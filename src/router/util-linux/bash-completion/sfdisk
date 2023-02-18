@@ -5,15 +5,38 @@ _sfdisk_module()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	case $prev in
-		'-u'|'--unit')
-			COMPREPLY=( $(compgen -W "S C B M" -- $cur) )
+		'-d'|'--dump'|'-J'|'--json'|'-l'|'--list'|'-F'|'--list-free'|'-r'|'--reorder'|'-s'|'--show-size'|'-V'|'--verify'|'-A'|'--activate'|'--delete')
+			compopt -o bashdefault -o default
+			COMPREPLY=( $(compgen -W "$(lsblk -dpnro name)" -- $cur) )
 			return 0
 			;;
-		'-n'|'-C'|'--cylinders'|'-H'|'--heads'|'-S'|'--sectors')
+		'-N'|'--partno')
 			COMPREPLY=( $(compgen -W "number" -- $cur) )
 			return 0
 			;;
-		'-O'|'-I')
+		'--color'|'-w'|'--wipe'|'-W'|'--wipe-partitions')
+			COMPREPLY=( $(compgen -W "auto never always" -- $cur) )
+			return 0
+			;;
+		'-o'|'--output')
+			local prefix realcur OUTPUT_ALL OUTPUT
+			realcur="${cur##*,}"
+			prefix="${cur%$realcur}"
+			OUTPUT_ALL="
+				Attrs Boot Bsize Cpg Cylinders Device End
+				End-C/H/S Flags Fsize Id Name Sectors Size
+				Slice Start Start-C/H/S Type Type-UUID UUID
+			"
+			for WORD in $OUTPUT_ALL; do
+				if ! [[ $prefix == *"$WORD"* ]]; then
+					OUTPUT="$WORD ${OUTPUT:-""}"
+				fi
+			done
+			compopt -o nospace
+			COMPREPLY=( $(compgen -P "$prefix" -W "$OUTPUT" -S ',' -- "$realcur") )
+			return 0
+			;;
+		'-O'|'--backup-file')
 			local IFS=$'\n'
 			compopt -o filenames
 			COMPREPLY=( $(compgen -f -- $cur) )
@@ -28,51 +51,51 @@ _sfdisk_module()
 			cur=${cur#=}
 			;;
 		-*)
-			OPTS="--show-size
-				--id
-				--change-id
-				--print-id
-				--list
+			OPTS="
+				--activate
 				--dump
-				--increment
-				--unit
-				--one-only
-				--list-types
-				--DOS
-				--DOS-extended
-				--re-read
-				-N
-				-n
-				-O
-				-I
-				--verify
-				--version
-				--help
-				--force
-				--no-reread
-				--quiet
-				--Linux
+				--json
 				--show-geometry
-				--show-pt-geometry
-				--activate=
-				--unhide=
-				--show-extended
-				--leave-last
-				--IBM
-				--in-order
-				--not-in-order
-				--inside-outer
-				--not-inside-outer
-				--nested
-				--chained
-				--onesector
-				--cylinders
-				--heads
-				--sectors"
+				--list
+				--list-free
+				--disk-id
+				--reorder
+				--show-size
+				--list-types
+				--verify
+				--relocate
+				--delete
+				--part-label
+				--part-type
+				--part-uuid
+				--part-attrs
+				--append
+				--backup
+				--backup-pt-sectors
+				--bytes
+				--move-data
+				--force
+				--color
+				--lock
+				--partno
+				--no-act
+				--no-reread
+				--no-tell-kernel
+				--backup-file
+				--output
+				--quiet
+				--wipe
+				--wipe-partitions
+				--label
+				--label-nested
+				--help
+				--version
+			"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;
 	esac
+	compopt -o bashdefault -o default
 	COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
 	return 0
 }

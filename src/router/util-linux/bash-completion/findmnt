@@ -43,15 +43,23 @@ _findmnt_module()
 			return 0
 			;;
 		'-o'|'--output')
-			# FIXME: how to append to a string with compgen?
-			local OUTPUT
-			OUTPUT="SOURCE TARGET FSTYPE OPTIONS VFS-OPTIONS
+			local prefix realcur OUTPUT_ALL OUTPUT
+			realcur="${cur##*,}"
+			prefix="${cur%$realcur}"
+
+			OUTPUT_ALL="SOURCE TARGET FSTYPE OPTIONS VFS-OPTIONS
 				FS-OPTIONS LABEL UUID PARTLABEL PARTUUID
 				MAJ\:MIN ACTION OLD-TARGET OLD-OPTIONS
 				SIZE AVAIL USED USE% FSROOT TID ID
 				OPT-FIELDS PROPAGATION FREQ PASSNO"
+
+			for WORD in $OUTPUT_ALL; do
+				if ! [[ $prefix == *"$WORD"* ]]; then
+					OUTPUT="$WORD ${OUTPUT:-""}"
+				fi
+			done
 			compopt -o nospace
-			COMPREPLY=( $(compgen -W "$OUTPUT" -S ',' -- $cur) )
+			COMPREPLY=( $(compgen -P "$prefix" -W "$OUTPUT" -S ',' -- $realcur) )
 			return 0
 			;;
 		'-t'|'--types')
@@ -77,6 +85,12 @@ _findmnt_module()
 			COMPREPLY=( $(compgen -W "$DEV_MPOINT" -- $cur) )
 			return 0
 			;;
+		'-M'|'--mountpoint')
+			local IFS=$'\n'
+			compopt -o filenames
+			COMPREPLY=( $(compgen -o dirnames -- ${cur:-"/"}) )
+			return 0
+			;;
 		'-h'|'--help'|'-V'|'--version')
 			return 0
 			;;
@@ -97,12 +111,14 @@ _findmnt_module()
 				--tab-file
 				--first-only
 				--invert
+				--json
 				--list
 				--task
 				--noheadings
 				--notruncate
 				--options
 				--output
+				--output-all
 				--pairs
 				--raw
 				--types
@@ -110,7 +126,11 @@ _findmnt_module()
 				--submounts
 				--source
 				--target
+				--mountpoint
 				--help
+				--tree
+				--real
+				--pseudo
 				--version"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0

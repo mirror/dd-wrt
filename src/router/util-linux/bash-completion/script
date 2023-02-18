@@ -10,6 +10,18 @@ _script_module()
 			COMPREPLY=( $(compgen -c -- $cur) )
 			return 0
 			;;
+		'-E'|'--echo')
+			COMPREPLY=( $(compgen -W "auto always never" -- $cur) )
+			return 0
+			;;
+		'-o'|'--output-limit')
+			COMPREPLY=( $(compgen -W "size" -- $cur) )
+			return 0
+			;;
+		'-m'|'--logging-format')
+			COMPREPLY=( $(compgen -W "classic advanced" -- $cur) )
+			return 0
+			;;
 		'-h'|'--help'|'-V'|'--version')
 			return 0
 			;;
@@ -21,10 +33,17 @@ _script_module()
 		-*)
 			OPTS="--append
 				--command
+				--echo
+				--log-in
+				--log-out
+				--log-io
+				--log-timing
+				--logging-format
 				--return
 				--flush
 				--force
 				--quiet
+				--output-limit
 				--timing=
 				--version
 				--help"

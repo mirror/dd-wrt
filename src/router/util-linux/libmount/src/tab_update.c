@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2010 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2011-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -25,6 +30,7 @@
 #include "mountP.h"
 #include "mangle.h"
 #include "pathnames.h"
+#include "strutils.h"
 
 struct libmnt_update {
 	char		*target;
@@ -105,7 +111,9 @@ int mnt_update_set_filename(struct libmnt_update *upd, const char *filename,
 
 	/* detect tab filename -- /etc/mtab or /run/mount/utab
 	 */
+#ifdef USE_LIBMOUNT_SUPPORT_MTAB
 	mnt_has_regular_mtab(&path, &rw);
+#endif
 	if (!rw) {
 		path = NULL;
 		mnt_has_regular_utab(&path, &rw);
@@ -167,8 +175,8 @@ int mnt_update_set_fs(struct libmnt_update *upd, unsigned long mountflags,
 		return -EINVAL;
 
 	DBG(UPDATE, ul_debugobj(upd,
-			"resetting FS [fs=0x%p, target=%s, flags=0x%08lx]",
-			fs, target, mountflags));
+			"resetting FS [target=%s, flags=0x%08lx]",
+			target, mountflags));
 	if (fs) {
 		DBG(UPDATE, ul_debugobj(upd, "FS template:"));
 		DBG(UPDATE, mnt_fs_print_debug(fs, stderr));
@@ -289,7 +297,7 @@ static int utab_new_entry(struct libmnt_update *upd, struct libmnt_fs *fs,
 			  unsigned long mountflags)
 {
 	int rc = 0;
-	const char *o = NULL, *a = NULL;
+	const char *o, *a;
 	char *u = NULL;
 
 	assert(fs);
@@ -357,7 +365,7 @@ static int set_fs_root(struct libmnt_update *upd, struct libmnt_fs *fs,
 {
 	struct libmnt_fs *src_fs;
 	char *fsroot = NULL;
-	const char *src;
+	const char *src, *fstype;
 	int rc = 0;
 
 	DBG(UPDATE, ul_debug("setting FS root"));
@@ -366,16 +374,21 @@ static int set_fs_root(struct libmnt_update *upd, struct libmnt_fs *fs,
 	assert(upd->fs);
 	assert(fs);
 
+	fstype = mnt_fs_get_fstype(fs);
+
 	if (mountflags & MS_BIND) {
 		if (!upd->mountinfo)
 			upd->mountinfo = mnt_new_table_from_file(_PATH_PROC_MOUNTINFO);
-
 		src = mnt_fs_get_srcpath(fs);
 		if (src) {
 			 rc = mnt_fs_set_bindsrc(upd->fs, src);
 			 if (rc)
 				 goto err;
 		}
+
+	} else if (fstype && (strcmp(fstype, "btrfs") == 0 || strcmp(fstype, "auto") == 0)) {
+		if (!upd->mountinfo)
+			upd->mountinfo = mnt_new_table_from_file(_PATH_PROC_MOUNTINFO);
 	}
 
 	src_fs = mnt_table_get_fs_root(upd->mountinfo, fs,
@@ -564,6 +577,7 @@ leave:
 
 	unlink(uq);	/* be paranoid */
 	free(uq);
+	DBG(UPDATE, ul_debugobj(upd, "%s: done [rc=%d]", upd->filename, rc));
 	return rc;
 }
 
@@ -689,10 +703,10 @@ static int update_add_entry(struct libmnt_update *upd, struct libmnt_lock *lc)
 	if (lc)
 		rc = mnt_lock_file(lc);
 	if (rc)
-		return rc;
+		return -MNT_ERR_LOCK;
 
 	tb = __mnt_new_table_from_file(upd->filename,
-			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB);
+			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB, 1);
 	if (tb)
 		rc = add_file_entry(tb, upd);
 	if (lc)
@@ -715,10 +729,10 @@ static int update_remove_entry(struct libmnt_update *upd, struct libmnt_lock *lc
 	if (lc)
 		rc = mnt_lock_file(lc);
 	if (rc)
-		return rc;
+		return -MNT_ERR_LOCK;
 
 	tb = __mnt_new_table_from_file(upd->filename,
-			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB);
+			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB, 1);
 	if (tb) {
 		struct libmnt_fs *rem = mnt_table_find_target(tb, upd->target, MNT_ITER_BACKWARD);
 		if (rem) {
@@ -744,20 +758,54 @@ static int update_modify_target(struct libmnt_update *upd, struct libmnt_lock *l
 	if (lc)
 		rc = mnt_lock_file(lc);
 	if (rc)
-		return rc;
+		return -MNT_ERR_LOCK;
 
 	tb = __mnt_new_table_from_file(upd->filename,
-			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB);
+			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB, 1);
 	if (tb) {
-		struct libmnt_fs *cur = mnt_table_find_target(tb,
-				mnt_fs_get_srcpath(upd->fs), MNT_ITER_BACKWARD);
-		if (cur) {
-			rc = mnt_fs_set_target(cur, mnt_fs_get_target(upd->fs));
-			if (!rc)
-				rc = update_table(upd, tb);
+		const char *upd_source = mnt_fs_get_srcpath(upd->fs);
+		const char *upd_target = mnt_fs_get_target(upd->fs);
+		struct libmnt_iter itr;
+		struct libmnt_fs *fs;
+		char *cn_target = mnt_resolve_path(upd_target, NULL);
+
+		if (!cn_target) {
+			rc = -ENOMEM;
+			goto done;
 		}
+
+		mnt_reset_iter(&itr, MNT_ITER_BACKWARD);
+		while (mnt_table_next_fs(tb, &itr, &fs) == 0) {
+			char *p;
+			const char *e;
+
+			e = startswith(mnt_fs_get_target(fs), upd_source);
+			if (!e || (*e && *e != '/'))
+				continue;
+			if (*e == '/')
+				e++;		/* remove extra '/' */
+
+			/* no subdirectory, replace entire path */
+			if (!*e)
+				rc = mnt_fs_set_target(fs, cn_target);
+
+			/* update start of the path, keep subdirectory */
+			else if (asprintf(&p, "%s/%s", cn_target, e) > 0) {
+				rc = mnt_fs_set_target(fs, p);
+				free(p);
+			} else
+				rc = -ENOMEM;
+
+			if (rc < 0)
+				break;
+		}
+
+		if (!rc)
+			rc = update_table(upd, tb);
+		free(cn_target);
 	}
 
+done:
 	if (lc)
 		mnt_unlock_file(lc);
 
@@ -781,10 +829,10 @@ static int update_modify_options(struct libmnt_update *upd, struct libmnt_lock *
 	if (lc)
 		rc = mnt_lock_file(lc);
 	if (rc)
-		return rc;
+		return -MNT_ERR_LOCK;
 
 	tb = __mnt_new_table_from_file(upd->filename,
-			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB);
+			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB, 1);
 	if (tb) {
 		struct libmnt_fs *cur = mnt_table_find_target(tb,
 					mnt_fs_get_target(fs),
@@ -878,13 +926,16 @@ int mnt_update_already_done(struct libmnt_update *upd, struct libmnt_lock *lc)
 	}
 	if (lc && upd->userspace_only)
 		mnt_lock_use_simplelock(lc, TRUE);	/* use flock */
-	if (lc)
+	if (lc) {
 		rc = mnt_lock_file(lc);
-	if (rc)
-		goto done;
+		if (rc) {
+			rc = -MNT_ERR_LOCK;
+			goto done;
+		}
+	}
 
 	tb = __mnt_new_table_from_file(upd->filename,
-			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB);
+			upd->userspace_only ? MNT_FMT_UTAB : MNT_FMT_MTAB, 1);
 	if (lc)
 		mnt_unlock_file(lc);
 	if (!tb)

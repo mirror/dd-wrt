@@ -1,101 +1,265 @@
-.\" Copyright (c) 1989, 1990, 1993
-.\"	The Regents of the University of California.  All rights reserved.
+'\" t
+.\"     Title: column
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-08-04
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\"     @(#)column.1	8.1 (Berkeley) 6/6/93
-.\"
-.TH COLUMN 1 "July 2014" "util-linux" "User Commands"
-.SH NAME
+.TH "COLUMN" "1" "2022-08-04" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 column \- columnate lists
-.SH SYNOPSIS
-.BR column " [options]"
-.RI [ file ...]
-.SH DESCRIPTION
-The
-.B column
-utility formats its input into multiple columns.  By default, rows
-are filled before columns.  Input is taken from \fIfile\fR, or
-otherwise from standard input.  Empty lines are ignored.
-.PP
-.SH OPTIONS
-.IP "\fB\-c, \-\-columns\fP \fIwidth\fP"
-Output is formatted to a width specified as number of characters.
-.IP "\fB\-o, \-\-output\-separator\fP \fIstring\fP"
+.SH "SYNOPSIS"
+.sp
+\fBcolumn\fP [options] [\fIfile\fP ...]
+.SH "DESCRIPTION"
+.sp
+The \fBcolumn\fP utility formats its input into multiple columns. The util support three modes:
+.sp
+\fBcolumns are filled before rows\fP
+.RS 4
+This is the default mode (required by backward compatibility).
+.RE
+.sp
+\fBrows are filled before columns\fP
+.RS 4
+This mode is enabled by option \fB\-x, \-\-fillrows\fP
+.RE
+.sp
+\fBtable\fP
+.RS 4
+Determine the number of columns the input contains and create a table. This mode is enabled by option \fB\-t, \-\-table\fP and columns formatting is possible to modify by \fB\-\-table\-\fP* options. Use this mode if not sure. The output is aligned to the terminal width in interactive mode and the 80 columns in non\-interactive mode (see \fB\-\-output\-width\fP for more details).
+.RE
+.sp
+Input is taken from \fIfile\fP, or otherwise from standard input. Empty lines are ignored and all invalid multibyte sequences are encoded by x<hex> convention.
+.SH "OPTIONS"
+.sp
+The argument \fIcolumns\fP for \fB\-\-table\-\fP* options is a comma separated list of the column names as defined by \fB\-\-table\-columns\fP or it\(cqs column number in order as specified by input. It\(cqs possible to mix names and numbers. The special placeholder \(aq0\(aq (e.g. \-R0) may be used to specify all columns.
+.sp
+\fB\-J, \-\-json\fP
+.RS 4
+Use JSON output format to print the table, the option \fB\-\-table\-columns\fP is required and the option \fB\-\-table\-name\fP is recommended.
+.RE
+.sp
+\fB\-c, \-\-output\-width\fP \fIwidth\fP
+.RS 4
+Output is formatted to a width specified as number of characters. The original name of this option is \fB\-\-columns\fP; this name is deprecated since v2.30. Note that input longer than \fIwidth\fP is not truncated by default. The default is a terminal width and the 80 columns in non\-interactive mode. The column headers are never truncated.
+.RE
+.sp
+\fB\-d, \-\-table\-noheadings\fP
+.RS 4
+Do not print header. This option allows the use of logical column names on the command line, but keeps the header hidden when printing the table.
+.RE
+.sp
+\fB\-o, \-\-output\-separator\fP \fIstring\fP
+.RS 4
 Specify the columns delimiter for table output (default is two spaces).
-.IP "\fB\-s, \-\-separator\fP \fIseparators\fP"
+.RE
+.sp
+\fB\-s, \-\-separator\fP \fIseparators\fP
+.RS 4
 Specify the possible input item delimiters (default is whitespace).
-.IP "\fB\-t, \-\-table\fP"
-Determine the number of columns the input contains and create a table.
-Columns are delimited with whitespace, by default, or with the characters
-supplied using the \fB\-\-output\-separator\fP option.
-Table output is useful for pretty-printing.
-.IP "\fB\-x, \-\-fillrows\fP"
-Fill columns before filling rows.
-.IP "\fB\-V\fR, \fB\-\-version\fR"
-Display version information and exit.
-.IP "\fB\-h, \-\-help\fP"
+.RE
+.sp
+\fB\-t, \-\-table\fP
+.RS 4
+Determine the number of columns the input contains and create a table. Columns are delimited with whitespace, by default, or with the characters supplied using the \fB\-\-output\-separator\fP option. Table output is useful for pretty\-printing.
+.RE
+.sp
+\fB\-N, \-\-table\-columns\fP \fInames\fP
+.RS 4
+Specify the columns names by comma separated list of names. The names are used for the table header or to address column in option arguments.
+.RE
+.sp
+\fB\-l, \-\-table\-columns\-limit\fP \fInumber\fP
+.RS 4
+Specify maximal number of the input columns. The last column will contain all remaining line data if the limit is smaller than the number of the columns in the input data.
+.RE
+.sp
+\fB\-R, \-\-table\-right\fP \fIcolumns\fP
+.RS 4
+Right align text in the specified columns.
+.RE
+.sp
+\fB\-T, \-\-table\-truncate\fP \fIcolumns\fP
+.RS 4
+Specify columns where text can be truncated when necessary, otherwise very long table entries may be printed on multiple lines.
+.RE
+.sp
+\fB\-E, \-\-table\-noextreme\fP \fIcolumns\fP
+.RS 4
+Specify columns where is possible to ignore unusually long (longer than average) cells when calculate column width. The option has impact to the width calculation and table formatting, but the printed text is not affected.
+.sp
+The option is used for the last visible column by default.
+.RE
+.sp
+\fB\-e, \-\-table\-header\-repeat\fP
+.RS 4
+Print header line for each page.
+.RE
+.sp
+\fB\-W, \-\-table\-wrap\fP \fIcolumns\fP
+.RS 4
+Specify columns where is possible to use multi\-line cell for long text when necessary.
+.RE
+.sp
+\fB\-H, \-\-table\-hide\fP \fIcolumns\fP
+.RS 4
+Don\(cqt print specified columns. The special placeholder \(aq\-\(aq may be used to hide all unnamed columns (see \fB\-\-table\-columns\fP).
+.RE
+.sp
+\fB\-O, \-\-table\-order\fP \fIcolumns\fP
+.RS 4
+Specify columns order on output.
+.RE
+.sp
+\fB\-n, \-\-table\-name\fP \fIname\fP
+.RS 4
+Specify the table name used for JSON output. The default is "table".
+.RE
+.sp
+\fB\-L, \-\-keep\-empty\-lines\fP
+.RS 4
+Preserve whitespace\-only lines in the input. The default is ignore empty lines at all. This option\(cqs original name was \fB\-\-table\-empty\-lines\fP but is now deprecated because it gives the false impression that the option only applies to table mode.
+.RE
+.sp
+\fB\-r, \-\-tree\fP \fIcolumn\fP
+.RS 4
+Specify column to use tree\-like output. Note that the circular dependencies and other anomalies in child and parent relation are silently ignored.
+.RE
+.sp
+\fB\-i, \-\-tree\-id\fP \fIcolumn\fP
+.RS 4
+Specify column with line ID to create child\-parent relation.
+.RE
+.sp
+\fB\-p, \-\-tree\-parent\fP \fIcolumn\fP
+.RS 4
+Specify column with parent ID to create child\-parent relation.
+.RE
+.sp
+\fB\-x, \-\-fillrows\fP
+.RS 4
+Fill rows before filling columns.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-.SH ENVIRONMENT
-The environment variable \fBCOLUMNS\fR is used to determine the size of
-the screen if no other information is available.
-.SH EXAMPLES
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "ENVIRONMENT"
+.sp
+The environment variable \fBCOLUMNS\fP is used to determine the size of the screen if no other information is available.
+.SH "HISTORY"
+.sp
+The \fBcolumn\fP command appeared in 4.3BSD\-Reno.
+.SH "BUGS"
+.sp
+Version 2.23 changed the \fB\-s\fP option to be non\-greedy, for example:
+.sp
+.if n .RS 4
 .nf
-.B sed 's/#.*//' /etc/fstab | column -t
-.nf
-.SH BUGS
-Version 2.23 changed the
-.B \-s
-option to be non-greedy, for example:
-.PP
-.EX
-\fBprintf "a:b:c\\n1::3\\n" | column  -t -s ':'\fR
-.EE
-.PP
+.fam C
+printf "a:b:c\(rsn1::3\(rsn" | column \-t \-s \(aq:\(aq
+.fam
+.fi
+.if n .RE
+.sp
 Old output:
-.EX
+.sp
+.if n .RS 4
+.nf
+.fam C
 a  b  c
 1  3
-.EE
-.PP
-New output (since util-linux 2.23):
-.EX
+.fam
+.fi
+.if n .RE
+.sp
+New output (since util\-linux 2.23):
+.sp
+.if n .RS 4
+.nf
+.fam C
 a  b  c
 1     3
-.EE
+.fam
+.fi
+.if n .RE
+.sp
+Historical versions of this tool indicated that "rows are filled before columns" by default, and that the \fB\-x\fP option reverses this. This wording did not reflect the actual behavior, and it has since been corrected (see above). Other implementations of \fBcolumn\fP may continue to use the older documentation, but the behavior should be identical in any case.
+.SH "EXAMPLES"
+.sp
+Print fstab with header line and align number to the right:
+.sp
+.if n .RS 4
+.nf
+.fam C
+sed \(aqs/#.*//\(aq /etc/fstab | column \-\-table \-\-table\-columns SOURCE,TARGET,TYPE,OPTIONS,PASS,FREQ \-\-table\-right PASS,FREQ
+.fam
+.fi
+.if n .RE
+.sp
+Print fstab and hide unnamed columns:
+.sp
+.if n .RS 4
+.nf
+.fam C
+sed \(aqs/#.*//\(aq /etc/fstab | column \-\-table \-\-table\-columns SOURCE,TARGET,TYPE \-\-table\-hide \-
+.fam
+.fi
+.if n .RE
+.sp
+Print a tree:
+.sp
+.if n .RS 4
+.nf
+.fam C
+echo \-e \(aq1 0 A\(rsn2 1 AA\(rsn3 1 AB\(rsn4 2 AAA\(rsn5 2 AAB\(aq | column \-\-tree\-id 1 \-\-tree\-parent 2 \-\-tree 3
+1  0  A
+2  1  |\-AA
+4  2  | |\-AAA
+5  2  | `\-AAB
+3  1  `\-AB
+.fam
+.fi
+.if n .RE
 .SH "SEE ALSO"
-.BR colrm (1),
-.BR ls (1),
-.BR paste (1),
-.BR sort (1)
-.SH HISTORY
-The column command appeared in 4.3BSD-Reno.
-.SH AVAILABILITY
-The column command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBcolrm\fP(1),
+\fBls\fP(1),
+\fBpaste\fP(1),
+\fBsort\fP(1)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBcolumn\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

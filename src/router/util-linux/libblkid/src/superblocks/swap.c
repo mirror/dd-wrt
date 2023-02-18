@@ -91,7 +91,9 @@ static int probe_swap(blkid_probe pr, const struct blkid_idmag *mag)
 		blkid_probe_set_version(pr, "0");
 		return 0;
 
-	} else if (!memcmp(mag->magic, "SWAPSPACE2", mag->len))
+	}
+
+	if (!memcmp(mag->magic, "SWAPSPACE2", mag->len))
 		return swap_set_info(pr, "1");
 
 	return 1;
@@ -107,7 +109,7 @@ static int probe_swsuspend(blkid_probe pr, const struct blkid_idmag *mag)
 		return swap_set_info(pr, "s2suspend");
 	if (!memcmp(mag->magic, "ULSUSPEND", mag->len))
 		return swap_set_info(pr, "ulsuspend");
-	if (!memcmp(mag->magic, TOI_MAGIC_STRING, mag->len))
+	if (!memcmp(mag->magic, TOI_MAGIC_STRING, TOI_MAGIC_STRLEN))
 		return swap_set_info(pr, "tuxonice");
 	if (!memcmp(mag->magic, "LINHIB0001", mag->len))
 		return swap_set_info(pr, "linhib0001");
@@ -123,16 +125,16 @@ const struct blkid_idinfo swap_idinfo =
 	.minsz		= 10 * 4096,	/* 10 pages */
 	.magics		=
 	{
-		{ "SWAP-SPACE", 10, 0,  0xff6 },
-		{ "SWAPSPACE2", 10, 0,  0xff6 },
-		{ "SWAP-SPACE", 10, 0, 0x1ff6 },
-		{ "SWAPSPACE2", 10, 0, 0x1ff6 },
-		{ "SWAP-SPACE", 10, 0, 0x3ff6 },
-		{ "SWAPSPACE2", 10, 0, 0x3ff6 },
-		{ "SWAP-SPACE", 10, 0, 0x7ff6 },
-		{ "SWAPSPACE2", 10, 0, 0x7ff6 },
-		{ "SWAP-SPACE", 10, 0, 0xfff6 },
-		{ "SWAPSPACE2", 10, 0, 0xfff6 },
+		{ .magic = "SWAP-SPACE", .len = 10, .sboff = 0xff6 },
+		{ .magic = "SWAPSPACE2", .len = 10, .sboff = 0xff6 },
+		{ .magic = "SWAP-SPACE", .len = 10, .sboff = 0x1ff6 },
+		{ .magic = "SWAPSPACE2", .len = 10, .sboff = 0x1ff6 },
+		{ .magic = "SWAP-SPACE", .len = 10, .sboff = 0x3ff6 },
+		{ .magic = "SWAPSPACE2", .len = 10, .sboff = 0x3ff6 },
+		{ .magic = "SWAP-SPACE", .len = 10, .sboff = 0x7ff6 },
+		{ .magic = "SWAPSPACE2", .len = 10, .sboff = 0x7ff6 },
+		{ .magic = "SWAP-SPACE", .len = 10, .sboff = 0xfff6 },
+		{ .magic = "SWAPSPACE2", .len = 10, .sboff = 0xfff6 },
 		{ NULL }
 	}
 };
@@ -146,33 +148,31 @@ const struct blkid_idinfo swsuspend_idinfo =
 	.minsz		= 10 * 4096,	/* 10 pages */
 	.magics		=
 	{
-		{ TOI_MAGIC_STRING, TOI_MAGIC_STRLEN, 0, 0 },
-		{ "S1SUSPEND", 9, 0, 0xff6 },
-		{ "S2SUSPEND", 9, 0, 0xff6 },
-		{ "ULSUSPEND", 9, 0, 0xff6 },
-		{ "LINHIB0001",10,0, 0xff6 },
+		{ .magic = TOI_MAGIC_STRING, .len = TOI_MAGIC_STRLEN },
+		{ .magic = "S1SUSPEND", .len = 9, .sboff = 0xff6 },
+		{ .magic = "S2SUSPEND", .len = 9, .sboff = 0xff6 },
+		{ .magic = "ULSUSPEND", .len = 9, .sboff = 0xff6 },
+		{ .magic = "LINHIB0001", .len = 10, .sboff = 0xff6 },
 
-		{ "S1SUSPEND", 9, 0, 0x1ff6 },
-		{ "S2SUSPEND", 9, 0, 0x1ff6 },
-		{ "ULSUSPEND", 9, 0, 0x1ff6 },
-		{ "LINHIB0001",10,0, 0x1ff6 },
+		{ .magic = "S1SUSPEND", .len = 9, .sboff = 0x1ff6 },
+		{ .magic = "S2SUSPEND", .len = 9, .sboff = 0x1ff6 },
+		{ .magic = "ULSUSPEND", .len = 9, .sboff = 0x1ff6 },
+		{ .magic = "LINHIB0001", .len = 10, .sboff = 0x1ff6 },
 
-		{ "S1SUSPEND", 9, 0, 0x3ff6 },
-		{ "S2SUSPEND", 9, 0, 0x3ff6 },
-		{ "ULSUSPEND", 9, 0, 0x3ff6 },
-		{ "LINHIB0001",10,0, 0x3ff6 },
+		{ .magic = "S1SUSPEND", .len = 9, .sboff = 0x3ff6 },
+		{ .magic = "S2SUSPEND", .len = 9, .sboff = 0x3ff6 },
+		{ .magic = "ULSUSPEND", .len = 9, .sboff = 0x3ff6 },
+		{ .magic = "LINHIB0001", .len = 10, .sboff = 0x3ff6 },
 
-		{ "S1SUSPEND", 9, 0, 0x7ff6 },
-		{ "S2SUSPEND", 9, 0, 0x7ff6 },
-		{ "ULSUSPEND", 9, 0, 0x7ff6 },
-		{ "LINHIB0001",10,0, 0x7ff6 },
+		{ .magic = "S1SUSPEND", .len = 9, .sboff = 0x7ff6 },
+		{ .magic = "S2SUSPEND", .len = 9, .sboff = 0x7ff6 },
+		{ .magic = "ULSUSPEND", .len = 9, .sboff = 0x7ff6 },
+		{ .magic = "LINHIB0001", .len = 10, .sboff = 0x7ff6 },
 
-		{ "S1SUSPEND", 9, 0, 0xfff6 },
-		{ "S2SUSPEND", 9, 0, 0xfff6 },
-		{ "ULSUSPEND", 9, 0, 0xfff6 },
-		{ "LINHIB0001",10,0, 0xfff6 },
-
+		{ .magic = "S1SUSPEND", .len = 9, .sboff = 0xfff6 },
+		{ .magic = "S2SUSPEND", .len = 9, .sboff = 0xfff6 },
+		{ .magic = "ULSUSPEND", .len = 9, .sboff = 0xfff6 },
+		{ .magic = "LINHIB0001", .len = 10, .sboff = 0xfff6 },
 		{ NULL }
 	}
 };
-

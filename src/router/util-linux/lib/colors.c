@@ -11,6 +11,23 @@
 #include <dirent.h>
 #include <ctype.h>
 
+#if defined(HAVE_LIBNCURSES) || defined(HAVE_LIBNCURSESW)
+# if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+# elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+# elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+# endif
+# if defined(HAVE_NCURSESW_TERM_H)
+#  include <ncursesw/term.h>
+# elif defined(HAVE_NCURSES_TERM_H)
+#  include <ncurses/term.h>
+# elif defined(HAVE_TERM_H)
+#  include <term.h>
+# endif
+#endif
+
 #include "c.h"
 #include "colors.h"
 #include "pathnames.h"
@@ -19,7 +36,7 @@
 #include "debug.h"
 
 /*
- * Default behavior, maybe be override by terminal-colors.d/{enable,disable}.
+ * Default behavior, may be overridden by terminal-colors.d/{enable,disable}.
  */
 #ifdef USE_COLORS_BY_DEFAULT
 # define UL_COLORMODE_DEFAULT	UL_COLORMODE_AUTO	/* check isatty() */
@@ -30,7 +47,7 @@
 /*
  * terminal-colors.d debug stuff
  */
-UL_DEBUG_DEFINE_MASK(termcolors);
+static UL_DEBUG_DEFINE_MASK(termcolors);
 UL_DEBUG_DEFINE_MASKNAMES(termcolors) = UL_DEBUG_EMPTY_MASKNAMES;
 
 #define TERMCOLORS_DEBUG_INIT	(1 << 1)
@@ -103,45 +120,10 @@ static int colors_read_schemes(struct ul_color_ctl *cc);
  */
 static int cmp_scheme_name(const void *a0, const void *b0)
 {
-	struct ul_color_scheme	*a = (struct ul_color_scheme *) a0,
-				*b = (struct ul_color_scheme *) b0;
+	const struct ul_color_scheme *a = (const struct ul_color_scheme *) a0,
+				     *b = (const struct ul_color_scheme *) b0;
 	return strcmp(a->name, b->name);
 }
-
-/*
- * Maintains human readable color names
- */
-const char *color_sequence_from_colorname(const char *str)
-{
-	static const struct ul_color_scheme basic_schemes[] = {
-		{ "black",	UL_COLOR_BLACK           },
-		{ "blue",	UL_COLOR_BLUE            },
-		{ "brown",	UL_COLOR_BROWN           },
-		{ "cyan",	UL_COLOR_CYAN            },
-		{ "darkgray",	UL_COLOR_DARK_GRAY       },
-		{ "gray",	UL_COLOR_GRAY            },
-		{ "green",	UL_COLOR_GREEN           },
-		{ "lightblue",	UL_COLOR_BOLD_BLUE       },
-		{ "lightcyan",	UL_COLOR_BOLD_CYAN       },
-		{ "lightgray,",	UL_COLOR_GRAY            },
-		{ "lightgreen", UL_COLOR_BOLD_GREEN      },
-		{ "lightmagenta", UL_COLOR_BOLD_MAGENTA  },
-		{ "lightred",	UL_COLOR_BOLD_RED        },
-		{ "magenta",	UL_COLOR_MAGENTA         },
-		{ "red",	UL_COLOR_RED             },
-		{ "yellow",	UL_COLOR_BOLD_YELLOW     },
-	};
-	struct ul_color_scheme key = { .name = (char *) str }, *res;
-
-	if (!str)
-		return NULL;
-
-	res = bsearch(&key, basic_schemes, ARRAY_SIZE(basic_schemes),
-				sizeof(struct ul_color_scheme),
-				cmp_scheme_name);
-	return res ? res->seq : NULL;
-}
-
 
 /*
  * Resets control struct (note that we don't allocate the struct)
@@ -296,7 +278,7 @@ static int colors_readdir(struct ul_color_ctl *cc, const char *dirname)
 				       &tk_term, &tk_termsz, &type) != 0)
 			continue;
 
-		/* count teoretical score before we check names to avoid
+		/* count theoretical score before we check names to avoid
 		 * unnecessary strcmp() */
 		if (tk_name)
 			score += 20;
@@ -373,6 +355,7 @@ static char *colors_get_homedir(char *buf, size_t bufsz)
 static int cn_sequence(const char *str, char **seq)
 {
 	char *in, *out;
+	int len;
 
 	if (!str)
 		return -EINVAL;
@@ -388,7 +371,7 @@ static int cn_sequence(const char *str, char **seq)
 	}
 
 	/* convert xx;yy sequences to "\033[xx;yy" */
-	if (asprintf(seq, "\033[%sm", str) < 1)
+	if ((len = asprintf(seq, "\033[%sm", str)) < 1)
 		return -ENOMEM;
 
 	for (in = *seq, out = *seq; in && *in; in++) {
@@ -431,7 +414,7 @@ static int cn_sequence(const char *str, char **seq)
 			*out++ = '#';	/* Hash mark */
 			break;
 		case '?':
-			*out++ = '?';	/* Qestion mark */
+			*out++ = '?';	/* Question mark */
 			break;
 		default:
 			*out++ = *in;
@@ -440,7 +423,11 @@ static int cn_sequence(const char *str, char **seq)
 		}
 		in++;
 	}
-	*out = '\0';
+
+	if (out) {
+		assert ((out - *seq) <= len);
+		*out = '\0';
+	}
 
 	return 0;
 }
@@ -661,7 +648,28 @@ done:
 
 static void termcolors_init_debug(void)
 {
-	__UL_INIT_DEBUG(termcolors, TERMCOLORS_DEBUG_, 0, TERMINAL_COLORS_DEBUG);
+	__UL_INIT_DEBUG_FROM_ENV(termcolors, TERMCOLORS_DEBUG_, 0, TERMINAL_COLORS_DEBUG);
+}
+
+static int colors_terminal_is_ready(void)
+{
+	int ncolors = -1;
+
+#if defined(HAVE_LIBNCURSES) || defined(HAVE_LIBNCURSESW)
+	{
+		int ret;
+
+		if (setupterm(NULL, STDOUT_FILENO, &ret) == 0 && ret == 1)
+			ncolors = tigetnum("colors");
+	}
+#endif
+	if (1 < ncolors) {
+		DBG(CONF, ul_debug("terminal is ready (supports %d colors)", ncolors));
+		return 1;
+	}
+
+	DBG(CONF, ul_debug("terminal is NOT ready (no colors)"));
+	return 0;
 }
 
 /**
@@ -676,15 +684,20 @@ static void termcolors_init_debug(void)
  */
 int colors_init(int mode, const char *name)
 {
-	int atty = -1;
+	int ready = -1;
 	struct ul_color_ctl *cc = &ul_colors;
 
 	cc->utilname = name;
-	cc->mode = mode;
 
 	termcolors_init_debug();
 
-	if (mode == UL_COLORMODE_UNDEF && (atty = isatty(STDOUT_FILENO))) {
+	if (mode != UL_COLORMODE_ALWAYS && !isatty(STDOUT_FILENO))
+		cc->mode = UL_COLORMODE_NEVER;
+	else
+		cc->mode = mode;
+
+	if (cc->mode == UL_COLORMODE_UNDEF
+	    && (ready = colors_terminal_is_ready())) {
 		int rc = colors_read_configuration(cc);
 		if (rc)
 			cc->mode = UL_COLORMODE_DEFAULT;
@@ -703,7 +716,7 @@ int colors_init(int mode, const char *name)
 
 	switch (cc->mode) {
 	case UL_COLORMODE_AUTO:
-		cc->has_colors = atty == -1 ? isatty(STDOUT_FILENO) : atty;
+		cc->has_colors = ready == -1 ? colors_terminal_is_ready() : ready;
 		break;
 	case UL_COLORMODE_ALWAYS:
 		cc->has_colors = 1;
@@ -740,6 +753,14 @@ void colors_on(void)
 int colors_wanted(void)
 {
 	return ul_colors.has_colors;
+}
+
+/*
+ * Returns mode
+ */
+int colors_mode(void)
+{
+	return ul_colors.mode;
 }
 
 /*
@@ -828,16 +849,16 @@ int colormode_or_err(const char *str, const char *errmsg)
 	return colormode;
 }
 
-#ifdef TEST_PROGRAM
+#ifdef TEST_PROGRAM_COLORS
 # include <getopt.h>
 int main(int argc, char *argv[])
 {
 	static const struct option longopts[] = {
-		{ "mode",	required_argument, 0, 'm' },
-		{ "color",	required_argument, 0, 'c' },
-		{ "color-scheme", required_argument, 0, 'C' },
-		{ "name",	required_argument, 0, 'n' },
-		{ NULL, 0, 0, 0 }
+		{ "mode",	required_argument, NULL, 'm' },
+		{ "color",	required_argument, NULL, 'c' },
+		{ "color-scheme", required_argument, NULL, 'C' },
+		{ "name",	required_argument, NULL, 'n' },
+		{ NULL, 0, NULL, 0 }
 	};
 	int c, mode = UL_COLORMODE_UNDEF;	/* default */
 	const char *color = "red", *name = NULL, *color_scheme = NULL;
@@ -882,5 +903,5 @@ int main(int argc, char *argv[])
 
 	return EXIT_SUCCESS;
 }
-#endif
+#endif /* TEST_PROGRAM_COLORS */
 

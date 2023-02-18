@@ -58,7 +58,7 @@ EXTRA_HFILES=
 # Header files to ignore when scanning. Use base file name, no paths
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=blkidP.h partitions.h superblocks.h \
-	      topology.h aix.h dos.h iso9660.h
+	      topology.h aix.h dos.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
@@ -68,7 +68,7 @@ HTML_IMAGES=
 # e.g. content_files=running.sgml building.sgml changes-2.0.sgml
 content_files = $(builddir)/version.xml $(srcdir)/libblkid-config.xml
 
-# SGML files where gtk-doc abbrevations (#GtkWidget) are expanded
+# SGML files where gtk-doc abbreviations (#GtkWidget) are expanded
 # These files must be listed here *and* in content_files
 # e.g. expand_content_files=running.sgml
 expand_content_files=

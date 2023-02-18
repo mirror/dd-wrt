@@ -8,7 +8,7 @@
 /**
  * SECTION: init
  * @title: Library initialization
- * @short_description: initialize debuging
+ * @short_description: initialize debugging
  */
 
 #include <stdarg.h>
@@ -23,10 +23,11 @@ UL_DEBUG_DEFINE_MASKNAMES(libblkid) =
 	{ "config", BLKID_DEBUG_CONFIG, "config file utils" },
 	{ "dev", BLKID_DEBUG_DEV,       "device utils" },
 	{ "devname", BLKID_DEBUG_DEVNAME, "/proc/partitions evaluation" },
-	{ "devno", BLKID_DEBUG_DEVNO,	"convertions to device name" },
+	{ "devno", BLKID_DEBUG_DEVNO,	"conversions to device name" },
 	{ "evaluate", BLKID_DEBUG_EVALUATE, "tags resolving" },
 	{ "help", BLKID_DEBUG_HELP,	"this help" },
 	{ "lowprobe", BLKID_DEBUG_LOWPROBE, "superblock/raids/partitions probing" },
+	{ "buffer", BLKID_DEBUG_BUFFER, "low-probing buffers" },
 	{ "probe", BLKID_DEBUG_PROBE,	"devices verification" },
 	{ "read", BLKID_DEBUG_READ,	"cache parsing" },
 	{ "save", BLKID_DEBUG_SAVE,	"cache writing" },
@@ -36,7 +37,7 @@ UL_DEBUG_DEFINE_MASKNAMES(libblkid) =
 
 /**
  * blkid_init_debug:
- * @mask: debug mask (0xffff to enable full debuging)
+ * @mask: debug mask (0xffff to enable full debugging)
  *
  * If the @mask is not specified then this function reads
  * LIBBLKID_DEBUG environment variable to get the mask.
@@ -49,7 +50,7 @@ void blkid_init_debug(int mask)
 	if (libblkid_debug_mask)
 		return;
 
-	__UL_INIT_DEBUG(libblkid, BLKID_DEBUG_, mask, LIBBLKID_DEBUG);
+	__UL_INIT_DEBUG_FROM_ENV(libblkid, BLKID_DEBUG_, mask, LIBBLKID_DEBUG);
 
 	if (libblkid_debug_mask != BLKID_DEBUG_INIT
 	    && libblkid_debug_mask != (BLKID_DEBUG_HELP|BLKID_DEBUG_INIT)) {

@@ -1,106 +1,129 @@
-.TH CHCPU 8 "July 2014" "util-linux" "System Administration"
-.SH NAME
+'\" t
+.\"     Title: chcpu
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "CHCPU" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 chcpu \- configure CPUs
-.SH SYNOPSIS
-.B chcpu
-.BR \-c | \-d | \-e | \-g
-.I cpu-list
-.br
-.B chcpu \-p
-.I mode
-.br
-.B chcpu
-.BR \-r | \-h | \-V
-.SH DESCRIPTION
-.B chcpu
-can modify the state of CPUs.  It can enable or disable CPUs, scan for new
-CPUs, change the CPU dispatching
-.I mode
-of the underlying hypervisor, and request CPUs from the hypervisor
-(configure) or return CPUs to the hypervisor (deconfigure).
-.PP
-Some options have a
-.I cpu-list
-argument.  Use this argument to specify a comma-separated list of CPUs.  The
-list can contain individual CPU addresses or ranges of addresses.  For
-example,
-.B 0,5,7,9-11
-makes the command applicable to the CPUs with the addresses 0, 5, 7, 9, 10,
-and 11.
-.SH OPTIONS
-.TP
-.BR \-c , " \-\-configure " \fIcpu-list\fP
-Configure the specified CPUs.  Configuring a CPU means that the hypervisor
-takes a CPU from the CPU pool and assigns it to the virtual hardware on which
-your kernel runs.
-.TP
-.BR \-d , " \-\-disable " \fIcpu-list\fP
-Disable the specified CPUs.  Disabling a CPU means that the kernel sets it
-offline.
-.TP
-.BR \-e , " \-\-enable " \fIcpu-list\fP
-Enable the specified CPUs.  Enabling a CPU means that the kernel sets it
-online.  A CPU must be configured, see \fB\-c\fR, before it can be enabled.
-.TP
-.BR \-g , " \-\-deconfigure " \fIcpu-list\fP
-Deconfigure the specified CPUs.  Deconfiguring a CPU means that the
-hypervisor removes the CPU from the virtual hardware on which the Linux
-instance runs and returns it to the CPU pool.  A CPU must be offline, see
-\fB\-d\fR, before it can be deconfigured.
-.TP
-.BR \-p , " \-\-dispatch " \fImode\fP
-Set the CPU dispatching
-.I mode
-(polarization).  This option has an effect only if your hardware architecture
-and hypervisor support CPU polarization.  Available
-.I modes
-are:
-.RS 14
-.TP 12
-.PD 0
-.B horizontal
+.SH "SYNOPSIS"
+.sp
+\fBchcpu\fP \fB\-c\fP|\fB\-d\fP|\fB\-e\fP|\fB\-g\fP \fIcpu\-list\fP
+.sp
+\fBchcpu\fP \fB\-p\fP \fImode\fP
+.sp
+\fBchcpu\fP \fB\-r\fP|\fB\-h\fP|\fB\-V\fP
+.SH "DESCRIPTION"
+.sp
+\fBchcpu\fP can modify the state of CPUs. It can enable or disable CPUs, scan for new CPUs, change the CPU dispatching \fImode\fP of the underlying hypervisor, and request CPUs from the hypervisor (configure) or return CPUs to the hypervisor (deconfigure).
+.sp
+Some options have a \fIcpu\-list\fP argument. Use this argument to specify a comma\-separated list of CPUs. The list can contain individual CPU addresses or ranges of addresses. For example, \fB0,5,7,9\-11\fP makes the command applicable to the CPUs with the addresses 0, 5, 7, 9, 10, and 11.
+.SH "OPTIONS"
+.sp
+\fB\-c\fP, \fB\-\-configure\fP \fIcpu\-list\fP
+.RS 4
+Configure the specified CPUs. Configuring a CPU means that the hypervisor takes a CPU from the CPU pool and assigns it to the virtual hardware on which your kernel runs.
+.RE
+.sp
+\fB\-d\fP, \fB\-\-disable\fP \fIcpu\-list\fP
+.RS 4
+Disable the specified CPUs. Disabling a CPU means that the kernel sets it offline.
+.RE
+.sp
+\fB\-e\fP, \fB\-\-enable\fP \fIcpu\-list\fP
+.RS 4
+Enable the specified CPUs. Enabling a CPU means that the kernel sets it online. A CPU must be configured, see \fB\-c\fP, before it can be enabled.
+.RE
+.sp
+\fB\-g\fP, \fB\-\-deconfigure\fP \fIcpu\-list\fP
+.RS 4
+Deconfigure the specified CPUs. Deconfiguring a CPU means that the hypervisor removes the CPU from the virtual hardware on which the Linux instance runs and returns it to the CPU pool. A CPU must be offline, see \fB\-d\fP, before it can be deconfigured.
+.RE
+.sp
+\fB\-p\fP, \fB\-\-dispatch\fP \fImode\fP
+.RS 4
+Set the CPU dispatching \fImode\fP (polarization). This option has an effect only if your hardware architecture and hypervisor support CPU polarization. Available \fImodes\fP are:
+.sp
+\fBhorizontal\fP
+.RS 4
 The workload is spread across all available CPUs.
-.TP 12
-.B vertical
+.RE
+.sp
+\fBvertical\fP
+.RS 4
 The workload is concentrated on few CPUs.
 .RE
-.PD 1
-.TP
-.BR \-r , " \-\-rescan"
-Trigger a rescan of CPUs.  After a rescan, the Linux kernel recognizes
-the new CPUs.  Use this option on systems that do not
-automatically detect newly attached CPUs.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.TP
-.BR \-h , " \-\-help"
+.RE
+.sp
+\fB\-r\fP, \fB\-\-rescan\fP
+.RS 4
+Trigger a rescan of CPUs. After a rescan, the Linux kernel recognizes the new CPUs. Use this option on systems that do not automatically detect newly attached CPUs.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-
-.SH RETURN CODES
-.B chcpu
-has the following return codes:
-.TP
-.BR 0
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBchcpu\fP has the following exit status values:
+.sp
+\fB0\fP
+.RS 4
 success
-.TP
-.BR 1
+.RE
+.sp
+\fB1\fP
+.RS 4
 failure
-.TP
-.BR 64
+.RE
+.sp
+\fB64\fP
+.RS 4
 partial success
 .RE
-.SH AUTHOR
-.MT heiko.carstens@de.ibm.com
-Heiko Carstens
-.ME
-.SH COPYRIGHT
+.SH "AUTHORS"
+.sp
+.MTO "heiko.carstens\(atde.ibm.com" "Heiko Carstens" ""
+.SH "COPYRIGHT"
+.sp
 Copyright IBM Corp. 2011
-.br
 .SH "SEE ALSO"
-.BR lscpu (1)
-.SH AVAILABILITY
-The chcpu command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.sp
+\fBlscpu\fP(1)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBchcpu\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

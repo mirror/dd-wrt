@@ -43,41 +43,48 @@
 #include "nls.h"
 #include "strutils.h"
 #include "closestream.h"
+#include "monotonic.h"
 #include "timer.h"
 
-static void __attribute__((__noreturn__)) usage(int ex)
+static void __attribute__((__noreturn__)) usage(void)
 {
-	fprintf(stderr, USAGE_HEADER);
-	fprintf(stderr,
+	fputs(USAGE_HEADER, stdout);
+	printf(
 		_(" %1$s [options] <file>|<directory> <command> [<argument>...]\n"
 		  " %1$s [options] <file>|<directory> -c <command>\n"
 		  " %1$s [options] <file descriptor number>\n"),
 		program_invocation_short_name);
 
-	fputs(USAGE_SEPARATOR, stderr);
-	fputs(_("Manage file locks from shell scripts.\n"), stderr);
+	fputs(USAGE_SEPARATOR, stdout);
+	fputs(_("Manage file locks from shell scripts.\n"), stdout);
 
-	fputs(USAGE_OPTIONS, stderr);
-	fputs(_(  " -s, --shared             get a shared lock\n"), stderr);
-	fputs(_(  " -x, --exclusive          get an exclusive lock (default)\n"), stderr);
-	fputs(_(  " -u, --unlock             remove a lock\n"), stderr);
-	fputs(_(  " -n, --nonblock           fail rather than wait\n"), stderr);
-	fputs(_(  " -w, --timeout <secs>     wait for a limited amount of time\n"), stderr);
-	fputs(_(  " -E, --conflict-exit-code <number>  exit code after conflict or timeout\n"), stderr);
-	fputs(_(  " -o, --close              close file descriptor before running command\n"), stderr);
-	fputs(_(  " -c, --command <command>  run a single command string through the shell\n"), stderr);
-	fprintf(stderr, USAGE_SEPARATOR);
-	fprintf(stderr, USAGE_HELP);
-	fprintf(stderr, USAGE_VERSION);
-	fprintf(stderr, USAGE_MAN_TAIL("flock(1)"));
-	exit(ex);
+	fputs(USAGE_OPTIONS, stdout);
+	fputs(_(  " -s, --shared             get a shared lock\n"), stdout);
+	fputs(_(  " -x, --exclusive          get an exclusive lock (default)\n"), stdout);
+	fputs(_(  " -u, --unlock             remove a lock\n"), stdout);
+	fputs(_(  " -n, --nonblock           fail rather than wait\n"), stdout);
+	fputs(_(  " -w, --timeout <secs>     wait for a limited amount of time\n"), stdout);
+	fputs(_(  " -E, --conflict-exit-code <number>  exit code after conflict or timeout\n"), stdout);
+	fputs(_(  " -o, --close              close file descriptor before running command\n"), stdout);
+	fputs(_(  " -c, --command <command>  run a single command string through the shell\n"), stdout);
+	fputs(_(  " -F, --no-fork            execute command without forking\n"), stdout);
+	fputs(_(  "     --verbose            increase verbosity\n"), stdout);
+	fputs(USAGE_SEPARATOR, stdout);
+	printf(USAGE_HELP_OPTIONS(26));
+	printf(USAGE_MAN_TAIL("flock(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 static sig_atomic_t timeout_expired = 0;
 
-static void timeout_handler(int sig __attribute__((__unused__)))
+static void timeout_handler(int sig __attribute__((__unused__)),
+			    siginfo_t *info,
+			    void *context __attribute__((__unused__)))
 {
-	timeout_expired = 1;
+#ifdef HAVE_TIMER_CREATE
+	if (info->si_code == SI_TIMER)
+#endif
+		timeout_expired = 1;
 }
 
 static int open_file(const char *filename, int *flags)
@@ -109,9 +116,18 @@ static int open_file(const char *filename, int *flags)
 	return fd;
 }
 
+static void __attribute__((__noreturn__)) run_program(char **cmd_argv)
+{
+	execvp(cmd_argv[0], cmd_argv);
+
+	warn(_("failed to execute %s"), cmd_argv[0]);
+	_exit((errno == ENOMEM) ? EX_OSERR : EX_UNAVAILABLE);
+}
+
 int main(int argc, char *argv[])
 {
-	struct itimerval timeout, old_timer;
+	struct ul_timer timer;
+	struct itimerval timeout;
 	int have_timeout = 0;
 	int type = LOCK_EX;
 	int block = 0;
@@ -119,7 +135,10 @@ int main(int argc, char *argv[])
 	int fd = -1;
 	int opt, ix;
 	int do_close = 0;
+	int no_fork = 0;
 	int status;
+	int verbose = 0;
+	struct timeval time_start, time_done;
 	/*
 	 * The default exit code for lock conflict or timeout
 	 * is specified in man flock.1
@@ -127,8 +146,9 @@ int main(int argc, char *argv[])
 	int conflict_exit_code = 1;
 	char **cmd_argv = NULL, *sh_c_argv[4];
 	const char *filename = NULL;
-	struct sigaction old_sa;
-
+	enum {
+		OPT_VERBOSE = CHAR_MAX + 1
+	};
 	static const struct option long_options[] = {
 		{"shared", no_argument, NULL, 's'},
 		{"exclusive", no_argument, NULL, 'x'},
@@ -139,6 +159,8 @@ int main(int argc, char *argv[])
 		{"wait", required_argument, NULL, 'w'},
 		{"conflict-exit-code", required_argument, NULL, 'E'},
 		{"close", no_argument, NULL, 'o'},
+		{"no-fork", no_argument, NULL, 'F'},
+		{"verbose", no_argument, NULL, OPT_VERBOSE},
 		{"help", no_argument, NULL, 'h'},
 		{"version", no_argument, NULL, 'V'},
 		{NULL, 0, NULL, 0}
@@ -147,16 +169,20 @@ int main(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	if (argc < 2)
-		usage(EX_USAGE);
+	strutils_set_exitcode(EX_USAGE);
+
+	if (argc < 2) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EX_USAGE);
+	}
 
 	memset(&timeout, 0, sizeof timeout);
 
 	optopt = 0;
 	while ((opt =
-		getopt_long(argc, argv, "+sexnouw:E:hV?", long_options,
+		getopt_long(argc, argv, "+sexnoFuw:E:hV?", long_options,
 			    &ix)) != EOF) {
 		switch (opt) {
 		case 's':
@@ -172,6 +198,9 @@ int main(int argc, char *argv[])
 		case 'o':
 			do_close = 1;
 			break;
+		case 'F':
+			no_fork = 1;
+			break;
 		case 'n':
 			block = LOCK_NB;
 			break;
@@ -183,18 +212,25 @@ int main(int argc, char *argv[])
 		case 'E':
 			conflict_exit_code = strtos32_or_err(optarg,
 				_("invalid exit code"));
+			if (conflict_exit_code < 0 || conflict_exit_code > 255)
+				errx(EX_USAGE, _("exit code out of range (expected 0 to 255)"));
 			break;
+		case OPT_VERBOSE:
+			verbose = 1;
+			break;
+
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			exit(EX_OK);
+			print_version(EX_OK);
+		case 'h':
+			usage();
 		default:
-			/* optopt will be set if this was an unrecognized
-			 * option, i.e.  *not* 'h' or '?
-			 */
-			usage(optopt ? EX_USAGE : 0);
-			break;
+			errtryhelp(EX_USAGE);
 		}
 	}
+
+	if (no_fork && do_close)
+		errx(EX_USAGE,
+			_("the --no-fork and --close options are incompatible"));
 
 	if (argc > optind + 1) {
 		/* Run command */
@@ -210,7 +246,7 @@ int main(int argc, char *argv[])
 				cmd_argv[0] = _PATH_BSHELL;
 			cmd_argv[1] = "-c";
 			cmd_argv[2] = argv[optind + 2];
-			cmd_argv[3] = 0;
+			cmd_argv[3] = NULL;
 		} else {
 			cmd_argv = &argv[optind + 1];
 		}
@@ -236,19 +272,27 @@ int main(int argc, char *argv[])
 			have_timeout = 0;
 			block = LOCK_NB;
 		} else
-			setup_timer(&timeout, &old_timer, &old_sa, timeout_handler);
+			if (setup_timer(&timer, &timeout, &timeout_handler))
+				err(EX_OSERR, _("cannot set up timer"));
 	}
 
+	if (verbose)
+		gettime_monotonic(&time_start);
 	while (flock(fd, type | block)) {
 		switch (errno) {
 		case EWOULDBLOCK:
 			/* -n option set and failed to lock. */
+			if (verbose)
+				warnx(_("failed to get lock"));
 			exit(conflict_exit_code);
 		case EINTR:
 			/* Signal received */
-			if (timeout_expired)
+			if (timeout_expired) {
 				/* -w option set and failed to lock. */
+				if (verbose)
+					warnx(_("timeout while waiting to get lock"));
 				exit(conflict_exit_code);
+			}
 			/* otherwise try again */
 			continue;
 		case EIO:
@@ -268,7 +312,7 @@ int main(int argc, char *argv[])
 				if (open_flags & O_RDWR)
 					break;
 			}
-			/* go through */
+			/* fallthrough */
 		default:
 			/* Other errors */
 			if (filename)
@@ -281,43 +325,60 @@ int main(int argc, char *argv[])
 	}
 
 	if (have_timeout)
-		cancel_timer(&old_timer, &old_sa);
+		cancel_timer(&timer);
+	if (verbose) {
+		struct timeval delta;
 
+		gettime_monotonic(&time_done);
+		timersub(&time_done, &time_start, &delta);
+		printf(_("%s: getting lock took %"PRId64".%06"PRId64" seconds\n"),
+		       program_invocation_short_name,
+		       (int64_t) delta.tv_sec,
+		       (int64_t) delta.tv_usec);
+	}
 	status = EX_OK;
 
 	if (cmd_argv) {
 		pid_t w, f;
 		/* Clear any inherited settings */
 		signal(SIGCHLD, SIG_DFL);
-		f = fork();
+		if (verbose)
+			printf(_("%s: executing %s\n"), program_invocation_short_name, cmd_argv[0]);
 
-		if (f < 0) {
-			err(EX_OSERR, _("fork failed"));
-		} else if (f == 0) {
-			if (do_close)
-				close(fd);
-			execvp(cmd_argv[0], cmd_argv);
-			/* execvp() failed */
-			warn(_("failed to execute %s"), cmd_argv[0]);
-			_exit((errno == ENOMEM) ? EX_OSERR : EX_UNAVAILABLE);
-		} else {
-			do {
-				w = waitpid(f, &status, 0);
-				if (w == -1 && errno != EINTR)
-					break;
-			} while (w != f);
+		if (!no_fork) {
+			f = fork();
+			if (f < 0)
+				err(EX_OSERR, _("fork failed"));
 
-			if (w == -1) {
-				status = EXIT_FAILURE;
-				warn(_("waitpid failed"));
-			} else if (WIFEXITED(status))
-				status = WEXITSTATUS(status);
-			else if (WIFSIGNALED(status))
-				status = WTERMSIG(status) + 128;
-			else
-				/* WTF? */
-				status = EX_OSERR;
-		}
+			/* child */
+			else if (f == 0) {
+				if (do_close)
+					close(fd);
+				run_program(cmd_argv);
+
+			/* parent */
+			} else {
+				do {
+					w = waitpid(f, &status, 0);
+					if (w == -1 && errno != EINTR)
+						break;
+				} while (w != f);
+
+				if (w == -1) {
+					status = EXIT_FAILURE;
+					warn(_("waitpid failed"));
+				} else if (WIFEXITED(status))
+					status = WEXITSTATUS(status);
+				else if (WIFSIGNALED(status))
+					status = WTERMSIG(status) + 128;
+				else
+					/* WTF? */
+					status = EX_OSERR;
+			}
+
+		} else
+			/* no-fork execution */
+			run_program(cmd_argv);
 	}
 
 	return status;

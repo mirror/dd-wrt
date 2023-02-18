@@ -24,8 +24,9 @@
 #include "nls.h"
 #include "widechar.h"
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options]\n"), program_invocation_short_name);
 
@@ -33,10 +34,9 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_("Read one line.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("line(1)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("line(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -54,19 +54,19 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((opt = getopt_long(argc, argv, "Vh", longopts, NULL)) != -1)
 		switch (opt) {
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
+	setvbuf(stdin, NULL, _IONBF, 0);
 	for (;;) {
 		c = getwchar();
 		if (c == WEOF) {

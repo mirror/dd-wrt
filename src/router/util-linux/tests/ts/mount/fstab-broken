@@ -27,40 +27,53 @@ ts_check_test_command "$TS_CMD_FINDMNT"
 
 ts_skip_nonroot
 
-set -o pipefail
-
 # Let's use the same mountpoint for all subtests
 MNT=$TS_MOUNTPOINT
 mkdir -p $MNT
 
+ts_fstab_lock
 ts_fstab_open
 echo "tmpd $MNT tmpfs" >> /etc/fstab
 ts_fstab_close
 
 ts_init_subtest "mount"
 $TS_CMD_MOUNT $MNT &> /dev/null
-$TS_CMD_FINDMNT --kernel --target "$MNT" &> /dev/null
+[ "$?" = "0" ] || ts_log "error: mount $MNT"
+$TS_CMD_FINDMNT --kernel --mountpoint "$MNT" &> /dev/null
 if [ "$?" != "0" ]; then
 	ts_log "Cannot find $MNT in /proc/self/mountinfo"
 else
 	ts_log "OK"
 fi
 $TS_CMD_UMOUNT $MNT &> /dev/null
+if [ "$?" = "0" ]; then
+	# for old systems with mtab and /sbin/mount.tmpfs
+	/bin/umount --fake "$MNT" &> /dev/null
+else
+	ts_log "error: umount $MNT"
+fi
 ts_finalize_subtest
 
 
 ts_init_subtest "mount-all"
 $TS_CMD_MOUNT -a &> /dev/null
-$TS_CMD_FINDMNT --kernel --target "$MNT" &> /dev/null
+[ "$?" = "0" ] || ts_log "error: mount -a"
+$TS_CMD_FINDMNT --kernel --mountpoint "$MNT" &> /dev/null
 if [ "$?" != "0" ]; then
 	ts_log "Cannot find $MNT in /proc/self/mountinfo"
 else
 	ts_log "OK"
 fi
 $TS_CMD_UMOUNT $MNT &> /dev/null
+if [ "$?" = "0" ]; then
+	# for old systems with mtab and /sbin/mount.tmpfs
+	/bin/umount --fake $MNT &> /dev/null
+else
+	ts_log "error: umount $MNT"
+fi
 ts_finalize_subtest
 
-ts_fstab_clean
+ts_fstab_clean	# this unlocks too
 
 ts_log "Success"
 ts_finalize

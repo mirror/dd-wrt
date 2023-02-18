@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "c.h"
+#include "blkdev.h"
 #include "strutils.h"
 #include "closestream.h"
 #include "nls.h"
@@ -19,7 +20,7 @@
 
 #define SECTOR_SIZE 512
 
-struct floppy_struct param;
+static struct floppy_struct param;
 
 
 static void format_begin(int ctrl)
@@ -42,7 +43,8 @@ static void format_track_head(int ctrl, struct format_descr *descr)
 
 static void seek_track_head(int ctrl, struct format_descr *descr)
 {
-	lseek(ctrl, (descr->track * param.head + descr->head) * param.sect * SECTOR_SIZE, SEEK_SET);
+	lseek(ctrl, ((off_t) descr->track * param.head + descr->head)
+			* param.sect * SECTOR_SIZE, SEEK_SET);
 }
 
 static void format_disk(int ctrl, unsigned int track_from, unsigned int track_to)
@@ -64,7 +66,7 @@ static void format_disk(int ctrl, unsigned int track_from, unsigned int track_to
 
 	format_end(ctrl);
 
-	printf(_("done\n"));
+	printf("     \b\b\b\b\b%s", _("done\n"));
 }
 
 static void verify_disk(int ctrl, unsigned int track_from, unsigned int track_to, unsigned int repair)
@@ -137,8 +139,9 @@ static void verify_disk(int ctrl, unsigned int track_from, unsigned int track_to
 	printf(_("done\n"));
 }
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] <device>\n"),
 		program_invocation_short_name);
@@ -154,11 +157,10 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_(" -n, --no-verify   disable the verification after the format\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("fdformat(8)"));
+	printf(USAGE_HELP_OPTIONS(19));
+	printf(USAGE_MAN_TAIL("fdformat(8)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -185,7 +187,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((ch = getopt_long(argc, argv, "f:t:r:nVh", longopts, NULL)) != -1)
 		switch (ch) {
@@ -203,28 +205,26 @@ int main(int argc, char **argv)
 			verify = 0;
 			break;
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			exit(EXIT_SUCCESS);
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1)
-		usage(stderr);
+	if (argc < 1) {
+		warnx(_("no device specified"));
+		errtryhelp(EXIT_FAILURE);
+	}
 	if (stat(argv[0], &st) < 0)
 		err(EXIT_FAILURE, _("stat of %s failed"), argv[0]);
 	if (!S_ISBLK(st.st_mode))
-		/* do not test major - perhaps this was an USB floppy */
+		/* do not test major - perhaps this was a USB floppy */
 		errx(EXIT_FAILURE, _("%s: not a block device"), argv[0]);
-	if (access(argv[0], W_OK) < 0)
-		err(EXIT_FAILURE, _("cannot access file %s"), argv[0]);
-
-	ctrl = open(argv[0], O_RDWR);
+	ctrl = open_blkdev_or_file(&st, argv[0], O_RDWR);
 	if (ctrl < 0)
 		err(EXIT_FAILURE, _("cannot open %s"), argv[0]);
 	if (ioctl(ctrl, FDGETPRM, (long) &param) < 0)

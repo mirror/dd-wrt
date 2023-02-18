@@ -39,7 +39,7 @@
 #include "canonicalize.h"		/* $(top_srcdir)/include */
 #include "pathnames.h"
 #include "sysfs.h"
-#include "at.h"
+#include "fileutils.h"
 
 /*
  * Find a dev struct in the cache by device name, if available.
@@ -51,28 +51,55 @@ blkid_dev blkid_get_dev(blkid_cache cache, const char *devname, int flags)
 {
 	blkid_dev dev = NULL, tmp;
 	struct list_head *p, *pnext;
+	char *cn = NULL;
 
 	if (!cache || !devname)
 		return NULL;
 
+	/* search by name */
 	list_for_each(p, &cache->bic_devs) {
 		tmp = list_entry(p, struct blkid_struct_dev, bid_devs);
-		if (strcmp(tmp->bid_name, devname))
+		if (strcmp(tmp->bid_name, devname) != 0)
 			continue;
-
-		DBG(DEVNAME, ul_debug("found devname %s in cache", tmp->bid_name));
 		dev = tmp;
 		break;
 	}
 
+	/* try canonicalize the name */
+	if (!dev && (cn = canonicalize_path(devname))) {
+		if (strcmp(cn, devname) != 0) {
+			DBG(DEVNAME, ul_debug("search canonical %s", cn));
+			list_for_each(p, &cache->bic_devs) {
+				tmp = list_entry(p, struct blkid_struct_dev, bid_devs);
+				if (strcmp(tmp->bid_name, cn) != 0)
+					continue;
+				dev = tmp;
+
+				/* update name returned by blkid_dev_devname() */
+				free(dev->bid_xname);
+				dev->bid_xname = strdup(devname);
+				break;
+			}
+		} else {
+			free(cn);
+			cn = NULL;
+		}
+	}
+
 	if (!dev && (flags & BLKID_DEV_CREATE)) {
 		if (access(devname, F_OK) < 0)
-			return NULL;
+			goto done;
 		dev = blkid_new_dev();
 		if (!dev)
-			return NULL;
-		dev->bid_time = INT_MIN;
-		dev->bid_name = strdup(devname);
+			goto done;
+		dev->bid_time = (uintmax_t)1 << (sizeof(time_t) * 8 - 1);
+		if (cn) {
+			dev->bid_name = cn;
+			dev->bid_xname = strdup(devname);
+			cn = NULL;	/* see free() below */
+		} else
+			dev->bid_name = strdup(devname);
+
 		dev->bid_cache = cache;
 		list_add_tail(&dev->bid_devs, &cache->bic_devs);
 		cache->bic_flags |= BLKID_BIC_FL_CHANGED;
@@ -81,7 +108,7 @@ blkid_dev blkid_get_dev(blkid_cache cache, const char *devname, int flags)
 	if (flags & BLKID_DEV_VERIFY) {
 		dev = blkid_verify(cache, dev);
 		if (!dev || !(dev->bid_flags & BLKID_BID_FL_VERIFIED))
-			return dev;
+			goto done;
 		/*
 		 * If the device is verified, then search the blkid
 		 * cache for any entries that match on the type, uuid,
@@ -94,13 +121,13 @@ blkid_dev blkid_get_dev(blkid_cache cache, const char *devname, int flags)
 			if (dev2->bid_flags & BLKID_BID_FL_VERIFIED)
 				continue;
 			if (!dev->bid_type || !dev2->bid_type ||
-			    strcmp(dev->bid_type, dev2->bid_type))
+			    strcmp(dev->bid_type, dev2->bid_type) != 0)
 				continue;
 			if (dev->bid_label && dev2->bid_label &&
-			    strcmp(dev->bid_label, dev2->bid_label))
+			    strcmp(dev->bid_label, dev2->bid_label) != 0)
 				continue;
 			if (dev->bid_uuid && dev2->bid_uuid &&
-			    strcmp(dev->bid_uuid, dev2->bid_uuid))
+			    strcmp(dev->bid_uuid, dev2->bid_uuid) != 0)
 				continue;
 			if ((dev->bid_label && !dev2->bid_label) ||
 			    (!dev->bid_label && dev2->bid_label) ||
@@ -112,40 +139,32 @@ blkid_dev blkid_get_dev(blkid_cache cache, const char *devname, int flags)
 				blkid_free_dev(dev2);
 		}
 	}
+done:
+	if (dev)
+		DBG(DEVNAME, ul_debug("%s requested, found %s in cache", devname, dev->bid_name));
+	free(cn);
 	return dev;
 }
 
 /* Directories where we will try to search for device names */
 static const char *dirlist[] = { "/dev", "/devfs", "/devices", NULL };
 
+/*
+ * Return 1 if the device is a device-mapper 'leaf' node
+ * not holding any other devices in its hierarchy.
+ */
 static int is_dm_leaf(const char *devname)
 {
-	struct dirent	*de, *d_de;
-	DIR		*dir, *d_dir;
-	char		path[256];
-	int		ret = 1;
+	DIR *dir;
+	char path[NAME_MAX + 18 + 1];
+	int ret;
 
-	if ((dir = opendir("/sys/block")) == NULL)
+	snprintf(path, sizeof(path), "/sys/block/%s/holders", devname);
+	if ((dir = opendir(path)) == NULL)
 		return 0;
-	while ((de = readdir(dir)) != NULL) {
-		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..") ||
-		    !strcmp(de->d_name, devname) ||
-		    strncmp(de->d_name, "dm-", 3) ||
-		    strlen(de->d_name) > sizeof(path)-32)
-			continue;
-		sprintf(path, "/sys/block/%s/slaves", de->d_name);
-		if ((d_dir = opendir(path)) == NULL)
-			continue;
-		while ((d_de = readdir(d_dir)) != NULL) {
-			if (!strcmp(d_de->d_name, devname)) {
-				ret = 0;
-				break;
-			}
-		}
-		closedir(d_dir);
-		if (!ret)
-			break;
-	}
+
+	ret = xreaddir(dir) == NULL ? 1 : 0;	/* 'leaf' has no entries */
+
 	closedir(dir);
 	return ret;
 }
@@ -171,7 +190,7 @@ static void probe_one(blkid_cache cache, const char *ptname,
 			dev = blkid_verify(cache, tmp);
 			if (dev && (dev->bid_flags & BLKID_BID_FL_VERIFIED))
 				break;
-			dev = 0;
+			dev = NULL;
 		}
 	}
 	if (dev && dev->bid_devno == devno)
@@ -183,7 +202,7 @@ static void probe_one(blkid_cache cache, const char *ptname,
 	if (!strncmp(ptname, "dm-", 3) && isdigit(ptname[3])) {
 		devname = canonicalize_dm_name(ptname);
 		if (!devname)
-			blkid__scan_dir("/dev/mapper", devno, 0, &devname);
+			blkid__scan_dir("/dev/mapper", devno, NULL, &devname);
 		if (devname)
 			goto get_dev;
 	}
@@ -213,7 +232,7 @@ static void probe_one(blkid_cache cache, const char *ptname,
 	}
 	/* Do a short-cut scan of /dev/mapper first */
 	if (!devname)
-		blkid__scan_dir("/dev/mapper", devno, 0, &devname);
+		blkid__scan_dir("/dev/mapper", devno, NULL, &devname);
 	if (!devname) {
 		devname = blkid_devno_to_devname(devno);
 		if (!devname)
@@ -228,7 +247,7 @@ set_pri:
 	if (dev) {
 		if (pri)
 			dev->bid_pri = pri;
-		else if (!strncmp(dev->bid_name, "/dev/mapper/", 11)) {
+		else if (!strncmp(dev->bid_name, "/dev/mapper/", 12)) {
 			dev->bid_pri = BLKID_PRI_DM;
 			if (is_dm_leaf(ptname))
 				dev->bid_pri += 5;
@@ -237,7 +256,6 @@ set_pri:
 		if (removable)
 			dev->bid_flags |= BLKID_BID_FL_REMOVABLE;
 	}
-	return;
 }
 
 #define PROC_PARTITIONS "/proc/partitions"
@@ -291,14 +309,16 @@ static void lvm_probe_all(blkid_cache cache, int only_if_new)
 		char		*vdirname;
 		char		*vg_name;
 		struct dirent	*lv_iter;
+		size_t		len;
 
 		vg_name = vg_iter->d_name;
 		if (!strcmp(vg_name, ".") || !strcmp(vg_name, ".."))
 			continue;
-		vdirname = malloc(vg_len + strlen(vg_name) + 8);
+		len = vg_len + strlen(vg_name) + 8;
+		vdirname = malloc(len);
 		if (!vdirname)
 			goto exit;
-		sprintf(vdirname, "%s/%s/LVs", VG_DIR, vg_name);
+		snprintf(vdirname, len, "%s/%s/LVs", VG_DIR, vg_name);
 
 		lv_list = opendir(vdirname);
 		free(vdirname);
@@ -312,17 +332,17 @@ static void lvm_probe_all(blkid_cache cache, int only_if_new)
 			if (!strcmp(lv_name, ".") || !strcmp(lv_name, ".."))
 				continue;
 
-			lvm_device = malloc(vg_len + strlen(vg_name) +
-					    strlen(lv_name) + 8);
+			len = vg_len + strlen(vg_name) + strlen(lv_name) + 8;
+			lvm_device = malloc(len);
 			if (!lvm_device) {
 				closedir(lv_list);
 				goto exit;
 			}
-			sprintf(lvm_device, "%s/%s/LVs/%s", VG_DIR, vg_name,
+			snprintf(lvm_device, len, "%s/%s/LVs/%s", VG_DIR, vg_name,
 				lv_name);
 			dev = lvm_get_devno(lvm_device);
-			sprintf(lvm_device, "%s/%s", vg_name, lv_name);
-			DBG(DEVNAME, ul_debug("LVM dev %s: devno 0x%04X",
+			snprintf(lvm_device, len, "%s/%s", vg_name, lv_name);
+			DBG(DEVNAME, ul_debug("Probe LVM dev %s: devno 0x%04X",
 						  lvm_device,
 						  (unsigned int) dev));
 			probe_one(cache, lvm_device, dev, BLKID_PRI_LVM,
@@ -335,35 +355,6 @@ exit:
 	closedir(vg_list);
 }
 #endif
-
-#define PROC_EVMS_VOLUMES "/proc/evms/volumes"
-
-static int
-evms_probe_all(blkid_cache cache, int only_if_new)
-{
-	char line[100];
-	int ma, mi, sz, num = 0;
-	FILE *procpt;
-	char device[110];
-
-	procpt = fopen(PROC_EVMS_VOLUMES, "r" UL_CLOEXECSTR);
-	if (!procpt)
-		return 0;
-	while (fgets(line, sizeof(line), procpt)) {
-		if (sscanf (line, " %d %d %d %*s %*s %[^\n ]",
-			    &ma, &mi, &sz, device) != 4)
-			continue;
-
-		DBG(DEVNAME, ul_debug("Checking partition %s (%d, %d)",
-					  device, ma, mi));
-
-		probe_one(cache, device, makedev(ma, mi), BLKID_PRI_EVMS,
-			  only_if_new, 0);
-		num++;
-	}
-	fclose(procpt);
-	return num;
-}
 
 static void
 ubi_probe_all(blkid_cache cache, int only_if_new)
@@ -397,14 +388,14 @@ ubi_probe_all(blkid_cache cache, int only_if_new)
 				continue;
 			if (!strcmp(name, "ubi_ctrl"))
 				continue;
-			if (fstat_at(dirfd(dir), *dirname, name, &st, 0))
+			if (fstatat(dirfd(dir), name, &st, 0))
 				continue;
 
 			dev = st.st_rdev;
 
 			if (!S_ISCHR(st.st_mode) || !minor(dev))
 				continue;
-			DBG(DEVNAME, ul_debug("UBI vol %s/%s: devno 0x%04X",
+			DBG(DEVNAME, ul_debug("Probe UBI vol %s/%s: devno 0x%04X",
 				  *dirname, name, (int) dev));
 			probe_one(cache, name, dev, BLKID_PRI_UBI, only_if_new, 0);
 		}
@@ -413,170 +404,155 @@ ubi_probe_all(blkid_cache cache, int only_if_new)
 }
 
 /*
- * Read the device data for all available block devices in the system.
+ * This function uses /sys to read all block devices in way compatible with
+ * /proc/partitions (like the original libblkid implementation)
  */
-static int probe_all(blkid_cache cache, int only_if_new)
+static int
+sysfs_probe_all(blkid_cache cache, int only_if_new, int only_removable)
 {
-	FILE *proc;
-	char line[1024];
-	char ptname0[128 + 1], ptname1[128 + 1], *ptname = 0;
-	char *ptnames[2];
-	dev_t devs[2];
-	int ma, mi;
-	unsigned long long sz;
-	int lens[2] = { 0, 0 };
-	int which = 0, last = 0;
-	struct list_head *p, *pnext;
+	DIR *sysfs;
+	struct dirent *dev;
 
-	ptnames[0] = ptname0;
-	ptnames[1] = ptname1;
+	sysfs = opendir(_PATH_SYS_BLOCK);
+	if (!sysfs)
+		return -BLKID_ERR_SYSFS;
 
-	if (!cache)
-		return -BLKID_ERR_PARAM;
+	DBG(DEVNAME, ul_debug(" probe /sys/block"));
 
-	if (cache->bic_flags & BLKID_BIC_FL_PROBED &&
-	    time(0) - cache->bic_time < BLKID_PROBE_INTERVAL)
-		return 0;
+	/* scan /sys/block */
+	while ((dev = xreaddir(sysfs))) {
+		DIR *dir = NULL;
+		dev_t devno;
+		size_t nparts = 0;
+		unsigned int maxparts = 0, removable = 0;
+		struct dirent *part;
+		struct path_cxt *pc = NULL;
+		uint64_t size = 0;
 
-	blkid_read_cache(cache);
-	evms_probe_all(cache, only_if_new);
-#ifdef VG_DIR
-	lvm_probe_all(cache, only_if_new);
-#endif
-	ubi_probe_all(cache, only_if_new);
+		DBG(DEVNAME, ul_debug("checking %s", dev->d_name));
 
-	proc = fopen(PROC_PARTITIONS, "r" UL_CLOEXECSTR);
-	if (!proc)
-		return -BLKID_ERR_PROC;
+		devno = sysfs_devname_to_devno(dev->d_name);
+		if (!devno)
+			goto next;
+		pc = ul_new_sysfs_path(devno, NULL, NULL);
+		if (!pc)
+			goto next;
 
-	while (fgets(line, sizeof(line), proc)) {
-		last = which;
-		which ^= 1;
-		ptname = ptnames[which];
+		if (ul_path_read_u64(pc, &size, "size") != 0)
+			size = 0;
+		if (ul_path_read_u32(pc, &removable, "removable") != 0)
+			removable = 0;
 
-		if (sscanf(line, " %d %d %llu %128[^\n ]",
-			   &ma, &mi, &sz, ptname) != 4)
-			continue;
-		devs[which] = makedev(ma, mi);
+		/* ignore empty devices */
+		if (!size)
+			goto next;
 
-		DBG(DEVNAME, ul_debug("read partition name %s", ptname));
+		/* accept removable if only removable requested */
+		if (only_removable) {
+			if (!removable)
+				goto next;
 
-		/* Skip whole disk devs unless they have no partitions.
-		 * If base name of device has changed, also
-		 * check previous dev to see if it didn't have a partn.
-		 * heuristic: partition name ends in a digit, & partition
-		 * names contain whole device name as substring.
-		 *
-		 * Skip extended partitions.
-		 * heuristic: size is 1
-		 *
-		 * FIXME: skip /dev/{ida,cciss,rd} whole-disk devs
-		 */
-
-		lens[which] = strlen(ptname);
-
-		/* ends in a digit, clearly a partition, so check */
-		if (isdigit(ptname[lens[which] - 1])) {
-			DBG(DEVNAME, ul_debug("partition dev %s, devno 0x%04X",
-				   ptname, (unsigned int) devs[which]));
-
-			if (sz > 1)
-				probe_one(cache, ptname, devs[which], 0,
-					  only_if_new, 0);
-			lens[which] = 0;	/* mark as checked */
+		/* emulate /proc/partitions
+		 * -- ignore empty devices and non-partitionable removable devices */
+		} else {
+			if (ul_path_read_u32(pc, &maxparts, "ext_range") != 0)
+				maxparts = 0;
+			if (!maxparts && removable)
+				goto next;
 		}
 
-		/*
-		 * If last was a whole disk and we just found a partition
-		 * on it, remove the whole-disk dev from the cache if
-		 * it exists.
-		 */
-		if (lens[last] && !strncmp(ptnames[last], ptname, lens[last])) {
-			list_for_each_safe(p, pnext, &cache->bic_devs) {
-				blkid_dev tmp;
+		DBG(DEVNAME, ul_debug("read device name %s", dev->d_name));
 
-				/* find blkid dev for the whole-disk devno */
-				tmp = list_entry(p, struct blkid_struct_dev,
-						 bid_devs);
-				if (tmp->bid_devno == devs[last]) {
-					DBG(DEVNAME, ul_debug("freeing %s",
-						       tmp->bid_name));
+		dir = ul_path_opendir(pc, NULL);
+		if (!dir)
+			goto next;
+
+		/* read /sys/block/<name>/ do get partitions */
+		while ((part = xreaddir(dir))) {
+			dev_t partno;
+
+			if (!sysfs_blkdev_is_partition_dirent(dir, part, dev->d_name))
+				continue;
+
+			/* ignore extended partitions
+			 * -- recount size to blocks like /proc/partitions */
+			if (ul_path_readf_u64(pc, &size, "%s/size", part->d_name) == 0
+			    && (size >> 1) == 1)
+				continue;
+			partno = __sysfs_devname_to_devno(NULL, part->d_name, dev->d_name);
+			if (!partno)
+				continue;
+
+			DBG(DEVNAME, ul_debug(" Probe partition dev %s, devno 0x%04X",
+                                   part->d_name, (unsigned int) partno));
+			nparts++;
+			probe_one(cache, part->d_name, partno, 0, only_if_new, 0);
+		}
+
+		if (!nparts) {
+			/* add non-partitioned whole disk to cache */
+			DBG(DEVNAME, ul_debug(" Probe whole dev %s, devno 0x%04X",
+				   dev->d_name, (unsigned int) devno));
+			probe_one(cache, dev->d_name, devno, 0, only_if_new, 0);
+		} else {
+			/* remove partitioned whole-disk from cache */
+			struct list_head *p, *pnext;
+
+			list_for_each_safe(p, pnext, &cache->bic_devs) {
+				blkid_dev tmp = list_entry(p, struct blkid_struct_dev,
+							bid_devs);
+				if (tmp->bid_devno == devno) {
+					DBG(DEVNAME, ul_debug(" freeing %s", tmp->bid_name));
 					blkid_free_dev(tmp);
 					cache->bic_flags |= BLKID_BIC_FL_CHANGED;
 					break;
 				}
 			}
-			lens[last] = 0;
 		}
-		/*
-		 * If last was not checked because it looked like a whole-disk
-		 * dev, and the device's base name has changed,
-		 * check last as well.
-		 */
-		if (lens[last] && strncmp(ptnames[last], ptname, lens[last])) {
-			DBG(DEVNAME, ul_debug("whole dev %s, devno 0x%04X",
-				   ptnames[last], (unsigned int) devs[last]));
-			probe_one(cache, ptnames[last], devs[last], 0,
-				  only_if_new, 0);
-			lens[last] = 0;
-		}
+	next:
+		if (dir)
+			closedir(dir);
+		if (pc)
+			ul_unref_path(pc);
 	}
 
-	/* Handle the last device if it wasn't partitioned */
-	if (lens[which])
-		probe_one(cache, ptname, devs[which], 0, only_if_new, 0);
-
-	fclose(proc);
-	blkid_flush_cache(cache);
+	closedir(sysfs);
 	return 0;
 }
 
-/* Don't use it by default -- it's pretty slow (because cdroms, floppy, ...)
+/*
+ * Read the device data for all available block devices in the system.
  */
-static int probe_all_removable(blkid_cache cache)
+static int probe_all(blkid_cache cache, int only_if_new, int update_interval)
 {
-	DIR *dir;
-	struct dirent *d;
+	int rc;
 
 	if (!cache)
 		return -BLKID_ERR_PARAM;
 
-	dir = opendir(_PATH_SYS_BLOCK);
-	if (!dir)
-		return -BLKID_ERR_PROC;
-
-	while((d = readdir(dir))) {
-		struct sysfs_cxt sysfs = UL_SYSFSCXT_EMPTY;
-		int removable = 0;
-		dev_t devno;
-
-#ifdef _DIRENT_HAVE_D_TYPE
-		if (d->d_type != DT_UNKNOWN && d->d_type != DT_LNK)
-			continue;
-#endif
-		if (d->d_name[0] == '.' &&
-		    ((d->d_name[1] == 0) ||
-		     ((d->d_name[1] == '.') && (d->d_name[2] == 0))))
-			continue;
-
-		devno = sysfs_devname_to_devno(d->d_name, NULL);
-		if (!devno)
-			continue;
-
-		if (sysfs_init(&sysfs, devno, NULL) == 0) {
-			if (sysfs_read_int(&sysfs, "removable", &removable) != 0)
-				removable = 0;
-			sysfs_deinit(&sysfs);
-		}
-
-		if (removable)
-			probe_one(cache, d->d_name, devno, 0, 0, 1);
+	if (cache->bic_flags & BLKID_BIC_FL_PROBED &&
+	    time(NULL) - cache->bic_time < BLKID_PROBE_INTERVAL) {
+		DBG(PROBE, ul_debug("don't re-probe [delay < %d]", BLKID_PROBE_INTERVAL));
+		return 0;
 	}
 
-	closedir(dir);
+	blkid_read_cache(cache);
+#ifdef VG_DIR
+	lvm_probe_all(cache, only_if_new);
+#endif
+	ubi_probe_all(cache, only_if_new);
+
+	rc = sysfs_probe_all(cache, only_if_new, 0);
+
+	/* Don't mark the change as "probed" if /sys not avalable */
+	if (update_interval && rc == 0) {
+		cache->bic_time = time(NULL);
+		cache->bic_flags |= BLKID_BIC_FL_PROBED;
+	}
+
+	blkid_flush_cache(cache);
 	return 0;
 }
-
 
 /**
  * blkid_probe_all:
@@ -591,11 +567,7 @@ int blkid_probe_all(blkid_cache cache)
 	int ret;
 
 	DBG(PROBE, ul_debug("Begin blkid_probe_all()"));
-	ret = probe_all(cache, 0);
-	if (ret == 0) {
-		cache->bic_time = time(0);
-		cache->bic_flags |= BLKID_BIC_FL_PROBED;
-	}
+	ret = probe_all(cache, 0, 1);
 	DBG(PROBE, ul_debug("End blkid_probe_all() [rc=%d]", ret));
 	return ret;
 }
@@ -613,7 +585,7 @@ int blkid_probe_all_new(blkid_cache cache)
 	int ret;
 
 	DBG(PROBE, ul_debug("Begin blkid_probe_all_new()"));
-	ret = probe_all(cache, 1);
+	ret = probe_all(cache, 1, 0);
 	DBG(PROBE, ul_debug("End blkid_probe_all_new() [rc=%d]", ret));
 	return ret;
 }
@@ -641,7 +613,7 @@ int blkid_probe_all_removable(blkid_cache cache)
 	int ret;
 
 	DBG(PROBE, ul_debug("Begin blkid_probe_all_removable()"));
-	ret = probe_all_removable(cache);
+	ret = sysfs_probe_all(cache, 0, 1);
 	DBG(PROBE, ul_debug("End blkid_probe_all_removable() [rc=%d]", ret));
 	return ret;
 }

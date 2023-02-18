@@ -19,8 +19,47 @@ TS_DESC="line"
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_LINE"
+ts_check_test_command "$TS_CMD_HEXDUMP"
 
+ts_init_subtest 'one-call'
 printf "a\nb\n" |
-	$TS_CMD_LINE > $TS_OUTPUT 2>&1
+	$TS_CMD_LINE >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest 'two-calls'
+printf "1\n2\n" |
+	($TS_CMD_LINE && $TS_CMD_LINE) >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest 'text-without-eol'
+printf "abc" |
+	$TS_CMD_LINE >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest 'empty-input'
+printf "" |
+	$TS_CMD_LINE >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest 'wait-for-eof'
+(printf "xyz" && cat </dev/null) |
+	$TS_CMD_LINE >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest 'empty-input-wait-for-eof'
+$TS_CMD_LINE </dev/null >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest 'large-line'
+dd if=/dev/zero  bs=1k count=1k 2>/dev/null |
+	$TS_CMD_LINE line | $TS_CMD_HEXDUMP -C >> $TS_OUTPUT 2>> $TS_ERRLOG
+echo "ret: $?" >> $TS_OUTPUT
+ts_finalize_subtest
 
 ts_finalize

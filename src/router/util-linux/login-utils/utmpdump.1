@@ -1,81 +1,100 @@
-.\" Copyright (C) 2010 Michael Krapp
+'\" t
+.\"     Title: utmpdump
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" This program is free software; you can redistribute it and/or modify
-.\" it under the terms of the GNU General Public License as published by
-.\" the Free Software Foundation; either version 2 of the License, or
-.\" (at your option) any later version.
-.\"
-.\" This program is distributed in the hope that it will be useful,
-.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
-.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-.\" GNU General Public License for more details.
-.\"
-.\" You should have received a copy of the GNU General Public License
-.\" along with this program; if not, write to the Free Software
-.\" Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-.\"
-.TH UTMPDUMP 1 "July 2014" "util-linux" "User Commands"
-.SH NAME
+.TH "UTMPDUMP" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 utmpdump \- dump UTMP and WTMP files in raw format
-.SH SYNOPSIS
-.BR utmpdump " [options]"
-.RI [ filename ]
-.SH DESCRIPTION
-.B utmpdump
-is a simple program to dump UTMP and WTMP files in raw format, so they
-can be examined.
-.B utmpdump
-reads from stdin unless a
-.I filename
-is passed.
-.SH OPTIONS
-.TP
-.BR \-f , " \-\-follow"
+.SH "SYNOPSIS"
+.sp
+\fButmpdump\fP [options] \fIfilename\fP
+.SH "DESCRIPTION"
+.sp
+\fButmpdump\fP is a simple program to dump UTMP and WTMP files in raw format, so they can be examined. \fButmpdump\fP reads from stdin unless a \fIfilename\fP is passed.
+.SH "OPTIONS"
+.sp
+\fB\-f\fP, \fB\-\-follow\fP
+.RS 4
 Output appended data as the file grows.
-.TP
-.BR \-o , " \-\-output " \fIfile
-Write command output to \fIfile\fR instead of standard output.
-.TP
-.BR \-r , " \-\-reverse"
-Undump, write back edited login information into the utmp or wtmp files.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.TP
-.BR \-h , " \-\-help"
-Display help text and exit.
-.SH NOTES
-.B utmpdump
-can be useful in cases of corrupted utmp or wtmp entries.  It can dump
-out utmp/wtmp to an ASCII file, which can then be edited to remove
-bogus entries, and reintegrated using:
-.PP
-.RS
-.B utmpdump -r < ascii_file > wtmp
 .RE
-.PP
-But be warned,
-.B utmpdump
-was written for debugging purposes only.
-.SH BUGS
-You may
-.B not
-use the
-.B \-r
-option, as the format for the utmp/wtmp files strongly depends on the input
-format.  This tool was
-.B not
-written for normal use, but for debugging only.
-.SH AUTHOR
+.sp
+\fB\-o\fP, \fB\-\-output\fP \fIfile\fP
+.RS 4
+Write command output to \fIfile\fP instead of standard output.
+.RE
+.sp
+\fB\-r\fP, \fB\-\-reverse\fP
+.RS 4
+Undump, write back edited login information into the utmp or wtmp files.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "NOTES"
+.sp
+\fButmpdump\fP can be useful in cases of corrupted utmp or wtmp entries. It can dump out utmp/wtmp to an ASCII file, which can then be edited to remove bogus entries, and reintegrated using:
+.RS 3
+.ll -.6i
+.sp
+\fButmpdump \-r < ascii_file > wtmp\fP
+.br
+.RE
+.ll
+.sp
+But be warned, \fButmpdump\fP was written for debugging purposes only.
+.SS "File formats"
+.sp
+Only the binary version of the \fButmp\fP(5) is standardised. Textual dumps may become incompatible in future.
+.sp
+The version 2.28 was the last one that printed text output using \fBctime\fP(3) timestamp format. Newer dumps use millisecond precision ISO\-8601 timestamp format in UTC\-0 timezone. Conversion from former timestamp format can be made to binary, although attempt to do so can lead the timestamps to drift amount of timezone offset.
+.SH "BUGS"
+.sp
+You may \fBnot\fP use the \fB\-r\fP option, as the format for the utmp/wtmp files strongly depends on the input format. This tool was \fBnot\fP written for normal use, but for debugging only.
+.SH "AUTHORS"
+.sp
 Michael Krapp
 .SH "SEE ALSO"
-.BR last (1),
-.BR w (1),
-.BR who (1),
-.BR utmp (5)
-.SH AVAILABILITY
-The utmpdump command is part of the util-linux package and is available
-from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.sp
+\fBlast\fP(1),
+\fBw\fP(1),
+\fBwho\fP(1),
+\fButmp\fP(5)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fButmpdump\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

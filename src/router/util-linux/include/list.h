@@ -12,6 +12,8 @@
 #ifndef UTIL_LINUX_LIST_H
 #define UTIL_LINUX_LIST_H
 
+#include "c.h"
+
 /* TODO: use AC_C_INLINE */
 #ifdef __GNUC__
 #define _INLINE_ static __inline__
@@ -32,11 +34,6 @@
 struct list_head {
 	struct list_head *next, *prev;
 };
-
-#define LIST_HEAD_INIT(name) { &(name), &(name) }
-
-#define LIST_HEAD(name) \
-	struct list_head name = LIST_HEAD_INIT(name)
 
 #define INIT_LIST_HEAD(ptr) do { \
 	(ptr)->next = (ptr); (ptr)->prev = (ptr); \
@@ -140,6 +137,16 @@ _INLINE_ int list_entry_is_last(struct list_head *entry, struct list_head *head)
 }
 
 /**
+ * list_entry_is_first - tests whether is entry first in the list
+ * @entry:	the entry to test.
+ * @head:	the list to test.
+ */
+_INLINE_ int list_entry_is_first(struct list_head *entry, struct list_head *head)
+{
+	return head->next == entry;
+}
+
+/**
  * list_splice - join two lists
  * @list:	the new list to add.
  * @head:	the place to add it in the first list.
@@ -166,10 +173,7 @@ _INLINE_ void list_splice(struct list_head *list, struct list_head *head)
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
-#define list_entry(ptr, type, member) __extension__ ({              \
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);   \
-	(type *)( (char *)__mptr - offsetof(type,member) );})
-
+#define list_entry(ptr, type, member)	container_of(ptr, type, member)
 
 #define list_first_entry(head, type, member) \
 	((head) && (head)->next != (head) ? list_entry((head)->next, type, member) : NULL)
@@ -203,6 +207,36 @@ _INLINE_ void list_splice(struct list_head *list, struct list_head *head)
 #define list_for_each_safe(pos, pnext, head) \
 	for (pos = (head)->next, pnext = pos->next; pos != (head); \
 	     pos = pnext, pnext = pos->next)
+
+/**
+ * list_free - remove all entries from list and call freefunc()
+ *             for each entry
+ * @head:       the head for your list
+ * @type:       the type of the struct this is embedded in.
+ * @member:     the name of the list_struct within the struct.
+ * @freefunc:   the list entry deallocator
+ */
+#define list_free(head, type, member, freefunc)				\
+	do {								\
+		struct list_head *__p, *__pnext;			\
+									\
+		list_for_each_safe (__p, __pnext, (head)) {		\
+			type *__elt = list_entry(__p, type, member);	\
+			list_del(__p);					\
+			freefunc(__elt);			\
+		}							\
+	} while (0)
+
+_INLINE_ size_t list_count_entries(struct list_head *head)
+{
+	struct list_head *pos;
+	size_t ct = 0;
+
+	list_for_each(pos, head)
+		ct++;
+
+	return ct;
+}
 
 #define MAX_LIST_LENGTH_BITS 20
 

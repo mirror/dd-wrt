@@ -49,9 +49,6 @@
 #define CHCPU_EXIT_SOMEOK	64
 
 #define _PATH_SYS_CPU		"/sys/devices/system/cpu"
-#define _PATH_SYS_CPU_ONLINE	_PATH_SYS_CPU "/online"
-#define _PATH_SYS_CPU_RESCAN	_PATH_SYS_CPU "/rescan"
-#define _PATH_SYS_CPU_DISPATCH	_PATH_SYS_CPU "/dispatching"
 
 static cpu_set_t *onlinecpus;
 static int maxcpus;
@@ -73,90 +70,95 @@ enum {
  *          < 0 = failure
  *          > 0 = partial success
  */
-static int cpu_enable(cpu_set_t *cpu_set, size_t setsize, int enable)
+static int cpu_enable(struct path_cxt *sys, cpu_set_t *cpu_set, size_t setsize, int enable)
 {
-	unsigned int cpu;
+	int cpu;
 	int online, rc;
 	int configured = -1;
-	size_t fails = 0;
+	int fails = 0;
 
-	for (cpu = 0; cpu < setsize; cpu++) {
-		if (!CPU_ISSET(cpu, cpu_set))
+	for (cpu = 0; cpu < maxcpus; cpu++) {
+		if (!CPU_ISSET_S(cpu, setsize, cpu_set))
 			continue;
-		if (!path_exist(_PATH_SYS_CPU "/cpu%d", cpu)) {
-			warnx(_("CPU %d does not exist"), cpu);
+		if (ul_path_accessf(sys, F_OK, "cpu%d", cpu) != 0) {
+			warnx(_("CPU %u does not exist"), cpu);
 			fails++;
 			continue;
 		}
-		if (!path_exist(_PATH_SYS_CPU "/cpu%d/online", cpu)) {
-			warnx(_("CPU %d is not hot pluggable"), cpu);
+		if (ul_path_accessf(sys, F_OK, "cpu%d/online", cpu) != 0) {
+			warnx(_("CPU %u is not hot pluggable"), cpu);
 			fails++;
 			continue;
 		}
-		online = path_read_s32(_PATH_SYS_CPU "/cpu%d/online", cpu);
-		if ((online == 1) && (enable == 1)) {
-			printf(_("CPU %d is already enabled\n"), cpu);
+		if (ul_path_readf_s32(sys, &online, "cpu%d/online", cpu) == 0
+		    && online == 1
+		    && enable == 1) {
+			printf(_("CPU %u is already enabled\n"), cpu);
 			continue;
 		}
-		if ((online == 0) && (enable == 0)) {
-			printf(_("CPU %d is already disabled\n"), cpu);
+		if (online == 0 && enable == 0) {
+			printf(_("CPU %u is already disabled\n"), cpu);
 			continue;
 		}
-		if (path_exist(_PATH_SYS_CPU "/cpu%d/configure", cpu))
-			configured = path_read_s32(_PATH_SYS_CPU "/cpu%d/configure", cpu);
+		if (ul_path_accessf(sys, F_OK, "cpu%d/configure", cpu) == 0)
+			ul_path_readf_s32(sys, &configured, "cpu%d/configure", cpu);
 		if (enable) {
-			rc = path_write_str("1", _PATH_SYS_CPU "/cpu%d/online", cpu);
-			if ((rc == -1) && (configured == 0)) {
-				warn(_("CPU %d enable failed (CPU is deconfigured)"), cpu);
+			rc = ul_path_writef_string(sys, "1", "cpu%d/online", cpu);
+			if (rc != 0 && configured == 0) {
+				warn(_("CPU %u enable failed (CPU is deconfigured)"), cpu);
 				fails++;
-			} else if (rc == -1) {
-				warn(_("CPU %d enable failed"), cpu);
+			} else if (rc != 0) {
+				warn(_("CPU %u enable failed"), cpu);
 				fails++;
 			} else
-				printf(_("CPU %d enabled\n"), cpu);
+				printf(_("CPU %u enabled\n"), cpu);
 		} else {
 			if (onlinecpus && num_online_cpus() == 1) {
-				warnx(_("CPU %d disable failed (last enabled CPU)"), cpu);
+				warnx(_("CPU %u disable failed (last enabled CPU)"), cpu);
 				fails++;
 				continue;
 			}
-			rc = path_write_str("0", _PATH_SYS_CPU "/cpu%d/online", cpu);
-			if (rc == -1) {
-				warn(_("CPU %d disable failed"), cpu);
+			rc = ul_path_writef_string(sys, "0", "cpu%d/online", cpu);
+			if (rc != 0) {
+				warn(_("CPU %u disable failed"), cpu);
 				fails++;
 			} else {
-				printf(_("CPU %d disabled\n"), cpu);
+				printf(_("CPU %u disabled\n"), cpu);
 				if (onlinecpus)
-					CPU_CLR(cpu, onlinecpus);
+					CPU_CLR_S(cpu, setsize, onlinecpus);
 			}
 		}
 	}
 
-	return fails == 0 ? 0 : fails == setsize ? -1 : 1;
+	return fails == 0 ? 0 : fails == maxcpus ? -1 : 1;
 }
 
-static int cpu_rescan(void)
+static int cpu_rescan(struct path_cxt *sys)
 {
-	if (!path_exist(_PATH_SYS_CPU_RESCAN))
+	if (ul_path_access(sys, F_OK, "rescan") != 0)
 		errx(EXIT_FAILURE, _("This system does not support rescanning of CPUs"));
-	if (path_write_str("1", _PATH_SYS_CPU_RESCAN) == -1)
+
+	if (ul_path_write_string(sys, "1", "rescan") != 0)
 		err(EXIT_FAILURE, _("Failed to trigger rescan of CPUs"));
+
 	printf(_("Triggered rescan of CPUs\n"));
 	return 0;
 }
 
-static int cpu_set_dispatch(int mode)
+static int cpu_set_dispatch(struct path_cxt *sys, int mode)
 {
-	if (!path_exist(_PATH_SYS_CPU_DISPATCH))
+	if (ul_path_access(sys, F_OK, "dispatching") != 0)
 		errx(EXIT_FAILURE, _("This system does not support setting "
 				     "the dispatching mode of CPUs"));
 	if (mode == 0) {
-		if (path_write_str("0", _PATH_SYS_CPU_DISPATCH) == -1)
+		if (ul_path_write_string(sys, "0", "dispatching") != 0)
 			err(EXIT_FAILURE, _("Failed to set horizontal dispatch mode"));
+
 		printf(_("Successfully set horizontal dispatching mode\n"));
 	} else {
-		if (path_write_str("1", _PATH_SYS_CPU_DISPATCH) == -1)
+		if (ul_path_write_string(sys, "1", "dispatching") != 0)
 			err(EXIT_FAILURE, _("Failed to set vertical dispatch mode"));
+
 		printf(_("Successfully set vertical dispatching mode\n"));
 	}
 	return 0;
@@ -166,58 +168,58 @@ static int cpu_set_dispatch(int mode)
  *          < 0 = failure
  *          > 0 = partial success
  */
-static int cpu_configure(cpu_set_t *cpu_set, size_t setsize, int configure)
+static int cpu_configure(struct path_cxt *sys, cpu_set_t *cpu_set, size_t setsize, int configure)
 {
-	unsigned int cpu;
+	int cpu;
 	int rc, current;
-	size_t fails = 0;
+	int fails = 0;
 
-	for (cpu = 0; cpu < setsize; cpu++) {
-		if (!CPU_ISSET(cpu, cpu_set))
+	for (cpu = 0; cpu < maxcpus; cpu++) {
+		if (!CPU_ISSET_S(cpu, setsize, cpu_set))
 			continue;
-		if (!path_exist(_PATH_SYS_CPU "/cpu%d", cpu)) {
-			warnx(_("CPU %d does not exist"), cpu);
+		if (ul_path_accessf(sys, F_OK, "cpu%d", cpu) != 0) {
+			warnx(_("CPU %u does not exist"), cpu);
 			fails++;
 			continue;
 		}
-		if (!path_exist(_PATH_SYS_CPU "/cpu%d/configure", cpu)) {
-			warnx(_("CPU %d is not configurable"), cpu);
+		if (ul_path_accessf(sys, F_OK, "cpu%d/configure", cpu) != 0) {
+			warnx(_("CPU %u is not configurable"), cpu);
 			fails++;
 			continue;
 		}
-		current = path_read_s32(_PATH_SYS_CPU "/cpu%d/configure", cpu);
-		if ((current == 1) && (configure == 1)) {
-			printf(_("CPU %d is already configured\n"), cpu);
+		ul_path_readf_s32(sys, &current, "cpu%d/configure", cpu);
+		if (current == 1 && configure == 1) {
+			printf(_("CPU %u is already configured\n"), cpu);
 			continue;
 		}
-		if ((current == 0) && (configure == 0)) {
-			printf(_("CPU %d is already deconfigured\n"), cpu);
+		if (current == 0 && configure == 0) {
+			printf(_("CPU %u is already deconfigured\n"), cpu);
 			continue;
 		}
-		if ((current == 1) && (configure == 0) && onlinecpus &&
+		if (current == 1 && configure == 0 && onlinecpus &&
 		    is_cpu_online(cpu)) {
-			warnx(_("CPU %d deconfigure failed (CPU is enabled)"), cpu);
+			warnx(_("CPU %u deconfigure failed (CPU is enabled)"), cpu);
 			fails++;
 			continue;
 		}
 		if (configure) {
-			rc = path_write_str("1", _PATH_SYS_CPU "/cpu%d/configure", cpu);
-			if (rc == -1) {
-				warn(_("CPU %d configure failed"), cpu);
+			rc = ul_path_writef_string(sys, "1", "cpu%d/configure", cpu);
+			if (rc != 0) {
+				warn(_("CPU %u configure failed"), cpu);
 				fails++;
 			} else
-				printf(_("CPU %d configured\n"), cpu);
+				printf(_("CPU %u configured\n"), cpu);
 		} else {
-			rc = path_write_str("0", _PATH_SYS_CPU "/cpu%d/configure", cpu);
-			if (rc == -1) {
-				warn(_("CPU %d deconfigure failed"), cpu);
+			rc = ul_path_writef_string(sys, "0", "cpu%d/configure", cpu);
+			if (rc != 0) {
+				warn(_("CPU %u deconfigure failed"), cpu);
 				fails++;
 			} else
-				printf(_("CPU %d deconfigured\n"), cpu);
+				printf(_("CPU %u deconfigured\n"), cpu);
 		}
 	}
 
-	return fails == 0 ? 0 : fails == setsize ? -1 : 1;
+	return fails == 0 ? 0 : fails == maxcpus ? -1 : 1;
 }
 
 static void cpu_parse(char *cpu_string, cpu_set_t *cpu_set, size_t setsize)
@@ -232,8 +234,9 @@ static void cpu_parse(char *cpu_string, cpu_set_t *cpu_set, size_t setsize)
 	errx(EXIT_FAILURE, _("failed to parse CPU list: %s"), cpu_string);
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fprintf(out, _(
 		"\nUsage:\n"
 		" %s [options]\n"), program_invocation_short_name);
@@ -241,39 +244,42 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Configure CPUs in a multi-processor system.\n"), out);
 
-	puts(_(	"\nOptions:\n"
-		"  -h, --help                    print this help\n"
-		"  -e, --enable <cpu-list>       enable cpus\n"
-		"  -d, --disable <cpu-list>      disable cpus\n"
-		"  -c, --configure <cpu-list>    configure cpus\n"
-		"  -g, --deconfigure <cpu-list>  deconfigure cpus\n"
-		"  -p, --dispatch <mode>         set dispatching mode\n"
-		"  -r, --rescan                  trigger rescan of cpus\n"
-		"  -V, --version                 output version information and exit\n"));
+	fputs(USAGE_OPTIONS, stdout);
+	fputs(_(
+		" -e, --enable <cpu-list>       enable cpus\n"
+		" -d, --disable <cpu-list>      disable cpus\n"
+		" -c, --configure <cpu-list>    configure cpus\n"
+		" -g, --deconfigure <cpu-list>  deconfigure cpus\n"
+		" -p, --dispatch <mode>         set dispatching mode\n"
+		" -r, --rescan                  trigger rescan of cpus\n"
+		), stdout);
+	printf(USAGE_HELP_OPTIONS(31));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_MAN_TAIL("chcpu(8)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
 {
-	cpu_set_t *cpu_set;
+	struct path_cxt *sys = NULL;	/* _PATH_SYS_CPU handler */
+	cpu_set_t *cpu_set = NULL;
 	size_t setsize;
 	int cmd = -1;
 	int c, rc;
 
 	static const struct option longopts[] = {
-		{ "configure",	required_argument, 0, 'c' },
-		{ "deconfigure",required_argument, 0, 'g' },
-		{ "disable",	required_argument, 0, 'd' },
-		{ "dispatch",	required_argument, 0, 'p' },
-		{ "enable",	required_argument, 0, 'e' },
-		{ "help",	no_argument,       0, 'h' },
-		{ "rescan",	no_argument,       0, 'r' },
-		{ "version",	no_argument,       0, 'V' },
-		{ NULL,		0, 0, 0 }
+		{ "configure",	required_argument, NULL, 'c' },
+		{ "deconfigure",required_argument, NULL, 'g' },
+		{ "disable",	required_argument, NULL, 'd' },
+		{ "dispatch",	required_argument, NULL, 'p' },
+		{ "enable",	required_argument, NULL, 'e' },
+		{ "help",	no_argument,       NULL, 'h' },
+		{ "rescan",	no_argument,       NULL, 'r' },
+		{ "version",	no_argument,       NULL, 'V' },
+		{ NULL,		0, NULL, 0 }
 	};
 
-	static const ul_excl_t excl[] = {       /* rows and cols in in ASCII order */
+	static const ul_excl_t excl[] = {       /* rows and cols in ASCII order */
 		{ 'c','d','e','g','p' },
 		{ 0 }
 	};
@@ -282,17 +288,25 @@ int main(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
+
+	ul_path_init_debug();
+	sys = ul_new_path(_PATH_SYS_CPU);
+	if (!sys)
+		err(EXIT_FAILURE, _("failed to initialize sysfs handler"));
 
 	maxcpus = get_max_number_of_cpus();
 	if (maxcpus < 1)
 		errx(EXIT_FAILURE, _("cannot determine NR_CPUS; aborting"));
-	if (path_exist(_PATH_SYS_CPU_ONLINE))
-		onlinecpus = path_read_cpulist(maxcpus, _PATH_SYS_CPU_ONLINE);
-	setsize = CPU_ALLOC_SIZE(maxcpus);
-	cpu_set = CPU_ALLOC(maxcpus);
+
+	if (ul_path_access(sys, F_OK, "online") == 0)
+		ul_path_readf_cpulist(sys, &cpu_set, maxcpus, "online");
+	else
+		cpu_set = CPU_ALLOC(maxcpus);
 	if (!cpu_set)
 		err(EXIT_FAILURE, _("cpuset_alloc failed"));
+
+	setsize = CPU_ALLOC_SIZE(maxcpus);
 
 	while ((c = getopt_long(argc, argv, "c:d:e:g:hp:rV", longopts, NULL)) != -1) {
 
@@ -315,8 +329,6 @@ int main(int argc, char *argv[])
 			cmd = CMD_CPU_DECONFIGURE;
 			cpu_parse(argv[optind - 1], cpu_set, setsize);
 			break;
-		case 'h':
-			usage(stdout);
 		case 'p':
 			if (strcmp("horizontal", argv[optind - 1]) == 0)
 				cmd = CMD_CPU_DISPATCH_HORIZONTAL;
@@ -329,43 +341,50 @@ int main(int argc, char *argv[])
 		case 'r':
 			cmd = CMD_CPU_RESCAN;
 			break;
+
+		case 'h':
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
-	if ((argc == 1) || (argc != optind))
-		usage(stderr);
+	if ((argc == 1) || (argc != optind)) {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	switch (cmd) {
 	case CMD_CPU_ENABLE:
-		rc = cpu_enable(cpu_set, maxcpus, 1);
+		rc = cpu_enable(sys, cpu_set, maxcpus, 1);
 		break;
 	case CMD_CPU_DISABLE:
-		rc = cpu_enable(cpu_set, maxcpus, 0);
+		rc = cpu_enable(sys, cpu_set, maxcpus, 0);
 		break;
 	case CMD_CPU_CONFIGURE:
-		rc = cpu_configure(cpu_set, maxcpus, 1);
+		rc = cpu_configure(sys, cpu_set, maxcpus, 1);
 		break;
 	case CMD_CPU_DECONFIGURE:
-		rc = cpu_configure(cpu_set, maxcpus, 0);
+		rc = cpu_configure(sys, cpu_set, maxcpus, 0);
 		break;
 	case CMD_CPU_RESCAN:
-		rc = cpu_rescan();
+		rc = cpu_rescan(sys);
 		break;
 	case CMD_CPU_DISPATCH_HORIZONTAL:
-		rc = cpu_set_dispatch(0);
+		rc = cpu_set_dispatch(sys, 0);
 		break;
 	case CMD_CPU_DISPATCH_VERTICAL:
-		rc = cpu_set_dispatch(1);
+		rc = cpu_set_dispatch(sys, 1);
 		break;
 	default:
 		rc = -EINVAL;
 		break;
 	}
+
+	CPU_FREE(cpu_set);
+	ul_unref_path(sys);
 
 	return rc == 0 ? EXIT_SUCCESS :
 	        rc < 0 ? EXIT_FAILURE : CHCPU_EXIT_SOMEOK;

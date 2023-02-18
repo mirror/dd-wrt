@@ -20,7 +20,7 @@
 
 /*
  * Old version would die on largish filesystems. Change to mmap the
- * files one by one instaed of all simultaneously. - aeb, 2002-11-01
+ * files one by one instead of all simultaneously. - aeb, 2002-11-01
  */
 
 #include <sys/types.h>
@@ -36,15 +36,24 @@
 #include <string.h>
 #include <getopt.h>
 #include <zconf.h>
+
+/* We don't use our include/crc32.h, but crc32 from zlib!
+ *
+ * The zlib implementation performs pre/post-conditioning. The util-linux
+ * imlemenation requires post-conditioning (xor) in the applications.
+ */
 #include <zlib.h>
 
 #include "c.h"
 #include "cramfs.h"
-#include "closestream.h"
 #include "md5.h"
 #include "nls.h"
 #include "exitcodes.h"
 #include "strutils.h"
+
+#define CLOSE_EXIT_CODE	 MKFS_EX_ERROR
+#include "closestream.h"
+
 #define XALLOC_EXIT_CODE MKFS_EX_ERROR
 #include "xalloc.h"
 
@@ -89,7 +98,7 @@ struct entry {
 	/* stats */
 	unsigned char *name;
 	unsigned int mode, size, uid, gid;
-	unsigned char md5sum[MD5LENGTH];
+	unsigned char md5sum[UL_MD5LENGTH];
 	unsigned char flags;	   /* CRAMFS_EFLAG_* */
 
 	/* FS data */
@@ -113,32 +122,30 @@ struct entry {
 #define CRAMFS_GID_WIDTH 8
 #define CRAMFS_OFFSET_WIDTH 26
 
-/* Input status of 0 to print help and exit without an error. */
-static void
-usage(int status) {
-	FILE *stream = status ? stderr : stdout;
-
-	fprintf(stream,
-		_("usage: %s [-h] [-v] [-b blksize] [-e edition] [-N endian] [-i file] "
-		  "[-n name] dirname outfile\n"
-		  " -h         print this help\n"
-		  " -v         be verbose\n"
-		  " -E         make all warnings errors "
-		    "(non-zero exit status)\n"
-		  " -b blksize use this blocksize, must equal page size\n"
-		  " -e edition set edition number (part of fsid)\n"
-		  " -N endian  set cramfs endianness (big|little|host), default host\n"
-		  " -i file    insert a file image into the filesystem "
-		    "(requires >= 2.4.0)\n"
-		  " -n name    set name of cramfs filesystem\n"
-		  " -p         pad by %d bytes for boot code\n"
-		  " -s         sort directory entries (old option, ignored)\n"
-		  " -z         make explicit holes (requires >= 2.3.39)\n"
-		  " dirname    root of the filesystem to be compressed\n"
-		  " outfile    output file\n"),
-		program_invocation_short_name, PAD_SIZE);
-
-	exit(status);
+static void __attribute__((__noreturn__)) usage(void)
+{
+	fputs(USAGE_HEADER, stdout);
+	printf(_(" %s [-h] [-v] [-b blksize] [-e edition] [-N endian] [-i file] [-n name] dirname outfile\n"),
+		program_invocation_short_name);
+	fputs(USAGE_SEPARATOR, stdout);
+	puts(_("Make compressed ROM file system."));
+	fputs(USAGE_OPTIONS, stdout);
+	puts(_(  " -v             be verbose"));
+	puts(_(  " -E             make all warnings errors (non-zero exit status)"));
+	puts(_(  " -b blksize     use this blocksize, must equal page size"));
+	puts(_(  " -e edition     set edition number (part of fsid)"));
+	printf(_(" -N endian      set cramfs endianness (%s|%s|%s), default %s\n"), "big", "little", "host", "host");
+	puts(_(  " -i file        insert a file image into the filesystem"));
+	puts(_(  " -n name        set name of cramfs filesystem"));
+	printf(_(" -p             pad by %d bytes for boot code\n"), PAD_SIZE);
+	puts(_(  " -s             sort directory entries (old option, ignored)"));
+	puts(_(  " -z             make explicit holes"));
+	puts(_(  " dirname        root of the filesystem to be compressed"));
+	puts(_(  " outfile        output file"));
+	fputs(USAGE_SEPARATOR, stdout);
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("mkfs.cramfs(8)"));
+	exit(MKFS_EX_OK);
 }
 
 static char *
@@ -150,6 +157,8 @@ do_mmap(char *path, unsigned int size, unsigned int mode){
 		return NULL;
 
 	if (S_ISLNK(mode)) {
+		/* The link buffer is unnecessary to terminate by null as it's
+		 * always used as buffer rather than a string */
 		start = xmalloc(size);
 		if (readlink(path, start, size) < 0) {
 			warn(_("readlink failed: %s"), path);
@@ -187,16 +196,17 @@ do_munmap(char *start, unsigned int size, unsigned int mode){
 /* compute md5sums, so that we do not have to compare every pair of files */
 static void
 mdfile(struct entry *e) {
-	MD5_CTX ctx;
 	char *start;
 
 	start = do_mmap(e->path, e->size, e->mode);
 	if (start == NULL) {
 		e->flags |= CRAMFS_EFLAG_INVALID;
 	} else {
-		MD5Init(&ctx);
-		MD5Update(&ctx, (unsigned char *) start, e->size);
-		MD5Final(e->md5sum, &ctx);
+		UL_MD5_CTX ctx;
+
+		ul_MD5Init(&ctx);
+		ul_MD5Update(&ctx, (unsigned char *) start, e->size);
+		ul_MD5Final(e->md5sum, &ctx);
 
 		do_munmap(start, e->size, e->mode);
 
@@ -248,7 +258,7 @@ static int find_identical_file(struct entry *orig, struct entry *new, loff_t *fs
 
 		if ((orig->flags & CRAMFS_EFLAG_MD5) &&
 		    (new->flags & CRAMFS_EFLAG_MD5) &&
-		    !memcmp(orig->md5sum, new->md5sum, MD5LENGTH) &&
+		    !memcmp(orig->md5sum, new->md5sum, UL_MD5LENGTH) &&
 		    identical_file(orig, new)) {
 			new->same = orig;
 			*fslen_ub -= new->size;
@@ -293,7 +303,7 @@ static unsigned int parse_directory(struct entry *root_entry, const char *name, 
 	endpath++;
 
 	/* read in the directory and sort */
-	dircount = scandir(name, &dirlist, 0, cramsort);
+	dircount = scandir(name, &dirlist, NULL, cramsort);
 
 	if (dircount < 0)
 		err(MKFS_EX_ERROR, _("could not read directory %s"), name);
@@ -313,18 +323,16 @@ static unsigned int parse_directory(struct entry *root_entry, const char *name, 
 		if (dirent->d_name[0] == '.') {
 			if (dirent->d_name[1] == '\0')
 				continue;
-			if (dirent->d_name[1] == '.') {
-				if (dirent->d_name[2] == '\0')
-					continue;
-			}
+			if (dirent->d_name[1] == '.' &&
+			    dirent->d_name[2] == '\0')
+				continue;
 		}
 		namelen = strlen(dirent->d_name);
-		if (namelen > MAX_INPUT_NAMELEN)
-			errx(MKFS_EX_ERROR,
-				_("Very long (%zu bytes) filename `%s' found.\n"
-				  " Please increase MAX_INPUT_NAMELEN in "
-				  "mkcramfs.c and recompile.  Exiting."),
-				namelen, dirent->d_name);
+		if (namelen > MAX_INPUT_NAMELEN) {
+			namelen = MAX_INPUT_NAMELEN;
+			warn_namelen = 1;
+		}
+
 		memcpy(endpath, dirent->d_name, namelen + 1);
 
 		if (lstat(path, &st) < 0) {
@@ -333,15 +341,7 @@ static unsigned int parse_directory(struct entry *root_entry, const char *name, 
 			continue;
 		}
 		entry = xcalloc(1, sizeof(struct entry));
-		entry->name = (unsigned char *)xstrdup(dirent->d_name);
-		if (namelen > 255) {
-			/* Can't happen when reading from ext2fs. */
-
-			/* TODO: we ought to avoid chopping in half
-			   multi-byte UTF8 characters. */
-			entry->name[namelen = 255] = '\0';
-			warn_namelen = 1;
-		}
+		entry->name = (unsigned char *)xstrndup(dirent->d_name, namelen);
 		entry->mode = st.st_mode;
 		entry->size = st.st_size;
 		entry->uid = st.st_uid;
@@ -361,11 +361,9 @@ static unsigned int parse_directory(struct entry *root_entry, const char *name, 
 			entry->size = parse_directory(root_entry, path, &entry->child, fslen_ub);
 		} else if (S_ISREG(st.st_mode)) {
 			entry->path = xstrdup(path);
-			if (entry->size) {
-				if (entry->size >= (1 << CRAMFS_SIZE_WIDTH)) {
-					warn_size = 1;
-					entry->size = (1 << CRAMFS_SIZE_WIDTH) - 1;
-				}
+			if (entry->size >= (1 << CRAMFS_SIZE_WIDTH)) {
+				warn_size = 1;
+				entry->size = (1 << CRAMFS_SIZE_WIDTH) - 1;
 			}
 		} else if (S_ISLNK(st.st_mode)) {
 			entry->path = xstrdup(path);
@@ -415,16 +413,16 @@ static unsigned int write_superblock(struct entry *root, char *base, int size)
 	super->size = size;
 	memcpy(super->signature, CRAMFS_SIGNATURE, sizeof(super->signature));
 
-	super->fsid.crc = crc32(0L, Z_NULL, 0);
+	super->fsid.crc = crc32(0L, NULL, 0);
 	super->fsid.edition = opt_edition;
 	super->fsid.blocks = total_blocks;
 	super->fsid.files = total_nodes;
 
 	memset(super->name, 0x00, sizeof(super->name));
 	if (opt_name)
-		strncpy((char *)super->name, opt_name, sizeof(super->name));
+		str2memcpy((char *)super->name, opt_name, sizeof(super->name));
 	else
-		strncpy((char *)super->name, "Compressed", sizeof(super->name));
+		str2memcpy((char *)super->name, "Compressed", sizeof(super->name));
 
 	super->root.mode = root->mode;
 	super->root.uid = root->uid;
@@ -551,9 +549,9 @@ static int is_zero(unsigned char const *begin, unsigned len)
 			     (len-- == 0 ||
 			      (begin[3] == '\0' &&
 			       memcmp(begin, begin + 4, len) == 0))))))));
-	else
-		/* Never create holes. */
-		return 0;
+
+	/* Never create holes. */
+	return 0;
 }
 
 /*
@@ -709,7 +707,7 @@ int main(int argc, char **argv)
 	loff_t fslen_ub = sizeof(struct cramfs_super);
 	unsigned int fslen_max;
 	char const *dirname, *outfile;
-	uint32_t crc = crc32(0L, Z_NULL, 0);
+	uint32_t crc = crc32(0L, NULL, 0);
 	int c;
 	cramfs_is_big_endian = HOST_IS_BIG_ENDIAN; /* default is to use host order */
 
@@ -718,13 +716,24 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
+
+	if (argc > 1) {
+		/* first arg may be one of our standard longopts */
+		if (!strcmp(argv[1], "--help"))
+			usage();
+		if (!strcmp(argv[1], "--version")) {
+			print_version(EXIT_SUCCESS);
+			exit(MKFS_EX_OK);
+		}
+	}
+	strutils_set_exitcode(MKFS_EX_USAGE);
 
 	/* command line options */
 	while ((c = getopt(argc, argv, "hb:Ee:i:n:N:psVvz")) != EOF) {
 		switch (c) {
 		case 'h':
-			usage(MKFS_EX_OK);
+			usage();
 		case 'b':
 			blksize = strtou32_or_err(optarg, _("invalid blocksize argument"));
 			break;
@@ -763,8 +772,7 @@ int main(int argc, char **argv)
 			/* old option, ignored */
 			break;
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			exit(MKFS_EX_OK);
+			print_version(MKFS_EX_OK);
 		case 'v':
 			verbose = 1;
 			break;
@@ -772,12 +780,14 @@ int main(int argc, char **argv)
 			opt_holes = 1;
 			break;
 		default:
-			usage(FSCK_EX_USAGE);
+			errtryhelp(MKFS_EX_USAGE);
 		}
 	}
 
-	if ((argc - optind) != 2)
-		usage(MKFS_EX_USAGE);
+	if ((argc - optind) != 2) {
+		warnx(_("bad usage"));
+		errtryhelp(MKFS_EX_USAGE);
+	}
 	dirname = argv[optind];
 	outfile = argv[optind + 1];
 
@@ -891,7 +901,7 @@ int main(int argc, char **argv)
 	if (warn_namelen)
 		/* Can't happen when reading from ext2fs. */
 		/* Bytes, not chars: think UTF8. */
-		warnx(_("warning: filenames truncated to 255 bytes."));
+		warnx(_("warning: filenames truncated to %u bytes."), MAX_INPUT_NAMELEN);
 	if (warn_skip)
 		warnx(_("warning: files were skipped due to errors."));
 	if (warn_size)
@@ -913,5 +923,5 @@ int main(int argc, char **argv)
 	    (warn_namelen|warn_skip|warn_size|warn_uid|warn_gid|warn_dev))
 		exit(MKFS_EX_ERROR);
 
-	return EXIT_SUCCESS;
+	return MKFS_EX_OK;
 }

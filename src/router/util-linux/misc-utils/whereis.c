@@ -57,7 +57,7 @@
 
 #include "debug.h"
 
-UL_DEBUG_DEFINE_MASK(whereis);
+static UL_DEBUG_DEFINE_MASK(whereis);
 UL_DEBUG_DEFINE_MASKNAMES(whereis) = UL_DEBUG_EMPTY_MASKNAMES;
 
 #define WHEREIS_DEBUG_INIT	(1 << 1)
@@ -71,6 +71,9 @@ UL_DEBUG_DEFINE_MASKNAMES(whereis) = UL_DEBUG_EMPTY_MASKNAMES;
 
 #define DBG(m, x)       __UL_DBG(whereis, WHEREIS_DEBUG_, m, x)
 #define ON_DBG(m, x)    __UL_DBG_CALL(whereis, WHEREIS_DEBUG_, m, x)
+
+#define UL_DEBUG_CURRENT_MASK	UL_DEBUG_MASK(whereis)
+#include "debugobj.h"
 
 static char uflag = 0;
 
@@ -96,13 +99,20 @@ struct wh_dirlist {
 static const char *bindirs[] = {
 	"/usr/bin",
 	"/usr/sbin",
-	"/usr/lib",
-	"/usr/lib64",
 	"/bin",
 	"/sbin",
+#if defined(MULTIARCHTRIPLET)
+	"/lib/" MULTIARCHTRIPLET,
+	"/usr/lib/" MULTIARCHTRIPLET,
+	"/usr/local/lib/" MULTIARCHTRIPLET,
+#endif
+	"/usr/lib",
+	"/usr/lib32",
+	"/usr/lib64",
 	"/etc",
 	"/usr/etc",
 	"/lib",
+	"/lib32",
 	"/lib64",
 	"/usr/games",
 	"/usr/games/bin",
@@ -170,7 +180,7 @@ static const char *srcdirs[] = {
 
 static void whereis_init_debug(void)
 {
-	__UL_INIT_DEBUG(whereis, WHEREIS_DEBUG_, 0, WHEREIS_DEBUG);
+	__UL_INIT_DEBUG_FROM_ENV(whereis, WHEREIS_DEBUG_, 0, WHEREIS_DEBUG);
 }
 
 static const char *whereis_type_to_name(int type)
@@ -183,10 +193,12 @@ static const char *whereis_type_to_name(int type)
 	}
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
+
 	fputs(USAGE_HEADER, out);
-	fprintf(out, _(" %s [options] <file>\n"), program_invocation_short_name);
+	fprintf(out, _(" %s [options] [-BMS <dir>... -f] <name>\n"), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Locate the binary, source, and manual-page files for a command.\n"), out);
@@ -201,9 +213,11 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_(" -f         terminate <dirs> argument list\n"), out);
 	fputs(_(" -u         search for unusual entries\n"), out);
 	fputs(_(" -l         output effective lookup paths\n"), out);
-	fprintf(out, USAGE_MAN_TAIL("whereis(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	fputs(USAGE_SEPARATOR, out);
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("whereis(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 static void dirlist_add_dir(struct wh_dirlist **ls0, int type, const char *dir)
@@ -242,7 +256,6 @@ static void dirlist_add_dir(struct wh_dirlist **ls0, int type, const char *dir)
 	}
 
 	DBG(LIST, ul_debugobj(*ls0, "  add dir: %s", ls->path));
-	return;
 }
 
 /* special case for '*' in the paths */
@@ -251,31 +264,47 @@ static void dirlist_add_subdir(struct wh_dirlist **ls, int type, const char *dir
 	char buf[PATH_MAX], *d;
 	DIR *dirp;
 	struct dirent *dp;
+	char *postfix;
+	size_t len;
 
-	strncpy(buf, dir, PATH_MAX);
-	buf[PATH_MAX - 1] = '\0';
+	postfix = strchr(dir, '*');
+	if (!postfix)
+		goto ignore;
 
-	d = strchr(buf, '*');
-	if (!d)
-		return;
-	*d = 0;
+	/* copy begin of the path to the buffer (part before '*') */
+	len = (postfix - dir) + 1;
+	xstrncpy(buf, dir, len);
 
+	/* remember place where to append subdirs */
+	d = buf + len - 1;
+
+	/* skip '*' */
+	postfix++;
+	if (!*postfix)
+		postfix = NULL;
+
+	/* open parental dir t scan */
 	dirp = opendir(buf);
 	if (!dirp)
-		return;
+		goto ignore;
 
-	DBG(LIST, ul_debugobj(*ls, " scanning subdir: %s", dir));
+	DBG(LIST, ul_debugobj(*ls, " scanning subdirs: %s [%s<subdir>%s]",
+				dir, buf, postfix ? postfix : ""));
 
 	while ((dp = readdir(dirp)) != NULL) {
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
-		snprintf(d, PATH_MAX - (d - buf), "%s", dp->d_name);
-		/* a dir definition can have a star in middle of path */
-		strcat(buf, strchr(dir, '*') + 1);
+		if (postfix)
+			snprintf(d, PATH_MAX - len, "%s%s", dp->d_name, postfix);
+		else
+			snprintf(d, PATH_MAX - len, "%s", dp->d_name);
+
 		dirlist_add_dir(ls, type, buf);
 	}
 	closedir(dirp);
 	return;
+ignore:
+	DBG(LIST, ul_debugobj(*ls, " ignore path: %s", dir));
 }
 
 static void construct_dirlist_from_env(const char *env,
@@ -296,7 +325,6 @@ static void construct_dirlist_from_env(const char *env,
 		dirlist_add_dir(ls, type, tok);
 
 	free(pathcp);
-	return;
 }
 
 static void construct_dirlist_from_argv(struct wh_dirlist **ls,
@@ -318,8 +346,6 @@ static void construct_dirlist_from_argv(struct wh_dirlist **ls,
 		dirlist_add_dir(ls, type, argv[i]);
 		*idx = i;
 	}
-
-	return;
 }
 
 static void construct_dirlist(struct wh_dirlist **ls,
@@ -337,7 +363,6 @@ static void construct_dirlist(struct wh_dirlist **ls,
 		else
 			dirlist_add_subdir(ls, type, paths[i]);
 	}
-	return;
 }
 
 static void free_dirlist(struct wh_dirlist **ls0, int type)
@@ -364,34 +389,35 @@ static void free_dirlist(struct wh_dirlist **ls0, int type)
 			ls = ls->next;
 		}
 	}
-
-	return;
 }
 
 
-static int filename_equal(const char *cp, const char *dp)
+static int filename_equal(const char *cp, const char *dp, int type)
 {
 	int i = strlen(dp);
 
 	DBG(SEARCH, ul_debug("compare '%s' and '%s'", cp, dp));
 
-	if (dp[0] == 's' && dp[1] == '.' && filename_equal(cp, dp + 2))
+	if (type & SRC_DIR &&
+	    dp[0] == 's' && dp[1] == '.' && filename_equal(cp, dp + 2, type))
 		return 1;
-	if (!strcmp(dp + i - 2, ".Z"))
-		i -= 2;
-	else if (!strcmp(dp + i - 3, ".gz"))
-		i -= 3;
-	else if (!strcmp(dp + i - 3, ".xz"))
-		i -= 3;
-	else if (!strcmp(dp + i - 4, ".bz2"))
-		i -= 4;
+	if (type & MAN_DIR) {
+		if (i > 1 && !strcmp(dp + i - 2, ".Z"))
+			i -= 2;
+		else if (i > 2 && !strcmp(dp + i - 3, ".gz"))
+			i -= 3;
+		else if (i > 2 && !strcmp(dp + i - 3, ".xz"))
+			i -= 3;
+		else if (i > 3 && !strcmp(dp + i - 4, ".bz2"))
+			i -= 4;
+		else if (i > 3 && !strcmp(dp + i - 4, ".zst"))
+			i -= 4;
+	}
 	while (*cp && *dp && *cp == *dp)
 		cp++, dp++, i--;
 	if (*cp == 0 && *dp == 0)
 		return 1;
-	while (isdigit(*dp))
-		dp++;
-	if (*cp == 0 && *dp++ == '.') {
+	if (!(type & BIN_DIR) && *cp == 0 && *dp++ == '.') {
 		--i;
 		while (i > 0 && *dp)
 			if (--i, *dp++ == '.')
@@ -401,7 +427,8 @@ static int filename_equal(const char *cp, const char *dp)
 	return 0;
 }
 
-static void findin(const char *dir, const char *pattern, int *count, char **wait)
+static void findin(const char *dir, const char *pattern, int *count,
+		   char **wait, int type)
 {
 	DIR *dirp;
 	struct dirent *dp;
@@ -413,7 +440,7 @@ static void findin(const char *dir, const char *pattern, int *count, char **wait
 	DBG(SEARCH, ul_debug("find '%s' in '%s'", pattern, dir));
 
 	while ((dp = readdir(dirp)) != NULL) {
-		if (!filename_equal(pattern, dp->d_name))
+		if (!filename_equal(pattern, dp->d_name, type))
 			continue;
 
 		if (uflag && *count == 0)
@@ -428,7 +455,6 @@ static void findin(const char *dir, const char *pattern, int *count, char **wait
 		++(*count);
 	}
 	closedir(dirp);
-	return;
 }
 
 static void lookup(const char *pattern, struct wh_dirlist *ls, int want)
@@ -440,17 +466,13 @@ static void lookup(const char *pattern, struct wh_dirlist *ls, int want)
 	/* canonicalize pattern -- remove path suffix etc. */
 	p = strrchr(pattern, '/');
 	p = p ? p + 1 : (char *) pattern;
-	strncpy(patbuf, p, PATH_MAX);
-	patbuf[PATH_MAX - 1] = '\0';
+	xstrncpy(patbuf, p, PATH_MAX);
 
 	DBG(SEARCH, ul_debug("lookup dirs for '%s' (%s), want: %s %s %s",
 				patbuf, pattern,
 				want & BIN_DIR ? "bin" : "",
-				want & MAN_DIR ? "min" : "",
+				want & MAN_DIR ? "man" : "",
 				want & SRC_DIR ? "src" : ""));
-	p = strrchr(patbuf, '.');
-	if (p)
-		*p = '\0';
 
 	if (!uflag)
 		/* if -u not specified then we always print the pattern */
@@ -458,14 +480,13 @@ static void lookup(const char *pattern, struct wh_dirlist *ls, int want)
 
 	for (; ls; ls = ls->next) {
 		if ((ls->type & want) && ls->path)
-			findin(ls->path, patbuf, &count, &wait);
+			findin(ls->path, patbuf, &count, &wait, ls->type);
 	}
 
 	free(wait);
 
-	if (!uflag || (uflag && count > 1))
+	if (!uflag || count > 1)
 		putchar('\n');
-	return;
 }
 
 static void list_dirlist(struct wh_dirlist *ls)
@@ -495,15 +516,23 @@ int main(int argc, char **argv)
 {
 	struct wh_dirlist *ls = NULL;
 	int want = ALL_DIRS;
-	int i, want_resetable = 0;
+	int i, want_resetable = 0, opt_f_missing = 0;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	if (argc == 1)
-		usage(stderr);
+	if (argc <= 1) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EXIT_FAILURE);
+	} else {
+		/* first arg may be one of our standard longopts */
+		if (!strcmp(argv[1], "--help"))
+			usage();
+		if (!strcmp(argv[1], "--version"))
+			print_version(EXIT_SUCCESS);
+	}
 
 	whereis_init_debug();
 
@@ -525,7 +554,7 @@ int main(int argc, char **argv)
 			lookup(arg, ls, want);
 			/*
 			 * The lookup mask ("want") is cumulative and it's
-			 * resetable only when it has been already used.
+			 * resettable only when it has been already used.
 			 *
 			 *  whereis -b -m foo     :'foo' mask=BIN|MAN
 			 *  whereis -b foo bar    :'foo' and 'bar' mask=BIN|MAN
@@ -540,33 +569,44 @@ int main(int argc, char **argv)
 
 			switch (*arg) {
 			case 'f':
+				opt_f_missing = 0;
 				break;
 			case 'u':
 				uflag = 1;
+				opt_f_missing = 0;
 				break;
 			case 'B':
-				if (*(arg + 1))
-					usage(stderr);
+				if (*(arg + 1)) {
+					warnx(_("bad usage"));
+					errtryhelp(EXIT_FAILURE);
+				}
 				i++;
 				free_dirlist(&ls, BIN_DIR);
 				construct_dirlist_from_argv(
 					&ls, &i, argc, argv, BIN_DIR);
+				opt_f_missing = 1;
 				break;
 			case 'M':
-				if (*(arg + 1))
-					usage(stderr);
+				if (*(arg + 1)) {
+					warnx(_("bad usage"));
+					errtryhelp(EXIT_FAILURE);
+				}
 				i++;
 				free_dirlist(&ls, MAN_DIR);
 				construct_dirlist_from_argv(
 					&ls, &i, argc, argv, MAN_DIR);
+				opt_f_missing = 1;
 				break;
 			case 'S':
-				if (*(arg + 1))
-					usage(stderr);
+				if (*(arg + 1)) {
+					warnx(_("bad usage"));
+					errtryhelp(EXIT_FAILURE);
+				}
 				i++;
 				free_dirlist(&ls, SRC_DIR);
 				construct_dirlist_from_argv(
 					&ls, &i, argc, argv, SRC_DIR);
+				opt_f_missing = 1;
 				break;
 			case 'b':
 				if (want_resetable) {
@@ -574,6 +614,7 @@ int main(int argc, char **argv)
 					want_resetable = 0;
 				}
 				want = want == ALL_DIRS ? BIN_DIR : want | BIN_DIR;
+				opt_f_missing = 0;
 				break;
 			case 'm':
 				if (want_resetable) {
@@ -581,6 +622,7 @@ int main(int argc, char **argv)
 					want_resetable = 0;
 				}
 				want = want == ALL_DIRS ? MAN_DIR : want | MAN_DIR;
+				opt_f_missing = 0;
 				break;
 			case 's':
 				if (want_resetable) {
@@ -588,17 +630,19 @@ int main(int argc, char **argv)
 					want_resetable = 0;
 				}
 				want = want == ALL_DIRS ? SRC_DIR : want | SRC_DIR;
+				opt_f_missing = 0;
 				break;
 			case 'l':
 				list_dirlist(ls);
 				break;
+
 			case 'V':
-				printf(UTIL_LINUX_VERSION);
-				return EXIT_SUCCESS;
+				print_version(EXIT_SUCCESS);
 			case 'h':
-				usage(stdout);
+				usage();
 			default:
-				usage(stderr);
+				warnx(_("bad usage"));
+				errtryhelp(EXIT_FAILURE);
 			}
 
 			if (arg_i < i)		/* moved to the next argv[] item */
@@ -607,5 +651,7 @@ int main(int argc, char **argv)
 	}
 
 	free_dirlist(&ls, ALL_DIRS);
+	if (opt_f_missing)
+		errx(EXIT_FAILURE, _("option -f is missing"));
 	return EXIT_SUCCESS;
 }

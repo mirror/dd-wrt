@@ -1,116 +1,150 @@
-.\" Copyright 1993 Rickard E. Faith (faith@cs.unc.edu)
-.\" May be distributed under the GNU General Public License
-.TH IPCS "1" "July 2014" "util-linux" "User Commands"
-.SH NAME
+'\" t
+.\"     Title: ipcs
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "IPCS" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 ipcs \- show information on IPC facilities
-.SH SYNOPSIS
-.B ipcs
-[options]
-.SH DESCRIPTION
-.B ipcs
-shows information on the inter-process communication facilities
-for which the calling process has read access.
-By default it shows information about all three resources:
-shared memory segments, message queues, and semaphore arrays.
-.SH OPTIONS
-.TP
-\fB\-i\fR, \fB\-\-id\fR \fIid\fR
-Show full details on just the one resource element identified by
-.IR id .
-This option needs to be combined with one of the three resource options:
-.BR \-m ,
-.BR \-q " or"
-.BR \-s .
-.TP
-\fB\-h\fR, \fB\-\-help\fR
+.SH "SYNOPSIS"
+.sp
+\fBipcs\fP [options]
+.SH "DESCRIPTION"
+.sp
+\fBipcs\fP shows information on System V inter\-process communication facilities. By default it shows information about all three resources: shared memory segments, message queues, and semaphore arrays.
+.SH "OPTIONS"
+.sp
+\fB\-i\fP, \fB\-\-id\fP \fIid\fP
+.RS 4
+Show full details on just the one resource element identified by \fIid\fP. This option needs to be combined with one of the three resource options: \fB\-m\fP, \fB\-q\fP or \fB\-s\fP.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-.TP
-\fB\-V\fR, \fB\-\-version\fR
-Display version information and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
 .SS "Resource options"
-.TP
-\fB\-m\fR, \fB\-\-shmems\fR
+.sp
+\fB\-m\fP, \fB\-\-shmems\fP
+.RS 4
 Write information about active shared memory segments.
-.TP
-\fB\-q\fR, \fB\-\-queues\fR
+.RE
+.sp
+\fB\-q\fP, \fB\-\-queues\fP
+.RS 4
 Write information about active message queues.
-.TP
-\fB\-s\fR, \fB\-\-semaphores\fR
+.RE
+.sp
+\fB\-s\fP, \fB\-\-semaphores\fP
+.RS 4
 Write information about active semaphore sets.
-.TP
-\fB\-a\fR, \fB\-\-all\fR
+.RE
+.sp
+\fB\-a\fP, \fB\-\-all\fP
+.RS 4
 Write information about all three resources (default).
+.RE
 .SS "Output formats"
+.sp
 Of these options only one takes effect: the last one specified.
-.TP
-\fB\-c\fR, \fB\-\-creator\fR
+.sp
+\fB\-c\fP, \fB\-\-creator\fP
+.RS 4
 Show creator and owner.
-.TP
-\fB\-l\fR, \fB\-\-limits\fR
+.RE
+.sp
+\fB\-l\fP, \fB\-\-limits\fP
+.RS 4
 Show resource limits.
-.TP
-\fB\-p\fR, \fB\-\-pid\fR
+.RE
+.sp
+\fB\-p\fP, \fB\-\-pid\fP
+.RS 4
 Show PIDs of creator and last operator.
-.TP
-\fB\-t\fR, \fB\-\-time\fR
-Write time information.  The time of the last control operation that changed
-the access permissions for all facilities, the time of the last
-.I msgsnd()
-and
-.I msgrcv()
-operations on message queues, the time of the last
-.I shmat()
-and
-.I shmdt()
-operations on shared memory, and the time of the last
-.I semop()
-operation on semaphores.
-.TP
-\fB\-u\fR, \fB\-\-summary\fR
+.RE
+.sp
+\fB\-t\fP, \fB\-\-time\fP
+.RS 4
+Write time information. The time of the last control operation that changed the access permissions for all facilities, the time of the last \fBmsgsnd\fP(2) and \fBmsgrcv\fP(2) operations on message queues, the time of the last \fBshmat\fP(2) and \fBshmdt\fP(2) operations on shared memory, and the time of the last \fBsemop\fP(2) operation on semaphores.
+.RE
+.sp
+\fB\-u\fP, \fB\-\-summary\fP
+.RS 4
 Show status summary.
+.RE
 .SS "Representation"
-These affect only the \fB\-l\fR (\fB\-\-limits\fR) option.
-.TP
-\fB\-b\fR, \fB\-\-bytes\fR
-Print sizes in bytes.
-.TP
-.B \-\-human
-Print sizes in human-readable format.
-.SH SEE ALSO
-.BR ipcrm (1),
-.BR ipcmk (1),
-.BR msgrcv (2),
-.BR msgsnd (2),
-.BR semget (2),
-.BR semop (2),
-.BR shmat (2),
-.BR shmdt (2),
-.BR shmget (2)
-.SH CONFORMING TO
-The Linux ipcs utility is not fully compatible to the POSIX ipcs utility.
-The Linux version does not support the POSIX
-.BR \-a ,
-.B \-b
-and
-.B \-o
-options, but does support the
-.B \-l
-and
-.B \-u
-options not defined by POSIX.  A portable application shall not use the
-.BR \-a ,
-.BR \-b ,
-.BR \-o ,
-.BR \-l ,
-and
-.B \-u
-options.
-.SH AUTHOR
-.UR balasub@cis.ohio-state.edu
-Krishna Balasubramanian
-.UE
-.SH AVAILABILITY
-The ipcs command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.sp
+These affect only the \fB\-l\fP (\fB\-\-limits\fP) option.
+.sp
+\fB\-b\fP, \fB\-\-bytes\fP
+.RS 4
+Print the sizes in bytes rather than in a human\-readable format.
+.sp
+By default, the unit, sizes are expressed in, is byte, and unit prefixes are in
+power of 2^10 (1024). Abbreviations of symbols are exhibited truncated in order
+to reach a better readability, by exhibiting alone the first letter of them;
+examples: "1 KiB" and "1 MiB" are respectively exhibited as "1 K" and "1 M",
+then omitting on purpose the mention "iB", which is part of these abbreviations.
+.RE
+.sp
+\fB\-\-human\fP
+.RS 4
+Print sizes in human\-readable format.
+.RE
+.SH "CONFORMING TO"
+.sp
+The Linux \fBipcs\fP utility is not fully compatible to the POSIX \fBipcs\fP utility. The Linux version does not support the POSIX \fB\-a\fP, \fB\-b\fP and \fB\-o\fP options, but does support the \fB\-l\fP and \fB\-u\fP options not defined by POSIX. A portable application shall not use the \fB\-a\fP, \fB\-b\fP, \fB\-o\fP, \fB\-l\fP, and \fB\-u\fP options.
+.SH "NOTES"
+.sp
+The current implementation of \fBipcs\fP obtains information about available IPC resources by parsing the files in \fI/proc/sysvipc\fP. Before util\-linux version v2.23, an alternate mechanism was used: the \fBIPC_STAT\fP command of \fBmsgctl\fP(2), \fBsemctl\fP(2), and \fBshmctl\fP(2). This mechanism is also used in later util\-linux versions in the case where \fI/proc\fP is unavailable. A limitation of the \fBIPC_STAT\fP mechanism is that it can only be used to retrieve information about IPC resources for which the user has read permission.
+.SH "AUTHORS"
+.sp
+.MTO "balasub\(atcis.ohio\-state.edu" "Krishna Balasubramanian" ""
+.SH "SEE ALSO"
+.sp
+\fBipcmk\fP(1),
+\fBipcrm\fP(1),
+\fBmsgrcv\fP(2),
+\fBmsgsnd\fP(2),
+\fBsemget\fP(2),
+\fBsemop\fP(2),
+\fBshmat\fP(2),
+\fBshmdt\fP(2),
+\fBshmget\fP(2),
+\fBsysvipc\fP(7)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBipcs\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

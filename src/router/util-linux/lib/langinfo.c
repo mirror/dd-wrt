@@ -1,8 +1,11 @@
 /*
  * This is callback solution for systems without nl_langinfo(), this function
- * returns hardcoded and on locale setting independed value.
+ * returns hardcoded and on locale setting indepndent value.
  *
  * See langinfo.h man page for more details.
+ *
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
  *
  * Copyright (C) 2010 Karel Zak <kzak@redhat.com>
  */

@@ -25,6 +25,8 @@
 #include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <sys/resource.h>
 
 #include <libsmartcols.h>
@@ -73,20 +75,20 @@ struct prlimit_desc {
 static struct prlimit_desc prlimit_desc[] =
 {
 	[AS]         = { "AS",         N_("address space limit"),                N_("bytes"),     RLIMIT_AS },
-	[CORE]       = { "CORE",       N_("max core file size"),                 N_("blocks"),    RLIMIT_CORE },
+	[CORE]       = { "CORE",       N_("max core file size"),                 N_("bytes"),     RLIMIT_CORE },
 	[CPU]        = { "CPU",        N_("CPU time"),                           N_("seconds"),   RLIMIT_CPU },
 	[DATA]       = { "DATA",       N_("max data size"),                      N_("bytes"),     RLIMIT_DATA },
-	[FSIZE]      = { "FSIZE",      N_("max file size"),                      N_("blocks"),    RLIMIT_FSIZE },
-	[LOCKS]      = { "LOCKS",      N_("max number of file locks held"),      NULL,            RLIMIT_LOCKS },
+	[FSIZE]      = { "FSIZE",      N_("max file size"),                      N_("bytes"),     RLIMIT_FSIZE },
+	[LOCKS]      = { "LOCKS",      N_("max number of file locks held"),      N_("locks"),     RLIMIT_LOCKS },
 	[MEMLOCK]    = { "MEMLOCK",    N_("max locked-in-memory address space"), N_("bytes"),     RLIMIT_MEMLOCK },
 	[MSGQUEUE]   = { "MSGQUEUE",   N_("max bytes in POSIX mqueues"),         N_("bytes"),     RLIMIT_MSGQUEUE },
 	[NICE]       = { "NICE",       N_("max nice prio allowed to raise"),     NULL,            RLIMIT_NICE },
-	[NOFILE]     = { "NOFILE",     N_("max number of open files"),           NULL,            RLIMIT_NOFILE },
-	[NPROC]      = { "NPROC",      N_("max number of processes"),            NULL,            RLIMIT_NPROC },
-	[RSS]        = { "RSS",        N_("max resident set size"),              N_("pages"),     RLIMIT_RSS },
+	[NOFILE]     = { "NOFILE",     N_("max number of open files"),           N_("files"),     RLIMIT_NOFILE },
+	[NPROC]      = { "NPROC",      N_("max number of processes"),            N_("processes"), RLIMIT_NPROC },
+	[RSS]        = { "RSS",        N_("max resident set size"),              N_("bytes"),     RLIMIT_RSS },
 	[RTPRIO]     = { "RTPRIO",     N_("max real-time priority"),             NULL,            RLIMIT_RTPRIO },
 	[RTTIME]     = { "RTTIME",     N_("timeout for real-time tasks"),        N_("microsecs"), RLIMIT_RTTIME },
-	[SIGPENDING] = { "SIGPENDING", N_("max number of pending signals"),      NULL,            RLIMIT_SIGPENDING },
+	[SIGPENDING] = { "SIGPENDING", N_("max number of pending signals"),      N_("signals"),   RLIMIT_SIGPENDING },
 	[STACK]      = { "STACK",      N_("max stack size"),                     N_("bytes"),     RLIMIT_STACK }
 };
 
@@ -119,7 +121,7 @@ struct colinfo {
 };
 
 /* columns descriptions */
-struct colinfo infos[] = {
+static struct colinfo infos[] = {
 	[COL_RES]     = { "RESOURCE",    0.25, SCOLS_FL_TRUNC, N_("resource name") },
 	[COL_HELP]    = { "DESCRIPTION", 0.1,  SCOLS_FL_TRUNC, N_("resource description")},
 	[COL_SOFT]    = { "SOFT",        0.1,  SCOLS_FL_RIGHT, N_("soft limit")},
@@ -141,40 +143,45 @@ static int ncolumns;
 static pid_t pid; /* calling process (default) */
 static int verbose;
 
-#ifndef HAVE_PRLIMIT
+#ifdef HAVE_SYS_SYSCALL_H
 # include <sys/syscall.h>
+# if defined(SYS_prlimit64)
+#  ifndef HAVE_PRLIMIT
 static int prlimit(pid_t p, int resource,
 		   const struct rlimit *new_limit,
 		   struct rlimit *old_limit)
 {
 	return syscall(SYS_prlimit64, p, resource, new_limit, old_limit);
 }
-#endif
+#  endif /* !HAVE_PRLIMIT */
+# endif /* SYS_prlimit64 */
+#endif /* HAVE_SYS_SYSCALL_H */
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	size_t i;
 
 	fputs(USAGE_HEADER, out);
 
 	fprintf(out,
-		_(" %s [options] [-p PID]\n"), program_invocation_short_name);
+		_(" %s [options] [--<resource>=<limit>] [-p PID]\n"), program_invocation_short_name);
 	fprintf(out,
-		_(" %s [options] COMMAND\n"), program_invocation_short_name);
+		_(" %s [options] [--<resource>=<limit>] COMMAND\n"), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Show or change the resource limits of a process.\n"), out);
 
-	fputs(_("\nGeneral Options:\n"), out);
+	fputs(USAGE_OPTIONS, out);
 	fputs(_(" -p, --pid <pid>        process id\n"
 		" -o, --output <list>    define which output columns to use\n"
 		"     --noheadings       don't print headings\n"
 		"     --raw              use the raw output format\n"
 		"     --verbose          verbose output\n"
-		" -h, --help             display this help and exit\n"
-		" -V, --version          output version information and exit\n"), out);
+		), out);
+	printf(USAGE_HELP_OPTIONS(24));
 
-	fputs(_("\nResources Options:\n"), out);
+	fputs(_("\nResources:\n"), out);
 	fputs(_(" -c, --core             maximum size of core files created\n"
 		" -d, --data             maximum size of a process's data segment\n"
 		" -e, --nice             maximum nice priority allowed to raise\n"
@@ -193,14 +200,18 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 		" -y, --rttime           CPU time in microseconds a process scheduled\n"
 		"                        under real-time scheduling\n"), out);
 
-	fputs(_("\nAvailable columns (for --output):\n"), out);
+	fputs(USAGE_ARGUMENTS, out);
+	fputs(_(
+		" <limit> is defined as a range soft:hard, soft:, :hard or a value to\n"
+		"         define both limits (e.g. -e=0:10 -r=:10).\n"), out);
 
+	fputs(USAGE_COLUMNS, out);
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(out, " %11s  %s\n", infos[i].name, _(infos[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("prlimit(1)"));
+	printf(USAGE_MAN_TAIL("prlimit(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 static inline int get_column_id(int num)
@@ -226,17 +237,19 @@ static void add_scols_line(struct libscols_table *table, struct prlimit *l)
 
 	line = scols_table_new_line(table, NULL);
 	if (!line)
-		err(EXIT_FAILURE, _("failed to initialize output line"));
+		err(EXIT_FAILURE, _("failed to allocate output line"));
 
 	for (i = 0; i < ncolumns; i++) {
 		char *str = NULL;
 
 		switch (get_column_id(i)) {
 		case COL_RES:
-			str = xstrdup(l->desc->name);
+			if (l->desc->name)
+				str = xstrdup(l->desc->name);
 			break;
 		case COL_HELP:
-			str = xstrdup(l->desc->help);
+			if (l->desc->help)
+				str = xstrdup(_(l->desc->help));
 			break;
 		case COL_SOFT:
 			if (l->rlim.rlim_cur == RLIM_INFINITY)
@@ -251,14 +264,15 @@ static void add_scols_line(struct libscols_table *table, struct prlimit *l)
 				xasprintf(&str, "%llu", (unsigned long long) l->rlim.rlim_max);
 			break;
 		case COL_UNITS:
-			str = l->desc->unit ? xstrdup(_(l->desc->unit)) : NULL;
+			if (l->desc->unit)
+				str = xstrdup(_(l->desc->unit));
 			break;
 		default:
 			break;
 		}
 
-		if (str)
-			scols_line_refer_data(line, i, str);
+		if (str && scols_line_refer_data(line, i, str))
+			err(EXIT_FAILURE, _("failed to add output data"));
 	}
 }
 
@@ -294,7 +308,7 @@ static int show_limits(struct list_head *lims)
 
 	table = scols_new_table();
 	if (!table)
-		err(EXIT_FAILURE, _("failed to initialize output table"));
+		err(EXIT_FAILURE, _("failed to allocate output table"));
 
 	scols_table_enable_raw(table, raw);
 	scols_table_enable_noheadings(table, no_headings);
@@ -303,9 +317,8 @@ static int show_limits(struct list_head *lims)
 		struct colinfo *col = get_column_info(i);
 
 		if (!scols_table_new_column(table, col->name, col->whint, col->flags))
-			err(EXIT_FAILURE, _("failed to initialize output column"));
+			err(EXIT_FAILURE, _("failed to allocate output column"));
 	}
-
 
 	list_for_each_safe(p, pnext, lims) {
 		struct prlimit *lim = list_entry(p, struct prlimit, lims);
@@ -360,16 +373,17 @@ static void do_prlimit(struct list_head *lims)
 			old = &lim->rlim;
 
 		if (verbose && new) {
-			printf(_("New %s limit: "), lim->desc->name);
+			printf(_("New %s limit for pid %d: "), lim->desc->name,
+				pid ? pid : getpid());
 			if (new->rlim_cur == RLIM_INFINITY)
 				printf("<%s", _("unlimited"));
 			else
-				printf("<%ju", new->rlim_cur);
+				printf("<%ju", (uintmax_t)new->rlim_cur);
 
 			if (new->rlim_max == RLIM_INFINITY)
 				printf(":%s>\n", _("unlimited"));
 			else
-				printf(":%ju>\n", new->rlim_max);
+				printf(":%ju>\n", (uintmax_t)new->rlim_max);
 		}
 
 		if (prlimit(pid, lim->desc->resource, new, old) == -1)
@@ -397,7 +411,9 @@ static int get_range(char *str, rlim_t *soft, rlim_t *hard, int *found)
 		*found |= PRLIMIT_SOFT | PRLIMIT_HARD;
 		return 0;
 
-	} else if (*str == ':') {			/* <:hard> */
+	}
+
+	if (*str == ':') {			/* <:hard> */
 		str++;
 
 		if (strcmp(str, INFINITY_STR) != 0) {
@@ -448,8 +464,11 @@ static int get_range(char *str, rlim_t *soft, rlim_t *hard, int *found)
 
 static int parse_prlim(struct rlimit *lim, char *ops, size_t id)
 {
-	rlim_t soft, hard;
+	rlim_t soft = 0, hard = 0;
 	int found = 0;
+
+	if (ops && *ops == '=')
+		ops++;
 
 	if (get_range(ops, &soft, &hard, &found))
 		errx(EXIT_FAILURE, _("failed to parse %s limit"),
@@ -516,7 +535,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	INIT_LIST_HEAD(&lims);
 
@@ -584,8 +603,6 @@ int main(int argc, char **argv)
 				errx(EXIT_FAILURE, _("option --pid may be specified only once"));
 			pid = strtos32_or_err(optarg, _("invalid PID argument"));
 			break;
-		case 'h':
-			usage(stdout);
 		case 'o':
 			ncolumns = string_to_idarray(optarg,
 						     columns, ARRAY_SIZE(columns),
@@ -593,10 +610,6 @@ int main(int argc, char **argv)
 			if (ncolumns < 0)
 				return EXIT_FAILURE;
 			break;
-		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
-
 		case NOHEADINGS_OPTION:
 			no_headings = 1;
 			break;
@@ -607,8 +620,12 @@ int main(int argc, char **argv)
 			raw = 1;
 			break;
 
+		case 'h':
+			usage();
+		case 'V':
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 	if (argc > optind && pid)
@@ -640,7 +657,7 @@ int main(int argc, char **argv)
 	if (argc > optind) {
 		/* prlimit [options] COMMAND */
 		execvp(argv[optind], &argv[optind]);
-		err(EXIT_FAILURE, _("failed to execute %s"), argv[optind]);
+		errexec(argv[optind]);
 	}
 
 	return EXIT_SUCCESS;

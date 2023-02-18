@@ -5,17 +5,13 @@ _mountpoint_module()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	case $prev in
-		'-f'|'--fixme')
-			COMPREPLY=( $(compgen -W "fixme" -- $cur) )
-			return 0
-			;;
 		'-h'|'--help'|'-V'|'--version')
 			return 0
 			;;
 	esac
 	case $cur in
 		-*)
-			OPTS="--quiet --fs-devno --devno --help --version"
+			OPTS="--quiet --nofollow --fs-devno --devno --help --version"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;

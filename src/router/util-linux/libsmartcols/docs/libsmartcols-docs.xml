@@ -9,12 +9,12 @@
     <title>libsmartcols Reference Manual</title>
     <releaseinfo>for libsmartcols version &version;</releaseinfo>
     <copyright>
-      <year>2014-2015</year>
+      <year>2014-2022</year>
       <holder>Karel Zak &lt;kzak@redhat.com&gt;</holder>
     </copyright>
   </bookinfo>
 
-  <part id="gtk">
+  <part id="overview">
     <title>libsmartcols Overview</title>
     <partintro>
     <para>
@@ -22,7 +22,7 @@ The libsmartcols library is used for smart adaptive formatting of tabular data.
     </para>
     <para>
 The library is part of the util-linux package since version 2.25 and is
-available from ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+available from https://www.kernel.org/pub/linux/utils/util-linux/.
     </para>
   </partintro>
  </part>
@@ -34,6 +34,7 @@ available from ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
     <xi:include href="xml/line.xml"/>
     <xi:include href="xml/cell.xml"/>
     <xi:include href="xml/symbols.xml"/>
+    <xi:include href="xml/grouping.xml"/>
   </part>
   <part>
     <title>Printing</title>
@@ -45,8 +46,40 @@ available from ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
     <xi:include href="xml/version-utils.xml"/>
     <xi:include href="xml/init.xml"/>
   </part>
-  <index id="api-index-full">
+  <index id="api-index">
     <title>API Index</title>
     <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.27">
+    <title>Index of new symbols in 2.27</title>
+    <xi:include href="xml/api-index-2.27.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.28">
+    <title>Index of new symbols in 2.28</title>
+    <xi:include href="xml/api-index-2.28.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.29">
+    <title>Index of new symbols in 2.29</title>
+    <xi:include href="xml/api-index-2.29.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.30">
+    <title>Index of new symbols in 2.30</title>
+    <xi:include href="xml/api-index-2.30.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.31">
+    <title>Index of new symbols in 2.31</title>
+    <xi:include href="xml/api-index-2.31.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.33">
+    <title>Index of new symbols in 2.33</title>
+    <xi:include href="xml/api-index-2.33.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.34">
+    <title>Index of new symbols in 2.34</title>
+    <xi:include href="xml/api-index-2.34.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="2.35">
+    <title>Index of new symbols in 2.35</title>
+    <xi:include href="xml/api-index-2.35.xml"><xi:fallback /></xi:include>
   </index>
 </book>

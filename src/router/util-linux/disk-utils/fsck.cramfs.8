@@ -1,61 +1,106 @@
-.TH FSCK.CRAMFS 8 "April 2013" "util-linux" "System Administration"
-.SH NAME
+'\" t
+.\"     Title: fsck.cramfs
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "FSCK.CRAMFS" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 fsck.cramfs \- fsck compressed ROM file system
-.SH SYNOPSIS
-.B fsck.cramfs
-[options]
-.I file
-.SH DESCRIPTION
-.I fsck.cramfs
-is used to check the cramfs file system.
-.SH OPTIONS
-.TP
-\fB\-v\fR, \fB\-\-verbose\fR
+.SH "SYNOPSIS"
+.sp
+\fBfsck.cramfs\fP [options] \fIfile\fP
+.SH "DESCRIPTION"
+.sp
+\fBfsck.cramfs\fP is used to check the cramfs file system.
+.SH "OPTIONS"
+.sp
+\fB\-v\fP, \fB\-\-verbose\fP
+.RS 4
 Enable verbose messaging.
-.TP
-\fB\-b\fR, \fB\-\-blocksize\fR \fIblocksize\fR
-Use this blocksize, defaults to page size. Must be equal to what was set at
-creation time. Only used for \-\-extract.
-.TP
-\fB\-\-extract\fR[=\fIdirectory\fR]
-Test to uncompress the whole file system. Optionally extract contents of the
-.I file
-to
-.IR directory .
-.TP
-\fB\-a\fR
+.RE
+.sp
+\fB\-b\fP, \fB\-\-blocksize\fP \fIblocksize\fP
+.RS 4
+Use this blocksize, defaults to page size. Must be equal to what was set at creation time. Only used for \fB\-\-extract\fP.
+.RE
+.sp
+\fB\-\-extract\fP[=\fIdirectory\fP]
+.RS 4
+Test to uncompress the whole file system. Optionally extract contents of the \fIfile\fP to \fIdirectory\fP.
+.RE
+.sp
+\fB\-a\fP
+.RS 4
 This option is silently ignored.
-.TP
-\fB\-y\fR
+.RE
+.sp
+\fB\-y\fP
+.RS 4
 This option is silently ignored.
-.TP
-\fB\-V\fR, \fB\-\-version\fR
-Display version information and exit.
-.TP
-\fB\-h\fR, \fB\-\-help\fR
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
 .SH "EXIT STATUS"
-.RS
-.PD 0
-.TP
-.B 0
+.sp
+\fB0\fP
+.RS 4
 success
-.TP
-.B 4
+.RE
+.sp
+\fB4\fP
+.RS 4
 file system was left uncorrected
-.TP
-.B 8
+.RE
+.sp
+\fB8\fP
+.RS 4
 operation error, such as unable to allocate memory
-.TP
-.B 16
+.RE
+.sp
+\fB16\fP
+.RS 4
 usage information was printed
-.PD
 .RE
 .SH "SEE ALSO"
-.BR mount (8),
-.BR mkfs.cramfs (8)
-.SH AVAILABILITY
-The example command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.sp
+\fBmount\fP(8),
+\fBmkfs.cramfs\fP(8)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBfsck.cramfs\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

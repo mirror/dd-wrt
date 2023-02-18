@@ -34,7 +34,6 @@
 
 #include "blkidP.h"
 #include "pathnames.h"
-#include "at.h"
 #include "sysfs.h"
 
 static char *blkid_strconcat(const char *a, const char *b, const char *c)
@@ -126,7 +125,7 @@ void blkid__scan_dir(char *dirname, dev_t devno, struct dir_list **list,
 		     ((dp->d_name[1] == '.') && (dp->d_name[2] == 0))))
 			continue;
 
-		if (fstat_at(dirfd(dir), dirname, dp->d_name, &st, 0))
+		if (fstatat(dirfd(dir), dp->d_name, &st, 0))
 			continue;
 
 		if (S_ISBLK(st.st_mode) && st.st_rdev == devno) {
@@ -146,9 +145,9 @@ void blkid__scan_dir(char *dirname, dev_t devno, struct dir_list **list,
 		if (dp->d_type == DT_UNKNOWN)
 #endif
 		{
-			if (fstat_at(dirfd(dir), dirname, dp->d_name, &st, 1) ||
+			if (fstatat(dirfd(dir), dp->d_name, &st, AT_SYMLINK_NOFOLLOW) ||
 			    !S_ISDIR(st.st_mode))
-				continue;	/* symlink or lstat() failed */
+				continue;	/* symlink or fstatat() failed */
 		}
 
 		if (*dp->d_name == '.' || (
@@ -162,7 +161,6 @@ void blkid__scan_dir(char *dirname, dev_t devno, struct dir_list **list,
 		add_to_dirlist(dirname, dp->d_name, list);
 	}
 	closedir(dir);
-	return;
 }
 
 /* Directories where we will try to search for device numbers */
@@ -226,7 +224,7 @@ static char *scandev_devno_to_devpath(dev_t devno)
  */
 char *blkid_devno_to_devname(dev_t devno)
 {
-	char *path = NULL;
+	char *path;
 	char buf[PATH_MAX];
 
 	path = sysfs_devno_to_devpath(devno, buf, sizeof(buf));
@@ -291,7 +289,7 @@ int blkid_devno_to_wholedisk(dev_t dev, char *diskname,
 /*
  * Returns 1 if the @major number is associated with @drvname.
  */
-int blkid_driver_has_major(const char *drvname, int major)
+int blkid_driver_has_major(const char *drvname, int drvmaj)
 {
 	FILE *f;
 	char buf[128];
@@ -313,7 +311,7 @@ int blkid_driver_has_major(const char *drvname, int major)
 		if (sscanf(buf, "%d %64[^\n ]", &maj, name) != 2)
 			continue;
 
-		if (maj == major && strcmp(name, drvname) == 0) {
+		if (maj == drvmaj && strcmp(name, drvname) == 0) {
 			match = 1;
 			break;
 		}
@@ -322,7 +320,7 @@ int blkid_driver_has_major(const char *drvname, int major)
 	fclose(f);
 
 	DBG(DEVNO, ul_debug("major %d %s associated with '%s' driver",
-			major, match ? "is" : "is NOT", drvname));
+			drvmaj, match ? "is" : "is NOT", drvname));
 	return match;
 }
 
@@ -331,7 +329,7 @@ int main(int argc, char** argv)
 {
 	char	*devname, *tmp;
 	char	diskname[PATH_MAX];
-	int	major, minor;
+	int	devmaj, devmin;
 	dev_t	devno, disk_devno;
 	const char *errmsg = "Couldn't parse %s: %s\n";
 
@@ -349,17 +347,17 @@ int main(int argc, char** argv)
 			exit(1);
 		}
 	} else {
-		major = strtoul(argv[1], &tmp, 0);
+		devmaj = strtoul(argv[1], &tmp, 0);
 		if (*tmp) {
 			fprintf(stderr, errmsg, "major number", argv[1]);
 			exit(1);
 		}
-		minor = strtoul(argv[2], &tmp, 0);
+		devmin = strtoul(argv[2], &tmp, 0);
 		if (*tmp) {
 			fprintf(stderr, errmsg, "minor number", argv[2]);
 			exit(1);
 		}
-		devno = makedev(major, minor);
+		devno = makedev(devmaj, devmin);
 	}
 	printf("Looking for device 0x%04llx\n", (long long)devno);
 	devname = blkid_devno_to_devname(devno);

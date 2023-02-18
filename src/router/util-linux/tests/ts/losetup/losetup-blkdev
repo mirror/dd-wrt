@@ -23,6 +23,7 @@ TS_DESC="losetup-blkdev"
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_LOSETUP"
+ts_check_test_command "$TS_CMD_LSBLK"
 
 ts_skip_nonroot
 ts_check_losetup
@@ -41,6 +42,7 @@ if [ -z "$LODEV" ]; then
 	ts_log "Failed to create loop device"
 fi
 lo_print $LODEV >> $TS_OUTPUT
+udevadm settle
 $TS_CMD_LOSETUP -d $LODEV
 ts_finalize_subtest
 
@@ -50,6 +52,7 @@ if [ -z "$LODEV" ]; then
 	ts_log "Failed to create loop device"
 fi
 lo_print $LODEV >> $TS_OUTPUT
+udevadm settle
 $TS_CMD_LOSETUP -d $LODEV
 ts_finalize_subtest
 
@@ -60,6 +63,7 @@ if [ -z "$LODEV" ]; then
 	ts_log "Failed to create loop device"
 fi
 lo_print $LODEV >> $TS_OUTPUT
+udevadm settle
 $TS_CMD_LOSETUP -d $LODEV
 ts_finalize_subtest
 
@@ -70,11 +74,8 @@ if [ -z "$LODEV" ]; then
 	ts_log "Failed to create loop device"
 fi
 lo_print $LODEV >> $TS_OUTPUT
+udevadm settle
 $TS_CMD_LOSETUP -d $LODEV
 ts_finalize_subtest
-
-udevadm settle
-
-rmmod scsi_debug
 
 ts_finalize

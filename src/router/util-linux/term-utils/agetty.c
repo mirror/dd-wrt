@@ -25,10 +25,9 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <utmp.h>
+#include <utmpx.h>
 #include <getopt.h>
 #include <time.h>
-#include <sys/file.h>
 #include <sys/socket.h>
 #include <langinfo.h>
 #include <grp.h>
@@ -36,21 +35,39 @@
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <net/if.h>
+#include <sys/utsname.h>
 
 #include "strutils.h"
 #include "all-io.h"
 #include "nls.h"
 #include "pathnames.h"
 #include "c.h"
+#include "cctype.h"
 #include "widechar.h"
 #include "ttyutils.h"
+#include "color-names.h"
+#include "env.h"
+
+#ifdef USE_PLYMOUTH_SUPPORT
+# include "plymouth-ctrl.h"
+#endif
 
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
 
+#ifdef HAVE_GETTTYNAM
+# include <ttyent.h>
+#endif
+
 #if defined(__FreeBSD_kernel__)
-#include <pty.h>
+# include <pty.h>
+# ifdef HAVE_UTMP_H
+#  include <utmp.h>
+# endif
+# ifdef HAVE_LIBUTIL_H
+#  include <libutil.h>
+# endif
 #endif
 
 #ifdef __linux__
@@ -105,9 +122,9 @@
 /*
  * Things you may want to modify.
  *
- * If ISSUE is not defined, agetty will never display the contents of the
- * /etc/issue file. You will not want to spit out large "issue" files at the
- * wrong baud rate. Relevant for System V only.
+ * If ISSUE_SUPPORT is not defined, agetty will never display the contents of
+ * the /etc/issue file. You will not want to spit out large "issue" files at
+ * the wrong baud rate. Relevant for System V only.
  *
  * You may disagree with the default line-editing etc. characters defined
  * below. Note, however, that DEL cannot be used for interrupt generation
@@ -116,8 +133,14 @@
 
 /* Displayed before the login prompt. */
 #ifdef	SYSV_STYLE
-#  define ISSUE _PATH_ISSUE
-#  include <sys/utsname.h>
+#  define ISSUE_SUPPORT
+#  if defined(HAVE_SCANDIRAT) && defined(HAVE_OPENAT)
+#    include <dirent.h>
+#    include "fileutils.h"
+#    define ISSUEDIR_SUPPORT
+#    define ISSUEDIR_EXT	".issue"
+#    define ISSUEDIR_EXTSIZ	(sizeof(ISSUEDIR_EXT) - 1)
+#  endif
 #endif
 
 /* Login prompt. */
@@ -129,10 +152,26 @@
  */
 #ifdef AGETTY_RELOAD
 # include <sys/inotify.h>
+# include <linux/netlink.h>
+# include <linux/rtnetlink.h>
 # define AGETTY_RELOAD_FILENAME "/run/agetty.reload"	/* trigger file */
 # define AGETTY_RELOAD_FDNONE	-2			/* uninitialized fd */
 static int inotify_fd = AGETTY_RELOAD_FDNONE;
+static int netlink_fd = AGETTY_RELOAD_FDNONE;
+static uint32_t netlink_groups;
 #endif
+
+struct issue {
+	FILE *output;
+	char *mem;
+	size_t mem_sz;
+
+#ifdef AGETTY_RELOAD
+	char *mem_old;
+#endif
+	unsigned int do_tcsetattr : 1,
+		     do_tcrestore : 1;
+};
 
 /*
  * When multiple baud rates are specified on the command line, the first one
@@ -145,25 +184,26 @@ static int inotify_fd = AGETTY_RELOAD_FDNONE;
 
 struct options {
 	int flags;			/* toggle switches, see below */
-	int timeout;			/* time-out period */
+	unsigned int timeout;			/* time-out period */
 	char *autolog;			/* login the user automatically */
 	char *chdir;			/* Chdir before the login */
 	char *chroot;			/* Chroot before the login */
 	char *login;			/* login program */
 	char *logopt;			/* options for login program */
-	char *tty;			/* name of tty */
-	char *vcline;			/* line of virtual console */
+	const char *tty;		/* name of tty */
+	const char *vcline;		/* line of virtual console */
 	char *term;			/* terminal type */
 	char *initstring;		/* modem init string */
-	char *issue;			/* alternative issue file */
+	char *issue;			/* alternative issue file or directory */
 	char *erasechars;		/* string with erase chars */
 	char *killchars;		/* string with kill chars */
 	char *osrelease;		/* /etc/os-release data */
-	int delay;			/* Sleep seconds before prompt */
+	unsigned int delay;			/* Sleep seconds before prompt */
 	int nice;			/* Run login with this priority */
 	int numspeed;			/* number of baud rates to try */
 	int clocal;			/* CLOCAL_MODE_* */
 	int kbmode;			/* Keyboard mode if virtual console */
+	int tty_is_stdin;		/* is the tty the standard input stream */
 	speed_t speeds[MAX_SPEED];	/* baud rates to be tried */
 };
 
@@ -174,12 +214,12 @@ enum {
 };
 
 #define	F_PARSE		(1<<0)	/* process modem status messages */
-#define	F_ISSUE		(1<<1)	/* display /etc/issue */
+#define	F_ISSUE		(1<<1)	/* display /etc/issue or /etc/issue.d */
 #define	F_RTSCTS	(1<<2)	/* enable RTS/CTS flow control */
 
 #define F_INITSTRING    (1<<4)	/* initstring is set */
 #define F_WAITCRLF	(1<<5)	/* wait for CR or LF */
-#define F_CUSTISSUE	(1<<6)	/* give alternative issue file */
+
 #define F_NOPROMPT	(1<<7)	/* do not ask for login name! */
 #define F_LCUC		(1<<8)	/* support for *LCUC stty modes */
 #define F_KEEPSPEED	(1<<9)	/* follow baud rate from kernel */
@@ -280,21 +320,23 @@ static void init_special_char(char* arg, struct options *op);
 static void parse_args(int argc, char **argv, struct options *op);
 static void parse_speeds(struct options *op, char *arg);
 static void update_utmp(struct options *op);
-static void open_tty(char *tty, struct termios *tp, struct options *op);
+static void open_tty(const char *tty, struct termios *tp, struct options *op);
 static void termio_init(struct options *op, struct termios *tp);
-static void reset_vc (const struct options *op, struct termios *tp);
+static void reset_vc(const struct options *op, struct termios *tp, int canon);
 static void auto_baud(struct termios *tp);
-static void output_special_char (unsigned char c, struct options *op,
+static void list_speeds(void);
+static void output_special_char (struct issue *ie, unsigned char c, struct options *op,
 		struct termios *tp, FILE *fp);
-static void do_prompt(struct options *op, struct termios *tp);
+static void do_prompt(struct issue *ie, struct options *op, struct termios *tp);
 static void next_speed(struct options *op, struct termios *tp);
-static char *get_logname(struct options *op,
+static char *get_logname(struct issue *ie, struct options *op,
 			 struct termios *tp, struct chardata *cp);
 static void termio_final(struct options *op,
 			 struct termios *tp, struct chardata *cp);
 static int caps_lock(char *s);
 static speed_t bcode(char *s);
-static void usage(FILE * out) __attribute__((__noreturn__));
+static void usage(void) __attribute__((__noreturn__));
+static void exit_slowly(int code) __attribute__((__noreturn__));
 static void log_err(const char *, ...) __attribute__((__noreturn__))
 			       __attribute__((__format__(printf, 1, 2)));
 static void log_warn (const char *, ...)
@@ -302,8 +344,11 @@ static void log_warn (const char *, ...)
 static ssize_t append(char *dest, size_t len, const char  *sep, const char *src);
 static void check_username (const char* nm);
 static void login_options_to_argv(char *argv[], int *argc, char *str, char *username);
-static int plymouth_command(const char* arg);
 static void reload_agettys(void);
+static void print_issue_file(struct issue *ie, struct options *op, struct termios *tp);
+static void eval_issue_file(struct issue *ie, struct options *op, struct termios *tp);
+static void show_issue(struct options *op);
+
 
 /* Fake hostname for ut_host specified on command line. */
 static char *fakehost;
@@ -327,8 +372,10 @@ int main(int argc, char **argv)
 	struct options options = {
 		.flags  =  F_ISSUE,		/* show /etc/issue (SYSV_STYLE) */
 		.login  =  _PATH_LOGIN,		/* default login program */
-		.tty    = "tty1",		/* default tty line */
-		.issue  =  ISSUE		/* default issue file */
+		.tty    = "tty1"		/* default tty line */
+	};
+	struct issue issue = {
+		.mem = NULL,
 	};
 	char *login_argv[LOGIN_ARGV_MAX + 1];
 	int login_argc = 0;
@@ -348,13 +395,17 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sa, &sa_int);
 
 #ifdef DEBUGGING
-	dbf = fopen(DEBUG_OUTPUT, "w");
-	for (int i = 1; i < argc; i++) {
-		if (i > 1)
-			debug(" ");
-		debug(argv[i]);
+	{
+		int i;
+
+		dbf = fopen(DEBUG_OUTPUT, "w");
+		for (i = 1; i < argc; i++) {
+			if (i > 1)
+				debug(" ");
+			debug(argv[i]);
+		}
+		debug("\n");
 	}
-	debug("\n");
 #endif				/* DEBUGGING */
 
 	/* Parse command-line arguments. */
@@ -382,7 +433,7 @@ int main(int argc, char **argv)
 
 	tcsetpgrp(STDIN_FILENO, getpid());
 
-	/* Default is to follow the current line speend and then default to 9600 */
+	/* Default is to follow the current line speed and then default to 9600 */
 	if ((options.flags & F_VCONSOLE) == 0 && options.numspeed == 0) {
 		options.speeds[options.numspeed++] = bcode("9600");
 		options.flags |= F_KEEPSPEED;
@@ -393,7 +444,7 @@ int main(int argc, char **argv)
 	termio_init(&options, &termios);
 
 	/* Write the modem init string and DO NOT flush the buffers. */
-	if (serial_tty_option(&options, F_INITSTRING) &&
+	if (options.flags & F_INITSTRING &&
 	    options.initstring && *options.initstring != '\0') {
 		debug("writing init string\n");
 		write_all(STDOUT_FILENO, options.initstring,
@@ -414,7 +465,7 @@ int main(int argc, char **argv)
 
 	/* Set the optional timer. */
 	if (options.timeout)
-		alarm((unsigned) options.timeout);
+		alarm(options.timeout);
 
 	/* Optionally wait for CR or LF before writing /etc/issue */
 	if (serial_tty_option(&options, F_WAITCRLF)) {
@@ -439,16 +490,20 @@ int main(int argc, char **argv)
 		username = options.autolog;
 	}
 
-	if ((options.flags & F_NOPROMPT) == 0) {
+	if (options.flags & F_NOPROMPT) {	/* --skip-login */
+		eval_issue_file(&issue, &options, &termios);
+		print_issue_file(&issue, &options, &termios);
+	} else {				/* regular (auto)login */
 		if (options.autolog) {
 			/* Autologin prompt */
-			do_prompt(&options, &termios);
+			eval_issue_file(&issue, &options, &termios);
+			do_prompt(&issue, &options, &termios);
 			printf(_("%s%s (automatic login)\n"), LOGIN, options.autolog);
 		} else {
 			/* Read the login name. */
 			debug("reading login name\n");
 			while ((username =
-				get_logname(&options, &termios, &chardata)) == NULL)
+				get_logname(&issue, &options, &termios, &chardata)) == NULL)
 				if ((options.flags & F_VCONSOLE) == 0 && options.numspeed)
 					next_speed(&options, &termios);
 		}
@@ -458,13 +513,14 @@ int main(int argc, char **argv)
 	if (options.timeout)
 		alarm(0);
 
-	if ((options.flags & F_VCONSOLE) == 0) {
-		/* Finalize the termios settings. */
+	/* Finalize the termios settings. */
+	if ((options.flags & F_VCONSOLE) == 0)
 		termio_final(&options, &termios, &chardata);
+	else
+		reset_vc(&options, &termios, 1);
 
-		/* Now the newline character should be properly written. */
-		write_all(STDOUT_FILENO, "\r\n", 2);
-	}
+	/* Now the newline character should be properly written. */
+	write_all(STDOUT_FILENO, "\r\n", 2);
 
 	sigaction(SIGQUIT, &sa_quit, NULL);
 	sigaction(SIGINT, &sa_int, NULL);
@@ -480,9 +536,12 @@ int main(int argc, char **argv)
 		login_options_to_argv(login_argv, &login_argc,
 				      options.logopt, username);
 	} else {
-		if (fakehost && (options.flags & F_REMOTE)) {
-			login_argv[login_argc++] = "-h";
-			login_argv[login_argc++] = fakehost;
+		if (options.flags & F_REMOTE) {
+			if (fakehost) {
+				login_argv[login_argc++] = "-h";
+				login_argv[login_argc++] = fakehost;
+			} else if (options.flags & F_NOHOSTNAME)
+				login_argv[login_argc++] = "-H";
 		}
 		if (username) {
 			if (options.autolog)
@@ -495,21 +554,16 @@ int main(int argc, char **argv)
 
 	login_argv[login_argc] = NULL;	/* last login argv */
 
-	if (options.chroot) {
-		if (chroot(options.chroot) < 0)
-			log_err(_("%s: can't change root directory %s: %m"),
-				options.tty, options.chroot);
-	}
-	if (options.chdir) {
-		if (chdir(options.chdir) < 0)
-			log_err(_("%s: can't change working directory %s: %m"),
-				options.tty, options.chdir);
-	}
-	if (options.nice) {
-		if (nice(options.nice) < 0)
-			log_warn(_("%s: can't change process priority: %m"),
-				options.tty);
-	}
+	if (options.chroot && chroot(options.chroot) < 0)
+		log_err(_("%s: can't change root directory %s: %m"),
+			options.tty, options.chroot);
+	if (options.chdir && chdir(options.chdir) < 0)
+		log_err(_("%s: can't change working directory %s: %m"),
+			options.tty, options.chdir);
+	if (options.nice && nice(options.nice) < 0)
+		log_warn(_("%s: can't change process priority: %m"),
+			 options.tty);
+
 	free(options.osrelease);
 #ifdef DEBUGGING
 	if (close_stream(dbf) != 0)
@@ -535,7 +589,7 @@ static char *replace_u(char *str, char *username)
 		size_t sz;
 		char *tp, *old = entry;
 
-		if (memcmp(p, "\\u", 2)) {
+		if (memcmp(p, "\\u", 2) != 0) {
 			p++;
 			continue;	/* no \u */
 		}
@@ -552,7 +606,7 @@ static char *replace_u(char *str, char *username)
 			log_err(_("failed to allocate memory: %m"));
 
 		if (p != str) {
-			/* copy chars befor \u */
+			/* copy chars before \u */
 			memcpy(tp, str, p - str);
 			tp += p - str;
 		}
@@ -602,12 +656,60 @@ static void login_options_to_argv(char *argv[], int *argc,
 	*argc = i;
 }
 
+static void output_version(void)
+{
+	static const char *features[] = {
+#ifdef DEBUGGING
+		"debug",
+#endif
+#ifdef CRTSCTS
+		"flow control",
+#endif
+#ifdef KDGKBLED
+		"hints",
+#endif
+#ifdef ISSUE_SUPPORT
+		"issue",
+#endif
+#ifdef ISSUEDIR_SUPPORT
+		"issue.d",
+#endif
+#ifdef KDGKBMODE
+		"keyboard mode",
+#endif
+#ifdef USE_PLYMOUTH_SUPPORT
+		"plymouth",
+#endif
+#ifdef AGETTY_RELOAD
+		"reload",
+#endif
+#ifdef USE_SYSLOG
+		"syslog",
+#endif
+#ifdef HAVE_WIDECHAR
+		"widechar",
+#endif
+		NULL
+	};
+	unsigned int i;
+
+	printf( _("%s from %s"), program_invocation_short_name, PACKAGE_STRING);
+	fputs(" (", stdout);
+	for (i = 0; features[i]; i++) {
+		if (0 < i)
+			fputs(", ", stdout);
+		printf("%s", features[i]);
+	}
+	fputs(")\n", stdout);
+}
+
 #define is_speed(str) (strlen((str)) == strspn((str), "0123456789,"))
 
 /* Parse command-line arguments. */
 static void parse_args(int argc, char **argv, struct options *op)
 {
 	int c;
+	int opt_show_issue = 0;
 
 	enum {
 		VERSION_OPTION = CHAR_MAX + 1,
@@ -618,43 +720,47 @@ static void parse_args(int argc, char **argv, struct options *op)
 		ERASE_CHARS_OPTION,
 		KILL_CHARS_OPTION,
 		RELOAD_OPTION,
+		LIST_SPEEDS_OPTION,
+		ISSUE_SHOW_OPTION,
 	};
 	const struct option longopts[] = {
-		{  "8bits",	     no_argument,	 0,  '8'  },
-		{  "autologin",	     required_argument,	 0,  'a'  },
-		{  "noreset",	     no_argument,	 0,  'c'  },
-		{  "chdir",	     required_argument,	 0,  'C'  },
-		{  "delay",	     required_argument,	 0,  'd'  },
-		{  "remote",         no_argument,        0,  'E'  },
-		{  "issue-file",     required_argument,  0,  'f'  },
-		{  "flow-control",   no_argument,	 0,  'h'  },
-		{  "host",	     required_argument,  0,  'H'  },
-		{  "noissue",	     no_argument,	 0,  'i'  },
-		{  "init-string",    required_argument,  0,  'I'  },
-		{  "noclear",	     no_argument,	 0,  'J'  },
-		{  "login-program",  required_argument,  0,  'l'  },
-		{  "local-line",     optional_argument,	 0,  'L'  },
-		{  "extract-baud",   no_argument,	 0,  'm'  },
-		{  "skip-login",     no_argument,	 0,  'n'  },
-		{  "nonewline",	     no_argument,	 0,  'N'  },
-		{  "login-options",  required_argument,  0,  'o'  },
-		{  "login-pause",    no_argument,        0,  'p'  },
-		{  "nice",	     required_argument,  0,  'P'  },
-		{  "chroot",	     required_argument,	 0,  'r'  },
-		{  "hangup",	     no_argument,	 0,  'R'  },
-		{  "keep-baud",      no_argument,	 0,  's'  },
-		{  "timeout",	     required_argument,  0,  't'  },
-		{  "detect-case",    no_argument,	 0,  'U'  },
-		{  "wait-cr",	     no_argument,	 0,  'w'  },
-		{  "nohints",        no_argument,        0,  NOHINTS_OPTION },
-		{  "nohostname",     no_argument,	 0,  NOHOSTNAME_OPTION },
-		{  "long-hostname",  no_argument,	 0,  LONGHOSTNAME_OPTION },
-		{  "reload",         no_argument,        0,  RELOAD_OPTION },
-		{  "version",	     no_argument,	 0,  VERSION_OPTION  },
-		{  "help",	     no_argument,	 0,  HELP_OPTION     },
-		{  "erase-chars",    required_argument,  0,  ERASE_CHARS_OPTION },
-		{  "kill-chars",     required_argument,  0,  KILL_CHARS_OPTION },
-		{ NULL, 0, 0, 0 }
+		{  "8bits",	     no_argument,	 NULL,  '8'  },
+		{  "autologin",	     required_argument,	 NULL,  'a'  },
+		{  "noreset",	     no_argument,	 NULL,  'c'  },
+		{  "chdir",	     required_argument,	 NULL,  'C'  },
+		{  "delay",	     required_argument,	 NULL,  'd'  },
+		{  "remote",         no_argument,        NULL,  'E'  },
+		{  "issue-file",     required_argument,  NULL,  'f'  },
+		{  "show-issue",     no_argument,        NULL,  ISSUE_SHOW_OPTION },
+		{  "flow-control",   no_argument,	 NULL,  'h'  },
+		{  "host",	     required_argument,  NULL,  'H'  },
+		{  "noissue",	     no_argument,	 NULL,  'i'  },
+		{  "init-string",    required_argument,  NULL,  'I'  },
+		{  "noclear",	     no_argument,	 NULL,  'J'  },
+		{  "login-program",  required_argument,  NULL,  'l'  },
+		{  "local-line",     optional_argument,	 NULL,  'L'  },
+		{  "extract-baud",   no_argument,	 NULL,  'm'  },
+		{  "list-speeds",    no_argument,	 NULL,	LIST_SPEEDS_OPTION },
+		{  "skip-login",     no_argument,	 NULL,  'n'  },
+		{  "nonewline",	     no_argument,	 NULL,  'N'  },
+		{  "login-options",  required_argument,  NULL,  'o'  },
+		{  "login-pause",    no_argument,        NULL,  'p'  },
+		{  "nice",	     required_argument,  NULL,  'P'  },
+		{  "chroot",	     required_argument,	 NULL,  'r'  },
+		{  "hangup",	     no_argument,	 NULL,  'R'  },
+		{  "keep-baud",      no_argument,	 NULL,  's'  },
+		{  "timeout",	     required_argument,  NULL,  't'  },
+		{  "detect-case",    no_argument,	 NULL,  'U'  },
+		{  "wait-cr",	     no_argument,	 NULL,  'w'  },
+		{  "nohints",        no_argument,        NULL,  NOHINTS_OPTION },
+		{  "nohostname",     no_argument,	 NULL,  NOHOSTNAME_OPTION },
+		{  "long-hostname",  no_argument,	 NULL,  LONGHOSTNAME_OPTION },
+		{  "reload",         no_argument,        NULL,  RELOAD_OPTION },
+		{  "version",	     no_argument,	 NULL,  VERSION_OPTION  },
+		{  "help",	     no_argument,	 NULL,  HELP_OPTION     },
+		{  "erase-chars",    required_argument,  NULL,  ERASE_CHARS_OPTION },
+		{  "kill-chars",     required_argument,  NULL,  KILL_CHARS_OPTION },
+		{ NULL, 0, NULL, 0 }
 	};
 
 	while ((c = getopt_long(argc, argv,
@@ -674,13 +780,12 @@ static void parse_args(int argc, char **argv, struct options *op)
 			op->chdir = optarg;
 			break;
 		case 'd':
-			op->delay = atoi(optarg);
+			op->delay = strtou32_or_err(optarg,  _("invalid delay argument"));
 			break;
 		case 'E':
 			op->flags |= F_REMOTE;
 			break;
 		case 'f':
-			op->flags |= F_CUSTISSUE;
 			op->issue = optarg;
 			break;
 		case 'h':
@@ -732,7 +837,7 @@ static void parse_args(int argc, char **argv, struct options *op)
 			op->flags |= F_LOGINPAUSE;
 			break;
 		case 'P':
-			op->nice = atoi(optarg);
+			op->nice = strtos32_or_err(optarg,  _("invalid nice argument"));
 			break;
 		case 'r':
 			op->chroot = optarg;
@@ -744,8 +849,7 @@ static void parse_args(int argc, char **argv, struct options *op)
 			op->flags |= F_KEEPSPEED;
 			break;
 		case 't':
-			if ((op->timeout = atoi(optarg)) <= 0)
-				log_err(_("bad timeout value: %s"), optarg);
+			op->timeout = strtou32_or_err(optarg,  _("invalid timeout argument"));
 			break;
 		case 'U':
 			op->flags |= F_LCUC;
@@ -771,21 +875,32 @@ static void parse_args(int argc, char **argv, struct options *op)
 		case RELOAD_OPTION:
 			reload_agettys();
 			exit(EXIT_SUCCESS);
+		case LIST_SPEEDS_OPTION:
+			list_speeds();
+			exit(EXIT_SUCCESS);
+		case ISSUE_SHOW_OPTION:
+			opt_show_issue = 1;
+			break;
 		case VERSION_OPTION:
-			printf(UTIL_LINUX_VERSION);
+			output_version();
 			exit(EXIT_SUCCESS);
 		case HELP_OPTION:
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
+	}
+
+	if (opt_show_issue) {
+		show_issue(op);
+		exit(EXIT_SUCCESS);
 	}
 
 	debug("after getopt loop\n");
 
 	if (argc < optind + 1) {
 		log_warn(_("not enough arguments"));
-		usage(stderr);
+		errx(EXIT_FAILURE, _("not enough arguments"));
 	}
 
 	/* Accept "tty", "baudrate tty", and "tty baudrate". */
@@ -793,8 +908,8 @@ static void parse_args(int argc, char **argv, struct options *op)
 		/* Assume BSD style speed. */
 		parse_speeds(op, argv[optind++]);
 		if (argc < optind + 1) {
-			warn(_("not enough arguments"));
-			usage(stderr);
+			log_warn(_("not enough arguments"));
+			errx(EXIT_FAILURE, _("not enough arguments"));
 		}
 		op->tty = argv[optind++];
 	} else {
@@ -808,6 +923,15 @@ static void parse_args(int argc, char **argv, struct options *op)
 		}
 	}
 
+	/* resolve the tty path in case it was provided as stdin */
+	if (strcmp(op->tty, "-") == 0) {
+		op->tty_is_stdin = 1;
+		int fd = get_terminal_name(NULL, &op->tty, NULL);
+		if (fd < 0) {
+			log_warn(_("could not get terminal name: %d"), fd);
+		}
+	}
+
 	/* On virtual console remember the line which is used for */
 	if (strncmp(op->tty, "tty", 3) == 0 &&
 	    strspn(op->tty + 3, "0123456789") == strlen(op->tty+3))
@@ -816,45 +940,6 @@ static void parse_args(int argc, char **argv, struct options *op)
 	if (argc > optind && argv[optind])
 		op->term = argv[optind];
 
-#ifdef DO_DEVFS_FIDDLING
-	/*
-	 * Some devfs junk, following Goswin Brederlow:
-	 *   turn ttyS<n> into tts/<n>
-	 *   turn tty<n> into vc/<n>
-	 * http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=72241
-	 */
-	if (op->tty && strlen(op->tty) < 90) {
-		char dev_name[100];
-		struct stat st;
-
-		if (strncmp(op->tty, "ttyS", 4) == 0) {
-			strcpy(dev_name, "/dev/");
-			strcat(dev_name, op->tty);
-			if (stat(dev_name, &st) < 0) {
-				strcpy(dev_name, "/dev/tts/");
-				strcat(dev_name, op->tty + 4);
-				if (stat(dev_name, &st) == 0) {
-					op->tty = strdup(dev_name + 5);
-					if (!op->tty)
-						log_err(_("failed to allocate memory: %m"));
-				}
-			}
-		} else if (strncmp(op->tty, "tty", 3) == 0) {
-			strcpy(dev_name, "/dev/");
-			strncat(dev_name, op->tty, 90);
-			if (stat(dev_name, &st) < 0) {
-				strcpy(dev_name, "/dev/vc/");
-				strcat(dev_name, op->tty + 3);
-				if (stat(dev_name, &st) == 0) {
-					op->tty = strdup(dev_name + 5);
-					if (!op->tty)
-						log_err(_("failed to allocate memory: %m"));
-				}
-			}
-		}
-	}
-#endif				/* DO_DEVFS_FIDDLING */
-
 	debug("exiting parseargs\n");
 }
 
@@ -862,15 +947,20 @@ static void parse_args(int argc, char **argv, struct options *op)
 static void parse_speeds(struct options *op, char *arg)
 {
 	char *cp;
+	char *str = strdup(arg);
 
-	debug("entered parse_speeds\n");
-	for (cp = strtok(arg, ","); cp != NULL; cp = strtok((char *)0, ",")) {
+	if (!str)
+		log_err(_("failed to allocate memory: %m"));
+
+	debug("entered parse_speeds:\n");
+	for (cp = strtok(str, ","); cp != NULL; cp = strtok((char *)0, ",")) {
 		if ((op->speeds[op->numspeed++] = bcode(cp)) <= 0)
 			log_err(_("bad speed: %s"), cp);
 		if (op->numspeed >= MAX_SPEED)
 			log_err(_("too many alternate speeds"));
 	}
 	debug("exiting parsespeeds\n");
+	free(str);
 }
 
 #ifdef	SYSV_STYLE
@@ -878,13 +968,13 @@ static void parse_speeds(struct options *op, char *arg)
 /* Update our utmp entry. */
 static void update_utmp(struct options *op)
 {
-	struct utmp ut;
+	struct utmpx ut;
 	time_t t;
 	pid_t pid = getpid();
 	pid_t sid = getsid(0);
-	char *vcline = op->vcline;
-	char *line   = op->tty;
-	struct utmp *utp;
+	const char *vcline = op->vcline;
+	const char *line = op->tty;
+	struct utmpx *utp;
 
 	/*
 	 * The utmp file holds miscellaneous information about things started by
@@ -894,8 +984,8 @@ static void update_utmp(struct options *op)
 	 * utmp file can be opened for update, and if we are able to find our
 	 * entry in the utmp file.
 	 */
-	utmpname(_PATH_UTMP);
-	setutent();
+	utmpxname(_PATH_UTMP);
+	setutxent();
 
 	/*
 	 * Find my pid in utmp.
@@ -906,7 +996,7 @@ static void update_utmp(struct options *op)
 	 * FIXME: The present code is taken from login.c, so if this is changed,
 	 * maybe login has to be changed as well (is this true?).
 	 */
-	while ((utp = getutent()))
+	while ((utp = getutxent()))
 		if (utp->ut_pid == pid
 				&& utp->ut_type >= INIT_PROCESS
 				&& utp->ut_type <= DEAD_PROCESS)
@@ -919,60 +1009,38 @@ static void update_utmp(struct options *op)
 		memset(&ut, 0, sizeof(ut));
 		if (vcline && *vcline)
 			/* Standard virtual console devices */
-			strncpy(ut.ut_id, vcline, sizeof(ut.ut_id));
+			str2memcpy(ut.ut_id, vcline, sizeof(ut.ut_id));
 		else {
 			size_t len = strlen(line);
-			char * ptr;
+			const char * ptr;
 			if (len >= sizeof(ut.ut_id))
 				ptr = line + len - sizeof(ut.ut_id);
 			else
 				ptr = line;
-			strncpy(ut.ut_id, ptr, sizeof(ut.ut_id));
+			str2memcpy(ut.ut_id, ptr, sizeof(ut.ut_id));
 		}
 	}
 
-	strncpy(ut.ut_user, "LOGIN", sizeof(ut.ut_user));
-	strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+	str2memcpy(ut.ut_user, "LOGIN", sizeof(ut.ut_user));
+	str2memcpy(ut.ut_line, line, sizeof(ut.ut_line));
 	if (fakehost)
-		strncpy(ut.ut_host, fakehost, sizeof(ut.ut_host));
+		str2memcpy(ut.ut_host, fakehost, sizeof(ut.ut_host));
 	time(&t);
-#if defined(_HAVE_UT_TV)
 	ut.ut_tv.tv_sec = t;
-#else
-	ut.ut_time = t;
-#endif
 	ut.ut_type = LOGIN_PROCESS;
 	ut.ut_pid = pid;
 	ut.ut_session = sid;
 
-	pututline(&ut);
-	endutent();
+	pututxline(&ut);
+	endutxent();
 
-	{
-#ifdef HAVE_UPDWTMP
-		updwtmp(_PATH_WTMP, &ut);
-#else
-		int ut_fd;
-		int lf;
-
-		if ((lf = open(_PATH_WTMPLOCK, O_CREAT | O_WRONLY, 0660)) >= 0) {
-			flock(lf, LOCK_EX);
-			if ((ut_fd =
-			     open(_PATH_WTMP, O_APPEND | O_WRONLY)) >= 0) {
-				write_all(ut_fd, &ut, sizeof(ut));
-				close(ut_fd);
-			}
-			flock(lf, LOCK_UN);
-			close(lf);
-		}
-#endif				/* HAVE_UPDWTMP */
-	}
+	updwtmpx(_PATH_WTMP, &ut);
 }
 
 #endif				/* SYSV_STYLE */
 
 /* Set up tty as stdin, stdout & stderr. */
-static void open_tty(char *tty, struct termios *tp, struct options *op)
+static void open_tty(const char *tty, struct termios *tp, struct options *op)
 {
 	const pid_t pid = getpid();
 	int closed = 0;
@@ -982,7 +1050,7 @@ static void open_tty(char *tty, struct termios *tp, struct options *op)
 
 	/* Set up new standard input, unless we are given an already opened port. */
 
-	if (strcmp(tty, "-") != 0) {
+	if (!op->tty_is_stdin) {
 		char buf[PATH_MAX+1];
 		struct group *gr = NULL;
 		struct stat st;
@@ -994,8 +1062,12 @@ static void open_tty(char *tty, struct termios *tp, struct options *op)
 		if ((gr = getgrnam("tty")))
 			gid = gr->gr_gid;
 
-		if (((len = snprintf(buf, sizeof(buf), "/dev/%s", tty)) >=
-		     (int)sizeof(buf)) || (len < 0))
+		len = snprintf(buf, sizeof(buf), "/dev/%s", tty);
+		if (len < 0 || (size_t)len >= sizeof(buf))
+			log_err(_("/dev/%s: cannot open as standard input: %m"), tty);
+
+		/* Open the tty as standard input. */
+		if ((fd = open(buf, O_RDWR|O_NOCTTY|O_NONBLOCK, 0)) < 0)
 			log_err(_("/dev/%s: cannot open as standard input: %m"), tty);
 
 		/*
@@ -1004,16 +1076,12 @@ static void open_tty(char *tty, struct termios *tp, struct options *op)
 		 * Linux login(1) will change tty permissions. Use root owner and group
 		 * with permission -rw------- for the period between getty and login.
 		 */
-		if (chown(buf, 0, gid) || chmod(buf, (gid ? 0620 : 0600))) {
+		if (fchown(fd, 0, gid) || fchmod(fd, (gid ? 0620 : 0600))) {
 			if (errno == EROFS)
 				log_warn("%s: %m", buf);
 			else
 				log_err("%s: %m", buf);
 		}
-
-		/* Open the tty as standard input. */
-		if ((fd = open(buf, O_RDWR|O_NOCTTY|O_NONBLOCK, 0)) < 0)
-			log_err(_("/dev/%s: cannot open as standard input: %m"), tty);
 
 		/* Sanity checks... */
 		if (fstat(fd, &st) < 0)
@@ -1037,7 +1105,7 @@ static void open_tty(char *tty, struct termios *tp, struct options *op)
 				debug("TIOCNOTTY ioctl failed\n");
 
 			/*
-			 * Let's close all file decriptors before vhangup
+			 * Let's close all file descriptors before vhangup
 			 * https://lkml.org/lkml/2012/6/5/145
 			 */
 			close(fd);
@@ -1106,6 +1174,18 @@ static void open_tty(char *tty, struct termios *tp, struct options *op)
 	if (tcgetattr(STDIN_FILENO, tp) < 0)
 		log_err(_("%s: failed to get terminal attributes: %m"), tty);
 
+#ifdef HAVE_GETTTYNAM
+	if (!op->term) {
+		struct ttyent *ent = getttynam(tty);
+		/* a bit nasty as it's never freed */
+		if (ent && ent->ty_type) {
+			op->term = strdup(ent->ty_type);
+			if (!op->term)
+				log_err(_("failed to allocate memory: %m"));
+		}
+	}
+#endif
+
 #if defined (__s390__) || defined (__s390x__)
 	if (!op->term) {
 	        /*
@@ -1149,7 +1229,8 @@ static void open_tty(char *tty, struct termios *tp, struct options *op)
 			op->term = DEFAULT_STERM;
 	}
 
-	setenv("TERM", op->term, 1);
+	if (setenv("TERM", op->term, 1) != 0)
+		log_err(_("failed to set the %s environment variable"), "TERM");
 }
 
 /* Initialize termios settings. */
@@ -1172,10 +1253,11 @@ static void termio_init(struct options *op, struct termios *tp)
 {
 	speed_t ispeed, ospeed;
 	struct winsize ws;
+#ifdef USE_PLYMOUTH_SUPPORT
 	struct termios lock;
-#ifdef TIOCGLCKTRMIOS
-	int i =  (plymouth_command("--ping") == 0) ? 30 : 0;
-
+	int i =  (plymouth_command(MAGIC_PING) == 0) ? PLYMOUTH_TERMIOS_FLAGS_DELAY : 0;
+	if (i)
+		plymouth_command(MAGIC_QUIT);
 	while (i-- > 0) {
 		/*
 		 * Even with TTYReset=no it seems with systemd or plymouth
@@ -1188,8 +1270,6 @@ static void termio_init(struct options *op, struct termios *tp)
 		if (!lock.c_iflag && !lock.c_oflag && !lock.c_cflag && !lock.c_lflag)
 			break;
 		debug("termios locked\n");
-		if (i == 15 && plymouth_command("quit") != 0)
-			break;
 		sleep(1);
 	}
 	memset(&lock, 0, sizeof(struct termios));
@@ -1215,7 +1295,7 @@ static void termio_init(struct options *op, struct termios *tp)
 		setlocale(LC_CTYPE, "POSIX");
 		op->flags &= ~F_UTF8;
 #endif
-		reset_vc(op, tp);
+		reset_vc(op, tp, 0);
 
 		if ((tp->c_cflag & (CS8|PARODD|PARENB)) == CS8)
 			op->flags |= F_EIGHTBITS;
@@ -1234,9 +1314,17 @@ static void termio_init(struct options *op, struct termios *tp)
 		ispeed = cfgetispeed(tp);
 		ospeed = cfgetospeed(tp);
 
-		if (!ispeed) ispeed = TTYDEF_SPEED;
-		if (!ospeed) ospeed = TTYDEF_SPEED;
-
+		/* Save also the original speed to array of the speeds to make
+		 * it possible to return the original after unexpected BREAKs.
+		 */
+		if (op->numspeed)
+			op->speeds[op->numspeed++] = ispeed ? ispeed :
+						     ospeed ? ospeed :
+						     TTYDEF_SPEED;
+		if (!ispeed)
+			ispeed = TTYDEF_SPEED;
+		if (!ospeed)
+			ospeed = TTYDEF_SPEED;
 	} else {
 		ospeed = ispeed = op->speeds[FIRST_SPEED];
 	}
@@ -1248,13 +1336,22 @@ static void termio_init(struct options *op, struct termios *tp)
 	 * later on.
 	 */
 
+	/* The default is set c_iflag in termio_final() according to chardata.
+	 * Unfortunately, the chardata are not set according to the serial line
+	 * if --autolog is enabled. In this case we do not read from the line
+	 * at all. The best what we can do in this case is to keep c_iflag
+	 * unmodified for --autolog.
+	 */
+	if (!op->autolog) {
 #ifdef IUTF8
-	tp->c_iflag = tp->c_iflag & IUTF8;
-	if (tp->c_iflag & IUTF8)
-		op->flags |= F_UTF8;
+		tp->c_iflag = tp->c_iflag & IUTF8;
+		if (tp->c_iflag & IUTF8)
+			op->flags |= F_UTF8;
 #else
-	tp->c_iflag = 0;
+		tp->c_iflag = 0;
 #endif
+	}
+
 	tp->c_lflag = 0;
 	tp->c_oflag &= OPOST | ONLCR;
 
@@ -1263,7 +1360,7 @@ static void termio_init(struct options *op, struct termios *tp)
 
 	/*
 	 * Note that the speed is stored in the c_cflag termios field, so we have
-	 * set the speed always when the cflag se reseted.
+	 * set the speed always when the cflag is reset.
 	 */
 	cfsetispeed(tp, ispeed);
 	cfsetospeed(tp, ospeed);
@@ -1289,15 +1386,10 @@ static void termio_init(struct options *op, struct termios *tp)
 
 	/* Check for terminal size and if not found set default */
 	if (ioctl(STDIN_FILENO, TIOCGWINSZ, &ws) == 0) {
-		int set = 0;
-		if (ws.ws_row == 0) {
+		if (ws.ws_row == 0)
 			ws.ws_row = 24;
-			set++;
-		}
-		if (ws.ws_col == 0) {
+		if (ws.ws_col == 0)
 			ws.ws_col = 80;
-			set++;
-		}
 		if (ioctl(STDIN_FILENO, TIOCSWINSZ, &ws))
 			debug("TIOCSWINSZ ioctl failed\n");
 	}
@@ -1321,7 +1413,7 @@ static void termio_init(struct options *op, struct termios *tp)
 }
 
 /* Reset virtual console on stdin to its defaults */
-static void reset_vc(const struct options *op, struct termios *tp)
+static void reset_vc(const struct options *op, struct termios *tp, int canon)
 {
 	int fl = 0;
 
@@ -1329,6 +1421,15 @@ static void reset_vc(const struct options *op, struct termios *tp)
 	fl |= (op->flags & F_UTF8)       == 0 ? 0 : UL_TTY_UTF8;
 
 	reset_virtual_console(tp, fl);
+
+#ifdef AGETTY_RELOAD
+	/*
+	 * Discard all the flags that makes the line go canonical with echoing.
+	 * We need to know when the user starts typing.
+	 */
+	if (canon == 0)
+		tp->c_lflag = 0;
+#endif
 
 	if (tcsetattr(STDIN_FILENO, TCSADRAIN, tp))
 		log_warn(_("setting terminal attributes failed: %m"));
@@ -1383,7 +1484,7 @@ static void auto_baud(struct termios *tp)
 	if ((nread = read(STDIN_FILENO, buf, sizeof(buf) - 1)) > 0) {
 		buf[nread] = '\0';
 		for (bp = buf; bp < buf + nread; bp++)
-			if (isascii(*bp) && isdigit(*bp)) {
+			if (c_isascii(*bp) && isdigit(*bp)) {
 				if ((speed = bcode(bp))) {
 					cfsetispeed(tp, speed);
 					cfsetospeed(tp, speed);
@@ -1419,7 +1520,7 @@ static char *xgetdomainname(void)
 {
 #ifdef HAVE_GETDOMAINNAME
 	char *name;
-	size_t sz = get_hostname_max() + 1;
+	const size_t sz = get_hostname_max() + 1;
 
 	name = malloc(sizeof(char) * sz);
 	if (!name)
@@ -1431,9 +1532,11 @@ static char *xgetdomainname(void)
 	}
 	name[sz - 1] = '\0';
 	return name;
-#endif
+#else
 	return NULL;
+#endif
 }
+
 
 static char *read_os_release(struct options *op, const char *varname)
 {
@@ -1487,6 +1590,11 @@ static char *read_os_release(struct options *op, const char *varname)
 			continue;
 		}
 		p += varsz;
+		p += strspn(p, " \t\n\r");
+
+		if (*p != '=')
+			continue;
+
 		p += strspn(p, " \t\n\r=\"");
 		eol = p + strcspn(p, "\n\r");
 		*eol = '\0';
@@ -1516,26 +1624,84 @@ done:
 }
 
 #ifdef AGETTY_RELOAD
+static void open_netlink(void)
+{
+	struct sockaddr_nl addr = { 0, };
+	int sock;
+
+	if (netlink_fd != AGETTY_RELOAD_FDNONE)
+		return;
+
+	sock = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+	if (sock >= 0) {
+		addr.nl_family = AF_NETLINK;
+		addr.nl_pid = getpid();
+		addr.nl_groups = netlink_groups;
+		if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+			close(sock);
+		else
+			netlink_fd = sock;
+	}
+}
+
+static int process_netlink_msg(int *triggered)
+{
+	char buf[4096];
+	struct sockaddr_nl snl;
+	struct nlmsghdr *h;
+	int rc;
+
+	struct iovec iov = {
+		.iov_base = buf,
+		.iov_len = sizeof(buf)
+	};
+	struct msghdr msg = {
+		.msg_name = &snl,
+		.msg_namelen = sizeof(snl),
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = NULL,
+		.msg_controllen = 0,
+		.msg_flags = 0
+	};
+
+	rc = recvmsg(netlink_fd, &msg, MSG_DONTWAIT);
+	if (rc < 0) {
+		if (errno == EWOULDBLOCK || errno == EAGAIN)
+			return 0;
+
+		/* Failure, just stop listening for changes */
+		close(netlink_fd);
+		netlink_fd = AGETTY_RELOAD_FDNONE;
+		return 0;
+	}
+
+	for (h = (struct nlmsghdr *)buf; NLMSG_OK(h, (unsigned int)rc); h = NLMSG_NEXT(h, rc)) {
+		if (h->nlmsg_type == NLMSG_DONE ||
+		    h->nlmsg_type == NLMSG_ERROR) {
+			close(netlink_fd);
+			netlink_fd = AGETTY_RELOAD_FDNONE;
+			return 0;
+		}
+
+		*triggered = 1;
+		break;
+	}
+
+	return 1;
+}
+
+static int process_netlink(void)
+{
+	int triggered = 0;
+	while (process_netlink_msg(&triggered));
+	return triggered;
+}
+
 static int wait_for_term_input(int fd)
 {
 	char buffer[sizeof(struct inotify_event) + NAME_MAX + 1];
-	struct termios orig, nonc;
 	fd_set rfds;
-	int count, i;
-
-	/* Our aim here is to fall through if something fails
-         * and not be stuck waiting. On failure assume we have input */
-
-	if (tcgetattr(fd, &orig) != 0)
-		return 1;
-
-	memcpy(&nonc, &orig, sizeof (nonc));
-	nonc.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHOKE);
-	nonc.c_cc[VMIN] = 1;
-	nonc.c_cc[VTIME] = 0;
-
-	if (tcsetattr(fd, TCSANOW, &nonc) != 0)
-		return 1;
 
 	if (inotify_fd == AGETTY_RELOAD_FDNONE) {
 		/* make sure the reload trigger file exists */
@@ -1556,92 +1722,354 @@ static int wait_for_term_input(int fd)
 					AGETTY_RELOAD_FILENAME);
 	}
 
-	FD_ZERO(&rfds);
-	FD_SET(fd, &rfds);
+	while (1) {
+		int nfds = fd;
 
-	if (inotify_fd >= 0)
-		FD_SET(inotify_fd, &rfds);
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds);
 
-	/* If waiting fails, just fall through, presumably reading input will fail */
-	if (select(max(fd, inotify_fd) + 1, &rfds, NULL, NULL, NULL) < 0)
-		return 1;
+		if (inotify_fd >= 0) {
+			FD_SET(inotify_fd, &rfds);
+			nfds = max(nfds, inotify_fd);
+		}
+		if (netlink_fd >= 0) {
+			FD_SET(netlink_fd, &rfds);
+			nfds = max(nfds, netlink_fd);
+		}
 
-	if (FD_ISSET(fd, &rfds)) {
-		count = read(fd, buffer, sizeof (buffer));
+		/* If waiting fails, just fall through, presumably reading input will fail */
+		if (select(nfds + 1, &rfds, NULL, NULL, NULL) < 0)
+			return 1;
 
-		tcsetattr(fd, TCSANOW, &orig);
+		if (FD_ISSET(fd, &rfds)) {
+			return 1;
 
-		/* Reinject the bytes we read back into the buffer, usually just one byte */
-		for (i = 0; i < count; i++)
-			ioctl(fd, TIOCSTI, buffer + i);
+		}
 
-		/* Have terminal input */
-		return 1;
-
-	} else {
-		tcsetattr(fd, TCSANOW, &orig);
+		if (netlink_fd >= 0 && FD_ISSET(netlink_fd, &rfds)) {
+			if (!process_netlink())
+				continue;
 
 		/* Just drain the inotify buffer */
-		while (read(inotify_fd, buffer, sizeof (buffer)) > 0);
+		} else if (inotify_fd >= 0 && FD_ISSET(inotify_fd, &rfds)) {
+			while (read(inotify_fd, buffer, sizeof (buffer)) > 0);
+		}
 
-		/* Need to reprompt */
 		return 0;
 	}
 }
 #endif  /* AGETTY_RELOAD */
-static void print_issue_file(struct options *op, struct termios *tp)
+
+#ifdef ISSUEDIR_SUPPORT
+static int issuedir_filter(const struct dirent *d)
 {
-#ifdef	ISSUE
-	FILE *fd;
+	size_t namesz;
+
+#ifdef _DIRENT_HAVE_D_TYPE
+	if (d->d_type != DT_UNKNOWN && d->d_type != DT_REG &&
+	    d->d_type != DT_LNK)
+		return 0;
 #endif
+	if (*d->d_name == '.')
+		return 0;
+
+	namesz = strlen(d->d_name);
+	if (!namesz || namesz < ISSUEDIR_EXTSIZ + 1 ||
+	    strcmp(d->d_name + (namesz - ISSUEDIR_EXTSIZ), ISSUEDIR_EXT) != 0)
+		return 0;
+
+	/* Accept this */
+	return 1;
+}
+
+
+static int issuefile_read_stream(struct issue *ie, FILE *f, struct options *op, struct termios *tp);
+
+/* returns: 0 on success, 1 cannot open, <0 on error
+ */
+static int issuedir_read(struct issue *ie, const char *dirname,
+			 struct options *op, struct termios *tp)
+{
+        int dd, nfiles, i;
+        struct dirent **namelist = NULL;
+
+	dd = open(dirname, O_RDONLY|O_CLOEXEC|O_DIRECTORY);
+	if (dd < 0)
+		return 1;
+
+	nfiles = scandirat(dd, ".", &namelist, issuedir_filter, versionsort);
+	if (nfiles <= 0)
+		goto done;
+
+	ie->do_tcsetattr = 1;
+
+	for (i = 0; i < nfiles; i++) {
+		struct dirent *d = namelist[i];
+		FILE *f;
+
+		f = fopen_at(dd, d->d_name, O_RDONLY|O_CLOEXEC, "r" UL_CLOEXECSTR);
+		if (f) {
+			issuefile_read_stream(ie, f, op, tp);
+			fclose(f);
+		}
+	}
+
+	for (i = 0; i < nfiles; i++)
+		free(namelist[i]);
+	free(namelist);
+done:
+	close(dd);
+	return 0;
+}
+
+#else /* !ISSUEDIR_SUPPORT */
+static int issuedir_read(struct issue *ie __attribute__((__unused__)),
+			const char *dirname __attribute__((__unused__)),
+			struct options *op __attribute__((__unused__)),
+			struct termios *tp __attribute__((__unused__)))
+{
+	return 1;
+}
+#endif /* ISSUEDIR_SUPPORT */
+
+#ifndef ISSUE_SUPPORT
+static void print_issue_file(struct issue *ie __attribute__((__unused__)),
+			     struct options *op,
+			     struct termios *tp __attribute__((__unused__)))
+{
+	if ((op->flags & F_NONL) == 0) {
+		/* Issue not in use, start with a new line. */
+		write_all(STDOUT_FILENO, "\r\n", 2);
+	}
+}
+
+static void eval_issue_file(struct issue *ie __attribute__((__unused__)),
+			    struct options *op __attribute__((__unused__)),
+			    struct termios *tp __attribute__((__unused__)))
+{
+}
+
+static void show_issue(struct options *op __attribute__((__unused__)))
+{
+}
+
+#else /* ISSUE_SUPPORT */
+
+static int issuefile_read_stream(
+		struct issue *ie, FILE *f,
+		struct options *op, struct termios *tp)
+{
+	struct stat st;
+	int c;
+
+	if (fstat(fileno(f), &st) || !S_ISREG(st.st_mode))
+		return 1;
+
+	if (!ie->output) {
+		free(ie->mem);
+		ie->mem_sz = 0;
+		ie->mem = NULL;
+		ie->output = open_memstream(&ie->mem, &ie->mem_sz);
+	}
+
+	while ((c = getc(f)) != EOF) {
+		if (c == '\\')
+			output_special_char(ie, getc(f), op, tp, f);
+		else
+			putc(c, ie->output);
+	}
+
+	return 0;
+}
+
+static int issuefile_read(
+		struct issue *ie, const char *filename,
+		struct options *op, struct termios *tp)
+{
+	FILE *f = fopen(filename, "r" UL_CLOEXECSTR);
+	int rc = 1;
+
+	if (f) {
+		rc = issuefile_read_stream(ie, f, op, tp);
+		fclose(f);
+	}
+	return rc;
+}
+
+
+#ifdef AGETTY_RELOAD
+static int issue_is_changed(struct issue *ie)
+{
+	if (ie->mem_old && ie->mem
+	    && strcmp(ie->mem_old, ie->mem) == 0) {
+		free(ie->mem_old);
+		ie->mem_old = ie->mem;
+		ie->mem = NULL;
+		return 0;
+	}
+
+	return 1;
+}
+#endif
+
+static void print_issue_file(struct issue *ie,
+			     struct options *op,
+			     struct termios *tp)
+{
+	int oflag = tp->c_oflag;	    /* Save current setting. */
+
 	if ((op->flags & F_NONL) == 0) {
 		/* Issue not in use, start with a new line. */
 		write_all(STDOUT_FILENO, "\r\n", 2);
 	}
 
-#ifdef	ISSUE
-	if ((op->flags & F_ISSUE) && (fd = fopen(op->issue, "r"))) {
-		int c, oflag = tp->c_oflag;	    /* Save current setting. */
-
+	if (ie->do_tcsetattr) {
 		if ((op->flags & F_VCONSOLE) == 0) {
 			/* Map new line in output to carriage return & new line. */
 			tp->c_oflag |= (ONLCR | OPOST);
 			tcsetattr(STDIN_FILENO, TCSADRAIN, tp);
 		}
-
-		while ((c = getc(fd)) != EOF) {
-			if (c == '\\')
-				output_special_char(getc(fd), op, tp, fd);
-			else
-				putchar(c);
-		}
-		fflush(stdout);
-
-		if ((op->flags & F_VCONSOLE) == 0) {
-			/* Restore settings. */
-			tp->c_oflag = oflag;
-			/* Wait till output is gone. */
-			tcsetattr(STDIN_FILENO, TCSADRAIN, tp);
-		}
-		fclose(fd);
 	}
-#endif	/* ISSUE */
+
+	if (ie->mem_sz)
+		write_all(STDOUT_FILENO, ie->mem, ie->mem_sz);
+
+	if (ie->do_tcrestore) {
+		/* Restore settings. */
+		tp->c_oflag = oflag;
+		/* Wait till output is gone. */
+		tcsetattr(STDIN_FILENO, TCSADRAIN, tp);
+	}
+
+#ifdef AGETTY_RELOAD
+	free(ie->mem_old);
+	ie->mem_old = ie->mem;
+	ie->mem = NULL;
+	ie->mem_sz = 0;
+#else
+	free(ie->mem);
+	ie->mem = NULL;
+	ie->mem_sz = 0;
+#endif
 }
 
-/* Show login prompt, optionally preceded by /etc/issue contents. */
-static void do_prompt(struct options *op, struct termios *tp)
+static void eval_issue_file(struct issue *ie,
+			    struct options *op,
+			    struct termios *tp)
 {
+	int has_file = 0;
+
+#ifdef AGETTY_RELOAD
+	netlink_groups = 0;
+#endif
+	if (!(op->flags & F_ISSUE))
+		goto done;
+	/*
+	 * The custom issue file or directory list specified by:
+	 *   agetty --isue-file <path[:path]...>
+	 * Note that nothing is printed if the file/dir does not exist.
+	 */
+	if (op->issue) {
+		char *list = strdup(op->issue);
+		char *file;
+
+		if (!list)
+			log_err(_("failed to allocate memory: %m"));
+
+		for (file = strtok(list, ":"); file; file = strtok(NULL, ":")) {
+			struct stat st;
+
+			if (stat(file, &st) < 0)
+				continue;
+			if (S_ISDIR(st.st_mode))
+				issuedir_read(ie, file, op, tp);
+			else
+				issuefile_read(ie, file, op, tp);
+		}
+		free(list);
+		goto done;
+	}
+
+	/* The default /etc/issue and optional /etc/issue.d directory as
+	 * extension to the file. The /etc/issue.d directory is ignored if
+	 * there is no /etc/issue file. The file may be empty or symlink.
+	 */
+	if (access(_PATH_ISSUE, F_OK|R_OK) == 0) {
+		issuefile_read(ie, _PATH_ISSUE, op, tp);
+		issuedir_read(ie, _PATH_ISSUEDIR, op, tp);
+		goto done;
+	}
+
+	/* Fallback @runstatedir (usually /run) -- the file is not required to
+	 * read the dir.
+	 */
+	if (issuefile_read(ie, _PATH_RUNSTATEDIR "/" _PATH_ISSUE_FILENAME, op, tp) == 0)
+		has_file++;
+	if (issuedir_read(ie, _PATH_RUNSTATEDIR "/" _PATH_ISSUE_DIRNAME, op, tp) == 0)
+		has_file++;
+	if (has_file)
+		goto done;
+
+	/* Fallback @sysconfstaticdir (usually /usr/lib) -- the file is not
+	 * required to read the dir
+	 */
+	issuefile_read(ie, _PATH_SYSCONFSTATICDIR "/" _PATH_ISSUE_FILENAME, op, tp); 
+	issuedir_read(ie, _PATH_SYSCONFSTATICDIR "/" _PATH_ISSUE_DIRNAME, op, tp);
+
+done:
+
+#ifdef AGETTY_RELOAD
+	if (netlink_groups != 0)
+		open_netlink();
+#endif
+	if (ie->output) {
+		fclose(ie->output);
+		ie->output = NULL;
+	}
+}
+
+/* This is --show-issue backend, executed by normal user on the current
+ * terminal.
+ */
+static void show_issue(struct options *op)
+{
+	struct issue ie = { .output = NULL };
+	struct termios tp;
+
+	memset(&tp, 0, sizeof(struct termios));
+	if (tcgetattr(STDIN_FILENO, &tp) < 0)
+		err(EXIT_FAILURE, _("failed to get terminal attributes: %m"));
+
+	eval_issue_file(&ie, op, &tp);
+
+	if (ie.mem_sz)
+		write_all(STDOUT_FILENO, ie.mem, ie.mem_sz);
+	if (ie.output)
+		fclose(ie.output);
+	free(ie.mem);
+}
+
+#endif /* ISSUE_SUPPORT */
+
+/* Show login prompt, optionally preceded by /etc/issue contents. */
+static void do_prompt(struct issue *ie, struct options *op, struct termios *tp)
+{
+#ifdef AGETTY_RELOAD
 again:
-	print_issue_file(op, tp);
+#endif
+	print_issue_file(ie, op, tp);
 
 	if (op->flags & F_LOGINPAUSE) {
 		puts(_("[press ENTER to login]"));
 #ifdef AGETTY_RELOAD
+		/* reload issue */
 		if (!wait_for_term_input(STDIN_FILENO)) {
-			/* reload issue */
-			if (op->flags & F_VCONSOLE)
-				termio_clear(STDOUT_FILENO);
-			goto again;
+			eval_issue_file(ie, op, tp);
+			if (issue_is_changed(ie)) {
+				if (op->flags & F_VCONSOLE)
+					termio_clear(STDOUT_FILENO);
+				goto again;
+			}
 		}
 #endif
 		getc(stdin);
@@ -1733,7 +2161,7 @@ static void next_speed(struct options *op, struct termios *tp)
 }
 
 /* Get user name, establish parity, speed, erase, kill & eol. */
-static char *get_logname(struct options *op, struct termios *tp, struct chardata *cp)
+static char *get_logname(struct issue *ie, struct options *op, struct termios *tp, struct chardata *cp)
 {
 	static char logname[BUFSIZ];
 	char *bp;
@@ -1758,20 +2186,31 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 		sleep(1);
 	tcflush(STDIN_FILENO, TCIFLUSH);
 
-	eightbit = (op->flags & F_EIGHTBITS);
+	eightbit = (op->flags & (F_EIGHTBITS|F_UTF8));
 	bp = logname;
 	*bp = '\0';
 
+	eval_issue_file(ie, op, tp);
 	while (*logname == '\0') {
-
 		/* Write issue file and prompt */
-		do_prompt(op, tp);
+		do_prompt(ie, op, tp);
 
+	no_reload:
 #ifdef AGETTY_RELOAD
-		/* If asked to reprompt *before* terminal input arrives, then do so */
 		if (!wait_for_term_input(STDIN_FILENO)) {
+			/* refresh prompt -- discard input data, clear terminal
+			 * and call do_prompt() again
+			 */
+			if ((op->flags & F_VCONSOLE) == 0)
+				sleep(1);
+			eval_issue_file(ie, op, tp);
+			if (!issue_is_changed(ie))
+				goto no_reload;
+			tcflush(STDIN_FILENO, TCIFLUSH);
 			if (op->flags & F_VCONSOLE)
 				termio_clear(STDOUT_FILENO);
+			bp = logname;
+			*bp = '\0';
 			continue;
 		}
 #endif
@@ -1781,8 +2220,12 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 		while (cp->eol == '\0') {
 
 			char key;
+			ssize_t readres;
 
-			if (read(STDIN_FILENO, &c, 1) < 1) {
+			debug("read from FD\n");
+			readres = read(STDIN_FILENO, &c, 1);
+			if (readres < 0) {
+				debug("read failed\n");
 
 				/* The terminal could be open with O_NONBLOCK when
 				 * -L (force CLOCAL) is specified...  */
@@ -1796,11 +2239,14 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 				case ESRCH:
 				case EINVAL:
 				case ENOENT:
-					break;
+					exit_slowly(EXIT_SUCCESS);
 				default:
 					log_err(_("%s: read: %m"), op->tty);
 				}
 			}
+
+			if (readres == 0)
+				c = 0;
 
 			/* Do parity bit handling. */
 			if (eightbit)
@@ -1826,8 +2272,10 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 			switch (key) {
 			case 0:
 				*bp = 0;
-				if (op->numspeed > 1)
+				if (op->numspeed > 1 && !(op->flags & F_VCONSOLE))
 					return NULL;
+				if (readres == 0)
+					exit_slowly(EXIT_SUCCESS);
 				break;
 			case CR:
 			case NL:
@@ -1845,6 +2293,11 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 				break;
 			case CTL('U'):
 				cp->kill = ascval;		/* set kill character */
+				/* fallthrough */
+			case CTL('C'):
+				if (key == CTL('C') && !(op->flags & F_VCONSOLE))
+					/* Ignore CTRL+C on serial line */
+					break;
 				while (bp > logname) {
 					if ((tp->c_lflag & ECHO) == 0)
 						write_all(1, erase[cp->parity], 3);
@@ -1854,8 +2307,6 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 			case CTL('D'):
 				exit(EXIT_SUCCESS);
 			default:
-				if (!isascii(ascval) || !isprint(ascval))
-					break;
 				if ((size_t)(bp - logname) >= sizeof(logname) - 1)
 					log_err(_("%s: input overrun"), op->tty);
 				if ((tp->c_lflag & ECHO) == 0)
@@ -1863,8 +2314,12 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 				*bp++ = ascval;			/* and store it */
 				break;
 			}
+			/* Everything was erased. */
+			if (bp == logname && cp->eol == '\0')
+				goto no_reload;
 		}
 	}
+
 #ifdef HAVE_WIDECHAR
 	if ((op->flags & (F_EIGHTBITS|F_UTF8)) == (F_EIGHTBITS|F_UTF8)) {
 		/* Check out UTF-8 multibyte characters */
@@ -1875,7 +2330,7 @@ static char *get_logname(struct options *op, struct termios *tp, struct chardata
 		if (len < 0)
 			log_err(_("%s: invalid character conversion for login name"), op->tty);
 
-		wcs = (wchar_t *) malloc((len + 1) * sizeof(wchar_t));
+		wcs = malloc((len + 1) * sizeof(wchar_t));
 		if (!wcs)
 			log_err(_("failed to allocate memory: %m"));
 
@@ -1940,12 +2395,12 @@ static void termio_final(struct options *op, struct termios *tp, struct chardata
 	case 1:
 		/* odd parity */
 		tp->c_cflag |= PARODD;
-		/* do not break */
+		/* fallthrough */
 	case 2:
 		/* even parity */
 		tp->c_cflag |= PARENB;
 		tp->c_iflag |= INPCK | ISTRIP;
-		/* do not break */
+		/* fallthrough */
 	case (1 | 2):
 		/* no parity bit */
 		tp->c_cflag &= ~CSIZE;
@@ -1997,7 +2452,14 @@ static int caps_lock(char *s)
 static speed_t bcode(char *s)
 {
 	const struct Speedtab *sp;
-	long speed = atol(s);
+	char *end = NULL;
+	long speed;
+
+	errno = 0;
+	speed = strtol(s, &end, 10);
+
+	if (errno || !end || end == s)
+		return 0;
 
 	for (sp = speedtab; sp->speed; sp++)
 		if (sp->speed == speed)
@@ -2005,8 +2467,10 @@ static speed_t bcode(char *s)
 	return 0;
 }
 
-static void __attribute__ ((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
+
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %1$s [options] <line> [<baud_rate>,...] [<termtype>]\n"
 		       " %1$s [options] <baud_rate>,... <line> [<termtype>]\n"), program_invocation_short_name);
@@ -2019,7 +2483,8 @@ static void __attribute__ ((__noreturn__)) usage(FILE *out)
 	fputs(_(" -a, --autologin <user>     login the specified user automatically\n"), out);
 	fputs(_(" -c, --noreset              do not reset control mode\n"), out);
 	fputs(_(" -E, --remote               use -r <hostname> for login(1)\n"), out);
-	fputs(_(" -f, --issue-file <file>    display issue file\n"), out);
+	fputs(_(" -f, --issue-file <list>    display issue files or directories\n"), out);
+	fputs(_("     --show-issue           display issue file and exit\n"), out);
 	fputs(_(" -h, --flow-control         enable hardware flow control\n"), out);
 	fputs(_(" -H, --host <hostname>      specify login host\n"), out);
 	fputs(_(" -i, --noissue              do not display issue file\n"), out);
@@ -2047,11 +2512,20 @@ static void __attribute__ ((__noreturn__)) usage(FILE *out)
 	fputs(_("     --delay <number>       sleep seconds before prompt\n"), out);
 	fputs(_("     --nice <number>        run login with this priority\n"), out);
 	fputs(_("     --reload               reload prompts on running agetty instances\n"), out);
-	fputs(_("     --help                 display this help and exit\n"), out);
-	fputs(_("     --version              output version information and exit\n"), out);
-	fprintf(out, USAGE_MAN_TAIL("agetty(8)"));
+	fputs(_("     --list-speeds          display supported baud rates\n"), out);
+	printf( "     --help                 %s\n", USAGE_OPTSTR_HELP);
+	printf( "     --version              %s\n", USAGE_OPTSTR_VERSION);
+	printf(USAGE_MAN_TAIL("agetty(8)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
+}
+
+static void list_speeds(void)
+{
+	const struct Speedtab *sp;
+
+	for (sp = speedtab; sp->speed; sp++)
+		printf("%10ld\n", sp->speed);
 }
 
 /*
@@ -2059,46 +2533,47 @@ static void __attribute__ ((__noreturn__)) usage(FILE *out)
  * Will be used by log_err() and log_warn() therefore
  * it takes a format as well as va_list.
  */
-#define	str2cpy(b,s1,s2)	strcat(strcpy(b,s1),s2)
-
-static void dolog(int priority, const char *fmt, va_list ap)
-{
-#ifndef	USE_SYSLOG
-	int fd;
+static void dolog(int priority
+#ifndef USE_SYSLOG
+		  __attribute__((__unused__))
 #endif
-	char buf[BUFSIZ];
-	char *bp;
-
+		  , const char *fmt, va_list ap)
+{
+#ifdef USE_SYSLOG
 	/*
 	 * If the diagnostic is reported via syslog(3), the process name is
 	 * automatically prepended to the message. If we write directly to
 	 * /dev/console, we must prepend the process name ourselves.
 	 */
-#ifdef USE_SYSLOG
-	buf[0] = '\0';
-	bp = buf;
-#else
-	str2cpy(buf, program_invocation_short_name, ": ");
-	bp = buf + strlen(buf);
-#endif				/* USE_SYSLOG */
-	vsnprintf(bp, sizeof(buf)-strlen(buf), fmt, ap);
-
-	/*
-	 * Write the diagnostic directly to /dev/console if we do not use the
-	 * syslog(3) facility.
-	 */
-#ifdef	USE_SYSLOG
 	openlog(program_invocation_short_name, LOG_PID, LOG_AUTHPRIV);
-	syslog(priority, "%s", buf);
+	vsyslog(priority, fmt, ap);
 	closelog();
 #else
+	/*
+	 * Write the diagnostic directly to /dev/console if we do not use
+	 * the syslog(3) facility.
+	 */
+	char buf[BUFSIZ];
+	char new_fmt[BUFSIZ];
+	int fd;
+
+	snprintf(new_fmt, sizeof(new_fmt), "%s: %s\r\n",
+		 program_invocation_short_name, fmt);
 	/* Terminate with CR-LF since the console mode is unknown. */
-	strcat(bp, "\r\n");
+	vsnprintf(buf, sizeof(buf), new_fmt, ap);
+
 	if ((fd = open("/dev/console", 1)) >= 0) {
 		write_all(fd, buf, strlen(buf));
 		close(fd);
 	}
-#endif				/* USE_SYSLOG */
+#endif	/* USE_SYSLOG */
+}
+
+static void exit_slowly(int code)
+{
+	/* Be kind to init(8). */
+	sleep(10);
+	exit(code);
 }
 
 static void log_err(const char *fmt, ...)
@@ -2109,9 +2584,7 @@ static void log_err(const char *fmt, ...)
 	dolog(LOG_ERR, fmt, ap);
 	va_end(ap);
 
-	/* Be kind to init(8). */
-	sleep(10);
-	exit(EXIT_FAILURE);
+	exit_slowly(EXIT_FAILURE);
 }
 
 static void log_warn(const char *fmt, ...)
@@ -2123,12 +2596,12 @@ static void log_warn(const char *fmt, ...)
 	va_end(ap);
 }
 
-static void print_addr(sa_family_t family, void *addr)
+static void print_addr(struct issue *ie, sa_family_t family, void *addr)
 {
 	char buff[INET6_ADDRSTRLEN + 1];
 
 	inet_ntop(family, addr, buff, sizeof(buff));
-	printf("%s", buff);
+	fprintf(ie->output, "%s", buff);
 }
 
 /*
@@ -2136,7 +2609,8 @@ static void print_addr(sa_family_t family, void *addr)
  * specified then prints the "best" one (UP, RUNNING, non-LOOPBACK). If not
  * found the "best" interface then prints at least host IP.
  */
-static void output_iface_ip(struct ifaddrs *addrs,
+static void output_iface_ip(struct issue *ie,
+			    struct ifaddrs *addrs,
 			    const char *iface,
 			    sa_family_t family)
 {
@@ -2178,7 +2652,7 @@ static void output_iface_ip(struct ifaddrs *addrs,
 		}
 
 		if (addr) {
-			print_addr(family, addr);
+			print_addr(ie, family, addr);
 			return;
 		}
 	}
@@ -2203,7 +2677,7 @@ static void output_iface_ip(struct ifaddrs *addrs,
 			break;
 		}
 		if (addr)
-			print_addr(family, addr);
+			print_addr(ie, family, addr);
 
 		freeaddrinfo(info);
 	}
@@ -2237,34 +2711,52 @@ static char *get_escape_argument(FILE *fd, char *buf, size_t bufsz)
 	return buf;
 }
 
-static void output_special_char(unsigned char c, struct options *op,
-				struct termios *tp, FILE *fp)
+static void output_special_char(struct issue *ie,
+				unsigned char c,
+				struct options *op,
+				struct termios *tp,
+				FILE *fp)
 {
 	struct utsname uts;
 
-	uname(&uts);
-
 	switch (c) {
+	case 'e':
+	{
+		char escname[UL_COLORNAME_MAXSZ];
+
+		if (get_escape_argument(fp, escname, sizeof(escname))) {
+			const char *esc = color_sequence_from_colorname(escname);
+			if (esc)
+				fputs(esc, ie->output);
+		} else
+			fputs("\033", ie->output);
+		break;
+	}
 	case 's':
-		printf("%s", uts.sysname);
+		uname(&uts);
+		fprintf(ie->output, "%s", uts.sysname);
 		break;
 	case 'n':
-		printf("%s", uts.nodename);
+		uname(&uts);
+		fprintf(ie->output, "%s", uts.nodename);
 		break;
 	case 'r':
-		printf("%s", uts.release);
+		uname(&uts);
+		fprintf(ie->output, "%s", uts.release);
 		break;
 	case 'v':
-		printf("%s", uts.version);
+		uname(&uts);
+		fprintf(ie->output, "%s", uts.version);
 		break;
 	case 'm':
-		printf("%s", uts.machine);
+		uname(&uts);
+		fprintf(ie->output, "%s", uts.machine);
 		break;
 	case 'o':
 	{
 		char *dom = xgetdomainname();
 
-		fputs(dom ? dom : "unknown_domain", stdout);
+		fputs(dom ? dom : "unknown_domain", ie->output);
 		free(dom);
 		break;
 	}
@@ -2284,7 +2776,7 @@ static void output_special_char(unsigned char c, struct options *op,
 			    (canon = strchr(info->ai_canonname, '.')))
 				dom = canon + 1;
 		}
-		fputs(dom ? dom : "unknown_domain", stdout);
+		fputs(dom ? dom : "unknown_domain", ie->output);
 		if (info)
 			freeaddrinfo(info);
 		free(host);
@@ -2294,28 +2786,25 @@ static void output_special_char(unsigned char c, struct options *op,
 	case 't':
 	{
 		time_t now;
-		struct tm *tm;
+		struct tm tm;
 
 		time(&now);
-		tm = localtime(&now);
-
-		if (!tm)
-			break;
+		localtime_r(&now, &tm);
 
 		if (c == 'd') /* ISO 8601 */
-			printf("%s %s %d  %d",
-				      nl_langinfo(ABDAY_1 + tm->tm_wday),
-				      nl_langinfo(ABMON_1 + tm->tm_mon),
-				      tm->tm_mday,
-				      tm->tm_year < 70 ? tm->tm_year + 2000 :
-				      tm->tm_year + 1900);
+			fprintf(ie->output, "%s %s %2d  %d",
+				      nl_langinfo(ABDAY_1 + tm.tm_wday),
+				      nl_langinfo(ABMON_1 + tm.tm_mon),
+				      tm.tm_mday,
+				      tm.tm_year < 70 ? tm.tm_year + 2000 :
+				      tm.tm_year + 1900);
 		else
-			printf("%02d:%02d:%02d",
-				      tm->tm_hour, tm->tm_min, tm->tm_sec);
+			fprintf(ie->output, "%02d:%02d:%02d",
+				      tm.tm_hour, tm.tm_min, tm.tm_sec);
 		break;
 	}
 	case 'l':
-		printf ("%s", op->tty);
+		fprintf (ie->output, "%s", op->tty);
 		break;
 	case 'b':
 	{
@@ -2324,7 +2813,7 @@ static void output_special_char(unsigned char c, struct options *op,
 
 		for (i = 0; speedtab[i].speed; i++) {
 			if (speedtab[i].code == speed) {
-				printf("%ld", speedtab[i].speed);
+				fprintf(ie->output, "%ld", speedtab[i].speed);
 				break;
 			}
 		}
@@ -2334,36 +2823,46 @@ static void output_special_char(unsigned char c, struct options *op,
 	{
 		char *var = NULL, varname[64];
 
-		if (get_escape_argument(fp, varname, sizeof(varname)))
+		/* \S{varname} */
+		if (get_escape_argument(fp, varname, sizeof(varname))) {
 			var = read_os_release(op, varname);
-		else if (!(var = read_os_release(op, "PRETTY_NAME")))
-			var = uts.sysname;
-		if (var) {
-			if (strcmp(varname, "ANSI_COLOR") == 0)
-				printf("\033[%sm", var);
-			else
-				printf("%s", var);
-			if (var != uts.sysname)
-				free(var);
+			if (var) {
+				if (strcmp(varname, "ANSI_COLOR") == 0)
+					fprintf(ie->output, "\033[%sm", var);
+				else
+					fputs(var, ie->output);
+			}
+		/* \S */
+		} else if ((var = read_os_release(op, "PRETTY_NAME"))) {
+			fputs(var, ie->output);
+
+		/* \S and PRETTY_NAME not found */
+		} else {
+			uname(&uts);
+			fputs(uts.sysname, ie->output);
 		}
+
+		free(var);
+
 		break;
 	}
 	case 'u':
 	case 'U':
 	{
 		int users = 0;
-		struct utmp *ut;
-		setutent();
-		while ((ut = getutent()))
+		struct utmpx *ut;
+		setutxent();
+		while ((ut = getutxent()))
 			if (ut->ut_type == USER_PROCESS)
 				users++;
-		endutent();
+		endutxent();
 		if (c == 'U')
-			printf(P_("%d user", "%d users", users), users);
+			fprintf(ie->output, P_("%d user", "%d users", users), users);
 		else
-			printf ("%d ", users);
+			fprintf (ie->output, "%d ", users);
 		break;
 	}
+#if defined(RTMGRP_IPV4_IFADDR) && defined(RTMGRP_IPV6_IFADDR)
 	case '4':
 	case '6':
 	{
@@ -2375,15 +2874,21 @@ static void output_special_char(unsigned char c, struct options *op,
 			break;
 
 		if (get_escape_argument(fp, iface, sizeof(iface)))
-			output_iface_ip(addrs, iface, family);
+			output_iface_ip(ie, addrs, iface, family);
 		else
-			output_iface_ip(addrs, NULL, family);
+			output_iface_ip(ie, addrs, NULL, family);
 
 		freeifaddrs(addrs);
+
+		if (c == '4')
+			netlink_groups |= RTMGRP_IPV4_IFADDR;
+		else
+			netlink_groups |= RTMGRP_IPV6_IFADDR;
 		break;
 	}
+#endif
 	default:
-		putchar(c);
+		putc(c, ie->output);
 		break;
 	}
 }
@@ -2431,7 +2936,7 @@ static void init_special_char(char* arg, struct options *op)
 }
 
 /*
- * Appends @str to @dest and if @dest is not empty then use use @sep as a
+ * Appends @str to @dest and if @dest is not empty then use @sep as a
  * separator. The maximal final length of the @dest is @len.
  *
  * Returns the final @dest length or -1 in case of error.
@@ -2484,37 +2989,6 @@ static void check_username(const char* nm)
 err:
 	errno = EPERM;
 	log_err(_("checkname failed: %m"));
-}
-
-/*
- * For the case plymouth is found on this system
- */
-static int plymouth_command(const char* arg)
-{
-	const char *cmd = "/usr/bin/plymouth";
-	static int has_plymouth = 1;
-	pid_t pid;
-
-	if (!has_plymouth)
-		return 127;
-
-	pid = fork();
-	if (!pid) {
-		int fd = open("/dev/null", O_RDWR);
-		dup2(fd, 0);
-		dup2(fd, 1);
-		dup2(fd, 2);
-		close(fd);
-		execl(cmd, cmd, arg, (char *) NULL);
-		exit(127);
-	} else if (pid > 0) {
-		int status;
-		waitpid(pid, &status, 0);
-		if (status == 127)
-			has_plymouth = 0;
-		return status;
-	}
-	return 1;
 }
 
 static void reload_agettys(void)

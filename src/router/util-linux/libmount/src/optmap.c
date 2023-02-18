@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2010 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2010-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -14,7 +19,7 @@
  *
  *	@mountflags: (see MS_* macros in linux/fs.h)
  *
- *	@mountdata: (usully a comma separated string of options)
+ *	@mountdata: (usually a comma separated string of options)
  *
  * The libmount uses options-map(s) to describe mount options.
  *
@@ -113,6 +118,10 @@ static const struct libmnt_optmap linux_flags_map[] =
    { "strictatime", MS_STRICTATIME },         /* Strict atime semantics */
    { "nostrictatime", MS_STRICTATIME, MNT_INVERT }, /* kernel default atime */
 #endif
+#ifdef MS_LAZYTIME
+   { "lazytime", MS_LAZYTIME },               /* Update {a,m,c}time on the in-memory inode only */
+   { "nolazytime", MS_LAZYTIME, MNT_INVERT },
+#endif
 #ifdef MS_PROPAGATION
    { "unbindable",  MS_UNBINDABLE,          MNT_NOHLPS | MNT_NOMTAB }, /* Unbindable */
    { "runbindable", MS_UNBINDABLE | MS_REC, MNT_NOHLPS | MNT_NOMTAB },
@@ -122,6 +131,10 @@ static const struct libmnt_optmap linux_flags_map[] =
    { "rslave",      MS_SLAVE | MS_REC,      MNT_NOHLPS | MNT_NOMTAB },
    { "shared",      MS_SHARED,              MNT_NOHLPS | MNT_NOMTAB }, /* Shared */
    { "rshared",     MS_SHARED | MS_REC,     MNT_NOHLPS | MNT_NOMTAB },
+#endif
+#ifdef MS_NOSYMFOLLOW
+   { "symfollow", MS_NOSYMFOLLOW, MNT_INVERT }, /* Don't follow symlinks */
+   { "nosymfollow", MS_NOSYMFOLLOW },
 #endif
    { NULL, 0, 0 }
 };
@@ -155,7 +168,9 @@ static const struct libmnt_optmap userspace_opts_map[] =
    { "_netdev", MNT_MS_NETDEV },                           /* Device requires network */
 
    { "comment=", MNT_MS_COMMENT, MNT_NOHLPS | MNT_NOMTAB },/* fstab comment only */
-   { "x-",      MNT_MS_XCOMMENT, MNT_NOHLPS | MNT_NOMTAB | MNT_PREFIX }, /* x- options */
+
+   { "x-",      MNT_MS_XCOMMENT,   MNT_NOHLPS | MNT_PREFIX },              /* persistent comments (utab) */
+   { "X-",      MNT_MS_XFSTABCOMM, MNT_NOHLPS | MNT_NOMTAB | MNT_PREFIX }, /* fstab only comments */
 
    { "loop[=]", MNT_MS_LOOP, MNT_NOHLPS },                             /* use the loop device */
    { "offset=", MNT_MS_OFFSET, MNT_NOHLPS | MNT_NOMTAB },		   /* loop device offset */
@@ -168,6 +183,16 @@ static const struct libmnt_optmap userspace_opts_map[] =
 
    { "helper=", MNT_MS_HELPER },			   /* /sbin/mount.<helper> */
 
+   { "verity.hashdevice=", MNT_MS_HASH_DEVICE, MNT_NOHLPS | MNT_NOMTAB },     /* mount a verity device */
+   { "verity.roothash=",   MNT_MS_ROOT_HASH, MNT_NOHLPS | MNT_NOMTAB },		   /* verity device root hash */
+   { "verity.hashoffset=", MNT_MS_HASH_OFFSET, MNT_NOHLPS | MNT_NOMTAB },	   /* verity device hash offset */
+   { "verity.roothashfile=", MNT_MS_ROOT_HASH_FILE, MNT_NOHLPS | MNT_NOMTAB },/* verity device root hash (read from file) */
+   { "verity.fecdevice=",   MNT_MS_FEC_DEVICE, MNT_NOHLPS | MNT_NOMTAB },		/* verity FEC device */
+   { "verity.fecoffset=", MNT_MS_FEC_OFFSET, MNT_NOHLPS | MNT_NOMTAB },	      /* verity FEC area offset */
+   { "verity.fecroots=", MNT_MS_FEC_ROOTS, MNT_NOHLPS | MNT_NOMTAB },	      /* verity FEC roots */
+   { "verity.roothashsig=",    MNT_MS_ROOT_HASH_SIG, MNT_NOHLPS | MNT_NOMTAB },	/* verity device root hash signature file */
+   { "verity.oncorruption=",   MNT_MS_VERITY_ON_CORRUPTION, MNT_NOHLPS | MNT_NOMTAB },	/* verity: action the kernel takes on corruption */
+
    { NULL, 0, 0 }
 };
 
@@ -178,7 +203,7 @@ static const struct libmnt_optmap userspace_opts_map[] =
  * MNT_LINUX_MAP - Linux kernel fs-independent mount options
  *                 (usually MS_* flags, see linux/fs.h)
  *
- * MNT_USERSPACE_MAP - userpace mount(8) specific mount options
+ * MNT_USERSPACE_MAP - userspace mount(8) specific mount options
  *                     (e.g user=, _netdev, ...)
  *
  * Returns: static built-in libmount map.
@@ -189,7 +214,7 @@ const struct libmnt_optmap *mnt_get_builtin_optmap(int id)
 
 	if (id == MNT_LINUX_MAP)
 		return linux_flags_map;
-	else if (id == MNT_USERSPACE_MAP)
+	if (id == MNT_USERSPACE_MAP)
 		return userspace_opts_map;
 	return NULL;
 }
@@ -229,7 +254,7 @@ const struct libmnt_optmap *mnt_optmap_get_entry(
 				}
 				continue;
 			}
-			if (strncmp(ent->name, name, namelen))
+			if (strncmp(ent->name, name, namelen) != 0)
 				continue;
 			p = ent->name + namelen;
 			if (*p == '\0' || *p == '=' || *p == '[') {

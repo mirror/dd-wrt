@@ -54,8 +54,13 @@ blkid_probe_get_sectors
 blkid_probe_get_sectorsize
 blkid_probe_get_size
 blkid_probe_get_wholedisk_devno
+blkid_probe_hide_range
 blkid_probe_is_wholedisk
+blkid_probe_reset_buffers
+blkid_probe_reset_hints
 blkid_probe_set_device
+blkid_probe_set_hint
+blkid_probe_set_sectorsize
 blkid_probe_step_back
 blkid_reset_probe
 </SECTION>
@@ -85,6 +90,7 @@ blkid_probe_invert_partitions_filter
 blkid_probe_reset_partitions_filter
 <SUBSECTION>
 blkid_known_pttype
+blkid_partitions_get_name
 <SUBSECTION>
 blkid_partition_get_name
 blkid_partition_get_flags
@@ -140,6 +146,7 @@ blkid_probe_enable_topology
 <SUBSECTION>
 blkid_probe_get_topology
 blkid_topology_get_alignment_offset
+blkid_topology_get_dax
 blkid_topology_get_logical_sector_size
 blkid_topology_get_minimum_io_size
 blkid_topology_get_optimal_io_size

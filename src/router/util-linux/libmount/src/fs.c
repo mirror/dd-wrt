@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2008-2009 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2008-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -34,7 +39,7 @@ struct libmnt_fs *mnt_new_fs(void)
 
 	fs->refcount = 1;
 	INIT_LIST_HEAD(&fs->ents);
-	/*DBG(FS, ul_debugobj(fs, "alloc"));*/
+	DBG(FS, ul_debugobj(fs, "alloc"));
 	return fs;
 }
 
@@ -43,7 +48,7 @@ struct libmnt_fs *mnt_new_fs(void)
  * @fs: fs pointer
  *
  * Deallocates the fs. This function does not care about reference count. Don't
- * use this function directly -- it's better to use use mnt_unref_fs().
+ * use this function directly -- it's better to use mnt_unref_fs().
  *
  * The reference counting is supported since util-linux v2.24.
  */
@@ -148,10 +153,12 @@ static inline int update_str(char **dest, const char *src)
 	return 0;
 }
 
+/* This function does NOT overwrite (replace) the string in @new, the string in
+ * @new has to be NULL otherwise this is no-op. */
 static inline int cpy_str_at_offset(void *new, const void *old, size_t offset)
 {
-	char **o = (char **) (old + offset);
-	char **n = (char **) (new + offset);
+	char **o = (char **) ((char *) old + offset);
+	char **n = (char **) ((char *) new + offset);
 
 	if (*n)
 		return 0;	/* already set, don't overwrite */
@@ -183,9 +190,9 @@ struct libmnt_fs *mnt_copy_fs(struct libmnt_fs *dest,
 		dest = mnt_new_fs();
 		if (!dest)
 			return NULL;
-	}
 
-	/*DBG(FS, ul_debugobj(dest, "copy from %p", src));*/
+		dest->tab	 = NULL;
+	}
 
 	dest->id         = src->id;
 	dest->parent     = src->parent;
@@ -248,11 +255,11 @@ struct libmnt_fs *mnt_copy_mtab_fs(const struct libmnt_fs *fs)
 	if (!n)
 		return NULL;
 
-	if (cpy_str_at_offset(n, fs, offsetof(struct libmnt_fs, source)))
+	if (strdup_between_structs(n, fs, source))
 		goto err;
-	if (cpy_str_at_offset(n, fs, offsetof(struct libmnt_fs, target)))
+	if (strdup_between_structs(n, fs, target))
 		goto err;
-	if (cpy_str_at_offset(n, fs, offsetof(struct libmnt_fs, fstype)))
+	if (strdup_between_structs(n, fs, fstype))
 		goto err;
 
 	if (fs->vfs_optstr) {
@@ -271,7 +278,7 @@ struct libmnt_fs *mnt_copy_mtab_fs(const struct libmnt_fs *fs)
 		n->user_optstr = p;
 	}
 
-	if (cpy_str_at_offset(n, fs, offsetof(struct libmnt_fs, fs_optstr)))
+	if (strdup_between_structs(n, fs, fs_optstr))
 		goto err;
 
 	/* we cannot copy original optstr, the new optstr has to be without
@@ -299,8 +306,6 @@ void *mnt_fs_get_userdata(struct libmnt_fs *fs)
 {
 	if (!fs)
 		return NULL;
-
-	/*DBG(FS, ul_debugobj(fs, "get userdata [%p]", fs->userdata));*/
 	return fs->userdata;
 }
 
@@ -317,8 +322,6 @@ int mnt_fs_set_userdata(struct libmnt_fs *fs, void *data)
 {
 	if (!fs)
 		return -EINVAL;
-
-	/*DBG(FS, ul_debugobj(fs, "set userdata [%p]", fs->userdata));*/
 	fs->userdata = data;
 	return 0;
 }
@@ -422,8 +425,9 @@ int mnt_fs_set_source(struct libmnt_fs *fs, const char *source)
  * @fs: fs
  * @path: source path
  *
- * Compares @fs source path with @path. The trailing slash is ignored.
- * See also mnt_fs_match_source().
+ * Compares @fs source path with @path. The redundant slashes are ignored.
+ * This function compares strings and does not canonicalize the paths.
+ * See also more heavy and generic mnt_fs_match_source().
  *
  * Returns: 1 if @fs source path equal to @path, otherwise 0.
  */
@@ -437,7 +441,7 @@ int mnt_fs_streq_srcpath(struct libmnt_fs *fs, const char *path)
 	p = mnt_fs_get_srcpath(fs);
 
 	if (!mnt_fs_is_pseudofs(fs))
-		return streq_except_trailing_slash(p, path);
+		return streq_paths(p, path);
 
 	if (!p && !path)
 		return 1;
@@ -446,18 +450,37 @@ int mnt_fs_streq_srcpath(struct libmnt_fs *fs, const char *path)
 }
 
 /**
+ * mnt_fs_get_table:
+ * @fs: table entry
+ * @tb: table that contains @fs
+ *
+ * Returns: 0 or negative number on error (if @fs or @tb is NULL).
+ *
+ * Since: 2.34
+ */
+int mnt_fs_get_table(struct libmnt_fs *fs, struct libmnt_table **tb)
+{
+	if (!fs || !tb)
+		return -EINVAL;
+
+	*tb = fs->tab;
+	return 0;
+}
+
+/**
  * mnt_fs_streq_target:
  * @fs: fs
  * @path: mount point
  *
- * Compares @fs target path with @path. The trailing slash is ignored.
- * See also mnt_fs_match_target().
+ * Compares @fs target path with @path. The redundant slashes are ignored.
+ * This function compares strings and does not canonicalize the paths.
+ * See also more generic mnt_fs_match_target().
  *
  * Returns: 1 if @fs target path equal to @path, otherwise 0.
  */
 int mnt_fs_streq_target(struct libmnt_fs *fs, const char *path)
 {
-	return fs && streq_except_trailing_slash(mnt_fs_get_target(fs), path);
+	return fs && streq_paths(mnt_fs_get_target(fs), path);
 }
 
 /**
@@ -518,27 +541,15 @@ const char *mnt_fs_get_target(struct libmnt_fs *fs)
 /**
  * mnt_fs_set_target:
  * @fs: fstab/mtab/mountinfo entry
- * @target: mountpoint
+ * @tgt: mountpoint
  *
- * This function creates a private copy (strdup()) of @target.
+ * This function creates a private copy (strdup()) of @tgt.
  *
  * Returns: 0 on success or negative number in case of error.
  */
-int mnt_fs_set_target(struct libmnt_fs *fs, const char *target)
+int mnt_fs_set_target(struct libmnt_fs *fs, const char *tgt)
 {
-	char *p = NULL;
-
-	if (!fs)
-		return -EINVAL;
-	if (target) {
-		p = strdup(target);
-		if (!p)
-			return -ENOMEM;
-	}
-	free(fs->target);
-	fs->target = p;
-
-	return 0;
+	return strdup_to_struct_member(fs, target, tgt);
 }
 
 static int mnt_fs_get_flags(struct libmnt_fs *fs)
@@ -589,7 +600,7 @@ int mnt_fs_get_propagation(struct libmnt_fs *fs, unsigned long *flags)
  */
 int mnt_fs_is_kernel(struct libmnt_fs *fs)
 {
-	return mnt_fs_get_flags(fs) & MNT_FS_KERNEL;
+	return mnt_fs_get_flags(fs) & MNT_FS_KERNEL ? 1 : 0;
 }
 
 /**
@@ -600,7 +611,7 @@ int mnt_fs_is_kernel(struct libmnt_fs *fs)
  */
 int mnt_fs_is_swaparea(struct libmnt_fs *fs)
 {
-	return mnt_fs_get_flags(fs) & MNT_FS_SWAP;
+	return mnt_fs_get_flags(fs) & MNT_FS_SWAP ? 1 : 0;
 }
 
 /**
@@ -611,7 +622,7 @@ int mnt_fs_is_swaparea(struct libmnt_fs *fs)
  */
 int mnt_fs_is_pseudofs(struct libmnt_fs *fs)
 {
-	return mnt_fs_get_flags(fs) & MNT_FS_PSEUDO;
+	return mnt_fs_get_flags(fs) & MNT_FS_PSEUDO ? 1 : 0;
 }
 
 /**
@@ -622,7 +633,22 @@ int mnt_fs_is_pseudofs(struct libmnt_fs *fs)
  */
 int mnt_fs_is_netfs(struct libmnt_fs *fs)
 {
-	return mnt_fs_get_flags(fs) & MNT_FS_NET;
+	return mnt_fs_get_flags(fs) & MNT_FS_NET ? 1 : 0;
+}
+
+/**
+ * mnt_fs_is_regularfs:
+ * @fs: filesystem
+ *
+ * Returns: 1 if the filesystem is a regular filesystem (not network or pseudo filesystem).
+ *
+ * Since: 2.38
+ */
+int mnt_fs_is_regularfs(struct libmnt_fs *fs)
+{
+	return !(mnt_fs_is_pseudofs(fs)
+		 || mnt_fs_is_netfs(fs)
+		 || mnt_fs_is_swaparea(fs));
 }
 
 /**
@@ -743,7 +769,7 @@ static char *merge_optstr(const char *vfs, const char *fs)
  * @fs: fstab/mtab/mountinfo entry pointer
  *
  * Merges all mount options (VFS, FS and userspace) to one options string
- * and returns the result. This function does not modigy @fs.
+ * and returns the result. This function does not modify @fs.
  *
  * Returns: pointer to string (can be freed by free(3)) or NULL in case of error.
  */
@@ -761,11 +787,10 @@ char *mnt_fs_strdup_options(struct libmnt_fs *fs)
 	res = merge_optstr(fs->vfs_optstr, fs->fs_optstr);
 	if (!res && errno)
 		return NULL;
-	if (fs->user_optstr) {
-		if (mnt_optstr_append_option(&res, fs->user_optstr, NULL)) {
-			free(res);
-			res = NULL;
-		}
+	if (fs->user_optstr &&
+	    mnt_optstr_append_option(&res, fs->user_optstr, NULL)) {
+		free(res);
+		res = NULL;
 	}
 	return res;
 }
@@ -857,7 +882,7 @@ int mnt_fs_append_options(struct libmnt_fs *fs, const char *optstr)
 	if (!optstr)
 		return 0;
 
-	rc = mnt_split_optstr((char *) optstr, &u, &v, &f, 0, 0);
+	rc = mnt_split_optstr(optstr, &u, &v, &f, 0, 0);
 	if (rc)
 		return rc;
 
@@ -899,7 +924,7 @@ int mnt_fs_prepend_options(struct libmnt_fs *fs, const char *optstr)
 	if (!optstr)
 		return 0;
 
-	rc = mnt_split_optstr((char *) optstr, &u, &v, &f, 0, 0);
+	rc = mnt_split_optstr(optstr, &u, &v, &f, 0, 0);
 	if (rc)
 		return rc;
 
@@ -942,6 +967,38 @@ const char *mnt_fs_get_vfs_options(struct libmnt_fs *fs)
 }
 
 /**
+ * mnt_fs_get_vfs_options_all:
+ * @fs: fstab/mtab entry pointer
+ *
+ * Returns: pointer to newlly allocated string (can be freed by free(3)) or
+ * NULL in case of error.  The string contains all (including defaults) mount
+ * options.
+ */
+char *mnt_fs_get_vfs_options_all(struct libmnt_fs *fs)
+{
+	const struct libmnt_optmap *map = mnt_get_builtin_optmap(MNT_LINUX_MAP);
+	const struct libmnt_optmap *ent;
+	const char *opts = mnt_fs_get_options(fs);
+	char *result = NULL;
+	unsigned long flags = 0;
+
+	if (!opts || mnt_optstr_get_flags(opts, &flags, map))
+		return NULL;
+
+	for (ent = map ; ent && ent->name ; ent++){
+		if (ent->id & flags) { /* non-default value */
+			if (!(ent->mask & MNT_INVERT))
+				mnt_optstr_append_option(&result, ent->name, NULL);
+			else
+				continue;
+		} else if (ent->mask & MNT_INVERT)
+			mnt_optstr_append_option(&result, ent->name, NULL);
+	}
+
+	return result;
+}
+
+/**
  * mnt_fs_get_user_options:
  * @fs: fstab/mtab entry pointer
  *
@@ -980,19 +1037,7 @@ const char *mnt_fs_get_attributes(struct libmnt_fs *fs)
  */
 int mnt_fs_set_attributes(struct libmnt_fs *fs, const char *optstr)
 {
-	char *p = NULL;
-
-	if (!fs)
-		return -EINVAL;
-	if (optstr) {
-		p = strdup(optstr);
-		if (!p)
-			return -ENOMEM;
-	}
-	free(fs->attrs);
-	fs->attrs = p;
-
-	return 0;
+	return strdup_to_struct_member(fs, attrs, optstr);
 }
 
 /**
@@ -1098,24 +1143,13 @@ const char *mnt_fs_get_root(struct libmnt_fs *fs)
 /**
  * mnt_fs_set_root:
  * @fs: mountinfo entry
- * @root: path
+ * @path: root path
  *
  * Returns: 0 on success or negative number in case of error.
  */
-int mnt_fs_set_root(struct libmnt_fs *fs, const char *root)
+int mnt_fs_set_root(struct libmnt_fs *fs, const char *path)
 {
-	char *p = NULL;
-
-	if (!fs)
-		return -EINVAL;
-	if (root) {
-		p = strdup(root);
-		if (!p)
-			return -ENOMEM;
-	}
-	free(fs->root);
-	fs->root = p;
-	return 0;
+	return strdup_to_struct_member(fs, root, path);
 }
 
 /**
@@ -1165,6 +1199,9 @@ int mnt_fs_get_priority(struct libmnt_fs *fs)
 /**
  * mnt_fs_set_priority:
  * @fs: /proc/swaps entry
+ * @prio: priority
+ *
+ * Since: 2.28
  *
  * Returns: 0 or -1 in case of error
  */
@@ -1196,18 +1233,7 @@ const char *mnt_fs_get_bindsrc(struct libmnt_fs *fs)
  */
 int mnt_fs_set_bindsrc(struct libmnt_fs *fs, const char *src)
 {
-	char *p = NULL;
-
-	if (!fs)
-		return -EINVAL;
-	if (src) {
-		p = strdup(src);
-		if (!p)
-			return -ENOMEM;
-	}
-	free(fs->bindsrc);
-	fs->bindsrc = p;
-	return 0;
+	return strdup_to_struct_member(fs, bindsrc, src);
 }
 
 /**
@@ -1326,19 +1352,7 @@ const char *mnt_fs_get_comment(struct libmnt_fs *fs)
  */
 int mnt_fs_set_comment(struct libmnt_fs *fs, const char *comm)
 {
-	char *p = NULL;
-
-	if (!fs)
-		return -EINVAL;
-	if (comm) {
-		p = strdup(comm);
-		if (!p)
-			return -ENOMEM;
-	}
-
-	free(fs->comment);
-	fs->comment = p;
-	return 0;
+	return strdup_to_struct_member(fs, comment, comm);
 }
 
 /**
@@ -1355,7 +1369,7 @@ int mnt_fs_append_comment(struct libmnt_fs *fs, const char *comm)
 	if (!fs)
 		return -EINVAL;
 
-	return append_string(&fs->comment, comm);
+	return strappend(&fs->comment, comm);
 }
 
 /**
@@ -1531,7 +1545,7 @@ int mnt_fs_print_debug(struct libmnt_fs *fs, FILE *file)
 {
 	if (!fs || !file)
 		return -EINVAL;
-	fprintf(file, "------ fs: %p\n", fs);
+	fprintf(file, "------ fs:\n");
 	fprintf(file, "source: %s\n", mnt_fs_get_source(fs));
 	fprintf(file, "target: %s\n", mnt_fs_get_target(fs));
 	fprintf(file, "fstype: %s\n", mnt_fs_get_fstype(fs));

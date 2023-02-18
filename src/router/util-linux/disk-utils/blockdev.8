@@ -1,85 +1,186 @@
-.\" Copyright 1998 Andries E. Brouwer (aeb@cwi.nl)
-.\" Copyright 2007 Karel Zak <kzak@redhat.com>
+'\" t
+.\"     Title: blockdev
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" May be distributed under the GNU General Public License
-.TH BLOCKDEV 8 "August 2010" "util-linux" "System Administration"
-.SH NAME
+.TH "BLOCKDEV" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 blockdev \- call block device ioctls from the command line
-.SH SYNOPSIS
-.B blockdev
-.RB [ \-q ]
-.RB [ \-v ]
-.I command
-.RI [ command \&...\&]
-.I device
-.RI [ device \&...\&]
-.br
-.B blockdev
-.B \-\-report
-.RI [ device \&...\&]
-.SH DESCRIPTION
-The utility
-.B blockdev
-allows one to call block device ioctls from the command line.
-.SH OPTIONS
-.IP "\fB\-V\fP"
-Print version and exit.
-.IP "\fB\-q\fP"
+.SH "SYNOPSIS"
+.sp
+\fBblockdev\fP [\fB\-q\fP] [\fB\-v\fP] \fIcommand\fP [\fIcommand\fP...] \fIdevice\fP [\fIdevice\fP...]
+.sp
+\fBblockdev\fP \fB\-\-report\fP [\fIdevice\fP...]
+.sp
+\fBblockdev\fP \fB\-h\fP|\fB\-V\fP
+.SH "DESCRIPTION"
+.sp
+The utility \fBblockdev\fP allows one to call block device ioctls from the command line.
+.SH "OPTIONS"
+.sp
+\fB\-q\fP
+.RS 4
 Be quiet.
-.IP "\fB\-v\fP"
+.RE
+.sp
+\fB\-v\fP
+.RS 4
 Be verbose.
-.IP "\fB\-\-report\fP"
-Print a report for the specified device. It is possible to give multiple
-devices. If none is given, all devices which appear in /proc/partitions are
-shown. Note that the partition StartSec is in 512-byte sectors.
-.SH COMMANDS
+.RE
+.sp
+\fB\-\-report\fP
+.RS 4
+Print a report for the specified device. It is possible to give multiple devices. If none is given, all devices which appear in \fI/proc/partitions\fP are shown. Note that the partition StartSec is in 512\-byte sectors.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "COMMANDS"
+.sp
 It is possible to give multiple devices and multiple commands.
-.IP "\fB\-\-flushbufs\fP"
+.sp
+\fB\-\-flushbufs\fP
+.RS 4
 Flush buffers.
-.IP "\fB\-\-getalignoff\fP"
+.RE
+.sp
+\fB\-\-getalignoff\fP
+.RS 4
 Get alignment offset.
-.IP "\fB\-\-getbsz\fP"
-Print blocksize in bytes.
-.IP "\fB\-\-getdiscardzeroes\fP"
+.RE
+.sp
+\fB\-\-getbsz\fP
+.RS 4
+Print the blocksize in bytes. This size does not describe device topology. It\(cqs the size used internally by the kernel and it may be modified (for example) by filesystem driver on mount.
+.RE
+.sp
+\fB\-\-getdiscardzeroes\fP
+.RS 4
 Get discard zeroes support status.
-.IP "\fB\-\-getfra\fP"
-Get filesystem readahead in 512-byte sectors.
-.IP "\fB\-\-getiomin\fP"
+.RE
+.sp
+\fB\-\-getfra\fP
+.RS 4
+Get filesystem readahead in 512\-byte sectors.
+.RE
+.sp
+\fB\-\-getiomin\fP
+.RS 4
 Get minimum I/O size.
-.IP "\fB\-\-getioopt\fP"
+.RE
+.sp
+\fB\-\-getioopt\fP
+.RS 4
 Get optimal I/O size.
-.IP "\fB\-\-getmaxsect\fP"
-Get max sectors per request
-.IP "\fB\-\-getpbsz\fP"
+.RE
+.sp
+\fB\-\-getmaxsect\fP
+.RS 4
+Get max sectors per request.
+.RE
+.sp
+\fB\-\-getpbsz\fP
+.RS 4
 Get physical block (sector) size.
-.IP "\fB\-\-getra\fP"
-Print readahead (in 512-byte sectors).
-.IP "\fB\-\-getro\fP"
-Get read-only. Print 1 if the device is read-only, 0 otherwise.
-.IP "\fB\-\-getsize64\fP"
+.RE
+.sp
+\fB\-\-getra\fP
+.RS 4
+Print readahead (in 512\-byte sectors).
+.RE
+.sp
+\fB\-\-getro\fP
+.RS 4
+Get read\-only. Print 1 if the device is read\-only, 0 otherwise.
+.RE
+.sp
+\fB\-\-getsize64\fP
+.RS 4
 Print device size in bytes.
-.IP "\fB\-\-getsize\fP"
-Print device size (32-bit!) in sectors. Deprecated in favor of the \-\-getsz option.
-.IP "\fB\-\-getss\fP"
-Print sectorsize in bytes \(en usually 512.
-.IP "\fB\-\-getsz\fP"
-Get size in 512-byte sectors.
-.IP "\fB\-\-rereadpt\fP"
+.RE
+.sp
+\fB\-\-getsize\fP
+.RS 4
+Print device size (32\-bit!) in sectors. Deprecated in favor of the \fB\-\-getsz\fP option.
+.RE
+.sp
+\fB\-\-getss\fP
+.RS 4
+Print logical sector size in bytes \- usually 512.
+.RE
+.sp
+\fB\-\-getsz\fP
+.RS 4
+Get size in 512\-byte sectors.
+.RE
+.sp
+\fB\-\-rereadpt\fP
+.RS 4
 Reread partition table
-.IP "\fB\-\-setbsz\fP \fIbytes\fP"
-Set blocksize. Note that the block size is specific to the current file
-descriptor opening the block device, so the change of block size only persists
-for as long as blockdev has the device open, and is lost once blockdev exits.
-.IP "\fB\-\-setfra\fP \fIsectors\fP"
-Set filesystem readahead (same like \-\-setra on 2.6 kernels).
-.IP "\fB\-\-setra\fP \fIsectors\fP"
-Set readahead (in 512-byte sectors).
-.IP "\fB\-\-setro\fP"
-Set read-only.
-.IP "\fB\-\-setrw\fP"
-Set read-write.
-.SH AUTHOR
-blockdev was written by Andries E.\& Brouwer and rewritten by Karel Zak.
-.SH AVAILABILITY
-The blockdev command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.RE
+.sp
+\fB\-\-setbsz\fP \fIbytes\fP
+.RS 4
+Set blocksize. Note that the block size is specific to the current file descriptor opening the block device, so the change of block size only persists for as long as \fBblockdev\fP has the device open, and is lost once \fBblockdev\fP exits.
+.RE
+.sp
+\fB\-\-setfra\fP \fIsectors\fP
+.RS 4
+Set filesystem readahead (same as \fB\-\-setra\fP on 2.6 kernels).
+.RE
+.sp
+\fB\-\-setra\fP \fIsectors\fP
+.RS 4
+Set readahead (in 512\-byte sectors).
+.RE
+.sp
+\fB\-\-setro\fP
+.RS 4
+Set read\-only. The currently active access to the device may not be affected by the change. For example, a filesystem already mounted in read\-write mode will not be affected. The change applies after remount.
+.RE
+.sp
+\fB\-\-setrw\fP
+.RS 4
+Set read\-write.
+.RE
+.SH "AUTHORS"
+.sp
+\fBblockdev\fP was written by Andries E. Brouwer and rewritten by Karel Zak.
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBblockdev\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

@@ -29,28 +29,40 @@ ts_skip_nonroot
 ts_check_losetup
 ts_check_prog "mdadm"
 
-set -o pipefail
+# rhbz#182625: It can't create new raid0 with metadata 0.90 from mdadm-4.1
+TS_KNOWN_FAIL="yes"
 
 ts_log "Initialize devices"
 IMGNAME="${TS_OUTDIR}/${TS_TESTNAME}"
 
-DEVICE1=$(ts_device_init 50 ${IMGNAME}1.img)
-[ "$?" == 0 ] || ts_die "Cannot init device1"
+ts_device_init 50 ${IMGNAME}1.img
+DEVICE1=$TS_LODEV
 
-DEVICE2=$(ts_device_init 50 ${IMGNAME}2.img)
-[ "$?" == 0 ] || ts_die "Cannot init device2" $DEVICE1
+ts_device_init 50 ${IMGNAME}2.img
+DEVICE2=$TS_LODEV
 
 MD_DEVNAME=md8
 MD_DEVICE=/dev/${MD_DEVNAME}
 
+ts_lock "md"
+
 mdadm -q -S ${MD_DEVICE} &> /dev/null
+udevadm settle
 
 ts_log "Create RAID device"
 mdadm -q --create ${MD_DEVICE} --metadata=0.90 --chunk=64 --level=1 \
-	    --raid-devices=2 ${DEVICE1} ${DEVICE2} >> $TS_OUTPUT 2>&1
+	    --raid-devices=2 ${DEVICE1} ${DEVICE2} >> $TS_OUTPUT 2>> $TS_ERRLOG
+udevadm settle
+
+# create dos partition table
+$TS_CMD_FDISK --noauto-pt ${MD_DEVICE} &>/dev/null <<EOF
+o
+w
+q
+EOF
 
 ts_log "Create partitions on RAID device"
-$TS_CMD_FDISK ${MD_DEVICE} >> $TS_OUTPUT 2>&1 <<EOF
+$TS_CMD_FDISK ${MD_DEVICE} >> $TS_OUTPUT 2>> $TS_ERRLOG <<EOF
 n
 p
 1
@@ -69,21 +81,22 @@ EOF
 udevadm settle
 
 ts_log "Probe first RAID member"
-$TS_CMD_BLKID -p -o udev $DEVICE1 2>&1 | sort >> $TS_OUTPUT
+$TS_CMD_BLKID -p -o udev $DEVICE1 2>> $TS_ERRLOG | sort >> $TS_OUTPUT
 
 ts_log "Probe second RAID member"
-$TS_CMD_BLKID -p -o udev $DEVICE1 2>&1 | sort >> $TS_OUTPUT
+$TS_CMD_BLKID -p -o udev $DEVICE1 2>> $TS_ERRLOG | sort >> $TS_OUTPUT
 
 ts_log "Stop RAID device"
-mdadm -q -S ${MD_DEVICE} >> $TS_OUTPUT 2>&1
+mdadm -q -S ${MD_DEVICE} >> $TS_OUTPUT 2>> $TS_ERRLOG
 
 udevadm settle
+ts_unlock "md"
 
 ts_log "Deinitialize devices"
-ts_device_deinit $DEVICE1
-ts_device_deinit $DEVICE2
 
 ts_fdisk_clean
+# seems that raid1 minimum I/O size has been changed in kernels >4.4.x and >4.8
+sed -i 's@^\(I/O size (minimum/optimal): \)[1-9][0-9]*@\1<removed>@' $TS_OUTPUT
 # remove generated UUIDs
 sed -i -e 's/ID_FS_UUID.*//g' $TS_OUTPUT
 

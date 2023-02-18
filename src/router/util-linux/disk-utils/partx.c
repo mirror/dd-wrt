@@ -32,7 +32,6 @@
 #include "partx.h"
 #include "sysfs.h"
 #include "loopdev.h"
-#include "at.h"
 #include "closestream.h"
 #include "optutils.h"
 
@@ -83,7 +82,7 @@ struct colinfo {
 };
 
 /* columns descriptions */
-struct colinfo infos[] = {
+static struct colinfo infos[] = {
 	[COL_PARTNO]   = { "NR",    0.25, SCOLS_FL_RIGHT, N_("partition number") },
 	[COL_START]    = { "START",   0.30, SCOLS_FL_RIGHT, N_("start of the partition in sectors") },
 	[COL_END]      = { "END",     0.30, SCOLS_FL_RIGHT, N_("end of the partition in sectors") },
@@ -99,7 +98,8 @@ struct colinfo infos[] = {
 #define NCOLS ARRAY_SIZE(infos)
 
 /* array with IDs of enabled columns */
-static int columns[NCOLS], ncolumns;
+static int columns[NCOLS];
+static size_t ncolumns;
 
 static int verbose;
 static int partx_flags;
@@ -136,7 +136,7 @@ static void assoc_loopdev(const char *fname)
 static inline int get_column_id(int num)
 {
 	assert(ARRAY_SIZE(columns) == NCOLS);
-	assert(num < ncolumns);
+	assert((size_t)num < ncolumns);
 	assert(columns[num] < (int) NCOLS);
 	return columns[num];
 }
@@ -177,14 +177,15 @@ static int get_partno_from_device(char *partition, dev_t devno)
 	assert(partition);
 
 	if (devno) {
-		struct sysfs_cxt cxt;
+		struct path_cxt *pc;
 		int rc;
 
-		if (sysfs_init(&cxt, devno, NULL))
+		pc = ul_new_sysfs_path(devno, NULL, NULL);
+		if (!pc)
 			goto err;
 
-		rc = sysfs_read_int(&cxt, "partition", &partno);
-		sysfs_deinit(&cxt);
+		rc = ul_path_read_s32(pc, &partno, "partition");
+		ul_unref_path(pc);
 
 		if (rc == 0)
 			return partno;
@@ -193,10 +194,10 @@ static int get_partno_from_device(char *partition, dev_t devno)
 	sz = strlen(partition);
 	p = partition + sz - 1;
 
-	if (!isdigit((unsigned int) *p))
+	if (!isdigit((unsigned char) *p))
 		goto err;
 
-	while (isdigit((unsigned int) *(p - 1))) p--;
+	while (isdigit((unsigned char) *(p - 1))) p--;
 
 	errno = 0;
 	partno = strtol(p, &end, 10);
@@ -244,11 +245,11 @@ static int get_max_partno(const char *disk, dev_t devno)
 		if (d->d_type != DT_DIR && d->d_type != DT_UNKNOWN)
 			continue;
 #endif
-		if (strncmp(parent, d->d_name, strlen(parent)))
+		if (strncmp(parent, d->d_name, strlen(parent)) != 0)
 			continue;
 		snprintf(path, sizeof(path), "%s/partition", d->d_name);
 
-		fd = open_at(dirfd(dir), dirname, path, O_RDONLY);
+		fd = openat(dirfd(dir), path, O_RDONLY);
 		if (fd) {
 			int x = 0;
 			FILE *f = fdopen(fd, "r");
@@ -265,6 +266,30 @@ static int get_max_partno(const char *disk, dev_t devno)
 	return partno;
 dflt:
 	return SLICES_MAX;
+}
+
+static int recount_range_by_pt(blkid_partlist ls, int *lower, int *upper)
+{
+	int n = 0, i, nparts = blkid_partlist_numof_partitions(ls);
+
+	for (i = 0; i < nparts; i++) {
+		blkid_partition par = blkid_partlist_get_partition(ls, i);
+		int partno = blkid_partition_get_partno(par);
+		n = max(partno, n);
+	}
+
+	if (*lower < 0)
+		*lower = n + *lower + 1;
+	if (*upper < 0)
+		*upper = n + *upper + 1;
+
+	if (*lower > *upper && *upper != 0) {
+		warnx(_("specified range <%d:%d> does not make sense"), *lower, *upper);
+		return -EINVAL;
+	}
+	if (verbose)
+		printf(_("range recount: max partno=%d, lower=%d, upper=%d\n"), n, *lower, *upper);
+	return 0;
 }
 
 static void del_parts_warnx(const char *device, int first, int last)
@@ -284,6 +309,7 @@ static int del_parts(int fd, const char *device, dev_t devno,
 	assert(fd >= 0);
 	assert(device);
 
+	/* recount range by information in /sys */
 	if (!lower)
 		lower = 1;
 	if (!upper || lower < 0 || upper < 0) {
@@ -302,12 +328,13 @@ static int del_parts(int fd, const char *device, dev_t devno,
 	}
 
 	for (i = lower; i <= upper; i++) {
-		rc = partx_del_partition(fd, i);
-		if (rc == 0) {
+		if (partx_del_partition(fd, i) == 0) {
 			if (verbose)
 				printf(_("%s: partition #%d removed\n"), device, i);
 			continue;
-		} else if (errno == ENXIO) {
+		}
+
+		if (errno == ENXIO) {
 			if (verbose)
 				printf(_("%s: partition #%d doesn't exist\n"), device, i);
 			continue;
@@ -343,11 +370,15 @@ static void add_parts_warnx(const char *device, int first, int last)
 static int add_parts(int fd, const char *device,
 		     blkid_partlist ls, int lower, int upper)
 {
-	int i, nparts, rc = 0, errfirst = 0, errlast = 0;
+	int i, nparts, rc, errfirst = 0, errlast = 0;
 
 	assert(fd >= 0);
 	assert(device);
 	assert(ls);
+
+	rc = recount_range_by_pt(ls, &lower, &upper);
+	if (rc)
+		return rc;
 
 	nparts = blkid_partlist_numof_partitions(ls);
 
@@ -430,6 +461,8 @@ static int upd_parts(int fd, const char *device, dev_t devno,
 	assert(device);
 	assert(ls);
 
+	/* recount range by information in /sys, if on disk number of
+	 * partitions is greater than in /sys the use on-disk limit */
 	nparts = blkid_partlist_numof_partitions(ls);
 	if (!lower)
 		lower = 1;
@@ -505,9 +538,13 @@ static int upd_parts(int fd, const char *device, dev_t devno,
 
 static int list_parts(blkid_partlist ls, int lower, int upper)
 {
-	int i, nparts;
+	int i, nparts, rc;
 
 	assert(ls);
+
+	rc = recount_range_by_pt(ls, &lower, &upper);
+	if (rc)
+		return rc;
 
 	nparts = blkid_partlist_numof_partitions(ls);
 
@@ -543,11 +580,11 @@ static int add_scols_line(struct libscols_table *table, blkid_partition par)
 
 	line = scols_table_new_line(table, NULL);
 	if (!line) {
-		warn(_("failed to add line to output"));
+		warn(_("failed to allocate output line"));
 		return -ENOMEM;
 	}
 
-	for (i = 0; i < ncolumns; i++) {
+	for (i = 0; (size_t)i < ncolumns; i++) {
 		char *str = NULL;			/* allocated string */
 		const char *cstr = NULL;		/* foreign string */
 
@@ -606,7 +643,7 @@ static int add_scols_line(struct libscols_table *table, blkid_partition par)
 		else if (str)
 			rc = scols_line_refer_data(line, i, str);
 		if (rc) {
-			warn(_("failed to add data to output table"));
+			warn(_("failed to add output data"));
 			break;
 		}
 	}
@@ -629,21 +666,25 @@ static int show_parts(blkid_partlist ls, int scols_flags, int lower, int upper)
 	scols_init_debug(0);
 	table = scols_new_table();
 	if (!table) {
-		warn(_("failed to initialize output table"));
+		warn(_("failed to allocate output table"));
 		return -1;
 	}
 	scols_table_enable_raw(table, !!(scols_flags & PARTX_RAW));
 	scols_table_enable_export(table, !!(scols_flags & PARTX_EXPORT));
 	scols_table_enable_noheadings(table, !!(scols_flags & PARTX_NOHEADINGS));
 
-	for (i = 0; i < ncolumns; i++) {
+	for (i = 0; (size_t)i < ncolumns; i++) {
 		struct colinfo *col = get_column_info(i);
 
 		if (!scols_table_new_column(table, col->name, col->whint, col->flags)) {
-			warnx(_("failed to initialize output column"));
+			warnx(_("failed to allocate output column"));
 			goto done;
 		}
 	}
+
+	rc = recount_range_by_pt(ls, &lower, &upper);
+	if (rc)
+		goto done;
 
 	for (i = 0; i < nparts; i++) {
 		blkid_partition par = blkid_partlist_get_partition(ls, i);
@@ -704,8 +745,9 @@ static blkid_partlist get_partlist(blkid_probe pr,
 	return ls;
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	size_t i;
 
 	fputs(USAGE_HEADER, out);
@@ -725,23 +767,24 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_(" -g, --noheadings     don't print headings for --show\n"), out);
 	fputs(_(" -n, --nr <n:m>       specify the range of partitions (e.g. --nr 2:4)\n"), out);
 	fputs(_(" -o, --output <list>  define which output columns to use\n"), out);
+	fputs(_("     --output-all     output all columns\n"), out);
 	fputs(_(" -P, --pairs          use key=\"value\" output format\n"), out);
 	fputs(_(" -r, --raw            use raw output format\n"), out);
-	fputs(_(" -t, --type <type>    specify the partition type (dos, bsd, solaris, etc.)\n"), out);
+	fputs(_(" -S, --sector-size <num>  overwrite sector size\n"), out);
+	fputs(_(" -t, --type <type>    specify the partition type\n"), out);
+	fputs(_("     --list-types     list supported partition types and exit\n"), out);
 	fputs(_(" -v, --verbose        verbose mode\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(22));
 
-	fputs(_("\nAvailable columns (for --show, --raw or --pairs):\n"), out);
-
+	fputs(USAGE_COLUMNS, out);
 	for (i = 0; i < NCOLS; i++)
 		fprintf(out, " %10s  %s\n", infos[i].name, _(infos[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("partx(8)"));
+	printf(USAGE_MAN_TAIL("partx(8)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -753,7 +796,12 @@ int main(int argc, char **argv)
 	char *wholedisk = NULL; /* allocated, ie: /dev/sda */
 	char *outarg = NULL;
 	dev_t disk_devno = 0, part_devno = 0;
+	unsigned int sector_size = 0;
 
+	enum {
+		OPT_LIST_TYPES = CHAR_MAX + 1,
+		OPT_OUTPUT_ALL
+	};
 	static const struct option long_opts[] = {
 		{ "bytes",	no_argument,       NULL, 'b' },
 		{ "noheadings",	no_argument,       NULL, 'g' },
@@ -764,16 +812,19 @@ int main(int argc, char **argv)
 		{ "delete",	no_argument,	   NULL, 'd' },
 		{ "update",     no_argument,       NULL, 'u' },
 		{ "type",	required_argument, NULL, 't' },
+		{ "list-types", no_argument,       NULL, OPT_LIST_TYPES },
 		{ "nr",		required_argument, NULL, 'n' },
 		{ "output",	required_argument, NULL, 'o' },
+		{ "output-all", no_argument,       NULL, OPT_OUTPUT_ALL },
 		{ "pairs",      no_argument,       NULL, 'P' },
+		{ "sector-size",required_argument, NULL, 'S' },
 		{ "help",	no_argument,       NULL, 'h' },
 		{ "version",    no_argument,       NULL, 'V' },
 		{ "verbose",	no_argument,       NULL, 'v' },
 		{ NULL, 0, NULL, 0 }
 	};
 
-	static const ul_excl_t excl[] = {	/* rows and cols in in ASCII order */
+	static const ul_excl_t excl[] = {	/* rows and cols in ASCII order */
 		{ 'P','a','d','l','r','s','u' },
 		{ 0 }
 	};
@@ -782,10 +833,10 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((c = getopt_long(argc, argv,
-				"abdglrsuvn:t:o:PhV", long_opts, NULL)) != -1) {
+				"abdglrsuvn:t:o:PS:hV", long_opts, NULL)) != -1) {
 
 		err_exclusive_options(c, long_opts, excl, excl_st);
 
@@ -812,6 +863,10 @@ int main(int argc, char **argv)
 		case 'o':
 			outarg = optarg;
 			break;
+		case OPT_OUTPUT_ALL:
+			for (ncolumns = 0; ncolumns < ARRAY_SIZE(infos); ncolumns++)
+				columns[ncolumns] = ncolumns;
+			break;
 		case 'P':
 			scols_flags |= PARTX_EXPORT;
 			what = ACT_SHOW;
@@ -823,6 +878,9 @@ int main(int argc, char **argv)
 		case 's':
 			what = ACT_SHOW;
 			break;
+		case 'S':
+			sector_size = strtou32_or_err(optarg, _("invalid sector size argument"));
+			break;
 		case 't':
 			type = optarg;
 			break;
@@ -832,14 +890,21 @@ int main(int argc, char **argv)
 		case 'v':
 			verbose = 1;
 			break;
-		case 'h':
-			usage(stdout);
-		case 'V':
-			printf(UTIL_LINUX_VERSION);
+		case OPT_LIST_TYPES:
+		{
+			size_t idx = 0;
+			const char *name = NULL;
+
+			while (blkid_partitions_get_name(idx++, &name) == 0)
+				puts(name);
 			return EXIT_SUCCESS;
-		case '?':
+		}
+		case 'h':
+			usage();
+		case 'V':
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
@@ -880,6 +945,9 @@ int main(int argc, char **argv)
 		} else {
 			device = argv[optind];
 			wholedisk = xstrdup(argv[optind + 1]);
+
+			if (device && wholedisk && !startswith(device, wholedisk))
+				errx(EXIT_FAILURE, _("partition and disk name do not match"));
 		}
 	} else if (optind == argc - 1) {
 		/* passed only one arg (ie: /dev/sda3 or /dev/sda) */
@@ -903,9 +971,10 @@ int main(int argc, char **argv)
 			device = NULL;
 			part_devno = 0;
 		}
-	} else
-		usage(stderr);
-
+	} else {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+	}
 	if (device && (upper || lower))
 		errx(EXIT_FAILURE, _("--nr and <partition> are mutually exclusive"));
 
@@ -944,6 +1013,7 @@ int main(int argc, char **argv)
 				errx(EXIT_FAILURE, _("%s: partitioned loop devices unsupported"),
 				     wholedisk);
 			assoc_loopdev(wholedisk);
+			free(wholedisk);
 			wholedisk = xstrdup(lc.device);
 		} else if (!S_ISBLK(x.st_mode))
 			errx(EXIT_FAILURE, _("%s: not a block device"), wholedisk);
@@ -960,22 +1030,14 @@ int main(int argc, char **argv)
 		if (!pr || blkid_probe_set_device(pr, fd, 0, 0))
 			warnx(_("%s: failed to initialize blkid prober"),
 					wholedisk);
-		else
+		else {
+			if (sector_size)
+				blkid_probe_set_sectorsize(pr, sector_size);
+
 			ls = get_partlist(pr, wholedisk, type);
+		}
 
 		if (ls) {
-			int n = blkid_partlist_numof_partitions(ls);
-
-			if (lower < 0)
-				lower = n + lower + 1;
-			if (upper < 0)
-				upper = n + upper + 1;
-			if (lower > upper) {
-				warnx(_("specified range <%d:%d> "
-					"does not make sense"), lower, upper);
-				rc = -1, what = ACT_NONE;
-			}
-
 			switch (what) {
 			case ACT_SHOW:
 				rc = show_parts(ls, scols_flags, lower, upper);
@@ -988,14 +1050,19 @@ int main(int argc, char **argv)
 				break;
 			case ACT_UPD:
 				rc = upd_parts(fd, wholedisk, disk_devno, ls, lower, upper);
+				break;
 			case ACT_NONE:
 				break;
 			default:
 				abort();
 			}
-		}
+		} else
+			rc = 1;
+
 		blkid_free_probe(pr);
 	}
+
+	free(wholedisk);
 
 	if (loopdev)
 		loopcxt_deinit(&lc);

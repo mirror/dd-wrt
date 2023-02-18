@@ -1,132 +1,216 @@
-.\" Copyright 2014 Ondrej Oprala (ondrej.oprala@gmail.com)
-.\" May be distributed under the GNU General Public License
-.TH LSLOGINS "1" "April 2014" "util-linux" "User Commands"
-.SH NAME
+'\" t
+.\"     Title: lslogins
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "LSLOGINS" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 lslogins \- display information about known users in the system
-.SH SYNOPSIS
-.B lslogins
-[options]
-.RB [ \-s | \-u [ =\fIUID ]]
-.RB [ \-g " \fIgroups\fR]"
-.RB [ \-l " \fIlogins\fR]"
-.SH DESCRIPTION
-.PP
-Examine the wtmp and btmp logs, /etc/shadow (if necessary) and /etc/passwd
-and output the desired data.
-.PP
+.SH "SYNOPSIS"
+.sp
+\fBlslogins\fP [options] [\fB\-s\fP|\fB\-u\fP[=\fIUID\fP]] [\fB\-g\fP \fIgroups\fP] [\fB\-l\fP \fIlogins\fP] [\fIusername\fP]
+.SH "DESCRIPTION"
+.sp
+Examine the wtmp and btmp logs, \fI/etc/shadow\fP (if necessary) and \fI/passwd\fP and output the desired data.
+.sp
+The optional argument \fIusername\fP forces \fBlslogins\fP to print all available details about the specified user only. In this case the output format is different than in case of \fB\-l\fP or \fB\-g\fP and unknown is \fIusername\fP reported as an error.
+.sp
 The default action is to list info about all the users in the system.
-.SH OPTIONS
+.SH "OPTIONS"
+.sp
 Mandatory arguments to long options are mandatory for short options too.
-.TP
-\fB\-a\fR, \fB\-\-acc\-expiration\fR
-Display data about the date of last password change and the account expiration
-date (see \fBshadow\fR(5) for more info).  (Requires root privileges.)
-.TP
-\fB\-\-btmp\-file \fIpath\fP
+.sp
+\fB\-a\fP, \fB\-\-acc\-expiration\fP
+.RS 4
+Display data about the date of last password change and the account expiration date (see \fBshadow\fP(5) for more info). (Requires root privileges.)
+.RE
+.sp
+\fB\-\-btmp\-file\fP \fIpath\fP
+.RS 4
 Alternate path for btmp.
-.TP
-\fB\-c\fR, \fB\-\-colon\-separate\fR
+.RE
+.sp
+\fB\-c\fP, \fB\-\-colon\-separate\fP
+.RS 4
 Separate info about each user with a colon instead of a newline.
-.TP
-\fB\-e\fR, \fB\-\-export\fR
-Output data in the format of NAME=VALUE.
-.TP
-\fB\-f\fR, \fB\-\-failed\fR
-Display data about the users' last failed login attempts.
-.TP
-\fB\-G\fR, \fB\-\-supp\-groups\fR
-Show information about groups.
-.TP
-\fB\-g\fR, \fB\-\-groups\fR=\fIgroups\fR
-Only show data of users belonging to \fIgroups\fR.  More than one group
-may be specified; the list has to be comma-separated.
-.TP
-\fB\-h\fR, \fB\-\-help\fR
-Display help information and exit.
-.TP
-\fB\-L\fR, \fB\-\-last\fR
-Display data containing information about the users' last login sessions.
-.TP
-\fB\-l\fR, \fB\-\-logins\fR=\fIlogins\fR
-Only show data of users with a login specified in \fIlogins\fR (user names or user
-IDS).  More than one login may be specified; the list has to be comma-separated.
-.TP
-\fB\-n\fR, \fB\-\-newline\fR
+.RE
+.sp
+\fB\-e\fP, \fB\-\-export\fP
+.RS 4
+Output data in the format of NAME=VALUE. See also option \fB\-\-shell\fP.
+.RE
+.sp
+\fB\-f\fP, \fB\-\-failed\fP
+.RS 4
+Display data about the users\(aq last failed login attempts.
+.RE
+.sp
+\fB\-G\fP, \fB\-\-supp\-groups\fP
+.RS 4
+Show information about supplementary groups.
+.RE
+.sp
+\fB\-g\fP, \fB\-\-groups\fP=\fIgroups\fP
+.RS 4
+Only show data of users belonging to \fIgroups\fP. More than one group may be specified; the list has to be comma\-separated. Unknown group names are ignored.
+.sp
+Note that the relation between user and group may be invisible for the primary group if the user is not explicitly specified as group member (e.g., in \fI/etc/group\fP). If the command \fBlslogins\fP scans for groups then it uses the groups database only, and the user database with primary GID is not used at all.
+.RE
+.sp
+\fB\-L\fP, \fB\-\-last\fP
+.RS 4
+Display data containing information about the users\(aq last login sessions.
+.RE
+.sp
+\fB\-l\fP, \fB\-\-logins\fP=\fIlogins\fP
+.RS 4
+Only show data of users with a login specified in \fIlogins\fP (user names or user IDs). More than one login may be specified; the list has to be comma\-separated. Unknown login names are ignored.
+.RE
+.sp
+\fB\-n\fP, \fB\-\-newline\fP
+.RS 4
 Display each piece of information on a separate line.
-.TP
-\fB\-\-noheadings\fR
+.RE
+.sp
+\fB\-\-noheadings\fP
+.RS 4
 Do not print a header line.
-.TP
-\fB\-\-notruncate\fR
-Don't truncate output.
-.TP
-\fB\-o\fR, \fB\-\-output \fIlist\fP
-Specify which output columns to print.  Use
-.B \-\-help
-to get a list of all supported columns.
-.TP
-\fB\-p\fR, \fB\-\-pwd\fR
-Display information related to login by password (see also \fB\-afL).
-.TP
-\fB\-r\fR, \fB\-\-raw\fR
+.RE
+.sp
+\fB\-\-notruncate\fP
+.RS 4
+Don\(cqt truncate output.
+.RE
+.sp
+\fB\-o\fP, \fB\-\-output\fP \fIlist\fP
+.RS 4
+Specify which output columns to print. The default list of columns may be extended if \fIlist\fP is specified in the format \fI+list\fP.
+.RE
+.sp
+\fB\-\-output\-all\fP
+.RS 4
+Output all available columns. \fB\-\-help\fP to get a list of all supported columns.
+.RE
+.sp
+\fB\-p\fP, \fB\-\-pwd\fP
+.RS 4
+Display information related to login by password (see also \fB\-afL\fP).
+.RE
+.sp
+\fB\-r\fP, \fB\-\-raw\fP
+.RS 4
 Raw output (no columnation).
-.TP
-\fB\-s\fR, \fB\-\-system\-accs\fR[=\fIthreshold\fR]
-Show system accounts.  These are by default all accounts with a UID below 1000
-(non-inclusive), with the exception of either nobody or nfsnobody (UID 65534).  The UID
-threshold can also be specified explicitly (necessary for some distributions that
-allocate UIDs starting from 100, 500 - or an entirely different value - rather than 1000).
-.TP
-\fB\-\-time\-format\fR \fItype\fP
-Display dates in short, full or iso format.  The default is short, this time
-format is designed to be space efficient and human readable.
-.TP
-\fB\-u\fR, \fB\-\-user\-accs\fR[=\fIthreshold\fR]
-Show user accounts.  These are by default all accounts with UID above 1000
-(inclusive), with the exception of either nobody or nfsnobody (UID 65534).  The UID
-threshold can also be specified explicitly (necessary for some distributions that
-allocate UIDs starting from 100, 500 - or an entirely different value - rather than 1000).
-.TP
-\fB\-V\fR, \fB\-\-version\fR
-Display version information and exit.
-.TP
-\fB\-\-wtmp\-file \fIpath\fP
+.RE
+.sp
+\fB\-s\fP, \fB\-\-system\-accs\fP
+.RS 4
+Show system accounts. These are by default all accounts with a UID between 101 and 999 (inclusive), with the exception of either nobody or nfsnobody (UID 65534). This hardcoded default may be overwritten by parameters \fBSYS_UID_MIN\fP and \fBSYS_UID_MAX\fP in the file \fI/etc/login.defs\fP.
+.RE
+.sp
+\fB\-\-time\-format\fP \fItype\fP
+.RS 4
+Display dates in short, full or iso format. The default is short, this time format is designed to be space efficient and human readable.
+.RE
+.sp
+\fB\-u\fP, \fB\-\-user\-accs\fP
+.RS 4
+Show user accounts. These are by default all accounts with UID above 1000 (inclusive), with the exception of either nobody or nfsnobody (UID 65534). This hardcoded default maybe overwritten by parameters UID_MIN and UID_MAX in the file \fI/etc/login.defs\fP.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.sp
+\fB\-\-wtmp\-file\fP \fIpath\fP
+.RS 4
 Alternate path for wtmp.
-.TP
-\fB\-Z\fR, \fB\-\-context\fR
-Display the users' security context.
-.TP
-\fB\-z\fR, \fB\-\-print0\fR
+.RE
+.sp
+\fB\-\-lastlog\fP \fIpath\fP
+.RS 4
+Alternate path for \fBlastlog\fP(8).
+.RE
+.sp
+\fBy\-\fP, \fB\-\-shell\fP
+.RS 4
+The column name will be modified to contain only characters allowed for shell variable identifiers. This is usable, for example, with \fB\-\-export\fP. Note that this feature has been automatically enabled for \fB\-\-export\fP in version 2.37, but due to compatibility issues, now it\(cqs necessary to request this behavior by \fB\-\-shell\fP.
+.RE
+.sp
+\fB\-Z\fP, \fB\-\-context\fP
+.RS 4
+Display the users\(aq security context.
+.RE
+.sp
+\fB\-z\fP, \fB\-\-print0\fP
+.RS 4
 Delimit user entries with a nul character, instead of a newline.
-
-.SH NOTES
-The default UID thresholds are read from /etc/login.defs.
-
-.SH EXIT STATUS
-.TP
+.RE
+.SH "EXIT STATUS"
+.sp
 0
+.RS 4
 if OK,
-.TP
+.RE
+.sp
 1
+.RS 4
 if incorrect arguments specified,
-.TP
+.RE
+.sp
 2
-if a serious error occurs (e.g. a corrupt log).
-.SH SEE ALSO
-\fBgroup\fP(5), \fBpasswd\fP(5), \fBshadow\fP(5), \fButmp\fP(5)
-.SH HISTORY
+.RS 4
+if a serious error occurs (e.g., a corrupt log).
+.RE
+.SH "NOTES"
+.sp
+The default UID thresholds are read from \fI/etc/login.defs\fP.
+.SH "HISTORY"
+.sp
 The \fBlslogins\fP utility is inspired by the \fBlogins\fP utility, which first appeared in FreeBSD 4.10.
-.SH AUTHORS
-.MT ooprala@redhat.com
-Ondrej Oprala
-.ME
-.br
-.MT kzak@redhat.com
-Karel Zak
-.ME
-
-.SH AVAILABILITY
-The lslogins command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.SH "AUTHORS"
+.sp
+.MTO "ooprala\(atredhat.com" "Ondrej Oprala" ","
+.MTO "kzak\(atredhat.com" "Karel Zak" ""
+.SH "SEE ALSO"
+.sp
+\fBgroup\fP(5),
+\fBpasswd\fP(5),
+\fBshadow\fP(5),
+\fButmp\fP(5)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBlslogins\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

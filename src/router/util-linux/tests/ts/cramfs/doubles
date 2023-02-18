@@ -28,8 +28,6 @@ ts_check_test_command "$TS_CMD_UMOUNT"
 ts_skip_nonroot
 ts_check_losetup
 
-set -o pipefail
-
 ORIGPWD=$(pwd)
 IMAGE_NAME="${TS_TESTNAME}.img"
 IMAGE_PATH="$TS_OUTDIR/$IMAGE_NAME"
@@ -38,12 +36,19 @@ IMAGE_SRC="$TS_OUTDIR/${TS_TESTNAME}-data"
 ts_log "create mountpoint dir"
 [ -d "$TS_MOUNTPOINT" ] || mkdir -p $TS_MOUNTPOINT
 
-mkdir -p $IMAGE_SRC
+rm -rf "$IMAGE_SRC"
+mkdir -m 755 -p $IMAGE_SRC
+
+umask 133
+
 echo hello > $IMAGE_SRC/a
 echo hello > $IMAGE_SRC/b
 
+# sudo may use whatever group
+chgrp -R 0 "$IMAGE_SRC"
+
 ts_log "create cramfs image"
-$TS_CMD_MKCRAMFS $IMAGE_SRC $IMAGE_PATH 2>&1 >> $TS_OUTPUT
+$TS_CMD_MKCRAMFS $IMAGE_SRC $IMAGE_PATH >> $TS_OUTPUT 2>> $TS_ERRLOG
 [ -s "$IMAGE_PATH" ] || ts_die "Cannot create $IMAGE_PATH"
 
 ts_mount "cramfs" -r $IMAGE_PATH $TS_MOUNTPOINT

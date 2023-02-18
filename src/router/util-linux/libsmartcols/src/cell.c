@@ -54,32 +54,21 @@ int scols_reset_cell(struct libscols_cell *ce)
 /**
  * scols_cell_set_data:
  * @ce: a pointer to a struct libscols_cell instance
- * @str: data (used for scols_print_table())
+ * @data: data (used for scols_print_table())
  *
- * Stores a copy of the @str in @ce.
+ * Stores a copy of the @str in @ce, the old data are deallocated by free().
  *
  * Returns: 0, a negative value in case of an error.
  */
-int scols_cell_set_data(struct libscols_cell *ce, const char *str)
+int scols_cell_set_data(struct libscols_cell *ce, const char *data)
 {
-	char *p = NULL;
-
-	if (!ce)
-		return -EINVAL;
-	if (str) {
-		p = strdup(str);
-		if (!p)
-			return -ENOMEM;
-	}
-	free(ce->data);
-	ce->data = p;
-	return 0;
+	return strdup_to_struct_member(ce, data, data);
 }
 
 /**
  * scols_cell_refer_data:
  * @ce: a pointer to a struct libscols_cell instance
- * @str: data (used for scols_print_table())
+ * @data: data (used for scols_print_table())
  *
  * Adds a reference to @str to @ce. The pointer is deallocated by
  * scols_reset_cell() or scols_unref_line(). This function is mostly designed
@@ -88,12 +77,12 @@ int scols_cell_set_data(struct libscols_cell *ce, const char *str)
  *
  * Returns: 0, a negative value in case of an error.
  */
-int scols_cell_refer_data(struct libscols_cell *ce, char *str)
+int scols_cell_refer_data(struct libscols_cell *ce, char *data)
 {
 	if (!ce)
 		return -EINVAL;
 	free(ce->data);
-	ce->data = str;
+	ce->data = data;
 	return 0;
 }
 
@@ -131,7 +120,7 @@ int scols_cell_set_userdata(struct libscols_cell *ce, void *data)
  */
 void *scols_cell_get_userdata(struct libscols_cell *ce)
 {
-	return ce ? ce->userdata : NULL;
+	return ce->userdata;
 }
 
 /**
@@ -177,24 +166,12 @@ int scols_cmpstr_cells(struct libscols_cell *a,
  */
 int scols_cell_set_color(struct libscols_cell *ce, const char *color)
 {
-	char *p = NULL;
-
-	if (!ce)
-		return -EINVAL;
-	if (color) {
-		if (isalpha(*color)) {
-			color = color_sequence_from_colorname(color);
-
-			if (!color)
-				return -EINVAL;
-		}
-		p = strdup(color);
-		if (!p)
-			return -ENOMEM;
+	if (color && isalpha(*color)) {
+		color = color_sequence_from_colorname(color);
+		if (!color)
+			return -EINVAL;
 	}
-	free(ce->color);
-	ce->color = p;
-	return 0;
+	return strdup_to_struct_member(ce, color, color);
 }
 
 /**
@@ -205,7 +182,54 @@ int scols_cell_set_color(struct libscols_cell *ce, const char *color)
  */
 const char *scols_cell_get_color(const struct libscols_cell *ce)
 {
-	return ce ? ce->color : NULL;
+	return ce->color;
+}
+
+/**
+ * scols_cell_set_flags:
+ * @ce: a pointer to a struct libscols_cell instance
+ * @flags: SCOLS_CELL_FL_* flags
+ *
+ * Note that cells in the table are always aligned by column flags. The cell
+ * flags are used for table title only (now).
+ *
+ * Returns: 0, a negative value in case of an error.
+ */
+int scols_cell_set_flags(struct libscols_cell *ce, int flags)
+{
+	if (!ce)
+		return -EINVAL;
+	ce->flags = flags;
+	return 0;
+}
+
+/**
+ * scols_cell_get_flags:
+ * @ce: a pointer to a struct libscols_cell instance
+ *
+ * Returns: the current flags
+ */
+int scols_cell_get_flags(const struct libscols_cell *ce)
+{
+	return ce->flags;
+}
+
+/**
+ * scols_cell_get_alignment:
+ * @ce: a pointer to a struct libscols_cell instance
+ *
+ * Since: 2.30
+ *
+ * Returns: SCOLS_CELL_FL_{RIGHT,CELNTER,LEFT}
+ */
+int scols_cell_get_alignment(const struct libscols_cell *ce)
+{
+	if (ce->flags & SCOLS_CELL_FL_RIGHT)
+		return SCOLS_CELL_FL_RIGHT;
+	if (ce->flags & SCOLS_CELL_FL_CENTER)
+		return SCOLS_CELL_FL_CENTER;
+
+	return SCOLS_CELL_FL_LEFT;	/* default */
 }
 
 /**
@@ -228,6 +252,6 @@ int scols_cell_copy_content(struct libscols_cell *dest,
 	if (!rc)
 		dest->userdata = src->userdata;
 
-	DBG(CELL, ul_debugobj((void *) src, "copy into %p", dest));
+	DBG(CELL, ul_debugobj(src, "copy"));
 	return rc;
 }

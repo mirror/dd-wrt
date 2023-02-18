@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2014 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2014-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -21,8 +26,6 @@
  *
  * printf("waiting for changes...\n");
  * while (mnt_monitor_wait(mn, -1) > 0) {
- *    printf("notification detected\n");
- *
  *    while (mnt_monitor_next_change(mn, &filename, NULL) == 0)
  *       printf(" %s: change detected\n", filename);
  * }
@@ -66,7 +69,7 @@ struct libmnt_monitor {
 struct monitor_opers {
 	int (*op_get_fd)(struct libmnt_monitor *, struct monitor_entry *);
 	int (*op_close_fd)(struct libmnt_monitor *, struct monitor_entry *);
-	void (*op_event_cleanup)(struct libmnt_monitor *, struct monitor_entry *);
+	int (*op_event_verify)(struct libmnt_monitor *, struct monitor_entry *);
 };
 
 static int monitor_modify_epoll(struct libmnt_monitor *mn,
@@ -121,7 +124,7 @@ static void free_monitor_entry(struct monitor_entry *me)
  * mnt_unref_monitor:
  * @mn: monitor pointer
  *
- * De-increments reference counter, on zero the @mn is automatically
+ * Decrements the reference counter, on zero the @mn is automatically
  * deallocated.
  */
 void mnt_unref_monitor(struct libmnt_monitor *mn)
@@ -170,9 +173,6 @@ static int monitor_next_entry(struct libmnt_monitor *mn,
 	assert(itr);
 	assert(me);
 
-	if (!mn || !itr || !me)
-		return -EINVAL;
-
 	*me = NULL;
 
 	if (!itr->head)
@@ -204,10 +204,9 @@ static struct monitor_entry *monitor_get_entry(struct libmnt_monitor *mn, int ty
  * Userspace monitor
  */
 
-static int userspace_monitor_close_fd(struct libmnt_monitor *mn,
+static int userspace_monitor_close_fd(struct libmnt_monitor *mn __attribute__((__unused__)),
 				    struct monitor_entry *me)
 {
-	assert(mn);
 	assert(me);
 
 	if (me->fd >= 0)
@@ -216,15 +215,70 @@ static int userspace_monitor_close_fd(struct libmnt_monitor *mn,
 	return 0;
 }
 
+static int userspace_add_watch(struct monitor_entry *me, int *final, int *fd)
+{
+	char *filename = NULL;
+	int wd, rc = -EINVAL;
+
+	assert(me);
+	assert(me->path);
+
+	/*
+	 * libmount uses rename(2) to atomically update utab, monitor
+	 * rename changes is too tricky. It seems better to monitor utab
+	 * lockfile close.
+	 */
+	if (asprintf(&filename, "%s.lock", me->path) <= 0) {
+		rc = -errno;
+		goto done;
+	}
+
+	/* try lock file if already exists */
+	errno = 0;
+	wd = inotify_add_watch(me->fd, filename, IN_CLOSE_NOWRITE);
+	if (wd >= 0) {
+		DBG(MONITOR, ul_debug(" added inotify watch for %s [fd=%d]", filename, wd));
+		rc = 0;
+		if (final)
+			*final = 1;
+		if (fd)
+			*fd = wd;
+		goto done;
+	} else if (errno != ENOENT) {
+		rc = -errno;
+		goto done;
+	}
+
+	while (strchr(filename, '/')) {
+		stripoff_last_component(filename);
+		if (!*filename)
+			break;
+
+		/* try directory where is the lock file */
+		errno = 0;
+		wd = inotify_add_watch(me->fd, filename, IN_CREATE|IN_ISDIR);
+		if (wd >= 0) {
+			DBG(MONITOR, ul_debug(" added inotify watch for %s [fd=%d]", filename, wd));
+			rc = 0;
+			if (fd)
+				*fd = wd;
+			break;
+		}
+
+		if (errno != ENOENT) {
+			rc = -errno;
+			break;
+		}
+	}
+done:
+	free(filename);
+	return rc;
+}
+
 static int userspace_monitor_get_fd(struct libmnt_monitor *mn,
 				    struct monitor_entry *me)
 {
-	int wd, rc, dummy_fd;
-	char *dirname, *sep;
-	char *filename = NULL;
-
-	assert(mn);
-	assert(me);
+	int rc;
 
 	if (!me || me->enable == 0)	/* not-initialized or disabled */
 		return -EINVAL;
@@ -234,51 +288,17 @@ static int userspace_monitor_get_fd(struct libmnt_monitor *mn,
 	assert(me->path);
 	DBG(MONITOR, ul_debugobj(mn, " open userspace monitor for %s", me->path));
 
-	dirname = me->path;
-	sep = stripoff_last_component(dirname);	/* add \0 between dir/filename */
-
-	/* make sure the directory exists */
-	rc = mkdir(dirname, S_IWUSR|
-			    S_IRUSR|S_IRGRP|S_IROTH|
-			    S_IXUSR|S_IXGRP|S_IXOTH);
-
-	if (sep && sep > dirname)
-		*(sep - 1) = '/';		/* set '/' back to the path */
-
-	if (rc && errno != EEXIST)
-		goto err;
-
-	/*
-	 * libmount uses rename(2) to atomically update utab/mtab, monitor
-	 * rename changes is too tricky. It seems better to monitor utab
-	 * lockfile close.
-	 */
-	if (asprintf(&filename, "%s.lock", me->path) <= 0)
-		goto err;
-
-	/* make sure the file exists */
-	dummy_fd = open(filename, O_RDONLY|O_CREAT|O_CLOEXEC,
-				  S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH);
-	if (dummy_fd < 0)
-		goto err;
-	close(dummy_fd);
-
-	/* initialize inotify stuff */
 	me->fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 	if (me->fd < 0)
 		goto err;
 
-
-	wd = inotify_add_watch(me->fd, filename, IN_CLOSE_NOWRITE);
-	if (wd < 0)
+	if (userspace_add_watch(me, NULL, NULL) < 0)
 		goto err;
 
-	free(filename);
 	return me->fd;
 err:
 	rc = -errno;
-	free(filename);
-	if (me->fd)
+	if (me->fd >= 0)
 		close(me->fd);
 	me->fd = -1;
 	DBG(MONITOR, ul_debugobj(mn, "failed to create userspace monitor [rc=%d]", rc));
@@ -286,20 +306,53 @@ err:
 }
 
 /*
- * drain inotify buffer
+ * verify and drain inotify buffer
  */
-static void userspace_event_cleanup(struct libmnt_monitor *mn,
+static int userspace_event_verify(struct libmnt_monitor *mn,
 					struct monitor_entry *me)
 {
 	char buf[sizeof(struct inotify_event) + NAME_MAX + 1];
+	int status = 0;
 
 	if (!me || me->fd < 0)
-		return;
+		return 0;
 
-	DBG(MONITOR, ul_debugobj(mn, "drain userspace monitor inotify"));
+	DBG(MONITOR, ul_debugobj(mn, "drain and verify userspace monitor inotify"));
 
-	/* the 'fd' is non-blocking */
-	while (read(me->fd, buf, sizeof(buf)) > 0);
+	/* the me->fd is non-blocking */
+	do {
+		ssize_t len;
+		char *p;
+		const struct inotify_event *e;
+
+		len = read(me->fd, buf, sizeof(buf));
+		if (len < 0)
+			break;
+
+		for (p = buf; p < buf + len;
+		     p += sizeof(struct inotify_event) + e->len) {
+
+			int fd = -1;
+
+			e = (const struct inotify_event *) p;
+			DBG(MONITOR, ul_debugobj(mn, " inotify event 0x%x [%s]\n", e->mask, e->len ? e->name : ""));
+
+			if (e->mask & IN_CLOSE_NOWRITE)
+				status = 1;
+			else {
+				/* event on lock file */
+				userspace_add_watch(me, &status, &fd);
+
+				if (fd != e->wd) {
+					DBG(MONITOR, ul_debugobj(mn, " removing watch [fd=%d]", e->wd));
+					inotify_rm_watch(me->fd, e->wd);
+				}
+			}
+		}
+	} while (1);
+
+	DBG(MONITOR, ul_debugobj(mn, "%s", status == 1 ? " success" : " nothing"));
+	return status;
 }
 
 /*
@@ -308,7 +361,7 @@ static void userspace_event_cleanup(struct libmnt_monitor *mn,
 static const struct monitor_opers userspace_opers = {
 	.op_get_fd		= userspace_monitor_get_fd,
 	.op_close_fd		= userspace_monitor_close_fd,
-	.op_event_cleanup	= userspace_event_cleanup
+	.op_event_verify	= userspace_event_verify
 };
 
 /**
@@ -323,7 +376,7 @@ static const struct monitor_opers userspace_opers = {
  * If the top-level monitor has been already created (by mnt_monitor_get_fd()
  * or mnt_monitor_wait()) then it's updated according to @enable.
  *
- * The @filename is used only first time when you enable the monitor. It's
+ * The @filename is used only the first time when you enable the monitor. It's
  * impossible to have more than one userspace monitor. The recommended is to
  * use NULL as filename.
  *
@@ -352,10 +405,6 @@ int mnt_monitor_enable_userspace(struct libmnt_monitor *mn, int enable, const ch
 
 	DBG(MONITOR, ul_debugobj(mn, "allocate new userspace monitor"));
 
-	/* create a new entry */
-	if (mnt_has_regular_mtab(NULL, NULL))
-		return -ENOSYS;
-
 	if (!filename)
 		filename = mnt_get_utab_path();		/* /run/mount/utab */
 	if (!filename) {
@@ -369,7 +418,7 @@ int mnt_monitor_enable_userspace(struct libmnt_monitor *mn, int enable, const ch
 
 	me->type = MNT_MONITOR_TYPE_USERSPACE;
 	me->opers = &userspace_opers;
-	me->events = EPOLLPRI | EPOLLIN;
+	me->events = EPOLLIN;
 	me->path = strdup(filename);
 	if (!me->path)
 		goto err;
@@ -387,10 +436,9 @@ err:
  * Kernel monitor
  */
 
-static int kernel_monitor_close_fd(struct libmnt_monitor *mn,
+static int kernel_monitor_close_fd(struct libmnt_monitor *mn __attribute__((__unused__)),
 				   struct monitor_entry *me)
 {
-	assert(mn);
 	assert(me);
 
 	if (me->fd >= 0)
@@ -403,9 +451,6 @@ static int kernel_monitor_get_fd(struct libmnt_monitor *mn,
 				 struct monitor_entry *me)
 {
 	int rc;
-
-	assert(mn);
-	assert(me);
 
 	if (!me || me->enable == 0)	/* not-initialized or disabled */
 		return -EINVAL;
@@ -480,11 +525,11 @@ int mnt_monitor_enable_kernel(struct libmnt_monitor *mn, int enable)
 	 * Unfortunately, use EPOLLIN for mountinfo is tricky because in this
 	 * case kernel returns events all time (we don't read from the FD).
 	 * The solution is to use also edge-triggered (EPOLLET) flag, then
-	 * kernel generate events on moutinfo changes only. The disadvantage is
+	 * kernel generate events on mountinfo changes only. The disadvantage is
 	 * that we have to drain initial event generated by EPOLLIN after
 	 * epoll_ctl(ADD). See monitor_modify_epoll().
 	 */
-	me->events = EPOLLPRI | EPOLLIN | EPOLLET;
+	me->events = EPOLLIN | EPOLLET;
 
 	me->type = MNT_MONITOR_TYPE_KERNEL;
 	me->opers = &kernel_opers;
@@ -518,6 +563,9 @@ static int monitor_modify_epoll(struct libmnt_monitor *mn,
 	if (enable) {
 		struct epoll_event ev = { .events = me->events };
 		int fd = me->opers->op_get_fd(mn, me);
+
+		if (fd < 0)
+			goto err;
 
 		DBG(MONITOR, ul_debugobj(mn, " add fd=%d (for %s)", fd, me->path));
 
@@ -640,8 +688,8 @@ err:
  * @timeout: number of milliseconds, -1 block indefinitely, 0 return immediately
  *
  * Waits for the next change, after the event it's recommended to use
- * mnt_monitor_next_change() to get more details about the change or
- * at least mnt_monitor_event_cleanup().
+ * mnt_monitor_next_change() to get more details about the change and to
+ * avoid false positive events.
  *
  * Returns: 1 success (something changed), 0 timeout, <0 error.
  */
@@ -660,20 +708,24 @@ int mnt_monitor_wait(struct libmnt_monitor *mn, int timeout)
 			return rc;
 	}
 
-	DBG(MONITOR, ul_debugobj(mn, "calling epoll_wait(), timeout=%d", timeout));
-	rc = epoll_wait(mn->fd, events, 1, timeout);
-	if (rc < 0)
-		return -errno;		/* error */
-	if (rc == 0)
-		return 0;		/* timeout */
+	do {
+		DBG(MONITOR, ul_debugobj(mn, "calling epoll_wait(), timeout=%d", timeout));
+		rc = epoll_wait(mn->fd, events, 1, timeout);
+		if (rc < 0)
+			return -errno;		/* error */
+		if (rc == 0)
+			return 0;		/* timeout */
 
-	me = (struct monitor_entry *) events[0].data.ptr;
-	if (!me)
-		return -EINVAL;
-	me->changed = 1;
+		me = (struct monitor_entry *) events[0].data.ptr;
+		if (!me)
+			return -EINVAL;
 
-	if (me->opers->op_event_cleanup != NULL)
-		me->opers->op_event_cleanup(mn, me);
+		if (me->opers->op_event_verify == NULL ||
+		    me->opers->op_event_verify(mn, me) == 1) {
+			me->changed = 1;
+			break;
+		}
+	} while (1);
 
 	return 1;			/* success */
 }
@@ -699,6 +751,7 @@ static struct monitor_entry *get_changed(struct libmnt_monitor *mn)
  * @type: returns MNT_MONITOR_TYPE_* (optional argument)
  *
  * The function does not wait and it's designed to provide details about changes.
+ * It's always recommended to use this function to avoid false positives.
  *
  * Returns: 0 on success, 1 no change, <0 on error
  */
@@ -713,35 +766,34 @@ int mnt_monitor_next_change(struct libmnt_monitor *mn,
 		return -EINVAL;
 
 	/*
-	 * if we previously called epoll_wait() (e.g. mnt_monitor_waith()) then
+	 * if we previously called epoll_wait() (e.g. mnt_monitor_wait()) then
 	 * info about unread change is already stored in monitor_entry.
 	 *
 	 * If we get nothing, then ask kernel.
 	 */
 	me = get_changed(mn);
-	if (!me) {
-		do {
-			struct epoll_event events[1];
+	while (!me) {
+		struct epoll_event events[1];
 
-			DBG(MONITOR, ul_debugobj(mn, "asking for next changed"));
+		DBG(MONITOR, ul_debugobj(mn, "asking for next changed"));
 
-			rc = epoll_wait(mn->fd, events, 1, 0);	/* no timeout! */
-			if (rc < 0) {
-				DBG(MONITOR, ul_debugobj(mn, " *** error"));
-				return -errno;
-			}
-			if (rc == 0) {
-				DBG(MONITOR, ul_debugobj(mn, " *** nothing"));
-				return 1;
-			}
+		rc = epoll_wait(mn->fd, events, 1, 0);	/* no timeout! */
+		if (rc < 0) {
+			DBG(MONITOR, ul_debugobj(mn, " *** error"));
+			return -errno;
+		}
+		if (rc == 0) {
+			DBG(MONITOR, ul_debugobj(mn, " *** nothing"));
+			return 1;
+		}
 
-			me = (struct monitor_entry *) events[0].data.ptr;
-			if (!me)
-				return -EINVAL;
-			if (me->opers->op_event_cleanup != NULL)
-				me->opers->op_event_cleanup(mn, me);
-			break;
-		} while (1);
+		me = (struct monitor_entry *) events[0].data.ptr;
+		if (!me)
+			return -EINVAL;
+
+		if (me->opers->op_event_verify != NULL &&
+		    me->opers->op_event_verify(mn, me) != 1)
+			me = NULL;
 	}
 
 	me->changed = 0;
@@ -751,8 +803,8 @@ int mnt_monitor_next_change(struct libmnt_monitor *mn,
 	if (type)
 		*type = me->type;
 
-	DBG(MONITOR, ul_debugobj(mn, " *** success"));
-	return 0;				/* success */
+	DBG(MONITOR, ul_debugobj(mn, " *** success [changed: %s]", me->path));
+	return 0;
 }
 
 /**
@@ -762,22 +814,17 @@ int mnt_monitor_next_change(struct libmnt_monitor *mn,
  * This function cleanups (drain) internal buffers. It's necessary to call
  * this function after event if you do not call mnt_monitor_next_change().
  *
- * Returns: 0 on success, 1 no change, <0 on error
+ * Returns: 0 on success, <0 on error
  */
 int mnt_monitor_event_cleanup(struct libmnt_monitor *mn)
 {
-	struct monitor_entry *me;
-	struct libmnt_iter itr;
+	int rc;
 
 	if (!mn || mn->fd < 0)
 		return -EINVAL;
 
-	mnt_reset_iter(&itr, MNT_ITER_FORWARD);
-	while (monitor_next_entry(mn, &itr, &me) == 0) {
-		if (me->opers->op_event_cleanup != NULL)
-			me->opers->op_event_cleanup(mn, me);
-	}
-	return 0;
+	while ((rc = mnt_monitor_next_change(mn, NULL, NULL)) == 0);
+	return rc < 0 ? rc : 0;
 }
 
 #ifdef TEST_PROGRAM
@@ -821,7 +868,7 @@ err:
 /*
  * create a monitor and add the monitor fd to epoll
  */
-int test_epoll(struct libmnt_test *ts, int argc, char *argv[])
+static int __test_epoll(struct libmnt_test *ts, int argc, char *argv[], int cleanup)
 {
 	int fd, efd = -1, rc = -1;
 	struct epoll_event ev;
@@ -842,7 +889,7 @@ int test_epoll(struct libmnt_test *ts, int argc, char *argv[])
 		goto done;
 	}
 
-	ev.events = EPOLLPRI | EPOLLIN;
+	ev.events = EPOLLIN;
 	ev.data.fd = fd;
 
 	rc = epoll_ctl(efd, EPOLL_CTL_ADD, fd, &ev);
@@ -866,8 +913,12 @@ int test_epoll(struct libmnt_test *ts, int argc, char *argv[])
 			continue;
 
 		printf(" top-level FD active\n");
-		while (mnt_monitor_next_change(mn, &filename, NULL) == 0)
-			printf("  %s: change detected\n", filename);
+		if (cleanup)
+			mnt_monitor_event_cleanup(mn);
+		else {
+			while (mnt_monitor_next_change(mn, &filename, NULL) == 0)
+				printf("  %s: change detected\n", filename);
+		}
 	} while (1);
 
 	rc = 0;
@@ -879,9 +930,22 @@ done:
 }
 
 /*
+ * create a monitor and add the monitor fd to epoll
+ */
+static int test_epoll(struct libmnt_test *ts, int argc, char *argv[])
+{
+	return __test_epoll(ts, argc, argv, 0);
+}
+
+static int test_epoll_cleanup(struct libmnt_test *ts, int argc, char *argv[])
+{
+	return __test_epoll(ts, argc, argv, 1);
+}
+
+/*
  * create a monitor and wait for a change
  */
-int test_wait(struct libmnt_test *ts, int argc, char *argv[])
+static int test_wait(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *filename;
 	struct libmnt_monitor *mn = create_test_monitor(argc, argv);
@@ -905,6 +969,7 @@ int main(int argc, char *argv[])
 {
 	struct libmnt_test tss[] = {
 		{ "--epoll", test_epoll, "<userspace kernel ...>  monitor in epoll" },
+		{ "--epoll-clean", test_epoll_cleanup, "<userspace kernel ...>  monitor in epoll and clean events" },
 		{ "--wait",  test_wait,  "<userspace kernel ...>  monitor wait function" },
 		{ NULL }
 	};

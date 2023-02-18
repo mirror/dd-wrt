@@ -1,0 +1,733 @@
+'\" t
+.\"     Title: lsfd
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-08-04
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "LSFD" "1" "2022-08-04" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+lsfd \- list file descriptors
+.SH "SYNOPSIS"
+.sp
+\fBlsfd\fP [option]
+.SH "DESCRIPTION"
+.sp
+\fBlsfd\fP is intended to be a modern replacement for \fBlsof\fP(8) on Linux systems.
+Unlike \fBlsof\fP, \fBlsfd\fP is specialized to Linux kernel; it supports Linux
+specific features like namespaces with simpler code. \fBlsfd\fP is not a
+drop\-in replacement for \fBlsof\fP; they are different in the command line
+interface and output formats.
+.sp
+\fBlsfd\fP uses Libsmartcols for output formatting and filtering. See the description of \fB\-\-output\fP
+option for customizing the output format, and \fB\-\-filter\fP option for filtering.
+.SH "OPTIONS"
+.sp
+\fB\-l\fP, \fB\-\-threads\fP
+.RS 4
+List in threads level.
+.RE
+.sp
+\fB\-J\fP, \fB\-\-json\fP
+.RS 4
+Use JSON output format.
+.RE
+.sp
+\fB\-n\fP, \fB\-\-noheadings\fP
+.RS 4
+Don\(cqt print headings.
+.RE
+.sp
+\fB\-o\fP, \fB\-\-output\fP \fIlist\fP
+.RS 4
+Specify which output columns to print. See the \fBOUTPUT COLUMNS\fP
+section for details of available columns.
+.sp
+The default list of columns may be extended if \fIlist\fP is specified in
+the format \fI+list\fP (e.g., \fBlsfd \-o +DELETED\fP).
+.RE
+.sp
+\fB\-r\fP, \fB\-\-raw\fP
+.RS 4
+Use raw output format.
+.RE
+.sp
+\fB\-\-notruncate\fP
+.RS 4
+Don\(cqt truncate text in columns.
+.RE
+.sp
+\fB\-p\fP, \fB\-\-pid\fP \fIpids\fP
+.RS 4
+Collect information only for specified processes.
+\fIpids\fP is a list of pids. A comma or whitespaces can be used as separators.
+You can use this option with \fBpidof\fP(1). See \fBFILTER EXAMPLES\fP.
+.sp
+Both \fB\-Q\fP option with an expression including PID, e.g. \-Q (PID == 1),
+and \fB\-p\fP option, e.g. \-p 1, may print the same output but using \fB\-p\fP
+option is much more efficient because \fB\-p\fP option works at a much earlier
+stage of processing than the \fB\-Q\fP option.
+.RE
+.sp
+\fB\-Q\fP, \fB\-\-filter\fP \fIexpr\fP
+.RS 4
+Print only the files matching the condition represented by the \fIexpr\fP.
+See also \fBFILTER EXAMPLES\fP.
+.RE
+.sp
+\fB\-C\fP, \fB\-\-counter\fP \fIlabel\fP:\fIfilter_expr\fP
+.RS 4
+Define a custom counter used in \fB\-\-summary\fP output. \fBlsfd\fP makes a
+counter named \fIlabel\fP. During collect information, \fBlsfd\fP counts files
+matching \fIfilter_expr\fP, and stores the counted number to the
+counter named \fIlabel\fP. \fBlsfd\fP applies filters defined with \fB\-\-filter\fP
+options before counting; files excluded by the filters are not counted.
+.sp
+See \fBFILTER EXPRESSION\fP about \fIfilter_expr\fP.
+\fIlabel\fP should not include \fI{\fP nor \fI:\fP. You can define multiple
+counters by specifying this option multiple times.
+.sp
+See also \fBCOUNTER EXAMPLES\fP.
+.RE
+.sp
+\fB\-\-summary\fP[=\fIwhen\fP]
+.RS 4
+This option controls summary lines output. The optional argument \fIwhen\fP
+can be \fBonly\fP, \fBappend\fP or \fBnever\fP. If the \fIwhen\fP argument is omitted,
+it defaults to \fBonly\fP.
+.sp
+The summary reports counters. A counter consists of a label and an
+integer value.  \fB\-\-counter\fP is the option for defining a counter.  If
+a user defines no counter, \fBlsfd\fP uses the definitions of pre\-defined
+built\-in counters (default counters) to make the summary output.
+.sp
+CAUTION: Using \fB\-\-summary\fP and \fB\-\-json\fP may make the output broken. Only combining \fB\-\-summary\fP=\fBonly\fP and \fB\-\-json\fP is valid.
+.RE
+.sp
+\fB\-\-debug\-filter\fP
+.RS 4
+Dump the internal data structure for the filter and exit. This is useful
+only for \fBlsfd\fP developers.
+.RE
+.sp
+\fB\-\-dump\-counters\fP
+.RS 4
+Dump the definition of counters used in \fB\-\-summary\fP output.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "OUTPUT COLUMNS"
+.sp
+Each column has a type. Types are surround by < and >.
+.sp
+CAUTION: The names and types of columns are not stable yet.
+They may be changed in the future releases.
+.sp
+ASSOC <\fIstring\fP>
+.RS 4
+Association between file and process.
+.RE
+.sp
+BLKDRV <\fIstring\fP>
+.RS 4
+Block device driver name resolved by \fI/proc/devices\fP.
+.RE
+.sp
+CHRDRV <\fIstring\fP>
+.RS 4
+Character device driver name resolved by \fI/proc/devices\fP.
+.RE
+.sp
+COMMAND <\fIstring\fP>
+.RS 4
+Command of the process opening the file.
+.RE
+.sp
+DELETED <\fIboolean\fP>
+.RS 4
+Reachability from the file system.
+.RE
+.sp
+DEV <\fIstring\fP>
+.RS 4
+ID of the device containing the file.
+.RE
+.sp
+DEVTYPE <\fIstring\fP>
+.RS 4
+Device type (\fIblk\fP, \fIchar\fP, or \fInodev\fP).
+.RE
+.sp
+FD <\fInumber\fP>
+.RS 4
+File descriptor for the file.
+.RE
+.sp
+FLAGS <\fIstring\fP>
+.RS 4
+Flags specified when opening the file.
+.RE
+.sp
+FUID <\fInumber\fP>
+.RS 4
+User ID number of the file\(cqs owner.
+.RE
+.sp
+INODE <\fInumber\fP>
+.RS 4
+Inode number.
+.RE
+.sp
+KTHREAD <\fIboolean\fP>
+.RS 4
+Whether the process is a kernel thread or not.
+.RE
+.sp
+MAJ:MIN <\fIstring\fP>
+.RS 4
+Device ID for special, or ID of device containing file.
+.RE
+.sp
+MAPLEN <\fInumber\fP>
+.RS 4
+Length of file mapping (in page).
+.RE
+.sp
+MISCDEV <\fIstring\fP>
+.RS 4
+Misc character device name resolved by \fI/proc/misc\fP.
+.RE
+.sp
+MNTID <\fInumber\fP>
+.RS 4
+Mount ID.
+.RE
+.sp
+MODE <\fIstring\fP>
+.RS 4
+Access mode (rwx).
+.RE
+.sp
+NAME <\fIstring\fP>
+.RS 4
+Name of the file.
+.RE
+.sp
+NLINK <\fInumber\fP>
+.RS 4
+Link count.
+.RE
+.sp
+OWNER <\fIstring\fP>
+.RS 4
+Owner of the file.
+.RE
+.sp
+PARTITION <\fIstring\fP>
+.RS 4
+Block device name resolved by \fI/proc/partition\fP.
+.RE
+.sp
+PID <\fInumber\fP>
+.RS 4
+PID of the process opening the file.
+.RE
+.sp
+POS <\fInumber\fP>
+.RS 4
+File position.
+.RE
+.sp
+PROTONAME <\fIstring\fP>
+.RS 4
+Protocol name.
+.RE
+.sp
+RDEV <\fIstring\fP>
+.RS 4
+Device ID (if special file).
+.RE
+.sp
+SIZE <\fInumber\fP>
+.RS 4
+File size.
+.RE
+.sp
+SOURCE <\fIstring\fP>
+.RS 4
+File system, partition, or device containing the file.
+.RE
+.sp
+TID <\fInumber\fP>
+.RS 4
+Thread ID of the process opening the file.
+.RE
+.sp
+TYPE <\fIstring\fP>
+.RS 4
+File type.
+.RE
+.sp
+UID <\fInumber\fP>
+.RS 4
+User ID number.
+.RE
+.sp
+USER <\fIstring\fP>
+.RS 4
+User of the process.
+.RE
+.SH "FILTER EXPRESSION"
+.sp
+\fBlsfd\fP evaluates the expression passed to \fB\-\-filter\fP option every time
+before printing a file line. \fBlsfd\fP prints the line only if the result
+of evaluation is \fItrue\fP.
+.sp
+An expression consists of column names, literals and, operators like:
+\f(CRDELETED\fP, \f(CR(PID == 1)\fP, \f(CR(NAME == "/etc/passwd")\fP, \f(CR(PID == 1) && DELETED\fP.
+\f(CRDELETED\fP, \f(CRPID\fP, and \f(CRNAME\fP are column names in the example.
+\f(CR1\fP and "/etc/passwd" are literals.
+\f(CR==\fP and \f(CR&&\fP are operators.
+.sp
+Before evaluation, \fBlsfd\fP substitutes column names in the given
+expression with actual column values in the line. There are three
+different data types: \fIboolean\fP, \fIstring\fP, and \fInumber\fP.  For columns
+with a \fIboolean\fP type, the value can be stand\-alone.  For \fIstring\fP and
+\fInumber\fP values, the value must be an operand of an operator, for
+example, \f(CR(PID == 1)\fP. See the "OUTPUT COLUMNS" about the types of
+columns.
+.sp
+Literal is for representing a value directly. See BOOLLIT, STRLIT, and
+NUMLIT. Different data types have different literal syntax.
+.sp
+An operator works with one or two operand(s). An operator has an
+expectation about the data type(s) of its operands. Giving an
+unexpected data type to an operator causes a syntax error.
+.sp
+Operators taking two operands are \fIand\fP, \fIor\fP, \fIeq\fP, \fIne\fP, \fIle\fP, \fIlt\fP, \fIge\fP, \fIgt\fP, \fI=~\fP, \fI!~\fP.
+Alphabetically named operators have C\-language
+flavored aliases: \fI&&\fP, \fI||\fP, \fI==\fP, \fI!=\fP, \fI<\fP, \fI\(lA\fP, \fI>=\fP, and \fI>\fP.
+.sp
+\fI!\fP is the only operator that takes one operand.
+.sp
+\fIeq\fP, \fIne\fP, and their aliases expect operands have the same data type.
+Applying these operators return a \fIboolean\fP.
+.sp
+\fIand\fP, \fIor\fP, \fInot\fP and their aliases expect operands have \fIbool\fP data
+type. Applying these operators return a \fIboolean\fP.
+.sp
+\fIlt\fP, \fIle\fP, \fIgt\fP, \fIge\fP, and their aliases expect operands have
+\fInumber\fP data types. Applying these operators return a \fIboolean\fP.
+.sp
+\fI=~\fP is for regular expression matching; if a string at the right side
+matches a regular expression at the left side, the result is true.
+The right side operand must be a string literal. See STRLIT about the
+syntax.
+.sp
+\fI!~\fP is a short\-hand version of \f(CRnot (STR =~ PAT)\fP; it inverts the
+result of \fI=~\fP.
+.SS "Limitations"
+.sp
+The current implementation does not define precedences within
+operators.  Use \fI(\fP and \fI)\fP explicitly for grouping the
+sub\-expressions if your expression uses more than two operators.
+.sp
+About \fInumber\fP typed values, the filter engine supports only
+non\-negative integers.
+.SS "Semi\-formal syntax"
+.sp
+EXPR
+.RS 4
+BOOLEXP
+.RE
+.sp
+BOOLEXP0
+.RS 4
+COLUMN <\fIboolean\fP> | BOOLLIT | \fI(\fP BOOLEXP \fI)\fP
+.RE
+.sp
+BOOLEXP
+.RS 4
+BOOLEXP0 | BOOLOP1 | BOOLOP2 | BOOLOP2BL | BOOLOP2CMP | BOOLOP2REG
+.RE
+.sp
+COLUMN
+.RS 4
+[_A\-Za\-z][\-_:A\-Za\-z0\-9]*
+.RE
+.sp
+BOOLOP1
+.RS 4
+\fI!\fP BOOLEXP0 | \fInot\fP BOOLEXP0
+.RE
+.sp
+STREXP
+.RS 4
+COLUMN <\fIstring\fP> | STRLIT
+.RE
+.sp
+NUMEXP
+.RS 4
+COLUMN <\fInumber\fP> | NUMLIT
+.RE
+.sp
+BOOLLIT
+.RS 4
+\fItrue\fP | \fIfalse\fP
+.RE
+.sp
+CHARS
+.RS 4
+( [^\(rs] | \fI\(rs\(rs\fP | \fI\(rs\(aq\fP | \fI\(rs"\fP )*
+.RE
+.sp
+STRLIT
+.RS 4
+\fI\(aq\fP CHARS \fI\(aq\fP | \fI"\fP CHARS \fI"\fP
+.RE
+.sp
+NUMLIT
+.RS 4
+[1\-9][0\-9]* | \fI0\fP
+.RE
+.sp
+BOOLOP2
+.RS 4
+STREXP OP2 STREXP | NUMEXP OP2 NUMEXP | BOOLEXP0 OP2 BOOLEXP0
+.RE
+.sp
+OP2
+.RS 4
+\fI==\fP | \fIeq\fP | \fI!=\fP | \fIne\fP
+.RE
+.sp
+BOOLOP2BL
+.RS 4
+BOOLEXP0 OP2BL BOOLEXP0
+.RE
+.sp
+OP2BL
+.RS 4
+\fI&&\fP | \fIand\fP |  \fI||\fP | \fIor\fP
+.RE
+.sp
+BOOLOP2CMP
+.RS 4
+NUMEXP OP2CMP NUMEXP
+.RE
+.sp
+OP2CMP
+.RS 4
+\fI<\fP | \fIlt\fP | \fI<=\fP | \fIle\fP | \fI>\fP | \fIgt\fP | \fI>=\fP | \fIge\fP
+.RE
+.sp
+BOOLOP2REG
+.RS 4
+STREXP OP2REG STRLIT
+.RE
+.sp
+OP2REG
+.RS 4
+\fI=~\fP | \fI!~\fP
+.RE
+.SH "FILTER EXAMPLES"
+.sp
+\fBlsfd\fP has few options for filtering. In most of cases, what you should
+know is \fB\-Q\fP (or \fB\-\-filter\fP) option.  Combined with \fB\-o\fP (or
+\fB\-\-output\fP) option, you can customize the output as you want.
+.sp
+List files associated with PID 1 and PID 2 processes:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aq(PID == 1) or (PID == 2)\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Do the same in an alternative way:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aq(PID == 1) || (PID == 2)\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Do the same in a more efficient way:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-\-pid 1,2
+.fam
+.fi
+.if n .RE
+.sp
+Whitescapes can be used instead of a comma:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-\-pid \(aq1 2\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Utilize \fBpidof\fP(1) for list the files associated with "firefox":
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-\-pid "$(pidof firefox)"
+.fam
+.fi
+.if n .RE
+.sp
+List the 1st file descriptor opened by PID 1 process:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aq(PID == 1) and (FD == 1)\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Do the same in an alternative way:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aq(PID == 1) && (FD == 1)\(aq
+.fam
+.fi
+.if n .RE
+.sp
+List all running executables:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqASSOC == "exe"\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Do the same in an alternative way:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqASSOC eq "exe"\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Do the same but print only file names:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-o NAME \-Q \(aqASSOC eq "exe"\(aq | sort \-u
+.fam
+.fi
+.if n .RE
+.sp
+List deleted files associated to processes:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqDELETED\(aq
+.fam
+.fi
+.if n .RE
+.sp
+List non\-regular files:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqTYPE != "REG"\(aq
+.fam
+.fi
+.if n .RE
+.sp
+List block devices:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqDEVTYPE == "blk"\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Do the same with TYPE column:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqTYPE == "BLK"\(aq
+.fam
+.fi
+.if n .RE
+.sp
+List files including "dconf" directory in their names:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aqNAME =~ ".\(rs*/dconf/.*"\(aq
+.fam
+.fi
+.if n .RE
+.sp
+List files opened in a QEMU virtual machine:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aq(COMMAND =~ ".\(rs*qemu.*") and (FD >= 0)\(aq
+.fam
+.fi
+.if n .RE
+.sp
+Hide files associated to kernel threads:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-Q \(aq!KTHREAD\(aq
+.fam
+.fi
+.if n .RE
+.SH "COUNTER EXAMPLES"
+.sp
+Report the numbers of netlink socket descriptors and unix socket descriptors:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-\-summary=only \(rs
+        \-C \(aqnetlink sockets\(aq:\(aq(NAME =~ "NETLINK:.*")\(aq \(rs
+        \-C \(aqunix sockets\(aq:\(aq(NAME =~ "UNIX:.*")\(aq
+VALUE COUNTER
+   57 netlink sockets
+ 1552 unix sockets
+.fam
+.fi
+.if n .RE
+.sp
+Do the same but print in JSON format:
+.RS 4
+.RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+# lsfd \-\-summary=only \-\-json \(rs
+        \-C \(aqnetlink sockets\(aq:\(aq(NAME =~ "NETLINK:.*")\(aq \(rs
+        \-C \(aqunix sockets\(aq:\(aq(NAME =~ "UNIX:.*")\(aq
+{
+   "lsfd\-summary": [
+      {
+         "value": 15,
+         "counter": "netlink sockets"
+      },{
+         "value": 798,
+         "counter": "unix sockets"
+      }
+   ]
+}
+.fam
+.fi
+.if n .RE
+.SH "HISTORY"
+.sp
+The \fBlsfd\fP command is part of the util\-linux package since v2.38.
+.SH "AUTHORS"
+.sp
+.MTO "yamato\(atredhat.com" "Masatake YAMATO" ","
+.MTO "kzak\(atredhat.com" "Karel Zak" ""
+.SH "SEE ALSO"
+.sp
+\fBlsof\fP(8)
+\fBpidof\fP(1)
+\fBproc\fP(5)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBlsfd\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

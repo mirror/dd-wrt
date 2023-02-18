@@ -26,131 +26,208 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "c.h"
 #include "nls.h"
 #include "closestream.h"
 #include "strutils.h"
-#include "procutils.h"
-
-/* the SCHED_BATCH is supported since Linux 2.6.16
- *  -- temporary workaround for people with old glibc headers
- */
-#if defined (__linux__) && !defined(SCHED_BATCH)
-# define SCHED_BATCH 3
-#endif
-
-/* the SCHED_IDLE is supported since Linux 2.6.23
- * commit id 0e6aca43e08a62a48d6770e9a159dbec167bf4c6
- * -- temporary workaround for people with old glibc headers
- */
-#if defined (__linux__) && !defined(SCHED_IDLE)
-# define SCHED_IDLE 5
-#endif
-
-#if defined(__linux__) && !defined(SCHED_RESET_ON_FORK)
-#define SCHED_RESET_ON_FORK 0x40000000
-#endif
+#include "procfs.h"
+#include "sched_attr.h"
 
 
-static void __attribute__((__noreturn__)) show_usage(int rc)
+/* control struct */
+struct chrt_ctl {
+	pid_t	pid;
+	int	policy;				/* SCHED_* */
+	int	priority;
+
+	uint64_t runtime;			/* --sched-* options */
+	uint64_t deadline;
+	uint64_t period;
+
+	unsigned int all_tasks : 1,		/* all threads of the PID */
+		     reset_on_fork : 1,		/* SCHED_RESET_ON_FORK or SCHED_FLAG_RESET_ON_FORK */
+		     altered : 1,		/* sched_set**() used */
+		     verbose : 1;		/* verbose output */
+};
+
+static void __attribute__((__noreturn__)) usage(void)
 {
-	FILE *out = rc == EXIT_SUCCESS ? stdout : stderr;
+	FILE *out = stdout;
 
 	fputs(_("Show or change the real-time scheduling attributes of a process.\n"), out);
-	fprintf(out, _(
-	"\nSet policy:\n"
-	"  chrt [options] [<policy>] <priority> [-p <pid> | <command> [<arg>...]]\n"
-	"\nGet policy:\n"
-	"  chrt [options] -p <pid>\n"));
+	fputs(USAGE_SEPARATOR, out);
+	fputs(_("Set policy:\n"
+	" chrt [options] <priority> <command> [<arg>...]\n"
+	" chrt [options] --pid <priority> <pid>\n"), out);
+	fputs(USAGE_SEPARATOR, out);
+	fputs(_("Get policy:\n"
+	" chrt [options] -p <pid>\n"), out);
 
-	fprintf(out, _(
-	"\nScheduling policies:\n"
-	"  -b | --batch         set policy to SCHED_BATCH\n"
-	"  -f | --fifo          set policy to SCHED_FIFO\n"
-	"  -i | --idle          set policy to SCHED_IDLE\n"
-	"  -o | --other         set policy to SCHED_OTHER\n"
-	"  -r | --rr            set policy to SCHED_RR (default)\n"));
+	fputs(USAGE_SEPARATOR, out);
+	fputs(_("Policy options:\n"), out);
+	fputs(_(" -b, --batch          set policy to SCHED_BATCH\n"), out);
+	fputs(_(" -d, --deadline       set policy to SCHED_DEADLINE\n"), out);
+	fputs(_(" -f, --fifo           set policy to SCHED_FIFO\n"), out);
+	fputs(_(" -i, --idle           set policy to SCHED_IDLE\n"), out);
+	fputs(_(" -o, --other          set policy to SCHED_OTHER\n"), out);
+	fputs(_(" -r, --rr             set policy to SCHED_RR (default)\n"), out);
 
-#ifdef SCHED_RESET_ON_FORK
-	fprintf(out, _(
-	"\nScheduling flags:\n"
-	"  -R | --reset-on-fork set SCHED_RESET_ON_FORK for FIFO or RR\n"));
-#endif
-	fprintf(out, _(
-	"\nOptions:\n"
-	"  -a | --all-tasks     operate on all the tasks (threads) for a given pid\n"
-	"  -h | --help          display this help\n"
-	"  -m | --max           show min and max valid priorities\n"
-	"  -p | --pid           operate on existing given pid\n"
-	"  -v | --verbose       display status information\n"
-	"  -V | --version       output version information\n\n"));
+	fputs(USAGE_SEPARATOR, out);
+	fputs(_("Scheduling options:\n"), out);
+	fputs(_(" -R, --reset-on-fork       set reset-on-fork flag\n"), out);
+	fputs(_(" -T, --sched-runtime <ns>  runtime parameter for DEADLINE\n"), out);
+	fputs(_(" -P, --sched-period <ns>   period parameter for DEADLINE\n"), out);
+	fputs(_(" -D, --sched-deadline <ns> deadline parameter for DEADLINE\n"), out);
 
-	fprintf(out, USAGE_MAN_TAIL("chrt(1)"));
-	exit(rc);
+	fputs(USAGE_SEPARATOR, out);
+	fputs(_("Other options:\n"), out);
+	fputs(_(" -a, --all-tasks      operate on all the tasks (threads) for a given pid\n"), out);
+	fputs(_(" -m, --max            show min and max valid priorities\n"), out);
+	fputs(_(" -p, --pid            operate on existing given pid\n"), out);
+	fputs(_(" -v, --verbose        display status information\n"), out);
+
+	fputs(USAGE_SEPARATOR, out);
+	printf(USAGE_HELP_OPTIONS(22));
+
+	printf(USAGE_MAN_TAIL("chrt(1)"));
+	exit(EXIT_SUCCESS);
 }
 
-static void show_rt_info(pid_t pid, int isnew)
+static const char *get_policy_name(int policy)
 {
-	struct sched_param sp;
-	int policy;
+#ifdef SCHED_RESET_ON_FORK
+	policy &= ~SCHED_RESET_ON_FORK;
+#endif
+	switch (policy) {
+	case SCHED_OTHER:
+		return "SCHED_OTHER";
+	case SCHED_FIFO:
+		return "SCHED_FIFO";
+#ifdef SCHED_IDLE
+	case SCHED_IDLE:
+		return "SCHED_IDLE";
+#endif
+	case SCHED_RR:
+		return "SCHED_RR";
+#ifdef SCHED_BATCH
+	case SCHED_BATCH:
+		return "SCHED_BATCH";
+#endif
+#ifdef SCHED_DEADLINE
+	case SCHED_DEADLINE:
+		return "SCHED_DEADLINE";
+#endif
+	default:
+		break;
+	}
+
+	return _("unknown");
+}
+
+static void show_sched_pid_info(struct chrt_ctl *ctl, pid_t pid)
+{
+	int policy = -1, reset_on_fork = 0, prio = 0;
+#ifdef SCHED_DEADLINE
+	uint64_t deadline = 0, runtime = 0, period = 0;
+#endif
 
 	/* don't display "pid 0" as that is confusing */
 	if (!pid)
 		pid = getpid();
 
-	policy = sched_getscheduler(pid);
-	if (policy == -1)
-		err(EXIT_FAILURE, _("failed to get pid %d's policy"), pid);
+	errno = 0;
 
-	if (isnew)
-		printf(_("pid %d's new scheduling policy: "), pid);
-	else
-		printf(_("pid %d's current scheduling policy: "), pid);
+	/*
+	 * New way
+	 */
+#ifdef HAVE_SCHED_SETATTR
+	{
+		struct sched_attr sa;
 
-	switch (policy) {
-	case SCHED_OTHER:
-		printf("SCHED_OTHER\n");
-		break;
-	case SCHED_FIFO:
-		printf("SCHED_FIFO\n");
-		break;
-#ifdef SCHED_RESET_ON_FORK
-	case SCHED_FIFO | SCHED_RESET_ON_FORK:
-		printf("SCHED_FIFO|SCHED_RESET_ON_FORK\n");
-		break;
-#endif
-#ifdef SCHED_IDLE
-	case SCHED_IDLE:
-		printf("SCHED_IDLE\n");
-		break;
-#endif
-	case SCHED_RR:
-		printf("SCHED_RR\n");
-		break;
-#ifdef SCHED_RESET_ON_FORK
-	case SCHED_RR | SCHED_RESET_ON_FORK:
-		printf("SCHED_RR|SCHED_RESET_ON_FORK\n");
-		break;
-#endif
-#ifdef SCHED_BATCH
-	case SCHED_BATCH:
-		printf("SCHED_BATCH\n");
-		break;
-#endif
-	default:
-		warnx(_("unknown scheduling policy"));
+		if (sched_getattr(pid, &sa, sizeof(sa), 0) != 0) {
+			if (errno == ENOSYS)
+				goto fallback;
+			err(EXIT_FAILURE, _("failed to get pid %d's policy"), pid);
+		}
+
+		policy = sa.sched_policy;
+		prio = sa.sched_priority;
+		reset_on_fork = sa.sched_flags & SCHED_FLAG_RESET_ON_FORK;
+		deadline = sa.sched_deadline;
+		runtime = sa.sched_runtime;
+		period = sa.sched_period;
 	}
 
-	if (sched_getparam(pid, &sp))
-		err(EXIT_FAILURE, _("failed to get pid %d's attributes"), pid);
+	/*
+	 * Old way
+	 */
+fallback:
+	if (errno == ENOSYS)
+#endif
+	{
+		struct sched_param sp;
 
-	if (isnew)
-		printf(_("pid %d's new scheduling priority: %d\n"),
-		       pid, sp.sched_priority);
+		policy = sched_getscheduler(pid);
+		if (policy == -1)
+			err(EXIT_FAILURE, _("failed to get pid %d's policy"), pid);
+
+		if (sched_getparam(pid, &sp) != 0)
+			err(EXIT_FAILURE, _("failed to get pid %d's attributes"), pid);
+		else
+			prio = sp.sched_priority;
+# ifdef SCHED_RESET_ON_FORK
+		if (policy & SCHED_RESET_ON_FORK)
+			reset_on_fork = 1;
+# endif
+	}
+
+	if (ctl->altered)
+		printf(_("pid %d's new scheduling policy: %s"), pid, get_policy_name(policy));
 	else
-		printf(_("pid %d's current scheduling priority: %d\n"),
-		       pid, sp.sched_priority);
+		printf(_("pid %d's current scheduling policy: %s"), pid, get_policy_name(policy));
+
+	if (reset_on_fork)
+		printf("|SCHED_RESET_ON_FORK");
+	putchar('\n');
+
+	if (ctl->altered)
+		printf(_("pid %d's new scheduling priority: %d\n"), pid, prio);
+	else
+		printf(_("pid %d's current scheduling priority: %d\n"), pid, prio);
+
+#ifdef SCHED_DEADLINE
+	if (policy == SCHED_DEADLINE) {
+		if (ctl->altered)
+			printf(_("pid %d's new runtime/deadline/period parameters: %ju/%ju/%ju\n"),
+					pid, runtime, deadline, period);
+		else
+			printf(_("pid %d's current runtime/deadline/period parameters: %ju/%ju/%ju\n"),
+					pid, runtime, deadline, period);
+	}
+#endif
+}
+
+
+static void show_sched_info(struct chrt_ctl *ctl)
+{
+	if (ctl->all_tasks) {
+#ifdef __linux__
+		DIR *sub = NULL;
+		pid_t tid;
+		struct path_cxt *pc = ul_new_procfs_path(ctl->pid, NULL);
+
+		while (pc && procfs_process_next_tid(pc, &sub, &tid) == 0)
+			show_sched_pid_info(ctl, tid);
+
+		ul_unref_path(pc);
+#else
+		err(EXIT_FAILURE, _("cannot obtain the list of tasks"));
+#endif
+	} else
+		show_sched_pid_info(ctl, ctl->pid);
 }
 
 static void show_min_max(void)
@@ -166,170 +243,250 @@ static void show_min_max(void)
 #ifdef SCHED_IDLE
 		SCHED_IDLE,
 #endif
-	};
-	const char *names[] = {
-		"OTHER",
-		"FIFO",
-		"RR",
-#ifdef SCHED_BATCH
-		"BATCH",
-#endif
-#ifdef SCHED_IDLE
-		"IDLE",
+#ifdef SCHED_DEADLINE
+		SCHED_DEADLINE,
 #endif
 	};
 
 	for (i = 0; i < ARRAY_SIZE(policies); i++) {
-		int max = sched_get_priority_max(policies[i]);
-		int min = sched_get_priority_min(policies[i]);
+		int plc = policies[i];
+		int max = sched_get_priority_max(plc);
+		int min = sched_get_priority_min(plc);
 
 		if (max >= 0 && min >= 0)
-			printf(_("SCHED_%s min/max priority\t: %d/%d\n"),
-					names[i], min, max);
+			printf(_("%s min/max priority\t: %d/%d\n"),
+					get_policy_name(plc), min, max);
 		else
-			printf(_("SCHED_%s not supported?\n"), names[i]);
+			printf(_("%s not supported?\n"), get_policy_name(plc));
 	}
+}
+
+static int set_sched_one_by_setscheduler(struct chrt_ctl *ctl, pid_t pid)
+{
+	struct sched_param sp = { .sched_priority = ctl->priority };
+	int policy = ctl->policy;
+
+	errno = 0;
+# ifdef SCHED_RESET_ON_FORK
+	if (ctl->reset_on_fork)
+		policy |= SCHED_RESET_ON_FORK;
+# endif
+
+#if defined (__linux__) && defined(SYS_sched_setscheduler)
+	/* musl libc returns ENOSYS for its sched_setscheduler library
+	 * function, because the sched_setscheduler Linux kernel system call
+	 * does not conform to Posix; so we use the system call directly
+	 */
+	return syscall(SYS_sched_setscheduler, pid, policy, &sp);
+#else
+	return sched_setscheduler(pid, policy, &sp);
+#endif
+}
+
+
+#ifndef HAVE_SCHED_SETATTR
+static int set_sched_one(struct chrt_ctl *ctl, pid_t pid)
+{
+	return set_sched_one_by_setscheduler(ctl, pid);
+}
+
+#else /* !HAVE_SCHED_SETATTR */
+static int set_sched_one(struct chrt_ctl *ctl, pid_t pid)
+{
+	struct sched_attr sa = { .size = sizeof(struct sched_attr) };
+
+	/* old API is good enough for non-deadline */
+	if (ctl->policy != SCHED_DEADLINE)
+		return set_sched_one_by_setscheduler(ctl, pid);
+
+	/* no changeed by chrt, follow the current setting */
+	sa.sched_nice = getpriority(PRIO_PROCESS, pid);
+
+	/* use main() to check if the setting makes sense */
+	sa.sched_policy	  = ctl->policy;
+	sa.sched_priority = ctl->priority;
+	sa.sched_runtime  = ctl->runtime;
+	sa.sched_period   = ctl->period;
+	sa.sched_deadline = ctl->deadline;
+
+# ifdef SCHED_FLAG_RESET_ON_FORK
+	/* Don't use SCHED_RESET_ON_FORK for sched_setattr()! */
+	if (ctl->reset_on_fork)
+		sa.sched_flags |= SCHED_FLAG_RESET_ON_FORK;
+# endif
+	errno = 0;
+	return sched_setattr(pid, &sa, 0);
+}
+#endif /* HAVE_SCHED_SETATTR */
+
+static void set_sched(struct chrt_ctl *ctl)
+{
+	if (ctl->all_tasks) {
+#ifdef __linux__
+		DIR *sub = NULL;
+		pid_t tid;
+		struct path_cxt *pc = ul_new_procfs_path(ctl->pid, NULL);
+
+		if (!pc)
+			err(EXIT_FAILURE, _("cannot obtain the list of tasks"));
+
+		while (procfs_process_next_tid(pc, &sub, &tid) == 0) {
+			if (set_sched_one(ctl, tid) == -1)
+				err(EXIT_FAILURE, _("failed to set tid %d's policy"), tid);
+		}
+		ul_unref_path(pc);
+#else
+		err(EXIT_FAILURE, _("cannot obtain the list of tasks"));
+#endif
+	} else if (set_sched_one(ctl, ctl->pid) == -1)
+		err(EXIT_FAILURE, _("failed to set pid %d's policy"), ctl->pid);
+
+	ctl->altered = 1;
 }
 
 int main(int argc, char **argv)
 {
-	int i, policy = SCHED_RR, priority = 0, verbose = 0, policy_flag = 0,
-	    all_tasks = 0;
-	struct sched_param sp;
-	pid_t pid = -1;
+	struct chrt_ctl _ctl = { .pid = -1, .policy = SCHED_RR }, *ctl = &_ctl;
+	int c;
 
 	static const struct option longopts[] = {
-		{ "all-tasks",  0, NULL, 'a' },
-		{ "batch",	0, NULL, 'b' },
-		{ "fifo",	0, NULL, 'f' },
-		{ "idle",	0, NULL, 'i' },
-		{ "pid",	0, NULL, 'p' },
-		{ "help",	0, NULL, 'h' },
-		{ "max",        0, NULL, 'm' },
-		{ "other",	0, NULL, 'o' },
-		{ "rr",		0, NULL, 'r' },
-		{ "reset-on-fork", 0, NULL, 'R' },
-		{ "verbose",	0, NULL, 'v' },
-		{ "version",	0, NULL, 'V' },
-		{ NULL,		0, NULL, 0 }
+		{ "all-tasks",  no_argument, NULL, 'a' },
+		{ "batch",	no_argument, NULL, 'b' },
+		{ "deadline",   no_argument, NULL, 'd' },
+		{ "fifo",	no_argument, NULL, 'f' },
+		{ "idle",	no_argument, NULL, 'i' },
+		{ "pid",	no_argument, NULL, 'p' },
+		{ "help",	no_argument, NULL, 'h' },
+		{ "max",        no_argument, NULL, 'm' },
+		{ "other",	no_argument, NULL, 'o' },
+		{ "rr",		no_argument, NULL, 'r' },
+		{ "sched-runtime",  required_argument, NULL, 'T' },
+		{ "sched-period",   required_argument, NULL, 'P' },
+		{ "sched-deadline", required_argument, NULL, 'D' },
+		{ "reset-on-fork",  no_argument,       NULL, 'R' },
+		{ "verbose",	no_argument, NULL, 'v' },
+		{ "version",	no_argument, NULL, 'V' },
+		{ NULL,		no_argument, NULL, 0 }
 	};
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	while((i = getopt_long(argc, argv, "+abfiphmoRrvV", longopts, NULL)) != -1)
+	while((c = getopt_long(argc, argv, "+abdD:fiphmoP:T:rRvV", longopts, NULL)) != -1)
 	{
-		int ret = EXIT_FAILURE;
-
-		switch (i) {
+		switch (c) {
 		case 'a':
-			all_tasks = 1;
+			ctl->all_tasks = 1;
 			break;
 		case 'b':
 #ifdef SCHED_BATCH
-			policy = SCHED_BATCH;
+			ctl->policy = SCHED_BATCH;
+#endif
+			break;
+
+		case 'd':
+#ifdef SCHED_DEADLINE
+			ctl->policy = SCHED_DEADLINE;
 #endif
 			break;
 		case 'f':
-			policy = SCHED_FIFO;
+			ctl->policy = SCHED_FIFO;
 			break;
 		case 'R':
-#ifdef SCHED_RESET_ON_FORK
-			policy_flag |= SCHED_RESET_ON_FORK;
-#endif
+			ctl->reset_on_fork = 1;
 			break;
 		case 'i':
 #ifdef SCHED_IDLE
-			policy = SCHED_IDLE;
+			ctl->policy = SCHED_IDLE;
 #endif
 			break;
 		case 'm':
 			show_min_max();
 			return EXIT_SUCCESS;
 		case 'o':
-			policy = SCHED_OTHER;
+			ctl->policy = SCHED_OTHER;
 			break;
 		case 'p':
 			errno = 0;
-			pid = strtos32_or_err(argv[argc - 1], _("invalid PID argument"));
+			ctl->pid = strtos32_or_err(argv[argc - 1], _("invalid PID argument"));
 			break;
 		case 'r':
-			policy = SCHED_RR;
+			ctl->policy = SCHED_RR;
 			break;
 		case 'v':
-			verbose = 1;
+			ctl->verbose = 1;
 			break;
+		case 'T':
+			ctl->runtime = strtou64_or_err(optarg, _("invalid runtime argument"));
+			break;
+		case 'P':
+			ctl->period = strtou64_or_err(optarg, _("invalid period argument"));
+			break;
+		case 'D':
+			ctl->deadline = strtou64_or_err(optarg, _("invalid deadline argument"));
+			break;
+
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			ret = EXIT_SUCCESS;
-			/* fallthrough */
+			usage();
 		default:
-			show_usage(ret);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
-	if (((pid > -1) && argc - optind < 1) ||
-	    ((pid == -1) && argc - optind < 2))
-		show_usage(EXIT_FAILURE);
+	if (((ctl->pid > -1) && argc - optind < 1) ||
+	    ((ctl->pid == -1) && argc - optind < 2)) {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+}
 
-	if ((pid > -1) && (verbose || argc - optind == 1)) {
-		if (all_tasks) {
-			pid_t tid;
-			struct proc_tasks *ts = proc_open_tasks(pid);
-
-			if (!ts)
-				err(EXIT_FAILURE, _("cannot obtain the list of tasks"));
-			while (!proc_next_tid(ts, &tid))
-				show_rt_info(tid, FALSE);
-			proc_close_tasks(ts);
-		} else
-			show_rt_info(pid, FALSE);
-
+	if ((ctl->pid > -1) && (ctl->verbose || argc - optind == 1)) {
+		show_sched_info(ctl);
 		if (argc - optind == 1)
 			return EXIT_SUCCESS;
 	}
 
 	errno = 0;
-	priority = strtos32_or_err(argv[optind], _("invalid priority argument"));
+	ctl->priority = strtos32_or_err(argv[optind], _("invalid priority argument"));
 
-#ifdef SCHED_RESET_ON_FORK
-	/* sanity check */
-	if ((policy_flag & SCHED_RESET_ON_FORK) &&
-	    !(policy == SCHED_FIFO || policy == SCHED_RR))
-		errx(EXIT_FAILURE, _("SCHED_RESET_ON_FORK flag is supported for "
-				     "SCHED_FIFO and SCHED_RR policies only"));
+#ifdef SCHED_DEADLINE
+	if ((ctl->runtime || ctl->deadline || ctl->period) && ctl->policy != SCHED_DEADLINE)
+		errx(EXIT_FAILURE, _("--sched-{runtime,deadline,period} options "
+				     "are supported for SCHED_DEADLINE only"));
+	if (ctl->policy == SCHED_DEADLINE) {
+		/* The basic rule is runtime <= deadline <= period, so we can
+		 * make deadline and runtime optional on command line. Note we
+		 * don't check any values or set any defaults, it's kernel
+		 * responsibility.
+		 */
+		if (ctl->deadline == 0)
+			ctl->deadline = ctl->period;
+		if (ctl->runtime == 0)
+			ctl->runtime = ctl->deadline;
+	}
+#else
+	if (ctl->runtime || ctl->deadline || ctl->period)
+		errx(EXIT_FAILURE, _("SCHED_DEADLINE is unsupported"));
 #endif
+	if (ctl->pid == -1)
+		ctl->pid = 0;
+	if (ctl->priority < sched_get_priority_min(ctl->policy) ||
+	    sched_get_priority_max(ctl->policy) < ctl->priority)
+		errx(EXIT_FAILURE,
+		     _("unsupported priority value for the policy: %d: see --max for valid range"),
+		     ctl->priority);
+	set_sched(ctl);
 
-	policy |= policy_flag;
+	if (ctl->verbose)
+		show_sched_info(ctl);
 
-	if (pid == -1)
-		pid = 0;
-	sp.sched_priority = priority;
-
-	if (all_tasks) {
-		pid_t tid;
-		struct proc_tasks *ts = proc_open_tasks(pid);
-
-		if (!ts)
-			err(EXIT_FAILURE, _("cannot obtain the list of tasks"));
-		while (!proc_next_tid(ts, &tid))
-			if (sched_setscheduler(tid, policy, &sp) == -1)
-				err(EXIT_FAILURE, _("failed to set tid %d's policy"), tid);
-		proc_close_tasks(ts);
-	} else if (sched_setscheduler(pid, policy, &sp) == -1)
-		err(EXIT_FAILURE, _("failed to set pid %d's policy"), pid);
-
-	if (verbose)
-		show_rt_info(pid, TRUE);
-
-	if (!pid) {
+	if (!ctl->pid) {
 		argv += optind + 1;
 		execvp(argv[0], argv);
-		err(EXIT_FAILURE, _("failed to execute %s"), argv[0]);
+		errexec(argv[0]);
 	}
 
 	return EXIT_SUCCESS;

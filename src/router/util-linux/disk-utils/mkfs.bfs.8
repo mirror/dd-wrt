@@ -1,58 +1,95 @@
-.\" Copyright 1999 Andries E. Brouwer (aeb@cwi.nl)
-.\" May be freely distributed.
-.TH MKFS.BFS 8 "July 2011" "util-linux" "System Administration"
-.SH NAME
+'\" t
+.\"     Title: mkfs.bfs
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "MKFS.BFS" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 mkfs.bfs \- make an SCO bfs filesystem
-.SH SYNOPSIS
-.B mkfs.bfs
-.RI [options] " device " [ block-count ]
-.SH DESCRIPTION
-.B mkfs.bfs
-creates an SCO bfs filesystem on a block device
-(usually a disk partition or a file accessed via the loop device).
-.PP
-The
-.I block-count
-parameter is the desired size of the filesystem, in blocks.
-If nothing is specified, the entire partition will be used.
-.SH OPTIONS
-.TP
-.BR \-N , " \-\-inodes " \fInumber\fR
-Specify the desired \fInumber\fR of inodes (at most 512).
-If nothing is specified, some default number in the range 48\(en512 is picked
-depending on the size of the partition.
-.TP
-.BR \-V , " \-\-vname " \fIlabel\fR
-Specify the volume \fIlabel\fR.  I have no idea if/where this is used.
-.TP
-.BR \-F , " \-\-fname " \fIname\fR
-Specify the filesystem \fIname\fR.  I have no idea if/where this is used.
-.TP
-.BR \-v , " \-\-verbose"
+.SH "SYNOPSIS"
+.sp
+\fBmkfs.bfs\fP [options] \fIdevice\fP [\fIblock\-count\fP]
+.SH "DESCRIPTION"
+.sp
+\fBmkfs.bfs\fP creates an SCO bfs filesystem on a block device (usually a disk partition or a file accessed via the loop device).
+.sp
+The \fIblock\-count\fP parameter is the desired size of the filesystem, in blocks. If nothing is specified, the entire partition will be used.
+.SH "OPTIONS"
+.sp
+\fB\-N\fP, \fB\-\-inodes\fP \fInumber\fP
+.RS 4
+Specify the desired \fInumber\fP of inodes (at most 512). If nothing is specified, some default number in the range 48\-512 is picked depending on the size of the partition.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-vname\fP \fIlabel\fP
+.RS 4
+Specify the volume \fIlabel\fP. I have no idea if/where this is used.
+.RE
+.sp
+\fB\-F\fP, \fB\-\-fname\fP \fIname\fP
+.RS 4
+Specify the filesystem \fIname\fP. I have no idea if/where this is used.
+.RE
+.sp
+\fB\-v\fP, \fB\-\-verbose\fP
+.RS 4
 Explain what is being done.
-.TP
-.B \-c
+.RE
+.sp
+\fB\-c\fP
+.RS 4
 This option is silently ignored.
-.TP
-.B \-l
+.RE
+.sp
+\fB\-l\fP
+.RS 4
 This option is silently ignored.
-.TP
-.BR \-h , " \-\-help"
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-Option
-.B \-V
-only works as
-.B \-\-version
-when it is the only option.
-.SH "EXIT CODES"
-The exit code returned by
-.B mkfs.bfs
-is 0 when all went well, and 1 when something went wrong.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+Option \fB\-V\fP only works as \fB\-\-version\fP when it is the only option.
+.RE
+.SH "EXIT STATUS"
+.sp
+The exit status returned by \fBmkfs.bfs\fP is 0 when all went well, and 1 when something went wrong.
 .SH "SEE ALSO"
-.BR mkfs (8)
-.SH AVAILABILITY
-The mkfs.bfs command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBmkfs\fP(8)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBmkfs.bfs\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

@@ -1,84 +1,123 @@
-.\" Copyright 1993, 1994, 1995 by Theodore Ts'o.  All Rights Reserved.
-.\" This file may be copied under the terms of the GNU Public License.
+'\" t
+.\"     Title: findfs
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.TH FINDFS 8 "March 2014" "util-linux" "System Administration"
-.SH NAME
+.TH "FINDFS" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 findfs \- find a filesystem by label or UUID
-.SH SYNOPSIS
-.B findfs
-.BI NAME= value
-.SH DESCRIPTION
-.B findfs
-will search the block devices in the system looking for a filesystem or
-partition with specified tag. The currently supported tags are:
-.TP
-.B LABEL=<label>
+.SH "SYNOPSIS"
+.sp
+\fBfindfs\fP \fBNAME\fP=\fIvalue\fP
+.SH "DESCRIPTION"
+.sp
+\fBfindfs\fP will search the block devices in the system looking for a filesystem or partition with specified tag. The currently supported tags are:
+.sp
+\fBLABEL\fP=\fI<label>\fP
+.RS 4
 Specifies filesystem label.
-.TP
-.B UUID=<uuid>
+.RE
+.sp
+\fBUUID\fP=\fI<uuid>\fP
+.RS 4
 Specifies filesystem UUID.
-.TP
-.B PARTUUID=<uuid>
-Specifies partition UUID. This partition identifier is supported for example for
-GUID  Partition  Table (GPT) partition tables.
-.TP
-.B PARTLABEL=<label>
-Specifies partition label (name). The partition labels are supported for example for
-GUID Partition Table (GPT) or MAC partition tables.
-.PP
-If the filesystem or partition is found, the device name will be printed on
-stdout.
-
-The complete overview about filesystems and partitions you can get for example
-by
-.RS
-
-.br
-.BI "lsblk \-\-fs"
-.br
-
-.BI "partx --show <disk>"
-.br
-
-.BI blkid
-.br
-
 .RE
-
-.PP
+.sp
+\fBPARTUUID\fP=\fI<uuid>\fP
+.RS 4
+Specifies partition UUID. This partition identifier is supported for example for GUID Partition Table (GPT) partition tables.
+.RE
+.sp
+\fBPARTLABEL\fP=\fI<label>\fP
+.RS 4
+Specifies partition label (name). The partition labels are supported for example for GUID Partition Table (GPT) or MAC partition tables.
+.RE
+.sp
+If the filesystem or partition is found, the device name will be printed on stdout.
+.sp
+The complete overview about filesystems and partitions you can get for example by
+.RS 3
+.ll -.6i
+.sp
+\fBlsblk \-\-fs\fP
+.sp
+\fBpartx \-\-show <disk>\fP
+.sp
+\fBblkid\fP
+.br
+.RE
+.ll
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
 .SH "EXIT STATUS"
-.RS
-.PD 0
-.TP
-.B 0
+.sp
+\fB0\fP
+.RS 4
 success
-.TP
-.B 1
-label or uuid cannot be found
-.TP
-.B 2
-usage error, wrong number of arguments or unknown option
-.PD
 .RE
-.SH AUTHOR
-.B findfs
-was originally written by
-.MT tytso@mit.edu
-Theodore Ts'o
-.ME
-and re-written for the util-linux package by
-.MT kzak@redhat.com
-Karel Zak
-.ME .
-.SH ENVIRONMENT
-.IP LIBBLKID_DEBUG=all
+.sp
+\fB1\fP
+.RS 4
+label or uuid cannot be found
+.RE
+.sp
+\fB2\fP
+.RS 4
+usage error, wrong number of arguments or unknown option
+.RE
+.SH "ENVIRONMENT"
+.sp
+LIBBLKID_DEBUG=all
+.RS 4
 enables libblkid debug output.
-.SH SEE ALSO
-.BR blkid (8),
-.BR lsblk (8),
-.BR partx (8)
-.SH AVAILABILITY
-The findfs command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.RE
+.SH "AUTHORS"
+.sp
+\fBfindfs\fP was originally written by \c
+.MTO "tytso\(atmit.edu" "Theodore Ts\(cqo" ""
+and re\-written for the util\-linux package by
+.MTO "kzak\(atredhat.com" "Karel Zak" "."
+.SH "SEE ALSO"
+.sp
+\fBblkid\fP(8),
+\fBlsblk\fP(8),
+\fBpartx\fP(8)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBfindfs\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

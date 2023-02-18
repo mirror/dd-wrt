@@ -17,19 +17,19 @@ libsmartcols:
    been originally developed for lsblk(8) and findmnt(8).
 
 cfdisk(8):
- - the code been completely rewritten, now it uses libfdisk and libsmartcols, 
+ - the code been completely rewritten, now it uses libfdisk and libsmartcols,
    supports GPT, SUN, SGI and BSD disk labels
  - the command is no more based on CHS addressing
 
 fdisk(8):
- - no more print sizes in 1024-byte blocks, but in real sectors or human 
+ - no more print sizes in 1024-byte blocks, but in real sectors or human
    readable sizes (MiB, TiB, etc.)
- - allows to modify GPT partition attributes 
+ - allows to modify GPT partition attributes
 
 lslogins(1):
  - this NEW COMMAND list information about users, groups and system accounts,
    provides  data from last, wtmp, btmp, hust status, password expiration
-   settings, SELinux context, nologin setting, etc. 
+   settings, SELinux context, nologin setting, etc.
 
 terminal-colors.d(5):
  - this new directory controls output colorization for various utilities
@@ -41,7 +41,7 @@ cal(1):
   - supports new option --week to show week numbers
 
 fallocate(1):
-  - supports new option --dig-holes to detect and dig holes, it makes the 
+  - supports new option --dig-holes to detect and dig holes, it makes the
     file sparse in-place, without using extra disk space.
 
 fstrim(1):
@@ -65,10 +65,10 @@ lsblk(8):
 
 kill(1) and setterm(1):
   - the commands have been refactored to be more robust
- 
+
 
 The build system has been improved to support to build only explicitly specified
-utils or libs (e.g. --disable-all-programs --enable-libblkid to build only 
+utils or libs (e.g. --disable-all-programs --enable-libblkid to build only
 libblkid).
 
 The project test suite has been improved to be more portable and robust, project
@@ -80,20 +80,20 @@ Stable maintenance releases between v2.24 and v2.25
 
 util-linux 2.24.1 [Jan 20 2014]
 
- * ftp://ftp.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.1-ReleaseNotes
-   ftp://ftp.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.1-ChangeLog
+ * https://www.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.1-ReleaseNotes
+   https://www.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.1-ChangeLog
 
 util-linux 2.24.2 [Apr 24 2014]
 
- * ftp://ftp.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.2-ReleaseNotes
-   ftp://ftp.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.2-ChangeLog
+ * https://www.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.2-ReleaseNotes
+   https://www.kernel.org/pub/linux/utils/util-linux/v2.24/v2.24.2-ChangeLog
 
 
 Changes between v2.24 and v2.25
 -------------------------------
 
  For more details see ChangeLog files at:
- ftp://ftp.kernel.org/pub/linux/utils/util-linux/v2.25/
+ https://www.kernel.org/pub/linux/utils/util-linux/v2.25/
 
 
 addpart:
@@ -618,7 +618,7 @@ libblkid:
    - add extra checks to XFS prober  [Karel Zak]
    - cleanup internal return codes  [Karel Zak]
    - comparing an array to null is not useful [coverity scan]  [Karel Zak]
-   - convert GPT attributes to host endianess  [Karel Zak]
+   - convert GPT attributes to host endianness  [Karel Zak]
    - correct the return values in squashfs probe  [David Shea]
    - detect alone PMBR  [Karel Zak]
    - detect squashfs 3 vs 4  [Ruediger Meier]
@@ -662,7 +662,7 @@ libfdisk:
    - (gpt) add /home GUID  [Karel Zak]
    - (gpt) allow to work with hybrid GPT  [Karel Zak]
    - (gpt) fix last LBA code for S_ISREG  [Karel Zak]
-   - (gpt) implement 'fix order' commnad  [Karel Zak]
+   - (gpt) implement 'fix order' command  [Karel Zak]
    - (gpt) improve and cleanup recovery code  [Karel Zak]
    - (gpt) initialize last_lba, cleanup pa->{start,size} usage  [Karel Zak]
    - (gpt) recover from corrupted primary/backup PT  [Karel Zak]
@@ -1146,7 +1146,7 @@ tests:
    - allow to add or override test suite options  [Ruediger Meier]
    - avoid executing dirname(1) command  [Sami Kerola]
    - cal  do not let --week=<num> to adjust requested month  [Sami Kerola]
-   - cal  take account week numbers when determing month lenght  [Sami Kerola]
+   - cal  take account week numbers when determing month length  [Sami Kerola]
    - cal(1) is year is limited to signed 32 bit value  [Sami Kerola]
    - call ts_init_env as early as possible  [Ruediger Meier]
    - check /proc availability, and go-around if it is incomplete  [Sami Kerola]

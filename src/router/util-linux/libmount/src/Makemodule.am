@@ -1,19 +1,19 @@
 
 # libmount.h is generated, so it's store in builddir!
 mountincdir = $(includedir)/libmount
-nodist_mountinc_HEADERS = $(top_builddir)/libmount/src/libmount.h
+nodist_mountinc_HEADERS = libmount/src/libmount.h
 
 usrlib_exec_LTLIBRARIES += libmount.la
 libmount_la_SOURCES = \
 	include/list.h \
 	lib/monotonic.c \
 	\
+	libmount/src/mountP.h \
 	libmount/src/cache.c \
 	libmount/src/fs.c \
 	libmount/src/init.c \
 	libmount/src/iter.c \
 	libmount/src/lock.c \
-	libmount/src/mountP.h \
 	libmount/src/optmap.c \
 	libmount/src/optstr.c \
 	libmount/src/tab.c \
@@ -22,51 +22,62 @@ libmount_la_SOURCES = \
 	libmount/src/tab_update.c \
 	libmount/src/test.c \
 	libmount/src/utils.c \
-	libmount/src/version.c \
-	$(nodist_mountinc_HEADERS)
+	libmount/src/version.c
 
 if LINUX
 libmount_la_SOURCES += \
 	libmount/src/context.c \
 	libmount/src/context_loopdev.c \
+	libmount/src/context_veritydev.c \
 	libmount/src/context_mount.c \
 	libmount/src/context_umount.c \
 	libmount/src/monitor.c
+
+if HAVE_BTRFS
+libmount_la_SOURCES += libmount/src/btrfs.c
 endif
 
-nodist_libmount_la_SOURCES = libmount/src/mountP.h
+endif # LINUX
+
 
 libmount_la_LIBADD = \
 	libcommon.la \
 	libblkid.la \
 	$(SELINUX_LIBS) \
-	$(CLOCKGETTIME_LIBS)
+	$(REALTIME_LIBS)
+
+if HAVE_CRYPTSETUP
+if CRYPTSETUP_VIA_DLOPEN
+libmount_la_LIBADD += -ldl
+else
+libmount_la_LIBADD += $(CRYPTSETUP_LIBS)
+endif
+endif
 
 libmount_la_CFLAGS = \
+	$(AM_CFLAGS) \
 	$(SOLIB_CFLAGS) \
+	$(CRYPTSETUP_CFLAGS) \
 	-I$(ul_libblkid_incdir) \
 	-I$(ul_libmount_incdir) \
 	-I$(top_srcdir)/libmount/src
 
-libmount_la_DEPENDENCIES = \
-	libcommon.la \
-	libblkid.la \
-	libmount/src/libmount.sym \
-	libmount/src/libmount.h.in
+EXTRA_libmount_la_DEPENDENCIES = \
+	libmount/src/libmount.sym
 
-libmount_la_LDFLAGS = \
-	$(SOLIB_LDFLAGS) \
-	-Wl,--version-script=$(top_srcdir)/libmount/src/libmount.sym \
-	-version-info $(LIBMOUNT_VERSION_INFO)
+libmount_la_LDFLAGS = $(SOLIB_LDFLAGS)
+if HAVE_VSCRIPT
+libmount_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(top_srcdir)/libmount/src/libmount.sym
+endif
+libmount_la_LDFLAGS += -version-info $(LIBMOUNT_VERSION_INFO)
+
 
 EXTRA_DIST += \
-	libmount/src/libmount.sym \
-	libmount/src/libmount.h.in
+	libmount/src/libmount.sym
 
 if BUILD_LIBMOUNT_TESTS
 check_PROGRAMS += \
 	test_mount_cache \
-	test_mount_context \
 	test_mount_lock \
 	test_mount_optstr \
 	test_mount_tab \
@@ -74,15 +85,26 @@ check_PROGRAMS += \
 	test_mount_tab_update \
 	test_mount_utils \
 	test_mount_version \
-	test_mount_monitor \
 	test_mount_debug
+if LINUX
+check_PROGRAMS += test_mount_context
+check_PROGRAMS += test_mount_monitor
+endif
 
-libmount_tests_cflags  = -DTEST_PROGRAM $(libmount_la_CFLAGS)
-libmount_tests_ldflags = libblkid.la -static
-libmount_tests_ldadd   = libmount.la $(UUID_LIBS) $(CLOCKGETTIME_LIBS)
+libmount_tests_cflags  = -DTEST_PROGRAM $(libmount_la_CFLAGS) $(NO_UNUSED_WARN_CFLAGS)
+libmount_tests_ldflags = -static
+libmount_tests_ldadd   = libmount.la libblkid.la $(LDADD) $(REALTIME_LIBS)
 
 if HAVE_SELINUX
 libmount_tests_ldadd += $(SELINUX_LIBS)
+endif
+
+if HAVE_CRYPTSETUP
+if CRYPTSETUP_VIA_DLOPEN
+libmount_tests_ldadd += -ldl
+else
+libmount_tests_ldadd += $(CRYPTSETUP_LIBS)
+endif
 endif
 
 test_mount_cache_SOURCES = libmount/src/cache.c
@@ -140,13 +162,26 @@ test_mount_debug_CFLAGS = $(libmount_tests_cflags)
 test_mount_debug_LDFLAGS = $(libmount_tests_ldflags)
 test_mount_debug_LDADD = $(libmount_tests_ldadd)
 
+if FUZZING_ENGINE
+check_PROGRAMS += test_mount_fuzz
+
+test_mount_fuzz_SOURCES = libmount/src/fuzz.c
+
+# https://google.github.io/oss-fuzz/getting-started/new-project-guide/#Requirements
+nodist_EXTRA_test_mount_fuzz_SOURCES = dummy.cxx
+
+test_mount_fuzz_CFLAGS = $(libmount_tests_cflags)
+test_mount_fuzz_LDFLAGS = $(libmount_tests_ldflags) -lpthread
+test_mount_fuzz_LDADD = $(libmount_tests_ldadd) $(LIB_FUZZING_ENGINE)
+endif
+
 endif # BUILD_LIBMOUNT_TESTS
 
 
 # move lib from $(usrlib_execdir) to $(libdir) if needed
 install-exec-hook-libmount:
 	if test "$(usrlib_execdir)" != "$(libdir)" -a -f "$(DESTDIR)$(usrlib_execdir)/libmount.so"; then \
-		mkdir -p $(DESTDIR)$(libdir); \
+		$(MKDIR_P) $(DESTDIR)$(libdir); \
 		mv $(DESTDIR)$(usrlib_execdir)/libmount.so.* $(DESTDIR)$(libdir); \
 		so_img_name=$$(readlink $(DESTDIR)$(usrlib_execdir)/libmount.so); \
 		so_img_rel_target=$$(echo $(usrlib_execdir) | sed 's,\(^/\|\)[^/][^/]*,..,g'); \

@@ -1,118 +1,116 @@
-.\" Copyright (c) 1990, 1993
-.\"	The Regents of the University of California.  All rights reserved.
+'\" t
+.\"     Title: look
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\"     @(#)look.1	8.1 (Berkeley) 6/14/93
-.\"
-.TH LOOK 1 "June 2011" "util-linux" "User Commands"
-.SH NAME
+.TH "LOOK" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 look \- display lines beginning with a given string
-.SH SYNOPSIS
-.B look
-[options]
-.IR "string " [ file ]
-.SH DESCRIPTION
-The
-.B look
-utility displays any lines in
-.I file
-which contain
-.IR string .
-As
-.B look
-performs a binary search, the lines in
-.I file
-must be sorted (where
-.BR sort (1)
-was given the same options
-.BR "\-d " and/or " \-f " that
-.B look
-is invoked with).
-.PP
-If
-.I file
-is not specified, the file
-.I /usr/share/dict/words
-is used, only alphanumeric characters are compared and the case of
-alphabetic characters is ignored.
-.SH OPTIONS
-.TP
-.BR \-a , " \-\-alternative"
+.SH "SYNOPSIS"
+.sp
+\fBlook\fP [options] \fIstring\fP [\fIfile\fP]
+.SH "DESCRIPTION"
+.sp
+The \fBlook\fP utility displays any lines in \fIfile\fP which contain \fIstring\fP as a prefix. As \fBlook\fP performs a binary search, the lines in \fIfile\fP must be sorted (where \fBsort\fP(1) was given the same options \fB\-d\fP and/or \fB\-f\fP that \fBlook\fP is invoked with).
+.sp
+If \fIfile\fP is not specified, the file \fI/usr/share/dict/words\fP is used, only alphanumeric characters are compared and the case of alphabetic characters is ignored.
+.SH "OPTIONS"
+.sp
+\fB\-a\fP, \fB\-\-alternative\fP
+.RS 4
 Use the alternative dictionary file.
-.TP
-.BR \-d , " \-\-alphanum"
-Use normal dictionary character set and order, i.e. only alphanumeric characters
-are compared.  (This is on by default if no file is specified.)
-.TP
-.BR \-f , " \-\-ignore\-case"
-Ignore the case of alphabetic characters.  (This is on by default if no file is
-specified.)
-.TP
-.BR \-t , " \-\-terminate " \fIcharacter\fR
-Specify a string termination character, i.e. only the characters
-in \fIstring\fR up to and including the first occurrence of \fIcharacter\fR
-are compared.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.TP
-.BR \-h , " \-\-help"
-Display help text and exit.
-.PP
-The
-.B look
-utility exits 0 if one or more lines were found and displayed, 1 if
-no lines were found, and >1 if an error occurred.
-.SH EXAMPLE
-.RS
-.nf
-sort -d /etc/passwd -o /tmp/look.dict
-look -t: root:foobar /tmp/look.dict
-.nf
 .RE
-.SH FILES
-.IP "\fB/usr/share/dict/words\fR" 4
+.sp
+\fB\-d\fP, \fB\-\-alphanum\fP
+.RS 4
+Use normal dictionary character set and order, i.e., only blanks and alphanumeric characters are compared. This is on by default if no file is specified.
+.sp
+Note that blanks have been added to dictionary character set for compatibility with \fBsort \-d\fP command since version 2.28.
+.RE
+.sp
+\fB\-f\fP, \fB\-\-ignore\-case\fP
+.RS 4
+Ignore the case of alphabetic characters. This is on by default if no file is specified.
+.RE
+.sp
+\fB\-t\fP, \fB\-\-terminate\fP \fIcharacter\fP
+.RS 4
+Specify a string termination character, i.e., only the characters in \fIstring\fP up to and including the first occurrence of \fIcharacter\fP are compared.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.sp
+The \fBlook\fP utility exits 0 if one or more lines were found and displayed, 1 if no lines were found, and >1 if an error occurred.
+.SH "ENVIRONMENT"
+.sp
+\fBWORDLIST\fP
+.RS 4
+Path to a dictionary file. The environment variable has greater priority than the dictionary path defined in the \fBFILES\fP segment.
+.RE
+.SH "FILES"
+.sp
+\fI/usr/share/dict/words\fP
+.RS 4
 the dictionary
-.IP "\fB/usr/share/dict/web2\fR" 4
+.RE
+.sp
+\fI/usr/share/dict/web2\fP
+.RS 4
 the alternative dictionary
+.RE
+.SH "HISTORY"
+.sp
+The \fBlook\fP utility appeared in Version 7 AT&T Unix.
+.SH "EXAMPLES"
+.sp
+.if n .RS 4
+.nf
+.fam C
+sort \-d /etc/passwd \-o /tmp/look.dict
+look \-t: root:foobar /tmp/look.dict
+.fam
+.fi
+.if n .RE
 .SH "SEE ALSO"
-.BR grep (1),
-.BR sort (1)
-.SH COMPATIBILITY
-The original manual page stated that tabs and blank characters participated
-in comparisons when the \fB\-\-alphanum\fR option was specified.  This was
-incorrect, and the current man page matches the historic implementation.
-.SH HISTORY
-The
-.B look
-utility appeared in Version 7 AT&T Unix.
-.SH AVAILABILITY
-The look command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBgrep\fP(1),
+\fBsort\fP(1)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBlook\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

@@ -1,105 +1,97 @@
-.\" Copyright (c) 1980, 1990, 1993
-.\"	The Regents of the University of California.  All rights reserved.
+'\" t
+.\"     Title: colcrt
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\"     @(#)colcrt.1	8.1 (Berkeley) 6/30/93
-.\"
-.TH COLCRT "1" "September 2011" "util-linux" "User Commands"
-.SH NAME
+.TH "COLCRT" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 colcrt \- filter nroff output for CRT previewing
-.SH SYNOPSIS
-.B colcrt
-[options]
-.RI [ file ...]
-.SH DESCRIPTION
-.B colcrt
-provides virtual half-line and reverse line feed sequences for terminals
-without such capability, and on which overstriking is destructive.
-Half-line characters and underlining (changed to dashing `\-') are placed on
-new lines in between the normal output lines.
-.SH OPTIONS
-.TP
-\fB\-\fR, \fB\-\-no\-underlining\fR
-Suppress all underlining.  This option is especially useful for previewing
-.I allboxed
-tables from
-.BR tbl (1).
-.TP
-\fB\-2\fR, \fB\-\-half\-lines\fR
-Causes all half-lines to be printed, effectively double spacing the output.
-Normally, a minimal space output format is used which will suppress empty
-lines.  The program never suppresses two consecutive empty lines, however.
-The
-.B \-2
-option is useful for sending output to the line printer when the output
-contains superscripts and subscripts which would otherwise be invisible.
-.TP
-\fB\-V\fR, \fB\-\-version\fR
-Display version information and exit.
-.TP
-\fB\-h\fR, \fB\-\-help\fR
-Display help text and exit.
-.SH EXAMPLES
-A typical use of
-.B colcrt
-would be:
-.PP
-.RS
-.B tbl exum2.n \&| nroff \-ms \&| colcrt \- \&| more
+.SH "SYNOPSIS"
+.sp
+\fBcolcrt\fP [options] [\fIfile\fP ...]
+.SH "DESCRIPTION"
+.sp
+\fBcolcrt\fP provides virtual half\-line and reverse line feed sequences for terminals without such capability, and on which overstriking is destructive. Half\-line characters and underlining (changed to dashing `\-\(aq) are placed on new lines in between the normal output lines.
+.SH "OPTIONS"
+.sp
+\fB\-\fP, \fB\-\-no\-underlining\fP
+.RS 4
+Suppress all underlining. This option is especially useful for previewing \fIallboxed\fP tables from \fBtbl\fP(1).
 .RE
-.SH SEE ALSO
-.BR nroff (1),
-.BR troff (1),
-.BR col (1),
-.BR more (1),
-.BR ul (1)
-.SH BUGS
-Should fold underlines onto blanks even with the
-.B '\-'
-option so that a true underline character would show.
-.PP
-Can't back up more than 102 lines.
-.PP
-General overstriking is lost; as a special case '|' overstruck with '\-' or
-underline becomes '+'.
-.PP
+.sp
+\fB\-2\fP, \fB\-\-half\-lines\fP
+.RS 4
+Causes all half\-lines to be printed, effectively double spacing the output. Normally, a minimal space output format is used which will suppress empty lines. The program never suppresses two consecutive empty lines, however. The \fB\-2\fP option is useful for sending output to the line printer when the output contains superscripts and subscripts which would otherwise be partially invisible.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "HISTORY"
+.sp
+The \fBcolcrt\fP command appeared in 3.0BSD.
+.SH "BUGS"
+.sp
+Should fold underlines onto blanks even with the \fB\-\fP option so that a true underline character would show.
+.sp
+Can\(cqt back up more than 102 lines.
+.sp
+General overstriking is lost; as a special case \(aq|\(aq overstruck with \(aq\-\(aq or underline becomes \(aq+\(aq.
+.sp
 Lines are trimmed to 132 characters.
-.PP
-Some provision should be made for processing superscripts and subscripts in
-documents which are already double-spaced.
-.SH HISTORY
-The
-.B colcrt
-command appeared in 3.0BSD.
-.SH AVAILABILITY
-The colcrt command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.sp
+Some provision should be made for processing superscripts and subscripts in documents which are already double\-spaced.
+.SH "EXAMPLES"
+.sp
+A typical use of \fBcolcrt\fP would be:
+.RS 3
+.ll -.6i
+.sp
+\fBtbl exum2.n | nroff \-ms | colcrt \- | more\fP
+.br
+.RE
+.ll
+.SH "SEE ALSO"
+.sp
+\fBcol\fP(1),
+\fBmore\fP(1),
+\fBnroff\fP(1),
+\fBtroff\fP(1),
+\fBul\fP(1)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBcolcrt\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

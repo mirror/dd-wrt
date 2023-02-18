@@ -34,12 +34,12 @@ static PyObject *Context_set_tables_errcb(ContextObjext *self, PyObject *func,
 
 	if (!PyCallable_Check(func))
 		return NULL;
-	else {
-		PyObject *tmp = self->table_errcb;
-		Py_INCREF(func);
-		self->table_errcb = func;
-		Py_XDECREF(tmp);
-	}
+
+	PyObject *tmp = self->table_errcb;
+	Py_INCREF(func);
+	self->table_errcb = func;
+	Py_XDECREF(tmp);
+
 	return UL_IncRef(self);
 }
 
@@ -90,7 +90,7 @@ static int Context_init(ContextObjext *self, PyObject *args, PyObject *kwds)
 		"source", "target", "fstype",
 		"options", "mflags", "fstype_pattern",
 		"options_pattern", "fs", "fstab",
-		"optsmode"
+		"optsmode", NULL
 	};
 
 	if (!PyArg_ParseTupleAndKeywords(
@@ -311,10 +311,10 @@ static PyObject *Context_enable_fork(ContextObjext *self, PyObject *args, PyObje
 
 #define Context_disable_canonicalize_HELP "disable_canonicalize(disable)\n\n" \
 	"Enable/disable paths canonicalization and tags evaluation. The libmount context\n" \
-	"canonicalies paths when search in fstab and when prepare source and target paths\n" \
+	"canonicalizes paths when searching fstab and when preparing source and target paths\n" \
 	"for mount(2) syscall.\n" \
 	"\n" \
-	"This fuction has effect to the private (within context) fstab instance only\n" \
+	"This function has effect to the private (within context) fstab instance only\n" \
 	"(see Cxt.fstab).\n" \
 	"Returns self or raises an exception in case of an error."
 static PyObject *Context_disable_canonicalize(ContextObjext *self, PyObject *args, PyObject *kwds)
@@ -570,7 +570,7 @@ static int Context_set_optsmode(ContextObjext *self, PyObject *value, void *clos
 		PyErr_SetString(PyExc_TypeError, NODEL_ATTR);
 		return -1;
 	}
-	else if (!PyLong_Check(value)) {
+	if (!PyLong_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, ARG_ERR);
 		return -1;
 	}
@@ -586,7 +586,7 @@ static int Context_set_syscall_status(ContextObjext *self, PyObject *value, void
 		PyErr_SetString(PyExc_TypeError, NODEL_ATTR);
 		return -1;
 	}
-	else if (!PyLong_Check(value)) {
+	if (!PyLong_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, ARG_ERR);
 		return -1;
 	}
@@ -602,7 +602,7 @@ static int Context_set_user_mflags(ContextObjext *self, PyObject *value, void *c
 		PyErr_SetString(PyExc_TypeError, NODEL_ATTR);
 		return -1;
 	}
-	else if (!PyLong_Check(value)) {
+	if (!PyLong_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, ARG_ERR);
 		return -1;
 	}
@@ -619,7 +619,7 @@ static int Context_set_mflags(ContextObjext *self, PyObject *value, void *closur
 		PyErr_SetString(PyExc_TypeError, NODEL_ATTR);
 		return -1;
 	}
-	else if (!PyLong_Check(value)) {
+	if (!PyLong_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, ARG_ERR);
 		return -1;
 	}
@@ -1074,11 +1074,11 @@ static PyObject *Context_helper_setopt(ContextObjext *self, PyObject *args, PyOb
 }
 
 #define Context_init_helper_HELP "init_helper(action, flags)\n\n" \
-	"This function infors libmount that used from [u]mount.type helper.\n" \
+	"This function informs libmount that it is used from [u]mount.type helper.\n" \
 	"\n" \
-	"The function also calls Cxt.disable_helpers() to avoid recursive\n" \
-	"mount.type helpers calling. It you really want to call another\n" \
-	"mount.type helper from your helper than you have to explicitly enable this\n" \
+	"The function also calls Cxt.disable_helpers() to avoid calling\n" \
+	"mount.type helpers recursively. If you really want to call another\n" \
+	"mount.type helper from your helper then you have to explicitly enable this\n" \
 	"feature by:\n" \
 	"\n" \
 	"Cxt.disable_helpers(False);\n" \
@@ -1180,37 +1180,37 @@ PyTypeObject ContextType = {
 	0, /*tp_itemsize*/
 	(destructor)Context_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	0, /*tp_getattr*/
-	0, /*tp_setattr*/
-	0, /*tp_compare*/
+	NULL, /*tp_getattr*/
+	NULL, /*tp_setattr*/
+	NULL, /*tp_compare*/
 	(reprfunc) Context_repr,
-	0, /*tp_as_number*/
-	0, /*tp_as_sequence*/
-	0, /*tp_as_mapping*/
-	0, /*tp_hash */
-	0, /*tp_call*/
-	0, /*tp_str*/
-	0, /*tp_getattro*/
-	0, /*tp_setattro*/
-	0, /*tp_as_buffer*/
+	NULL, /*tp_as_number*/
+	NULL, /*tp_as_sequence*/
+	NULL, /*tp_as_mapping*/
+	NULL, /*tp_hash */
+	NULL, /*tp_call*/
+	NULL, /*tp_str*/
+	NULL, /*tp_getattro*/
+	NULL, /*tp_setattro*/
+	NULL, /*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
 	Context_HELP, /* tp_doc */
-	0, /* tp_traverse */
-	0, /* tp_clear */
-	0, /* tp_richcompare */
+	NULL, /* tp_traverse */
+	NULL, /* tp_clear */
+	NULL, /* tp_richcompare */
 	0, /* tp_weaklistoffset */
-	0, /* tp_iter */
-	0, /* tp_iternext */
+	NULL, /* tp_iter */
+	NULL, /* tp_iternext */
 	Context_methods, /* tp_methods */
 	Context_members, /* tp_members */
 	Context_getseters, /* tp_getset */
-	0, /* tp_base */
-	0, /* tp_dict */
-	0, /* tp_descr_get */
-	0, /* tp_descr_set */
+	NULL, /* tp_base */
+	NULL, /* tp_dict */
+	NULL, /* tp_descr_get */
+	NULL, /* tp_descr_set */
 	0, /* tp_dictoffset */
 	(initproc)Context_init, /* tp_init */
-	0, /* tp_alloc */
+	NULL, /* tp_alloc */
 	Context_new, /* tp_new */
 };
 

@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2009 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2009-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -143,9 +148,6 @@ int mnt_lock_use_simplelock(struct libmnt_lock *ml, int enable)
 	sz = strlen(ml->lockfile);
 	assert(sz);
 
-	if (sz < 1)
-		return -EINVAL;
-
 	/* Change lock name:
 	 *
 	 *	flock:     "<name>.lock"
@@ -199,6 +201,8 @@ static int lock_simplelock(struct libmnt_lock *ml)
 {
 	const char *lfile;
 	int rc;
+	struct stat sb;
+	const mode_t lock_mask = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH;
 
 	assert(ml);
 	assert(ml->simplelock);
@@ -219,6 +223,20 @@ static int lock_simplelock(struct libmnt_lock *ml)
 	if (ml->lockfile_fd < 0) {
 		rc = -errno;
 		goto err;
+	}
+
+	rc = fstat(ml->lockfile_fd, &sb);
+	if (rc < 0) {
+		rc = -errno;
+		goto err;
+	}
+
+	if ((sb.st_mode & lock_mask) != lock_mask) {
+		rc = fchmod(ml->lockfile_fd, lock_mask);
+		if (rc < 0) {
+			rc = -errno;
+			goto err;
+		}
 	}
 
 	while (flock(ml->lockfile_fd, LOCK_EX) < 0) {
@@ -256,7 +274,7 @@ static void mnt_lockalrm_handler(int sig __attribute__((__unused__)))
  */
 static int mnt_wait_mtab_lock(struct libmnt_lock *ml, struct flock *fl, time_t maxtime)
 {
-	struct timeval now;
+	struct timeval now = { 0 };
 	struct sigaction sa, osa;
 	int ret = 0;
 
@@ -373,8 +391,8 @@ static void unlock_mtab(struct libmnt_lock *ml)
 static int lock_mtab(struct libmnt_lock *ml)
 {
 	int i, rc = -1;
-	struct timespec waittime;
-	struct timeval maxtime;
+	struct timespec waittime = { 0 };;
+	struct timeval maxtime = { 0 };
 	const char *lockfile, *linkfile;
 
 	if (!ml)
@@ -422,7 +440,7 @@ static int lock_mtab(struct libmnt_lock *ml)
 
 	/* Repeat until it was us who made the link */
 	while (!ml->locked) {
-		struct timeval now;
+		struct timeval now = { 0 };
 		struct flock flock;
 		int j;
 
@@ -464,25 +482,25 @@ static int lock_mtab(struct libmnt_lock *ml)
 				/* proceed, since it was us who created the lockfile anyway */
 			}
 			break;
-		} else {
-			/* Someone else made the link. Wait. */
-			int err = mnt_wait_mtab_lock(ml, &flock, maxtime.tv_sec);
-
-			if (err == 1) {
-				DBG(LOCKS, ul_debugobj(ml,
-					"%s: can't create link: time out (perhaps "
-					"there is a stale lock file?)", lockfile));
-				rc = -ETIMEDOUT;
-				goto failed;
-
-			} else if (err < 0) {
-				rc = err;
-				goto failed;
-			}
-			nanosleep(&waittime, NULL);
-			close(ml->lockfile_fd);
-			ml->lockfile_fd = -1;
 		}
+
+		/* Someone else made the link. Wait. */
+		int err = mnt_wait_mtab_lock(ml, &flock, maxtime.tv_sec);
+
+		if (err == 1) {
+			DBG(LOCKS, ul_debugobj(ml,
+				"%s: can't create link: time out (perhaps "
+				"there is a stale lock file?)", lockfile));
+			rc = -ETIMEDOUT;
+			goto failed;
+
+		} else if (err < 0) {
+			rc = err;
+			goto failed;
+		}
+		nanosleep(&waittime, NULL);
+		close(ml->lockfile_fd);
+		ml->lockfile_fd = -1;
 	}
 	DBG(LOCKS, ul_debugobj(ml, "%s: (%d) successfully locked",
 					lockfile, getpid()));
@@ -508,8 +526,12 @@ failed:
  *
  *   1. create linkfile (e.g. /etc/mtab~.$PID)
  *   2. link linkfile --> lockfile (e.g. /etc/mtab~.$PID --> /etc/mtab~)
- *   3. a) link() success: setups F_SETLK lock (see fcnlt(2))
+ *   3. a) link() success: setups F_SETLK lock (see fcntl(2))
  *      b) link() failed:  wait (max 30s) on F_SETLKW lock, goto 2.
+ *
+ * Note that when the lock is used by mnt_update_table() interface then libmount
+ * uses flock() for private library file /run/mount/utab. The fcntl(2) is used only
+ * for backwardly compatible stuff like /etc/mtab.
  *
  * Returns: 0 on success or negative number in case of error (-ETIMEOUT is case
  * of stale lock file).
@@ -556,13 +578,13 @@ void mnt_unlock_file(struct libmnt_lock *ml)
 
 #ifdef TEST_PROGRAM
 
-struct libmnt_lock *lock;
+static struct libmnt_lock *lock;
 
 /*
  * read number from @filename, increment the number and
  * write the number back to the file
  */
-void increment_data(const char *filename, int verbose, int loopno)
+static void increment_data(const char *filename, int verbose, int loopno)
 {
 	long num;
 	FILE *f;
@@ -590,7 +612,7 @@ void increment_data(const char *filename, int verbose, int loopno)
 				filename, num - 1, num, loopno);
 }
 
-void clean_lock(void)
+static void clean_lock(void)
 {
 	if (!lock)
 		return;
@@ -598,12 +620,12 @@ void clean_lock(void)
 	mnt_free_lock(lock);
 }
 
-void __attribute__((__noreturn__)) sig_handler(int sig)
+static void __attribute__((__noreturn__)) sig_handler(int sig)
 {
 	errx(EXIT_FAILURE, "\n%d: catch signal: %s\n", getpid(), strsignal(sig));
 }
 
-int test_lock(struct libmnt_test *ts, int argc, char *argv[])
+static int test_lock(struct libmnt_test *ts, int argc, char *argv[])
 {
 	time_t synctime = 0;
 	unsigned int usecs;

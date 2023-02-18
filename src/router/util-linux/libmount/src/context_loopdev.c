@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2011 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2011-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /*
@@ -10,6 +15,7 @@
  */
 
 #include <blkid.h>
+#include <stdbool.h>
 
 #include "mountP.h"
 #include "loopdev.h"
@@ -36,7 +42,7 @@ int mnt_context_is_loopdev(struct libmnt_context *cxt)
 				    MNT_MS_OFFSET |
 				    MNT_MS_SIZELIMIT)) {
 
-		DBG(CXT, ul_debugobj(cxt, "loopdev specific options detected"));
+		DBG(LOOP, ul_debugobj(cxt, "loopdev specific options detected"));
 		return 1;
 	}
 
@@ -56,13 +62,13 @@ int mnt_context_is_loopdev(struct libmnt_context *cxt)
 	 */
 	type = mnt_fs_get_fstype(cxt->fs);
 
-	if (mnt_fs_is_regular(cxt->fs) &&
+	if (mnt_fs_is_regularfs(cxt->fs) &&
 	    (!type || strcmp(type, "auto") == 0 || blkid_known_fstype(type))) {
 		struct stat st;
 
 		if (stat(src, &st) == 0 && S_ISREG(st.st_mode) &&
 		    st.st_size > 1024) {
-			DBG(CXT, ul_debugobj(cxt, "automatically enabling loop= option"));
+			DBG(LOOP, ul_debugobj(cxt, "automatically enabling loop= option"));
 			cxt->user_mountflags |= MNT_MS_LOOP;
 			mnt_optstr_append_option(&cxt->fs->user_optstr, "loop", NULL);
 			return 1;
@@ -88,15 +94,20 @@ is_mounted_same_loopfile(struct libmnt_context *cxt,
 	struct libmnt_cache *cache;
 	const char *bf;
 	int rc = 0;
+	struct libmnt_ns *ns_old;
 
 	assert(cxt);
 	assert(cxt->fs);
 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
 
-	if (!target || !backing_file || mnt_context_get_mtab(cxt, &tb))
+	if (mnt_context_get_mtab(cxt, &tb))
 		return 0;
 
-	DBG(CXT, ul_debugobj(cxt, "checking if %s mounted on %s",
+	ns_old = mnt_context_switch_target_ns(cxt);
+	if (!ns_old)
+		return -MNT_ERR_NAMESPACE;
+
+	DBG(LOOP, ul_debugobj(cxt, "checking if %s mounted on %s",
 				backing_file, target));
 
 	cache = mnt_context_get_cache(cxt);
@@ -119,51 +130,48 @@ is_mounted_same_loopfile(struct libmnt_context *cxt,
 		rc = 0;
 
 		if (strncmp(src, "/dev/loop", 9) == 0) {
-			rc = loopdev_is_used((char *) src, bf, offset, LOOPDEV_FL_OFFSET);
+			rc = loopdev_is_used((char *) src, bf, offset, 0, LOOPDEV_FL_OFFSET);
 
 		} else if (opts && (cxt->user_mountflags & MNT_MS_LOOP) &&
 		    mnt_optstr_get_option(opts, "loop", &val, &len) == 0 && val) {
 
 			val = strndup(val, len);
-			rc = loopdev_is_used((char *) val, bf, offset, LOOPDEV_FL_OFFSET);
+			rc = loopdev_is_used((char *) val, bf, offset, 0, LOOPDEV_FL_OFFSET);
 			free(val);
 		}
 	}
 	if (rc)
-		DBG(CXT, ul_debugobj(cxt, "%s already mounted", backing_file));
+		DBG(LOOP, ul_debugobj(cxt, "%s already mounted", backing_file));
+
+	if (!mnt_context_switch_ns(cxt, ns_old))
+		return -MNT_ERR_NAMESPACE;
 	return rc;
 }
 
 int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 {
 	const char *backing_file, *optstr, *loopdev = NULL;
-	char *val = NULL;
+	char *val = NULL, *loopval = NULL;
 	size_t len;
 	struct loopdev_cxt lc;
 	int rc = 0, lo_flags = 0;
 	uint64_t offset = 0, sizelimit = 0;
+	bool reuse = FALSE;
 
 	assert(cxt);
 	assert(cxt->fs);
 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
 
-	if (!cxt)
-		return -EINVAL;
-
 	backing_file = mnt_fs_get_srcpath(cxt->fs);
 	if (!backing_file)
 		return -EINVAL;
 
-	DBG(CXT, ul_debugobj(cxt, "trying to setup loopdev for %s", backing_file));
+	DBG(LOOP, ul_debugobj(cxt, "trying to setup device for %s", backing_file));
 
 	if (cxt->mountflags & MS_RDONLY) {
-		DBG(CXT, ul_debugobj(cxt, "enabling READ-ONLY flag"));
+		DBG(LOOP, ul_debugobj(cxt, "enabling READ-ONLY flag"));
 		lo_flags |= LO_FLAGS_READ_ONLY;
 	}
-
-	rc = loopcxt_init(&lc, 0);
-	if (rc)
-		return rc;
 
 	optstr = mnt_fs_get_user_options(cxt->fs);
 
@@ -172,13 +180,8 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 	 */
 	if (rc == 0 && (cxt->user_mountflags & MNT_MS_LOOP) &&
 	    mnt_optstr_get_option(optstr, "loop", &val, &len) == 0 && val) {
-
-		val = strndup(val, len);
-		rc = val ? loopcxt_set_device(&lc, val) : -ENOMEM;
-		free(val);
-
-		if (rc == 0)
-			loopdev = loopcxt_get_device(&lc);
+		loopval = strndup(val, len);
+		rc = loopval ? 0 : -ENOMEM;
 	}
 
 	/*
@@ -188,7 +191,7 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 	    mnt_optstr_get_option(optstr, "offset", &val, &len) == 0) {
 		rc = mnt_parse_offset(val, len, &offset);
 		if (rc) {
-			DBG(CXT, ul_debugobj(cxt, "failed to parse offset="));
+			DBG(LOOP, ul_debugobj(cxt, "failed to parse offset="));
 			rc = -MNT_ERR_MOUNTOPT;
 		}
 	}
@@ -200,7 +203,7 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 	    mnt_optstr_get_option(optstr, "sizelimit", &val, &len) == 0) {
 		rc = mnt_parse_offset(val, len, &sizelimit);
 		if (rc) {
-			DBG(CXT, ul_debugobj(cxt, "failed to parse sizelimit="));
+			DBG(LOOP, ul_debugobj(cxt, "failed to parse sizelimit="));
 			rc = -MNT_ERR_MOUNTOPT;
 		}
 	}
@@ -210,7 +213,7 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 	 */
 	if (rc == 0 && (cxt->user_mountflags & MNT_MS_ENCRYPTION) &&
 	    mnt_optstr_get_option(optstr, "encryption", &val, &len) == 0) {
-		DBG(CXT, ul_debugobj(cxt, "encryption no longer supported"));
+		DBG(LOOP, ul_debugobj(cxt, "encryption no longer supported"));
 		rc = -MNT_ERR_MOUNTOPT;
 	}
 
@@ -220,6 +223,100 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 		rc = -EBUSY;
 
 	if (rc)
+		goto done_no_deinit;
+
+	/* It is possible to mount the same file more times. If we set more
+	 * than one loop device referring to the same file, kernel has no
+	 * mechanism to detect it. To prevent data corruption, the same loop
+	 * device has to be recycled.
+	*/
+	if (backing_file) {
+		rc = loopcxt_init(&lc, 0);
+		if (rc)
+			goto done_no_deinit;
+
+		rc = loopcxt_find_overlap(&lc, backing_file, offset, sizelimit);
+		switch (rc) {
+		case 0: /* not found */
+			DBG(LOOP, ul_debugobj(cxt, "not found overlapping loopdev"));
+			loopcxt_deinit(&lc);
+			break;
+
+		case 1:	/* overlap */
+			DBG(LOOP, ul_debugobj(cxt, "overlapping %s detected",
+						loopcxt_get_device(&lc)));
+			rc = -MNT_ERR_LOOPOVERLAP;
+			goto done;
+
+		case 2: /* overlap -- full size and offset match (reuse) */
+		{
+			uint32_t lc_encrypt_type = 0;
+
+			DBG(LOOP, ul_debugobj(cxt, "re-using existing loop device %s",
+				loopcxt_get_device(&lc)));
+
+			/* Open loop device to block device autoclear... */
+			if (loopcxt_get_fd(&lc) < 0) {
+				DBG(LOOP, ul_debugobj(cxt, "failed to get loopdev FD"));
+				rc = -errno;
+				goto done;
+			}
+
+			/*
+			 * Now that we certainly have the loop device open,
+			 * verify the loop device was not autocleared in the
+			 * mean time.
+			 */
+			if (!loopcxt_get_info(&lc)) {
+				DBG(LOOP, ul_debugobj(cxt, "lost race with %s teardown",
+						loopcxt_get_device(&lc)));
+				loopcxt_deinit(&lc);
+				break;
+			}
+
+			/* Once a loop is initialized RO, there is no
+			 * way to change its parameters. */
+			if (loopcxt_is_readonly(&lc)
+			    && !(lo_flags & LO_FLAGS_READ_ONLY)) {
+				DBG(LOOP, ul_debugobj(cxt, "%s is read-only",
+						loopcxt_get_device(&lc)));
+				rc = -EROFS;
+				goto done;
+			}
+
+			/* This is no more supported, but check to be safe. */
+			if (loopcxt_get_encrypt_type(&lc, &lc_encrypt_type) == 0
+			    && lc_encrypt_type != LO_CRYPT_NONE) {
+				DBG(LOOP, ul_debugobj(cxt, "encryption no longer supported for device %s",
+					loopcxt_get_device(&lc)));
+				rc = -MNT_ERR_LOOPOVERLAP;
+				goto done;
+			}
+			rc = 0;
+			/* loop= used with argument. Conflict will occur. */
+			if (loopval) {
+				rc = -MNT_ERR_LOOPOVERLAP;
+				goto done;
+			} else {
+				reuse = TRUE;
+				goto success;
+			}
+		}
+		default: /* error */
+			goto done;
+		}
+	}
+
+	DBG(LOOP, ul_debugobj(cxt, "not found; create a new loop device"));
+	rc = loopcxt_init(&lc, 0);
+	if (rc)
+		goto done_no_deinit;
+	if (loopval) {
+		rc = loopcxt_set_device(&lc, loopval);
+		if (rc == 0)
+			loopdev = loopcxt_get_device(&lc);
+	}
+	if (rc)
 		goto done;
 
 	/* since 2.6.37 we don't have to store backing filename to mtab
@@ -227,7 +324,7 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 	 */
 	if (get_linux_version() >= KERNEL_VERSION(2, 6, 37) ||
 	    !mnt_context_mtab_writable(cxt)) {
-		DBG(CXT, ul_debugobj(cxt, "enabling AUTOCLEAR flag"));
+		DBG(LOOP, ul_debugobj(cxt, "enabling AUTOCLEAR flag"));
 		lo_flags |= LO_FLAGS_AUTOCLEAR;
 	}
 
@@ -237,7 +334,7 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 			rc = loopcxt_find_unused(&lc);
 			if (rc)
 				goto done;
-			DBG(CXT, ul_debugobj(cxt, "trying to use %s",
+			DBG(LOOP, ul_debugobj(cxt, "trying to use %s",
 						loopcxt_get_device(&lc)));
 		}
 
@@ -253,7 +350,7 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 		if (!rc)
 			loopcxt_set_flags(&lc, lo_flags);
 		if (rc) {
-			DBG(CXT, ul_debugobj(cxt, "failed to set loopdev attributes"));
+			DBG(LOOP, ul_debugobj(cxt, "failed to set loop attributes"));
 			goto done;
 		}
 
@@ -263,13 +360,14 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 			break;		/* success */
 
 		if (loopdev || rc != -EBUSY) {
-			DBG(CXT, ul_debugobj(cxt, "failed to setup device"));
+			DBG(LOOP, ul_debugobj(cxt, "failed to setup device"));
 			rc = -MNT_ERR_LOOPDEV;
 			goto done;
 		}
-		DBG(CXT, ul_debugobj(cxt, "loopdev stolen...trying again"));
+		DBG(LOOP, ul_debugobj(cxt, "device stolen...trying again"));
 	} while (1);
 
+success:
 	if (!rc)
 		rc = mnt_fs_set_source(cxt->fs, loopcxt_get_device(&lc));
 
@@ -277,12 +375,13 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 		/* success */
 		cxt->flags |= MNT_FL_LOOPDEV_READY;
 
-		if ((cxt->user_mountflags & MNT_MS_LOOP) &&
-		    loopcxt_is_autoclear(&lc)) {
+		if (reuse || ( (cxt->user_mountflags & MNT_MS_LOOP) &&
+		    loopcxt_is_autoclear(&lc))) {
 			/*
 			 * autoclear flag accepted by the kernel, don't store
 			 * the "loop=" option to mtab.
 			 */
+			DBG(LOOP, ul_debugobj(cxt, "removing unnecessary loop= from mtab"));
 			cxt->user_mountflags &= ~MNT_MS_LOOP;
 			mnt_optstr_remove_option(&cxt->fs->user_optstr, "loop");
 		}
@@ -299,10 +398,16 @@ int mnt_context_setup_loopdev(struct libmnt_context *cxt)
 		 * otherwise it will be auto-cleared by kernel
 		 */
 		cxt->loopdev_fd = loopcxt_get_fd(&lc);
-		loopcxt_set_fd(&lc, -1, 0);
+		if (cxt->loopdev_fd < 0) {
+			DBG(LOOP, ul_debugobj(cxt, "failed to get loopdev FD"));
+			rc = -errno;
+		} else
+			loopcxt_set_fd(&lc, -1, 0);
 	}
 done:
 	loopcxt_deinit(&lc);
+done_no_deinit:
+	free(loopval);
 	return rc;
 }
 
@@ -317,9 +422,6 @@ int mnt_context_delete_loopdev(struct libmnt_context *cxt)
 	assert(cxt);
 	assert(cxt->fs);
 
-	if (!cxt)
-		return -EINVAL;
-
 	src = mnt_fs_get_srcpath(cxt->fs);
 	if (!src)
 		return -EINVAL;
@@ -331,7 +433,7 @@ int mnt_context_delete_loopdev(struct libmnt_context *cxt)
 	cxt->flags &= ~MNT_FL_LOOPDEV_READY;
 	cxt->loopdev_fd = -1;
 
-	DBG(CXT, ul_debugobj(cxt, "loopdev deleted [rc=%d]", rc));
+	DBG(LOOP, ul_debugobj(cxt, "deleted [rc=%d]", rc));
 	return rc;
 }
 
@@ -342,9 +444,6 @@ int mnt_context_delete_loopdev(struct libmnt_context *cxt)
 int mnt_context_clear_loopdev(struct libmnt_context *cxt)
 {
 	assert(cxt);
-
-	if (!cxt)
-		return -EINVAL;
 
 	if (mnt_context_get_status(cxt) == 0 &&
 	    (cxt->flags & MNT_FL_LOOPDEV_READY)) {
@@ -357,7 +456,7 @@ int mnt_context_clear_loopdev(struct libmnt_context *cxt)
 		/*
 		 * mount(2) success, close the device
 		 */
-		DBG(CXT, ul_debugobj(cxt, "closing loopdev FD"));
+		DBG(LOOP, ul_debugobj(cxt, "closing FD"));
 		close(cxt->loopdev_fd);
 	}
 	cxt->loopdev_fd = -1;

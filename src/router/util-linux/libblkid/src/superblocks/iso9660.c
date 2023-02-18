@@ -19,6 +19,7 @@
 #include <ctype.h>
 
 #include "superblocks.h"
+#include "cctype.h"
 
 struct iso9660_date {
 	unsigned char year[4];
@@ -42,9 +43,10 @@ struct iso_volume_descriptor {
 	unsigned char	unused[8];
 	unsigned char	space_size[8];
 	unsigned char	escape_sequences[8];
-	unsigned char  unused1[222];
+	unsigned char  unused2[94];
+	unsigned char  volume_set_id[128];
 	unsigned char  publisher_id[128];
-	unsigned char  unused2[128];
+	unsigned char  data_preparer_id[128];
 	unsigned char  application_id[128];
 	unsigned char  unused3[111];
 	struct iso9660_date created;
@@ -63,8 +65,8 @@ struct boot_record {
 
 #define ISO_SUPERBLOCK_OFFSET		0x8000
 #define ISO_SECTOR_SIZE			0x800
-#define ISO_VD_OFFSET			(ISO_SUPERBLOCK_OFFSET + ISO_SECTOR_SIZE)
 #define ISO_VD_BOOT_RECORD		0x0
+#define ISO_VD_PRIMARY			0x1
 #define ISO_VD_SUPPLEMENTARY		0x2
 #define ISO_VD_END			0xff
 #define ISO_VD_MAX			16
@@ -79,20 +81,6 @@ struct high_sierra_volume_descriptor {
 	unsigned char   volume_id[32];
 } __attribute__((packed));
 
-/* returns 1 if the begin of @ascii is equal to @utf16 string.
- */
-static int ascii_eq_utf16be(unsigned char *ascii,
-			unsigned char *utf16, size_t len)
-{
-	size_t a, u;
-
-	for (a = 0, u = 0; u < len; a++, u += 2) {
-		if (utf16[u] != 0x0 || ascii[a] != utf16[u + 1])
-			return 0;
-	}
-	return 1;
-}
-
 /* old High Sierra format */
 static int probe_iso9660_hsfs(blkid_probe pr, const struct blkid_idmag *mag)
 {
@@ -102,6 +90,7 @@ static int probe_iso9660_hsfs(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!iso)
 		return errno ? -errno : 1;
 
+	blkid_probe_set_block_size(pr, ISO_SECTOR_SIZE);
 	blkid_probe_set_version(pr, "High Sierra");
 	blkid_probe_set_label(pr, iso->volume_id, sizeof(iso->volume_id));
 	return 0;
@@ -165,95 +154,169 @@ static int is_str_empty(const unsigned char *str, size_t len)
 	return 1;
 }
 
-/* iso9660 [+ Microsoft Joliet Extension] */
-int probe_iso9660(blkid_probe pr, const struct blkid_idmag *mag)
+static int is_utf16be_str_empty(unsigned char *utf16, size_t len)
 {
-	struct iso_volume_descriptor *iso;
-	unsigned char label[32];
+	size_t i;
+
+	for (i = 0; i < len; i += 2) {
+		if (utf16[i] != 0x0 || !isspace(utf16[i + 1]))
+			return 0;
+	}
+	return 1;
+}
+
+/* if @utf16 is prefix of @ascii (ignoring non-representable characters and upper-case conversion)
+ * then reconstruct prefix from @utf16 and @ascii, append suffix from @ascii, fill it into @out
+ * and returns length of bytes written into @out; otherwise returns zero */
+static size_t merge_utf16be_ascii(unsigned char *out, const unsigned char *utf16, const unsigned char *ascii, size_t len)
+{
+	size_t o, a, u;
+
+	for (o = 0, a = 0, u = 0; u + 1 < len && a < len; o += 2, a++, u += 2) {
+		/* Surrogate pair with code point above U+FFFF */
+		if (utf16[u] >= 0xD8 && utf16[u] <= 0xDB && u + 3 < len &&
+		    utf16[u + 2] >= 0xDC && utf16[u + 2] <= 0xDF) {
+			out[o++] = utf16[u++];
+			out[o++] = utf16[u++];
+		}
+		/* Value '_' is replacement for non-representable character */
+		if (ascii[a] == '_') {
+			out[o] = utf16[u];
+			out[o + 1] = utf16[u + 1];
+		} else if (utf16[u] == 0x00 && utf16[u + 1] == '_') {
+			out[o] = 0x00;
+			out[o + 1] = ascii[a];
+		} else if (utf16[u] == 0x00 && c_toupper(ascii[a]) == c_toupper(utf16[u + 1])) {
+			out[o] = 0x00;
+			out[o + 1] = c_isupper(ascii[a]) ? utf16[u + 1] : ascii[a];
+		} else {
+			return 0;
+		}
+	}
+
+	for (; a < len; o += 2, a++) {
+		out[o] = 0x00;
+		out[o + 1] = ascii[a];
+	}
+
+	return o;
+}
+
+/* iso9660 [+ Microsoft Joliet Extension] */
+static int probe_iso9660(blkid_probe pr, const struct blkid_idmag *mag)
+{
+	struct boot_record *boot = NULL;
+	struct iso_volume_descriptor *pvd = NULL;
+	struct iso_volume_descriptor *joliet = NULL;
+	unsigned char buf[256];
+	size_t len;
+	int is_unicode_empty;
+	int is_ascii_empty;
 	int i;
-	int off;
+	uint64_t off;
+
+	if (blkid_probe_get_hint(pr, mag->hoff, &off) < 0)
+		off = 0;
+
+	if (off % ISO_SECTOR_SIZE)
+		return 1;
 
 	if (strcmp(mag->magic, "CDROM") == 0)
 		return probe_iso9660_hsfs(pr, mag);
 
-	iso = blkid_probe_get_sb(pr, mag, struct iso_volume_descriptor);
-	if (!iso)
-		return errno ? -errno : 1;
-
-	memcpy(label, iso->volume_id, sizeof(label));
-
-	if (!is_str_empty(iso->system_id, sizeof(iso->system_id)))
-		blkid_probe_set_id_label(pr, "SYSTEM_ID",
-				iso->system_id, sizeof(iso->system_id));
-
-	if (!is_str_empty(iso->publisher_id, sizeof(iso->publisher_id)))
-		blkid_probe_set_id_label(pr, "PUBLISHER_ID",
-				iso->publisher_id, sizeof(iso->publisher_id));
-
-	if (!is_str_empty(iso->application_id, sizeof(iso->application_id)))
-		blkid_probe_set_id_label(pr, "APPLICATION_ID",
-				iso->application_id, sizeof(iso->application_id));
-
-	/* create an UUID using the modified/created date */
-	if (! probe_iso9660_set_uuid(pr, &iso->modified))
-		probe_iso9660_set_uuid(pr, &iso->created);
-
-	/* Joliet Extension and Boot Record */
-	off = ISO_VD_OFFSET;
-	for (i = 0; i < ISO_VD_MAX; i++) {
-		struct boot_record *boot= (struct boot_record *)
+	for (i = 0, off += ISO_SUPERBLOCK_OFFSET; i < ISO_VD_MAX && (!boot || !pvd || !joliet); i++, off += ISO_SECTOR_SIZE) {
+		unsigned char *desc =
 			blkid_probe_get_buffer(pr,
 					off,
 					max(sizeof(struct boot_record),
 					    sizeof(struct iso_volume_descriptor)));
 
-		if (boot == NULL || boot->vd_type == ISO_VD_END)
+		if (desc == NULL || desc[0] == ISO_VD_END)
 			break;
-
-		if (boot->vd_type == ISO_VD_BOOT_RECORD) {
-			if (!is_str_empty(boot->boot_system_id,
-					  sizeof(boot->boot_system_id)))
-				blkid_probe_set_id_label(pr, "BOOT_SYSTEM_ID",
-							boot->boot_system_id,
-							sizeof(boot->boot_system_id));
-			off += ISO_SECTOR_SIZE;
-			continue;
+		else if (!boot && desc[0] == ISO_VD_BOOT_RECORD)
+			boot = (struct boot_record *)desc;
+		else if (!pvd && desc[0] == ISO_VD_PRIMARY)
+			pvd = (struct iso_volume_descriptor *)desc;
+		else if (!joliet && desc[0] == ISO_VD_SUPPLEMENTARY) {
+			joliet = (struct iso_volume_descriptor *)desc;
+			if (memcmp(joliet->escape_sequences, "%/@", 3) != 0 &&
+			    memcmp(joliet->escape_sequences, "%/C", 3) != 0 &&
+			    memcmp(joliet->escape_sequences, "%/E", 3) != 0)
+				joliet = NULL;
 		}
-
-		/* Not a Boot record, lets see if its supplemntary volume descriptor */
-		iso = (struct iso_volume_descriptor *) boot;
-
-		if (iso->vd_type != ISO_VD_SUPPLEMENTARY) {
-			off += ISO_SECTOR_SIZE;
-			continue;
-		}
-
-		if (memcmp(iso->escape_sequences, "%/@", 3) == 0 ||
-		    memcmp(iso->escape_sequences, "%/C", 3) == 0 ||
-		    memcmp(iso->escape_sequences, "%/E", 3) == 0) {
-
-			blkid_probe_set_version(pr, "Joliet Extension");
-
-			/* Is the Joliet (UTF16BE) label equal to the label in
-			 * the PVD? If yes, use PVD label.  The Jolied version
-			 * of the label could be trimed (because UTF16..).
-			 */
-			if (ascii_eq_utf16be(label, iso->volume_id, 32))
-				break;
-
-			blkid_probe_set_utf8label(pr,
-					iso->volume_id,
-					sizeof(iso->volume_id),
-					BLKID_ENC_UTF16BE);
-			goto has_label;
-		}
-		off += ISO_SECTOR_SIZE;
 	}
 
-	/* Joliet not found, let use standard iso label */
-	blkid_probe_set_label(pr, label, sizeof(label));
+	if (!pvd)
+		return errno ? -errno : 1;
 
-has_label:
+	blkid_probe_set_block_size(pr, ISO_SECTOR_SIZE);
+
+	if (joliet && (len = merge_utf16be_ascii(buf, joliet->system_id, pvd->system_id, sizeof(pvd->system_id))) != 0)
+		blkid_probe_set_utf8_id_label(pr, "SYSTEM_ID", buf, len, UL_ENCODE_UTF16BE);
+	else if (joliet)
+		blkid_probe_set_utf8_id_label(pr, "SYSTEM_ID", joliet->system_id, sizeof(joliet->system_id), UL_ENCODE_UTF16BE);
+	else
+		blkid_probe_set_id_label(pr, "SYSTEM_ID", pvd->system_id, sizeof(pvd->system_id));
+
+	if (joliet && (len = merge_utf16be_ascii(buf, joliet->volume_set_id, pvd->volume_set_id, sizeof(pvd->volume_set_id))) != 0)
+		blkid_probe_set_utf8_id_label(pr, "VOLUME_SET_ID", buf, len, UL_ENCODE_UTF16BE);
+	else if (joliet)
+		blkid_probe_set_utf8_id_label(pr, "VOLUME_SET_ID", joliet->volume_set_id, sizeof(joliet->volume_set_id), UL_ENCODE_UTF16BE);
+	else
+		blkid_probe_set_id_label(pr, "VOLUME_SET_ID", pvd->volume_set_id, sizeof(pvd->volume_set_id));
+
+	is_ascii_empty = (is_str_empty(pvd->publisher_id, sizeof(pvd->publisher_id)) || pvd->publisher_id[0] == '_');
+	is_unicode_empty = (!joliet || is_utf16be_str_empty(joliet->publisher_id, sizeof(joliet->publisher_id)) || (joliet->publisher_id[0] == 0x00 && joliet->publisher_id[1] == '_'));
+	if (!is_unicode_empty && !is_ascii_empty && (len = merge_utf16be_ascii(buf, joliet->publisher_id, pvd->publisher_id, sizeof(pvd->publisher_id))) != 0)
+		blkid_probe_set_utf8_id_label(pr, "PUBLISHER_ID", buf, len, UL_ENCODE_UTF16BE);
+	else if (!is_unicode_empty)
+		blkid_probe_set_utf8_id_label(pr, "PUBLISHER_ID", joliet->publisher_id, sizeof(joliet->publisher_id), UL_ENCODE_UTF16BE);
+	else if (!is_ascii_empty)
+		blkid_probe_set_id_label(pr, "PUBLISHER_ID", pvd->publisher_id, sizeof(pvd->publisher_id));
+
+	is_ascii_empty = (is_str_empty(pvd->data_preparer_id, sizeof(pvd->data_preparer_id)) || pvd->data_preparer_id[0] == '_');
+	is_unicode_empty = (!joliet || is_utf16be_str_empty(joliet->data_preparer_id, sizeof(joliet->data_preparer_id)) || (joliet->data_preparer_id[0] == 0x00 && joliet->data_preparer_id[1] == '_'));
+	if (!is_unicode_empty && !is_ascii_empty && (len = merge_utf16be_ascii(buf, joliet->data_preparer_id, pvd->data_preparer_id, sizeof(pvd->data_preparer_id))) != 0)
+		blkid_probe_set_utf8_id_label(pr, "DATA_PREPARER_ID", buf, len, UL_ENCODE_UTF16BE);
+	else if (!is_unicode_empty)
+		blkid_probe_set_utf8_id_label(pr, "DATA_PREPARER_ID", joliet->data_preparer_id, sizeof(joliet->data_preparer_id), UL_ENCODE_UTF16BE);
+	else if (!is_ascii_empty)
+		blkid_probe_set_id_label(pr, "DATA_PREPARER_ID", pvd->data_preparer_id, sizeof(pvd->data_preparer_id));
+
+	is_ascii_empty = (is_str_empty(pvd->application_id, sizeof(pvd->application_id)) || pvd->application_id[0] == '_');
+	is_unicode_empty = (!joliet || is_utf16be_str_empty(joliet->application_id, sizeof(joliet->application_id)) || (joliet->application_id[0] == 0x00 && joliet->application_id[1] == '_'));
+	if (!is_unicode_empty && !is_ascii_empty && (len = merge_utf16be_ascii(buf, joliet->application_id, pvd->application_id, sizeof(pvd->application_id))) != 0)
+		blkid_probe_set_utf8_id_label(pr, "APPLICATION_ID", buf, len, UL_ENCODE_UTF16BE);
+	else if (!is_unicode_empty)
+		blkid_probe_set_utf8_id_label(pr, "APPLICATION_ID", joliet->application_id, sizeof(joliet->application_id), UL_ENCODE_UTF16BE);
+	else if (!is_ascii_empty)
+		blkid_probe_set_id_label(pr, "APPLICATION_ID", pvd->application_id, sizeof(pvd->application_id));
+
+	/* create an UUID using the modified/created date */
+	if (! probe_iso9660_set_uuid(pr, &pvd->modified))
+		probe_iso9660_set_uuid(pr, &pvd->created);
+
+	if (boot)
+		blkid_probe_set_id_label(pr, "BOOT_SYSTEM_ID",
+					boot->boot_system_id,
+					sizeof(boot->boot_system_id));
+
+	if (joliet)
+		blkid_probe_set_version(pr, "Joliet Extension");
+
+	/* Label in Joliet is UNICODE (UTF16BE) but can contain only 16 characters. Label in PVD is
+	 * subset of ASCII but can contain up to the 32 characters. Non-representable characters are
+	 * stored as replacement character '_'. Label in Joliet is in most cases trimmed but UNICODE
+	 * version of label in PVD. Based on these facts try to reconstruct original label if label
+	 * in Joliet is prefix of the label in PVD (ignoring non-representable characters).
+	 */
+	if (joliet && (len = merge_utf16be_ascii(buf, joliet->volume_id, pvd->volume_id, sizeof(pvd->volume_id))) != 0)
+		blkid_probe_set_utf8label(pr, buf, len, UL_ENCODE_UTF16BE);
+	else if (joliet)
+		blkid_probe_set_utf8label(pr, joliet->volume_id, sizeof(joliet->volume_id), UL_ENCODE_UTF16BE);
+	else
+		blkid_probe_set_label(pr, pvd->volume_id, sizeof(pvd->volume_id));
+
 	return 0;
 }
 
@@ -265,8 +328,8 @@ const struct blkid_idinfo iso9660_idinfo =
 	.flags		= BLKID_IDINFO_TOLERANT,
 	.magics		=
 	{
-		{ .magic = "CD001", .len = 5, .kboff = 32, .sboff = 1 },
-		{ .magic = "CDROM", .len = 5, .kboff = 32, .sboff = 9 },
+		{ .magic = "CD001", .len = 5, .kboff = 32, .sboff = 1, .hoff = "session_offset" },
+		{ .magic = "CDROM", .len = 5, .kboff = 32, .sboff = 9, .hoff = "session_offset" },
 		{ NULL }
 	}
 };

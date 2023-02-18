@@ -2,8 +2,15 @@ The common case
 
 	./autogen.sh && ./configure && make
 
-	If something fails read the last lines. Typical reason to
-	fail is a missing dependency, such as libtool or gettext.
+	  If something fails read the last lines. Typical reason to
+	  fail is a missing dependency, such as libtool or gettext.
+
+        make install-strip
+
+	  Note that on the production systems it is strongly recommended to use
+	  "make install-strip" to install binaries and libraries. The result
+	  from the standard "make install" may produce large binaries with
+	  unnecessary symbols.
 
 Autotools
 
@@ -35,6 +42,25 @@ Compiling
 	libmount, libblkid and libuuid.
 
 	FIXME: add notes about klib and uClib.
+
+
+Compile certain portion
+
+	See ./configure --help and use --disable-* and --enable-* options.
+
+        It's also possible to disable all the programs and enable only wanted.
+        For example:
+
+	./configure --disable-all-programs --enable-fallocate
+
+	Note that the configure script tracks dependencies between libs and
+        tools. Always see warning messages and follow error messages if any
+        dependence is necessary. For example to compile mount(8) you need also
+        libmount, libblkid and libuuid:
+
+	./configure --disable-all-programs --enable-mount --enable-libmount \
+                    --enable-libblkid --enable-libuuid
+
 
 Static linking
 

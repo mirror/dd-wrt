@@ -26,7 +26,7 @@ static int is_ide_cdrom_or_tape(char *device)
 {
 	int fd, ret;
 
-	if ((fd = open(device, O_RDONLY)) < 0)
+	if ((fd = open(device, O_RDONLY|O_NONBLOCK)) < 0)
 		return 0;
 	ret = blkdev_is_cdrom(fd);
 
@@ -34,13 +34,27 @@ static int is_ide_cdrom_or_tape(char *device)
 	return ret;
 }
 
+void list_disk_identifier(struct fdisk_context *cxt)
+{
+	struct fdisk_label *lb = fdisk_get_label(cxt, NULL);
+	char *id = NULL;
+
+	if (fdisk_has_label(cxt))
+		fdisk_info(cxt, _("Disklabel type: %s"),
+				fdisk_label_get_name(lb));
+
+	if (!fdisk_is_details(cxt) && fdisk_get_disklabel_id(cxt, &id) == 0 && id) {
+		fdisk_info(cxt, _("Disk identifier: %s"), id);
+		free(id);
+	}
+}
 
 void list_disk_geometry(struct fdisk_context *cxt)
 {
-	char *id = NULL;
 	struct fdisk_label *lb = fdisk_get_label(cxt, NULL);
 	uint64_t bytes = fdisk_get_nsectors(cxt) * fdisk_get_sector_size(cxt);
-	char *strsz = size_to_human_string(SIZE_SUFFIX_SPACE
+	char *strsz = size_to_human_string(SIZE_DECIMAL_2DIGITS
+					   | SIZE_SUFFIX_SPACE
 					   | SIZE_SUFFIX_3LETTER, bytes);
 
 	color_scheme_enable("header", UL_COLOR_BOLD);
@@ -50,11 +64,14 @@ void list_disk_geometry(struct fdisk_context *cxt)
 	color_disable();
 	free(strsz);
 
+	if (fdisk_get_devmodel(cxt))
+		fdisk_info(cxt, _("Disk model: %s"), fdisk_get_devmodel(cxt));
+
 	if (lb && (fdisk_label_require_geometry(lb) || fdisk_use_cylinders(cxt)))
-		fdisk_info(cxt, _("Geometry: %d heads, %llu sectors/track, %llu cylinders"),
+		fdisk_info(cxt, _("Geometry: %d heads, %ju sectors/track, %ju cylinders"),
 			       fdisk_get_geom_heads(cxt),
-			       fdisk_get_geom_sectors(cxt),
-			       fdisk_get_geom_cylinders(cxt));
+			       (uintmax_t) fdisk_get_geom_sectors(cxt),
+			       (uintmax_t) fdisk_get_geom_cylinders(cxt));
 
 	fdisk_info(cxt, _("Units: %s of %d * %ld = %ld bytes"),
 	       fdisk_get_unit(cxt, FDISK_PLURAL),
@@ -71,12 +88,8 @@ void list_disk_geometry(struct fdisk_context *cxt)
 	if (fdisk_get_alignment_offset(cxt))
 		fdisk_info(cxt, _("Alignment offset: %lu bytes"),
 				fdisk_get_alignment_offset(cxt));
-	if (fdisk_has_label(cxt))
-		fdisk_info(cxt, _("Disklabel type: %s"),
-				fdisk_label_get_name(lb));
 
-	if (fdisk_get_disklabel_id(cxt, &id) == 0 && id)
-		fdisk_info(cxt, _("Disk identifier: %s"), id);
+	list_disk_identifier(cxt);
 }
 
 void list_disklabel(struct fdisk_context *cxt)
@@ -141,7 +154,7 @@ void list_disklabel(struct fdisk_context *cxt)
 		if (!co)
 			goto done;
 
-		/* set colum header color */
+		/* set column header color */
 		if (bold)
 			scols_cell_set_color(scols_column_get_header(co), bold);
 	}
@@ -160,13 +173,16 @@ void list_disklabel(struct fdisk_context *cxt)
 
 			if (fdisk_partition_to_string(pa, cxt, ids[i], &data))
 				continue;
-			scols_line_refer_data(ln, i, data);
+			if (scols_line_refer_data(ln, i, data)) {
+				fdisk_warn(cxt, _("failed to add output data"));
+				goto done;
+			}
 		}
 	}
 
 	/* print */
 	if (!scols_table_is_empty(out)) {
-		fputc('\n', stdout);
+		fdisk_info(cxt, "%s", "");	/* just line break */
 		scols_print_table(out);
 	}
 
@@ -177,17 +193,123 @@ void list_disklabel(struct fdisk_context *cxt)
 			continue;
 		if (!fdisk_lba_is_phy_aligned(cxt, fdisk_partition_get_start(pa))) {
 			if (!post)
-				fputc('\n', stdout);
+				fdisk_info(cxt, "%s", ""); /* line break */
 			fdisk_warnx(cxt, _("Partition %zu does not start on physical sector boundary."),
 					  fdisk_partition_get_partno(pa) + 1);
+			post++;
+		}
+		if (fdisk_partition_has_wipe(cxt, pa)) {
+			if (!post)
+				fdisk_info(cxt, "%s", ""); /* line break */
+
+			fdisk_info(cxt, _("Filesystem/RAID signature on partition %zu will be wiped."),
+					fdisk_partition_get_partno(pa) + 1);
 			post++;
 		}
 	}
 
 	if (fdisk_table_wrong_order(tb)) {
 		if (!post)
-			fputc('\n', stdout);
+			fdisk_info(cxt, "%s", ""); /* line break */
 		fdisk_info(cxt, _("Partition table entries are not in disk order."));
+	}
+done:
+	scols_unref_table(out);
+	fdisk_unref_table(tb);
+	fdisk_free_iter(itr);
+}
+
+void list_freespace(struct fdisk_context *cxt)
+{
+	struct fdisk_table *tb = NULL;
+	struct fdisk_partition *pa = NULL;
+	struct fdisk_iter *itr = NULL;
+	struct libscols_table *out = NULL;
+	const char *bold = NULL;
+	size_t i;
+	uintmax_t sumsize = 0, bytes = 0;
+	char *strsz;
+
+	static const char *colnames[] = { N_("Start"), N_("End"), N_("Sectors"), N_("Size") };
+	static const int colids[] = { FDISK_FIELD_START, FDISK_FIELD_END, FDISK_FIELD_SECTORS, FDISK_FIELD_SIZE };
+
+	if (fdisk_get_freespaces(cxt, &tb))
+		goto done;
+
+	itr = fdisk_new_iter(FDISK_ITER_FORWARD);
+	if (!itr) {
+		fdisk_warn(cxt, _("failed to allocate iterator"));
+		goto done;
+	}
+
+	out = scols_new_table();
+	if (!out) {
+		fdisk_warn(cxt, _("failed to allocate output table"));
+		goto done;
+	}
+
+	if (colors_wanted()) {
+		scols_table_enable_colors(out, 1);
+		bold = color_scheme_get_sequence("header", UL_COLOR_BOLD);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(colnames); i++) {
+		struct libscols_column *co = scols_table_new_column(out, _(colnames[i]), 5, SCOLS_FL_RIGHT);
+
+		if (!co)
+			goto done;
+		if (bold)
+			scols_cell_set_color(scols_column_get_header(co), bold);
+	}
+
+	/* fill-in output table */
+	while (fdisk_table_next_partition(tb, itr, &pa) == 0) {
+		struct libscols_line *ln = scols_table_new_line(out, NULL);
+		char *data;
+
+		if (!ln) {
+			fdisk_warn(cxt, _("failed to allocate output line"));
+			goto done;
+		}
+		for (i = 0; i < ARRAY_SIZE(colids); i++) {
+			if (fdisk_partition_to_string(pa, cxt, colids[i], &data))
+				continue;
+			if (scols_line_refer_data(ln, i, data)) {
+				fdisk_warn(cxt, _("failed to add output data"));
+				goto done;
+			}
+		}
+
+		if (fdisk_partition_has_size(pa))
+			sumsize += fdisk_partition_get_size(pa);
+	}
+
+	bytes = sumsize * fdisk_get_sector_size(cxt);
+	strsz = size_to_human_string(SIZE_DECIMAL_2DIGITS
+				     | SIZE_SUFFIX_SPACE
+				     | SIZE_SUFFIX_3LETTER, bytes);
+
+	color_scheme_enable("header", UL_COLOR_BOLD);
+	fdisk_info(cxt,	_("Unpartitioned space %s: %s, %ju bytes, %ju sectors"),
+			fdisk_get_devname(cxt), strsz,
+			bytes, sumsize);
+	color_disable();
+	free(strsz);
+
+	fdisk_info(cxt, _("Units: %s of %d * %ld = %ld bytes"),
+	       fdisk_get_unit(cxt, FDISK_PLURAL),
+	       fdisk_get_units_per_sector(cxt),
+	       fdisk_get_sector_size(cxt),
+	       fdisk_get_units_per_sector(cxt) * fdisk_get_sector_size(cxt));
+
+	fdisk_info(cxt, _("Sector size (logical/physical): %lu bytes / %lu bytes"),
+				fdisk_get_sector_size(cxt),
+				fdisk_get_physector_size(cxt));
+
+	/* print */
+	if (!scols_table_is_empty(out)) {
+		fdisk_info(cxt, "%s", "");	/* line break */
+		scols_print_table(out);
 	}
 done:
 	scols_unref_table(out);
@@ -214,11 +336,11 @@ char *next_proc_partition(FILE **f)
 		if (sscanf(line, " %*d %*d %*d %128[^\n ]", buf) != 1)
 			continue;
 
-		devno = sysfs_devname_to_devno(buf, NULL);
+		devno = sysfs_devname_to_devno(buf);
 		if (devno <= 0)
 			continue;
 
-		if (sysfs_devno_is_lvm_private(devno) ||
+		if (sysfs_devno_is_dm_private(devno, NULL) ||
 		    sysfs_devno_is_wholedisk(devno) <= 0)
 			continue;
 
@@ -238,13 +360,17 @@ char *next_proc_partition(FILE **f)
 	return NULL;
 }
 
-int print_device_pt(struct fdisk_context *cxt, char *device, int warnme, int verify)
+int print_device_pt(struct fdisk_context *cxt, char *device, int warnme,
+		    int verify, int separator)
 {
 	if (fdisk_assign_device(cxt, device, 1) != 0) {	/* read-only */
 		if (warnme || errno == EACCES)
 			warn(_("cannot open %s"), device);
 		return -1;
 	}
+
+	if (separator)
+		fputs("\n\n", stdout);
 
 	list_disk_geometry(cxt);
 
@@ -257,18 +383,46 @@ int print_device_pt(struct fdisk_context *cxt, char *device, int warnme, int ver
 	return 0;
 }
 
+int print_device_freespace(struct fdisk_context *cxt, char *device, int warnme,
+			   int separator)
+{
+	if (fdisk_assign_device(cxt, device, 1) != 0) {	/* read-only */
+		if (warnme || errno == EACCES)
+			warn(_("cannot open %s"), device);
+		return -1;
+	}
+
+	if (separator)
+		fputs("\n\n", stdout);
+
+	list_freespace(cxt);
+	fdisk_deassign_device(cxt, 1);
+	return 0;
+}
+
 void print_all_devices_pt(struct fdisk_context *cxt, int verify)
 {
 	FILE *f = NULL;
-	int ct = 0;
+	int sep = 0;
 	char *dev;
 
 	while ((dev = next_proc_partition(&f))) {
-		if (ct)
-			fputs("\n\n", stdout);
-		if (print_device_pt(cxt, dev, 0, verify) == 0)
-			ct++;
+		print_device_pt(cxt, dev, 0, verify, sep);
 		free(dev);
+		sep = 1;
+	}
+}
+
+void print_all_devices_freespace(struct fdisk_context *cxt)
+{
+	FILE *f = NULL;
+	int sep = 0;
+	char *dev;
+
+	while ((dev = next_proc_partition(&f))) {
+		print_device_freespace(cxt, dev, 0, sep);
+		free(dev);
+		sep = 1;
 	}
 }
 
@@ -283,11 +437,9 @@ void list_available_columns(FILE *out)
 	if (!cxt)
 		return;
 
-	termwidth = get_terminal_width();
-	if (termwidth <= 0)
-		termwidth = 80;
+	termwidth = get_terminal_width(80);
 
-	fprintf(out, _("\nAvailable columns (for -o):\n"));
+	fprintf(out, USAGE_COLUMNS);
 
 	while (fdisk_next_label(cxt, &lb) == 0) {
 		size_t width = 6;	/* label name and separators */
@@ -371,7 +523,7 @@ int *init_fields(struct fdisk_context *cxt, const char *str, size_t *n)
 	if (fdisk_label_get_fields_ids(NULL, cxt, &dflt_ids, &fields_nids))
 		goto done;
 
-	fields_ids = xcalloc(sizeof(int), FDISK_NFIELDS * 2);
+	fields_ids = xcalloc(FDISK_NFIELDS * 2, sizeof(int));
 
 	/* copy defaults to the list with wanted fields */
 	memcpy(fields_ids, dflt_ids, fields_nids * sizeof(int));
@@ -380,7 +532,7 @@ int *init_fields(struct fdisk_context *cxt, const char *str, size_t *n)
 	/* extend or replace fields_nids[] according to fields_string */
 	if (fields_string &&
 	    string_add_to_idarray(fields_string, fields_ids, FDISK_NFIELDS * 2,
-			      (int *) &fields_nids, fieldname_to_id) < 0)
+			          &fields_nids, fieldname_to_id) < 0)
 		exit(EXIT_FAILURE);
 done:
 	fields_label = NULL;

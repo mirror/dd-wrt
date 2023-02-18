@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	devname = argv[1];
 	pr = blkid_new_probe_from_filename(devname);
 	if (!pr)
-		err(EXIT_FAILURE, "%s: faild to create a new libblkid probe",
+		err(EXIT_FAILURE, "%s: failed to create a new libblkid probe",
 				devname);
 	/*
 	 * Binary interface
@@ -51,6 +51,8 @@ int main(int argc, char *argv[])
 				blkid_topology_get_logical_sector_size(tp));
 		printf("\tphysical sector size : %lu\n",
 				blkid_topology_get_physical_sector_size(tp));
+		printf("\tdax support          : %lu\n",
+				blkid_topology_get_dax(tp));
 	}
 
 	/*

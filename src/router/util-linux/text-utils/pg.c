@@ -46,7 +46,7 @@
 #ifndef	TIOCGWINSZ
 # include <sys/ioctl.h>
 #endif
-#include <sys/termios.h>
+#include <termios.h>
 #include <fcntl.h>
 #include <regex.h>
 #include <stdio.h>
@@ -58,15 +58,22 @@
 #include <unistd.h>
 #include <signal.h>
 #include <setjmp.h>
-#include <libgen.h>
 
-#ifdef HAVE_NCURSES_H
-# include <ncurses.h>
+#if defined(HAVE_NCURSESW_NCURSES_H)
+# include <ncursesw/ncurses.h>
 #elif defined(HAVE_NCURSES_NCURSES_H)
 # include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_H)
+# include <ncurses.h>
 #endif
 
-#include <term.h>
+#if defined(HAVE_NCURSESW_TERM_H)
+# include <ncursesw/term.h>
+#elif defined(HAVE_NCURSES_TERM_H)
+# include <ncurses/term.h>
+#elif defined(HAVE_TERM_H)
+# include <term.h>
+#endif
 
 #include "nls.h"
 #include "xalloc.h"
@@ -77,7 +84,7 @@
 
 #define	READBUF		LINE_MAX	/* size of input buffer */
 #define CMDBUF		255		/* size of command buffer */
-#define	TABSIZE		8		/* spaces consumed by tab character */
+#define	PG_TABSIZE	8		/* spaces consumed by tab character */
 
 #define	cuc(c)		((c) & 0377)
 
@@ -97,7 +104,7 @@ enum {
 };
 
 /* Current command */
-struct {
+static struct {
 	char cmdline[CMDBUF];
 	size_t cmdlen;
 	int count;
@@ -107,42 +114,42 @@ struct {
 } cmd;
 
 /* Position of file arguments on argv[] to main() */
-struct {
+static struct {
 	int first;
 	int current;
 	int last;
 } files;
 
-void (*oldint) (int);		/* old SIGINT handler */
-void (*oldquit) (int);		/* old SIGQUIT handler */
-void (*oldterm) (int);		/* old SIGTERM handler */
-char *tty;			/* result of ttyname(1) */
-unsigned ontty;			/* whether running on tty device */
-unsigned exitstatus;		/* exit status */
-int pagelen = 23;		/* lines on a single screen page */
-int ttycols = 79;		/* screen columns (starting at 0) */
-struct termios otio;		/* old termios settings */
-int tinfostat = -1;		/* terminfo routines initialized */
-int searchdisplay = TOP;	/* matching line position */
-regex_t re;			/* regular expression to search for */
-int remembered;			/* have a remembered search string */
-int cflag;			/* clear screen before each page */
-int eflag;			/* suppress (EOF) */
-int fflag;			/* do not split lines */
-int nflag;			/* no newline for commands required */
-int rflag;			/* "restricted" pg */
-int sflag;			/* use standout mode */
-const char *pstring = ":";	/* prompt string */
-char *searchfor;		/* search pattern from argv[] */
-int havepagelen;		/* page length is manually defined */
-long startline;			/* start line from argv[] */
-int nextfile = 1;		/* files to advance */
-jmp_buf jmpenv;			/* jump from signal handlers */
-int canjump;			/* jmpenv is valid */
-wchar_t wbuf[READBUF];		/* used in several widechar routines */
+static void (*oldint) (int);		/* old SIGINT handler */
+static void (*oldquit) (int);		/* old SIGQUIT handler */
+static void (*oldterm) (int);		/* old SIGTERM handler */
+static char *tty;			/* result of ttyname(1) */
+static unsigned ontty;			/* whether running on tty device */
+static unsigned exitstatus;		/* exit status */
+static int pagelen = 23;		/* lines on a single screen page */
+static int ttycols = 79;		/* screen columns (starting at 0) */
+static struct termios otio;		/* old termios settings */
+static int tinfostat = -1;		/* terminfo routines initialized */
+static int searchdisplay = TOP;	/* matching line position */
+static regex_t re;			/* regular expression to search for */
+static int remembered;			/* have a remembered search string */
+static int cflag;			/* clear screen before each page */
+static int eflag;			/* suppress (EOF) */
+static int fflag;			/* do not split lines */
+static int nflag;			/* no newline for commands required */
+static int rflag;			/* "restricted" pg */
+static int sflag;			/* use standout mode */
+static const char *pstring = ":";	/* prompt string */
+static char *searchfor;		/* search pattern from argv[] */
+static int havepagelen;		/* page length is manually defined */
+static long startline;			/* start line from argv[] */
+static int nextfile = 1;		/* files to advance */
+static jmp_buf jmpenv;			/* jump from signal handlers */
+static int canjump;			/* jmpenv is valid */
+static wchar_t wbuf[READBUF];		/* used in several widechar routines */
 
-char *copyright;
-const char *helpscreen = N_("\
+static char *copyright;
+static const char *helpscreen = N_("\
 -------------------------------------------------------\n\
   h                       this screen\n\
   q or Q                  quit program\n\
@@ -216,8 +223,9 @@ static void __attribute__((__noreturn__)) quit(int status)
 }
 
 /* Usage message and similar routines. */
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out,
 		_(" %s [options] [+line] [+/pattern/] [files]\n"),
@@ -239,23 +247,22 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_(" +/pattern/   start at the line containing pattern\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(16));
 
-	fprintf(out, USAGE_MAN_TAIL("pg(1)"));
-	quit(out == stderr ? 2 : 0);
+	printf(USAGE_MAN_TAIL("pg(1)"));
+	exit(0);
 }
 
 static void __attribute__((__noreturn__)) needarg(const char *s)
 {
 	warnx(_("option requires an argument -- %s"), s);
-	usage(stderr);
+	errtryhelp(2);
 }
 
 static void __attribute__((__noreturn__)) invopt(const char *s)
 {
 	warnx(_("illegal option -- %s"), s);
-	usage(stderr);
+	errtryhelp(2);
 }
 
 #ifdef HAVE_WIDECHAR
@@ -310,15 +317,14 @@ static void getwinsize(void)
 	struct winsize winsz;
 	int badioctl;
 #endif
-	char *p;
-
 	if (initialized == 0) {
-		if ((p = getenv("LINES")) != NULL && *p != '\0')
-			if ((envlines = atoi(p)) < 0)
-				envlines = 0;
-		if ((p = getenv("COLUMNS")) != NULL && *p != '\0')
-			if ((envcols = atoi(p)) < 0)
-				envcols = 0;
+		uint32_t tmp = 0;
+
+		if (ul_strtou32(getenv("LINES"), &tmp, 10) == 0)
+			envlines = tmp;
+		if (ul_strtou32(getenv("COLUMNS"), &tmp, 10) == 0)
+			envcols = tmp;
+
 		/* terminfo values. */
 		if (tinfostat != 1 || columns == 0)
 			defcols = 24;
@@ -418,7 +424,7 @@ static char *endline_for_mb(unsigned col, char *s)
 			goto ended;
 			/* Cursor right. */
 		case L'\t':
-			pos += TABSIZE - (pos % TABSIZE);
+			pos += PG_TABSIZE - (pos % PG_TABSIZE);
 			break;
 		default:
 			if (iswprint(*p))
@@ -446,7 +452,7 @@ static char *endline_for_mb(unsigned col, char *s)
  ended:
 	*end = L'\0';
 	p = wbuf;
-	if ((pos = wcstombs(NULL, p, READBUF)) == (size_t)-1)
+	if ((pos = wcstombs(NULL, p, 0)) == (size_t)-1)
 		return s + 1;
 	return s + pos;
 }
@@ -482,7 +488,7 @@ static char *endline(unsigned col, char *s)
 			goto cend;
 			/* Cursor right. */
 		case '\t':
-			pos += TABSIZE - (pos % TABSIZE);
+			pos += PG_TABSIZE - (pos % PG_TABSIZE);
 			break;
 		default:
 			pos++;
@@ -591,11 +597,8 @@ static int getcount(char *cmdstr)
 	}
 	if (buf[0] == '-' && buf[1] == '\0') {
 		i = -1;
-	} else {
-		if (*buf == '+')
-			i = atoi(buf + 1);
-		else
-			i = atoi(buf);
+	} else if (ul_strtos32(*buf == '+' ? buf + 1 : buf, &i, 10) != 0) {
+		i = -1;
 	}
 	free(buf);
 	return i;
@@ -652,7 +655,7 @@ static void prompt(long long pageno)
 					break;
 				case SEARCH_FIN:
 					state = SEARCH;
-					/* FALLTHRU */
+					/* fallthrough */
 				case SEARCH:
 					if (cmd.cmdline[cmd.cmdlen - 1] == '\\') {
 						escape = 1;
@@ -731,7 +734,7 @@ static void prompt(long long pageno)
 					continue;
 				}
 				state = COUNT;
-				/* FALLTHRU */
+				/* fallthrough */
 			case COUNT:
 				break;
 			case ADDON_FIN:
@@ -806,7 +809,7 @@ static char *colb(char *s)
 }
 
 #ifdef HAVE_WIDECHAR
-/* Convert nonprintable characters to spaces in case MB_CUR_MAX > 1.  */
+/* Convert non-printable characters to spaces in case MB_CUR_MAX > 1.  */
 static void makeprint_for_mb(char *s, size_t l)
 {
 	char *t = s;
@@ -826,7 +829,7 @@ static void makeprint_for_mb(char *s, size_t l)
 }
 #endif
 
-/* Convert nonprintable characters to spaces. */
+/* Convert non-printable characters to spaces. */
 static void makeprint(char *s, size_t l)
 {
 #ifdef HAVE_WIDECHAR
@@ -939,7 +942,7 @@ static void pgfile(FILE *f, const char *name)
 	}
 	find = tmpfile();
 	if (fbuf == NULL || find == NULL) {
-		warn(_("Cannot create tempfile"));
+		warn(_("Cannot create temporary file"));
 		quit(++exitstatus);
 	}
 	if (searchfor) {
@@ -980,42 +983,43 @@ static void pgfile(FILE *f, const char *name)
 					*b = '\0';
 					dline = pagelen;
 					break;
-				} else {
-					if (nobuf)
-						fseeko(f, fpos, SEEK_SET);
-					canjump = 1;
-					p = fgets(b, READBUF, f);
-					if (nobuf)
-						if ((fpos = ftello(f)) == -1)
-							warn("%s", name);
-					canjump = 0;
 				}
+
+				if (nobuf)
+					fseeko(f, fpos, SEEK_SET);
+				canjump = 1;
+				p = fgets(b, READBUF, f);
+				if (nobuf)
+					if ((fpos = ftello(f)) == -1)
+						warn("%s", name);
+				canjump = 0;
+
 				if (p == NULL || *b == '\0') {
 					if (ferror(f))
 						warn("%s", name);
 					eofline = fline;
 					eof = 1;
 					break;
-				} else {
-					if (!nobuf)
-						fputs(b, fbuf);
-					fwrite_all(&pos, sizeof pos, 1, find);
-					if (!fflag) {
-						oldpos = pos;
-						p = b;
-						while (*(p = endline(ttycols,
-								     p))
-						       != '\0') {
-							pos = oldpos + (p - b);
-							fwrite_all(&pos,
-								   sizeof pos,
-								   1, find);
-							fline++;
-							bline++;
-						}
-					}
-					fline++;
 				}
+
+				if (!nobuf)
+					fputs(b, fbuf);
+				fwrite_all(&pos, sizeof pos, 1, find);
+				if (!fflag) {
+					oldpos = pos;
+					p = b;
+					while (*(p = endline(ttycols,
+							     p))
+					       != '\0') {
+						pos = oldpos + (p - b);
+						fwrite_all(&pos,
+							   sizeof pos,
+							   1, find);
+						fline++;
+						bline++;
+					}
+				}
+				fline++;
 			} while (line > bline++);
 		} else {
 			/* eofline != 0 */
@@ -1050,7 +1054,9 @@ static void pgfile(FILE *f, const char *name)
 				skip(1);
 			}
 			continue;
-		} else if (eof) {
+		}
+
+		if (eof) {
 			/* We are not searching. */
 			line = bline;
 		} else if (*b != '\0') {
@@ -1372,10 +1378,9 @@ static void pgfile(FILE *f, const char *name)
 						my_sigset(SIGQUIT, oldquit);
 						my_sigset(SIGTERM, oldterm);
 						execl(sh, sh, "-c",
-						      cmd.cmdline + 1, NULL);
-						warn(_("failed to execute %s"), sh);
-						_exit(0177);
-						/* NOTREACHED */
+						      cmd.cmdline + 1, (char *)NULL);
+						errexec(sh);
+						break;
 					}
 					case -1:
 						mesg(_("fork() failed, "
@@ -1538,7 +1543,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	if (tcgetattr(STDOUT_FILENO, &otio) == 0) {
 		ontty = 1;
@@ -1560,11 +1565,11 @@ int main(int argc, char **argv)
 		argc--;
 
 		if (!strcmp(argv[arg], "--help")) {
-		    usage(stdout);
+		    usage();
 		}
 
 		if (!strcmp(argv[arg], "--version")) {
-		    printf(UTIL_LINUX_VERSION);
+		    print_version(EXIT_SUCCESS);
 		    return EXIT_SUCCESS;
 		}
 
@@ -1615,11 +1620,11 @@ int main(int argc, char **argv)
 			case 's':
 				sflag = 1;
 				break;
+
 			case 'h':
-				usage(stdout);
+				usage();
 			case 'V':
-				printf(UTIL_LINUX_VERSION);
-				return EXIT_SUCCESS;
+				print_version(EXIT_SUCCESS);
 			default:
 				invopt(&argv[arg][i]);
 			}

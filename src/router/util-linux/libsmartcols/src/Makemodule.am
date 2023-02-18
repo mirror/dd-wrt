@@ -2,7 +2,7 @@
 
 # smartcols.h is generated, so it's stored in builddir!
 smartcolsincdir = $(includedir)/libsmartcols
-nodist_smartcolsinc_HEADERS = $(top_builddir)/libsmartcols/src/libsmartcols.h
+nodist_smartcolsinc_HEADERS = libsmartcols/src/libsmartcols.h
 
 usrlib_exec_LTLIBRARIES += libsmartcols.la
 libsmartcols_la_SOURCES= \
@@ -15,51 +15,38 @@ libsmartcols_la_SOURCES= \
 	libsmartcols/src/column.c \
 	libsmartcols/src/line.c \
 	libsmartcols/src/table.c \
-	libsmartcols/src/table_print.c \
+	libsmartcols/src/print.c \
+	libsmartcols/src/print-api.c \
 	libsmartcols/src/version.c \
-	libsmartcols/src/init.c \
-	$(nodist_smartcolsinc_HEADERS)
+	libsmartcols/src/calculate.c \
+	libsmartcols/src/grouping.c \
+	libsmartcols/src/walk.c \
+	libsmartcols/src/init.c
 
-nodist_libsmartcols_la_SOURCES = libsmartcols/src/smartcolsP.h
-
-libsmartcols_la_LIBADD = libcommon.la
+libsmartcols_la_LIBADD = $(LDADD) libcommon.la
 
 libsmartcols_la_CFLAGS = \
+	$(AM_CFLAGS) \
 	$(SOLIB_CFLAGS) \
 	-I$(ul_libsmartcols_incdir) \
 	-I$(top_srcdir)/libsmartcols/src
 
-libsmartcols_la_DEPENDENCIES = \
-	libcommon.la \
-	libsmartcols/src/libsmartcols.sym \
-	libsmartcols/src/libsmartcols.h.in
+EXTRA_libsmartcols_la_DEPENDENCIES = \
+	libsmartcols/src/libsmartcols.sym
 
-libsmartcols_la_LDFLAGS = \
-	$(SOLIB_LDFLAGS) \
-	-Wl,--version-script=$(top_srcdir)/libsmartcols/src/libsmartcols.sym \
-	-version-info $(LIBSMARTCOLS_VERSION_INFO)
+libsmartcols_la_LDFLAGS = $(SOLIB_LDFLAGS)
+if HAVE_VSCRIPT
+libsmartcols_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(top_srcdir)/libsmartcols/src/libsmartcols.sym
+endif
+libsmartcols_la_LDFLAGS += -version-info $(LIBSMARTCOLS_VERSION_INFO)
 
 EXTRA_DIST += \
-	libsmartcols/src/libsmartcols.sym \
-	libsmartcols/src/libsmartcols.h.in
-
-
-if BUILD_LIBSMARTCOLS_TESTS
-check_PROGRAMS += test_smartcols
-
-libsmartcols_tests_cflags = $(libsmartcols_la_CFLAGS)
-libsmartcols_tests_ldadd  = libsmartcols.la libcommon.la
-
-test_smartcols_SOURCES = libsmartcols/src/test.c
-test_smartcols_CFLAGS = $(libsmartcols_tests_cflags)
-test_smartcols_LDADD = $(libsmartcols_tests_ldadd)
-endif # BUILD_LIBSMARTCOLS_TESTS
-
+	libsmartcols/src/libsmartcols.sym
 
 # move lib from $(usrlib_execdir) to $(libdir) if needed
 install-exec-hook-libsmartcols:
 	if test "$(usrlib_execdir)" != "$(libdir)" -a -f "$(DESTDIR)$(usrlib_execdir)/libsmartcols.so"; then \
-		mkdir -p $(DESTDIR)$(libdir); \
+		$(MKDIR_P) $(DESTDIR)$(libdir); \
 		mv $(DESTDIR)$(usrlib_execdir)/libsmartcols.so.* $(DESTDIR)$(libdir); \
 		so_img_name=$$(readlink $(DESTDIR)$(usrlib_execdir)/libsmartcols.so); \
 		so_img_rel_target=$$(echo $(usrlib_execdir) | sed 's,\(^/\|\)[^/][^/]*,..,g'); \

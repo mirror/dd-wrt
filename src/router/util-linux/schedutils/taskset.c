@@ -31,7 +31,7 @@
 #include "nls.h"
 #include "strutils.h"
 #include "xalloc.h"
-#include "procutils.h"
+#include "procfs.h"
 #include "c.h"
 #include "closestream.h"
 
@@ -45,8 +45,9 @@ struct taskset {
 			get_only:1;	/* print the mask, but not modify */
 };
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fprintf(out,
 		_("Usage: %s [options] [mask | cpu-list] [pid|cmd [args...]]\n\n"),
 		program_invocation_short_name);
@@ -60,9 +61,10 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 		" -a, --all-tasks         operate on all the tasks (threads) for a given pid\n"
 		" -p, --pid               operate on existing given pid\n"
 		" -c, --cpu-list          display and specify cpus in list format\n"
-		" -h, --help              display this help\n"
-		" -V, --version           output version information\n\n"));
+		));
+	printf(USAGE_HELP_OPTIONS(25));
 
+	fputs(USAGE_SEPARATOR, out);
 	fprintf(out, _(
 		"The default behavior is to run a new command:\n"
 		"    %1$s 03 sshd -b 1024\n"
@@ -76,9 +78,8 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 		"    e.g. 0-31:2 is equivalent to mask 0x55555555\n"),
 		program_invocation_short_name);
 
-	fprintf(out, USAGE_MAN_TAIL("taskset(1)"));
-
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_MAN_TAIL("taskset(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 static void print_affinity(struct taskset *ts, int isnew)
@@ -98,7 +99,17 @@ static void print_affinity(struct taskset *ts, int isnew)
 	if (!str)
 		errx(EXIT_FAILURE, _("internal error: conversion from cpuset to string failed"));
 
-	printf(msg, ts->pid, str);
+	printf(msg, ts->pid ? ts->pid : getpid(), str);
+}
+
+static void __attribute__((__noreturn__)) err_affinity(pid_t pid, int set)
+{
+	char *msg;
+
+	msg = set ? _("failed to set pid %d's affinity") :
+		    _("failed to get pid %d's affinity");
+
+	err(EXIT_FAILURE, msg, pid ? pid : getpid());
 }
 
 static void do_taskset(struct taskset *ts, size_t setsize, cpu_set_t *set)
@@ -106,8 +117,7 @@ static void do_taskset(struct taskset *ts, size_t setsize, cpu_set_t *set)
 	/* read the current mask */
 	if (ts->pid) {
 		if (sched_getaffinity(ts->pid, ts->setsize, ts->set) < 0)
-			err(EXIT_FAILURE, _("failed to get pid %d's affinity"),
-			    ts->pid);
+			err_affinity(ts->pid, 0);
 		print_affinity(ts, FALSE);
 	}
 
@@ -116,14 +126,12 @@ static void do_taskset(struct taskset *ts, size_t setsize, cpu_set_t *set)
 
 	/* set new mask */
 	if (sched_setaffinity(ts->pid, setsize, set) < 0)
-		err(EXIT_FAILURE, _("failed to set pid %d's affinity"),
-		    ts->pid);
+		err_affinity(ts->pid, 1);
 
 	/* re-read the current mask */
 	if (ts->pid) {
 		if (sched_getaffinity(ts->pid, ts->setsize, ts->set) < 0)
-			err(EXIT_FAILURE, _("failed to get pid %d's affinity"),
-			    ts->pid);
+			err_affinity(ts->pid, 0);
 		print_affinity(ts, TRUE);
 	}
 }
@@ -149,7 +157,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	memset(&ts, 0, sizeof(ts));
 
@@ -165,21 +173,21 @@ int main(int argc, char **argv)
 		case 'c':
 			ts.use_list = 1;
 			break;
+
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
-			break;
+			usage();
 		default:
-			usage(stderr);
-			break;
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
 	if ((!pid && argc - optind < 2)
-	    || (pid && (argc - optind < 1 || argc - optind > 2)))
-		usage(stderr);
+	    || (pid && (argc - optind < 1 || argc - optind > 2))) {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	ncpus = get_max_number_of_cpus();
 	if (ncpus <= 0)
@@ -220,10 +228,13 @@ int main(int argc, char **argv)
 	}
 
 	if (all_tasks && pid) {
-		struct proc_tasks *tasks = proc_open_tasks(pid);
-		while (!proc_next_tid(tasks, &ts.pid))
+		DIR *sub = NULL;
+		struct path_cxt *pc = ul_new_procfs_path(pid, NULL);
+
+		while (pc && procfs_process_next_tid(pc, &sub, &ts.pid) == 0)
 			do_taskset(&ts, new_setsize, new_set);
-		proc_close_tasks(tasks);
+
+		ul_unref_path(pc);
 	} else {
 		ts.pid = pid;
 		do_taskset(&ts, new_setsize, new_set);
@@ -236,7 +247,7 @@ int main(int argc, char **argv)
 	if (!pid) {
 		argv += optind + 1;
 		execvp(argv[0], argv);
-		err(EXIT_FAILURE, _("failed to execute %s"), argv[0]);
+		errexec(argv[0]);
 	}
 
 	return EXIT_SUCCESS;

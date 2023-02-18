@@ -69,12 +69,12 @@ blkid_dev blkid_verify(blkid_cache cache, blkid_dev dev)
 	if (!dev || !cache)
 		return NULL;
 
-	now = time(0);
-	diff = now - dev->bid_time;
+	now = time(NULL);
+	diff = (uintmax_t)now - dev->bid_time;
 
 	if (stat(dev->bid_name, &st) < 0) {
-		DBG(PROBE, ul_debug("blkid_verify: error %m (%d) while "
-			   "trying to stat %s", errno,
+		DBG(PROBE, ul_debug("blkid_verify: error %s (%d) while "
+			   "trying to stat %s", strerror(errno), errno,
 			   dev->bid_name));
 	open_err:
 		if ((errno == EPERM) || (errno == EACCES) || (errno == ENOENT)) {
@@ -95,26 +95,26 @@ blkid_dev blkid_verify(blkid_cache cache, blkid_dev dev)
 #else
 	    st.st_mtime <= dev->bid_time &&
 #endif
-	    (diff < BLKID_PROBE_MIN ||
-		(dev->bid_flags & BLKID_BID_FL_VERIFIED &&
-		 diff < BLKID_PROBE_INTERVAL)))
+	    diff >= 0 && diff < BLKID_PROBE_MIN) {
+		dev->bid_flags |= BLKID_BID_FL_VERIFIED;
 		return dev;
+	}
 
 #ifndef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-	DBG(PROBE, ul_debug("need to revalidate %s (cache time %lu, stat time %lu,\t"
-		   "time since last check %lu)",
-		   dev->bid_name, (unsigned long)dev->bid_time,
-		   (unsigned long)st.st_mtime, (unsigned long)diff));
+	DBG(PROBE, ul_debug("need to revalidate %s (cache time %lld, stat time %lld,\t"
+		   "time since last check %lld)",
+		   dev->bid_name, (long long)dev->bid_time,
+		   (long long)st.st_mtime, (long long)diff));
 #else
-	DBG(PROBE, ul_debug("need to revalidate %s (cache time %lu.%lu, stat time %lu.%lu,\t"
-		   "time since last check %lu)",
+	DBG(PROBE, ul_debug("need to revalidate %s (cache time %lld.%lld, stat time %lld.%lld,\t"
+		   "time since last check %lld)",
 		   dev->bid_name,
-		   (unsigned long)dev->bid_time, (unsigned long)dev->bid_utime,
-		   (unsigned long)st.st_mtime, (unsigned long)st.st_mtim.tv_nsec / 1000,
-		   (unsigned long)diff));
+		   (long long)dev->bid_time, (long long)dev->bid_utime,
+		   (long long)st.st_mtime, (long long)st.st_mtim.tv_nsec / 1000,
+		   (long long)diff));
 #endif
 
-	if (sysfs_devno_is_lvm_private(st.st_rdev)) {
+	if (sysfs_devno_is_dm_private(st.st_rdev, NULL)) {
 		blkid_free_dev(dev);
 		return NULL;
 	}
@@ -126,10 +126,10 @@ blkid_dev blkid_verify(blkid_cache cache, blkid_dev dev)
 		}
 	}
 
-	fd = open(dev->bid_name, O_RDONLY|O_CLOEXEC);
+	fd = open(dev->bid_name, O_RDONLY|O_CLOEXEC|O_NONBLOCK);
 	if (fd < 0) {
-		DBG(PROBE, ul_debug("blkid_verify: error %m (%d) while "
-					"opening %s", errno,
+		DBG(PROBE, ul_debug("blkid_verify: error %s (%d) while "
+					"opening %s", strerror(errno), errno,
 					dev->bid_name));
 		goto open_err;
 	}
@@ -172,7 +172,7 @@ blkid_dev blkid_verify(blkid_cache cache, blkid_dev dev)
 			dev->bid_utime = tv.tv_usec;
 		} else
 #endif
-			dev->bid_time = time(0);
+			dev->bid_time = time(NULL);
 
 		dev->bid_devno = st.st_rdev;
 		dev->bid_flags |= BLKID_BID_FL_VERIFIED;
@@ -184,9 +184,11 @@ blkid_dev blkid_verify(blkid_cache cache, blkid_dev dev)
 			   dev->bid_name, (long long)st.st_rdev, dev->bid_type));
 	}
 
-	blkid_reset_probe(cache->probe);
+	/* reset prober */
 	blkid_probe_reset_superblocks_filter(cache->probe);
+	blkid_probe_set_device(cache->probe, -1, 0, 0);
 	close(fd);
+
 	return dev;
 }
 

@@ -1,90 +1,175 @@
-.\" Man page for the lslocks command.
-.\" Copyright 2012 Davidlohr Bueso <dave@gnu.org>
-.\" May be distributed under the GNU General Public License
-
-.TH LSLOCKS 8 "December 2014" "util-linux" "System Administration"
-.SH NAME
+'\" t
+.\"     Title: lslocks
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "LSLOCKS" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 lslocks \- list local system locks
-.SH SYNOPSIS
-.B lslocks
-[options]
-
-.SH DESCRIPTION
-.B lslocks
-lists information about all the currently held file locks in a Linux system.
-
-.SH OPTIONS
-.TP
-.BR \-n , " \-\-noheadings"
+.SH "SYNOPSIS"
+.sp
+\fBlslocks\fP [options]
+.SH "DESCRIPTION"
+.sp
+\fBlslocks\fP lists information about all the currently held file locks in a Linux system.
+.sp
+Note that lslocks also lists OFD (Open File Description) locks, these locks are not associated with any process (PID is \-1). OFD locks are associated with the open file description on which they are acquired. This lock type is available since Linux 3.15, see \fBfcntl\fP(2) for more details.
+.SH "OPTIONS"
+.sp
+\fB\-b\fP, \fB\-\-bytes\fP
+.RS 4
+Print the sizes in bytes rather than in a human\-readable format.
+.sp
+By default, the unit, sizes are expressed in, is byte, and unit prefixes are in
+power of 2^10 (1024). Abbreviations of symbols are exhibited truncated in order
+to reach a better readability, by exhibiting alone the first letter of them;
+examples: "1 KiB" and "1 MiB" are respectively exhibited as "1 K" and "1 M",
+then omitting on purpose the mention "iB", which is part of these abbreviations.
+.RE
+.sp
+\fB\-i\fP, \fB\-\-noinaccessible\fP
+.RS 4
+Ignore lock files which are inaccessible for the current user.
+.RE
+.sp
+\fB\-J\fP, \fB\-\-json\fP
+.RS 4
+Use JSON output format.
+.RE
+.sp
+\fB\-n\fP, \fB\-\-noheadings\fP
+.RS 4
 Do not print a header line.
-.TP
-.BR \-o , " \-\-output " \fIlist\fP
-Specify which output columns to print.  Use
-.B "--help"
-to get a list of all supported columns.
-
-The default list of columns may be extended if \fIlist\fP is
-specified in the format \fI+list\fP (e.g. \fBlslocks -o +BLOCKER\fP).
-.TP
-.BR \-p , " \-\-pid " \fIpid\fP
-Display only the locks held by the process with this \fIpid\fR.
-.TP
-.BR \-r , " \-\-raw"
+.RE
+.sp
+\fB\-o\fP, \fB\-\-output\fP \fIlist\fP
+.RS 4
+Specify which output columns to print. Use \fB\-\-help\fP to get a list of all supported columns.
+.sp
+The default list of columns may be extended if \fIlist\fP is specified in the format \fI+list\fP (e.g., \fBlslocks \-o +BLOCKER\fP).
+.RE
+.sp
+\fB\-\-output\-all\fP
+.RS 4
+Output all available columns.
+.RE
+.sp
+\fB\-p\fP, \fB\-\-pid\fP \fIpid\fP
+.RS 4
+Display only the locks held by the process with this \fIpid\fP.
+.RE
+.sp
+\fB\-r\fP, \fB\-\-raw\fP
+.RS 4
 Use the raw output format.
-.TP
-.BR \-u , " \-\-notruncate"
+.RE
+.sp
+\fB\-u\fP, \fB\-\-notruncate\fP
+.RS 4
 Do not truncate text in columns.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.TP
-.BR \-h , " \-\-help"
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-
-.SH OUTPUT
-.IP "COMMAND"
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "OUTPUT"
+.sp
+COMMAND
+.RS 4
 The command name of the process holding the lock.
-.IP "PID"
-The process ID of the process which holds the lock.
-.IP "TYPE"
-The type of lock; can be FLOCK (created with \fBflock\fR(2)) or POSIX
-(created with \fBfcntl\fR(2) and \fBlockf\fR(3)).
-.IP "SIZE"
+.RE
+.sp
+PID
+.RS 4
+The process ID of the process which holds the lock or \-1 for OFDLCK.
+.RE
+.sp
+TYPE
+.RS 4
+The type of lock; can be FLOCK (created with \fBflock\fP(2)), POSIX (created with \fBfcntl\fP(2) and \fBlockf\fP(3)) or OFDLCK (created with \fBfcntl\fP(2)).
+.RE
+.sp
+SIZE
+.RS 4
 Size of the locked file.
-.IP "MODE"
-The lock's access permissions (read, write).  If the process is blocked and waiting for the lock,
-then the mode is postfixed with an '*' (asterisk).
-.IP "M"
-Whether the lock is mandatory; 0 means no (meaning the lock is only advisory), 1 means yes.
-(See \fBfcntl\fR(2).)
-.IP "START"
+.RE
+.sp
+MODE
+.RS 4
+The lock\(cqs access permissions (read, write). If the process is blocked and waiting for the lock, then the mode is postfixed with an \(aq*\(aq (asterisk).
+.RE
+.sp
+M
+.RS 4
+Whether the lock is mandatory; 0 means no (meaning the lock is only advisory), 1 means yes. (See \fBfcntl\fP(2).)
+.RE
+.sp
+START
+.RS 4
 Relative byte offset of the lock.
-.IP "END"
+.RE
+.sp
+END
+.RS 4
 Ending offset of the lock.
-.IP "PATH"
-Full path of the lock.  If none is found, or there are no permissions to read the path,
-it will fall back to the device's mountpoint.  The path might be truncated; use
-\fB\-\-notruncate\fR to get the full path.
-.IP "BLOCKER"
+.RE
+.sp
+PATH
+.RS 4
+Full path of the lock. If none is found, or there are no permissions to read the path, it will fall back to the device\(cqs mountpoint and "..." is appended to the path. The path might be truncated; use \fB\-\-notruncate\fP to get the full path.
+.RE
+.sp
+BLOCKER
+.RS 4
 The PID of the process which blocks the lock.
-
-.SH NOTES
-.nf
-The \fBlslocks\fR command is meant to replace the \fBlslk\fR(8) command,
-originally written by Victor A. Abell <abe@purdue.edu> and unmaintained
-since 2001.
-.fi
-
-.SH AUTHORS
-.nf
-Davidlohr Bueso <dave@gnu.org>
-.fi
-
+.RE
+.SH "NOTES"
+.sp
+The \fBlslocks\fP command is meant to replace the \fBlslk\fP(8) command, originally written by \c
+.MTO "abe\(atpurdue.edu" "Victor A. Abell" ""
+and unmaintained since 2001.
+.SH "AUTHORS"
+.sp
+.MTO "dave\(atgnu.org" "Davidlohr Bueso" ""
 .SH "SEE ALSO"
-.BR flock (1),
-.BR fcntl (2),
-.BR lockf (2)
-
-.SH AVAILABILITY
-The lslocks command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBflock\fP(1),
+\fBfcntl\fP(2),
+\fBlockf\fP(3)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBlslocks\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

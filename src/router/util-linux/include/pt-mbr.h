@@ -1,6 +1,8 @@
 #ifndef UTIL_LINUX_PT_MBR_H
 #define UTIL_LINUX_PT_MBR_H
 
+#include <assert.h>
+
 struct dos_partition {
 	unsigned char boot_ind;		/* 0x80 - active */
 	unsigned char bh, bs, bc;	/* begin CHS */
@@ -11,6 +13,7 @@ struct dos_partition {
 } __attribute__((packed));
 
 #define MBR_PT_OFFSET		0x1be
+#define MBR_PT_BOOTBITS_SIZE	440
 
 static inline struct dos_partition *mbr_get_partition(unsigned char *mbr, int i)
 {
@@ -19,13 +22,16 @@ static inline struct dos_partition *mbr_get_partition(unsigned char *mbr, int i)
 }
 
 /* assemble badly aligned little endian integer */
-static inline unsigned int __dos_assemble_4le(const unsigned char *p)
+static inline uint32_t __dos_assemble_4le(const unsigned char *p)
 {
-	return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+	uint32_t last_byte = p[3];
+
+	return p[0] | (p[1] << 8) | (p[2] << 16) | (last_byte << 24);
 }
 
 static inline void __dos_store_4le(unsigned char *p, unsigned int val)
 {
+	assert(!(p == NULL));
 	p[0] = (val & 0xff);
 	p[1] = ((val >> 8) & 0xff);
 	p[2] = ((val >> 16) & 0xff);
@@ -50,6 +56,28 @@ static inline unsigned int dos_partition_get_size(struct dos_partition *p)
 static inline void dos_partition_set_size(struct dos_partition *p, unsigned int n)
 {
 	__dos_store_4le(p->nr_sects, n);
+}
+
+static inline void dos_partition_sync_chs(struct dos_partition *p, unsigned long long int part_offset, unsigned int geom_sectors, unsigned int geom_heads)
+{
+	unsigned long long int start = part_offset + dos_partition_get_start(p);
+	unsigned long long int stop = start + dos_partition_get_size(p) - 1;
+	unsigned int spc = geom_heads * geom_sectors;
+
+	if (start / spc > 1023)
+		start = spc * 1024 - 1;
+	if (stop / spc > 1023)
+		stop = spc * 1024 - 1;
+
+	p->bc = (start / spc) & 0xff;
+	p->bh = (start / geom_sectors) % geom_heads;
+	p->bs = ((start % geom_sectors + 1) & 0x3f) |
+		(((start / spc) >> 2) & 0xc0);
+
+	p->ec = (stop / spc) & 0xff;
+	p->eh = (stop / geom_sectors) % geom_heads;
+	p->es = ((stop % geom_sectors + 1) & 0x3f) |
+		(((stop / spc) >> 2) & 0xc0);
 }
 
 static inline int mbr_is_valid_magic(const unsigned char *mbr)
@@ -128,7 +156,8 @@ enum {
 	MBR_LINUX_SWAP_PARTITION	= 0x82,
 	MBR_SOLARIS_X86_PARTITION	= MBR_LINUX_SWAP_PARTITION,
 	MBR_LINUX_DATA_PARTITION	= 0x83,
-	MBR_OS2_HIDDEN_DRIVE_PARTITION	= 0x84,
+	MBR_OS2_HIDDEN_DRIVE_PARTITION	= 0x84, /* also hibernation MS APM, Intel Rapid Start */
+	MBR_INTEL_HIBERNATION_PARTITION	= MBR_OS2_HIDDEN_DRIVE_PARTITION,
 	MBR_LINUX_EXTENDED_PARTITION	= 0x85,
 	MBR_NTFS_VOL_SET1_PARTITION	= 0x86,
 	MBR_NTFS_VOL_SET2_PARTITION	= 0x87,
@@ -148,6 +177,7 @@ enum {
 	MBR_BSDI_FS_PARTITION		= 0xb7,
 	MBR_BSDI_SWAP_PARTITION		= 0xb8,
 	MBR_BOOTWIZARD_HIDDEN_PARTITION	= 0xbb,
+	MBR_ACRONIS_FAT32LBA_PARTITION  = 0xbc, /* Acronis Secure Zone with ipl for loader F11.SYS */
 	MBR_SOLARIS_BOOT_PARTITION	= 0xbe,
 	MBR_SOLARIS_PARTITION		= 0xbf,
 	MBR_DRDOS_FAT12_PARTITION	= 0xc1,
@@ -161,6 +191,7 @@ enum {
 	MBR_DOS_ACCESS_PARTITION	= 0xe1, /* DOS access or SpeedStor 12-bit FAT extended partition */
 	MBR_DOS_RO_PARTITION		= 0xe3, /* DOS R/O or SpeedStor */
 	MBR_SPEEDSTOR_EXTENDED_PARTITION = 0xe4, /* SpeedStor 16-bit FAT extended partition < 1024 cyl. */
+	MBR_RUFUS_EXTRA_PARTITION	= 0xea, /* Rufus extra partition for alignment */
 	MBR_BEOS_FS_PARTITION		= 0xeb,
 	MBR_GPT_PARTITION		= 0xee, /* Intel EFI GUID Partition Table */
 	MBR_EFI_SYSTEM_PARTITION	= 0xef, /* Intel EFI System Partition */
@@ -168,9 +199,10 @@ enum {
 	MBR_SPEEDSTOR1_PARTITION	= 0xf1,
 	MBR_SPEEDSTOR2_PARTITION	= 0xf4, /* SpeedStor large partition */
 	MBR_DOS_SECONDARY_PARTITION	= 0xf2, /* DOS 3.3+ secondary */
+	MBR_EBBR_PROTECTIVE_PARTITION	= 0xf8, /* Arm EBBR firmware protective partition */
 	MBR_VMWARE_VMFS_PARTITION	= 0xfb,
 	MBR_VMWARE_VMKCORE_PARTITION	= 0xfc, /* VMware kernel dump partition */
-	MBR_LINUX_RAID_PARTITION	= 0xfd, /* New (2.2.x) raid partition with autodetect using persistent superblock */
+	MBR_LINUX_RAID_PARTITION	= 0xfd, /* Linux raid partition with autodetect using persistent superblock */
 	MBR_LANSTEP_PARTITION		= 0xfe, /* SpeedStor >1024 cyl. or LANstep */
 	MBR_XENIX_BBT_PARTITION		= 0xff, /* Xenix Bad Block Table */
 };

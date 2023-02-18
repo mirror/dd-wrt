@@ -42,19 +42,24 @@
 #include <errno.h>
 #include <string.h>
 #include <getopt.h>
-#include <utime.h>
 #include <fcntl.h>
+
+/* We don't use our include/crc32.h, but crc32 from zlib!
+ *
+ * The zlib implementation performs pre/post-conditioning. The util-linux
+ * imlemenation requires post-conditioning (xor) in the applications.
+ */
 #include <zlib.h>
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <sys/sysmacros.h>	/* for major, minor */
 
+#include "c.h"
 #include "cramfs.h"
 #include "nls.h"
 #include "blkdev.h"
-#include "c.h"
 #include "exitcodes.h"
 #include "strutils.h"
 #include "closestream.h"
@@ -64,11 +69,11 @@
 
 static int fd;			/* ROM image file descriptor */
 static char *filename;		/* ROM image filename */
-struct cramfs_super super;	/* just find the cramfs superblock once */
+static struct cramfs_super super;	/* just find the cramfs superblock once */
 static int cramfs_is_big_endian = 0;	/* source is big endian */
 static int opt_verbose = 0;	/* 1 = verbose (-v), 2+ = very verbose (-vv) */
 static int opt_extract = 0;	/* extract cramfs (-x) */
-char *extract_dir = "";		/* optional extraction directory (-x) */
+static char *extract_dir = "";		/* optional extraction directory (-x) */
 
 #define PAD_SIZE 512
 
@@ -81,11 +86,17 @@ static unsigned long start_data = ~0UL;	/* start of the data (256 MB = max) */
 static unsigned long end_data = 0;	/* end of the data */
 
 
-/* Guarantee access to at least 8kB at a time */
-#define ROMBUFFER_BITS	13
-#define ROMBUFFERSIZE	(1 << ROMBUFFER_BITS)
-#define ROMBUFFERMASK	(ROMBUFFERSIZE - 1)
-static char read_buffer[ROMBUFFERSIZE * 2];
+/* Guarantee access to at least 2 * blksize at a time */
+#define CRAMFS_ROMBUFFER_BITS	13
+#define CRAMFS_ROMBUFFERSIZE	(1 << CRAMFS_ROMBUFFER_BITS)
+#define CRAMFS_ROMBUFFERMASK	(CRAMFS_ROMBUFFERSIZE - 1)
+
+/* Defaults, updated in main() according to block size */
+static size_t rombufbits = CRAMFS_ROMBUFFER_BITS;
+static size_t rombufsize = CRAMFS_ROMBUFFERSIZE;
+static size_t rombufmask = CRAMFS_ROMBUFFERMASK;
+
+static char *read_buffer;
 static unsigned long read_buffer_block = ~0UL;
 
 static z_stream stream;
@@ -97,11 +108,9 @@ static char *outbuffer;
 
 static size_t blksize = 0;
 
-
-/* Input status of 0 to print help and exit without an error. */
-static void __attribute__((__noreturn__)) usage(int status)
+static void __attribute__((__noreturn__)) usage(void)
 {
-	FILE *out = status ? stderr : stdout;
+	FILE *out = stdout;
 
 	fputs(USAGE_HEADER, out);
 	fprintf(out,
@@ -117,11 +126,10 @@ static void __attribute__((__noreturn__)) usage(int status)
 	fputs(_(" -b, --blocksize <size>   use this blocksize, defaults to page size\n"), out);
 	fputs(_("     --extract[=<dir>]    test uncompression, optionally extract into <dir>\n"), out);
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fputs(USAGE_SEPARATOR, out);
+	printf(USAGE_HELP_OPTIONS(26));
 
-	exit(status);
+	printf(USAGE_MAN_TAIL("fsck.cramfs(8)"));
+	exit(FSCK_EX_OK);
 }
 
 static int get_superblock_endianness(uint32_t magic)
@@ -129,25 +137,29 @@ static int get_superblock_endianness(uint32_t magic)
 	if (magic == CRAMFS_MAGIC) {
 		cramfs_is_big_endian = HOST_IS_BIG_ENDIAN;
 		return 0;
-	} else if (magic ==
+	}
+
+	if (magic ==
 		   u32_toggle_endianness(!HOST_IS_BIG_ENDIAN, CRAMFS_MAGIC)) {
 		cramfs_is_big_endian = !HOST_IS_BIG_ENDIAN;
 		return 0;
-	} else
-		return -1;
+	}
+
+	return -1;
 }
 
 static void test_super(int *start, size_t * length)
 {
 	struct stat st;
 
-	/* find the physical size of the file or block device */
-	if (stat(filename, &st) < 0)
-		err(FSCK_EX_ERROR, _("stat of %s failed"), filename);
 
 	fd = open(filename, O_RDONLY);
 	if (fd < 0)
 		err(FSCK_EX_ERROR, _("cannot open %s"), filename);
+
+	/* find the physical size of the file or block device */
+	if (fstat(fd, &st) < 0)
+		err(FSCK_EX_ERROR, _("stat of %s failed"), filename);
 
 	if (S_ISBLK(st.st_mode)) {
 		unsigned long long bytes;
@@ -190,7 +202,7 @@ static void test_super(int *start, size_t * length)
 		errx(FSCK_EX_ERROR, _("unsupported filesystem features"));
 
 	/* What are valid superblock sizes? */
-	if (super.size < sizeof(struct cramfs_super))
+	if (super.size < *start + sizeof(struct cramfs_super))
 		errx(FSCK_EX_UNCORRECTED, _("superblock size (%d) too small"),
 		     super.size);
 
@@ -215,7 +227,7 @@ static void test_crc(int start)
 		return;
 	}
 
-	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(0L, NULL, 0);
 
 	buf =
 	    mmap(NULL, super.size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -224,15 +236,20 @@ static void test_crc(int start)
 		    mmap(NULL, super.size, PROT_READ | PROT_WRITE,
 			 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		if (buf != MAP_FAILED) {
+			ssize_t tmp;
 			if (lseek(fd, 0, SEEK_SET) == (off_t) -1)
 				err(FSCK_EX_ERROR, _("seek on %s failed"), filename);
-			if (read(fd, buf, super.size) < 0)
+			tmp = read(fd, buf, super.size);
+			if (tmp < 0)
 				err(FSCK_EX_ERROR, _("cannot read %s"), filename);
+			if (tmp != (ssize_t) super.size)
+				errx(FSCK_EX_ERROR, _("failed to read %"PRIu32" bytes from file %s"),
+					super.size, filename);
 		}
 	}
 	if (buf != MAP_FAILED) {
 		((struct cramfs_super *)((unsigned char *) buf + start))->fsid.crc =
-		    crc32(0L, Z_NULL, 0);
+		    crc32(0L, NULL, 0);
 		crc = crc32(crc, (unsigned char *) buf + start, super.size - start);
 		munmap(buf, super.size);
 	} else {
@@ -250,7 +267,7 @@ static void test_crc(int start)
 				break;
 			if (length == 0)
 				((struct cramfs_super *)buf)->fsid.crc =
-				    crc32(0L, Z_NULL, 0);
+				    crc32(0L, NULL, 0);
 			length += retval;
 			if (length > (super.size - start)) {
 				crc = crc32(crc, buf,
@@ -288,19 +305,19 @@ static void print_node(char type, struct cramfs_inode *i, char *name)
  */
 static void *romfs_read(unsigned long offset)
 {
-	unsigned int block = offset >> ROMBUFFER_BITS;
+	unsigned int block = offset >> rombufbits;
 	if (block != read_buffer_block) {
 		ssize_t x;
 
 		read_buffer_block = block;
-		if (lseek(fd, block << ROMBUFFER_BITS, SEEK_SET) == (off_t) -1)
+		if (lseek(fd, block << rombufbits, SEEK_SET) == (off_t) -1)
 			warn(_("seek failed"));
 
-		x = read(fd, read_buffer, ROMBUFFERSIZE * 2);
+		x = read(fd, read_buffer, rombufsize * 2);
 		if (x < 0)
 			warn(_("read romfs failed"));
 	}
-	return read_buffer + (offset & ROMBUFFERMASK);
+	return read_buffer + (offset & rombufmask);
 }
 
 static struct cramfs_inode *cramfs_iget(struct cramfs_inode *i)
@@ -361,7 +378,7 @@ static int uncompress_block(void *src, size_t len)
 	return stream.total_out;
 }
 
-#if !HAVE_LCHOWN
+#ifndef HAVE_LCHOWN
 #define lchown chown
 #endif
 
@@ -382,14 +399,14 @@ static void do_uncompress(char *path, int outfd, unsigned long offset,
 		offset += 4;
 		if (curr == next) {
 			if (opt_verbose > 1)
-				printf(_("  hole at %ld (%zd)\n"), curr,
+				printf(_("  hole at %lu (%zu)\n"), curr,
 				       blksize);
 			if (size < blksize)
 				out = size;
 			memset(outbuffer, 0x00, out);
 		} else {
 			if (opt_verbose > 1)
-				printf(_("  uncompressing block at %ld to %ld (%ld)\n"),
+				printf(_("  uncompressing block at %lu to %lu (%lu)\n"),
 				       curr, next, next - curr);
 			out = uncompress_block(romfs_read(curr), next - curr);
 		}
@@ -404,17 +421,14 @@ static void do_uncompress(char *path, int outfd, unsigned long offset,
 				     size);
 		}
 		size -= out;
-		if (*extract_dir != '\0')
-			if (write(outfd, outbuffer, out) < 0)
-				err(FSCK_EX_ERROR, _("write failed: %s"),
-				    path);
+		if (*extract_dir != '\0' && write(outfd, outbuffer, out) < 0)
+			err(FSCK_EX_ERROR, _("write failed: %s"), path);
 		curr = next;
 	} while (size);
 }
-
 static void change_file_status(char *path, struct cramfs_inode *i)
 {
-	struct utimbuf epoch = { 0, 0 };
+	const struct timeval epoch[] = { {0,0}, {0,0} };
 
 	if (euid == 0) {
 		if (lchown(path, i->uid, i->gid) < 0)
@@ -426,8 +440,8 @@ static void change_file_status(char *path, struct cramfs_inode *i)
 	}
 	if (S_ISLNK(i->mode))
 		return;
-	if (utime(path, &epoch) < 0)
-		err(FSCK_EX_ERROR, _("utime failed: %s"), path);
+	if (utimes(path, epoch) < 0)
+		err(FSCK_EX_ERROR, _("utimes failed: %s"), path);
 }
 
 static void do_directory(char *path, struct cramfs_inode *i)
@@ -544,7 +558,7 @@ static void do_symlink(char *path, struct cramfs_inode *i)
 		xasprintf(&str, "%s -> %s", path, outbuffer);
 		print_node('l', i, str);
 		if (opt_verbose > 1)
-			printf(_("  uncompressing block at %ld to %ld (%ld)\n"),
+			printf(_("  uncompressing block at %lu to %lu (%lu)\n"),
 			       curr, next, next - curr);
 		free(str);
 	}
@@ -630,9 +644,8 @@ static void test_fs(int start)
 			     _("directory data end (%lu) != file data start (%lu)"),
 			     end_dir, start_data);
 	}
-	if (super.flags & CRAMFS_FLAG_FSID_VERSION_2)
-		if (end_data > super.size)
-			errx(FSCK_EX_UNCORRECTED, _("invalid file data offset"));
+	if (super.flags & CRAMFS_FLAG_FSID_VERSION_2 && end_data > super.size)
+		errx(FSCK_EX_UNCORRECTED, _("invalid file data offset"));
 
 	iput(root);		/* free(root) */
 }
@@ -644,19 +657,21 @@ int main(int argc, char **argv)
 	size_t length = 0;
 
 	static const struct option longopts[] = {
-		{"verbose", no_argument, 0, 'v'},
-		{"version", no_argument, 0, 'V'},
-		{"help", no_argument, 0, 'h'},
-		{"blocksize", required_argument, 0, 'b'},
-		{"extract", optional_argument, 0, 'x'},
-		{NULL, no_argument, 0, '0'},
+		{"verbose",   no_argument,       NULL, 'v'},
+		{"version",   no_argument,       NULL, 'V'},
+		{"help",      no_argument,       NULL, 'h'},
+		{"blocksize", required_argument, NULL, 'b'},
+		{"extract",   optional_argument, NULL, 'x'},
+		{NULL, 0, NULL, 0},
 	};
 
 	setlocale(LC_MESSAGES, "");
 	setlocale(LC_CTYPE, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
+
+	strutils_set_exitcode(FSCK_EX_USAGE);
 
 	/* command line options */
 	while ((c = getopt_long(argc, argv, "ayvVhb:", longopts, NULL)) != EOF)
@@ -665,11 +680,10 @@ int main(int argc, char **argv)
 		case 'y':
 			break;
 		case 'h':
-			usage(FSCK_EX_OK);
+			usage();
 			break;
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(FSCK_EX_OK);
 		case 'x':
 			opt_extract = 1;
 			if(optarg)
@@ -682,20 +696,33 @@ int main(int argc, char **argv)
 			blksize = strtou32_or_err(optarg, _("invalid blocksize argument"));
 			break;
 		default:
-			usage(FSCK_EX_USAGE);
+			errtryhelp(FSCK_EX_USAGE);
 		}
 
-	if ((argc - optind) != 1)
-		usage(FSCK_EX_USAGE);
+	if ((argc - optind) != 1){
+		warnx(_("bad usage"));
+		errtryhelp(FSCK_EX_USAGE);
+	}
 	filename = argv[optind];
 
 	test_super(&start, &length);
 	test_crc(start);
 
-	if(opt_extract) {
+	if (opt_extract) {
+		size_t bufsize = 0;
+
 		if (blksize == 0)
 			blksize = getpagesize();
+
+		/* re-calculate according to blksize */
+		bufsize = rombufsize = blksize * 2;
+		rombufbits = 0;
+		while (bufsize >>= 1)
+			rombufbits++;
+		rombufmask = rombufsize - 1;
+
 		outbuffer = xmalloc(blksize * 2);
+		read_buffer = xmalloc(rombufsize * 2);
 		test_fs(start);
 	}
 

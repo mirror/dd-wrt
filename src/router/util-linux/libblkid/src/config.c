@@ -88,15 +88,18 @@ static int parse_next(FILE *fd, struct blkid_config *conf)
 	} while (*s == '\0' || *s == '#');
 
 	if (!strncmp(s, "SEND_UEVENT=", 12)) {
-		s += 13;
+		s += 12;
 		if (*s && !strcasecmp(s, "yes"))
 			conf->uevent = TRUE;
 		else if (*s)
 			conf->uevent = FALSE;
 	} else if (!strncmp(s, "CACHE_FILE=", 11)) {
 		s += 11;
+		free(conf->cachefile);
 		if (*s)
 			conf->cachefile = strdup(s);
+		else
+			conf->cachefile = NULL;
 	} else if (!strncmp(s, "EVALUATE=", 9)) {
 		s += 9;
 		if (*s && parse_evaluate(conf, s) == -1)
@@ -120,7 +123,7 @@ struct blkid_config *blkid_read_config(const char *filename)
 	if (!filename)
 		filename = BLKID_CONFIG_FILE;
 
-	conf = (struct blkid_config *) calloc(1, sizeof(*conf));
+	conf = calloc(1, sizeof(*conf));
 	if (!conf)
 		return NULL;
 	conf->uevent = -1;

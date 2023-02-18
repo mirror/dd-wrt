@@ -23,6 +23,10 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#ifndef UUID_STR_LEN
+# define UUID_STR_LEN   37
+#endif
+
 #include "c.h"
 #include "bitops.h"	/* $(top_srcdir)/include/ */
 #include "blkdev.h"
@@ -30,6 +34,7 @@
 #include "debug.h"
 #include "blkid.h"
 #include "list.h"
+#include "encode.h"
 
 /*
  * This describes the attributes of a specific device.
@@ -42,7 +47,8 @@ struct blkid_struct_dev
 	struct list_head	bid_devs;	/* All devices in the cache */
 	struct list_head	bid_tags;	/* All tags for this device */
 	blkid_cache		bid_cache;	/* Dev belongs to this cache */
-	char			*bid_name;	/* Device inode pathname */
+	char			*bid_name;	/* Device real path (as used in cache) */
+	char			*bid_xname;	/* Device path as used by application (maybe symlink..) */
 	char			*bid_type;	/* Preferred device TYPE */
 	int			bid_pri;	/* Device priority */
 	dev_t			bid_devno;	/* Device major/minor number */
@@ -115,27 +121,22 @@ struct blkid_chaindrv {
 	void		(*free_data)(blkid_probe, void *);
 };
 
+/* chains */
+extern const struct blkid_chaindrv superblocks_drv;
+extern const struct blkid_chaindrv topology_drv;
+extern const struct blkid_chaindrv partitions_drv;
+
 /*
  * Low-level probe result
  */
-#define BLKID_PROBVAL_BUFSIZ	128
-
-#define BLKID_NVALS_SUBLKS	18
-#define BLKID_NVALS_TOPLGY	5
-#define BLKID_NVALS_PARTS	13
-
-/* Max number of all values in probing result */
-#define BLKID_NVALS             (BLKID_NVALS_SUBLKS + \
-				 BLKID_NVALS_TOPLGY + \
-				 BLKID_NVALS_PARTS)
-
 struct blkid_prval
 {
-	const char	*name;			/* value name */
-	unsigned char	data[BLKID_PROBVAL_BUFSIZ]; /* value data */
-	size_t		len;			/* length of value data */
+	const char	*name;		/* value name */
+	unsigned char	*data;		/* value data */
+	size_t		len;		/* length of value data */
 
 	struct blkid_chain	*chain;		/* owner */
+	struct list_head	prvals;		/* list of results */
 };
 
 /*
@@ -146,8 +147,13 @@ struct blkid_idmag
 	const char	*magic;		/* magic string */
 	unsigned int	len;		/* length of magic */
 
+	const char	*hoff;		/* hint which contains byte offset to kboff */
 	long		kboff;		/* kilobyte offset of superblock */
 	unsigned int	sboff;		/* byte offset within superblock */
+
+	int		is_zoned;	/* indicate magic location is calculated based on zone position  */
+	long		zonenum;	/* zone number which has superblock */
+	long		kboff_inzone;	/* kilobyte offset of superblock in a zone */
 };
 
 /*
@@ -177,9 +183,18 @@ struct blkid_idinfo
 
 struct blkid_bufinfo {
 	unsigned char		*data;
-	blkid_loff_t		off;
-	blkid_loff_t		len;
+	uint64_t		off;
+	uint64_t		len;
 	struct list_head	bufs;	/* list of buffers */
+};
+
+/*
+ * Probing hint
+ */
+struct blkid_hint {
+	char			*name;
+	uint64_t		value;
+	struct list_head	hints;
 };
 
 /*
@@ -188,28 +203,29 @@ struct blkid_bufinfo {
 struct blkid_struct_probe
 {
 	int			fd;		/* device file descriptor */
-	blkid_loff_t		off;		/* begin of data on the device */
-	blkid_loff_t		size;		/* end of data on the device */
+	uint64_t		off;		/* begin of data on the device */
+	uint64_t		size;		/* end of data on the device */
 
 	dev_t			devno;		/* device number (st.st_rdev) */
 	dev_t			disk_devno;	/* devno of the whole-disk or 0 */
 	unsigned int		blkssz;		/* sector size (BLKSSZGET ioctl) */
 	mode_t			mode;		/* struct stat.sb_mode */
+	uint64_t		zone_size;	/* zone size (BLKGETZONESZ ioctl) */
 
-	int			flags;		/* private libray flags */
+	int			flags;		/* private library flags */
 	int			prob_flags;	/* always zeroized by blkid_do_*() */
 
-	blkid_loff_t		wipe_off;	/* begin of the wiped area */
-	blkid_loff_t		wipe_size;	/* size of the wiped area */
+	uint64_t		wipe_off;	/* begin of the wiped area */
+	uint64_t		wipe_size;	/* size of the wiped area */
 	struct blkid_chain	*wipe_chain;	/* superblock, partition, ... */
 
 	struct list_head	buffers;	/* list of buffers */
+	struct list_head	hints;
 
 	struct blkid_chain	chains[BLKID_NCHAINS];	/* array of chains */
 	struct blkid_chain	*cur_chain;		/* current chain */
 
-	struct blkid_prval	vals[BLKID_NVALS];	/* results */
-	int			nvals;		/* number of assigned vals */
+	struct list_head	values;		/* results */
 
 	struct blkid_struct_probe *parent;	/* for clones */
 	struct blkid_struct_probe *disk_probe;	/* whole-disk probing */
@@ -220,6 +236,7 @@ struct blkid_struct_probe
 #define BLKID_FL_TINY_DEV	(1 << 2)	/* <= 1.47MiB (floppy or so) */
 #define BLKID_FL_CDROM_DEV	(1 << 3)	/* is a CD/DVD drive */
 #define BLKID_FL_NOSCAN_DEV	(1 << 4)	/* do not scan this device */
+#define BLKID_FL_MODIF_BUFF	(1 << 5)	/* cached buffers has been modified */
 
 /* private per-probing flags */
 #define BLKID_PROBE_FL_IGNORE_PT (1 << 1)	/* ignore partition table */
@@ -300,7 +317,7 @@ struct blkid_struct_cache
 #define BLKID_PROBE_NONE 1
 
 #define BLKID_ERR_IO	 5
-#define BLKID_ERR_PROC	 9
+#define BLKID_ERR_SYSFS	 9
 #define BLKID_ERR_MEM	12
 #define BLKID_ERR_CACHE	14
 #define BLKID_ERR_DEV	19
@@ -329,14 +346,17 @@ struct blkid_struct_cache
 #define BLKID_DEBUG_READ	(1 << 10)
 #define BLKID_DEBUG_SAVE	(1 << 11)
 #define BLKID_DEBUG_TAG		(1 << 12)
+#define BLKID_DEBUG_BUFFER	(1 << 13)
 #define BLKID_DEBUG_ALL		0xFFFF		/* (1 << 16) aka FFFF is expected by API */
 
 UL_DEBUG_DECLARE_MASK(libblkid);
 #define DBG(m, x)	__UL_DBG(libblkid, BLKID_DEBUG_, m, x)
 #define ON_DBG(m, x)    __UL_DBG_CALL(libblkid, BLKID_DEBUG_, m, x)
 
+#define UL_DEBUG_CURRENT_MASK	UL_DEBUG_MASK(libblkid)
+#include "debugobj.h"
+
 extern void blkid_debug_dump_dev(blkid_dev dev);
-extern void blkid_debug_dump_tag(blkid_tag tag);
 
 
 /* devno.c */
@@ -346,11 +366,8 @@ struct dir_list {
 };
 extern void blkid__scan_dir(char *, dev_t, struct dir_list **, char **)
 			__attribute__((nonnull(1,4)));
-extern int blkid_driver_has_major(const char *drvname, int major)
+extern int blkid_driver_has_major(const char *drvname, int drvmaj)
 			__attribute__((warn_unused_result));
-
-/* lseek.c */
-extern blkid_loff_t blkid_llseek(int fd, blkid_loff_t offset, int whence);
 
 /* read.c */
 extern void blkid_read_cache(blkid_cache cache)
@@ -395,7 +412,7 @@ extern int blkid_probe_is_cdrom(blkid_probe pr)
 			__attribute__((warn_unused_result));
 
 extern unsigned char *blkid_probe_get_buffer(blkid_probe pr,
-                                blkid_loff_t off, blkid_loff_t len)
+                                uint64_t off, uint64_t len)
 			__attribute__((nonnull))
 			__attribute__((warn_unused_result));
 
@@ -404,36 +421,35 @@ extern unsigned char *blkid_probe_get_sector(blkid_probe pr, unsigned int sector
 			__attribute__((warn_unused_result));
 
 extern int blkid_probe_get_dimension(blkid_probe pr,
-	                blkid_loff_t *off, blkid_loff_t *size)
+	                uint64_t *off, uint64_t *size)
 			__attribute__((nonnull));
 
 extern int blkid_probe_set_dimension(blkid_probe pr,
-	                blkid_loff_t off, blkid_loff_t size)
+	                uint64_t off, uint64_t size)
 			__attribute__((nonnull));
 
 extern int blkid_probe_get_idmag(blkid_probe pr, const struct blkid_idinfo *id,
-			blkid_loff_t *offset, const struct blkid_idmag **res)
+			uint64_t *offset, const struct blkid_idmag **res)
 			__attribute__((nonnull(1)));
 
-/* returns superblok according to 'struct blkid_idmag' */
+/* returns superblock according to 'struct blkid_idmag' */
+extern unsigned char *_blkid_probe_get_sb(blkid_probe pr, const struct blkid_idmag *mag, size_t size);
 #define blkid_probe_get_sb(_pr, _mag, type) \
-			((type *) blkid_probe_get_buffer((_pr),\
-					(_mag)->kboff << 10, sizeof(type)))
+			((type *) _blkid_probe_get_sb((_pr), _mag, sizeof(type)))
 
 extern blkid_partlist blkid_probe_get_partlist(blkid_probe pr)
 			__attribute__((nonnull))
 			__attribute__((warn_unused_result));
 
 extern int blkid_probe_is_covered_by_pt(blkid_probe pr,
-					blkid_loff_t offset, blkid_loff_t size)
+					uint64_t offset, uint64_t size)
 			__attribute__((warn_unused_result));
 
-extern void blkid_probe_chain_reset_vals(blkid_probe pr, struct blkid_chain *chn)
+extern void blkid_probe_chain_reset_values(blkid_probe pr, struct blkid_chain *chn)
 			__attribute__((nonnull));
-extern int blkid_probe_chain_copy_vals(blkid_probe pr,
+extern int blkid_probe_chain_save_values(blkid_probe pr,
 				       struct blkid_chain *chn,
-			               struct blkid_prval *vals,
-				       int nvals)
+			               struct list_head *vals)
 			__attribute__((nonnull));
 
 extern struct blkid_prval *blkid_probe_assign_value(blkid_probe pr,
@@ -441,12 +457,14 @@ extern struct blkid_prval *blkid_probe_assign_value(blkid_probe pr,
 			__attribute__((nonnull))
 			__attribute__((warn_unused_result));
 
-extern int blkid_probe_reset_last_value(blkid_probe pr)
+extern void blkid_probe_free_value(struct blkid_prval *v);
+
+
+extern void blkid_probe_append_values_list(blkid_probe pr,
+				    struct list_head *vals)
 			__attribute__((nonnull));
-extern void blkid_probe_append_vals(blkid_probe pr,
-				    struct blkid_prval *vals,
-				    int nvals)
-			__attribute__((nonnull));
+
+extern void blkid_probe_free_values_list(struct list_head *vals);
 
 extern struct blkid_chain *blkid_probe_get_chain(blkid_probe pr)
 			__attribute__((nonnull))
@@ -475,8 +493,13 @@ extern void *blkid_probe_get_binary_data(blkid_probe pr, struct blkid_chain *chn
 			__attribute__((nonnull))
 			__attribute__((warn_unused_result));
 
+extern struct blkid_prval *blkid_probe_new_val(void)
+			__attribute__((warn_unused_result));
 extern int blkid_probe_set_value(blkid_probe pr, const char *name,
-				unsigned char *data, size_t len)
+				const unsigned char *data, size_t len)
+			__attribute__((nonnull));
+extern int blkid_probe_value_set_data(struct blkid_prval *v,
+				const unsigned char *data, size_t len)
 			__attribute__((nonnull));
 
 extern int blkid_probe_vsprintf_value(blkid_probe pr, const char *name,
@@ -488,8 +511,8 @@ extern int blkid_probe_sprintf_value(blkid_probe pr, const char *name,
 			__attribute__((nonnull))
 			__attribute__ ((__format__ (__printf__, 3, 4)));
 
-extern int blkid_probe_set_magic(blkid_probe pr, blkid_loff_t offset,
-				size_t len, unsigned char *magic)
+extern int blkid_probe_set_magic(blkid_probe pr, uint64_t offset,
+				size_t len, const unsigned char *magic)
 			__attribute__((nonnull));
 
 extern int blkid_probe_verify_csum(blkid_probe pr, uint64_t csum, uint64_t expected)
@@ -504,15 +527,19 @@ extern size_t blkid_rtrim_whitespace(unsigned char *str)
 extern size_t blkid_ltrim_whitespace(unsigned char *str)
 			__attribute__((nonnull));
 
-extern void blkid_probe_set_wiper(blkid_probe pr, blkid_loff_t off,
-				  blkid_loff_t size)
+extern void blkid_probe_set_wiper(blkid_probe pr, uint64_t off,
+				  uint64_t size)
 			__attribute__((nonnull));
 extern int blkid_probe_is_wiped(blkid_probe pr, struct blkid_chain **chn,
-		                blkid_loff_t off, blkid_loff_t size)
+		                uint64_t off, uint64_t size)
 			__attribute__((nonnull))
 			__attribute__((warn_unused_result));
-extern void blkid_probe_use_wiper(blkid_probe pr, blkid_loff_t off, blkid_loff_t size)
+extern void blkid_probe_use_wiper(blkid_probe pr, uint64_t off, uint64_t size)
 			__attribute__((nonnull));
+
+extern int blkid_probe_get_hint(blkid_probe pr, const char *name, uint64_t *value)
+			__attribute__((nonnull(1,2)))
+			__attribute__((warn_unused_result));
 
 /* filter bitmap macros */
 #define blkid_bmp_wordsize		(8 * sizeof(unsigned long))
@@ -533,13 +560,5 @@ extern void blkid_probe_use_wiper(blkid_probe pr, blkid_loff_t off, blkid_loff_t
 
 #define blkid_bmp_nbytes(max_items) \
 		(blkid_bmp_nwords(max_items) * sizeof(unsigned long))
-
-/* encode.c */
-extern size_t blkid_encode_to_utf8(int enc, unsigned char *dest, size_t len,
-				const unsigned char *src, size_t count)
-			__attribute__((nonnull));
-
-#define BLKID_ENC_UTF16BE	0
-#define BLKID_ENC_UTF16LE	1
 
 #endif /* _BLKID_BLKIDP_H */

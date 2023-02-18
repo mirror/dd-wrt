@@ -1,166 +1,137 @@
-.\" Copyright (c) 1980, 1990 The Regents of the University of California.
-.\" All rights reserved.
+'\" t
+.\"     Title: whereis
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"     This product includes software developed by the University of
-.\"     California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\" @(#)whereis.1 from UCB 4.2
-.TH WHEREIS 1 "October 2014" "util-linux" "User Commands"
-.SH NAME
+.TH "WHEREIS" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 whereis \- locate the binary, source, and manual page files for a command
-.SH SYNOPSIS
-.B whereis
-[options]
-.RB [ \-BMS
-.IR directory "... " \fB\-f\fR ]
-.IR name ...
-.SH DESCRIPTION
-.B whereis
-locates the binary, source and manual files for the specified command names.
-The supplied names are first stripped of leading pathname components and any
-(single) trailing extension of the form
-.BI . ext
-(for example:
-.BR .c )
-Prefixes of
-.B s.
-resulting from use of source code control are also dealt with.
-.B whereis
-then attempts to locate the desired program in the standard Linux places, and
-in the places specified by
-.B $PATH
-and
-.BR $MANPATH .
+.SH "SYNOPSIS"
 .sp
-The search restrictions (options \fB\-b\fP, \fB\-m\fP and \fB\-s\fP)
-are cumulative and apply to the subsequent \fIname\fP patterns on
-the command line.  Any new search restriction resets the search mask.
-For example,
-.RS
+\fBwhereis\fP [options] [\fB\-BMS\fP \fIdirectory\fP... \fB\-f\fP] \fIname\fP...
+.SH "DESCRIPTION"
 .sp
-.B "whereis -bm ls tr -m gcc"
+\fBwhereis\fP locates the binary, source and manual files for the specified command names. The supplied names are first stripped of leading pathname components. Prefixes of \fBs.\fP resulting from use of source code control are also dealt with. \fBwhereis\fP then attempts to locate the desired program in the standard Linux places, and in the places specified by \fB$PATH\fP and \fB$MANPATH\fP.
 .sp
+The search restrictions (options \fB\-b\fP, \fB\-m\fP and \fB\-s\fP) are cumulative and apply to the subsequent \fIname\fP patterns on the command line. Any new search restriction resets the search mask. For example,
+.RS 3
+.ll -.6i
+.sp
+\fBwhereis \-bm ls tr \-m gcc\fP
+.br
 .RE
+.ll
+.sp
 searches for "ls" and "tr" binaries and man pages, and for "gcc" man pages only.
 .sp
-The options \fB\-B\fP, \fB\-M\fP and \fB\-S\fP reset search paths for the
-subsequent \fIname\fP patterns.  For example,
-.RS
+The options \fB\-B\fP, \fB\-M\fP and \fB\-S\fP reset search paths for the subsequent \fIname\fP patterns. For example,
+.RS 3
+.ll -.6i
 .sp
-.B "whereis -m ls -M /usr/share/man/man1 -f cal"
-.sp
-.RE
-searches for "ls" man pages in all default paths, but for "cal" in
-the /usr/share/man/man1 directory only.
-
-.SH OPTIONS
-.TP
-.IP \fB\-b\fP
-Search for binaries.
-.IP \fB\-m\fP
-Search for manuals.
-.IP \fB\-s\fP
-Search for sources.
-.IP \fB\-u\fP
-Only show the command names that have unusual entries.  A command is said to be
-unusual if it does not have just one entry of each explicitly requested type.
-Thus
-.RB ' "whereis \-m \-u *" '
-asks for those files in the current directory which have no documentation file,
-or more than one.
-.IP "\fB\-B \fIlist\fP"
-Limit the places where
-.B whereis
-searches for binaries, by a whitespace-separated list of directories.
-.IP "\fB\-M \fIlist\fP"
-Limit the places where
-.B whereis
-searches for manuals and documentation in Info format, by a
-whitespace-separated list of directories.
-.IP "\fB\-S \fIlist\fP"
-Limit the places where
-.B whereis
-searches for sources, by a whitespace-separated list of directories.
-.IP "\fB\-f\fP"
-Terminates the directory list and signals the start of filenames.  It
-.I must
-be used when any of the
-.BR \-B ,
-.BR \-M ,
-or
-.BR \-S
-options is used.
-.IP "\fB\-l"
-Output the list of effective lookup paths that
-.B whereis
-is using.  When none of
-.BR \-B ,
-.BR \-M ,
-or
-.BR \-S
-is specified, the option will output the hard-coded paths
-that the command was able to find on the system.
-.SH EXAMPLE
-To find all files in
-.B /usr/\:bin
-which are not documented
-in
-.B /usr/\:man/\:man1
-or have no source in
-.BR /usr/\:src :
-.IP
-.B cd /usr/bin
+\fBwhereis \-m ls \-M /usr/share/man/man1 \-f cal\fP
 .br
-.B whereis \-u \-ms \-M /usr/man/man1 \-S /usr/src \-f *
+.RE
+.ll
+.sp
+searches for "\fBls\fP" man pages in all default paths, but for "cal" in the \fI/usr/share/man/man1\fP directory only.
+.SH "OPTIONS"
+.sp
+\fB\-b\fP
+.RS 4
+Search for binaries.
+.RE
+.sp
+\fB\-m\fP
+.RS 4
+Search for manuals.
+.RE
+.sp
+\fB\-s\fP
+.RS 4
+Search for sources.
+.RE
+.sp
+\fB\-u\fP
+.RS 4
+Only show the command names that have unusual entries. A command is said to be unusual if it does not have just one entry of each explicitly requested type. Thus \(aq\fBwhereis \-m \-u *\fP\(aq asks for those files in the current directory which have no documentation file, or more than one.
+.RE
+.sp
+\fB\-B\fP \fIlist\fP
+.RS 4
+Limit the places where \fBwhereis\fP searches for binaries, by a whitespace\-separated list of directories.
+.RE
+.sp
+\fB\-M\fP \fIlist\fP
+.RS 4
+Limit the places where \fBwhereis\fP searches for manuals and documentation in Info format, by a whitespace\-separated list of directories.
+.RE
+.sp
+\fB\-S\fP \fIlist\fP
+.RS 4
+Limit the places where \fBwhereis\fP searches for sources, by a whitespace\-separated list of directories.
+.RE
+.sp
+\fB\-f\fP
+.RS 4
+Terminates the directory list and signals the start of filenames. It \fImust\fP be used when any of the \fB\-B\fP, \fB\-M\fP, or \fB\-S\fP options is used.
+.RE
+.sp
+\fB\-l\fP
+.RS 4
+Output the list of effective lookup paths that \fBwhereis\fP is using. When none of \fB\-B\fP, \fB\-M\fP, or \fB\-S\fP is specified, the option will output the hard\-coded paths that the command was able to find on the system.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
 .SH "FILE SEARCH PATHS"
-By default
-.B whereis
-tries to find files from hard-coded paths, which are defined with glob
-patterns.  The command attempst to use contents of
-.B $PATH
-and
-.B $MANPATH
-environment variables as default search path.  The easiest way to know
-what paths are in use is to add
-.B \-l
-listing option.  Effects of the
-.BR \-B ,
-.BR \-M ,
-and
-.BR \-S
-are display with
-.BR \-l .
-.PP
-.SH ENVIRONMENT
-.IP WHEREIS_DEBUG=all
+.sp
+By default \fBwhereis\fP tries to find files from hard\-coded paths, which are defined with glob patterns. The command attempts to use the contents of \fB$PATH\fP and \fB$MANPATH\fP environment variables as default search path. The easiest way to know what paths are in use is to add the \fB\-l\fP listing option. Effects of the \fB\-B\fP, \fB\-M\fP, and \fB\-S\fP are displayed with \fB\-l\fP.
+.SH "ENVIRONMENT"
+.sp
+\fBWHEREIS_DEBUG\fP=all
+.RS 4
 enables debug output.
-.SH AVAILABILITY
-The whereis command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.RE
+.SH "EXAMPLES"
+.sp
+To find all files in \fI/usr/bin\fP which are not documented in \fI/usr/man/man1\fP or have no source in \fI/usr/src\fP:
+.sp
+\fBcd /usr/bin\fP \fBwhereis \-u \-ms \-M /usr/man/man1 \-S /usr/src \-f *\fP
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBwhereis\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

@@ -170,7 +170,7 @@ static void ext_get_info(blkid_probe pr, int ver, struct ext2_super_block *es)
 		   le32_to_cpu(es->s_feature_incompat),
 		   le32_to_cpu(es->s_feature_ro_compat)));
 
-	if (strlen(es->s_volume_name))
+	if (*es->s_volume_name != '\0')
 		blkid_probe_set_label(pr, (unsigned char *) es->s_volume_name,
 					sizeof(es->s_volume_name));
 	blkid_probe_set_uuid(pr, es->s_uuid);
@@ -187,6 +187,9 @@ static void ext_get_info(blkid_probe pr, int ver, struct ext2_super_block *es)
 	blkid_probe_sprintf_version(pr, "%u.%u",
 		le32_to_cpu(es->s_rev_level),
 		le16_to_cpu(es->s_minor_rev_level));
+
+	if (le32_to_cpu(es->s_log_block_size) < 32)
+		blkid_probe_set_block_size(pr, 1024U << le32_to_cpu(es->s_log_block_size));
 }
 
 

@@ -31,13 +31,44 @@ _logger_module()
 			COMPREPLY=( $(compgen -W "$(awk '$NF ~ /^\// {print $NF}' /proc/net/unix)" -- $cur) )
 			return 0
 			;;
+		'--socket-errors')
+			COMPREPLY=( $(compgen -W "on off auto" -- $cur) )
+			return 0
+			;;
+		'--msgid')
+			COMPREPLY=( $(compgen -W "msgid" -- $cur) )
+			return 0
+			;;
 		'-h'|'--help'|'-V'|'--version')
 			return 0
 			;;
 	esac
 	case $cur in
 		-*)
-			OPTS="--journald --udp --id --file --help --server --skip-empty --port --priority --rfc3164 --rfc5424 --stderr --tag --size --socket --version"
+			OPTS="
+				--file
+				--help
+				--id
+				--journald
+				--msgid
+				--no-act
+				--octet-count
+				--port
+				--prio-prefix
+				--priority
+				--rfc3164
+				--rfc5424
+				--server
+				--size
+				--skip-empty
+				--socket
+				--socket-errors
+				--stderr
+				--tag
+				--tcp
+				--udp
+				--version
+			"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;

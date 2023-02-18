@@ -52,12 +52,17 @@
 #ifdef __linux__
 # include <sys/kd.h>
 # include <sys/param.h>
+# include <linux/serial.h>
 #endif
 
 #include "c.h"
 #include "closestream.h"
+#include "env.h"
 #include "nls.h"
 #include "pathnames.h"
+#ifdef USE_PLYMOUTH_SUPPORT
+# include "plymouth-ctrl.h"
+#endif
 #include "strutils.h"
 #include "ttyutils.h"
 #include "sulogin-consoles.h"
@@ -66,68 +71,50 @@
 static unsigned int timeout;
 static int profile;
 static volatile uint32_t openfd;		/* Remember higher file descriptors */
-static volatile uint32_t *usemask;
 
-struct sigaction saved_sigint;
-struct sigaction saved_sigtstp;
-struct sigaction saved_sigquit;
-struct sigaction saved_sighup;
-struct sigaction saved_sigchld;
+static struct sigaction saved_sigint;
+static struct sigaction saved_sigtstp;
+static struct sigaction saved_sigquit;
+static struct sigaction saved_sighup;
+static struct sigaction saved_sigchld;
 
 static volatile sig_atomic_t alarm_rised;
 static volatile sig_atomic_t sigchild;
+
+#define SULOGIN_PASSWORD_BUFSIZ	128
 
 #ifndef IUCLC
 # define IUCLC		0
 #endif
 
-#ifdef TIOCGLCKTRMIOS
-/*
- * For the case plymouth is found on this system
- */
-static int plymouth_command(const char* arg)
-{
-	const char *cmd = "/usr/bin/plymouth";
-	static int has_plymouth = 1;
-	pid_t pid;
-
-	if (!has_plymouth)
-		return 127;
-
-	pid = fork();
-	if (!pid) {
-		int fd = open("/dev/null", O_RDWR);
-		if (fd < 0)
-			exit(127);
-		dup2(fd, 0);
-		dup2(fd, 1);
-		dup2(fd, 2);
-		close(fd);
-		execl(cmd, cmd, arg, (char *) NULL);
-		exit(127);
-	} else if (pid > 0) {
-		int status;
-		waitpid(pid, &status, 0);
-		if (status == 127)
-			has_plymouth = 0;
-		return status;
-	}
-	return 1;
-}
+#ifndef WEXITED
+# warning "WEXITED is missing, sulogin may not work as expected"
+# define WEXITED 0
 #endif
+
+static int locked_account_password(const char * const passwd)
+{
+	if (passwd && (*passwd == '*' || *passwd == '!'))
+		return 1;
+	return 0;
+}
 
 /*
  * Fix the tty modes and set reasonable defaults.
  */
 static void tcinit(struct console *con)
 {
-	int mode = 0, flags = 0;
+	int flags = 0, mode = 0;
 	struct termios *tio = &con->tio;
+	const int fd = con->fd;
+#if defined(TIOCGSERIAL)
+	struct serial_struct serinfo;
+#endif
+#ifdef USE_PLYMOUTH_SUPPORT
 	struct termios lock;
-	int fd = con->fd;
-#ifdef TIOCGLCKTRMIOS
-	int i = (plymouth_command("--ping")) ? 20 : 0;
-
+	int i = (plymouth_command(MAGIC_PING)) ? PLYMOUTH_TERMIOS_FLAGS_DELAY : 0;
+	if (i)
+		plymouth_command(MAGIC_QUIT);
 	while (i-- > 0) {
 		/*
 		 * With plymouth the termios flags become changed after this
@@ -138,33 +125,75 @@ static void tcinit(struct console *con)
 			break;
 		if (!lock.c_iflag && !lock.c_oflag && !lock.c_cflag && !lock.c_lflag)
 			break;
-		if (i == 15 && plymouth_command("quit") != 0)
-			break;
 		sleep(1);
 	}
 	memset(&lock, 0, sizeof(struct termios));
 	ioctl(fd, TIOCSLCKTRMIOS, &lock);
+	errno = 0;
 #endif
 
+#if defined(TIOCGSERIAL)
+	if (ioctl(fd, TIOCGSERIAL,  &serinfo) >= 0)
+		con->flags |= CON_SERIAL;
 	errno = 0;
+#else
+# if defined(KDGKBMODE)
+	if (ioctl(fd, KDGKBMODE, &mode) < 0)
+		con->flags |= CON_SERIAL;
+	errno = 0;
+# endif
+#endif
 
 	if (tcgetattr(fd, tio) < 0) {
-		warn(_("tcgetattr failed"));
-		con->flags |= CON_NOTTY;
-		return;
+		int saveno = errno;
+#if defined(KDGKBMODE) || defined(TIOCGSERIAL)
+		if (con->flags & CON_SERIAL) {			/* Try to recover this */
+
+# if defined(TIOCGSERIAL)
+			serinfo.flags |= ASYNC_SKIP_TEST;	/* Skip test of UART */
+
+			if (ioctl(fd, TIOCSSERIAL, &serinfo) < 0)
+				goto tcgeterr;
+			if (ioctl(fd, TIOCSERCONFIG) < 0)	/* Try to autoconfigure */
+				goto tcgeterr;
+			if (ioctl(fd, TIOCGSERIAL,  &serinfo) < 0)
+				goto tcgeterr;			/* Ouch */
+# endif
+			if (tcgetattr(fd, tio) < 0)		/* Retry to get tty attributes */
+				saveno = errno;
+		}
+# if defined(TIOCGSERIAL)
+	tcgeterr:
+# endif
+		if (saveno)
+#endif
+		{
+			FILE *fcerr = fdopen(fd, "w");
+			if (fcerr) {
+				fprintf(fcerr, _("tcgetattr failed"));
+				fclose(fcerr);
+			}
+			warn(_("tcgetattr failed"));
+
+			con->flags &= ~CON_SERIAL;
+			if (saveno != EIO)
+				con->flags |= CON_NOTTY;
+			else
+				con->flags |= CON_EIO;
+
+			errno = 0;
+			return;
+		}
 	}
 
 	/* Handle lines other than virtual consoles here */
-#if defined(KDGKBMODE)
-	if (ioctl(fd, KDGKBMODE, &mode) < 0)
+#if defined(KDGKBMODE) || defined(TIOCGSERIAL)
+	if (con->flags & CON_SERIAL)
 #endif
 	{
 		speed_t ispeed, ospeed;
 		struct winsize ws;
 		errno = 0;
-
-		/* this is a modem line */
-		con->flags |= CON_SERIAL;
 
 		/* Flush input and output queues on modem lines */
 		tcflush(fd, TCIOFLUSH);
@@ -190,16 +219,17 @@ static void tcinit(struct console *con)
 		tio->c_cc[VMIN]     = 1;
 
 		if (ioctl(fd, TIOCGWINSZ, &ws) == 0) {
-			int set = 0;
+			int update = 0;
+
 			if (ws.ws_row == 0) {
 				ws.ws_row = 24;
-				set++;
+				update++;
 			}
 			if (ws.ws_col == 0) {
 				ws.ws_col = 80;
-				set++;
+				update++;
 			}
-			if (set)
+			if (update)
 				ignore_result( ioctl(fd, TIOCSWINSZ, &ws) );
 		}
 
@@ -238,26 +268,25 @@ setattr:
  */
 static void tcfinal(struct console *con)
 {
-	struct termios *tio;
-	int fd;
+	struct termios *tio = &con->tio;
+	const int fd = con->fd;
 
+	if (con->flags & CON_EIO)
+		return;
 	if ((con->flags & CON_SERIAL) == 0) {
-		setenv("TERM", "linux", 1);
+		xsetenv("TERM", "linux", 1);
 		return;
 	}
 	if (con->flags & CON_NOTTY) {
-		setenv("TERM", "dumb", 1);
+		xsetenv("TERM", "dumb", 1);
 		return;
 	}
 
 #if defined (__s390__) || defined (__s390x__)
-	setenv("TERM", "dumb", 1);
+	xsetenv("TERM", "dumb", 1);
 #else
-	setenv("TERM", "vt102", 1);
+	xsetenv("TERM", "vt102", 1);
 #endif
-	tio = &con->tio;
-	fd = con->fd;
-
 	tio->c_iflag |= (IXON | IXOFF);
 	tio->c_lflag |= (ICANON | ISIG | ECHO|ECHOE|ECHOK|ECHOKE);
 	tio->c_oflag |= OPOST;
@@ -292,11 +321,11 @@ static void tcfinal(struct console *con)
 		break;
 	case 1:				/* odd parity */
 		tio->c_cflag |= PARODD;
-		/* fall through */
+		/* fallthrough */
 	case 2:				/* even parity */
 		tio->c_cflag |= PARENB;
 		tio->c_iflag |= (INPCK | ISTRIP);
-		/* fall through */
+		/* fallthrough */
 	case (1 | 2):			/* no parity bit */
 		tio->c_cflag &= ~CSIZE;
 		tio->c_cflag |= CS7;
@@ -435,8 +464,8 @@ static struct passwd *getrootpwent(int try_manually)
 	struct passwd *pw;
 	struct spwd *spw;
 	FILE *fp;
-	static char line[256];
-	static char sline[256];
+	static char line[2 * BUFSIZ];
+	static char sline[2 * BUFSIZ];
 	char *p;
 
 	/*
@@ -472,7 +501,7 @@ static struct passwd *getrootpwent(int try_manually)
 	/*
 	 * Find root in the password file.
 	 */
-	while ((p = fgets(line, 256, fp)) != NULL) {
+	while ((p = fgets(line, sizeof(line), fp)) != NULL) {
 		if (strncmp(line, "root:", 5) != 0)
 			continue;
 		p += 5;
@@ -485,7 +514,6 @@ static struct passwd *getrootpwent(int try_manually)
 		p = line;
 		break;
 	}
-
 	fclose(fp);
 
 	/*
@@ -501,12 +529,12 @@ static struct passwd *getrootpwent(int try_manually)
 	/*
 	 * The password is invalid. If there is a shadow password, try it.
 	 */
-	strcpy(pwd.pw_passwd, "");
+	*pwd.pw_passwd = '\0';
 	if ((fp = fopen(_PATH_SHADOW_PASSWD, "r")) == NULL) {
 		warn(_("cannot open %s"), _PATH_PASSWD);
 		return &pwd;
 	}
-	while ((p = fgets(sline, 256, fp)) != NULL) {
+	while ((p = fgets(sline, sizeof(sline), fp)) != NULL) {
 		if (strncmp(sline, "root:", 5) != 0)
 			continue;
 		p += 5;
@@ -520,11 +548,12 @@ static struct passwd *getrootpwent(int try_manually)
 	 */
 	if (p == NULL) {
 		warnx(_("%s: no entry for root"), _PATH_SHADOW_PASSWD);
-		strcpy(pwd.pw_passwd, "");
+		*pwd.pw_passwd = '\0';
 	}
-	if (!valid(pwd.pw_passwd)) {
+	/* locked account passwords are valid too */
+	if (!locked_account_password(pwd.pw_passwd) && !valid(pwd.pw_passwd)) {
 		warnx(_("%s: root password garbled"), _PATH_SHADOW_PASSWD);
-		strcpy(pwd.pw_passwd, "");
+		*pwd.pw_passwd = '\0';
 	}
 	return &pwd;
 }
@@ -532,7 +561,7 @@ static struct passwd *getrootpwent(int try_manually)
 /*
  * Ask by prompt for the password.
  */
-static void doprompt(const char *crypted, struct console *con)
+static void doprompt(const char *crypted, struct console *con, int deny)
 {
 	struct termios tty;
 
@@ -545,22 +574,30 @@ static void doprompt(const char *crypted, struct console *con)
 		tty.c_oflag |= (ONLCR | OPOST);
 		tcsetattr(con->fd, TCSADRAIN, &tty);
 	}
-	if (con->file == (FILE*)0) {
-		if  ((con->file = fdopen(con->fd, "r+")) == (FILE*)0)
+	if (!con->file) {
+		con->file = fdopen(con->fd, "r+");
+		if (!con->file)
 			goto err;
 	}
+
+	if (deny)
+		fprintf(con->file, _("\nCannot open access to console, the root account is locked.\n"
+				     "See sulogin(8) man page for more details.\n\n"
+				     "Press Enter to continue.\n"));
+	else {
 #if defined(USE_ONELINE)
-	if (crypted[0])
-		fprintf(con->file, _("Give root password for login: "));
-	else
-		fprintf(con->file, _("Press Enter for login: "));
+		if (crypted[0] && !locked_account_password(crypted))
+			fprintf(con->file, _("Give root password for login: "));
+		else
+			fprintf(con->file, _("Press Enter for login: "));
 #else
-	if (crypted[0])
-		fprintf(con->file, _("Give root password for maintenance\n"));
-	else
-		fprintf(con->file, _("Press Enter for maintenance"));
-	fprintf(con->file, _("(or press Control-D to continue): "));
+		if (crypted[0] && !locked_account_password(crypted))
+			fprintf(con->file, _("Give root password for maintenance\n"));
+		else
+			fprintf(con->file, _("Press Enter for maintenance\n"));
+		fprintf(con->file, _("(or press Control-D to continue): "));
 #endif
+	}
 	fflush(con->file);
 err:
 	if (con->flags & CON_SERIAL)
@@ -572,22 +609,21 @@ err:
  */
 static void setup(struct console *con)
 {
-	pid_t pid, pgrp, ppgrp, ttypgrp;
-	int fd;
+	int fd = con->fd;
+	const pid_t pid = getpid(), pgrp = getpgid(0), ppgrp = getpgid(getppid());
+	pid_t ttypgrp;
 
 	if (con->flags & CON_NOTTY)
+		goto notty;
+	if (con->flags & CON_EIO)
 		return;
-	fd = con->fd;
+
+	ttypgrp = tcgetpgrp(fd);
 
 	/*
 	 * Only go through this trouble if the new
 	 * tty doesn't fall in this process group.
 	 */
-	pid = getpid();
-	pgrp = getpgid(0);
-	ppgrp = getpgid(getppid());
-	ttypgrp = tcgetpgrp(fd);
-
 	if (pgrp != ttypgrp && ppgrp != ttypgrp) {
 		if (pid != getsid(0)) {
 			if (pid == getpgid(0))
@@ -606,6 +642,7 @@ static void setup(struct console *con)
 		ioctl(fd, TIOCSCTTY, (char *)1);
 		tcsetpgrp(fd, ppgrp);
 	}
+notty:
 	dup2(fd, STDIN_FILENO);
 	dup2(fd, STDOUT_FILENO);
 	dup2(fd, STDERR_FILENO);
@@ -627,23 +664,27 @@ static char *getpasswd(struct console *con)
 {
 	struct sigaction sa;
 	struct termios tty;
-	static char pass[128], *ptr;
+	static char pass[SULOGIN_PASSWORD_BUFSIZ], *ptr;
 	struct chardata *cp;
-	char *ret = pass;
+	char *ret = NULL;
 	unsigned char tc;
 	char c, ascval;
 	int eightbit;
-	int fd;
+	const int fd = con->fd;
 
-	if (con->flags & CON_NOTTY)
+	if (con->flags & CON_EIO)
 		goto out;
-	fd = con->fd;
+
 	cp = &con->cp;
 	tty = con->tio;
+	tc = 0;
+	ret = pass;
 
 	tty.c_iflag &= ~(IUCLC|IXON|IXOFF|IXANY);
 	tty.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|TOSTOP|ISIG);
-	tc = (tcsetattr(fd, TCSAFLUSH, &tty) == 0);
+
+	if ((con->flags & CON_NOTTY) == 0)
+		tc = (tcsetattr(fd, TCSAFLUSH, &tty) == 0);
 
 	sigemptyset(&sa.sa_mask);
 	sa.sa_handler = alrm_handler;
@@ -657,22 +698,29 @@ static char *getpasswd(struct console *con)
 	cp->eol = *ptr = '\0';
 
 	eightbit = ((con->flags & CON_SERIAL) == 0 || (tty.c_cflag & (PARODD|PARENB)) == 0);
+
 	while (cp->eol == '\0') {
+		errno = 0;
+
 		if (read(fd, &c, 1) < 1) {
 			if (errno == EINTR || errno == EAGAIN) {
+				if (alarm_rised) {
+					ret = NULL;
+					goto quit;
+				}
 				xusleep(250000);
 				continue;
 			}
-			ret = (char*)0;
+			ret = NULL;
+
 			switch (errno) {
-			case 0:
 			case EIO:
-			case ESRCH:
-			case EINVAL:
-			case ENOENT:
-				break;
+				con->flags |= CON_EIO;
+				/* fallthrough */
 			default:
 				warn(_("cannot read %s"), con->tty);
+				break;
+			case 0:
 				break;
 			}
 			goto quit;
@@ -710,11 +758,12 @@ static char *getpasswd(struct console *con)
 				ptr--;
 			break;
 		case CEOF:
+			ret = NULL;
 			goto quit;
 		default:
 			if ((size_t)(ptr - &pass[0]) >= (sizeof(pass) -1 )) {
 				 fprintf(stderr, "sulogin: input overrun at %s\n\r", con->tty);
-				 ret = (char*)0;
+				 ret = NULL;
 				 goto quit;
 			}
 			*ptr++ = ascval;
@@ -725,10 +774,13 @@ quit:
 	alarm(0);
 	if (tc)
 		tcsetattr(fd, TCSAFLUSH, &con->tio);
-	if (ret && *ret != '\0')
-		tcfinal(con);
+	tcfinal(con);
 	printf("\r\n");
 out:
+#ifdef HAVE_EXPLICIT_BZERO
+	if (ret == NULL)
+		explicit_bzero(pass, sizeof(pass));
+#endif
 	return ret;
 }
 
@@ -739,8 +791,8 @@ static void sushell(struct passwd *pwd)
 {
 	char shell[PATH_MAX];
 	char home[PATH_MAX];
-	char *p;
-	char *su_shell;
+	char const *p;
+	char const *su_shell;
 
 	/*
 	 * Set directory and shell.
@@ -776,16 +828,16 @@ static void sushell(struct passwd *pwd)
 	if (getcwd(home, sizeof(home)) == NULL)
 		strcpy(home, "/");
 
-	setenv("HOME", home, 1);
-	setenv("LOGNAME", "root", 1);
-	setenv("USER", "root", 1);
+	xsetenv("HOME", home, 1);
+	xsetenv("LOGNAME", "root", 1);
+	xsetenv("USER", "root", 1);
 	if (!profile)
-		setenv("SHLVL","0",1);
+		xsetenv("SHLVL","0",1);
 
 	/*
 	 * Try to execute a shell.
 	 */
-	setenv("SHELL", su_shell, 1);
+	xsetenv("SHELL", su_shell, 1);
 	unmask_signal(SIGINT, &saved_sigint);
 	unmask_signal(SIGTSTP, &saved_sigtstp);
 	unmask_signal(SIGQUIT, &saved_sigquit);
@@ -793,9 +845,10 @@ static void sushell(struct passwd *pwd)
 
 #ifdef HAVE_LIBSELINUX
 	if (is_selinux_enabled() > 0) {
-		security_context_t scon=NULL;
-		char *seuser=NULL;
-		char *level=NULL;
+		char *scon = NULL;
+		char *seuser = NULL;
+		char *level = NULL;
+
 		if (getseuserbyname("root", &seuser, &level) == 0) {
 			if (get_default_context_with_level(seuser, level, 0, &scon) == 0) {
 				if (setexeccon(scon) != 0)
@@ -807,16 +860,17 @@ static void sushell(struct passwd *pwd)
 		free(level);
 	}
 #endif
-	execl(su_shell, shell, NULL);
+	execl(su_shell, shell, (char *)NULL);
 	warn(_("failed to execute %s"), su_shell);
 
-	setenv("SHELL", "/bin/sh", 1);
-	execl("/bin/sh", profile ? "-sh" : "sh", NULL);
+	xsetenv("SHELL", "/bin/sh", 1);
+	execl("/bin/sh", profile ? "-sh" : "sh", (char *)NULL);
 	warn(_("failed to execute %s"), "/bin/sh");
 }
 
-static void usage(FILE *out)
+static void usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(
 		" %s [options] [tty device]\n"), program_invocation_short_name);
@@ -831,34 +885,39 @@ static void usage(FILE *out)
 		out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("sulogin(8)"));
+	printf(USAGE_HELP_OPTIONS(26));
+	printf(USAGE_MAN_TAIL("sulogin(8)"));
+
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
 {
-	LIST_HEAD(consoles);
-	struct list_head *ptr;
+	struct list_head *ptr, consoles;
 	struct console *con;
 	char *tty = NULL;
 	struct passwd *pwd;
-	int c, status = 0;
-	int reconnect = 0;
+	const struct timespec sigwait = { .tv_sec = 0, .tv_nsec = 50000000 };
+	siginfo_t status = { 0 };
+	sigset_t set;
+	int c, reconnect = 0;
 	int opt_e = 0;
+	int wait = 0;
 	pid_t pid;
 
 	static const struct option longopts[] = {
-		{ "login-shell",  0, 0, 'p' },
-		{ "timeout",      1, 0, 't' },
-		{ "force",        0, 0, 'e' },
-		{ "help",         0, 0, 'h' },
-		{ "version",      0, 0, 'V' },
-		{ NULL,           0, 0, 0 }
+		{ "login-shell",  no_argument,       NULL, 'p' },
+		{ "timeout",      required_argument, NULL, 't' },
+		{ "force",        no_argument,       NULL, 'e' },
+		{ "help",         no_argument,       NULL, 'h' },
+		{ "version",      no_argument,       NULL, 'V' },
+		{ NULL, 0, NULL, 0 }
 	};
 
+	INIT_LIST_HEAD(&consoles);
+
 	/*
-	 * If we are init we need to set up a own session.
+	 * If we are init we need to set up an own session.
 	 */
 	if ((pid = getpid()) == 1) {
 		setsid();
@@ -868,7 +927,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout); /* XXX */
+	close_stdout_atexit();
 
 	/*
 	 * See if we have a timeout flag.
@@ -885,14 +944,11 @@ int main(int argc, char **argv)
 			opt_e = 1;
 			break;
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
-			return EXIT_SUCCESS;
+			usage();
 		default:
-			usage(stderr);
-			/* Do not exit! */
+			/* Do not exit! getopt prints a warning. */
 			break;
 		}
 	}
@@ -925,7 +981,7 @@ int main(int argc, char **argv)
 	reconnect = detect_consoles(tty, STDIN_FILENO, &consoles);
 
 	/*
-	 * If previous stdin was not the speified tty and therefore reconnected
+	 * If previous stdin was not the specified tty and therefore reconnected
 	 * to the specified tty also reconnect stdout and stderr.
 	 */
 	if (reconnect) {
@@ -971,37 +1027,46 @@ int main(int argc, char **argv)
 		tcinit(con);
 	}
 	ptr = (&consoles)->next;
-	usemask = (uint32_t*) mmap(NULL, sizeof(uint32_t),
-					PROT_READ|PROT_WRITE,
-					MAP_ANONYMOUS|MAP_SHARED, -1, 0);
 
 	if (ptr->next == &consoles) {
 		con = list_entry(ptr, struct console, entry);
 		goto nofork;
 	}
 
+
 	mask_signal(SIGCHLD, chld_handler, &saved_sigchld);
 	do {
 		con = list_entry(ptr, struct console, entry);
 		if (con->id >= CONMAX)
 			break;
+		if (con->flags & CON_EIO)
+			goto next;
 
 		switch ((con->pid = fork())) {
 		case 0:
 			mask_signal(SIGCHLD, SIG_DFL, NULL);
-			/* fall through */
+			dup2(con->fd, STDERR_FILENO);
 		nofork:
 			setup(con);
 			while (1) {
 				const char *passwd = pwd->pw_passwd;
-				const char *answer;
-				int failed = 0, doshell = 0;
+				char *answer;
+				int doshell = 0;
+				int deny = !opt_e && locked_account_password(pwd->pw_passwd);
 
-				doprompt(passwd, con);
+				doprompt(passwd, con, deny);
+
 				if ((answer = getpasswd(con)) == NULL)
 					break;
+				if (deny) {
+#ifdef HAVE_EXPLICIT_BZERO
+					explicit_bzero(answer, SULOGIN_PASSWORD_BUFSIZ);
+#endif
+					exit(EXIT_FAILURE);
+				}
 
-				if (passwd[0] == '\0')
+				/* no password or locked account */
+				if (!passwd[0] || locked_account_password(passwd))
 					doshell++;
 				else {
 					const char *cryptbuf;
@@ -1011,20 +1076,18 @@ int main(int argc, char **argv)
 					else if (strcmp(cryptbuf, pwd->pw_passwd) == 0)
 						doshell++;
 				}
-
+#ifdef HAVE_EXPLICIT_BZERO
+				explicit_bzero(answer, SULOGIN_PASSWORD_BUFSIZ);
+#endif
 				if (doshell) {
-					*usemask |= (1<<con->id);
+					/* sushell() unmask signals */
 					sushell(pwd);
-					*usemask &= ~(1<<con->id);
-					failed++;
-				}
 
-				mask_signal(SIGQUIT, SIG_IGN, &saved_sigquit);
-				mask_signal(SIGTSTP, SIG_IGN, &saved_sigtstp);
-				mask_signal(SIGINT,  SIG_IGN, &saved_sigint);
+					mask_signal(SIGQUIT, SIG_IGN, &saved_sigquit);
+					mask_signal(SIGTSTP, SIG_IGN, &saved_sigtstp);
+					mask_signal(SIGINT,  SIG_IGN, &saved_sigint);
 
-				if (failed) {
-					fprintf(stderr, _("Can not execute su shell\n\n"));
+					fprintf(stderr, _("cannot execute su shell\n\n"));
 					break;
 				}
 				fprintf(stderr, _("Login incorrect\n\n"));
@@ -1039,37 +1102,89 @@ int main(int argc, char **argv)
 			exit(0);
 		case -1:
 			warn(_("fork failed"));
-			/* fall through */
+			/* fallthrough */
 		default:
 			break;
 		}
-
+	next:
 		ptr = ptr->next;
 
 	} while (ptr != &consoles);
 
-	while ((pid = wait(&status))) {
-		if (errno == ECHILD)
+	do {
+		int ret;
+
+		status.si_pid = 0;
+		ret = waitid(P_ALL, 0, &status, WEXITED);
+
+		if (ret == 0)
 			break;
-		if (pid < 0)
+		if (ret < 0) {
+			if (errno == ECHILD)
+				break;
+			if (errno == EINTR)
+				continue;
+		}
+
+		errx(EXIT_FAILURE, _("cannot wait on su shell\n\n"));
+
+	} while (1);
+
+	list_for_each(ptr, &consoles) {
+		con = list_entry(ptr, struct console, entry);
+
+		if (con->fd < 0)
 			continue;
-		list_for_each(ptr, &consoles) {
-			con = list_entry(ptr, struct console, entry);
-			if (con->pid == pid) {
-				*usemask &= ~(1<<con->id);
-				continue;
-			}
-			if (kill(con->pid, 0) < 0) {
-				*usemask &= ~(1<<con->id);
-				continue;
-			}
-			if (*usemask & (1<<con->id))
-				continue;
-			kill(con->pid, SIGHUP);
-			xusleep(50000);
-			kill(con->pid, SIGKILL);
+		if (con->pid < 0)
+			continue;
+		if (con->pid == status.si_pid)
+			con->pid = -1;
+		else {
+			kill(con->pid, SIGTERM);
+			wait++;
 		}
 	}
+
+	sigemptyset(&set);
+	sigaddset(&set, SIGCHLD);
+
+	do {
+		int signum, ret;
+
+		if (!wait)
+			break;
+
+		status.si_pid = 0;
+		ret = waitid(P_ALL, 0, &status, WEXITED|WNOHANG);
+
+		if (ret < 0) {
+			if (errno == ECHILD)
+				break;
+			if (errno == EINTR)
+				continue;
+		}
+
+		if (!ret && status.si_pid > 0) {
+			list_for_each(ptr, &consoles) {
+				con = list_entry(ptr, struct console, entry);
+
+				if (con->fd < 0)
+					continue;
+				if (con->pid < 0)
+					continue;
+				if (con->pid == status.si_pid) {
+					con->pid = -1;
+					wait--;
+				}
+			}
+			continue;
+		}
+
+		signum = sigtimedwait(&set, NULL, &sigwait);
+		if (signum != SIGCHLD && signum < 0 && errno == EAGAIN)
+			break;
+
+	} while (1);
 
 	mask_signal(SIGCHLD, SIG_DFL, NULL);
 	return EXIT_SUCCESS;

@@ -59,6 +59,9 @@ static int verify_tag(const char *devname, const char *name, const char *value)
 	const char *data;
 	int errsv = 0;
 
+	if (strcmp(token, "ID") == 0)
+		return 0; /* non-content tag */
+
 	pr = blkid_new_probe();
 	if (!pr)
 		return -1;
@@ -70,7 +73,7 @@ static int verify_tag(const char *devname, const char *name, const char *value)
 	blkid_probe_enable_partitions(pr, TRUE);
 	blkid_probe_set_partitions_flags(pr, BLKID_PARTS_ENTRY_DETAILS);
 
-	fd = open(devname, O_RDONLY|O_CLOEXEC);
+	fd = open(devname, O_RDONLY|O_CLOEXEC|O_NONBLOCK);
 	if (fd < 0) {
 		errsv = errno;
 		goto done;
@@ -128,7 +131,7 @@ int blkid_send_uevent(const char *devname, const char *action)
 			DBG(EVALUATE, ul_debug("write failed: %s", uevent));
 	}
 	DBG(EVALUATE, ul_debug("%s: send uevent %s",
-			uevent, rc == 0 ? "SUCCES" : "FAILED"));
+			uevent, rc == 0 ? "SUCCESS" : "FAILED"));
 	return rc;
 }
 
@@ -149,6 +152,8 @@ static char *evaluate_by_udev(const char *token, const char *value, int uevent)
 		strcpy(dev, _PATH_DEV_BYPARTLABEL "/");
 	else if (!strcmp(token, "PARTUUID"))
 		strcpy(dev, _PATH_DEV_BYPARTUUID "/");
+	else if (!strcmp(token, "ID"))
+		strcpy(dev, _PATH_DEV_BYID "/");
 	else {
 		DBG(EVALUATE, ul_debug("unsupported token %s", token));
 		return NULL;	/* unsupported tag */
@@ -195,8 +200,10 @@ static char *evaluate_by_scan(const char *token, const char *value,
 
 	if (!c) {
 		char *cachefile = blkid_get_cache_filename(conf);
-		blkid_get_cache(&c, cachefile);
+		int rc = blkid_get_cache(&c, cachefile);
 		free(cachefile);
+		if (rc < 0)
+			return NULL;
 	}
 	if (!c)
 		return NULL;
@@ -240,8 +247,7 @@ char *blkid_evaluate_tag(const char *token, const char *value, blkid_cache *cach
 			ret = strdup(token);
 			goto out;
 		}
-		blkid_parse_tag_string(token, &t, &v);
-		if (!t || !v)
+		if (blkid_parse_tag_string(token, &t, &v) != 0 || !t || !v)
 			goto out;
 		token = t;
 		value = v;

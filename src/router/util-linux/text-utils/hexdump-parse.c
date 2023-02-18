@@ -78,7 +78,7 @@ void addfile(char *name, struct hexdump *hex)
 {
 	char *fmt, *buf = NULL;
 	FILE *fp;
-	size_t n;
+	size_t n = 0;
 
 	if ((fp = fopen(name, "r")) == NULL)
 	        err(EXIT_FAILURE, _("can't read %s"), name);
@@ -96,6 +96,18 @@ void addfile(char *name, struct hexdump *hex)
 
 	free(buf);
 	fclose(fp);
+}
+
+static char *next_number(const char *str, int *num)
+{
+	char *end = NULL;
+
+	errno = 0;
+	*num = strtol(str, &end, 10);
+
+	if (errno || !end || end == str)
+		return NULL;
+	return end;
 }
 
 void add_fmt(const char *fmt, struct hexdump *hex)
@@ -127,13 +139,11 @@ void add_fmt(const char *fmt, struct hexdump *hex)
 
 		/* If leading digit, repetition count. */
 		if (isdigit(*p)) {
-			savep = p;
-			while (isdigit(*p) && ++p)
-				;
-			if (!isspace(*p) && *p != '/')
+			p = next_number(p, &tfu->reps);
+			if (!p || (!isspace(*p) && *p != '/'))
 				badfmt(fmt);
+
 			/* may overwrite either white space or slash */
-			tfu->reps = atoi(savep);
 			tfu->flags = F_SETREP;
 			/* skip trailing white space */
 			p = skip_space(++p);
@@ -145,12 +155,9 @@ void add_fmt(const char *fmt, struct hexdump *hex)
 
 		/* byte count */
 		if (isdigit(*p)) {
-			savep = p;
-			while (isdigit(*p) && ++p)
-				;
-			if (!isspace(*p))
+			p = next_number(p, &tfu->bcnt);
+			if (!p || !isspace(*p))
 				badfmt(fmt);
-			tfu->bcnt = atoi(savep);
 			/* skip trailing white space */
 			p = skip_space(++p);
 		}
@@ -199,11 +206,8 @@ int block_size(struct hexdump_fs *fs)
 			 */
 			while (strchr(spec + 1, *++fmt))
 				;
-			if (*fmt == '.' && isdigit(*++fmt)) {
-				prec = atoi(fmt);
-				while (isdigit(*++fmt))
-					;
-			}
+			if (*fmt == '.' && isdigit(*++fmt))
+				fmt = next_number(fmt, &prec);
 			if (first_letter(fmt, "diouxX"))
 				bcnt += 4;
 			else if (first_letter(fmt, "efgEG"))
@@ -261,7 +265,7 @@ void rewrite_rules(struct hexdump_fs *fs, struct hexdump *hex)
 			if (fu->bcnt) {
 				sokay = USEBCNT;
 				/* skip to conversion character */
-				while (++p1 && strchr(spec, *p1))
+				for (p1++; strchr(spec, *p1); p1++)
 					;
 			} else {
 				/* skip any special chars, field width */
@@ -269,9 +273,7 @@ void rewrite_rules(struct hexdump_fs *fs, struct hexdump *hex)
 					;
 				if (*p1 == '.' && isdigit(*++p1)) {
 					sokay = USEPREC;
-					prec = atoi(p1);
-					while (isdigit(*++p1))
-						;
+					p1 = next_number(p1, &prec);
 				} else
 					sokay = NOTOKAY;
 			}
@@ -351,7 +353,7 @@ isint:				cs[3] = '\0';
 					case 'A':
 						endfu = fu;
 						fu->flags |= F_IGNORE;
-						/* FALLTHROUGH */
+						/* fallthrough */
 					case 'a':
 						pr->flags = F_ADDRESS;
 						++p2;
@@ -460,15 +462,14 @@ isint:				cs[3] = '\0';
 			fs->bcnt < hex->blocksize &&
 			!(fu->flags&F_SETREP) && fu->bcnt)
 				fu->reps += (hex->blocksize - fs->bcnt) / fu->bcnt;
-		if (fu->reps > 1) {
-			if (!list_empty(&fu->prlist)) {
-				pr = list_last_entry(&fu->prlist,
-				  struct hexdump_pr, prlist);
-				for (p1 = pr->fmt, p2 = NULL; *p1; ++p1)
-					p2 = isspace(*p1) ? p1 : NULL;
-				if (p2)
-					pr->nospace = p2;
-			}
+		if (fu->reps > 1 && !list_empty(&fu->prlist)) {
+			pr = list_last_entry(&fu->prlist, struct hexdump_pr, prlist);
+			if (!pr)
+				continue;
+			for (p1 = pr->fmt, p2 = NULL; *p1; ++p1)
+				p2 = isspace(*p1) ? p1 : NULL;
+			if (p2)
+				pr->nospace = p2;
 		}
 	}
 }

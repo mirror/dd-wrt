@@ -18,9 +18,6 @@
 /* gfs1 constants: */
 #define GFS_FORMAT_FS           1309
 #define GFS_FORMAT_MULTI        1401
-/* gfs2 constants: */
-#define GFS2_FORMAT_FS          1801
-#define GFS2_FORMAT_MULTI       1900
 
 struct gfs2_meta_header {
 	uint32_t mh_magic;
@@ -54,9 +51,11 @@ struct gfs2_sb {
 	char sb_locktable[GFS_LOCKNAME_LEN];
 
 	struct gfs2_inum __pad3; /* Was quota inode in gfs1 */
-	struct gfs2_inum __pad4; /* Was licence inode in gfs1 */
+	struct gfs2_inum __pad4; /* Was license inode in gfs1 */
 	uint8_t sb_uuid[16]; /* The UUID maybe 0 for backwards compat */
 } __attribute__((packed));
+
+
 
 static int probe_gfs(blkid_probe pr, const struct blkid_idmag *mag)
 {
@@ -81,6 +80,15 @@ static int probe_gfs(blkid_probe pr, const struct blkid_idmag *mag)
 	return 1;
 }
 
+static inline int gfs2_format_is_valid(uint32_t format)
+{
+	return (format >= 1800 && format < 1900);
+}
+static inline int gfs2_multiformat_is_valid(uint32_t multi)
+{
+	return (multi >= 1900 && multi < 2000);
+}
+
 static int probe_gfs2(blkid_probe pr, const struct blkid_idmag *mag)
 {
 	struct gfs2_sb *sbd;
@@ -89,8 +97,8 @@ static int probe_gfs2(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!sbd)
 		return errno ? -errno : 1;
 
-	if (be32_to_cpu(sbd->sb_fs_format) == GFS2_FORMAT_FS &&
-	    be32_to_cpu(sbd->sb_multihost_format) == GFS2_FORMAT_MULTI)
+	if (gfs2_format_is_valid(be32_to_cpu(sbd->sb_fs_format)) &&
+	    gfs2_multiformat_is_valid(be32_to_cpu(sbd->sb_multihost_format)))
 	{
 		if (*sbd->sb_locktable)
 			blkid_probe_set_label(pr,
@@ -98,6 +106,7 @@ static int probe_gfs2(blkid_probe pr, const struct blkid_idmag *mag)
 				sizeof(sbd->sb_locktable));
 		blkid_probe_set_uuid(pr, sbd->sb_uuid);
 		blkid_probe_set_version(pr, "1");
+		blkid_probe_set_block_size(pr, be32_to_cpu(sbd->sb_bsize));
 		return 0;
 	}
 	return 1;

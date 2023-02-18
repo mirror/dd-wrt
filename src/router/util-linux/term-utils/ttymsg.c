@@ -85,12 +85,12 @@ ttymsg(struct iovec *iov, size_t iovcnt, char *line, int tmout) {
 	/* The old code here rejected the line argument when it contained a '/',
 	   saying: "A slash may be an attempt to break security...".
 	   However, if a user can control the line argument here
-	   then he can make this routine write to /dev/hda or /dev/sda
+	   then they can make this routine write to /dev/hda or /dev/sda
 	   already. So, this test was worthless, and these days it is
 	   also wrong since people use /dev/pts/xxx. */
 
 	len = snprintf(device, sizeof(device), "%s%s", _PATH_DEV, line);
-	if (len < 0 || len + 1 > (ssize_t) sizeof(device)) {
+	if (len < 0 || (size_t)len >= sizeof(device)) {
 		snprintf(errbuf, sizeof(errbuf), _("excessively long line arg"));
 		return errbuf;
 	}
@@ -104,7 +104,7 @@ ttymsg(struct iovec *iov, size_t iovcnt, char *line, int tmout) {
 			return NULL;
 
 		len = snprintf(errbuf, sizeof(errbuf), "%s: %m", device);
-		if (len < 0 || len + 1 > (ssize_t) sizeof(errbuf))
+		if (len < 0 || (size_t)len >= sizeof(errbuf))
 			snprintf(errbuf, sizeof(errbuf), _("open failed"));
 		return errbuf;
 	}
@@ -145,7 +145,7 @@ ttymsg(struct iovec *iov, size_t iovcnt, char *line, int tmout) {
 			cpid = fork();
 			if (cpid < 0) {
 				len = snprintf(errbuf, sizeof(errbuf), _("fork: %m"));
-				if (len < 0 || len + 1 > (ssize_t) sizeof(errbuf))
+				if (len < 0 || (size_t)len >= sizeof(errbuf))
 					snprintf(errbuf, sizeof(errbuf), _("cannot fork"));
 				close(fd);
 				return errbuf;
@@ -177,12 +177,14 @@ ttymsg(struct iovec *iov, size_t iovcnt, char *line, int tmout) {
 			_exit(EXIT_FAILURE);
 
 		len = snprintf(errbuf, sizeof(errbuf), "%s: %m", device);
-		if (len < 0 || len + 1 > (ssize_t) sizeof(errbuf))
+		if (len < 0 || (size_t)len >= sizeof(errbuf))
 			snprintf(errbuf, sizeof(errbuf),
 					_("%s: BAD ERROR, message is "
 					  "far too long"), device);
 		return errbuf;
 	}
+
+	close(fd);
 
 	if (forked)
 		_exit(EXIT_SUCCESS);

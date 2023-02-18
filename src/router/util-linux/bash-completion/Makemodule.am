@@ -18,6 +18,12 @@ endif
 if BUILD_COLUMN
 dist_bashcompletion_DATA += bash-completion/column
 endif
+if BUILD_FINCORE
+dist_bashcompletion_DATA += bash-completion/fincore
+endif
+if BUILD_FINDFS
+dist_bashcompletion_DATA += bash-completion/findfs
+endif
 if BUILD_FINDMNT
 dist_bashcompletion_DATA += bash-completion/findmnt
 endif
@@ -30,11 +36,17 @@ endif
 if BUILD_HEXDUMP
 dist_bashcompletion_DATA += bash-completion/hexdump
 endif
+if BUILD_IPCMK
+dist_bashcompletion_DATA += bash-completion/ipcmk
+endif
 if BUILD_IPCRM
 dist_bashcompletion_DATA += bash-completion/ipcrm
 endif
 if BUILD_IPCS
 dist_bashcompletion_DATA += bash-completion/ipcs
+endif
+if BUILD_IRQTOP
+dist_bashcompletion_DATA += bash-completion/irqtop
 endif
 if BUILD_ISOSIZE
 dist_bashcompletion_DATA += bash-completion/isosize
@@ -44,6 +56,15 @@ dist_bashcompletion_DATA += bash-completion/logger
 endif
 if BUILD_LOOK
 dist_bashcompletion_DATA += bash-completion/look
+endif
+if BUILD_LSIPC
+dist_bashcompletion_DATA += bash-completion/lsipc
+endif
+if BUILD_LSIRQ
+dist_bashcompletion_DATA += bash-completion/lsirq
+endif
+if BUILD_LSNS
+dist_bashcompletion_DATA += bash-completion/lsns
 endif
 if BUILD_MCOOKIE
 dist_bashcompletion_DATA += bash-completion/mcookie
@@ -75,11 +96,11 @@ endif
 if BUILD_SCRIPTREPLAY
 dist_bashcompletion_DATA += bash-completion/scriptreplay
 endif
+if BUILD_SCRIPTLIVE
+dist_bashcompletion_DATA += bash-completion/scriptlive
+endif
 if BUILD_SETSID
 dist_bashcompletion_DATA += bash-completion/setsid
-endif
-if BUILD_TAILF
-dist_bashcompletion_DATA += bash-completion/tailf
 endif
 if BUILD_WHEREIS
 dist_bashcompletion_DATA += bash-completion/whereis
@@ -143,6 +164,12 @@ dist_bashcompletion_DATA += \
 endif
 if BUILD_LAST
 dist_bashcompletion_DATA += bash-completion/last
+install-data-hook-bashcomp-lastb::
+	ln -sf last $(DESTDIR)$(bashcompletiondir)/lastb
+INSTALL_DATA_HOOKS += install-data-hook-bashcomp-lastb
+endif
+if BUILD_LSLOGINS
+dist_bashcompletion_DATA += bash-completion/lslogins
 endif
 if BUILD_NEWGRP
 dist_bashcompletion_DATA += bash-completion/newgrp
@@ -165,8 +192,11 @@ endif
 if BUILD_UTMPDUMP
 dist_bashcompletion_DATA += bash-completion/utmpdump
 endif
-if BUILD_LIBUUID
+if BUILD_UUIDGEN
 dist_bashcompletion_DATA += bash-completion/uuidgen
+endif
+if BUILD_UUIDPARSE
+dist_bashcompletion_DATA += bash-completion/uuidparse
 endif
 if BUILD_UUIDD
 dist_bashcompletion_DATA += bash-completion/uuidd
@@ -183,6 +213,9 @@ endif
 if BUILD_CHRT
 dist_bashcompletion_DATA += bash-completion/chrt
 endif
+if BUILD_UCLAMPSET
+dist_bashcompletion_DATA += bash-completion/uclampset
+endif
 if BUILD_IONICE
 dist_bashcompletion_DATA += bash-completion/ionice
 endif
@@ -192,6 +225,9 @@ endif
 
 if BUILD_CHCPU
 dist_bashcompletion_DATA += bash-completion/chcpu
+endif
+if BUILD_CHMEM
+dist_bashcompletion_DATA += bash-completion/chmem
 endif
 if BUILD_EJECT
 dist_bashcompletion_DATA += bash-completion/eject
@@ -208,8 +244,15 @@ endif
 if BUILD_LSCPU
 dist_bashcompletion_DATA += bash-completion/lscpu
 endif
+if BUILD_LSMEM
+dist_bashcompletion_DATA += bash-completion/lsmem
+endif
 if BUILD_LOSETUP
 dist_bashcompletion_DATA += bash-completion/losetup
+endif
+if BUILD_MOUNT
+dist_bashcompletion_DATA += bash-completion/mount
+dist_bashcompletion_DATA += bash-completion/umount
 endif
 if BUILD_MOUNTPOINT
 dist_bashcompletion_DATA += bash-completion/mountpoint
@@ -225,6 +268,7 @@ dist_bashcompletion_DATA += bash-completion/setpriv
 endif
 if BUILD_SWAPON
 dist_bashcompletion_DATA += bash-completion/swapon
+dist_bashcompletion_DATA += bash-completion/swapoff
 endif
 if BUILD_UNSHARE
 dist_bashcompletion_DATA += bash-completion/unshare
@@ -234,6 +278,9 @@ dist_bashcompletion_DATA += bash-completion/wdctl
 endif
 if BUILD_BLKDISCARD
 dist_bashcompletion_DATA += bash-completion/blkdiscard
+endif
+if BUILD_BLKZONE
+dist_bashcompletion_DATA += bash-completion/blkzone
 endif
 if BUILD_CTRLALTDEL
 dist_bashcompletion_DATA += bash-completion/ctrlaltdel
@@ -249,6 +296,9 @@ dist_bashcompletion_DATA += bash-completion/fstrim
 endif
 if BUILD_LDATTACH
 dist_bashcompletion_DATA += bash-completion/ldattach
+endif
+if BUILD_RFKILL
+dist_bashcompletion_DATA += bash-completion/rfkill
 endif
 if BUILD_RTCWAKE
 dist_bashcompletion_DATA += bash-completion/rtcwake
@@ -281,6 +331,9 @@ dist_bashcompletion_DATA += bash-completion/pg
 endif
 if BUILD_UL
 dist_bashcompletion_DATA += bash-completion/ul
+endif
+if BUILD_HARDLINK
+dist_bashcompletion_DATA += bash-completion/hardlink
 endif
 
 endif # BUILD_BASH_COMPLETION

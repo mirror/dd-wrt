@@ -67,6 +67,7 @@ struct blkid_struct_topology {
 	unsigned long	optimal_io_size;
 	unsigned long	logical_sector_size;
 	unsigned long	physical_sector_size;
+	unsigned long   dax;
 };
 
 /*
@@ -75,8 +76,8 @@ struct blkid_struct_topology {
 static const struct blkid_idinfo *idinfos[] =
 {
 #ifdef __linux__
-	&ioctl_tp_idinfo,
 	&sysfs_tp_idinfo,
+	&ioctl_tp_idinfo,
 	&md_tp_idinfo,
 	&dm_tp_idinfo,
 	&lvm_tp_idinfo,
@@ -110,8 +111,6 @@ const struct blkid_chaindrv topology_drv = {
  */
 int blkid_probe_enable_topology(blkid_probe pr, int enable)
 {
-	if (!pr)
-		return -1;
 	pr->chains[BLKID_CHAIN_TOPLGY].enabled = enable;
 	return 0;
 }
@@ -128,10 +127,10 @@ int blkid_probe_enable_topology(blkid_probe pr, int enable)
  *
  * WARNING: the returned object will be overwritten by the next
  *          blkid_probe_get_topology() call for the same @pr. If you want to
- *          use more blkid_topopogy objects in the same time you have to create
+ *          use more blkid_topology objects in the same time you have to create
  *          more blkid_probe handlers (see blkid_new_probe()).
  *
- * Returns: blkid_topopogy, or NULL in case of error.
+ * Returns: blkid_topology, or NULL in case of error.
  */
 blkid_topology blkid_probe_get_topology(blkid_probe pr)
 {
@@ -146,7 +145,7 @@ static int topology_probe(blkid_probe pr, struct blkid_chain *chn)
 {
 	size_t i;
 
-	if (!pr || chn->idx < -1)
+	if (chn->idx < -1)
 		return -1;
 
 	if (!S_ISBLK(pr->mode))
@@ -167,7 +166,7 @@ static int topology_probe(blkid_probe pr, struct blkid_chain *chn)
 		}
 	}
 
-	blkid_probe_chain_reset_vals(pr, chn);
+	blkid_probe_chain_reset_values(pr, chn);
 
 	DBG(LOWPROBE, ul_debug("--> starting probing loop [TOPOLOGY idx=%d]",
 		chn->idx));
@@ -218,7 +217,7 @@ static int topology_set_value(blkid_probe pr, const char *name,
 		return 0;	/* ignore zeros */
 
 	if (chn->binary) {
-		memcpy(chn->data + structoff, &data, sizeof(data));
+		memcpy((char *) chn->data + structoff, &data, sizeof(data));
 		return 0;
 	}
 	return blkid_probe_sprintf_value(pr, name, "%lu", data);
@@ -305,6 +304,14 @@ int blkid_topology_set_physical_sector_size(blkid_probe pr, unsigned long val)
 			val);
 }
 
+int blkid_topology_set_dax(blkid_probe pr, unsigned long val)
+{
+	return topology_set_value(pr,
+			"DAX",
+			offsetof(struct blkid_struct_topology, dax),
+			val);
+}
+
 /**
  * blkid_topology_get_alignment_offset:
  * @tp: topology
@@ -360,3 +367,15 @@ unsigned long blkid_topology_get_physical_sector_size(blkid_topology tp)
 	return tp->physical_sector_size;
 }
 
+/**
+ * blkid_topology_get_dax
+ * @tp: topology
+ *
+ * Returns: 1 if dax is supported, 0 otherwise.
+ *
+ * Since: 2.36
+ */
+unsigned long blkid_topology_get_dax(blkid_topology tp)
+{
+	return tp->dax;
+}

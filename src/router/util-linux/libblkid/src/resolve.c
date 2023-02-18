@@ -32,7 +32,7 @@ char *blkid_get_tag_value(blkid_cache cache, const char *tagname,
 	blkid_cache c = cache;
 	char *ret = NULL;
 
-	DBG(TAG, ul_debug("looking for %s on %s", tagname, devname));
+	DBG(TAG, ul_debug("looking for tag %s on %s device", tagname, devname));
 
 	if (!devname)
 		return NULL;
@@ -60,7 +60,7 @@ char *blkid_get_devname(blkid_cache cache, const char *token,
 {
 	blkid_dev dev;
 	blkid_cache c = cache;
-	char *t = 0, *v = 0;
+	char *t = NULL, *v = NULL;
 	char *ret = NULL;
 
 	if (!token)
@@ -76,8 +76,7 @@ char *blkid_get_devname(blkid_cache cache, const char *token,
 			ret = strdup(token);
 			goto out;
 		}
-		blkid_parse_tag_string(token, &t, &v);
-		if (!t || !v)
+		if (blkid_parse_tag_string(token, &t, &v) != 0 || !t || !v)
 			goto out;
 		token = t;
 		value = v;
