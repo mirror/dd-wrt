@@ -904,7 +904,7 @@ int nfs_getport_ping(struct sockaddr *sap, const socklen_t salen,
  * listen on AF_LOCAL.
  *
  * If that doesn't work (for example, if portmapper is running, or rpcbind
- * isn't listening on /var/run/rpcbind.sock), send a query via UDP to localhost
+ * isn't listening on /run/rpcbind.sock), send a query via UDP to localhost
  * (UDP doesn't leave a socket in TIME_WAIT, and the timeout is a relatively
  * short 3 seconds).
  */

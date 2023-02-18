@@ -48,7 +48,6 @@
 
 #include <dirent.h>
 #include <errno.h>
-#include <event.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -380,7 +379,7 @@ sqlite_maindb_init_v4(void)
 				&err);
 	if (ret != SQLITE_OK) {
 		xlog(L_ERROR, "Unable to begin transaction: %s", err);
-		return ret;
+		goto out;
 	}
 
 	/*
@@ -831,7 +830,6 @@ sqlite_prepare_dbh(const char *topdir)
 	switch (ret) {
 	case CLD_SQLITE_LATEST_SCHEMA_VERSION:
 		/* DB is already set up. Do nothing */
-		ret = 0;
 		break;
 	case 3:
 		/* Old DB -- update to new schema */
@@ -868,6 +866,8 @@ sqlite_prepare_dbh(const char *topdir)
 	}
 
 	ret = sqlite_startup_query_grace();
+	if (ret)
+		goto out_close;
 
 	ret = sqlite_query_first_time(&first_time);
 	if (ret)
@@ -1330,20 +1330,26 @@ sqlite_iterate_recovery(int (*cb)(struct cld_client *clnt), struct cld_client *c
 	}
 
 	while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
+		const void *id;
+		int id_len;
+
+		id = sqlite3_column_blob(stmt, 0);
+		id_len = sqlite3_column_bytes(stmt, 0);
+		if (id_len > NFS4_OPAQUE_LIMIT)
+			id_len = NFS4_OPAQUE_LIMIT;
+
 		memset(&cmsg->cm_u, 0, sizeof(cmsg->cm_u));
 #if UPCALL_VERSION >= 2
-		memcpy(&cmsg->cm_u.cm_clntinfo.cc_name.cn_id,
-			sqlite3_column_blob(stmt, 0), NFS4_OPAQUE_LIMIT);
-		cmsg->cm_u.cm_clntinfo.cc_name.cn_len = sqlite3_column_bytes(stmt, 0);
+		memcpy(&cmsg->cm_u.cm_clntinfo.cc_name.cn_id, id, id_len);
+		cmsg->cm_u.cm_clntinfo.cc_name.cn_len = id_len;
 		if (sqlite3_column_bytes(stmt, 1) > 0) {
 			memcpy(&cmsg->cm_u.cm_clntinfo.cc_princhash.cp_data,
-				sqlite3_column_blob(stmt, 1), NFS4_OPAQUE_LIMIT);
+				sqlite3_column_blob(stmt, 1), SHA256_DIGEST_SIZE);
 			cmsg->cm_u.cm_clntinfo.cc_princhash.cp_len = sqlite3_column_bytes(stmt, 1);
 		}
 #else
-		memcpy(&cmsg->cm_u.cm_name.cn_id, sqlite3_column_blob(stmt, 0),
-			NFS4_OPAQUE_LIMIT);
-		cmsg->cm_u.cm_name.cn_len = sqlite3_column_bytes(stmt, 0);
+		memcpy(&cmsg->cm_u.cm_name.cn_id, id, id_len);
+		cmsg->cm_u.cm_name.cn_len = id_len;
 #endif
 		cb(clnt);
 	}
@@ -1403,4 +1409,19 @@ sqlite_first_time_done(void)
 
 	sqlite3_free(err);
 	return ret;
+}
+
+/*
+ * Closes all sqlite3 resources and shuts down the library.
+ *
+ */
+void
+sqlite_shutdown(void)
+{
+	if (dbh != NULL) {
+		sqlite3_close(dbh);
+		dbh = NULL;
+	}
+
+	sqlite3_shutdown();
 }

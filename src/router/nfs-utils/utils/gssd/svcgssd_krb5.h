@@ -32,5 +32,6 @@
 #define SVCGSSD_KRB5_H
 
 int svcgssd_limit_krb5_enctypes(void);
+void svcgssd_free_enctypes(void);
 
 #endif /* SVCGSSD_KRB5_H */

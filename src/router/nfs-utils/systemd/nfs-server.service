@@ -1,18 +1,18 @@
 [Unit]
 Description=NFS server and services
 DefaultDependencies=no
-Requires= network.target proc-fs-nfsd.mount
-Requires= nfs-mountd.service
+Requires=network.target proc-fs-nfsd.mount
+Requires=nfs-mountd.service
 Wants=rpcbind.socket network-online.target
 Wants=rpc-statd.service nfs-idmapd.service
 Wants=rpc-statd-notify.service
 Wants=nfsdcld.service
 
-After= network-online.target local-fs.target
-After= proc-fs-nfsd.mount rpcbind.socket nfs-mountd.service
-After= nfs-idmapd.service rpc-statd.service
-After= nfsdcld.service
-Before= rpc-statd-notify.service
+After=network-online.target local-fs.target
+After=proc-fs-nfsd.mount rpcbind.socket nfs-mountd.service
+After=nfs-idmapd.service rpc-statd.service
+After=nfsdcld.service
+Before=rpc-statd-notify.service
 
 # GSS services dependencies and ordering
 Wants=auth-rpcgss-module.service
@@ -21,13 +21,13 @@ After=rpc-gssd.service gssproxy.service rpc-svcgssd.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStartPre=/usr/sbin/exportfs -r
+ExecStartPre=-/usr/sbin/exportfs -r
 ExecStart=/usr/sbin/rpc.nfsd
 ExecStop=/usr/sbin/rpc.nfsd 0
 ExecStopPost=/usr/sbin/exportfs -au
 ExecStopPost=/usr/sbin/exportfs -f
 
-ExecReload=/usr/sbin/exportfs -r
+ExecReload=-/usr/sbin/exportfs -r
 
 [Install]
 WantedBy=multi-user.target

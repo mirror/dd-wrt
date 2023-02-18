@@ -1,0 +1,21 @@
+#!/bin/bash
+#install dependencies for compiling from source code
+
+#RHEL/Fedora/CentOS-Stream/Rocky
+command -v dnf >/dev/null || command -v yum >/dev/null && {
+	yum install -y automake libtool make gcc rpcgen libtirpc-devel libevent-devel sqlite-devel device-mapper-devel \
+		libblkid-devel krb5-devel libuuid-devel
+}
+
+#Debian/ubuntu
+command -v apt >/dev/null && {
+	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y \
+		autotools-dev automake make libtool pkg-config libtirpc-dev libevent-dev libsqlite3-dev \
+		libdevmapper-dev libblkid-dev libkrb5-dev libkeyutils-dev uuid-dev
+}
+
+#openSUSE Leap
+command -v zypper >/dev/null && {
+	zypper in --no-recommends -y automake libtool make gcc rpcgen libtirpc-devel libevent-devel sqlite-devel \
+		device-mapper-devel libblkid-devel krb5-devel libuuid-devel
+}

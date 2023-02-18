@@ -5,7 +5,7 @@ Conflicts=umount.target
 Requires=nss-lookup.target rpcbind.socket
 Wants=network-online.target
 Wants=rpc-statd-notify.service
-After=network-online.target nss-lookup.target rpcbind.socket
+After=network-online.target nss-lookup.target rpcbind.service
 
 PartOf=nfs-utils.service
 IgnoreOnIsolate=yes

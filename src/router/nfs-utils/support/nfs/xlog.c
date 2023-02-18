@@ -129,7 +129,7 @@ xlog_sconfig(char *kind, int on)
 }
 
 void
-xlog_from_conffile(char *service)
+xlog_set_debug(char *service)
 {
 	struct conf_list *kinds;
 	struct conf_list_node *n;
@@ -156,13 +156,29 @@ xlog_enabled(int fac)
 void
 xlog_backend(int kind, const char *fmt, va_list args)
 {
-	va_list args2;
-
 	if (!(kind & (L_ALL)) && !(logging && (kind & logmask)))
 		return;
 
-	if (log_stderr)
+	if (log_stderr) {
+		va_list		args2;
+#ifdef VERBOSE_PRINTF
+		time_t		now;
+		struct tm	*tm;
+
+		time(&now);
+		tm = localtime(&now);
+		fprintf(stderr, "%s[%d] %04d-%02d-%02d %02d:%02d:%02d ",
+				log_name, log_pid,
+				tm->tm_year+1900, tm->tm_mon + 1, tm->tm_mday,
+				tm->tm_hour, tm->tm_min, tm->tm_sec);
+#else
+		fprintf(stderr, "%s: ", log_name);
+#endif
 		va_copy(args2, args);
+		vfprintf(stderr, fmt, args2);
+		fprintf(stderr, "\n");
+		va_end(args2);
+	}
 
 	if (log_syslog) {
 		switch (kind) {
@@ -183,25 +199,6 @@ xlog_backend(int kind, const char *fmt, va_list args)
 				vsyslog(LOG_INFO, fmt, args);
 			break;
 		}
-	}
-
-	if (log_stderr) {
-#ifdef VERBOSE_PRINTF
-		time_t		now;
-		struct tm	*tm;
-
-		time(&now);
-		tm = localtime(&now);
-		fprintf(stderr, "%s[%d] %04d-%02d-%02d %02d:%02d:%02d ",
-				log_name, log_pid,
-				tm->tm_year+1900, tm->tm_mon + 1, tm->tm_mday,
-				tm->tm_hour, tm->tm_min, tm->tm_sec);
-#else
-		fprintf(stderr, "%s: ", log_name);
-#endif
-		vfprintf(stderr, fmt, args2);
-		fprintf(stderr, "\n");
-		va_end(args2);
 	}
 
 	if (kind == L_FATAL)

@@ -43,10 +43,12 @@ void			po_replace(struct mount_options *,
 				   struct mount_options *);
 po_return_t		po_join(struct mount_options *, char **);
 
+po_return_t		po_insert(struct mount_options *, char *);
 po_return_t		po_append(struct mount_options *, char *);
 po_found_t		po_contains(struct mount_options *, char *);
 po_found_t		po_contains_prefix(struct mount_options *options,
-						const char *prefix, char **keyword);
+					   const char *prefix, char **keyword,
+					   int n);
 char *			po_get(struct mount_options *, char *);
 po_found_t		po_get_numeric(struct mount_options *,
 					char *, long *);

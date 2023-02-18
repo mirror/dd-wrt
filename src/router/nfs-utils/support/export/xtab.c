@@ -27,7 +27,7 @@
 #include "misc.h"
 
 static char state_base_dirname[PATH_MAX] = NFS_STATEDIR;
-extern struct state_paths etab;
+struct state_paths etab;
 
 int v4root_needed;
 static void cond_rename(char *newfile, char *oldfile);

@@ -2,13 +2,13 @@ dnl *********** BSD vs. POSIX signal handling **************
 AC_DEFUN([AC_BSD_SIGNALS], [
   AC_MSG_CHECKING(for BSD signal semantics)
   AC_CACHE_VAL(knfsd_cv_bsd_signals,
-    [AC_TRY_RUN([
+    [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <signal.h>
 	#include <unistd.h>
 	#include <sys/wait.h>
 
 	static int counter = 0;
-	static RETSIGTYPE handler(int num) { counter++; }
+	static void handler(int num) { counter++; }
 
 	int main()
 	{
@@ -23,8 +23,7 @@ AC_DEFUN([AC_BSD_SIGNALS], [
 		kill(getpid(), SIGHUP); kill(getpid(), SIGHUP);
 		return (counter == 2)? 0 : 1;
 	}
-    ], knfsd_cv_bsd_signals=yes, knfsd_cv_bsd_signals=no,
-    [
+    ]])],[knfsd_cv_bsd_signals=yes],[knfsd_cv_bsd_signals=no],[
       case "$host_os" in
         *linux*) knfsd_cv_bsd_signals=no;;
         *bsd*)   knfsd_cv_bsd_signals=yes;;

@@ -50,6 +50,7 @@ typedef struct _extra_mapping_params {
 typedef void (*nfs4_idmap_log_function_t)(const char *, ...);
 
 int nfs4_init_name_mapping(char *conffile);
+void nfs4_term_name_mapping(void);
 int nfs4_get_default_domain(char *server, char *domain, size_t len);
 int nfs4_uid_to_name(uid_t uid, char *domain, char *name, size_t len);
 int nfs4_gid_to_name(gid_t gid, char *domain, char *name, size_t len);

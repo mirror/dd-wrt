@@ -318,7 +318,7 @@ print_hexl(const char *description, unsigned char *cp, int length)
 #endif
 
 void
-handle_nullreq(int f) {
+handle_nullreq(char *cp) {
 	/* XXX initialize to a random integer to reduce chances of unnecessary
 	 * invalidation of existing ctx's on restarting svcgssd. */
 	static u_int32_t	handle_seq = 0;
@@ -340,23 +340,10 @@ handle_nullreq(int f) {
 	u_int32_t		maj_stat = GSS_S_FAILURE, min_stat = 0;
 	u_int32_t		ignore_min_stat;
 	struct svc_cred		cred;
-	char			lbuf[RPC_CHAN_BUF_SIZE];
-	int			lbuflen = 0;
-	char			*cp;
 	int32_t			ctx_endtime;
 	char			*hostbased_name = NULL;
 
 	printerr(1, "handling null request\n");
-
-	lbuflen = read(f, lbuf, sizeof(lbuf));
-	if (lbuflen <= 0 || lbuf[lbuflen-1] != '\n') {
-		printerr(0, "WARNING: handle_nullreq: "
-			    "failed reading request\n");
-		return;
-	}
-	lbuf[lbuflen-1] = 0;
-
-	cp = lbuf;
 
 	in_handle.length = (size_t) qword_get(&cp, in_handle.value,
 					      sizeof(in_handle_buf));

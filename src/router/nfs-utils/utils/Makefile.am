@@ -7,6 +7,10 @@ OPTDIRS += idmapd
 OPTDIRS += nfsidmap
 endif
 
+if CONFIG_NFSV4SERVER
+OPTDIRS += exportd
+endif
+
 if CONFIG_NFSV41
 OPTDIRS += blkmapd
 endif

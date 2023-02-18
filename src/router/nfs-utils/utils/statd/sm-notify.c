@@ -482,12 +482,12 @@ nsm_lift_grace_period(void)
 	return;
 }
 inline static void 
-read_nfsconf(char **argv)
+read_smnotify_conf(char **argv)
 {
 	char *s;
 
 	conf_init_file(NFS_CONFFILE);
-	xlog_from_conffile("sm-notify");
+	xlog_set_debug("sm-notify");
 	opt_max_retry = conf_get_num("sm-notify", "retry-time", opt_max_retry / 60) * 60;
 	opt_srcport = conf_get_str("sm-notify", "outgoing-port");
 	opt_srcaddr = conf_get_str("sm-notify", "outgoing-addr");
@@ -512,7 +512,8 @@ main(int argc, char **argv)
 	else
 		progname = argv[0];
 
-	read_nfsconf(argv);
+	/* Read in config setting */
+	read_smnotify_conf(argv);
 
 	while ((c = getopt(argc, argv, "dm:np:v:P:f")) != -1) {
 		switch (c) {
@@ -900,7 +901,7 @@ find_host(uint32_t xid)
 }
 
 /*
- * Record pid in /var/run/sm-notify.pid
+ * Record pid in /run/sm-notify.pid
  * This file should remain until a reboot, even if the
  * program exits.
  * If file already exists, fail.
@@ -912,7 +913,7 @@ static int record_pid(void)
 	int fd;
 
 	(void)snprintf(pid, sizeof(pid), "%d\n", (int)getpid());
-	fd = open("/var/run/sm-notify.pid", O_CREAT|O_EXCL|O_WRONLY, 0600);
+	fd = open("/run/sm-notify.pid", O_CREAT|O_EXCL|O_WRONLY, 0600);
 	if (fd < 0)
 		return 0;
 

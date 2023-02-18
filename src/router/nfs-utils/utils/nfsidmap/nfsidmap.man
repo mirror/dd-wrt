@@ -2,7 +2,7 @@
 .\"@(#)nfsidmap(8) - The NFS idmapper upcall program
 .\"
 .\" Copyright (C) 2010 Bryan Schumaker <bjschuma@netapp.com>
-.TH nfsidmap 5 "1 October 2010"
+.TH nfsidmap 8 "1 October 2010"
 .SH NAME
 nfsidmap \- The NFS idmapper upcall program
 .SH SYNOPSIS

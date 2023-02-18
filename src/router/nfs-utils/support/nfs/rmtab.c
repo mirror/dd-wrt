@@ -33,7 +33,7 @@
 
 static FILE	*rmfp = NULL;
 
-extern struct state_paths rmtab;
+struct state_paths rmtab;
 
 int
 setrmtabent(char *type)

@@ -14,7 +14,7 @@ AC_DEFUN([AC_SQLITE3_VERS], [
    [
     saved_LIBS="$LIBS"
     LIBS=-lsqlite3
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <stdio.h>
 	#include <sqlite3.h>
 	int main()
@@ -24,8 +24,7 @@ AC_DEFUN([AC_SQLITE3_VERS], [
 		return vers != SQLITE_VERSION_NUMBER ||
 			vers < 3003000;
 	}
-       ], [libsqlite3_cv_is_recent=yes], [libsqlite3_cv_is_recent=no],
-       [libsqlite3_cv_is_recent=unknown])
+       ]])],[libsqlite3_cv_is_recent=yes],[libsqlite3_cv_is_recent=no],[libsqlite3_cv_is_recent=unknown])
     LIBS="$saved_LIBS"])
 
   AC_MSG_RESULT($libsqlite3_cv_is_recent)

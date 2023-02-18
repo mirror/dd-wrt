@@ -151,6 +151,58 @@ names to local user names.  Entries in the list are of the form:
 .fi
 .\"
 .\" -------------------------------------------------------------------
+.\" The [REGEX] section
+.\" -------------------------------------------------------------------
+.\"
+.SS "[REGEX] section variables"
+.nf
+
+.fi
+If the "regex" translation method is specified, the following
+variables within the [REGEX] section are used to map between NFS4 names and local IDs.
+.TP
+.B User-Regex
+Case-insensitive regular expression that extracts the local user name from an NFSv4 name. Multiple expressions may be concatenated with '|'. The first match will be used.
+There is no default. A basic regular expression for domain DOMAIN.ORG and realm MY.DOMAIN.ORG would be:
+.nf
+^DOMAIN\\([^@]+)@MY.DOMAIN.ORG$
+.fi
+.TP
+.B Group-Regex
+Case-insensitive regular expression that extracts the local group name from an NFSv4 name. Multiple expressions may be concatenated with '|'. The first match will be used.
+There is no default. A basic regular expression for domain DOMAIN.ORG and realm MY.DOMAIN.ORG would be:
+.nf
+^([^@]+)@DOMAIN.ORG@MY.DOMAIN.ORG$|^DOMAIN\\([^@]+)@MY.DOMAIN.ORG$
+.fi
+.TP
+.B Prepend-Before-User
+Constant string to put before a local user name when building an NFSv4 name. Usually this is the short domain name followed by '\'.
+(Default: none)
+.TP
+.B Append-After-User
+Constant string to put after a local user name when building an NFSv4 name. Usually this is '@' followed by the default realm.
+(Default: none)
+.TP
+.B Prepend-Before-Group
+Constant string to put before a local group name when building an NFSv4 name. Usually not used.
+(Default: none)
+.TP
+.B Append-After-Group
+Constant string to put before a local group name when building an NFSv4 name. Usually this is '@' followed by the domain name followed by another '@' and the default realm.
+(Default: none)
+.TP
+.B Group-Name-Prefix
+Constant string that is prepended to a local group name when converting it to an NFSv4 name. If an NFSv4 group name has this prefix it is removed when converting it to a local group name.
+With this group names of a central directory can be shortened for an isolated organizational unit if all groups have a common prefix.
+(Default: none)
+.TP
+.B Group-Name-No-Prefix-Regex
+Case-insensitive regular expression to exclude groups from adding and removing the prefix set by
+.BR Group-Name-Prefix .
+The regular expression must match both the remote and local group names. Multiple expressions may be concatenated with '|'.
+(Default: none)
+.\"
+.\" -------------------------------------------------------------------
 .\" The [UMICH_SCHEMA] section
 .\" -------------------------------------------------------------------
 .\"
@@ -187,6 +239,9 @@ name given as
 .B LDAP_server
 (Default: "true")
 .TP
+.B LDAP_follow_referrals
+Whether or not to follow ldap referrals. (Default: "true")
+.TP
 .B LDAP_use_ssl
 Set to "true" to enable SSL communication with the LDAP server.
 (Default: "false")
@@ -205,6 +260,39 @@ It can take the same values as ldap.conf(5)'s
 .B TLS_REQCERT
 tunable.
 (Default: "hard")
+.TP
+.B LDAP_timeout_seconds
+Number of seconds before timing out an LDAP request
+(Default: 4)
+.TP
+.B LDAP_sasl_mech
+SASL mechanism to be used for sasl authentication.  Required
+if SASL auth is to be used (Default: None)
+.TP
+.B LDAP_realm
+SASL realm to be used for sasl authentication. (Default: None)
+.TP
+.B LDAP_sasl_authcid
+Authentication identity to be used for sasl authentication. (Default: None)
+.TP
+.B LDAP_sasl_authzid
+Authorization identity to be used for sasl authentication. (Default: None)
+.TP
+.B LDAP_sasl_secprops
+Cyrus SASL security properties. It can  the same values as ldap.conf(5)'s
+sasl_secprops.
+.TP
+.B LDAP_sasl_canonicalize
+Specifies whether the LDAP server hostname should be canonicalised.
+If set to yes LDAP lib with do a reverse hostname lookup.
+If this is not set the LDAP library's default will be used. (Default:
+None)
+.TP
+.B LDAP_sasl_krb5_ccname
+Path to kerberos credential cache. If it is not set then the value
+of environment variable KRB5CCNAME will be used. If the environment
+variable is not set then the default mechanism of kerberos library
+will be used.
 .TP
 .B NFSv4_person_objectclass
 The object class name for people accounts in your local LDAP schema
@@ -257,10 +345,6 @@ is true, this is the attribute to be searched for.
 .B NFSv4_grouplist_filter
 An optional search filter for determining group membership.
 (No Default)
-.TP
-.B LDAP_timeout_seconds
-Number of seconds before timing out an LDAP request
-(Default: 4)
 .\"
 .\" -------------------------------------------------------------------
 .\" An Example
@@ -286,12 +370,22 @@ Nobody-Group = nfsnobody
 
 [Translation]
 
-Method = umich_ldap,nsswitch
-GSS-Methods = umich_ldap,static
+Method = umich_ldap,regex,nsswitch
+GSS-Methods = umich_ldap,regex,static
 
 [Static]
 
 johndoe@OTHER.DOMAIN.ORG = johnny
+
+[Regex]
+
+User-Regex = ^DOMAIN\\([^@]+)@DOMAIN.ORG$
+Group-Regex = ^([^@]+)@DOMAIN.ORG@DOMAIN.ORG$|^DOMAIN\\([^@]+)@DOMAIN.ORG$
+Prepend-Before-User = DOMAIN\ 
+Append-After-User = @DOMAIN.ORG
+Append-After-Group = @domain.org@domain.org
+Group-Name-Prefix = sales-
+Group-Name-No-Prefix-Regex = -personal-group$
 
 [UMICH_SCHEMA]
 

@@ -20,6 +20,7 @@
 #endif
 
 #include <nfslib.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdio_ext.h>
 #include <string.h>
@@ -31,8 +32,6 @@
 #include <time.h>
 #include <errno.h>
 
-extern struct state_paths etab;
-
 void qword_add(char **bpp, int *lp, char *str)
 {
 	char *bp = *bpp;
@@ -41,7 +40,7 @@ void qword_add(char **bpp, int *lp, char *str)
 
 	if (len < 0) return;
 
-	while ((c=*str++) && len)
+	while ((c=*str++) && len > 0)
 		switch(c) {
 		case ' ':
 		case '\t':
@@ -212,9 +211,8 @@ int qword_get_uint(char **bpp, unsigned int *anint)
  */
 
 void
-cache_flush(int force)
+cache_flush(void)
 {
-	struct stat stb;
 	int c;
 	char stime[32];
 	char path[200];
@@ -233,12 +231,13 @@ cache_flush(int force)
 		NULL
 	};
 	now = time(0);
-	if (force ||
-	    stat(etab.statefn, &stb) != 0 ||
-	    stb.st_mtime > now)
-		stb.st_mtime = time(0);
-	
-	sprintf(stime, "%lld\n", (long long)stb.st_mtime);
+
+	/* Since v4.16-rc2-3-g3b68e6ee3cbd the timestamp written is ignored.
+	 * It is safest always to flush caches if there is any doubt.
+	 * For earlier kernels, writing the next second from now is
+	 * the best we can do.
+	 */
+	sprintf(stime, "%" PRId64 "\n", (int64_t)now+1);
 	for (c=0; cachelist[c]; c++) {
 		int fd;
 		sprintf(path, "/proc/net/rpc/%s/flush", cachelist[c]);

@@ -209,12 +209,12 @@ not necessary after upgrading \fBnfsdcld\fR, however \fBnfsd\fR will not use a l
 version until restart.  A restart of \fBnfsd is necessary\fR after downgrading \fBnfsdcld\fR,
 to ensure that \fBnfsd\fR does not use an upcall version that \fBnfsdcld\fR does not support.
 Additionally, a downgrade of \fBnfsdcld\fR requires the schema of the on-disk database to
-be downgraded as well.  That can be accomplished using the \fBclddb-tool\fR(8) utility.
+be downgraded as well.  That can be accomplished using the \fBnfsdclddb\fR(8) utility.
 .SH FILES
 .TP
 .B /var/lib/nfs/nfsdcld/main.sqlite
 .SH SEE ALSO
-.BR nfsdcltrack "(8), " clddb-tool (8)
+.BR nfsdcltrack "(8), " nfsdclddb (8)
 .SH "AUTHORS"
 .IX Header "AUTHORS"
 The nfsdcld daemon was developed by Jeff Layton <jlayton@redhat.com>

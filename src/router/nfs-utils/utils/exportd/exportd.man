@@ -1,0 +1,141 @@
+.\"@(#)nfsv4.exportd.8"
+.\"
+.\" Copyright (C) 2021 Red Hat <nfs@redhat.com>
+.\"
+.TH nfsv4.exportd 8 "02 Feb 2021"
+.SH NAME
+nfsv4.exportd \- NFSv4 Server Mount Daemon
+.SH SYNOPSIS
+.BI "/usr/sbin/nfsv4.exportd [" options "]"
+.SH DESCRIPTION
+The
+.B nfsv4.exportd
+is used to manage NFSv4 exports.
+The NFS server
+.RI ( nfsd )
+maintains a cache of authentication and authorization information which
+is used to identify the source of each request, and then what access
+permissions that source has to any local filesystem.  When required
+information is not found in the cache, the server sends a request to
+.B nfsv4.exportd
+to fill in the missing information.  
+.B nfsv4.exportd
+uses a table of information stored in
+.B /var/lib/nfs/etab
+and maintained by
+.BR exportfs (8),
+possibly based on the contents of 
+.BR exports (5),
+to respond to each request.
+.SH OPTIONS
+.TP
+.B \-d kind " or " \-\-debug kind
+Turn on debugging. Valid kinds are: all, auth, call, general and parse.
+.TP
+.BR \-l " or " \-\-log\-auth
+Enable logging of responses to authentication and access requests from
+nfsd.  Each response is then cached by the kernel for 30 minutes (or as set by
+.B \-\-ttl
+below), and will be refreshed after 15 minutes (half the ttl time) if
+the relevant client remains active.
+Note that
+.B -l
+is equivalent to
+.B "-d auth"
+and so can be enabled in
+.B /etc/nfs.conf
+with
+.B "\[dq]debug = auth\[dq]"
+in the
+.B "[exportd]"
+section.
+.TP
+.BR \-i " or " \-\-cache\-use\-ipaddr
+Normally each client IP address is matched against each host identifier
+(name, wildcard, netgroup etc) found in
+.B /etc/exports
+and a combined identity is formed from all matching identifiers.
+Often many clients will map to the same combined identity so performing
+this mapping reduces the number of distinct access details that the
+kernel needs to store.
+Specifying the
+.B \-i
+option suppresses this mapping so that access to each filesystem is
+requested and cached separately for each client IP address.  Doing this
+can increase the burden of updating the cache slightly, but can make the
+log messages produced by the
+.B -l
+option easier to read.
+.TP
+.B \-T " or " \-\-ttl
+Provide a time-to-live (TTL) for cached information given to the kernel.
+The kernel will normally request an update if the information is needed
+after half of this time has expired.  Increasing the provided number,
+which is in seconds, reduces the rate of cache update requests, and this
+is particularly noticeable when these requests are logged with
+.BR \-l .
+However increasing also means that changes to hostname to address
+mappings can take longer to be noticed.
+The default TTL is 1800 (30 minutes).
+.TP
+.B \-F " or " \-\-foreground
+Run in foreground (do not daemonize)
+.TP
+.B \-h " or " \-\-help
+Display usage message.
+.TP
+.BR "\-t N" " or " "\-\-num\-threads=N " or  " \-\-num\-threads N "
+This option specifies the number of worker threads that 
+.B nfsv4.exports
+spawns.  The default is 1 thread, which is probably enough.  More
+threads are usually only needed for NFS servers which need to handle
+mount storms of hundreds of NFS mounts in a few seconds, or when
+your DNS server is slow or unreliable.
+.TP
+.BR \-g " or " \-\-manage-gids
+Accept requests from the kernel to map user id numbers into lists of
+group id numbers for use in access control.  An NFS request will
+normally (except when using Kerberos or other cryptographic
+authentication) contain a user-id and a list of group-ids.  Due to a
+limitation in the NFS protocol, at most 16 groups ids can be listed.
+If you use the
+.B \-g
+flag, then the list of group ids received from the client will be
+replaced by a list of group ids determined by an appropriate lookup on
+the server. Note that the 'primary' group id is not affected so a
+.B newgroup
+command on the client will still be effective.  This function requires
+a Linux Kernel with version at least 2.6.21.
+.SH CONFIGURATION FILE
+Many of the options that can be set on the command line can also be
+controlled through values set in the
+.B [exportd]
+or, in some cases, the
+.B [nfsd]
+sections of the
+.I /etc/nfs.conf
+configuration file.
+Values recognized in the
+.B [exportd]
+section include 
+.B cache\-use\-ipaddr ,
+.BR ttl ,
+.BR manage-gids ", and"
+.B debug 
+which each have the same effect as the option with the same name.
+.SH FILES
+.TP 2.5i
+.I /etc/exports
+input file for
+.BR exportfs ,
+listing exports, export options, and access control lists
+.SH SEE ALSO
+.BR exportfs (8),
+.BR exports (5),
+.BR showmount (8),
+.BR nfs.conf (5),
+.BR firewall-cmd (1),
+.sp
+RFC 7530 - "Network File System (NFS) Version 4 Protocol"
+.br
+RFC 8881 - "Network File System (NFS) Version 4 Minor Version 1 Protocol"

@@ -97,7 +97,7 @@ static const char *nfs_transport_opttbl[] = {
 };
 
 static const char *nfs_version_opttbl[] = {
-	"v2",
+	"v2", /* no longer supported */
 	"v3",
 	"v4",
 	"vers",
@@ -429,10 +429,6 @@ static int get_socket(struct sockaddr_in *saddr, unsigned int p_prot,
 	if (resvp) {
 		if (bindresvport(so, &laddr) < 0)
 			goto err_bindresvport;
-	} else {
-		cc = bind(so, SAFE_SOCKADDR(&laddr), namelen);
-		if (cc < 0)
-			goto err_bind;
 	}
 	if (type == SOCK_STREAM || (conn && type == SOCK_DGRAM)) {
 		cc = connect_to(so, SAFE_SOCKADDR(saddr), namelen,
@@ -458,17 +454,6 @@ err_bindresvport:
 	if (verbose) {
 		nfs_error(_("%s: Unable to bindresvport %s socket: errno %d"
 				" (%s)\n"),
-			progname, p_prot == IPPROTO_UDP ? _("UDP") : _("TCP"),
-			errno, strerror(errno));
-	}
-	close(so);
-	return RPC_ANYSOCK;
-
-err_bind:
-	rpc_createerr.cf_stat = RPC_SYSTEMERROR;
-	rpc_createerr.cf_error.re_errno = errno;
-	if (verbose) {
-		nfs_error(_("%s: Unable to bind to %s socket: errno %d (%s)\n"),
 			progname, p_prot == IPPROTO_UDP ? _("UDP") : _("TCP"),
 			errno, strerror(errno));
 	}
@@ -1268,28 +1253,32 @@ nfs_nfs_program(struct mount_options *options, unsigned long *program)
 int
 nfs_nfs_version(char *type, struct mount_options *options, struct nfs_version *version)
 {
-	char *version_key, *version_val, *cptr;
-	int i, found = 0;
+	char *version_key, *version_val = NULL, *cptr;
+	int i, found = -1;
 
 	version->v_mode = V_DEFAULT;
 
 	for (i = 0; nfs_version_opttbl[i]; i++) {
 		if (po_contains_prefix(options, nfs_version_opttbl[i],
-								&version_key) == PO_FOUND) {
-			found++;
-			break;
+				       &version_key, 0) == PO_FOUND) {
+			if (found >= 0)
+				goto ret_error_multiple;
+			if (po_contains_prefix(options, nfs_version_opttbl[i],
+					       NULL, 1) == PO_FOUND)
+				goto ret_error_multiple;
+			found = i;
 		}
 	}
 
-	if (!found && strcmp(type, "nfs4") == 0)
+	if (found < 0 && strcmp(type, "nfs4") == 0)
 		version_val = type + 3;
-	else if (!found)
+	else if (found < 0)
 		return 1;
-	else if (i <= 2 ) {
-		/* v2, v3, v4 */
+	else if (found <= 2 ) {
+		/* v3, v4 */
 		version_val = version_key + 1;
 		version->v_mode = V_SPECIFIC;
-	} else if (i > 2 ) {
+	} else if (found > 2 ) {
 		/* vers=, nfsvers= */
 		version_val = po_get(options, version_key);
 	}
@@ -1303,7 +1292,7 @@ nfs_nfs_version(char *type, struct mount_options *options, struct nfs_version *v
 	if (version->major == 4 && *cptr != '.' &&
 	    (version_val = po_get(options, "minorversion")) != NULL) {
 		version->minor = strtol(version_val, &cptr, 10);
-		i = -1;
+		found = -1;
 		if (*cptr)
 			goto ret_error;
 		version->v_mode = V_SPECIFIC;
@@ -1319,7 +1308,7 @@ nfs_nfs_version(char *type, struct mount_options *options, struct nfs_version *v
 		if (version_val != NULL) {
 			version->minor = strtol(version_val, &cptr, 10);
 			version->v_mode = V_SPECIFIC;
-		} else 
+		} else
 			version->v_mode = V_GENERAL;
 	}
 	if (*cptr != '\0')
@@ -1327,17 +1316,21 @@ nfs_nfs_version(char *type, struct mount_options *options, struct nfs_version *v
 
 	return 1;
 
+ret_error_multiple:
+	nfs_error(_("%s: multiple version options not permitted"),
+		  progname);
+	found = 10; /* avoid other errors */
 ret_error:
-	if (i < 0) {
+	if (found < 0) {
 		nfs_error(_("%s: parsing error on 'minorversion=' option"),
 			progname);
-	} else if (i <= 2 ) {
+	} else if (found <= 2 ) {
 		nfs_error(_("%s: parsing error on 'v' option"),
 			progname);
-	} else if (i == 3 ) {
+	} else if (found == 3 ) {
 		nfs_error(_("%s: parsing error on 'vers=' option"),
 			progname);
-	} else if (i == 4) {
+	} else if (found == 4) {
 		nfs_error(_("%s: parsing error on 'nfsvers=' option"),
 			progname);
 	}

@@ -12,7 +12,7 @@ created by Sun Microsystems in 1984. NFS was developed
 to allow file sharing between systems residing
 on a local area network.
 Depending on kernel configuration, the Linux NFS client may
-support NFS versions 2, 3, 4.0, 4.1, or 4.2.
+support NFS versions 3, 4.0, 4.1, or 4.2.
 .P
 The
 .BR mount (8)
@@ -416,6 +416,19 @@ Note that the
 option may also be used by some pNFS drivers to decide how many
 connections to set up to the data servers.
 .TP 1.5i
+.BR max_connect= n
+While
+.BR nconnect
+option sets a limit on the number of connections that can be established
+to a given server IP,
+.BR max_connect
+option allows the user to specify maximum number of connections to different
+server IPs that belong to the same NFSv4.1+ server (session trunkable
+connections) up to a limit of 16. When client discovers that it established
+a client ID to an already existing server, instead of dropping the newly
+created network transport, the client will add this new connection to the
+list of available transports for that RPC client.
+.TP 1.5i
 .BR rdirplus " / " nordirplus
 Selects whether to use NFS v3 or v4 READDIRPLUS requests.
 If this option is not specified, the NFS client uses READDIRPLUS requests
@@ -552,9 +565,16 @@ detailed discussion of these trade-offs.
 .BR fsc " / " nofsc
 Enable/Disables the cache of (read-only) data pages to the local disk 
 using the FS-Cache facility. See cachefilesd(8) 
-and <kernel_soruce>/Documentation/filesystems/caching
+and <kernel_source>/Documentation/filesystems/caching
 for detail on how to configure the FS-Cache facility.
 Default value is nofsc.
+.TP 1.5i
+.B sloppy
+The
+.B sloppy
+option is an alternative to specifying
+.BR mount.nfs " -s " option.
+
 .SS "Options for NFS versions 2 and 3 only"
 Use these options, along with the options in the above subsection,
 for NFS versions 2 and 3 only.
@@ -564,7 +584,7 @@ The
 .I netid
 determines the transport that is used to communicate with the NFS
 server.  Available options are
-.BR udp ", " udp6 ", "tcp ", " tcp6 ", and " rdma .
+.BR udp ", " udp6 ", "tcp ", " tcp6 ", " rdma ", and " rdma6 .
 Those which end in
 .B 6
 use IPv6 addresses and are only available if support for TI-RPC is
@@ -812,7 +832,7 @@ The
 .I netid
 determines the transport that is used to communicate with the NFS
 server.  Supported options are
-.BR tcp ", " tcp6 ", and " rdma .
+.BR tcp ", " tcp6 ", " rdma ", and " rdma6 .
 .B tcp6
 use IPv6 addresses and is only available if support for TI-RPC is
 built in. Both others use IPv4 addresses.
@@ -934,11 +954,6 @@ file. See
 .BR nfsmount.conf(5)
 for details.
 .SH EXAMPLES
-To mount an export using NFS version 2,
-use the
-.B nfs
-file system type and specify the
-.B nfsvers=2
 mount option.
 To mount using NFS version 3,
 use the
@@ -963,13 +978,6 @@ reasonable defaults for NFS behavior.
 .nf
 .ta 8n +16n +6n +6n +30n
 	server:/export	/mnt	nfs	defaults	0 0
-.fi
-.P
-Here is an example from an /etc/fstab file for an NFS version 2 mount over UDP.
-.P
-.nf
-.ta 8n +16n +6n +6n +30n
-	server:/export	/mnt	nfs	nfsvers=2,proto=udp	0 0
 .fi
 .P
 This example shows how to mount using NFS version 4 over TCP
@@ -1064,7 +1072,7 @@ and
 can safely be allowed to default to the largest values supported by
 both client and server, independent of the network's MTU size.
 .SS "Using the mountproto mount option"
-This section applies only to NFS version 2 and version 3 mounts
+This section applies only to NFS version 3 mounts
 since NFS version 4 does not use a separate protocol for mount
 requests.
 .P
@@ -1467,7 +1475,7 @@ the use of the
 mount option.
 .SS "Using file locks with NFS"
 The Network Lock Manager protocol is a separate sideband protocol
-used to manage file locks in NFS version 2 and version 3.
+used to manage file locks in NFS version 3.
 To support lock recovery after a client or server reboot,
 a second sideband protocol --
 known as the Network Status Manager protocol --
@@ -1639,52 +1647,55 @@ from a server's pseudo-fs
 into one of the server's exported physical filesystems,
 which often have more restrictive security settings than the pseudo-fs.
 .SS "NFS version 4 Leases"
-In NFS version 4, a lease is a period of time during which a server
-irrevocably grants a file lock to a client.
-If the lease expires, the server is allowed to revoke that lock.
+In NFS version 4, a lease is a period during which a server
+irrevocably grants a client file locks.
+Once the lease expires, the server may revoke those locks.
 Clients periodically renew their leases to prevent lock revocation.
 .P
 After an NFS version 4 server reboots, each client tells the
-server about all file open and lock state under its lease
+server about existing file open and lock state under its lease
 before operation can continue.
-If the client reboots, the server frees all open and lock state
+If a client reboots, the server frees all open and lock state
 associated with that client's lease.
 .P
-As part of establishing a lease, therefore,
+When establishing a lease, therefore,
 a client must identify itself to a server.
-A fixed string is used to distinguish that client from
-others, and a changeable verifier is used to indicate
-when the client has rebooted.
+Each client presents an arbitrary string
+to distinguish itself from other clients.
+The client administrator can
+supplement the default identity string using the
+.I nfs4.nfs4_unique_id
+module parameter to avoid collisions
+with other client identity strings.
 .P
-A client uses a particular security flavor and principal
-when performing the operations to establish a lease.
-If two clients happen to present the same identity string,
-a server can use their principals to detect that they are
-different clients, and prevent one client from interfering
-with the other's lease.
+A client also uses a unique security flavor and principal
+when it establishes its lease.
+If two clients present the same identity string,
+a server can use client principals to distinguish between them,
+thus securely preventing one client from interfering with the other's lease.
 .P
-The Linux NFS client establishes one lease for each server.
+The Linux NFS client establishes one lease on each NFS version 4 server.
 Lease management operations, such as lease renewal, are not
 done on behalf of a particular file, lock, user, or mount
-point, but on behalf of the whole client that owns that lease.
-These operations must use the same security flavor and
-principal that was used when the lease was established,
-even across client reboots.
+point, but on behalf of the client that owns that lease.
+A client uses a consistent identity string, security flavor,
+and principal across client reboots to ensure that the server
+can promptly reap expired lease state.
 .P
 When Kerberos is configured on a Linux NFS client
 (i.e., there is a
 .I /etc/krb5.keytab
 on that client), the client attempts to use a Kerberos
 security flavor for its lease management operations.
-This provides strong authentication of the client to
-each server it contacts.
+Kerberos provides secure authentication of each client.
 By default, the client uses the
 .I host/
 or
 .I nfs/
 service principal in its
 .I /etc/krb5.keytab
-for this purpose.
+for this purpose, as described in
+.BR rpc.gssd (8).
 .P
 If the client has Kerberos configured, but the server
 does not, or if the client does not have a keytab or
@@ -1883,8 +1894,6 @@ CONFIG_NFS_V4, CONFIG_NFS_V4_1, and CONFIG_NFS_V4_2.
 RFC 768 for the UDP specification.
 .br
 RFC 793 for the TCP specification.
-.br
-RFC 1094 for the NFS version 2 specification.
 .br
 RFC 1813 for the NFS version 3 specification.
 .br

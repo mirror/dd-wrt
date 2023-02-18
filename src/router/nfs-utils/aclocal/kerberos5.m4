@@ -6,7 +6,7 @@ dnl The Kerberos gssapi library will be dynamically loaded?
 AC_DEFUN([AC_KERBEROS_V5],[
   AC_MSG_CHECKING(for Kerberos v5)
   AC_ARG_WITH(krb5,
-  [AC_HELP_STRING([--with-krb5=DIR], [use Kerberos v5 installation in DIR])],
+  [AS_HELP_STRING([--with-krb5=DIR],[use Kerberos v5 installation in DIR])],
   [ case "$withval" in
     yes|no)
        krb5_with=""

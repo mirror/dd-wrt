@@ -440,7 +440,7 @@ directory containing notify list
 .I /var/lib/nfs/state
 NSM state number for this host
 .TP 2.5i
-.I /var/run/run.statd.pid
+.I /run/run.statd.pid
 pid file
 .TP 2.5i
 .I /etc/netconfig

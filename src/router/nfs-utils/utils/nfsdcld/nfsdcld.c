@@ -24,9 +24,10 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <errno.h>
-#include <event.h>
+#include <event2/event.h>
 #include <stdbool.h>
 #include <getopt.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -44,7 +45,7 @@
 #include "cld.h"
 #include "cld-internal.h"
 #include "sqlite.h"
-#include "../mount/version.h"
+#include "version.h"
 #include "conffile.h"
 #include "legacy.h"
 
@@ -66,8 +67,10 @@
 static char pipefs_dir[PATH_MAX] = DEFAULT_PIPEFS_DIR;
 static char pipepath[PATH_MAX];
 static int 		inotify_fd = -1;
-static struct event	pipedir_event;
+static struct event	 *pipedir_event;
+static struct event_base *evbase;
 static bool old_kernel = false;
+static bool signal_received = false;
 
 uint64_t current_epoch;
 uint64_t recovery_epoch;
@@ -87,6 +90,19 @@ static struct option longopts[] =
 
 /* forward declarations */
 static void cldcb(int UNUSED(fd), short which, void *data);
+
+static void
+sig_die(int signal)
+{
+	if (signal_received) {
+		xlog(D_GENERAL, "forced exiting on signal %d\n", signal);
+		exit(0);
+	}
+
+	signal_received = true;
+	xlog(D_GENERAL, "exiting on signal %d\n", signal);
+	event_base_loopexit(evbase, NULL);
+}
 
 static void
 usage(char *progname)
@@ -141,6 +157,7 @@ static int
 cld_pipe_open(struct cld_client *clnt)
 {
 	int fd;
+	struct event *ev;
 
 	xlog(D_GENERAL, "%s: opening upcall pipe %s", __func__, pipepath);
 	fd = open(pipepath, O_RDWR, 0);
@@ -149,13 +166,22 @@ cld_pipe_open(struct cld_client *clnt)
 		return -errno;
 	}
 
-	if (event_initialized(&clnt->cl_event))
-		event_del(&clnt->cl_event);
+	ev = event_new(evbase, fd, EV_READ, cldcb, clnt);
+	if (ev == NULL) {
+		xlog(D_GENERAL, "%s: failed to create event for %s", __func__, pipepath);
+		close(fd);
+		return -ENOMEM;
+	}
+
+	if (clnt->cl_event && event_initialized(clnt->cl_event)) {
+		event_del(clnt->cl_event);
+		event_free(clnt->cl_event);
+	}
 	if (clnt->cl_fd >= 0)
 		close(clnt->cl_fd);
 
 	clnt->cl_fd = fd;
-	event_set(&clnt->cl_event, clnt->cl_fd, EV_READ, cldcb, clnt);
+	clnt->cl_event = ev;
 	/* event_add is done by the caller */
 	return 0;
 }
@@ -208,7 +234,7 @@ cld_inotify_cb(int UNUSED(fd), short which, void *data)
 	switch (ret) {
 	case 0:
 		/* readd the event for the cl_event pipe */
-		event_add(&clnt->cl_event, NULL);
+		event_add(clnt->cl_event, NULL);
 		break;
 	case -ENOENT:
 		/* pipe must have disappeared, wait for it to come back */
@@ -221,7 +247,7 @@ cld_inotify_cb(int UNUSED(fd), short which, void *data)
 	}
 
 out:
-	event_add(&pipedir_event, NULL);
+	event_add(pipedir_event, NULL);
 	free(dirc);
 }
 
@@ -252,11 +278,12 @@ cld_inotify_setup(void)
 		xlog_err("%s: inotify_add_watch failed: %m", __func__);
 		ret = -errno;
 		goto out_err;
-	}
+	} else
+		ret = 0;
 
 out_free:
 	free(dirc);
-	return 0;
+	return ret;
 out_err:
 	close(inotify_fd);
 	goto out_free;
@@ -286,7 +313,7 @@ cld_pipe_init(struct cld_client *clnt)
 	switch (ret) {
 	case 0:
 		/* add the event and we're good to go */
-		event_add(&clnt->cl_event, NULL);
+		event_add(clnt->cl_event, NULL);
 		break;
 	case -ENOENT:
 		/* ignore this error -- cld_inotify_cb will handle it */
@@ -299,8 +326,12 @@ cld_pipe_init(struct cld_client *clnt)
 	}
 
 	/* set event for inotify read */
-	event_set(&pipedir_event, inotify_fd, EV_READ, cld_inotify_cb, clnt);
-	event_add(&pipedir_event, NULL);
+	pipedir_event = event_new(evbase, inotify_fd, EV_READ, cld_inotify_cb, clnt);
+	if (pipedir_event == NULL) {
+		close(inotify_fd);
+		return -ENOMEM;
+	}
+	event_add(pipedir_event, NULL);
 out:
 	return ret;
 }
@@ -331,6 +362,7 @@ cld_check_grace_period(void)
 	if (read(fd, &c, 1) < 0) {
 		xlog(L_WARNING, "Unable to read from %s: %m",
 			NFSD_END_GRACE_FILE);
+		close(fd);
 		return 1;
 	}
 	close(fd);
@@ -737,7 +769,7 @@ cldcb(int UNUSED(fd), short which, void *data)
 		cld_not_implemented(clnt);
 	}
 out:
-	event_add(&clnt->cl_event, NULL);
+	event_add(clnt->cl_event, NULL);
 }
 
 int
@@ -762,7 +794,11 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	event_init();
+	evbase = event_base_new();
+	if (evbase == NULL) {
+		fprintf(stderr, "%s: unable to allocate event base.\n", argv[0]);
+		return 1;
+	}
 	xlog_syslog(0);
 	xlog_stderr(1);
 
@@ -795,6 +831,7 @@ main(int argc, char **argv)
 			break;
 		default:
 			usage(progname);
+			free(progname);
 			return 0;
 		}
 	}
@@ -859,14 +896,27 @@ main(int argc, char **argv)
 	if (rc)
 		goto out;
 
+	signal(SIGINT, sig_die);
+	signal(SIGTERM, sig_die);
+
 	xlog(D_GENERAL, "%s: Starting event dispatch handler.", __func__);
-	rc = event_dispatch();
+	rc = event_base_dispatch(evbase);
 	if (rc < 0)
 		xlog(L_ERROR, "%s: event_dispatch failed: %m", __func__);
 
-	close(clnt.cl_fd);
-	close(inotify_fd);
 out:
+	if (clnt.cl_event)
+		event_free(clnt.cl_event);
+	if (clnt.cl_fd != -1)
+		close(clnt.cl_fd);
+	if (pipedir_event)
+		event_free(pipedir_event);
+	if (inotify_fd != -1)
+		close(inotify_fd);
+
+	event_base_free(evbase);
+	sqlite_shutdown();
+
 	free(progname);
 	return rc;
 }

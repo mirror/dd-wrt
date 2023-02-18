@@ -1,5 +1,5 @@
 /*
- * configfile.c -- mount configuration file manipulation 
+ * configfile.c -- mount configuration file manipulation
  * Copyright (C) 2008 Red Hat, Inc <nfs@redhat.com>
  *
  * - Routines use to create mount options from the mount
@@ -34,10 +34,7 @@
 #include "parse_opt.h"
 #include "network.h"
 #include "conffile.h"
-
-char *mountopts_convert(char *value);
-char *is_alias(char *opt);
-char *conf_get_mntopts(char *spec, char *mount_point, char *mount_opts);
+#include "mount_config.h"
 
 #define KBYTES(x)     ((x) * (1024))
 #define MEGABYTES(x)  ((x) * (1048576))
@@ -70,17 +67,31 @@ struct mnt_alias {
 	{"background", "bg", MNT_NOARG},
 	{"foreground", "fg", MNT_NOARG},
 	{"sloppy", "sloppy", MNT_NOARG},
-	{"nfsvers", "vers", MNT_UNSET},
 };
 int mnt_alias_sz = (sizeof(mnt_alias_tab)/sizeof(mnt_alias_tab[0]));
 
+static const char *version_keys[] = {
+	"v3", "v4", "vers", "nfsvers", "minorversion", NULL
+};
+
 static int strict;
 
+static int is_version(const char *field)
+{
+	int i;
+	for (i = 0; version_keys[i] ; i++)
+		if (strcmp(version_keys[i], field) == 0)
+			return 1;
+	if (strncmp(field, "v4.", 3) == 0)
+		return 1;
+	return 0;
+}
+
 /*
- * See if the option is an alias, if so return the 
+ * See if the option is an alias, if so return the
  * real mount option along with the argument type.
  */
-inline static 
+inline static
 char *mountopts_alias(char *opt, int *argtype)
 {
 	int i;
@@ -99,10 +110,10 @@ char *mountopts_alias(char *opt, int *argtype)
 }
 /*
  * Convert numeric strings that end with 'k', 'm' or 'g'
- * into numeric strings with the real value. 
+ * into numeric strings with the real value.
  * Meaning '8k' becomes '8094'.
  */
-char *mountopts_convert(char *value)
+static char *mountopts_convert(char *value)
 {
 	unsigned long long factor, num;
 	static char buf[64];
@@ -136,110 +147,16 @@ char *mountopts_convert(char *value)
 	return buf;
 }
 
-struct entry {
-	SLIST_ENTRY(entry) entries;
-	char *opt;
-};
-static SLIST_HEAD(shead, entry) head = SLIST_HEAD_INITIALIZER(head);
-static int list_size;
-
-/*
- * Add option to the link list
- */
-inline static void 
-add_entry(char *opt)
-{
-	struct entry *entry;
-
-	entry = calloc(1, sizeof(struct entry));
-	if (entry == NULL) {
-		xlog_warn("Unable calloc memory for mount configs"); 
-		return;
-	}
-	entry->opt = strdup(opt);
-	if (entry->opt == NULL) {
-		xlog_warn("Unable calloc memory for mount opts"); 
-		free(entry);
-		return;
-	}
-	SLIST_INSERT_HEAD(&head, entry, entries);
-}
-/*
- * Check the alias list to see if the given 
- * opt is a alias
- */
-char *is_alias(char *opt)
-{
-	int i;
-
-	for (i=0; i < mnt_alias_sz; i++) {
-		if (strcasecmp(opt, mnt_alias_tab[i].alias) == 0)
-			return mnt_alias_tab[i].opt; 
-	}
-	return NULL;
-}
-/*
- * See if the given entry exists if the link list,
- * if so return that entry
- */
-inline static 
-char *lookup_entry(char *opt)
-{
-	struct entry *entry;
-	char *alias = is_alias(opt);
-	char *ptr;
-
-	SLIST_FOREACH(entry, &head, entries) {
-		/*
-		 * Only check the left side or options that use '='
-		 */
-		if ((ptr = strchr(entry->opt, '=')) != 0) {
-			int len = (int) (ptr - entry->opt);
-
-			if (strncasecmp(entry->opt, opt, len) == 0)
-				return opt;
-		}
-		if (strcasecmp(entry->opt, opt) == 0)
-			return opt;
-		if (alias && strcasecmp(entry->opt, alias) == 0)
-			return opt;
-		if (alias && strcasecmp(alias, "fg") == 0) {
-			if (strcasecmp(entry->opt, "bg") == 0)
-				return opt;
-		}
-		if (alias && strcasecmp(alias, "bg") == 0) {
-			if (strcasecmp(entry->opt, "fg") == 0)
-				return opt;
-		}
-	}
-	return NULL;
-}
-/*
- * Free all entries on the link list
- */
-inline static 
-void free_all(void)
-{
-	struct entry *entry;
-
-	while (!SLIST_EMPTY(&head)) {
-		entry = SLIST_FIRST(&head);
-		SLIST_REMOVE_HEAD(&head, entries);
-		free(entry->opt);
-		free(entry);
-	}
-}
-
 struct nfs_version config_default_vers;
 unsigned long config_default_proto;
 extern sa_family_t config_default_family;
 
 /*
  * Check to see if a default value is being set.
- * If so, set the appropriate global value which will 
+ * If so, set the appropriate global value which will
  * be used as the initial value in the server negation.
  */
-static int 
+static int
 default_value(char *mopt)
 {
 	struct mount_options *options = NULL;
@@ -253,11 +170,11 @@ default_value(char *mopt)
 	if (strncasecmp(field, "proto", strlen("proto")) == 0) {
 		if ((options = po_split(field)) != NULL) {
 			if (!nfs_nfs_protocol(options, &config_default_proto)) {
-				xlog_warn("Unable to set default protocol : %s", 
+				xlog_warn("Unable to set default protocol : %s",
 					strerror(errno));
 			}
 			if (!nfs_nfs_proto_family(options, &config_default_family)) {
-				xlog_warn("Unable to set default family : %s", 
+				xlog_warn("Unable to set default family : %s",
 					strerror(errno));
 			}
 		} else {
@@ -266,14 +183,13 @@ default_value(char *mopt)
 	} else if (strncasecmp(field, "vers", strlen("vers")) == 0) {
 		if ((options = po_split(field)) != NULL) {
 			if (!nfs_nfs_version("nfs", options, &config_default_vers)) {
-				xlog_warn("Unable to set default version: %s", 
+				xlog_warn("Unable to set default version: %s",
 					strerror(errno));
-				
 			}
 		} else {
 			xlog_warn("Unable to alloc memory for default version");
 		}
-	} else 
+	} else
 		xlog_warn("Invalid default setting: '%s'", mopt);
 
 	if (options)
@@ -282,32 +198,60 @@ default_value(char *mopt)
 	return 1;
 }
 /*
- * Parse the given section of the configuration 
+ * Parse the given section of the configuration
  * file to if there are any mount options set.
  * If so, added them to link list.
  */
-static void 
-conf_parse_mntopts(char *section, char *arg, char *opts)
+static void
+conf_parse_mntopts(char *section, char *arg, struct mount_options *options)
 {
 	struct conf_list *list;
 	struct conf_list_node *node;
 	char buf[BUFSIZ], *value, *field;
 	char *nvalue, *ptr;
 	int argtype;
+	int have_version = 0;
+
+	if (po_rightmost(options, version_keys) >= 0 ||
+	    po_contains_prefix(options, "v4.", NULL, 0) == PO_FOUND)
+		have_version = 1;
 
 	list = conf_get_tag_list(section, arg);
 	TAILQ_FOREACH(node, &list->fields, link) {
-		/* check first if this is an alias for another option */
-		field = mountopts_alias(node->field, &argtype);
 		/*
-		 * Do not overwrite options if already exists 
+		 * Do not overwrite options if already exists
 		 */
-		snprintf(buf, BUFSIZ, "%s=", field);
-		if (opts && strcasestr(opts, buf) != NULL)
+		field = mountopts_alias(node->field, &argtype);
+		if (po_contains(options, field) == PO_FOUND)
+			continue;
+		/* Some options can be inverted by a "no" prefix.
+		 * Check for these.
+		 * "no" prefixes are unlikely in the config file as
+		 * "option=false" is preferred, but still possible.
+		 */
+		if (strncmp(field, "no", 2) == 0 &&
+		    po_contains(options, field+2) == PO_FOUND)
+			continue;
+		if (strlen(field) < BUFSIZ-3) {
+			strcat(strcpy(buf, "no"), field);
+			if (po_contains(options, buf) == PO_FOUND)
+				continue;
+		}
+
+		/* If fg or bg already present, ignore bg or fg */
+		if (strcmp(field, "fg") == 0 &&
+		    po_contains(options, "bg") == PO_FOUND)
+			continue;
+		if (strcmp(field, "bg") == 0 &&
+		    po_contains(options, "fg") == PO_FOUND)
 			continue;
 
-		if (lookup_entry(field) != NULL)
-			continue;
+		if (is_version(field)) {
+			if (have_version)
+				continue;
+			have_version = 1;
+		}
+
 		buf[0] = '\0';
 		value = conf_get_section(section, arg, node->field);
 		if (value == NULL)
@@ -333,99 +277,71 @@ conf_parse_mntopts(char *section, char *arg, char *opts)
 		}
 		if (buf[0] == '\0')
 			continue;
-		/* 
-		 * Keep a running tally of the list size adding 
-		 * one for the ',' that will be appened later
-		 */
-		list_size += strlen(buf) + 1;
-		add_entry(buf);
+
+		po_append(options, buf);
+		default_value(buf);
 	}
 	conf_free_list(list);
 }
 
 /*
- * Concatenate options from the configuration file with the 
+ * Concatenate options from the configuration file with the
  * given options by building a link list of options from the
- * different sections in the conf file. Options that exists 
- * in the either the given options or link list are not 
+ * different sections in the conf file. Options that exists
+ * in the either the given options or link list are not
  * overwritten so it matter which when each section is
- * parsed. 
+ * parsed.
  */
-char *conf_get_mntopts(char *spec, char *mount_point, 
-	char *mount_opts)
+char *conf_get_mntopts(char *spec, char *mount_point,
+			      char *mount_opts)
 {
-	struct entry *entry;
-	char *ptr, *server, *config_opts;
-	int optlen = 0;
+	struct mount_options *options;
+	char *ptr, *server;
 
 	strict = 0;
-	SLIST_INIT(&head);
-	list_size = 0;
+	options = po_split(mount_opts);
+	if (!options) {
+		xlog_warn("conf_get_mountops: Unable calloc memory for options");
+		return mount_opts;
+	}
 	/*
-	 * First see if there are any mount options relative 
+	 * First see if there are any mount options relative
 	 * to the mount point.
 	 */
-	conf_parse_mntopts(NFSMOUNT_MOUNTPOINT, mount_point, mount_opts);
+	conf_parse_mntopts(NFSMOUNT_MOUNTPOINT, mount_point, options);
 
-	/* 
+	/*
 	 * Next, see if there are any mount options relative
 	 * to the server
 	 */
 	server = strdup(spec);
 	if (server == NULL) {
-		xlog_warn("conf_get_mountops: Unable calloc memory for server"); 
-		free_all();
+		xlog_warn("conf_get_mountops: Unable calloc memory for server");
+		po_destroy(options);
 		return mount_opts;
 	}
 	if ((ptr = strchr(server, ':')) != NULL)
 		*ptr='\0';
-	conf_parse_mntopts(NFSMOUNT_SERVER, server, mount_opts);
+	conf_parse_mntopts(NFSMOUNT_SERVER, server, options);
 	free(server);
 
 	/*
-	 * Finally process all the global mount options. 
+	 * Finally process all the global mount options.
 	 */
-	conf_parse_mntopts(NFSMOUNT_GLOBAL_OPTS, NULL, mount_opts);
+	conf_parse_mntopts(NFSMOUNT_GLOBAL_OPTS, NULL, options);
 
 	/*
-	 * If no mount options were found in the configuration file
-	 * just return what was passed in .
+	 * Strip out defaults, which have already been handled,
+	 * then join the rest and return.
 	 */
-	if (SLIST_EMPTY(&head))
-		return mount_opts;
-
-	/*
-	 * Found options in the configuration file. So
-	 * concatenate the configuration options with the 
-	 * options that were passed in
-	 */
-	if (mount_opts)
-		optlen = strlen(mount_opts);
-
-	/* list_size + optlen + ',' + '\0' */
-	config_opts = calloc(1, (list_size+optlen+2));
-	if (config_opts == NULL) {
-		xlog_warn("conf_get_mountops: Unable calloc memory for config_opts"); 
-		free_all();
-		return mount_opts;
+	while (po_contains_prefix(options, "default", &ptr, 0) == PO_FOUND) {
+		ptr = strdup(ptr);
+		po_remove_all(options, ptr);
+		free(ptr);
 	}
 
-	if (mount_opts) {
-		strcpy(config_opts, mount_opts);
-		strcat(config_opts, ",");
-	}
-	SLIST_FOREACH(entry, &head, entries) {
-		if (default_value(entry->opt))
-			continue;
-		strcat(config_opts, entry->opt);
-		strcat(config_opts, ",");
-	}
-	if ((ptr = strrchr(config_opts, ',')) != NULL)
-		*ptr = '\0';
+	po_join(options, &mount_opts);
+	po_destroy(options);
 
-	free_all();
-	if (mount_opts)
-		free(mount_opts);
-
-	return config_opts;
+	return mount_opts;
 }

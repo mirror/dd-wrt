@@ -339,3 +339,9 @@ out:
 	return retval;
 }
 
+void
+gssd_cleanup(void)
+{
+	u_int32_t min_stat;
+	gss_release_cred(&min_stat, &gssd_creds);
+}

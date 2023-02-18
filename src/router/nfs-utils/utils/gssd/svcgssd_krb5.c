@@ -46,7 +46,7 @@
 #include "gss_oids.h"
 #include "err_util.h"
 #include "svcgssd_krb5.h"
-#include "../mount/version.h"
+#include "version.h"
 
 #define MYBUFLEN 1024
 
@@ -74,13 +74,7 @@ parse_enctypes(char *enctypes)
 		return 0;
 
 	/* Free any existing cached_enctypes */
-	free(cached_enctypes);
-
-	if (parsed_enctypes != NULL) {
-		free(parsed_enctypes);
-		parsed_enctypes = NULL;
-		parsed_num_enctypes = 0;
-	}
+	svcgssd_free_enctypes();
 
 	/* count the number of commas */
 	for (curr = enctypes; curr && *curr != '\0'; curr = ++comma) {
@@ -161,6 +155,19 @@ out_clean_parsed:
 /*==========================*/
 /*===  External routines ===*/
 /*==========================*/
+
+void
+svcgssd_free_enctypes(void)
+{
+	free(cached_enctypes);
+	cached_enctypes = NULL;
+
+	if (parsed_enctypes != NULL) {
+		free(parsed_enctypes);
+		parsed_enctypes = NULL;
+		parsed_num_enctypes = 0;
+	}
+}
 
 /*
  * Get encryption types supported by the kernel, and then

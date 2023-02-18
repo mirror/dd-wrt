@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- python-mode -*-
 """Emulate iostat for NFS mount points using /proc/self/mountstats
 """
@@ -213,8 +213,11 @@ class DeviceData:
         # the reference to them.  so we build new lists here
         # for the result object.
         for op in result.__rpc_data['ops']:
-            result.__rpc_data[op] = list(map(
-                difference, self.__rpc_data[op], old_stats.__rpc_data[op]))
+            try:
+                result.__rpc_data[op] = list(map(
+                    difference, self.__rpc_data[op], old_stats.__rpc_data[op]))
+            except KeyError:
+                continue
 
         # update the remaining keys we care about
         result.__rpc_data['rpcsends'] -= old_stats.__rpc_data['rpcsends']
@@ -380,6 +383,8 @@ class DeviceData:
         sends = float(self.__rpc_data['rpcsends'])
         if sample_time == 0:
             sample_time = float(self.__nfs_data['age'])
+        if sample_time == 0:
+            sample_time = 1;
         return (sends / sample_time)
 
     def display_iostats(self, sample_time, which):
@@ -465,10 +470,13 @@ def parse_stats_file(filename):
 def print_iostat_summary(old, new, devices, time, options):
     stats = {}
     diff_stats = {}
+    devicelist = []
     if old:
         # Trim device list to only include intersection of old and new data,
         # this addresses umounts due to autofs mountpoints
-        devicelist = [x for x in old if x in devices]
+        for device in devices:
+            if "fstype autofs" not in str(old[device]):
+                devicelist.append(device)
     else:
         devicelist = devices
 

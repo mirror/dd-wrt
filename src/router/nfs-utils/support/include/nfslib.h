@@ -106,6 +106,7 @@ void			dupexportent(struct exportent *dst,
 					struct exportent *src);
 int			updateexportent(struct exportent *eep, char *options);
 
+extern struct state_paths rmtab;
 int			setrmtabent(char *type);
 struct rmtabent *	getrmtabent(int log, long *pos);
 void			putrmtabent(struct rmtabent *xep, long *pos);
@@ -132,7 +133,7 @@ int			wildmat(char *text, char *pattern);
 
 int qword_get(char **bpp, char *dest, int bufsize);
 int qword_get_int(char **bpp, int *anint);
-void cache_flush(int force);
+void cache_flush(void);
 void qword_add(char **bpp, int *lp, char *str);
 void qword_addhex(char **bpp, int *lp, char *buf, int blen);
 void qword_addint(char **bpp, int *lp, int n);

@@ -61,6 +61,19 @@ this is equivalent to the
 option.  If set to any other value, that is used like the
 .B -p
 option.
+.TP
+.B verbosity
+Value which is equivalent to the number of
+.BR -v .
+.TP
+.B rpc-verbosity
+Value which is equivalent to the number of
+.BR -r .
+.TP
+.B idmap-verbosity
+Value which is equivalent to the number of
+.BR -i .
+
 
 .SH SEE ALSO
 .BR rpc.gssd(8),

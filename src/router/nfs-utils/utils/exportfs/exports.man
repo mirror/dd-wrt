@@ -169,13 +169,6 @@ default.  In all releases after 1.0.0,
 is the default, and
 .I async
 must be explicitly requested if needed.
-To help make system administrators aware of this change,
-.B exportfs
-will issue a warning if neither
-.I sync
-nor
-.I async
-is specified.
 .TP
 .IR no_wdelay
 This option has no effect if
@@ -494,6 +487,33 @@ export entry for
 .B /home/joe
 in the example section below, which maps all requests to uid 150 (which
 is supposedly that of user joe).
+
+.SS Subdirectory Exports
+
+Normally you should only export only the root of a filesystem.  The NFS
+server will also allow you to export a subdirectory of a filesystem,
+however, this has drawbacks:
+
+First, it may be possible for a malicious user to access files on the
+filesystem outside of the exported subdirectory, by guessing filehandles
+for those other files.  The only way to prevent this is by using the
+.IR no_subtree_check
+option, which can cause other problems.
+
+Second, export options may not be enforced in the way that you would
+expect.  For example, the
+.IR security_label
+option will not work on subdirectory exports, and if nested subdirectory
+exports change the
+.IR security_label
+or
+.IR sec=
+options, NFSv4 clients will normally see only the options on the parent
+export.  Also, where security options differ, a malicious client may use
+filehandle-guessing attacks to access the files from one subdirectory
+using the options from another.
+
+
 .SS Extra Export Tables
 After reading 
 .I /etc/exports 

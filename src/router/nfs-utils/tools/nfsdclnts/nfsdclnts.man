@@ -1,0 +1,180 @@
+.\"
+.\" nfsdclnts(8)
+.\"
+.TH "NFSDCLTS" "8" "2020-05-09" "nfsdclnts" "nfsdclnts"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+nfsdclnts \- print various nfs client information for knfsd server.
+.SH "SYNOPSIS"
+.sp
+\fBnfsdclnts\fP [\fI\-h\fP] [\fI\-t type\fP] [\fI\-\-clientinfo\fP] [\fI\-\-hostname\fP] [\fI\-q\fP]
+.SH "DESCRIPTION"
+.sp
+The nfsdclnts(8) command parses the content present in /proc/fs/nfsd/clients/ directories. nfsdclnts(8) displays files which are open, locked, delegated by the nfs\-client. It also prints useful client information such as hostname, clientID, NFS version mounted by the nfs\-client.
+.SH "OPTIONS"
+.sp
+\fB\-t, \-\-type\fP=TYPE
+.RS 4
+Specify the type of file to be displayed. Takes only one TYPE at a time.
+.sp
+\fIopen\fP, \fIlock\fP, \fIdeleg\fP, \fIlayout\fP, or \fIall\fP
+.sp
+open: displays the open files by nfs\-client(s).
+.sp
+lock: displays the files locked by nfs\-client(s).
+.sp
+layout: displays the files for which layout is given.
+.sp
+deleg: displays delegated files information and delegation type.
+.sp
+all: prints all the above type.
+.RE
+.sp
+\fB\-\-clientinfo\fP
+.RS 4
+displays various nfs\-client info fields such as version of nfs mounted at nfs\-client and clientID.
+.RE
+.sp
+\fB\-\-hostname\fP
+.RS 4
+Print hostname of nfs\-client instead of ip-address.
+.RE
+.sp
+\fB\-q, \-\-quiet\fP
+.RS 4
+Hide the header information.
+.RE
+.sp
+\fB\-v, \-\-verbose\fP
+.RS 4
+Verbose operation, show debug messages.
+.RE
+.sp
+\fB\-f, \-\-file\fP
+.RS 4
+Instead of processing all client directories under /proc/fs/nfsd/clients, one can provide a specific
+states file to process. One should make sure that info file resides in the same directory as states file.
+If the info file is not valid or present the fields would be marked as "N/A".
+.RE
+.sp
+\fB\-h, \-\-help\fP
+.RS 4
+Print help explaining the command line options.
+.SH "EXAMPLES"
+.sp
+\fBnfsdclnts \-\-type open\fP
+.RS 4
+List all files with open type only.
+.RE
+.sp
+.if n .RS 4
+.nf
+Inode number | Type   | Access | Deny | ip address            | Filename
+33823232     | open   | r\-     | \-\-   | [::1]:757             | testfile
+.fi
+.if n .RE
+.sp
+\fBnfsdclnts \-\-type deleg\fP
+.RS 4
+List all files with deleg type only.
+.RE
+.sp
+.if n .RS 4
+.nf
+Inode number | Type   | Access | ip address            | Filename
+33823232     | deleg  | r      | [::1]:757             | testfile
+.fi
+.if n .RE
+.sp
+\fBnfsdclnts \-\-hostname\fP
+.RS 4
+Print hostname instead of ip\-address.
+.RE
+.sp
+.if n .RS 4
+.nf
+Inode number | Type   | Access | Deny | Hostname              | Filename
+33823232     | open   | r\-     | \-\-   | nfs\-server            | testfile
+33823232     | deleg  | r      |      | nfs\-server            | testfile
+.fi
+.if n .RE
+.sp
+\fBnfsdclnts \-\-clientinfo\fP
+.RS 4
+Print client information.
+.RE
+.sp
+.if n .RS 4
+.nf
+Inode number | Type   | Access | Deny | ip address            | Client ID           | vers | Filename
+33823232     | open   | r\-     | \-\-   | [::1]:757             | 0xc79a009f5eb65e84  | 4.2  | testfile
+33823232     | deleg  | r      |      | [::1]:757             | 0xc79a009f5eb65e84  | 4.2  | testfile
+.fi
+.if n .RE
+.sp
+\fBnfsdclnts \-\-file /proc/fs/nfsd/clients/3/states -t open\fP
+.RS 4
+Process specific states file.
+.RE
+.sp
+.if n .RS 4
+.nf
+Inode number | Type   | Access | Deny | ip address            | Client ID           | vers | Filename
+33823232     | open   | r\-     | \-\-   | [::1]:757             | 0xc79a009f5eb65e84  | 4.2  | testfile
+.fi
+.if n .RE
+.sp
+\fBnfsdclnts \-\-quiet \-\-hostname\fP
+.RS 4
+Hide the header information.
+.RE
+.sp
+.if n .RS 4
+.nf
+33823232     | open   | r\-     | \-\-   | nfs\-server            | testfile
+33823232     | deleg  | r      |      | nfs\-server            | testfile
+.fi
+.if n .RE
+.SH "FILES"
+.sp
+\fB/proc/fs/nfsd/clients/\fP
+.sp
+Displays basic information about each NFSv4 client.
+.sp
+\fB/proc/fs/nfsd/clients/#/info\fP
+.sp
+Displays information about all the opens held by the given client, including open modes, device numbers, inode numbers, and open owners.
+.sp
+\fB/proc/fs/nfsd/clients/#/states\fP
+.SH "NOTES"
+.sp
+/proc/fs/nfsd/clients/ support was initially introduced in 5.3 kernel and is only implemented for mount points using NFSv4.
+.SH "BUGS"
+Please report any BUGs to \c
+.MTO "linux\-nfs\(atvger.kernel.org" "" ""
+.SH SEE ALSO
+.BR nfsd (8),
+.BR exportfs (8),
+.BR idmapd (8),
+.BR statd (8)
+.SH "AUTHORS"
+Achilles Gaikwad <agaikwad@redhat.com> and
+Kenneth D'souza  <kdsouza@redhat.com>

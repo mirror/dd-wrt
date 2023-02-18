@@ -1,14 +1,9 @@
 /* support/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if the `closedir' function returns void instead of `int'. */
+/* Define to 1 if the `closedir' function returns void instead of int. */
 #undef CLOSEDIR_VOID
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
-/* Define to 1 if using `alloca.c'. */
+/* Define to 1 if using 'alloca.c'. */
 #undef C_ALLOCA
 
 /* Enable GUMS mapping library support */
@@ -17,6 +12,9 @@
 /* Enable LDAP Support */
 #undef ENABLE_LDAP
 
+/* Enable LDAP SASL support */
+#undef ENABLE_LDAP_SASL
+
 /* Define to the type of elements in the array set by `getgroups'. Usually
    this is either `int' or `gid_t'. */
 #undef GETGROUPS_T
@@ -24,11 +22,10 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
-/* Define to 1 if you have `alloca', as a function or macro. */
+/* Define to 1 if you have 'alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
+/* Define to 1 if <alloca.h> works. */
 #undef HAVE_ALLOCA_H
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
@@ -62,8 +59,8 @@
 /* Define to 1 if you have the <et/com_err.h> header file. */
 #undef HAVE_ET_COM_ERR_H
 
-/* Define to 1 if you have the <event.h> header file. */
-#undef HAVE_EVENT_H
+/* Define to 1 if you have the <event2/event.h> header file. */
+#undef HAVE_EVENT2_EVENT_H
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -122,6 +119,24 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_GENERIC_H
+
+/* Define to 1 if you have the <gssapi/gssapi.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_H
+
+/* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_KRB5_H
+
+/* Define to 1 if you have the <gssapi.h> header file. */
+#undef HAVE_GSSAPI_H
+
+/* Define to 1 if you have the <gsssasl.h> header file. */
+#undef HAVE_GSSSASL_H
+
+/* Has gss_krb5_ccache_name function */
+#undef HAVE_GSS_KRB5_CCACHE_NAME
+
 /* Define this if the Kerberos GSS library supports
    gss_krb5_free_lucid_sec_context */
 #undef HAVE_GSS_KRB5_FREE_LUCID_SEC_CONTEXT
@@ -159,6 +174,12 @@
 /* Define this if the function krb5_get_init_creds_opt_set_addressless is
    available */
 #undef HAVE_KRB5_GET_INIT_CREDS_OPT_SET_ADDRESSLESS
+
+/* Define to 1 if you have the <krb5.h> header file. */
+#undef HAVE_KRB5_H
+
+/* Has ldap_sasl_interactive_bind_s function */
+#undef HAVE_LDAP_SASL_INTERACTIVE_BIND_S
 
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
@@ -207,6 +228,9 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
+/* Define to 1 if you have the <minix/config.h> header file. */
+#undef HAVE_MINIX_CONFIG_H
+
 /* Define to 1 if you have the `mkdir' function. */
 #undef HAVE_MKDIR
 
@@ -225,6 +249,9 @@
 /* Bundled lib always has the `nfs4_set_debug' function. */
 #undef HAVE_NFS4_SET_DEBUG
 
+/* Define this if you want NFSv4 server only support compiled in */
+#undef HAVE_NFSV4SERVER_SUPPORT
+
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
 
@@ -242,6 +269,12 @@
 
 /* Define to 1 if you have the `rmdir' function. */
 #undef HAVE_RMDIR
+
+/* Define to 1 if you have the <sasl.h> header file. */
+#undef HAVE_SASL_H
+
+/* Define to 1 if you have the <sasl/sasl.h> header file. */
+#undef HAVE_SASL_SASL_H
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
@@ -271,6 +304,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -370,6 +406,9 @@
 /* Define to 1 if you have the `vprintf' function. */
 #undef HAVE_VPRINTF
 
+/* Define to 1 if you have the <wchar.h> header file. */
+#undef HAVE_WCHAR_H
+
 /* Define to 1 if `fork' works. */
 #undef HAVE_WORKING_FORK
 
@@ -440,9 +479,6 @@
 /* Define this to change the plugins path */
 #undef PATH_PLUGINS
 
-/* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
-
 /* Define to the type of arg 1 for `select'. */
 #undef SELECT_TYPE_ARG1
 
@@ -478,11 +514,10 @@
 /* Define this to a script which can start statd on mount */
 #undef START_STATD
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#undef TIME_WITH_SYS_TIME
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
@@ -494,47 +529,98 @@
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
 #endif
+/* Enable general extensions on macOS.  */
+#ifndef _DARWIN_C_SOURCE
+# undef _DARWIN_C_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
 # undef _GNU_SOURCE
 #endif
-/* Enable threading extensions on Solaris.  */
+/* Enable X/Open compliant socket functions that do not require linking
+   with -lxnet on HP-UX 11.11.  */
+#ifndef _HPUX_ALT_XOPEN_SOCKET_API
+# undef _HPUX_ALT_XOPEN_SOCKET_API
+#endif
+/* Identify the host operating system as Minix.
+   This macro does not affect the system headers' behavior.
+   A future release of Autoconf may stop defining this macro.  */
+#ifndef _MINIX
+# undef _MINIX
+#endif
+/* Enable general extensions on NetBSD.
+   Enable NetBSD compatibility extensions on Minix.  */
+#ifndef _NETBSD_SOURCE
+# undef _NETBSD_SOURCE
+#endif
+/* Enable OpenBSD compatibility extensions on NetBSD.
+   Oddly enough, this does nothing on OpenBSD.  */
+#ifndef _OPENBSD_SOURCE
+# undef _OPENBSD_SOURCE
+#endif
+/* Define to 1 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_SOURCE
+# undef _POSIX_SOURCE
+#endif
+/* Define to 2 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_1_SOURCE
+# undef _POSIX_1_SOURCE
+#endif
+/* Enable POSIX-compatible threading on Solaris.  */
 #ifndef _POSIX_PTHREAD_SEMANTICS
 # undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-5:2014.  */
+#ifndef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+# undef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-1:2014.  */
+#ifndef __STDC_WANT_IEC_60559_BFP_EXT__
+# undef __STDC_WANT_IEC_60559_BFP_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-2:2015.  */
+#ifndef __STDC_WANT_IEC_60559_DFP_EXT__
+# undef __STDC_WANT_IEC_60559_DFP_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+# undef __STDC_WANT_IEC_60559_FUNCS_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+#ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
+# undef __STDC_WANT_IEC_60559_TYPES_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TR 24731-2:2010.  */
+#ifndef __STDC_WANT_LIB_EXT2__
+# undef __STDC_WANT_LIB_EXT2__
+#endif
+/* Enable extensions specified by ISO/IEC 24747:2009.  */
+#ifndef __STDC_WANT_MATH_SPEC_FUNCS__
+# undef __STDC_WANT_MATH_SPEC_FUNCS__
 #endif
 /* Enable extensions on HP NonStop.  */
 #ifndef _TANDEM_SOURCE
 # undef _TANDEM_SOURCE
 #endif
-/* Enable general extensions on Solaris.  */
-#ifndef __EXTENSIONS__
-# undef __EXTENSIONS__
+/* Enable X/Open extensions.  Define to 500 only if necessary
+   to make mbstate_t available.  */
+#ifndef _XOPEN_SOURCE
+# undef _XOPEN_SOURCE
 #endif
 
 
 /* Version number of package */
 #undef VERSION
 
-/* Enable large inode numbers on Mac OS X 10.5.  */
-#ifndef _DARWIN_USE_64_BIT_INODE
-# define _DARWIN_USE_64_BIT_INODE 1
-#endif
-
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
 
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
-
-/* Define to 1 if on MINIX. */
-#undef _MINIX
-
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-#undef _POSIX_1_SOURCE
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-#undef _POSIX_SOURCE
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
@@ -551,7 +637,7 @@
 /* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t
 
-/* Define to `int' if <sys/types.h> does not define. */
+/* Define as a signed integer type capable of holding a process identifier. */
 #undef pid_t
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */

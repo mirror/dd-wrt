@@ -105,7 +105,8 @@ typedef struct mexport {
 } nfs_export;
 
 #define HASH_TABLE_SIZE 1021
-#define DEFAULT_TTL	(30 * 60)
+
+extern int default_ttl;
 
 typedef struct _exp_hash_entry {
 	nfs_export * p_first;
@@ -144,6 +145,7 @@ nfs_export *			export_create(struct exportent *, int canonical);
 void				exportent_release(struct exportent *);
 void				export_freeall(void);
 
+extern struct state_paths etab;
 int				xtab_export_read(void);
 int				xtab_export_write(void);
 
@@ -172,5 +174,6 @@ struct export_features {
 struct export_features *get_export_features(void);
 void fix_pseudoflavor_flags(struct exportent *ep);
 char *exportent_realpath(struct exportent *eep);
+int export_test(struct exportent *eep, int with_fsid);
 
 #endif /* EXPORTFS_H */
