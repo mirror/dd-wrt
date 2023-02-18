@@ -6,6 +6,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(LIBB64_STANDALONE_BUILD ON)
 endif()
 
+option(LIBB64_SHARED "${PROJECT_NAME}: Build shared library" ${BUILD_SHARED_LIBS})
 option(LIBB64_ENABLE_INSTALL "${PROJECT_NAME}: Enable install" ${LIBB64_STANDALONE_BUILD})
 option(LIBB64_ENABLE_TESTS "${PROJECT_NAME}: Enable tests" ${LIBB64_STANDALONE_BUILD})
 option(LIBB64_ENABLE_WERROR "${PROJECT_NAME}: Treat warnings as errors" ${LIBB64_STANDALONE_BUILD})
@@ -45,6 +46,11 @@ if(LIBB64_STANDALONE_BUILD)
             /W4
             $<$<BOOL:${LIBB64_ENABLE_WERROR}>:/WX>)
     endif()
+endif()
+
+set(LIBB64_LIBRARY_TYPE STATIC)
+if(LIBB64_SHARED)
+    set(LIBB64_LIBRARY_TYPE SHARED)
 endif()
 
 add_subdirectory(src)

@@ -6,6 +6,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(LIBUTP_STANDALONE_BUILD ON)
 endif()
 
+option(LIBUTP_SHARED "${PROJECT_NAME}: Build shared library" ${BUILD_SHARED_LIBS})
 option(LIBUTP_ENABLE_INSTALL "${PROJECT_NAME}: Enable install" ${LIBUTP_STANDALONE_BUILD})
 option(LIBUTP_ENABLE_WERROR "${PROJECT_NAME}: Treat warnings as errors" ${LIBUTP_STANDALONE_BUILD})
 option(LIBUTP_BUILD_PROGRAMS "${PROJECT_NAME}: Build programs" ${LIBUTP_STANDALONE_BUILD})
@@ -43,6 +44,11 @@ if(LIBUTP_STANDALONE_BUILD)
     endif()
 endif()
 
+set(LIBUTP_LIBRARY_TYPE STATIC)
+if(LIBUTP_SHARED)
+    set(LIBUTP_LIBRARY_TYPE SHARED)
+endif()
+
 set(LIBUTP_ADD_SOURCES)
 if(WIN32)
     list(APPEND LIBUTP_ADD_SOURCES
@@ -50,7 +56,7 @@ if(WIN32)
         libutp_inet_ntop.h)
 endif()
 
-add_library(libutp
+add_library(libutp ${LIBUTP_LIBRARY_TYPE}
     include/libutp/utp.h
     include/libutp/utp_types.h
     utp_api.cpp
