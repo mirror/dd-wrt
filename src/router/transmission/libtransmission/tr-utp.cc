@@ -1,4 +1,4 @@
-// This file Copyright © 2010 Juliusz Chroboczek.
+// This file Copyright © 2010-2023 Juliusz Chroboczek.
 // It may be used under the MIT (SPDX: MIT) license.
 // License text can be found in the licenses/ folder.
 
@@ -134,7 +134,7 @@ uint64 utp_callback(utp_callback_arguments* args)
         break;
 
     case UTP_SENDTO:
-        utp_send_to(session, args->buf, args->len, args->u1.address, args->u2.address_len);
+        utp_send_to(session, args->buf, args->len, args->address, args->address_len);
         break;
     }
 
