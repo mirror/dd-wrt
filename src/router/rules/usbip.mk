@@ -53,7 +53,9 @@ usbip-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/*.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/*.la
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
