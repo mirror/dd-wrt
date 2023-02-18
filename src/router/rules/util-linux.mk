@@ -30,7 +30,6 @@ util-linux-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
@@ -42,6 +41,9 @@ util-linux-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+ifneq ($(CONFIG_NFS),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
