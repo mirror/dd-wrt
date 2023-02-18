@@ -150,7 +150,9 @@ endif
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
@@ -261,7 +263,9 @@ asterisk-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
