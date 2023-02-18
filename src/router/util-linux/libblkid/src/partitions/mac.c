@@ -61,8 +61,7 @@ static inline unsigned char *get_mac_block(
 					uint16_t block_size,
 					uint32_t num)
 {
-	return blkid_probe_get_buffer(pr,
-			(blkid_loff_t) num * block_size, block_size);
+	return blkid_probe_get_buffer(pr, (uint64_t) num * block_size, block_size);
 }
 
 static inline int has_part_signature(struct mac_partition *p)
@@ -80,7 +79,7 @@ static int probe_mac_pt(blkid_probe pr,
 	blkid_partlist ls;
 	uint16_t block_size;
 	uint16_t ssf;	/* sector size fragment */
-	uint32_t nblks, i;
+	uint32_t nblks, nprts, i;
 
 
 	/* The driver descriptor record is always located at physical block 0,
@@ -94,6 +93,8 @@ static int probe_mac_pt(blkid_probe pr,
 	}
 
 	block_size = be16_to_cpu(md->block_size);
+	if (block_size < sizeof(struct mac_partition))
+		goto nothing;
 
 	/* The partition map always begins at physical block 1,
 	 * the second block on the disk.
@@ -123,13 +124,20 @@ static int probe_mac_pt(blkid_probe pr,
 
 	ssf = block_size / 512;
 	nblks = be32_to_cpu(p->map_count);
+	if (nblks > 256) {
+		nprts = 256;
+		DBG(LOWPROBE, ul_debug(
+			"mac: map_count too large, entry[0]: %u, "
+			"enforcing limit of %u", nblks, nprts));
+	} else
+		nprts = nblks;
 
-	for (i = 1; i <= nblks; ++i) {
+	for (i = 0; i < nprts; ++i) {
 		blkid_partition par;
 		uint32_t start;
 		uint32_t size;
 
-		p = (struct mac_partition *) get_mac_block(pr, block_size, i);
+		p = (struct mac_partition *) get_mac_block(pr, block_size, i + 1);
 		if (!p) {
 			if (errno)
 				return -errno;
@@ -140,9 +148,9 @@ static int probe_mac_pt(blkid_probe pr,
 
 		if (be32_to_cpu(p->map_count) != nblks) {
 			DBG(LOWPROBE, ul_debug(
-				"mac: inconsisten map_count in partition map, "
-				"entry[0]: %d, entry[%d]: %d",
-				nblks, i - 1,
+				"mac: inconsistent map_count in partition map, "
+				"entry[0]: %u, entry[%u]: %u",
+				nblks, i,
 				be32_to_cpu(p->map_count)));
 		}
 

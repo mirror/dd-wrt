@@ -40,7 +40,7 @@ static int create_shm(size_t size, int permission)
 {
 	key_t key;
 
-	random_get_bytes(&key, sizeof(key));
+	ul_random_get_bytes(&key, sizeof(key));
 	return shmget(key, size, permission | IPC_CREAT);
 }
 
@@ -48,7 +48,7 @@ static int create_msg(int permission)
 {
 	key_t key;
 
-	random_get_bytes(&key, sizeof(key));
+	ul_random_get_bytes(&key, sizeof(key));
 	return msgget(key, permission | IPC_CREAT);
 }
 
@@ -56,12 +56,13 @@ static int create_sem(int nsems, int permission)
 {
 	key_t key;
 
-	random_get_bytes(&key, sizeof(key));
+	ul_random_get_bytes(&key, sizeof(key));
 	return semget(key, nsems, permission | IPC_CREAT);
 }
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options]\n"), program_invocation_short_name);
 
@@ -75,11 +76,14 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_(" -p, --mode <mode>        permission for the resource (default is 0644)\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("ipcmk(1)"));
+	printf(USAGE_HELP_OPTIONS(26));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	fputs(USAGE_ARGUMENTS, out);
+	printf(USAGE_ARG_SIZE(_("<size>")));
+
+	printf(USAGE_MAN_TAIL("ipcmk(1)"));
+
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -102,12 +106,12 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while((opt = getopt_long(argc, argv, "hM:QS:p:Vh", longopts, NULL)) != -1) {
 		switch(opt) {
 		case 'M':
-			size = strtou64_or_err(optarg, _("failed to parse size"));
+			size = strtosize_or_err(optarg, _("failed to parse size"));
 			ask_shm = 1;
 			break;
 		case 'Q':
@@ -118,23 +122,27 @@ int main(int argc, char **argv)
 			ask_sem = 1;
 			break;
 		case 'p':
-			permission = strtoul(optarg, NULL, 8);
+		{
+			char *end = NULL;
+			errno = 0;
+			permission = strtoul(optarg, &end, 8);
+			if (errno || optarg == end || (end && *end))
+				err(EXIT_FAILURE, _("failed to parse mode"));
 			break;
+		}
 		case 'h':
-			usage(stdout);
-			break;
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		default:
-			ask_shm = ask_msg = ask_sem = 0;
-			break;
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
-	if(!ask_shm && !ask_msg && !ask_sem)
-		usage(stderr);
-
+	if(!ask_shm && !ask_msg && !ask_sem) {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+	}
 	if (ask_shm) {
 		int shmid;
 		if (-1 == (shmid = create_shm(size, permission)))

@@ -8,8 +8,9 @@
 #include "partx.h"
 #include "strutils.h"
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s <disk device> <partition number>\n"),
 		program_invocation_short_name);
@@ -18,10 +19,9 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_("Tell the kernel to forget about a specified partition.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("delpart(8)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("delpart(8)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -29,9 +29,9 @@ int main(int argc, char **argv)
 	int c, fd;
 
 	static const struct option longopts[] = {
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'V'},
-		{NULL, no_argument, 0, '0'},
+		{"help",    no_argument, NULL, 'h'},
+		{"version", no_argument, NULL, 'V'},
+		{NULL, 0, NULL, 0},
 	};
 
 	setlocale(LC_ALL, "");
@@ -41,16 +41,17 @@ int main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, "Vh", longopts, NULL)) != -1)
 		switch (c) {
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
-	if (argc != 3)
-		usage(stderr);
+	if (argc != 3) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 
 	if ((fd = open(argv[1], O_RDONLY)) < 0)

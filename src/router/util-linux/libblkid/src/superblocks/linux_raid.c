@@ -79,7 +79,7 @@ struct mdp1_super_block {
 	uint8_t		pad2[64-57];	/* set to 0 when writing */
 
 	/* array state information - 64 bytes */
-	uint64_t	utime;		/* 40 bits second, 24 btes microseconds */
+	uint64_t	utime;		/* 40 bits second, 24 bits microseconds */
 	uint64_t	events;		/* incremented when superblock updated */
 	uint64_t	resync_offset;	/* data before this offset (from data_offset) known to be in sync */
 	uint32_t	sb_csum;	/* checksum up to dev_roles[max_dev] */
@@ -99,7 +99,7 @@ struct mdp1_super_block {
 #define MD_RESERVED_BYTES		0x10000
 #define MD_SB_MAGIC			0xa92b4efc
 
-static int probe_raid0(blkid_probe pr, blkid_loff_t off)
+static int probe_raid0(blkid_probe pr, uint64_t off)
 {
 	struct mdp0_super_block *mdp0;
 	union {
@@ -148,11 +148,11 @@ static int probe_raid0(blkid_probe pr, blkid_loff_t off)
 
 	size <<= 10;	/* convert KiB to bytes */
 
-	if (pr->size < 0 || (uint64_t) pr->size < size + MD_RESERVED_BYTES)
+	if (pr->size < size + MD_RESERVED_BYTES)
 		/* device is too small */
 		return 1;
 
-	if (off < 0 || (uint64_t) off < size)
+	if (off < size)
 		/* no space before superblock */
 		return 1;
 
@@ -212,7 +212,7 @@ static int probe_raid1(blkid_probe pr, off_t off)
 	return 0;
 }
 
-int probe_raid(blkid_probe pr,
+static int probe_raid(blkid_probe pr,
 		const struct blkid_idmag *mag __attribute__((__unused__)))
 {
 	const char *ver = NULL;

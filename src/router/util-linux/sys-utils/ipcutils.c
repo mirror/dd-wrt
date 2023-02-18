@@ -18,13 +18,16 @@
 
 int ipc_msg_get_limits(struct ipc_limits *lim)
 {
-	if (path_exist(_PATH_PROC_IPC_MSGMNI) &&
-	    path_exist(_PATH_PROC_IPC_MSGMNB) &&
-	    path_exist(_PATH_PROC_IPC_MSGMAX)) {
+	if (access(_PATH_PROC_IPC_MSGMNI, F_OK) == 0 &&
+	    access(_PATH_PROC_IPC_MSGMNB, F_OK) == 0 &&
+	    access(_PATH_PROC_IPC_MSGMAX, F_OK) == 0) {
 
-		lim->msgmni = path_read_s32(_PATH_PROC_IPC_MSGMNI);
-		lim->msgmnb = path_read_s32(_PATH_PROC_IPC_MSGMNB);
-		lim->msgmax = path_read_s32(_PATH_PROC_IPC_MSGMAX);
+		if (ul_path_read_s32(NULL, &lim->msgmni, _PATH_PROC_IPC_MSGMNI) != 0)
+			return 1;
+		if (ul_path_read_s32(NULL, &lim->msgmnb, _PATH_PROC_IPC_MSGMNB) != 0)
+			return 1;
+		if (ul_path_read_u64(NULL, &lim->msgmax, _PATH_PROC_IPC_MSGMAX) != 0)
+			return 1;
 	} else {
 		struct msginfo msginfo;
 
@@ -45,16 +48,15 @@ int ipc_sem_get_limits(struct ipc_limits *lim)
 
 	lim->semvmx = SEMVMX;
 
-	f = path_fopen("r", 0, _PATH_PROC_IPC_SEM);
+	f = fopen(_PATH_PROC_IPC_SEM, "r");
 	if (f) {
 		rc = fscanf(f, "%d\t%d\t%d\t%d",
 		       &lim->semmsl, &lim->semmns, &lim->semopm, &lim->semmni);
 		fclose(f);
-
 	}
 
-	if (rc == 4) {
-		struct seminfo seminfo;
+	if (rc != 4) {
+		struct seminfo seminfo = { .semmni = 0 };
 		union semun arg = { .array = (ushort *) &seminfo };
 
 		if (semctl(0, 0, IPC_INFO, arg) < 0)
@@ -72,13 +74,13 @@ int ipc_shm_get_limits(struct ipc_limits *lim)
 {
 	lim->shmmin = SHMMIN;
 
-	if (path_exist(_PATH_PROC_IPC_SHMALL) &&
-	    path_exist(_PATH_PROC_IPC_SHMMAX) &&
-	    path_exist(_PATH_PROC_IPC_SHMMNI)) {
+	if (access(_PATH_PROC_IPC_SHMALL, F_OK) == 0 &&
+	    access(_PATH_PROC_IPC_SHMMAX, F_OK) == 0 &&
+	    access(_PATH_PROC_IPC_SHMMNI, F_OK) == 0) {
 
-		lim->shmall = path_read_u64(_PATH_PROC_IPC_SHMALL);
-		lim->shmmax = path_read_u64(_PATH_PROC_IPC_SHMMAX);
-		lim->shmmni = path_read_u64(_PATH_PROC_IPC_SHMMNI);
+		ul_path_read_u64(NULL, &lim->shmall, _PATH_PROC_IPC_SHMALL);
+		ul_path_read_u64(NULL, &lim->shmmax, _PATH_PROC_IPC_SHMMAX);
+		ul_path_read_u64(NULL, &lim->shmmni, _PATH_PROC_IPC_SHMMNI);
 
 	} else {
 		struct shminfo *shminfo;
@@ -98,21 +100,25 @@ int ipc_shm_get_limits(struct ipc_limits *lim)
 int ipc_shm_get_info(int id, struct shm_data **shmds)
 {
 	FILE *f;
-	int i = 0, maxid;
+	int i = 0, maxid, j;
+	char buf[BUFSIZ];
 	struct shm_data *p;
 	struct shmid_ds dummy;
 
 	p = *shmds = xcalloc(1, sizeof(struct shm_data));
 	p->next = NULL;
 
-	f = path_fopen("r", 0, _PATH_PROC_SYSV_SHM);
+	f = fopen(_PATH_PROC_SYSV_SHM, "r");
 	if (!f)
 		goto shm_fallback;
 
 	while (fgetc(f) != '\n');		/* skip header */
 
-	while (feof(f) == 0) {
-		if (fscanf(f,
+	while (fgets(buf, sizeof(buf), f) != NULL) {
+		/* scan for the first 14-16 columns (e.g. Linux 2.6.32 has 14) */
+		p->shm_rss = 0xdead;
+		p->shm_swp = 0xdead;
+		if (sscanf(buf,
 			  "%d %d  %o %"SCNu64 " %u %u  "
 			  "%"SCNu64 " %u %u %u %u %"SCNi64 " %"SCNi64 " %"SCNi64
 			  " %"SCNu64 " %"SCNu64 "\n",
@@ -131,16 +137,16 @@ int ipc_shm_get_info(int id, struct shm_data **shmds)
 			   &p->shm_dtim,
 			   &p->shm_ctim,
 			   &p->shm_rss,
-			   &p->shm_swp) != 16)
-			continue;
+			   &p->shm_swp) < 14)
+			continue; /* invalid line, skipped */
 
 		if (id > -1) {
 			/* ID specified */
 			if (id == p->shm_perm.id) {
 				i = 1;
 				break;
-			} else
-				continue;
+			}
+			continue;
 		}
 
 		p->next = xcalloc(1, sizeof(struct shm_data));
@@ -158,7 +164,7 @@ int ipc_shm_get_info(int id, struct shm_data **shmds)
 shm_fallback:
 	maxid = shmctl(0, SHM_INFO, &dummy);
 
-	for (int j = 0; j <= maxid; j++) {
+	for (j = 0; j <= maxid; j++) {
 		int shmid;
 		struct shmid_ds shmseg;
 		struct ipc_perm *ipcp = &shmseg.shm_perm;
@@ -212,7 +218,7 @@ static void get_sem_elements(struct sem_data *p)
 {
 	size_t i;
 
-	if (!p || !p->sem_nsems || p->sem_perm.id < 0)
+	if (!p || !p->sem_nsems || p->sem_nsems > SIZE_MAX || p->sem_perm.id < 0)
 		return;
 
 	p->elements = xcalloc(p->sem_nsems, sizeof(struct sem_elem));
@@ -242,7 +248,7 @@ static void get_sem_elements(struct sem_data *p)
 int ipc_sem_get_info(int id, struct sem_data **semds)
 {
 	FILE *f;
-	int i = 0, maxid;
+	int i = 0, maxid, j;
 	struct sem_data *p;
 	struct seminfo dummy;
 	union semun arg;
@@ -250,7 +256,7 @@ int ipc_sem_get_info(int id, struct sem_data **semds)
 	p = *semds = xcalloc(1, sizeof(struct sem_data));
 	p->next = NULL;
 
-	f = path_fopen("r", 0, _PATH_PROC_SYSV_SEM);
+	f = fopen(_PATH_PROC_SYSV_SEM, "r");
 	if (!f)
 		goto sem_fallback;
 
@@ -278,8 +284,8 @@ int ipc_sem_get_info(int id, struct sem_data **semds)
 				get_sem_elements(p);
 				i = 1;
 				break;
-			} else
-				continue;
+			}
+			continue;
 		}
 
 		p->next = xcalloc(1, sizeof(struct sem_data));
@@ -298,7 +304,7 @@ sem_fallback:
 	arg.array = (ushort *) (void *)&dummy;
 	maxid = semctl(0, 0, SEM_INFO, arg);
 
-	for (int j = 0; j <= maxid; j++) {
+	for (j = 0; j <= maxid; j++) {
 		int semid;
 		struct semid_ds semseg;
 		struct ipc_perm *ipcp = &semseg.sem_perm;
@@ -350,7 +356,7 @@ void ipc_sem_free_info(struct sem_data *semds)
 int ipc_msg_get_info(int id, struct msg_data **msgds)
 {
 	FILE *f;
-	int i = 0, maxid;
+	int i = 0, maxid, j;
 	struct msg_data *p;
 	struct msqid_ds dummy;
 	struct msqid_ds msgseg;
@@ -358,7 +364,7 @@ int ipc_msg_get_info(int id, struct msg_data **msgds)
 	p = *msgds = xcalloc(1, sizeof(struct msg_data));
 	p->next = NULL;
 
-	f = path_fopen("r", 0, _PATH_PROC_SYSV_MSG);
+	f = fopen(_PATH_PROC_SYSV_MSG, "r");
 	if (!f)
 		goto msg_fallback;
 
@@ -391,8 +397,8 @@ int ipc_msg_get_info(int id, struct msg_data **msgds)
 					p->q_qbytes = msgseg.msg_qbytes;
 				i = 1;
 				break;
-			} else
-				continue;
+			}
+			continue;
 		}
 
 		p->next = xcalloc(1, sizeof(struct msg_data));
@@ -410,7 +416,7 @@ int ipc_msg_get_info(int id, struct msg_data **msgds)
 msg_fallback:
 	maxid = msgctl(0, MSG_INFO, &dummy);
 
-	for (int j = 0; j <= maxid; j++) {
+	for (j = 0; j <= maxid; j++) {
 		int msgid;
 		struct ipc_perm *ipcp = &msgseg.msg_perm;
 
@@ -505,17 +511,21 @@ void ipc_print_size(int unit, char *msg, uint64_t size, const char *end,
 	switch (unit) {
 	case IPC_UNIT_DEFAULT:
 	case IPC_UNIT_BYTES:
-		sprintf(format, "%%%dju", width);
+		snprintf(format, sizeof(format), "%%%dju", width);
 		printf(format, size);
 		break;
 	case IPC_UNIT_KB:
-		sprintf(format, "%%%dju", width);
+		snprintf(format, sizeof(format), "%%%dju", width);
 		printf(format, size / 1024);
 		break;
 	case IPC_UNIT_HUMAN:
-		sprintf(format, "%%%ds", width);
-		printf(format, size_to_human_string(SIZE_SUFFIX_1LETTER, size));
+	{
+		char *tmp;
+		snprintf(format, sizeof(format), "%%%ds", width);
+		printf(format, (tmp = size_to_human_string(SIZE_SUFFIX_1LETTER, size)));
+		free(tmp);
 		break;
+	}
 	default:
 		/* impossible occurred */
 		abort();

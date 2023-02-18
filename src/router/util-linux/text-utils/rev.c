@@ -64,16 +64,14 @@
 #include "c.h"
 #include "closestream.h"
 
-wchar_t *buf;
-
 static void sig_handler(int signo __attribute__ ((__unused__)))
 {
-	free(buf);
 	_exit(EXIT_SUCCESS);
 }
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fprintf(out, _("Usage: %s [options] [file ...]\n"),
 		program_invocation_short_name);
 
@@ -81,11 +79,10 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_("Reverse lines characterwise.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("rev(1)"));
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("rev(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 static void reverse_str(wchar_t *str, size_t n)
@@ -101,21 +98,23 @@ static void reverse_str(wchar_t *str, size_t n)
 
 int main(int argc, char *argv[])
 {
-	char *filename = "stdin";
+	char const *filename = "stdin";
+	wchar_t *buf;
 	size_t len, bufsiz = BUFSIZ;
 	FILE *fp = stdin;
 	int ch, rval = EXIT_SUCCESS;
+	uintmax_t line;
 
 	static const struct option longopts[] = {
-		{ "version",    no_argument,       0, 'V' },
-		{ "help",       no_argument,       0, 'h' },
-		{ NULL,         0, 0, 0 }
+		{ "version",    no_argument,       NULL, 'V' },
+		{ "help",       no_argument,       NULL, 'h' },
+		{ NULL,         0, NULL, 0 }
 	};
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
@@ -123,12 +122,11 @@ int main(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "Vh", longopts, NULL)) != -1)
 		switch(ch) {
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			exit(EXIT_SUCCESS);
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
 	argc -= optind;
@@ -147,8 +145,12 @@ int main(int argc, char *argv[])
 			filename = *argv++;
 		}
 
+		line = 0;
 		while (fgetws(buf, bufsiz, fp)) {
 			len = wcslen(buf);
+
+			if (len == 0)
+				continue;
 
 			/* This is my hack from setpwnam.c -janl */
 			while (buf[len-1] != '\n' && !feof(fp)) {
@@ -168,12 +170,14 @@ int main(int argc, char *argv[])
 				buf[len--] = '\0';
 			reverse_str(buf, len);
 			fputws(buf, stdout);
+			line++;
 		}
 		if (ferror(fp)) {
-			warn("%s", filename);
+			warn("%s: %ju", filename, line);
 			rval = EXIT_FAILURE;
 		}
-		fclose(fp);
+		if (fp != stdin)
+			fclose(fp);
 	} while(*argv);
 
 	free(buf);

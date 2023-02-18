@@ -138,7 +138,7 @@ static int xfs_verify_sb(struct xfs_super_block *ondisk)
 	    sbp->sb_blocksize > XFS_MAX_BLOCKSIZE			||
 	    sbp->sb_blocklog < XFS_MIN_BLOCKSIZE_LOG			||
 	    sbp->sb_blocklog > XFS_MAX_BLOCKSIZE_LOG			||
-	    sbp->sb_blocksize != (1 << sbp->sb_blocklog)		||
+	    sbp->sb_blocksize != (1ULL << sbp->sb_blocklog)		||
 	    sbp->sb_inodesize < XFS_DINODE_MIN_SIZE			||
 	    sbp->sb_inodesize > XFS_DINODE_MAX_SIZE			||
 	    sbp->sb_inodelog < XFS_DINODE_MIN_LOG			||
@@ -169,10 +169,11 @@ static int probe_xfs(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!xfs_verify_sb(xs))
 		return 1;
 
-	if (strlen(xs->sb_fname))
+	if (*xs->sb_fname != '\0')
 		blkid_probe_set_label(pr, (unsigned char *) xs->sb_fname,
 				sizeof(xs->sb_fname));
 	blkid_probe_set_uuid(pr, xs->sb_uuid);
+	blkid_probe_set_block_size(pr, be16_to_cpu(xs->sb_sectsize));
 	return 0;
 }
 
@@ -241,7 +242,8 @@ static int xlog_valid_rec_header(struct xlog_rec_header *rhead)
 }
 
 /* xlog record header will be in some sector in the first 256k */
-static int probe_xfs_log(blkid_probe pr, const struct blkid_idmag *mag)
+static int probe_xfs_log(blkid_probe pr,
+		const struct blkid_idmag *mag __attribute__((__unused__)))
 {
 	int i;
 	struct xlog_rec_header *rhead;
@@ -251,15 +253,22 @@ static int probe_xfs_log(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!buf)
 		return errno ? -errno : 1;
 
-	if (memcmp(buf, "XFSB", 4) == 0)
-		return 1;			/* this is regular XFS, ignore */
-
 	/* check the first 512 512-byte sectors */
 	for (i = 0; i < 512; i++) {
+		/* this is regular XFS (maybe with some sectors shift), ignore */
+		if (memcmp(&buf[i*512], "XFSB", 4) == 0)
+			return 1;
+
 		rhead = (struct xlog_rec_header *)&buf[i*512];
 
 		if (xlog_valid_rec_header(rhead)) {
 			blkid_probe_set_uuid_as(pr, rhead->h_uuid, "LOGUUID");
+
+			if (blkid_probe_set_magic(pr, i * 512,
+						sizeof(rhead->h_magicno),
+						(unsigned char *) &rhead->h_magicno))
+				return 1;
+
 			return 0;
 		}
 	}

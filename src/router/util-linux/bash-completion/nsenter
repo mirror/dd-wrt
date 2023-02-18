@@ -5,9 +5,17 @@ _nsenter_module()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	case $prev in
+		'-S'|'--uid')
+			COMPREPLY=( $(compgen -W "uid" -- $cur) )
+			return 0
+			;;
+		'-G'|'--gid')
+			COMPREPLY=( $(compgen -W "gid" -- $cur) )
+			return 0
+			;;
 		'-t'|'--target')
 			local PIDS
-			PIDS=$(for I in /proc/[0-9]*; do echo ${I##"/proc/"}; done)
+			PIDS=$(cd /proc && echo [0-9]*)
 			COMPREPLY=( $(compgen -W "$PIDS" -- $cur) )
 			return 0
 			;;
@@ -24,18 +32,27 @@ _nsenter_module()
 			cur=${cur#=}
 			;;
 		-*)
-			OPTS="--target
+			OPTS="
+				--all
+				--target
 				--mount=
 				--uts=
 				--ipc=
 				--net=
 				--pid=
+				--cgroup=
 				--user=
+				--time=
+				--setuid
+				--setgid
+				--preserve-credentials
 				--root=
 				--wd=
+				--wdns=
 				--no-fork
 				--help
-				--version"
+				--version
+			"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;

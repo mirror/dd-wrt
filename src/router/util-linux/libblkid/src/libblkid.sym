@@ -6,7 +6,7 @@
  * The original libblkid from e2fsprogs (<=1.41.4) does not to use
  * symbol versioning -- all the original symbols are in BLKID_1.0 now.
  *
- * Copyright (C) 2009-2014 Karel Zak <kzak@redhat.com> 
+ * Copyright (C) 2009-2014 Karel Zak <kzak@redhat.com>
  */
 BLKID_1.0 {
 global:
@@ -164,3 +164,22 @@ global:
 BLKID_2.25 {
 	blkid_partlist_get_partition_by_partno;
 } BLKID_2.23;
+
+BLKID_2.30 {
+	blkid_probe_set_sectorsize;
+	blkid_partitions_get_name;
+} BLKID_2.25;
+
+BLKID_2_31 {
+	blkid_probe_reset_buffers;
+	blkid_probe_hide_range;
+} BLKID_2.30;
+
+BLKID_2_36 {
+	blkid_topology_get_dax;
+} BLKID_2_31;
+
+BLKID_2_37 {
+	blkid_probe_set_hint;
+	blkid_probe_reset_hints;
+} BLKID_2_36;

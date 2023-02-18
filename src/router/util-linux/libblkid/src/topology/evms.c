@@ -1,6 +1,6 @@
 /*
  * Evms topology
- * -- this is fallback for old systems where the toplogy information is not
+ * -- this is fallback for old systems where the topology information is not
  *    exported by sysfs
  *
  * Copyright (C) 2009 Karel Zak <kzak@redhat.com>
@@ -33,7 +33,7 @@
 struct evms_stripe_info {
 	uint32_t	size;		/* stripe unit 512-byte blocks */
 	uint32_t	width;		/* the number of stripe members or RAID data disks */
-} evms_stripe_info;
+};
 
 static int is_evms_device(dev_t devno)
 {

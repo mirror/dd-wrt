@@ -34,9 +34,10 @@ blkid_dev blkid_new_dev(void)
 {
 	blkid_dev dev;
 
-	if (!(dev = (blkid_dev) calloc(1, sizeof(struct blkid_struct_dev))))
+	if (!(dev = calloc(1, sizeof(struct blkid_struct_dev))))
 		return NULL;
 
+	DBG(DEV, ul_debugobj(dev, "alloc"));
 	INIT_LIST_HEAD(&dev->bid_devs);
 	INIT_LIST_HEAD(&dev->bid_tags);
 
@@ -48,10 +49,7 @@ void blkid_free_dev(blkid_dev dev)
 	if (!dev)
 		return;
 
-	DBG(DEV,
-	    ul_debug("  freeing dev %s (%s)", dev->bid_name, dev->bid_type ?
-		   dev->bid_type : "(null)"));
-	DBG(DEV, blkid_debug_dump_dev(dev));
+	DBG(DEV, ul_debugobj(dev, "freeing (%s)", dev->bid_name));
 
 	list_del(&dev->bid_devs);
 	while (!list_empty(&dev->bid_tags)) {
@@ -60,16 +58,23 @@ void blkid_free_dev(blkid_dev dev)
 					   bit_tags);
 		blkid_free_tag(tag);
 	}
+	free(dev->bid_xname);
 	free(dev->bid_name);
 	free(dev);
 }
 
 /*
- * Given a blkid device, return its name
+ * Given a blkid device, return its name. The function returns the name
+ * previously used for blkid_get_dev(). This name does not have to be canonical
+ * (real path) name, but for example symlink.
  */
 const char *blkid_dev_devname(blkid_dev dev)
 {
-	return dev ? dev->bid_name : NULL;
+	if (!dev)
+		return NULL;
+	if (dev->bid_xname)
+		return dev->bid_xname;
+	return dev->bid_name;
 }
 
 void blkid_debug_dump_dev(blkid_dev dev)
@@ -82,8 +87,8 @@ void blkid_debug_dump_dev(blkid_dev dev)
 	}
 
 	fprintf(stderr, "  dev: name = %s\n", dev->bid_name);
-	fprintf(stderr, "  dev: DEVNO=\"0x%0llx\"\n", (long long)dev->bid_devno);
-	fprintf(stderr, "  dev: TIME=\"%ld.%ld\"\n", (long)dev->bid_time, (long)dev->bid_utime);
+	fprintf(stderr, "  dev: DEVNO=\"0x%0lx\"\n", (unsigned long)dev->bid_devno);
+	fprintf(stderr, "  dev: TIME=\"%lld.%lld\"\n", (long long)dev->bid_time, (long long)dev->bid_utime);
 	fprintf(stderr, "  dev: PRI=\"%d\"\n", dev->bid_pri);
 	fprintf(stderr, "  dev: flags = 0x%08X\n", dev->bid_flags);
 
@@ -102,10 +107,10 @@ void blkid_debug_dump_dev(blkid_dev dev)
  *
  * These routines do not expose the list.h implementation, which are a
  * contamination of the namespace, and which force us to reveal far, far
- * too much of our internal implemenation.  I'm not convinced I want
+ * too much of our internal implementation.  I'm not convinced I want
  * to keep list.h in the long term, anyway.  It's fine for kernel
  * programming, but performance is not the #1 priority for this
- * library, and I really don't like the tradeoff of type-safety for
+ * library, and I really don't like the trade-off of type-safety for
  * performance for this application.  [tytso:20030125.2007EST]
  */
 
@@ -136,14 +141,14 @@ blkid_dev_iterate blkid_dev_iterate_begin(blkid_cache cache)
 		iter->magic = DEV_ITERATE_MAGIC;
 		iter->cache = cache;
 		iter->p	= cache->bic_devs.next;
-		iter->search_type = 0;
-		iter->search_value = 0;
+		iter->search_type = NULL;
+		iter->search_value = NULL;
 	}
 	return iter;
 }
 
 int blkid_dev_set_search(blkid_dev_iterate iter,
-				 char *search_type, char *search_value)
+				 const char *search_type, const char *search_value)
 {
 	char *new_type, *new_value;
 
@@ -176,7 +181,7 @@ int blkid_dev_next(blkid_dev_iterate iter,
 
 	if  (!ret_dev || !iter || iter->magic != DEV_ITERATE_MAGIC)
 		return -1;
-	*ret_dev = 0;
+	*ret_dev = NULL;
 	while (iter->p != &iter->cache->bic_devs) {
 		dev = list_entry(iter->p, struct blkid_struct_dev, bid_devs);
 		iter->p = iter->p->next;
@@ -208,7 +213,7 @@ extern char *optarg;
 extern int optind;
 #endif
 
-void __attribute__((__noreturn__)) usage(char *prog)
+static void __attribute__((__noreturn__)) usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [-f blkid_file] [-m debug_mask]\n", prog);
 	fprintf(stderr, "\tList all devices and exit\n");

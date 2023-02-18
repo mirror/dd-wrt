@@ -5,7 +5,7 @@ _blkdiscard_module()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	case $prev in
-		'-o'|'--offset'|'-l'|'--length')
+		'-o'|'--offset'|'-l'|'--length'|'-p'|'--step')
 			COMPREPLY=( $(compgen -W "num" -- $cur) )
 			return 0
 			;;
@@ -15,11 +15,22 @@ _blkdiscard_module()
 	esac
 	case $cur in
 		-*)
-			OPTS="--offset --length --secure --verbose --help --version"
+			OPTS="
+				--force
+				--offset
+				--length
+				--step
+				--secure
+				--zeroout
+				--verbose
+				--help
+				--version
+			"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;
 	esac
+	compopt -o bashdefault -o default
 	COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
 	return 0
 }

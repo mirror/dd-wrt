@@ -22,33 +22,38 @@ TS_DESC="mkfs endianness"
 ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MKCRAMFS"
+ts_check_test_command "$TS_CMD_HEXDUMP"
 
 ts_skip_nonroot
 
-set -o pipefail
-
 IMAGE_DATA="$TS_OUTDIR/${TS_TESTNAME}-data"
 IMAGE_CREATED="$TS_OUTDIR/${TS_TESTNAME}-cramfs.img"	#Image created during the test and compared against the known images.
+
+umask 133
 
 test_image() {
 	local TO_ENDIANNESS="$1"; shift
 	ts_log "create $TO_ENDIANNESS endian"
 
 	$TS_CMD_MKCRAMFS -N "$TO_ENDIANNESS" -b 4096 "$IMAGE_DATA" \
-		"$IMAGE_CREATED" >> $TS_OUTPUT 2>&1
+		"$IMAGE_CREATED" >> $TS_OUTPUT 2>> $TS_ERRLOG
 
-	md5sum $IMAGE_CREATED | cut -d" " -f1 >> $TS_OUTPUT
+	$TS_CMD_HEXDUMP -C $IMAGE_CREATED >> $TS_OUTPUT
 
 	rm "$IMAGE_CREATED"
 }
 
 #generate test data, must be owner root
 rm -rf "$IMAGE_DATA"
-mkdir -p $IMAGE_DATA/dirA/dirB
-yes "Testing cramfs 1234567890 Endianness check 1234567890 Endianness check" \
-	| dd of=$IMAGE_DATA/dirA/dirB/a bs=512 count=1 &> /dev/null
-yes "Testing cramfs 1234567890 Endianness check 1234567890 Endianness check" \
-	| dd of=$IMAGE_DATA/dirA/dirB/b bs=512 count=30 &> /dev/null
+mkdir -m 755 $IMAGE_DATA
+mkdir -m 755 $IMAGE_DATA/dirA
+mkdir -m 755 $IMAGE_DATA/dirA/dirB
+
+cp $TS_SELF/mkfs-endianness_testdata_a $IMAGE_DATA/dirA/dirB/a
+cp $TS_SELF/mkfs-endianness_testdata_b $IMAGE_DATA/dirA/dirB/b
+
+# sudo may use whatever group
+chgrp -R 0 $IMAGE_DATA
 
 #perform tests for both endians
 test_image "little"

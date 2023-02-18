@@ -51,23 +51,35 @@ void *UL_RaiseExc(int e)
 			PyErr_SetString(PyExc_TypeError, strerror(e));
 			break;
 		/* libmount-specific errors */
-		case MNT_ERR_APPLYFLAGS:
-			PyErr_SetString(LibmountError, "Failed to apply MS_PROPAGATION flags");
-			break;
-		case MNT_ERR_MOUNTOPT:
-			PyErr_SetString(LibmountError, "Failed to parse/use userspace mount options");
-			break;
 		case MNT_ERR_NOFSTAB:
-			PyErr_SetString(LibmountError, "Failed to detect filesystem type");
+			PyErr_SetString(LibmountError, "Not found required entry in fstab");
 			break;
 		case MNT_ERR_NOFSTYPE:
-			PyErr_SetString(LibmountError, "Required mount source undefined");
+			PyErr_SetString(LibmountError, "Lailed to detect filesystem type");
 			break;
 		case MNT_ERR_NOSOURCE:
+			PyErr_SetString(LibmountError, "Required mount source undefined");
+			break;
+		case MNT_ERR_LOOPDEV:
 			PyErr_SetString(LibmountError, "Loopdev setup failed");
+			break;
+		case MNT_ERR_APPLYFLAGS:
+			PyErr_SetString(LibmountError, "Failed to parse/use userspace mount options");
+			break;
+		case MNT_ERR_MOUNTOPT:
+			PyErr_SetString(LibmountError, "Failed to apply propagation flags");
 			break;
 		case MNT_ERR_AMBIFS:
 			PyErr_SetString(LibmountError, "Libblkid detected more filesystems on the device");
+			break;
+		case MNT_ERR_LOOPOVERLAP:
+			PyErr_SetString(LibmountError, "Detected overlapping loop device that cannot be re-use");
+			break;
+		case MNT_ERR_LOCK:
+			PyErr_SetString(LibmountError, "Failed to lock mtab/utab or so");
+			break;
+		case MNT_ERR_NAMESPACE:
+			PyErr_SetString(LibmountError, "Failed to switch namespace");
 			break;
 		/* some other errno */
 		default:
@@ -130,7 +142,7 @@ char *pystos(PyObject *pys)
 	"Please note that none of the classes' attributes may be deleted.\n" \
 	"This is not a complete mapping to the libmount C API, nor is it\n" \
 	"attempting to be one.\n" "Iterator functions only allow forward\n" \
-	"iteration for now. Contex.get_{user_,}mflags() differs from the C API\n" \
+	"iteration for now. Context.get_{user_,}mflags() differs from the C API\n" \
 	"and returns the flags directly. Fs.get_tag() differs from the C API\n" \
 	"and returns a (tag, value) tuple. Every attribute is \"filtered\"" \
 	"through appropriate getters/setters, no values are set directly."
@@ -208,9 +220,12 @@ PyMODINIT_FUNC initpylibmount(void)
 	if (!(pylibmount_debug_mask & PYMNT_DEBUG_INIT)) {
 		char *str = getenv("PYLIBMOUNT_DEBUG");
 
+		errno = 0;
 		pylibmount_debug_mask = 0;
 		if (str)
-			pylibmount_debug_mask = strtoul(str, 0, 0);
+			pylibmount_debug_mask = strtoul(str, NULL, 0);
+		if (errno)
+			pylibmount_debug_mask = 0;
 
 		pylibmount_debug_mask |= PYMNT_DEBUG_INIT;
 	}
@@ -229,7 +244,9 @@ PyMODINIT_FUNC initpylibmount(void)
 
 	FS_AddModuleObject(m);
 	Table_AddModuleObject(m);
+#ifdef __linux__
 	Context_AddModuleObject(m);
+#endif
 
 	/*
 	 * mount(8) userspace options masks (MNT_MAP_USERSPACE map)
@@ -249,6 +266,14 @@ PyMODINIT_FUNC initpylibmount(void)
 	PyModule_AddIntConstant(m, "MNT_MS_USER", MNT_MS_USER);
 	PyModule_AddIntConstant(m, "MNT_MS_USERS", MNT_MS_USERS);
 	PyModule_AddIntConstant(m, "MNT_MS_XCOMMENT", MNT_MS_XCOMMENT);
+	PyModule_AddIntConstant(m, "MNT_MS_HASH_DEVICE", MNT_MS_HASH_DEVICE);
+	PyModule_AddIntConstant(m, "MNT_MS_ROOT_HASH", MNT_MS_ROOT_HASH);
+	PyModule_AddIntConstant(m, "MNT_MS_HASH_OFFSET", MNT_MS_HASH_OFFSET);
+	PyModule_AddIntConstant(m, "MNT_MS_ROOT_HASH_FILE", MNT_MS_ROOT_HASH_FILE);
+	PyModule_AddIntConstant(m, "MNT_MS_FEC_DEVICE", MNT_MS_FEC_DEVICE);
+	PyModule_AddIntConstant(m, "MNT_MS_FEC_OFFSET", MNT_MS_FEC_OFFSET);
+	PyModule_AddIntConstant(m, "MNT_MS_FEC_ROOTS", MNT_MS_FEC_ROOTS);
+	PyModule_AddIntConstant(m, "MNT_MS_ROOT_HASH_SIG", MNT_MS_ROOT_HASH_SIG);
 
 	/*
 	 * mount(2) MS_* masks (MNT_MAP_LINUX map)

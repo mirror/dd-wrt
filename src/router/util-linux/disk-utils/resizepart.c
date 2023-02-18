@@ -13,8 +13,9 @@
 #include "strutils.h"
 #include "closestream.h"
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s <disk device> <partition number> <length>\n"),
 		program_invocation_short_name);
@@ -23,17 +24,15 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_("Tell the kernel about the new size of a partition.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("resizepart(8)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("resizepart(8)"));
+	exit(EXIT_SUCCESS);
 }
 
 static int get_partition_start(int fd, int partno, uint64_t *start)
 {
 	struct stat st;
-	struct sysfs_cxt disk = UL_SYSFSCXT_EMPTY,
-			 part = UL_SYSFSCXT_EMPTY;
+	struct path_cxt *disk = NULL, *part = NULL;
 	dev_t devno = 0;
 	int rc = -1;
 
@@ -43,23 +42,26 @@ static int get_partition_start(int fd, int partno, uint64_t *start)
 	if (fstat(fd, &st) || !S_ISBLK(st.st_mode))
 		goto done;
 	devno = st.st_rdev;
-	if (sysfs_init(&disk, devno, NULL))
+	disk = ul_new_sysfs_path(devno, NULL, NULL);
+	if (!disk)
 		goto done;
 	/*
 	 * partition
 	 */
-	devno = sysfs_partno_to_devno(&disk, partno);
+	devno = sysfs_blkdev_partno_to_devno(disk, partno);
 	if (!devno)
 		goto done;
-	if (sysfs_init(&part, devno, &disk))
+
+	part = ul_new_sysfs_path(devno, disk, NULL);
+	if (!part)
 		goto done;
-	if (sysfs_read_u64(&part, "start", start))
+	if (ul_path_read_u64(part, start, "start"))
 		goto done;
 
 	rc = 0;
 done:
-	sysfs_deinit(&part);
-	sysfs_deinit(&disk);
+	ul_unref_path(part);
+	ul_unref_path(disk);
 	return rc;
 }
 
@@ -70,29 +72,30 @@ int main(int argc, char **argv)
 	uint64_t start;
 
 	static const struct option longopts[] = {
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'V'},
-		{NULL, no_argument, 0, '0'},
+		{"help", no_argument, NULL, 'h'},
+		{"version", no_argument, NULL, 'V'},
+		{NULL, 0, NULL, '0'},
 	};
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((c = getopt_long(argc, argv, "Vh", longopts, NULL)) != -1)
 		switch (c) {
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
-	if (argc != 4)
-		usage(stderr);
+	if (argc != 4) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	wholedisk = argv[1];
 	partno = strtou32_or_err(argv[2], _("invalid partition number argument"));

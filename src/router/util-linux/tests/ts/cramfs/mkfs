@@ -24,11 +24,12 @@ ts_init "$*"
 ts_check_test_command "$TS_CMD_MKCRAMFS"
 ts_check_test_command "$TS_CMD_MOUNT"
 ts_check_test_command "$TS_CMD_UMOUNT"
+ts_check_test_command "$TS_CMD_BLKID"
+ts_check_test_command "$TS_HELPER_MD5"
+ts_check_test_command "$TS_HELPER_SYSINFO"
 
 ts_skip_nonroot
 ts_check_losetup
-
-set -o pipefail
 
 ORIGPWD=$(pwd)
 IMAGE_NAME="${TS_TESTNAME}-loop.img"
@@ -36,51 +37,75 @@ IMAGE_PATH="$TS_OUTDIR/$IMAGE_NAME"
 IMAGE_SRC="$TS_OUTDIR/${TS_TESTNAME}-data"
 LABEL="testCramfs"
 
+BYTE_ORDER=$($TS_HELPER_SYSINFO byte-order)
+PAGE_SIZE=$($TS_HELPER_SYSINFO pagesize)
+case "${BYTE_ORDER}:${PAGE_SIZE}" in
+	LE:4096)
+		MD5_EXP="a6667acb1cb0685d9eb5b9cd3724766c" ;;
+	LE:16384 | LE:65536)
+		MD5_EXP="b60133682603b0118592b55f1dba017c" ;;
+	BE:4096)
+		MD5_EXP="eaf05031dc8ec97c91ba5c773635cc89" ;;
+	BE:8192 | BE:65536)
+		MD5_EXP="5859f87b185b1187fca3b2b00c809c03" ;;
+	*)
+		echo "warning ${TS_NS}: unknown checksum for ${BYTE_ORDER}:${PAGE_SIZE}"
+		MD5_EXP="unknown" ;;
+esac
+
 ts_log "create mountpoint dir"
 
 [ -d "$TS_MOUNTPOINT" ] || mkdir -p $TS_MOUNTPOINT
 
 ts_log "generate data"
-if [ ! -d "$IMAGE_SRC" ]; then
-	mkdir -p $IMAGE_SRC
-	for d in `seq 0 110`; do
-		DIRNAME="$IMAGE_SRC/$(printf "dir-%03d" $d)"
-		mkdir -p $DIRNAME
-		for f in `seq 0 10`; do
-			FILENAME="$DIRNAME/$(printf "data.%03d" $f)"
-			printf "data in %03d-%03d" $d $f >> $FILENAME
-		done
+rm -rf "$IMAGE_SRC"
+mkdir -m 755 -p $IMAGE_SRC
+
+umask 133
+
+for d in `seq 0 110`; do
+	DIRNAME="$IMAGE_SRC/$(printf "dir-%03d" $d)"
+	mkdir -m 755 $DIRNAME
+	for f in `seq 0 10`; do
+		FILENAME="$DIRNAME/$(printf "data.%03d" $f)"
+		printf "data in %03d-%03d" $d $f >> $FILENAME
 	done
-fi
+done
+
+chgrp -R 0 "$IMAGE_SRC"
 
 ts_cd "$IMAGE_SRC"
 
 ts_log "list checksums from original data"
-find -type f -exec md5sum {} \; | sort >> $TS_OUTPUT
+find . -type f -exec md5sum {} \; | sort >> $TS_OUTPUT
 echo >> $TS_OUTPUT
 
 ts_log "create cramfs image"
-$TS_CMD_MKCRAMFS -n $LABEL $IMAGE_SRC $IMAGE_PATH 2>&1 >> $TS_OUTPUT
+$TS_CMD_MKCRAMFS -n $LABEL $IMAGE_SRC $IMAGE_PATH >> $TS_OUTPUT 2>> $TS_ERRLOG
 [ -s "$IMAGE_PATH" ] || ts_die "Cannot create $IMAGE_PATH"
 
 ts_cd "$TS_OUTDIR"
 
 ts_log "count MD5 from the image"
-md5sum $IMAGE_NAME 2>&1 | sort >> $TS_OUTPUT
+MD5_OUT=$("$TS_HELPER_MD5" < "$IMAGE_NAME") >> $TS_OUTPUT 2>> $TS_ERRLOG
+if [ "$MD5_EXP" != "$MD5_OUT" -a "$MD5_EXP" != "unknown" ]; then
+	ts_log "is $MD5_OUT, should be $MD5_EXP"
+fi
 echo >> $TS_OUTPUT
 
 ts_log "create loop device from image"
 DEVICE=$($TS_CMD_LOSETUP --show -f $IMAGE_PATH)
+ts_register_loop_device "$DEVICE"
 
 ts_log "check the image"
 ts_device_has "TYPE" "cramfs" $DEVICE
-[  "$?" == "0" ] || ts_die "Cannot find cramfs on $DEVICE" $DEVICE
+[  "$?" == "0" ] || ts_die "Cannot find cramfs on $DEVICE"
 
 ts_log "mount the image"
 ts_mount "cramfs" -r -L $LABEL $TS_MOUNTPOINT
 
 # check it
-ts_is_mounted $DEVICE || ts_die "Cannot find $DEVICE in /proc/mounts" $DEVICE
+ts_is_mounted $DEVICE || ts_die "Cannot find $DEVICE in /proc/mounts"
 
 ts_cd "$TS_MOUNTPOINT"
 
@@ -96,7 +121,5 @@ echo >> $TS_OUTPUT
 ts_cd "$ORIGPWD"
 
 ts_log "umount the image"
-$TS_CMD_UMOUNT $DEVICE
-$TS_CMD_LOSETUP -d $DEVICE 2>&1 >> $TS_OUTPUT
 ts_finalize
 

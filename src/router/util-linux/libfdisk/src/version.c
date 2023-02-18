@@ -17,7 +17,7 @@
 
 static const char *lib_version = LIBFDISK_VERSION;
 static const char *lib_features[] = {
-#ifdef CONFIG_LIBFDISK_ASSERT
+#if !defined(NDEBUG)	/* libc assert.h stuff */
 	"assert",
 #endif
 	"debug",	/* always enabled */
@@ -91,7 +91,7 @@ int fdisk_get_library_features(const char ***features)
 }
 
 #ifdef TEST_PROGRAM
-int test_version(struct fdisk_test *ts, int argc, char *argv[])
+static int test_version(struct fdisk_test *ts, int argc, char *argv[])
 {
 	const char *ver;
 	const char **features;

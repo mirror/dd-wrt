@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <utmp.h>
+#include <utmpx.h>
 #include <time.h>
 #include <ctype.h>
 #include <getopt.h>
@@ -44,19 +44,7 @@
 #include "nls.h"
 #include "xalloc.h"
 #include "closestream.h"
-
-static char *timetostr(const time_t time)
-{
-	static char s[29];	/* [Sun Sep 01 00:00:00 1998 PST] */
-	struct tm *tmp;
-
-	if (time != 0 && (tmp = localtime(&time)))
-		strftime(s, 29, "%a %b %d %T %Y %Z", tmp);
-	else
-		s[0] = '\0';
-
-	return s;
-}
+#include "timeutils.h"
 
 static time_t strtotime(const char *s_time)
 {
@@ -67,13 +55,36 @@ static time_t strtotime(const char *s_time)
 	if (s_time[0] == ' ' || s_time[0] == '\0')
 		return (time_t)0;
 
-	strptime(s_time, "%a %b %d %T %Y", &tm);
+	if (isdigit(s_time[0])) {
+		/* [1998-09-01T01:00:00,000000+00:00]
+		 * Subseconds are parsed with strtousec().  Timezone is
+		 * always UTC-0 */
+		strptime(s_time, "%Y-%m-%dT%H:%M:%S", &tm);
+	} else {
+		/* [Tue Sep 01 00:00:00 1998 GMT] */
+		strptime(s_time, "%a %b %d %T %Y", &tm);
+		/* Cheesy way of checking for DST.  This could be needed
+		 * with legacy dumps that used localtime(3).  */
+		if (s_time[26] == 'D')
+			tm.tm_isdst = 1;
+	}
+	return timegm(&tm);
+}
 
-	/* Cheesy way of checking for DST */
-	if (s_time[26] == 'D')
-		tm.tm_isdst = 1;
+static suseconds_t strtousec(const char *s_time)
+{
+	const char *s = strchr(s_time, ',');
 
-	return mktime(&tm);
+	if (s && *++s) {
+		suseconds_t us;
+		char *end = NULL;
+
+		errno = 0;
+		us = strtol(s, &end, 10);
+		if (errno == 0 && end && end > s)
+			return us;
+	}
+	return 0;
 }
 
 #define cleanse(x) xcleanse(x, sizeof(x))
@@ -84,30 +95,35 @@ static void xcleanse(char *s, int len)
 			*s = '?';
 }
 
-static void print_utline(struct utmp *ut, FILE *out)
+static void print_utline(struct utmpx *ut, FILE *out)
 {
-	const char *addr_string, *time_string;
+	const char *addr_string;
 	char buffer[INET6_ADDRSTRLEN];
+	char time_string[40];
+	struct timeval tv;
 
 	if (ut->ut_addr_v6[1] || ut->ut_addr_v6[2] || ut->ut_addr_v6[3])
 		addr_string = inet_ntop(AF_INET6, &(ut->ut_addr_v6), buffer, sizeof(buffer));
 	else
 		addr_string = inet_ntop(AF_INET, &(ut->ut_addr_v6), buffer, sizeof(buffer));
 
-#if defined(_HAVE_UT_TV)
-	time_string = timetostr(ut->ut_tv.tv_sec);
-#else
-	time_string = timetostr((time_t)ut->ut_time);	/* ut_time is not always a time_t */
-#endif
+	tv.tv_sec = ut->ut_tv.tv_sec;
+	tv.tv_usec = ut->ut_tv.tv_usec;
+
+	if (strtimeval_iso(&tv, ISO_TIMESTAMP_COMMA_GT, time_string,
+			   sizeof(time_string)) != 0)
+		return;
 	cleanse(ut->ut_id);
 	cleanse(ut->ut_user);
 	cleanse(ut->ut_line);
 	cleanse(ut->ut_host);
 
-	/*            pid    id       user     line     host     addr       time */
-	fprintf(out, "[%d] [%05d] [%-4.4s] [%-*.*s] [%-*.*s] [%-*.*s] [%-15s] [%-28.28s]\n",
-	       ut->ut_type, ut->ut_pid, ut->ut_id, 8, UT_NAMESIZE, ut->ut_user,
-	       12, UT_LINESIZE, ut->ut_line, 20, UT_HOSTSIZE, ut->ut_host,
+	/*            type pid    id       user     line     host     addr    time */
+	fprintf(out, "[%d] [%05d] [%-4.4s] [%-*.*s] [%-*.*s] [%-*.*s] [%-15s] [%s]\n",
+	       ut->ut_type, ut->ut_pid, ut->ut_id,
+	       8, (int)sizeof(ut->ut_user), ut->ut_user,
+	       12, (int)sizeof(ut->ut_line), ut->ut_line,
+	       20, (int)sizeof(ut->ut_host), ut->ut_host,
 	       addr_string, time_string);
 }
 
@@ -119,7 +135,7 @@ static void roll_file(const char *filename, off_t *size, FILE *out)
 {
 	FILE *in;
 	struct stat st;
-	struct utmp ut;
+	struct utmpx ut;
 	off_t pos;
 
 	if (!(in = fopen(filename, "r")))
@@ -161,6 +177,9 @@ static int follow_by_inotify(FILE *in, const char *filename, FILE *out)
 	size = ftello(in);
 	fclose(in);
 
+	if (size < 0)
+		err(EXIT_FAILURE, _("%s: cannot get file position"), filename);
+
 	wd = inotify_add_watch(fd, filename, EVENTS);
 	if (wd == -1)
 		err(EXIT_FAILURE, _("%s: cannot add inotify watch."), filename);
@@ -197,7 +216,7 @@ static int follow_by_inotify(FILE *in, const char *filename, FILE *out)
 
 static FILE *dump(FILE *in, const char *filename, int follow, FILE *out)
 {
-	struct utmp ut;
+	struct utmpx ut;
 
 	if (follow)
 		ignore_result( fseek(in, -10 * sizeof(ut), SEEK_END) );
@@ -211,15 +230,14 @@ static FILE *dump(FILE *in, const char *filename, int follow, FILE *out)
 #ifdef HAVE_INOTIFY_INIT
 	if (follow_by_inotify(in, filename, out) == 0)
 		return NULL;				/* file already closed */
-	else
 #endif
-		/* fallback for systems without inotify or with non-free
-		 * inotify instances */
-		for (;;) {
-			while (fread(&ut, sizeof(ut), 1, in) == 1)
-				print_utline(&ut, out);
-			sleep(1);
-		}
+	/* fallback for systems without inotify or with non-free
+	 * inotify instances */
+	for (;;) {
+		while (fread(&ut, sizeof(ut), 1, in) == 1)
+			print_utline(&ut, out);
+		sleep(1);
+	}
 
 	return in;
 }
@@ -255,9 +273,8 @@ static int gettok(char *line, char *dest, int size, int eatspace)
 
 static void undump(FILE *in, FILE *out)
 {
-	struct utmp ut;
-	char s_addr[INET6_ADDRSTRLEN + 1], s_time[29], *linestart, *line;
-	int count = 0;
+	struct utmpx ut;
+	char s_addr[INET6_ADDRSTRLEN + 1], s_time[29] = {}, *linestart, *line;
 
 	linestart = xmalloc(1024 * sizeof(*linestart));
 	s_time[28] = 0;
@@ -265,7 +282,12 @@ static void undump(FILE *in, FILE *out)
 	while (fgets(linestart, 1023, in)) {
 		line = linestart;
 		memset(&ut, '\0', sizeof(ut));
-		sscanf(line, "[%hd] [%d] [%4c] ", &ut.ut_type, &ut.ut_pid, ut.ut_id);
+
+		if (sscanf(line, "[%hd] [%d] [%4c] ",
+				&ut.ut_type, &ut.ut_pid, ut.ut_id) != 3) {
+			warnx(_("parse error: %s"), line);
+			continue;
+		}
 
 		line += 19;
 		line += gettok(line, ut.ut_user, sizeof(ut.ut_user), 1);
@@ -277,21 +299,19 @@ static void undump(FILE *in, FILE *out)
 			inet_pton(AF_INET, s_addr, &(ut.ut_addr_v6));
 		else
 			inet_pton(AF_INET6, s_addr, &(ut.ut_addr_v6));
-#if defined(_HAVE_UT_TV)
-		ut.ut_tv.tv_sec = strtotime(s_time);
-#else
-		ut.ut_time = strtotime(s_time);
-#endif
-		ignore_result( fwrite(&ut, sizeof(ut), 1, out) );
 
-		++count;
+		ut.ut_tv.tv_sec = strtotime(s_time);
+		ut.ut_tv.tv_usec = strtousec(s_time);
+
+		ignore_result( fwrite(&ut, sizeof(ut), 1, out) );
 	}
 
 	free(linestart);
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 
 	fprintf(out,
@@ -304,11 +324,10 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_(" -f, --follow         output appended data as the file grows\n"), out);
 	fputs(_(" -r, --reverse        write back dumped data into utmp file\n"), out);
 	fputs(_(" -o, --output <file>  write to file instead of standard output\n"), out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(22));
 
-	fprintf(out, USAGE_MAN_TAIL("utmpdump(1)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_MAN_TAIL("utmpdump(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -319,18 +338,18 @@ int main(int argc, char **argv)
 	const char *filename = NULL;
 
 	static const struct option longopts[] = {
-		{ "follow",  0, 0, 'f' },
-		{ "reverse", 0, 0, 'r' },
-		{ "output",  required_argument, 0, 'o' },
-		{ "help",    0, 0, 'h' },
-		{ "version", 0, 0, 'V' },
-		{ NULL, 0, 0, 0 }
+		{ "follow",  no_argument,       NULL, 'f' },
+		{ "reverse", no_argument,       NULL, 'r' },
+		{ "output",  required_argument, NULL, 'o' },
+		{ "help",    no_argument,       NULL, 'h' },
+		{ "version", no_argument,       NULL, 'V' },
+		{ NULL, 0, NULL, 0 }
 	};
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((c = getopt_long(argc, argv, "fro:hV", longopts, NULL)) != -1) {
 		switch (c) {
@@ -350,18 +369,20 @@ int main(int argc, char **argv)
 			break;
 
 		case 'h':
-			usage(stdout);
-			break;
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
 	if (!out)
 		out = stdout;
+
+	if (follow && (out != stdout || !isatty(STDOUT_FILENO))) {
+		setvbuf(out, NULL, _IOLBF, 0);
+	}
 
 	if (optind < argc) {
 		filename = argv[optind];
@@ -383,9 +404,8 @@ int main(int argc, char **argv)
 		in = dump(in, filename, follow, out);
 	}
 
-	if (out != stdout)
-		if (close_stream(out))
-			err(EXIT_FAILURE, _("write failed"));
+	if (out != stdout && close_stream(out))
+		err(EXIT_FAILURE, _("write failed"));
 
 	if (in && in != stdin)
 		fclose(in);

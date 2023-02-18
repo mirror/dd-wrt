@@ -5,39 +5,76 @@ _setpriv_module()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	case $prev in
-		'--inh-caps'|'--bounding-set')
-			# FIXME: how to append to a string with compgen?
-			local INHERIT
-			INHERIT=$($1 --list-caps| awk '{print $1, "-" $1}')
+		'--ambient-caps'|'--inh-caps'|'--bounding-set')
+			local prefix realcur INHERIT_ALL INHERIT
+			realcur="${cur##*,}"
+			prefix="${cur%$realcur}"
+			INHERIT_ALL=$($1 --list-caps| awk '{print $1, "-" $1}')
+			for WORD in $INHERIT_ALL; do
+				if ! [[ $prefix == *"$WORD"* ]]; then
+					INHERIT="$WORD ${INHERIT:-""}"
+				fi
+			done
 			compopt -o nospace
-			COMPREPLY=( $(compgen -W "all $INHERIT" -S ',' -- $cur) )
+			COMPREPLY=( $(compgen -P "$prefix" -W "$INHERIT" -S ',' -- $realcur) )
 			return 0
 			;;
 		'--ruid'|'--euid'|'--reuid')
 			local UIDS
-			UIDS=$(getent passwd | awk -F: '{print $3}')
+			UIDS=$(getent passwd | awk -F: '{print $1}')
 			COMPREPLY=( $(compgen -W "$UIDS" -- $cur) )
 			return 0
 			;;
 		'--rgid'|'--egid'|'--regid')
 			local GIDS
-			GIDS=$(getent group | awk -F: '{print $3}')
+			GIDS=$(getent group | awk -F: '{print $1}')
 			COMPREPLY=( $(compgen -W "$GIDS" -- $cur) )
 			return 0
 			;;
 		'--groups')
-			# FIXME: how to append to a string with compgen?
-			local GIDS
-			GIDS=$(getent group | awk -F: '{print $3}')
+			local prefix realcur GIDS_ALL GIDS
+			realcur="${cur##*,}"
+			prefix="${cur%$realcur}"
+			GIDS_ALL=$(getent group | awk -F: '{print $3}')
+			for WORD in $GIDS_ALL; do
+				if ! [[ $prefix == *"$WORD"* ]]; then
+					GIDS="$WORD ${GIDS:-""}"
+				fi
+			done
 			compopt -o nospace
-			COMPREPLY=( $(compgen -W "$GIDS" -S ',' -- $cur) )
+			COMPREPLY=( $(compgen -P "$prefix" -W "$GIDS" -S ',' -- $realcur) )
 			return 0
 			;;
 		'--securebits')
-			local SBITS
-			SBITS="noroot noroot_locked no_setuid_fixup no_setuid_fixup_locked keep_caps_locked
-			-noroot -noroot_locked -no_setuid_fixup -no_setuid_fixup_locked -keep_caps_locked"
-			COMPREPLY=( $(compgen -W "$SBITS" -- $cur) )
+			local prefix realcur SBITS_ALL SBITS WORD
+			realcur="${cur##*,}"
+			prefix="${cur%$realcur}"
+			SBITS_ALL="
+				{+,-}keep_caps_locked
+				{+,-}noroot
+				{+,-}noroot_locked
+				{+,-}no_setuid_fixup
+				{+,-}no_setuid_fixup_locked
+			"
+			for WORD in $SBITS_ALL; do
+				if ! [[ $prefix == *"$WORD"* ]]; then
+					SBITS="$WORD ${SBITS:-""}"
+				fi
+			done
+			compopt -o nospace
+			COMPREPLY=( $(compgen -P "$prefix" -W "$SBITS" -S ',' -- $realcur) )
+			return 0
+			;;
+		'--pdeathsig')
+			local i signals
+			for i in $(kill -l); do
+				case $i in
+					SIG*)
+						signals+="$i "
+					;;
+				esac
+			done
+			COMPREPLY=( $(compgen -W "keep clear $signals" -- $cur) )
 			return 0
 			;;
 		'--selinux-label')
@@ -58,6 +95,7 @@ _setpriv_module()
 		-*)
 			OPTS="--dump
 				--no-new-privs
+				--ambient-caps
 				--inh-caps
 				--bounding-set
 				--ruid
@@ -70,6 +108,8 @@ _setpriv_module()
 				--keep-groupskeep
 				--groups
 				--securebits
+				--pdeathsig
+				--reset-env
 				--selinux-label
 				--apparmor-profile
 				--help

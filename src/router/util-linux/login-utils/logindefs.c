@@ -38,6 +38,18 @@
 #include "pathnames.h"
 #include "xalloc.h"
 
+
+static void (*logindefs_loader)(void *) = NULL;
+static void *logindefs_loader_data = NULL;
+
+void logindefs_set_loader(void (*loader)(void *data), void *data)
+{
+	logindefs_loader = loader;
+	logindefs_loader_data = data;
+}
+
+#ifndef HAVE_LIBECONF
+
 struct item {
 	char *name;		/* name of the option.  */
 	char *value;		/* value of the option.  */
@@ -47,8 +59,6 @@ struct item {
 };
 
 static struct item *list = NULL;
-
-void (*logindefs_load_defaults)(void) = NULL;
 
 void free_getlogindefs_data(void)
 {
@@ -146,8 +156,8 @@ void logindefs_load_file(const char *filename)
 
 static void load_defaults(void)
 {
-	if (logindefs_load_defaults)
-		logindefs_load_defaults();
+	if (logindefs_loader)
+		logindefs_loader(logindefs_loader_data);
 	else
 		logindefs_load_file(_PATH_LOGINDEFS);
 }
@@ -189,7 +199,7 @@ int getlogindefs_bool(const char *name, int dflt)
 	return ptr && ptr->value ? (strcasecmp(ptr->value, "yes") == 0) : dflt;
 }
 
-unsigned long getlogindefs_num(const char *name, long dflt)
+unsigned long getlogindefs_num(const char *name, unsigned long dflt)
 {
 	struct item *ptr = search(name);
 	char *end = NULL;
@@ -224,6 +234,158 @@ const char *getlogindefs_str(const char *name, const char *dflt)
 		return "";
 	return ptr->value;
 }
+
+#else /* !HAVE_LIBECONF */
+
+#include <libeconf.h>
+
+static econf_file *file = NULL;
+
+void free_getlogindefs_data(void)
+{
+	econf_free (file);
+	file = NULL;
+}
+
+static void load_defaults(void)
+{
+	econf_err error;
+
+	if (file != NULL)
+	        free_getlogindefs_data();
+
+	error = econf_readDirs(&file,
+#if USE_VENDORDIR
+			_PATH_VENDORDIR,
+#else
+			NULL,
+#endif
+			"/etc", "login", "defs", "= \t", "#");
+
+	if (error)
+	  syslog(LOG_NOTICE, _("Error reading login.defs: %s"),
+		 econf_errString(error));
+
+	if (logindefs_loader)
+		logindefs_loader(logindefs_loader_data);
+
+}
+
+void logindefs_load_file(const char *filename)
+{
+	econf_file *file_l = NULL, *file_m = NULL;
+	char *path;
+
+	logindefs_loader = NULL; /* No recursion */
+
+#if USE_VENDORDIR
+	xasprintf(&path, _PATH_VENDORDIR"/%s", filename);
+
+	if (!econf_readFile(&file_l, path, "= \t", "#")) {
+	        if (file == NULL)
+		        file = file_l;
+	        else if (!econf_mergeFiles(&file_m, file, file_l)) {
+		        econf_free(file);
+			file = file_m;
+			econf_free(file_l);
+		}
+	}
+	free (path);
+#endif
+
+	xasprintf(&path, "/etc/%s", filename);
+
+	if (!econf_readFile(&file_l, path, "= \t", "#")) {
+	        if (file == NULL)
+		        file = file_l;
+	        else if (!econf_mergeFiles(&file_m, file, file_l)) {
+	                econf_free(file);
+			file = file_m;
+			econf_free(file_l);
+		}
+
+	/* Try original filename, could be relative */
+	} else if (!econf_readFile(&file_l, filename, "= \t", "#")) {
+		if (file == NULL)
+			file = file_l;
+		else if (!econf_mergeFiles(&file_m, file, file_l)) {
+			econf_free(file);
+			file = file_m;
+			econf_free(file_l);
+		}
+	}
+	free (path);
+}
+
+int getlogindefs_bool(const char *name, int dflt)
+{
+        bool value;
+	econf_err error;
+
+	if (!file)
+	        load_defaults();
+
+	if (!file)
+		return dflt;
+
+	if ((error = econf_getBoolValue(file, NULL, name, &value))) {
+	        if (error != ECONF_NOKEY)
+	                syslog(LOG_NOTICE, _("couldn't fetch %s: %s"), name,
+			       econf_errString(error));
+		return dflt;
+	}
+	return value;
+}
+
+unsigned long getlogindefs_num(const char *name, unsigned long dflt)
+{
+	uint64_t value;
+	econf_err error;
+
+	if (!file)
+	        load_defaults();
+
+	if (!file)
+		return dflt;
+
+	if ((error = econf_getUInt64Value(file, NULL, name, &value))) {
+	        if (error != ECONF_NOKEY)
+		        syslog(LOG_NOTICE, _("couldn't fetch %s: %s"), name,
+			       econf_errString(error));
+		return dflt;
+	}
+	return value;
+}
+
+/*
+ * Returns:
+ *	@dflt		if @name not found
+ *	""		(empty string) if found, but value not defined
+ *	"string"	if found
+ */
+const char *getlogindefs_str(const char *name, const char *dflt)
+{
+        char *value;
+	econf_err error;
+
+	if (!file)
+	        load_defaults();
+
+	if (!file)
+		return dflt;
+
+	if ((error = econf_getStringValue(file, NULL, name, &value))) {
+	        if (error != ECONF_NOKEY)
+		  syslog(LOG_NOTICE, _("couldn't fetch %s: %s"), name,
+			 econf_errString(error));
+		return dflt;
+	}
+	if (value)
+		return value;
+
+	return xstrdup("");
+}
+#endif /* !HAVE_LIBECONF */
 
 /*
  * For compatibility with shadow-utils we have to support additional
@@ -275,7 +437,6 @@ int effective_access(const char *path, int mode)
 		close(fd);
 	return fd == -1 ? -1 : 0;
 }
-
 
 /*
  * Check the per-account or the global hush-login setting.
@@ -344,7 +505,8 @@ int get_hushlogin_status(struct passwd *pwd, int force_check)
 				continue;	/* ignore errors... */
 
 			while (ok == 0 && fgets(buf, sizeof(buf), f)) {
-				buf[strlen(buf) - 1] = '\0';
+				if (buf[0] != '\0')
+					buf[strlen(buf) - 1] = '\0';
 				ok = !strcmp(buf, *buf == '/' ? pwd->pw_shell :
 								pwd->pw_name);
 			}
@@ -356,10 +518,11 @@ int get_hushlogin_status(struct passwd *pwd, int force_check)
 		}
 
 		/* per-account setting */
-		if (strlen(pwd->pw_dir) + sizeof(file) + 2 > sizeof(buf))
+		if (strlen(pwd->pw_dir) + strlen(file) + 2 > sizeof(buf))
 			continue;
 
-		sprintf(buf, "%s/%s", pwd->pw_dir, file);
+		if (snprintf(buf, sizeof(buf), "%s/%s", pwd->pw_dir, file) < 0)
+			continue;
 
 		if (force_check) {
 			uid_t ruid = getuid();
@@ -383,8 +546,9 @@ int get_hushlogin_status(struct passwd *pwd, int force_check)
 			rc = effective_access(buf, O_RDONLY);
 			if (rc == 0)
 				return 1;
-			else if (rc == -1 && errno == EACCES)
-					return -1;
+
+			if (rc == -1 && errno == EACCES)
+				return -1;
 		}
 
 	}
@@ -395,7 +559,7 @@ int get_hushlogin_status(struct passwd *pwd, int force_check)
 int main(int argc, char *argv[])
 {
 	char *name, *type;
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	if (argc <= 1)
 		errx(EXIT_FAILURE, "usage: %s <filename> "
@@ -404,12 +568,28 @@ int main(int argc, char *argv[])
 	logindefs_load_file(argv[1]);
 
 	if (argc != 4) {	/* list all */
+#ifdef HAVE_LIBECONF
+		int i;
+		char *keys[] = {"END", "EMPTY", "CRAZY3", "CRAZY2", "CRAZY1",
+				"BOOLEAN", "NUMBER", "STRING", "HELLO_WORLD",
+				NULL};
+
+		for (i = 0; keys[i] != NULL; i++) {
+		  	char *value = NULL;
+
+			econf_getStringValue(file, NULL, keys[i], &value);
+		        printf ("%s: $%s: '%s'\n", argv[1], keys[i], value);
+		}
+
+		econf_free (file);
+
+#else
 		struct item *ptr;
 
 		for (ptr = list; ptr; ptr = ptr->next)
 			printf("%s: $%s: '%s'\n", ptr->path, ptr->name,
 			       ptr->value);
-
+#endif
 		return EXIT_SUCCESS;
 	}
 

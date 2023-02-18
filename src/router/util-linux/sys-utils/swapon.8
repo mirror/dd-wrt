@@ -1,253 +1,252 @@
-.\" Copyright (c) 1980, 1991 Regents of the University of California.
-.\" All rights reserved.
+'\" t
+.\"     Title: swapon
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\"     @(#)swapon.8	6.3 (Berkeley) 3/16/91
-.\"
-.TH SWAPON 8 "October 2014" "util-linux" "System Administration"
-.SH NAME
+.TH "SWAPON" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 swapon, swapoff \- enable/disable devices and files for paging and swapping
-.SH SYNOPSIS
-.BR swapon
-[options]
-.RI [ specialfile ...]
-.br
-.B swapoff
-.RB [ \-va ]
-.RI [ specialfile ...]
-.SH DESCRIPTION
-.B swapon
-is used to specify devices on which paging and swapping are to take place.
-
-The device or file used is given by the
-.I specialfile
-parameter.  It may be of the form
-.BI \-L " label"
-or
-.BI \-U " uuid"
-to indicate a device by label or uuid.
-
-Calls to
-.B swapon
-normally occur in the system boot scripts making all swap devices available, so
-that the paging and swapping activity is interleaved across several devices and
-files.
-
-.B swapoff
-disables swapping on the specified devices and files.
-When the
-.B \-a
-flag is given, swapping is disabled on all known swap devices and files
-(as found in
-.I /proc/swaps
-or
-.IR /etc/fstab ).
-
-.SH OPTIONS
-.TP
-.BR \-a , " \-\-all"
-All devices marked as ``swap'' in
-.I /etc/fstab
-are made available, except for those with the ``noauto'' option.
-Devices that are already being used as swap are silently skipped.
-.TP
-.BR \-d , " \-\-discard" [ =\fIpolicy\fR]
-Enable swap discards, if the swap backing device supports the discard or
-trim operation.  This may improve performance on some Solid State Devices,
-but often it does not.  The option allows one to select between two
-available swap discard policies:
-.BI \-\-discard=once
-to perform a single-time discard operation for the whole swap area at swapon;
-or
-.BI \-\-discard=pages
-to discard freed swap pages before they are reused, while swapping.
-If no policy is selected, the default behavior is to enable both discard types.
-The
-.I /etc/fstab
-mount options
-.BR discard ,
-.BR discard=once ,
-or
-.B discard=pages
-may also be used to enable discard flags.
-.TP
-.BR \-e , " \-\-ifexists"
-Silently skip devices that do not exist.
-The
-.I /etc/fstab
-mount option
-.B nofail
-may also be used to skip non-existing device.
-
-.TP
-.BR \-f , " \-\-fixpgsz"
-Reinitialize (exec /sbin/mkswap) the swap space if its page size does not
-match that of the current running kernel.
-.BR mkswap (2)
-initializes the whole device and does not check for bad blocks.
-.TP
-.BR \-h , " \-\-help"
-Display help text and exit.
-.TP
-.BI \-L " label"
-Use the partition that has the specified
-.IR label .
-(For this, access to
-.I /proc/partitions
-is needed.)
-.TP
-.BR \-o , " \-\-options " \fIopts\fP
-Specify swap options by an fstab-compatible comma-separated string.
-For example:
-.RS
-.RS
+.SH "SYNOPSIS"
 .sp
-.B "swapon -o pri=1,discard=pages,nofail /dev/sda2"
+\fBswapon\fP [options] [\fIspecialfile\fP...]
 .sp
+\fBswapoff\fP [\fB\-va\fP] [\fIspecialfile\fP...]
+.SH "DESCRIPTION"
+.sp
+\fBswapon\fP is used to specify devices on which paging and swapping are to take place.
+.sp
+The device or file used is given by the \fIspecialfile\fP parameter. It may be of the form \fB\-L\fP \fIlabel\fP or \fB\-U\fP \fIuuid\fP to indicate a device by label or uuid.
+.sp
+Calls to \fBswapon\fP normally occur in the system boot scripts making all swap devices available, so that the paging and swapping activity is interleaved across several devices and files.
+.sp
+\fBswapoff\fP disables swapping on the specified devices and files. When the \fB\-a\fP flag is given, swapping is disabled on all known swap devices and files (as found in \fI/proc/swaps\fP or \fI/etc/fstab\fP).
+.SH "OPTIONS"
+.sp
+\fB\-a\fP, \fB\-\-all\fP
+.RS 4
+All devices marked as "swap" in \fI/etc/fstab\fP are made available, except for those with the "noauto" option. Devices that are already being used as swap are silently skipped.
 .RE
-The \fIopts\fP string is evaluated last and overrides all other
-options.
+.sp
+\fB\-d\fP, \fB\-\-discard\fP[\fB=\fP\fIpolicy\fP]
+.RS 4
+Enable swap discards, if the swap backing device supports the discard or trim operation. This may improve performance on some Solid State Devices, but often it does not. The option allows one to select between two available swap discard policies:
+.sp
+\fB\-\-discard=once\fP
+.RS 4
+to perform a single\-time discard operation for the whole swap area at swapon; or
 .RE
-.TP
-.BR \-p , " \-\-priority " \fIpriority\fP
-Specify the priority of the swap device.
-.I priority
-is a value between \-1 and 32767.  Higher numbers indicate
-higher priority.  See
-.BR swapon (2)
-for a full description of swap priorities.  Add
-.BI pri= value
-to the option field of
-.I /etc/fstab
-for use with
-.BR "swapon -a" .
-When no priority is defined, it defaults to \-1.
-.TP
-.BR \-s , " \-\-summary"
-Display swap usage summary by device.  Equivalent to "cat /proc/swaps".
-Not available before Linux 2.1.25.  This output format is DEPRECATED in favour
-of \fB\-\-show\fR that provides better control on output data.
-.TP
-.BR \-\-show [ =\fIcolumn\fR ...]
-Display a definable table of swap areas.  See the
-.B \-\-help
-output for a list of available columns.
-.TP
-.B \-\-noheadings
-Do not print headings when displaying
-.B \-\-show
-output.
-.TP
-.B \-\-raw
-Display
-.B \-\-show
-output without aligning table columns.
-.TP
-.B \-\-bytes
-Display swap size in bytes in
-.B \-\-show
-output instead of in user-friendly units.
-.TP
-.BI \-U  " uuid"
-Use the partition that has the specified
-.IR uuid .
-.TP
-.BR \-v , " \-\-verbose"
+.sp
+\fB\-\-discard=pages\fP
+.RS 4
+to asynchronously discard freed swap pages before they are available for reuse.
+.RE
+.sp
+If no policy is selected, the default behavior is to enable both discard types. The \fI/etc/fstab\fP mount options \fBdiscard\fP, \fBdiscard=once\fP, or \fBdiscard=pages\fP may also be used to enable discard flags.
+.RE
+.sp
+\fB\-e\fP, \fB\-\-ifexists\fP
+.RS 4
+Silently skip devices that do not exist. The \fI/etc/fstab\fP mount option \fBnofail\fP may also be used to skip non\-existing device.
+.RE
+.sp
+\fB\-f\fP, \fB\-\-fixpgsz\fP
+.RS 4
+Reinitialize (exec mkswap) the swap space if its page size does not match that of the current running kernel. \fBmkswap\fP(8) initializes the whole device and does not check for bad blocks.
+.RE
+.sp
+\fB\-L\fP \fIlabel\fP
+.RS 4
+Use the partition that has the specified \fIlabel\fP. (For this, access to \fI/proc/partitions\fP is needed.)
+.RE
+.sp
+\fB\-o\fP, \fB\-\-options\fP \fIopts\fP
+.RS 4
+Specify swap options by an \fIfstab\fP\-compatible comma\-separated string. For example:
+.sp
+\fBswapon \-o pri=1,discard=pages,nofail /dev/sda2\fP
+.sp
+The \fIopts\fP string is evaluated last and overrides all other command line options.
+.RE
+.sp
+\fB\-p\fP, \fB\-\-priority\fP \fIpriority\fP
+.RS 4
+Specify the priority of the swap device. \fIpriority\fP is a value between \-1 and 32767. Higher numbers indicate higher priority. See \fBswapon\fP(2) for a full description of swap priorities. Add \fBpri=\fP\fIvalue\fP to the option field of \fI/etc/fstab\fP for use with \fBswapon \-a\fP. When no priority is defined, it defaults to \-1.
+.RE
+.sp
+\fB\-s\fP, \fB\-\-summary\fP
+.RS 4
+Display swap usage summary by device. Equivalent to \fBcat /proc/swaps\fP. This output format is DEPRECATED in favour of \fB\-\-show\fP that provides better control on output data.
+.RE
+.sp
+\fB\-\-show\fP[\fB=\fP\fIcolumn\fP...]
+.RS 4
+Display a definable table of swap areas. See the \fB\-\-help\fP output for a list of available columns.
+.RE
+.sp
+\fB\-\-output\-all\fP
+.RS 4
+Output all available columns.
+.RE
+.sp
+\fB\-\-noheadings\fP
+.RS 4
+Do not print headings when displaying \fB\-\-show\fP output.
+.RE
+.sp
+\fB\-\-raw\fP
+.RS 4
+Display \fB\-\-show\fP output without aligning table columns.
+.RE
+.sp
+\fB\-\-bytes\fP
+.RS 4
+Display swap size in bytes in \fB\-\-show\fP output instead of in user\-friendly units.
+.RE
+.sp
+\fB\-U\fP \fIuuid\fP
+.RS 4
+Use the partition that has the specified \fIuuid\fP.
+.RE
+.sp
+\fB\-v\fP, \fB\-\-verbose\fP
+.RS 4
 Be verbose.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.SH NOTES
-You should not use \fBswapon\fR on a file with holes.
-This can be seen in the system log as
-.RS
-.sp
-.B "swapon: swapfile has holes."
-.sp
 .RE
-The swap file implementation in the kernel expects to be able to write to the
-file directly, without the assistance of the filesystem.  This is a problem on
-preallocated files (e.g.
-.BR fallocate (1))
-on filesystems like \fBXFS\fR or \fBext4\fR, and on copy-on-write
-filesystems like \fBbtrfs\fR.
-.PP
-It is recommended to use
-.BR dd (1)
-and
-.I /dev/zero
-to avoid holes on XFS and ext4.
-.PP
-.B swapon
-may not work correctly when using a swap file with some versions of
-\fBbtrfs\fR.  This is due to btrfs being a copy-on-write filesystem: the
-file location may not be static and corruption can result.  Btrfs actively
-disallows the use of swap files on its filesystems by refusing to map the file.
-.PP
-One possible workaround is to map the swap
-file to a loopback device.  This will allow the filesystem to determine the
-mapping properly but may come with a performance impact.
-.PP
-Swap over \fBNFS\fR may not work.
-.PP
-.B swapon
-automatically detects and rewrites a swap space signature with old software
-suspend data (e.g S1SUSPEND, S2SUSPEND, ...). The problem is that if we don't
-do it, then we get data corruption the next time an attempt at unsuspending is
-made.
-
-.SH ENVIRONMENT
-.IP LIBMOUNT_DEBUG=all
-enables libmount debug output.
-.IP LIBBLKID_DEBUG=all
-enables libblkid debug output.
-
-.SH SEE ALSO
-.BR swapon (2),
-.BR swapoff (2),
-.BR fstab (5),
-.BR init (8),
-.BR mkswap (8),
-.BR rc (8),
-.BR mount (8)
-.SH FILES
-.br
-.I /dev/sd??
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBswapoff\fP has the following exit status values since v2.36:
+.sp
+\fB0\fP
+.RS 4
+success
+.RE
+.sp
+\fB2\fP
+.RS 4
+system has insufficient memory to stop swapping (OOM)
+.RE
+.sp
+\fB4\fP
+.RS 4
+\fBswapoff\fP(2) syscall failed for another reason
+.RE
+.sp
+\fB8\fP
+.RS 4
+non\-\fBswapoff\fP(2) syscall system error (out of memory, ...)
+.RE
+.sp
+\fB16\fP
+.RS 4
+usage or syntax error
+.RE
+.sp
+\fB32\fP
+.RS 4
+all swapoff failed on \fB\-\-all\fP
+.RE
+.sp
+\fB64\fP
+.RS 4
+some swapoff succeeded on \fB\-\-all\fP
+.RE
+.sp
+The command \fBswapoff \-\-all\fP returns 0 (all succeeded), 32 (all failed), or 64 (some failed, some succeeded).
+.sp
++
+The old versions before v2.36 has no documented exit status, 0 means success in all versions.
+.SH "ENVIRONMENT"
+.sp
+\fBLIBMOUNT_DEBUG\fP=all
+.RS 4
+enables \fBlibmount\fP debug output.
+.RE
+.sp
+\fBLIBBLKID_DEBUG\fP=all
+.RS 4
+enables \fBlibblkid\fP debug output.
+.RE
+.SH "FILES"
+.sp
+\fI/dev/sd??\fP
+.RS 4
 standard paging devices
-.br
-.I /etc/fstab
+.RE
+.sp
+\fI/etc/fstab\fP
+.RS 4
 ascii filesystem description table
-.SH HISTORY
-The
-.B swapon
-command appeared in 4.0BSD.
-.SH AVAILABILITY
-The swapon command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.RE
+.SH "NOTES"
+.SS "Files with holes"
+.sp
+The swap file implementation in the kernel expects to be able to write to the file directly, without the assistance of the filesystem. This is a problem on files with holes or on copy\-on\-write files on filesystems like Btrfs.
+.sp
+Commands like \fBcp\fP(1) or \fBtruncate\fP(1) create files with holes. These files will be rejected by \fBswapon\fP.
+.sp
+Preallocated files created by \fBfallocate\fP(1) may be interpreted as files with holes too depending of the filesystem. Preallocated swap files are supported on XFS since Linux 4.18.
+.sp
+The most portable solution to create a swap file is to use \fBdd\fP(1) and \fI/dev/zero\fP.
+.SS "Btrfs"
+.sp
+Swap files on Btrfs are supported since Linux 5.0 on files with \fBnocow\fP attribute. See the \fBbtrfs\fP(5) manual page for more details.
+.SS "NFS"
+.sp
+Swap over \fBNFS\fP may not work.
+.SS "Suspend"
+.sp
+\fBswapon\fP automatically detects and rewrites a swap space signature with old software suspend data (e.g., \fBS1SUSPEND\fP, \fBS2SUSPEND\fP, ...). The problem is that if we don\(cqt do it, then we get data corruption the next time an attempt at unsuspending is made.
+.SH "HISTORY"
+.sp
+The \fBswapon\fP command appeared in 4.0BSD.
+.SH "SEE ALSO"
+.sp
+\fBswapoff\fP(2),
+\fBswapon\fP(2),
+\fBfstab\fP(5),
+\fBinit\fP(8),
+\fBfallocate\fP(1),
+\fBmkswap\fP(8),
+\fBmount\fP(8),
+\fBrc\fP(8)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBswapon\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

@@ -1,133 +1,199 @@
-.\" Copyright 1992, 1993, 1994 Rickard E. Faith (faith@cs.unc.edu)
-.\" May be freely distributed.
-.TH FSCK.MINIX 8 "July 1996" "util-linux" "System Administration"
-.SH NAME
+'\" t
+.\"     Title: fsck.minix
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "FSCK.MINIX" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 fsck.minix \- check consistency of Minix filesystem
-.SH SYNOPSIS
-.B fsck.minix
-.RB [ \-larvsmf ]
-.I device
-.SH DESCRIPTION
-.B fsck.minix
-performs a consistency check for the Linux MINIX filesystem.  The current
-version supports the 14 character and 30 character filename options.
-
-The program
-assumes the filesystem is quiescent.
-.B fsck.minix
-should not be used on a mounted device unless you can be sure nobody is
-writing to it (and remember that the kernel can write to it when it
-searches for files).
-
-The \fIdevice\fR name will usually have the following form:
-.nf
-.RS
-/dev/hda[1\(en63] (IDE disk 1)
-/dev/hdb[1\(en63] (IDE disk 2)
-/dev/sda[1\(en15] (SCSI disk 1)
-/dev/sdb[1\(en15] (SCSI disk 2)
+.SH "SYNOPSIS"
+.sp
+\fBfsck.minix\fP [options] \fIdevice\fP
+.SH "DESCRIPTION"
+.sp
+\fBfsck.minix\fP performs a consistency check for the Linux MINIX filesystem.
+.sp
+The program assumes the filesystem is quiescent. \fBfsck.minix\fP should not be used on a mounted device unless you can be sure nobody is writing to it. Remember that the kernel can write to device when it searches for files.
+.sp
+The \fIdevice\fP name will usually have the following form:
+.RS 3
+.ll -.6i
+.TS
+allbox tab(:);
+lt lt.
+T{
+.sp
+/dev/hda[1\-63]
+T}:T{
+.sp
+IDE disk 1
+T}
+T{
+.sp
+/dev/hdb[1\-63]
+T}:T{
+.sp
+IDE disk 2
+T}
+T{
+.sp
+/dev/sda[1\-15]
+T}:T{
+.sp
+SCSI disk 1
+T}
+T{
+.sp
+/dev/sdb[1\-15]
+T}:T{
+.sp
+SCSI disk 2
+T}
+.TE
+.sp
+.br
 .RE
-.fi
-
-If the filesystem was changed (i.e., repaired), then
-.B fsck.minix
-will print "FILE SYSTEM HAS CHANGED" and will
-.BR sync (2)
-three times before exiting.  Since Linux does not currently have raw
-devices, there is
-.I no
-need to reboot at this time.
-.SH WARNING
-.B fsck.minix
-should
-.B not
-be used on a mounted filesystem.  Using
-.B fsck.minix
-on a mounted filesystem is very dangerous, due to the possibility that
-deleted files are still in use, and can seriously damage a perfectly good
-filesystem!  If you absolutely have to run
-.B fsck.minix
-on a mounted filesystem (i.e., the root filesystem), make sure nothing is
-writing to the disk, and that no files are "zombies" waiting for deletion.
-.SH OPTIONS
-.TP
-.B \-l
+.ll
+.sp
+If the filesystem was changed, i.e., repaired, then \fBfsck.minix\fP will print "FILE SYSTEM HAS BEEN CHANGED" and will \fBsync\fP(2) three times before exiting. There is \fIno\fP need to reboot after check.
+.SH "WARNING"
+.sp
+\fBfsck.minix\fP should \fBnot\fP be used on a mounted filesystem. Using \fBfsck.minix\fP on a mounted filesystem is very dangerous, due to the possibility that deleted files are still in use, and can seriously damage a perfectly good filesystem! If you absolutely have to run \fBfsck.minix\fP on a mounted filesystem, such as the root filesystem, make sure nothing is writing to the disk, and that no files are "zombies" waiting for deletion.
+.SH "OPTIONS"
+.sp
+\fB\-l\fP, \fB\-\-list\fP
+.RS 4
 List all filenames.
-.TP
-.B \-r
+.RE
+.sp
+\fB\-r\fP, \fB\-\-repair\fP
+.RS 4
 Perform interactive repairs.
-.TP
-.B \-a
-Perform automatic repairs.  (This option implies
-.B \-r
-and serves to answer all of the questions asked with the default.)  Note
-that this can be extremely dangerous in the case of extensive filesystem
-damage.
-.TP
-.B \-v
+.RE
+.sp
+\fB\-a\fP, \fB\-\-auto\fP
+.RS 4
+Perform automatic repairs. This option implies \fB\-\-repair\fP and serves to answer all of the questions asked with the default. Note that this can be extremely dangerous in the case of extensive filesystem damage.
+.RE
+.sp
+\fB\-v\fP, \fB\-\-verbose\fP
+.RS 4
 Be verbose.
-.TP
-.B \-s
-Output super-block information.
-.TP
-.B \-m
-Activate MINIX-like "mode not cleared" warnings.
-.TP
-.B \-f
-Force a filesystem check even if the filesystem was marked as valid (this
-marking is done by the kernel when the filesystem is unmounted).
-.SH "SEE ALSO"
-.BR fsck (8),
-.BR fsck.ext2 (8),
-.BR mkfs (8),
-.BR mkfs.minix (8),
-.BR mkfs.ext2 (8),
-.BR reboot (8)
-.SH DIAGNOSTICS
-There are numerous diagnostic messages.  The ones mentioned here are the
-most commonly seen in normal usage.
-
-If the device does not exist,
-.B fsck.minix
-will print "unable to read super block".  If the device exists, but is not
-a MINIX filesystem,
-.B fsck.minix
-will print "bad magic number in super-block".
-.SH "EXIT CODES"
-The exit code returned by
-.B fsck.minix
-is the sum of the following:
-.IP 0
+.RE
+.sp
+\fB\-s\fP, \fB\-\-super\fP
+.RS 4
+Output super\-block information.
+.RE
+.sp
+\fB\-m\fP, \fB\-\-uncleared\fP
+.RS 4
+Activate MINIX\-like "mode not cleared" warnings.
+.RE
+.sp
+\fB\-f\fP, \fB\-\-force\fP
+.RS 4
+Force a filesystem check even if the filesystem was marked as valid. Marking is done by the kernel when the filesystem is unmounted.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "DIAGNOSTICS"
+.sp
+There are numerous diagnostic messages. The ones mentioned here are the most commonly seen in normal usage.
+.sp
+If the device does not exist, \fBfsck.minix\fP will print "unable to read super block". If the device exists, but is not a MINIX filesystem, \fBfsck.minix\fP will print "bad magic number in super\-block".
+.SH "EXIT STATUS"
+.sp
+The exit status returned by \fBfsck.minix\fP is the sum of the following:
+.sp
+\fB0\fP
+.RS 4
 No errors
-.IP 3
-Filesystem errors corrected, system should be rebooted if filesystem was
-mounted
-.IP 4
+.RE
+.sp
+\fB3\fP
+.RS 4
+Filesystem errors corrected, system should be rebooted if filesystem was mounted
+.RE
+.sp
+\fB4\fP
+.RS 4
 Filesystem errors left uncorrected
-.IP 7
-Combination of exit codes 3 and 4
-.IP 8
+.RE
+.sp
+\fB7\fP
+.RS 4
+Combination of exit statuses 3 and 4
+.RE
+.sp
+\fB8\fP
+.RS 4
 Operational error
-.IP 16
+.RE
+.sp
+\fB16\fP
+.RS 4
 Usage or syntax error
-.PP
-In point of fact, only 0, 3, 4, 7, 8, and 16 can ever be returned.
-.SH AUTHOR
-Linus Torvalds (torvalds@cs.helsinki.fi)
-.br
-Error code values by Rik Faith (faith@cs.unc.edu)
-.br
-Added support for filesystem valid flag: Dr.\& Wettstein
-(greg%wind.uucp@plains.nodak.edu)
-.br
-Check to prevent fsck of mounted filesystem added by Daniel Quinlan
-(quinlan@yggdrasil.com)
-.br
-Minix v2 fs support by Andreas Schwab
-(schwab@issan.informatik.uni-dortmund.de), updated by Nicolai
-Langfeldt (janl@math.uio.no)
-.br
-Portability patch by Russell King (rmk@ecs.soton.ac.uk).
-.SH AVAILABILITY
-The fsck.minix command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.RE
+.SH "AUTHORS"
+.sp
+.MTO "torvalds\(atcs.helsinki.fi" "Linus Torvalds" "."
+Exit status values by
+.MTO "faith\(atcs.unc.edu" "Rik Faith" ""
+Added support for filesystem valid flag:
+.MTO "greg%wind.uucp\(atplains.nodak.edu" "Dr. Wettstein" "."
+Check to prevent fsck of mounted filesystem added by
+.MTO "quinlan\(atyggdrasil.com" "Daniel Quinlan" "."
+Minix v2 fs support by
+.MTO "schwab\(atissan.informatik.uni\-dortmund.de" "Andreas Schwab" ","
+updated by
+.MTO "janl\(atmath.uio.no" "Nicolai Langfeldt" "."
+Portability patch by
+.MTO "rmk\(atecs.soton.ac.uk" "Russell King" "."
+.SH "SEE ALSO"
+.sp
+\fBfsck\fP(8),
+\fBfsck.ext2\fP(8),
+\fBmkfs\fP(8),
+\fBmkfs.ext2\fP(8),
+\fBmkfs.minix\fP(8),
+\fBreboot\fP(8)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBfsck.minix\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

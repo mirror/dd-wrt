@@ -16,12 +16,13 @@
  */
 
 #include <errno.h>
-#include <features.h>
 #include <getopt.h>
 
 #include "c.h"
 #include "nls.h"
 #include "closestream.h"
+#include "timeutils.h"
+#include "strutils.h"
 
 #include "ipcutils.h"
 
@@ -44,11 +45,18 @@ static void print_sem (int id);
 static void do_msg (char format, int unit);
 static void print_msg (int id, int unit);
 
-/* we read time as int64_t from /proc, so cast... */
-#define xctime(_x)	ctime((time_t *) (_x))
-
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static inline char *ctime64(int64_t *t)
 {
+	static char buf[CTIME_BUFSIZ];
+
+	/* we read time as int64_t from /proc, so cast... */
+	ctime_r((time_t *)t, buf);
+	return buf;
+}
+
+static void __attribute__((__noreturn__)) usage(void)
+{
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %1$s [resource-option...] [output-option]\n"
 		       " %1$s -m|-q|-s -i <id>\n"), program_invocation_short_name);
@@ -58,8 +66,7 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 
 	fputs(USAGE_OPTIONS, out);
 	fputs(_(" -i, --id <id>  print details on resource identified by <id>\n"), out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(16));
 
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Resource options:\n"), out);
@@ -77,9 +84,9 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_(" -u, --summary     show status summary\n"), out);
 	fputs(_("     --human       show sizes in human-readable format\n"), out);
 	fputs(_(" -b, --bytes       show sizes in bytes\n"), out);
-	fprintf(out, USAGE_MAN_TAIL("ipcs(1)"));
+	printf(USAGE_MAN_TAIL("ipcs(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 int main (int argc, char **argv)
@@ -109,12 +116,12 @@ int main (int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((opt = getopt_long(argc, argv, options, longopts, NULL)) != -1) {
 		switch (opt) {
 		case 'i':
-			id = atoi (optarg);
+			id = strtos32_or_err(optarg, _("failed to parse id argument"));
 			specific = 1;
 			break;
 		case 'a':
@@ -150,13 +157,13 @@ int main (int argc, char **argv)
 		case 'b':
 			unit = IPC_UNIT_BYTES;
 			break;
+
 		case 'h':
-			usage(stdout);
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
@@ -199,16 +206,32 @@ static void do_shm (char format, int unit)
 	case LIMITS:
 	{
 		struct ipc_limits lim;
+		uint64_t tmp, pgsz = getpagesize();
 
-		printf (_("------ Shared Memory Limits --------\n"));
-		if (ipc_shm_get_limits(&lim))
+		if (ipc_shm_get_limits(&lim)) {
+			printf (_("unable to fetch shared memory limits\n"));
 			return;
+		}
+		printf (_("------ Shared Memory Limits --------\n"));
 		printf (_("max number of segments = %ju\n"), lim.shmmni);
 		ipc_print_size(unit == IPC_UNIT_DEFAULT ? IPC_UNIT_KB : unit,
 			       _("max seg size"), lim.shmmax, "\n", 0);
-		ipc_print_size(unit == IPC_UNIT_DEFAULT ? IPC_UNIT_KB : unit,
-			       _("max total shared memory"),
-			       (uint64_t) lim.shmall * getpagesize(), "\n", 0);
+
+		if (unit == IPC_UNIT_KB || unit == IPC_UNIT_DEFAULT) {
+			tmp = (uint64_t) lim.shmall * (pgsz / 1024);
+			if (lim.shmall != 0 && tmp / lim.shmall != pgsz / 1024)
+				tmp = UINT64_MAX - (UINT64_MAX % (pgsz / 1024));
+
+			ipc_print_size(IPC_UNIT_DEFAULT, _("max total shared memory (kbytes)"), tmp, "\n", 0);
+		}
+		else {
+			tmp = (uint64_t) lim.shmall * pgsz;
+			/* overflow handling, at least we don't print ridiculous small values */
+			if (lim.shmall != 0 && tmp / lim.shmall != pgsz)
+			        tmp = UINT64_MAX - (UINT64_MAX % pgsz);
+
+			ipc_print_size(unit, _("max total shared memory"), tmp, "\n", 0);
+		}
 		ipc_print_size(unit == IPC_UNIT_DEFAULT ? IPC_UNIT_BYTES : unit,
 			       _("min seg size"), lim.shmmin, "\n", 0);
 		return;
@@ -302,11 +325,11 @@ static void do_shm (char format, int unit)
 				printf ("%-10d %-10u", shmdsp->shm_perm.id, shmdsp->shm_perm.uid);
 			/* ctime uses static buffer: use separate calls */
 			printf(" %-20.16s", shmdsp->shm_atim
-			       ? xctime(&shmdsp->shm_atim) + 4 : _("Not set"));
+			       ? ctime64(&shmdsp->shm_atim) + 4 : _("Not set"));
 			printf(" %-20.16s", shmdsp->shm_dtim
-			       ? xctime(&shmdsp->shm_dtim) + 4 : _("Not set"));
+			       ? ctime64(&shmdsp->shm_dtim) + 4 : _("Not set"));
 			printf(" %-20.16s\n", shmdsp->shm_ctim
-			       ? xctime(&shmdsp->shm_ctim) + 4 : _("Not set"));
+			       ? ctime64(&shmdsp->shm_ctim) + 4 : _("Not set"));
 			break;
 		case PID:
 			if (pw)
@@ -339,7 +362,6 @@ static void do_shm (char format, int unit)
 	}
 
 	ipc_shm_free_info(shmds);
-	return;
 }
 
 static void do_sem (char format)
@@ -352,14 +374,16 @@ static void do_sem (char format)
 	{
 		struct ipc_limits lim;
 
-		printf (_("------ Semaphore Limits --------\n"));
-		if (ipc_sem_get_limits(&lim))
+		if (ipc_sem_get_limits(&lim)) {
+			printf (_("unable to fetch semaphore limits\n"));
 			return;
+		}
+		printf (_("------ Semaphore Limits --------\n"));
 		printf (_("max number of arrays = %d\n"), lim.semmni);
 		printf (_("max semaphores per array = %d\n"), lim.semmsl);
 		printf (_("max semaphores system wide = %d\n"), lim.semmns);
 		printf (_("max ops per semop call = %d\n"), lim.semopm);
-		printf (_("semaphore max value = %d\n"), lim.semvmx);
+		printf (_("semaphore max value = %u\n"), lim.semvmx);
 		return;
 	}
 	case STATUS:
@@ -418,9 +442,9 @@ static void do_sem (char format)
 			else
 				printf ("%-8d %-10u", semdsp->sem_perm.id, semdsp->sem_perm.uid);
 			printf ("  %-26.24s", semdsp->sem_otime
-				? xctime(&semdsp->sem_otime) : _("Not set"));
+				? ctime64(&semdsp->sem_otime) : _("Not set"));
 			printf (" %-26.24s\n", semdsp->sem_ctime
-				? xctime( &semdsp->sem_ctime) : _("Not set"));
+				? ctime64( &semdsp->sem_ctime) : _("Not set"));
 			break;
 		case PID:
 			break;
@@ -439,7 +463,6 @@ static void do_sem (char format)
 	}
 
 	ipc_sem_free_info(semds);
-	return;
 }
 
 static void do_msg (char format, int unit)
@@ -452,8 +475,10 @@ static void do_msg (char format, int unit)
 	{
 		struct ipc_limits lim;
 
-		if (ipc_msg_get_limits(&lim))
+		if (ipc_msg_get_limits(&lim)) {
+			printf (_("unable to fetch message limits\n"));
 			return;
+		}
 		printf (_("------ Messages Limits --------\n"));
 		printf (_("max queues system wide = %d\n"), lim.msgmni);
 		ipc_print_size(unit == IPC_UNIT_DEFAULT ? IPC_UNIT_BYTES : unit,
@@ -524,11 +549,11 @@ static void do_msg (char format, int unit)
 			else
 				printf ("%-8d %-10u", msgdsp->msg_perm.id, msgdsp->msg_perm.uid);
 			printf (" %-20.16s", msgdsp->q_stime
-				? xctime(&msgdsp->q_stime) + 4 : _("Not set"));
+				? ctime64(&msgdsp->q_stime) + 4 : _("Not set"));
 			printf (" %-20.16s", msgdsp->q_rtime
-				? xctime(&msgdsp->q_rtime) + 4 : _("Not set"));
+				? ctime64(&msgdsp->q_rtime) + 4 : _("Not set"));
 			printf (" %-20.16s\n", msgdsp->q_ctime
-				? xctime(&msgdsp->q_ctime) + 4 : _("Not set"));
+				? ctime64(&msgdsp->q_ctime) + 4 : _("Not set"));
 			break;
 		case PID:
 			if (pw)
@@ -558,7 +583,6 @@ static void do_msg (char format, int unit)
 	}
 
 	ipc_msg_free_info(msgds);
-	return;
 }
 
 static void print_shm(int shmid, int unit)
@@ -572,7 +596,7 @@ static void print_shm(int shmid, int unit)
 
 	printf(_("\nShared memory Segment shmid=%d\n"), shmid);
 	printf(_("uid=%u\tgid=%u\tcuid=%u\tcgid=%u\n"),
-	       shmdata->shm_perm.uid, shmdata->shm_perm.uid,
+	       shmdata->shm_perm.uid, shmdata->shm_perm.gid,
 	       shmdata->shm_perm.cuid, shmdata->shm_perm.cgid);
 	printf(_("mode=%#o\taccess_perms=%#o\n"), shmdata->shm_perm.mode,
 	       shmdata->shm_perm.mode & 0777);
@@ -582,16 +606,16 @@ static void print_shm(int shmid, int unit)
 	       shmdata->shm_lprid, shmdata->shm_cprid,
 	       shmdata->shm_nattch);
 	printf(_("att_time=%-26.24s\n"),
-	       shmdata->shm_atim ? xctime(&(shmdata->shm_atim)) : _("Not set"));
+	       shmdata->shm_atim ? ctime64(&(shmdata->shm_atim)) : _("Not set"));
 	printf(_("det_time=%-26.24s\n"),
-	       shmdata->shm_dtim ? xctime(&shmdata->shm_dtim) : _("Not set"));
-	printf(_("change_time=%-26.24s\n"), xctime(&shmdata->shm_ctim));
+	       shmdata->shm_dtim ? ctime64(&shmdata->shm_dtim) : _("Not set"));
+	printf(_("change_time=%-26.24s\n"), ctime64(&shmdata->shm_ctim));
 	printf("\n");
 
 	ipc_shm_free_info(shmdata);
 }
 
-void print_msg(int msgid, int unit)
+static void print_msg(int msgid, int unit)
 {
 	struct msg_data *msgdata;
 
@@ -602,7 +626,7 @@ void print_msg(int msgid, int unit)
 
 	printf(_("\nMessage Queue msqid=%d\n"), msgid);
 	printf(_("uid=%u\tgid=%u\tcuid=%u\tcgid=%u\tmode=%#o\n"),
-	       msgdata->msg_perm.uid, msgdata->msg_perm.uid,
+	       msgdata->msg_perm.uid, msgdata->msg_perm.gid,
 	       msgdata->msg_perm.cuid, msgdata->msg_perm.cgid,
 	       msgdata->msg_perm.mode);
 	ipc_print_size(unit, unit == IPC_UNIT_HUMAN ? _("csize=") : _("cbytes="),
@@ -613,11 +637,11 @@ void print_msg(int msgid, int unit)
 	       msgdata->q_qnum,
 	       msgdata->q_lspid, msgdata->q_lrpid);
 	printf(_("send_time=%-26.24s\n"),
-	       msgdata->q_stime ? xctime(&msgdata->q_stime) : _("Not set"));
+	       msgdata->q_stime ? ctime64(&msgdata->q_stime) : _("Not set"));
 	printf(_("rcv_time=%-26.24s\n"),
-	       msgdata->q_rtime ? xctime(&msgdata->q_rtime) : _("Not set"));
+	       msgdata->q_rtime ? ctime64(&msgdata->q_rtime) : _("Not set"));
 	printf(_("change_time=%-26.24s\n"),
-	       msgdata->q_ctime ? xctime(&msgdata->q_ctime) : _("Not set"));
+	       msgdata->q_ctime ? ctime64(&msgdata->q_ctime) : _("Not set"));
 	printf("\n");
 
 	ipc_msg_free_info(msgdata);
@@ -635,21 +659,21 @@ static void print_sem(int semid)
 
 	printf(_("\nSemaphore Array semid=%d\n"), semid);
 	printf(_("uid=%u\t gid=%u\t cuid=%u\t cgid=%u\n"),
-	       semdata->sem_perm.uid, semdata->sem_perm.uid,
+	       semdata->sem_perm.uid, semdata->sem_perm.gid,
 	       semdata->sem_perm.cuid, semdata->sem_perm.cgid);
 	printf(_("mode=%#o, access_perms=%#o\n"),
 	       semdata->sem_perm.mode, semdata->sem_perm.mode & 0777);
 	printf(_("nsems = %ju\n"), semdata->sem_nsems);
 	printf(_("otime = %-26.24s\n"),
-	       semdata->sem_otime ? xctime(&semdata->sem_otime) : _("Not set"));
-	printf(_("ctime = %-26.24s\n"), xctime(&semdata->sem_ctime));
+	       semdata->sem_otime ? ctime64(&semdata->sem_otime) : _("Not set"));
+	printf(_("ctime = %-26.24s\n"), ctime64(&semdata->sem_ctime));
 
 	printf("%-10s %-10s %-10s %-10s %-10s\n",
 	       _("semnum"), _("value"), _("ncount"), _("zcount"), _("pid"));
 
 	for (i = 0; i < semdata->sem_nsems; i++) {
 		struct sem_elem *e = &semdata->elements[i];
-		printf("%-10zd %-10d %-10d %-10d %-10d\n",
+		printf("%-10zu %-10d %-10d %-10d %-10d\n",
 		       i, e->semval, e->ncount, e->zcount, e->pid);
 	}
 	printf("\n");

@@ -16,6 +16,8 @@
 # GNU General Public License for more details.
 #
 
+test -f /proc/sys/kernel/shmall || ts_skip "no /proc"
+
 PAGE_SIZE=$($TS_HELPER_SYSINFO pagesize)
 
 # kernel files
@@ -53,13 +55,15 @@ IPCS_CMD=(
 #  ... it's a problem for admins who want to use 75557863725TB of RAM for shm)
 #
 IPCS_LIMITS=(
-	$($TS_HELPER_SYSINFO INT_MAX)
+	32768
 	$($TS_HELPER_SYSINFO ULONG_MAX32)
 	$($TS_HELPER_SYSINFO ULONG_MAX32)
 )
 
 # list of indexes = 0..(sizeof Array - 1)
 IPCS_IDX=$(seq 0 $(( ${#IPCS_PROCFILES[*]} - 1 )))
+
+UINT64_MAX=$($TS_HELPER_SYSINFO UINT64_MAX)
 
 # checker
 function ipcs_limits_check {
@@ -70,11 +74,18 @@ function ipcs_limits_check {
 		a=$(eval ${IPCS_KERNEL_CMD[$i]})
 		b=$(eval ${IPCS_CMD[$i]})
 
+		# follow the way how ipcs handles u64 overflow
+		max_kbytes=$(bc <<< "$UINT64_MAX - ($UINT64_MAX % ($PAGE_SIZE / 1024))")
+
 		#echo
-		#echo "KERNEL-CMD: ${IPCS_KERNEL_CMD[$i]}"
-		#echo "KERNEL-RAW: $(cat ${IPCS_PROCFILES[$i]})"
-		#echo "IPCS-CMD:   ${IPCS_CMD[$i]}"
+		#echo "kernel kbytes: $a"
+		#echo "lsipc kbytes:  $b"
+		#echo "max kbytes:    $max_kbytes"
 		#echo
+
+		if [ $(bc <<<"$a > $max_kbytes") -eq 1 ]; then
+			a=$max_kbytes
+		fi
 
 		if [ x"$a" == x"$b" ]; then
 			echo " OK"

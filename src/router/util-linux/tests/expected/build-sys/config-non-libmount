@@ -1,48 +1,59 @@
-blkid:  libblkid libuuid 
-cfdisk:  libblkid libfdisk libncursesw libsmartcols libtinfo libuuid 
-fdisk:  libblkid libfdisk libsmartcols libuuid 
-findfs:  libblkid libuuid 
-libblkid.so.1.1.0:  libuuid 
+blkdiscard:  libblkid 
+blkid:  libblkid 
+cfdisk:  libfdisk libncursesw libsmartcols libtinfo 
+column:  libsmartcols 
+fdisk:  libfdisk libreadline libsmartcols libtinfo 
+fincore:  libsmartcols 
+findfs:  libblkid 
+irqtop:  libncursesw libsmartcols libtinfo 
+libblkid.so.1.1.0:  
 libfdisk.so.1.1.0:  libblkid libuuid 
 libsmartcols.so.1.1.0:  
 libuuid.so.1.3.0:  
 losetup:  libsmartcols 
 lscpu:  libsmartcols 
+lsfd:  libsmartcols 
+lsipc:  libsmartcols 
+lsirq:  libsmartcols 
 lslogins:  libsmartcols libsystemd 
+lsmem:  libsmartcols 
 mkswap:  libblkid libuuid 
-partx:  libblkid libsmartcols libuuid 
+partx:  libblkid libsmartcols 
 prlimit:  libsmartcols 
-sfdisk:  libblkid libfdisk libsmartcols libuuid 
+rfkill:  libsmartcols 
+sfdisk:  libfdisk libreadline libsmartcols libtinfo 
 swaplabel:  libblkid libuuid 
 uuidd:  libsystemd libuuid 
 uuidgen:  libuuid 
+uuidparse:  libsmartcols libuuid 
 wdctl:  libsmartcols 
-wipefs:  libblkid libuuid 
+wipefs:  libblkid libsmartcols 
 zramctl:  libsmartcols 
 addpart:  
 agetty:  
-blkdiscard:  
+blkzone:  
 blockdev:  
-cal:  libncursesw libtinfo 
+cal:  libtinfo 
 chcpu:  
-chfn:  libpam libpam_misc libpthread libuser 
+chfn:  libpam libpam_misc libuser 
+chmem:  
+choom:  
 chrt:  
-chsh:  libpam libpam_misc libpthread libuser 
+chsh:  libpam libpam_misc libuser 
 col:  
 colcrt:  
 colrm:  
-column:  
 ctrlaltdel:  
 delpart:  
-dmesg:  
+dmesg:  libtinfo 
 fallocate:  
-fdformat:  
 flock:  
 fsck.cramfs:  libz 
 fsck.minix:  
 fsfreeze:  
 getopt:  
-hexdump:  
+hardlink:  
+hexdump:  libtinfo 
 hwclock:  libm 
 ionice:  
 ipcmk:  
@@ -65,9 +76,7 @@ more:  libtinfo
 namei:  
 nologin:  
 nsenter:  
-pg:  libncursesw libtinfo 
 pivot_root:  
-raw:  
 readprofile:  
 rename:  
 renice:  
@@ -75,17 +84,18 @@ resizepart:
 rev:  
 rtcwake:  
 runuser:  libpam libpam_misc 
-script:  libutil 
+script:  
+scriptlive:  
 scriptreplay:  
 setarch:  
-setpriv:  ap-ng 
+setpriv:  libcap-ng 
 setsid:  
 setterm:  libtinfo 
 su:  libpam libpam_misc 
-sulogin:  rypt 
+sulogin:  libcrypt 
 switch_root:  
-tailf:  
 taskset:  
+uclampset:  
 ul:  libtinfo 
 unshare:  
 utmpdump:  

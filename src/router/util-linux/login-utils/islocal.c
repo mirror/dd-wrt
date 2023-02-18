@@ -56,12 +56,11 @@ static int is_local_in_file(const char *user, const char *filename)
 					 * but it is just an optimisation
 					 * anyway.  */
 					break;
-				} else {
-					/* we read a whole username, but it
-					 * is the wrong user.  Skip to the
-					 * next line.  */
-					skip = 1;
 				}
+				/* we read a whole username, but it
+				 * is the wrong user.  Skip to the
+				 * next line.  */
+				skip = 1;
 			} else if ('\n' == chin) {
 				/* This line contains no colon; it's
 				 * malformed.  No skip since we are already
@@ -91,22 +90,22 @@ int is_local(const char *user)
 #ifdef TEST_PROGRAM
 int main(int argc, char *argv[])
 {
-	atexit(close_stdout);
+	close_stdout_atexit();
 	if (argc <= 2) {
 		fprintf(stderr, _("Usage: %s <passwordfile> <username>...\n"),
 			argv[0]);
 		return 1;
-	} else {
-		int i;
-		for (i = 2; i < argc; i++) {
-			const int rv = is_local_in_file(argv[i], argv[1]);
-			if (rv < 0) {
-				perror(argv[1]);
-				return 2;
-			}
-			printf("%d:%s\n", rv, argv[i]);
-		}
-		return 0;
 	}
+
+	int i;
+	for (i = 2; i < argc; i++) {
+		const int rv = is_local_in_file(argv[i], argv[1]);
+		if (rv < 0) {
+			perror(argv[1]);
+			return 2;
+		}
+		printf("%d:%s\n", rv, argv[i]);
+	}
+	return 0;
 }
 #endif

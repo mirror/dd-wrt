@@ -17,20 +17,23 @@ _mkswap_module()
 			COMPREPLY=( $(compgen -W "1" -- $cur) )
 			return 0
 			;;
-		'-U'|'--uuid'|'-h'|'--help'|'-V'|'--version')
+		'-U'|'--uuid')
+			COMPREPLY=( $(compgen -W "$(uuidgen -r)" -- $cur) )
+			return 0
+			;;
+		'-h'|'--help'|'-V'|'--version')
 			return 0
 			;;
 	esac
 	case $cur in
 		-*)
-			OPTS="--check --force --pagesize --label --swapversion --uuid --version --help"
+			OPTS="--check --force --pagesize --lock --label --swapversion --uuid --verbose --version --help"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;
 	esac
-	local IFS=$'\n'
-	compopt -o filenames
-	COMPREPLY=( $(compgen -f -- $cur) )
+	compopt -o bashdefault -o default
+	COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
 	return 0
 }
 complete -F _mkswap_module mkswap

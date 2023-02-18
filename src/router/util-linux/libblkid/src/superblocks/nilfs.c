@@ -67,25 +67,37 @@ struct nilfs_super_block {
 #define NILFS_SB_OFFSET		0x400
 #define NILFS_SBB_OFFSET(_sz)	((((_sz) / 0x200) - 8) * 0x200)
 
-static int nilfs_valid_sb(blkid_probe pr, struct nilfs_super_block *sb)
+static int nilfs_valid_sb(blkid_probe pr, struct nilfs_super_block *sb, int is_bak)
 {
 	static unsigned char sum[4];
 	const int sumoff = offsetof(struct nilfs_super_block, s_sum);
 	size_t bytes;
+	const size_t crc_start = sumoff + 4;
 	uint32_t crc;
 
 	if (!sb || le16_to_cpu(sb->s_magic) != NILFS_SB_MAGIC)
 		return 0;
 
+	if (is_bak && blkid_probe_is_wholedisk(pr) &&
+	    sb->s_dev_size != pr->size)
+		return 0;
+
 	bytes = le16_to_cpu(sb->s_bytes);
-	crc = crc32(le32_to_cpu(sb->s_crc_seed), (unsigned char *)sb, sumoff);
-	crc = crc32(crc, sum, 4);
-	crc = crc32(crc, (unsigned char *)sb + sumoff + 4, bytes - sumoff - 4);
+	/* ensure that no underrun can happen in the length parameter
+	 * of the crc32 call or more data are processed than read into
+	 * sb */
+	if (bytes < crc_start || bytes > sizeof(struct nilfs_super_block))
+		return 0;
+
+	crc = ul_crc32(le32_to_cpu(sb->s_crc_seed), (unsigned char *)sb, sumoff);
+	crc = ul_crc32(crc, sum, 4);
+	crc = ul_crc32(crc, (unsigned char *)sb + crc_start, bytes - crc_start);
 
 	return blkid_probe_verify_csum(pr, crc, le32_to_cpu(sb->s_sum));
 }
 
-static int probe_nilfs2(blkid_probe pr, const struct blkid_idmag *mag)
+static int probe_nilfs2(blkid_probe pr,
+		const struct blkid_idmag *mag __attribute__((__unused__)))
 {
 	struct nilfs_super_block *sb, *sbp, *sbb;
 	int valid[2], swp = 0;
@@ -97,18 +109,29 @@ static int probe_nilfs2(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!sbp)
 		return errno ? -errno : 1;
 
+	valid[0] = nilfs_valid_sb(pr, sbp, 0);
+
+
 	/* backup */
 	sbb = (struct nilfs_super_block *) blkid_probe_get_buffer(
 			pr, NILFS_SBB_OFFSET(pr->size), sizeof(struct nilfs_super_block));
-	if (!sbb)
-		return errno ? -errno : 1;
+	if (!sbb) {
+		valid[1] = 0;
+
+		/* If the primary block is valid then continue and ignore also
+		 * I/O errors for backup block. Note the this is probably CD
+		 * where I/O errors and the end of the disk/session are "normal".
+		 */
+		if (!valid[0])
+			return errno ? -errno : 1;
+	} else
+		valid[1] = nilfs_valid_sb(pr, sbb, 1);
+
 
 	/*
 	 * Compare two super blocks and set 1 in swp if the secondary
 	 * super block is valid and newer.  Otherwise, set 0 in swp.
 	 */
-	valid[0] = nilfs_valid_sb(pr, sbp);
-	valid[1] = nilfs_valid_sb(pr, sbb);
 	if (!valid[0] && !valid[1])
 		return 1;
 
@@ -120,7 +143,7 @@ static int probe_nilfs2(blkid_probe pr, const struct blkid_idmag *mag)
 	DBG(LOWPROBE, ul_debug("nilfs2: primary=%d, backup=%d, swap=%d",
 				valid[0], valid[1], swp));
 
-	if (strlen(sb->s_volume_name))
+	if (*(sb->s_volume_name) != '\0')
 		blkid_probe_set_label(pr, (unsigned char *) sb->s_volume_name,
 				      sizeof(sb->s_volume_name));
 
@@ -133,6 +156,9 @@ static int probe_nilfs2(blkid_probe pr, const struct blkid_idmag *mag)
 	if (blkid_probe_set_magic(pr, magoff, sizeof(sb->s_magic),
 				(unsigned char *) &sb->s_magic))
 		return 1;
+
+	if (le32_to_cpu(sb->s_log_block_size) < 32)
+		blkid_probe_set_block_size(pr, 1024U << le32_to_cpu(sb->s_log_block_size));
 
 	return 0;
 }

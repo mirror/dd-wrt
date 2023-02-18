@@ -1,17 +1,48 @@
-.\" This page is in the public domain
-.TH LINE 1 "July 2002" "util-linux" "User Commands"
-.SH NAME
+'\" t
+.\"     Title: line
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "LINE" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 line \- read one line
-.SH SYNOPSIS
-.B line
-.SH DESCRIPTION
-The utility
-.B line
-copies one line (up to a newline) from standard input to standard output.
-It always prints at least a newline and returns an exit status of 1
-on EOF or read error.
+.SH "SYNOPSIS"
+.sp
+\fBline\fP
+.SH "DESCRIPTION"
+.sp
+The utility \fBline\fP copies one line (up to a newline) from standard input to standard output. It always prints at least a newline and returns an exit status of 1 on EOF or read error.
 .SH "SEE ALSO"
-.BR read (1)
-.SH AVAILABILITY
-The line command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBread\fP(1p)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBline\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

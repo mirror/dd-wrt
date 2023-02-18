@@ -46,11 +46,21 @@ extern size_t mbsalign (const char *src, char *dest,
 			size_t dest_size,  size_t *width,
 			mbs_align_t align, int flags);
 
+extern size_t mbsalign_with_padding (const char *src, char *dest, size_t dest_size,
+	               size_t *width, mbs_align_t align, int flags,
+		       int padchar);
+
 extern size_t mbs_safe_nwidth(const char *buf, size_t bufsz, size_t *sz);
 extern size_t mbs_safe_width(const char *s);
 
+extern size_t mbs_nwidth(const char *buf, size_t bufsz);
+extern size_t mbs_width(const char *s);
+
 extern char *mbs_safe_encode(const char *s, size_t *width);
-extern char *mbs_safe_encode_to_buffer(const char *s, size_t *width, char *buf);
+extern char *mbs_safe_encode_to_buffer(const char *s, size_t *width, char *buf, const char *safechars);
 extern size_t mbs_safe_encode_size(size_t bytes);
+
+extern char *mbs_invalid_encode(const char *s, size_t *width);
+extern char *mbs_invalid_encode_to_buffer(const char *s, size_t *width, char *buf);
 
 #endif /* UTIL_LINUX_MBSALIGN_H */

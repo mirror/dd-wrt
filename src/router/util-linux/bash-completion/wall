@@ -9,13 +9,17 @@ _wall_module()
 			COMPREPLY=( $(compgen -W "seconds" -- $cur) )
 			return 0
 			;;
+		'-g'|'--group')
+			COMPREPLY=( $(compgen -A 'group' -- $cur) )
+			return 0
+			;;
 		'-h'|'--help'|'-V'|'--version')
 			return 0
 			;;
 	esac
 	case $cur in
 		-*)
-			OPTS="--nobanner --timeout --version --help"
+			OPTS="--group --nobanner --timeout --version --help"
 			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
 			return 0
 			;;

@@ -1,52 +1,100 @@
-.TH NOLOGIN 8 "September 2013" "util-linux" "System Administration"
-.SH NAME
+'\" t
+.\"     Title: nologin
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: System Administration
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "NOLOGIN" "8" "2022-05-11" "util\-linux 2.38.1" "System Administration"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 nologin \- politely refuse a login
-.SH SYNOPSIS
-.B nologin
-.RB [ \-V ]
-.RB [ \-h ]
-.SH DESCRIPTION
-.B nologin
-displays a message that an account is not available and exits non-zero.  It is
-intended as a replacement shell field to deny login access to an account.
-.PP
-If the file /etc/nologin.txt exists, nologin displays its contents to the
-user instead of the default message.
-.PP
-The exit code returned by
-.B nologin
-is always 1.
-.PP
-.SH OPTIONS
-.IP "\fB\-h, \-\-help\fP"
+.SH "SYNOPSIS"
+.sp
+\fBnologin\fP [\fB\-V\fP] [\fB\-h\fP]
+.SH "DESCRIPTION"
+.sp
+\fBnologin\fP displays a message that an account is not available and exits non\-zero. It is intended as a replacement shell field to deny login access to an account.
+.sp
+If the file \fI/etc/nologin.txt\fP exists, \fBnologin\fP displays its contents to the user instead of the default message.
+.sp
+The exit status returned by \fBnologin\fP is always 1.
+.SH "OPTIONS"
+.sp
+\fB\-c\fP, \fB\-\-command\fP \fIcommand\fP
+.sp
+\fB\-\-init\-file\fP
+.sp
+\fB\-i\fP \fB\-\-interactive\fP
+.sp
+\fB\-\-init\-file\fP \fIfile\fP
+.sp
+\fB\-i\fP, \fB\-\-interactive\fP
+.sp
+\fB\-l\fP, \fB\-\-login\fP
+.sp
+\fB\-\-noprofile\fP
+.sp
+\fB\-\-norc\fP
+.sp
+\fB\-\-posix\fP
+.sp
+\fB\-\-rcfile\fP \fIfile\fP
+.sp
+\fB\-r\fP, \fB\-\-restricted\fP
+.sp
+These shell command\-line options are ignored to avoid \fBnologin\fP error.
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-.IP "\fB-V, \-\-version"
-Display version information and exit.
-.SH NOTES
-.B nologin
-is a per-account way to disable login (usually used for system accounts like http or ftp).
-.BR nologin (8)
-uses /etc/nologin.txt as an optional source for a non-default message, the login
-access is always refused independently of the file.
-.PP
-.BR pam_nologin (8)
-PAM module usually prevents all non-root users from logging into the system.
-.BR pam_nologin (8)
-functionality is controlled by /var/run/nologin or the /etc/nologin file.
-.SH AUTHORS
-.UR kzak@redhat.com
-Karel Zak
-.UE
-.SH SEE ALSO
-.BR login (1),
-.BR passwd (5),
-.BR pam_nologin (8)
-.SH HISTORY
-The
-.B nologin
-command appeared in 4.4BSD.
-.SH AVAILABILITY
-The nologin command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "NOTES"
+.sp
+\fBnologin\fP is a per\-account way to disable login (usually used for system accounts like http or ftp). \fBnologin\fP uses \fI/etc/nologin.txt\fP as an optional source for a non\-default message, the login access is always refused independently of the file.
+.sp
+\fBpam_nologin\fP(8) PAM module usually prevents all non\-root users from logging into the system. \fBpam_nologin\fP(8) functionality is controlled by \fI/var/run/nologin\fP or the \fI/etc/nologin\fP file.
+.SH "HISTORY"
+.sp
+The \fBnologin\fP command appeared in 4.4BSD.
+.SH "AUTHORS"
+.sp
+.MTO "kzak\(atredhat.com" "Karel Zak" ""
+.SH "SEE ALSO"
+.sp
+\fBlogin\fP(1),
+\fBpasswd\fP(5),
+\fBpam_nologin\fP(8)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBnologin\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

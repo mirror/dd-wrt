@@ -28,11 +28,15 @@ ts_check_test_command "$TS_CMD_BLKID"
 ts_skip_nonroot
 ts_check_prog "mdadm"
 
+# rhbz#182625: It can't create new raid0 with metadata 0.90 from mdadm-4.1
+TS_KNOWN_FAIL="yes"
+
 # set global variable TS_DEVICE
 ts_scsi_debug_init dev_size_mb=51 sector_size=512
 
 ts_log "Create partitions"
-$TS_CMD_FDISK ${TS_DEVICE} >> $TS_OUTPUT 2>&1 <<EOF
+$TS_CMD_FDISK --noauto-pt ${TS_DEVICE} >> $TS_OUTPUT 2>> $TS_ERRLOG <<EOF
+o
 n
 p
 1
@@ -62,28 +66,30 @@ udevadm settle
 MD_DEVNAME=md8
 MD_DEVICE=/dev/${MD_DEVNAME}
 
+ts_lock "md"
+
 ts_log "Create RAID1 device"
 mdadm -q -S ${MD_DEVICE} &> /dev/null
 mdadm -q --create ${MD_DEVICE} --metadata=0.90 --chunk=64 --level=1 \
-	    --raid-devices=2 ${TS_DEVICE}1 ${TS_DEVICE}2 >> $TS_OUTPUT 2>&1
+	    --raid-devices=2 ${TS_DEVICE}1 ${TS_DEVICE}2 >> $TS_OUTPUT 2>> $TS_ERRLOG
 udevadm settle
 
 ts_log "Probe whole-disk"
-$TS_CMD_BLKID -p -o udev ${TS_DEVICE} 2>&1 | sort >> $TS_OUTPUT
+$TS_CMD_BLKID -p -o udev ${TS_DEVICE} 2>> $TS_ERRLOG | sort >> $TS_OUTPUT
 
 ts_log "Probe first RAID member"
-$TS_CMD_BLKID -p -o udev ${TS_DEVICE}1 2>&1 | sort >> $TS_OUTPUT
+$TS_CMD_BLKID -p -o udev ${TS_DEVICE}1 2>> $TS_ERRLOG | sort >> $TS_OUTPUT
 
 ts_log "Probe second RAID member"
-$TS_CMD_BLKID -p -o udev ${TS_DEVICE}2 2>&1 | sort >> $TS_OUTPUT
+$TS_CMD_BLKID -p -o udev ${TS_DEVICE}2 2>> $TS_ERRLOG | sort >> $TS_OUTPUT
 
-mdadm -q -S ${MD_DEVICE} >> $TS_OUTPUT 2>&1
+mdadm -q -S ${MD_DEVICE} >> $TS_OUTPUT 2>> $TS_ERRLOG
 
 udevadm settle
-rmmod scsi_debug
+ts_unlock "md"
 
 ts_fdisk_clean $TS_DEVICE
-# substitue UUIDs and major/minor number before comparison
+# substitute UUIDs and major/minor number before comparison
 sed -i \
   -e         's/^\(ID_FS_UUID\)=.*/\1=__ts_uuid__/' \
   -e     's/^\(ID_FS_UUID_ENC\)=.*/\1=__ts_uuid_enc__/' \

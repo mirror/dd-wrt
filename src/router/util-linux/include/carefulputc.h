@@ -1,5 +1,5 @@
-#ifndef UTIL_LINUX_CAREFUULPUTC_H
-#define UTIL_LINUX_CAREFUULPUTC_H
+#ifndef UTIL_LINUX_CAREFULPUTC_H
+#define UTIL_LINUX_CAREFULPUTC_H
 
 /*
  * A putc() for use in write and wall (that sometimes are sgid tty).
@@ -10,13 +10,15 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "cctype.h"
+
 static inline int fputc_careful(int c, FILE *fp, const char fail)
 {
 	int ret;
 
 	if (isprint(c) || c == '\a' || c == '\t' || c == '\r' || c == '\n')
 		ret = putc(c, fp);
-	else if (!isascii(c))
+	else if (!c_isascii(c))
 		ret = fprintf(fp, "\\%3o", (unsigned char)c);
 	else {
 		ret = putc(fail, fp);
@@ -26,7 +28,7 @@ static inline int fputc_careful(int c, FILE *fp, const char fail)
 	return (ret < 0) ? EOF : 0;
 }
 
-static inline void fputs_quoted(const char *data, FILE *out)
+static inline void fputs_quoted_case(const char *data, FILE *out, int dir)
 {
 	const char *p;
 
@@ -41,10 +43,16 @@ static inline void fputs_quoted(const char *data, FILE *out)
 
 			fprintf(out, "\\x%02x", (unsigned char) *p);
 		} else
-			fputc(*p, out);
+			fputc(dir ==  1 ? toupper(*p) :
+			      dir == -1 ? tolower(*p) :
+			      *p, out);
 	}
 	fputc('"', out);
 }
+
+#define fputs_quoted(_d, _o)		fputs_quoted_case(_d, _o, 0)
+#define fputs_quoted_upper(_d, _o)	fputs_quoted_case(_d, _o, 1)
+#define fputs_quoted_lower(_d, _o)	fputs_quoted_case(_d, _o, -1)
 
 static inline void fputs_nonblank(const char *data, FILE *out)
 {
@@ -63,5 +71,4 @@ static inline void fputs_nonblank(const char *data, FILE *out)
 	}
 }
 
-
-#endif  /*  _CAREFUULPUTC_H  */
+#endif  /*  _CAREFULPUTC_H  */

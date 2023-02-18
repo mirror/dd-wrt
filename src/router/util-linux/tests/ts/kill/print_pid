@@ -18,6 +18,11 @@ TS_DESC="print_pid"
 . "$TS_TOPDIR/functions.sh"
 ts_init "$*"
 
+# make sure we do not use shell built-in command
+if [ "$TS_USE_SYSTEM_COMMANDS" == "yes" ]; then
+	TS_CMD_KILL="$(which kill)"
+fi
+
 ts_check_test_command "$TS_CMD_KILL"
 ts_check_test_command "$TS_HELPER_SIGRECEIVE"
 
@@ -28,12 +33,12 @@ all_ok=true
 HELPER_SYMLINK="$(mktemp "${TS_OUTDIR}/prXXXXXXXXXXXXX")"
 ln -sf "$TS_HELPER_SIGRECEIVE" "$HELPER_SYMLINK"
 
-"$HELPER_SYMLINK" >> "$TS_OUTPUT" 2>&1 &
+"$HELPER_SYMLINK" >> $TS_OUTPUT 2>> $TS_ERRLOG &
 TEST_PID=$!
 check_test_sigreceive $TEST_PID
 [ $? -eq 1 ] || echo "${HELPER_SYMLINK##*/} helper did not start" >> "$TS_OUTPUT"
 
-KILL_PID=$("$TS_CMD_KILL" -p ${HELPER_SYMLINK##*/} 2>> "$TS_OUTPUT" 2>&1)
+KILL_PID=$("$TS_CMD_KILL" -p ${HELPER_SYMLINK##*/} 2>> $TS_OUTPUT 2>> $TS_ERRLOG)
 if [ $? -ne 0 ]; then
 	echo "kill -p did not work" >> "$TS_OUTPUT"
 	all_ok=false
@@ -41,13 +46,13 @@ fi
 if [ "x$TEST_PID" != "x$KILL_PID" ]; then
 	echo "jobs -p $TEST_PID != kill -p $KILL_PID" >> "$TS_OUTPUT"
 	all_ok=false
-else
-	"$TS_CMD_KILL" -1 $TEST_PID
-	wait $TEST_PID
-	if [ $? -ne 1 ]; then
-		echo "wait $TEST_PID returned ${?}" >> "$TS_OUTPUT"
-		all_ok=false
-	fi
+fi
+
+"$TS_CMD_KILL" -1 $TEST_PID
+wait $TEST_PID
+if [ $? -ne 1 ]; then
+	echo "wait $TEST_PID returned ${?}" >> "$TS_OUTPUT"
+	all_ok=false
 fi
 
 if $all_ok; then

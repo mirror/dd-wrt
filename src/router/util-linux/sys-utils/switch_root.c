@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <getopt.h>
 
 #include "c.h"
 #include "nls.h"
@@ -62,7 +63,6 @@ static int recursiveRemove(int fd)
 
 	/* fdopendir() precludes us from continuing to use the input fd */
 	dfd = dirfd(dir);
-
 	if (fstat(dfd, &rb)) {
 		warn(_("stat failed"));
 		goto done;
@@ -94,18 +94,19 @@ static int recursiveRemove(int fd)
 				continue;
 			}
 
-			/* remove subdirectories if device is same as dir */
-			if (S_ISDIR(sb.st_mode) && sb.st_dev == rb.st_dev) {
+			/* skip if device is not the same */
+			if (sb.st_dev != rb.st_dev)
+				continue;
+
+			/* remove subdirectories */
+			if (S_ISDIR(sb.st_mode)) {
 				int cfd;
 
 				cfd = openat(dfd, d->d_name, O_RDONLY);
-				if (cfd >= 0) {
-					recursiveRemove(cfd);
-					close(cfd);
-				}
+				if (cfd >= 0)
+					recursiveRemove(cfd);	/* it closes cfd too */
 				isdir = 1;
-			} else
-				continue;
+			}
 		}
 
 		if (unlinkat(dfd, d->d_name, isdir ? AT_REMOVEDIR : 0))
@@ -113,10 +114,11 @@ static int recursiveRemove(int fd)
 	}
 
 	rc = 0;	/* success */
-
 done:
 	if (dir)
 		closedir(dir);
+	else
+		close(fd);
 	return rc;
 }
 
@@ -125,9 +127,13 @@ static int switchroot(const char *newroot)
 	/*  Don't try to unmount the old "/", there's no way to do it. */
 	const char *umounts[] = { "/dev", "/proc", "/sys", "/run", NULL };
 	int i;
-	int cfd;
-	pid_t pid;
-	struct stat newroot_stat, sb;
+	int cfd = -1;
+	struct stat newroot_stat, oldroot_stat, sb;
+
+	if (stat("/", &oldroot_stat) != 0) {
+		warn(_("stat of %s failed"), "/");
+		return -1;
+	}
 
 	if (stat(newroot, &newroot_stat) != 0) {
 		warn(_("stat of %s failed"), newroot);
@@ -138,6 +144,11 @@ static int switchroot(const char *newroot)
 		char newmount[PATH_MAX];
 
 		snprintf(newmount, sizeof(newmount), "%s%s", newroot, umounts[i]);
+
+		if ((stat(umounts[i], &sb) == 0) && sb.st_dev == oldroot_stat.st_dev) {
+			/* mount point to move seems to be a normal directory or stat failed */
+			continue;
+		}
 
 		if ((stat(newmount, &sb) != 0) || (sb.st_dev != newroot_stat.st_dev)) {
 			/* mount point seems to be mounted already or stat failed */
@@ -161,42 +172,56 @@ static int switchroot(const char *newroot)
 	cfd = open("/", O_RDONLY);
 	if (cfd < 0) {
 		warn(_("cannot open %s"), "/");
-		return -1;
+		goto fail;
 	}
 
 	if (mount(newroot, "/", NULL, MS_MOVE, NULL) < 0) {
-		close(cfd);
 		warn(_("failed to mount moving %s to /"), newroot);
-		return -1;
+		goto fail;
 	}
 
 	if (chroot(".")) {
-		close(cfd);
 		warn(_("failed to change root"));
-		return -1;
+		goto fail;
 	}
 
-	if (cfd >= 0) {
-		pid = fork();
-		if (pid <= 0) {
-			struct statfs stfs;
-			if (fstatfs(cfd, &stfs) == 0 &&
-			    (stfs.f_type == (ul_statfs_ftype_t) STATFS_RAMFS_MAGIC ||
-			     stfs.f_type == (ul_statfs_ftype_t) STATFS_TMPFS_MAGIC))
-				recursiveRemove(cfd);
-			else
-				warn(_("old root filesystem is not an initramfs"));
+	if (chdir("/")) {
+		warn(_("cannot change directory to %s"), "/");
+		goto fail;
+	}
 
-			if (pid == 0)
-				exit(EXIT_SUCCESS);
+	switch (fork()) {
+	case 0: /* child */
+	{
+		struct statfs stfs;
+
+		if (fstatfs(cfd, &stfs) == 0 &&
+		    (F_TYPE_EQUAL(stfs.f_type, STATFS_RAMFS_MAGIC) ||
+		     F_TYPE_EQUAL(stfs.f_type, STATFS_TMPFS_MAGIC)))
+			recursiveRemove(cfd);
+		else {
+			warn(_("old root filesystem is not an initramfs"));
+			close(cfd);
 		}
-		close(cfd);
+		exit(EXIT_SUCCESS);
 	}
-	return 0;
+	case -1: /* error */
+		break;
+
+	default: /* parent */
+		close(cfd);
+		return 0;
+	}
+
+fail:
+	if (cfd >= 0)
+		close(cfd);
+	return -1;
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *output)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *output = stdout;
 	fputs(USAGE_HEADER, output);
 	fprintf(output, _(" %s [options] <newrootdir> <init> <args to init>\n"),
 		program_invocation_short_name);
@@ -205,33 +230,46 @@ static void __attribute__((__noreturn__)) usage(FILE *output)
 	fputs(_("Switch to another filesystem as the root of the mount tree.\n"), output);
 
 	fputs(USAGE_OPTIONS, output);
-	fputs(USAGE_HELP, output);
-	fputs(USAGE_VERSION, output);
-	fprintf(output, USAGE_MAN_TAIL("switch_root(8)"));
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("switch_root(8)"));
 
-	exit(output == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
 {
 	char *newroot, *init, **initargs;
-	atexit(close_stdout);
+	int c;
+	static const struct option longopts[] = {
+		{"version", no_argument, NULL, 'V'},
+		{"help", no_argument, NULL, 'h'},
+		{NULL, 0, NULL, 0}
+	};
 
-	if (argv[1] && (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")))
-		usage(stdout);
-	if (argv[1] && (!strcmp(argv[1], "--version") || !strcmp(argv[1], "-V"))) {
-		printf(UTIL_LINUX_VERSION);
-		return EXIT_SUCCESS;
+	close_stdout_atexit();
+
+	while ((c = getopt_long(argc, argv, "+Vh", longopts, NULL)) != -1)
+		switch (c) {
+		case 'V':
+			print_version(EXIT_SUCCESS);
+		case 'h':
+			usage();
+		default:
+			errtryhelp(EXIT_FAILURE);
+		}
+	if (argc < 3) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EXIT_FAILURE);
 	}
-	if (argc < 3)
-		usage(stderr);
 
 	newroot = argv[1];
 	init = argv[2];
 	initargs = &argv[2];
 
-	if (!*newroot || !*init)
-		usage(stderr);
+	if (!*newroot || !*init) {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	if (switchroot(newroot))
 		errx(EXIT_FAILURE, _("failed. Sorry."));
@@ -240,6 +278,6 @@ int main(int argc, char *argv[])
 		warn(_("cannot access %s"), init);
 
 	execv(init, initargs);
-	err(EXIT_FAILURE, _("failed to execute %s"), init);
+	errexec(init);
 }
 

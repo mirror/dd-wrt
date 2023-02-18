@@ -13,11 +13,16 @@ ts_check_test_command "$TS_CMD_FINDMNT"
 ts_check_test_command "$TS_CMD_MOUNT"
 ts_check_test_command "$TS_CMD_UMOUNT"
 ts_check_test_command "$TS_CMD_UUIDGEN"
-ts_check_prog "mkfs.ext3"
+
+ts_skip_nonroot
+ts_check_prog "mkfs.ext2"
 ts_check_prog "mkfs.ext4"
 
 ts_init_py libmount
-ts_skip_nonroot
+
+if [ "$TS_ENABLE_ASAN" == "yes" -o "$TS_ENABLE_UBSAN" == "yes" ]; then
+	TS_KNOWN_FAIL="yes"
+fi
 
 TESTPROG="$TS_HELPER_PYLIBMOUNT_CONTEXT"
 [ -x $TESTPROG ] || ts_die "test script missing"
@@ -30,14 +35,21 @@ TS_NOEXIST="$TS_OUTDIR/${TS_TESTNAME}-${TS_SUBNAME}-noex"
 [ -d $TS_NOEXIST ] && rmdir $TS_NOEXIST
 
 ts_log "Init device"
-umount $MOUNTPOINT &> /dev/null
+$TS_CMD_UMOUNT $MOUNTPOINT &> /dev/null
 
 # set global variable TS_DEVICE
 ts_scsi_debug_init dev_size_mb=100
 DEVNAME=$(basename $TS_DEVICE)
 
+MOUNTINFO_ONLY=yes
+has_mtab=$( ts_has_mtab_support )
+if [ "$has_mtab" == "yes" ]; then
+	MOUNTINFO_ONLY=no
+fi
+
 ts_log "Create partitions"
-$TS_CMD_FDISK ${TS_DEVICE} &> /dev/null <<EOF
+$TS_CMD_FDISK --noauto-pt ${TS_DEVICE} &> /dev/null <<EOF
+o
 n
 p
 1
@@ -49,12 +61,10 @@ EOF
 
 DEVICE="${TS_DEVICE}1"
 
-sleep 1
 udevadm settle
 
-grep -q $DEVNAME /proc/partitions
+grep -q " $DEVNAME\$" /proc/partitions
 if [ $? -ne 0 ]; then
-	rmmod scsi_debug
 	ts_skip "no partition!"
 fi
 
@@ -66,89 +76,91 @@ ts_log "Do tests..."
 export LIBMOUNT_MTAB=$TS_OUTPUT.mtab
 > $LIBMOUNT_MTAB
 
+# check local mtab of system mountinfo
+function is_mounted {
+	if [ "$MOUNTINFO_ONLY" = "yes" ]; then
+		ts_is_mounted "$1"
+		return $?
+	fi
+	grep -q "\(^\| \)$1 " $LIBMOUNT_MTAB && return 0
+	return 1
+}
+
+
 udevadm settle
-ts_device_has "TYPE" "ext4" $DEVICE || ts_die "Cannot find ext3 on $DEVICE" $DEVICE
+ts_device_has "TYPE" "ext4" $DEVICE || ts_die "Cannot find ext2 on $DEVICE"
+
 
 ts_init_subtest "mount-by-devname"
 mkdir -p $MOUNTPOINT &>  /dev/null
-$PYTHON $TESTPROG --mount $DEVICE $MOUNTPOINT >> $TS_OUTPUT 2>&1
-
-grep -q $DEVICE $LIBMOUNT_MTAB || \
-	echo "(by device) cannot find $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --mount $DEVICE $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE || echo "$DEVICE not mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
+
 ts_init_subtest "umount-by-devname"
-$PYTHON $TESTPROG --umount $DEVICE >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB &&
-	echo "umount (device) failed: found $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --umount $DEVICE >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE && echo "$DEVICE still mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
 
 ts_init_subtest "mount-by-label"
 mkdir -p $MOUNTPOINT &>  /dev/null
-$PYTHON $TESTPROG --mount LABEL="$LABEL" $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB || \
-	echo "(by label) cannot find $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --mount LABEL="$LABEL" $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE || echo "$DEVICE not mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
 
 ts_init_subtest "umount-by-mountpoint"
-$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB && \
-	echo "umount (mountpoint) failed: found $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE && echo "$DEVICE still mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
 
 ts_init_subtest "mount-by-uuid"
 mkdir -p $MOUNTPOINT &> /dev/null
-$PYTHON $TESTPROG --mount UUID="$UUID" $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB || \
-	echo "(by uuid) cannot find $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
-$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB &&
-	echo "umount failed: found $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --mount UUID="$UUID" $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE || echo "$DEVICE not mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
+$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE && echo "$DEVICE still mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
 
 ts_init_subtest "mount-flags"
 mkdir -p $MOUNTPOINT &> /dev/null
-$PYTHON $TESTPROG --mount -o ro,noexec,nosuid,strictatime $DEVICE $MOUNTPOINT >> $TS_OUTPUT 2>&1
-$TS_CMD_FINDMNT --kernel $MOUNTPOINT -o VFS-OPTIONS -n >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB || \
-	echo "cannot find $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --mount -o ro,noexec,nosuid,strictatime $DEVICE $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+$TS_CMD_FINDMNT --kernel $MOUNTPOINT -o VFS-OPTIONS -n >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE || echo "$DEVICE not mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 
-$PYTHON $TESTPROG --mount -o remount,rw $MOUNTPOINT >> $TS_OUTPUT 2>&1
-$TS_CMD_FINDMNT --kernel $MOUNTPOINT -o VFS-OPTIONS -n >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --mount -o remount,rw $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+$TS_CMD_FINDMNT --kernel $MOUNTPOINT -o VFS-OPTIONS -n >> $TS_OUTPUT 2>> $TS_ERRLOG
 
-$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $DEVICE $LIBMOUNT_MTAB &&
-	echo "umount failed: found $DEVICE in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $DEVICE && echo "$DEVICE still mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
 
 ts_init_subtest "mount-loopdev"
 mkdir -p $MOUNTPOINT &> /dev/null
 img=$(ts_image_init)
-mkfs.ext3 -F $img &> /dev/null
+mkfs.ext2 -F $img &> /dev/null
 udevadm settle
 
-$PYTHON $TESTPROG --mount -o loop $img $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $MOUNTPOINT $LIBMOUNT_MTAB || \
-	echo "(loopdev) cannot find $MOUNTPOINT in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --mount -o loop $img $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $MOUNTPOINT || echo "$MOUNTPOINT not mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 udevadm settle
-$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>&1
-grep -q $MOUNTPOINT $LIBMOUNT_MTAB &&
-	echo "umount failed: found $MOUNTPOINT in $LIBMOUNT_MTAB" >> $TS_OUTPUT 2>&1
+$PYTHON $TESTPROG --umount $MOUNTPOINT >> $TS_OUTPUT 2>> $TS_ERRLOG
+is_mounted $MOUNTPOINT && echo "$MOUNTPOINT still mounted" >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_finalize_subtest
 
 ts_init_subtest "x-mount.mkdir"
-$TS_CMD_MOUNT -o x-mount.mkdir --bind $MOUNTPOINT $TS_NOEXIST >> $TS_OUTPUT 2>&1 &&
+$TS_CMD_MOUNT -o x-mount.mkdir --bind $MOUNTPOINT $TS_NOEXIST >> $TS_OUTPUT 2>> $TS_ERRLOG &&
   echo "successfully mounted" >> $TS_OUTPUT
 ts_finalize_subtest
+
 
 $TS_CMD_UMOUNT $TS_NOEXIST
 rmdir $TS_NOEXIST
 
 ts_log "...done."
-rmmod scsi_debug
 ts_finalize

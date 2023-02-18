@@ -14,8 +14,7 @@
 #include "swapprober.h"
 #include "swapon-common.h"
 
-#ifndef SWAPON_HAS_TWO_ARGS
-/* libc is insane, let's call the kernel */
+#if !defined(HAVE_SWAPOFF) && defined(SYS_swapoff)
 # include <sys/syscall.h>
 # define swapoff(path) syscall(SYS_swapoff, path)
 #endif
@@ -26,8 +25,16 @@ static int all;
 #define QUIET	1
 #define CANONIC	1
 
+#define SWAPOFF_EX_OK		0	/* no errors */
+#define SWAPOFF_EX_ENOMEM	2	/* swapoff(2) failed due to OOM */
+#define SWAPOFF_EX_FAILURE	4	/* swapoff(2) failed due to another reason */
+#define SWAPOFF_EX_SYSERR	8	/* non-swaoff() errors */
+#define SWAPOFF_EX_USAGE	16	/* usage, permissions or syntax error */
+#define SWAPOFF_EX_ALLERR	32	/* --all all failed */
+#define SWAPOFF_EX_SOMEOK	64	/* --all some failed some OK */
+
 /*
- * This function works like mnt_resolve_tag(), but it's able to read UUiD/LABEL
+ * This function works like mnt_resolve_tag(), but it's able to read UUID/LABEL
  * from regular swap files too (according to entries in /proc/swaps). Note that
  * mnt_resolve_tag() and mnt_resolve_spec() works with system visible block
  * devices only.
@@ -53,7 +60,7 @@ static char *swapoff_resolve_tag(const char *name, const char *value,
 
 	itr = mnt_new_iter(MNT_ITER_BACKWARD);
 	if (!itr)
-		err(EXIT_FAILURE, _("failed to initialize libmount iterator"));
+		err(SWAPOFF_EX_SYSERR, _("failed to initialize libmount iterator"));
 
 	while (tb && mnt_table_next_fs(tb, itr, &fs) == 0) {
 		blkid_probe pr = NULL;
@@ -81,6 +88,7 @@ static char *swapoff_resolve_tag(const char *name, const char *value,
 static int do_swapoff(const char *orig_special, int quiet, int canonic)
 {
         const char *special = orig_special;
+	int rc = SWAPOFF_EX_OK;
 
 	if (verbose)
 		printf(_("swapoff %s\n"), orig_special);
@@ -89,22 +97,35 @@ static int do_swapoff(const char *orig_special, int quiet, int canonic)
 		char *n, *v;
 
 		special = mnt_resolve_spec(orig_special, mntcache);
-		if (!special && blkid_parse_tag_string(orig_special, &n, &v) == 0)
+		if (!special && blkid_parse_tag_string(orig_special, &n, &v) == 0) {
 			special = swapoff_resolve_tag(n, v, mntcache);
+			free(n);
+			free(v);
+		}
 		if (!special)
 			return cannot_find(orig_special);
 	}
 
 	if (swapoff(special) == 0)
-		return 0;	/* success */
+		rc = SWAPOFF_EX_OK;	/* success */
+	else {
+		switch (errno) {
+		case EPERM:
+			errx(SWAPOFF_EX_USAGE, _("Not superuser."));
+			break;
+		case ENOMEM:
+			warn(_("%s: swapoff failed"), orig_special);
+			rc = SWAPOFF_EX_ENOMEM;
+			break;
+		default:
+			if (!quiet)
+				warn(_("%s: swapoff failed"), orig_special);
+			rc = SWAPOFF_EX_FAILURE;
+			break;
+		}
+	}
 
-	if (errno == EPERM)
-		errx(EXIT_FAILURE, _("Not superuser."));
-
-	if (!quiet || errno == ENOMEM)
-		warn(_("%s: swapoff failed"), orig_special);
-
-	return -1;
+	return rc;
 }
 
 static int swapoff_by(const char *name, const char *value, int quiet)
@@ -113,8 +134,9 @@ static int swapoff_by(const char *name, const char *value, int quiet)
 	return special ? do_swapoff(special, quiet, CANONIC) : cannot_find(value);
 }
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] [<spec>]\n"), program_invocation_short_name);
 
@@ -126,8 +148,7 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 		" -v, --verbose          verbose mode\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(24));
 
 	fputs(_("\nThe <spec> parameter:\n" \
 		" -L <label>             LABEL of device to be used\n" \
@@ -137,19 +158,19 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 		" <device>               name of device to be used\n" \
 		" <file>                 name of file to be used\n"), out);
 
-	fprintf(out, USAGE_MAN_TAIL("swapoff(8)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_MAN_TAIL("swapoff(8)"));
+	exit(SWAPOFF_EX_OK);
 }
 
 static int swapoff_all(void)
 {
-	int status = 0;
+	int nerrs = 0, nsucc = 0;
 	struct libmnt_table *tb;
 	struct libmnt_fs *fs;
 	struct libmnt_iter *itr = mnt_new_iter(MNT_ITER_BACKWARD);
 
 	if (!itr)
-		err(EXIT_FAILURE, _("failed to initialize libmount iterator"));
+		err(SWAPOFF_EX_SYSERR, _("failed to initialize libmount iterator"));
 
 	/*
 	 * In case /proc/swaps exists, unswap stuff listed there.  We are quiet
@@ -159,8 +180,12 @@ static int swapoff_all(void)
 	 */
 	tb = get_swaps();
 
-	while (tb && mnt_table_find_next_fs(tb, itr, match_swap, NULL, &fs) == 0)
-		status |= do_swapoff(mnt_fs_get_source(fs), QUIET, CANONIC);
+	while (tb && mnt_table_find_next_fs(tb, itr, match_swap, NULL, &fs) == 0) {
+		if (do_swapoff(mnt_fs_get_source(fs), QUIET, CANONIC) == SWAPOFF_EX_OK)
+			nsucc++;
+		else
+			nerrs++;
+	}
 
 	/*
 	 * Unswap stuff mentioned in /etc/fstab.  Probably it was unmounted
@@ -176,7 +201,13 @@ static int swapoff_all(void)
 	}
 
 	mnt_free_iter(itr);
-	return status;
+
+	if (nerrs == 0)
+		return SWAPOFF_EX_OK;		/* all success */
+	else if (nsucc == 0)
+		return SWAPOFF_EX_ALLERR;	/* all failed */
+
+	return SWAPOFF_EX_SOMEOK;		/* some success, some failed */
 }
 
 int main(int argc, char *argv[])
@@ -185,17 +216,17 @@ int main(int argc, char *argv[])
 	size_t i;
 
 	static const struct option long_opts[] = {
-		{ "all", 0, 0, 'a' },
-		{ "help", 0, 0, 'h' },
-		{ "verbose", 0, 0, 'v' },
-		{ "version", 0, 0, 'V' },
-		{ NULL, 0, 0, 0 }
+		{ "all",     no_argument, NULL, 'a' },
+		{ "help",    no_argument, NULL, 'h' },
+		{ "verbose", no_argument, NULL, 'v' },
+		{ "version", no_argument, NULL, 'V' },
+		{ NULL, 0, NULL, 0 }
 	};
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((c = getopt_long(argc, argv, "ahvVL:U:",
 				 long_opts, NULL)) != -1) {
@@ -203,30 +234,30 @@ int main(int argc, char *argv[])
 		case 'a':		/* all */
 			++all;
 			break;
-		case 'h':		/* help */
-			usage(stdout);
-			break;
 		case 'v':		/* be chatty */
 			++verbose;
 			break;
-		case 'V':		/* version */
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
 		case 'L':
 			add_label(optarg);
 			break;
 		case 'U':
 			add_uuid(optarg);
 			break;
-		case '?':
+
+		case 'h':		/* help */
+			usage();
+		case 'V':		/* version */
+			print_version(SWAPOFF_EX_OK);
 		default:
-			usage(stderr);
+			errtryhelp(SWAPOFF_EX_USAGE);
 		}
 	}
 	argv += optind;
 
-	if (!all && !numof_labels() && !numof_uuids() && *argv == NULL)
-		usage(stderr);
+	if (!all && !numof_labels() && !numof_uuids() && *argv == NULL) {
+		warnx(_("bad usage"));
+		errtryhelp(SWAPOFF_EX_USAGE);
+	}
 
 	mnt_init_debug(0);
 	mntcache = mnt_new_cache();

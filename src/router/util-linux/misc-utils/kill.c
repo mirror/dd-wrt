@@ -38,7 +38,7 @@
  *  1999-02-22 Arkadiusz Miśkiewicz <misiek@pld.ORG.PL>
  *  - added Native Language Support
  *
- *  1999-11-13 aeb Accept signal numers 128+s.
+ *  1999-11-13 aeb Accept signal numbers 128+s.
  *
  * Copyright (C) 2014 Sami Kerola <kerolasa@iki.fi>
  * Copyright (C) 2014 Karel Zak <kzak@redhat.com>
@@ -54,10 +54,14 @@
 #include "c.h"
 #include "closestream.h"
 #include "nls.h"
-#include "procutils.h"
+#include "pidfd-utils.h"
+#include "procfs.h"
+#include "pathnames.h"
+#include "signames.h"
 #include "strutils.h"
 #include "ttyutils.h"
 #include "xalloc.h"
+#include "fileutils.h"
 
 /* partial success, otherwise we return regular EXIT_{SUCCESS,FAILURE} */
 #define KILL_EXIT_SOMEOK	64
@@ -67,6 +71,16 @@ enum {
 	KILL_OUTPUT_WIDTH = 72
 };
 
+#ifdef UL_HAVE_PIDFD
+# include <poll.h>
+# include "list.h"
+struct timeouts {
+	int period;
+	int sig;
+	struct list_head follow_ups;
+};
+#endif
+
 struct kill_control {
 	char *arg;
 	pid_t pid;
@@ -74,106 +88,27 @@ struct kill_control {
 #ifdef HAVE_SIGQUEUE
 	union sigval sigdata;
 #endif
+#ifdef UL_HAVE_PIDFD
+	struct list_head follow_ups;
+#endif
 	unsigned int
 		check_all:1,
 		do_kill:1,
 		do_pid:1,
 		use_sigval:1,
+#ifdef UL_HAVE_PIDFD
+		timeout:1,
+#endif
 		verbose:1;
-};
-
-struct signv {
-	const char *name;
-	int val;
-} sys_signame[] = {
-	/* POSIX signals */
-	{ "HUP",	SIGHUP },	/* 1 */
-	{ "INT",	SIGINT },	/* 2 */
-	{ "QUIT",	SIGQUIT },	/* 3 */
-	{ "ILL",	SIGILL },	/* 4 */
-#ifdef SIGTRAP
-	{ "TRAP",	SIGTRAP },	/* 5 */
-#endif
-	{ "ABRT",	SIGABRT },	/* 6 */
-#ifdef SIGIOT
-	{ "IOT",	SIGIOT },	/* 6, same as SIGABRT */
-#endif
-#ifdef SIGEMT
-	{ "EMT",	SIGEMT },	/* 7 (mips,alpha,sparc*) */
-#endif
-#ifdef SIGBUS
-	{ "BUS",	SIGBUS },	/* 7 (arm,i386,m68k,ppc), 10 (mips,alpha,sparc*) */
-#endif
-	{ "FPE",	SIGFPE },	/* 8 */
-	{ "KILL",	SIGKILL },	/* 9 */
-	{ "USR1",	SIGUSR1 },	/* 10 (arm,i386,m68k,ppc), 30 (alpha,sparc*), 16 (mips) */
-	{ "SEGV",	SIGSEGV },	/* 11 */
-	{ "USR2",	SIGUSR2 },	/* 12 (arm,i386,m68k,ppc), 31 (alpha,sparc*), 17 (mips) */
-	{ "PIPE",	SIGPIPE },	/* 13 */
-	{ "ALRM",	SIGALRM },	/* 14 */
-	{ "TERM",	SIGTERM },	/* 15 */
-#ifdef SIGSTKFLT
-	{ "STKFLT",	SIGSTKFLT },	/* 16 (arm,i386,m68k,ppc) */
-#endif
-	{ "CHLD",	SIGCHLD },	/* 17 (arm,i386,m68k,ppc), 20 (alpha,sparc*), 18 (mips) */
-#ifdef SIGCLD
-	{ "CLD",	SIGCLD },	/* same as SIGCHLD (mips) */
-#endif
-	{ "CONT",	SIGCONT },	/* 18 (arm,i386,m68k,ppc), 19 (alpha,sparc*), 25 (mips) */
-	{ "STOP",	SIGSTOP },	/* 19 (arm,i386,m68k,ppc), 17 (alpha,sparc*), 23 (mips) */
-	{ "TSTP",	SIGTSTP },	/* 20 (arm,i386,m68k,ppc), 18 (alpha,sparc*), 24 (mips) */
-	{ "TTIN",	SIGTTIN },	/* 21 (arm,i386,m68k,ppc,alpha,sparc*), 26 (mips) */
-	{ "TTOU",	SIGTTOU },	/* 22 (arm,i386,m68k,ppc,alpha,sparc*), 27 (mips) */
-#ifdef SIGURG
-	{ "URG",	SIGURG },	/* 23 (arm,i386,m68k,ppc), 16 (alpha,sparc*), 21 (mips) */
-#endif
-#ifdef SIGXCPU
-	{ "XCPU",	SIGXCPU },	/* 24 (arm,i386,m68k,ppc,alpha,sparc*), 30 (mips) */
-#endif
-#ifdef SIGXFSZ
-	{ "XFSZ",	SIGXFSZ },	/* 25 (arm,i386,m68k,ppc,alpha,sparc*), 31 (mips) */
-#endif
-#ifdef SIGVTALRM
-	{ "VTALRM",	SIGVTALRM },	/* 26 (arm,i386,m68k,ppc,alpha,sparc*), 28 (mips) */
-#endif
-#ifdef SIGPROF
-	{ "PROF",	SIGPROF },	/* 27 (arm,i386,m68k,ppc,alpha,sparc*), 29 (mips) */
-#endif
-#ifdef SIGWINCH
-	{ "WINCH",	SIGWINCH },	/* 28 (arm,i386,m68k,ppc,alpha,sparc*), 20 (mips) */
-#endif
-#ifdef SIGIO
-	{ "IO",		SIGIO },	/* 29 (arm,i386,m68k,ppc), 23 (alpha,sparc*), 22 (mips) */
-#endif
-#ifdef SIGPOLL
-	{ "POLL",	SIGPOLL },	/* same as SIGIO */
-#endif
-#ifdef SIGINFO
-	{ "INFO",	SIGINFO },	/* 29 (alpha) */
-#endif
-#ifdef SIGLOST
-	{ "LOST",	SIGLOST },	/* 29 (arm,i386,m68k,ppc,sparc*) */
-#endif
-#ifdef SIGPWR
-	{ "PWR",	SIGPWR },	/* 30 (arm,i386,m68k,ppc), 29 (alpha,sparc*), 19 (mips) */
-#endif
-#ifdef SIGUNUSED
-	{ "UNUSED",	SIGUNUSED },	/* 31 (arm,i386,m68k,ppc) */
-#endif
-#ifdef SIGSYS
-	{ "SYS",	SIGSYS },	/* 31 (mips,alpha,sparc*) */
-#endif
 };
 
 static void print_signal_name(int signum)
 {
-	size_t n;
+	const char *name = signum_to_signame(signum);
 
-	for (n = 0; n < ARRAY_SIZE(sys_signame); n++) {
-		if (sys_signame[n].val == signum) {
-			printf("%s\n", sys_signame[n].name);
-			return;
-		}
+	if (name) {
+		printf("%s\n", name);
+		return;
 	}
 #ifdef SIGRTMIN
 	if (SIGRTMIN <= signum && signum <= SIGRTMAX) {
@@ -198,17 +133,19 @@ static void pretty_print_signal(FILE *fp, size_t term_width, size_t *lpos,
 static void print_all_signals(FILE *fp, int pretty)
 {
 	size_t n, lth, lpos = 0, width;
+	const char *signame = NULL;
+	int signum = 0;
 
 	if (!pretty) {
-		for (n = 0; n < ARRAY_SIZE(sys_signame); n++) {
-			lth = 1 + strlen(sys_signame[n].name);
+		for (n = 0; get_signame_by_idx(n, &signame, NULL) == 0; n++) {
+			lth = 1 + strlen(signame);
 			if (KILL_OUTPUT_WIDTH < lpos + lth) {
 				fputc('\n', fp);
 				lpos = 0;
 			} else if (lpos)
 				fputc(' ', fp);
 			lpos += lth;
-			fputs(sys_signame[n].name, fp);
+			fputs(signame, fp);
 		}
 #ifdef SIGRTMIN
 		fputs(" RT<N> RTMIN+<N> RTMAX-<N>", fp);
@@ -218,14 +155,9 @@ static void print_all_signals(FILE *fp, int pretty)
 	}
 
 	/* pretty print */
-	width = get_terminal_width();
-	if (width == 0)
-		width = KILL_OUTPUT_WIDTH;
-	else
-		width -= 1;
-	for (n = 0; n < ARRAY_SIZE(sys_signame); n++)
-		pretty_print_signal(fp, width, &lpos,
-				    sys_signame[n].val, sys_signame[n].name);
+	width = get_terminal_width(KILL_OUTPUT_WIDTH + 1) - 1;
+	for (n = 0; get_signame_by_idx(n, &signame, &signum) == 0; n++)
+		pretty_print_signal(fp, width, &lpos, signum, signame);
 #ifdef SIGRTMIN
 	pretty_print_signal(fp, width, &lpos, SIGRTMIN, "RTMIN");
 	pretty_print_signal(fp, width, &lpos, SIGRTMAX, "RTMAX");
@@ -240,68 +172,26 @@ static void err_nosig(char *name)
 	exit(EXIT_FAILURE);
 }
 
-#ifdef SIGRTMIN
-static int rtsig_to_signum(char *sig)
-{
-	int num, maxi = 0;
-	char *ep = NULL;
-
-	if (strncasecmp(sig, "min+", 4) == 0)
-		sig += 4;
-	else if (strncasecmp(sig, "max-", 4) == 0) {
-		sig += 4;
-		maxi = 1;
-	}
-	if (!isdigit(*sig))
-		return -1;
-	errno = 0;
-	num = strtol(sig, &ep, 10);
-	if (!ep || sig == ep || errno || num < 0)
-		return -1;
-	num = maxi ? SIGRTMAX - num : SIGRTMIN + num;
-	if (num < SIGRTMIN || SIGRTMAX < num)
-		return -1;
-	return num;
-}
-#endif
-
-static int signame_to_signum(char *sig)
-{
-	size_t n;
-
-	if (!strncasecmp(sig, "sig", 3))
-		sig += 3;
-#ifdef SIGRTMIN
-	/* RT signals */
-	if (!strncasecmp(sig, "rt", 2))
-		return rtsig_to_signum(sig + 2);
-#endif
-	/* Normal sugnals */
-	for (n = 0; n < ARRAY_SIZE(sys_signame); n++) {
-		if (!strcasecmp(sys_signame[n].name, sig))
-			return sys_signame[n].val;
-	}
-	return -1;
-}
-
 static int arg_to_signum(char *arg, int maskbit)
 {
 	int numsig;
 	char *ep;
 
 	if (isdigit(*arg)) {
+		errno = 0;
 		numsig = strtol(arg, &ep, 10);
 		if (NSIG <= numsig && maskbit && (numsig & 128) != 0)
 			numsig -= 128;
-		if (*ep != 0 || numsig < 0 || NSIG <= numsig)
+		if (errno || *ep != 0 || numsig < 0 || NSIG <= numsig)
 			return -1;
 		return numsig;
 	}
 	return signame_to_signum(arg);
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] <pid>|<name>...\n"), program_invocation_short_name);
 
@@ -315,17 +205,46 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 #ifdef HAVE_SIGQUEUE
 	fputs(_(" -q, --queue <value>    use sigqueue(2), not kill(2), and pass <value> as data\n"), out);
 #endif
+#ifdef UL_HAVE_PIDFD
+	fputs(_("     --timeout <milliseconds> <follow-up signal>\n"
+		"                        wait up to timeout and send follow-up signal\n"), out);
+#endif
 	fputs(_(" -p, --pid              print pids without signaling them\n"), out);
 	fputs(_(" -l, --list[=<signal>]  list signal names, or convert a signal number to a name\n"), out);
 	fputs(_(" -L, --table            list signal names and numbers\n"), out);
 	fputs(_("     --verbose          print pids that will be signaled\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("kill(1)"));
+	printf(USAGE_HELP_OPTIONS(24));
+	printf(USAGE_MAN_TAIL("kill(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
+}
+
+static void __attribute__((__noreturn__)) print_kill_version(void)
+{
+	static const char *features[] = {
+#ifdef HAVE_SIGQUEUE
+		"sigqueue",
+#endif
+#ifdef UL_HAVE_PIDFD
+		"pidfd",
+#endif
+	};
+
+	printf(_("%s from %s"), program_invocation_short_name, PACKAGE_STRING);
+
+	if (ARRAY_SIZE(features)) {
+		size_t i;
+		fputs(_(" (with: "), stdout);
+		for (i = 0; i < ARRAY_SIZE(features); i++) {
+			fputs(features[i], stdout);
+			if (i + 1 < ARRAY_SIZE(features))
+				fputs(", ", stdout);
+		}
+		fputs(")\n", stdout);
+	}
+	exit(EXIT_SUCCESS);
 }
 
 static char **parse_arguments(int argc, char **argv, struct kill_control *ctl)
@@ -344,12 +263,10 @@ static char **parse_arguments(int argc, char **argv, struct kill_control *ctl)
 			break;
 		}
 		if (!strcmp(arg, "-v") || !strcmp(arg, "-V") ||
-		    !strcmp(arg, "--version")) {
-			printf(UTIL_LINUX_VERSION);
-			exit(EXIT_SUCCESS);
-		}
+		    !strcmp(arg, "--version"))
+			print_kill_version();
 		if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
-			usage(stdout);
+			usage();
 		if (!strcmp(arg, "--verbose")) {
 			ctl->verbose = 1;
 			continue;
@@ -420,6 +337,26 @@ static char **parse_arguments(int argc, char **argv, struct kill_control *ctl)
 			continue;
 		}
 #endif
+#ifdef UL_HAVE_PIDFD
+		if (!strcmp(arg, "--timeout")) {
+			struct timeouts *next;
+
+			ctl->timeout = 1;
+			if (argc < 2)
+				errx(EXIT_FAILURE, _("option '%s' requires an argument"), arg);
+			argc--, argv++;
+			arg = *argv;
+			next = xcalloc(1, sizeof(*next));
+			next->period = strtos32_or_err(arg, _("argument error"));
+			INIT_LIST_HEAD(&next->follow_ups);
+			argc--, argv++;
+			arg = *argv;
+			if ((next->sig = arg_to_signum(arg, 0)) < 0)
+				err_nosig(arg);
+			list_add_tail(&next->follow_ups, &ctl->follow_ups);
+			continue;
+		}
+#endif
 		/* 'arg' begins with a dash but is not a known option.
 		 * So it's probably something like -HUP, or -1/-n try to
 		 * deal with it.
@@ -436,13 +373,53 @@ static char **parse_arguments(int argc, char **argv, struct kill_control *ctl)
 		ctl->do_kill = 1;
 		if (ctl->do_pid)
 			errx(EXIT_FAILURE, _("%s and %s are mutually exclusive"), "--pid", "--signal");
-		continue;
 	}
 	if (!*argv)
 		errx(EXIT_FAILURE, _("not enough arguments"));
 	return argv;
 }
 
+#ifdef UL_HAVE_PIDFD
+static int kill_with_timeout(const struct kill_control *ctl)
+{
+	int pfd, n;
+	struct pollfd p = { 0 };
+	siginfo_t info = { 0 };
+	struct list_head *entry;
+
+	info.si_code = SI_QUEUE;
+	info.si_signo = ctl->numsig;
+	info.si_uid = getuid();
+	info.si_pid = getpid();
+	info.si_value.sival_int =
+	    ctl->use_sigval != 0 ? ctl->use_sigval : ctl->numsig;
+
+	if ((pfd = pidfd_open(ctl->pid, 0)) < 0)
+		err(EXIT_FAILURE, _("pidfd_open() failed: %d"), ctl->pid);
+	p.fd = pfd;
+	p.events = POLLIN;
+
+	if (pidfd_send_signal(pfd, ctl->numsig, &info, 0) < 0)
+		err(EXIT_FAILURE, _("pidfd_send_signal() failed"));
+	list_for_each(entry, &ctl->follow_ups) {
+		struct timeouts *timeout;
+
+		timeout = list_entry(entry, struct timeouts, follow_ups);
+		n = poll(&p, 1, timeout->period);
+		if (n < 0)
+			err(EXIT_FAILURE, _("poll() failed"));
+		if (n == 0) {
+			info.si_signo = timeout->sig;
+			if (ctl->verbose)
+				printf(_("timeout, sending signal %d to pid %d\n"),
+					 timeout->sig, ctl->pid);
+			if (pidfd_send_signal(pfd, timeout->sig, &info, 0) < 0)
+				err(EXIT_FAILURE, _("pidfd_send_signal() failed"));
+		}
+	}
+	return 0;
+}
+#endif
 
 static int kill_verbose(const struct kill_control *ctl)
 {
@@ -454,6 +431,11 @@ static int kill_verbose(const struct kill_control *ctl)
 		printf("%ld\n", (long) ctl->pid);
 		return 0;
 	}
+#ifdef UL_HAVE_PIDFD
+	if (ctl->timeout) {
+		rc = kill_with_timeout(ctl);
+	} else
+#endif
 #ifdef HAVE_SIGQUEUE
 	if (ctl->use_sigval)
 		rc = sigqueue(ctl->pid, ctl->numsig, ctl->sigdata);
@@ -474,12 +456,11 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	ctl.do_pid = (!strcmp(program_invocation_short_name, "pid"));	/* Yecch */
-	if (ctl.do_pid)	/* FIXME: remove in March 2016.  */
-		warnx(_("use of 'kill --pid' option as command name is deprecated"));
-
+#ifdef UL_HAVE_PIDFD
+	INIT_LIST_HEAD(&ctl.follow_ups);
+#endif
 	argv = parse_arguments(argc, argv, &ctl);
 
 	/* The rest of the arguments should be process ids and names. */
@@ -493,23 +474,31 @@ int main(int argc, char **argv)
 				nerrs++;
 			ct++;
 		} else {
-			struct proc_processes *ps = proc_open_processes();
 			int found = 0;
+			struct dirent *d;
+			DIR *dir = opendir(_PATH_PROC);
+			uid_t uid = !ctl.check_all ? getuid() : 0;
 
-			if (!ps)
+			if (!dir)
 				continue;
-			if (!ctl.check_all)
-				proc_processes_filter_by_uid(ps, getuid());
 
-			proc_processes_filter_by_name(ps, ctl.arg);
-			while (proc_next_pid(ps, &ctl.pid) == 0) {
+			while ((d = xreaddir(dir))) {
+				if (!ctl.check_all &&
+				    !procfs_dirent_match_uid(dir, d, uid))
+					continue;
+				if (ctl.arg &&
+				    !procfs_dirent_match_name(dir, d, ctl.arg))
+					continue;
+				if (procfs_dirent_get_pid(d, &ctl.pid) != 0)
+					continue;
+
 				if (kill_verbose(&ctl) != 0)
 					nerrs++;
 				ct++;
 				found = 1;
 			}
-			proc_close_processes(ps);
 
+			closedir(dir);
 			if (!found) {
 				nerrs++, ct++;
 				warnx(_("cannot find process \"%s\""), ctl.arg);
@@ -517,9 +506,17 @@ int main(int argc, char **argv)
 		}
 	}
 
+#ifdef UL_HAVE_PIDFD
+	while (!list_empty(&ctl.follow_ups)) {
+		struct timeouts *x = list_entry(ctl.follow_ups.next,
+				                  struct timeouts, follow_ups);
+		list_del(&x->follow_ups);
+		free(x);
+	}
+#endif
 	if (ct && nerrs == 0)
 		return EXIT_SUCCESS;	/* full success */
-	else if (ct == nerrs)
+	if (ct == nerrs)
 		return EXIT_FAILURE;	/* all failed */
 
 	return KILL_EXIT_SOMEOK;	/* partial success */

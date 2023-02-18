@@ -25,6 +25,7 @@ UL_DEBUG_DEFINE_MASKNAMES(libsmartcols) =
 	{ "cell", SCOLS_DEBUG_CELL,	"table cell utils" },
 	{ "col", SCOLS_DEBUG_COL,	"cols utils" },
 	{ "help", SCOLS_DEBUG_HELP,	"this help" },
+	{ "group", SCOLS_DEBUG_GROUP,	"lines grouping utils" },
 	{ "line", SCOLS_DEBUG_LINE,	"table line utils" },
 	{ "tab", SCOLS_DEBUG_TAB,	"table utils" },
 	{ NULL, 0, NULL }
@@ -45,7 +46,7 @@ void scols_init_debug(int mask)
 	if (libsmartcols_debug_mask)
 		return;
 
-	__UL_INIT_DEBUG(libsmartcols, SCOLS_DEBUG_, mask, LIBSMARTCOLS_DEBUG);
+	__UL_INIT_DEBUG_FROM_ENV(libsmartcols, SCOLS_DEBUG_, mask, LIBSMARTCOLS_DEBUG);
 
 	if (libsmartcols_debug_mask != SCOLS_DEBUG_INIT
 	    && libsmartcols_debug_mask != (SCOLS_DEBUG_HELP|SCOLS_DEBUG_INIT)) {

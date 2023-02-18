@@ -1,13 +1,12 @@
 /*
- * Vaguely based on
- *	@(#)pathnames.h	5.3 (Berkeley) 5/9/89
- * This code is in the public domain.
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
  */
 #ifndef PATHNAMES_H
 #define PATHNAMES_H
 
 #ifdef HAVE_PATHS_H
-#include <paths.h>
+# include <paths.h>
 #endif
 
 #ifndef __STDC__
@@ -15,18 +14,24 @@
 #endif
 
 /* used by kernel in /proc (e.g. /proc/swaps) for deleted files */
-#define PATH_DELETED_SUFFIX	"\\040(deleted)"
-#define PATH_DELETED_SUFFIX_SZ	(sizeof(PATH_DELETED_SUFFIX) - 1)
+#define PATH_DELETED_SUFFIX	" (deleted)"
 
 /* DEFPATHs from <paths.h> don't include /usr/local */
 #undef _PATH_DEFPATH
-#define	_PATH_DEFPATH	        "/usr/local/bin:/bin:/usr/bin"
+
+#ifdef USE_USRDIR_PATHS_ONLY
+# define _PATH_DEFPATH	        "/usr/local/bin:/usr/bin"
+#else
+# define _PATH_DEFPATH	        "/usr/local/bin:/bin:/usr/bin"
+#endif
 
 #undef _PATH_DEFPATH_ROOT
-#define	_PATH_DEFPATH_ROOT	"/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
-#define _PATH_SECURETTY		"/etc/securetty"
-#define _PATH_WTMPLOCK		"/etc/wtmplock"
+#ifdef USE_USRDIR_PATHS_ONLY
+# define _PATH_DEFPATH_ROOT	"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+#else
+# define _PATH_DEFPATH_ROOT	"/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+#endif
 
 #define	_PATH_HUSHLOGIN		".hushlogin"
 #define	_PATH_HUSHLOGINS	"/etc/hushlogins"
@@ -34,56 +39,58 @@
 #define _PATH_NOLOGIN_TXT	"/etc/nologin.txt"
 
 #ifndef _PATH_MAILDIR
-#define	_PATH_MAILDIR		"/var/spool/mail"
+# define _PATH_MAILDIR		"/var/spool/mail"
 #endif
-#define	_PATH_MOTDFILE		"/etc/motd"
-#define	_PATH_NOLOGIN		"/etc/nologin"
+#define	_PATH_MOTDFILE		"/usr/share/misc/motd:/run/motd:/etc/motd"
+#ifndef _PATH_NOLOGIN
+# define _PATH_NOLOGIN		"/etc/nologin"
+#endif
 #define	_PATH_VAR_NOLOGIN	"/var/run/nologin"
 
-#define _PATH_LOGIN		"/bin/login"
-#define _PATH_INITTAB		"/etc/inittab"
-#define _PATH_RC		"/etc/rc"
-#define _PATH_REBOOT		"/sbin/reboot"
+#ifndef _PATH_LOGIN
+# define _PATH_LOGIN		"/bin/login"
+#endif
 #define _PATH_SHUTDOWN		"/sbin/shutdown"
-#define _PATH_SINGLE		"/etc/singleboot"
-#define _PATH_SHUTDOWN_CONF	"/etc/shutdown.conf"
-
-#define _PATH_SECURE		"/etc/securesingle"
-#define _PATH_USERTTY           "/etc/usertty"
+#define _PATH_POWEROFF		"/sbin/poweroff"
 
 #define _PATH_TERMCOLORS_DIRNAME "terminal-colors.d"
 #define _PATH_TERMCOLORS_DIR	"/etc/" _PATH_TERMCOLORS_DIRNAME
 
-/* used in login-utils/shutdown.c */
-
-/* used in login-utils/setpwnam.h and login-utils/islocal.c */
+/* login paths */
 #define _PATH_PASSWD		"/etc/passwd"
-
-/* used in login-utils/newgrp and login-utils/setpwnam.h*/
 #define _PATH_GSHADOW		"/etc/gshadow"
-
-/* used in login-utils/setpwnam.h */
 #define _PATH_GROUP		"/etc/group"
 #define _PATH_SHADOW_PASSWD	"/etc/shadow"
 #define _PATH_SHELLS		"/etc/shells"
 
-/* used in term-utils/agetty.c */
-#define _PATH_ISSUE		"/etc/issue"
+#ifndef _PATH_TMP
+# define _PATH_TMP		"/tmp/"
+#endif
+
+#ifndef _PATH_BTMP
+# define _PATH_BTMP		"/var/log/btmp"
+#endif
+
+#define _PATH_ISSUE_FILENAME	"issue"
+#define _PATH_ISSUE_DIRNAME	_PATH_ISSUE_FILENAME ".d"
+
+#define _PATH_ISSUE		"/etc/" _PATH_ISSUE_FILENAME
+#define _PATH_ISSUEDIR		"/etc/" _PATH_ISSUE_DIRNAME
+
 #define _PATH_OS_RELEASE_ETC	"/etc/os-release"
 #define _PATH_OS_RELEASE_USR	"/usr/lib/os-release"
-
-#define _PATH_NUMLOCK_ON	_PATH_LOCALSTATEDIR "/numlock-on"
-
+#define _PATH_NUMLOCK_ON	_PATH_RUNSTATEDIR "/numlock-on"
 #define _PATH_LOGINDEFS		"/etc/login.defs"
 
-/* used in misc-utils/look.c */
+#define _PATH_SD_UNITSLOAD	_PATH_RUNSTATEDIR "/systemd/systemd-units-load"
+
+/* misc paths */
 #define _PATH_WORDS             "/usr/share/dict/words"
 #define _PATH_WORDS_ALT         "/usr/share/dict/web2"
 
 /* mount paths */
-#define _PATH_UMOUNT		"/bin/umount"
-
 #define _PATH_FILESYSTEMS	"/etc/filesystems"
+#define _PATH_PROC		"/proc"
 #define _PATH_PROC_SWAPS	"/proc/swaps"
 #define _PATH_PROC_FILESYSTEMS	"/proc/filesystems"
 #define _PATH_PROC_MOUNTS	"/proc/mounts"
@@ -93,9 +100,14 @@
 #define _PATH_PROC_LOCKS        "/proc/locks"
 #define _PATH_PROC_CDROMINFO	"/proc/sys/dev/cdrom/info"
 
+/* unshare paths */
+#define _PATH_SUBUID		"/etc/subuid"
+#define _PATH_SUBGID		"/etc/subgid"
 #define _PATH_PROC_UIDMAP	"/proc/self/uid_map"
 #define _PATH_PROC_GIDMAP	"/proc/self/gid_map"
 #define _PATH_PROC_SETGROUPS	"/proc/self/setgroups"
+
+#define _PATH_PROC_FDDIR	"/proc/self/fd"
 
 #define _PATH_PROC_ATTR_CURRENT	"/proc/self/attr/current"
 #define _PATH_PROC_ATTR_EXEC	"/proc/self/attr/exec"
@@ -104,6 +116,7 @@
 
 #define _PATH_SYS_BLOCK		"/sys/block"
 #define _PATH_SYS_DEVBLOCK	"/sys/dev/block"
+#define _PATH_SYS_DEVCHAR	"/sys/dev/char"
 #define _PATH_SYS_CLASS		"/sys/class"
 #define _PATH_SYS_SCSI		"/sys/bus/scsi"
 
@@ -126,11 +139,6 @@
 # endif
 #endif
 
-#define _PATH_MNTTAB_DIR	_PATH_MNTTAB ".d"
-
-#define _PATH_MOUNTED_LOCK	_PATH_MOUNTED "~"
-#define _PATH_MOUNTED_TMP	_PATH_MOUNTED ".tmp"
-
 #ifndef _PATH_DEV
   /*
    * The tailing '/' in _PATH_DEV is there for compatibility with libc.
@@ -138,12 +146,12 @@
 # define _PATH_DEV		"/dev/"
 #endif
 
+#define _PATH_DEV_MAPPER	"/dev/mapper"
+
 #define _PATH_DEV_MEM		"/dev/mem"
 
 #define _PATH_DEV_LOOP		"/dev/loop"
 #define _PATH_DEV_LOOPCTL	"/dev/loop-control"
-#define _PATH_DEV_TTY		"/dev/tty"
-
 
 /* udev paths */
 #define _PATH_DEV_BYLABEL	"/dev/disk/by-label"
@@ -160,15 +168,10 @@
 # define _PATH_ADJTIME		"/etc/adjtime"
 #endif
 
-#define _PATH_LASTDATE		"/var/lib/lastdate"
 #ifdef __ia64__
 # define _PATH_RTC_DEV		"/dev/efirtc"
 #else
-# define _PATH_RTC_DEV		"/dev/rtc"
-#endif
-
-#ifndef _PATH_BTMP
-#define _PATH_BTMP		"/var/log/btmp"
+# define _PATH_RTC_DEV		"/dev/rtc0"
 #endif
 
 /* raw paths*/
@@ -177,26 +180,45 @@
 /* deprecated */
 #define _PATH_RAWDEVCTL_OLD	"/dev/rawctl"
 
-/* wdctl path */
-#define _PATH_WATCHDOG_DEV	"/dev/watchdog"
+#define _PATH_PROC_KERNEL	"/proc/sys/kernel"
 
 /* ipc paths */
 #define _PATH_PROC_SYSV_MSG	"/proc/sysvipc/msg"
 #define _PATH_PROC_SYSV_SEM	"/proc/sysvipc/sem"
 #define _PATH_PROC_SYSV_SHM	"/proc/sysvipc/shm"
-#define _PATH_PROC_IPC_MSGMAX	"/proc/sys/kernel/msgmax"
-#define _PATH_PROC_IPC_MSGMNB	"/proc/sys/kernel/msgmnb"
-#define _PATH_PROC_IPC_MSGMNI	"/proc/sys/kernel/msgmni"
-#define _PATH_PROC_IPC_SEM	"/proc/sys/kernel/sem"
-#define _PATH_PROC_IPC_SHMALL	"/proc/sys/kernel/shmall"
-#define _PATH_PROC_IPC_SHMMAX	"/proc/sys/kernel/shmmax"
-#define _PATH_PROC_IPC_SHMMNI	"/proc/sys/kernel/shmmni"
+#define _PATH_PROC_IPC_MSGMAX	_PATH_PROC_KERNEL "/msgmax"
+#define _PATH_PROC_IPC_MSGMNB	_PATH_PROC_KERNEL "/msgmnb"
+#define _PATH_PROC_IPC_MSGMNI	_PATH_PROC_KERNEL "/msgmni"
+#define _PATH_PROC_IPC_SEM	_PATH_PROC_KERNEL "/sem"
+#define _PATH_PROC_IPC_SHMALL	_PATH_PROC_KERNEL "/shmall"
+#define _PATH_PROC_IPC_SHMMAX	_PATH_PROC_KERNEL "/shmmax"
+#define _PATH_PROC_IPC_SHMMNI	_PATH_PROC_KERNEL "/shmmni"
+
+/* util clamp */
+#define _PATH_PROC_UCLAMP_MIN	_PATH_PROC_KERNEL "/sched_util_clamp_min"
+#define _PATH_PROC_UCLAMP_MAX	_PATH_PROC_KERNEL "/sched_util_clamp_max"
+
+/* irqtop paths */
+#define _PATH_PROC_INTERRUPTS	"/proc/interrupts"
+#define _PATH_PROC_SOFTIRQS	"/proc/softirqs"
+#define _PATH_PROC_UPTIME	"/proc/uptime"
 
 /* kernel command line */
 #define _PATH_PROC_CMDLINE	"/proc/cmdline"
 
+
 /* logger paths */
 #define _PATH_DEVLOG		"/dev/log"
 
-#endif /* PATHNAMES_H */
+/* ctrlaltdel paths */
+#define _PATH_PROC_CTRL_ALT_DEL	"/proc/sys/kernel/ctrl-alt-del"
 
+/* lscpu paths */
+#define _PATH_PROC_CPUINFO	"/proc/cpuinfo"
+
+/* rfkill paths */
+#define _PATH_DEV_RFKILL	"/dev/rfkill"
+#define _PATH_SYS_RFKILL	"/sys/class/rfkill"
+
+
+#endif /* PATHNAMES_H */

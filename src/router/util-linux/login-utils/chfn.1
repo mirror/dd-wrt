@@ -1,81 +1,108 @@
+'\" t
+.\"     Title: chfn
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\"  chfn.1 -- change your finger information
-.\"  (c) 1994 by salvatore valente <svalente@athena.mit.edu>
-.\"
-.\"  This program is free software.  You can redistribute it and
-.\"  modify it under the terms of the GNU General Public License.
-.\"  There is no warranty.
-.\"
-.TH CHFN 1 "July 2014" "util-linux" "User Commands"
-.SH NAME
+.TH "CHFN" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 chfn \- change your finger information
-.SH SYNOPSIS
-.B chfn
-.RB [ \-f
-.IR full-name ]
-.RB [ \-o
-.IR office ]
-.RB [ \-p
-.IR office-phone ]
-.RB [ \-h
-.IR home-phone ]
-.RB [ \-u ]
-.RB [ \-v ]
-.RI [ username ]
-.SH DESCRIPTION
-.B chfn
-is used to change your finger information.  This information is
-stored in the
-.I /etc/passwd
-file, and is displayed by the
-.B finger
-program.  The Linux
-.B finger
-command will display four pieces of information that can be changed by
-.BR chfn :
-your real name, your work room and phone, and your home phone.
-.PP
-Any of the four pieces of information can be specified on the command
-line.  If no information is given on the command line,
-.B chfn
-enters interactive mode.
-.PP
-In interactive mode,
-.B chfn
-will prompt for each field.  At a prompt, you can enter the new information,
-or just press return to leave the field unchanged.  Enter the keyword
-"none" to make the field blank.
-.PP
-.B chfn
-supports non-local entries (kerberos, LDAP, etc.\&) if linked with libuser,
-otherwise use \fBypchfn\fR, \fBlchfn\fR or any other implementation for
-non-local entries.
-.SH OPTIONS
-.TP
-.BR \-f , " \-\-full\-name " \fIfull-name
+.SH "SYNOPSIS"
+.sp
+\fBchfn\fP [\fB\-f\fP \fIfull\-name\fP] [\fB\-o\fP \fIoffice\fP] [\fB\-p\fP \fIoffice\-phone\fP] [\fB\-h\fP \fIhome\-phone\fP] [\fB\-u\fP] [\fB\-v\fP] [\fIusername\fP]
+.SH "DESCRIPTION"
+.sp
+\fBchfn\fP is used to change your finger information. This information is stored in the \fI/etc/passwd\fP file, and is displayed by the \fBfinger\fP program. The Linux \fBfinger\fP command will display four pieces of information that can be changed by \fBchfn\fP: your real name, your work room and phone, and your home phone.
+.sp
+Any of the four pieces of information can be specified on the command line. If no information is given on the command line, \fBchfn\fP enters interactive mode.
+.sp
+In interactive mode, \fBchfn\fP will prompt for each field. At a prompt, you can enter the new information, or just press return to leave the field unchanged. Enter the keyword "none" to make the field blank.
+.sp
+\fBchfn\fP supports non\-local entries (kerberos, LDAP, etc.) if linked with libuser, otherwise use \fBypchfn\fP(1), \fBlchfn\fP(1) or any other implementation for non\-local entries.
+.SH "OPTIONS"
+.sp
+\fB\-f\fP, \fB\-\-full\-name\fP \fIfull\-name\fP
+.RS 4
 Specify your real name.
-.TP
-.BR \-o , " \-\-office " \fIoffice
+.RE
+.sp
+\fB\-o\fP, \fB\-\-office\fP \fIoffice\fP
+.RS 4
 Specify your office room number.
-.TP
-.BR \-p , " \-\-office\-phone " \fIoffice-phone
+.RE
+.sp
+\fB\-p\fP, \fB\-\-office\-phone\fP \fIoffice\-phone\fP
+.RS 4
 Specify your office phone number.
-.TP
-.BR \-h , " \-\-home\-phone " \fIhome-phone
+.RE
+.sp
+\fB\-h\fP, \fB\-\-home\-phone\fP \fIhome\-phone\fP
+.RS 4
 Specify your home phone number.
-.TP
-.BR \-u , " \-\-help"
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-.TP
-.BR \-v , " \-\-version"
-Display version information and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "CONFIG FILE ITEMS"
+.sp
+\fBchfn\fP reads the \fI/etc/login.defs\fP configuration file (see \fBlogin.defs\fP(5)). Note that the configuration file could be distributed with another package (e.g., shadow\-utils). The following configuration items are relevant for \fBchfn\fP:
+.sp
+\fBCHFN_RESTRICT\fP \fIstring\fP
+.RS 4
+Indicate which fields are changeable by \fBchfn\fP.
+.sp
+The boolean setting \fB"yes"\fP means that only the Office, Office Phone and Home Phone fields are changeable, and boolean setting \fB"no"\fP means that also the Full Name is changeable.
+.sp
+Another way to specify changeable fields is by abbreviations: f = Full Name, r = Office (room), w = Office (work) Phone, h = Home Phone. For example, \fBCHFN_RESTRICT "wh"\fP allows changing work and home phone numbers.
+.sp
+If \fBCHFN_RESTRICT\fP is undefined, then all finger information is read\-only. This is the default.
+.RE
 .SH "EXIT STATUS"
+.sp
 Returns 0 if operation was successful, 1 if operation failed or command syntax was not valid.
+.SH "AUTHORS"
+.sp
+.MTO "svalente\(atmit.edu" "Salvatore Valente" ""
 .SH "SEE ALSO"
-.BR finger (1),
-.BR passwd (5)
-.SH AUTHOR
-Salvatore Valente <svalente@mit.edu>
-.SH AVAILABILITY
-The chfn command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBchsh\fP(1),
+\fBfinger\fP(1),
+\fBlogin.defs\fP(5),
+\fBpasswd\fP(5)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBchfn\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

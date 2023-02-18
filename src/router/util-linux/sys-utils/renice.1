@@ -1,119 +1,103 @@
-.\" Copyright (c) 1983, 1991, 1993
-.\"	The Regents of the University of California.  All rights reserved.
+'\" t
+.\"     Title: renice
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-05-11
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
 .\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\"     @(#)renice.8	8.1 (Berkeley) 6/9/93
-.\"
-.TH RENICE "1" "July 2014" "util-linux" "User Commands"
-.SH NAME
+.TH "RENICE" "1" "2022-05-11" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 renice \- alter priority of running processes
-.SH SYNOPSIS
-.B renice
-.RB [ \-n ]
-.I priority
-.RB [ \-g | \-p | \-u ]
-.IR identifier ...
-.SH DESCRIPTION
-.B renice
-alters the scheduling priority of one or more running processes.  The
-first argument is the \fIpriority\fR value to be used.
-The other arguments are interpreted as process IDs (by default),
-process group IDs, user IDs, or user names.
-.BR renice 'ing
-a process group causes all processes in the process group to have their
-scheduling priority altered.
-.BR renice 'ing
-a user causes all processes owned by the user to have their scheduling
-priority altered.
-.PP
-.SH OPTIONS
-.TP
-.BR \-n , " \-\-priority " \fIpriority\fR
-Specify the scheduling
-.I priority
-to be used for the process, process group, or user.  Use of the option
-.BR \-n " or " \-\-priority
-is optional, but when used it must be the first argument.
-.TP
-.BR \-g , " \-\-pgrp
+.SH "SYNOPSIS"
+.sp
+\fBrenice\fP [\fB\-n\fP] \fIpriority\fP [\fB\-g\fP|\fB\-p\fP|\fB\-u\fP] \fIidentifier\fP...
+.SH "DESCRIPTION"
+.sp
+\fBrenice\fP alters the scheduling priority of one or more running processes. The first argument is the \fIpriority\fP value to be used. The other arguments are interpreted as process IDs (by default), process group IDs, user IDs, or user names. \fBrenice\fP\(aqing a process group causes all processes in the process group to have their scheduling priority altered. \fBrenice\fP\(aqing a user causes all processes owned by the user to have their scheduling priority altered.
+.SH "OPTIONS"
+.sp
+\fB\-n\fP, \fB\-\-priority\fP \fIpriority\fP
+.RS 4
+Specify the scheduling \fIpriority\fP to be used for the process, process group, or user. Use of the option \fB\-n\fP or \fB\-\-priority\fP is optional, but when used it must be the first argument.
+.RE
+.sp
+\fB\-g\fP, \fB\-\-pgrp\fP
+.RS 4
 Interpret the succeeding arguments as process group IDs.
-.TP
-.BR \-p , " \-\-pid
-Interpret the succeeding arguments as process IDs
-(the default).
-.TP
-.BR \-u , " \-\-user
+.RE
+.sp
+\fB\-p\fP, \fB\-\-pid\fP
+.RS 4
+Interpret the succeeding arguments as process IDs (the default).
+.RE
+.sp
+\fB\-u\fP, \fB\-\-user\fP
+.RS 4
 Interpret the succeeding arguments as usernames or UIDs.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.TP
-.BR \-h , " \-\-help"
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
 Display help text and exit.
-.SH EXAMPLES
-The following command would change the priority of the processes with
-PIDs 987 and 32, plus all processes owned by the users daemon and root:
-.TP
-.B "       renice" +1 987 -u daemon root -p 32
-.SH NOTES
-Users other than the superuser may only alter the priority of processes they
-own, and can only monotonically increase their ``nice value'' (for security
-reasons) within the range 0 to 19,
-unless a nice resource limit is set (Linux 2.6.12 and higher).  The
-superuser may alter the priority of any process and set the priority to any
-value in the range \-20 to 19.
-Useful priorities are: 19 (the affected processes will run only when nothing
-else in the system wants to), 0 (the ``base'' scheduling priority), anything
-negative (to make things go very fast).
-.SH FILES
-.TP
-.B /etc/passwd
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "FILES"
+.sp
+\fI/etc/passwd\fP
+.RS 4
 to map user names to user IDs
-.SH SEE ALSO
-.BR nice (1),
-.BR getpriority (2),
-.BR setpriority (2)
-.SH BUGS
-Non-superusers cannot increase scheduling priorities of their own processes,
-even if they were the ones that decreased the priorities in the first place.
-.PP
-The Linux kernel (at least version 2.0.0) and linux libc (at least version
-5.2.18) does not agree entirely on what the specifics of the systemcall
-interface to set nice values is.  Thus causes renice to report bogus previous
-nice values.
-.SH HISTORY
-The
-.B renice
-command appeared in 4.0BSD.
-.SH AVAILABILITY
-The renice command is part of the util-linux package and is available from
-.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
-Linux Kernel Archive
-.UE .
+.RE
+.SH "NOTES"
+.sp
+Users other than the superuser may only alter the priority of processes they own. Furthermore, an unprivileged user can only \fIincrease\fP the "nice value" (i.e., choose a lower priority) and such changes are irreversible unless (since Linux 2.6.12) the user has a suitable "nice" resource limit (see \fBulimit\fP(1p) and \fBgetrlimit\fP(2)).
+.sp
+The superuser may alter the priority of any process and set the priority to any value in the range \-20 to 19. Useful priorities are: 19 (the affected processes will run only when nothing else in the system wants to), 0 (the "base" scheduling priority), anything negative (to make things go very fast).
+.SH "HISTORY"
+.sp
+The \fBrenice\fP command appeared in 4.0BSD.
+.SH "EXAMPLES"
+.sp
+The following command would change the priority of the processes with PIDs 987 and 32, plus all processes owned by the users daemon and root:
+.sp
+\fBrenice +1 987 \-u daemon root \-p 32\fP
+.SH "SEE ALSO"
+.sp
+\fBnice\fP(1),
+\fBchrt\fP(1),
+\fBgetpriority\fP(2),
+\fBsetpriority\fP(2),
+\fBcredentials\fP(7),
+\fBsched\fP(7)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBrenice\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

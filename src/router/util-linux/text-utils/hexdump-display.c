@@ -100,7 +100,6 @@ static const char *color_cond(struct hexdump_pr *pr, unsigned char *bp, int bcnt
 		/* return the format string or check for another */
 		if (match ^ clr->invert)
 			return clr->fmt;
-		continue;
 	}
 
 	/* no match */
@@ -146,13 +145,15 @@ print(struct hexdump_pr *pr, unsigned char *bp) {
 	    }
 	case F_INT:
 	    {
+		char cval;	/* int8_t */
 		short sval;	/* int16_t */
 		int ival;	/* int32_t */
 		long long Lval;	/* int64_t, int64_t */
 
 		switch(pr->bcnt) {
 		case 1:
-			printf(pr->fmt, (unsigned long long) *bp);
+			memmove(&cval, bp, sizeof(cval));
+			printf(pr->fmt, (unsigned long long) cval);
 			break;
 		case 2:
 			memmove(&sval, bp, sizeof(sval));
@@ -299,9 +300,9 @@ void display(struct hexdump *hex)
 			eaddress = address;
 		}
 		list_for_each (p, &endfu->prlist) {
-			pr = list_entry(p, struct hexdump_pr, prlist);
-
 			const char *color = NULL;
+
+			pr = list_entry(p, struct hexdump_pr, prlist);
 			if (colors_wanted() && pr->colorlist
 			    && (color = color_cond(pr, bp, pr->bcnt))) {
 				color_enable(color);
@@ -378,7 +379,7 @@ get(struct hexdump *hex)
 			hex->length -= n;
 		if (!(need -= n)) {
 			if (vflag == ALL || vflag == FIRST ||
-			    memcmp(curp, savp, hex->blocksize)) {
+			    memcmp(curp, savp, hex->blocksize) != 0) {
 				if (vflag == DUP || vflag == FIRST)
 					vflag = WAIT;
 				return(curp);

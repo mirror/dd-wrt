@@ -12,7 +12,6 @@
  */
 
 #include "c.h"
-#include "nls.h"
 #include "all-io.h"
 
 #include "blkdev.h"
@@ -154,7 +153,7 @@ int fdisk_sgi_create_info(struct fdisk_context *cxt)
 	/* I keep SGI's habit to write the sgilabel to the second block */
 	sgilabel->volume[0].block_num = cpu_to_be32(2);
 	sgilabel->volume[0].num_bytes = cpu_to_be32(sizeof(struct sgi_info));
-	strncpy((char *) sgilabel->volume[0].name, "sgilabel", 8);
+	memcpy((char *) sgilabel->volume[0].name, "sgilabel", 8);
 
 	fdisk_info(cxt, _("SGI info created on second sector."));
 	return 0;
@@ -264,22 +263,48 @@ static int sgi_probe_label(struct fdisk_context *cxt)
 	return 1;
 }
 
-static int sgi_list_table(struct fdisk_context *cxt)
+static int sgi_get_disklabel_item(struct fdisk_context *cxt, struct fdisk_labelitem *item)
 {
-	struct sgi_disklabel *sgilabel = self_disklabel(cxt);
-	struct sgi_device_parameter *sgiparam = &sgilabel->devparam;
+	struct sgi_disklabel *sgilabel;
+	struct sgi_device_parameter *sgiparam;
 	int rc = 0;
 
-	if (fdisk_is_details(cxt))
-		fdisk_info(cxt, _(
-			"Label geometry: %d heads, %llu sectors\n"
-			"                %llu cylinders, %d physical cylinders\n"
-			"                %d extra sects/cyl, interleave %d:1\n"),
-			cxt->geom.heads, cxt->geom.sectors,
-			cxt->geom.cylinders, be16_to_cpu(sgiparam->pcylcount),
-			(int) sgiparam->sparecyl, be16_to_cpu(sgiparam->ilfact));
+	assert(cxt);
+	assert(cxt->label);
+	assert(fdisk_is_label(cxt, SGI));
 
-	fdisk_info(cxt, _("Bootfile: %s"), sgilabel->boot_file);
+	sgilabel = self_disklabel(cxt);
+	sgiparam = &sgilabel->devparam;
+
+	switch (item->id) {
+	case SGI_LABELITEM_PCYLCOUNT:
+		item->name = _("Physical cylinders");
+		item->type = 'j';
+		item->data.num64 = (uint64_t) be16_to_cpu(sgiparam->pcylcount);
+		break;
+	case SGI_LABELITEM_SPARECYL:
+		item->name = _("Extra sects/cyl");
+		item->type = 'j';
+		item->data.num64 = (uint64_t) sgiparam->sparecyl;
+		break;
+	case SGI_LABELITEM_ILFACT:
+		item->name = _("Interleave");
+		item->type = 'j';
+		item->data.num64 = (uint64_t) be16_to_cpu(sgiparam->ilfact);
+		break;
+	case SGI_LABELITEM_BOOTFILE:
+		item->name = _("Bootfile");
+		item->type = 's';
+		item->data.str = *sgilabel->boot_file ? strdup((char *) sgilabel->boot_file) : NULL;
+		break;
+	default:
+		if (item->id < __FDISK_NLABELITEMS)
+			rc = 1;	/* unsupported generic item */
+		else
+			rc = 2;	/* out of range */
+		break;
+	}
+
 	return rc;
 }
 
@@ -371,20 +396,24 @@ static int sgi_check_bootfile(struct fdisk_context *cxt, const char *name)
 				   "e.g. \"/unix\" or \"/unix.save\"."));
 		return -EINVAL;
 
-	} else if (sz > sizeof(sgilabel->boot_file)) {
+	}
+
+	if (sz > sizeof(sgilabel->boot_file)) {
 		fdisk_warnx(cxt, P_("Name of bootfile is too long: %zu byte maximum.",
 				    "Name of bootfile is too long: %zu bytes maximum.",
 				    sizeof(sgilabel->boot_file)),
 			    sizeof(sgilabel->boot_file));
 		return -EINVAL;
 
-	} else if (*name != '/') {
+	}
+
+	if (*name != '/') {
 		fdisk_warnx(cxt, _("Bootfile must have a fully qualified pathname."));
 		return -EINVAL;
 	}
 
 	if (strncmp(name, (char *) sgilabel->boot_file,
-				sizeof(sgilabel->boot_file))) {
+				sizeof(sgilabel->boot_file)) != 0) {
 		fdisk_warnx(cxt, _("Be aware that the bootfile is not checked "
 				   "for existence.  SGI's default is \"/unix\", "
 				   "and for backup \"/unix.save\"."));
@@ -485,8 +514,8 @@ static int compare_start(struct fdisk_context *cxt,
 	 * Sort according to start sectors and prefer the largest partition:
 	 * entry zero is the entire-disk entry.
 	 */
-	unsigned int i = *(int *) x;
-	unsigned int j = *(int *) y;
+	const unsigned int i = *(const int *) x;
+	const unsigned int j = *(const int *) y;
 	unsigned int a = sgi_get_start_sector(cxt, i);
 	unsigned int b = sgi_get_start_sector(cxt, j);
 	unsigned int c = sgi_get_num_sectors(cxt, i);
@@ -566,9 +595,8 @@ static int verify_disklabel(struct fdisk_context *cxt, int verbose)
 		if (sgi_get_num_sectors(cxt, i) != 0) {
 			Index[sortcount++] = i;
 			if (sgi_get_sysid(cxt, i) == SGI_TYPE_ENTIRE_DISK
-			    && entire++ == 1) {
-				if (verbose)
-					fdisk_info(cxt, _("More than one entire "
+			    && entire++ == 1 && verbose) {
+				fdisk_info(cxt, _("More than one entire "
 						"disk entry present."));
 			}
 		}
@@ -665,7 +693,7 @@ static int verify_disklabel(struct fdisk_context *cxt, int verbose)
 		add_to_freelist(cxt, start, lastblock);
 	}
 	/*
-	 * Done with arithmetics. Go for details now.
+	 * Done with arithmetic. Go for details now.
 	 */
 	if (verbose) {
 		if (sgi_get_bootpartition(cxt) < 0
@@ -901,6 +929,7 @@ static int sgi_add_partition(struct fdisk_context *cxt,
 		fdisk_ask_number_set_default(ask, fdisk_scround(cxt, last) - 1);/* default */
 		fdisk_ask_number_set_high(ask,    fdisk_scround(cxt, last) - 1);/* maximal */
 		fdisk_ask_number_set_base(ask,    fdisk_scround(cxt, first));
+		fdisk_ask_number_set_wrap_negative(ask, 1); /* wrap negative around high */
 
 		if (fdisk_use_cylinders(cxt))
 			fdisk_ask_number_set_unit(ask,
@@ -942,7 +971,6 @@ static int sgi_create_disklabel(struct fdisk_context *cxt)
 	assert(cxt->label);
 	assert(fdisk_is_label(cxt, SGI));
 
-#ifdef HDIO_GETGEO
 	if (cxt->geom.heads && cxt->geom.sectors) {
 		fdisk_sector_t llsectors;
 
@@ -959,13 +987,14 @@ static int sgi_create_disklabel(struct fdisk_context *cxt)
 			/* otherwise print error and use truncated version */
 			fdisk_warnx(cxt,
 				_("BLKGETSIZE ioctl failed on %s. "
-				  "Using geometry cylinder value of %llu. "
+				  "Using geometry cylinder value of %ju. "
 				  "This value may be truncated for devices "
-				  "> 33.8 GB."), cxt->dev_path, cxt->geom.cylinders);
+				  "> 33.8 GB."), cxt->dev_path,
+				(uintmax_t) cxt->geom.cylinders);
 		}
 	}
-#endif
-	rc = fdisk_init_firstsector_buffer(cxt);
+
+	rc = fdisk_init_firstsector_buffer(cxt, 0, 0);
 	if (rc)
 		return rc;
 
@@ -1041,9 +1070,6 @@ static int sgi_set_partition(struct fdisk_context *cxt,
 
 	if (pa->type) {
 		struct fdisk_parttype *t = pa->type;
-
-		if (t->code > UINT32_MAX)
-			return -EINVAL;
 
 		if (sgi_get_num_sectors(cxt, i) == 0)	/* caught already before, ... */ {
 			fdisk_warnx(cxt, _("Sorry, only for non-empty partitions you can change the tag."));
@@ -1145,8 +1171,8 @@ static const struct fdisk_label_operations sgi_operations =
 	.probe		= sgi_probe_label,
 	.write		= sgi_write_disklabel,
 	.verify		= sgi_verify_disklabel,
+	.get_item	= sgi_get_disklabel_item,
 	.create		= sgi_create_disklabel,
-	.list		= sgi_list_table,
 
 	.get_part	= sgi_get_partition,
 	.set_part	= sgi_set_partition,
@@ -1158,12 +1184,10 @@ static const struct fdisk_label_operations sgi_operations =
 };
 
 /* Allocates an SGI label driver. */
-struct fdisk_label *fdisk_new_sgi_label(struct fdisk_context *cxt)
+struct fdisk_label *fdisk_new_sgi_label(struct fdisk_context *cxt __attribute__ ((__unused__)))
 {
 	struct fdisk_label *lb;
 	struct fdisk_sgi_label *sgi;
-
-	assert(cxt);
 
 	sgi = calloc(1, sizeof(*sgi));
 	if (!sgi)
@@ -1181,5 +1205,6 @@ struct fdisk_label *fdisk_new_sgi_label(struct fdisk_context *cxt)
 
 	lb->flags |= FDISK_LABEL_FL_REQUIRE_GEOMETRY;
 
-	return lb;
+	/* return calloc() result to keep static anaylizers happy */
+	return (struct fdisk_label *) sgi;
 }

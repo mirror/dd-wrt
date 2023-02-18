@@ -32,12 +32,15 @@
 #include <unistd.h>
 
 #include "c.h"
+#include "caputils.h"
 #include "closestream.h"
 #include "nls.h"
 #include "optutils.h"
 #include "strutils.h"
 #include "xalloc.h"
 #include "pathnames.h"
+#include "signames.h"
+#include "env.h"
 
 #ifndef PR_SET_NO_NEW_PRIVS
 # define PR_SET_NO_NEW_PRIVS 38
@@ -47,6 +50,19 @@
 #endif
 
 #define SETPRIV_EXIT_PRIVERR 127	/* how we exit when we fail to set privs */
+
+/* The shell to set SHELL env.variable if none is given in the user's passwd entry.  */
+#define DEFAULT_SHELL "/bin/sh"
+
+static gid_t get_group(const char *s, const char *err);
+
+enum cap_type {
+	CAP_TYPE_EFFECTIVE   = CAPNG_EFFECTIVE,
+	CAP_TYPE_PERMITTED   = CAPNG_PERMITTED,
+	CAP_TYPE_INHERITABLE = CAPNG_INHERITABLE,
+	CAP_TYPE_BOUNDING    = CAPNG_BOUNDING_SET,
+	CAP_TYPE_AMBIENT     = (1 << 4)
+};
 
 /*
  * Note: We are subject to https://bugzilla.redhat.com/show_bug.cgi?id=895105
@@ -62,14 +78,20 @@ struct privctx {
 		have_euid:1,		/* effective uid */
 		have_rgid:1,		/* real gid */
 		have_egid:1,		/* effective gid */
+		have_passwd:1,		/* passwd entry */
 		have_groups:1,		/* add groups */
 		keep_groups:1,		/* keep groups */
 		clear_groups:1,		/* remove groups */
+		init_groups:1,		/* initialize groups */
+		reset_env:1,		/* reset environment */
 		have_securebits:1;	/* remove groups */
 
 	/* uids and gids */
 	uid_t ruid, euid;
 	gid_t rgid, egid;
+
+	/* real user passwd entry */
+	struct passwd passwd;
 
 	/* supplementary groups */
 	size_t num_groups;
@@ -77,18 +99,22 @@ struct privctx {
 
 	/* caps */
 	const char *caps_to_inherit;
+	const char *ambient_caps;
 	const char *bounding_set;
 
 	/* securebits */
 	int securebits;
+	/* parent death signal (<0 clear, 0 nothing, >0 signal) */
+	int pdeathsig;
 
 	/* LSMs */
 	const char *selinux_label;
 	const char *apparmor_profile;
 };
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] <program> [<argument>...]\n"),
 		program_invocation_short_name);
@@ -97,88 +123,88 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_("Run a program with different privilege settings.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(_(" -d, --dump               show current state (and do not exec anything)\n"), out);
-	fputs(_(" --nnp, --no-new-privs    disallow granting new privileges\n"), out);
-	fputs(_(" --inh-caps <caps,...>    set inheritable capabilities\n"), out);
-	fputs(_(" --bounding-set <caps>    set capability bounding set\n"), out);
-	fputs(_(" --ruid <uid>             set real uid\n"), out);
-	fputs(_(" --euid <uid>             set effective uid\n"), out);
-	fputs(_(" --rgid <gid>             set real gid\n"), out);
-	fputs(_(" --egid <gid>             set effective gid\n"), out);
-	fputs(_(" --reuid <uid>            set real and effective uid\n"), out);
-	fputs(_(" --regid <gid>            set real and effective gid\n"), out);
-	fputs(_(" --clear-groups           clear supplementary groups\n"), out);
-	fputs(_(" --keep-groups            keep supplementary groups\n"), out);
-	fputs(_(" --groups <group,...>     set supplementary groups\n"), out);
-	fputs(_(" --securebits <bits>      set securebits\n"), out);
-	fputs(_(" --selinux-label <label>  set SELinux label\n"), out);
-	fputs(_(" --apparmor-profile <pr>  set AppArmor profile\n"), out);
+	fputs(_(" -d, --dump                  show current state (and do not exec)\n"), out);
+	fputs(_(" --nnp, --no-new-privs       disallow granting new privileges\n"), out);
+	fputs(_(" --ambient-caps <caps,...>   set ambient capabilities\n"), out);
+	fputs(_(" --inh-caps <caps,...>       set inheritable capabilities\n"), out);
+	fputs(_(" --bounding-set <caps>       set capability bounding set\n"), out);
+	fputs(_(" --ruid <uid|user>           set real uid\n"), out);
+	fputs(_(" --euid <uid|user>           set effective uid\n"), out);
+	fputs(_(" --rgid <gid|user>           set real gid\n"), out);
+	fputs(_(" --egid <gid|group>          set effective gid\n"), out);
+	fputs(_(" --reuid <uid|user>          set real and effective uid\n"), out);
+	fputs(_(" --regid <gid|group>         set real and effective gid\n"), out);
+	fputs(_(" --clear-groups              clear supplementary groups\n"), out);
+	fputs(_(" --keep-groups               keep supplementary groups\n"), out);
+	fputs(_(" --init-groups               initialize supplementary groups\n"), out);
+	fputs(_(" --groups <group,...>        set supplementary groups by UID or name\n"), out);
+	fputs(_(" --securebits <bits>         set securebits\n"), out);
+	fputs(_(" --pdeathsig keep|clear|<signame>\n"
+	        "                             set or clear parent death signal\n"), out);
+	fputs(_(" --selinux-label <label>     set SELinux label\n"), out);
+	fputs(_(" --apparmor-profile <pr>     set AppArmor profile\n"), out);
+	fputs(_(" --reset-env                 clear all environment and initialize\n"
+		"                               HOME, SHELL, USER, LOGNAME and PATH\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(29));
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_(" This tool can be dangerous.  Read the manpage, and be careful.\n"), out);
-	fprintf(out, USAGE_MAN_TAIL("setpriv(1)"));
+	printf(USAGE_MAN_TAIL("setpriv(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
-static int real_cap_last_cap(void)
+static int has_cap(enum cap_type which, unsigned int i)
 {
-	/* CAP_LAST_CAP is untrustworthy. */
-	static int ret = -1;
-	int matched;
-	FILE *f;
-
-	if (ret != -1)
-		return ret;
-
-	f = fopen(_PATH_PROC_CAPLASTCAP, "r");
-	if (!f) {
-		ret = CAP_LAST_CAP;	/* guess */
-		return ret;
+	switch (which) {
+	case CAP_TYPE_EFFECTIVE:
+	case CAP_TYPE_BOUNDING:
+	case CAP_TYPE_INHERITABLE:
+	case CAP_TYPE_PERMITTED:
+		return capng_have_capability((capng_type_t)which, i);
+	case CAP_TYPE_AMBIENT:
+		return prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET,
+				(unsigned long) i, 0UL, 0UL);
+	default:
+		warnx(_("invalid capability type"));
+		return -1;
 	}
-
-	matched = fscanf(f, "%d", &ret);
-	fclose(f);
-
-	if (matched != 1)
-		ret = CAP_LAST_CAP;	/* guess */
-
-	return ret;
 }
 
 /* Returns the number of capabilities printed. */
-static int print_caps(FILE *f, capng_type_t which)
+static int print_caps(FILE *f, enum cap_type which)
 {
-	int i, n = 0, max = real_cap_last_cap();
+	int i, n = 0, max = cap_last_cap();
 
 	for (i = 0; i <= max; i++) {
-		if (capng_have_capability(which, i)) {
+		int ret = has_cap(which, i);
+
+		if (i == 0 && ret < 0)
+			return -1;
+
+		if (ret == 1) {
 			const char *name = capng_capability_to_name(i);
 			if (n)
 				fputc(',', f);
 			if (name)
 				fputs(name, f);
 			else
-				/* cap-ng has very poor handling of
-				 * CAP_LAST_CAP changes.  This is the
-				 * best we can do. */
-				printf("cap_%d", i);
+				warnx(_("cap %d: libcap-ng is broken"), i);
 			n++;
 		}
 	}
+
 	return n;
 }
 
 static void dump_one_secbit(int *first, int *bits, int bit, const char *name)
 {
 	if (*bits & bit) {
-		if (!*first)
-			printf(",");
-		else
+		if (*first)
 			*first = 0;
+		else
+			printf(",");
 		fputs(name, stdout);
 		*bits &= ~bit;
 	}
@@ -206,10 +232,10 @@ static void dump_securebits(void)
 	dump_one_secbit(&first, &bits, SECBIT_KEEP_CAPS_LOCKED,
 			"keep_caps_locked");
 	if (bits) {
-		if (!first)
-			printf(",");
-		else
+		if (first)
 			first = 0;
+		else
+			printf(",");
 		printf("0x%x", (unsigned)bits);
 	}
 
@@ -252,7 +278,7 @@ static void dump_label(const char *name)
 
 static void dump_groups(void)
 {
-	int n = getgroups(0, 0);
+	int n = getgroups(0, NULL);
 	gid_t *groups;
 
 	if (n < 0) {
@@ -281,6 +307,24 @@ static void dump_groups(void)
 	}
 	printf("\n");
 	free(groups);
+}
+
+static void dump_pdeathsig(void)
+{
+	int pdeathsig;
+
+	if (prctl(PR_GET_PDEATHSIG, &pdeathsig) != 0) {
+		warn(_("get pdeathsig failed"));
+		return;
+	}
+
+	printf(_("Parent death signal: "));
+	if (pdeathsig && signum_to_signame(pdeathsig) != NULL)
+		printf("%s\n", signum_to_signame(pdeathsig));
+	else if (pdeathsig)
+		printf("%d\n", pdeathsig);
+	else
+		printf(_("[none]\n"));
 }
 
 static void dump(int dumplevel)
@@ -317,27 +361,36 @@ static void dump(int dumplevel)
 
 	if (2 <= dumplevel) {
 		printf(_("Effective capabilities: "));
-		if (print_caps(stdout, CAPNG_EFFECTIVE) == 0)
+		if (print_caps(stdout, CAP_TYPE_EFFECTIVE) == 0)
 			printf(_("[none]"));
 		printf("\n");
 
 		printf(_("Permitted capabilities: "));
-		if (print_caps(stdout, CAPNG_PERMITTED) == 0)
+		if (print_caps(stdout, CAP_TYPE_PERMITTED) == 0)
 			printf(_("[none]"));
 		printf("\n");
 	}
 
 	printf(_("Inheritable capabilities: "));
-	if (print_caps(stdout, CAPNG_INHERITABLE) == 0)
+	if (print_caps(stdout, CAP_TYPE_INHERITABLE) == 0)
 		printf(_("[none]"));
 	printf("\n");
 
+	printf(_("Ambient capabilities: "));
+	x = print_caps(stdout, CAP_TYPE_AMBIENT);
+	if (x == 0)
+		printf(_("[none]"));
+	if (x < 0)
+		printf(_("[unsupported]"));
+	printf("\n");
+
 	printf(_("Capability bounding set: "));
-	if (print_caps(stdout, CAPNG_BOUNDING_SET) == 0)
+	if (print_caps(stdout, CAP_TYPE_BOUNDING) == 0)
 		printf(_("[none]"));
 	printf("\n");
 
 	dump_securebits();
+	dump_pdeathsig();
 
 	if (access(_PATH_SYS_SELINUX, F_OK) == 0)
 		dump_label(_("SELinux label"));
@@ -349,7 +402,7 @@ static void dump(int dumplevel)
 
 static void list_known_caps(void)
 {
-	int i, max = real_cap_last_cap();
+	int i, max = cap_last_cap();
 
 	for (i = 0; i <= max; i++) {
 		const char *name = capng_capability_to_name(i);
@@ -378,10 +431,22 @@ static void parse_groups(struct privctx *opts, const char *str)
 
 	opts->groups = xcalloc(opts->num_groups, sizeof(gid_t));
 	while ((c = strsep(&groups, ",")))
-		opts->groups[i++] = (gid_t) strtol_or_err(c,
-						  _("Invalid supplementary group id"));
+		opts->groups[i++] = get_group(c, _("Invalid supplementary group id"));
 
 	free(groups);
+}
+
+static void parse_pdeathsig(struct privctx *opts, const char *str)
+{
+	if (!strcmp(str, "keep")) {
+		if (prctl(PR_GET_PDEATHSIG, &opts->pdeathsig) != 0)
+			errx(SETPRIV_EXIT_PRIVERR,
+				 _("failed to get parent death signal"));
+	} else if (!strcmp(str, "clear")) {
+		opts->pdeathsig = -1;
+	} else if ((opts->pdeathsig = signame_to_signum(str)) < 0) {
+		errx(EXIT_FAILURE, _("unknown signal: %s"), str);
+	}
 }
 
 static void do_setresuid(const struct privctx *opts)
@@ -420,7 +485,35 @@ static void bump_cap(unsigned int cap)
 		capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, cap);
 }
 
-static void do_caps(capng_type_t type, const char *caps)
+static int cap_update(capng_act_t action,
+		enum cap_type type, unsigned int cap)
+{
+	switch (type) {
+		case CAP_TYPE_EFFECTIVE:
+		case CAP_TYPE_BOUNDING:
+		case CAP_TYPE_INHERITABLE:
+		case CAP_TYPE_PERMITTED:
+			return capng_update(action, (capng_type_t) type, cap);
+		case CAP_TYPE_AMBIENT:
+		{
+			int ret;
+
+			if (action == CAPNG_ADD)
+				ret = prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE,
+						(unsigned long) cap, 0UL, 0UL);
+			else
+				ret = prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_LOWER,
+						(unsigned long) cap, 0UL, 0UL);
+
+			return ret;
+		}
+		default:
+			errx(EXIT_FAILURE, _("unsupported capability type"));
+			return -1;
+	}
+}
+
+static void do_caps(enum cap_type type, const char *caps)
 {
 	char *my_caps = xstrdup(caps);
 	char *c;
@@ -436,17 +529,17 @@ static void do_caps(capng_type_t type, const char *caps)
 
 		if (!strcmp(c + 1, "all")) {
 			int i;
-			/* It would be really bad if -all didn't drop all
-			 * caps.  It's better to just fail. */
-			if (real_cap_last_cap() > CAP_LAST_CAP)
-				errx(SETPRIV_EXIT_PRIVERR,
-				     _("libcap-ng is too old for \"all\" caps"));
-			for (i = 0; i <= CAP_LAST_CAP; i++)
-				capng_update(action, type, i);
+			/* We can trust the return value from cap_last_cap(),
+			 * so use that directly. */
+			for (i = 0; i <= cap_last_cap(); i++)
+				cap_update(action, type, i);
 		} else {
 			int cap = capng_name_to_capability(c + 1);
 			if (0 <= cap)
-				capng_update(action, type, cap);
+				cap_update(action, type, cap);
+			else if (sscanf(c + 1, "cap_%d", &cap) == 1
+			    && 0 <= cap && cap <= cap_last_cap())
+				cap_update(action, type, cap);
 			else
 				errx(EXIT_FAILURE,
 				     _("unknown capability \"%s\""), c + 1);
@@ -558,6 +651,38 @@ static void do_apparmor_profile(const char *label)
 		    _("write failed: %s"), _PATH_PROC_ATTR_EXEC);
 }
 
+
+static void do_reset_environ(struct passwd *pw)
+{
+	char *term = getenv("TERM");
+
+	if (term)
+		term = xstrdup(term);
+#ifdef HAVE_CLEARENV
+	clearenv();
+#else
+	environ = NULL;
+#endif
+	if (term) {
+		xsetenv("TERM", term, 1);
+		free(term);
+	}
+
+	if (pw->pw_shell && *pw->pw_shell)
+		xsetenv("SHELL", pw->pw_shell, 1);
+	else
+		xsetenv("SHELL", DEFAULT_SHELL, 1);
+
+	xsetenv("HOME", pw->pw_dir, 1);
+	xsetenv("USER", pw->pw_name, 1);
+	xsetenv("LOGNAME", pw->pw_name, 1);
+
+	if (pw->pw_uid)
+		xsetenv("PATH", _PATH_DEFPATH, 1);
+	else
+		xsetenv("PATH", _PATH_DEFPATH_ROOT, 1);
+}
+
 static uid_t get_user(const char *s, const char *err)
 {
 	struct passwd *pw;
@@ -580,6 +705,33 @@ static gid_t get_group(const char *s, const char *err)
 	return tmp;
 }
 
+static struct passwd *get_passwd(const char *s, uid_t *uid, const char *err)
+{
+	struct passwd *pw;
+	long tmp;
+	pw = getpwnam(s);
+	if (pw) {
+		*uid = pw->pw_uid;
+	} else {
+		tmp = strtol_or_err(s, err);
+		*uid = tmp;
+		pw = getpwuid(*uid);
+	}
+	return pw;
+}
+
+static struct passwd *passwd_copy(struct passwd *dst, const struct passwd *src)
+{
+	struct passwd *rv;
+	rv = memcpy(dst, src, sizeof(*dst));
+	rv->pw_name = xstrdup(rv->pw_name);
+	rv->pw_passwd = xstrdup(rv->pw_passwd);
+	rv->pw_gecos = xstrdup(rv->pw_gecos);
+	rv->pw_dir = xstrdup(rv->pw_dir);
+	rv->pw_shell = xstrdup(rv->pw_shell);
+	return rv;
+}
+
 int main(int argc, char **argv)
 {
 	enum {
@@ -592,48 +744,57 @@ int main(int argc, char **argv)
 		REGID,
 		CLEAR_GROUPS,
 		KEEP_GROUPS,
+		INIT_GROUPS,
 		GROUPS,
 		INHCAPS,
+		AMBCAPS,
 		LISTCAPS,
 		CAPBSET,
 		SECUREBITS,
+		PDEATHSIG,
 		SELINUX_LABEL,
-		APPARMOR_PROFILE
+		APPARMOR_PROFILE,
+		RESET_ENV
 	};
 
 	static const struct option longopts[] = {
-		{"dump", no_argument, 0, 'd'},
-		{"nnp", no_argument, 0, NNP},
-		{"no-new-privs", no_argument, 0, NNP},
-		{"inh-caps", required_argument, 0, INHCAPS},
-		{"list-caps", no_argument, 0, LISTCAPS},
-		{"ruid", required_argument, 0, RUID},
-		{"euid", required_argument, 0, EUID},
-		{"rgid", required_argument, 0, RGID},
-		{"egid", required_argument, 0, EGID},
-		{"reuid", required_argument, 0, REUID},
-		{"regid", required_argument, 0, REGID},
-		{"clear-groups", no_argument, 0, CLEAR_GROUPS},
-		{"keep-groups", no_argument, 0, KEEP_GROUPS},
-		{"groups", required_argument, 0, GROUPS},
-		{"bounding-set", required_argument, 0, CAPBSET},
-		{"securebits", required_argument, 0, SECUREBITS},
-		{"selinux-label", required_argument, 0, SELINUX_LABEL},
-		{"apparmor-profile", required_argument, 0, APPARMOR_PROFILE},
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'V'},
-		{NULL, 0, 0, 0}
+		{ "dump",             no_argument,       NULL, 'd'              },
+		{ "nnp",              no_argument,       NULL, NNP              },
+		{ "no-new-privs",     no_argument,       NULL, NNP              },
+		{ "inh-caps",         required_argument, NULL, INHCAPS          },
+		{ "ambient-caps",     required_argument, NULL, AMBCAPS          },
+		{ "list-caps",        no_argument,       NULL, LISTCAPS         },
+		{ "ruid",             required_argument, NULL, RUID             },
+		{ "euid",             required_argument, NULL, EUID             },
+		{ "rgid",             required_argument, NULL, RGID             },
+		{ "egid",             required_argument, NULL, EGID             },
+		{ "reuid",            required_argument, NULL, REUID            },
+		{ "regid",            required_argument, NULL, REGID            },
+		{ "clear-groups",     no_argument,       NULL, CLEAR_GROUPS     },
+		{ "keep-groups",      no_argument,       NULL, KEEP_GROUPS      },
+		{ "init-groups",      no_argument,       NULL, INIT_GROUPS      },
+		{ "groups",           required_argument, NULL, GROUPS           },
+		{ "bounding-set",     required_argument, NULL, CAPBSET          },
+		{ "securebits",       required_argument, NULL, SECUREBITS       },
+		{ "pdeathsig",        required_argument, NULL, PDEATHSIG,       },
+		{ "selinux-label",    required_argument, NULL, SELINUX_LABEL    },
+		{ "apparmor-profile", required_argument, NULL, APPARMOR_PROFILE },
+		{ "help",             no_argument,       NULL, 'h'              },
+		{ "reset-env",        no_argument,       NULL, RESET_ENV,       },
+		{ "version",          no_argument,       NULL, 'V'              },
+		{ NULL, 0, NULL, 0 }
 	};
 
 	static const ul_excl_t excl[] = {
 		/* keep in same order with enum definitions */
-		{CLEAR_GROUPS, KEEP_GROUPS, GROUPS},
+		{CLEAR_GROUPS, KEEP_GROUPS, INIT_GROUPS, GROUPS},
 		{0}
 	};
 	int excl_st[ARRAY_SIZE(excl)] = UL_EXCL_STATUS_INIT;
 
 	int c;
 	struct privctx opts;
+	struct passwd *pw = NULL;
 	int dumplevel = 0;
 	int total_opts = 0;
 	int list_caps = 0;
@@ -641,7 +802,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	memset(&opts, 0, sizeof(opts));
 
@@ -662,7 +823,11 @@ int main(int argc, char **argv)
 			if (opts.have_ruid)
 				errx(EXIT_FAILURE, _("duplicate ruid"));
 			opts.have_ruid = 1;
-			opts.ruid = get_user(optarg, _("failed to parse ruid"));
+			pw = get_passwd(optarg, &opts.ruid, _("failed to parse ruid"));
+			if (pw) {
+				passwd_copy(&opts.passwd, pw);
+				opts.have_passwd = 1;
+			}
 			break;
 		case EUID:
 			if (opts.have_euid)
@@ -674,7 +839,12 @@ int main(int argc, char **argv)
 			if (opts.have_ruid || opts.have_euid)
 				errx(EXIT_FAILURE, _("duplicate ruid or euid"));
 			opts.have_ruid = opts.have_euid = 1;
-			opts.ruid = opts.euid = get_user(optarg, _("failed to parse reuid"));
+			pw = get_passwd(optarg, &opts.ruid, _("failed to parse reuid"));
+			opts.euid = opts.ruid;
+			if (pw) {
+				passwd_copy(&opts.passwd, pw);
+				opts.have_passwd = 1;
+			}
 			break;
 		case RGID:
 			if (opts.have_rgid)
@@ -706,11 +876,23 @@ int main(int argc, char **argv)
 				     _("duplicate --keep-groups option"));
 			opts.keep_groups = 1;
 			break;
+		case INIT_GROUPS:
+			if (opts.init_groups)
+				errx(EXIT_FAILURE,
+				     _("duplicate --init-groups option"));
+			opts.init_groups = 1;
+			break;
 		case GROUPS:
 			if (opts.have_groups)
 				errx(EXIT_FAILURE,
 				     _("duplicate --groups option"));
 			parse_groups(&opts, optarg);
+			break;
+		case PDEATHSIG:
+			if (opts.pdeathsig)
+				errx(EXIT_FAILURE,
+				     _("duplicate --keep-pdeathsig option"));
+			parse_pdeathsig(&opts, optarg);
 			break;
 		case LISTCAPS:
 			list_caps = 1;
@@ -720,6 +902,12 @@ int main(int argc, char **argv)
 				errx(EXIT_FAILURE,
 				     _("duplicate --inh-caps option"));
 			opts.caps_to_inherit = optarg;
+			break;
+		case AMBCAPS:
+			if (opts.ambient_caps)
+				errx(EXIT_FAILURE,
+				     _("duplicate --ambient-caps option"));
+			opts.ambient_caps = optarg;
 			break;
 		case CAPBSET:
 			if (opts.bounding_set)
@@ -745,15 +933,16 @@ int main(int argc, char **argv)
 				     _("duplicate --apparmor-profile option"));
 			opts.apparmor_profile = optarg;
 			break;
+		case RESET_ENV:
+			opts.reset_env = 1;
+			break;
+
 		case 'h':
-			usage(stdout);
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
-		case '?':
-			usage(stderr);
+			print_version(EXIT_SUCCESS);
 		default:
-			errx(EXIT_FAILURE, _("unrecognized option '%c'"), c);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
@@ -777,13 +966,33 @@ int main(int argc, char **argv)
 		errx(EXIT_FAILURE, _("No program specified"));
 
 	if ((opts.have_rgid || opts.have_egid)
-	    && !opts.keep_groups && !opts.clear_groups && !opts.have_groups)
+	    && !opts.keep_groups && !opts.clear_groups && !opts.init_groups
+	    && !opts.have_groups)
 		errx(EXIT_FAILURE,
-		     _("--[re]gid requires --keep-groups, --clear-groups, or --groups"));
+		     _("--[re]gid requires --keep-groups, --clear-groups, --init-groups, or --groups"));
 
-	if (opts.nnp)
-		if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1)
-			err(EXIT_FAILURE, _("disallow granting new privileges failed"));
+	if (opts.init_groups && !opts.have_ruid)
+		errx(EXIT_FAILURE,
+		     _("--init-groups requires --ruid or --reuid"));
+
+	if (opts.init_groups && !opts.have_passwd)
+		errx(EXIT_FAILURE,
+		     _("uid %ld not found, --init-groups requires an user that "
+		       "can be found on the system"),
+		     (long) opts.ruid);
+
+	if (opts.reset_env) {
+		if (opts.have_passwd)
+			/* pwd according to --ruid or --reuid */
+			pw = &opts.passwd;
+		else
+			/* pwd for the current user */
+			pw = getpwuid(getuid());
+		do_reset_environ(pw);
+	}
+
+	if (opts.nnp && prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1)
+		err(EXIT_FAILURE, _("disallow granting new privileges failed"));
 
 	if (opts.selinux_label)
 		do_selinux_label(opts.selinux_label);
@@ -814,30 +1023,39 @@ int main(int argc, char **argv)
 	if (opts.have_groups) {
 		if (setgroups(opts.num_groups, opts.groups) != 0)
 			err(SETPRIV_EXIT_PRIVERR, _("setgroups failed"));
+	} else if (opts.init_groups) {
+		if (initgroups(opts.passwd.pw_name, opts.passwd.pw_gid) != 0)
+			err(SETPRIV_EXIT_PRIVERR, _("initgroups failed"));
 	} else if (opts.clear_groups) {
 		gid_t x = 0;
 		if (setgroups(0, &x) != 0)
 			err(SETPRIV_EXIT_PRIVERR, _("setgroups failed"));
 	}
 
-	if (opts.have_securebits)
-		if (prctl(PR_SET_SECUREBITS, opts.securebits, 0, 0, 0) != 0)
-			err(SETPRIV_EXIT_PRIVERR, _("set process securebits failed"));
+	if (opts.have_securebits && prctl(PR_SET_SECUREBITS, opts.securebits, 0, 0, 0) != 0)
+		err(SETPRIV_EXIT_PRIVERR, _("set process securebits failed"));
 
 	if (opts.bounding_set) {
-		do_caps(CAPNG_BOUNDING_SET, opts.bounding_set);
+		do_caps(CAP_TYPE_BOUNDING, opts.bounding_set);
 		errno = EPERM;	/* capng doesn't set errno if we're missing CAP_SETPCAP */
 		if (capng_apply(CAPNG_SELECT_BOUNDS) != 0)
 			err(SETPRIV_EXIT_PRIVERR, _("apply bounding set"));
 	}
 
 	if (opts.caps_to_inherit) {
-		do_caps(CAPNG_INHERITABLE, opts.caps_to_inherit);
+		do_caps(CAP_TYPE_INHERITABLE, opts.caps_to_inherit);
 		if (capng_apply(CAPNG_SELECT_CAPS) != 0)
 			err(SETPRIV_EXIT_PRIVERR, _("apply capabilities"));
 	}
 
-	execvp(argv[optind], argv + optind);
+	if (opts.ambient_caps) {
+		do_caps(CAP_TYPE_AMBIENT, opts.ambient_caps);
+	}
 
-	err(EXIT_FAILURE, _("cannot execute: %s"), argv[optind]);
+	/* Clear or set parent death signal */
+	if (opts.pdeathsig && prctl(PR_SET_PDEATHSIG, opts.pdeathsig < 0 ? 0 : opts.pdeathsig) != 0)
+		err(SETPRIV_EXIT_PRIVERR, _("set parent death signal failed"));
+
+	execvp(argv[optind], argv + optind);
+	errexec(argv[optind]);
 }

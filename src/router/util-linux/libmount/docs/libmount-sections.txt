@@ -20,6 +20,7 @@ mnt_resolve_target
 <SECTION>
 <FILE>context</FILE>
 libmnt_context
+libmnt_ns
 mnt_free_context
 mnt_new_context
 mnt_reset_context
@@ -35,9 +36,13 @@ mnt_context_enable_fork
 mnt_context_enable_lazy
 mnt_context_enable_loopdel
 mnt_context_enable_rdonly_umount
+mnt_context_enable_rwonly_mount
 mnt_context_enable_sloppy
 mnt_context_enable_verbose
+mnt_context_forced_rdonly
+mnt_context_force_unrestricted
 mnt_context_get_cache
+mnt_context_get_excode
 mnt_context_get_fs
 mnt_context_get_fstab
 mnt_context_get_fstab_userdata
@@ -50,11 +55,14 @@ mnt_context_get_mtab
 mnt_context_get_mtab_userdata
 mnt_context_get_options
 mnt_context_get_optsmode
+mnt_context_get_origin_ns
 mnt_context_get_source
 mnt_context_get_status
 mnt_context_get_syscall_errno
 mnt_context_get_table
 mnt_context_get_target
+mnt_context_get_target_ns
+mnt_context_get_target_prefix
 mnt_context_get_user_mflags
 mnt_context_helper_executed
 mnt_context_helper_setopt
@@ -72,6 +80,7 @@ mnt_context_is_nomtab
 mnt_context_is_parent
 mnt_context_is_rdonly_umount
 mnt_context_is_restricted
+mnt_context_is_rwonly_mount
 mnt_context_is_sloppy
 mnt_context_is_swapmatch
 mnt_context_is_verbose
@@ -91,8 +100,13 @@ mnt_context_set_source
 mnt_context_set_syscall_status
 mnt_context_set_tables_errcb
 mnt_context_set_target
+mnt_context_set_target_ns
+mnt_context_set_target_prefix
 mnt_context_set_user_mflags
 mnt_context_strerror
+mnt_context_switch_ns
+mnt_context_switch_origin_ns
+mnt_context_switch_target_ns
 mnt_context_syscall_called
 mnt_context_tab_applied
 mnt_context_wait_for_children
@@ -104,6 +118,18 @@ MNT_ERR_MOUNTOPT
 MNT_ERR_NOFSTAB
 MNT_ERR_NOFSTYPE
 MNT_ERR_NOSOURCE
+MNT_ERR_LOOPOVERLAP
+MNT_ERR_LOCK
+MNT_ERR_NAMESPACE
+<SUBSECTION>
+MNT_EX_SUCCESS
+MNT_EX_USAGE
+MNT_EX_SYSERR
+MNT_EX_SOFTWARE
+MNT_EX_USER
+MNT_EX_FILEIO
+MNT_EX_FAIL
+MNT_EX_SOMEOK
 </SECTION>
 
 <SECTION>
@@ -112,6 +138,7 @@ mnt_context_do_mount
 mnt_context_finalize_mount
 mnt_context_mount
 mnt_context_next_mount
+mnt_context_next_remount
 mnt_context_prepare_mount
 <SUBSECTION>
 MNT_MS_COMMENT
@@ -129,6 +156,15 @@ MNT_MS_UHELPER
 MNT_MS_USER
 MNT_MS_USERS
 MNT_MS_XCOMMENT
+MNT_MS_XFSTABCOMM
+MNT_MS_HASH_DEVICE
+MNT_MS_ROOT_HASH
+MNT_MS_HASH_OFFSET
+MNT_MS_ROOT_HASH_FILE
+MNT_MS_FEC_DEVICE
+MNT_MS_FEC_OFFSET
+MNT_MS_FEC_ROOTS
+MNT_MS_ROOT_HASH_SIG
 <SUBSECTION>
 MS_BIND
 MS_DIRSYNC
@@ -156,6 +192,7 @@ MS_SLAVE
 MS_STRICTATIME
 MS_SYNCHRONOUS
 MS_UNBINDABLE
+MS_LAZYTIME
 </SECTION>
 
 <SECTION>
@@ -201,15 +238,18 @@ mnt_fs_get_source
 mnt_fs_get_srcpath
 mnt_fs_get_swaptype
 mnt_fs_get_tag
+mnt_fs_get_table
 mnt_fs_get_target
 mnt_fs_get_tid
 mnt_fs_get_usedsize
 mnt_fs_get_userdata
 mnt_fs_get_user_options
 mnt_fs_get_vfs_options
+mnt_fs_get_vfs_options_all
 mnt_fs_is_kernel
 mnt_fs_is_netfs
 mnt_fs_is_pseudofs
+mnt_fs_is_regularfs
 mnt_fs_is_swaparea
 mnt_fs_match_fstype
 mnt_fs_match_options
@@ -225,6 +265,7 @@ mnt_fs_set_freq
 mnt_fs_set_fstype
 mnt_fs_set_options
 mnt_fs_set_passno
+mnt_fs_set_priority
 mnt_fs_set_root
 mnt_fs_set_source
 mnt_fs_set_target
@@ -284,6 +325,7 @@ mnt_optstr_prepend_option
 mnt_optstr_remove_option
 mnt_optstr_set_option
 mnt_split_optstr
+mnt_match_options
 </SECTION>
 
 <SECTION>
@@ -301,6 +343,7 @@ mnt_table_append_intro_comment
 mnt_table_append_trailing_comment
 mnt_table_enable_comments
 mnt_table_find_devno
+mnt_table_find_fs
 mnt_table_find_mountpoint
 mnt_table_find_next_fs
 mnt_table_find_pair
@@ -308,6 +351,7 @@ mnt_table_find_source
 mnt_table_find_srcpath
 mnt_table_find_tag
 mnt_table_find_target
+mnt_table_find_target_with_option
 mnt_table_first_fs
 mnt_table_get_cache
 mnt_table_get_intro_comment
@@ -315,11 +359,14 @@ mnt_table_get_nents
 mnt_table_get_root_fs
 mnt_table_get_trailing_comment
 mnt_table_get_userdata
+mnt_table_insert_fs
 mnt_table_is_empty
 mnt_table_is_fs_mounted
 mnt_table_last_fs
+mnt_table_move_fs
 mnt_table_next_child_fs
 mnt_table_next_fs
+mnt_table_over_fs
 mnt_table_parse_dir
 mnt_table_parse_file
 mnt_table_parse_fstab
@@ -333,8 +380,8 @@ mnt_table_set_iter
 mnt_table_set_parser_errcb
 mnt_table_set_trailing_comment
 mnt_table_set_userdata
-mnt_table_with_comments
 mnt_table_uniq_fs
+mnt_table_with_comments
 </SECTION>
 
 <SECTION>
@@ -370,10 +417,10 @@ mnt_get_fstab_path
 mnt_get_mountpoint
 mnt_get_mtab_path
 mnt_get_swaps_path
+mnt_guess_system_root
 mnt_has_regular_mtab
 mnt_mangle
 mnt_match_fstype
-mnt_match_options
 mnt_tag_is_valid
 mnt_unmangle
 </SECTION>

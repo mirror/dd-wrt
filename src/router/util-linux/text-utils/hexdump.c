@@ -66,10 +66,10 @@ parse_args(int argc, char **argv, struct hexdump *hex)
 
 	static const struct option longopts[] = {
 		{"one-byte-octal", no_argument, NULL, 'b'},
-		{"one-byte-char", required_argument, NULL, 'c'},
-		{"canonical", required_argument, NULL, 'C'},
+		{"one-byte-char", no_argument, NULL, 'c'},
+		{"canonical", no_argument, NULL, 'C'},
 		{"two-bytes-decimal", no_argument, NULL, 'd'},
-		{"two-bytes-octal", required_argument, NULL, 'o'},
+		{"two-bytes-octal", no_argument, NULL, 'o'},
 		{"two-bytes-hex", no_argument, NULL, 'x'},
 		{"format", required_argument, NULL, 'e'},
 		{"format-file", required_argument, NULL, 'f'},
@@ -81,6 +81,13 @@ parse_args(int argc, char **argv, struct hexdump *hex)
 		{"version", no_argument, NULL, 'V'},
 		{NULL, no_argument, NULL, 0}
 	};
+
+	if (!strcmp(program_invocation_short_name, "hd")) {
+		/* Canonical format */
+		add_fmt("\"%08.8_Ax\n\"", hex);
+		add_fmt("\"%08.8_ax  \" 8/1 \"%02x \" \"  \" 8/1 \"%02x \" ", hex);
+		add_fmt("\"  |\" 16/1 \"%_p\" \"|\\n\"", hex);
+	}
 
 	while ((ch = getopt_long(argc, argv, "bcCde:f:L::n:os:vxhV", longopts, NULL)) != -1) {
 		switch (ch) {
@@ -107,7 +114,7 @@ parse_args(int argc, char **argv, struct hexdump *hex)
 		case 'f':
 			addfile(optarg, hex);
 			break;
-                case 'L':
+		case 'L':
 			colormode = UL_COLORMODE_AUTO;
 			if (optarg)
 				colormode = colormode_or_err(optarg,
@@ -130,14 +137,13 @@ parse_args(int argc, char **argv, struct hexdump *hex)
 			add_fmt(hex_offt, hex);
 			add_fmt("\"%07.7_ax \" 8/2 \"   %04x \" \"\\n\"", hex);
 			break;
+
 		case 'h':
-			usage(stdout);
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			exit(EXIT_SUCCESS);
-			break;
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
@@ -149,8 +155,9 @@ parse_args(int argc, char **argv, struct hexdump *hex)
 	return optind;
 }
 
-void __attribute__((__noreturn__)) usage(FILE *out)
+void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] <file>...\n"), program_invocation_short_name);
 
@@ -172,12 +179,15 @@ void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_(" -n, --length <length>     interpret only length bytes of input\n"), out);
 	fputs(_(" -s, --skip <offset>       skip offset bytes from the beginning\n"), out);
 	fputs(_(" -v, --no-squeezing        output identical lines\n"), out);
-	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("hexdump(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	fputs(USAGE_SEPARATOR, out);
+	printf(USAGE_HELP_OPTIONS(27));
+
+	fputs(USAGE_ARGUMENTS, out);
+	printf(USAGE_ARG_SIZE(_("<length> and <offset>")));
+
+	printf(USAGE_MAN_TAIL("hexdump(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -193,7 +203,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	argv += parse_args(argc, argv, hex);
 

@@ -31,9 +31,12 @@ static int probe_romfs(blkid_probe pr, const struct blkid_idmag *mag)
 	if (!ros)
 		return errno ? -errno : 1;
 
-	if (strlen((char *) ros->ros_volume))
+	if (*((char *) ros->ros_volume) != '\0')
 		blkid_probe_set_label(pr, ros->ros_volume,
 				sizeof(ros->ros_volume));
+
+	blkid_probe_set_block_size(pr, 1024);
+
 	return 0;
 }
 

@@ -14,6 +14,8 @@
 #endif
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <stdint.h>
 
 #ifdef HAVE_SYS_MKDEV_H
 # include <sys/mkdev.h>		/* major and minor on Solaris */
@@ -97,6 +99,9 @@ struct hd_geometry {
 /* are we working with block device? */
 int is_blkdev(int fd);
 
+/* open block device or file */
+int open_blkdev_or_file(const struct stat *st, const char *name, const int oflag);
+
 /* Determine size in bytes */
 off_t blkdev_find_size (int fd);
 
@@ -142,5 +147,14 @@ int blkdev_get_geometry(int fd, unsigned int *h, unsigned int *s);
 /* convert scsi type code to name */
 const char *blkdev_scsi_type_to_name(int type);
 
+int blkdev_lock(int fd, const char *devname, const char *lockmode);
+#ifdef HAVE_LINUX_BLKZONED_H
+struct blk_zone_report *blkdev_get_zonereport(int fd, uint64_t sector, uint32_t nzones);
+#else
+static inline struct blk_zone_report *blkdev_get_zonereport(int fd, uint64_t sector, uint32_t nzones)
+{
+	return NULL;
+}
+#endif
 
 #endif /* BLKDEV_H */

@@ -1,4 +1,10 @@
-/* Compat code so unshare and setns can be used with older libcs */
+
+/*
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
+ *
+ * Compat code so unshare and setns can be used with older libcs
+ */
 #ifndef UTIL_LINUX_NAMESPACE_H
 # define UTIL_LINUX_NAMESPACE_H
 
@@ -6,6 +12,9 @@
 
 # ifndef CLONE_NEWNS
 #  define CLONE_NEWNS 0x00020000
+# endif
+# ifndef CLONE_NEWCGROUP
+#  define CLONE_NEWCGROUP 0x02000000
 # endif
 # ifndef CLONE_NEWUTS
 #  define CLONE_NEWUTS 0x04000000
@@ -21,6 +30,9 @@
 # endif
 # ifndef CLONE_NEWPID
 #  define CLONE_NEWPID 0x20000000
+# endif
+# ifndef CLONE_NEWTIME
+#  define CLONE_NEWTIME 0x00000080
 # endif
 
 # if !defined(HAVE_UNSHARE) || !defined(HAVE_SETNS)

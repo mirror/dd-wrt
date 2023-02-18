@@ -62,12 +62,13 @@ struct gsm_config
 #ifndef N_GIGASET_M101
 # define N_GIGASET_M101 16
 #endif
-#ifndef N_GSM0710
-# define N_GSM0710 21
-#endif
 
 #ifndef N_PPS
 # define N_PPS 18
+#endif
+
+#ifndef N_GSM0710
+# define N_GSM0710 21
 #endif
 
 #define MAXINTROPARMLEN 32
@@ -86,7 +87,6 @@ struct ld_table {
 
 /* currently supported line disciplines, plus some aliases */
 static const struct ld_table ld_discs[] = {
-	{ "GSM0710",		N_GSM0710},
 	{ "TTY",		N_TTY },
 	{ "SLIP",		N_SLIP },
 	{ "MOUSE",		N_MOUSE },
@@ -101,10 +101,11 @@ static const struct ld_table ld_discs[] = {
 	{ "SYNC_PPP",		N_SYNC_PPP },
 	{ "SYNCPPP",		N_SYNC_PPP },
 	{ "HCI",		N_HCI },
-	{ "PPS",		N_PPS },
+	{ "GIGASET_M101",	N_GIGASET_M101 },
 	{ "M101",		N_GIGASET_M101 },
 	{ "GIGASET",		N_GIGASET_M101 },
-	{ "GIGASET_M101",	N_GIGASET_M101 },
+	{ "PPS",		N_PPS },
+	{ "GSM0710",		N_GSM0710},
 	{ NULL,	0 }
 };
 
@@ -129,20 +130,24 @@ static const struct ld_table ld_iflags[] =
 	{ NULL,		0 }
 };
 
-static void dbg(char *fmt, ...)
+static void __attribute__((__format__ (__printf__, 1, 2)))
+	dbg(char *fmt, ...)
 {
 	va_list args;
 
 	if (debug == 0)
 		return;
 	fflush(NULL);
-	fprintf(stderr, "%s: ", program_invocation_short_name);
 	va_start(args, fmt);
+#ifdef HAVE_VWARNX
+	vwarnx(fmt, args);
+#else
+	fprintf(stderr, "%s: ", program_invocation_short_name);
 	vfprintf(stderr, fmt, args);
-	va_end(args);
 	fprintf(stderr, "\n");
+#endif
+	va_end(args);
 	fflush(NULL);
-	return;
 }
 
 static int lookup_table(const struct ld_table *tab, const char *str)
@@ -161,8 +166,8 @@ static void print_table(FILE * out, const struct ld_table *tab)
 	int i;
 
 	for (t = tab, i = 1; t && t->name; t++, i++) {
-		fprintf(out, "  %-10s", t->name);
-		if (!(i % 6))
+		fprintf(out, "  %-12s", t->name);
+		if (!(i % 5))
 			fputc('\n', out);
 	}
 }
@@ -187,9 +192,9 @@ static int parse_iflag(char *str, int *set_iflag, int *clr_iflag)
 }
 
 
-static void __attribute__ ((__noreturn__)) usage(int exitcode)
+static void __attribute__((__noreturn__)) usage(void)
 {
-	FILE *out = exitcode == EXIT_SUCCESS ? stdout : stderr;
+	FILE *out = stdout;
 
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] <ldisc> <device>\n"), program_invocation_short_name);
@@ -212,15 +217,17 @@ static void __attribute__ ((__noreturn__)) usage(int exitcode)
 	fputs(_(" -i, --iflag [-]<iflag>  set input mode flag\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(25));
+
 	fputs(_("\nKnown <ldisc> names:\n"), out);
 	print_table(out, ld_discs);
+	fputs(USAGE_SEPARATOR, out);
+
 	fputs(_("\nKnown <iflag> names:\n"), out);
 	print_table(out, ld_iflags);
-	fputc('\n', out);
-	fprintf(out, USAGE_MAN_TAIL("ldattach(8)"));
-	exit(exitcode);
+
+	printf(USAGE_MAN_TAIL("ldattach(8)"));
+	exit(EXIT_SUCCESS);
 }
 
 static int my_cfsetspeed(struct termios *ts, int speed)
@@ -235,7 +242,7 @@ static int my_cfsetspeed(struct termios *ts, int speed)
 	 * -- we have to bypass glibc and set the speed manually (because glibc
 	 *    checks for speed and supports Bxxx bit rates only)...
 	 */
-#ifdef _HAVE_STRUCT_TERMIOS_C_ISPEED
+#if _HAVE_STRUCT_TERMIOS_C_ISPEED
 # define BOTHER 0010000		/* non standard rate */
 	dbg("using non-standard speeds");
 	ts->c_ospeed = ts->c_ispeed = speed;
@@ -249,7 +256,7 @@ static int my_cfsetspeed(struct termios *ts, int speed)
 
 static void handler(int s)
 {
-	dbg("got SIG %i -> exiting\n", s);
+	dbg("got SIG %i -> exiting", s);
 	exit(EXIT_SUCCESS);
 }
 
@@ -307,11 +314,12 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	/* parse options */
 	if (argc == 0)
-		usage(EXIT_SUCCESS);
+		errx(EXIT_FAILURE, _("bad usage"));
+
 	while ((optc =
 		getopt_long(argc, argv, "dhV78neo12s:i:c:p:", opttbl,
 			    NULL)) >= 0) {
@@ -346,24 +354,37 @@ int main(int argc, char **argv)
 		case 'i':
 			parse_iflag(optarg, &set_iflag, &clr_iflag);
 			break;
+
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(EXIT_SUCCESS);
+			usage();
 		default:
-			warnx(_("invalid option"));
-			usage(EXIT_FAILURE);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
-	if (argc - optind != 2)
-		usage(EXIT_FAILURE);
-
+	if (argc - optind != 2) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EXIT_FAILURE);
+	}
 	/* parse line discipline specification */
 	ldisc = lookup_table(ld_discs, argv[optind]);
 	if (ldisc < 0)
 		ldisc = strtos32_or_err(argv[optind], _("invalid line discipline argument"));
+
+	/* ldisc specific option settings */
+	if (ldisc == N_GIGASET_M101) {
+		/* device specific defaults for line speed and data format */
+		if (speed == 0)
+			speed = 115200;
+		if (bits == '-')
+			bits = '8';
+		if (parity == '-')
+			parity = 'n';
+		if (stop == '-')
+			stop = '1';
+	}
 
 	/* open device */
 	dev = argv[optind + 1];
@@ -447,12 +468,13 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Attach the line discpline. */
+	/* Attach the line discipline. */
 	if (ioctl(tty_fd, TIOCSETD, &ldisc) < 0)
 		err(EXIT_FAILURE, _("cannot set line discipline"));
 
 	dbg("line discipline set to %d", ldisc);
 
+	/* ldisc specific post-attach actions */
 	if (ldisc == N_GSM0710)
 		gsm0710_set_conf(tty_fd);
 

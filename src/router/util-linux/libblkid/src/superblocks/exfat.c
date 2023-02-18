@@ -19,8 +19,8 @@ struct exfat_super_block {
 	uint32_t rootdir_cluster;
 	uint8_t volume_serial[4];
 	struct {
-		uint8_t minor;
-		uint8_t major;
+		uint8_t vermin;
+		uint8_t vermaj;
 	} version;
 	uint16_t volume_state;
 	uint8_t block_bits;
@@ -33,10 +33,11 @@ struct exfat_super_block {
 struct exfat_entry_label {
 	uint8_t type;
 	uint8_t length;
-	uint8_t name[30];
+	uint8_t name[22];
+	uint8_t reserved[8];
 } __attribute__((__packed__));
 
-#define BLOCK_SIZE(sb) (1 << (sb)->block_bits)
+#define BLOCK_SIZE(sb) (1u << (sb)->block_bits)
 #define CLUSTER_SIZE(sb) (BLOCK_SIZE(sb) << (sb)->bpc_bits)
 #define EXFAT_FIRST_DATA_CLUSTER 2
 #define EXFAT_LAST_DATA_CLUSTER 0xffffff6
@@ -45,21 +46,21 @@ struct exfat_entry_label {
 #define EXFAT_ENTRY_EOD		0x00
 #define EXFAT_ENTRY_LABEL	0x83
 
-static blkid_loff_t block_to_offset(const struct exfat_super_block *sb,
-		blkid_loff_t block)
+static uint64_t block_to_offset(const struct exfat_super_block *sb,
+		uint64_t block)
 {
-	return (blkid_loff_t) block << sb->block_bits;
+	return block << sb->block_bits;
 }
 
-static blkid_loff_t cluster_to_block(const struct exfat_super_block *sb,
+static uint64_t cluster_to_block(const struct exfat_super_block *sb,
 		uint32_t cluster)
 {
 	return le32_to_cpu(sb->cluster_block_start) +
-			((blkid_loff_t) (cluster - EXFAT_FIRST_DATA_CLUSTER)
+			((uint64_t) (cluster - EXFAT_FIRST_DATA_CLUSTER)
 					<< sb->bpc_bits);
 }
 
-static blkid_loff_t cluster_to_offset(const struct exfat_super_block *sb,
+static uint64_t cluster_to_offset(const struct exfat_super_block *sb,
 		uint32_t cluster)
 {
 	return block_to_offset(sb, cluster_to_block(sb, cluster));
@@ -69,10 +70,10 @@ static uint32_t next_cluster(blkid_probe pr,
 		const struct exfat_super_block *sb, uint32_t cluster)
 {
 	uint32_t *next;
-	blkid_loff_t fat_offset;
+	uint64_t fat_offset;
 
 	fat_offset = block_to_offset(sb, le32_to_cpu(sb->fat_block_start))
-		+ (blkid_loff_t) cluster * sizeof(cluster);
+		+ (uint64_t) cluster * sizeof(cluster);
 	next = (uint32_t *) blkid_probe_get_buffer(pr, fat_offset,
 			sizeof(uint32_t));
 	if (!next)
@@ -84,10 +85,12 @@ static struct exfat_entry_label *find_label(blkid_probe pr,
 		const struct exfat_super_block *sb)
 {
 	uint32_t cluster = le32_to_cpu(sb->rootdir_cluster);
-	blkid_loff_t offset = cluster_to_offset(sb, cluster);
+	uint64_t offset = cluster_to_offset(sb, cluster);
 	uint8_t *entry;
+	const size_t max_iter = 10000;
+	size_t i = 0;
 
-	for (;;) {
+	for (; i < max_iter; i++) {
 		entry = (uint8_t *) blkid_probe_get_buffer(pr, offset,
 				EXFAT_ENTRY_SIZE);
 		if (!entry)
@@ -96,6 +99,7 @@ static struct exfat_entry_label *find_label(blkid_probe pr,
 			return NULL;
 		if (entry[0] == EXFAT_ENTRY_LABEL)
 			return (struct exfat_entry_label *) entry;
+
 		offset += EXFAT_ENTRY_SIZE;
 		if (offset % CLUSTER_SIZE(sb) == 0) {
 			cluster = next_cluster(pr, sb, cluster);
@@ -106,6 +110,8 @@ static struct exfat_entry_label *find_label(blkid_probe pr,
 			offset = cluster_to_offset(sb, cluster);
 		}
 	}
+
+	return NULL;
 }
 
 static int probe_exfat(blkid_probe pr, const struct blkid_idmag *mag)
@@ -114,13 +120,14 @@ static int probe_exfat(blkid_probe pr, const struct blkid_idmag *mag)
 	struct exfat_entry_label *label;
 
 	sb = blkid_probe_get_sb(pr, mag, struct exfat_super_block);
-	if (!sb)
+	if (!sb || !CLUSTER_SIZE(sb))
 		return errno ? -errno : BLKID_PROBE_NONE;
 
 	label = find_label(pr, sb);
 	if (label)
 		blkid_probe_set_utf8label(pr, label->name,
-				min(label->length * 2, 30), BLKID_ENC_UTF16LE);
+				min((size_t) label->length * 2, sizeof(label->name)),
+				UL_ENCODE_UTF16LE);
 	else if (errno)
 		return -errno;
 
@@ -130,7 +137,9 @@ static int probe_exfat(blkid_probe pr, const struct blkid_idmag *mag)
 			sb->volume_serial[1], sb->volume_serial[0]);
 
 	blkid_probe_sprintf_version(pr, "%u.%u",
-			sb->version.major, sb->version.minor);
+			sb->version.vermaj, sb->version.vermin);
+
+	blkid_probe_set_block_size(pr, BLOCK_SIZE(sb));
 
 	return BLKID_PROBE_OK;
 }

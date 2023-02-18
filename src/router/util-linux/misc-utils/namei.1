@@ -1,28 +1,48 @@
-.TH NAMEI 1 "June 2011" "util-linux" "User Commands"
-.SH NAME
+'\" t
+.\"     Title: namei
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.15
+.\"      Date: 2022-08-04
+.\"    Manual: User Commands
+.\"    Source: util-linux 2.38.1
+.\"  Language: English
+.\"
+.TH "NAMEI" "1" "2022-08-04" "util\-linux 2.38.1" "User Commands"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
 namei \- follow a pathname until a terminal point is found
-.SH SYNOPSIS
-.B namei
-[options]
-.IR pathname ...
-.SH DESCRIPTION
-.B namei
-interprets its arguments as pathnames to any type
-of Unix file (symlinks, files, directories, and so forth).
-.B namei
-then follows each pathname until an endpoint
-is found (a file, a directory, a device node, etc).
-If it finds a symbolic link, it shows the link, and starts
-following it, indenting the output to show the context.
-.PP
-This program is useful for finding "too many levels of
-symbolic links" problems.
-.PP
-For each line of output,
-.B namei
-uses the following characters to identify the file type found:
-.LP
+.SH "SYNOPSIS"
+.sp
+\fBnamei\fP [options] \fIpathname\fP...
+.SH "DESCRIPTION"
+.sp
+\fBnamei\fP interprets its arguments as pathnames to any type of Unix file (symlinks, files, directories, and so forth). \fBnamei\fP then follows each pathname until an endpoint is found (a file, a directory, a device node, etc). If it finds a symbolic link, it shows the link, and starts following it, indenting the output to show the context.
+.sp
+This program is useful for finding "too many levels of symbolic links" problems.
+.sp
+For each line of output, \fBnamei\fP uses the following characters to identify the file type found:
+.sp
+.if n .RS 4
 .nf
+.fam C
    f: = the pathname currently being resolved
     d = directory
     l = symbolic link (both the link and its contents are output)
@@ -30,50 +50,74 @@ uses the following characters to identify the file type found:
     b = block device
     c = character device
     p = FIFO (named pipe)
-    - = regular file
+    \- = regular file
     ? = an error of some kind
+.fam
 .fi
-.PP
-.B namei
-prints an informative message when
-the maximum number of symbolic links this system can have has been exceeded.
-.SH OPTIONS
-.TP
-.BR \-l , " \-\-long"
-Use the long listing format (same as \fB\-m \-o \-v\fR).
-.TP
-.BR \-m , " \-\-modes"
-Show the mode bits of each file type in the style of ls(1),
-for example 'rwxr-xr-x'.
-.TP
-.BR \-n , " \-\-nosymlinks"
-Don't follow symlinks.
-.TP
-.BR \-o , " \-\-owners"
-Show owner and group name of each file.
-.TP
-.BR \-v , " \-\-vertical"
-Vertically align the modes and owners.
-.TP
-.BR \-x , " \-\-mountpoints"
-Show mountpoint directories with a 'D' rather than a 'd'.
-.TP
-.BR \-V , " \-\-version"
-Display version information and exit.
-.TP
-.BR \-h , " \-\-help"
-Display help text and exit.
-.SH AUTHOR
-The original
-.B namei
-program was written by Roger Southwick <rogers@amadeus.wr.tek.com>.
+.if n .RE
 .sp
-The program was rewritten by Karel Zak <kzak@redhat.com>.
-.SH BUGS
+\fBnamei\fP prints an informative message when the maximum number of symbolic links this system can have has been exceeded.
+.SH "OPTIONS"
+.sp
+\fB\-l\fP, \fB\-\-long\fP
+.RS 4
+Use the long listing format (same as \fB\-m \-o \-v\fP).
+.RE
+.sp
+\fB\-m\fP, \fB\-\-modes\fP
+.RS 4
+Show the mode bits of each file type in the style of \fBls\fP(1), for example \(aqrwxr\-xr\-x\(aq.
+.RE
+.sp
+\fB\-n\fP, \fB\-\-nosymlinks\fP
+.RS 4
+Don\(cqt follow symlinks.
+.RE
+.sp
+\fB\-o\fP, \fB\-\-owners\fP
+.RS 4
+Show owner and group name of each file.
+.RE
+.sp
+\fB\-v\fP, \fB\-\-vertical\fP
+.RS 4
+Vertically align the modes and owners.
+.RE
+.sp
+\fB\-x\fP, \fB\-\-mountpoints\fP
+.RS 4
+Show mountpoint directories with a \(aqD\(aq rather than a \(aqd\(aq.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+Display help text and exit.
+.RE
+.sp
+\fB\-V\fP, \fB\-\-version\fP
+.RS 4
+Print version and exit.
+.RE
+.SH "BUGS"
+.sp
 To be discovered.
+.SH "AUTHORS"
+.sp
+The original \fBnamei\fP program was written by \c
+.MTO "rogers\(atamadeus.wr.tek.com" "Roger Southwick" "."
+.sp
+The program was rewritten by Karel Zak \c
+.MTO "kzak\(atredhat.com" "Karel Zak" "."
 .SH "SEE ALSO"
-.BR ls (1),
-.BR stat (1)
-.SH AVAILABILITY
-The namei command is part of the util-linux package and is available from
-ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
+.sp
+\fBls\fP(1),
+\fBstat\fP(1),
+\fBsymlink\fP(7)
+.SH "REPORTING BUGS"
+.sp
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBnamei\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

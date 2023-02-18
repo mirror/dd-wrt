@@ -12,7 +12,7 @@ Setup
 1. Find a git server that can be reached from anywhere in internet
 anonymously.  Github is for example a popular choice.
 
-2. Create your own util-linux contributor repository, and push a upstream
+2. Create your own util-linux contributor repository, and push an upstream
 clone to there.
 
 3. In these instructions the upstream remote repository is called
@@ -29,7 +29,7 @@ Branches
 --------
 
 1. Use the name of the subsystem, such as blkid, libmount, misc-utils,
-that is the common thing for changes in in the change set.
+that is the common thing for changes in the change set.
 
 2. If the changes do not have anything in common use some random name,
 such as YYYY-MM-DD of the first patch in the branch.  Name of the branch
@@ -43,7 +43,7 @@ is needed to stay up to date with upstream.
 git checkout master
 git branch textual
 # spent here most of the effort
-git push yourbranch textual:textual
+git push yourgit textual:textual
 
 5. Do not worry if you used stupid-and-wrong branch name, it can be fixed
 before submission.
@@ -128,7 +128,17 @@ git rebase -i master
 # change something
 git push -f yourgit textual:textual
 
-4. Assuming the changes look good send them to mail list.  Yes, the all
+4. You have two ways how to send your pull request:
+
+4.1 Github pull request
+
+This is recommended way for your small and trivial changes, or for
+work-in-progress projects (rewrites, new commands, etc.). All you
+need is to press "pull request" button on GitHub.
+
+4.2. Send your work to the mailing list
+
+Assuming the changes look good send them to mail list.  Yes, the all
 of them!  Sending pull request with github is not visible for project
 contributors, and they will not have change to review your changes.
 

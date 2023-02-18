@@ -1,13 +1,17 @@
 #ifndef UTIL_LINUX_OPTUTILS_H
 #define UTIL_LINUX_OPTUTILS_H
 
+#include <assert.h>
+
 #include "c.h"
 #include "nls.h"
+#include "cctype.h"
 
 static inline const char *option_to_longopt(int c, const struct option *opts)
 {
 	const struct option *o;
 
+	assert(!(opts == NULL));
 	for (o = opts; o->name; o++)
 		if (o->val == c)
 			return o->name;
@@ -78,8 +82,8 @@ static inline void err_exclusive_options(
 			else if (status[e] != c) {
 				size_t ct = 0;
 
-				fprintf(stderr, _("%s: these options are "
-						  "mutually exclusive:"),
+				fprintf(stderr, _("%s: mutually exclusive "
+						  "arguments:"),
 						program_invocation_short_name);
 
 				for (op = excl[e];
@@ -88,7 +92,7 @@ static inline void err_exclusive_options(
 					const char *n = option_to_longopt(*op, opts);
 					if (n)
 						fprintf(stderr, " --%s", n);
-					else
+					else if (c_isgraph(*op))
 						fprintf(stderr, " -%c", *op);
 				}
 				fputc('\n', stderr);

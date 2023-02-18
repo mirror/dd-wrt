@@ -1,4 +1,9 @@
-
+/*
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
+ *
+ * Written by Karel Zak <kzak@redhat.com>
+ */
 #include "c.h"
 #include "nls.h"
 
@@ -37,7 +42,7 @@ blkid_probe get_swap_prober(const char *devname)
 		/* Only the SWAPSPACE2 is supported. */
 		if (blkid_probe_lookup_value(pr, "VERSION", &version, NULL) == 0
 		    && version
-		    && strcmp(version, stringify_value(SWAP_VERSION)))
+		    && strcmp(version, stringify_value(SWAP_VERSION)) != 0)
 			warnx(_("%s: unsupported swap version '%s'"),
 						devname, version);
 		else

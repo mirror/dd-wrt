@@ -44,8 +44,9 @@ typedef enum type_id {
 static int verbose = 0;
 
 /* print the usage */
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %1$s [options]\n"
 		       " %1$s shm|msg|sem <id>...\n"), program_invocation_short_name);
@@ -64,11 +65,10 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fputs(_(" -v, --verbose              explain what is being done\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("ipcrm(1)"));
+	printf(USAGE_HELP_OPTIONS(28));
+	printf(USAGE_MAN_TAIL("ipcrm(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 static int remove_id(int type, int iskey, int id)
@@ -125,12 +125,13 @@ static int remove_id(int type, int iskey, int id)
 static int remove_arg_list(type_id type, int argc, char **argv)
 {
 	int id;
-	char *end;
+	char *end = NULL;
 	int nb_errors = 0;
 
 	do {
+		errno = 0;
 		id = strtoul(argv[0], &end, 10);
-		if (*end != 0) {
+		if (errno || !end || *end != 0) {
 			warnx(_("invalid id: %s"), argv[0]);
 			nb_errors++;
 		} else {
@@ -158,7 +159,7 @@ static int deprecated_main(int argc, char **argv)
 
 	if (argc < 3) {
 		warnx(_("not enough arguments"));
-		usage(stderr);
+		errtryhelp(EXIT_FAILURE);
 	}
 
 	if (remove_arg_list(type, argc - 2, &argv[2]))
@@ -191,13 +192,13 @@ static unsigned long strtokey(const char *str, const char *errmesg)
 	return 0;
 }
 
-static int key_to_id(type_id type, char *optarg)
+static int key_to_id(type_id type, char *s)
 {
 	int id;
 	/* keys are in hex or decimal */
-	key_t key = strtokey(optarg, "failed to parse argument");
+	key_t key = strtokey(s, "failed to parse argument");
 	if (key == IPC_PRIVATE) {
-		warnx(_("illegal key (%s)"), optarg);
+		warnx(_("illegal key (%s)"), s);
 		return -1;
 	}
 	switch (type) {
@@ -230,7 +231,7 @@ static int key_to_id(type_id type, char *optarg)
 		default:
 			err(EXIT_FAILURE, _("key failed"));
 		}
-		warnx("%s (%s)", errmsg, optarg);
+		warnx("%s (%s)", errmsg, s);
 	}
 	return id;
 }
@@ -328,7 +329,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	/* check to see if the command is being invoked in the old way if so
 	 * then remove argument list */
@@ -346,6 +347,7 @@ int main(int argc, char **argv)
 				ret++;
 				break;
 			}
+			/* fallthrough */
 		case 'm':
 			if (!iskey)
 				id = strtos32_or_err(optarg, _("failed to parse argument"));
@@ -359,6 +361,7 @@ int main(int argc, char **argv)
 				ret++;
 				break;
 			}
+			/* fallthrough */
 		case 'q':
 			if (!iskey)
 				id = strtos32_or_err(optarg, _("failed to parse argument"));
@@ -372,6 +375,7 @@ int main(int argc, char **argv)
 				ret++;
 				break;
 			}
+			/* fallthrough */
 		case 's':
 			if (!iskey)
 				id = strtos32_or_err(optarg, _("failed to parse argument"));
@@ -397,24 +401,23 @@ int main(int argc, char **argv)
 		case 'v':
 			verbose = 1;
 			break;
+
 		case 'h':
-			usage(stdout);
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
-	if (rm_all)
-		if (remove_all(what_all))
-			ret++;
+	if (rm_all && remove_all(what_all))
+		ret++;
 
 	/* print usage if we still have some arguments left over */
 	if (optind < argc) {
 		warnx(_("unknown argument: %s"), argv[optind]);
-		usage(stderr);
+		errtryhelp(EXIT_FAILURE);
 	}
 
 	return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;

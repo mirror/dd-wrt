@@ -1,11 +1,12 @@
 /*
  * The symbol versioning ensures that a new application requiring symbol foo;
- * can't run with old libblkid.so not providing foo;
- * version info can't enforce this since we never change the SONAME.
+ * can't run with old library.so not providing foo.
+
+ * Version info can't enforce this since we never change the SONAME.
  *
- * Copyright (C) 2014 Karel Zak <kzak@redhat.com>
+ * Copyright (C) 2014-2015 Karel Zak <kzak@redhat.com>
  */
-MOUNT_2.26 {
+FDISK_2.26 {
 global:
 	fdisk_add_partition;
 	fdisk_align_lba;
@@ -238,3 +239,84 @@ global:
 local:
 	*;
 };
+
+FDISK_2.27 {
+	fdisk_enable_bootbits_protection;
+	fdisk_gpt_get_partition_attrs;
+	fdisk_gpt_set_partition_attrs;
+	fdisk_has_protected_bootbits;
+	fdisk_label_get_fields_ids_all;
+	fdisk_script_get_userdata;
+	fdisk_script_set_fgets;
+	fdisk_script_set_userdata;
+	fdisk_table_get_partition_by_partno;
+	fdisk_get_disklabel_item;
+	fdisk_script_enable_json;
+} FDISK_2.26;
+
+FDISK_2.28 {
+	fdisk_enable_wipe;
+	fdisk_get_collision;
+	fdisk_has_wipe;
+} FDISK_2.27;
+
+FDISK_2.29 {
+	fdisk_wipe_partition;
+	fdisk_new_labelitem;
+	fdisk_ref_labelitem;
+	fdisk_reset_labelitem;
+	fdisk_unref_labelitem;
+	fdisk_labelitem_get_name;
+	fdisk_labelitem_get_id;
+	fdisk_labelitem_get_data_u64;
+	fdisk_labelitem_get_data_string;
+	fdisk_labelitem_is_string;
+	fdisk_labelitem_is_number;
+	fdisk_gpt_set_npartitions;
+} FDISK_2.28;
+
+
+FDISK_2.30 {
+	fdisk_script_has_force_label;
+	fdisk_is_regfile;
+	fdisk_is_ptcollision;
+	fdisk_partition_has_wipe;
+} FDISK_2.29;
+
+FDISK_2.31 {
+	fdisk_reassign_device;
+	fdisk_device_is_used;
+	fdisk_reread_changes;
+	fdisk_disable_dialogs;
+	fdisk_has_dialogs;
+	fdisk_save_user_grain;
+} FDISK_2.30;
+
+FDISK_2.32 {
+	fdisk_label_get_geomrange_sectors;
+	fdisk_label_get_geomrange_heads;
+	fdisk_label_get_geomrange_cylinders;
+} FDISK_2.31;
+
+FDISK_2.33 {
+	fdisk_ask_number_is_wrap_negative;
+	fdisk_get_devmodel;
+	fdisk_get_devno;
+} FDISK_2.32;
+
+FDISK_2.35 {
+	fdisk_script_set_table;
+	fdisk_assign_device_by_fd;
+} FDISK_2.33;
+FDISK_2.36 {
+	fdisk_set_disklabel_id_from_string;
+	fdisk_gpt_disable_relocation;
+	fdisk_gpt_enable_minimize;
+	fdisk_label_has_parttypes_shortcuts;
+	fdisk_label_advparse_parttype;
+	fdisk_label_get_parttype_shortcut;
+} FDISK_2.35;
+
+FDISK_2.38 {
+	fdisk_dos_fix_chs;
+} FDISK_2.36;

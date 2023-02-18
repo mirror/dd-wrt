@@ -6,6 +6,7 @@
  */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -14,20 +15,27 @@
 #include <linux/fd.h>
 #endif
 
+#ifdef HAVE_LINUX_BLKZONED_H
+#include <linux/blkzoned.h>
+#endif
+
 #ifdef HAVE_SYS_DISKLABEL_H
 #include <sys/disklabel.h>
 #endif
 
 #ifdef HAVE_SYS_DISK_H
-# ifdef HAVE_SYS_QUEUE_H
-#  include <sys/queue.h>	/* for LIST_HEAD */
-# endif
 # include <sys/disk.h>
+#endif
+
+#ifndef EBADFD
+# define EBADFD 77		/* File descriptor in bad state */
 #endif
 
 #include "blkdev.h"
 #include "c.h"
 #include "linux_version.h"
+#include "fileutils.h"
+#include "nls.h"
 
 static long
 blkdev_valid_offset (int fd, off_t offset) {
@@ -88,18 +96,9 @@ blkdev_get_size(int fd, unsigned long long *bytes)
 #endif
 
 #ifdef BLKGETSIZE64
-	{
-#ifdef __linux__
-		int ver = get_linux_version();
-
-		/* kernels 2.4.15-2.4.17, had a broken BLKGETSIZE64 */
-		if (ver >= KERNEL_VERSION (2,6,0) ||
-		   (ver >= KERNEL_VERSION (2,4,18) && ver < KERNEL_VERSION (2,5,0)))
+	if (ioctl(fd, BLKGETSIZE64, bytes) >= 0)
+		return 0;
 #endif
-			if (ioctl(fd, BLKGETSIZE64, bytes) >= 0)
-				return 0;
-	}
-#endif /* BLKGETSIZE64 */
 
 #ifdef BLKGETSIZE
 	{
@@ -124,13 +123,13 @@ blkdev_get_size(int fd, unsigned long long *bytes)
 		struct floppy_struct this_floppy;
 
 		if (ioctl(fd, FDGETPRM, &this_floppy) >= 0) {
-			*bytes = this_floppy.size << 9;
+			*bytes = ((unsigned long long) this_floppy.size) << 9;
 			return 0;
 		}
 	}
 #endif /* FDGETPRM */
 
-#ifdef HAVE_SYS_DISKLABEL_H
+#if defined(HAVE_SYS_DISKLABEL_H) && defined(DIOCGDINFO)
 	{
 		/*
 		 * This code works for FreeBSD 4.11 i386, except for the full device
@@ -144,7 +143,6 @@ blkdev_get_size(int fd, unsigned long long *bytes)
 		int part = -1;
 		struct disklabel lab;
 		struct partition *pp;
-		char ch;
 		struct stat st;
 
 		if ((fstat(fd, &st) >= 0) &&
@@ -159,7 +157,7 @@ blkdev_get_size(int fd, unsigned long long *bytes)
 			}
 		}
 	}
-#endif /* HAVE_SYS_DISKLABEL_H */
+#endif /* defined(HAVE_SYS_DISKLABEL_H) && defined(DIOCGDINFO) */
 
 	{
 		struct stat st;
@@ -196,17 +194,20 @@ blkdev_get_sectors(int fd, unsigned long long *sectors)
  * This is the smallest unit the storage device can
  * address. It is typically 512 bytes.
  */
+#ifdef BLKSSZGET
 int blkdev_get_sector_size(int fd, int *sector_size)
 {
-#ifdef BLKSSZGET
 	if (ioctl(fd, BLKSSZGET, sector_size) >= 0)
 		return 0;
 	return -1;
+}
 #else
+int blkdev_get_sector_size(int fd __attribute__((__unused__)), int *sector_size)
+{
 	*sector_size = DEFAULT_SECTOR_SIZE;
 	return 0;
-#endif
 }
+#endif
 
 /*
  * Get physical block device size. The BLKPBSZGET is supported since Linux
@@ -222,51 +223,80 @@ int blkdev_get_sector_size(int fd, int *sector_size)
  *		physec = DEFAULT_SECTOR_SIZE;
  * }
  */
+#ifdef BLKPBSZGET
 int blkdev_get_physector_size(int fd, int *sector_size)
 {
-#ifdef BLKPBSZGET
-	if (ioctl(fd, BLKPBSZGET, &sector_size) >= 0)
+	if (ioctl(fd, BLKPBSZGET, sector_size) >= 0)
+    {
 		return 0;
+    }
 	return -1;
+}
 #else
+int blkdev_get_physector_size(int fd __attribute__((__unused__)), int *sector_size)
+{
 	*sector_size = DEFAULT_SECTOR_SIZE;
 	return 0;
-#endif
 }
+#endif
 
 /*
  * Return the alignment status of a device
  */
+#ifdef BLKALIGNOFF
 int blkdev_is_misaligned(int fd)
 {
-#ifdef BLKALIGNOFF
 	int aligned;
 
 	if (ioctl(fd, BLKALIGNOFF, &aligned) < 0)
 		return 0;			/* probably kernel < 2.6.32 */
 	/*
-	 * Note that kernel returns -1 as alignement offset if no compatible
+	 * Note that kernel returns -1 as alignment offset if no compatible
 	 * sizes and alignments exist for stacked devices
 	 */
 	return aligned != 0 ? 1 : 0;
+}
 #else
+int blkdev_is_misaligned(int fd __attribute__((__unused__)))
+{
 	return 0;
+}
 #endif
+
+int open_blkdev_or_file(const struct stat *st, const char *name, const int oflag)
+{
+	int fd;
+
+	if (S_ISBLK(st->st_mode)) {
+		fd = open(name, oflag | O_EXCL);
+	} else
+		fd = open(name, oflag);
+	if (-1 < fd && !is_same_inode(fd, st)) {
+		close(fd);
+		errno = EBADFD;
+		return -1;
+	}
+	if (-1 < fd && S_ISBLK(st->st_mode) && blkdev_is_misaligned(fd))
+		warnx(_("warning: %s is misaligned"), name);
+	return fd;
 }
 
+#ifdef CDROM_GET_CAPABILITY
 int blkdev_is_cdrom(int fd)
 {
-#ifdef CDROM_GET_CAPABILITY
 	int ret;
 
 	if ((ret = ioctl(fd, CDROM_GET_CAPABILITY, NULL)) < 0)
 		return 0;
-	else
-		return ret;
-#else
-	return 0;
-#endif
+
+	return ret;
 }
+#else
+int blkdev_is_cdrom(int fd __attribute__((__unused__)))
+{
+	return 0;
+}
+#endif
 
 /*
  * Get kernel's interpretation of the device's geometry.
@@ -276,9 +306,9 @@ int blkdev_is_cdrom(int fd)
  *
  * Note that this is deprecated in favor of LBA addressing.
  */
+#ifdef HDIO_GETGEO
 int blkdev_get_geometry(int fd, unsigned int *h, unsigned int *s)
 {
-#ifdef HDIO_GETGEO
 	struct hd_geometry geometry;
 
 	if (ioctl(fd, HDIO_GETGEO, &geometry) == 0) {
@@ -287,6 +317,9 @@ int blkdev_get_geometry(int fd, unsigned int *h, unsigned int *s)
 		return 0;
 	}
 #else
+int blkdev_get_geometry(int fd __attribute__((__unused__)),
+		unsigned int *h, unsigned int *s)
+{
 	*h = 0;
 	*s = 0;
 #endif
@@ -335,6 +368,82 @@ const char *blkdev_scsi_type_to_name(int type)
 	return NULL;
 }
 
+/* return 0 on success */
+int blkdev_lock(int fd, const char *devname, const char *lockmode)
+{
+	int oper, rc, msg = 0;
+
+	if (!lockmode)
+		lockmode = getenv("LOCK_BLOCK_DEVICE");
+	if (!lockmode)
+		return 0;
+
+	if (strcasecmp(lockmode, "yes") == 0 ||
+	    strcmp(lockmode, "1") == 0)
+		oper = LOCK_EX;
+
+	else if (strcasecmp(lockmode, "nonblock") == 0)
+		oper = LOCK_EX | LOCK_NB;
+
+	else if (strcasecmp(lockmode, "no") == 0 ||
+		 strcmp(lockmode, "0") == 0)
+		return 0;
+	else {
+		warnx(_("unsupported lock mode: %s"), lockmode);
+		return -EINVAL;
+	}
+
+	if (!(oper & LOCK_NB)) {
+		/* Try non-block first to provide message */
+		rc = flock(fd, oper | LOCK_NB);
+		if (rc == 0)
+			return 0;
+		if (rc != 0 && errno == EWOULDBLOCK) {
+			fprintf(stderr, _("%s: %s: device already locked, waiting to get lock ... "),
+					program_invocation_short_name, devname);
+			msg = 1;
+		}
+	}
+	rc = flock(fd, oper);
+	if (rc != 0) {
+		switch (errno) {
+		case EWOULDBLOCK: /* LOCK_NB */
+			warnx(_("%s: device already locked"), devname);
+			break;
+		default:
+			warn(_("%s: failed to get lock"), devname);
+		}
+	} else if (msg)
+		fprintf(stderr, _("OK\n"));
+	return rc;
+}
+
+#ifdef HAVE_LINUX_BLKZONED_H
+struct blk_zone_report *blkdev_get_zonereport(int fd, uint64_t sector, uint32_t nzones)
+{
+	struct blk_zone_report *rep;
+	size_t rep_size;
+	int ret;
+
+	rep_size = sizeof(struct blk_zone_report) + sizeof(struct blk_zone) * 2;
+	rep = calloc(1, rep_size);
+	if (!rep)
+		return NULL;
+
+	rep->sector = sector;
+	rep->nr_zones = nzones;
+
+	ret = ioctl(fd, BLKREPORTZONE, rep);
+	if (ret || rep->nr_zones != nzones) {
+		free(rep);
+		return NULL;
+	}
+
+	return rep;
+}
+#endif
+
+
 #ifdef TEST_PROGRAM_BLKDEV
 #include <stdio.h>
 #include <stdlib.h>
@@ -371,4 +480,4 @@ main(int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
-#endif /* TEST_PROGRAM */
+#endif /* TEST_PROGRAM_BLKDEV */

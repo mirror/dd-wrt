@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2011 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2011-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -131,7 +136,7 @@ static int tabdiff_reset(struct libmnt_tabdiff *df)
 		struct tabdiff_entry *de = list_entry(df->changes.next,
 			                  struct tabdiff_entry, changes);
 
-		list_del(&de->changes);
+		list_del_init(&de->changes);
 		list_add_tail(&de->changes, &df->unused);
 
 		mnt_unref_fs(de->new_fs);
@@ -237,9 +242,9 @@ int mnt_diff_tables(struct libmnt_tabdiff *df, struct libmnt_table *old_tab,
 	if (!no && !nn)			/* both tables are empty */
 		return 0;
 
-	DBG(DIFF, ul_debugobj(df, "analyze new=%p (%d entries), "
-				          "old=%p (%d entries)",
-				new_tab, nn, old_tab, no));
+	DBG(DIFF, ul_debugobj(df, "analyze new (%d entries), "
+				          "old (%d entries)",
+				nn, no));
 
 	mnt_reset_iter(&itr, MNT_ITER_FORWARD);
 
@@ -272,7 +277,7 @@ int mnt_diff_tables(struct libmnt_tabdiff *df, struct libmnt_table *old_tab,
 				   *f1 = mnt_fs_get_fs_options(o_fs),
 				   *f2 = mnt_fs_get_fs_options(fs);
 
-			if ((v1 && v2 && strcmp(v1, v2)) || (f1 && f2 && strcmp(f1, f2)))
+			if ((v1 && v2 && strcmp(v1, v2) != 0) || (f1 && f2 && strcmp(f1, f2) != 0))
 				tabdiff_add_entry(df, o_fs, fs, MNT_TABDIFF_REMOUNT);
 		}
 	}
@@ -303,10 +308,10 @@ done:
 
 #ifdef TEST_PROGRAM
 
-int test_diff(struct libmnt_test *ts, int argc, char *argv[])
+static int test_diff(struct libmnt_test *ts, int argc, char *argv[])
 {
-	struct libmnt_table *tb_old = NULL, *tb_new = NULL;
-	struct libmnt_tabdiff *diff = NULL;
+	struct libmnt_table *tb_old, *tb_new;
+	struct libmnt_tabdiff *diff;
 	struct libmnt_iter *itr;
 	struct libmnt_fs *old, *new;
 	int rc = -1, change;

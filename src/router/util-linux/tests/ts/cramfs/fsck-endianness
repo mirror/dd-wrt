@@ -23,10 +23,9 @@ ts_init "$*"
 
 ts_check_test_command "$TS_CMD_MKCRAMFS"
 ts_check_test_command "$TS_CMD_FSCKCRAMFS"
+ts_check_test_command "$TS_HELPER_MD5"
 
 ts_skip_nonroot
-
-set -o pipefail
 
 IMAGE_LITTLE="$TS_SELF/cramfs-little.img"	#Known good little endian image
 IMAGE_BIG="$TS_SELF/cramfs-big.img"		#Known good big endian image
@@ -41,13 +40,13 @@ test_image() {
 
 	rm -rf "$IMAGE_DATA"
 	ts_log "extract from $FROM_ENDIANNESS endian"
-	$TS_CMD_FSCKCRAMFS -v -b 4096 --extract=$IMAGE_DATA $FROM_IMAGE | head -n1 | cut -d" " -f4 2>&1 >> $TS_OUTPUT
+	$TS_CMD_FSCKCRAMFS -v -b 4096 --extract=$IMAGE_DATA $FROM_IMAGE | head -n1 | cut -d" " -f4 >> $TS_OUTPUT 2>> $TS_ERRLOG
 
 	ts_log "create $TO_ENDIANNESS endian"
 	$TS_CMD_MKCRAMFS -N "$TO_ENDIANNESS" -b 4096 "$IMAGE_DATA" \
-		"$IMAGE_CREATED" >> $TS_OUTPUT 2>&1
+		"$IMAGE_CREATED" >> $TS_OUTPUT 2>> $TS_ERRLOG
 
-	md5sum $IMAGE_CREATED | cut -d" " -f1 >> $TS_OUTPUT
+	"$TS_HELPER_MD5" < "$IMAGE_CREATED" >> $TS_OUTPUT
 
 	rm "$IMAGE_CREATED"
 }

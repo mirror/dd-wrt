@@ -30,11 +30,12 @@ ts_check_test_command "$TS_CMD_FDISK"
 ts_skip_nonroot
 ts_check_losetup
 
-DEVICE=$(ts_device_init 50)
-[ "$?" == 0 ] || ts_die "Cannot init device"
+ts_device_init 50
+DEVICE=$TS_LODEV
 
 ts_log "Create partitions"
-$TS_CMD_FDISK ${DEVICE} >> $TS_OUTPUT 2>&1 <<EOF
+$TS_CMD_FDISK --noauto-pt ${DEVICE} >> $TS_OUTPUT 2>> $TS_ERRLOG <<EOF
+o
 n
 p
 1
@@ -67,7 +68,6 @@ p
 q
 EOF
 
-ts_device_deinit $DEVICE
 ts_fdisk_clean $DEVICE
 
 ts_finalize

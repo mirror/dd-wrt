@@ -29,6 +29,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <grp.h>
+#include <sys/stat.h>
+
+#ifdef HAVE_LIBSELINUX
+# include <selinux/selinux.h>
+#endif
 
 #include "strutils.h"
 #include "nls.h"
@@ -36,6 +41,7 @@
 #include "closestream.h"
 #include "namespace.h"
 #include "exec_shell.h"
+#include "optutils.h"
 
 static struct namespace_file {
 	int nstype;
@@ -44,51 +50,61 @@ static struct namespace_file {
 } namespace_files[] = {
 	/* Careful the order is significant in this array.
 	 *
-	 * The user namespace comes first, so that it is entered
-	 * first.  This gives an unprivileged user the potential to
-	 * enter the other namespaces.
+	 * The user namespace comes either first or last: first if
+	 * you're using it to increase your privilege and last if
+	 * you're using it to decrease.  We enter the namespaces in
+	 * two passes starting initially from offset 1 and then offset
+	 * 0 if that fails.
 	 */
-	{ .nstype = CLONE_NEWUSER, .name = "ns/user", .fd = -1 },
-	{ .nstype = CLONE_NEWIPC,  .name = "ns/ipc",  .fd = -1 },
-	{ .nstype = CLONE_NEWUTS,  .name = "ns/uts",  .fd = -1 },
-	{ .nstype = CLONE_NEWNET,  .name = "ns/net",  .fd = -1 },
-	{ .nstype = CLONE_NEWPID,  .name = "ns/pid",  .fd = -1 },
-	{ .nstype = CLONE_NEWNS,   .name = "ns/mnt",  .fd = -1 },
+	{ .nstype = CLONE_NEWUSER,  .name = "ns/user", .fd = -1 },
+	{ .nstype = CLONE_NEWCGROUP,.name = "ns/cgroup", .fd = -1 },
+	{ .nstype = CLONE_NEWIPC,   .name = "ns/ipc",  .fd = -1 },
+	{ .nstype = CLONE_NEWUTS,   .name = "ns/uts",  .fd = -1 },
+	{ .nstype = CLONE_NEWNET,   .name = "ns/net",  .fd = -1 },
+	{ .nstype = CLONE_NEWPID,   .name = "ns/pid",  .fd = -1 },
+	{ .nstype = CLONE_NEWNS,    .name = "ns/mnt",  .fd = -1 },
+	{ .nstype = CLONE_NEWTIME,  .name = "ns/time", .fd = -1 },
 	{ .nstype = 0, .name = NULL, .fd = -1 }
 };
 
-static void usage(int status)
+static void __attribute__((__noreturn__)) usage(void)
 {
-	FILE *out = status == EXIT_SUCCESS ? stdout : stderr;
+	FILE *out = stdout;
 
 	fputs(USAGE_HEADER, out);
-	fprintf(out, _(" %s [options] <program> [<argument>...]\n"),
+	fprintf(out, _(" %s [options] [<program> [<argument>...]]\n"),
 		program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Run a program with namespaces of other processes.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
+	fputs(_(" -a, --all              enter all namespaces\n"), out);
 	fputs(_(" -t, --target <pid>     target process to get namespaces from\n"), out);
 	fputs(_(" -m, --mount[=<file>]   enter mount namespace\n"), out);
 	fputs(_(" -u, --uts[=<file>]     enter UTS namespace (hostname etc)\n"), out);
 	fputs(_(" -i, --ipc[=<file>]     enter System V IPC namespace\n"), out);
 	fputs(_(" -n, --net[=<file>]     enter network namespace\n"), out);
 	fputs(_(" -p, --pid[=<file>]     enter pid namespace\n"), out);
+	fputs(_(" -C, --cgroup[=<file>]  enter cgroup namespace\n"), out);
 	fputs(_(" -U, --user[=<file>]    enter user namespace\n"), out);
+	fputs(_(" -T, --time[=<file>]    enter time namespace\n"), out);
 	fputs(_(" -S, --setuid <uid>     set uid in entered namespace\n"), out);
 	fputs(_(" -G, --setgid <gid>     set gid in entered namespace\n"), out);
 	fputs(_("     --preserve-credentials do not touch uids or gids\n"), out);
 	fputs(_(" -r, --root[=<dir>]     set the root directory\n"), out);
 	fputs(_(" -w, --wd[=<dir>]       set the working directory\n"), out);
+	fputs(_(" -W. --wdns <dir>       set the working directory in namespace\n"), out);
 	fputs(_(" -F, --no-fork          do not fork before exec'ing <program>\n"), out);
+#ifdef HAVE_LIBSELINUX
+	fputs(_(" -Z, --follow-context   set SELinux context according to --target PID\n"), out);
+#endif
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("nsenter(1)"));
+	printf(USAGE_HELP_OPTIONS(24));
+	printf(USAGE_MAN_TAIL("nsenter(1)"));
 
-	exit(status);
+	exit(EXIT_SUCCESS);
 }
 
 static pid_t namespace_target_pid = 0;
@@ -132,12 +148,55 @@ static void open_namespace_fd(int nstype, const char *path)
 	assert(nsfile->nstype);
 }
 
+static int get_ns_ino(const char *path, ino_t *ino)
+{
+	struct stat st;
+
+	if (stat(path, &st) != 0)
+		return -errno;
+	*ino = st.st_ino;
+	return 0;
+}
+
+static int is_usable_namespace(pid_t target, const struct namespace_file *nsfile)
+{
+	char path[PATH_MAX];
+	ino_t my_ino = 0;
+	int rc;
+
+	/* Check NS accessibility */
+	snprintf(path, sizeof(path), "/proc/%u/%s", getpid(), nsfile->name);
+	rc = get_ns_ino(path, &my_ino);
+	if (rc == -ENOENT)
+		return false; /* Unsupported NS */
+
+	/* It is not permitted to use setns(2) to reenter the caller's
+	 * current user namespace; see setns(2) man page for more details.
+	 */
+	if (nsfile->nstype & CLONE_NEWUSER) {
+		ino_t target_ino = 0;
+
+		snprintf(path, sizeof(path), "/proc/%u/%s", target, nsfile->name);
+		if (get_ns_ino(path, &target_ino) != 0)
+			err(EXIT_FAILURE, _("stat of %s failed"), path);
+
+		if (my_ino == target_ino)
+			return false;
+	}
+
+	return true; /* All pass */
+}
+
 static void continue_as_child(void)
 {
-	pid_t child = fork();
+	pid_t child;
 	int status;
 	pid_t ret;
 
+	/* Clear any inherited settings */
+	signal(SIGCHLD, SIG_DFL);
+
+	child = fork();
 	if (child < 0)
 		err(EXIT_FAILURE, _("fork failed"));
 
@@ -170,6 +229,7 @@ int main(int argc, char *argv[])
 		OPT_PRESERVE_CRED = CHAR_MAX + 1
 	};
 	static const struct option longopts[] = {
+		{ "all", no_argument, NULL, 'a' },
 		{ "help", no_argument, NULL, 'h' },
 		{ "version", no_argument, NULL, 'V'},
 		{ "target", required_argument, NULL, 't' },
@@ -179,36 +239,53 @@ int main(int argc, char *argv[])
 		{ "net", optional_argument, NULL, 'n' },
 		{ "pid", optional_argument, NULL, 'p' },
 		{ "user", optional_argument, NULL, 'U' },
+		{ "cgroup", optional_argument, NULL, 'C' },
+		{ "time", optional_argument, NULL, 'T' },
 		{ "setuid", required_argument, NULL, 'S' },
 		{ "setgid", required_argument, NULL, 'G' },
 		{ "root", optional_argument, NULL, 'r' },
 		{ "wd", optional_argument, NULL, 'w' },
+		{ "wdns", optional_argument, NULL, 'W' },
 		{ "no-fork", no_argument, NULL, 'F' },
 		{ "preserve-credentials", no_argument, NULL, OPT_PRESERVE_CRED },
+#ifdef HAVE_LIBSELINUX
+		{ "follow-context", no_argument, NULL, 'Z' },
+#endif
 		{ NULL, 0, NULL, 0 }
 	};
+	static const ul_excl_t excl[] = {       /* rows and cols in ASCII order */
+		{ 'W', 'w' },
+		{ 0 }
+	};
+	int excl_st[ARRAY_SIZE(excl)] = UL_EXCL_STATUS_INIT;
 
 	struct namespace_file *nsfile;
-	int c, namespaces = 0, setgroups_nerrs = 0, preserve_cred = 0;
+	int c, pass, namespaces = 0, setgroups_nerrs = 0, preserve_cred = 0;
 	bool do_rd = false, do_wd = false, force_uid = false, force_gid = false;
+	bool do_all = false;
 	int do_fork = -1; /* unknown yet */
+	char *wdns = NULL;
 	uid_t uid = 0;
 	gid_t gid = 0;
+#ifdef HAVE_LIBSELINUX
+	bool selinux = 0;
+#endif
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((c =
-		getopt_long(argc, argv, "+hVt:m::u::i::n::p::U::S:G:r::w::F",
+		getopt_long(argc, argv, "+ahVt:m::u::i::n::p::C::U::T::S:G:r::w::W:FZ",
 			    longopts, NULL)) != -1) {
+
+		err_exclusive_options(c, longopts, excl, excl_st);
+
 		switch (c) {
-		case 'h':
-			usage(EXIT_SUCCESS);
-		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+		case 'a':
+			do_all = true;
+			break;
 		case 't':
 			namespace_target_pid =
 			    strtoul_or_err(optarg, _("failed to parse pid"));
@@ -243,11 +320,23 @@ int main(int argc, char *argv[])
 			else
 				namespaces |= CLONE_NEWPID;
 			break;
+		case 'C':
+			if (optarg)
+				open_namespace_fd(CLONE_NEWCGROUP, optarg);
+			else
+				namespaces |= CLONE_NEWCGROUP;
+			break;
 		case 'U':
 			if (optarg)
 				open_namespace_fd(CLONE_NEWUSER, optarg);
 			else
 				namespaces |= CLONE_NEWUSER;
+			break;
+		case 'T':
+			if (optarg)
+				open_namespace_fd(CLONE_NEWTIME, optarg);
+			else
+				namespaces |= CLONE_NEWTIME;
 			break;
 		case 'S':
 			uid = strtoul_or_err(optarg, _("failed to parse uid"));
@@ -272,11 +361,52 @@ int main(int argc, char *argv[])
 			else
 				do_wd = true;
 			break;
+		case 'W':
+			wdns = optarg;
+			break;
 		case OPT_PRESERVE_CRED:
 			preserve_cred = 1;
 			break;
+#ifdef HAVE_LIBSELINUX
+		case 'Z':
+			selinux = 1;
+			break;
+#endif
+		case 'h':
+			usage();
+		case 'V':
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(EXIT_FAILURE);
+			errtryhelp(EXIT_FAILURE);
+		}
+	}
+
+#ifdef HAVE_LIBSELINUX
+	if (selinux && is_selinux_enabled() > 0) {
+		char *scon = NULL;
+
+		if (!namespace_target_pid)
+			errx(EXIT_FAILURE, _("no target PID specified for --follow-context"));
+		if (getpidcon(namespace_target_pid, &scon) < 0)
+			errx(EXIT_FAILURE, _("failed to get %d SELinux context"),
+					(int) namespace_target_pid);
+		if (setexeccon(scon) < 0)
+			errx(EXIT_FAILURE, _("failed to set exec context to '%s'"), scon);
+		freecon(scon);
+	}
+#endif
+
+	if (do_all) {
+		if (!namespace_target_pid)
+			errx(EXIT_FAILURE, _("no target PID specified for --all"));
+		for (nsfile = namespace_files; nsfile->nstype; nsfile++) {
+			if (nsfile->fd >= 0)
+				continue;	/* namespace already specified */
+
+			if (!is_usable_namespace(namespace_target_pid, nsfile))
+				continue;
+
+			namespaces |= nsfile->nstype;
 		}
 	}
 
@@ -312,23 +442,35 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	 * Now that we know which namespaces we want to enter, enter them.
+	 * Now that we know which namespaces we want to enter, enter
+	 * them.  Do this in two passes, not entering the user
+	 * namespace on the first pass.  So if we're deprivileging the
+	 * container we'll enter the user namespace last and if we're
+	 * privileging it then we enter the user namespace first
+	 * (because the initial setns will fail).
 	 */
-	for (nsfile = namespace_files; nsfile->nstype; nsfile++) {
-		if (nsfile->fd < 0)
-			continue;
-		if (nsfile->nstype == CLONE_NEWPID && do_fork == -1)
-			do_fork = 1;
-		if (setns(nsfile->fd, nsfile->nstype))
-			err(EXIT_FAILURE,
-			    _("reassociate to namespace '%s' failed"),
-			    nsfile->name);
-		close(nsfile->fd);
-		nsfile->fd = -1;
+	for (pass = 0; pass < 2; pass ++) {
+		for (nsfile = namespace_files + 1 - pass; nsfile->nstype; nsfile++) {
+			if (nsfile->fd < 0)
+				continue;
+			if (nsfile->nstype == CLONE_NEWPID && do_fork == -1)
+				do_fork = 1;
+			if (setns(nsfile->fd, nsfile->nstype)) {
+				if (pass != 0)
+					err(EXIT_FAILURE,
+					    _("reassociate to namespace '%s' failed"),
+					    nsfile->name);
+				else
+					continue;
+			}
+
+			close(nsfile->fd);
+			nsfile->fd = -1;
+		}
 	}
 
 	/* Remember the current working directory if I'm not changing it */
-	if (root_fd >= 0 && wd_fd < 0) {
+	if (root_fd >= 0 && wd_fd < 0 && wdns == NULL) {
 		wd_fd = open(".", O_RDONLY);
 		if (wd_fd < 0)
 			err(EXIT_FAILURE,
@@ -343,9 +485,19 @@ int main(int argc, char *argv[])
 
 		if (chroot(".") < 0)
 			err(EXIT_FAILURE, _("chroot failed"));
+		if (chdir("/"))
+			err(EXIT_FAILURE, _("cannot change directory to %s"), "/");
 
 		close(root_fd);
 		root_fd = -1;
+	}
+
+	/* working directory specified as in-namespace path */
+	if (wdns) {
+		wd_fd = open(wdns, O_RDONLY);
+		if (wd_fd < 0)
+			err(EXIT_FAILURE,
+			    _("cannot open current working directory"));
 	}
 
 	/* Change the working directory */
@@ -372,7 +524,7 @@ int main(int argc, char *argv[])
 
 	if (optind < argc) {
 		execvp(argv[optind], argv + optind);
-		err(EXIT_FAILURE, _("failed to execute %s"), argv[optind]);
+		errexec(argv[optind]);
 	}
 	exec_shell();
 }

@@ -1,7 +1,8 @@
 /*
  * Functions for \oct encoding used in mtab/fstab/swaps/etc.
  *
- * Based on code from mount(8).
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
  *
  * Copyright (C) 2010 Karel Zak <kzak@redhat.com>
  */
@@ -70,12 +71,13 @@ void unmangle_to_buffer(const char *s, char *buf, size_t len)
 	*buf = '\0';
 }
 
-void unhexmangle_to_buffer(const char *s, char *buf, size_t len)
+size_t unhexmangle_to_buffer(const char *s, char *buf, size_t len)
 {
 	size_t sz = 0;
+	const char *buf0 = buf;
 
 	if (!s)
-		return;
+		return 0;
 
 	while(*s && sz < len - 1) {
 		if (*s == '\\' && sz + 3 < len - 1 && s[1] == 'x' &&
@@ -90,22 +92,23 @@ void unhexmangle_to_buffer(const char *s, char *buf, size_t len)
 		}
 	}
 	*buf = '\0';
+	return buf - buf0 + 1;
 }
 
-static inline char *skip_nonspaces(const char *s)
+static inline const char *skip_nonspaces(const char *s)
 {
-	while (*s && !(*s == ' ' || *s == '\t'))
+	while (s && *s && !(*s == ' ' || *s == '\t'))
 		s++;
-	return (char *) s;
+	return s;
 }
 
 /*
  * Returns mallocated buffer or NULL in case of error.
  */
-char *unmangle(const char *s, char **end)
+char *unmangle(const char *s, const char **end)
 {
 	char *buf;
-	char *e;
+	const char *e;
 	size_t sz;
 
 	if (!s)
@@ -127,7 +130,7 @@ char *unmangle(const char *s, char **end)
 	return buf;
 }
 
-#ifdef TEST_PROGRAM
+#ifdef TEST_PROGRAM_MANGLE
 #include <errno.h>
 int main(int argc, char *argv[])
 {
@@ -153,9 +156,9 @@ int main(int argc, char *argv[])
 		}
 
 		x = strdup(argv[2]);
-		unmangle_to_buffer(x, x, strlen(x) + 1);
-
 		if (x) {
+			unmangle_to_buffer(x, x, strlen(x) + 1);
+
 			printf("self-unmangled: '%s'\n", x);
 			free(x);
 		}
@@ -163,4 +166,4 @@ int main(int argc, char *argv[])
 
 	return EXIT_SUCCESS;
 }
-#endif /* TEST_PROGRAM */
+#endif /* TEST_PROGRAM_MANGLE */

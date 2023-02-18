@@ -18,6 +18,11 @@ TS_DESC="options"
 . "$TS_TOPDIR/functions.sh"
 ts_init "$*"
 
+# make sure we do not use shell built-in command
+if [ "$TS_USE_SYSTEM_COMMANDS" == "yes" ]; then
+	TS_CMD_KILL="$(which kill)"
+fi
+
 ts_check_test_command "$TS_CMD_KILL"
 ts_check_test_command "$TS_HELPER_SIGRECEIVE"
 
@@ -30,12 +35,12 @@ ln -sf "$TS_HELPER_SIGRECEIVE" "$HELPER_SYMLINK"
 
 try_option()
 {
-	"$HELPER_SYMLINK" >> "$TS_OUTPUT" 2>&1 &
+	"$HELPER_SYMLINK" >> $TS_OUTPUT 2>> $TS_ERRLOG &
 	TEST_PID=$!
 	check_test_sigreceive $TEST_PID
 	[ $? -eq 1 ] || echo "${HELPER_SYMLINK##*/} helper did not start" >> "$TS_OUTPUT"
 
-	"$TS_CMD_KILL" "$@" $TEST_PID >> "$TS_OUTPUT" 2>&1
+	"$TS_CMD_KILL" "$@" $TEST_PID >> $TS_OUTPUT 2>> $TS_ERRLOG
 	if [ $? -ne 0 ]; then
 		echo "kill $@ did not work" >> "$TS_OUTPUT"
 		all_ok=false

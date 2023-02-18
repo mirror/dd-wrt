@@ -18,8 +18,7 @@
 #include <ctype.h>
 
 #include "blkidP.h"
-
-#define UDEV_ALLOWED_CHARS_INPUT               "/ $%?,"
+#include "strutils.h"
 
 /**
  * SECTION: encode
@@ -151,34 +150,6 @@ static int utf8_encoded_valid_unichar(const char *str)
 	return len;
 }
 
-static int replace_whitespace(const char *str, char *to, size_t len)
-{
-	size_t i, j;
-
-	/* strip trailing whitespace */
-	len = strnlen(str, len);
-	while (len && isspace(str[len-1]))
-		len--;
-
-	/* strip leading whitespace */
-	i = 0;
-	while (isspace(str[i]) && (i < len))
-		i++;
-
-	j = 0;
-	while (i < len) {
-		/* substitute multiple whitespace with a single '_' */
-		if (isspace(str[i])) {
-			while (isspace(str[i]))
-				i++;
-			to[j++] = '_';
-		}
-		to[j++] = str[i++];
-	}
-	to[j] = '\0';
-	return 0;
-}
-
 static int is_whitelisted(char c, const char *white)
 {
 	if ((c >= '0' && c <= '9') ||
@@ -188,84 +159,6 @@ static int is_whitelisted(char c, const char *white)
 	    (white != NULL && strchr(white, c) != NULL))
 		return 1;
 	return 0;
-}
-
-/* allow chars in whitelist, plain ascii, hex-escaping and valid utf8 */
-static int replace_chars(char *str, const char *white)
-{
-	size_t i = 0;
-	int replaced = 0;
-
-	while (str[i] != '\0') {
-		int len;
-
-		if (is_whitelisted(str[i], white)) {
-			i++;
-			continue;
-		}
-
-		/* accept hex encoding */
-		if (str[i] == '\\' && str[i+1] == 'x') {
-			i += 2;
-			continue;
-		}
-
-		/* accept valid utf8 */
-		len = utf8_encoded_valid_unichar(&str[i]);
-		if (len > 1) {
-			i += len;
-			continue;
-		}
-
-		/* if space is allowed, replace whitespace with ordinary space */
-		if (isspace(str[i]) && white != NULL && strchr(white, ' ') != NULL) {
-			str[i] = ' ';
-			i++;
-			replaced++;
-			continue;
-		}
-
-		/* everything else is replaced with '_' */
-		str[i] = '_';
-		i++;
-		replaced++;
-	}
-	return replaced;
-}
-
-size_t blkid_encode_to_utf8(int enc, unsigned char *dest, size_t len,
-			const unsigned char *src, size_t count)
-{
-	size_t i, j;
-	uint16_t c;
-
-	for (j = i = 0; i + 2 <= count; i += 2) {
-		if (enc == BLKID_ENC_UTF16LE)
-			c = (src[i+1] << 8) | src[i];
-		else /* BLKID_ENC_UTF16BE */
-			c = (src[i] << 8) | src[i+1];
-		if (c == 0) {
-			dest[j] = '\0';
-			break;
-		} else if (c < 0x80) {
-			if (j+1 >= len)
-				break;
-			dest[j++] = (uint8_t) c;
-		} else if (c < 0x800) {
-			if (j+2 >= len)
-				break;
-			dest[j++] = (uint8_t) (0xc0 | (c >> 6));
-			dest[j++] = (uint8_t) (0x80 | (c & 0x3f));
-		} else {
-			if (j+3 >= len)
-				break;
-			dest[j++] = (uint8_t) (0xe0 | (c >> 12));
-			dest[j++] = (uint8_t) (0x80 | ((c >> 6) & 0x3f));
-			dest[j++] = (uint8_t) (0x80 | (c & 0x3f));
-		}
-	}
-	dest[j] = '\0';
-	return j;
 }
 
 /**
@@ -325,16 +218,46 @@ err:
  * @str_safe: output string
  * @len: size of output string
  *
- * Allows plain ascii, hex-escaping and valid utf8. Replaces all whitespaces
- * with '_'.
+ * Processing whitespace characters. Allows valid ascii,valid utf8.
+ * Replace everything else with'_'
  *
  * Returns: 0 on success or -1 in case of error.
  */
 int blkid_safe_string(const char *str, char *str_safe, size_t len)
 {
+	size_t i = 0;
+
 	if (!str || !str_safe || !len)
 		return -1;
-	replace_whitespace(str, str_safe, len);
-	replace_chars(str_safe, UDEV_ALLOWED_CHARS_INPUT);
+
+	__normalize_whitespace(
+			(const unsigned char *) str, strnlen(str, len),
+			(unsigned char *) str_safe, len);
+
+	while (i < len && str_safe[i] != '\0') {
+		int seqsz;
+
+		/* accept ASCII from ' ' to '~' */
+		if (str_safe[i] > 0x20 && str_safe[i] <= 0x7E)
+			i++;
+
+		/* accept hex encoding */
+		else if (str_safe[i] == '\\' && str_safe[i+1] == 'x')
+			i += 2;
+
+		/* replace whitespace */
+		else if (isspace(str_safe[i]))
+			str_safe[i++] = '_';
+
+		/* accept valid utf8 */
+		else if ((seqsz = utf8_encoded_valid_unichar(&str_safe[i])) >= 1)
+			i += seqsz;
+
+		/* everything else is replaced with '_' */
+		else
+			str_safe[i++] = '_';
+	}
+
+	str_safe[len - 1] = '\0';
 	return 0;
 }

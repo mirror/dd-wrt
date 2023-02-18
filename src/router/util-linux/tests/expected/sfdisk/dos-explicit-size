@@ -1,28 +1,25 @@
-Partition 1 does not start on physical sector boundary.
-Partition 2 does not start on physical sector boundary.
-Partition 3 does not start on physical sector boundary.
-Partition 4 does not start on physical sector boundary.
-Partition 5 does not start on physical sector boundary.
-Partition 6 does not start on physical sector boundary.
-Partition 7 does not start on physical sector boundary.
 Checking that no-one is using this disk right now ... OK
 
 Disk <removed>: 50 MiB, 52428800 bytes, 102400 sectors
+Disk model: scsi_debug      
 Units: sectors of 1 * 512 = 512 bytes
 Sector size (logical/physical): 512 bytes / 4096 bytes
-I/O size (minimum/optimal): 4096 bytes / 32768 bytes
+I/O size (minimum/optimal): 4096 bytes / <removed> bytes
 
 >>> Script header accepted.
->>> Created a new <removed>.
-Created a new <removed>.
-<removed>2: Created a new <removed>.
-<removed>3: Created a new <removed>.
-<removed>4: Created a new <removed>.
-<removed>5: Created a new <removed>.
-<removed>6: Created a new <removed>.
-<removed>7: Created a new <removed>.
-<removed>8: 
+>>> Created a new disklabel.
+<removed>1: Created a new partition <removed>.
+<removed>2: Created a new partition <removed>.
+<removed>3: Created a new partition <removed>.
+<removed>4: Created a new partition <removed>.
+<removed>5: Created a new partition <removed>.
+<removed>6: Created a new partition <removed>.
+<removed>7: Created a new partition <removed>.
+<removed>8: Done.
+
 New situation:
+Disklabel type: dos
+Disk identifier: <removed>
 
 Device     Boot Start    End Sectors  Size Id Type
 <removed>1           1   1000    1000  500K 83 Linux

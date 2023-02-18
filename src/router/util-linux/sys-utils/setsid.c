@@ -25,8 +25,9 @@
 #include "nls.h"
 #include "closestream.h"
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(
 		" %s [options] <program> [arguments ...]\n"),
@@ -37,24 +38,25 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 
 	fputs(USAGE_OPTIONS, out);
 	fputs(_(" -c, --ctty     set the controlling terminal to the current one\n"), out);
+	fputs(_(" -f, --fork     always fork\n"), out);
 	fputs(_(" -w, --wait     wait program to exit, and use the same return\n"), out);
 
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
+	printf(USAGE_HELP_OPTIONS(16));
 
-	fprintf(out, USAGE_MAN_TAIL("setsid(1)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_MAN_TAIL("setsid(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
 {
-	int ch;
+	int ch, forcefork = 0;
 	int ctty = 0;
 	pid_t pid;
 	int status = 0;
 
 	static const struct option longopts[] = {
 		{"ctty", no_argument, NULL, 'c'},
+		{"fork", no_argument, NULL, 'f'},
 		{"wait", no_argument, NULL, 'w'},
 		{"version", no_argument, NULL, 'V'},
 		{"help", no_argument, NULL, 'h'},
@@ -64,29 +66,34 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	while ((ch = getopt_long(argc, argv, "+Vhcw", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "+Vhcfw", longopts, NULL)) != -1)
 		switch (ch) {
-		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
 		case 'c':
 			ctty=1;
+			break;
+		case 'f':
+			forcefork = 1;
 			break;
 		case 'w':
 			status = 1;
 			break;
+
 		case 'h':
-			usage(stdout);
+			usage();
+		case 'V':
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
-	if (argc < 2)
-		usage(stderr);
+	if (argc - optind < 1) {
+		warnx(_("no command specified"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
-	if (getpgrp() == getpid()) {
+	if (forcefork || getpgrp() == getpid()) {
 		pid = fork();
 		switch (pid) {
 		case -1:
@@ -109,10 +116,8 @@ int main(int argc, char **argv)
 		/* cannot happen */
 		err(EXIT_FAILURE, _("setsid failed"));
 
-	if (ctty) {
-		if (ioctl(STDIN_FILENO, TIOCSCTTY, 1))
-			err(EXIT_FAILURE, _("failed to set the controlling terminal"));
-	}
+	if (ctty && ioctl(STDIN_FILENO, TIOCSCTTY, 1))
+		err(EXIT_FAILURE, _("failed to set the controlling terminal"));
 	execvp(argv[optind], argv + optind);
-	err(EXIT_FAILURE, _("failed to execute %s"), argv[optind]);
+	errexec(argv[optind]);
 }

@@ -6,16 +6,22 @@ _prlimit_module()
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	case $prev in
 		'-p'|'--pid')
-			PIDS=$(for I in /proc/[0-9]*; do echo ${I##"/proc/"}; done)
+			PIDS=$(cd /proc && echo [0-9]*)
 			COMPREPLY=( $(compgen -W "$PIDS" -- $cur) )
 			return 0
 			;;
 		'-o'|'--output')
-			# FIXME: how to append to a string with compgen?
-			local OUTPUT
-			OUTPUT="DESCRIPTION RESOURCE SOFT HARD UNITS"
+			local prefix realcur OUTPUT_ALL OUTPUT
+			realcur="${cur##*,}"
+			prefix="${cur%$realcur}"
+			OUTPUT_ALL="DESCRIPTION RESOURCE SOFT HARD UNITS"
+			for WORD in $OUTPUT_ALL; do
+				if ! [[ $prefix == *"$WORD"* ]]; then
+					OUTPUT="$WORD ${OUTPUT:-""}"
+				fi
+			done
 			compopt -o nospace
-			COMPREPLY=( $(compgen -W "$OUTPUT" -S ',' -- $cur) )
+			COMPREPLY=( $(compgen -P "$prefix" -W "$OUTPUT" -S ',' -- $realcur) )
 			return 0
 			;;
 		'-h'|'--help'|'-V'|'--version')

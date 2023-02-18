@@ -38,6 +38,7 @@
 #include "islocal.h"
 #include "nls.h"
 #include "pathnames.h"
+#include "pwdutils.h"
 #include "setpwnam.h"
 #include "strutils.h"
 #include "xalloc.h"
@@ -46,10 +47,8 @@
 
 #ifdef HAVE_LIBSELINUX
 # include <selinux/selinux.h>
-# include <selinux/av_permissions.h>
-# include "selinux_utils.h"
+# include "selinux-utils.h"
 #endif
-
 
 #ifdef HAVE_LIBUSER
 # include <libuser/user.h>
@@ -63,9 +62,9 @@ struct sinfo {
 	char *shell;
 };
 
-
-static void __attribute__((__noreturn__)) usage (FILE *fp)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *fp = stdout;
 	fputs(USAGE_HEADER, fp);
 	fprintf(fp, _(" %s [options] [<username>]\n"), program_invocation_short_name);
 
@@ -76,50 +75,44 @@ static void __attribute__((__noreturn__)) usage (FILE *fp)
 	fputs(_(" -s, --shell <shell>  specify login shell\n"), fp);
 	fputs(_(" -l, --list-shells    print list of shells and exit\n"), fp);
 	fputs(USAGE_SEPARATOR, fp);
-	fputs(_(" -u, --help     display this help and exit\n"), fp);
-	fputs(_(" -v, --version  output version information and exit\n"), fp);
-	fprintf(fp, USAGE_MAN_TAIL("chsh(1)"));
-	exit(fp == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf( " -u, --help           %s\n", USAGE_OPTSTR_HELP);
+	printf( " -v, --version        %s\n", USAGE_OPTSTR_VERSION);
+	printf(USAGE_MAN_TAIL("chsh(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 /*
- *  get_shell_list () -- if the given shell appears in /etc/shells,
+ *  is_known_shell() -- if the given shell appears in /etc/shells,
  *	return true.  if not, return false.
- *	if the given shell is NULL, /etc/shells is outputted to stdout.
  */
-static int get_shell_list(const char *shell_name)
+static int is_known_shell(const char *shell_name)
 {
-	FILE *fp;
-	int found = 0;
-	char *buf = NULL;
-	size_t sz = 0;
-	ssize_t len;
+	char *s, ret = 0;
 
-	fp = fopen(_PATH_SHELLS, "r");
-	if (!fp) {
-		if (!shell_name)
-			warnx(_("No known shells."));
+	if (!shell_name)
 		return 0;
+
+	setusershell();
+	while ((s = getusershell())) {
+		if (strcmp(shell_name, s) == 0) {
+			ret = 1;
+			break;
+		}
 	}
-	while ((len = getline(&buf, &sz, fp)) != -1) {
-		/* ignore comments and blank lines */
-		if (*buf == '#' || len < 2)
-			continue;
-		/* strip the ending newline */
-		if (buf[len - 1] == '\n')
-			buf[len - 1] = 0;
-		/* check or output the shell */
-		if (shell_name) {
-			if (!strcmp(shell_name, buf)) {
-				found = 1;
-				break;
-			}
-		} else
-			printf("%s\n", buf);
-	}
-	fclose(fp);
-	free(buf);
-	return found;
+	endusershell();
+	return ret;
+}
+
+/*
+ *  print_shells () -- /etc/shells is outputted to stdout.
+ */
+static void print_shells(void)
+{
+	char *s;
+
+	while ((s = getusershell()))
+		printf("%s\n", s);
+	endusershell();
 }
 
 /*
@@ -130,37 +123,36 @@ static int get_shell_list(const char *shell_name)
 static void parse_argv(int argc, char **argv, struct sinfo *pinfo)
 {
 	static const struct option long_options[] = {
-		{"shell", required_argument, 0, 's'},
-		{"list-shells", no_argument, 0, 'l'},
-		{"help", no_argument, 0, 'u'},
-		{"version", no_argument, 0, 'v'},
-		{NULL, no_argument, 0, '0'},
+		{"shell",       required_argument, NULL, 's'},
+		{"list-shells", no_argument,       NULL, 'l'},
+		{"help",        no_argument,       NULL, 'h'},
+		{"version",     no_argument,       NULL, 'v'},
+		{NULL, 0, NULL, 0},
 	};
 	int c;
 
-	while ((c = getopt_long(argc, argv, "s:luv", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "s:lhuv", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'v':
-			printf(UTIL_LINUX_VERSION);
-			exit(EXIT_SUCCESS);
-		case 'u':
-			usage(stdout);
+			print_version(EXIT_SUCCESS);
+		case 'u': /* deprecated */
+		case 'h':
+			usage();
 		case 'l':
-			get_shell_list(NULL);
+			print_shells();
 			exit(EXIT_SUCCESS);
 		case 's':
-			if (!optarg)
-				usage(stderr);
 			pinfo->shell = optarg;
 			break;
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 	/* done parsing arguments.  check for a username. */
 	if (optind < argc) {
-		if (optind + 1 < argc)
-			usage(stderr);
+		if (optind + 1 < argc) {
+			errx(EXIT_FAILURE, _("cannot handle multiple usernames"));
+		}
 		pinfo->username = argv[optind];
 	}
 }
@@ -174,14 +166,17 @@ static char *ask_new_shell(char *question, char *oldshell)
 	int len;
 	char *ans = NULL;
 	size_t dummy = 0;
-	ssize_t sz;
 
 	if (!oldshell)
 		oldshell = "";
-	printf("%s [%s]: ", question, oldshell);
-	sz = getline(&ans, &dummy, stdin);
-	if (sz == -1)
+	printf("%s [%s]:", question, oldshell);
+
+	putchar(' ');
+	fflush(stdout);
+
+	if (getline(&ans, &dummy, stdin) < 0)
 		return NULL;
+
 	/* remove the newline at the end of ans. */
 	ltrim_whitespace((unsigned char *) ans);
 	len = rtrim_whitespace((unsigned char *) ans);
@@ -204,7 +199,7 @@ static void check_shell(const char *shell)
 		errx(EXIT_FAILURE, _("\"%s\" is not executable"), shell);
 	if (illegal_passwd_chars(shell))
 		errx(EXIT_FAILURE, _("%s: has illegal characters"), shell);
-	if (!get_shell_list(shell)) {
+	if (!is_known_shell(shell)) {
 #ifdef ONLY_LISTED_SHELLS
 		if (!getuid())
 			warnx(_("Warning: \"%s\" is not listed in %s."), shell,
@@ -224,26 +219,26 @@ static void check_shell(const char *shell)
 
 int main(int argc, char **argv)
 {
-	char *oldshell;
+	char *oldshell, *pwbuf;
 	int nullshell = 0;
 	const uid_t uid = getuid();
-	struct sinfo info = { 0 };
+	struct sinfo info = { NULL };
 	struct passwd *pw;
 
 	sanitize_env();
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	parse_argv(argc, argv, &info);
 	if (!info.username) {
-		pw = getpwuid(uid);
+		pw = xgetpwuid(uid, &pwbuf);
 		if (!pw)
 			errx(EXIT_FAILURE, _("you (user %d) don't exist."),
 			     uid);
 	} else {
-		pw = getpwnam(info.username);
+		pw = xgetpwnam(info.username, &pwbuf);
 		if (!pw)
 			errx(EXIT_FAILURE, _("user \"%s\" does not exist."),
 			     info.username);
@@ -256,20 +251,15 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_LIBSELINUX
 	if (is_selinux_enabled() > 0) {
-		if (uid == 0) {
-			if (checkAccess(pw->pw_name, PASSWD__CHSH) != 0) {
-				security_context_t user_context;
-				if (getprevcon(&user_context) < 0)
-					user_context =
-					    (security_context_t) NULL;
+		char *user_cxt = NULL;
 
-				errx(EXIT_FAILURE,
-				     _("%s is not authorized to change the shell of %s"),
-				     user_context ? : _("Unknown user context"),
-				     pw->pw_name);
-			}
-		}
-		if (setupDefaultContext(_PATH_PASSWD) != 0)
+		if (uid == 0 && !ul_selinux_has_access("passwd", "chsh", &user_cxt))
+			errx(EXIT_FAILURE,
+			     _("%s is not authorized to change the shell of %s"),
+			     user_cxt ? : _("Unknown user context"),
+			     pw->pw_name);
+
+		if (ul_setfscreatecon_from_file(_PATH_PASSWD) != 0)
 			errx(EXIT_FAILURE,
 			     _("can't set default context for %s"), _PATH_PASSWD);
 	}
@@ -293,7 +283,7 @@ int main(int argc, char **argv)
 		    _("running UID doesn't match UID of user we're "
 		      "altering, shell change denied"));
 	}
-	if (uid != 0 && !get_shell_list(oldshell)) {
+	if (uid != 0 && !is_known_shell(oldshell)) {
 		errno = EACCES;
 		err(EXIT_FAILURE, _("your shell is not in %s, "
 				    "shell change denied"), _PATH_SHELLS);
@@ -323,7 +313,7 @@ int main(int argc, char **argv)
 		errx(EXIT_FAILURE, _("Shell *NOT* changed.  Try again later."));
 #else
 	pw->pw_shell = info.shell;
-	if (setpwnam(pw) < 0)
+	if (setpwnam(pw, ".chsh") < 0)
 		err(EXIT_FAILURE, _("setpwnam failed\n"
 			"Shell *NOT* changed.  Try again later."));
 #endif

@@ -1,5 +1,5 @@
 /*
- * mkfs		A simple generic frontend for the for the mkfs program
+ * mkfs		A simple generic frontend for the mkfs program
  *		under Linux.  See the manual page for details.
  *
  * Authors:	David Engel, <david@ods.com>
@@ -10,7 +10,7 @@
  *	Incorporated fix by Jonathan Kamens <jik@annex-1-slip-jik.cam.ov.com>
  * 1999-02-22 Arkadiusz Miśkiewicz <misiek@pld.ORG.PL>
  * - added Native Language Support
- *	
+ *
  */
 
 /*
@@ -38,12 +38,9 @@
 #define DEFAULT_FSTYPE	"ext2"
 #endif
 
-#define SEARCH_PATH	"PATH=" FS_SEARCH_PATH
-#define PROGNAME	"mkfs.%s"
-
-
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] [-t <type>] [fs-options] <device> [<size>]\n"),
 		     program_invocation_short_name);
@@ -58,18 +55,9 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 	fprintf(out, _("     <size>         number of blocks to be used on the device\n"));
 	fprintf(out, _(" -V, --verbose      explain what is being done;\n"
 		       "                      specifying -V more than once will cause a dry-run\n"));
-	fprintf(out, _(" -V, --version      display version information and exit;\n"
-		       "                      -V as --version must be the only option\n"));
-	fprintf(out, _(" -h, --help         display this help text and exit\n"));
+	printf(USAGE_HELP_OPTIONS(20));
 
-	fprintf(out, USAGE_MAN_TAIL("mkfs(8)"));
-
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
-}
-
-static void __attribute__ ((__noreturn__)) print_version(void)
-{
-	printf(UTIL_LINUX_VERSION);
+	printf(USAGE_MAN_TAIL("mkfs(8)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -78,7 +66,6 @@ int main(int argc, char **argv)
 	char *progname;		/* name of executable to be called */
 	char *fstype = NULL;
 	int i, more = 0, verbose = 0;
-	char *oldpath, *newpath;
 
 	enum { VERSION_OPTION = CHAR_MAX + 1 };
 
@@ -93,10 +80,10 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	if (argc == 2 && !strcmp(argv[1], "-V"))
-		print_version();
+		print_version(EXIT_SUCCESS);
 
 	/* Check commandline options. */
 	opterr = 0;
@@ -111,32 +98,24 @@ int main(int argc, char **argv)
 			fstype = optarg;
 			break;
 		case 'h':
-			usage(stdout);
+			usage();
 		case VERSION_OPTION:
-			print_version();
+			print_version(EXIT_SUCCESS);
 		default:
 			optind--;
 			more = 1;
 			break;	/* start of specific arguments */
 		}
-	if (optind == argc)
-		usage(stderr);
+	if (optind == argc) {
+		warnx(_("no device specified"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	/* If -t wasn't specified, use the default */
 	if (fstype == NULL)
 		fstype = DEFAULT_FSTYPE;
 
-	/* Set PATH and program name */
-	oldpath = getenv("PATH");
-	if (!oldpath)
-		oldpath = "/bin";
-
-	newpath = xmalloc(strlen(oldpath) + sizeof(SEARCH_PATH) + 3);
-	sprintf(newpath, "%s:%s\n", SEARCH_PATH, oldpath);
-	putenv(newpath);
-
-	progname = xmalloc(sizeof(PROGNAME) + strlen(fstype) + 1);
-	sprintf(progname, PROGNAME, fstype);
+	xasprintf(&progname, "mkfs.%s", fstype);
 	argv[--optind] = progname;
 
 	if (verbose) {

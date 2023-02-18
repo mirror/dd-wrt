@@ -20,7 +20,9 @@
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_SYS_SYSCALL_H
 #include <sys/syscall.h>
+#endif
 
 #include "cpuset.h"
 #include "c.h"
@@ -29,23 +31,21 @@ static inline int val_to_char(int v)
 {
 	if (v >= 0 && v < 10)
 		return '0' + v;
-	else if (v >= 10 && v < 16)
+	if (v >= 10 && v < 16)
 		return ('a' - 10) + v;
-	else
-		return -1;
+	return -1;
 }
 
 static inline int char_to_val(int c)
 {
 	int cl;
 
-	cl = tolower(c);
 	if (c >= '0' && c <= '9')
 		return c - '0';
-	else if (cl >= 'a' && cl <= 'f')
+	cl = tolower(c);
+	if (cl >= 'a' && cl <= 'f')
 		return cl + (10 - 'a');
-	else
-		return -1;
+	return -1;
 }
 
 static const char *nexttoken(const char *q,  int sep)
@@ -169,21 +169,18 @@ char *cpulist_create(char *str, size_t len,
 					break;
 			}
 			if (!run)
-				rlen = snprintf(ptr, len, "%zd,", i);
+				rlen = snprintf(ptr, len, "%zu,", i);
 			else if (run == 1) {
-				rlen = snprintf(ptr, len, "%zd,%zd,", i, i + 1);
+				rlen = snprintf(ptr, len, "%zu,%zu,", i, i + 1);
 				i++;
 			} else {
-				rlen = snprintf(ptr, len, "%zd-%zd,", i, i + run);
+				rlen = snprintf(ptr, len, "%zu-%zu,", i, i + run);
 				i += run;
 			}
-			if (rlen < 0 || (size_t) rlen + 1 > len)
+			if (rlen < 0 || (size_t) rlen >= len)
 				return NULL;
 			ptr += rlen;
-			if (rlen > 0 && len > (size_t) rlen)
-				len -= rlen;
-			else
-				len = 0;
+			len -= rlen;
 		}
 	}
 	ptr -= entry_made;
@@ -258,11 +255,23 @@ int cpumask_parse(const char *str, cpu_set_t *set, size_t setsize)
 			CPU_SET_S(cpu + 2, setsize, set);
 		if (val & 8)
 			CPU_SET_S(cpu + 3, setsize, set);
-		len--;
 		ptr--;
 		cpu += 4;
 	}
 
+	return 0;
+}
+
+static int nextnumber(const char *str, char **end, unsigned int *result)
+{
+	errno = 0;
+	if (str == NULL || *str == '\0' || !isdigit(*str))
+		return -EINVAL;
+	*result = (unsigned int) strtoul(str, end, 10);
+	if (errno)
+		return -errno;
+	if (str == *end)
+		return -EINVAL;
 	return 0;
 }
 
@@ -278,7 +287,7 @@ int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize, int fail)
 {
 	size_t max = cpuset_nbits(setsize);
 	const char *p, *q;
-	int r = 0;
+	char *end = NULL;
 
 	q = str;
 	CPU_ZERO_S(setsize, set);
@@ -288,21 +297,24 @@ int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize, int fail)
 		unsigned int b;	/* end of range */
 		unsigned int s;	/* stride */
 		const char *c1, *c2;
-		char c;
 
-		if ((r = sscanf(p, "%u%c", &a, &c)) < 1)
+		if (nextnumber(p, &end, &a) != 0)
 			return 1;
 		b = a;
 		s = 1;
+		p = end;
 
 		c1 = nexttoken(p, '-');
 		c2 = nexttoken(p, ',');
+
 		if (c1 != NULL && (c2 == NULL || c1 < c2)) {
-			if ((r = sscanf(c1, "%u%c", &b, &c)) < 1)
+			if (nextnumber(c1, &end, &b) != 0)
 				return 1;
-			c1 = nexttoken(c1, ':');
+
+			c1 = end && *end ? nexttoken(end, ':') : NULL;
+
 			if (c1 != NULL && (c2 == NULL || c1 < c2)) {
-				if ((r = sscanf(c1, "%u%c", &s, &c)) < 1)
+				if (nextnumber(c1, &end, &s) != 0)
 					return 1;
 				if (s == 0)
 					return 1;
@@ -319,12 +331,12 @@ int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize, int fail)
 		}
 	}
 
-	if (r == 2)
+	if (end && *end)
 		return 1;
 	return 0;
 }
 
-#ifdef TEST_PROGRAM
+#ifdef TEST_PROGRAM_CPUSET
 
 #include <getopt.h>
 
@@ -336,10 +348,10 @@ int main(int argc, char *argv[])
 	int ncpus = 2048, rc, c;
 
 	static const struct option longopts[] = {
-	    { "ncpus", 1, 0, 'n' },
-	    { "mask",  1, 0, 'm' },
-	    { "range", 1, 0, 'r' },
-	    { NULL,    0, 0, 0 }
+	    { "ncpus", 1, NULL, 'n' },
+	    { "mask",  1, NULL, 'm' },
+	    { "range", 1, NULL, 'r' },
+	    { NULL,    0, NULL, 0 }
 	};
 
 	while ((c = getopt_long(argc, argv, "n:m:r:", longopts, NULL)) != -1) {
@@ -396,7 +408,7 @@ int main(int argc, char *argv[])
 
 usage_err:
 	fprintf(stderr,
-		"usage: %s [--ncpus <num>] --mask <mask> | --range <list>",
+		"usage: %s [--ncpus <num>] --mask <mask> | --range <list>\n",
 		program_invocation_short_name);
 	exit(EXIT_FAILURE);
 }

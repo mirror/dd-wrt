@@ -1,10 +1,20 @@
 /*
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This file is part of libmount from util-linux project.
+ *
+ * Copyright (C) 2011-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ *
  * The symbol versioning ensures that a new application requiring symbol foo,
  * can't run with old library.so not providing foo.
  *
  * Version info can't enforce this since we never change the SONAME.
- *
- * Copyright (C) 2011-2014 Karel Zak <kzak@redhat.com> 
  */
 MOUNT_2.19 {
 global:
@@ -310,3 +320,49 @@ MOUNT_2.26 {
 	mnt_ref_monitor;
 	mnt_unref_monitor;
 } MOUNT_2.25;
+
+MOUNT_2.28 {
+	mnt_table_find_target_with_option;
+	mnt_fs_set_priority;
+} MOUNT_2.26;
+
+MOUNT_2.30 {
+	mnt_context_is_rwonly_mount;
+	mnt_context_forced_rdonly;
+	mnt_context_enable_rwonly_mount;
+	mnt_context_get_excode;
+} MOUNT_2.28;
+
+MOUNT_2.33 {
+	mnt_context_get_origin_ns;
+	mnt_context_get_target_ns;
+	mnt_context_set_target_ns;
+	mnt_context_switch_ns;
+	mnt_context_switch_origin_ns;
+	mnt_context_switch_target_ns;
+} MOUNT_2.30;
+
+MOUNT_2.34 {
+	mnt_context_next_remount;
+	mnt_fs_get_table;
+	mnt_guess_system_root;
+	mnt_table_find_fs;
+	mnt_table_insert_fs;
+	mnt_table_move_fs;
+} MOUNT_2.33;
+
+MOUNT_2_35 {
+	mnt_context_force_unrestricted;
+	mnt_context_get_target_prefix;
+	mnt_context_set_target_prefix;
+} MOUNT_2.34;
+
+MOUNT_2_37 {
+	mnt_fs_get_vfs_options_all;
+	mnt_table_over_fs;
+} MOUNT_2_35;
+
+
+MOUNT_2_38 {
+	mnt_fs_is_regularfs;
+} MOUNT_2_37;

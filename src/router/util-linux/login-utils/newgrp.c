@@ -60,9 +60,10 @@ static char *xgetpass(FILE *input, const char *prompt)
 	return pass;
 }
 
+#ifndef HAVE_EXPLICIT_BZERO
 /* Ensure memory is set to value c without compiler optimization getting
  * into way that could happen with memset(3). */
-static int memset_s(void *v, size_t sz, const int c)
+static int xmemset_s(void *v, size_t sz, const int c)
 {
 	volatile unsigned char *p = v;
 
@@ -72,6 +73,7 @@ static int memset_s(void *v, size_t sz, const int c)
 		*p++ = c;
 	return 0;
 }
+#endif
 
 /* try to read password from gshadow */
 static char *get_gshadow_pwd(const char *groupname)
@@ -121,7 +123,7 @@ static int allow_setgid(const struct passwd *pe, const struct group *ge)
 {
 	char **look;
 	int notfound = 1;
-	char *pwd, *xpwd;
+	char *pwd, *xpwd, *spwd;
 
 	if (getuid() == 0)
 		/* root may do anything */
@@ -142,13 +144,17 @@ static int allow_setgid(const struct passwd *pe, const struct group *ge)
 	 * as in /etc/passwd */
 
 	/* check /etc/gshadow */
-	if (!(pwd = get_gshadow_pwd(ge->gr_name)))
-		pwd = ge->gr_passwd;
+	spwd = get_gshadow_pwd(ge->gr_name);
+	pwd = spwd ? spwd : ge->gr_passwd;
 
 	if (pwd && *pwd && (xpwd = xgetpass(stdin, _("Password: ")))) {
 		char *cbuf = crypt(xpwd, pwd);
 
-		memset_s(xpwd, strlen(xpwd), 0);
+#ifdef HAVE_EXPLICIT_BZERO
+		explicit_bzero(xpwd, strlen(xpwd));
+#else
+		xmemset_s(xpwd, strlen(xpwd), 0);
+#endif
 		free(xpwd);
 		if (!cbuf)
 			warn(_("crypt failed"));
@@ -156,23 +162,25 @@ static int allow_setgid(const struct passwd *pe, const struct group *ge)
 			return TRUE;
 	}
 
+	free(spwd);
+
 	/* default to denial */
 	return FALSE;
 }
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+static void __attribute__((__noreturn__)) usage(void)
 {
-	fprintf(out, USAGE_HEADER);
+	FILE *out = stdout;
+	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s <group>\n"), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Log in to a new group.\n"), out);
 
-	fprintf(out, USAGE_OPTIONS);
-	fprintf(out, USAGE_HELP);
-	fprintf(out, USAGE_VERSION);
-	fprintf(out, USAGE_MAN_TAIL("newgrp(1)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	fputs(USAGE_OPTIONS, out);
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("newgrp(1)"));
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -180,7 +188,7 @@ int main(int argc, char *argv[])
 	struct passwd *pw_entry;
 	struct group *gr_entry;
 	char *shell;
-	char ch;
+	int ch;
 	static const struct option longopts[] = {
 		{"version", no_argument, NULL, 'V'},
 		{"help", no_argument, NULL, 'h'},
@@ -190,17 +198,16 @@ int main(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((ch = getopt_long(argc, argv, "Vh", longopts, NULL)) != -1)
 		switch (ch) {
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 
 	if (!(pw_entry = getpwuid(getuid())))
@@ -229,9 +236,6 @@ int main(int argc, char *argv[])
 	fflush(NULL);
 	shell = (pw_entry->pw_shell && *pw_entry->pw_shell ?
 				pw_entry->pw_shell : _PATH_BSHELL);
-	execl(shell, shell, (char *)0);
-	warn(_("failed to execute %s"), shell);
-	fflush(stderr);
-
-	return EXIT_FAILURE;
+	execl(shell, shell, (char *)NULL);
+	errexec(shell);
 }

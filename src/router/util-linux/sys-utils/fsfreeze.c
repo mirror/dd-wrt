@@ -33,34 +33,24 @@ enum fs_operation {
 	UNFREEZE
 };
 
-static int freeze_f(int fd)
+static void __attribute__((__noreturn__)) usage(void)
 {
-	return ioctl(fd, FIFREEZE, 0);
-}
-
-static int unfreeze_f(int fd)
-{
-	return ioctl(fd, FITHAW, 0);
-}
-
-static void __attribute__((__noreturn__)) usage(FILE *out)
-{
-	fprintf(out, USAGE_HEADER);
+	FILE *out = stdout;
+	fputs(USAGE_HEADER, out);
 	fprintf(out,
 	      _(" %s [options] <mountpoint>\n"), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(_("Suspend access to a filesystem (ext3/4, ReiserFS, JFS, XFS).\n"), out);
+	fputs(_("Suspend access to a filesystem.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
 	fputs(_(" -f, --freeze      freeze the filesystem\n"), out);
 	fputs(_(" -u, --unfreeze    unfreeze the filesystem\n"), out);
-	fprintf(out, USAGE_SEPARATOR);
-	fprintf(out, USAGE_HELP);
-	fprintf(out, USAGE_VERSION);
-	fprintf(out, USAGE_MAN_TAIL("fsfreeze(8)"));
+	fputs(USAGE_SEPARATOR, out);
+	printf(USAGE_HELP_OPTIONS(19));
+	printf(USAGE_MAN_TAIL("fsfreeze(8)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -71,14 +61,14 @@ int main(int argc, char **argv)
 	struct stat sb;
 
 	static const struct option longopts[] = {
-	    { "help",      0, 0, 'h' },
-	    { "freeze",    0, 0, 'f' },
-	    { "unfreeze",  0, 0, 'u' },
-	    { "version",   0, 0, 'V' },
-	    { NULL,        0, 0, 0 }
+	    { "help",      no_argument, NULL, 'h' },
+	    { "freeze",    no_argument, NULL, 'f' },
+	    { "unfreeze",  no_argument, NULL, 'u' },
+	    { "version",   no_argument, NULL, 'V' },
+	    { NULL, 0, NULL, 0 }
 	};
 
-	static const ul_excl_t excl[] = {       /* rows and cols in in ASCII order */
+	static const ul_excl_t excl[] = {       /* rows and cols in ASCII order */
 		{ 'f','u' },			/* freeze, unfreeze */
 		{ 0 }
 	};
@@ -87,28 +77,26 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	while ((c = getopt_long(argc, argv, "hfuV", longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
 
 		switch(c) {
-		case 'h':
-			usage(stdout);
-			break;
 		case 'f':
 			action = FREEZE;
 			break;
 		case 'u':
 			action = UNFREEZE;
 			break;
+
+		case 'h':
+			usage();
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			exit(EXIT_SUCCESS);
+			print_version(EXIT_SUCCESS);
 		default:
-			usage(stderr);
-			break;
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
@@ -120,7 +108,7 @@ int main(int argc, char **argv)
 
 	if (optind != argc) {
 		warnx(_("unexpected number of arguments"));
-		usage(stderr);
+		errtryhelp(EXIT_FAILURE);
 	}
 
 	fd = open(path, O_RDONLY);
@@ -139,13 +127,13 @@ int main(int argc, char **argv)
 
 	switch (action) {
 	case FREEZE:
-		if (freeze_f(fd)) {
+		if (ioctl(fd, FIFREEZE, 0)) {
 			warn(_("%s: freeze failed"), path);
 			goto done;
 		}
 		break;
 	case UNFREEZE:
-		if (unfreeze_f(fd)) {
+		if (ioctl(fd, FITHAW, 0)) {
 			warn(_("%s: unfreeze failed"), path);
 			goto done;
 		}
@@ -156,8 +144,7 @@ int main(int argc, char **argv)
 
 	rc = EXIT_SUCCESS;
 done:
-	if (fd >= 0)
-		close(fd);
+	close(fd);
 	return rc;
 }
 

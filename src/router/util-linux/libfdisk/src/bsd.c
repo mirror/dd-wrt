@@ -16,7 +16,6 @@
 #include <errno.h>
 #include <sys/param.h>
 
-#include "nls.h"
 #include "blkdev.h"
 #include "fdiskP.h"
 #include "pt-mbr.h"
@@ -43,7 +42,7 @@ static const char *bsd_dktypenames[] = {
 	"HP-FL",
 	"type 9",
 	"floppy",
-	0
+	NULL
 };
 #define BSD_DKMAXTYPES	(ARRAY_SIZE(bsd_dktypenames) - 1)
 
@@ -89,7 +88,6 @@ struct fdisk_bsd_label {
 #endif
 };
 
-static int bsd_list_disklabel(struct fdisk_context *cxt);
 static int bsd_initlabel(struct fdisk_context *cxt);
 static int bsd_readlabel(struct fdisk_context *cxt);
 static void sync_disks(struct fdisk_context *cxt);
@@ -192,7 +190,7 @@ static int bsd_probe_label(struct fdisk_context *cxt)
 	int rc = 0;
 
 	if (cxt->parent)
-		rc = bsd_assign_dos_partition(cxt);	/* nested BSD partiotn table */
+		rc = bsd_assign_dos_partition(cxt);	/* nested BSD partition table */
 	if (!rc)
 		rc = bsd_readlabel(cxt);
 	if (!rc)
@@ -290,12 +288,12 @@ static int bsd_add_partition(struct fdisk_context *cxt,
 		fdisk_ask_set_type(ask, FDISK_ASKTYPE_OFFSET);
 
 		if (fdisk_use_cylinders(cxt)) {
-			fdisk_ask_set_query(ask, _("Last cylinder, +cylinders or +size{K,M,G,T,P}"));
+			fdisk_ask_set_query(ask, _("Last cylinder, +/-cylinders or +/-size{K,M,G,T,P}"));
 			fdisk_ask_number_set_unit(ask,
 				     cxt->sector_size *
 				     fdisk_get_units_per_sector(cxt));
 		} else {
-			fdisk_ask_set_query(ask, _("Last sector, +sectors or +size{K,M,G,T,P}"));
+			fdisk_ask_set_query(ask, _("Last sector, +/-sectors or +/-size{K,M,G,T,P}"));
 			fdisk_ask_number_set_unit(ask,cxt->sector_size);
 		}
 
@@ -303,6 +301,7 @@ static int bsd_add_partition(struct fdisk_context *cxt,
 		fdisk_ask_number_set_default(ask, fdisk_cround(cxt, end));
 		fdisk_ask_number_set_high(ask, fdisk_cround(cxt, end));
 		fdisk_ask_number_set_base(ask, fdisk_cround(cxt, begin));
+		fdisk_ask_number_set_wrap_negative(ask, 1); /* wrap negative around high */
 
 		rc = fdisk_do_ask(cxt, ask);
 		end = fdisk_ask_number_get_result(ask);
@@ -398,14 +397,8 @@ static int bsd_create_disklabel(struct fdisk_context *cxt)
 
 	rc = bsd_initlabel(cxt);
 	if (!rc) {
-		int org = fdisk_is_details(cxt);
-
 		cxt->label->nparts_cur = d->d_npartitions;
 		cxt->label->nparts_max = BSD_MAXPARTITIONS;
-
-		fdisk_enable_details(cxt, 1);
-		bsd_list_disklabel(cxt);
-		fdisk_enable_details(cxt, org);
 	}
 
 	return rc;
@@ -430,48 +423,114 @@ static int bsd_delete_part(
 	return 0;
 }
 
-static int bsd_list_disklabel(struct fdisk_context *cxt)
+static int bsd_get_disklabel_item(struct fdisk_context *cxt, struct fdisk_labelitem *item)
 {
-	struct bsd_disklabel *d = self_disklabel(cxt);
+	struct bsd_disklabel *d;
+	int rc = 0;
 
 	assert(cxt);
 	assert(cxt->label);
 	assert(fdisk_is_label(cxt, BSD));
 
-	if (fdisk_is_details(cxt)) {
-		fdisk_info(cxt, "# %s:", cxt->dev_path);
+	d = self_disklabel(cxt);
 
-		if ((unsigned) d->d_type < BSD_DKMAXTYPES)
-			fdisk_info(cxt, _("type: %s"), bsd_dktypenames[d->d_type]);
-		else
-			fdisk_info(cxt, _("type: %d"), d->d_type);
-
-		fdisk_info(cxt, _("disk: %.*s"), (int) sizeof(d->d_typename), d->d_typename);
-		fdisk_info(cxt, _("label: %.*s"), (int) sizeof(d->d_packname), d->d_packname);
-
-		fdisk_info(cxt, _("flags: %s"),
+	switch (item->id) {
+	case BSD_LABELITEM_TYPE:
+		item->name = _("Type");
+		item->type = 's';
+		if ((unsigned) d->d_type < BSD_DKMAXTYPES) {
+			item->data.str = strdup(bsd_dktypenames[d->d_type]);
+			if (!item->data.str)
+				rc = -ENOMEM;
+		} else if (asprintf(&item->data.str, "%d", d->d_type) < 0)
+			rc = -ENOMEM;
+		break;
+	case BSD_LABELITEM_DISK:
+		item->name = _("Disk");
+		item->type = 's';
+		item->data.str = strndup(d->d_typename, sizeof(d->d_typename));
+		if (!item->data.str)
+			rc = -ENOMEM;
+		break;
+	case BSD_LABELITEM_PACKNAME:
+		item->name = _("Packname");
+		item->type = 's';
+		item->data.str = strndup(d->d_packname, sizeof(d->d_packname));
+		if (!item->data.str)
+			rc = -ENOMEM;
+		break;
+	case BSD_LABELITEM_FLAGS:
+		item->name = _("Flags");
+		item->type = 's';
+		item->data.str = strdup(
 			d->d_flags & BSD_D_REMOVABLE ? _(" removable") :
 			d->d_flags & BSD_D_ECC ? _(" ecc") :
 			d->d_flags & BSD_D_BADSECT ? _(" badsect") : "");
+		if (!item->data.str)
+			rc = -ENOMEM;
+		break;
 
-		/* On various machines the fields of *lp are short/int/long */
-		/* In order to avoid problems, we cast them all to long. */
-		fdisk_info(cxt, _("bytes/sector: %ld"), (long) d->d_secsize);
-		fdisk_info(cxt, _("sectors/track: %ld"), (long) d->d_nsectors);
-		fdisk_info(cxt, _("tracks/cylinder: %ld"), (long) d->d_ntracks);
-		fdisk_info(cxt, _("sectors/cylinder: %ld"), (long) d->d_secpercyl);
-		fdisk_info(cxt, _("cylinders: %ld"), (long) d->d_ncylinders);
-		fdisk_info(cxt, _("rpm: %d"), d->d_rpm);
-		fdisk_info(cxt, _("interleave: %d"), d->d_interleave);
-		fdisk_info(cxt, _("trackskew: %d"), d->d_trackskew);
-		fdisk_info(cxt, _("cylinderskew: %d"), d->d_cylskew);
-		fdisk_info(cxt, _("headswitch: %ld (milliseconds)"), (long) d->d_headswitch);
-		fdisk_info(cxt, _("track-to-track seek: %ld (milliseconds)"), (long) d->d_trkseek);
+	/* On various machines the fields of *lp are short/int/long */
+	/* In order to avoid problems, we cast them all uint64. */
+	case BSD_LABELITEM_SECSIZE:
+		item->name = _("Bytes/Sector");
+		item->type = 'j';
+		item->data.num64 = (uint64_t) d->d_secsize;
+		break;
+	case BSD_LABELITEM_NTRACKS:
+		item->name = _("Tracks/Cylinder");
+		item->type = 'j';
+		item->data.num64 = (uint64_t) d->d_ntracks;
+		break;
+	case BSD_LABELITEM_SECPERCYL:
+		item->name = _("Sectors/Cylinder");
+		item->data.num64 = (uint64_t) d->d_secpercyl;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_CYLINDERS:
+		item->name = _("Cylinders");
+		item->data.num64 = (uint64_t) d->d_ncylinders;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_RPM:
+		item->name = _("Rpm");
+		item->data.num64 = (uint64_t) d->d_rpm;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_INTERLEAVE:
+		item->name = _("Interleave");
+		item->data.num64 = (uint64_t) d->d_interleave;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_TRACKSKEW:
+		item->name = _("Trackskew");
+		item->data.num64 = (uint64_t) d->d_trackskew;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_CYLINDERSKEW:
+		item->name = _("Cylinderskew");
+		item->data.num64 = (uint64_t) d->d_cylskew;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_HEADSWITCH:
+		item->name = _("Headswitch");
+		item->data.num64 = (uint64_t) d->d_headswitch;
+		item->type = 'j';
+		break;
+	case BSD_LABELITEM_TRKSEEK:
+		item->name = _("Track-to-track seek");
+		item->data.num64 = (uint64_t) d->d_trkseek;
+		item->type = 'j';
+		break;
+	default:
+		if (item->id < __FDISK_NLABELITEMS)
+			rc = 1;	/* unsupported generic item */
+		else
+			rc = 2;	/* out of range */
+		break;
 	}
 
-	fdisk_info(cxt, _("partitions: %d"), d->d_npartitions);
-
-	return 0;
+	return rc;
 }
 
 static int bsd_get_partition(struct fdisk_context *cxt, size_t n,
@@ -556,8 +615,9 @@ int fdisk_bsd_edit_disklabel(struct fdisk_context *cxt)
 	d->d_ntracks = ask_uint32(cxt, d->d_ntracks, _("tracks/cylinder"));
 	d->d_ncylinders = ask_uint32(cxt, d->d_ncylinders  ,_("cylinders"));
 #endif
-	if (fdisk_ask_number(cxt, 1, d->d_nsectors * d->d_ntracks,
-			     d->d_nsectors * d->d_ntracks,
+	if (fdisk_ask_number(cxt, 1,
+			(uintmax_t) d->d_nsectors * d->d_ntracks,
+			(uintmax_t) d->d_nsectors * d->d_ntracks,
 			     _("sectors/cylinder"), &res) == 0)
 		d->d_secpercyl = res;
 
@@ -677,13 +737,20 @@ done:
 
 static unsigned short bsd_dkcksum (struct bsd_disklabel *lp)
 {
-	unsigned short *start, *end;
+	unsigned char *ptr, *end;
 	unsigned short sum = 0;
 
-	start = (unsigned short *) lp;
-	end = (unsigned short *) &lp->d_partitions[lp->d_npartitions];
-	while (start < end)
-		sum ^= *start++;
+	ptr = (unsigned char *) lp;
+	end = (unsigned char *) &lp->d_partitions[lp->d_npartitions];
+
+	while (ptr < end) {
+		unsigned short val;
+
+		memcpy(&val, ptr, sizeof(unsigned short));
+		sum ^= val;
+
+		ptr += sizeof(unsigned short);
+	}
 	return sum;
 }
 
@@ -800,6 +867,9 @@ static int bsd_readlabel(struct fdisk_context *cxt)
 	cxt->geom.heads = d->d_ntracks;
 	cxt->geom.cylinders = d->d_ncylinders;
 
+	if (fdisk_has_user_device_geometry(cxt))
+		fdisk_apply_user_device_properties(cxt);
+
 	cxt->label->nparts_cur = d->d_npartitions;
 	cxt->label->nparts_max = BSD_MAXPARTITIONS;
 	DBG(LABEL, ul_debug("read BSD label"));
@@ -837,7 +907,11 @@ static int bsd_write_disklabel(struct fdisk_context *cxt)
 	}
 	sync_disks(cxt);
 
-	fdisk_info(cxt, _("Disklabel written to %s."), cxt->dev_path);
+	if (cxt->parent && fdisk_label_is_changed(cxt->parent->label))
+		fdisk_info(cxt, _("Disklabel written to %s.  (Don't forget to write the %s disklabel too.)"),
+				cxt->dev_path, cxt->parent->dev_path);
+	else
+		fdisk_info(cxt, _("Disklabel written to %s."), cxt->dev_path);
 	return 0;
 }
 
@@ -934,7 +1008,7 @@ static int bsd_partition_is_used(
 static const struct fdisk_label_operations bsd_operations =
 {
 	.probe		= bsd_probe_label,
-	.list		= bsd_list_disklabel,
+	.get_item	= bsd_get_disklabel_item,
 	.write		= bsd_write_disklabel,
 	.create		= bsd_create_disklabel,
 
@@ -963,12 +1037,10 @@ static const struct fdisk_field bsd_fields[] =
 /*
  * allocates BSD label driver
  */
-struct fdisk_label *fdisk_new_bsd_label(struct fdisk_context *cxt)
+struct fdisk_label *fdisk_new_bsd_label(struct fdisk_context *cxt __attribute__ ((__unused__)))
 {
 	struct fdisk_label *lb;
 	struct fdisk_bsd_label *bsd;
-
-	assert(cxt);
 
 	bsd = calloc(1, sizeof(*bsd));
 	if (!bsd)
@@ -988,5 +1060,6 @@ struct fdisk_label *fdisk_new_bsd_label(struct fdisk_context *cxt)
 	lb->flags |= FDISK_LABEL_FL_INCHARS_PARTNO;
 	lb->flags |= FDISK_LABEL_FL_REQUIRE_GEOMETRY;
 
-	return lb;
+	/* return calloc() result to keep static anaylizers happy */
+	return (struct fdisk_label *) bsd;
 }

@@ -1,43 +1,44 @@
-blkid:  libblkid libuuid 
-eject:  libblkid libmount libuuid 
-findfs:  libblkid libuuid 
-fsck:  libblkid libmount libuuid 
-fstrim:  libblkid libmount libuuid 
-libblkid.so.1.1.0:  libuuid 
+blkdiscard:  libblkid 
+blkid:  libblkid 
+eject:  libmount 
+findfs:  libblkid 
+fsck:  libblkid libmount 
+fstrim:  libmount 
+libblkid.so.1.1.0:  
 libfdisk.so.1.1.0:  libblkid libuuid 
-libmount.so.1.1.0:  libblkid libuuid 
+libmount.so.1.1.0:  libblkid 
 libuuid.so.1.3.0:  
 mkswap:  libblkid libuuid 
-mount:  libblkid libmount libuuid 
-mountpoint:  libblkid libmount libuuid 
-pylibmount.so:  libblkid libmount libpython2 libuuid 
+mount:  libmount 
+mountpoint:  libmount 
+pylibmount.so:  libblkid libmount 
 swaplabel:  libblkid libuuid 
-umount:  libblkid libmount libuuid 
+umount:  libmount 
 uuidd:  libsystemd libuuid 
 uuidgen:  libuuid 
-wipefs:  libblkid libuuid 
 agetty:  
-blkdiscard:  
+blkzone:  
 blockdev:  
-cal:  libncursesw libtinfo 
+cal:  libtinfo 
 chcpu:  
-chfn:  libpam libpam_misc libpthread libuser 
+chfn:  libpam libpam_misc libuser 
+chmem:  
+choom:  
 chrt:  
-chsh:  libpam libpam_misc libpthread libuser 
+chsh:  libpam libpam_misc libuser 
 col:  
 colcrt:  
 colrm:  
-column:  
 ctrlaltdel:  
-dmesg:  
+dmesg:  libtinfo 
 fallocate:  
-fdformat:  
 flock:  
 fsck.cramfs:  libz 
 fsck.minix:  
 fsfreeze:  
 getopt:  
-hexdump:  
+hardlink:  
+hexdump:  libtinfo 
 hwclock:  libm 
 ionice:  
 ipcmk:  
@@ -60,26 +61,25 @@ more:  libtinfo
 namei:  
 nologin:  
 nsenter:  
-pg:  libncursesw libtinfo 
 pivot_root:  
-raw:  
 readprofile:  
 rename:  
 renice:  
 rev:  
 rtcwake:  
 runuser:  libpam libpam_misc 
-script:  libutil 
+script:  
+scriptlive:  
 scriptreplay:  
 setarch:  
-setpriv:  ap-ng 
+setpriv:  libcap-ng 
 setsid:  
 setterm:  libtinfo 
 su:  libpam libpam_misc 
-sulogin:  rypt 
+sulogin:  libcrypt 
 switch_root:  
-tailf:  
 taskset:  
+uclampset:  
 ul:  libtinfo 
 unshare:  
 utmpdump:  

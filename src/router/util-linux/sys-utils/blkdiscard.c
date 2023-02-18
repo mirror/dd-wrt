@@ -38,6 +38,10 @@
 #include <sys/time.h>
 #include <linux/fs.h>
 
+#ifdef HAVE_LIBBLKID
+# include <blkid.h>
+#endif
+
 #include "nls.h"
 #include "strutils.h"
 #include "c.h"
@@ -45,19 +49,41 @@
 #include "monotonic.h"
 
 #ifndef BLKDISCARD
-#define BLKDISCARD	_IO(0x12,119)
+# define BLKDISCARD	_IO(0x12,119)
 #endif
 
 #ifndef BLKSECDISCARD
-#define BLKSECDISCARD	_IO(0x12,125)
+# define BLKSECDISCARD	_IO(0x12,125)
 #endif
 
-#define print_stats(path, stats) \
-	printf(_("%s: Discarded %" PRIu64 " bytes from the " \
-		 "offset %" PRIu64"\n"), path, stats[1], stats[0]);
+#ifndef BLKZEROOUT
+# define BLKZEROOUT	_IO(0x12,127)
+#endif
 
-static void __attribute__((__noreturn__)) usage(FILE *out)
+enum {
+	ACT_DISCARD = 0,	/* default */
+	ACT_ZEROOUT,
+	ACT_SECURE
+};
+
+static void print_stats(int act, char *path, uint64_t stats[])
 {
+	switch (act) {
+	case ACT_ZEROOUT:
+		printf(_("%s: Zero-filled %" PRIu64 " bytes from the offset %" PRIu64"\n"), \
+			path, stats[1], stats[0]);
+		break;
+	case ACT_SECURE:
+	case ACT_DISCARD:
+		printf(_("%s: Discarded %" PRIu64 " bytes from the offset %" PRIu64"\n"), \
+			path, stats[1], stats[0]);
+		break;
+	}
+}
+
+static void __attribute__((__noreturn__)) usage(void)
+{
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out,
 	      _(" %s [options] <device>\n"), program_invocation_short_name);
@@ -66,55 +92,98 @@ static void __attribute__((__noreturn__)) usage(FILE *out)
 	fputs(_("Discard the content of sectors on a device.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(_(" -o, --offset <num>  offset in bytes to discard from\n"
-		" -l, --length <num>  length of bytes to discard from the offset\n"
-		" -p, --step <num>    size of the discard iterations within the offset\n"
-		" -s, --secure        perform secure discard\n"
-		" -v, --verbose       print aligned length and offset\n"),
-		out);
+	fputs(_(" -f, --force         disable all checking\n"), out);
+	fputs(_(" -o, --offset <num>  offset in bytes to discard from\n"), out);
+	fputs(_(" -l, --length <num>  length of bytes to discard from the offset\n"), out);
+	fputs(_(" -p, --step <num>    size of the discard iterations within the offset\n"), out);
+	fputs(_(" -s, --secure        perform secure discard\n"), out);
+	fputs(_(" -z, --zeroout       zero-fill rather than discard\n"), out);
+	fputs(_(" -v, --verbose       print aligned length and offset\n"), out);
+
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("blkdiscard(8)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	printf(USAGE_HELP_OPTIONS(21));
+
+	fputs(USAGE_ARGUMENTS, out);
+	printf(USAGE_ARG_SIZE(_("<num>")));
+
+	printf(USAGE_MAN_TAIL("blkdiscard(8)"));
+	exit(EXIT_SUCCESS);
 }
+
+#ifdef HAVE_LIBBLKID
+/*
+ * Check existing signature on the open fd
+ * Returns	0  signature found
+ * 		1  no signature
+ * 		<0 error
+ */
+static int probe_device(int fd, char *path)
+{
+	const char *type;
+	blkid_probe pr = NULL;
+	int ret = -1;
+
+	pr = blkid_new_probe();
+	if (!pr || blkid_probe_set_device(pr, fd, 0, 0))
+		return ret;
+
+	blkid_probe_enable_superblocks(pr, TRUE);
+	blkid_probe_enable_partitions(pr, TRUE);
+
+	ret = blkid_do_fullprobe(pr);
+	if (ret)
+		goto out;
+
+	if (!blkid_probe_lookup_value(pr, "TYPE", &type, NULL)) {
+		warnx("%s contains existing file system (%s).",path ,type);
+	} else if (!blkid_probe_lookup_value(pr, "PTTYPE", &type, NULL)) {
+		warnx("%s contains existing partition (%s).",path ,type);
+	} else {
+		warnx("%s contains existing signature.", path);
+	}
+
+out:
+	blkid_free_probe(pr);
+	return ret;
+}
+#endif /* HAVE_LIBBLKID */
 
 int main(int argc, char **argv)
 {
 	char *path;
-	int c, fd, verbose = 0, secure = 0, secsize;
+	int c, fd, verbose = 0, secsize, force = 0;
 	uint64_t end, blksize, step, range[2], stats[2];
 	struct stat sb;
-	struct timeval now, last;
+	struct timeval now = { 0 }, last = { 0 };
+	int act = ACT_DISCARD;
 
 	static const struct option longopts[] = {
-	    { "help",      0, 0, 'h' },
-	    { "version",   0, 0, 'V' },
-	    { "offset",    1, 0, 'o' },
-	    { "length",    1, 0, 'l' },
-	    { "step",      1, 0, 'p' },
-	    { "secure",    0, 0, 's' },
-	    { "verbose",   0, 0, 'v' },
-	    { NULL,        0, 0, 0 }
+	    { "help",      no_argument,       NULL, 'h' },
+	    { "version",   no_argument,       NULL, 'V' },
+	    { "offset",    required_argument, NULL, 'o' },
+	    { "force",     no_argument,       NULL, 'f' },
+	    { "length",    required_argument, NULL, 'l' },
+	    { "step",      required_argument, NULL, 'p' },
+	    { "secure",    no_argument,       NULL, 's' },
+	    { "verbose",   no_argument,       NULL, 'v' },
+	    { "zeroout",   no_argument,       NULL, 'z' },
+	    { NULL, 0, NULL, 0 }
 	};
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
 	range[0] = 0;
 	range[1] = ULLONG_MAX;
 	step = 0;
 
-	while ((c = getopt_long(argc, argv, "hVsvo:l:p:", longopts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "hfVsvo:l:p:z", longopts, NULL)) != -1) {
 		switch(c) {
-		case 'h':
-			usage(stdout);
+		case 'f':
+			force = 1;
 			break;
-		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
 		case 'l':
 			range[1] = strtosize_or_err(optarg,
 					_("failed to parse length"));
@@ -128,14 +197,21 @@ int main(int argc, char **argv)
 					_("failed to parse step"));
 			break;
 		case 's':
-			secure = 1;
+			act = ACT_SECURE;
 			break;
 		case 'v':
 			verbose = 1;
 			break;
-		default:
-			usage(stderr);
+		case 'z':
+			act = ACT_ZEROOUT;
 			break;
+
+		case 'h':
+			usage();
+		case 'V':
+			print_version(EXIT_SUCCESS);
+		default:
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
@@ -146,10 +222,10 @@ int main(int argc, char **argv)
 
 	if (optind != argc) {
 		warnx(_("unexpected number of arguments"));
-		usage(stderr);
+		errtryhelp(EXIT_FAILURE);
 	}
 
-	fd = open(path, O_WRONLY);
+	fd = open(path, O_RDWR | (force ? 0 : O_EXCL));
 	if (fd < 0)
 		err(EXIT_FAILURE, _("cannot open %s"), path);
 
@@ -181,37 +257,70 @@ int main(int argc, char **argv)
 	if (range[1] % secsize)
 		errx(EXIT_FAILURE, _("%s: length %" PRIu64 " is not aligned "
 			 "to sector size %i"), path, range[1], secsize);
+#ifdef HAVE_LIBBLKID
+	if (force)
+		warnx(_("Operation forced, data will be lost!"));
+	else {
+		 /* Check for existing signatures on the device */
+		switch(probe_device(fd, path)) {
+		case 0: /* signature detected */
+			/*
+			 * Only require force in interactive mode to avoid
+			 * breaking existing scripts
+			 */
+			if (isatty(STDIN_FILENO)) {
+				errx(EXIT_FAILURE,
+				     _("This is destructive operation, data will " \
+				       "be lost! Use the -f option to override."));
+			}
+			break;
+		case 1: /* no signature */
+			break;
+		default: /* error */
+			err(EXIT_FAILURE, _("failed to probe the device"));
+			break;
+		}
+	}
+#endif /* HAVE_LIBBLKID */
 
 	stats[0] = range[0], stats[1] = 0;
 	gettime_monotonic(&last);
 
-	for (range[0] = range[0]; range[0] < end; range[0] += range[1]) {
+	for (/* nothing */; range[0] < end; range[0] += range[1]) {
 		if (range[0] + range[1] > end)
 			range[1] = end - range[0];
 
-		if (secure) {
+		switch (act) {
+		case ACT_ZEROOUT:
+			if (ioctl(fd, BLKZEROOUT, &range))
+				 err(EXIT_FAILURE, _("%s: BLKZEROOUT ioctl failed"), path);
+			break;
+		case ACT_SECURE:
 			if (ioctl(fd, BLKSECDISCARD, &range))
 				err(EXIT_FAILURE, _("%s: BLKSECDISCARD ioctl failed"), path);
-		} else {
+			break;
+		case ACT_DISCARD:
 			if (ioctl(fd, BLKDISCARD, &range))
 				err(EXIT_FAILURE, _("%s: BLKDISCARD ioctl failed"), path);
-		}
-
-		/* reporting progress */
-		if (verbose && step) {
-			gettime_monotonic(&now);
-			if (last.tv_sec < now.tv_sec) {
-				print_stats(path, stats);
-				stats[0] = range[0], stats[1] = 0;
-				last = now;
-			}
+			break;
 		}
 
 		stats[1] += range[1];
+
+		/* reporting progress at most once per second */
+		if (verbose && step) {
+			gettime_monotonic(&now);
+			if (now.tv_sec > last.tv_sec &&
+			    (now.tv_usec >= last.tv_usec || now.tv_sec > last.tv_sec + 1)) {
+				print_stats(act, path, stats);
+				stats[0] += stats[1], stats[1] = 0;
+				last = now;
+			}
+		}
 	}
 
-	if (verbose)
-		print_stats(path, stats);
+	if (verbose && stats[1])
+		print_stats(act, path, stats);
 
 	close(fd);
 	return EXIT_SUCCESS;

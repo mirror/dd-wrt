@@ -1,6 +1,6 @@
 _mkfs_module()
 {
-	local cur prev OPTS DEVS
+	local cur prev OPTS
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -21,7 +21,8 @@ _mkfs_module()
 			return 0
 			;;
 	esac
-	COMPREPLY=( $(compgen -W "$(lsblk -pnro name) /path/to/file" -- $cur) )
+	compopt -o bashdefault -o default
+	COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
 	return 0
 }
 complete -F _mkfs_module mkfs

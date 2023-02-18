@@ -12,12 +12,21 @@ static struct libmnt_table *swaps, *fstab;
 
 struct libmnt_cache *mntcache;
 
+static int table_parser_errcb(struct libmnt_table *tb __attribute__((__unused__)),
+			const char *filename, int line)
+{
+	if (filename)
+		warnx(_("%s: parse error at line %d -- ignored"), filename, line);
+	return 1;
+}
+
 struct libmnt_table *get_fstab(void)
 {
 	if (!fstab) {
 		fstab = mnt_new_table();
 		if (!fstab)
 			return NULL;
+		mnt_table_set_parser_errcb(fstab, table_parser_errcb);
 		mnt_table_set_cache(fstab, mntcache);
 		if (mnt_table_parse_fstab(fstab, NULL) != 0)
 			return NULL;
@@ -33,6 +42,7 @@ struct libmnt_table *get_swaps(void)
 		if (!swaps)
 			return NULL;
 		mnt_table_set_cache(swaps, mntcache);
+		mnt_table_set_parser_errcb(swaps, table_parser_errcb);
 		if (mnt_table_parse_swaps(swaps, NULL) != 0)
 			return NULL;
 	}
@@ -75,7 +85,7 @@ static size_t ulct;
 
 void add_label(const char *label)
 {
-	llist = (const char **) xrealloc(llist, (++llct) * sizeof(char *));
+	llist = xrealloc(llist, (++llct) * sizeof(char *));
 	llist[llct - 1] = label;
 }
 
@@ -91,7 +101,7 @@ size_t numof_labels(void)
 
 void add_uuid(const char *uuid)
 {
-	ulist = (const char **) xrealloc(ulist, (++ulct) * sizeof(char *));
+	ulist = xrealloc(ulist, (++ulct) * sizeof(char *));
 	ulist[ulct - 1] = uuid;
 }
 

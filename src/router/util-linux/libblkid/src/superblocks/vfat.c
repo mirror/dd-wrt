@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "pt-mbr.h"
 #include "superblocks.h"
@@ -42,7 +43,9 @@ struct vfat_super_block {
 /* 30*/	uint16_t	vs_fsinfo_sector;
 /* 32*/	uint16_t	vs_backup_boot;
 /* 34*/	uint16_t	vs_reserved2[6];
-/* 40*/	unsigned char	vs_unknown[3];
+/* 40*/	unsigned char	vs_drive_number;
+/* 41*/	unsigned char	vs_boot_flags;
+/* 42*/	unsigned char	vs_ext_boot_sign; /* 0x28 - without vs_label/vs_magic; 0x29 - with */
 /* 43*/	unsigned char	vs_serno[4];
 /* 47*/	unsigned char	vs_label[11];
 /* 52*/	unsigned char   vs_magic[8];
@@ -52,6 +55,7 @@ struct vfat_super_block {
 
 /* Yucky misaligned values */
 struct msdos_super_block {
+/* DOS 2.0 BPB */
 /* 00*/	unsigned char	ms_ignored[3];
 /* 03*/	unsigned char	ms_sysid[8];
 /* 0b*/	unsigned char	ms_sector_size[2];
@@ -62,16 +66,21 @@ struct msdos_super_block {
 /* 13*/	unsigned char	ms_sectors[2]; /* =0 iff V3 or later */
 /* 15*/	unsigned char	ms_media;
 /* 16*/	uint16_t	ms_fat_length; /* Sectors per FAT */
+/* DOS 3.0 BPB */
 /* 18*/	uint16_t	ms_secs_track;
 /* 1a*/	uint16_t	ms_heads;
 /* 1c*/	uint32_t	ms_hidden;
-/* V3 BPB */
+/* DOS 3.31 BPB */
 /* 20*/	uint32_t	ms_total_sect; /* iff ms_sectors == 0 */
-/* V4 BPB */
-/* 24*/	unsigned char	ms_unknown[3]; /* Phys drive no., resvd, V4 sig (0x29) */
+/* DOS 3.4 EBPB */
+/* 24*/	unsigned char	ms_drive_number;
+/* 25*/	unsigned char	ms_boot_flags;
+/* 26*/	unsigned char	ms_ext_boot_sign; /* 0x28 - DOS 3.4 EBPB; 0x29 - DOS 4.0 EBPB */
 /* 27*/	unsigned char	ms_serno[4];
+/* DOS 4.0 EBPB */
 /* 2b*/	unsigned char	ms_label[11];
 /* 36*/	unsigned char   ms_magic[8];
+/* padding */
 /* 3e*/	unsigned char	ms_dummy2[0x1fe - 0x3e];
 /*1fe*/	unsigned char	ms_pmagic[2];
 } __attribute__((packed));
@@ -125,14 +134,14 @@ static unsigned char *search_fat_label(blkid_probe pr,
 	uint32_t i;
 
 	DBG(LOWPROBE, ul_debug("\tlook for label in root-dir "
-			"(entries: %d, offset: %jd)", entries, offset));
+			"(entries: %"PRIu32", offset: %"PRIu64")", entries, offset));
 
 	if (!blkid_probe_is_tiny(pr)) {
 		/* large disk, read whole root directory */
 		dir = (struct vfat_dir_entry *)
 			blkid_probe_get_buffer(pr,
 					offset,
-					(blkid_loff_t) entries *
+					(uint64_t) entries *
 						sizeof(struct vfat_dir_entry));
 		if (!dir)
 			return NULL;
@@ -147,7 +156,7 @@ static unsigned char *search_fat_label(blkid_probe pr,
 		if (!dir)
 			ent = (struct vfat_dir_entry *)
 				blkid_probe_get_buffer(pr,
-					(blkid_loff_t) offset + (i *
+					(uint64_t) offset + (i *
 						sizeof(struct vfat_dir_entry)),
 					sizeof(struct vfat_dir_entry));
 		else
@@ -164,6 +173,8 @@ static unsigned char *search_fat_label(blkid_probe pr,
 		if ((ent->attr & (FAT_ATTR_VOLUME_ID | FAT_ATTR_DIR)) ==
 		    FAT_ATTR_VOLUME_ID) {
 			DBG(LOWPROBE, ul_debug("\tfound fs LABEL at entry %d", i));
+			if (ent->name[0] == 0x05)
+				ent->name[0] = 0xE5;
 			return ent->name;
 		}
 	}
@@ -196,8 +207,10 @@ static int fat_valid_superblock(blkid_probe pr,
 		 * FAT-like pseudo-header.
 		 */
 		if ((memcmp(ms->ms_magic, "JFS     ", 8) == 0) ||
-		    (memcmp(ms->ms_magic, "HPFS    ", 8) == 0))
+		    (memcmp(ms->ms_magic, "HPFS    ", 8) == 0)) {
+			DBG(LOWPROBE, ul_debug("\tJFS/HPFS detected"));
 			return 0;
+		}
 	}
 
 	/* fat counts(Linux kernel expects at least 1 FAT table) */
@@ -245,22 +258,14 @@ static int fat_valid_superblock(blkid_probe pr,
 	if (cluster_count)
 		*cluster_count = __cluster_count;
 
-	if (blkid_probe_is_wholedisk(pr)) {
-		/* OK, seems like FAT, but it's possible that we found boot
-		 * sector with crazy FAT-like stuff (magic strings, media,
-		 * etc..) before MBR. Let's make sure that there is no MBR with
-		 * usable partition. */
-		unsigned char *buf = (unsigned char *) ms;
-		if (mbr_is_valid_magic(buf)) {
-			struct dos_partition *p0 = mbr_get_partition(buf, 0);
-			if (dos_partition_get_size(p0) != 0 &&
-			    (p0->boot_ind == 0 || p0->boot_ind == 0x80))
-				return 0;
-		}
-	}
+	if (blkid_probe_is_bitlocker(pr))
+		return 0;
 
 	return 1;	/* valid */
 }
+
+/* function prototype to avoid warnings (duplicate in partitions/dos.c) */
+extern int blkid_probe_is_vfat(blkid_probe pr);
 
 /*
  * This function is used by MBR partition table parser to avoid
@@ -295,7 +300,8 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 {
 	struct vfat_super_block *vs;
 	struct msdos_super_block *ms;
-	const unsigned char *vol_label = 0;
+	const unsigned char *vol_label = NULL;
+	const unsigned char *boot_label = NULL;
 	unsigned char *vol_serno = NULL, vol_label_buf[11];
 	uint16_t sector_size = 0, reserved;
 	uint32_t cluster_count, fat_size;
@@ -326,9 +332,11 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 			vol_label = vol_label_buf;
 		}
 
-		if (!vol_label || !memcmp(vol_label, no_name, 11))
-			vol_label = ms->ms_label;
-		vol_serno = ms->ms_serno;
+		if (ms->ms_ext_boot_sign == 0x29)
+			boot_label = ms->ms_label;
+
+		if (ms->ms_ext_boot_sign == 0x28 || ms->ms_ext_boot_sign == 0x29)
+			vol_serno = ms->ms_serno;
 
 		blkid_probe_set_value(pr, "SEC_TYPE", (unsigned char *) "msdos",
                               sizeof("msdos"));
@@ -346,8 +354,8 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 		/* Search the FAT32 root dir for the label attribute */
 		uint32_t buf_size = vs->vs_cluster_size * sector_size;
 		uint32_t start_data_sect = reserved + fat_size;
-		uint32_t entries = le32_to_cpu(vs->vs_fat32_length) *
-					sector_size / sizeof(uint32_t);
+		uint32_t entries = ((uint64_t) le32_to_cpu(vs->vs_fat32_length)
+					* sector_size) / sizeof(uint32_t);
 		uint32_t next = le32_to_cpu(vs->vs_root_cluster);
 
 		while (next && next < entries && --maxloop) {
@@ -381,8 +389,9 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 
 		version = "FAT32";
 
-		if (!vol_label || !memcmp(vol_label, no_name, 11))
-			vol_label = vs->vs_label;
+		if (vs->vs_ext_boot_sign == 0x29)
+			boot_label = vs->vs_label;
+
 		vol_serno = vs->vs_serno;
 
 		/*
@@ -395,7 +404,7 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 			struct fat32_fsinfo *fsinfo;
 
 			buf = blkid_probe_get_buffer(pr,
-					(blkid_loff_t) fsinfo_sect * sector_size,
+					(uint64_t) fsinfo_sect * sector_size,
 					sizeof(struct fat32_fsinfo));
 			if (buf == NULL)
 				return errno ? -errno : 1;
@@ -411,8 +420,11 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 		}
 	}
 
-	if (vol_label && memcmp(vol_label, no_name, 11))
-		blkid_probe_set_label(pr, (unsigned char *) vol_label, 11);
+	if (boot_label && memcmp(boot_label, no_name, 11) != 0)
+		blkid_probe_set_id_label(pr, "LABEL_FATBOOT", boot_label, 11);
+
+	if (vol_label)
+		blkid_probe_set_label(pr, vol_label, 11);
 
 	/* We can't just print them as %04X, because they are unaligned */
 	if (vol_serno)
@@ -420,6 +432,8 @@ static int probe_vfat(blkid_probe pr, const struct blkid_idmag *mag)
 			vol_serno[3], vol_serno[2], vol_serno[1], vol_serno[0]);
 	if (version)
 		blkid_probe_set_version(pr, version);
+
+	blkid_probe_set_block_size(pr, sector_size);
 
 	return 0;
 }

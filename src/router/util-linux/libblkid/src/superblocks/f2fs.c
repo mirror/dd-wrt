@@ -58,26 +58,28 @@ struct f2fs_super_block {					/* According to version 1.1 */
 static int probe_f2fs(blkid_probe pr, const struct blkid_idmag *mag)
 {
 	struct f2fs_super_block *sb;
-	uint16_t major, minor;
+	uint16_t vermaj, vermin;
 
 	sb = blkid_probe_get_sb(pr, mag, struct f2fs_super_block);
 	if (!sb)
 		return errno ? -errno : 1;
 
-	major = le16_to_cpu(sb->major_ver);
-	minor = le16_to_cpu(sb->minor_ver);
+	vermaj = le16_to_cpu(sb->major_ver);
+	vermin = le16_to_cpu(sb->minor_ver);
 
 	/* For version 1.0 we cannot know the correct sb structure */
-	if (major == 1 && minor == 0)
+	if (vermaj == 1 && vermin == 0)
 		return 0;
 
 	if (*((unsigned char *) sb->volume_name))
 		blkid_probe_set_utf8label(pr, (unsigned char *) sb->volume_name,
 						sizeof(sb->volume_name),
-						BLKID_ENC_UTF16LE);
+						UL_ENCODE_UTF16LE);
 
 	blkid_probe_set_uuid(pr, sb->uuid);
-	blkid_probe_sprintf_version(pr, "%u.%u", major, minor);
+	blkid_probe_sprintf_version(pr, "%u.%u", vermaj, vermin);
+	if (le32_to_cpu(sb->log_blocksize) < 32)
+		blkid_probe_set_block_size(pr, 1U << le32_to_cpu(sb->log_blocksize));
 	return 0;
 }
 

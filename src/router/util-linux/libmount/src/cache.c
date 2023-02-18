@@ -1,8 +1,14 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
 /*
- * Copyright (C) 2009-2011 Karel Zak <kzak@redhat.com>
+ * This file is part of libmount from util-linux project.
  *
- * This file may be redistributed under the terms of the
- * GNU Lesser General Public License.
+ * Copyright (C) 2009-2018 Karel Zak <kzak@redhat.com>
+ *
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -85,7 +91,7 @@ struct libmnt_cache *mnt_new_cache(void)
  * @cache: pointer to struct libmnt_cache instance
  *
  * Deallocates the cache. This function does not care about reference count. Don't
- * use this function directly -- it's better to use use mnt_unref_cache().
+ * use this function directly -- it's better to use mnt_unref_cache().
  */
 void mnt_free_cache(struct libmnt_cache *cache)
 {
@@ -147,7 +153,7 @@ void mnt_unref_cache(struct libmnt_cache *cache)
  * @cache: cache pointer
  * @mtab: table with already canonicalized mountpoints
  *
- * Add to @cache reference to @mtab. This allows to avoid unnecessary paths
+ * Add to @cache reference to @mtab. This can be used to avoid unnecessary paths
  * canonicalization in mnt_resolve_target().
  *
  * Returns: negative number in case of error, or 0 o success.
@@ -248,7 +254,7 @@ static const char *cache_find_path(struct libmnt_cache *cache, const char *path)
 		struct mnt_cache_entry *e = &cache->ents[i];
 		if (!(e->flag & MNT_CACHE_ISPATH))
 			continue;
-		if (streq_except_trailing_slash(path, e->key))
+		if (streq_paths(path, e->key))
 			return e->value;
 	}
 	return NULL;
@@ -489,9 +495,9 @@ char *mnt_get_fstype(const char *devname, int *ambi, struct libmnt_cache *cache)
 static char *canonicalize_path_and_cache(const char *path,
 						struct libmnt_cache *cache)
 {
-	char *p = NULL;
-	char *key = NULL;
-	char *value = NULL;
+	char *p;
+	char *key;
+	char *value;
 
 	DBG(CACHE, ul_debugobj(cache, "canonicalize path %s", path));
 	p = canonicalize_path(path);
@@ -572,7 +578,8 @@ char *mnt_resolve_target(const char *path, struct libmnt_cache *cache)
 	p = (char *) cache_find_path(cache, path);
 	if (p)
 		return p;
-	else {
+
+	{
 		struct libmnt_iter itr;
 		struct libmnt_fs *fs = NULL;
 
@@ -580,8 +587,8 @@ char *mnt_resolve_target(const char *path, struct libmnt_cache *cache)
 		while (mnt_table_next_fs(cache->mtab, &itr, &fs) == 0) {
 
 			if (!mnt_fs_is_kernel(fs)
-                            || mnt_fs_is_swaparea(fs)
-                            || !mnt_fs_streq_target(fs, path))
+			     || mnt_fs_is_swaparea(fs)
+			     || !mnt_fs_streq_target(fs, path))
 				continue;
 
 			p = strdup(path);
@@ -635,6 +642,7 @@ char *mnt_pretty_path(const char *path, struct libmnt_cache *cache)
 		if (loopcxt_is_autoclear(&lc)) {
 			char *tmp = loopcxt_get_backing_file(&lc);
 			if (tmp) {
+				loopcxt_deinit(&lc);
 				if (!cache)
 					free(pretty);	/* not cached, deallocate */
 				return tmp;		/* return backing file */
@@ -719,7 +727,7 @@ char *mnt_resolve_spec(const char *spec, struct libmnt_cache *cache)
 
 #ifdef TEST_PROGRAM
 
-int test_resolve_path(struct libmnt_test *ts, int argc, char *argv[])
+static int test_resolve_path(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char line[BUFSIZ];
 	struct libmnt_cache *cache;
@@ -742,7 +750,7 @@ int test_resolve_path(struct libmnt_test *ts, int argc, char *argv[])
 	return 0;
 }
 
-int test_resolve_spec(struct libmnt_test *ts, int argc, char *argv[])
+static int test_resolve_spec(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char line[BUFSIZ];
 	struct libmnt_cache *cache;
@@ -765,7 +773,7 @@ int test_resolve_spec(struct libmnt_test *ts, int argc, char *argv[])
 	return 0;
 }
 
-int test_read_tags(struct libmnt_test *ts, int argc, char *argv[])
+static int test_read_tags(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char line[BUFSIZ];
 	struct libmnt_cache *cache;

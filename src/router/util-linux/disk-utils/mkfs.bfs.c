@@ -67,8 +67,9 @@ struct bfsde {
 	char d_name[BFS_NAMELEN];
 };
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fprintf(out,
 		_("Usage: %s [options] device [block-count]\n"),
 		program_invocation_short_name);
@@ -83,17 +84,10 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 		       " -v, --verbose       explain what is being done\n"
 		       " -c                  this option is silently ignored\n"
 		       " -l                  this option is silently ignored\n"
-		       " -V, --version       output version information and exit\n"
-		       "                     -V as version must be only option\n"
-		       " -h, --help          display this help and exit\n\n"));
+		       ));
+	printf(USAGE_HELP_OPTIONS(21));
 
-	fprintf(out, USAGE_MAN_TAIL("mkfs.bfs(8)"));
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
-}
-
-static void __attribute__ ((__noreturn__)) print_version(void)
-{
-	printf(UTIL_LINUX_VERSION);
+	printf(USAGE_MAN_TAIL("mkfs.bfs(8)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -127,13 +121,14 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	if (argc < 2)
-		usage(stderr);
-
+	if (argc < 2) {
+		warnx(_("not enough arguments"));
+		errtryhelp(EXIT_FAILURE);
+	}
 	if (argc == 2 && !strcmp(argv[1], "-V"))
-		print_version();
+		print_version(EXIT_SUCCESS);
 
 	volume = fsname = "      ";	/* is there a default? */
 	inodes = 0;
@@ -168,34 +163,35 @@ int main(int argc, char **argv)
 			break;
 
 		case VERSION_OPTION:
-			print_version();
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	}
 
-	if (optind == argc)
-		usage(stderr);
+	if (optind == argc) {
+		warnx(_("no device specified"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	device = argv[optind++];
 
 	if (stat(device, &statbuf) < 0)
 		err(EXIT_FAILURE, _("stat of %s failed"), device);
 
-	if (!S_ISBLK(statbuf.st_mode))
-		errx(EXIT_FAILURE, _("%s is not a block special device"), device);
-
-	fd = open(device, O_RDWR | O_EXCL);
+	fd = open_blkdev_or_file(&statbuf, device, O_RDWR);
 	if (fd < 0)
 		err(EXIT_FAILURE, _("cannot open %s"), device);
 
 	if (optind == argc - 1)
 		user_specified_total_blocks =
 			strtou64_or_err(argv[optind], _("invalid block-count"));
-	else if (optind != argc)
-		usage(stderr);
+	else if (optind != argc) {
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
+	}
 
 	if (blkdev_get_sectors(fd, &total_blocks) == -1) {
 		if (!user_specified_total_blocks)
@@ -246,12 +242,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, _("FSname: <%-6s>\n"), fsname);
 		fprintf(stderr, _("BlockSize: %d\n"), BFS_BLOCKSIZE);
 		if (ino_blocks == 1)
-			fprintf(stderr, _("Inodes: %lu (in 1 block)\n"),
+			fprintf(stderr, _("Inodes: %ld (in 1 block)\n"),
 				inodes);
 		else
-			fprintf(stderr, _("Inodes: %lu (in %llu blocks)\n"),
+			fprintf(stderr, _("Inodes: %ld (in %llu blocks)\n"),
 				inodes, ino_blocks);
-		fprintf(stderr, _("Blocks: %lld\n"), total_blocks);
+		fprintf(stderr, _("Blocks: %llu\n"), total_blocks);
 		fprintf(stderr, _("Inode end: %d, Data end: %d\n"),
 			le32_to_cpu(sb.s_start) - 1, le32_to_cpu(sb.s_end));
 	}

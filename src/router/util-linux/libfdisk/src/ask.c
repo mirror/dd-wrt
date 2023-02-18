@@ -36,6 +36,10 @@ int fdisk_set_ask(struct fdisk_context *cxt,
 struct fdisk_ask *fdisk_new_ask(void)
 {
 	struct fdisk_ask *ask = calloc(1, sizeof(struct fdisk_ask));
+
+	if (!ask)
+		return NULL;
+
 	DBG(ASK, ul_debugobj(ask, "alloc"));
 	ask->refcount = 1;
 	return ask;
@@ -62,7 +66,7 @@ void fdisk_reset_ask(struct fdisk_ask *ask)
  * fdisk_ref_ask:
  * @ask: ask instance
  *
- * Incremparts reference counter.
+ * Increments reference counter.
  */
 void fdisk_ref_ask(struct fdisk_ask *ask)
 {
@@ -75,7 +79,7 @@ void fdisk_ref_ask(struct fdisk_ask *ask)
  * fdisk_unref_ask:
  * @ask: ask instance
  *
- * De-incremparts reference counter, on zero the @ask is automatically
+ * Decrements reference counter, on zero the @ask is automatically
  * deallocated.
  */
 void fdisk_unref_ask(struct fdisk_ask *ask)
@@ -106,7 +110,7 @@ const char *fdisk_ask_get_query(struct fdisk_ask *ask)
 int fdisk_ask_set_query(struct fdisk_ask *ask, const char *str)
 {
 	assert(ask);
-	return !strdup_to_struct_member(ask, query, str) ? -ENOMEM : 0;
+	return strdup_to_struct_member(ask, query, str);
 }
 
 /**
@@ -141,6 +145,14 @@ int fdisk_do_ask(struct fdisk_context *cxt, struct fdisk_ask *ask)
 				ask->type == FDISK_ASKTYPE_WARNX ? "warnx" :
 				ask->type == FDISK_ASKTYPE_WARN  ? "warn" :
 				"?nothing?"));
+
+	if (!fdisk_has_dialogs(cxt) &&
+	    !(ask->type == FDISK_ASKTYPE_INFO ||
+	      ask->type == FDISK_ASKTYPE_WARNX ||
+	      ask->type == FDISK_ASKTYPE_WARN)) {
+		DBG(ASK, ul_debugobj(ask, "dialogs disabled"));
+		return -EINVAL;
+	}
 
 	if (!cxt->ask_cb) {
 		DBG(ASK, ul_debugobj(ask, "no ask callback specified!"));
@@ -312,13 +324,31 @@ int fdisk_ask_number_is_relative(struct fdisk_ask *ask)
 }
 
 /**
+ * fdisk_ask_number_is_wrap_negative:
+ * @ask: ask instance
+ *
+ * The wrap-negative flag can be used to accept negative number from user. In this
+ * case the dialog result is calculated as "high - num" (-N from high limit).
+ *
+ * Returns: 1 or 0.
+ *
+ * Since: 2.33
+ */
+int fdisk_ask_number_is_wrap_negative(struct fdisk_ask *ask)
+{
+	assert(ask);
+	assert(is_number_ask(ask));
+	return ask->data.num.wrap_negative;
+}
+
+/**
  * fdisk_ask_number_set_relative
  * @ask: ask instance
  * @relative: 0 or 1
  *
- * Inform libfdisk that user specified number in relative notation rather than
- * by explicit number. This info allows to fdisk do some optimization (e.g.
- * align end of partiton, etc.)
+ * Inform libfdisk that user can specify the number in relative notation rather than
+ * by explicit number. This is useful for some optimization (e.g.
+ * align end of partition, etc.)
  *
  * Returns: 0 on success, <0 on error
  */
@@ -346,6 +376,13 @@ int fdisk_ask_number_inchars(struct fdisk_ask *ask)
 	return ask->data.num.inchars;
 }
 
+int fdisk_ask_number_set_wrap_negative(struct fdisk_ask *ask, int wrap_negative)
+{
+	assert(ask);
+	ask->data.num.wrap_negative = wrap_negative ? 1 : 0;
+	return 0;
+}
+
 /*
  * Generates string with list ranges (e.g. 1,2,5-8) for the 'cur'
  */
@@ -361,7 +398,7 @@ static char *mk_string_list(char *ptr, size_t *len, size_t *begin,
 			return ptr;
 		}
 
-		if (*begin + *run == cur) {	/* no gap, continue */
+		if (*begin + *run == (size_t)cur) {	/* no gap, continue */
 			(*run)++;
 			return ptr;
 		}
@@ -383,15 +420,11 @@ static char *mk_string_list(char *ptr, size_t *len, size_t *begin,
 			snprintf(ptr, *len, "%c-%c,", tochar(*begin), tochar(*begin + *run)) :
 			snprintf(ptr, *len, "%zu-%zu,", *begin, *begin + *run);
 
-	if (rlen < 0 || (size_t) rlen + 1 > *len)
+	if (rlen < 0 || (size_t) rlen >= *len)
 		return NULL;
 
 	ptr += rlen;
-
-	if (rlen > 0 && *len > (size_t) rlen)
-		*len -= rlen;
-	else
-		*len = 0;
+	*len -= rlen;
 
 	if (cur == -1 && *begin) {
 		/* end of the list */
@@ -432,9 +465,9 @@ int fdisk_ask_partnum(struct fdisk_context *cxt, size_t *partnum, int wantnew)
 
 	DBG(ASK, ul_debug("%s: asking for %s partition number "
 			  "(max: %zu, inchar: %s)",
-			cxt->label->name,
+			cxt->label ? cxt->label->name : "???",
 			wantnew ? "new" : "used",
-			cxt->label->nparts_max,
+			cxt->label ? cxt->label->nparts_max : 0,
 			inchar ? "yes" : "not"));
 
 	ask = fdisk_new_ask();
@@ -466,12 +499,12 @@ int fdisk_ask_partnum(struct fdisk_context *cxt, size_t *partnum, int wantnew)
 		}
 	}
 
-	DBG(ASK, ul_debugobj(ask, "ask limits: low: %ju, high: %ju, default: %ju",
+	DBG(ASK, ul_debugobj(ask, "ask limits: low: %"PRIu64", high: %"PRIu64", default: %"PRIu64"",
 				num->low, num->hig, num->dfl));
 
 	if (!rc && !wantnew && num->low == num->hig) {
 		if (num->low > 0) {
-			/* only one existing partiton, don't ask, return the number */
+			/* only one existing partition, don't ask, return the number */
 			fdisk_ask_number_set_result(ask, num->low);
 			fdisk_info(cxt, _("Selected partition %ju"), num->low);
 
@@ -508,7 +541,7 @@ dont_ask:
 		if (*partnum)
 			*partnum -= 1;
 	}
-	DBG(ASK, ul_debugobj(ask, "result: %ju [rc=%d]\n", fdisk_ask_number_get_result(ask), rc));
+	DBG(ASK, ul_debugobj(ask, "result: %"PRIu64" [rc=%d]\n", fdisk_ask_number_get_result(ask), rc));
 	fdisk_unref_ask(ask);
 	return rc;
 }
@@ -631,7 +664,7 @@ int fdisk_ask_string(struct fdisk_context *cxt,
  * @query: question string
  * @result: returns 0 (no) or 1 (yes)
  *
- * Hight-level API to ask Yes/No questions
+ * High-level API to ask Yes/No questions
  *
  * Returns: 0 on success, <0 on error
  */
@@ -923,7 +956,7 @@ static int do_vprint(struct fdisk_context *cxt, int errnum, int type,
  * fdisk_info:
  * @cxt: context
  * @fmt: printf-like formatted string
- * @...: variable parametrs
+ * @...: variable parameters
  *
  * High-level API to print info messages,
  *
@@ -945,7 +978,7 @@ int fdisk_info(struct fdisk_context *cxt, const char *fmt, ...)
  * fdisk_info:
  * @cxt: context
  * @fmt: printf-like formatted string
- * @...: variable parametrs
+ * @...: variable parameters
  *
  * High-level API to print warning message (errno expected)
  *
@@ -1002,7 +1035,7 @@ int fdisk_info_new_partition(
 }
 
 #ifdef TEST_PROGRAM
-int test_ranges(struct fdisk_test *ts, int argc, char *argv[])
+static int test_ranges(struct fdisk_test *ts, int argc, char *argv[])
 {
 	/*                1  -  3,       6,    8, 9,   11    13 */
 	size_t nums[] = { 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1 };

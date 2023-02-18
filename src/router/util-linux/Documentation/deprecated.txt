@@ -3,6 +3,30 @@ deprecated utils are in maintenance mode and we keep them in source tree for
 backward compatibility only.
 
 
+what:  column --table-empty-lines
+why:   renamed to --keep-empty-lines
+since: v2.37
+
+--------------------------
+
+what:  hwclock --debug
+why:   renamed to --verbose, and may be repurposed later.
+since: v2.32
+
+--------------------------
+
+what:  hwclock -v for version
+why:   renamed to -V
+since: v2.20 (was repurposed to verbose in v2.32)
+
+--------------------------
+
+what:  column --columns
+why:   renamed to --output-width
+since: v2.30
+
+--------------------------
+
 what:  sfdisk --show-size
 why:   this does not belong to fdisk, use "blockdev --getsz"
 
@@ -18,14 +42,14 @@ why:    unnecessary option, only 'S'ector unit is supported
 
 --------------------------
 
-what:  "swapon --summary" output format
-why:   does not provide control on output data formatting. The recommended solution
-       is to use --show=<columns> in all scripts.
+what:   sfdisk --show-pt-geometry
+why:    equal to --show-geometry for a long time
 
 --------------------------
 
-what:  "pid" as binary name for "kill --pid"
-why:   too ugly, too obscure
+what:  "swapon --summary" output format
+why:   does not provide control on output data formatting. The recommended solution
+       is to use --show=<columns> in all scripts.
 
 --------------------------
 
@@ -45,7 +69,7 @@ Why:    udevd links libblkid directly; the 'list' is unnecessary, use lsblk(8)
 --------------------------
 
 What:   line(1) command
-Why:    useless, nobody uses this command, head(1) is better
+Why:    use the read(1) command
 
 --------------------------
 
@@ -55,7 +79,7 @@ Why:    use less(1) or more(1)
 --------------------------
 
 What:   CHS stuff in fdisk (except SUN where are partitions addresses by cylinders only)
-Why:    use addresssing by sectors, CHS does not work with modern disks,
+Why:    use addressing by sectors, CHS does not work with modern disks,
         confusing for users...
 
 --------------------------
@@ -68,7 +92,7 @@ Why:	the option -s is in collision with the Loop-AES losetup dialect that is use
 
 What:   losetup output format without --list
 
-        deprecated format"
+        deprecated format:
 
           # losetup -a
           /dev/loop0: []: (/home/fs-images/swap.img)
@@ -85,11 +109,6 @@ What:   losetup output format without --list
 
 What:	tunelp
 Why:	parallel port printers are probably almost extinct devices
-
---------------------------
-
-What:	deprecated_last(1)
-Why:	nobody uses this implementation
 
 ----------------------------
 

@@ -36,14 +36,16 @@
 # include <linux/serial.h>
 # include <linux/major.h>
 #endif
-#include <fcntl.h>
 #include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 
-#ifdef USE_SULOGIN_EMERGENCY_MOUNT
+#if defined(USE_SULOGIN_EMERGENCY_MOUNT)
 # include <sys/mount.h>
-# include <linux/fs.h>
-# include <linux/magic.h>
+# ifndef MS_RELATIME
+#  define MS_RELATIME  (1<<21)
+# endif
 # ifndef MNT_DETACH
 #  define MNT_DETACH   2
 # endif
@@ -74,7 +76,7 @@ static int consoles_debug;
 		} while (0)
 
 static inline void __attribute__ ((__format__ (__printf__, 1, 2)))
-dbgprint(const char *mesg, ...)
+dbgprint(const char * const mesg, ...)
 {
 	va_list ap;
 	va_start(ap, mesg);
@@ -112,7 +114,7 @@ void emergency_do_mounts(void)
 	}
 
 	if (stat("/", &rt) != 0) {
-		warn("can not get file status of root file system\n");
+		warn("cannot get file status of root file system\n");
 		return;
 	}
 
@@ -150,17 +152,19 @@ void emergency_do_mounts(void) { }
  * the caller has to free the result
  */
 static __attribute__((__nonnull__))
-char *oneline(const char *file)
+char *oneline(const char * const file)
 {
 	FILE *fp;
 	char *ret = NULL;
-	size_t len = 0;
+	size_t dummy = 0;
+	ssize_t len;
 
 	DBG(dbgprint("reading %s", file));
 
-	if (!(fp = fopen(file, "re")))
+	if (!(fp = fopen(file, "r" UL_CLOEXECSTR)))
 		return NULL;
-	if (getline(&ret, &len, fp) >= 0) {
+	len = getline(&ret, &dummy, fp);
+	if (len >= 0) {
 		char *nl;
 
 		if (len)
@@ -179,7 +183,7 @@ char *oneline(const char *file)
  *  /sys/class/tty, the caller has to free the result.
  */
 static __attribute__((__malloc__))
-char *actattr(const char *tty)
+char *actattr(const char * const tty)
 {
 	char *ret, *path;
 
@@ -198,7 +202,7 @@ char *actattr(const char *tty)
  * /sys/class/tty.
  */
 static
-dev_t devattr(const char *tty)
+dev_t devattr(const char * const tty)
 {
 	dev_t dev = 0;
 	char *path, *value;
@@ -223,24 +227,38 @@ dev_t devattr(const char *tty)
 #endif /* __linux__ */
 
 /*
- * Search below /dev for the characer device in `dev_t comparedev' variable.
+ * Search below /dev for the character device in `dev_t comparedev' variable.
+ * Note that realpath(3) is used here to avoid not existent devices due the
+ * strdup(3) used in our canonicalize_path()!
  */
 static
 #ifdef __GNUC__
 __attribute__((__nonnull__,__malloc__,__hot__))
 #endif
-char* scandev(DIR *dir, dev_t comparedev)
+char* scandev(DIR *dir, const dev_t comparedev)
 {
+	char path[PATH_MAX];
 	char *name = NULL;
-	struct dirent *dent;
-	int fd;
+	const struct dirent *dent;
+	int len, fd;
 
 	DBG(dbgprint("scanning /dev for %u:%u", major(comparedev), minor(comparedev)));
+
+	/*
+	 * Try udev links on character devices first.
+	 */
+	if ((len = snprintf(path, sizeof(path),
+			    "/dev/char/%u:%u", major(comparedev), minor(comparedev))) > 0 &&
+	    (size_t)len < sizeof(path)) {
+
+	    name = realpath(path, NULL);
+	    if (name)
+		    goto out;
+	}
 
 	fd = dirfd(dir);
 	rewinddir(dir);
 	while ((dent = readdir(dir))) {
-		char path[PATH_MAX];
 		struct stat st;
 
 #ifdef _DIRENT_HAVE_D_TYPE
@@ -253,17 +271,33 @@ char* scandev(DIR *dir, dev_t comparedev)
 			continue;
 		if (comparedev != st.st_rdev)
 			continue;
-		if ((size_t)snprintf(path, sizeof(path), "/dev/%s", dent->d_name) >= sizeof(path))
+		if ((len = snprintf(path, sizeof(path), "/dev/%s", dent->d_name)) < 0 ||
+		    (size_t)len >= sizeof(path))
 			continue;
-#ifdef USE_SULOGIN_EMERGENCY_MOUNT
-		if (emergency_flags & MNT_DEVTMPFS)
-			mknod(path, S_IFCHR|S_IRUSR|S_IWUSR, comparedev);
-#endif
 
-		name = canonicalize_path(path);
-		break;
+		name = realpath(path, NULL);
+		if (name)
+			goto out;
 	}
 
+#ifdef USE_SULOGIN_EMERGENCY_MOUNT
+	/*
+	 * There was no /dev mounted hence and no device was found hence we create our own.
+	 */
+	if (!name && (emergency_flags & MNT_DEVTMPFS)) {
+
+		if ((len = snprintf(path, sizeof(path),
+				    "/dev/tmp-%u:%u", major(comparedev), minor(comparedev))) < 0 ||
+		    (size_t)len >= sizeof(path))
+			goto out;
+
+		if (mknod(path, S_IFCHR|S_IRUSR|S_IWUSR, comparedev) < 0 && errno != EEXIST)
+			goto out;
+
+		name = realpath(path, NULL);
+	}
+#endif
+out:
 	return name;
 }
 
@@ -278,14 +312,14 @@ char* scandev(DIR *dir, dev_t comparedev)
  */
 static
 #ifdef __GNUC__
-__attribute__((__nonnull__,__hot__))
+__attribute__((__hot__))
 #endif
-int append_console(struct list_head *consoles, const char *name)
+int append_console(struct list_head *consoles, const char * const name)
 {
 	struct console *restrict tail;
-	struct console *last = NULL;
+	const struct console *last = NULL;
 
-	DBG(dbgprint("appenging %s", name));
+	DBG(dbgprint("appending %s", name));
 
 	if (!list_empty(consoles))
 		last = list_last_entry(consoles, struct console, entry);
@@ -305,7 +339,7 @@ int append_console(struct list_head *consoles, const char *name)
 	tail->flags = 0;
 	tail->fd = -1;
 	tail->id = last ? last->id + 1 : 0;
-	tail->pid = 0;
+	tail->pid = -1;
 	memset(&tail->tio, 0, sizeof(tail->tio));
 
 	return 0;
@@ -328,7 +362,7 @@ static int detect_consoles_from_proc(struct list_head *consoles)
 
 	DBG(dbgprint("trying /proc"));
 
-	fc = fopen("/proc/consoles", "re");
+	fc = fopen("/proc/consoles", "r" UL_CLOEXECSTR);
 	if (!fc) {
 		rc = 2;
 		goto done;
@@ -516,7 +550,7 @@ done:
 
 #ifdef TIOCGDEV
 static int detect_consoles_from_tiocgdev(struct list_head *consoles,
-					int fallback,
+					const int fallback,
 					const char *device)
 {
 	unsigned int devnum;
@@ -586,7 +620,7 @@ done:
  * Returns 1 if stdout and stderr should be reconnected and 0
  * otherwise or less than zero on error.
  */
-int detect_consoles(const char *device, int fallback, struct list_head *consoles)
+int detect_consoles(const char *device, const int fallback, struct list_head *consoles)
 {
 	int fd, reconnect = 0, rc;
 	dev_t comparedev = 0;
@@ -609,6 +643,14 @@ int detect_consoles(const char *device, int fallback, struct list_head *consoles
 		struct stat st;
 #ifdef TIOCGDEV
 		unsigned int devnum;
+#endif
+#ifdef __GNU__
+		/*
+		 * The Hurd always gives st_rdev as 0, which causes this
+		 * method to select the first terminal it finds.
+		 */
+		close(fd);
+		goto fallback;
 #endif
 		DBG(dbgprint("trying device/fallback file descriptor"));
 
@@ -677,7 +719,7 @@ int detect_consoles(const char *device, int fallback, struct list_head *consoles
 #ifdef __linux__
 console:
 	/*
-	 * Detection of devices used for Linux system consolei using
+	 * Detection of devices used for Linux system console using
 	 * the /proc/consoles API with kernel 2.6.38 and higher.
 	 */
 	rc = detect_consoles_from_proc(consoles);
@@ -761,8 +803,7 @@ int main(int argc, char *argv[])
 {
 	char *name = NULL;
 	int fd, re;
-	LIST_HEAD(consoles);
-	struct list_head *p;
+	struct list_head *p, consoles;
 
 	if (argc == 2) {
 		name = argv[1];
@@ -775,6 +816,7 @@ int main(int argc, char *argv[])
 	if (!name)
 		errx(EXIT_FAILURE, "usage: %s [<tty>]\n", program_invocation_short_name);
 
+	INIT_LIST_HEAD(&consoles);
 	re = detect_consoles(name, fd, &consoles);
 
 	list_for_each(p, &consoles) {

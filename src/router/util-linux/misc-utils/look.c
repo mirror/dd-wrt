@@ -66,19 +66,19 @@
 #define	GREATER		1
 #define	LESS		(-1)
 
-int dflag, fflag;
+static int dflag, fflag;
 /* uglified the source a bit with globals, so that we only need
    to allocate comparbuf once */
-int stringlen;
-char *string;
-char *comparbuf;
+static int stringlen;
+static char *string;
+static char *comparbuf;
 
 static char *binary_search (char *, char *);
 static int compare (char *, char *);
 static char *linear_search (char *, char *);
 static int look (char *, char *);
 static void print_from (char *, char *);
-static void __attribute__ ((__noreturn__)) usage(FILE * out);
+static void __attribute__((__noreturn__)) usage(void);
 
 int
 main(int argc, char *argv[])
@@ -100,11 +100,13 @@ main(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
-	atexit(close_stdout);
+	close_stdout_atexit();
 
-	setlocale(LC_ALL, "");
+	if ((file = getenv("WORDLIST")) && !access(file, R_OK))
+		/* use the WORDLIST */;
+	else
+		file = _PATH_WORDS;
 
-	file = _PATH_WORDS;
 	termchar = '\0';
 	string = NULL;		/* just for gcc */
 
@@ -123,13 +125,11 @@ main(int argc, char *argv[])
 			termchar = *optarg;
 			break;
 		case 'V':
-			printf(UTIL_LINUX_VERSION);
-			return EXIT_SUCCESS;
+			print_version(EXIT_SUCCESS);
 		case 'h':
-			usage(stdout);
-		case '?':
+			usage();
 		default:
-			usage(stderr);
+			errtryhelp(EXIT_FAILURE);
 		}
 	argc -= optind;
 	argv += optind;
@@ -144,7 +144,8 @@ main(int argc, char *argv[])
 		string = *argv;
 		break;
 	default:
-		usage(stderr);
+		warnx(_("bad usage"));
+		errtryhelp(EXIT_FAILURE);
 	}
 
 	if (termchar != '\0' && (p = strchr(string, termchar)) != NULL)
@@ -165,16 +166,16 @@ main(int argc, char *argv[])
 	return look(front, back);
 }
 
-int
+static int
 look(char *front, char *back)
 {
 	int ch;
 	char *readp, *writep;
 
-	/* Reformat string string to avoid doing it multiple times later. */
+	/* Reformat string to avoid doing it multiple times later. */
 	if (dflag) {
 		for (readp = writep = string; (ch = *readp++) != 0;) {
-			if (isalnum(ch))
+			if (isalnum(ch) || isblank(ch))
 				*(writep++) = ch;
 		}
 		*writep = '\0';
@@ -233,7 +234,7 @@ look(char *front, char *back)
 #define	SKIP_PAST_NEWLINE(p, back) \
 	while (p < back && *p++ != '\n')
 
-char *
+static char *
 binary_search(char *front, char *back)
 {
 	char *p;
@@ -267,17 +268,15 @@ binary_search(char *front, char *back)
  * 	o front points at the first character in a line.
  *	o front is before or at the first line to be printed.
  */
-char *
+static char *
 linear_search(char *front, char *back)
 {
 	while (front < back) {
 		switch (compare(front, back)) {
 		case EQUAL:		/* Found it. */
 			return (front);
-			break;
 		case LESS:		/* No such string. */
 			return (NULL);
-			break;
 		case GREATER:		/* Keep going. */
 			break;
 		}
@@ -289,7 +288,7 @@ linear_search(char *front, char *back)
 /*
  * Print as many lines as match string, starting at front.
  */
-void
+static void
 print_from(char *front, char *back)
 {
 	int eol;
@@ -324,7 +323,7 @@ print_from(char *front, char *back)
  * We use strcasecmp etc, since it knows how to ignore case also
  * in other locales.
  */
-int
+static int
 compare(char *s2, char *s2end) {
 	int i;
 	char *p;
@@ -333,7 +332,7 @@ compare(char *s2, char *s2end) {
 	p = comparbuf;
 	i = stringlen;
 	while(s2 < s2end && *s2 != '\n' && i) {
-		if (!dflag || isalnum(*s2))
+		if (!dflag || isalnum(*s2) || isblank(*s2))
 		{
 			*p++ = *s2;
 			i--;
@@ -351,8 +350,9 @@ compare(char *s2, char *s2end) {
 	return ((i > 0) ? LESS : (i < 0) ? GREATER : EQUAL);
 }
 
-static void __attribute__ ((__noreturn__)) usage(FILE * out)
+static void __attribute__((__noreturn__)) usage(void)
 {
+	FILE *out = stdout;
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options] <string> [<file>...]\n"), program_invocation_short_name);
 
@@ -361,14 +361,13 @@ static void __attribute__ ((__noreturn__)) usage(FILE * out)
 
 	fputs(USAGE_OPTIONS, out);
 	fputs(_(" -a, --alternative        use the alternative dictionary\n"), out);
-	fputs(_(" -d, --alphanum           compare only alphanumeric characters\n"), out);
+	fputs(_(" -d, --alphanum           compare only blanks and alphanumeric characters\n"), out);
 	fputs(_(" -f, --ignore-case        ignore case differences when comparing\n"), out);
 	fputs(_(" -t, --terminate <char>   define the string-termination character\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(USAGE_HELP, out);
-	fputs(USAGE_VERSION, out);
-	fprintf(out, USAGE_MAN_TAIL("look(1)"));
+	printf(USAGE_HELP_OPTIONS(26));
+	printf(USAGE_MAN_TAIL("look(1)"));
 
-	exit(out == stderr ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }

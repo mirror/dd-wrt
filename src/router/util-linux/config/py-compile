@@ -1,9 +1,9 @@
 #!/bin/sh
 # py-compile - Compile a Python program
 
-scriptversion=2011-06-08.12; # UTC
+scriptversion=2021-02-27.01; # UTC
 
-# Copyright (C) 2000-2013 Free Software Foundation, Inc.
+# Copyright (C) 2000-2021 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@ scriptversion=2011-06-08.12; # UTC
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -27,7 +27,7 @@ scriptversion=2011-06-08.12; # UTC
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-if [ -z "$PYTHON" ]; then
+if test -z "$PYTHON"; then
   PYTHON=python
 fi
 
@@ -96,27 +96,46 @@ done
 
 files=$*
 if test -z "$files"; then
-    usage_error "no files given"
+  usage_error "no files given"
 fi
 
 # if basedir was given, then it should be prepended to filenames before
 # byte compilation.
-if [ -z "$basedir" ]; then
-    pathtrans="path = file"
+if test -z "$basedir"; then
+  pathtrans="path = file"
 else
-    pathtrans="path = os.path.join('$basedir', file)"
+  pathtrans="path = os.path.join('$basedir', file)"
 fi
 
 # if destdir was given, then it needs to be prepended to the filename to
 # byte compile but not go into the compiled file.
-if [ -z "$destdir" ]; then
-    filetrans="filepath = path"
+if test -z "$destdir"; then
+  filetrans="filepath = path"
 else
-    filetrans="filepath = os.path.normpath('$destdir' + os.sep + path)"
+  filetrans="filepath = os.path.normpath('$destdir' + os.sep + path)"
+fi
+
+python_major=`$PYTHON -V 2>&1 | sed -e 's/.* //;s/\..*$//;1q'`
+if test -z "$python_major"; then
+  echo "$me: could not determine $PYTHON major version, guessing 3" >&2
+  python_major=3
+fi
+
+# The old way to import libraries was deprecated.
+if test "$python_major" -le 2; then
+  import_lib=imp
+  import_test="hasattr(imp, 'get_tag')"
+  import_call=imp.cache_from_source
+  import_arg2=', False' # needed in one call and not the other
+else
+  import_lib=importlib
+  import_test="hasattr(sys.implementation, 'cache_tag')"
+  import_call=importlib.util.cache_from_source
+  import_arg2=
 fi
 
 $PYTHON -c "
-import sys, os, py_compile, imp
+import sys, os, py_compile, $import_lib
 
 files = '''$files'''
 
@@ -129,15 +148,15 @@ for file in files.split():
 	    continue
     sys.stdout.write(file)
     sys.stdout.flush()
-    if hasattr(imp, 'get_tag'):
-        py_compile.compile(filepath, imp.cache_from_source(filepath), path)
+    if $import_test:
+        py_compile.compile(filepath, $import_call(filepath), path)
     else:
         py_compile.compile(filepath, filepath + 'c', path)
 sys.stdout.write('\n')" || exit $?
 
 # this will fail for python < 1.5, but that doesn't matter ...
 $PYTHON -O -c "
-import sys, os, py_compile, imp
+import sys, os, py_compile, $import_lib
 
 # pypy does not use .pyo optimization
 if hasattr(sys, 'pypy_translation_info'):
@@ -153,18 +172,18 @@ for file in files.split():
 	    continue
     sys.stdout.write(file)
     sys.stdout.flush()
-    if hasattr(imp, 'get_tag'):
-        py_compile.compile(filepath, imp.cache_from_source(filepath, False), path)
+    if $import_test:
+        py_compile.compile(filepath, $import_call(filepath$import_arg2), path)
     else:
         py_compile.compile(filepath, filepath + 'o', path)
-sys.stdout.write('\n')" 2>/dev/null || :
+sys.stdout.write('\n')" 2>/dev/null || exit $?
 
 # Local Variables:
 # mode: shell-script
 # sh-indentation: 2
-# eval: (add-hook 'write-file-hooks 'time-stamp)
+# eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-time-zone: "UTC"
+# time-stamp-time-zone: "UTC0"
 # time-stamp-end: "; # UTC"
 # End:

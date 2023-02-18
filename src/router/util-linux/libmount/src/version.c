@@ -1,10 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * version.c - Return the version of the libmount library
+ * This file is part of libmount from util-linux project.
  *
- * Copyright (C) 2008 Karel Zak <kzak@redhat.com>
- * [Based on libblkid/version.c by Theodore Ts'o]
+ * Copyright (C) 2008-2018 Karel Zak <kzak@redhat.com>
  *
- * See COPYING.libmount for the License of this software.
+ * libmount is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  */
 
 /**
@@ -25,8 +28,20 @@ static const char *lib_features[] = {
 #ifdef HAVE_SMACK
 	"smack",
 #endif
-#ifdef CONFIG_LIBMOUNT_ASSERT
-	"assert",
+#ifdef HAVE_BTRFS_SUPPORT
+	"btrfs",
+#endif
+#ifdef HAVE_CRYPTSETUP
+	"verity",
+#endif
+#ifdef USE_LIBMOUNT_SUPPORT_MTAB
+	"mtab",
+#endif
+#ifdef USE_LIBMOUNT_SUPPORT_NAMESPACES
+	"namespaces",
+#endif
+#if !defined(NDEBUG)
+	"assert",	/* libc assert.h stuff */
 #endif
 	"debug",	/* always enabled */
 	NULL
@@ -80,7 +95,7 @@ int mnt_get_library_version(const char **ver_string)
  * Example:
  * <informalexample>
  *   <programlisting>
- *	const char *features;
+ *	const char **features;
  *
  *	mnt_get_library_features(&features);
  *	while (features && *features)
@@ -99,10 +114,14 @@ int mnt_get_library_features(const char ***features)
 }
 
 #ifdef TEST_PROGRAM
-int test_version(struct libmnt_test *ts, int argc, char *argv[])
+static int test_version(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *ver;
 	const char **features;
+
+	if (argc == 2)
+		printf("Your version: %d\n",
+				mnt_parse_version_string(argv[1]));
 
 	mnt_get_library_version(&ver);
 
@@ -113,6 +132,8 @@ int test_version(struct libmnt_test *ts, int argc, char *argv[])
 	mnt_get_library_features(&features);
 	while (features && *features)
 		printf(" %s", *features++);
+
+	printf("\n");
 
 	if (mnt_get_library_version(NULL) ==
 			mnt_parse_version_string(LIBMOUNT_VERSION))

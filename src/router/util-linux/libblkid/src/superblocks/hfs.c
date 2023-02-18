@@ -25,6 +25,8 @@ struct hfs_finder_info {
         uint8_t         id[8];
 } __attribute__((packed));
 
+#define HFS_SECTOR_SIZE         512
+
 struct hfs_mdb {
         uint8_t         signature[2];
         uint32_t        cr_date;
@@ -130,19 +132,21 @@ struct hfsplus_vol_header {
 
 static int hfs_set_uuid(blkid_probe pr, unsigned char const *hfs_info, size_t len)
 {
-	static unsigned char const hash_init[MD5LENGTH] = {
+	static unsigned char const hash_init[UL_MD5LENGTH] = {
 		0xb3, 0xe2, 0x0f, 0x39, 0xf2, 0x92, 0x11, 0xd6,
 		0x97, 0xa4, 0x00, 0x30, 0x65, 0x43, 0xec, 0xac
 	};
-	unsigned char uuid[MD5LENGTH];
-	struct MD5Context md5c;
+	unsigned char uuid[UL_MD5LENGTH];
+	struct UL_MD5Context md5c;
 
 	if (memcmp(hfs_info, "\0\0\0\0\0\0\0\0", len) == 0)
 		return -1;
-	MD5Init(&md5c);
-	MD5Update(&md5c, hash_init, MD5LENGTH);
-	MD5Update(&md5c, hfs_info, len);
-	MD5Final(uuid, &md5c);
+
+	ul_MD5Init(&md5c);
+	ul_MD5Update(&md5c, hash_init, UL_MD5LENGTH);
+	ul_MD5Update(&md5c, hfs_info, len);
+	ul_MD5Final(uuid, &md5c);
+
 	uuid[6] = 0x30 | (uuid[6] & 0x0f);
 	uuid[8] = 0x80 | (uuid[8] & 0x3f);
 	return blkid_probe_set_uuid(pr, uuid);
@@ -151,6 +155,7 @@ static int hfs_set_uuid(blkid_probe pr, unsigned char const *hfs_info, size_t le
 static int probe_hfs(blkid_probe pr, const struct blkid_idmag *mag)
 {
 	struct hfs_mdb	*hfs;
+	int size;
 
 	hfs = blkid_probe_get_sb(pr, mag, struct hfs_mdb);
 	if (!hfs)
@@ -160,9 +165,18 @@ static int probe_hfs(blkid_probe pr, const struct blkid_idmag *mag)
 	    (memcmp(hfs->embed_sig, "HX", 2) == 0))
 		return 1;	/* Not hfs, but an embedded HFS+ */
 
+	size = be32_to_cpu(hfs->al_blk_size);
+	if (!size || (size & (HFS_SECTOR_SIZE - 1))) {
+		DBG(LOWPROBE, ul_debug("\tbad allocation size - ignore"));
+		return 1;
+	}
+
 	hfs_set_uuid(pr, hfs->finder_info.id, sizeof(hfs->finder_info.id));
 
-	blkid_probe_set_label(pr, hfs->label, hfs->label_len);
+	size = hfs->label_len;
+	if ((size_t) size > sizeof(hfs->label))
+		size = sizeof(hfs->label);
+	blkid_probe_set_label(pr, hfs->label, size);
 	return 0;
 }
 
@@ -180,7 +194,7 @@ static int probe_hfsplus(blkid_probe pr, const struct blkid_idmag *mag)
 	unsigned int off = 0;
 	unsigned int blocksize;
 	unsigned int cat_block;
-	unsigned int ext_block_start;
+	unsigned int ext_block_start = 0;
 	unsigned int ext_block_count;
 	unsigned int record_count;
 	unsigned int leaf_node_head;
@@ -230,11 +244,13 @@ static int probe_hfsplus(blkid_probe pr, const struct blkid_idmag *mag)
 	if (blocksize < HFSPLUS_SECTOR_SIZE)
 		return 1;
 
+	blkid_probe_set_block_size(pr, blocksize);
+
 	memcpy(extents, hfsplus->cat_file.extents, sizeof(extents));
 	cat_block = be32_to_cpu(extents[0].start_block);
 
 	buf = blkid_probe_get_buffer(pr,
-			off + ((blkid_loff_t) cat_block * blocksize), 0x2000);
+			off + ((uint64_t) cat_block * blocksize), 0x2000);
 	if (!buf)
 		return errno ? -errno : 0;
 
@@ -244,7 +260,9 @@ static int probe_hfsplus(blkid_probe pr, const struct blkid_idmag *mag)
 	leaf_node_head = be32_to_cpu(bnode->leaf_head);
 	leaf_node_size = be16_to_cpu(bnode->node_size);
 	leaf_node_count = be32_to_cpu(bnode->leaf_count);
-	if (leaf_node_count == 0)
+
+	if (leaf_node_size < sizeof(struct hfsplus_bnode_descriptor) +
+	    sizeof(struct hfsplus_catalog_key) || leaf_node_count == 0)
 		return 0;
 
 	leaf_block = (leaf_node_head * leaf_node_size) / blocksize;
@@ -268,7 +286,7 @@ static int probe_hfsplus(blkid_probe pr, const struct blkid_idmag *mag)
 	leaf_off = ((uint64_t) ext_block_start + leaf_block) * blocksize;
 
 	buf = blkid_probe_get_buffer(pr,
-				(blkid_loff_t) off + leaf_off,
+				(uint64_t) off + leaf_off,
 				leaf_node_size);
 	if (!buf)
 		return errno ? -errno : 0;
@@ -284,12 +302,13 @@ static int probe_hfsplus(blkid_probe pr, const struct blkid_idmag *mag)
 	key = (struct hfsplus_catalog_key *)
 		&buf[sizeof(struct hfsplus_bnode_descriptor)];
 
-	if (be32_to_cpu(key->parent_id) != HFSPLUS_POR_CNID)
+	if (be32_to_cpu(key->parent_id) != HFSPLUS_POR_CNID ||
+	    be16_to_cpu(key->unicode_len) > 255)
 		return 0;
 
 	blkid_probe_set_utf8label(pr, key->unicode,
 			be16_to_cpu(key->unicode_len) * 2,
-			BLKID_ENC_UTF16BE);
+			UL_ENCODE_UTF16BE);
 	return 0;
 }
 
