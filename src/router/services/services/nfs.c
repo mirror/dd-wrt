@@ -63,6 +63,7 @@ void start_nfs(void)
 	mkdir("/var/lib", 0777);
 	mkdir("/var/lib/nfs", 0777);
 	mkdir("/var/lib/nfs/v4recovery", 0777);
+	mkdir("/var/lib/nfs/sm", 0777);
 	//rpc.mountd requires ipv6 support. so load the drivers
 	insmod("ipv6");
 	insmod("oid_registry");
