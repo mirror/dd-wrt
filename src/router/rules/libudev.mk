@@ -27,7 +27,9 @@ libudev:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
