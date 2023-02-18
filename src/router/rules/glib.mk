@@ -134,7 +134,9 @@ glib20-configure: libffi zlib util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif	
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 
 	cd glib20/gettext && ./autogen.sh
@@ -180,7 +182,9 @@ glib20: libffi zlib util-linux util-linux-install
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	$(MAKE) -C glib20/gettext all
 
@@ -198,7 +202,9 @@ glib20: libffi zlib util-linux util-linux-install
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+ifneq ($(CONFIG_NFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+endif
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
