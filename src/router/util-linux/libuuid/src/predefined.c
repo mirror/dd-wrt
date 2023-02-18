@@ -1,7 +1,7 @@
 /*
- * parse.c --- UUID parsing
+ * predefined.c --- well-known UUIDs from the RFC-4122 namespace
  *
- * Copyright (C) 1996, 1997 Theodore Ts'o.
+ * Copyright (C) 2017 Philip Prindeville
  *
  * %Begin-Header%
  * Redistribution and use in source and binary forms, with or without
@@ -32,67 +32,52 @@
  * %End-Header%
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
 #include <string.h>
+#include "uuid.h"
 
-#include "c.h"
-#include "uuidP.h"
+/*
+ * These are time-based UUIDs that are well-known in that they've
+ * been canonized as part of RFC-4122, Appendex C.  They are to
+ * be used as the namespace (ns) argument to the uuid_generate_md5()
+ * and uuid_generate_sha1() functions.
+ *
+ * See Section 4.3 for the particulars of how namespace UUIDs
+ * are combined with seed values to generate new UUIDs.
+ */
 
-int uuid_parse(const char *in, uuid_t uu)
+UUID_DEFINE(NameSpace_DNS,
+	0x6b, 0xa7, 0xb8, 0x10, 0x9d, 0xad, 0x11, 0xd1,
+	0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8);
+
+UUID_DEFINE(NameSpace_URL,
+	0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1,
+	0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8);
+
+UUID_DEFINE(NameSpace_OID,
+	0x6b, 0xa7, 0xb8, 0x12, 0x9d, 0xad, 0x11, 0xd1,
+	0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8);
+
+UUID_DEFINE(NameSpace_X500,
+	0x6b, 0xa7, 0xb8, 0x14, 0x9d, 0xad, 0x11, 0xd1,
+	0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8);
+
+const uuid_t *uuid_get_template(const char *alias)
 {
-	size_t len = strlen(in);
-	if (len != 36)
-		return -1;
+	if (!alias || !*alias)
+		return NULL;
 
-	return uuid_parse_range(in, in + len, uu);
+	if (!strcmp(alias, "dns"))
+		return &NameSpace_DNS;
+
+	if (!strcmp(alias, "url"))
+		return &NameSpace_URL;
+
+	if (!strcmp(alias, "oid"))
+		return &NameSpace_OID;
+
+	if (!strcmp(alias, "x500") || !strcmp(alias, "x.500"))
+		return &NameSpace_X500;
+
+	return NULL;
 }
 
-int uuid_parse_range(const char *in_start, const char *in_end, uuid_t uu)
-{
-	struct uuid	uuid;
-	int		i;
-	const char	*cp;
-	char		buf[3];
-
-	if ((in_end - in_start) != 36)
-		return -1;
-	for (i=0, cp = in_start; i < 36; i++,cp++) {
-		if ((i == 8) || (i == 13) || (i == 18) ||
-		    (i == 23)) {
-			if (*cp == '-')
-				continue;
-			return -1;
-		}
-
-		if (!isxdigit(*cp))
-			return -1;
-	}
-	errno = 0;
-	uuid.time_low = strtoul(in_start, NULL, 16);
-
-	if (!errno)
-		uuid.time_mid = strtoul(in_start+9, NULL, 16);
-	if (!errno)
-		uuid.time_hi_and_version = strtoul(in_start+14, NULL, 16);
-	if (!errno)
-		uuid.clock_seq = strtoul(in_start+19, NULL, 16);
-	if (errno)
-		return -1;
-
-	cp = in_start+24;
-	buf[2] = 0;
-	for (i=0; i < 6; i++) {
-		buf[0] = *cp++;
-		buf[1] = *cp++;
-
-		errno = 0;
-		uuid.node[i] = strtoul(buf, NULL, 16);
-		if (errno)
-			return -1;
-	}
-
-	uuid_pack(&uuid, uu);
-	return 0;
-}
