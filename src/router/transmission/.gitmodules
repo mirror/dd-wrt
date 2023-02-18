@@ -1,0 +1,49 @@
+[submodule "third-party/dht"]
+	path = third-party/dht
+	url = https://github.com/transmission/dht
+	branch = post-0.27-transmission
+[submodule "third-party/libb64"]
+	path = third-party/libb64
+	url = https://github.com/transmission/libb64
+	branch = post-1.2.1-transmission
+[submodule "third-party/libevent"]
+	path = third-party/libevent
+	url = https://github.com/transmission/libevent
+	branch = post-2.0.22-transmission
+[submodule "third-party/libnatpmp"]
+	path = third-party/libnatpmp
+	url = https://github.com/transmission/libnatpmp
+	branch = post-20151025-transmission
+[submodule "third-party/libutp"]
+	path = third-party/libutp
+	url = https://github.com/transmission/libutp
+	branch = post-3.4-transmission
+[submodule "third-party/miniupnpc"]
+	path = third-party/miniupnpc
+	url = https://github.com/transmission/miniupnpc
+	branch = post-2.0.20170509-transmission
+[submodule "third-party/googletest"]
+	path = third-party/googletest
+	url = https://github.com/google/googletest.git
+[submodule "third-party/utfcpp"]
+	branch = post-3.2.1-transmission
+	path = third-party/utfcpp
+	url = https://github.com/transmission/utfcpp
+[submodule "third-party/libdeflate"]
+	path = third-party/libdeflate
+	url = https://github.com/transmission/libdeflate
+	branch = v1.17.x
+[submodule "third-party/libpsl"]
+	path = third-party/libpsl
+	url = https://github.com/transmission/libpsl.git
+	branch = post-3.0.0-transmission
+[submodule "third-party/fmt"]
+	path = third-party/fmt
+	url = https://github.com/transmission/fmt.git
+	branch = 9-x-y
+[submodule "third-party/fast_float"]
+	path = third-party/fast_float
+	url = https://github.com/transmission/fast_float
+[submodule "third-party/wide-integer"]
+	path = third-party/wide-integer
+	url = https://github.com/transmission/wide-integer
