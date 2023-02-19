@@ -271,7 +271,7 @@ NDPI_STATIC   void ndpi_set_bitmask_protocol_detection(char *label,
    * @par detection_bitmask  = the protocol bitmask to set
    *
    */
-NPDI_STATIC  int ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC  int ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
  					    const NDPI_PROTOCOL_BITMASK * detection_bitmask);
 
   /**
