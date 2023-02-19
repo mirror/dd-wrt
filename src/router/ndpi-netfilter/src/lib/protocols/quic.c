@@ -254,7 +254,7 @@ static uint16_t gquic_get_u16(const uint8_t *buf, uint32_t version)
 }
 
 
-NDPI_STATIC char *__gcry_err(gpg_error_t err, char *buf, size_t buflen)
+static char *__gcry_err(gpg_error_t err, char *buf, size_t buflen)
 {
   gpg_strerror_r(err, buf, buflen);
   /* I am not sure if the string will be always null-terminated...
@@ -1622,17 +1622,33 @@ static int eval_extra_processing(struct ndpi_detection_module_struct *ndpi_struc
 {
   /* For the time being we need extra processing in two cases only:
      1) to detect Snapchat calls, i.e. RTP/RTCP multiplxed with QUIC.
-     We noticed that Snapchat uses Q046, without any SNI.
+        Two cases:
+        a) [old] Q046, without any SNI
+        b) v1 with SNI *.addlive.io
      2) to reassemble CH fragments on multiple UDP packets.
      These two cases are mutually exclusive
   */
 
-  if((version == V_Q046 &&
-      flow->host_server_name[0] == '\0') ||
-     is_ch_reassembler_pending(flow)) {
-    NDPI_LOG_DBG2(ndpi_struct, "We have further work to do\n");
+  if(version == V_Q046 && flow->host_server_name[0] == '\0') {
+    NDPI_LOG_DBG2(ndpi_struct, "We have further work to do (old snapchat call?)\n");
     return 1;
   }
+
+  if(version == V_1 &&
+     flow->detected_protocol_stack[0] == NDPI_PROTOCOL_SNAPCHAT) {
+    size_t sni_len = strlen(flow->host_server_name);
+    if(sni_len > 11 &&
+       strcmp(flow->host_server_name + sni_len - 11, ".addlive.io") == 0) {
+      NDPI_LOG_DBG2(ndpi_struct, "We have further work to do (new snapchat call?)\n");
+      return 1;
+    }
+  }
+
+  if(is_ch_reassembler_pending(flow)) {
+    NDPI_LOG_DBG2(ndpi_struct, "We have further work to do (reasm)\n");
+    return 1;
+  }
+
   return 0;
 }
 
@@ -1809,10 +1825,9 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ***************************************************************** */
 
-void init_quic_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
-			 NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_quic_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("QUIC", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("QUIC", ndpi_struct, *id,
 				      NDPI_PROTOCOL_QUIC, ndpi_search_quic,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);

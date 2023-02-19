@@ -40,20 +40,9 @@ static void ndpi_int_eaq_add_connection(struct ndpi_detection_module_struct *ndp
 }
 
 
-void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet;
-  u_int16_t sport,dport;
-
-  if (!flow) 
-    return;
-
-  packet = ndpi_get_packet_struct(ndpi_struct);
-
-  if (!packet->udp)
-     return;
-
-  sport = ntohs(packet->udp->source);
-  dport = ntohs(packet->udp->dest);
+static void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  u_int16_t sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
   
   NDPI_LOG_DBG(ndpi_struct, "search eaq\n");
 
@@ -90,9 +79,9 @@ void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 }
 
 
-void init_eaq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_eaq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("EAQ", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("EAQ", ndpi_struct, *id,
 				      NDPI_PROTOCOL_EAQ,
 				      ndpi_search_eaq,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

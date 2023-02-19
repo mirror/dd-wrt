@@ -182,18 +182,18 @@ static u_int32_t __get_master(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-int ndpi_search_tls_tcp_memory(struct ndpi_detection_module_struct *ndpi_struct,
-			       struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  message_t *message = &flow->l4.tcp.tls.message[packet->packet_direction];
+static int ndpi_search_tls_memory(struct ndpi_detection_module_struct *ndpi_struct,
+				  struct ndpi_flow_struct *flow,
+				  const u_int8_t *payload,
+				  u_int16_t payload_len,
+				  u_int32_t seq,
+				  message_t *message) {
   u_int avail_bytes;
 
-  /* TCP */
 #ifdef DEBUG_TLS_MEMORY
-  printf("[TLS Mem] Handling TCP/TLS flow [payload_len: %u][buffer_len: %u][direction: %u]\n",
-	 packet->payload_packet_len,
-	 message->buffer_len,
-	 packet->packet_direction);
+  printf("[TLS Mem] Handling TLS flow [payload_len: %u][buffer_len: %u]\n",
+	 payload_len,
+	 message->buffer_len);
 #endif
 
   if(message->buffer == NULL) {
@@ -211,13 +211,12 @@ int ndpi_search_tls_tcp_memory(struct ndpi_detection_module_struct *ndpi_struct,
 
   avail_bytes = message->buffer_len - message->buffer_used;
 
-  if(avail_bytes < packet->payload_packet_len) {
+  if(avail_bytes < payload_len) {
     void *newbuf;
-    u_int new_len = message->buffer_len + packet->payload_packet_len - avail_bytes + 1;
-
+    u_int new_len = message->buffer_len + payload_len - avail_bytes + 1;
     if(new_len >= ndpi_struct->max_tls_buf) return -1;
-
-    newbuf  = ndpi_realloc(message->buffer, message->buffer_len, new_len);
+    newbuf  = ndpi_realloc(message->buffer,
+				 message->buffer_len, new_len);
     if(!newbuf) return -1;
 
 #ifdef DEBUG_TLS_MEMORY
@@ -230,35 +229,33 @@ int ndpi_search_tls_tcp_memory(struct ndpi_detection_module_struct *ndpi_struct,
 
   }
 
-  if(packet->payload_packet_len > 0 && avail_bytes >= packet->payload_packet_len) {
+  if(payload_len > 0 && avail_bytes >= payload_len) {
     u_int8_t ok = 0;
 
     if(message->next_seq != 0) {
-      if(ntohl(packet->tcp->seq) == message->next_seq)
+      if(seq == message->next_seq)
 	ok = 1;
     } else
       ok = 1;
 
     if(ok) {
       memcpy(&message->buffer[message->buffer_used],
-	     packet->payload, packet->payload_packet_len);
+	     payload, payload_len);
 
-      message->buffer_used += packet->payload_packet_len;
+      message->buffer_used += payload_len;
 #ifdef DEBUG_TLS_MEMORY
-      printf("[TLS Mem] Copied data to buffer [%u/%u bytes][direction: %u][tcp_seq: %u][next: %u]\n",
+      printf("[TLS Mem] Copied data to buffer [%u/%u bytes][tcp_seq: %u][next: %u]\n",
 	     message->buffer_used, message->buffer_len,
-	     packet->packet_direction,
-	     ntohl(packet->tcp->seq),
-	     ntohl(packet->tcp->seq)+packet->payload_packet_len);
+	     seq,
+	     seq + payload_len);
 #endif
 
-      message->next_seq = ntohl(packet->tcp->seq)+packet->payload_packet_len;
+      message->next_seq = seq + payload_len;
     } else {
 #ifdef DEBUG_TLS_MEMORY
-      printf("[TLS Mem] Skipping packet [%u bytes][direction: %u][tcp_seq: %u][expected next: %u]\n",
+      printf("[TLS Mem] Skipping packet [%u bytes][tcp_seq: %u][expected next: %u]\n",
 	     message->buffer_len,
-	     packet->packet_direction,
-	     ntohl(packet->tcp->seq),
+	     seq,
 	     message->next_seq);
 #endif
     }
@@ -382,23 +379,18 @@ static void checkTLSSubprotocol(struct ndpi_detection_module_struct *ndpi_struct
       key = make_tls_cert_key(packet, is_from_client);
 
       if(ndpi_lru_find_cache(ndpi_struct->tls_cert_cache, key,
-			     &cached_proto, 0 /* Don't remove it as it can be used for other connections */)) {
-//	ndpi_protocol ret = { __get_master(ndpi_struct, flow), cached_proto, NDPI_PROTOCOL_UNKNOWN /* unused */,
-//#ifndef __KERNEL__
-//		NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL
-//#endif
-//		};
+			     &cached_proto, 0 /* Don't remove it as it can be used for other connections */,
+			     ndpi_get_current_time(flow))) {
 
-	flow->detected_protocol_stack[0] = cached_proto,
-	flow->detected_protocol_stack[1] = NDPI_PROTOCOL_TLS;
 	ndpi_set_detected_protocol(ndpi_struct, flow, cached_proto, __get_master(ndpi_struct, flow), NDPI_CONFIDENCE_DPI_CACHE);
-#ifndef __KERNEL__
+#ifndef __KERNEL__ 
 	{
-	  ndpi_protocol ret = { __get_master(ndpi_struct, flow), cached_proto, NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL};
-	  flow->category = ndpi_get_proto_category(ndpi_struct, ret);
-	  ndpi_check_subprotocol_risk(ndpi_struct, flow, cached_proto);
+	ndpi_protocol ret = { __get_master(ndpi_struct, flow), cached_proto, NDPI_PROTOCOL_UNKNOWN /* unused */,
+		NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL };
+	flow->category = ndpi_get_proto_category(ndpi_struct, ret);
 	}
 #endif
+	ndpi_check_subprotocol_risk(ndpi_struct, flow, cached_proto);
       }
     }
   }
@@ -795,7 +787,7 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 	if(ndpi_struct->tls_cert_cache) {
 	  u_int32_t key = make_tls_cert_key(packet, 0 /* from the server */);
 
-	  ndpi_lru_add_to_cache(ndpi_struct->tls_cert_cache, key, proto_id);
+	  ndpi_lru_add_to_cache(ndpi_struct->tls_cert_cache, key, proto_id, ndpi_get_current_time(flow));
 	}
       }
     }
@@ -1024,8 +1016,8 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
   message_t *message;
 
 #ifdef DEBUG_TLS_MEMORY
-  printf("[TLS Mem] ndpi_search_tls_tcp() Processing new packet [payload_packet_len: %u]\n",
-	 packet->payload_packet_len);
+  printf("[TLS Mem] ndpi_search_tls_tcp() Processing new packet [payload_packet_len: %u][Dir: %u]\n",
+	 packet->payload_packet_len, packet->packet_direction);
 #endif
 
   /* This function is also called by "extra dissection" data path. Unfortunately,
@@ -1040,9 +1032,11 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
     return 1; /* Keep working */
   }
 
-  if(ndpi_search_tls_tcp_memory(ndpi_struct, flow) == -1)
+  message = &flow->tls_quic.message[packet->packet_direction];
+  if(ndpi_search_tls_memory(ndpi_struct, flow, packet->payload,
+			    packet->payload_packet_len, ntohl(packet->tcp->seq),
+			    message) == -1)
     return 0; /* Error -> stop */
-  message = &flow->l4.tcp.tls.message[packet->packet_direction];
 
   /* Valid TLS Content Types:
      https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-5 */
@@ -1219,10 +1213,11 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
 			       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  u_int32_t handshake_len;
+  u_int32_t handshake_len, handshake_frag_off, handshake_frag_len;
   u_int16_t p_len, processed;
   const u_int8_t *p;
   u_int8_t no_dtls = 0, change_cipher_found = 0;
+  message_t *message = NULL;
 
 #ifdef DEBUG_TLS
   printf("[TLS] %s()\n", __FUNCTION__);
@@ -1270,19 +1265,73 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
         break;
       }
       /* TODO: handle (certificate) fragments */
-      if(block_len > 16) {
+      if(block_len > 24) {
         handshake_len = (block[14] << 16) + (block[15] << 8) + block[16];
-        if((handshake_len + 12) != block_len) {
+        handshake_frag_off = (block[19] << 16) + (block[20] << 8) + block[21];
+        handshake_frag_len = (block[22] << 16) + (block[23] << 8) + block[24];
+        message = &flow->tls_quic.message[packet->packet_direction];
+
+
 #ifdef DEBUG_TLS
-          printf("[TLS] DTLS invalid handshake_len %d, %d)\n",
+        printf("[TLS] DTLS frag off %d len %d\n", handshake_frag_off, handshake_frag_len);
+#endif
+
+	if((handshake_len + 12) == block_len) {
+          packet->payload = &block[13];
+          packet->payload_packet_len = block_len;
+          processTLSBlock(ndpi_struct, flow);
+	} else if(handshake_len + 12 > block_len) {
+	  int rc;
+
+#ifdef DEBUG_TLS
+          printf("[TLS] DTLS fragment off %d len %d\n", handshake_frag_off, handshake_frag_len);
+#endif
+          if(handshake_frag_len + 12 > block_len) {
+#ifdef DEBUG_TLS
+            printf("[TLS] DTLS fragment invalid len %d + 12 > %d\n", handshake_frag_len, block_len);
+#endif
+            no_dtls = 1;
+            break;
+	  }
+
+          if(handshake_frag_off == 0) {
+            rc = ndpi_search_tls_memory(ndpi_struct, flow,  &block[13],
+					handshake_frag_len + 12,
+					handshake_frag_off, message);
+	  } else {
+            rc = ndpi_search_tls_memory(ndpi_struct, flow,  &block[13 + 12],
+					handshake_frag_len,
+					handshake_frag_off + 12, message);
+	  }
+	  if(rc == -1) {
+            no_dtls = 1;
+            break;
+	  }
+#ifdef DEBUG_TLS
+          printf("[TLS] DTLS reassembled len %d vs %d\n",
+                 message->buffer_used, handshake_len + 12);
+#endif
+
+          if(handshake_len + 12 == message->buffer_used) {
+            packet->payload = message->buffer;
+            packet->payload_packet_len = message->buffer_used;
+            processTLSBlock(ndpi_struct, flow);
+
+            ndpi_free(message->buffer);
+            memset(message, '\0', sizeof(*message));
+            message = NULL;
+          } else {
+            /* No break, next fragments might be in the same packet */
+          }
+
+        } else {
+#ifdef DEBUG_TLS
+          printf("[TLS] DTLS invalid handshake_len %d, %d\n",
                  handshake_len, block_len);
 #endif
           no_dtls = 1;
           break;
         }
-        packet->payload = &block[13];
-        packet->payload_packet_len = block_len;
-        processTLSBlock(ndpi_struct, flow);
       }
     } else if(block[0] == 0x14) {
       /* Change-cipher-spec: any subsequent block might be encrypted */
@@ -1305,7 +1354,7 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
 
     processed += block_len + 13;
   }
-  if(processed != p_len) {
+  if(processed != p_len && message == NULL /* No pending reassembler */) {
 #ifdef DEBUG_TLS
     printf("[TLS] DTLS invalid processed len %d/%d (%d)\n", processed, p_len, change_cipher_found);
 #endif
@@ -1346,12 +1395,12 @@ NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_str
 #endif
 
   /* Reset reassemblers */
-  if(flow->l4.tcp.tls.message[0].buffer)
-    ndpi_free(flow->l4.tcp.tls.message[0].buffer);
-  memset(&flow->l4.tcp.tls.message[0], '\0', sizeof(flow->l4.tcp.tls.message[0]));
-  if(flow->l4.tcp.tls.message[1].buffer)
-    ndpi_free(flow->l4.tcp.tls.message[1].buffer);
-  memset(&flow->l4.tcp.tls.message[1], '\0', sizeof(flow->l4.tcp.tls.message[1]));
+  if(flow->tls_quic.message[0].buffer)
+    ndpi_free(flow->tls_quic.message[0].buffer);
+  memset(&flow->tls_quic.message[0], '\0', sizeof(flow->tls_quic.message[0]));
+  if(flow->tls_quic.message[1].buffer)
+    ndpi_free(flow->tls_quic.message[1].buffer);
+  memset(&flow->tls_quic.message[1], '\0', sizeof(flow->tls_quic.message[1]));
 
   tlsInitExtraPacketProcessing(ndpi_struct, flow);
 }
@@ -2669,11 +2718,11 @@ static void ndpi_search_tls_wrapper(struct ndpi_detection_module_struct *ndpi_st
 /* **************************************** */
 
 void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
+			u_int32_t *id) {
 
   ndpi_struct->max_tls_buf = NDPI_MAX_TLS_REQUEST_SIZE;
 
-  ndpi_set_bitmask_protocol_detection("TLS", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("TLS", ndpi_struct, *id,
 				      NDPI_PROTOCOL_TLS,
 				      ndpi_search_tls_wrapper,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
@@ -2684,7 +2733,7 @@ void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct,
 
   /* *************************************************** */
 
-  ndpi_set_bitmask_protocol_detection("DTLS", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("DTLS", ndpi_struct, *id,
 				      NDPI_PROTOCOL_DTLS,
 				      ndpi_search_tls_wrapper,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

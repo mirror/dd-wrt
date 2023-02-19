@@ -119,16 +119,12 @@ static void ndpi_check_mongodb(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void ndpi_search_mongodb(struct ndpi_detection_module_struct *ndpi_struct,
-			 struct ndpi_flow_struct *flow)
+static void ndpi_search_mongodb(struct ndpi_detection_module_struct *ndpi_struct,
+				struct ndpi_flow_struct *flow)
 {
   // Break after 6 packets.
   if(flow->packet_counter > 6) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    return;
-  }
-
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN) {
     return;
   }
 
@@ -142,8 +138,8 @@ void ndpi_search_mongodb(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 void init_mongodb_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			    u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("MongoDB", ndpi_struct, detection_bitmask,
+			    u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("MongoDB", ndpi_struct,
 				      *id, NDPI_PROTOCOL_MONGODB, ndpi_search_mongodb,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,

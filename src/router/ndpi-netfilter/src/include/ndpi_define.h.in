@@ -183,8 +183,10 @@
  #define NDPI_LOG(proto, m, log_level, args...)		                                 \
   {								                         \
     struct ndpi_detection_module_struct *mod = (struct ndpi_detection_module_struct*) m; \
-    if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
-      (*(mod->ndpi_debug_printf))(proto, mod, log_level, __FILE__, __FUNCTION__, __LINE__, args); \
+    if(mod && mod->ndpi_log_level >= log_level) {	                                 \
+      if(mod != NULL && mod->ndpi_debug_printf != NULL)		                         \
+        (*(mod->ndpi_debug_printf))(proto, mod, log_level, __FILE__, __FUNCTION__, __LINE__, args); \
+    } \
   }
 
  /* We must define NDPI_CURRENT_PROTO before include ndpi_main.h !!!
@@ -232,7 +234,11 @@
 # define NDPI_LOG_DBG2(...) {}
 # else
 # define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
-# define NDPI_LOG_ERR(mod, args...)  { printf(args); }
+# ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#  define NDPI_LOG_ERR(mod, args...)  { printf(args); }
+# else
+#  define NDPI_LOG_ERR(mod, args...)  { /* printf(args); */ }
+# endif
 # define NDPI_LOG_INFO(mod, args...) { /* printf(args); */ }
 # define NDPI_LOG_DBG(mod,  args...) { /* printf(args); */ }
 # define NDPI_LOG_DBG2(mod, args...) { /* printf(args); */ }

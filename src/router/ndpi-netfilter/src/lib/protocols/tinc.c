@@ -132,7 +132,7 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void ndpi_search_tinc(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
+static void ndpi_search_tinc(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
   NDPI_LOG_DBG(ndpi_struct, "tinc detection\n");
 
   if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_TINC) {
@@ -140,9 +140,9 @@ void ndpi_search_tinc(struct ndpi_detection_module_struct* ndpi_struct, struct n
   }
 }
 
-void init_tinc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_tinc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("TINC", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("TINC", ndpi_struct, *id,
 				      NDPI_PROTOCOL_TINC,
 				      ndpi_search_tinc,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION, /* TODO: IPv6? */

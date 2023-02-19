@@ -34,7 +34,7 @@ static void ndpi_check_bjnp(struct ndpi_detection_module_struct *ndpi_struct, st
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void ndpi_search_bjnp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_bjnp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_DBG(ndpi_struct, "search bjnp\n");
 
@@ -45,9 +45,9 @@ void ndpi_search_bjnp(struct ndpi_detection_module_struct *ndpi_struct, struct n
 }
 
 
-void init_bjnp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_bjnp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("BJNP", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("BJNP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_BJNP,
 				      ndpi_search_bjnp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

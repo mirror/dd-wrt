@@ -1003,19 +1003,20 @@ static void ndpi_add_connection_as_bittorrent(
 
     key1 = ndpi_ip_port_hash_funct(flow->c_address.v4, flow->c_port), key2 = ndpi_ip_port_hash_funct(flow->s_address.v4, flow->s_port);
     
-    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT);
-    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key2, NDPI_PROTOCOL_BITTORRENT);
+    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(flow));
+    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key2, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(flow));
 
     /* Now add hosts as twins */
     ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache,
 			  flow->c_address.v4 + flow->s_address.v4,
-			  NDPI_PROTOCOL_BITTORRENT);
+			  NDPI_PROTOCOL_BITTORRENT,
+			  ndpi_get_current_time(flow));
     
     /* Also add +2 ports of the sender in order to catch additional sockets open by the same client */
     for(i=0; i<2; i++) {
       key1 = ndpi_ip_port_hash_funct(flow->c_address.v4, htons(ntohs(flow->c_port)+1+i));
 
-      ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT);
+      ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(flow));
     }
     
 #ifdef BITTORRENT_CACHE_DEBUG
@@ -1118,8 +1119,6 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
   u_int16_t a = 0;
 
   if(packet->payload_packet_len == 1 && packet->payload[0] == 0x13) {
-    /* reset stage back to 0 so we will see the next packet here too */
-    flow->bittorrent_stage = 0;
     return 0;
   }
   if(flow->packet_counter == 2 && packet->payload_packet_len > 20) {
@@ -1356,17 +1355,7 @@ static void ndpi_int_search_bittorrent_tcp(struct ndpi_detection_module_struct *
     return;
   }
 
-  if(flow->bittorrent_stage == 0 && packet->payload_packet_len != 0) {
-    /* exclude stage 0 detection from next run */
-    flow->bittorrent_stage = 1;
-    if(ndpi_int_search_bittorrent_tcp_zero(ndpi_struct, flow) != 0) {
-      NDPI_LOG_DBG2(ndpi_struct, "stage 0 has detected something, returning\n");
-      return;
-    }
-
-    NDPI_LOG_DBG2(ndpi_struct, "stage 0 has no direct detection, fall through\n");
-  }
-  return;
+  ndpi_int_search_bittorrent_tcp_zero(ndpi_struct, flow);
 }
 
 static char *bt_code_text[8] = {
@@ -1405,7 +1394,8 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
   char *detect_type = NULL;
   char *bt_proto = NULL;
 
-  NDPI_LOG_DBG(ndpi_struct, "search Bittorrent\n");
+  NDPI_LOG_DBG(ndpi_struct, "Search bittorrent\n");
+
   /* This is broadcast */
 
   if(packet->iph) {
@@ -1462,13 +1452,13 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 #endif
 	
 	if(ndpi_lru_find_cache(ndpi_struct->bittorrent_cache, key,
-			       &cached_proto, 0 /* Don't remove it as it can be used for other connections */))
+			       &cached_proto, 0, ndpi_get_current_time(flow)))
 	  found = 1;
 	else {
 	  key = packet->udp ? (packet->iph->daddr + packet->udp->dest) : (packet->iph->daddr + packet->tcp->dest);
 
 	  found = ndpi_lru_find_cache(ndpi_struct->bittorrent_cache, key,
-				      &cached_proto, 0 /* Don't remove it as it can be used for other connections */);
+				&cached_proto, 0, ndpi_get_current_time(flow));
 	}
 
 	if(found)
@@ -1560,7 +1550,6 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 
 	}
       }
-
       if(match_utp_query_reply((uint32_t *)packet->payload,&flow->bittorrent_seq,
 			       packet->payload_packet_len,&utp_type)) {
 	      if(utp_type == 0xffff) {
@@ -1668,9 +1657,9 @@ if(ndpi_struct->bt6_ht) {
 }
 
 void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			       u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+			       u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("BitTorrent", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("BitTorrent", ndpi_struct, *id,
 				      NDPI_PROTOCOL_BITTORRENT,
 				      ndpi_search_bittorrent,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

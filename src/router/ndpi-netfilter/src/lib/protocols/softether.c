@@ -1,7 +1,7 @@
 /*
  * softether.c
  *
- * Copyright (C) 2022 - ntop.org
+ * Copyright (C) 2022-23 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -288,7 +288,7 @@ static int dissect_softether_ip_port(struct ndpi_flow_struct *flow,
 
 /* ***************************************************** */
 
-void ndpi_search_softether(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_softether(struct ndpi_detection_module_struct *ndpi_struct,
                            struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -343,8 +343,8 @@ static int ndpi_search_softether_again(struct ndpi_detection_module_struct *ndpi
 /* ***************************************************** */
   
 void init_softether_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			      u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("Softether", ndpi_struct, detection_bitmask, *id,
+			      u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("Softether", ndpi_struct, *id,
 				      NDPI_PROTOCOL_SOFTETHER,
 				      ndpi_search_softether,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

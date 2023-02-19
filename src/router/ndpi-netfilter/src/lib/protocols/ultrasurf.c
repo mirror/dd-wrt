@@ -1,7 +1,7 @@
 /*
  * ultrasurf.c
  *
- * Copyright (C) 2022 - ntop.org
+ * Copyright (C) 2022-23 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,8 +35,8 @@ static void ndpi_int_ultrasurf_add_connection(struct ndpi_detection_module_struc
                              NDPI_CONFIDENCE_DPI);
 }
 
-void ndpi_search_ultrasurf(struct ndpi_detection_module_struct *ndpi_struct,
-                           struct ndpi_flow_struct *flow)
+static void ndpi_search_ultrasurf(struct ndpi_detection_module_struct *ndpi_struct,
+                                  struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -58,9 +58,9 @@ void ndpi_search_ultrasurf(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 void init_ultrasurf_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-                              u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+                              u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("UltraSurf", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("UltraSurf", ndpi_struct, *id,
     NDPI_PROTOCOL_ULTRASURF,
     ndpi_search_ultrasurf,
     NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

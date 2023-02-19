@@ -25,7 +25,7 @@
 
 #include "ndpi_api.h"
 
-void ndpi_search_mpegts(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_mpegts(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -51,9 +51,9 @@ void ndpi_search_mpegts(struct ndpi_detection_module_struct *ndpi_struct, struct
 }
 
 
-void init_mpegts_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_mpegts_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("MPEG_TS", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("MPEG_TS", ndpi_struct, *id,
 				      NDPI_PROTOCOL_MPEGTS,
 				      ndpi_search_mpegts,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

@@ -79,7 +79,7 @@ int8_t check_pkid_and_detect_hmac_size(const u_int8_t * payload) {
   return(-1);
 }
 
-void ndpi_search_openvpn(struct ndpi_detection_module_struct* ndpi_struct,
+static void ndpi_search_openvpn(struct ndpi_detection_module_struct* ndpi_struct,
                          struct ndpi_flow_struct* flow) {
   struct ndpi_packet_struct* packet = ndpi_get_packet_struct(ndpi_struct);
   const u_int8_t * ovpn_payload = packet->payload;
@@ -177,8 +177,8 @@ void ndpi_search_openvpn(struct ndpi_detection_module_struct* ndpi_struct,
 }
 
 void init_openvpn_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			    u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("OpenVPN", ndpi_struct, detection_bitmask, *id,
+			    u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("OpenVPN", ndpi_struct, *id,
 				      NDPI_PROTOCOL_OPENVPN,
 				      ndpi_search_openvpn,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

@@ -99,14 +99,13 @@ static void ndpi_int_memcached_add_connection(struct ndpi_detection_module_struc
 			     NDPI_PROTOCOL_MEMCACHED, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
-void ndpi_search_memcached(
-			   struct ndpi_detection_module_struct *ndpi_struct,
-			   struct ndpi_flow_struct *flow)
+static void ndpi_search_memcached(struct ndpi_detection_module_struct *ndpi_struct,
+				  struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   const u_int8_t *offset = packet->payload;
   u_int16_t length = packet->payload_packet_len;
-  u_int8_t *matches;
+  u_int8_t *matches = NULL;
 
   NDPI_LOG_DBG(ndpi_struct, "search memcached\n");
 
@@ -133,10 +132,6 @@ void ndpi_search_memcached(
     offset += MEMCACHED_UDP_HDR_LEN;
     length -= MEMCACHED_UDP_HDR_LEN;
     matches = &flow->l4.udp.memcached_matches;
-  }
-  else {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    return;
   }
 
   /* grep MCD memcached.c |\
@@ -179,10 +174,10 @@ void ndpi_search_memcached(
 
 void init_memcached_dissector(
 			      struct ndpi_detection_module_struct *ndpi_struct,
-			      u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+			      u_int32_t *id)
 {
   ndpi_set_bitmask_protocol_detection("MEMCACHED",
-				      ndpi_struct, detection_bitmask, *id,
+				      ndpi_struct, *id,
 				      NDPI_PROTOCOL_MEMCACHED,
 				      ndpi_search_memcached,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

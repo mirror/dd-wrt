@@ -82,17 +82,14 @@ static int64_t get_var_int(const unsigned char *buf, int buf_len, u_int8_t *num_
 /**
  * Dissector function that searches Mqtt headers
  */
-void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
-		struct ndpi_flow_struct *flow)
+static void ndpi_search_mqtt(struct ndpi_detection_module_struct *ndpi_struct,
+			     struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	u_int8_t pt,flags, rl_len;
 	int64_t rl;
 
 	NDPI_LOG_DBG(ndpi_struct, "search Mqtt\n");
-	if (flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN) {
-		return;
-	}
 	if (flow->packet_counter > 10) {
 		NDPI_LOG_DBG(ndpi_struct, "Excluding Mqtt .. mandatory header not found!\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MQTT);
@@ -263,9 +260,9 @@ void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
  * Entry point for the ndpi library
  */
 void init_mqtt_dissector (struct ndpi_detection_module_struct *ndpi_struct,
-		u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+		u_int32_t *id)
 {
-	ndpi_set_bitmask_protocol_detection ("MQTT", ndpi_struct, detection_bitmask, *id,
+	ndpi_set_bitmask_protocol_detection ("MQTT", ndpi_struct, *id,
 			NDPI_PROTOCOL_MQTT,
 			ndpi_search_mqtt,
 			NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

@@ -27,7 +27,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_MODBUS
 #include "ndpi_api.h"
 
-void ndpi_search_modbus_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_modbus_tcp(struct ndpi_detection_module_struct *ndpi_struct,
                             struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t modbus_port = htons(502); // port used by modbus
@@ -59,9 +59,9 @@ void ndpi_search_modbus_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 void init_modbus_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-                           u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
+                           u_int32_t *id) {
 	
-  ndpi_set_bitmask_protocol_detection("Modbus", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("Modbus", ndpi_struct, *id,
 				      NDPI_PROTOCOL_MODBUS,
 				      ndpi_search_modbus_tcp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

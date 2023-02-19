@@ -92,7 +92,7 @@ struct flow_ver7_rec {
   u_int32_t router_sc;  /* Router which is shortcut by switch */
 };
 
-void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   // const u_int8_t *packet_payload = packet->payload;
@@ -177,9 +177,9 @@ void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct, struc
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("NetFlow", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("NetFlow", ndpi_struct, *id,
 				      NDPI_PROTOCOL_NETFLOW,
 				      ndpi_search_netflow,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

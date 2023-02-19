@@ -34,7 +34,7 @@ static void ndpi_dofus_add_connection(struct ndpi_detection_module_struct *ndpi_
   NDPI_LOG_INFO(ndpi_struct, "found dofus\n");
 }
 
-void ndpi_search_dofus(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_dofus(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -138,9 +138,9 @@ maybe_dofus:
 
 }
 
-void init_dofus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_dofus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("Dofus", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("Dofus", ndpi_struct, *id,
 				      NDPI_PROTOCOL_DOFUS,
 				      ndpi_search_dofus,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

@@ -35,7 +35,7 @@ static void ndpi_int_tvuplayer_add_connection(struct ndpi_detection_module_struc
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TVUPLAYER, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
-void ndpi_search_tvuplayer(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_tvuplayer(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	
@@ -147,9 +147,9 @@ void ndpi_search_tvuplayer(struct ndpi_detection_module_struct *ndpi_struct, str
 }
 
 
-void init_tvuplayer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_tvuplayer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("TVUplayer", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("TVUplayer", ndpi_struct, *id,
 				      NDPI_PROTOCOL_TVUPLAYER,
 				      ndpi_search_tvuplayer,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

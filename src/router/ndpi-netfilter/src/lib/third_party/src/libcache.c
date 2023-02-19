@@ -307,7 +307,7 @@ void cache_free(cache_t cache) {
 void cache_dump(cache_t cache) {
   unsigned int i;
   cache_entry_t *entry,*entry2;
-  if(!cache || !cache->map) {
+  if(!cache) {
     return;
   }
   printf("== size:%d ",cache->size);

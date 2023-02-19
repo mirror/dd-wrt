@@ -248,22 +248,16 @@ static void ndpi_check_ftp_data(struct ndpi_detection_module_struct *ndpi_struct
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void ndpi_search_ftp_data(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_ftp_data(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
 	
-  /* Break after 20 packets. */
-  if(flow->packet_counter > 20) {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    return;
-  }
-
   NDPI_LOG_DBG(ndpi_struct, "search FTP_DATA\n");
   ndpi_check_ftp_data(ndpi_struct, flow);
 }
 
 
-void init_ftp_data_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_ftp_data_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("FTP_DATA", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("FTP_DATA", ndpi_struct, *id,
 				      NDPI_PROTOCOL_FTP_DATA,
 				      ndpi_search_ftp_data,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

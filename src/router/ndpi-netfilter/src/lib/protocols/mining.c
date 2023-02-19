@@ -44,7 +44,7 @@ u_int32_t make_mining_key(struct ndpi_flow_struct *flow) {
 static void cacheMiningHostTwins(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow) {
   if(ndpi_struct->mining_cache)
-    ndpi_lru_add_to_cache(ndpi_struct->mining_cache, make_mining_key(flow), NDPI_PROTOCOL_MINING);
+    ndpi_lru_add_to_cache(ndpi_struct->mining_cache, make_mining_key(flow), NDPI_PROTOCOL_MINING, ndpi_get_current_time(flow));
 }
 
 /* ************************************************************************** */
@@ -172,7 +172,7 @@ static void ndpi_search_mining_tcp(struct ndpi_detection_module_struct *ndpi_str
 
 /* ************************************************************************** */
 
-void ndpi_search_mining(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_mining(struct ndpi_detection_module_struct *ndpi_struct,
 			struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -185,9 +185,9 @@ void ndpi_search_mining(struct ndpi_detection_module_struct *ndpi_struct,
 /* ************************************************************************** */
 
 void init_mining_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			   u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+			   u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("Mining", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("Mining", ndpi_struct, *id,
 				      NDPI_PROTOCOL_MINING,
 				      ndpi_search_mining,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

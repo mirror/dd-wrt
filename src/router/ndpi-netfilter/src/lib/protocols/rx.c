@@ -80,7 +80,7 @@ struct ndpi_rx_header {
 
 
 
-NDPI_STATIC void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
                    struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -207,8 +207,8 @@ NDPI_STATIC void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void ndpi_search_rx(struct ndpi_detection_module_struct *ndpi_struct,
-                    struct ndpi_flow_struct *flow)
+static void ndpi_search_rx(struct ndpi_detection_module_struct *ndpi_struct,
+                           struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_DBG(ndpi_struct, "search RX\n");
   if (flow->detected_protocol_stack[0] != NDPI_PROTOCOL_RX) {
@@ -217,10 +217,9 @@ void ndpi_search_rx(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-                       u_int32_t *id,
-                       NDPI_PROTOCOL_BITMASK *detection_bitmask)
+                       u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("RX", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("RX", ndpi_struct, *id,
 				      NDPI_PROTOCOL_RX,
 				      ndpi_search_rx,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

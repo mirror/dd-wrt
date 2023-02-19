@@ -37,8 +37,6 @@ static void ndpi_check_zmq(struct ndpi_detection_module_struct *ndpi_struct, str
   u_char p1[] =  { 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x7f };
   u_char p2[] =  { 0x28, 0x66, 0x6c, 0x6f, 0x77, 0x00 };
 
-  if(payload_len == 0) return; /* Shouldn't happen */
-
   /* Break after 17 packets. */
   if(flow->packet_counter > 17) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
@@ -83,7 +81,7 @@ static void ndpi_check_zmq(struct ndpi_detection_module_struct *ndpi_struct, str
   }
 }
 
-void ndpi_search_zmq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_zmq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   NDPI_LOG_DBG(ndpi_struct, "search ZMQ\n");
 
   /* skip marked packets */
@@ -93,9 +91,9 @@ void ndpi_search_zmq(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 }
 
 
-void init_zmq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_zmq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("ZeroMQ", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("ZeroMQ", ndpi_struct, *id,
 				      NDPI_PROTOCOL_ZMQ,
 				      ndpi_search_zmq, /* TODO: add UDP support */
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

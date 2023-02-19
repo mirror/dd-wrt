@@ -1,7 +1,7 @@
 /*
  * threema.c
  *
- * Copyright (C) 2022 - ntop.org
+ * Copyright (C) 2022-23 - ntop.org
  *
  * nDPI is free software: you can zmqtribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -89,10 +89,9 @@ static void ndpi_search_threema(struct ndpi_detection_module_struct *ndpi_struct
 }
 
 void init_threema_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-                            u_int32_t *id,
-                            NDPI_PROTOCOL_BITMASK *detection_bitmask)
+                            u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("Threema", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("Threema", ndpi_struct, *id,
     NDPI_PROTOCOL_THREEMA,
     ndpi_search_threema,
     NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

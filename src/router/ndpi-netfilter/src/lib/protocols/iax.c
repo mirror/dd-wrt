@@ -85,7 +85,7 @@ static void ndpi_search_setup_iax(struct ndpi_detection_module_struct *ndpi_stru
 
 }
 
-void ndpi_search_iax(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_iax(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -95,9 +95,9 @@ void ndpi_search_iax(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 }
 
 
-void init_iax_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_iax_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("IAX", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("IAX", ndpi_struct, *id,
 				      NDPI_PROTOCOL_IAX,
 				      ndpi_search_iax,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

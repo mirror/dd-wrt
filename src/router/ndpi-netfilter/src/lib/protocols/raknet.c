@@ -47,8 +47,8 @@ static size_t raknet_dissect_ip(struct ndpi_packet_struct * const packet, size_t
 }
 
 /* Reference: https://wiki.vg/Raknet_Protocol */
-void ndpi_search_raknet(struct ndpi_detection_module_struct *ndpi_struct,
-                        struct ndpi_flow_struct *flow)
+static void ndpi_search_raknet(struct ndpi_detection_module_struct *ndpi_struct,
+                               struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int8_t op, ip_addr_offset, required_packets = 3;
@@ -339,9 +339,9 @@ void ndpi_search_raknet(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 void init_raknet_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-                           u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+                           u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("RakNet", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("RakNet", ndpi_struct, *id,
 				      NDPI_PROTOCOL_RAKNET,
 				      ndpi_search_raknet,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

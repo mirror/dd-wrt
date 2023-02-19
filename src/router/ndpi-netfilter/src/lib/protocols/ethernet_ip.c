@@ -31,7 +31,7 @@ static void ndpi_int_ethernet_ip_add_connection(struct ndpi_detection_module_str
 }
 
 
-void ndpi_search_ethernet_ip(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_ethernet_ip(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   
@@ -60,8 +60,8 @@ void ndpi_search_ethernet_ip(struct ndpi_detection_module_struct *ndpi_struct,
   
 
 void init_ethernet_ip_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-				u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("EthernetIP", ndpi_struct, detection_bitmask, *id,
+				u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("EthernetIP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_ETHERNET_IP,
 				      ndpi_search_ethernet_ip,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

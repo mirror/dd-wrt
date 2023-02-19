@@ -27,7 +27,7 @@ static const u_int16_t ookla_port = 8080;
 
 /* ************************************************************* */
 
-void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
+static void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
   struct ndpi_packet_struct* packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t addr = 0;
   u_int16_t sport, dport;
@@ -63,7 +63,7 @@ void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct 
 #ifdef OOKLA_DEBUG
 	  printf("=>>>>>>>> [OOKLA IPv6] Adding %u\n", h);
 #endif
-	  ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, h, 1 /* dummy */);
+	  ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, h, 1 /* dummy */, ndpi_get_current_time(flow));
 	}
 	return;
       } else {
@@ -79,7 +79,8 @@ void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct 
 	  printf("=>>>>>>>> [OOKLA IPv6] Searching %u\n", h);
 #endif
 	  
-	  if(ndpi_lru_find_cache(ndpi_struct->ookla_cache, h, &dummy, 0 /* Don't remove it as it can be used for other connections */)) {
+	  if(ndpi_lru_find_cache(ndpi_struct->ookla_cache, h, &dummy, 0 /* Don't remove it as it can be used for other connections */,
+				 ndpi_get_current_time(flow))) {
 	    NDPI_LOG_INFO(ndpi_struct, "found ookla tcp connection\n");
 	    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI_CACHE);
 #ifdef OOKLA_DEBUG
@@ -100,10 +101,8 @@ void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct 
   } else {
     if(sport == ookla_port)
       addr = packet->iph->saddr;
-    else if(dport == ookla_port)
-      addr = packet->iph->daddr;
     else
-      goto ookla_exclude;
+      addr = packet->iph->daddr;
 
 #ifdef OOKLA_DEBUG
     printf("=>>>>>>>> [OOKLA IPv4] Searching %u\n", addr);
@@ -112,7 +111,8 @@ void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct 
     if(ndpi_struct->ookla_cache != NULL) {
       u_int16_t dummy;
     
-      if(ndpi_lru_find_cache(ndpi_struct->ookla_cache, addr, &dummy, 0 /* Don't remove it as it can be used for other connections */)) {
+      if(ndpi_lru_find_cache(ndpi_struct->ookla_cache, addr, &dummy, 0 /* Don't remove it as it can be used for other connections */,
+			     ndpi_get_current_time(flow))) {
 	NDPI_LOG_INFO(ndpi_struct, "found ookla tcp connection\n");
 	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI_CACHE);
 #ifdef OOKLA_DEBUG
@@ -134,8 +134,8 @@ void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct 
 /* ************************************************************* */
 
 void init_ookla_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			  u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("Ookla", ndpi_struct, detection_bitmask, *id,
+			  u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("Ookla", ndpi_struct, *id,
 				      NDPI_PROTOCOL_OOKLA,
 				      ndpi_search_ookla,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

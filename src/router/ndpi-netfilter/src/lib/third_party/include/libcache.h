@@ -23,6 +23,10 @@ SOFTWARE.
  *
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #ifndef __DESELMO_LIBCACHE_H__
 #define __DESELMO_LIBCACHE_H__
@@ -108,4 +112,8 @@ NDPI_STATIC void cache_free(cache_t cache);
 void cache_dump(cache_t cache);
 #endif
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

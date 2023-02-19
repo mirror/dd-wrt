@@ -48,6 +48,8 @@ extern "C" {
   */
 //  extern ndpi_custom_dga_predict_fctn ndpi_dga_function;
 
+  extern ndpi_debug_function_ptr ndpi_debug_print_init;
+  extern ndpi_log_level_t ndpi_debug_level_init;
   /**
    * Check if a string is encoded with punycode
    * ( https://tools.ietf.org/html/rfc3492 )
@@ -245,7 +247,6 @@ NDPI_STATIC   void ndpi_exit_detection_module(struct ndpi_detection_module_struc
    *
    * @par label                    = string for the protocol name
    * @par ndpi_struct              = the detection module
-   * @par detection_bitmask        = the protocol bitmask
    * @par idx                      = the index of the callback_buffer
    * @par func                     = function pointer of the protocol search
    * @par ndpi_selection_bitmask   = the protocol selected bitmask
@@ -255,7 +256,6 @@ NDPI_STATIC   void ndpi_exit_detection_module(struct ndpi_detection_module_struc
    */
 NDPI_STATIC   void ndpi_set_bitmask_protocol_detection(char *label,
 					   struct ndpi_detection_module_struct *ndpi_struct,
-					   const NDPI_PROTOCOL_BITMASK *detection_bitmask,
 					   const u_int32_t idx,
 					   u_int16_t ndpi_protocol_id,
 					   void (*func) (struct ndpi_detection_module_struct *,
@@ -271,8 +271,8 @@ NDPI_STATIC   void ndpi_set_bitmask_protocol_detection(char *label,
    * @par detection_bitmask  = the protocol bitmask to set
    *
    */
-NDPI_STATIC   void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
-					    const NDPI_PROTOCOL_BITMASK * detection_bitmask);
+NPDI_STATIC  int ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
+ 					    const NDPI_PROTOCOL_BITMASK * detection_bitmask);
 
   /**
    *  Function to be called before we give up with detection for a given flow.
@@ -1011,12 +1011,15 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC void ndpi_set_log_level(struct ndpi_detection_module_struct *ndpi_mod, u_int l);
   NDPI_STATIC void ndpi_set_debug_bitmask(struct ndpi_detection_module_struct *ndpi_mod, NDPI_PROTOCOL_BITMASK debug_bitmask);
 
+  /* Simple helper to get current time, in sec */
+  NDPI_STATIC u_int32_t ndpi_get_current_time(struct ndpi_flow_struct *flow);
+
   /* LRU cache */
-  NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries);
+  NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries, u_int32_t ttl);
   NDPI_STATIC void ndpi_lru_free_cache(struct ndpi_lru_cache *c);
   NDPI_STATIC u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key,
-			       u_int16_t *value, u_int8_t clean_key_when_found);
-  NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value);
+			       u_int16_t *value, u_int8_t clean_key_when_found, u_int32_t now_sec);
+  NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value, u_int32_t now_sec);
   NDPI_STATIC void ndpi_lru_get_stats(struct ndpi_lru_cache *c, struct ndpi_lru_cache_stats *stats);
 
   NDPI_STATIC int ndpi_get_lru_cache_stats(struct ndpi_detection_module_struct *ndpi_struct,
@@ -1029,6 +1032,14 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_set_lru_cache_size(struct ndpi_detection_module_struct *ndpi_struct,
 			      lru_cache_type cache_type,
 			      u_int32_t num_entries);
+
+  NDPI_STATIC int ndpi_set_lru_cache_ttl(struct ndpi_detection_module_struct *ndpi_struct,
+			     lru_cache_type cache_type,
+			     u_int32_t ttl);
+  NDPI_STATIC int ndpi_get_lru_cache_ttl(struct ndpi_detection_module_struct *ndpi_struct,
+			     lru_cache_type cache_type,
+			     u_int32_t *ttl);
+
 
   NDPI_STATIC int ndpi_set_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				 u_int16_t proto, int value);
@@ -1270,6 +1281,16 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @param serializer The serializer handle
    * @param key The field name or ID
    * @param value The field value
+   * @param format The float value format
+   * @return 0 on success, a negative number otherwise
+   */
+  int ndpi_serialize_uint32_double(ndpi_serializer *serializer, u_int32_t key, double value, const char *format /* e.f. "%.2f" */);
+
+  /**
+   * Serialize a 32-bit unsigned int key and a double value
+   * @param serializer The serializer handle
+   * @param key The field name or ID
+   * @param value The field value
    * @param format The double value format
    * @return 0 on success, a negative number otherwise
    */
@@ -1292,6 +1313,16 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @return 0 on success, a negative number otherwise
    */
   NDPI_STATIC int ndpi_serialize_uint32_boolean(ndpi_serializer *serializer, u_int32_t key, u_int8_t value);
+
+  /**
+   * Serialize a 32-bit unsigned int and an unterminated string value
+   * @param serializer The serializer handle
+   * @param key The field name or ID
+   * @param value The field value
+   * @param vlen The value length
+   * @return 0 on success, a negative number otherwise
+   */
+  int ndpi_serialize_uint32_binary(ndpi_serializer *serializer, u_int32_t key, const char *_value, u_int16_t vlen);
 
   /**
    * Serialize an unterminated string key and a 32-bit signed int value
@@ -1697,13 +1728,13 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   /* ******************************* */
 
   NDPI_STATIC int ndpi_ses_init(struct ndpi_ses_struct *ses, double alpha, float significance);
-  NDPI_STATIC int ndpi_ses_add_value(struct ndpi_ses_struct *ses, const u_int64_t _value, double *forecast, double *confidence_band);
+  NDPI_STATIC int ndpi_ses_add_value(struct ndpi_ses_struct *ses, const double _value, double *forecast, double *confidence_band);
   NDPI_STATIC void ndpi_ses_fitting(double *values, u_int32_t num_values, float *ret_alpha);
 
   /* ******************************* */
 
   NDPI_STATIC int ndpi_des_init(struct ndpi_des_struct *des, double alpha, double beta, float significance);
-  NDPI_STATIC int ndpi_des_add_value(struct ndpi_des_struct *des, const u_int64_t _value, double *forecast, double *confidence_band);
+  NDPI_STATIC int ndpi_des_add_value(struct ndpi_des_struct *des, const double _value, double *forecast, double *confidence_band);
   NDPI_STATIC void ndpi_des_fitting(double *values, u_int32_t num_values, float *ret_alpha, float *ret_beta);
 
   /* ******************************* */

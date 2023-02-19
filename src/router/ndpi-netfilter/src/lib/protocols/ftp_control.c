@@ -563,8 +563,6 @@ static int ndpi_ftp_control_check_response(struct ndpi_flow_struct *flow,
   printf("%s() [%.*s]\n", __FUNCTION__, (int)payload_len, payload);
 #endif
 
-  if(payload_len == 0) return(1);
-
   switch(payload[0]) {
   case '1':
   case '2':
@@ -573,14 +571,12 @@ static int ndpi_ftp_control_check_response(struct ndpi_flow_struct *flow,
     if(flow->l4.tcp.ftp_imap_pop_smtp.auth_found == 1)
       flow->l4.tcp.ftp_imap_pop_smtp.auth_tls = 1;
     return(1);
-    break;
 
   case '4':
   case '5':
     flow->l4.tcp.ftp_imap_pop_smtp.auth_failed = 1;
     flow->l4.tcp.ftp_imap_pop_smtp.auth_done = 1;
     return(1);
-    break;
   }
 
   return 0;
@@ -672,8 +668,8 @@ static void ndpi_check_ftp_control(struct ndpi_detection_module_struct *ndpi_str
 
 /* *************************************************************** */
 
-void ndpi_search_ftp_control(struct ndpi_detection_module_struct *ndpi_struct,
-			     struct ndpi_flow_struct *flow) {
+static void ndpi_search_ftp_control(struct ndpi_detection_module_struct *ndpi_struct,
+				    struct ndpi_flow_struct *flow) {
   NDPI_LOG_DBG(ndpi_struct, "search FTP_CONTROL\n");
 
   /* skip marked packets */
@@ -685,8 +681,8 @@ void ndpi_search_ftp_control(struct ndpi_detection_module_struct *ndpi_struct,
 /* *************************************************************** */
 
 void init_ftp_control_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-				u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("FTP_CONTROL", ndpi_struct, detection_bitmask, *id,
+				u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("FTP_CONTROL", ndpi_struct, *id,
 				      NDPI_PROTOCOL_FTP_CONTROL,
 				      ndpi_search_ftp_control,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
