@@ -116,6 +116,17 @@ function changedpbr(F, index, value) {
 	}
 }
 
+function changedns46(F, index) {
+	//alert(" F:" + F.name + "; tun: " + index + "; value: " + oetdnspbr);
+	if ( F.checked == true) {
+		//console.log(" F:" + F.name + " Checked");
+		show_layer_ext(F, "idoet" + index + "_dns46", true);
+	} else {
+		//console.log(" F:" + F.name + " Not Checked");
+		show_layer_ext(F, "idoet" + index + "_dns46", false);
+	}
+}
+
 function changeproto(F, index, value, brvalue) {
 	if (value == 1) {
 		show_layer_ext(F, "idmtik" + index, true);

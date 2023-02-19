@@ -343,8 +343,26 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "eoip.wireguard_dnspbr", NULL);
 					websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
-					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s onclick=\"changedns46(this, %d)\" />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun);
 				}
+				websWrite(wp, "</div>\n");
+				websWrite(wp, "<div id=\"idoet%d_dns46\">\n", tun);	//for show or hide dns4 and dns6
+					snprintf(temp, sizeof(temp), "oet%d_dns4", tun);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_dns4", NULL);
+						websWrite(wp, "<input size=\"16\" maxlength=\"16\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "9.9.9.9"));
+					}
+					websWrite(wp, "</div>\n");
+					if (nvram_matchi("ipv6_enable", 1)) {
+						snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							show_caption(wp, "label", "eoip.wireguard_dns6", NULL);
+							websWrite(wp, "<input size=\"40\" maxlength=\"40\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "2620:fe::9"));
+						}
+						websWrite(wp, "</div>\n");
+					}
 				websWrite(wp, "</div>\n");
 				// */
 				//end Split DNS
@@ -831,6 +849,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_failgrp', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_wdog", tun) ? "false" : "true");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_spbr',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_spbr", tun) ? "false" : "true");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_dpbr',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_dpbr", tun) ? "false" : "true");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_dns46',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_dnspbr", tun) ? "false" : "true");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</fieldset><br>\n");
 	}
