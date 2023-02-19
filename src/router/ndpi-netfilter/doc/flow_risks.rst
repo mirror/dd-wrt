@@ -213,7 +213,7 @@ This risk is triggered when a TLS fatal alert is detected in the TLS flow. See `
 
 NDPI_SUSPICIOUS_ENTROPY
 =======================
-This risk is used to detect suspicious data carried in ICMP packets whose entropy (used to measure how data is distributed, hence to indirectly guess the type of data carried on) is suspicious and thus that it can indicate a data leak.
+This risk is used to detect suspicious data carried in ICMP packets whose entropy (used to measure how data is distributed, hence to indirectly guess the type of data carried on) is suspicious and thus that it can indicate a data leak. Suspicious values indicate random entropy or entropy that is similar to encrypted traffic. In the latter case, this can be a suspicious data exfiltration symptom.
 
 .. _Risk 036:
 
@@ -291,3 +291,21 @@ risk is not triggered for multicast/broadcast destinations.
 NDPI_HTTP_OBSOLETE_SERVER
 ===================================
 This risk is generated whenever a HTTP server uses an obsolete HTTP server version.
+
+.. _Risk 048:
+
+NDPI_PERIODIC_FLOW
+==================
+This risk is generated whenever a flow is observed at a specific periodic pace (e.g. every 10 seconds).
+
+.. _Risk 049:
+
+NDPI_MINOR_ISSUES
+=================
+Minor packet/flow issues (e.g. DNS traffic with zero TTL) have been detected.
+
+.. _Risk 050:
+
+NDPI_TCP_ISSUES
+===============
+Relevant TCP connection issues such as connection refused, scan, or probe attempt.
