@@ -20,7 +20,7 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 #include "xlog.h"
 #include "exportfs.h"
