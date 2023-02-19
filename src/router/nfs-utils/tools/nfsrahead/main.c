@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include <libmount/libmount.h>
+#include <libmount.h>
 #include <sys/sysmacros.h>
 
 #include "xlog.h"
