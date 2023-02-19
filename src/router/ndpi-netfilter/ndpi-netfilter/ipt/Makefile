@@ -2,7 +2,7 @@ NDPI_SRC := ../../src
 NDPI_PRO := ${NDPI_SRC}/lib/protocols
 XTBL := $(shell pkg-config --variable=xtlibdir xtables)
 
-CFLAGS = -fPIC -I../.. -I${NDPI_SRC}/include -I${NDPI_SRC}/lib -I../src -I../libre -DOPENDPI_NETFILTER_MODULE -O2 -Wall
+CFLAGS = -fPIC -I../.. -I${NDPI_SRC}/include -I${NDPI_SRC}/lib -I../src -I../libre -DOPENDPI_NETFILTER_MODULE -DXTABLES_INTERNAL -O2 -Wall
 
 all:  libxt_ndpi.so
 install:  libxt_ndpi.so

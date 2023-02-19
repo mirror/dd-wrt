@@ -57,6 +57,7 @@
 #include <net/netfilter/nf_conntrack_extend.h>
 #include <net/netfilter/nf_nat.h>
 #include <linux/ktime.h>
+#include <linux/rcupdate.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
 #define IP_CT_UNTRACKED IP_CT_NUMBER
@@ -100,6 +101,23 @@ static char ann_name[]="announce";
 static char proto_name[]="proto";
 static char debug_name[]="debug";
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0)
+#ifndef USE_LIVEPATCH
+#define USE_LIVEPATCH
+#endif
+#endif
+
+#ifdef USE_LIVEPATCH
+#if IS_ENABLED(CONFIG_LIVEPATCH)
+#include <linux/livepatch.h>
+#include <linux/rculist_nulls.h>
+
+typedef void (*ndpi_conntrack_destroy_ptr) (struct nf_conntrack *);
+ndpi_conntrack_destroy_ptr __rcu nf_conntrack_destroy_cb;
+#else
+#error "CONFIG_LIVEPATCH not enabled"
+#endif
+#endif
 
 #if 1
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
@@ -418,6 +436,7 @@ static unsigned long
 	       ndpi_pudf=0,ndpi_pudr=0,
 	       ndpi_puo=0;
 
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
 struct dbg_ipt_names {
 	uint32_t mask;
 	const char *name;
@@ -454,6 +473,7 @@ static struct dbg_ipt_names dbg_ipt_names [] = {
 	{1 << DBG_TRACE_MATCH_CMD,"match_cmd"},
 	{1 << DBG_TRACE_NETNS,"netns"},
 }; // 27 < 32
+#endif
 
 static int net_ns_id=0;
 static int ndpi_net_id;
@@ -471,6 +491,7 @@ static struct kmem_cache *ct_info_cache = NULL;
 static struct kmem_cache *bt_port_cache = NULL;
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
+#if 0
 static char *dbl_lvl_txt[5] = {
 	"ERR",
 	"TRACE",
@@ -478,17 +499,19 @@ static char *dbl_lvl_txt[5] = {
 	"DEBUG2",
 	NULL
 };
+#endif
 /* debug functions */
 static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t log_level,
 	const char *file_name, const char *func_name, unsigned line_number, const char * format, ...)
 {
 	struct ndpi_net *n = id_struct ? ((struct ndpi_detection_module_struct *)id_struct)->user_data : NULL;
-	if(!n || protocol >= NDPI_NUM_BITS)
-		pr_info("ndpi_debug n=%d, p=%u, l=%s\n",n != NULL,protocol,
-				log_level < 5 ? dbl_lvl_txt[log_level]:"???");
-	if(!n || protocol >= NDPI_NUM_BITS) return;
+//	if(!n || protocol >= NDPI_NUM_BITS)
+//		pr_info("ndpi_debug n=%d, p=%u, l=%s\n",n != NULL,protocol,
+//				log_level < 5 ? dbl_lvl_txt[log_level]:"???");
+//	if(!n || protocol >= NDPI_NUM_BITS) return;
 
-	if(log_level+1 <= ( ndpi_lib_trace < n->debug_level[protocol] ?
+	if( !n || protocol >= NDPI_NUM_BITS || 
+		log_level+1 <= ( ndpi_lib_trace < n->debug_level[protocol] ?
 				ndpi_lib_trace : n->debug_level[protocol]))  {
 		char buf[256];
 		const char *short_fn;
@@ -506,16 +529,16 @@ static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t l
 
 		switch(log_level) {
 		case NDPI_LOG_ERROR:
-                	pr_err("E: P=%d %s:%d:%s %s",protocol, short_fn, line_number, func_name, buf);
+                	pr_err("E: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
 			break;
 		case NDPI_LOG_TRACE:
-                	pr_info("T: P=%d %s:%d:%s %s",protocol, short_fn, line_number, func_name, buf);
+                	pr_info("T: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
 			break;
 		case NDPI_LOG_DEBUG:
-                	pr_info("D: P=%d %s:%d:%s %s",protocol, short_fn, line_number, func_name, buf);
+                	pr_info("D: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
 			break;
 		case NDPI_LOG_DEBUG_EXTRA:
-                	pr_info("D2: P=%d %s:%d:%s %s",protocol, short_fn, line_number, func_name, buf);
+                	pr_info("D2: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
 			break;
 		default:
 			;
@@ -571,6 +594,11 @@ uint32_t dbg_ipt_opt_get(const char *lbuf) {
 	return 0;
 }
 #else
+
+static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t log_level,
+	const char *file_name, const char *func_name, unsigned line_number, const char * format, ...) {
+}
+
 uint32_t dbg_ipt_opt_get(const char *lbuf) {
 	return 0;
 }
@@ -1653,17 +1681,6 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 				atomic64_inc(&n->protocols_cnt[proto.master_protocol]);
 		}
 
-		if(flow->fail_with_unknown) {
-		    if(_DBG_TRACE_DDONE)
-			packet_trace(skb,ct,ct_ndpi,"fail_with_unknown","%s",
-					flow->extra_packets_func ?
-					  " extra_packets":" free_ct_flow");
-		    COUNTER(ndpi_p_c_end_fail);
-		    detect_complete = 1;
-		    set_detect_done(ct_ndpi);
-		    __ndpi_free_ct_flow(ct_ndpi);
-		    break;
-		}
 		if(ct_ndpi->confidence == NDPI_CONFIDENCE_DPI) {
 		    if(tls) {
 			    detect_complete = tls == 2;
@@ -1671,7 +1688,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		    }
 		    detect_complete  = 1;
 		    if(_DBG_TRACE_DDONE)
-			packet_trace(skb,ct,ct_ndpi,"dpi_completed","tls %d %s",
+			packet_trace(skb,ct,ct_ndpi,"dpi_done completed","tls %d %s",
 		    			tls, flow->extra_packets_func ?
 					  " extra_packets":" free_ct_flow");
 		    if(!flow->extra_packets_func) {
@@ -1681,12 +1698,15 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		    break;
 		}
 
-		if(ct_ndpi->confidence < NDPI_CONFIDENCE_DPI_CACHE) {
+		if(ct_ndpi->confidence < NDPI_CONFIDENCE_DPI_CACHE || flow->fail_with_unknown) {
 		    int max_packet_unk =
 		         (ct_ndpi->l4_proto == IPPROTO_TCP) ? max_packet_unk_tcp:
 		         (ct_ndpi->l4_proto == IPPROTO_UDP) ? max_packet_unk_udp : max_packet_unk_other;
-		    if( flow->packet_counter > max_packet_unk && !flow->extra_packets_func) {
-			COUNTER(ndpi_p_c_end_max);
+		    if( flow->fail_with_unknown || (flow->packet_counter > max_packet_unk && !flow->extra_packets_func)) {
+			if(flow->fail_with_unknown)
+				COUNTER(ndpi_p_c_end_fail);
+			    else
+				COUNTER(ndpi_p_c_end_max);
 		    	detect_complete = 1;
 			if(proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
 			    u_int8_t proto_guessed;
@@ -1706,7 +1726,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 			    c_proto->proto = pack_proto(proto);
 			}
 		    	if(_DBG_TRACE_DDONE)
-		    	    packet_trace(skb,ct,ct_ndpi," Stop: max packet"," %d, free flow",max_packet_unk);
+		    	    packet_trace(skb,ct,ct_ndpi,"dpi_done ","%s %d, free flow",
+					    flow->fail_with_unknown ? "fail_with_unknown":"max_packet",max_packet_unk);
 		    	set_detect_done(ct_ndpi);
 		    	__ndpi_free_ct_flow(ct_ndpi);
 		    }
@@ -1827,12 +1848,12 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		if(!result) break;
 	}
 	if(info->clevel) {
-		switch(info->clevel) {
-		     case 1: result &= info->clevel < confidence;
+		switch(info->clevel_op) {
+		     case 1: result &= info->clevel-1 < confidence;
 			 break;
-		     case 2: result &= info->clevel > confidence;
+		     case 2: result &= info->clevel-1 > confidence;
 			 break;
-		     default: result &= info->clevel == confidence;
+		     default: result &= info->clevel-1 == confidence;
 		}
 		if(_DBG_TRACE_MATCH)
 		    pr_info(" ndpi_match confidence: %s : %s\n",
@@ -1856,7 +1877,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 /*
  *  invert:1,error:1,m_proto:1,p_proto:1,have_master:1,
  *  host:1,re:1,empty:1,proto:1,inprogress:1,ja3s:1,ja3c:1,tlsfp:1,tlsv:1,
- *  untracked:1,clevel:3,clevel_op:2;
+ *  untracked:1,clevel:4,clevel_op:2;
  */
 	if(_DBG_TRACE_MATCH_CMD) {
 		char cbuf[512];
@@ -2916,7 +2937,10 @@ static int __net_init ndpi_net_init(struct net *net)
                 return -ENOMEM;
 	}
 	ndpi_stun_cache_enable = ndpi_stun_cache_opt;
-
+	ndpi_debug_print_init = debug_printf;
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
+	ndpi_debug_level_init = ndpi_lib_trace;
+#endif
 	/* init global detection structure */
 	n->ndpi_struct = ndpi_init_detection_module(ndpi_no_prefs);
 	if (n->ndpi_struct == NULL) {
@@ -2925,10 +2949,11 @@ static int __net_init ndpi_net_init(struct net *net)
 	}
 	n->flow_h = NULL;
 	n->ndpi_struct->direction_detect_disable = 1;
-	/* disable all protocols */
-	NDPI_BITMASK_RESET(n->protocols_bitmask);
+	n->ndpi_struct->stun_cache_num_entries = ndpi_stun_cache_enable ? 1024:0;
+	n->ndpi_struct->ookla_cache_num_entries = 0;
+	/* enable all protocols */
+	NDPI_BITMASK_SET_ALL(n->protocols_bitmask);
 	ndpi_set_protocol_detection_bitmask2(n->ndpi_struct, &n->protocols_bitmask);
-
 	n->ndpi_struct->user_data = n;
 	for (i = 0; i < NDPI_NUM_BITS; i++) {
                 atomic64_set (&n->protocols_cnt[i], 0);
@@ -3058,8 +3083,7 @@ static int __net_init ndpi_net_init(struct net *net)
 			i2 = ndpi_match_string_subprotocol(n->ndpi_struct,
 								hm->string_to_match,sml,&s_ret);
 			if(i2 == NDPI_PROTOCOL_UNKNOWN || i != i2) {
-				pr_err("xt_ndpi: Warning! Hostdef '%s' %s! proto_id %u != %u, p:%u. Skipping.\n",
-						i != i2 ? "missmatch":"unknown",
+				pr_err("xt_ndpi: Warning! Hostdef missmatch '%s' proto_id %u, subproto %u, p:%u. Skipping.\n",
 						hm->string_to_match,i,i2,s_ret.protocol_id
 						);
 				continue;
@@ -3147,6 +3171,7 @@ static int __net_init ndpi_net_init(struct net *net)
 	return -ENOMEM;
 }
 
+#ifndef USE_LIVEPATCH
 static struct nf_ct_ext_type ndpi_extend = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
        .seq_print = seq_print_ndpi,
@@ -3156,6 +3181,38 @@ static struct nf_ct_ext_type ndpi_extend = {
        .align  = __alignof__(uint32_t),
        .id     = 0,
 };
+#else
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,17,0)
+#error "not implemented"
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,18,13)
+#include "livepatch/v5.18.1.c"
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,0,0)
+#include "livepatch/v5.18.13.c"
+#else
+#include "livepatch/v6.0.c"
+#endif
+
+static struct klp_func ndpi_funcs[] = {
+	{
+		.old_name = "nf_ct_destroy",
+		.new_func = ndpi_nf_ct_destroy,
+	}, { }
+};
+
+static struct klp_object ndpi_objs[] = {
+	{
+		.name = "nf_conntrack",
+		.funcs = ndpi_funcs,
+	}, { }
+};
+
+static struct klp_patch ndpi_patch = {
+	.mod = THIS_MODULE,
+	.objs = ndpi_objs,
+};
+
+#endif
 
 static struct pernet_operations ndpi_net_ops = {
         .init   = ndpi_net_init,
@@ -3194,6 +3251,9 @@ static int __init ndpi_mt_init(void)
 	}
 	nf_ct_ext_id_ndpi = ndpi_extend.id;
 #else
+#ifdef USE_LIVEPATCH
+	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
+#else
 	ndpi_extend.id = nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
 	nf_ct_extend_unregister(&ndpi_extend);
 	ret = nf_ct_extend_register(&ndpi_extend);
@@ -3201,6 +3261,7 @@ static int __init ndpi_mt_init(void)
 		pr_err("xt_ndpi: can't nf_ct_extend_register.\n");
 		return -EBUSY;
 	}
+#endif
 #endif
 
 	ret = register_pernet_subsys(&ndpi_net_ops);
@@ -3294,8 +3355,12 @@ static int __init ndpi_mt_init(void)
 		NDPI_NUM_BITS,
 		NDPI_LAST_IMPLEMENTED_PROTOCOL);
 	pr_info("xt_ndpi: flow acctounting %s\n",ndpi_enable_flow ? "ON":"OFF");
-
+#ifdef USE_LIVEPATCH
+	rcu_assign_pointer(nf_conntrack_destroy_cb,nf_ndpi_free_flow);
+	return klp_enable_patch(&ndpi_patch);
+#else
 	return 0;
+#endif
 
 free_flow:
        	kmem_cache_destroy (osdpi_flow_cache);
@@ -3308,7 +3373,9 @@ unreg_match:
 unreg_pernet:
 	unregister_pernet_subsys(&ndpi_net_ops);
 unreg_ext:
+#ifndef USE_LIVEPATCH
 	nf_ct_extend_unregister(&ndpi_extend);
+#endif
        	return ret;
 }
 
@@ -3318,7 +3385,11 @@ static void __exit ndpi_mt_exit(void)
 	xt_unregister_target(&ndpi_tg_reg);
 	xt_unregister_match(&ndpi_mt_reg);
 	unregister_pernet_subsys(&ndpi_net_ops);
+#ifndef USE_LIVEPATCH
 	nf_ct_extend_unregister(&ndpi_extend);
+#else
+	rcu_assign_pointer(nf_conntrack_destroy_cb,NULL);
+#endif
         kmem_cache_destroy (bt_port_cache);
         kmem_cache_destroy (osdpi_id_cache);
         kmem_cache_destroy (osdpi_flow_cache);
@@ -3328,6 +3399,9 @@ static void __exit ndpi_mt_exit(void)
 
 module_init(ndpi_mt_init);
 module_exit(ndpi_mt_exit);
+#ifdef USE_LIVEPATCH
+MODULE_INFO(livepatch, "Y");
+#endif
 
 #include "ndpi_strcol.c" 
 #include "ndpi_proc_parsers.c" 

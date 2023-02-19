@@ -102,9 +102,8 @@ static void ndpi_mt_init(struct xt_entry_match *match)
 	NDPI_BITMASK_RESET(info->flags);
 }
 static char *_clevel2str[] = {
- "unknown", "port", "ip", "user",
- "dpart",  "dcpart", "dcache", "dpi" };
-static int clevelnc[] = { 2, 1, 1, 2, 3, 3, 3, 3 };
+	"unknown", "port", "ip", "user",
+	"nbpf",	"dpart",  "dcpart", "dcache", "dpi" };
 
 #define clevel2num (sizeof(_clevel2str)/sizeof(_clevel2str[0]))
 
@@ -119,16 +118,22 @@ static const char *clevel_op2str(int l) {
 	return "";
 }
 static int str2clevel(const char *s) {
-	int i;
+	int i,n,l;
 	char *e;
 
 	for(i=0; i < clevel2num; i++)
 	    if(!strcasecmp(_clevel2str[i],s)) return i;
+	n = -1;
+	l = strlen(s);
 	for(i=0; i < clevel2num; i++)
-	    if(!strncasecmp(_clevel2str[i],s,clevelnc[i])) return i;
+	    if(!strncasecmp(_clevel2str[i],s,l)) {
+		if(n < 0) n = i;
+		   else return -1;
+	    }
+	if(n >= 0) return n;
 	i = strtol(s,&e,0);
-	if(*e) return 0;
-	return i < 0 || i > 7 ? 0 : i;
+	if(*e) return -1;
+	return i < 0 || i >= clevel2num ? -1 : i;
 }
 static void 
 _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
@@ -168,7 +173,7 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 	}
 	if(info->clevel) {
 		printf(" %sclevel %s%s", csave, clevel_op2str(info->clevel_op),
-				clevel2str(info->clevel));
+				clevel2str(info->clevel-1));
 	}
 	if(info->m_proto && !info->p_proto)
 		printf(" %smatch-m-proto",csave);
@@ -267,19 +272,19 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			cl = str2clevel(optarg+1);
 		} else
 			cl = str2clevel(optarg);
-		if(!cl) {
+		if(cl < 0) {
 			printf("Error: invalid clevel %s\n",optarg);
 			return false;
 		}
-		if(info->clevel == 0 && info->clevel_op == 1) {
+		if(cl == 0 && info->clevel_op == 1) {
 			printf("Error: impossible condition '-unknown'\n");
 			return false;
 		}
-		if(info->clevel == 5 && info->clevel_op == 2) {
+		if(cl >= NDPI_CONFIDENCE_MAX && info->clevel_op == 2) {
 			printf("Error: impossible condition '+dpi'\n");
 			return false;
 		}
-		info->clevel = cl;
+		info->clevel = cl + 1;
         	*flags |= FLAGS_CLEVEL;
 		return true;
 	}
@@ -526,7 +531,7 @@ ndpi_mt_help(void)
 		"  --host str             Match server host name\n"
 		"                         Use /str/ for regexp match.\n"
 		"  --clevel L             Match confidence level. -L - level < L, +L - level > L\n"
-		"                         Levels: unknown,port,ip,user,cache,dpi\n"
+		"                         Levels: unknown,port,ip,user,nbpf,dpart,dcpart,dcache,dpi\n"
 		"  --have-master          Match if master protocol detected\n"
 		"  --match-m-proto        Match master protocol only\n"
 		"  --match-a-proto        Match application protocol only\n"
