@@ -38,7 +38,7 @@ static void ndpi_int_gnutella_add_connection(struct ndpi_detection_module_struct
 					    confidence);
 }
 
-void ndpi_search_gnutella(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_gnutella(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	
@@ -314,9 +314,9 @@ void ndpi_search_gnutella(struct ndpi_detection_module_struct *ndpi_struct, stru
 }
 
 
-void init_gnutella_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_gnutella_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("Gnutella", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("Gnutella", ndpi_struct, *id,
 				      NDPI_PROTOCOL_GNUTELLA,
 				      ndpi_search_gnutella,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

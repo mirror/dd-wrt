@@ -243,7 +243,7 @@ static void ndpi_check_steam_udp3(struct ndpi_detection_module_struct *ndpi_stru
     }
 
     /* This is a packet in another direction. Check if we find the proper response. */
-    if ((payload_len == 0) || ((payload_len == 8) && (packet->payload[0] == 0x3a) && (packet->payload[1] == 0x18) && (packet->payload[2] == 0x00) && (packet->payload[3] == 0x00))) {
+    if ((payload_len == 8) && (packet->payload[0] == 0x3a) && (packet->payload[1] == 0x18) && (packet->payload[2] == 0x00) && (packet->payload[3] == 0x00)) {
       NDPI_LOG_INFO(ndpi_struct, "found STEAM\n");
       ndpi_int_steam_add_connection(ndpi_struct, flow);
     } else {
@@ -254,7 +254,7 @@ static void ndpi_check_steam_udp3(struct ndpi_detection_module_struct *ndpi_stru
   }
 }
 
-void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(packet->udp != NULL) {
@@ -281,10 +281,6 @@ void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct 
       return;
     }
 
-    /* skip marked packets */
-    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
-      return;   
-
     NDPI_LOG_DBG(ndpi_struct, "search STEAM\n");
     ndpi_check_steam_http(ndpi_struct, flow);
 	
@@ -300,8 +296,8 @@ void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct 
 
 
 void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			  u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("Steam", ndpi_struct, detection_bitmask, *id,
+			  u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("Steam", ndpi_struct, *id,
 				      NDPI_PROTOCOL_STEAM,
 				      ndpi_search_steam,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

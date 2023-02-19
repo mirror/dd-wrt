@@ -31,7 +31,7 @@
 #include "ndpi_api.h"
 
 
-void ndpi_search_kakaotalk_voice(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_kakaotalk_voice(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   
   NDPI_LOG_DBG(ndpi_struct, "search kakaotalk_voice\n");
@@ -65,9 +65,9 @@ void ndpi_search_kakaotalk_voice(struct ndpi_detection_module_struct *ndpi_struc
 
 
 void init_kakaotalk_voice_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-				    u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+				    u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("KakaoTalk_Voice", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("KakaoTalk_Voice", ndpi_struct, *id,
 				      NDPI_PROTOCOL_KAKAOTALK_VOICE,
 				      ndpi_search_kakaotalk_voice,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

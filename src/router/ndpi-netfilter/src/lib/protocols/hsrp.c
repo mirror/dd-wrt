@@ -31,7 +31,7 @@
 #define HSRP_PORT	1985
 #define HSRP_PORT_V6	2029
 
-void ndpi_search_hsrp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_hsrp(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t port_to_match;
@@ -81,8 +81,8 @@ void ndpi_search_hsrp(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 void init_hsrp_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			 u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("HSRP", ndpi_struct, detection_bitmask, *id,
+			 u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("HSRP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_HSRP,
 				      ndpi_search_hsrp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

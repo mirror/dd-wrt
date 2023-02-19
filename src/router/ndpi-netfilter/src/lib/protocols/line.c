@@ -1,7 +1,7 @@
 /*
  * line.c
  *
- * Copyright (C) 2022 - ntop.org
+ * Copyright (C) 2022-23 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,8 +35,8 @@ static void ndpi_int_line_add_connection(struct ndpi_detection_module_struct * c
                              NDPI_PROTOCOL_LINE_CALL, NDPI_CONFIDENCE_DPI);
 }
 
-void ndpi_search_line(struct ndpi_detection_module_struct *ndpi_struct,
-                      struct ndpi_flow_struct *flow)
+static void ndpi_search_line(struct ndpi_detection_module_struct *ndpi_struct,
+                             struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -65,8 +65,13 @@ void ndpi_search_line(struct ndpi_detection_module_struct *ndpi_struct,
         if((u_int8_t)(flow->l4.udp.line_base_cnt[packet->packet_direction] +
                       flow->l4.udp.line_pkts[packet->packet_direction]) == packet->payload[3]) {
           flow->l4.udp.line_pkts[packet->packet_direction] += 1;
-          if(flow->l4.udp.line_pkts[0] >= 4 && flow->l4.udp.line_pkts[1] >= 4)
-            ndpi_int_line_add_connection(ndpi_struct, flow);
+          if(flow->l4.udp.line_pkts[0] >= 4 && flow->l4.udp.line_pkts[1] >= 4) {
+            /* To avoid false positives: usually "base pkt numbers" per-direction are different */
+            if(flow->l4.udp.line_base_cnt[0] != flow->l4.udp.line_base_cnt[1])
+              ndpi_int_line_add_connection(ndpi_struct, flow);
+            else
+              NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+	  }
           return;
         }
       }
@@ -78,9 +83,9 @@ void ndpi_search_line(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 void init_line_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-                         u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+                         u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("LineCall", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("LineCall", ndpi_struct, *id,
 				      NDPI_PROTOCOL_LINE_CALL,
 				      ndpi_search_line,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

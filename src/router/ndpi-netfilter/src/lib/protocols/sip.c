@@ -185,12 +185,6 @@ void ndpi_search_sip_handshake(struct ndpi_detection_module_struct
     return;
   }
 
-  /* for STUN flows we need some more packets */
-  if(packet->udp != NULL && flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN && flow->packet_counter < 40) {
-    NDPI_LOG_DBG2(ndpi_struct, "need next STUN packet\n");
-    return;
-  }
-
   if(payload_len == 4 && get_u_int32_t(packet_payload, 0) == 0) {
     NDPI_LOG_DBG2(ndpi_struct, "maybe sip. need next packet\n");
     return;
@@ -199,19 +193,16 @@ void ndpi_search_sip_handshake(struct ndpi_detection_module_struct
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void ndpi_search_sip(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_sip(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_DBG(ndpi_struct, "search sip\n");
 
-  /* skip marked packets */
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_SIP) {
-    ndpi_search_sip_handshake(ndpi_struct, flow);
-  }
+  ndpi_search_sip_handshake(ndpi_struct, flow);
 }
 
-void init_sip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_sip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("SIP", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("SIP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_SIP,
 				      ndpi_search_sip,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,/* Fix courtesy of Miguel Quesada <mquesadab@gmail.com> */

@@ -107,19 +107,9 @@ static void ndpi_check_ajp(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void ndpi_search_ajp(struct ndpi_detection_module_struct *ndpi_struct,
- struct ndpi_flow_struct *flow)
+static void ndpi_search_ajp(struct ndpi_detection_module_struct *ndpi_struct,
+                            struct ndpi_flow_struct *flow)
 {
-  // Break after 20 packets.
-  if(flow->packet_counter > 20) {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    return;
-  }
-
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN) {
-    return;
-  }
-
   NDPI_LOG_DBG(ndpi_struct, "search AJP\n");
   ndpi_check_ajp(ndpi_struct, flow);
 
@@ -130,9 +120,9 @@ void ndpi_search_ajp(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 void init_ajp_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-  u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+  u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("AJP", ndpi_struct, detection_bitmask,
+  ndpi_set_bitmask_protocol_detection("AJP", ndpi_struct,
     *id, NDPI_PROTOCOL_AJP, ndpi_search_ajp,
     NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
     SAVE_DETECTION_BITMASK_AS_UNKNOWN,

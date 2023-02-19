@@ -155,8 +155,8 @@ static int ndpi_int_mail_pop_check_for_client_commands(struct ndpi_detection_mod
 
 
 
-void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
-			      *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
+				     *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int8_t a = 0;
@@ -206,7 +206,7 @@ void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
       if(flow->l4.tcp.mail_pop_stage > 0) {
 	
 	if((flow->l4.tcp.ftp_imap_pop_smtp.password[0] != '\0')
-	   || (flow->l4.tcp.mail_pop_stage > 3)) {
+	   || (flow->l4.tcp.mail_pop_stage >= 3)) {
 	  ndpi_int_mail_pop_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_MAIL_POP);
 	  if(flow->l4.tcp.ftp_imap_pop_smtp.password[0] == '\0')
 	    popInitExtraPacketProcessing(flow);
@@ -270,8 +270,8 @@ static void popInitExtraPacketProcessing(struct ndpi_flow_struct *flow) {
 /* **************************************** */
 
 void init_mail_pop_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			     u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("MAIL_POP", ndpi_struct, detection_bitmask, *id,
+			     u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("MAIL_POP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_MAIL_POP,
 				      ndpi_search_mail_pop_tcp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

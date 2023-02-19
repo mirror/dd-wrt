@@ -1259,9 +1259,9 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	if(ndpi_struct->ookla_cache != NULL) {
 	  if(packet->iph != NULL) {
 	    if(packet->tcp->source == htons(8080))
-	      ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, packet->iph->saddr, 1 /* dummy */);
+	      ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, packet->iph->saddr, 1 /* dummy */, ndpi_get_current_time(flow));
 	    else
-	      ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, packet->iph->daddr, 1 /* dummy */);
+	      ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, packet->iph->daddr, 1 /* dummy */, ndpi_get_current_time(flow));
 	  } else if(packet->iphv6 != NULL) {
 	    u_int32_t h;
 
@@ -1270,7 +1270,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	    else
 	      h = ndpi_quick_hash((unsigned char *)&packet->iphv6->ip6_dst, sizeof(packet->iphv6->ip6_dst));
 
-	    ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, h, 1 /* dummy */);
+	    ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, h, 1 /* dummy */, ndpi_get_current_time(flow));
 	  }
 	}
 
@@ -1526,9 +1526,8 @@ char* ndpi_get_http_content_type(struct ndpi_detection_module_struct *ndpi_struc
 }
 
 
-void init_http_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
-			 NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("HTTP",ndpi_struct, detection_bitmask, *id,
+void init_http_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("HTTP",ndpi_struct, *id,
 				      NDPI_PROTOCOL_HTTP,
 				      ndpi_search_http_tcp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

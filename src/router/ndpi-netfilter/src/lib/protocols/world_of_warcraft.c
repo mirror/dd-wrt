@@ -51,8 +51,8 @@ u_int8_t ndpi_int_is_wow_port(const u_int16_t port)
   return 0;
 }
 
-void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
-				 *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct *ndpi_struct,
+					struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -195,9 +195,9 @@ void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
 }
 
 
-void init_world_of_warcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_world_of_warcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("WorldOfWarcraft", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("WorldOfWarcraft", ndpi_struct, *id,
 				      NDPI_PROTOCOL_WORLDOFWARCRAFT,
 				      ndpi_search_worldofwarcraft,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

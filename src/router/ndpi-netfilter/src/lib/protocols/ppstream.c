@@ -38,8 +38,8 @@ static void ndpi_int_ppstream_add_connection(struct ndpi_detection_module_struct
 }
 
 
-void ndpi_search_ppstream(struct ndpi_detection_module_struct
-			  *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_ppstream(struct ndpi_detection_module_struct
+				 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -56,26 +56,27 @@ void ndpi_search_ppstream(struct ndpi_detection_module_struct
 	  || (packet->payload_packet_len == get_l16(packet->payload, 0))
 	  || (packet->payload_packet_len >= 6 && packet->payload_packet_len - 6 == get_l16(packet->payload, 0)))) {
 	/* check 43 and */
-	if(packet->payload[2] == 0x43) {
-	  if(packet->payload[5] == 0xff &&
-	     packet->payload[6] == 0x00 &&
-	     packet->payload[7] == 0x01 &&
-	     packet->payload[8] == 0x00 &&
-	     packet->payload[9] == 0x00 &&
-	     packet->payload[10] == 0x00 &&
-	     packet->payload[11] == 0x00 &&
-	     packet->payload[12] == 0x00 &&
-	     packet->payload[13] == 0x00 &&
-	     packet->payload[14] == 0x00) {
+	  if(packet->payload[2] == 0x43) {
+	    if(packet->payload[5] == 0xff &&
+	       packet->payload[6] == 0x00 &&
+	       packet->payload[7] == 0x01 &&
+	       packet->payload[8] == 0x00 &&
+	       packet->payload[9] == 0x00 &&
+	       packet->payload[10] == 0x00 &&
+	       packet->payload[11] == 0x00 &&
+	       packet->payload[12] == 0x00 &&
+	       packet->payload[13] == 0x00 &&
+	       packet->payload[14] == 0x00) {
 
 	    /* increase count pkt ppstream over udp */
 	    flow->l4.udp.ppstream_stage++;
 	    
 	    ndpi_int_ppstream_add_connection(ndpi_struct, flow);
 	    return;
-	  }       
+	    }       
+	  }
 	  /* check 44 */
-	  else if(packet->payload[2] == 0x44) {
+	  else if(packet->payload[2] == 0x44 && packet->payload_packet_len > 20) {
 	    /** b1 71 **/
 	    if(packet->payload[3] == 0xb1 && packet->payload[4] == 0x71) {
 	      if(packet->payload[13] == 0x00 &&
@@ -155,7 +156,8 @@ void ndpi_search_ppstream(struct ndpi_detection_module_struct
 	    }
 	  }
 	  /** check 55 (1) **/
-	  else if(packet->payload[2] == 0x55 && (packet->payload[13] == 0x1b &&
+	  else if(packet->payload_packet_len > 20 &&
+		  packet->payload[2] == 0x55 && (packet->payload[13] == 0x1b &&
 						 packet->payload[14] == 0xa0 &&
 						 packet->payload[15] == 0x00 &&
 						 packet->payload[16] == 0x00 &&
@@ -171,7 +173,8 @@ void ndpi_search_ppstream(struct ndpi_detection_module_struct
 	    return;
 	  }
 	  /** check 55 (2) **/
-	  else if(packet->payload[2] == 0x55 && packet->payload[1] == 0x00 &&
+	  else if(packet->payload_packet_len > 20 &&
+		  packet->payload[2] == 0x55 && packet->payload[1] == 0x00 &&
 		  (packet->payload[5] == 0x00 &&
 		   packet->payload[6] == 0x00 &&
 		   packet->payload[7] == 0x00 &&
@@ -190,7 +193,6 @@ void ndpi_search_ppstream(struct ndpi_detection_module_struct
 	    ndpi_int_ppstream_add_connection(ndpi_struct, flow);
 	    return;
 	  }
-	}
       }
       /* No port detection */
       if(packet->payload_packet_len > 17) {
@@ -223,12 +225,12 @@ void ndpi_search_ppstream(struct ndpi_detection_module_struct
 }
 
 
-void init_ppstream_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_ppstream_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("PPStream", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("PPStream", ndpi_struct, *id,
 				      NDPI_PROTOCOL_PPSTREAM,
 				      ndpi_search_ppstream,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
   

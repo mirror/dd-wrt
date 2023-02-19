@@ -54,7 +54,7 @@ static int ndpi_search_snmp_again(struct ndpi_detection_module_struct *ndpi_stru
 
 /* *************************************************************** */
 
-void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t snmp_port = htons(161), trap_port = htons(162);
@@ -144,8 +144,8 @@ void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 void init_snmp_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			 u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("SNMP", ndpi_struct, detection_bitmask, *id,
+			 u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("SNMP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_SNMP,
 				      ndpi_search_snmp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,

@@ -36,10 +36,10 @@ static void ndpi_int_rdp_add_connection(struct ndpi_detection_module_struct *ndp
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RDP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
-void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 		     struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-	
+
   NDPI_LOG_DBG(ndpi_struct, "search RDP\n");
 
   if (packet->tcp != NULL) {
@@ -97,9 +97,9 @@ void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void init_rdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_rdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("RDP", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("RDP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_RDP,
 				      ndpi_search_rdp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

@@ -35,7 +35,7 @@ static void ndpi_int_ipp_add_connection(struct ndpi_detection_module_struct *ndp
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_IPP, NDPI_PROTOCOL_HTTP, NDPI_CONFIDENCE_DPI);
 }
 
-void ndpi_search_ipp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_ipp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -55,9 +55,9 @@ void ndpi_search_ipp(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 }
 
 
-void init_ipp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_ipp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("IPP", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("IPP", ndpi_struct, *id,
 				      NDPI_PROTOCOL_IPP,
 				      ndpi_search_ipp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

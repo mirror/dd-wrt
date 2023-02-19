@@ -161,6 +161,8 @@ NDPI_STATIC  void ndpi_set_proto_defaults(struct ndpi_detection_module_struct *n
 NDPI_STATIC  void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str,
 		     struct ndpi_flow_struct *flow, ndpi_risk_enum r,
 		     char *risk_message);
+NDPI_STATIC  void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
+		       struct ndpi_flow_struct *flow, ndpi_risk_enum r);    
 NDPI_STATIC  int ndpi_isset_risk(struct ndpi_detection_module_struct *ndpi_str,
 		      struct ndpi_flow_struct *flow, ndpi_risk_enum r);
 NDPI_STATIC  int ndpi_is_printable_buffer(uint8_t const * const buf, size_t len);

@@ -198,7 +198,7 @@ static void ndpi_check_edonkey(struct ndpi_detection_module_struct *ndpi_struct,
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);    
 }
 
-void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   NDPI_LOG_DBG(ndpi_struct, "search EDONKEY\n");
 
   /* skip marked packets */
@@ -208,9 +208,9 @@ void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struc
 }
 
 
-void init_edonkey_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_edonkey_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("eDonkey", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("eDonkey", ndpi_struct, *id,
 				      NDPI_PROTOCOL_EDONKEY,
 				      ndpi_search_edonkey,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

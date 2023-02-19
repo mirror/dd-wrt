@@ -30,10 +30,7 @@ static void ndpi_check_lotus_notes(struct ndpi_detection_module_struct *ndpi_str
 				   struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  // const u_int8_t *packet_payload = packet->payload;
   u_int32_t payload_len = packet->payload_packet_len;
-
-  if(packet->tcp == NULL)  return;
 
   flow->l4.tcp.lotus_notes_packet_id++;
   
@@ -54,19 +51,17 @@ static void ndpi_check_lotus_notes(struct ndpi_detection_module_struct *ndpi_str
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void ndpi_search_lotus_notes(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_lotus_notes(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_DBG(ndpi_struct, "search lotus_notes\n");
 
-  /* skip marked packets */
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_LOTUS_NOTES)
-    ndpi_check_lotus_notes(ndpi_struct, flow);
+  ndpi_check_lotus_notes(ndpi_struct, flow);
 }
 
 
-void init_lotus_notes_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_lotus_notes_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("LotusNotes", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("LotusNotes", ndpi_struct, *id,
 				      NDPI_PROTOCOL_LOTUS_NOTES,
 				      ndpi_search_lotus_notes,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,

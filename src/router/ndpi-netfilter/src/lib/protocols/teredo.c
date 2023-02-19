@@ -25,7 +25,7 @@
 #include "ndpi_api.h"
 
 /* https://en.wikipedia.org/wiki/Teredo_tunneling */
-void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -43,9 +43,9 @@ void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct
 }
 
 
-void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
-  ndpi_set_bitmask_protocol_detection("TEREDO", ndpi_struct, detection_bitmask, *id,
+  ndpi_set_bitmask_protocol_detection("TEREDO", ndpi_struct, *id,
 				      NDPI_PROTOCOL_TEREDO,
 				      ndpi_search_teredo,
 				      /* Teredo is inherently IPV4 only */

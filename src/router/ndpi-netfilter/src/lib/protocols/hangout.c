@@ -55,7 +55,7 @@ static u_int8_t isHangoutTCPPort(u_int16_t port) {
 
 /* ***************************************************************** */
 
-void ndpi_search_hangout(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_hangout(struct ndpi_detection_module_struct *ndpi_struct,
 			 struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct * packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -80,7 +80,7 @@ void ndpi_search_hangout(struct ndpi_detection_module_struct *ndpi_struct,
 	printf("[LRU] ADDING %u / %u.%u\n", key, NDPI_PROTOCOL_STUN, NDPI_PROTOCOL_HANGOUT_DUO);
 #endif
 
-	ndpi_lru_add_to_cache(ndpi_struct->stun_cache, key, NDPI_PROTOCOL_HANGOUT_DUO);
+	ndpi_lru_add_to_cache(ndpi_struct->stun_cache, key, NDPI_PROTOCOL_HANGOUT_DUO, ndpi_get_current_time(flow));
       }
       
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_HANGOUT_DUO,
@@ -94,9 +94,8 @@ void ndpi_search_hangout(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ***************************************************************** */
 
-void init_hangout_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
-			    NDPI_PROTOCOL_BITMASK *detection_bitmask) {
-  ndpi_set_bitmask_protocol_detection("GoogleHangout", ndpi_struct, detection_bitmask, *id,
+void init_hangout_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id) {
+  ndpi_set_bitmask_protocol_detection("GoogleHangout", ndpi_struct, *id,
 				      NDPI_PROTOCOL_HANGOUT_DUO,
 				      ndpi_search_hangout,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
