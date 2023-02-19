@@ -913,7 +913,7 @@ static int record_pid(void)
 	int fd;
 
 	(void)snprintf(pid, sizeof(pid), "%d\n", (int)getpid());
-	fd = open("/run/sm-notify.pid", O_CREAT|O_EXCL|O_WRONLY, 0600);
+	fd = open("/var/run/sm-notify.pid", O_CREAT|O_EXCL|O_WRONLY, 0600);
 	if (fd < 0)
 		return 0;
 

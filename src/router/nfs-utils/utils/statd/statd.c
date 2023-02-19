@@ -161,7 +161,7 @@ usage(void)
 	fprintf(stderr,"      -H                   Specify a high-availability callout program.\n");
 }
 
-static const char *pidfile = "/run/rpc.statd.pid";
+static const char *pidfile = "/var/run/rpc.statd.pid";
 
 int pidfd = -1;
 static void create_pidfile(void)
