@@ -83,7 +83,13 @@ for i in $(seq 1 $tunnels); do
 			(while read dpbrip; do ip route del $dpbrip >/dev/null 2>&1; done < $WGDPBRIP)
 			rm $WGDPBRIP >/dev/null 2>&1
 		fi
+		WGDNSRT="/tmp/wgdnsrt_oet${i}"
+		if [[ -f "$WGDNSRT" ]]; then
+			(while read dnsrt; do $dnsrt >/dev/null 2>&1; done < $WGDNSRT)
+			rm $WGDNSRT
+		fi
 		ip route flush cache
+		ip -6 route flush cache >/dev/null 2>&1
 	fi
 done
 for i in $(seq 1 $tunnels); do

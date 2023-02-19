@@ -1988,6 +1988,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_killswitch", i);
 		copytonv(wp, "oet%d_spbr", i);
 		copytonv(wp, "oet%d_dnspbr", i);
+		copytonv(wp, "oet%d_dns4", i);
+		copytonv(wp, "oet%d_dns6", i);
 		copytonv(wp, "oet%d_dpbr", i);
 		copytonv(wp, "oet%d_firewallin", i);
 		copytonv(wp, "oet%d_failgrp", i);
@@ -2249,6 +2251,8 @@ void add_tunnel(webs_t wp)
 	default_seti("killswitch", 0);
 	default_seti("spbr", 0);
 	default_seti("dnspbr", 0);
+	default_set("dns4", "9.9.9.9");
+	default_set("dns6", "2620:fe::9");
 	default_seti("dpbr", 0);
 	default_seti("firewallin", 1);
 	default_seti("failgrp", 0);
@@ -2402,6 +2406,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("killswitch", i, i - 1);
 		copytunvalue("spbr", i, i - 1);
 		copytunvalue("dnspbr", i, i - 1);
+		copytunvalue("dns4", i, i - 1);
+		copytunvalue("dns6", i, i - 1);
 		copytunvalue("dpbr", i, i - 1);
 		copytunvalue("firewallin", i, i - 1);
 		copytunvalue("failgrp", i, i - 1);
@@ -2456,6 +2462,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("killswitch", tunnels);
 	deltunvalue("spbr", tunnels);
 	deltunvalue("dnspbr", tunnels);
+	deltunvalue("dns4", tunnels);
+	deltunvalue("dns6", tunnels);
 	deltunvalue("dpbr", tunnels);
 	deltunvalue("firewallin", tunnels);
 	deltunvalue("failgrp", tunnels);
