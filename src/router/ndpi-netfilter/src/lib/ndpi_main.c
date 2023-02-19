@@ -227,8 +227,8 @@ static ndpi_risk_info ndpi_known_risks[] = {
 
 NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
 			    struct ndpi_flow_struct *flow, ndpi_risk_enum r);
-extern u_int32_t make_mining_key(struct ndpi_flow_struct *flow);
-extern int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC u_int32_t make_mining_key(struct ndpi_flow_struct *flow);
+NDPI_STATIC int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 /* Forward */
 static void addDefaultPort(struct ndpi_detection_module_struct *ndpi_str,
@@ -2240,7 +2240,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 #define MATCH_DEBUG_INFO(fmt, ...) if(txt->option & AC_FEATURE_DEBUG) printf(fmt, ##__VA_ARGS__)
 
 /* No static because it is used by fuzzer, too */
-int ac_domain_match_handler(AC_MATCH_t *m, AC_TEXT_t *txt, AC_REP_t *match) {
+NDPI_STATIC int ac_domain_match_handler(AC_MATCH_t *m, AC_TEXT_t *txt, AC_REP_t *match) {
   AC_PATTERN_t *pattern = m->patterns;
   int i,start,end = m->position;
 
@@ -7199,7 +7199,7 @@ u_int32_t ndpi_bytestream_to_ipv4(const u_int8_t *str, u_int16_t max_chars_to_re
 
 /* ********************************************************************************* */
 
-void ndpi_parse_single_packet_line(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow) {
+NDPI_STATIC void ndpi_parse_single_packet_line(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_str);
   
   /* First line of a HTTP response parsing. Expected a "HTTP/1.? ???" */
