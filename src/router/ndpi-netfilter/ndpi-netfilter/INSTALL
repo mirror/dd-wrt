@@ -7,33 +7,53 @@ The minimum required kernel version is 4.4.
 If you need to use the extension 'connlabel' you need
 to use a patch for the kernel.
 
+For linux kernels since 5.18 patches are not implemented yet.
+
 --------------------------------------------------------
 2. The minimum requirements for the kernel configuration
 --------------------------------------------------------
 
-Kernel version >= 4.4
+Kernel version >= 5.18
 
-Networking support  --->
-  Networking options  --->
-  [*] Network packet filtering framework (Netfilter)  --->
+  Processor type and features  --->
+    [*] Kernel Live Patching
+  Networking support  --->
+    Networking options  --->
+    [*] Network packet filtering framework (Netfilter)  --->
         Core Netfilter Configuration  --->
           Netfilter connection tracking support (M/Y)
-          Number of custom extend (1) (if patched kernel)
 	  "connlabel" match support (M)
 
-Check your kernel configuration file.
-For non-patched kernel there should be:
+  or
 
-  CONFIG_NF_CONNTRACK=m or y
-  CONFIG_NF_CONNTRACK_LABELS=y
-  CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
-  CONFIG_UNUSED_SYMBOLS=y
+    CONFIG_LIVEPATCH=y
+    CONFIG_NF_CONNTRACK=m or y
+    CONFIG_NF_CONNTRACK_LABELS=y
+    CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
 
-For patched kernel there should be:
+Kernel version >= 4.4
 
-  CONFIG_NF_CONNTRACK=m or y
-  CONFIG_NF_CONNTRACK_CUSTOM=1
-  CONFIG_UNUSED_SYMBOLS=y
+  Networking support  --->
+    Networking options  --->
+    [*] Network packet filtering framework (Netfilter)  --->
+        Core Netfilter Configuration  --->
+          Netfilter connection tracking support (M/Y)
+	  "connlabel" match support (M)
+          Number of custom extend (1) (if patched kernel)
+
+  Check your kernel configuration file.
+  For non-patched kernel there should be:
+
+    CONFIG_NF_CONNTRACK=m or y
+    CONFIG_NF_CONNTRACK_LABELS=y
+    CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
+    CONFIG_UNUSED_SYMBOLS=y
+
+  For patched kernel there should be:
+
+    CONFIG_NF_CONNTRACK=m or y
+    CONFIG_NF_CONNTRACK_CUSTOM=1
+    CONFIG_UNUSED_SYMBOLS=y
 
 ----------------------
 3. Compile and install
@@ -218,7 +238,19 @@ to be moved to the 'mangle/FORWARD' and 'mangle/INPUT' chains.
 In case you want to stop using the nDPI kernel module, first remove every
 iptables rule for nDPI and then type (as root):
 
-        conntrack -F && rmmod xt_ndpi
+Without livepatch
+
+        conntrack -F
+	rmmod xt_ndpi
+
+With livepatch
+        
+	conntrack -F
+	sleep 1
+	echo 0 >/sys/kernel/livepatch/xt_ndpi/enabled
+	sleep 1
+	rmmod xt_ndpi
+
 
 --------------------
 6. Module parameters

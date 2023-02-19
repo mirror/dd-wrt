@@ -67,7 +67,7 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
                               size_t count, loff_t *ppos)
 {
         struct ndpi_net *n = pde_data(file_inode(file));
-	char lbuf[256+32],*host;
+	char lbuf[256+32],unkproto[16],*host;
 	const char *t_proto;
 	str_collect_t *ph;
 	int i, l=0, p=0, bpos = 0, hl, pl;
@@ -88,6 +88,10 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 		host = NULL;
 		if(ph && ph->last && hdh < ph->last ) {
 			t_proto = ndpi_get_proto_by_id(n->ndpi_struct,hdp);
+			if(!t_proto) {
+				snprintf(unkproto,sizeof(unkproto)-1,"custom%.5d",hdp);
+				t_proto = unkproto;
+			}
 			pl = strlen(t_proto);
 			i = 0; p = 0;
 			for( ; (uint8_t)ph->s[hdh] ;
