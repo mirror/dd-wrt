@@ -11,8 +11,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/afp.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/aimini.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/ajp.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/amazon_video.c"
@@ -23,13 +21,9 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/apple_push.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/applejuice.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/armagetron.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/avast_securedns.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/ayiya.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/bgp.c"
 #undef NDPI_CURRENT_PROTO
@@ -67,10 +61,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/diameter.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/directconnect.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/directdownloadlink.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/dnp3.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/dns.c"
@@ -89,13 +79,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/ethernet_ip.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/fasttrack.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/fiesta.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/fix.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/florensia.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/ftp_control.c"
 #undef NDPI_CURRENT_PROTO
@@ -203,8 +187,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/ookla.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/openft.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/openvpn.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/oracle.c"
@@ -249,8 +231,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/sflow.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/shoutcast.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/sip.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/skinny.c"
@@ -269,8 +249,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/someip.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/sopcast.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/spotify.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/ssdp.c"
@@ -278,8 +256,6 @@
 #include "protocols/ssh.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/starcraft.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/stealthnet.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/steam.c"
 #undef NDPI_CURRENT_PROTO
@@ -302,8 +278,6 @@
 #include "protocols/tftp.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/threema.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/thunder.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/tinc.c"
 #undef NDPI_CURRENT_PROTO
@@ -369,8 +343,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/crynet.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/elasticsearch.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/fastcgi.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/kismet.c"
@@ -386,4 +358,14 @@
 #include "protocols/syncthing.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/tivoconnect.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/tplink_shp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/elastic_search.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/tailscale.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/tuya_lp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/merakicloud.c"
 #undef NDPI_CURRENT_PROTO

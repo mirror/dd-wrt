@@ -60,7 +60,7 @@ NDPI_STATIC u_int32_t get_stun_lru_key(struct ndpi_flow_struct *flow, u_int8_t r
   }
 }
 
-int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct,
                                 struct ndpi_flow_struct *flow)
 {
   u_int16_t dummy;

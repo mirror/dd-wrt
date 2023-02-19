@@ -180,7 +180,7 @@ static int is_version_with_encrypted_header(uint32_t version)
     ((version & 0xFFFFFF00) == 0x51303500) /* Q05X */ ||
     ((version & 0xFFFFFF00) == 0x54303500) /* T05X */;
 }
-int is_version_with_tls(uint32_t version)
+NDPI_STATIC int is_version_with_tls(uint32_t version)
 {
   return is_version_quic(version) ||
     ((version & 0xFFFFFF00) == 0x54303500) /* T05X */;
@@ -1153,7 +1153,7 @@ static const uint8_t *get_reassembled_crypto_data(struct ndpi_detection_module_s
   return NULL;
 }
 
-const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_struct,
 			       struct ndpi_flow_struct *flow,
 			       uint32_t version,
 			       u_int8_t *clear_payload, uint32_t clear_payload_len,
@@ -1333,7 +1333,7 @@ static uint8_t *get_clear_payload(struct ndpi_detection_module_struct *ndpi_stru
   return clear_payload;
 }
 
-void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
 		 struct ndpi_flow_struct *flow,
 		 const u_int8_t *crypto_data, uint32_t crypto_data_len,
 		 uint32_t version)
@@ -1368,7 +1368,7 @@ void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DOH_DOT, NDPI_PROTOCOL_QUIC, NDPI_CONFIDENCE_DPI);
   }
 }
-void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
 		  struct ndpi_flow_struct *flow,
 		  const u_int8_t *crypto_data, uint32_t crypto_data_len)
 {
