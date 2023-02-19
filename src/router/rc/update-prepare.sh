@@ -93,6 +93,7 @@ cp -av /dev ${R}/
 service snmp stop
 service transmission stop
 service plex stop
+service ftpsrv stop
 service freeradius stop
 service pppoeserver stop
 service upnp stop
@@ -112,6 +113,8 @@ killall resetbutton
 killall cron
 killall -9 rpc.mountd
 killall -9 rpcbind
+killall -9 rpc.nfsd
+killall -9 rpc.statd
 killall -9 irqbalance
 killall -9 mstpd
 killall -9 wland
