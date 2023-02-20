@@ -1590,7 +1590,7 @@ static int ath_nand_probe(void)
 		mtd->size	= ath_plane_size[sc->nid.pls] << sc->nid.pn;
 	}
 	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
-	skip_blocks = kmalloc(count, GFP_KERNEL);
+	skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
 	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	if (!sc->onfi[0]) {
 		mtd->writesize_shift	= 10 + sc->nid.ps;
