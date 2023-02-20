@@ -634,6 +634,8 @@ ath_nand_dump_buf(loff_t addr, void *v, unsigned count)
 	//while(1);
 }
 
+static loff_t *skip_blocks;
+
 static int
 ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 		loff_t addr, size_t len, size_t *iodone)
@@ -642,16 +644,21 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 	unsigned char	*pa;
 	ath_nand_sc_t	*sc = mtd->priv;
 	uint8_t		*buf = get_ath_nand_io_buf();
-
+	int i;
 	*iodone = 0;
+	unsigned int count = (unsigned int)addr / (unsigned int)mtd->erasesize;
 
 	dir = rd ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
 
+	for (i=0;i< count;i++)
+	    addr += skip_blocks[i];
 	while (len) {
 		unsigned c, ba0, ba1;
 
 		if (ath_nand_block_isbad(mtd, addr)) {
-			//printk("Skipping bad block[0x%x]\n", (unsigned)addr);
+			printk("Skipping bad block[0x%x]\n", (unsigned)addr);
+			count = (unsigned int)addr / (unsigned int)mtd->erasesize;
+			skip_blocks[count] = mtd->erasesize;
 			addr += mtd->erasesize;
 			continue;
 		}
@@ -846,15 +853,15 @@ ath_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 		ba1 = ((i >> (mtd->writesize_shift + 16)) & 0xf);
 
 		if ((ret = ath_nand_block_erase(sc, ba0, ba1)) != 0) {
-			iodbg("%s: erase failed 0x%llx 0x%llx 0x%x %llu "
-				"%lx %lx\n", __func__, instr->addr, s_last,
+			printk(KERN_ERR "%s: erase failed 0x%llx 0x%llx %llu "
+				"%lx %lx\n", __func__, instr->addr,
 				mtd->erasesize, i, ba1, ba0);
 			break;
 		}
 		ath_nand_set_blk_state(mtd, i, ATH_NAND_BLK_ERASED);
 #if inject_failure
 		if (ath_nand_inject & 4 && ((ath_nand_inject & ~4u) == i)) {
-			printk("Forcing erase failure at 0x%llx\n", i);
+			printk(KERN_ERR "Forcing erase failure at 0x%llx\n", i);
 			break;
 		}
 #endif
@@ -1540,6 +1547,7 @@ static int ath_nand_probe(void)
 	ath_nand_sc_t	*sc = NULL;
 	struct mtd_info	*mtd = NULL;
 	int		i, err = 0, bbt_size;
+	unsigned int count;
 	unsigned	nf_ctrl_pg[][2] = {
 		/* page size in bytes, register val */
 		{   256, ATH_NF_CTRL_PAGE_SIZE_256	},
@@ -1581,7 +1589,9 @@ static int ath_nand_probe(void)
 	if (mtd->size == 0) {
 		mtd->size	= ath_plane_size[sc->nid.pls] << sc->nid.pn;
 	}
-
+	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
+	skip_blocks = kmalloc(count, GFP_KERNEL);
+	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	if (!sc->onfi[0]) {
 		mtd->writesize_shift	= 10 + sc->nid.ps;
 		mtd->writesize		= (1 << mtd->writesize_shift);
