@@ -1589,7 +1589,6 @@ static int ath_nand_probe(void)
 	if (mtd->size == 0) {
 		mtd->size	= ath_plane_size[sc->nid.pls] << sc->nid.pn;
 	}
-	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
 	if (!sc->onfi[0]) {
 		mtd->writesize_shift	= 10 + sc->nid.ps;
 		mtd->writesize		= (1 << mtd->writesize_shift);
@@ -1618,6 +1617,7 @@ static int ath_nand_probe(void)
 					  (*(uint32_t *)(&sc->onfi[ONFI_BLOCKS_PER_LUN])) *
 					  sc->onfi[ONFI_NUM_LUNS];
 	}
+	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
 	skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
 	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	mtd->writebufsize = mtd->writesize;
