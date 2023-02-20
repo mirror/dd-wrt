@@ -656,7 +656,7 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 		unsigned c, ba0, ba1;
 
 		if (ath_nand_block_isbad(mtd, addr)) {
-			printk("Skipping bad block[0x%x]\n", (unsigned)addr);
+			printk(KERN_ERR "Skipping bad block[0x%x]\n", (unsigned)addr);
 			count = (unsigned int)addr / (unsigned int)mtd->erasesize;
 			skip_blocks[count] = mtd->erasesize;
 			addr += mtd->erasesize;
@@ -1590,8 +1590,6 @@ static int ath_nand_probe(void)
 		mtd->size	= ath_plane_size[sc->nid.pls] << sc->nid.pn;
 	}
 	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
-	skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
-	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	if (!sc->onfi[0]) {
 		mtd->writesize_shift	= 10 + sc->nid.ps;
 		mtd->writesize		= (1 << mtd->writesize_shift);
@@ -1620,6 +1618,8 @@ static int ath_nand_probe(void)
 					  (*(uint32_t *)(&sc->onfi[ONFI_BLOCKS_PER_LUN])) *
 					  sc->onfi[ONFI_NUM_LUNS];
 	}
+	skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
+	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	mtd->writebufsize = mtd->writesize;
 
 	for (i = 0; nf_ctrl_pg[i][0]; i++) {

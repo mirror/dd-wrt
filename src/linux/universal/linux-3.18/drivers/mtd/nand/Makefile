@@ -1,6 +1,7 @@
 #
 # linux/drivers/nand/Makefile
 #
+EXTRA_CFLAGS+= -g
 
 obj-$(CONFIG_MTD_NAND)			+= nand.o
 obj-$(CONFIG_MTD_NAND_ECC)		+= nand_ecc.o  nand_ecc_mlc.o
