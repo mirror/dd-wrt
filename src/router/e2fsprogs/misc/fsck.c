@@ -61,7 +61,7 @@
 #include "../version.h"
 #include "support/nls-enable.h"
 #include "fsck.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 
 #ifndef _PATH_MNTTAB
 #define	_PATH_MNTTAB	"/etc/fstab"

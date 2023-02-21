@@ -50,7 +50,7 @@ extern int optind;
 #include "e2p/e2p.h"
 #include "et/com_err.h"
 #include "e2p/e2p.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "support/plausible.h"
 #include "e2fsck.h"
 #include "problem.h"

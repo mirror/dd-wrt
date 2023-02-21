@@ -35,7 +35,7 @@
 #include "plausible.h"
 #include "ext2fs/ext2fs.h"
 #include "nls-enable.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 
 #ifdef HAVE_MAGIC_H
 static magic_t (*dl_magic_open)(int);

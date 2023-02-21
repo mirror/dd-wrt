@@ -47,7 +47,7 @@
 
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 
 /* special process keyring shortcut IDs */
 #define KEY_SPEC_THREAD_KEYRING		-1

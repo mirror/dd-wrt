@@ -33,8 +33,8 @@ extern int getopt(int argc, char * const argv[], const char *optstring);
 extern char *optarg;
 extern int optind;
 #endif
-#include "uuid/uuid.h"
-#include "uuid/uuidd.h"
+#include "uuid.h"
+#include "uuidd.h"
 #include "support/nls-enable.h"
 #include "ext2fs/ext2fs.h"
 

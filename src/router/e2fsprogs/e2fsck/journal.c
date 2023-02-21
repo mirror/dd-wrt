@@ -25,7 +25,7 @@
 #define E2FSCK_INCLUDE_INLINE_FUNCS
 #include "jfs_user.h"
 #include "problem.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 
 #ifdef CONFIG_JBD_DEBUG		/* Enabled by configure --enable-jfs-debug */
 static int bh_count = 0;

@@ -36,7 +36,7 @@ extern int optind;
 #define OUTPUT_PRETTY_LIST	0x0004
 
 #include "ext2fs/ext2fs.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 
 static const char *progname = "blkid";
 

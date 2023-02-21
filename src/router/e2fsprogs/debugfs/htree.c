@@ -24,7 +24,7 @@ extern char *optarg;
 #endif
 
 #include "debugfs.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "e2p/e2p.h"
 
 static FILE *pager;

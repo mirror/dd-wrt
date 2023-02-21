@@ -45,7 +45,7 @@
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
 #include "support/nls-enable.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 #include "util.h"
 
 char *journal_location_string = NULL;

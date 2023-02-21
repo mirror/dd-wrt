@@ -34,7 +34,7 @@
 #include <errno.h>
 #endif
 #include "blkidP.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "probe.h"
 
 static int figure_label_len(const unsigned char *label, int len)

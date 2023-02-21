@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 #endif
 
-#include <blkid/blkid.h>
+#include <blkid.h>
 
 #include <blkid/list.h>
 

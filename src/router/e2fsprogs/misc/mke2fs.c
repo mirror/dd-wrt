@@ -48,11 +48,11 @@ extern int optind;
 #endif
 #include <libgen.h>
 #include <limits.h>
-#include <blkid/blkid.h>
+#include <blkid.h>
 
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fsP.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "util.h"
 #include "support/nls-enable.h"
 #include "support/plausible.h"

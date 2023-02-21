@@ -26,7 +26,7 @@
 #endif
 
 #include "blkidP.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 
 #ifdef HAVE_STRTOULL
 #define STRTOULL strtoull /* defined in stdlib.h if you try hard enough */

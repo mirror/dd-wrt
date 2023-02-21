@@ -31,7 +31,7 @@ extern char *optarg;
 #endif
 
 #include "debugfs.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "e2p/e2p.h"
 
 #include <ext2fs/ext2_ext_attr.h>

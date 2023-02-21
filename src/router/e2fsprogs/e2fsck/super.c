@@ -15,7 +15,7 @@
 #endif
 
 #ifndef EXT2_SKIP_UUID
-#include "uuid/uuid.h"
+#include "uuid.h"
 #endif
 #include "e2fsck.h"
 #include "problem.h"

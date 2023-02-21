@@ -23,7 +23,7 @@
 #endif
 
 #define E2FSCK_INCLUDE_INLINE_FUNCS
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "journal.h"
 
 #ifdef CONFIG_JBD_DEBUG		/* Enabled by configure --enable-jfs-debug */
@@ -33,7 +33,7 @@ static int bh_count = 0;
 #if EXT2_FLAT_INCLUDES
 #include "blkid.h"
 #else
-#include "blkid/blkid.h"
+#include "blkid.h"
 #endif
 
 /*
