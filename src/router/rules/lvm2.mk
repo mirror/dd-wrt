@@ -1,8 +1,8 @@
 lvm2-configure: e2fsprogs
 	cd lvm2 && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" \
-		BLKID_CFLAGS="-L$(TOP)/e2fsprogs/lib/blkid" \
-		BLKID_LIBS="-L$(TOP)/e2fsprogs/lib/blkid -le2fsblkid"
+		BLKID_CFLAGS="-L$(TOP)/util-linux/libblkid/src" \
+		BLKID_LIBS="-L$(TOP)/util-linux/.libs -lblkid"
 
 lvm2: e2fsprogs
 	make -C lvm2 device-mapper
