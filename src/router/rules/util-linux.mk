@@ -1,6 +1,13 @@
 util-linux-configure: ncurses
 	-make -C util-linux clean
-	cd util-linux && autoreconf -fi && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/tmp CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/ncurses/include" PKG_CONFIG="/tmp" \
+
+	cd util-linux && rm -f config.cache
+	cd util-linux && libtoolize
+	cd util-linux && aclocal
+	cd util-linux && autoconf
+	cd util-linux && autoheader
+	cd util-linux && autoreconf -vfi
+	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/tmp CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/ncurses/include" PKG_CONFIG="/tmp" \
 	--disable-rpath \
 	--enable-new-mount	\
 	--disable-tls		\
