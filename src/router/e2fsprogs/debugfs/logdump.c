@@ -31,9 +31,9 @@ extern char *optarg;
 #endif
 
 #include "debugfs.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 #include "jfs_user.h"
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 enum journal_location {JOURNAL_IS_INTERNAL, JOURNAL_IS_EXTERNAL};
 

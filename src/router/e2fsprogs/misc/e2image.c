@@ -45,7 +45,7 @@ extern int optind;
 #include "ext2fs/ext2fs.h"
 #include "ext2fs/ext2fsP.h"
 #include "et/com_err.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "e2p/e2p.h"
 #include "ext2fs/e2image.h"
 #include "ext2fs/qcow2.h"

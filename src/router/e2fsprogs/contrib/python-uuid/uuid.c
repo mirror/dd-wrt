@@ -1,6 +1,6 @@
 #include <Python.h>
 #include <time.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 static PyObject * _uuid_generate(PyObject *self, PyObject *args)
 {

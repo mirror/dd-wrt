@@ -38,7 +38,7 @@ extern int optind;
 #include "ext2fs/ext2fs.h"
 #include "e2p/e2p.h"
 #include "ext2fs/kernel-jbd.h"
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 #include "support/nls-enable.h"
 #include "support/plausible.h"

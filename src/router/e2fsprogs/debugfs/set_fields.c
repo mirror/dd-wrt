@@ -38,7 +38,7 @@
 #include <utime.h>
 
 #include "debugfs.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "e2p/e2p.h"
 #include "support/quotaio.h"
 

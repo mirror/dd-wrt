@@ -11,7 +11,7 @@
 #include "e2fsck.h"
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "uuid/uuid.h"
+#include "uuid.h"
 
 #include "ext2fs/ext2fs.h"
 #include <ext2fs/tdb.h>

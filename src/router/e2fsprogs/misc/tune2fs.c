@@ -59,10 +59,10 @@ extern int optind;
 #include "et/com_err.h"
 #include "support/plausible.h"
 #include "support/quotaio.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "e2p/e2p.h"
 #include "util.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 
 #include "../version.h"
 #include "support/nls-enable.h"

@@ -33,7 +33,7 @@
 #else
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
-#include "blkid/blkid.h"
+#include "blkid.h"
 #endif
 
 #include "support/profile.h"

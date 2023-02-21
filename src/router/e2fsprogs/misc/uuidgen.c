@@ -21,7 +21,7 @@ extern int getopt(int argc, char * const argv[], const char *optstring);
 extern char *optarg;
 extern int optind;
 #endif
-#include "uuid/uuid.h"
+#include "uuid.h"
 #include "support/nls-enable.h"
 
 #define DO_TYPE_TIME	1
