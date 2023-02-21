@@ -1,0 +1,43 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: GLib
+Upstream-Contact: https://gitlab.gnome.org/GNOME/glib/-/issues
+Source: https://gitlab.gnome.org/GNOME/glib/
+
+# These test files are too simple to be copyrightable, but adding
+# copyright/licensing headers to them (or beside them in a .license file) may
+# affect the tests
+Files:
+ fuzzing/*.corpus
+ fuzzing/*.dict
+ gio/tests/cert-tests/*.p12
+ gio/tests/cert-tests/*.pem
+ gio/tests/desktop-files/**.desktop
+ gio/tests/schema-tests/*.gschema.xml
+ gio/tests/thumbnails/*.png
+ glib/tests/bookmarks/*.xbel
+ glib/tests/markups/*.cdata-as-text
+ glib/tests/markups/*.expected
+ glib/tests/markups/*.gmarkup
+Copyright: See individual files
+License: CC0-1.0
+
+# Translation files are explicitly contributed under the license of the project,
+# but by multiple authors
+Files: po/*.po
+Copyright: See individual files
+License: LGPL-2.1-or-later
+
+# Subproject wrap files are too simple to be copyrightable, but adding
+# copyright/licensing headers to them will get lost when they’re next updated
+# from wrapdb
+Files:
+ subprojects/*.wrap
+Copyright: Meson Wrap Database (wrapdb) contributors
+License: CC0-1.0
+
+# SVG files do contain the licensing metadata, but `reuse` can’t extract it
+# yet. The canonical licensing information for these files is in their internal
+# metadata.
+Files: docs/reference/glib/gvariant-*.svg
+Copyright: 2022 Philip Withnall
+License: CC-BY-SA-3.0
