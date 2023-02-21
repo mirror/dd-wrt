@@ -32,8 +32,8 @@ endif
 	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -fcommon -I$(TOP)/glib20/gettext" \
 		LDFLAGS="-L$(TOP)/glib20/gettext/.libs -lintl" \
-		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib -I$(TOP)/glib20/libglib/build/glib " \
-		GLIB_LIBS="-L$(TOP)/_staging/usr/lib -lglib-2.0" \
+		GLIB_CFLAGS="-I$(TOP)/_staging/usr/include/glib-2.0 -I$(TOP)/_staging/usr/lib/glib-2.0/include -L$(INSTALLDIR)/util-linux/usr/lib" \
+		GLIB_LIBS="-L$(TOP)/_staging/usr/lib -lglib-2.0 -lpcre2-8" \
 		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
 		GMODULE_LIBS="-pthread $(TOP)/_staging/usr/lib -lrt -lglib-2.0" \
 	--without-included-gettext \
