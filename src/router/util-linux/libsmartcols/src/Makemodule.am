@@ -35,10 +35,6 @@ EXTRA_libsmartcols_la_DEPENDENCIES = \
 	libsmartcols/src/libsmartcols.sym
 
 libsmartcols_la_LDFLAGS = $(SOLIB_LDFLAGS)
-if HAVE_VSCRIPT
-libsmartcols_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(top_srcdir)/libsmartcols/src/libsmartcols.sym
-endif
-libsmartcols_la_LDFLAGS += -version-info $(LIBSMARTCOLS_VERSION_INFO)
 
 EXTRA_DIST += \
 	libsmartcols/src/libsmartcols.sym
