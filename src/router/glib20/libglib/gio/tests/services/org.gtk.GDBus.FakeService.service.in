@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.gtk.GDBus.FakeService
-Exec=@installed_tests_dir@/fake-service-name
