@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <time.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 #include "f2fs_fs.h"
 #include "f2fs_format_utils.h"
