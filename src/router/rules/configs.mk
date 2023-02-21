@@ -183,7 +183,7 @@ endif
 obj-$(CONFIG_UTILS) += utils
 obj-$(CONFIG_MTR) += mtr
 obj-$(CONFIG_PCIUTILS) += pciutils
-obj-$(CONFIG_E2FSPROGS) += lzo e2fsprogs
+obj-$(CONFIG_E2FSPROGS) += util-linux lzo e2fsprogs
 obj-$(CONFIG_XFSPROGS) += ncurses util-linux xfsprogs 
 obj-$(CONFIG_BTRFSPROGS) += ncurses util-linux zstd btrfsprogs
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
@@ -336,7 +336,7 @@ obj-$(CONFIG_SOFTETHER) += libsodium readline softether
 obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
 obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_ANCHORFREE) += zlib jansson libevent-af hydra
-obj-$(CONFIG_F2FS) += f2fs-tools
+obj-$(CONFIG_F2FS) += util-linux f2fs-tools
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_LSOF) += lsof
 obj-$(CONFIG_X86) += lsof

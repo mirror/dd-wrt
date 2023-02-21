@@ -1,4 +1,4 @@
-f2fs-tools-configure:
+f2fs-tools-configure: util-linux
 	cd f2fs-tools && ./autogen.sh 
 	cd f2fs-tools && ./configure \
 	    --prefix=/usr \
