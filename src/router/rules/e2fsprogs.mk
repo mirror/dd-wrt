@@ -1,6 +1,26 @@
 e2fsprogs-configure:
 	touch e2fsprogs/intl/plural.c
-	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89 -I$(TOP)/e2fsprogs/intl" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/e2fsprogs/intl" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs --disable-nls --disable-debugfs
+	cd e2fsprogs && ./configure \
+		    --host=$(ARCH)-linux \
+		    CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89 -I$(TOP)/e2fsprogs/intl -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src" \
+		    LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/e2fsprogs/intl -L$(INSTALLDIR)/util-linux/usr/lib" \
+		    --disable-static \
+		    --enable-shared \
+		    --with-gnu-ld \
+		    --disable-rpath \
+		    --enable-elf-shlibs \
+		    --enable-compression \
+		    --enable-htree \
+		    --enable-symlink-install \
+		    --disable-tls \
+		    --libdir=/lib \
+		    root_prefix=$(INSTALLDIR)/e2fsprogs \
+		    --disable-nls \
+		    --disable-libuuid \
+		    --enable-libuuid=no \
+		    --disable-uuidd \
+		    --disable-debugfs
+	
 	make -C e2fsprogs clean
 	make -C e2fsprogs
 
