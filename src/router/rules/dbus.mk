@@ -8,7 +8,7 @@ dbus-configure:
 	--localstatedir=/tmp/var \
 	--disable-xml-docs \
 	--without-x \
-	--disable-systemd \
+	--enable-systemd=no \
 	--with-dbus-user="nobody" \
 	--with-dbus-session-bus-connect-address="/tmp/var/run/dbus/dbussocket" \
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \
