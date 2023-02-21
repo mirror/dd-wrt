@@ -17,7 +17,7 @@ irqbalance-configure: libnl glib20
 		LIBNL3GENL_CFLAGS="-I$(TOP)/libnl/include" \
 		LIBNL3GENL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-genl-3"
 
-irqbalance: zlib libffi libnl
+irqbalance: zlib libffi libnl glib20
 	$(MAKE) -C irqbalance
 
 irqbalance-clean: 
