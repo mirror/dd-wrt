@@ -143,7 +143,7 @@ installed_tests_template = files('tests/template.test.in')
 installed_tests_template_tap = files('tests/template-tap.test.in')
 
 # Don’t build the tests unless we can run them (either natively, in an exe wrapper, or by installing them for later use)
-build_tests = get_option('tests') and (meson.can_run_host_binaries() or installed_tests_enabled)
+build_tests = false
 
 common_test_env = [
   'G_DEBUG=gc-friendly',
@@ -1073,7 +1073,7 @@ if host_system == 'windows' and (cc.get_id() == 'msvc' or cc.get_id() == 'clang-
   glib_conf.set('HAVE_C99_SNPRINTF', false)
   glib_conf.set('HAVE_C99_VSNPRINTF', false)
   glib_conf.set('HAVE_UNIX98_PRINTF', false)
-elif not cc_can_run and host_system in ['ios', 'darwin']
+elif true
   # All these are true when compiling natively on macOS, so we should use good
   # defaults when building for iOS and tvOS.
   glib_conf.set('HAVE_C99_SNPRINTF', true)
@@ -2079,7 +2079,7 @@ subproject('gvdb')
 gvdb_dep = dependency('gvdb')
 
 libm = cc.find_library('m', required : false)
-libffi_dep = dependency('libffi', version : '>= 3.0.0')
+# libffi_dep = dependency('libffi', version : '>= 3.0.0')
 
 libz_dep = dependency('zlib')
 
@@ -2088,6 +2088,9 @@ libz_dep = dependency('zlib')
 # FIXME: glib-gettext.m4 has much more checks to detect broken/uncompatible
 # implementations. This could be extended if issues are found in some platforms.
 libintl_deps = []
+if true
+  have_bind_textdomain_codeset = cc.has_function('bind_textdomain_codeset', prefix :'#include <libintl.h>')
+else
 libintl = dependency('intl', required: false, allow_fallback: false)
 if libintl.found()
   # libintl supports different threading APIs, which may not
@@ -2110,14 +2113,6 @@ if libintl.found()
     endif
   endif
 endif
-
-if libintl.found()
-  have_bind_textdomain_codeset = cc.has_function('bind_textdomain_codeset', dependencies: libintl_deps)
-else
-  libintl = dependency('intl', allow_fallback: true)
-  assert(libintl.type_name() == 'internal')
-  libintl_deps = [libintl]
-  have_bind_textdomain_codeset = true  # proxy-libintl supports it
 endif
 
 glib_conf.set('HAVE_BIND_TEXTDOMAIN_CODESET', have_bind_textdomain_codeset)
@@ -2272,15 +2267,9 @@ endif
 
 glib_conf.set('HAVE_PROC_SELF_CMDLINE', have_proc_self_cmdline)
 
-python = import('python').find_installation()
+python = 'python3'
 # used for '#!/usr/bin/env <name>'
 python_name = 'python3'
-
-python_version = python.language_version()
-python_version_req = '>=3.5'
-if not python_version.version_compare(python_version_req)
-  error('Requires Python @0@, @1@ found.'.format(python_version_req, python_version))
-endif
 
 # Determine which user environment-dependent files that we want to install
 have_bash = find_program('bash', required : false).found() # For completion scripts
