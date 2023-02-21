@@ -8,7 +8,7 @@ irqbalance-configure: libnl glib20
 		--enable-static=glib2 \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		GLIB2_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib -L$(INSTALLDIR)/util-linux/usr/lib" \
+		GLIB2_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB2_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" \
 		LDFLAGS="$(LDLTO)" \
