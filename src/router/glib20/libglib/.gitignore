@@ -1,0 +1,29 @@
+# for all subdirectories
+TAGS
+tags
+.libs
+.deps
+*.o
+*.lo
+*.la
+*.pc
+.*.swp
+.sw?
+*.rc
+*.gcno
+*.gcda
+*.gcov
+*.sourcefiles
+*.stp
+*.exe
+*.def
+*.test
+*.log
+*.trs
+
+/glib-lcov.info
+/glib-lcov/
+
+# Meson
+/meson-build/
+/subprojects/*/
