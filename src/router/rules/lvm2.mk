@@ -1,4 +1,4 @@
-lvm2-configure: e2fsprogs
+lvm2-configure: util-linux
 	cd lvm2 && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" \
 		BLKID_CFLAGS="-L$(TOP)/util-linux/libblkid/src" \
