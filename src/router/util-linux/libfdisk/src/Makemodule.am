@@ -40,9 +40,6 @@ libfdisk_la_CFLAGS = \
 	-I$(ul_libfdisk_incdir) \
 	-I$(top_srcdir)/libfdisk/src
 
-EXTRA_libfdisk_la_DEPENDENCIES = \
-	libfdisk/src/libfdisk.sym
-
 libfdisk_la_LDFLAGS = $(SOLIB_LDFLAGS)
 
 
@@ -50,9 +47,6 @@ if BUILD_LIBBLKID
 libfdisk_la_LIBADD += libblkid.la
 libfdisk_la_CFLAGS += -I$(ul_libblkid_incdir)
 endif
-
-EXTRA_DIST += \
-	libfdisk/src/libfdisk.sym
 
 if BUILD_LIBFDISK_TESTS
 check_PROGRAMS += \

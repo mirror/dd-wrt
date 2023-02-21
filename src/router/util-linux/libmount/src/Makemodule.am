@@ -62,14 +62,8 @@ libmount_la_CFLAGS = \
 	-I$(ul_libmount_incdir) \
 	-I$(top_srcdir)/libmount/src
 
-EXTRA_libmount_la_DEPENDENCIES = \
-	libmount/src/libmount.sym
-
 libmount_la_LDFLAGS = $(SOLIB_LDFLAGS)
 
-
-EXTRA_DIST += \
-	libmount/src/libmount.sym
 
 if BUILD_LIBMOUNT_TESTS
 check_PROGRAMS += \

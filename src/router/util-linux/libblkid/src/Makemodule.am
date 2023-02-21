@@ -118,9 +118,6 @@ endif
 
 libblkid_la_LIBADD = libcommon.la
 
-EXTRA_libblkid_la_DEPENDENCIES = \
-	libblkid/src/libblkid.sym
-
 libblkid_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(SOLIB_CFLAGS) \
@@ -128,9 +125,6 @@ libblkid_la_CFLAGS = \
 	-I$(top_srcdir)/libblkid/src
 
 libblkid_la_LDFLAGS = $(SOLIB_LDFLAGS)
-
-EXTRA_DIST += \
-	libblkid/src/libblkid.sym
 
 if BUILD_LIBBLKID_TESTS
 check_PROGRAMS += \
