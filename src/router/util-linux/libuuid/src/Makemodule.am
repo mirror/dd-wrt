@@ -28,9 +28,6 @@ libuuid_la_SOURCES = \
 	lib/md5.c \
 	lib/sha1.c
 
-EXTRA_libuuid_la_DEPENDENCIES = \
-	libuuid/src/libuuid.sym
-
 libuuid_la_LIBADD       = $(LDADD) $(SOCKET_LIBS)
 
 libuuid_la_CFLAGS = \
@@ -41,8 +38,6 @@ libuuid_la_CFLAGS = \
 
 libuuid_la_LDFLAGS = $(SOLIB_LDFLAGS)
 
-
-EXTRA_DIST += libuuid/src/libuuid.sym
 
 # move lib from $(usrlib_execdir) to $(libdir) if needed
 install-exec-hook-libuuid:
