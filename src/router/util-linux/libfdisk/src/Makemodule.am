@@ -44,10 +44,6 @@ EXTRA_libfdisk_la_DEPENDENCIES = \
 	libfdisk/src/libfdisk.sym
 
 libfdisk_la_LDFLAGS = $(SOLIB_LDFLAGS)
-if HAVE_VSCRIPT
-libfdisk_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(top_srcdir)/libfdisk/src/libfdisk.sym
-endif
-libfdisk_la_LDFLAGS += -version-info $(LIBFDISK_VERSION_INFO)
 
 
 if BUILD_LIBBLKID
