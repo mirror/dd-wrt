@@ -1,6 +1,11 @@
 f2fs-tools-configure:
 	cd f2fs-tools && ./autogen.sh 
-	cd f2fs-tools && ./configure --prefix=/usr --without-selinux --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/e2fsprogs/lib -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DNEED_PRINTF" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid -ffunction-sections -fdata-sections -Wl,--gc-sections" CC="$(CC) $(COPTS)"
+	cd f2fs-tools && ./configure \
+	    --prefix=/usr \
+	    --without-selinux \
+	    --host=$(ARCH)-linux \
+	    CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/util-linux/libuuid/src -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DNEED_PRINTF" \
+	    LDFLAGS="-L$(TOP)/util-linux/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" CC="$(CC) $(COPTS)"
 
 f2fs-tools:
 	make -C f2fs-tools DEBUG= Q= 
