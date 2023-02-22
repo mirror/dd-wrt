@@ -21,6 +21,10 @@
 		<input name="ppp_service" size="30" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvg("ppp_service"); %>" />
 	</div>
 	<div class="setting">
+		<div class="label"><% tran("share.host_uniq"); %></div>
+		<input name="pppoe_host_uniq" size="30" maxlength="63" onblur="valid_name(this,share.host_uniq)" value="<% nvg("pppoe_host_uniq"); %>" />
+	</div>
+	<div class="setting">
 		<div class="label"><% tran("idx_pptp.srv"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idpptpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idpptpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>

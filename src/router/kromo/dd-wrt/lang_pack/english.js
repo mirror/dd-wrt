@@ -160,6 +160,7 @@ share.left="Left";
 share.share_key="Shared Key";
 share.inter="Interval";
 share.srv="Service Name";
+share.host_uniq="Host Uniq";
 share.port_range="Port Range";
 share.priority="Priority";
 share.gateway="Gateway";
