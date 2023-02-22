@@ -270,6 +270,7 @@ ieee80211_determine_chantype(struct ieee80211_sub_if_data *sdata,
 		goto out;
 	}
 
+	if (chandef->chan->band != NL80211_BAND_2GHZ) {
 	if (!cfg80211_chandef_valid(&vht_chandef)) {
 		if (!(ifmgd->flags & IEEE80211_STA_DISABLE_VHT))
 			sdata_info(sdata,
@@ -277,18 +278,21 @@ ieee80211_determine_chantype(struct ieee80211_sub_if_data *sdata,
 		ret = IEEE80211_STA_DISABLE_VHT;
 		goto out;
 	}
+	}
 
 	if (cfg80211_chandef_identical(chandef, &vht_chandef)) {
 		ret = 0;
 		goto out;
 	}
 
+	if (chandef->chan->band != NL80211_BAND_2GHZ) {
 	if (!cfg80211_chandef_compatible(chandef, &vht_chandef)) {
 		if (!(ifmgd->flags & IEEE80211_STA_DISABLE_VHT))
 			sdata_info(sdata,
 				   "AP VHT information doesn't match HT, disable VHT\n");
 		ret = IEEE80211_STA_DISABLE_VHT;
 		goto out;
+	}
 	}
 
 	*chandef = vht_chandef;

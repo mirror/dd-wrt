@@ -892,8 +892,9 @@ static bool cfg80211_secondary_chans_ok(struct wiphy *wiphy,
 
 	for (freq = start_freq; freq <= end_freq; freq += MHZ_TO_KHZ(20)) {
 		c = ieee80211_get_channel_khz(wiphy, freq);
-		if (!c || c->flags & prohibited_flags)
+		if (!c || c->flags & prohibited_flags == prohibited_flags) {
 			return false;
+		}
 	}
 
 	return true;
@@ -961,7 +962,6 @@ bool cfg80211_chandef_usable(struct wiphy *wiphy,
 	struct ieee80211_edmg *edmg_cap;
 	u32 width, control_freq, cap;
 	bool ext_nss_cap, support_80_80 = false;
-
 	if (WARN_ON(!cfg80211_chandef_valid(chandef)))
 		return false;
 
@@ -1088,8 +1088,9 @@ bool cfg80211_chandef_usable(struct wiphy *wiphy,
 
 	if (!cfg80211_secondary_chans_ok(wiphy,
 					 ieee80211_chandef_to_khz(chandef),
-					 width, prohibited_flags))
+					 width, prohibited_flags)) {
 		return false;
+	}
 
 	if (!chandef->center_freq2)
 		return true;

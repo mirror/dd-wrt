@@ -1732,9 +1732,10 @@ static int sta_apply_parameters(struct ieee80211_local *local,
 						  params->ht_capa, sta);
 
 	/* VHT can override some HT caps such as the A-MSDU max length */
-	if (params->vht_capa)
+	if (params->vht_capa) {
 		ieee80211_vht_cap_ie_to_sta_vht_cap(sdata, sband,
 						    params->vht_capa, sta);
+	}
 
 	if (params->he_capa)
 		ieee80211_he_cap_ie_to_sta_he_cap(sdata, sband,
@@ -1849,7 +1850,6 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *vlansdata;
 	enum cfg80211_station_type statype;
 	int err;
-
 	mutex_lock(&local->sta_mtx);
 
 	sta = sta_info_get_bss(sdata, mac);
