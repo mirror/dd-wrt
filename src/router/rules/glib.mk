@@ -258,6 +258,8 @@ ifneq ($(CONFIG_LIBMBIM),y)
 endif
 endif
 	rm -f $(INSTALLDIR)/glib20/usr/lib/*.a
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-32*
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-posix*
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libintl.so.8
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libgnuintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libgnuintl.so.8
 #	install -D glib20/gettext/gettext-runtime/libasprintf/.libs/libasprintf.so.0 $(INSTALLDIR)/glib20/usr/lib/libasprintf.so.0
