@@ -36,6 +36,10 @@
 		<input name="ppp_service" size="30" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvg("ppp_service"); %>" />
 	</div>
 	<div class="setting">
+		<div class="label"><% tran("share.host_uniq"); %></div>
+		<input name="pppoe_host_uniq" size="30" maxlength="63" onblur="valid_name(this,share.host_uniq)" value="<% nvg("pppoe_host_uniq"); %>" />
+	</div>
+	<div class="setting">
 		<div class="label"><% tran("share.vdslvlan7"); %></div>
 		<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvc("wan_vdsl","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvc("wan_vdsl","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %>
