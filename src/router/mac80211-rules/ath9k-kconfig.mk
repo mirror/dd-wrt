@@ -56,7 +56,9 @@ ifeq ($(CONFIG_UBNTXW),y)
 else
 ifeq ($(ARCHITECTURE),wasp)
   CPTCFG_ATH9K_PCI=y
+ifneq ($(CONFIG_WR941NV6_CN),y)
   CPTCFG_ATH9K_AHB=y
+endif
 else
 ifeq ($(CONFIG_DIR615I),y)
   CPTCFG_ATH9K_AHB=y
