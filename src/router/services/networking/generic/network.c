@@ -3467,6 +3467,8 @@ void run_wan(int status)
 #endif
 		if (nvram_invmatch("pppoe_service", ""))
 			fprintf(fp, " rp_pppoe_service %s", nvram_safe_get("pppoe_service"));
+		if (nvram_invmatch("pppoe_host_uniq", ""))
+			fprintf(fp, " host-uniq %s", nvram_safe_get("pppoe_host_uniq"));
 		fprintf(fp, "\n");
 		char vlannic[32];
 		char tvnic[32];
