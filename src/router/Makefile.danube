@@ -269,7 +269,7 @@ endif
 	rm -f $(LINUXDIR)/vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
-include common.mk
+include common-nolto.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
