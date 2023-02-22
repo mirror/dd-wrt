@@ -124,8 +124,13 @@ static int cpu_enable(struct path_cxt *sys, cpu_set_t *cpu_set, size_t setsize, 
 				fails++;
 			} else {
 				printf(_("CPU %u disabled\n"), cpu);
-				if (onlinecpus)
+				if (onlinecpus) {
+				#ifdef CPU_CLR_S
 					CPU_CLR_S(cpu, setsize, onlinecpus);
+				#else
+					CPU_CLR(cpu, onlinecpus);
+				#endif
+				}
 			}
 		}
 	}

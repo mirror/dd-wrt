@@ -288,7 +288,9 @@ static int lookup_umount_fs_by_statfs(struct libmnt_context *cxt, const char *tg
 		int fd;
 
 		DBG(CXT, ul_debugobj(cxt, "  trying fstatfs()"));
-
+#ifndef O_PATH
+#define O_PATH O_RDONLY
+#endif
 		/* O_PATH avoids triggering automount points. */
 		fd = open(tgt, O_PATH);
 		if (fd >= 0) {
