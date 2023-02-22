@@ -58,8 +58,6 @@
 #define MAC80211DEBUG() syslog(LOG_DEBUG,"mac80211: %s:%d", __func__,__LINE__)
 #endif
 
-static int cur_channel;
-static int cur_channel2;
 static int cur_freq;
 static int cur_freq2;
 static int cur_channeloffset;
@@ -659,8 +657,6 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, in
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
 	MAC80211DEBUG();
-	int channel = 0;
-	int channel2 = 0;
 	int freq = 0;
 	char nfreq[32];
 	int freq2 = 0;
@@ -810,7 +806,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		switch (usebw) {
 		case 160:
-			channel = 100;
 			ht = "HT40+";
 			iht = 1;
 			channeloffset = 14;
@@ -818,8 +813,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			break;
 		case 80:
 		case 8080:
-			channel = 100;
-			channel2 = 155;
+			freq2 = 5775;
 			ht = "HT40+";
 			channeloffset = 6;
 			iht = 1;
@@ -828,11 +822,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		case 40:
 			ht = "HT40+";
 			if (has_2ghz(prefix)) {
-				channel = 6;
 				freq = 2437;
 			}
 			if (has_5ghz(prefix)) {
-				channel = 100;
 				freq = 5500;
 			}
 			break;
@@ -842,11 +834,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			ht = "HT20";
 		default:
 			if (has_2ghz(prefix)) {
-				channel = 6;
 				freq = 2437;
 			}
 			if (has_5ghz(prefix)) {
-				channel = 100;
 				freq = 5500;
 			}
 			break;
@@ -860,7 +850,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 		if (freq == 0) {
 			if (has_ad(prefix)) {
-				channel = 1;
 				freq = 53320;
 			} else {
 				struct mac80211_ac *acs;
@@ -883,7 +872,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				if (acs != NULL) {
 					struct wifi_channels *chan = mac80211_get_channels_simple(prefix, country, usebw, 0xff);
 					freq = acs->freq;
-					channel = ieee80211_mhz2ieee(freq);
 					fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
 					int i = 0;
 					while (chan[i].freq != -1) {
@@ -977,29 +965,25 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					free_mac80211_ac(acs);
 				} else {
 					if (has_2ghz(prefix)) {
-						channel = 6;
 						freq = 2437;
 					}
 					if (has_5ghz(prefix)) {
 						switch (usebw) {
 						case 8080:
 						case 80:
-							channel = 100;
-							channel2 = 155;
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
 							freq = 5500;
+							freq2 = 5775;
 							break;
 						case 160:
-							channel = 100;
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 14;
 							freq = 5500;
 							break;
 						case 40:
-							channel = 100;
 							ht = "HT40+";
 							iht = 1;
 							freq = 5500;
@@ -1007,7 +991,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						case 20:
 						default:
 							ht = "HT20";
-							channel = 100;
 							freq = 5500;
 							break;
 
@@ -1015,10 +998,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					}
 				}
 			}
-		} else {
-			channel = ieee80211_mhz2ieee(freq);
-			channel2 = ieee80211_mhz2ieee(freq2);
-		}
+		} 
 	}
 	MAC80211DEBUG();
 	if (!isath5k && !has_ad(prefix)) {
@@ -1050,8 +1030,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		free(caps);
 	}
 	MAC80211DEBUG();
-	cur_channel = channel;
-	cur_channel2 = channel2;
 	cur_freq = freq;
 	cur_freq2 = freq2;
 	cur_channeloffset = channeloffset;
@@ -1099,20 +1077,20 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (2 * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
 					break;
 				case 80:
 					fprintf(fp, "vht_oper_chwidth=1\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset*5) * iht));
 					break;
 				case 160:
 					fprintf(fp, "vht_oper_chwidth=2\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset*5) * iht));
 					break;
 				case 8080:
 					fprintf(fp, "vht_oper_chwidth=3\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
-					fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", channel2);
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset*5) * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
 					break;
 				default:
 					fprintf(fp, "vht_oper_chwidth=0\n");
@@ -1154,7 +1132,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	}
 
 	MAC80211DEBUG();
-	fprintf(fp, "channel=%d\n", channel);
+	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
 	if (!has_ad(prefix))
 		fprintf(fp, "frequency=%d\n", freq);
 	char bcn[32];
