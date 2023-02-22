@@ -3,7 +3,7 @@ e2fsprogs-configure:
 	cd e2fsprogs && ./configure \
 		    --host=$(ARCH)-linux \
 		    CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89 -I$(TOP)/e2fsprogs/intl -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src" \
-		    LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/e2fsprogs/intl -L$(INSTALLDIR)/util-linux/usr/lib" \
+		    LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/e2fsprogs/intl -L$(TOP)/util-linux/.libs" \
 		    --disable-static \
 		    --enable-shared \
 		    --with-gnu-ld \
