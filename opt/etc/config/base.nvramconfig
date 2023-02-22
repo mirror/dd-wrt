@@ -43,6 +43,7 @@
  "ppp_idletime"  "Max Idle Time"  "RANGE"  "0"  "9999"  "FALSE" "0"
  "ppp_redialperiod"  "Redial Period"  "RANGE"  "1"  "9999"  "FALSE" "0"
  "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "3"
+ "pppoe_host_uniq"  "Host Uniq"  "NAME"  "63"  "TRUE" "3"
  "ppp_static"  "Enable /Disable Static IP"  "CHOICE" "2" "0"  "1"  "TRUE" "0"
  "ppp_compression"  " "  "CHOICE" "2" "0"  "1"  "TRUE" "0"
  "ppp_mppe"  "Mppe parameters"  "NAME"  "63"  "TRUE" "3"
