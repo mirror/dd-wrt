@@ -2488,6 +2488,7 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 				     i++) {
 
 					chan = &sband->channels[i];
+//					printk(KERN_INFO "chan %d disabled %d\n", chan->center_freq, chan->flags & IEEE80211_CHAN_DISABLED);
 					if (chan->flags & IEEE80211_CHAN_DISABLED)
 						continue;
 

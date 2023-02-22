@@ -210,6 +210,18 @@ static ssize_t chandata_write(struct file *file, const char __user *user_buf,
 					chan->flags |= disabled * IEEE80211_CHAN_NO_HT40PLUS;
 				}
 
+				if (chan->center_freq + 40 >= freq_start &&
+					chan->center_freq + 40 <= freq_end) {
+					chan->flags &= ~IEEE80211_CHAN_NO_80MHZ;
+					chan->flags |= disabled * IEEE80211_CHAN_NO_80MHZ;
+				}
+
+				if (chan->center_freq + 80 >= freq_start &&
+					chan->center_freq + 80 <= freq_end) {
+					chan->flags &= ~IEEE80211_CHAN_NO_160MHZ;
+					chan->flags |= disabled * IEEE80211_CHAN_NO_160MHZ;
+				}
+
 				if (chan->center_freq >= freq_start &&
 				    chan->center_freq <= freq_end) {
 					chan->flags &= ~IEEE80211_CHAN_DISABLED;

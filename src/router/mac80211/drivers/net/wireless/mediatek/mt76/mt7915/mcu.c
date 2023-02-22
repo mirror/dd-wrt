@@ -2117,7 +2117,7 @@ static int mt7915_load_firmware(struct mt7915_dev *dev)
 	/* make sure fw is download state */
 	if (mt7915_firmware_state(dev, false)) {
 		/* restart firmware once */
-		__mt76_mcu_restart(&dev->mt76);
+		mt76_connac_mcu_restart(&dev->mt76);
 		ret = mt7915_firmware_state(dev, false);
 		if (ret) {
 			dev_err(dev->mt76.dev,
@@ -2349,7 +2349,6 @@ int mt7915_mcu_init(struct mt7915_dev *dev)
 		.headroom = sizeof(struct mt76_connac2_mcu_txd),
 		.mcu_skb_send_msg = mt7915_mcu_send_message,
 		.mcu_parse_response = mt7915_mcu_parse_response,
-		.mcu_restart = mt76_connac_mcu_restart,
 	};
 
 	dev->mt76.mcu_ops = &mt7915_mcu_ops;
@@ -2359,16 +2358,17 @@ int mt7915_mcu_init(struct mt7915_dev *dev)
 
 void mt7915_mcu_exit(struct mt7915_dev *dev)
 {
-	__mt76_mcu_restart(&dev->mt76);
+	mt76_connac_mcu_restart(&dev->mt76);
 	if (mt7915_firmware_state(dev, false)) {
 		dev_err(dev->mt76.dev, "Failed to exit mcu\n");
-		return;
+		goto out;
 	}
 
 	mt76_wr(dev, MT_TOP_LPCR_HOST_BAND(0), MT_TOP_LPCR_HOST_FW_OWN);
 	if (dev->hif2)
 		mt76_wr(dev, MT_TOP_LPCR_HOST_BAND(1),
 			MT_TOP_LPCR_HOST_FW_OWN);
+out:
 	skb_queue_purge(&dev->mt76.mcu.res_q);
 }
 
@@ -3079,6 +3079,29 @@ int mt7915_mcu_get_temperature(struct mt7915_phy *phy)
 int mt7915_mcu_set_thermal_throttling(struct mt7915_phy *phy, u8 state)
 {
 	struct mt7915_dev *dev = phy->dev;
+	struct mt7915_mcu_thermal_ctrl req = {
+		.band_idx = phy->mt76->band_idx,
+		.ctrl_id = THERMAL_PROTECT_DUTY_CONFIG,
+	};
+	int level, ret;
+
+	/* set duty cycle and level */
+	for (level = 0; level < 4; level++) {
+		req.duty.duty_level = level;
+		req.duty.duty_cycle = state;
+		state /= 2;
+
+		ret = mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(THERMAL_PROT),
+					&req, sizeof(req), false);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+
+int mt7915_mcu_set_thermal_protect(struct mt7915_phy *phy)
+{
+	struct mt7915_dev *dev = phy->dev;
 	struct {
 		struct mt7915_mcu_thermal_ctrl ctrl;
 
@@ -3089,29 +3112,18 @@ int mt7915_mcu_set_thermal_throttling(struct mt7915_phy *phy, u8 state)
 	} __packed req = {
 		.ctrl = {
 			.band_idx = phy->mt76->band_idx,
+			.type.protect_type = 1,
+			.type.trigger_type = 1,
 		},
 	};
-	int level;
+	int ret;
 
-	if (!state) {
-		req.ctrl.ctrl_id = THERMAL_PROTECT_DISABLE;
-		goto out;
-	}
+	req.ctrl.ctrl_id = THERMAL_PROTECT_DISABLE;
+	ret = mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(THERMAL_PROT),
+				&req, sizeof(req.ctrl), false);
 
-	/* set duty cycle and level */
-	for (level = 0; level < 4; level++) {
-		int ret;
-
-		req.ctrl.ctrl_id = THERMAL_PROTECT_DUTY_CONFIG;
-		req.ctrl.duty.duty_level = level;
-		req.ctrl.duty.duty_cycle = state;
-		state /= 2;
-
-		ret = mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(THERMAL_PROT),
-					&req, sizeof(req.ctrl), false);
-		if (ret)
-			return ret;
-	}
+	if (ret)
+		return ret;
 
 	/* set high-temperature trigger threshold */
 	req.ctrl.ctrl_id = THERMAL_PROTECT_ENABLE;
@@ -3119,10 +3131,6 @@ int mt7915_mcu_set_thermal_throttling(struct mt7915_phy *phy, u8 state)
 	req.restore_temp = cpu_to_le32(phy->throttle_temp[0] - 10);
 	req.trigger_temp = cpu_to_le32(phy->throttle_temp[1]);
 	req.sustain_time = cpu_to_le16(10);
-
-out:
-	req.ctrl.type.protect_type = 1;
-	req.ctrl.type.trigger_type = 1;
 
 	return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(THERMAL_PROT),
 				 &req, sizeof(req), false);

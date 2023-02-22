@@ -1409,6 +1409,7 @@ _ieee802_11_parse_elems_crc(const u8 *start, size_t len, bool action,
 	if (!for_each_element_completed(elem, start, len))
 		elems->parse_error = true;
 
+	elems->crc = crc;
 	return crc;
 }
 
@@ -3411,9 +3412,12 @@ bool ieee80211_chandef_vht_oper(struct ieee80211_hw *hw, u32 vht_cap_info,
 		ccf1 = ccfs1;
 		break;
 	}
-
 	cf0 = ieee80211_channel_to_frequency(ccf0, chandef->chan->band);
 	cf1 = ieee80211_channel_to_frequency(ccf1, chandef->chan->band);
+	if (cf0 == 2407 && chandef->chan->band == NL80211_BAND_2GHZ && oper->chan_width == IEEE80211_VHT_CHANWIDTH_80MHZ) {
+		printk(KERN_WARNING "warning. vht_operation EID contains invalid or zero channel number, apply workaround\n");
+		cf0 = chandef->chan->center_freq + 30;
+	}
 
 	switch (oper->chan_width) {
 	case IEEE80211_VHT_CHANWIDTH_USE_HT:
@@ -3422,6 +3426,7 @@ bool ieee80211_chandef_vht_oper(struct ieee80211_hw *hw, u32 vht_cap_info,
 	case IEEE80211_VHT_CHANWIDTH_80MHZ:
 		new.width = NL80211_CHAN_WIDTH_80;
 		new.center_freq1 = cf0;
+		
 		/* If needed, adjust based on the newer interop workaround. */
 		if (ccf1) {
 			unsigned int diff;
@@ -3451,8 +3456,10 @@ bool ieee80211_chandef_vht_oper(struct ieee80211_hw *hw, u32 vht_cap_info,
 		return false;
 	}
 
+	if (chandef->chan->band != NL80211_BAND_2GHZ) {
 	if (!cfg80211_chandef_valid(&new))
 		return false;
+	}
 
 	*chandef = new;
 	return true;

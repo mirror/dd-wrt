@@ -97,6 +97,7 @@ void __wiphy_dbg(struct wiphy *wiphy, bool print, const char *fmt, ...)
 #define _wiphy_dbg(print, wiphy, fmt, ...)				\
 	__wiphy_dbg(wiphy, print, fmt, ##__VA_ARGS__)
 #else
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 #define _sdata_info(sdata, fmt, ...)					\
 do {									\
 	pr_info("%s: " fmt,						\
@@ -121,6 +122,24 @@ do {									\
 	if (print)							\
 		wiphy_dbg((wiphy), fmt, ##__VA_ARGS__);			\
 } while (0)
+#else
+#define _sdata_info(sdata, fmt, ...)					\
+do {									\
+} while (0)
+
+#define _sdata_dbg(print, sdata, fmt, ...)				\
+do {									\
+} while (0)
+
+#define _sdata_err(sdata, fmt, ...)					\
+do {									\
+} while (0)
+
+#define _wiphy_dbg(print, wiphy, fmt, ...)				\
+do {									\
+} while (0)
+
+#endif
 #endif
 
 #define sdata_info(sdata, fmt, ...)					\
