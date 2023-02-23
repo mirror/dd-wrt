@@ -2337,7 +2337,9 @@ void ath9k_start_supplicant(int count, char *prefix)
 		}
 	}
 	if (is_ath10k(dev)) {
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override",nvram_nget("%s_power_override",prefix), wif);
+		char wl_po[32];
+		sprintf(wl_po, "%s_power_override", dev);
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override",nvram_default_get(wl_po,"0"), wif);
 	}
 	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
 	char wl_intmit[32];
