@@ -3068,6 +3068,7 @@ wl_basic.regmode="Mode";
 wl_basic.tpcdb="TPC Mitigation Factor";
 wl_basic.TXpower="TX Power";
 wl_basic.TXpowerFcc="TX Peak Power (FCC)";
+wl_basic.power_override="Override Chipset Restrictions";
 wl_basic.AntGain="Antenna Gain";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primary";

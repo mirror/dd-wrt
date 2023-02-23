@@ -2680,6 +2680,7 @@ wl_basic.regmode="Regulierungs Modus";
 wl_basic.tpcdb="TPC Leistungs Reduzierung";
 wl_basic.TXpower="Sendeleistung";
 wl_basic.TXpowerFcc="Maximal erlaubte Sendeleistung (FCC)";
+wl_basic.power_override="Umgehe Chipsatz Einschränkungen";
 wl_basic.AntGain="Antennenleistung";
 wl_basic.diversity="Diversität";
 wl_basic.primary="Primär";
