@@ -3135,8 +3135,29 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 #if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) || !defined(HAVE_IDEXX)
+
+#ifdef HAVE_ATH9K
+	if (is_ath10k(prefix))
+	{
+
+		char wl_po[32];
+		sprintf(wl_po, "%s_power_override", prefix);
+		nvram_default_get(wl_po, "0");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.power_override", NULL);
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  prefix, nvram_matchi(wl_po, 1) ? "checked" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			  prefix, nvram_matchi(wl_po, 0) ? "checked" : "");
+		websWrite(wp, "</div>\n");
+	}
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 #ifdef HAVE_ATH9K
+
+
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
 		  power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
@@ -4544,6 +4565,25 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 #if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
+#ifdef HAVE_ATH9K
+	if (is_ath10k(prefix))
+	{
+
+		char wl_po[32];
+		sprintf(wl_po, "%s_power_override", prefix);
+		nvram_default_get(wl_po, "0");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.power_override", NULL);
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  prefix, nvram_matchi(wl_po, 1) ? "checked" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			  prefix, nvram_matchi(wl_po, 0) ? "checked" : "");
+		websWrite(wp, "</div>\n");
+	}
+#endif
+
 	websWrite(wp, "<div class=\"setting\">\n");
 #ifdef HAVE_ATH9K
 	websWrite(wp,
