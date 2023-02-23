@@ -4575,10 +4575,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.power_override", NULL);
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 			  prefix, nvram_matchi(wl_po, 1) ? "checked" : "");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_power_override\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 			  prefix, nvram_matchi(wl_po, 0) ? "checked" : "");
 		websWrite(wp, "</div>\n");
 	}
