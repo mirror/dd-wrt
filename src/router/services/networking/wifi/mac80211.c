@@ -596,15 +596,15 @@ void configure_single_ath9k(int count)
 			// create the first main hostapd interface when this is repeater mode
 			if (!nvram_nmatch("mesh", "%s_mode", var)) {
 				if (isfirst)
-					sysprintf("iw %s interface add %s type managed", wif, var);
+					eval("iw", wif, "interface", "add", var, "type", "managed");
 				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
 				char akm[32];
 				sprintf(akm, "%s_akm", var);
 				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
-					sysprintf("iw %s interface add %s type mp", wif, var);
+					eval("iw", wif, "interface", "add", var, "type", "mp", wif, var);
 				else
-					sysprintf("iw %s interface add %s type mp mesh_id %s", wif, var, nvram_nget("%s_ssid", var));
+					eval("iw", wif, "interface", "add", var, "type", "mp", "mesh_id", nvram_nget("%s_ssid", var));
 				setupSupplicant_ath9k(var, NULL, 0);
 			}
 			sprintf(compr, "%s_fc_th", var);
@@ -998,7 +998,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					}
 				}
 			}
-		} 
+		}
 	}
 	MAC80211DEBUG();
 	if (!isath5k && !has_ad(prefix)) {
@@ -1073,7 +1073,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				}
 				if (cansuperchannel(prefix))
 					fprintf(fp, "no_country_ie=1\n");
-				
+
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
@@ -1081,15 +1081,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					break;
 				case 80:
 					fprintf(fp, "vht_oper_chwidth=1\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset*5) * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					break;
 				case 160:
 					fprintf(fp, "vht_oper_chwidth=2\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset*5) * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					break;
 				case 8080:
 					fprintf(fp, "vht_oper_chwidth=3\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset*5) * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					fprintf(fp, "vht_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
 					break;
 				default:
@@ -2339,7 +2339,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (is_ath10k(dev)) {
 		char wl_po[32];
 		sprintf(wl_po, "%s_power_override", dev);
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override",nvram_default_get(wl_po,"0"), wif);
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override", nvram_default_get(wl_po, "0"), wif);
 	}
 	char wl_intmit[32];
 	sprintf(wl_intmit, "%s_intmit", dev);
@@ -2405,7 +2405,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 		chanbw = bwmax;
 	setchanbw(wif, driver, chanbw);
 	char pw[32];
-	sprintf(pw, "%d",nvram_default_geti(power, 16) * 100);
-	eval("iw","phy",wif,"set","txpower","fixed",pw);
+	sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+	eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
 }
 #endif
