@@ -2341,7 +2341,6 @@ void ath9k_start_supplicant(int count, char *prefix)
 		sprintf(wl_po, "%s_power_override", dev);
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override",nvram_default_get(wl_po,"0"), wif);
 	}
-	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
 	char wl_intmit[32];
 	sprintf(wl_intmit, "%s_intmit", dev);
 	char wl_qboost[32];
@@ -2405,5 +2404,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (chanbw > bwmax)
 		chanbw = bwmax;
 	setchanbw(wif, driver, chanbw);
+	char pw[32];
+	sprintf(pw, "%d",nvram_default_geti(power, 16) * 100);
+	eval("iw","phy",wif,"set","txpower","fixed",pw);
 }
 #endif
