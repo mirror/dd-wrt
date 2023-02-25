@@ -60,4 +60,7 @@ ifeq ($(CONFIG_WPS),y)
 endif
 	cd $(INSTALLDIR)/hostapd2/usr/sbin && ln -sf wpad hostapd
 	cd $(INSTALLDIR)/hostapd2/usr/sbin && ln -sf wpad wpa_supplicant
+ifeq ($(CONFIG_WPA3),y)
+	install -D hostapd-$(HOSTAPDVERSION)/hostapd/hostapd_cli $(INSTALLDIR)/hostapd2/usr/sbin/hostapd_cli
+endif
 
