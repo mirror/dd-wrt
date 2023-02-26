@@ -68,9 +68,10 @@ asterisk-configure: util-linux-configure jansson editline zlib minidlna
 	--without-iksemel \
 	--with-uuid=$(INSTALLDIR)/util-linux/usr \
 	ac_cv_header_locale_h=yes \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -DLOW_MEMORY -DNEED_PRINTF" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -DLOW_MEMORY -DNEED_PRINTF" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
+	LDFLAGS="-L$(TOP)/util-linux/.libs" \
 	SQLITE3_LIB="-L$(TOP)/minidlna/lib -lsqlite3" \
 	SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" \
 	LIBUUID_LIB="-L$(TOP)/util-linux/.libs -luuid" \
