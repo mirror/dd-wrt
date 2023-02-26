@@ -308,7 +308,7 @@ const char report_authentication_succeeded[] =
 "Authentication succeeded for user '%s' ts %ld\n";
 
 const char report_authentication_failed[] =
-"Authentication failed for user '%s' ts %ld\n";
+"Authentication failed with return code %d for user '%s' ts %ld\n";
 
 const char report_reverse[] =
 "Reverse mode, remote host %s is sending\n";
@@ -451,11 +451,7 @@ const char report_receiver_not_available_summary_format[] = "[%3s] (receiver sta
 const char report_tcpInfo[] =
 "event=TCP_Info CWND=%u SND_SSTHRESH=%u RCV_SSTHRESH=%u UNACKED=%u SACK=%u LOST=%u RETRANS=%u FACK=%u RTT=%u REORDERING=%u\n";
 #endif
-#if defined(__FreeBSD__)
-const char report_tcpInfo[] =
-"event=TCP_Info CWND=%u RCV_WIND=%u SND_SSTHRESH=%u RTT=%u\n";
-#endif
-#if defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 const char report_tcpInfo[] =
 "event=TCP_Info CWND=%u RCV_WIND=%u SND_SSTHRESH=%u RTT=%u\n";
 #endif
