@@ -759,7 +759,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 		}
 	}
-	return (0);
+	return (NL_SKIP);
 }
 
 struct mac80211_info *mac80211_assoclist(char *interface)
