@@ -1,6 +1,9 @@
 iperf-configure:
-	cd iperf && autoreconf -f
-	cd iperf && ./bootstrap.sh
+	cd iperf && libtoolize
+	cd iperf && aclocal
+	cd iperf && autoconf
+	cd iperf && autoheader
+	cd iperf && automake --add-missing
 	cd iperf && ./configure --host=$(ARCH)-linux --disable-shared --without-openssl --prefix=/usr --libdir=/usr/lib \
 		CC="$(CC)" \
 		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
