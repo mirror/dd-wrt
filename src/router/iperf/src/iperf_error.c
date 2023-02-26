@@ -260,11 +260,11 @@ iperf_strerror(int int_errno)
             snprintf(errstr, len, "received an unknown control message");
             break;
         case IESENDMESSAGE:
-            snprintf(errstr, len, "unable to send control message");
+            snprintf(errstr, len, "unable to send control message - port may not be available, the other side may have stopped running, etc.");
             perr = 1;
             break;
         case IERECVMESSAGE:
-            snprintf(errstr, len, "unable to receive control message");
+            snprintf(errstr, len, "unable to receive control message - port may not be available, the other side may have stopped running, etc.");
             perr = 1;
             break;
         case IESENDPARAMS:
@@ -459,7 +459,7 @@ iperf_strerror(int int_errno)
 	    snprintf(errstr, len, "unable to set IP Do-Not-Fragment flag");
             break;
         case IESETUSERTIMEOUT:
-            snprintf(errstr, len, "unable to set TCP/SCTP MSS");
+            snprintf(errstr, len, "unable to set TCP USER_TIMEOUT");
             perr = 1;
             break;
 	default:
