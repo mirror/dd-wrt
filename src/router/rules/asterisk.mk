@@ -68,12 +68,12 @@ asterisk-configure: util-linux-configure jansson editline zlib minidlna
 	--without-iksemel \
 	--with-uuid=$(INSTALLDIR)/util-linux/usr \
 	ac_cv_header_locale_h=yes \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/sqlite/.libs -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
 	LDFLAGS="-L$(TOP)/util-linux/.libs" \
-	SQLITE3_LIB="-L$(TOP)/minidlna/lib -lsqlite3" \
-	SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" \
+	SQLITE3_LIB="-L$(TOP)/sqlite -lsqlite3" \
+	SQLITE3_INCLUDE="-I$(TOP)/sqlite -I$(TOP)/openssl/include -L$(TOP)/openssl" \
 	LIBUUID_LIB="-L$(TOP)/util-linux/.libs -luuid" \
 	LIBUUID_INCLUDE="-I $(INSTALLDIR)/util-linux/usr/include" \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
@@ -81,7 +81,7 @@ asterisk-configure: util-linux-configure jansson editline zlib minidlna
 	OPENSSL_CFLAGS="-I$(TOP)/openssl/include" \
 	OPENSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
 	JANSSON_CFLAGS="-I$(TOP)/jansson/src" \
-	JANSSON_LIBS="-L$(TOP)/jansson/src/.libs -ljansson -L$(TOP)/minidlna/lib -lsqlite3 -L$(TOP)/openssl" \
+	JANSSON_LIBS="-L$(TOP)/jansson/src/.libs -ljansson -L$(TOP)/sqlite/.libs -lsqlite3 -L$(TOP)/openssl" \
 	LIBEDIT_CFLAGS="-I$(TOP)/editline/src" \
 	LIBEDIT_LIBS="-L$(TOP)/editline/src/.libs -ledit -L$(TOP)/ncurses/lib -lncurses"
 	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
