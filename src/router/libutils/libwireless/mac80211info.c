@@ -569,6 +569,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_BEACON_RX] = { .type = NLA_U64},
 		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
+		[NL80211_STA_INFO_SIGNAL_AVG,] = { .type = NLA_U8 },
 		[NL80211_STA_INFO_T_OFFSET] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_TX_BITRATE] = { .type = NLA_NESTED },
 		[NL80211_STA_INFO_RX_BITRATE] = { .type = NLA_NESTED },
@@ -662,8 +663,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		mac80211_info->wci->tx_compressed = nla_get_u32(sinfo[NL80211_STA_INFO_TX_COMPRESSED]);
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo);
-	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
-		mac80211_info->wci->signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
+	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
+		mac80211_info->wci->signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg);
 
