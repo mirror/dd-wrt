@@ -589,6 +589,7 @@ AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_INV_ACCEPT_MULTIPLE_SDP_ANSWERS], [PJSIP INVIT
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_ENDPOINT_COMPACT_FORM], [PJSIP Compact Form Support on Endpoint], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_TRANSPORT_DISABLE_CONNECTION_REUSE], [PJSIP Transport Connection Reuse Disabling], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_OAUTH_AUTHENTICATION], [PJSIP OAuth Authentication Support], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_TLS_TRANSPORT_RESTART], [PJSIP TLS Transport Restart Support], [PJPROJECT], [pjsip])
 fi
 
 AST_EXT_LIB_SETUP([POPT], [popt], [popt])
@@ -1399,6 +1400,16 @@ else
 	AST_NO_FORMAT_TRUNCATION=
 fi
 AC_SUBST(AST_NO_FORMAT_TRUNCATION)
+
+AC_MSG_CHECKING(for -Wno-format-y2k)
+if $(${CC} -Wno-format-y2k -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
+	AC_MSG_RESULT(yes)
+	AST_NO_FORMAT_Y2K=-Wno-format-y2k
+else
+	AC_MSG_RESULT(no)
+	AST_NO_FORMAT_Y2K=
+fi
+AC_SUBST(AST_NO_FORMAT_Y2K)
 
 AC_MSG_CHECKING(for -Wno-stringop-truncation)
 if $(${CC} -Wno-stringop-truncation -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
@@ -2501,6 +2512,7 @@ if test "$USE_PJPROJECT" != "no" ; then
          AST_EXT_LIB_CHECK([PJSIP_INV_SESSION_REF], [pjsip], [pjsip_inv_add_ref], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
          AST_EXT_LIB_CHECK([PJSIP_AUTH_CLT_DEINIT], [pjsip], [pjsip_auth_clt_deinit], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
          AST_EXT_LIB_CHECK([PJSIP_TSX_LAYER_FIND_TSX2], [pjsip], [pjsip_tsx_layer_find_tsx2], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
+         AST_EXT_LIB_CHECK([PJSIP_TLS_TRANSPORT_RESTART], [pjsip], [pjsip_tls_transport_restart], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
       fi
    fi
 

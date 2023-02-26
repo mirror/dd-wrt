@@ -177,6 +177,35 @@
 			<para>This application will Accept the R2 call either with charge or no charge.</para>
 		</description>
 	</application>
+	<function name="POLARITY" language="en_US">
+		<synopsis>
+			Set or get the polarity of a DAHDI channel.
+		</synopsis>
+		<syntax />
+		<description>
+			<para>The POLARITY function can be used to set the polarity of a DAHDI channel.</para>
+			<para>Applies only to FXS channels (using FXO signalling) with supporting hardware.</para>
+			<para>The polarity can be set to the following numeric or named values:</para>
+			<enumlist>
+				<enum name="0" />
+				<enum name="idle" />
+				<enum name="1" />
+				<enum name="reverse" />
+			</enumlist>
+			<para>However, when read, the function will always return 0 or 1.</para>
+			<example title="Set idle polarity">
+			same => n,Set(POLARITY()=0)
+			</example>
+			<example title="Set reverse polarity">
+			same => n,NoOp(Current Polarity: ${POLARITY()})
+			same => n,Set(POLARITY()=reverse)
+			same => n,NoOp(New Polarity: ${POLARITY()})
+			</example>
+			<example title="Reverse the polarity from whatever it is currently">
+			same => n,Set(POLARITY()=${IF($[ "${POLARITY()}" = "1" ]?0:1)})
+			</example>
+		</description>
+	</function>
 	<info name="CHANNEL" language="en_US" tech="DAHDI">
 		<enumlist>
 			<enum name="dahdi_channel">
@@ -238,8 +267,8 @@
 		<para>DAHDI allows several modifiers to be specified as part of the resource.</para>
 		<para>The general syntax is :</para>
 		<para><literal>Dial(DAHDI/pseudo[/extension])</literal></para>
-		<para><literal>Dial(DAHDI/&lt;channel#&gt;[c|r&lt;cadance#&gt;|d][/extension])</literal></para>
-		<para><literal>Dial(DAHDI/(g|G|r|R)&lt;group#(0-63)&gt;[c|r&lt;cadance#&gt;|d][/extension])</literal></para>
+		<para><literal>Dial(DAHDI/&lt;channel#&gt;[c|r&lt;cadence#&gt;|d][/extension])</literal></para>
+		<para><literal>Dial(DAHDI/(g|G|r|R)&lt;group#(0-63)&gt;[c|r&lt;cadence#&gt;|d][/extension])</literal></para>
 		<para>The following modifiers may be used before the channel number:</para>
 		<enumlist>
 		<enum name="g">
@@ -1613,19 +1642,29 @@ static int my_send_callerid(void *pvt, int cwcid, struct ast_party_caller *calle
 	}
 
 	if ((p->cidspill = ast_malloc(MAX_CALLERID_SIZE))) {
+		int pres = ast_party_id_presentation(&caller->id);
 		if (cwcid == 0) {
-			p->cidlen = ast_callerid_generate(p->cidspill,
+			p->cidlen = ast_callerid_full_generate(p->cidspill,
 				caller->id.name.str,
 				caller->id.number.str,
+				NULL,
+				-1,
+				pres,
+				0,
+				CID_TYPE_MDMF,
 				AST_LAW(p));
 		} else {
 			ast_verb(3, "CPE supports Call Waiting Caller*ID.  Sending '%s/%s'\n",
 				caller->id.name.str, caller->id.number.str);
 			p->callwaitcas = 0;
 			p->cidcwexpire = 0;
-			p->cidlen = ast_callerid_callwaiting_generate(p->cidspill,
+			p->cidlen = ast_callerid_callwaiting_full_generate(p->cidspill,
 				caller->id.name.str,
 				caller->id.number.str,
+				NULL,
+				-1,
+				pres,
+				0,
 				AST_LAW(p));
 			p->cidlen += READ_SIZE * 4;
 		}
@@ -2694,6 +2733,86 @@ static void my_hangup_polarityswitch(void *pvt)
 	}
 }
 
+/*! \brief Return DAHDI pivot if channel is FXO signalled */
+static struct dahdi_pvt *fxo_pvt(struct ast_channel *chan)
+{
+	int res;
+	struct dahdi_params dahdip;
+	struct dahdi_pvt *pvt = NULL;
+
+	if (strcasecmp(ast_channel_tech(chan)->type, "DAHDI")) {
+		ast_log(LOG_WARNING, "%s is not a DAHDI channel\n", ast_channel_name(chan));
+		return NULL;
+	}
+
+	memset(&dahdip, 0, sizeof(dahdip));
+	res = ioctl(ast_channel_fd(chan, 0), DAHDI_GET_PARAMS, &dahdip);
+
+	if (res) {
+		ast_log(LOG_WARNING, "Unable to get parameters of %s: %s\n", ast_channel_name(chan), strerror(errno));
+		return NULL;
+	}
+	if (!(dahdip.sigtype & __DAHDI_SIG_FXO)) {
+		ast_log(LOG_WARNING, "%s is not FXO signalled\n", ast_channel_name(chan));
+		return NULL;
+	}
+
+	pvt = ast_channel_tech_pvt(chan);
+	if (!dahdi_analog_lib_handles(pvt->sig, 0, 0)) {
+		ast_log(LOG_WARNING, "Channel signalling is not analog");
+		return NULL;
+	}
+
+	return pvt;
+}
+
+static int polarity_read(struct ast_channel *chan, const char *cmd, char *data, char *buffer, size_t buflen)
+{
+	struct dahdi_pvt *pvt;
+
+	pvt = fxo_pvt(chan);
+	if (!pvt) {
+		return -1;
+	}
+
+	snprintf(buffer, buflen, "%d", pvt->polarity);
+
+	return 0;
+}
+
+static int polarity_write(struct ast_channel *chan, const char *cmd, char *data, const char *value)
+{
+	struct dahdi_pvt *pvt;
+	int polarity;
+
+	pvt = fxo_pvt(chan);
+	if (!pvt) {
+		return -1;
+	}
+
+	if (!strcasecmp(value, "idle")) {
+		polarity = POLARITY_IDLE;
+	} else if (!strcasecmp(value, "reverse")) {
+		polarity = POLARITY_REV;
+	} else {
+		polarity = atoi(value);
+	}
+
+	if (polarity != POLARITY_IDLE && polarity != POLARITY_REV) {
+		ast_log(LOG_WARNING, "Invalid polarity: '%s'\n", value);
+		return -1;
+	}
+
+	my_set_polarity(pvt, polarity);
+	return 0;
+}
+
+static struct ast_custom_function polarity_function = {
+	.name = "POLARITY",
+	.write = polarity_write,
+	.read = polarity_read,
+};
+
 static int my_start(void *pvt)
 {
 	struct dahdi_pvt *p = pvt;
@@ -3328,7 +3447,7 @@ struct sig_ss7_callback sig_ss7_callbacks =
  */
 static void notify_message(char *mailbox, int thereornot)
 {
-	char s[sizeof(mwimonitornotify) + 80];
+	char s[sizeof(mwimonitornotify) + 164];
 
 	if (ast_strlen_zero(mailbox)) {
 		return;
@@ -3996,7 +4115,7 @@ static void dahdi_r2_on_context_log(openr2_context_t *r2context, openr2_log_leve
 {
 #define CONTEXT_TAG "Context - "
 	char logmsg[256];
-	char completemsg[sizeof(logmsg) + sizeof(CONTEXT_TAG) - 1];
+	char completemsg[sizeof(logmsg) * 2];
 	vsnprintf(logmsg, sizeof(logmsg), fmt, ap);
 	snprintf(completemsg, sizeof(completemsg), CONTEXT_TAG "%s", logmsg);
 	dahdi_r2_write_log(level, completemsg);
@@ -4009,10 +4128,11 @@ static void dahdi_r2_on_chan_log(openr2_chan_t *r2chan, openr2_log_level_t level
 {
 #define CHAN_TAG "Chan "
 	char logmsg[256];
-	char completemsg[sizeof(logmsg) + sizeof(CHAN_TAG) - 1];
+	char completemsg[sizeof(logmsg) * 2];
 	vsnprintf(logmsg, sizeof(logmsg), fmt, ap);
 	snprintf(completemsg, sizeof(completemsg), CHAN_TAG "%d - %s", openr2_chan_get_number(r2chan), logmsg);
 	dahdi_r2_write_log(level, completemsg);
+#undef CHAN_TAG
 }
 
 static int dahdi_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
@@ -13532,6 +13652,7 @@ static struct ast_channel *dahdi_request(const char *type, struct ast_format_cap
 	struct ast_channel *tmp = NULL;
 	struct dahdi_pvt *exitpvt;
 	int channelmatched = 0;
+	int foundowner = 0;
 	int groupmatched = 0;
 #if defined(HAVE_PRI) || defined(HAVE_SS7)
 	int transcapdigital = 0;
@@ -13554,6 +13675,10 @@ static struct ast_channel *dahdi_request(const char *type, struct ast_format_cap
 	while (p && !tmp) {
 		if (start.roundrobin)
 			round_robin[start.rr_starting_point] = p;
+
+		if (p->owner) {
+			foundowner++;
+		}
 
 		if (is_group_or_channel_match(p, start.span, start.groupmatch, &groupmatched, start.channelmatch, &channelmatched)
 			&& available(&p, channelmatched)) {
@@ -13673,7 +13798,7 @@ next:
 	ast_mutex_unlock(&iflock);
 	restart_monitor();
 	if (cause && !tmp) {
-		if (callwait || channelmatched) {
+		if (callwait || (channelmatched && foundowner)) {
 			*cause = AST_CAUSE_BUSY;
 		} else if (groupmatched) {
 			*cause = AST_CAUSE_CONGESTION;
@@ -17605,6 +17730,8 @@ static int __unload_module(void)
 	ast_unregister_application(dahdi_accept_r2_call_app);
 #endif
 
+	ast_custom_function_unregister(&polarity_function);
+
 	ast_cli_unregister_multiple(dahdi_cli, ARRAY_LEN(dahdi_cli));
 	ast_manager_unregister("DAHDIDialOffhook");
 	ast_manager_unregister("DAHDIHangup");
@@ -19290,7 +19417,7 @@ static int process_dahdi(struct dahdi_chan_conf *confp, const char *cat, struct 
 					report_alarms = REPORT_SPAN_ALARMS;
 			 }
 		} else if (!(options & PROC_DAHDI_OPT_NOWARN) )
-			ast_log(LOG_WARNING, "Ignoring any changes to '%s' (on reload) at line %d.\n", v->name, v->lineno);
+			ast_log(LOG_NOTICE, "Ignoring any changes to '%s' (on reload) at line %d.\n", v->name, v->lineno);
 	}
 
 	if (dahdichan) {
@@ -19792,6 +19919,8 @@ static int load_module(void)
 	ast_cli_register_multiple(dahdi_mfcr2_cli, ARRAY_LEN(dahdi_mfcr2_cli));
 	ast_register_application_xml(dahdi_accept_r2_call_app, dahdi_accept_r2_call_exec);
 #endif
+
+	ast_custom_function_register(&polarity_function);
 
 	ast_cli_register_multiple(dahdi_cli, ARRAY_LEN(dahdi_cli));
 	memset(round_robin, 0, sizeof(round_robin));

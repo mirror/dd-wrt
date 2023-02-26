@@ -40,6 +40,7 @@
 #include "asterisk/paths.h"
 #include "asterisk/pbx.h"
 #include "asterisk/stasis_channels.h"
+#include "asterisk/test.h"
 #include "pbx_private.h"
 
 /*** DOCUMENTATION
@@ -188,6 +189,8 @@ static const char *ast_str_substring(struct ast_str *value, int offset, int leng
 	int lr;	/* length of the input string after the copy */
 
 	lr = ast_str_strlen(value); /* compute length after copy, so we never go out of the workspace */
+
+	ast_assert(lr == strlen(ast_str_buffer(value))); /* ast_str_strlen should always agree with strlen */
 
 	/* Quick check if no need to do anything */
 	if (offset == 0 && length >= lr)	/* take the whole string */
@@ -394,7 +397,9 @@ const char *ast_str_retrieve_variable(struct ast_str **str, ssize_t maxlen, stru
 	return ret;
 }
 
-void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, struct ast_channel *c, struct varshead *headp, const char *templ, size_t *used)
+void ast_str_substitute_variables_full2(struct ast_str **buf, ssize_t maxlen,
+	struct ast_channel *c, struct varshead *headp, const char *templ,
+	size_t *used, int use_both)
 {
 	/* Substitutes variables into buf, based on string templ */
 	const char *whereweare;
@@ -501,7 +506,8 @@ void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, str
 
 			/* Store variable name expression to lookup. */
 			ast_str_set_substr(&substr1, 0, vars, len);
-			ast_debug(5, "Evaluating '%s' (from '%s' len %d)\n", ast_str_buffer(substr1), vars, len);
+			ast_debug(5, "Evaluating '%s' (from '%s' len %d)\n",
+				ast_str_buffer(substr1), vars, len);
 
 			/* Substitute if necessary */
 			if (needsub) {
@@ -511,7 +517,8 @@ void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, str
 						continue;
 					}
 				}
-				ast_str_substitute_variables_full(&substr2, 0, c, headp, ast_str_buffer(substr1), NULL);
+				ast_str_substitute_variables_full2(&substr2, 0, c, headp,
+					ast_str_buffer(substr1), NULL, use_both);
 				finalvars = ast_str_buffer(substr2);
 			} else {
 				finalvars = ast_str_buffer(substr1);
@@ -520,31 +527,48 @@ void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, str
 			parse_variable_name(finalvars, &offset, &offset2, &isfunction);
 			if (isfunction) {
 				/* Evaluate function */
-				if (c || !headp) {
+				res = -1;
+				if (c) {
 					res = ast_func_read2(c, finalvars, &substr3, 0);
-				} else {
+					ast_debug(2, "Function %s result is '%s' from channel\n",
+						finalvars, res ? "" : ast_str_buffer(substr3));
+				}
+				if (!c || (c && res < 0 && use_both)) {
 					struct varshead old;
 					struct ast_channel *bogus;
 
 					bogus = ast_dummy_channel_alloc();
 					if (bogus) {
 						old = *ast_channel_varshead(bogus);
-						*ast_channel_varshead(bogus) = *headp;
+						if (headp) {
+							*ast_channel_varshead(bogus) = *headp;
+						}
 						res = ast_func_read2(bogus, finalvars, &substr3, 0);
 						/* Don't deallocate the varshead that was passed in */
-						*ast_channel_varshead(bogus) = old;
+						if (headp) {
+							*ast_channel_varshead(bogus) = old;
+						}
 						ast_channel_unref(bogus);
 					} else {
 						ast_log(LOG_ERROR, "Unable to allocate bogus channel for function value substitution.\n");
 						res = -1;
 					}
+					ast_debug(2, "Function %s result is '%s' from headp\n",
+						finalvars, res ? "" : ast_str_buffer(substr3));
 				}
-				ast_debug(2, "Function %s result is '%s'\n",
-					finalvars, res ? "" : ast_str_buffer(substr3));
 			} else {
-				/* Retrieve variable value */
-				ast_str_retrieve_variable(&substr3, 0, c, headp, finalvars);
-				res = 0;
+				const char *result;
+				if (c) {
+					result = ast_str_retrieve_variable(&substr3, 0, c, NULL, finalvars);
+					ast_debug(2, "Variable %s result is '%s' from channel\n",
+						finalvars, S_OR(result, ""));
+				}
+				if (!c || (c && !result && use_both)) {
+					result = ast_str_retrieve_variable(&substr3, 0, NULL, headp, finalvars);
+					ast_debug(2, "Variable %s result is '%s' from headp\n",
+						finalvars, S_OR(result, ""));
+				}
+				res = (result ? 0 : -1);
 			}
 			if (!res) {
 				ast_str_substring(substr3, offset, offset2);
@@ -596,7 +620,8 @@ void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, str
 						continue;
 					}
 				}
-				ast_str_substitute_variables_full(&substr2, 0, c, headp, ast_str_buffer(substr1), NULL);
+				ast_str_substitute_variables_full2(&substr2, 0, c, headp,
+					ast_str_buffer(substr1), NULL, use_both);
 				finalvars = ast_str_buffer(substr2);
 			} else {
 				finalvars = ast_str_buffer(substr1);
@@ -616,6 +641,12 @@ void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen, str
 	ast_free(substr3);
 }
 
+void ast_str_substitute_variables_full(struct ast_str **buf, ssize_t maxlen,
+	struct ast_channel *chan, struct varshead *headp, const char *templ, size_t *used)
+{
+	ast_str_substitute_variables_full2(buf, maxlen, chan, headp, templ, used, 0);
+}
+
 void ast_str_substitute_variables(struct ast_str **buf, ssize_t maxlen, struct ast_channel *chan, const char *templ)
 {
 	ast_str_substitute_variables_full(buf, maxlen, chan, NULL, templ, NULL);
@@ -631,7 +662,7 @@ void pbx_substitute_variables_helper_full(struct ast_channel *c, struct varshead
 	pbx_substitute_variables_helper_full_location(c, headp, cp1, cp2, count, used, NULL, NULL, 0);
 }
 
-void pbx_substitute_variables_helper_full_location(struct ast_channel *c, struct varshead *headp, const char *cp1, char *cp2, int count, size_t *used, char *context, char *exten, int pri)
+void pbx_substitute_variables_helper_full_location(struct ast_channel *c, struct varshead *headp, const char *cp1, char *cp2, int count, size_t *used, const char *context, const char *exten, int pri)
 {
 	/* Substitutes variables into cp2, based on string cp1, cp2 NO LONGER NEEDS TO BE ZEROED OUT!!!!  */
 	const char *whereweare;
@@ -1264,6 +1295,74 @@ void pbx_builtin_clear_globals(void)
 	ast_rwlock_unlock(&globalslock);
 }
 
+#ifdef TEST_FRAMEWORK
+AST_TEST_DEFINE(test_variable_substrings)
+{
+	int i, res = AST_TEST_PASS;
+	struct ast_channel *chan; /* dummy channel */
+	struct ast_str *str; /* fancy string for holding comparing value */
+
+	const char *test_strings[][5] = {
+		{"somevaluehere", "CALLERID(num):0:25", "somevaluehere"},
+		{"somevaluehere", "CALLERID(num):0:5", "somev"},
+		{"somevaluehere", "CALLERID(num):4:5", "value"},
+		{"somevaluehere", "CALLERID(num):0:-4", "somevalue"},
+		{"somevaluehere", "CALLERID(num):-4", "here"},
+	};
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "variable_substrings";
+		info->category = "/main/pbx/";
+		info->summary = "Test variable substring resolution";
+		info->description = "Verify that variable substrings are calculated correctly";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	if (!(chan = ast_dummy_channel_alloc())) {
+		ast_test_status_update(test, "Unable to allocate dummy channel\n");
+		return AST_TEST_FAIL;
+	}
+
+	if (!(str = ast_str_create(64))) {
+		ast_test_status_update(test, "Unable to allocate dynamic string buffer\n");
+		ast_channel_release(chan);
+		return AST_TEST_FAIL;
+	}
+
+	for (i = 0; i < ARRAY_LEN(test_strings); i++) {
+		char substituted[512], tmp[512] = "";
+
+		ast_set_callerid(chan, test_strings[i][0], NULL, test_strings[i][0]);
+
+		snprintf(tmp, sizeof(tmp), "${%s}", test_strings[i][1]);
+
+		/* test ast_str_substitute_variables */
+		ast_str_substitute_variables(&str, 0, chan, tmp);
+		ast_debug(1, "Comparing STR %s with %s\n", ast_str_buffer(str), test_strings[i][2]);
+		if (strcmp(test_strings[i][2], ast_str_buffer(str))) {
+			ast_test_status_update(test, "Format string '%s' substituted to '%s' using str sub.  Expected '%s'.\n", test_strings[i][0], ast_str_buffer(str), test_strings[i][2]);
+			res = AST_TEST_FAIL;
+		}
+
+		/* test pbx_substitute_variables_helper */
+		pbx_substitute_variables_helper(chan, tmp, substituted, sizeof(substituted) - 1);
+		ast_debug(1, "Comparing PBX %s with %s\n", substituted, test_strings[i][2]);
+		if (strcmp(test_strings[i][2], substituted)) {
+			ast_test_status_update(test, "Format string '%s' substituted to '%s' using pbx sub.  Expected '%s'.\n", test_strings[i][0], substituted, test_strings[i][2]);
+			res = AST_TEST_FAIL;
+		}
+	}
+	ast_free(str);
+
+	ast_channel_release(chan);
+
+	return res;
+}
+#endif
+
 static struct ast_cli_entry vars_cli[] = {
 	AST_CLI_DEFINE(handle_show_globals, "Show global dialplan variables"),
 	AST_CLI_DEFINE(handle_show_chanvar, "Show channel variables"),
@@ -1278,6 +1377,7 @@ static void unload_pbx_variables(void)
 	ast_unregister_application("Set");
 	ast_unregister_application("MSet");
 	pbx_builtin_clear_globals();
+	AST_TEST_UNREGISTER(test_variable_substrings);
 }
 
 int load_pbx_variables(void)
@@ -1288,6 +1388,7 @@ int load_pbx_variables(void)
 	res |= ast_register_application2("Set", pbx_builtin_setvar, NULL, NULL, NULL);
 	res |= ast_register_application2("MSet", pbx_builtin_setvar_multiple, NULL, NULL, NULL);
 	ast_register_cleanup(unload_pbx_variables);
+	AST_TEST_REGISTER(test_variable_substrings);
 
 	return res;
 }

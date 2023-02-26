@@ -54,7 +54,7 @@
 - \ref manager.c Main manager code file
  */
 
-#define AMI_VERSION                     "8.0.1"
+#define AMI_VERSION                     "9.0.0"
 #define DEFAULT_MANAGER_PORT 5038	/* Default port for Asterisk management via TCP */
 #define DEFAULT_MANAGER_TLS_PORT 5039	/* Default port for Asterisk management via TCP */
 
@@ -349,6 +349,18 @@ void astman_send_list_complete_start(struct mansession *s, const struct message 
  * using astman_append().
  */
 void astman_send_list_complete_end(struct mansession *s);
+
+/*!
+ * \brief Enable/disable the inclusion of 'dangerous' configurations outside
+ * of the ast_config_AST_CONFIG_DIR
+ *
+ * This function can globally enable/disable the loading of configuration files
+ * outside of ast_config_AST_CONFIG_DIR.
+ *
+ * \param new_live_dangerously If true, enable the access of files outside
+ * ast_config_AST_CONFIG_DIR from astman.
+ */
+void astman_live_dangerously(int new_live_dangerously);
 
 void __attribute__((format(printf, 2, 3))) astman_append(struct mansession *s, const char *fmt, ...);
 

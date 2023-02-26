@@ -389,8 +389,8 @@ struct subscription_persistence {
 	char src_name[PJ_INET6_ADDRSTRLEN];
 	/*! Source port of the message */
 	int src_port;
-	/*! Local transport key type */
-	char transport_key[32];
+	/*! Local transport type (UDP,TCP,TLS)*/
+	char transport_type[32];
 	/*! Local transport address */
 	char local_name[PJ_INET6_ADDRSTRLEN];
 	/*! Local transport port */
@@ -474,7 +474,7 @@ struct sip_subscription_tree {
 	/*! The transport the subscription was received on.
 	 * Only used for reliable transports.
 	 */
-	pjsip_transport *transport;
+	char transport_key[IP6ADDR_COLON_PORT_BUFLEN];
 	/*! Indicator if initial notify should be generated.
 	 * Used to refresh modified RLS.
 	 */
@@ -711,8 +711,9 @@ static void subscription_persistence_update(struct sip_subscription_tree *sub_tr
 							rdata->tp_info.transport->obj_name,
 							sub_tree->persistence->endpoint, sub_tree->root->resource,
 							sub_tree->persistence->prune_on_boot);
-						sub_tree->transport = rdata->tp_info.transport;
-						ast_sip_transport_monitor_register(rdata->tp_info.transport,
+						AST_SIP_MAKE_REMOTE_IPADDR_PORT_STR(rdata->tp_info.transport,
+							sub_tree->transport_key);
+						ast_sip_transport_monitor_register_key(sub_tree->transport_key,
 							sub_tree_transport_cb, sub_tree);
 						/*
 						 * FYI: ast_sip_transport_monitor_register holds a reference to the sub_tree
@@ -746,8 +747,8 @@ static void subscription_persistence_update(struct sip_subscription_tree *sub_tr
 		ast_copy_string(sub_tree->persistence->src_name, rdata->pkt_info.src_name,
 				sizeof(sub_tree->persistence->src_name));
 		sub_tree->persistence->src_port = rdata->pkt_info.src_port;
-		ast_copy_string(sub_tree->persistence->transport_key, rdata->tp_info.transport->type_name,
-			sizeof(sub_tree->persistence->transport_key));
+		ast_copy_string(sub_tree->persistence->transport_type, rdata->tp_info.transport->type_name,
+			sizeof(sub_tree->persistence->transport_type));
 		ast_copy_pj_str(sub_tree->persistence->local_name, &rdata->tp_info.transport->local_name.host,
 			sizeof(sub_tree->persistence->local_name));
 		sub_tree->persistence->local_port = rdata->tp_info.transport->local_name.port;
@@ -763,12 +764,12 @@ static void subscription_persistence_remove(struct sip_subscription_tree *sub_tr
 		return;
 	}
 
-	if (sub_tree->persistence->prune_on_boot && sub_tree->transport) {
+	if (sub_tree->persistence->prune_on_boot && !ast_strlen_zero(sub_tree->transport_key)) {
 		ast_debug(3, "Unregistering transport monitor on %s '%s->%s'\n",
-			sub_tree->transport->obj_name,
+			sub_tree->transport_key,
 			sub_tree->endpoint ? ast_sorcery_object_get_id(sub_tree->endpoint) : "Unknown",
 			sub_tree->root ? sub_tree->root->resource : "Unknown");
-		ast_sip_transport_monitor_unregister(sub_tree->transport,
+		ast_sip_transport_monitor_unregister_key(sub_tree->transport_key,
 			sub_tree_transport_cb, sub_tree, NULL);
 	}
 
@@ -1596,17 +1597,17 @@ static int sub_persistence_recreate(void *obj)
 	struct ast_sip_pubsub_body_generator *generator;
 	struct ast_sip_subscription_handler *handler;
 	char *resource;
-	pjsip_sip_uri *request_uri;
 	size_t resource_size;
 	int resp;
 	struct resource_tree tree;
 	pjsip_expires_hdr *expires_header;
 	int64_t expires;
+	const pj_str_t *user;
 
-	request_uri = pjsip_uri_get_uri(rdata->msg_info.msg->line.req.uri);
-	resource_size = pj_strlen(&request_uri->user) + 1;
+	user = ast_sip_pjsip_uri_get_username(rdata->msg_info.msg->line.req.uri);
+	resource_size = pj_strlen(user) + 1;
 	resource = ast_alloca(resource_size);
-	ast_copy_pj_str(resource, &request_uri->user, resource_size);
+	ast_copy_pj_str(resource, user, resource_size);
 
 	/*
 	 * We may want to match without any user options getting
@@ -1743,7 +1744,7 @@ static int subscription_persistence_recreate(void *obj, void *arg, int flags)
 	rdata.tp_info.pool = pool;
 
 	if (ast_sip_create_rdata_with_contact(&rdata, persistence->packet, persistence->src_name,
-		persistence->src_port, persistence->transport_key, persistence->local_name,
+		persistence->src_port, persistence->transport_type, persistence->local_name,
 		persistence->local_port, persistence->contact_uri)) {
 		ast_log(LOG_WARNING, "Failed recreating '%s' subscription: The message could not be parsed\n",
 			persistence->endpoint);
@@ -3015,11 +3016,11 @@ static pj_bool_t pubsub_on_rx_subscribe_request(pjsip_rx_data *rdata)
 	struct ast_sip_pubsub_body_generator *generator;
 	char *resource;
 	pjsip_uri *request_uri;
-	pjsip_sip_uri *request_uri_sip;
 	size_t resource_size;
 	int resp;
 	struct resource_tree tree;
 	pj_status_t dlg_status;
+	const pj_str_t *user;
 
 	endpoint = ast_pjsip_rdata_get_endpoint(rdata);
 	ast_assert(endpoint != NULL);
@@ -3032,7 +3033,7 @@ static pj_bool_t pubsub_on_rx_subscribe_request(pjsip_rx_data *rdata)
 
 	request_uri = rdata->msg_info.msg->line.req.uri;
 
-	if (!PJSIP_URI_SCHEME_IS_SIP(request_uri) && !PJSIP_URI_SCHEME_IS_SIPS(request_uri)) {
+	if (!ast_sip_is_uri_sip_sips(request_uri)) {
 		char uri_str[PJSIP_MAX_URL_SIZE];
 
 		pjsip_uri_print(PJSIP_URI_IN_REQ_URI, request_uri, uri_str, sizeof(uri_str));
@@ -3041,10 +3042,10 @@ static pj_bool_t pubsub_on_rx_subscribe_request(pjsip_rx_data *rdata)
 		return PJ_TRUE;
 	}
 
-	request_uri_sip = pjsip_uri_get_uri(request_uri);
-	resource_size = pj_strlen(&request_uri_sip->user) + 1;
+	user = ast_sip_pjsip_uri_get_username(request_uri);
+	resource_size = pj_strlen(user) + 1;
 	resource = ast_alloca(resource_size);
-	ast_copy_pj_str(resource, &request_uri_sip->user, resource_size);
+	ast_copy_pj_str(resource, user, resource_size);
 
 	/*
 	 * We may want to match without any user options getting
@@ -3260,12 +3261,12 @@ static struct ast_sip_publication *publish_request_initial(struct ast_sip_endpoi
 	RAII_VAR(struct ast_sip_publication_resource *, resource, NULL, ao2_cleanup);
 	struct ast_variable *event_configuration_name = NULL;
 	pjsip_uri *request_uri;
-	pjsip_sip_uri *request_uri_sip;
 	int resp;
+	const pj_str_t *user;
 
 	request_uri = rdata->msg_info.msg->line.req.uri;
 
-	if (!PJSIP_URI_SCHEME_IS_SIP(request_uri) && !PJSIP_URI_SCHEME_IS_SIPS(request_uri)) {
+	if (!ast_sip_is_uri_sip_sips(request_uri)) {
 		char uri_str[PJSIP_MAX_URL_SIZE];
 
 		pjsip_uri_print(PJSIP_URI_IN_REQ_URI, request_uri, uri_str, sizeof(uri_str));
@@ -3274,10 +3275,10 @@ static struct ast_sip_publication *publish_request_initial(struct ast_sip_endpoi
 		return NULL;
 	}
 
-	request_uri_sip = pjsip_uri_get_uri(request_uri);
-	resource_size = pj_strlen(&request_uri_sip->user) + 1;
+	user = ast_sip_pjsip_uri_get_username(request_uri);
+	resource_size = pj_strlen(user) + 1;
 	resource_name = ast_alloca(resource_size);
-	ast_copy_pj_str(resource_name, &request_uri_sip->user, resource_size);
+	ast_copy_pj_str(resource_name, user, resource_size);
 
 	/*
 	 * We may want to match without any user options getting
@@ -3994,6 +3995,15 @@ static int cmp_subscription_childrens(struct ast_sip_subscription *s1, struct as
 	return 0;
 }
 
+static int destroy_subscriptions_task(void *obj)
+{
+	struct ast_sip_subscription *sub = (struct ast_sip_subscription *) obj;
+
+	destroy_subscriptions(sub);
+
+	return 0;
+}
+
 /*!
  * \brief Called whenever an in-dialog SUBSCRIBE is received
  *
@@ -4067,8 +4077,19 @@ static void pubsub_on_rx_refresh(pjsip_evsub *evsub, pjsip_rx_data *rdata,
 							AST_SCHED_DEL_UNREF(sched, sub_tree->notify_sched_id, ao2_ref(sub_tree, -1));
 							sub_tree->send_scheduled_notify = 0;
 						}
+
+						/* Terminate old subscriptions to stop sending NOTIFY messages on exten/device state changes */
+						set_state_terminated(old_root);
+
+						/* Shutdown old subscriptions to remove exten/device state change callbacks
+						 that can queue tasks for old subscriptions */
 						shutdown_subscriptions(old_root);
-						destroy_subscriptions(old_root);
+
+						/* Postpone destruction until all already queued tasks that may be using old subscriptions have completed */
+						if (ast_sip_push_task(sub_tree->serializer, destroy_subscriptions_task, old_root)) {
+							ast_log(LOG_ERROR, "Failed to push task to destroy old subscriptions for RLS '%s->%s'.\n",
+								ast_sorcery_object_get_id(endpoint), old_root->resource);
+						}
 					} else {
 						destroy_subscriptions(new_root);
 					}
@@ -5739,7 +5760,7 @@ static int load_module(void)
 	ast_sorcery_object_field_register(sorcery, "subscription_persistence", "src_port", "0", OPT_UINT_T, 0,
 		FLDSET(struct subscription_persistence, src_port));
 	ast_sorcery_object_field_register(sorcery, "subscription_persistence", "transport_key", "0", OPT_CHAR_ARRAY_T, 0,
-		CHARFLDSET(struct subscription_persistence, transport_key));
+		CHARFLDSET(struct subscription_persistence, transport_type));
 	ast_sorcery_object_field_register(sorcery, "subscription_persistence", "local_name", "", OPT_CHAR_ARRAY_T, 0,
 		CHARFLDSET(struct subscription_persistence, local_name));
 	ast_sorcery_object_field_register(sorcery, "subscription_persistence", "local_port", "0", OPT_UINT_T, 0,

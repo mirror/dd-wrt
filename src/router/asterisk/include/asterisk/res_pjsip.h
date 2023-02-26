@@ -51,6 +51,11 @@
 #include "asterisk/stasis_endpoints.h"
 #include "asterisk/stream.h"
 
+#ifdef HAVE_PJSIP_TLS_TRANSPORT_RESTART
+/* Needed for knowing if the cert or priv key files changed */
+#include <sys/stat.h>
+#endif
+
 #define PJSIP_MINVERSION(m,n,p) (((m << 24) | (n << 16) | (p << 8)) >= PJ_VERSION_NUM)
 
 #ifndef PJSIP_EXPIRES_NOT_SPECIFIED
@@ -62,6 +67,9 @@
  */
 #define PJSIP_EXPIRES_NOT_SPECIFIED	((pj_uint32_t)-1)
 #endif
+
+#define PJSTR_PRINTF_SPEC "%.*s"
+#define PJSTR_PRINTF_VAR(_v) ((int)(_v).slen), ((_v).ptr)
 
 /* Response codes from RFC8224 */
 #define AST_STIR_SHAKEN_RESPONSE_CODE_STALE_DATE 403
@@ -78,6 +86,26 @@
 #define AST_STIR_SHAKEN_RESPONSE_STR_BAD_IDENTITY_INFO "Bad Identity Info"
 #define AST_STIR_SHAKEN_RESPONSE_STR_UNSUPPORTED_CREDENTIAL "Unsupported Credential"
 #define AST_STIR_SHAKEN_RESPONSE_STR_INVALID_IDENTITY_HEADER "Invalid Identity Header"
+
+/* ":12345" */
+#define COLON_PORT_STRLEN 6
+/*
+ * "<ipaddr>:<port>"
+ * PJ_INET6_ADDRSTRLEN includes the NULL terminator
+ */
+#define IP6ADDR_COLON_PORT_BUFLEN (PJ_INET6_ADDRSTRLEN + COLON_PORT_STRLEN)
+
+/*!
+ * \brief Fill a buffer with a pjsip transport's remote ip address and port
+ *
+ * \param transport The pjsip_transport to use
+ * \param dest The destination buffer of at least IP6ADDR_COLON_PORT_BUFLEN bytes
+ */
+#define AST_SIP_MAKE_REMOTE_IPADDR_PORT_STR(_transport, _dest) \
+	snprintf(_dest, IP6ADDR_COLON_PORT_BUFLEN, \
+		PJSTR_PRINTF_SPEC ":%d", \
+		PJSTR_PRINTF_VAR(_transport->remote_name.host), \
+		_transport->remote_name.port);
 
 /* Forward declarations of PJSIP stuff */
 struct pjsip_rx_data;
@@ -96,6 +124,8 @@ struct pjsip_tpselector;
 #define MAX_RX_CHALLENGES	10
 
 AST_VECTOR(ast_sip_service_route_vector, char *);
+
+static const pj_str_t AST_PJ_STR_EMPTY = { "", 0 };
 
 /*!
  * \brief Structure for SIP transport information
@@ -173,6 +203,24 @@ struct ast_sip_transport_state {
 	 * \since 17.0.0
 	 */
 	struct ast_sip_service_route_vector *service_routes;
+	/*!
+	 * Disregard RFC5922 7.2, and allow wildcard certs (TLS only)
+	 */
+	int allow_wildcard_certs;
+	/*!
+	 * If true, fail if server certificate cannot verify (TLS only)
+	 */
+	int verify_server;
+#ifdef HAVE_PJSIP_TLS_TRANSPORT_RESTART
+	/*!
+	 * The stats information for the certificate file, if configured
+	 */
+	struct stat cert_file_stat;
+	/*!
+	 * The stats information for the private key file, if configured
+	 */
+	struct stat privkey_file_stat;
+#endif
 };
 
 #define ast_sip_transport_is_nonlocal(transport_state, addr) \
@@ -292,6 +340,45 @@ struct ast_sip_nat_hook {
 };
 
 /*!
+ * \brief The kind of security negotiation
+ */
+enum ast_sip_security_negotiation {
+	/*! No security mechanism negotiation */
+	AST_SIP_SECURITY_NEG_NONE = 0,
+	/*! Use mediasec security mechanism negotiation */
+	AST_SIP_SECURITY_NEG_MEDIASEC,
+	/* Add RFC 3329 (sec-agree) mechanism negotiation in the future */
+};
+
+/*!
+ * \brief The security mechanism type
+ */
+enum ast_sip_security_mechanism_type {
+	AST_SIP_SECURITY_MECH_NONE = 0,
+	/* Use msrp-tls as security mechanism */
+	AST_SIP_SECURITY_MECH_MSRP_TLS,
+	/* Use sdes-srtp as security mechanism */
+	AST_SIP_SECURITY_MECH_SDES_SRTP,
+	/* Use dtls-srtp as security mechanism */
+	AST_SIP_SECURITY_MECH_DTLS_SRTP,
+	/* Add RFC 3329 (sec-agree) mechanisms like tle, digest, ipsec-ike in the future */
+};
+
+/*!
+ * \brief Structure representing a security mechanism as defined in RFC 3329
+ */
+struct ast_sip_security_mechanism {
+	/* Used to determine which security mechanism to use. */
+	enum ast_sip_security_mechanism_type type;
+	/* The preference of this security mechanism. The higher the value, the more preferred. */
+	float qvalue;
+	/* Optional mechanism parameters. */
+	struct ast_vector_string mechanism_parameters;
+};
+
+AST_VECTOR(ast_sip_security_mechanism_vector, struct ast_sip_security_mechanism *);
+
+/*!
  * \brief Contact associated with an address of record
  */
 struct ast_sip_contact {
@@ -362,6 +449,13 @@ struct ast_sip_contact_status {
 	);
 	/*! The round trip time in microseconds */
 	int64_t rtt;
+	/*!
+	 * The security mechanism list of the contact (RFC 3329).
+	 * Stores the values of Security-Server headers in 401/421/494 responses to an
+	 * in-dialog request or successful outbound registration which will be used to
+	 * set the Security-Verify headers of all subsequent requests to the contact.
+	 */
+	struct ast_sip_security_mechanism_vector security_mechanisms;
 	/*! Current status for a contact (default - unavailable) */
 	enum ast_sip_contact_status_type status;
 	/*! Last status for a contact (default - unavailable) */
@@ -419,6 +513,20 @@ struct ast_sip_contact_wrapper {
 	char *contact_id;
 	/*! Pointer to the actual contact. */
 	struct ast_sip_contact *contact;
+};
+
+/*!
+ * \brief 100rel modes for SIP endpoints
+ */
+enum ast_sip_100rel_mode {
+	/*! Do not support 100rel. (no) */
+	AST_SIP_100REL_UNSUPPORTED = 0,
+	/*! As UAC, indicate 100rel support in Supported header. (yes) */
+	AST_SIP_100REL_SUPPORTED,
+	/*! As UAS, send 1xx responses reliably, if the UAC indicated its support. Otherwise same as AST_SIP_100REL_SUPPORTED. (peer_supported) */
+	AST_SIP_100REL_PEER_SUPPORTED,
+	/*! Require the use of 100rel. (required) */
+	AST_SIP_100REL_REQUIRED,
 };
 
 /*!
@@ -945,10 +1053,22 @@ struct ast_sip_endpoint {
 	unsigned int suppress_q850_reason_headers;
 	/*! Ignore 183 if no SDP is present */
 	unsigned int ignore_183_without_sdp;
+	/*! Type of security negotiation to use (RFC 3329). */
+	enum ast_sip_security_negotiation security_negotiation;
+	/*! Client security mechanisms (RFC 3329). */
+	struct ast_sip_security_mechanism_vector security_mechanisms;
 	/*! Set which STIR/SHAKEN behaviors we want on this endpoint */
 	unsigned int stir_shaken;
 	/*! Should we authenticate OPTIONS requests per RFC 3261? */
 	unsigned int allow_unauthenticated_options;
+	/*! The name of the geoloc profile to apply when Asterisk receives a call from this endpoint */
+	AST_STRING_FIELD_EXTENDED(geoloc_incoming_call_profile);
+	/*! The name of the geoloc profile to apply when Asterisk sends a call to this endpoint */
+	AST_STRING_FIELD_EXTENDED(geoloc_outgoing_call_profile);
+	/*! 100rel mode to use with this endpoint */
+	enum ast_sip_100rel_mode rel100;
+	/*! Send Advice-of-Charge messages */
+	unsigned int send_aoc;
 };
 
 /*! URI parameter for symmetric transport */
@@ -988,6 +1108,87 @@ int ast_sip_are_media_types_equal(pjsip_media_type *a, pjsip_media_type *b);
  * \retval 0 Media types are not equal
  */
 int ast_sip_is_media_type_in(pjsip_media_type *a, ...) attribute_sentinel;
+
+/*!
+ * \brief Add security headers to transmission data
+ *
+ * \param security_mechanisms Vector of security mechanisms.
+ * \param header_name The header name under which to add the security mechanisms.
+ * One of Security-Client, Security-Server, Security-Verify.
+ * \param add_qval If zero, don't add the q-value to the header.
+ * \param tdata The transmission data.
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_sip_add_security_headers(struct ast_sip_security_mechanism_vector *security_mechanisms,
+		const char *header_name, int add_qval, pjsip_tx_data *tdata);
+
+/*!
+ * \brief Append to security mechanism vector from SIP header
+ *
+ * \param hdr The header of the security mechanisms.
+ * \param security_mechanisms Vector of security mechanisms to append to.
+ * Header name must be one of Security-Client, Security-Server, Security-Verify.
+ */
+void ast_sip_header_to_security_mechanism(const pjsip_generic_string_hdr *hdr,
+		struct ast_sip_security_mechanism_vector *security_mechanisms);
+
+/*!
+ * \brief Initialize security mechanism vector from string of security mechanisms.
+ *
+ * \param security_mechanisms Pointer to vector of security mechanisms to initialize.
+ * \param value String of security mechanisms as defined in RFC 3329.
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_sip_security_mechanism_vector_init(struct ast_sip_security_mechanism_vector *security_mechanism, const char *value);
+
+/*!
+ * \brief Removes all headers of a specific name and value from a pjsip_msg.
+ *
+ * \param msg PJSIP message from which to remove headers.
+ * \param hdr_name Name of the header to remove.
+ * \param value Optional string value of the header to remove.
+ * If NULL, remove all headers of given hdr_name.
+ */
+void ast_sip_remove_headers_by_name_and_value(pjsip_msg *msg, const pj_str_t *hdr_name, const char* value);
+
+/*!
+ * \brief Duplicate a security mechanism.
+ *
+ * \param dst Security mechanism to duplicate to.
+ * \param src Security mechanism to duplicate.
+ */
+void ast_sip_security_mechanisms_vector_copy(struct ast_sip_security_mechanism_vector *dst,
+	const struct ast_sip_security_mechanism_vector *src);
+
+/*!
+ * \brief Free contents of a security mechanism vector.
+ *
+ * \param security_mechanisms Vector whose contents are to be freed
+ */
+void ast_sip_security_mechanisms_vector_destroy(struct ast_sip_security_mechanism_vector *security_mechanisms);
+
+/*!
+ * \brief Allocate a security mechanism from a string.
+ *
+ * \param security_mechanism Pointer-pointer to the security mechanism to allocate.
+ * \param value The security mechanism string as defined in RFC 3329 (section 2.2)
+ * \param ... in the form <mechanism_name>;q=<q_value>;<mechanism_parameters>
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_sip_str_to_security_mechanism(struct ast_sip_security_mechanism **security_mechanism, const char *value);
+
+/*!
+ * \brief Set the security negotiation based on a given string.
+ *
+ * \param security_negotiation Security negotiation enum to set.
+ * \param val String that represents a security_negotiation value.
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_sip_set_security_negotiation(enum ast_sip_security_negotiation *security_negotiation, const char *val);
 
 /*!
  * \brief Initialize an auth vector with the configured values.
@@ -2450,6 +2651,17 @@ int ast_sip_set_outbound_proxy(pjsip_tx_data *tdata, const char *proxy);
 int ast_sip_add_header(pjsip_tx_data *tdata, const char *name, const char *value);
 
 /*!
+ * \brief Add a header to an outbound SIP message, returning a pointer to the header
+ *
+ * \param tdata The message to add the header to
+ * \param name The header name
+ * \param value The header value
+ * \return The pjsip_generic_string_hdr * added.
+ */
+pjsip_generic_string_hdr *ast_sip_add_header2(pjsip_tx_data *tdata,
+	const char *name, const char *value);
+
+/*!
  * \brief Add a body to an outbound SIP message
  *
  * If this is called multiple times, the latest body will replace the current
@@ -3555,6 +3767,7 @@ enum ast_transport_monitor_reg {
 
 /*!
  * \brief Register a reliable transport shutdown monitor callback.
+ * \deprecated Replaced with ast_sip_transport_monitor_register_key().
  * \since 13.20.0
  *
  * \param transport Transport to monitor for shutdown.
@@ -3573,7 +3786,28 @@ enum ast_transport_monitor_reg ast_sip_transport_monitor_register(pjsip_transpor
 	ast_transport_monitor_shutdown_cb cb, void *ao2_data);
 
 /*!
+ * \brief Register a reliable transport shutdown monitor callback.
+ *
+ * \param transport_key Key for the transport to monitor for shutdown.
+ *                      Create the key with AST_SIP_MAKE_REMOTE_IPADDR_PORT_STR.
+ * \param cb Who to call when transport is shutdown.
+ * \param ao2_data Data to pass with the callback.
+ *
+ * \note The data object passed will have its reference count automatically
+ * incremented by this call and automatically decremented after the callback
+ * runs or when the callback is unregistered.
+ *
+ * There is no checking for duplicate registrations.
+ *
+ * \return enum ast_transport_monitor_reg
+ */
+enum ast_transport_monitor_reg ast_sip_transport_monitor_register_key(
+	const char *transport_key, ast_transport_monitor_shutdown_cb cb,
+	void *ao2_data);
+
+/*!
  * \brief Register a reliable transport shutdown monitor callback replacing any duplicate.
+ * \deprecated Replaced with ast_sip_transport_monitor_register_replace_key().
  * \since 13.26.0
  * \since 16.3.0
  *
@@ -3596,7 +3830,31 @@ enum ast_transport_monitor_reg ast_sip_transport_monitor_register_replace(pjsip_
 	ast_transport_monitor_shutdown_cb cb, void *ao2_data, ast_transport_monitor_data_matcher matches);
 
 /*!
+ * \brief Register a reliable transport shutdown monitor callback replacing any duplicate.
+ *
+ * \param transport_key Key for the transport to monitor for shutdown.
+ *                      Create the key with AST_SIP_MAKE_REMOTE_IPADDR_PORT_STR.
+ * \param cb Who to call when transport is shutdown.
+ * \param ao2_data Data to pass with the callback.
+ * \param matches Matcher function that returns true if data matches a previously
+ *                registered data object
+ *
+ * \note The data object passed will have its reference count automatically
+ * incremented by this call and automatically decremented after the callback
+ * runs or when the callback is unregistered.
+ *
+ * This function checks for duplicates, and overwrites/replaces the old monitor
+ * with the given one.
+ *
+ * \return enum ast_transport_monitor_reg
+ */
+enum ast_transport_monitor_reg ast_sip_transport_monitor_register_replace_key(
+	const char *transport_key, ast_transport_monitor_shutdown_cb cb,
+	void *ao2_data, ast_transport_monitor_data_matcher matches);
+
+/*!
  * \brief Unregister a reliable transport shutdown monitor
+ * \deprecated Replaced with ast_sip_transport_monitor_unregister_key().
  * \since 13.20.0
  *
  * \param transport Transport to monitor for shutdown.
@@ -3610,6 +3868,23 @@ enum ast_transport_monitor_reg ast_sip_transport_monitor_register_replace(pjsip_
  * automatically decremented.
  */
 void ast_sip_transport_monitor_unregister(pjsip_transport *transport,
+	ast_transport_monitor_shutdown_cb cb, void *data, ast_transport_monitor_data_matcher matches);
+
+/*!
+ * \brief Unregister a reliable transport shutdown monitor
+ *
+ * \param transport_key Key for the transport to monitor for shutdown.
+ *                      Create the key with AST_SIP_MAKE_REMOTE_IPADDR_PORT_STR.
+ * \param cb The callback that was used for the original register.
+ * \param data Data to pass to the matcher. May be NULL and does NOT need to be an ao2 object.
+ *             If NULL, all monitors with the provided callback are unregistered.
+ * \param matches Matcher function that returns true if data matches the previously
+ *                registered data object.  If NULL, a simple pointer comparison is done.
+ *
+ * \note The data object passed into the original register will have its reference count
+ * automatically decremented.
+ */
+void ast_sip_transport_monitor_unregister_key(const char *transport_key,
 	ast_transport_monitor_shutdown_cb cb, void *data, ast_transport_monitor_data_matcher matches);
 
 /*!
@@ -3650,5 +3925,73 @@ void ast_sip_transport_state_register(struct ast_sip_tpmgr_state_callback *eleme
  * \param element What we are unregistering.
  */
 void ast_sip_transport_state_unregister(struct ast_sip_tpmgr_state_callback *element);
+
+/*!
+ * \brief Check whether a pjsip_uri is SIP/SIPS or not
+ * \since 16.28.0
+ *
+ * \param uri The pjsip_uri to check
+ *
+ * \retval 1 if true
+ * \retval 0 if false
+ */
+int ast_sip_is_uri_sip_sips(pjsip_uri *uri);
+
+/*!
+ * \brief Check whether a pjsip_uri is allowed or not
+ * \since 16.28.0
+ *
+ * \param uri The pjsip_uri to check
+ *
+ * \retva; 1 if allowed
+ * \retval 0 if not allowed
+ */
+int ast_sip_is_allowed_uri(pjsip_uri *uri);
+
+/*!
+ * \brief Get the user portion of the pjsip_uri
+ * \since 16.28.0
+ *
+ * \param uri The pjsip_uri to get the user from
+ *
+ * \note This function will check what kind of URI it receives and return
+ * the user based off of that
+ *
+ * \return User string or empty string if not present
+ */
+const pj_str_t *ast_sip_pjsip_uri_get_username(pjsip_uri *uri);
+
+/*!
+ * \brief Get the host portion of the pjsip_uri
+ * \since 16.28.0
+ *
+ * \param uri The pjsip_uri to get the host from
+ *
+ * \note This function will check what kind of URI it receives and return
+ * the host based off of that
+ *
+ * \return Host string or empty string if not present
+ */
+const pj_str_t *ast_sip_pjsip_uri_get_hostname(pjsip_uri *uri);
+
+/*!
+ * \brief Get the other_param portion of the pjsip_uri
+ * \since 16.28.0
+ *
+ * \param uri The pjsip_uri to get hte other_param from
+ *
+ * \note This function will check what kind of URI it receives and return
+ * the other_param based off of that
+ *
+ * \return other_param or NULL if not present
+ */
+struct pjsip_param *ast_sip_pjsip_uri_get_other_param(pjsip_uri *uri, const pj_str_t *param_str);
+
+/*!
+ * \brief Retrieve the system setting 'all_codecs_on_empty_reinvite'.
+ *
+ * \retval non zero if we should return all codecs on empty re-INVITE
+ */
+unsigned int ast_sip_get_all_codecs_on_empty_reinvite(void);
 
 #endif /* _RES_PJSIP_H */

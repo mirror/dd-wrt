@@ -6106,7 +6106,7 @@ struct ast_channel *__ast_request_and_dial(const char *type, struct ast_format_c
 	}
 
 	/*
-	 * I seems strange to set the CallerID on an outgoing call leg
+	 * It seems strange to set the CallerID on an outgoing call leg
 	 * to whom we are calling, but this function's callers are doing
 	 * various Originate methods.  This call leg goes to the local
 	 * user.  Once the local user answers, the dialplan needs to be
@@ -11161,15 +11161,6 @@ int ast_channel_request_stream_topology_change(struct ast_channel *chan,
 	if (!ast_channel_is_multistream(chan) || !ast_channel_tech(chan)->indicate) {
 		ast_channel_unlock(chan);
 		return -1;
-	}
-
-	if (ast_stream_topology_equal(ast_channel_get_stream_topology(chan), topology)) {
-		ast_debug(2, "%s: Topologies already match. Current: %s  Requested: %s\n",
-				ast_channel_name(chan),
-				ast_str_tmp(256, ast_stream_topology_to_str(ast_channel_get_stream_topology(chan), &STR_TMP)),
-				ast_str_tmp(256, ast_stream_topology_to_str(topology, &STR_TMP)));
-		ast_channel_unlock(chan);
-		return 0;
 	}
 
 	ast_channel_internal_set_stream_topology_change_source(chan, change_source);
