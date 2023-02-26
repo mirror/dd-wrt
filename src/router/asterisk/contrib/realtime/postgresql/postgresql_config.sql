@@ -1456,5 +1456,69 @@ ALTER TABLE ps_registrations ADD COLUMN max_random_initial_delay INTEGER;
 
 UPDATE alembic_version SET version_num='18e0805d367f' WHERE alembic_version.version_num = '0bee61aa9425';
 
+-- Running upgrade 18e0805d367f -> 58e440314c2a
+
+ALTER TABLE ps_transports ADD COLUMN allow_wildcard_certs yesno_values;
+
+UPDATE alembic_version SET version_num='58e440314c2a' WHERE alembic_version.version_num = '18e0805d367f';
+
+-- Running upgrade 58e440314c2a -> 7197536bb68d
+
+ALTER TABLE ps_endpoints ADD COLUMN geoloc_incoming_call_profile VARCHAR(80);
+
+ALTER TABLE ps_endpoints ADD COLUMN geoloc_outgoing_call_profile VARCHAR(80);
+
+UPDATE alembic_version SET version_num='7197536bb68d' WHERE alembic_version.version_num = '58e440314c2a';
+
+-- Running upgrade 7197536bb68d -> 9f3692b1654b
+
+CREATE TYPE pjsip_incoming_call_offer_pref_values AS ENUM ('local', 'local_first', 'remote', 'remote_first');
+
+CREATE TYPE pjsip_outgoing_call_offer_pref_values AS ENUM ('local', 'local_merge', 'local_first', 'remote', 'remote_merge', 'remote_first');
+
+ALTER TABLE ps_endpoints ADD COLUMN incoming_call_offer_pref pjsip_incoming_call_offer_pref_values;
+
+ALTER TABLE ps_endpoints ADD COLUMN outgoing_call_offer_pref pjsip_outgoing_call_offer_pref_values;
+
+ALTER TABLE ps_endpoints ADD COLUMN stir_shaken_profile VARCHAR(80);
+
+UPDATE alembic_version SET version_num='9f3692b1654b' WHERE alembic_version.version_num = '7197536bb68d';
+
+-- Running upgrade 9f3692b1654b -> 539f68bede2c
+
+CREATE TYPE pjsip_100rel_values_v2 AS ENUM ('no', 'required', 'peer_supported', 'yes');
+
+ALTER TABLE ps_endpoints ALTER COLUMN 100rel TYPE pjsip_100rel_values_v2 USING 100rel::text::pjsip_100rel_values_v2;
+
+DROP TYPE pjsip_100rel_values;
+
+UPDATE alembic_version SET version_num='539f68bede2c' WHERE alembic_version.version_num = '9f3692b1654b';
+
+-- Running upgrade 539f68bede2c -> 417c0247fd7e
+
+CREATE TYPE security_negotiation_values AS ENUM ('no', 'mediasec');
+
+ALTER TABLE ps_endpoints ADD COLUMN security_negotiation security_negotiation_values;
+
+ALTER TABLE ps_endpoints ADD COLUMN security_mechanisms VARCHAR(512);
+
+ALTER TABLE ps_registrations ADD COLUMN security_negotiation security_negotiation_values;
+
+ALTER TABLE ps_registrations ADD COLUMN security_mechanisms VARCHAR(512);
+
+UPDATE alembic_version SET version_num='417c0247fd7e' WHERE alembic_version.version_num = '539f68bede2c';
+
+-- Running upgrade 417c0247fd7e -> ccf795ee535f
+
+ALTER TABLE ps_globals ADD COLUMN all_codecs_on_empty_reinvite ast_bool_values;
+
+UPDATE alembic_version SET version_num='ccf795ee535f' WHERE alembic_version.version_num = '417c0247fd7e';
+
+-- Running upgrade ccf795ee535f -> 5a2247c957d2
+
+ALTER TABLE ps_endpoints ADD COLUMN send_aoc ast_bool_values;
+
+UPDATE alembic_version SET version_num='5a2247c957d2' WHERE alembic_version.version_num = 'ccf795ee535f';
+
 COMMIT;
 

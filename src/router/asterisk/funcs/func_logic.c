@@ -72,10 +72,10 @@
 	</function>
 	<function name="IF" language="en_US">
 		<synopsis>
-			Check for an expresion.
+			Check for an expression.
 		</synopsis>
 		<syntax argsep="?">
-			<parameter name="expresion" required="true" />
+			<parameter name="expression" required="true" />
 			<parameter name="retvalue" argsep=":" required="true">
 				<argument name="true" />
 				<argument name="false" />
@@ -187,8 +187,7 @@ static int acf_if(struct ast_channel *chan, const char *cmd, char *data, char *b
 	AST_NONSTANDARD_APP_ARGS(args2, args1.remainder, ':');
 
 	if (ast_strlen_zero(args1.expr) || !(args2.iftrue || args2.iffalse)) {
-		ast_log(LOG_WARNING, "Syntax IF(<expr>?[<true>][:<false>])  (expr must be non-null, and either <true> or <false> must be non-null)\n");
-		ast_log(LOG_WARNING, "      In this case, <expr>='%s', <true>='%s', and <false>='%s'\n", args1.expr, args2.iftrue, args2.iffalse);
+		ast_debug(1, "<expr>='%s', <true>='%s', and <false>='%s'\n", args1.expr, args2.iftrue, args2.iffalse);
 		return -1;
 	}
 

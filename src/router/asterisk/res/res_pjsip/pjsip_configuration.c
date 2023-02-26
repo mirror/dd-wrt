@@ -21,6 +21,7 @@
 #include <pjsip.h>
 #include <pjsip_ua.h>
 
+#include "asterisk/res_geolocation.h"
 #include "asterisk/res_pjsip.h"
 #include "include/res_pjsip_private.h"
 #include "asterisk/res_pjsip_cli.h"
@@ -181,9 +182,16 @@ static int prack_handler(const struct aco_option *opt, struct ast_variable *var,
 
 	if (ast_true(var->value)) {
 		endpoint->extensions.flags |= PJSIP_INV_SUPPORT_100REL;
+		endpoint->rel100 = AST_SIP_100REL_SUPPORTED;
+	} else if (!strcasecmp(var->value, "peer_supported")) {
+		endpoint->extensions.flags |= PJSIP_INV_SUPPORT_100REL;
+		endpoint->rel100 = AST_SIP_100REL_PEER_SUPPORTED;
 	} else if (!strcasecmp(var->value, "required")) {
 		endpoint->extensions.flags |= PJSIP_INV_REQUIRE_100REL;
-	} else if (!ast_false(var->value)){
+		endpoint->rel100 = AST_SIP_100REL_REQUIRED;
+	} else if (ast_false(var->value)) {
+		endpoint->rel100 = AST_SIP_100REL_UNSUPPORTED;
+	} else {
 		return -1;
 	}
 
@@ -194,10 +202,12 @@ static int prack_to_str(const void *obj, const intptr_t *args, char **buf)
 {
 	const struct ast_sip_endpoint *endpoint = obj;
 
-	if (endpoint->extensions.flags & PJSIP_INV_REQUIRE_100REL) {
-		*buf = "required";
-	} else if (endpoint->extensions.flags & PJSIP_INV_SUPPORT_100REL) {
+	if (endpoint->rel100 == AST_SIP_100REL_SUPPORTED) {
 		*buf = "yes";
+	} else if (endpoint->rel100 == AST_SIP_100REL_PEER_SUPPORTED) {
+		*buf = "peer_supported";
+	} else if (endpoint->rel100 == AST_SIP_100REL_REQUIRED) {
+		*buf = "required";
 	} else {
 		*buf = "no";
 	}
@@ -244,6 +254,31 @@ static int timers_to_str(const void *obj, const intptr_t *args, char **buf)
 
 	*buf = ast_strdup(*buf);
 	return 0;
+}
+
+static int security_mechanism_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
+{
+	struct ast_sip_endpoint *endpoint = obj;
+
+	return ast_sip_security_mechanism_vector_init(&endpoint->security_mechanisms, var->value);
+}
+
+int ast_sip_set_security_negotiation(enum ast_sip_security_negotiation *security_negotiation, const char *val) {
+	if (!strcasecmp("no", val)) {
+		*security_negotiation = AST_SIP_SECURITY_NEG_NONE;
+	} else if (!strcasecmp("mediasec", val)) {
+		*security_negotiation = AST_SIP_SECURITY_NEG_MEDIASEC;
+	} else {
+		return -1;
+	}
+	return 0;
+}
+
+static int security_negotiation_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
+{
+	struct ast_sip_endpoint *endpoint = obj;
+
+	return ast_sip_set_security_negotiation(&endpoint->security_negotiation, var->value);
 }
 
 void ast_sip_auth_vector_destroy(struct ast_sip_auth_vector *auths)
@@ -1539,6 +1574,36 @@ static int sip_endpoint_apply_handler(const struct ast_sorcery *sorcery, void *o
 		}
 	}
 
+	if (!ast_strlen_zero(endpoint->geoloc_incoming_call_profile) ||
+		!ast_strlen_zero(endpoint->geoloc_outgoing_call_profile)) {
+
+		if (!ast_geoloc_is_loaded()) {
+			ast_log(LOG_ERROR, "A geoloc incoming and/or outgoing call_profile was specified on endpoint '%s'"
+				" but res_geolocation is not loaded.\n", ast_sorcery_object_get_id(endpoint));
+			return -1;
+		}
+
+		if (!ast_strlen_zero(endpoint->geoloc_incoming_call_profile)) {
+			struct ast_geoloc_profile *profile = ast_geoloc_get_profile(endpoint->geoloc_incoming_call_profile);
+			if (!profile) {
+				ast_log(LOG_ERROR, "geoloc_incoming_call_profile '%s' on endpoint '%s' doesn't exist\n",
+					endpoint->geoloc_incoming_call_profile, ast_sorcery_object_get_id(endpoint));
+				return -1;
+			}
+			ao2_cleanup(profile);
+		}
+
+		if (!ast_strlen_zero(endpoint->geoloc_outgoing_call_profile)) {
+			struct ast_geoloc_profile *profile = ast_geoloc_get_profile(endpoint->geoloc_outgoing_call_profile);
+			if (!profile) {
+				ast_log(LOG_ERROR, "geoloc_outgoing_call_profile '%s' on endpoint '%s' doesn't exist\n",
+					endpoint->geoloc_outgoing_call_profile, ast_sorcery_object_get_id(endpoint));
+				return -1;
+			}
+			ao2_cleanup(profile);
+		}
+	}
+
 	return 0;
 }
 
@@ -2194,6 +2259,11 @@ int ast_res_pjsip_initialize_configuration(void)
 	ast_sorcery_object_field_register_custom(sip_sorcery, "endpoint", "stir_shaken", "off", stir_shaken_handler, stir_shaken_to_str, NULL, 0, 0);
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "stir_shaken_profile", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_sip_endpoint, stir_shaken_profile));
 	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "allow_unauthenticated_options", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, allow_unauthenticated_options));
+	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "geoloc_incoming_call_profile", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_sip_endpoint, geoloc_incoming_call_profile));
+	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "geoloc_outgoing_call_profile", "", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_sip_endpoint, geoloc_outgoing_call_profile));
+	ast_sorcery_object_field_register_custom(sip_sorcery, "endpoint", "security_mechanisms", "", security_mechanism_handler, NULL, NULL, 0, 0);
+	ast_sorcery_object_field_register_custom(sip_sorcery, "endpoint", "security_negotiation", "no", security_negotiation_handler, NULL, NULL, 0, 0);
+	ast_sorcery_object_field_register(sip_sorcery, "endpoint", "send_aoc", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_endpoint, send_aoc));
 
 	if (ast_sip_initialize_sorcery_transport()) {
 		ast_log(LOG_ERROR, "Failed to register SIP transport support with sorcery\n");
@@ -2246,8 +2316,6 @@ int ast_res_pjsip_initialize_configuration(void)
 	ast_sorcery_load(sip_sorcery);
 
 	load_all_endpoints();
-
-	ast_sip_location_prune_boot_contacts();
 
 	acl_change_sub = stasis_subscribe(ast_security_topic(), acl_change_stasis_cb, NULL);
 	stasis_subscription_accept_message_type(acl_change_sub, ast_named_acl_change_type());
@@ -2350,6 +2418,12 @@ void *ast_sip_endpoint_alloc(const char *name)
 		return NULL;
 	}
 	if (ast_string_field_init(endpoint, 64)) {
+		ao2_cleanup(endpoint);
+		return NULL;
+	}
+
+	if (ast_string_field_init_extended(endpoint, geoloc_incoming_call_profile) ||
+		ast_string_field_init_extended(endpoint, geoloc_outgoing_call_profile)) {
 		ao2_cleanup(endpoint);
 		return NULL;
 	}

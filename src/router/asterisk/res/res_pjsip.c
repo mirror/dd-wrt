@@ -53,6 +53,7 @@
 	<depend>res_sorcery_memory</depend>
 	<depend>res_sorcery_astdb</depend>
 	<use type="module">res_statsd</use>
+	<use type="module">res_geolocation</use>
 	<support_level>core</support_level>
  ***/
 
@@ -904,6 +905,7 @@ pjsip_dialog *ast_sip_create_dialog_uac(const struct ast_sip_endpoint *endpoint,
 	/* Add the user=phone parameter if applicable */
 	ast_sip_add_usereqphone(endpoint, dlg->pool, dlg->target);
 	ast_sip_add_usereqphone(endpoint, dlg->pool, dlg->remote.info->uri);
+	ast_sip_add_usereqphone(endpoint, dlg->pool, dlg->local.info->uri);
 
 	if (!ast_strlen_zero(outbound_proxy)) {
 		pjsip_route_hdr route_set, *route;
@@ -1870,6 +1872,22 @@ int ast_sip_add_header(pjsip_tx_data *tdata, const char *name, const char *value
 	return 0;
 }
 
+pjsip_generic_string_hdr *ast_sip_add_header2(pjsip_tx_data *tdata,
+	const char *name, const char *value)
+{
+	pj_str_t hdr_name;
+	pj_str_t hdr_value;
+	pjsip_generic_string_hdr *hdr;
+
+	pj_cstr(&hdr_name, name);
+	pj_cstr(&hdr_value, value);
+
+	hdr = pjsip_generic_string_hdr_create(tdata->pool, &hdr_name, &hdr_value);
+
+	pjsip_msg_add_hdr(tdata->msg, (pjsip_hdr *) hdr);
+	return hdr;
+}
+
 static pjsip_msg_body *ast_body_to_pjsip_body(pj_pool_t *pool, const struct ast_sip_body *body)
 {
 	pj_str_t type;
@@ -2240,31 +2258,62 @@ int ast_sip_send_response(pjsip_response_addr *res_addr, pjsip_tx_data *tdata, s
 	return status == PJ_SUCCESS ? 0 : -1;
 }
 
+static void pool_destroy_callback(void *arg)
+{
+	pj_pool_t *pool = (pj_pool_t *)arg;
+	pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), pool);
+}
+
+static void clean_contact_from_tdata(pjsip_tx_data *tdata)
+{
+	struct ast_sip_contact *contact;
+	contact = ast_sip_mod_data_get(tdata->mod_data, supplement_module.id, MOD_DATA_CONTACT);
+	ao2_cleanup(contact);
+	ast_sip_mod_data_set(tdata->pool, tdata->mod_data, supplement_module.id, MOD_DATA_CONTACT, NULL);
+	pjsip_tx_data_dec_ref(tdata);
+}
+
 int ast_sip_send_stateful_response(pjsip_rx_data *rdata, pjsip_tx_data *tdata, struct ast_sip_endpoint *sip_endpoint)
 {
 	pjsip_transaction *tsx;
+	pj_grp_lock_t *tsx_glock;
+	pj_pool_t *pool;
 
-	if (pjsip_tsx_create_uas(NULL, rdata, &tsx) != PJ_SUCCESS) {
-		struct ast_sip_contact *contact;
-
+	/* Create and initialize global lock pool */
+	pool = pjsip_endpt_create_pool(ast_sip_get_pjsip_endpoint(), "stateful response", PJSIP_POOL_TSX_LEN, PJSIP_POOL_TSX_INC);
+	if (!pool){
 		/* ast_sip_create_response bumps the refcount of the contact and adds it to the tdata.
 		 * We'll leak that reference if we don't get rid of it here.
 		 */
-		contact = ast_sip_mod_data_get(tdata->mod_data, supplement_module.id, MOD_DATA_CONTACT);
-		ao2_cleanup(contact);
-		ast_sip_mod_data_set(tdata->pool, tdata->mod_data, supplement_module.id, MOD_DATA_CONTACT, NULL);
-		pjsip_tx_data_dec_ref(tdata);
+		clean_contact_from_tdata(tdata);
 		return -1;
 	}
-	pjsip_tsx_recv_msg(tsx, rdata);
+	/* Create with handler so that we can release the pool once the glock derefs out */
+	if(pj_grp_lock_create_w_handler(pool, NULL, pool, &pool_destroy_callback, &tsx_glock) != PJ_SUCCESS) {
+		clean_contact_from_tdata(tdata);
+		pool_destroy_callback((void *) pool);
+		return -1;
+	}
+	/* We need an additional reference as the qualify thread may destroy this out
+	 * from under us. Add it now before it gets added to the tsx. */
+	pj_grp_lock_add_ref(tsx_glock);
 
+	if (pjsip_tsx_create_uas2(NULL, rdata, tsx_glock, &tsx) != PJ_SUCCESS) {
+		clean_contact_from_tdata(tdata);
+		pj_grp_lock_dec_ref(tsx_glock);
+		return -1;
+	}
+
+	pjsip_tsx_recv_msg(tsx, rdata);
 	supplement_outgoing_response(tdata, sip_endpoint);
 
 	if (pjsip_tsx_send_msg(tsx, tdata) != PJ_SUCCESS) {
+		pj_grp_lock_dec_ref(tsx_glock);
 		pjsip_tx_data_dec_ref(tdata);
 		return -1;
 	}
 
+	pj_grp_lock_dec_ref(tsx_glock);
 	return 0;
 }
 
@@ -2453,6 +2502,69 @@ long ast_sip_threadpool_queue_size(void)
 struct ast_threadpool *ast_sip_threadpool(void)
 {
 	return sip_threadpool;
+}
+
+int ast_sip_is_uri_sip_sips(pjsip_uri *uri)
+{
+	return (PJSIP_URI_SCHEME_IS_SIP(uri) || PJSIP_URI_SCHEME_IS_SIPS(uri));
+}
+
+int ast_sip_is_allowed_uri(pjsip_uri *uri)
+{
+	return (ast_sip_is_uri_sip_sips(uri) || PJSIP_URI_SCHEME_IS_TEL(uri));
+}
+
+const pj_str_t *ast_sip_pjsip_uri_get_username(pjsip_uri *uri)
+{
+	if (ast_sip_is_uri_sip_sips(uri)) {
+		pjsip_sip_uri *sip_uri = pjsip_uri_get_uri(uri);
+		if (!sip_uri) {
+			return &AST_PJ_STR_EMPTY;
+		}
+		return &sip_uri->user;
+	} else if (PJSIP_URI_SCHEME_IS_TEL(uri)) {
+		pjsip_tel_uri *tel_uri = pjsip_uri_get_uri(uri);
+		if (!tel_uri) {
+			return &AST_PJ_STR_EMPTY;
+		}
+		return &tel_uri->number;
+	}
+
+	return &AST_PJ_STR_EMPTY;
+}
+
+const pj_str_t *ast_sip_pjsip_uri_get_hostname(pjsip_uri *uri)
+{
+	if (ast_sip_is_uri_sip_sips(uri)) {
+		pjsip_sip_uri *sip_uri = pjsip_uri_get_uri(uri);
+		if (!sip_uri) {
+			return &AST_PJ_STR_EMPTY;
+		}
+		return &sip_uri->host;
+	} else if (PJSIP_URI_SCHEME_IS_TEL(uri)) {
+		return &AST_PJ_STR_EMPTY;
+	}
+
+	return &AST_PJ_STR_EMPTY;
+}
+
+struct pjsip_param *ast_sip_pjsip_uri_get_other_param(pjsip_uri *uri, const pj_str_t *param_str)
+{
+	if (ast_sip_is_uri_sip_sips(uri)) {
+		pjsip_sip_uri *sip_uri = pjsip_uri_get_uri(uri);
+		if (!sip_uri) {
+			return NULL;
+		}
+		return pjsip_param_find(&sip_uri->other_param, param_str);
+	} else if (PJSIP_URI_SCHEME_IS_TEL(uri)) {
+		pjsip_tel_uri *tel_uri = pjsip_uri_get_uri(uri);
+		if (!tel_uri) {
+			return NULL;
+		}
+		return pjsip_param_find(&tel_uri->other_param, param_str);
+	}
+
+	return NULL;
 }
 
 #ifdef TEST_FRAMEWORK
@@ -2749,6 +2861,14 @@ static int load_module(void)
 		goto error;
 	}
 
+	/*
+	 * It is OK to prune the contacts now that
+	 * ast_res_pjsip_init_options_handling() has added the contact observer
+	 * of res/res_pjsip/pjsip_options.c to sorcery (to ensure that any
+	 * pruned contacts are removed from this module's data structure).
+	 */
+	ast_sip_location_prune_boot_contacts();
+
 	if (ast_res_pjsip_init_message_filter()) {
 		ast_log(LOG_ERROR, "Failed to initialize message IP updating. Aborting load\n");
 		goto error;
@@ -2810,5 +2930,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_
 	.reload = reload_module,
 	.load_pri = AST_MODPRI_CHANNEL_DEPEND - 5,
 	.requires = "dnsmgr,res_pjproject,res_sorcery_config,res_sorcery_memory,res_sorcery_astdb",
-	.optional_modules = "res_statsd",
+	.optional_modules = "res_geolocation,res_statsd",
 );

@@ -226,6 +226,16 @@
 			</enum>
 		</enumlist>
 	</info>
+	<info name="Dial_Resource" language="en_US" tech="IAX2">
+		<para>The general syntax is:</para>
+		<para><literal>Dial(IAX2/[username[:password]@]peer[:port][/exten[@context]][/options]</literal></para>
+		<para>IAX2 optionally allows modifiers to be specified after the extension.</para>
+		<enumlist>
+			<enum name="a">
+				<para>Request auto answer (supporting equipment/configuration required)</para>
+			</enum>
+		</enumlist>
+	</info>
 	<manager name="IAXpeers" language="en_US">
 		<synopsis>
 			List IAX peers.
@@ -3407,7 +3417,7 @@ static int send_packet(struct iax_frame *f)
 
 	/* Called with iaxsl held */
 	if (iaxdebug) {
-		ast_debug(3, "Sending %u on %d/%d to %s\n", f->ts, callno, iaxs[callno]->peercallno, ast_sockaddr_stringify(&iaxs[callno]->addr));
+		ast_debug(8, "Sending %u on %d/%d to %s\n", f->ts, callno, iaxs[callno]->peercallno, ast_sockaddr_stringify(&iaxs[callno]->addr));
 	}
 	if (f->transfer) {
 		iax_outputframe(f, NULL, 0, &iaxs[callno]->transfer, f->datalen - sizeof(struct ast_iax2_full_hdr));
@@ -6381,14 +6391,18 @@ static void build_rand_pad(unsigned char *buf, ssize_t len)
 
 static int invalid_key(ast_aes_decrypt_key *ecx)
 {
+#ifdef HAVE_OPENSSL
 	int i;
 	for (i = 0; i < 60; i++) {
-		if (ecx->rd_key[i]) {
+		if (ecx->raw[i]) {
 			return 0; /* stop if we encounter anything non-zero */
 		}
 	}
 	/* if ast_aes_encrypt or ast_aes_decrypt is called, then we'll crash when calling AES_encrypt or AES_decrypt */
 	return -1;
+#else
+	return 0; /* Can't verify, but doesn't matter anyways */
+#endif
 }
 
 static void build_encryption_keys(const unsigned char *digest, struct chan_iax2_pvt *pvt)
@@ -10359,7 +10373,7 @@ static int socket_process_helper(struct iax2_thread *thread)
 	}
 	if (ast_test_flag64(iaxs[fr->callno], IAX_ENCRYPTED) && !decrypted) {
 		if (decrypt_frame(fr->callno, fh, &f, &res)) {
-			ast_log(LOG_NOTICE, "Packet Decrypt Failed!\n");
+			ast_log(LOG_WARNING, "Packet Decrypt Failed!\n");
 			ast_variables_destroy(ies.vars);
 			ast_mutex_unlock(&iaxsl[fr->callno]);
 			return 1;
@@ -12029,7 +12043,7 @@ immediatedial:
 		iaxs[fr->callno]->last = fr->ts;
 #if 1
 		if (iaxdebug)
-			ast_debug(3, "For call=%d, set last=%u\n", fr->callno, fr->ts);
+			ast_debug(8, "For call=%d, set last=%u\n", fr->callno, fr->ts);
 #endif
 	}
 

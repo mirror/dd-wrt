@@ -393,6 +393,37 @@
 				ConfbridgeListRoomsComplete.</para>
 		</description>
 	</manager>
+	<managerEvent language="en_US" name="ConfbridgeListRooms">
+		<managerEventInstance class="EVENT_FLAG_REPORTING">
+			<synopsis>Raised as part of the ConfbridgeListRooms action response list.</synopsis>
+			<syntax>
+				<parameter name="Conference">
+					<para>The name of the Confbridge conference.</para>
+				</parameter>
+				<parameter name="Parties">
+					<para>Number of users in the conference.</para>
+					<para>This includes both active and waiting users.</para>
+				</parameter>
+				<parameter name="Marked">
+					<para>Number of marked users in the conference.</para>
+				</parameter>
+				<parameter name="Locked">
+					<para>Is the conference locked?</para>
+					<enumlist>
+						<enum name="Yes"/>
+						<enum name="No"/>
+					</enumlist>
+				</parameter>
+				<parameter name="Muted">
+					<para>Is the conference muted?</para>
+					<enumlist>
+						<enum name="Yes"/>
+						<enum name="No"/>
+					</enumlist>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
 	<manager name="ConfbridgeMute" language="en_US">
 		<synopsis>
 			Mute a Confbridge user.
@@ -1738,7 +1769,7 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 	struct post_join_action *action;
 	int max_members_reached = 0;
 
-	/* We explicitly lock the conference bridges container ourselves so that other callers can not create duplicate conferences at the same */
+	/* We explicitly lock the conference bridges container ourselves so that other callers can not create duplicate conferences at the same time */
 	ao2_lock(conference_bridges);
 
 	ast_debug(1, "Trying to find conference bridge '%s'\n", conference_name);
@@ -1804,7 +1835,6 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 			ast_bridge_set_talker_src_video_mode(conference->bridge);
 		} else if (ast_test_flag(&conference->b_profile, BRIDGE_OPT_VIDEO_SRC_SFU)) {
 			ast_bridge_set_sfu_video_mode(conference->bridge);
-			ast_bridge_set_video_update_discard(conference->bridge, conference->b_profile.video_update_discard);
 			ast_bridge_set_remb_send_interval(conference->bridge, conference->b_profile.remb_send_interval);
 			if (ast_test_flag(&conference->b_profile, BRIDGE_OPT_REMB_BEHAVIOR_AVERAGE)) {
 				ast_brige_set_remb_behavior(conference->bridge, AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE);
@@ -1823,6 +1853,9 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 				ast_bridge_set_remb_estimated_bitrate(conference->bridge, conference->b_profile.remb_estimated_bitrate);
 			}
 		}
+
+		/* Always set the minimum interval between video updates, to avoid infinite video updates. */
+		ast_bridge_set_video_update_discard(conference->bridge, conference->b_profile.video_update_discard);
 
 		if (ast_test_flag(&conference->b_profile, BRIDGE_OPT_ENABLE_EVENTS)) {
 			ast_bridge_set_send_sdp_label(conference->bridge, 1);
@@ -3989,6 +4022,7 @@ static int action_confbridgelist_item(struct mansession *s, const char *id_text,
 		"MarkedUser: %s\r\n"
 		"WaitMarked: %s\r\n"
 		"EndMarked: %s\r\n"
+		"EndMarkedAny: %s\r\n"
 		"Waiting: %s\r\n"
 		"Muted: %s\r\n"
 		"Talking: %s\r\n"
@@ -4001,6 +4035,7 @@ static int action_confbridgelist_item(struct mansession *s, const char *id_text,
 		AST_YESNO(ast_test_flag(&user->u_profile, USER_OPT_MARKEDUSER)),
 		AST_YESNO(ast_test_flag(&user->u_profile, USER_OPT_WAITMARKED)),
 		AST_YESNO(ast_test_flag(&user->u_profile, USER_OPT_ENDMARKED)),
+		AST_YESNO(ast_test_flag(&user->u_profile, USER_OPT_ENDMARKEDANY)),
 		AST_YESNO(waiting),
 		AST_YESNO(user->muted),
 		AST_YESNO(user->talking),

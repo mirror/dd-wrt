@@ -372,7 +372,7 @@
 					</argument>
 					<para>Enables <emphasis>operator services</emphasis> mode.  This option only
 					works when bridging a DAHDI channel to another DAHDI channel
-					only. if specified on non-DAHDI interfaces, it will be ignored.
+					only. If specified on non-DAHDI interfaces, it will be ignored.
 					When the destination answers (presumably an operator services
 					station), the originator no longer has control of their line.
 					They may hang up, but the switch will not release their line
@@ -1325,7 +1325,7 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 			if (is_cc_recall) {
 				ast_cc_failed(cc_recall_core_id, "Everyone is busy/congested for the recall. How sad");
 			}
-			SCOPE_EXIT_RTN_VALUE(NULL, "%s: No outging channels available\n", ast_channel_name(in));
+			SCOPE_EXIT_RTN_VALUE(NULL, "%s: No outgoing channels available\n", ast_channel_name(in));
 		}
 		winner = ast_waitfor_n(watchers, pos, to);
 		AST_LIST_TRAVERSE(out_chans, o, node) {
@@ -1892,6 +1892,10 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 					case AST_CONTROL_UNHOLD:
 						ast_verb(3, "Call on %s left from hold\n", ast_channel_name(o->chan));
 						ast_indicate(o->chan, AST_CONTROL_UNHOLD);
+						break;
+					case AST_CONTROL_FLASH:
+						ast_verb(3, "Hook flash on %s\n", ast_channel_name(o->chan));
+						ast_indicate(o->chan, AST_CONTROL_FLASH);
 						break;
 					case AST_CONTROL_VIDUPDATE:
 					case AST_CONTROL_SRCUPDATE:
@@ -2699,7 +2703,8 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 
 		if (!tc) {
 			/* If we can't, just go on to the next call */
-			ast_log(LOG_WARNING, "Unable to create channel of type '%s' (cause %d - %s)\n",
+			/* Failure doesn't necessarily mean user error. DAHDI channels could be busy. */
+			ast_log(LOG_NOTICE, "Unable to create channel of type '%s' (cause %d - %s)\n",
 				tmp->tech, cause, ast_cause2str(cause));
 			handle_cause(cause, &num);
 			if (!rest) {
@@ -2837,7 +2842,9 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 		AST_LIST_INSERT_TAIL(&out_chans, tmp, node);
 	}
 
-	if (AST_LIST_EMPTY(&out_chans)) {
+	/* As long as we attempted to dial valid peers, don't throw a warning. */
+	/* If a DAHDI peer is busy, out_chans will be empty so checking list size is misleading. */
+	if (!num_dialed) {
 		ast_verb(3, "No devices or endpoints to dial (technology/resource)\n");
 		if (continue_exec) {
 			/* There is no point in having RetryDial try again */

@@ -160,7 +160,7 @@ struct ast_str* ast_get_character_str(const char *str, const char *lang, enum as
 		}
 		if ((fn && ast_fileexists(fn, NULL, lang) > 0) ||
 			(snprintf(asciibuf + 13, sizeof(asciibuf) - 13, "%d", str[num]) > 0 && ast_fileexists(asciibuf, NULL, lang) > 0 && (fn = asciibuf))) {
-			ast_str_append(&filenames, 0, (num == 0 ? "%s" : "&%s"), fn);
+			ast_str_append(&filenames, 0, "%s%s", ast_str_strlen(filenames) ? "&" : "", fn);
 		}
 		if (upper || lower) {
 			continue;
@@ -189,19 +189,13 @@ static int say_filenames(struct ast_channel *chan, const char *ints, const char 
 
 	files = ast_str_buffer(filenames);
 
-	while ((fn = strsep(&files, "&"))) {
+	while (!res && (fn = strsep(&files, "&"))) {
 		res = ast_streamfile(chan, fn, lang);
 		if (!res) {
-			if ((audiofd  > -1) && (ctrlfd > -1))
+			if ((audiofd  > -1) && (ctrlfd > -1)) {
 				res = ast_waitstream_full(chan, ints, audiofd, ctrlfd);
-			else
+			} else {
 				res = ast_waitstream(chan, ints);
-
-			if (res > 0) {
-				/* We were interrupted by a digit */
-				ast_stopstream(chan);
-				ast_free(filenames);
-				return res;
 			}
 		}
 		ast_stopstream(chan);
@@ -288,7 +282,7 @@ struct ast_str* ast_get_phonetic_str(const char *str, const char *lang)
 			fn = fnbuf;
 		}
 		if (fn && ast_fileexists(fn, NULL, lang) > 0) {
-			ast_str_append(&filenames, 0, (num == 0 ? "%s" : "&%s"), fn);
+			ast_str_append(&filenames, 0, "%s%s", ast_str_strlen(filenames) ? "&" : "", fn);
 		}
 		num++;
 	}
@@ -342,7 +336,7 @@ struct ast_str* ast_get_digit_str(const char *str, const char *lang)
 			break;
 		}
 		if (fn && ast_fileexists(fn, NULL, lang) > 0) {
-			ast_str_append(&filenames, 0, (num == 0 ? "%s" : "&%s"), fn);
+			ast_str_append(&filenames, 0, "%s%s", ast_str_strlen(filenames) ? "&" : "", fn);
 		}
 		num++;
 	}

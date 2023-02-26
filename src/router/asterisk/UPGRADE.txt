@@ -19,19 +19,42 @@
 ===========================================================
 
 ------------------------------------------------------------------------------
---- Functionality changes from Asterisk 19.4.0 to Asterisk 19.5.0 ------------
+--- Functionality changes from Asterisk 20.0.0 to Asterisk 20.1.0 ------------
 ------------------------------------------------------------------------------
 
-res_pjsip
+AMI (Asterisk Manager Interface)
 ------------------
- * The 'async_operations' setting on transports is no longer
-   obeyed and instead is always set to 1. This is due to the
-   functionality not being applicable to Asterisk and causing
-   excess unnecessary memory usage. This setting will now be
-   ignored but can also be removed from the configuration file.
+ * Previously, GetConfig and UpdateConfig were able to access files outside of
+   the Asterisk configuration directory. Now this access is put behind the
+   live_dangerously configuration option in asterisk.conf, which is disabled by
+   default. If access to configuration files outside of the Asterisk configuation
+   directory is required via AMI, then the live_dangerously configuration option
+   must be set to yes.
 
 ------------------------------------------------------------------------------
---- Functionality changes from Asterisk 19.2.0 to Asterisk 19.3.0 ------------
+--- Functionality changes from Asterisk 19.0.0 to Asterisk 20.0.0 ------------
+------------------------------------------------------------------------------
+
+res_crypto
+------------------
+ * In addition to only paying attention to files ending with .key or .pub
+   in the keys directory, we now also ignore any files which aren't regular
+   files.
+
+------------------------------------------------------------------------------
+--- New functionality introduced in Asterisk 20.0.0 --------------------------
+------------------------------------------------------------------------------
+
+res_monitor
+------------------
+ * This module is no longer built by default in
+   accordance with the Module Deprecation Policy.
+   If you require this functionality you will need
+   to enable it for building in menuselect. Note
+   that in the future res_monitor will be removed.
+
+------------------------------------------------------------------------------
+--- Functionality changes from Asterisk 19.0.0 to Asterisk 20.0.0 ------------
 ------------------------------------------------------------------------------
 
 AMI
@@ -43,10 +66,6 @@ AMI
    attribute names that start with a digit with an underscore ('_') to
    prevent XML validation failures.
 
-------------------------------------------------------------------------------
---- Functionality changes from Asterisk 19.0.0 to Asterisk 19.1.0 ------------
-------------------------------------------------------------------------------
-
 STIR/SHAKEN
 ------------------
  * The STIR/SHAKEN configuration option has been split into
@@ -54,6 +73,40 @@ STIR/SHAKEN
    on behave the same way as before. Attest will only perform
    attestation on the endpoint, and verify will only perform
    verification on the endpoint.
+
+chan_iax2
+------------------
+ * Encryption is now supported for RSA authentication.
+
+   Currently, these auth configurations will cause a crash:
+   auth = md5,rsa
+   auth = plaintext,md5,rsa
+
+   With a patched peer, the following will cause a crash:
+   auth = rsa
+   auth = md5,rsa
+   auth = plaintext,md5,rsa
+
+   If both the peer and user are patches, no crash occurs.
+   Existing good configurations should continue to work.
+
+res_http_media_cache
+------------------
+ * When fetching a file for playback from a URL, Asterisk will now first
+   use the value of the Content-Type header in the HTTP response to
+   determine the format of the audio data, and only if it is unable to do
+   that will it attempt to parse the URL and extract the extension from
+   the path portion. Previously Asterisk would first look at the end of
+   the URL, which may have included query string parameters or a URL
+   fragment, which was error prone.
+
+res_pjsip
+------------------
+ * The 'async_operations' setting on transports is no longer
+   obeyed and instead is always set to 1. This is due to the
+   functionality not being applicable to Asterisk and causing
+   excess unnecessary memory usage. This setting will now be
+   ignored but can also be removed from the configuration file.
 
 ------------------------------------------------------------------------------
 --- New functionality introduced in Asterisk 19.0.0 --------------------------
@@ -68,156 +121,10 @@ Log Rotate
    for .log extensions instead of no extension for files such as full
    and messages.
 
-app_dahdiras
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-app_fax
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-app_ices
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-app_image
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-app_meetme
-------------------
- * This module is now deprecated and will no
-   longer be built by default. It is scheduled
-   to be removed as of Asterisk 21.
-
-app_mysql
-------------------
- * This module was deprecated in Asterisk 1.8
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-app_nbscat
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-app_osplookup
-------------------
- * This module is now deprecated and will no
-   longer be built by default. It is scheduled
-   to be removed as of Asterisk 21.
-
-app_url
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-cdr_mysql
-------------------
- * This module was deprecated in Asterisk 1.8
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-cdr_syslog
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-chan_alsa
-------------------
- * This module is now deprecated and will no
-   longer be built by default. It is scheduled
-   to be removed as of Asterisk 21.
-
-chan_mgcp
-------------------
- * This module is now deprecated and will no
-   longer be built by default. It is scheduled
-   to be removed as of Asterisk 21.
-
-chan_misdn
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-chan_nbs
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-chan_oss
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-chan_phone
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
 chan_sip
 ------------------
  * chan_sip is no longer built by default. To build it, make sure to
    enable it when running 'make menuselect'
-
-chan_skinny
-------------------
- * This module is now deprecated and will no
-   longer be built by default. It is scheduled
-   to be removed as of Asterisk 21.
-
-chan_vpb
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-conf2ael
-------------------
- * This application was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-muted
-------------------
- * This application was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-res_config_sqlite
-------------------
- * This module was deprecated in Asterisk 16
-   and is now being removed in accordance with
-   the Asterisk Module Deprecation policy.
-
-res_monitor
-------------------
- * This module is no longer built by default in
-   accordance with the Module Deprecation Policy.
-   If you require this functionality you will need
-   to enable it for building in menuselect. Note
-   that in the future res_monitor will be removed.
-
-res_pktccops
-------------------
- * This module is now deprecated and will no
-   longer be built by default. It is scheduled
-   to be removed as of Asterisk 21.
 
 ------------------------------------------------------------------------------
 --- Functionality changes from Asterisk 18.0.0 to Asterisk 19.0.0 ------------
@@ -237,37 +144,11 @@ STIR/SHAKEN
    you have in your stir_shaken.conf will need to be removed
    for the module to read in certificates.
 
-chan_iax2
-------------------
- * Encryption is now supported for RSA authentication.
-
-   Currently, these auth configurations will cause a crash:
-   auth = md5,rsa
-   auth = plaintext,md5,rsa
-
-   With a patched peer, the following will cause a crash:
-   auth = rsa
-   auth = md5,rsa
-   auth = plaintext,md5,rsa
-
-   If both the peer and user are patches, no crash occurs.
-   Existing good configurations should continue to work.
-
 menuselect
 ------------------
  * menuselect --enable, --disable, --enable-category and --disable-category will
    now fail with a non-zero exit code instead of silently failing if an invalid
    option or category is specified.
-
-res_http_media_cache
-------------------
- * When fetching a file for playback from a URL, Asterisk will now first
-   use the value of the Content-Type header in the HTTP response to
-   determine the format of the audio data, and only if it is unable to do
-   that will it attempt to parse the URL and extract the extension from
-   the path portion. Previously Asterisk would first look at the end of
-   the URL, which may have included query string parameters or a URL
-   fragment, which was error prone.
 
 res_srtp
 ------------------

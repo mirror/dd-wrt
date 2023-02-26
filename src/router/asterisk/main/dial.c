@@ -166,14 +166,12 @@ static int predial_disable(void *data)
 static void answer_exec_run(struct ast_dial *dial, struct ast_dial_channel *dial_channel, char *app, char *args)
 {
 	struct ast_channel *chan = dial_channel->owner;
-	struct ast_app *ast_app = pbx_findapp(app);
 
-	/* If the application was not found, return immediately */
-	if (!ast_app)
+	/* Execute the application, if available */
+	if (ast_pbx_exec_application(chan, app, args)) {
+		/* If the application was not found, return immediately */
 		return;
-
-	/* All is well... execute the application */
-	pbx_exec(chan, ast_app, args);
+	}
 
 	/* If another thread is not taking over hang up the channel */
 	ast_mutex_lock(&dial->lock);
@@ -1045,8 +1043,17 @@ enum ast_dial_result ast_dial_join(struct ast_dial *dial)
 			ast_channel_unlock(chan);
 		}
 	} else {
+		struct ast_dial_channel *channel = NULL;
+
 		/* Now we signal it with SIGURG so it will break out of it's waitfor */
 		pthread_kill(thread, SIGURG);
+
+		/* pthread_kill may not be enough, if outgoing channel has already got an answer (no more in waitfor) but is not yet running an application. Force soft hangup. */
+		AST_LIST_TRAVERSE(&dial->channels, channel, list) {
+			if (channel->owner) {
+				ast_softhangup(channel->owner, AST_SOFTHANGUP_EXPLICIT);
+			}
+		}
 	}
 	AST_LIST_UNLOCK(&dial->channels);
 

@@ -49,11 +49,23 @@
 			<parameter name="delay">
 				<para>Asterisk will wait this number of milliseconds before returning to
 				the dialplan after answering the call.</para>
+				<para>The minimum is 500 ms. To answer immediately without waiting for media,
+				use the i option.</para>
+			</parameter>
+			<parameter name="options">
+				<optionlist>
+					<option name="i">
+						<para>Answer the channel immediately without waiting for media.</para>
+					</option>
+				</optionlist>
 			</parameter>
 		</syntax>
 		<description>
 			<para>If the call has not been answered, this application will
 			answer it. Otherwise, it has no effect on the call.</para>
+			<para>By default, Asterisk will wait for media for up to 500 ms, or
+			the user specified delay, whichever is longer. If you do not want
+			to wait for media at all, use the i option.</para>
 		</description>
 		<see-also>
 			<ref type="application">Hangup</ref>
@@ -836,6 +848,11 @@ static int pbx_builtin_answer(struct ast_channel *chan, const char *data)
 		delay = 0;
 	}
 
+	if (!ast_strlen_zero(args.answer_cdr) && !strcmp(args.answer_cdr, "i")) {
+		/*! \todo We will remove the nocdr stuff for 21 entirely, as part of another review. */
+		return ast_raw_answer(chan);
+	}
+
 	if (!ast_strlen_zero(args.answer_cdr) && !strcasecmp(args.answer_cdr, "nocdr")) {
 		ast_log(AST_LOG_WARNING, "The nocdr option for the Answer application has been removed and is no longer supported.\n");
 	}
@@ -1000,7 +1017,6 @@ static int pbx_builtin_execiftime(struct ast_channel *chan, const char *data)
 {
 	char *s, *appname;
 	struct ast_timing timing;
-	struct ast_app *app;
 	static const char * const usage = "ExecIfTime requires an argument:\n  <time range>,<days of week>,<days of month>,<months>[,<timezone>]?<appname>[(<appargs>)]";
 
 	if (ast_strlen_zero(data)) {
@@ -1038,13 +1054,7 @@ static int pbx_builtin_execiftime(struct ast_channel *chan, const char *data)
 			ast_log(LOG_WARNING, "Failed to find closing parenthesis\n");
 	}
 
-
-	if ((app = pbx_findapp(appname))) {
-		return pbx_exec(chan, app, S_OR(s, ""));
-	} else {
-		ast_log(LOG_WARNING, "Cannot locate application %s\n", appname);
-		return -1;
-	}
+	return ast_pbx_exec_application(chan, appname, S_OR(s, ""));
 }
 
 /*!
