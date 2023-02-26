@@ -640,10 +640,10 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED]) {
 		mac80211_info->wci->tx_compressed = nla_get_u32(sinfo[NL80211_STA_INFO_TX_COMPRESSED]);
 	}
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo);
 	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
 		mac80211_info->wci->signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
 	}
-	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo);
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg);
 
 	if (sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]) {
