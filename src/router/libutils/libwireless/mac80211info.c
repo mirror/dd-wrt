@@ -569,7 +569,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_BEACON_RX] = { .type = NLA_U64},
 		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_SIGNAL_AVG,] = { .type = NLA_U8 },
+		[NL80211_STA_INFO_SIGNAL_AVG] = { .type = NLA_U8 },
 		[NL80211_STA_INFO_T_OFFSET] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_TX_BITRATE] = { .type = NLA_NESTED },
 		[NL80211_STA_INFO_RX_BITRATE] = { .type = NLA_NESTED },
