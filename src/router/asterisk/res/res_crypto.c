@@ -161,7 +161,9 @@ struct ast_key * AST_OPTIONAL_API_NAME(ast_key_get)(const char *kname, int ktype
 
 	return key;
 }
-
+#ifndef ALLPERMS
+# define ALLPERMS (S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)/* 07777 */
+#endif
 /*!
  * \brief load RSA key from file
  * \param dir directory string
