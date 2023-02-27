@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: b845840cd3537f1814db618e31614b4f004f94c4 $
+ * Version:	$Id: 23806f4bb1e0eeaa51c22da15a50bb2c1108400c $
  *
  */
 
-RCSIDH(realms_h, "$Id: b845840cd3537f1814db618e31614b4f004f94c4 $")
+RCSIDH(realms_h, "$Id: 23806f4bb1e0eeaa51c22da15a50bb2c1108400c $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,13 +41,15 @@ typedef enum {
 } home_ping_check_t;
 
 typedef enum {
-	HOME_STATE_UNKNOWN = 0,
-	HOME_STATE_ALIVE,
+	HOME_STATE_ALIVE = 0,
 	HOME_STATE_ZOMBIE,
 	HOME_STATE_IS_DEAD,
-	HOME_STATE_CONNECTION_FAIL,
+	HOME_STATE_UNKNOWN,
 	HOME_STATE_ADMIN_DOWN,
+	HOME_STATE_CONNECTION_FAIL,
 } home_state_t;
+
+#define HOME_SERVER_IS_DEAD(_x) (((_x)->state == HOME_STATE_IS_DEAD) || ((_x)->state == HOME_STATE_ADMIN_DOWN) || ((_x)->state == HOME_STATE_CONNECTION_FAIL))
 
 typedef struct fr_socket_limit_t {
 	uint32_t	max_connections;
@@ -66,6 +68,7 @@ typedef struct home_server {
 
 	bool			dual;			//!< One of a pair of homeservers on consecutive ports.
 	bool			dynamic;		//!< is this a dynamically added home server?
+	bool			nonblock;		//!< Enable a socket non-blocking to the home server.
 #ifdef WITH_COA_TUNNEL
 	bool			recv_coa;		//!< receive CoA packets, too
 #endif
@@ -136,6 +139,7 @@ typedef struct home_server {
 #ifdef WITH_TLS
 	fr_tls_server_conf_t	*tls;
 	uint32_t		connect_timeout;
+	rbtree_t		*listeners;
 #endif
 
 #ifdef WITH_STATS

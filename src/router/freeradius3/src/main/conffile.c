@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 7fe658711ffcc665bcc777d860c3e66d21d3856f $
+ * Version:	$Id: 8a9297b5d6b6e8f039fa475364b0e1c00fb2c270 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 7fe658711ffcc665bcc777d860c3e66d21d3856f $")
+RCSID("$Id: 8a9297b5d6b6e8f039fa475364b0e1c00fb2c270 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -2318,7 +2318,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 
 		if (has_spaces) {
 			ptr = cbuf;
-			while (isspace((int) *ptr)) ptr++;
+			while (isspace((uint8_t) *ptr)) ptr++;
 
 			if (ptr > cbuf) {
 				memmove(cbuf, ptr, len - (ptr - cbuf));
@@ -2334,7 +2334,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 			if (at_eof) break;
 
 			ptr = buf;
-			while (*ptr && isspace((int) *ptr)) ptr++;
+			while (*ptr && isspace((uint8_t) *ptr)) ptr++;
 
 			if (!*ptr || (*ptr == '#')) continue;
 
@@ -2524,8 +2524,8 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 					 *	Check for valid characters
 					 */
 					for (p = dp->d_name; *p != '\0'; p++) {
-						if (isalpha((int)*p) ||
-						    isdigit((int)*p) ||
+						if (isalpha((uint8_t)*p) ||
+						    isdigit((uint8_t)*p) ||
 						    (*p == '-') ||
 						    (*p == '_') ||
 						    (*p == '.')) continue;
@@ -2805,7 +2805,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 		case T_OP_EQ:
 		case T_OP_SET:
 		case T_OP_PREPEND:
-			while (isspace((int) *ptr)) ptr++;
+			while (isspace((uint8_t) *ptr)) ptr++;
 
 			/*
 			 *	Be a little more forgiving.
@@ -2827,7 +2827,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 
 				t3 = T_BARE_WORD;
 				while (*q && (*q >= ' ') && (*q != ',') &&
-				       !isspace(*q)) q++;
+				       !isspace((uint8_t) *q)) q++;
 
 				if ((size_t) (q - ptr) >= sizeof(buf3)) {
 					ERROR("%s[%d]: Parse error: value too long",
@@ -2898,7 +2898,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 			/*
 			 *	Require a comma, unless there's a comment.
 			 */
-			while (isspace(*ptr)) ptr++;
+			while (isspace((uint8_t) *ptr)) ptr++;
 
 			if (*ptr == ',') {
 				ptr++;
@@ -2971,7 +2971,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 		/*
 		 *	Done parsing one thing.  Skip to EOL if possible.
 		 */
-		while (isspace(*ptr)) ptr++;
+		while (isspace((uint8_t) *ptr)) ptr++;
 
 		if (*ptr == '#') continue;
 

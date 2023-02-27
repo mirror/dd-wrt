@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: 8fe3e4a58ac0c95f0e8b54cc6e2fddc86dfca0a4 $
+ * Version:	$Id: c1e4ec98fec5f8fdaffab2339643c3adce37df30 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 8fe3e4a58ac0c95f0e8b54cc6e2fddc86dfca0a4 $")
+RCSID("$Id: c1e4ec98fec5f8fdaffab2339643c3adce37df30 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -565,9 +565,9 @@ void request_stats_reply(REQUEST *request)
 		if (vp) vp->vp_date = hup_time.tv_sec;
 
 #ifdef HAVE_PTHREAD_H
-		int i, array[RAD_LISTEN_MAX], pps[2];
+		int i, array[RAD_LISTEN_MAX], stats[3];
 
-		thread_pool_queue_stats(array, pps);
+		thread_pool_queue_stats(array, stats);
 
 		for (i = 0; i <= 4; i++) {
 			vp = radius_pair_create(request->reply, &request->reply->vps,
@@ -582,7 +582,17 @@ void request_stats_reply(REQUEST *request)
 					       PW_FREERADIUS_QUEUE_PPS_IN + i, VENDORPEC_FREERADIUS);
 
 			if (!vp) continue;
-			vp->vp_integer = pps[i];
+			vp->vp_integer = stats[i];
+		}
+
+		thread_pool_thread_stats(stats);
+
+		for (i = 0; i < 3; i++) {
+			vp = radius_pair_create(request->reply, &request->reply->vps,
+					       PW_FREERADIUS_STATS_THREADS_ACTIVE + i, VENDORPEC_FREERADIUS);
+
+			if (!vp) continue;
+			vp->vp_integer = stats[i];
 		}
 #endif
 	}

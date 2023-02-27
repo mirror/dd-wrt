@@ -2,7 +2,7 @@
 # Copyright (C) 2019 The FreeRADIUS Server project and contributors
 # This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-# Version $Id: 619fcbaeec4953b3e5d9dfc8d10ae393b89b2943 $
+# Version $Id: 86582f0c44319610b4e03067ddadc121ebc3b87c $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -177,6 +177,7 @@ $INCLUDE dictionary.bskyb
 $INCLUDE dictionary.bt
 $INCLUDE dictionary.cablelabs
 $INCLUDE dictionary.cabletron
+$INCLUDE dictionary.calix
 $INCLUDE dictionary.cambium
 $INCLUDE dictionary.camiant
 $INCLUDE dictionary.centec

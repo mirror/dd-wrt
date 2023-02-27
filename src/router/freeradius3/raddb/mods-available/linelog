@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 4357b747d6be5d4fab2df4ec3b935dcac172f85b $
+#  $Id: 66d26823db4ba9faf4800f60a81e73fad1a56ee9 $
 
 #
 #  The "linelog" module will log one line of text to a file.
@@ -84,6 +84,12 @@ linelog {
 
 	#  If logging via syslog, the severity can be set here.
 	#  Defaults to info.
+
+	#
+	#  Optional header format string.
+	#  Written to the first line of any newly created log file
+#	header = "This is a header line"
+
 	#
 	#  The default format string.
 	format = "This is a log message for %{User-Name}"

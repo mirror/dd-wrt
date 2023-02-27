@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 410c5713d090d27d5c776caed1fce74356b77043 $
+ * $Id: 3ca352497a575d024e36d2cd854ff28384efc990 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 410c5713d090d27d5c776caed1fce74356b77043 $")
+RCSID("$Id: 3ca352497a575d024e36d2cd854ff28384efc990 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -610,6 +610,46 @@ static void request_free(REQUEST *request)
 
 
 #ifdef WITH_PROXY
+#ifdef WITH_TLS
+void proxy_listener_freeze(rad_listen_t *listener, fr_event_fd_handler_t write_handler)
+{
+	PTHREAD_MUTEX_LOCK(&proxy_mutex);
+	if (!fr_packet_list_socket_freeze(proxy_list,
+					  listener->fd)) {
+		ERROR("Fatal error freezing socket: %s", fr_strerror());
+		fr_exit(1);
+	}
+
+	listener->blocked = true;
+
+	if (fr_event_fd_write_handler(el, 0, listener->fd, write_handler, listener) < 0) {
+		ERROR("Fatal error freezing socket: %s", fr_strerror());
+		fr_exit(1);
+	}
+
+	PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
+}
+
+void proxy_listener_thaw(rad_listen_t *listener)
+{
+	PTHREAD_MUTEX_LOCK(&proxy_mutex);
+	if (!fr_packet_list_socket_thaw(proxy_list,
+					  listener->fd)) {
+		ERROR("Fatal error freezing socket: %s", fr_strerror());
+		fr_exit(1);
+	}
+
+	listener->blocked = false;
+
+	if (fr_event_fd_write_handler(el, 0, listener->fd, NULL, listener) < 0) {
+		ERROR("Fatal error freezing socket: %s", fr_strerror());
+		fr_exit(1);
+	}
+
+	PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
+}
+#endif	/* WITH_TLS */
+
 static void proxy_reply_too_late(REQUEST *request)
 {
 	char buffer[128];
@@ -1343,7 +1383,7 @@ static int request_pre_handler(REQUEST *request, UNUSED int action)
 			/*
 			 *	Ignore parse errors.
 			 */
-			if (radius_evaluate_cond(request, RLM_MODULE_OK, 0, debug_condition)) {
+			if (radius_evaluate_cond(request, RLM_MODULE_OK, 0, debug_condition) == 1) {
 				request->log.lvl = L_DBG_LVL_2;
 				request->log.func = vradlog_request;
 			}
@@ -1667,7 +1707,7 @@ static void request_running(REQUEST *request, int action)
 				if (request->home_server && request->home_server->virtual_server) goto req_finished;
 
 				if (request->home_pool && request->home_server &&
-				    (request->home_server->state >= HOME_STATE_IS_DEAD)) {
+				    HOME_SERVER_IS_DEAD(request->home_server)) {
 					VALUE_PAIR *vp;
 					REALM *realm = NULL;
 					home_server_t *home = NULL;
@@ -2085,23 +2125,7 @@ static void tcp_socket_timer(void *ctx)
 
 	fr_event_now(el, &now);
 
-	switch (listener->type) {
-#ifdef WITH_PROXY
-	case RAD_LISTEN_PROXY:
-		limit = &sock->home->limit;
-		break;
-#endif
-
-	case RAD_LISTEN_AUTH:
-#ifdef WITH_ACCOUNTING
-	case RAD_LISTEN_ACCT:
-#endif
-		limit = &sock->limit;
-		break;
-
-	default:
-		return;
-	}
+	limit = &sock->limit;
 
 	/*
 	 *	If we enforce a lifetime, do it now.
@@ -2142,6 +2166,16 @@ static void tcp_socket_timer(void *ctx)
 			 *	Mark the socket as "don't use if at all possible".
 			 */
 			listener->status = RAD_LISTEN_STATUS_FROZEN;
+
+			/*
+			 *	If it's blocked, then push all of the requests to other sockets.
+			 */
+#ifdef WITH_TLS
+			if (listener->blocked) {
+				listener->status = RAD_LISTEN_STATUS_REMOVE_NOW;
+			}
+#endif
+
 			event_new_fd(listener);
 			return;
 		}
@@ -3072,7 +3106,6 @@ static int request_will_proxy(REQUEST *request)
 	VERIFY_REQUEST(request);
 
 	if (!request->root->proxy_requests) {
-		REDEBUG3("Cannot proxy packets unless 'proxy_requests = yes'");
 		return 0;
 	}
 	if (request->packet->dst_port == 0) return 0;
@@ -3209,7 +3242,7 @@ static int request_will_proxy(REQUEST *request)
 		 *	The home server is alive (or may be alive).
 		 *	Send the packet to the IP.
 		 */
-		if (home->state < HOME_STATE_IS_DEAD) goto do_home;
+		if (!HOME_SERVER_IS_DEAD(home)) goto do_home;
 
 		/*
 		 *	The home server is dead.  If you wanted
@@ -3257,7 +3290,7 @@ static int request_will_proxy(REQUEST *request)
 		 *	The home server is alive (or may be alive).
 		 *	Send the packet to the IP.
 		 */
-		if (home->state < HOME_STATE_IS_DEAD) goto do_home;
+		if (!HOME_SERVER_IS_DEAD(home)) goto do_home;
 
 		/*
 		 *	The home server is dead.  If you wanted
@@ -3789,7 +3822,7 @@ static void request_ping(REQUEST *request, int action)
 		 *
 		 *	If it's zombie, we mark it alive immediately.
 		 */
-		if ((home->state >= HOME_STATE_IS_DEAD) &&
+		if (HOME_SERVER_IS_DEAD(home) &&
 		    (home->num_received_pings < home->num_pings_to_alive)) {
 			return;
 		}
@@ -4093,6 +4126,33 @@ void revive_home_server(void *ctx)
 	       home->port);
 }
 
+#ifdef WITH_TLS
+static int eol_home_listener(UNUSED void *ctx, void *data)
+{
+	rad_listen_t *this = talloc_get_type_abort(data, rad_listen_t);
+
+	/*
+	 *	The socket isn't blocked, we can still use it.
+	 *
+	 *	i.e. the home server is dead for a reason OTHER than
+	 *	"all available sockets are blocked".
+	 *
+	 *	We can still ping the home server via sockets which
+	 *	are writable.
+	 */
+	if (!this->blocked) return 0;
+
+	this->status = RAD_LISTEN_STATUS_EOL;
+
+	FD_MUTEX_LOCK(&fd_mutex);
+	this->next = new_listeners;
+	new_listeners = this;
+	FD_MUTEX_UNLOCK(&fd_mutex);
+
+	return 1;		/* alway delete from this tree */
+}
+#endif
+
 void mark_home_server_dead(home_server_t *home, struct timeval *when, bool down)
 {
 	int previous_state = home->state;
@@ -4105,6 +4165,25 @@ void mark_home_server_dead(home_server_t *home, struct timeval *when, bool down)
 
 	home->state = HOME_STATE_IS_DEAD;
 	home_trigger(home, "home_server.dead");
+
+#ifdef WITH_TLS
+	/*
+	 *	If the home server is dead, then close all of the sockets associated with it.
+	 *
+	 *	Note that the "EOL listener" code expects to _also_
+	 *	delete the listeners.  At which point we end up with a
+	 *	mutex locked twice, and bad things happen.  The
+	 *	solution is to move the listeners to the global
+	 *	"waiting for update" list, and then notify ourselves
+	 *	that there are listeners waiting to be updated.
+	 */
+	if (home->listeners) {
+		ASSERT_MASTER;
+
+		rbtree_walk(home->listeners, RBTREE_DELETE_ORDER, eol_home_listener, NULL);
+		radius_signal_self(RADIUS_SIGNAL_SELF_NEW_FD);
+	}
+#endif
 
 	/*
 	 *	Administratively down - don't do anything to bring it
@@ -4210,7 +4289,7 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		 *	If the listener is known or frozen, use it for
 		 *	retransmits.
 		 */
-		if ((home->state >= HOME_STATE_IS_DEAD) ||
+		if (HOME_SERVER_IS_DEAD(home) ||
 		    !request->proxy_listener ||
 		    (request->proxy_listener->status >= RAD_LISTEN_STATUS_EOL)) {
 			request_proxy_anew(request);
@@ -4722,7 +4801,7 @@ static void coa_retransmit(REQUEST *request)
 	 *	Don't do fail-over.  This is a 3.1 feature.
 	 */
 	if (!request->home_server ||
-	    (request->home_server->state >= HOME_STATE_IS_DEAD) ||
+	    HOME_SERVER_IS_DEAD(request->home_server) ||
 	    request->proxy_reply ||
 	    !request->proxy_listener ||
 	    (request->proxy_listener->status >= RAD_LISTEN_STATUS_EOL)) {
@@ -5673,6 +5752,20 @@ static void event_new_fd(rad_listen_t *this)
 				      buffer, fr_strerror());
 				fr_exit(1);
 			}
+
+#ifdef WITH_TLS
+			/*
+			 *	Remove this socket from the list of sockets assocated with this home server.
+			 *
+			 *	This MUST be done with the proxy mutex locked!
+			 */
+			if (home && home->tls) {
+				fr_assert(home->listeners);
+
+				(void) rbtree_deletebydata(home->listeners, this);
+			}
+#endif
+
 			PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
 
 #ifdef WITH_COA_TUNNEL

@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id: 79603c90020ddd2c1d80a47f945afecaf2fac671 $
+##	$Id: 366dce419dee0e4ab8ea47351f6f2953bcba2899 $
 ##
 
 ######################################################################
@@ -472,7 +472,7 @@ security {
 	#
 	#  If you are worried about security issues related to this
 	#  use of chdir, then simply ensure that the "raddb" directory
-	#  is inside of the chroot, end be sure to do "cd raddb"
+	#  is inside of the chroot, and be sure to do "cd raddb"
 	#  BEFORE starting the server.
 	#
 	#  If the server is statically linked, then the only files

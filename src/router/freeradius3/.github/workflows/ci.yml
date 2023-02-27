@@ -15,6 +15,9 @@ env:
   APT_OPTS: "-y --no-install-recommends"
   LDAP_TEST_SERVER: 127.0.0.1
   LDAP_TEST_SERVER_PORT: 3890
+  REST_TEST_SERVER: 127.0.0.1
+  REST_TEST_SERVER_PORT: 8080
+  REST_TEST_SERVER_SSL_PORT: 8443
 #
 # Update between running in a container (GitHub runner and
 # self-hosted runner), or directly on the VM (currently GitHub
@@ -102,6 +105,7 @@ jobs:
       if: ${{ env.USE_DOCKER == 1 }}
       run: |
         ln -fs /usr/bin/env /usr/local/bin/sudo
+        rm -rf "$HOME"/*
 
     - name: Package manager performance improvements
       run: |
@@ -128,6 +132,7 @@ jobs:
         freetds-dev \
         gawk \
         git \
+        git-lfs \
         gnupg \
         libcap-dev \
         libcollectdclient-dev \
@@ -202,11 +207,11 @@ jobs:
       id: opensslshasum
       if: ${{ matrix.env.LIBS_ALT == 'yes' }}
       run: |
-        wget -qO- http://www.openssl.org/source/openssl-$ALT_OPENSSL.tar.gz.sha256 | sed -ne 's/^\s\+/::set-output name=shasum::/p'
+        wget -qO- http://www.openssl.org/source/openssl-$ALT_OPENSSL.tar.gz.sha256 | sed -ne 's/^\s\+/shasum=/p' >> $GITHUB_OUTPUT
 
     - name: 'Restore OpenSSL 3.0 from the cache'
       if: ${{ matrix.env.LIBS_ALT == 'yes' }}
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: openssl-cache
       with:
         path: /opt/openssl/
@@ -238,7 +243,7 @@ jobs:
         [ -d /opt/openssl ] && export PATH=/opt/openssl/bin:$PATH
         openssl version
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Build eapol_test
       run: |
@@ -266,11 +271,24 @@ jobs:
       if: ${{ matrix.env.CC == 'clang' }}
 
     - name: "Clang Static Analyzer: Store assets on failure"
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: clang-scan.tgz
         path: build/plist/**/*.html
       if: ${{ matrix.env.CC == 'clang' && failure() }}
+
+    - name: Add OpenResty repository
+      shell: bash
+      run: |
+        wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+        echo "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/openresty.list
+
+        sudo apt-get update
+
+    - name: Setup git (containers)
+      if: ${{ env.USE_DOCKER == 1 }}
+      shell: bash
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
     - name: Install test requisites
       run: |
@@ -284,6 +302,7 @@ jobs:
         sudo apt-get install ${APT_OPTS} \
           apparmor-utils \
           ldap-utils \
+          openresty \
           slapd
 
         sudo mv -f /usr/bin/ucf.disabled /usr/bin/ucf
@@ -311,11 +330,17 @@ jobs:
 
         slapd
 
+    - name: Build certificates for REST tests
+      run: |
+        cp -r raddb/certs raddb/restcerts
+        cd ./raddb/restcerts && make ca && make server
+
     - name: Setup test databases
       run: |
         for i in \
             postgresql-setup.sh \
             mysql-setup.sh \
+            openresty-setup.sh \
             ldap-setup.sh \
             ldap2-setup.sh; do
 
@@ -433,7 +458,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Merge into upstream"
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         lfs: false

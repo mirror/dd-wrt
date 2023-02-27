@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 030416f051676f9da7572556ca39198e882528dd $
+ * Version:	$Id: 12d1afdfdb1a8c675526f29a5fd2c5336f2484f5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -1401,7 +1401,7 @@ static int command_debug_file(rad_listen_t *listener, int argc, char *argv[])
 		return -1;
 	}
 
-	if ((argc > 0) && (strchr(argv[0], FR_DIR_SEP) != NULL)) {
+	if ((argc > 0) && (strchr(argv[0], FR_DIR_SEP) == argv[0])) {
 		cprintf_error(listener, "Cannot direct debug logs to absolute path.\n");
 	}
 
@@ -1661,7 +1661,7 @@ static home_server_t *get_home_server(rad_listen_t *listener, int argc,
 		return NULL;
 	}
 
-	if (isdigit(*argv[1])) {
+	if (isdigit((uint8_t) *argv[1])) {
 		if (ip_hton(&ipaddr, AF_UNSPEC, argv[0], false) < 0) {
 			cprintf_error(listener, "Failed parsing IP address; %s\n",
 				      fr_strerror());
@@ -2440,6 +2440,19 @@ static int command_stats_queue(rad_listen_t *listener, UNUSED int argc, UNUSED c
 
 	return CMD_OK;
 }
+
+static int command_stats_threads(rad_listen_t *listener, UNUSED int argc, UNUSED char *argv[])
+{
+	int stats[3];
+
+	thread_pool_thread_stats(stats);
+
+	cprintf(listener, "threads_active\t%d\n", stats[0]);
+	cprintf(listener, "threads_total\t\t%d\n", stats[1]);
+	cprintf(listener, "threads_max\t\t%d\n", stats[2]);
+
+	return CMD_OK;
+}
 #endif
 
 #ifndef NDEBUG
@@ -2935,7 +2948,7 @@ static fr_command_table_t command_table_stats[] = {
 #endif
 
 	{ "pool", FR_READ,
-	  "pool <name> "
+	  "stats pool <name> "
 	  "- show pool statistics for given module",
 	  command_stats_pool, NULL },
 
@@ -2943,6 +2956,9 @@ static fr_command_table_t command_table_stats[] = {
 	{ "queue", FR_READ,
 	  "stats queue - show statistics for packet queues",
 	  command_stats_queue, NULL },
+	{ "threads", FR_READ,
+	  "stats threads - show statistics for the worker threads",
+	  command_stats_threads, NULL },
 #endif
 
 	{ "socket", FR_READ,

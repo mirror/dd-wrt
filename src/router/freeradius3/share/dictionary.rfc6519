@@ -5,7 +5,7 @@
 #	Attributes and values defined in RFC 6519.
 #	http://www.ietf.org/rfc/rfc6519.txt
 #
-#	$Id: dc53b52f951c7252d52f51e335bd5523b78397f5 $
+#	$Id: 0a0bc3244a1178219123520c2ed538cd456c437d $
 #
 
-ATTRIBUTE	DS-Lite-Tunnel-Name			144	string
+ATTRIBUTE	DS-Lite-Tunnel-Name			144	octets

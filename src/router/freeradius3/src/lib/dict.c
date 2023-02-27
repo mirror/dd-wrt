@@ -1,7 +1,7 @@
 /*
  * dict.c	Routines to read the dictionary file.
  *
- * Version:	$Id: 479bf1104ee02c98a8ef10939a78fc0a6206fcfa $
+ * Version:	$Id: c171abd434454011c7ff518e937efe9cd70c37d7 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  * Copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 479bf1104ee02c98a8ef10939a78fc0a6206fcfa $")
+RCSID("$Id: c171abd434454011c7ff518e937efe9cd70c37d7 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -1359,7 +1359,7 @@ static int sscanf_i(char const *str, unsigned int *pvalue)
 
 		if (*str == '.') break;
 
-		c = memchr(tab, tolower((int) *str), base);
+		c = memchr(tab, tolower((uint8_t) *str), base);
 		if (!c) return 0;
 
 		rcode *= base;
@@ -2057,9 +2057,9 @@ static int parse_format(char const *fn, int line, char const *format, int *ptype
 
 	p = format + 7;
 	if ((strlen(p) < 3) ||
-	    !isdigit((int) p[0]) ||
+	    !isdigit((uint8_t) p[0]) ||
 	    (p[1] != ',') ||
-	    !isdigit((int) p[2]) ||
+	    !isdigit((uint8_t) p[2]) ||
 	    (p[3] && (p[3] != ','))) {
 		fr_strerror_printf("dict_init: %s[%d]: Invalid format for VENDOR.  Expected text like \"1,1\", got \"%s\"",
 				   fn, line, p);
@@ -2130,7 +2130,7 @@ static int process_vendor(char const* fn, int const line, char **argv,
 	/*
 	 *	 Validate all entries
 	 */
-	if (!isdigit((int) argv[1][0])) {
+	if (!isdigit((uint8_t) argv[1][0])) {
 		fr_strerror_printf("dict_init: %s[%d]: invalid value",
 			fn, line);
 		return -1;

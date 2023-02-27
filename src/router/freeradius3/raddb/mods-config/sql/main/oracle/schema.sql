@@ -1,5 +1,5 @@
 /*
- * $Id: 96cde18d1c42057dfff65df9fff5f664790c4fcb $
+ * $Id: 8f89e9da64a2cefdd88ca643d37bc35116ec191e $
  *
  * Oracle schema for FreeRADIUS
  *
@@ -20,6 +20,7 @@ CREATE TABLE radacct (
 	nasportid		VARCHAR(32),
 	nasporttype		VARCHAR(32),
 	acctstarttime		TIMESTAMP WITH TIME ZONE,
+	acctupdatetime		TIMESTAMP WITH TIME ZONE,
 	acctstoptime		TIMESTAMP WITH TIME ZONE,
 	acctsessiontime		NUMERIC(19),
 	acctauthentic		VARCHAR(32),

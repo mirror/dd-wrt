@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 17988d27f9d8208dc224d6fd3f413725c21a8998 $
+ * $Id: a1464e3de5439e2e3f1f88bb5649f486b98acb8f $
  *
  * @brief map / template functions
  * @file main/map.c
@@ -26,7 +26,7 @@
  * @copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 17988d27f9d8208dc224d6fd3f413725c21a8998 $")
+RCSID("$Id: a1464e3de5439e2e3f1f88bb5649f486b98acb8f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -87,7 +87,7 @@ bool map_cast_from_hex(vp_map_t *map, FR_TOKEN rhs_type, char const *rhs)
 	 *	string, go parse it as that.
 	 */
 	if (rhs_type != T_BARE_WORD) return false;
-	if ((rhs[0] != '0') || (tolower((int)rhs[1]) != 'x')) return false;
+	if ((rhs[0] != '0') || (tolower((uint8_t)rhs[1]) != 'x')) return false;
 	if (!rhs[2]) return false;
 
 	len = strlen(rhs + 2);
@@ -1059,7 +1059,6 @@ int map_to_request(REQUEST *request, vp_map_t const *map, radius_map_getvalue_t 
 		slen = tmpl_aexpand(request, &attr, request, map->lhs, NULL, NULL);
 		if (slen <= 0) {
 			REDEBUG("Left side \"%.*s\" of map failed expansion", (int)map->lhs->len, map->lhs->name);
-			rad_assert(!attr);
 			return -1;
 		}
 

@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 1337ae5425947926d3719b1520e3a7c7f8872202 $
+ * $Id: 1942749c1c1fe7e129bf0ea26fea034f61bf8461 $
  * @file rlm_rest.c
  * @brief Integrate FreeRADIUS with RESTfull APIs
  *
  * @copyright 2012-2014  Arran Cudbard-Bell <arran.cudbardb@freeradius.org>
  */
-RCSID("$Id: 1337ae5425947926d3719b1520e3a7c7f8872202 $")
+RCSID("$Id: 1942749c1c1fe7e129bf0ea26fea034f61bf8461 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -77,6 +77,9 @@ static const CONF_PARSER section_config[] = {
 
 	/* TLS Parameters */
 	{ "tls", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) tls_config },
+
+	/* Xlat specific */
+	{ "body_uri_encode", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_section_t, body_encode), "yes" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -217,22 +220,16 @@ static ssize_t rest_xlat(void *instance, REQUEST *request,
 	int		hcode;
 	int		ret;
 	ssize_t		len, outlen = 0;
-	char		*uri = NULL;
+	char		*uri = NULL, *request_body = NULL;
 	char const	*p = fmt, *q;
 	char const	*body;
 	http_method_t	method;
 
-	/* There are no configurable parameters other than the URI */
-	rlm_rest_section_t section = {
-		.name = "xlat",
-		.method = HTTP_METHOD_GET,
-		.body = HTTP_BODY_NONE,
-		.attr_num = false,
-		.raw_value = false,
-		.body_str = "application/x-www-form-urlencoded",
-		.require_auth = false,
-		.force_to = HTTP_BODY_PLAIN
-	};
+	/*
+	 *	Start with xlat "section" config.
+	 *	The provided string will then be parsed to populate URI etc.
+	 */
+	rlm_rest_section_t section = inst->xlat;
 	*out = '\0';
 
 	rad_assert(fmt);
@@ -254,7 +251,7 @@ static ssize_t rest_xlat(void *instance, REQUEST *request,
 	/*
 	 *  Trim whitespace
 	 */
-	while (isspace(*p) && p++);
+	while (isspace((uint8_t) *p) && p++);
 
 	/*
 	 *  Unescape parts of xlat'd URI, this allows REST servers to be specified by
@@ -271,8 +268,19 @@ static ssize_t rest_xlat(void *instance, REQUEST *request,
 	 */
 	q = strchr(p, ' ');
 	if (q && (*++q != '\0')) {
+		rlm_rest_handle_t *randle = handle;
+
+		/*
+		 *  As all input was escaped, this is already encoded.
+		 *  Un-escape if the body is to be sent as is.
+		 */
+		if (section.body_encode) {
+			section.data = q;
+		} else {
+			request_body = curl_easy_unescape(randle->handle, q, strlen(q), NULL);
+			section.data = request_body;
+		}
 		section.body = HTTP_BODY_CUSTOM_LITERAL;
-		section.data = q;
 	}
 
 	RDEBUG("Sending HTTP %s to \"%s\"", fr_int2str(http_method_table, section.method, NULL), uri);
@@ -345,6 +353,7 @@ error:
 
 finish:
 	rlm_rest_cleanup(instance, &section, handle);
+	if (request_body) curl_free(request_body);
 
 	fr_connection_release(inst->pool, handle);
 
@@ -746,11 +755,9 @@ finish:
 }
 #endif
 
-static int parse_sub_section(CONF_SECTION *parent, rlm_rest_section_t *config, rlm_components_t comp)
+static int parse_sub_section(CONF_SECTION *parent, rlm_rest_section_t *config, char const *name)
 {
 	CONF_SECTION *cs;
-
-	char const *name = section_type_value[comp].section;
 
 	cs = cf_section_sub_find(parent, name);
 	if (!cs) {
@@ -914,20 +921,21 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	 *	Parse sub-section configs.
 	 */
 	if (
-		(parse_sub_section(conf, &inst->authorize, MOD_AUTHORIZE) < 0) ||
-		(parse_sub_section(conf, &inst->authenticate, MOD_AUTHENTICATE) < 0) ||
-		(parse_sub_section(conf, &inst->preacct, MOD_PREACCT) < 0) ||
-		(parse_sub_section(conf, &inst->accounting, MOD_ACCOUNTING) < 0) ||
-		(parse_sub_section(conf, &inst->pre_proxy, MOD_PRE_PROXY) < 0) ||
-		(parse_sub_section(conf, &inst->post_proxy, MOD_POST_PROXY) < 0) ||
+		(parse_sub_section(conf, &inst->authorize, section_type_value[MOD_AUTHORIZE].section) < 0) ||
+		(parse_sub_section(conf, &inst->authenticate, section_type_value[MOD_AUTHENTICATE].section) < 0) ||
+		(parse_sub_section(conf, &inst->preacct, section_type_value[MOD_PREACCT].section) < 0) ||
+		(parse_sub_section(conf, &inst->accounting, section_type_value[MOD_ACCOUNTING].section) < 0) ||
+		(parse_sub_section(conf, &inst->pre_proxy, section_type_value[MOD_PRE_PROXY].section) < 0) ||
+		(parse_sub_section(conf, &inst->post_proxy, section_type_value[MOD_POST_PROXY].section) < 0) ||
+		(parse_sub_section(conf, &inst->xlat, "xlat") < 0) ||
 
 #ifdef WITH_COA
-		(parse_sub_section(conf, &inst->recv_coa, MOD_RECV_COA) < 0) ||
+		(parse_sub_section(conf, &inst->recv_coa, section_type_value[MOD_RECV_COA].section) < 0) ||
 #endif
 
 /* @todo add behaviour for checksimul */
 /*		(parse_sub_section(conf, &inst->checksimul, MOD_SESSION) < 0) || */
-		(parse_sub_section(conf, &inst->post_auth, MOD_POST_AUTH) < 0))
+		(parse_sub_section(conf, &inst->post_auth, section_type_value[MOD_POST_AUTH].section) < 0))
 	{
 		return -1;
 	}

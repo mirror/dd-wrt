@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 25bcd9c44e94039b7c3ed57da5066e19e3a80640 $
+ * $Id: 00ab90d994fddd9475ababb03069ba65507e5627 $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -23,7 +23,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id: 25bcd9c44e94039b7c3ed57da5066e19e3a80640 $")
+RCSID("$Id: 00ab90d994fddd9475ababb03069ba65507e5627 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -489,7 +489,7 @@ static ssize_t mschap_xlat(void *instance, REQUEST *request,
 		if ((*p == '\0') || (outlen <= 32))
 			return 0;
 
-		while (isspace(*p)) p++;
+		while (isspace((uint8_t) *p)) p++;
 
 		if (mschap_ntpwdhash(buffer, p) < 0) {
 			REDEBUG("Failed generating NT-Password");
@@ -512,7 +512,7 @@ static ssize_t mschap_xlat(void *instance, REQUEST *request,
 		if ((*p == '\0') || (outlen <= 32))
 			return 0;
 
-		while (isspace(*p)) p++;
+		while (isspace((uint8_t) *p)) p++;
 
 		smbdes_lmpwdhash(p, buffer);
 		fr_bin2hex(out, buffer, LM_DIGEST_LENGTH);

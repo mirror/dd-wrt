@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: dbad8e4fedee7e22a4da8f28f23fc9ea5cb726c7 $
+#	$Id: 78b7ae7f37a487276e963d8e9b67913285e8ab18 $
 #
 ######################################################################
 #
@@ -1151,7 +1151,13 @@ session {
 	#  accounting packets to disk if the home server is down.
 	#
 #	Post-Proxy-Type Fail-Accounting {
-#			detail.example.com
+#		detail.example.com
+
+		#
+		#  Ensure a response is sent to the NAS now that the
+		#  packet has been written to a detail file.
+		#
+#		acct_response
 #	}
 #}
 }

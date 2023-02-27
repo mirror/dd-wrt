@@ -1,7 +1,7 @@
 /*
  * dhcp.c	DHCP processing.
  *
- * Version:	$Id: 4cafd5624c3d966767d0ef7fe1dee39a4df62752 $
+ * Version:	$Id: bc51c36d8468c4c95fc5194f4422fb78761b6001 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -843,7 +843,6 @@ static int dhcp_socket_send(rad_listen_t *listener, REQUEST *request)
 
 static int dhcp_socket_encode(UNUSED rad_listen_t *listener, UNUSED REQUEST *request)
 {
-	DEBUG2("NO ENCODE!");
 	return 0;
 }
 

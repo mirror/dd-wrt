@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 529524d16a719d591f1aab3879dc7a9ec7159ec9 $
+ * $Id: 59e6a05d80f79ac4533e75713ccbaa5680c30b7e $
  *
  * @file exfile.c
  * @brief Allow multiple threads to write to the same set of files.
@@ -238,12 +238,13 @@ static int exfile_open_mkdir(exfile_t *ef, char const *filename, mode_t permissi
  * @param permissions to use.
  * @return an FD used to write to the file, or -1 on error.
  */
-int exfile_open(exfile_t *ef, char const *filename, mode_t permissions)
+int exfile_open(exfile_t *ef, char const *filename, mode_t permissions, off_t *offset)
 {
 	int i, found, tries, unused, oldest;
 	uint32_t hash;
 	time_t now;
 	struct stat st;
+	off_t real_offset;
 
 	if (!ef || !filename) return -1;
 
@@ -254,7 +255,8 @@ int exfile_open(exfile_t *ef, char const *filename, mode_t permissions)
 		found = exfile_open_mkdir(ef, filename, permissions);
 		if (found < 0) return -1;
 
-		(void) lseek(found, 0, SEEK_END);
+		real_offset = lseek(found, 0, SEEK_END);
+		if (offset) *offset = real_offset;
 		return found;
 	}
 
@@ -492,7 +494,8 @@ int exfile_open(exfile_t *ef, char const *filename, mode_t permissions)
 	 *	If we're appending, seek to the end of the file before
 	 *	returning the FD to the caller.
 	 */
-	(void) lseek(ef->entries[i].fd, 0, SEEK_END);
+	real_offset = lseek(ef->entries[i].fd, 0, SEEK_END);
+	if (offset) *offset = real_offset;
 
 	/*
 	 *	Return holding the mutex for the entry.

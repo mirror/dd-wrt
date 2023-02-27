@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4c41cf46c28a8f197ff7bfb14fb31661f107365a $
+ * $Id: cc0a0be92a26375dafd63a8b17ace01693820ec0 $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: 4c41cf46c28a8f197ff7bfb14fb31661f107365a $")
+RCSIDH(other_h, "$Id: cc0a0be92a26375dafd63a8b17ace01693820ec0 $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -150,6 +150,9 @@ typedef struct rlm_rest_section_t {
 	bool			tls_check_cert;
 	bool			tls_check_cert_cn;
 
+	bool			body_encode;	//!< Should the body data be URI encoded.  Only applies
+						//!< to xlats.
+
 	struct timeval		timeout_tv;	//!< Timeout timeval.
 	long			timeout;	//!< Timeout in ms.
 	uint32_t		chunk;		//!< Max chunk-size (mainly for testing the encoders)
@@ -182,6 +185,8 @@ typedef struct rlm_rest_t {
 
 	rlm_rest_section_t	pre_proxy;	//!< Configuration specific to pre_proxy
 	rlm_rest_section_t	post_proxy;	//!< Configuration specific to post_proxy
+
+	rlm_rest_section_t	xlat;		//!< Configuration specific to xlats
 
 #ifdef WITH_COA
 	rlm_rest_section_t	recv_coa;		//!< Configuration specific to recv-coa

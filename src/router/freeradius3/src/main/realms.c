@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 497c8991d1eeb0514986e80196dd7a60ae0e05e8 $
+ * Version:     $Id: d707f085e6c2ec57f6ad77a8d4b968d416ff9b1d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 497c8991d1eeb0514986e80196dd7a60ae0e05e8 $")
+RCSID("$Id: d707f085e6c2ec57f6ad77a8d4b968d416ff9b1d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -375,7 +375,7 @@ static ssize_t xlat_home_server_dynamic(UNUSED void *instance, REQUEST *request,
 	}
 
 	p = fmt;
-	while (isspace((int) *p)) p++;
+	while (isspace((uint8_t) *p)) p++;
 
 	/*
 	 *	Allow for dynamic strings as arguments.
@@ -473,6 +473,7 @@ static CONF_PARSER home_server_recv_coa[] = {
 #endif
 
 static CONF_PARSER home_server_config[] = {
+	{ "nonblock", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, home_server_t, nonblock), "no" },
 	{ "ipaddr", FR_CONF_OFFSET(PW_TYPE_COMBO_IP_ADDR, home_server_t, ipaddr), NULL },
 	{ "ipv4addr", FR_CONF_OFFSET(PW_TYPE_IPV4_ADDR, home_server_t, ipaddr), NULL },
 	{ "ipv6addr", FR_CONF_OFFSET(PW_TYPE_IPV6_ADDR, home_server_t, ipaddr), NULL },
@@ -742,6 +743,19 @@ bool realm_home_server_add(home_server_t *home)
 
 	return true;
 }
+
+#ifdef WITH_TLS
+/*
+ *	The listeners are always different.  And we always look them up by *known* listener.  And not "find me some random thing".
+ */
+static int listener_cmp(void const *one, void const *two)
+{
+	if (one < two) return -1;
+	if (one > two) return +1;
+
+	return 0;
+}
+#endif
 
 /** Alloc a new home server defined by a CONF_SECTION
  *
@@ -1112,6 +1126,9 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 			if (rcode < 0) goto error;
 
 			if (!home->connect_timeout || (home->connect_timeout > 30)) home->connect_timeout = 30;
+
+			home->listeners = rbtree_create(home, listener_cmp, NULL, RBTREE_FLAG_LOCK);
+			if (!home->listeners) goto error;
 		}
 #endif
 	} /* end of parse home server */
@@ -1367,8 +1384,17 @@ void realm_pool_free(home_pool_t *pool)
 }
 #endif	/* HAVE_PTHREAD_H */
 
-int realm_pool_add(home_pool_t *pool, UNUSED CONF_SECTION *cs)
+int realm_pool_add(home_pool_t *pool, CONF_SECTION *cs)
 {
+	home_pool_t *old;
+
+	old = rbtree_finddata(home_pools_byname, pool);
+	if (old) {
+		cf_log_err_cs(cs, "Cannot add duplicate home server %s, original is at %s[%d]", pool->name,
+			      cf_section_filename(old->cs), cf_section_lineno(old->cs));
+		return 0;
+	}
+
 	/*
 	 *	The structs aren't mutex protected.  Refuse to destroy
 	 *	the server.
@@ -2505,8 +2531,8 @@ int realms_init(CONF_SECTION *config)
 			 *	Check for valid characters
 			 */
 			for (p = dp->d_name; *p != '\0'; p++) {
-				if (isalpha((int)*p) ||
-				    isdigit((int)*p) ||
+				if (isalpha((uint8_t)*p) ||
+				    isdigit((uint8_t)*p) ||
 				    (*p == '-') ||
 				    (*p == '_') ||
 				    (*p == '.')) continue;
@@ -2784,7 +2810,7 @@ home_server_t *home_server_ldb(char const *realmname,
 		 *	Home servers that are unknown, alive, or zombie
 		 *	are used for proxying.
 		 */
-		if (home->state >= HOME_STATE_IS_DEAD) {
+		if (HOME_SERVER_IS_DEAD(home)) {
 			continue;
 		}
 
@@ -2949,7 +2975,7 @@ home_server_t *home_server_ldb(char const *realmname,
 
 			if (!home) continue;
 
-			if ((home->state >= HOME_STATE_IS_DEAD) &&
+			if (HOME_SERVER_IS_DEAD(home) &&
 			    (home->ping_check == HOME_PING_CHECK_NONE)) {
 				home->state = HOME_STATE_ALIVE;
 				home->response_timeouts = 0;

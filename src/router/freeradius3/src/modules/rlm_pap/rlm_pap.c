@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 318e9a806eeee15f7cd7c06d539d4d4da6f1daee $
+ * $Id: 94fbcc861092e775d797d99472a6c10454c7e0cb $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 318e9a806eeee15f7cd7c06d539d4d4da6f1daee $")
+RCSID("$Id: 94fbcc861092e775d797d99472a6c10454c7e0cb $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -359,9 +359,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 	for (vp = fr_cursor_init(&cursor, &request->config);
 	     vp;
 	     vp = fr_cursor_next(&cursor)) {
-	     	VERIFY_VP(vp);
+
 	next:
-		switch (vp->da->attr) {
+
+		VERIFY_VP(vp);
+
+		if (!vp->da->vendor) switch (vp->da->attr) {
 		case PW_USER_PASSWORD: /* deprecated */
 			RWDEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 			RWDEBUG("!!! Ignoring control:User-Password.  Update your        !!!");
@@ -479,8 +482,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 			 *	Auth-Type := Accept
 			 *	Auth-Type := Reject
 			 */
-			if ((vp->vp_integer == 254) ||
-			    (vp->vp_integer == 4)) {
+			if ((vp->vp_integer == PW_AUTH_TYPE_ACCEPT) ||
+			    (vp->vp_integer == PW_AUTH_TYPE_REJECT)) {
 			    found_pw = true;
 			}
 			break;

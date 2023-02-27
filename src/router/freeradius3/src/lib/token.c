@@ -2,7 +2,7 @@
  * token.c	Read the next token from a string.
  *		Yes it's pretty primitive but effective.
  *
- * Version:	$Id: a7978622e6139536d6ed28883671a66a2903c01d $
+ * Version:	$Id: 33b858bd62ad7b5e6aece4738e468617885126bf $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: a7978622e6139536d6ed28883671a66a2903c01d $")
+RCSID("$Id: 33b858bd62ad7b5e6aece4738e468617885126bf $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -187,7 +187,7 @@ static FR_TOKEN getthing(char const **ptr, char *buf, int buflen, bool tok,
 	/* Skip whitespace */
 	p = *ptr;
 
-	while (*p && isspace((int) *p)) p++;
+	while (*p && isspace((uint8_t) *p)) p++;
 
 	if (!*p) {
 		*ptr = p;
@@ -241,7 +241,7 @@ static FR_TOKEN getthing(char const **ptr, char *buf, int buflen, bool tok,
 		 *	comma.
 		 */
 		if (!quote) {
-			if (isspace((int) *p)) {
+			if (isspace((uint8_t) *p)) {
 				break;
 			}
 
@@ -340,7 +340,7 @@ static FR_TOKEN getthing(char const **ptr, char *buf, int buflen, bool tok,
 
 done:
 	/* Skip whitespace again. */
-	while (*p && isspace((int) *p)) p++;
+	while (*p && isspace((uint8_t) *p)) p++;
 
 	*ptr = p;
 
@@ -392,7 +392,7 @@ FR_TOKEN getstring(char const **ptr, char *buf, int buflen, bool unescape)
 
 	p = *ptr;
 
-	while (*p && (isspace((int)*p))) p++;
+	while (*p && (isspace((uint8_t)*p))) p++;
 
 	*ptr = p;
 

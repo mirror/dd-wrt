@@ -4,7 +4,7 @@
 /*
  * event.h	Simple event queue
  *
- * Version:	$Id: a29c9562a99cdfebff6040821df8ce90a38c0849 $
+ * Version:	$Id: 04097287a6324e24d15768b78642d5dc6c7d1c71 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(event_h, "$Id: a29c9562a99cdfebff6040821df8ce90a38c0849 $")
+RCSIDH(event_h, "$Id: 04097287a6324e24d15768b78642d5dc6c7d1c71 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,6 +53,8 @@ int fr_event_now(fr_event_list_t *el, struct timeval *when);
 
 int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 			 fr_event_fd_handler_t handler, void *ctx);
+int fr_event_fd_write_handler(fr_event_list_t *el, int type, int fd,
+			      fr_event_fd_handler_t write_handler, void *ctx);
 int fr_event_fd_delete(fr_event_list_t *el, int type, int fd);
 int fr_event_loop(fr_event_list_t *el);
 void fr_event_loop_exit(fr_event_list_t *el, int code);

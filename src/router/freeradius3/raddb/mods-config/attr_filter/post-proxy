@@ -2,7 +2,7 @@
 #	Configuration file for the rlm_attr_filter module.
 #	Please see rlm_attr_filter(5) manpage for more information.
 #
-#	$Id: 5d889ea733ec8e6b246335f86bf6e122b54f23aa $
+#	$Id: 169fe5c1d39635b039f3ad471dfd0888cd0ffbce $
 #
 #	This file contains security and configuration information
 #	for each realm. The first field is the realm name and
@@ -116,4 +116,6 @@ DEFAULT
 	Idle-Timeout <= 600,
 	Calling-Station-Id =* ANY,
 	Operator-Name =* ANY,
+	User-Name =* ANY,
+	Chargeable-User-Identity =* ANY,
 	Port-Limit <= 2

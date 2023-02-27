@@ -16,7 +16,7 @@
 #ifndef LISTEN_H
 #define LISTEN_H
 /**
- * $Id: e756e953b1ba68029147058498d2d030570c7f77 $
+ * $Id: 3debec356a70d0324abb2af8c1219717fa7049be $
  *
  * @file listen.h
  * @brief The listener API.
@@ -85,6 +85,8 @@ struct rad_listen {
 #ifdef WITH_TLS
 	fr_tls_server_conf_t *tls;
 	bool		check_client_connections;
+	bool		nonblock;
+	bool		blocked;
 
 #ifdef WITH_COA_TUNNEL
 	char const	*key;		/* Originating-Realm-Key */

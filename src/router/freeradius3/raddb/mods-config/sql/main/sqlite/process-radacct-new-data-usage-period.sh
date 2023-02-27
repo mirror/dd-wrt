@@ -3,7 +3,7 @@
 #  main/sqlite/process-radacct-new-data-usage-period.sh -- Script for
 #    processing radacct entries to extract daily usage
 #
-#  $Id: edfb12933144972fa3158eefce83eae7c880d7e9 $
+#  $Id: 0deb3911441ce65f55e697d55f04c3e499e883ab $
 
 #
 #  See process-radacct-schema.sql for details.
@@ -61,7 +61,18 @@ cat <<EOF | sqlite3 "$1"
         FROM
             radacct
         WHERE
-            acctstoptime > (SELECT value FROM vars WHERE key='v_start') OR
+            acctstoptime > (SELECT value FROM vars WHERE key='v_start');
+
+    INSERT INTO radacct_sessions
+        SELECT
+            username,
+            acctstarttime,
+            acctstoptime,
+            acctinputoctets,
+            acctoutputoctets
+        FROM
+            radacct
+        WHERE
             acctstoptime IS NULL;
 
 

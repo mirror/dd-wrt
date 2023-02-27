@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 77f0db091549300b963b199d3cb3aafc2b663d55 $
+ * $Id: b7204719c7935e9a8392a082973e43b0b6673873 $
  * @file collectd.c
  * @brief Helper functions to enabled radsniff to talk to collectd
  *
@@ -264,7 +264,7 @@ rs_stats_tmpl_t *rs_stats_collectd_init_latency(TALLOC_CTX *ctx, rs_stats_tmpl_t
 
 #define INIT_STATS(_ti, _v) do {\
 		strlcpy(buffer, fr_packet_codes[code], sizeof(buffer)); \
-		for (p = buffer; *p; ++p) *p = tolower(*p);\
+		for (p = buffer; *p; ++p) *p = tolower((uint8_t) *p);\
 		last = *tmpl = rs_stats_collectd_init(ctx, conf, type, _ti, buffer, stats, _v);\
 		if (!*tmpl) {\
 			TALLOC_FREE(*out);\

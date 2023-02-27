@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: e720c8e7aa0158a69399f44bd0b180907d54f9e5 $
+ * $Id: b6a27e50db0537b57ea85b644c0441a0a938cd5b $
  * @file rlm_sql_map.c
  * @brief Tracks data usage and other counters using SQL.
  *
- * @copyright 2001,2006  The FreeRADIUS server project
- * @copyright 2001  Alan DeKok <aland@ox.org>
+ * @copyright 2021  The FreeRADIUS server project
+ * @copyright 2021  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: e720c8e7aa0158a69399f44bd0b180907d54f9e5 $")
+RCSID("$Id: b6a27e50db0537b57ea85b644c0441a0a938cd5b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -315,7 +315,7 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 		return -1;
 	}
 
-	while (isspace((int) *p)) p++;
+	while (isspace((uint8_t) *p)) p++;
 
 	if ((strncasecmp(p, "insert", 6) == 0) ||
 	    (strncasecmp(p, "update", 6) == 0) ||

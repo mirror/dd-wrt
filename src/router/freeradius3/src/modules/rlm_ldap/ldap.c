@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: adabe3300e2c4470e28434f05528a3994699cf0b $
+ * $Id: 97fdcbe2f35d57c7f7e6bebbfc44a94c6da4304e $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1534,6 +1534,12 @@ void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 		int is_server = 0;
 		do_ldap_option(LDAP_OPT_X_TLS_NEWCTX, "new TLS context", &is_server);
 
+	}
+#  endif
+
+#  ifdef LDAP_OPT_X_TLS_CIPHER_SUITE
+	if (inst->tls_cipher_list) {
+		do_ldap_option(LDAP_OPT_X_TLS_CIPHER_SUITE, "cipher_list", inst->tls_cipher_list);
 	}
 #  endif
 

@@ -1,7 +1,7 @@
 /*
  * evaluate.c	Evaluate complex conditions
  *
- * Version:	$Id: ba214a26ffc9e8a53fc1cf4000be58ed527b5bc2 $
+ * Version:	$Id: c8585b67e0e0940e4bc328d425d7b2ca4d5941ad $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: ba214a26ffc9e8a53fc1cf4000be58ed527b5bc2 $")
+RCSID("$Id: c8585b67e0e0940e4bc328d425d7b2ca4d5941ad $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -61,7 +61,7 @@ static bool all_digits(char const *string)
 
 	if (*p == '-') p++;
 
-	while (isdigit((int) *p)) p++;
+	while (isdigit((uint8_t) *p)) p++;
 
 	return (*p == '\0');
 }

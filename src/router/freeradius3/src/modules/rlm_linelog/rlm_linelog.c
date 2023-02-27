@@ -1,7 +1,7 @@
 /*
  * rlm_linelog.c
  *
- * Version:	$Id: 3da07d9011c77b11e6fcbf5022ed57478cf5b3f4 $
+ * Version:	$Id: 8f381fc7ca293b8af361de79ddb8a4e3591d0838 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2004  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 3da07d9011c77b11e6fcbf5022ed57478cf5b3f4 $")
+RCSID("$Id: 8f381fc7ca293b8af361de79ddb8a4e3591d0838 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -67,6 +67,7 @@ typedef struct rlm_linelog_t {
 	char const	*group;
 	char const	*line;
 	char const	*reference;
+	char const	*header;
 	exfile_t	*ef;
 } rlm_linelog_t;
 
@@ -87,6 +88,7 @@ static const CONF_PARSER module_config[] = {
 	{ "permissions", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_linelog_t, permissions), "0600" },
 	{ "group", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_linelog_t, group), NULL },
 	{ "format", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_linelog_t, line), NULL },
+	{ "header", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_linelog_t, header), NULL },
 	{ "reference", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_linelog_t, reference), NULL },
 	CONF_PARSER_TERMINATOR
 };
@@ -183,6 +185,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_do_linelog(void *instance, REQUEST *requ
 	int fd = -1;
 	rlm_linelog_t *inst = (rlm_linelog_t*) instance;
 	char const *value = inst->line;
+	off_t offset;
 
 #ifdef HAVE_GRP_H
 	gid_t gid;
@@ -254,7 +257,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_do_linelog(void *instance, REQUEST *requ
 		return RLM_MODULE_FAIL;
 	}
 
-	fd = exfile_open(inst->ef, path, inst->permissions);
+	fd = exfile_open(inst->ef, path, inst->permissions, &offset);
 	if (fd < 0) {
 		ERROR("rlm_linelog: Failed to open %s: %s", path, fr_syserror(errno));
 		return RLM_MODULE_FAIL;
@@ -275,13 +278,23 @@ static rlm_rcode_t CC_HINT(nonnull) mod_do_linelog(void *instance, REQUEST *requ
 	}
 
  skip_group:
+	if (inst->header && (offset == 0)) {
+		char header[4096];
+		if (radius_xlat(header, sizeof(header) - 1, request, inst->header, linelog_escape_func, NULL) < 0) {
+		error:
+			exfile_close(inst->ef, fd);
+			return RLM_MODULE_FAIL;
+		}
+		strcat(header, "\n");
+		if (write(fd, header, strlen(header)) < 0) {
+			ERROR("rlm_linelog: Failed writing: %s", fr_syserror(errno));
+			goto error;
+		}
+	}
+
 	strcat(line, "\n");
 
-	if (write(fd, line, strlen(line)) < 0) {
-		exfile_close(inst->ef, fd);
-		ERROR("rlm_linelog: Failed writing: %s", fr_syserror(errno));
-		return RLM_MODULE_FAIL;
-	}
+	if (write(fd, line, strlen(line)) < 0) goto error;
 
 	exfile_close(inst->ef, fd);
 	return RLM_MODULE_OK;
