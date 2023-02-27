@@ -11,6 +11,7 @@ lvm2-clean:
 	make -C lvm2 clean
 
 lvm2-install:
-	make -C lvm2 install_device-mapper DESTDIR=$(INSTALLDIR)/lvm2
-	rm -rf $(INSTALLDIR)/lvm2/usr/share
-	rm -rf $(INSTALLDIR)/lvm2/usr/include
+	@true
+#	make -C lvm2 install_device-mapper DESTDIR=$(INSTALLDIR)/lvm2
+#	rm -rf $(INSTALLDIR)/lvm2/usr/share
+#	rm -rf $(INSTALLDIR)/lvm2/usr/include
