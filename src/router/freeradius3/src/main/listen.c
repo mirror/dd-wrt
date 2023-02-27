@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: b160d4f361ff6d56b5f56dc12c8e31363e7f13a7 $
+ * Version:	$Id: 53c6079354b2c79d017c2ffa59138421a8e5bdc1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: b160d4f361ff6d56b5f56dc12c8e31363e7f13a7 $")
+RCSID("$Id: 53c6079354b2c79d017c2ffa59138421a8e5bdc1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -403,6 +403,15 @@ int rad_status_server(REQUEST *request)
 	}
 #endif
 
+#ifdef WITH_STATS
+	/*
+	 *	Full statistics are available only on a statistics
+	 *	socket.
+	 */
+	if (request->listener->type == RAD_LISTEN_NONE) {
+		request_stats_reply(request);
+	}
+#endif
 
 	switch (request->listener->type) {
 #ifdef WITH_STATS
@@ -494,16 +503,6 @@ int rad_status_server(REQUEST *request)
 	default:
 		return 0;
 	}
-
-#ifdef WITH_STATS
-	/*
-	 *	Full statistics are available only on a statistics
-	 *	socket.
-	 */
-	if (request->listener->type == RAD_LISTEN_NONE) {
-		request_stats_reply(request);
-	}
-#endif
 
 	return 0;
 }
@@ -1248,6 +1247,12 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			if (rcode < 0) return -1;
 
 			/*
+			 *	Allow non-blocking for TLS sockets
+			 */
+			rcode = cf_item_parse(cs, "nonblock", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &this->nonblock), NULL);
+			if (rcode < 0) return -1;
+
+			/*
 			 *	If unset, set to default.
 			 */
 			if (listen_port == 0) listen_port = PW_RADIUS_TLS_PORT;
@@ -1529,12 +1534,12 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 }
 
 /*
- *	Send an authentication response packet
+ *	Send a response packet
  */
-static int auth_socket_send(rad_listen_t *listener, REQUEST *request)
+static int common_socket_send(rad_listen_t *listener, REQUEST *request)
 {
 	rad_assert(request->listener == listener);
-	rad_assert(listener->send == auth_socket_send);
+	rad_assert(listener->send == common_socket_send);
 
 	if (request->reply->code == 0) return 0;
 
@@ -1559,46 +1564,6 @@ static int auth_socket_send(rad_listen_t *listener, REQUEST *request)
 	return 0;
 }
 
-
-#ifdef WITH_ACCOUNTING
-/*
- *	Send an accounting response packet (or not)
- */
-static int acct_socket_send(rad_listen_t *listener, REQUEST *request)
-{
-	rad_assert(request->listener == listener);
-	rad_assert(listener->send == acct_socket_send);
-
-	/*
-	 *	Accounting reject's are silently dropped.
-	 *
-	 *	We do it here to avoid polluting the rest of the
-	 *	code with this knowledge
-	 */
-	if (request->reply->code == 0) return 0;
-
-#ifdef WITH_UDPFROMTO
-	/*
-	 *	Overwrite the src ip address on the outbound packet
-	 *	with the one specified by the client.
-	 *	This is useful to work around broken DSR implementations
-	 *	and other routing issues.
-	 */
-	if (request->client->src_ipaddr.af != AF_UNSPEC) {
-		request->reply->src_ipaddr = request->client->src_ipaddr;
-	}
-#endif
-
-	if (rad_send(request->reply, request->packet,
-		     request->client->secret) < 0) {
-		RERROR("Failed sending reply: %s",
-			       fr_strerror());
-		return -1;
-	}
-
-	return 0;
-}
-#endif
 
 #ifdef WITH_PROXY
 /*
@@ -2364,8 +2329,13 @@ static int proxy_socket_tcp_recv(rad_listen_t *listener)
 #endif
 #endif
 
+#ifdef WITH_TLS
+#define TLS_UNUSED
+#else
+#define TLS_UNUSED UNUSED
+#endif
 
-static int client_socket_encode(UNUSED rad_listen_t *listener, REQUEST *request)
+static int client_socket_encode(TLS_UNUSED rad_listen_t *listener, REQUEST *request)
 {
 #ifdef WITH_TLS
 	/*
@@ -2479,7 +2449,7 @@ static fr_protocol_t master_listen[RAD_LISTEN_MAX] = {
 #ifdef WITH_STATS
 	{ RLM_MODULE_INIT, "status", sizeof(listen_socket_t), NULL,
 	  common_socket_parse, NULL,
-	  stats_socket_recv, auth_socket_send,
+	  stats_socket_recv, common_socket_send,
 	  common_socket_print, client_socket_encode, client_socket_decode },
 #else
 	/*
@@ -2502,14 +2472,14 @@ static fr_protocol_t master_listen[RAD_LISTEN_MAX] = {
 	/* authentication */
 	{ RLM_MODULE_INIT, "auth", sizeof(listen_socket_t), NULL,
 	  common_socket_parse, common_socket_free,
-	  auth_socket_recv, auth_socket_send,
+	  auth_socket_recv, common_socket_send,
 	  common_socket_print, client_socket_encode, client_socket_decode },
 
 #ifdef WITH_ACCOUNTING
 	/* accounting */
 	{ RLM_MODULE_INIT, "acct", sizeof(listen_socket_t), NULL,
 	  common_socket_parse, common_socket_free,
-	  acct_socket_recv, acct_socket_send,
+	  acct_socket_recv, common_socket_send,
 	  common_socket_print, client_socket_encode, client_socket_decode},
 #else
 	{ 0, "acct", 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
@@ -2543,7 +2513,7 @@ static fr_protocol_t master_listen[RAD_LISTEN_MAX] = {
 	/* Change of Authorization */
 	{ RLM_MODULE_INIT, "coa", sizeof(listen_socket_t), NULL,
 	  common_socket_parse, NULL,
-	  coa_socket_recv, auth_socket_send, /* CoA packets are same as auth */
+	  coa_socket_recv, common_socket_send,
 	  common_socket_print, client_socket_encode, client_socket_decode },
 #else
 	{ 0, "coa", 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
@@ -3016,9 +2986,13 @@ static int _listener_free(rad_listen_t *this)
 
 			rad_assert(!sock->ssn || (talloc_parent(sock->ssn) == sock));
 			rad_assert(!sock->request || (talloc_parent(sock->request) == sock));
+
+			if (sock->home && sock->home->listeners) (void) rbtree_deletebydata(sock->home->listeners, this);
+
 #ifdef HAVE_PTHREAD_H
 			pthread_mutex_destroy(&(sock->mutex));
 #endif
+
 		}
 #endif	/* WITH_TLS */
 	}
@@ -3120,6 +3094,11 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		 */
 		this->fd = fr_socket_client_tcp(&home->src_ipaddr,
 						&home->ipaddr, home->port, false);
+
+		/*
+		 *	Set max_requests, lifetime, and idle_timeout from the home server.
+		 */
+		sock->limit = home->limit;
 	} else
 #endif
 		this->fd = fr_socket(&home->src_ipaddr, src_port);
@@ -3148,7 +3127,26 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		 *	here through various C magic.
 		 */
 		if (home->tls->client_hostname) {
-			(void) SSL_set_tlsext_host_name(sock->ssn->ssl, (void *) (uintptr_t) "home->tls->client_hostname");
+			(void) SSL_set_tlsext_host_name(sock->ssn->ssl, (void *) (uintptr_t) home->tls->client_hostname);
+		}
+
+		this->nonblock |= home->nonblock;
+
+		/*
+		 *	Set non-blocking if it's configured.
+		 */
+		if (this->nonblock) {
+			if (fr_nonblock(this->fd) < 0) {
+				ERROR("(TLS) Failed setting nonblocking for proxy socket '%s' - %s", buffer, fr_strerror());
+				goto error;
+			}
+
+			rad_assert(home->listeners != NULL);
+
+			if (!rbtree_insert(home->listeners, this)) {
+				ERROR("(TLS) Failed adding tracking informtion for proxy socket '%s'", buffer);
+				goto error;
+			}
 		}
 
 		/*
@@ -3157,15 +3155,19 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		sock->ssn = tls_new_client_session(sock, home->tls, this->fd, &sock->certs);
 		if (!sock->ssn) {
 			ERROR("(TLS) Failed opening connection on proxy socket '%s'", buffer);
-			home->last_failed_open = now;
-			listen_free(&this);
-			return NULL;
+			goto error;
 		}
 
 		sock->connect_timeout = home->connect_timeout;
 
 		this->recv = proxy_tls_recv;
 		this->proxy_send = proxy_tls_send;
+
+		/*
+		 *	Make sure that this listener is associated with the home server.
+		 *
+		 *	Since it's TCP+TLS, this socket can only be associated with one home server.
+		 */
 
 #ifdef WITH_COA_TUNNEL
 		if (home->recv_coa) {
@@ -3219,6 +3221,8 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 				&sizeof_src) < 0) {
 			ERROR("Failed getting socket name for '%s': %s",
 			      buffer, fr_syserror(errno));
+		error:
+			close(this->fd);
 			home->last_failed_open = now;
 			listen_free(&this);
 			return NULL;
@@ -3227,9 +3231,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		if (!fr_sockaddr2ipaddr(&src, sizeof_src,
 					&sock->my_ipaddr, &sock->my_port)) {
 			ERROR("Socket has unsupported address family for '%s'", buffer);
-			home->last_failed_open = now;
-			listen_free(&this);
-			return NULL;
+			goto error;
 		}
 
 		this->print(this, buffer, sizeof(buffer));
@@ -3494,7 +3496,6 @@ static void *recv_thread(void *arg)
 
 	while (1) {
 		this->recv(this);
-		DEBUG("%p", &this);
 	}
 
 	return NULL;
@@ -4085,6 +4086,8 @@ int listen_coa_find(REQUEST *request, char const *key)
 	for (this = fr_hash_table_iter_init(coa_key->ht, &iter);
 	     this != NULL;
 	     this = fr_hash_table_iter_next(coa_key->ht, &iter)) {
+		if (this->blocked) continue;
+
 		if (this->dead) continue;
 
 		if (!found) {

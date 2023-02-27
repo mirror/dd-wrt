@@ -2,7 +2,7 @@
 #
 #  main/mssql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: a3a64451d56979369f177cf971dd173c6670bd84 $
+#  $Id: 01129b6c4c8a1c4c71c8bffca9fe5b1c027899e5 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -99,11 +99,21 @@ BEGIN
                 @v_end AS period_end,
                 SUM(acctinputoctets) AS acctinputoctets,
                 SUM(acctoutputoctets) AS acctoutputoctets
-            FROM
-                radacct
-            WHERE
-                acctstoptime > @v_start OR
-                acctstoptime=0
+            FROM ((
+                SELECT
+                    username, acctinputoctets, acctoutputoctets
+                FROM
+                    radacct
+                WHERE
+                    acctstoptime > @v_start
+            ) UNION ALL (
+                SELECT
+                    username, acctinputoctets, acctoutputoctets
+                FROM
+                    radacct
+                WHERE
+                    acctstoptime=0
+            )) a
             GROUP BY
                 username
         ) s

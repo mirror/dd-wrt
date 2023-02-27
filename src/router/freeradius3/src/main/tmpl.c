@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: abcd7687f12df54427a3b1aeb85f7bc057d366a3 $
+ * $Id: 6ec25987ba8470e555cb7dea7456c2c9e71eae10 $
  *
  * @brief #VALUE_PAIR template functions
  * @file main/tmpl.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014-2015 The FreeRADIUS server project
  */
-RCSID("$Id: abcd7687f12df54427a3b1aeb85f7bc057d366a3 $")
+RCSID("$Id: 6ec25987ba8470e555cb7dea7456c2c9e71eae10 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -153,8 +153,8 @@ size_t radius_list_name(pair_lists_t *out, char const *name, pair_lists_t def)
 	{
 		char const *d = q + 1;
 
-		if (isdigit((int) *d)) {
-			while (isdigit((int) *d)) d++;
+		if (isdigit((uint8_t) *d)) {
+			while (isdigit((uint8_t) *d)) d++;
 
 			/*
 			 *	Char after the number string

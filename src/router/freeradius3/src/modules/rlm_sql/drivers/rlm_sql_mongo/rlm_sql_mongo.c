@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: a45dd654738308df738eb41a8c1b3adaa6217eee $
+ * $Id: f40f18af3ce808ffa8166d3c1cb4fbc43e795944 $
  * @file rlm_sql_mongo.c
  * @brief Mongo driver.
  *
  * @copyright 2019 Network RADIUS SARL
  */
 
-RCSID("$Id: a45dd654738308df738eb41a8c1b3adaa6217eee $")
+RCSID("$Id: f40f18af3ce808ffa8166d3c1cb4fbc43e795944 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -243,7 +243,7 @@ static CC_HINT(nonnull) sql_rcode_t sql_query(rlm_sql_handle_t *handle, rlm_sql_
 	 *	We parse the string to see what's up.
 	 */
 	p = query;
-	while (isspace((int) *p)) p++;
+	while (isspace((uint8_t) *p)) p++;
 
 	if (strncmp(p, "db.", 3) != 0) {
 		ERROR("rlm_sql_mongo: Invalid query - must start with 'db.'");
@@ -284,9 +284,9 @@ static CC_HINT(nonnull) sql_rcode_t sql_query(rlm_sql_handle_t *handle, rlm_sql_
 		 *	Allow whitespace after the command name, and
 		 *	before the bracket.
 		 */
-		if (isspace((int) *p)) {
+		if (isspace((uint8_t) *p)) {
 			*ptr = '\0';
-			while (*p && isspace((int) *p)) p++;
+			while (*p && isspace((uint8_t) *p)) p++;
 
 			if (*p != '(') {
 				ERROR("rlm_sql_mongo: Invalid query - no starting '('");

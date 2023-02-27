@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 93979818bae5e8643673d9809a65dca3ff10b68f $
+ * $Id: dfdc81a80912261172602cfb8f958deb937af8b5 $
  * @file rlm_unpack.c
  * @brief Unpack binary data
  *
  * @copyright 2014 The FreeRADIUS server project
  * @copyright 2014 Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: 93979818bae5e8643673d9809a65dca3ff10b68f $")
+RCSID("$Id: dfdc81a80912261172602cfb8f958deb937af8b5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -58,11 +58,11 @@ static ssize_t unpack_xlat(UNUSED void *instance, REQUEST *request, char const *
 	strlcpy(buffer, fmt, sizeof(buffer));
 
 	p = buffer;
-	while (isspace((int) *p)) p++; /* skip leading spaces */
+	while (isspace((uint8_t) *p)) p++; /* skip leading spaces */
 
 	data_name = p;
 
-	while (*p && !isspace((int) *p)) p++;
+	while (*p && !isspace((uint8_t) *p)) p++;
 
 	if (!*p) {
 	error:
@@ -72,20 +72,20 @@ static ssize_t unpack_xlat(UNUSED void *instance, REQUEST *request, char const *
 		return -1;
 	}
 
-	while (isspace((int) *p)) *(p++) = '\0';
+	while (isspace((uint8_t) *p)) *(p++) = '\0';
 	if (!*p) GOTO_ERROR;
 
 	data_size = p;
 
-	while (*p && !isspace((int) *p)) p++;
+	while (*p && !isspace((uint8_t) *p)) p++;
 	if (!*p) GOTO_ERROR;
 
-	while (isspace((int) *p)) *(p++) = '\0';
+	while (isspace((uint8_t) *p)) *(p++) = '\0';
 	if (!*p) GOTO_ERROR;
 
 	data_type = p;
 
-	while (*p && !isspace((int) *p)) p++;
+	while (*p && !isspace((uint8_t) *p)) p++;
 	if (*p) GOTO_ERROR;	/* anything after the type is an error */
 
 	/*
@@ -287,7 +287,7 @@ static ssize_t substring_xlat(UNUSED void *instance, REQUEST *request,
 	/*
 	 *  Trim whitespace
 	 */
-	while (isspace(*p) && p++);
+	while (isspace((uint8_t) *p) && p++);
 
 	/*
 	 * Find numeric parameters at the end.

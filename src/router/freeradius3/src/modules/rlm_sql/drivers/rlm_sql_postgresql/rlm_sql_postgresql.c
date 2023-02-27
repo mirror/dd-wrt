@@ -1,7 +1,7 @@
 /*
  * sql_postgresql.c		Postgresql rlm_sql driver
  *
- * Version:	$Id: 9114b020fc297d37ef40db5214369655e774a4d9 $
+ * Version:	$Id: c88d8b05a67289537a5c339f62ac37e091176d98 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
  * Bernhard Herzog <bh@intevation.de>
  */
 
-RCSID("$Id: 9114b020fc297d37ef40db5214369655e774a4d9 $")
+RCSID("$Id: c88d8b05a67289537a5c339f62ac37e091176d98 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -595,7 +595,7 @@ static size_t sql_escape_func(UNUSED REQUEST *request, char *out, size_t outlen,
 extern rlm_sql_module_t rlm_sql_postgresql;
 rlm_sql_module_t rlm_sql_postgresql = {
 	.name				= "rlm_sql_postgresql",
-//	.flags				= RLM_SQL_RCODE_FLAGS_ALT_QUERY,	/* Needs more testing */
+	.flags				= RLM_SQL_RCODE_FLAGS_ALT_QUERY,
 	.mod_instantiate		= mod_instantiate,
 	.sql_socket_init		= sql_socket_init,
 	.sql_query			= sql_query,

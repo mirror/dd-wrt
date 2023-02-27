@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 9e77cd7ff193100a7e6e3038700beea9955560c0 $
+ * $Id: 1b47dd77b290ed7c28a51ecb2c2ee2a3a6539974 $
  * @file rlm_files.c
  * @brief Process simple 'users' policy files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 9e77cd7ff193100a7e6e3038700beea9955560c0 $")
+RCSID("$Id: 1b47dd77b290ed7c28a51ecb2c2ee2a3a6539974 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -352,6 +352,13 @@ static rlm_rcode_t file_common(rlm_files_t *inst, REQUEST *request, char const *
 	bool		found = false;
 	PAIR_LIST	my_pl;
 	char		buffer[256];
+
+	/*
+	 *	Certain post-proxy fail situations can cause there not to be
+	 *	a valid request_packet to lookup check pairs in.
+	 *	Test here in case there are other situations where this happens.
+	 */
+	if (!request_packet) return RLM_MODULE_NOOP;
 
 	if (!inst->key) {
 		VALUE_PAIR	*namepair;

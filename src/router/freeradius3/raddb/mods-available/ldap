@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: bc879ccc20354d5d32afa1f8b4d10422d5184eab $
+#  $Id: 5d87f848cadda957e64a1254596ba5ad6da5515b $
 
 #
 #  Lightweight Directory Access Protocol (LDAP)
@@ -622,6 +622,12 @@ ldap {
 		#  setting this to "1.2"
 		#
 #		tls_min_version = "1.2"
+
+		#  Set this option to specify the allowed
+		#  TLS cipher suites.  The format is listed
+		#  in "man 1 ciphers".
+		#
+		cipher_list = "DEFAULT"
 	}
 
 	#  As of v3, the 'pool' section has replaced the

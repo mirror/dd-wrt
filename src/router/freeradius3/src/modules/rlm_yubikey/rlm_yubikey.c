@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1908e9d28c2fc5222161c80597d2aa32c08f7dbe $
+ * $Id: 83b76558cab621d042f2c7740787dd050a80eaa3 $
  * @file rlm_yubikey.c
  * @brief Authentication for yubikey OTP tokens.
  *
@@ -23,7 +23,7 @@
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 Network RADIUS <info@networkradius.com>
  */
-RCSID("$Id: 1908e9d28c2fc5222161c80597d2aa32c08f7dbe $")
+RCSID("$Id: 83b76558cab621d042f2c7740787dd050a80eaa3 $")
 
 #include "rlm_yubikey.h"
 
@@ -88,8 +88,8 @@ static ssize_t modhex2hex(char const *modhex, uint8_t *hex, size_t len)
 		if (modhex[(i << 1) + 1] == '\0')
 			return -1;
 
-		if (!(c1 = memchr(modhextab, tolower((int) modhex[i << 1]), 16)) ||
-		    !(c2 = memchr(modhextab, tolower((int) modhex[(i << 1) + 1]), 16)))
+		if (!(c1 = memchr(modhextab, tolower((uint8_t) modhex[i << 1]), 16)) ||
+		    !(c2 = memchr(modhextab, tolower((uint8_t) modhex[(i << 1) + 1]), 16)))
 			return -1;
 
 		hex[i] = hextab[c1 - modhextab];

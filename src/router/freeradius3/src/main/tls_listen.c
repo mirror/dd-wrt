@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 5995fa390ad1a026bd80adb6942e99d03ae07a91 $
+ * Version:     $Id: b08385f801a2a692411160313f9ce43b2c37dfc1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 5995fa390ad1a026bd80adb6942e99d03ae07a91 $")
+RCSID("$Id: b08385f801a2a692411160313f9ce43b2c37dfc1 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -93,31 +93,70 @@ static void tls_socket_close(rad_listen_t *listener)
 	 */
 }
 
-static int CC_HINT(nonnull) tls_socket_write(rad_listen_t *listener, REQUEST *request)
+static void tls_write_available(fr_event_list_t *el, int sock, void *ctx);
+
+static int CC_HINT(nonnull) tls_socket_write(rad_listen_t *listener)
 {
-	uint8_t *p;
 	ssize_t rcode;
 	listen_socket_t *sock = listener->data;
 
-	p = sock->ssn->dirty_out.data;
+	/*
+	 *	It's not writable, so we don't bother writing to it.
+	 */
+	if (listener->blocked) return 0;
 
-	while (p < (sock->ssn->dirty_out.data + sock->ssn->dirty_out.used)) {
-		RDEBUG3("(TLS) Writing to socket %d", listener->fd);
-		rcode = write(listener->fd, p,
-			      (sock->ssn->dirty_out.data + sock->ssn->dirty_out.used) - p);
-		if (rcode <= 0) {
-			RDEBUG("(TLS) Error writing to socket: %s", fr_syserror(errno));
-
-			tls_socket_close(listener);
+	/*
+	 *	Write as much as possible.
+	 */
+	rcode = write(listener->fd, sock->ssn->dirty_out.data, sock->ssn->dirty_out.used);
+	if (rcode <= 0) {
+#ifdef EWOULDBLOCK
+		/*
+		 *	Writing to the socket would cause it to block.
+		 *	As a result, we just mark it as "don't use"
+		 *	until such time as it becomes writable.
+		 */
+		if (errno == EWOULDBLOCK) {
+			proxy_listener_freeze(listener, tls_write_available);
 			return 0;
 		}
-		p += rcode;
+#endif
+
+
+		ERROR("(TLS) Error writing to socket: %s", fr_syserror(errno));
+
+		tls_socket_close(listener);
+		return -1;
 	}
 
-	sock->ssn->dirty_out.used = 0;
+	/*
+	 *	All of the data was written.  It's fine.
+	 */
+	if ((size_t) rcode == sock->ssn->dirty_out.used) {
+		sock->ssn->dirty_out.used = 0;
+		return 0;
+	}
 
-	return 1;
+	/*
+	 *	Move the data to the start of the buffer.
+	 *
+	 *	Yes, this is horrible.  But doing this means that we
+	 *	don't have to modify the rest of the code which mangles dirty_out, and assumes that the write offset is always &data[used].
+	 */
+	memmove(&sock->ssn->dirty_out.data[0], &sock->ssn->dirty_out.data[rcode], sock->ssn->dirty_out.used - rcode);
+	sock->ssn->dirty_out.used -= rcode;
+
+	return 0;
 }
+
+static void tls_write_available(UNUSED fr_event_list_t *el, UNUSED int sock, void *ctx)
+{
+	rad_listen_t *listener = ctx;
+
+	proxy_listener_thaw(listener);
+	(void) tls_socket_write(listener);
+}
+
 
 /*
  *	Check for PROXY protocol.  Once that's done, clear
@@ -490,7 +529,8 @@ check_for_setup:
 		 *	More ACK data to send.  Do so.
 		 */
 		if (sock->ssn->dirty_out.used > 0) {
-			tls_socket_write(listener, request);
+			RDEBUG3("(TLS) Writing to socket %d", listener->fd);
+			tls_socket_write(listener);
 			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
 			return 0;
 		}
@@ -551,6 +591,18 @@ check_for_setup:
 	 *	Try to get application data.
 	 */
 get_application_data:
+	/*
+	 *	More data to send.  Do so.
+	 */
+	if (sock->ssn->dirty_out.used > 0) {
+		RDEBUG3("(TLS) Writing to socket %d", listener->fd);
+		rcode = tls_socket_write(listener);
+		if (rcode < 0) {
+			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
+			return rcode;
+		}
+	}
+
 	status = tls_application_data(sock->ssn, request);
 	RDEBUG3("(TLS) Application data status %d", status);
 
@@ -888,7 +940,8 @@ int dual_tls_send(rad_listen_t *listener, REQUEST *request)
 	if (sock->ssn->dirty_out.used > 0) {
 		dump_hex("WRITE TO SSL", sock->ssn->dirty_out.data, sock->ssn->dirty_out.used);
 
-		tls_socket_write(listener, request);
+		RDEBUG3("(TLS) Writing to socket %d", listener->fd);
+		tls_socket_write(listener);
 	}
 	PTHREAD_MUTEX_UNLOCK(&sock->mutex);
 
@@ -939,7 +992,8 @@ int dual_tls_send_coa_request(rad_listen_t *listener, REQUEST *request)
 	if (sock->ssn->dirty_out.used > 0) {
 		dump_hex("WRITE TO SSL", sock->ssn->dirty_out.data, sock->ssn->dirty_out.used);
 
-		tls_socket_write(listener, request);
+		RDEBUG3("(TLS) Writing to socket %d", listener->fd);
+		tls_socket_write(listener);
 	}
 	PTHREAD_MUTEX_UNLOCK(&sock->mutex);
 
@@ -953,7 +1007,7 @@ static int try_connect(listen_socket_t *sock)
 	time_t now;
 
 	now = time(NULL);
-	if ((sock->opened + sock->connect_timeout) > now) {
+	if ((sock->opened + sock->connect_timeout) < now) {
 		tls_error_io_log(NULL, sock->ssn, 0, "Timeout in SSL_connect");
 		goto fail;
 	}
@@ -962,6 +1016,7 @@ static int try_connect(listen_socket_t *sock)
 	if (ret < 0) {
 		switch (SSL_get_error(sock->ssn->ssl, ret)) {
 		default:
+			tls_error_io_log(NULL, sock->ssn, ret, "Failed in " STRINGIFY(__FUNCTION__) " (SSL_connect)");
 			break;
 
 		case SSL_ERROR_WANT_READ:
@@ -971,8 +1026,6 @@ static int try_connect(listen_socket_t *sock)
 	}
 
 	if (ret <= 0) {
-		tls_error_io_log(NULL, sock->ssn, ret, "Failed in " STRINGIFY(__FUNCTION__) " (SSL_connect)");
-
 	fail:
 		SSL_shutdown(sock->ssn->ssl);
 		TALLOC_FREE(sock->ssn);
@@ -1007,7 +1060,11 @@ static ssize_t proxy_tls_read(rad_listen_t *listener)
 
 	if (!sock->ssn->connected) {
 		rcode = try_connect(sock);
-		if (rcode <= 0) return rcode;
+		if (rcode <= 0) {
+			listener->status = RAD_LISTEN_STATUS_EOL;
+			radius_update_listener(listener);
+			return rcode;
+		}
 	}
 
 	/*
@@ -1038,8 +1095,7 @@ static ssize_t proxy_tls_read(rad_listen_t *listener)
 				return -1;
 
 			default:
-				tls_error_log(NULL, "Failed in proxy receive");
-
+				tls_error_log(NULL, "Failed in proxy receive with OpenSSL error %d", err);
 				goto do_close;
 			}
 		}
@@ -1121,6 +1177,8 @@ int proxy_tls_recv(rad_listen_t *listener)
 #endif
 
 	if (listener->status != RAD_LISTEN_STATUS_KNOWN) return 0;
+
+	rad_assert(sock->ssn != NULL);
 
 	DEBUG3("Proxy SSL socket has data to read");
 	PTHREAD_MUTEX_LOCK(&sock->mutex);
@@ -1242,11 +1300,17 @@ int proxy_tls_send(rad_listen_t *listener, REQUEST *request)
 						      request);
 	}
 
+	rad_assert(sock->ssn != NULL);
+
 	if (!sock->ssn->connected) {
 		PTHREAD_MUTEX_LOCK(&sock->mutex);
 		rcode = try_connect(sock);
 		PTHREAD_MUTEX_UNLOCK(&sock->mutex);
-		if (rcode <= 0) return rcode;
+		if (rcode <= 0) {
+			listener->status = RAD_LISTEN_STATUS_EOL;
+			radius_update_listener(listener);
+			return rcode;
+		}
 	}
 
 	DEBUG3("Proxy is writing %u bytes to SSL",
@@ -1265,7 +1329,7 @@ int proxy_tls_send(rad_listen_t *listener, REQUEST *request)
 			break;	/* let someone else retry */
 
 		default:
-			tls_error_log(NULL, "Failed in proxy send");
+			tls_error_log(NULL, "Failed in proxy send with OpenSSL error %d", err);
 			DEBUG("Closing TLS socket to home server");
 			tls_socket_close(listener);
 			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
@@ -1313,6 +1377,8 @@ int proxy_tls_send_reply(rad_listen_t *listener, REQUEST *request)
 		return 0;
 	}
 
+	rad_assert(sock->ssn != NULL);
+
 	DEBUG3("Proxy is writing %u bytes to SSL",
 	       (unsigned int) request->reply->data_len);
 	PTHREAD_MUTEX_LOCK(&sock->mutex);
@@ -1329,7 +1395,7 @@ int proxy_tls_send_reply(rad_listen_t *listener, REQUEST *request)
 			break;	/* let someone else retry */
 
 		default:
-			tls_error_log(NULL, "Failed in proxy send");
+			tls_error_log(NULL, "Failed in proxy send with OpenSSL error %d", err);
 			DEBUG("Closing TLS socket to home server");
 			tls_socket_close(listener);
 			PTHREAD_MUTEX_UNLOCK(&sock->mutex);

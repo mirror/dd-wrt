@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 379f697a63b7fcf9120083272e41bce66174ca21 $
+ * $Id: 036549f820fed13342c960506e9088a805cb25f8 $
  * @file rlm_detail.c
  * @brief Write plaintext versions of packets to flatfiles.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 379f697a63b7fcf9120083272e41bce66174ca21 $")
+RCSID("$Id: 036549f820fed13342c960506e9088a805cb25f8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -388,7 +388,7 @@ static rlm_rcode_t CC_HINT(nonnull) detail_do(void *instance, REQUEST *request, 
 #endif
 #endif
 
-	outfd = exfile_open(inst->ef, buffer, inst->perm);
+	outfd = exfile_open(inst->ef, buffer, inst->perm, NULL);
 	if (outfd < 0) {
 		RERROR("Couldn't open file %s: %s", buffer, fr_strerror());
 		return RLM_MODULE_FAIL;

@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: c3e8cdd142ad2b74729e92b9b907afe3f545b578 $
+ * $Id: 8deed795d9d0e6f3160bbbd6db476ab9f13b28d6 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: c3e8cdd142ad2b74729e92b9b907afe3f545b578 $")
+RCSIDH(radiusd_h, "$Id: 8deed795d9d0e6f3160bbbd6db476ab9f13b28d6 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -545,6 +545,7 @@ int	total_active_threads(void);
 void	thread_pool_lock(void);
 void	thread_pool_unlock(void);
 void	thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2]);
+void	thread_pool_thread_stats(int stats[3]);
 
 #ifndef HAVE_PTHREAD_H
 #  define rad_fork(n) fork()

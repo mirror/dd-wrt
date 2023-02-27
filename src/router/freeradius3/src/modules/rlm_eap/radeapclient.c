@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: cd504a8363f8ff6cbab9763667e0e31246cf976b $
+ * Version:	$Id: 955df1eae030110520222c084ed4bbe8ac41766f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: cd504a8363f8ff6cbab9763667e0e31246cf976b $")
+RCSID("$Id: 955df1eae030110520222c084ed4bbe8ac41766f $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -1959,7 +1959,7 @@ int main(int argc, char **argv)
 		  break;
 
 		case 'r':
-			if (!isdigit((int) *optarg))
+			if (!isdigit((uint8_t) *optarg))
 				usage();
 			retries = atoi(optarg);
 			break;
@@ -1967,12 +1967,12 @@ int main(int argc, char **argv)
 			do_summary = 1;
 			break;
 		case 't':
-			if (!isdigit((int) *optarg))
+			if (!isdigit((uint8_t) *optarg))
 				usage();
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: cd504a8363f8ff6cbab9763667e0e31246cf976b $"
+			printf("$Id: 955df1eae030110520222c084ed4bbe8ac41766f $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif
@@ -2059,7 +2059,7 @@ int main(int argc, char **argv)
 	/*
 	 *	Get the request type
 	 */
-	if (!isdigit((int) argv[2][0])) {
+	if (!isdigit((uint8_t) argv[2][0])) {
 		packet_code = fr_str2int(rc_request_types, argv[2], -2);
 		if (packet_code == -2) {
 			ERROR("Unrecognised request type \"%s\"\n", argv[2]);

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 26aded7a7c58e6790271bb30e867801a81f4ab79 $
+ * $Id: 5987ae62636e90edcb3d8a2b7de2e57a4b11e952 $
  * @file rlm_sqlcounter.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 26aded7a7c58e6790271bb30e867801a81f4ab79 $")
+RCSID("$Id: 5987ae62636e90edcb3d8a2b7de2e57a4b11e952 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -124,12 +124,12 @@ static int find_next_reset(rlm_sqlcounter_t *inst, REQUEST *request, time_t time
 	/*
 	 *	Reset every N hours, days, weeks, months.
 	 */
-	if (isdigit((int) inst->reset[0])){
+	if (isdigit((uint8_t) inst->reset[0])){
 		len = strlen(inst->reset);
 		if (len == 0) return -1;
 
 		last = inst->reset[len - 1];
-		if (!isalpha((int) last)) {
+		if (!isalpha((uint8_t) last)) {
 			last = 'd';
 		}
 
@@ -212,12 +212,12 @@ static int find_prev_reset(rlm_sqlcounter_t *inst, time_t timeval)
 
 	rad_assert(inst->reset != NULL);
 
-	if (isdigit((int) inst->reset[0])){
+	if (isdigit((uint8_t) inst->reset[0])){
 		len = strlen(inst->reset);
 		if (len == 0)
 			return -1;
 		last = inst->reset[len - 1];
-		if (!isalpha((int) last))
+		if (!isalpha((uint8_t) last))
 			last = 'd';
 		num = atoi(inst->reset);
 		DEBUG("rlm_sqlcounter: num=%d, last=%c",num,last);

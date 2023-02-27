@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: bd0a41169efbad8f11ea84a771cf3bba6e676046 $
+ * Version:     $Id: 4f34d70faccc5098bc1175cfae047c141fee6b90 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: bd0a41169efbad8f11ea84a771cf3bba6e676046 $")
+RCSID("$Id: 4f34d70faccc5098bc1175cfae047c141fee6b90 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -365,7 +365,7 @@ static bool identity_is_safe(const char *identity)
 	if (!identity) return true;
 
 	while ((c = *(identity++)) != '\0') {
-		if (isalpha((int) c) || isdigit((int) c) || isspace((int) c) ||
+		if (isalpha((uint8_t) c) || isdigit((uint8_t) c) || isspace((uint8_t) c) ||
 		    (c == '@') || (c == '-') || (c == '_') || (c == '.')) {
 			continue;
 		}
@@ -396,7 +396,8 @@ static unsigned int psk_server_callback(SSL *ssl, const char *identity,
 					     FR_TLS_EX_INDEX_REQUEST);
 	if (request && conf->psk_query) {
 		size_t hex_len;
-		VALUE_PAIR *vp;
+		VALUE_PAIR *vp, **certs;
+		TALLOC_CTX *talloc_ctx;
 		char buffer[2 * PSK_MAX_PSK_LEN + 4]; /* allow for too-long keys */
 
 		/*
@@ -409,6 +410,13 @@ static unsigned int psk_server_callback(SSL *ssl, const char *identity,
 
 		vp = pair_make_request("TLS-PSK-Identity", identity, T_OP_SET);
 		if (!vp) return 0;
+
+		certs = (VALUE_PAIR **)SSL_get_ex_data(ssl, fr_tls_ex_index_certs);
+		talloc_ctx = SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_TALLOC);
+		fr_assert(certs != NULL); /* pointer to sock->certs */
+		fr_assert(talloc_ctx != NULL); /* sock */
+
+		fr_pair_add(certs, fr_pair_copy(talloc_ctx, vp));
 
 		hex_len = radius_xlat(buffer, sizeof(buffer), request, conf->psk_query,
 				      NULL, NULL);
@@ -3014,7 +3022,14 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	 */
 	if (lookup > 1) {
 		if (!my_ok) lookup = 1;
-	} else {
+
+	} else if (lookup == 0) {
+		/*
+		 *	This flag is only set for outbound
+		 *	connections.  And then allows us to remap SSL
+		 *	offset 0 (server) to our offset 1 (also
+		 *	server).
+		 */
 		lookup = (SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_FIX_CERT_ORDER) != NULL);
 	}
 
@@ -3545,6 +3560,11 @@ X509_STORE *fr_init_x509_store(fr_tls_server_conf_t *conf)
 	if (conf->check_all_crl)
 		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK_ALL);
 #endif
+
+#if defined(X509_V_FLAG_PARTIAL_CHAIN)
+	X509_STORE_set_flags(store, X509_V_FLAG_PARTIAL_CHAIN);
+#endif
+
 	return store;
 }
 
@@ -4007,12 +4027,13 @@ load_ca:
 	/*
 	 *	Load the CAs we trust and configure CRL checks if needed
 	 */
-#if defined(X509_V_FLAG_PARTIAL_CHAIN)
-	X509_STORE_set_flags(SSL_CTX_get_cert_store(ctx), X509_V_FLAG_PARTIAL_CHAIN);
-#endif
 	if (conf->ca_file || conf->ca_path) {
 		if ((certstore = fr_init_x509_store(conf)) == NULL ) return NULL;
 		SSL_CTX_set_cert_store(ctx, certstore);
+	} else {
+#if defined(X509_V_FLAG_PARTIAL_CHAIN)
+		X509_STORE_set_flags(SSL_CTX_get_cert_store(ctx), X509_V_FLAG_PARTIAL_CHAIN);
+#endif
 	}
 
 	if (conf->ca_file && *conf->ca_file) SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(conf->ca_file));
@@ -5316,7 +5337,13 @@ fr_tls_status_t tls_ack_handler(tls_session_t *ssn, REQUEST *request)
 		return FR_TLS_FAIL;
 
 	case handshake:
-		if ((ssn->is_init_finished) && (ssn->dirty_out.used == 0)) {
+		if (ssn->dirty_out.used > 0) {
+			RDEBUG2("(TLS) Peer ACKed our handshake fragment");
+			/* Fragmentation handler, send next fragment */
+			return FR_TLS_REQUEST;
+		}
+
+		if (ssn->is_init_finished || SSL_is_init_finished(ssn->ssl)) {
 			RDEBUG2("(TLS) Peer ACKed our handshake fragment.  handshake is finished");
 
 			/*
@@ -5328,9 +5355,8 @@ fr_tls_status_t tls_ack_handler(tls_session_t *ssn, REQUEST *request)
 			return FR_TLS_SUCCESS;
 		} /* else more data to send */
 
-		RDEBUG2("(TLS) Peer ACKed our handshake fragment");
-		/* Fragmentation handler, send next fragment */
-		return FR_TLS_REQUEST;
+		REDEBUG("(TLS) Cannot continue, as the peer is misbehaving.");
+		return FR_TLS_FAIL;
 
 	case application_data:
 		RDEBUG2("(TLS) Peer ACKed our application data fragment");

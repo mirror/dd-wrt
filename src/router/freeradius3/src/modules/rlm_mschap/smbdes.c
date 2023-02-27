@@ -46,7 +46,7 @@
    up with a different answer to the one above)
 */
 
-RCSID("$Id: 12e75a0000a9a4b8c912aeaa2065d83449d5d3a8 $")
+RCSID("$Id: d80de343c3beffdcc14d13419d5439d8de0c5b89 $")
 
 #include <freeradius-devel/libradius.h>
 #include <ctype.h>
@@ -323,7 +323,7 @@ void smbdes_lmpwdhash(char const *password, uint8_t *lmhash)
 
 	memset(p14, 0, sizeof(p14));
 	for (i = 0; i < 14 && password[i]; i++) {
-		p14[i] = toupper((int) password[i]);
+		p14[i] = toupper((uint8_t) password[i]);
 	}
 
 	smbhash(lmhash, sp8, p14);

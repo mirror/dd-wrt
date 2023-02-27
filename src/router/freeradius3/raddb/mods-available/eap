@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id: 8fd8eb5edc69f5b72c5d3b92d90ccf018660dd4e $
+##	$Id: 62152a6dfc25709629f17d6f2e0fef9045142ec7 $
 
 #######################################################################
 #
@@ -487,9 +487,8 @@ eap {
 		#  compatibility, as clients get upgraded, and people
 		#  don't upgrade their copies of FreeRADIUS.
 		#
-		#  Also note that we only support TLS 1.3 for EAP-TLS.
-		#  Other versions of EAP (PEAP, TTLS, FAST) DO NOT
-		#  SUPPORT TLS 1.3.
+		#  Also note that we only support TLS 1.3 for EAP-TLS,
+		#  TTLS, and PEAP.  It is not supported for EAP-FAST.
 		#
 		tls_min_version = "1.2"
 		tls_max_version = "1.2"

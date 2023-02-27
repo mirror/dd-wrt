@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 960a31200621c2e86ecae1103a4651248e17f001 $
+ * Version:	$Id: 227ae4acfde86d209b249e15174b6bc83be1d5ec $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 960a31200621c2e86ecae1103a4651248e17f001 $")
+RCSID("$Id: 227ae4acfde86d209b249e15174b6bc83be1d5ec $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -501,11 +501,27 @@ static ssize_t xlat_listen_common(REQUEST *request, rad_listen_t *listen,
 		VALUE_PAIR *vp;
 		listen_socket_t *sock = listen->data;
 
+		if (!listen->tls) {
+			RDEBUG("Listener is not using TLS.  TLS attributes are not available");
+			*out = '\0';
+			return 0;
+		}
+
 		for (vp = sock->certs; vp != NULL; vp = vp->next) {
 			if (strcmp(fmt, vp->da->name) == 0) {
 				return vp_prints_value(out, outlen, vp, 0);
 			}
 		}
+
+		RDEBUG("Unknown TLS attribute \"%s\"", fmt);
+		*out = '\0';
+		return 0;
+	}
+#else
+	if (strncmp(fmt, "TLS-", 4) == 0) {
+		RDEBUG("Server is not built with TLS support");
+		*out = '\0';
+		return 0;
 	}
 #endif
 

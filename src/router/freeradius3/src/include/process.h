@@ -4,7 +4,7 @@
 /*
  * process.h	State machine for a server to process packets.
  *
- * Version:	$Id: fc14ed16cc358eba39bfed94d68ae76461e6b330 $
+ * Version:	$Id: 35a91bfa55ba1c5ae0f79d126c09a6e9594559ab $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2012 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(process_h, "$Id: fc14ed16cc358eba39bfed94d68ae76461e6b330 $")
+RCSIDH(process_h, "$Id: 35a91bfa55ba1c5ae0f79d126c09a6e9594559ab $")
 
 #include <freeradius-devel/clients.h>
 #include <freeradius-devel/listen.h>
@@ -75,6 +75,9 @@ void request_inject(REQUEST *request);
 
 #ifdef WITH_PROXY
 int request_proxy_reply(RADIUS_PACKET *packet);
+
+void proxy_listener_freeze(rad_listen_t *listener, fr_event_fd_handler_t write_handler);
+void proxy_listener_thaw(rad_listen_t *listener);
 #endif
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /**
- * $Id: f3e066783f56dc56e6d16c6ed7562e506599b64b $
+ * $Id: 2ab8ba375fab08a6c6c15ea43c470aa9622cd744 $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *
@@ -268,6 +268,8 @@ typedef struct ldap_instance {
 
 	char const	*tls_min_version_str;		//!< Minimum TLS version
 	int		tls_min_version;
+
+	char const	*tls_cipher_list;	       	//!< cipher suites
 
 	/*
 	 *	Options

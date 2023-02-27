@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 09d27c8711898d81c5c1916e4cc5c30c06d305f8 $
+ * Version:	$Id: 37bd406c4afcd527f27ca61112462be06e249f98 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 09d27c8711898d81c5c1916e4cc5c30c06d305f8 $")
+RCSID("$Id: 37bd406c4afcd527f27ca61112462be06e249f98 $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -1253,7 +1253,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'c':
-			if (!isdigit((int) *optarg)) usage();
+			if (!isdigit((uint8_t) *optarg)) usage();
 
 			resend_count = atoi(optarg);
 
@@ -1332,7 +1332,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'r':
-			if (!isdigit((int) *optarg)) usage();
+			if (!isdigit((uint8_t) *optarg)) usage();
 			retries = atoi(optarg);
 			if ((retries == 0) || (retries > 1000)) usage();
 			break;
@@ -1372,7 +1372,7 @@ int main(int argc, char **argv)
 		       break;
 
 		case 't':
-			if (!isdigit((int) *optarg))
+			if (!isdigit((uint8_t) *optarg))
 				usage();
 			timeout = atof(optarg);
 			break;
@@ -1419,7 +1419,7 @@ int main(int argc, char **argv)
 	/*
 	 *	Get the request type
 	 */
-	if (!isdigit((int) argv[2][0])) {
+	if (!isdigit((uint8_t) argv[2][0])) {
 		packet_code = fr_str2int(request_types, argv[2], -2);
 		if (packet_code == -2) {
 			ERROR("Unrecognised request type \"%s\"", argv[2]);

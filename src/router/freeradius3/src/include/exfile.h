@@ -16,14 +16,14 @@
 #ifndef EXFILE_H
 #define EXFILE_H
 /*
- * $Id: 750eb4dd448f4139fd4eaf678d3da9676dc03304 $
+ * $Id: febe2e6747881f33c67842d488809366fa01b931 $
  *
  * @file exfile.h
  * @brief Functions for managing concurrent file access.
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSIDH(exfile_h, "$Id: 750eb4dd448f4139fd4eaf678d3da9676dc03304 $")
+RCSIDH(exfile_h, "$Id: febe2e6747881f33c67842d488809366fa01b931 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +36,7 @@ extern "C" {
 typedef struct exfile_t exfile_t;
 
 exfile_t *exfile_init(TALLOC_CTX *ctx, uint32_t entries, uint32_t idle, bool locking);
-int exfile_open(exfile_t *lf, char const *filename, mode_t permissions);
+int exfile_open(exfile_t *lf, char const *filename, mode_t permissions, off_t *offset);
 int exfile_close(exfile_t *lf, int fd);
 
 #ifdef __cplusplus

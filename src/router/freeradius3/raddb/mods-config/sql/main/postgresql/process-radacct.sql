@@ -2,7 +2,7 @@
 #
 #  main/postgresql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: 7a70724760f48a96a5466c6754dd589749f78751 $
+#  $Id: a454369249af04e7da8201522e5f8cb360e64d88 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -21,7 +21,7 @@
 --  given user could be obtained by queriing this table with:
 --
 --      SELECT
---          TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-Month') AS month,
+--          TO_CHAR(period_start, 'YYYY-Month') AS month,
 --          TRUNC(SUM(acctinputoctets)/1000/1000/1000,9) AS gb_in,
 --          TRUNC(SUM(acctoutputoctets)/1000/1000/1000,9) AS gb_out
 --      FROM
@@ -96,11 +96,21 @@ BEGIN
             v_end,
             SUM(acctinputoctets) AS acctinputoctets,
             SUM(acctoutputoctets) AS acctoutputoctets
-        FROM
-            radacct
-        WHERE
-            acctstoptime > v_start OR
-            acctstoptime IS NULL
+        FROM ((
+            SELECT
+                username, acctinputoctets, acctoutputoctets
+            FROM
+                radacct
+            WHERE
+                acctstoptime > v_start
+        ) UNION ALL (
+            SELECT
+                username, acctinputoctets, acctoutputoctets
+            FROM
+                radacct
+            WHERE
+                acctstoptime IS NULL
+        )) AS a
         GROUP BY
             username
     ) AS s

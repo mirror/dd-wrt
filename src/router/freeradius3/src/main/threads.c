@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: a9bd63bb57484df65fe716a31ec46568c596936c $
+ * Version:	$Id: 774affce29976d65db4a016363f32db8a312c43b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: a9bd63bb57484df65fe716a31ec46568c596936c $")
+RCSID("$Id: 774affce29976d65db4a016363f32db8a312c43b $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -1574,6 +1574,29 @@ void thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2])
 		}
 
 		pps[0] = pps[1] = 0;
+	}
+}
+
+void thread_pool_thread_stats(int stats[3])
+{
+#ifndef WITH_GCD
+	if (pool_initialized) {
+		/*
+		 *	We don't need a mutex lock here as we only want to
+		 *	read a close approximation of the number of active
+		 *	threads, and not modify it.
+		 */
+#ifdef HAVE_STDATOMIC_H
+		stats[0] = load(thread_pool.active_threads);
+#else
+		stats[0] = thread_pool.active_threads;
+#endif
+		stats[1] = thread_pool.total_threads;
+		stats[2] = thread_pool.max_threads;
+	} else
+#endif	/* WITH_GCD */
+	{
+		stats[0] = stats[1] = stats[2] = 0;
 	}
 }
 #endif /* HAVE_PTHREAD_H */

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 7f19824dd301d215decf7fad2185f45103efad41 $
+ * $Id: ff46aef0c327708efe9fa164ae87794d03aa3b28 $
  * @file rlm_counter.c
  * @brief Provides a packet counter to track data usage and other values.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  Alan DeKok <aland@ox.org>
  * @copyright 2001-2003  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 7f19824dd301d215decf7fad2185f45103efad41 $")
+RCSID("$Id: ff46aef0c327708efe9fa164ae87794d03aa3b28 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -271,12 +271,12 @@ static int find_next_reset(rlm_counter_t *inst, time_t timeval)
 
 	if (!inst->reset)
 		return -1;
-	if (isdigit((int) inst->reset[0])) {
+	if (isdigit((uint8_t) inst->reset[0])) {
 		len = strlen(inst->reset);
 		if (len == 0)
 			return -1;
 		last = inst->reset[len - 1];
-		if (!isalpha((int) last))
+		if (!isalpha((uint8_t) last))
 			last = 'd';
 		num = atoi(inst->reset);
 		DEBUG("rlm_counter: num=%d, last=%c",num,last);

@@ -1,7 +1,7 @@
 /*
  * eap.c    rfc2284 & rfc2869 implementation
  *
- * Version:     $Id: f0452b43f4f887e9872363cfa6df53c25359b207 $
+ * Version:     $Id: 1ece323072c7b2bdb615885fa5a5c4179cee25bb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@
 
 #include <freeradius-devel/modpriv.h>
 
-RCSID("$Id: f0452b43f4f887e9872363cfa6df53c25359b207 $")
+RCSID("$Id: 1ece323072c7b2bdb615885fa5a5c4179cee25bb $")
 
 #include "rlm_eap.h"
 #include <ctype.h>
@@ -118,7 +118,7 @@ int eap_module_instantiate(rlm_eap_t *inst, eap_module_t **m_inst, eap_type_t nu
 	 */
 	p = mod_name;
 	while (*p) {
-		*p = tolower(*p);
+		*p = tolower((uint8_t) *p);
 		p++;
 	}
 

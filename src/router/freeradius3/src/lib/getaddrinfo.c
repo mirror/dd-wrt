@@ -7,7 +7,7 @@
  *	return all IPv4 addresses provided by DNS lookup.
  */
 
-RCSID("$Id: 2022362d3d095e3ca25814906e625cf018fcc5e1 $")
+RCSID("$Id: 1c8aa9a8666f7032ba23702e27ef88c7eb1ed68e $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -287,7 +287,7 @@ int getaddrinfo(char const *hostname, char const *servname, struct addrinfo cons
 	}
 
 	if (servname) {
-		if (isdigit((int)*servname)) {
+		if (isdigit((uint8_t)*servname)) {
 			port = htons(atoi(servname));
 		} else {
 			struct		servent *se;

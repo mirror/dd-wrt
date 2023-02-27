@@ -34,7 +34,7 @@
 #	module that writes the "detail.example.com" file.
 #
 #
-#	$Id: 85f2f9dcc06ed2cc2c14d371c7cfc5a086b4c6cf $
+#	$Id: 73716430db01cb92451d9b8f0ef09b4bcae126f4 $
 #
 ######################################################################
 
@@ -116,6 +116,10 @@ server home.example.com {
 		#
 		Post-Proxy-Type Fail-Accounting {
 			detail.example.com
+
+			#  Now that the packet has been stored
+			#  mark that we can respond to the NAS
+			acct_response
 		}
 
 		#
@@ -141,7 +145,13 @@ server home.example.com {
 	listen {
 		type = detail
 		filename = "${radacctdir}/detail.example.com/detail-*:*"
-		load_factor = 10
+
+		#
+		#  See sites-available/buffered-sql for documentation
+		#  on the configuration items for a detail listener.
+		#
+		load_factor = 90
+		track = yes
 	}
 
 	#  All packets read from the detail file are proxied back to

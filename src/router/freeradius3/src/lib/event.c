@@ -2,7 +2,7 @@
  * event.c	Non-thread-safe event handling, specific to a RADIUS
  *		server.
  *
- * Version:	$Id: 0c2976b3c96f90ffda165734431c24e0332ddea7 $
+ * Version:	$Id: fefa2951444562d8edf8a4175a977cb92b42edf2 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  *  Copyright 2007  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 0c2976b3c96f90ffda165734431c24e0332ddea7 $")
+RCSID("$Id: fefa2951444562d8edf8a4175a977cb92b42edf2 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/heap.h>
@@ -40,6 +40,7 @@ RCSID("$Id: 0c2976b3c96f90ffda165734431c24e0332ddea7 $")
 typedef struct fr_event_fd_t {
 	int			fd;
 	fr_event_fd_handler_t	handler;
+	fr_event_fd_handler_t	write_handler;
 	void			*ctx;
 } fr_event_fd_t;
 
@@ -61,9 +62,10 @@ struct fr_event_list_t {
 	int		num_readers;
 #ifndef HAVE_KQUEUE
 	int		max_readers;
+	int		max_fd;
 
-	bool		changed;
-
+	fd_set		read_fds;
+	fd_set		write_fds;
 #else
 	int		kq;
 	struct kevent	events[FR_EV_MAX_FDS]; /* so it doesn't go on the stack every time */
@@ -139,8 +141,9 @@ fr_event_list_t *fr_event_list_create(TALLOC_CTX *ctx, fr_event_status_t status)
 	}
 
 #ifndef HAVE_KQUEUE
-	el->changed = true;	/* force re-set of fds's */
-
+	el->max_fd = 0;
+	FD_ZERO(&el->read_fds);
+	FD_ZERO(&el->write_fds);
 #else
 	el->kq = kqueue();
 	if (el->kq < 0) {
@@ -432,6 +435,9 @@ int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 			el->num_readers++;
 
 			if (i == el->max_readers) el->max_readers = i + 1;
+
+			FD_SET(fd, &el->read_fds);
+			if (el->max_fd <= fd) el->max_fd = fd;
 			break;
 		}
 	}
@@ -446,11 +452,67 @@ int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 	ef->handler = handler;
 	ef->ctx = ctx;
 
-#ifndef HAVE_KQUEUE
-	el->changed = true;
-#endif
-
 	return 1;
+}
+
+int fr_event_fd_write_handler(fr_event_list_t *el, int type, int fd,
+			      fr_event_fd_handler_t write_handler, void *ctx)
+{
+	int i;
+
+	if (!el || (fd < 0)) return 0;
+
+	if (type != 0) return 0;
+
+#ifdef HAVE_KQUEUE
+	for (i = 0; i < FR_EV_MAX_FDS; i++) {
+		int j;
+		struct kevent evset;
+
+		j = (i + fd) & (FR_EV_MAX_FDS - 1);
+
+		if (el->readers[j].fd != fd) continue;
+
+		fr_assert(ctx = el->readers[j].ctx);
+
+		/*
+		 *	Tell us when the socket is ready for writing
+		 */
+		if (write_handler) {
+			fr_assert(!el->readers[j].write_handler);
+
+			el->readers[j].write_handler = write_handler;
+
+			EV_SET(&evset, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &el->readers[j]);
+		} else {
+			fr_assert(el->readers[j].write_handler);
+
+			el->readers[j].write_handler = NULL;
+
+			EV_SET(&evset, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+		}
+		if (kevent(el->kq, &evset, 1, NULL, 0, NULL) < 0) {
+			fr_strerror_printf("Failed inserting event for FD %i: %s", fd, fr_syserror(errno));
+			return 0;
+		}
+
+		return 1;
+	}
+
+#else
+
+	for (i = 0; i < el->max_readers; i++) {
+		if (el->readers[i].fd != fd) continue;
+
+		fr_assert(ctx = el->readers[i].ctx);
+		el->readers[i].write_handler = write_handler;
+
+		FD_SET(fd, &el->write_fds); /* fd MUST already be in the set of readers! */
+		return 1;
+	}
+#endif	/* HAVE_KQUEUE */
+
+	return 0;
 }
 
 int fr_event_fd_delete(fr_event_list_t *el, int type, int fd)
@@ -480,6 +542,14 @@ int fr_event_fd_delete(fr_event_list_t *el, int type, int fd)
 		EV_SET(&evset, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 		(void) kevent(el->kq, &evset, 1, NULL, 0, NULL);
 
+		/*
+		 *	Delete the write handler if it exits.
+		 */
+		if (el->readers[j].write_handler) {
+			EV_SET(&evset, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+			(void) kevent(el->kq, &evset, 1, NULL, 0, NULL);
+		}
+
 		el->readers[j].fd = -1;
 		el->num_readers--;
 
@@ -487,14 +557,18 @@ int fr_event_fd_delete(fr_event_list_t *el, int type, int fd)
 	}
 
 #else
-
 	for (i = 0; i < el->max_readers; i++) {
 		if (el->readers[i].fd == fd) {
 			el->readers[i].fd = -1;
 			el->num_readers--;
 
 			if ((i + 1) == el->max_readers) el->max_readers = i;
-			el->changed = true;
+			FD_CLR(fd, &el->read_fds);
+			FD_CLR(fd, &el->write_fds);
+
+			/*
+			 *	@todo - update el->max_fd, too.
+			 */
 			return 1;
 		}
 	}
@@ -523,39 +597,13 @@ int fr_event_loop(fr_event_list_t *el)
 #ifdef HAVE_KQUEUE
 	struct timespec ts_when, *ts_wake;
 #else
-	int maxfd = 0;
-	fd_set read_fds, master_fds;
-
-	el->changed = true;
+	fd_set read_fds, write_fds;
 #endif
 
 	el->exit = 0;
 	el->dispatch = true;
 
 	while (!el->exit) {
-#ifndef HAVE_KQUEUE
-		/*
-		 *	Cache the list of FD's to watch.
-		 */
-		if (el->changed) {
-#ifdef __clang_analyzer__
-			memset(&master_fds, 0, sizeof(master_fds));
-#else
-			FD_ZERO(&master_fds);
-#endif
-			for (i = 0; i < el->max_readers; i++) {
-				if (el->readers[i].fd < 0) continue;
-
-				if (el->readers[i].fd > maxfd) {
-					maxfd = el->readers[i].fd;
-				}
-				FD_SET(el->readers[i].fd, &master_fds);
-			}
-
-			el->changed = false;
-		}
-#endif	/* HAVE_KQUEUE */
-
 		/*
 		 *	Find the first event.  If there's none, we wait
 		 *	on the socket forever.
@@ -604,8 +652,9 @@ int fr_event_loop(fr_event_list_t *el)
 		if (el->status) el->status(wake);
 
 #ifndef HAVE_KQUEUE
-		read_fds = master_fds;
-		rcode = select(maxfd + 1, &read_fds, NULL, NULL, wake);
+		read_fds = el->read_fds;
+		write_fds = el->write_fds;
+		rcode = select(el->max_fd + 1, &read_fds, &write_fds, NULL, wake);
 		if ((rcode < 0) && (errno != EINTR)) {
 			fr_strerror_printf("Failed in select: %s", fr_syserror(errno));
 			el->dispatch = false;
@@ -644,11 +693,16 @@ int fr_event_loop(fr_event_list_t *el)
 
 			if (ef->fd < 0) continue;
 
+			/*
+			 *	Check if the socket is available for writing.
+			 */
+			if (ef->write_handler && FD_ISSET(ef->fd, &write_fds)) {
+				ef->write_handler(el, ef->fd, ef->ctx);
+			}
+
 			if (!FD_ISSET(ef->fd, &read_fds)) continue;
 
 			ef->handler(el, ef->fd, ef->ctx);
-
-			if (el->changed) break;
 		}
 
 #else  /* HAVE_KQUEUE */
@@ -670,6 +724,11 @@ int fr_event_loop(fr_event_list_t *el)
 				 *	delete the connection.
 				 */
 				ef->handler(el, ef->fd, ef->ctx);
+				continue;
+			}
+
+			if (el->events[i].filter == EVFILT_WRITE) {
+				ef->write_handler(el, ef->fd, ef->ctx);
 				continue;
 			}
 

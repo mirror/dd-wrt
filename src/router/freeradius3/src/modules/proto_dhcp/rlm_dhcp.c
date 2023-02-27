@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 1cd73ff2469d5f1cac253adedc77037be2a7ae24 $
+ * $Id: b8a740be29266c06162e2f3829d85f1eb59fc2e1 $
  * @file rlm_dhcp.c
  * @brief Will contain dhcp listener code.
  *
  * @copyright 2012  The FreeRADIUS server project
  */
-RCSID("$Id: 1cd73ff2469d5f1cac253adedc77037be2a7ae24 $")
+RCSID("$Id: b8a740be29266c06162e2f3829d85f1eb59fc2e1 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -57,7 +57,7 @@ static ssize_t dhcp_options_xlat(UNUSED void *instance, REQUEST *request,
 	int		decoded = 0;
 	ssize_t		slen;
 
-	while (isspace((int) *fmt)) fmt++;
+	while (isspace((uint8_t) *fmt)) fmt++;
 
 	slen = tmpl_from_attr_str(&src, fmt, REQUEST_CURRENT, PAIR_LIST_REQUEST, false, false);
 	if (slen <= 0) {
@@ -116,7 +116,7 @@ static ssize_t dhcp_xlat(UNUSED void *instance, REQUEST *request, char const *fm
 	uint8_t *p = binbuf, *end = p + sizeof(binbuf);
 	ssize_t slen;
 
-	while (isspace((int) *fmt)) fmt++;
+	while (isspace((uint8_t) *fmt)) fmt++;
 
 	if ((radius_copy_vp(request, &head, request, fmt) < 0) || !head) {
 		 *out = '\0';

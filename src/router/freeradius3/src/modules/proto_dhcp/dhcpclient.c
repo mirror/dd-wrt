@@ -1,7 +1,7 @@
 /*
  * dhcpclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 2ae0a763cb1a983a6c738d1609aedad11ecb1ddf $
+ * Version:	$Id: 5ab4365f679224991bbec7589863d7af9212accb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2010  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 2ae0a763cb1a983a6c738d1609aedad11ecb1ddf $")
+RCSID("$Id: 5ab4365f679224991bbec7589863d7af9212accb $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/conf.h>
@@ -459,13 +459,13 @@ int main(int argc, char **argv)
 			break;
 #endif
 		case 'r':
-			if (!isdigit((int) *optarg))
+			if (!isdigit((uint8_t) *optarg))
 				usage();
 			retries = atoi(optarg);
 			if ((retries == 0) || (retries > 1000)) usage();
 			break;
 		case 't':
-			if (!isdigit((int) *optarg))
+			if (!isdigit((uint8_t) *optarg))
 				usage();
 			timeout = atof(optarg);
 			break;
@@ -530,7 +530,7 @@ int main(int argc, char **argv)
 	 *	See what kind of request we want to send.
 	 */
 	if (argc >= 3) {
-		if (!isdigit((int) argv[2][0])) {
+		if (!isdigit((uint8_t) argv[2][0])) {
 			packet_code = fr_str2int(request_types, argv[2], -2);
 			if (packet_code == -2) {
 				fprintf(stderr, "Unknown packet type: %s\n", argv[2]);

@@ -2,7 +2,7 @@
 #
 #  main/mysql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: 04c1c5b555f7791df8b84fce402994f8032a0251 $
+#  $Id: 8902338e308dc6bc48bdcf10bdf30167dc7c6ed6 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -109,11 +109,21 @@ BEGIN
             v_end,
             SUM(acctinputoctets) AS acctinputoctets,
             SUM(acctoutputoctets) AS acctoutputoctets
-        FROM
-            radacct
-        WHERE
-            acctstoptime > v_start OR
-            acctstoptime IS NULL
+        FROM ((
+            SELECT
+                username, acctinputoctets, acctoutputoctets
+            FROM
+                radacct
+            WHERE
+                acctstoptime > v_start
+        ) UNION ALL (
+            SELECT
+                username, acctinputoctets, acctoutputoctets
+            FROM
+                radacct
+            WHERE
+                acctstoptime IS NULL
+        )) AS a
         GROUP BY
             username
     ) AS s

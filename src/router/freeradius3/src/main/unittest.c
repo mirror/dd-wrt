@@ -1,7 +1,7 @@
 /*
  * unittest.c	Unit test wrapper for the RADIUS daemon.
  *
- * Version:	$Id: 50935c989e0e36f61a79a25f6996d9c783e4a273 $
+ * Version:	$Id: 5a15ee2e5773217555ea82efa8ce87623a0459a3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2013  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 50935c989e0e36f61a79a25f6996d9c783e4a273 $")
+RCSID("$Id: 5a15ee2e5773217555ea82efa8ce87623a0459a3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -552,7 +552,7 @@ static bool do_xlats(char const *filename, FILE *fp)
 		 *	Ignore blank lines and comments
 		 */
 		p = input;
-		while (isspace((int) *p)) p++;
+		while (isspace((uint8_t) *p)) p++;
 
 		if (*p < ' ') continue;
 		if (*p == '#') continue;

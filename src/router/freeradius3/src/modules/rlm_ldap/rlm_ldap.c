@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 33e5a885caa8dfd4069692b4b1ae8627f4592c25 $
+ * $Id: 0e0b3bc189373425ca512473b591c2c37cffebcb $
  * @file rlm_ldap.c
  * @brief LDAP authorization and authentication module.
  *
@@ -27,7 +27,7 @@
  * @copyright 2012 Alan DeKok <aland@freeradius.org>
  * @copyright 1999-2013 The FreeRADIUS Server Project.
  */
-RCSID("$Id: 33e5a885caa8dfd4069692b4b1ae8627f4592c25 $")
+RCSID("$Id: 0e0b3bc189373425ca512473b591c2c37cffebcb $")
 
 #include	<freeradius-devel/rad_assert.h>
 
@@ -110,6 +110,9 @@ static CONF_PARSER tls_config[] = {
 	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, tls_min_version_str), NULL },
 #endif
 
+#ifdef LDAP_OPT_X_TLS_CIPHER_SUITE
+	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, tls_cipher_list), NULL },
+#endif
 	/*
 	 *	LDAP Specific TLS attributes
 	 */
@@ -827,7 +830,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 			case ',':
 			case ';':
 			case ' ':
-				while (isspace((int) *p)) p++;
+				while (isspace((uint8_t) *p)) p++;
 				if (p == q) continue;
 
 				buff = talloc_array(inst, char, (q - p) + 1);

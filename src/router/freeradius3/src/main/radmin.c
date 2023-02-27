@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id: d71a2dd0b465a2a976607404a07aef9d6ccd5174 $
+ * Version:	$Id: badc186d397d51a0c6752546ea05fa3baf7685b5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: d71a2dd0b465a2a976607404a07aef9d6ccd5174 $")
+RCSID("$Id: badc186d397d51a0c6752546ea05fa3baf7685b5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -445,7 +445,6 @@ int main(int argc, char **argv)
 		case 'v':
 			printf("%s\n", radmin_version);
 			exit(EXIT_SUCCESS);
-			break;
 		}
 	}
 

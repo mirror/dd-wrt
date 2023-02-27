@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: e5ae41df66e4bc07bd8b72636e32730e2f4cfe49 $
+ * $Id: 67243f79ef62e3dda003677ba2b6fef173a14489 $
  *
  * @file exec.c
  * @brief Execute external programs.
@@ -23,7 +23,7 @@
  * @copyright 2000-2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: e5ae41df66e4bc07bd8b72636e32730e2f4cfe49 $")
+RCSID("$Id: 67243f79ef62e3dda003677ba2b6fef173a14489 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -152,8 +152,8 @@ pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
 				for (p = buffer; *p != '='; p++) {
 					if (*p == '-') {
 						*p = '_';
-					} else if (isalpha((int) *p)) {
-						*p = toupper(*p);
+					} else if (isalpha((uint8_t) *p)) {
+						*p = toupper((uint8_t) *p);
 					}
 				}
 			}

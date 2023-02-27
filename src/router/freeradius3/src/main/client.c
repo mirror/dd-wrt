@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: b0b3e24028c9d634b1a4d51b3b0e3d2ffd8798e4 $
+ * $Id: b5c38d408f8f9db64e64cfa26dbee080cc4f3307 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: b0b3e24028c9d634b1a4d51b3b0e3d2ffd8798e4 $")
+RCSID("$Id: b5c38d408f8f9db64e64cfa26dbee080cc4f3307 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -656,8 +656,8 @@ RADCLIENT_LIST *client_list_parse_section(CONF_SECTION *section, UNUSED bool tls
 				 *	Check for valid characters
 				 */
 				for (p = dp->d_name; *p != '\0'; p++) {
-					if (isalpha((int)*p) ||
-					    isdigit((int)*p) ||
+					if (isalpha((uint8_t)*p) ||
+					    isdigit((uint8_t)*p) ||
 					    (*p == ':') ||
 					    (*p == '.')) continue;
 					break;
