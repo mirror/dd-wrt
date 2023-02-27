@@ -500,6 +500,18 @@ static int write_main(int argc, char *argv[])
 	eval("mount","-f", "-o","remount,ro","/jffs");
 	eval("umount", "-r", "-f", "/jffs");
 	eval("service", "syslog", "start");
+
+
+#if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+#if defined(HAVE_R9000)
+	int mtddev = getMTD("plex");
+#else
+	int mtddev = getMTD("ddwrt");
+#endif
+	char devdev[32];
+	sprintf(devdev, "/dev/mtd%d", mtddev);
+	eval("ubidetach", "-p", devdev);
+#endif
 	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
 		dd_logerror("flash", "%s: Bad trx header\n", path);
 		goto fail;
