@@ -128,7 +128,7 @@ source/pjlib/include/pj/%.h: patches/%.h
 
 source/build.mak: Makefile.rules source/user.mak $(if $(PJPROJECT_BUNDLED_OOT),,.rebuild_needed) $(subst patches,source/pjlib/include/pj,$(wildcard patches/*.h))
 	$(ECHO_PREFIX) Configuring with $(PJPROJECT_CONFIG_OPTS) 
-	$(CMD_PREFIX) (cd source ; ./aconfigure $(QUIET_CONFIGURE) --host $(ARCH)-linux-uclibc $(PJPROJECT_CONFIG_OPTS)) --with-ssl=$(TOP)/openssl
+	$(CMD_PREFIX) (cd source ; ./aconfigure $(QUIET_CONFIGURE) --host $(ARCH)-linux-uclibc $(PJPROJECT_CONFIG_OPTS) --with-ssl=$(TOP)/openssl)
 
 build.mak: source/build.mak
 	$(CMD_PREFIX) $(GREP) -v -e prefix -e "export PJ_SHARED_LIBRARIES" -e MACHINE_NAME \
