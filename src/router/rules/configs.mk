@@ -265,7 +265,7 @@ obj-$(CONFIG_USB_ADVANCED) += hdparm
 ifeq ($(CONFIG_X86),y)
 obj-$(CONFIG_USB_ADVANCED) += sdparm
 endif
-obj-$(CONFIG_ASTERISK) += editline zlib ncurses util-linux jansson asterisk
+obj-$(CONFIG_ASTERISK) += editline zlib ncurses util-linux jansson sqlite asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
 obj-$(CONFIG_WAVESAT) += wavesat
 obj-$(CONFIG_RT2860APD) += rt2860apd apsta_client
