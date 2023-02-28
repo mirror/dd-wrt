@@ -6,7 +6,7 @@ refresh() {
 
   id=1
   lastid=0
-  
+  rm -rf /tmp/snmp_cache  
   for mac in $(wl_atheros assoclist | cut -d" " -f2)
   do
     if test $lastid -eq 0
