@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Yann Collet, Facebook, Inc.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -30,6 +30,7 @@ const char* ZSTD_versionString(void) { return ZSTD_VERSION_STRING; }
 /*-****************************************
 *  ZSTD Error Management
 ******************************************/
+#undef ZSTD_isError   /* defined within zstd_internal.h */
 /*! ZSTD_isError() :
  *  tells if a return value is an error code
  *  symbol is required for external callers */

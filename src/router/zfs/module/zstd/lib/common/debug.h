@@ -1,7 +1,7 @@
 /* ******************************************************************
  * debug
  * Part of FSE library
- * Copyright (c) Yann Collet, Facebook, Inc.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * You can contact the author at :
  * - Source repository : https://github.com/Cyan4973/FiniteStateEntropy
@@ -91,7 +91,7 @@ extern int g_debuglevel; /* the variable is only declared,
             }   }
 #  define DEBUGLOG(l, ...) {                                     \
                 if (l<=g_debuglevel) {                           \
-                    ZSTD_DEBUG_PRINT("unknown" ": " __VA_ARGS__); \
+                    ZSTD_DEBUG_PRINT(__FILE__ ": " __VA_ARGS__); \
                     ZSTD_DEBUG_PRINT(" \n");                     \
             }   }
 #else

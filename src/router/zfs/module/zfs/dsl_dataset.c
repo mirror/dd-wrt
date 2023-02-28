@@ -1039,7 +1039,7 @@ dsl_dataset_has_owner(dsl_dataset_t *ds)
 	return (rv);
 }
 
-static boolean_t
+boolean_t
 zfeature_active(spa_feature_t f, void *arg)
 {
 	switch (spa_feature_table[f].fi_type) {
@@ -1272,9 +1272,6 @@ dsl_dataset_zero_zil(dsl_dataset_t *ds, dmu_tx_t *tx)
 		zio = zio_root(dp->dp_spa, NULL, NULL, ZIO_FLAG_MUSTSUCCEED);
 		dsl_dataset_sync(ds, zio, tx);
 		VERIFY0(zio_wait(zio));
-
-		/* dsl_dataset_sync_done will drop this reference. */
-		dmu_buf_add_ref(ds->ds_dbuf, ds);
 		dsl_dataset_sync_done(ds, tx);
 	}
 }
@@ -1759,25 +1756,6 @@ dsl_dataset_snapshot_sync_impl(dsl_dataset_t *ds, const char *snapname,
 		}
 	}
 
-	/*
-	 * We are not allowed to dirty a filesystem when done receiving
-	 * a snapshot. In this case some flags such as SPA_FEATURE_LARGE_BLOCKS
-	 * will not be set and a subsequent encrypted raw send will fail. Hence
-	 * activate this feature if needed here. This needs to happen only in
-	 * syncing context.
-	 */
-	if (dmu_tx_is_syncing(tx)) {
-		for (spa_feature_t f = 0; f < SPA_FEATURES; f++) {
-			if (zfeature_active(f, ds->ds_feature_activation[f]) &&
-			    !(zfeature_active(f, ds->ds_feature[f]))) {
-				dsl_dataset_activate_feature(dsobj, f,
-				    ds->ds_feature_activation[f], tx);
-				ds->ds_feature[f] =
-				    ds->ds_feature_activation[f];
-			}
-		}
-	}
-
 	ASSERT3U(ds->ds_prev != 0, ==,
 	    dsl_dataset_phys(ds)->ds_prev_snap_obj != 0);
 	if (ds->ds_prev) {
@@ -2121,16 +2099,6 @@ dsl_dataset_sync(dsl_dataset_t *ds, zio_t *zio, dmu_tx_t *tx)
 	}
 
 	dmu_objset_sync(ds->ds_objset, zio, tx);
-
-	for (spa_feature_t f = 0; f < SPA_FEATURES; f++) {
-		if (zfeature_active(f, ds->ds_feature_activation[f])) {
-			if (zfeature_active(f, ds->ds_feature[f]))
-				continue;
-			dsl_dataset_activate_feature(ds->ds_object, f,
-			    ds->ds_feature_activation[f], tx);
-			ds->ds_feature[f] = ds->ds_feature_activation[f];
-		}
-	}
 }
 
 /*
@@ -2300,9 +2268,18 @@ dsl_dataset_sync_done(dsl_dataset_t *ds, dmu_tx_t *tx)
 	else
 		ASSERT0(os->os_next_write_raw[tx->tx_txg & TXG_MASK]);
 
-	ASSERT(!dmu_objset_is_dirty(os, dmu_tx_get_txg(tx)));
+	for (spa_feature_t f = 0; f < SPA_FEATURES; f++) {
+		if (zfeature_active(f,
+		    ds->ds_feature_activation[f])) {
+			if (zfeature_active(f, ds->ds_feature[f]))
+				continue;
+			dsl_dataset_activate_feature(ds->ds_object, f,
+			    ds->ds_feature_activation[f], tx);
+			ds->ds_feature[f] = ds->ds_feature_activation[f];
+		}
+	}
 
-	dmu_buf_rele(ds->ds_dbuf, ds);
+	ASSERT(!dmu_objset_is_dirty(os, dmu_tx_get_txg(tx)));
 }
 
 int

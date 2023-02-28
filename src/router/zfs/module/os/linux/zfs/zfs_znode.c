@@ -271,7 +271,7 @@ zfs_znode_held(zfsvfs_t *zfsvfs, uint64_t obj)
 	return (held);
 }
 
-static znode_hold_t *
+znode_hold_t *
 zfs_znode_hold_enter(zfsvfs_t *zfsvfs, uint64_t obj)
 {
 	znode_hold_t *zh, *zh_new, search;
@@ -304,7 +304,7 @@ zfs_znode_hold_enter(zfsvfs_t *zfsvfs, uint64_t obj)
 	return (zh);
 }
 
-static void
+void
 zfs_znode_hold_exit(zfsvfs_t *zfsvfs, znode_hold_t *zh)
 {
 	int i = ZFS_OBJ_HASH(zfsvfs, zh->zh_obj);
@@ -357,7 +357,7 @@ zfs_znode_sa_init(zfsvfs_t *zfsvfs, znode_t *zp,
 void
 zfs_znode_dmu_fini(znode_t *zp)
 {
-	ASSERT(zfs_znode_held(ZTOZSB(zp), zp->z_id) || zp->z_unlinked ||
+	ASSERT(zfs_znode_held(ZTOZSB(zp), zp->z_id) ||
 	    RW_WRITE_HELD(&ZTOZSB(zp)->z_teardown_inactive_lock));
 
 	sa_handle_destroy(zp->z_sa_hdl);
@@ -495,13 +495,11 @@ zfs_set_inode_flags(znode_t *zp, struct inode *ip)
 void
 zfs_znode_update_vfs(znode_t *zp)
 {
-	zfsvfs_t	*zfsvfs;
 	struct inode	*ip;
 	uint32_t	blksize;
 	u_longlong_t	i_blocks;
 
 	ASSERT(zp != NULL);
-	zfsvfs = ZTOZSB(zp);
 	ip = ZTOI(zp);
 
 	/* Skip .zfs control nodes which do not exist on disk. */
@@ -553,7 +551,9 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 	ASSERT3P(zp->z_xattr_cached, ==, NULL);
 	zp->z_unlinked = B_FALSE;
 	zp->z_atime_dirty = B_FALSE;
+#if !defined(HAVE_FILEMAP_RANGE_HAS_PAGE)
 	zp->z_is_mapped = B_FALSE;
+#endif
 	zp->z_is_ctldir = B_FALSE;
 	zp->z_suspended = B_FALSE;
 	zp->z_sa_hdl = NULL;
@@ -1643,7 +1643,7 @@ zfs_free_range(znode_t *zp, uint64_t off, uint64_t len)
 	 * Zero partial page cache entries.  This must be done under a
 	 * range lock in order to keep the ARC and page cache in sync.
 	 */
-	if (zp->z_is_mapped) {
+	if (zn_has_cached_data(zp, off, off + len - 1)) {
 		loff_t first_page, last_page, page_len;
 		loff_t first_page_offset, last_page_offset;
 
@@ -1885,6 +1885,7 @@ zfs_create_fs(objset_t *os, cred_t *cr, nvlist_t *zplprops, dmu_tx_t *tx)
 	}
 	ASSERT(version != 0);
 	error = zap_update(os, moid, ZPL_VERSION_STR, 8, 1, &version, tx);
+	ASSERT(error == 0);
 
 	/*
 	 * Create zap object used for SA attribute registration

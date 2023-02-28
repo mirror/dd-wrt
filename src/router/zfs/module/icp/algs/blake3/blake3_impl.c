@@ -334,7 +334,7 @@ blake3_param_get(char *buffer, zfs_kernel_param_t *unused)
 	for (uint32_t i = 0; i < generic_supp_impls_cnt; ++i) {
 		fmt = IMPL_FMT(impl, i);
 		cnt += kmem_scnprintf(buffer + cnt, PAGE_SIZE - cnt, fmt,
-		    generic_supp_impls[i]->name);
+		    blake3_impls[i]->name);
 	}
 
 	return (cnt);

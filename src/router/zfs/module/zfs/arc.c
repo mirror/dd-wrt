@@ -1816,12 +1816,13 @@ arc_hdr_authenticate(arc_buf_hdr_t *hdr, spa_t *spa, uint64_t dsobj)
 	 */
 	if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF &&
 	    !HDR_COMPRESSION_ENABLED(hdr)) {
-		tmpbuf = zio_buf_alloc(lsize);
+
+		csize = zio_compress_data(HDR_GET_COMPRESS(hdr),
+		    hdr->b_l1hdr.b_pabd, &tmpbuf, lsize, hdr->b_complevel);
+		ASSERT3P(tmpbuf, !=, NULL);
+		ASSERT3U(csize, <=, psize);
 		abd = abd_get_from_buf(tmpbuf, lsize);
 		abd_take_ownership_of_buf(abd, B_TRUE);
-		csize = zio_compress_data(HDR_GET_COMPRESS(hdr),
-		    hdr->b_l1hdr.b_pabd, tmpbuf, lsize, hdr->b_complevel);
-		ASSERT3U(csize, <=, psize);
 		abd_zero_off(abd, csize, psize - csize);
 	}
 
@@ -5958,6 +5959,7 @@ arc_read(zio_t *pio, spa_t *spa, const blkptr_t *bp,
 	    (zio_flags & ZIO_FLAG_RAW_ENCRYPT) != 0;
 	boolean_t embedded_bp = !!BP_IS_EMBEDDED(bp);
 	boolean_t no_buf = *arc_flags & ARC_FLAG_NO_BUF;
+	arc_buf_t *buf = NULL;
 	int rc = 0;
 
 	ASSERT(!embedded_bp ||
@@ -5987,7 +5989,7 @@ top:
 	if (!zfs_blkptr_verify(spa, bp, zio_flags & ZIO_FLAG_CONFIG_WRITER,
 	    BLK_VERIFY_LOG)) {
 		rc = SET_ERROR(ECKSUM);
-		goto out;
+		goto done;
 	}
 
 	if (!embedded_bp) {
@@ -6008,14 +6010,13 @@ top:
 	if (hdr != NULL && HDR_HAS_L1HDR(hdr) && (HDR_HAS_RABD(hdr) ||
 	    (hdr->b_l1hdr.b_pabd != NULL && !encrypted_read))) {
 		boolean_t is_data = !HDR_ISTYPE_METADATA(hdr);
-		arc_buf_t *buf = NULL;
 
 		if (HDR_IO_IN_PROGRESS(hdr)) {
 			if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
 				mutex_exit(hash_lock);
 				ARCSTAT_BUMP(arcstat_cached_only_in_progress);
 				rc = SET_ERROR(ENOENT);
-				goto out;
+				goto done;
 			}
 
 			zio_t *head_zio = hdr->b_l1hdr.b_acb->acb_zio_head;
@@ -6144,9 +6145,7 @@ top:
 		ARCSTAT_CONDSTAT(!(*arc_flags & ARC_FLAG_PREFETCH),
 		    demand, prefetch, is_data, data, metadata, hits);
 		*arc_flags |= ARC_FLAG_CACHED;
-
-		if (done)
-			done(NULL, zb, bp, buf, private);
+		goto done;
 	} else {
 		uint64_t lsize = BP_GET_LSIZE(bp);
 		uint64_t psize = BP_GET_PSIZE(bp);
@@ -6159,10 +6158,10 @@ top:
 		int alloc_flags = encrypted_read ? ARC_HDR_ALLOC_RDATA : 0;
 
 		if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
-			rc = SET_ERROR(ENOENT);
 			if (hash_lock != NULL)
 				mutex_exit(hash_lock);
-			goto out;
+			rc = SET_ERROR(ENOENT);
+			goto done;
 		}
 
 		if (hdr == NULL) {
@@ -6482,6 +6481,16 @@ out:
 		spa_read_history_add(spa, zb, *arc_flags);
 	spl_fstrans_unmark(cookie);
 	return (rc);
+
+done:
+	if (done)
+		done(NULL, zb, bp, buf, private);
+	if (pio && rc != 0) {
+		zio_t *zio = zio_null(pio, spa, NULL, NULL, NULL, zio_flags);
+		zio->io_error = rc;
+		zio_nowait(zio);
+	}
+	goto out;
 }
 
 arc_prune_t *
@@ -9394,7 +9403,7 @@ l2arc_apply_transforms(spa_t *spa, arc_buf_hdr_t *hdr, uint64_t asize,
 		cabd = abd_alloc_for_io(size, ismd);
 		tmp = abd_borrow_buf(cabd, size);
 
-		psize = zio_compress_data(compress, to_write, tmp, size,
+		psize = zio_compress_data(compress, to_write, &tmp, size,
 		    hdr->b_complevel);
 
 		if (psize >= asize) {
@@ -10859,12 +10868,11 @@ l2arc_log_blk_commit(l2arc_dev_t *dev, zio_t *pio, l2arc_write_callback_t *cb)
 	uint64_t		psize, asize;
 	zio_t			*wzio;
 	l2arc_lb_abd_buf_t	*abd_buf;
-	uint8_t			*tmpbuf;
+	uint8_t			*tmpbuf = NULL;
 	l2arc_lb_ptr_buf_t	*lb_ptr_buf;
 
 	VERIFY3S(dev->l2ad_log_ent_idx, ==, dev->l2ad_log_entries);
 
-	tmpbuf = zio_buf_alloc(sizeof (*lb));
 	abd_buf = zio_buf_alloc(sizeof (*abd_buf));
 	abd_buf->abd = abd_get_from_buf(lb, sizeof (*lb));
 	lb_ptr_buf = kmem_zalloc(sizeof (l2arc_lb_ptr_buf_t), KM_SLEEP);
@@ -10883,7 +10891,7 @@ l2arc_log_blk_commit(l2arc_dev_t *dev, zio_t *pio, l2arc_write_callback_t *cb)
 
 	/* try to compress the buffer */
 	psize = zio_compress_data(ZIO_COMPRESS_LZ4,
-	    abd_buf->abd, tmpbuf, sizeof (*lb), 0);
+	    abd_buf->abd, (void **) &tmpbuf, sizeof (*lb), 0);
 
 	/* a log block is never entirely zero */
 	ASSERT(psize != 0);

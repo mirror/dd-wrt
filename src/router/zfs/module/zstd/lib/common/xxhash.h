@@ -1,9 +1,9 @@
 /*
  *  xxHash - Fast Hash algorithm
- *  Copyright (c) Yann Collet, Facebook, Inc.
+ *  Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  *  You can contact the author at :
- *  - xxHash homepage: http://www.xxhash.com
+ *  - xxHash homepage: https://cyan4973.github.io/xxHash/
  *  - xxHash source repository : https://github.com/Cyan4973/xxHash
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -614,7 +614,7 @@ introduced in CPP17 and C23.
 CPP17 : https://en.cppreference.com/w/cpp/language/attributes/fallthrough
 C23   : https://en.cppreference.com/w/c/language/attributes/fallthrough
 */
-# define XXH_FALLTHROUGH
+#define XXH_FALLTHROUGH
 
 /*!
  * @}
@@ -1306,7 +1306,7 @@ XXH3_128bits_reset_withSecretandSeed(XXH3_state_t* statePtr,
  *   care, as what works on one compiler/platform/optimization level may cause
  *   another to read garbage data or even crash.
  *
- * See http://fastcompression.blogspot.com/2015/08/accessing-unaligned-memory.html for details.
+ * See https://fastcompression.blogspot.com/2015/08/accessing-unaligned-memory.html for details.
  *
  * Prefer these methods in priority order (0 > 3 > 1 > 2)
  */
@@ -1526,7 +1526,7 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) { return ZSTD_
  * @brief Used to prevent unwanted optimizations for @p var.
  *
  * It uses an empty GCC inline assembly statement with a register constraint
- * which forces @p var into a general purpose register (eg eax, ebx, ecx
+ * which forces @p var into a general purpose register (e.g. eax, ebx, ecx
  * on x86) and marks it as modified.
  *
  * This is used in a few places to avoid unwanted autovectorization (e.g.
@@ -1647,7 +1647,7 @@ static xxh_u32 XXH_read32(const void* ptr)
 
 /*
  * Portable and safe solution. Generally efficient.
- * see: http://fastcompression.blogspot.com/2015/08/accessing-unaligned-memory.html
+ * see: https://fastcompression.blogspot.com/2015/08/accessing-unaligned-memory.html
  */
 static xxh_u32 XXH_read32(const void* memPtr)
 {
@@ -2288,7 +2288,7 @@ static xxh_u64 XXH_read64(const void* ptr)
 
 /*
  * Portable and safe solution. Generally efficient.
- * see: http://fastcompression.blogspot.com/2015/08/accessing-unaligned-memory.html
+ * see: https://fastcompression.blogspot.com/2015/08/accessing-unaligned-memory.html
  */
 static xxh_u64 XXH_read64(const void* memPtr)
 {
@@ -2801,7 +2801,7 @@ enum XXH_VECTOR_TYPE /* fake enum */ {
  * @ingroup tuning
  * @brief Selects the minimum alignment for XXH3's accumulators.
  *
- * When using SIMD, this should match the alignment reqired for said vector
+ * When using SIMD, this should match the alignment required for said vector
  * type, so, for example, 32 for AVX2.
  *
  * Default: Auto detected.
@@ -3018,7 +3018,7 @@ enum XXH_VECTOR_TYPE /* fake enum */ {
  * have more than 2 NEON (F0/F1) micro-ops. If you are only using NEON instructions,
  * you are only using 2/3 of the CPU bandwidth.
  *
- * This is even more noticable on the more advanced cores like the A76 which
+ * This is even more noticeable on the more advanced cores like the A76 which
  * can dispatch 8 micro-ops per cycle, but still only 2 NEON micro-ops at once.
  *
  * Therefore, @ref XXH3_NEON_LANES lanes will be processed using NEON, and the

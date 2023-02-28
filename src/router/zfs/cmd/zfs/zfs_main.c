@@ -327,15 +327,15 @@ get_usage(zfs_help_t idx)
 	case HELP_ROLLBACK:
 		return (gettext("\trollback [-rRf] <snapshot>\n"));
 	case HELP_SEND:
-		return (gettext("\tsend [-DLPbcehnpsvw] "
+		return (gettext("\tsend [-DLPbcehnpsVvw] "
 		    "[-i|-I snapshot]\n"
 		    "\t     [-R [-X dataset[,dataset]...]]     <snapshot>\n"
-		    "\tsend [-DnvPLecw] [-i snapshot|bookmark] "
+		    "\tsend [-DnVvPLecw] [-i snapshot|bookmark] "
 		    "<filesystem|volume|snapshot>\n"
-		    "\tsend [-DnPpvLec] [-i bookmark|snapshot] "
+		    "\tsend [-DnPpVvLec] [-i bookmark|snapshot] "
 		    "--redact <bookmark> <snapshot>\n"
-		    "\tsend [-nvPe] -t <receive_resume_token>\n"
-		    "\tsend [-Pnv] --saved filesystem\n"));
+		    "\tsend [-nVvPe] -t <receive_resume_token>\n"
+		    "\tsend [-PnVv] --saved filesystem\n"));
 	case HELP_SET:
 		return (gettext("\tset <property=value> ... "
 		    "<filesystem|volume|snapshot> ...\n"));
@@ -3882,10 +3882,25 @@ zfs_do_redact(int argc, char **argv)
 	switch (err) {
 	case 0:
 		break;
-	case ENOENT:
-		(void) fprintf(stderr,
-		    gettext("provided snapshot %s does not exist\n"), snap);
+	case ENOENT: {
+		zfs_handle_t *zhp = zfs_open(g_zfs, snap, ZFS_TYPE_SNAPSHOT);
+		if (zhp == NULL) {
+			(void) fprintf(stderr, gettext("provided snapshot %s "
+			    "does not exist\n"), snap);
+		} else {
+			zfs_close(zhp);
+		}
+		for (int i = 0; i < numrsnaps; i++) {
+			zhp = zfs_open(g_zfs, rsnaps[i], ZFS_TYPE_SNAPSHOT);
+			if (zhp == NULL) {
+				(void) fprintf(stderr, gettext("provided "
+				    "snapshot %s does not exist\n"), rsnaps[i]);
+			} else {
+				zfs_close(zhp);
+			}
+		}
 		break;
+	}
 	case EEXIST:
 		(void) fprintf(stderr, gettext("specified redaction bookmark "
 		    "(%s) provided already exists\n"), bookname);
@@ -4388,6 +4403,7 @@ zfs_do_send(int argc, char **argv)
 		{"props",	no_argument,		NULL, 'p'},
 		{"parsable",	no_argument,		NULL, 'P'},
 		{"dedup",	no_argument,		NULL, 'D'},
+		{"proctitle",	no_argument,		NULL, 'V'},
 		{"verbose",	no_argument,		NULL, 'v'},
 		{"dryrun",	no_argument,		NULL, 'n'},
 		{"large-block",	no_argument,		NULL, 'L'},
@@ -4403,7 +4419,7 @@ zfs_do_send(int argc, char **argv)
 	};
 
 	/* check options */
-	while ((c = getopt_long(argc, argv, ":i:I:RsDpvnPLeht:cwbd:SX:",
+	while ((c = getopt_long(argc, argv, ":i:I:RsDpVvnPLeht:cwbd:SX:",
 	    long_options, NULL)) != -1) {
 		switch (c) {
 		case 'X':
@@ -4451,6 +4467,9 @@ zfs_do_send(int argc, char **argv)
 			break;
 		case 'P':
 			flags.parsable = B_TRUE;
+			break;
+		case 'V':
+			flags.progressastitle = B_TRUE;
 			break;
 		case 'v':
 			flags.verbosity++;
@@ -4528,7 +4547,7 @@ zfs_do_send(int argc, char **argv)
 		}
 	}
 
-	if (flags.parsable && flags.verbosity == 0)
+	if ((flags.parsable || flags.progressastitle) && flags.verbosity == 0)
 		flags.verbosity = 1;
 
 	if (excludes.count > 0 && !flags.replicate) {
@@ -8724,6 +8743,8 @@ main(int argc, char **argv)
 	zfs_save_arguments(argc, argv, history_str, sizeof (history_str));
 
 	libzfs_print_on_error(g_zfs, B_TRUE);
+
+	zfs_setproctitle_init(argc, argv, environ);
 
 	/*
 	 * Many commands modify input strings for string parsing reasons.

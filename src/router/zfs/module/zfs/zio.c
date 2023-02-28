@@ -1704,12 +1704,15 @@ zio_write_compress(zio_t *zio)
 	/* If it's a compressed write that is not raw, compress the buffer. */
 	if (compress != ZIO_COMPRESS_OFF &&
 	    !(zio->io_flags & ZIO_FLAG_RAW_COMPRESS)) {
-		void *cbuf = zio_buf_alloc(lsize);
-		psize = zio_compress_data(compress, zio->io_abd, cbuf, lsize,
+		void *cbuf = NULL;
+		psize = zio_compress_data(compress, zio->io_abd, &cbuf, lsize,
 		    zp->zp_complevel);
-		if (psize == 0 || psize >= lsize) {
+		if (psize == 0) {
 			compress = ZIO_COMPRESS_OFF;
-			zio_buf_free(cbuf, lsize);
+		} else if (psize >= lsize) {
+			compress = ZIO_COMPRESS_OFF;
+			if (cbuf != NULL)
+				zio_buf_free(cbuf, lsize);
 		} else if (!zp->zp_dedup && !zp->zp_encrypt &&
 		    psize <= BPE_PAYLOAD_SIZE &&
 		    zp->zp_level == 0 && !DMU_OT_HAS_FILL(zp->zp_type) &&
@@ -2778,7 +2781,7 @@ zio_write_gang_member_ready(zio_t *zio)
 	ASSERT3U(zio->io_prop.zp_copies, ==, gio->io_prop.zp_copies);
 	ASSERT3U(zio->io_prop.zp_copies, <=, BP_GET_NDVAS(zio->io_bp));
 	ASSERT3U(pio->io_prop.zp_copies, <=, BP_GET_NDVAS(pio->io_bp));
-	ASSERT3U(BP_GET_NDVAS(zio->io_bp), <=, BP_GET_NDVAS(pio->io_bp));
+	VERIFY3U(BP_GET_NDVAS(zio->io_bp), <=, BP_GET_NDVAS(pio->io_bp));
 
 	mutex_enter(&pio->io_lock);
 	for (int d = 0; d < BP_GET_NDVAS(zio->io_bp); d++) {
@@ -2816,18 +2819,20 @@ zio_write_gang_block(zio_t *pio, metaslab_class_t *mc)
 	uint64_t resid = pio->io_size;
 	uint64_t lsize;
 	int copies = gio->io_prop.zp_copies;
-	int gbh_copies;
 	zio_prop_t zp;
 	int error;
 	boolean_t has_data = !(pio->io_flags & ZIO_FLAG_NODATA);
 
 	/*
-	 * encrypted blocks need DVA[2] free so encrypted gang headers can't
-	 * have a third copy.
+	 * If one copy was requested, store 2 copies of the GBH, so that we
+	 * can still traverse all the data (e.g. to free or scrub) even if a
+	 * block is damaged.  Note that we can't store 3 copies of the GBH in
+	 * all cases, e.g. with encryption, which uses DVA[2] for the IV+salt.
 	 */
-	gbh_copies = MIN(copies + 1, spa_max_replication(spa));
-	if (BP_IS_ENCRYPTED(bp) && gbh_copies >= SPA_DVAS_PER_BP)
-		gbh_copies = SPA_DVAS_PER_BP - 1;
+	int gbh_copies = copies;
+	if (gbh_copies == 1) {
+		gbh_copies = MIN(2, spa_max_replication(spa));
+	}
 
 	int flags = METASLAB_HINTBP_FAVOR | METASLAB_GANG_HEADER;
 	if (pio->io_flags & ZIO_FLAG_IO_ALLOCATING) {
@@ -4429,7 +4434,7 @@ zio_ready(zio_t *zio)
 	}
 
 	if (zio->io_flags & ZIO_FLAG_NODATA) {
-		if (BP_IS_GANG(bp)) {
+		if (bp != NULL && BP_IS_GANG(bp)) {
 			zio->io_flags &= ~ZIO_FLAG_NODATA;
 		} else {
 			ASSERT((uintptr_t)zio->io_abd < SPA_MAXBLOCKSIZE);

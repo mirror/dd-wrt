@@ -160,13 +160,16 @@ zfs-$(CONFIG_PPC)    += $(addprefix icp/,$(ICP_OBJS_PPC_PPC64))
 zfs-$(CONFIG_PPC64)  += $(addprefix icp/,$(ICP_OBJS_PPC_PPC64))
 
 $(addprefix $(obj)/icp/,$(ICP_OBJS) $(ICP_OBJS_X86) $(ICP_OBJS_X86_64) \
-	$(ICP_OBJS_ARM) $(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : asflags-y += -I$(icp_include)
+	$(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : asflags-y += -I$(icp_include) -I$(zfs_include)/os/linux/spl -I$(zfs_include)
 
 $(addprefix $(obj)/icp/,$(ICP_OBJS) $(ICP_OBJS_X86) $(ICP_OBJS_X86_64) \
-	$(ICP_OBJS_ARM) $(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : ccflags-y += -I$(icp_include)
+	$(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : ccflags-y += -I$(icp_include) -I$(zfs_include)/os/linux/spl -I$(zfs_include)
 
 # Suppress objtool "return with modified stack frame" warnings.
 OBJECT_FILES_NON_STANDARD_aesni-gcm-x86_64.o := y
+
+# Suppress objtool "unsupported stack pointer realignment" warnings.
+# See #6950 for the reasoning.
 OBJECT_FILES_NON_STANDARD_sha256-x86_64.o := y
 OBJECT_FILES_NON_STANDARD_sha512-x86_64.o := y
 
@@ -251,7 +254,7 @@ ZFS_ZSTD_FLAGS := -O3
 ZFS_ZSTD_FLAGS += -fno-tree-vectorize
 
 # SSE register return with SSE disabled if -march=znverX is passed
-ZFS_ZSTD_FLAGS += -U__BMI__ -DZSTD_NO_TRACE
+ZFS_ZSTD_FLAGS += -U__BMI__ -U__BMI2__ -DZSTD_NO_TRACE
 
 # Quiet warnings about frame size due to unused code in unmodified zstd lib
 ZFS_ZSTD_FLAGS += -Wframe-larger-than=20480
