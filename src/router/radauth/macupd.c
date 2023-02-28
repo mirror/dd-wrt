@@ -229,6 +229,7 @@ main (int argc, char **argv)
       DBGPRINT ("open file...\n");
 
       // bashabfrage erstellen !!!!!!
+      system ("rm -rf /tmp/snmp_cache");
       system (bash1);		// delete and create rssiclients.lst
       system (bash2);		// append rssiclients.lst WLAN Clients
       system (bash3);		// append rssiclients.lst WDS Clients
