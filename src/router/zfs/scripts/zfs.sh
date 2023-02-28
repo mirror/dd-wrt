@@ -162,7 +162,7 @@ unload_modules_freebsd() {
 }
 
 unload_modules_linux() {
-	legacy_kmods="icp zlua zcommon zunicode znvpair zavl"
+	legacy_kmods="icp zzstd zlua zcommon zunicode znvpair zavl"
 	for KMOD in "$KMOD_ZFS" $legacy_kmods "$KMOD_SPL"; do
 		NAME="${KMOD##*/}"
 		NAME="${NAME%.ko}"

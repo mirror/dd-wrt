@@ -24,7 +24,7 @@
 #define _ASM
 #include <sys/asm_linkage.h>
 
-.text
+.section .rodata
 
 .align	64
 .type	K512,@object
@@ -109,14 +109,10 @@ K512:
 .quad	0x4cc5d4becb3e42b6,0x597f299cfc657e2a
 .quad	0x5fcb6fab3ad6faec,0x6c44198c4a475817
 .quad	0x5fcb6fab3ad6faec,0x6c44198c4a475817
-
 .quad	0x0001020304050607,0x08090a0b0c0d0e0f
 .quad	0x0001020304050607,0x08090a0b0c0d0e0f
 
-.globl	zfs_sha512_transform_x64
-.type	zfs_sha512_transform_x64,@function
-.align	16
-zfs_sha512_transform_x64:
+ENTRY_ALIGN(zfs_sha512_transform_x64, 16)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -1464,13 +1460,10 @@ zfs_sha512_transform_x64:
 .cfi_def_cfa_register	%rsp
 .Lepilogue:
 	RET
-.cfi_endproc	
-.size	zfs_sha512_transform_x64,.-zfs_sha512_transform_x64
+.cfi_endproc
+SET_SIZE(zfs_sha512_transform_x64)
 
-.globl	zfs_sha512_transform_avx
-.type	zfs_sha512_transform_avx,@function
-.align	64
-zfs_sha512_transform_avx:
+ENTRY_ALIGN(zfs_sha512_transform_avx, 64)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -2631,13 +2624,10 @@ zfs_sha512_transform_avx:
 .cfi_def_cfa_register	%rsp
 .Lepilogue_avx:
 	RET
-.cfi_endproc	
-.size	zfs_sha512_transform_avx,.-zfs_sha512_transform_avx
+.cfi_endproc
+SET_SIZE(zfs_sha512_transform_avx)
 
-.globl	zfs_sha512_transform_avx2
-.type	zfs_sha512_transform_avx2,@function
-.align	64
-zfs_sha512_transform_avx2:
+ENTRY_ALIGN(zfs_sha512_transform_avx2, 64)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -4012,8 +4002,9 @@ zfs_sha512_transform_avx2:
 .cfi_def_cfa_register	%rsp
 .Lepilogue_avx2:
 	RET
-.cfi_endproc	
-.size	zfs_sha512_transform_avx2,.-zfs_sha512_transform_avx2
+.cfi_endproc
+SET_SIZE(zfs_sha512_transform_avx2)
+
 #if defined(__ELF__)
 	.section .note.GNU-stack,"",%progbits
 #endif

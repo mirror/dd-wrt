@@ -1301,6 +1301,7 @@ dmu_objset_create_sync(void *arg, dmu_tx_t *tx)
 			ASSERT3P(ds->ds_key_mapping, !=, NULL);
 			key_mapping_rele(spa, ds->ds_key_mapping, ds);
 			dsl_dataset_sync_done(ds, tx);
+			dmu_buf_rele(ds->ds_dbuf, ds);
 		}
 
 		mutex_enter(&ds->ds_lock);
@@ -2407,6 +2408,13 @@ dmu_objset_id_quota_upgrade_cb(objset_t *os)
 	if (!dmu_objset_projectquota_enabled(os) &&
 	    dmu_objset_userobjspace_present(os))
 		return (SET_ERROR(ENOTSUP));
+
+	if (dmu_objset_userobjused_enabled(os))
+		dmu_objset_ds(os)->ds_feature_activation[
+		    SPA_FEATURE_USEROBJ_ACCOUNTING] = (void *)B_TRUE;
+	if (dmu_objset_projectquota_enabled(os))
+		dmu_objset_ds(os)->ds_feature_activation[
+		    SPA_FEATURE_PROJECT_QUOTA] = (void *)B_TRUE;
 
 	err = dmu_objset_space_upgrade(os);
 	if (err)

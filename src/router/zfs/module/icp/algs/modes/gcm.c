@@ -59,7 +59,7 @@ boolean_t gcm_avx_can_use_movbe = B_FALSE;
 static boolean_t gcm_use_avx = B_FALSE;
 #define	GCM_IMPL_USE_AVX	(*(volatile boolean_t *)&gcm_use_avx)
 
-extern boolean_t atomic_toggle_boolean_nv(volatile boolean_t *);
+extern boolean_t ASMABI atomic_toggle_boolean_nv(volatile boolean_t *);
 
 static inline boolean_t gcm_avx_will_work(void);
 static inline void gcm_set_avx(boolean_t);
@@ -1073,19 +1073,19 @@ MODULE_PARM_DESC(icp_gcm_impl, "Select gcm implementation.");
 static uint32_t gcm_avx_chunk_size =
 	((32 * 1024) / GCM_AVX_MIN_DECRYPT_BYTES) * GCM_AVX_MIN_DECRYPT_BYTES;
 
-extern void clear_fpu_regs_avx(void);
-extern void gcm_xor_avx(const uint8_t *src, uint8_t *dst);
-extern void aes_encrypt_intel(const uint32_t rk[], int nr,
+extern void ASMABI clear_fpu_regs_avx(void);
+extern void ASMABI gcm_xor_avx(const uint8_t *src, uint8_t *dst);
+extern void ASMABI aes_encrypt_intel(const uint32_t rk[], int nr,
     const uint32_t pt[4], uint32_t ct[4]);
 
-extern void gcm_init_htab_avx(uint64_t *Htable, const uint64_t H[2]);
-extern void gcm_ghash_avx(uint64_t ghash[2], const uint64_t *Htable,
+extern void ASMABI gcm_init_htab_avx(uint64_t *Htable, const uint64_t H[2]);
+extern void ASMABI gcm_ghash_avx(uint64_t ghash[2], const uint64_t *Htable,
     const uint8_t *in, size_t len);
 
-extern size_t aesni_gcm_encrypt(const uint8_t *, uint8_t *, size_t,
+extern size_t ASMABI aesni_gcm_encrypt(const uint8_t *, uint8_t *, size_t,
     const void *, uint64_t *, uint64_t *);
 
-extern size_t aesni_gcm_decrypt(const uint8_t *, uint8_t *, size_t,
+extern size_t ASMABI aesni_gcm_decrypt(const uint8_t *, uint8_t *, size_t,
     const void *, uint64_t *, uint64_t *);
 
 static inline boolean_t
@@ -1127,24 +1127,6 @@ gcm_simd_get_htab_size(boolean_t simd_mode)
 	}
 }
 
-/*
- * Clear sensitive data in the context.
- *
- * ctx->gcm_remainder may contain a plaintext remainder. ctx->gcm_H and
- * ctx->gcm_Htable contain the hash sub key which protects authentication.
- *
- * Although extremely unlikely, ctx->gcm_J0 and ctx->gcm_tmp could be used for
- * a known plaintext attack, they consists of the IV and the first and last
- * counter respectively. If they should be cleared is debatable.
- */
-static inline void
-gcm_clear_ctx(gcm_ctx_t *ctx)
-{
-	memset(ctx->gcm_remainder, 0, sizeof (ctx->gcm_remainder));
-	memset(ctx->gcm_H, 0, sizeof (ctx->gcm_H));
-	memset(ctx->gcm_J0, 0, sizeof (ctx->gcm_J0));
-	memset(ctx->gcm_tmp, 0, sizeof (ctx->gcm_tmp));
-}
 
 /* Increment the GCM counter block by n. */
 static inline void
@@ -1367,8 +1349,6 @@ gcm_encrypt_final_avx(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size)
 		return (rv);
 
 	out->cd_offset += ctx->gcm_tag_len;
-	/* Clear sensitive data in the context before returning. */
-	gcm_clear_ctx(ctx);
 	return (CRYPTO_SUCCESS);
 }
 
@@ -1478,7 +1458,6 @@ gcm_decrypt_final_avx(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size)
 		return (rv);
 	}
 	out->cd_offset += pt_len;
-	gcm_clear_ctx(ctx);
 	return (CRYPTO_SUCCESS);
 }
 

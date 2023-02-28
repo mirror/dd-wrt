@@ -56,7 +56,6 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_UPDATE_READAHEAD], [
 		#include <linux/blkdev.h>
 	],[
 		struct request_queue q;
-		memset(&q, 0, sizeof(q));
 		blk_queue_update_readahead(&q);
 	])
 
@@ -207,9 +206,8 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_FLAG_SET], [
 		#include <linux/kernel.h>
 		#include <linux/blkdev.h>
 	],[
-		struct request_queue q;
-		memset(&q, 0, sizeof(q));
-		blk_queue_flag_set(0, &q);
+		struct request_queue *q = NULL;
+		blk_queue_flag_set(0, q);
 	])
 ])
 
@@ -229,9 +227,8 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_FLAG_CLEAR], [
 		#include <linux/kernel.h>
 		#include <linux/blkdev.h>
 	],[
-		struct request_queue q;
-		memset(&q, 0, sizeof(q));
-		blk_queue_flag_clear(0, &q);
+		struct request_queue *q = NULL;
+		blk_queue_flag_clear(0, q);
 	])
 ])
 
@@ -262,18 +259,16 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_FLUSH], [
 	ZFS_LINUX_TEST_SRC([blk_queue_flush], [
 		#include <linux/blkdev.h>
 	], [
-		struct request_queue q;
-		memset(&q, 0, sizeof(q));
-		(void) blk_queue_flush(&q, REQ_FLUSH);
+		struct request_queue *q __attribute__ ((unused)) = NULL;
+		(void) blk_queue_flush(q, REQ_FLUSH);
 	], [], [ZFS_META_LICENSE])
 
 	ZFS_LINUX_TEST_SRC([blk_queue_write_cache], [
 		#include <linux/kernel.h>
 		#include <linux/blkdev.h>
 	], [
-		struct request_queue q;
-		memset(&q, 0, sizeof(q));
-		blk_queue_write_cache(&q, true, true);
+		struct request_queue *q __attribute__ ((unused)) = NULL;
+		blk_queue_write_cache(q, true, true);
 	], [], [ZFS_META_LICENSE])
 ])
 
@@ -327,9 +322,8 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_MAX_HW_SECTORS], [
 	ZFS_LINUX_TEST_SRC([blk_queue_max_hw_sectors], [
 		#include <linux/blkdev.h>
 	], [
-		struct request_queue q;
-		memset(&q, 0, sizeof(q));
-		(void) blk_queue_max_hw_sectors(&q, BLK_SAFE_MAX_SECTORS);
+		struct request_queue *q __attribute__ ((unused)) = NULL;
+		(void) blk_queue_max_hw_sectors(q, BLK_SAFE_MAX_SECTORS);
 	], [])
 ])
 
@@ -351,9 +345,8 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_MAX_SEGMENTS], [
 	ZFS_LINUX_TEST_SRC([blk_queue_max_segments], [
 		#include <linux/blkdev.h>
 	], [
-		struct request_queue q;
-		memset(&q, 0, sizeof(q));
-		(void) blk_queue_max_segments(&q, BLK_MAX_SEGMENTS);
+		struct request_queue *q __attribute__ ((unused)) = NULL;
+		(void) blk_queue_max_segments(q, BLK_MAX_SEGMENTS);
 	], [])
 ])
 

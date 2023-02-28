@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Yann Collet, Facebook, Inc.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -112,7 +112,7 @@ void _force_has_format_string(const char *format, ...) {
 #define RETURN_ERROR_IF(cond, err, ...) \
   if (cond) { \
     RAWLOG(3, "%s:%d: ERROR!: check %s failed, returning %s", \
-           "unknown", __LINE__, ERR_QUOTE(cond), ERR_QUOTE(ERROR(err))); \
+           __FILE__, __LINE__, ERR_QUOTE(cond), ERR_QUOTE(ERROR(err))); \
     _FORCE_HAS_FORMAT_STRING(__VA_ARGS__); \
     RAWLOG(3, ": " __VA_ARGS__); \
     RAWLOG(3, "\n"); \
@@ -127,7 +127,7 @@ void _force_has_format_string(const char *format, ...) {
 #define RETURN_ERROR(err, ...) \
   do { \
     RAWLOG(3, "%s:%d: ERROR!: unconditional check failed, returning %s", \
-           "unknown", __LINE__, ERR_QUOTE(ERROR(err))); \
+           __FILE__, __LINE__, ERR_QUOTE(ERROR(err))); \
     _FORCE_HAS_FORMAT_STRING(__VA_ARGS__); \
     RAWLOG(3, ": " __VA_ARGS__); \
     RAWLOG(3, "\n"); \
@@ -144,7 +144,7 @@ void _force_has_format_string(const char *format, ...) {
     size_t const err_code = (err); \
     if (ERR_isError(err_code)) { \
       RAWLOG(3, "%s:%d: ERROR!: forwarding error in %s: %s", \
-             "unknown", __LINE__, ERR_QUOTE(err), ERR_getErrorName(err_code)); \
+             __FILE__, __LINE__, ERR_QUOTE(err), ERR_getErrorName(err_code)); \
       _FORCE_HAS_FORMAT_STRING(__VA_ARGS__); \
       RAWLOG(3, ": " __VA_ARGS__); \
       RAWLOG(3, "\n"); \

@@ -1,5 +1,5 @@
 url="https://github.com/facebook/zstd"
-release="$(curl -s "${url}"/releases/latest | grep -oP '(?<=v)[\d\.]+')"
+release="1.5.4"
 zstd="/tmp/zstd-${release}/"
 
 wget -O /tmp/zstd.tar.gz \

@@ -82,5 +82,4 @@ KERNEL_CFLAGS       = $(FRAME_LARGER_THAN)
 LIBRARY_CFLAGS      = -no-suppress
 
 # Forcibly enable asserts/debugging for libzpool &al.
-FORCEDEBUG_CPPFLAGS = 
-# -DDEBUG -UNDEBUG -DZFS_DEBUG
+FORCEDEBUG_CPPFLAGS = -DDEBUG -UNDEBUG -DZFS_DEBUG

@@ -24,7 +24,7 @@
 #define _ASM
 #include <sys/asm_linkage.h>
 
-.text
+.section .rodata
 
 .align	64
 .type	K256,@object
@@ -69,10 +69,7 @@ K256:
 .long	0xffffffff,0xffffffff,0x03020100,0x0b0a0908
 .long	0xffffffff,0xffffffff,0x03020100,0x0b0a0908
 
-.globl	zfs_sha256_transform_x64
-.type	zfs_sha256_transform_x64,@function
-.align	16
-zfs_sha256_transform_x64:
+ENTRY_ALIGN(zfs_sha256_transform_x64, 16)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -1420,13 +1417,10 @@ zfs_sha256_transform_x64:
 .cfi_def_cfa_register	%rsp
 .Lepilogue:
 	RET
-.cfi_endproc	
-.size	zfs_sha256_transform_x64,.-zfs_sha256_transform_x64
+.cfi_endproc
+SET_SIZE(zfs_sha256_transform_x64)
 
-.globl	zfs_sha256_transform_shani
-.type	zfs_sha256_transform_shani,@function
-.align	64
-zfs_sha256_transform_shani:
+ENTRY_ALIGN(zfs_sha256_transform_shani, 64)
 .cfi_startproc
 	ENDBR
 	leaq	K256+128(%rip),%rcx
@@ -1631,12 +1625,10 @@ zfs_sha256_transform_shani:
 	movdqu	%xmm1,(%rdi)
 	movdqu	%xmm2,16(%rdi)
 	RET
-.cfi_endproc	
-.size	zfs_sha256_transform_shani,.-zfs_sha256_transform_shani
-.globl	zfs_sha256_transform_ssse3
-.type	zfs_sha256_transform_ssse3,@function
-.align	64
-zfs_sha256_transform_ssse3:
+.cfi_endproc
+SET_SIZE(zfs_sha256_transform_shani)
+
+ENTRY_ALIGN(zfs_sha256_transform_ssse3, 64)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -2744,12 +2736,10 @@ zfs_sha256_transform_ssse3:
 .cfi_def_cfa_register	%rsp
 .Lepilogue_ssse3:
 	RET
-.cfi_endproc	
-.size	zfs_sha256_transform_ssse3,.-zfs_sha256_transform_ssse3
-.globl	zfs_sha256_transform_avx
-.type	zfs_sha256_transform_avx,@function
-.align	64
-zfs_sha256_transform_avx:
+.cfi_endproc
+SET_SIZE(zfs_sha256_transform_ssse3)
+
+ENTRY_ALIGN(zfs_sha256_transform_avx, 64)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -3820,12 +3810,10 @@ zfs_sha256_transform_avx:
 .cfi_def_cfa_register	%rsp
 .Lepilogue_avx:
 	RET
-.cfi_endproc	
-.size	zfs_sha256_transform_avx,.-zfs_sha256_transform_avx
-.globl	zfs_sha256_transform_avx2
-.type	zfs_sha256_transform_avx2,@function
-.align	64
-zfs_sha256_transform_avx2:
+.cfi_endproc
+SET_SIZE(zfs_sha256_transform_avx)
+
+ENTRY_ALIGN(zfs_sha256_transform_avx2, 64)
 .cfi_startproc
 	ENDBR
 	movq	%rsp,%rax
@@ -5107,8 +5095,9 @@ zfs_sha256_transform_avx2:
 .cfi_def_cfa_register	%rsp
 .Lepilogue_avx2:
 	RET
-.cfi_endproc	
-.size	zfs_sha256_transform_avx2,.-zfs_sha256_transform_avx2
+.cfi_endproc
+SET_SIZE(zfs_sha256_transform_avx2)
+
 #if defined(__ELF__)
 	.section .note.GNU-stack,"",%progbits
 #endif

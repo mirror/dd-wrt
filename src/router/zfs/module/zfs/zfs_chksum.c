@@ -255,8 +255,6 @@ chksum_benchmark(void)
 	chksum_stat_cnt += sha256->getcnt();
 	chksum_stat_cnt += sha512->getcnt();
 	chksum_stat_cnt += blake3->getcnt();
-
-	/* space for the benchmark times */
 	chksum_stat_data = kmem_zalloc(
 	    sizeof (chksum_stat_t) * chksum_stat_cnt, KM_SLEEP);
 

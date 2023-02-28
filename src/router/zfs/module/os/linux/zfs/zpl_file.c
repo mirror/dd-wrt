@@ -630,7 +630,6 @@ static int
 zpl_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	struct inode *ip = filp->f_mapping->host;
-	znode_t *zp = ITOZ(ip);
 	int error;
 	fstrans_cookie_t cookie;
 
@@ -645,9 +644,12 @@ zpl_mmap(struct file *filp, struct vm_area_struct *vma)
 	if (error)
 		return (error);
 
+#if !defined(HAVE_FILEMAP_RANGE_HAS_PAGE)
+	znode_t *zp = ITOZ(ip);
 	mutex_enter(&zp->z_lock);
 	zp->z_is_mapped = B_TRUE;
 	mutex_exit(&zp->z_lock);
+#endif
 
 	return (error);
 }
@@ -660,29 +662,16 @@ zpl_mmap(struct file *filp, struct vm_area_struct *vma)
 static inline int
 zpl_readpage_common(struct page *pp)
 {
-	struct inode *ip;
-	struct page *pl[1];
-	int error = 0;
 	fstrans_cookie_t cookie;
 
 	ASSERT(PageLocked(pp));
-	ip = pp->mapping->host;
-	pl[0] = pp;
 
 	cookie = spl_fstrans_mark();
-	error = -zfs_getpage(ip, pl, 1);
+	int error = -zfs_getpage(pp->mapping->host, pp);
 	spl_fstrans_unmark(cookie);
 
-	if (error) {
-		SetPageError(pp);
-		ClearPageUptodate(pp);
-	} else {
-		ClearPageError(pp);
-		SetPageUptodate(pp);
-		flush_dcache_page(pp);
-	}
-
 	unlock_page(pp);
+
 	return (error);
 }
 
@@ -942,7 +931,7 @@ zpl_fadvise(struct file *filp, loff_t offset, loff_t len, int advice)
 	case POSIX_FADV_SEQUENTIAL:
 	case POSIX_FADV_WILLNEED:
 #ifdef HAVE_GENERIC_FADVISE
-		if (zn_has_cached_data(zp))
+		if (zn_has_cached_data(zp, offset, offset + len - 1))
 			error = generic_fadvise(filp, offset, len, advice);
 #endif
 		/*
