@@ -10,7 +10,11 @@ aircrack-ng-install:
 	-rm -f $(INSTALLDIR)/aircrack-ng/usr/lib/*.la
 
 aircrack-ng-configure: pcre zlib
-	cd aircrack-ng && ./autogen.sh
+	cd aircrack-ng && libtoolize --force --copy --automake
+	cd aircrack-ng && aclocal -I build/m4/stubs -I build/m4 ${ACLOCAL_FLAGS:-}
+	cd aircrack-ng && autoconf
+	cd aircrack-ng && autoheader
+	cd aircrack-ng && automake --gnu --add-missing --force --copy -Wno-portability -Wno-portability
 	cd aircrack-ng && ./configure --host=$(ARCH)-linux \
 	--with-openssl="$(TOP)/openssl" \
         --prefix=/usr \
