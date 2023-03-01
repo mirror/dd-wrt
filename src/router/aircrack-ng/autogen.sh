@@ -118,3 +118,6 @@ if [ ! -z "${NOCONFIGURE:-}" ]; then
     echo "Done. ./configure skipped."
     exit $?
 fi
+
+exec ./configure "$@"
+

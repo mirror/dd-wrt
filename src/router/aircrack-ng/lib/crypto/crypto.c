@@ -83,6 +83,7 @@ encrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen)
 {
 	RC4_KEY S;
 
+	memset(&S, 0, sizeof(S));
 	RC4_set_key(&S, keylen, key);
 	RC4(&S, (size_t) len, data, data);
 
@@ -99,7 +100,7 @@ decrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen)
 
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk(char * key, char * essid_pre, unsigned char pmk[40])
+void calc_pmk(char * key, char * essid_pre, unsigned char pmk[static 40])
 {
 	REQUIRE(key != NULL);
 	REQUIRE(essid_pre != NULL);
@@ -186,16 +187,16 @@ void calc_pmk(char * key, char * essid_pre, unsigned char pmk[40])
 }
 
 void calc_mic(struct AP_info * ap,
-			  unsigned char pmk[32],
-			  unsigned char ptk[80],
-			  unsigned char mic[20])
+			  unsigned char pmk[static 32],
+			  unsigned char ptk[static 80],
+			  unsigned char mic[static 20])
 {
 	REQUIRE(ap != NULL);
 
 	int i;
 	unsigned char pke[100];
 #if defined(USE_GCRYPT) || OPENSSL_VERSION_NUMBER < 0x10100000L                \
-	|| defined(LIBRESSL_VERSION_NUMBER)
+	|| (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x30500000L)
 #define HMAC_USE_NO_PTR
 #endif
 
@@ -571,12 +572,12 @@ int known_clear(
 				 * bruteforce it later
 		 */
 		// ID=0
-		len = 2;
+		/*  len = 2; */
 		memcpy(ptr, "\x00\x00", len);
 		ptr += len;
 
 		// ip flags=don't fragment
-		len = 2;
+		/* len = 2; */
 		memcpy(ptr, "\x40\x00", len);
 		ptr += len;
 
@@ -597,7 +598,7 @@ int known_clear(
 
 /* derive the pairwise transcient keys from a bunch of stuff */
 
-int calc_ptk(struct WPA_ST_info * wpa, unsigned char pmk[32])
+int calc_ptk(struct WPA_ST_info * wpa, unsigned char pmk[static 32])
 {
 	REQUIRE(wpa != NULL);
 
@@ -645,7 +646,7 @@ int calc_ptk(struct WPA_ST_info * wpa, unsigned char pmk[32])
 	return (memcmp(mic, wpa->keymic, 16) == 0); //-V512
 }
 
-static int init_michael(struct Michael * mic, const unsigned char key[8])
+static int init_michael(struct Michael * mic, const unsigned char key[static 8])
 {
 	REQUIRE(mic != NULL);
 
@@ -692,7 +693,7 @@ static int michael_append_byte(struct Michael * mic, unsigned char byte)
 }
 
 static int michael_remove_byte(struct Michael * mic,
-							   const unsigned char bytes[4])
+							   const unsigned char bytes[static 4])
 {
 	REQUIRE(mic != NULL);
 
@@ -797,10 +798,10 @@ static int michael_finalize_zero(struct Michael * mic)
 	return (0);
 }
 
-int michael_test(unsigned char key[8],
+int michael_test(unsigned char key[static 8],
 				 unsigned char * message,
 				 int length,
-				 unsigned char out[8])
+				 unsigned char out[static 8])
 {
 	int i = 0;
 	struct Michael mic0;
@@ -848,7 +849,9 @@ int michael_test(unsigned char key[8],
 	return (memcmp(mic.mic, out, 8) == 0);
 }
 
-int calc_tkip_mic_key(unsigned char * packet, int length, unsigned char key[8])
+int calc_tkip_mic_key(unsigned char * packet,
+					  int length,
+					  unsigned char key[static 8])
 {
 	REQUIRE(packet != NULL);
 
@@ -939,8 +942,8 @@ int calc_tkip_mic_key(unsigned char * packet, int length, unsigned char key[8])
 
 int calc_tkip_mic(unsigned char * packet,
 				  int length,
-				  unsigned char ptk[80],
-				  unsigned char value[8])
+				  unsigned char ptk[static 80],
+				  unsigned char value[static 8])
 {
 	REQUIRE(packet != NULL);
 
@@ -1082,8 +1085,8 @@ static const unsigned short TkipSbox[2][256]
 
 int calc_tkip_ppk(unsigned char * h80211,
 				  int caplen,
-				  unsigned char TK1[16],
-				  unsigned char key[16])
+				  unsigned char TK1[static 16],
+				  unsigned char key[static 16])
 {
 	UNUSED_PARAM(caplen);
 	REQUIRE(h80211 != NULL);
@@ -1150,8 +1153,8 @@ int calc_tkip_ppk(unsigned char * h80211,
 
 static int calc_tkip_mic_skip_eiv(unsigned char * packet,
 								  int length,
-								  unsigned char ptk[80],
-								  unsigned char value[8])
+								  unsigned char ptk[static 80],
+								  unsigned char value[static 8])
 {
 	REQUIRE(packet != NULL);
 
@@ -1220,7 +1223,9 @@ static int calc_tkip_mic_skip_eiv(unsigned char * packet,
 	return (0);
 }
 
-void encrypt_tkip(unsigned char * h80211, int caplen, unsigned char ptk[80])
+void encrypt_tkip(unsigned char * h80211,
+				  int caplen,
+				  unsigned char ptk[static 80])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1255,7 +1260,9 @@ void encrypt_tkip(unsigned char * h80211, int caplen, unsigned char ptk[80])
 	decrypt_wep(h80211 + z + 8, caplen - z - 8, K, 16);
 }
 
-int decrypt_tkip(unsigned char * h80211, int caplen, unsigned char TK1[16])
+int decrypt_tkip(unsigned char * h80211,
+				 int caplen,
+				 unsigned char TK1[static 16])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1303,8 +1310,8 @@ static inline void XOR(unsigned char * dst, unsigned char * src, int len)
 // caplen is the combined length of the 802.11 header and data, not the FCS!
 int encrypt_ccmp(unsigned char * h80211,
 				 int caplen,
-				 unsigned char TK1[16],
-				 unsigned char PN[6])
+				 unsigned char TK1[static 16],
+				 unsigned char PN[static 6])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1313,6 +1320,8 @@ int encrypt_ccmp(unsigned char * h80211,
 	unsigned char B0[16], B[16], MIC[16];
 	unsigned char AAD[32];
 	AES_KEY aes_ctx;
+
+	memset(&aes_ctx, 0, sizeof(aes_ctx));
 
 	is_a4 = (h80211[1] & 3) == 3;
 	is_qos = (h80211[0] & 0x8C) == 0x88;
@@ -1438,7 +1447,9 @@ int encrypt_ccmp(unsigned char * h80211,
 	return (z + 8 + data_len + 8);
 }
 
-int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
+int decrypt_ccmp(unsigned char * h80211,
+				 int caplen,
+				 unsigned char TK1[static 16])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1447,6 +1458,8 @@ int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[16])
 	unsigned char B0[16], B[16], MIC[16];
 	unsigned char PN[6], AAD[32];
 	AES_KEY aes_ctx;
+
+	memset(&aes_ctx, 0, sizeof(aes_ctx));
 
 	is_a4 = (h80211[1] & 3) == 3;
 	is_qos = (h80211[0] & 0x8C) == 0x88;

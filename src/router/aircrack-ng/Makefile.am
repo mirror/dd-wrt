@@ -37,6 +37,8 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
+AM_MAKEFLAGS = --no-print-directory
+
 ACLOCAL_AMFLAGS = -I build/m4/stubs -I build/m4
 
 SUBDIRS =	manpages \
@@ -57,13 +59,13 @@ CXXFLAGS	+=	$(CODE_COVERAGE_CXXFLAGS)
 LIBS			+=	$(CODE_COVERAGE_LIBS)
 
 COMMON_CFLAGS	= $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-COMMON_LDADD	= $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+COMMON_LDADD	= $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 
 bin_PROGRAMS =
 sbin_PROGRAMS =
 noinst_LTLIBRARIES =
 lib_LTLIBRARIES =
-EXTRA_DIST = VERSION
+EXTRA_DIST = AC_VERSION
 check_PROGRAMS =
 TESTS =
 INTEGRATION_TESTS =
@@ -102,4 +104,4 @@ clean-local: code-coverage-clean
 distclean-local: code-coverage-dist-clean
 
 dist-hook:
-	$(AM_V_GEN)echo $(VERSION) > $(distdir)/VERSION
+	$(AM_V_GEN)echo $(VERSION) > $(distdir)/AC_VERSION

@@ -1,7 +1,7 @@
 /*
   * Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
-  *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+  *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005 Christophe Devine
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -41,7 +41,7 @@
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
+	"  %s - (C) 2006-2022 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: makeivs-ng [options]\n"
@@ -118,16 +118,6 @@ int main(int argc, char * argv[])
 		{
 			case 0:
 
-				break;
-
-			case ':':
-
-				goto usage;
-				break;
-
-			case '?':
-
-				goto usage;
 				break;
 
 			case 'n':
@@ -249,7 +239,6 @@ int main(int argc, char * argv[])
 
 			case 'f':
 
-				paramUsed = 1;
 				if (atoi(optarg) < 0 || atoi(optarg) > 0xFFFFFF)
 				{
 					printf(usage,
@@ -375,11 +364,6 @@ int main(int argc, char * argv[])
 				weplen = i;
 				keylen = i + 3;
 
-				break;
-
-			case 'h':
-			case 'H':
-				goto usage;
 				break;
 
 			default:
@@ -568,12 +552,7 @@ int main(int argc, char * argv[])
 			SWAP(S[i], S[j]);
 		}
 
-		if (errorrate > 0 && (rand_f32() <= (float) (errorrate /
-#if defined(__x86_64__) && defined(__CYGWIN__)
-													 (0.0f + 100))))
-#else
-													 100.0f)))
-#endif
+		if (errorrate > 0 && (rand_f32() <= (float) (errorrate / 100.0f)))
 		{
 			SWAP(S[1], S[11]);
 		}
@@ -616,13 +595,7 @@ int main(int argc, char * argv[])
 			fprintf(f_ivs_out, "%c", S[(S[i] + S[j]) & 0xFF]);
 		}
 		if ((n % 10000) == 0)
-			printf("%2.1f%%\r",
-				   ((float) n / (float) count) *
-#if defined(__x86_64__) && defined(__CYGWIN__)
-					   (0.0f + 100));
-#else
-					   100.0f);
-#endif
+			printf("%2.1f%%\r", ((float) n / (float) count) * 100.0f);
 		fflush(stdout);
 	}
 

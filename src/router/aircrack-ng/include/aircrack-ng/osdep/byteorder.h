@@ -1,7 +1,7 @@
 /*
  *  Compatibility header
  *
- *  Copyright (C) 2009-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2009-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,11 +74,27 @@
 #include <stdint.h>
 
 #ifndef __int8_t_defined
-typedef uint64_t u_int64_t;
-typedef uint32_t u_int32_t;
-typedef uint16_t u_int16_t;
-typedef uint8_t u_int8_t;
+typedef uint64_t u_int64_t; //-V677
+typedef uint32_t u_int32_t; //-V677
+typedef uint16_t u_int16_t; //-V677
+typedef uint8_t u_int8_t; //-V677
 #endif
+
+#if defined(__UCLIBC__)
+#include <asm/byteorder.h>
+
+#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+#endif
+#endif
+
+/*
+	 * Android/termux
+	 */
+#if defined(__ANDROID__)
+#include <asm/byteorder.h>
+#include <unistd.h>
+
+#define AIRCRACK_NG_BYTE_ORDER_DEFINED
 
 #endif
 
@@ -236,7 +252,8 @@ typedef uint8_t u_int8_t;
 #endif
 
 // FreeBSD
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)     \
+	|| defined(__MidnightBSD__) || defined(__NetBSD__)
 #undef ushort
 #undef uint
 #include <sys/types.h>

@@ -1,7 +1,7 @@
 /*
  *  802.11 to Ethernet pcap translator
  *
- *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
+	"  %s - (C) 2006-2022 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: airdecap-ng [options] <pcap file>\n"
@@ -225,7 +225,7 @@ int main(int argc, char * argv[])
 	unsigned n;
 	unsigned z;
 	unsigned char * h80211 = NULL;
-	unsigned char bssid[6], stmac[6];
+	unsigned char bssid[6] = {0}, stmac[6] = {0};
 
 	c_avl_tree_t * stations = c_avl_create(station_compare);
 	ALLEGE(stations != NULL);
@@ -256,10 +256,6 @@ int main(int argc, char * argv[])
 		switch (option)
 		{
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (EXIT_FAILURE);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -765,7 +761,7 @@ int main(int argc, char * argv[])
 
 		/* check minimum size */
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((*(h80211 + 1) & 3) != 3) ? 24 : 30;
 
 		if (z + 16 > pkh.caplen) continue;
 
@@ -777,7 +773,7 @@ int main(int argc, char * argv[])
 
 		/* check the BSSID */
 
-		switch (h80211[1] & 3)
+		switch (*(h80211 + 1) & 3)
 		{
 			case 0:
 				memcpy(bssid, h80211 + 16, sizeof(bssid)); //-V525
@@ -790,11 +786,11 @@ int main(int argc, char * argv[])
 				break; // FromDS
 			case 3:
 				wds = true;
-				if (memcmp(opt.bssid, ZERO, 6))
+				if (memcmp(opt.bssid, ZERO, 6) != 0)
 				{
 					/* BSSID has been specified */
-					if (memcmp(opt.bssid, h80211 + 4, 6))
-						if (memcmp(opt.bssid, h80211 + 10, 6))
+					if (memcmp(opt.bssid, h80211 + 4, 6) != 0)
+						if (memcmp(opt.bssid, h80211 + 10, 6) != 0)
 							/* BSSID doesn't match either RA nor TA */
 							continue;
 						else
@@ -815,7 +811,7 @@ int main(int argc, char * argv[])
 
 		/* locate the station's MAC address */
 
-		switch (h80211[1] & 3)
+		switch (*(h80211 + 1) & 3)
 		{
 			case 1:
 				memcpy(stmac, h80211 + 10, sizeof(stmac)); //-V525
@@ -824,10 +820,10 @@ int main(int argc, char * argv[])
 				memcpy(stmac, h80211 + 4, sizeof(stmac));
 				break;
 			case 3:
-				if (memcmp(opt.bssid, ZERO, 6))
+				if (memcmp(opt.bssid, ZERO, 6) != 0)
 				{
 					/* BSSID has been specified */
-					if (memcmp(bssid, h80211 + 4, 6))
+					if (memcmp(bssid, h80211 + 4, 6) != 0)
 						/* BSSID is not RA, STA must be RA */
 						memcpy(stmac, h80211 + 4, sizeof(stmac));
 				}
@@ -866,7 +862,7 @@ int main(int argc, char * argv[])
 
 		crc = calc_crc_buf(h80211 + z, pkh.caplen - z);
 
-		if ((h80211[1] & 3) == 2)
+		if ((*(h80211 + 1) & 3) == 2)
 		{
 			if (st_cur->t_crc == crc) continue;
 
@@ -922,7 +918,7 @@ int main(int argc, char * argv[])
 
 				stats.nb_unwep++;
 
-				h80211[1] &= 0xBF;
+				*(h80211 + 1) &= 0xBF;
 
 				if (write_packet(f_out, &pkh, h80211) != 0) break;
 			}
@@ -980,7 +976,7 @@ int main(int argc, char * argv[])
 
 				stats.nb_unwpa++;
 
-				h80211[1] &= 0xBF;
+				*(h80211 + 1) &= 0xBF;
 
 				if (write_packet(f_out, &pkh, h80211) != 0) break;
 			}

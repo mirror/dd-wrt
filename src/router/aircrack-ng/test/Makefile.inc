@@ -49,7 +49,7 @@ AM_TESTS_ENVIRONMENT = \
 TESTS_ENVIRONMENT ?= $(AM_TESTS_ENVIRONMENT)
 
 test_hex_string_to_array_SOURCES = %D%/test-hex_string_to_array.c
-test_hex_string_to_array_LDADD = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS)
+test_hex_string_to_array_LDADD = $(libaccrypto_la_LIBADD) $(libaircrack_la_LIBADD) $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS)
 
 check_PROGRAMS += test-hex_string_to_array
 
@@ -74,6 +74,8 @@ TESTS += %D%/test-hex_string_to_array.sh \
 		 %D%/test-aircrack-ng-0018.sh \
 		 %D%/test-aircrack-ng-0019.sh \
 		 %D%/test-aircrack-ng-0021.sh \
+		 %D%/test-aircrack-ng-0022.sh \
+		 %D%/test-aircrack-ng-0023.sh \
 		 %D%/test-airdecap-ng-0001.sh \
 		 %D%/test-airdecap-ng-0002.sh \
 		 %D%/test-airdecap-ng-0003.sh \
@@ -133,6 +135,8 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
 			  %D%/test-aircrack-ng-0018.sh \
 			  %D%/test-aircrack-ng-0019.sh \
 			  %D%/test-aircrack-ng-0021.sh \
+			  %D%/test-aircrack-ng-0022.sh \
+			  %D%/test-aircrack-ng-0023.sh \
 			  %D%/test-airdecap-ng-0001.sh \
 			  %D%/test-airdecap-ng-0002.sh \
 			  %D%/test-airdecap-ng-0003.sh \
@@ -172,7 +176,9 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
 			  %D%/test-airdecap-ng.sh \
 			  %D%/test-airolib-sqlite.sh \
 			  %D%/MOM1.cap \
-			  %D%/pass.txt
+			  %D%/pass.txt \
+			  %D%/test23.pcap \
+			  %D%/testm1m2m3.pcap
 
 if EXPECT
 EXTRA_DIST += %D%/test-aircrack-ng-0020.sh \
@@ -210,8 +216,3 @@ if CMOCKA
 include %D%/unit/Makefile.inc
 endif
 include %D%/cryptounittest/Makefile.inc
-
-
-VALGRIND_SUPPRESSIONS_FILES = $(abs_srcdir)/build/valgrind.supp
-EXTRA_DIST += %D%/../build/valgrind.supp
-@VALGRIND_CHECK_RULES@

@@ -75,12 +75,14 @@ getRegister(const unsigned int val, const char from, const char to)
 	return (val & mask) >> from;
 }
 
-static void sprintcat(char * dest, const char * src, size_t len)
+#if defined(_X86) || defined(__arm__) || defined(__aarch64__)
+static void sprintcat(char * restrict dest, const char * restrict src, size_t len)
 {
-	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
+	if (*dest != '\0') (void) strncat(dest, ",", len - strlen(dest) - 1);
 
 	(void) strncat(dest, src, len - strlen(dest) - 1);
 }
+#endif
 
 int is_dir(const char * dir)
 {
@@ -142,6 +144,8 @@ int cpuid_simdsize(int viewmax)
 	if (hwcaps & (1 << 1)) // ASIMD
 		return 4;
 #endif
+#elif defined(__aarch64__) && !defined(HAS_AUXV)
+	return 4; // ASIMD is required on AARCH64
 #endif
 	(void) viewmax;
 
@@ -271,6 +275,8 @@ static char * cpuid_featureflags(void)
 	if ((hwcaps & (1 << 17)) || (hwcaps & (1 << 18)))
 		sprintcat((char *) &flags, "IDIV", sizeof(flags));
 #endif
+#elif defined(__aarch64__) && !defined(HAS_AUXV)
+	sprintcat((char *) &flags, "ASIMD", sizeof(flags));
 #endif
 	return strdup(flags);
 }
@@ -334,8 +340,7 @@ static int cpuid_findcpusensorpath(const char * path)
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
 		{
-			strncpy(tbuf[cnt], dp->d_name, 31);
-			tbuf[cnt][31] = '\0'; // ensure NULL termination
+			ALLEGE(strlcpy(tbuf[cnt], dp->d_name, 32) < 32);
 			if (cnt < (MAX_SENSOR_PATHS - 1)) ++cnt; //-V547
 		}
 	}
@@ -370,16 +375,13 @@ static int cpuid_findcpusensorpath(const char * path)
 static int cpuid_readsysfs(const char * file)
 {
 	int fd, ival = 0;
-	struct stat sf;
 	char buf[16] = {0};
-
-	if (stat(file, &sf)) return -1;
 
 	fd = open(file, O_RDONLY);
 
 	if (fd == -1) return -1;
 
-	if (read(fd, &buf, sizeof(buf)))
+	if (read(fd, &buf, sizeof(buf)) > 0)
 	{
 		ival = atoi(buf);
 	}
@@ -395,18 +397,15 @@ static int cpuid_readsysfs(const char * file)
 static int cpuid_getfreq(int type)
 {
 	int fd, ifreq = 0;
-	struct stat sf;
 	char freq[16] = {0}, *fptr;
 
 	fptr = (type == 1 ? CPUFREQ_CPU0C : CPUFREQ_CPU0M);
-
-	if (stat(fptr, &sf)) return 0;
 
 	fd = open(fptr, O_RDONLY);
 
 	if (fd == -1) return 0;
 
-	if (read(fd, &freq, sizeof(freq))) ifreq = atoi(freq) / 1000;
+	if (read(fd, &freq, sizeof(freq)) > 0) ifreq = atoi(freq) / 1000;
 
 	close(fd);
 
@@ -491,6 +490,8 @@ static char * cpuid_modelinfo(void)
 		snprintf(modelbuf, sizeof(modelbuf), "Unknown");
 
 	pm = modelbuf;
+#elif defined(__APPLE__) && defined(__aarch64__)
+	pm = "Apple M1";
 #endif
 
 	// Clean up the empty spaces in the model name on some intel's because they
@@ -712,7 +713,7 @@ int cpuid_getinfo()
 	printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 
 #ifdef _X86
-	printf("Threads per core= %d\n", cpuid_x86_threads_per_core());
+	printf("Threads per core= %u\n", cpuid_x86_threads_per_core());
 #endif
 
 	if (cpuinfo.cores > 0)

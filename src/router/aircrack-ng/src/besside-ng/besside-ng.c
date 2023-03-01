@@ -138,6 +138,7 @@ static struct conf
 {
 	char * cf_ifname;
 	struct channel cf_channels;
+	int cf_autochan;
 	int cf_hopfreq;
 	int cf_deauthfreq;
 	unsigned char * cf_bssid;
@@ -255,6 +256,7 @@ static struct state
 
 static void attack_continue(struct network * n);
 static void attack(struct network * n);
+static void autodetect_channels(void);
 
 void show_wep_stats(int UNUSED(B),
 					int UNUSED(force),
@@ -334,12 +336,6 @@ static void save_network(FILE * f, struct network * n)
 	if (n->n_client_handshake)
 	{
 		fprintf(f, "Got WPA handshake");
-		len = 17;
-	}
-
-	if (n->n_astate == ASTATE_UNREACH)
-	{
-		fprintf(f, "Crappy connection");
 		len = 17;
 	}
 
@@ -657,7 +653,7 @@ static void deauth_send(struct network * n, unsigned char * mac)
 	REQUIRE(n != NULL);
 	REQUIRE(mac != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	uint16_t * rc = (uint16_t *) (wh + 1);
 
@@ -840,9 +836,11 @@ static void wpa_upload(void)
 			 boundary,
 			 (int) (strlen(h1) + strlen(form) + tot));
 
-	if (write(s, buf, strlen(buf)) != (int) strlen(buf)) goto __fail;
+	const size_t buf_sz = strlen(buf);
+	if (write(s, buf, buf_sz) != (int) buf_sz) goto __fail;
 
-	if (write(s, h1, strlen(h1)) != (int) strlen(h1)) goto __fail;
+	const size_t h1_sz = strlen(h1);
+	if (write(s, h1, h1_sz) != (int) h1_sz) goto __fail;
 
 	if ((off = lseek(_state.s_wpafd, 0, SEEK_CUR)) == (off_t) -1)
 		err(1, "lseek()");
@@ -862,7 +860,8 @@ static void wpa_upload(void)
 		tot -= l;
 	}
 
-	if (write(s, form, strlen(form)) != (int) strlen(form)) goto __fail;
+	const size_t form_sz = strlen(form);
+	if (write(s, form, form_sz) != (int) form_sz) goto __fail;
 
 	if (lseek(_state.s_wpafd, off, SEEK_SET) == (off_t) -1) err(1, "lseek()");
 
@@ -934,7 +933,7 @@ static void attack_wpa(struct network * n)
 	{
 		case ASTATE_READY:
 			n->n_astate = ASTATE_DEAUTH;
-		/* fallthrough */
+			fallthrough;
 		case ASTATE_DEAUTH:
 			deauth(n);
 			break;
@@ -988,7 +987,7 @@ static void send_auth(struct network * n)
 {
 	REQUIRE(n != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	uint16_t * rc = (uint16_t *) (wh + 1);
 
@@ -1355,7 +1354,7 @@ static void do_assoc(struct network * n, int stype)
 {
 	REQUIRE(n != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	uint16_t * rc = (uint16_t *) (wh + 1);
 	unsigned char * p;
@@ -1570,7 +1569,7 @@ static void attack_wep(struct network * n)
 	{
 		case ASTATE_READY:
 			n->n_astate = ASTATE_WEP_PRGA_GET;
-		/* fallthrough */
+			fallthrough;
 		case ASTATE_WEP_PRGA_GET:
 			prga_get(n);
 			break;
@@ -1591,7 +1590,7 @@ static void attack_continue(struct network * n)
 	{
 		case ASTATE_NONE:
 			n->n_astate = ASTATE_PING;
-		/* fall through */
+			fallthrough;
 		case ASTATE_PING:
 			n->n_ping_got = n->n_ping_sent = 0;
 			attack_ping(n);
@@ -1599,7 +1598,7 @@ static void attack_continue(struct network * n)
 
 		case ASTATE_DONE:
 			pwned(n);
-		/* fallthrough */
+			fallthrough;
 		case ASTATE_UNREACH:
 			if (_conf.cf_bssid)
 				_state.s_state = STATE_DONE;
@@ -1631,7 +1630,8 @@ static void attack(struct network * n)
 
 	char * mac = mac2string(n->n_bssid);
 	ALLEGE(mac != NULL);
-	time_printf(V_VERBOSE, "Pwning [%s] %s\n", n->n_ssid, mac);
+	time_printf(
+		V_VERBOSE, "Pwning [%s] %s on chan %d\n", n->n_ssid, mac, n->n_chan);
 	free(mac);
 
 	if (n->n_start.tv_sec == 0)
@@ -1865,6 +1865,7 @@ wifi_beacon(struct network * n, struct ieee80211_frame * wh, int totlen)
 				break;
 
 			case IEEE80211_ELEMID_DSPARMS:
+			case IEEE80211_ELEMID_HTINFO:
 				n->n_chan = *p;
 				break;
 
@@ -2357,7 +2358,7 @@ check_replay(struct network * n, struct ieee80211_frame * wh, int len)
 		|| n->n_astate != ASTATE_WEP_FLOOD)
 		return;
 
-	if (!(wh->i_fc[1] |= IEEE80211_FC1_DIR_FROMDS)) return;
+	if (!(wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)) return;
 
 	if (memcmp(wh->i_addr3, _state.s_mac, sizeof(wh->i_addr3)) != 0) return;
 
@@ -2609,15 +2610,17 @@ static struct network * network_update(struct ieee80211_frame * wh)
 static void wifi_read(void)
 {
 	struct state * s = &_state;
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 8];
 	int rd;
-	struct rx_info ri;
+	struct rx_info * ri = calloc(1, sizeof(*ri));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	struct network * n;
 
+	REQUIRE(ri != NULL);
+
 	memset(buf, 0, sizeof(buf));
 
-	rd = wi_read(s->s_wi, NULL, NULL, buf, sizeof(buf), &ri);
+	rd = wi_read(s->s_wi, NULL, NULL, buf, sizeof(buf), ri);
 	if (rd < 0) err(1, "wi_read()");
 
 	if (rd < (int) sizeof(struct ieee80211_frame))
@@ -2625,7 +2628,7 @@ static void wifi_read(void)
 		return;
 	}
 
-	s->s_ri = &ri;
+	s->s_ri = ri;
 
 	n = network_update(wh);
 
@@ -2859,7 +2862,7 @@ static int parse_hex(unsigned char * out, char * in, int l)
 	while (in)
 	{
 		char * p = strchr(in, ':');
-		int x;
+		unsigned int x;
 
 		if (--l < 0) err(1, "parse_hex len");
 
@@ -2915,7 +2918,7 @@ static void resume_network(char * buf)
 				if (strstr(p, "handshake"))
 				{
 					n->n_crypto = CRYPTO_WPA;
-					n->n_client_handshake = (void *) 0xbad;
+					n->n_client_handshake = (void *) 0xbad; //-V566
 				}
 				else if (strchr(p, ':'))
 				{
@@ -3004,6 +3007,10 @@ static void cleanup(int UNUSED(x))
 
 	print_work();
 
+#ifdef HAVE_PCRE
+	if (_conf.cf_essid_regex) pcre_free(_conf.cf_essid_regex);
+#endif
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -3030,6 +3037,8 @@ static void pwn(void)
 	free(mac);
 	time_printf(V_NORMAL, "Let's ride\n");
 
+	if (_conf.cf_autochan) autodetect_channels();
+
 	if (wi_set_channel(s->s_wi, _state.s_chan) == -1)
 		err(1, "wi_set_channel()");
 
@@ -3043,7 +3052,7 @@ static void pwn(void)
 
 	scan_start();
 
-	while (s->s_state != STATE_DONE)
+	while (s->s_state != STATE_DONE) //-V1044
 	{
 		timer_next(&tv);
 
@@ -3089,14 +3098,47 @@ static void channel_add(int num)
 	c->c_next = _conf.cf_channels.c_next;
 }
 
+static void autodetect_freq(int start, int end, int incr)
+{
+
+	int freq;
+	int chan;
+
+	for (freq = start; freq <= end; freq += incr)
+	{
+		if (wi_set_freq(_state.s_wi, freq) == 0)
+		{
+			chan = wi_get_channel(_state.s_wi);
+			channel_add(chan);
+			time_printf(
+				V_VERBOSE, "Found channel %d on frequency %d\n", chan, freq);
+		}
+		else
+		{
+			time_printf(V_VERBOSE, "No channel found on frequency %d\n", freq);
+		}
+	}
+}
+
+static void autodetect_channels(void)
+{
+	time_printf(V_NORMAL, "Autodetecting supported channels...\n");
+
+	// clang-format off
+	// autodetect 2ghz channels
+	autodetect_freq(2412, 2472, 5);  //-V525  CH: 1-13
+	autodetect_freq(2484, 2484, 1);  //-V525  CH: 14
+	autodetect_freq(5180, 5320, 10); //-V525  CH: 36-64
+	autodetect_freq(5500, 5720, 10); //-V525  CH: 100-144
+	autodetect_freq(5745, 5805, 10); //-V525  CH: 149-161
+	autodetect_freq(5825, 5825, 1);  //-V525  CH: 165
+	// clang-format on
+}
+
 static void init_conf(void)
 {
-	int i;
-
 	_conf.cf_channels.c_next = &_conf.cf_channels;
-
-	for (i = 1; i <= 11; i++) channel_add(i);
-
+	_conf.cf_autochan = 1;
 	_state.s_hopchan = _conf.cf_channels.c_next;
 
 	_conf.cf_hopfreq = 250;
@@ -3202,28 +3244,18 @@ static void print_state(int UNUSED(x))
 	} while (c != c2);
 	printf("\n");
 
-	printf(
-#if !defined(__APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
-		"Now: %lu.%lu\n",
-#else
-		"Now: %lu.%d\n",
-#endif
-		s->s_now.tv_sec,
-		s->s_now.tv_usec);
+	printf("Now: %lu.%lu\n",
+		   (unsigned long) s->s_now.tv_sec,
+		   (unsigned long) s->s_now.tv_usec);
 
 	while (t)
 	{
-		printf(
-#if !defined(__APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
-			"Timer: %lu.%lu %p[%s](%p)\n",
-#else
-			"Timer: %lu.%d %p[%s](%p)\n",
-#endif
-			t->t_tv.tv_sec,
-			t->t_tv.tv_usec,
-			t->t_cb,
-			timer_cb2str(t->t_cb),
-			t->t_arg);
+		printf("Timer: %lu.%lu %p[%s](%p)\n",
+			   (unsigned long) t->t_tv.tv_sec,
+			   (unsigned long) t->t_tv.tv_usec,
+			   (void *) ((uintptr_t) t->t_cb),
+			   timer_cb2str(t->t_cb),
+			   t->t_arg);
 
 		t = t->t_next;
 	}
@@ -3245,16 +3277,14 @@ static void usage(char * prog)
 		   "\n"
 		   "  Options:\n"
 		   "\n"
-		   "       -b <victim mac> : Victim BSSID\n"
-#ifdef HAVE_PCRE
-		   "       -R <victim ap regex> : Victim ESSID regex\n"
-#endif
-		   "       -s <WPA server> : Upload wpa.cap for cracking\n"
-		   "       -c       <chan> : chanlock\n"
-		   "       -p       <pps>  : flood rate\n"
-		   "       -W              : WPA only\n"
-		   "       -v              : verbose, -vv for more, etc.\n"
-		   "       -h              : This help screen\n"
+		   "       -b <victim mac>       Victim BSSID\n"
+		   "       -R <victim ap regex>  Victim ESSID regex (requires PCRE)\n"
+		   "       -s <WPA server>       Upload wpa.cap for cracking\n"
+		   "       -c <chan>             chanlock\n"
+		   "       -p <pps>              flood rate\n"
+		   "       -W                    WPA only\n"
+		   "       -v                    verbose, -vv for more, etc.\n"
+		   "       -h                    This help screen\n"
 		   "\n",
 		   version_info,
 		   prog);
@@ -3306,6 +3336,7 @@ int main(int argc, char * argv[])
 				}
 				channel_add(temp);
 				_state.s_hopchan = _conf.cf_channels.c_next;
+				_conf.cf_autochan = 0;
 				break;
 
 			case 'v':
@@ -3317,8 +3348,8 @@ int main(int argc, char * argv[])
 				parse_hex(_conf.cf_bssid, optarg, 6);
 				break;
 
-#ifdef HAVE_PCRE
 			case 'R':
+#ifdef HAVE_PCRE
 				if (_conf.cf_essid_regex != NULL)
 				{
 					printf("Error: ESSID regular expression already given. "
@@ -3338,6 +3369,10 @@ int main(int argc, char * argv[])
 					exit(EXIT_FAILURE);
 				}
 				break;
+#else
+				printf("Error: Regular expressions are unsupported in this "
+					   "build.\n");
+				exit(EXIT_FAILURE);
 #endif
 
 			default:
@@ -3362,9 +3397,5 @@ int main(int argc, char * argv[])
 
 	pwn();
 
-#ifdef HAVE_PCRE
-	if (_conf.cf_essid_regex) pcre_free(_conf.cf_essid_regex);
-#endif
-
-	exit(EXIT_SUCCESS);
+	/* UNREACHED */
 }

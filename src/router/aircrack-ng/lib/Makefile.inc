@@ -64,13 +64,9 @@ if LIBGCRYPT
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
 endif
 
-if X86
-SRC_CRYPTO	+=	%D%/crypto/sha1-sse2.S
-endif
-
 libaccrypto_la_SOURCES	= $(SRC_CRYPTO)
 libaccrypto_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS)
-libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LIBS)
+libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
 
 libcowpatty_la_SOURCES = $(SRC_COW)
 libcowpatty_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
@@ -116,13 +112,21 @@ if !HAVE_HWLOC
 CPUSET = %D%/libac/cpu/cpuset_pthread.c
 endif
 
+if INCLUDE_COMPAT_STRLCAT
+SRC_LIBAC += %D%/libac/support/strlcat.c
+endif
+
+if INCLUDE_COMPAT_STRLCPY
+SRC_LIBAC += %D%/libac/support/strlcpy.c
+endif
+
 libaircrack_la_SOURCES	= $(SRC_LIBAC) $(TRAMPOLINE) $(CPUSET)
 libaircrack_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) \
 													"-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
 													"-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
 													"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 													"-DLIBDIR=\"$(libdir)\""
-libaircrack_la_LIBADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(PCRE_LIBS) $(CRYPTO_LIBS)
+libaircrack_la_LIBADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(PCRE_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
 
 if CYGWIN
 libaircrack_la_LIBADD += -lshlwapi
@@ -152,7 +156,7 @@ endif
 
 libaircrack_ce_wep_la_SOURCES	= $(SRC_CE_WEP)
 libaircrack_ce_wep_la_CFLAGS	= $(COMMON_CFLAGS)
-libaircrack_ce_wep_la_LIBADD	= $(CRYPTO_LIBS)
+libaircrack_ce_wep_la_LIBADD	= $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
 
 ########################################################################
 # Aircrack Crypto Engine for WPA                                       #
@@ -163,28 +167,28 @@ libaircrack_ce_wpa_x86_avx512_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx512_la_CFLAGS = $(x86_avx512_cflags) -DSIMD_CORE -DJOHN_AVX512F $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_x86_avx512_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_avx512_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_x86_avx512_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_x86_avx2_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_x86_avx2_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_avx2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_x86_avx2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_x86_avx_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx_la_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_x86_avx_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_avx_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_x86_avx_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_x86_sse2_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE -DJOHN_SSE2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_x86_sse2_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_sse2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_x86_sse2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 # ARM/AARCH64
@@ -192,7 +196,7 @@ libaircrack_ce_wpa_arm_neon_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_arm_neon_la_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_arm_neon_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_arm_neon_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_arm_neon_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 # PowerPC
@@ -200,14 +204,14 @@ libaircrack_ce_wpa_ppc_altivec_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_ppc_altivec_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_ppc_altivec_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_ppc_altivec_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_ppc_power8_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC -DJOHN_POWER8 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_ppc_power8_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_ppc_power8_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_ppc_power8_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 # Generic library
@@ -215,7 +219,7 @@ libaircrack_ce_wpa_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
-libaircrack_ce_wpa_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_ce_wpa_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 # Build librarie(s)
@@ -251,7 +255,6 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/cowpatty/cowpatty.c \
 							%D%/crypto/crypto.c \
 							%D%/crypto/sha1-git.c \
-							%D%/crypto/sha1-sse2.S \
 							%D%/libac/adt/avl_tree.c \
 							%D%/libac/adt/circular_buffer.c \
 							%D%/libac/adt/circular_queue.c \
