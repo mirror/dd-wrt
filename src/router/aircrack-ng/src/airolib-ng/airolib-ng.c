@@ -109,7 +109,7 @@ static void print_help(const char * msg)
 		   EXPORT_ESSID);
 	free(version_info);
 
-	if (msg && strlen(msg) > 0)
+	if (msg && *msg != '\0')
 	{
 		printf("%s", msg);
 		puts("");
@@ -142,8 +142,10 @@ static void sql_error(sqlite3 * db)
 	fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 }
 
-static int
-sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
+static int sql_exec_cb(sqlite3 * db,
+					   const char * sql,
+					   int (*callback)(void *, int, char **, char **),
+					   void * cb_arg)
 {
 	REQUIRE(db != NULL);
 	REQUIRE(sql != NULL);
@@ -171,15 +173,24 @@ sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
 					looper[looperc++ % sizeof(looper)]);
 			fflush(stdout);
 			sleep(1);
+			if (zErrMsg)
+			{
+				sqlite3_free(zErrMsg);
+				zErrMsg = NULL;
+			}
 		}
 		else
 		{
 			if (rc != SQLITE_OK)
 			{
 				fprintf(stderr, "SQL error. %s\n", zErrMsg);
-				sqlite3_free(zErrMsg);
 			}
 			if (waited != 0) printf("\n\n");
+			if (zErrMsg)
+			{
+				sqlite3_free(zErrMsg);
+				zErrMsg = NULL;
+			}
 			return (rc);
 		}
 	}
@@ -297,7 +308,7 @@ static int stmt_stdout(sqlite3_stmt * stmt, int * rowcount)
 	int rcount = 0;
 	int rc;
 
-	if (stmt == 0 || (ccount = sqlite3_column_count(stmt)) == 0)
+	if ((ccount = sqlite3_column_count(stmt)) == 0)
 	{
 		return (sql_step(stmt, 0));
 	}
@@ -593,9 +604,11 @@ static void batch_process(sqlite3 * db)
 
 // Verify an ESSID. Returns 1 if ESSID is invalid.
 // TODO More things to verify? Invalid chars?
-static int verify_essid(char * essid)
+static int verify_essid(char * const essid)
 {
-	return (essid == NULL || strlen(essid) < 1 || strlen(essid) > 32);
+	const size_t essid_len = essid ? strlen(essid) : 0;
+
+	return (essid_len < 1 || essid_len > 32);
 }
 
 // sql function which checks a given ESSID
@@ -612,9 +625,11 @@ sql_verify_essid(sqlite3_context * context, int argc, sqlite3_value ** values)
 	sqlite3_result_int(context, verify_essid(essid));
 }
 
-static int verify_passwd(char * passwd)
+static int verify_passwd(char * const passwd)
 {
-	return (passwd == NULL || strlen(passwd) < 8 || strlen(passwd) > 63);
+	const size_t passwd_len = passwd ? strlen(passwd) : 0;
+
+	return (passwd_len < 8 || passwd_len > 63);
 }
 
 static void
@@ -737,7 +752,7 @@ static void export_cowpatty(sqlite3 * db, char * essid, char * filename)
 		return;
 	}
 
-	if (filename == NULL || strlen(filename) == 0)
+	if (filename == NULL || *filename == '\0')
 	{
 		printf("Invalid filename (NULL)");
 		return;
@@ -894,11 +909,8 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 					"Invalid password %s will not be imported.\n",
 					rec->word);
 		}
-		if (rec)
-		{
-			free(rec->word);
-			free(rec);
-		}
+		free(rec->word);
+		free(rec);
 	}
 
 	// Finalize
@@ -980,8 +992,8 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 	while (!exit_airolib && fgets(buffer, sizeof(buffer), f) != 0)
 	{
 		int i = strlen(buffer);
-		if (buffer[i - 1] == '\n') buffer[--i] = '\0';
-		if (buffer[i - 1] == '\r') buffer[--i] = '\0';
+		if (i > 0 && buffer[i - 1] == '\n') buffer[--i] = '\0';
+		if (i > 0 && buffer[i - 1] == '\r') buffer[--i] = '\0';
 		imported++;
 		if ((imode == 0 && verify_essid(buffer) == 0)
 			|| (imode == 1 && verify_passwd(buffer) == 0))

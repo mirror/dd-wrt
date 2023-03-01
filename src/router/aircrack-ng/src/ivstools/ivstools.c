@@ -1,7 +1,7 @@
 /*
   *  IVS Tools - Convert or merge IVs
   *
-  *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+  *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005  Christophe Devine (pcap2ivs and mergeivs)
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -77,7 +77,7 @@ static void usage(int what)
 {
 	char * version_info
 		= getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
-	printf("\n  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
+	printf("\n  %s - (C) 2006-2022 Thomas d\'Otreppe\n"
 		   "  https://www.aircrack-ng.org\n"
 		   "\n   usage: ",
 		   version_info);
@@ -208,7 +208,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
 	REQUIRE(h80211 != NULL);
 
-	int seq, clen;
+	int clen;
 	size_t dlen;
 	size_t i;
 	size_t n;
@@ -235,9 +235,6 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
 		return (FAILURE);
 
-	/* grab the sequence number */
-	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
-
 	/* locate the access point's MAC address */
 
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
@@ -249,11 +246,9 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			memcpy(bssid, h80211 + 4, 6);
 			break; // ToDS
 		case IEEE80211_FC1_DIR_FROMDS:
-			memcpy(bssid, h80211 + 10, 6);
-			break; // FromDS
 		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
-			break; // WDS -> Transmitter taken as BSSID
+			break;
 	}
 
 	/* update our chained list of access points */

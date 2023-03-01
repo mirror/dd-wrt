@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2008, 2009 Martin Beck <martin.beck2@gmx.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -142,7 +142,7 @@
 
 static const char usage[]
 	= "\n"
-	  "  %s - (C) 2008-2020 Thomas d'Otreppe\n"
+	  "  %s - (C) 2008-2022 Thomas d'Otreppe\n"
 	  "  Original work: Martin Beck\n"
 	  "  https://www.aircrack-ng.org\n"
 	  "\n"
@@ -321,11 +321,6 @@ static pMAC_t rClient;
 pFrag_t rFragment;
 static pCF_t rCF;
 
-// Threads
-static void beacon_thread(void * arg);
-static void caffelatte_thread(void);
-static void cfrag_thread(void);
-
 static int addESSID(char * essid, int len, int expiration)
 {
 	pESSID_t tmp;
@@ -389,6 +384,12 @@ static int addESSID(char * essid, int len, int expiration)
 	return 0;
 }
 
+/**
+ * @brief Save 802.11 frame to capture file
+ * @param[in] packet 802.11 frame buffer
+ * @param[in] length Length of the buffer
+ * @return 0 on success, 1 on failure/error
+ */
 static int capture_packet(unsigned char * packet, int length)
 {
 	REQUIRE(packet != NULL);
@@ -739,9 +740,15 @@ static int addMACfile(pMAC_t pMAC, char * filename)
 	return (0);
 }
 
+/**
+ * @brief Send 802.11 frame, and optionally save it to the capture file
+ * @param[in] buf Buffer containing the frame
+ * @param[in] count Size of the 'buffer' variable
+ * @return return value from send_packet()
+ */
 static int my_send_packet(void * buf, size_t count)
 {
-	int rc = send_packet(_wi_out, buf, count, kNoChange);
+	int rc = send_packet(_wi_out, buf, count, kRewriteSequenceNumber);
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
 	if (lopt.record_data) capture_packet(buf, (int) count);
@@ -930,51 +937,101 @@ static int packet_xmit_external(unsigned char * packet,
 	return (0);
 }
 
-static int remove_tag(unsigned char * flags, unsigned char type, int * length)
+/**
+ * @brief Remove specific Information Element(s) (aka tag) from a frame.
+ *        Handle when multiple tags with the same number exist.
+ * @param[in,out] tagged_params Buffer containing IEs, starting at an IE
+ * @param[in] exclude_tag_id tag number to remove. See enum containing IEEE80211_ELEMID_ items in ieee80211.h
+ * @param[in,out] tp_length Length of the 'flags' buffer. It gets updated if the tag is removed
+ * @return 0 on success, 1 on error/failure
+ */
+static int remove_tag(uint8_t * tagged_params,
+					  const uint8_t exclude_tag_id,
+					  size_t * tp_length)
 {
-	REQUIRE(length != NULL);
+	REQUIRE(tp_length != NULL);
 
-	int cur_type = 0, cur_len = 0, len = 0;
-	unsigned char * pos;
-	unsigned char buffer[4096];
+	size_t dst_pos = 0, src_pos = 0;
+	uint8_t cur_tag_id;
+	uint8_t cur_tag_length;
+	size_t cur_tag_total_len;
 
-	if (*length < 2) return (1);
+	if (tagged_params == NULL) return (1);
 
-	if (flags == NULL) return (1);
+	if (*tp_length == 0) return (1);
 
-	pos = flags;
-
-	do
+	while (src_pos < *tp_length)
 	{
-		cur_type = pos[0];
-		cur_len = pos[1];
+		// Handle the case when frame is malformed ...
+		if (src_pos + 2 > *tp_length) break;
 
-		if (len + 2 + cur_len > *length) return (1);
+		// Grab tag id and its length
+		cur_tag_id = tagged_params[src_pos];
+		cur_tag_length = tagged_params[src_pos + 1];
 
-		if (cur_type == type)
+		cur_tag_total_len = cur_tag_length + 2;
+
+		// Now validate the frame is still valid and we have enough buffer
+		if (src_pos + cur_tag_total_len > *tp_length) break;
+
+		// If we skipped 1+ tag, then we need to move this tag
+		if (src_pos != dst_pos)
 		{
-			if (cur_len > 0 && (pos - flags + cur_len + 2) <= *length)
-			{
-				memcpy(buffer,
-					   pos + 2 + cur_len,
-					   *length - ((pos + 2 + cur_len) - flags));
-				memcpy(pos, buffer, *length - ((pos + 2 + cur_len) - flags));
-				*length = *length - 2 - cur_len;
-				return (0);
-			}
-			else
-				return (1);
+			// memmove tag by tag, there might be multiple instances of the tag to exclude
+			memmove(tagged_params + dst_pos,
+					tagged_params + src_pos,
+					cur_tag_total_len);
 		}
-		pos += cur_len + 2;
-		len += cur_len + 2;
-	} while (len + 2 <= *length);
 
-	return (0);
+		// Compute new positions
+		src_pos += cur_tag_total_len;
+		if (cur_tag_id != exclude_tag_id)
+		{
+			dst_pos += cur_tag_total_len;
+		}
+	}
+
+	// In case something goes wrong in the parsing of a tag, move what's
+	// available so we don't leave frame in unknown state
+	const size_t avail_length = (*tp_length) - src_pos;
+	if (avail_length && tagged_params[src_pos] != exclude_tag_id
+		&& src_pos != dst_pos)
+	{
+		memmove(tagged_params + dst_pos, tagged_params + src_pos, avail_length);
+		dst_pos += avail_length;
+	}
+
+	// Update length
+	*tp_length = dst_pos;
+
+	return (avail_length == 0);
 }
 
+/**
+ * @brief Parse a specific Information Element (IE), aka Tag, to return
+ *        a pointer to the location of its value and its length
+ * @param[in] flags Buffer containing IEs, starting at an IE
+ * @param[in] type IE/tag number to search for. See enum containing IEEE80211_ELEMID_ items in ieee80211.h
+ * @param[in] length length of the 'flags' buffer
+ * @param[out] taglen returning the length of the tag, if found
+ *
+ * @return pointer to the start of the IE value, or NULL when there is
+ *         an error or the IE hasn't been found
+ *
+ * @note
+ * IE (aka tag) is of Type-Length-Value (TLV):
+ * - 1 byte for the tag number (unsigned char)
+ * - 1 byte for the length (unsigned char)
+ * - X bytes (defined by the 'length' field right before) for the
+ *   value whose interpretation depends on the type, and sometimes
+ *   more (such as WPA/RSN IE).
+ *
+ * These are present in management frames, and vary. However, they
+ * are typically ordered by tag
+ */
 static unsigned char * parse_tags(unsigned char * flags,
-								  unsigned char type,
-								  int length,
+								  const unsigned char type,
+								  const int length,
 								  size_t * taglen)
 {
 	int cur_type = 0, cur_len = 0, len = 0;
@@ -1009,26 +1066,38 @@ static unsigned char * parse_tags(unsigned char * flags,
 	return (NULL);
 }
 
+/**
+ * @brief Parses the WPA (Vendor specific) or RSN tag and fill out the station information structure
+ * @param[in,out] st_cur pointer to the current station
+ * @param[in] tag start of the WPA/RSN tag/IE. See enum containing IEEE80211_ELEMID_ items in ieee80211.h
+ * @param[in] length length of the tag buffer
+ * @return 0 on success, 1 on error/failure
+ */
 static int
-wpa_client(struct ST_info * st_cur, const unsigned char * tag, int length)
+wpa_client(struct ST_info * st_cur, const unsigned char * tag, const int length)
 {
 	if (tag == NULL) return (1);
 
 	if (st_cur == NULL) return (1);
 
-	if (tag[0] != 0xDD && tag[0] != 0x30) // wpa1 or wpa2
+	if (length <= 0) return (1);
+
+	if (tag[0] != IEEE80211_ELEMID_VENDOR
+		&& tag[0] != IEEE80211_ELEMID_RSN) // wpa1 or wpa2
 		return (1);
 
-	if (tag[0] == 0xDD)
+	// TODO: improve parsing, in the event if there are multiple cipher suites
+	if (tag[0] == IEEE80211_ELEMID_VENDOR)
 	{
 		if (length < 24) return (1);
 
+		// Get first unicast cipher suite
 		switch (tag[17])
 		{
-			case 0x02:
+			case WPA_CSE_TKIP:
 				st_cur->wpahash = 1; // md5|tkip
 				break;
-			case 0x04:
+			case WPA_CSE_CCMP:
 				st_cur->wpahash = 2; // sha1|ccmp
 				break;
 			default:
@@ -1038,16 +1107,17 @@ wpa_client(struct ST_info * st_cur, const unsigned char * tag, int length)
 		st_cur->wpatype = 1; // wpa1
 	}
 
-	if (tag[0] == 0x30 && st_cur->wpatype == 0)
+	if (tag[0] == IEEE80211_ELEMID_RSN && st_cur->wpatype == 0)
 	{
 		if (length < 22) return (1);
 
+		// Get first unicast cipher suite
 		switch (tag[13])
 		{
-			case 0x02:
+			case WPA_CSE_TKIP:
 				st_cur->wpahash = 1; // md5|tkip
 				break;
-			case 0x04:
+			case WPA_CSE_CCMP:
 				st_cur->wpahash = 2; // sha1|ccmp
 				break;
 			default:
@@ -1521,12 +1591,14 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	uint8_t * buffer;
 	uint8_t essid[256];
 	struct timeval tv1;
-	u_int64_t timestamp;
+	uint64_t timestamp;
 	char fessid[MAX_IE_ELEMENT_SIZE + 1];
 	int seqnum, fragnum, morefrag;
 	int gotsource, gotbssid;
 	int remaining;
-	int reasso, fixed, temp_channel;
+	// Is the frame a reassociation request?
+	int reasso;
+	int fixed, temp_channel;
 	uint8_t bytes2use;
 	unsigned z;
 
@@ -1541,9 +1613,13 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	if (lopt.record_data) capture_packet(packet, (int) length);
 	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
 
-	z = ((packet[1] & 3) != 3) ? 24 : 30;
+	// Check if the frame has 4 addresses (ToDS and FromDS present), and save base length
+	z = ((packet[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS) ? 24
+																		   : 30;
 
-	if (packet[0] == 0x88) z += 2; /* handle QoS field */
+	/* handle QoS field in data frame: they're 2 bytes longer */
+	if (packet[0] == (IEEE80211_FC0_SUBTYPE_QOS | IEEE80211_FC0_TYPE_DATA))
+		z += 2;
 
 	if (length < z)
 	{
@@ -1555,19 +1631,20 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		return (1);
 	}
 
-	switch (packet[1] & 3)
+	// Grab MAC addresses
+	switch (packet[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 			memcpy(bssid, packet + 16, 6);
 			memcpy(dmac, packet + 4, 6);
 			memcpy(smac, packet + 10, 6);
 			break;
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, packet + 4, 6);
 			memcpy(dmac, packet + 16, 6);
 			memcpy(smac, packet + 10, 6);
 			break;
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			memcpy(bssid, packet + 10, 6);
 			memcpy(dmac, packet + 4, 6);
 			memcpy(smac, packet + 16, 6);
@@ -1579,7 +1656,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			break;
 	}
 
-	if ((packet[1] & 3) == 0x03)
+	if ((packet[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_DSTODS)
 	{
 		/* no wds support yet */
 		return (1);
@@ -2014,12 +2091,13 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 		ti_write(dev.dv_ti, h80211, (int) length);
 	}
-	else
+	else if ((packet[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT)
 	{
 		// react on management frames
-		// probe request -> send probe response if essid matches. if brodcast
+		// probe request -> send probe response if essid matches. if broadcast
 		// probe, ignore it.
-		if (packet[0] == 0x40)
+		if ((packet[0] & IEEE80211_FC0_SUBTYPE_MASK)
+			== IEEE80211_FC0_SUBTYPE_PROBE_REQ)
 		{
 			tag = parse_tags(packet + z, 0, (int) (length - z), &len);
 			if (tag != NULL && tag[0] >= 32 && len <= 255) // directed probe
@@ -2324,7 +2402,9 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		}
 
 		// auth req
-		if (packet[0] == 0xB0 && memcmp(bssid, opt.r_bssid, 6) == 0)
+		if ((packet[0] & IEEE80211_FC0_SUBTYPE_MASK)
+				== IEEE80211_FC0_SUBTYPE_AUTH
+			&& memcmp(bssid, opt.r_bssid, 6) == 0)
 		{
 			if (packet[z] == 0x00) // open system auth
 			{
@@ -2434,15 +2514,20 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		}
 
 		// asso req or reasso
-		if ((packet[0] == 0x00 || packet[0] == 0x20)
+		if (((packet[0] & IEEE80211_FC0_SUBTYPE_MASK)
+				 == IEEE80211_FC0_SUBTYPE_ASSOC_REQ
+			 || (packet[0] & IEEE80211_FC0_SUBTYPE_MASK)
+					== IEEE80211_FC0_SUBTYPE_REASSOC_REQ)
 			&& memcmp(bssid, opt.r_bssid, 6) == 0)
 		{
-			if (packet[0] == 0x00) // asso req
+			if ((packet[0] & IEEE80211_FC0_SUBTYPE_MASK)
+				== IEEE80211_FC0_SUBTYPE_ASSOC_REQ)
 			{
-				reasso = 0;
+				// asso req
+				reasso = 0; //-V1048
 				fixed = 4;
 			}
-			else
+			else // reassociation frame
 			{
 				reasso = 1;
 				fixed = 10;
@@ -2450,8 +2535,11 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 			st_cur->wep = (packet[z] & 0x10) >> 4;
 
-			tag = parse_tags(
-				packet + z + fixed, 0, (int) (length - z - fixed), &len);
+			// Check SSID is present
+			tag = parse_tags(packet + z + fixed,
+							 IEEE80211_ELEMID_SSID,
+							 (int) (length - z - fixed),
+							 &len);
 			if (tag != NULL && tag[0] >= 32 && len < 256)
 			{
 				memcpy(essid, tag, len);
@@ -2463,31 +2551,45 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			st_cur->wpatype = 0;
 			st_cur->wpahash = 0;
 
-			tag = parse_tags(
-				packet + z + fixed, 0xDD, (int) (length - z - fixed), &len);
+			// Search for WPA IE, which is inside a Vendor Specific (221, 0xDD) and parse client's WPA IE
+			tag = parse_tags(packet + z + fixed,
+							 IEEE80211_ELEMID_VENDOR,
+							 (int) (length - z - fixed),
+							 &len);
 			while (tag != NULL)
 			{
 				wpa_client(st_cur, tag - 2, (int) (len + 2u));
 				tag += (tag - 2)[1] + 2;
-				tag = parse_tags(
-					tag - 2, 0xDD, (int) (length - (tag - packet) + 2u), &len);
+				tag = parse_tags(tag - 2,
+								 IEEE80211_ELEMID_VENDOR,
+								 (int) (length - (tag - packet) + 2u),
+								 &len);
 			}
 
-			tag = parse_tags(
-				packet + z + fixed, 0x30, (int) (length - z - fixed), &len);
+			// Search for RSN IE and parse client's RSN IE
+			tag = parse_tags(packet + z + fixed,
+							 IEEE80211_ELEMID_RSN,
+							 (int) (length - z - fixed),
+							 &len);
 			while (tag != NULL)
 			{
 				wpa_client(st_cur, tag - 2, (int) (len + 2u));
 				tag += (tag - 2)[1] + 2;
-				tag = parse_tags(
-					tag - 2, 0x30, (int) (length - (tag - packet) + 2u), &len);
+				tag = parse_tags(tag - 2,
+								 IEEE80211_ELEMID_RSN,
+								 (int) (length - (tag - packet) + 2u),
+								 &len);
 			}
 
+			// Set type/subtype depending on the frame received
 			if (!reasso)
-				packet[0] = 0x10;
+				packet[0]
+					= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_ASSOC_RESP;
 			else
-				packet[0] = 0x30;
+				packet[0] = IEEE80211_FC0_TYPE_MGT
+							| IEEE80211_FC0_SUBTYPE_REASSOC_RESP;
 
+			// Add the addresses
 			memcpy(packet + 4, smac, 6);
 			memcpy(packet + 10, dmac, 6);
 
@@ -2507,7 +2609,20 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			buffer = NULL;
 
 			len = length - z - 6;
-			remove_tag(packet + z + 6, 0, (int *) &len);
+
+			// Remove SSID
+			remove_tag(packet + z + 6, IEEE80211_ELEMID_SSID, &len);
+
+			// Remove Supported Operating Classes (59)
+			remove_tag(packet + z + 6, 59, &len);
+
+			// Remove WPA tag (Vendor Specific) - It will also remove other vendor tags which aren't needed
+			remove_tag(packet + z + 6, IEEE80211_ELEMID_VENDOR, &len);
+
+			// Remove RSN tag
+			remove_tag(packet + z + 6, IEEE80211_ELEMID_RSN, &len);
+
+			// Recalculate length
 			length = len + z + 6;
 
 			my_send_packet(packet, length);
@@ -2654,7 +2769,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	return (0);
 }
 
-static void beacon_thread(void * arg)
+static THREAD_ENTRY(beacon_thread)
 {
 	REQUIRE(arg != NULL);
 
@@ -2685,13 +2800,13 @@ static void beacon_thread(void * arg)
 			if ((rc = read(dev.fd_rtc, &n, sizeof(n))) < 0)
 			{
 				perror("read(/dev/rtc) failed");
-				return;
+				return (NULL);
 			}
 
 			if (rc == 0)
 			{
 				perror("EOF encountered on /dev/rtc");
-				return;
+				return (NULL);
 			}
 
 			ticks[0]++;
@@ -2728,7 +2843,7 @@ static void beacon_thread(void * arg)
 			if (!essid_len)
 			{
 				strncpy((char *) essid, "default", sizeof(essid) - 1);
-				essid_len = strlen("default");
+				essid_len = strlen("default"); //-V814
 			}
 
 			beacon_len = 0;
@@ -2849,21 +2964,25 @@ static void beacon_thread(void * arg)
 			if (my_send_packet(beacon, beacon_len) < 0)
 			{
 				printf("Error sending beacon!\n");
-				return;
+				return (NULL);
 			}
 
 			seq++;
 		}
 	}
+
+	return (NULL);
 }
 
-static void caffelatte_thread(void)
+static THREAD_ENTRY(caffelatte_thread)
 {
 	struct timeval tv, tv2;
 	float f, ticks[3];
 	int arp_off1 = 0;
 	int nb_pkt_sent_1 = 0;
 	int seq = 0;
+
+	UNUSED_PARAM(arg);
 
 	ticks[0] = 0;
 	ticks[1] = 0;
@@ -2896,7 +3015,7 @@ static void caffelatte_thread(void)
 				if (my_send_packet(arp[arp_off1].buf,
 								   (size_t) arp[arp_off1].len)
 					< 0)
-					return;
+					return (NULL);
 
 				nb_pkt_sent_1++;
 
@@ -2907,7 +3026,7 @@ static void caffelatte_thread(void)
 					if (my_send_packet(arp[arp_off1].buf,
 									   (size_t) arp[arp_off1].len)
 						< 0)
-						return;
+						return (NULL);
 
 					nb_pkt_sent_1++;
 				}
@@ -2916,6 +3035,8 @@ static void caffelatte_thread(void)
 			}
 		}
 	}
+
+	return (NULL);
 }
 
 static int del_next_CF(pCF_t curCF)
@@ -2990,7 +3111,7 @@ static int cfrag_fuzz(unsigned char * packet,
 	return (0);
 }
 
-static void cfrag_thread(void)
+static THREAD_ENTRY(cfrag_thread)
 {
 	struct timeval tv, tv2;
 	float f, ticks[3];
@@ -2999,6 +3120,8 @@ static void cfrag_thread(void)
 	pCF_t curCF;
 	unsigned char rnd[2];
 	unsigned char buffer[4096];
+
+	UNUSED_PARAM(arg);
 
 	ticks[0] = 0;
 	ticks[1] = 0;
@@ -3068,7 +3191,7 @@ static void cfrag_thread(void)
 					if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-						return;
+						return (NULL);
 					}
 				}
 				memcpy(buffer, curCF->final, curCF->finallen);
@@ -3080,7 +3203,7 @@ static void cfrag_thread(void)
 				if (my_send_packet(buffer, curCF->finallen) < 0)
 				{
 					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-					return;
+					return (NULL);
 				}
 
 				curCF->xmitcount++;
@@ -3103,7 +3226,7 @@ static void cfrag_thread(void)
 						if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 						{
 							ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-							return;
+							return (NULL);
 						}
 					}
 					memcpy(buffer, curCF->final, curCF->finallen);
@@ -3115,7 +3238,7 @@ static void cfrag_thread(void)
 					if (my_send_packet(buffer, curCF->finallen) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-						return;
+						return (NULL);
 					}
 
 					curCF->xmitcount++;
@@ -3125,6 +3248,8 @@ static void cfrag_thread(void)
 			ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 		}
 	}
+
+	return (NULL);
 }
 
 int main(int argc, char * argv[])
@@ -3229,10 +3354,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (EXIT_FAILURE);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -4027,9 +4148,7 @@ int main(int argc, char * argv[])
 		}
 	}
 	// start sending beacons
-	if (pthread_create(
-			&(beaconpid), NULL, (void *) beacon_thread, (void *) &apc)
-		!= 0)
+	if (pthread_create(&(beaconpid), NULL, &beacon_thread, (void *) &apc) != 0)
 	{
 		perror("Beacons pthread_create");
 		return (EXIT_FAILURE);
@@ -4041,8 +4160,7 @@ int main(int argc, char * argv[])
 										* sizeof(struct ARP_req));
 		ALLEGE(arp != NULL);
 
-		if (pthread_create(
-				&(caffelattepid), NULL, (void *) caffelatte_thread, NULL)
+		if (pthread_create(&(caffelattepid), NULL, &caffelatte_thread, NULL)
 			!= 0)
 		{
 			perror("Caffe-Latte pthread_create");
@@ -4052,7 +4170,7 @@ int main(int argc, char * argv[])
 
 	if (lopt.cf_attack)
 	{
-		if (pthread_create(&(cfragpid), NULL, (void *) cfrag_thread, NULL) != 0)
+		if (pthread_create(&(cfragpid), NULL, &cfrag_thread, NULL) != 0)
 		{
 			perror("cfrag pthread_create");
 			return (EXIT_FAILURE);

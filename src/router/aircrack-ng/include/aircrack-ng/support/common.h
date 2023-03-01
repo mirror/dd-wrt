@@ -42,6 +42,8 @@
 #if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
 int fseeko64(FILE * fp, int64_t offset, int whence);
 int64_t ftello64(FILE * fp);
+//-V:fseek:1059
+//-V:ftello:1059
 #undef fseek
 #define fseek fseeko64
 #undef ftello
@@ -49,6 +51,8 @@ int64_t ftello64(FILE * fp);
 #endif
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
+//-V:rand:1059
+//-V:srand:1059
 #undef rand
 #define rand lrand48
 #undef srand
@@ -72,6 +76,7 @@ int64_t ftello64(FILE * fp);
 		struct tm * lt;                                                        \
 		time_t tc = time(NULL);                                                \
 		lt = localtime(&tc);                                                   \
+		REQUIRE(lt != NULL);                                                   \
 		printf("%02d:%02d:%02d  ", lt->tm_hour, lt->tm_min, lt->tm_sec);       \
 	}
 
@@ -154,7 +159,7 @@ static inline int str2mac(uint8_t * mac, const char * str)
 	REQUIRE(mac != NULL);
 	REQUIRE(str != NULL);
 
-	unsigned int macf[6];
+	unsigned int macf[6] = {0};
 
 	if (sscanf(str,
 			   "%x:%x:%x:%x:%x:%x",
@@ -315,7 +320,7 @@ get_line_from_buffer(char * buffer, size_t size, char * line)
 	{
 		*cursor = '\0';
 		cursor++;
-		strcpy(line, buffer);
+		strlcpy(line, buffer, size);
 		memmove(buffer, cursor, size - (strlen(line) + 1));
 
 		return (size - (strlen(line) + 1));
@@ -379,6 +384,25 @@ static inline uint32_t adds_u32(uint32_t a, uint32_t b)
 	if (unlikely(c < a)) /* can only happen due to overflow */
 		c = -1;
 	return (c);
+}
+
+/// Saturated add for unsigned, machine word integers.
+static inline uintptr_t adds_uptr(uintptr_t a, uintptr_t b)
+{
+	uintptr_t c = a + b;
+	if (unlikely(c < a)) /* can only happen due to overflow */
+		c = -1;
+	return (c);
+}
+
+/// Saturated subtraction for unsigned, 64-bit integers.
+static inline uint64_t subs_u64(uint64_t x, uint64_t y)
+{
+	uint64_t res = x - y;
+
+	res &= -(res <= x); //-V732
+
+	return (res);
 }
 
 #ifdef __cplusplus

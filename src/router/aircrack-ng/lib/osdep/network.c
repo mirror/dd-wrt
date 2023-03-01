@@ -70,6 +70,8 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 		return -1;
 	}
 
+	if (arg == NULL) return -1;
+
 	pktlen = sizeof(struct net_hdr) + len;
 
 	pktbuf = (char *) calloc(sizeof(char), pktlen);
@@ -83,7 +85,6 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 	pnh->nh_type = command;
 	pnh->nh_len = htonl(len);
 
-	assert(arg != NULL);
 	memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
 
 	for (;;)
@@ -220,7 +221,7 @@ static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 {
 	unsigned char buf[2048];
 	int l = sizeof(buf);
-	int c;
+	int c = 0;
 
 	while (1)
 	{
@@ -242,7 +243,7 @@ static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 
 static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)
 {
-	uint32_t rc;
+	uint32_t rc = 0;
 	int len;
 	int cmd;
 
@@ -257,7 +258,7 @@ static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)
 	{
 		return -1;
 	}
-	assert(cmd == NET_RC);
+	assert(cmd == NET_RC); //-V547
 	assert(len == sizeof(rc));
 
 	return ntohl(rc);
@@ -269,6 +270,10 @@ static int queue_get(struct priv_net * pn, void * buf, int len)
 	struct netqueue * q = head->q_next;
 
 	if (q == head) return 0;
+
+#ifdef NDEBUG
+	(void) len;
+#endif
 
 	assert(q->q_len <= len);
 	memcpy(buf, q->q_buf, q->q_len);
@@ -287,7 +292,7 @@ static int net_read(struct wif * wi,
 					struct rx_info * ri)
 {
 	struct priv_net * pn = wi_priv(wi);
-	uint32_t buf[512]; // 512 * 4 = 2048
+	uint32_t buf[512] = {0}; // 512 * 4 = 2048
 	unsigned char * bufc = (unsigned char *) buf;
 	int cmd;
 	int sz = sizeof(*ri);
@@ -315,7 +320,8 @@ static int net_read(struct wif * wi,
 	if (ri)
 	{
 		// re-assemble 64-bit integer
-		ri->ri_mactime = __be64_to_cpu((uint64_t) buf[0] << 32u | buf[1]);
+		uint64_t hi = buf[0];
+		ri->ri_mactime = __be64_to_cpu(((hi) << 32U) | buf[1]);
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);
@@ -352,7 +358,7 @@ static int net_get_mac(struct wif * wi, unsigned char * mac)
 
 	cmd = net_get_nopacket(pn, buf, &sz);
 	if (cmd == -1) return -1;
-	if (cmd == NET_RC) return ntohl(buf[0]);
+	if (cmd == NET_RC) return ntohl(buf[0]); //-V547
 	assert(cmd == NET_MAC);
 	assert(sz == 6);
 
