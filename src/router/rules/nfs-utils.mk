@@ -41,13 +41,13 @@ nfs-utils-install:
 	rm -rf $(INSTALLDIR)/nfs-utils/var
 	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.a
 	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.la
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/blkmapd
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/mountstats
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/rpcdebug
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/nfsdclnts
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/nfsiostat
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/rpcctl
-	rm -f $(INSTALLDIR)/nfs-utils/usr/bin/start-statd
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/blkmapd
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/mountstats
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/rpcdebug
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/nfsdclnts
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/nfsiostat
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/rpcctl
+	rm -f $(INSTALLDIR)/nfs-utils/usr/sbin/start-statd
 	mkdir -p $(INSTALLDIR)/nfs-utils/etc
 	rm -f $(INSTALLDIR)/nfs-utils/etc/exports
 	-cd $(INSTALLDIR)/nfs-utils/etc && ln -s /tmp/exports exports
