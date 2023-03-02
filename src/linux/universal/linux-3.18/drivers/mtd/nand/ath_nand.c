@@ -1511,8 +1511,13 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 	offset += 4096;
 	base += 4096;
 	}
+#ifdef CONFIG_DW02_412H
+	if (bbuf)
+		return add_mtd_partitions(mtd, dir_parts, 4);
+#else
 	if (bbuf)
 		return add_mtd_partitions(mtd, dir_parts, 7);
+#endif
 	if (ubi) 
 		return add_mtd_partitions(mtd, ubi_parts, 4);
 
