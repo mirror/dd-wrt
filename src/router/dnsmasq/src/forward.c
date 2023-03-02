@@ -824,7 +824,14 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
       switch (extract_addresses(header, n, daemon->namebuff, now, ipsets, nftsets, is_sign, check_rebind, no_cache, cache_secure, &doctored))
 	{
 	case 1:
-	  my_syslog(LOG_WARNING, _("possible DNS-rebind attack detected: %s"), daemon->namebuff);
+	  my_syslog(LOG_WARNING, _("possible DNS-rebind attack on IPv4 detected: %s"), daemon->namebuff);
+	  munged = 1;
+	  cache_secure = 0;
+	  ede = EDE_BLOCKED;
+	  break;
+	  
+	case 10:
+	  my_syslog(LOG_WARNING, _("possible DNS-rebind attack on IPv6 detected: %s"), daemon->namebuff);
 	  munged = 1;
 	  cache_secure = 0;
 	  ede = EDE_BLOCKED;

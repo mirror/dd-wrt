@@ -361,7 +361,7 @@ size_t resize_packet(struct dns_header *header, size_t plen, unsigned char *phea
 int private_net(struct in_addr addr, int ban_localhost) 
 {
   in_addr_t ip_addr = ntohl(addr.s_addr);
-
+    
   return
     (((ip_addr & 0xFF000000) == 0x7F000000) && ban_localhost)  /* 127.0.0.0/8    (loopback) */ ||
     (((ip_addr & 0xFF000000) == 0x00000000) && ban_localhost) /* RFC 5735 section 3. "here" network */ ||
@@ -840,12 +840,13 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		  if (check_rebind)
 		    {
 		      if ((flags & F_IPV4) &&
-			  private_net(addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
+			  private_net(addr.addr4, !option_bool(OPT_LOCAL_REBIND))) {
 			return 1;
+			}
 		      
 		      if ((flags & F_IPV6) &&
 			  private_net6(&addr.addr6, !option_bool(OPT_LOCAL_REBIND)))
-			return 1;
+			return 10;
 		    }
 		  
 #ifdef HAVE_IPSET
