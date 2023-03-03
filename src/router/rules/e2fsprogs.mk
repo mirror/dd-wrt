@@ -1,5 +1,4 @@
 e2fsprogs-configure:
-	touch e2fsprogs/intl/plural.c
 	cd e2fsprogs && ./configure \
 		    --host=$(ARCH)-linux \
 		    CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89 -I$(TOP)/e2fsprogs/intl -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src" \
