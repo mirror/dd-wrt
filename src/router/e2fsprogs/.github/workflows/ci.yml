@@ -1,0 +1,116 @@
+name: CI
+on: [push]
+env:
+  DEF_CFLAGS: -O2 -g -Wall
+
+jobs:
+  gcc-build-and-test:
+    name: Build and test with gcc
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: ./configure CC=gcc CFLAGS="$DEF_CFLAGS"
+    - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 install V=1 DESTDIR=$PWD/installdir
+    - run: make -j8 uninstall V=1 DESTDIR=$PWD/installdir
+
+  clang-build-and-test:
+    name: Build and test with clang
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang
+    - run: ./configure CC=clang CFLAGS="$DEF_CFLAGS"
+    - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 install V=1 DESTDIR=$PWD/installdir
+    - run: make -j8 uninstall V=1 DESTDIR=$PWD/installdir
+
+  i386-build-and-test:
+    name: Build and test with gcc -m32
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib
+    - run: ./configure CC=gcc CFLAGS="$DEF_CFLAGS -m32" LDFLAGS="-m32"
+    - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 install V=1 DESTDIR=$PWD/installdir
+    - run: make -j8 uninstall V=1 DESTDIR=$PWD/installdir
+
+  asan-build-and-test:
+    name: Build and test with ASAN enabled
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang
+    - run: echo "ASAN_CFLAGS=$DEF_CFLAGS -fsanitize=address -fno-sanitize-recover=address" >> $GITHUB_ENV
+    - run: ./configure CC=clang CFLAGS="$ASAN_CFLAGS" LDFLAGS="$ASAN_CFLAGS"
+    - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+
+  ubsan-build-and-test:
+    name: Build and test with UBSAN enabled
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang
+    - run: echo "UBSAN_CFLAGS=$DEF_CFLAGS -fsanitize=undefined -fno-sanitize-recover=undefined" >> $GITHUB_ENV
+    - run: ./configure CC=clang CFLAGS="$UBSAN_CFLAGS" LDFLAGS="$UBSAN_CFLAGS"
+    - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+
+  macos-build-and-test:
+    name: Build and test on macOS
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: ./configure CFLAGS="$DEF_CFLAGS"
+      # -Wno-error=deprecated-declarations is needed to suppress known warnings
+      # due to e2fsprogs' use of sbrk(0) and daemon().
+    - run: make -j8 check V=1 CFLAGS_WARN="-Werror -Wno-error=deprecated-declarations"
+    - run: make -j8 install DESTDIR=$PWD/installdir
+    - run: make -j8 uninstall DESTDIR=$PWD/installdir
+
+  windows-msys2-build:
+    name: Build mke2fs on Windows with ${{matrix.sys}}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+        - { sys: mingw32, env: i686 }
+        - { sys: mingw64, env: x86_64 }
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{matrix.sys}}
+        update: true
+        install: >
+          make
+          mingw-w64-${{matrix.env}}-cc
+    # For now the only parts that actually build for Windows are mke2fs and its
+    # dependencies: all libraries except libss.  The build system doesn't want
+    # to build just those parts, though, so do it one step at a time...
+    - run: ./configure CFLAGS="$DEF_CFLAGS"
+    - run: make -j8 subs V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C lib/et/ all V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C lib/uuid/ all V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C lib/blkid/ all V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C lib/ext2fs/ all V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C lib/support/ all V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C lib/e2p/ all V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 -C misc/ mke2fs V=1 CFLAGS_WARN="-Werror"
+    - run: touch image.ext4
+    - run: misc/mke2fs.exe -T ext4 image.ext4 128M
