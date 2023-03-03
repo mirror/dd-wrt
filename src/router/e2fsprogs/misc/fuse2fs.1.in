@@ -48,6 +48,9 @@ pretend to be root for permission checks
 \fB-o\fR no_default_opts
 do not include default fuse options
 .TP
+\fB-o\fR norecovery
+do not replay the journal and mount the file system read-only
+.TP
 \fB-o\fR fuse2fs_debug
 enable fuse2fs debugging
 .SS "FUSE options:"

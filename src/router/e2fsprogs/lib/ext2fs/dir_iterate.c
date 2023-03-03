@@ -221,6 +221,10 @@ int ext2fs_process_dir_block(ext2_filsys fs,
 	if (ext2fs_has_feature_metadata_csum(fs->super))
 		csum_size = sizeof(struct ext2_dir_entry_tail);
 
+	if (buflen < 8) {
+		ctx->errcode = EXT2_ET_DIR_CORRUPTED;
+		return BLOCK_ABORT;
+	}
 	while (offset < buflen - 8) {
 		dirent = (struct ext2_dir_entry *) (ctx->buf + offset);
 		if (ext2fs_get_rec_len(fs, dirent, &rec_len))

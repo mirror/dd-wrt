@@ -34,8 +34,10 @@ Default directory hash:   half_md4
 Journal backup:           inode blocks
 Checksum type:            crc32c
 Journal features:         (none)
-Journal size:             4096k
-Journal length:           1024
+Total journal size:       4096k
+Total journal blocks:     1024
+Max transaction length:   1024
+Fast commit length:       0
 Journal sequence:         0x00000001
 Journal start:            0
 Journal number of users:  9999

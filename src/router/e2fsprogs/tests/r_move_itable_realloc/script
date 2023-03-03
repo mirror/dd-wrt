@@ -1,12 +1,7 @@
-if [ $(uname -s) = "FreeBSD" ]; then
-       # creates a 96GB filesystem
-       echo "$test_name: $DESCRIPTION: skipped for FreeBSD (no sparse files)"
-       return 0
-fi
-
-if [ $(uname -s) = "Darwin" ]; then
+os=$(uname -s)
+if [ "$os" = "Darwin" -o "$os" = "GNU" -o "FreeBSD" ]; then
 	# creates a 96GB filesystem
-	echo "$test_name: $DESCRIPTION: skipped for HFS+ (no sparse files)"
+	echo "$test_name: $test_description: skipped: skipped for $os"
 	return 0
 fi
 

@@ -43,8 +43,10 @@ Desired extra isize:      28
 Default directory hash:   half_md4
 Checksum type:            crc32c
 Journal features:         journal_64bit journal_checksum_v3
-Journal size:             2048k
-Journal length:           2048
+Total journal size:       2048k
+Total journal blocks:     2048
+Max transaction length:   2048
+Fast commit length:       0
 Journal first block:      3
 Journal sequence:         0x00000003
 Journal start:            0

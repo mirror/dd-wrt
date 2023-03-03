@@ -10,9 +10,10 @@ SIZE_2=2T
 LOG=$test_name.log
 E2FSCK=../e2fsck/e2fsck
 
-if [ $(uname -s) = "FreeBSD" ]; then
+os=$(uname -s)
+if [ "$os" = "Darwin" -o "$os" = "GNU" -o "FreeBSD" ]; then
 	# creates a 2TB filesystem
-	echo "$test_name: $DESCRIPTION: skipped for FreeBSD"
+	echo "$test_name: $test_description: skipped for FreeBSD"
 	return 0
 fi
 

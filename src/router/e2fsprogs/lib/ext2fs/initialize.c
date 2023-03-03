@@ -575,3 +575,97 @@ cleanup:
 	ext2fs_free(fs);
 	return retval;
 }
+
+errcode_t ext2fs_calculate_summary_stats(ext2_filsys fs, int super_only)
+{
+	blk64_t		blk;
+	ext2_ino_t	ino;
+	unsigned int	group = 0;
+	unsigned int	count = 0;
+	int		total_free = 0;
+	int		group_free = 0;
+	int		last_allocated = 0;
+	int		uninit;
+
+	/*
+	 * First calculate the block statistics
+	 */
+	uninit = 1;
+	for (blk = fs->super->s_first_data_block;
+	     blk < ext2fs_blocks_count(fs->super); blk++) {
+		if (!ext2fs_fast_test_block_bitmap2(fs->block_map, blk)) {
+			group_free++;
+			total_free++;
+		} else {
+			uninit = 0;
+		}
+		count++;
+		if ((count == fs->super->s_blocks_per_group) ||
+		    (blk == ext2fs_blocks_count(fs->super)-1)) {
+			ext2fs_bg_free_blocks_count_set(fs, group,
+							group_free);
+			if (!super_only) {
+				if (uninit && blk !=
+					ext2fs_blocks_count(fs->super) - 1)
+					ext2fs_bg_flags_set(fs, group,
+							EXT2_BG_BLOCK_UNINIT);
+				else
+					ext2fs_bg_flags_clear(fs, group,
+							EXT2_BG_BLOCK_UNINIT);
+			}
+			count = 0;
+			group_free = 0;
+			uninit = 1;
+			group++;
+		}
+	}
+	total_free = EXT2FS_C2B(fs, total_free);
+	ext2fs_free_blocks_count_set(fs->super, total_free);
+
+	/*
+	 * Next, calculate the inode statistics
+	 */
+	group_free = 0;
+	total_free = 0;
+	last_allocated = 0;
+	count = 0;
+	group = 0;
+
+	/* Protect loop from wrap-around if s_inodes_count maxed */
+	for (ino = 1; ino <= fs->super->s_inodes_count && ino > 0; ino++) {
+		if (!ext2fs_test_inode_bitmap2(fs->inode_map, ino)) {
+			group_free++;
+			total_free++;
+		} else {
+			last_allocated = ino;
+		}
+		count++;
+		if ((count == fs->super->s_inodes_per_group) ||
+		    (ino == fs->super->s_inodes_count)) {
+			if (!super_only) {
+				if (last_allocated) {
+					ext2fs_bg_flags_clear(fs, group,
+						EXT2_BG_INODE_UNINIT);
+					ext2fs_bg_itable_unused_set(fs, group,
+						fs->super->s_inodes_per_group -
+						(last_allocated %
+						fs->super->s_inodes_per_group));
+				} else {
+					ext2fs_bg_flags_set(fs, group,
+						EXT2_BG_INODE_UNINIT);
+					ext2fs_bg_itable_unused_set(fs, group,
+									0);
+				}
+				ext2fs_bg_free_inodes_count_set(fs, group,
+								group_free);
+			}
+			group++;
+			count = 0;
+			group_free = 0;
+			last_allocated = 0;
+		}
+	}
+	fs->super->s_free_inodes_count = total_free;
+	ext2fs_mark_super_dirty(fs);
+	return 0;
+}

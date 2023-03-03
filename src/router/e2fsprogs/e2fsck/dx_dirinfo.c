@@ -17,7 +17,7 @@ void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino, struct ext2_inode *inode,
 		       int num_blocks)
 {
 	struct dx_dir_info *dir;
-	int		i, j;
+	ext2_ino_t	i, j;
 	errcode_t	retval;
 	unsigned long	old_size;
 
@@ -41,7 +41,7 @@ void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino, struct ext2_inode *inode,
 					   &ctx->dx_dir_info);
 		if (retval) {
 			fprintf(stderr, "Couldn't reallocate dx_dir_info "
-				"structure to %d entries\n",
+				"structure to %u entries\n",
 				ctx->dx_dir_info_size);
 			fatal_error(ctx, 0);
 			ctx->dx_dir_info_size -= 10;
@@ -73,11 +73,10 @@ void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino, struct ext2_inode *inode,
 	dir->ino = ino;
 	dir->numblocks = num_blocks;
 	dir->hashversion = 0;
-	dir->casefolded_hash = inode->i_flags & EXT4_CASEFOLD_FL;
+	dir->casefolded_hash = !!(inode->i_flags & EXT4_CASEFOLD_FL);
 	dir->dx_block = e2fsck_allocate_memory(ctx, num_blocks
 				       * sizeof (struct dx_dirblock_info),
 				       "dx_block info array");
-
 }
 
 /*
@@ -86,7 +85,7 @@ void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino, struct ext2_inode *inode,
  */
 struct dx_dir_info *e2fsck_get_dx_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 {
-	int	low, high, mid;
+	ext2_ino_t low, high, mid;
 
 	low = 0;
 	high = ctx->dx_dir_info_count-1;
@@ -98,7 +97,8 @@ struct dx_dir_info *e2fsck_get_dx_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 		return &ctx->dx_dir_info[high];
 
 	while (low < high) {
-		mid = (low+high)/2;
+		/* sum may overflow, but result will fit into mid again */
+		mid = (unsigned long long)(low + high) / 2;
 		if (mid == low || mid == high)
 			break;
 		if (ino == ctx->dx_dir_info[mid].ino)
@@ -116,8 +116,8 @@ struct dx_dir_info *e2fsck_get_dx_dir_info(e2fsck_t ctx, ext2_ino_t ino)
  */
 void e2fsck_free_dx_dir_info(e2fsck_t ctx)
 {
-	int	i;
 	struct dx_dir_info *dir;
+	ext2_ino_t i;
 
 	if (ctx->dx_dir_info) {
 		dir = ctx->dx_dir_info;
@@ -137,18 +137,18 @@ void e2fsck_free_dx_dir_info(e2fsck_t ctx)
 /*
  * Return the count of number of directories in the dx_dir_info structure
  */
-int e2fsck_get_num_dx_dirinfo(e2fsck_t ctx)
+ext2_ino_t e2fsck_get_num_dx_dirinfo(e2fsck_t ctx)
 {
 	return ctx->dx_dir_info_count;
 }
 
 /*
- * A simple interator function
+ * A simple iterator function
  */
-struct dx_dir_info *e2fsck_dx_dir_info_iter(e2fsck_t ctx, int *control)
+struct dx_dir_info *e2fsck_dx_dir_info_iter(e2fsck_t ctx, ext2_ino_t *control)
 {
 	if (*control >= ctx->dx_dir_info_count)
 		return 0;
 
-	return(ctx->dx_dir_info + (*control)++);
+	return ctx->dx_dir_info + (*control)++;
 }

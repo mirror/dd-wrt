@@ -48,7 +48,8 @@ static errcode_t read_ea_inode_hash(ext2_filsys fs, ext2_ino_t ino, __u32 *hash)
 __u32 ext2fs_ext_attr_hash_entry(struct ext2_ext_attr_entry *entry, void *data)
 {
 	__u32 hash = 0;
-	char *name = ((char *) entry) + sizeof(struct ext2_ext_attr_entry);
+	unsigned char *name = (((unsigned char *) entry) +
+			       sizeof(struct ext2_ext_attr_entry));
 	int n;
 
 	for (n = 0; n < entry->e_name_len; n++) {
@@ -71,18 +72,51 @@ __u32 ext2fs_ext_attr_hash_entry(struct ext2_ext_attr_entry *entry, void *data)
 	return hash;
 }
 
+__u32 ext2fs_ext_attr_hash_entry_signed(struct ext2_ext_attr_entry *entry,
+					void *data)
+{
+	__u32 hash = 0;
+	signed char *name = (((signed char *) entry) +
+			     sizeof(struct ext2_ext_attr_entry));
+	int n;
+
+	for (n = 0; n < entry->e_name_len; n++) {
+		hash = (hash << NAME_HASH_SHIFT) ^
+		       (hash >> (8*sizeof(hash) - NAME_HASH_SHIFT)) ^
+		       *name++;
+	}
+
+	/* The hash needs to be calculated on the data in little-endian. */
+	if (entry->e_value_inum == 0 && entry->e_value_size != 0) {
+		__u32 *value = (__u32 *)data;
+		for (n = (entry->e_value_size + EXT2_EXT_ATTR_ROUND) >>
+			 EXT2_EXT_ATTR_PAD_BITS; n; n--) {
+			hash = (hash << VALUE_HASH_SHIFT) ^
+			       (hash >> (8*sizeof(hash) - VALUE_HASH_SHIFT)) ^
+			       ext2fs_le32_to_cpu(*value++);
+		}
+	}
+
+	return hash;
+}
+
+
 /*
- * ext2fs_ext_attr_hash_entry2()
+ * ext2fs_ext_attr_hash_entry3()
  *
- * Compute the hash of an extended attribute.
- * This version of the function supports hashing entries that reference
- * external inodes (ea_inode feature).
+ * Compute the hash of an extended attribute.  This version of the
+ * function supports hashing entries that reference external inodes
+ * (ea_inode feature) as well as calculating the old legacy signed
+ * hash variant.
  */
-errcode_t ext2fs_ext_attr_hash_entry2(ext2_filsys fs,
+errcode_t ext2fs_ext_attr_hash_entry3(ext2_filsys fs,
 				      struct ext2_ext_attr_entry *entry,
-				      void *data, __u32 *hash)
+				      void *data, __u32 *hash,
+				      __u32 *signed_hash)
 {
 	*hash = ext2fs_ext_attr_hash_entry(entry, data);
+	if (signed_hash)
+		*signed_hash = ext2fs_ext_attr_hash_entry_signed(entry, data);
 
 	if (entry->e_value_inum) {
 		__u32 ea_inode_hash;
@@ -96,8 +130,27 @@ errcode_t ext2fs_ext_attr_hash_entry2(ext2_filsys fs,
 		*hash = (*hash << VALUE_HASH_SHIFT) ^
 			(*hash >> (8*sizeof(*hash) - VALUE_HASH_SHIFT)) ^
 			ea_inode_hash;
+		if (signed_hash)
+			*signed_hash = (*signed_hash << VALUE_HASH_SHIFT) ^
+				(*signed_hash >> (8*sizeof(*hash) -
+						  VALUE_HASH_SHIFT)) ^
+				ea_inode_hash;
 	}
 	return 0;
+}
+
+/*
+ * ext2fs_ext_attr_hash_entry2()
+ *
+ * Compute the hash of an extended attribute.
+ * This version of the function supports hashing entries that reference
+ * external inodes (ea_inode feature).
+ */
+errcode_t ext2fs_ext_attr_hash_entry2(ext2_filsys fs,
+				      struct ext2_ext_attr_entry *entry,
+				      void *data, __u32 *hash)
+{
+	return ext2fs_ext_attr_hash_entry3(fs, entry, data, hash, NULL);
 }
 
 #undef NAME_HASH_SHIFT
@@ -293,7 +346,9 @@ errcode_t ext2fs_adjust_ea_refcount(ext2_filsys fs, blk_t blk,
 
 /* Manipulate the contents of extended attribute regions */
 struct ext2_xattr {
+	int name_index;
 	char *name;
+	char *short_name;
 	void *value;
 	unsigned int value_len;
 	ext2_ino_t ea_ino;
@@ -336,6 +391,7 @@ struct ea_name_index {
 
 /* Keep these names sorted in order of decreasing specificity. */
 static struct ea_name_index ea_names[] = {
+	{10, "gnu."},
 	{3, "system.posix_acl_default"},
 	{2, "system.posix_acl_access"},
 	{8, "system.richacl"},
@@ -553,10 +609,10 @@ static errcode_t convert_posix_acl_to_disk_buffer(const void *value, size_t size
 	s = sizeof(ext4_acl_header);
 	for (end = entry + count; entry != end;entry++) {
 		ext4_acl_entry *disk_entry = (ext4_acl_entry*) e;
-		disk_entry->e_tag = ext2fs_cpu_to_le16(entry->e_tag);
-		disk_entry->e_perm = ext2fs_cpu_to_le16(entry->e_perm);
+		disk_entry->e_tag = entry->e_tag;
+		disk_entry->e_perm = entry->e_perm;
 
-		switch(entry->e_tag) {
+		switch(ext2fs_le16_to_cpu(entry->e_tag)) {
 			case ACL_USER_OBJ:
 			case ACL_GROUP_OBJ:
 			case ACL_MASK:
@@ -566,10 +622,12 @@ static errcode_t convert_posix_acl_to_disk_buffer(const void *value, size_t size
 				break;
 			case ACL_USER:
 			case ACL_GROUP:
-				disk_entry->e_id =  ext2fs_cpu_to_le32(entry->e_id);
+				disk_entry->e_id = entry->e_id;
 				e += sizeof(ext4_acl_entry);
 				s += sizeof(ext4_acl_entry);
 				break;
+			default:
+				return EINVAL;
 		}
 	}
 	*size_out = s;
@@ -605,10 +663,10 @@ static errcode_t convert_disk_buffer_to_posix_acl(const void *value, size_t size
 	while (size > 0) {
 		const ext4_acl_entry *disk_entry = (const ext4_acl_entry *) cp;
 
-		entry->e_tag = ext2fs_le16_to_cpu(disk_entry->e_tag);
-		entry->e_perm = ext2fs_le16_to_cpu(disk_entry->e_perm);
+		entry->e_tag = disk_entry->e_tag;
+		entry->e_perm = disk_entry->e_perm;
 
-		switch(entry->e_tag) {
+		switch(ext2fs_le16_to_cpu(entry->e_tag)) {
 			case ACL_USER_OBJ:
 			case ACL_GROUP_OBJ:
 			case ACL_MASK:
@@ -619,14 +677,13 @@ static errcode_t convert_disk_buffer_to_posix_acl(const void *value, size_t size
 				break;
 			case ACL_USER:
 			case ACL_GROUP:
-				entry->e_id = ext2fs_le32_to_cpu(disk_entry->e_id);
+				entry->e_id = disk_entry->e_id;
 				cp += sizeof(ext4_acl_entry);
 				size -= sizeof(ext4_acl_entry);
 				break;
-		default:
-			ext2fs_free_mem(&out);
-			return EINVAL;
-			break;
+			default:
+				ext2fs_free_mem(&out);
+				return EINVAL;
 		}
 		entry++;
 	}
@@ -643,29 +700,23 @@ write_xattrs_to_buffer(ext2_filsys fs, struct ext2_xattr *attrs, int count,
 	struct ext2_xattr *x;
 	struct ext2_ext_attr_entry *e = entries_start;
 	char *end = (char *) entries_start + storage_size;
-	const char *shortname;
 	unsigned int value_size;
-	int idx, ret;
 	errcode_t err;
 
 	memset(entries_start, 0, storage_size);
 	for (x = attrs; x < attrs + count; x++) {
-		/* Calculate index and shortname position */
-		shortname = x->name;
-		ret = find_ea_index(x->name, &shortname, &idx);
-
 		value_size = ((x->value_len + EXT2_EXT_ATTR_PAD - 1) /
 			      EXT2_EXT_ATTR_PAD) * EXT2_EXT_ATTR_PAD;
 
 		/* Fill out e appropriately */
-		e->e_name_len = strlen(shortname);
-		e->e_name_index = (ret ? idx : 0);
+		e->e_name_len = strlen(x->short_name);
+		e->e_name_index = x->name_index;
 
 		e->e_value_size = x->value_len;
 		e->e_value_inum = x->ea_ino;
 
 		/* Store name */
-		memcpy((char *)e + sizeof(*e), shortname, e->e_name_len);
+		memcpy((char *)e + sizeof(*e), x->short_name, e->e_name_len);
 		if (x->ea_ino) {
 			e->e_value_offs = 0;
 		} else {
@@ -875,6 +926,8 @@ static errcode_t read_xattrs_from_buffer(struct ext2_xattr_handle *handle,
 			memcpy(x->name + prefix_len,
 			       (char *)entry + sizeof(*entry),
 			       entry->e_name_len);
+		x->short_name = x->name + prefix_len;
+		x->name_index = entry->e_name_index;
 
 		/* Check & copy value */
 		if (!ext2fs_has_feature_ea_inode(handle->fs->super) &&
@@ -924,8 +977,8 @@ static errcode_t read_xattrs_from_buffer(struct ext2_xattr_handle *handle,
 			    !(ea_inode->i_flags & EXT4_EA_INODE_FL) ||
 			    ea_inode->i_links_count == 0)
 				err = EXT2_ET_EA_INODE_CORRUPTED;
-			else if (ext2fs_file_get_size(ea_file) !=
-			    entry->e_value_size)
+			else if ((__u64) ext2fs_file_get_size(ea_file) !=
+				 entry->e_value_size)
 				err = EXT2_ET_EA_BAD_VALUE_SIZE;
 			else
 				err = ext2fs_file_read(ea_file, x->value,
@@ -940,15 +993,18 @@ static errcode_t read_xattrs_from_buffer(struct ext2_xattr_handle *handle,
 
 		/* e_hash may be 0 in older inode's ea */
 		if (entry->e_hash != 0) {
-			__u32 hash;
+			__u32 hash, signed_hash;
+
 			void *data = (entry->e_value_inum != 0) ?
 					0 : value_start + entry->e_value_offs;
 
-			err = ext2fs_ext_attr_hash_entry2(handle->fs, entry,
-							  data, &hash);
+			err = ext2fs_ext_attr_hash_entry3(handle->fs, entry,
+							  data, &hash,
+							  &signed_hash);
 			if (err)
 				return err;
-			if (entry->e_hash != hash) {
+			if ((entry->e_hash != hash) &&
+			    (entry->e_hash != signed_hash)) {
 				struct ext2_inode child;
 
 				/* Check whether this is an old Lustre-style
@@ -987,30 +1043,18 @@ static void xattrs_free_keys(struct ext2_xattr_handle *h)
 	h->ibody_count = 0;
 }
 
-errcode_t ext2fs_xattrs_read(struct ext2_xattr_handle *handle)
+/* fetch xattrs from an already-loaded inode */
+errcode_t ext2fs_xattrs_read_inode(struct ext2_xattr_handle *handle,
+				   struct ext2_inode_large *inode)
 {
-	struct ext2_inode_large *inode;
 	struct ext2_ext_attr_header *header;
 	__u32 ea_inode_magic;
 	unsigned int storage_size;
 	char *start, *block_buf = NULL;
 	blk64_t blk;
-	size_t i;
-	errcode_t err;
+	errcode_t err = 0;
 
 	EXT2_CHECK_MAGIC(handle, EXT2_ET_MAGIC_EA_HANDLE);
-	i = EXT2_INODE_SIZE(handle->fs->super);
-	if (i < sizeof(*inode))
-		i = sizeof(*inode);
-	err = ext2fs_get_memzero(i, &inode);
-	if (err)
-		return err;
-
-	err = ext2fs_read_inode_full(handle->fs, handle->ino,
-				     (struct ext2_inode *)inode,
-				     EXT2_INODE_SIZE(handle->fs->super));
-	if (err)
-		goto out;
 
 	xattrs_free_keys(handle);
 
@@ -1046,7 +1090,7 @@ errcode_t ext2fs_xattrs_read(struct ext2_xattr_handle *handle)
 
 read_ea_block:
 	/* Look for EA in a separate EA block */
-	blk = ext2fs_file_acl_block(handle->fs, (struct ext2_inode *)inode);
+	blk = ext2fs_file_acl_block(handle->fs, EXT2_INODE(inode));
 	if (blk != 0) {
 		if ((blk < handle->fs->super->s_first_data_block) ||
 		    (blk >= ext2fs_blocks_count(handle->fs->super))) {
@@ -1077,20 +1121,39 @@ read_ea_block:
 		err = read_xattrs_from_buffer(handle, inode,
 					(struct ext2_ext_attr_entry *) start,
 					storage_size, block_buf);
-		if (err)
-			goto out3;
-
-		ext2fs_free_mem(&block_buf);
 	}
 
-	ext2fs_free_mem(&block_buf);
-	ext2fs_free_mem(&inode);
-	return 0;
-
 out3:
-	ext2fs_free_mem(&block_buf);
+	if (block_buf)
+		ext2fs_free_mem(&block_buf);
+out:
+	return err;
+}
+
+errcode_t ext2fs_xattrs_read(struct ext2_xattr_handle *handle)
+{
+	struct ext2_inode_large *inode;
+	size_t inode_size = EXT2_INODE_SIZE(handle->fs->super);
+	errcode_t err;
+
+	EXT2_CHECK_MAGIC(handle, EXT2_ET_MAGIC_EA_HANDLE);
+
+	if (inode_size < sizeof(*inode))
+		inode_size = sizeof(*inode);
+	err = ext2fs_get_memzero(inode_size, &inode);
+	if (err)
+		return err;
+
+	err = ext2fs_read_inode_full(handle->fs, handle->ino, EXT2_INODE(inode),
+				     EXT2_INODE_SIZE(handle->fs->super));
+	if (err)
+		goto out;
+
+	err = ext2fs_xattrs_read_inode(handle, inode);
+
 out:
 	ext2fs_free_mem(&inode);
+
 	return err;
 }
 
@@ -1302,7 +1365,8 @@ out:
 }
 
 static errcode_t xattr_update_entry(ext2_filsys fs, struct ext2_xattr *x,
-				    const char *name, const void *value,
+				    const char *name, const char *short_name,
+				    int index, const void *value,
 				    size_t value_len, int in_inode)
 {
 	ext2_ino_t ea_ino = 0;
@@ -1336,8 +1400,11 @@ static errcode_t xattr_update_entry(ext2_filsys fs, struct ext2_xattr *x,
 			goto fail;
 	}
 
-	if (!x->name)
+	if (!x->name) {
 		x->name = new_name;
+		x->short_name = new_name + (short_name  - name);
+	}
+	x->name_index = index;
 
 	if (x->value)
 		ext2fs_free_mem(&x->value);
@@ -1356,31 +1423,27 @@ fail:
 }
 
 static int xattr_find_position(struct ext2_xattr *attrs, int count,
-			       const char *name)
+			       const char *shortname, int name_idx)
 {
 	struct ext2_xattr *x;
 	int i;
-	const char *shortname, *x_shortname;
-	int name_idx, x_name_idx;
 	int shortname_len, x_shortname_len;
 
-	find_ea_index(name, &shortname, &name_idx);
 	shortname_len = strlen(shortname);
 
 	for (i = 0, x = attrs; i < count; i++, x++) {
-		find_ea_index(x->name, &x_shortname, &x_name_idx);
-		if (name_idx < x_name_idx)
+		if (name_idx < x->name_index)
 			break;
-		if (name_idx > x_name_idx)
+		if (name_idx > x->name_index)
 			continue;
 
-		x_shortname_len = strlen(x_shortname);
+		x_shortname_len = strlen(x->short_name);
 		if (shortname_len < x_shortname_len)
 			break;
 		if (shortname_len > x_shortname_len)
 			continue;
 
-		if (memcmp(shortname, x_shortname, shortname_len) <= 0)
+		if (memcmp(shortname, x->short_name, shortname_len) <= 0)
 			break;
 	}
 	return i;
@@ -1395,8 +1458,8 @@ static errcode_t xattr_array_update(struct ext2_xattr_handle *h,
 	struct ext2_xattr tmp;
 	int add_to_ibody;
 	int needed;
-	int name_len, name_idx;
-	const char *shortname;
+	int name_len, name_idx = 0;
+	const char *shortname = name;
 	int new_idx;
 	int ret;
 
@@ -1423,7 +1486,8 @@ static errcode_t xattr_array_update(struct ext2_xattr_handle *h,
 
 		/* Update the existing entry. */
 		ret = xattr_update_entry(h->fs, &h->attrs[old_idx], name,
-					 value, value_len, in_inode);
+					 shortname, name_idx, value,
+					 value_len, in_inode);
 		if (ret)
 			return ret;
 		if (h->ibody_count <= old_idx) {
@@ -1451,7 +1515,8 @@ static errcode_t xattr_array_update(struct ext2_xattr_handle *h,
 	if (old_idx >= 0) {
 		/* Update the existing entry. */
 		ret = xattr_update_entry(h->fs, &h->attrs[old_idx], name,
-					 value, value_len, in_inode);
+					 shortname, name_idx, value,
+					 value_len, in_inode);
 		if (ret)
 			return ret;
 		if (old_idx < h->ibody_count) {
@@ -1460,7 +1525,8 @@ static errcode_t xattr_array_update(struct ext2_xattr_handle *h,
 			 * entries in the block are sorted.
 			 */
 			new_idx = xattr_find_position(h->attrs + h->ibody_count,
-				h->count - h->ibody_count, name);
+						      h->count - h->ibody_count,
+						      shortname, name_idx);
 			new_idx += h->ibody_count - 1;
 			tmp = h->attrs[old_idx];
 			memmove(h->attrs + old_idx, h->attrs + old_idx + 1,
@@ -1472,7 +1538,8 @@ static errcode_t xattr_array_update(struct ext2_xattr_handle *h,
 	}
 
 	new_idx = xattr_find_position(h->attrs + h->ibody_count,
-				      h->count - h->ibody_count, name);
+				      h->count - h->ibody_count,
+				      shortname, name_idx);
 	new_idx += h->ibody_count;
 	add_to_ibody = 0;
 
@@ -1483,8 +1550,8 @@ add_new:
 			return ret;
 	}
 
-	ret = xattr_update_entry(h->fs, &h->attrs[h->count], name, value,
-				 value_len, in_inode);
+	ret = xattr_update_entry(h->fs, &h->attrs[h->count], name, shortname,
+				 name_idx, value, value_len, in_inode);
 	if (ret)
 		return ret;
 
@@ -1502,12 +1569,10 @@ static int space_used(struct ext2_xattr *attrs, int count)
 {
 	int total = 0;
 	struct ext2_xattr *x;
-	const char *shortname;
-	int i, len, name_idx;
+	int i, len;
 
 	for (i = 0, x = attrs; i < count; i++, x++) {
-		find_ea_index(x->name, &shortname, &name_idx);
-		len = strlen(shortname);
+		len = strlen(x->short_name);
 		total += EXT2_EXT_ATTR_LEN(len);
 		if (!x->ea_ino)
 			total += EXT2_EXT_ATTR_SIZE(x->value_len);
@@ -1550,14 +1615,15 @@ errcode_t ext2fs_xattr_set(struct ext2_xattr_handle *h,
 						       new_value, &value_len);
 		if (ret)
 			goto out;
-	} else
+	} else if (value_len)
 		memcpy(new_value, value, value_len);
 
 	/* Imitate kernel behavior by skipping update if value is the same. */
 	for (x = h->attrs; x < h->attrs + h->count; x++) {
 		if (!strcmp(x->name, name)) {
 			if (!x->ea_ino && x->value_len == value_len &&
-			    !memcmp(x->value, new_value, value_len)) {
+			    (!value_len ||
+			     !memcmp(x->value, new_value, value_len))) {
 				ret = 0;
 				goto out;
 			}

@@ -43,24 +43,24 @@ Change in FS metadata:
  Default mount options:    user_xattr acl
  Filesystem state:         clean
  Errors behavior:          Continue
-@@ -10,7 +10,7 @@
- Inode count:              65536
+@@ -11,7 +11,7 @@
  Block count:              524288
  Reserved block count:     26214
+ Overhead clusters:        35246
 -Free blocks:              571
 +Free blocks:              568
  Free inodes:              65048
  First block:              1
  Block size:               1024
-@@ -33,6 +33,7 @@
+@@ -34,6 +34,7 @@
  Journal inode:            8
  Default directory hash:   half_md4
  Journal backup:           inode blocks
 +Checksum type:            crc32c
  Journal features:         (none)
- Journal size:             16M
- Journal length:           16384
-@@ -46,8 +47,8 @@
+ Total journal size:       16M
+ Total journal blocks:     16384
+@@ -49,8 +50,8 @@
    Block bitmap at 262 (+261)
    Inode bitmap at 278 (+277)
    Inode table at 294-549 (+293)

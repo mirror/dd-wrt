@@ -11,7 +11,7 @@ is the configuration file for
 .BR e2fsck (8).
 It controls the default behavior of
 .BR e2fsck (8)
-while it is checking ext2, ext3, or ext4 filesystems.
+while it is checking ext2, ext3, or ext4 file systems.
 .PP
 The
 .I e2fsck.conf
@@ -77,7 +77,7 @@ provided by the user.
 .TP
 .I [problems]
 This stanza allows the administrator to reconfigure how e2fsck handles
-various filesystem inconsistencies.
+various file system inconsistencies.
 @TDB_MAN_COMMENT@.TP
 @TDB_MAN_COMMENT@.I [scratch_files]
 @TDB_MAN_COMMENT@This stanza controls when e2fsck will attempt to use
@@ -89,7 +89,7 @@ stanza.
 .TP
 .I allow_cancellation
 If this relation is set to a boolean value of true, then if the user
-interrupts e2fsck using ^C, and the filesystem is not explicitly flagged
+interrupts e2fsck using ^C, and the file system is not explicitly flagged
 as containing errors, e2fsck will exit with an exit status of 0 instead
 of 32.  This setting defaults to false.
 .TP
@@ -144,12 +144,12 @@ we changed the default, we also renamed this boolean relation to
 This boolean relation controls whether or not
 .BR e2fsck (8)
 will offer to clear
-the test_fs flag if the ext4 filesystem is available on the system.  It
+the test_fs flag if the ext4 file system is available on the system.  It
 defaults to true.
 .TP
 .I defer_check_on_battery
 This boolean relation controls whether or not the interval between
-filesystem checks (either based on time or number of mounts) should
+file system checks (either based on time or number of mounts) should
 be doubled if the system is running on battery.  This setting defaults to
 true.
 .TP
@@ -248,7 +248,7 @@ for more details.
 Use this amount of memory to read in metadata blocks ahead of the main checking
 thread.  Setting this value to zero disables readahead entirely.  By default,
 this is set the size of two block groups' inode tables (typically 4MiB on a
-regular ext4 filesystem); if this amount is more than 1/50th of total physical
+regular ext4 file system); if this amount is more than 1/50th of total physical
 memory, readahead is disabled.
 .TP
 .I report_features
@@ -298,12 +298,12 @@ not be making changes to this section without referring to source code.
 Within each problem code's subsection, the following tags may be used:
 .TP
 .I description
-This relation allows the message which is printed when this filesystem
+This relation allows the message which is printed when this file system
 inconsistency is detected to be overridden.
 .TP
 .I preen_ok
 This boolean relation overrides the default behavior controlling
-whether this filesystem problem should be automatically fixed when
+whether this file system problem should be automatically fixed when
 .B e2fsck
 is running in preen mode.
 .TP
@@ -314,7 +314,7 @@ parameter (set in the options section) for this particular problem.
 .TP
 .I no_ok
 This boolean relation overrides the default behavior determining
-whether or not the filesystem will be marked as inconsistent if the user
+whether or not the file system will be marked as inconsistent if the user
 declines to fix the reported problem.
 .TP
 .I no_default
@@ -323,14 +323,14 @@ problem (or question) should be "no".
 .TP
 .I preen_nomessage
 This boolean relation overrides the default behavior controlling
-whether or not the description for this filesystem problem should
+whether or not the description for this file system problem should
 be suppressed when
 .B e2fsck
 is running in preen mode.
 .TP
 .I no_nomsg
 This boolean relation overrides the default behavior controlling
-whether or not the description for this filesystem problem should
+whether or not the description for this file system problem should
 be suppressed when a problem forced not to be fixed, either because
 .B e2fsck
 is run with the
@@ -367,7 +367,7 @@ data structure, such as pruning an extent tree.
 @TDB_MAN_COMMENT@.TP
 @TDB_MAN_COMMENT@.I numdirs_threshold
 @TDB_MAN_COMMENT@If this relation is set, then in-memory data structures
-@TDB_MAN_COMMENT@will be used if the number of directories in the filesystem
+@TDB_MAN_COMMENT@will be used if the number of directories in the file system
 @TDB_MAN_COMMENT@are fewer than amount specified.
 @TDB_MAN_COMMENT@.TP
 @TDB_MAN_COMMENT@.I dirinfo
@@ -453,7 +453,7 @@ The last two digits of the current year (00..99)
 The current year (i.e., 2012).
 .SH EXAMPLES
 The following recipe will prevent e2fsck from aborting during the boot
-process when a filesystem contains orphaned files.  (Of course, this is
+process when a file system contains orphaned files.  (Of course, this is
 not always a good idea, since critical files that are needed for the
 security of the system could potentially end up in lost+found, and
 starting the system without first having a system administrator check

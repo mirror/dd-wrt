@@ -62,7 +62,8 @@ default_com_err_proc (const char *whoami, errcode_t code, const
     fflush(stderr);
 }
 
-typedef void (*errf) (const char *, errcode_t, const char *, va_list);
+typedef void (*errf) (const char *, errcode_t, const char *, va_list)
+        COM_ERR_ATTR((format(printf, 3, 0)));
 
 errf com_err_hook = default_com_err_proc;
 

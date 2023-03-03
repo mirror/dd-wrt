@@ -58,11 +58,15 @@ errcode_t ext2fs_allocate_inode_bitmap(ext2_filsys fs,
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
 
+	if (ext2fs_has_feature_journal_dev(fs->super))
+		return EXT2_ET_EXTERNAL_JOURNAL_NOSUPP;
+
 	fs->write_bitmaps = ext2fs_write_bitmaps;
 
 	start = 1;
 	end = fs->super->s_inodes_count;
-	real_end = (EXT2_INODES_PER_GROUP(fs->super) * fs->group_desc_count);
+	real_end = (__u64)EXT2_INODES_PER_GROUP(fs->super) *
+		fs->group_desc_count;
 
 	/* Are we permitted to use new-style bitmaps? */
 	if (fs->flags & EXT2_FLAG_64BITS)
@@ -89,6 +93,9 @@ errcode_t ext2fs_allocate_block_bitmap(ext2_filsys fs,
 	__u64		start, end, real_end;
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
+
+	if (ext2fs_has_feature_journal_dev(fs->super))
+		return EXT2_ET_EXTERNAL_JOURNAL_NOSUPP;
 
 	fs->write_bitmaps = ext2fs_write_bitmaps;
 
@@ -129,6 +136,9 @@ errcode_t ext2fs_allocate_subcluster_bitmap(ext2_filsys fs,
 	errcode_t		retval;
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
+
+	if (ext2fs_has_feature_journal_dev(fs->super))
+		return EXT2_ET_EXTERNAL_JOURNAL_NOSUPP;
 
 	fs->write_bitmaps = ext2fs_write_bitmaps;
 

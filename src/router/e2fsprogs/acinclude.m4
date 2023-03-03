@@ -158,10 +158,6 @@ dnl If there was a GNU version, then set @ifGNUmake@ to the empty string, '#' ot
 AC_DEFUN([AX_CHECK_MOUNT_OPT], [__AX_CHECK_MOUNT_OPT(m4_tolower([$1]),m4_toupper([$1]))])
 AC_DEFUN([__AX_CHECK_MOUNT_OPT],
 [
-    AS_IF([test "x$ac_cv_header_sys_mount_h" = x],
-          [AC_CHECK_HEADERS([sys/mount.h])])
-    AS_IF([test "x$ac_cv_header_sys_mount_h" = xno],
-          [AC_MSG_FAILURE([error: sys/mount.h not present on your system!])])
     AS_ECHO_N("checking for mount '$1' option... ")
     AC_TRY_COMPILE(
         [#include <sys/mount.h>],

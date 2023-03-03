@@ -82,6 +82,10 @@ if [ $elapsed -gt 60 -a ! -f $test_dir/is_slow_test ]; then
 	echo "$test_name:  consider adding $test_dir/is_slow_test"
 fi
 
+if [ -n "$PRINT_FAILED" -a -f $test_name.failed ] ; then
+	cat $test_name.failed
+fi
+
 if [ "$SKIP_UNLINK" != "true" ] ; then
 	rm -f $TMPFILE
 fi

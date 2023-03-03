@@ -12,29 +12,35 @@ struct block_range *new_block_range(blk64_t start, blk64_t end)
 	return range;
 }
 
-void add_blocks_to_range(struct block_range **head, struct block_range **tail,
-			 blk64_t blk_start, blk64_t blk_end)
+void add_blocks_to_range(struct block_range_list *list, blk64_t blk_start,
+			 blk64_t blk_end)
 {
-	if (*head == NULL)
-		*head = *tail = new_block_range(blk_start, blk_end);
-	else if ((*tail)->end + 1 == blk_start)
-		(*tail)->end += (blk_end - blk_start + 1);
+	if (list->head == NULL)
+		list->head = list->tail = new_block_range(blk_start, blk_end);
+	else if (list->tail->end + 1 == blk_start)
+		list->tail->end += (blk_end - blk_start + 1);
 	else {
 		struct block_range *range = new_block_range(blk_start, blk_end);
-		(*tail)->next = range;
-		*tail = range;
+		list->tail->next = range;
+		list->tail = range;
 	}
 }
 
-void delete_block_ranges(struct block_range *head)
+static void remove_head(struct block_range_list *list)
 {
-	struct block_range *tmp;
+	struct block_range *next_range = list->head->next;
 
-	while (head) {
-		tmp = head->next;
-		free(head);
-		head = tmp;
-	}
+	free(list->head);
+	if (next_range == NULL)
+		list->head = list->tail = NULL;
+	else
+		list->head = next_range;
+}
+
+void delete_block_ranges(struct block_range_list *list)
+{
+	while (list->head)
+		remove_head(list);
 }
 
 int write_block_ranges(FILE *f, struct block_range *range,
@@ -61,4 +67,14 @@ int write_block_ranges(FILE *f, struct block_range *range,
 	if (fseek(f, -len, SEEK_CUR) == -len)
 		return -1;
 	return 0;
+}
+
+blk64_t consume_next_block(struct block_range_list *list)
+{
+	blk64_t ret = list->head->start;
+
+	list->head->start += 1;
+	if (list->head->start > list->head->end)
+		remove_head(list);
+	return ret;
 }

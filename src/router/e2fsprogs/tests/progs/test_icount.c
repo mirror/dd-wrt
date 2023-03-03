@@ -109,13 +109,12 @@ void do_free_icount(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 void do_fetch(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
-	const char	*usage = "usage: %s inode\n";
 	errcode_t	retval;
 	ext2_ino_t	ino;
 	__u16		count;
 
 	if (argc < 2) {
-		printf(usage, argv[0]);
+		printf("usage: %s inode\n", argv[0]);
 		return;
 	}
 	if (check_icount(argv[0]))
@@ -133,13 +132,12 @@ void do_fetch(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 void do_increment(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
-	const char	*usage = "usage: %s inode\n";
 	errcode_t	retval;
 	ext2_ino_t	ino;
 	__u16		count;
 
 	if (argc < 2) {
-		printf(usage, argv[0]);
+		printf("usage: %s inode\n", argv[0]);
 		return;
 	}
 	if (check_icount(argv[0]))
@@ -158,13 +156,12 @@ void do_increment(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 void do_decrement(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
-	const char	*usage = "usage: %s inode\n";
 	errcode_t	retval;
 	ext2_ino_t	ino;
 	__u16		count;
 
 	if (argc < 2) {
-		printf(usage, argv[0]);
+		printf("usage: %s inode\n", argv[0]);
 		return;
 	}
 	if (check_icount(argv[0]))
@@ -183,13 +180,12 @@ void do_decrement(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 void do_store(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
-	const char	*usage = "usage: %s inode count\n";
 	errcode_t	retval;
 	ext2_ino_t	ino;
 	ext2_ino_t	count;
 
 	if (argc < 3) {
-		printf(usage, argv[0]);
+		printf("usage: %s inode count\n", argv[0]);
 		return;
 	}
 	if (check_icount(argv[0]))

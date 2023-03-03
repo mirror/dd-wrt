@@ -123,6 +123,8 @@ extern void do_set_block_group_descriptor(int argc, char **, int sci_idx, void *
 extern void do_dump_unused(int argc, char **argv, int sci_idx, void *infop);
 
 /* debugfs.c */
+extern ss_request_table *extra_cmds;
+extern const char *debug_prog_name;
 extern void internal_dump_inode(FILE *, const char *, ext2_ino_t,
 				struct ext2_inode *, int);
 
@@ -191,7 +193,8 @@ extern void do_get_quota(int argc, char *argv[], int sci_idx, void *infop);
 
 /* util.c */
 extern __s64 string_to_time(const char *arg);
-errcode_t read_list(char *str, blk64_t **list, size_t *len);
+extern errcode_t read_list(char *str, blk64_t **list, size_t *len);
+extern void do_byte_hexdump(FILE *fp, unsigned char *buf, size_t bufsize);
 
 /* xattrs.c */
 void dump_inode_attributes(FILE *out, ext2_ino_t ino);
@@ -205,4 +208,3 @@ void block_xattr_dump(FILE *f, unsigned char *buf, unsigned int len);
 /* zap.c */
 extern void do_zap_block(int argc, char **argv, int sci_idx, void *infop);
 extern void do_block_dump(int argc, char **argv, int sci_idx, void *infop);
-extern void do_byte_hexdump(FILE *fp, unsigned char *buf, size_t bufsize);

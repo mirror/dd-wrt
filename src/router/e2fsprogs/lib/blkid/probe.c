@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -144,7 +145,7 @@ static void get_ext2_info(blkid_dev dev, struct blkid_magic *id,
 		   blkid_le32(es->s_feature_incompat),
 		   blkid_le32(es->s_feature_ro_compat)));
 
-	if (strlen(es->s_volume_name))
+	if (es->s_volume_name[0])
 		label = es->s_volume_name;
 	blkid_set_tag(dev, "LABEL", label, sizeof(es->s_volume_name));
 
@@ -1197,7 +1198,6 @@ static int probe_hfs(struct blkid_probe *probe __BLKID_ATTR((unused)),
 			 unsigned char *buf)
 {
 	struct hfs_mdb *hfs = (struct hfs_mdb *)buf;
-	unsigned long long *uuid_ptr;
 	char	uuid_str[17];
 	__u64	uuid;
 
@@ -1205,8 +1205,8 @@ static int probe_hfs(struct blkid_probe *probe __BLKID_ATTR((unused)),
 	    (memcmp(hfs->embed_sig, "HX", 2) == 0))
 		return 1;	/* Not hfs, but an embedded HFS+ */
 
-	uuid_ptr = (unsigned long long *)hfs->finder_info.id;
-	uuid = blkid_le64(*uuid_ptr);
+	memcpy(&uuid, hfs->finder_info.id, 8);
+	uuid = blkid_le64(uuid);
 	if (uuid) {
 		sprintf(uuid_str, "%016llX", uuid);
 		blkid_set_tag(probe->dev, "UUID", uuid_str, 0);
@@ -1242,7 +1242,6 @@ static int probe_hfsplus(struct blkid_probe *probe,
 	unsigned int leaf_node_size;
 	unsigned int leaf_block;
 	unsigned int label_len;
-	unsigned long long *uuid_ptr;
 	__u64 leaf_off, uuid;
 	char	uuid_str[17], label[512];
 	int ext;
@@ -1273,8 +1272,8 @@ static int probe_hfsplus(struct blkid_probe *probe,
 	    (memcmp(hfsplus->signature, "HX", 2) != 0))
 		return 1;
 
-	uuid_ptr = (unsigned long long *)hfsplus->finder_info.id;
-	uuid = blkid_le64(*uuid_ptr);
+	memcpy(&uuid, hfsplus->finder_info.id, 8);
+	uuid = blkid_le64(uuid);
 	if (uuid) {
 		sprintf(uuid_str, "%016llX", uuid);
 		blkid_set_tag(probe->dev, "UUID", uuid_str, 0);

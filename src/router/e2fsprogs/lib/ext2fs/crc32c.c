@@ -72,8 +72,14 @@
 
 #if CRC_LE_BITS > 8 || CRC_BE_BITS > 8
 
+#if CRC_LE_BITS < 64 && CRC_BE_BITS < 64
+#define CRC_INLINE inline
+#else
+#define CRC_INLINE
+#endif
+
 /* implements slicing-by-4 or slicing-by-8 algorithm */
-static inline uint32_t
+static CRC_INLINE uint32_t
 crc32_body(uint32_t crc, unsigned char const *buf, size_t len,
 	   const uint32_t (*tab)[256])
 {

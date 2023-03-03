@@ -43,7 +43,7 @@ static blk64_t flexbg_offset(ext2_filsys fs, dgrp_t group, blk64_t start_blk,
 	blk64_t		last_blk, first_free = 0;
 	dgrp_t	       	last_grp;
 
-	flexbg_size = 1 << fs->super->s_log_groups_per_flex;
+	flexbg_size = 1U << fs->super->s_log_groups_per_flex;
 	flexbg = group / flexbg_size;
 	size = rem_grp * elem_size;
 
@@ -97,7 +97,7 @@ errcode_t ext2fs_allocate_group_table(ext2_filsys fs, dgrp_t group,
 
 	if (ext2fs_has_feature_flex_bg(fs->super) &&
 	    fs->super->s_log_groups_per_flex) {
-		flexbg_size = 1 << fs->super->s_log_groups_per_flex;
+		flexbg_size = 1U << fs->super->s_log_groups_per_flex;
 		last_grp = group | (flexbg_size - 1);
 		if (last_grp > fs->group_desc_count-1)
 			last_grp = fs->group_desc_count-1;

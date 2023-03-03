@@ -81,12 +81,12 @@ static void fix_perms(const char *cmd, const struct ext2_inode *inode,
 		com_err(cmd, errno, "while setting permissions of %s", name);
 
 #ifndef HAVE_FCHOWN
-	i = chown(name, inode->i_uid, inode->i_gid);
+	i = chown(name, inode_uid(*inode), inode_gid(*inode));
 #else
 	if (fd != -1)
-		i = fchown(fd, inode->i_uid, inode->i_gid);
+		i = fchown(fd, inode_uid(*inode), inode_gid(*inode));
 	else
-		i = chown(name, inode->i_uid, inode->i_gid);
+		i = chown(name, inode_uid(*inode), inode_gid(*inode));
 #endif
 	if (i == -1)
 		com_err(cmd, errno, "while changing ownership of %s", name);

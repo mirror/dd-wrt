@@ -1,4 +1,5 @@
 mke2fs -F -T ext4h -I 128 test.img 786432
+128-byte inodes cannot handle dates beyond 2038 and are deprecated
 Creating filesystem with 786432 1k blocks and 98304 inodes
 Superblock backups stored on blocks: 
 	8193, 24577, 40961, 57345, 73729, 204801, 221185, 401409, 663553

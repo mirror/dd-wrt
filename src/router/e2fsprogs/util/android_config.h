@@ -36,7 +36,6 @@
 
 #if defined(_WIN32)
 # define HAVE_LINUX_TYPES_H 1
-# define HAVE_WINSOCK_H 1
 #endif
 #if defined(__APPLE__) || defined(__linux__)
 # define HAVE_FCNTL 1

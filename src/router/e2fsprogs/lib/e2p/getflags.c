@@ -30,8 +30,8 @@
 
 int getflags (int fd, unsigned long * flags)
 {
-	struct stat buf;
 #if HAVE_STAT_FLAGS
+	struct stat buf;
 
 	if (fstat (fd, &buf) == -1)
 		return -1;
@@ -53,6 +53,7 @@ int getflags (int fd, unsigned long * flags)
 	return 0;
 #else
 #if HAVE_EXT2_IOCTLS
+	struct stat buf;
 	int r, f;
 
 	if (!fstat(fd, &buf) &&

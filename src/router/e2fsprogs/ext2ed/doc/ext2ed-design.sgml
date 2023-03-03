@@ -1446,7 +1446,7 @@ specific commands, by using <Literal remap="tt">free&lowbar;struct&lowbar;descri
 <ListItem>
 
 <Para>
-	Closes the window subsystem, and deattaches EXT2ED from the ncurses
+	Closes the window subsystem, and detaches EXT2ED from the ncurses
 library, through the use of the <Literal remap="tt">close&lowbar;windows</Literal> function,
 available in <Literal remap="tt">win.c</Literal>.
 </Para>

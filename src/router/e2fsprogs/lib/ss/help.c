@@ -20,8 +20,6 @@
 #endif
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#else
-extern int errno;
 #endif
 #include <fcntl.h>
 #include <sys/param.h>
@@ -96,7 +94,12 @@ void ss_help(int argc, char const * const *argv, int sci_idx, pointer info_ptr)
     }
     if (fd < 0) {
 #define MSG "No info found for "
-        char *buf = malloc(strlen (MSG) + strlen (argv[1]) + 1);
+	char *buf = malloc(strlen (MSG) + strlen (argv[1]) + 1);
+	if (!buf) {
+		ss_perror(sci_idx, 0,
+			  "couldn't allocate memory to print error message");
+		return;
+	}
 	strcpy(buf, MSG);
 	strcat(buf, argv[1]);
 	ss_perror(sci_idx, 0, buf);
@@ -148,13 +151,16 @@ void ss_add_info_dir(int sci_idx, char *info_dir, int *code_ptr)
     dirs = (char **)realloc((char *)dirs,
 			    (unsigned)(n_dirs + 2)*sizeof(char *));
     if (dirs == (char **)NULL) {
-	info->info_dirs = (char **)NULL;
-	*code_ptr = errno;
+	*code_ptr = ENOMEM;
 	return;
     }
     info->info_dirs = dirs;
     dirs[n_dirs + 1] = (char *)NULL;
     dirs[n_dirs] = malloc((unsigned)strlen(info_dir)+1);
+    if (dirs[n_dirs] == (char *)NULL) {
+        *code_ptr = ENOMEM;
+        return;
+    }
     strcpy(dirs[n_dirs], info_dir);
     *code_ptr = 0;
 }

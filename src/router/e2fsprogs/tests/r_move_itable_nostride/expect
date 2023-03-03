@@ -52,8 +52,10 @@ Journal inode:            8
 Default directory hash:   half_md4
 Journal backup:           inode blocks
 Journal features:         (none)
-Journal size:             16M
-Journal length:           16384
+Total journal size:       16M
+Total journal blocks:     16384
+Max transaction length:   16384
+Fast commit length:       0
 Journal sequence:         0x00000001
 Journal start:            0
 

@@ -115,11 +115,11 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
 	int skiprate=512;		/* one sector */
-	loff_t sk=0, skl=0;
+	ext2_loff_t sk=0, skl=0;
 	int fd;
 	char *s;
 	time_t tm, last = time(0);
-	loff_t interval = 1024 * 1024;
+	ext2_loff_t interval = 1024 * 1024;
 	int c, print_jnl_copies = 0;
 	const char * device_name;
 	struct ext2_super_block ext2;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 			sb_offset = 0;
 		if (jnl_copy && !print_jnl_copies)
 			continue;
-		printf("\r%11Lu %11Lu%s %11Lu%s %9u %5Lu %4u%s %s %02x%02x%02x%02x %s\n",
+		printf("\r%11Lu %11Lu%s %11Lu%s %9u %5Lu %4u%s %s %02x%02x%02x%02x %.*s\n",
 		       sk, sk - ext2.s_block_group_nr * grpsize - sb_offset,
 		       jnl_copy ? "*":" ",
 		       sk + ext2fs_blocks_count(&ext2) * bsize -
@@ -259,7 +259,8 @@ int main(int argc, char *argv[])
 		       jnl_copy ? "*" : " ", ext2fs_blocks_count(&ext2), bsize,
 		       ext2.s_block_group_nr, jnl_copy ? "*" : " ", s,
 		       ext2.s_uuid[0], ext2.s_uuid[1],
-		       ext2.s_uuid[2], ext2.s_uuid[3], ext2.s_volume_name);
+		       ext2.s_uuid[2], ext2.s_uuid[3],
+		       EXT2_LEN_STR(ext2.s_volume_name));
 	}
 	printf(_("\n%11Lu: finished with errno %d\n"), sk, errno);
 	close(fd);

@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ../..
 my_dir = lib/et
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 DEP_MAKEFILE = $(DEP_LIB_MAKEFILES)
 

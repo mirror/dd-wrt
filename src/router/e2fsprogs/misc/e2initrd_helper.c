@@ -36,6 +36,7 @@ extern char *optarg;
 #include "ext2fs/ext2fs.h"
 #include "blkid.h"
 #include "support/nls-enable.h"
+#include "support/devname.h"
 
 #include "../version.h"
 
@@ -262,7 +263,7 @@ static int parse_fstab_line(char *line, struct fs_info *fs)
 	parse_escape(freq);
 	parse_escape(passno);
 
-	dev = blkid_get_devname(cache, device, NULL);
+	dev = get_devname(cache, device, NULL);
 	if (dev)
 		device = dev;
 
@@ -325,7 +326,7 @@ static void PRS(int argc, char **argv)
 	}
 	if (optind < argc - 1 || optind == argc)
 		usage();
-	device_name = blkid_get_devname(NULL, argv[optind], NULL);
+	device_name = get_devname(NULL, argv[optind], NULL);
 	if (!device_name) {
 		com_err(program_name, 0, _("Unable to resolve '%s'"),
 			argv[optind]);

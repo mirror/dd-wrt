@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ../..
 my_dir = tests/progs
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 @MCONFIG@
 

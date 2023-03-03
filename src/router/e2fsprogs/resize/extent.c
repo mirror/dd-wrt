@@ -50,14 +50,12 @@ errcode_t ext2fs_create_extent_table(ext2_extent *ret_extent, __u64 size)
 	extent->num = 0;
 	extent->sorted = 1;
 
-	retval = ext2fs_get_array(sizeof(struct ext2_extent_entry),
+	retval = ext2fs_get_arrayzero(sizeof(struct ext2_extent_entry),
 				extent->size, &extent->list);
 	if (retval) {
 		ext2fs_free_mem(&extent);
 		return retval;
 	}
-	memset(extent->list, 0,
-	       sizeof(struct ext2_extent_entry) * extent->size);
 	*ret_extent = extent;
 	return 0;
 }
@@ -201,10 +199,15 @@ void ext2fs_extent_dump(ext2_extent extent, FILE *out)
 
 	fputs(_("# Extent dump:\n"), out);
 	fprintf(out, _("#\tNum=%llu, Size=%llu, Cursor=%llu, Sorted=%llu\n"),
-	       extent->num, extent->size, extent->cursor, extent->sorted);
+	       (unsigned long long) extent->num,
+		(unsigned long long) extent->size,
+		(unsigned long long) extent->cursor,
+		(unsigned long long) extent->sorted);
 	for (i=0, ent=extent->list; i < extent->num; i++, ent++) {
-		fprintf(out, "#\t\t %llu -> %llu (%llu)\n", ent->old_loc,
-			ent->new_loc, ent->size);
+		fprintf(out, "#\t\t %llu -> %llu (%llu)\n",
+			(unsigned long long) ent->old_loc,
+			(unsigned long long) ent->new_loc,
+			(unsigned long long) ent->size);
 	}
 }
 

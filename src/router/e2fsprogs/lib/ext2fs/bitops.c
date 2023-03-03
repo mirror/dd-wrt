@@ -19,14 +19,8 @@
 #include "ext2_fs.h"
 #include "ext2fs.h"
 
-#ifndef _EXT2_HAVE_ASM_BITOPS_
-
 /*
- * For the benefit of those who are trying to port Linux to another
- * architecture, here are some C-language equivalents.  You should
- * recode these in the native assembly language, if at all possible.
- *
- * C language equivalents written by Theodore Ts'o, 9/26/92.
+ * C language bitmap functions written by Theodore Ts'o, 9/26/92.
  * Modified by Pete A. Zaitcev 7/14/95 to be portable to big endian
  * systems, as well as non-32 bit systems.
  */
@@ -65,8 +59,6 @@ int ext2fs_test_bit(unsigned int nr, const void * addr)
 	return (mask & *ADDR);
 }
 
-#endif	/* !_EXT2_HAVE_ASM_BITOPS_ */
-
 void ext2fs_warn_bitmap(errcode_t errcode, unsigned long arg,
 			const char *description)
 {
@@ -78,9 +70,7 @@ void ext2fs_warn_bitmap(errcode_t errcode, unsigned long arg,
 #endif
 }
 
-/*
- * C-only 64 bit ops.
- */
+/* Bitmap functions that take a 64-bit offset */
 
 int ext2fs_set_bit64(__u64 nr, void * addr)
 {

@@ -1,7 +1,7 @@
 \input texinfo    @c -*-texinfo-*-
 @c %**start of header
 @setfilename libext2fs.info
-@settitle The EXT2FS Library (version 1.45.4)
+@settitle The EXT2FS Library (version 1.47.0)
 @synindex tp fn
 @comment %**end of header
 
@@ -60,8 +60,8 @@ by the author.
 
 @title The EXT2FS Library
 @subtitle The EXT2FS Library
-@subtitle Version 1.45.4
-@subtitle September 2019
+@subtitle Version 1.47.0
+@subtitle February 2023
 
 @author by Theodore Ts'o
 
@@ -101,7 +101,7 @@ by the Foundation.
 
 @top The EXT2FS Library
 
-This manual documents the EXT2FS Library, version 1.45.4.
+This manual documents the EXT2FS Library, version 1.47.0.
 
 @menu
 * Introduction to the EXT2FS Library::  
@@ -625,7 +625,7 @@ The @var{flags} parameter controls how the iterator will function:
 @table @samp
 
 @item BLOCK_FLAG_HOLE
-This flag indicates that the interator function should be called on
+This flag indicates that the iterator function should be called on
 blocks where the block number is zero (also known as ``holes''.)  It is
 also known as BLOCK_FLAG_APPEND, since it is also used by functions
 such as ext2fs_expand_dir() to add a new block to an inode.
@@ -1150,7 +1150,7 @@ utility programs.
 @subsection Directory-block list management
 
 The dblist abstraction stores a list of blocks belonging to
-directories.  This list can be useful when a program needs to interate
+directories.  This list can be useful when a program needs to iterate
 over all directory entries in a filesystem; @code{e2fsck} does this in
 pass 2 of its operations, and @code{debugfs} needs to do this when it is
 trying to turn an inode number into a pathname.

@@ -653,7 +653,7 @@ static errcode_t file_test(ext2_filsys fs)
 
 	if (size != BUFF_SIZE) {
 		fprintf(stderr,
-			"tst_inline_data: size %lu != buflen %u\n",
+			"tst_inline_data: size %zu != buflen %u\n",
 			size, BUFF_SIZE);
 		retval = 1;
 		goto err;

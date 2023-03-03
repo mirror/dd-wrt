@@ -599,6 +599,7 @@ void add_to_flist(int ft, int id, int parent)
 void append_pathname(pathname_t * name, char *str)
 {
 	int len;
+	char *path;
 
 	len = strlen(str);
 #ifdef DEBUG
@@ -609,7 +610,13 @@ void append_pathname(pathname_t * name, char *str)
 
 	}
 #endif
-	name->path = realloc(name->path, name->len + 1 + len);
+	path = realloc(name->path, name->len + 1 + len);
+	if (path == NULL) {
+		fprintf(stderr, "fsstress: append_pathname realloc failed\n");
+		chdir(homedir);
+		abort();
+	}
+	name->path = path;
 	strcpy(&name->path[name->len], str);
 	name->len += len;
 }

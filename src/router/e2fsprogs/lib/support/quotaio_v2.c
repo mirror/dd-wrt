@@ -44,6 +44,68 @@ struct quotafile_ops quotafile_ops_2 = {
 /*
  * Copy dquot from disk to memory
  */
+static void v2r0_disk2memdqblk(struct dquot *dquot, void *dp)
+{
+	struct util_dqblk *m = &dquot->dq_dqb;
+	struct v2r0_disk_dqblk *d = dp, empty;
+
+	dquot->dq_id = ext2fs_le32_to_cpu(d->dqb_id);
+	m->dqb_ihardlimit = ext2fs_le32_to_cpu(d->dqb_ihardlimit);
+	m->dqb_isoftlimit = ext2fs_le32_to_cpu(d->dqb_isoftlimit);
+	m->dqb_bhardlimit = ext2fs_le32_to_cpu(d->dqb_bhardlimit);
+	m->dqb_bsoftlimit = ext2fs_le32_to_cpu(d->dqb_bsoftlimit);
+	m->dqb_curinodes = ext2fs_le32_to_cpu(d->dqb_curinodes);
+	m->dqb_curspace = ext2fs_le64_to_cpu(d->dqb_curspace);
+	m->dqb_itime = ext2fs_le64_to_cpu(d->dqb_itime);
+	m->dqb_btime = ext2fs_le64_to_cpu(d->dqb_btime);
+
+	memset(&empty, 0, sizeof(struct v2r0_disk_dqblk));
+	empty.dqb_itime = ext2fs_cpu_to_le64(1);
+	if (!memcmp(&empty, dp, sizeof(struct v2r0_disk_dqblk)))
+		m->dqb_itime = 0;
+}
+
+/*
+ * Copy dquot from memory to disk
+ */
+static void v2r0_mem2diskdqblk(void *dp, struct dquot *dquot)
+{
+	struct util_dqblk *m = &dquot->dq_dqb;
+	struct v2r0_disk_dqblk *d = dp;
+
+	d->dqb_ihardlimit = ext2fs_cpu_to_le32(m->dqb_ihardlimit);
+	d->dqb_isoftlimit = ext2fs_cpu_to_le32(m->dqb_isoftlimit);
+	d->dqb_bhardlimit = ext2fs_cpu_to_le32(m->dqb_bhardlimit);
+	d->dqb_bsoftlimit = ext2fs_cpu_to_le32(m->dqb_bsoftlimit);
+	d->dqb_curinodes = ext2fs_cpu_to_le32(m->dqb_curinodes);
+	d->dqb_curspace = ext2fs_cpu_to_le64(m->dqb_curspace);
+	d->dqb_itime = ext2fs_cpu_to_le64(m->dqb_itime);
+	d->dqb_btime = ext2fs_cpu_to_le64(m->dqb_btime);
+	d->dqb_id = ext2fs_cpu_to_le32(dquot->dq_id);
+	if (qtree_entry_unused(&dquot->dq_h->qh_info.u.v2_mdqi.dqi_qtree, dp))
+		d->dqb_itime = ext2fs_cpu_to_le64(1);
+}
+
+static int v2r0_is_id(void *dp, struct dquot *dquot)
+{
+	struct v2r0_disk_dqblk *d = dp;
+	struct qtree_mem_dqinfo *info =
+			&dquot->dq_h->qh_info.u.v2_mdqi.dqi_qtree;
+
+	if (qtree_entry_unused(info, dp))
+		return 0;
+	return ext2fs_le32_to_cpu(d->dqb_id) == dquot->dq_id;
+}
+
+static struct qtree_fmt_operations v2r0_fmt_ops = {
+	.mem2disk_dqblk = v2r0_mem2diskdqblk,
+	.disk2mem_dqblk = v2r0_disk2memdqblk,
+	.is_id = v2r0_is_id,
+};
+
+/*
+ * Copy dquot from disk to memory
+ */
 static void v2r1_disk2memdqblk(struct dquot *dquot, void *dp)
 {
 	struct util_dqblk *m = &dquot->dq_dqb;
@@ -161,10 +223,11 @@ static int v2_check_file(struct quota_handle *h, int type, int fmt)
 
 	be_magic = ext2fs_be32_to_cpu((__force __be32)dqh.dqh_magic);
 	if (be_magic == file_magics[type]) {
-		log_err("Your quota file is stored in wrong endianity");
+		log_err("Your quota file is stored in wrong endianness");
 		return 0;
 	}
-	if (V2_VERSION != ext2fs_le32_to_cpu(dqh.dqh_version))
+	if (V2_VERSION_R0 != ext2fs_le32_to_cpu(dqh.dqh_version) &&
+	    V2_VERSION_R1 != ext2fs_le32_to_cpu(dqh.dqh_version))
 		return 0;
 	return 1;
 }
@@ -174,13 +237,25 @@ static int v2_check_file(struct quota_handle *h, int type, int fmt)
  */
 static int v2_init_io(struct quota_handle *h)
 {
+	struct v2_disk_dqheader dqh;
 	struct v2_disk_dqinfo ddqinfo;
 	struct v2_mem_dqinfo *info;
 	__u64 filesize;
+	int version;
 
-	h->qh_info.u.v2_mdqi.dqi_qtree.dqi_entry_size =
-		sizeof(struct v2r1_disk_dqblk);
-	h->qh_info.u.v2_mdqi.dqi_qtree.dqi_ops = &v2r1_fmt_ops;
+	if (!v2_read_header(h, &dqh))
+		return -1;
+	version = ext2fs_le32_to_cpu(dqh.dqh_version);
+
+	if (version == V2_VERSION_R0) {
+		h->qh_info.u.v2_mdqi.dqi_qtree.dqi_entry_size =
+			sizeof(struct v2r0_disk_dqblk);
+		h->qh_info.u.v2_mdqi.dqi_qtree.dqi_ops = &v2r0_fmt_ops;
+	} else {
+		h->qh_info.u.v2_mdqi.dqi_qtree.dqi_entry_size =
+			sizeof(struct v2r1_disk_dqblk);
+		h->qh_info.u.v2_mdqi.dqi_qtree.dqi_ops = &v2r1_fmt_ops;
+	}
 
 	/* Read information about quotafile */
 	if (h->e2fs_read(&h->qh_qf, V2_DQINFOOFF, &ddqinfo,
@@ -197,7 +272,8 @@ static int v2_init_io(struct quota_handle *h)
 	     (filesize + QT_BLKSIZE - 1) >> QT_BLKSIZE_BITS)) {
 		log_err("Quota inode %u corrupted: file size %llu; "
 			"dqi_blocks %u", h->qh_qf.ino,
-			filesize, info->dqi_qtree.dqi_blocks);
+			(unsigned long long) filesize,
+			info->dqi_qtree.dqi_blocks);
 		return -1;
 	}
 	if (info->dqi_qtree.dqi_free_blk >= info->dqi_qtree.dqi_blocks) {
@@ -230,7 +306,7 @@ static int v2_new_io(struct quota_handle *h)
 
 	/* Write basic quota header */
 	ddqheader.dqh_magic = ext2fs_cpu_to_le32(file_magics[h->qh_type]);
-	ddqheader.dqh_version = ext2fs_cpu_to_le32(V2_VERSION);
+	ddqheader.dqh_version = ext2fs_cpu_to_le32(V2_VERSION_R1);
 	if (h->e2fs_write(&h->qh_qf, 0, &ddqheader, sizeof(ddqheader)) !=
 			sizeof(ddqheader))
 		return -1;

@@ -17,8 +17,8 @@
 #include <ext2fs/tdb.h>
 
 struct dir_info_db {
-	int		count;
-	int		size;
+	ext2_ino_t	count;
+	ext2_ino_t	size;
 	struct dir_info *array;
 	struct dir_info *last_lookup;
 #ifdef CONFIG_TDB
@@ -28,7 +28,7 @@ struct dir_info_db {
 };
 
 struct dir_info_iter {
-	int	i;
+	ext2_ino_t	i;
 #ifdef CONFIG_TDB
 	TDB_DATA	tdb_iter;
 #endif
@@ -46,7 +46,7 @@ static void e2fsck_put_dir_info(e2fsck_t ctx, struct dir_info *dir);
 static void setup_tdb(e2fsck_t ctx, ext2_ino_t num_dirs)
 {
 	struct dir_info_db	*db = ctx->dir_info;
-	unsigned int		threshold;
+	ext2_ino_t		threshold;
 	errcode_t		retval;
 	mode_t			save_umask;
 	char			*tdb_dir, uuid[40];
@@ -130,12 +130,12 @@ static void setup_db(e2fsck_t ctx)
 void e2fsck_add_dir_info(e2fsck_t ctx, ext2_ino_t ino, ext2_ino_t parent)
 {
 	struct dir_info		*dir, *old_array;
-	int			i, j;
+	ext2_ino_t		i, j;
 	errcode_t		retval;
 	unsigned long		old_size;
 
 #ifdef DIRINFO_DEBUG
-	printf("add_dir_info for inode (%lu, %lu)...\n", ino, parent);
+	printf("add_dir_info for inode (%u, %u)...\n", ino, parent);
 #endif
 	if (!ctx->dir_info)
 		setup_db(ctx);
@@ -149,7 +149,7 @@ void e2fsck_add_dir_info(e2fsck_t ctx, ext2_ino_t ino, ext2_ino_t parent)
 					   &ctx->dir_info->array);
 		if (retval) {
 			fprintf(stderr, "Couldn't reallocate dir_info "
-				"structure to %d entries\n",
+				"structure to %u entries\n",
 				ctx->dir_info->size);
 			fatal_error(ctx, 0);
 			ctx->dir_info->size -= 10;
@@ -204,13 +204,13 @@ void e2fsck_add_dir_info(e2fsck_t ctx, ext2_ino_t ino, ext2_ino_t parent)
 static struct dir_info *e2fsck_get_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 {
 	struct dir_info_db	*db = ctx->dir_info;
-	int			low, high, mid;
+	ext2_ino_t low, high, mid;
 
 	if (!db)
 		return 0;
 
 #ifdef DIRINFO_DEBUG
-	printf("e2fsck_get_dir_info %d...", ino);
+	printf("e2fsck_get_dir_info %u...", ino);
 #endif
 
 #ifdef CONFIG_TDB
@@ -235,7 +235,7 @@ static struct dir_info *e2fsck_get_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 		ret_dir_info.dotdot = buf->dotdot;
 		ret_dir_info.parent = buf->parent;
 #ifdef DIRINFO_DEBUG
-		printf("(%d,%d,%d)\n", ino, buf->dotdot, buf->parent);
+		printf("(%u,%u,%u)\n", ino, buf->dotdot, buf->parent);
 #endif
 		free(data.dptr);
 		return &ret_dir_info;
@@ -246,10 +246,10 @@ static struct dir_info *e2fsck_get_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 		return db->last_lookup;
 
 	low = 0;
-	high = ctx->dir_info->count-1;
+	high = ctx->dir_info->count - 1;
 	if (ino == ctx->dir_info->array[low].ino) {
 #ifdef DIRINFO_DEBUG
-		printf("(%d,%d,%d)\n", ino,
+		printf("(%u,%u,%u)\n", ino,
 		       ctx->dir_info->array[low].dotdot,
 		       ctx->dir_info->array[low].parent);
 #endif
@@ -257,7 +257,7 @@ static struct dir_info *e2fsck_get_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 	}
 	if (ino == ctx->dir_info->array[high].ino) {
 #ifdef DIRINFO_DEBUG
-		printf("(%d,%d,%d)\n", ino,
+		printf("(%u,%u,%u)\n", ino,
 		       ctx->dir_info->array[high].dotdot,
 		       ctx->dir_info->array[high].parent);
 #endif
@@ -265,12 +265,13 @@ static struct dir_info *e2fsck_get_dir_info(e2fsck_t ctx, ext2_ino_t ino)
 	}
 
 	while (low < high) {
-		mid = (low+high)/2;
+		/* sum may overflow, but result will fit into mid again */
+		mid = (unsigned long long)(low + high) / 2;
 		if (mid == low || mid == high)
 			break;
 		if (ino == ctx->dir_info->array[mid].ino) {
 #ifdef DIRINFO_DEBUG
-			printf("(%d,%d,%d)\n", ino,
+			printf("(%u,%u,%u)\n", ino,
 			       ctx->dir_info->array[mid].dotdot,
 			       ctx->dir_info->array[mid].parent);
 #endif
@@ -294,7 +295,7 @@ static void e2fsck_put_dir_info(e2fsck_t ctx EXT2FS_NO_TDB_UNUSED,
 #endif
 
 #ifdef DIRINFO_DEBUG
-	printf("e2fsck_put_dir_info (%d, %d, %d)...", dir->ino, dir->dotdot,
+	printf("e2fsck_put_dir_info (%u, %u, %u)...", dir->ino, dir->dotdot,
 	       dir->parent);
 #endif
 
@@ -329,7 +330,7 @@ void e2fsck_free_dir_info(e2fsck_t ctx)
 			if (unlink(ctx->dir_info->tdb_fn) < 0)
 				com_err("e2fsck_free_dir_info", errno,
 					_("while freeing dir_info tdb file"));
-			free(ctx->dir_info->tdb_fn);
+			ext2fs_free_mem(&ctx->dir_info->tdb_fn);
 		}
 #endif
 		if (ctx->dir_info->array)
@@ -375,7 +376,7 @@ void e2fsck_dir_info_iter_end(e2fsck_t ctx EXT2FS_ATTR((unused)),
 }
 
 /*
- * A simple interator function
+ * A simple iterator function
  */
 struct dir_info *e2fsck_dir_info_iter(e2fsck_t ctx, struct dir_info_iter *iter)
 {
@@ -412,7 +413,7 @@ struct dir_info *e2fsck_dir_info_iter(e2fsck_t ctx, struct dir_info_iter *iter)
 		return 0;
 
 #ifdef DIRINFO_DEBUG
-	printf("iter(%d, %d, %d)...", ctx->dir_info->array[iter->i].ino,
+	printf("iter(%u, %u, %u)...", ctx->dir_info->array[iter->i].ino,
 	       ctx->dir_info->array[iter->i].dotdot,
 	       ctx->dir_info->array[iter->i].parent);
 #endif

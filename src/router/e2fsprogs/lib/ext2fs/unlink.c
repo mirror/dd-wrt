@@ -49,7 +49,7 @@ static int unlink_proc(struct ext2_dir_entry *dirent,
 		if (strncmp(ls->name, dirent->name, ext2fs_dirent_name_len(dirent)))
 			return 0;
 	}
-	if (ls->inode) {
+	if (!(ls->flags & EXT2FS_UNLINK_FORCE) && ls->inode) {
 		if (dirent->inode != ls->inode)
 			return 0;
 	} else {
@@ -70,7 +70,7 @@ static int unlink_proc(struct ext2_dir_entry *dirent,
 #endif
 errcode_t ext2fs_unlink(ext2_filsys fs, ext2_ino_t dir,
 			const char *name, ext2_ino_t ino,
-			int flags EXT2FS_ATTR((unused)))
+			int flags)
 {
 	errcode_t	retval;
 	struct link_struct ls;
@@ -86,7 +86,7 @@ errcode_t ext2fs_unlink(ext2_filsys fs, ext2_ino_t dir,
 	ls.name = name;
 	ls.namelen = name ? strlen(name) : 0;
 	ls.inode = ino;
-	ls.flags = 0;
+	ls.flags = flags;
 	ls.done = 0;
 	ls.prev = 0;
 

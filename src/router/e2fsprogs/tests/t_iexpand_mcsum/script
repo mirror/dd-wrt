@@ -34,7 +34,7 @@ ENDL
 
 echo "tune2fs test" > $OUT
 
-MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -I 128 $TMPFILE 786432 >> $OUT 2>&1
+MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -o Linux -I 128 $TMPFILE 786432 >> $OUT 2>&1
 rm -f $CONF
 
 # dump and check

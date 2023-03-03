@@ -1,6 +1,7 @@
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE //asprintf
 #endif
+#include "config.h"
 #include "perms.h"
 #include "support/nls-enable.h"
 #include <time.h>

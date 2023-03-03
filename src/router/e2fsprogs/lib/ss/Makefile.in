@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ../..
 my_dir = lib/ss
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 DLOPEN_LIB = @DLOPEN_LIB@
 
 @MCONFIG@
@@ -124,10 +125,11 @@ ss.pc: $(srcdir)/ss.pc.in $(top_builddir)/config.status
 	$(Q) cd $(top_builddir); CONFIG_FILES=lib/ss/ss.pc ./config.status
 
 installdirs::
-	$(E) "	MKDIR_P $(libdir) $(includedir)/ss $(datadir)/ss $(bindir)"
+	$(E) "	MKDIR_P $(libdir) $(includedir)/ss $(datadir)/ss $(bindir) $(pkgconfigdir) $(man1dir)"
 	$(Q) $(MKDIR_P) $(DESTDIR)$(libdir) \
 		$(DESTDIR)$(includedir)/ss $(DESTDIR)$(datadir)/ss \
-		$(DESTDIR)$(bindir) $(DESTDIR)$(pkgconfigdir)
+		$(DESTDIR)$(bindir) $(DESTDIR)$(pkgconfigdir) \
+		$(DESTDIR)$(man1dir)
 
 install:: libss.a $(INSTALL_HFILES) installdirs ss_err.h mk_cmds ss.pc
 	$(E) "	INSTALL_DATA $(DESTDIR)$(libdir)/libss.a"

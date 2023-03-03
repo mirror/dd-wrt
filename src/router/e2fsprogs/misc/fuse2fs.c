@@ -324,6 +324,8 @@ struct fuse2fs {
 	int minixdf;
 	int fakeroot;
 	int alloc_all_blocks;
+	int norecovery;
+	unsigned long offset;
 	FILE *err_fp;
 	unsigned int next_generation;
 };
@@ -648,8 +650,8 @@ static int check_inum_access(ext2_filsys fs, ext2_ino_t ino, mode_t mask)
 	dbg_printf("access ino=%d mask=e%s%s%s perms=0%o fuid=%d fgid=%d "
 		   "uid=%d gid=%d\n", ino,
 		   (mask & R_OK ? "r" : ""), (mask & W_OK ? "w" : ""),
-		   (mask & X_OK ? "x" : ""), perms, inode.i_uid, inode.i_gid,
-		   ctxt->uid, ctxt->gid);
+		   (mask & X_OK ? "x" : ""), perms, inode_uid(inode),
+		   inode_gid(inode), ctxt->uid, ctxt->gid);
 
 	/* existence check */
 	if (mask == 0)
@@ -679,14 +681,14 @@ static int check_inum_access(ext2_filsys fs, ext2_ino_t ino, mode_t mask)
 	}
 
 	/* allow owner, if perms match */
-	if (inode.i_uid == ctxt->uid) {
+	if (inode_uid(inode) == ctxt->uid) {
 		if ((mask & (perms >> 6)) == mask)
 			return 0;
 		return -EACCES;
 	}
 
 	/* allow group, if perms match */
-	if (inode.i_gid == ctxt->gid) {
+	if (inode_gid(inode) == ctxt->gid) {
 		if ((mask & (perms >> 3)) == mask)
 			return 0;
 		return -EACCES;
@@ -754,23 +756,6 @@ static void *op_init(struct fuse_conn_info *conn)
 	return ff;
 }
 
-static blkcnt_t blocks_from_inode(ext2_filsys fs,
-				  struct ext2_inode_large *inode)
-{
-	blkcnt_t b;
-
-	b = inode->i_blocks;
-	if (ext2fs_has_feature_huge_file(fs->super))
-		b += ((long long) inode->osd2.linux2.l_i_blocks_hi) << 32;
-
-	if (!ext2fs_has_feature_huge_file(fs->super) ||
-	    !(inode->i_flags & EXT4_HUGE_FILE_FL))
-		b *= fs->blocksize / 512;
-	b *= EXT2FS_CLUSTER_RATIO(fs);
-
-	return b;
-}
-
 static int stat_inode(ext2_filsys fs, ext2_ino_t ino, struct stat *statbuf)
 {
 	struct ext2_inode_large inode;
@@ -790,11 +775,12 @@ static int stat_inode(ext2_filsys fs, ext2_ino_t ino, struct stat *statbuf)
 	statbuf->st_ino = ino;
 	statbuf->st_mode = inode.i_mode;
 	statbuf->st_nlink = inode.i_links_count;
-	statbuf->st_uid = inode.i_uid;
-	statbuf->st_gid = inode.i_gid;
+	statbuf->st_uid = inode_uid(inode);
+	statbuf->st_gid = inode_gid(inode);
 	statbuf->st_size = EXT2_I_SIZE(&inode);
 	statbuf->st_blksize = fs->blocksize;
-	statbuf->st_blocks = blocks_from_inode(fs, &inode);
+	statbuf->st_blocks = ext2fs_get_stat_i_blocks(fs,
+						(struct ext2_inode *)&inode);
 	EXT4_INODE_GET_XTIME(i_atime, &tv, &inode);
 	statbuf->st_atime = tv.tv_sec;
 	EXT4_INODE_GET_XTIME(i_mtime, &tv, &inode);
@@ -1014,7 +1000,9 @@ static int op_mknod(const char *path, mode_t mode, dev_t dev)
 	inode.i_extra_isize = sizeof(struct ext2_inode_large) -
 		EXT2_GOOD_OLD_INODE_SIZE;
 	inode.i_uid = ctxt->uid;
+	ext2fs_set_i_uid_high(inode, ctxt->uid >> 16);
 	inode.i_gid = ctxt->gid;
+	ext2fs_set_i_gid_high(inode, ctxt->gid >> 16);
 
 	err = ext2fs_write_new_inode(fs, child, (struct ext2_inode *)&inode);
 	if (err) {
@@ -1138,7 +1126,9 @@ static int op_mkdir(const char *path, mode_t mode)
 	}
 
 	inode.i_uid = ctxt->uid;
+	ext2fs_set_i_uid_high(inode, ctxt->uid >> 16);
 	inode.i_gid = ctxt->gid;
+	ext2fs_set_i_gid_high(inode, ctxt->gid >> 16);
 	inode.i_mode = LINUX_S_IFDIR | (mode & ~(S_ISUID | fs->umask)) |
 		       parent_sgid;
 	inode.i_generation = ff->next_generation++;
@@ -1511,7 +1501,9 @@ static int op_symlink(const char *src, const char *dest)
 	}
 
 	inode.i_uid = ctxt->uid;
+	ext2fs_set_i_uid_high(inode, ctxt->uid >> 16);
 	inode.i_gid = ctxt->gid;
+	ext2fs_set_i_gid_high(inode, ctxt->gid >> 16);
 	inode.i_generation = ff->next_generation++;
 
 	err = ext2fs_write_inode_full(fs, child, (struct ext2_inode *)&inode,
@@ -1907,7 +1899,7 @@ static int op_chmod(const char *path, mode_t mode)
 		goto out;
 	}
 
-	if (!ff->fakeroot && ctxt->uid != 0 && ctxt->uid != inode.i_uid) {
+	if (!ff->fakeroot && ctxt->uid != 0 && ctxt->uid != inode_uid(inode)) {
 		ret = -EPERM;
 		goto out;
 	}
@@ -1917,7 +1909,7 @@ static int op_chmod(const char *path, mode_t mode)
 	 * of the user's groups, but FUSE only tells us about the primary
 	 * group.
 	 */
-	if (!ff->fakeroot && ctxt->uid != 0 && ctxt->gid != inode.i_gid)
+	if (!ff->fakeroot && ctxt->uid != 0 && ctxt->gid != inode_gid(inode))
 		mode &= ~S_ISGID;
 
 	inode.i_mode &= ~0xFFF;
@@ -1971,22 +1963,25 @@ static int op_chown(const char *path, uid_t owner, gid_t group)
 	if (owner != (uid_t) ~0) {
 		/* Only root gets to change UID. */
 		if (!ff->fakeroot && ctxt->uid != 0 &&
-		    !(inode.i_uid == ctxt->uid && owner == ctxt->uid)) {
+		    !(inode_uid(inode) == ctxt->uid && owner == ctxt->uid)) {
 			ret = -EPERM;
 			goto out;
 		}
 		inode.i_uid = owner;
+		ext2fs_set_i_uid_high(inode, owner >> 16);
 	}
 
 	if (group != (gid_t) ~0) {
 		/* Only root or the owner get to change GID. */
-		if (!ff->fakeroot && ctxt->uid != 0 && inode.i_uid != ctxt->uid) {
+		if (!ff->fakeroot && ctxt->uid != 0 &&
+		    inode_uid(inode) != ctxt->uid) {
 			ret = -EPERM;
 			goto out;
 		}
 
 		/* XXX: We /should/ check group membership but FUSE */
 		inode.i_gid = group;
+		ext2fs_set_i_gid_high(inode, group >> 16);
 	}
 
 	ret = update_ctime(fs, ino, &inode);
@@ -2364,7 +2359,7 @@ static int op_statfs(const char *path EXT2FS_ATTR((unused)),
 		overhead = 0;
 	else
 		overhead = fs->desc_blocks +
-			   fs->group_desc_count *
+			   (blk64_t)fs->group_desc_count *
 			   (fs->inode_blocks_per_group + 2);
 	reserved = ext2fs_r_blocks_count(fs->super);
 	if (!reserved)
@@ -2514,9 +2509,10 @@ static int copy_names(char *name, char *value EXT2FS_ATTR((unused)),
 		      size_t value_len EXT2FS_ATTR((unused)), void *data)
 {
 	char **b = data;
+	size_t name_len = strlen(name);
 
-	strncpy(*b, name, strlen(name));
-	*b = *b + strlen(name) + 1;
+	memcpy(*b, name, name_len + 1);
+	*b = *b + name_len + 1;
 
 	return 0;
 }
@@ -2914,7 +2910,9 @@ static int op_create(const char *path, mode_t mode, struct fuse_file_info *fp)
 	inode.i_extra_isize = sizeof(struct ext2_inode_large) -
 		EXT2_GOOD_OLD_INODE_SIZE;
 	inode.i_uid = ctxt->uid;
+	ext2fs_set_i_uid_high(inode, ctxt->uid >> 16);
 	inode.i_gid = ctxt->gid;
+	ext2fs_set_i_gid_high(inode, ctxt->gid >> 16);
 	if (ext2fs_has_feature_extents(fs->super)) {
 		ext2_extent_handle_t handle;
 
@@ -3132,7 +3130,7 @@ static int ioctl_setflags(ext2_filsys fs, struct fuse2fs_file_handle *fh,
 	if (err)
 		return translate_error(fs, fh->ino, err);
 
-	if (!ff->fakeroot && ctxt->uid != 0 && inode.i_uid != ctxt->uid)
+	if (!ff->fakeroot && ctxt->uid != 0 && inode_uid(inode) != ctxt->uid)
 		return -EPERM;
 
 	if ((inode.i_flags ^ flags) & ~FUSE2FS_MODIFIABLE_IFLAGS)
@@ -3189,7 +3187,7 @@ static int ioctl_setversion(ext2_filsys fs, struct fuse2fs_file_handle *fh,
 	if (err)
 		return translate_error(fs, fh->ino, err);
 
-	if (!ff->fakeroot && ctxt->uid != 0 && inode.i_uid != ctxt->uid)
+	if (!ff->fakeroot && ctxt->uid != 0 && inode_uid(inode) != ctxt->uid)
 		return -EPERM;
 
 	inode.i_generation = generation;
@@ -3662,6 +3660,8 @@ static struct fuse_opt fuse2fs_opts[] = {
 	FUSE2FS_OPT("fakeroot",		fakeroot,		1),
 	FUSE2FS_OPT("fuse2fs_debug",	debug,			1),
 	FUSE2FS_OPT("no_default_opts",	no_default_opts,	1),
+	FUSE2FS_OPT("norecovery",	norecovery,		1),
+	FUSE2FS_OPT("offset=%lu",	offset,		0),
 
 	FUSE_OPT_KEY("-V",             FUSE2FS_VERSION),
 	FUSE_OPT_KEY("--version",      FUSE2FS_VERSION),
@@ -3700,6 +3700,8 @@ static int fuse2fs_opt_proc(void *data, const char *arg,
 	"    -o minixdf             minix-style df\n"
 	"    -o fakeroot            pretend to be root for permission checks\n"
 	"    -o no_default_opts     do not include default fuse options\n"
+	"    -o offset=<bytes>      similar to mount -o offset=<bytes>, mount the partition starting at <bytes>\n"
+	"    -o norecovery	    don't replay the journal (implies ro)\n"
 	"    -o fuse2fs_debug       enable fuse2fs debugging\n"
 	"\n",
 			outargs->argv[0]);
@@ -3729,7 +3731,8 @@ int main(int argc, char *argv[])
 	errcode_t err;
 	char *logfile;
 	char extra_args[BUFSIZ];
-	int ret = 0, flags = EXT2_FLAG_64BITS | EXT2_FLAG_EXCLUSIVE;
+	int ret = 0;
+	int flags = EXT2_FLAG_64BITS | EXT2_FLAG_THREADS | EXT2_FLAG_EXCLUSIVE;
 
 	memset(&fctx, 0, sizeof(fctx));
 	fctx.magic = FUSE2FS_MAGIC;
@@ -3741,6 +3744,8 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (fctx.norecovery)
+		fctx.ro = 1;
 	if (fctx.ro)
 		printf("%s", _("Mounting read-only.\n"));
 
@@ -3775,7 +3780,9 @@ int main(int argc, char *argv[])
 	ret = 2;
 	if (!fctx.ro)
 		flags |= EXT2_FLAG_RW;
-	err = ext2fs_open2(fctx.device, NULL, flags, 0, 0, unix_io_manager,
+	char options[50];
+	sprintf(options, "offset=%lu", fctx.offset);
+	err = ext2fs_open2(fctx.device, options, flags, 0, 0, unix_io_manager,
 			   &global_fs);
 	if (err) {
 		printf(_("%s: %s.\n"), fctx.device, error_message(err));
@@ -3788,7 +3795,11 @@ int main(int argc, char *argv[])
 	ret = 3;
 
 	if (ext2fs_has_feature_journal_needs_recovery(global_fs->super)) {
-		if (!fctx.ro) {
+		if (fctx.norecovery) {
+			printf(_("%s: mounting read-only without "
+				 "recovering journal\n"),
+			       fctx.device);
+		} else if (!fctx.ro) {
 			printf(_("%s: recovering journal\n"), fctx.device);
 			err = ext2fs_run_ext3_journal(&global_fs);
 			if (err) {

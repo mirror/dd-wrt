@@ -57,7 +57,20 @@ errcode_t ext2fs_mmp_read(ext2_filsys fs, blk64_t mmp_blk, void *buf)
 	 * regardless of how the io_manager is doing reads, to avoid caching of
 	 * the MMP block by the io_manager or the VM.  It needs to be fresh. */
 	if (fs->mmp_fd <= 0) {
-		fs->mmp_fd = open(fs->device_name, O_RDWR | O_DIRECT);
+		struct stat st;
+		int flags = O_RDONLY | O_DIRECT;
+
+		/*
+		 * There is no reason for using O_DIRECT if we're working with
+		 * regular file. Disabling it also avoids problems with
+		 * alignment when the device of the host file system has sector
+		 * size larger than blocksize of the fs we're working with.
+		 */
+		if (stat(fs->device_name, &st) == 0 &&
+		    S_ISREG(st.st_mode))
+			flags &= ~O_DIRECT;
+
+		fs->mmp_fd = open(fs->device_name, flags);
 		if (fs->mmp_fd < 0) {
 			retval = EXT2_ET_MMP_OPEN_DIRECT;
 			goto out;
@@ -159,9 +172,11 @@ unsigned ext2fs_mmp_new_seq(void)
 #ifdef CONFIG_MMP
 	unsigned new_seq;
 	struct timeval tv;
+	unsigned long pid = getpid();
 
 	gettimeofday(&tv, 0);
-	srand((getpid() << 16) ^ getuid() ^ tv.tv_sec ^ tv.tv_usec);
+	pid = (pid >> 16) | ((pid & 0xFFFF) << 16);
+	srand(pid ^ getuid() ^ tv.tv_sec ^ tv.tv_usec);
 
 	gettimeofday(&tv, 0);
 	/* Crank the random number generator a few times */
@@ -197,11 +212,11 @@ static errcode_t ext2fs_mmp_reset(ext2_filsys fs)
 	mmp_s->mmp_seq = EXT4_MMP_SEQ_CLEAN;
 	mmp_s->mmp_time = 0;
 #ifdef HAVE_GETHOSTNAME
-	gethostname(mmp_s->mmp_nodename, sizeof(mmp_s->mmp_nodename));
+	gethostname((char *) mmp_s->mmp_nodename, sizeof(mmp_s->mmp_nodename));
 #else
 	mmp_s->mmp_nodename[0] = '\0';
 #endif
-	strncpy(mmp_s->mmp_bdevname, fs->device_name,
+	strncpy((char *) mmp_s->mmp_bdevname, fs->device_name,
 		sizeof(mmp_s->mmp_bdevname));
 
 	mmp_s->mmp_check_interval = fs->super->s_mmp_update_interval;
@@ -339,11 +354,11 @@ clean_seq:
 
 	mmp_s->mmp_seq = seq = ext2fs_mmp_new_seq();
 #ifdef HAVE_GETHOSTNAME
-	gethostname(mmp_s->mmp_nodename, sizeof(mmp_s->mmp_nodename));
+	gethostname((char *) mmp_s->mmp_nodename, sizeof(mmp_s->mmp_nodename));
 #else
-	strcpy(mmp_s->mmp_nodename, "unknown host");
+	strcpy((char *) mmp_s->mmp_nodename, "unknown host");
 #endif
-	strncpy(mmp_s->mmp_bdevname, fs->device_name,
+	strncpy((char *) mmp_s->mmp_bdevname, fs->device_name,
 		sizeof(mmp_s->mmp_bdevname));
 
 	retval = ext2fs_mmp_write(fs, fs->super->s_mmp_block, fs->mmp_buf);
@@ -388,10 +403,11 @@ errcode_t ext2fs_mmp_stop(ext2_filsys fs)
 	errcode_t retval = 0;
 
 	if (!ext2fs_has_feature_mmp(fs->super) ||
-	    !(fs->flags & EXT2_FLAG_RW) || (fs->flags & EXT2_FLAG_SKIP_MMP))
+	    !(fs->flags & EXT2_FLAG_RW) || (fs->flags & EXT2_FLAG_SKIP_MMP) ||
+	    (fs->mmp_buf == NULL) || (fs->mmp_cmp == NULL))
 		goto mmp_error;
 
-	retval = ext2fs_mmp_read(fs, fs->super->s_mmp_block, fs->mmp_buf);
+	retval = ext2fs_mmp_read(fs, fs->super->s_mmp_block, NULL);
 	if (retval)
 		goto mmp_error;
 

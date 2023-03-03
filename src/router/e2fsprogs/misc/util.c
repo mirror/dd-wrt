@@ -16,6 +16,11 @@
 #define _LARGEFILE64_SOURCE
 #endif
 
+#ifdef _WIN32
+#define _POSIX
+#define __USE_MINGW_ALARM
+#endif
+
 #include "config.h"
 #include <fcntl.h>
 #include <setjmp.h>
@@ -45,6 +50,7 @@
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
 #include "support/nls-enable.h"
+#include "support/devname.h"
 #include "blkid.h"
 #include "util.h"
 
@@ -183,7 +189,7 @@ void parse_journal_opts(const char *opts)
 		       arg ? arg : "NONE");
 #endif
 		if (strcmp(token, "device") == 0) {
-			journal_device = blkid_get_devname(NULL, arg, NULL);
+			journal_device = get_devname(NULL, arg, NULL);
 			if (!journal_device) {
 				if (arg)
 					fprintf(stderr, _("\nCould not find "
@@ -198,6 +204,14 @@ void parse_journal_opts(const char *opts)
 				continue;
 			}
 			journal_size = strtoul(arg, &p, 0);
+			if (*p)
+				journal_usage++;
+		} else if (strcmp(token, "fast_commit_size") == 0) {
+			if (!arg) {
+				journal_usage++;
+				continue;
+			}
+			journal_fc_size = strtoul(arg, &p, 0);
 			if (*p)
 				journal_usage++;
 		} else if (!strcmp(token, "location")) {
@@ -229,42 +243,63 @@ void parse_journal_opts(const char *opts)
 	free(buf);
 }
 
+static inline int jsize_to_blks(ext2_filsys fs, int size)
+{
+	return (size * 1024) / (fs->blocksize / 1024);
+}
+
+/* Fast commit size is in KBs */
+static inline int fcsize_to_blks(ext2_filsys fs, int size)
+{
+	return (size * 1024) / (fs->blocksize);
+}
+
 /*
  * Determine the number of journal blocks to use, either via
  * user-specified # of megabytes, or via some intelligently selected
  * defaults.
  *
- * Find a reasonable journal file size (in blocks) given the number of blocks
- * in the filesystem.  For very small filesystems, it is not reasonable to
- * have a journal that fills more than half of the filesystem.
+ * Find a reasonable journal file size (in blocks) given the number of blocks in
+ * the filesystem. For very small filesystems, it is not reasonable to have a
+ * journal that fills more than half of the filesystem.
  */
-unsigned int figure_journal_size(int size, ext2_filsys fs)
+void figure_journal_size(struct ext2fs_journal_params *jparams,
+		int requested_j_size, int requested_fc_size, ext2_filsys fs)
 {
-	int j_blocks;
+	int total_blocks, ret;
 
-	j_blocks = ext2fs_default_journal_size(ext2fs_blocks_count(fs->super));
-	if (j_blocks < 0) {
+	ret = ext2fs_get_journal_params(jparams, fs);
+	if (ret) {
 		fputs(_("\nFilesystem too small for a journal\n"), stderr);
-		return 0;
+		return;
 	}
 
-	if (size > 0) {
-		j_blocks = size * 1024 / (fs->blocksize	/ 1024);
-		if (j_blocks < 1024 || j_blocks > 10240000) {
-			fprintf(stderr, _("\nThe requested journal "
+	if (requested_j_size > 0 ||
+		(ext2fs_has_feature_fast_commit(fs->super) && requested_fc_size > 0)) {
+		if (requested_j_size > 0)
+			jparams->num_journal_blocks =
+				jsize_to_blks(fs, requested_j_size);
+		if (ext2fs_has_feature_fast_commit(fs->super) &&
+			requested_fc_size > 0)
+			jparams->num_fc_blocks =
+				fcsize_to_blks(fs, requested_fc_size);
+		else if (!ext2fs_has_feature_fast_commit(fs->super))
+			jparams->num_fc_blocks = 0;
+		total_blocks = jparams->num_journal_blocks + jparams->num_fc_blocks;
+		if (total_blocks < 1024 || total_blocks > 10240000) {
+			fprintf(stderr, _("\nThe total requested journal "
 				"size is %d blocks; it must be\n"
 				"between 1024 and 10240000 blocks.  "
 				"Aborting.\n"),
-				j_blocks);
+				total_blocks);
 			exit(1);
 		}
-		if ((unsigned) j_blocks > ext2fs_free_blocks_count(fs->super) / 2) {
-			fputs(_("\nJournal size too big for filesystem.\n"),
+		if ((unsigned int) total_blocks > ext2fs_free_blocks_count(fs->super) / 2) {
+			fputs(_("\nTotal journal size too big for filesystem.\n"),
 			      stderr);
 			exit(1);
 		}
 	}
-	return j_blocks;
 }
 
 void print_check_message(int mnt, unsigned int check)
@@ -288,7 +323,8 @@ void dump_mmp_msg(struct mmp_struct *mmp, const char *msg)
 	if (mmp) {
 		time_t t = mmp->mmp_time;
 
-		printf("MMP error info: last update: %s node: %s device: %s\n",
-		       ctime(&t), mmp->mmp_nodename, mmp->mmp_bdevname);
+		printf("MMP error info: node: %.*s, device: %.*s, updated: %s",
+		       EXT2_LEN_STR(mmp->mmp_nodename),
+		       EXT2_LEN_STR(mmp->mmp_bdevname), ctime(&t));
 	}
 }

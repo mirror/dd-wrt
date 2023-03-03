@@ -95,8 +95,8 @@ int main(int argc, char **argv)
 	int	fd;
 	char	*fname;
 	int	opt;
-	loff_t	length = -2LL;
-	loff_t	offset = 0;
+	ext2_loff_t length = -2LL;
+	ext2_loff_t offset = 0;
 	int	falloc_mode = 0;
 	int	error;
 	int	tflag = 0;

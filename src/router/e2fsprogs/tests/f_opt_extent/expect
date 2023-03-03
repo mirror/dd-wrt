@@ -26,16 +26,16 @@ Pass 5: Checking group summary information
 
 
 Change in FS metadata:
-@@ -10,7 +10,7 @@
- Inode count:              65536
+@@ -11,7 +11,7 @@
  Block count:              524288
  Reserved block count:     26214
+ Overhead clusters:        35246
 -Free blocks:              570
 +Free blocks:              567
  Free inodes:              65047
  First block:              1
  Block size:               1024
-@@ -47,8 +47,8 @@
+@@ -50,8 +50,8 @@
    Block bitmap at 262 (+261)
    Inode bitmap at 278 (+277)
    Inode table at 294-549 (+293)

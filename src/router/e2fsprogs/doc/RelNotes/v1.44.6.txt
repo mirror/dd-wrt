@@ -26,7 +26,7 @@ p0wned) by maliciously modified file systems.  (Addresses Google Bugs:
 
 Fix mke2fs and debugfs so they can correctly copy in files > 2 GiB.
 
-Fix debugfs so its stat command can correct supportly display directory
+Fix debugfs so its stat command can correctly display directory
 sizes > 2 GiB.
 
 Fix memory leaks in debugfs, mke2fs, and e2freefrag.

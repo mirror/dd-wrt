@@ -16,6 +16,7 @@
  *
  * $Id: dict.c,v 1.40.2.7 2000/11/13 01:36:44 kaz Exp $
  * $Name: kazlib_1_20 $
+ * The work has been modified.
  */
 
 #define DICT_NODEBUG
@@ -267,6 +268,7 @@ dict_t *dict_create(dictcount_t maxcount, dict_comp_t comp)
 	new->allocnode = dnode_alloc;
 	new->freenode = dnode_free;
 	new->context = NULL;
+	new->cmp_ctx = NULL;
 	new->nodecount = 0;
 	new->maxcount = maxcount;
 	new->nilnode.left = &new->nilnode;
@@ -292,6 +294,14 @@ void dict_set_allocator(dict_t *dict, dnode_alloc_t al,
     dict->allocnode = al ? al : dnode_alloc;
     dict->freenode = fr ? fr : dnode_free;
     dict->context = context;
+}
+
+void dict_set_cmp_context(dict_t *dict, const void *cmp_ctx)
+{
+    dict_assert (!dict->cmp_ctx);
+    dict_assert (dict_count(dict) == 0);
+
+    dict->cmp_ctx = cmp_ctx;
 }
 
 #ifdef E2FSCK_NOTUSED
@@ -467,7 +477,7 @@ dnode_t *dict_lookup(dict_t *dict, const void *key)
     /* simple binary search adapted for trees that contain duplicate keys */
 
     while (root != nil) {
-	result = dict->compare(key, root->key);
+	result = dict->compare(dict->cmp_ctx, key, root->key);
 	if (result < 0)
 	    root = root->left;
 	else if (result > 0)
@@ -479,7 +489,8 @@ dnode_t *dict_lookup(dict_t *dict, const void *key)
 		do {
 		    saved = root;
 		    root = root->left;
-		    while (root != nil && dict->compare(key, root->key))
+		    while (root != nil
+			   && dict->compare(dict->cmp_ctx, key, root->key))
 			root = root->right;
 		} while (root != nil);
 		return saved;
@@ -503,7 +514,7 @@ dnode_t *dict_lower_bound(dict_t *dict, const void *key)
     dnode_t *tentative = 0;
 
     while (root != nil) {
-	int result = dict->compare(key, root->key);
+	int result = dict->compare(dict->cmp_ctx, key, root->key);
 
 	if (result > 0) {
 	    root = root->right;
@@ -535,7 +546,7 @@ dnode_t *dict_upper_bound(dict_t *dict, const void *key)
     dnode_t *tentative = 0;
 
     while (root != nil) {
-	int result = dict->compare(key, root->key);
+	int result = dict->compare(dict->cmp_ctx, key, root->key);
 
 	if (result < 0) {
 	    root = root->left;
@@ -580,7 +591,7 @@ void dict_insert(dict_t *dict, dnode_t *node, const void *key)
 
     while (where != nil) {
 	parent = where;
-	result = dict->compare(key, where->key);
+	result = dict->compare(dict->cmp_ctx, key, where->key);
 	/* trap attempts at duplicate key insertion unless it's explicitly allowed */
 	dict_assert (dict->dupes || result != 0);
 	if (result < 0)
@@ -1261,7 +1272,7 @@ static int tokenize(char *string, ...)
     return tokcount;
 }
 
-static int comparef(const void *key1, const void *key2)
+static int comparef(const void *cmp_ctx, const void *key1, const void *key2)
 {
     return strcmp(key1, key2);
 }

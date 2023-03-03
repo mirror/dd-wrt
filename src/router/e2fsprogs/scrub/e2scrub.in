@@ -66,7 +66,7 @@ exitcode() {
 	# for capturing all the log messages if the scrub fails, because the
 	# fail service uses the service name to gather log messages for the
 	# error report.
-	if [ -n "${SERVICE_MODE}" ]; then
+	if [ -n "${SERVICE_MODE}" -a "${ret}" -ne 0 ]; then
 		test "${ret}" -ne 0 && ret=1
 		sleep 2
 	fi
@@ -164,7 +164,7 @@ lvm_vars="$(lvs --nameprefixes -o name,vgname,lv_role --noheadings "${dev}" 2> /
 eval "${lvm_vars}"
 if [ -z "${LVM2_VG_NAME}" ] || [ -z "${LVM2_LV_NAME}" ] ||
    echo "${LVM2_LV_ROLE}" | grep -q "snapshot"; then
-	echo "${arg}: Not connnected to an LVM logical volume."
+	echo "${arg}: Not connected to an LVM logical volume."
 	print_help
 	exitcode 16
 fi
@@ -201,7 +201,7 @@ mark_corrupt() {
 
 setup() {
 	# Try to remove snapshot for 30s, bail out if we can't remove it.
-	lveremove_deadline="$(( $(date "+%s") + 30))"
+	lvremove_deadline="$(( $(date "+%s") + 30))"
 	${DBG} lvremove -f "${LVM2_VG_NAME}/${snap}" 2>/dev/null
 	while [ -e "${snap_dev}" ] && [ "$?" -eq "5" ] &&
 	      [ "$(date "+%s")" -lt "${lvremove_deadline}" ]; do

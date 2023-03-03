@@ -3,10 +3,10 @@
 .\"
 .TH E2MMPSTATUS 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-e2mmpstatus \- Check MMP status of an ext4 filesystem
+e2mmpstatus \- Check MMP status of an ext4 file system
 .SH SYNOPSIS
 .BR e2mmpstatus " [" \-i ]
-.RI < filesystem >
+.RI < file system >
 .SH OPTIONS
 .TP
 .B \-i
@@ -14,29 +14,29 @@ prints out the MMP information rather than check it.
 .SH DESCRIPTION
 .B e2mmpstatus
 is used to check Multiple-Mount Protection (MMP) status of an ext4
-filesystem with the
+file system with the
 .B mmp
 feature enabled.  The specified
-.I filesystem
+.I file system
 can be a device name (e.g.
 .IR /dev/hdc1 ", " /dev/sdb2 ),
-or an ext4 filesystem label or UUID, for example
+or an ext4 file system label or UUID, for example
 .B UUID=8868abf6-88c5-4a83-98b8-bfc24057f7bd
 or
 .BR LABEL=root .
 By default, the
 .B e2mmpstatus
-program checks whether it is safe to mount the filesystem without taking
+program checks whether it is safe to mount the file system without taking
 the risk of mounting it more than once.
 .PP
 MMP (multiple-mount protection) is a feature that adds protection against
-the filesystem being modified simultaneously by more than one node.
-It is NOT safe to mount a filesystem when one of the following conditions
+the file system being modified simultaneously by more than one node.
+It is NOT safe to mount a file system when one of the following conditions
 is true:
 .br
-	1. e2fsck is running on the filesystem.
+	1. e2fsck is running on the file system.
 .br
-	2. the filesystem is in use by another node.
+	2. the file system is in use by another node.
 .br
 	3. The MMP block is corrupted or cannot be read for some reason.
 .br
@@ -48,9 +48,9 @@ frequently the MMP block is being written by the other node.
 .SH EXIT CODE
 The exit code returned by
 .B e2mmpstatus
-is 0 when it is safe to mount the filesystem, 1 when the MMP block shows
-the filesystem is in use on another node and it is NOT safe to mount
-the filesystem, and 2 if some other failure occurred that prevents the
+is 0 when it is safe to mount the file system, 1 when the MMP block shows
+the file system is in use on another node and it is NOT safe to mount
+the file system, and 2 if some other failure occurred that prevents the
 check from properly detecting the current MMP status.
 .SH SEE ALSO
 .BR dumpe2fs (8),

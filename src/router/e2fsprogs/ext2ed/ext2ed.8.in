@@ -9,8 +9,8 @@ ext2ed \- ext2 file system editor
 in an
 .B editor
 for the
-.B second extended filesystem.
-Its aim is to show you the various internal filesystem structures in an
+.B second extended file system.
+Its aim is to show you the various internal file system structures in an
 intuitive form so that you would be able to easily understand and modify
 them.
 .SH DOCUMENTATION
@@ -23,9 +23,9 @@ This article explains how to use ext2ed.
 
 The second article is
 .B The Ext2fs overview.
-This article gives an overview of internal structure of the ext2 filesystem.
+This article gives an overview of internal structure of the ext2 file system.
 You need to understand the internal layout in order to effectively edit
-your filesystem.
+your file system.
 
 The third article is
 .B EXT2ED - Design and implementation.
@@ -35,7 +35,7 @@ in it if you plan to view or modify the source code.
 .SH WARNING
 
 .B
-Do not use ext2ed on a mounted filesystem.
+Do not use ext2ed on a mounted file system.
 
 .SH FILES
 .TP
@@ -46,10 +46,10 @@ The program itself.
 ext2ed's configuration file.
 .TP
 .I @datadir@/ext2.descriptors
-Definition of the various objects for the ext2 filesystem.
+Definition of the various objects for the ext2 file system.
 .TP
 .I /var/log/ext2ed.log
-Log file of actual changes made to the filesystem.
+Log file of actual changes made to the file system.
 .TP
 .I /usr/man/man8/ext2ed.8
 The manual page.
@@ -58,13 +58,13 @@ The manual page.
 The user's guide.
 .TP
 .I @datadir@/doc/ext2ed/Ext2fs-overview-0.1.ps
-Technical overview of the ext2 filesystem.
+Technical overview of the ext2 file system.
 .TP
 .I @datadir@/doc/ext2ed/ext2ed-design-0.1.ps
 EXT2ED design notes.
 
 .SH BUGS
-Filesystems bigger than 2 GB aren't yet supported.
+File Systems bigger than 2 GB aren't yet supported.
 .SH AUTHOR
 Gadi Oxman <tgud@tochnapc2.technion.ac.il>
 .SH SEE ALSO

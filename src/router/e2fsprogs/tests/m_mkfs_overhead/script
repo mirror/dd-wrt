@@ -3,7 +3,7 @@ test_description="test bg overhead calculation"
 OUT=$test_name.log
 EXP=$test_dir/expect
 FS_SIZE=1024
-MKE2FS_OPTS="-b 1024 -m 0 -g 256 -N 3745"
+MKE2FS_OPTS="-o hurd -b 1024 -m 0 -g 256 -N 3745"
 
 MKE2FS_SKIP_PROGRESS=true
 MKE2FS_SKIP_CHECK_MSG=true

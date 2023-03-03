@@ -37,10 +37,6 @@
 #include <errno.h>
 #endif
 
-#ifdef HAVE_SYS_SYSCTL_H
-#include <sys/sysctl.h>
-#endif
-
 #include "e2fsck.h"
 
 extern e2fsck_t e2fsck_global_ctx;   /* Try your very best not to use this! */
@@ -116,27 +112,26 @@ void log_err(e2fsck_t ctx, const char *fmt, ...)
 	}
 }
 
-void *e2fsck_allocate_memory(e2fsck_t ctx, unsigned int size,
+void *e2fsck_allocate_memory(e2fsck_t ctx, unsigned long size,
 			     const char *description)
 {
 	void *ret;
 	char buf[256];
 
 #ifdef DEBUG_ALLOCATE_MEMORY
-	printf("Allocating %u bytes for %s...\n", size, description);
+	printf("Allocating %lu bytes for %s...\n", size, description);
 #endif
-	ret = malloc(size);
-	if (!ret) {
-		sprintf(buf, "Can't allocate %u bytes for %s\n",
+	if (ext2fs_get_memzero(size, &ret)) {
+		sprintf(buf, "Can't allocate %lu bytes for %s\n",
 			size, description);
 		fatal_error(ctx, buf);
 	}
-	memset(ret, 0, size);
+
 	return ret;
 }
 
 char *string_copy(e2fsck_t ctx EXT2FS_ATTR((unused)),
-		  const char *str, int len)
+		  const char *str, size_t len)
 {
 	char	*ret;
 
@@ -422,9 +417,6 @@ void print_resource_track(e2fsck_t ctx, const char *desc,
 #ifdef HAVE_GETRUSAGE
 	struct rusage r;
 #endif
-#ifdef HAVE_MALLINFO
-	struct mallinfo	malloc_info;
-#endif
 	struct timeval time_end;
 
 	if ((desc && !(ctx->options & E2F_OPT_TIME2)) ||
@@ -437,18 +429,30 @@ void print_resource_track(e2fsck_t ctx, const char *desc,
 	if (desc)
 		log_out(ctx, "%s: ", desc);
 
-#ifdef HAVE_MALLINFO
-#define kbytes(x)	(((unsigned long)(x) + 1023) / 1024)
+#define kbytes(x)	(((unsigned long long)(x) + 1023) / 1024)
+#ifdef HAVE_MALLINFO2
+	if (1) {
+		struct mallinfo2 malloc_info = mallinfo2();
 
-	malloc_info = mallinfo();
-	log_out(ctx, _("Memory used: %luk/%luk (%luk/%luk), "),
-		kbytes(malloc_info.arena), kbytes(malloc_info.hblkhd),
-		kbytes(malloc_info.uordblks), kbytes(malloc_info.fordblks));
-#else
-	log_out(ctx, _("Memory used: %lu, "),
-		(unsigned long) (((char *) sbrk(0)) -
-				 ((char *) track->brk_start)));
+		log_out(ctx, _("Memory used: %lluk/%lluk (%lluk/%lluk), "),
+			kbytes(malloc_info.arena), kbytes(malloc_info.hblkhd),
+			kbytes(malloc_info.uordblks),
+			kbytes(malloc_info.fordblks));
+	} else
+#elif defined HAVE_MALLINFO
+	/* don't use mallinfo() if over 2GB used, since it returns "int" */
+	if ((char *)sbrk(0) - (char *)track->brk_start < 2LL << 30) {
+		struct mallinfo	malloc_info = mallinfo();
+
+		log_out(ctx, _("Memory used: %lluk/%lluk (%lluk/%lluk), "),
+			kbytes(malloc_info.arena), kbytes(malloc_info.hblkhd),
+			kbytes(malloc_info.uordblks),
+			kbytes(malloc_info.fordblks));
+	} else
 #endif
+	log_out(ctx, _("Memory used: %lluk, "),
+		kbytes(((char *)sbrk(0)) - ((char *)track->brk_start)));
+
 #ifdef HAVE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &r);
 
@@ -776,9 +780,12 @@ void dump_mmp_msg(struct mmp_struct *mmp, const char *fmt, ...)
 		       mmp->mmp_check_interval);
 		printf("    mmp_sequence: %08x\n", mmp->mmp_seq);
 		printf("    mmp_update_date: %s", ctime(&t));
-		printf("    mmp_update_time: %lld\n", mmp->mmp_time);
-		printf("    mmp_node_name: %s\n", mmp->mmp_nodename);
-		printf("    mmp_device_name: %s\n", mmp->mmp_bdevname);
+		printf("    mmp_update_time: %lld\n",
+		       (long long) mmp->mmp_time);
+		printf("    mmp_node_name: %.*s\n",
+		       EXT2_LEN_STR(mmp->mmp_nodename));
+		printf("    mmp_device_name: %.*s\n",
+		       EXT2_LEN_STR(mmp->mmp_bdevname));
 	}
 }
 
@@ -884,12 +891,6 @@ unsigned long long get_memory_size(void)
 	unsigned long long size = 0;
 # elif defined(CTL_HW_UINT)
 	unsigned int size = 0;
-# endif
-# if defined(CTL_HW_INT64) || defined(CTL_HW_UINT)
-	size_t len = sizeof(size);
-
-	if (sysctl(mib, 2, &size, &len, NULL, 0) == 0)
-		return (unsigned long long)size;
 # endif
 	return 0;
 #else

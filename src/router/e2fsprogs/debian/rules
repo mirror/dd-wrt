@@ -27,7 +27,7 @@ udebdir		?= ${topdir}/debian/e2fsprogs-udeb
 stdbuilddir	?= ${topdir}/debian/BUILD-STD
 
 INSTALL ?= install
-INSTALL_PROGRAM ?= $(INSTALL) -p -o root -g root -m 0755
+INSTALL_PROGRAM ?= $(INSTALL) -p -m 0755
 
 ifneq (,$(findstring update-symbols,$(DEB_BUILD_OPTIONS)))
 SYMBOL_LIBS := libext2fs libcomerr2 libss2
@@ -68,7 +68,9 @@ override_dh_auto_configure:
 
 override_dh_auto_build:
 	$(MAKE) -C ${stdbuilddir} V=1 all
+ifeq (,$(filter pkg.e2fsprogs.no-static,$(DEB_BUILD_PROFILES)))
 	$(MAKE) -C ${stdbuilddir}/e2fsck V=1 e2fsck.static
+endif
 	if ! test -d debian/orig-gmo ; then \
 		mkdir debian/orig-gmo ; \
 		mv po/*.gmo po/*.po debian/orig-gmo ; \
@@ -96,9 +98,11 @@ override_dh_auto_install:
   # static libs and .h files
 	$(MAKE) -C ${stdbuilddir} V=1 install-libs DESTDIR=${tmpdir} LDCONFIG=true
 
+ifeq (,$(filter pkg.e2fsprogs.no-static,$(DEB_BUILD_PROFILES)))
   # statically-linked fsck
 	${INSTALL_PROGRAM} ${stdbuilddir}/e2fsck/e2fsck.static ${tmpdir}/sbin
 	(cd debian/tmp/usr/share/man/man8 ; cp e2fsck.8 e2fsck.static.8)
+endif
 
 ifeq ($(DEB_HOST_ARCH_OS), hurd)
 	${INSTALL} -m 0644 misc/mke2fs-hurd.conf ${tmpdir}/etc/mke2fs.conf
@@ -110,10 +114,12 @@ override_dh_install:
 	dh_install
 	dh_missing --fail-missing
 
+ifeq (,$(filter noudeb,$(DEB_BUILD_PROFILES)))
 override_dh_lintian:
 	dh_lintian
 	$(INSTALL) -D -p -m644 debian/e2fsprogs-udeb.lintian-overrides \
 	    debian/e2fsprogs-udeb/usr/share/lintian/overrides/e2fsprogs-udeb
+endif
 
 override_dh_installinfo:
   # HTML docs
@@ -151,13 +157,15 @@ override_dh_makeshlibs:
 		patch debian/$$i.symbols < debian/$$i.tmp-patch; \
 		/bin/rm debian/$$i.tmp-patch; \
 	done
-	dh_makeshlibs --add-udeb=e2fsprogs-udeb
+	dh_makeshlibs $(if $(filter noudeb,$(DEB_BUILD_PROFILES)),,--add-udeb=e2fsprogs-udeb)
 
 override_dh_shlibdeps:
 	dh_shlibdeps -pe2fsprogs -l${stdbuilddir}/lib \
 		-- -Ldebian/e2fsprogs.shlibs.local
+ifeq (,$(filter noudeb,$(DEB_BUILD_PROFILES)))
 	dh_shlibdeps -pe2fsprogs-udeb -l${stdbuilddir}/lib \
 		-- -Ldebian/e2fsprogs-udeb.shlibs.local
+endif
 ifeq ($(SKIP_FUSE2FS),)
 	dh_shlibdeps -pfuse2fs -l${stdbuilddir}/lib \
 		-- -Ldebian/e2fsprogs.shlibs.local
@@ -171,7 +179,7 @@ override_dh_gencontrol:
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
-	$(MAKE) -C ${stdbuilddir} V=1 check
+	PRINT_FAILED=yes $(MAKE) -C ${stdbuilddir} V=1 check
 endif
 
 test_printenv:

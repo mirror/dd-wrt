@@ -13,7 +13,8 @@
 /* Offset of info header in file */
 #define V2_DQINFOOFF		sizeof(struct v2_disk_dqheader)
 /* Supported version of quota-tree format */
-#define V2_VERSION 1
+#define V2_VERSION_R1 1
+#define V2_VERSION_R0 0
 
 struct v2_disk_dqheader {
 	__le32 dqh_magic;	/* Magic number identifying file */
@@ -34,6 +35,20 @@ struct v2_disk_dqinfo {
 	__le32 dqi_free_blk;	/* Number of first free block in the list */
 	__le32 dqi_free_entry;	/* Number of block with at least one
 					 * free entry */
+} __attribute__ ((packed));
+
+struct v2r0_disk_dqblk {
+	__le32 dqb_id;	/* id this quota applies to */
+	__le32 dqb_ihardlimit;	/* absolute limit on allocated inodes */
+	__le32 dqb_isoftlimit;	/* preferred inode limit */
+	__le32 dqb_curinodes;	/* current # allocated inodes */
+	__le32 dqb_bhardlimit;	/* absolute limit on disk space
+					 * (in QUOTABLOCK_SIZE) */
+	__le32 dqb_bsoftlimit;	/* preferred limit on disk space
+					 * (in QUOTABLOCK_SIZE) */
+	__le64 dqb_curspace;	/* current space occupied (in bytes) */
+	__le64 dqb_btime;	/* time limit for excessive disk use */
+	__le64 dqb_itime;	/* time limit for excessive inode use */
 } __attribute__ ((packed));
 
 struct v2r1_disk_dqblk {

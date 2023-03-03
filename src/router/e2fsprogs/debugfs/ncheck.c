@@ -134,9 +134,15 @@ void do_ncheck(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 
 	iw.names_left = 0;
 	for (i=0; i < argc; i++) {
-		iw.iarray[i] = strtol(argv[i], &tmp, 0);
-		if (*tmp) {
-			com_err("ncheck", 0, "Bad inode - %s", argv[i]);
+		char *str = argv[i];
+		int len = strlen(str);
+
+		if ((len > 2) && (str[0] == '<') && (str[len - 1] == '>'))
+			str++;
+		iw.iarray[i] = strtol(str, &tmp, 0);
+		if (*tmp && (str == argv[i] || *tmp != '>')) {
+			com_err("ncheck", 0, "Invalid inode number - '%s'",
+				argv[i]);
 			goto error_out;
 		}
 		if (debugfs_read_inode(iw.iarray[i], &inode, *argv))

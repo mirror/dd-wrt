@@ -12,7 +12,7 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 0
 -----------------------------------------------
  
@@ -25,22 +25,22 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-Free blocks count wrong for group #0 (717, counted=718).
+Free blocks count wrong for group #0 (685, counted=686).
 Fix? yes
 
-Free blocks count wrong (14276, counted=14277).
+Free blocks count wrong (13764, counted=13765).
 Fix? yes
 
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 1
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 0
 -----------------------------------------------
  
@@ -53,22 +53,22 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-Free blocks count wrong for group #0 (717, counted=718).
+Free blocks count wrong for group #0 (685, counted=686).
 Fix? yes
 
-Free blocks count wrong (14276, counted=14277).
+Free blocks count wrong (13764, counted=13765).
 Fix? yes
 
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 1
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 0
 -----------------------------------------------
  
@@ -81,22 +81,22 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-Free blocks count wrong for group #0 (717, counted=718).
+Free blocks count wrong for group #0 (685, counted=686).
 Fix? yes
 
-Free blocks count wrong (14276, counted=14277).
+Free blocks count wrong (13764, counted=13765).
 Fix? yes
 
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 1
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 0
 -----------------------------------------------
  
@@ -111,7 +111,7 @@ Pass 4: Checking reference counts
 Pass 5: Checking group summary information
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
-test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 2619/16384 blocks
 Exit status is 1
 -----------------------------------------------
  
@@ -125,35 +125,35 @@ Pass 5: Checking group summary information
 Block bitmap differences:  -(35--258) -(1059--1282) -(3107--3330) -(5155--5378) -(7203--7426) -(9251--9474)
 Fix? yes
 
-Free blocks count wrong for group #0 (718, counted=942).
+Free blocks count wrong for group #0 (686, counted=910).
 Fix? yes
 
-Free blocks count wrong for group #1 (732, counted=956).
+Free blocks count wrong for group #1 (700, counted=924).
 Fix? yes
 
-Free blocks count wrong for group #3 (732, counted=956).
+Free blocks count wrong for group #3 (700, counted=924).
 Fix? yes
 
-Free blocks count wrong for group #5 (732, counted=956).
+Free blocks count wrong for group #5 (700, counted=924).
 Fix? yes
 
-Free blocks count wrong for group #7 (732, counted=956).
+Free blocks count wrong for group #7 (700, counted=924).
 Fix? yes
 
-Free blocks count wrong for group #9 (732, counted=956).
+Free blocks count wrong for group #9 (700, counted=924).
 Fix? yes
 
-Free blocks count wrong (14277, counted=15621).
+Free blocks count wrong (13765, counted=15109).
 Fix? yes
 
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
-test_filesys: 11/4096 files (0.0% non-contiguous), 763/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 1275/16384 blocks
 Exit status is 1
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/4096 files (0.0% non-contiguous), 763/16384 blocks
+test_filesys: 11/4096 files (0.0% non-contiguous), 1275/16384 blocks
 Exit status is 0

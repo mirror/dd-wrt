@@ -16,7 +16,7 @@ e2freefrag \- report free space fragmentation information
 .B e2freefrag
 is used to report free space fragmentation on ext2/3/4 file systems.
 .I filesys
-is the filesystem device name (e.g.
+is the file system device name (e.g.
 .IR /dev/hdc1 ", " /dev/md0 ).
 The
 .B e2freefrag
@@ -25,8 +25,8 @@ are present as contiguous and aligned free space. The percentage of contiguous
 free blocks of size and of alignment
 .I chunk_kb
 is reported.  It also displays the minimum/maximum/average free chunk size in
-the filesystem, along with a histogram of all free chunks.  This information
-can be used to gauge the level of free space fragmentation in the filesystem.
+the file system, along with a histogram of all free chunks.  This information
+can be used to gauge the level of free space fragmentation in the file system.
 .SH OPTIONS
 .TP
 .BI \-c " chunk_kb"
@@ -35,7 +35,7 @@ If a chunk size is specified, then
 will print how many free chunks of size
 .I chunk_kb
 are available in units of kilobytes (Kb).  The chunk size must be a
-power of two and be larger than filesystem block size.
+power of two and be larger than file system block size.
 .TP
 .B \-h
 Print the usage of the program.

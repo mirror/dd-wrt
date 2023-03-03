@@ -1,11 +1,11 @@
 #define _GNU_SOURCE
 
+#include "config.h"
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-#include <ext2fs/ext2fs.h>
 
 #include "perms.h"
 #include "base_fs.h"
@@ -76,11 +76,12 @@ static int parse_ugid_map_entry(char* line, struct ugid_map_entry* result)
 	     token && num_tokens < 3;
 	     token = strtok_r(NULL, " ", &token_saveptr), ++num_tokens) {
 		char* endptr = NULL;
-		*parsed[num_tokens] = strtoul(token, &endptr, 10);
-		if ((*parsed[num_tokens] == ULONG_MAX && errno) || *endptr) {
+		unsigned long t = strtoul(token, &endptr, 10);
+		if ((t == ULONG_MAX && errno) || (t > UINT_MAX) || *endptr) {
 			fprintf(stderr, "Malformed u/gid mapping line\n");
 			return 0;
 		}
+		*parsed[num_tokens] = (unsigned int) t;
 	}
 	if (num_tokens < 3 || strtok_r(NULL, " ", &token_saveptr) != NULL) {
 		fprintf(stderr, "Malformed u/gid mapping line\n");
@@ -301,7 +302,8 @@ int main(int argc, char *argv[])
 	if (src_dir) {
 		ext2fs_read_bitmaps(fs);
 		if (basefs_in) {
-			retval = base_fs_alloc_load(fs, basefs_in, mountpoint);
+			retval = base_fs_alloc_load(fs, basefs_in, mountpoint,
+				src_dir);
 			if (retval) {
 				com_err(prog_name, retval, "%s",
 				"while reading base_fs file");

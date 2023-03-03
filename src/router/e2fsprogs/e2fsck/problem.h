@@ -288,6 +288,18 @@ struct problem_context {
 /* Meta_bg and resize_inode are not compatible, remove resize_inode*/
 #define PR_0_DISABLE_RESIZE_INODE		0x000051
 
+/* Orphan file contains holes */
+#define PR_0_ORPHAN_FILE_HOLE			0x000052
+
+/* Orphan file block has wrong magic */
+#define PR_0_ORPHAN_FILE_BAD_MAGIC		0x000053
+
+/* Orphan file block has wrong checksum */
+#define PR_0_ORPHAN_FILE_BAD_CHECKSUM		0x000054
+
+/* Orphan file size isn't multiple of blocks size */
+#define PR_0_ORPHAN_FILE_WRONG_SIZE		0x000055
+
 /*
  * Pass 1 errors
  */
@@ -667,8 +679,8 @@ struct problem_context {
 /* Inode leaf has a duplicate extent mapping */
 #define PR_1_EXTENT_COLLISION			0x01007D
 
-/* Error allocating memory for encrypted directory list */
-#define PR_1_ALLOCATE_ENCRYPTED_DIRLIST		0x01007E
+/* Error allocating memory for encrypted inode list */
+#define PR_1_ALLOCATE_ENCRYPTED_INODE_LIST	0x01007E
 
 /* Inode extent tree could be more shallow */
 #define PR_1_EXTENT_BAD_MAX_DEPTH		0x01007F
@@ -701,6 +713,26 @@ struct problem_context {
 /* Casefold flag set, but file system is missing the casefold feature */
 #define PR_1_CASEFOLD_FEATURE			0x010089
 
+/* Inode has encrypt flag but no encryption extended attribute */
+#define PR_1_MISSING_ENCRYPTION_XATTR		0x01008A
+
+/* Encrypted inode has corrupt encryption extended attribute */
+#define PR_1_CORRUPT_ENCRYPTION_XATTR		0x01008B
+
+/* Error allocating memory for casefolded directory list */
+#define PR_1_ALLOCATE_CASEFOLDED_DIRLIST	0x01008C
+
+/* Htree directory should use SipHash but does not */
+#define PR_1_HTREE_NEEDS_SIPHASH		0x01008D
+
+/* Htree directory uses SipHash but should not */
+#define PR_1_HTREE_CANNOT_SIPHASH		0x01008E
+
+/* Orphan file inode is not a regular file */
+#define PR_1_ORPHAN_FILE_BAD_MODE		0x01008F
+
+/* Orphan file inode is not in use, but contains data */
+#define PR_1_ORPHAN_FILE_NOT_CLEAR		0x010090
 
 /*
  * Pass 1b errors
@@ -948,8 +980,8 @@ struct problem_context {
 /* Clear invalid HTREE directory */
 #define PR_2_HTREE_CLEAR	0x020038
 
-/* Clear the htree flag forcibly */
-/* #define PR_2_HTREE_FCLR	0x020039 */
+/* Filesystem has large directories, but has no such flag in superblock */
+#define PR_2_FEATURE_LARGE_DIRS	0x020039
 
 /* Bad block in htree interior node */
 #define PR_2_HTREE_BADBLK	0x02003A
@@ -1016,6 +1048,18 @@ struct problem_context {
 
 /* Encrypted directory entry is too short */
 #define PR_2_BAD_ENCRYPTED_NAME		0x020050
+
+/* Encrypted directory contains unencrypted file */
+#define PR_2_UNENCRYPTED_FILE		0x020051
+
+/* Encrypted directory contains file with different encryption policy */
+#define PR_2_INCONSISTENT_ENCRYPTION_POLICY	0x020052
+
+/* Encoded directory entry has illegal characters in its name */
+#define PR_2_BAD_ENCODED_NAME		0x020053
+
+/* Non-unique filename found, but can't rename */
+#define PR_2_NON_UNIQUE_FILE_NO_RENAME	0x020054
 
 /*
  * Pass 3 errors
@@ -1105,6 +1149,9 @@ struct problem_context {
 /* Lost+found is encrypted */
 #define PR_3_LPF_ENCRYPTED		0x03001B
 
+/* Recursively looped directory inode */
+#define PR_3_LOOPED_DIR			0x03001D
+
 /*
  * Pass 3a --- rehashing directories
  */
@@ -1152,6 +1199,9 @@ struct problem_context {
 
 /* directory exceeds max links, but no DIR_NLINK feature in superblock */
 #define PR_4_DIR_NLINK_FEATURE		0x040006
+
+/* Directory ref count set to overflow but it doesn't have to be */
+#define PR_4_DIR_OVERFLOW_REF_COUNT	0x040007
 
 /*
  * Pass 5 errors
@@ -1263,6 +1313,35 @@ struct problem_context {
 /* Error updating quota information */
 #define PR_6_WRITE_QUOTAS		0x060006
 
+/* Orphan file without a journal */
+#define PR_6_ORPHAN_FILE_WITHOUT_JOURNAL	0x060007
+
+/* Orphan file truncation failed */
+#define PR_6_ORPHAN_FILE_TRUNC_FAILED	0x060008
+
+/* Failed to initialize orphan file */
+#define PR_6_ORPHAN_FILE_CORRUPTED	0x060009
+
+/* Cannot fix corrupted orphan file with invalid bitmaps */
+#define PR_6_ORPHAN_FILE_BITMAP_INVALID	0x06000A
+
+/* Orphan file creation failed */
+#define PR_6_ORPHAN_FILE_CREATE_FAILED	0x06000B
+
+/* Orphan file block contains data */
+#define PR_6_ORPHAN_BLOCK_DIRTY		0x06000C
+
+/* orphan_present set but orphan file is empty */
+#define PR_6_ORPHAN_PRESENT_CLEAN_FILE	0x06000D
+
+/* orphan_present set but orphan_file is not */
+#define PR_6_ORPHAN_PRESENT_NO_FILE	0x06000E
+
+/* Orphan file size isn't multiple of blocks size */
+#define PR_6_ORPHAN_FILE_WRONG_SIZE	0x06000F
+
+/* Orphan file contains holes */
+#define PR_6_ORPHAN_FILE_HOLE		0x060010
 
 /*
  * Function declarations

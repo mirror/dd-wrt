@@ -9,16 +9,13 @@ struct block_list {
 	FILE *f;
 	const char *mountpoint;
 
-	struct {
-		const char *filename;
-		struct block_range *head;
-		struct block_range *tail;
-	} entry;
+	const char *filename;
+	struct block_range_list blocks;
 };
 
 static void *init(const char *file, const char *mountpoint)
 {
-	struct block_list *params = malloc(sizeof(*params));
+	struct block_list *params = calloc(1, sizeof(*params));
 
 	if (!params)
 		return NULL;
@@ -37,8 +34,7 @@ static int start_new_file(char *path, ext2_ino_t ino EXT2FS_ATTR((unused)),
 {
 	struct block_list *params = data;
 
-	params->entry.head = params->entry.tail = NULL;
-	params->entry.filename = LINUX_S_ISREG(inode->i_mode) ? path : NULL;
+	params->filename = LINUX_S_ISREG(inode->i_mode) ? path : NULL;
 	return 0;
 }
 
@@ -47,9 +43,8 @@ static int add_block(ext2_filsys fs EXT2FS_ATTR((unused)), blk64_t blocknr,
 {
 	struct block_list *params = data;
 
-	if (params->entry.filename && !metadata)
-		add_blocks_to_range(&params->entry.head, &params->entry.tail,
-				    blocknr, blocknr);
+	if (params->filename && !metadata)
+		add_blocks_to_range(&params->blocks, blocknr, blocknr);
 	return 0;
 }
 
@@ -63,15 +58,15 @@ static int end_new_file(void *data)
 {
 	struct block_list *params = data;
 
-	if (!params->entry.filename || !params->entry.head)
+	if (!params->filename || !params->blocks.head)
 		return 0;
 	if (fprintf(params->f, "%s%s ", params->mountpoint,
-		    params->entry.filename) < 0
-	    || write_block_ranges(params->f, params->entry.head, " ")
+		    params->filename) < 0
+	    || write_block_ranges(params->f, params->blocks.head, " ")
 	    || fwrite("\n", 1, 1, params->f) != 1)
 		return -1;
 
-	delete_block_ranges(params->entry.head);
+	delete_block_ranges(&params->blocks);
 	return 0;
 }
 

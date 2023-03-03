@@ -1,11 +1,13 @@
 #!/bin/sh
 
-# old distros are missing "truncate", emulate it with "dd"
-truncate()
+# old distros are missing "truncate", emulate it with "dd" if necessary
+do_truncate()
 {
 	[ "$1" = "-s" ] && size=$2 && shift 2
 
-	dd if=/dev/zero of=$1 bs=1 count=0 seek=$size >> $LOG 2>&1
+	if ! truncate -s $size $1 >> $LOG 2>&1 ; then
+		dd if=/dev/zero of=$1 bs=1 count=0 seek=$size >> $LOG 2>&1
+	fi
 }
 
 resize_test () {
@@ -17,14 +19,14 @@ touch $TMPFILE
 
 # Verify that the $TMP filesystem handles $SIZE_2 sparse files.
 # If that fails, try the local filesystem instead.
-if truncate -s $SIZE_2 $TMPFILE 2> /dev/null; then
+if do_truncate -s $SIZE_2 $TMPFILE 2> /dev/null; then
 	echo "using $TMPFILE" >> $LOG
 else
 	rm $TMPFILE
 	export TMPFILE=$(mktemp ./$test_name.tmp.XXXXXX)
 	touch $TMPFILE
 	echo "using $TMPFILE" >> $LOG
-	if ! truncate -s $SIZE_2 $TMPFILE >> $LOG 2>&1; then
+	if ! do_truncate -s $SIZE_2 $TMPFILE >> $LOG 2>&1; then
 		rm $TMPFILE
 		return 111
 	fi
@@ -57,6 +59,14 @@ rm -f $OUT_TMP
 
 echo $FSCK -fy $TMPFILE >> $LOG 2>&1 
 $FSCK -fy $TMPFILE >> $LOG 2>&1 
+
+chmod u-w $TMPFILE
+echo $RESIZE2FS -P $TMPFILE >> $LOG 2>&1
+if ! $RESIZE2FS -P $TMPFILE >> $LOG 2>&1
+then
+	return 1
+fi
+chmod u+w $TMPFILE
 
 echo $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS $TMPFILE $SIZE_2 >> $LOG 2>&1
 if ! $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS $TMPFILE $SIZE_2 >> $LOG 2>&1

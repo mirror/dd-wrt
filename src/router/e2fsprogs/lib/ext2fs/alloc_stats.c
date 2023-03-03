@@ -62,7 +62,8 @@ void ext2fs_block_alloc_stats2(ext2_filsys fs, blk64_t blk, int inuse)
 {
 	int	group = ext2fs_group_of_blk2(fs, blk);
 
-	if (blk >= ext2fs_blocks_count(fs->super)) {
+	if (blk < fs->super->s_first_data_block ||
+	    blk >= ext2fs_blocks_count(fs->super)) {
 #ifndef OMIT_COM_ERR
 		com_err("ext2fs_block_alloc_stats", 0,
 			"Illegal block number: %lu", (unsigned long) blk);

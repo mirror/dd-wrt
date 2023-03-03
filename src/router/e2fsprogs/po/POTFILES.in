@@ -5,6 +5,7 @@ e2fsck/e2fsck.c
 e2fsck/ea_refcount.c
 e2fsck/ehandler.c
 e2fsck/emptydir.c
+e2fsck/encrypted_files.c
 e2fsck/extend.c
 e2fsck/extents.c
 e2fsck/flushb.c

@@ -223,8 +223,8 @@ out_dindir:
 	}
 out_inode:
 #ifdef RES_GDT_DEBUG
-	printf("inode.i_blocks = %u, i_size = %u\n", inode.i_blocks,
-	       inode.i_size);
+	printf("inode.i_blocks = %u, i_size = %lu\n", inode.i_blocks,
+	       EXT2_I_SIZE(&inode));
 #endif
 	if (inode_dirty) {
 		inode.i_atime = inode.i_mtime = fs->now ? fs->now : time(0);

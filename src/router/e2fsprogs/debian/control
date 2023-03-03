@@ -2,8 +2,9 @@ Source: e2fsprogs
 Section: admin
 Priority: required
 Maintainer: Theodore Y. Ts'o <tytso@mit.edu>
-Build-Depends: gettext, texinfo, pkg-config, libfuse-dev [linux-any kfreebsd-any] <!pkg.e2fsprogs.no-fuse2fs>, libattr1-dev, debhelper (>= 11.0), dh-exec, libblkid-dev, uuid-dev, m4, udev [linux-any], systemd [linux-any], cron [linux-any]
-Standards-Version: 4.4.0
+Build-Depends: gettext, texinfo, pkg-config, libfuse-dev [linux-any kfreebsd-any] <!pkg.e2fsprogs.no-fuse2fs>, debhelper-compat (= 12), dh-exec, libblkid-dev, uuid-dev, m4, udev [linux-any], systemd [linux-any], cron [linux-any]
+Rules-Requires-Root: no
+Standards-Version: 4.6.2
 Homepage: http://e2fsprogs.sourceforge.net
 Vcs-Browser: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
 Vcs-Git: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git -b debian/master
@@ -33,6 +34,7 @@ Description: save the output of a command in a log file
  of the output will also be written to standard output.
 
 Package: e2fsck-static
+Build-Profiles: <!pkg.e2fsprogs.no-static>
 Priority: optional
 Depends: ${misc:Depends}
 Recommends: sash | bash-static | zsh-static | busybox-static
@@ -61,15 +63,6 @@ Description: ext2/ext3/ext4 file system utilities - translations
  .
  This package provides translations for messages for programs found in
  the 'e2fsprogs' package.
-
-Package: libcomerr2
-Depends: libcom-err2, ${misc:Depends}
-Architecture: any
-Multi-Arch: same
-Priority: optional
-Section: oldlibs
-Description: transitional package to libcom-err2
- This is a transitional package to libcom-err2. It can safely be removed.
 
 Package: libcom-err2
 Section: libs
@@ -132,6 +125,7 @@ Description: command-line interface parsing library - headers and static librari
  This package contains the development environment for the ss library.
 
 Package: e2fsprogs-udeb
+Build-Profiles: <!noudeb>
 Package-Type: udeb
 Section: debian-installer
 Priority: optional
@@ -143,23 +137,6 @@ Description: stripped-down versions of e2fsprogs, for debian-installer
  .
  Don't attempt to install this package, it has no support for a couple of
  features you surely want.  Anyway it should refuse to install.
-
-Package: e2fslibs
-Depends: libext2fs2, ${misc:Depends}
-Architecture: any
-Multi-Arch: same
-Priority: optional
-Section: oldlibs
-Description: transitional package to libext2fs2
- This is a transitional package to libext2fs2. It can safely be removed.
-
-Package: e2fslibs-dev
-Depends: libext2fs-dev, ${misc:Depends}
-Architecture: all
-Priority: optional
-Section: oldlibs
-Description: transitional package to libext2fs-dev
- This is a transitional package to libext2fs-dev. It can safely be removed.
 
 Package: libext2fs2
 Section: libs

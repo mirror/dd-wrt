@@ -28,14 +28,14 @@ Change in FS metadata:
  Default mount options:    user_xattr acl
  Filesystem state:         clean
  Errors behavior:          Continue
-@@ -33,7 +33,6 @@
+@@ -34,7 +34,6 @@
  Journal inode:            8
  Default directory hash:   half_md4
  Journal backup:           inode blocks
 -Checksum type:            crc32c
  Journal features:         (none)
- Journal size:             16M
- Journal length:           16384
+ Total journal size:       16M
+ Total journal blocks:     16384
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity

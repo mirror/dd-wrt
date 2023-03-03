@@ -3003,7 +3003,7 @@ int utf8cursor(struct utf8cursor *u8c, struct tree *tree, const char *s)
 /*
  * Get one byte from the normalized form of the string described by u8c.
  *
- * Returns the byte cast to an unsigned char on succes, and -1 on failure.
+ * Returns the byte cast to an unsigned char on success, and -1 on failure.
  *
  * The cursor keeps track of the location in the string in u8c->s.
  * When a character is decomposed, the current location is stored in

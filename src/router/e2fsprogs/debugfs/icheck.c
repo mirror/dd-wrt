@@ -159,10 +159,12 @@ void do_icheck(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	printf("Block\tInode number\n");
 	for (i=0, binfo = bw.barray; i < bw.num_blocks; i++, binfo++) {
 		if (binfo->ino == 0) {
-			printf("%llu\t<block not found>\n", binfo->blk);
+			printf("%llu\t<block not found>\n",
+			       (unsigned long long) binfo->blk);
 			continue;
 		}
-		printf("%llu\t%u\n", binfo->blk, binfo->ino);
+		printf("%llu\t%u\n", (unsigned long long) binfo->blk,
+		       binfo->ino);
 	}
 
 error_out:

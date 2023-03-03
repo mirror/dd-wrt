@@ -90,7 +90,7 @@ static void delete_file(e2fsck_t ctx, ext2_ino_t ino,
 			struct dup_inode *dp, char *block_buf);
 static errcode_t clone_file(e2fsck_t ctx, ext2_ino_t ino,
 			    struct dup_inode *dp, char* block_buf);
-static int check_if_fs_block(e2fsck_t ctx, blk64_t test_block);
+static int check_if_fs_block(e2fsck_t ctx, blk64_t block);
 static int check_if_fs_cluster(e2fsck_t ctx, blk64_t cluster);
 
 static void pass1b(e2fsck_t ctx, char *block_buf);
@@ -104,7 +104,8 @@ static dict_t clstr_dict, ino_dict;
 
 static ext2fs_inode_bitmap inode_dup_map;
 
-static int dict_int_cmp(const void *a, const void *b)
+static int dict_int_cmp(const void *cmp_ctx EXT2FS_ATTR((unused)),
+			const void *a, const void *b)
 {
 	intptr_t	ia, ib;
 
@@ -180,10 +181,10 @@ static void inode_dnode_free(dnode_t *node,
 	di = (struct dup_inode *) dnode_get(node);
 	for (p = di->cluster_list; p; p = next) {
 		next = p->next;
-		free(p);
+		ext2fs_free_mem(&p);
 	}
-	free(di);
-	free(node);
+	ext2fs_free_mem(&di);
+	ext2fs_free_mem(&node);
 }
 
 /*
@@ -198,10 +199,10 @@ static void cluster_dnode_free(dnode_t *node,
 	dc = (struct dup_cluster *) dnode_get(node);
 	for (p = dc->inode_list; p; p = next) {
 		next = p->next;
-		free(p);
+		ext2fs_free_mem(&p);
 	}
-	free(dc);
-	free(node);
+	ext2fs_free_mem(&dc);
+	ext2fs_free_mem(&node);
 }
 
 
@@ -670,7 +671,7 @@ static int delete_file_block(ext2_filsys fs,
 		} else
 			com_err("delete_file_block", 0,
 			    _("internal error: can't find dup_blk for %llu\n"),
-				*block_nr);
+				(unsigned long long) *block_nr);
 	} else {
 		if ((*block_nr % EXT2FS_CLUSTER_RATIO(ctx->fs)) == 0)
 			ext2fs_block_alloc_stats2(fs, *block_nr, -1);
@@ -705,6 +706,10 @@ static void delete_file(e2fsck_t ctx, ext2_ino_t ino,
 		fix_problem(ctx, PR_1B_BLOCK_ITERATE, &pctx);
 	if (ctx->inode_bad_map)
 		ext2fs_unmark_inode_bitmap2(ctx->inode_bad_map, ino);
+	if (ctx->inode_reg_map)
+		ext2fs_unmark_inode_bitmap2(ctx->inode_reg_map, ino);
+	ext2fs_unmark_inode_bitmap2(ctx->inode_dir_map, ino);
+	ext2fs_unmark_inode_bitmap2(ctx->inode_used_map, ino);
 	ext2fs_inode_alloc_stats2(fs, ino, -1, LINUX_S_ISDIR(dp->inode.i_mode));
 	quota_data_sub(ctx->qctx, &dp->inode, ino,
 		       pb.dup_blocks * fs->blocksize);
@@ -810,8 +815,6 @@ static int clone_file_block(ext2_filsys fs,
 		should_write = 0;
 
 	c = EXT2FS_B2C(fs, blockcnt);
-	if (check_if_fs_cluster(ctx, EXT2FS_B2C(fs, *block_nr)))
-		is_meta = 1;
 
 	if (c == cs->dup_cluster && cs->alloc_block) {
 		new_block = cs->alloc_block;
@@ -824,7 +827,7 @@ static int clone_file_block(ext2_filsys fs,
 		if (!n) {
 			com_err("clone_file_block", 0,
 			    _("internal error: can't find dup_blk for %llu\n"),
-				*block_nr);
+				(unsigned long long) *block_nr);
 			return 0;
 		}
 
@@ -874,7 +877,8 @@ cluster_alloc_ok:
 		}
 #if 0
  		printf("Cloning block #%lld from %llu to %llu\n",
-		       blockcnt, *block_nr, new_block);
+		       blockcnt, (unsigned long long) *block_nr,
+		       (unsigned long long) new_block);
 #endif
 		retval = io_channel_read_blk64(fs->io, *block_nr, 1, cs->buf);
 		if (retval) {
@@ -888,6 +892,8 @@ cluster_alloc_ok:
 				return BLOCK_ABORT;
 			}
 		}
+		if (check_if_fs_cluster(ctx, EXT2FS_B2C(fs, *block_nr)))
+			is_meta = 1;
 		cs->save_dup_cluster = (is_meta ? NULL : p);
 		cs->save_blocknr = *block_nr;
 		*block_nr = new_block;
@@ -974,7 +980,8 @@ static errcode_t clone_file(e2fsck_t ctx, ext2_ino_t ino,
 		if (!n) {
 			com_err("clone_file", 0,
 				_("internal error: couldn't lookup EA "
-				  "block record for %llu"), blk);
+				  "block record for %llu"),
+				(unsigned long long) blk);
 			retval = 0; /* OK to stumble on... */
 			goto errout;
 		}
@@ -1014,37 +1021,9 @@ errout:
  * This routine returns 1 if a block overlaps with one of the superblocks,
  * group descriptors, inode bitmaps, or block bitmaps.
  */
-static int check_if_fs_block(e2fsck_t ctx, blk64_t test_block)
+static int check_if_fs_block(e2fsck_t ctx, blk64_t block)
 {
-	ext2_filsys fs = ctx->fs;
-	blk64_t	first_block;
-	dgrp_t	i;
-
-	first_block = fs->super->s_first_data_block;
-	for (i = 0; i < fs->group_desc_count; i++) {
-
-		/* Check superblocks/block group descriptors */
-		if (ext2fs_bg_has_super(fs, i)) {
-			if (test_block >= first_block &&
-			    (test_block <= first_block + fs->desc_blocks))
-				return 1;
-		}
-
-		/* Check the inode table */
-		if ((ext2fs_inode_table_loc(fs, i)) &&
-		    (test_block >= ext2fs_inode_table_loc(fs, i)) &&
-		    (test_block < (ext2fs_inode_table_loc(fs, i) +
-				   fs->inode_blocks_per_group)))
-			return 1;
-
-		/* Check the bitmap blocks */
-		if ((test_block == ext2fs_block_bitmap_loc(fs, i)) ||
-		    (test_block == ext2fs_inode_bitmap_loc(fs, i)))
-			return 1;
-
-		first_block += fs->super->s_blocks_per_group;
-	}
-	return 0;
+	return ext2fs_test_block_bitmap2(ctx->block_metadata_map, block);
 }
 
 /*
@@ -1054,37 +1033,14 @@ static int check_if_fs_block(e2fsck_t ctx, blk64_t test_block)
 static int check_if_fs_cluster(e2fsck_t ctx, blk64_t cluster)
 {
 	ext2_filsys fs = ctx->fs;
-	blk64_t	first_block;
-	dgrp_t	i;
+	blk64_t	block = EXT2FS_C2B(fs, cluster);
+	int i;
 
-	first_block = fs->super->s_first_data_block;
-	for (i = 0; i < fs->group_desc_count; i++) {
-
-		/* Check superblocks/block group descriptors */
-		if (ext2fs_bg_has_super(fs, i)) {
-			if (cluster >= EXT2FS_B2C(fs, first_block) &&
-			    (cluster <= EXT2FS_B2C(fs, first_block +
-						   fs->desc_blocks)))
-				return 1;
-		}
-
-		/* Check the inode table */
-		if ((ext2fs_inode_table_loc(fs, i)) &&
-		    (cluster >= EXT2FS_B2C(fs,
-					   ext2fs_inode_table_loc(fs, i))) &&
-		    (cluster <= EXT2FS_B2C(fs,
-					   ext2fs_inode_table_loc(fs, i) +
-					   fs->inode_blocks_per_group - 1)))
+	for (i = 0; i < EXT2FS_CLUSTER_RATIO(fs); i++) {
+		if (ext2fs_test_block_bitmap2(ctx->block_metadata_map,
+					      block + i))
 			return 1;
-
-		/* Check the bitmap blocks */
-		if ((cluster == EXT2FS_B2C(fs,
-					   ext2fs_block_bitmap_loc(fs, i))) ||
-		    (cluster == EXT2FS_B2C(fs,
-					   ext2fs_inode_bitmap_loc(fs, i))))
-			return 1;
-
-		first_block += fs->super->s_blocks_per_group;
 	}
+
 	return 0;
 }

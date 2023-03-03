@@ -1,4 +1,5 @@
 tune2fs metadata_csum test
+128-byte inodes cannot handle dates beyond 2038 and are deprecated
 Creating filesystem with 524288 1k blocks and 65536 inodes
 Superblock backups stored on blocks: 
 	8193, 24577, 40961, 57345, 73729, 204801, 221185, 401409
@@ -31,15 +32,15 @@ Change in FS metadata:
  Default mount options:    user_xattr acl
  Filesystem state:         clean
  Errors behavior:          Continue
-@@ -29,6 +29,7 @@
+@@ -30,6 +30,7 @@
  Journal inode:            8
  Default directory hash:   half_md4
  Journal backup:           inode blocks
 +Checksum type:            crc32c
  Journal features:         (none)
- Journal size:             16M
- Journal length:           16384
-@@ -36,7 +37,7 @@
+ Total journal size:       16M
+ Total journal blocks:     16384
+@@ -39,7 +40,7 @@
  Journal start:            0
  
  
@@ -48,7 +49,7 @@ Change in FS metadata:
    Primary superblock at 1, Group descriptors at 2-3
    Reserved GDT blocks at 4-259
    Block bitmap at 260 (+259)
-@@ -45,7 +46,7 @@
+@@ -48,7 +49,7 @@
    0 free blocks, 1013 free inodes, 2 directories
    Free blocks: 
    Free inodes: 12-1024
@@ -57,7 +58,7 @@ Change in FS metadata:
    Backup superblock at 8193, Group descriptors at 8194-8195
    Reserved GDT blocks at 8196-8451
    Block bitmap at 8452 (+259)
-@@ -54,6 +55,6 @@
+@@ -57,6 +58,6 @@
    0 free blocks, 1024 free inodes, 0 directories
    Free blocks: 
    Free inodes: 1025-2048

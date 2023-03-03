@@ -7,8 +7,7 @@
 
 struct basefs_entry {
 	char *path;
-	struct block_range *head;
-	struct block_range *tail;
+	struct block_range_list blocks;
 };
 
 extern struct fsmap_format base_fs_format;

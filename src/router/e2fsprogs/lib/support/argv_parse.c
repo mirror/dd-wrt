@@ -116,6 +116,8 @@ int argv_parse(char *in_buf, int *ret_argc, char ***ret_argv)
 	if (argv == 0) {
 		argv = malloc(sizeof(char *));
 		free(buf);
+		if (!argv)
+			return -1;
 	}
 	argv[argc] = 0;
 	if (ret_argc)

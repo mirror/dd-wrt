@@ -32,7 +32,7 @@ static void alloc_string(struct string *s, int len)
 {
 	s->s = malloc(len);
 /* e2fsck_allocate_memory(ctx, len, "logfile name"); */
-	s->len = len;
+	s->len = s->s ? len : 0;
 	s->end = 0;
 }
 
@@ -154,6 +154,9 @@ static void expand_percent_expression(e2fsck_t ctx, char ch,
 		break;
 	case 'Y':
 		sprintf(buf, "%d", tm->tm_year + 1900);
+		break;
+	default:
+		sprintf(buf, "%%%c", ch);
 		break;
 	}
 	append_string(s, buf, 0);
@@ -353,7 +356,7 @@ void set_up_logging(e2fsck_t ctx)
 					    ctx->problem_log_fn);
 }
 #else
-void *e2fsck_allocate_memory(e2fsck_t ctx, unsigned int size,
+void *e2fsck_allocate_memory(e2fsck_t ctx, unsigned long size,
 			     const char *description)
 {
 	void *ret;

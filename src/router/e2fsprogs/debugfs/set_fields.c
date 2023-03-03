@@ -160,7 +160,7 @@ static struct field_set_info super_fields[] = {
 	{ "usr_quota_inum", &set_sb.s_usr_quota_inum, NULL, 4, parse_uint },
 	{ "grp_quota_inum", &set_sb.s_grp_quota_inum, NULL, 4, parse_uint },
 	{ "prj_quota_inum", &set_sb.s_prj_quota_inum, NULL, 4, parse_uint },
-	{ "overhead_blocks", &set_sb.s_overhead_blocks, NULL, 4, parse_uint },
+	{ "overhead_clusters", &set_sb.s_overhead_clusters, NULL, 4, parse_uint },
 	{ "backup_bgs", &set_sb.s_backup_bgs[0], NULL, 4, parse_uint,
 	  FLAG_ARRAY, 2 },
 	{ "checksum", &set_sb.s_checksum, NULL, 4, parse_uint },
@@ -183,6 +183,7 @@ static struct field_set_info super_fields[] = {
 	{ "lpf_ino", &set_sb.s_lpf_ino, NULL, 4, parse_uint },
 	{ "checksum_seed", &set_sb.s_checksum_seed, NULL, 4, parse_uint },
 	{ "encoding", &set_sb.s_encoding, NULL, 2, parse_encoding },
+	{ "orphan_file_inum", &set_sb.s_orphan_file_inum, NULL, 4, parse_uint },
 	{ 0, 0, 0, 0 }
 };
 
@@ -487,10 +488,7 @@ static errcode_t parse_uint(struct field_set_info *info, char *field,
 	n = num & mask;
 	switch (size) {
 	case 8:
-		/* Should never get here */
-		fprintf(stderr, "64-bit field %s has a second 64-bit field\n"
-			"defined; BUG?!?\n", info->name);
-		*u.ptr64 = 0;
+		*u.ptr64 = n;
 		break;
 	case 4:
 		*u.ptr32 = n;
@@ -510,7 +508,10 @@ static errcode_t parse_uint(struct field_set_info *info, char *field,
 		size = 2;
 	switch (size) {
 	case 8:
-		*u.ptr64 = n;
+		/* Should never get here */
+		fprintf(stderr, "64-bit field %s has a second 64-bit field\n"
+			"defined; BUG?!?\n", info->name);
+		*u.ptr64 = 0;
 		break;
 	case 4:
 		*u.ptr32 = n;

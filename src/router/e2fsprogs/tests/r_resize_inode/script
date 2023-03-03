@@ -14,8 +14,11 @@ dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 echo mke2fs -q -F -O resize_inode -o Linux -b 1024 -g 1024 test.img 16384 > $OUT.new
 $MKE2FS -q -F -O resize_inode -o Linux -b 1024 -g 1024 $TMPFILE 16384 >> $OUT.new 2>&1
 
-echo resize2fs test.img 65536 >> $OUT.new
-$RESIZE2FS $TMPFILE 65536 >> $OUT.new 2>&1
+echo dumpe2fs test.img >> $OUT.new
+$DUMPE2FS $TMPFILE >> $OUT.new 2>&1
+
+echo resize2fs -p test.img 65536 >> $OUT.new
+$RESIZE2FS -p $TMPFILE 65536 >> $OUT.new 2>&1
 
 $FSCK $FSCK_OPT  -N test_filesys $TMPFILE >> $OUT.new 2>&1
 status=$?
@@ -36,8 +39,11 @@ dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 echo mke2fs -q -F -O resize_inode -o Linux -b 1024 -g 1024 test.img 65536 >> $OUT.new
 $MKE2FS -q -F -O resize_inode -o Linux -b 1024 -g 1024 $TMPFILE 65536 >> $OUT.new 2>&1
 
-echo resize2fs test.img 16384 >> $OUT.new
-$RESIZE2FS $TMPFILE 16384 >> $OUT.new 2>&1
+echo dumpe2fs test.img >> $OUT.new
+$DUMPE2FS $TMPFILE >> $OUT.new 2>&1
+
+echo resize2fs -p test.img 16384 >> $OUT.new
+$RESIZE2FS -p $TMPFILE 16384 >> $OUT.new 2>&1
 
 $FSCK $FSCK_OPT  -N test_filesys $TMPFILE >> $OUT.new 2>&1
 status=$?
@@ -53,8 +59,8 @@ $DUMPE2FS $TMPFILE >> $OUT.new 2>&1
 
 echo "--------------------------------" >> $OUT.new
 
-echo resize2fs test.img 165536 >> $OUT.new
-$RESIZE2FS $TMPFILE 165536 >> $OUT.new 2>&1
+echo resize2fs -p test.img 165536 >> $OUT.new
+$RESIZE2FS -p $TMPFILE 165536 >> $OUT.new 2>&1
 
 $FSCK $FSCK_OPT  -N test_filesys $TMPFILE >> $OUT.new 2>&1
 status=$?

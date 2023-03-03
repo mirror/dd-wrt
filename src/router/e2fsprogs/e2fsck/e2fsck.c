@@ -75,6 +75,10 @@ errcode_t e2fsck_reset_context(e2fsck_t ctx)
 		ext2fs_free_block_bitmap(ctx->block_found_map);
 		ctx->block_found_map = 0;
 	}
+	if (ctx->inode_casefold_map) {
+		ext2fs_free_block_bitmap(ctx->inode_casefold_map);
+		ctx->inode_casefold_map = 0;
+	}
 	if (ctx->inode_link_info) {
 		ext2fs_free_icount(ctx->inode_link_info);
 		ctx->inode_link_info = 0;
@@ -138,6 +142,7 @@ errcode_t e2fsck_reset_context(e2fsck_t ctx)
 		ext2fs_u32_list_free(ctx->dirs_to_hash);
 		ctx->dirs_to_hash = 0;
 	}
+	destroy_encrypted_file_info(ctx);
 
 	/*
 	 * Clear the array of invalid meta-data flags
@@ -154,9 +159,9 @@ errcode_t e2fsck_reset_context(e2fsck_t ctx)
 		ext2fs_free_mem(&ctx->invalid_inode_table_flag);
 		ctx->invalid_inode_table_flag = 0;
 	}
-	if (ctx->encrypted_dirs) {
-		ext2fs_u32_list_free(ctx->encrypted_dirs);
-		ctx->encrypted_dirs = 0;
+	if (ctx->casefolded_dirs) {
+		ext2fs_u32_list_free(ctx->casefolded_dirs);
+		ctx->casefolded_dirs = 0;
 	}
 	if (ctx->inode_count) {
 		ext2fs_free_icount(ctx->inode_count);
@@ -181,6 +186,7 @@ errcode_t e2fsck_reset_context(e2fsck_t ctx)
 	ctx->fs_fragmented = 0;
 	ctx->fs_fragmented_dir = 0;
 	ctx->large_files = 0;
+	ctx->large_dirs = 0;
 
 	for (i=0; i < MAX_EXTENT_DEPTH_COUNT; i++)
 		ctx->extent_depth_count[i] = 0;

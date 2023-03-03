@@ -185,7 +185,7 @@ static void sha512_done(struct hash_state * md, unsigned char *out)
 		md->sha512.curlen = 0;
 	}
 
-	/* pad upto 120 bytes of zeroes note: that from 112 to 120 is the 64 MSB
+	/* pad up to 120 bytes of zeroes note: that from 112 to 120 is the 64 MSB
 	 * of the length. We assume that you won't hash > 2^64 bits of data. */
 	while (md->sha512.curlen < 120) {
 		md->sha512.buf[md->sha512.curlen++] = (unsigned char)0;

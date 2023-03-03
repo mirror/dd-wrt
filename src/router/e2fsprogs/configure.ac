@@ -1,8 +1,10 @@
-AC_INIT(version.h)
-AC_PREREQ(2.54)
+AC_INIT
+AC_CONFIG_SRCDIR([version.h])
+AC_PREREQ([2.71])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS([lib/config.h])
 AH_BOTTOM([#include <dirpaths.h>])
+AC_USE_SYSTEM_EXTENSIONS
 MCONFIG=./MCONFIG
 AC_SUBST_FILE(MCONFIG)
 BINARY_TYPE=bin
@@ -69,7 +71,7 @@ dnl Use diet libc
 dnl 
 WITH_DIET_LIBC=
 AC_ARG_WITH([diet-libc],
-[  --with-diet-libc        use diet libc],
+AS_HELP_STRING([--with-diet-libc],[use diet libc]),
 CC="diet cc -nostdinc"
 WITH_DIET_LIBC=yes
 if test -z "$LIBS"
@@ -89,15 +91,15 @@ AC_CHECK_LIB(dl, dlopen,DLOPEN_LIB=-ldl)
 AC_SUBST(DLOPEN_LIB)
 dnl
 AC_ARG_WITH([cc],
-AC_HELP_STRING([--with-cc],[no longer supported, use CC= instead]),
+AS_HELP_STRING([--with-cc],[no longer supported, use CC= instead]),
 AC_MSG_ERROR([--with-cc no longer supported; use CC= instead]))
 dnl
 AC_ARG_WITH([ccopts],
-AC_HELP_STRING([--with-ccopts],[no longer supported, use CFLAGS= instead]),
+AS_HELP_STRING([--with-ccopts],[no longer supported, use CFLAGS= instead]),
 AC_MSG_ERROR([--with-ccopts no longer supported; use CFLAGS= instead]))
 dnl
 AC_ARG_WITH([ldopts],
-AC_HELP_STRING([--with-ldopts],[no longer supported, use LDFLAGS= instead]),
+AS_HELP_STRING([--with-ldopts],[no longer supported, use LDFLAGS= instead]),
 AC_MSG_ERROR([--with-ldopts no longer supported; use LDFLAGS= instead]))
 dnl
 AC_PROG_CC
@@ -123,7 +125,6 @@ then
 else
     AC_MSG_RESULT([[(none)]])
 fi
-AC_USE_SYSTEM_EXTENSIONS
 dnl
 dnl Set default values for library extensions.  Will be dealt with after
 dnl parsing configuration options, which may modify these
@@ -135,14 +136,14 @@ dnl
 dnl Allow separate `root_prefix' to be specified
 dnl
 AC_ARG_WITH([root-prefix],
-[  --with-root-prefix=PREFIX override prefix variable for files to be placed in the root],
+AS_HELP_STRING([--with-root-prefix=PREFIX],[override prefix variable for files to be placed in the root]),
 root_prefix=$withval,
 root_prefix=NONE)dnl
 dnl
 dnl handle --enable-maintainer-mode
 dnl
 AC_ARG_ENABLE([maintainer-mode],
-[  --enable-maintainer-mode enable makefile rules useful for maintainers],
+AS_HELP_STRING([--enable-maintainer-mode],[enable makefile rules useful for maintainers]),
 if test "$enableval" = "no"
 then
 	MAINTAINER_CMT=#
@@ -160,7 +161,7 @@ dnl
 dnl handle --enable-symlink-install
 dnl
 AC_ARG_ENABLE([symlink-install],
-[  --enable-symlink-install use symlinks when installing instead of hard links],
+AS_HELP_STRING([--enable-symlink-install],[use symlinks when installing instead of hard links]),
 if test "$enableval" = "no"
 then
 	LINK_INSTALL_FLAGS=-f
@@ -179,7 +180,7 @@ dnl handle --enable-relative-symlinks
 dnl
 relative_symlink_defined=
 AC_ARG_ENABLE([relative-symlinks],
-[  --enable-relative-symlinks use relative symlinks when installing],
+AS_HELP_STRING([--enable-relative-symlinks],[use relative symlinks when installing]),
 if test "$enableval" = "no"
 then
 	SYMLINK_RELATIVE=
@@ -211,7 +212,7 @@ dnl
 dnl handle --enable-symlink-build
 dnl
 AC_ARG_ENABLE([symlink-build],
-[  --enable-symlink-build  use symlinks while building instead of hard links],
+AS_HELP_STRING([--enable-symlink-build],[use symlinks while building instead of hard links]),
 if test "$enableval" = "no"
 then
 	LINK_BUILD_FLAGS=
@@ -229,7 +230,7 @@ dnl
 dnl handle --enable-verbose-makecmds
 dnl
 AC_ARG_ENABLE([verbose-makecmds],
-[  --enable-verbose-makecmds enable verbose make command output],
+AS_HELP_STRING([--enable-verbose-makecmds],[enable verbose make command output]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling verbose make commands])
@@ -261,7 +262,7 @@ dnl
 dnl handle --enable-elf-shlibs
 dnl
 AC_ARG_ENABLE([elf-shlibs],
-[  --enable-elf-shlibs	  select ELF shared libraries],
+AS_HELP_STRING([--enable-elf-shlibs],[select ELF shared libraries]),
 if test "$enableval" = "no"
 then
 	ELF_CMT=#
@@ -293,7 +294,7 @@ dnl
 dnl handle --enable-bsd-shlibs
 dnl
 AC_ARG_ENABLE([bsd-shlibs],
-[  --enable-bsd-shlibs	  select BSD shared libraries],
+AS_HELP_STRING([--enable-bsd-shlibs],[select BSD shared libraries]),
 if test "$enableval" = "no"
 then
 	BSDLIB_CMT=#
@@ -323,7 +324,7 @@ dnl
 dnl handle --enable-profile
 dnl
 AC_ARG_ENABLE([profile],
-[  --enable-profile	  build profiling libraries],
+AS_HELP_STRING([--enable-profile],[build profiling libraries]),
 if test "$enableval" = "no"
 then
 	PROFILE_CMT=#
@@ -346,7 +347,7 @@ dnl
 dnl handle --enable-gcov
 dnl
 AC_ARG_ENABLE([gcov],
-[  --enable-gcov	  	  build for coverage testing using gcov],
+AS_HELP_STRING([--enable-gcov],[build for coverage testing using gcov]),
 if test "$enableval" = "yes"
 then
 	CFLAGS="-g -fprofile-arcs -ftest-coverage"
@@ -362,7 +363,7 @@ CFLAGS_STLIB="${CFLAGS_STLIB:-$CFLAGS}"
 LDFLAGS_SHLIB=${LDFLAGS_SHLIB:-$LDFLAGS}
 LDFLAGS_STATIC=${LDFLAGS_STATIC:-$LDFLAGS}
 AC_ARG_ENABLE([hardening],
-[  --enable-hardening	  	  build for coverage testing using gcov],
+AS_HELP_STRING([--enable-hardening],[build for coverage testing using gcov]),
 if test "$enableval" = "yes"
 then
 	HARDEN_CFLAGS="-D_FORTIFY_SOURCE=2 -fstack-protector-strong"
@@ -388,7 +389,7 @@ dnl
 dnl handle --enable-jbd-debug
 dnl
 AC_ARG_ENABLE([jbd-debug],
-[  --enable-jbd-debug  	  enable journal debugging],
+AS_HELP_STRING([--enable-jbd-debug],[enable journal debugging]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling journal debugging])
@@ -404,7 +405,7 @@ dnl
 dnl handle --enable-blkid-debug
 dnl
 AC_ARG_ENABLE([blkid-debug],
-[  --enable-blkid-debug    enable blkid debugging],
+AS_HELP_STRING([--enable-blkid-debug],[enable blkid debugging]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling blkid debugging])
@@ -420,7 +421,7 @@ dnl
 dnl handle --enable-testio-debug
 dnl
 AC_ARG_ENABLE([testio-debug],
-[  --disable-testio-debug  disable the use of the test I/O manager for debugging],
+AS_HELP_STRING([--disable-testio-debug],[disable the use of the test I/O manager for debugging]),
 AH_TEMPLATE([CONFIG_TESTIO_DEBUG],
 	[Define to 1 if the testio I/O manager should be enabled])
 if test "$enableval" = "no"
@@ -439,6 +440,27 @@ TEST_IO_CMT=
 )
 AC_SUBST(TEST_IO_CMT)
 dnl
+dnl handle --enable-developer-features
+dnl
+AC_ARG_ENABLE([developer-features],
+AS_HELP_STRING([--enable-developer-features],[enable features for use by ext4 developers]),
+AH_TEMPLATE([CONFIG_DEVELOPER_FEATURES],
+	[Define to 1 for features for use by ext4 developers])
+if test "$enableval" = "yes"
+then
+	DEV_FEATURES_CMT=
+	AC_DEFINE(CONFIG_DEVELOPER_FEATURES, 1)
+	AC_MSG_RESULT([Enabling ext4 developer features])
+else
+	AC_MSG_RESULT([Disabling ext4 developer features])
+	DEV_FEATURES_CMT="#"
+fi
+,
+AC_MSG_RESULT([Disabling ext4 developer features by default])
+DEV_FEATURES_CMT=
+)
+AC_SUBST(DEV_FEATURES_CMT)
+dnl
 dnl handle --disable-libuuid
 dnl
 PKG_PROG_PKG_CONFIG
@@ -450,7 +472,7 @@ PROFILED_LIBUUID=
 DEPPROFILED_LIBUUID=
 UUID_CMT=
 AC_ARG_ENABLE([libuuid],
-[  --enable-libuuid	  build and use private uuid library],
+AS_HELP_STRING([--enable-libuuid],[build and use private uuid library]),
 if test "$enableval" = "no"
 then
 	if test -z "$PKG_CONFIG"; then
@@ -513,7 +535,7 @@ DEPPROFILED_LIBBLKID=
 BLKID_CMT=
 AH_TEMPLATE([CONFIG_BUILD_FINDFS], [Define to 1 to compile findfs])
 AC_ARG_ENABLE([libblkid],
-[  --enable-libblkid	  build and use private blkid library],
+AS_HELP_STRING([--enable-libblkid],[build and use private blkid library]),
 if test "$enableval" = "no"
 then
 	if test -z "$PKG_CONFIG"; then
@@ -571,7 +593,7 @@ dnl
 ALL_CMT=
 SUBSET_CMT=
 AC_ARG_ENABLE([subset],
-[  --enable-subset  	  enable subset-only build],
+AS_HELP_STRING([--enable-subset],[enable subset-only build]),
 if test "$enableval" = "no"
 then
 	SUBSET_CMT=#
@@ -588,7 +610,7 @@ dnl handle --disable-backtrace
 dnl
 AH_TEMPLATE([DISABLE_BACKTRACE], [Define to 1 to disable use of backtrace])
 AC_ARG_ENABLE([backtrace],
-[  --disable-backtrace	  disable use backtrace],
+AS_HELP_STRING([--disable-backtrace],[disable use backtrace]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling use of backtrace])
@@ -603,7 +625,7 @@ dnl
 dnl handle --enable-debugfs
 dnl
 AC_ARG_ENABLE([debugfs],
-[  --disable-debugfs   	  disable support of debugfs program],
+AS_HELP_STRING([--disable-debugfs],[disable support of debugfs program]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling debugfs support])
@@ -621,7 +643,7 @@ dnl
 dnl handle --enable-imager
 dnl
 AC_ARG_ENABLE([imager],
-[  --disable-imager   	  disable support of e2image program],
+AS_HELP_STRING([--disable-imager],[disable support of e2image program]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling e2image support])
@@ -639,7 +661,7 @@ dnl
 dnl handle --enable-resizer
 dnl
 AC_ARG_ENABLE([resizer],
-[  --disable-resizer   	  disable support of e2resize program],
+AS_HELP_STRING([--disable-resizer],[disable support of e2resize program]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling e2resize support])
@@ -657,7 +679,7 @@ dnl
 dnl handle --enable-defrag
 dnl
 AC_ARG_ENABLE([defrag],
-[  --disable-defrag   	  disable support of e4defrag program],
+AS_HELP_STRING([--disable-defrag],[disable support of e4defrag program]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling e4defrag support])
@@ -681,7 +703,7 @@ dnl
 dnl See whether to install the `fsck' wrapper program (that calls e2fsck)
 dnl
 AC_ARG_ENABLE([fsck],
-[  --enable-fsck           build fsck wrapper program],
+AS_HELP_STRING([--enable-fsck],[build fsck wrapper program]),
 [if test "$enableval" = "no"
 then
 	FSCK_PROG='' FSCK_MAN=''
@@ -707,7 +729,7 @@ dnl
 dnl See whether to install the `e2initrd-helper' program
 dnl
 AC_ARG_ENABLE([e2initrd-helper],
-[  --enable-e2initrd-helper build e2initrd-helper program],
+AS_HELP_STRING([--enable-e2initrd-helper],[build e2initrd-helper program]),
 [if test "$enableval" = "no"
 then
 	E2INITRD_PROG='' E2INITRD_MAN=''
@@ -726,7 +748,7 @@ dnl
 dnl
 dnl
 AC_ARG_ENABLE([tls],
-[  --disable-tls           disable use of thread local support],
+AS_HELP_STRING([--disable-tls],[disable use of thread local support]),
 [if test "$enableval" = "no"
 then
 	try_tls=""
@@ -752,9 +774,33 @@ fi
 dnl
 dnl
 dnl
+AC_ARG_WITH([pthread],
+AS_HELP_STRING([--without-pthread],[disable use of pthread support]),
+[if test "$withval" = "no"
+then
+	try_pthread=""
+	AC_MSG_RESULT([Disabling pthread support])
+else
+	try_pthread="yes"
+	AC_MSG_RESULT([Testing for pthread support])
+fi]
+,
+try_pthread="yes"
+AC_MSG_RESULT([Try testing for pthread support by default])
+)
+if test "$try_pthread" = "yes"
+then
+AX_PTHREAD
+else
+test -n "$PTHREAD_CC" || PTHREAD_CC="$CC"
+AC_SUBST([PTHREAD_CC])
+fi
+dnl
+dnl
+dnl
 AH_TEMPLATE([USE_UUIDD], [Define to 1 to build uuidd])
 AC_ARG_ENABLE([uuidd],
-[  --disable-uuidd         disable building the uuid daemon],
+AS_HELP_STRING([--disable-uuidd],[disable building the uuid daemon]),
 [if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Not building uuidd])
@@ -781,7 +827,7 @@ dnl handle --disable-mmp
 dnl
 AH_TEMPLATE([CONFIG_MMP], [Define to 1 to enable mmp support])
 AC_ARG_ENABLE([mmp],
-[  --disable-mmp           disable support mmp, Multi Mount Protection],
+AS_HELP_STRING([--disable-mmp],[disable support mmp, Multi Mount Protection]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling mmp support])
@@ -798,24 +844,40 @@ dnl handle --disable-tdb
 dnl
 AH_TEMPLATE([CONFIG_TDB], [Define to 1 to enable tdb support])
 AC_ARG_ENABLE([tdb],
-[  --disable-tdb           disable tdb support],
+AS_HELP_STRING([--disable-tdb],[disable tdb support]),
+[
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling tdb support])
-	TDB_CMT="#"
-	TDB_MAN_COMMENT='.\"'
+	CONFIG_TDB=0
 else
 	AC_MSG_RESULT([Enabling tdb support])
+	CONFIG_TDB=1
+fi
+]
+,
+[
+case "$host_os" in
+mingw*)
+	AC_MSG_RESULT([Disabling tdb support by default])
+	CONFIG_TDB=0
+	;;
+*)
+	AC_MSG_RESULT([Enabling tdb support by default])
+	CONFIG_TDB=1
+	;;
+esac
+]
+)
+if test "$CONFIG_TDB" = "1"
+then
 	AC_DEFINE(CONFIG_TDB, 1)
 	TDB_CMT=""
 	TDB_MAN_COMMENT=""
+else
+	TDB_CMT="#"
+	TDB_MAN_COMMENT='.\"'
 fi
-,
-AC_MSG_RESULT([Enabling mmp support by default])
-AC_DEFINE(CONFIG_TDB, 1)
-TDB_CMT=""
-TDB_MAN_COMMENT=""
-)
 AC_SUBST(TDB_CMT)
 AC_SUBST(TDB_MAN_COMMENT)
 dnl
@@ -823,7 +885,7 @@ dnl handle --disable-bmap-stats
 dnl
 AH_TEMPLATE([ENABLE_BMAP_STATS], [Define to 1 to enable bitmap stats.])
 AC_ARG_ENABLE([bmap-stats],
-[  --disable-bmap-stats    disable collection of bitmap stats.],
+AS_HELP_STRING([--disable-bmap-stats],[disable collection of bitmap stats]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling bitmap statistics support])
@@ -840,7 +902,7 @@ dnl handle --enable-bmap-stats-ops
 dnl
 AH_TEMPLATE([ENABLE_BMAP_STATS_OPS], [Define to 1 to enable bitmap stats.])
 AC_ARG_ENABLE([bmap-stats-ops],
-[  --enable-bmap-stats-ops enable collection of additional bitmap stats],
+AS_HELP_STRING([--enable-bmap-stats-ops],[enable collection of additional bitmap stats]),
 if test "$enableval" = "no"
 then
 	AC_MSG_RESULT([Disabling additional bitmap statistics])
@@ -873,7 +935,7 @@ AC_SUBST(GETTEXT_PACKAGE)
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 
-AM_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
 dnl
 dnl End of configuration options
 dnl
@@ -882,6 +944,11 @@ AC_PROG_MAKE_SET
 CHECK_GNU_MAKE
 AC_PATH_PROG(LN, ln, ln)
 AC_PROG_MKDIR_P
+dnl
+dnl @mkdir_p@ is used by po's Makefile.in
+dnl
+mkdir_p=$MKDIR_P
+AC_SUBST(mkdir_p)
 AC_PROG_LN_S
 AC_PATH_PROG(MV, mv, mv)
 AC_PATH_PROG(CP, cp, cp)
@@ -925,6 +992,7 @@ AC_CHECK_HEADERS(m4_flatten([
 	malloc.h
 	mntent.h
 	paths.h
+	pthread.h
 	semaphore.h
 	setjmp.h
 	signal.h
@@ -954,13 +1022,13 @@ AC_CHECK_HEADERS(m4_flatten([
 	sys/mman.h
 	sys/mount.h
 	sys/prctl.h
+	sys/random.h
 	sys/resource.h
 	sys/select.h
 	sys/socket.h
 	sys/sockio.h
 	sys/stat.h
 	sys/syscall.h
-	sys/sysctl.h
 	sys/sysmacros.h
 	sys/time.h
 	sys/types.h
@@ -968,6 +1036,17 @@ AC_CHECK_HEADERS(m4_flatten([
 	sys/wait.h
 	sys/xattr.h
 ]))
+case "$host_os" in
+mingw*)
+	# The above checks only detect system headers, not the headers in
+	# ./include/mingw/, so explicitly define them to be available.
+	AC_DEFINE(HAVE_LINUX_TYPES_H, 1)
+	AC_DEFINE(HAVE_SYS_STAT_H, 1)
+	AC_DEFINE(HAVE_SYS_SYSMACROS_H, 1)
+	AC_DEFINE(HAVE_SYS_TYPES_H, 1)
+	AC_DEFINE(HAVE_UNISTD_H, 1)
+	;;
+esac
 dnl Check where to find a dd(1) that supports iflag=fullblock
 dnl and oflag=append
 AC_MSG_CHECKING([for a dd(1) program that supports iflag=fullblock])
@@ -1087,18 +1166,12 @@ dnl flags somewhat portably.  Also check for the analogous setter, chflags().
 dnl
 AC_MSG_CHECKING(whether struct stat has a st_flags field)
 AC_CACHE_VAL(e2fsprogs_cv_struct_st_flags,
-	AC_TRY_COMPILE([#include <sys/stat.h>],
-		[struct stat stat; stat.st_flags = 0;],
-		[e2fsprogs_cv_struct_st_flags=yes],
-		[e2fsprogs_cv_struct_st_flags=no]))
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[struct stat stat; stat.st_flags = 0;]])],[e2fsprogs_cv_struct_st_flags=yes],[e2fsprogs_cv_struct_st_flags=no]))
 AC_MSG_RESULT($e2fsprogs_cv_struct_st_flags)
 if test "$e2fsprogs_cv_struct_st_flags" = yes; then
   AC_MSG_CHECKING(whether st_flags field is useful)
   AC_CACHE_VAL(e2fsprogs_cv_struct_st_flags_immut,
-	AC_TRY_COMPILE([#include <sys/stat.h>],
-		[struct stat stat; stat.st_flags |= UF_IMMUTABLE;],
-		[e2fsprogs_cv_struct_st_flags_immut=yes],
-		[e2fsprogs_cv_struct_st_flags_immut=no]))
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[struct stat stat; stat.st_flags |= UF_IMMUTABLE;]])],[e2fsprogs_cv_struct_st_flags_immut=yes],[e2fsprogs_cv_struct_st_flags_immut=no]))
   AC_MSG_RESULT($e2fsprogs_cv_struct_st_flags_immut)
   if test "$e2fsprogs_cv_struct_st_flags_immut" = yes; then
 	  AC_DEFINE(HAVE_STAT_FLAGS, 1,
@@ -1121,6 +1194,9 @@ if test -n "$BLKID_CMT"; then
   AC_CHECK_LIB(blkid, blkid_probe_get_topology,
 		      AC_DEFINE(HAVE_BLKID_PROBE_GET_TOPOLOGY, 1,
 				[Define to 1 if blkid has blkid_probe_get_topology]))
+  AC_CHECK_LIB(blkid, blkid_topology_get_dax,
+		      AC_DEFINE(HAVE_BLKID_TOPOLOGY_GET_DAX, 1,
+				[Define to 1 if blkid has blkid_topology_get_dax]))
   AC_CHECK_LIB(blkid, blkid_probe_enable_partitions,
 		      AC_DEFINE(HAVE_BLKID_PROBE_ENABLE_PARTITIONS, 1,
 				[Define to 1 if blkid has blkid_probe_enable_partitions]))
@@ -1147,9 +1223,11 @@ AC_CHECK_FUNCS(m4_flatten([
 	futimes
 	getcwd
 	getdtablesize
+	getentropy
 	gethostname
 	getmntinfo
 	getpwuid_r
+	getrandom
 	getrlimit
 	getrusage
 	jrand48
@@ -1158,6 +1236,7 @@ AC_CHECK_FUNCS(m4_flatten([
 	llseek
 	lseek64
 	mallinfo
+	mallinfo2
 	mbstowcs
 	memalign
 	mempcpy
@@ -1174,6 +1253,7 @@ AC_CHECK_FUNCS(m4_flatten([
 	pwrite
 	pread64
 	pwrite64
+	qsort_r
 	secure_getenv
 	setmntent
 	setresgid
@@ -1221,7 +1301,7 @@ FUSE_CMT=
 FUSE_LIB=
 dnl osxfuse.dylib supersedes fuselib.dylib
 AC_ARG_ENABLE([fuse2fs],
-[  --disable-fuse2fs	  do not build fuse2fs],
+AS_HELP_STRING([--disable-fuse2fs],[do not build fuse2fs]),
 if test "$enableval" = "no"
 then
 	FUSE_CMT="#"
@@ -1299,6 +1379,33 @@ then
 fi
 AC_SUBST(SEM_INIT_LIB)
 dnl
+dnl qsort_r detection
+dnl
+AS_IF([test "$ac_cv_func_qsort_r" != no], [
+  AC_CACHE_CHECK(whether qsort_r is GNU version, e2_cv_gnu_qsort_r,
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+@%:@include <stdlib.h>
+void (qsort_r)(void *base, size_t nmemb, size_t size,
+	    int (*compar)(const void *, const void *, void *),
+	    void *arg);
+]], [[ ]])],[e2_cv_gnu_qsort_r=yes],[e2_cv_gnu_qsort_r=no])
+  ])
+  AC_CACHE_CHECK(whether qsort_r is BSD version, e2_cv_bsd_qsort_r,
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+@%:@include <stdlib.h>
+void (qsort_r)(void *base, size_t nmemb, size_t size,
+	     void *arg, int (*compar)(void *, const void *, const void *));
+]], [[ ]])],[e2_cv_bsd_qsort_r=yes],[e2_cv_bsd_qsort_r=no])
+  ])
+  AS_CASE("$e2_cv_gnu_qsort_r:$e2_cv_bsd_qsort_r",
+  [yes:no], [
+    AC_DEFINE(HAVE_GNU_QSORT_R, 1, [ Define to 1 if you have the GNU-style 'qsort_r' function.])
+  ],
+  [no:yes], [
+    AC_DEFINE(HAVE_BSD_QSORT_R, 1, [ Define to 1 if you have the BSD-style 'qsort_r' function.])
+  ])
+])
+dnl
 dnl Check for unified diff
 dnl
 AC_MSG_CHECKING(for unified diff option)
@@ -1325,7 +1432,7 @@ AX_CHECK_MOUNT_OPT(nodev)
 dnl Enable LTO for all packages
 dnl
 AC_ARG_ENABLE([lto],
-[  --enable-lto		  enable link time optimization],,
+AS_HELP_STRING([--enable-lto],[enable link time optimization]),,
 enable_lto=no)
 if test "$enable_lto" = "yes" || test "$enable_lto" = "probe"; then
 	AC_MSG_CHECKING([if C compiler supports LTO])
@@ -1359,7 +1466,7 @@ dnl
 dnl Enable UBSAN for all packages
 dnl
 AC_ARG_ENABLE([ubsan],
-[  --enable-ubsan	  enable undefined behavior sanitizer],,
+AS_HELP_STRING([--enable-ubsan],[enable undefined behavior sanitizer]),,
 enable_ubsan=no)
 if test "$enable_ubsan" = "yes" || test "$enable_ubsan" = "probe"; then
 	AC_MSG_CHECKING([if C compiler supports UBSAN])
@@ -1387,7 +1494,7 @@ dnl
 dnl Enable ADDRSAN for all packages
 dnl
 AC_ARG_ENABLE([addrsan],
-[  --enable-addrsan	  enable address sanitizer],,
+AS_HELP_STRING([--enable-addrsan],[enable address sanitizer]),,
 enable_addrsan=no)
 if test "$enable_addrsan" = "yes" || test "$enable_addrsan" = "probe"; then
 	AC_MSG_CHECKING([if C compiler supports ADDRSAN])
@@ -1415,7 +1522,7 @@ dnl
 dnl Enable THREADSAN for all packages
 dnl
 AC_ARG_ENABLE([threadsan],
-[  --enable-threadsan	  enable thread sanitizer],,
+AS_HELP_STRING([--enable-threadsan],[enable thread sanitizer]),,
 enable_threadsan=no)
 if test "$enable_threadsan" = "yes" || test "$enable_threadsan" = "probe"; then
 	AC_MSG_CHECKING([if C compiler supports THREADSAN])
@@ -1442,6 +1549,45 @@ fi
 if test "$have_threadsan" = "yes" && test "$have_addrsan" = "yes"; then
 	AC_MSG_WARN([ADDRSAN and THREADSAN are not known to work together.])
 fi
+dnl
+dnl Enable the fuzzer sanitizer for all packages
+dnl
+FUZZING_CMT="#"
+AC_ARG_ENABLE([fuzzing],
+AS_HELP_STRING([--enable-fuzzing],[enable fuzzing sanitizer]),,
+enable_fuzzing=no)
+if test "$enable_fuzzing" = "yes" || test "$enable_fuzzing" = "probe"; then
+	AC_PROG_CXX
+	AC_MSG_CHECKING([if C compiler supports fuzzing sanitizer])
+	AC_LANG_PUSH([C++])
+	OLD_CXXFLAGS="$CXXFLAGS"
+	OLD_LDFLAGS="$LDFLAGS"
+	FUZZER_FLAGS="-fsanitize=fuzzer"
+	CXXFLAGS="$CXXFLAGS $FUZZER_FLAGS"
+	LDFLAGS="$LDFLAGS $FUZZER_FLAGS"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+		#include <stddef.h>
+		#include <stdint.h>
+		]],
+		[ return 0; ])],
+		[AC_MSG_RESULT([yes])]
+		[fuzzer_cflags=$FUZZER_FLAGS]
+		[fuzzer_ldflags=$FUZZER_FLAGS]
+		[FUZZING_CMT=]
+		[have_fuzzer=yes],
+		[AC_MSG_RESULT([no])]
+		[AC_MSG_ERROR([fuzzing requested but not available])])
+	CXXFLAGS="${OLD_CXXFLAGS}"
+	LDFLAGS="${OLD_LDFLAGS}"
+	AC_LANG_POP([C++])
+	AC_SUBST(have_fuzzer)
+	AC_SUBST(fuzzer_cflags)
+	AC_SUBST(fuzzer_ldflags)
+fi
+if test "$enable_fuzzer" = "yes" && test "$have_fuzzer" != "yes"; then
+	AC_MSG_ERROR([Fuzzing not supported by compiler.])
+fi
+AC_SUBST(FUZZING_CMT)
 dnl
 dnl OS-specific uncomment control
 dnl
@@ -1532,7 +1678,7 @@ dnl
 dnl Allow specification of the multiarch arch
 dnl
 AC_ARG_WITH([multiarch],
-[  --with-multiarch=ARCH specify the multiarch triplet],
+AS_HELP_STRING([--with-multiarch=ARCH],[specify the multiarch triplet]),
 if test "$withval" = "lib64"; then
     libdir=/usr/lib64
     root_libdir=/lib64
@@ -1550,8 +1696,7 @@ dnl
 AC_MSG_CHECKING([whether we can link with -static])
 AC_CACHE_VAL(ac_cv_e2fsprogs_use_static,
 [SAVE_LDFLAGS=$LDFLAGS; LDFLAGS="$LDFLAGS_STATIC -static"
-AC_TRY_LINK([#include <stdio.h>],[fflush(stdout);],
- ac_cv_e2fsprogs_use_static=yes, ac_cv_e2fsprogs_use_static=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[fflush(stdout);]])],[ac_cv_e2fsprogs_use_static=yes],[ac_cv_e2fsprogs_use_static=no])
 LDFLAGS=$SAVE_LDFLAGS])
 dnl
 dnl Regardless of how the test turns out, Solaris doesn't handle -static
@@ -1604,6 +1749,11 @@ fi
 if test -n "$WITH_DIET_LIBC" ; then
 	INCLUDES="$INCLUDES -D_REENTRANT"
 fi
+case "$host_os" in
+mingw*)
+	INCLUDES=$INCLUDES' -I$(top_srcdir)/include/mingw'
+	;;
+esac
 AC_SUBST(INCLUDES)
 dnl
 dnl Build CFLAGS
@@ -1732,6 +1882,20 @@ AS_IF([test "x${with_systemd_unit_dir}" != "xno"],
   ])
 AC_SUBST(have_systemd)
 AC_SUBST(systemd_system_unit_dir)
+dnl Adjust the compiled files if we are on windows vs everywhere else
+dnl
+OS_IO_FILE=""
+[case "$host_os" in
+  mingw*)
+    OS_IO_FILE=windows_io
+  ;;
+  *)
+    OS_IO_FILE=unix_io
+  ;;
+esac]
+AC_SUBST(OS_IO_FILE)
+
+AC_SYS_LARGEFILE
 
 dnl
 dnl Make our output files, being sure that we create the some miscellaneous 
@@ -1757,11 +1921,12 @@ for i in MCONFIG Makefile \
 	lib/ss/ss.pc lib/et/com_err.pc lib/e2p/e2p.pc lib/ext2fs/ext2fs.pc \
 	misc/Makefile ext2ed/Makefile e2fsck/Makefile \
 	debugfs/Makefile tests/Makefile tests/progs/Makefile \
-	resize/Makefile doc/Makefile intl/Makefile \
-	intl/libgnuintl.h po/Makefile.in scrub/Makefile; do
+	tests/fuzz/Makefile resize/Makefile doc/Makefile \
+	po/Makefile.in scrub/Makefile; do
 	if test -d `dirname ${srcdir}/$i` ; then
 		outlist="$outlist $i"
 	fi
 done
-AC_OUTPUT($outlist)
+AC_CONFIG_FILES([$outlist])
+AC_OUTPUT
 if test -f util/gen-tarball; then chmod +x util/gen-tarball; fi

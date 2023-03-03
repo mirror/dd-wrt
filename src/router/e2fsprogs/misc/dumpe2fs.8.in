@@ -4,7 +4,7 @@
 .\" 
 .TH DUMPE2FS 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-dumpe2fs \- dump ext2/ext3/ext4 filesystem information
+dumpe2fs \- dump ext2/ext3/ext4 file system information
 .SH SYNOPSIS
 .B dumpe2fs
 [
@@ -19,35 +19,35 @@ dumpe2fs \- dump ext2/ext3/ext4 filesystem information
 .I device
 .SH DESCRIPTION
 .B dumpe2fs
-prints the super block and blocks group information for the filesystem
+prints the super block and blocks group information for the file system
 present on
 .I device.
 .PP
 .B Note:
-When used with a mounted filesystem, the printed
+When used with a mounted file system, the printed
 information may be old or inconsistent.
 .SH OPTIONS
 .TP
 .B \-b
-print the blocks which are reserved as bad in the filesystem.
+print the blocks which are reserved as bad in the file system.
 .TP
 .B \-o superblock=\fIsuperblock
 use the block
 .I superblock
-when examining the filesystem.
-This option is not usually needed except by a filesystem wizard who
-is examining the remains of a very badly corrupted filesystem.
+when examining the file system.
+This option is not usually needed except by a file system wizard who
+is examining the remains of a very badly corrupted file system.
 .TP
 .B \-o blocksize=\fIblocksize
 use blocks of
 .I blocksize
-bytes when examining the filesystem.
-This option is not usually needed except by a filesystem wizard who
-is examining the remains of a very badly corrupted filesystem.
+bytes when examining the file system.
+This option is not usually needed except by a file system wizard who
+is examining the remains of a very badly corrupted file system.
 .TP
 .B \-f
-force dumpe2fs to display a filesystem even though it may have some
-filesystem feature flags which dumpe2fs may not understand (and which
+force dumpe2fs to display a file system even though it may have some
+file system feature flags which dumpe2fs may not understand (and which
 can cause some of dumpe2fs's display to be suspect).
 .TP
 .B \-g
@@ -63,7 +63,7 @@ only display the superblock information and not any of the block
 group descriptor detail information.
 .TP
 .B \-i
-display the filesystem data from an image file created by
+display the file system data from an image file created by
 .BR e2image ,
 using
 .I device
@@ -72,7 +72,7 @@ as the pathname to the image file.
 .B \-m
 If the
 .B mmp
-feature is enabled on the filesystem, check if
+feature is enabled on the file system, check if
 .I device
 is in use by another node, see
 .BR e2mmpstatus (8)
@@ -96,7 +96,7 @@ is in use by another node and
 .B -m
 is specified.
 .SH BUGS
-You may need to know the physical filesystem structure to understand the
+You may need to know the physical file system structure to understand the
 output.
 .SH AUTHOR
 .B dumpe2fs

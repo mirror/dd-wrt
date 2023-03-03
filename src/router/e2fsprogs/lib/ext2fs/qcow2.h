@@ -30,8 +30,8 @@
 
 #define QCOW_MAGIC (('Q' << 24) | ('F' << 16) | ('I' << 8) | 0xfb)
 #define QCOW_VERSION		2
-#define QCOW_OFLAG_COPIED	(1LL << 63)
-#define QCOW_OFLAG_COMPRESSED	(1LL << 62)
+#define QCOW_OFLAG_COPIED	(1ULL << 63)
+#define QCOW_OFLAG_COMPRESSED	(1ULL << 62)
 
 #define QCOW_COMPRESSED		1
 #define QCOW_ENCRYPTED		2

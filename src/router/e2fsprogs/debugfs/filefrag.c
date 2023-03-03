@@ -85,14 +85,17 @@ static void report_filefrag(struct filefrag_struct *fs)
 			fprintf(fs->f, "%4d %*lu %*llu %*llu %*lu\n", fs->ext,
 				fs->logical_width,
 				(unsigned long) fs->logical_start,
-				fs->physical_width, fs->physical_start,
-				fs->physical_width, fs->expected,
+				fs->physical_width,
+				(unsigned long long) fs->physical_start,
+				fs->physical_width,
+				(unsigned long long) fs->expected,
 				fs->logical_width, (unsigned long) fs->num);
 		else
 			fprintf(fs->f, "%4d %*lu %*llu %*s %*lu\n", fs->ext,
 				fs->logical_width,
 				(unsigned long) fs->logical_start,
-				fs->physical_width, fs->physical_start,
+				fs->physical_width,
+				(unsigned long long) fs->physical_start,
 				fs->physical_width, "",
 				fs->logical_width, (unsigned long) fs->num);
 	}
@@ -150,7 +153,8 @@ static void filefrag(ext2_ino_t ino, struct ext2_inode *inode,
 			num_blocks /= current_fs->blocksize / 512;
 
 		fprintf(fs->f, "\n%s has %llu block(s), i_size is %llu\n",
-			fs->name, num_blocks, EXT2_I_SIZE(inode));
+			fs->name, (unsigned long long) num_blocks,
+			(unsigned long long) EXT2_I_SIZE(inode));
 	}
 	print_header(fs);
 	if (ext2fs_inode_has_valid_blocks2(current_fs, inode)) {

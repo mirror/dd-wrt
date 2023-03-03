@@ -198,8 +198,10 @@ void do_lsdel(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	for (i = 0; i < num_delarray; i++) {
 		fprintf(out, "%6u %6d %6o %6llu %6lld/%6lld %s",
 			delarray[i].ino,
-			delarray[i].uid, delarray[i].mode, delarray[i].size,
-			delarray[i].free_blocks, delarray[i].num_blocks,
+			delarray[i].uid, delarray[i].mode,
+			(unsigned long long) delarray[i].size,
+			(long long) delarray[i].free_blocks,
+			(long long) delarray[i].num_blocks,
 			time_to_string(delarray[i].dtime));
 	}
 	fprintf(out, "%d deleted inodes found.\n", num_delarray);

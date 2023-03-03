@@ -475,8 +475,14 @@ errcode_t ext2fs_file_write(ext2_file_t file, const void *buf,
 
 			if (new_block) {
 				new_block->physblock = file->physblock;
-				ext2fs_hashmap_add(fs->block_sha_map, new_block,
-					new_block->sha, sizeof(new_block->sha));
+				int ret = ext2fs_hashmap_add(fs->block_sha_map,
+						new_block, new_block->sha,
+						sizeof(new_block->sha));
+				if (ret) {
+					retval = EXT2_ET_NO_MEMORY;
+					free(new_block);
+					goto fail;
+				}
 			}
 
 			if (bmap_flags & BMAP_SET) {

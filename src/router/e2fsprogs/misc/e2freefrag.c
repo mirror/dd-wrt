@@ -265,8 +265,8 @@ static errcode_t dump_chunk_info(ext2_filsys fs, struct chunk_info *info,
 	int i, retval = 0;
 
 	fprintf(f, "Total blocks: %llu\nFree blocks: %llu (%0.1f%%)\n",
-		ext2fs_blocks_count(fs->super),
-		free_blks,
+		(unsigned long long) ext2fs_blocks_count(fs->super),
+		(unsigned long long) free_blks,
 		(double)free_blks * 100 /
 		ext2fs_blocks_count(fs->super));
 
@@ -363,7 +363,7 @@ static void collect_info(ext2_filsys fs, struct chunk_info *chunk_info, FILE *f)
 static void open_device(char *device_name, ext2_filsys *fs)
 {
 	int retval;
-	int flag = EXT2_FLAG_FORCE | EXT2_FLAG_64BITS;
+	int flag = EXT2_FLAG_FORCE | EXT2_FLAG_64BITS | EXT2_FLAG_THREADS;
 
 	retval = ext2fs_open(device_name, flag, 0, 0, unix_io_manager, fs);
 	if (retval) {

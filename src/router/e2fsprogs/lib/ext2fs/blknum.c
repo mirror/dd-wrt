@@ -86,6 +86,22 @@ blk64_t ext2fs_inode_i_blocks(ext2_filsys fs,
 }
 
 /*
+ * Return the inode i_blocks in stat (512 byte) units
+ */
+blk64_t ext2fs_get_stat_i_blocks(ext2_filsys fs,
+				 struct ext2_inode *inode)
+{
+	blk64_t	ret = inode->i_blocks;
+
+	if (ext2fs_has_feature_huge_file(fs->super)) {
+		ret += ((long long) inode->osd2.linux2.l_i_blocks_hi) << 32;
+		if (inode->i_flags & EXT4_HUGE_FILE_FL)
+			ret *= (fs->blocksize / 512);
+	}
+	return ret;
+}
+
+/*
  * Return the fs block count
  */
 blk64_t ext2fs_blocks_count(struct ext2_super_block *super)
@@ -185,9 +201,42 @@ struct ext2_group_desc *ext2fs_group_desc(ext2_filsys fs,
 					  struct opaque_ext2_group_desc *gdp,
 					  dgrp_t group)
 {
-	int desc_size = EXT2_DESC_SIZE(fs->super) & ~7;
+	struct ext2_group_desc *ret_gdp;
+	errcode_t	retval;
+	static char	*buf = 0;
+	static unsigned	bufsize = 0;
+	blk64_t		blk;
+	int		desc_size = EXT2_DESC_SIZE(fs->super) & ~7;
+	int		desc_per_blk = EXT2_DESC_PER_BLOCK(fs->super);
 
-	return (struct ext2_group_desc *)((char *)gdp + group * desc_size);
+	if (group > fs->group_desc_count)
+		return NULL;
+	if (gdp)
+		return (struct ext2_group_desc *)((char *)gdp +
+						  group * desc_size);
+	/*
+	 * If fs->group_desc wasn't read in when the file system was
+	 * opened, then read it on demand here.
+	 */
+	if (bufsize < fs->blocksize)
+		ext2fs_free_mem(&buf);
+	if (!buf) {
+		retval = ext2fs_get_mem(fs->blocksize, &buf);
+		if (retval)
+			return NULL;
+		bufsize = fs->blocksize;
+	}
+	blk = ext2fs_descriptor_block_loc2(fs, fs->super->s_first_data_block,
+					   group / desc_per_blk);
+	retval = io_channel_read_blk(fs->io, blk, 1, buf);
+	if (retval)
+		return NULL;
+	ret_gdp = (struct ext2_group_desc *)
+		(buf + ((group % desc_per_blk) * desc_size));
+#ifdef WORDS_BIGENDIAN
+	ext2fs_swap_group_desc2(fs, ret_gdp);
+#endif
+	return ret_gdp;
 }
 
 /* Do the same but as an ext4 group desc for internal use here */
@@ -521,18 +570,32 @@ void ext2fs_file_acl_block_set(ext2_filsys fs, struct ext2_inode *inode,
 errcode_t ext2fs_inode_size_set(ext2_filsys fs, struct ext2_inode *inode,
 				ext2_off64_t size)
 {
-	/* Only regular files get to be larger than 4GB */
-	if (!LINUX_S_ISREG(inode->i_mode) && (size >> 32))
-		return EXT2_ET_FILE_TOO_BIG;
+	if (size < 0)
+		return EINVAL;
 
-	/* If we're writing a large file, set the large_file flag */
-	if (LINUX_S_ISREG(inode->i_mode) &&
-	    ext2fs_needs_large_file_feature(size) &&
-	    (!ext2fs_has_feature_large_file(fs->super) ||
-	     fs->super->s_rev_level == EXT2_GOOD_OLD_REV)) {
-		ext2fs_set_feature_large_file(fs->super);
-		ext2fs_update_dynamic_rev(fs);
-		ext2fs_mark_super_dirty(fs);
+	/* If writing a large inode, set the large_file or large_dir flag */
+	if (ext2fs_needs_large_file_feature(size)) {
+		int dirty_sb = 0;
+
+		if (LINUX_S_ISREG(inode->i_mode)) {
+			if (!ext2fs_has_feature_large_file(fs->super)) {
+				ext2fs_set_feature_large_file(fs->super);
+				dirty_sb = 1;
+			}
+		} else if (LINUX_S_ISDIR(inode->i_mode)) {
+			if (!ext2fs_has_feature_largedir(fs->super)) {
+				ext2fs_set_feature_largedir(fs->super);
+				dirty_sb = 1;
+			}
+		} else {
+			/* Only regular files get to be larger than 4GB */
+			return EXT2_ET_FILE_TOO_BIG;
+		}
+		if (dirty_sb) {
+			if (fs->super->s_rev_level == EXT2_GOOD_OLD_REV)
+				ext2fs_update_dynamic_rev(fs);
+			ext2fs_mark_super_dirty(fs);
+		}
 	}
 
 	inode->i_size = size & 0xffffffff;
