@@ -197,6 +197,7 @@ static ssize_t chandata_write(struct file *file, const char __user *user_buf,
 
 			for (i = 0; i < sband->n_channels; i++) {
 				chan = &sband->channels[i];
+				chan->flags &= ~IEEE80211_CHAN_NO_IR;
 
 				if (chan->center_freq - 20 >= freq_start &&
 					chan->center_freq - 20 <= freq_end) {
