@@ -42,6 +42,8 @@ char *ss_name(int sci_idx)
 			 (strlen(infop->subsystem_name)+
 			  strlen(infop->current_request)+
 			  4));
+	if (ret_val == (char *)NULL)
+		return ((char *)NULL);
 	cp = ret_val;
 	cp1 = infop->subsystem_name;
 	while (*cp1)

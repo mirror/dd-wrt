@@ -36,15 +36,15 @@ or an ext2 label or UUID specifier (e.g.
 UUID=8868abf6-88c5-4a83-98b8-bfc24057f7bd or LABEL=root).
 Normally, the
 .B fsck
-program will try to handle filesystems on different physical disk drives
+program will try to handle file systems on different physical disk drives
 in parallel to reduce the total amount of time needed to check all of the
-filesystems.
+file systems.
 .PP
-If no filesystems are specified on the command line, and the
+If no file systems are specified on the command line, and the
 .B \-A
 option is not specified,
 .B fsck
-will default to checking filesystems in
+will default to checking file systems in
 .B /etc/fstab
 serially.  This is equivalent to the
 .B \-As
@@ -93,7 +93,7 @@ further details.
 Serialize
 .B fsck
 operations.  This is a good idea if you are checking multiple
-filesystems and the checkers are in an interactive mode.  (Note:
+file systems and the checkers are in an interactive mode.  (Note:
 .BR e2fsck (8)
 runs in an interactive mode by default.  To make
 .BR e2fsck (8)
@@ -108,21 +108,21 @@ option if you do not.)
 .BI \-t " fslist"
 Specifies the type(s) of file system to be checked.  When the
 .B \-A
-flag is specified, only filesystems that match
+flag is specified, only file systems that match
 .I fslist
 are checked.  The
 .I fslist
-parameter is a comma-separated list of filesystems and options
-specifiers.  All of the filesystems in this comma-separated list may be
+parameter is a comma-separated list of file systems and options
+specifiers.  All of the file systems in this comma-separated list may be
 prefixed by a negation operator
 .RB ' no '
 or
 .RB ' ! ',
-which requests that only those filesystems not listed in
+which requests that only those file systems not listed in
 .I fslist
-will be checked.  If all of the filesystems in
+will be checked.  If all of the file systems in
 .I fslist
-are not prefixed by a negation operator, then only those filesystems
+are not prefixed by a negation operator, then only those file systems
 listed
 in
 .I fslist
@@ -132,13 +132,13 @@ Options specifiers may be included in the comma-separated
 .IR fslist .
 They must have the format
 .BI opts= fs-option\fR.
-If an options specifier is present, then only filesystems which contain
+If an options specifier is present, then only file systems which contain
 .I fs-option
 in their mount options field of
 .B /etc/fstab
 will be checked.  If the options specifier is prefixed by a negation
 operator, then only
-those filesystems that do not have
+those file systems that do not have
 .I fs-option
 in their mount options field of
 .B /etc/fstab
@@ -148,7 +148,7 @@ For example, if
 .B opts=ro
 appears in
 .IR fslist ,
-then only filesystems listed in
+then only file systems listed in
 .B /etc/fstab
 with the
 .B ro
@@ -157,7 +157,7 @@ option will be checked.
 For compatibility with Mandrake distributions whose boot scripts
 depend upon an unauthorized UI change to the
 .B fsck
-program, if a filesystem type of
+program, if a file system type of
 .B loop
 is found in
 .IR fslist ,
@@ -167,17 +167,17 @@ were specified as an argument to the
 .B \-t
 option.
 .sp
-Normally, the filesystem type is deduced by searching for
+Normally, the file system type is deduced by searching for
 .I filesys
 in the
 .I /etc/fstab
 file and using the corresponding entry.
-If the type can not be deduced, and there is only a single filesystem
+If the type can not be deduced, and there is only a single file system
 given as an argument to the
 .B \-t
 option,
 .B fsck
-will use the specified filesystem type.  If this type is not
+will use the specified file system type.  If this type is not
 available, then the default file system type (currently ext2) is used.
 .TP
 .B \-A
@@ -189,53 +189,53 @@ typically used from the
 system initialization file, instead of multiple commands for checking
 a single file system.
 .sp
-The root filesystem will be checked first unless the
+The root file system will be checked first unless the
 .B \-P
 option is specified (see below).  After that,
-filesystems will be checked in the order specified by the
+file systems will be checked in the order specified by the
 .I fs_passno
 (the sixth) field in the
 .I /etc/fstab
 file.
-Filesystems with a
+File Systems with a
 .I fs_passno
-value of 0 are skipped and are not checked at all.  Filesystems with a
+value of 0 are skipped and are not checked at all.  File Systems with a
 .I fs_passno
 value of greater than zero will be checked in order,
-with filesystems with the lowest
+with file systems with the lowest
 .I fs_passno
 number being checked first.
-If there are multiple filesystems with the same pass number,
+If there are multiple file systems with the same pass number,
 fsck will attempt to check them in parallel, although it will avoid running
-multiple filesystem checks on the same physical disk.
+multiple file system checks on the same physical disk.
 .sp
 Hence, a very common configuration in
 .I /etc/fstab
-files is to set the root filesystem to have a
+files is to set the root file system to have a
 .I fs_passno
 value of 1
-and to set all other filesystems to have a
+and to set all other file systems to have a
 .I fs_passno
 value of 2.  This will allow
 .B fsck
-to automatically run filesystem checkers in parallel if it is advantageous
+to automatically run file system checkers in parallel if it is advantageous
 to do so.  System administrators might choose
-not to use this configuration if they need to avoid multiple filesystem
+not to use this configuration if they need to avoid multiple file system
 checks running in parallel for some reason --- for example, if the
 machine in question is short on memory so that
 excessive paging is a concern.
 .TP
 .B \-C\fR [ \fI "fd" \fR ]
-Display completion/progress bars for those filesystem checkers (currently
+Display completion/progress bars for those file system checkers (currently
 only for ext2 and ext3) which support them.   Fsck will manage the
-filesystem checkers so that only one of them will display
+file system checkers so that only one of them will display
 a progress bar at a time.  GUI front-ends may specify a file descriptor
 .IR fd ,
 in which case the progress bar information will be sent to that file descriptor.
 .TP
 .B \-M
-Do not check mounted filesystems and return an exit code of 0
-for mounted filesystems.
+Do not check mounted file systems and return an exit code of 0
+for mounted file systems.
 .TP
 .B \-N
 Don't execute, just show what would be done.
@@ -243,13 +243,13 @@ Don't execute, just show what would be done.
 .B \-P
 When the
 .B \-A
-flag is set, check the root filesystem in parallel with the other filesystems.
+flag is set, check the root file system in parallel with the other file systems.
 This is not the safest thing in the world to do,
-since if the root filesystem is in doubt things like the
+since if the root file system is in doubt things like the
 .BR e2fsck (8)
 executable might be corrupted!  This option is mainly provided
 for those sysadmins who don't want to repartition the root
-filesystem to be small and compact (which is really the right solution).
+file system to be small and compact (which is really the right solution).
 .TP
 .B \-R
 When checking all file systems with the
@@ -266,7 +266,7 @@ that are executed.
 .B fs-specific-options
 Options which are not understood by
 .B fsck
-are passed to the filesystem-specific checker.  These arguments
+are passed to the file system-specific checker.  These arguments
 .B must
 not take arguments, as there is no
 way for
@@ -280,9 +280,9 @@ are treated as file system-specific options to be passed to the
 file system-specific checker.
 .IP
 Please note that fsck is not
-designed to pass arbitrarily complicated options to filesystem-specific
+designed to pass arbitrarily complicated options to file system-specific
 checkers.  If you're doing something complicated, please just
-execute the filesystem-specific checker directly.  If you pass
+execute the file system-specific checker directly.  If you pass
 .B fsck
 some horribly complicated option and arguments, and it doesn't do
 what you expect,
@@ -291,8 +291,8 @@ You're almost certainly doing something that you shouldn't be doing
 with
 .BR fsck.
 .PP
-Options to different filesystem-specific fsck's are not standardized.
-If in doubt, please consult the man pages of the filesystem-specific
+Options to different file system-specific fsck's are not standardized.
+If in doubt, please consult the man pages of the file system-specific
 checker.  Although not guaranteed, the following options are supported
 by most file system checkers:
 .TP
@@ -310,11 +310,11 @@ option which is safe to use, unlike the
 option that some file system checkers support.
 .TP
 .B \-n
-For some filesystem-specific checkers, the
+For some file system-specific checkers, the
 .B \-n
 option will cause the fs-specific fsck to avoid attempting to repair any
 problems, but simply report such problems to stdout.  This is however
-not true for all filesystem-specific checkers.  In particular,
+not true for all file system-specific checkers.  In particular,
 .BR fsck.reiserfs (8)
 will not report any corruption if given this option.
 .BR fsck.minix (8)
@@ -323,7 +323,7 @@ does not support the
 option at all.
 .TP
 .B \-r
-Interactively repair the filesystem (ask for confirmations).  Note: It
+Interactively repair the file system (ask for confirmations).  Note: It
 is generally a bad idea to use this option if multiple fsck's are being
 run in parallel.  Also note that this is
 .BR e2fsck 's
@@ -331,13 +331,13 @@ default behavior; it supports this option for backwards compatibility
 reasons only.
 .TP
 .B \-y
-For some filesystem-specific checkers, the
+For some file system-specific checkers, the
 .B \-y
 option will cause the fs-specific fsck to always attempt to fix any
-detected filesystem corruption automatically.  Sometimes an expert may
+detected file system corruption automatically.  Sometimes an expert may
 be able to do better driving the fsck manually.  Note that
 .B not
-all filesystem-specific checkers implement this option.  In particular
+all file system-specific checkers implement this option.  In particular
 .BR fsck.minix (8)
 and
 .BR fsck.cramfs (8)
@@ -356,8 +356,8 @@ program's behavior is affected by the following environment variables:
 .B FSCK_FORCE_ALL_PARALLEL
 If this environment variable is set,
 .B fsck
-will attempt to run all of the specified filesystems in parallel,
-regardless of whether the filesystems appear to be on the same
+will attempt to run all of the specified file systems in parallel,
+regardless of whether the file systems appear to be on the same
 device.  (This is useful for RAID systems or high-end storage systems
 such as those sold by companies such as IBM or EMC.)
 .TP

@@ -127,9 +127,12 @@ static void usage(void)
 
 static void dump_header(struct undo_header *hdr)
 {
-	printf("nr keys:\t%llu\n", ext2fs_le64_to_cpu(hdr->num_keys));
-	printf("super block:\t%llu\n", ext2fs_le64_to_cpu(hdr->super_offset));
-	printf("key block:\t%llu\n", ext2fs_le64_to_cpu(hdr->key_offset));
+	printf("nr keys:\t%llu\n",
+	       (unsigned long long) ext2fs_le64_to_cpu(hdr->num_keys));
+	printf("super block:\t%llu\n",
+	       (unsigned long long) ext2fs_le64_to_cpu(hdr->super_offset));
+	printf("key block:\t%llu\n",
+	       (unsigned long long) ext2fs_le64_to_cpu(hdr->key_offset));
 	printf("block size:\t%u\n", ext2fs_le32_to_cpu(hdr->block_size));
 	printf("fs block size:\t%u\n", ext2fs_le32_to_cpu(hdr->fs_block_size));
 	printf("super crc:\t0x%x\n", ext2fs_le32_to_cpu(hdr->sb_crc));
@@ -138,7 +141,8 @@ static void dump_header(struct undo_header *hdr)
 	printf("incompat:\t0x%x\n", ext2fs_le32_to_cpu(hdr->f_incompat));
 	printf("rocompat:\t0x%x\n", ext2fs_le32_to_cpu(hdr->f_rocompat));
 	if (e2undo_has_feature_fs_offset(hdr))
-		printf("fs offset:\t%llu\n", ext2fs_le64_to_cpu(hdr->fs_offset));
+		printf("fs offset:\t%llu\n",
+		       (unsigned long long) ext2fs_le64_to_cpu(hdr->fs_offset));
 	printf("header crc:\t0x%x\n", ext2fs_le32_to_cpu(hdr->header_crc));
 }
 
@@ -460,7 +464,7 @@ int main(int argc, char *argv[])
 		if (!*opt_offset_string)
 			offset = ext2fs_le64_to_cpu(undo_ctx.hdr.fs_offset);
 		retval = snprintf(opt_offset_string, sizeof(opt_offset_string),
-						  "offset=%llu", offset);
+				  "offset=%llu", (unsigned long long) offset);
 		if ((size_t) retval >= sizeof(opt_offset_string)) {
 			/* should not happen... */
 			com_err(prg_name, 0, _("specified offset is too large"));
@@ -517,7 +521,7 @@ int main(int argc, char *argv[])
 		if (!force &&
 		    ext2fs_le32_to_cpu(keyb->magic) != KEYBLOCK_MAGIC) {
 			fprintf(stderr, _("%s: wrong key magic at %llu\n"),
-				tdb_file, lblk);
+				tdb_file, (unsigned long long) lblk);
 			exit(1);
 		}
 		crc = keyb->crc;
@@ -527,7 +531,7 @@ int main(int argc, char *argv[])
 		if (!force && ext2fs_le32_to_cpu(crc) != key_crc) {
 			fprintf(stderr,
 				_("%s: key block checksum error at %llu.\n"),
-				tdb_file, lblk);
+				tdb_file, (unsigned long long) lblk);
 			exit(1);
 		}
 
@@ -550,7 +554,8 @@ int main(int argc, char *argv[])
 			    ikey->size) {
 				com_err(prg_name, retval,
 					_("%s: block %llu is too long."),
-					tdb_file, ikey->fsblk);
+					tdb_file,
+					(unsigned long long) ikey->fsblk);
 				exit(1);
 			}
 
@@ -562,7 +567,7 @@ int main(int argc, char *argv[])
 			if (retval) {
 				com_err(prg_name, retval,
 					_("while fetching block %llu."),
-					ikey->fileblk);
+					(unsigned long long) ikey->fileblk);
 				if (!force)
 					exit(1);
 				io_error = 1;
@@ -575,7 +580,8 @@ int main(int argc, char *argv[])
 				fprintf(stderr,
 					_("checksum error in filesystem block "
 					  "%llu (undo blk %llu)\n"),
-					ikey->fsblk, ikey->fileblk);
+					(unsigned long long) ikey->fsblk,
+					(unsigned long long) ikey->fileblk);
 				if (!force)
 					exit(1);
 				csum_error = 1;
@@ -598,21 +604,23 @@ int main(int argc, char *argv[])
 		if (retval) {
 			com_err(prg_name, retval,
 				_("while fetching block %llu."),
-				ikey->fileblk);
+				(unsigned long long) ikey->fileblk);
 			io_error = 1;
 			continue;
 		}
 
 		if (verbose)
 			printf("Replayed block of size %u from %llu to %llu\n",
-				ikey->size, ikey->fileblk, ikey->fsblk);
+			       ikey->size, (unsigned long long) ikey->fileblk,
+			       (unsigned long long) ikey->fsblk);
 		if (dry_run)
 			continue;
 		retval = io_channel_write_blk64(channel, ikey->fsblk,
 						-(int)ikey->size, buf);
 		if (retval) {
 			com_err(prg_name, retval,
-				_("while writing block %llu."), ikey->fsblk);
+				_("while writing block %llu."),
+				(unsigned long long) ikey->fsblk);
 			io_error = 1;
 		}
 	}

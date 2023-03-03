@@ -133,7 +133,8 @@ void do_zap_block(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 				       block, 0, &block);
 		if (errcode) {
 			com_err(argv[0], errcode,
-				"while mapping logical block %llu\n", block);
+				"while mapping logical block %llu\n",
+				(unsigned long long) block);
 			return;
 		}
 	}
@@ -147,7 +148,8 @@ void do_zap_block(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	errcode = io_channel_read_blk64(current_fs->io, block, 1, buf);
 	if (errcode) {
 		com_err(argv[0], errcode,
-			"while reading block %llu\n", block);
+			"while reading block %llu\n",
+			(unsigned long long) block);
 		goto errout;
 	}
 
@@ -159,7 +161,8 @@ void do_zap_block(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	errcode = io_channel_write_blk64(current_fs->io, block, 1, buf);
 	if (errcode) {
 		com_err(argv[0], errcode,
-			"while write block %llu\n", block);
+			"while write block %llu\n",
+			(unsigned long long) block);
 		goto errout;
 	}
 
@@ -214,7 +217,8 @@ void do_block_dump(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 				       block, 0, &block);
 		if (errcode) {
 			com_err(argv[0], errcode,
-				"while mapping logical block %llu\n", block);
+				"while mapping logical block %llu\n",
+				(unsigned long long) block);
 			return;
 		}
 	}
@@ -228,7 +232,8 @@ void do_block_dump(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	errcode = io_channel_read_blk64(current_fs->io, block, 1, buf);
 	if (errcode) {
 		com_err(argv[0], errcode,
-			"while reading block %llu\n", block);
+			"while reading block %llu\n",
+			(unsigned long long) block);
 		goto errout;
 	}
 
@@ -238,39 +243,4 @@ void do_block_dump(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		do_byte_hexdump(stdout, buf, current_fs->blocksize);
 errout:
 	free(buf);
-}
-
-void do_byte_hexdump(FILE *fp, unsigned char *buf, size_t bufsize)
-{
-	size_t		i, j, max;
-	int		suppress = -1;
-
-	for (i = 0; i < bufsize; i += 16) {
-		max = (bufsize - i > 16) ? 16 : bufsize - i;
-		if (suppress < 0) {
-			if (i && memcmp(buf + i, buf + i - max, max) == 0) {
-				suppress = i;
-				fprintf(fp, "*\n");
-				continue;
-			}
-		} else {
-			if (memcmp(buf + i, buf + suppress, max) == 0)
-				continue;
-			suppress = -1;
-		}
-		fprintf(fp, "%04o  ", (unsigned int)i);
-		for (j = 0; j < 16; j++) {
-			if (j < max)
-				fprintf(fp, "%02x", buf[i+j]);
-			else
-				fprintf(fp, "  ");
-			if ((j % 2) == 1)
-				fprintf(fp, " ");
-		}
-		fprintf(fp, " ");
-		for (j = 0; j < max; j++)
-			fprintf(fp, "%c", isprint(buf[i+j]) ? buf[i+j] : '.');
-		fprintf(fp, "\n");
-	}
-	fprintf(fp, "\n");
 }

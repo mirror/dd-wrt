@@ -1,3 +1,4 @@
+128-byte inodes cannot handle dates beyond 2038 and are deprecated
 Creating filesystem with 108341 1k blocks and 65072 inodes
 Superblock backups stored on blocks: 
 	8193, 24577, 40961, 57345, 73729
@@ -6,6 +7,16 @@ Allocating group tables:      done
 Writing inode tables:      done                            
 Writing superblocks and filesystem accounting information:      done
 
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 3A: Optimizing directories
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+
+test.img: ***** FILE SYSTEM WAS MODIFIED *****
+test.img: 17/65072 files (5.9% non-contiguous), 9732/108341 blocks
+Exit status is 0
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity

@@ -114,7 +114,7 @@ static int qcow2_read_l1_table(struct ext2_qcow2_image *img)
 }
 
 static int qcow2_read_l2_table(struct ext2_qcow2_image *img,
-			       ext2_off64_t offset, blk64_t **l2_table)
+			       __u64 offset, blk64_t **l2_table)
 {
 	int fd = img->fd;
 	size_t size;
@@ -131,8 +131,8 @@ static int qcow2_read_l2_table(struct ext2_qcow2_image *img,
 	return 0;
 }
 
-static int qcow2_copy_data(int fdin, int fdout, ext2_off64_t off_in,
-			   ext2_off64_t off_out, void *buf, size_t count)
+static int qcow2_copy_data(int fdin, int fdout, __u64 off_in,
+			   __u64 off_out, void *buf, size_t count)
 {
 	size_t size;
 
@@ -162,7 +162,7 @@ int qcow2_write_raw_image(int qcow2_fd, int raw_fd,
 	struct ext2_qcow2_image img;
 	errcode_t ret = 0;
 	unsigned int l1_index, l2_index;
-	ext2_off64_t offset;
+	__u64 offset;
 	blk64_t *l1_table, *l2_table = NULL;
 	void *copy_buf = NULL;
 	size_t size;
@@ -212,7 +212,7 @@ int qcow2_write_raw_image(int qcow2_fd, int raw_fd,
 	l1_table = img.l1_table;
 	/* Walk through l1 table */
 	for (l1_index = 0; l1_index < img.l1_size; l1_index++) {
-		ext2_off64_t off_out;
+		__u64 off_out;
 
 		offset = ext2fs_be64_to_cpu(l1_table[l1_index]) &
 			 ~QCOW_OFLAG_COPIED;
@@ -238,7 +238,7 @@ int qcow2_write_raw_image(int qcow2_fd, int raw_fd,
 			if (offset == 0)
 				continue;
 
-			off_out = (l1_index * img.l2_size) +
+			off_out = ((__u64)l1_index * img.l2_size) +
 				  l2_index;
 			off_out <<= img.cluster_bits;
 			ret = qcow2_copy_data(qcow2_fd, raw_fd, offset,

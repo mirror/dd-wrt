@@ -97,7 +97,7 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 				   int *mount_flags, char *mtpt, int mtlen)
 {
 	struct mntent 	*mnt;
-	struct stat	st_buf;
+	struct stat	st_buf, dir_st_buf;
 	errcode_t	retval = 0;
 	dev_t		file_dev=0, file_rdev=0;
 	ino_t		file_ino=0;
@@ -128,13 +128,30 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 	while ((mnt = getmntent (f)) != NULL) {
 		if (mnt->mnt_fsname[0] != '/')
 			continue;
-		if (strcmp(file, mnt->mnt_fsname) == 0)
+		if (strcmp(file, mnt->mnt_fsname) == 0) {
+			if (stat(mnt->mnt_dir, &st_buf) != 0)
+				continue;
+			if (file_rdev && (file_rdev != st_buf.st_dev)) {
+#ifdef DEBUG
+				printf("Bogus entry in %s!  "
+				       "(%s is not mounted on %s)\n",
+				       mtab_file, file, mnt->mnt_dir);
+#endif /* DEBUG */
+				continue;
+			}
 			break;
+		}
 		if (stat(mnt->mnt_fsname, &st_buf) == 0) {
 			if (ext2fsP_is_disk_device(st_buf.st_mode)) {
 #ifndef __GNU__
-				if (file_rdev && (file_rdev == st_buf.st_rdev))
-					break;
+				if (file_rdev &&
+				    (file_rdev == st_buf.st_rdev)) {
+					if (stat(mnt->mnt_dir,
+						 &dir_st_buf) != 0)
+						continue;
+					if (file_rdev == dir_st_buf.st_dev)
+						break;
+				}
 				if (check_loop_mounted(mnt->mnt_fsname,
 						st_buf.st_rdev, file_dev,
 						file_ino) == 1)
@@ -168,32 +185,6 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 #endif	/* __GNU__ */
 		goto errout;
 	}
-#ifndef __GNU__ /* The GNU hurd is deficient; what else is new? */
-	/* Validate the entry in case /etc/mtab is out of date */
-	/*
-	 * We need to be paranoid, because some broken distributions
-	 * (read: Slackware) don't initialize /etc/mtab before checking
-	 * all of the non-root filesystems on the disk.
-	 */
-	if (stat(mnt->mnt_dir, &st_buf) < 0) {
-		retval = errno;
-		if (retval == ENOENT) {
-#ifdef DEBUG
-			printf("Bogus entry in %s!  (%s does not exist)\n",
-			       mtab_file, mnt->mnt_dir);
-#endif /* DEBUG */
-			retval = 0;
-		}
-		goto errout;
-	}
-	if (file_rdev && (st_buf.st_dev != file_rdev)) {
-#ifdef DEBUG
-		printf("Bogus entry in %s!  (%s not mounted on %s)\n",
-		       mtab_file, file, mnt->mnt_dir);
-#endif /* DEBUG */
-		goto errout;
-	}
-#endif /* __GNU__ */
 	*mount_flags = EXT2_MF_MOUNTED;
 
 #ifdef MNTOPT_RO
@@ -222,6 +213,12 @@ is_root:
 			close(fd);
 		(void) unlink(TEST_FILE);
 	}
+
+	if (mnt && mnt->mnt_type &&
+	    (!strcmp(mnt->mnt_type, "ext4") ||
+	     !strcmp(mnt->mnt_type, "ext3") ||
+	     !strcmp(mnt->mnt_type, "ext2")))
+		*mount_flags |= EXT2_MF_EXTFS;
 	retval = 0;
 errout:
 	endmntent (f);
@@ -242,7 +239,7 @@ static errcode_t check_mntent(const char *file, int *mount_flags,
 #ifdef __linux__
 	retval = check_mntent_file("/proc/mounts", file, mount_flags,
 				   mtpt, mtlen);
-	if (retval == 0 && (*mount_flags != 0))
+	if (retval == 0)
 		return 0;
 #endif /* __linux__ */
 #if defined(MOUNTED) || defined(_PATH_MOUNTED)
@@ -367,6 +364,7 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 				  char *mtpt, int mtlen)
 {
 	errcode_t	retval = 0;
+	int 		busy = 0;
 
 	if (getenv("EXT2FS_PRETEND_RO_MOUNT")) {
 		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_READONLY;
@@ -381,9 +379,34 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 		return 0;
 	}
 
+#ifdef __linux__ /* This only works on Linux 2.6+ systems */
+	{
+		struct stat st_buf;
+
+		if (stat(device, &st_buf) == 0 &&
+		    ext2fsP_is_disk_device(st_buf.st_mode)) {
+			int fd = open(device, O_RDONLY | O_EXCL);
+
+			if (fd >= 0) {
+				/*
+				 * The device is not busy so it's
+				 * definitelly not mounted. No need to
+				 * to perform any more checks.
+				 */
+				close(fd);
+				*mount_flags = 0;
+				return 0;
+			} else if (errno == EBUSY) {
+				busy = 1;
+			}
+		}
+	}
+#endif
+
 	if (is_swap_device(device)) {
 		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_SWAP;
-		strncpy(mtpt, "<swap>", mtlen);
+		if (mtpt)
+			strncpy(mtpt, "<swap>", mtlen);
 	} else {
 #ifdef HAVE_SETMNTENT
 		retval = check_mntent(device, mount_flags, mtpt, mtlen);
@@ -391,7 +414,7 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 #ifdef HAVE_GETMNTINFO
 		retval = check_getmntinfo(device, mount_flags, mtpt, mtlen);
 #else
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
  #warning "Can't use getmntent or getmntinfo to check for mounted filesystems!"
 #endif
 		*mount_flags = 0;
@@ -401,21 +424,8 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 	if (retval)
 		return retval;
 
-#ifdef __linux__ /* This only works on Linux 2.6+ systems */
-	{
-		struct stat st_buf;
-
-		if (stat(device, &st_buf) == 0 &&
-		    ext2fsP_is_disk_device(st_buf.st_mode)) {
-			int fd = open(device, O_RDONLY | O_EXCL);
-
-			if (fd >= 0)
-				close(fd);
-			else if (errno == EBUSY)
-				*mount_flags |= EXT2_MF_BUSY;
-		}
-	}
-#endif
+	if (busy)
+		*mount_flags |= EXT2_MF_BUSY;
 
 	return 0;
 }

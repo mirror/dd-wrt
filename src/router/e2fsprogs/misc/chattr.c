@@ -86,7 +86,7 @@ static unsigned long sf;
 static void usage(void)
 {
 	fprintf(stderr,
-		_("Usage: %s [-pRVf] [-+=aAcCdDeijPsStTuF] [-v version] files...\n"),
+		_("Usage: %s [-RVf] [-+=aAcCdDeijPsStTuFx] [-p project] [-v version] files...\n"),
 		program_name);
 	exit(1);
 }
@@ -102,6 +102,7 @@ static const struct flags_char flags_array[] = {
 	{ EXT2_DIRSYNC_FL, 'D' },
 	{ EXT2_APPEND_FL, 'a' },
 	{ EXT2_COMPR_FL, 'c' },
+	{ EXT2_NOCOMPR_FL, 'm' },
 	{ EXT2_NODUMP_FL, 'd' },
 	{ EXT4_EXTENTS_FL, 'e'},
 	{ EXT2_IMMUTABLE_FL, 'i' },
@@ -112,6 +113,7 @@ static const struct flags_char flags_array[] = {
 	{ EXT2_NOTAIL_FL, 't' },
 	{ EXT2_TOPDIR_FL, 'T' },
 	{ FS_NOCOW_FL, 'C' },
+	{ FS_DAX_FL, 'x' },
 	{ EXT4_CASEFOLD_FL, 'F' },
 	{ 0, 0 }
 };
@@ -202,7 +204,6 @@ static int decode_arg (int * i, int argc, char ** argv)
 		break;
 	default:
 		return EOF;
-		break;
 	}
 	return 1;
 }

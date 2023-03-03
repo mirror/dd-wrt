@@ -218,7 +218,8 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 	}
 
 	printf(_("Performing an on-line resize of %s to %llu (%dk) blocks.\n"),
-	       fs->device_name, *new_size, fs->blocksize / 1024);
+	       fs->device_name, (unsigned long long) *new_size,
+	       fs->blocksize / 1024);
 
 	size = fs->group_desc_count * sb->s_blocks_per_group +
 		sb->s_first_data_block;

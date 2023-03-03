@@ -200,6 +200,10 @@ static errcode_t punch_extent_blocks(ext2_filsys fs, ext2_ino_t ino,
 	__u32		cluster_freed;
 	errcode_t	retval = 0;
 
+	if (free_start < fs->super->s_first_data_block ||
+	    (free_start + free_count) >= ext2fs_blocks_count(fs->super))
+		return EXT2_ET_BAD_BLOCK_NUM;
+
 	/* No bigalloc?  Just free each block. */
 	if (EXT2FS_CLUSTER_RATIO(fs) == 1) {
 		*freed += free_count;
@@ -502,8 +506,8 @@ errcode_t ext2fs_punch(ext2_filsys fs, ext2_ino_t ino,
 		return retval;
 
 #ifdef PUNCH_DEBUG
-	printf("%u: write inode size now %u blocks %u\n",
-		ino, inode->i_size, inode->i_blocks);
+	printf("%u: write inode size now %lu blocks %u\n",
+		ino, EXT2_I_SIZE(inode), inode->i_blocks);
 #endif
 	return ext2fs_write_inode(fs, ino, inode);
 }

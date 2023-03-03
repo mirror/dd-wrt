@@ -418,7 +418,7 @@ errcode_t ext2fs_get_generic_bitmap_range(ext2fs_generic_bitmap gen_bmap,
 	if ((start < bmap->start) || (start+num-1 > bmap->real_end))
 		return EXT2_ET_INVALID_ARGUMENT;
 
-	memcpy(out, bmap->bitmap + (start >> 3), (num+7) >> 3);
+	memcpy(out, bmap->bitmap + ((start - bmap->start) >> 3), (num+7) >> 3);
 	return 0;
 }
 
@@ -435,7 +435,7 @@ errcode_t ext2fs_set_generic_bitmap_range(ext2fs_generic_bitmap gen_bmap,
 	if ((start < bmap->start) || (start+num-1 > bmap->real_end))
 		return EXT2_ET_INVALID_ARGUMENT;
 
-	memcpy(bmap->bitmap + (start >> 3), in, (num+7) >> 3);
+	memcpy(bmap->bitmap + ((start - bmap->start) >> 3), in, (num+7) >> 3);
 	return 0;
 }
 

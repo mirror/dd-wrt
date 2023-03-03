@@ -13,8 +13,8 @@ gunzip < $IMAGE > $TMPFILE
 echo "resize2fs test" > $OUT.new
 
 # Look at existing inline extended attribute
-echo "debugfs -R ''stat file'' test.img 2>&1 | grep ''^Inode\|in inode body\|user.name (''" >> $OUT.new
-$DEBUGFS -R "stat file" $TMPFILE 2>&1 | grep "^Inode\|in inode body\|user.name (" >> $OUT.new
+echo "debugfs -R ''stat file'' test.img 2>&1 | grep -E ''^Inode\|in inode body\|user.name \\(''" >> $OUT.new
+$DEBUGFS -R "stat file" $TMPFILE 2>&1 | grep -E "^Inode|in inode body|user.name \(" >> $OUT.new
 status=$?
 echo Exit status is $status >> $OUT.new
 
@@ -25,8 +25,8 @@ status=$?
 echo Exit status is $status >> $OUT.new
 
 # Look at inline extended attribute in resized fs
-echo "debugfs -R ''stat file'' test.img 2>&1 | grep ''^Inode\|in inode body\|user.name (''" >> $OUT.new
-$DEBUGFS -R "stat file" $TMPFILE 2>&1 | grep "^Inode\|in inode body\|user.name (" >> $OUT.new
+echo "debugfs -R ''stat file'' test.img 2>&1 | grep -E ''^Inode\|in inode body\|user.name \\(''" >> $OUT.new
+$DEBUGFS -R "stat file" $TMPFILE 2>&1 | grep -E "^Inode|in inode body|user.name \(" >> $OUT.new
 status=$?
 echo Exit status is $status >> $OUT.new
 

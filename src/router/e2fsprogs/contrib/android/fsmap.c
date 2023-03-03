@@ -23,11 +23,51 @@ static int walk_block(ext2_filsys fs  EXT2FS_ATTR((unused)), blk64_t *blocknr,
 	return format->add_block(fs, *blocknr, blockcnt < 0, format->private);
 }
 
+static errcode_t ino_iter_extents(ext2_filsys fs, ext2_ino_t ino,
+				  ext2_extent_handle_t extents,
+				  struct walk_ext_priv_data *pdata)
+{
+	blk64_t block;
+	errcode_t retval;
+	blk64_t next_lblk = 0;
+	int op = EXT2_EXTENT_ROOT;
+	struct ext2fs_extent extent;
+	struct fsmap_format *format = pdata->format;
+
+	for (;;) {
+		retval = ext2fs_extent_get(extents, op, &extent);
+		if (retval)
+			break;
+
+		op = EXT2_EXTENT_NEXT;
+
+		if ((extent.e_flags & EXT2_EXTENT_FLAGS_SECOND_VISIT) ||
+		    !(extent.e_flags & EXT2_EXTENT_FLAGS_LEAF))
+			continue;
+
+		for (; next_lblk < extent.e_lblk; next_lblk++)
+			format->add_block(fs, 0, 0, format->private);
+
+		block = extent.e_pblk;
+		for (; next_lblk < extent.e_lblk + extent.e_len; next_lblk++)
+			format->add_block(fs, block++, 0, format->private);
+	}
+
+	if (retval == EXT2_ET_EXTENT_NO_NEXT)
+		retval = 0;
+	if (retval) {
+		com_err(__func__, retval, ("getting extents of ino \"%u\""),
+			ino);
+	}
+	return retval;
+}
+
 static errcode_t ino_iter_blocks(ext2_filsys fs, ext2_ino_t ino,
 				 struct walk_ext_priv_data *pdata)
 {
 	errcode_t retval;
 	struct ext2_inode inode;
+	ext2_extent_handle_t extents;
 	struct fsmap_format *format = pdata->format;
 
 	retval = ext2fs_read_inode(fs, ino, &inode);
@@ -38,10 +78,20 @@ static errcode_t ino_iter_blocks(ext2_filsys fs, ext2_ino_t ino,
 		return format->inline_data(&(inode.i_block[0]),
 					   format->private);
 
-	retval = ext2fs_block_iterate3(fs, ino, 0, NULL, walk_block, pdata);
-	if (retval)
-		com_err(__func__, retval, _("listing blocks of ino \"%u\""),
-			ino);
+	retval = ext2fs_extent_open(fs, ino, &extents);
+	if (retval == EXT2_ET_INODE_NOT_EXTENT) {
+		retval = ext2fs_block_iterate3(fs, ino, BLOCK_FLAG_READ_ONLY,
+			NULL, walk_block, pdata);
+		if (retval) {
+			com_err(__func__, retval, _("listing blocks of ino \"%u\""),
+				ino);
+		}
+		return retval;
+	}
+
+	retval = ino_iter_extents(fs, ino, extents, pdata);
+
+	ext2fs_extent_free(extents);
 	return retval;
 }
 

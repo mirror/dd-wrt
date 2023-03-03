@@ -26,6 +26,7 @@
 #include <getopt.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -652,6 +653,7 @@ static void do_help(int argc, char **argv, const struct cmd_desc *cmd);
 static void do_add_key(int argc, char **argv, const struct cmd_desc *cmd)
 {
 	struct salt *salt;
+	bool explicit_salt = false;
 	char *keyring = NULL;
 	int i, opt, pad = 4;
 	unsigned j;
@@ -666,8 +668,13 @@ static void do_add_key(int argc, char **argv, const struct cmd_desc *cmd)
 			pad = atoi(optarg);
 			break;
 		case 'S':
+			if (explicit_salt) {
+				fputs("May only provide -S once\n", stderr);
+				exit(1);
+			}
 			/* Salt value for passphrase. */
 			parse_salt(optarg, 0);
+			explicit_salt = true;
 			break;
 		case 'v':
 			options |= OPT_VERBOSE;
@@ -692,8 +699,9 @@ static void do_add_key(int argc, char **argv, const struct cmd_desc *cmd)
 		exit(1);
 	}
 	validate_paths(argc, argv, optind);
-	for (i = optind; i < argc; i++)
-		parse_salt(argv[i], PARSE_FLAGS_FORCE_FN);
+	if (!explicit_salt)
+		for (i = optind; i < argc; i++)
+			parse_salt(argv[i], PARSE_FLAGS_FORCE_FN);
 	printf("Enter passphrase (echo disabled): ");
 	get_passphrase(in_passphrase, sizeof(in_passphrase));
 	for (j = 0, salt = salt_list; j < num_salt; j++, salt++) {
@@ -702,8 +710,10 @@ static void do_add_key(int argc, char **argv, const struct cmd_desc *cmd)
 		generate_key_ref_str(salt);
 		insert_key_into_keyring(keyring, salt);
 	}
-	if (optind != argc)
-		set_policy(NULL, pad, argc, argv, optind);
+	if (optind != argc) {
+		salt = explicit_salt ? salt_list : NULL;
+		set_policy(salt, pad, argc, argv, optind);
+	}
 	clear_secrets();
 	exit(0);
 }

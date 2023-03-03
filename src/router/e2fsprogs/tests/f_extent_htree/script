@@ -29,7 +29,7 @@ fi
 
 # make filesystem with enough inodes and blocks to hold all the test files
 > $TMPFILE
-NUM=$((NUM * 5 / 3))
+NUM=$((NUM * 7 / 3))
 echo "mke2fs -b $BSIZE -O dir_index,extent -E no_copy_xattrs -d$SRC -N$NUM $TMPFILE $NUM" >> $OUT
 $MKE2FS -b $BSIZE -O dir_index,extent -E no_copy_xattrs -d$SRC -N$NUM $TMPFILE $NUM >> $OUT 2>&1
 rm -r $SRC

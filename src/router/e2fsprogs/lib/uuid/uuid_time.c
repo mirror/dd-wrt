@@ -36,12 +36,6 @@
 
 #include "config.h"
 
-#ifdef _WIN32
-#define _WIN32_WINNT 0x0500
-#include <windows.h>
-#define UUID MYUUID
-#endif
-
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

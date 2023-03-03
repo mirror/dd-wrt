@@ -1,8 +1,24 @@
 // Copyright 2017 The Android Open Source Project
 
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "external_e2fsprogs_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-GPL
+    //   SPDX-license-identifier-GPL-2.0
+    //   SPDX-license-identifier-LGPL
+    //   SPDX-license-identifier-LGPL-2.1
+    //   SPDX-license-identifier-LGPL-3.0
+    //   legacy_unencumbered
+    default_applicable_licenses: ["external_e2fsprogs_license"],
+}
+
 cc_library {
     name: "libext2fs",
     host_supported: true,
+    ramdisk_available: true,
+    vendor_ramdisk_available: true,
     recovery_available: true,
     unique_host_soname: true,
     defaults: ["e2fsprogs-defaults"],
@@ -68,6 +84,7 @@ cc_library {
         "namei.c",
         "native.c",
         "newdir.c",
+        "nls_utf8.c",
         "openfs.c",
         "progress.c",
         "punch.c",
@@ -95,23 +112,14 @@ cc_library {
         "libsparse",
         "libz",
     ],
-    cflags: ["-Wno-unused-parameter"],
     target: {
         android: {
-            shared_libs: [ "libext2_uuid" ],
+            shared_libs: ["libext2_uuid"],
         },
         windows: {
             enabled: true,
-            include_dirs: [ "external/e2fsprogs/include/mingw" ],
-            cflags: [
-                "-Wno-error=cpp",
-                "-Wno-format",
-                "-Wno-unused-variable",
-            ],
-            clang_cflags: [
-                "-Wno-error=typedef-redefinition",
-            ],
-            host_ldlibs: ["-lws2_32"],
+            srcs: ["windows_io.c"],
+            exclude_srcs: ["unix_io.c"],
         },
     },
 

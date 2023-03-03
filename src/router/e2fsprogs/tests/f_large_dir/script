@@ -26,17 +26,33 @@ $MKE2FS -b 1024 -O large_dir,uninit_bg -N $((ENTRIES + 50)) \
 RC=$?
 if [ $RC -eq 0 ]; then
 {
-	START=$SECONDS
+	# First some initial fs setup to create indexed dir
 	echo "mkdir /foo"
 	echo "cd /foo"
 	touch $TMPFILE.tmp
 	echo "write $TMPFILE.tmp foofile"
 	i=0
-	last=0
+	while test $i -lt $DIRENT_PER_LEAF ; do
+		printf "mkdir d%0254u\n" $i
+		i=$((i + 1));
+	done
+	echo "expand ./"
+	printf "mkdir d%0254u\n" $i
+} | $DEBUGFS -w $TMPFILE > /dev/null 2>> $OUT.new
+	RC=$?
+	# e2fsck should optimize the dir to become indexed
+	$E2FSCK -yfD $TMPFILE >> $OUT.new 2>&1
+	status=$?
+	echo Exit status is $status >> $OUT.new
+fi
+
+if [ $RC -eq 0 ]; then
+{
+	START=$SECONDS
+	i=$(($DIRENT_PER_LEAF+1))
+	last=$i
+	echo "cd /foo"
 	while test $i -lt $ENTRIES ; do
-	    if test $((i % DIRENT_PER_LEAF)) -eq 0; then
-	    	echo "expand ./"
-	    fi
 	    ELAPSED=$((SECONDS - START))
 	    if test $((i % 5000)) -eq 0 -a $ELAPSED -gt 10; then
 		RATE=$(((i - last) / ELAPSED))
@@ -54,6 +70,7 @@ if [ $RC -eq 0 ]; then
 } | $DEBUGFS -w $TMPFILE > /dev/null 2>> $OUT.new
 	RC=$?
 fi
+
 if [ $RC -eq 0 ]; then
 	$E2FSCK -yfD $TMPFILE >> $OUT.new 2>&1
 	status=$?

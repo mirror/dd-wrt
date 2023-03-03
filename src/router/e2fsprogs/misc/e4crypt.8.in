@@ -1,6 +1,6 @@
 .TH E4CRYPT 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-e4crypt \- ext4 filesystem encryption utility
+e4crypt \- ext4 file system encryption utility
 .SH SYNOPSIS
 .B e4crypt add_key -S \fR[\fB -k \fIkeyring\fR ] [\fB-v\fR] [\fB-q\fR] \fR[\fB -p \fIpad\fR ] [ \fIpath\fR ... ]
 .br
@@ -48,7 +48,9 @@ values are 4, 8, 16, and 32.
 If one or more directory paths are specified, e4crypt will try to
 set the policy of those directories to use the key just added by the
 .B add_key
-command.
+command.  If a salt was explicitly specified, then it will be used
+to derive the encryption key of those directories.  Otherwise a
+directory-specific default salt will be used.
 .TP
 .B e4crypt get_policy \fIpath\fR ...
 Print the policy for the directories specified on the command line.

@@ -53,16 +53,18 @@ static void htree_dump_leaf_node(ext2_filsys fs, ext2_ino_t ino,
 	errcode = ext2fs_bmap2(fs, ino, inode, buf, 0, blk, 0, &pblk);
 	if (errcode) {
 		com_err("htree_dump_leaf_node", errcode,
-			"while mapping logical block %llu\n", blk);
+			"while mapping logical block %llu\n",
+			(unsigned long long) blk);
 		return;
 	}
 
-	fprintf(pager, "Reading directory block %llu, phys %llu\n", blk, pblk);
+	fprintf(pager, "Reading directory block %llu, phys %llu\n",
+		(unsigned long long) blk, (unsigned long long) pblk);
 	errcode = ext2fs_read_dir_block4(current_fs, pblk, buf, 0, ino);
 	if (errcode) {
 		com_err("htree_dump_leaf_node", errcode,
 			"while reading block %llu (%llu)\n",
-			blk, pblk);
+			(unsigned long long) blk, (unsigned long long) pblk);
 		return;
 	}
 	hash_alg = rootnode->hash_version;
@@ -85,7 +87,7 @@ static void htree_dump_leaf_node(ext2_filsys fs, ext2_ino_t ino,
 		    ((rec_len % 4) != 0) ||
 		    ((unsigned) thislen + 8 > rec_len)) {
 			fprintf(pager, "Corrupted directory block (%llu)!\n",
-				blk);
+				(unsigned long long) blk);
 			break;
 		}
 		strncpy(name, dirent->name, thislen);
@@ -136,7 +138,7 @@ static void htree_dump_int_block(ext2_filsys fs, ext2_ino_t ino,
 static void htree_dump_int_node(ext2_filsys fs, ext2_ino_t ino,
 				struct ext2_inode *inode,
 				struct ext2_dx_root_info * rootnode,
-				struct ext2_dx_entry *ent,
+				struct ext2_dx_entry *ent, __u32 crc,
 				char *buf, int level)
 {
 	struct ext2_dx_countlimit	dx_countlimit;
@@ -160,8 +162,11 @@ static void htree_dump_int_node(ext2_filsys fs, ext2_ino_t ino,
 	if (ext2fs_has_feature_metadata_csum(fs->super) &&
 	    remainder == sizeof(struct ext2_dx_tail)) {
 		tail = (struct ext2_dx_tail *)(ent + limit);
-		fprintf(pager, "Checksum: 0x%08x\n",
+		fprintf(pager, "Checksum: 0x%08x",
 			ext2fs_le32_to_cpu(tail->dt_checksum));
+		if (tail->dt_checksum != crc)
+			fprintf(pager, " --- EXPECTED: 0x%08x", crc);
+		fputc('\n', pager);
 	}
 
 	for (i=0; i < count; i++) {
@@ -199,6 +204,7 @@ static void htree_dump_int_block(ext2_filsys fs, ext2_ino_t ino,
 	char		*cbuf;
 	errcode_t	errcode;
 	blk64_t		pblk;
+	__u32		crc;
 
 	cbuf = malloc(fs->blocksize);
 	if (!cbuf) {
@@ -209,20 +215,30 @@ static void htree_dump_int_block(ext2_filsys fs, ext2_ino_t ino,
 	errcode = ext2fs_bmap2(fs, ino, inode, buf, 0, blk, 0, &pblk);
 	if (errcode) {
 		com_err("htree_dump_int_block", errcode,
-			"while mapping logical block %llu\n", blk);
+			"while mapping logical block %llu\n",
+			(unsigned long long) blk);
 		goto errout;
 	}
 
 	errcode = io_channel_read_blk64(current_fs->io, pblk, 1, buf);
 	if (errcode) {
 		com_err("htree_dump_int_block", errcode,
-			"while 	reading block %llu\n", blk);
+			"while reading block %llu\n",
+			(unsigned long long) blk);
 		goto errout;
 	}
 
+	errcode = ext2fs_dx_csum(current_fs, ino,
+				 (struct ext2_dir_entry *) buf, &crc, NULL);
+	if (errcode) {
+		com_err("htree_dump_int_block", errcode,
+			"while calculating checksum for logical block %llu\n",
+			(unsigned long long) blk);
+		crc = (unsigned int) -1;
+	}
 	htree_dump_int_node(fs, ino, inode, rootnode,
 			    (struct ext2_dx_entry *) (buf+8),
-			    cbuf, level);
+			    crc, cbuf, level);
 errout:
 	free(cbuf);
 }
@@ -239,6 +255,7 @@ void do_htree_dump(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	struct 		ext2_dx_root_info  *rootnode;
 	struct 		ext2_dx_entry *ent;
 	errcode_t	errcode;
+	__u32		crc;
 
 	if (check_fs_open(argv[0]))
 		return;
@@ -288,12 +305,19 @@ void do_htree_dump(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	fprintf(pager, "\t Hash Version: %d\n", rootnode->hash_version);
 	fprintf(pager, "\t Info length: %d\n", rootnode->info_length);
 	fprintf(pager, "\t Indirect levels: %d\n", rootnode->indirect_levels);
-	fprintf(pager, "\t Flags: %d\n", rootnode->unused_flags);
+	fprintf(pager, "\t Flags: %#x\n", rootnode->unused_flags);
 
 	ent = (struct ext2_dx_entry *)
 		((char *)rootnode + rootnode->info_length);
 
-	htree_dump_int_node(current_fs, ino, &inode, rootnode, ent,
+	errcode = ext2fs_dx_csum(current_fs, ino,
+				 (struct ext2_dir_entry *) buf, &crc, NULL);
+	if (errcode) {
+		com_err("htree_dump_int_block", errcode,
+			"while calculating checksum for htree root\n");
+		crc = (unsigned int) -1;
+	}
+	htree_dump_int_node(current_fs, ino, &inode, rootnode, ent, crc,
 			    buf + current_fs->blocksize,
 			    rootnode->indirect_levels);
 
@@ -453,7 +477,7 @@ static int search_dir_block(ext2_filsys fs, blk64_t *blocknr,
 			    p->len) == 0) {
 			printf("Entry found at logical block %lld, "
 			       "phys %llu, offset %u\n", (long long)blockcnt,
-			       *blocknr, offset);
+			       (unsigned long long) *blocknr, offset);
 			printf("offset %u\n", offset);
 			return BLOCK_ABORT;
 		}

@@ -8,7 +8,7 @@ EXP=$test_dir/expect
 OUT=$test_name.log
 E2FSCK=../e2fsck/e2fsck
 
-$MKE2FS -T ext4 -b 1024 -F -U 56d3ee50-8532-4f29-8181-d7c6ea4a94a6 $TMPFILE 20000 > $OUT 2>&1
+$MKE2FS -T ext4 -o Linux -b 1024 -F -U 56d3ee50-8532-4f29-8181-d7c6ea4a94a6 $TMPFILE 20000 > $OUT 2>&1
 $DUMPE2FS $TMPFILE 2>&1 | grep -A10 '^Group 2:' >> $OUT
 $DEBUGFS -R "set_bg 2 itable_unused 0" -w $TMPFILE > /dev/null 2>&1
 $DEBUGFS -R "set_bg 2 flags 0" -w $TMPFILE > /dev/null 2>&1

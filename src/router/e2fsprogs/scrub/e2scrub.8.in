@@ -1,13 +1,13 @@
 .TH E2SCRUB 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-e2scrub - check the contents of a mounted ext[234] filesystem
-.SH SYNOPSYS
+e2scrub - check the contents of a mounted ext[234] file system
+.SH SYNOPSIS
 .B
 e2scrub [OPTION] MOUNTPOINT | DEVICE
 .SH DESCRIPTION
 .B e2scrub
 attempts to check (but not repair) all metadata in a mounted ext[234]
-filesystem if the filesystem resides on an LVM logical volume.
+file system if the file system resides on an LVM logical volume.
 The block device of the LVM logical volume can also be passed in.
 
 This program snapshots the volume and runs a file system check on the snapshot
@@ -28,12 +28,12 @@ If no errors are found,
 .B fstrim
 can be called on the file system if it is mounted.
 If errors are found, the file system will be marked as having errors.
-The filesystem should be taken offline and
+The file system should be taken offline and
 .B e2fsck
 run as soon as possible, because
 .B e2scrub
 does not fix corruptions.
-If the filesystem is not repaired,
+If the file system is not repaired,
 .B e2fsck
 will be run before the next mount.
 .SH OPTIONS
@@ -54,7 +54,7 @@ Remove the e2scrub snapshot and exit without checking anything.
 Run
 .B
 fstrim(1)
-on the mounted filesystem if no errors are found.
+on the mounted file system if no errors are found.
 .TP
 \fB-V\fR
 Print version information and exit.

@@ -439,7 +439,7 @@ void do_ffzb(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		       error_message(retval));
 		return;
 	}
-	printf("First unmarked block is %llu\n", out);
+	printf("First unmarked block is %llu\n", (unsigned long long) out);
 }
 
 void do_ffsb(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
@@ -473,7 +473,7 @@ void do_ffsb(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		       error_message(retval));
 		return;
 	}
-	printf("First marked block is %llu\n", out);
+	printf("First marked block is %llu\n", (unsigned long long) out);
 }
 
 

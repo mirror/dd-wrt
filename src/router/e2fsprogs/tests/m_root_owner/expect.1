@@ -10,7 +10,7 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/128 files (0.0% non-contiguous), 38/1024 blocks
+test_filesys: 11/128 files (0.0% non-contiguous), 54/1024 blocks
 Exit status is 0
 Filesystem volume name:   <none>
 Last mounted on:          <not available>
@@ -24,7 +24,8 @@ Filesystem OS type:       Linux
 Inode count:              128
 Block count:              1024
 Reserved block count:     51
-Free blocks:              986
+Overhead clusters:        40
+Free blocks:              970
 Free inodes:              117
 First block:              1
 Block size:               1024
@@ -33,13 +34,15 @@ Reserved GDT blocks:      3
 Blocks per group:         8192
 Fragments per group:      8192
 Inodes per group:         128
-Inode blocks per group:   16
+Inode blocks per group:   32
 Mount count:              0
 Check interval:           15552000 (6 months)
 Reserved blocks uid:      0
 Reserved blocks gid:      0
 First inode:              11
-Inode size:	          128
+Inode size:	          256
+Required extra isize:     32
+Desired extra isize:      32
 Default directory hash:   half_md4
 
 
@@ -48,7 +51,7 @@ Group 0: (Blocks 1-1023)
   Reserved GDT blocks at 3-5
   Block bitmap at 6 (+5)
   Inode bitmap at 7 (+6)
-  Inode table at 8-23 (+7)
-  986 free blocks, 117 free inodes, 2 directories
-  Free blocks: 38-1023
+  Inode table at 8-39 (+7)
+  970 free blocks, 117 free inodes, 2 directories
+  Free blocks: 54-1023
   Free inodes: 12-128

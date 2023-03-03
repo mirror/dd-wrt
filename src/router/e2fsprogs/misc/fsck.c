@@ -59,6 +59,7 @@
 #endif
 
 #include "../version.h"
+#include "support/devname.h"
 #include "support/nls-enable.h"
 #include "fsck.h"
 #include "blkid.h"
@@ -297,7 +298,7 @@ static int parse_fstab_line(char *line, struct fs_info **ret_fs)
 	parse_escape(freq);
 	parse_escape(passno);
 
-	dev = blkid_get_devname(cache, device, NULL);
+	dev = get_devname(cache, device, NULL);
 	if (dev)
 		device = dev;
 
@@ -545,6 +546,8 @@ static int kill_all(int signum)
 
 	for (inst = instance_list; inst; inst = inst->next) {
 		if (inst->flags & FLAG_DONE)
+			continue;
+		if (inst->pid <= 0)
 			continue;
 		kill(inst->pid, signum);
 		n++;
@@ -1128,7 +1131,7 @@ static void PRS(int argc, char *argv[])
 					progname);
 				exit(EXIT_ERROR);
 			}
-			dev = blkid_get_devname(cache, arg, NULL);
+			dev = get_devname(cache, arg, NULL);
 			if (!dev && strchr(arg, '=')) {
 				/*
 				 * Check to see if we failed because

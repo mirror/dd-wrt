@@ -63,8 +63,10 @@ void print_resource_track(ext2_resize_t rfs, struct resource_track *track,
 #ifdef HAVE_GETRUSAGE
 	struct rusage r;
 #endif
-#ifdef HAVE_MALLINFO
-	struct mallinfo	malloc_info;
+#ifdef HAVE_MALLINFO2
+	struct mallinfo2 malloc_info;
+#elif defined HAVE_MALLINFO
+	struct mallinfo malloc_info;
 #endif
 	struct timeval time_end;
 
@@ -76,8 +78,13 @@ void print_resource_track(ext2_resize_t rfs, struct resource_track *track,
 	if (track->desc)
 		printf("%s: ", track->desc);
 
-#ifdef HAVE_MALLINFO
 #define kbytes(x)	(((unsigned long)(x) + 1023) / 1024)
+#ifdef HAVE_MALLINFO2
+	malloc_info = mallinfo2();
+	printf("Memory used: %luk/%luk (%luk/%luk), ",
+		kbytes(malloc_info.arena), kbytes(malloc_info.hblkhd),
+		kbytes(malloc_info.uordblks), kbytes(malloc_info.fordblks));
+#elif defined HAVE_MALLINFO
 
 	malloc_info = mallinfo();
 	printf("Memory used: %luk/%luk (%luk/%luk), ",

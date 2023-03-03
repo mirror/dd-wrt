@@ -20,6 +20,10 @@
 #include "ext2fs.h"
 #include "ext2fsP.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 /*
  * Keyed 32-bit hash function using TEA in a Davis-Meyer function
  *   H0 = Key

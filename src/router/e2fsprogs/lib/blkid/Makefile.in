@@ -11,6 +11,7 @@ VPATH = @srcdir@
 top_builddir = ../..
 my_dir = lib/blkid
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 @MCONFIG@
 

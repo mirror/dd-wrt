@@ -39,7 +39,7 @@ errcode_t ext2fs_read_bb_FILE2(ext2_filsys fs, FILE *f,
 					       void *priv_data))
 {
 	errcode_t	retval;
-	blk64_t		blockno;
+	unsigned long long blockno;
 	int		count;
 	char		buf[128];
 
@@ -65,10 +65,10 @@ errcode_t ext2fs_read_bb_FILE2(ext2_filsys fs, FILE *f,
 		    ((blockno < fs->super->s_first_data_block) ||
 		     (blockno >= ext2fs_blocks_count(fs->super)))) {
 			if (invalid)
-				(invalid)(fs, blockno, buf, priv_data);
+				(invalid)(fs, (blk64_t) blockno, buf, priv_data);
 			continue;
 		}
-		retval = ext2fs_badblocks_list_add(*bb_list, blockno);
+		retval = ext2fs_badblocks_list_add(*bb_list, (blk64_t) blockno);
 		if (retval)
 			return retval;
 	}

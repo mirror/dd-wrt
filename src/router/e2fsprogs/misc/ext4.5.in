@@ -161,8 +161,8 @@ option.
 .TP
 .B has_journal
 .br
-Create a journal to ensure filesystem consistency even across unclean
-shutdowns.  Setting the filesystem feature is equivalent to using the
+Create a journal to ensure file system consistency even across unclean
+shutdowns.  Setting the file system feature is equivalent to using the
 .B \-j
 option with
 .BR mke2fs " or " tune2fs.
@@ -208,7 +208,7 @@ kernels from mounting file systems that they could not understand.
 .B metadata_csum
 .br
 This ext4 feature enables metadata checksumming.  This feature stores
-checksums for all of the filesystem metadata (superblock, group
+checksums for all of the file system metadata (superblock, group
 descriptor blocks, inode and block bitmaps, directories, and
 extent tree blocks).  The checksum algorithm used for the metadata
 blocks is different than the one used for group descriptors with the
@@ -220,8 +220,8 @@ will be used preferentially instead of
 .TP
 .B metadata_csum_seed
 .br
-This feature allows the filesystem to store the metadata checksum seed in the
-superblock, which allows the administrator to change the UUID of a filesystem
+This feature allows the file system to store the metadata checksum seed in the
+superblock, which allows the administrator to change the UUID of a file system
 using the
 .B metadata_csum
 feature while it is mounted.
@@ -241,20 +241,20 @@ available in the resize inode.
 .B mmp
 .br
 This ext4 feature provides multiple mount protection (MMP).  MMP helps to
-protect the filesystem from being multiply mounted and is useful in
+protect the file system from being multiply mounted and is useful in
 shared storage environments.
 .TP
 .B project
 .br
 This ext4 feature provides project quota support. With this feature,
-the project ID of inode will be managed when the filesystem is mounted.
+the project ID of inode will be managed when the file system is mounted.
 .TP
 .B quota
 .br
 Create quota inodes (inode #3 for userquota and inode
 #4 for group quota) and set them in the superblock.
 With this feature, the quotas will be enabled
-automatically when the filesystem is mounted.
+automatically when the file system is mounted.
 .IP
 Causes the quota files (i.e., user.quota and
 group.quota which existed
@@ -270,7 +270,7 @@ is carried out by the kernel, triggered by
 By default
 .B mke2fs
 will attempt to reserve enough space so that the
-filesystem may grow to 1024 times its initial size.  This can be changed
+file system may grow to 1024 times its initial size.  This can be changed
 using the
 .B resize
 extended option.
@@ -298,6 +298,20 @@ group #1, and one in the last block group in the file system.  This
 feature is essentially a more extreme version of sparse_super and is
 designed to allow a much larger percentage of the disk to have
 contiguous blocks available for data files.
+.TP
+.B stable_inodes
+.br
+Marks the file system's inode numbers and UUID as stable.
+.BR resize2fs (8)
+will not allow shrinking a file system with this feature, nor
+will
+.BR tune2fs (8)
+allow changing its UUID.  This feature allows the use of specialized encryption
+settings that make use of the inode numbers and UUID.  Note that the
+.B encrypt
+feature still needs to be enabled separately.
+.B stable_inodes
+is a "compat" feature, so old kernels will allow it.
 .TP
 .B uninit_bg
 .br
@@ -330,9 +344,9 @@ and ext4.  Other generic mount options may be used as well; see
 .BR mount (8)
 for details.
 .SH "Mount options for ext2"
-The `ext2' filesystem is the standard Linux filesystem.
+The `ext2' file system is the standard Linux file system.
 Since Linux 2.5.46, for most mount options the default
-is determined by the filesystem superblock. Set them with
+is determined by the file system superblock. Set them with
 .BR tune2fs (8).
 .TP
 .BR acl | noacl
@@ -347,17 +361,17 @@ system call. The
 .B minixdf
 behavior is to return in the
 .I f_blocks
-field the total number of blocks of the filesystem, while the
+field the total number of blocks of the file system, while the
 .B bsddf
 behavior (which is the default) is to subtract the overhead blocks
-used by the ext2 filesystem and not available for file storage. Thus
+used by the ext2 file system and not available for file storage. Thus
 .sp 1
 % mount /k \-o minixdf; df /k; umount /k
 .TS
 tab(#);
 l2 l2 r2 l2 l2 l
 l c r c c l.
-Filesystem#1024-blocks#Used#Available#Capacity#Mounted on
+File System#1024-blocks#Used#Available#Capacity#Mounted on
 /dev/sda6#2630655#86954#2412169#3%#/k
 .TE
 .sp 1
@@ -366,7 +380,7 @@ Filesystem#1024-blocks#Used#Available#Capacity#Mounted on
 tab(#);
 l2 l2 r2 l2 l2 l
 l c r c c l.
-Filesystem#1024-blocks#Used#Available#Capacity#Mounted on
+File System#1024-blocks#Used#Available#Capacity#Mounted on
 /dev/sda6#2543714#13#2412169#0%#/k
 .TE
 .sp 1
@@ -380,16 +394,16 @@ It is wise to invoke
 .BR e2fsck (8)
 every now and then, e.g.\& at boot time. The non-default behavior is unsupported
 (check=normal and check=strict options have been removed). Note that these mount options
-don't have to be supported if ext4 kernel driver is used for ext2 and ext3 filesystems.
+don't have to be supported if ext4 kernel driver is used for ext2 and ext3 file systems.
 .TP
 .B debug
 Print debugging info upon each (re)mount.
 .TP
 .BR errors= { continue | remount-ro | panic }
 Define the behavior when an error is encountered.
-(Either ignore errors and just mark the filesystem erroneous and continue,
-or remount the filesystem read-only, or panic and halt the system.)
-The default is set in the filesystem superblock, and can be
+(Either ignore errors and just mark the file system erroneous and continue,
+or remount the file system read-only, or panic and halt the system.)
+The default is set in the file system superblock, and can be
 changed using
 .BR tune2fs (8).
 .TP
@@ -405,7 +419,7 @@ if it is a directory itself.
 .TP
 .BR grpquota | noquota | quota | usrquota
 The usrquota (same as quota) mount option enables user quota support on the
-filesystem. grpquota enables group quotas support. You need the quota utilities
+file system. grpquota enables group quotas support. You need the quota utilities
 to actually enable and manage the quota system.
 .TP
 .B nouid32
@@ -416,7 +430,7 @@ kernels which only store and expect 16-bit values.
 Use old allocator or Orlov allocator for new inodes. Orlov is default.
 .TP
 \fBresgid=\fP\,\fIn\fP and \fBresuid=\fP\,\fIn\fP
-The ext2 filesystem reserves a certain percentage of the available
+The ext2 file system reserves a certain percentage of the available
 space (by default 5%, see
 .BR mke2fs (8)
 and
@@ -430,7 +444,7 @@ specified by
 .IR n .
 This option is normally used when the primary superblock has been
 corrupted.  The location of backup superblocks is dependent on the
-filesystem's blocksize, the number of blocks per group, and features
+file system's blocksize, the number of blocks per group, and features
 such as
 .BR sparse_super .
 .IP
@@ -440,20 +454,20 @@ program using the
 .B \-n
 option to print out where the superblocks exist, supposing
 .B mke2fs
-is supplied with arguments that are consistent with the filesystem's layout
+is supplied with arguments that are consistent with the file system's layout
 (e.g. blocksize, blocks per group,
 .BR sparse_super ,
 etc.).
 .IP
 The block number here uses 1\ k units. Thus, if you want to use logical
-block 32768 on a filesystem with 4\ k blocks, use "sb=131072".
+block 32768 on a file system with 4\ k blocks, use "sb=131072".
 .TP
 .BR user_xattr | nouser_xattr
 Support "user." extended attributes (or not).
 
 
 .SH "Mount options for ext3"
-The ext3 filesystem is a version of the ext2 filesystem which has been
+The ext3 file system is a version of the ext2 file system which has been
 enhanced with journaling.  It supports the same options as ext2 as
 well as the following additions:
 .TP
@@ -466,22 +480,22 @@ in devnum, or via a path to the device.
 .TP
 .BR norecovery / noload
 Don't load the journal on mounting.  Note that
-if the filesystem was not unmounted cleanly,
+if the file system was not unmounted cleanly,
 skipping the journal replay will lead to the
-filesystem containing inconsistencies that can
+file system containing inconsistencies that can
 lead to any number of problems.
 .TP
 .BR data= { journal | ordered | writeback }
 Specifies the journaling mode for file data.  Metadata is always journaled.
 To use modes other than
 .B ordered
-on the root filesystem, pass the mode to the kernel as boot parameter, e.g.\&
+on the root file system, pass the mode to the kernel as boot parameter, e.g.\&
 .IR rootflags=data=journal .
 .RS
 .TP
 .B journal
 All data is committed into the journal prior to being written into the
-main filesystem.
+main file system.
 .TP
 .B ordered
 This is the default mode.  All data is forced directly out to the main file
@@ -489,9 +503,9 @@ system prior to its metadata being committed to the journal.
 .TP
 .B writeback
 Data ordering is not preserved \(en data may be written into the main
-filesystem after its metadata has been committed to the journal.
+file system after its metadata has been committed to the journal.
 This is rumoured to be the highest-throughput option.  It guarantees
-internal filesystem integrity, however it can allow old data to appear
+internal file system integrity, however it can allow old data to appear
 in files after a crash and journal recovery.
 .RE
 .TP
@@ -527,7 +541,7 @@ ext3 also supports journaled quotas (version 2 quota). jqfmt=vfsv0 or
 jqfmt=vfsv1 enables journaled quotas. Journaled quotas have the advantage that
 even after a crash no quota check is required. When the
 .B quota
-filesystem feature is enabled, journaled quotas are used automatically, and
+file system feature is enabled, journaled quotas are used automatically, and
 this mount option is ignored.
 .TP
 .BR usrjquota=aquota.user | grpjquota=aquota.group
@@ -535,13 +549,13 @@ For journaled quotas (jqfmt=vfsv0 or jqfmt=vfsv1), the mount options
 usrjquota=aquota.user and grpjquota=aquota.group are required to tell the
 quota system which quota database files to use. When the
 .B quota
-filesystem feature is enabled, journaled quotas are used automatically, and
+file system feature is enabled, journaled quotas are used automatically, and
 this mount option is ignored.
 
 .SH "Mount options for ext4"
-The ext4 filesystem is an advanced level of the ext3 filesystem which
+The ext4 file system is an advanced level of the ext3 file system which
 incorporates scalability and reliability enhancements for supporting large
-filesystem.
+file system.
 
 The options
 .B journal_dev, journal_path, norecovery, noload, data, commit, orlov,
@@ -565,7 +579,7 @@ These mount options have the same effect as in ext3.  The mount options
 "barrier" and "nobarrier" are added for consistency with other ext4 mount
 options.
 
-The ext4 filesystem enables write barriers by default.
+The ext4 file system enables write barriers by default.
 .TP
 .BI inode_readahead_blks= n
 This tuning parameter controls the maximum number of inode table blocks that
@@ -573,9 +587,9 @@ ext4's inode table readahead algorithm will pre-read into the buffer cache.
 The value must be a power of 2. The default value is 32 blocks.
 .TP
 .BI stripe= n
-Number of filesystem blocks that mballoc will try to use for allocation size
+Number of file system blocks that mballoc will try to use for allocation size
 and alignment. For RAID5/6 systems this should be the number of data disks *
-RAID chunk size in filesystem blocks.
+RAID chunk size in file system blocks.
 .TP
 .B delalloc
 Deferring block allocation until write-out time.
@@ -585,7 +599,7 @@ Disable delayed allocation. Blocks are allocated when data is copied from user
 to page cache.
 .TP
 .BI max_batch_time= usec
-Maximum amount of time ext4 should wait for additional filesystem operations to
+Maximum amount of time ext4 should wait for additional file system operations to
 be batch together with a synchronous write operation. Since a synchronous
 write operation is going to force a commit and then a wait for the I/O
 complete, it doesn't cost much, and can be a huge throughput win, we wait for a
@@ -614,7 +628,7 @@ priority.
 .B abort
 Simulate the effects of calling ext4_abort() for
 debugging purposes.  This is normally used while
-remounting a filesystem which is already mounted.
+remounting a file system which is already mounted.
 .TP
 .BR auto_da_alloc | noauto_da_alloc
 Many broken applications don't use fsync() when
@@ -638,12 +652,12 @@ crashes before the delayed allocation blocks are forced to disk.
 Do not initialize any uninitialized inode table blocks in the background. This
 feature may be used by installation CD's so that the install process can
 complete as quickly as possible; the inode table initialization process would
-then be deferred until the next time the filesystem is mounted.
+then be deferred until the next time the file system is mounted.
 .TP
 .B init_itable=n
 The lazy itable init code will wait n times the number of milliseconds it took
 to zero out the previous block group's inode table. This minimizes the impact on
-system performance while the filesystem's inode table is being initialized.
+system performance while the file system's inode table is being initialized.
 .TP
 .BR discard / nodiscard
 Controls whether ext4 should issue discard/TRIM commands to the underlying
@@ -653,9 +667,9 @@ testing has been done.
 .TP
 .BR block_validity / noblock_validity
 This option enables/disables the in-kernel facility for tracking
-filesystem metadata blocks within internal data structures. This allows multi-\c
+file system metadata blocks within internal data structures. This allows multi-\c
 block allocator and other routines to quickly locate extents which might
-overlap with filesystem metadata blocks. This option is intended for debugging
+overlap with file system metadata blocks. This option is intended for debugging
 purposes and since it negatively affects the performance, it is off by default.
 .TP
 .BR dioread_lock / dioread_nolock
@@ -686,14 +700,14 @@ systems where extended attributes are rarely or never shared between files,
 use of mbcache for deduplication adds unnecessary computational overhead.
 .TP
 .B prjquota
-The prjquota mount option enables project quota support on the filesystem.
+The prjquota mount option enables project quota support on the file system.
 You need the quota utilities to actually enable and manage the quota system.
 This mount option requires the
 .B project
-filesystem feature.
+file system feature.
 
 .SH FILE ATTRIBUTES
-The ext2, ext3, and ext4 filesystems support setting the following file
+The ext2, ext3, and ext4 file systems support setting the following file
 attributes on Linux systems using the
 .BR chattr (1)
 utility:
@@ -712,11 +726,11 @@ utility:
 .sp
 .BR u " - undeletable"
 .sp
-In addition, the ext3 and ext4 filesystems support the following flag:
+In addition, the ext3 and ext4 file systems support the following flag:
 .sp
 .BR j " - data journaling"
 .sp
-Finally, the ext4 filesystem also supports the following flag:
+Finally, the ext4 file system also supports the following flag:
 .sp
 .BR e " - extents format"
 .sp
@@ -788,6 +802,8 @@ ext4, 4.13
 ext4, 5.2
 .IP "\fBverity\fR" 2i
 ext4, 5.4
+.IP "\fBstable_inodes\fR" 2i
+ext4, 5.5
 .SH SEE ALSO
 .BR mke2fs (8),
 .BR mke2fs.conf (5),

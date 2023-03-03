@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ..
 my_dir = util
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 SRCS = $(srcdir)/subst.c $(srcdir)/mkutf8data.c
 

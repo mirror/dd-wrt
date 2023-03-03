@@ -8,6 +8,8 @@ rm -rf $OUT
 $FSCK -f -y -N test_filesystem $TMPFILE > $OUT.new 2>&1
 status=$?
 echo Exit status is $status >> $OUT.new
+$DEBUGFS -R 'lq user' $TMPFILE >> $OUT.new 2>&1
+$DEBUGFS -R 'lq group' $TMPFILE >> $OUT.new 2>&1
 sed -f $cmd_dir/filter.sed $OUT.new >> $OUT
 rm -f $OUT.new
 

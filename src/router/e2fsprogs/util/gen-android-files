@@ -37,9 +37,16 @@ rm -f $MK_CMDS
 
 cp lib/blkid/blkid.h.in lib/blkid/blkid.h
 cp lib/uuid/uuid.h.in lib/uuid/uuid.h
+
 cp util/android_types.h lib/ext2fs/ext2_types.h
 cp util/android_types.h lib/blkid/blkid_types.h
 cp util/android_types.h lib/uuid/uuid_types.h
+# Copied header files having exactly same content results in debug output
+# differences on RBE. Hence modify the #define's appropriately.
+sed -i 's/#define _LINUX_TYPES_H/#define _BLKID_TYPES_H/g' lib/blkid/blkid_types.h
+sed -i 's/#define _LINUX_TYPES_H/#define _EXT2_TYPES_H/g' lib/ext2fs/ext2_types.h
+sed -i 's/#define _LINUX_TYPES_H/#define _UUID_TYPES_H/g' lib/uuid/uuid_types.h
+
 cp util/android_config.h lib/config.h
 cp misc/e2freefrag.c debugfs/
 cp e2fsck/recovery.c e2fsck/revoke.c debugfs/

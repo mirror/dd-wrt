@@ -521,7 +521,7 @@ errcode_t read_list(char *str, blk64_t **list, size_t *len)
 	blk64_t *lst = *list;
 	size_t ln = *len;
 	char *tok, *p = str;
-	errcode_t retval;
+	errcode_t retval = 0;
 
 	while ((tok = strtok(p, ","))) {
 		blk64_t *l;
@@ -530,24 +530,28 @@ errcode_t read_list(char *str, blk64_t **list, size_t *len)
 
 		errno = 0;
 		y = x = strtoull(tok, &e, 0);
-		if (errno)
-			return errno;
+		if (errno) {
+			retval = errno;
+			break;
+		}
 		if (*e == '-') {
 			y = strtoull(e + 1, NULL, 0);
-			if (errno)
-				return errno;
+			if (errno) {
+				retval = errno;
+				break;
+			}
 		} else if (*e != 0) {
 			retval = EINVAL;
-			goto err;
+			break;
 		}
 		if (y < x) {
 			retval = EINVAL;
-			goto err;
+			break;
 		}
 		l = realloc(lst, sizeof(blk64_t) * (ln + y - x + 1));
 		if (l == NULL) {
 			retval = ENOMEM;
-			goto err;
+			break;
 		}
 		lst = l;
 		for (; x <= y; x++)
@@ -557,8 +561,40 @@ errcode_t read_list(char *str, blk64_t **list, size_t *len)
 
 	*list = lst;
 	*len = ln;
-	return 0;
-err:
-	free(lst);
 	return retval;
+}
+
+void do_byte_hexdump(FILE *fp, unsigned char *buf, size_t bufsize)
+{
+	size_t		i, j, max;
+	int		suppress = -1;
+
+	for (i = 0; i < bufsize; i += 16) {
+		max = (bufsize - i > 16) ? 16 : bufsize - i;
+		if (suppress < 0) {
+			if (i && memcmp(buf + i, buf + i - max, max) == 0) {
+				suppress = i;
+				fprintf(fp, "*\n");
+				continue;
+			}
+		} else {
+			if (memcmp(buf + i, buf + suppress, max) == 0)
+				continue;
+			suppress = -1;
+		}
+		fprintf(fp, "%04o  ", (unsigned int)i);
+		for (j = 0; j < 16; j++) {
+			if (j < max)
+				fprintf(fp, "%02x", buf[i+j]);
+			else
+				fprintf(fp, "  ");
+			if ((j % 2) == 1)
+				fprintf(fp, " ");
+		}
+		fprintf(fp, " ");
+		for (j = 0; j < max; j++)
+			fprintf(fp, "%c", isprint(buf[i+j]) ? buf[i+j] : '.');
+		fprintf(fp, "\n");
+	}
+	fprintf(fp, "\n");
 }

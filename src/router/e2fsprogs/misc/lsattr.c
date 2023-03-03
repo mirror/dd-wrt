@@ -144,6 +144,11 @@ static int lsattr_dir_proc (const char * dir_name, struct dirent * de,
 	int dir_len = strlen(dir_name);
 
 	path = malloc(dir_len + strlen (de->d_name) + 2);
+	if (!path) {
+		fputs(_("Couldn't allocate path variable in lsattr_dir_proc\n"),
+			stderr);
+		return -1;
+	}
 
 	if (dir_len && dir_name[dir_len-1] == '/')
 		sprintf (path, "%s%s", dir_name, de->d_name);
@@ -182,6 +187,8 @@ int main (int argc, char ** argv)
 #endif
 	if (argc && *argv)
 		program_name = *argv;
+	else
+		usage();
 	while ((c = getopt (argc, argv, "RVadlvp")) != EOF)
 		switch (c)
 		{

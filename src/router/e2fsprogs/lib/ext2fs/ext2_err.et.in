@@ -545,4 +545,16 @@ ec	EXT2_ET_INODE_CORRUPTED,
 ec	EXT2_ET_EA_INODE_CORRUPTED,
 	"Inode containing extended attribute value is corrupted"
 
+ec	EXT2_ET_NO_GDESC,
+	"Group descriptors not loaded"
+
+ec	EXT2_FILSYS_CORRUPTED,
+	"The internal ext2_filsys data structure appears to be corrupted"
+
+ec	EXT2_ET_EXTENT_CYCLE,
+	"Found cyclic loop in extent tree"
+
+ec	EXT2_ET_EXTERNAL_JOURNAL_NOSUPP,
+	"Operation not supported on an external journal"
+
 	end

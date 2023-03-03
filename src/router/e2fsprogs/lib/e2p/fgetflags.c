@@ -39,16 +39,19 @@
 
 #include "e2p.h"
 
-#ifdef O_LARGEFILE
-#define OPEN_FLAGS (O_RDONLY|O_NONBLOCK|O_LARGEFILE)
-#else
-#define OPEN_FLAGS (O_RDONLY|O_NONBLOCK)
+#ifndef O_LARGEFILE
+#define O_LARGEFILE 0
 #endif
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
+
+#define OPEN_FLAGS (O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_NOFOLLOW)
 
 int fgetflags (const char * name, unsigned long * flags)
 {
-	struct stat buf;
 #if HAVE_STAT_FLAGS && !(APPLE_DARWIN && HAVE_EXT2_IOCTLS)
+	struct stat buf;
 
 	if (stat (name, &buf) == -1)
 		return -1;
@@ -68,35 +71,47 @@ int fgetflags (const char * name, unsigned long * flags)
 #endif
 
 	return 0;
-#else /* !HAVE_STAT_FLAGS || (APPLE_DARWIN && HAVE_EXT2_IOCTLS) */
-#if HAVE_EXT2_IOCTLS
+#elif APPLE_DARWIN && HAVE_EXT2_IOCTLS
+	int f, save_errno = 0;
+
+	f = -1;
+	save_errno = syscall(SYS_fsctl, name, EXT2_IOC_GETFLAGS, &f, 0);
+	*flags = f;
+	return (save_errno);
+#elif HAVE_EXT2_IOCTLS
+	struct stat buf;
 	int fd, r, f, save_errno = 0;
 
-	if (!lstat(name, &buf) &&
+	if (!stat(name, &buf) &&
 	    !S_ISREG(buf.st_mode) && !S_ISDIR(buf.st_mode)) {
-		goto notsupp;
-	}
-#if !APPLE_DARWIN
-	fd = open (name, OPEN_FLAGS);
-	if (fd == -1)
+		errno = EOPNOTSUPP;
 		return -1;
-	r = ioctl (fd, EXT2_IOC_GETFLAGS, &f);
-	if (r == -1)
+	}
+	fd = open(name, OPEN_FLAGS);
+	if (fd == -1) {
+		if (errno == ELOOP || errno == ENXIO)
+			errno = EOPNOTSUPP;
+		return -1;
+	}
+	if (!fstat(fd, &buf) &&
+	    !S_ISREG(buf.st_mode) && !S_ISDIR(buf.st_mode)) {
+		close(fd);
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+	r = ioctl(fd, EXT2_IOC_GETFLAGS, &f);
+	if (r == -1) {
+		if (errno == ENOTTY)
+			errno = EOPNOTSUPP;
 		save_errno = errno;
+	}
 	*flags = f;
-	close (fd);
+	close(fd);
 	if (save_errno)
 		errno = save_errno;
 	return r;
-#else /* APPLE_DARWIN */
-   f = -1;
-   save_errno = syscall(SYS_fsctl, name, EXT2_IOC_GETFLAGS, &f, 0);
-   *flags = f;
-   return (save_errno);
-#endif /* !APPLE_DARWIN */
-notsupp:
-#endif /* HAVE_EXT2_IOCTLS */
-#endif
+#else
 	errno = EOPNOTSUPP;
 	return -1;
+#endif
 }

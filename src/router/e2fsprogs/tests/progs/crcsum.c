@@ -57,11 +57,10 @@ int main(int argc, char **argv)
 
 	while (!feof(f)) {
 		unsigned char buf[4096];
+		int cnt = fread(buf, 1, sizeof(buf), f);
 
-		int c = fread(buf, 1, sizeof(buf), f);
-
-		if (c)
-			crc = csum_func(crc, buf, c);
+		if (cnt)
+			crc = csum_func(crc, buf, cnt);
 	}
 	printf("%u\n", crc);
 	return 0;

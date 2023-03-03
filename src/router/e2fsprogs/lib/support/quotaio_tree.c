@@ -601,7 +601,7 @@ static int report_tree(struct dquot *dquot, unsigned int blk, int depth,
 	__le32 *ref = (__le32 *) buf;
 
 	if (!buf)
-		return 0;
+		return -1;
 
 	read_blk(dquot->dq_h, blk, buf);
 	if (depth == QT_TREEDEPTH - 1) {

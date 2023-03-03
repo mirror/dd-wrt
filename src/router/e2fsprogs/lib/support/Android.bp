@@ -1,12 +1,25 @@
 // Copyright 2017 The Android Open Source Project
 
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "external_e2fsprogs_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-GPL
+    //   SPDX-license-identifier-MIT
+    default_applicable_licenses: ["external_e2fsprogs_license"],
+}
+
 cc_library {
     name: "libext2_quota",
     host_supported: true,
+    ramdisk_available: true,
+    vendor_ramdisk_available: true,
     recovery_available: true,
     unique_host_soname: true,
     defaults: ["e2fsprogs-defaults"],
     srcs: [
+        "devname.c",
         "dict.c",
         "mkquota.c",
         "parse_qtype.c",
@@ -26,7 +39,7 @@ cc_library {
 
     target: {
         windows: {
-            enabled: true
+            enabled: true,
         },
     },
 

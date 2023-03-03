@@ -65,6 +65,12 @@ Last Changed Date: 2007-06-22 13:36:10 -0400 (Fri, 22 Jun 2007)
 #include <sys/mman.h>
 #endif
 
+#ifdef __GNUC__
+#define EXT2FS_ATTR(x) __attribute__(x)
+#else
+#define EXT2FS_ATTR(x)
+#endif
+
 #ifndef MAP_FILE
 #define MAP_FILE 0
 #endif
@@ -256,6 +262,7 @@ struct tdb_context {
 static int tdb_munmap(struct tdb_context *tdb);
 static void tdb_mmap(struct tdb_context *tdb);
 static int tdb_lock(struct tdb_context *tdb, int list, int ltype);
+int tdb_lock_nonblock(struct tdb_context *tdb, int list, int ltype);
 static int tdb_unlock(struct tdb_context *tdb, int list, int ltype);
 static int tdb_brlock(struct tdb_context *tdb, tdb_off_t offset, int rw_type, int lck_type, int probe, size_t len);
 static int tdb_transaction_lock(struct tdb_context *tdb, int ltype);
@@ -410,7 +417,7 @@ static int _tdb_lock(struct tdb_context *tdb, int list, int ltype, int op)
 
 	/* a global lock allows us to avoid per chain locks */
 	if (tdb->global_lock.count &&
-	    (ltype == tdb->global_lock.ltype || ltype == F_RDLCK)) {
+	    ((u32)ltype == tdb->global_lock.ltype || ltype == F_RDLCK)) {
 		return 0;
 	}
 
@@ -505,7 +512,7 @@ int tdb_unlock(struct tdb_context *tdb, int list, int ltype)
 
 	/* a global lock allows us to avoid per chain locks */
 	if (tdb->global_lock.count &&
-	    (ltype == tdb->global_lock.ltype || ltype == F_RDLCK)) {
+	    ((u32)ltype == tdb->global_lock.ltype || ltype == F_RDLCK)) {
 		return 0;
 	}
 
@@ -626,7 +633,7 @@ static int _tdb_lockall(struct tdb_context *tdb, int ltype, int op)
 	if (tdb->read_only || tdb->traverse_read)
 		return TDB_ERRCODE(TDB_ERR_LOCK, -1);
 
-	if (tdb->global_lock.count && tdb->global_lock.ltype == ltype) {
+	if (tdb->global_lock.count && tdb->global_lock.ltype == (u32)ltype) {
 		tdb->global_lock.count++;
 		return 0;
 	}
@@ -670,7 +677,8 @@ static int _tdb_unlockall(struct tdb_context *tdb, int ltype)
 		return TDB_ERRCODE(TDB_ERR_LOCK, -1);
 	}
 
-	if (tdb->global_lock.ltype != ltype || tdb->global_lock.count == 0) {
+	if (tdb->global_lock.ltype != (u32)ltype ||
+	    tdb->global_lock.count == 0) {
 		return TDB_ERRCODE(TDB_ERR_LOCK, -1);
 	}
 
@@ -853,7 +861,7 @@ static int tdb_oob(struct tdb_context *tdb, tdb_off_t len, int probe)
 		return TDB_ERRCODE(TDB_ERR_IO, -1);
 	}
 
-	if (st.st_size < (size_t)len) {
+	if (st.st_size < (off_t)len) {
 		if (!probe) {
 			/* Ensure ecode is set for log fn. */
 			tdb->ecode = TDB_ERR_IO;
@@ -1537,7 +1545,8 @@ static void transaction_next_hash_chain(struct tdb_context *tdb, u32 *chain)
 /*
   out of bounds check during a transaction
 */
-static int transaction_oob(struct tdb_context *tdb, tdb_off_t len, int probe)
+static int transaction_oob(struct tdb_context *tdb, tdb_off_t len,
+			   int probe EXT2FS_ATTR((unused)))
 {
 	if (len <= tdb->map_size) {
 		return 0;
@@ -1563,8 +1572,12 @@ static int transaction_expand_file(struct tdb_context *tdb, tdb_off_t size,
 /*
   brlock during a transaction - ignore them
 */
-static int transaction_brlock(struct tdb_context *tdb, tdb_off_t offset,
-			      int rw_type, int lck_type, int probe, size_t len)
+static int transaction_brlock(struct tdb_context *tdb EXT2FS_ATTR((unused)),
+			      tdb_off_t offset EXT2FS_ATTR((unused)),
+			      int rw_type EXT2FS_ATTR((unused)),
+			      int lck_type EXT2FS_ATTR((unused)),
+			      int probe EXT2FS_ATTR((unused)),
+			      size_t len EXT2FS_ATTR((unused)))
 {
 	return 0;
 }
@@ -2186,6 +2199,7 @@ int tdb_transaction_recover(struct tdb_context *tdb)
 				   rec.data_len, 0) == -1) {
 		TDB_LOG((tdb, TDB_DEBUG_FATAL, "tdb_transaction_recover: failed to read recovery data\n"));
 		tdb->ecode = TDB_ERR_IO;
+		free(data);
 		return -1;
 	}
 
@@ -3006,7 +3020,7 @@ static int tdb_dump_chain(struct tdb_context *tdb, int i)
 void tdb_dump_all(struct tdb_context *tdb)
 {
 	int i;
-	for (i=0;i<tdb->header.hash_size;i++) {
+	for (i = 0; i < (int)tdb->header.hash_size; i++) {
 		tdb_dump_chain(tdb, i);
 	}
 	printf("freelist:\n");
@@ -3075,9 +3089,10 @@ void tdb_increment_seqnum_nonblock(struct tdb_context *tdb)
 	/* we ignore errors from this, as we have no sane way of
 	   dealing with them.
 	*/
-	tdb_ofs_read(tdb, TDB_SEQNUM_OFS, &seqnum);
+	if (tdb_ofs_read(tdb, TDB_SEQNUM_OFS, &seqnum) == -1)
+		return;
 	seqnum++;
-	tdb_ofs_write(tdb, TDB_SEQNUM_OFS, &seqnum);
+	(void) tdb_ofs_write(tdb, TDB_SEQNUM_OFS, &seqnum);
 }
 
 /*
@@ -3099,7 +3114,8 @@ static void tdb_increment_seqnum(struct tdb_context *tdb)
 	tdb_brlock(tdb, TDB_SEQNUM_OFS, F_UNLCK, F_SETLKW, 1, 1);
 }
 
-static int tdb_key_compare(TDB_DATA key, TDB_DATA data, void *private_data)
+static int tdb_key_compare(TDB_DATA key, TDB_DATA data,
+			   void *private_data EXT2FS_ATTR((unused)))
 {
 	return memcmp(data.dptr, key.dptr, data.dsize);
 }
@@ -3677,7 +3693,8 @@ int tdb_get_seqnum(struct tdb_context *tdb)
 {
 	tdb_off_t seqnum=0;
 
-	tdb_ofs_read(tdb, TDB_SEQNUM_OFS, &seqnum);
+	if (tdb_ofs_read(tdb, TDB_SEQNUM_OFS, &seqnum) == -1)
+		return 0;
 	return seqnum;
 }
 
@@ -3803,7 +3820,9 @@ struct tdb_context *tdb_open(const char *name, int hash_size, int tdb_flags,
 
 /* a default logging function */
 static void null_log_fn(struct tdb_context *tdb, enum tdb_debug_level level, const char *fmt, ...) PRINTF_ATTRIBUTE(3, 4);
-static void null_log_fn(struct tdb_context *tdb, enum tdb_debug_level level, const char *fmt, ...)
+static void null_log_fn(struct tdb_context *tdb EXT2FS_ATTR((unused)),
+			enum tdb_debug_level level EXT2FS_ATTR((unused)),
+			const char *fmt EXT2FS_ATTR((unused)), ...)
 {
 }
 
@@ -3897,7 +3916,8 @@ struct tdb_context *tdb_open_ex(const char *name, int hash_size, int tdb_flags,
 	}
 
 	if (read(tdb->fd, &tdb->header, sizeof(tdb->header)) != sizeof(tdb->header)
-	    || strcmp(tdb->header.magic_food, TDB_MAGIC_FOOD) != 0
+	    || memcmp(tdb->header.magic_food, TDB_MAGIC_FOOD,
+		      sizeof(TDB_MAGIC_FOOD)) != 0
 	    || (tdb->header.version != TDB_VERSION
 		&& !(rev = (tdb->header.version==TDB_BYTEREV(TDB_VERSION))))) {
 		/* its not a valid database - possibly initialise it */

@@ -26,29 +26,34 @@ int ss_create_invocation(const char *subsystem_name, const char *version_string,
 			 void *info_ptr, ss_request_table *request_table_ptr,
 			 int *code_ptr)
 {
-	register int sci_idx;
-	register ss_data *new_table;
-	register ss_data **table;
+	int sci_idx;
+	ss_data *new_table = NULL;
+	ss_data **table = NULL;
+	ss_data **realloc_table = NULL;
 
 	*code_ptr = 0;
 	table = _ss_table;
 	new_table = (ss_data *) malloc(sizeof(ss_data));
+	if (!new_table)
+		goto out;
+	memset(new_table, 0, sizeof(ss_data));
 
 	if (table == (ss_data **) NULL) {
 		table = (ss_data **) malloc(2 * size);
+		if (!table)
+			goto out;
 		table[0] = table[1] = (ss_data *)NULL;
 	}
 	initialize_ss_error_table ();
 
 	for (sci_idx = 1; table[sci_idx] != (ss_data *)NULL; sci_idx++)
 		;
-	table = (ss_data **) realloc((char *)table,
+	realloc_table = (ss_data **) realloc((char *)table,
 				     ((unsigned)sci_idx+2)*size);
-	if (table == NULL) {
-		*code_ptr = ENOMEM;
-		free(new_table);
-		return 0;
-	}
+	if (realloc_table == NULL)
+		goto out;
+
+	table = realloc_table;
 	table[sci_idx+1] = (ss_data *) NULL;
 	table[sci_idx] = new_table;
 
@@ -57,9 +62,15 @@ int ss_create_invocation(const char *subsystem_name, const char *version_string,
 	new_table->argv = (char **)NULL;
 	new_table->current_request = (char *)NULL;
 	new_table->info_dirs = (char **)malloc(sizeof(char *));
+	if (!new_table->info_dirs)
+		goto out;
+
 	*new_table->info_dirs = (char *)NULL;
 	new_table->info_ptr = info_ptr;
 	new_table->prompt = malloc((unsigned)strlen(subsystem_name)+4);
+	if (!new_table->prompt)
+		goto out;
+
 	strcpy(new_table->prompt, subsystem_name);
 	strcat(new_table->prompt, ":  ");
 #ifdef silly
@@ -71,6 +82,9 @@ int ss_create_invocation(const char *subsystem_name, const char *version_string,
 	new_table->flags.abbrevs_disabled = 0;
 	new_table->rqt_tables =
 		(ss_request_table **) calloc(2, sizeof(ss_request_table *));
+	if (!new_table->rqt_tables)
+		goto out;
+
 	*(new_table->rqt_tables) = request_table_ptr;
 	*(new_table->rqt_tables+1) = (ss_request_table *) NULL;
 
@@ -85,6 +99,17 @@ int ss_create_invocation(const char *subsystem_name, const char *version_string,
 	ss_get_readline(sci_idx);
 #endif
 	return(sci_idx);
+
+out:
+	if (new_table) {
+		free(new_table->prompt);
+		free(new_table->info_dirs);
+	}
+	free(new_table);
+	free(table);
+	*code_ptr = ENOMEM;
+	return 0;
+
 }
 
 void

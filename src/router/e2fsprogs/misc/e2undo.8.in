@@ -4,7 +4,7 @@
 .\"
 .TH E2UNDO 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-e2undo \- Replay an undo log for an ext2/ext3/ext4 filesystem
+e2undo \- Replay an undo log for an ext2/ext3/ext4 file system
 .SH SYNOPSIS
 .B e2undo
 [
@@ -32,7 +32,7 @@ e2undo \- Replay an undo log for an ext2/ext3/ext4 filesystem
 .B e2undo
 will replay the undo log
 .I undo_log
-for an ext2/ext3/ext4 filesystem found on
+for an ext2/ext3/ext4 file system found on
 .IR device .
 This can be
 used to undo a failed operation by an e2fsprogs program.
@@ -41,8 +41,8 @@ used to undo a failed operation by an e2fsprogs program.
 .B \-f
 Normally,
 .B e2undo
-will check the filesystem superblock to make sure the undo log matches
-with the filesystem on the device.  If they do not match,
+will check the file system superblock to make sure the undo log matches
+with the file system on the device.  If they do not match,
 .B e2undo
 will refuse to apply the undo log as a safety mechanism.  The
 .B \-f
@@ -52,10 +52,10 @@ option disables this safety mechanism.
 Display a usage message.
 .TP
 .B \-n
-Dry-run; do not actually write blocks back to the filesystem.
+Dry-run; do not actually write blocks back to the file system.
 .TP
 .BI \-o " offset"
-Specify the filesystem's
+Specify the file system's
 .I offset
 (in bytes) from the beginning of the device or file.
 .TP

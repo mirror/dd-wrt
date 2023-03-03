@@ -88,7 +88,8 @@ void do_test(FILE *in, FILE *out)
 				goto handle_error;
 		} else if (!strcmp(cmd, "lookup")) {
 			num2 = ext2fs_extent_translate(extent, num1);
-			fprintf(out, "# Answer: %llu%s\n", num2,
+			fprintf(out, "# Answer: %llu%s\n",
+				(unsigned long long) num2,
 				num2 ? "" : " (not found)");
 		} else if (!strcmp(cmd, "dump")) {
 			ext2fs_extent_dump(extent, out);
@@ -104,7 +105,9 @@ void do_test(FILE *in, FILE *out)
 				if (!size)
 					break;
 				fprintf(out, "# %llu -> %llu (%llu)\n",
-					num1, num2, size);
+					(unsigned long long) num1,
+					(unsigned long long) num2,
+					(unsigned long long) size);
 			}
 		} else
 			fputs("# Syntax error\n", out);

@@ -96,17 +96,12 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "compiler.h"
 
-#undef offsetof
-#ifdef __compiler_offsetof
-#define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
-#else
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#if __GNUC_PREREQ (4, 6)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 #endif
-
-#define container_of(ptr, type, member) ({			\
-	const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 struct rb_node
 {
@@ -161,14 +156,6 @@ static inline void ext2fs_rb_clear_node(struct rb_node *node)
 extern void ext2fs_rb_insert_color(struct rb_node *, struct rb_root *);
 extern void ext2fs_rb_erase(struct rb_node *, struct rb_root *);
 
-typedef void (*rb_augment_f)(struct rb_node *node, void *data);
-
-extern void ext2fs_rb_augment_insert(struct rb_node *node,
-			      rb_augment_f func, void *data);
-extern struct rb_node *ext2fs_rb_augment_erase_begin(struct rb_node *node);
-extern void ext2fs_rb_augment_erase_end(struct rb_node *node,
-				 rb_augment_f func, void *data);
-
 /* Find logical next and previous nodes in a tree */
 extern struct rb_node *ext2fs_rb_next(struct rb_node *);
 extern struct rb_node *ext2fs_rb_prev(struct rb_node *);
@@ -188,5 +175,9 @@ static inline void ext2fs_rb_link_node(struct rb_node * node,
 
 	*rb_link = node;
 }
+
+#if __GNUC_PREREQ (4, 6)
+#pragma GCC diagnostic pop
+#endif
 
 #endif	/* _LINUX_RBTREE_H */

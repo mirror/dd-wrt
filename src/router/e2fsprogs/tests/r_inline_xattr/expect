@@ -1,5 +1,5 @@
 resize2fs test
-debugfs -R ''stat file'' test.img 2>&1 | grep ''^Inode\|in inode body\|user.name (''
+debugfs -R ''stat file'' test.img 2>&1 | grep -E ''^Inode\|in inode body\|user.name \(''
 Inode: 1550   Type: regular    Mode:  0644   Flags: 0x0
   user.name (11) = "propervalue"
 Exit status is 0
@@ -8,7 +8,7 @@ Resizing the filesystem on test.img to 5120 (1k) blocks.
 The filesystem on test.img is now 5120 (1k) blocks long.
 
 Exit status is 0
-debugfs -R ''stat file'' test.img 2>&1 | grep ''^Inode\|in inode body\|user.name (''
+debugfs -R ''stat file'' test.img 2>&1 | grep -E ''^Inode\|in inode body\|user.name \(''
 Inode: 12   Type: regular    Mode:  0644   Flags: 0x0
   user.name (11) = "propervalue"
 Exit status is 0

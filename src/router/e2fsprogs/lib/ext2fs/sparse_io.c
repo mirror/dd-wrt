@@ -138,7 +138,7 @@ static errcode_t io_manager_configure(struct sparse_io_params *params,
 	retval = io_manager_import_sparse(params, sm, io);
 	if (retval) {
 		if (!params->block_size || !params->blocks_count) {
-			retval = -EINVAL;
+			retval = EINVAL;
 			goto err_params;
 		}
 		sm->block_size = params->block_size;
@@ -229,7 +229,7 @@ static errcode_t read_sparse_argv(const char *name, bool is_fd,
 
 	if (ret < 1) {
 		free(sparse_params->file);
-		return -EINVAL;
+		return EINVAL;
 	}
 	return 0;
 }

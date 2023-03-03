@@ -33,7 +33,7 @@ ENDL
 
 echo "tune2fs dangerous prompts test" > $OUT
 
-MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -U 6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf $TMPFILE 524288 >> $OUT 2>&1
+MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -o Linux -U 6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf $TMPFILE 524288 >> $OUT 2>&1
 
 # trigger a filesystem check
 $DEBUGFS -w -R 'ssv mtime now' $TMPFILE > /dev/null 2>&1
@@ -54,7 +54,7 @@ $TUNE2FS -O metadata_csum $TMPFILE >> $OUT 2>&1
 status=$?
 echo Exit status is $status >> $OUT
 
-MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -U 6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf $TMPFILE 524288 >> $OUT 2>&1
+MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -o Linux -U 6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf $TMPFILE 524288 >> $OUT 2>&1
 
 # dump and check
 $DUMPE2FS $TMPFILE 2> /dev/null | grep '^Group 0:' -B99 -A20 | sed -f $cmd_dir/filter.sed > $OUT.before
@@ -120,7 +120,7 @@ echo Exit status is $status >> $OUT
 echo " " >> $OUT
 echo "Testing with metadata checksum enabled" >> $OUT
 
-MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4m -U 6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf $TMPFILE 524288 >> $OUT 2>&1
+MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4m -o Linux -U 6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf $TMPFILE 524288 >> $OUT 2>&1
 $DUMPE2FS $TMPFILE 2> /dev/null | grep '^Group 0:' -B99 -A20 | sed -f $cmd_dir/filter.sed > $OUT.before
 $FSCK $FSCK_OPT -f -N test_filesys $TMPFILE >> $OUT 2>&1
 status=$?

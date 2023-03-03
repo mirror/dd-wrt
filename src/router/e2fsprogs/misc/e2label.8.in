@@ -4,7 +4,7 @@
 .\" 
 .TH E2LABEL 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-e2label \- Change the label on an ext2/ext3/ext4 filesystem
+e2label \- Change the label on an ext2/ext3/ext4 file system
 .SH SYNOPSIS
 .B e2label
 .I device
@@ -14,7 +14,7 @@ e2label \- Change the label on an ext2/ext3/ext4 filesystem
 .SH DESCRIPTION
 .B e2label
 will display or change the volume label on the ext2, ext3, or ext4
-filesystem located on
+file system located on
 .I device.
 .PP
 If the optional argument
@@ -33,7 +33,12 @@ Ext2 volume labels can be at most 16 characters long; if
 .I volume-label
 is longer than 16 characters,
 .B e2label
-will truncate it and print a warning message.
+will truncate it and print a warning message.  For other file systems that
+support online label manipulation and are mounted
+.B e2label
+will work as well, but it will not attempt to truncate the
+.I volume-label
+at all.
 .PP
 It is also possible to set the volume label using the
 .B \-L

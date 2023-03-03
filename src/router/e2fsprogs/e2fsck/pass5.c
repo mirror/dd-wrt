@@ -842,7 +842,7 @@ static void check_inode_end(e2fsck_t ctx)
 
 	clear_problem_context(&pctx);
 
-	end = EXT2_INODES_PER_GROUP(fs->super) * fs->group_desc_count;
+	end = (__u64)EXT2_INODES_PER_GROUP(fs->super) * fs->group_desc_count;
 	pctx.errcode = ext2fs_fudge_inode_bitmap_end(fs->inode_map, end,
 						     &save_inodes_count);
 	if (pctx.errcode) {

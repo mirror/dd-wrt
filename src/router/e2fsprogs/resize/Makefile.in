@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ..
 my_dir = resize
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 @MCONFIG@
 
@@ -41,6 +42,8 @@ DEPSTATIC_LIBS= $(STATIC_LIBE2P) $(STATIC_LIBEXT2FS) $(DEPSTATIC_LIBCOM_ERR)
 	$(Q) $(CPPCHECK_CMD) $(CPPFLAGS) $<
 
 all:: $(PROGS) $(TEST_PROGS) $(MANPAGES) 
+
+all-static:: resize2fs.static
 
 resize2fs: $(RESIZE_OBJS) $(DEPLIBS)
 	$(E) "	LD $@"

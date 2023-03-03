@@ -51,7 +51,7 @@ extern long long llseek (int fd, long long offset, int origin);
 
 #else	/* ! HAVE_LLSEEK */
 
-#if SIZEOF_LONG == SIZEOF_LONG_LONG
+#if SIZEOF_LONG == SIZEOF_LONG_LONG || _FILE_OFFSET_BITS+0 == 64
 
 #define my_llseek lseek
 
@@ -69,7 +69,7 @@ static int _llseek (unsigned int, unsigned long,
 
 static _syscall5(int,_llseek,unsigned int,fd,unsigned long,offset_high,
 		 unsigned long, offset_low,ext2_loff_t *,result,
-		 unsigned int, origin)
+		 unsigned int, origin);
 #endif
 
 static ext2_loff_t my_llseek (int fd, ext2_loff_t offset, int origin)

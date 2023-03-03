@@ -3,15 +3,10 @@ OUT=$test_name.log
 EXP=$test_dir/expect
 CONF=$TMPFILE.conf
 
-if [ $(uname -s) = "Darwin" ]; then
-	# creates a 4TB filesystem
-	echo "$test_name: $DESCRIPTION: skipped for HFS+ (no sparse files)"
-	return 0
-fi
-
-if [ $(uname -s) = "FreeBSD" ]; then
-	# creates a 4TB filesystem
-	echo "$test_name: $DESCRIPTION: skipped for FreeBSD (no sparse files)"
+os=$(uname -s)
+if [ "$os" = "Darwin" -o "$os" = "GNU" -o "FreeBSD" ]; then
+	# creates a 44GB filesystem
+	echo "$test_name: $test_description: skipped for $os"
 	return 0
 fi
 

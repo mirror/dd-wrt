@@ -1,5 +1,5 @@
 test_filesys: recovering journal
-JBD2: Invalid checksum recovering block 1090 in log
+JBD2: Invalid checksum recovering data block 1090 in log
 Journal checksum error found in test_filesys
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure

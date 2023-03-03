@@ -524,6 +524,8 @@ char *dupstr (char *src)
 	char *ptr;
 
 	ptr=(char *) malloc (strlen (src)+1);
+	if (!ptr)
+		return NULL;
 	strcpy (ptr,src);
 	return (ptr);
 }

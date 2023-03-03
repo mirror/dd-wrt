@@ -224,8 +224,11 @@ void quota_data_add(quota_ctx_t qctx, struct ext2_inode_large *inode,
 void quota_data_sub(quota_ctx_t qctx, struct ext2_inode_large *inode,
 		    ext2_ino_t ino, qsize_t space);
 errcode_t quota_write_inode(quota_ctx_t qctx, enum quota_type qtype);
-errcode_t quota_update_limits(quota_ctx_t qctx, ext2_ino_t qf_ino,
-			      enum quota_type type);
+/* Flags for quota_read_all_dquots() */
+#define QREAD_USAGE  0x01
+#define QREAD_LIMITS 0x02
+errcode_t quota_read_all_dquots(quota_ctx_t qctx, ext2_ino_t qf_ino,
+				enum quota_type type, unsigned int flags);
 errcode_t quota_compute_usage(quota_ctx_t qctx);
 void quota_release_context(quota_ctx_t *qctx);
 errcode_t quota_remove_inode(ext2_filsys fs, enum quota_type qtype);

@@ -1,5 +1,5 @@
 dd if=/dev/zero of=$TMPFILE bs=1k count=64 > /dev/null 2>&1
-$MKE2FS -q -b 1024 $TMPFILE
+$MKE2FS -q -b 1024 -o hurd $TMPFILE
 $DEBUGFS -w -R 'set_super_value creator_os 0xf0000000' $TMPFILE
 
 OUT=$test_name.log

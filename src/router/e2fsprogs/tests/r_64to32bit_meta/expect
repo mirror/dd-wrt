@@ -31,10 +31,11 @@ Change in FS metadata:
  Default mount options:    user_xattr acl
  Filesystem state:         clean
  Errors behavior:          Continue
-@@ -10,12 +10,11 @@
+@@ -10,13 +10,11 @@
  Inode count:              65536
  Block count:              524288
  Reserved block count:     26214
+-Overhead clusters:        32918
 -Free blocks:              852
 +Free blocks:              858
  Free inodes:              65046
@@ -45,7 +46,7 @@ Change in FS metadata:
  Blocks per group:         8192
  Fragments per group:      8192
  Inodes per group:         1024
-@@ -55,9 +54,9 @@
+@@ -58,9 +56,9 @@
  12:98305:-1:-1:15:31:3107
  13:106497:-1:-1:16:32:3363
  14:114689:-1:-1:17:33:3619
@@ -58,7 +59,7 @@ Change in FS metadata:
  18:147457:-1:-1:131076:131092:131618
  19:155649:-1:-1:131077:131093:131874
  20:163841:-1:-1:131078:131094:132130
-@@ -87,9 +86,9 @@
+@@ -90,9 +88,9 @@
  44:360449:-1:-1:262158:262174:265250
  45:368641:-1:-1:262159:262175:265506
  46:376833:-1:-1:262160:262176:265762

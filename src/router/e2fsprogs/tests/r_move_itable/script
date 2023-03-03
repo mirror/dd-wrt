@@ -14,8 +14,11 @@ fi
 
 dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 
-echo mke2fs -q -F -o Linux -b 1024 -g 256 test.img 1024 > $OUT.new
-$MKE2FS -q -F -o Linux -b 1024 -g 256 $TMPFILE 1024 >> $OUT.new 2>&1
+echo mke2fs -q -F -o Linux -b 1024 -g 256 -O ^resize_inode test.img 1024 > $OUT.new
+$MKE2FS -q -F -o Linux -b 1024 -g 256 -O ^resize_inode $TMPFILE 1024 >> $OUT.new 2>&1
+
+echo dumpe2fs test.img >> $OUT.new
+$DUMPE2FS $TMPFILE >> $OUT.new 2>&1
 
 echo resize2fs -p test.img 10000 >> $OUT.new
 $RESIZE2FS -p $TMPFILE 10000 >> $OUT.new 2>&1

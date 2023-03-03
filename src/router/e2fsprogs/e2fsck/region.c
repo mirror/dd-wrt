@@ -36,11 +36,12 @@ struct region_struct {
 region_t region_create(region_addr_t min, region_addr_t max)
 {
 	region_t	region;
+	errcode_t	retval;
 
-	region = malloc(sizeof(struct region_struct));
-	if (!region)
+	retval = ext2fs_get_memzero(sizeof(struct region_struct), &region);
+	if (retval)
 		return NULL;
-	memset(region, 0, sizeof(struct region_struct));
+
 	region->min = min;
 	region->max = max;
 	region->last = NULL;
@@ -53,16 +54,17 @@ void region_free(region_t region)
 
 	for (r = region->allocated; r; r = next) {
 		next = r->next;
-		free(r);
+		ext2fs_free_mem(&r);
 	}
 	memset(region, 0, sizeof(struct region_struct));
-	free(region);
+	ext2fs_free_mem(&region);
 }
 
 int region_allocate(region_t region, region_addr_t start, int n)
 {
 	struct region_el	*r, *new_region, *prev, *next;
 	region_addr_t end;
+	errcode_t retval;
 
 	end = start+n;
 	if ((start < region->min) || (end > region->max))
@@ -105,7 +107,7 @@ int region_allocate(region_t region, region_addr_t start, int n)
 				if (end == next->start) {
 					r->end = next->end;
 					r->next = next->next;
-					free(next);
+					ext2fs_free_mem(&next);
 					if (!r->next)
 						region->last = r;
 					return 0;
@@ -121,8 +123,8 @@ int region_allocate(region_t region, region_addr_t start, int n)
 	 * Insert a new region element structure into the linked list
 	 */
 append_to_list:
-	new_region = malloc(sizeof(struct region_el));
-	if (!new_region)
+	retval = ext2fs_get_mem(sizeof(struct region_el), &new_region);
+	if (retval)
 		return -1;
 	new_region->start = start;
 	new_region->end = start + n;
@@ -178,10 +180,13 @@ void region_print(region_t region, FILE *f)
 	struct region_el	*r;
 	int	i = 0;
 
-	fprintf(f, "Printing region (min=%llu. max=%llu)\n\t", region->min,
-		region->max);
+	fprintf(f, "Printing region (min=%llu. max=%llu)\n\t",
+		(unsigned long long) region->min,
+		(unsigned long long) region->max);
 	for (r = region->allocated; r; r = r->next) {
-		fprintf(f, "(%llu, %llu)  ", r->start, r->end);
+		fprintf(f, "(%llu, %llu)  ",
+			(unsigned long long) r->start,
+			(unsigned long long) r->end);
 		if (++i >= 8)
 			fprintf(f, "\n\t");
 	}
@@ -203,7 +208,8 @@ int main(int argc, char **argv)
 			start = bcode_program[pc++];
 			end = bcode_program[pc++];
 			printf("Creating region with args(%llu, %llu)\n",
-			       start, end);
+			       (unsigned long long) start,
+			       (unsigned long long) end);
 			r = region_create(start, end);
 			if (!r) {
 				fprintf(stderr, "Couldn't create region.\n");
@@ -215,7 +221,8 @@ int main(int argc, char **argv)
 			end = bcode_program[pc++];
 			ret = region_allocate(r, start, end);
 			printf("Region_allocate(%llu, %llu) returns %d\n",
-			       start, end, ret);
+			       (unsigned long long) start,
+			       (unsigned long long) end, ret);
 			break;
 		case BCODE_PRINT:
 			region_print(r, stdout);

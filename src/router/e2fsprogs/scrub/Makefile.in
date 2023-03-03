@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ..
 my_dir = scrub
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 @MCONFIG@
 

@@ -103,7 +103,7 @@ errcode_t ext2fs_badblocks_copy(ext2_badblocks_list src,
 
 
 /*
- * This procedure adds a block to a badblocks list.
+ * This procedure adds an item to a tracking list (e.g. badblocks or casefold).
  */
 errcode_t ext2fs_u32_list_add(ext2_u32_list bb, __u32 blk)
 {

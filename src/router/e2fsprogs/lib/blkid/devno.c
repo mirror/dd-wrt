@@ -37,6 +37,12 @@
 
 #include "blkidP.h"
 
+#if defined(__GNUC__) && __GNUC__ >= 8
+/* gcc incorrectly thinks the destination string is not being null-terminated */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+
 char *blkid_strndup(const char *s, int length)
 {
 	char *ret;
@@ -54,6 +60,10 @@ char *blkid_strndup(const char *s, int length)
 	}
 	return ret;
 }
+
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
 
 char *blkid_strdup(const char *s)
 {

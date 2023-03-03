@@ -313,7 +313,7 @@ static void ba_clear_bmap(ext2fs_generic_bitmap_64 bitmap)
 #ifdef ENABLE_BMAP_STATS
 static void ba_print_stats(ext2fs_generic_bitmap_64 bitmap)
 {
-	fprintf(stderr, "%16llu Bytes used by bitarray\n",
+	fprintf(stderr, "%16llu Bytes used by bitarray\n", (unsigned long long)
 		((bitmap->real_end - bitmap->start) >> 3) + 1 +
 		sizeof(struct ext2fs_ba_private_struct));
 }

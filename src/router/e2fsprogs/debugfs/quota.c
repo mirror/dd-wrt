@@ -123,7 +123,7 @@ void do_list_quota(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 
 	printf("%7s %2s   %8s %8s %8s    %8s %8s %8s\n",
 	       quota_type[type], "id",
-	       "blocks", "quota", "limit", "inodes", "quota", "limit");
+	       "space", "quota", "limit", "inodes", "quota", "limit");
 	qh = current_qctx->quota_file[type];
 	retval = qh->qh_ops->scan_dquots(qh, list_quota_callback, NULL);
 	if (retval) {
@@ -158,7 +158,7 @@ void do_get_quota(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 
 	printf("%7s %2s   %8s %8s %8s    %8s %8s %8s\n",
 	       quota_type[type], "id",
-	       "blocks", "quota", "limit", "inodes", "quota", "limit");
+	       "space", "quota", "limit", "inodes", "quota", "limit");
 
 	qh = current_qctx->quota_file[type];
 

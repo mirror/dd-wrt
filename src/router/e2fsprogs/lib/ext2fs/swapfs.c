@@ -22,7 +22,6 @@
 #include "ext2fsP.h"
 #include <ext2fs/ext2_ext_attr.h>
 
-#ifdef WORDS_BIGENDIAN
 void ext2fs_swap_super(struct ext2_super_block * sb)
 {
 	int i;
@@ -121,7 +120,7 @@ void ext2fs_swap_super(struct ext2_super_block * sb)
 	/* sb->s_mount_opts is __u8 and does not need swabbing */
 	sb->s_usr_quota_inum = ext2fs_swab32(sb->s_usr_quota_inum);
 	sb->s_grp_quota_inum = ext2fs_swab32(sb->s_grp_quota_inum);
-	sb->s_overhead_blocks = ext2fs_swab32(sb->s_overhead_blocks);
+	sb->s_overhead_clusters = ext2fs_swab32(sb->s_overhead_clusters);
 	sb->s_backup_bgs[0] = ext2fs_swab32(sb->s_backup_bgs[0]);
 	sb->s_backup_bgs[1] = ext2fs_swab32(sb->s_backup_bgs[1]);
 	/* sb->s_encrypt_algos is __u8 and does not need swabbing */
@@ -132,8 +131,9 @@ void ext2fs_swap_super(struct ext2_super_block * sb)
 	/* s_*_time_hi are __u8 and does not need swabbing */
 	sb->s_encoding = ext2fs_swab16(sb->s_encoding);
 	sb->s_encoding_flags = ext2fs_swab16(sb->s_encoding_flags);
+	sb->s_orphan_file_inum = ext2fs_swab32(sb->s_orphan_file_inum);
 	/* catch when new fields are used from s_reserved */
-	EXT2FS_BUILD_BUG_ON(sizeof(sb->s_reserved) != 95 * sizeof(__le32));
+	EXT2FS_BUILD_BUG_ON(sizeof(sb->s_reserved) != 94 * sizeof(__le32));
 	sb->s_checksum = ext2fs_swab32(sb->s_checksum);
 }
 
@@ -245,8 +245,8 @@ void ext2fs_swap_inode_full(ext2_filsys fs, struct ext2_inode_large *t,
 			    int bufsize)
 {
 	unsigned i, extra_isize, attr_magic;
-	int has_extents, has_inline_data, islnk, fast_symlink;
-	int inode_size;
+	int has_extents = 0, has_inline_data = 0, islnk = 0, fast_symlink = 0;
+	unsigned int inode_size;
 	__u32 *eaf, *eat;
 
 	/*
@@ -417,10 +417,11 @@ errcode_t ext2fs_dirent_swab_in2(ext2_filsys fs, char *buf,
 	errcode_t	retval;
 	char		*p, *end;
 	struct ext2_dir_entry *dirent;
-	unsigned int	name_len, rec_len;
+	unsigned int	name_len, rec_len, left;
 
 	p = (char *) buf;
 	end = (char *) buf + size;
+	left = size;
 	while (p < end-8) {
 		dirent = (struct ext2_dir_entry *) p;
 		dirent->inode = ext2fs_swab32(dirent->inode);
@@ -434,9 +435,15 @@ errcode_t ext2fs_dirent_swab_in2(ext2_filsys fs, char *buf,
 			return retval;
 		if ((rec_len < 8) || (rec_len % 4)) {
 			rec_len = 8;
-			retval = EXT2_ET_DIR_CORRUPTED;
+			if (!(fs->flags & EXT2_FLAG_IGNORE_SWAP_DIRENT))
+				return EXT2_ET_DIR_CORRUPTED;
 		} else if (((name_len & 0xFF) + 8) > rec_len)
-			retval = EXT2_ET_DIR_CORRUPTED;
+			if (!(fs->flags & EXT2_FLAG_IGNORE_SWAP_DIRENT))
+				return EXT2_ET_DIR_CORRUPTED;
+		if (rec_len > left)
+			if (!(fs->flags & EXT2_FLAG_IGNORE_SWAP_DIRENT))
+				return EXT2_ET_DIR_CORRUPTED;
+		left -= rec_len;
 		p += rec_len;
 	}
 
@@ -472,6 +479,9 @@ errcode_t ext2fs_dirent_swab_out2(ext2_filsys fs, char *buf,
 		dirent->inode = ext2fs_swab32(dirent->inode);
 		dirent->rec_len = ext2fs_swab16(dirent->rec_len);
 		dirent->name_len = ext2fs_swab16(dirent->name_len);
+		if (rec_len > size)
+			return EXT2_ET_DIR_CORRUPTED;
+		size -= rec_len;
 
 		if (flags & EXT2_DIRBLOCK_V2_STRUCT)
 			dirent->name_len = ext2fs_swab16(dirent->name_len);
@@ -479,5 +489,3 @@ errcode_t ext2fs_dirent_swab_out2(ext2_filsys fs, char *buf,
 
 	return 0;
 }
-
-#endif

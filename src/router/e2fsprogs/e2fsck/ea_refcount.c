@@ -53,10 +53,9 @@ errcode_t ea_refcount_create(size_t size, ext2_refcount_t *ret)
 	errcode_t	retval;
 	size_t		bytes;
 
-	retval = ext2fs_get_mem(sizeof(struct ea_refcount), &refcount);
+	retval = ext2fs_get_memzero(sizeof(struct ea_refcount), &refcount);
 	if (retval)
 		return retval;
-	memset(refcount, 0, sizeof(struct ea_refcount));
 
 	if (!size)
 		size = 500;
@@ -66,10 +65,9 @@ errcode_t ea_refcount_create(size_t size, ext2_refcount_t *ret)
 	printf("Refcount allocated %zu entries, %zu bytes.\n",
 	       refcount->size, bytes);
 #endif
-	retval = ext2fs_get_mem(bytes, &refcount->list);
+	retval = ext2fs_get_memzero(bytes, &refcount->list);
 	if (retval)
 		goto errout;
-	memset(refcount->list, 0, bytes);
 
 	refcount->count = 0;
 	refcount->cursor = 0;
@@ -315,8 +313,10 @@ errcode_t ea_refcount_validate(ext2_refcount_t refcount, FILE *out)
 		if (refcount->list[i-1].ea_key >= refcount->list[i].ea_key) {
 			fprintf(out,
 				"%s: list[%d].ea_key=%llu, list[%d].ea_key=%llu\n",
-				bad, i-1, refcount->list[i-1].ea_key, i,
-				refcount->list[i].ea_key);
+				bad, i-1,
+				(unsigned long long) refcount->list[i-1].ea_key,
+				i,
+				(unsigned long long) refcount->list[i].ea_key);
 			ret = EXT2_ET_INVALID_ARGUMENT;
 		}
 	}
@@ -401,22 +401,26 @@ int main(int argc, char **argv)
 		case BCODE_STORE:
 			ea_key = (size_t) bcode_program[i++];
 			arg = bcode_program[i++];
-			printf("Storing ea_key %llu with value %llu\n", ea_key,
-			       arg);
+			printf("Storing ea_key %llu with value %llu\n",
+			       (unsigned long long) ea_key,
+			       (unsigned long long) arg);
 			retval = ea_refcount_store(refcount, ea_key, arg);
 			if (retval)
 				com_err("ea_refcount_store", retval,
-					"while storing ea_key %llu", ea_key);
+					"while storing ea_key %llu",
+					(unsigned long long) ea_key);
 			break;
 		case BCODE_FETCH:
 			ea_key = (size_t) bcode_program[i++];
 			retval = ea_refcount_fetch(refcount, ea_key, &arg);
 			if (retval)
 				com_err("ea_refcount_fetch", retval,
-					"while fetching ea_key %llu", ea_key);
+					"while fetching ea_key %llu",
+					(unsigned long long) ea_key);
 			else
 				printf("bcode_fetch(%llu) returns %llu\n",
-				       ea_key, arg);
+				       (unsigned long long) ea_key,
+				       (unsigned long long) arg);
 			break;
 		case BCODE_INCR:
 			ea_key = (size_t) bcode_program[i++];
@@ -424,10 +428,11 @@ int main(int argc, char **argv)
 			if (retval)
 				com_err("ea_refcount_increment", retval,
 					"while incrementing ea_key %llu",
-					ea_key);
+					(unsigned long long) ea_key);
 			else
 				printf("bcode_increment(%llu) returns %llu\n",
-				       ea_key, arg);
+				       (unsigned long long) ea_key,
+				       (unsigned long long) arg);
 			break;
 		case BCODE_DECR:
 			ea_key = (size_t) bcode_program[i++];
@@ -435,10 +440,11 @@ int main(int argc, char **argv)
 			if (retval)
 				com_err("ea_refcount_decrement", retval,
 					"while decrementing ea_key %llu",
-					ea_key);
+					(unsigned long long) ea_key);
 			else
 				printf("bcode_decrement(%llu) returns %llu\n",
-				       ea_key, arg);
+				       (unsigned long long) ea_key,
+				       (unsigned long long) arg);
 			break;
 		case BCODE_VALIDATE:
 			retval = ea_refcount_validate(refcount, stderr);
@@ -454,8 +460,9 @@ int main(int argc, char **argv)
 				ea_key = ea_refcount_intr_next(refcount, &arg);
 				if (!ea_key)
 					break;
-				printf("\tea_key=%llu, count=%llu\n", ea_key,
-				       arg);
+				printf("\tea_key=%llu, count=%llu\n",
+				       (unsigned long long) ea_key,
+				       (unsigned long long) arg);
 			}
 			break;
 		case BCODE_COLLAPSE:

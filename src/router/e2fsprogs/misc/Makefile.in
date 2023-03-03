@@ -8,6 +8,7 @@ VPATH = @srcdir@
 top_builddir = ..
 my_dir = misc
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 @MCONFIG@
 
@@ -18,13 +19,16 @@ INSTALL = @INSTALL@
 @LINUX_CMT@E4CRYPT_MAN= e4crypt.8
 
 @IMAGER_CMT@E2IMAGE_PROG= e2image
+@IMAGER_CMT@E2IMAGE_STATIC= e2image.static
 @IMAGER_CMT@E2IMAGE_MAN= e2image.8
 
 @UUIDD_CMT@UUIDD_PROG= uuidd
+@UUIDD_CMT@UUIDD_STATIC= uuidd.static
 @UUIDD_CMT@UUIDD_MAN= uuidd.8
 @UUIDD_CMT@UUIDD_PROFILED= uuidd.profiled
 
 @BLKID_CMT@BLKID_PROG= blkid
+@BLKID_CMT@BLKID_STATIC= blkid.static
 @BLKID_CMT@BLKID_MAN= blkid.8
 
 @BLKID_CMT@FINDFS_LINK= findfs
@@ -102,7 +106,8 @@ SRCS=	$(srcdir)/tune2fs.c $(srcdir)/mklost+found.c $(srcdir)/mke2fs.c $(srcdir)/
 		$(srcdir)/filefrag.c $(srcdir)/base_device.c \
 		$(srcdir)/ismounted.c $(srcdir)/e2undo.c \
 		$(srcdir)/e2freefrag.c $(srcdir)/create_inode.c \
-		$(srcdir)/fuse2fs.c \
+		$(srcdir)/fuse2fs.c $(srcdir)/e2fuzz.c \
+		$(srcdir)/check_fuzzer.c \
 		$(srcdir)/../debugfs/journal.c $(srcdir)/../e2fsck/revoke.c \
 		$(srcdir)/../e2fsck/recovery.c
 
@@ -133,6 +138,9 @@ DEPEND_CFLAGS = -I$(top_srcdir)/e2fsck
 
 all:: profiled $(SPROGS) $(UPROGS) $(USPROGS) $(SMANPAGES) $(UMANPAGES) \
 	$(FMANPAGES) $(LPROGS) $(E4DEFRAG_PROG) $(E4CRYPT_PROGS) e2fuzz
+
+all-static:: $(E2IMAGE_STATIC) $(UUIDD_STATIC) $(BLKID_STATIC) \
+	dumpe2fs.static mke2fs.static tune2fs.static lsattr.static chattr.static
 
 @PROFILE_CMT@all:: tune2fs.profiled blkid.profiled e2image.profiled \
 	e2undo.profiled mke2fs.profiled dumpe2fs.profiled fsck.profiled \
@@ -241,7 +249,7 @@ e4defrag: $(E4DEFRAG_OBJS) $(DEPLIBS)
 e4crypt: $(E4CRYPT_OBJS) $(DEPLIBS) $(DEPSTATIC_LIBUUID)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o e4crypt $(E4CRYPT_OBJS) \
-		$(LIBUUID) $(LIBS)
+		$(LIBUUID) $(LIBS) $(SYSLIBS)
 
 e4defrag.profiled: $(E4DEFRAG_OBJS) $(PROFILED_DEPLIBS)
 	$(E) "	LD $@"
@@ -296,10 +304,20 @@ chattr: $(CHATTR_OBJS) $(DEPLIBS_E2P)
 	$(Q) $(CC) $(ALL_LDFLAGS) -o chattr $(CHATTR_OBJS) $(LIBS_E2P) \
 		$(LIBINTL) $(SYSLIBS)
 
+chattr.static: $(CHATTR_OBJS) $(STATIC_LIBE2P) $(STATIC_LIBCOM_ERR)
+	$(E) "	LD $@"
+	$(Q) $(CC) $(ALL_LDFLAGS) -o chattr.static $(CHATTR_OBJS) $(STATIC_LIBE2P) \
+		$(STATIC_LIBCOM_ERR) $(LIBINTL) $(SYSLIBS)
+
 lsattr: $(LSATTR_OBJS) $(DEPLIBS_E2P)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o lsattr $(LSATTR_OBJS) $(LIBS_E2P) \
 		$(LIBINTL) $(SYSLIBS)
+
+lsattr.static: $(LSATTR_OBJS) $(STATIC_LIBE2P) $(STATIC_LIBCOM_ERR)
+	$(E) "	LD $@"
+	$(Q) $(CC) $(ALL_LDFLAGS) -o lsattr.static $(LSATTR_OBJS) $(STATIC_LIBE2P) \
+		$(STATIC_LIBCOM_ERR) $(LIBINTL) $(SYSLIBS)
 
 uuidgen: $(UUIDGEN_OBJS) $(DEPLIBUUID)
 	$(E) "	LD $@"
@@ -342,15 +360,15 @@ dumpe2fs.static: $(DUMPE2FS_OBJS) $(DEPLIBS) $(DEPLIBS_E2P) $(DEPLIBUUID) $(DEPL
 		$(STATIC_LIBS) $(STATIC_LIBE2P) $(STATIC_LIBUUID) \
 		$(LIBINTL) $(SYSLIBS) $(STATIC_LIBBLKID) $(LIBMAGIC)
 
-fsck: $(FSCK_OBJS) $(DEPLIBBLKID)
+fsck: $(FSCK_OBJS) $(DEPLIBBLKID) $(DEPLIBS)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o fsck $(FSCK_OBJS) $(LIBBLKID) \
-		$(LIBINTL) $(SYSLIBS)
+		$(LIBINTL) $(SYSLIBS) $(LIBS)
 
-fsck.profiled: $(FSCK_OBJS) $(PROFILED_DEPLIBBLKID)
+fsck.profiled: $(FSCK_OBJS) $(PROFILED_DEPLIBBLKID) $(PROFILED_DEPLIBS)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -g -pg -o fsck.profiled $(PROFILED_FSCK_OBJS) \
-		$(PROFILED_LIBBLKID) $(LIBINTL) $(SYSLIBS)
+		$(PROFILED_LIBBLKID) $(LIBINTL) $(SYSLIBS) $(PROFILED_LIBS)
 
 badblocks: $(BADBLOCKS_OBJS) $(DEPLIBS)
 	$(E) "	LD $@"
@@ -387,6 +405,10 @@ e2fuzz: $(E2FUZZ_OBJS) $(DEPLIBS) $(DEPLIBBLKID) $(DEPLIBUUID) \
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o e2fuzz $(E2FUZZ_OBJS) $(LIBS) \
 		$(LIBBLKID) $(LIBUUID) $(LIBEXT2FS) $(SYSLIBS)
+
+check_fuzzer: check_fuzzer.o $(DEPLIBS)
+	$(E) "	LD $@"
+	$(Q) $(CC) $(ALL_LDFLAGS) -o check_fuzzer check_fuzzer.o $(LIBS)
 
 filefrag: $(FILEFRAG_OBJS)
 	$(E) "	LD $@"
@@ -712,10 +734,10 @@ tune2fs.o: $(srcdir)/tune2fs.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/ext2fs/kernel-jbd.h \
  $(top_srcdir)/lib/ext2fs/jfs_compat.h $(top_srcdir)/lib/ext2fs/kernel-list.h \
- $(top_srcdir)/lib/support/plausible.h $(top_srcdir)/lib/support/quotaio.h \
- $(top_srcdir)/lib/support/dqblk_v2.h \
- $(top_srcdir)/lib/support/quotaio_tree.h $(top_srcdir)/lib/e2p/e2p.h \
- $(srcdir)/util.h $(top_srcdir)/version.h \
+ $(top_srcdir)/lib/ext2fs/compiler.h $(top_srcdir)/lib/support/plausible.h \
+ $(top_srcdir)/lib/support/quotaio.h $(top_srcdir)/lib/support/dqblk_v2.h \
+ $(top_srcdir)/lib/support/quotaio_tree.h $(top_srcdir)/lib/support/devname.h \
+ $(top_srcdir)/lib/e2p/e2p.h $(srcdir)/util.h $(top_srcdir)/version.h \
  $(top_srcdir)/lib/support/nls-enable.h
 mklost+found.o: $(srcdir)/mklost+found.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
@@ -764,7 +786,7 @@ dumpe2fs.o: $(srcdir)/dumpe2fs.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/e2p/e2p.h \
  $(top_srcdir)/lib/ext2fs/kernel-jbd.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
- $(top_srcdir)/lib/ext2fs/kernel-list.h \
+ $(top_srcdir)/lib/ext2fs/kernel-list.h $(top_srcdir)/lib/ext2fs/compiler.h \
  $(top_srcdir)/lib/support/nls-enable.h $(top_srcdir)/lib/support/plausible.h \
  $(top_srcdir)/version.h
 badblocks.o: $(srcdir)/badblocks.c $(top_builddir)/lib/config.h \
@@ -777,7 +799,8 @@ badblocks.o: $(srcdir)/badblocks.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/support/nls-enable.h
 fsck.o: $(srcdir)/fsck.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/version.h \
- $(top_srcdir)/lib/support/nls-enable.h $(srcdir)/fsck.h
+ $(top_srcdir)/lib/support/devname.h $(top_srcdir)/lib/support/nls-enable.h \
+ $(srcdir)/fsck.h
 util.o: $(srcdir)/util.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/et/com_err.h \
  $(top_srcdir)/lib/e2p/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
@@ -786,7 +809,7 @@ util.o: $(srcdir)/util.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/support/nls-enable.h \
- $(srcdir)/util.h
+ $(top_srcdir)/lib/support/devname.h $(srcdir)/util.h
 uuidgen.o: $(srcdir)/uuidgen.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/support/nls-enable.h
 blkid.o: $(srcdir)/blkid.c $(top_builddir)/lib/config.h \
@@ -804,7 +827,8 @@ filefrag.o: $(srcdir)/filefrag.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
  $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
- $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/ext2fs/fiemap.h
+ $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/ext2fs/fiemap.h \
+ $(top_srcdir)/version.h
 base_device.o: $(srcdir)/base_device.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/fsck.h
 ismounted.o: $(srcdir)/ismounted.c $(top_builddir)/lib/config.h \
@@ -840,6 +864,19 @@ fuse2fs.o: $(srcdir)/fuse2fs.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/version.h
+e2fuzz.o: $(srcdir)/e2fuzz.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/ext2fs/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h
+check_fuzzer.o: $(srcdir)/check_fuzzer.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/ext2fs/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h
 journal.o: $(srcdir)/../debugfs/journal.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/../debugfs/journal.h \
  $(top_srcdir)/e2fsck/jfs_user.h $(top_srcdir)/e2fsck/e2fsck.h \
@@ -852,9 +889,11 @@ journal.o: $(srcdir)/../debugfs/journal.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/support/prof_err.h $(top_srcdir)/lib/support/quotaio.h \
  $(top_srcdir)/lib/support/dqblk_v2.h \
  $(top_srcdir)/lib/support/quotaio_tree.h \
- $(top_srcdir)/lib/ext2fs/kernel-jbd.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
- $(top_srcdir)/lib/ext2fs/kernel-list.h
+ $(top_srcdir)/lib/ext2fs/fast_commit.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
+ $(top_srcdir)/lib/ext2fs/kernel-list.h $(top_srcdir)/lib/ext2fs/compiler.h \
+ $(top_srcdir)/lib/ext2fs/kernel-jbd.h
 revoke.o: $(srcdir)/../e2fsck/revoke.c $(srcdir)/../e2fsck/jfs_user.h \
+ $(top_builddir)/lib/config.h $(top_builddir)/lib/dirpaths.h \
  $(srcdir)/../e2fsck/e2fsck.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
  $(top_srcdir)/lib/ext2fs/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
@@ -864,9 +903,11 @@ revoke.o: $(srcdir)/../e2fsck/revoke.c $(srcdir)/../e2fsck/jfs_user.h \
  $(top_builddir)/lib/support/prof_err.h $(top_srcdir)/lib/support/quotaio.h \
  $(top_srcdir)/lib/support/dqblk_v2.h \
  $(top_srcdir)/lib/support/quotaio_tree.h \
- $(top_srcdir)/lib/ext2fs/kernel-jbd.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
- $(top_srcdir)/lib/ext2fs/kernel-list.h
+ $(top_srcdir)/lib/ext2fs/fast_commit.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
+ $(top_srcdir)/lib/ext2fs/kernel-list.h $(top_srcdir)/lib/ext2fs/compiler.h \
+ $(top_srcdir)/lib/ext2fs/kernel-jbd.h
 recovery.o: $(srcdir)/../e2fsck/recovery.c $(srcdir)/../e2fsck/jfs_user.h \
+ $(top_builddir)/lib/config.h $(top_builddir)/lib/dirpaths.h \
  $(srcdir)/../e2fsck/e2fsck.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
  $(top_srcdir)/lib/ext2fs/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
@@ -876,5 +917,6 @@ recovery.o: $(srcdir)/../e2fsck/recovery.c $(srcdir)/../e2fsck/jfs_user.h \
  $(top_builddir)/lib/support/prof_err.h $(top_srcdir)/lib/support/quotaio.h \
  $(top_srcdir)/lib/support/dqblk_v2.h \
  $(top_srcdir)/lib/support/quotaio_tree.h \
- $(top_srcdir)/lib/ext2fs/kernel-jbd.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
- $(top_srcdir)/lib/ext2fs/kernel-list.h
+ $(top_srcdir)/lib/ext2fs/fast_commit.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
+ $(top_srcdir)/lib/ext2fs/kernel-list.h $(top_srcdir)/lib/ext2fs/compiler.h \
+ $(top_srcdir)/lib/ext2fs/kernel-jbd.h

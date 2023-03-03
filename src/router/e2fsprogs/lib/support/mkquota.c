@@ -99,6 +99,8 @@ void quota_set_sb_inum(ext2_filsys fs, ext2_ino_t ino, enum quota_type qtype)
 
 	log_debug("setting quota ino in superblock: ino=%u, type=%d", ino,
 		 qtype);
+	if (inump == NULL)
+		return;
 	*inump = ino;
 	ext2fs_mark_super_dirty(fs);
 }
@@ -234,7 +236,8 @@ out:
 /* Helper functions for computing quota in memory.                */
 /******************************************************************/
 
-static int dict_uint_cmp(const void *a, const void *b)
+static int dict_uint_cmp(const void *cmp_ctx EXT2FS_ATTR((unused)),
+			 const void *a, const void *b)
 {
 	unsigned int	c, d;
 
@@ -432,7 +435,8 @@ void quota_data_sub(quota_ctx_t qctx, struct ext2_inode_large *inode,
 		dict = qctx->quota_dict[qtype];
 		if (dict) {
 			dq = get_dq(dict, get_qid(inode, qtype));
-			dq->dq_dqb.dqb_curspace -= space;
+			if (dq)
+				dq->dq_dqb.dqb_curspace -= space;
 		}
 	}
 }
@@ -459,7 +463,8 @@ void quota_data_inodes(quota_ctx_t qctx, struct ext2_inode_large *inode,
 		dict = qctx->quota_dict[qtype];
 		if (dict) {
 			dq = get_dq(dict, get_qid(inode, qtype));
-			dq->dq_dqb.dqb_curinodes += adjust;
+			if (dq)
+				dq->dq_dqb.dqb_curinodes += adjust;
 		}
 	}
 }
@@ -500,11 +505,14 @@ errcode_t quota_compute_usage(quota_ctx_t qctx)
 		}
 		if (ino == 0)
 			break;
-		if (inode->i_links_count &&
-		    (ino == EXT2_ROOT_INO ||
-		     ino >= EXT2_FIRST_INODE(fs->super))) {
-			space = ext2fs_inode_i_blocks(fs,
-						      EXT2_INODE(inode)) << 9;
+		if (!inode->i_links_count)
+			continue;
+		if (ino == EXT2_ROOT_INO ||
+		    (ino >= EXT2_FIRST_INODE(fs->super) &&
+		     ino != quota_type2inum(PRJQUOTA, fs->super) &&
+		     ino != fs->super->s_orphan_file_inum)) {
+			space = ext2fs_get_stat_i_blocks(fs,
+						EXT2_INODE(inode)) << 9;
 			quota_data_add(qctx, inode, ino, space);
 			quota_data_inodes(qctx, inode, ino, +1);
 		}
@@ -530,6 +538,8 @@ static int scan_dquots_callback(struct dquot *dquot, void *cb_data)
 	struct dquot *dq;
 
 	dq = get_dq(quota_dict, dquot->dq_id);
+	if (!dq)
+		return -1;
 	dq->dq_id = dquot->dq_id;
 	dq->dq_flags |= DQF_SEEN;
 
@@ -565,48 +575,13 @@ static int scan_dquots_callback(struct dquot *dquot, void *cb_data)
 }
 
 /*
- * Read all dquots from quota file into memory
+ * Read quotas from disk and updates the in-memory information determined by
+ * 'flags' from the on-disk data.
  */
-static errcode_t quota_read_all_dquots(struct quota_handle *qh,
-                                       quota_ctx_t qctx,
-				       int update_limits EXT2FS_ATTR((unused)))
+errcode_t quota_read_all_dquots(quota_ctx_t qctx, ext2_ino_t qf_ino,
+				enum quota_type qtype, unsigned int flags)
 {
 	struct scan_dquots_data scan_data;
-
-	scan_data.quota_dict = qctx->quota_dict[qh->qh_type];
-	scan_data.check_consistency = 0;
-	scan_data.update_limits = 0;
-	scan_data.update_usage = 1;
-
-	return qh->qh_ops->scan_dquots(qh, scan_dquots_callback, &scan_data);
-}
-
-/*
- * Write all memory dquots into quota file
- */
-#if 0 /* currently unused, but may be useful in the future? */
-static errcode_t quota_write_all_dquots(struct quota_handle *qh,
-                                        quota_ctx_t qctx)
-{
-	errcode_t err;
-
-	err = ext2fs_read_bitmaps(qctx->fs);
-	if (err)
-		return err;
-	write_dquots(qctx->quota_dict[qh->qh_type], qh);
-	ext2fs_mark_bb_dirty(qctx->fs);
-	qctx->fs->flags &= ~EXT2_FLAG_SUPER_ONLY;
-	ext2fs_write_bitmaps(qctx->fs);
-	return 0;
-}
-#endif
-
-/*
- * Updates the in-memory quota limits from the given quota inode.
- */
-errcode_t quota_update_limits(quota_ctx_t qctx, ext2_ino_t qf_ino,
-			      enum quota_type qtype)
-{
 	struct quota_handle *qh;
 	errcode_t err;
 
@@ -625,7 +600,11 @@ errcode_t quota_update_limits(quota_ctx_t qctx, ext2_ino_t qf_ino,
 		goto out;
 	}
 
-	quota_read_all_dquots(qh, qctx, 1);
+	scan_data.quota_dict = qctx->quota_dict[qh->qh_type];
+	scan_data.check_consistency = 0;
+	scan_data.update_limits = !!(flags & QREAD_LIMITS);
+	scan_data.update_usage = !!(flags & QREAD_USAGE);
+	qh->qh_ops->scan_dquots(qh, scan_dquots_callback, &scan_data);
 
 	err = quota_file_close(qctx, qh);
 	if (err) {

@@ -10,6 +10,7 @@ Filesystem OS type:       Linux
 Inode count:              1024
 Block count:              16384
 Reserved block count:     819
+Overhead clusters:        1543
 Free blocks:              14786
 Free inodes:              1005
 First block:              1
@@ -35,8 +36,10 @@ Default directory hash:   half_md4
 Journal backup:           inode blocks
 Checksum type:            crc32c
 Journal features:         (none)
-Journal size:             1024k
-Journal length:           1024
+Total journal size:       1024k
+Total journal blocks:     1024
+Max transaction length:   1024
+Fast commit length:       0
 Journal sequence:         0x00000001
 Journal start:            0
 

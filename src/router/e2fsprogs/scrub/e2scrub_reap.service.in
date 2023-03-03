@@ -22,4 +22,4 @@ SyslogIdentifier=%N
 RemainAfterExit=no
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

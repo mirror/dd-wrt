@@ -73,7 +73,7 @@ struct ext2_inode_relocation_table {
 
 	/*
 	 * The iterator function for the inode references for an
-	 * inode.  The references for only one inode can be interator
+	 * inode.  The references for only one inode can be iterator
 	 * over at a time, as the iterator state is stored in ext2_irel.
 	 */
 	errcode_t (*next_ref)(ext2_irel irel,

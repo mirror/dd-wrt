@@ -48,8 +48,14 @@ extern char *optarg;
 int journal_enable_debug = -1;
 #endif
 
+/*
+ * There must be only one definition if we're hooking in extra commands or
+ * changing default prompt. Use -DSKIP_GLOBDEF for that.
+ */
+#ifndef SKIP_GLOBDEFS
 ss_request_table *extra_cmds;
 const char *debug_prog_name;
+#endif
 int ss_sci_idx;
 
 ext2_filsys	current_fs;
@@ -189,9 +195,7 @@ try_open_again:
 	}
 	current_fs->default_bitmap_type = EXT2FS_BMAP64_RBTREE;
 
-	if (catastrophic)
-		com_err(device, 0, "catastrophic mode - not reading inode or group bitmaps");
-	else {
+	if (!catastrophic) {
 		retval = ext2fs_read_bitmaps(current_fs);
 		if (retval) {
 			com_err(device, retval,
@@ -225,7 +229,8 @@ void do_open_filesys(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	int	catastrophic = 0;
 	blk64_t	superblock = 0;
 	blk64_t	blocksize = 0;
-	int	open_flags = EXT2_FLAG_SOFTSUPP_FEATURES | EXT2_FLAG_64BITS; 
+	int	open_flags = EXT2_FLAG_SOFTSUPP_FEATURES | EXT2_FLAG_64BITS |
+		EXT2_FLAG_THREADS;
 	char	*data_filename = 0;
 	char	*undo_file = NULL;
 
@@ -270,7 +275,11 @@ void do_open_filesys(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 				return;
 			break;
 		case 'z':
+#ifdef READ_ONLY
+			goto print_usage;
+#else
 			undo_file = optarg;
+#endif
 			break;
 		default:
 			goto print_usage;
@@ -288,9 +297,10 @@ void do_open_filesys(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 
 print_usage:
 	fprintf(stderr, "%s: Usage: open [-s superblock] [-b blocksize] "
+#ifdef READ_ONLY
 		"[-d image_filename] [-z undo_file] [-c] [-i] [-f] [-e] [-D] "
-#ifndef READ_ONLY
-		"[-w] "
+#else
+		"[-d image_filename] [-c] [-i] [-f] [-e] [-D] [-w] "
 #endif
 		"<device>\n", argv[0]);
 }
@@ -467,7 +477,7 @@ void do_show_super_stats(int argc, char *argv[],
 	}
 	for (i=0; i < current_fs->group_desc_count; i++)
 		numdirs += ext2fs_bg_used_dirs_count(current_fs, i);
-	fprintf(out, "Directories:              %d\n", numdirs);
+	fprintf(out, "Directories:              %u\n", numdirs);
 
 	if (header_only) {
 		close_pager(out);
@@ -481,11 +491,12 @@ void do_show_super_stats(int argc, char *argv[],
 		        "inode table at %llu\n"
 		        "           %u free %s%s, "
 		        "%u free %s, "
-		        "%u used %s%s",
-		        i, ext2fs_block_bitmap_loc(current_fs, i),
-		        ext2fs_inode_bitmap_loc(current_fs, i),
-			ext2fs_inode_table_loc(current_fs, i),
-		        ext2fs_bg_free_blocks_count(current_fs, i), units,
+		        "%u used %s%s", i,
+		        (unsigned long long) ext2fs_block_bitmap_loc(current_fs, i),
+		        (unsigned long long) ext2fs_inode_bitmap_loc(current_fs, i),
+			(unsigned long long) ext2fs_inode_table_loc(current_fs, i),
+		        ext2fs_bg_free_blocks_count(current_fs, i),
+			units,
 		        ext2fs_bg_free_blocks_count(current_fs, i) != 1 ?
 			"s" : "",
 		        ext2fs_bg_free_inodes_count(current_fs, i),
@@ -555,11 +566,13 @@ static void finish_range(struct list_blocks_struct *lb)
 		fprintf(lb->f, ", ");
 	if (lb->first_block == lb->last_block)
 		fprintf(lb->f, "(%lld):%llu",
-			(long long)lb->first_bcnt, lb->first_block);
+			(long long)lb->first_bcnt,
+			(unsigned long long) lb->first_block);
 	else
 		fprintf(lb->f, "(%lld-%lld):%llu-%llu",
 			(long long)lb->first_bcnt, (long long)lb->last_bcnt,
-			lb->first_block, lb->last_block);
+			(unsigned long long) lb->first_block,
+			(unsigned long long) lb->last_block);
 	lb->first_block = 0;
 }
 
@@ -709,18 +722,18 @@ static void dump_extents(FILE *f, const char *prefix, ext2_ino_t ino,
 					info.curr_level, info.max_depth,
 					info.curr_entry, info.num_entries,
 					logical_width,
-					extent.e_lblk,
+					(unsigned long long) extent.e_lblk,
 					logical_width,
-					extent.e_lblk + (extent.e_len - 1),
+					(unsigned long long) extent.e_lblk + (extent.e_len - 1),
 					physical_width,
-					extent.e_pblk,
+					(unsigned long long) extent.e_pblk,
 					physical_width+3, "", extent.e_len);
 				continue;
 			}
 
-			fprintf(f, "%s(ETB%d):%lld",
+			fprintf(f, "%s(ETB%d):%llu",
 				printed ? ", " : "", info.curr_level,
-				extent.e_pblk);
+				(unsigned long long) extent.e_pblk);
 			printed = 1;
 			continue;
 		}
@@ -731,13 +744,13 @@ static void dump_extents(FILE *f, const char *prefix, ext2_ino_t ino,
 				info.curr_level, info.max_depth,
 				info.curr_entry, info.num_entries,
 				logical_width,
-				extent.e_lblk,
+				(unsigned long long) extent.e_lblk,
 				logical_width,
-				extent.e_lblk + (extent.e_len - 1),
+				(unsigned long long) extent.e_lblk + (extent.e_len - 1),
 				physical_width,
-				extent.e_pblk,
+				(unsigned long long) extent.e_pblk,
 				physical_width,
-				extent.e_pblk + (extent.e_len - 1),
+				(unsigned long long) extent.e_pblk + (extent.e_len - 1),
 				extent.e_len,
 				extent.e_flags & EXT2_EXTENT_FLAGS_UNINIT ?
 					"Uninit" : "");
@@ -750,20 +763,20 @@ static void dump_extents(FILE *f, const char *prefix, ext2_ino_t ino,
 			fprintf(f,
 				"%s(%lld%s):%lld",
 				printed ? ", " : "",
-				extent.e_lblk,
+				(unsigned long long) extent.e_lblk,
 				extent.e_flags & EXT2_EXTENT_FLAGS_UNINIT ?
 				"[u]" : "",
-				extent.e_pblk);
+				(unsigned long long) extent.e_pblk);
 		else
 			fprintf(f,
 				"%s(%lld-%lld%s):%lld-%lld",
 				printed ? ", " : "",
-				extent.e_lblk,
-				extent.e_lblk + (extent.e_len - 1),
+				(unsigned long long) extent.e_lblk,
+				(unsigned long long) extent.e_lblk + (extent.e_len - 1),
 				extent.e_flags & EXT2_EXTENT_FLAGS_UNINIT ?
 					"[u]" : "",
-				extent.e_pblk,
-				extent.e_pblk + (extent.e_len - 1));
+				(unsigned long long) extent.e_pblk,
+				(unsigned long long) extent.e_pblk + (extent.e_len - 1));
 		printed = 1;
 	}
 	if (printed)
@@ -849,12 +862,12 @@ void internal_dump_inode(FILE *out, const char *prefix,
 		fprintf(out, "   Project: %5d", large_inode->i_projid);
 	fputs("   Size: ", out);
 	if (LINUX_S_ISREG(inode->i_mode) || LINUX_S_ISDIR(inode->i_mode))
-		fprintf(out, "%llu\n", EXT2_I_SIZE(inode));
+		fprintf(out, "%llu\n", (unsigned long long) EXT2_I_SIZE(inode));
 	else
-		fprintf(out, "%d\n", inode->i_size);
+		fprintf(out, "%u\n", inode->i_size);
 	if (os == EXT2_OS_HURD)
 		fprintf(out,
-			"%sFile ACL: %d Translator: %d\n",
+			"%sFile ACL: %u Translator: %u\n",
 			prefix,
 			inode->i_file_acl,
 			inode->osd1.hurd1.h_i_translator);
@@ -864,13 +877,13 @@ void internal_dump_inode(FILE *out, const char *prefix,
 			inode->i_file_acl | ((long long)
 				(inode->osd2.linux2.l_i_file_acl_high) << 32));
 	if (os != EXT2_OS_HURD)
-		fprintf(out, "%sLinks: %d   Blockcount: %llu\n",
+		fprintf(out, "%sLinks: %u   Blockcount: %llu\n",
 			prefix, inode->i_links_count,
 			(((unsigned long long)
 			  inode->osd2.linux2.l_i_blocks_hi << 32)) +
 			inode->i_blocks);
 	else
-		fprintf(out, "%sLinks: %d   Blockcount: %u\n",
+		fprintf(out, "%sLinks: %u   Blockcount: %u\n",
 			prefix, inode->i_links_count, inode->i_blocks);
 	switch (os) {
 	    case EXT2_OS_HURD:
@@ -880,7 +893,7 @@ void internal_dump_inode(FILE *out, const char *prefix,
 	    default:
 		frag = fsize = 0;
 	}
-	fprintf(out, "%sFragment:  Address: %d    Number: %d    Size: %d\n",
+	fprintf(out, "%sFragment:  Address: %u    Number: %u    Size: %u\n",
 		prefix, inode->i_faddr, frag, fsize);
 	if (is_large_inode && large_inode->i_extra_isize >= 24) {
 		fprintf(out, "%s ctime: 0x%08x:%08x -- %s", prefix,
@@ -1073,7 +1086,7 @@ static int print_blocks_proc(ext2_filsys fs EXT2FS_ATTR((unused)),
 			     int ref_offset EXT2FS_ATTR((unused)),
 			     void *private EXT2FS_ATTR((unused)))
 {
-	printf("%llu ", *blocknr);
+	printf("%llu ", (unsigned long long) *blocknr);
 	return 0;
 }
 
@@ -1220,7 +1233,7 @@ void do_freeb(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	while (count-- > 0) {
 		if (!ext2fs_test_block_bitmap2(current_fs->block_map,block))
 			com_err(argv[0], 0, "Warning: block %llu already clear",
-				block);
+				(unsigned long long) block);
 		ext2fs_unmark_block_bitmap2(current_fs->block_map,block);
 		block++;
 	}
@@ -1240,7 +1253,7 @@ void do_setb(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	while (count-- > 0) {
 		if (ext2fs_test_block_bitmap2(current_fs->block_map,block))
 			com_err(argv[0], 0, "Warning: block %llu already set",
-				block);
+				(unsigned long long) block);
 		ext2fs_mark_block_bitmap2(current_fs->block_map,block);
 		block++;
 	}
@@ -1258,9 +1271,11 @@ void do_testb(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		return;
 	while (count-- > 0) {
 		if (ext2fs_test_block_bitmap2(current_fs->block_map,block))
-			printf("Block %llu marked in use\n", block);
+			printf("Block %llu marked in use\n",
+			       (unsigned long long) block);
 		else
-			printf("Block %llu not in use\n", block);
+			printf("Block %llu not in use\n",
+			       (unsigned long long) block);
 		block++;
 	}
 }
@@ -1397,7 +1412,7 @@ void do_modify_inode(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		modify_u8(argv[0], "Fragment size", decimal_format, fsize);
 
 	for (i=0;  i < EXT2_NDIR_BLOCKS; i++) {
-		sprintf(buf, "Direct Block #%d", i);
+		sprintf(buf, "Direct Block #%u", i);
 		modify_u32(argv[0], buf, decimal_format, &inode.i_block[i]);
 	}
 	modify_u32(argv[0], "Indirect Block", decimal_format,
@@ -1696,7 +1711,7 @@ void do_find_free_block(int argc, char *argv[],
 			com_err("ext2fs_new_block", retval, 0);
 			return;
 		} else
-			printf("%llu ", free_blk);
+			printf("%llu ", (unsigned long long) free_blk);
 	}
  	printf("\n");
 }
@@ -2098,10 +2113,11 @@ void do_bmap(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 			       &ret_flags, &pblk);
 	if (errcode) {
 		com_err(argv[0], errcode,
-			"while mapping logical block %llu\n", blk);
+			"while mapping logical block %llu\n",
+			(unsigned long long) blk);
 		return;
 	}
-	printf("%llu", pblk);
+	printf("%llu", (unsigned long long) pblk);
 	if (ret_flags & BMAP_RET_UNINIT)
 		fputs(" (uninit)", stdout);
 	fputc('\n', stdout);
@@ -2133,7 +2149,7 @@ void do_imap(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		block;
 	offset &= (EXT2_BLOCK_SIZE(current_fs->super) - 1);
 
-	printf("Inode %d is part of block group %lu\n"
+	printf("Inode %u is part of block group %lu\n"
 	       "\tlocated at block %lu, offset 0x%04lx\n", ino, group,
 	       block_nr, offset);
 
@@ -2279,9 +2295,9 @@ void do_supported_features(int argc, char *argv[],
 	__u32	supp[3] = { EXT2_LIB_FEATURE_COMPAT_SUPP,
 			    EXT2_LIB_FEATURE_INCOMPAT_SUPP,
 			    EXT2_LIB_FEATURE_RO_COMPAT_SUPP };
-	__u32	jrnl_supp[3] = { JFS_KNOWN_COMPAT_FEATURES,
-				 JFS_KNOWN_INCOMPAT_FEATURES,
-				 JFS_KNOWN_ROCOMPAT_FEATURES };
+	__u32	jrnl_supp[3] = { JBD2_KNOWN_COMPAT_FEATURES,
+				 JBD2_KNOWN_INCOMPAT_FEATURES,
+				 JBD2_KNOWN_ROCOMPAT_FEATURES };
 
 	if (argc > 1) {
 		ret = find_supp_feature(supp, E2P_FS_FEATURE, argv[1]);
@@ -2373,7 +2389,6 @@ void do_fallocate(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		return;
 	}
 }
-#endif /* READ_ONLY */
 
 void do_symlink(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		void *infop EXT2FS_ATTR((unused)))
@@ -2389,6 +2404,7 @@ void do_symlink(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 		com_err(argv[0], retval, 0);
 
 }
+#endif /* READ_ONLY */
 
 #if CONFIG_MMP
 void do_dump_mmp(int argc EXT2FS_ATTR((unused)), char *argv[],
@@ -2435,19 +2451,23 @@ void do_dump_mmp(int argc EXT2FS_ATTR((unused)), char *argv[],
 	retval = ext2fs_mmp_read(current_fs, mmp_block, current_fs->mmp_buf);
 	if (retval) {
 		com_err(argv[0], retval, "reading MMP block %llu.\n",
-			mmp_block);
+			(unsigned long long) mmp_block);
 		return;
 	}
 
 	t = mmp_s->mmp_time;
-	fprintf(stdout, "block_number: %llu\n", current_fs->super->s_mmp_block);
+	fprintf(stdout, "block_number: %llu\n",
+		(unsigned long long) current_fs->super->s_mmp_block);
 	fprintf(stdout, "update_interval: %d\n",
 		current_fs->super->s_mmp_update_interval);
 	fprintf(stdout, "check_interval: %d\n", mmp_s->mmp_check_interval);
 	fprintf(stdout, "sequence: %08x\n", mmp_s->mmp_seq);
-	fprintf(stdout, "time: %lld -- %s", mmp_s->mmp_time, ctime(&t));
-	fprintf(stdout, "node_name: %s\n", mmp_s->mmp_nodename);
-	fprintf(stdout, "device_name: %s\n", mmp_s->mmp_bdevname);
+	fprintf(stdout, "time: %llu -- %s",
+		(unsigned long long) mmp_s->mmp_time, ctime(&t));
+	fprintf(stdout, "node_name: %.*s\n",
+		EXT2_LEN_STR(mmp_s->mmp_nodename));
+	fprintf(stdout, "device_name: %.*s\n",
+		EXT2_LEN_STR(mmp_s->mmp_bdevname));
 	fprintf(stdout, "magic: 0x%x\n", mmp_s->mmp_magic);
 	fprintf(stdout, "checksum: 0x%08x\n", mmp_s->mmp_checksum);
 }
@@ -2486,6 +2506,10 @@ static int source_file(const char *cmd_file, int ss_idx)
 	while (!feof(f)) {
 		if (fgets(buf, sizeof(buf), f) == NULL)
 			break;
+		if (buf[0] == '#') {
+			printf("%s", buf);
+			continue;
+		}
 		cp = strchr(buf, '\n');
 		if (cp)
 			*cp = 0;
@@ -2515,7 +2539,8 @@ int main(int argc, char **argv)
 #endif
 		"[-c]] [device]";
 	int		c;
-	int		open_flags = EXT2_FLAG_SOFTSUPP_FEATURES | EXT2_FLAG_64BITS;
+	int		open_flags = EXT2_FLAG_SOFTSUPP_FEATURES |
+				EXT2_FLAG_64BITS | EXT2_FLAG_THREADS;
 	char		*request = 0;
 	int		exit_status = 0;
 	char		*cmd_file = 0;
@@ -2527,8 +2552,8 @@ int main(int argc, char **argv)
 	const char	*opt_string = "nicR:f:b:s:Vd:D";
 #else
 	const char	*opt_string = "niwcR:f:b:s:Vd:Dz:";
-	char		*undo_file = NULL;
 #endif
+	char		*undo_file = NULL;
 #ifdef CONFIG_JBD_DEBUG
 	char		*jbd_debug;
 #endif
@@ -2600,9 +2625,11 @@ int main(int argc, char **argv)
 			fprintf(stderr, "\tUsing %s\n",
 				error_message(EXT2_ET_BASE));
 			exit(0);
+#ifndef READ_ONLY
 		case 'z':
 			undo_file = optarg;
 			break;
+#endif
 		default:
 			com_err(argv[0], 0, usage, debug_prog_name);
 			return 1;

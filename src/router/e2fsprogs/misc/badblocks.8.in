@@ -68,7 +68,7 @@ or
 .B mke2fs
 programs, it is important that the block size is properly specified,
 since the block numbers which are generated are very dependent on the
-block size in use by the filesystem.
+block size in use by the file system.
 For this reason, it is strongly recommended that
 users
 .B not
@@ -105,7 +105,7 @@ range is reached.
 .B \-f
 Normally, badblocks will refuse to do a read/write or a non-destructive
 test on a device which is mounted, since either can cause the system to
-potentially crash and/or damage the filesystem even if it is mounted
+potentially crash and/or damage the file system even if it is mounted
 read-only.  This can be overridden using the
 .B \-f
 flag, but should almost never be used --- if you think you're smarter
@@ -129,7 +129,7 @@ The
 option of
 .BR dumpe2fs (8)
 can be used to retrieve the list of blocks currently marked bad on
-an existing filesystem, in a format suitable for use with this option.
+an existing file system, in a format suitable for use with this option.
 .TP
 .B \-n
 Use non-destructive read-write mode.  By default only a non-destructive

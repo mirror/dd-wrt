@@ -56,14 +56,8 @@ exitcode() {
 	# section 22.2) and hope the admin will scan the log for what
 	# actually happened.
 
-	# We have to sleep 2 seconds here because journald uses the pid to
-	# connect our log messages to the systemd service.  This is critical
-	# for capturing all the log messages if the scrub fails, because the
-	# fail service uses the service name to gather log messages for the
-	# error report.
-	if [ -n "${SERVICE_MODE}" ]; then
+	if [ -n "${SERVICE_MODE}" -a "${ret}" -ne 0 ]; then
 		test "${ret}" -ne 0 && ret=1
-		sleep 2
 	fi
 
 	exit "${ret}"
@@ -80,9 +74,18 @@ while getopts "nrAV" opt; do
 done
 shift "$((OPTIND - 1))"
 
-if [ -n "${SERVICE_MODE}" -a "${reap}" -ne 1 -a "${periodic_e2scrub}" -ne 1 ]
-then
-    exitcode 0
+# If we're in service mode and the service is not enabled via config file...
+if [ -n "${SERVICE_MODE}" -a "${periodic_e2scrub}" -ne 1 ]; then
+	# ...don't start e2scrub processes.
+	if [ "${reap}" -eq 0 ]; then
+		exitcode 0
+	fi
+
+	# ...and if we don't see any leftover e2scrub snapshots, don't
+	# run the reaping process either, because lvs can be slow.
+	if ! readlink -q -s -e /dev/mapper/*.e2scrub* > /dev/null; then
+		exitcode 0
+	fi
 fi
 
 # close file descriptor 3 (from cron) since it causes lvm to kvetch
@@ -91,6 +94,12 @@ exec 3<&-
 # If some prerequisite packages are not installed, exit with a code
 # indicating success to avoid spamming the sysadmin with fail messages
 # when e2scrub_all is run out of cron or a systemd timer.
+
+if ! type mapfile >& /dev/null ; then
+    test -n "${SERVICE_MODE}" && exitcode 0
+    echo "e2scrub_all: can't find mapfile --- is bash 4.xx installed?"
+    exitcode 1
+fi
 
 if ! type lsblk >& /dev/null ; then
     test -n "${SERVICE_MODE}" && exitcode 0
@@ -156,13 +165,13 @@ escape_path_for_systemd() {
 }
 
 # Scrub any mounted fs on lvm by creating a snapshot and fscking that.
-stdin="$(realpath /dev/stdin)"
-ls_targets | while read tgt; do
+mapfile -t targets < <(ls_targets)
+for tgt in "${targets[@]}"; do
 	# If we're not reaping and systemd is present, try invoking the
 	# systemd service.
 	if [ "${reap}" -ne 1 ] && type systemctl > /dev/null 2>&1; then
 		tgt_esc="$(escape_path_for_systemd "${tgt}")"
-		${DBG} systemctl start "e2scrub@${tgt_esc}" 2> /dev/null < "${stdin}"
+		${DBG} systemctl start "e2scrub@${tgt_esc}" 2> /dev/null
 		res=$?
 		if [ "${res}" -eq 0 ] || [ "${res}" -eq 1 ]; then
 			continue;
@@ -170,7 +179,7 @@ ls_targets | while read tgt; do
 	fi
 
 	# Otherwise use direct invocation
-	${DBG} "@root_sbindir@/e2scrub" ${scrub_args} "${tgt}" < "${stdin}"
+	${DBG} "@root_sbindir@/e2scrub" ${scrub_args} "${tgt}"
 done
 
 exitcode 0

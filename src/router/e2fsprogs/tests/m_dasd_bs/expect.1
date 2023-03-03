@@ -12,7 +12,7 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-test_filesys: 11/16384 files (0.0% non-contiguous), 1104/32768 blocks
+test_filesys: 11/16384 files (0.0% non-contiguous), 2128/32768 blocks
 Exit status is 0
 Filesystem volume name:   <none>
 Last mounted on:          <not available>
@@ -26,7 +26,8 @@ Filesystem OS type:       Linux
 Inode count:              16384
 Block count:              32768
 Reserved block count:     1638
-Free blocks:              31664
+Overhead clusters:        2118
+Free blocks:              30640
 Free inodes:              16373
 First block:              0
 Block size:               2048
@@ -35,13 +36,15 @@ Reserved GDT blocks:      31
 Blocks per group:         16384
 Fragments per group:      16384
 Inodes per group:         8192
-Inode blocks per group:   512
+Inode blocks per group:   1024
 Mount count:              0
 Check interval:           15552000 (6 months)
 Reserved blocks uid:      0
 Reserved blocks gid:      0
 First inode:              11
-Inode size:	          128
+Inode size:	          256
+Required extra isize:     32
+Desired extra isize:      32
 Default directory hash:   half_md4
 
 
@@ -50,16 +53,16 @@ Group 0: (Blocks 0-16383)
   Reserved GDT blocks at 2-32
   Block bitmap at 33 (+33)
   Inode bitmap at 34 (+34)
-  Inode table at 35-546 (+35)
-  15827 free blocks, 8181 free inodes, 2 directories
-  Free blocks: 557-16383
+  Inode table at 35-1058 (+35)
+  15315 free blocks, 8181 free inodes, 2 directories
+  Free blocks: 1069-16383
   Free inodes: 12-8192
 Group 1: (Blocks 16384-32767)
   Backup superblock at 16384, Group descriptors at 16385-16385
   Reserved GDT blocks at 16386-16416
   Block bitmap at 16417 (+33)
   Inode bitmap at 16418 (+34)
-  Inode table at 16419-16930 (+35)
-  15837 free blocks, 8192 free inodes, 0 directories
-  Free blocks: 16931-32767
+  Inode table at 16419-17442 (+35)
+  15325 free blocks, 8192 free inodes, 0 directories
+  Free blocks: 17443-32767
   Free inodes: 8193-16384

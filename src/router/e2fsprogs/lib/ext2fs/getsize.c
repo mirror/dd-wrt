@@ -71,6 +71,8 @@
 #define HAVE_GET_FILE_SIZE_EX 1
 #endif
 
+HANDLE windows_get_handle(io_channel channel);
+
 errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 				  blk64_t *retblocks)
 {
@@ -84,12 +86,17 @@ errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 	DWORD filesize;
 #endif /* HAVE_GET_FILE_SIZE_EX */
 
-	dev = CreateFile(file, GENERIC_READ,
-			 FILE_SHARE_READ | FILE_SHARE_WRITE ,
-                	 NULL,  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,  NULL);
+	io_channel data_io = 0;
+	int retval;
 
+	retval = windows_io_manager->open(file, 0, &data_io);
+	if (retval)
+		return retval;
+
+	dev = windows_get_handle(data_io);
 	if (dev == INVALID_HANDLE_VALUE)
 		return EBADF;
+
 	if (DeviceIoControl(dev, IOCTL_DISK_GET_PARTITION_INFO,
 			    &pi, sizeof(PARTITION_INFORMATION),
 			    &pi, sizeof(PARTITION_INFORMATION),
@@ -120,7 +127,8 @@ errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 	}
 #endif /* HAVE_GET_FILE_SIZE_EX */
 
-	CloseHandle(dev);
+	windows_io_manager->close(data_io);
+
 	return 0;
 }
 
@@ -295,7 +303,7 @@ errcode_t ext2fs_get_device_size(const char *file, int blocksize,
 #ifdef DEBUG
 int main(int argc, char **argv)
 {
-	blk_t	blocks;
+	blk64_t	blocks;
 	int	retval;
 
 	if (argc < 2) {
@@ -303,13 +311,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	retval = ext2fs_get_device_size(argv[1], 1024, &blocks);
+	retval = ext2fs_get_device_size2(argv[1], 1024, &blocks);
 	if (retval) {
 		com_err(argv[0], retval,
 			"while calling ext2fs_get_device_size");
 		exit(1);
 	}
-	printf("Device %s has %u 1k blocks.\n", argv[1], blocks);
+	printf("Device %s has %llu 1k blocks.\n", argv[1],
+	       (unsigned long long) locks);
 	exit(0);
 }
 #endif

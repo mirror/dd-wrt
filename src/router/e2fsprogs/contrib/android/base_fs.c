@@ -72,8 +72,7 @@ static struct basefs_entry *basefs_readline(FILE *f, const char *mountpoint,
 		range_start = atoll(block);
 		block = strtok_r(NULL, "-", &saveptr2);
 		range_end = block ? atoll(block) : range_start;
-		add_blocks_to_range(&entry->head, &entry->tail, range_start,
-				    range_end);
+		add_blocks_to_range(&entry->blocks, range_start, range_end);
 		block_range = strtok_r(NULL, ",\n", &saveptr1);
 	}
 end:
@@ -111,10 +110,16 @@ struct ext2fs_hashmap *basefs_parse(const char *file, const char *mountpoint)
 	if (!entries)
 		goto end;
 
-	while ((entry = basefs_readline(f, mountpoint, &err)))
-		ext2fs_hashmap_add(entries, entry, entry->path,
+	while ((entry = basefs_readline(f, mountpoint, &err))) {
+		err = ext2fs_hashmap_add(entries, entry, entry->path,
 				   strlen(entry->path));
-
+		if (err) {
+			free_base_fs_entry(entry);
+			fclose(f);
+			ext2fs_hashmap_free(entries);
+			return NULL;
+		}
+	}
 	if (err) {
 		fclose(f);
 		ext2fs_hashmap_free(entries);
@@ -151,7 +156,6 @@ static int start_new_file(char *path, ext2_ino_t ino EXT2FS_ATTR((unused)),
 {
 	struct base_fs *params = data;
 
-	params->entry.head = params->entry.tail = NULL;
 	params->entry.path = LINUX_S_ISREG(inode->i_mode) ? path : NULL;
 	return 0;
 }
@@ -162,8 +166,7 @@ static int add_block(ext2_filsys fs EXT2FS_ATTR((unused)), blk64_t blocknr,
 	struct base_fs *params = data;
 
 	if (params->entry.path && !metadata)
-		add_blocks_to_range(&params->entry.head, &params->entry.tail,
-				    blocknr, blocknr);
+		add_blocks_to_range(&params->entry.blocks, blocknr, blocknr);
 	return 0;
 }
 
@@ -181,11 +184,11 @@ static int end_new_file(void *data)
 		return 0;
 	if (fprintf(params->file, "%s%s ", params->mountpoint,
 		    params->entry.path) < 0
-	    || write_block_ranges(params->file, params->entry.head, ",")
+	    || write_block_ranges(params->file, params->entry.blocks.head, ",")
 	    || fwrite("\n", 1, 1, params->file) != 1)
 		return -1;
 
-	delete_block_ranges(params->entry.head);
+	delete_block_ranges(&params->entry.blocks);
 	return 0;
 }
 

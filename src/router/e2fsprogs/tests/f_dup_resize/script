@@ -9,7 +9,7 @@ TEST_DATA="$test_name.tmp"
 dd if=$TEST_BITS of=$TEST_DATA bs=63k count=1 conv=sync > /dev/null 2>&1
 
 touch $TMPFILE
-$MKE2FS -F -O resize_inode $TMPFILE 10240 > /dev/null 2>&1
+$MKE2FS -F -o Linux -O resize_inode $TMPFILE 10240 > /dev/null 2>&1
 $DEBUGFS -w $TMPFILE << EOF > /dev/null 2>&1
 freeb 4 4
 freeb 8195 4

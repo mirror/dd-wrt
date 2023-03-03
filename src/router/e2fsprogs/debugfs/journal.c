@@ -26,9 +26,7 @@
 #include "uuid.h"
 #include "journal.h"
 
-#ifdef CONFIG_JBD_DEBUG		/* Enabled by configure --enable-jfs-debug */
 static int bh_count = 0;
-#endif
 
 #if EXT2_FLAT_INCLUDES
 #include "blkid.h"
@@ -49,7 +47,7 @@ static int bh_count = 0;
 static int ext2fs_journal_verify_csum_type(journal_t *j,
 					   journal_superblock_t *jsb)
 {
-	if (!journal_has_csum_v2or3(j))
+	if (!jbd2_journal_has_csum_v2or3(j))
 		return 1;
 
 	return jsb->s_checksum_type == JBD2_CRC32C_CHKSUM;
@@ -73,7 +71,7 @@ static int ext2fs_journal_sb_csum_verify(journal_t *j,
 {
 	__u32 provided, calculated;
 
-	if (!journal_has_csum_v2or3(j))
+	if (!jbd2_journal_has_csum_v2or3(j))
 		return 1;
 
 	provided = ext2fs_be32_to_cpu(jsb->s_checksum);
@@ -87,7 +85,7 @@ static errcode_t ext2fs_journal_sb_csum_set(journal_t *j,
 {
 	__u32 crc;
 
-	if (!journal_has_csum_v2or3(j))
+	if (!jbd2_journal_has_csum_v2or3(j))
 		return 0;
 
 	crc = ext2fs_journal_sb_csum(jsb);
@@ -99,7 +97,8 @@ static errcode_t ext2fs_journal_sb_csum_set(journal_t *j,
  * to use the recovery.c file virtually unchanged from the kernel, so we
  * don't have to do much to keep kernel and user recovery in sync.
  */
-int journal_bmap(journal_t *journal, blk64_t block, unsigned long long *phys)
+int jbd2_journal_bmap(journal_t *journal, unsigned long block,
+		      unsigned long long *phys)
 {
 #ifdef USE_INODE_IO
 	*phys = block;
@@ -115,13 +114,15 @@ int journal_bmap(journal_t *journal, blk64_t block, unsigned long long *phys)
 	}
 
 	retval = ext2fs_bmap2(inode->i_fs, inode->i_ino,
-			      &inode->i_ext2, NULL, 0, block, 0, &pblk);
+			      &inode->i_ext2, NULL, 0, (blk64_t) block,
+			      0, &pblk);
 	*phys = pblk;
 	return (int) retval;
 #endif
 }
 
-struct buffer_head *getblk(kdev_t kdev, blk64_t blocknr, int blocksize)
+struct buffer_head *getblk(kdev_t kdev, unsigned long long blocknr,
+			   int blocksize)
 {
 	struct buffer_head *bh;
 	int bufsize = sizeof(*bh) + kdev->k_fs->blocksize -
@@ -132,12 +133,10 @@ struct buffer_head *getblk(kdev_t kdev, blk64_t blocknr, int blocksize)
 	if (retval)
 		return NULL;
 
-#ifdef CONFIG_JBD_DEBUG
 	if (journal_enable_debug >= 3)
 		bh_count++;
-#endif
 	jfs_debug(4, "getblk for block %llu (%d bytes)(total %d)\n",
-		  (unsigned long long) blocknr, blocksize, bh_count);
+		  blocknr, blocksize, bh_count);
 
 	bh->b_fs = kdev->k_fs;
 	if (kdev->k_dev == K_DEV_FS)
@@ -162,14 +161,15 @@ int sync_blockdev(kdev_t kdev)
 	return io_channel_flush(io) ? EIO : 0;
 }
 
-void ll_rw_block(int rw, int nr, struct buffer_head *bhp[])
+void ll_rw_block(int rw, int op_flags EXT2FS_ATTR((unused)), int nr,
+		 struct buffer_head *bhp[])
 {
 	errcode_t retval;
 	struct buffer_head *bh;
 
 	for (; nr > 0; --nr) {
 		bh = *bhp++;
-		if (rw == READ && !bh->b_uptodate) {
+		if (rw == REQ_OP_READ && !bh->b_uptodate) {
 			jfs_debug(3, "reading block %llu/%p\n",
 				  bh->b_blocknr, (void *) bh);
 			retval = io_channel_read_blk64(bh->b_io,
@@ -183,7 +183,7 @@ void ll_rw_block(int rw, int nr, struct buffer_head *bhp[])
 				continue;
 			}
 			bh->b_uptodate = 1;
-		} else if (rw == WRITE && bh->b_dirty) {
+		} else if (rw == REQ_OP_WRITE && bh->b_dirty) {
 			jfs_debug(3, "writing block %llu/%p\n",
 				  bh->b_blocknr,
 				  (void *) bh);
@@ -201,7 +201,7 @@ void ll_rw_block(int rw, int nr, struct buffer_head *bhp[])
 			bh->b_uptodate = 1;
 		} else {
 			jfs_debug(3, "no-op %s for block %llu\n",
-				  rw == READ ? "read" : "write",
+				  rw == REQ_OP_READ ? "read" : "write",
 				  bh->b_blocknr);
 		}
 	}
@@ -220,7 +220,7 @@ static void mark_buffer_clean(struct buffer_head *bh)
 void brelse(struct buffer_head *bh)
 {
 	if (bh->b_dirty)
-		ll_rw_block(WRITE, 1, &bh);
+		ll_rw_block(REQ_OP_WRITE, 0, 1, &bh);
 	jfs_debug(3, "freeing block %llu/%p (total %d)\n",
 		  bh->b_blocknr, (void *) bh, --bh_count);
 	ext2fs_free_mem(&bh);
@@ -239,7 +239,7 @@ void mark_buffer_uptodate(struct buffer_head *bh, int val)
 void wait_on_buffer(struct buffer_head *bh)
 {
 	if (!bh->b_uptodate)
-		ll_rw_block(READ, 1, &bh);
+		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
 }
 
 
@@ -355,7 +355,7 @@ try_backup_journal:
 			goto try_backup_journal;
 		}
 		if (EXT2_I_SIZE(&j_inode->i_ext2) / journal->j_blocksize <
-		    JFS_MIN_JOURNAL_BLOCKS) {
+		    JBD2_MIN_JOURNAL_BLOCKS) {
 			retval = EXT2_ET_JOURNAL_TOO_SMALL;
 			goto try_backup_journal;
 		}
@@ -375,7 +375,7 @@ try_backup_journal:
 				goto errout;
 		}
 
-		journal->j_maxlen = EXT2_I_SIZE(&j_inode->i_ext2) /
+		journal->j_total_len = EXT2_I_SIZE(&j_inode->i_ext2) /
 			journal->j_blocksize;
 
 #ifdef USE_INODE_IO
@@ -389,7 +389,7 @@ try_backup_journal:
 #else
 		journal->j_inode = j_inode;
 		fs->journal_io = fs->io;
-		retval = (errcode_t)journal_bmap(journal, 0, &start);
+		retval = (errcode_t) jbd2_journal_bmap(journal, 0, &start);
 		if (retval)
 			goto errout;
 #endif
@@ -443,7 +443,7 @@ try_backup_journal:
 			retval = EXT2_ET_NO_MEMORY;
 			goto errout;
 		}
-		ll_rw_block(READ, 1, &bh);
+		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
 		retval = bh->b_err;
 		if (retval) {
 			brelse(bh);
@@ -490,7 +490,7 @@ try_backup_journal:
 		brelse(bh);
 
 		maxlen = ext2fs_blocks_count(&jsuper);
-		journal->j_maxlen = (maxlen < 1ULL << 32) ? maxlen :
+		journal->j_total_len = (maxlen < 1ULL << 32) ? maxlen :
 				    (1ULL << 32) - 1;
 		start++;
 	}
@@ -554,17 +554,17 @@ static errcode_t ext2fs_journal_load(journal_t *journal)
 	journal_superblock_t *jsb;
 	struct buffer_head *jbh = journal->j_sb_buffer;
 
-	ll_rw_block(READ, 1, &jbh);
+	ll_rw_block(REQ_OP_READ, 0, 1, &jbh);
 	if (jbh->b_err)
 		return jbh->b_err;
 
 	jsb = journal->j_superblock;
-	/* If we don't even have JFS_MAGIC, we probably have a wrong inode */
-	if (jsb->s_header.h_magic != htonl(JFS_MAGIC_NUMBER))
+	/* If we don't even have JBD2_MAGIC, we probably have a wrong inode */
+	if (jsb->s_header.h_magic != htonl(JBD2_MAGIC_NUMBER))
 		return ext2fs_journal_fix_bad_inode(fs);
 
 	switch (ntohl(jsb->s_header.h_blocktype)) {
-	case JFS_SUPERBLOCK_V1:
+	case JBD2_SUPERBLOCK_V1:
 		journal->j_format_version = 1;
 		if (jsb->s_feature_compat ||
 		    jsb->s_feature_incompat ||
@@ -573,7 +573,7 @@ static errcode_t ext2fs_journal_load(journal_t *journal)
 			clear_v2_journal_fields(journal);
 		break;
 
-	case JFS_SUPERBLOCK_V2:
+	case JBD2_SUPERBLOCK_V2:
 		journal->j_format_version = 2;
 		if (ntohl(jsb->s_nr_users) > 1 &&
 		    uuid_is_null(fs->super->s_journal_uuid))
@@ -586,9 +586,9 @@ static errcode_t ext2fs_journal_load(journal_t *journal)
 	 * These should never appear in a journal super block, so if
 	 * they do, the journal is badly corrupted.
 	 */
-	case JFS_DESCRIPTOR_BLOCK:
-	case JFS_COMMIT_BLOCK:
-	case JFS_REVOKE_BLOCK:
+	case JBD2_DESCRIPTOR_BLOCK:
+	case JBD2_COMMIT_BLOCK:
+	case JBD2_REVOKE_BLOCK:
 		return EXT2_ET_CORRUPT_JOURNAL_SB;
 
 	/* If we don't understand the superblock major type, but there
@@ -598,25 +598,25 @@ static errcode_t ext2fs_journal_load(journal_t *journal)
 		return EXT2_ET_JOURNAL_UNSUPP_VERSION;
 	}
 
-	if (JFS_HAS_INCOMPAT_FEATURE(journal, ~JFS_KNOWN_INCOMPAT_FEATURES))
+	if (JBD2_HAS_INCOMPAT_FEATURE(journal, ~JBD2_KNOWN_INCOMPAT_FEATURES))
 		return EXT2_ET_UNSUPP_FEATURE;
 
-	if (JFS_HAS_RO_COMPAT_FEATURE(journal, ~JFS_KNOWN_ROCOMPAT_FEATURES))
+	if (JBD2_HAS_RO_COMPAT_FEATURE(journal, ~JBD2_KNOWN_ROCOMPAT_FEATURES))
 		return EXT2_ET_RO_UNSUPP_FEATURE;
 
 	/* Checksum v1-3 are mutually exclusive features. */
-	if (jfs_has_feature_csum2(journal) && jfs_has_feature_csum3(journal))
+	if (jbd2_has_feature_csum2(journal) && jbd2_has_feature_csum3(journal))
 		return EXT2_ET_CORRUPT_JOURNAL_SB;
 
-	if (journal_has_csum_v2or3(journal) &&
-	    jfs_has_feature_checksum(journal))
+	if (jbd2_journal_has_csum_v2or3(journal) &&
+	    jbd2_has_feature_checksum(journal))
 		return EXT2_ET_CORRUPT_JOURNAL_SB;
 
 	if (!ext2fs_journal_verify_csum_type(journal, jsb) ||
 	    !ext2fs_journal_sb_csum_verify(journal, jsb))
 		return EXT2_ET_CORRUPT_JOURNAL_SB;
 
-	if (journal_has_csum_v2or3(journal))
+	if (jbd2_journal_has_csum_v2or3(journal))
 		journal->j_csum_seed = jbd2_chksum(journal, ~0, jsb->s_uuid,
 						   sizeof(jsb->s_uuid));
 
@@ -626,9 +626,9 @@ static errcode_t ext2fs_journal_load(journal_t *journal)
 	if (jsb->s_blocksize != htonl(journal->j_blocksize))
 		return EXT2_ET_CORRUPT_JOURNAL_SB;
 
-	if (ntohl(jsb->s_maxlen) < journal->j_maxlen)
-		journal->j_maxlen = ntohl(jsb->s_maxlen);
-	else if (ntohl(jsb->s_maxlen) > journal->j_maxlen)
+	if (ntohl(jsb->s_maxlen) < journal->j_total_len)
+		journal->j_total_len = ntohl(jsb->s_maxlen);
+	else if (ntohl(jsb->s_maxlen) > journal->j_total_len)
 		return EXT2_ET_CORRUPT_JOURNAL_SB;
 
 	journal->j_tail_sequence = ntohl(jsb->s_sequence);
@@ -740,7 +740,14 @@ static errcode_t recover_ext3_journal(ext2_filsys fs)
 	journal_t *journal;
 	errcode_t retval;
 
-	journal_init_revoke_caches();
+	retval = jbd2_journal_init_revoke_record_cache();
+	if (retval)
+		return retval;
+
+	retval = jbd2_journal_init_revoke_table_cache();
+	if (retval)
+		return retval;
+
 	retval = ext2fs_get_journal(fs, &journal);
 	if (retval)
 		return retval;
@@ -749,11 +756,11 @@ static errcode_t recover_ext3_journal(ext2_filsys fs)
 	if (retval)
 		goto errout;
 
-	retval = journal_init_revoke(journal, 1024);
+	retval = jbd2_journal_init_revoke(journal, 1024);
 	if (retval)
 		goto errout;
 
-	retval = -journal_recover(journal);
+	retval = -jbd2_journal_recover(journal);
 	if (retval)
 		goto errout;
 
@@ -762,9 +769,12 @@ static errcode_t recover_ext3_journal(ext2_filsys fs)
 		mark_buffer_dirty(journal->j_sb_buffer);
 	}
 
+	journal->j_tail_sequence = journal->j_transaction_sequence;
+
 errout:
-	journal_destroy_revoke(journal);
-	journal_destroy_revoke_caches();
+	jbd2_journal_destroy_revoke(journal);
+	jbd2_journal_destroy_revoke_record_cache();
+	jbd2_journal_destroy_revoke_table_cache();
 	ext2fs_journal_release(fs, journal, 1, 0);
 	return retval;
 }
@@ -830,7 +840,14 @@ errcode_t ext2fs_open_journal(ext2_filsys fs, journal_t **j)
 	journal_t *journal;
 	errcode_t retval;
 
-	journal_init_revoke_caches();
+	retval = jbd2_journal_init_revoke_record_cache();
+	if (retval)
+		return retval;
+
+	retval = jbd2_journal_init_revoke_table_cache();
+	if (retval)
+		return retval;
+
 	retval = ext2fs_get_journal(fs, &journal);
 	if (retval)
 		return retval;
@@ -839,7 +856,7 @@ errcode_t ext2fs_open_journal(ext2_filsys fs, journal_t **j)
 	if (retval)
 		goto errout;
 
-	retval = journal_init_revoke(journal, 1024);
+	retval = jbd2_journal_init_revoke(journal, 1024);
 	if (retval)
 		goto errout;
 
@@ -852,8 +869,9 @@ errcode_t ext2fs_open_journal(ext2_filsys fs, journal_t **j)
 	return 0;
 
 errout:
-	journal_destroy_revoke(journal);
-	journal_destroy_revoke_caches();
+	jbd2_journal_destroy_revoke(journal);
+	jbd2_journal_destroy_revoke_record_cache();
+	jbd2_journal_destroy_revoke_table_cache();
 	ext2fs_journal_release(fs, journal, 1, 0);
 	return retval;
 }
@@ -862,8 +880,9 @@ errcode_t ext2fs_close_journal(ext2_filsys fs, journal_t **j)
 {
 	journal_t *journal = *j;
 
-	journal_destroy_revoke(journal);
-	journal_destroy_revoke_caches();
+	jbd2_journal_destroy_revoke(journal);
+	jbd2_journal_destroy_revoke_record_cache();
+	jbd2_journal_destroy_revoke_table_cache();
 	ext2fs_journal_release(fs, journal, 0, 0);
 	*j = NULL;
 
@@ -875,7 +894,7 @@ void jbd2_commit_block_csum_set(journal_t *j, struct buffer_head *bh)
 	struct commit_header *h;
 	__u32 csum;
 
-	if (!journal_has_csum_v2or3(j))
+	if (!jbd2_journal_has_csum_v2or3(j))
 		return;
 
 	h = (struct commit_header *)(bh->b_data);
@@ -888,29 +907,19 @@ void jbd2_commit_block_csum_set(journal_t *j, struct buffer_head *bh)
 
 void jbd2_revoke_csum_set(journal_t *j, struct buffer_head *bh)
 {
-	struct journal_revoke_tail *tail;
-	__u32 csum;
-
-	if (!journal_has_csum_v2or3(j))
-		return;
-
-	tail = (struct journal_revoke_tail *)(bh->b_data + j->j_blocksize -
-			sizeof(struct journal_revoke_tail));
-	tail->r_checksum = 0;
-	csum = jbd2_chksum(j, j->j_csum_seed, bh->b_data, j->j_blocksize);
-	tail->r_checksum = ext2fs_cpu_to_be32(csum);
+	jbd2_descr_block_csum_set(j, bh);
 }
 
 void jbd2_descr_block_csum_set(journal_t *j, struct buffer_head *bh)
 {
-	struct journal_block_tail *tail;
+	struct jbd2_journal_block_tail *tail;
 	__u32 csum;
 
-	if (!journal_has_csum_v2or3(j))
+	if (!jbd2_journal_has_csum_v2or3(j))
 		return;
 
-	tail = (struct journal_block_tail *)(bh->b_data + j->j_blocksize -
-			sizeof(struct journal_block_tail));
+	tail = (struct jbd2_journal_block_tail *)(bh->b_data + j->j_blocksize -
+			sizeof(struct jbd2_journal_block_tail));
 	tail->t_checksum = 0;
 	csum = jbd2_chksum(j, j->j_csum_seed, bh->b_data, j->j_blocksize);
 	tail->t_checksum = ext2fs_cpu_to_be32(csum);
@@ -923,14 +932,14 @@ void jbd2_block_tag_csum_set(journal_t *j, journal_block_tag_t *tag,
 	__u32 csum32;
 	__be32 seq;
 
-	if (!journal_has_csum_v2or3(j))
+	if (!jbd2_journal_has_csum_v2or3(j))
 		return;
 
 	seq = ext2fs_cpu_to_be32(sequence);
 	csum32 = jbd2_chksum(j, j->j_csum_seed, (__u8 *)&seq, sizeof(seq));
 	csum32 = jbd2_chksum(j, csum32, bh->b_data, bh->b_size);
 
-	if (jfs_has_feature_csum3(j))
+	if (jbd2_has_feature_csum3(j))
 		tag3->t_checksum = ext2fs_cpu_to_be32(csum32);
 	else
 		tag->t_checksum = ext2fs_cpu_to_be16(csum32);

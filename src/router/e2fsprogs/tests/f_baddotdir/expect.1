@@ -29,6 +29,9 @@ Fix? yes
 Missing '..' in directory inode 16.
 Fix? yes
 
+Directory entry for '.' in ... (19) is big.
+Split? yes
+
 Pass 3: Checking directory connectivity
 '..' in /a (12) is <The NULL inode> (0), should be / (2).
 Fix? yes
@@ -47,13 +50,13 @@ Fix? yes
 
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-Free blocks count wrong for group #0 (70, counted=71).
+Free blocks count wrong for group #0 (69, counted=70).
 Fix? yes
 
-Free blocks count wrong (70, counted=71).
+Free blocks count wrong (69, counted=70).
 Fix? yes
 
 
 test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
-test_filesys: 18/32 files (0.0% non-contiguous), 29/100 blocks
+test_filesys: 19/32 files (0.0% non-contiguous), 30/100 blocks
 Exit status is 1

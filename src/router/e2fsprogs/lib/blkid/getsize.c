@@ -75,7 +75,7 @@ static int valid_offset(int fd, blkid_loff_t offset)
  */
 blkid_loff_t blkid_get_dev_size(int fd)
 {
-	unsigned long long size64;
+	unsigned long long size64 __BLKID_ATTR((unused));
 	blkid_loff_t high, low;
 
 #if defined DKIOCGETBLOCKCOUNT && defined DKIOCGETBLOCKSIZE	/* For Apple Darwin */

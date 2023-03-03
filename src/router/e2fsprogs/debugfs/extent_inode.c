@@ -33,8 +33,9 @@ static void dbg_print_extent(char *desc, struct ext2fs_extent *extent)
 	if (desc)
 		printf("%s: ", desc);
 	printf("extent: lblk %llu--%llu, len %u, pblk %llu, flags: ",
-	       extent->e_lblk, extent->e_lblk + extent->e_len - 1,
-	       extent->e_len, extent->e_pblk);
+	       (unsigned long long) extent->e_lblk,
+	       (unsigned long long) extent->e_lblk + extent->e_len - 1,
+	       extent->e_len, (unsigned long long) extent->e_pblk);
 	if (extent->e_flags & EXT2_EXTENT_FLAGS_LEAF)
 		fputs("LEAF ", stdout);
 	if (extent->e_flags & EXT2_EXTENT_FLAGS_UNINIT)
@@ -77,7 +78,7 @@ void do_extent_open(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 
 	if (argc == 1) {
 		if (current_ino)
-			printf("Current inode is %d\n", current_ino);
+			printf("Current inode is %u\n", current_ino);
 		else
 			printf("No current inode\n");
 		return;
@@ -107,7 +108,7 @@ void do_extent_open(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	cp = strchr(extent_prompt, ':');
 	if (cp)
 		*cp = 0;
-	sprintf(extent_prompt + strlen(extent_prompt), " (extent ino %d): ",
+	sprintf(extent_prompt + strlen(extent_prompt), " (extent ino %u): ",
 		current_ino);
 	ss_add_request_table(sci_idx, &extent_cmds, 1, &ret);
 	ss_set_prompt(sci_idx, extent_prompt);
@@ -527,8 +528,9 @@ void do_info(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	printf("Current handle location: %d/%d (max: %d, bytes %d), level %d/%d\n",
 	       info.curr_entry, info.num_entries, info.max_entries,
 	       info.bytes_avail, info.curr_level, info.max_depth);
-	printf("\tmax lblk: %llu, max pblk: %llu\n", info.max_lblk,
-	       info.max_pblk);
+	printf("\tmax lblk: %llu, max pblk: %llu\n",
+	       (unsigned long long) info.max_lblk,
+	       (unsigned long long) info.max_pblk);
 	printf("\tmax_len: %u, max_uninit_len: %u\n", info.max_len,
 	       info.max_uninit_len);
 }

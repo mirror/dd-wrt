@@ -44,10 +44,12 @@ static struct flags_name flags_array[] = {
 	{ EXT2_TOPDIR_FL, "T", "Top_of_Directory_Hierarchies" },
 	{ EXT4_EXTENTS_FL, "e", "Extents" },
 	{ FS_NOCOW_FL, "C", "No_COW" },
+	{ FS_DAX_FL, "x", "DAX" },
 	{ EXT4_CASEFOLD_FL, "F", "Casefold" },
 	{ EXT4_INLINE_DATA_FL, "N", "Inline_Data" },
 	{ EXT4_PROJINHERIT_FL, "P", "Project_Hierarchy" },
 	{ EXT4_VERITY_FL, "V", "Verity" },
+	{ EXT2_NOCOMPR_FL, "m", "Dont_Compress" },
 	{ 0, NULL, NULL }
 };
 
@@ -75,4 +77,3 @@ void print_flags (FILE * f, unsigned long flags, unsigned options)
 	if (long_opt && first)
 		fputs("---", f);
 }
-

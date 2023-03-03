@@ -11,6 +11,7 @@ VPATH = @srcdir@
 top_builddir = ../..
 my_dir = lib/e2p
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 
 @MCONFIG@
 
@@ -20,17 +21,20 @@ OBJS=		feature.o fgetflags.o fsetflags.o fgetversion.o fsetversion.o \
 		getflags.o getversion.o hashstr.o iod.o ls.o ljs.o mntopts.o \
 		parse_num.o pe.o pf.o ps.o setflags.o setversion.o uuid.o \
 		ostype.o percent.o crypto_mode.o fgetproject.o fsetproject.o \
-		encoding.o
+		encoding.o errcode.o
 
 SRCS=		$(srcdir)/feature.c $(srcdir)/fgetflags.c \
 		$(srcdir)/fsetflags.c $(srcdir)/fgetversion.c \
 		$(srcdir)/fsetversion.c $(srcdir)/getflags.c \
 		$(srcdir)/getversion.c $(srcdir)/hashstr.c $(srcdir)/iod.c \
-		$(srcdir)/ls.c $(srcdir)/ljs.c $(srcdir)/mntopts.c $(srcdir)/parse_num.c \
-		$(srcdir)/pe.c $(srcdir)/pf.c $(srcdir)/ps.c \
-		$(srcdir)/setflags.c $(srcdir)/setversion.c $(srcdir)/uuid.c \
-		$(srcdir)/ostype.c $(srcdir)/percent.c $(srcdir)/crypto_mode.c \
-		$(srcdir)/fgetproject.c $(srcdir)/fsetproject.c $(srcdir)/encoding.c
+		$(srcdir)/ls.c $(srcdir)/ljs.c $(srcdir)/mntopts.c \
+		$(srcdir)/parse_num.c $(srcdir)/pe.c $(srcdir)/pf.c \
+		$(srcdir)/ps.c $(srcdir)/setflags.c $(srcdir)/setversion.c \
+		$(srcdir)/uuid.c $(srcdir)/ostype.c $(srcdir)/percent.c \
+		$(srcdir)/crypto_mode.c $(srcdir)/fgetproject.c \
+		$(srcdir)/fsetproject.c $(srcdir)/encoding.c \
+		$(srcdir)/errcode.c
+
 HFILES= e2p.h
 
 LIBRARY= libe2p
@@ -126,7 +130,8 @@ feature.o: $(srcdir)/feature.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/ext2fs/kernel-jbd.h \
- $(top_srcdir)/lib/ext2fs/jfs_compat.h $(top_srcdir)/lib/ext2fs/kernel-list.h
+ $(top_srcdir)/lib/ext2fs/jfs_compat.h $(top_srcdir)/lib/ext2fs/kernel-list.h \
+ $(top_srcdir)/lib/ext2fs/compiler.h
 fgetflags.o: $(srcdir)/fgetflags.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
@@ -168,7 +173,7 @@ ljs.o: $(srcdir)/ljs.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/kernel-jbd.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
- $(top_srcdir)/lib/ext2fs/kernel-list.h
+ $(top_srcdir)/lib/ext2fs/kernel-list.h $(top_srcdir)/lib/ext2fs/compiler.h
 mntopts.o: $(srcdir)/mntopts.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
@@ -211,5 +216,8 @@ fsetproject.o: $(srcdir)/fsetproject.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h \
  $(srcdir)/e2p.h
 encoding.o: $(srcdir)/encoding.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
+errcode.o: $(srcdir)/errcode.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h

@@ -21,7 +21,7 @@ ENDL
 
 echo "tune2fs ^metadata_csum test" > $OUT
 
-MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h $TMPFILE 524288 >> $OUT 2>&1
+MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -o Linux $TMPFILE 524288 >> $OUT 2>&1
 rm -f $CONF
 
 # dump and check

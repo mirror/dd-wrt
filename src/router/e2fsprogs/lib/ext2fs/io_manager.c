@@ -134,9 +134,11 @@ errcode_t io_channel_alloc_buf(io_channel io, int count, void *ptr)
 	else
 		size = -count;
 
-	if (io->align)
+	if (io->align > 0) {
+		if ((unsigned) io->align > size)
+			size = io->align;
 		return ext2fs_get_memalign(size, io->align, ptr);
-	else
+	} else
 		return ext2fs_get_mem(size, ptr);
 }
 

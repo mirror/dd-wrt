@@ -814,46 +814,6 @@ struct exfat_entry_label {
 #define _INLINE_ static inline
 #endif
 
-static __u16 blkid_swab16(__u16 val);
-static __u32 blkid_swab32(__u32 val);
-static __u64 blkid_swab64(__u64 val);
-
-#if ((defined __GNUC__) && \
-     (defined(__i386__) || defined(__i486__) || defined(__i586__)))
-
-#define _BLKID_HAVE_ASM_BITOPS_
-
-_INLINE_ __u32 blkid_swab32(__u32 val)
-{
-#ifdef EXT2FS_REQUIRE_486
-	__asm__("bswap %0" : "=r" (val) : "0" (val));
-#else
-	__asm__("xchgb %b0,%h0\n\t"	/* swap lower bytes	*/
-		"rorl $16,%0\n\t"	/* swap words		*/
-		"xchgb %b0,%h0"		/* swap higher bytes	*/
-		:"=q" (val)
-		: "0" (val));
-#endif
-	return val;
-}
-
-_INLINE_ __u16 blkid_swab16(__u16 val)
-{
-	__asm__("xchgb %b0,%h0"		/* swap bytes		*/ \
-		: "=q" (val) \
-		:  "0" (val)); \
-		return val;
-}
-
-_INLINE_ __u64 blkid_swab64(__u64 val)
-{
-	return (blkid_swab32(val >> 32) |
-		(((__u64) blkid_swab32(val & 0xFFFFFFFFUL)) << 32));
-}
-#endif
-
-#if !defined(_BLKID_HAVE_ASM_BITOPS_)
-
 _INLINE_  __u16 blkid_swab16(__u16 val)
 {
 	return (val >> 8) | (val << 8);
@@ -870,9 +830,6 @@ _INLINE_ __u64 blkid_swab64(__u64 val)
 	return (blkid_swab32(val >> 32) |
 		(((__u64) blkid_swab32(val & 0xFFFFFFFFUL)) << 32));
 }
-#endif
-
-
 
 #ifdef WORDS_BIGENDIAN
 #define blkid_le16(x) blkid_swab16(x)

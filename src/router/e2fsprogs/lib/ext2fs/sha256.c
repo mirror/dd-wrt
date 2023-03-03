@@ -180,7 +180,7 @@ static void sha256_done(struct hash_state * md, unsigned char *out)
         md->sha256.curlen = 0;
     }
 
-    /* pad upto 56 bytes of zeroes */
+    /* pad up to 56 bytes of zeroes */
     while (md->sha256.curlen < 56) {
         md->sha256.buf[md->sha256.curlen++] = (unsigned char)0;
     }

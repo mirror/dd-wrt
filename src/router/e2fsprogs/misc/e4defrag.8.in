@@ -1,6 +1,6 @@
 .TH E4DEFRAG 8 "May 2009" "e4defrag version 2.0"
 .SH NAME
-e4defrag \- online defragmenter for ext4 filesystem
+e4defrag \- online defragmenter for ext4 file system
 .SH SYNOPSIS
 .B e4defrag
 [
@@ -15,13 +15,13 @@ e4defrag \- online defragmenter for ext4 filesystem
 .B e4defrag
 reduces fragmentation of extent based file. The file targeted by
 .B e4defrag
-is created on ext4 filesystem made with "-O extent" option (see
+is created on ext4 file system made with "-O extent" option (see
 .BR mke2fs (8)).
 The targeted file gets more contiguous blocks and improves the file access
 speed.
 .PP
 .I target
-is a regular file, a directory, or a device that is mounted as ext4 filesystem.
+is a regular file, a directory, or a device that is mounted as ext4 file system.
 If
 .I target
 is a directory,
@@ -48,7 +48,7 @@ printed for each file.
 .IP
 Also this option outputs the average data size in one extent. If you see it,
 you'll find the file has ideal extents or not. Note that the maximum extent
-size is 131072KB in ext4 filesystem (if block size is 4KB).
+size is 131072KB in ext4 file system (if block size is 4KB).
 .IP
 If this option is specified,
 .I target

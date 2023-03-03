@@ -41,7 +41,7 @@ The
 .B blkid
 program is the command-line interface to working with
 .BR libblkid (3)
-library.  It can determine the type of content (e.g. filesystem, swap)
+library.  It can determine the type of content (e.g. file system, swap)
 a block device holds, and also attributes (tokens, NAME=value pairs)
 from the content metadata (e.g. LABEL or UUID fields).
 .PP

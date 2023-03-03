@@ -3,6 +3,17 @@
 //########################
 // Build the e2fsck binary
 
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "external_e2fsprogs_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-GPL
+    //   SPDX-license-identifier-GPL-2.0
+    //   SPDX-license-identifier-LGPL
+    default_applicable_licenses: ["external_e2fsprogs_license"],
+}
+
 cc_defaults {
     name: "e2fsck-defaults",
     defaults: ["e2fsprogs-defaults"],
@@ -34,10 +45,7 @@ cc_defaults {
         "sigcatcher.c",
         "readahead.c",
         "extents.c",
-    ],
-    cflags: [
-        "-Wno-sign-compare",
-        "-fno-strict-aliasing",
+        "encrypted_files.c",
     ],
 }
 
@@ -53,10 +61,11 @@ e2fsck_libs = [
 cc_binary {
     name: "e2fsck",
     host_supported: true,
+    vendor_ramdisk_available: true,
     defaults: ["e2fsck-defaults"],
 
     shared_libs: e2fsck_libs,
-    system_shared_libs: ["libc", "libdl"],
+    required: ["badblocks"],
 }
 
 cc_binary {
@@ -64,5 +73,14 @@ cc_binary {
     static_executable: true,
     defaults: ["e2fsck-defaults"],
 
+    static_libs: e2fsck_libs,
+}
+
+cc_binary {
+    name: "e2fsck_ramdisk",
+    stem: "e2fsck",
+    static_executable: true,
+    ramdisk: true,
+    defaults: ["e2fsck-defaults"],
     static_libs: e2fsck_libs,
 }

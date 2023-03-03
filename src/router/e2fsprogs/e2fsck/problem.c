@@ -50,29 +50,29 @@
  * to fix a problem.
  */
 static const char *prompt[] = {
-	N_("(no prompt)"),	/* 0 */
-	N_("Fix"),		/* 1 */
-	N_("Clear"),		/* 2 */
-	N_("Relocate"),		/* 3 */
-	N_("Allocate"),		/* 4 */
-	N_("Expand"),		/* 5 */
-	N_("Connect to /lost+found"), /* 6 */
-	N_("Create"),		/* 7 */
-	N_("Salvage"),		/* 8 */
-	N_("Truncate"),		/* 9 */
-	N_("Clear inode"),	/* 10 */
-	N_("Abort"),		/* 11 */
-	N_("Split"),		/* 12 */
-	N_("Continue"),		/* 13 */
-	N_("Clone multiply-claimed blocks"), /* 14 */
-	N_("Delete file"),	/* 15 */
-	N_("Suppress messages"),/* 16 */
-	N_("Unlink"),		/* 17 */
-	N_("Clear HTree index"),/* 18 */
-	N_("Recreate"),		/* 19 */
-	N_("Optimize"),		/* 20 */
-	N_("Clear flag"),	/* 21 */
-	"",			/* 22 */
+	N_("(no prompt)"),			/* PROMPT_NONE		=  0 */
+	N_("Fix"),				/* PROMPT_FIX		=  1 */
+	N_("Clear"),				/* PROMPT_CLEAR		=  2 */
+	N_("Relocate"),				/* PROMPT_RELOCATE	=  3 */
+	N_("Allocate"),				/* PROMPT_CREATE	=  4 */
+	N_("Expand"),				/* PROMPT_EXPAND	=  5 */
+	N_("Connect to /lost+found"),		/* PROMPT_CONNECT	=  6 */
+	N_("Create"),				/* PROMPT_CREATE	=  7 */
+	N_("Salvage"),				/* PROMPT_SALVAGE	=  8 */
+	N_("Truncate"),				/* PROMPT_TRUNCATE	=  9 */
+	N_("Clear inode"),			/* PROMPT_CLEAR_INODE	= 10 */
+	N_("Abort"),				/* PROMPT_ABORT		= 11 */
+	N_("Split"),				/* PROMPT_SPLIT		= 12 */
+	N_("Continue"),				/* PROMPT_CONTINUE	= 13 */
+	N_("Clone multiply-claimed blocks"),	/* PROMPT_CLONE		= 14 */
+	N_("Delete file"),			/* PROMPT_DELETE	= 15 */
+	N_("Suppress messages"),		/* PROMPT_SUPPRESS	= 16 */
+	N_("Unlink"),				/* PROMPT_UNLINK	= 17 */
+	N_("Clear HTree index"),		/* PROMPT_CLEAR_HTREE	= 18 */
+	N_("Recreate"),				/* PROMPT_RECREATE	= 19 */
+	N_("Optimize"),				/* PROMPT_OPTIMIZE	= 20 */
+	N_("Clear flag"),			/* PROMPT_CLEAR_FLAG	= 21 */
+	"",					/* PROMPT_NULL		= 22 */
 };
 
 /*
@@ -379,7 +379,7 @@ static struct e2fsck_problem problem_table[] = {
 	/* group descriptor N checksum is invalid, should be yyyy. */
 	{ PR_0_GDT_CSUM,
 	  N_("@g descriptor %g checksum is %04x, should be %04y.  "),
-	     PROMPT_FIX, PR_LATCH_BG_CHECKSUM, 0, 0, 0 },
+	     PROMPT_FIX, PR_PREEN_OK | PR_LATCH_BG_CHECKSUM, 0, 0, 0 },
 
 	/* group descriptor N marked uninitialized without feature set. */
 	{ PR_0_GDT_UNINIT,
@@ -525,6 +525,26 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("Resize_@i and meta_bg features are enabled. Those features are\n"
 	     "not compatible. Resize @i should be disabled.  "),
 	  PROMPT_FIX, 0, 0, 0, 0 },
+
+	/* Orphan file contains holes */
+	{ PR_0_ORPHAN_FILE_HOLE,
+	  N_("Orphan file (@i %i) contains hole at @b %b. Terminating orphan file recovery.\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Orphan file block has wrong magic */
+	{ PR_0_ORPHAN_FILE_BAD_MAGIC,
+	  N_("Orphan file (@i %i) @b %b contains wrong magic. Terminating orphan file recovery.\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Orphan file block has wrong checksum */
+	{ PR_0_ORPHAN_FILE_BAD_CHECKSUM,
+	  N_("Orphan file (@i %i) @b %b contains wrong checksum. Terminating orphan file recovery.\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Orphan file size isn't multiple of blocks size */
+	{ PR_0_ORPHAN_FILE_WRONG_SIZE,
+	  N_("Orphan file (@i %i) size is not multiple of block size. Terminating orphan file recovery.\n"),
+	  PROMPT_NONE, 0 },
 
 	/* Pass 1 errors */
 
@@ -1199,9 +1219,9 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("@i %i has a duplicate @x mapping\n\t(logical @b %c, @n physical @b %b, len %N)\n"),
 	  PROMPT_CLEAR, 0, 0, 0, 0 },
 
-	/* Error allocating memory for encrypted directory list */
-	{ PR_1_ALLOCATE_ENCRYPTED_DIRLIST,
-	  N_("@A memory for encrypted @d list\n"),
+	/* Error allocating memory for encrypted inode list */
+	{ PR_1_ALLOCATE_ENCRYPTED_INODE_LIST,
+	  N_("@A %N bytes of memory for encrypted @i list\n"),
 	  PROMPT_NONE, PR_FATAL, 0, 0, 0 },
 
 	/* Inode extent tree could be more shallow */
@@ -1243,6 +1263,12 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("EA @i %N for parent @i %i missing EA_INODE flag.\n "),
 	  PROMPT_FIX, PR_PREEN_OK, 0, 0, 0 },
 
+	/* Offer to clear uninitialized flag on an extent */
+	{ PR_1_CLEAR_UNINIT_EXTENT,
+	  /* xgettext:no-c-format */
+	  N_("@i %i has @x marked uninitialized at @b %c (len %N).  "),
+	  PROMPT_CLEAR, PR_PREEN_OK, 0, 0, 0 },
+
 	/* Casefold flag set on a non-directory */
 	{ PR_1_CASEFOLD_NONDIR,
 	  N_("@i %i has the casefold flag set but is not a directory.  "),
@@ -1252,6 +1278,36 @@ static struct e2fsck_problem problem_table[] = {
 	{ PR_1_CASEFOLD_FEATURE,
 	  N_("@d %p has the casefold flag, but the\ncasefold feature is not enabled.  "),
 	  PROMPT_CLEAR_FLAG, 0, 0, 0, 0 },
+
+	/* Inode has encrypt flag but no encryption extended attribute */
+	{ PR_1_MISSING_ENCRYPTION_XATTR,
+	  N_("@i %i has encrypt flag but no encryption @a.\n"),
+	  PROMPT_CLEAR_FLAG, 0, 0, 0, 0 },
+
+	/* Encrypted inode has corrupt encryption extended attribute */
+	{ PR_1_CORRUPT_ENCRYPTION_XATTR,
+	  N_("Encrypted @i %i has corrupt encryption @a.\n"),
+	  PROMPT_CLEAR_INODE, 0, 0, 0, 0 },
+
+	/* Htree directory should use SipHash but does not */
+	{ PR_1_HTREE_NEEDS_SIPHASH,
+	  N_("@h %i uses hash version (%N), but should use SipHash (6) \n"),
+	  PROMPT_CLEAR_HTREE, PR_PREEN_OK, 0, 0, 0 },
+
+	/* Htree directory uses SipHash but should not */
+	{ PR_1_HTREE_CANNOT_SIPHASH,
+	  N_("@h %i uses SipHash, but should not.  "),
+	  PROMPT_CLEAR_HTREE, PR_PREEN_OK, 0, 0, 0 },
+
+	/* Orphan file has bad mode */
+	{ PR_1_ORPHAN_FILE_BAD_MODE,
+	  N_("Orphan file @i %i is not regular file.  "),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* Orphan file inode is not in use, but contains data */
+	{ PR_1_ORPHAN_FILE_NOT_CLEAR,
+	  N_("Orphan file @i %i is not in use, but contains data.  "),
+	  PROMPT_CLEAR, PR_PREEN_OK },
 
 	/* Pass 1b errors */
 
@@ -1639,7 +1695,7 @@ static struct e2fsck_problem problem_table[] = {
 	/* Filesystem contains large files, but has no such flag in sb */
 	{ PR_2_FEATURE_LARGE_FILES,
 	  N_("@f contains large files, but lacks LARGE_FILE flag in @S.\n"),
-	  PROMPT_FIX, 0, 0, 0, 0 },
+	  PROMPT_FIX, PR_PREEN_OK, 0, 0, 0 },
 
 	/* Node in HTREE directory not referenced */
 	{ PR_2_HTREE_NOTREF,
@@ -1665,6 +1721,11 @@ static struct e2fsck_problem problem_table[] = {
 	{ PR_2_HTREE_CLEAR,
 	  N_("@n @h %d (%q).  "), PROMPT_CLEAR_HTREE, 0, 0, 0, 0 },
 
+	/* Filesystem has large directories, but has no such flag in sb */
+	{ PR_2_FEATURE_LARGE_DIRS,
+	  N_("@f has large directories, but lacks LARGE_DIR flag in @S.\n"),
+	  PROMPT_FIX, PR_PREEN_OK, 0, 0, 0 },
+
 	/* Bad block in htree interior node */
 	{ PR_2_HTREE_BADBLK,
 	  N_("@p @h %d (%q): bad @b number %b.\n"),
@@ -1675,7 +1736,7 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("Error adjusting refcount for @a @b %b (@i %i): %m\n"),
 	  PROMPT_NONE, PR_FATAL, 0, 0, 0 },
 
-	/* Invalid HTREE root node */
+	/* Problem in HTREE directory inode: root node is invalid */
 	{ PR_2_HTREE_BAD_ROOT,
 	  /* xgettext:no-c-format */
 	  N_("@p @h %d: root node is @n\n"),
@@ -1779,6 +1840,27 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("Encrypted @E is too short.\n"),
 	  PROMPT_CLEAR, 0, 0, 0, 0 },
 
+	/* Encrypted directory contains unencrypted file */
+	{ PR_2_UNENCRYPTED_FILE,
+	  N_("Encrypted @E references unencrypted @i %Di.\n"),
+	  PROMPT_CLEAR, 0, 0, 0, 0 },
+
+	/* Encrypted directory contains file with different encryption policy */
+	{ PR_2_INCONSISTENT_ENCRYPTION_POLICY,
+	  N_("Encrypted @E references @i %Di, which has a different encryption policy.\n"),
+	  PROMPT_CLEAR, 0, 0, 0, 0 },
+
+	/* Casefolded directory entry has illegal characters in its name */
+	{ PR_2_BAD_ENCODED_NAME,
+	  N_("@E has illegal UTF-8 characters in its name.\n"),
+	  PROMPT_FIX, 0, 0, 0, 0 },
+
+	 /* Non-unique filename found, but can't rename */
+	 { PR_2_NON_UNIQUE_FILE_NO_RENAME,
+	   N_("Duplicate filename @E found.  "),
+	   PROMPT_CLEAR, 0, 0, 0, 0 },
+
+
 	/* Pass 3 errors */
 
 	/* Pass 3: Checking directory connectivity */
@@ -1799,7 +1881,7 @@ static struct e2fsck_problem problem_table[] = {
 	/* Unconnected directory inode */
 	{ PR_3_UNCONNECTED_DIR,
 	  /* xgettext:no-c-format */
-	  N_("Unconnected @d @i %i (%p)\n"),
+	  N_("Unconnected @d @i %i (was in %q)\n"),
 	  PROMPT_CONNECT, 0, 0, 0, 0 },
 
 	/* /lost+found not found */
@@ -1936,6 +2018,12 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("/@l is encrypted\n"),
 	  PROMPT_CLEAR, 0, 0, 0, 0 },
 
+	/* Recursively looped directory inode */
+	{ PR_3_LOOPED_DIR,
+	  /* xgettext:no-c-format */
+	  N_("Recursively looped @d @i %i (%p)\n"),
+	  PROMPT_CONNECT, 0, 0, 0, 0 },
+
 	/* Pass 3A Directory Optimization	*/
 
 	/* Pass 3A: Optimizing directories */
@@ -2008,6 +2096,11 @@ static struct e2fsck_problem problem_table[] = {
 	{ PR_4_DIR_NLINK_FEATURE,
 	  N_("@d exceeds max links, but no DIR_NLINK feature in @S.\n"),
 	  PROMPT_FIX, 0, 0, 0, 0 },
+
+	/* Directory inode ref count set to overflow but could be exact value */
+	{ PR_4_DIR_OVERFLOW_REF_COUNT,
+	  N_("@d @i %i ref count set to overflow but could be exact value %N.  "),
+	  PROMPT_FIX, PR_PREEN_OK, 0, 0, 0 },
 
 	/* Pass 5 errors */
 
@@ -2201,6 +2294,56 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("Error writing quota info for quota type %N: %m\n"),
 	  PROMPT_NULL, 0, 0, 0, 0 },
 
+	/* Orphan file without a journal */
+	{ PR_6_ORPHAN_FILE_WITHOUT_JOURNAL,
+	  N_("@S has orphan file without @j.\n"),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* Orphan file truncation failed */
+	{ PR_6_ORPHAN_FILE_TRUNC_FAILED,
+	  N_("Failed to truncate orphan file.\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Failed to initialize orphan file */
+	{ PR_6_ORPHAN_FILE_CORRUPTED,
+	  N_("Failed to initialize orphan file.\n"),
+	  PROMPT_RECREATE, PR_PREEN_OK },
+
+	/* Cannot fix corrupted orphan file with invalid bitmaps */
+	{ PR_6_ORPHAN_FILE_BITMAP_INVALID,
+	  N_("Cannot fix corrupted orphan file with invalid bitmaps.\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Orphan file creation failed */
+	{ PR_6_ORPHAN_FILE_CREATE_FAILED,
+	  N_("Failed to truncate orphan file (@i %i).\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Orphan file block contains data */
+	{ PR_6_ORPHAN_BLOCK_DIRTY,
+	  N_("Orphan file (@i %i) @b %b is not clean.\n"),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* orphan_present set but orphan file is empty */
+	{ PR_6_ORPHAN_PRESENT_CLEAN_FILE,
+	  N_("Feature orphan_present is set but orphan file is clean.\n"),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* orphan_present set but orphan_file is not */
+	{ PR_6_ORPHAN_PRESENT_NO_FILE,
+	  N_("Feature orphan_present is set but feature orphan_file is not.\n"),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* Orphan file size isn't multiple of blocks size */
+	{ PR_6_ORPHAN_FILE_WRONG_SIZE,
+	  N_("Orphan file (@i %i) size is not multiple of block size.\n"),
+	  PROMPT_NONE, 0 },
+
+	/* Orphan file contains holes */
+	{ PR_6_ORPHAN_FILE_HOLE,
+	  N_("Orphan file (@i %i) contains hole at @b %b.\n"),
+	  PROMPT_NONE, 0 },
+
 	{ 0 }
 };
 
@@ -2257,6 +2400,8 @@ int end_problem_latch(e2fsck_t ctx, int mask)
 	int answer = -1;
 
 	ldesc = find_latch(mask);
+	if (!ldesc)
+		return answer;
 	if (ldesc->end_message && (ldesc->flags & PRL_LATCHED)) {
 		clear_problem_context(&pctx);
 		answer = fix_problem(ctx, ldesc->end_message, &pctx);
@@ -2328,11 +2473,11 @@ static void print_problem(FILE *f, problem_t code, int answer, int fixed,
 	if (pctx->dir)
 		fprintf(f, " dir=\"%u\"", pctx->dir);
 	if (pctx->blk)
-		fprintf(f, " blk=\"%llu\"", pctx->blk);
+		fprintf(f, " blk=\"%llu\"", (unsigned long long) pctx->blk);
 	if (pctx->blk2)
-		fprintf(f, " blk2=\"%llu\"", pctx->blk2);
+		fprintf(f, " blk2=\"%llu\"", (unsigned long long) pctx->blk2);
 	if (pctx->blkcount != (e2_blkcnt_t) -1)
-		fprintf(f, " blkcount=\"%lld\"", pctx->blkcount);
+		fprintf(f, " blkcount=\"%lld\"", (unsigned long long) pctx->blkcount);
 	if (pctx->group != (dgrp_t) -1)
 		fprintf(f, " group=\"%u\"", pctx->group);
 	if (pctx->csum1)
@@ -2340,9 +2485,9 @@ static void print_problem(FILE *f, problem_t code, int answer, int fixed,
 	if (pctx->csum2)
 		fprintf(f, " csum2=\"%u\"", pctx->csum2);
 	if (pctx->num)
-		fprintf(f, " num=\"%llu\"", pctx->num);
+		fprintf(f, " num=\"%llu\"", (unsigned long long) pctx->num);
 	if (pctx->num2)
-		fprintf(f, " num2=\"%llu\"", pctx->num2);
+		fprintf(f, " num2=\"%llu\"", (unsigned long long) pctx->num2);
 	if (pctx->str)
 		fprintf(f, " str=\"%s\"", pctx->str);
 	fputs("/>\n", f);
@@ -2403,8 +2548,8 @@ int fix_problem(e2fsck_t ctx, problem_t code, struct problem_context *pctx)
 	 * Do special latch processing.  This is where we ask the
 	 * latch question, if it exists
 	 */
-	if (ptr->flags & PR_LATCH_MASK) {
-		ldesc = find_latch(ptr->flags & PR_LATCH_MASK);
+	if (ptr->flags & PR_LATCH_MASK &&
+	    (ldesc = find_latch(ptr->flags & PR_LATCH_MASK)) != NULL) {
 		if (ldesc->question && !(ldesc->flags & PRL_LATCHED)) {
 			ans = fix_problem(ctx, ldesc->question, pctx);
 			if (ans == 1)
@@ -2428,8 +2573,7 @@ int fix_problem(e2fsck_t ctx, problem_t code, struct problem_context *pctx)
 		if ((ctx->options & E2F_OPT_PREEN) &&
 		    (ptr->flags & PR_PREEN_OK))
 			suppress++;
-		if ((ptr->flags & PR_LATCH_MASK) &&
-		    (ldesc->flags & (PRL_YES | PRL_NO)))
+		if (ldesc && (ldesc->flags & (PRL_YES | PRL_NO)))
 			suppress++;
 		if (ptr->count == ptr->max_count + 1) {
 			if (ctx->problem_logf)
@@ -2474,8 +2618,7 @@ int fix_problem(e2fsck_t ctx, problem_t code, struct problem_context *pctx)
 			answer = def_yn;
 			if (!(ptr->flags & PR_PREEN_NOMSG))
 				print_answer = 1;
-		} else if ((ptr->flags & PR_LATCH_MASK) &&
-			   (ldesc->flags & (PRL_YES | PRL_NO))) {
+		} else if (ldesc && (ldesc->flags & (PRL_YES | PRL_NO))) {
 			print_answer = 1;
 			if (ldesc->flags & PRL_YES)
 				answer = 1;

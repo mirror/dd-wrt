@@ -31,7 +31,7 @@ filesystems against the original e2fsck, you will have to inspect the
 test_script.log file manually.
 
 --------------------------------------------------------------
-Here's a one-line descriptons of the various test images in this
+Here's a one-line descriptions of the various test images in this
 directory:
 
 baddir.img		Filesystem with a corrupted directory

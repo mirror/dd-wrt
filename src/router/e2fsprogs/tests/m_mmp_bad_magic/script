@@ -1,13 +1,3 @@
-# use current directory instead of /tmp becase tmpfs doesn't support DIO
-rm -f $TMPFILE
-TMPFILE=$(mktemp ./tmp-$test_name.XXXXXX)
-
-stat -f $TMPFILE | grep -q "Type: tmpfs"
-if [ $? = 0 ]; then
-	rm -f $TMPFILE
-	echo "$test_name: $test_description: skipped for tmpfs (no O_DIRECT)"
-	return 0
-fi
 gzip -dc < $test_dir/image.gz > $TMPFILE
 
 OUT=$test_name.log

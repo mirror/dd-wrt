@@ -154,7 +154,15 @@ int blkid_flush_cache(blkid_cache cache)
 			if (backup) {
 				sprintf(backup, "%s.old", filename);
 				unlink(backup);
+#if defined(__GNUC__) && __GNUC__ >= 5
+/* explicit (void) cast is not enough with glibc and _FORTIFY_SOURCE */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+#endif
 				(void) link(filename, backup);
+#if defined(__GNUC__) && __GNUC__ >= 5
+#pragma GCC diagnostic pop
+#endif
 				free(backup);
 			}
 			if (rename(opened, filename) < 0)

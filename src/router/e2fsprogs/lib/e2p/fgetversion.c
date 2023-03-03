@@ -65,8 +65,6 @@ int fgetversion(const char *name, unsigned long *version)
 	rc = syscall(SYS_fsctl, name, EXT2_IOC_GETVERSION, &ver, 0);
 # endif /* !APPLE_DARWIN */
 #else /* ! HAVE_EXT2_IOCTLS */
-	extern int errno;
-
 	errno = EOPNOTSUPP;
 #endif /* ! HAVE_EXT2_IOCTLS */
 	if (rc == 0)

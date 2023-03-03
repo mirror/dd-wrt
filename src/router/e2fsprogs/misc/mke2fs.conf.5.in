@@ -11,7 +11,7 @@ is the configuration file for
 .BR mke2fs (8).
 It controls the default parameters used by
 .BR mke2fs (8)
-when it is creating ext2, ext3, or ext4 filesystems.
+when it is creating ext2, ext3, or ext4 file systems.
 .PP
 The
 .I mke2fs.conf
@@ -118,8 +118,15 @@ The following relations are defined in the
 .I [defaults]
 stanza.
 .TP
+.I creator_os
+This relation specifies the "creator operating system" for the
+file system unless it is overridden on the command line.
+The default value is the OS for which the
+.B mke2fs
+executable was compiled.
+.TP
 .I fs_type
-This relation specifies the default filesystem type if the user does not
+This relation specifies the default file system type if the user does not
 specify it via the
 .B \-t
 option, or if
@@ -128,8 +135,8 @@ is not started using a program name of the form
 .BI mkfs. fs-type\fR.
 If both the user and the
 .B mke2fs.conf
-file do not specify a default filesystem type, mke2fs will use a
-default filesystem type of
+file do not specify a default file system type, mke2fs will use a
+default file system type of
 .I ext3
 if a journal was requested via a command-line option, or
 .I ext2
@@ -154,12 +161,12 @@ subsection as defined below (e.g.,
 etc.) can also be specified in the
 .I defaults
 stanza to specify the default value to be used if the user does not
-specify one on the command line, and the filesystem-type
+specify one on the command line, and the file system-type
 specific section of the configuration file does not specify a default value.
 .SH THE [fs_types] STANZA
 Each tag in the
 .I [fs_types]
-stanza names a filesystem type or usage type which can be specified via the
+stanza names a file system type or usage type which can be specified via the
 .B \-t
 or
 .B \-T
@@ -169,14 +176,14 @@ respectively.
 .P
 The
 .B mke2fs
-program constructs a list of fs_types by concatenating the filesystem
+program constructs a list of fs_types by concatenating the file system
 type (i.e., ext2, ext3, etc.) with the usage type list.  For most
 configuration options,
 .B mke2fs
 will look for a subsection in the
 .I [fs_types]
 stanza corresponding with each entry in the constructed list, with later
-entries overriding earlier filesystem or usage types.
+entries overriding earlier file system or usage types.
 For
 example, consider the following
 .B mke2fs.conf
@@ -230,7 +237,7 @@ fragment:
 .P
 If mke2fs started with a program name of
 .BR mke2fs.ext4 ,
-then the filesystem type of ext4 will be used.  If the filesystem is
+then the file system type of ext4 will be used.  If the file system is
 smaller than 3 megabytes, and no usage type is specified, then
 .B mke2fs
 will use a default
@@ -241,30 +248,30 @@ subsection and the floppy subsection define an
 .I inode_size
 relation, but since the later entries in the fs_types list supersede
 earlier ones, the configuration parameter for fs_types.floppy.inode_size
-will be used, so the filesystem  will have an inode size of 128.
+will be used, so the file system  will have an inode size of 128.
 .P
 The exception to this resolution is the
 .I features
 tag, which specifies a set of changes to the features used by the
-filesystem, and which is cumulative.  So in the above example, first
+file system, and which is cumulative.  So in the above example, first
 the configuration relation defaults.base_features would enable an
 initial feature set with the sparse_super, filetype, resize_inode, and
 dir_index features enabled.  Then configuration relation
 fs_types.ext4.features would enable the extents and flex_bg
 features, and finally the configuration relation
 fs_types.floppy.features would remove
-the resize_inode feature, resulting in a filesystem feature set
+the resize_inode feature, resulting in a file system feature set
 consisting of the sparse_super, filetype, dir_index,
 extents_and flex_bg features.
 .P
-For each filesystem type, the following tags may be used in that
+For each file system type, the following tags may be used in that
 fs_type's subsection.   These tags may also be used in the
 .I default
 section:
 .TP
 .I base_features
 This relation specifies the features which are initially enabled for this
-filesystem type.  Only one
+file system type.  Only one
 .I base_features
 will be used, so if there are multiple entries in the fs_types list
 whose subsections define the
@@ -273,7 +280,7 @@ relation, only the last will be used by
 .BR mke2fs (8).
 .TP
 .I enable_periodic_fsck
-This boolean relation specifies whether periodic filesystem checks should be
+This boolean relation specifies whether periodic file system checks should be
 enforced at boot time.  If set to true, checks will be forced every
 180 days, or after a random number of mounts.  These values may
 be changed later via the
@@ -285,9 +292,9 @@ command-line options to
 .TP
 .I errors
 Change the behavior of the kernel code when errors are detected.
-In all cases, a filesystem error will cause
+In all cases, a file system error will cause
 .BR e2fsck (8)
-to check the filesystem on the next boot.
+to check the file system on the next boot.
 .I errors
 can be one of the following:
 .RS 1.2i
@@ -296,7 +303,7 @@ can be one of the following:
 Continue normal execution.
 .TP
 .B remount-ro
-Remount filesystem read-only.
+Remount file system read-only.
 .TP
 .B panic
 Cause a kernel panic.
@@ -305,7 +312,7 @@ Cause a kernel panic.
 .I features
 This relation specifies a comma-separated list of features edit
 requests which modify the feature set
-used by the newly constructed filesystem.  The syntax is the same as the
+used by the newly constructed file system.  The syntax is the same as the
 .B -O
 command-line option to
 .BR mke2fs (8);
@@ -319,7 +326,7 @@ found in the fs_types list.
 This boolean relation, if set to a value of true, forces
 .B mke2fs
 to always try to create an undo file, even if the undo file might be
-huge and it might extend the time to create the filesystem image
+huge and it might extend the time to create the file system image
 because the inode table isn't being initialized lazily.
 .TP
 .I default_features
@@ -359,9 +366,9 @@ enabled.  If lazy_itable_init is true and the uninit_bg feature is
 enabled,  the inode table will
 not be fully initialized by
 .BR mke2fs (8).
-This speeds up filesystem
+This speeds up file system
 initialization noticeably, but it requires the kernel to finish
-initializing the filesystem in the background when the filesystem is
+initializing the file system in the background when the file system is
 first mounted.
 .TP
 .I lazy_journal_init
@@ -370,7 +377,7 @@ lazily initialized. It only has meaning if the has_journal feature is
 enabled. If lazy_journal_init is true, the journal inode will not be
 fully zeroed out by
 .BR mke2fs .
-This speeds up filesystem initialization noticeably, but carries some
+This speeds up file system initialization noticeably, but carries some
 small risk if the system crashes before the journal has been overwritten
 entirely one time.
 .TP
@@ -395,13 +402,13 @@ This relation specifies the default inode size if the user does not
 specify one on the command line.
 .TP
 .I reserved_ratio
-This relation specifies the default percentage of filesystem blocks
+This relation specifies the default percentage of file system blocks
 reserved for the super-user, if the user does not specify one on the command
 line.
 .TP
 .I hash_alg
 This relation specifies the default hash algorithm used for the
-new filesystems with hashed b-tree directories.  Valid algorithms
+new file systems with hashed b-tree directories.  Valid algorithms
 accepted are:
 .IR legacy ,
 .IR half_md4 ,
@@ -410,10 +417,10 @@ and
 .TP
 .I flex_bg_size
 This relation specifies the number of block groups that will be packed
-together to create one large virtual block group on an ext4 filesystem.
+together to create one large virtual block group on an ext4 file system.
 This improves meta-data locality and performance on meta-data heavy
 workloads.  The number of groups must be a power of 2 and may only be
-specified if the flex_bg filesystem feature is enabled.
+specified if the flex_bg file system feature is enabled.
 .TP
 .I options
 This relation specifies additional extended options which should be
@@ -424,12 +431,12 @@ as if they were prepended to the argument of the
 option.  This can be used to configure the default extended options used
 by
 .BR mke2fs (8)
-on a per-filesystem type basis.
+on a per-file system type basis.
 .TP
 .I discard
 This boolean relation specifies whether the
 .BR mke2fs (8)
-should attempt to discard device prior to filesystem creation.
+should attempt to discard device prior to file system creation.
 .TP
 .I cluster_size
 This relation specifies the default cluster size if the bigalloc file
@@ -449,7 +456,7 @@ blocks of the pre-allocated files will be contiguous.
 .TP
 .I hugefiles_dir
 This relation specifies the directory where huge files are created,
-relative to the filesystem root.
+relative to the file system root.
 .TP
 .I hugefiles_uid
 This relation controls the user ownership for all of the files and
@@ -504,6 +511,13 @@ This relation specifies the base file name for the huge files.
 .I hugefiles_digits
 This relation specifies the (zero-padded) width of the field for the
 huge file number.
+.TP
+.I warn_y2038_dates
+This boolean relation specifies whether mke2fs will issue a warning
+when creating a file system with 128 byte inodes (and so therefore will
+not support dates after January 19th, 2038).  The default value is true,
+except for file systems created for the GNU Hurd since it only supports
+128-byte inodes.
 .TP
 .I zero_hugefiles
 This boolean relation specifies whether or not zero blocks will be

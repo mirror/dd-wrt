@@ -430,9 +430,9 @@ static void dump_xattr_raw_entries(FILE *f, unsigned char *buf,
 #else
 		ent = *((struct ext2_ext_attr_entry *) (buf + off));
 #endif
-		fprintf(f, "offset = %d (%04o), name_len = %u, "
+		fprintf(f, "offset = %d (%04o), hash = %u, name_len = %u, "
 			"name_index = %u\n",
-			off, off, ent.e_name_len, ent.e_name_index);
+			off, off, ent.e_hash, ent.e_name_len, ent.e_name_index);
 		vstart = value_start + ent.e_value_offs;
 		fprintf(f, "value_offset = %d (%04o), value_inum = %u, "
 			"value_size = %u\n", ent.e_value_offs,

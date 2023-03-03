@@ -33,7 +33,7 @@
 
 /*
  * Required for the uber-silly devfs /dev/ide/host1/bus2/target3/lun3
- * pathames.
+ * pathnames.
  */
 static const char *devfs_hier[] = {
 	"host", "bus", "target", "lun", 0

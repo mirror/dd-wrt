@@ -80,7 +80,8 @@ static void print_tree(struct rb_root *root)
 	     node = ext2fs_rb_next(node)) {
 		ext = node_to_extent(node);
 		fprintf(stderr, "\t\t\t--> (%llu -> %llu)\n",
-			ext->start, ext->start + ext->count);
+			(unsigned long long) ext->start,
+			(unsigned long long) ext->start + ext->count);
 	}
 	fprintf(stderr, "\t\t\t=================================\n");
 }
@@ -96,16 +97,18 @@ static void check_tree(struct rb_root *root, const char *msg)
 		if (ext->count == 0) {
 			fprintf(stderr, "Tree Error: count is zero\n");
 			fprintf(stderr, "extent: %llu -> %llu (%llu)\n",
-				ext->start, ext->start + ext->count,
-				ext->count);
+				(unsigned long long) ext->start,
+				(unsigned long long) ext->start + ext->count,
+				(unsigned long long) ext->count);
 			goto err_out;
 		}
 		if (ext->start + ext->count < ext->start) {
 			fprintf(stderr,
 				"Tree Error: start or count is crazy\n");
 			fprintf(stderr, "extent: %llu -> %llu (%llu)\n",
-				ext->start, ext->start + ext->count,
-				ext->count);
+				(unsigned long long) ext->start,
+				(unsigned long long) ext->start + ext->count,
+				(unsigned long long) ext->count);
 			goto err_out;
 		}
 
@@ -113,24 +116,28 @@ static void check_tree(struct rb_root *root, const char *msg)
 			if (old->start > ext->start) {
 				fprintf(stderr, "Tree Error: start is crazy\n");
 				fprintf(stderr, "extent: %llu -> %llu (%llu)\n",
-					old->start, old->start + old->count,
-					old->count);
+					(unsigned long long) old->start,
+					(unsigned long long) old->start + old->count,
+					(unsigned long long) old->count);
 				fprintf(stderr,
 					"extent next: %llu -> %llu (%llu)\n",
-					ext->start, ext->start + ext->count,
-					ext->count);
+					(unsigned long long) ext->start,
+					(unsigned long long) ext->start + ext->count,
+					(unsigned long long) ext->count);
 				goto err_out;
 			}
 			if ((old->start + old->count) >= ext->start) {
 				fprintf(stderr,
 					"Tree Error: extent is crazy\n");
 				fprintf(stderr, "extent: %llu -> %llu (%llu)\n",
-					old->start, old->start + old->count,
-					old->count);
+					(unsigned long long) old->start,
+					(unsigned long long) old->start + old->count,
+					(unsigned long long) old->count);
 				fprintf(stderr,
 					"extent next: %llu -> %llu (%llu)\n",
-					ext->start, ext->start + ext->count,
-					ext->count);
+					(unsigned long long) ext->start,
+					(unsigned long long) ext->start + ext->count,
+					(unsigned long long) ext->count);
 				goto err_out;
 			}
 		}
@@ -949,15 +956,17 @@ static void rb_print_stats(ext2fs_generic_bitmap_64 bitmap)
 		bp->test_hit, t_hit, bp->mark_hit, m_hit);
 #endif
 	fprintf(stderr, "%16llu extents (%llu bytes)\n",
-		count, ((count * sizeof(struct bmap_rb_extent)) +
-			sizeof(struct ext2fs_rb_private)));
+		(unsigned long long) count, (unsigned long long)
+		((count * sizeof(struct bmap_rb_extent)) +
+		 sizeof(struct ext2fs_rb_private)));
  	fprintf(stderr, "%16llu bits minimum size\n",
-		min_size);
+		(unsigned long long) min_size);
 	fprintf(stderr, "%16llu bits maximum size\n"
 		"%16llu bits average size\n",
-		max_size, avg_size);
-	fprintf(stderr, "%16llu bits set in bitmap (out of %llu)\n", size,
-		bitmap->real_end - bitmap->start);
+		(unsigned long long) max_size, (unsigned long long) avg_size);
+	fprintf(stderr, "%16llu bits set in bitmap (out of %llu)\n",
+		(unsigned long long) size,
+		(unsigned long long) bitmap->real_end - bitmap->start);
 	fprintf(stderr,
 		"%16.4lf memory / bitmap bit memory ratio (bitarray = 1)\n",
 		eff);

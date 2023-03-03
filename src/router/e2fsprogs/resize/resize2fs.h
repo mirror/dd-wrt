@@ -150,6 +150,7 @@ extern errcode_t adjust_fs_info(ext2_filsys fs, ext2_filsys old_fs,
 				ext2fs_block_bitmap reserve_blocks,
 				blk64_t new_size);
 extern blk64_t calculate_minimum_resize_size(ext2_filsys fs, int flags);
+extern void adjust_new_size(ext2_filsys fs, blk64_t *sizep);
 
 
 /* extent.c */

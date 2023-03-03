@@ -1,6 +1,8 @@
-46,50d45
+46,52d45
 < Journal features:         (none)
-< Journal size:             1024k
-< Journal length:           1024
+< Total journal size:       1024k
+< Total journal blocks:     1024
+< Max transaction length:   1024
+< Fast commit length:       0
 < Journal sequence:         0x00000001
 < Journal start:            0
