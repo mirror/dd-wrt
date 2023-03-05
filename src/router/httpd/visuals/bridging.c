@@ -291,7 +291,7 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifstp%d", count);
 	if (hasstp) {
-		showOptions_trans(wp, vlan_name, "On Off", (char *[]) { "share.on", "share.off" }, stp ? !strcmp(stp, "1") ? "On" : "Off" : "On");
+		showOptions_trans(wp, vlan_name, "On Off", (char *[]) { "share.on", "share.off" }, stp ? (!strcmp(stp, "1") ? "On" : "Off") : "On");
 	} else {
 		showOptions_ext_trans(wp, vlan_name, "Off", (char *[]) { "share.off" }, "Off", 1);
 	}
