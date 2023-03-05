@@ -135,6 +135,7 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
+	show_layer_ext(document.vlan.vlans, 'idvlans', <% nvem("vlans", "1", "1", "0"); %> == 1);
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -163,16 +164,19 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="del_value" />
-
 							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("vlan.legend"); %></legend>
+								<input class="spaceradio" type="radio" name="vlans" value="1" <% nvc("vlans", "1"); %> onclick="show_layer_ext(this, 'idvlans', true)" /><% tran("share.enable"); %>&nbsp;
+								<input class="spaceradio" type="radio" name="vlans" value="0" <% nvc("vlans", "0"); %> onclick="show_layer_ext(this, 'idvlans', false)" /><% tran("share.disable"); %>
 								<table class="table vlan" summary="virtual lan table">
+								<div id="idvlans">
 									<tbody>
 										<% port_vlan_table(); %>
 									</tbody>
+								</div>
 							 </table>
-						 </fieldset><br/>
+							 </fieldset><br/>
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
