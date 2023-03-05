@@ -1959,19 +1959,19 @@ char *getBridgeSTPType(char *br, char *word)
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(stp, word, 1);
-		if (strcmp(bridge, br))
+		if (bridge && br && strcmp(bridge, br))
 			continue;
 		strcpy(word, stp);
 		return word;
 	}
-	if (!strcmp(br, "br0"))
+	if (br && !strcmp(br, "br0"))
 		return nvram_matchi("lan_stp", 1) ? "STP" : "Off";
 	return "Off";
 }
 
 int getBridgeSTP(char *br, char *word)
 {
-	if (strcmp(getBridgeSTPType(br, word), "Off"))
+	if (br && word && strcmp(getBridgeSTPType(br, word), "Off"))
 		return 1;
 	else
 		return 0;
@@ -1984,7 +1984,7 @@ int getBridgeForwardDelay(char *br)
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(fd, word, 4);
-		if (strcmp(bridge, br))
+		if (bridge && br && strcmp(bridge, br))
 			continue;
 		if (!fd)
 			fd = "15";
@@ -2000,7 +2000,7 @@ int getBridgeMaxAge(char *br)
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(age, word, 5);
-		if (strcmp(bridge, br))
+		if (bridge && br && strcmp(bridge, br))
 			continue;
 		if (!age)
 			age = "20";
