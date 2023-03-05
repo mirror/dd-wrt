@@ -876,6 +876,8 @@ void do_ej_buffer(char *buffer, webs_t stream);
 
 char *websGetVar(webs_t wp, char *var, char *d);
 
+char *websGetSaneVar(webs_t wp, char *var, char *d);
+
 int websGetVari(webs_t wp, char *var, int d);
 
 char *validate_websGetVar(webs_t wp, char *var, char *d);
