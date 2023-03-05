@@ -452,10 +452,16 @@ int nfs4_init_name_mapping(char *conffile)
 
 	nobody_user = conf_get_str("Mapping", "Nobody-User");
 	if (nobody_user) {
-		size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+		long scbuflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+		size_t buflen = 1024; /*value on my gentoo glibc system that has _SC_GETPW_R_SIZE_MAX*/
 		struct passwd *buf;
 		struct passwd *pw = NULL;
 		int err;
+
+		/*sysconf can return -1 when _SC_GETPW_R_SIZE_MAX is not defined, like on musl systems, if cast to size_t this will lead
+		  to an integer overflow, which leads to a buffer overflow and crashes svcgssd */
+		if (scbuflen > 0)
+			buflen = (size_t)scbuflen;
 
 		buf = malloc(sizeof(*buf) + buflen);
 		if (buf) {
@@ -473,10 +479,16 @@ int nfs4_init_name_mapping(char *conffile)
 
 	nobody_group = conf_get_str("Mapping", "Nobody-Group");
 	if (nobody_group) {
-		size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+		long scbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+		size_t buflen = 1024; /*value on my gentoo glibc system that has _SC_GETGR_R_SIZE_MAX*/
 		struct group *buf;
 		struct group *gr = NULL;
 		int err;
+
+		/*sysconf can return -1 when _SC_GETGR_R_SIZE_MAX is not defined, like on musl systems, if cast to size_t this will lead
+		  to an integer overflow, which leads to a buffer overflow and crashes svcgssd */
+		if (scbuflen > 0)
+			buflen = (size_t)scbuflen;
 
 		buf = malloc(sizeof(*buf) + buflen);
 		if (buf) {

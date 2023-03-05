@@ -93,8 +93,10 @@ statd_get_socket(void)
 					__func__);
 			break;
 		}
+#if defined(__GLIBC__) || defined(__UCLIBC__)
 		se = getservbyport(sin.sin_port, "udp");
 		if (se == NULL)
+#endif
 			break;
 
 		if (retries == MAX_BRP_RETRIES) {

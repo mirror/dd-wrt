@@ -91,8 +91,12 @@ static int nss_uid_to_name(uid_t uid, char *domain, char *name, size_t len)
 	struct passwd *pw = NULL;
 	struct passwd pwbuf;
 	char *buf;
-	size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	long scbuflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t buflen = 1024;
 	int err = -ENOMEM;
+
+	if (scbuflen > 0)
+		buflen = (size_t)scbuflen;
 
 	buf = malloc(buflen);
 	if (!buf)
@@ -119,8 +123,12 @@ static int nss_gid_to_name(gid_t gid, char *domain, char *name, size_t len)
 	struct group *gr = NULL;
 	struct group grbuf;
 	char *buf;
-	size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	long scbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	size_t buflen = 1024;
 	int err;
+
+	if (scbuflen > 0)
+		buflen = (size_t)scbuflen;
 
 	if (domain == NULL)
 		domain = get_default_domain();
@@ -192,12 +200,13 @@ static struct passwd *nss_getpwnam(const char *name, const char *domain,
 {
 	struct passwd *pw;
 	struct pwbuf *buf;
-	size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	long scbuflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t buflen = 1024;
 	char *localname;
 	int err = ENOMEM;
 
-	if (buflen > UINT_MAX)
-		goto err;
+	if (scbuflen > 0)
+		buflen = (size_t)scbuflen;
 
 	buf = malloc(sizeof(*buf) + buflen);
 	if (buf == NULL)
@@ -301,7 +310,8 @@ static int _nss_name_to_gid(char *name, gid_t *gid, int dostrip)
 	struct group *gr = NULL;
 	struct group grbuf;
 	char *buf, *domain;
-	size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	long scbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	size_t buflen = 1024;
 	int err = -EINVAL;
 	char *localname = NULL;
 	char *ref_name = NULL;
@@ -327,8 +337,8 @@ static int _nss_name_to_gid(char *name, gid_t *gid, int dostrip)
 	}
 
 	err = -ENOMEM;
-	if (buflen > UINT_MAX)
-		goto out_name;
+	if (scbuflen > 0)
+		buflen = (size_t)scbuflen;
 
 	do {
 		buf = malloc(buflen);
