@@ -4092,15 +4092,15 @@ void save_networking(webs_t wp)
 
 		sprintf(var, "vlanifname%d", i);
 		ifname = websGetVar(wp, var, NULL);
-		if (!ifname)
+		if (!ifname || !*ifname)
 			break;
 		sprintf(var, "vlantag%d", i);
 		tag = websGetVar(wp, var, NULL);
-		if (!tag)
+		if (!tag || !*tag)
 			break;
 		sprintf(var, "vlanprio%d", i);
 		prio = websGetVar(wp, var, NULL);
-		if (!prio)
+		if (!prio || !*prio)
 			break;
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -4128,11 +4128,11 @@ void save_networking(webs_t wp)
 
 		sprintf(var, "bondingifname%d", i);
 		ifname = websGetVar(wp, var, NULL);
-		if (!ifname)
+		if (!ifname || !*ifname)
 			break;
 		sprintf(var, "bondingattach%d", i);
 		tag = websGetVar(wp, var, NULL);
-		if (!tag)
+		if (!tag || !*tag)
 			break;
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -4165,7 +4165,7 @@ void save_networking(webs_t wp)
 		char var[32];
 		sprintf(var, "ipvsname%d", i);
 		ipvsname = websGetVar(wp, var, NULL);
-		if (!ipvsname)
+		if (!ipvsname || !*ipvsname)
 			break;
 		trunkspaces(ipvsname);
 
@@ -4177,19 +4177,19 @@ void save_networking(webs_t wp)
 
 		sprintf(var, "ipvsport%d", i);
 		ipvsport = websGetVar(wp, var, NULL);
-		if (!ipvsport)
+		if (!ipvsport || !*ipvsport)
 			break;
 		trunkspaces(ipvsport);
 
 		sprintf(var, "ipvsscheduler%d", i);
 		ipvsscheduler = websGetVar(wp, var, NULL);
-		if (!ipvsscheduler)
+		if (!ipvsscheduler || !*ipvsscheduler)
 			break;
 		trunkspaces(ipvsscheduler);
 
 		sprintf(var, "ipvsproto%d", i);
 		ipvsproto = websGetVar(wp, var, NULL);
-		if (!ipvsproto)
+		if (!ipvsproto || !*ipvsproto)
 			break;
 		trunkspaces(ipvsproto);
 
@@ -4217,30 +4217,30 @@ void save_networking(webs_t wp)
 		char var[32];
 		sprintf(var, "target_ipvsname%d", i);
 		ipvsname = websGetVar(wp, var, NULL);
-		if (!ipvsname)
+		if (!ipvsname || !*ipvsname)
 			break;
 		trunkspaces(ipvsname);
 
 		sprintf(var, "target_ipvsip%d", i);
 		ipvsip = websGetVar(wp, var, NULL);
-		if (!ipvsip)
+		if (!ipvsip || !*ipvsip)
 			break;
 		trunkspaces(ipvsip);
 
 		sprintf(var, "target_ipvsport%d", i);
 		ipvsport = websGetVar(wp, var, NULL);
-		if (!ipvsport)
+		if (!ipvsport || !*ipvsport)
 			break;
 		trunkspaces(ipvsport);
 
 		sprintf(var, "target_ipvsweight%d", i);
 		ipvsweight = websGetVar(wp, var, NULL);
-		if (!ipvsweight)
+		if (!ipvsweight || !*ipvsweight)
 			break;
 		trunkspaces(ipvsweight);
 		sprintf(var, "target_ipvsmasquerade%d", i);
 		ipvsnat = websGetVar(wp, var, "0");
-		if (!ipvsnat)
+		if (!ipvsnat|| !*ipvsnat)
 			break;
 		trunkspaces(ipvsnat);
 
@@ -4274,16 +4274,16 @@ void save_networking(webs_t wp)
 		bzero(ipaddr, 32);
 		bzero(netmask, 32);
 		sprintf(var, "bridgename%d", i);
-		ifname = websGetVar(wp, var, NULL);
-		if (!ifname)
-			break;
+		ifname = websGetVar(wp, var, "none");
+		if (!ifname || !*ifname)
+			break; // we will not save bullshit. 
 		sprintf(var, "bridgestp%d", i);
 		tag = websGetVar(wp, var, "Off");
 		if (!tag)
 			break;
 		sprintf(var, "bridgemcastbr%d", i);
 		mcast = websGetVar(wp, var, NULL);
-		if (!mcast) {
+		if (!mcast || !*mcast) {
 			break;
 		} else {
 			sprintf(n, "%s_mcast", ifname);
@@ -4320,12 +4320,9 @@ void save_networking(webs_t wp)
 		sprintf(s_max_age, "%d", max_age);
 
 		sprintf(var, "bridgemtu%d", i);
-		mtu = websGetVar(wp, var, NULL);
-		if (!mtu)
-			mtu = "1500";
-		if (*(mtu) == 0)
-			mtu = "1500";
-
+		mtu = websGetVar(wp, var, "1500");
+		if (!*mtu)
+			mtu="1500";	
 		copymergetonv(wp, "%s_ipaddr", ifname);
 		char buf[32];
 		char temp[32];
@@ -4363,12 +4360,12 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "bridge%d", i);
-		ifname = websGetVar(wp, var, NULL);
-		if (!ifname)
+		ifname = websGetVar(wp, var, "none");
+		if (!ifname || !*ifname)
 			break;
 		sprintf(var, "bridgeif%d", i);
-		tag = websGetVar(wp, var, NULL);
-		if (!tag)
+		tag = websGetVar(wp, var, "none");
+		if (!tag || !*tag)
 			break;
 		sprintf(var, "bridgeifstp%d", i);
 		stp = websGetVar(wp, var, "On");
@@ -4417,7 +4414,7 @@ void save_networking(webs_t wp)
 
 		sprintf(var, "mdhcpifname%d", i);
 		mdhcpinterface = websGetVar(wp, var, NULL);
-		if (!mdhcpinterface)
+		if (!mdhcpinterface || !*mdhcpinterface)
 			break;
 
 		sprintf(var, "mdhcpon%d", i);
