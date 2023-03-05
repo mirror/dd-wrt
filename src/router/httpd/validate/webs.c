@@ -4275,8 +4275,8 @@ void save_networking(webs_t wp)
 		bzero(netmask, 32);
 		sprintf(var, "bridgename%d", i);
 		ifname = websGetVar(wp, var, "none");
-		if (!ifname || !*ifname)
-			break; // we will not save bullshit. 
+		if (!*ifname)
+		    ifname="none");
 		sprintf(var, "bridgestp%d", i);
 		tag = websGetVar(wp, var, "Off");
 		if (!tag)

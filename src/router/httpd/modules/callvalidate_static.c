@@ -455,6 +455,14 @@ char *websGetVar(webs_t wp, char *var, char *d)
 	return get_cgi(wp, var) ? : d;
 }
 
+char *websGetSaneVar(webs_t wp, char *var, char *d)
+{
+	char *var = websGetVar(wp, var, d);
+	if (d && var && !*var)
+	    var = d;
+	return var;
+}
+
 int websGetVari(webs_t wp, char *var, int d)
 {
 	char *res = get_cgi(wp, var);
