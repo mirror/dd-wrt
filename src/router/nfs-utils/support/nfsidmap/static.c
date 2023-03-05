@@ -98,9 +98,13 @@ static struct passwd *static_getpwnam(const char *name,
 {
 	struct passwd *pw;
 	struct pwbuf *buf;
-	size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	long scbuflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t buflen = 1024;
 	char *localname;
 	int err;
+
+	if (scbuflen > 0)
+		buflen = (size_t)scbuflen;
 
 	buf = malloc(sizeof(*buf) + buflen);
 	if (!buf) {
@@ -149,9 +153,13 @@ static struct group *static_getgrnam(const char *name,
 {
 	struct group *gr;
 	struct grbuf *buf;
-	size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	long scbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	size_t buflen = 1024;
 	char *localgroup;
 	int err;
+
+	if (scbuflen > 0)
+		buflen = (size_t)scbuflen;
 
 	buf = malloc(sizeof(*buf) + buflen);
 	if (!buf) {
