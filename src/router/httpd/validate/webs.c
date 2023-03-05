@@ -2321,7 +2321,7 @@ Need parsing to get the file data out of the POST data
 		sprintf(idx, "oet%d_peers", key);
 		nvram_default_geti(idx, 0);
 		int peer = nvram_geti(idx);
-		char ka[3]="26";
+		char ka[3] = "26";
 
 		/*debug
 		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
@@ -2352,17 +2352,17 @@ Need parsing to get the file data out of the POST data
 				upload_set("endpoint", "1");
 				endp = strrchr(output, ':');	//reverse strrchr to get last : in case of IPv6
 				upload_set("peerport", endp + 1);
-				endp[0]='\0';	//terminate output string at last :
+				endp[0] = '\0';	//terminate output string at last :
 				//remove [ and ]
 				int i, j;
 				int len = strlen(output);
-				for(i=0; i<len; i++) {
-					if(output[i] == '[' || output[i] == ']') {
-						for(j=i; j<len; j++) {
-							output[j] = output[j+1];
+				for (i = 0; i < len; i++) {
+					if (output[i] == '[' || output[i] == ']') {
+						for (j = i; j < len; j++) {
+							output[j] = output[j + 1];
 						}
-					len--;
-					i--;
+						len--;
+						i--;
 					}
 				}
 				upload_set("rem", output);
@@ -3021,7 +3021,7 @@ void userpass_add(webs_t wp)
 {
 	//experimental, try to save already existing lines
 	validate_openvpnuserpass(wp, NULL, NULL);
-	
+
 	macro_add("openvpn_userpassnum");
 }
 #endif
@@ -3479,7 +3479,8 @@ static char *vapsettings[] = {
 	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "tpc_db", "ttls", "ttls8021xaddopt", "ttls8021xanon",
 	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "dwds", "nitro_qam", "fwtype", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain",
 	"txchain_pwrsave_enable", "txpwr",
-	"txpwrdbm", "power_override", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_if",
+	"txpwrdbm", "power_override", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr",
+	    "wds10_if",
 	"wds10_ipaddr",
 	"wds10_netmask", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2", "wds2_desc", "wds2_enable", "wds2_hwaddr", "wds2_if", "wds2_ipaddr",
 	"wds2_netmask", "wds2_ospf", "wds3", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_if", "wds3_ipaddr", "wds3_netmask", "wds3_ospf", "wds4", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_if",
@@ -5876,6 +5877,11 @@ void port_vlan_table_save(webs_t wp)
 	int port = 0, vlan = 0, *vlans, i;
 	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
 	int portval;
+	char *vlans_enable = websGetVar(wp, "vlans", NULL);
+	nvram_set("vlans", vlans_enable);
+	if (nvram_match("vlans", "0"))
+		return;
+
 	strcpy(portvlan, "");
 	int blen = nvram_geti("portvlan_count");
 	int max = blen + 6;
@@ -6083,7 +6089,6 @@ void port_vlan_table_save(webs_t wp)
 	// nvram_set("ub1_ifnames", br1vlans);
 	// nvram_set("ub2_ifnames", br2vlans);
 	nvram_set("trunking", buff);
-	nvram_seti("vlans", 1);
 
 	nvram_async_commit();
 
