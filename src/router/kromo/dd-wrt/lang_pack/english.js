@@ -2551,6 +2551,7 @@ var vlan=new Object();
 vlan.titl="Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN Configuration";
+vlan.vlans_label="Vlans";
 vlan.bridge="Assigned To<br />Bridge";
 vlan.tagged="Tagged";
 vlan.negociate="Autonegotiation";
