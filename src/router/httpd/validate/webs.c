@@ -4091,17 +4091,11 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "vlanifname%d", i);
-		ifname = websGetVar(wp, var, NULL);
-		if (!ifname || !*ifname)
-			break;
+		ifname = websGetSaneVar(wp, var, "none");
 		sprintf(var, "vlantag%d", i);
-		tag = websGetVar(wp, var, NULL);
-		if (!tag || !*tag)
-			break;
+		tag = websGetSaneVar(wp, var, "1");
 		sprintf(var, "vlanprio%d", i);
-		prio = websGetVar(wp, var, NULL);
-		if (!prio || !*prio)
-			break;
+		prio = websGetSaneVar(wp, var, "0");
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
 		strcat(buffer, tag);
@@ -4127,13 +4121,9 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "bondingifname%d", i);
-		ifname = websGetVar(wp, var, NULL);
-		if (!ifname || !*ifname)
-			break;
+		ifname = websGetSaneVar(wp, var, "none");
 		sprintf(var, "bondingattach%d", i);
-		tag = websGetVar(wp, var, NULL);
-		if (!tag || !*tag)
-			break;
+		tag = websGetSaneVar(wp, var, "none");
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
 		strcat(buffer, tag);
@@ -4164,21 +4154,15 @@ void save_networking(webs_t wp)
 		char *ipvsscheduler;
 		char var[32];
 		sprintf(var, "ipvsname%d", i);
-		ipvsname = websGetVar(wp, var, NULL);
-		if (!ipvsname || !*ipvsname)
-			break;
+		ipvsname = websGetSaneVar(wp, var, "none");
 		trunkspaces(ipvsname);
 
 		sprintf(var, "ipvsip%d", i);
-		ipvsip = websGetVar(wp, var, NULL);
-		if (!ipvsip)
-			break;
+		ipvsip = websGetSaneVar(wp, var, "0.0.0.0");
 		trunkspaces(ipvsip);
 
 		sprintf(var, "ipvsport%d", i);
-		ipvsport = websGetVar(wp, var, NULL);
-		if (!ipvsport || !*ipvsport)
-			break;
+		ipvsport = websGetSaneVar(wp, var, "0");
 		trunkspaces(ipvsport);
 
 		sprintf(var, "ipvsscheduler%d", i);
@@ -4216,32 +4200,22 @@ void save_networking(webs_t wp)
 		char *ipvsnat;
 		char var[32];
 		sprintf(var, "target_ipvsname%d", i);
-		ipvsname = websGetVar(wp, var, NULL);
-		if (!ipvsname || !*ipvsname)
-			break;
+		ipvsname = websGetSaneVar(wp, var, "none");
 		trunkspaces(ipvsname);
 
 		sprintf(var, "target_ipvsip%d", i);
-		ipvsip = websGetVar(wp, var, NULL);
-		if (!ipvsip || !*ipvsip)
-			break;
+		ipvsip = websGetSaneVar(wp, var, "0.0.0.0");
 		trunkspaces(ipvsip);
 
 		sprintf(var, "target_ipvsport%d", i);
-		ipvsport = websGetVar(wp, var, NULL);
-		if (!ipvsport || !*ipvsport)
-			break;
+		ipvsport = websGetSaneVar(wp, var, "0");
 		trunkspaces(ipvsport);
 
 		sprintf(var, "target_ipvsweight%d", i);
-		ipvsweight = websGetVar(wp, var, NULL);
-		if (!ipvsweight || !*ipvsweight)
-			break;
+		ipvsweight = websGetSaneVar(wp, var, "0");
 		trunkspaces(ipvsweight);
 		sprintf(var, "target_ipvsmasquerade%d", i);
-		ipvsnat = websGetVar(wp, var, "0");
-		if (!ipvsnat|| !*ipvsnat)
-			break;
+		ipvsnat = websGetSaneVar(wp, var, "0");
 		trunkspaces(ipvsnat);
 
 		strcat(buffer, ipvsname);
@@ -4274,9 +4248,7 @@ void save_networking(webs_t wp)
 		bzero(ipaddr, 32);
 		bzero(netmask, 32);
 		sprintf(var, "bridgename%d", i);
-		ifname = websGetVar(wp, var, "none");
-		if (!*ifname)
-		    ifname="none");
+		ifname = websGetSaneVar(wp, var, "none");
 		sprintf(var, "bridgestp%d", i);
 		tag = websGetVar(wp, var, "Off");
 		if (!tag)
@@ -4320,9 +4292,7 @@ void save_networking(webs_t wp)
 		sprintf(s_max_age, "%d", max_age);
 
 		sprintf(var, "bridgemtu%d", i);
-		mtu = websGetVar(wp, var, "1500");
-		if (!*mtu)
-			mtu="1500";	
+		mtu = websGetSaneVar(wp, var, "1500");
 		copymergetonv(wp, "%s_ipaddr", ifname);
 		char buf[32];
 		char temp[32];
@@ -4360,13 +4330,9 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "bridge%d", i);
-		ifname = websGetVar(wp, var, "none");
-		if (!ifname || !*ifname)
-			break;
+		ifname = websGetSaneVar(wp, var, "none");
 		sprintf(var, "bridgeif%d", i);
-		tag = websGetVar(wp, var, "none");
-		if (!tag || !*tag)
-			break;
+		tag = websGetSaneVar(wp, var, "none");
 		sprintf(var, "bridgeifstp%d", i);
 		stp = websGetVar(wp, var, "On");
 		if (!strcmp(stp, "On"))
@@ -4413,9 +4379,7 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "mdhcpifname%d", i);
-		mdhcpinterface = websGetVar(wp, var, NULL);
-		if (!mdhcpinterface || !*mdhcpinterface)
-			break;
+		mdhcpinterface = websGetSaneVar(wp, var, "none");
 
 		sprintf(var, "mdhcpon%d", i);
 		mdhcpon = websGetVar(wp, var, NULL);
@@ -4423,19 +4387,13 @@ void save_networking(webs_t wp)
 			break;
 
 		sprintf(var, "mdhcpstart%d", i);
-		mdhcpstart = websGetVar(wp, var, NULL);
-		if (!mdhcpstart)
-			break;
+		mdhcpstart = websGetSaneVar(wp, var, "1");
 
 		sprintf(var, "mdhcpmax%d", i);
-		mdhcpmax = websGetVar(wp, var, NULL);
-		if (!mdhcpmax)
-			break;
+		mdhcpmax = websGetSaneVar(wp, var, "253");
 
 		sprintf(var, "mdhcpleasetime%d", i);
-		mdhcpleasetime = websGetVar(wp, var, NULL);
-		if (!mdhcpleasetime)
-			break;
+		mdhcpleasetime = websGetSaneVar(wp, var, "1500");
 
 		strcat(buffer, mdhcpinterface);
 		strcat(buffer, ">");
