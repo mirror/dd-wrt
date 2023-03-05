@@ -82,10 +82,10 @@ char *websGetVar(webs_t wp, char *var, char *d)
 
 char *websGetSaneVar(webs_t wp, char *var, char *d)
 {
-	char *var = websGetVar(wp, var, d);
-	if (d && var && !*var)
-	    var = d;
-	return var;
+	char *sanevar = websGetVar(wp, var, d);
+	if (d && sanevar && !*var)
+	    sanevar = d;
+	return sanevar;
 }
 
 int websGetVari(webs_t wp, char *var, int d)
