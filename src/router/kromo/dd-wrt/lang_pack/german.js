@@ -2253,7 +2253,7 @@ hvpn.right1="Sie können hier die IPsec-, PPTP- und/oder L2TP-Durchleitung aktiv
 
 vlan.titl="Virtuelles LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
-vlan.legend="VLAN";
+vlan.legend="VLAN Konfiguration";
 vlan.bridge="Der Brücke zuweisen";
 vlan.tagged="Tagged";
 vlan.negociate="Automatisches Aushandeln";
