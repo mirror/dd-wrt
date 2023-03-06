@@ -5,7 +5,7 @@
 #ifndef __XFS_LINUX_H__
 #define __XFS_LINUX_H__
 
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include <sys/vfs.h>
 #include <sys/ioctl.h>
 #include <sys/param.h>
