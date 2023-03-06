@@ -1651,7 +1651,7 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		char *vlans = websGetVar(wp, "vlans", NULL);
 		if (vlans && nvram_match("vlans", "1")) {
 			if (!strcmp(vlans, "0"))
-			    need_reboot=1;
+				need_reboot = 1;
 		}
 	}
 	cprintf("apply");
