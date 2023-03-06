@@ -1647,6 +1647,13 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 			nvram_seti("do_reboot", 1);
 
 	}
+	if (*nvram_safe_get("vlans")) {
+		char *vlans = websGetVar(wp, "vlans", NULL);
+		if (vlans && nvram_match("vlans", "1")) {
+			if (!strcmp(vlans, "0"))
+			    need_reboot=1;
+		}
+	}
 	cprintf("apply");
 
 	/**********   get "change_action" and launch gozila_cgi if needed **********/
