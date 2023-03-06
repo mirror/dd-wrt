@@ -3819,7 +3819,6 @@ char *enable_dtag_vlan(int enable)
 			char vl[32];
 			sprintf(vl, "%d", lan_vlan_num);
 			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", brcm_to_swconfig(vlan_lan_ports, vlanbuf));
-			char vl[32];
 			sprintf(vl, "%d", wan_vlan_num);
 			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", brcm_to_swconfig(vlan_wan_ports, vlanbuf));
 			eval("swconfig", "dev", "switch0", "set", "apply");
