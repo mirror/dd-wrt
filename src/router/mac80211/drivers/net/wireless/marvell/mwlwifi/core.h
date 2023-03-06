@@ -414,7 +414,6 @@ struct mwl_tx_info {
 
 struct mwl_amsdu_frag {
 	struct sk_buff *skb;
-	u8 *cur_pos;
 	unsigned long jiffies;
 	u8 pad;
 	u8 num;

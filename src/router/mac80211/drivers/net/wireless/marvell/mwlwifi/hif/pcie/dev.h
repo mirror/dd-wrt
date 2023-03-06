@@ -38,7 +38,7 @@
 #define PCIE_TX_WAKE_Q_THRESHOLD  (2 * PCIE_MAX_NUM_TX_DESC)
 #define PCIE_DELAY_FREE_Q_LIMIT   PCIE_MAX_NUM_TX_DESC
 #define PCIE_MAX_NUM_RX_DESC      256
-#define PCIE_RECEIVE_LIMIT        64
+#define PCIE_RECEIVE_LIMIT        256
 
 enum {
 	IEEE_TYPE_MANAGEMENT = 0,
@@ -765,8 +765,6 @@ static inline void pcie_tx_add_dma_header(struct mwl_priv *priv,
 		skb_push(skb, needed_room);
 	}
 
-	if (ieee80211_is_data_qos(wh->frame_control))
-		hdrlen -= IEEE80211_QOS_CTL_LEN;
 
 	if (priv->chip_type == MWL8997)
 		dma_data = &((struct pcie_pfu_dma_data *)skb->data)->dma_data;

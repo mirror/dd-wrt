@@ -394,6 +394,9 @@ void pcie_rx_recv(unsigned long data)
 	struct ieee80211_rx_status *status;
 	struct mwl_vif *mwl_vif = NULL;
 	struct ieee80211_hdr *wh;
+	u8 *_data;
+	u8 *qc;
+	const u8 eapol[] = {0x88, 0x8e};
 
 	desc = &pcie_priv->desc_data[0];
 	curr_hndl = desc->pnext_rx_hndl;
@@ -500,25 +503,17 @@ void pcie_rx_recv(unsigned long data)
 		wh = (struct ieee80211_hdr *)prx_skb->data;
 
 		if (ieee80211_is_data_qos(wh->frame_control)) {
-			const u8 eapol[] = {0x88, 0x8e};
-			u8 *qc = ieee80211_get_qos_ctl(wh);
-			u8 *data;
-
-			data = prx_skb->data +
+			qc = ieee80211_get_qos_ctl(wh);
+			_data = prx_skb->data +
 				ieee80211_hdrlen(wh->frame_control) + 6;
 
-			if (!memcmp(data, eapol, sizeof(eapol)))
+			if (!memcmp(_data, eapol, sizeof(eapol)))
 				*qc |= 7;
-		}
 
-		if (ieee80211_is_data_qos(wh->frame_control) &&
-		    ieee80211_has_a4(wh->frame_control)) {
-			u8 *qc = ieee80211_get_qos_ctl(wh);
-
-			if (*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT)
-				if (pcie_rx_process_mesh_amsdu(priv, prx_skb,
-							      status))
+			if ((*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT) && (ieee80211_has_a4(wh->frame_control))) {
+				if (pcie_rx_process_mesh_amsdu(priv, prx_skb, status))
 					goto out;
+			}
 		}
 
 		if (ieee80211_is_probe_req(wh->frame_control) &&
