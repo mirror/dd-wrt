@@ -554,12 +554,14 @@ recheck:
 			dev_kfree_skb_any(psk_buff);
 			break;
 		case RXRING_CASE_SLOW_BAD_MIC:
-			bad_mic = true;
 		case RXRING_CASE_SLOW_NOQUEUE:
 		case RXRING_CASE_SLOW_NORUN:
 		case RXRING_CASE_SLOW_MGMT:
 		case RXRING_CASE_SLOW_MCAST:
 		case RXRING_CASE_SLOW_PROMISC:
+			if (RXRING_CASE_SLOW_BAD_MIC == ctrl_case)
+				bad_mic = true;
+
 			rx_info = (struct rx_info *)psk_buff->data;
 			dma_data = (struct pcie_dma_data *)&rx_info->hdr[0];
 			pktlen = le16_to_cpu(dma_data->fwlen);
