@@ -1,7 +1,7 @@
 xfsprogs-configure:
 	cd xfsprogs && ./configure --host=$(ARCH)-linux \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF" \
-		LDFLAGS="$(LDLTO) -L$(TOP)/e2fsprogs/lib/uuid -luuid -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/util-linux/libuuid/src -DNEED_PRINTF" \
+		LDFLAGS="$(LDLTO) -L$(TOP)/util-linux/.libs -luuid -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CC="$(CC) $(COPTS) $(MIPS16_OPT)" \
 		--with-gnu-ld  \
 		--disable-rpath \
