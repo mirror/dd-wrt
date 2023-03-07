@@ -300,6 +300,10 @@ void start_raid(void)
 			}
 		}
 		if (!strcmp(type, "zfs")) {
+			// disable NCQ
+			foreach(drive, raid, next) {
+				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", drive);
+			}
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			sysprintf("zpool import -a -d /dev");
 			sysprintf("zpool upgrade %s", poolname);
@@ -333,6 +337,10 @@ void start_raid(void)
 			eval("service", "run_rc_usb", "start");
 		}
 		if (!strcmp(type, "md")) {
+			// disable NCQ
+			foreach(drive, raid, next) {
+				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", drive);
+			}
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
 			sysprintf("echo 32768 > /sys/block/md%d/md/stripe_cache_size", i);
 			writeprocsys("dev/raid/speed_limit_max", nvram_default_get("dev.raid.speed_limit_max", "10000000"));
