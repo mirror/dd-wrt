@@ -500,7 +500,8 @@ void start_sysinit(void)
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
-		eval("mtd", "resetbc", "s_env");
+		if (!nvram_match("nobcreset","1"))
+			eval("mtd", "resetbc", "s_env");
 		break;
 	default:
 		break;
