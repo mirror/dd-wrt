@@ -607,7 +607,7 @@ function ValidateDevices()
 
 function AskPath()
 {
-	echo -n 'What should be the path to your fancontrol config file (/etc/fancontrol)? '
+	echo -n 'What should be the path to your fancontrol config file (/tmp/etc/fancontrol)? '
 
 	read FCCONFIG
 	if [ "$FCCONFIG" = "" ]
