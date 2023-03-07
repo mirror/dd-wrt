@@ -300,10 +300,6 @@ void start_raid(void)
 			}
 		}
 		if (!strcmp(type, "zfs")) {
-			// disable NCQ
-			foreach(drive, raid, next) {
-				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", drive);
-			}
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			sysprintf("zpool import -a -d /dev");
 			sysprintf("zpool upgrade %s", poolname);
