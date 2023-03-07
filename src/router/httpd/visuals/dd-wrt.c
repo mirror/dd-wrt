@@ -3137,7 +3137,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) || !defined(HAVE_IDEXX)
 
 #ifdef HAVE_ATH9K
-	if (is_ath10k(prefix))
+	if (is_ath10k(prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix))
 	{
 
 		char wl_po[32];
@@ -4566,7 +4566,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
 #ifdef HAVE_ATH9K
-	if (is_ath10k(prefix))
+	if (is_ath10k(prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix))
 	{
 
 		char wl_po[32];
