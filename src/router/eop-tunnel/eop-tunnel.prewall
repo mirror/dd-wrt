@@ -5,10 +5,15 @@ cd /tmp/oet/pid
 rmmod eoip >/dev/null 2>&1
 tunnels=$($nv get oet_tunnels)
 WAN_IF=$(get_wanface)
-GATEWAY="$($nv get wan_gateway)"
-GATEWAY6="$(ip -6 route show table main | awk '/default via/ { print $3;exit; }')"
+IP=ip
+IP6=echo
 WGDELRT=/tmp/wgdelrt
 ipv6_en=$($nv get ipv6_enable)
+if [[ $ipv6_en -eq 1 ]]; then 
+    IP6=ip -6
+fi
+GATEWAY="$($nv get wan_gateway)"
+GATEWAY6="$($IP6 route show table main | awk '/default via/ { print $3;exit; }')"
 [[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 # set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
 if [[ $tunnels -gt 0 ]]; then
@@ -61,17 +66,17 @@ for i in $(seq 1 $tunnels); do
 		{
 		emf del iface $(getbridge oet${i}) oet${i}
 		brctl delif $(getbridge oet${i}) oet${i}
-		ip tunnel del oet${i}
-		ip link del oet${i}
+		$IP tunnel del oet${i}
+		$IP link del oet${i}
 		rm -f ${i}.pid
 		} >/dev/null 2>&1
 		TID=$((20+$i))
-		while ip rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
-		ip route flush table $TID
+		while $IP rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
+		$IP route flush table $TID
 		if [[ $ipv6_en -eq 1 ]]; then 
-			while ip -6 rule delete from ::/0 to ::/0 table $TID >/dev/null 2>&1; do true; done
-			ip -6 route show table all | grep "table $TID" | while read v6r; do
-				ip -6 route del ${v6r%error*} >/dev/null 2>&1
+			while $IP6 rule delete from ::/0 to ::/0 table $TID >/dev/null 2>&1; do true; done
+			$IP6 route show table all | grep "table $TID" | while read v6r; do
+				$IP6 route del ${v6r%error*} >/dev/null 2>&1
 			done
 		fi
 		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
@@ -80,7 +85,7 @@ for i in $(seq 1 $tunnels); do
 		# remove destination routes
 		WGDPBRIP="/tmp/wgdpbrip_oet${i}"
 		if [[ -f "$WGDPBRIP" ]]; then
-			(while read dpbrip; do ip route del $dpbrip >/dev/null 2>&1; done < $WGDPBRIP)
+			(while read dpbrip; do $IP route del $dpbrip >/dev/null 2>&1; done < $WGDPBRIP)
 			rm $WGDPBRIP >/dev/null 2>&1
 		fi
 		WGDNSRT="/tmp/wgdnsrt_oet${i}"
@@ -88,8 +93,10 @@ for i in $(seq 1 $tunnels); do
 			(while read dnsrt; do $dnsrt >/dev/null 2>&1; done < $WGDNSRT)
 			rm $WGDNSRT
 		fi
-		ip route flush cache
-		ip -6 route flush cache >/dev/null 2>&1
+		$IP route flush cache
+		if [[ $ipv6_en -eq 1 ]]; then 
+		    $IP6 route flush cache >/dev/null 2>&1
+		fi
 	fi
 done
 for i in $(seq 1 $tunnels); do
@@ -115,7 +122,7 @@ for i in $(seq 1 $tunnels); do
 					$nv set oet${i}_mtu=$((1500 - $overhead))
 				fi
 			fi
-			ip link add oet${i} type wireguard
+			$IP link add oet${i} type wireguard
 			wg set oet${i} listen-port $($nv get oet${i}_port)
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
@@ -156,19 +163,19 @@ for i in $(seq 1 $tunnels); do
 						logger -p user.info "WireGuard experimental endpoint routing for oet${i} to endpoint $endp:$($nv get oet${i}_peerport${p}) is Domain Name resolving to IPv4:[$ipv4]; IPv6:[$ipv6]"
 					fi
 					if [[ ! -z $ipv4 ]]; then 
-						ip route add $ipv4 via $GATEWAY dev $WAN_IF >/dev/null 2>&1
-						echo "ip route del $ipv4 via $GATEWAY dev $WAN_IF " >> $WGDELRT
+						$IP route add $ipv4 via $GATEWAY dev $WAN_IF >/dev/null 2>&1
+						echo "$IP route del $ipv4 via $GATEWAY dev $WAN_IF " >> $WGDELRT
 					fi
 					if [[ ! -z $ipv6 ]]; then 
 						#IPv6 route needs via nexthop
-						ip -6 route add $ipv6 via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
-						echo "ip -6 route del $ipv6 via $GATEWAY6 dev $WAN_IF " >> $WGDELRT
+						$IP6 route add $ipv6 via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+						echo "$IP6 route del $ipv6 via $GATEWAY6 dev $WAN_IF " >> $WGDELRT
 					fi
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 			done
 			ifconfig oet${i} promisc up >/dev/null 2>&1
-			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
+			$IP link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
 			echo enable > ${i}.pid
 			# alternative input with ipaddrmask
 			if [[ ! -z "$($nv get oet${i}_ipaddrmask)" ]]
@@ -186,7 +193,7 @@ for i in $(seq 1 $tunnels); do
 							logger -p user.err "ERROR: WireGuard no valid tunnel address for oet${i}: $ipaddrmask, please correct, using /24"
 							mask=24
 						fi
-						ip addr add $IPADDR/$mask dev oet${i} >/dev/null 2>&1
+						$IP addr add $IPADDR/$mask dev oet${i} >/dev/null 2>&1
 						logger -p user.info "WireGuard $IPADDR/$mask added to oet${i}"
 						set -- $(( 5 - ($mask / 8) )) 255 255 255 255 $(( (255 << (8 - ($mask % 8))) & 255 )) 0 0 0
 						[ $1 -gt 1 ] && shift $1 || shift
@@ -195,7 +202,7 @@ for i in $(seq 1 $tunnels); do
 						$nv set oet${i}_netmask=$NETMASK
 						;;
 					  *:*) #IPv6
-						ip addr add $ipaddrmask dev oet${i} >/dev/null 2>&1
+						$IP addr add $ipaddrmask dev oet${i} >/dev/null 2>&1
 						logger -p user.info "WireGuard $ipaddrmask added to oet${i}"
 						;;
 					  *)
@@ -205,7 +212,7 @@ for i in $(seq 1 $tunnels); do
 				done
 			else
 				logger -p user.err "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct, trying the old way"
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
+				$IP addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
 		fi
 		if [ $($nv get oet${i}_proto) -eq 1 ]; then
@@ -221,7 +228,7 @@ for i in $(seq 1 $tunnels); do
 				emf add iface $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 			else
 				ifconfig oet${i} promisc up >/dev/null 2>&1
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
+				$IP addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
 			echo enable > ${i}.pid
 		fi
@@ -229,22 +236,22 @@ for i in $(seq 1 $tunnels); do
 			insmod etherip
 			if [ $($nv get oet${i}_local) == "0.0.0.0" ]; then
 				logger -p user.info "Enable RFC 3378 EtherIP Tunnel interface oet${i} with peer $($nv get oet${i}_rem)"
-				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
+				$IP tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			else
 				logger -p user.info "Enable RFC 3378 EtherIP Tunnel interface oet${i} on address $($nv get oet${i}_local) with peer $($nv get oet${i}_rem)"
-				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
+				$IP tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
 			fi
 			if [ $($nv get oet${i}_bridged) -eq 1 ]; then
-				ip link set dev oet${i} up
+				$IP link set dev oet${i} up
 				ifconfig oet${i} up >/dev/null 2>&1
 				ifconfig oet${i} promisc >/dev/null 2>&1
 				brctl addif $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 				setportprio $(getbridge oet${i}) oet${i}
 				emf add iface $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 			else
-				ip link set dev oet${i} up
+				$IP link set dev oet${i} up
 				ifconfig oet${i} promisc >/dev/null 2>&1
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
+				$IP addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
     			fi
 			echo enable > ${i}.pid
 		fi
