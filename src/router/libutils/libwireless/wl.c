@@ -2486,6 +2486,7 @@ struct wifidevices {
 #define CUSTOMFW 0x800
 #define DUALBAND 0x1000
 #define AUTOBURST 0x2000
+#define QAM256BUG 0x4000
 
 #define PCI_ANY 0
 #ifdef HAVE_ATH5K
@@ -2573,13 +2574,13 @@ static struct wifidevices wdevices[] = {
 	{ "AR2425", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1b, PCI_ANY, PCI_ANY, NULL },
 	{ "AR5008", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1c, PCI_ANY, PCI_ANY, NULL },
 	{ "AR922x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1d, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA988x 802.11ac", SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA988x 802.11ac", SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA6174 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x003e, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA99X0 802.11ac", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA, 0x168c, 0x0040, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA99X0 802.11ac", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA, 0x168c, 0x0040, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA6164 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x0041, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA9377 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x0042, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA9984 802.11ac", DUALBAND | WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0046, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA9887 802.11ac", SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0050, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA9887 802.11ac", SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0050, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA9888 802.11ac", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056, PCI_ANY, PCI_ANY, NULL },
 	{ "Ubiquiti QCA9888 802.11ac", SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x0777, 0x11ac, PCI_ANY, PCI_ANY, NULL },
 	{ "MWL88W8964 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b40, PCI_ANY, PCI_ANY, NULL },
@@ -3327,6 +3328,23 @@ FLAGCHECK(beacon_limit, BEACONVAP100, 0);
 FLAGCHECK(fwswitch, FWSWITCH, 0);
 FLAGCHECK(spectral_support, SPECTRAL, 0);
 
+int has_qam256(const char *prefix)
+{
+	int support = flagcheck(prefix, QAM256, 0);
+	int bug = flagcheck(prefix, QAM256BUG, 0);
+	if (support && bug && !nvram_nmatch("ddwrt", "%s_fwtype", prefix)) {
+		/*
+		   Vanilla firmware contains a bug caused by a wrong assert in ratecontrol on 99X0 chipsets 
+		   which leads to crashes if vht modes are used in 2.4 ghz. 
+		   so we can only allow using this feature on ddwrt fw types
+		   on QCA988X/QCA9887 vanilla firmwares its entirely broken at several code locations. this has been fixed
+		   in ddwrt firmwares
+		 */
+		return 0;
+	}
+	return support;
+}
+
 int has_dualband(const char *prefix)
 {
 	INITVALUECACHE();
@@ -3581,6 +3599,7 @@ int is_ap8x(char *prefix)
 	return ret;
 
 }
+
 IS_DRIVER(iwlwifi, "pci:iwlwifi");
 IS_DRIVER(iwl4965, "pci:iwl4965");
 IS_DRIVER(iwl3945, "pci:iwl3945");
