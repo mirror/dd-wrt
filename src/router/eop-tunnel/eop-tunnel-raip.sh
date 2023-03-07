@@ -59,8 +59,10 @@ for i in $(seq 1 $tunnels); do
 						;;
 					 *[0-9a-fA-F]:*)
 						logger -p user.info "WireGuard PBR $line:IPv6 via oet${i} table $TID"
-						ip -6 rule del table $TID from $line >/dev/null 2>&1
-						ip -6 rule add table $TID from $line
+						if [[ $ipv6_en -eq 1 ]]; then
+							ip -6 rule del table $TID from $line >/dev/null 2>&1
+							ip -6 rule add table $TID from $line
+						fi
 						;;
 					 *)
 						logger -p user.info "WireGuard PBR $line:text via oet${i} table $TID"
@@ -149,7 +151,9 @@ for i in $(seq 1 $tunnels); do
 							if [[ "$dpbrip" != "${dpbrip#*[0-9].[0-9]}" ]]; then
 								ip route add $dpbrip via $GATEWAY >/dev/null 2>&1
 							else
-								ip -6 route add $dpbrip via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+								if [[ $ipv6_en -eq 1 ]]; then
+									ip -6 route add $dpbrip via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+								fi
 							fi
 						fi
 					done < $WGDPBRIP
@@ -211,13 +215,17 @@ for i in $(seq 1 $tunnels); do
 				if [[ $($nv get oet${i}_spbr) -eq 2 ]]; then
 					# route dnsservers via WAN
 					ip route add $dns4 via $GATEWAY >/dev/null 2>&1
-					ip -6 route add $dns6 via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+					if [[ $ipv6_en -eq 1 ]]; then
+						ip -6 route add $dns6 via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+					fi
 					echo "ip route del $dns4 via $GATEWAY " >> $WGDNSRT
 					echo "ip -6 route del $dns6 via $GATEWAY6 dev $WAN_IF " >> $WGDNSRT
 				elif [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
 					# route dnsservers via tunnel no need to delete as interface is taken down
 					ip route add $dns4 dev oet${i}
-					ip -6 route add $dns6 dev oet${i}
+					if [[ $ipv6_en -eq 1 ]]; then
+						ip -6 route add $dns6 dev oet${i}
+					fi
 				fi
 			fi
 			# add routes to PBR table
