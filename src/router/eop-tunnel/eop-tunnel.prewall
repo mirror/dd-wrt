@@ -10,7 +10,7 @@ IP6=echo
 WGDELRT=/tmp/wgdelrt
 ipv6_en=$($nv get ipv6_enable)
 if [[ $ipv6_en -eq 1 ]]; then 
-    IP6=ip -6
+    IP6="ip -6"
 fi
 GATEWAY="$($nv get wan_gateway)"
 GATEWAY6="$($IP6 route show table main | awk '/default via/ { print $3;exit; }')"
