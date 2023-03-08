@@ -11,11 +11,13 @@
 			<input class="spaceradio" type="radio" name="klogd_enable" value="1" <% nvc("klogd_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="klogd_enable" value="0" <% nvc("klogd_enable", "0"); %> /><% tran("share.disable"); %>
 		</div>
+<% ifndef("JFFS2", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("service.syslog_jffs2"); %></div>
 			<input class="spaceradio" type="radio" name="syslogd_jffs2" value="1" <% nvc("syslogd_jffs2", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="syslogd_jffs2" value="0" <% nvc("syslogd_jffs2", "0"); %> /><% tran("share.disable"); %>
 		</div>
+<% ifndef("JFFS2", "-->"); %>
 		<div class="setting">
 			<div class="label"><% tran("service.syslog_ip"); %></div>
 			<input maxlength="64" size="25" name="syslogd_rem_ip" value="<% nvg("syslogd_rem_ip"); %>" />
