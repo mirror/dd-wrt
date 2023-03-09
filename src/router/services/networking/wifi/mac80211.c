@@ -2196,11 +2196,18 @@ void ath9k_start_supplicant(int count, char *prefix)
 	} else {
 		if (*vifs) {
 			int ctrl = 0;
+			int last = 0;
 			foreach(var, vifs, next) {
 				ctrl++;
+				if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
+					continue;
+				last = ctrl;
 				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
 					break;
 			}
+			ctrl = last;
+			if (ctrl == 0)
+				goto skip;
 			if (!nvram_match(wmode, "mesh")) {
 				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
@@ -2228,6 +2235,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 				do_hostapd(fstr, dev);
 			}
 		} else {
+		      skip:;
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1)) {
