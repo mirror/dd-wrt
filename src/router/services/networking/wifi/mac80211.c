@@ -1072,8 +1072,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
 				}
-				if (cansuperchannel(prefix))
-					fprintf(fp, "no_country_ie=1\n");
+				//if (cansuperchannel(prefix))
+				fprintf(fp, "no_country_ie=1\n");
 
 				switch (usebw) {
 				case 40:
@@ -1331,7 +1331,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
-	if (cansuperchannel(maininterface))
+//	if (cansuperchannel(maininterface))
 		fprintf(fp, "no_country_ie=1\n");
 	if (has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
