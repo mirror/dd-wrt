@@ -460,6 +460,7 @@ void configure_single_ath9k(int count)
 	} else if (!strcmp(apm, "mesh")) {
 		char akm[32];
 		sprintf(akm, "%s_akm", dev);
+		nvram_default_get(akm, "disabled");
 		int iht, channeloffset;
 		get_channeloffset(dev, &iht, &channeloffset);
 		char farg[32];
@@ -1789,6 +1790,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char eapol[32];
 	sprintf(eapol, "%s_eapol_version", prefix);
 	sprintf(akm, "%s_akm", prefix);
+	nvram_default_get(akm,"disabled");
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
 	const int _has_wpa3 = has_wpa3(prefix);
