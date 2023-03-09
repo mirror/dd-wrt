@@ -1190,6 +1190,7 @@ struct nvram_param srouter_defaults[] = {
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL) && !defined(HAVE_ANTAIRA)
 	{ "wl0_ssid", "dd-wrt" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "dd-wrt" },	/* Service set ID (network name) */
+	{ "wlan0_akm", "disabled" },	/* Service set ID (network name) */
 #endif
 #endif
 
