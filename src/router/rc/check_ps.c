@@ -335,6 +335,7 @@ static void checkupgrade(void)
 		eval("mkdir", "-p", "/tmp/new_root");
 		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 		eval("mkdir", "-p", "/tmp/new_root/tmp");
+		eval("mv","/tmp/firmware.bin","/tmp/new_root/tmp");
 		eval("update-prepare.sh", "/tmp/firmware.bin", getdisc(), "usefile", "reboot", "usedd");
 #elif defined(HAVE_VENTANA)
 		eval("mkdir", "-p", "/tmp/new_root");
@@ -346,6 +347,7 @@ static void checkupgrade(void)
 		eval("mkdir", "-p", "/tmp/new_root");
 		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 		eval("mkdir", "-p", "/tmp/new_root/tmp");
+		eval("mv","/tmp/firmware.bin","/tmp/new_root/tmp");
 		eval("update-prepare.sh", "/tmp/firmware.bin", getdisc(), "usefile", "reboot", "usedd");
 #else
 		eval("fischecksum");
