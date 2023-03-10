@@ -70,6 +70,6 @@ ifneq (,$(findstring adm5120,$(TARGET)))
 TOOLPREFIX=/xfs/toolchains/toolchain-mipsel_mips32_gcc-8.2.0_musl/bin/mipsel-linux-
 endif
 ifneq (,$(findstring arm64,$(TARGET)))
-TOOLPREFIX=/xfs/toolchains/toolchain-aarch64_generic_gcc-8.2.0_musl/bin/aarch64-linux-
+TOOLPREFIX=/xfs/toolchains/toolchain-aarch64_generic_gcc-12.1.0_musl/bin/aarch64-linux-
 endif
 
