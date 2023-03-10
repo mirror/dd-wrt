@@ -36,6 +36,7 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
+	--disable-dco \
 	--with-crypto-library=openssl \
 	$(OPENSSL_SSL_ADDOPT) \
 	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -65,6 +66,7 @@ CONFIGURE_ARGS_WOLFSSL += \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
+	--disable-dco \
 	--with-crypto-library=wolfssl \
 	$(WOLFSSL_SSL_ADDOPT) \
 	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include  -DNEED_PRINTF  -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
