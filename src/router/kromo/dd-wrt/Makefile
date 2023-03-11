@@ -647,6 +647,7 @@ ifeq ($(CONFIG_TMK),y)
 	#cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 	mkdir -p $(INSTALLDIR)/etc/config
 	cp -f kmt/defaults/config/* $(INSTALLDIR)/etc/config
+	chmod 777 $(INSTALLDIR)/etc/config/nsmd.startup
 	mkdir -p $(INSTALLDIR)/sbin
 	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
 ifeq ($(CONFIG_VENTANA),y)
