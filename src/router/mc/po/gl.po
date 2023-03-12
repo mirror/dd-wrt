@@ -11,8 +11,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Miguel Anxo Bouzada <mbouzada@gmail.com>, "
 "2012,2014-2015,2019\n"
@@ -531,6 +531,9 @@ msgid ""
 msgstr ""
 "Produciuse un erro en select() lendo os datos para o proceso fillo:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1211,8 +1214,8 @@ msgstr "É necesario seleccionar primeiro un bloque de texto"
 msgid "Run sort"
 msgstr "Proceder a ordenar"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Opcións para ordenar (ver manual), separadas por espazos:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "Ordenar"
@@ -2367,12 +2370,6 @@ msgstr "Hai ficheiros marcados. Quere cambiar de directorio?"
 msgid "Cannot change directory"
 msgstr "Non é posíbel cambiar de directorio"
 
-msgid "Filter"
-msgstr "Filtro"
-
-msgid "Set expression for filtering filenames"
-msgstr "Introduza a expresión para filtrar nomes de ficheiro"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Crear ligazón a %s como:"
@@ -2520,18 +2517,22 @@ msgid "Pipe failed"
 msgstr "Fallo na canalización"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr "Produciuse un erro no ficheiro  %s%s"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"O formato do ficheiro %smc.ext cambiou coa versión 3.0. Parece que está mal "
-"instalado. Por favor, tente conseguir unha copia intacta dende o paquete "
-"Midnight Commander."
 
 #, c-format
 msgid "%s file error"
@@ -2539,11 +2540,9 @@ msgstr "Erro no ficheiro %s"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"O formato do ficheiro %s ha cambiou coa versión 3.0. Pode facer unha copia "
-"de %smc.ext ou empregalo como modelo."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Copiar"
@@ -2838,6 +2837,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(atoado)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "&Manter"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2853,12 +2861,6 @@ msgid ""
 msgstr ""
 "Non é posíbel pechar o ficheiro destino «%s»\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "O ficheiro esta incompleto. Desexa conservalo?"
-
-msgid "&Keep"
-msgstr "&Manter"
 
 #, c-format
 msgid ""
@@ -2978,8 +2980,8 @@ msgid "Background process: File exists"
 msgstr "Proceso en 2º plano: O ficheiro xa existe"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Ficheiros procesados: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3006,8 +3008,8 @@ msgid " Total: %s "
 msgstr " Total: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " Total: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Orixe"
@@ -3058,7 +3060,7 @@ msgstr "Ár&Bore"
 msgid "&Listing format..."
 msgstr "Formato de &ista..."
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3073,7 +3075,7 @@ msgstr "Conexión por FT&P..."
 msgid "S&hell link..."
 msgstr "Conexión por &Terminal..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3456,8 +3458,8 @@ msgid "No space information"
 msgstr "Sen información do espazo"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Espazo libre: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3700,6 +3702,9 @@ msgstr "Seleccionar"
 
 msgid "Unselect"
 msgstr "Desmarcar"
+
+msgid "Filter"
+msgstr "Filtro"
 
 msgid "Do you really want to execute?"
 msgstr "Confirma que quere executalo?"
@@ -4131,6 +4136,10 @@ msgstr ""
 "Fin de ficheiro inesperado\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Arquivo de tipo tar inconsistente"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4257,6 +4266,21 @@ msgstr "ftpfs: fracasou a conexión ao servidor: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Agardando antes de volver tentar... %d (Ctrl-G para cancelar)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: familia de enderezos incorrecta"

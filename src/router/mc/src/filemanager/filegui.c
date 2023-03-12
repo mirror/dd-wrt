@@ -21,7 +21,7 @@
    Norbert Warmuth, 1997
    Pavel Machek, 1998
    Slava Zanko, 2009, 2010, 2011, 2012, 2013
-   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2011, 2012, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2009-2022
 
    This file is part of the Midnight Commander.
 
@@ -171,8 +171,8 @@ gboolean classic_progressbar = TRUE;
 
 /*** file scope macro definitions ****************************************************************/
 
-#define truncFileString(dlg, s)       str_trunc (s, WIDGET (dlg)->cols - 10)
-#define truncFileStringSecure(dlg, s) path_trunc (s, WIDGET (dlg)->cols - 10)
+#define truncFileString(dlg, s)       str_trunc (s, WIDGET (dlg)->rect.cols - 10)
+#define truncFileStringSecure(dlg, s) path_trunc (s, WIDGET (dlg)->rect.cols - 10)
 
 /*** file scope type declarations ****************************************************************/
 
@@ -383,6 +383,27 @@ file_bps_prepare_for_show (char *buffer, long bps)
 
 /* --------------------------------------------------------------------------------------------- */
 
+static cb_ret_t
+file_ui_op_dlg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
+{
+    switch (msg)
+    {
+    case MSG_ACTION:
+        /* Do not close the dialog because the query dialog will be shown */
+        if (parm == CK_Cancel)
+        {
+            DIALOG (w)->ret_value = FILE_ABORT; /* for check_progress_buttons() */
+            return MSG_HANDLED;
+        }
+        return MSG_NOT_HANDLED;
+
+    default:
+        return dlg_default_callback (w, sender, msg, parm, data);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /* The dialog layout:
  *
  * +---------------------- File exists -----------------------+
@@ -406,8 +427,9 @@ static replace_action_t
 overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
 {
 #define W(i) dlg_widgets[i].widget
-#define WX(i) W(i)->x
-#define WCOLS(i) W(i)->cols
+#define WX(i) W(i)->rect.x
+#define WY(i) W(i)->rect.y
+#define WCOLS(i) W(i)->rect.cols
 
 #define NEW_LABEL(i, text) \
     W(i) = WIDGET (label_new (dlg_widgets[i].y, dlg_widgets[i].x, text))
@@ -646,7 +668,7 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
     /* file info */
     for (i = 0; i <= 7; i++)
         ADD_LABEL (i);
-    group_add_widget (g, hline_new (W (7)->y - wd->y + 1, -1, -1));
+    group_add_widget (g, hline_new (WY (7) - wd->rect.y + 1, -1, -1));
 
     /* label & buttons */
     ADD_LABEL (8);              /* Overwrite this file? */
@@ -656,14 +678,14 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
         ADD_BUTTON (11);        /* Append */
     if (do_reget)
         ADD_BUTTON (12);        /* Reget */
-    group_add_widget (g, hline_new (W (10)->y - wd->y + 1, -1, -1));
+    group_add_widget (g, hline_new (WY (10) - wd->rect.y + 1, -1, -1));
 
     /* label & buttons */
     ADD_LABEL (13);             /* Overwrite all files? */
     group_add_widget (g, dlg_widgets[14].widget);
     for (i = 15; i <= 19; i++)
         ADD_BUTTON (i);
-    group_add_widget (g, hline_new (W (19)->y - wd->y + 1, -1, -1));
+    group_add_widget (g, hline_new (WY (19) - wd->rect.y + 1, -1, -1));
 
     ADD_BUTTON (20);            /* Abort */
 
@@ -725,9 +747,9 @@ place_progress_buttons (WDialog * h, gboolean suspended)
     buttons_width += progress_buttons[i].len;
     button_set_text (BUTTON (progress_buttons[i].w), progress_buttons[i].text);
 
-    progress_buttons[0].w->x = w->x + (w->cols - buttons_width) / 2;
-    progress_buttons[i].w->x = progress_buttons[0].w->x + progress_buttons[0].len + 1;
-    progress_buttons[3].w->x = progress_buttons[i].w->x + progress_buttons[i].len + 1;
+    progress_buttons[0].w->rect.x = w->rect.x + (w->rect.cols - buttons_width) / 2;
+    progress_buttons[i].w->rect.x = progress_buttons[0].w->rect.x + progress_buttons[0].len + 1;
+    progress_buttons[3].w->rect.x = progress_buttons[i].w->rect.x + progress_buttons[i].len + 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -808,6 +830,7 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
     int buttons_width;
     int dlg_width = 58, dlg_height = 17;
     int y = 2, x = 3;
+    WRect r;
 
     if (ctx == NULL || ctx->ui != NULL)
         return;
@@ -829,9 +852,8 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
     ui = ctx->ui;
     ui->replace_result = REPLACE_YES;
 
-    ui->op_dlg =
-        dlg_create (TRUE, 0, 0, dlg_height, dlg_width, WPOS_CENTER, FALSE, dialog_colors, NULL,
-                    NULL, NULL, op_names[ctx->operation]);
+    ui->op_dlg = dlg_create (TRUE, 0, 0, dlg_height, dlg_width, WPOS_CENTER, FALSE, dialog_colors,
+                             file_ui_op_dlg_callback, NULL, NULL, op_names[ctx->operation]);
     w = WIDGET (ui->op_dlg);
     g = GROUP (ui->op_dlg);
 
@@ -932,7 +954,10 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
         progress_buttons[3].len;
 
     /* adjust dialog sizes  */
-    widget_set_size (w, w->y, w->x, y + 3, MAX (COLS * 2 / 3, buttons_width + 6));
+    r = w->rect;
+    r.lines = y + 3;
+    r.cols = MAX (COLS * 2 / 3, buttons_width + 6);
+    widget_set_size_rect (w, &r);
 
     place_progress_buttons (ui->op_dlg, FALSE);
 
@@ -1022,7 +1047,7 @@ file_progress_show_count (file_op_context_t * ctx, size_t done, size_t total)
         return;
 
     if (ctx->progress_totals_computed)
-        label_set_textv (ui->total_files_processed_label, _("Files processed: %zu/%zu"), done,
+        label_set_textv (ui->total_files_processed_label, _("Files processed: %zu / %zu"), done,
                          total);
     else
         label_set_textv (ui->total_files_processed_label, _("Files processed: %zu"), done);
@@ -1098,7 +1123,7 @@ file_progress_show_total (file_op_total_context_t * tctx, file_op_context_t * ct
         else
         {
             size_trunc_len (buffer3, 5, ctx->progress_bytes, 0, panels_options.kilobyte_si);
-            hline_set_textv (ui->total_bytes_label, _(" Total: %s/%s "), buffer2, buffer3);
+            hline_set_textv (ui->total_bytes_label, _(" Total: %s / %s "), buffer2, buffer3);
         }
     }
 }
@@ -1368,9 +1393,10 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation, gboolean onl
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, fmd_xlen };
+
         quick_dialog_t qdlg = {
-            -1, -1, fmd_xlen,
-            op_names[operation], "[Mask Copy/Rename]",
+            r, op_names[operation], "[Mask Copy/Rename]",
             quick_widgets, NULL, NULL
         };
 
@@ -1402,7 +1428,7 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation, gboolean onl
                 ctx->umask_kill = i2 ^ 0777777;
             }
 
-            if (dest_dir == NULL || *dest_dir == '\0')
+            if (*dest_dir == '\0')
             {
                 g_free (def_text_secure);
                 g_free (source_mask);

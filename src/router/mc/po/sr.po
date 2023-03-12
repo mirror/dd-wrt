@@ -8,8 +8,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
 "Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
@@ -17,8 +17,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
@@ -516,6 +516,9 @@ msgid ""
 msgstr ""
 "Неочекивана грешка у функцији бирања података за читање из потпроцеса:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1192,8 +1195,8 @@ msgstr "Морате прво да изаберете блок текста"
 msgid "Run sort"
 msgstr "Покрени ређање"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Унесите опције ређања (видите странице упутства) одвојене празнинама:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "Поређај"
@@ -2347,12 +2350,6 @@ msgstr "Датотеке су означене, желите ли да пром�
 msgid "Cannot change directory"
 msgstr "Не могу да променим директоријум"
 
-msgid "Filter"
-msgstr "Пропусник"
-
-msgid "Set expression for filtering filenames"
-msgstr "Поставите израз за издвајање назива датотека"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Повежите „%s“ са:"
@@ -2500,17 +2497,22 @@ msgid "Pipe failed"
 msgstr "Сојка није успела"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s грешка датотеке"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Запис датотеке „%smc.ext“ је измењен издањем 3.0. Изгледа да инсталација "
-"није успела. Набавите најновији примерак из пакета Поноћног наредника."
 
 #, c-format
 msgid "%s file error"
@@ -2518,11 +2520,9 @@ msgstr "Грешка датотеке „%s“"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"Запис датотеке „%s“ је измењен издањем 3.0. Можда желите да је умножите из "
-"„%smc.ext“ или да користите ту датотеку као пример како је записати."
 
 msgid "DialogTitle|Copy"
 msgstr "Умножите"
@@ -2807,6 +2807,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(застој)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "&Задржи"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2822,12 +2831,6 @@ msgid ""
 msgstr ""
 "Не могу да затворим циљну датотеку „%s“\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Датотека није у потпуности преузета. Да је задржим?"
-
-msgid "&Keep"
-msgstr "&Задржи"
 
 #, c-format
 msgid ""
@@ -2947,8 +2950,8 @@ msgid "Background process: File exists"
 msgstr "Позадински процес: Датотека постоји"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Обрађене датотеке: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -2975,8 +2978,8 @@ msgid " Total: %s "
 msgstr " Укупно: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " Укупно: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Извор"
@@ -3027,7 +3030,7 @@ msgstr "&Стабло"
 msgid "&Listing format..."
 msgstr ""
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3042,7 +3045,7 @@ msgstr "&ФТП веза..."
 msgid "S&hell link..."
 msgstr "Веза &љуске..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3427,8 +3430,8 @@ msgid "No space information"
 msgstr "Нема података о простору"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Слободан простор:  %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3673,6 +3676,9 @@ msgstr "Изаберите"
 
 msgid "Unselect"
 msgstr "Поништите избор"
+
+msgid "Filter"
+msgstr "Пропусник"
 
 msgid "Do you really want to execute?"
 msgstr "Да ли стварно желите да извршите?"
@@ -4105,6 +4111,10 @@ msgstr ""
 "Неочекивани крај датотеке\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Недоследна тар архива"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4231,6 +4241,21 @@ msgstr "ftpfs: повезивање са сервером није успело:
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Чекам да бих поново покушао... %d (Ктрл-Г да откажете)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: неисправна породица адресе"

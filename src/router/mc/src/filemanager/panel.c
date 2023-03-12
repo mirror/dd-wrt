@@ -8,7 +8,7 @@
    Miguel de Icaza, 1995
    Timur Bakeyev, 1997, 1999
    Slava Zanko <slavazanko@gmail.com>, 2013
-   Andrew Borodin <aborodin@vmail.ru>, 2013-2016
+   Andrew Borodin <aborodin@vmail.ru>, 2013-2022
 
    This file is part of the Midnight Commander.
 
@@ -61,6 +61,7 @@
 #include "src/selcodepage.h"    /* select_charset (), SELECT_CHARSET_NO_TRANSLATE */
 #endif
 #include "src/keymap.h"         /* global_keymap_t */
+#include "src/history.h"
 #ifdef ENABLE_SUBSHELL
 #include "src/subshell/subshell.h"      /* do_subshell_chdir() */
 #endif
@@ -116,6 +117,15 @@ mc_fhl_t *mc_filehighlight = NULL;
 #define MARKED          2
 #define MARKED_SELECTED 3
 #define STATUS          5
+
+/* select/unselect dialog results */
+#define SELECT_RESET ((mc_search_t *)(-1))
+#define SELECT_ERROR ((mc_search_t *)(-2))
+
+/* mouse position relative to file list */
+#define MOUSE_UPPER_FILE_LIST (-1)
+#define MOUSE_BELOW_FILE_LIST (-2)
+#define MOUSE_AFTER_LAST_FILE (-3)
 
 /*** file scope type declarations ****************************************************************/
 
@@ -402,7 +412,7 @@ static int
 panel_lines (const WPanel * p)
 {
     /* 3 lines are: top frame, column header, botton frame */
-    return (CONST_WIDGET (p)->lines - 3 - (panels_options.show_mini_info ? 2 : 0));
+    return (CONST_WIDGET (p)->rect.lines - 3 - (panels_options.show_mini_info ? 2 : 0));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -913,7 +923,7 @@ repaint_file (WPanel * panel, int file_index, int attr, gboolean isstatus)
     int fln = 0;
 
     panel_is_split = !isstatus && panel->list_cols > 1;
-    width = w->cols - 2;
+    width = w->rect.cols - 2;
 
     if (panel_is_split)
     {
@@ -923,7 +933,7 @@ repaint_file (WPanel * panel, int file_index, int attr, gboolean isstatus)
         offset = width * nth_column;
 
         if (nth_column + 1 >= panel->list_cols)
-            width = w->cols - offset - 2;
+            width = w->rect.cols - offset - 2;
     }
 
     /* Nothing to paint */
@@ -986,7 +996,7 @@ display_mini_info (WPanel * panel)
 {
     Widget *w = WIDGET (panel);
 
-    if (!panels_options.show_mini_info)
+    if (!panels_options.show_mini_info || panel->selected < 0)
         return;
 
     widget_gotoyx (w, panel_lines (panel) + 3, 1);
@@ -995,7 +1005,8 @@ display_mini_info (WPanel * panel)
     {
         tty_setcolor (INPUT_COLOR);
         tty_print_char ('/');
-        tty_print_string (str_fit_to_term (panel->quick_search.buffer->str, w->cols - 3, J_LEFT));
+        tty_print_string (str_fit_to_term
+                          (panel->quick_search.buffer->str, w->rect.cols - 3, J_LEFT));
         return;
     }
 
@@ -1017,10 +1028,10 @@ display_mini_info (WPanel * panel)
         {
             link_target[len] = 0;
             tty_print_string ("-> ");
-            tty_print_string (str_fit_to_term (link_target, w->cols - 5, J_LEFT_FIT));
+            tty_print_string (str_fit_to_term (link_target, w->rect.cols - 5, J_LEFT_FIT));
         }
         else
-            tty_print_string (str_fit_to_term (_("<readlink failed>"), w->cols - 2, J_LEFT));
+            tty_print_string (str_fit_to_term (_("<readlink failed>"), w->rect.cols - 2, J_LEFT));
     }
     else if (DIR_IS_DOTDOT (panel->dir.list[panel->selected].fname->str))
     {
@@ -1028,7 +1039,7 @@ display_mini_info (WPanel * panel)
          * while loading directory (dir_list_load() and dir_list_reload()),
          * the actual stat info about ".." directory isn't got;
          * so just don't display incorrect info about ".." directory */
-        tty_print_string (str_fit_to_term (_("UP--DIR"), w->cols - 2, J_LEFT));
+        tty_print_string (str_fit_to_term (_("UP--DIR"), w->rect.cols - 2, J_LEFT));
     }
     else
         /* Default behavior */
@@ -1078,7 +1089,7 @@ display_total_marked_size (const WPanel * panel, int y, int x, gboolean size_onl
         return;
 
     buf = size_only ? b_bytes : buffer;
-    cols = w->cols - 2;
+    cols = w->rect.cols - 2;
 
     g_strlcpy (b_bytes, size_trunc_sep (panel->total, panels_options.kilobyte_si),
                sizeof (b_bytes));
@@ -1093,7 +1104,7 @@ display_total_marked_size (const WPanel * panel, int y, int x, gboolean size_onl
 
     if (x < 0)
         /* center in panel */
-        x = (w->cols - str_term_width1 (buf)) / 2 - 1;
+        x = (w->rect.cols - str_term_width1 (buf)) / 2 - 1;
 
     /*
      * y == panel_lines (panel) + 2  for mini_info_separator
@@ -1117,7 +1128,7 @@ mini_info_separator (const WPanel * panel)
         y = panel_lines (panel) + 2;
 
         tty_setcolor (NORMAL_COLOR);
-        tty_draw_hline (w->y + y, w->x + 1, ACS_HLINE, w->cols - 2);
+        tty_draw_hline (w->rect.y + y, w->rect.x + 1, ACS_HLINE, w->rect.cols - 2);
         /* Status displays total marked size.
          * Centered in panel, full format. */
         display_total_marked_size (panel, y, -1, FALSE);
@@ -1161,10 +1172,10 @@ show_free_space (const WPanel * panel)
                         panels_options.kilobyte_si);
         size_trunc_len (buffer2, sizeof (buffer2) - 1, myfs_stats.total, 1,
                         panels_options.kilobyte_si);
-        g_snprintf (tmp, sizeof (tmp), " %s/%s (%d%%) ", buffer1, buffer2,
+        g_snprintf (tmp, sizeof (tmp), " %s / %s (%d%%) ", buffer1, buffer2,
                     myfs_stats.total == 0 ? 0 :
                     (int) (100 * (long double) myfs_stats.avail / myfs_stats.total));
-        widget_gotoyx (w, w->lines - 1, w->cols - 2 - (int) strlen (tmp));
+        widget_gotoyx (w, w->rect.lines - 1, w->rect.cols - 2 - (int) strlen (tmp));
         tty_setcolor (NORMAL_COLOR);
         tty_print_string (tmp);
     }
@@ -1259,7 +1270,7 @@ show_dir (const WPanel * panel)
     gchar *tmp;
 
     set_colors (panel);
-    tty_draw_box (w->y, w->x, w->lines, w->cols, FALSE);
+    tty_draw_box (w->rect.y, w->rect.x, w->rect.lines, w->rect.cols, FALSE);
 
     if (panels_options.show_mini_info)
     {
@@ -1269,7 +1280,7 @@ show_dir (const WPanel * panel)
 
         widget_gotoyx (w, y, 0);
         tty_print_alt_char (ACS_LTEE, FALSE);
-        widget_gotoyx (w, y, w->cols - 1);
+        widget_gotoyx (w, y, w->rect.cols - 1);
         tty_print_alt_char (ACS_RTEE, FALSE);
     }
 
@@ -1280,7 +1291,7 @@ show_dir (const WPanel * panel)
     tmp = g_strdup_printf ("%s[%s]%s", tmp, panel_history_show_list_char,
                            panel_history_next_item_char);
 
-    widget_gotoyx (w, 0, w->cols - 6);
+    widget_gotoyx (w, 0, w->rect.cols - 6);
     tty_print_string (tmp);
 
     g_free (tmp);
@@ -1306,7 +1317,7 @@ show_dir (const WPanel * panel)
         tty_setcolor (REVERSE_COLOR);
 
     tmp = panel_correct_path_to_show (panel);
-    tty_printf (" %s ", str_term_trim (tmp, MIN (MAX (w->cols - 12, 0), w->cols)));
+    tty_printf (" %s ", str_term_trim (tmp, MIN (MAX (w->rect.cols - 12, 0), w->rect.cols)));
     g_free (tmp);
 
     if (!panels_options.show_mini_info)
@@ -1322,7 +1333,7 @@ show_dir (const WPanel * panel)
                             size_trunc_sep (panel->dir.list[panel->selected].st.st_size,
                                             panels_options.kilobyte_si));
                 tty_setcolor (NORMAL_COLOR);
-                widget_gotoyx (w, w->lines - 1, 4);
+                widget_gotoyx (w, w->rect.lines - 1, 4);
                 tty_print_string (buffer);
             }
         }
@@ -1330,7 +1341,7 @@ show_dir (const WPanel * panel)
         {
             /* Show total size of marked files
              * In the bottom of panel, display size only. */
-            display_total_marked_size (panel, w->lines - 1, 2, TRUE);
+            display_total_marked_size (panel, w->rect.lines - 1, 2, TRUE);
         }
     }
 
@@ -1492,6 +1503,8 @@ panel_destroy (WPanel * p)
     }
     g_free (p->dir_history.name);
 
+    file_filter_clear (&p->filter);
+
     g_slist_free_full (p->format, (GDestroyNotify) format_item_free);
     g_slist_free_full (p->status_format, (GDestroyNotify) format_item_free);
 
@@ -1564,7 +1577,7 @@ panel_print_header (const WPanel * panel)
     widget_gotoyx (w, 1, 1);
     tty_getyx (&y, &x);
     tty_setcolor (NORMAL_COLOR);
-    tty_draw_hline (y, x, ' ', w->cols - 2);
+    tty_draw_hline (y, x, ' ', w->rect.cols - 2);
 
     format_txt = g_string_new ("");
 
@@ -1587,10 +1600,10 @@ panel_print_header (const WPanel * panel)
 
                 g_string_append (format_txt, fi->title);
 
-                if (panel->filter != NULL && strcmp (fi->id, "name") == 0)
+                if (panel->filter.handler != NULL && strcmp (fi->id, "name") == 0)
                 {
                     g_string_append (format_txt, " [");
-                    g_string_append (format_txt, panel->filter);
+                    g_string_append (format_txt, panel->filter.value);
                     g_string_append (format_txt, "]");
                 }
 
@@ -1840,7 +1853,7 @@ use_display_format (WPanel * panel, const char *format, char **error, gboolean i
 
     panel->dirty = TRUE;
 
-    usable_columns = WIDGET (panel)->cols - 2;
+    usable_columns = WIDGET (panel)->rect.cols - 2;
     /* Status needn't to be split */
     if (!isstatus)
     {
@@ -2522,17 +2535,16 @@ mark_file_left (WPanel * panel)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-panel_select_unselect_files (WPanel * panel, const char *title, const char *history_name,
-                             gboolean do_select)
+static mc_search_t *
+panel_select_unselect_files_dialog (select_flags_t * flags, const char *title,
+                                    const char *history_name, const char *help_section, char **str)
 {
-    gboolean files_only = (panels_options.select_flags & SELECT_FILES_ONLY) != 0;
-    gboolean case_sens = (panels_options.select_flags & SELECT_MATCH_CASE) != 0;
-    gboolean shell_patterns = (panels_options.select_flags & SELECT_SHELL_PATTERNS) != 0;
+    gboolean files_only = (*flags & SELECT_FILES_ONLY) != 0;
+    gboolean case_sens = (*flags & SELECT_MATCH_CASE) != 0;
+    gboolean shell_patterns = (*flags & SELECT_SHELL_PATTERNS) != 0;
 
     char *reg_exp;
     mc_search_t *search;
-    int i;
 
     quick_widget_t quick_widgets[] = {
         /* *INDENT-OFF* */
@@ -2548,25 +2560,69 @@ panel_select_unselect_files (WPanel * panel, const char *title, const char *hist
         /* *INDENT-ON* */
     };
 
+    WRect r = { -1, -1, 0, 50 };
+
     quick_dialog_t qdlg = {
-        -1, -1, 50,
-        title, "[Select/Unselect Files]",
+        r, title, help_section,
         quick_widgets, NULL, NULL
     };
 
     if (quick_dialog (&qdlg) == B_CANCEL)
-        return;
+        return NULL;
 
-    if (reg_exp == NULL || *reg_exp == '\0')
+    if (*reg_exp == '\0')
     {
         g_free (reg_exp);
-        return;
+        if (str != NULL)
+            *str = NULL;
+        return SELECT_RESET;
     }
 
     search = mc_search_new (reg_exp, NULL);
     search->search_type = shell_patterns ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
     search->is_entire_line = TRUE;
     search->is_case_sensitive = case_sens;
+
+    if (str != NULL)
+        *str = reg_exp;
+    else
+        g_free (reg_exp);
+
+    if (!mc_search_prepare (search))
+    {
+        message (D_ERROR, MSG_ERROR, _("Malformed regular expression"));
+        mc_search_free (search);
+        return SELECT_ERROR;
+    }
+
+    /* result flags */
+    *flags = 0;
+    if (case_sens)
+        *flags |= SELECT_MATCH_CASE;
+    if (files_only)
+        *flags |= SELECT_FILES_ONLY;
+    if (shell_patterns)
+        *flags |= SELECT_SHELL_PATTERNS;
+
+    return search;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+panel_select_unselect_files (WPanel * panel, const char *title, const char *history_name,
+                             const char *help_section, gboolean do_select)
+{
+    mc_search_t *search;
+    gboolean files_only;
+    int i;
+
+    search = panel_select_unselect_files_dialog (&panels_options.select_flags, title, history_name,
+                                                 help_section, NULL);
+    if (search == NULL || search == SELECT_RESET || search == SELECT_ERROR)
+        return;
+
+    files_only = (panels_options.select_flags & SELECT_FILES_ONLY) != 0;
 
     for (i = 0; i < panel->dir.len; i++)
     {
@@ -2581,16 +2637,6 @@ panel_select_unselect_files (WPanel * panel, const char *title, const char *hist
     }
 
     mc_search_free (search);
-    g_free (reg_exp);
-
-    /* result flags */
-    panels_options.select_flags = 0;
-    if (case_sens)
-        panels_options.select_flags |= SELECT_MATCH_CASE;
-    if (files_only)
-        panels_options.select_flags |= SELECT_FILES_ONLY;
-    if (shell_patterns)
-        panels_options.select_flags |= SELECT_SHELL_PATTERNS;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2598,7 +2644,8 @@ panel_select_unselect_files (WPanel * panel, const char *title, const char *hist
 static void
 panel_select_files (WPanel * panel)
 {
-    panel_select_unselect_files (panel, _("Select"), ":select_cmd: Select ", TRUE);
+    panel_select_unselect_files (panel, _("Select"), MC_HISTORY_FM_PANEL_SELECT,
+                                 "[Select/Unselect Files]", TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2606,7 +2653,8 @@ panel_select_files (WPanel * panel)
 static void
 panel_unselect_files (WPanel * panel)
 {
-    panel_select_unselect_files (panel, _("Unselect"), ":unselect_cmd: Unselect ", FALSE);
+    panel_select_unselect_files (panel, _("Unselect"), MC_HISTORY_FM_PANEL_UNSELECT,
+                                 "[Select/Unselect Files]", FALSE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2623,6 +2671,26 @@ panel_select_invert_files (WPanel * panel)
         if (!panels_options.reverse_files_only || !S_ISDIR (file->st.st_mode))
             do_file_mark (panel, i, file->f.marked ? 0 : 1);
     }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+panel_do_set_filter (WPanel * panel)
+{
+    file_filter_t ff = {.value = NULL,.handler = NULL,.flags = panel->filter.flags };
+
+    ff.handler =
+        panel_select_unselect_files_dialog (&ff.flags, _("Filter"), MC_HISTORY_FM_PANEL_FILTER,
+                                            "[Filter...]", &ff.value);
+
+    if (ff.handler == NULL || ff.handler == SELECT_ERROR)
+        return;
+
+    if (ff.handler == SELECT_RESET)
+        ff.handler = NULL;
+
+    panel_set_filter (panel, &ff);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3288,7 +3356,7 @@ panel_do_cd_int (WPanel * panel, const vfs_path_t * new_dir_vpath, enum cd_enum 
     panel_clean_dir (panel);
 
     if (!dir_list_load (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
-                        &panel->sort_info, panel->filter))
+                        &panel->sort_info, &panel->filter))
         message (D_ERROR, MSG_ERROR, _("Cannot read directory contents"));
 
     try_to_select (panel, get_parent_dir_name (panel->cwd_vpath, olddir_vpath));
@@ -3367,8 +3435,8 @@ directory_history_list (WPanel * panel)
 
     pos = g_list_position (panel->dir_history.current, panel->dir_history.list);
 
-    history_descriptor_init (&hd, WIDGET (panel)->y, WIDGET (panel)->x, panel->dir_history.list,
-                             (int) pos);
+    history_descriptor_init (&hd, WIDGET (panel)->rect.y, WIDGET (panel)->rect.x,
+                             panel->dir_history.list, (int) pos);
     history_show (&hd);
 
     panel->dir_history.list = hd.list;
@@ -3475,6 +3543,9 @@ panel_execute_cmd (WPanel * panel, long command)
         break;
     case CK_Unselect:
         panel_unselect_files (panel);
+        break;
+    case CK_Filter:
+        panel_do_set_filter (panel);
         break;
     case CK_PageDown:
         next_page (panel);
@@ -3745,19 +3816,30 @@ mouse_set_mark (WPanel * panel)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static gboolean
-mark_if_marking (WPanel * panel, const mouse_event_t * event)
+static void
+mark_if_marking (WPanel * panel, const mouse_event_t * event, int previous_selected)
 {
-    if ((event->buttons & GPM_B_RIGHT) != 0)
-    {
-        if (event->msg == MSG_MOUSE_DOWN)
-            mouse_toggle_mark (panel);
-        else
-            mouse_set_mark (panel);
-        return TRUE;
-    }
+    if ((event->buttons & GPM_B_RIGHT) == 0)
+        return;
 
-    return FALSE;
+    if (event->msg == MSG_MOUSE_DOWN)
+        mouse_toggle_mark (panel);
+    else
+    {
+        int psel, sel1, sel2;
+
+        psel = panel->selected;
+        sel1 = MIN (previous_selected, panel->selected);
+        sel2 = MAX (previous_selected, panel->selected);
+
+        for (; sel1 <= sel2; sel1++)
+        {
+            panel->selected = sel1;
+            mouse_set_mark (panel);
+        }
+
+        panel->selected = psel;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3820,27 +3902,27 @@ mouse_sort_col (WPanel * panel, int x)
 static int
 panel_mouse_is_on_item (const WPanel * panel, int y, int x)
 {
-    int last;
+    int lines, col_width, col;
 
     if (y < 0)
-        return (-1);
+        return MOUSE_UPPER_FILE_LIST;
 
-    last = panel->dir.len - 1;
-    y += panel->top_file;
+    lines = panel_lines (panel);
+    if (y >= lines)
+        return MOUSE_BELOW_FILE_LIST;
 
-    if (y > last)
-        return (-1);
+    col_width = (CONST_WIDGET (panel)->rect.cols - 2) / panel->list_cols;
+    /* column where mouse is */
+    col = x / col_width;
 
-    if (panel->list_cols > 1)
-    {
-        int width, lines;
+    y += panel->top_file + lines * col;
 
-        width = (CONST_WIDGET (panel)->cols - 2) / panel->list_cols;
-        lines = panel_lines (panel);
-        y += lines * (x / width);
-    }
+    /* are we below or in the next column of last file? */
+    if (y > panel->dir.len)
+        return MOUSE_AFTER_LAST_FILE;
 
-    return (y > last ? -1 : y);
+    /* we are on item of the file file; return an index to select a file */
+    return y;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3862,13 +3944,13 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             if (event->x == 1)
                 /* "<" button */
                 directory_history_prev (panel);
-            else if (event->x == w->cols - 2)
+            else if (event->x == w->rect.cols - 2)
                 /* ">" button */
                 directory_history_next (panel);
-            else if (event->x >= w->cols - 5 && event->x <= w->cols - 3)
+            else if (event->x >= w->rect.cols - 5 && event->x <= w->rect.cols - 3)
                 /* "^" button */
                 directory_history_list (panel);
-            else if (event->x == w->cols - 6)
+            else if (event->x == w->rect.cols - 6)
                 /* "." button show/hide hidden files */
                 send_message (filemanager, NULL, MSG_ACTION, CK_ShowHidden, NULL);
             else
@@ -3895,10 +3977,27 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
     case MSG_MOUSE_DRAG:
         {
             int my_index;
+            int previous_selected;
 
             my_index = panel_mouse_is_on_item (panel, event->y - 2, event->x);
-            if (my_index >= 0)
+            previous_selected = panel->selected;
+
+            switch (my_index)
             {
+            case MOUSE_UPPER_FILE_LIST:
+                move_up (panel);
+                mark_if_marking (panel, event, previous_selected);
+                break;
+
+            case MOUSE_BELOW_FILE_LIST:
+                move_down (panel);
+                mark_if_marking (panel, event, previous_selected);
+                break;
+
+            case MOUSE_AFTER_LAST_FILE:
+                break;          /* do nothing */
+
+            default:
                 if (my_index != panel->selected)
                 {
                     unselect_item (panel);
@@ -3906,8 +4005,8 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
                     select_item (panel);
                 }
 
-                /* This one is new */
-                mark_if_marking (panel, event);
+                mark_if_marking (panel, event, previous_selected);
+                break;
             }
         }
         break;
@@ -4052,7 +4151,7 @@ do_select (WPanel * panel, int i)
     {
         panel->dirty = TRUE;
         panel->selected = i;
-        panel->top_file = panel->selected - (WIDGET (panel)->lines - 2) / 2;
+        panel->top_file = panel->selected - (WIDGET (panel)->rect.lines - 2) / 2;
         if (panel->top_file < 0)
             panel->top_file = 0;
     }
@@ -4304,6 +4403,7 @@ panel_set_lwd (WPanel * panel, const vfs_path_t * vpath)
 WPanel *
 panel_sized_empty_new (const char *panel_name, int y, int x, int lines, int cols)
 {
+    WRect r = { y, x, lines, cols };
     WPanel *panel;
     Widget *w;
     char *section;
@@ -4311,7 +4411,7 @@ panel_sized_empty_new (const char *panel_name, int y, int x, int lines, int cols
 
     panel = g_new0 (WPanel, 1);
     w = WIDGET (panel);
-    widget_init (w, y, x, lines, cols, panel_callback, panel_mouse_callback);
+    widget_init (w, &r, panel_callback, panel_mouse_callback);
     w->options |= WOP_SELECTABLE | WOP_TOP_SELECT;
     w->keymap = panel_map;
 
@@ -4328,6 +4428,8 @@ panel_sized_empty_new (const char *panel_name, int y, int x, int lines, int cols
 
     panel->list_format = list_full;
     panel->user_format = g_strdup (DEFAULT_USER_FORMAT);
+
+    panel->filter.flags = FILE_FILTER_DEFAULT_FLAGS;
 
     for (i = 0; i < LIST_FORMATS; i++)
         panel->user_status_format[i] = g_strdup (DEFAULT_USER_FORMAT);
@@ -4353,6 +4455,21 @@ panel_sized_empty_new (const char *panel_name, int y, int x, int lines, int cols
     }
     panel_load_setup (panel, section);
     g_free (section);
+
+    if (panel->filter.value != NULL)
+    {
+        gboolean case_sens = (panel->filter.flags & SELECT_MATCH_CASE) != 0;
+        gboolean shell_patterns = (panel->filter.flags & SELECT_SHELL_PATTERNS) != 0;
+
+        panel->filter.handler = mc_search_new (panel->filter.value, NULL);
+        panel->filter.handler->search_type = shell_patterns ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
+        panel->filter.handler->is_entire_line = TRUE;
+        panel->filter.handler->is_case_sensitive = case_sens;
+
+        /* FIXME: silent check -- do not display an error message */
+        if (!mc_search_prepare (panel->filter.handler))
+            file_filter_clear (&panel->filter);
+    }
 
     /* Load format strings */
     err = set_panel_formats (panel);
@@ -4419,7 +4536,7 @@ panel_sized_with_dir_new (const char *panel_name, int y, int x, int lines, int c
 
     /* Load the default format */
     if (!dir_list_load (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
-                        &panel->sort_info, panel->filter))
+                        &panel->sort_info, &panel->filter))
         message (D_ERROR, MSG_ERROR, _("Cannot read directory contents"));
 
     /* Restore old right path */
@@ -4467,7 +4584,7 @@ panel_reload (WPanel * panel)
     show_dir (panel);
 
     if (!dir_list_reload (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
-                          &panel->sort_info, panel->filter))
+                          &panel->sort_info, &panel->filter))
         message (D_ERROR, MSG_ERROR, _("Cannot read directory contents"));
 
     panel->dirty = TRUE;
@@ -4535,6 +4652,22 @@ set_panel_formats (WPanel * p)
     }
 
     return retcode;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+panel_set_filter (WPanel * panel, const file_filter_t * filter)
+{
+    MC_PTR_FREE (panel->filter.value);
+    mc_search_free (panel->filter.handler);
+    panel->filter.handler = NULL;
+
+    /* NULL to clear filter */
+    if (filter != NULL)
+        panel->filter = *filter;
+
+    reread_cmd ();
 }
 
 /* --------------------------------------------------------------------------------------------- */

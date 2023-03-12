@@ -12,8 +12,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
 "Language-Team: Spanish (http://www.transifex.com/mc/mc/language/es/)\n"
@@ -21,7 +21,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
@@ -533,6 +534,9 @@ msgid ""
 msgstr ""
 "Error inesperado en select() leyendo datos del proceso hijo:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr "Imposible cerrar descriptor de tubería (p == NULL)"
 
 #, c-format
 msgid ""
@@ -1214,8 +1218,8 @@ msgstr "Es necesario tener un bloque seleccionado"
 msgid "Run sort"
 msgstr "Ordenar bloque de texto"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Opciones para «sort» (ver manual), separadas por espacios:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr "Opciones para «sort» (ver manual sort(1)), separadas por espacios:"
 
 msgid "Sort"
 msgstr "Ordenar"
@@ -2375,12 +2379,6 @@ msgstr "Hay archivos marcados. ¿Quiere cambiar de directorio?"
 msgid "Cannot change directory"
 msgstr "Imposible cambiar de directorio"
 
-msgid "Filter"
-msgstr "Filtro"
-
-msgid "Set expression for filtering filenames"
-msgstr "Teclee la expresión para filtrar nombres de archivo"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Crear enlace a %s como:"
@@ -2528,19 +2526,28 @@ msgid "Pipe failed"
 msgstr "Fallo en la tubería"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+"Tiene un archivo %s obsoleto.\n"
+"Midnight Commander usa ahora el archivo %s. Por favor,\n"
+"copie las modificaciones realizadas al nuevo."
+
+#, c-format
 msgid " %s%s file error"
 msgstr " error en el archivo %s%s "
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"El archivo %smc.ext ha cambiado con la versión 3.0.\n"
-"Parece que la instalación falló. Por favor, trate\n"
-"de conseguir una copia intacta con el paquete del\n"
-"Midnight Commander."
+"El formato del archivo %s%s ha cambiado con la versión 4.0.\n"
+"Parece que la instalación falló. Por favor, trate de conseguir\n"
+"una copia intacta del paquete de Midnight Commander."
 
 #, c-format
 msgid "%s file error"
@@ -2548,11 +2555,11 @@ msgstr "error en el archivo %s"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"El formato del archivo %s ha cambiado con la versión 3.0. Puede hacer una "
-"copia de %smc.ext o bien emplearlo como modelo."
+"El formato del archivo %s ha cambiado con la versión 4.0. Puede hacer una "
+"copia de %s%s o bien emplearlo como modelo."
 
 msgid "DialogTitle|Copy"
 msgstr "Copiar"
@@ -2846,6 +2853,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(bloqueado)"
 
+msgid "Incomplete file was retrieved"
+msgstr "El archivo descargado está incompleto"
+
+msgid "&Keep"
+msgstr "&Mantener"
+
+msgid "&Continue copy"
+msgstr "&Continuar copia"
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2861,12 +2877,6 @@ msgid ""
 msgstr ""
 "Imposible cerrar el archivo destino «%s»\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "El archivo está incompleto. ¿Desea conservarlo?"
-
-msgid "&Keep"
-msgstr "&Mantener"
 
 #, c-format
 msgid ""
@@ -2986,8 +2996,8 @@ msgid "Background process: File exists"
 msgstr "Proceso en 2º plano: El archivo ya existe"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Archivos procesados: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr "Archivos procesados: %zu / %zu"
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3014,8 +3024,8 @@ msgid " Total: %s "
 msgstr " Total: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr "Total: %s/%s"
+msgid " Total: %s / %s "
+msgstr "Total: %s / %s"
 
 msgid "Source"
 msgstr "Origen"
@@ -3066,7 +3076,7 @@ msgstr "ár&Bol"
 msgid "&Listing format..."
 msgstr "for&Mato de listado..."
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr "&Ordenar..."
 
 msgid "&Filter..."
@@ -3081,7 +3091,7 @@ msgstr "conexión por FT&P..."
 msgid "S&hell link..."
 msgstr "conexión por SS&H..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr "conexión por SF&TP..."
 
 msgid "Paneli&ze"
@@ -3236,6 +3246,7 @@ msgid "You have %zu opened screen. Quit anyway?"
 msgid_plural "You have %zu opened screens. Quit anyway?"
 msgstr[0] "Hay %zu pantalla abierta. ¿Desea realmente salir?"
 msgstr[1] "Hay %zu pantallas abiertas. ¿Desea realmente salir?"
+msgstr[2] "Hay %zu pantallas abiertas. ¿Desea realmente salir?"
 
 msgid "The Midnight Commander"
 msgstr "The Midnight Commander"
@@ -3337,6 +3348,7 @@ msgid "Finished (ignored %zu directory)"
 msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Terminado (%zu directorio ignorado)"
 msgstr[1] "Terminado (%zu directorios ignorados)"
+msgstr[2] "Terminado (%zu directorios ignorados)"
 
 #, c-format
 msgid "Find File: \"%s\". Content: \"%s\""
@@ -3464,8 +3476,8 @@ msgid "No space information"
 msgstr "Espacio libre desconocido"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Espacio libre: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr "Espacio libre: %s / %s (%d%%)"
 
 #, c-format
 msgid "Type:       %s"
@@ -3508,6 +3520,7 @@ msgid " (%lu block)"
 msgid_plural " (%lu blocks)"
 msgstr[0] " (%lu bloque)"
 msgstr[1] " (%lu bloques)"
+msgstr[2] " (%lu bloques)"
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3690,6 +3703,7 @@ msgid "%s in %d file"
 msgid_plural "%s in %d files"
 msgstr[0] "%s en %d archivo"
 msgstr[1] "%s en %d archivos"
+msgstr[2] "%s en %d archivos"
 
 msgid "Panelize"
 msgstr "Búsqueda externa"
@@ -3708,6 +3722,9 @@ msgstr "Seleccionar grupo"
 
 msgid "Unselect"
 msgstr "De-seleccionar grupo"
+
+msgid "Filter"
+msgstr "Filtro"
 
 msgid "Do you really want to execute?"
 msgstr "¿Realmente quiere ejecutar?"
@@ -4147,6 +4164,10 @@ msgstr ""
 "Fin de archivo inesperado\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Archivo de tipo tar inconsistente"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4278,6 +4299,21 @@ msgstr "ftpfs: Conexión al servidor fracasó: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Esperando antes de insistir... %d (Ctrl-G para cancelar)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr "ftpfs: Imposible traducir dirección a nombre: %s"
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr "ftpfs: Intento de reconexión %u"
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr "ftpfs: Imposible obtener nombre de socket: %s"
+
+msgid "ftpfs: could not reconnect to server"
+msgstr "ftpfs: Imposible reconectar con el servidor"
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: Familia de direcciones incorrecta"

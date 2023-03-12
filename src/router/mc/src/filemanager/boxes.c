@@ -7,7 +7,7 @@
    Written by:
    Miguel de Icaza, 1994, 1995
    Jakub Jelinek, 1995
-   Andrew Borodin <aborodin@vmail.ru>, 2009-2015
+   Andrew Borodin <aborodin@vmail.ru>, 2009-2022
 
    This file is part of the Midnight Commander.
 
@@ -189,13 +189,11 @@ skin_dlg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
     case MSG_RESIZE:
         {
             WDialog *d = DIALOG (w);
-            Widget *wd = WIDGET (d->data);
-            int y, x;
-            WRect r;
+            const WRect *wd = &WIDGET (d->data)->rect;
+            WRect r = w->rect;
 
-            y = wd->y + (wd->lines - w->lines) / 2;
-            x = wd->x + wd->cols / 2;
-            rect_init (&r, y, x, w->lines, w->cols);
+            r.y = wd->y + (wd->lines - r.lines) / 2;
+            r.x = wd->x + wd->cols / 2;
 
             return dlg_default_callback (w, NULL, MSG_RESIZE, 0, &r);
         }
@@ -405,15 +403,16 @@ tree_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
     {
     case MSG_RESIZE:
         {
-            WRect r;
+            WRect r = w->rect;
             Widget *bar;
 
-            rect_init (&r, w->y, w->x, LINES - 9, COLS - 20);
+            r.lines = LINES - 9;
+            r.cols = COLS - 20;
             dlg_default_callback (w, NULL, MSG_RESIZE, 0, &r);
 
             bar = WIDGET (find_buttonbar (h));
-            bar->x = 0;
-            bar->y = LINES - 1;
+            bar->rect.x = 0;
+            bar->rect.y = LINES - 1;
             return MSG_HANDLED;
         }
 
@@ -591,9 +590,10 @@ configure_box (void)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 60 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 60,
-            N_("Configure options"), "[Configuration]",
+            r, N_("Configure options"), "[Configuration]",
             quick_widgets, configure_callback, NULL
         };
 
@@ -612,7 +612,12 @@ configure_box (void)
 #endif
 
         if (quick_dialog (&qdlg) == B_ENTER)
-            old_esc_mode_timeout = atoi (time_out_new);
+        {
+            if (time_out_new[0] == '\0')
+                old_esc_mode_timeout = 0;
+            else
+                old_esc_mode_timeout = atoi (time_out_new);
+        }
 
         g_free (time_out_new);
     }
@@ -644,9 +649,10 @@ appearance_box (void)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 54 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 54,
-            N_("Appearance"), "[Appearance]",
+            r, N_("Appearance"), "[Appearance]",
             quick_widgets, appearance_box_callback, NULL
         };
 
@@ -724,9 +730,10 @@ panel_options_box (void)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 60 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 60,
-            N_("Panel options"), "[Panel options]",
+            r, N_("Panel options"), "[Panel options]",
             quick_widgets, NULL, NULL
         };
 
@@ -800,9 +807,10 @@ panel_listing_box (WPanel * panel, int num, char **userp, char **minip, gboolean
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 48 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 48,
-            N_("Listing format"), "[Listing Format...]",
+            r, N_("Listing format"), "[Listing Format...]",
             quick_widgets, panel_listing_callback, NULL
         };
 
@@ -890,9 +898,10 @@ sort_box (dir_sort_options_t * op, const panel_field_t * sort_field)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 40 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 40,
-            N_("Sort order"), "[Sort Order...]",
+            r, N_("Sort order"), "[Sort Order...]",
             quick_widgets, NULL, NULL
         };
 
@@ -929,9 +938,10 @@ confirm_box (void)
         /* *INDENT-ON* */
     };
 
+    WRect r = { -1, -1, 0, 46 };
+
     quick_dialog_t qdlg = {
-        -1, -1, 46,
-        N_("Confirmation"), "[Confirmation]",
+        r, N_("Confirmation"), "[Confirmation]",
         quick_widgets, NULL, NULL
     };
 
@@ -964,9 +974,10 @@ display_bits_box (void)
         /* *INDENT-ON* */
     };
 
+    WRect r = { -1, -1, 0, 46 };
+
     quick_dialog_t qdlg = {
-        -1, -1, 46,
-        _("Display bits"), "[Display bits]",
+        r, _("Display bits"), "[Display bits]",
         quick_widgets, NULL, NULL
     };
 
@@ -1022,9 +1033,10 @@ display_bits_box (void)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 46 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 46,
-            N_("Display bits"), "[Display bits]",
+            r, N_("Display bits"), "[Display bits]",
             quick_widgets, NULL, NULL
         };
 
@@ -1078,14 +1090,14 @@ tree_box (const char *current_dir)
     g = GROUP (dlg);
     wd = WIDGET (dlg);
 
-    mytree = tree_new (2, 2, wd->lines - 6, wd->cols - 5, FALSE);
+    mytree = tree_new (2, 2, wd->rect.lines - 6, wd->rect.cols - 5, FALSE);
     group_add_widget_autopos (g, mytree, WPOS_KEEP_ALL, NULL);
-    group_add_widget_autopos (g, hline_new (wd->lines - 4, 1, -1), WPOS_KEEP_BOTTOM, NULL);
+    group_add_widget_autopos (g, hline_new (wd->rect.lines - 4, 1, -1), WPOS_KEEP_BOTTOM, NULL);
     bar = buttonbar_new ();
     group_add_widget (g, bar);
     /* restore ButtonBar coordinates after add_widget() */
-    WIDGET (bar)->x = 0;
-    WIDGET (bar)->y = LINES - 1;
+    WIDGET (bar)->rect.x = 0;
+    WIDGET (bar)->rect.y = LINES - 1;
 
     if (dlg_run (dlg) == B_ENTER)
     {
@@ -1149,9 +1161,10 @@ configure_vfs_box (void)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 56 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 56,
-            N_("Virtual File System Setting"), "[Virtual FS]",
+            r, N_("Virtual File System Setting"), "[Virtual FS]",
             quick_widgets,
 #ifdef ENABLE_VFS_FTP
             confvfs_callback,
@@ -1169,7 +1182,10 @@ configure_vfs_box (void)
         if (quick_dialog (&qdlg) != B_CANCEL)
         {
             /* cppcheck-suppress uninitvar */
-            vfs_timeout = atoi (ret_timeout);
+            if (ret_timeout[0] == '\0')
+                vfs_timeout = 0;
+            else
+                vfs_timeout = atoi (ret_timeout);
             g_free (ret_timeout);
 
             if (vfs_timeout < 0 || vfs_timeout > 10000)
@@ -1182,7 +1198,10 @@ configure_vfs_box (void)
             /* cppcheck-suppress uninitvar */
             ftpfs_proxy_host = ret_ftp_proxy;
             /* cppcheck-suppress uninitvar */
-            ftpfs_directory_timeout = atoi (ret_directory_timeout);
+            if (ret_directory_timeout[0] == '\0')
+                ftpfs_directory_timeout = 0;
+            else
+                ftpfs_directory_timeout = atoi (ret_directory_timeout);
             g_free (ret_directory_timeout);
 #endif
         }
@@ -1205,9 +1224,10 @@ cd_box (const WPanel * panel)
         QUICK_END
     };
 
+    WRect r = { w->rect.y + w->rect.lines - 6, w->rect.x, 0, w->rect.cols };
+
     quick_dialog_t qdlg = {
-        w->y + w->lines - 6, w->x, w->cols,
-        N_("Quick cd"), "[Quick cd]",
+        r, N_("Quick cd"), "[Quick cd]",
         quick_widgets, NULL, NULL
     };
 
@@ -1234,9 +1254,10 @@ symlink_box (const vfs_path_t * existing_vpath, const vfs_path_t * new_vpath,
         /* *INDENT-ON* */
     };
 
+    WRect r = { -1, -1, 0, 64 };
+
     quick_dialog_t qdlg = {
-        -1, -1, 64,
-        N_("Symbolic link"), "[File Menu]",
+        r, N_("Symbolic link"), "[File Menu]",
         quick_widgets, NULL, NULL
     };
 

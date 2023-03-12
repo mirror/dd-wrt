@@ -54,7 +54,7 @@ typedef struct
     gboolean permission_mode;   /* If TRUE, we use permission hilighting */
     qsearch_mode_t qsearch_mode;        /* Quick search mode */
     gboolean torben_fj_mode;    /* If TRUE, use some usability hacks by Torben */
-    panel_select_flags_t select_flags;  /* Select/unselect file flags */
+    select_flags_t select_flags;        /* Select/unselect file flags */
 } panels_options_t;
 
 typedef struct macro_action_t
@@ -96,7 +96,9 @@ extern gboolean only_leading_plus_minus;
 extern int cd_symlinks;
 extern gboolean auto_fill_mkdir_name;
 extern gboolean output_starts_shell;
+#ifdef USE_FILE_CMD
 extern gboolean use_file_to_check_type;
+#endif
 extern gboolean file_op_compute_totals;
 extern gboolean editor_ask_filename_before_edit;
 

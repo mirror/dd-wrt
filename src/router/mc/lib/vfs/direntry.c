@@ -6,7 +6,8 @@
 
    Written by:
    Pavel Machek <pavel@ucw.cz>, 1998
-   Slava Zanko <slavazanko@gmail.com>, 2013
+   Slava Zanko <slavazanko@gmail.com>, 2010-2013
+   Andrew Borodin <aborodin@vmail.ru> 2010-2022
 
    This file is part of the Midnight Commander.
 
@@ -69,7 +70,7 @@
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"        /* enable/disable interrupt key */
-#include "lib/util.h"           /* custom_canonicalize_pathname() */
+#include "lib/util.h"           /* canonicalize_pathname_custom() */
 #if 0
 #include "lib/widget.h"         /* message() */
 #endif
@@ -181,7 +182,7 @@ vfs_s_find_entry_tree (struct vfs_class *me, struct vfs_s_inode *root,
     char *path = pathref;
 
     /* canonicalize as well, but don't remove '../' from path */
-    custom_canonicalize_pathname (path, CANON_PATH_ALL & (~CANON_PATH_REMDOUBLEDOTS));
+    canonicalize_pathname_custom (path, CANON_PATH_ALL & (~CANON_PATH_REMDOUBLEDOTS));
 
     while (root != NULL)
     {
@@ -245,7 +246,7 @@ vfs_s_find_entry_linear (struct vfs_class *me, struct vfs_s_inode *root,
         vfs_die ("We have to use _real_ root. Always. Sorry.");
 
     /* canonicalize as well, but don't remove '../' from path */
-    custom_canonicalize_pathname (path, CANON_PATH_ALL & (~CANON_PATH_REMDOUBLEDOTS));
+    canonicalize_pathname_custom (path, CANON_PATH_ALL & (~CANON_PATH_REMDOUBLEDOTS));
 
     if ((flags & FL_DIR) == 0)
     {
@@ -1326,15 +1327,12 @@ vfs_s_open (const vfs_path_t * vpath, int flags, mode_t mode)
             return NULL;
 
         dirname = g_path_get_dirname (q);
-        name = g_path_get_basename (q);
         dir = vfs_s_find_inode (path_element->class, super, dirname, LINK_FOLLOW, FL_DIR);
+        g_free (dirname);
         if (dir == NULL)
-        {
-            g_free (dirname);
-            g_free (name);
             return NULL;
-        }
 
+        name = g_path_get_basename (q);
         ent = vfs_s_generate_entry (path_element->class, name, dir, 0755);
         ino = ent->ino;
         vfs_s_insert_entry (path_element->class, dir, ent);
@@ -1347,14 +1345,13 @@ vfs_s_open (const vfs_path_t * vpath, int flags, mode_t mode)
             ino->localname = vfs_path_free (tmp_vpath, FALSE);
             if (tmp_handle == -1)
             {
-                g_free (dirname);
                 g_free (name);
                 return NULL;
             }
 
             close (tmp_handle);
         }
-        g_free (dirname);
+
         g_free (name);
         was_changed = TRUE;
     }
@@ -1723,18 +1720,18 @@ vfs_s_normalize_filename_leading_spaces (struct vfs_s_inode *root_inode, size_t 
     {
         struct vfs_s_entry *entry = VFS_ENTRY (iter->data);
 
-        if ((size_t) entry->ino->data_offset > final_num_spaces)
+        if ((size_t) entry->leading_spaces > final_num_spaces)
         {
             char *source_name, *spacer;
 
             source_name = entry->name;
-            spacer = g_strnfill (entry->ino->data_offset - final_num_spaces, ' ');
+            spacer = g_strnfill ((size_t) entry->leading_spaces - final_num_spaces, ' ');
             entry->name = g_strconcat (spacer, source_name, (char *) NULL);
             g_free (spacer);
             g_free (source_name);
         }
 
-        entry->ino->data_offset = -1;
+        entry->leading_spaces = -1;
     }
 }
 

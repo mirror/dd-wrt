@@ -254,7 +254,7 @@ extfs_find_entry_int (struct vfs_s_inode *dir, const char *name, GSList * list, 
         *q = '\0';
 
         if (DIR_IS_DOTDOT (p))
-            pent = pent->dir->ent;
+            pent = pent->dir != NULL ? pent->dir->ent : NULL;
         else
         {
             GList *pl;
@@ -515,13 +515,12 @@ extfs_open_archive (int fstype, const char *name, struct extfs_super_t **pparc, 
     static dev_t archive_counter = 0;
     mc_pipe_t *result = NULL;
     mode_t mode;
-    char *cmd = NULL;
+    char *cmd;
     struct stat mystat;
     struct extfs_super_t *current_archive;
     struct vfs_s_entry *root_entry;
     char *tmp = NULL;
     vfs_path_t *local_name_vpath = NULL;
-    const char *local_last_path = NULL;
     vfs_path_t *name_vpath;
 
     memset (&mystat, 0, sizeof (mystat));
@@ -541,24 +540,16 @@ extfs_open_archive (int fstype, const char *name, struct extfs_super_t **pparc, 
                 goto ret;
         }
 
-        local_last_path = vfs_path_get_last_path_str (local_name_vpath);
-        if (local_last_path == NULL)
-            tmp = name_quote (vfs_path_get_last_path_str (name_vpath), FALSE);
+        tmp = name_quote (vfs_path_get_last_path_str (name_vpath), FALSE);
     }
 
-    if (local_last_path != NULL)
-        cmd = g_strconcat (info->path, info->prefix, " list ", local_last_path, (char *) NULL);
-    else if (tmp != NULL)
-    {
-        cmd = g_strconcat (info->path, info->prefix, " list ", tmp, (char *) NULL);
-        g_free (tmp);
-    }
+    cmd = g_strconcat (info->path, info->prefix, " list ",
+                       vfs_path_get_last_path_str (local_name_vpath) != NULL ?
+                       vfs_path_get_last_path_str (local_name_vpath) : tmp, (char *) NULL);
+    g_free (tmp);
 
-    if (cmd != NULL)
-    {
-        result = mc_popen (cmd, TRUE, TRUE, error);
-        g_free (cmd);
-    }
+    result = mc_popen (cmd, TRUE, TRUE, error);
+    g_free (cmd);
 
     if (result == NULL)
     {
@@ -696,6 +687,8 @@ extfs_read_archive (mc_pipe_t * pip, struct extfs_super_t *archive, GError ** er
 
         g_string_free (err_msg, TRUE);
     }
+    else if (ret == -1)
+        mc_propagate_error (error, 0, "%s", _("Inconsistent archive"));
 
     return ret;
 }
@@ -959,6 +952,8 @@ extfs_cmd (const char *str_extfs_cmd, const struct extfs_super_t *archive,
         g_error_free (error);
         return (-1);
     }
+
+    pip->err.null_term = TRUE;
 
     mc_pread (pip, &error);
     if (error != NULL)

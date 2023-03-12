@@ -28,7 +28,6 @@
 #define MC_HELP                 "help" PATH_SEP_STR "mc.hlp"
 #define GLOBAL_KEYMAP_FILE      "mc.keymap"
 #define CHARSETS_LIST           "mc.charsets"
-#define MC_LIB_EXT              "mc.ext"
 #define MC_MACRO_FILE           "mc.macros"
 
 #define FISH_PREFIX             "fish"
@@ -56,7 +55,8 @@
 #define MC_ASHRC_FILE           "ashrc"
 #define MC_INPUTRC_FILE         "inputrc"
 #define MC_CONFIG_FILE          "ini"
-#define MC_FILEBIND_FILE        "mc.ext"
+#define MC_EXT_FILE             "mc.ext.ini"
+#define MC_EXT_OLD_FILE         "mc.ext"
 #define MC_FILEPOS_FILE         "filepos"
 #define MC_HISTORY_FILE         "history"
 #define MC_HOTLIST_FILE         "hotlist"
@@ -72,10 +72,11 @@
 
 /* file names */
 #define EDIT_HOME_MACRO_FILE    EDIT_HOME_DIR PATH_SEP_STR "macros.d" PATH_SEP_STR "macro"
-#define EDIT_HOME_SYNTAX_FILE   EDIT_HOME_DIR PATH_SEP_STR "Syntax"
 #define EDIT_HOME_CLIP_FILE     EDIT_HOME_DIR PATH_SEP_STR "mcedit.clip"
 #define EDIT_HOME_BLOCK_FILE    EDIT_HOME_DIR PATH_SEP_STR "mcedit.block"
 #define EDIT_HOME_TEMP_FILE     EDIT_HOME_DIR PATH_SEP_STR "mcedit.temp"
+#define EDIT_SYNTAX_DIR         "syntax"
+#define EDIT_SYNTAX_FILE        EDIT_SYNTAX_DIR PATH_SEP_STR "Syntax"
 
 #define EDIT_GLOBAL_MENU        "mcedit.menu"
 #define EDIT_LOCAL_MENU         ".cedit.menu"

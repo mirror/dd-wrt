@@ -8,8 +8,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Yury V. Zaytsev <yury@shurup.com>, 2022\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
@@ -529,6 +529,9 @@ msgid ""
 msgstr ""
 "Neatendita eraro en select() leginte datumojn el ida procezo:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr "Ne eblas fermi duktan priskribilon (p == NULL)"
 
 #, c-format
 msgid ""
@@ -1207,9 +1210,10 @@ msgstr "Vi devas antaŭe elekti blokon da teksto"
 msgid "Run sort"
 msgstr "Rula ordigo"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-"Enmetu ordigajn agordaĵon (vidu man-paĝon) apartigante per blankospacoj:"
+"Enmetu ordigajn agordaĵon (vidu la man-elementon sort(1)) apartigante ilin "
+"per blankspacoj:"
 
 msgid "Sort"
 msgstr "Ordigi"
@@ -2369,12 +2373,6 @@ msgstr "Dosieroj markitaj, ĉu vi volas al ŝanĝi la dosierujon?"
 msgid "Cannot change directory"
 msgstr "Ne eblas ŝanĝi dosierujon"
 
-msgid "Filter"
-msgstr "Filtri"
-
-msgid "Set expression for filtering filenames"
-msgstr "Agordi esprimon por filtri dosiernomojn"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Ligi je %s al:"
@@ -2522,17 +2520,27 @@ msgid "Pipe failed"
 msgstr "Dukto malsukcesis"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+"Vi havas malaktualan dosieron %s.\n"
+"Midnight Cammander now uzas la dosieron %s.\n"
+"Bonvolu kopii viajn modifojn de la malnova dosiero al la nova."
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s: dosiera eraro"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"La aranĝo de la dosiero %smc.ext ŝanĝiĝis en eldono 3.0. Ŝajne la instalado "
-"malsukcesis. Bonvolu havigi al vi freŝan ekzempleron de la pako Midnight "
+"La aranĝo de la dosiero %s%s ŝanĝiĝis en eldono 4.0. Ŝajne la instalado "
+"malsukcesis. Bonvolu havigi al vi freŝan ekzempleron de la pakaĵo Midnight "
 "Commander."
 
 #, c-format
@@ -2541,11 +2549,11 @@ msgstr "%s dosiera eraro"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"La aranĝo de la dosiero %s ŝanĝiĝis en eldono 3.0. Vi eble povos aŭ kopii "
-"ĝin el %smc.txt aŭ uzi tiun dosieron kiel ekzemplon."
+"La aranĝo de la dosiero %s ŝanĝiĝis en eldono 4.0. Vi eble povos aŭ kopii "
+"ĝin el %s%s aŭ uzi tiun dosieron kiel ekzemplon pri kiel skribi ĝin."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Kopii"
@@ -2839,6 +2847,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(paŭzinta)"
 
+msgid "Incomplete file was retrieved"
+msgstr "Nekompleta dosiero estis akirita"
+
+msgid "&Keep"
+msgstr "&Teni"
+
+msgid "&Continue copy"
+msgstr "D&aŭrigi kopii"
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2854,12 +2871,6 @@ msgid ""
 msgstr ""
 "Ne eblas fermi celan dosieron \"%s\"\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Nekompleta dosiero estis akirita. Ĉu teni ĝin?"
-
-msgid "&Keep"
-msgstr "&Teni"
 
 #, c-format
 msgid ""
@@ -2979,8 +2990,8 @@ msgid "Background process: File exists"
 msgstr "Fona procezo: Dosiero ekzistas"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Dosieroj traktitaj: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr "Dosieroj traktitaj: %zu / %zu"
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3007,7 +3018,7 @@ msgid " Total: %s "
 msgstr " Kiomo: %s "
 
 #, c-format
-msgid " Total: %s/%s "
+msgid " Total: %s / %s "
 msgstr " Kiomo: %s el %s "
 
 msgid "Source"
@@ -3059,8 +3070,8 @@ msgstr "&Arbo"
 msgid "&Listing format..."
 msgstr "&Listo-aranĝo..."
 
-msgid "S&ort order..."
-msgstr "&Ordigi laŭ..."
+msgid "&Sort order..."
+msgstr "&Ordiga ordo..."
 
 msgid "&Filter..."
 msgstr "&Filtri..."
@@ -3074,7 +3085,7 @@ msgstr "FT&P-ligilo..."
 msgid "S&hell link..."
 msgstr "Ŝ&ela ligilo..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr "&SFTP-ligilo..."
 
 msgid "Paneli&ze"
@@ -3457,7 +3468,7 @@ msgid "No space information"
 msgstr "Neniuj spacaj informoj"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
 msgstr "Restanta spaco: %s el %s (%d%%)"
 
 #, c-format
@@ -3701,6 +3712,9 @@ msgstr "Elekti"
 
 msgid "Unselect"
 msgstr "Malelekti"
+
+msgid "Filter"
+msgstr "Filtri"
 
 msgid "Do you really want to execute?"
 msgstr "Ĉu vi efekti volas plenumigi?"
@@ -4141,6 +4155,10 @@ msgstr ""
 "Neatendita dosierfino\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Malkonsekvenca tar-dosiero"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4272,6 +4290,21 @@ msgstr "ftpfs: konekto al servilo fiaskis: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Atendanta por reprovi... %d (Stirklavo-G por nuligi)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr "ftpfs: ne eblas krei adreso-al-noman traduko: %s"
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr "ftpfs: provo rekonektiĝi al servilo, provo %u"
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr "ftpfs: ne eblas akiri konektingan nomon: %s"
+
+msgid "ftpfs: could not reconnect to server"
+msgstr "ftpfs: ne eblas rekonektiĝi al servilo"
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: nevalida familio"

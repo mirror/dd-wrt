@@ -10,6 +10,7 @@
    Dugan Porter, 1994, 1995, 1996
    Jakub Jelinek, 1994, 1995, 1996
    Mauricio Plaza, 1994, 1995, 1996
+   Andrew Borodin <aborodin@vmail.ru> 2010-2022
 
    The mc_realpath routine is mostly from uClibc package, written
    by Rick Sladkey <jrs@world.std.com>
@@ -674,6 +675,13 @@ mc_pclose (mc_pipe_t * p, GError ** error)
 {
     int res;
 
+    if (p == NULL)
+    {
+        mc_replace_error (error, MC_PIPE_ERROR_READ, "%s",
+                          _("Cannot close pipe descriptor (p == NULL)"));
+        return;
+    }
+
     if (p->out.fd >= 0)
         res = close (p->out.fd);
     if (p->err.fd >= 0)
@@ -746,18 +754,19 @@ tilde_expand (const char *directory)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
- * Canonicalize path, and return a new path.  Do everything in place.
- * The new path differs from path in:
- *      Multiple '/'s are collapsed to a single '/'.
- *      Leading './'s and trailing '/.'s are removed.
- *      Trailing '/'s are removed.
- *      Non-leading '../'s and trailing '..'s are handled by removing
- *      portions of the path.
+ * Canonicalize path.
+ *
+ * @param path path to file
+ * @param flags canonicalization flags
+ *
+ * @return a new path
+ *
+ * All modifications of @path are made in place.
  * Well formed UNC paths are modified only in the local part.
  */
 
 void
-custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
+canonicalize_pathname_custom (char *path, canon_path_flags_t flags)
 {
     char *p, *s;
     char *lpath = path;         /* path without leading UNC part */
@@ -978,11 +987,22 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/**
+ * Canonicalize path with CANON_PATH_ALL.
+ *
+ * @param path path to file
+ * @param flags canonicalization flags
+ *
+ * @return a new path
+ *
+ * All modifications of @path are made in place.
+ * Well formed UNC paths are modified only in the local part.
+ */
 
 void
 canonicalize_pathname (char *path)
 {
-    custom_canonicalize_pathname (path, CANON_PATH_ALL);
+    canonicalize_pathname_custom (path, CANON_PATH_ALL);
 }
 
 /* --------------------------------------------------------------------------------------------- */

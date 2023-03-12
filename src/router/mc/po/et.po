@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Priit Jõerüüt <transifex@joeruut.com>, 2020-2021\n"
 "Language-Team: Estonian (http://www.transifex.com/mc/mc/language/et/)\n"
@@ -526,6 +526,9 @@ msgid ""
 msgstr ""
 "Ootamatu viga tütarprotsessist andmete lugemisel funktsioonis select():\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1203,8 +1206,8 @@ msgstr "Esmalt vali tekstiplokk"
 msgid "Run sort"
 msgstr "Räivita sortimine"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Sisesta sortimise suvandid tühikutega eraldatult (vaata manuaali):"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "Sorteeri"
@@ -2358,12 +2361,6 @@ msgstr "Failid märgitud, soovid kataloogi vahetada?"
 msgid "Cannot change directory"
 msgstr "Kataloogi vahetamine nurjus"
 
-msgid "Filter"
-msgstr "Filter"
-
-msgid "Set expression for filtering filenames"
-msgstr "Määra failinimede filtri väljend"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Loo link %s:"
@@ -2511,17 +2508,22 @@ msgid "Pipe failed"
 msgstr "Funktsioon pipe nurjus"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr "%s%s faili viga"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Versiooniga 3.0 muutus faili %smc.ext vormindus. Tundub, et paigaldus ei "
-"õnnestunud. Palun hangi uus koopia Midnight Commanderi paketist."
 
 #, c-format
 msgid "%s file error"
@@ -2529,11 +2531,9 @@ msgstr "%s faili viga"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"Faili %s vormindus muutus versioonis 3.0. Sa võiksid kas kopeerida faili "
-"%smc.ext või kasutada seda faili tooriku näidisena."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Kopeerimine"
@@ -2827,6 +2827,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(seiskunud)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "&Hoia"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2842,12 +2851,6 @@ msgid ""
 msgstr ""
 "Sihtfaili \"%s\" sulgemine nurjus\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Saadi lõpetamata fail. Kas hoida see alles?"
-
-msgid "&Keep"
-msgstr "&Hoia"
 
 #, c-format
 msgid ""
@@ -2967,8 +2970,8 @@ msgid "Background process: File exists"
 msgstr "Taustaprotsess: Fail on olemas"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Faile töödeldud: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -2995,8 +2998,8 @@ msgid " Total: %s "
 msgstr "Kokku: %s"
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr "Kokku: %s/%s"
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Lähtekoht"
@@ -3047,7 +3050,7 @@ msgstr "&Puu"
 msgid "&Listing format..."
 msgstr "&Loendi vormindus"
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3062,7 +3065,7 @@ msgstr "F&TP ühendus..."
 msgid "S&hell link..."
 msgstr "K&esta ühendus..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3445,8 +3448,8 @@ msgid "No space information"
 msgstr "Puudub mahu informatsioon"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Vaba ruum: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3689,6 +3692,9 @@ msgstr "Vali"
 
 msgid "Unselect"
 msgstr "Tühista valik"
+
+msgid "Filter"
+msgstr "Filter"
 
 msgid "Do you really want to execute?"
 msgstr "Kas sa soovid tõesti käivitada?"
@@ -4123,6 +4129,10 @@ msgstr ""
 "Ootamatu faili lõpp\n"
 " %s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Tar arhiiv sisaldab vasturääkivusi"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4254,6 +4264,21 @@ msgstr "ftpfs: ühendus serveriga nurjus: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Oodatakse kordamist... %d (Ctrl-G tühistab)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: vigane aadressi perekond"

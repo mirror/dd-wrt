@@ -27,10 +27,6 @@
 
 #define VFS_CLASS(a) ((struct vfs_class *) (a))
 
-#if defined (ENABLE_VFS_FTP) || defined (ENABLE_VFS_FISH)
-#define ENABLE_VFS_NET 1
-#endif
-
 /**
  * This is the type of callback function passed to vfs_fill_names.
  * It gets the name of the virtual file system as its first argument.
@@ -71,12 +67,6 @@
  */
 
 /* And now some defines for our errors. */
-
-#ifdef ENOSYS
-#define E_NOTSUPP ENOSYS        /* for use in vfs when module does not provide function */
-#else
-#define E_NOTSUPP EFAULT        /* Does this happen? */
-#endif
 
 #ifdef ENOMSG
 #define E_UNKNOWN ENOMSG        /* if we do not know what error happened */

@@ -46,16 +46,16 @@ typedef int input_colors_t[WINPUTC_COUNT_COLORS];
 typedef struct
 {
     Widget widget;
+
+    GString *buffer;
     const int *color;
     int point;                  /* cursor position in the input line in characters */
     int mark;                   /* the mark position in characters; negative value means no marked text */
     int term_first_shown;       /* column of the first shown character */
-    size_t current_max_size;    /* maximum length of input line (bytes) */
     gboolean first;             /* is first keystroke? */
     int disable_update;         /* do we want to skip updates? */
     gboolean is_password;       /* is this a password input line? */
     gboolean init_from_history; /* init text will be get from history */
-    char *buffer;               /* pointer to editing buffer */
     gboolean need_push;         /* need to push the current Input on hist? */
     gboolean strip_password;    /* need to strip password before placing string to history */
     char **completions;         /* possible completions array */
@@ -91,7 +91,6 @@ cb_ret_t input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm
 void input_set_default_colors (void);
 cb_ret_t input_handle_char (WInput * in, int key);
 void input_assign_text (WInput * in, const char *text);
-gboolean input_is_empty (const WInput * in);
 void input_insert (WInput * in, const char *text, gboolean insert_extra_space);
 void input_set_point (WInput * in, int pos);
 void input_update (WInput * in, gboolean clear_first);
@@ -103,6 +102,54 @@ void input_clean (WInput * in);
 void input_complete (WInput * in);
 void input_complete_free (WInput * in);
 
+/* --------------------------------------------------------------------------------------------- */
 /*** inline functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Get text of input line.
+ *
+ * @param in input line
+ *
+ * @return newly allocated string that contains a copy of @in's text.
+ */
+static inline char *
+input_get_text (const WInput * in)
+{
+    return g_strndup (in->buffer->str, in->buffer->len);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Get pointer to input line buffer.
+ *
+ * @param in input line
+ *
+ * @return pointer to @in->buffer->str.
+ */
+static inline const char *
+input_get_ctext (const WInput * in)
+{
+    return in->buffer->str;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Is input line empty or not.
+ *
+ * @param in input line
+ *
+ * @return TRUE if buffer of @in is empty, FALSE othewise.
+ */
+static inline gboolean
+input_is_empty (const WInput * in)
+{
+    return (in->buffer->len == 0);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 
 #endif /* MC__WIDGET_INPUT_H */

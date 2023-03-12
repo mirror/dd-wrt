@@ -17,8 +17,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Alexander Kilian <alexander.kilian@gmail.com>, 2022\n"
 "Language-Team: Swedish (http://www.transifex.com/mc/mc/language/sv/)\n"
@@ -531,6 +531,9 @@ msgid ""
 msgstr ""
 "Oväntat fel i select() under läsning av data från en barnprocess:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1210,8 +1213,8 @@ msgstr "Du måste först markera ett textblock"
 msgid "Run sort"
 msgstr "Kör sortering"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Mata in sorteringsflaggor (se man-sidan) separerade av blanksteg:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "Sortera"
@@ -2367,12 +2370,6 @@ msgstr "Filerna är markerade, vill du byta katalog?"
 msgid "Cannot change directory"
 msgstr "Kan inte byta katalog"
 
-msgid "Filter"
-msgstr "Filter"
-
-msgid "Set expression for filtering filenames"
-msgstr "Ange uttryck för filnamnsfiltrering"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Länka %s till:"
@@ -2520,18 +2517,22 @@ msgid "Pipe failed"
 msgstr "Tunnel misslyckades"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s filfel"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Formatet på filen %smc.ext har ändrats i version 3.0. Det verkar som att "
-"installationen har misslyckats. Hämta en ny kopia från Midnight Commander-"
-"paketet."
 
 #, c-format
 msgid "%s file error"
@@ -2539,11 +2540,9 @@ msgstr "%s filfel"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"Formatet på filen %s har ändrats i version 3.0. Du kan antingen kopiera den "
-"från %smc.ext eller använda den filen som mall för hur den ska se ut."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Kopiera"
@@ -2837,6 +2836,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(avstannad)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "&Behåll"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2852,12 +2860,6 @@ msgid ""
 msgstr ""
 "Stängning av målfilen \"%s\" misslyckades\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Den återhämtade filen är ofullständig. Behåll den ändå?"
-
-msgid "&Keep"
-msgstr "&Behåll"
 
 #, c-format
 msgid ""
@@ -2977,8 +2979,8 @@ msgid "Background process: File exists"
 msgstr "Bakgrundsprocessen: Filen finns"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Bearbetade filer: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3005,8 +3007,8 @@ msgid " Total: %s "
 msgstr " Totalt: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " Totalt: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Källa"
@@ -3057,7 +3059,7 @@ msgstr "&Träd"
 msgid "&Listing format..."
 msgstr "&Listformat..."
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3072,7 +3074,7 @@ msgstr "FT&P-länk..."
 msgid "S&hell link..."
 msgstr "S&kallänk..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3455,8 +3457,8 @@ msgid "No space information"
 msgstr "Ingen information om ledigt utrymme"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Fritt utr:  %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3699,6 +3701,9 @@ msgstr "Markera"
 
 msgid "Unselect"
 msgstr "Avmarkera"
+
+msgid "Filter"
+msgstr "Filter"
 
 msgid "Do you really want to execute?"
 msgstr "Vill du verkligen exekvera?"
@@ -4130,6 +4135,10 @@ msgstr ""
 "Oväntat filslut\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Inkonsistensfel i tararkivet"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4256,6 +4265,21 @@ msgstr "ftpfs: misslyckades att ansluta till servern: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Väntar på att försöka igen... %d (Control-G för att avbryta)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: felaktig adressfamilj"

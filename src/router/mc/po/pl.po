@@ -9,8 +9,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>, 2011-2022\n"
 "Language-Team: Polish (http://www.transifex.com/mc/mc/language/pl/)\n"
@@ -18,9 +18,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n"
-"%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n"
-"%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && "
+"(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
+"n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
@@ -535,6 +535,9 @@ msgstr ""
 "Nieoczekiwany błąd w select() podczas odczytywania danych z procesu "
 "potomnego:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr "Nie można zamknąć deskryptora potoku (p == NULL)"
 
 #, c-format
 msgid ""
@@ -1215,10 +1218,10 @@ msgstr "Należy najpierw wyróżnić blok tekstu"
 msgid "Run sort"
 msgstr "Wykonaj polecenie sort"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-"Proszę podać opcje polecenia sort (proszę zobaczyć stronę man), rozdzielone "
-"spacjami: "
+"Proszę podać opcje polecenia sort (strona podręcznika sort(1) zawiera więcej "
+"informacji), rozdzielone spacjami:"
 
 msgid "Sort"
 msgstr "Posortuj"
@@ -2377,12 +2380,6 @@ msgstr "Zaznaczono pliki, zmienić katalog?"
 msgid "Cannot change directory"
 msgstr "Nie można zmienić katalogu"
 
-msgid "Filter"
-msgstr "Filtr"
-
-msgid "Set expression for filtering filenames"
-msgstr "Wyrażenie filtrujące nazwy plików"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Dowiązanie %s do:"
@@ -2530,16 +2527,26 @@ msgid "Pipe failed"
 msgstr "Potok się nie powiódł"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+"Plik %s jest przestarzały.\n"
+"Midnight Commander używa teraz pliku %s.\n"
+"Proszę skopiować wprowadzone zmiany z poprzedniego pliku do nowego."
+
+#, c-format
 msgid " %s%s file error"
 msgstr " Błąd pliku %s%s"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Format pliku %smc.ext uległ zmianie wraz z wersją 3.0. Wygląda na to, że "
+"Format pliku %s%s uległ zmianie wraz z wersją 4.0. Wygląda na to, że "
 "instalacja się nie powiodła. Proszę pobrać nową wersję tego pliku z pakietu "
 "programu Midnight Commander."
 
@@ -2549,11 +2556,11 @@ msgstr "Błąd pliku %s"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"Format pliku %s został zmieniony w wersji 3.0. Można skopiować go z %smc.ext "
-"lub użyć tego pliku jako przykład."
+"Format pliku %s został zmieniony w wersji 4.0. Można skopiować go z %s%s lub "
+"użyć tego pliku jako przykład."
 
 msgid "DialogTitle|Copy"
 msgstr "Kopiowanie"
@@ -2848,6 +2855,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(wstrzymany)"
 
+msgid "Incomplete file was retrieved"
+msgstr "Pobrano niepełny plik"
+
+msgid "&Keep"
+msgstr "&Zachowaj"
+
+msgid "&Continue copy"
+msgstr "&Kontynuuj kopiowanie"
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2863,12 +2879,6 @@ msgid ""
 msgstr ""
 "Nie można zamknąć pliku docelowego „%s”\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Pobrano niepełny plik. Zachować go?"
-
-msgid "&Keep"
-msgstr "&Zachowaj"
 
 #, c-format
 msgid ""
@@ -2988,7 +2998,7 @@ msgid "Background process: File exists"
 msgstr "Proces w tle: plik istnieje"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
+msgid "Files processed: %zu / %zu"
 msgstr "Przetworzono pliki: %zu/%zu"
 
 #, c-format
@@ -3016,7 +3026,7 @@ msgid " Total: %s "
 msgstr " Razem: %s "
 
 #, c-format
-msgid " Total: %s/%s "
+msgid " Total: %s / %s "
 msgstr " Razem: %s/%s "
 
 msgid "Source"
@@ -3068,7 +3078,7 @@ msgstr "&Drzewo"
 msgid "&Listing format..."
 msgstr "&Format wyświetlania…"
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr "Porządek s&ortowania…"
 
 msgid "&Filter..."
@@ -3083,7 +3093,7 @@ msgstr "Połączenie FT&P…"
 msgid "S&hell link..."
 msgstr "Połączenie po po&włoce…"
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr "Połączenie SF&TP…"
 
 msgid "Paneli&ze"
@@ -3471,7 +3481,7 @@ msgid "No space information"
 msgstr "Brak informacji o miejscu"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
 msgstr "Wolne miejsce: %s/%s (%d%%)"
 
 #, c-format
@@ -3719,6 +3729,9 @@ msgstr "Wybierz"
 
 msgid "Unselect"
 msgstr "Odznacz"
+
+msgid "Filter"
+msgstr "Filtr"
 
 msgid "Do you really want to execute?"
 msgstr "Na pewno wykonać?"
@@ -4159,6 +4172,10 @@ msgstr ""
 "Nieoczekiwany koniec pliku\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Niespójne archiwum tar"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4290,6 +4307,21 @@ msgstr "ftpfs: połączenie z serwerem się nie powiodło: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Oczekiwanie na ponowienie… %d (Ctrl-G anuluje)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr "ftpfs: nie można wykonać tłumaczenia adresu na nazwę: %s"
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr "ftpfs: próba ponownego połączenia z serwerem, %u. próba"
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr "ftpfs: nie można uzyskać nazwy gniazda: %s"
+
+msgid "ftpfs: could not reconnect to server"
+msgstr "ftpfs: nie można ponownie połączyć się z serwerem"
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: nieprawidłowa rodzina adresów"
