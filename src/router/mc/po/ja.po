@@ -12,8 +12,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Takuro Onoue <kusanaginoturugi@gmail.com>, 2021\n"
 "Language-Team: Japanese (http://www.transifex.com/mc/mc/language/ja/)\n"
@@ -513,6 +513,9 @@ msgstr ""
 msgid ""
 "Unexpected error in select() reading data from a child process:\n"
 "%s"
+msgstr ""
+
+msgid "Cannot close pipe descriptor (p == NULL)"
 msgstr ""
 
 #, c-format
@@ -1138,7 +1141,7 @@ msgstr ""
 msgid "Run sort"
 msgstr "並び替えの実行"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 
 msgid "Sort"
@@ -2279,12 +2282,6 @@ msgstr "ファイルはタグ付られています。cd しますか?"
 msgid "Cannot change directory"
 msgstr "ディレクトリを変更できません"
 
-msgid "Filter"
-msgstr "フィルター"
-
-msgid "Set expression for filtering filenames"
-msgstr ""
-
 #, c-format
 msgid "Link %s to:"
 msgstr ""
@@ -2426,13 +2423,20 @@ msgid "Pipe failed"
 msgstr "パイプの受け渡しに失敗しました"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr ""
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
 
@@ -2442,8 +2446,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
 
 msgid "DialogTitle|Copy"
@@ -2678,6 +2682,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(stalled)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "保存(&K)"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2689,12 +2702,6 @@ msgid ""
 "Cannot close target file \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "ファイルを完全に取得できませんでした。保存しますか?"
-
-msgid "&Keep"
-msgstr "保存(&K)"
 
 #, c-format
 msgid ""
@@ -2802,7 +2809,7 @@ msgid "Background process: File exists"
 msgstr ""
 
 #, c-format
-msgid "Files processed: %zu/%zu"
+msgid "Files processed: %zu / %zu"
 msgstr ""
 
 #, c-format
@@ -2830,7 +2837,7 @@ msgid " Total: %s "
 msgstr ""
 
 #, c-format
-msgid " Total: %s/%s "
+msgid " Total: %s / %s "
 msgstr ""
 
 msgid "Source"
@@ -2882,7 +2889,7 @@ msgstr "ツリー(&T)"
 msgid "&Listing format..."
 msgstr ""
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -2897,7 +2904,7 @@ msgstr "FTP リンク(&P)..."
 msgid "S&hell link..."
 msgstr ""
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3274,8 +3281,8 @@ msgid "No space information"
 msgstr "空き領域情報がありません"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "空き容量: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3516,6 +3523,9 @@ msgstr "選択"
 
 msgid "Unselect"
 msgstr "選択解除"
+
+msgid "Filter"
+msgstr "フィルター"
 
 msgid "Do you really want to execute?"
 msgstr "本当に実行しますか?"
@@ -3932,6 +3942,10 @@ msgstr ""
 "予期しない EOF です\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "tar アーカイブに不整合"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4057,6 +4071,21 @@ msgstr "ftpfs: サーバへの接続に失敗しました: %s"
 
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
 msgstr ""
 
 msgid "ftpfs: invalid address family"

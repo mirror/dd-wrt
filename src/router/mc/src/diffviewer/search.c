@@ -6,7 +6,7 @@
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2010.
-   Andrew Borodin <aborodin@vmail.ru>, 2012
+   Andrew Borodin <aborodin@vmail.ru>, 2012-2022
 
    This file is part of the Midnight Commander.
 
@@ -101,9 +101,10 @@ mcdiffview_dialog_search (WDiff * dview)
             /* *INDENT-ON* */
         };
 
+        WRect r = { -1, -1, 0, 58 };
+
         quick_dialog_t qdlg = {
-            -1, -1, 58,
-            N_("Search"), "[Input Line Keys]",
+            r, N_("Search"), "[Input Line Keys]",
             quick_widgets, NULL, NULL
         };
 
@@ -112,7 +113,7 @@ mcdiffview_dialog_search (WDiff * dview)
 
     g_strfreev (list_of_types);
 
-    if ((qd_result == B_CANCEL) || (exp == NULL) || (exp[0] == '\0'))
+    if (qd_result == B_CANCEL || exp[0] == '\0')
     {
         g_free (exp);
         return FALSE;

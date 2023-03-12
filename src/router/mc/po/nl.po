@@ -13,8 +13,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Richard E. van der Luit <nippur@fedoraproject.org>, "
 "2012-2015,2017,2020\n"
@@ -533,6 +533,9 @@ msgid ""
 msgstr ""
 "Onverwachte fout in select() reading data van een child process:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1206,8 +1209,8 @@ msgstr "U moet eerst een blok selecteren"
 msgid "Run sort"
 msgstr "Sorteren"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Geef sorteeropties (zie 'man'-pagina) gescheiden door spaties:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "Sorteren"
@@ -2368,12 +2371,6 @@ msgstr "Bestanden gemarkeerd, veranderen van map?"
 msgid "Cannot change directory"
 msgstr "Veranderen van map mislukt"
 
-msgid "Filter"
-msgstr "Filter"
-
-msgid "Set expression for filtering filenames"
-msgstr " Zet expressie voor het filteren van bestandsnamen"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "%s verbinden met:"
@@ -2521,18 +2518,22 @@ msgid "Pipe failed"
 msgstr "Pijp mislukt"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s bestandsfout "
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Het formaat van het %smc.ext bestand is veranderd met versie 3.0. De "
-"installatie lijkt mislukt. Haal een nieuwe versie van het Midnight Commander-"
-"pakket op."
 
 #, c-format
 msgid "%s file error"
@@ -2540,12 +2541,9 @@ msgstr "%s bestandsfout"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"De format van het %s bestand is veranderd met versie 3.0. U kunt de format "
-"bekijken in %smc.ext of dat bestand zelf gebruiken als voorbeeld van hoe u "
-"het nu moet schrijven."
 
 msgid "DialogTitle|Copy"
 msgstr "Kopiëren"
@@ -2840,6 +2838,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(geblokkeerd)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "&Behouden"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2855,12 +2862,6 @@ msgid ""
 msgstr ""
 "Doelbestand \"%s\" kan niet gesloten worden \n"
 "%s "
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Onvolledige bestand opgehaald. Wilt u het behouden?"
-
-msgid "&Keep"
-msgstr "&Behouden"
 
 #, c-format
 msgid ""
@@ -2980,8 +2981,8 @@ msgid "Background process: File exists"
 msgstr "Achtergrond proces: Bestand bestaat"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Verwerkte bestanden: %zu van %zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3008,8 +3009,8 @@ msgid " Total: %s "
 msgstr " Totaal: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " Totaal: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Bron"
@@ -3060,7 +3061,7 @@ msgstr "&Boom"
 msgid "&Listing format..."
 msgstr "&Lijstformaat..."
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3075,7 +3076,7 @@ msgstr "FT&P-Verbinding...      "
 msgid "S&hell link..."
 msgstr "S&hellverbinding...    "
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3458,8 +3459,8 @@ msgid "No space information"
 msgstr "Geen informatie over schijfruimte"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Vrij ruimte: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3702,6 +3703,9 @@ msgstr "Selectie maken"
 
 msgid "Unselect"
 msgstr "Selectie wissen"
+
+msgid "Filter"
+msgstr "Filter"
 
 msgid "Do you really want to execute?"
 msgstr "Wilt u die opdracht echt uitvoeren? "
@@ -4139,6 +4143,10 @@ msgstr ""
 "Onverwacht einde van bestand in\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Inconsistent tar-archief"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4266,6 +4274,21 @@ msgstr "ftpfs: verbinding met server mislukt: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Aan het wachten op nieuwe poging... %d (Control-C om af te breken)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: Ongeldige adres familie"

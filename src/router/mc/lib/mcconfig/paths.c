@@ -64,12 +64,12 @@ static const struct
     { &mc_config_str, MC_HOTLIST_FILE },
     { &mc_config_str, GLOBAL_KEYMAP_FILE },
     { &mc_config_str, MC_USERMENU_FILE },
-    { &mc_config_str, EDIT_HOME_SYNTAX_FILE },
     { &mc_config_str, EDIT_HOME_MENU },
     { &mc_config_str, MC_PANELS_FILE },
 
     /* User should move this file with applying some changes in file */
-    { &mc_config_str, MC_FILEBIND_FILE },
+    { &mc_config_str, MC_EXT_FILE },
+    { &mc_config_str, MC_EXT_OLD_FILE },
 
     /* data */
     { &mc_data_str, MC_SKINS_DIR },
@@ -81,6 +81,7 @@ static const struct
     { &mc_data_str, MC_EXTFS_DIR },
     { &mc_data_str, MC_HISTORY_FILE },
     { &mc_data_str, MC_FILEPOS_FILE },
+    { &mc_data_str, EDIT_SYNTAX_FILE },
     { &mc_data_str, EDIT_HOME_CLIP_FILE },
     { &mc_data_str, MC_MACRO_FILE },
 

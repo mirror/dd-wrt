@@ -79,6 +79,7 @@ struct vfs_s_entry
     struct vfs_s_inode *dir;    /* Directory we are in, i.e. our parent */
     char *name;                 /* Name of this entry */
     struct vfs_s_inode *ino;    /* ... and its inode */
+    ssize_t leading_spaces;     /* number of leading spases in the file name */
 };
 
 /* Single virtual file - inode */
@@ -139,7 +140,7 @@ struct vfs_s_subclass
     struct vfs_s_entry *(*find_entry) (struct vfs_class * me,
                                        struct vfs_s_inode * root,
                                        const char *path, int follow, int flags);
-    int (*dir_load) (struct vfs_class * me, struct vfs_s_inode * ino, char *path);
+    int (*dir_load) (struct vfs_class * me, struct vfs_s_inode * ino, const char *path);
     gboolean (*dir_uptodate) (struct vfs_class * me, struct vfs_s_inode * ino);
     int (*file_store) (struct vfs_class * me, vfs_file_handler_t * fh, char *path, char *localname);
 
@@ -197,7 +198,7 @@ void vfs_s_normalize_filename_leading_spaces (struct vfs_s_inode *root_inode, si
 static inline void
 vfs_s_store_filename_leading_spaces (struct vfs_s_entry *entry, size_t position)
 {
-    entry->ino->data_offset = (off_t) position;
+    entry->leading_spaces = (ssize_t) position;
 }
 
 #endif

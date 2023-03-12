@@ -6,7 +6,7 @@
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2013
-   Andrew Borodin <aborodin@vmail.ru>, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2013-2022
 
    This file is part of the Midnight Commander.
 
@@ -89,16 +89,16 @@ info_box (WInfo * info)
     tty_set_normal_attrs ();
     tty_setcolor (NORMAL_COLOR);
     widget_erase (w);
-    tty_draw_box (w->y, w->x, w->lines, w->cols, FALSE);
+    tty_draw_box (w->rect.y, w->rect.x, w->rect.lines, w->rect.cols, FALSE);
 
-    widget_gotoyx (w, 0, (w->cols - len - 2) / 2);
+    widget_gotoyx (w, 0, (w->rect.cols - len - 2) / 2);
     tty_printf (" %s ", title);
 
     widget_gotoyx (w, 2, 0);
     tty_print_alt_char (ACS_LTEE, FALSE);
-    widget_gotoyx (w, 2, w->cols - 1);
+    widget_gotoyx (w, 2, w->rect.cols - 1);
     tty_print_alt_char (ACS_RTEE, FALSE);
-    tty_draw_hline (w->y + 2, w->x + 1, ACS_HLINE, w->cols - 2);
+    tty_draw_hline (w->rect.y + 2, w->rect.x + 1, ACS_HLINE, w->rect.cols - 2);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -106,7 +106,7 @@ info_box (WInfo * info)
 static void
 info_show_info (WInfo * info)
 {
-    Widget *w = WIDGET (info);
+    const WRect *w = &CONST_WIDGET (info)->rect;
     static int i18n_adjust = 0;
     static const char *file_label;
     GString *buff;
@@ -163,11 +163,11 @@ info_show_info (WInfo * info)
             (myfs_stats.nfree == (uintmax_t) (-1) && myfs_stats.nodes == (uintmax_t) (-1)))
             tty_print_string (_("No node information"));
         else if (myfs_stats.nfree == (uintmax_t) (-1))
-            tty_printf ("%s -/%" PRIuMAX, _("Free nodes:"), myfs_stats.nodes);
+            tty_printf ("%s - / %" PRIuMAX, _("Free nodes:"), myfs_stats.nodes);
         else if (myfs_stats.nodes == (uintmax_t) (-1))
-            tty_printf ("%s %" PRIuMAX "/-", _("Free nodes:"), myfs_stats.nfree);
+            tty_printf ("%s %" PRIuMAX " / -", _("Free nodes:"), myfs_stats.nfree);
         else
-            tty_printf ("%s %" PRIuMAX "/%" PRIuMAX " (%d%%)",
+            tty_printf ("%s %" PRIuMAX " / %" PRIuMAX " (%d%%)",
                         _("Free nodes:"),
                         myfs_stats.nfree, myfs_stats.nodes,
                         myfs_stats.nodes == 0 ? 0 :
@@ -183,7 +183,7 @@ info_show_info (WInfo * info)
 
             size_trunc_len (buffer1, 5, myfs_stats.avail, 1, panels_options.kilobyte_si);
             size_trunc_len (buffer2, 5, myfs_stats.total, 1, panels_options.kilobyte_si);
-            tty_printf (_("Free space: %s/%s (%d%%)"), buffer1, buffer2,
+            tty_printf (_("Free space: %s / %s (%d%%)"), buffer1, buffer2,
                         myfs_stats.total == 0 ? 0 :
                         (int) (100 * (long double) myfs_stats.avail / myfs_stats.total));
         }
@@ -362,12 +362,13 @@ info_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
 WInfo *
 info_new (int y, int x, int lines, int cols)
 {
+    WRect r = { y, x, lines, cols };
     WInfo *info;
     Widget *w;
 
     info = g_new (struct WInfo, 1);
     w = WIDGET (info);
-    widget_init (w, y, x, lines, cols, info_callback, NULL);
+    widget_init (w, &r, info_callback, NULL);
 
     return info;
 }

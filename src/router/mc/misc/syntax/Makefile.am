@@ -69,6 +69,7 @@ SYNTAXFILES =			\
 	php.syntax		\
 	po.syntax		\
 	povray.syntax		\
+	privoxy.syntax		\
 	procmail.syntax		\
 	properties.syntax	\
 	protobuf.syntax		\
@@ -89,6 +90,7 @@ SYNTAXFILES =			\
 	syntax.syntax		\
 	tcl.syntax		\
 	texinfo.syntax		\
+	toml.syntax		\
 	ts.syntax		\
 	tt.syntax		\
 	unknown.syntax		\

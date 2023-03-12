@@ -8,8 +8,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Iñigo Salvador Azurmendi <xalba@euskalnet.net>, "
 "2011,2015-2019\n"
@@ -524,6 +524,9 @@ msgid ""
 msgstr ""
 "Ustekabeko errorea select()-ean ume prozesutik datuak irakurtzean:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1202,10 +1205,8 @@ msgstr "Aurrena testu bloke bat nabarmendu behar duzu"
 msgid "Run sort"
 msgstr "Exekutatu \"sort\""
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-"Sartu sailkatzeko aukerak (begiratu eskuliburu (\"man\") orrialdea) zuriune "
-"bitartez banatuta:"
 
 msgid "Sort"
 msgstr "Sailkatu"
@@ -2361,12 +2362,6 @@ msgstr "Fitxategiak hautatuta, direktoria aldatu nahi?"
 msgid "Cannot change directory"
 msgstr "Direktorioa ezin aldatu"
 
-msgid "Filter"
-msgstr "Iragazi"
-
-msgid "Set expression for filtering filenames"
-msgstr "Ezarri fitxategi izenak iragazteko adierazpena"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Estekatu %s hona:"
@@ -2514,18 +2509,22 @@ msgid "Pipe failed"
 msgstr "Hodiak huts egin du"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s fitxategi akatsa"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"%smc.ext fitxategiaren formatua aldatu egin da 3.0 bertsioarekin. "
-"Instalatzeak huts egin duela diruri. Mesedez eskuratu kopia berri bat "
-"Midnight Commander paketetik."
 
 #, c-format
 msgid "%s file error"
@@ -2533,12 +2532,9 @@ msgstr "%s fitxategi akatsa"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"%s fitxategiaren formatua aldatu egin da 3.0 bertsioarekin. %smc.ext "
-"fitxategitik kopiatu edo fitxategi hori nola idatzi adibide gisa erabili "
-"nahi izan dezakezu."
 
 msgid "DialogTitle|Copy"
 msgstr "Kopiatu"
@@ -2834,6 +2830,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(trabatuta)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "&Gorde"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2849,12 +2854,6 @@ msgid ""
 msgstr ""
 "Ezin da itxi \"%s\" helburu fitxategia\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Osatu gabeko fitxategia eskuratu da. Mantendu?"
-
-msgid "&Keep"
-msgstr "&Gorde"
 
 #, c-format
 msgid ""
@@ -2974,8 +2973,8 @@ msgid "Background process: File exists"
 msgstr "Hondoko prozesua: Fitxategia existitzen da"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Prozesatutako fitxategiak: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3002,8 +3001,8 @@ msgid " Total: %s "
 msgstr " Guztira: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " Guztira: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Iturburua"
@@ -3054,7 +3053,7 @@ msgstr "Zu&haitza"
 msgid "&Listing format..."
 msgstr "&Zerrenda formatua"
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3069,7 +3068,7 @@ msgstr "FT&P esteka..."
 msgid "S&hell link..."
 msgstr "S&hell esteka..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3452,8 +3451,8 @@ msgid "No space information"
 msgstr "Ez dago leku-informaziorik"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Leku askea: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3696,6 +3695,9 @@ msgstr "Hautatu"
 
 msgid "Unselect"
 msgstr "Hautua kendu"
+
+msgid "Filter"
+msgstr "Iragazi"
 
 msgid "Do you really want to execute?"
 msgstr "Beneta exekutatu nahi duzu?"
@@ -4128,6 +4130,10 @@ msgstr ""
 "Ustekabeko fitxategi bukaera\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "tar artxibo inkoherentea"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4255,6 +4261,21 @@ msgstr "ftpfs: zerbitzarirako konexioak huts egin du: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Berriz saiatzeko itxoiten... %d (Ctrl-G uzteko)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: baliogabeko helbide familia"

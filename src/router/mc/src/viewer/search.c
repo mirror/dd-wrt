@@ -14,7 +14,7 @@
    Pavel Machek, 1998
    Roland Illig <roland.illig@gmx.de>, 2004, 2005
    Slava Zanko <slavazanko@google.com>, 2009
-   Andrew Borodin <aborodin@vmail.ru>, 2009, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2009-2022
    Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
@@ -97,12 +97,15 @@ mcview_search_status_update_cb (status_msg_t * sm)
 
     if (vsm->first)
     {
-        int wd_width;
         Widget *lw = WIDGET (ssm->label);
+        WRect r;
 
-        wd_width = MAX (wd->cols, lw->cols + 6);
-        widget_set_size (wd, wd->y, wd->x, wd->lines, wd_width);
-        widget_set_size (lw, lw->y, wd->x + (wd->cols - lw->cols) / 2, lw->lines, lw->cols);
+        r = wd->rect;
+        r.cols = MAX (r.cols, lw->rect.cols + 6);
+        widget_set_size_rect (wd, &r);
+        r = lw->rect;
+        r.x = wd->rect.x + (wd->rect.cols - r.cols) / 2;
+        widget_set_size_rect (lw, &r);
         vsm->first = FALSE;
     }
 
@@ -152,9 +155,9 @@ mcview_find (mcview_search_status_msg_t * ssm, off_t search_start, off_t search_
             view->search_nroff_seq->index = search_start;
             mcview_nroff_seq_info (view->search_nroff_seq);
 
-            if (search_end > search_start + (off_t) view->search->original_len
+            if (search_end > search_start + (off_t) view->search->original.str->len
                 && mc_search_is_fixed_search_str (view->search))
-                search_end = search_start + view->search->original_len;
+                search_end = search_start + view->search->original.str->len;
 
             ok = mc_search_run (view->search, (void *) ssm, search_start, search_end, len);
             if (ok && view->search->normal_offset == search_start)
@@ -406,7 +409,7 @@ mcview_do_search (WView * view, off_t want_search_start)
         if (view->growbuf_in_use)
             growbufsize = mcview_growbuf_filesize (view);
         else
-            growbufsize = view->search->original_len;
+            growbufsize = view->search->original.str->len;
 
         if (mcview_find (&vsm, search_start, mcview_get_filesize (view), &match_len))
         {
@@ -422,7 +425,7 @@ mcview_do_search (WView * view, off_t want_search_start)
         if (view->search->error != MC_SEARCH_E_NOTFOUND)
             break;
 
-        search_start = growbufsize - view->search->original_len;
+        search_start = growbufsize - view->search->original.str->len;
     }
     while (search_start > 0 && mcview_may_still_grow (view));
 

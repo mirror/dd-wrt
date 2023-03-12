@@ -107,15 +107,20 @@ typedef struct mc_search_struct
 
     /* private data */
 
-    /* prepared conditions */
-    GPtrArray *conditions;
+    struct
+    {
+        GPtrArray *conditions;
+        gboolean result;
+    } prepared;
 
     /* original search string */
-    gchar *original;
-    gsize original_len;
+    struct
+    {
+        GString *str;
 #ifdef HAVE_CHARSET
-    gchar *original_charset;
+        gchar *charset;
 #endif
+    } original;
 
     /* error code after search */
     mc_search_error_t error;

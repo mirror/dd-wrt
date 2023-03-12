@@ -6,7 +6,7 @@
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2013
-   Andrew Borodin <aborodin@vmail.ru>, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2013-2022
 
    This file is part of the Midnight Commander.
 
@@ -117,6 +117,20 @@ key_collate (const char *t1, const char *t2)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static inline int
+compare_by_names (file_entry_t * a, file_entry_t * b)
+{
+    /* create key if does not exist, key will be freed after sorting */
+    if (a->sort_key == NULL)
+        a->sort_key = str_create_key_for_filename (a->fname->str, case_sensitive);
+    if (b->sort_key == NULL)
+        b->sort_key = str_create_key_for_filename (b->fname->str, case_sensitive);
+
+    return key_collate (a->sort_key, b->sort_key);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /**
  * clear keys, should be call after sorting is finished.
  */
@@ -145,10 +159,11 @@ clean_sort_keys (dir_list * list, int start, int count)
  */
 
 static gboolean
-handle_dirent (struct vfs_dirent *dp, const char *filter, struct stat *buf1, gboolean * link_to_dir,
-               gboolean * stale_link)
+handle_dirent (struct vfs_dirent *dp, const file_filter_t * filter, struct stat *buf1,
+               gboolean * link_to_dir, gboolean * stale_link)
 {
     vfs_path_t *vpath;
+    gboolean ok = TRUE;
 
     if (DIR_IS_DOT (dp->d_name) || DIR_IS_DOTDOT (dp->d_name))
         return FALSE;
@@ -176,8 +191,15 @@ handle_dirent (struct vfs_dirent *dp, const char *filter, struct stat *buf1, gbo
 
     vfs_path_free (vpath, TRUE);
 
-    return (S_ISDIR (buf1->st_mode) || *link_to_dir || filter == NULL
-            || mc_search (filter, NULL, dp->d_name, MC_SEARCH_T_GLOB));
+    if (filter != NULL && filter->handler != NULL)
+    {
+        gboolean files_only = (filter->flags & SELECT_FILES_ONLY) != 0;
+
+        ok = ((S_ISDIR (buf1->st_mode) || *link_to_dir) && files_only)
+            || mc_search_run (filter->handler, dp->d_name, 0, strlen (dp->d_name), NULL);
+    }
+
+    return ok;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -328,15 +350,7 @@ sort_name (file_entry_t * a, file_entry_t * b)
     int bd = MY_ISDIR (b);
 
     if (ad == bd || panels_options.mix_all_files)
-    {
-        /* create key if does not exist, key will be freed after sorting */
-        if (a->sort_key == NULL)
-            a->sort_key = str_create_key_for_filename (a->fname->str, case_sensitive);
-        if (b->sort_key == NULL)
-            b->sort_key = str_create_key_for_filename (b->fname->str, case_sensitive);
-
-        return key_collate (a->sort_key, b->sort_key);
-    }
+        return compare_by_names (a, b);
 
     return bd - ad;
 }
@@ -350,7 +364,15 @@ sort_vers (file_entry_t * a, file_entry_t * b)
     int bd = MY_ISDIR (b);
 
     if (ad == bd || panels_options.mix_all_files)
-        return filevercmp (a->fname->str, b->fname->str) * reverse;
+    {
+        int result;
+
+        result = filevercmp (a->fname->str, b->fname->str);
+        if (result != 0)
+            return result * reverse;
+
+        return compare_by_names (a, b);
+    }
 
     return bd - ad;
 }
@@ -376,7 +398,7 @@ sort_ext (file_entry_t * a, file_entry_t * b)
         if (r != 0)
             return r * reverse;
 
-        return sort_name (a, b);
+        return compare_by_names (a, b);
     }
 
     return bd - ad;
@@ -397,7 +419,7 @@ sort_time (file_entry_t * a, file_entry_t * b)
         if (result != 0)
             return result * reverse;
 
-        return sort_name (a, b);
+        return compare_by_names (a, b);
     }
 
     return bd - ad;
@@ -418,7 +440,7 @@ sort_ctime (file_entry_t * a, file_entry_t * b)
         if (result != 0)
             return result * reverse;
 
-        return sort_name (a, b);
+        return compare_by_names (a, b);
     }
 
     return bd - ad;
@@ -439,7 +461,7 @@ sort_atime (file_entry_t * a, file_entry_t * b)
         if (result != 0)
             return result * reverse;
 
-        return sort_name (a, b);
+        return compare_by_names (a, b);
     }
 
     return bd - ad;
@@ -474,7 +496,7 @@ sort_size (file_entry_t * a, file_entry_t * b)
         if (result != 0)
             return result * reverse;
 
-        return sort_name (a, b);
+        return compare_by_names (a, b);
     }
 
     return bd - ad;
@@ -620,7 +642,7 @@ handle_path (const char *path, struct stat * buf1, gboolean * link_to_dir, gbool
 
 gboolean
 dir_list_load (dir_list * list, const vfs_path_t * vpath, GCompareFunc sort,
-               const dir_sort_options_t * sort_op, const char *filter)
+               const dir_sort_options_t * sort_op, const file_filter_t * filter)
 {
     DIR *dirp;
     struct vfs_dirent *dp;
@@ -693,7 +715,7 @@ if_link_is_exe (const vfs_path_t * full_name_vpath, const file_entry_t * file)
 
 gboolean
 dir_list_reload (dir_list * list, const vfs_path_t * vpath, GCompareFunc sort,
-                 const dir_sort_options_t * sort_op, const char *filter)
+                 const dir_sort_options_t * sort_op, const file_filter_t * filter)
 {
     DIR *dirp;
     struct vfs_dirent *dp;
@@ -811,6 +833,17 @@ dir_list_reload (dir_list * list, const vfs_path_t * vpath, GCompareFunc sort,
     dir_list_free_list (&dir_copy);
 
     return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+file_filter_clear (file_filter_t * filter)
+{
+    MC_PTR_FREE (filter->value);
+    mc_search_free (filter->handler);
+    filter->handler = NULL;
+    /* keep filter->flags */
 }
 
 /* --------------------------------------------------------------------------------------------- */

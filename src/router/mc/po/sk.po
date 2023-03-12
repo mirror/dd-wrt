@@ -14,8 +14,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: hualahyja, 2019\n"
 "Language-Team: Slovak (http://www.transifex.com/mc/mc/language/sk/)\n"
@@ -528,6 +528,9 @@ msgid ""
 msgstr ""
 "Neočakávaná chyba v select() pri čítaní dát z procesu potomka:\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1205,10 +1208,8 @@ msgstr "Musíte zvýrazniť blok textu"
 msgid "Run sort"
 msgstr "Spustiť zoradenie"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-"Zadajte možnosti zoradenia (pozri manuálovú stránku) oddelené netlačiteľnými "
-"znakmi:"
 
 msgid "Sort"
 msgstr "Zoradiť"
@@ -2362,12 +2363,6 @@ msgstr "Súbory označené, chcete cd?"
 msgid "Cannot change directory"
 msgstr "Nepodarilo sa zmeniť adresár"
 
-msgid "Filter"
-msgstr "Filter"
-
-msgid "Set expression for filtering filenames"
-msgstr "Nastaviť výraz na filtrovanie názvov súborov"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Odkazovať %s na:"
@@ -2515,17 +2510,22 @@ msgid "Pipe failed"
 msgstr "Pipe zlyhalo"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s chyba v súbore"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Formát súboru %smc.ext sa vo verzii 3.0 zmenil. Zdá sa, že inštalácia "
-"zlyhala. Prosím, stiahnite si novú kópiu z balíka Midnight Commander."
 
 #, c-format
 msgid "%s file error"
@@ -2533,12 +2533,9 @@ msgstr "chýba súboru %s"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"Formát súboru %smc.ext sa vo verzii 3.0 zmenil. Mali by ste si ho buď "
-"skopírovať z %smc.ext alebo použiť tento súbor ako príklad na jeho "
-"vytvorenie."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Kopírovať"
@@ -2829,6 +2826,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(zastavený)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "Po&nechať"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2844,12 +2850,6 @@ msgid ""
 msgstr ""
 "Nemožno zatvoriť cieľový súbor „%s“\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Bol získaný neúplný súbor. Ponechať ho?"
-
-msgid "&Keep"
-msgstr "Po&nechať"
 
 #, c-format
 msgid ""
@@ -2969,8 +2969,8 @@ msgid "Background process: File exists"
 msgstr "Proces na pozadí: Súbor už existuje"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "Spracovaných súborov: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -2997,8 +2997,8 @@ msgid " Total: %s "
 msgstr " Celkom: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " Celkom: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "Zdroj"
@@ -3049,7 +3049,7 @@ msgstr "&Strom"
 msgid "&Listing format..."
 msgstr "&Formát výpisu..."
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3064,7 +3064,7 @@ msgstr "&Pripojenie FTP..."
 msgid "S&hell link..."
 msgstr "Pripojenie s&hell..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3451,8 +3451,8 @@ msgid "No space information"
 msgstr "Žiadne informácie o mieste"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "Voľné miesto: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3699,6 +3699,9 @@ msgstr "Vybrať"
 
 msgid "Unselect"
 msgstr "Zrušiť výber"
+
+msgid "Filter"
+msgstr "Filter"
 
 msgid "Do you really want to execute?"
 msgstr "Skutočne chcete spustiť?"
@@ -4132,6 +4135,10 @@ msgstr ""
 "Neočakávaný koniec súboru\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Poškodený archív .tar"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4258,6 +4265,21 @@ msgstr "ftpfs: pripojenie k serveru neúspešné: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "Čaká sa pred opakovaným pokusom... %d (Ctrl-G zruší)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: neplatná rodina adries"

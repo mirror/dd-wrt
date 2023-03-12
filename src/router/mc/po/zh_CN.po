@@ -17,8 +17,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Gurbuzguven <6mehmet6@gmail.com>, 2021\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/mc/mc/language/"
@@ -530,6 +530,9 @@ msgid ""
 msgstr ""
 "使用 select() 从子进程读取数据时发生未知错误：\n"
 "%s"
+
+msgid "Cannot close pipe descriptor (p == NULL)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1205,8 +1208,8 @@ msgstr "您必需先突出显示一个文字块"
 msgid "Run sort"
 msgstr "运行 sort"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "输入排序选项(查看 manpage)用空格分隔: "
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "排序"
@@ -2360,12 +2363,6 @@ msgstr "文件已经标记，要更改目录吗?"
 msgid "Cannot change directory"
 msgstr "无法改变目录"
 
-msgid "Filter"
-msgstr "过滤"
-
-msgid "Set expression for filtering filenames"
-msgstr "设置过滤文件名的表达式"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "链接 %s 到: "
@@ -2513,17 +2510,22 @@ msgid "Pipe failed"
 msgstr "管道失败"
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s 文件错误"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"文件 %smc.ext 的格式在3.0版本时已经被修改。似乎安装有错误。请获取新的"
-"Midnight Commander软件包。"
 
 #, c-format
 msgid "%s file error"
@@ -2531,11 +2533,9 @@ msgstr "%s 文件错误"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
-"%s 文件的格式在 3.0 版中已经改变。您可以或者将 %smc.ext 文件复制过来，或者将"
-"其为作为范本撰写您自己的版本。"
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|复制"
@@ -2827,6 +2827,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(暂停)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "保留(&K)"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2842,12 +2851,6 @@ msgid ""
 msgstr ""
 "无法关闭目标文件“%s”\n"
 "%s"
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "文件没有完整获取。保留它吗?"
-
-msgid "&Keep"
-msgstr "保留(&K)"
 
 #, c-format
 msgid ""
@@ -2967,8 +2970,8 @@ msgid "Background process: File exists"
 msgstr "后台进程: 文件已存在"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
-msgstr "已处理文件: %zu/%zu"
+msgid "Files processed: %zu / %zu"
+msgstr ""
 
 #, c-format
 msgid "Files processed: %zu"
@@ -2995,8 +2998,8 @@ msgid " Total: %s "
 msgstr " 总共: %s "
 
 #, c-format
-msgid " Total: %s/%s "
-msgstr " 总共: %s/%s "
+msgid " Total: %s / %s "
+msgstr ""
 
 msgid "Source"
 msgstr "来源"
@@ -3047,7 +3050,7 @@ msgstr "树(&T)"
 msgid "&Listing format..."
 msgstr "列表格式(&L)…"
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -3062,7 +3065,7 @@ msgstr "FTP 链接(&P)..."
 msgid "S&hell link..."
 msgstr "S&hell 链接..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3443,8 +3446,8 @@ msgid "No space information"
 msgstr "没有空间信息"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
-msgstr "空余空间: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
+msgstr ""
 
 #, c-format
 msgid "Type:       %s"
@@ -3685,6 +3688,9 @@ msgstr "选择"
 
 msgid "Unselect"
 msgstr "取消选择"
+
+msgid "Filter"
+msgstr "过滤"
 
 msgid "Do you really want to execute?"
 msgstr "您真的要执行吗?"
@@ -4116,6 +4122,10 @@ msgstr ""
 "异常的文件结束\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "不完整的 tar 档案文件"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4242,6 +4252,21 @@ msgstr "ftpfs: 连接服务器失败: %s"
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr "等待重试... %d (Ctrl-G 取消)"
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
+msgstr ""
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs: 无效的地址族"

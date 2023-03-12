@@ -149,7 +149,7 @@ gboolean should_read_new_subshell_prompt;
 #define FORK_FAILURE 69         /* Arbitrary */
 
 /* Length of the buffer for all I/O with the subshell */
-#define PTY_BUFFER_SIZE BUF_SMALL       /* Arbitrary; but keep it >= 80 */
+#define PTY_BUFFER_SIZE BUF_MEDIUM      /* Arbitrary; but keep it >= 80 */
 
 /*** file scope type declarations ****************************************************************/
 
@@ -728,7 +728,7 @@ set_prompt_string (void)
         return;
 
     if (subshell_prompt_temp_buffer->len != 0)
-        g_string_assign (subshell_prompt, subshell_prompt_temp_buffer->str);
+        mc_g_string_copy (subshell_prompt, subshell_prompt_temp_buffer);
 
     setup_cmdline ();
 }
@@ -748,8 +748,9 @@ feed_subshell (int how, gboolean fail_on_error)
 
     should_read_new_subshell_prompt = FALSE;
 
-    /* we wait up to 1 second if fail_on_error, forever otherwise */
-    wtime.tv_sec = 1;
+    /* have more than enough time to run subshell:
+       wait up to 10 second if fail_on_error, forever otherwise */
+    wtime.tv_sec = 10;
     wtime.tv_usec = 0;
     wptr = fail_on_error ? &wtime : NULL;
 
@@ -1262,6 +1263,37 @@ subshell_name_quote (const char *s)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/**
+ * This function checks the pipe from which we receive data about the current working directory.
+ * If there is any data waiting, we clear it.
+ */
+
+static void
+clear_cwd_pipe (void)
+{
+    fd_set read_set;
+    struct timeval wtime = { 0, 0 };
+    int maxfdp;
+
+    FD_ZERO (&read_set);
+    FD_SET (subshell_pipe[READ], &read_set);
+    maxfdp = subshell_pipe[READ];
+
+    if (select (maxfdp + 1, &read_set, NULL, NULL, &wtime) > 0
+        && FD_ISSET (subshell_pipe[READ], &read_set))
+    {
+        if (read (subshell_pipe[READ], subshell_cwd, sizeof (subshell_cwd)) <= 0)
+        {
+            tcsetattr (STDOUT_FILENO, TCSANOW, &shell_mode);
+            fprintf (stderr, "read (subshell_pipe[READ]...): %s\r\n", unix_error_string (errno));
+            exit (EXIT_FAILURE);
+        }
+
+        synchronize ();
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1431,21 +1463,23 @@ invoke_subshell (const char *command, int how, vfs_path_t ** new_dir_vpath)
 
             if (use_persistent_buffer)
             {
+                const char *s;
                 size_t i;
                 int pos;
 
+                s = input_get_ctext (cmdline);
+
                 /* Check to make sure there are no non text characters in the command buffer,
                  * such as tab, or newline, as this could cause problems. */
-                for (i = 0; cmdline->buffer[i] != '\0'; i++)
-                    if ((unsigned char) cmdline->buffer[i] < 32
-                        || (unsigned char) cmdline->buffer[i] == 127)
-                        cmdline->buffer[i] = ' ';
+                for (i = 0; i < cmdline->buffer->len; i++)
+                    if ((unsigned char) s[i] < 32 || (unsigned char) s[i] == 127)
+                        g_string_overwrite_len (cmdline->buffer, i, " ", 1);
 
                 /* Write the command buffer to the subshell. */
-                write_all (mc_global.tty.subshell_pty, cmdline->buffer, strlen (cmdline->buffer));
+                write_all (mc_global.tty.subshell_pty, s, cmdline->buffer->len);
 
                 /* Put the cursor in the correct place in the subshell. */
-                pos = str_length (cmdline->buffer) - cmdline->point;
+                pos = str_length (s) - cmdline->point;
                 for (i = 0; i < (size_t) pos; i++)
                     write_all (mc_global.tty.subshell_pty, ESC_STR "[D", 3);
             }
@@ -1457,7 +1491,9 @@ invoke_subshell (const char *command, int how, vfs_path_t ** new_dir_vpath)
         /* data is there, but only if we are using one of the shells that */
         /* doesn't support keeping command buffer contents, OR if there was */
         /* some sort of error. */
-        if (!use_persistent_buffer)
+        if (use_persistent_buffer)
+            clear_cwd_pipe ();
+        else
         {
             /* We don't need to call feed_subshell here if we are using fish, because of a
              * quirk in the behavior of that particular shell. */

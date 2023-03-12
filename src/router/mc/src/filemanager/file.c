@@ -11,7 +11,7 @@
    Jakub Jelinek, 1995, 1996
    Norbert Warmuth, 1997
    Pavel Machek, 1998
-   Andrew Borodin <aborodin@vmail.ru>, 2011-2014
+   Andrew Borodin <aborodin@vmail.ru>, 2011-2022
 
    The copy code was based in GNU's cp, and was written by:
    Torbjorn Granlund, David MacKenzie, and Jim Meyering.
@@ -121,9 +121,11 @@ struct link
 /* Status of the destination file */
 typedef enum
 {
-    DEST_NONE = 0,              /* Not created */
-    DEST_SHORT = 1,             /* Created, not fully copied */
-    DEST_FULL = 2               /* Created, fully copied */
+    DEST_NONE = 0,              /**< Not created */
+    DEST_SHORT_QUERY,           /**< Created, not fully copied, query to do */
+    DEST_SHORT_KEEP,            /**< Created, not fully copied, keep it */
+    DEST_SHORT_DELETE,          /**< Created, not fully copied, delete it */
+    DEST_FULL                   /**< Created, fully copied */
 } dest_status_t;
 
 /* Status of hard link creation */
@@ -206,28 +208,36 @@ dirsize_status_locate_buttons (dirsize_status_msg_t * dsm)
     status_msg_t *sm = STATUS_MSG (dsm);
     Widget *wd = WIDGET (sm->dlg);
     int y, x;
+    WRect r;
 
-    y = wd->y + 5;
-    x = wd->x;
+    y = wd->rect.y + 5;
+    x = wd->rect.x;
 
     if (!dsm->allow_skip)
     {
         /* single button: "Abort" */
-        x += (wd->cols - dsm->abort_button->cols) / 2;
-        widget_set_size (dsm->abort_button, y, x,
-                         dsm->abort_button->lines, dsm->abort_button->cols);
+        x += (wd->rect.cols - dsm->abort_button->rect.cols) / 2;
+        r = dsm->abort_button->rect;
+        r.y = y;
+        r.x = x;
+        widget_set_size_rect (dsm->abort_button, &r);
     }
     else
     {
         /* two buttons: "Abort" and "Skip" */
         int cols;
 
-        cols = dsm->abort_button->cols + dsm->skip_button->cols + 1;
-        x += (wd->cols - cols) / 2;
-        widget_set_size (dsm->abort_button, y, x, dsm->abort_button->lines,
-                         dsm->abort_button->cols);
-        x += dsm->abort_button->cols + 1;
-        widget_set_size (dsm->skip_button, y, x, dsm->skip_button->lines, dsm->skip_button->cols);
+        cols = dsm->abort_button->rect.cols + dsm->skip_button->rect.cols + 1;
+        x += (wd->rect.cols - cols) / 2;
+        r = dsm->abort_button->rect;
+        r.y = y;
+        r.x = x;
+        widget_set_size_rect (dsm->abort_button, &r);
+        x += dsm->abort_button->rect.cols + 1;
+        r = dsm->skip_button->rect;
+        r.y = y;
+        r.x = x;
+        widget_set_size_rect (dsm->skip_button, &r);
     }
 }
 
@@ -844,10 +854,39 @@ real_warn_same_file (enum OperationMode mode, const char *fmt, const char *a, co
     char *msg;
     int result = 0;
     const char *head_msg;
+    int width_a, width_b, width;
 
     head_msg = mode == Foreground ? MSG_ERROR : _("Background process error");
 
-    msg = g_strdup_printf (fmt, a, b);
+    width_a = str_term_width1 (a);
+    width_b = str_term_width1 (b);
+    width = COLS - 8;
+
+    if (width_a > width)
+    {
+        if (width_b > width)
+        {
+            char *s;
+
+            s = g_strndup (str_trunc (a, width), width);
+            b = str_trunc (b, width);
+            msg = g_strdup_printf (fmt, s, b);
+            g_free (s);
+        }
+        else
+        {
+            a = str_trunc (a, width);
+            msg = g_strdup_printf (fmt, a, b);
+        }
+    }
+    else
+    {
+        if (width_b > width)
+            b = str_trunc (b, width);
+
+        msg = g_strdup_printf (fmt, a, b);
+    }
+
     result = query_dialog (head_msg, msg, D_ERROR, 2, _("&Skip"), _("&Abort"));
     g_free (msg);
     do_refresh ();
@@ -1468,27 +1507,39 @@ recursive_erase (file_op_total_context_t * tctx, file_op_context_t * ctx, const 
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Return -1 on error, 1 if there are no entries besides "." and ".." 
-   in the directory path points to, 0 else. */
-
+/**
+  * Check if directory is empty or not.
+  *
+  * @param vpath directory handler
+  *
+  * @returns -1 on error,
+  *          1 if there are no entries besides "." and ".." in the directory path points to,
+  *          0 else.
+  *
+  * ATTENTION! Be carefull when modifying this function (like commit 25e419ba0886f)!
+  * Some implementations of readdir() in MC VFS (for example, vfs_s_readdir(), whuch is uded
+  * in FISH) don't return "." and ".." entries.
+  */
 static int
 check_dir_is_empty (const vfs_path_t * vpath)
 {
     DIR *dir;
     struct vfs_dirent *d;
-    int i = 0;
+    int i = 1;
 
     dir = mc_opendir (vpath);
     if (dir == NULL)
         return -1;
 
-    /* https://stackoverflow.com/questions/6383584/check-if-a-directory-is-empty-using-c-on-linux */
-    while ((d = mc_readdir (dir)) != NULL)
-        if (++i > 2)
+    for (d = mc_readdir (dir); d != NULL; d = mc_readdir (dir))
+        if (!DIR_IS_DOT (d->d_name) && !DIR_IS_DOTDOT (d->d_name))
+        {
+            i = 0;
             break;
+        }
 
     mc_closedir (dir);
-    return i <= 2 ? 1 : 0;
+    return i;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2459,7 +2510,8 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         goto ret;
     }
 
-    dst_status = DEST_SHORT;    /* file opened, but not fully copied */
+    /* file opened, but not fully copied */
+    dst_status = DEST_SHORT_QUERY;
 
     appending = ctx->do_append;
     ctx->do_append = FALSE;
@@ -2647,15 +2699,36 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
             mc_refresh ();
 
             return_status = check_progress_buttons (ctx);
-
             if (return_status != FILE_CONT)
             {
-                mc_refresh ();
-                goto ret;
+                int query_res;
+
+                query_res =
+                    query_dialog (Q_ ("DialogTitle|Copy"),
+                                  _("Incomplete file was retrieved"), D_ERROR, 3,
+                                  _("&Delete"), _("&Keep"), _("&Continue copy"));
+
+                switch (query_res)
+                {
+                case 0:
+                    /* delete */
+                    dst_status = DEST_SHORT_DELETE;
+                    goto ret;
+
+                case 1:
+                    /* keep */
+                    dst_status = DEST_SHORT_KEEP;
+                    goto ret;
+
+                default:
+                    /* continue copy */
+                    break;
+                }
             }
         }
 
-        dst_status = DEST_FULL; /* copy successful, don't remove target file */
+        /* copy successful */
+        dst_status = DEST_FULL;
     }
 
   ret:
@@ -2685,13 +2758,15 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         break;
     }
 
-    if (dst_status == DEST_SHORT)
+    if (dst_status == DEST_SHORT_QUERY)
     {
         /* Query to remove short file */
-        if (query_dialog (Q_ ("DialogTitle|Copy"), _("Incomplete file was retrieved. Keep it?"),
+        if (query_dialog (Q_ ("DialogTitle|Copy"), _("Incomplete file was retrieved"),
                           D_ERROR, 2, _("&Delete"), _("&Keep")) == 0)
             mc_unlink (dst_vpath);
     }
+    else if (dst_status == DEST_SHORT_DELETE)
+        mc_unlink (dst_vpath);
     else if (dst_status == DEST_FULL && !appending)
     {
         /* Copy has succeeded */
@@ -3092,6 +3167,7 @@ dirsize_status_init_cb (status_msg_t * sm)
     dirsize_status_msg_t *dsm = (dirsize_status_msg_t *) sm;
     WGroup *gd = GROUP (sm->dlg);
     Widget *wd = WIDGET (sm->dlg);
+    WRect r = wd->rect;
 
     const char *b1_name = N_("&Abort");
     const char *b2_name = N_("&Skip");
@@ -3122,7 +3198,9 @@ dirsize_status_init_cb (status_msg_t * sm)
         widget_select (dsm->skip_button);
     }
 
-    widget_set_size (wd, wd->y, wd->x, 8, ui_width);
+    r.lines = 8;
+    r.cols = ui_width;
+    widget_set_size_rect (wd, &r);
     dirsize_status_locate_buttons (dsm);
 }
 
@@ -3133,22 +3211,25 @@ dirsize_status_update_cb (status_msg_t * sm)
 {
     dirsize_status_msg_t *dsm = (dirsize_status_msg_t *) sm;
     Widget *wd = WIDGET (sm->dlg);
+    WRect r = wd->rect;
 
     /* update second (longer label) */
     label_set_textv (dsm->count_size, _("Directories: %zu, total size: %s"),
                      dsm->dir_count, size_trunc_sep (dsm->total_size, panels_options.kilobyte_si));
 
     /* enlarge dialog if required */
-    if (WIDGET (dsm->count_size)->cols + 6 > wd->cols)
+    if (WIDGET (dsm->count_size)->rect.cols + 6 > r.cols)
     {
-        widget_set_size (wd, wd->y, wd->x, wd->lines, WIDGET (dsm->count_size)->cols + 6);
+        r.cols = WIDGET (dsm->count_size)->rect.cols + 6;
+        widget_set_size_rect (wd, &r);
         dirsize_status_locate_buttons (dsm);
         widget_draw (wd);
         /* TODO: ret rid of double redraw */
     }
 
     /* adjust first label */
-    label_set_text (dsm->dirname, str_trunc (vfs_path_as_str (dsm->dirname_vpath), wd->cols - 6));
+    label_set_text (dsm->dirname,
+                    str_trunc (vfs_path_as_str (dsm->dirname_vpath), wd->rect.cols - 6));
 
     switch (status_msg_common_update (sm))
     {

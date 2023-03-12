@@ -97,8 +97,8 @@ static const struct test_user_config_paths_ds
         MC_USERMENU_FILE
     },
     { /* 5. */
-        CONF_MAIN,
-        EDIT_HOME_SYNTAX_FILE
+        CONF_DATA,
+        EDIT_SYNTAX_FILE
     },
     { /* 6. */
         CONF_MAIN,
@@ -110,7 +110,7 @@ static const struct test_user_config_paths_ds
     },
     { /* 8. */
         CONF_MAIN,
-        MC_FILEBIND_FILE
+        MC_EXT_FILE
     },
     { /* 9. */
         CONF_DATA,

@@ -6,7 +6,7 @@
    Free Software Foundation, Inc.
 
    Written by:
-   Andrew Borodin <aborodin@vmail.ru>, 2013-2015
+   Andrew Borodin <aborodin@vmail.ru>, 2013-2022
 
    This file is part of the Midnight Commander.
 
@@ -167,40 +167,6 @@ do_edit (const vfs_path_t * what_vpath)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-set_panel_filter_to (WPanel * p, char *filter)
-{
-    MC_PTR_FREE (p->filter);
-
-    /* Three ways to clear filter: NULL, "", "*" */
-    if (filter == NULL || filter[0] == '\0' || (filter[0] == '*' && filter[1] == '\0'))
-        g_free (filter);
-    else
-        p->filter = filter;
-    reread_cmd ();
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/** Set a given panel filter expression */
-
-static void
-set_panel_filter (WPanel * p)
-{
-    char *reg_exp;
-    const char *x;
-
-    x = p->filter != NULL ? p->filter : easy_patterns ? "*" : ".";
-
-    reg_exp = input_dialog_help (_("Filter"),
-                                 _("Set expression for filtering filenames"),
-                                 "[Filter...]", MC_HISTORY_FM_PANEL_FILTER, x, FALSE,
-                                 INPUT_COMPLETE_FILENAMES);
-    if (reg_exp != NULL)
-        set_panel_filter_to (p, reg_exp);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 static int
 compare_files (const vfs_path_t * vpath1, const vfs_path_t * vpath2, off_t size)
 {
@@ -264,7 +230,7 @@ compare_files (const vfs_path_t * vpath1, const vfs_path_t * vpath2, off_t size)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-compare_dir (WPanel * panel, WPanel * other, enum CompareMode mode)
+compare_dir (WPanel * panel, const WPanel * other, enum CompareMode mode)
 {
     int i, j;
 
@@ -277,6 +243,7 @@ compare_dir (WPanel * panel, WPanel * other, enum CompareMode mode)
     for (i = 0; i < panel->dir.len; i++)
     {
         file_entry_t *source = &panel->dir.list[i];
+        const char *source_fname;
 
         /* Default: unmarked */
         file_mark (panel, i, 0);
@@ -285,10 +252,22 @@ compare_dir (WPanel * panel, WPanel * other, enum CompareMode mode)
         if (S_ISDIR (source->st.st_mode))
             continue;
 
+        source_fname = source->fname->str;
+        if (panel->is_panelized)
+            source_fname = x_basename (source_fname);
+
         /* Search the corresponding entry from the other panel */
         for (j = 0; j < other->dir.len; j++)
-            if (g_string_equal (source->fname, other->dir.list[j].fname))
+        {
+            const char *other_fname;
+
+            other_fname = other->dir.list[j].fname->str;
+            if (other->is_panelized)
+                other_fname = x_basename (other_fname);
+
+            if (strcmp (source_fname, other_fname) == 0)
                 break;
+        }
 
         if (j >= other->dir.len)
             /* Not found -> mark */
@@ -656,7 +635,7 @@ view_filtered_cmd (const WPanel * panel)
     if (input_is_empty (cmdline))
         initial_command = selection (panel)->fname->str;
     else
-        initial_command = cmdline->buffer;
+        initial_command = input_get_ctext (cmdline);
 
     command =
         input_dialog (_("Filtered view"),
@@ -819,21 +798,6 @@ mkdir_cmd (WPanel * panel)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Invoked from the left/right menus */
-
-void
-filter_cmd (void)
-{
-    if (SELECTED_IS_PANEL)
-    {
-        WPanel *p;
-
-        p = MENU_PANEL;
-        set_panel_filter (p);
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
 
 void
 reread_cmd (void)
@@ -861,13 +825,13 @@ ext_cmd (void)
                             _("Which extension file you want to edit?"), D_NORMAL, 2,
                             _("&User"), _("&System Wide"));
 
-    extdir_vpath = vfs_path_build_filename (mc_global.sysconfig_dir, MC_LIB_EXT, (char *) NULL);
+    extdir_vpath = vfs_path_build_filename (mc_global.sysconfig_dir, MC_EXT_FILE, (char *) NULL);
 
     if (dir == 0)
     {
         vfs_path_t *buffer_vpath;
 
-        buffer_vpath = mc_config_get_full_vpath (MC_FILEBIND_FILE);
+        buffer_vpath = mc_config_get_full_vpath (MC_EXT_FILE);
         check_for_default (extdir_vpath, buffer_vpath);
         do_edit (buffer_vpath);
         vfs_path_free (buffer_vpath, TRUE);
@@ -878,7 +842,7 @@ ext_cmd (void)
         {
             vfs_path_free (extdir_vpath, TRUE);
             extdir_vpath =
-                vfs_path_build_filename (mc_global.share_data_dir, MC_LIB_EXT, (char *) NULL);
+                vfs_path_build_filename (mc_global.share_data_dir, MC_EXT_FILE, (char *) NULL);
         }
         do_edit (extdir_vpath);
     }
@@ -1426,7 +1390,7 @@ listing_cmd (void)
     p = PANEL (get_panel_widget (MENU_PANEL_IDX));
 
     p->is_panelized = FALSE;
-    set_panel_filter_to (p, NULL);      /* including panel reload */
+    panel_set_filter (p, NULL); /* including panel reload */
 }
 
 /* --------------------------------------------------------------------------------------------- */

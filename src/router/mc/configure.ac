@@ -126,7 +126,7 @@ fi
 AC_SUBST(MANDOC)
 AC_SUBST(MAN_FLAGS)
 
-dnl Check for -z, -L, and -S options to file
+dnl Check for -z, -b, -L, and -S options to file
 AC_CHECK_PROG(HAVE_FILECMD, file, true, false)
 if $HAVE_FILECMD; then
     dnl Don't use the file command if it doesn't accept the -z option
@@ -148,7 +148,22 @@ if $HAVE_FILECMD; then
     fi
 
     if test x$mc_cv_file_z = xyes; then
-        dnl file is used; check -L and -S options
+        dnl file is used; check -b, -L and -S options
+
+        AC_MSG_CHECKING([for -b option to file command])
+        AC_CACHE_VAL(mc_cv_file_b, [
+            file -b . > /dev/null 2>&1
+            if test $? = 0; then
+                mc_cv_file_b=yes
+            else
+                mc_cv_file_b=no
+            fi
+        ])
+        AC_MSG_RESULT([$mc_cv_file_b])
+
+        if test x$mc_cv_file_b = xyes; then
+            AC_DEFINE(FILE_B, "-b ", [Define if the file command accepts the -b option])
+        fi
 
         AC_MSG_CHECKING([for -L option to file command])
         AC_CACHE_VAL(mc_cv_file_L, [
@@ -332,11 +347,13 @@ dnl ############################################################################
 case $host_os in
 *os400)
     AC_PATH_PROG([PERL], [perl], [/QOpenSys/pkgs/bin/perl])
+    AC_PATH_PROG([PERL_FOR_BUILD], [perl], [/QOpenSys/pkgs/bin/perl])
     AC_PATH_PROG([PYTHON], [python], [/QOpenSys/pkgs/bin/python2])
     AC_PATH_PROG([RUBY], [ruby], [/QOpenSys/pkgs/bin/ruby])
     ;;
 *)
     AC_PATH_PROG([PERL], [perl], [/usr/bin/perl])
+    AC_PATH_PROG([PERL_FOR_BUILD], [perl], [/usr/bin/perl])
     AC_PATH_PROG([PYTHON], [python], [/usr/bin/python])
     AC_PATH_PROG([RUBY], [ruby], [/usr/bin/ruby])
 esac
@@ -557,7 +574,7 @@ AM_CONDITIONAL([HAVE_GMODULE], [test -n "$g_module_supported" && \
                                 test x"$textmode_x11_support" = x"yes" -o x"$enable_aspell" = x"yes"])
 
 AC_ARG_ENABLE([configure-args],
-    AS_HELP_STRING([--enable-configure-args], [Handle all compiler warnings as errors]))
+    AS_HELP_STRING([--enable-configure-args], [Embed ./configure arguments into binaries]))
 if test "x$enable_configure_args" != xno; then
     AC_DEFINE([ENABLE_CONFIGURE_ARGS], 1, [Define to enable showing configure arguments in help])
     AC_DEFINE_UNQUOTED([MC_CONFIGURE_ARGS], ["$ac_configure_args"], [MC configure arguments])
@@ -588,7 +605,7 @@ misc/ext.d/misc.sh
 misc/ext.d/text.sh
 misc/ext.d/web.sh
 misc/macros.d/Makefile
-misc/mc.ext
+misc/mc.ext.ini
 
 src/Makefile
 src/consaver/Makefile
@@ -663,7 +680,6 @@ lib/vfs/Makefile
 lib/widget/Makefile
 
 misc/syntax/Makefile
-misc/syntax/Syntax
 
 doc/Makefile
 
@@ -688,6 +704,11 @@ doc/hlp/sr/Makefile
 
 po/Makefile.in
 ])
+
+dnl https://stackoverflow.com/questions/30897170/ac-subst-does-not-expand-variable/30932102#30932102
+AC_CONFIG_FILES(
+[misc/syntax/Syntax], [sed -i -e "s%\${prefix}%$PREFIX%" misc/syntax/Syntax], [export PREFIX=$prefix]
+)
 
 AC_CONFIG_FILES([
 tests/Makefile

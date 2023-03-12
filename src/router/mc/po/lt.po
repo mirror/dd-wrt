@@ -13,8 +13,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
+"POT-Creation-Date: 2023-01-21 18:03+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Mantas Kriaučiūnas Baltix <mantas@akl.lt>, 2020\n"
 "Language-Team: Lithuanian (http://www.transifex.com/mc/mc/language/lt/)\n"
@@ -528,6 +528,9 @@ msgstr ""
 msgid ""
 "Unexpected error in select() reading data from a child process:\n"
 "%s"
+msgstr ""
+
+msgid "Cannot close pipe descriptor (p == NULL)"
 msgstr ""
 
 #, c-format
@@ -1169,8 +1172,8 @@ msgstr ""
 msgid "Run sort"
 msgstr "Rikiuoti"
 
-msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Įveskite rikiavimo parinktis (žiūrėkite 'manpage') atskirtas tarpais:"
+msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
+msgstr ""
 
 msgid "Sort"
 msgstr "Rikiuoti"
@@ -2314,12 +2317,6 @@ msgstr "Failai pažymėti, norite įvykdyti „cd“?"
 msgid "Cannot change directory"
 msgstr " Nepavyko pakeisti aplanko "
 
-msgid "Filter"
-msgstr "Filtras"
-
-msgid "Set expression for filtering filenames"
-msgstr "Failų vardų filtro išraiška"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Sukurti nuorodą iš „%s“ į:"
@@ -2461,13 +2458,20 @@ msgid "Pipe failed"
 msgstr ""
 
 #, c-format
+msgid ""
+"You have an outdated %s file.\n"
+"Midnight Commander now uses %s file.\n"
+"Please copy your modifications of the old file to the new one."
+msgstr ""
+
+#, c-format
 msgid " %s%s file error"
 msgstr " %s%s failo klaida"
 
 #, c-format
 msgid ""
-"The format of the %smc.ext file has changed with version 3.0. It seems that "
-"the installation failed. Please fetch a fresh copy from the Midnight "
+"The format of the %s%s file has changed with version 4.0. It seems that the "
+"installation has failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
 
@@ -2477,8 +2481,8 @@ msgstr "%s failo klaida"
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 3.0. You may either want "
-"to copy it from %smc.ext or use that file as an example of how to write it."
+"The format of the %s file has changed with version 4.0. You may either want "
+"to copy it from %s%s or use that file as an example of how to write it."
 msgstr ""
 
 msgid "DialogTitle|Copy"
@@ -2737,6 +2741,15 @@ msgstr ""
 msgid "(stalled)"
 msgstr "(sustojo)"
 
+msgid "Incomplete file was retrieved"
+msgstr ""
+
+msgid "&Keep"
+msgstr "Išlai&kyti"
+
+msgid "&Continue copy"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot close source file \"%s\"\n"
@@ -2748,12 +2761,6 @@ msgid ""
 "Cannot close target file \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "Incomplete file was retrieved. Keep it?"
-msgstr "Gautas nepilnas failas. Ar jį išlaikyti?"
-
-msgid "&Keep"
-msgstr "Išlai&kyti"
 
 #, c-format
 msgid ""
@@ -2867,7 +2874,7 @@ msgid "Background process: File exists"
 msgstr "Foninis procesas: failas egzistuoja"
 
 #, c-format
-msgid "Files processed: %zu/%zu"
+msgid "Files processed: %zu / %zu"
 msgstr ""
 
 #, c-format
@@ -2895,7 +2902,7 @@ msgid " Total: %s "
 msgstr "Iš viso: %s"
 
 #, c-format
-msgid " Total: %s/%s "
+msgid " Total: %s / %s "
 msgstr ""
 
 msgid "Source"
@@ -2947,7 +2954,7 @@ msgstr "&Medis"
 msgid "&Listing format..."
 msgstr ""
 
-msgid "S&ort order..."
+msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
@@ -2962,7 +2969,7 @@ msgstr "FT&P ryšys..."
 msgid "S&hell link..."
 msgstr "Apli&nkos ryšys..."
 
-msgid "&SFTP link..."
+msgid "SFTP li&nk..."
 msgstr ""
 
 msgid "Paneli&ze"
@@ -3347,7 +3354,7 @@ msgid "No space information"
 msgstr "Nėra informacijos apie vietą"
 
 #, c-format
-msgid "Free space: %s/%s (%d%%)"
+msgid "Free space: %s / %s (%d%%)"
 msgstr ""
 
 #, c-format
@@ -3595,6 +3602,9 @@ msgstr "Pasirinkti"
 
 msgid "Unselect"
 msgstr "Nebesirinkti"
+
+msgid "Filter"
+msgstr "Filtras"
 
 msgid "Do you really want to execute?"
 msgstr ""
@@ -4018,6 +4028,10 @@ msgstr ""
 "Netikėta failo pabaiga\n"
 "%s"
 
+#, fuzzy
+msgid "Inconsistent archive"
+msgstr "Nevientisas tar archyvas"
+
 #, c-format
 msgid ""
 "Cannot open %s archive\n"
@@ -4143,6 +4157,21 @@ msgstr "ftpfs: jungimasis į serverį nepavyko: %s"
 
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not make address-to-name translation: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: try reconnect to server, attempt %u"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not get socket name: %s"
+msgstr ""
+
+msgid "ftpfs: could not reconnect to server"
 msgstr ""
 
 msgid "ftpfs: invalid address family"
