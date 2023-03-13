@@ -807,12 +807,16 @@ int ndpi_string_to_automa(struct ndpi_detection_module_struct *ndpi_str,
     return(-1);
   }
 
-  if((ac_automa == NULL) || (value == NULL) || !*value)
+  if((ac_automa == NULL) || (value == NULL) || !*value) {
+    NDPI_LOG_ERR(ndpi_str, "[NDPI] protoId=%d: ac_automata is NULL or value is bad\n", protocol_id);
     return(-2);
+  }
 
   value_dup = ndpi_strdup(value);
-  if(!value_dup)
+  if(!value_dup) {
+    NDPI_LOG_ERR(ndpi_str, "[NDPI] protoId=%d: strdup failed\n", protocol_id);
     return(-1);
+  }
 
   memset(&ac_pattern, 0, sizeof(ac_pattern));
 
@@ -851,13 +855,15 @@ int ndpi_string_to_automa(struct ndpi_detection_module_struct *ndpi_str,
 
   if(rc != ACERR_SUCCESS) {
         ndpi_free(value_dup);
-	if(rc != ACERR_DUPLICATE_PATTERN)
+	if(rc != ACERR_DUPLICATE_PATTERN) {
+		NDPI_LOG_ERR(ndpi_str, "[NDPI] protoId=%d: unknown automata_add error\n", protocol_id);
 		return (-2);
+	}
 	{
 	  const char *tproto = ndpi_get_proto_by_id(ndpi_str, protocol_id);
 	  u_int16_t d_proto_id = ac_pattern.rep.number;
 	  if(protocol_id == d_proto_id) {
-		  if(0) NDPI_LOG_ERR(ndpi_str, "[NDPI] Duplicate '%s' proto %s\n",
+		  NDPI_LOG_ERR(ndpi_str, "[NDPI] Duplicate '%s' proto %s\n",
 				  value, tproto)
 	  } else {
 		  NDPI_LOG_ERR(ndpi_str, "[NDPI] Missmatch '%s' proto %s[%d] origin %s[%d]\n",
