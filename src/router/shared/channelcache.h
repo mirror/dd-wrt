@@ -60,7 +60,7 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	return NULL;
 }
 
-static void invalidate_cache(void)
+static void _invalidate_channelcache(void)
 {
 	if (cache) {
 		struct channellist_cache *tmpcache = cache;
