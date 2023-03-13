@@ -64,10 +64,11 @@ static void _invalidate_channelcache(void)
 {
 	if (cache) {
 		struct channellist_cache *tmpcache = cache;
+		int c = cachecount;
 		cachecount=0;
 		cache=NULL;
 		int cnt = 0;
-		for (cnt = 0; cnt < cachecount; cnt++) {
+		for (cnt = 0; cnt < c; cnt++) {
 				free(tmpcache[cnt].list);
 				free(tmpcache[cnt].ifname);
 				free(tmpcache[cnt].country);
