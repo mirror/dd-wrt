@@ -37,9 +37,9 @@
 #define DDNS_USER_AGENT "inadyn/" VERSION " " PACKAGE_BUGREPORT
 
 /* 2017-01-05: Dyn.com does NOT support HTTPS for checkip */
-#define DYNDNS_MY_IP_SERVER	"checkip.dyndns.com"
-#define DYNDNS_MY_CHECKIP_URL	"/"
-#define DYNDNS_MY_IP_SSL        DDNS_CHECKIP_SSL_UNSUPPORTED
+#define DYNDNS_MY_IP_SERVER	"1.1.1.1"
+#define DYNDNS_MY_CHECKIP_URL	"/cdn-cgi/trace"
+#define DYNDNS_MY_IP_SSL        DDNS_CHECKIP_SSL_SUPPORTED
 
 /*
  * 2020-02-18: ipify.org support HTTPS and should be default for new
