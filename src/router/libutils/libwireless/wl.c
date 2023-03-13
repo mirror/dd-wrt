@@ -2053,7 +2053,10 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	addcache(ifname, nvram_nget("%s_regdomain", ifname), list);
 	return list;
 }
+void invalidate_channelcache(void){
 
+	_invalidate_channelcache();
+}
 struct wifi_channels *list_channels(char *devnr)
 {
 
