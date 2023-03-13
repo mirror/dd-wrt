@@ -1002,10 +1002,10 @@ static void init_string_based_protocols(struct ndpi_detection_module_struct *ndp
   int i;
 
   for(i = 0; host_match[i].string_to_match != NULL; i++)
-	if(ndpi_init_protocol_match(ndpi_str, &host_match[i]))
-	    NDPI_LOG_ERR(ndpi_str, "[NDPI] Skip protocol match for %s/protoId=%d: disabled\n",
-		 host_match[i].string_to_match, host_match[i].protocol_id);
-
+	if(ndpi_init_protocol_match(ndpi_str, &host_match[i])) {
+	//    NDPI_LOG_ERR(ndpi_str, "[NDPI] Skip protocol match for %s/protoId=%d: disabled\n",
+	//	 host_match[i].string_to_match, host_match[i].protocol_id);
+	}
   /* ************************ */
   if(ndpi_str->tls_cert_subject_automa.ac_automa != NULL) {
     ac_automata_release((AC_AUTOMATA_t *) ndpi_str->tls_cert_subject_automa.ac_automa,1);
