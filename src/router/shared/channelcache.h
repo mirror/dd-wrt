@@ -60,6 +60,21 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	return NULL;
 }
 
+static void invalidate_cache(void)
+{
+	if (cache) {
+		struct channellist_cache *tmpcache = cache;
+		cachecount=0;
+		cache=NULL;
+		int cnt = 0;
+		for (cnt = 0; cnt < cachecount; cnt++) {
+				free(tmpcache[cnt].list);
+				free(tmpcache[cnt].ifname);
+				free(tmpcache[cnt].country);
+		}
+		free(tmpcache);
+	}
+}
 #ifdef HAVE_WIL6210
 
 #define INITVALUECACHEi(prefix) \
