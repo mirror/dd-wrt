@@ -1330,8 +1330,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
-//	if (cansuperchannel(maininterface))
-		fprintf(fp, "no_country_ie=1\n");
+//      if (cansuperchannel(maininterface))
+	fprintf(fp, "no_country_ie=1\n");
 	if (has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			fprintf(fp, "vendor_vht=1\n");
@@ -1789,7 +1789,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char eapol[32];
 	sprintf(eapol, "%s_eapol_version", prefix);
 	sprintf(akm, "%s_akm", prefix);
-	nvram_default_get(akm,"disabled");
+	nvram_default_get(akm, "disabled");
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
 	const int _has_wpa3 = has_wpa3(prefix);
@@ -2345,6 +2345,11 @@ void ath9k_start_supplicant(int count, char *prefix)
 			}
 		}
 	}
+	{
+		char pw[32];
+		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+	}
 	if (is_ath10k(dev)) {
 		char wl_po[32];
 		sprintf(wl_po, "%s_power_override", dev);
@@ -2413,8 +2418,10 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (chanbw > bwmax)
 		chanbw = bwmax;
 	setchanbw(wif, driver, chanbw);
-	char pw[32];
-	sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-	eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+	{
+		char pw[32];
+		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+	}
 }
 #endif
