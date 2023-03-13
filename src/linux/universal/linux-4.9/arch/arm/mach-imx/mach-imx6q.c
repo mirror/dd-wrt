@@ -332,18 +332,24 @@ static void __init imx6q_opp_check_speed_grading(struct device *cpu_dev)
 	val &= 0x3;
 
 
-	if (val != OCOTP_CFG3_SPEED_1P2GHZ) {
-		printk(KERN_INFO "disable 1,2 Ghz support (okay we wont for testing)\n");
+
+	if (val < OCOTP_CFG3_SPEED_996MHZ) {
+		printk(KERN_INFO "disable 996 Mhz support\n");
+		if (dev_pm_opp_disable(cpu_dev, 996000000)) {
+			pr_warn("failed to disable 996 MHz OPP\n");
+		}
 	}
-	if (val < OCOTP_CFG3_SPEED_996MHZ)
-		printk(KERN_INFO "disable 996 Mhz support (okay we wont for testing)\n");
-//		if (dev_pm_opp_disable(cpu_dev, 996000000))
-//			pr_warn("failed to disable 996 MHz OPP\n");
 	if (cpu_is_imx6q()) {
-		printk(KERN_INFO "disable 852 Mhz support (okay we wont for testing)\n");
-//		if (val != OCOTP_CFG3_SPEED_852MHZ)
-//			if (dev_pm_opp_disable(cpu_dev, 852000000))
-//				pr_warn("failed to disable 852 MHz OPP\n");
+		if (val != OCOTP_CFG3_SPEED_1P2GHZ) {
+			printk(KERN_INFO "disable 1,2 Ghz support\n");
+			if (dev_pm_opp_disable(cpu_dev, 1200000000))
+				pr_warn("failed to disable 1.2GHz OPP\n");
+		}
+		if (val != OCOTP_CFG3_SPEED_852MHZ) {
+			printk(KERN_INFO "disable 852 Mhz support\n");
+			if (dev_pm_opp_disable(cpu_dev, 852000000))
+				pr_warn("failed to disable 852 MHz OPP\n");
+		}
 	}
 	iounmap(base);
 put_node:
