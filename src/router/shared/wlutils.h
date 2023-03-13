@@ -553,6 +553,7 @@ static inline int has_wpa3(const char *prefix)
 char *getCountryList(char *filter);
 
 #ifdef HAVE_MADWIFI
+void invalidate_channelcache(void);
 extern struct wifi_channels *list_channels(char *devnr);
 int get_radiostate(char *ifname);
 
