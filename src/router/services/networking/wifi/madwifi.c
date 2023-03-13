@@ -148,6 +148,7 @@ void deconfigure_wifi(void)
 
 	for (i = 0; i < c; i++)
 		deconfigure_single(i);
+	invalidate_channelcache();
 }
 
 static int need_commit = 0;
@@ -2925,6 +2926,7 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void)	// madwifi implementation for atheros based
 	    // cards
 {
+	invalidate_channelcache();
 #ifdef HAVE_NLD
 	eval("/usr/sbin/nldstop.sh");
 #endif
@@ -2968,6 +2970,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
+	invalidate_channelcache();
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging
 	while (dead--) {
