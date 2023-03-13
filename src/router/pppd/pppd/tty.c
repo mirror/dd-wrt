@@ -131,7 +131,7 @@ int baud_rate;			/* Actual bits/second for serial device */
 char *callback_script;		/* script for doing callback */
 int charshunt_pid;		/* Process ID for charshunt */
 int locked;			/* lock() has succeeded */
-struct stat devstat;		/* result of stat() on devnam */
+struct stat PPP_VISIBLE devstat;		/* result of stat() on devnam */
 
 /* option variables */
 int	crtscts = 0;		/* Use hardware flow control */
