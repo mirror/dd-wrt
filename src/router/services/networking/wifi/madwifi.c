@@ -2970,6 +2970,25 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
+
+	if (hasath9k) {
+		char regdomain[16];
+		char *country;
+		sprintf(regdomain, "wlan0_regdomain");
+		country = nvram_default_get(regdomain, "UNITED_STATES");
+		eval("iw", "reg", "set", "00");
+		char *iso = getIsoName(country);
+		if (!iso)
+			iso = "DE";
+		eval("iw", "reg", "set", iso);
+#if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
+		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
+			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
+			eval("reboot");
+		}
+#endif
+	}
+#endif
 	invalidate_channelcache();
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging
