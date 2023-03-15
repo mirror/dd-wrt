@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7161 | brainslayer | 2023-03-15 13:52:00 +0600 (Wed, 15 Mar 2023) | 1 line
+
+reset txpower after fw recovery (may be needed for vanilla firmwares)
+------------------------------------------------------------------------
 r7160 | brainslayer | 2023-03-13 23:27:44 +0600 (Mon, 13 Mar 2023) | 1 line
 
 revert
