@@ -2971,6 +2971,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		configure_single((c - 1) - i);
 	}
 
+#ifdef HAVE_ATH9K
 	if (hasath9k) {
 		char regdomain[16];
 		char *country;
