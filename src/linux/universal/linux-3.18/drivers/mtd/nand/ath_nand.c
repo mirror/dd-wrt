@@ -659,7 +659,7 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 		if (ath_nand_block_isbad(mtd, addr)) {
 			printk(KERN_ERR "Skipping bad block[0x%x]\n", (unsigned)addr);
 			count = (unsigned int)addr / (unsigned int)mtd->erasesize;
-			skip_blocks[count] = mtd->erasesize;
+//			skip_blocks[count] = mtd->erasesize;
 			addr += mtd->erasesize;
 			continue;
 		}
@@ -1654,6 +1654,14 @@ static int ath_nand_probe(void)
 
 	mtd->_block_isbad	= ath_nand_block_isbad;
 	mtd->_block_markbad	= ath_nand_block_markbad;
+
+	for (i=0;i < count;i++){
+		if (ath_nand_block_isbad(mtd, i * mtd->erasesize)) {
+			printk(KERN_INFO "skip bad block at [%08X]\n", i * mtd->erasesize);
+			skip_blocks[i] = mtd->erasesize;
+		}
+	}
+
 
 	mtd->priv		= sc;
 
