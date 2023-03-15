@@ -649,9 +649,10 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 	unsigned int count = (unsigned int)addr / (unsigned int)mtd->erasesize;
 
 	dir = rd ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
-
-	for (i=0;i< count;i++)
-	    addr += skip_blocks[i];
+	if (rd) {
+		for (i=0;i< count;i++)
+			addr += skip_blocks[i];
+	}
 	while (len) {
 		unsigned c, ba0, ba1;
 
