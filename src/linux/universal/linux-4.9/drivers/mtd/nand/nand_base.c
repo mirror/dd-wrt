@@ -2201,14 +2201,11 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	size_t i;
 	if (!skip_blocks) {
 		skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
-		memset(skip_blocks, -1, count * sizeof(*skip_blocks));
+		memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	}
 	count = (size_t)from / (size_t)mtd->erasesize;
 	for (i=0;i < count;i++){
-		int skip = skip_blocks[i];
-		if (skip == -1)
-		    break;
-		from += skip;
+		from += skip_blocks[i];
 	}
 	while(from < (mtd->size - mtd->erasesize)) {
 		if (nand_block_isbad(mtd, from)) {
