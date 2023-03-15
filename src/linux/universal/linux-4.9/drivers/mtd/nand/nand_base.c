@@ -2170,7 +2170,7 @@ read_retry:
  *
  * Get hold of the chip and call nand_do_read.
  */
-static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
+static int priv_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		     size_t *retlen, uint8_t *buf)
 {
 	struct mtd_oob_ops ops;
@@ -2187,6 +2187,34 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	return ret;
 }
 
+#ifdef CONFIG_ARCH_QCOM
+static loff_t *skip_blocks = NULL;
+#endif
+
+static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
+		     size_t *retlen, uint8_t *buf)
+{
+#ifdef CONFIG_ARCH_QCOM
+	size_t count = (size_t)mtd->size / (size_t)mtd->erasesize;
+	if (!skip_blocks) {
+		skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
+		memset(skip_blocks, 0, count * sizeof(*skip_blocks));
+	}
+	count = (size_t)from / (size_t)mtd->erasesize;
+	for (i=0;i< count;i++)
+		from += skip_blocks[i];
+	while(from < (mtd->size - mtd->erasesize)) {
+		if (nand_block_bad(mtd, from)) {
+			skip_blocks[count]++;
+			from += mtd->erasesize;
+			continue;
+		}
+		break;
+	}
+#endif
+	priv_nand_read(mtd,from,len,retlen,buf);
+
+}
 /**
  * nand_read_oob_std - [REPLACEABLE] the most common OOB data read function
  * @mtd: mtd info structure
