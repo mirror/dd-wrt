@@ -2205,7 +2205,7 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	for (i=0;i < count;i++)
 		from += skip_blocks[i];
 	while(from < (mtd->size - mtd->erasesize)) {
-		if (nand_block_bad(mtd, from)) {
+		if (nand_block_is_bad(mtd, from)) {
 			printk(KERN_INFO "skip bad block at %zu\n", from);
 			count = (size_t)from / (size_t)mtd->erasesize;
 			skip_blocks[count] = mtd->erasesize;
