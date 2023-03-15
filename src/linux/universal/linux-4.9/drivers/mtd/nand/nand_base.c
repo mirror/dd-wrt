@@ -2217,7 +2217,7 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		break;
 	}
 #endif
-	priv_nand_read(mtd,from,len,retlen,buf);
+	return priv_nand_read(mtd,from,len,retlen,buf);
 
 }
 /**
