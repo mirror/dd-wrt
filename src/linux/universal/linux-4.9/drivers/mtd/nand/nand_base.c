@@ -2208,7 +2208,7 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		int skip = skip_blocks[i];
 		if (skip == -1)
 		    break;
-		from += skip[i];
+		from += skip;
 	}
 	while(from < (mtd->size - mtd->erasesize)) {
 		if (nand_block_isbad(mtd, from)) {
