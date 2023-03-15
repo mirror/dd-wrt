@@ -2190,7 +2190,7 @@ static int priv_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 static int nand_block_isbad(struct mtd_info *mtd, loff_t offs);
 
 #ifdef CONFIG_ARCH_QCOM
-static loff_t *skip_blocks = NULL;
+static int *skip_blocks = NULL;
 #endif
 
 static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
@@ -2201,11 +2201,15 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	size_t i;
 	if (!skip_blocks) {
 		skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
-		memset(skip_blocks, 0, count * sizeof(*skip_blocks));
+		memset(skip_blocks, -1, count * sizeof(*skip_blocks));
 	}
 	count = (size_t)from / (size_t)mtd->erasesize;
-	for (i=0;i < count;i++)
-		from += skip_blocks[i];
+	for (i=0;i < count;i++){
+		int skip = skip_blocks[i];
+		if (skip == -1)
+		    break;
+		from += skip[i];
+	}
 	while(from < (mtd->size - mtd->erasesize)) {
 		if (nand_block_isbad(mtd, from)) {
 			printk(KERN_INFO "skip bad block at %zu\n", from);
