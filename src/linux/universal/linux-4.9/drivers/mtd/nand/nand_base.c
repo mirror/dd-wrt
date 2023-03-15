@@ -2187,6 +2187,8 @@ static int priv_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	return ret;
 }
 
+static int nand_block_isbad(struct mtd_info *mtd, loff_t offs);
+
 #ifdef CONFIG_ARCH_QCOM
 static loff_t *skip_blocks = NULL;
 #endif
