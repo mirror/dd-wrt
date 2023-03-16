@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
 	fprintf(out, "#include \"genmain.h\"\n");
 
-	fprintf(out, "int services_main(int argc,char *argv[]){\n");
+	fprintf(out, "int main(int argc,char *argv[]){\n");
 	fprintf(out, "return check_arguments(argc, argv);\n");
 #if 0
 	fprintf(out, "int function;\n");

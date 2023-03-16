@@ -1980,9 +1980,7 @@ clean:
 install: all
 	install -d $(INSTALLDIR)/services/sbin
 	install -d $(INSTALLDIR)/services/etc
-#	install services_main $(INSTALLDIR)/services/sbin/service
-	cd $(INSTALLDIR)/services/sbin && ln -sf /bin/busybox service
-
+	install services_main $(INSTALLDIR)/services/sbin/service
 	install bin/defaults.bin $(INSTALLDIR)/services/etc
 ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
@@ -2006,7 +2004,7 @@ endif
 	gcc -o genmain genmain.c
 	./genmain
 	$(CC) $(CFLAGS) $(MAD_FLAGS) $(LTO) -c -o main.o main.c  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
-	$(AR) cru $(LTOPLUGIN) libservices.a $^ main.o $(NOBJS) $(ATH9KOBJS)
+	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.o $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
 	
 services.a: $(OBJS)
 	@echo "[AR] $@"
