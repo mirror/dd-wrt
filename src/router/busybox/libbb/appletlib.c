@@ -1033,7 +1033,7 @@ get_script_content(unsigned n UNUSED_PARAM)
 #if ENABLE_BUILD_LIBBUSYBOX
 int lbb_main(char **argv)
 #else
-int main(int argc, char **argv)
+int main(int argc UNUSED_PARAM, char **argv)
 #endif
 {
 #if 0
@@ -1104,13 +1104,9 @@ int main(int argc, char **argv)
 #else
 
 	lbb_prepare("busybox" IF_FEATURE_INDIVIDUAL(, argv));
-	int sub = 0;
 # if !ENABLE_BUSYBOX
-	if (argv[1] && is_prefixed_with(bb_basename(argv[0]), "busybox")) {
-		fprintf(stderr, "increment argv\n");
+	if (argv[1] && is_prefixed_with(bb_basename(argv[0]), "busybox"))
 		argv++;
-		sub++;
-	}
 # endif
 	applet_name = argv[0];
 	if (applet_name[0] == '-')
