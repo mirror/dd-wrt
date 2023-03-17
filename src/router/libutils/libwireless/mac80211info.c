@@ -1674,7 +1674,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
 								stopfreq = regfreq.end_freq_khz / 1000;
 							}
-							if (freq_mhz >= regfreq.start_freq_khz / 1000 && freq_mhz <= regfreq.end_freq_khz / 1000) {
+							if (freq_mhz > regfreq.start_freq_khz / 1000 && freq_mhz < regfreq.end_freq_khz / 1000) {
 								band = ccidx + bandcounter;
 								flags = rd->reg_rules[cc].flags;
 								regpower = rd->reg_rules[cc].power_rule;
@@ -1686,7 +1686,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 									firstchan = freq_mhz;
 								lastband = ccidx;
 								int offset = freq_mhz - firstchan;
-								if ((offset % max_bandwidth_khz) > (max_bandwidth_khz - 20)) {
+								if ((offset % max_bandwidth_khz) >= (max_bandwidth_khz - 20)) {
 //									fprintf(stderr, "increase bandcounter for freq %d, offset %d, modulo %d, max %d\n", freq_mhz, offset, offset % max_bandwidth_khz, max_bandwidth_khz - 20);
 									bandcounter += 10;
 								}
