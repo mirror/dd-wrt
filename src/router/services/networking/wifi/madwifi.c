@@ -3006,8 +3006,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		char power[32];
 		sprintf(power, "wlan%d_txpwrdbm", i);
 		char pw[32];
+		char phy[32];
+		sprintf(phy, "phy%d", i);
 		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+		eval("iw", "phy", phy, "set", "txpower", "fixed", pw);
 	}
 #endif
 	invalidate_channelcache();
