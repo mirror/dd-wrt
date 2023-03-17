@@ -2970,6 +2970,40 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
+#ifdef HAVE_ATH9K
+	if (hasath9k) {
+		char regdomain[16];
+		char *country;
+		sprintf(regdomain, "wlan0_regdomain");
+		country = nvram_default_get(regdomain, "UNITED_STATES");
+		eval("iw", "reg", "set", "00");
+		char *iso = getIsoName(country);
+		if (!iso)
+			iso = "DE";
+		eval("iw", "reg", "set", iso);
+#if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
+		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
+			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
+			eval("reboot");
+		}
+#endif
+	}
+#endif
+	for (i = 0; i < c; i++) {
+		adjust_regulatory(i);
+	}
+#ifdef HAVE_ATH9K
+	for (i = 0; i < c; i++) {
+		/* reset tx power */
+		char power[32];
+		sprintf(power, "wlan%d_txpwrdbm", i);
+		char pw[32];
+		char phy[32];
+		sprintf(phy, "phy%d", i);
+		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+		eval("iw", "phy", phy, "set", "txpower", "fixed", pw);
+	}
+#endif
 #ifdef HAVE_ATH10K
 	/* this sucks, we take it as workaround */
 	deconfigure_wifi();
