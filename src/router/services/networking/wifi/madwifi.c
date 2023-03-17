@@ -2970,7 +2970,14 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
-
+#ifdef HAVE_ATH10K
+	/* this sucks, we take it as workaround */
+	deconfigure_wifi();
+	for (i = 0; i < c; i++) {
+		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
+		configure_single((c - 1) - i);
+	}
+#endif
 #ifdef HAVE_ATH9K
 	if (hasath9k) {
 		char regdomain[16];
@@ -2990,6 +2997,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 	}
 #endif
+	for (i = 0; i < c; i++) {
+		adjust_regulatory(i);
+	}
 	invalidate_channelcache();
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging
