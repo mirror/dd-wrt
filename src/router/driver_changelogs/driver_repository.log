@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7171 | brainslayer | 2023-03-17 14:22:06 +0600 (Fri, 17 Mar 2023) | 1 line
+
+use count instead of phy index
+------------------------------------------------------------------------
 r7170 | brainslayer | 2023-03-16 05:51:32 +0600 (Thu, 16 Mar 2023) | 1 line
 
 fix problem with lost or not shown channels in wireless basic under some conditions
