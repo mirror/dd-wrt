@@ -3000,6 +3000,16 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	for (i = 0; i < c; i++) {
 		adjust_regulatory(i);
 	}
+#ifdef HAVE_ATH9K
+	for (i = 0; i < c; i++) {
+		/* reset tx power */
+		char power[32];
+		sprintf(power, "wlan%d_txpwrdbm", i);
+		char pw[32];
+		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+	}
+#endif
 	invalidate_channelcache();
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging
