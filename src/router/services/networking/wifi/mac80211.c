@@ -2186,6 +2186,11 @@ void ath9k_start_supplicant(int count, char *prefix)
 #endif
 	char pid[64];
 	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
+	{
+		char pw[32];
+		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+	}
 
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik")
 	    && strcmp(apm, "infra")
