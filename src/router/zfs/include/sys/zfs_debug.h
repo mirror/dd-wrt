@@ -57,6 +57,7 @@ extern int zfs_dbgmsg_enable;
 #define	ZFS_DEBUG_TRIM			(1 << 11)
 #define	ZFS_DEBUG_LOG_SPACEMAP		(1 << 12)
 #define	ZFS_DEBUG_METASLAB_ALLOC	(1 << 13)
+#define	ZFS_DEBUG_BRT			(1 << 14)
 
 extern void __set_error(const char *file, const char *func, int line, int err);
 extern void __zfs_dbgmsg(char *buf);
@@ -92,7 +93,7 @@ extern void __dprintf(boolean_t dprint, const char *file, const char *func,
 	if (zfs_flags & ZFS_DEBUG_DPRINTF) \
 		__dprintf(B_TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__)
 #else
-#define	zfs_dbgmsg(...) do { } while(0)
+#define	zfs_dbgmsg(...) do { } while (0)
 #define	dprintf(...) ((void)0)
 #endif /* ZFS_DEBUG */
 

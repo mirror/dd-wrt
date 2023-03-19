@@ -69,31 +69,40 @@ libspl_assert(const char *buf, const char *file, const char *func, int line)
 
 #define	VERIFY3B(LEFT, OP, RIGHT)					\
 do {									\
-	const boolean_t __left __attribute__((unused)) = (boolean_t)(LEFT);			\
-	const boolean_t __right __attribute__((unused)) = (boolean_t)(RIGHT);			\
+	const boolean_t __left __attribute__((unused)) = \
+		(boolean_t)(LEFT);	\
+	const boolean_t __right __attribute__((unused)) = \
+		(boolean_t)(RIGHT);	\
 } while (0)
 
 #define	VERIFY3S(LEFT, OP, RIGHT)					\
 do {									\
-	const int64_t __left __attribute__((unused)) = (int64_t)(LEFT);				\
-	const int64_t __right __attribute__((unused)) = (int64_t)(RIGHT);			\
+	const int64_t __left __attribute__((unused)) = \
+		(int64_t)(LEFT);		\
+	const int64_t __right __attribute__((unused)) = \
+		(int64_t)(RIGHT);	\
 } while (0)
 
 #define	VERIFY3U(LEFT, OP, RIGHT)					\
 do {									\
-	const uint64_t __left __attribute__((unused)) = (uint64_t)(LEFT);			\
-	const uint64_t __right __attribute__((unused)) = (uint64_t)(RIGHT);			\
+	const uint64_t __left __attribute__((unused)) = \
+		(uint64_t)(LEFT);	\
+	const uint64_t __right __attribute__((unused)) = \
+		(uint64_t)(RIGHT);	\
 } while (0)
 
 #define	VERIFY3P(LEFT, OP, RIGHT)					\
 do {									\
-	const uintptr_t __left __attribute__((unused)) = (uintptr_t)(LEFT);			\
-	const uintptr_t __right __attribute__((unused)) = (uintptr_t)(RIGHT);			\
+	const uintptr_t __left __attribute__((unused)) = \
+		(uintptr_t)(LEFT);	\
+	const uintptr_t __right __attribute__((unused)) = \
+		(uintptr_t)(RIGHT);	\
 } while (0)
 
 #define	VERIFY0(LEFT)							\
 do {									\
-	const uint64_t __left __attribute__((unused)) = (uint64_t)(LEFT);			\
+	const uint64_t __left __attribute__((unused)) = \
+		(uint64_t)(LEFT);	\
 } while (0)
 #else
 #define	VERIFY(cond)							\
