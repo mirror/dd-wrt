@@ -2350,11 +2350,6 @@ void ath9k_start_supplicant(int count, char *prefix)
 			}
 		}
 	}
-	{
-		char pw[32];
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "dev", dev, "set", "txpower", "fixed", pw);
-	}
 	if (is_ath10k(dev)) {
 		char wl_po[32];
 		sprintf(wl_po, "%s_power_override", dev);
@@ -2423,10 +2418,5 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (chanbw > bwmax)
 		chanbw = bwmax;
 	setchanbw(wif, driver, chanbw);
-	{
-		char pw[32];
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
-	}
 }
 #endif
