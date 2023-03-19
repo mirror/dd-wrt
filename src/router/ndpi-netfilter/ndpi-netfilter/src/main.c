@@ -35,6 +35,7 @@
 #include <net/netns/generic.h>
 
 #include <linux/skbuff.h>
+#include <linux/slab.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <linux/tcp.h>
@@ -612,7 +613,7 @@ static char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir
 
 static void *malloc_wrapper(size_t size)
 {
-	if(size > 32*1024) {
+	if(size > KMALLOC_MAX_SIZE) {
 		/*
 		 * Workarround for 32bit systems
 		 * Large memory areas (more than 128 KB) are requested
