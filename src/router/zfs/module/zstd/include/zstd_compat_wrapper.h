@@ -512,6 +512,8 @@
 #define	HUF_readDTableX1_wksp_bmi2 zfs_HUF_readDTableX1_wksp_bmi2
 #define	HUF_readStats_body_default zfs_HUF_readStats_body_default
 #define	HUF_readStats_wksp zfs_HUF_readStats_wksp
+#define HUF_minTableLog zfs_HUF_minTableLog
+#define HUF_cardinality zfs_HUF_cardinality
 #define	ZSTD_CCtx_init_compressStream2 zfs_ZSTD_CCtx_init_compressStream2
 #define	ZSTD_CCtx_refThreadPool zfs_ZSTD_CCtx_refThreadPool
 #define	ZSTD_DCtx_getParameter zfs_ZSTD_DCtx_getParameter
@@ -569,6 +571,10 @@
 #define	ZSTD_isSkippableFrame zfs_ZSTD_isSkippableFrame
 #define	ZSTD_readSkippableFrame zfs_ZSTD_readSkippableFrame
 #define	ZSTD_buildBlockEntropyStats zfs_ZSTD_buildBlockEntropyStats
+#define ZSTD_decompressionMargin zfs_ZSTD_decompressionMargin
+#define ZSTD_sequenceBound zfs_ZSTD_sequenceBound
+#define ZSTD_registerSequenceProducer zfs_ZSTD_registerSequenceProducer
+#define ZSTD_CCtx_setCParams zfs_ZSTD_CCtx_setCParams
 #define	XXH64_finalize zfs_XXH64_finalize
 #define	XXH_INLINE_XXH64_digest zfs_XXH_INLINE_XXH64_digest
 #define ZSTD_XXH_versionNumber zfs_ZSTD_XXH_versionNumber
@@ -590,3 +596,4 @@
 #define ZSTD_XXH64_digest zfs_ZSTD_XXH64_digest
 #define ZSTD_XXH64_canonicalFromHash zfs_ZSTD_XXH64_canonicalFromHash
 #define ZSTD_XXH64_hashFromCanonical zfs_ZSTD_XXH64_hashFromCanonical
+#define POOL_joinJobs zfs_POOL_joinJobs

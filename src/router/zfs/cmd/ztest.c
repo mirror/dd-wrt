@@ -1902,7 +1902,7 @@ ztest_log_write(ztest_ds_t *zd, dmu_tx_t *tx, lr_write_t *lr)
 	if (zil_replaying(zd->zd_zilog, tx))
 		return;
 
-	if (lr->lr_length > zil_max_log_data(zd->zd_zilog))
+	if (lr->lr_length > zil_max_log_data(zd->zd_zilog, sizeof (lr_write_t)))
 		write_state = WR_INDIRECT;
 
 	itx = zil_itx_create(TX_WRITE,
@@ -4639,8 +4639,11 @@ ztest_dmu_object_alloc_free(ztest_ds_t *zd, uint64_t id)
 	 * Destroy the previous batch of objects, create a new batch,
 	 * and do some I/O on the new objects.
 	 */
-	if (ztest_object_init(zd, od, size, B_TRUE) != 0)
+	if (ztest_object_init(zd, od, size, B_TRUE) != 0) {
+		zd->zd_od = NULL;
+		umem_free(od, size);
 		return;
+	}
 
 	while (ztest_random(4 * batchsize) != 0)
 		ztest_io(zd, od[ztest_random(batchsize)].od_object,

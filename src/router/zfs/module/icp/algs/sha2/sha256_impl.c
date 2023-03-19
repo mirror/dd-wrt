@@ -29,9 +29,10 @@
 #include <sys/simd.h>
 
 #include <sha2/sha2_impl.h>
+#include <sys/asm_linkage.h>
 
 #define	TF(E, N) \
-	extern void E(uint32_t s[8], const void *, size_t); \
+	extern void ASMABI E(uint32_t s[8], const void *, size_t); \
 	static inline void N(uint32_t s[8], const void *d, size_t b) { \
 	kfpu_begin(); E(s, d, b); kfpu_end(); \
 }
@@ -44,10 +45,19 @@ static inline boolean_t sha2_is_supported(void)
 
 #if defined(__x86_64)
 
-extern void zfs_sha256_transform_x64(uint32_t s[8], const void *, size_t);
+/* Users of ASMABI requires all calls to be from wrappers */
+extern void ASMABI
+zfs_sha256_transform_x64(uint32_t s[8], const void *, size_t);
+
+static inline void
+tf_sha256_transform_x64(uint32_t s[8], const void *d, size_t b)
+{
+	zfs_sha256_transform_x64(s, d, b);
+}
+
 const sha256_ops_t sha256_x64_impl = {
 	.is_supported = sha2_is_supported,
-	.transform = zfs_sha256_transform_x64,
+	.transform = tf_sha256_transform_x64,
 	.name = "x64"
 };
 
@@ -141,9 +151,9 @@ const sha256_ops_t sha256_armv8_impl = {
 };
 
 #elif defined(__PPC64__)
-static boolean_t sha256_have_vsx(void)
+static boolean_t sha256_have_isa207(void)
 {
-	return (kfpu_allowed() && zfs_vsx_available());
+	return (kfpu_allowed() && zfs_isa207_available());
 }
 
 TF(zfs_sha256_ppc, tf_sha256_ppc);
@@ -155,7 +165,7 @@ const sha256_ops_t sha256_ppc_impl = {
 
 TF(zfs_sha256_power8, tf_sha256_power8);
 const sha256_ops_t sha256_power8_impl = {
-	.is_supported = sha256_have_vsx,
+	.is_supported = sha256_have_isa207,
 	.transform = tf_sha256_power8,
 	.name = "power8"
 };
