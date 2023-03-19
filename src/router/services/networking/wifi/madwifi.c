@@ -2934,11 +2934,16 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	int c = getdevicecount();
 	int i;
 	char tmp[256];
+	char fwtype_use[32];
+	char changestring[128] = { 0 };
+	char cmpstring[128] = { 0 };
 	int changed = 0;
 #ifdef HAVE_ATH9K
 	char dev[32];
 	int hasath9k = 0;
 	for (i = 0; i < c; i++) {
+		sprintf(fwtype_use, "wlan%d_fwtype_use", i);
+		strcat(changestring, nvram_safe_get(fwtype_use));
 		sprintf(dev, "wlan%d", i);
 		if (is_mac80211(dev)) {
 			hasath9k = 1;
@@ -2969,6 +2974,8 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
+		sprintf(fwtype_use, "wlan%d_fwtype_use", i);
+		strcat(cmpstring, nvram_safe_get(fwtype_use));
 	}
 #ifdef HAVE_ATH9K
 	if (hasath9k) {
@@ -2992,58 +2999,37 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	for (i = 0; i < c; i++) {
 		adjust_regulatory(i);
 	}
-#ifdef HAVE_ATH9K
-	for (i = 0; i < c; i++) {
-		/* reset tx power */
-		char power[32];
-		sprintf(power, "wlan%d_txpwrdbm", i);
-		char pw[32];
-		char phy[32];
-		sprintf(phy, "phy%d", i);
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "phy", phy, "set", "txpower", "fixed", pw);
-	}
-#endif
 #ifdef HAVE_ATH10K
-	/* this sucks, we take it as workaround */
-	deconfigure_wifi();
-	for (i = 0; i < c; i++) {
-		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
-		configure_single((c - 1) - i);
-	}
-#endif
+	if (strcmp(changestring, cmpstring)) {
+		/* we only need todo this if firmware has changed */
+		/* this sucks, we take it as workaround */
+		deconfigure_wifi();
+		for (i = 0; i < c; i++) {
+			sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
+			configure_single((c - 1) - i);
+		}
 #ifdef HAVE_ATH9K
-	if (hasath9k) {
-		char regdomain[16];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
-		eval("iw", "reg", "set", iso);
+		if (hasath9k) {
+			char regdomain[16];
+			char *country;
+			sprintf(regdomain, "wlan0_regdomain");
+			country = nvram_default_get(regdomain, "UNITED_STATES");
+			eval("iw", "reg", "set", "00");
+			char *iso = getIsoName(country);
+			if (!iso)
+				iso = "DE";
+			eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
-		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
-			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
-			eval("reboot");
+			if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
+				fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
+				eval("reboot");
+			}
+#endif
 		}
 #endif
-	}
-#endif
-	for (i = 0; i < c; i++) {
-		adjust_regulatory(i);
-	}
-#ifdef HAVE_ATH9K
-	for (i = 0; i < c; i++) {
-		/* reset tx power */
-		char power[32];
-		sprintf(power, "wlan%d_txpwrdbm", i);
-		char pw[32];
-		char phy[32];
-		sprintf(phy, "phy%d", i);
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "phy", phy, "set", "txpower", "fixed", pw);
+		for (i = 0; i < c; i++) {
+			adjust_regulatory(i);
+		}
 	}
 #endif
 	invalidate_channelcache();
