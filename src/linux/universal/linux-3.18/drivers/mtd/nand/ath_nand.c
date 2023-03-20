@@ -1426,6 +1426,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 	char *bbuf = NULL;
 	char *ubi = NULL;
 	int retlen;
+	int i;
 	unsigned int rootsize,len;
 	uint64_t base = offset + mtd->erasesize;
 //	printk(KERN_INFO "mtd size %lld\n", mtd->size);
@@ -1458,6 +1459,12 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len = dir_parts[1].offset + dir_parts[1].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
+				/* consider bad blocks in fs length */
+				for (i = 0;i < len;i+= mtd->erasesize) {
+					if (mtd_block_isbad(mtd, offset + i) {
+						len += mtd->erasesize;
+					}
+				}
 				dir_parts[1].size = len - dir_parts[1].offset;
 				dir_parts[2].offset = dir_parts[1].offset + dir_parts[1].size;
 				dir_parts[2].size = mtd->size - dir_parts[2].offset;
@@ -1474,6 +1481,12 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
+				/* consider bad blocks in fs length */
+				for (i = 0;i < len;i+= mtd->erasesize) {
+					if (mtd_block_isbad(mtd, offset + i) {
+						len += mtd->erasesize;
+					}
+				}
 				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
 				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
 				dir_parts[3].size = mtd->size - dir_parts[3].offset;
