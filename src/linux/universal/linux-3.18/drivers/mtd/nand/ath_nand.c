@@ -634,7 +634,10 @@ ath_nand_dump_buf(loff_t addr, void *v, unsigned count)
 	//while(1);
 }
 
-static loff_t *skip_blocks;
+static int
+ath_nand_block_isbad(struct mtd_info *mtd, loff_t ofs);
+
+static loff_t *skip_blocks = NULL;
 
 static int
 ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
@@ -646,8 +649,19 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 	uint8_t		*buf = get_ath_nand_io_buf();
 	int i;
 	*iodone = 0;
-	unsigned int count = (unsigned int)addr / (unsigned int)mtd->erasesize;
-
+	unsigned int count;
+	if (!skip_blocks) {
+		count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
+		skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
+		memset(skip_blocks, 0, count * sizeof(*skip_blocks));
+		for (i=0;i < count;i++){
+			if (ath_nand_block_isbad(mtd, i * mtd->erasesize)) {
+				printk(KERN_INFO "skip bad block at [%08X]\n", i * mtd->erasesize);
+				skip_blocks[i] = mtd->erasesize;
+			}
+		}
+	}
+	count = (unsigned int)addr / (unsigned int)mtd->erasesize;
 	dir = rd ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
 	if (rd) {
 		for (i=0;i< count;i++)
@@ -1623,9 +1637,6 @@ static int ath_nand_probe(void)
 					  (*(uint32_t *)(&sc->onfi[ONFI_BLOCKS_PER_LUN])) *
 					  sc->onfi[ONFI_NUM_LUNS];
 	}
-	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
-	skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
-	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	mtd->writebufsize = mtd->writesize;
 
 	for (i = 0; nf_ctrl_pg[i][0]; i++) {
@@ -1654,13 +1665,6 @@ static int ath_nand_probe(void)
 
 	mtd->_block_isbad	= ath_nand_block_isbad;
 	mtd->_block_markbad	= ath_nand_block_markbad;
-
-	for (i=0;i < count;i++){
-		if (ath_nand_block_isbad(mtd, i * mtd->erasesize)) {
-			printk(KERN_INFO "skip bad block at [%08X]\n", i * mtd->erasesize);
-			skip_blocks[i] = mtd->erasesize;
-		}
-	}
 
 
 	mtd->priv		= sc;
