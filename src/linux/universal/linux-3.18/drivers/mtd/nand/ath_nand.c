@@ -637,8 +637,6 @@ ath_nand_dump_buf(loff_t addr, void *v, unsigned count)
 static int
 ath_nand_block_isbad(struct mtd_info *mtd, loff_t ofs);
 
-static loff_t *skip_blocks = NULL;
-
 static int
 ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 		loff_t addr, size_t len, size_t *iodone)
@@ -649,34 +647,9 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 	uint8_t		*buf = get_ath_nand_io_buf();
 	int i;
 	*iodone = 0;
-	unsigned int count;
-	if (!skip_blocks) {
-		count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
-		skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
-		memset(skip_blocks, 0, count * sizeof(*skip_blocks));
-		for (i=0;i < count;i++){
-			if (ath_nand_block_isbad(mtd, i * mtd->erasesize)) {
-				printk(KERN_INFO "skip bad block at [%08X]\n", i * mtd->erasesize);
-				skip_blocks[i] = mtd->erasesize;
-			}
-		}
-	}
-	count = (unsigned int)addr / (unsigned int)mtd->erasesize;
 	dir = rd ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
-	if (rd) {
-		for (i=0;i< count;i++)
-			addr += skip_blocks[i];
-	}
 	while (len) {
 		unsigned c, ba0, ba1;
-
-		if (ath_nand_block_isbad(mtd, addr)) {
-			printk(KERN_ERR "Skipping bad block[0x%x]\n", (unsigned)addr);
-			count = (unsigned int)addr / (unsigned int)mtd->erasesize;
-//			skip_blocks[count] = mtd->erasesize;
-			addr += mtd->erasesize;
-			continue;
-		}
 
 		c = (addr & mtd->writesize_mask);
 

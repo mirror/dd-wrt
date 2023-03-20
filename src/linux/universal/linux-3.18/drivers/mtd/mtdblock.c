@@ -47,6 +47,7 @@ struct mtdblk_dev {
 	unsigned char *cache_data;
 	unsigned long cache_offset;
 	unsigned int cache_size;
+	int *skip_blocks;
 	enum { STATE_EMPTY, STATE_CLEAN, STATE_DIRTY } cache_state;
 };
 
@@ -231,6 +232,26 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
         /* marklin 20080605 : return read mode for ST */
         Flash_SetModeRead();
 #endif
+
+	if (mtd->_block_isbad) {
+		if (!mtdblk->skip_blocks) {
+			printk(KERN_INFO "%s: allocate skip block area for 0x%08X blocks with 0x%08llX bytes\n", mtd->name, count, mtd->size);
+			mtdblk->skip_blocks = kmalloc(count * sizeof(*mtdblk->skip_blocks), GFP_KERNEL);
+			memset(mtdblk->skip_blocks, 0, count * sizeof(*mtdblk->skip_blocks));
+			for (i=0;i < count;i++){
+				if (mtd_block_isbad(mtd, i * mtd->erasesize)) {
+					printk(KERN_INFO "skip bad block at [0x%08zX]\n", i * mtd->erasesize);
+					mtdblk->skip_blocks[i] = mtd->erasesize;
+				}
+			}
+		}
+		if (mtdblk->skip_blocks) {
+			count = (size_t)pos / (size_t)mtd->erasesize;
+			for (i=0;i < count;i++){
+				pos += mtdblk->skip_blocks[i];
+			}
+		}
+	}
 
 	if (!sect_size)
 		return mtd_read(mtd, pos, len, &retlen, buf);
