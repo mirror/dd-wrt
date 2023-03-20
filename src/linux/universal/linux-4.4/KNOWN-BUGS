@@ -37,3 +37,6 @@ c00fcec32 | selinux: fix error initialization in inode_doinit_with_dentry(
 cec1c921f | btrfs: reject log replay if there is unsupported RO compat flag
 d1f0467fd | btrfs: check if root is readonly while setting security xattr
 
+4.14.y:
+
+35529d6b8 | nfc: pn533: Wait for out_urb's completion in pn533_usb_send_frame()

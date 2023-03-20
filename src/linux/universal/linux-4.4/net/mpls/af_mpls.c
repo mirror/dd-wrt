@@ -861,12 +861,16 @@ static int mpls_dev_sysctl_register(struct net_device *dev,
 free:
 	kfree(table);
 out:
+	mdev->sysctl = NULL;
 	return -ENOBUFS;
 }
 
 static void mpls_dev_sysctl_unregister(struct mpls_dev *mdev)
 {
 	struct ctl_table *table;
+
+	if (!mdev->sysctl)
+		return;
 
 	table = mdev->sysctl->ctl_table_arg;
 	unregister_net_sysctl_table(mdev->sysctl);

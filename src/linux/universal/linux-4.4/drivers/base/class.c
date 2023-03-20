@@ -205,6 +205,11 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 	}
 	error = add_class_attrs(class_get(cls));
 	class_put(cls);
+	if (error) {
+		kobject_del(&cp->subsys.kobj);
+		kfree_const(cp->subsys.kobj.name);
+		kfree(cp);
+	}
 	return error;
 }
 EXPORT_SYMBOL_GPL(__class_register);

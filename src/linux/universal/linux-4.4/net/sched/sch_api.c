@@ -870,8 +870,12 @@ skip:
 		if (cops && cops->graft) {
 			unsigned long cl = cops->get(parent, classid);
 			if (cl) {
-				err = cops->graft(parent, cl, new, &old);
-				cops->put(parent, cl);
+				if (new && new->ops == &noqueue_qdisc_ops)
+					err = -EINVAL;
+				else {
+					err = cops->graft(parent, cl, new, &old);
+					cops->put(parent, cl);
+				}
 			} else
 				err = -ENOENT;
 		}
