@@ -2999,7 +2999,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 	}
 #ifdef HAVE_ATH10K
-	fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
+//	fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
 	if (strcmp(changestring, cmpstring)) {
 		/* we only need todo this if firmware has changed */
 		/* this sucks, we take it as workaround */
