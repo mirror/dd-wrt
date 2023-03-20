@@ -1073,11 +1073,14 @@ static void ipip6_tunnel_bind_dev(struct net_device *dev)
 
 	if (tdev) {
 		int t_hlen = tunnel->hlen + sizeof(struct iphdr);
+		int mtu;
 
 		dev->hard_header_len = tdev->hard_header_len + sizeof(struct iphdr);
-		dev->mtu = tdev->mtu - t_hlen;
-		if (dev->mtu < IPV6_MIN_MTU)
-			dev->mtu = IPV6_MIN_MTU;
+
+		mtu = tdev->mtu - t_hlen;
+		if (mtu < IPV6_MIN_MTU)
+			mtu = IPV6_MIN_MTU;
+		WRITE_ONCE(dev->mtu, mtu);
 	}
 	dev->iflink = tunnel->parms.link;
 }
