@@ -1,0 +1,35 @@
+
+/dts-v1/;
+
+/ {
+        description = "IPQ8066/NAND Sysupgrade image";
+        images {
+
+                script {
+                        description = "boot.scr";
+                        data = /incbin/("tew827/script");
+                        type = "script";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+                };
+                ubi {
+                        description = "ubi";
+                        data = /incbin/("../arm-uclibc/ddwrt-tew827-squashfs-nand-factory.ubi");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+                };
+                bootconfig {
+                        description = "bootconfig";
+                        data = /incbin/("tew827/bootconfig");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+                };
+
+        };
+};
+
