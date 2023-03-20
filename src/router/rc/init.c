@@ -502,14 +502,8 @@ static void check_bootfails(void)
 			int open = nvram_geti("boot_fail_open");
 			int keepip = nvram_geti("boot_fail_keepip");
 			char ip[32], nm[32], gw[32];
-			int ifcount = 0;
-			int wlifcount = 0;
-			while (*nvram_nget("wlan%d_net_mode", ifcount)) {
-				ifcount++;
-			}
-			while (*nvram_nget("wl%d_net_mode", wlifcount)) {
-				wlifcount++;
-			}
+			int ifcount = 4;
+			int wlifcount = 4;
 
 			strcpy(ip, s_ip);
 			strcpy(nm, s_nm);
