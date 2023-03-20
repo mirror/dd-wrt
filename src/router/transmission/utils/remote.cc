@@ -19,7 +19,6 @@
 #include <curl/curl.h>
 
 #include <event2/buffer.h>
-#include <event2/util.h>
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>
@@ -544,9 +543,9 @@ static int getOptMode(int val)
     }
 }
 
-static std::string getEncodedMetainfo(std::string_view filename)
+static std::string getEncodedMetainfo(char const* filename)
 {
-    if (auto contents = std::vector<char>{}; tr_loadFile(filename, contents))
+    if (auto contents = std::vector<char>{}; tr_sys_path_exists(filename) && tr_loadFile(filename, contents))
     {
         return tr_base64_encode({ std::data(contents), std::size(contents) });
     }
