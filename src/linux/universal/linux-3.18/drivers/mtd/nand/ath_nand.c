@@ -1461,7 +1461,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len &= ~(mtd->erasesize - 1);
 				/* consider bad blocks in fs length */
 				for (i = 0;i < len;i+= mtd->erasesize) {
-					if (mtd_block_isbad(mtd, offset + i) {
+					if (mtd_block_isbad(mtd, offset + i)) {
 						len += mtd->erasesize;
 					}
 				}
@@ -1483,7 +1483,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len &= ~(mtd->erasesize - 1);
 				/* consider bad blocks in fs length */
 				for (i = 0;i < len;i+= mtd->erasesize) {
-					if (mtd_block_isbad(mtd, offset + i) {
+					if (mtd_block_isbad(mtd, offset + i)) {
 						len += mtd->erasesize;
 					}
 				}
