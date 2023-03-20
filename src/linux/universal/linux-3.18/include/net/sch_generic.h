@@ -340,6 +340,7 @@ static inline void sch_tree_unlock(const struct Qdisc *q)
 extern struct Qdisc noop_qdisc;
 extern struct Qdisc_ops noop_qdisc_ops;
 extern struct Qdisc_ops pfifo_fast_ops;
+extern struct Qdisc_ops noqueue_qdisc_ops;
 extern struct Qdisc_ops fq_codel_qdisc_ops;
 extern struct Qdisc_ops mq_qdisc_ops;
 extern const struct Qdisc_ops *default_qdisc_ops;
