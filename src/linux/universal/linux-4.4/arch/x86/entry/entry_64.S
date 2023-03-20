@@ -1639,5 +1639,5 @@ END(nmi)
 
 ENTRY(ignore_sysret)
 	mov	$-ENOSYS, %eax
-	sysret
+	sysretl
 END(ignore_sysret)

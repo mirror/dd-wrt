@@ -994,12 +994,13 @@ static void ip6gre_tnl_link_config(struct ip6_tnl *t, int set_mtu)
 			dev->hard_header_len = rt->dst.dev->hard_header_len + addend;
 
 			if (set_mtu) {
-				dev->mtu = rt->dst.dev->mtu - addend;
+				int mtu = rt->dst.dev->mtu - addend;
 				if (!(t->parms.flags & IP6_TNL_F_IGN_ENCAP_LIMIT))
-					dev->mtu -= 8;
+					mtu -= 8;
 
-				if (dev->mtu < IPV6_MIN_MTU)
-					dev->mtu = IPV6_MIN_MTU;
+				if (mtu < IPV6_MIN_MTU)
+					mtu = IPV6_MIN_MTU;
+				WRITE_ONCE(dev->mtu, mtu);
 			}
 		}
 		ip6_rt_put(rt);

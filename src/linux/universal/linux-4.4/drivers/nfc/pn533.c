@@ -2342,6 +2342,8 @@ static int pn533_in_dep_link_up_complete(struct pn533 *dev, void *arg,
 
 		memset(&nfc_target, 0, sizeof(struct nfc_target));
 
+		memset(&nfc_target, 0, sizeof(struct nfc_target));
+
 		nfc_target.supported_protocols = NFC_PROTO_NFC_DEP_MASK;
 		nfc_target.nfcid1_len = 10;
 		memcpy(nfc_target.nfcid1, rsp->nfcid3t, nfc_target.nfcid1_len);
