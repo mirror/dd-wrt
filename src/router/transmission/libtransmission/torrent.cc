@@ -24,8 +24,6 @@
 #include <windows.h> /* CreateProcess(), GetLastError() */
 #endif
 
-#include <event2/util.h> /* evutil_vsnprintf() */
-
 #include <fmt/chrono.h>
 #include <fmt/core.h>
 
@@ -475,10 +473,11 @@ void torrentCallScript(tr_torrent const* tor, std::string const& script)
     auto const labels_str = buildLabelsString(tor);
     auto const trackers_str = buildTrackersString(tor);
     auto const bytes_downloaded_str = std::to_string(tor->downloadedCur + tor->downloadedPrev);
+    auto const localtime_str = fmt::format("{:%a %b %d %T %Y%n}", fmt::localtime(tr_time()));
 
     auto const env = std::map<std::string_view, std::string_view>{
         { "TR_APP_VERSION"sv, SHORT_VERSION_STRING },
-        { "TR_TIME_LOCALTIME"sv, fmt::format("{:%a %b %d %T %Y%n}", fmt::localtime(tr_time())) },
+        { "TR_TIME_LOCALTIME"sv, localtime_str },
         { "TR_TORRENT_BYTES_DOWNLOADED"sv, bytes_downloaded_str },
         { "TR_TORRENT_DIR"sv, torrent_dir.c_str() },
         { "TR_TORRENT_HASH"sv, tor->infoHashString() },
@@ -1104,15 +1103,9 @@ void torrentInit(tr_torrent* tor, tr_ctor const* ctor)
         // the same ones that would be saved back again, so don't let them
         // affect the 'is dirty' flag.
         auto const was_dirty = tor->isDirty;
-
-        bool resume_file_was_migrated = false;
-        loaded = tr_resume::load(tor, tr_resume::All, ctor, &resume_file_was_migrated);
+        loaded = tr_resume::load(tor, tr_resume::All, ctor);
         tor->isDirty = was_dirty;
-
-        if (resume_file_was_migrated)
-        {
-            tr_torrent_metainfo::migrateFile(session->torrentDir(), tor->name(), tor->infoHashString(), ".torrent"sv);
-        }
+        tr_torrent_metainfo::migrateFile(session->torrentDir(), tor->name(), tor->infoHashString(), ".torrent"sv);
     }
 
     tor->completeness = tor->completion.status();
@@ -1391,7 +1384,7 @@ void tr_torrentSetDownloadDir(tr_torrent* tor, char const* path)
 
     if (tor->download_dir != path)
     {
-        tor->setDownloadDir(path);
+        tor->setDownloadDir(path, true);
     }
 }
 
@@ -2432,6 +2425,28 @@ std::string tr_torrentFindFile(tr_torrent const* tor, tr_file_index_t file_num)
 size_t tr_torrentFindFileToBuf(tr_torrent const* tor, tr_file_index_t file_num, char* buf, size_t buflen)
 {
     return tr_strvToBuf(tr_torrentFindFile(tor, file_num), buf, buflen);
+}
+
+void tr_torrent::setDownloadDir(std::string_view path, bool is_new_torrent)
+{
+    download_dir = path;
+    markEdited();
+    setDirty();
+    refreshCurrentDir();
+
+    if (is_new_torrent)
+    {
+        if (session->shouldFullyVerifyAddedTorrents() || !torrent_init_helpers::isNewTorrentASeed(this))
+        {
+            tr_torrentVerify(this);
+        }
+        else
+        {
+            completion.setHasAll();
+            doneDate = addedDate;
+            recheckCompleteness();
+        }
+    }
 }
 
 // decide whether we should be looking for files in downloadDir or incompleteDir
