@@ -1,0 +1,39 @@
+if test "x$verbose" = "x"; then
+echo \\c'Flashing bootconfig:                    '
+setenv stdout nulldev
+else
+echo '######################################## Flashing bootconfig: Started'
+fi
+ipq_nand linux || setenv stdout serial && echo "$failedmsg" && exit 1
+imxtract $imgaddr bootconfig || setenv stdout serial && echo "$failedmsg" && exit 1
+nand erase 0x04340000 0x00060000 || setenv stdout serial && echo "$failedmsg" && exit 1
+nand write $fileaddr 0x04340000 0x00000800 || setenv stdout serial && echo "$failedmsg" && exit 1
+if test "x$verbose" = "x"; then
+setenv stdout serial
+echo '[ done ]'
+setenv stdout nulldev
+setenv stdout serial
+else
+echo '######################################## Flashing bootconfig: Done'
+fi
+if test "x$verbose" = "x"; then
+echo \\c'Flashing ubi:                           '
+setenv stdout nulldev
+else
+echo '######################################## Flashing ubi: Started'
+fi
+ipq_nand linux || setenv stdout serial && echo "$failedmsg" && exit 1
+imxtract $imgaddr ubi || setenv stdout serial && echo "$failedmsg" && exit 1
+nand erase 0x01340000 0x04000000 || setenv stdout serial && echo "$failedmsg" && exit 1
+nand write $fileaddr 0x01340000 $filesize || setenv stdout serial && echo "$failedmsg" && exit 1
+if test "x$verbose" = "x"; then
+setenv stdout serial
+echo '[ done ]'
+setenv stdout nulldev
+setenv stdout serial
+else
+echo '######################################## Flashing ubi: Done'
+fi
+exit 0
+fi
+
