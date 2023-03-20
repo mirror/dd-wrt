@@ -2942,8 +2942,6 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	char dev[32];
 	int hasath9k = 0;
 	for (i = 0; i < c; i++) {
-		sprintf(fwtype_use, "wlan%d_fwtype_use", i);
-		strcat(changestring, nvram_safe_get(fwtype_use));
 		sprintf(dev, "wlan%d", i);
 		if (is_mac80211(dev)) {
 			hasath9k = 1;
@@ -2973,8 +2971,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	}
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
-		configure_single((c - 1) - i);
 		sprintf(fwtype_use, "wlan%d_fwtype_use", i);
+		strcat(changestring, nvram_safe_get(fwtype_use));
+		configure_single((c - 1) - i);
 		strcat(cmpstring, nvram_safe_get(fwtype_use));
 	}
 #ifdef HAVE_ATH9K
@@ -3000,6 +2999,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 	}
 #ifdef HAVE_ATH10K
+	fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
 	if (strcmp(changestring, cmpstring)) {
 		/* we only need todo this if firmware has changed */
 		/* this sucks, we take it as workaround */
