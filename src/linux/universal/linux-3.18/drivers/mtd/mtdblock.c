@@ -224,6 +224,8 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 	unsigned int sect_size = mtdblk->cache_size;
 	size_t retlen;
 	int ret;
+	size_t count = (size_t)mtd->size / (size_t)mtd->erasesize;
+	size_t i;
 
 	pr_debug("mtdblock: read on \"%s\" at 0x%lx, size 0x%x\n",
 			mtd->name, pos, len);
