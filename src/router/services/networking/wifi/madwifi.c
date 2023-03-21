@@ -3011,7 +3011,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	}
 #endif
 #ifdef HAVE_ATH10K
-//	fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
+//      fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
 	if (strcmp(changestring, cmpstring)) {
 		/* we only need todo this if firmware has changed */
 		/* this sucks, we take it as workaround */
@@ -3042,18 +3042,18 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		for (i = 0; i < c; i++) {
 			adjust_regulatory(i);
 		}
-	}
-#endif
 #ifdef HAVE_ATH9K
-	for (i = 0; i < c; i++) {
-		/* reset tx power */
-		char power[32];
-		sprintf(power, "wlan%d_txpwrdbm", i);
-		char pw[32];
-		char phy[32];
-		sprintf(phy, "phy%d", i);
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "phy", phy, "set", "txpower", "fixed", pw);
+		for (i = 0; i < c; i++) {
+			/* reset tx power */
+			char power[32];
+			sprintf(power, "wlan%d_txpwrdbm", i);
+			char pw[32];
+			char phy[32];
+			sprintf(phy, "phy%d", i);
+			sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+			eval("iw", "phy", phy, "set", "txpower", "fixed", pw);
+		}
+#endif
 	}
 #endif
 	invalidate_channelcache();
