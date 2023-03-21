@@ -223,7 +223,7 @@ void start_setup_vlans(void)
 						char vl[32];
 						sprintf(vl, "%d", vlanlist[vlan_number]);
 						char pl[32];
-						sprintf(pl, "%st %s%s", nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
+						sprintf(pl, "%st %st", nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 						eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", pl);
 					}
 					break;
