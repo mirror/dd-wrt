@@ -249,12 +249,12 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 					continue;
 				}
 				if (mtd_read(mtd, i * mtd->erasesize, mtd->erasesize, &retlen, testread)) {
-					printk(KERN_INFO "mark bad block at [0x%08zX]\n", i * mtd->erasesize);
+					printk(KERN_INFO "mark bad block at [0x%08zX] (read failed)\n", i * mtd->erasesize);
 					mtd_block_markbad(mtd, i * mtd->erasesize);
 					continue;
 				}
 				if (retlen != mtd->erasesize) {
-					printk(KERN_INFO "mark bad block at [0x%08zX]\n", i * mtd->erasesize);
+					printk(KERN_INFO "mark bad block at [0x%08zX] (retlen bad)\n", i * mtd->erasesize);
 					mtd_block_markbad(mtd, i * mtd->erasesize);			
 					continue;
 				}
