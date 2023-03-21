@@ -573,7 +573,6 @@ bool set_forward_port(const netconf_nat_t * nat)
 	char val[32];
 	sprintf(val, "%d", which);
 	nvram_set("forward_cur", val);
-	nvram_async_commit();
 	return TRUE;
 }
 
