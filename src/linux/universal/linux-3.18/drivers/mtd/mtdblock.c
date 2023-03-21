@@ -226,6 +226,7 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 	int ret;
 	size_t count = (size_t)mtd->size / (size_t)mtd->erasesize;
 	size_t i;
+	void *testread;
 
 	pr_debug("mtdblock: read on \"%s\" at 0x%lx, size 0x%x\n",
 			mtd->name, pos, len);
@@ -237,15 +238,30 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 
 	if (mtd->_block_isbad) {
 		if (!mtdblk->skip_blocks) {
-			printk(KERN_INFO "%s: allocate skip block area for 0x%08X blocks with 0x%08llX bytes\n", mtd->name, count, mtd->size);
+			printk(KERN_INFO "%s: allocate skip block area for %d blocks with 0x%08llX bytes\n", mtd->name, count, mtd->size);
 			mtdblk->skip_blocks = kmalloc(count * sizeof(*mtdblk->skip_blocks), GFP_KERNEL);
 			memset(mtdblk->skip_blocks, 0, count * sizeof(*mtdblk->skip_blocks));
+			testread = kmalloc(mtd->erasesize, GFP_KERNEL);
 			for (i=0;i < count;i++){
 				if (mtd_block_isbad(mtd, i * mtd->erasesize)) {
 					printk(KERN_INFO "skip bad block at [0x%08zX]\n", i * mtd->erasesize);
 					mtdblk->skip_blocks[i] = mtd->erasesize;
+					continue;
+				}
+				if (mtd_read(mtd, i * mtd->erasesize, mtd->erasesize, &retlen, testread)) {
+					printk(KERN_INFO "mark bad block at [0x%08zX]\n", i * mtd->erasesize);
+					mtd_block_markbad(mtd, i * mtd->erasesize);
+					mtdblk->skip_blocks[i] = mtd->erasesize;
+					continue;
+				}
+				if (retlen != mtd->erasesize) {
+					printk(KERN_INFO "mark bad block at [0x%08zX]\n", i * mtd->erasesize);
+					mtd_block_markbad(mtd, i * mtd->erasesize);			
+					mtdblk->skip_blocks[i] = mtd->erasesize;
+					continue;
 				}
 			}
+			kfree(testread);
 		}
 		if (mtdblk->skip_blocks) {
 			count = (size_t)pos / (size_t)mtd->erasesize;
