@@ -139,7 +139,7 @@ int mndp(int timeout, int batch_mode)  {
 				printf(" (%s %s %s)", packet->platform, packet->version, packet->hardware);
 			}
 			if (packet->uptime > 0) {
-				printf(_("  up %d days %d hours"), packet->uptime / 86400, packet->uptime % 86400 / 3600);
+				printf(_("  up %d days %d hours %d minutes"), packet->uptime / 86400, packet->uptime % 86400 / 3600, (packet->uptime / 60) % 60 );
 			}
 			if (packet->softid[0] != 0) {
 				printf("  %s", packet->softid);
