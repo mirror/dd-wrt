@@ -46,7 +46,7 @@ for i in $(seq 1 $tunnels); do
 			if [[ $($nv get oet${i}_spbr) -ne 0 ]]; then
 				logger -p user.info "WireGuard PBR via oet${i} table $TID"
 				echo $($nv get oet${i}_spbr_ip), | while read -d ',' line; do
-					line=$(echo $line)
+					line=$(eval echo $line) #use eval to execute nvram parameters
 					#[ ${line:0:1} = "#" ] && continue
 					case $line in
 					 "#"*)

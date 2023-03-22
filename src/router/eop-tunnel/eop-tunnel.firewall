@@ -151,7 +151,7 @@ for i in $(seq 1 $tunnels); do
 				dns4=$($nv get oet${i}_dns4)
 				dns6=$($nv get oet${i}_dns6)
 				echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do
-					pbrip=$(echo $pbrip)
+					pbrip=$(eval echo $pbrip)
 						case $pbrip in
 						 "#"*)
 							continue
@@ -247,7 +247,7 @@ for i in $(seq 1 $tunnels); do
 					logger -p user.info "WireGuard firewall on PBR activated for oet${i}"
 					makechain
 					echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do	# added "," so that last entry is read
-						pbrip=$(echo $pbrip)
+						pbrip=$(eval echo $pbrip)
 						case $pbrip in
 						 "#"*)
 							continue
