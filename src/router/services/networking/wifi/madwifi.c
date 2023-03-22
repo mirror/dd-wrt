@@ -2971,7 +2971,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	}
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
-		sprintf(fwtype_use, "wlan%d_fwtype_use", i);
+		sprintf(fwtype_use, "wlan%d_fwtype_use", (c - 1) - i);
 		strcat(changestring, nvram_safe_get(fwtype_use));
 		configure_single((c - 1) - i);
 		strcat(cmpstring, nvram_safe_get(fwtype_use));
