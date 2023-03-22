@@ -634,8 +634,7 @@ ath_nand_dump_buf(loff_t addr, void *v, unsigned count)
 	//while(1);
 }
 
-static int
-ath_nand_block_isbad(struct mtd_info *mtd, loff_t ofs);
+static loff_t *skip_blocks;
 
 static int
 ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
@@ -647,9 +646,23 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 	uint8_t		*buf = get_ath_nand_io_buf();
 	int i;
 	*iodone = 0;
+	unsigned int count = (unsigned int)addr / (unsigned int)mtd->erasesize;
+
 	dir = rd ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
+	if (rd) {
+		for (i=0;i< count;i++)
+			addr += skip_blocks[i];
+	}
 	while (len) {
 		unsigned c, ba0, ba1;
+
+		if (ath_nand_block_isbad(mtd, addr)) {
+			printk(KERN_ERR "Skipping bad block[0x%x]\n", (unsigned)addr);
+			count = (unsigned int)addr / (unsigned int)mtd->erasesize;
+//			skip_blocks[count] = mtd->erasesize;
+			addr += mtd->erasesize;
+			continue;
+		}
 
 		c = (addr & mtd->writesize_mask);
 
@@ -1426,7 +1439,6 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 	char *bbuf = NULL;
 	char *ubi = NULL;
 	int retlen;
-	int i;
 	unsigned int rootsize,len;
 	uint64_t base = offset + mtd->erasesize;
 //	printk(KERN_INFO "mtd size %lld\n", mtd->size);
@@ -1459,12 +1471,6 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len = dir_parts[1].offset + dir_parts[1].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				/* consider bad blocks in fs length */
-				for (i = 0;i < len;i+= mtd->erasesize) {
-					if (mtd_block_isbad(mtd, offset + i)) {
-						len += mtd->erasesize;
-					}
-				}
 				dir_parts[1].size = len - dir_parts[1].offset;
 				dir_parts[2].offset = dir_parts[1].offset + dir_parts[1].size;
 				dir_parts[2].size = mtd->size - dir_parts[2].offset;
@@ -1481,12 +1487,6 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				/* consider bad blocks in fs length */
-				for (i = 0;i < len;i+= mtd->erasesize) {
-					if (mtd_block_isbad(mtd, offset + i)) {
-						len += mtd->erasesize;
-					}
-				}
 				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
 				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
 				dir_parts[3].size = mtd->size - dir_parts[3].offset;
@@ -1623,6 +1623,9 @@ static int ath_nand_probe(void)
 					  (*(uint32_t *)(&sc->onfi[ONFI_BLOCKS_PER_LUN])) *
 					  sc->onfi[ONFI_NUM_LUNS];
 	}
+	count = (unsigned int)mtd->size / (unsigned int)mtd->erasesize;
+	skip_blocks = kmalloc(count * sizeof(*skip_blocks), GFP_KERNEL);
+	memset(skip_blocks, 0, count * sizeof(*skip_blocks));
 	mtd->writebufsize = mtd->writesize;
 
 	for (i = 0; nf_ctrl_pg[i][0]; i++) {
@@ -1653,9 +1656,11 @@ static int ath_nand_probe(void)
 	mtd->_block_markbad	= ath_nand_block_markbad;
 
 
+
 	mtd->priv		= sc;
 
 	ath_nand_ecc_init(mtd);
+
 
 	/* add NAND partition */
 	ath_nand_add_partition(sc);
@@ -1675,6 +1680,13 @@ static int ath_nand_probe(void)
 		sc->nf_ctrl, mtd->writesize, mtd->erasesize, mtd->oobsize);
 
 	nand_postinit(mtd);
+
+	for (i=0;i < count;i++){
+		if (ath_nand_block_isbad(mtd, i * mtd->erasesize)) {
+			printk(KERN_INFO "skip bad block at [%08X]\n", i * mtd->erasesize);
+			skip_blocks[i] = mtd->erasesize;
+		}
+	}
 	return 0;
 
 out_err_hw_init:
