@@ -175,6 +175,10 @@ void start_setup_vlans(void)
 		lanports = 3;
 	if (!*nvram_safe_get("sw_lan2"))
 		lanports = 2;
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
+		lanports += 2;
+	else if (*nvram_safe_get("sw_cpuport"))
+		lanports++;
 	char tagged[18];
 	char snoop[5];
 	memset(&tagged[0], 0, sizeof(tagged));
@@ -196,6 +200,15 @@ void start_setup_vlans(void)
 	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
 	}
+	int wancpuportidx = -1;
+	int lancpuportidx = -1;
+	int cpuportidx = -1;
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport")) {
+		wancpuportidx = lanports - 2;
+		lancpuportidx = lanports - 1;
+	} else if (*nvram_safe_get("sw_cpuport"))
+		cpuportidx = lanports - 1;
+
 #ifdef HAVE_R9000
 	for (i = 0; i < 7; i++) {
 #else
@@ -219,6 +232,7 @@ void start_setup_vlans(void)
 					eval("swconfig", "dev", "switch0", "port", (!nvram_match("sw_wan", "-1") && !i) ? nvram_safe_get("sw_wan") : nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
 					break;
 				case 16000:
+#if 0
 					if (!nvram_match("sw_wan", "-1") && nvram_exists("sw_wancpuport")) {
 						char vl[32];
 						sprintf(vl, "%d", vlanlist[vlan_number]);
@@ -226,6 +240,7 @@ void start_setup_vlans(void)
 						sprintf(pl, "%st %st", nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 						eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", pl);
 					}
+#endif
 					break;
 				case 17000:	// no auto negotiate
 					mask |= 4;
@@ -246,6 +261,7 @@ void start_setup_vlans(void)
 			} else {
 				vlan_number = tmp;
 				char *ports = buildports[vlan_number];
+#if 0
 				if (i == 0 && nvram_exists("sw_wancpuport")) {	// wan port
 					if (!nvram_match("sw_wan", "-1")) {
 						snprintf(ports, 31, "W");	// mark port as wan to prevent overwriting of vlan in later code
@@ -255,14 +271,30 @@ void start_setup_vlans(void)
 						sprintf(pl, "%st %s%s", nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
 						eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", pl);
 					}
-				} else {
+				} else
+#endif
+				{
 					if (i == 0) {
 						if (*ports)
-							snprintf(ports, 31, "%s %s%s", ports, nvram_nget("sw_wan", i), tagged[i] ? "t" : "");
+							snprintf(ports, 31, "%s %s%s", ports, nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
 						else
-							snprintf(ports, 31, "%s%s", nvram_nget("sw_wan", i), tagged[i] ? "t" : "");
+							snprintf(ports, 31, "%s%s", nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
+					} else if (i == wancpuportidx) {
+						if (*ports)
+							snprintf(ports, 31, "%s %s%s", ports, nvram_safe_get("sw_wancpuport"), tagged[i] ? "t" : "");
+						else
+							snprintf(ports, 31, "%s%s", nvram_safe_get("sw_wancpuport"), tagged[i] ? "t" : "");
+					} else if (i == lancpuportidx) {
+						if (*ports)
+							snprintf(ports, 31, "%s %s%s", ports, nvram_safe_get("sw_lancpuport"), tagged[i] ? "t" : "");
+						else
+							snprintf(ports, 31, "%s%s", nvram_safe_get("sw_lancpuport"), tagged[i] ? "t" : "");
+					} else if (i == cpuportidx) {
+						if (*ports)
+							snprintf(ports, 31, "%s %s%s", ports, nvram_safe_get("sw_cpuport"), tagged[i] ? "t" : "");
+						else
+							snprintf(ports, 31, "%s%s", nvram_safe_get("sw_cpuport"), tagged[i] ? "t" : "");
 					} else {
-
 						if (*ports)
 							snprintf(ports, 31, "%s %s%s", ports, nvram_nget("sw_lan%d", i), tagged[i] ? "t" : "");
 						else
@@ -283,8 +315,16 @@ void start_setup_vlans(void)
 					lanphy = "eth0";
 					wanphy = "eth1";
 				}
-				if (i == 0 && nvram_exists("sw_wancpuport"))
+
+				/*
+				 * user must now manually handle this at networking. we cannot decide what todo with the config
+				 * but i keep it now for testing
+				 */
+
+				if (i == wancpuportidx)
 					eval("vconfig", "add", wanphy, buff);
+				else if (i == lancpuportidx)
+					eval("vconfig", "add", lanphy, buff);
 				else
 					eval("vconfig", "add", lanphy, buff);
 				snprintf(buff, 9, "vlan%d", vlanlist[vlan_number]);
@@ -327,22 +367,24 @@ void start_setup_vlans(void)
 
 		} else
 			sprintf(linkstr, "autoneg on", linkstr);
-		if (i == 0) {
-			eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "link", linkstr);
-		} else {
-			eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "link", linkstr);
-		}
-		if (mask & 8) {
+		if (i != cpuportidx && i != lancpuportidx && i != wancpuportidx) {
 			if (i == 0) {
-				eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "disable", "1");
+				eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "link", linkstr);
 			} else {
-				eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "disable", "1");
+				eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "link", linkstr);
 			}
-		} else {
-			if (i == 0) {
-				eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "disable", "0");
+			if (mask & 8) {
+				if (i == 0) {
+					eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "disable", "1");
+				} else {
+					eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "disable", "1");
+				}
 			} else {
-				eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "disable", "0");
+				if (i == 0) {
+					eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "disable", "0");
+				} else {
+					eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "disable", "0");
+				}
 			}
 		}
 	}
@@ -363,19 +405,9 @@ void start_setup_vlans(void)
 	for (vlan_number = 0; vlan_number < blen; vlan_number++) {
 		char *ports = buildports[vlan_number];
 		if (strlen(ports) && ports[0] != 'W') {
-			if (nvram_exists("sw_wancpuport")) {
-				char vl[32];
-				sprintf(vl, "%d", vlanlist[vlan_number]);
-				char pl[32];
-				sprintf(pl, "%st %s", nvram_safe_get("sw_lancpuport"), ports);
-				eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", pl);
-			} else {
-				char vl[32];
-				sprintf(vl, "%d", vlanlist[vlan_number]);
-				char pl[32];
-				sprintf(pl, "%st %s", nvram_safe_get("sw_cpuport"), ports);
-				eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", pl);
-			}
+			char vl[32];
+			sprintf(vl, "%d", vlanlist[vlan_number]);
+			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", ports);
 		} else if (!strlen(ports)) {
 			char vl[32];
 			sprintf(vl, "%d", vlanlist[vlan_number]);
