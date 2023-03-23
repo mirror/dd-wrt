@@ -37,10 +37,11 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	 * (x 16 dosn't apply) 
 	 */
 
-	int i, j, *vlans[8], tmp, wl_br;
+	int i, j, *vlans[10], tmp, wl_br;
 	char *c, *next, buff[32], portvlan[32];
 	int a, *vlanlist;
 	int lanports = 4;
+	int cpuports = 1;
 	if (nvram_exists("sw_lan6"))
 		lanports = 6;
 
@@ -52,9 +53,11 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		if (!*nvram_safe_get("sw_lan2"))
 			lanports = 1;
 	}
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
+		cpuports = 2;
 	int blen = nvram_default_geti("portvlan_count", 3);
 	char *deflist = malloc((blen * 5) + 1);
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 10; i++)
 		vlans[i] = malloc(sizeof(int) * (blen + 8));
 	vlanlist = malloc(sizeof(int) * (blen + 16));
 
@@ -70,12 +73,12 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		vlanlist[i++] = atoi(portvlan);
 	}
 	for (i = 0; i < blen + 8; i++)
-		for (j = 0; j < lanports + 2; j++)
+		for (j = 0; j < lanports + 2 + cpuports; j++)
 			vlans[j][i] = -1;
 
 	wl_br = -1;
 
-	for (i = 0; i < lanports + 2; i++) {
+	for (i = 0; i < lanports + 2 + cpuports; i++) {
 		if (i < (lanports + 1))
 			snprintf(buff, 31, "port%dvlans", i);
 		else if (i == 5)
@@ -124,6 +127,12 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<th rowspan=\"2\" class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
+	if (cpuports == 2) {
+		websWrite(wp, "<th class=\"center\">WAN CPUPORT</th>\n");
+		websWrite(wp, "<th class=\"center\">LAN CPUPORT</th>\n");
+	} else {
+		websWrite(wp, "<th class=\"center\">CPUPORT</th>\n");
+	}
 	if (!nowan)
 		websWrite(wp, "<th class=\"center\">WAN</th>\n");
 	for (a = 1; a < lanports + 1; a++) {
@@ -133,6 +142,12 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
+	if (cpuports == 2) {
+		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", cstatus, getPortStatus(nvram_geti("sw_wancpuport")));
+		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", cstatus, getPortStatus(nvram_geti("sw_lancpuport")));
+	} else {
+		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", cstatus, getPortStatus(nvram_geti("sw_cpuport")));
+	}
 	for (a = nowan; a < lanports + 1; a++) {
 		int status = 0;
 		if (a == 0)
@@ -281,8 +296,22 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		}
 
 		websWrite(wp, "</td>\n");
+		int j1;
+		for (j1 = nowan; j1 < lanports + 1 + cpuports; j1++) {
+			if (cpuports == 1) {
+				if (j1 == 0)
+					j = lanports + 1;
+				else
+					j = j1 - 1;
+			} else {
+				if (j1 == 0)
+					j = lanports + 1;
+				else if (j1 == 1)
+					j = lanports + 2;
+				else
+					j = j1 - 2;
 
-		for (j = nowan; j < lanports + 1; j++) {
+			}
 			if (i >= blen)
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, ((i - blen) * 1000) + 16000);
 			else
