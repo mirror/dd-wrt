@@ -5961,9 +5961,9 @@ void port_vlan_table_save(webs_t wp)
 		}
 	}
 	debug_free(vlans);
-	if (ports == 5)
-		nvram_set("port5vlans", portvlan);
-	else
+	if (ports == 5) {
+	//	nvram_set("port5vlans", portvlan);
+	} else
 		nvram_set("port7vlans", portvlan);
 
 	strcpy(br0vlans, "");
