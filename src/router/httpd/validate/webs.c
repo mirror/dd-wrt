@@ -3480,7 +3480,7 @@ static char *vapsettings[] = {
 	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "dwds", "nitro_qam", "fwtype", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain",
 	"txchain_pwrsave_enable", "txpwr",
 	"txpwrdbm", "power_override", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr",
-	    "wds10_if",
+	"wds10_if",
 	"wds10_ipaddr",
 	"wds10_netmask", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2", "wds2_desc", "wds2_enable", "wds2_hwaddr", "wds2_if", "wds2_ipaddr",
 	"wds2_netmask", "wds2_ospf", "wds3", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_if", "wds3_ipaddr", "wds3_netmask", "wds3_ospf", "wds4", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_if",
@@ -5789,6 +5789,10 @@ void portvlan_remove(webs_t wp)
 		ports = 3;
 	if (!*nvram_safe_get("sw_lan2"))
 		ports = 2;
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
+		ports += 2;
+	else if (*nvram_safe_get("sw_cpuport"))
+		ports += 1;
 	int blen = nvram_default_geti("portvlan_count", 3);
 	int val = websGetVari(wp, "del_value", -1);
 	if (val >= 0) {
@@ -5852,6 +5856,12 @@ void port_vlan_table_save(webs_t wp)
 	int ports = 5;
 	if (nvram_exists("sw_lan6"))
 		ports = 7;
+
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
+		ports += 2;
+	else if (*nvram_safe_get("sw_cpuport"))
+		ports += 1;
+
 	char *vlanlist = malloc(blen * 5);
 	vlanlist[0] = 0;
 	for (i = 0; i < blen; i++) {
