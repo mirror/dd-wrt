@@ -55,7 +55,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
 		cpuports = 2;
-	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_cpuport"))
+	else if (*nvram_safe_get("sw_cpuport"))
 		cpuports = 1;
 	int blen = nvram_default_geti("portvlan_count", 3);
 	char *deflist = malloc((blen * 5) + 1);
