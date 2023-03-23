@@ -145,10 +145,10 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	if (cpuports == 2) {
-		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", cstatus, getPortStatus(nvram_geti("sw_wancpuport")));
-		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", cstatus, getPortStatus(nvram_geti("sw_lancpuport")));
+		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", getPortStatus(nvram_geti("sw_wancpuport")));
+		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", getPortStatus(nvram_geti("sw_lancpuport")));
 	} else {
-		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", cstatus, getPortStatus(nvram_geti("sw_cpuport")));
+		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", getPortStatus(nvram_geti("sw_cpuport")));
 	}
 	for (a = nowan; a < lanports + 1; a++) {
 		int status = 0;
