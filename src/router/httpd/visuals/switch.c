@@ -41,7 +41,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	char *c, *next, buff[32], portvlan[32];
 	int a, *vlanlist;
 	int lanports = 4;
-	int cpuports = 1;
+	int cpuports = 0;
 	if (nvram_exists("sw_lan6"))
 		lanports = 6;
 
@@ -55,6 +55,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
 		cpuports = 2;
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_cpuport"))
+		cpuports = 1;
 	int blen = nvram_default_geti("portvlan_count", 3);
 	char *deflist = malloc((blen * 5) + 1);
 	for (i = 0; i < 10; i++)
@@ -303,7 +305,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 					j = lanports + 1;
 				else
 					j = j1 - 1;
-			} else {
+			} else if (cpuports == 2) {
 				if (j1 == 0)
 					j = lanports + 1;
 				else if (j1 == 1)
@@ -311,7 +313,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				else
 					j = j1 - 2;
 
-			}
+			} else
+				j1 = j;
 			if (i >= blen)
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, ((i - blen) * 1000) + 16000);
 			else
