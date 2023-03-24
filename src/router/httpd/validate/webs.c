@@ -5843,10 +5843,10 @@ void port_vlan_table_save(webs_t wp)
 
 	strcpy(portvlan, "");
 	int blen = nvram_geti("portvlan_count");
-	int max = blen + 6;
+	int max = blen + 7;
 #ifdef HAVE_SWCONFIG
 	if (has_igmpsnooping())
-		max++;
+		max+=2;
 #endif
 
 	vlans = malloc(sizeof(int) * max);
@@ -5888,6 +5888,7 @@ void port_vlan_table_save(webs_t wp)
 			}
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, flag);
 			char *s_portval = websGetVar(wp, portid, "");
+			
 #ifdef HAVE_SWCONFIG
 			if (flag < 17000 || flag > 22000)
 #else
