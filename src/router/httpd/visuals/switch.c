@@ -60,8 +60,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int blen = nvram_default_geti("portvlan_count", 3);
 	char *deflist = malloc((blen * 5) + 1);
 	for (i = 0; i < 10; i++)
-		vlans[i] = malloc(sizeof(int) * (blen + 8));
-	vlanlist = malloc(sizeof(int) * (blen + 16));
+		vlans[i] = malloc(sizeof(int) * (blen + 9));
+	vlanlist = malloc(sizeof(int) * (blen + 17));
 
 	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
 		lanports = 2;
@@ -74,7 +74,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
 	}
-	for (i = 0; i < blen + 8; i++)
+	for (i = 0; i < blen + 9; i++)
 		for (j = 0; j < lanports + 2 + cpuports; j++)
 			vlans[j][i] = -1;
 
@@ -289,6 +289,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		case 22000:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.snooping)</script>");
 			break;
+		case 23000:
+			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.eee)</script>");
+			break;
 		default:
 			if (!i)
 				sprintf(deflist, "%d", i);
@@ -326,7 +329,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 			if (j1 % 2 == 0)
 				websWrite(wp, " class=\"odd\"");
-			if (j > lanports && flag > 16000) {
+			if (j > lanports && flag > 16000 && flag != 22000) {
 				websWrite(wp, " height=\"20\">&nbsp</td>\n");
 				continue;
 			}
@@ -348,6 +351,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "share.enabled"));
 				if (flag == 22000)
 					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "networking.snooping"));
+				if (flag == 23000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.eee"));
 			}
 			websWrite(wp, " height=\"20\"><div class=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
@@ -362,7 +367,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			if (flag < 17000) {
 				snprintf(buff, sizeof(buff), "\"SelVLAN(this.form,'port%d')\"", j);
 				websWrite(wp, "onclick=%s", buff);
-			} else if (flag == 17000 || flag == 18000 || flag == 21000 || flag == 22000) {
+			} else if (flag == 17000 || flag == 18000 || flag == 21000 || flag == 22000 || flag == 23000) {
 				snprintf(buff, sizeof(buff), "\"SelSpeed(this.form,'port%d')\"", j);
 				websWrite(wp, "onclick=%s", buff);
 			}
