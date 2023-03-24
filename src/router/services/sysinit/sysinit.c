@@ -2876,6 +2876,7 @@ void start_restore_defaults(void)
 
 	}
 #endif
+#ifdef HAVE_BRCMROUTER
 	if (restore_defaults && !nvram_exists("port0vlans")) {
 		if (!nvram_exists("vlan2ports") && nvram_exists("vlan1ports")
 		    && nvram_exists("vlan0ports")) {
@@ -2894,7 +2895,6 @@ void start_restore_defaults(void)
 			nvram_set("port5vlans", "1 2 16000");
 		}
 	}
-#ifdef HAVE_BRCMROUTER
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_exists("aa0"))
 			nvram_seti("aa0", 3);
@@ -3880,6 +3880,11 @@ void start_nvram(void)
 #endif
 	}
 
+	if (nvram_geti("nvram_ver") < 10) {
+		nvram_seti("nvram_ver",10);
+		nvram_unset("vlan5ports");
+		nvram_unset("vlan6ports");
+	}
 	return;
 }
 

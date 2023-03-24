@@ -46,7 +46,7 @@
 
 struct nvram_param srouter_defaults[] = {
 	// {"default_init","1",0},
-	{ "nvram_ver", "9" },
+	{ "nvram_ver", "10" },
 #ifdef HAVE_GGEW
 	{ "router_style", "blue" },
 #elif HAVE_OCTAGON
