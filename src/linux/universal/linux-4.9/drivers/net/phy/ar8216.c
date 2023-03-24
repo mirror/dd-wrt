@@ -1608,7 +1608,8 @@ ar8xxx_sw_set_disable(struct switch_dev *dev,
 		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
 	}else{
-		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
+		if (priv->state[port])
+			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
 	}
 
 	return 0;
@@ -1629,7 +1630,7 @@ ar8xxx_sw_get_disable(struct switch_dev *dev,
 		return -EOPNOTSUPP;
 
 	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
-	if ((t & AR8216_PORT_STATUS_LINK_UP) && (t & AR8216_PORT_STATUS_LINK_AUTO))
+	if (!(t & AR8216_PORT_STATUS_LINK_AUTO))
 		val->value.i = 1;
 	else
 		val->value.i = 0;
