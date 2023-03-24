@@ -1043,8 +1043,14 @@ endif
 ifeq ($(ARCHITECTURE),northstar)
 CFLAGS += -DHAVE_BRCM
 endif
-
-
+ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_BCMMODERN),y)
+CFLAGS += -DLEGACY_SWITCH
+endif
+endif
+ifeq ($(CONFIG_ALPINE),y)
+CFLAGS += -DLEGACY_SWITCH
+endif
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ATH9KVISOBJS += wireless_madwifiath9k.o

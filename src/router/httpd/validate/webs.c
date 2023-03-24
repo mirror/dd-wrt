@@ -5906,7 +5906,7 @@ void port_vlan_table_save(webs_t wp)
 					snprintf(buff, 6, "%d", vlan);
 				strcat(portvlan, buff);
 				vlans[vlan] = 1;
-#ifdef HAVE_SWCONFIG
+#if 0 //def HAVE_SWCONFIG
 				if (flag < 16000) {
 					char buff[32];
 					snprintf(buff, 9, "%d", vlan);
@@ -5949,7 +5949,7 @@ void port_vlan_table_save(webs_t wp)
 	/*
 	 * if a VLAN is used, it also gets assigned to port #5 
 	 */
-	for (vlan = 0; vlan < blen + 2; vlan++) {
+/*	for (vlan = 0; vlan < blen + 2; vlan++) {
 		if (vlans[vlan]) {
 			if (*(portvlan))
 				strcat(portvlan, " ");
@@ -5959,12 +5959,12 @@ void port_vlan_table_save(webs_t wp)
 				snprintf(buff, 6, "%d", vlan);
 			strcat(portvlan, buff);
 		}
-	}
+	}*/
 	debug_free(vlans);
-	if (ports == 5) {
+//	if (ports == 5) {
 	//	nvram_set("port5vlans", portvlan);
-	} else
-		nvram_set("port7vlans", portvlan);
+//	} else
+//		nvram_set("port7vlans", portvlan);
 
 	strcpy(br0vlans, "");
 	c = nvram_safe_get("lan_ifnames");
@@ -6295,7 +6295,6 @@ void nassrv_save(webs_t wp)
 		json_object_set_new(entry, "users", user_entries);
 		json_array_append(entries, entry);
 	}
-	//fprintf(stderr, "[SAVE NAS] %s\n", json_dumps( entries, JSON_COMPACT ) );
 	nvram_set("samba3_shares", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
 
@@ -6316,7 +6315,6 @@ void nassrv_save(webs_t wp)
 		json_object_set_new(entry, "type", json_integer(type));
 		json_array_append(entries, entry);
 	}
-	//fprintf(stderr, "[SAVE NAS USERS] %s\n", json_dumps( entries, JSON_COMPACT ) );
 	nvram_set("samba3_users", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
 #endif
