@@ -269,6 +269,7 @@ struct ar8327_data {
 
 	/* all fields below are cleared on reset */
 	bool eee[AR8XXX_NUM_PHYS];
+	u32 state[8];
 };
 
 #endif

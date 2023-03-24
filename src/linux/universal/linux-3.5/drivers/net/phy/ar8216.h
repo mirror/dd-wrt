@@ -455,6 +455,7 @@ struct ar8xxx_priv {
 	bool mirror_tx;
 	int source_port;
 	int monitor_port;
+	u32 state[8];
 };
 
 u32
