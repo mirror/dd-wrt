@@ -316,7 +316,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 			} else
 				j = j1;
-//			fprintf(stderr, "port %d %d\n", j, vlans[j][i]);
+//                      fprintf(stderr, "port %d %d\n", j, vlans[j][i]);
 			if (i >= blen)
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, ((i - blen) * 1000) + 16000);
 			else
@@ -325,8 +325,11 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td");
 
 			if (j1 % 2 == 0)
-				// websWrite(wp, " bgcolor=\"#CCCCCC\"");
 				websWrite(wp, " class=\"odd\"");
+			if (j > lanports && flag > 16000) {
+				websWrite(wp, " height=\"20\">&nbsp</td>\n");
+				continue;
+			}
 			char aria[64];
 			if (flag < 17000) {
 				sprintf(aria, "%s %d %s %d", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.legend"), i);
@@ -348,7 +351,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			}
 			websWrite(wp, " height=\"20\"><div class=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
-//			fprintf(stderr, "port %d, line %d flags %d %d\n", j, i, vlans[j][i], flag);
+//                      fprintf(stderr, "port %d, line %d flags %d %d\n", j, i, vlans[j][i], flag);
 			if (flag < 17000 || flag > 22000) {
 				if (vlans[j][i] == 1)
 					websWrite(wp, "checked=\"checked\" ");
