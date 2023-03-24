@@ -86,8 +86,8 @@ function SelSpeed(F,I) {
 }
 
 function SelVLAN(F,I) {
-	var i,j=0;
-/*	var vlancount = <% nvg("portvlan_count"); %>;
+/*	var i,j=0;
+	var vlancount = <% nvg("portvlan_count"); %>;
 	if(!eval("F."+I+"vlan21000") || eval("F."+I+"vlan21000").checked == true) {
 		if(eval("F."+I+"vlan16000") && eval("F."+I+"vlan16000").checked == true) {
 			for(i=0;i<vlancount;i++) {
@@ -121,7 +121,7 @@ function SelVLAN(F,I) {
 				}
 			}
 		}
-	}*/
+	} */
 }
 
 function init() {
