@@ -1082,6 +1082,54 @@ ar8327_sw_get_eee(struct switch_dev *dev,
 	return 0;
 }
 
+
+static int
+ar8327_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct ar8327_data *data = priv->chip_data;
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	
+	if (!!(val->value.i))  {
+		data->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	}else{
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), data->state[port]);
+	}
+
+	return 0;
+}
+
+static int
+ar8327_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	if ((t & AR8216_PORT_STATUS_LINK_UP) && (t & AR8216_PORT_STATUS_LINK_AUTO))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
 static void
 ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 {
@@ -1469,6 +1517,14 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.description = "Enable EEE PHY sleep mode",
 		.set = ar8327_sw_set_eee,
 		.get = ar8327_sw_get_eee,
+		.max = 1,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = ar8327_sw_set_disable,
+		.get = ar8327_sw_get_disable,
 		.max = 1,
 	},
 	{
