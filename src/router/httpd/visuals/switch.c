@@ -321,6 +321,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, ((i - blen) * 1000) + 16000);
 			else
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, i);
+			// todo. disable config fields for cpu ports
 			websWrite(wp, "<td");
 
 			if (j1 % 2 == 0)
