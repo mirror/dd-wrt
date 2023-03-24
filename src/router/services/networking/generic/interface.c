@@ -321,7 +321,7 @@ void start_setup_vlans(void)
 				 * user must now manually handle this at networking. we cannot decide what todo with the config
 				 * but i keep it now for testing
 				 */
-				if (tagged[i] && i == cpuportidx || i == wancpuportidx || i == lancpuportidx) {
+				if (tagged[i] && (i == cpuportidx || i == wancpuportidx || i == lancpuportidx)) {
 					if (i == wancpuportidx)
 						eval("vconfig", "add", wanphy, buff);
 					else if (i == lancpuportidx)
