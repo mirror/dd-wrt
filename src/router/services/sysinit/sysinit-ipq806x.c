@@ -633,6 +633,9 @@ void start_sysinit(void)
 	nvram_default_geti("port2vlans", 1);
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
+	nvram_default_get("port5vlans", "1 18000 19000 20000");
+	nvram_default_get("port6vlans", "2 18000 19000 20000");
+
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "20");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
