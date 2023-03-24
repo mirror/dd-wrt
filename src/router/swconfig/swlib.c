@@ -918,6 +918,33 @@ int has_igmpsnooping(void)
 	return 0;
 }
 
+int has_eee(void)
+{
+	struct switch_dev *dev;
+	struct switch_attr *attr;
+	struct switch_val val;
+	dev = swlib_connect("switch0");
+	if (!dev)
+		dev = swlib_connect("rtl8366s");
+	if (!dev)
+		dev = swlib_connect("rtl8366rb");
+	if (!dev)
+		return -1;
+
+	swlib_scan(dev);
+	attr = dev->ops;
+	while (attr) {
+		if (!strcmp(attr->name, "enable_eee")) {
+			swlib_free_all(dev);
+			return 1;
+
+		}
+		attr = attr->next;
+	}
+	swlib_free_all(dev);
+	return 0;
+}
+
 int getPortStatus(int port)
 {
 	struct switch_dev *dev;
