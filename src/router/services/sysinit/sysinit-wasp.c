@@ -165,6 +165,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+
 #elif defined (HAVE_XD3200)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 #ifndef HAVE_SR3200
@@ -199,14 +200,12 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 	nvram_seti("sw_lancpuport", 0);
-//	nvram_seti("sw_wancpuport", 6);
+//      nvram_seti("sw_wancpuport", 6);
 	nvram_seti("sw_wan", 1);
 	nvram_seti("sw_lan1", 2);
 	nvram_seti("sw_lan2", 3);
 	nvram_seti("sw_lan3", 4);
 	nvram_seti("sw_lan4", 5);
-
-
 
 #elif defined (HAVE_RAMBUTAN)
 #elif defined (HAVE_WR650AC)
@@ -231,7 +230,6 @@ void start_sysinit(void)
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-
 
 #elif defined (HAVE_JWAP606)
 	// nothing
@@ -770,7 +768,7 @@ void start_sysinit(void)
 	eval("ledtool", "1", "4");	//buzzer
 	eval("ledtool", "5", "0");	//diag ~5sec
 #elif HAVE_DW02_412H
-// 	don't use setWirelessLed since we only have one LED for two distinct radio's
+//      don't use setWirelessLed since we only have one LED for two distinct radio's
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4

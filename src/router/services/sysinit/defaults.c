@@ -1354,7 +1354,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan0_mode", "ap" },	/* AP mode (ap|sta|wds) */
 #elif HAVE_CARLSONWIRELES
 #ifdef HAVE_LAGUNA
-	{ "wlan0_mode", "ap" },		/* AP mode (wdsap) */
+	{ "wlan0_mode", "ap" },	/* AP mode (wdsap) */
 #else
 	{ "wlan0_mode", "wdsap" },	/* AP mode (wdsap) */
 #endif
@@ -3190,7 +3190,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_blockmulticast", "0" },
 	{ "openvpn_userpassnum", "0" },
 	{ "openvpn_enuserpass", "0" },
-	
+
 #endif
 #ifdef HAVE_ANTAIRA_AGENT
 	{ "antaira_agent_enable", "0" },

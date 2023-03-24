@@ -197,6 +197,18 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", -1);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
+		nvram_default_geti("port0vlans", 2);
+		nvram_default_geti("port1vlans", 1);
+		nvram_default_geti("port2vlans", 1);
+		nvram_default_geti("port3vlans", 1);
+		nvram_default_geti("port4vlans", 1);
+		nvram_default_get("port5vlans", "1 18000 19000 20000");
 		setEthLED(18, "eth0");
 		setEthLED(19, "eth1");
 #elif HAVE_DAP3410
@@ -214,6 +226,19 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
+
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", -1);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
+		nvram_default_geti("port0vlans", 2);
+		nvram_default_geti("port1vlans", 1);
+		nvram_default_geti("port2vlans", 1);
+		nvram_default_geti("port3vlans", 1);
+		nvram_default_geti("port4vlans", 1);
+		nvram_default_get("port5vlans", "1 18000 19000 20000");
 #endif
 #endif
 	}
@@ -394,6 +419,18 @@ char *set_wan_state(int state)
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
+
+		nvram_seti("sw_wan", -1);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
+		nvram_default_geti("port0vlans", 2);
+		nvram_default_geti("port1vlans", 1);
+		nvram_default_geti("port2vlans", 1);
+		nvram_default_geti("port3vlans", 1);
+		nvram_default_geti("port4vlans", 1);
+		nvram_default_get("port5vlans", "1 18000 19000 20000");
 #endif
 #endif
 		return NULL;

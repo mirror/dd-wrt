@@ -152,7 +152,7 @@ void start_sysinit(void)
 	nvram_default_geti("port2vlans", 1);
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
-	nvram_default_get("port5vlans", "1 2 16000");
+	nvram_default_get("port5vlans", "1 18000 19000 20000");
 #endif
 
 #ifndef HAVE_DAP2230
@@ -234,8 +234,8 @@ void start_sysinit(void)
 #endif
 #endif
 #ifdef HAVE_WA850RE
-		if (!nvram_matchi("wlanled", 0))
-			eval("/sbin/wlanled", "-L", "generic_0:-94", "-L", "generic_1:-87", "-L", "generic_2:-80", "-L", "generic_3:-73", "-L", "generic_4:-65");
+	if (!nvram_matchi("wlanled", 0))
+		eval("/sbin/wlanled", "-L", "generic_0:-94", "-L", "generic_1:-87", "-L", "generic_2:-80", "-L", "generic_3:-73", "-L", "generic_4:-65");
 #endif
 	/*
 	 * Set a sane date 

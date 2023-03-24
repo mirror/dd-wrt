@@ -122,7 +122,7 @@ void start_sysinit(void)
 	char *recovery = getUEnv("auto_recovery");
 	if (recovery && strcmp(recovery, "yes"))
 		eval("ubootenv", "set", "auto_recovery", "yes");
-	if (!nvram_match("nobcreset","1"))
+	if (!nvram_match("nobcreset", "1"))
 		eval("mtd", "resetbc", "s_env");	// reset boot counter
 
 	/*
@@ -196,7 +196,6 @@ void start_sysinit(void)
 
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-
 
 	return;
 }
