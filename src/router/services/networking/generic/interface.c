@@ -229,7 +229,30 @@ void start_setup_vlans(void)
 
 				switch (tmp) {
 				case 22000:
-					eval("swconfig", "dev", "switch0", "port", (!nvram_match("sw_wan", "-1") && !i) ? nvram_safe_get("sw_wan") : nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+					if (i == 0) {
+						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "igmp_snooping", "1");
+					} else if (i == wancpuportidx) {
+						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wancpuport"), "set", "igmp_snooping", "1");
+					} else if (i == lancpuportidx) {
+						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_lancpuport"), "set", "igmp_snooping", "1");
+					} else if (i == cpuportidx) {
+						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_cpuport"), "set", "igmp_snooping", "1");
+					} else {
+						eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+					}
+					break;
+				case 23000:
+					if (i == 0) {
+						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "enable_eee", "1");
+					} else if (i == wancpuportidx) {
+//						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wancpuport"), "set", "igmp_snooping", "1");
+					} else if (i == lancpuportidx) {
+//						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_lancpuport"), "set", "igmp_snooping", "1");
+					} else if (i == cpuportidx) {
+//						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_cpuport"), "set", "igmp_snoopin", "1");
+					} else {
+						eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "enable_eee", "1");
+					}
 					break;
 				case 16000:
 #if 0
@@ -274,7 +297,6 @@ void start_setup_vlans(void)
 				} else
 #endif
 				{
-					fprintf(stderr, "index %d, ports %s, vlan_number %d\n", i, ports, vlan_number);
 					if (i == 0) {
 						if (*ports)
 							snprintf(ports, 31, "%s %s%s", ports, nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
@@ -316,7 +338,7 @@ void start_setup_vlans(void)
 					lanphy = "eth0";
 					wanphy = "eth1";
 				}
-    
+
 				/*
 				 * user must now manually handle this at networking. we cannot decide what todo with the config
 				 * but i keep it now for testing
@@ -348,28 +370,28 @@ void start_setup_vlans(void)
 				}
 			}
 		}
-		char linkstr[128] = { 0 };
-		if (mask & 4) {
-			if (mask & 2)
-				sprintf(linkstr, "duplex half");
-			else
-				sprintf(linkstr, "duplex full");
-
-			if (mask & 16) {
-				if (mask & 1)
-					sprintf(linkstr, "%s speed 10", linkstr);
-				else
-					sprintf(linkstr, "%s speed 100", linkstr);
-
-				sprintf(linkstr, "%s autoneg off", linkstr);
-			} else {
-				sprintf(linkstr, "%s speed 1000", linkstr);
-				sprintf(linkstr, "%s autoneg on", linkstr);
-			}
-
-		} else
-			sprintf(linkstr, "autoneg on", linkstr);
 		if (i != cpuportidx && i != lancpuportidx && i != wancpuportidx) {
+			char linkstr[128] = { 0 };
+			if (mask & 4) {
+				if (mask & 2)
+					sprintf(linkstr, "duplex half");
+				else
+					sprintf(linkstr, "duplex full");
+
+				if (mask & 16) {
+					if (mask & 1)
+						sprintf(linkstr, "%s speed 10", linkstr);
+					else
+						sprintf(linkstr, "%s speed 100", linkstr);
+
+					sprintf(linkstr, "%s autoneg off", linkstr);
+				} else {
+					sprintf(linkstr, "%s speed 1000", linkstr);
+					sprintf(linkstr, "%s autoneg on", linkstr);
+				}
+
+			} else
+				sprintf(linkstr, "autoneg on", linkstr);
 			if (i == 0) {
 				eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "link", linkstr);
 			} else {
