@@ -193,7 +193,10 @@ void start_sysinit(void)
 	nvram_default_geti("port2vlans", 1);
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
-	nvram_default_get("port5vlans", "1 2 16000");
+
+	nvram_default_get("port5vlans", "2 18000 19000 20000");
+	nvram_default_get("port6vlans", "1 18000 19000 20000");
+
 
 	return;
 }
