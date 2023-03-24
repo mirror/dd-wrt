@@ -469,6 +469,7 @@ struct ar8xxx_priv {
 	int source_port;
 	int monitor_port;
 	u8 port_vlan_prio[AR8X16_MAX_PORTS];
+	u32 state[8];
 };
 
 u32
