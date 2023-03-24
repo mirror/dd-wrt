@@ -3882,8 +3882,13 @@ void start_nvram(void)
 
 	if (nvram_geti("nvram_ver") < 10) {
 		nvram_seti("nvram_ver", 10);
-		nvram_unset("vlan5ports");
-		nvram_unset("vlan6ports");
+		nvram_unset("port0vlans");
+		nvram_unset("port1vlans");
+		nvram_unset("port2vlans");
+		nvram_unset("port3vlans");
+		nvram_unset("port4vlans");
+		nvram_unset("port5vlans");
+		nvram_unset("port6vlans");
 	}
 	return;
 }
