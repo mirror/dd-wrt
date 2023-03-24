@@ -1470,6 +1470,53 @@ ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
 	return ret;
 }
 
+static int
+ar8xxx_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	
+	if (!!(val->value.i))  {
+		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
+	}else{
+		if (priv->state[port])
+			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
+	}
+
+	return 0;
+}
+
+static int
+ar8xxx_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+	if (!(t & AR8216_PORT_STATUS_LINK_AUTO))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
 static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1551,6 +1598,14 @@ const struct switch_attr ar8xxx_sw_attr_port[] = {
 		.name = "flush_arl_table",
 		.description = "Flush port's ARL table entries",
 		.set = ar8xxx_sw_set_flush_port_arl_table,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = ar8xxx_sw_set_disable,
+		.get = ar8xxx_sw_get_disable,
+		.max = 1,
 	},
 };
 
