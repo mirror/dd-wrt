@@ -156,7 +156,7 @@ void start_setup_vlans(void)
 	if (!nvram_exists("port7vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
 #else
-	if (!nvram_exists("port5vlans") || nvram_matchi("vlans", 0))
+	if (nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
 #endif
 #ifdef HAVE_R9000
@@ -274,6 +274,7 @@ void start_setup_vlans(void)
 				} else
 #endif
 				{
+					fprintf(stderr, "index %d, ports %s, vlan_number %d\n", i, ports, vlan_number);
 					if (i == 0) {
 						if (*ports)
 							snprintf(ports, 31, "%s %s%s", ports, nvram_safe_get("sw_wan"), tagged[i] ? "t" : "");
