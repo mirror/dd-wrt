@@ -81,7 +81,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	wl_br = -1;
 
 	for (i = 0; i < lanports + 2 + cpuports; i++) {
-		if (i < (lanports + 1))
+		if (i < (lanports + 1 + cpuports))
 			snprintf(buff, 31, "port%dvlans", i);
 		else if (i == 5)
 			snprintf(buff, 31, "%s", "lan_ifnames");
@@ -110,8 +110,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 					if (tmp >= 16000) {
 						tmp = blen + ((tmp - 16000) / 1000);
 					}
-					if (i < lanports + 1) {
+					if (i < lanports + 1 + cpuports) {
 						vlans[i][tmp] = 1;
+						//fprintf(stderr, "assign port %d flag %d\n", i, tmp);
 					} else {
 						vlans[lanports + 1][tmp] = i - (lanports + 1);
 					}
@@ -304,7 +305,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				if (j1 == 0)
 					j = lanports + 1;
 				else
-					j = j1 - 1;
+					j = j1 - 2;
 			} else if (cpuports == 2) {
 				if (j1 == 0)
 					j = lanports + 1;
@@ -314,14 +315,15 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 					j = j1 - 2;
 
 			} else
-				j1 = j;
+				j = j1;
+//			fprintf(stderr, "port %d %d\n", j, vlans[j][i]);
 			if (i >= blen)
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, ((i - blen) * 1000) + 16000);
 			else
 				snprintf(buff, 31, "\"port%dvlan%d\"", j, i);
 			websWrite(wp, "<td");
 
-			if (j % 2 == 0)
+			if (j1 % 2 == 0)
 				// websWrite(wp, " bgcolor=\"#CCCCCC\"");
 				websWrite(wp, " class=\"odd\"");
 			char aria[64];
@@ -345,6 +347,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			}
 			websWrite(wp, " height=\"20\"><div class=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
+//			fprintf(stderr, "port %d, line %d flags %d %d\n", j, i, vlans[j][i], flag);
 			if (flag < 17000 || flag > 22000) {
 				if (vlans[j][i] == 1)
 					websWrite(wp, "checked=\"checked\" ");
@@ -373,8 +376,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		if (i == (blen - 1)) {
 			websWrite(wp,
-				  "<tr><td colspan=\"6\">&nbsp;</td><td class=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
-				  i);
+				  "<tr><td colspan=\"%d\">&nbsp;</td><td class=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  6 + cpuports, i);
 		}
 		if (flag == 20000 || flag == 16000) {
 			websWrite(wp, "<tr><td>&nbsp;</td></tr>\n");
