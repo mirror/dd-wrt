@@ -1573,7 +1573,6 @@ char *strstrtok(char *str, char del);
 
 int getPortStatus(int port);
 int has_igmpsnooping(void);
-int has_eee(void);
 
 #endif
 
