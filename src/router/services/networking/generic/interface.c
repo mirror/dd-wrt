@@ -321,28 +321,29 @@ void start_setup_vlans(void)
 				 * user must now manually handle this at networking. we cannot decide what todo with the config
 				 * but i keep it now for testing
 				 */
-
-				if (i == wancpuportidx)
-					eval("vconfig", "add", wanphy, buff);
-				else if (i == lancpuportidx)
-					eval("vconfig", "add", lanphy, buff);
-				else
-					eval("vconfig", "add", lanphy, buff);
-				snprintf(buff, 9, "vlan%d", vlanlist[vlan_number]);
-				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
-					char hwaddr[32];
-					sprintf(hwaddr, "%s_hwaddr", buff);
-					if (!nvram_match(hwaddr, ""))
-						set_hwaddr(buff, nvram_safe_get(hwaddr));
-					if (nvram_nmatch("0", "%s_bridged", buff)) {
-						if (*(nvram_nget("%s_ipaddr", buff)))
-							eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
-						else
+				if (tagged[i] && i == cpuportindex || i == wancpuportindex || i == lancpuportindex) {
+					if (i == wancpuportidx)
+						eval("vconfig", "add", wanphy, buff);
+					else if (i == lancpuportidx)
+						eval("vconfig", "add", lanphy, buff);
+					else
+						eval("vconfig", "add", lanphy, buff);
+					snprintf(buff, 9, "vlan%d", vlanlist[vlan_number]);
+					if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
+						char hwaddr[32];
+						sprintf(hwaddr, "%s_hwaddr", buff);
+						if (!nvram_match(hwaddr, ""))
+							set_hwaddr(buff, nvram_safe_get(hwaddr));
+						if (nvram_nmatch("0", "%s_bridged", buff)) {
+							if (*(nvram_nget("%s_ipaddr", buff)))
+								eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
+							else
+								eval("ifconfig", buff, "0.0.0.0", "up");
+						} else {
+							char tmp[256];
 							eval("ifconfig", buff, "0.0.0.0", "up");
-					} else {
-						char tmp[256];
-						eval("ifconfig", buff, "0.0.0.0", "up");
-						br_add_interface(getBridge(buff, tmp), buff);
+							br_add_interface(getBridge(buff, tmp), buff);
+						}
 					}
 				}
 			}
