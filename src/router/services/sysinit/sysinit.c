@@ -3889,7 +3889,7 @@ void start_nvram(void)
 		nvram_unset("port4vlans");
 		nvram_unset("port5vlans");
 		nvram_unset("port6vlans");
-		nvram_seti("vlans",0);
+		nvram_seti("vlans", 0);
 		nvram_commit();
 		eval("reboot");
 	}

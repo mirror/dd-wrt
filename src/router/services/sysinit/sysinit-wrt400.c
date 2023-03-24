@@ -123,6 +123,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 2);
 		nvram_seti("sw_lan3", 3);
 		nvram_seti("sw_lan4", 4);
+		nvram_default_get("port5vlans", "1 18000 19000 20000");
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);

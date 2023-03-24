@@ -500,7 +500,7 @@ void start_sysinit(void)
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
-		if (!nvram_match("nobcreset","1"))
+		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 		break;
 	default:
@@ -592,7 +592,7 @@ void start_sysinit(void)
 */
 #endif				/*HAVE_ANTAIRA */
 		break;
-	/* routers with reverse port order */
+		/* routers with reverse port order */
 	case ROUTER_NETGEAR_R7800:
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:

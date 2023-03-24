@@ -195,9 +195,9 @@ void start_devinit(void)
 	insmod("mbcache");
 	insmod("crc16");
 	insmod("ext4");
-	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL|MS_SYNCHRONOUS, NULL)) {
+	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS, NULL)) {
 		eval("mkfs.ext4", "-F", "-b", " 1024", s_dev);
-		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL|MS_SYNCHRONOUS, NULL);
+		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS, NULL);
 	}
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
