@@ -820,6 +820,15 @@ int flush_interfaces(void)
 			strcat(all_ifnames, buff2);
 		}
 	}
+	c = nvram_safe_get("port6vlans");
+	if (c) {
+		foreach(buff, c, next) {
+			if (atoi(buff) > 15)
+				continue;
+			snprintf(buff2, sizeof(buff2), " vlan%s", buff);
+			strcat(all_ifnames, buff2);
+		}
+	}
 
 	foreach(buff, all_ifnames, next) {
 		if (strcmp(buff, "br0") == 0)
