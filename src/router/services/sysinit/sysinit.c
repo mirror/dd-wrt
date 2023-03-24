@@ -3389,7 +3389,7 @@ void start_nvram(void)
 	nvram_set("wan_get_domain", "");
 
 #ifdef HAVE_SSHD
-	nvram_unset("sshd_keyready");  //egc reset SSH key ready as the private key file /tmp/id_rsa_ssh is gone after reboot so cannot be downloaded anymore
+	nvram_unset("sshd_keyready");	//egc reset SSH key ready as the private key file /tmp/id_rsa_ssh is gone after reboot so cannot be downloaded anymore
 #endif
 
 #ifdef HAVE_BRCMROUTER
@@ -3881,7 +3881,7 @@ void start_nvram(void)
 	}
 
 	if (nvram_geti("nvram_ver") < 10) {
-		nvram_seti("nvram_ver",10);
+		nvram_seti("nvram_ver", 10);
 		nvram_unset("vlan5ports");
 		nvram_unset("vlan6ports");
 	}
