@@ -649,7 +649,7 @@ void start_setup_vlans(void)
 
 int flush_interfaces(void)
 {
-	char all_ifnames[256] = { 0 }, *c, *next, buff[32], buff2[32];
+	char all_ifnames[256] = { 0 }, *c, *next, buff[128], buff2[128];
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_GATEWORX
