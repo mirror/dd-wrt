@@ -305,14 +305,14 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		int j1;
 		for (j1 = nowan; j1 < lanports + 1 + cpuports; j1++) {
 			if (cpuports == 1) {
-				if (j1 == 0)
+				if (j1 == nowan)
 					j = lanports + 1;
 				else
 					j = j1 - 1;
 			} else if (cpuports == 2) {
-				if (j1 == 0)
+				if (j1 == nowan)
 					j = lanports + 1;
-				else if (j1 == 1)
+				else if (j1 == nowan + 1)
 					j = lanports + 2;
 				else
 					j = j1 - 2;
