@@ -456,6 +456,7 @@ struct ar8xxx_priv {
 	int source_port;
 	int monitor_port;
 	u32 state[8];
+	u32 disabled[8];
 };
 
 u32

@@ -1038,7 +1038,6 @@ ar8327_sw_set_disable(struct switch_dev *dev,
 		  struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
-	struct ar8327_data *data = priv->chip_data;
 	int port = val->port_vlan;
 
 	if (port >= dev->ports)
@@ -1048,11 +1047,13 @@ ar8327_sw_set_disable(struct switch_dev *dev,
 
 	
 	if (!!(val->value.i))  {
-		data->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+		priv->disabled = 1;
+		priv->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
 	} else {
-		if (data->state[port])
-			ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), data->state[port]);
+		priv->disabled = 0;
+		if (priv->state[port])
+			ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), priv->state[port]);
 	}
 
 	return 0;
