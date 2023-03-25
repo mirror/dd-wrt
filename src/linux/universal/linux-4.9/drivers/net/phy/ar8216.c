@@ -447,6 +447,8 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 	memset(link, '\0', sizeof(*link));
 
 	status = priv->chip->read_port_status(priv, port);
+	if (priv->disabled[port])
+		return;
 
 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
 	if (link->aneg) {
@@ -1605,9 +1607,11 @@ ar8xxx_sw_set_disable(struct switch_dev *dev,
 
 	
 	if (!!(val->value.i))  {
+		priv->disabled = 1;
 		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
 	}else{
+		priv->disabled = 0;
 		if (priv->state[port])
 			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
 	}
