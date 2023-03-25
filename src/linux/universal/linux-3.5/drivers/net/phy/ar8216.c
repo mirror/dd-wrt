@@ -1487,11 +1487,11 @@ ar8xxx_sw_set_disable(struct switch_dev *dev,
 
 	
 	if (!!(val->value.i))  {
-		priv->disabled = 1;
+		priv->disabled[port] = 1;
 		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
 	}else{
-		priv->disabled = 0;
+		priv->disabled[port] = 0;
 		if (priv->state[port])
 			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
 	}
