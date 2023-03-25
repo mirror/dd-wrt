@@ -308,7 +308,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				if (j1 == 0)
 					j = lanports + 1;
 				else
-					j = j1 - 2;
+					j = j1 - 1;
 			} else if (cpuports == 2) {
 				if (j1 == 0)
 					j = lanports + 1;
