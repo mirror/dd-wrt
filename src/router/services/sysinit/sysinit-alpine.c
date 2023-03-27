@@ -242,7 +242,7 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3", "untagged");	// wan port
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "2");
 
-	nvram_seti("sw_cpuport", 6);	// this is a dummy. for the r9000 we need to write complete new code
+	nvram_unset("sw_cpuport");	// this is a dummy. for the r9000 we need to write complete new code
 	nvram_seti("sw_wan", -1);	// switch 0 (3) note: we cannot allow wan for now
 	nvram_seti("sw_lan1", 2);	// switch 0
 	nvram_seti("sw_lan2", 1);	// switch 0
