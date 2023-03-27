@@ -445,7 +445,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 				    center_segment0 == freq - (6*5))
 					data->center_freq1 = center_segment0;
 				else 
-					return -1
+					return -1;
 			}else{	
 				if (center_segment0 == channel + 6 ||
 				    center_segment0 == channel + 2 ||
