@@ -1409,7 +1409,7 @@ _ieee802_11_parse_elems_crc(const u8 *start, size_t len, bool action,
 	if (!for_each_element_completed(elem, start, len))
 		elems->parse_error = true;
 
-	elems->crc = crc;
+//	elems->crc = crc;
 	return crc;
 }
 

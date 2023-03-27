@@ -247,32 +247,45 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 		break;
 	case NL80211_CHAN_WIDTH_40:
 		if (chandef->center_freq1 != control_freq + 10 &&
-		    chandef->center_freq1 != control_freq - 10)
+		    chandef->center_freq1 != control_freq - 10) {
+			printk(KERN_INFO "%s:%d:center_freq1 %d isnt in spec with control_freq %d\n", __func__,__LINE__, chandef->center_freq1, control_freq);
 			return false;
-		if (chandef->center_freq2)
+		}
+		if (chandef->center_freq2) {
+			printk(KERN_INFO "%s:%d: center_freq2 %d is defined. this is wrong\n", __func__,__LINE__,chandef->center_freq2);
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_80P80:
 		if (chandef->center_freq1 != control_freq + 30 &&
 		    chandef->center_freq1 != control_freq + 10 &&
 		    chandef->center_freq1 != control_freq - 10 &&
-		    chandef->center_freq1 != control_freq - 30)
+		    chandef->center_freq1 != control_freq - 30) {
+			printk(KERN_INFO "%s:%d:center_freq1 %d isnt in spec with control_freq %d\n", __func__,__LINE__, chandef->center_freq1, control_freq);
 			return false;
-		if (!chandef->center_freq2)
+		}
+		if (!chandef->center_freq2) {
+			printk(KERN_INFO "%s:%d: center_freq2 is not defined. this is wrong\n", __func__,__LINE__);
 			return false;
+		}
 		/* adjacent is not allowed -- that's a 160 MHz channel */
 		if (chandef->center_freq1 - chandef->center_freq2 == 80 ||
-		    chandef->center_freq2 - chandef->center_freq1 == 80)
+		    chandef->center_freq2 - chandef->center_freq1 == 80) {
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_80:
 		if (chandef->center_freq1 != control_freq + 30 &&
 		    chandef->center_freq1 != control_freq + 10 &&
 		    chandef->center_freq1 != control_freq - 10 &&
-		    chandef->center_freq1 != control_freq - 30)
+		    chandef->center_freq1 != control_freq - 30) {
+			printk(KERN_INFO "%s:%d:center_freq1 %d isnt in spec with control_freq %d\n", __func__,__LINE__, chandef->center_freq1, control_freq);
 			return false;
-		if (chandef->center_freq2)
+		    }
+		if (chandef->center_freq2) {
+			printk(KERN_INFO "%s:%d:center_freq2 %d is defined. this is wrong\n", __func__,__LINE__, chandef->center_freq2);
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_160:
 		if (chandef->center_freq1 != control_freq + 70 &&
@@ -282,10 +295,14 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 		    chandef->center_freq1 != control_freq - 10 &&
 		    chandef->center_freq1 != control_freq - 30 &&
 		    chandef->center_freq1 != control_freq - 50 &&
-		    chandef->center_freq1 != control_freq - 70)
+		    chandef->center_freq1 != control_freq - 70) {
+			printk(KERN_INFO "%s:%d:center_freq1 %d isnt in spec with control_freq %d\n", __func__,__LINE__, chandef->center_freq1, control_freq);
 			return false;
-		if (chandef->center_freq2)
+		}
+		if (chandef->center_freq2) {
+			printk(KERN_INFO "%s:%d:center_freq2 %d is defined. this is wrong\n", __func__,__LINE__, chandef->center_freq2);
 			return false;
+		}
 		break;
 	default:
 		return false;
@@ -892,7 +909,7 @@ static bool cfg80211_secondary_chans_ok(struct wiphy *wiphy,
 
 	for (freq = start_freq; freq <= end_freq; freq += MHZ_TO_KHZ(20)) {
 		c = ieee80211_get_channel_khz(wiphy, freq);
-		if (!c || c->flags & prohibited_flags == prohibited_flags) {
+		if (!c || c->flags & prohibited_flags) {
 			return false;
 		}
 	}

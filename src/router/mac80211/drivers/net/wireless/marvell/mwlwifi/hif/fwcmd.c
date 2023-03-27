@@ -1420,7 +1420,7 @@ int mwl_fwcmd_rf_antenna(struct ieee80211_hw *hw, int dir, int antenna)
 			else if (antenna == ANTENNA_RX_3)
 				rx_antenna = 7;
 			else if (antenna == ANTENNA_RX_2)
-				rx_antenna = 4;
+				rx_antenna = 3;
 			else
 				rx_antenna = 1;
 

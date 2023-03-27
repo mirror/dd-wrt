@@ -424,7 +424,7 @@ static void mwl_regd_init(struct mwl_priv *priv)
 		}
 }
 
-static void mwl_set_ht_caps(struct mwl_priv *priv,
+void mwl_set_ht_caps(struct mwl_priv *priv,
 			    struct ieee80211_supported_band *band)
 {
 	struct ieee80211_hw *hw;
@@ -463,15 +463,21 @@ static void mwl_set_ht_caps(struct mwl_priv *priv,
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(150);
 	if  (priv->antenna_tx == ANTENNA_TX_2)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(300);
-	if  (priv->antenna_tx == ANTENNA_TX_4_AUTO)
+	if  (priv->antenna_tx == ANTENNA_TX_3)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
+	if  (priv->antenna_tx == ANTENNA_TX_4_AUTO)
+		band->ht_cap.mcs.rx_highest = cpu_to_le16(600);
 }
 
-static void mwl_set_vht_caps(struct mwl_priv *priv,
+void mwl_set_vht_caps(struct mwl_priv *priv,
 			     struct ieee80211_supported_band *band, bool on)
 {
 	u32 antenna_num = 4;
+	int rxantennas;
+	int i;
 	__le16 highest;
+	u16 mcsmap;
+
 	if (!on) {
 		band->vht_cap.vht_supported = 0;
 		band->vht_cap.cap = 0;
@@ -504,26 +510,44 @@ static void mwl_set_vht_caps(struct mwl_priv *priv,
 		if (priv->antenna_tx != ANTENNA_TX_1)
 			band->vht_cap.cap |= IEEE80211_VHT_CAP_TXSTBC;
 	}
-
 	if (priv->antenna_rx == ANTENNA_RX_1)
-		band->vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(0xfffe);
+		rxantennas = 1;
 	else if (priv->antenna_rx == ANTENNA_RX_2)
-		band->vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(0xfffa);
+		rxantennas = 2;
+	else if (priv->antenna_rx == ANTENNA_RX_3)
+		rxantennas = 3;
 	else
-		band->vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(0xffea);
+		rxantennas = 4;
+
+	mcsmap = 0;
+	for (i = 0;i < rxantennas;i++)
+	    mcsmap |= IEEE80211_VHT_MCS_SUPPORT_0_9 << i*2;
+	for (i = rxantennas;i < 8;i++)
+	    mcsmap |= IEEE80211_VHT_MCS_NOT_SUPPORTED << i*2;
+
+	band->vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(mcsmap);
+
 
 	if (priv->antenna_tx == ANTENNA_TX_1) {
-		band->vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(0xfffe);
 		antenna_num = 1;
 		highest = cpu_to_le16(390);
 	} else if (priv->antenna_tx == ANTENNA_TX_2) {
-		band->vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(0xfffa);
 		antenna_num = 2;
 		highest = cpu_to_le16(780);
-	} else{
-		band->vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(0xffea);
+	} else if (priv->antenna_tx == ANTENNA_TX_3) {
+		antenna_num = 3;
 		highest = cpu_to_le16(1170);
+	} else{
+		highest = cpu_to_le16(1560);
 	}
+
+	mcsmap = 0;
+	for (i = 0;i < antenna_num;i++)
+	    mcsmap |= IEEE80211_VHT_MCS_SUPPORT_0_9 << i*2;
+	for (i = antenna_num;i < 8;i++)
+	    mcsmap |= IEEE80211_VHT_MCS_NOT_SUPPORTED << i*2;
+
+	band->vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(mcsmap);
 
 	band->vht_cap.vht_mcs.rx_highest=highest;
 	band->vht_cap.vht_mcs.tx_highest=highest;
@@ -916,11 +940,14 @@ static int mwl_wl_init(struct mwl_priv *priv)
 		hw->wiphy->available_antennas_rx = 0x1;
 		hw->wiphy->available_antennas_tx = 0x1;
 	} else if (priv->antenna_tx == ANTENNA_TX_2) {
-		hw->wiphy->available_antennas_rx = 0x2;
-		hw->wiphy->available_antennas_tx = 0x2;
-	} else{
-		hw->wiphy->available_antennas_rx = 0x4;
-		hw->wiphy->available_antennas_tx = 0x4;
+		hw->wiphy->available_antennas_rx = 0x3;
+		hw->wiphy->available_antennas_tx = 0x3;
+	} else if (priv->antenna_tx == ANTENNA_TX_3) {
+		hw->wiphy->available_antennas_rx = 0x7;
+		hw->wiphy->available_antennas_tx = 0x7;
+	} else {
+		hw->wiphy->available_antennas_rx = 0xf;
+		hw->wiphy->available_antennas_tx = 0xf;
 	}
 
 	mwl_set_caps(priv, false);

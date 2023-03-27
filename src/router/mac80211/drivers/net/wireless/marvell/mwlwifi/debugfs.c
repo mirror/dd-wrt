@@ -1470,6 +1470,8 @@ static ssize_t mwl_debugfs_ratetable_read(struct file *file, char __user *ubuf,
 					nss = 2;
 				else if ((mcs >= 16) && (mcs < 24))
 					nss = 3;
+				else if ((mcs >= 24) && (mcs < 32))
+					nss = 4;
 			}
 		}
 

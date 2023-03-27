@@ -919,6 +919,71 @@ static void mwl_mac80211_sw_scan_complete(struct ieee80211_hw *hw,
 	priv->sw_scanning = false;
 }
 
+static int mwl_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
+{
+	struct mwl_priv *priv = hw->priv;
+	if (priv->antenna_rx == ANTENNA_RX_1)
+		*rx_ant = 1;
+	else if (priv->antenna_rx == ANTENNA_RX_2)
+		*rx_ant = 3;
+	else if (priv->antenna_rx == ANTENNA_RX_3)
+		*rx_ant = 7;
+	else
+		*rx_ant = 15;
+
+
+	if (priv->antenna_tx == ANTENNA_TX_1)
+		*tx_ant = 1;
+	else if (priv->antenna_tx == ANTENNA_TX_2)
+		*tx_ant = 3;
+	else if (priv->antenna_tx == ANTENNA_TX_3)
+		*tx_ant = 7;
+	else
+		*tx_ant = 15;
+	printk(KERN_INFO "get antenna %d %d\n", *rx_ant, *tx_ant);
+	return 0;
+}
+
+static int mwl_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+{
+	struct mwl_priv *priv = hw->priv;
+	
+	printk(KERN_INFO "set antenna %d %d\n", rx_ant, tx_ant);
+	if (rx_ant == 1)
+		priv->antenna_rx = ANTENNA_RX_1;
+	else if (rx_ant == 3)
+		priv->antenna_rx = ANTENNA_RX_2;
+	else if (rx_ant == 7)
+		priv->antenna_rx = ANTENNA_RX_3;
+	else
+		priv->antenna_rx = ANTENNA_RX_4_AUTO;
+
+	if (tx_ant == 1)
+		priv->antenna_tx = ANTENNA_TX_1;
+	else if (tx_ant == 3)
+		priv->antenna_tx = ANTENNA_TX_2;
+	else if (tx_ant == 7)
+		priv->antenna_tx = ANTENNA_TX_3;
+	else
+		priv->antenna_tx = ANTENNA_TX_4_AUTO;
+
+	mwl_fwcmd_rf_antenna(hw, WL_ANTENNATYPE_TX, priv->antenna_tx);
+	mwl_fwcmd_rf_antenna(hw, WL_ANTENNATYPE_RX, priv->antenna_rx);
+	return 0;
+	/* set up band information for 2.4G */
+	if (!priv->disable_2g) {
+		mwl_set_ht_caps(priv, &priv->band_24);
+	}
+
+	/* set up band information for 5G */
+	if (!priv->disable_5g) {
+		mwl_set_ht_caps(priv, &priv->band_50);
+		mwl_set_vht_caps(priv, &priv->band_50, true);
+	}
+
+}
+
+
 const struct ieee80211_ops mwl_mac80211_ops = {
 	.tx                 = mwl_mac80211_tx,
 	.start              = mwl_mac80211_start,
@@ -939,4 +1004,6 @@ const struct ieee80211_ops mwl_mac80211_ops = {
 	.pre_channel_switch = mwl_mac80211_chnl_switch,
 	.sw_scan_start      = mwl_mac80211_sw_scan_start,
 	.sw_scan_complete   = mwl_mac80211_sw_scan_complete,
+	.set_antenna        = mwl_set_antenna,
+	.get_antenna        = mwl_get_antenna,
 };
