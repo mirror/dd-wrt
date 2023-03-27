@@ -230,14 +230,14 @@ static struct board_info boards[] = {
 		.hw_id		= 0x31500001,
 		.hw_rev		= 0x5f,
 		.layout_id	= "16Mbcm",
-		.hdr_ver	= 3,
+		.hdr_ver	= 0x3000003,
 		.endian_swap	= true,
 	}, {
 		.id		= "ArcherC3200",
 		.hw_id		= 0x89300001,
 		.hw_rev		= 0x4b,
 		.layout_id	= "16Mbcm",
-		.hdr_ver	= 3,
+		.hdr_ver	= 0x3000003,
 		.endian_swap	= true,
 	}, {
 		/* terminating entry */
@@ -807,6 +807,7 @@ static int inspect_fw(void)
 	switch(bswap_32(ntohl(hdr->version))) {
 	case 2:
 	case 3:
+	case 0x3000003:
 		break;
 	default:
 		ERR("file does not seem to have V2/V3 header!\n");
