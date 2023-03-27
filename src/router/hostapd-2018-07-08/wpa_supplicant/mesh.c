@@ -352,6 +352,8 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 				frequency,
 				&conf->vht_oper_centr_freq_seg0_idx);
 			conf->vht_oper_centr_freq_seg0_idx += ssid->ht40 * 2;
+			conf->vht_oper_centr_freq_seg0_idx_freq = frequency;
+			conf->vht_oper_centr_freq_seg0_idx_freq += ssid->ht40 * 2 * 5;
 			break;
 		case VHT_CHANWIDTH_160MHZ:
 			ieee80211_freq_to_chan(
@@ -359,10 +361,14 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 				&conf->vht_oper_centr_freq_seg0_idx);
 			conf->vht_oper_centr_freq_seg0_idx += ssid->ht40 * 2;
 			conf->vht_oper_centr_freq_seg0_idx += 40 / 5;
+			conf->vht_oper_centr_freq_seg0_idx_freq = frequency;
+			conf->vht_oper_centr_freq_seg0_idx_freq += ssid->ht40 * 2 * 5;
+			conf->vht_oper_centr_freq_seg0_idx_freq += 40;
 			break;
 		}
 		ieee80211_freq_to_chan(ssid->vht_center_freq2,
 				       &conf->vht_oper_centr_freq_seg1_idx);
+		conf->vht_oper_centr_freq_seg1_idx_freq = ssid->vht_center_freq2;
 	}
 
 	if (ssid->mesh_basic_rates == NULL) {
