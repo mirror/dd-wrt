@@ -133,7 +133,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	if (cpuports == 2) {
 		websWrite(wp, "<th class=\"center\">WAN CPUPORT</th>\n");
 		websWrite(wp, "<th class=\"center\">LAN CPUPORT</th>\n");
-	} else {
+	} else if (cpuports == 1) {
 		websWrite(wp, "<th class=\"center\">CPUPORT</th>\n");
 	}
 	if (!nowan)
@@ -148,7 +148,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	if (cpuports == 2) {
 		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", getPortStatus(nvram_geti("sw_wancpuport")));
 		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", getPortStatus(nvram_geti("sw_lancpuport")));
-	} else {
+	} else if (cpuports == 1) {
 		websWrite(wp, "<td class=\"status_green center\">%d</td>\n", getPortStatus(nvram_geti("sw_cpuport")));
 	}
 	for (a = nowan; a < lanports + 1; a++) {
