@@ -940,6 +940,7 @@ static int mwl_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
 		*tx_ant = 7;
 	else
 		*tx_ant = 15;
+
 	return 0;
 }
 
