@@ -87,8 +87,8 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 	 * which is channel 42 in 5G band
 	 */
 	if (hapd->iconf->vht_oper_centr_freq_seg0_idx_freq) {
-		oper->vht_op_info_chan_center_freq_seg0_idx = 
-			ieee80211_frequency_to_channel(hapd->iconf->vht_oper_centr_freq_seg0_idx_freq);
+		oper->vht_op_info_chan_center_freq_seg0_idx = ieee80211_frequency_to_channel(hapd->iconf->vht_oper_centr_freq_seg0_idx_freq);
+
 	} else{
 		oper->vht_op_info_chan_center_freq_seg0_idx =
 			hapd->iconf->vht_oper_centr_freq_seg0_idx;
@@ -111,11 +111,19 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 		oper->vht_op_info_chwidth = 1;
 		oper->vht_op_info_chan_center_freq_seg1_idx =
 			oper->vht_op_info_chan_center_freq_seg0_idx;
+		if (hapd->iconf->vht_oper_centr_freq_seg0_idx_freq) {
+		if (hapd->iconf->frequency <
+		    hapd->iconf->vht_oper_centr_freq_seg0_idx_freq)
+			oper->vht_op_info_chan_center_freq_seg0_idx -= 8;
+		else
+			oper->vht_op_info_chan_center_freq_seg0_idx += 8;
+		} else {
 		if (hapd->iconf->channel <
 		    hapd->iconf->vht_oper_centr_freq_seg0_idx)
 			oper->vht_op_info_chan_center_freq_seg0_idx -= 8;
 		else
 			oper->vht_op_info_chan_center_freq_seg0_idx += 8;
+		}
 	} else if (hapd->iconf->vht_oper_chwidth == 3) {
 		/*
 		 * Convert 80+80 MHz channel width to new style as interop
