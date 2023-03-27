@@ -940,7 +940,6 @@ static int mwl_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
 		*tx_ant = 7;
 	else
 		*tx_ant = 15;
-	printk(KERN_INFO "get antenna %d %d\n", *rx_ant, *tx_ant);
 	return 0;
 }
 
@@ -948,7 +947,6 @@ static int mwl_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
 {
 	struct mwl_priv *priv = hw->priv;
 	
-	printk(KERN_INFO "set antenna %d %d\n", rx_ant, tx_ant);
 	if (rx_ant == 1)
 		priv->antenna_rx = ANTENNA_RX_1;
 	else if (rx_ant == 3)
