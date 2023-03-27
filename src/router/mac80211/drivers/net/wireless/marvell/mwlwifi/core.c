@@ -428,7 +428,7 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 			    struct ieee80211_supported_band *band)
 {
 	struct ieee80211_hw *hw;
-	const u8 ant_rx_no[ANTENNA_RX_MAX] = { 3, 1, 2, 3};
+	const u8 ant_rx_no[ANTENNA_RX_MAX] = { 4, 1, 2, 3};
 	int i;
 
 	hw = priv->hw;
@@ -456,16 +456,25 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 
 	for (i = 0; i < ant_rx_no[priv->antenna_rx]; i++)
 		band->ht_cap.mcs.rx_mask[i] = 0xff;
-	band->ht_cap.mcs.rx_mask[4] = 0x01;
+//	band->ht_cap.mcs.rx_mask[4] = 0x01;
 
 	band->ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
 	if  (priv->antenna_tx == ANTENNA_TX_1)
-		band->ht_cap.mcs.rx_highest = cpu_to_le16(150);
+		band->ht_cap.mcs.tx_highest = cpu_to_le16(150);
 	if  (priv->antenna_tx == ANTENNA_TX_2)
-		band->ht_cap.mcs.rx_highest = cpu_to_le16(300);
+		band->ht_cap.mcs.tx_highest = cpu_to_le16(300);
 	if  (priv->antenna_tx == ANTENNA_TX_3)
-		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
+		band->ht_cap.mcs.tx_highest = cpu_to_le16(450);
 	if  (priv->antenna_tx == ANTENNA_TX_4_AUTO)
+		band->ht_cap.mcs.tx_highest = cpu_to_le16(600);
+
+	if  (priv->antenna_rx == ANTENNA_RX_1)
+		band->ht_cap.mcs.rx_highest = cpu_to_le16(150);
+	if  (priv->antenna_rx == ANTENNA_RX_2)
+		band->ht_cap.mcs.rx_highest = cpu_to_le16(300);
+	if  (priv->antenna_rx == ANTENNA_RX_3)
+		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
+	if  (priv->antenna_rx == ANTENNA_RX_4_AUTO)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(600);
 }
 
@@ -475,7 +484,8 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 	u32 antenna_num = 4;
 	int rxantennas;
 	int i;
-	__le16 highest;
+	__le16 txhighest;
+	__le16 rxhighest;
 	u16 mcsmap;
 
 	if (!on) {
@@ -510,15 +520,20 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 		if (priv->antenna_tx != ANTENNA_TX_1)
 			band->vht_cap.cap |= IEEE80211_VHT_CAP_TXSTBC;
 	}
-	if (priv->antenna_rx == ANTENNA_RX_1)
+	if (priv->antenna_rx == ANTENNA_RX_1) {
+		rxhighest = cpu_to_le16(390);
 		rxantennas = 1;
-	else if (priv->antenna_rx == ANTENNA_RX_2)
+	} else if (priv->antenna_rx == ANTENNA_RX_2) {
+		rxhighest = cpu_to_le16(780);
 		rxantennas = 2;
-	else if (priv->antenna_rx == ANTENNA_RX_3)
+	} else if (priv->antenna_rx == ANTENNA_RX_3) {
+		rxhighest = cpu_to_le16(1170);
 		rxantennas = 3;
-	else
+	} else {
+		rxhighest = cpu_to_le16(1560);
 		rxantennas = 4;
-
+	}
+	
 	mcsmap = 0;
 	for (i = 0;i < rxantennas;i++)
 	    mcsmap |= IEEE80211_VHT_MCS_SUPPORT_0_9 << i*2;
@@ -530,15 +545,15 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 
 	if (priv->antenna_tx == ANTENNA_TX_1) {
 		antenna_num = 1;
-		highest = cpu_to_le16(390);
+		txhighest = cpu_to_le16(390);
 	} else if (priv->antenna_tx == ANTENNA_TX_2) {
 		antenna_num = 2;
-		highest = cpu_to_le16(780);
+		txhighest = cpu_to_le16(780);
 	} else if (priv->antenna_tx == ANTENNA_TX_3) {
 		antenna_num = 3;
-		highest = cpu_to_le16(1170);
+		txhighest = cpu_to_le16(1170);
 	} else{
-		highest = cpu_to_le16(1560);
+		txhighest = cpu_to_le16(1560);
 	}
 
 	mcsmap = 0;
@@ -549,8 +564,8 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 
 	band->vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(mcsmap);
 
-	band->vht_cap.vht_mcs.rx_highest=highest;
-	band->vht_cap.vht_mcs.tx_highest=highest;
+	band->vht_cap.vht_mcs.rx_highest=rxhighest;
+	band->vht_cap.vht_mcs.tx_highest=txhighest;
 
 	if (band->vht_cap.cap & (IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE |
 	    IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE)) {
