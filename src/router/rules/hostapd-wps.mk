@@ -10,18 +10,6 @@ ifeq ($(CONFIG_DRIVER_WIRED),y)
 ATH9K_LDFLAGS +=-L$(TOP)/libnfnetlink/src/.libs -lnfnetlink
 ATH9K_LDFLAGS +=-L$(TOP)/libnetfilter_log/src/.libs -lnetfilter_log
 endif
-ifeq ($(CONFIG_ATH10K),y)
-HOSTAPDVERSION=2018-07-08
-endif
-ifeq ($(CONFIG_MT7615),y)
-HOSTAPDVERSION=2018-07-08
-endif
-ifeq ($(CONFIG_MT7662),y)
-HOSTAPDVERSION=2018-07-08
-endif
-ifeq ($(CONFIG_BRCMFMAC),y)
-HOSTAPDVERSION=2018-07-08
-endif
 ifeq ($(CONFIG_WPA3),y)
 ifndef $(HOSTAPDVERSION)
 HOSTAPDVERSION=2018-07-08
