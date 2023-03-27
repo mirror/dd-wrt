@@ -510,6 +510,11 @@ int mwl_init_hw(struct ieee80211_hw *hw, const char *fw_name,
 
 void mwl_deinit_hw(struct ieee80211_hw *hw);
 
+void mwl_set_vht_caps(struct mwl_priv *priv,
+			     struct ieee80211_supported_band *band, bool on);
+void mwl_set_ht_caps(struct mwl_priv *priv,
+			     struct ieee80211_supported_band *band);
+
 /* Defined in mac80211.c. */
 extern const struct ieee80211_ops mwl_mac80211_ops;
 
