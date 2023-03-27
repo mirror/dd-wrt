@@ -163,7 +163,6 @@ void start_setup_vlans(void)
 	sysprintf(". /usr/sbin/resetswitch.sh");
 #else
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
-	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 #endif
 	int lanports = 5;
@@ -185,6 +184,7 @@ void start_setup_vlans(void)
 	memset(&snoop[0], 0, sizeof(snoop));
 	int vlan_number;
 	int i;
+	int vlan_enable=0;
 	char **buildports = malloc(sizeof(char **) * (blen + 2));
 	for (i = 0; i < blen + 2; i++) {
 		buildports[i] = malloc(32);
@@ -220,8 +220,10 @@ void start_setup_vlans(void)
 		int mask = 0;
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
-			if (tmp == 16000)
+			if (tmp == 16000) {
 				tagged[i] = 1;
+				vlan_enable = 1;
+			}
 		}
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
@@ -439,6 +441,7 @@ void start_setup_vlans(void)
 		}
 	}
 
+	eval("swconfig", "dev", "switch0", "set", "enable_vlan", vlan_enable ? "1" : "0");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 #endif
 	for (i = 0; i < blen + 2; i++)
