@@ -3100,6 +3100,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->vht_oper_centr_freq_seg0_idx = atoi(pos);
 	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg1_idx") == 0) {
 		conf->vht_oper_centr_freq_seg1_idx = atoi(pos);
+	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg0_idx_freq") == 0) {
+		conf->vht_oper_centr_freq_seg0_idx_freq = atoi(pos);
+	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg1_idx_freq") == 0) {
+		conf->vht_oper_centr_freq_seg1_idx_freq = atoi(pos);
 	} else if (os_strcmp(buf, "vendor_vht") == 0) {
 		bss->vendor_vht = atoi(pos);
 	} else if (os_strcmp(buf, "use_sta_nsts") == 0) {

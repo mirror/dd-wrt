@@ -236,6 +236,7 @@ static u8 * hostapd_eid_country(struct hostapd_data *hapd, u8 *eid,
 	if (!hapd->iconf->ieee80211d || max_len < 6 ||
 	    hapd->iface->current_mode == NULL)
 		return eid;
+
 	if (hapd->iconf->no_country_ie)
 		return eid;
 		
@@ -1377,8 +1378,8 @@ int ieee802_11_set_beacon(struct hostapd_data *hapd)
 				    iconf->ieee80211ac,
 				    iconf->secondary_channel,
 				    iconf->vht_oper_chwidth,
-				    iconf->vht_oper_centr_freq_seg0_idx,
-				    iconf->vht_oper_centr_freq_seg1_idx,
+				    iconf->vht_oper_centr_freq_seg0_idx_freq ? iconf->vht_oper_centr_freq_seg0_idx_freq : iconf->vht_oper_centr_freq_seg0_idx,
+				    iconf->vht_oper_centr_freq_seg1_idx_freq ? iconf->vht_oper_centr_freq_seg1_idx_freq : iconf->vht_oper_centr_freq_seg1_idx, 
 				    iface->current_mode->vht_capab) == 0)
 		params.freq = &freq;
 

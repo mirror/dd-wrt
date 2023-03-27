@@ -23,6 +23,7 @@
 #include "ieee802_11.h"
 #include "beacon.h"
 #include "hw_features.h"
+#include <syslog.h>
 
 
 void hostapd_free_hw_features(struct hostapd_hw_modes *hw_features,
@@ -415,6 +416,8 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 		iface->conf->secondary_channel = 0;
 		iface->conf->vht_oper_centr_freq_seg0_idx = 0;
 		iface->conf->vht_oper_centr_freq_seg1_idx = 0;
+		iface->conf->vht_oper_centr_freq_seg0_idx_freq = 0;
+		iface->conf->vht_oper_centr_freq_seg1_idx_freq = 0;
 		iface->conf->vht_oper_chwidth = VHT_CHANWIDTH_USE_HT;
 		res = 1;
 		wpa_printf(MSG_INFO, "Fallback to 20 MHz");
@@ -734,6 +737,7 @@ static int ieee80211ac_supported_vht_capab(struct hostapd_iface *iface)
 			}
 		}
 	}
+	syslog(LOG_INFO, "%s: set vht cap %X\n", __func__, mode->vht_capab);
 
 	return ieee80211ac_cap_check(hw, conf);
 }
