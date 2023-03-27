@@ -514,8 +514,8 @@ endif
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8.bin
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8v2 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8_v2.bin
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8v3 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8_v3.bin
-	cd tools/tplink && ./mktplinkfw2 -B ArcherC3150 -V "ver. 2.0" -k $(TOP)/$(ARCH)-uclibc/vmlinuz.lzma -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc3150_v1.bin
-	cd tools/tplink && ./mktplinkfw2 -B ArcherC3200 -V "ver. 2.0" -k $(TOP)/$(ARCH)-uclibc/vmlinuz.lzma -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc3200_v1.bin
+	cd tools/tplink && ./mktplinkfw2 -B ArcherC3150 -v "0.9.1" -V "ver. 2.0" -k $(TOP)/$(ARCH)-uclibc/vmlinuz.lzma -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc3150_v1.bin
+	cd tools/tplink && ./mktplinkfw2 -B ArcherC3200 -v "0.9.1" -V "ver. 2.0" -k $(TOP)/$(ARCH)-uclibc/vmlinuz.lzma -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc3200_v1.bin
 
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C9-V3 -V 1 -k tools/tplink/kernel.hdr0 -r $(ARCH)-uclibc/root.fs -o $(ARCH)-uclibc/tplink-ARCHER-C9-v3-firmware.bin
 #	-./tools/safeloader/tplink-safeloader -B ARCHER-C9-V3 -V 1 -S -k $(ARCH)-uclibc/kernel.hdr0 -r $(ARCH)-uclibc/root.fs -o $(ARCH)-uclibc/archerC9v3_tp_recovery.bin
