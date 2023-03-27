@@ -6520,7 +6520,6 @@ EJ_VISIBLE void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef LEGACY_SWITCH
-#error "check"
 #include "switch_legacy.c"
 #else
 #include "switch.c"
