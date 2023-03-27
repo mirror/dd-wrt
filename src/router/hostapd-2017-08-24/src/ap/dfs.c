@@ -276,7 +276,7 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 		channel_no -= 4;
 
 	/* VHT */
-	if (iface->conf->ieee80211ac) {
+	if (iface->conf->ieee80211ac && 0) {
 		switch (iface->conf->vht_oper_chwidth) {
 		case VHT_CHANWIDTH_USE_HT:
 			break;
@@ -750,7 +750,6 @@ int hostapd_handle_dfs(struct hostapd_iface *iface)
 static int hostapd_config_dfs_chan_available(struct hostapd_iface *iface)
 {
 	int n_chans, n_chans1, start_chan_idx, start_chan_idx1;
-
 	/* Get the start (first) channel for current configuration */
 	start_chan_idx = dfs_get_start_chan_idx(iface, &start_chan_idx1);
 	if (start_chan_idx < 0)
