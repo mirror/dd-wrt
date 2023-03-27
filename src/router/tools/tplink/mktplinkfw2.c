@@ -33,6 +33,22 @@
 
 #define MD5SUM_LEN	16
 
+#define bswap_32(x) \
+	((uint32_t)( \
+			(((uint32_t)(x) & (uint32_t)0x000000ffUL) << 24) | \
+			(((uint32_t)(x) & (uint32_t)0x0000ff00UL) <<  8) | \
+			(((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) | \
+			(((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24) ))
+
+
+#if (__BYTE_ORDER == __BIG_ENDIAN)
+#  define HOST_TO_BE32(x)	(x)
+#  define BE32_TO_HOST(x)	(x)
+#else
+#  define HOST_TO_BE32(x)	bswap_32(x)
+#  define BE32_TO_HOST(x)	bswap_32(x)
+#endif
+
 struct file_info {
 	char		*file_name;	/* name of the file */
 	uint32_t	file_size;	/* length of the file */
@@ -166,7 +182,7 @@ static struct flash_layout layouts[] = {
 		.fw_max_len	= 0xf90000,
 		.kernel_la	= 0x00000000,
 		.kernel_ep	= 0x80000000,
-		.rootfs_ofs	= 0x140000,
+		.rootfs_ofs	= 0x160000,
 	}, {
 		/* terminating entry */
 	}
@@ -256,6 +272,7 @@ static struct board_info *find_board(char *id)
 
 	ret = NULL;
 	for (board = boards; board->id != NULL; board++){
+//		fprintf(stderr, "id %s == %s", board->id);
 		if (strcasecmp(id, board->id) == 0) {
 			ret = board;
 			break;
