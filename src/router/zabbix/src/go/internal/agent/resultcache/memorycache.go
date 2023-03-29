@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ func (c *MemoryCache) upload(u Uploader) (err error) {
 	request := AgentDataRequest{
 		Request: "agent data",
 		Data:    c.results,
-		Session: c.token,
+		Session: u.Session(),
 		Host:    u.Hostname(),
 		Version: version.Short(),
 	}

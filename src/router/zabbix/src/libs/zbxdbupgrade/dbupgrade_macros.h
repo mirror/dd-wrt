@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 
 #include "zbxalgo.h"
 #include "zbxdb.h"
+#include "zbxexpr.h"
 
 #define ZBX_DBPATCH_FUNCTION_UPDATE_NAME		0x01
 #define ZBX_DBPATCH_FUNCTION_UPDATE_PARAM		0x02

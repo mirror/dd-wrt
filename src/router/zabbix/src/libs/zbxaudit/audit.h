@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,10 @@
 
 #include "zbxalgo.h"
 #include "zbxjson.h"
+
+/* audit logging mode */
+#define ZBX_AUDITLOG_DISABLED	0
+#define ZBX_AUDITLOG_ENABLED	1
 
 #define AUDIT_ACTION_ADD		0
 #define AUDIT_ACTION_UPDATE		1

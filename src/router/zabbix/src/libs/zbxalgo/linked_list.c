@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 #include "zbxalgo.h"
 
-#include "common.h"
+#include "zbxcommon.h"
 
 /******************************************************************************
  *                                                                            *
@@ -334,7 +334,6 @@ void	zbx_list_iterator_update(zbx_list_iterator_t *iterator)
 	if (NULL != iterator->current)
 		iterator->next = iterator->current->next;
 }
-
 
 /******************************************************************************
  *                                                                            *

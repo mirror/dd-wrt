@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #ifndef ZABBIX_ZBXALGO_H
 #define ZABBIX_ZBXALGO_H
 
-#include "common.h"
+#include "zbxnum.h"
 #include "log.h"
 
 /* generic */
@@ -616,10 +616,15 @@ void	zbx_vector_ ## __id ## _clear_ext(zbx_vector_ ## __id ## _t *vector,					\
 }
 /* vector implementation end */
 
-/* this function is only for use with zbx_vector_XXX_clear_ext() */
+/* these functions are only for use with zbx_vector_XXX_clear_ext() */
 /* and only if the vector does not contain nested allocations */
 void	zbx_ptr_free(void *data);
 void	zbx_str_free(char *data);
+void	zbx_free_tag(zbx_tag_t *tag);
+
+/* these functions are only for use with zbx_vector_XXX_sort() */
+int	zbx_compare_tags(const void *d1, const void *d2);
+int	zbx_compare_tags_and_values(const void *d1, const void *d2);
 
 /* 128 bit unsigned integer handling */
 void	zbx_uinc128_64(zbx_uint128_t *base, zbx_uint64_t value);
@@ -659,7 +664,6 @@ int	zbx_fit_code(char *fit_str, zbx_fit_t *fit, unsigned *k, char **error);
 int	zbx_mode_code(char *mode_str, zbx_mode_t *mode, char **error);
 double	zbx_forecast(double *t, double *x, int n, double now, double time, zbx_fit_t fit, unsigned k, zbx_mode_t mode);
 double	zbx_timeleft(double *t, double *x, int n, double now, double threshold, zbx_fit_t fit, unsigned k);
-
 
 /* fifo queue of pointers */
 

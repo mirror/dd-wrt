@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #ifndef ZABBIX_PERSISTENT_STATE_H
 #define ZABBIX_PERSISTENT_STATE_H
 
-#include "common.h"	/* for SEC_PER_DAY */
+#include "zbxcommon.h"	/* for SEC_PER_DAY */
 #include "zbxhash.h"	/* for ZBX_MD5_DIGEST_SIZE, md5_byte_t */
 #include "zbxtypes.h"	/* for zbx_uint64_t struct st_logfile; */
 #include "zbxalgo.h"

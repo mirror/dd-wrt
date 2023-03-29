@@ -1,0 +1,93 @@
+diff --git a/odpi/include/dpi.h b/odpi/include/dpi.h
+index b4130a4..1fef3f9 100644
+--- a/odpi/include/dpi.h
++++ b/odpi/include/dpi.h
+@@ -477,12 +477,12 @@ struct dpiAppContext {
+ // structure used for common parameters used for creating standalone
+ // connections and session pools
+ struct dpiCommonCreateParams {
+-    dpiCreateMode createMode;
+     const char *encoding;
+     const char *nencoding;
+     const char *edition;
+-    uint32_t editionLength;
+     const char *driverName;
++    dpiCreateMode createMode;
++    uint32_t editionLength;
+     uint32_t driverNameLength;
+ };
+ 
+@@ -490,24 +490,24 @@ struct dpiCommonCreateParams {
+ struct dpiConnCreateParams {
+     dpiAuthMode authMode;
+     const char *connectionClass;
+-    uint32_t connectionClassLength;
+-    dpiPurity purity;
+     const char *newPassword;
+-    uint32_t newPasswordLength;
+     dpiAppContext *appContext;
+-    uint32_t numAppContext;
+-    int externalAuth;
+     void *externalHandle;
+     dpiPool *pool;
+     const char *tag;
++    const char *outTag;
++    dpiShardingKeyColumn *shardingKeyColumns;
++    dpiShardingKeyColumn *superShardingKeyColumns;
++    uint32_t connectionClassLength;
++    dpiPurity purity;
++    uint32_t newPasswordLength;
++    uint32_t numAppContext;
++    int externalAuth;
+     uint32_t tagLength;
+     int matchAnyTag;
+-    const char *outTag;
+     uint32_t outTagLength;
+     int outTagFound;
+-    dpiShardingKeyColumn *shardingKeyColumns;
+     uint8_t numShardingKeyColumns;
+-    dpiShardingKeyColumn *superShardingKeyColumns;
+     uint8_t numSuperShardingKeyColumns;
+     int outNewSession;
+ };
+@@ -678,20 +678,20 @@ struct dpiSubscrCreateParams {
+ 
+ // structure used for transferring messages in subscription callbacks
+ struct dpiSubscrMessage {
+-    dpiEventType eventType;
++    dpiErrorInfo *errorInfo;
+     const char *dbName;
+-    uint32_t dbNameLength;
++    const char *queueName;
++    const char *consumerName;
+     dpiSubscrMessageTable *tables;
+-    uint32_t numTables;
+     dpiSubscrMessageQuery *queries;
+-    uint32_t numQueries;
+-    dpiErrorInfo *errorInfo;
+     const void *txId;
++    dpiEventType eventType;
++    uint32_t dbNameLength;
++    uint32_t numTables;
++    uint32_t numQueries;
+     uint32_t txIdLength;
+     int registered;
+-    const char *queueName;
+     uint32_t queueNameLength;
+-    const char *consumerName;
+     uint32_t consumerNameLength;
+ };
+ 
+@@ -715,10 +715,10 @@ struct dpiSubscrMessageRow {
+ // structure used for transferring table information in messages in
+ // subscription callbacks
+ struct dpiSubscrMessageTable {
+-    dpiOpCode operation;
+     const char *name;
+-    uint32_t nameLength;
+     dpiSubscrMessageRow *rows;
++    dpiOpCode operation;
++    uint32_t nameLength;
+     uint32_t numRows;
+ };
+ 

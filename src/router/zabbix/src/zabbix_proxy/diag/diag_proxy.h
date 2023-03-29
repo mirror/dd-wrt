@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,8 +20,9 @@
 #ifndef ZABBIX_DIAG_PROXY_H
 #define ZABBIX_DIAG_PROXY_H
 
+#include "zbxjson.h"
+
 int	diag_add_section_info(const char *section, const struct zbx_json_parse *jp, struct zbx_json *json,
 		char **error);
 
 #endif /* ZABBIX_DIAG_PROXY_H */
-

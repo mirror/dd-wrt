@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@
 **/
 
 #include "eval.h"
+
+#include "zbxexpr.h"
+#include "zbxstr.h"
 
 /* The tag expression token is virtual token used during item query filter processing. */
 #define ZBX_EVAL_TOKEN_TAG_EXPRESSION		(1000)

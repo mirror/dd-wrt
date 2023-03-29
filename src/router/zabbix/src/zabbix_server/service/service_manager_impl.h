@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 **/
 
 #include "zbxalgo.h"
+#include "zbxtime.h"
 
 #ifndef ZABBIX_SERVICE_MANAGER_IMPL_H
 #define ZABBIX_SERVICE_MANAGER_IMPL_H

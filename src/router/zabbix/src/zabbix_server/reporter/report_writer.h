@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,6 +21,15 @@
 #define ZABBIX_REPORT_WRITER_H
 
 #include "zbxthreads.h"
+
+typedef struct
+{
+	char	*config_tls_ca_file;
+	char	*config_tls_cert_file;
+	char	*config_tls_key_file;
+	char	*config_source_ip;
+}
+zbx_thread_report_writer_args;
 
 ZBX_THREAD_ENTRY(report_writer_thread, args);
 

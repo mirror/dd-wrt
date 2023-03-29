@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,13 +24,17 @@ package zbxlib
 /*
 #cgo LDFLAGS: -Wl,--start-group
 #cgo LDFLAGS: ${SRCDIR}/../../../zabbix_agent/logfiles/libzbxlogfiles.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxnum/libzbxnum.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxstr/libzbxstr.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxparam/libzbxparam.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxexpr/libzbxexpr.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxip/libzbxip.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcomms/libzbxcomms.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcommon/libzbxcommon.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcrypto/libzbxcrypto.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxthreads/libzbxthreads.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxmutexs/libzbxmutexs.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxnix/libzbxnix.a
-#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxconf/libzbxconf.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxhttp/libzbxhttp.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcompress/libzbxcompress.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxregexp/libzbxregexp.a
@@ -46,8 +50,7 @@ package zbxlib
 #cgo pcre2 LDFLAGS: -lz -lpcre2-8 -lresolv
 #cgo LDFLAGS: -Wl,--end-group
 
-#include "common.h"
-#include "sysinfo.h"
+#include "zbxsysinfo.h"
 #include "zbxcomms.h"
 #include "log.h"
 #include "../src/zabbix_agent/metrics.h"
@@ -55,6 +58,7 @@ package zbxlib
 
 typedef ZBX_ACTIVE_METRIC* ZBX_ACTIVE_METRIC_LP;
 typedef zbx_vector_ptr_t * zbx_vector_ptr_lp_t;
+typedef zbx_vector_expression_t * zbx_vector_expression_lp_t;
 
 int CONFIG_MAX_LINES_PER_SECOND = 20;
 char ZBX_THREAD_LOCAL *CONFIG_HOSTNAME = NULL;
@@ -63,31 +67,6 @@ int	CONFIG_ENABLE_REMOTE_COMMANDS= 0;
 int	CONFIG_LOG_REMOTE_COMMANDS= 0;
 char	*CONFIG_SOURCE_IP= NULL;
 
-unsigned int	configured_tls_connect_mode = ZBX_TCP_SEC_UNENCRYPTED;
-unsigned int	configured_tls_accept_modes = ZBX_TCP_SEC_UNENCRYPTED;
-
-char *CONFIG_TLS_CONNECT= NULL;
-char *CONFIG_TLS_ACCEPT	= NULL;
-char *CONFIG_TLS_CA_FILE = NULL;
-char *CONFIG_TLS_CRL_FILE = NULL;
-char *CONFIG_TLS_SERVER_CERT_ISSUER	= NULL;
-char *CONFIG_TLS_SERVER_CERT_SUBJECT = NULL;
-char *CONFIG_TLS_CERT_FILE = NULL;
-char *CONFIG_TLS_KEY_FILE = NULL;
-char *CONFIG_TLS_PSK_IDENTITY = NULL;
-char *CONFIG_TLS_PSK_FILE = NULL;
-
-char *CONFIG_TLS_CIPHER_CERT13 = NULL;
-char *CONFIG_TLS_CIPHER_CERT = NULL;
-char *CONFIG_TLS_CIPHER_PSK13 = NULL;
-char *CONFIG_TLS_CIPHER_PSK = NULL;
-char *CONFIG_TLS_CIPHER_ALL13 = NULL;
-char *CONFIG_TLS_CIPHER_ALL = NULL;
-char *CONFIG_TLS_CIPHER_CMD13 = NULL;
-char *CONFIG_TLS_CIPHER_CMD = NULL;
-
-int	CONFIG_PASSIVE_FORKS = 0;
-int	CONFIG_ACTIVE_FORKS = 0;
 int	CONFIG_TCP_MAX_BACKLOG_SIZE	= SOMAXCONN;
 
 const char	*progname = NULL;

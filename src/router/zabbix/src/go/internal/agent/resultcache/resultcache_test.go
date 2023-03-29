@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -68,6 +68,10 @@ func (w *mockWriter) Hostname() string {
 	return ""
 }
 
+func (w *mockWriter) Session() string {
+	return ""
+}
+
 func TestResultCache(t *testing.T) {
 	agent.Options.BufferSize = 10
 	agent.Options.EnablePersistentBuffer = 0
@@ -96,21 +100,6 @@ func TestResultCache(t *testing.T) {
 	cache.write(&result)
 	cache.write(&result)
 	cache.flushOutput(&writer)
-}
-
-func TestToken(t *testing.T) {
-	tokens := make(map[string]bool)
-	for i := 0; i < 100000; i++ {
-		token := newToken()
-		if len(token) != 32 {
-			t.Errorf("Expected token length 32 while got %d", len(token))
-			return
-		}
-		if _, ok := tokens[token]; ok {
-			t.Errorf("Duplicated token detected")
-		}
-		tokens[token] = true
-	}
 }
 
 func checkBuffer(t *testing.T, c *MemoryCache, input []*plugin.Result, expected []*AgentData) {

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,8 +19,7 @@
 
 #include "zbxcrypto.h"
 
-#include "zbxhash.h"
-#include "common.h"
+#include "zbxcommon.h"
 
 static void	*hmac_hash_init(zbx_crypto_hash_t type)
 {

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,18 +25,18 @@
 
 $this->includeJsFile('administration.housekeeping.edit.js.php');
 
-$widget = (new CWidget())
+$html_page = (new CHtmlPage())
 	->setTitle(_('Housekeeping'))
-	->setTitleSubmenu(getAdministrationGeneralSubmenu())
 	->setDocUrl(CDocHelper::getUrl(CDocHelper::ADMINISTRATION_HOUSEKEEPING_EDIT));
 
 $form = (new CForm())
+	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('housekeeping')))->removeId())
 	->setId('housekeeping')
 	->setAction((new CUrl('zabbix.php'))
 		->setArgument('action', 'housekeeping.update')
 		->getUrl()
 	)
-	->setAttribute('aria-labelledby', ZBX_STYLE_PAGE_TITLE);
+	->setAttribute('aria-labelledby', CHtmlPage::PAGE_TITLE_ID);
 
 $house_keeper_tab = (new CFormList())
 	->addRow((new CTag('h4', true, _('Events and alerts')))->addClass('input-section-header'))
@@ -126,7 +126,19 @@ $house_keeper_tab = (new CFormList())
 	)
 	->addRow(
 		new CLabel(_('Override item history period'), 'hk_history_global'),
-		(new CCheckBox('hk_history_global'))->setChecked($data['hk_history_global'] == 1)
+		[
+			(new CCheckBox('hk_history_global'))->setChecked($data['hk_history_global'] == 1),
+			array_key_exists(CHousekeepingHelper::OVERRIDE_NEEDED_HISTORY, $data)
+				? new CSpan([
+					' ',
+					makeWarningIcon(
+						_('This setting should be enabled, because history tables contain compressed chunks.')
+					)
+						->addStyle('display:none;')
+						->addClass('js-hk-history-warning')
+				])
+				: null
+		]
 	)
 	->addRow(
 		(new CLabel(_('Data storage period'), 'hk_history'))
@@ -143,7 +155,19 @@ $house_keeper_tab = (new CFormList())
 	)
 	->addRow(
 		new CLabel(_('Override item trend period'), 'hk_trends_global'),
-		(new CCheckBox('hk_trends_global'))->setChecked($data['hk_trends_global'] == 1)
+		[
+			(new CCheckBox('hk_trends_global'))->setChecked($data['hk_trends_global'] == 1),
+			array_key_exists(CHousekeepingHelper::OVERRIDE_NEEDED_TRENDS, $data)
+				? new CSpan([
+					' ',
+					makeWarningIcon(
+						_('This setting should be enabled, because trend tables contain compressed chunks.')
+					)
+						->addStyle('display:none;')
+						->addClass('js-hk-trends-warning')
+				])
+				: null
+		]
 	)
 	->addRow(
 		(new CLabel(_('Data storage period'), 'hk_trends'))
@@ -226,10 +250,14 @@ $house_keeper_tab = (new CFormList())
 			);
 	}
 
-$house_keeper_tab
-	->addRow((new CTag('h4', true, _('Audit')))->addClass('input-section-header'))
-	->addRow(new CLink(_('Audit settings'), (new CUrl('zabbix.php'))->setArgument('action', 'audit.settings.edit'))
-);
+if (CWebUser::checkAccess(CRoleHelper::UI_ADMINISTRATION_AUDIT_LOG)) {
+	$house_keeper_tab
+		->addRow((new CTag('h4', true, _('Audit log')))->addClass('input-section-header'))
+		->addRow(
+			new CLink(_('Audit settings'),
+			(new CUrl('zabbix.php'))->setArgument('action', 'audit.settings.edit'))
+		);
+}
 
 $form->addItem(
 	(new CTabView())
@@ -240,6 +268,6 @@ $form->addItem(
 		))
 );
 
-$widget
+$html_page
 	->addItem($form)
 	->show();

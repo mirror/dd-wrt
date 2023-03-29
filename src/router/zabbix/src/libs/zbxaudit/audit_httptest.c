@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,13 +18,14 @@
 **/
 
 #include "audit/zbxaudit_httptest.h"
-
 #include "audit/zbxaudit.h"
+#include "audit.h"
+
 #include "log.h"
 #include "zbxalgo.h"
-#include "audit.h"
 #include "zbxdbhigh.h"
 #include "zbxdb.h"
+#include "zbxnum.h"
 
 void	zbx_audit_httptest_create_entry(int audit_action, zbx_uint64_t httptestid, const char *name)
 {
@@ -153,10 +154,10 @@ int	zbx_audit_DBselect_delete_for_httptest(const char *sql, zbx_vector_uint64_t 
 	DB_RESULT	result;
 	DB_ROW		row;
 
-	if (NULL == (result = DBselect("%s", sql)))
+	if (NULL == (result = zbx_db_select("%s", sql)))
 		return FAIL;
 
-	while (NULL != (row = DBfetch(result)))
+	while (NULL != (row = zbx_db_fetch(result)))
 	{
 		zbx_uint64_t	id;
 
@@ -166,7 +167,7 @@ int	zbx_audit_DBselect_delete_for_httptest(const char *sql, zbx_vector_uint64_t 
 		zbx_audit_httptest_create_entry(ZBX_AUDIT_ACTION_DELETE, id, row[1]);
 	}
 
-	DBfree_result(result);
+	zbx_db_free_result(result);
 
 	zbx_vector_uint64_sort(ids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 
