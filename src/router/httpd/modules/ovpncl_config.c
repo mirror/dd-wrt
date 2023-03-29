@@ -66,9 +66,9 @@ static int make_ovpncl_config(char *ovnpcl_fname) {
 		dd_loginfo("openvpncl_config", "Could not open %s\n", ovnpcl_fname);
 		return -1;
 	} else {
-		fprintf(f1, "#This is beta build 0.08, use it with care\n");
+		fprintf(f1, "#This is beta build 0.9, use it with care\n");
 		fprintf(f1, "#OpenVPN client config generated, check if settings are correct see: %s, made by %s\n", "https://forum.dd-wrt.com/phpBB2/viewtopic.php?t=327398","egc");
-		fprintf(f1, "client\n#windows-driver wintun     # only for Windows 10 OpenVPN 2.5.x\nverb 3\nnobind\npersist-key\npersist-tun\nfloat\nremote-cert-tls server\nauth-nocache\n");
+		fprintf(f1, "client\n#windows-driver wintun     # For Windows 10 and OpenVPN 2.5 and higher\nverb 3\nnobind\npersist-key\npersist-tun\nfloat\nremote-cert-tls server\nauth-nocache\n");
 		fprintf(f1, "tun-mtu 1400    # lowered default can be commented to let OpenVPN decide\n");
 		fprintf(f1, "#Replace remote address with actual WAN or DDNS address\nremote %s %s\n", nvram_safe_get("wan_ipaddr"), nvram_safe_get("openvpn_port"));
 		if (nvram_match("openvpn_tuntap", "tap")) {
@@ -120,10 +120,11 @@ static int make_ovpncl_config(char *ovnpcl_fname) {
 			fprintf(f1, "<ca>\n%s\n</ca>\n", nvram_safe_get("openvpn_ca"));
 		}
 		if (nvram_invmatch("openvpn_key", "")) {
-			fprintf(f1, "<cert>\n%s\n</cert>\n<key>\n%s\n</key>\n", "PLACE YOUR PUBLIC CLIENT CERTIFICATE HERE", "PLACE YOUR PRIVATE CLIENT KEY HERE");
+			fprintf(f1, "<cert>\n%s\n</cert>\n<key>\n%s\n</key>\n", "PLACE-PUBLIC-CLIENT-CERTIFICATE-HERE", "PLACE-PRIVATE-CLIENT-KEY-HERE");
 		}
 		if (nvram_matchi("openvpn_enuserpass", 1)) {
-			fprintf(f1, "#Make file credentials.txt in the same directory and place username and password on separate lines\nauth-user-pass credentials.txt\nauth-retry interact\n");
+			//fprintf(f1, "#Make file credentials.txt in the same directory and place username and password on separate lines\nauth-user-pass credentials.txt\nauth-retry interact\n");
+			fprintf(f1, "#For OpenVPN 2.6 and higher, inline username and password\n<auth-user-pass>\nPLACE-USERNAME-HERE\nPLACE-PASSWORD-HERE\n</auth-user-pass>\nauth-retry interact\n");
 		}
 		//dd_loginfo("openvpncl_config", "Success file open: %s\n", ovnpcl_fname);
 		fclose(f1);

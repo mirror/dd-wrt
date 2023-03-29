@@ -1,5 +1,5 @@
 #!/bin/sh
-# version: 0.5.1 beta, 3-oct-2022, by eibgrad
+# version: 0.5.2 beta, 6-mar-2023, by eibgrad and egc
 # for help download full script from eibgrads pastebin: curl -kLs bit.ly/ddwrt-installer|tr -d '\r'|sh -s 2gg5ZdRY
 VAR_LIST='openvpncl_adv=0 openvpncl_auth=none openvpncl_blockmulticast=0 openvpncl_bridge=0 openvpncl_ca= openvpncl_certtype=0 openvpncl_cipher= \
 openvpncl_client= openvpncl_config= openvpncl_dc1=CHACHA20-POLY1305 openvpncl_dc2=AES-128-GCM openvpncl_dc3=AES-256-GCM openvpncl_enable=0 \
@@ -14,7 +14,7 @@ CIPHER_LIST='CHACHA20-POLY1305 AES-256-GCM AES-192-GCM AES-128-GCM AES-256-CBC A
 AUTH_LIST='sha512 sha256 sha1 md5 md4 none'
 COMP_LZO_LIST='yes adaptive no'
 COMPRESS_LIST='lz4 lz4-v2'
-HANDLED_DIR_LIST='<ca> <cert> <key> <pkcs12> <secret> <tls-auth> <tls-crypt> auth auth-user-pass cipher comp-lzo compress data-ciphers dev \
+HANDLED_DIR_LIST='<ca> <cert> <key> <pkcs12> <secret> <tls-auth> <tls-crypt> <auth-user-pass> auth auth-user-pass cipher comp-lzo compress data-ciphers dev \
 fragment key-direction mmsfix ncp-ciphers ns-cert-type pkcs12 port proto remote remote-cert-tls tls-auth tls-crypt verify-x509-name'
 DC_FIELDS='1 2 3'
 MAX_REMOTES=5
@@ -210,6 +210,10 @@ nvram set openvpncl_tls_btn='2';;
 nvram set openvpncl_tls_btn='0';;
 '<tls-crypt>') nvram set openvpncl_tlsauth="$(get_textblock tls-crypt)"
 nvram set openvpncl_tls_btn='1';;
+'<auth-user-pass>') up="$(get_textblock auth-user-pass)"
+nvram set openvpncl_user=$(echo -e "$up" | awk 'NR==1{print $1}')
+nvram set openvpncl_pass=$(echo -e "$up" | awk 'NR==2{print $1}')
+nvram set openvpncl_upauth='1';;
 *) handle_${dir//-/_};;
 esac
 IFS=$'\n'
@@ -218,6 +222,7 @@ IFS="$OIFS"
 if echo "$(nvram get openvpncl_proto)" | grep -Eq '^(udp|tcp)4'; then
 write_addn_config 'pull-filter ignore ifconfig-ipv6'
 write_addn_config 'pull-filter ignore route-ipv6'
+write_addn_config 'block-ipv6'
 fi
 [ -s $ADDN_CONFIG ] && nvram set openvpncl_config="$(cat $ADDN_CONFIG)"
 [ ${nocommit+x} ] || nvram commit &>/dev/null

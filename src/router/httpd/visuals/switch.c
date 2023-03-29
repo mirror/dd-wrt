@@ -114,7 +114,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 						vlans[i][tmp] = 1;
 						//fprintf(stderr, "assign port %d flag %d\n", i, tmp);
 					} else {
-						vlans[lanports + 1][tmp] = i - (lanports + 1);
+						vlans[lanports + 1 + cpuports][tmp] = i - (lanports + 1 + cpuports);
 					}
 				}
 			}
@@ -424,7 +424,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, ">\" + vlan.trunk + \"</option>\");\n//]]>\n</script></select></td>\n");
 	websWrite(wp, "</tr>");
 #endif
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < 10; i++)
 		debug_free(vlans[i]);
 	debug_free(vlanlist);
 	nvram_default_get("portvlanlist", deflist);
