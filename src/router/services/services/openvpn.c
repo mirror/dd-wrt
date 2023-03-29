@@ -316,9 +316,16 @@ void create_openvpnrules(FILE * fp)
                 else */
 		if (!nvram_match("openvpncl_tuntap", "tap")) {
 			//fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
+			//flush table so in case of SIGHUP and having a new endpoint the endpoint route is flushed
+			fprintf(fp, "ip route flush table 10\n");
 			if (nvram_matchi("openvpncl_spbr", 1)) {	//PBR via VPN openvpncl_spbr=1
 				fprintf(fp, "ip route add 0.0.0.0/1 via $route_vpn_gateway table 10\n");
 				fprintf(fp, "ip route add 128.0.0.0/1 via $route_vpn_gateway table 10\n");
+				if (nvram_matchi("openvpncl_killswitch", 1)) {
+					fprintf(fp, "ip route add prohibit default table 10 >/dev/null 2>&1\n");
+				}
+			} else {
+				fprintf(fp, "ip route add default via %s table 10 >/dev/null 2>&1\n", nvram_safe_get("wan_gateway"));
 			}
 			//Adding local routes to alternate PBR routing table by egc
 			fprintf(fp, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do\n" "\t ip route add $route table 10 >/dev/null 2>&1\n" "done\n");
