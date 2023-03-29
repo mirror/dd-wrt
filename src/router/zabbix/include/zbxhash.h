@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ void zbx_md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
 
 /* ------------------ end of included md5.h file ------------------------- */
 
-#include "common.h"
+#include "zbxcommon.h"
 
 void	zbx_md5buf2str(const md5_byte_t *md5, char *str);
 

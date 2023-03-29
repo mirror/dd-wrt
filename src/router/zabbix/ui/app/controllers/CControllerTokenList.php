@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 class CControllerTokenList extends CController {
 
 	protected function init() {
-		$this->disableSIDValidation();
+		$this->disableCsrfValidation();
 	}
 
 	protected function checkInput() {
@@ -56,7 +56,7 @@ class CControllerTokenList extends CController {
 		}
 
 		return ($this->checkAccess(CRoleHelper::ACTIONS_MANAGE_API_TOKENS)
-			&& $this->checkAccess(CRoleHelper::UI_ADMINISTRATION_GENERAL)
+			&& $this->checkAccess(CRoleHelper::UI_ADMINISTRATION_API_TOKENS)
 		);
 	}
 

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 #include "zbxserver.h"
 
-#include "common.h"
+#include "zbxnum.h"
 #include "zbxvariant.h"
 #include "log.h"
 
@@ -636,13 +636,13 @@ static zbx_variant_t	evaluate_term4(int *unknown_idx)
 		else
 		{
 			if ('<' == op)
-				res.data.dbl = (res.data.dbl < operand.data.dbl - ZBX_DOUBLE_EPSILON);
+				res.data.dbl = (res.data.dbl < operand.data.dbl - zbx_get_double_epsilon());
 			else if ('l' == op)
-				res.data.dbl = (res.data.dbl <= operand.data.dbl + ZBX_DOUBLE_EPSILON);
+				res.data.dbl = (res.data.dbl <= operand.data.dbl + zbx_get_double_epsilon());
 			else if ('g' == op)
-				res.data.dbl = (res.data.dbl >= operand.data.dbl - ZBX_DOUBLE_EPSILON);
+				res.data.dbl = (res.data.dbl >= operand.data.dbl - zbx_get_double_epsilon());
 			else
-				res.data.dbl = (res.data.dbl > operand.data.dbl + ZBX_DOUBLE_EPSILON);
+				res.data.dbl = (res.data.dbl > operand.data.dbl + zbx_get_double_epsilon());
 		}
 
 		zbx_variant_clear(&operand);

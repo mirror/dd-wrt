@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #ifndef ZABBIX_AUDIT_GRAPH_H
 #define ZABBIX_AUDIT_GRAPH_H
 
-#include "common.h"
+#include "zbxcommon.h"
 #include "zbxalgo.h"
 
 void	zbx_audit_graph_create_entry(int audit_action, zbx_uint64_t graphid, const char *name, int flags);

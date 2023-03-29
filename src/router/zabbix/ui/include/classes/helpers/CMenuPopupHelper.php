@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,7 +43,8 @@ class CMenuPopupHelper {
 				'has_related_reports' => $has_related_reports,
 				'can_edit_dashboards' => $can_edit_dashboards,
 				'can_view_reports' => $can_view_reports,
-				'can_create_reports' => $can_create_reports
+				'can_create_reports' => $can_create_reports,
+				'csrf_token' => CCsrfTokenHelper::get('dashboard')
 			]
 		];
 	}
@@ -126,12 +127,14 @@ class CMenuPopupHelper {
 	 * Prepare data for Ajax trigger menu popup.
 	 *
 	 * @param string $triggerid
-	 * @param string $eventid      (optional) Mandatory for Acknowledge menu.
-	 * @param bool   $acknowledge  (optional) Whether to show Acknowledge menu.
+	 * @param string $eventid      (optional) Mandatory for "Update problem", "Convert as cause" and
+	 *                             "Mark selected as symptoms" context menus.
+	 * @param array  $options      (optional) Whether to show "Update problem" menu, "Convert as cause" or
+	 *                             "Mark selected as symptoms" context menus.
 	 *
 	 * @return array
 	 */
-	public static function getTrigger($triggerid, $eventid = 0, $acknowledge = false) {
+	public static function getTrigger(string $triggerid, string $eventid = '0', array $options = []): array {
 		$data = [
 			'type' => 'trigger',
 			'data' => [
@@ -141,7 +144,12 @@ class CMenuPopupHelper {
 
 		if ($eventid != 0) {
 			$data['data']['eventid'] = $eventid;
-			$data['data']['acknowledge'] = $acknowledge ? '1' : '0';
+
+			if ($options) {
+				foreach ($options as $key => $value) {
+					$data['data'][$key] = (int) $value;
+				}
+			}
 		}
 
 		return $data;
@@ -162,32 +170,15 @@ class CMenuPopupHelper {
 	 * Prepare data for item latest data popup menu.
 	 *
 	 * @param array  $data
-	 * @param string $data['itemid']   Item ID.
+	 * @param string $data['itemid']
+	 * @param string $data['backurl']
+	 * @param string $data['context']
 	 *
 	 * @return array
 	 */
 	public static function getItem(array $data): array {
 		return [
 			'type' => 'item',
-			'data' => [
-				'itemid' => $data['itemid']
-			]
-		];
-	}
-
-	/**
-	 * Prepare data for item configuration popup menu.
-	 *
-	 * @param array  $data
-	 * @param string $data['itemid']   Item ID.
-	 * @param string $data['context']  Additional parameter in URL to identify main section.
-	 * @param string $data['backurl']  Url from where the function was called.
-	 *
-	 * @return array
-	 */
-	public static function getItemConfiguration(array $data): array {
-		return [
-			'type' => 'item_configuration',
 			'data' => [
 				'itemid' => $data['itemid'],
 				'backurl' => $data['backurl']
@@ -200,15 +191,15 @@ class CMenuPopupHelper {
 	 * Prepare data for item prototype configuration popup menu.
 	 *
 	 * @param array  $data
-	 * @param string $data['itemid']   Item ID.
-	 * @param string $data['context']  Additional parameter in URL to identify main section.
-	 * @param string $data['backurl']  Url from where the function was called.
+	 * @param string $data['itemid']
+	 * @param string $data['backurl']
+	 * @param string $data['context']
 	 *
 	 * @return array
 	 */
-	public static function getItemPrototypeConfiguration(array $data): array {
+	public static function getItemPrototype(array $data): array {
 		return [
-			'type' => 'item_prototype_configuration',
+			'type' => 'item_prototype',
 			'data' => [
 				'itemid' => $data['itemid'],
 				'backurl' => $data['backurl']

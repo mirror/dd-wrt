@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,9 @@
 #ifndef ZABBIX_ZBXEVAL_H
 #define ZABBIX_ZBXEVAL_H
 
+#include "zbxtime.h"
 #include "zbxvariant.h"
+#include "zbxexpr.h"
 
 /*
  * Token type flags (32 bits):
@@ -251,7 +253,6 @@ char	*zbx_eval_format_function_error(const char *function, const char *host, con
 		const char *parameter, const char *error);
 
 void	zbx_eval_extract_item_refs(zbx_eval_context_t *ctx, zbx_vector_str_t *refs);
-
 
 typedef struct
 {

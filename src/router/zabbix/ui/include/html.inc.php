@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ function BR() {
 
 function get_icon($type, $params = []) {
 	switch ($type) {
-		case 'favourite':
+		case 'favorite':
 			if (CFavorite::exists($params['fav'], $params['elid'], $params['elname'])) {
 				$icon = (new CRedirectButton(SPACE, null))
 					->addClass(ZBX_STYLE_BTN_REMOVE_FAV)
@@ -806,11 +806,11 @@ function makePageFooter($with_version = true) {
 /**
  * Get drop-down submenu item list for the User settings section.
  *
- * @return array|null  Menu definition for CWidget::setTitleSubmenu.
+ * @return array  Menu definition for CHtmlPage::setTitleSubmenu.
  */
-function getUserSettingsSubmenu(): ?array {
+function getUserSettingsSubmenu(): array {
 	if (!CWebUser::checkAccess(CRoleHelper::ACTIONS_MANAGE_API_TOKENS)) {
-		return null;
+		return [];
 	}
 
 	$profile_url = (new CUrl('zabbix.php'))
@@ -834,7 +834,7 @@ function getUserSettingsSubmenu(): ?array {
 /**
  * Get drop-down submenu item list for the Administration->General section.
  *
- * @return array  Menu definition for CWidget::setTitleSubmenu.
+ * @return array  Menu definition for CHtmlPage::setTitleSubmenu.
  */
 function getAdministrationGeneralSubmenu() {
 	$gui_url = (new CUrl('zabbix.php'))
@@ -843,14 +843,6 @@ function getAdministrationGeneralSubmenu() {
 
 	$autoreg_url = (new CUrl('zabbix.php'))
 		->setArgument('action', 'autoreg.edit')
-		->getUrl();
-
-	$housekeeping_url = (new CUrl('zabbix.php'))
-		->setArgument('action', 'housekeeping.edit')
-		->getUrl();
-
-	$audit_settings_url = (new CUrl('zabbix.php'))
-		->setArgument('action', 'audit.settings.edit')
 		->getUrl();
 
 	$image_url = (new CUrl('zabbix.php'))
@@ -865,10 +857,6 @@ function getAdministrationGeneralSubmenu() {
 		->setArgument('action', 'regex.list')
 		->getUrl();
 
-	$macros_url = (new CUrl('zabbix.php'))
-		->setArgument('action', 'macros.edit')
-		->getUrl();
-
 	$trigdisplay_url = (new CUrl('zabbix.php'))
 		->setArgument('action', 'trigdisplay.edit')
 		->getUrl();
@@ -881,31 +869,26 @@ function getAdministrationGeneralSubmenu() {
 		->setArgument('action', 'module.list')
 		->getUrl();
 
-	$tokens_url = (new CUrl('zabbix.php'))
-		->setArgument('action', 'token.list')
+	$connectors_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'connector.list')
 		->getUrl();
 
 	$miscconfig_url = (new CUrl('zabbix.php'))
 		->setArgument('action', 'miscconfig.edit')
 		->getUrl();
 
-	$can_access_tokens = (!CWebUser::isGuest() && CWebUser::checkAccess(CRoleHelper::ACTIONS_MANAGE_API_TOKENS));
-
 	return [
 		'main_section' => [
 			'items' => array_filter([
 				$gui_url            => _('GUI'),
 				$autoreg_url        => _('Autoregistration'),
-				$housekeeping_url   => _('Housekeeping'),
-				$audit_settings_url => _('Audit log'),
 				$image_url          => _('Images'),
 				$iconmap_url        => _('Icon mapping'),
 				$regex_url          => _('Regular expressions'),
-				$macros_url         => _('Macros'),
 				$trigdisplay_url    => _('Trigger displaying options'),
 				$geomap_url			=> _('Geographical maps'),
 				$modules_url        => _('Modules'),
-				$tokens_url         => $can_access_tokens ? _('API tokens') : null,
+				$connectors_url     => _('Connectors'),
 				$miscconfig_url     => _('Other')
 			])
 		]
@@ -1023,7 +1006,6 @@ function makeSuppressedProblemIcon(array $icon_data, bool $blink = false) {
  * @return CTag  Returns CSpan or CButton depending on boolean $icon_data['button'] parameter
  */
 function makeActionIcon(array $icon_data): CTag {
-
 	if (array_key_exists('button', $icon_data) && $icon_data['button']) {
 		$icon = (new CButton(null))->addClass($icon_data['icon']);
 	}
@@ -1045,6 +1027,10 @@ function makeActionIcon(array $icon_data): CTag {
 	}
 	elseif (array_key_exists('title', $icon_data)) {
 		$icon->setTitle($icon_data['title']);
+	}
+
+	if (array_key_exists('style', $icon_data)) {
+		$icon->addStyle($icon_data['style']);
 	}
 
 	if (array_key_exists('aria-label', $icon_data)) {

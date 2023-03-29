@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -89,15 +89,8 @@ class CHostGroup extends CApiService {
 			'with_monitored_httptests' =>			['type' => API_BOOLEAN, 'default' => false],
 			'with_graphs' =>						['type' => API_BOOLEAN, 'default' => false],
 			'with_graph_prototypes' =>				['type' => API_BOOLEAN, 'default' => false],
-			'filter' =>								['type' => API_OBJECT, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => [
-				'groupid' =>							['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
-				'name' =>								['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
-				'flags' =>								['type' => API_INTS32, 'flags' => API_ALLOW_NULL | API_NORMALIZE],
-				'uuid' =>								['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE]
-			]],
-			'search' =>								['type' => API_OBJECT, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => [
-				'name' =>								['type' => API_STRINGS_UTF8, 'flags' => API_ALLOW_NULL | API_NORMALIZE]
-			]],
+			'filter' =>								['type' => API_FILTER, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => ['groupid', 'name', 'flags', 'uuid']],
+			'search' =>								['type' => API_FILTER, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => ['name']],
 			'searchByAny' =>						['type' => API_BOOLEAN, 'default' => false],
 			'startSearch' =>						['type' => API_BOOLEAN, 'default' => false],
 			'excludeSearch' =>						['type' => API_BOOLEAN, 'default' => false],
@@ -408,7 +401,7 @@ class CHostGroup extends CApiService {
 	}
 
 	/**
-	 * @param array  $groups
+	 * @param array $groups
 	 *
 	 * @return array
 	 */
@@ -572,13 +565,14 @@ class CHostGroup extends CApiService {
 	/**
 	 * Validates input data for update method.
 	 *
-	 * @param array $groups     [IN/OUT]
-	 * @param array $db_groups  [OUT]
+	 * @param array $groups
+	 * @param array $db_groups
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
 	protected function validateUpdate(array &$groups, array &$db_groups = null): void {
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['groupid'], ['name']], 'fields' => [
+			'uuid' => 		['type' => API_UUID],
 			'groupid' =>	['type' => API_ID, 'flags' => API_REQUIRED],
 			'name' =>		['type' => API_HG_NAME, 'length' => DB::getFieldLength('hstgrp', 'name')]
 		]];

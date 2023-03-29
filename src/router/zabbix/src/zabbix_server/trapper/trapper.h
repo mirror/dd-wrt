@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,12 +21,23 @@
 #define ZABBIX_TRAPPER_H
 
 #include "zbxthreads.h"
+#include "zbxcomms.h"
+#include "zbxvault.h"
 
-extern int	CONFIG_TIMEOUT;
 extern int	CONFIG_TRAPPER_TIMEOUT;
 extern char	*CONFIG_STATS_ALLOWED_IP;
 
 #define ZBX_IPC_SERVICE_TRAPPER	"trapper"
+
+typedef struct
+{
+	zbx_config_comms_args_t	*config_comms;
+	zbx_config_vault_t	*config_vault;
+	zbx_get_program_type_f	zbx_get_program_type_cb_arg;
+	zbx_socket_t		*listen_sock;
+	int			config_startup_time;
+}
+zbx_thread_trapper_args;
 
 ZBX_THREAD_ENTRY(trapper_thread, args);
 

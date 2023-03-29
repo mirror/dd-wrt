@@ -1,0 +1,30 @@
+language: go
+
+go:
+  - 1.8.x
+  - 1.9.x
+  - 1.10.x
+  - 1.11.x
+  - 1.12.x
+  - 1.13.x
+  - 1.14.x
+  - tip
+
+env:
+  - GO111MODULE=on
+
+matrix:
+  allow_failures:
+    - go: tip
+
+before_install:
+  - travis_retry sudo apt-get update
+
+install:
+  - travis_retry sudo apt-get install memcached
+  - memcached -h | head -1
+
+script:
+  - make
+  - make test-full
+  - make test-multinode

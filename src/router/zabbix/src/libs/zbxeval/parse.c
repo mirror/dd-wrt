@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 
 #include "zbxeval.h"
 #include "eval.h"
+
+#include "zbxstr.h"
 
 ZBX_VECTOR_IMPL(eval_token, zbx_eval_token_t)
 
@@ -640,7 +642,7 @@ size_t	eval_parse_query(const char *str, const char **phost, const char **pkey, 
 	}
 	else if ('/' != *key)
 	{
-		while (SUCCEED == is_hostname_char(*key))
+		while (SUCCEED == zbx_is_hostname_char(*key))
 			key++;
 	}
 
@@ -673,7 +675,7 @@ size_t	eval_parse_query(const char *str, const char **phost, const char **pkey, 
 				end += ZBX_CONST_STRLEN(MVAR_ITEM_KEY) + offset;
 		}
 	}
-	else if (SUCCEED != parse_key(&end))
+	else if (SUCCEED != zbx_parse_key(&end))
 		return 0;
 
 	if (*end == '?')

@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0);
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,11 +23,8 @@ use CController as CAction;
 
 class CLegacyAction extends CAction {
 
-	/**
-	 * Disable SID validation for legacy actions.
-	 */
 	protected function init(): void {
-		$this->disableSIDvalidation();
+		$this->disableCsrfValidation();
 	}
 
 	public function doAction(): void {
@@ -77,13 +74,9 @@ class CLegacyAction extends CAction {
 
 		if ($user_type < USER_TYPE_ZABBIX_ADMIN) {
 			$denied = array_merge($denied, ['actionconf.php', 'disc_prototypes.php', 'graphs.php', 'host_discovery.php',
-				'host_prototypes.php', 'host.list', 'httpconf.php', 'items.php', 'maintenance.php', 'report4.php',
+				'host_prototypes.php', 'host.list', 'httpconf.php', 'items.php', 'report4.php',
 				'templates.php', 'trigger_prototypes.php', 'triggers.php'
 			]);
-		}
-
-		if ($user_type != USER_TYPE_SUPER_ADMIN) {
-			$denied = array_merge($denied, ['auditacts.php']);
 		}
 
 		if (in_array($action, $denied)) {
@@ -108,27 +101,29 @@ class CLegacyAction extends CAction {
 		if ($user_type == USER_TYPE_ZABBIX_ADMIN || $user_type == USER_TYPE_SUPER_ADMIN) {
 			$rule_actions += [
 				CRoleHelper::UI_CONFIGURATION_HOSTS => ['host.list'],
-				CRoleHelper::UI_CONFIGURATION_MAINTENANCE => ['maintenance.php'],
 				CRoleHelper::UI_CONFIGURATION_TEMPLATES => ['templates.php'],
 				CRoleHelper::UI_REPORTS_NOTIFICATIONS => ['report4.php']
 			];
 
-			if ($action === 'actionconf.php' && getRequest('eventsource') === (string) EVENT_SOURCE_SERVICE) {
-				$rule_actions += [
-					CRoleHelper::UI_SERVICES_ACTIONS => ['actionconf.php']
-				];
+			if ($action === 'actionconf.php') {
+				switch (getRequest('eventsource')) {
+					case EVENT_SOURCE_TRIGGERS:
+						$rule_actions += [CRoleHelper::UI_CONFIGURATION_TRIGGER_ACTIONS => ['actionconf.php']];
+						break;
+					case EVENT_SOURCE_SERVICE:
+						$rule_actions += [CRoleHelper::UI_CONFIGURATION_SERVICE_ACTIONS => ['actionconf.php']];
+						break;
+					case EVENT_SOURCE_DISCOVERY:
+						$rule_actions += [CRoleHelper::UI_CONFIGURATION_DISCOVERY_ACTIONS => ['actionconf.php']];
+						break;
+					case EVENT_SOURCE_AUTOREGISTRATION:
+						$rule_actions += [CRoleHelper::UI_CONFIGURATION_AUTOREGISTRATION_ACTIONS => ['actionconf.php']];
+						break;
+					case EVENT_SOURCE_INTERNAL:
+						$rule_actions += [CRoleHelper::UI_CONFIGURATION_INTERNAL_ACTIONS => ['actionconf.php']];
+						break;
+				}
 			}
-			else {
-				$rule_actions += [
-					CRoleHelper::UI_CONFIGURATION_ACTIONS => ['actionconf.php']
-				];
-			}
-		}
-
-		if ($user_type == USER_TYPE_SUPER_ADMIN) {
-			$rule_actions += [
-				CRoleHelper::UI_REPORTS_ACTION_LOG => ['auditacts.php']
-			];
 		}
 
 		foreach ($rule_actions as $rule_name => $actions) {

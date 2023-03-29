@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2022 Zabbix SIA
+** Copyright (C) 2001-2023 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #define ZABBIX_ZBXIPCSERVICE_H
 
 #include "zbxalgo.h"
+#include "zbxtime.h"
 
 #define ZBX_IPC_SOCKET_BUFFER_SIZE	4096
 
@@ -68,6 +69,7 @@ typedef struct
 	struct event_base	*ev;
 	struct event		*ev_listener;
 	struct event		*ev_timer;
+	struct event		*ev_alert;
 
 	/* the unix socket path */
 	char			*path;
@@ -96,6 +98,7 @@ void	zbx_ipc_service_free_env(void);
 int	zbx_ipc_service_start(zbx_ipc_service_t *service, const char *service_name, char **error);
 int	zbx_ipc_service_recv(zbx_ipc_service_t *service, const zbx_timespec_t *timeout, zbx_ipc_client_t **client,
 		zbx_ipc_message_t **message);
+void	zbx_ipc_service_alert(zbx_ipc_service_t *service);
 void	zbx_ipc_service_close(zbx_ipc_service_t *service);
 
 int	zbx_ipc_client_send(zbx_ipc_client_t *client, zbx_uint32_t code, const unsigned char *data, zbx_uint32_t size);
@@ -127,12 +130,12 @@ int	zbx_ipc_async_socket_connected(zbx_ipc_async_socket_t *asocket);
 int	zbx_ipc_async_exchange(const char *service_name, zbx_uint32_t code, int timeout, const unsigned char *data,
 		zbx_uint32_t size, unsigned char **out, char **error);
 
-
 void	zbx_ipc_message_free(zbx_ipc_message_t *message);
 void	zbx_ipc_message_clean(zbx_ipc_message_t *message);
 void	zbx_ipc_message_init(zbx_ipc_message_t *message);
 void	zbx_ipc_message_format(const zbx_ipc_message_t *message, char **data);
 void	zbx_ipc_message_copy(zbx_ipc_message_t *dst, const zbx_ipc_message_t *src);
 
-#endif
+void	zbx_init_library_ipcservice(unsigned char program_type);
 
+#endif

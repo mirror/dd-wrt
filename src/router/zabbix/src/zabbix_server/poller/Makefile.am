@@ -25,12 +25,23 @@ libzbxpoller_a_SOURCES = \
 	checks_simple_vmware.h \
 	checks_snmp.c \
 	checks_snmp.h \
+	ssh_run.h \
 	checks_ssh.c \
 	checks_ssh.h \
+	telnet_run.c \
+	telnet_run.h \
 	checks_telnet.c \
 	checks_telnet.h \
 	poller.c \
 	poller.h
+
+if HAVE_SSH
+libzbxpoller_a_SOURCES += ssh_run.c
+endif
+
+if HAVE_SSH2
+libzbxpoller_a_SOURCES += ssh2_run.c
+endif
 
 libzbxpoller_server_a_SOURCES = \
 	checks_internal.h \
@@ -42,10 +53,15 @@ libzbxpoller_proxy_a_SOURCES = \
 
 libzbxpoller_a_CFLAGS = \
 	-I$(top_srcdir)/src/libs/zbxsysinfo/simple \
-	-I$(top_srcdir)/src/libs/zbxdbcache \
+	-I$(top_srcdir)/src/libs/zbxcacheconfig \
+	-I$(top_srcdir)/src/libs/zbxcachehistory \
+	-I$(top_srcdir)/src/libs/zbxcachevalue \
 	$(SNMP_CFLAGS) \
 	$(SSH2_CFLAGS) \
 	$(SSH_CFLAGS) \
 	$(LIBXML2_CFLAGS)
 
-libzbxpoller_server_a_CFLAGS = -I$(top_srcdir)/src/libs/zbxdbcache
+libzbxpoller_server_a_CFLAGS = \
+	-I$(top_srcdir)/src/libs/zbxcacheconfig \
+	-I$(top_srcdir)/src/libs/zbxcachehistory \
+	-I$(top_srcdir)/src/libs/zbxcachevalue
