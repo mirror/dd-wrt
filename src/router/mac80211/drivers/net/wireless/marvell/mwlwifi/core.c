@@ -467,8 +467,9 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(300);
 	if  (priv->antenna_rx == ANTENNA_RX_3)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
-	if  (priv->antenna_rx == ANTENNA_RX_4_AUTO)
-		band->ht_cap.mcs.rx_highest = cpu_to_le16(600);
+	if  (priv->antenna_rx == ANTENNA_RX_4_AUTO) {
+		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
+	}
 }
 
 void mwl_set_vht_caps(struct mwl_priv *priv,
@@ -513,18 +514,34 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 		if (priv->antenna_tx != ANTENNA_TX_1)
 			band->vht_cap.cap |= IEEE80211_VHT_CAP_TXSTBC;
 	}
-	if (priv->antenna_rx == ANTENNA_RX_1) {
-		rxhighest = cpu_to_le16(390);
-		rxantennas = 1;
-	} else if (priv->antenna_rx == ANTENNA_RX_2) {
-		rxhighest = cpu_to_le16(780);
-		rxantennas = 2;
-	} else if (priv->antenna_rx == ANTENNA_RX_3) {
-		rxhighest = cpu_to_le16(1170);
-		rxantennas = 3;
+	if (priv->chip_type != MWL8964) {
+		if (priv->antenna_rx == ANTENNA_RX_1) {
+			rxhighest = cpu_to_le16(433);
+			rxantennas = 1;
+		} else if (priv->antenna_rx == ANTENNA_RX_2) {
+			rxhighest = cpu_to_le16(866);
+			rxantennas = 2;
+		} else if (priv->antenna_rx == ANTENNA_RX_3) {
+			rxhighest = cpu_to_le16(1300);
+			rxantennas = 3;
+		} else {
+			rxhighest = cpu_to_le16(1300);
+			rxantennas = 4;
+		}
 	} else {
-		rxhighest = cpu_to_le16(1560);
-		rxantennas = 4;
+		if (priv->antenna_rx == ANTENNA_RX_1) {
+			rxhighest = cpu_to_le16(866);
+			rxantennas = 1;
+		} else if (priv->antenna_rx == ANTENNA_RX_2) {
+			rxhighest = cpu_to_le16(1733);
+			rxantennas = 2;
+		} else if (priv->antenna_rx == ANTENNA_RX_3) {
+			rxhighest = cpu_to_le16(2600);
+			rxantennas = 3;
+		} else {
+			rxhighest = cpu_to_le16(2600);
+			rxantennas = 4;
+		}
 	}
 	
 	mcsmap = 0;
@@ -536,17 +553,32 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 	band->vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(mcsmap);
 
 
-	if (priv->antenna_tx == ANTENNA_TX_1) {
-		antenna_num = 1;
-		txhighest = cpu_to_le16(390);
-	} else if (priv->antenna_tx == ANTENNA_TX_2) {
-		antenna_num = 2;
-		txhighest = cpu_to_le16(780);
-	} else if (priv->antenna_tx == ANTENNA_TX_3) {
-		antenna_num = 3;
-		txhighest = cpu_to_le16(1170);
-	} else{
-		txhighest = cpu_to_le16(1560);
+	if (priv->chip_type != MWL8964) {
+		if (priv->antenna_tx == ANTENNA_TX_1) {
+			antenna_num = 1;
+			txhighest = cpu_to_le16(433);
+		} else if (priv->antenna_tx == ANTENNA_TX_2) {
+			antenna_num = 2;
+			txhighest = cpu_to_le16(866);
+		} else if (priv->antenna_tx == ANTENNA_TX_3) {
+			antenna_num = 3;
+			txhighest = cpu_to_le16(1300);
+		} else{
+			txhighest = cpu_to_le16(1300);
+		}
+	} else {
+		if (priv->antenna_tx == ANTENNA_TX_1) {
+			antenna_num = 1;
+			txhighest = cpu_to_le16(866);
+		} else if (priv->antenna_tx == ANTENNA_TX_2) {
+			antenna_num = 2;
+			txhighest = cpu_to_le16(1733);
+		} else if (priv->antenna_tx == ANTENNA_TX_3) {
+			antenna_num = 3;
+			txhighest = cpu_to_le16(2600);
+		} else{
+			txhighest = cpu_to_le16(2600);
+		}
 	}
 
 	mcsmap = 0;
