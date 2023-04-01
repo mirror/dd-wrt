@@ -2356,7 +2356,6 @@ void start_restore_defaults(void)
 	}
 #endif
 
-	int nvcnt = 0;
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 	buffalo_defaults(restore_defaults);
 #endif
