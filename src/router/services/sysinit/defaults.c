@@ -189,10 +189,6 @@ struct nvram_param srouter_defaults[] = {
 	/*
 	 * LAN H/W parameters 
 	 */
-	{ "lan_ifname", "" },	/* LAN interface name */
-	{ "lan_ifnames", "" },	/* Enslaved LAN interfaces */
-	{ "lan_hwnames", "" },	/* LAN driver names (e.g. et0) */
-	{ "lan_hwaddr", "" },	/* LAN interface MAC address */
 //KONG needs to be modified for marvel
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 	{ "wl0_ifname", "wlan0" },	/* LAN interface MAC address */
