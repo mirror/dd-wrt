@@ -2370,18 +2370,18 @@ void start_restore_defaults(void)
 	runStartup(".pf");
 	// if (!nvram_match("default_init","1"))
 	{
+		for (u = linux_overrides; u && u->name; u++) {
+			if (restore_defaults || !nvram_exists(u->name)) {
+				nvram_set(u->name, u->value);
+			}
+		}
 		for (t = srouter_defaults; t->name; t++) {
 			if (restore_defaults || !nvram_exists(t->name)) {
-
 				for (u = linux_overrides; u && u->name; u++) {
-					if (!strcmp(t->name, u->name)) {
-						nvcnt++;
-						nvram_set(u->name, u->value);
-						break;
-					}
+					if (!strcmp(u->name, t->name))
+					    break;
 				}
 				if (!u || !u->name) {
-					nvcnt++;
 					nvram_set(t->name, t->value);
 					if (icnt < 2 && startswith(t->name, "wl1_"))	//unset wl1_xx if we have only one radio
 						nvram_unset(t->name);
