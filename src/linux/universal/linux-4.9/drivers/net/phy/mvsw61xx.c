@@ -456,6 +456,86 @@ static int mvsw61xx_set_enable_vlan(struct switch_dev *dev,
 	return 0;
 }
 
+static int mvsw61xx_get_mirror_rx_enable(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	val->value.i = state->mirror_rx;
+
+	return 0;
+}
+
+static int mvsw61xx_set_mirror_rx_enable(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	state->mirror_rx = val->value.i;
+
+	return 0;
+}
+
+static int mvsw61xx_get_mirror_tx_enable(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	val->value.i = state->mirror_tx;
+
+	return 0;
+}
+
+static int mvsw61xx_set_mirror_tx_enable(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	state->mirror_tx = val->value.i;
+
+	return 0;
+}
+
+static int mvsw61xx_get_mirror_monitor_port(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	val->value.i = state->monitor_port;
+
+	return 0;
+}
+
+static int mvsw61xx_set_mirror_monitor_port(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	state->monitor_port = val->value.i;
+
+	return 0;
+}
+
+static int mvsw61xx_get_mirror_source_port(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	val->value.i = state->source_port;
+
+	return 0;
+}
+
+static int mvsw61xx_set_mirror_source_port(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+
+	state->source_port = val->value.i;
+
+	return 0;
+}
+
 static int mvsw61xx_vtu_program(struct switch_dev *dev)
 {
 	struct mvsw61xx_state *state = get_state(dev);
@@ -831,10 +911,6 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 }
 
 enum {
-	MVSW61XX_ENABLE_VLAN,
-};
-
-enum {
 	MVSW61XX_VLAN_PORT_BASED,
 	MVSW61XX_VLAN_ID,
 };
@@ -845,13 +921,45 @@ enum {
 };
 
 static const struct switch_attr mvsw61xx_global[] = {
-	[MVSW61XX_ENABLE_VLAN] = {
+	{
 		.id = MVSW61XX_ENABLE_VLAN,
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable 802.1q VLAN support",
 		.get = mvsw61xx_get_enable_vlan,
 		.set = mvsw61xx_set_enable_vlan,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_rx",
+		.description = "Enable mirroring of RX packets",
+		.set = mvsw61xx_set_mirror_rx_enable,
+		.get = mvsw61xx_get_mirror_rx_enable,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_tx",
+		.description = "Enable mirroring of TX packets",
+		.set = mvsw61xx_set_mirror_tx_enable,
+		.get = mvsw61xx_get_mirror_tx_enable,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_monitor_port",
+		.description = "Mirror monitor port",
+		.set = mvsw61xx_set_mirror_monitor_port,
+		.get = mvsw61xx_get_mirror_monitor_port,
+		.max = MV_PORTS - 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_source_port",
+		.description = "Mirror source port",
+		.set = mvsw61xx_set_mirror_source_port,
+		.get = mvsw61xx_get_mirror_source_port,
+		.max = MV_PORTS - 1
 	},
 };
 
