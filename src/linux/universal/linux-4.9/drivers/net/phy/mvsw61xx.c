@@ -686,6 +686,40 @@ static int mvsw61xx_update_state(struct switch_dev *dev)
 
 	mvsw61xx_vtu_program(dev);
 
+	/* port mirroring */
+	/* reset all mirror registers */
+	for (i = 0; i < dev->ports; i++) {
+		reg = sr16(dev, MV_PORTREG(CONTROL2, i));
+		reg &= ~(MV_MIRROR_RX_SRC_MASK | MV_MIRROR_TX_SRC_MASK);
+		sw16(dev, MV_PORTREG(CONTROL2, i), reg);
+	}
+	reg = sr16(dev, MV_GLOBALREG(MONITOR_CTRL));
+	reg |= MV_MIRROR_RX_DEST_MASK | MV_MIRROR_TX_DEST_MASK;
+	sw16(dev, MV_GLOBALREG(MONITOR_CTRL), reg);
+
+	/* now enable mirroring if necessary */
+	if (state->mirror_rx) {
+		/* set ingress monitor source */
+		reg = sr16(dev, MV_PORTREG(CONTROL2, state->source_port)) & ~MV_MIRROR_RX_SRC_MASK;
+		reg |= state->mirror_rx << MV_MIRROR_RX_SRC_SHIFT;
+		sw16(dev, MV_PORTREG(CONTROL2, state->source_port), reg);
+		/* set ingress monitor destination */
+		reg = sr16(dev, MV_GLOBALREG(MONITOR_CTRL)) & ~MV_MIRROR_RX_DEST_MASK;
+		reg |= state->monitor_port << MV_MIRROR_RX_DEST_SHIFT;
+		sw16(dev, MV_GLOBALREG(MONITOR_CTRL), reg);
+	}
+
+	if (state->mirror_tx) {
+		/* set egress monitor source */
+		reg = sr16(dev, MV_PORTREG(CONTROL2, state->source_port)) & ~MV_MIRROR_TX_SRC_MASK;
+		reg |= state->mirror_tx << MV_MIRROR_TX_SRC_SHIFT;
+		sw16(dev, MV_PORTREG(CONTROL2, state->source_port), reg);
+		/* set egress monitor destination */
+		reg = sr16(dev, MV_GLOBALREG(MONITOR_CTRL)) & ~MV_MIRROR_TX_DEST_MASK;
+		reg |= state->monitor_port << MV_MIRROR_TX_DEST_SHIFT;
+		sw16(dev, MV_GLOBALREG(MONITOR_CTRL), reg);
+	}
+
 	return 0;
 }
 
@@ -774,6 +808,11 @@ static int _mvsw61xx_reset(struct switch_dev *dev, bool full)
 	}
 
 	state->vlan_enabled = 0;
+
+	state->mirror_rx = false;
+	state->mirror_tx = false;
+	state->source_port = 0;
+	state->monitor_port = 0;
 
 	mvsw61xx_update_state(dev);
 
@@ -922,7 +961,6 @@ enum {
 
 static const struct switch_attr mvsw61xx_global[] = {
 	{
-		.id = MVSW61XX_ENABLE_VLAN,
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable 802.1q VLAN support",
