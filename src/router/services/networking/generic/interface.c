@@ -430,6 +430,11 @@ void start_setup_vlans(void)
 #else
 	for (vlan_number = 0; vlan_number < blen; vlan_number++) {
 		char *ports = buildports[vlan_number];
+		if (!strstr(ports,"t"))
+			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "port_based", "1");
+		else
+			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "port_based", "0");
+		
 		if (strlen(ports) && ports[0] != 'W') {
 			char vl[32];
 			sprintf(vl, "%d", vlanlist[vlan_number]);
