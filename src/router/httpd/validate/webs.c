@@ -5890,7 +5890,7 @@ void port_vlan_table_save(webs_t wp)
 			char *s_portval = websGetVar(wp, portid, "");
 			
 #ifdef HAVE_SWCONFIG
-			if (flag < 17000 || flag > 22000 && flag != 22000)
+			if (flag < 17000 || flag > 21000)
 #else
 			if (flag < 17000 || flag > 21000)
 #endif
