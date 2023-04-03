@@ -5890,7 +5890,7 @@ void port_vlan_table_save(webs_t wp)
 			char *s_portval = websGetVar(wp, portid, "");
 			
 #ifdef HAVE_SWCONFIG
-			if (flag < 17000 || flag > 22000)
+			if (flag < 17000 || flag > 22000 && flag != 22000)
 #else
 			if (flag < 17000 || flag > 21000)
 #endif
@@ -6218,7 +6218,7 @@ static void nfs_save(webs_t wp)
 		if (!strcmp(val, "-")) {
 			sprintf(var, "nfsshare_access_perms_prev_%d", c);
 			sprintf(val, "%s", websGetVar(wp, var, "x"));
-		}
+[5~		}
 		json_object_set_new(entry, "perms", json_string(val));
 		json_array_append(entries, entry);
 	}
