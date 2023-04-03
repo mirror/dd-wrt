@@ -357,7 +357,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " height=\"20\"><div class=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
 //                      fprintf(stderr, "port %d, line %d flags %d %d\n", j, i, vlans[j][i], flag);
-			if (flag < 17000 || flag > 22000 && flag != 22000) {
+			if (flag < 17000 || flag > 21000) {
 				if (vlans[j][i] == 1)
 					websWrite(wp, "checked=\"checked\" ");
 			} else {
