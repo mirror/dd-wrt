@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r7208 | brainslayer | 2023-04-04 14:31:12 +0600 (Tue, 04 Apr 2023) | 1 line
+
+disable original sta powersave code since its not working correct. use the new one i wrote instead
+------------------------------------------------------------------------
+r7207 | brainslayer | 2023-04-04 14:26:21 +0600 (Tue, 04 Apr 2023) | 1 line
+
+disable original sta powersave code since its not working correct. use the new one i wrote instead
+------------------------------------------------------------------------
 r7206 | brainslayer | 2023-04-03 13:25:37 +0600 (Mon, 03 Apr 2023) | 1 line
 
 send nullfunc only in sta mode
