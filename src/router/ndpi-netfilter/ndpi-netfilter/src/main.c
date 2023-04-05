@@ -2917,6 +2917,9 @@ static void __net_exit ndpi_net_exit(struct net *net)
 		PROC_REMOVE(n->pde,net);
 	}
 }
+
+NDPI_STATIC ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
+
 static int ndpi_stun_cache_enable=
 #ifndef __KERNEL__
 	1;
