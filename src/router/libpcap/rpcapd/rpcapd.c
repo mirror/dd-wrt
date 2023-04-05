@@ -35,6 +35,7 @@
 #endif
 
 #include "ftmacros.h"
+#include "diag-control.h"
 
 #include <errno.h>		// for the errno variable
 #include <string.h>		// for strtok, etc
@@ -360,8 +361,8 @@ int main(int argc, char *argv[])
 	state_change_event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (state_change_event == NULL)
 	{
-		sock_geterror("Can't create state change event", errbuf,
-		    PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+		    "Can't create state change event");
 		rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 		exit(2);
 	}
@@ -371,8 +372,8 @@ int main(int argc, char *argv[])
 	//
 	if (!SetConsoleCtrlHandler(main_ctrl_event, TRUE))
 	{
-		sock_geterror("Can't set control handler", errbuf,
-		    PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+		    "Can't set control handler");
 		rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 		exit(2);
 	}
@@ -426,8 +427,8 @@ int main(int argc, char *argv[])
 		sockctrl = dup(0);
 		if (sockctrl == -1)
 		{
-			sock_geterror("Can't dup standard input", errbuf,
-			    PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+			    "Can't dup standard input");
 			rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 			exit(2);
 		}
@@ -503,7 +504,7 @@ int main(int argc, char *argv[])
 
 		// LINUX WARNING: the current linux implementation of pthreads requires a management thread
 		// to handle some hidden stuff. So, as soon as you create the first thread, two threads are
-		// created. Fom this point on, the number of threads active are always one more compared
+		// created. From this point on, the number of threads active are always one more compared
 		// to the number you're expecting
 
 		// Second child continues
@@ -622,7 +623,7 @@ void main_startup(void)
 			SOCKET sock;
 			struct listen_sock *sock_info;
 
-			if ((sock = sock_open(tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
+			if ((sock = sock_open(NULL, tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
 			{
 				switch (tempaddrinfo->ai_family)
 				{
@@ -735,8 +736,8 @@ send_state_change_event(void)
 
 	if (!SetEvent(state_change_event))
 	{
-		sock_geterror("SetEvent on shutdown event failed", errbuf,
-		    PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+		    "SetEvent on shutdown event failed");
 		rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 	}
 }
@@ -903,15 +904,15 @@ accept_connections(void)
 		event = WSACreateEvent();
 		if (event == WSA_INVALID_EVENT)
 		{
-			sock_geterror("Can't create socket event", errbuf,
-			    PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+			    "Can't create socket event");
 			rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 			exit(2);
 		}
 		if (WSAEventSelect(sock_info->sock, event, FD_ACCEPT) == SOCKET_ERROR)
 		{
-			sock_geterror("Can't setup socket event", errbuf,
-			    PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+			    "Can't setup socket event");
 			rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 			exit(2);
 		}
@@ -929,8 +930,8 @@ accept_connections(void)
 		    WSA_INFINITE, FALSE);
 		if (ret == WSA_WAIT_FAILED)
 		{
-			sock_geterror("WSAWaitForMultipleEvents failed", errbuf,
-			    PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+			    "WSAWaitForMultipleEvents failed");
 			rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 			exit(2);
 		}
@@ -969,8 +970,8 @@ accept_connections(void)
 			if (WSAEnumNetworkEvents(sock_info->sock,
 			    events[i], &network_events) == SOCKET_ERROR)
 			{
-				sock_geterror("WSAEnumNetworkEvents failed",
-				    errbuf, PCAP_ERRBUF_SIZE);
+				sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+				    "WSAEnumNetworkEvents failed");
 				rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 				exit(2);
 			}
@@ -984,10 +985,10 @@ accept_connections(void)
 					//
 					// Yes - report it and keep going.
 					//
-					sock_fmterror("Socket error",
+					sock_fmterrmsg(errbuf,
+					    PCAP_ERRBUF_SIZE,
 					    network_events.iErrorCode[FD_ACCEPT_BIT],
-					    errbuf,
-					    PCAP_ERRBUF_SIZE);
+					    "Socket error");
 					rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 					continue;
 				}
@@ -1173,7 +1174,7 @@ accept_connection(SOCKET listen_sock)
 
 		// Don't check for errors here, since the error can be due to the fact that the thread
 		// has been killed
-		sock_geterror("accept()", errbuf, PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE, "accept() failed");
 		rpcapd_log(LOGPRIO_ERROR, "Accept of control connection from client failed: %s",
 		    errbuf);
 		return;
@@ -1197,14 +1198,16 @@ accept_connection(SOCKET listen_sock)
 	//
 	if (WSAEventSelect(sockctrl, NULL, 0) == SOCKET_ERROR)
 	{
-		sock_geterror("WSAEventSelect()", errbuf, PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+		    "WSAEventSelect() failed");
 		rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 		sock_close(sockctrl, NULL, 0);
 		return;
 	}
 	if (ioctlsocket(sockctrl, FIONBIO, &off) == SOCKET_ERROR)
 	{
-		sock_geterror("ioctlsocket(FIONBIO)", errbuf, PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+		    "ioctlsocket(FIONBIO) failed");
 		rpcapd_log(LOGPRIO_ERROR, "%s", errbuf);
 		sock_close(sockctrl, NULL, 0);
 		return;
@@ -1357,13 +1360,15 @@ main_active(void *ptr)
 	{
 		int activeclose;
 
-		if ((sockctrl = sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
+		if ((sockctrl = sock_open(activepars->address, addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
 		{
 			rpcapd_log(LOGPRIO_DEBUG, "%s", errbuf);
 
+			DIAG_OFF_FORMAT_TRUNCATION
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error connecting to host %s, port %s, using protocol %s",
 					activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4":
 					(hints.ai_family == AF_INET6) ? "IPv6" : "Unspecified");
+			DIAG_ON_FORMAT_TRUNCATION
 
 			rpcapd_log(LOGPRIO_DEBUG, "%s", errbuf);
 

@@ -32,13 +32,14 @@
 #include <memory.h>
 #include <setjmp.h>
 #include <string.h>
-
+#include <limits.h> /* for SIZE_MAX */
 #include <errno.h>
 
 #include "pcap-int.h"
 
 #include "gencode.h"
 #include "optimize.h"
+#include "diag-control.h"
 
 #ifdef HAVE_OS_PROTO_H
 #include "os-proto.h"
@@ -2098,7 +2099,7 @@ opt_blks(opt_state_t *opt_state, struct icode *ic, int do_stmts)
 		 * versions of the machine code, eventually returning
 		 * to the first version.  (We're really not doing a
 		 * full loop detection, we're just testing for two
-		 * passes in a row where where we do nothing but
+		 * passes in a row where we do nothing but
 		 * move branches.)
 		 */
 		return;
@@ -2421,6 +2422,9 @@ opt_error(opt_state_t *opt_state, const char *fmt, ...)
 	}
 	longjmp(opt_state->top_ctx, 1);
 	/* NOTREACHED */
+#ifdef _AIX
+	PCAP_UNREACHABLE
+#endif /* _AIX */
 }
 
 /*
@@ -2606,7 +2610,7 @@ opt_init(opt_state_t *opt_state, struct icode *ic)
 	}
 
 	/*
-	 * Make sure the total memory required for both of them dosn't
+	 * Make sure the total memory required for both of them doesn't
 	 * overflow.
 	 */
 	if (block_memsize > SIZE_MAX - edge_memsize) {
@@ -2895,7 +2899,6 @@ icode_to_fcode(struct icode *ic, struct block *root, u_int *lenp,
 	    if (fp == NULL) {
 		(void)snprintf(errbuf, PCAP_ERRBUF_SIZE,
 		    "malloc");
-		free(fp);
 		return NULL;
 	    }
 	    memset((char *)fp, 0, sizeof(*fp) * n);
@@ -2925,6 +2928,9 @@ conv_error(conv_state_t *conv_state, const char *fmt, ...)
 	va_end(ap);
 	longjmp(conv_state->top_ctx, 1);
 	/* NOTREACHED */
+#ifdef _AIX
+	PCAP_UNREACHABLE
+#endif /* _AIX */
 }
 
 /*
