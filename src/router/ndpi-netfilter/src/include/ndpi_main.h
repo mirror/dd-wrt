@@ -128,7 +128,7 @@ NDPI_STATIC  void ndpi_set_detected_protocol(struct ndpi_detection_module_struct
 
   NDPI_STATIC u_int8_t ndpi_is_proto(ndpi_protocol proto, u_int16_t p);
 
-  extern void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+  NDPI_STATIC void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 NDPI_STATIC  void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct *ndpi_struct,

@@ -48,8 +48,8 @@ extern "C" {
   */
 //  extern ndpi_custom_dga_predict_fctn ndpi_dga_function;
 
-  extern ndpi_debug_function_ptr ndpi_debug_print_init;
-  extern ndpi_log_level_t ndpi_debug_level_init;
+//  extern ndpi_debug_function_ptr ndpi_debug_print_init;
+//  extern ndpi_log_level_t ndpi_debug_level_init;
   /**
    * Check if a string is encoded with punycode
    * ( https://tools.ietf.org/html/rfc3492 )

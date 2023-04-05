@@ -161,8 +161,7 @@ static void (*_ndpi_flow_free)(void *ptr);
 static void *(*_ndpi_malloc)(size_t size);
 static void (*_ndpi_free)(void *ptr);
 
-ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
-ndpi_log_level_t ndpi_debug_level_init = NDPI_LOG_ERROR;
+NDPI_STATIC ndpi_log_level_t ndpi_debug_level_init = NDPI_LOG_ERROR;
 
 static u_int32_t _ticks_per_second = 1000;
 static struct ndpi_detection_module_struct xxx0;
