@@ -21,7 +21,8 @@ if (!($TCPDUMP = $ENV{TCPDUMP_BIN})) {
 #
 # Make true and false work as Booleans.
 #
-use constant { true => 1, false => 0 };
+use constant true => 1;
+use constant false => 0;
 
 use File::Basename;
 use POSIX qw( WEXITSTATUS WIFEXITED);
@@ -38,6 +39,8 @@ mkpath($newdir);
 mkpath($diffdir);
 my $origdir = getcwd();
 my $srcdir  = $ENV{'srcdir'} || ".";
+# Default to unified diff and allow to fall back to basic diff if necessary.
+my $diff_flags = defined $ENV{'DIFF_FLAGS'} ? $ENV{'DIFF_FLAGS'} : '-u';
 
 #
 # Force UTC, so time stamps are printed in a standard time zone, and
@@ -120,7 +123,7 @@ sub runtest {
             $status = $!;
             printf OUTPUT "FAILED TO RUN: status: %d\n", $status;
         } else {
-            if ($^O eq 'MSWin32') {
+            if ($^O eq 'MSWin32' or $^O eq 'msys') {
                 #
                 # On Windows, the return value of system is the lower 8
                 # bits of the exit status of the process, shifted left
@@ -225,7 +228,7 @@ sub runtest {
             $r = system "fc /lb1000 /t /1 $winoutput tests\\NEW\\$outputbase >tests\\DIFF\\$outputbase.diff";
             $diffstat = $r >> 8;
         } else {
-            $r = system "diff $output tests/NEW/$outputbase >tests/DIFF/$outputbase.diff";
+            $r = system "diff $diff_flags $output tests/NEW/$outputbase >tests/DIFF/$outputbase.diff";
             $diffstat = WEXITSTATUS($r);
         }
     }
@@ -367,6 +370,13 @@ sub loadconfighash {
         $have_fptype = "HAVE_FPTYPE2";
     }
     $main::confighhash->{$have_fptype} = 1;
+
+    # and check whether this is OpenBSD, as one test fails in OpenBSD
+    # due to the sad hellscape of low-numbered DLT_ values, due to
+    # 12 meaning "OpenBSD loopback" rather than "raw IP" on OpenBSD
+    if($^O eq "openbsd") {
+        $main::confighhash->{"IS_OPENBSD"} = 1;
+    }
 
     return $main::confighhash;
 }

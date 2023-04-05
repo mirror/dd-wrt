@@ -185,7 +185,7 @@ static const struct printer printers[] = {
 #ifdef DLT_LOOP
 	{ null_if_print,	DLT_LOOP },
 #endif
-#if defined(DLT_PFLOG) && defined(HAVE_NET_IF_PFLOG_H)
+#ifdef DLT_PFLOG
 	{ pflog_if_print,	DLT_PFLOG },
 #endif
 #ifdef DLT_PKTAP
@@ -404,6 +404,7 @@ pretty_print_packet(netdissect_options *ndo, const struct pcap_pkthdr *h,
 	 * of the netdissect_options structure.
 	 */
 	ndo->ndo_snapend = sp + h->caplen;
+	ndo->ndo_packetp = sp;
 
 	ndo->ndo_protocol = "";
 	ndo->ndo_ll_hdr_len = 0;

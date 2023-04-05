@@ -231,11 +231,12 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 	u_int total_advance;
 	const u_char *cp;
 	uint32_t payload_len;
-	uint8_t nh;
+	uint8_t ph, nh;
 	int fragmented = 0;
 	u_int flow;
 	int found_extension_header;
 	int found_jumbo;
+	int found_hbh;
 
 	ndo->ndo_protocol = "ip6";
 	ip6 = (const struct ip6_hdr *)bp;
@@ -246,12 +247,12 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 		return;
 	}
 
-        if (!ndo->ndo_eflag)
-            ND_PRINT("IP6 ");
+	if (!ndo->ndo_eflag)
+	    ND_PRINT("IP6 ");
 
 	if (IP6_VERSION(ip6) != 6) {
-          ND_PRINT("version error: %u != 6", IP6_VERSION(ip6));
-          return;
+	  ND_PRINT("version error: %u != 6", IP6_VERSION(ip6));
+	  return;
 	}
 
 	payload_len = GET_BE_U_2(ip6->ip6_plen);
@@ -285,35 +286,31 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 	} else
 		len = length + sizeof(struct ip6_hdr);
 
-        nh = GET_U_1(ip6->ip6_nxt);
-        if (ndo->ndo_vflag) {
-            flow = GET_BE_U_4(ip6->ip6_flow);
-            ND_PRINT("(");
-#if 0
-            /* rfc1883 */
-            if (flow & 0x0f000000)
-		ND_PRINT("pri 0x%02x, ", (flow & 0x0f000000) >> 24);
-            if (flow & 0x00ffffff)
-		ND_PRINT("flowlabel 0x%06x, ", flow & 0x00ffffff);
-#else
-            /* RFC 2460 */
-            if (flow & 0x0ff00000)
-		ND_PRINT("class 0x%02x, ", (flow & 0x0ff00000) >> 20);
-            if (flow & 0x000fffff)
-		ND_PRINT("flowlabel 0x%05x, ", flow & 0x000fffff);
-#endif
+	ph = 255;
+	nh = GET_U_1(ip6->ip6_nxt);
+	if (ndo->ndo_vflag) {
+	    flow = GET_BE_U_4(ip6->ip6_flow);
+	    ND_PRINT("(");
+	    /* RFC 2460 */
+	    if (flow & 0x0ff00000)
+	        ND_PRINT("class 0x%02x, ", (flow & 0x0ff00000) >> 20);
+	    if (flow & 0x000fffff)
+	        ND_PRINT("flowlabel 0x%05x, ", flow & 0x000fffff);
 
-            ND_PRINT("hlim %u, next-header %s (%u) payload length: %u) ",
-                         GET_U_1(ip6->ip6_hlim),
-                         tok2str(ipproto_values,"unknown",nh),
-                         nh,
-                         payload_len);
-        }
+	    ND_PRINT("hlim %u, next-header %s (%u) payload length: %u) ",
+	                 GET_U_1(ip6->ip6_hlim),
+	                 tok2str(ipproto_values,"unknown",nh),
+	                 nh,
+	                 payload_len);
+	}
 
 	/*
 	 * Cut off the snapshot length to the end of the IP payload.
 	 */
-	nd_push_snapend(ndo, bp + len);
+	if (!nd_push_snaplen(ndo, bp, len)) {
+		(*ndo->ndo_error)(ndo, S_ERR_ND_MEM_ALLOC,
+			"%s: can't push snaplen on buffer stack", __func__);
+	}
 
 	cp = (const u_char *)ip6;
 	advance = sizeof(struct ip6_hdr);
@@ -321,6 +318,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 	/* Process extension headers */
 	found_extension_header = 0;
 	found_jumbo = 0;
+	found_hbh = 0;
 	while (cp < ndo->ndo_snapend && advance > 0) {
 		if (len < (u_int)advance)
 			goto trunc;
@@ -338,12 +336,32 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 		switch (nh) {
 
 		case IPPROTO_HOPOPTS:
+			/*
+			 * The Hop-by-Hop Options header, when present,
+			 * must immediately follow the IPv6 header (RFC 8200)
+			 */
+			if (found_hbh == 1) {
+				ND_PRINT("[The Hop-by-Hop Options header was already found]");
+				nd_print_invalid(ndo);
+				return;
+			}
+			if (ph != 255) {
+				ND_PRINT("[The Hop-by-Hop Options header don't follow the IPv6 header]");
+				nd_print_invalid(ndo);
+				return;
+			}
 			advance = hbhopt_process(ndo, cp, &found_jumbo, &payload_len);
+			if (payload_len == 0 && found_jumbo == 0) {
+				ND_PRINT("[No valid Jumbo Payload Hop-by-Hop option found]");
+				nd_print_invalid(ndo);
+				return;
+			}
 			if (advance < 0) {
 				nd_pop_packet_info(ndo);
 				return;
 			}
 			found_extension_header = 1;
+			found_hbh = 1;
 			nh = GET_U_1(cp);
 			break;
 
@@ -421,7 +439,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 				if (length < len)
 					ND_PRINT("truncated-ip6 - %u bytes missing!",
 						len - length);
-				nd_change_snapend(ndo, bp + len);
+				nd_change_snaplen(ndo, bp, len);
 
 				/*
 				 * Now subtract the length of the IPv6
@@ -446,7 +464,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 						goto trunc;
 
 					/*
-					 * OK, we didn't see any extnesion
+					 * OK, we didn't see any extension
 					 * header, but that means we have
 					 * no payload, so set the length
 					 * to the IPv6 header length,
@@ -454,7 +472,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 					 * accordingly.
 					 */
 					len = sizeof(struct ip6_hdr);
-					nd_change_snapend(ndo, bp + len);
+					nd_change_snaplen(ndo, bp, len);
 
 					/*
 					 * Now subtract the length of
@@ -471,6 +489,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 			nd_pop_packet_info(ndo);
 			return;
 		}
+		ph = nh;
 
 		/* ndo_protocol reassignment after xxx_print() calls */
 		ndo->ndo_protocol = "ip6";

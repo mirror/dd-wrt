@@ -86,7 +86,7 @@ const struct tok ethertype_values[] = {
     { ETHERTYPE_PPPOED,         "PPPoE D" },
     { ETHERTYPE_PPPOES,         "PPPoE S" },
     { ETHERTYPE_EAPOL,          "EAPOL" },
-    { ETHERTYPE_RRCP,           "RRCP" },
+    { ETHERTYPE_REALTEK,        "Realtek protocols" },
     { ETHERTYPE_MS_NLB_HB,      "MS NLB heartbeat" },
     { ETHERTYPE_JUMBO,          "Jumbo" },
     { ETHERTYPE_NSH,            "NSH" },
@@ -150,13 +150,14 @@ ether_common_print(netdissect_options *ndo, const u_char *p, u_int length,
 	int llc_hdrlen;
 	struct lladdr_info src, dst;
 
+	if (length < caplen) {
+		ND_PRINT("[length %u < caplen %u]", length, caplen);
+		nd_print_invalid(ndo);
+		return length;
+	}
 	if (caplen < ETHER_HDRLEN + switch_tag_len) {
 		nd_print_trunc(ndo);
 		return caplen;
-	}
-	if (length < ETHER_HDRLEN + switch_tag_len) {
-		nd_print_trunc(ndo);
-		return length;
 	}
 
 	if (print_encap_header != NULL)
@@ -221,7 +222,7 @@ recurse:
 		}
 
 		int ret = macsec_print(ndo, &p, &length, &caplen, &hdrlen,
-		    &src, &dst);
+				       &src, &dst);
 
 		if (ret == 0) {
 			/* Payload is encrypted; print it as raw data. */
@@ -237,6 +238,7 @@ recurse:
 			 */
 			length_type = GET_BE_U_2(p);
 
+			ND_LCHECK_U(caplen, 2);
 			length -= 2;
 			caplen -= 2;
 			p += 2;
@@ -304,7 +306,10 @@ recurse:
 		 * Cut off the snapshot length to the end of the
 		 * payload.
 		 */
-		nd_push_snapend(ndo, p + length);
+		if (!nd_push_snaplen(ndo, p, length)) {
+			(*ndo->ndo_error)(ndo, S_ERR_ND_MEM_ALLOC,
+				"%s: can't push snaplen on buffer stack", __func__);
+		}
 
 		if (ndo->ndo_eflag) {
 			ND_PRINT("802.3");
@@ -402,6 +407,7 @@ recurse:
 				ND_DEFAULTPRINT(p, caplen);
 		}
 	}
+invalid:
 	return hdrlen;
 }
 
@@ -581,8 +587,8 @@ ethertype_print(netdissect_options *ndo,
 		eapol_print(ndo, p);
 		return (1);
 
-	case ETHERTYPE_RRCP:
-		rrcp_print(ndo, p, length, src, dst);
+	case ETHERTYPE_REALTEK:
+		rtl_print(ndo, p, length, src, dst);
 		return (1);
 
 	case ETHERTYPE_PPP:

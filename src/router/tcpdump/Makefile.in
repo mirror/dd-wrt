@@ -193,6 +193,7 @@ LIBNETDISSECT_SRC=\
 	print-ospf.c \
 	print-ospf6.c \
 	print-otv.c \
+	print-pflog.c \
 	print-pgm.c \
 	print-pim.c \
 	print-pktap.c \
@@ -203,11 +204,11 @@ LIBNETDISSECT_SRC=\
 	print-ptp.c \
 	print-radius.c \
 	print-raw.c \
+	print-realtek.c \
 	print-resp.c \
 	print-rip.c \
 	print-ripng.c \
 	print-rpki-rtr.c \
-	print-rrcp.c \
 	print-rsvp.c \
 	print-rt6.c \
 	print-rtsp.c \
@@ -245,6 +246,7 @@ LIBNETDISSECT_SRC=\
 	print-vxlan-gpe.c \
 	print-vxlan.c \
 	print-wb.c \
+	print-whois.c \
 	print-zep.c \
 	print-zephyr.c \
 	print-zeromq.c \
@@ -275,6 +277,7 @@ HDR = \
 	chdlc.h \
 	compiler-tests.h \
 	cpack.h \
+	diag-control.h \
 	ethertype.h \
 	extract.h \
 	fptype.h \
@@ -304,6 +307,7 @@ HDR = \
 	ospf.h \
 	oui.h \
 	pcap-missing.h \
+	pflog.h \
 	ppp.h \
 	print.h \
 	rpc_auth.h \
@@ -329,28 +333,31 @@ CLEANFILES = $(PROG) $(OBJ) $(LIBNETDISSECT_OBJ)
 
 EXTRA_DIST = \
 	CHANGES \
-	CONTRIBUTING \
-	CREDITS \
 	CMakeLists.txt \
-	INSTALL.txt \
+	CONTRIBUTING.md \
+	CREDITS \
+	INSTALL.md \
 	LICENSE \
-	Makefile.in \
 	Makefile-devel-adds \
+	Makefile.in \
 	README.md \
 	VERSION \
 	aclocal.m4 \
 	atime.awk \
 	bpf_dump.c \
-	cmake_uninstall.cmake.in \
-	cmakeconfig.h.in \
 	cmake/Modules/FindCRYPTO.cmake \
 	cmake/Modules/FindPCAP.cmake \
 	cmake/Modules/FindSMI.cmake \
+	cmake_uninstall.cmake.in \
+	cmakeconfig.h.in \
 	config.guess \
 	config.h.in \
 	config.sub \
 	configure \
 	configure.ac \
+	doc/README.aix.md \
+	doc/README.NetBSD.md \
+	doc/README.solaris.md \
 	doc/README.Win32.md \
 	install-sh \
 	lbl/os-osf4.h \
@@ -358,10 +365,10 @@ EXTRA_DIST = \
 	lbl/os-sunos4.h \
 	lbl/os-ultrix4.h \
 	makemib \
-	missing/dlnames.c \
 	missing/datalinks.c \
-	missing/getopt_long.h \
+	missing/dlnames.c \
 	missing/getopt_long.c \
+	missing/getopt_long.h \
 	missing/getservent.c \
 	missing/pcap_dump_ftell.c \
 	missing/snprintf.c \
@@ -369,8 +376,6 @@ EXTRA_DIST = \
 	missing/strlcat.c \
 	missing/strlcpy.c \
 	missing/strsep.c \
-	missing/win_ether_ntohost.c \
-	missing/win_ether_ntohost.h \
 	mkdep \
 	packetdat.awk \
 	print-pflog.c \
@@ -381,6 +386,8 @@ EXTRA_DIST = \
 	tcpdump.1.in
 
 TEST_DIST= `git ls-files tests | grep -v 'tests/\..*'`
+
+RELEASE_FILES = $(CSRC) $(HDR) $(LIBNETDISSECT_SRC) $(EXTRA_DIST) $(TEST_DIST)
 
 all: $(PROG)
 
@@ -438,7 +445,7 @@ clean:
 
 distclean:
 	rm -f $(CLEANFILES) Makefile config.cache config.log config.status \
-	    config.h gnuc.h os-proto.h stamp-h stamp-h.in $(PROG).1 \
+	    config.h os-proto.h stamp-h stamp-h.in $(PROG).1 \
 	    libnetdissect.a tests/.failed tests/.passed \
 	    tests/failure-outputs.txt
 	rm -rf autom4te.cache tests/DIFF tests/NEW
@@ -456,18 +463,67 @@ TAGS: $(TAGFILES)
 	etags $(TAGFILES)
 
 releasetar:
-	@autoreconf -f; \
-	name=$(PROG)-`cat VERSION` ; \
-	   mkdir $$name; \
-	   tar cf - $(CSRC) $(HDR) $(LIBNETDISSECT_SRC) $(EXTRA_DIST) $(TEST_DIST) | (cd $$name; tar xf -); \
-	   tar -c -z -f $$name.tar.gz $$name; \
-	   rm -rf $$name
+	@TAG=$(PROG)-`cat VERSION` && \
+	if git show-ref --tags --quiet --verify -- "refs/tags/$$TAG"; then \
+	    git archive --prefix="$$TAG"/ -o "$$TAG".tar.gz "$$TAG" \
+	    $(RELEASE_FILES) && \
+	    echo "Archive build from tag $$TAG."; \
+	else \
+	    git archive --prefix="$$TAG"/ -o "$$TAG".tar.gz HEAD \
+	    $(RELEASE_FILES) && \
+	    echo "No $$TAG tag. Archive build from HEAD."; \
+	fi
 
-rc1 rc2 rc3 rc4 rc5:
-	@VER=`cat $(srcdir)/VERSION`; \
-	sed -i "s/$$VER/$${VER}$@/" VERSION ; \
-	make releasetar; \
-	git checkout VERSION configure
+releasecheck: releasetar
+	@TAG=$(PROG)-`cat VERSION` && \
+	INSTALL_DIR=/tmp/install_"$$TAG"_$$$$ && \
+	DIR=`pwd` && \
+	cd /tmp && \
+	rm -rf "$$TAG" && \
+	rm -rf "$$INSTALL_DIR" && \
+	tar xf "$$DIR"/"$$TAG".tar.gz && \
+	cd "$$TAG" && \
+	echo "[$@] $$ ./configure --enable-smb --quiet --prefix=$$INSTALL_DIR" && \
+	./configure --enable-smb --quiet --prefix="$$INSTALL_DIR" && \
+	echo '[$@] $$ make -s all check' && \
+	make -s all check >/dev/null && \
+	echo '[$@] $$ make -s install' && \
+	make -s install && \
+	cd .. && \
+	rm -rf "$$TAG" && \
+	rm -rf "$$INSTALL_DIR" && \
+	tar xf "$$DIR"/"$$TAG".tar.gz && \
+	cd "$$TAG" && \
+	mkdir build && \
+	cd build && \
+	echo '[$@] $$ cmake -DENABLE_SMB=yes [...] ..' && \
+	cmake -DENABLE_SMB=yes \
+	    -DCMAKE_INSTALL_PREFIX="$$INSTALL_DIR" \
+	    -DCMAKE_MESSAGE_LOG_LEVEL=NOTICE \
+	    -DCMAKE_RULE_MESSAGES=OFF \
+	    -DCMAKE_INSTALL_MESSAGE=NEVER \
+	    .. && \
+	echo '[$@] $$ make -s all check' && \
+	make -s all check >/dev/null && \
+	echo '[$@] $$ make -s install' && \
+	make -s install && \
+	cd ../.. && \
+	rm -rf "$$TAG" && \
+	rm -rf "$$INSTALL_DIR" && \
+	echo '[$@] Done.'
+
+whitespacecheck:
+	@# trailing space(s)?
+	@if git grep -I -n ' $$' $$(git ls-files|grep -v '^tests/'); then \
+	    echo 'Error: Trailing space(s).'; \
+	    exit 1; \
+	fi
+	@# trailing tab(s)?
+	@# install-sh has a tab at the end of one line
+	@if git grep -I -n '	$$' $$(git ls-files|grep -vE '^(tests/|install-sh$$)'); then \
+	    echo 'Error: Trailing tabs(s).'; \
+	    exit 1; \
+	fi
 
 testlist:
 	echo $(TEST_DIST)
@@ -476,4 +532,4 @@ depend:
 	$(MKDEP) -c "$(CC)" -m "$(DEPENDENCY_CFLAG)" -s "$(srcdir)" $(DEFS) $(INCLS) $(SRC) $(LIBNETDISSECT_SRC)
 
 shellcheck:
-	shellcheck -f gcc build.sh build_matrix.sh
+	shellcheck -f gcc -e SC2006 build.sh build_matrix.sh build_common.sh

@@ -499,7 +499,7 @@ static int	rx_cache_find(netdissect_options *, const struct rx_header *,
 
 static void fs_print(netdissect_options *, const u_char *, u_int);
 static void fs_reply_print(netdissect_options *, const u_char *, u_int, uint32_t);
-static void acl_print(netdissect_options *, u_char *, u_char *);
+static void acl_print(netdissect_options *, u_char *, const u_char *);
 static void cb_print(netdissect_options *, const u_char *, u_int);
 static void cb_reply_print(netdissect_options *, const u_char *, u_int, uint32_t);
 static void prot_print(netdissect_options *, const u_char *, u_int);
@@ -1140,11 +1140,12 @@ trunc:
  * representing a logical OR of all the ACL permission bits
  */
 
+#define XSTRINGIFY(x) #x
 #define NUMSTRINGIFY(x)	XSTRINGIFY(x)
 
 static void
 acl_print(netdissect_options *ndo,
-          u_char *s, u_char *end)
+          u_char *s, const u_char *end)
 {
 	int pos, neg, acl;
 	int n, i;

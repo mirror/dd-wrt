@@ -43,6 +43,8 @@ __RCSID("$NetBSD: print-tcp.c,v 1.8 2007/07/24 11:53:48 drochner Exp $");
 #include "addrtoname.h"
 #include "extract.h"
 
+#include "diag-control.h"
+
 #include "tcp.h"
 
 #include "ip.h"
@@ -698,7 +700,7 @@ tcp_print(netdissect_options *ndo,
          */
         ND_PRINT(", length %u", length);
 
-        if (length <= 0)
+        if (length == 0)
                 return;
 
         /*
@@ -743,8 +745,7 @@ tcp_print(netdissect_options *ndo,
                 smtp_print(ndo, bp, length);
         } else if (IS_SRC_OR_DST_PORT(WHOIS_PORT)) {
                 ND_PRINT(": ");
-                ndo->ndo_protocol = "whois";	/* needed by txtproto_print() */
-                txtproto_print(ndo, bp, length, NULL, 0); /* RFC 3912 */
+                whois_print(ndo, bp, length);
         } else if (IS_SRC_OR_DST_PORT(BGP_PORT))
                 bgp_print(ndo, bp, length);
         else if (IS_SRC_OR_DST_PORT(PPTP_PORT))
@@ -887,7 +888,7 @@ print_tcp_fastopen_option(netdissect_options *ndo, const u_char *cp,
 }
 
 #ifdef HAVE_LIBCRYPTO
-USES_APPLE_DEPRECATED_API
+DIAG_OFF_DEPRECATION
 static int
 tcp_verify_signature(netdissect_options *ndo,
                      const struct ip *ip, const struct tcphdr *tp,
@@ -967,5 +968,5 @@ tcp_verify_signature(netdissect_options *ndo,
         else
                 return (SIGNATURE_INVALID);
 }
-USES_APPLE_RST
+DIAG_ON_DEPRECATION
 #endif /* HAVE_LIBCRYPTO */

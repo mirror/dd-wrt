@@ -394,18 +394,13 @@ struct icmp6_nodeinfo {
 #define NI_QTYPE_NODEADDR	3 /* Node Addresses */
 #define NI_QTYPE_IPV4ADDR	4 /* IPv4 Addresses */
 
-/* network endian */
-#define NI_SUPTYPE_FLAG_COMPRESS	((uint16_t)htons(0x1))
-#define NI_FQDN_FLAG_VALIDTTL		((uint16_t)htons(0x1))
-
-/* network endian */
-#define NI_NODEADDR_FLAG_TRUNCATE	((uint16_t)htons(0x1))
-#define NI_NODEADDR_FLAG_ALL		((uint16_t)htons(0x2))
-#define NI_NODEADDR_FLAG_COMPAT		((uint16_t)htons(0x4))
-#define NI_NODEADDR_FLAG_LINKLOCAL	((uint16_t)htons(0x8))
-#define NI_NODEADDR_FLAG_SITELOCAL	((uint16_t)htons(0x10))
-#define NI_NODEADDR_FLAG_GLOBAL		((uint16_t)htons(0x20))
-#define NI_NODEADDR_FLAG_ANYCAST	((uint16_t)htons(0x40)) /* just experimental. not in spec */
+#define NI_NODEADDR_FLAG_TRUNCATE	0x0001
+#define NI_NODEADDR_FLAG_ALL		0x0002
+#define NI_NODEADDR_FLAG_COMPAT		0x0004
+#define NI_NODEADDR_FLAG_LINKLOCAL	0x0008
+#define NI_NODEADDR_FLAG_SITELOCAL	0x0010
+#define NI_NODEADDR_FLAG_GLOBAL		0x0020
+#define NI_NODEADDR_FLAG_ANYCAST	0x0040 /* just experimental. not in spec */
 
 struct ni_reply_fqdn {
 	nd_uint32_t ni_fqdn_ttl;	/* TTL */
@@ -489,10 +484,6 @@ static const struct udphdr *get_upperlayer(netdissect_options *ndo, const u_char
 static void dnsname_print(netdissect_options *ndo, const u_char *, const u_char *);
 static void icmp6_nodeinfo_print(netdissect_options *ndo, u_int, const u_char *, const u_char *);
 static void icmp6_rrenum_print(netdissect_options *ndo, const u_char *, const u_char *);
-
-#ifndef abs
-#define abs(a)	((0 < (a)) ? (a) : -(a))
-#endif
 
 /*
  * DIO: Updated to RFC6550, as published in 2012: section 6. (page 30)
@@ -711,7 +702,6 @@ static const struct tok icmp6_nd_na_flag_values[] = {
     { 0,	NULL }
 };
 
-
 static const struct tok icmp6_opt_values[] = {
    { ND_OPT_SOURCE_LINKADDR, "source link-address"},
    { ND_OPT_TARGET_LINKADDR, "destination link-address"},
@@ -850,27 +840,25 @@ rpl_dio_print(netdissect_options *ndo,
               const u_char *bp, u_int length)
 {
         const struct nd_rpl_dio *dio = (const struct nd_rpl_dio *)bp;
-        const char *dagid_str;
 
-        ND_TCHECK_SIZE(dio);
-        dagid_str = ip6addr_string (ndo, dio->rpl_dagid);
-
+        ND_LCHECK_ZU(length, sizeof(struct nd_rpl_dio));
         ND_PRINT(" [dagid:%s,seq:%u,instance:%u,rank:%u,%smop:%s,prf:%u]",
-                  dagid_str,
+                  GET_IP6ADDR_STRING(dio->rpl_dagid),
                   GET_U_1(dio->rpl_dtsn),
                   GET_U_1(dio->rpl_instanceid),
                   GET_BE_U_2(dio->rpl_dagrank),
                   RPL_DIO_GROUNDED(GET_U_1(dio->rpl_mopprf)) ? "grounded,":"",
-                  tok2str(rpl_mop_values, "mop%u", RPL_DIO_MOP(GET_U_1(dio->rpl_mopprf))),
+                  tok2str(rpl_mop_values, "mop%u",
+                          RPL_DIO_MOP(GET_U_1(dio->rpl_mopprf))),
                   RPL_DIO_PRF(GET_U_1(dio->rpl_mopprf)));
 
         if(ndo->ndo_vflag > 1) {
                 rpl_printopts(ndo, bp + sizeof(struct nd_rpl_dio),
                               length - sizeof(struct nd_rpl_dio));
         }
-	return;
-trunc:
-	nd_print_trunc(ndo);
+        return;
+invalid:
+        nd_print_invalid(ndo);
 }
 
 static void
@@ -1016,7 +1004,6 @@ trunc:
 #endif
 
 }
-
 
 void
 icmp6_print(netdissect_options *ndo,
@@ -1522,7 +1509,7 @@ icmp6_opt_print(netdissect_options *ndo, const u_char *bp, int resid)
 			default:
 				goto trunc;
 			}
-			ND_PRINT(" %s/%u", ip6addr_string(ndo, (const u_char *)&in6),
+			ND_PRINT(" %s/%u", ip6addr_string(ndo, (const u_char *)&in6), /* local buffer, not packet data; don't use GET_IP6ADDR_STRING() */
                                   GET_U_1(opri->nd_opt_rti_prefixlen));
 			ND_PRINT(", pref=%s",
 				 get_rtpref(GET_U_1(opri->nd_opt_rti_flags)));
@@ -1778,7 +1765,6 @@ icmp6_nodeinfo_print(netdissect_options *ndo, u_int icmp6len, const u_char *bp, 
 			break;
 		}
 
-
 		/* XXX backward compat, icmp-name-lookup-03 */
 		if (siz == sizeof(*ni6)) {
 			ND_PRINT(", 03 draft");
@@ -1973,16 +1959,16 @@ icmp6_rrenum_print(netdissect_options *ndo, const u_char *bp, const u_char *ep)
 	ND_TCHECK_4(rr6->rr_reserved);
 	switch (GET_U_1(rr6->rr_code)) {
 	case ICMP6_ROUTER_RENUMBERING_COMMAND:
-		ND_PRINT("router renum: command");
+		ND_PRINT(", command");
 		break;
 	case ICMP6_ROUTER_RENUMBERING_RESULT:
-		ND_PRINT("router renum: result");
+		ND_PRINT(", result");
 		break;
 	case ICMP6_ROUTER_RENUMBERING_SEQNUM_RESET:
-		ND_PRINT("router renum: sequence number reset");
+		ND_PRINT(", sequence number reset");
 		break;
 	default:
-		ND_PRINT("router renum: code-#%u", GET_U_1(rr6->rr_code));
+		ND_PRINT(", code-#%u", GET_U_1(rr6->rr_code));
 		break;
 	}
 

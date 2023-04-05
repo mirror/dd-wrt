@@ -263,12 +263,10 @@ static const struct tok bgp_notify_major_values[] = {
     { 0, NULL}
 };
 
-/* draft-ietf-idr-cease-subcode-02 */
+/* RFC 4486 */
 #define BGP_NOTIFY_MINOR_CEASE_MAXPRFX  1
-/* draft-ietf-idr-shutdown-07 */
 #define BGP_NOTIFY_MINOR_CEASE_SHUT     2
 #define BGP_NOTIFY_MINOR_CEASE_RESET    4
-#define BGP_NOTIFY_MINOR_CEASE_ADMIN_SHUTDOWN_LEN   128
 static const struct tok bgp_notify_minor_cease_values[] = {
     { BGP_NOTIFY_MINOR_CEASE_MAXPRFX, "Maximum Number of Prefixes Reached"},
     { BGP_NOTIFY_MINOR_CEASE_SHUT,    "Administrative Shutdown"},
@@ -842,7 +840,7 @@ bgp_extended_community_print(netdissect_options *ndo,
             break;
 
     case BGP_EXT_COM_LINKBAND:
-            bw.i = GET_BE_U_4(pptr + 2);
+            bw.i = GET_BE_U_4(pptr + 4);
             ND_PRINT("bandwidth: %.3f Mbps",
                      bw.f*8/1000000);
             break;
@@ -915,7 +913,7 @@ bgp_rt_prefix_print(netdissect_options *ndo,
                     u_int plen)
 {
     /* allocate space for the largest possible string */
-    char rtc_prefix_in_hex[20] = "";
+    char rtc_prefix_in_hex[sizeof("0000 0000 0000 0000")] = "";
     u_int rtc_prefix_in_hex_len = 0;
     static char output[61]; /* max response string */
     /* allocate space for the largest possible string */
@@ -951,7 +949,7 @@ bgp_rt_prefix_print(netdissect_options *ndo,
     /*
      * get the ext-comm type
      * Note: pptr references a static 8 octet buffer with unused bits set to 0,
-     * hense EXTRACT_*() macros are safe.
+     * hence EXTRACT_*() macros are safe.
      */
     ec_type = EXTRACT_BE_U_2(pptr);
     switch (ec_type) {
@@ -2379,7 +2377,6 @@ bgp_attr_print(netdissect_options *ndo,
             /*
              * Check if we can read the TLV data.
              */
-            ND_TCHECK_LEN(tptr + 3, length);
             if (tlen < length)
                 goto trunc;
 
@@ -2804,6 +2801,9 @@ bgp_update_print(netdissect_options *ndo,
     }
 
     if (len) {
+        /* Make sure the path attributes don't go past the end of the packet */
+        if (length < len)
+            goto trunc;
         /* do something more useful!*/
         while (len) {
             uint8_t aflags, atype, alenlen;
@@ -2909,8 +2909,6 @@ bgp_notification_print(netdissect_options *ndo,
     const struct bgp_notification *bgp_notification_header;
     const u_char *tptr;
     uint8_t bgpn_major, bgpn_minor;
-    uint8_t shutdown_comm_length;
-    uint8_t remainder_offset;
 
     ND_TCHECK_LEN(dat, BGP_NOTIFICATION_SIZE);
     if (length<BGP_NOTIFICATION_SIZE)
@@ -2963,7 +2961,7 @@ bgp_notification_print(netdissect_options *ndo,
                           bgpn_minor),
                   bgpn_minor);
 
-        /* draft-ietf-idr-cease-subcode-02 mentions optionally 7 bytes
+        /* RFC 4486 mentions optionally 7 bytes
          * for the maxprefix subtype, which may contain AFI, SAFI and MAXPREFIXES
          */
         if(bgpn_minor == BGP_NOTIFY_MINOR_CEASE_MAXPRFX && length >= BGP_NOTIFICATION_SIZE + 7) {
@@ -2976,18 +2974,17 @@ bgp_notification_print(netdissect_options *ndo,
                       GET_BE_U_4(tptr + 3));
         }
         /*
-         * draft-ietf-idr-shutdown describes a method to send a communication
+         * RFC 9003 describes a method to send a communication
          * intended for human consumption regarding the Administrative Shutdown
          */
         if ((bgpn_minor == BGP_NOTIFY_MINOR_CEASE_SHUT ||
              bgpn_minor == BGP_NOTIFY_MINOR_CEASE_RESET) &&
              length >= BGP_NOTIFICATION_SIZE + 1) {
             tptr = dat + BGP_NOTIFICATION_SIZE;
-            shutdown_comm_length = GET_U_1(tptr);
-            remainder_offset = 0;
+            uint8_t shutdown_comm_length = GET_U_1(tptr);
+            uint8_t remainder_offset = 0;
             /* garbage, hexdump it all */
-            if (shutdown_comm_length > BGP_NOTIFY_MINOR_CEASE_ADMIN_SHUTDOWN_LEN ||
-                shutdown_comm_length > length - (BGP_NOTIFICATION_SIZE + 1)) {
+            if (shutdown_comm_length > length - (BGP_NOTIFICATION_SIZE + 1)) {
                 ND_PRINT(", invalid Shutdown Communication length");
             }
             else if (shutdown_comm_length == 0) {
@@ -2996,7 +2993,6 @@ bgp_notification_print(netdissect_options *ndo,
             }
             /* a proper shutdown communication */
             else {
-                ND_TCHECK_LEN(tptr + 1, shutdown_comm_length);
                 ND_PRINT(", Shutdown Communication (length: %u): \"", shutdown_comm_length);
                 (void)nd_printn(ndo, tptr+1, shutdown_comm_length, NULL);
                 ND_PRINT("\"");

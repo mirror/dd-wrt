@@ -104,7 +104,7 @@
 #define PRINT_HEX(bytes_len, ptr_data)                               \
            while(bytes_len)                                          \
            {                                                         \
-              ND_PRINT("%02X", *ptr_data );                   \
+              ND_PRINT("%02X", GET_U_1(ptr_data));                   \
               ptr_data++;                                            \
               bytes_len--;                                           \
            }
@@ -1084,7 +1084,7 @@ print_attr_netmask6(netdissect_options *ndo,
    if (length > 2)
       memcpy(data2, data+2, length-2);
 
-   ND_PRINT("%s/%u", ip6addr_string(ndo, data2), GET_U_1(data + 1));
+   ND_PRINT("%s/%u", ip6addr_string(ndo, data2), GET_U_1(data + 1)); /* local buffer, not packet data; don't use GET_IP6ADDR_STRING() */
 
    if (GET_U_1(data + 1) > 8 * (length - 2))
       ND_PRINT(" (inconsistent prefix length)");
@@ -1339,11 +1339,9 @@ print_attr_strange(netdissect_options *ndo,
                return;
            }
            ND_PRINT("User_challenge (");
-           ND_TCHECK_8(data);
            len_data = 8;
            PRINT_HEX(len_data, data);
            ND_PRINT(") User_resp(");
-           ND_TCHECK_8(data);
            len_data = 8;
            PRINT_HEX(len_data, data);
            ND_PRINT(")");
@@ -1363,15 +1361,12 @@ print_attr_strange(netdissect_options *ndo,
            ND_PRINT(", Min password length: %u", GET_U_1(data));
            data++;
            ND_PRINT(", created at: ");
-           ND_TCHECK_4(data);
            len_data = 4;
            PRINT_HEX(len_data, data);
            ND_PRINT(", expires in: ");
-           ND_TCHECK_4(data);
            len_data = 4;
            PRINT_HEX(len_data, data);
            ND_PRINT(", Current Time: ");
-           ND_TCHECK_4(data);
            len_data = 4;
            PRINT_HEX(len_data, data);
         break;
@@ -1382,7 +1377,6 @@ print_attr_strange(netdissect_options *ndo,
                ND_PRINT("ERROR: length %u != 8", length);
                return;
            }
-           ND_TCHECK_8(data);
            len_data = 8;
            PRINT_HEX(len_data, data);
         break;
@@ -1399,9 +1393,6 @@ print_attr_strange(netdissect_options *ndo,
         break;
    }
    return;
-
-   trunc:
-     nd_print_trunc(ndo);
 }
 
 static void

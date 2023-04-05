@@ -4,7 +4,7 @@
 
 To report bugs and other problems, contribute patches, request a
 feature, provide generic feedback etc please see the
-[guidelines for contributing](CONTRIBUTING) in the tcpdump source tree root.
+[guidelines for contributing](CONTRIBUTING.md) in the tcpdump source tree root.
 
 Anonymous Git is available via
 
@@ -30,6 +30,7 @@ tcpdump compiles and works on at least the following platforms:
 * FreeBSD
 * Haiku
 * HP-UX 11i
+* illumos (OmniOS, OpenIndiana)
 * GNU/Linux
 * {Mac} OS X / macOS
 * NetBSD
@@ -45,7 +46,7 @@ build libpcap.
 
 Once libpcap is built (either install it or make sure it's in
 `../libpcap`), you can build tcpdump using the procedure in the
-[installation guide](INSTALL.txt).
+[installation notes](INSTALL.md).
 
 ### Origins of tcpdump
 The program is loosely based on SMI's "etherfind" although none of the

@@ -77,9 +77,9 @@ static const struct tok eap_code_values[] = {
 #define		EAP_TYPE_MD5_CHALLENGE	4
 #define		EAP_TYPE_OTP		5
 #define		EAP_TYPE_GTC		6
-#define		EAP_TYPE_TLS		13		/* RFC 2716 */
+#define		EAP_TYPE_TLS		13		/* RFC 5216 */
 #define		EAP_TYPE_SIM		18		/* RFC 4186 */
-#define		EAP_TYPE_TTLS		21		/* draft-funk-eap-ttls-v0-01.txt */
+#define		EAP_TYPE_TTLS		21		/* RFC 5281, draft-funk-eap-ttls-v0-01.txt */
 #define		EAP_TYPE_AKA		23		/* RFC 4187 */
 #define		EAP_TYPE_FAST		43		/* RFC 4851 */
 #define		EAP_TYPE_EXPANDED_TYPES	254
@@ -105,7 +105,7 @@ static const struct tok eap_type_values[] = {
 
 #define EAP_TLS_EXTRACT_BIT_L(x) 	(((x)&0x80)>>7)
 
-/* RFC 2716 - EAP TLS bits */
+/* RFC 5216 - EAP TLS bits */
 #define EAP_TLS_FLAGS_LEN_INCLUDED		(1 << 7)
 #define EAP_TLS_FLAGS_MORE_FRAGMENTS		(1 << 6)
 #define EAP_TLS_FLAGS_START			(1 << 5)
@@ -152,23 +152,39 @@ eap_print(netdissect_options *ndo,
           u_int length)
 {
     u_int type, subtype, len;
-    int count;
+    u_int count;
+    const char *sep;
 
     type = GET_U_1(cp);
     len = GET_BE_U_2(cp + 2);
-    if(len != length) {
-       goto trunc;
+    if (len != length) {
+        /*
+         * Probably a fragment; in some cases the fragmentation might
+         * not put an EAP header on every packet, if reassembly can
+         * be done without that (e.g., fragmentation to make a message
+         * fit in multiple TLVs in a RADIUS packet).
+         */
+        ND_PRINT("EAP fragment?");
+        return;
     }
     ND_PRINT("%s (%u), id %u, len %u",
             tok2str(eap_code_values, "unknown", type),
             type,
             GET_U_1((cp + 1)),
             len);
+    if (len < 4) {
+        ND_PRINT(" (too short for EAP header)");
+        return;
+    }
 
     ND_TCHECK_LEN(cp, len);
 
     if (type == EAP_REQUEST || type == EAP_RESPONSE) {
         /* RFC 3748 Section 4.1 */
+        if (len < 5) {
+            ND_PRINT(" (too short for EAP request/response)");
+            return;
+        }
         subtype = GET_U_1(cp + 4);
         ND_PRINT("\n\t\t Type %s (%u)",
                 tok2str(eap_type_values, "unknown", subtype),
@@ -176,58 +192,81 @@ eap_print(netdissect_options *ndo,
 
         switch (subtype) {
             case EAP_TYPE_IDENTITY:
-                if (len - 5 > 0) {
+                /* According to RFC 3748, the message is optional */
+                if (len > 5) {
                     ND_PRINT(", Identity: ");
                     nd_printjnp(ndo, cp + 5, len - 5);
                 }
                 break;
 
             case EAP_TYPE_NOTIFICATION:
-                if (len - 5 > 0) {
-                    ND_PRINT(", Notification: ");
-                    nd_printjnp(ndo, cp + 5, len - 5);
+                /* According to RFC 3748, there must be at least one octet of message */
+                if (len < 6) {
+                    ND_PRINT(" (too short for EAP Notification request/response)");
+                    return;
                 }
+                ND_PRINT(", Notification: ");
+                nd_printjnp(ndo, cp + 5, len - 5);
                 break;
 
             case EAP_TYPE_NAK:
-                count = 5;
-
                 /*
                  * one or more octets indicating
                  * the desired authentication
                  * type one octet per type
                  */
-                while (count < (int)len) {
-                    ND_PRINT(" %s (%u),",
+                if (len < 6) {
+                    ND_PRINT(" (too short for EAP Legacy NAK request/response)");
+                    return;
+                }
+                sep = "";
+                for (count = 5; count < len; count++) {
+                    ND_PRINT("%s %s (%u)", sep,
                            tok2str(eap_type_values, "unknown", GET_U_1((cp + count))),
                            GET_U_1(cp + count));
-                    count++;
+                    sep = ",";
                 }
                 break;
 
             case EAP_TYPE_TTLS:
             case EAP_TYPE_TLS:
+                if (len < 6) {
+                    ND_PRINT(" (too short for EAP TLS/TTLS request/response)");
+                    return;
+                }
                 if (subtype == EAP_TYPE_TTLS)
                     ND_PRINT(" TTLSv%u",
                            EAP_TTLS_VERSION(GET_U_1((cp + 5))));
-                ND_PRINT(" flags [%s] 0x%02x,",
+                ND_PRINT(" flags [%s] 0x%02x",
                        bittok2str(eap_tls_flags_values, "none", GET_U_1((cp + 5))),
                        GET_U_1(cp + 5));
 
                 if (EAP_TLS_EXTRACT_BIT_L(GET_U_1(cp + 5))) {
-                    ND_PRINT(" len %u", GET_BE_U_4(cp + 6));
+                    if (len < 10) {
+                        ND_PRINT(" (too short for EAP TLS/TTLS request/response with length)");
+                        return;
+                    }
+                    ND_PRINT(", len %u", GET_BE_U_4(cp + 6));
                 }
                 break;
 
             case EAP_TYPE_FAST:
+                if (len < 6) {
+                    ND_PRINT(" (too short for EAP FAST request/response)");
+                    return;
+                }
                 ND_PRINT(" FASTv%u",
                        EAP_TTLS_VERSION(GET_U_1((cp + 5))));
-                ND_PRINT(" flags [%s] 0x%02x,",
+                ND_PRINT(" flags [%s] 0x%02x",
                        bittok2str(eap_tls_flags_values, "none", GET_U_1((cp + 5))),
                        GET_U_1(cp + 5));
 
                 if (EAP_TLS_EXTRACT_BIT_L(GET_U_1(cp + 5))) {
-                    ND_PRINT(" len %u", GET_BE_U_4(cp + 6));
+                    if (len < 10) {
+                        ND_PRINT(" (too short for EAP FAST request/response with length)");
+                        return;
+                    }
+                    ND_PRINT(", len %u", GET_BE_U_4(cp + 6));
                 }
 
                 /* FIXME - TLV attributes follow */
@@ -235,7 +274,11 @@ eap_print(netdissect_options *ndo,
 
             case EAP_TYPE_AKA:
             case EAP_TYPE_SIM:
-                ND_PRINT(" subtype [%s] 0x%02x,",
+                if (len < 6) {
+                    ND_PRINT(" (too short for EAP SIM/AKA request/response)");
+                    return;
+                }
+                ND_PRINT(" subtype [%s] 0x%02x",
                        tok2str(eap_aka_subtype_values, "unknown", GET_U_1((cp + 5))),
                        GET_U_1(cp + 5));
 

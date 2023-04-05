@@ -59,8 +59,10 @@ static const struct tok ospf_authtype_values[] = {
 static const struct tok ospf_rla_flag_values[] = {
 	{ RLA_FLAG_B,		"ABR" },
 	{ RLA_FLAG_E,		"ASBR" },
-	{ RLA_FLAG_W1,		"Virtual" },
-	{ RLA_FLAG_W2,		"W2" },
+	{ RLA_FLAG_V,		"Virtual" },
+	{ RLA_FLAG_W,		"Wildcard" },
+	{ RLA_FLAG_NT,		"Nt" },
+	{ RLA_FLAG_H,		"Host" },
 	{ 0,			NULL }
 };
 
@@ -696,8 +698,7 @@ ospf_print_lsa(netdissect_options *ndo,
 		    GET_IPADDR_STRING(lsap->lsa_un.un_nla.nla_mask));
 		ap = lsap->lsa_un.un_nla.nla_router;
 		while ((const u_char *)ap < ls_end) {
-			ND_TCHECK_SIZE(ap);
-			ND_PRINT("\n\t      %s", GET_IPADDR_STRING(*ap));
+			ND_PRINT("\n\t      %s", GET_IPADDR_STRING(ap));
 			++ap;
 		}
 		break;
@@ -999,8 +1000,7 @@ ospf_decode_v2(netdissect_options *ndo,
 		if ((const u_char *)ap < dataend)
 			ND_PRINT("\n\t  Neighbor List:");
 		while ((const u_char *)ap < dataend) {
-			ND_TCHECK_SIZE(ap);
-			ND_PRINT("\n\t    %s", GET_IPADDR_STRING(*ap));
+			ND_PRINT("\n\t    %s", GET_IPADDR_STRING(ap));
 			++ap;
 		}
 		break;	/* HELLO */

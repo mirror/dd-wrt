@@ -741,10 +741,10 @@ static const char *etypestr[] = {
 		? npfunc[(x)] : NULL)
 
 static int
-iszero(const u_char *p, size_t l)
+iszero(netdissect_options *ndo, const u_char *p, size_t l)
 {
 	while (l != 0) {
-		if (*p)
+		if (GET_U_1(p))
 			return 0;
 		p++;
 		l--;
@@ -2309,7 +2309,7 @@ ikev2_auth_print(netdissect_options *ndo, u_char tpay,
 	const struct ikev2_auth *p;
 	const char *v2_auth[]={ "invalid", "rsasig",
 				"shared-secret", "dsssig" };
-	const u_char *authdata = (const u_char*)ext + sizeof(struct ikev2_auth);
+	const u_char *authdata = (const u_char *)ext + sizeof(struct ikev2_auth);
 
 	ND_TCHECK_LEN(ext, sizeof(struct ikev2_auth));
 	p = (const struct ikev2_auth *)ext;
@@ -2841,7 +2841,7 @@ ikev1_print(netdissect_options *ndo,
 
 	i = cookie_find(&base->i_ck);
 	if (i < 0) {
-		if (iszero((const u_char *)&base->r_ck, sizeof(base->r_ck))) {
+		if (iszero(ndo, base->r_ck, sizeof(base->r_ck))) {
 			/* the first packet */
 			ND_PRINT(" I");
 			if (bp2)

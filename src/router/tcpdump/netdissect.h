@@ -31,6 +31,8 @@
 #include <sys/types.h>
 #include <setjmp.h>
 #include "status-exit-codes.h"
+#include "funcattrs.h" /* for PRINTFLIKE_FUNCPTR() */
+#include "diag-control.h" /* for ND_UNREACHABLE */
 
 /*
  * Data types corresponding to multi-byte integral values within data
@@ -140,9 +142,6 @@ struct tok {
 	const char *s;		/* string */
 };
 
-extern const char *tok2strbuf(const struct tok *, const char *, u_int,
-			      char *buf, size_t bufsize);
-
 /* tok2str is deprecated */
 extern const char *tok2str(const struct tok *, const char *, u_int);
 extern char *bittok2str(const struct tok *, const char *, u_int);
@@ -178,7 +177,7 @@ typedef void (*if_printer) IF_PRINTER_ARGS;
  * buffer, we free the current buffer and pop the previous one off the
  * stack.
  *
- * A buffer has a beginnning and end pointer, and a link to the previous
+ * A buffer has a beginning and end pointer, and a link to the previous
  * buffer on the stack.
  *
  * In other cases, we temporarily adjust the snapshot end to reflect a
@@ -263,12 +262,25 @@ struct netdissect_options {
 		      PRINTFLIKE_FUNCPTR(2, 3);
 };
 
-extern int nd_push_buffer(netdissect_options *, u_char *, const u_char *,
-    const u_char *);
-extern int nd_push_snapend(netdissect_options *, const u_char *);
-extern void nd_change_snapend(netdissect_options *, const u_char *);
+extern WARN_UNUSED_RESULT int nd_push_buffer(netdissect_options *, u_char *, const u_char *, const u_int);
+extern WARN_UNUSED_RESULT int nd_push_snaplen(netdissect_options *, const u_char *, const u_int);
+extern void nd_change_snaplen(netdissect_options *, const u_char *, const u_int);
 extern void nd_pop_packet_info(netdissect_options *);
 extern void nd_pop_all_packet_info(netdissect_options *);
+
+static inline NORETURN void
+nd_trunc_longjmp(netdissect_options *ndo)
+{
+	longjmp(ndo->ndo_early_end, ND_TRUNCATED);
+#ifdef _AIX
+	/*
+	 * In AIX <setjmp.h> decorates longjmp() with "#pragma leaves", which tells
+	 * XL C that the function is noreturn, but GCC remains unaware of that and
+	 * yields a "'noreturn' function does return" warning.
+	 */
+	ND_UNREACHABLE
+#endif /* _AIX */
+}
 
 #define PT_VAT		1	/* Visual Audio Tool */
 #define PT_WB		2	/* distributed White Board */
@@ -382,6 +394,28 @@ extern void nd_pop_all_packet_info(netdissect_options *);
  */
 #define ND_BYTES_AVAILABLE_AFTER(p) ND_BYTES_BETWEEN(ndo->ndo_snapend, (p))
 
+/* Check length < minimum for invalid packet with a custom message, format %u */
+#define ND_LCHECKMSG_U(length, minimum, what) \
+if ((length) < (minimum)) { \
+ND_PRINT(" [%s %u < %u]", (what), (length), (minimum)); \
+goto invalid; \
+}
+
+/* Check length < minimum for invalid packet with #length message, format %u */
+#define ND_LCHECK_U(length, minimum) \
+ND_LCHECKMSG_U((length), (minimum), (#length))
+
+/* Check length < minimum for invalid packet with a custom message, format %zu */
+#define ND_LCHECKMSG_ZU(length, minimum, what) \
+if ((length) < (minimum)) { \
+ND_PRINT(" [%s %u < %zu]", (what), (length), (minimum)); \
+goto invalid; \
+}
+
+/* Check length < minimum for invalid packet with #length message, format %zu */
+#define ND_LCHECK_ZU(length, minimum) \
+ND_LCHECKMSG_ZU((length), (minimum), (#length))
+
 #define ND_PRINT(...) (ndo->ndo_printf)(ndo, __VA_ARGS__)
 #define ND_DEFAULTPRINT(ap, length) (*ndo->ndo_default_print)(ndo, ap, length)
 
@@ -410,7 +444,7 @@ extern void txtproto_print(netdissect_options *, const u_char *, u_int,
     (defined(__s390__) || defined(__s390x__) || defined(__zarch__)) || \
     defined(__vax__)
 /*
- * The procesor natively handles unaligned loads, so just use memcpy()
+ * The processor natively handles unaligned loads, so just use memcpy()
  * and memcmp(), to enable those optimizations.
  *
  * XXX - are those all the x86 tests we need?
@@ -469,9 +503,9 @@ extern void ap1394_if_print IF_PRINTER_ARGS;
 extern void arcnet_if_print IF_PRINTER_ARGS;
 extern void arcnet_linux_if_print IF_PRINTER_ARGS;
 extern void atm_if_print IF_PRINTER_ARGS;
-extern void bt_if_print IF_PRINTER_ARGS;
 extern void brcm_tag_if_print IF_PRINTER_ARGS;
 extern void brcm_tag_prepend_if_print IF_PRINTER_ARGS;
+extern void bt_if_print IF_PRINTER_ARGS;
 extern void chdlc_if_print IF_PRINTER_ARGS;
 extern void cip_if_print IF_PRINTER_ARGS;
 extern void dsa_if_print IF_PRINTER_ARGS;
@@ -486,8 +520,8 @@ extern void ieee802_11_radio_if_print IF_PRINTER_ARGS;
 extern void ieee802_15_4_if_print IF_PRINTER_ARGS;
 extern void ieee802_15_4_tap_if_print IF_PRINTER_ARGS;
 extern void ipfc_if_print IF_PRINTER_ARGS;
-extern void ipoib_if_print IF_PRINTER_ARGS;
 extern void ipnet_if_print IF_PRINTER_ARGS;
+extern void ipoib_if_print IF_PRINTER_ARGS;
 extern void juniper_atm1_if_print IF_PRINTER_ARGS;
 extern void juniper_atm2_if_print IF_PRINTER_ARGS;
 extern void juniper_chdlc_if_print IF_PRINTER_ARGS;
@@ -520,8 +554,8 @@ extern void prism_if_print IF_PRINTER_ARGS;
 extern void raw_if_print IF_PRINTER_ARGS;
 extern void sl_bsdos_if_print IF_PRINTER_ARGS;
 extern void sl_if_print IF_PRINTER_ARGS;
-extern void sll_if_print IF_PRINTER_ARGS;
 extern void sll2_if_print IF_PRINTER_ARGS;
+extern void sll_if_print IF_PRINTER_ARGS;
 extern void sunatm_if_print IF_PRINTER_ARGS;
 extern void symantec_if_print IF_PRINTER_ARGS;
 extern void token_if_print IF_PRINTER_ARGS;
@@ -675,9 +709,9 @@ extern void resp_print(netdissect_options *, const u_char *, u_int);
 extern void rip_print(netdissect_options *, const u_char *, u_int);
 extern void ripng_print(netdissect_options *, const u_char *, unsigned int);
 extern void rpki_rtr_print(netdissect_options *, const u_char *, u_int);
-extern void rrcp_print(netdissect_options *, const u_char *, u_int, const struct lladdr_info *, const struct lladdr_info *);
 extern void rsvp_print(netdissect_options *, const u_char *, u_int);
 extern int rt6_print(netdissect_options *, const u_char *, const u_char *);
+extern void rtl_print(netdissect_options *, const u_char *, u_int, const struct lladdr_info *, const struct lladdr_info *);
 extern void rtsp_print(netdissect_options *, const u_char *, u_int);
 extern void rx_print(netdissect_options *, const u_char *, u_int, uint16_t, uint16_t, const u_char *);
 extern void sctp_print(netdissect_options *, const u_char *, const u_char *, u_int);
@@ -702,11 +736,12 @@ extern void udld_print(netdissect_options *, const u_char *, u_int);
 extern void udp_print(netdissect_options *, const u_char *, u_int, const u_char *, int, u_int);
 extern int vjc_print(netdissect_options *, const u_char *, u_short);
 extern void vqp_print(netdissect_options *, const u_char *, u_int);
-extern void vrrp_print(netdissect_options *, const u_char *, u_int, const u_char *, int);
+extern void vrrp_print(netdissect_options *, const u_char *, u_int, const u_char *, int, int);
 extern void vtp_print(netdissect_options *, const u_char *, const u_int);
 extern void vxlan_gpe_print(netdissect_options *, const u_char *, u_int);
 extern void vxlan_print(netdissect_options *, const u_char *, u_int);
 extern void wb_print(netdissect_options *, const u_char *, u_int);
+extern void whois_print(netdissect_options *, const u_char *, u_int);
 extern void zep_print(netdissect_options *, const u_char *, u_int);
 extern void zephyr_print(netdissect_options *, const u_char *, u_int);
 extern void zmtp1_print(netdissect_options *, const u_char *, u_int);

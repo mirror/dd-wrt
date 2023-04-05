@@ -32,24 +32,12 @@ AC_LBL_C_INIT(V_CCOPT, V_INCLS)
 AC_LBL_C_INLINE
 
 AC_CHECK_HEADERS(fcntl.h rpc/rpc.h rpc/rpcent.h net/if.h)
-AC_CHECK_HEADERS(net/pfvar.h, , , [#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/if.h>])
-if test "$ac_cv_header_net_pfvar_h" = yes; then
-	AC_CHECK_HEADERS(net/if_pflog.h, , , [#include <sys/types.h>
-	#include <sys/socket.h>
-	#include <net/if.h>
-	#include <net/pfvar.h>])
-	if test "$ac_cv_header_net_if_pflog_h" = yes; then
-		LOCALSRC="print-pflog.c $LOCALSRC"
-	fi
-fi
 
 case "$host_os" in
 
 darwin*)
 	AC_ARG_ENABLE(universal,
-	AC_HELP_STRING([--disable-universal],[don't build universal on macOS]))
+	AS_HELP_STRING([--disable-universal],[don't build universal on macOS]))
 	if test "$enable_universal" != "no"; then
 		case "$host_os" in
 
@@ -76,10 +64,11 @@ darwin*)
 esac
 
 
-AC_ARG_WITH(smi,
-[  --with-smi              link with libsmi (allows to load MIBs on the fly to decode SNMP packets. [default=yes]
-  --without-smi           don't link with libsmi],,
-   with_smi=yes)
+AC_ARG_WITH([smi],
+   [AS_HELP_STRING([--with-smi],
+     [link with libsmi (allows to load MIBs on the fly to decode SNMP packets) [default=yes, if available]])],
+   [],
+   [with_smi=yes])
 
 if test "x$with_smi" != "xno" ; then
 	AC_CHECK_HEADER(smi.h,
@@ -98,8 +87,11 @@ if test "x$with_smi" != "xno" ; then
 			AC_TRY_RUN(
 				[
 /* libsmi available check */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <smi.h>
-main()
+int main()
 {
   int current, revision, age, n;
   const int required = 2;
@@ -146,10 +138,11 @@ main()
 fi
 
 AC_MSG_CHECKING([whether to enable the possibly-buggy SMB printer])
-AC_ARG_ENABLE(smb,
-[  --enable-smb            enable possibly-buggy SMB printer [default=no]
-  --disable-smb           disable possibly-buggy SMB printer],,
-   enableval=no)
+AC_ARG_ENABLE([smb],
+   [AS_HELP_STRING([--enable-smb],
+     [enable possibly-buggy SMB printer [default=no]])],
+   [],
+   [enableval=no])
 case "$enableval" in
 yes)	AC_MSG_RESULT(yes)
 	AC_DEFINE(ENABLE_SMB, 1,
@@ -198,7 +191,7 @@ AC_ARG_WITH(sandbox-capsicum,
 # XXX - do we need to check for all of them, or are there some that, if
 # present, imply others are present?
 #
-if test ! -z "$with_sandbox_capsicum" && test "$with_sandbox_capsicum" != "no" ; then
+if test -z "$with_sandbox_capsicum" || test "$with_sandbox_capsicum" != "no" ; then
 	#
 	# First, make sure we have the required header.
 	#
@@ -247,6 +240,7 @@ AC_COMPILE_IFELSE(
     [
       AC_LANG_SOURCE(
 	[[
+#include <string.h>
 /* AF_INET6 available check */
 #include <sys/types.h>
 #ifdef _WIN32
@@ -397,6 +391,38 @@ AC_CHECK_FUNC(vsnprintf,,
 AC_CHECK_FUNC(snprintf,,
     AC_MSG_ERROR([snprintf() is required but wasn't found]))
 
+#
+# Define HAVE_NO_PRINTF_Z to make it possible to disable test cases that
+# depend on %zu.
+#
+AC_MSG_CHECKING([whether printf(3) supports the z length modifier])
+AC_RUN_IFELSE(
+    [
+        AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <string.h>
+
+int main()
+{
+  char buf[100];
+  snprintf(buf, sizeof(buf), "%zu", sizeof(buf));
+  return strncmp(buf, "100", sizeof(buf)) ? 1 : 0;
+}
+        ]])
+    ],
+    [
+        AC_MSG_RESULT(yes)
+    ],
+    [
+        AC_MSG_RESULT(no)
+        AC_DEFINE(HAVE_NO_PRINTF_Z, 1,
+            [Define to 1 if printf(3) does not support the z length modifier.])
+    ],
+    [
+        AC_MSG_RESULT(not while cross-compiling)
+    ]
+)
+
 AC_CHECK_LIB(rpc, main)		dnl It's unclear why we might need -lrpc
 
 dnl Some platforms may need -lnsl for getrpcbynumber.
@@ -424,6 +450,8 @@ AC_CHECK_FUNCS(ether_ntohost, [
     AC_CACHE_CHECK(for buggy ether_ntohost, ac_cv_buggy_ether_ntohost, [
 	AC_TRY_RUN([
 		#include <netdb.h>
+		#include <netinet/ether.h>
+		#include <stdlib.h>
 		#include <sys/types.h>
 		#include <sys/param.h>
 		#include <sys/socket.h>
@@ -993,7 +1021,7 @@ AC_CONFIG_HEADER(config.h)
 AC_OUTPUT_COMMANDS([if test -f .devel; then
 	echo timestamp > stamp-h
 	cat $srcdir/Makefile-devel-adds >> Makefile
-	make depend
+	make depend || exit 1
 fi])
 AC_OUTPUT(Makefile tcpdump.1)
 exit 0

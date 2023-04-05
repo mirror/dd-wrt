@@ -20,7 +20,7 @@
 .\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 .\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH TCPDUMP 1  "21 December 2020"
+.TH TCPDUMP 1  "30 July 2022"
 .SH NAME
 tcpdump \- dump traffic on a network
 .SH SYNOPSIS
@@ -152,7 +152,9 @@ tcpdump \- dump traffic on a network
 .SH DESCRIPTION
 .LP
 \fITcpdump\fP prints out a description of the contents of packets on a
-network interface that match the Boolean \fIexpression\fP; the
+network interface that match the Boolean \fIexpression\fP (see
+.BR \%pcap-filter (@MAN_MISC_INFO@)
+for the \fIexpression\fP syntax); the
 description is preceded by a time stamp, printed, by default, as hours,
 minutes, seconds, and fractions of a second since midnight.  It can also
 be run with the
@@ -253,7 +255,7 @@ units of KiB (1024 bytes).
 Exit after receiving \fIcount\fP packets.
 .TP
 .BI \-\-count
-Print only on stderr the packet count when reading capture file(s) instead
+Print only on stdout the packet count when reading capture file(s) instead
 of parsing/printing the packets. If a filter is specified on the command
 line, \fItcpdump\fP counts only packets that were matched by the filter
 expression.
@@ -335,7 +337,7 @@ flag will not be supported if
 was built with an older version of
 .I libpcap
 that lacks the
-.BR pcap_findalldevs(3PCAP)
+.BR pcap_findalldevs (3PCAP)
 function.
 .TP
 .B \-e
@@ -364,7 +366,7 @@ with cryptography enabled.
 \fIsecret\fP is the ASCII text for ESP secret key.
 If preceded by 0x, then a hex value will be read.
 .IP
-The option assumes RFC2406 ESP, not RFC1827 ESP.
+The option assumes RFC 2406 ESP, not RFC 1827 ESP.
 The option is only for debugging purposes, and
 the use of this option with a true `secret' key is discouraged.
 By presenting IPsec secret key onto command line
@@ -384,10 +386,11 @@ Sun's NIS server \(em usually it hangs forever translating non-local
 internet numbers).
 .IP
 The test for `foreign' IPv4 addresses is done using the IPv4 address and
-netmask of the interface on which capture is being done.  If that
-address or netmask are not available, available, either because the
-interface on which capture is being done has no address or netmask or
-because the capture is being done on the Linux "any" interface, which
+netmask of the interface on that capture is being done.  If that
+address or netmask are not available, either because the
+interface on that capture is being done has no address or netmask or
+because it is the "any" pseudo-interface, which is
+available in Linux and in recent versions of macOS and Solaris, and which
 can capture on more than one interface, this option will not work
 correctly.
 .TP
@@ -440,10 +443,11 @@ flag is not given, \fItcpdump\fP searches the system
 interface list for the lowest numbered, configured up interface
 (excluding loopback), which may turn out to be, for example, ``eth0''.
 .IP
-On Linux systems with 2.2 or later kernels, an
+On Linux systems with 2.2 or later kernels and on recent versions of macOS
+and Solaris, an
 .I interface
 argument of ``any'' can be used to capture packets from all interfaces.
-Note that captures on the ``any'' device will not be done in promiscuous
+Note that captures on the ``any'' pseudo-interface will not be done in promiscuous
 mode.
 .IP
 If the
@@ -796,7 +800,7 @@ flag will not be supported if
 was built with an older version of
 .I libpcap
 that lacks the
-.BR pcap_dump_flush(3PCAP)
+.BR pcap_dump_flush (3PCAP)
 function.
 .TP
 .B \-v
@@ -855,7 +859,7 @@ operating systems and applications will use the extension if it is
 present and adding one (e.g. .pcap) is recommended.
 .IP
 See
-.BR pcap-savefile (@MAN_FILE_FORMATS@)
+.BR \%pcap-savefile (@MAN_FILE_FORMATS@)
 for a description of the file format.
 .TP
 .BI \-W " filecount"
@@ -977,7 +981,7 @@ Otherwise,
 only packets for which \fIexpression\fP is `true' will be dumped.
 .LP
 For the \fIexpression\fP syntax, see
-.BR pcap-filter (@MAN_MISC_INFO@).
+.BR \%pcap-filter (@MAN_MISC_INFO@).
 .LP
 The \fIexpression\fP argument can be passed to \fItcpdump\fP as either a single
 Shell argument, or as multiple Shell arguments, whichever is more convenient.
@@ -1158,7 +1162,7 @@ As on FDDI networks,
 packets are assumed to contain an LLC packet.
 .LP
 \fI(N.B.: The following description assumes familiarity with
-the SLIP compression algorithm described in RFC-1144.)\fP
+the SLIP compression algorithm described in RFC 1144.)\fP
 .LP
 On SLIP links, a direction indicator (``I'' for inbound, ``O'' for outbound),
 packet type, and compression information are printed out.
@@ -1279,7 +1283,7 @@ flag, in the IP header information, as described above.
 TCP Packets
 .LP
 \fI(N.B.:The following description assumes familiarity with
-the TCP protocol described in RFC-793.
+the TCP protocol described in RFC 793.
 If you are not familiar
 with the protocol, this description will not
 be of much use to you.)\fP
@@ -1605,13 +1609,13 @@ The packet contained 84 bytes of user data.
 .LP
 Some UDP services are recognized (from the source or destination
 port number) and the higher level protocol information printed.
-In particular, Domain Name service requests (RFC-1034/1035) and Sun
-RPC calls (RFC-1050) to NFS.
+In particular, Domain Name service requests (RFC 1034/1035) and Sun
+RPC calls (RFC 1050) to NFS.
 .HD
 TCP or UDP Name Server Requests
 .LP
 \fI(N.B.:The following description assumes familiarity with
-the Domain Service protocol described in RFC-1035.
+the Domain Service protocol described in RFC 1035.
 If you are not familiar
 with the protocol, the following description will appear to be written
 in Greek.)\fP
@@ -2006,7 +2010,7 @@ Craig Leres and
 Steven McCanne, all of the
 Lawrence Berkeley National Laboratory, University of California, Berkeley, CA.
 .LP
-It is currently being maintained by tcpdump.org.
+It is currently maintained by The Tcpdump Group.
 .LP
 The current version is available via HTTPS:
 .LP
@@ -2027,7 +2031,7 @@ To report a security issue please send an e-mail to \%security@tcpdump.org.
 .LP
 To report bugs and other problems, contribute patches, request a
 feature, provide generic feedback etc. please see the file
-.I CONTRIBUTING
+.I CONTRIBUTING.md
 in the tcpdump source tree root.
 .LP
 NIT doesn't let you watch your own outbound traffic, BPF will.
