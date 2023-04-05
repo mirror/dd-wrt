@@ -95,7 +95,7 @@ typedef enum {
   NDPI_TLS_CERTIFICATE_EXPIRED,
   NDPI_TLS_CERTIFICATE_MISMATCH, /* 10 */
   NDPI_HTTP_SUSPICIOUS_USER_AGENT,
-  NDPI_HTTP_NUMERIC_IP_HOST,
+  NDPI_NUMERIC_IP_HOST,
   NDPI_HTTP_SUSPICIOUS_URL,
   NDPI_HTTP_SUSPICIOUS_HEADER,
   NDPI_TLS_NOT_CARRYING_HTTPS,
@@ -841,9 +841,6 @@ struct ndpi_flow_tcp_struct {
 /* ************************************************** */
 
 struct ndpi_flow_udp_struct {
-  /* NDPI_PROTOCOL_PPSTREAM */
-  u_int32_t ppstream_stage:3;		  // 0 - 7
-
   /* NDPI_PROTOCOL_HALFLIFE2 */
   u_int32_t halflife2_stage:2;		  // 0 - 2
 
@@ -1023,14 +1020,12 @@ typedef enum {
   NDPI_CONFIDENCE_DPI_PARTIAL_CACHE,        /* Classification results based on some LRU cache with partial/incomplete DPI information */
   NDPI_CONFIDENCE_DPI_CACHE,                /* Classification results based on some LRU cache (i.e. correlation among sessions) */
   NDPI_CONFIDENCE_DPI,                      /* Deep packet inspection */
-
+  
   /*
     IMPORTANT
 
     Please keep in sync with
-
     ndpi_confidence_get_name()
-
     in ndpi_main.c
   */
 
@@ -1660,9 +1655,9 @@ struct ndpi_flow_struct {
   /* Only packets with L5 data (ie no TCP SYN, pure ACKs, ...) */
   u_int16_t packet_counter;		      // can be 0 - 65000
   u_int16_t packet_direction_counter[2];
-  u_int16_t all_packets_counter; /* All packets even those without payload */
-  
-  /* Every packets */
+
+  /* All packets even those without payload */
+  u_int16_t all_packets_counter;
   u_int16_t packet_direction_complete_counter[2];      // can be 0 - 65000
 
   /* NDPI_PROTOCOL_BITTORRENT */

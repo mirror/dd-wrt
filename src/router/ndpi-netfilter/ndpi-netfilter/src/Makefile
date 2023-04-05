@@ -1,4 +1,3 @@
-
 NDPI_SRC := ../../src
 NDPI_PRO := ${NDPI_SRC}/lib/protocols
 
@@ -7,7 +6,7 @@ ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE -
 ccflags-y += -Wno-declaration-after-statement
 #ccflags-y += -Wshadow-local
 # Needed for pahole
-#ccflags-y += -femit-struct-debug-detailed=any
+ccflags-y += -femit-struct-debug-detailed=any
 
 ifndef $(KERNEL_DIR)
 #KERNEL_DIR := /home/seg/DEV/x86_64/src/linux/universal/linux-4.9

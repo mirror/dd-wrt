@@ -100,7 +100,7 @@ _Static_assert(sizeof(struct ndpi_str_hash) == sizeof(struct ndpi_str_hash_priva
 int ndpi_check_punycode_string(char * buffer , int len) {
   int i = 0;
 
-  while(i++ < len) {
+  while(i++ < len - 3) {
     if((buffer[i] == 'x')
        && (buffer[i+1] == 'n')
        && (buffer[i+2] == '-')
@@ -1127,7 +1127,7 @@ void ndpi_serialize_confidence(ndpi_serializer *serializer,
 
 void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
                           ndpi_serializer *serializer,
-                          ndpi_risk_enum risk,
+                          ndpi_risk risk,
                           ndpi_confidence_t confidence,
                           ndpi_protocol l7_protocol)
 {
@@ -1953,8 +1953,8 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_HTTP_SUSPICIOUS_USER_AGENT:
     return("HTTP Susp User-Agent");
 
-  case NDPI_HTTP_NUMERIC_IP_HOST:
-    return("HTTP Numeric IP");
+  case NDPI_NUMERIC_IP_HOST:
+    return("HTTP/TLS/QUIC Numeric Hostname/SNI");
 
   case NDPI_HTTP_SUSPICIOUS_URL:
     return("HTTP Susp URL");
@@ -2078,7 +2078,7 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
     
   case NDPI_TCP_ISSUES:
     return("TCP Connection Issues");
-    
+
   default:
     ndpi_snprintf(buf, sizeof(buf), "%d", (int)risk);
     return(buf);
@@ -2441,6 +2441,23 @@ static void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndp
     if(host && (host[0] != '\0')) {
       /* Check host exception */
       ndpi_check_hostname_risk_exception(ndpi_str, flow, host);
+
+      if(flow->risk_mask == 0) {
+	u_int i;
+	
+	/*
+	  Might be that the exception applied when some risks
+	  were already triggered: we need to clean them up
+	*/
+	for(i=0; i<flow->num_risk_infos; i++) {
+	  if(flow->risk_infos[i].info != NULL) {
+	    ndpi_free(flow->risk_infos[i].info);
+	    flow->risk_infos[i].info = NULL;
+	  }
+	}
+	
+	flow->num_risk_infos = 0;
+      }
       
       /* Used to avoid double checks (e.g. in DNS req/rsp) */
       flow->host_risk_mask_evaluated = 1;
@@ -2474,14 +2491,16 @@ void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str,
     
     ndpi_handle_risk_exceptions(ndpi_str, flow);
 
-    if(risk_message != NULL) {
-      if(flow->num_risk_infos < MAX_NUM_RISK_INFOS) {
-	char *s = ndpi_strdup(risk_message);
+    if(flow->risk != 0 /* check if it has been masked */) {
+      if(risk_message != NULL) {
+	if(flow->num_risk_infos < MAX_NUM_RISK_INFOS) {
+	  char *s = ndpi_strdup(risk_message);
 
-	if(s != NULL) {
-	  flow->risk_infos[flow->num_risk_infos].id = r;
-	  flow->risk_infos[flow->num_risk_infos].info = s;
-	  flow->num_risk_infos++;
+	  if(s != NULL) {
+	    flow->risk_infos[flow->num_risk_infos].id = r;
+	    flow->risk_infos[flow->num_risk_infos].info = s;
+	    flow->num_risk_infos++;
+	  }
 	}
       }
     }
@@ -2744,7 +2763,8 @@ u_int8_t ndpi_is_encrypted_proto(struct ndpi_detection_module_struct *ndpi_str,
 
 void ndpi_set_tls_cert_expire_days(struct ndpi_detection_module_struct *ndpi_str,
 				   u_int8_t num_days) {
-  ndpi_str->tls_certificate_expire_in_x_days = num_days;
+  if(ndpi_str)
+    ndpi_str->tls_certificate_expire_in_x_days = num_days;
 }
 
 /* ******************************************* */

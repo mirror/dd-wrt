@@ -391,6 +391,7 @@ static void checkTLSSubprotocol(struct ndpi_detection_module_struct *ndpi_struct
 	}
 #endif
 	ndpi_check_subprotocol_risk(ndpi_struct, flow, cached_proto);
+	ndpi_unset_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST);
       }
     }
   }
@@ -729,8 +730,10 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 		    }
 
 		    if(!flow->protos.tls_quic.subprotocol_detected)
-		      if(ndpi_match_hostname_protocol(ndpi_struct, flow, __get_master(ndpi_struct, flow), dNSName, dNSName_len))
+		      if(ndpi_match_hostname_protocol(ndpi_struct, flow, __get_master(ndpi_struct, flow), dNSName, dNSName_len)) {
 			flow->protos.tls_quic.subprotocol_detected = 1;
+		        ndpi_unset_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST);
+		      }
 
 		    i += len;
 		  } else {
@@ -783,6 +786,7 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 	}
 #endif
 	ndpi_check_subprotocol_risk(ndpi_struct, flow, proto_id);
+	ndpi_unset_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST);
 
 	if(ndpi_struct->tls_cert_cache) {
 	  u_int32_t key = make_tls_cert_key(packet, 0 /* from the server */);
@@ -1566,6 +1570,16 @@ static void checkExtensions(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
+static int check_sni_is_numeric_ip(char *sni) {
+  unsigned char buf[sizeof(struct in6_addr)];
+
+  if(inet_pton(AF_INET, sni, buf) == 1)
+    return 1;
+  if(inet_pton(AF_INET6, sni, buf) == 1)
+    return 1;
+  return 0;
+}
+
 static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow, uint32_t quic_version,
 			     ja3_info_t *ja3 ) {
@@ -2108,6 +2122,11 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		    } else {
 		      if(ndpi_match_hostname_protocol(ndpi_struct, flow, NDPI_PROTOCOL_QUIC, sni, sni_len))
 		        flow->protos.tls_quic.subprotocol_detected = 1;
+		    }
+
+		    if(flow->protos.tls_quic.subprotocol_detected == 0 &&
+		       check_sni_is_numeric_ip(sni) == 1) {
+		      ndpi_set_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST, sni);
 		    }
 
 		    if(ndpi_check_dga_name(ndpi_struct, flow,

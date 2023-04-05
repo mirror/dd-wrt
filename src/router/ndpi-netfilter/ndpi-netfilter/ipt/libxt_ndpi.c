@@ -24,6 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <errno.h>
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include <xtables.h>
 
@@ -57,6 +59,8 @@ int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
 
 static char *prot_short_str[NDPI_NUM_BITS] = { /*NDPI_PROTOCOL_SHORT_STRING,*/ NULL, };
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
+static int risk_index_max = 0;
+static uint64_t risk_map = 0;
 
 #define EXT_OPT_BASE 0
 // #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
@@ -76,6 +80,7 @@ enum ndpi_opt_index {
 	NDPI_OPT_TLSV,
 	NDPI_OPT_UNTRACKED,
 	NDPI_OPT_CLEVEL,
+	NDPI_OPT_RISK,
 	NDPI_OPT_LAST
 };
 
@@ -94,6 +99,7 @@ enum ndpi_opt_index {
 #define FLAGS_UNTRACKED 0x1000
 #define FLAGS_CLEVEL 0x2000
 #define FLAGS_HPROTO 0x4000
+#define FLAGS_RISK 0x8000
 
 
 static void ndpi_mt_init(struct xt_entry_match *match)
@@ -135,6 +141,84 @@ static int str2clevel(const char *s) {
 	if(*e) return -1;
 	return i < 0 || i >= clevel2num ? -1 : i;
 }
+
+static int set_risk(uint64_t *risk,int v) {
+	if(v < 0 || v > risk_index_max) {
+		printf("Error: invalid risk index %d\n",v);
+		return 1;
+	}
+	if(risk_map & (1ULL << v)) {
+		printf("Error: risk index %d is disabled\n",v);
+		return 1;
+	}
+	*risk |= 1ULL << v;
+	return 0;
+}
+
+static int str2risk(const char *s, uint64_t *res) {
+	uint64_t risk = 0;
+	int v;
+	char *e,*tmp,*c;
+
+	if(s[0] == '0' && s[1] == 'x') {
+		*res = strtoull(s+2,&e,16);
+		if(*e)
+			printf("Error: invalid hex string '%s'\n",s);
+		return *e ? -1:0;
+	}
+	*res = 0ULL;
+	tmp = strdup(s);
+	if(!tmp) {
+		printf("Error: out of memory\n");
+		return -ENOMEM;
+	}
+	for(c=tmp,v=0; *c; c++) {
+		if(*c == ',') {
+			if(set_risk(&risk,v))
+				return -EINVAL;
+
+			v = 0;
+			continue;
+		}
+		if(*c < '0' || *c > '9') {
+			printf("Error: invalid risk number %s\n",s);
+			return -EINVAL;
+		}
+		v *= 10;
+		v += *c - '0';
+	}
+	if(v)
+	    if(set_risk(&risk,v)) return -EINVAL;
+	
+	*res = risk;
+	return 0;
+}
+
+static char *risk2str(uint64_t risk) { 
+    static char buf[22];
+    size_t len = sizeof(buf)-1;
+    int ri=0,l=0;
+    uint64_t risk_s = risk;
+
+    while(risk != 0 && l < len-4) { // ,XX\0
+        if((risk & 0xffffffff) == 0) { ri+=32; risk >>=32; }
+        if((risk & 0xffff) == 0) { ri+=16; risk >>=16; }
+        if((risk & 0xff) == 0) { ri+=8; risk >>=8; }
+        if((risk & 0xf) == 0) { ri+=4; risk >>=4; }
+        if((risk & 0x3) == 0) { ri+=2; risk >>=2; }
+        if((risk & 0x1) == 0) { ri+=1; risk >>=1; }
+        if(l) buf[l++] = ',';
+        l += snprintf(&buf[l],3,"%d",ri); 
+        ri++;
+        risk >>=1;
+    }
+    if(risk)
+        snprintf(buf,len-1,"0x%" PRIx64 ,risk_s);
+    else
+        buf[l] = '\0';
+    return buf;
+}
+
 static void 
 _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 {
@@ -175,6 +259,9 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 		printf(" %sclevel %s%s", csave, clevel_op2str(info->clevel_op),
 				clevel2str(info->clevel-1));
 	}
+	if(info->risk)
+		printf(" %srisk %s", csave, risk2str(info->risk));
+
 	if(info->m_proto && !info->p_proto)
 		printf(" %smatch-m-proto",csave);
 	if(!info->m_proto && info->p_proto)
@@ -286,6 +373,13 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		}
 		info->clevel = cl + 1;
         	*flags |= FLAGS_CLEVEL;
+		return true;
+	}
+	if(c == NDPI_OPT_RISK) {
+		if(str2risk(optarg+1,&info->risk))
+			return false;
+
+        	*flags |= FLAGS_RISK;
 		return true;
 	}
 	if(c == NDPI_OPT_APROTO) {
@@ -532,6 +626,8 @@ ndpi_mt_help(void)
 		"                         Use /str/ for regexp match.\n"
 		"  --clevel L             Match confidence level. -L - level < L, +L - level > L\n"
 		"                         Levels: unknown,port,ip,user,nbpf,dpart,dcpart,dcache,dpi\n"
+		"  --risk risklist        Match if at least one of the listed risks is present.\n"
+		"                         risklist - risk numbers separated by commas.\n"
 		"  --have-master          Match if master protocol detected\n"
 		"  --match-m-proto        Match master protocol only\n"
 		"  --match-a-proto        Match application protocol only\n"
@@ -822,6 +918,28 @@ void _init(void)
 	if(index >= NDPI_NUM_BITS)
 	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module version missmatch.");
 
+	f_proto = fopen("/proc/net/xt_ndpi/risks","r");
+	if(!f_proto)
+		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: no risks file");
+	index = 0;
+	while(!feof(f_proto)) {
+		int  ri;
+		char re;
+		c = fgets(buf,sizeof(buf)-1,f_proto);
+		if(!c) break;
+		if(sscanf(buf,"%d %c ",&ri,&re) != 2) 
+			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risks format.");
+		
+		if(ri < 0 || ri >= 64)
+			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risk index.");
+		if(risk_index_max < ri)
+			risk_index_max = ri;
+		if(re == 'd')
+			risk_map |= (1ull << ri);
+	}
+	fclose(f_proto);
+
+
 #define MT_OPT(np,protoname,nargs) { i=(np); \
 	ndpi_mt_opts[i].name = protoname; ndpi_mt_opts[i].flag = NULL; \
 	ndpi_mt_opts[i].has_arg = nargs;  ndpi_mt_opts[i].val = i; }
@@ -841,6 +959,7 @@ void _init(void)
 	MT_OPT(NDPI_OPT_TLSV,"tlsv",1)
 	MT_OPT(NDPI_OPT_UNTRACKED,"untracked",0)
 	MT_OPT(NDPI_OPT_CLEVEL,"clevel",1)
+	MT_OPT(NDPI_OPT_RISK,"risk",1)
 	MT_OPT(NDPI_OPT_LAST,NULL,0)
 
 	xtables_register_match(&ndpi_mt4_reg);

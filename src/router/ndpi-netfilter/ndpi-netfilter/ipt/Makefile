@@ -6,7 +6,15 @@ CFLAGS = -fPIC -I../.. -I${NDPI_SRC}/include -I${NDPI_SRC}/lib -I../src -I../lib
 
 all:  libxt_ndpi.so
 install:  libxt_ndpi.so
-	if [ -n "$(DESTDIR)$(XTBL)" -a -d "$(DESTDIR)$(XTBL)" ]; then install -v libxt_ndpi.so $(DESTDIR)$(XTBL); ln -fs libxt_ndpi.so $(DESTDIR)$(XTBL)/libxt_NDPI.so ; else echo "No pkg-config --variable=xtlibdir xtables"; fi
+ifndef XTBL
+$(error No pkg-config --variable=xtlibdir xtables)
+endif
+	if [ ! -d $(DESTDIR)$(XTBL) ]; then \
+	echo "$(DESTDIR)$(XTBL): directory nonexistent. Creating..."; \
+	mkdir -p $(DESTDIR)$(XTBL); \
+	fi
+	install -v libxt_ndpi.so ${DESTDIR}${XTBL}; \
+	ln -fs libxt_ndpi.so ${DESTDIR}${XTBL}/libxt_NDPI.so
 
 lib%.so: lib%.o
 	$(CC) -shared -o $@ $^;

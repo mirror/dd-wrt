@@ -369,6 +369,19 @@ tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, ran
   Disable all debug:
   "echo 'all y' >/proc/net/xt_ndpi/debug"
 
+/proc/net/xt_ndpi/risks - show and change risk.
+
+  View current settings:
+
+  "cat /proc/net/xt_ndpi/risks"
+
+  Format of /proc/net/xt_ndpi/risks:
+
+  id_number (d|a) description
+
+  Use "echo 'X d' >/proc/net/xt_ndpi/risks" for disable risk with number X.
+  Use "echo 'X a' >/proc/net/xt_ndpi/risks" for enable risk with number X.
+
 Bittorrents-specific files:
 
 /proc/net/xt_ndpi/announce - show BT announces (from DHT)

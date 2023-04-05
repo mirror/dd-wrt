@@ -306,7 +306,7 @@ ssize_t ndebug_proc_read(struct file *file, char __user *buf,
 int ndebug_proc_close(struct inode *inode, struct file *file)
 {
         struct ndpi_net *n = pde_data(file_inode(file));
-	generic_proc_close(n,parse_ndpi_debug,W_BUF_PROTO);
+	generic_proc_close(n,parse_ndpi_debug,W_BUF_DEBUG);
         return 0;
 }
 
@@ -315,7 +315,86 @@ ndebug_proc_write(struct file *file, const char __user *buffer,
                      size_t length, loff_t *loff)
 {
 	return generic_proc_write(pde_data(file_inode(file)), buffer, length, loff,
-			parse_ndpi_debug, 256, W_BUF_PROTO);
+			parse_ndpi_debug, 256, W_BUF_DEBUG);
+}
+
+
+int risk_names(struct ndpi_net *n, char *lbuf,size_t count) {
+	ndpi_risk_enum r;
+	char rbuf[128];
+	size_t l = 0, i;
+
+	for(r = NDPI_NO_RISK; r < NDPI_MAX_RISK; r++) {
+		const char *ra = ndpi_risk2str(r);
+		if(ra[0] >= '0' && ra[0] <= '9') continue; // unknown risk
+		i = snprintf(rbuf,sizeof(rbuf)-1,"%d %c %s\n",
+				(int)r, n->risk_mask & (1ULL << r) ? 'a':'d',
+				ra);
+		if(lbuf && l + i > count) return -1;
+		if(lbuf)
+			strncpy(&lbuf[l],rbuf,i);
+		l += i;
+	}
+	return l;
+}
+
+int nrisk_proc_open(struct inode *inode, struct file *file) {
+        struct ndpi_net *n = pde_data(file_inode(file));
+	char *tmp;
+
+	if(READ_ONCE(n->risk_names)) return -EBUSY;
+
+	tmp = kmalloc(n->risk_names_len+4,GFP_KERNEL);
+	if(tmp) {
+		risk_names(n,tmp,n->risk_names_len+1);
+		WRITE_ONCE(n->risk_names, tmp);
+	} else
+		return -ENOMEM;
+	return 0;
+}
+
+ssize_t nrisk_proc_read(struct file *file, char __user *buf,
+                              size_t count, loff_t *ppos)
+{
+        struct ndpi_net *n = pde_data(file_inode(file));
+
+	int l,ro;
+
+	if(!n->risk_names_len || !n->risk_names) return 0;
+	l = n->risk_names_len;
+
+	if( l <= *ppos ) return 0; // EOF
+
+	ro = 0;
+	if(*ppos > 0) {
+		ro = *ppos;
+		l -= ro;
+	}
+	if(count < l) l = count;
+	if(!count) return 0;
+
+	if (!(ACCESS_OK(VERIFY_WRITE, buf, l) &&
+			!__copy_to_user(buf, n->risk_names+ro, l))) return -EFAULT;
+	(*ppos) += l;
+	return l;
+}
+
+ssize_t
+nrisk_proc_write(struct file *file, const char __user *buffer,
+                     size_t length, loff_t *loff)
+{
+	return generic_proc_write(pde_data(file_inode(file)), buffer, length, loff,
+			parse_ndpi_risk, 256, W_BUF_RISK);
+}
+
+int nrisk_proc_close(struct inode *inode, struct file *file)
+{
+        struct ndpi_net *n = pde_data(file_inode(file));
+	char *tmp = NULL;
+	generic_proc_close(n,parse_ndpi_risk,W_BUF_RISK);
+	XCHGP(n->risk_names,tmp);
+	if(tmp) kfree(tmp);
+        return 0;
 }
 
 
