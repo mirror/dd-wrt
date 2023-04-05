@@ -684,6 +684,16 @@ l7filters filters_list[] = {
 	{ "yahoo_file", L7_ONLY },
 	{ "yahoo_login", L7_ONLY },
 	{ "yahoo_voice", L7_ONLY },
+#ifdef HAVE_OPENDPI
+	{ "yandex", NDPI_ONLY },
+	{ "yandex_cloud", NDPI_ONLY },
+	{ "yandex_direct", NDPI_ONLY },
+	{ "yandex_disk", NDPI_ONLY },
+	{ "yandex_mail", NDPI_ONLY },
+	{ "yandex_market", NDPI_ONLY },
+	{ "yandex_metrika", NDPI_ONLY },
+	{ "yandex_music", NDPI_ONLY },
+#endif
 	{ "youtube", DPI },
 #ifdef HAVE_OPENDPI
 	{ "youtubeupload", NDPI_ONLY },
