@@ -35,7 +35,8 @@
  *    |  domain No    | rsvd1         |   flag Field                  |
  *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *    |                        Correction NS                          |
- *    |                      Correction Sub NS                        |
+ *    +                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *    |                               |      Correction Sub NS        |
  *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *    |                           Reserved2                           |
  *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -175,11 +176,11 @@
  *
  */
 
+/* Values from IEEE1588-2008: 13.3.2.2 messageType (Enumeration4) */
 #define M_SYNC                  0x0
 #define M_DELAY_REQ             0x1
 #define M_PDELAY_REQ            0x2
 #define M_PDELAY_RESP           0x3
-#define M_OTHER                 0x5
 #define M_FOLLOW_UP             0x8
 #define M_DELAY_RESP            0x9
 #define M_PDELAY_RESP_FOLLOW_UP 0xA
@@ -188,20 +189,41 @@
 #define M_MANAGEMENT            0xD
 
 static const struct tok ptp_msg_type[] = {
-    { M_SYNC ,"sync msg"},
-    { M_DELAY_REQ ,"delay req msg"},
-    { M_PDELAY_REQ ,"peer delay req msg"},
-    { M_PDELAY_RESP ,"peer delay resp msg"},
-    { M_OTHER, "Other"},
-    { M_FOLLOW_UP ,"follow up msg"},
-    { M_DELAY_RESP ,"delay resp msg"},
-    { M_PDELAY_RESP_FOLLOW_UP ,"pdelay resp fup msg"},
-    { M_ANNOUNCE ,"announce msg"},
-    { M_SIGNALLING ,"signalling msg"},
-    { M_MANAGEMENT ,"management msg"},
+    { M_SYNC, "sync msg"},
+    { M_DELAY_REQ, "delay req msg"},
+    { M_PDELAY_REQ, "peer delay req msg"},
+    { M_PDELAY_RESP, "peer delay resp msg"},
+    { M_FOLLOW_UP, "follow up msg"},
+    { M_DELAY_RESP, "delay resp msg"},
+    { M_PDELAY_RESP_FOLLOW_UP, "pdelay resp fup msg"},
+    { M_ANNOUNCE, "announce msg"},
+    { M_SIGNALLING, "signalling msg"},
+    { M_MANAGEMENT, "management msg"},
     { 0, NULL}
 };
 
+/* Values from IEEE1588-2008: 13.3.2.10 controlField (UInteger8) */
+/*
+ * The use of this field by the receiver is deprecated.
+ * NOTE-This field is provided for compatibility with hardware designed
+ * to conform to version 1 of this standard.
+ */
+#define C_SYNC              0x0
+#define C_DELAY_REQ         0x1
+#define C_FOLLOW_UP         0x2
+#define C_DELAY_RESP        0x3
+#define C_MANAGEMENT        0x4
+#define C_OTHER             0x5
+
+static const struct tok ptp_control_field[] = {
+    { C_SYNC, "Sync"},
+    { C_DELAY_REQ, "Delay_Req"},
+    { C_FOLLOW_UP, "Follow_Up"},
+    { C_DELAY_RESP, "Delay_Resp"},
+    { C_MANAGEMENT, "Management"},
+    { C_OTHER, "Other"},
+    { 0, NULL}
+};
 
 #define PTP_TRUE 1
 #define PTP_FALSE !PTP_TRUE
@@ -235,28 +257,22 @@ static const struct tok ptp_msg_type[] = {
 #define PTP_SECURITY_MASK           0x4000
 #define PTP_FLAGS_UNKNOWN_MASK      0x18C0
 
-
 static const struct tok ptp_flag_values[] = {
-    { PTP_L161_MASK ,"l1 61"},
-    { PTP_L1_59_MASK ,"l1 59"},
-    { PTP_UTC_REASONABLE_MASK ,"utc reasonable"},
-    { PTP_TIMESCALE_MASK ,"timescale"},
-    { PTP_TIME_TRACABLE_MASK ,"time tracable"},
-    { PTP_FREQUENCY_TRACABLE_MASK ,"frequency tracable"},
-    { PTP_ALTERNATE_MASTER_MASK ,"alternate master"},
-    { PTP_TWO_STEP_MASK ,"two step"},
-    { PTP_UNICAST_MASK ,"unicast"},
-    { PTP_PROFILE_SPEC_1_MASK ,"profile specific 1"},
-    { PTP_PROFILE_SPEC_2_MASK ,"profile specific 2"},
-    { PTP_SECURITY_MASK ,"security mask"},
-    { PTP_FLAGS_UNKNOWN_MASK , "unknown"},
+    { PTP_L161_MASK, "l1 61"},
+    { PTP_L1_59_MASK, "l1 59"},
+    { PTP_UTC_REASONABLE_MASK, "utc reasonable"},
+    { PTP_TIMESCALE_MASK, "timescale"},
+    { PTP_TIME_TRACABLE_MASK, "time tracable"},
+    { PTP_FREQUENCY_TRACABLE_MASK, "frequency tracable"},
+    { PTP_ALTERNATE_MASTER_MASK, "alternate master"},
+    { PTP_TWO_STEP_MASK, "two step"},
+    { PTP_UNICAST_MASK, "unicast"},
+    { PTP_PROFILE_SPEC_1_MASK, "profile specific 1"},
+    { PTP_PROFILE_SPEC_2_MASK, "profile specific 2"},
+    { PTP_SECURITY_MASK, "security mask"},
+    { PTP_FLAGS_UNKNOWN_MASK,  "unknown"},
     {0, NULL}
 };
-
-#define PTP_PRINT_MSG_TYPE(e) \
-        { \
-            ND_PRINT("(%s)", tok2str(ptp_msg_type, "unknown", e)); \
-        }
 
 static const char *p_porigin_ts = "preciseOriginTimeStamp";
 static const char *p_origin_ts = "originTimeStamp";
@@ -270,8 +286,6 @@ static const char *p_recv_ts = "receiveTimeStamp";
 #define PTP_UINT32_LEN sizeof(uint32_t)
 #define PTP_6BYTES_LEN sizeof(uint32_t)+sizeof(uint16_t)
 #define PTP_UINT64_LEN sizeof(uint64_t)
-
-
 
 static void ptp_print_1(netdissect_options *ndo);
 static void ptp_print_2(netdissect_options *ndo, const u_char *bp, u_int len);
@@ -345,14 +359,16 @@ ptp_print_2(netdissect_options *ndo, const u_char *bp, u_int length)
     u_int len = length;
     uint16_t msg_len, flags, port_id, seq_id;
     uint8_t foct, domain_no, msg_type, v1_compat, rsvd1, lm_int, control;
-    uint32_t ns_corr, sns_corr, rsvd2;
+    uint64_t ns_corr;
+    uint16_t sns_corr;
+    uint32_t rsvd2;
     uint64_t clk_id;
 
     foct = GET_U_1(bp);
     v1_compat = foct & PTP_V1_COMPAT;
     ND_PRINT(", v1 compat : %s", v1_compat?"yes":"no");
     msg_type = foct & PTP_MSG_TYPE_MASK;
-    ND_PRINT(", msg type : %s", tok2str(ptp_msg_type, "none", msg_type));
+    ND_PRINT(", msg type : %s", tok2str(ptp_msg_type, "Reserved", msg_type));
 
     /* msg length */
     len -= 2; bp += 2; msg_len = GET_BE_U_2(bp); ND_PRINT(", length : %u", msg_len);
@@ -367,14 +383,14 @@ ptp_print_2(netdissect_options *ndo, const u_char *bp, u_int length)
     /* flags */
     len -= 2; bp += 2; flags = GET_BE_U_2(bp); ND_PRINT(", Flags [%s]", bittok2str(ptp_flag_values, "none", flags));
 
-    /* correction NS */
-    len -= 2; bp += 2; ns_corr = GET_BE_U_4(bp); ND_PRINT(", NS correction : %u", ns_corr);
+    /* correction NS (48 bits) */
+    len -= 2; bp += 2; ns_corr = GET_BE_U_6(bp); ND_PRINT(", NS correction : %"PRIu64, ns_corr);
 
-    /* correction sub NS */
-    len -= 4; bp += 4; sns_corr = GET_BE_U_4(bp); ND_PRINT(", sub NS correction : %u", sns_corr);
+    /* correction sub NS (16 bits) */
+    len -= 6; bp += 6; sns_corr = GET_BE_U_2(bp); ND_PRINT(", sub NS correction : %u", sns_corr);
 
     /* Reserved 2 */
-    len -= 4; bp += 4; rsvd2 = GET_BE_U_4(bp); ND_PRINT(", reserved2 : %u", rsvd2);
+    len -= 2; bp += 2; rsvd2 = GET_BE_U_4(bp); ND_PRINT(", reserved2 : %u", rsvd2);
 
     /* clock identity */
     len -= 4; bp += 4; clk_id = GET_BE_U_8(bp); ND_PRINT(", clock identity : 0x%"PRIx64, clk_id);
@@ -387,7 +403,7 @@ ptp_print_2(netdissect_options *ndo, const u_char *bp, u_int length)
 
     /* control */
     len -= 2; bp += 2; control = GET_U_1(bp) ;
-    ND_PRINT(", control : %u (%s)", control, tok2str(ptp_msg_type, "none", control));
+    ND_PRINT(", control : %u (%s)", control, tok2str(ptp_control_field, "Reserved", control));
 
     /* log message interval */
     lm_int = GET_BE_U_2(bp) & PTP_LOGMSG_MASK; ND_PRINT(", log message interval : %u", lm_int); len -= 2; bp += 2;
@@ -431,14 +447,12 @@ ptp_print_2(netdissect_options *ndo, const u_char *bp, u_int length)
  * PTP general message
  */
 void
-ptp_print(netdissect_options *ndo, const u_char *bp, u_int len)
+ptp_print(netdissect_options *ndo, const u_char *bp, u_int length)
 {
     u_int vers;
 
     ndo->ndo_protocol = "ptp";
-    if (len < PTP_HDR_LEN) {
-        goto trunc;
-    }
+    ND_LCHECK_U(length, PTP_HDR_LEN);
     vers = GET_BE_U_2(bp) & PTP_VERS_MASK;
     ND_PRINT("PTPv%u",vers);
     switch(vers) {
@@ -446,7 +460,7 @@ ptp_print(netdissect_options *ndo, const u_char *bp, u_int len)
             ptp_print_1(ndo);
             break;
         case PTP_VER_2:
-            ptp_print_2(ndo, bp, len);
+            ptp_print_2(ndo, bp, length);
             break;
         default:
             //ND_PRINT("ERROR: unknown-version\n");
@@ -454,8 +468,8 @@ ptp_print(netdissect_options *ndo, const u_char *bp, u_int len)
     }
     return;
 
-trunc:
-    nd_print_trunc(ndo);
+invalid:
+    nd_print_invalid(ndo);
 }
 
 static void

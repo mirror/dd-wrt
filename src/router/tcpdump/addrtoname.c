@@ -33,70 +33,67 @@
 
 #include "netdissect-stdinc.h"
 
-#ifdef _WIN32
-  /*
-   * We have our own ether_ntohost(), reading from the system's
-   * Ethernet address file.
-   */
-  #include "missing/win_ether_ntohost.h"
-#else
-  #ifdef USE_ETHER_NTOHOST
-    #if defined(NET_ETHERNET_H_DECLARES_ETHER_NTOHOST)
-      /*
-       * OK, just include <net/ethernet.h>.
-       */
-      #include <net/ethernet.h>
-    #elif defined(NETINET_ETHER_H_DECLARES_ETHER_NTOHOST)
-      /*
-       * OK, just include <netinet/ether.h>
-       */
-      #include <netinet/ether.h>
-    #elif defined(SYS_ETHERNET_H_DECLARES_ETHER_NTOHOST)
-      /*
-       * OK, just include <sys/ethernet.h>
-       */
-      #include <sys/ethernet.h>
-    #elif defined(ARPA_INET_H_DECLARES_ETHER_NTOHOST)
-      /*
-       * OK, just include <arpa/inet.h>
-       */
-      #include <arpa/inet.h>
-    #elif defined(NETINET_IF_ETHER_H_DECLARES_ETHER_NTOHOST)
-      /*
-       * OK, include <netinet/if_ether.h>, after all the other stuff we
-       * need to include or define for its benefit.
-       */
+#ifdef USE_ETHER_NTOHOST
+  #if defined(NET_ETHERNET_H_DECLARES_ETHER_NTOHOST)
+    /*
+     * OK, just include <net/ethernet.h>.
+     */
+    #include <net/ethernet.h>
+  #elif defined(NETINET_ETHER_H_DECLARES_ETHER_NTOHOST)
+    /*
+     * OK, just include <netinet/ether.h>
+     */
+    #include <netinet/ether.h>
+  #elif defined(SYS_ETHERNET_H_DECLARES_ETHER_NTOHOST)
+    /*
+     * OK, just include <sys/ethernet.h>
+     */
+    #include <sys/ethernet.h>
+  #elif defined(ARPA_INET_H_DECLARES_ETHER_NTOHOST)
+    /*
+     * OK, just include <arpa/inet.h>
+     */
+    #include <arpa/inet.h>
+  #elif defined(NETINET_IF_ETHER_H_DECLARES_ETHER_NTOHOST)
+    /*
+     * OK, include <netinet/if_ether.h>, after all the other stuff we
+     * need to include or define for its benefit.
+     */
+    #define NEED_NETINET_IF_ETHER_H
+  #else
+    /*
+     * We'll have to declare it ourselves.
+     * If <netinet/if_ether.h> defines struct ether_addr, include
+     * it.  Otherwise, define it ourselves.
+     */
+    #ifdef HAVE_STRUCT_ETHER_ADDR
       #define NEED_NETINET_IF_ETHER_H
-    #else
-      /*
-       * We'll have to declare it ourselves.
-       * If <netinet/if_ether.h> defines struct ether_addr, include
-       * it.  Otherwise, define it ourselves.
-       */
-      #ifdef HAVE_STRUCT_ETHER_ADDR
-        #define NEED_NETINET_IF_ETHER_H
-      #else /* HAVE_STRUCT_ETHER_ADDR */
+    #else /* HAVE_STRUCT_ETHER_ADDR */
 	struct ether_addr {
 		/* Beware FreeBSD calls this "octet". */
 		unsigned char ether_addr_octet[MAC_ADDR_LEN];
 	};
-      #endif /* HAVE_STRUCT_ETHER_ADDR */
-    #endif /* what declares ether_ntohost() */
+    #endif /* HAVE_STRUCT_ETHER_ADDR */
+  #endif /* what declares ether_ntohost() */
 
-    #ifdef NEED_NETINET_IF_ETHER_H
-      #include <net/if.h>	/* Needed on some platforms */
-      #include <netinet/in.h>	/* Needed on some platforms */
-      #include <netinet/if_ether.h>
-    #endif /* NEED_NETINET_IF_ETHER_H */
+  #ifdef NEED_NETINET_IF_ETHER_H
+    /*
+     * Include diag-control.h before <net/if.h>, which too defines a macro
+     * named ND_UNREACHABLE.
+     */
+    #include "diag-control.h"
+    #include <net/if.h>		/* Needed on some platforms */
+    #include <netinet/in.h>	/* Needed on some platforms */
+    #include <netinet/if_ether.h>
+  #endif /* NEED_NETINET_IF_ETHER_H */
 
-    #ifndef HAVE_DECL_ETHER_NTOHOST
-      /*
-       * No header declares it, so declare it ourselves.
-       */
-      extern int ether_ntohost(char *, const struct ether_addr *);
-    #endif /* !defined(HAVE_DECL_ETHER_NTOHOST) */
-  #endif /* USE_ETHER_NTOHOST */
-#endif /* _WIN32 */
+  #ifndef HAVE_DECL_ETHER_NTOHOST
+    /*
+     * No header declares it, so declare it ourselves.
+     */
+    extern int ether_ntohost(char *, const struct ether_addr *);
+  #endif /* !defined(HAVE_DECL_ETHER_NTOHOST) */
+#endif /* USE_ETHER_NTOHOST */
 
 #include <pcap.h>
 #include <pcap-namedb.h>
@@ -254,7 +251,7 @@ intoa(uint32_t addr)
 static uint32_t f_netmask;
 static uint32_t f_localnet;
 #ifdef HAVE_CASPER
-extern cap_channel_t *capdns;
+cap_channel_t *capdns;
 #endif
 
 /*
@@ -1288,7 +1285,7 @@ newhnamemem(netdissect_options *ndo)
 	static struct hnamemem *ptr = NULL;
 	static u_int num = 0;
 
-	if (num  <= 0) {
+	if (num  == 0) {
 		num = 64;
 		ptr = (struct hnamemem *)calloc(num, sizeof (*ptr));
 		if (ptr == NULL)
@@ -1308,7 +1305,7 @@ newh6namemem(netdissect_options *ndo)
 	static struct h6namemem *ptr = NULL;
 	static u_int num = 0;
 
-	if (num  <= 0) {
+	if (num  == 0) {
 		num = 64;
 		ptr = (struct h6namemem *)calloc(num, sizeof (*ptr));
 		if (ptr == NULL)

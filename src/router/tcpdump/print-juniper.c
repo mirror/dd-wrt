@@ -30,6 +30,7 @@ __RCSID("NetBSD: print-juniper.c,v 1.3 2007/07/25 06:31:32 dogcow Exp ");
 
 #include <string.h>
 
+#define ND_LONGJMP_FROM_TCHECK
 #include "netdissect.h"
 #include "addrtoname.h"
 #include "extract.h"
@@ -494,13 +495,13 @@ juniper_ggsn_if_print(netdissect_options *ndo,
         p+=l2info.header_len;
         gh = (struct juniper_ggsn_header *)&l2info.cookie;
 
-        ND_TCHECK_SIZE(gh);
-        proto = GET_U_1(gh->proto);
+        /* use EXTRACT_, not GET_ (not packet buffer pointer) */
+        proto = EXTRACT_U_1(gh->proto);
         if (ndo->ndo_eflag) {
             ND_PRINT("proto %s (%u), vlan %u: ",
                    tok2str(juniper_protocol_values,"Unknown",proto),
                    proto,
-                   GET_BE_U_2(gh->vlan_id));
+                   EXTRACT_BE_U_2(gh->vlan_id));
         }
 
         switch (proto) {
@@ -515,11 +516,6 @@ juniper_ggsn_if_print(netdissect_options *ndo,
                 ND_PRINT("unknown GGSN proto (%u)", proto);
         }
 
-        ndo->ndo_ll_hdr_len += l2info.header_len;
-        return;
-
-trunc:
-        nd_print_trunc(ndo);
         ndo->ndo_ll_hdr_len += l2info.header_len;
 }
 #endif
@@ -599,11 +595,6 @@ juniper_es_if_print(netdissect_options *ndo,
 
         ip_print(ndo, p, l2info.length);
         ndo->ndo_ll_hdr_len += l2info.header_len;
-        return;
-
-trunc:
-        nd_print_trunc(ndo);
-        ndo->ndo_ll_hdr_len += l2info.header_len;
 }
 #endif
 
@@ -642,11 +633,6 @@ juniper_monitor_if_print(netdissect_options *ndo,
         /* no proto field - lets guess by first byte of IP header*/
         ip_heuristic_guess (ndo, p, l2info.length);
 
-        ndo->ndo_ll_hdr_len += l2info.header_len;
-        return;
-
-trunc:
-        nd_print_trunc(ndo);
         ndo->ndo_ll_hdr_len += l2info.header_len;
 }
 #endif
@@ -688,11 +674,6 @@ juniper_services_if_print(netdissect_options *ndo,
         /* no proto field - lets guess by first byte of IP header*/
         ip_heuristic_guess (ndo, p, l2info.length);
 
-        ndo->ndo_ll_hdr_len += l2info.header_len;
-        return;
-
-trunc:
-        nd_print_trunc(ndo);
         ndo->ndo_ll_hdr_len += l2info.header_len;
 }
 #endif
@@ -968,6 +949,8 @@ juniper_mfr_if_print(netdissect_options *ndo,
             ND_PRINT("Bundle-ID %u, ", l2info.bundle);
         switch (l2info.proto) {
         case (LLCSAP_ISONS<<8 | LLCSAP_ISONS):
+            /* At least one byte is required */
+            ND_TCHECK_LEN(p, 1);
             isoclns_print(ndo, p + 1, l2info.length - 1);
             break;
         case (LLC_UI<<8 | NLPID_Q933):
@@ -1068,6 +1051,8 @@ juniper_atm1_if_print(netdissect_options *ndo,
         }
 
         if (GET_U_1(p) == 0x03) { /* Cisco style NLPID encaps ? */
+            /* At least one byte is required */
+            ND_TCHECK_LEN(p, 1);
             isoclns_print(ndo, p + 1, l2info.length - 1);
             /* FIXME check if frame was recognized */
             ndo->ndo_ll_hdr_len += l2info.header_len;
@@ -1135,6 +1120,8 @@ juniper_atm2_if_print(netdissect_options *ndo,
         }
 
         if (GET_U_1(p) == 0x03) { /* Cisco style NLPID encaps ? */
+            /* At least one byte is required */
+            ND_TCHECK_LEN(p, 1);
             isoclns_print(ndo, p + 1, l2info.length - 1);
             /* FIXME check if frame was recognized */
             ndo->ndo_ll_hdr_len += l2info.header_len;
@@ -1280,8 +1267,8 @@ static int
 juniper_parse_header(netdissect_options *ndo,
                      const u_char *p, const struct pcap_pkthdr *h, struct juniper_l2info_t *l2info)
 {
-    const struct juniper_cookie_table_t *lp = juniper_cookie_table;
-    u_int idx, jnx_ext_len, jnx_header_len = 0;
+    const struct juniper_cookie_table_t *lp;
+    u_int idx, extension_length, jnx_header_len = 0;
     uint8_t tlv_type,tlv_len;
 #ifdef DLT_JUNIPER_ATM2
     uint32_t control_word;
@@ -1321,20 +1308,20 @@ juniper_parse_header(netdissect_options *ndo,
         tptr = p+jnx_header_len;
 
         /* ok to read extension length ? */
-        jnx_ext_len = GET_BE_U_2(tptr);
+        extension_length = GET_BE_U_2(tptr);
         jnx_header_len += 2;
         tptr +=2;
 
         /* nail up the total length -
          * just in case something goes wrong
          * with TLV parsing */
-        jnx_header_len += jnx_ext_len;
+        jnx_header_len += extension_length;
 
         if (ndo->ndo_vflag > 1)
-            ND_PRINT(", PCAP Extension(s) total length %u", jnx_ext_len);
+            ND_PRINT(", PCAP Extension(s) total length %u", extension_length);
 
-        ND_TCHECK_LEN(tptr, jnx_ext_len);
-        while (jnx_ext_len > JUNIPER_EXT_TLV_OVERHEAD) {
+        ND_TCHECK_LEN(tptr, extension_length);
+        while (extension_length > JUNIPER_EXT_TLV_OVERHEAD) {
             tlv_type = GET_U_1(tptr);
             tptr++;
             tlv_len = GET_U_1(tptr);
@@ -1344,8 +1331,7 @@ juniper_parse_header(netdissect_options *ndo,
             /* sanity checks */
             if (tlv_type == 0 || tlv_len == 0)
                 break;
-            if (tlv_len+JUNIPER_EXT_TLV_OVERHEAD > jnx_ext_len)
-                goto trunc;
+            ND_LCHECK_U(extension_length, tlv_len + JUNIPER_EXT_TLV_OVERHEAD);
 
             if (ndo->ndo_vflag > 1)
                 ND_PRINT("\n\t  %s Extension TLV #%u, length %u, value ",
@@ -1388,7 +1374,7 @@ juniper_parse_header(netdissect_options *ndo,
             }
 
             tptr+=tlv_len;
-            jnx_ext_len -= tlv_len+JUNIPER_EXT_TLV_OVERHEAD;
+            extension_length -= tlv_len+JUNIPER_EXT_TLV_OVERHEAD;
         }
 
         if (ndo->ndo_vflag > 1)
@@ -1417,68 +1403,72 @@ juniper_parse_header(netdissect_options *ndo,
     l2info->length -= l2info->header_len;
     l2info->caplen -= l2info->header_len;
 
-    /* search through the cookie table and copy values matching for our PIC type */
-    ND_TCHECK_1(p);
-    while (lp->s != NULL) {
-        if (lp->pictype == l2info->pictype) {
+    /* search through the cookie table for one matching our PIC type */
+    lp = NULL;
+    for (const struct juniper_cookie_table_t *table_lp = juniper_cookie_table;
+         table_lp->s != NULL; table_lp++) {
+        if (table_lp->pictype == l2info->pictype) {
+            lp = table_lp;
+            break;
+        }
+    }
 
-            l2info->cookie_len += lp->cookie_len;
+    /* If we found one matching our PIC type, copy its values */
+    if (lp != NULL) {
+        l2info->cookie_len += lp->cookie_len;
 
-            switch (GET_U_1(p)) {
-            case LS_COOKIE_ID:
-                l2info->cookie_type = LS_COOKIE_ID;
-                l2info->cookie_len += 2;
-                break;
-            case AS_COOKIE_ID:
-                l2info->cookie_type = AS_COOKIE_ID;
-                l2info->cookie_len = 8;
-                break;
+        switch (GET_U_1(p)) {
+        case LS_COOKIE_ID:
+            l2info->cookie_type = LS_COOKIE_ID;
+            l2info->cookie_len += 2;
+            break;
+        case AS_COOKIE_ID:
+            l2info->cookie_type = AS_COOKIE_ID;
+            l2info->cookie_len = 8;
+            break;
 
-            default:
-                l2info->bundle = l2info->cookie[0];
-                break;
-            }
+        default:
+            l2info->bundle = l2info->cookie[0];
+            break;
+        }
 
 
 #ifdef DLT_JUNIPER_MFR
-            /* MFR child links don't carry cookies */
-            if (l2info->pictype == DLT_JUNIPER_MFR &&
-                (GET_U_1(p) & MFR_BE_MASK) == MFR_BE_MASK) {
-                l2info->cookie_len = 0;
-            }
+        /* MFR child links don't carry cookies */
+        if (l2info->pictype == DLT_JUNIPER_MFR &&
+            (GET_U_1(p) & MFR_BE_MASK) == MFR_BE_MASK) {
+            l2info->cookie_len = 0;
+        }
 #endif
 
-            l2info->header_len += l2info->cookie_len;
-            l2info->length -= l2info->cookie_len;
-            l2info->caplen -= l2info->cookie_len;
+        l2info->header_len += l2info->cookie_len;
+        l2info->length -= l2info->cookie_len;
+        l2info->caplen -= l2info->cookie_len;
 
-            if (ndo->ndo_eflag)
-                ND_PRINT("%s-PIC, cookie-len %u",
-                       lp->s,
-                       l2info->cookie_len);
+        if (ndo->ndo_eflag)
+            ND_PRINT("%s-PIC, cookie-len %u",
+                   lp->s,
+                   l2info->cookie_len);
 
-            if (l2info->cookie_len > 8) {
-                nd_print_invalid(ndo);
-                return 0;
-            }
-
-            if (l2info->cookie_len > 0) {
-                ND_TCHECK_LEN(p, l2info->cookie_len);
-                if (ndo->ndo_eflag)
-                    ND_PRINT(", cookie 0x");
-                for (idx = 0; idx < l2info->cookie_len; idx++) {
-                    l2info->cookie[idx] = GET_U_1(p + idx); /* copy cookie data */
-                    if (ndo->ndo_eflag) ND_PRINT("%02x", GET_U_1(p + idx));
-                }
-            }
-
-            if (ndo->ndo_eflag) ND_PRINT(": "); /* print demarc b/w L2/L3*/
-
-
-            l2info->proto = GET_BE_U_2(p + l2info->cookie_len);
-            break;
+        if (l2info->cookie_len > 8) {
+            nd_print_invalid(ndo);
+            return 0;
         }
-        ++lp;
+
+        if (l2info->cookie_len > 0) {
+            ND_TCHECK_LEN(p, l2info->cookie_len);
+            if (ndo->ndo_eflag)
+                ND_PRINT(", cookie 0x");
+            for (idx = 0; idx < l2info->cookie_len; idx++) {
+                l2info->cookie[idx] = GET_U_1(p + idx); /* copy cookie data */
+                if (ndo->ndo_eflag) ND_PRINT("%02x", GET_U_1(p + idx));
+            }
+        }
+
+        if (ndo->ndo_eflag) ND_PRINT(": "); /* print demarc b/w L2/L3*/
+
+
+        l2info->proto = GET_BE_U_2(p + l2info->cookie_len);
     }
     p+=l2info->cookie_len;
 
@@ -1568,8 +1558,16 @@ juniper_parse_header(netdissect_options *ndo,
         }
         break;
 #endif
+#ifdef DLT_JUNIPER_ES
+    case DLT_JUNIPER_ES:
+        break;
+#endif
 #ifdef DLT_JUNIPER_GGSN
     case DLT_JUNIPER_GGSN:
+        break;
+#endif
+#ifdef DLT_JUNIPER_SERVICES
+    case DLT_JUNIPER_SERVICES:
         break;
 #endif
 #ifdef DLT_JUNIPER_ATM1
@@ -1592,6 +1590,18 @@ juniper_parse_header(netdissect_options *ndo,
     case DLT_JUNIPER_FRELAY:
         break;
 #endif
+#ifdef DLT_JUNIPER_MONITOR
+    case DLT_JUNIPER_MONITOR:
+        break;
+#endif
+#ifdef DLT_JUNIPER_PPPOE
+    case DLT_JUNIPER_PPPOE:
+        break;
+#endif
+#ifdef DLT_JUNIPER_PPPOE_ATM
+    case DLT_JUNIPER_PPPOE_ATM:
+        break;
+#endif
 
     default:
         ND_PRINT("Unknown Juniper DLT_ type %u: ", l2info->pictype);
@@ -1602,8 +1612,8 @@ juniper_parse_header(netdissect_options *ndo,
         ND_PRINT("hlen %u, proto 0x%04x, ", l2info->header_len, l2info->proto);
 
     return 1; /* everything went ok so far. continue parsing */
-trunc:
-    nd_print_trunc(ndo);
+invalid:
+    nd_print_invalid(ndo);
     return 0;
 }
 #endif /* defined(DLT_JUNIPER_GGSN) || defined(DLT_JUNIPER_ES) || \

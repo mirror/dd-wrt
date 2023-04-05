@@ -78,7 +78,9 @@ The Regents of the University of California.  All rights reserved.\n";
 #endif
 /* Capsicum-specific code requires macros from <net/bpf.h>, which will fail
  * to compile if <pcap.h> has already been included; including the headers
- * in the opposite order works fine.
+ * in the opposite order works fine. For the most part anyway, because in
+ * FreeBSD <pcap/pcap.h> declares bpf_dump() instead of <net/bpf.h>. Thus
+ * interface.h takes care of it later to avoid a compiler warning.
  */
 #ifdef HAVE_CAPSICUM
 #include <sys/capsicum.h>
@@ -161,6 +163,8 @@ The Regents of the University of California.  All rights reserved.\n";
 
 #include "print.h"
 
+#include "diag-control.h"
+
 #include "fptype.h"
 
 #ifndef PATH_MAX
@@ -237,10 +241,6 @@ static int infodelay;
 static int infoprint;
 
 char *program_name;
-
-#ifdef HAVE_CASPER
-cap_channel_t *capdns;
-#endif
 
 /* Forwards */
 static NORETURN void error(FORMAT_STRING(const char *), ...) PRINTFLIKE(1, 2);
@@ -807,7 +807,7 @@ droproot(const char *username, const char *chroot_dir)
 		error("Couldn't find user '%.32s'", username);
 #ifdef HAVE_LIBCAP_NG
 	/* We don't need CAP_SETUID, CAP_SETGID and CAP_SYS_CHROOT any more. */
-DIAG_OFF_CLANG(assign-enum)
+DIAG_OFF_ASSIGN_ENUM
 	capng_updatev(
 		CAPNG_DROP,
 		CAPNG_EFFECTIVE | CAPNG_PERMITTED,
@@ -815,7 +815,7 @@ DIAG_OFF_CLANG(assign-enum)
 		CAP_SETGID,
 		CAP_SYS_CHROOT,
 		-1);
-DIAG_ON_CLANG(assign-enum)
+DIAG_ON_ASSIGN_ENUM
 	capng_apply(CAPNG_SELECT_BOTH);
 #endif /* HAVE_LIBCAP_NG */
 
@@ -2290,33 +2290,33 @@ main(int argc, char **argv)
 		/* Initialize capng */
 		capng_clear(CAPNG_SELECT_BOTH);
 		if (username) {
-DIAG_OFF_CLANG(assign-enum)
+DIAG_OFF_ASSIGN_ENUM
 			capng_updatev(
 				CAPNG_ADD,
 				CAPNG_PERMITTED | CAPNG_EFFECTIVE,
 				CAP_SETUID,
 				CAP_SETGID,
 				-1);
-DIAG_ON_CLANG(assign-enum)
+DIAG_ON_ASSIGN_ENUM
 		}
 		if (chroot_dir) {
-DIAG_OFF_CLANG(assign-enum)
+DIAG_OFF_ASSIGN_ENUM
 			capng_update(
 				CAPNG_ADD,
 				CAPNG_PERMITTED | CAPNG_EFFECTIVE,
 				CAP_SYS_CHROOT
 				);
-DIAG_ON_CLANG(assign-enum)
+DIAG_ON_ASSIGN_ENUM
 		}
 
 		if (WFileName) {
-DIAG_OFF_CLANG(assign-enum)
+DIAG_OFF_ASSIGN_ENUM
 			capng_update(
 				CAPNG_ADD,
 				CAPNG_PERMITTED | CAPNG_EFFECTIVE,
 				CAP_DAC_OVERRIDE
 				);
-DIAG_ON_CLANG(assign-enum)
+DIAG_ON_ASSIGN_ENUM
 		}
 		capng_apply(CAPNG_SELECT_BOTH);
 #endif /* HAVE_LIBCAP_NG */
@@ -2382,17 +2382,44 @@ DIAG_ON_CLANG(assign-enum)
 #endif
 		if (Cflag != 0 || Gflag != 0) {
 #ifdef HAVE_CAPSICUM
-			dumpinfo.WFileName = strdup(basename(WFileName));
+			/*
+			 * basename() and dirname() may modify their input buffer
+			 * and they do since FreeBSD 12.0, but they didn't before.
+			 * Hence use the return value only, but always assume the
+			 * input buffer has been modified and would need to be
+			 * reset before the next use.
+			 */
+			char *WFileName_copy;
+
+			if ((WFileName_copy = strdup(WFileName)) == NULL) {
+				error("Unable to allocate memory for file %s",
+				    WFileName);
+			}
+			DIAG_OFF_C11_EXTENSIONS
+			dumpinfo.WFileName = strdup(basename(WFileName_copy));
+			DIAG_ON_C11_EXTENSIONS
 			if (dumpinfo.WFileName == NULL) {
 				error("Unable to allocate memory for file %s",
 				    WFileName);
 			}
-			dumpinfo.dirfd = open(dirname(WFileName),
+			free(WFileName_copy);
+
+			if ((WFileName_copy = strdup(WFileName)) == NULL) {
+				error("Unable to allocate memory for file %s",
+				    WFileName);
+			}
+			DIAG_OFF_C11_EXTENSIONS
+			char *WFileName_dirname = dirname(WFileName_copy);
+			DIAG_ON_C11_EXTENSIONS
+			dumpinfo.dirfd = open(WFileName_dirname,
 			    O_DIRECTORY | O_RDONLY);
 			if (dumpinfo.dirfd < 0) {
 				error("unable to open directory %s",
-				    dirname(WFileName));
+				    WFileName_dirname);
 			}
+			free(WFileName_dirname);
+			free(WFileName_copy);
+
 			cap_rights_init(&rights, CAP_CREATE, CAP_FCNTL,
 			    CAP_FTRUNCATE, CAP_LOOKUP, CAP_SEEK, CAP_WRITE);
 			if (cap_rights_limit(dumpinfo.dirfd, &rights) < 0 &&
@@ -2641,7 +2668,7 @@ DIAG_ON_CLANG(assign-enum)
 
 	free(cmdbuf);
 	pcap_freecode(&fcode);
-	exit_tcpdump(status == -1 ? 1 : 0);
+	exit_tcpdump(status == -1 ? S_ERR_HOST_PROGRAM : S_SUCCESS);
 }
 
 /*
@@ -2657,7 +2684,14 @@ static void
 
 	memset(&new, 0, sizeof(new));
 	new.sa_handler = func;
-	if (sig == SIGCHLD)
+	if ((sig == SIGCHLD)
+# ifdef SIGNAL_REQ_INFO
+		|| (sig == SIGNAL_REQ_INFO)
+# endif
+# ifdef SIGNAL_FLUSH_PCAP
+		|| (sig == SIGNAL_FLUSH_PCAP)
+# endif
+		)
 		new.sa_flags = SA_RESTART;
 	if (sigaction(sig, &new, &old) < 0)
 		return (SIG_ERR);
@@ -3127,7 +3161,7 @@ static void verbose_stats_dump(int sig _U_)
 }
 #endif /* _WIN32 */
 
-USES_APPLE_DEPRECATED_API
+DIAG_OFF_DEPRECATION
 static void
 print_version(FILE *f)
 {
@@ -3165,7 +3199,7 @@ print_version(FILE *f)
 #  endif
 #endif /* __SANITIZE_ADDRESS__ or __has_feature */
 }
-USES_APPLE_RST
+DIAG_ON_DEPRECATION
 
 static void
 print_usage(FILE *f)

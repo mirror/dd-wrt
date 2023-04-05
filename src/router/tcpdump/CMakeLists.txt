@@ -16,7 +16,7 @@ else(WIN32)
     # environment variable when running pkg-config, to make sure
     # it finds any .pc file from there.
     #
-    cmake_minimum_required(VERSION 2.8.6)
+    cmake_minimum_required(VERSION 2.8.12)
 endif(WIN32)
 
 #
@@ -28,9 +28,93 @@ if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
+#
+# OK, this is a pain.
+#
+# When building on NetBSD, with a libpcap installed from pkgsrc,
+# a -Wl,-rpath,/usr/pkg/lib option is added to the options when
+# linking tcpdump.  This puts /usr/pkg/lib into the run-time path.
+#
+# However, by default, CMake adds a rule to the install CMake script
+# a CMake command (using an undocumented subcommand of file()) that
+# strips /usr/pkg/lib *out* of the run-time path; the message in the
+# output for the "install" target is
+#
+#    -- Set runtime path of "{target-directory}/tcpdump" to ""
+#
+# I am not certain what the rationale is for doing this, but a
+# *consequence* of this is that, when you run the installed tcpdump,
+# it fails to find libpcap.so:
+#
+#    $ {target-directory}/tcpdump -h
+#    {target-directory}/tcpdump: Shared object "libpcap.so.0" not found
+#
+# It also appears to be the case that, on Ubuntu 22.04, FreeBSD 12,
+# DragonFly BSD 5.8, OpenBSD 6.6, and Solaris 11.4,
+#
+# On Ubuntu and Solaris, even if you have a libpcap in /usr/local, you
+# have to provide not only -I/usr/local/include and -L/usr/local/lib,
+# you also must provide -Wl,-rpath,/usr/local/lib in order to have
+# the run-time linker look in /usr/local/lib for libpcap.  If it's not
+# specified, then, if the shared library major version number of the
+# libpcap in /usr/lib is the same as the shared major version number
+# of the libpcap in /usr/local/lib, the run-time linker will find the
+# libpcap in /usr/lib; if the versions are different, the run-time
+# linker will fail to find the libpcap in /usr/lib, so the program will
+# fail to run.
+#
+# We suppress this by setting CMAKE_INSTALL_RPATH_USE_LINK_PATH to TRUE;
+# as the documentation for that variable says:
+#
+#    Add paths to linker search and installed rpath.
+#
+#    CMAKE_INSTALL_RPATH_USE_LINK_PATH is a boolean that if set to True
+#    will append to the runtime search path (rpath) of installed
+#    binaries any directories outside the project that are in the linker
+#    search path or contain linked library files. The directories are
+#    appended after the value of the INSTALL_RPATH target property.
+#
+# If, for whatever reason, directories in which we search for external
+# libraries, other than the standard system library directories, are
+# added to the executable's rpath in the build process, we most
+# defintely want them in the installed image's rpath if they are
+# necessary in order to find the libraries at run time.
+#
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
-project(tcpdump)
+#
+# OK, this is a royal pain.
+#
+# CMake will try to determine the sizes of some data types, including
+# void *, early in the process of configuration; apparently, it's done
+# as part of processing the project() command.
+#
+# At least as of CMake 2.8.6, it does so by checking the size of
+# "void *" in C, setting CMAKE_C_SIZEOF_DATA_PTR based on that,
+# setting CMAKE_SIZEOF_VOID_P to that, and then checking the size
+# of "void *" in C++, setting CMAKE_CXX_SIZEOF_DATA_PTR based on
+# that, and then setting CMAKE_SIZEOF_VOID_P to *that*.
+#
+# The compile tests include whatever C flags may have been provided
+# to CMake in the CFLAGS and CXXFLAGS environment variables.
+#
+# If you set an architecture flag such as -m32 or -m64 in CFLAGS
+# but *not* in CXXFLAGS, the size for C++ will win, and hilarity
+# will ensue.
+#
+# Or if, at least on Solaris, you have a newer version of GCC
+# installed, but *not* a newer version of G++, and you have Oracle
+# Studio installed, it will find GCC, which will default to building
+# 64-bit, and Oracle Studio's C++ compiler, which will default to
+# building 32-bit, the size for C++ will win, and, again, hilarity
+# will ensue.
+#
+# So we *explicitly* state that only C is used; there is currently no
+# C++ code in tcpdump.
+#
+project(tcpdump C)
 
 #
 # For checking if a compiler flag works and adding it if it does.
@@ -245,15 +329,6 @@ check_include_file(net/if.h HAVE_NET_IF_H)
 if(HAVE_RPC_RPC_H)
     check_include_files("rpc/rpc.h;rpc/rpcent.h" HAVE_RPC_RPCENT_H)
 endif(HAVE_RPC_RPC_H)
-if(NOT WIN32)
-    check_include_files("sys/types.h;sys/socket.h;net/if.h;net/pfvar.h" HAVE_NET_PFVAR_H)
-    if(HAVE_NET_PFVAR_H)
-        check_include_files("sys/types.h;sys/socket.h;net/if.h;net/pfvar.h;net/if_pflog.h" HAVE_NET_IF_PFLOG_H)
-        if(HAVE_NET_IF_PFLOG_H)
-            set(LOCALSRC print-pflog.c ${LOCALSRC})
-        endif(HAVE_NET_IF_PFLOG_H)
-    endif(HAVE_NET_PFVAR_H)
-endif(NOT WIN32)
 
 #
 # Functions.
@@ -917,6 +992,19 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/.devel OR EXISTS ${CMAKE_BINARY_DIR}/.devel)
     endif()
 endif()
 
+#
+# Extra compiler options for the build matrix scripts to request -Werror or
+# its equivalent if required.  The CMake variable name cannot be CFLAGS
+# because that is already used for a different purpose in CMake.  Example
+# usage: cmake -DEXTRA_CFLAGS='-Wall -Wextra -Werror' ...
+#
+if(NOT "${EXTRA_CFLAGS}" STREQUAL "")
+    foreach(_extra_cflag ${EXTRA_CFLAGS})
+        check_and_add_compiler_option("${_extra_cflag}")
+    endforeach(_extra_cflag)
+    message(STATUS "Added extra compile options (${EXTRA_CFLAGS})")
+endif()
+
 ######################################
 # Input files
 ######################################
@@ -1050,6 +1138,7 @@ set(NETDISSECT_SOURCE_LIST_C
     print-ospf.c
     print-ospf6.c
     print-otv.c
+    print-pflog.c
     print-pgm.c
     print-pim.c
     print-pktap.c
@@ -1060,11 +1149,11 @@ set(NETDISSECT_SOURCE_LIST_C
     print-ptp.c
     print-radius.c
     print-raw.c
+    print-realtek.c
     print-resp.c
     print-rip.c
     print-ripng.c
     print-rpki-rtr.c
-    print-rrcp.c
     print-rsvp.c
     print-rt6.c
     print-rtsp.c
@@ -1102,6 +1191,7 @@ set(NETDISSECT_SOURCE_LIST_C
     print-vxlan-gpe.c
     print-vxlan.c
     print-wb.c
+    print-whois.c
     print-zep.c
     print-zephyr.c
     print-zeromq.c
@@ -1151,6 +1241,55 @@ set(PROJECT_SOURCE_LIST_C ${NETDISSECT_SOURCE_LIST_C} ${TCPDUMP_SOURCE_LIST_C})
 file(GLOB PROJECT_SOURCE_LIST_H
     *.h
 )
+
+#
+# Assume, by default, no support for shared libraries and V7/BSD
+# convention for man pages (devices in section 4, file formats in
+# section 5, miscellaneous info in section 7, administrative commands
+# and daemons in section 8).  Individual cases can override this.
+# Individual cases can override this.
+#
+set(MAN_FILE_FORMATS 5)
+set(MAN_MISC_INFO 7)
+if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
+    # Workaround to enable certain features
+    set(_SUN TRUE)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
+    #
+    # Use System V conventions for man pages.
+    #
+    set(MAN_FILE_FORMATS 4)
+    set(MAN_MISC_INFO 5)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "IRIX" OR CMAKE_SYSTEM_NAME STREQUAL "IRIX64")
+    #
+    # Use IRIX conventions for man pages; they're the same as the
+    # System V conventions, except that they use section 8 for
+    # administrative commands and daemons.
+    #
+    set(MAN_FILE_FORMATS 4)
+    set(MAN_MISC_INFO 5)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "OSF1")
+    #
+    # DEC OSF/1, a/k/a Digital UNIX, a/k/a Tru64 UNIX.
+    # Use Tru64 UNIX conventions for man pages; they're the same as the
+    # System V conventions except that they use section 8 for
+    # administrative commands and daemons.
+    #
+    set(MAN_FILE_FORMATS 4)
+    set(MAN_MISC_INFO 5)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "SunOS" AND CMAKE_SYSTEM_VERSION MATCHES "5[.][0-9.]*")
+    #
+    # SunOS 5.x.
+    #
+    if(CMAKE_SYSTEM_VERSION STREQUAL "5.12")
+    else()
+        #
+        # Use System V conventions for man pages.
+        #
+        set(MAN_FILE_FORMATS 4)
+        set(MAN_MISC_INFO 5)
+    endif()
+endif()
 
 source_group("Source Files" FILES ${PROJECT_SOURCE_LIST_C})
 source_group("Header Files" FILES ${PROJECT_SOURCE_LIST_H})

@@ -86,9 +86,6 @@ struct icmp {
 #define	icmp_data	icmp_dun.id_data
 };
 
-#define ICMP_MPLS_EXT_EXTRACT_VERSION(x) (((x)&0xf0)>>4)
-#define ICMP_MPLS_EXT_VERSION 2
-
 /*
  * Lower bounds on packet lengths for various types.
  * For the error advice packets must first insure that the
@@ -150,7 +147,7 @@ struct icmp {
 	((type) == ICMP_UNREACH || (type) == ICMP_SOURCEQUENCH || \
 	(type) == ICMP_REDIRECT || (type) == ICMP_TIMXCEED || \
 	(type) == ICMP_PARAMPROB)
-#define	ICMP_MPLS_EXT_TYPE(type) \
+#define	ICMP_MULTIPART_EXT_TYPE(type) \
 	((type) == ICMP_UNREACH || \
          (type) == ICMP_TIMXCEED || \
          (type) == ICMP_PARAMPROB)
@@ -221,13 +218,17 @@ struct id_rdiscovery {
 };
 
 /*
- * draft-bonica-internet-icmp-08
+ * RFC 4884 - Extended ICMP to Support Multi-Part Messages
+ *
+ * This is a general extension mechanism, based on the mechanism
+ * in draft-bonica-icmp-mpls-02 ICMP Extensions for MultiProtocol
+ * Label Switching.
  *
  * The Destination Unreachable, Time Exceeded
  * and Parameter Problem messages are slightly changed as per
- * the above draft. A new Length field gets added to give
+ * the above RFC. A new Length field gets added to give
  * the caller an idea about the length of the piggybacked
- * IP packet before the MPLS extension header starts.
+ * IP packet before the extension header starts.
  *
  * The Length field represents length of the padded "original datagram"
  * field  measured in 32-bit words.
@@ -259,15 +260,34 @@ struct icmp_ext_t {
     nd_byte     icmp_ext_data[1];
 };
 
-struct icmp_mpls_ext_object_header_t {
+/*
+ * Extract version from the first octet of icmp_ext_version_res.
+ */
+#define ICMP_EXT_EXTRACT_VERSION(x) (((x)&0xf0)>>4)
+
+/*
+ * Current version.
+ */
+#define ICMP_EXT_VERSION 2
+
+/*
+ * Extension object class numbers.
+ *
+ * Class 1 dates back to draft-bonica-icmp-mpls-02.
+ */
+
+/* rfc4950  */
+#define MPLS_STACK_ENTRY_OBJECT_CLASS            1
+
+struct icmp_multipart_ext_object_header_t {
     nd_uint16_t length;
     nd_uint8_t  class_num;
     nd_uint8_t  ctype;
 };
 
-static const struct tok icmp_mpls_ext_obj_values[] = {
+static const struct tok icmp_multipart_ext_obj_values[] = {
     { 1, "MPLS Stack Entry" },
-    { 2, "Extended Payload" },
+    { 2, "Interface Identification" },
     { 0, NULL}
 };
 
@@ -305,7 +325,7 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
 	const struct udphdr *ouh;
         const uint8_t *obj_tptr;
         uint32_t raw_label;
-	const struct icmp_mpls_ext_object_header_t *icmp_mpls_ext_object_header;
+	const struct icmp_multipart_ext_object_header_t *icmp_multipart_ext_object_header;
 	u_int hlen, mtu, obj_tlen, obj_class_num, obj_ctype;
 	uint16_t dport;
 	char buf[MAXHOSTNAMELEN + 100];
@@ -675,14 +695,14 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
 	ndo->ndo_protocol = "icmp";
 
         /*
-         * Attempt to decode the MPLS extensions only for some ICMP types.
+         * Attempt to decode multi-part message extensions (rfc4884) only for some ICMP types.
          */
-        if (ndo->ndo_vflag >= 1 && plen > ICMP_EXTD_MINLEN && ICMP_MPLS_EXT_TYPE(icmp_type)) {
+        if (ndo->ndo_vflag >= 1 && plen > ICMP_EXTD_MINLEN && ICMP_MULTIPART_EXT_TYPE(icmp_type)) {
 
             ND_TCHECK_SIZE(ext_dp);
 
             /*
-             * Check first if the mpls extension header shows a non-zero length.
+             * Check first if the multi-part extension header shows a non-zero length.
              * If the length field is not set then silently verify the checksum
              * to check if an extension header is present. This is expedient,
              * however not all implementations set the length field proper.
@@ -696,14 +716,14 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
                 }
             }
 
-            ND_PRINT("\n\tMPLS extension v%u",
-                   ICMP_MPLS_EXT_EXTRACT_VERSION(*(ext_dp->icmp_ext_version_res)));
+            ND_PRINT("\n\tICMP Multi-Part extension v%u",
+                   ICMP_EXT_EXTRACT_VERSION(*(ext_dp->icmp_ext_version_res)));
 
             /*
              * Sanity checking of the header.
              */
-            if (ICMP_MPLS_EXT_EXTRACT_VERSION(*(ext_dp->icmp_ext_version_res)) !=
-                ICMP_MPLS_EXT_VERSION) {
+            if (ICMP_EXT_EXTRACT_VERSION(*(ext_dp->icmp_ext_version_res)) !=
+                ICMP_EXT_VERSION) {
                 ND_PRINT(" packet not supported");
                 return;
             }
@@ -721,36 +741,36 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
             hlen -= 4; /* subtract common header size */
             obj_tptr = (const uint8_t *)ext_dp->icmp_ext_data;
 
-            while (hlen > sizeof(struct icmp_mpls_ext_object_header_t)) {
+            while (hlen > sizeof(struct icmp_multipart_ext_object_header_t)) {
 
-                icmp_mpls_ext_object_header = (const struct icmp_mpls_ext_object_header_t *)obj_tptr;
-                ND_TCHECK_SIZE(icmp_mpls_ext_object_header);
-                obj_tlen = GET_BE_U_2(icmp_mpls_ext_object_header->length);
-                obj_class_num = GET_U_1(icmp_mpls_ext_object_header->class_num);
-                obj_ctype = GET_U_1(icmp_mpls_ext_object_header->ctype);
-                obj_tptr += sizeof(struct icmp_mpls_ext_object_header_t);
+                icmp_multipart_ext_object_header = (const struct icmp_multipart_ext_object_header_t *)obj_tptr;
+                ND_TCHECK_SIZE(icmp_multipart_ext_object_header);
+                obj_tlen = GET_BE_U_2(icmp_multipart_ext_object_header->length);
+                obj_class_num = GET_U_1(icmp_multipart_ext_object_header->class_num);
+                obj_ctype = GET_U_1(icmp_multipart_ext_object_header->ctype);
+                obj_tptr += sizeof(struct icmp_multipart_ext_object_header_t);
 
                 ND_PRINT("\n\t  %s Object (%u), Class-Type: %u, length %u",
-                       tok2str(icmp_mpls_ext_obj_values,"unknown",obj_class_num),
+                       tok2str(icmp_multipart_ext_obj_values,"unknown",obj_class_num),
                        obj_class_num,
                        obj_ctype,
                        obj_tlen);
 
-                hlen-=sizeof(struct icmp_mpls_ext_object_header_t); /* length field includes tlv header */
+                hlen-=sizeof(struct icmp_multipart_ext_object_header_t); /* length field includes tlv header */
 
                 /* infinite loop protection */
                 if ((obj_class_num == 0) ||
-                    (obj_tlen < sizeof(struct icmp_mpls_ext_object_header_t))) {
+                    (obj_tlen < sizeof(struct icmp_multipart_ext_object_header_t))) {
                     return;
                 }
-                obj_tlen-=sizeof(struct icmp_mpls_ext_object_header_t);
+                obj_tlen-=sizeof(struct icmp_multipart_ext_object_header_t);
 
                 switch (obj_class_num) {
-                case 1:
+                case MPLS_STACK_ENTRY_OBJECT_CLASS:
                     switch(obj_ctype) {
                     case 1:
                         raw_label = GET_BE_U_4(obj_tptr);
-                        ND_PRINT("\n\t    label %u, exp %u", MPLS_LABEL(raw_label), MPLS_EXP(raw_label));
+                        ND_PRINT("\n\t    label %u, tc %u", MPLS_LABEL(raw_label), MPLS_TC(raw_label));
                         if (MPLS_STACK(raw_label))
                             ND_PRINT(", [S]");
                         ND_PRINT(", ttl %u", MPLS_TTL(raw_label));
@@ -760,11 +780,6 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
                     }
                     break;
 
-               /*
-                *  FIXME those are the defined objects that lack a decoder
-                *  you are welcome to contribute code ;-)
-                */
-                case 2:
                 default:
                     print_unknown_data(ndo, obj_tptr, "\n\t    ", obj_tlen);
                     break;

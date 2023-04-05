@@ -191,7 +191,7 @@ extern const struct tok ns_class2str[];
 
 static unsigned
 lwres_printname(netdissect_options *ndo,
-                size_t l, const u_char *p0)
+                u_int l, const u_char *p0)
 {
 	ND_PRINT(" ");
 	(void)nd_printn(ndo, p0, l, NULL);
@@ -546,7 +546,7 @@ lwres_print(netdissect_options *ndo,
 		ND_PRINT(" [len: %u != %u]", GET_BE_U_4(np->length),
 			  length);
 	}
-	if (!unsupported && s < bp + GET_BE_U_4(np->length))
+	if (!unsupported && ND_BYTES_BETWEEN(s, bp) < GET_BE_U_4(np->length))
 		ND_PRINT("[extra]");
 	return;
 

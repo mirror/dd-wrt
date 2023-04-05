@@ -458,7 +458,7 @@ print_unknown_data(netdissect_options *ndo, const u_char *cp,
 /*
  * Convert a token value to a string; use "fmt" if not found.
  */
-const char *
+static const char *
 tok2strbuf(const struct tok *lp, const char *fmt,
 	   u_int v, char *buf, size_t bufsize)
 {
@@ -604,7 +604,7 @@ uint2tokary_internal(const struct uint_tokary dict[], const size_t size,
 int
 mask2plen(uint32_t mask)
 {
-	uint32_t bitmasks[33] = {
+	const uint32_t bitmasks[33] = {
 		0x00000000,
 		0x80000000, 0xc0000000, 0xe0000000, 0xf0000000,
 		0xf8000000, 0xfc000000, 0xfe000000, 0xff000000,
@@ -917,7 +917,7 @@ txtproto_print(netdissect_options *ndo, const u_char *pptr, u_int len,
     (defined(__s390__) || defined(__s390x__) || defined(__zarch__)) || \
     defined(__vax__)
 /*
- * The procesor natively handles unaligned loads, so just use memcpy()
+ * The processor natively handles unaligned loads, so just use memcpy()
  * and memcmp(), to enable those optimizations.
  *
  * XXX - are those all the x86 tests we need?
