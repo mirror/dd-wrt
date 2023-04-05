@@ -26,6 +26,8 @@ typedef enum write_buf_id {
 	W_BUF_HOST,
 	W_BUF_PROTO,
 	W_BUF_FLOW,
+	W_BUF_DEBUG,
+	W_BUF_RISK,
 	W_BUF_LAST
 } write_buf_id_t;
 
@@ -53,6 +55,7 @@ struct ndpi_net {
 				*pe_info,
 				*pe_proto,
 				*pe_debug,
+				*pe_risk,
 				*pe_hostdef,
 				*pe_ipdef;
 
@@ -79,7 +82,10 @@ struct ndpi_net {
 	struct write_proc_cmd *w_buff[W_BUF_LAST];
 	struct nf_ct_ext_ndpi 	*flow_h;	// Head of info list
 	struct nf_ct_ext_ndpi	*flow_l;	// save point for next read info
-
+	
+	char			*risk_names;
+	size_t			risk_names_len;
+	ndpi_risk		risk_mask;
 	
 	char			*str_buf;	// buffer for nflow_read
 	int			str_buf_len,	// nflow_read data length
@@ -202,6 +208,7 @@ struct nf_ct_ext_ndpi {
 	uint8_t			l4_proto;	// 1
 	uint8_t			confidence;	// 1
 #endif
+	uint64_t		risk;		// 8 risk bitmap
 	uint16_t		ja3s,ja3c,tlsv,tlsfp;
 						// offset+1 in flow_opt
 

@@ -115,6 +115,10 @@ S - server JA3 hash
 C - client JA3 hash
 F - TLS fingerprint
 V - version of TLS
-L - confidence level (1 - port, 2 - ip, 3 - ip+port, 4 - dpi cache, 5 - dpi)
+L - confidence level
+	1 - port, 2 - ip, 3 - ip+port, 
+	4 - dpi part, 5 - dpi part cache, 6 - dpi cache, 7 - dpi)
+R - risk list or risk bitmap. If the line starts with 0x, then this is a bitmap,
+    otherwise a comma-separated list of risks.
 
 The information will be added in the order of the options.

@@ -74,6 +74,7 @@ static inline int add_opt_str(char *buf,size_t l,size_t size,char c,char *str) {
 	strcpy(buf,str);
 	return nc;
 }
+
 static int ndpi_confidence_level(ndpi_confidence_t confidence)
 {
   switch(confidence) {
@@ -99,6 +100,43 @@ static int ndpi_confidence_level(ndpi_confidence_t confidence)
     return 0;
   }
 }
+/* 0-99 to str */
+static int uint8tostr(char *buf,int v) {
+	int i;
+	v %= 100;
+	i = v % 10;
+	v /= 10;
+	if(v) {
+		buf[0] = '0'+v;
+		buf[1] = '0'+i;
+		buf[2] = '\0';
+		return 2;
+	}
+	buf[0] = '0'+i;
+	buf[1] = '\0';
+	return 1;
+}
+
+static void risk2str(uint64_t risk,char *buf,size_t len) {
+    int ri=0,l=0;
+    uint64_t risk_s = risk;
+    while(risk != 0 && l < len-4) { // ,XX\0
+	if((risk & 0xffffffff) == 0) { ri+=32; risk >>=32; }
+	if((risk & 0xffff) == 0) { ri+=16; risk >>=16; }
+	if((risk & 0xff) == 0) { ri+=8; risk >>=8; }
+	if((risk & 0xf) == 0) { ri+=4; risk >>=4; }
+	if((risk & 0x3) == 0) { ri+=2; risk >>=2; }
+	if((risk & 0x1) == 0) { ri+=1; risk >>=1; }
+	if(l) buf[l++] = ',';
+	l += uint8tostr(&buf[l],ri);
+	ri++;
+	risk >>=1;
+    }
+    if(risk)
+	snprintf(buf,len-1,"0x%llx",risk_s);
+    else
+	buf[l] = '\0';
+}
 
 size_t ndpi_dump_opt(char *buf, size_t bufsize,
 		struct nf_ct_ext_ndpi *ct)
@@ -108,8 +146,16 @@ size_t ndpi_dump_opt(char *buf, size_t bufsize,
 	buf[0] = '\0';
 
 	for(i=0; i < NDPI_FLOW_OPT_MAX && ndpi_flow_opt[i]; i++) {
-	   if(ndpi_flow_opt[i] != 'L' && !ct->flow_opt) continue;
+	   if(ndpi_flow_opt[i] != 'L' && ndpi_flow_opt[i] != 'R' && !ct->flow_opt) continue;
 	   switch(ndpi_flow_opt[i]) {
+		case 'R':
+			if(!(flag & 0x20) && ct->risk && l < bufsize-20) {
+			    char hbuf[22];
+			    risk2str(ct->risk,hbuf,sizeof(hbuf));
+			    l += add_opt_str(buf,l,bufsize,'R',hbuf);
+			    flag |= 0x20;
+			}
+			break;
 		case 'L':
 			if(!(flag & 0x10) && ct->confidence != NDPI_CONFIDENCE_UNKNOWN && l < bufsize-4) {
 			    if(l) buf[l++] = ' ';

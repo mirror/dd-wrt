@@ -32,6 +32,7 @@
 
 struct xt_ndpi_mtinfo {
         NDPI_PROTOCOL_BITMASK flags;
+	uint64_t    risk;
 	uint32_t    invert:1,error:1,m_proto:1,p_proto:1,have_master:1,
 		    host:1,re:1,empty:1,proto:1,inprogress:1,ja3s:1,ja3c:1,tlsfp:1,tlsv:1,
 		    untracked:1,clevel:4,clevel_op:2;

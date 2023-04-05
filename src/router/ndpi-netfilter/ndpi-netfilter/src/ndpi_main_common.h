@@ -83,7 +83,7 @@ extern unsigned long  ndpi_enable_flow;
 extern unsigned long  flow_read_debug;
 extern unsigned long  ndpi_log_debug;
 */
-#define NDPI_FLOW_OPT_MAX 6
+#define NDPI_FLOW_OPT_MAX 7
 //extern char  ndpi_flow_opt[NDPI_FLOW_OPT_MAX+1];
 //extern struct kmem_cache *ct_info_cache;
 
