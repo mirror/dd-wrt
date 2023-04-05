@@ -48,7 +48,6 @@ rpcapd
 .B \-l
 .I host_list
 ]
-.br
 .ti +8
 [
 .B \-a
@@ -62,7 +61,6 @@ rpcapd
 ] [
 .B \-i
 ]
-.br
 .ti +8
 [
 .B \-D
@@ -77,7 +75,6 @@ rpcapd
 [
 .B \-S
 ]
-.br
 .ti +8
 [
 .B \-K
@@ -199,7 +196,7 @@ By default,
 .B rpcapd
 listens on both IPv4 and IPv6 addresses.
 .TP
-.BI -l " host_list"
+.BI \-l " host_list"
 Only allow hosts specified in the
 .I host_list
 argument to connect to this server.

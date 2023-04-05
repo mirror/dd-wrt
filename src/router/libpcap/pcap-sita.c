@@ -441,7 +441,7 @@ static char *translate_IOP_to_pcap_name(unit_t *u, char *IOPname, bpf_u_int32 if
 
 	iface->iftype = iftype;					/* remember the interface type of this interface */
 
-	iface->IOPname = strdup(IOPnam);			/* copy it and stick it into the structure */
+	iface->IOPname = strdup(IOPname);			/* copy it and stick it into the structure */
         if (iface->IOPname == NULL) {    /* oops, we didn't get the memory requested     */
                 fprintf(stderr, "Error...couldn't allocate memory for IOPname...value of errno is: %d\n", errno);
                 return NULL;
@@ -492,7 +492,7 @@ static char *translate_IOP_to_pcap_name(unit_t *u, char *IOPname, bpf_u_int32 if
 		u->iface = iface;					/* stick this entry at the head of the list */
 	} else {
 		iface_ptr = u->iface;
-		while (iface_ptr->next) {			/* othewise scan the list */
+		while (iface_ptr->next) {			/* otherwise scan the list */
 			iface_ptr = iface_ptr->next;	/* till we're at the last entry */
 		}
 		iface_ptr->next = iface;			/* then tack this entry on the end of the list */

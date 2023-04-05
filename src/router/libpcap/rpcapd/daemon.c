@@ -449,7 +449,8 @@ daemon_serviceloop(SOCKET sockctrl, int isactive, char *passiveClients,
 		if (getpeername(pars.sockctrl, (struct sockaddr *)&from,
 		    &fromlen) == -1)
 		{
-			sock_geterror("getpeername()", errmsgbuf, PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+			    "getpeername() failed");
 			if (rpcap_senderror(pars.sockctrl, pars.ssl, 0, PCAP_ERR_NETW, errmsgbuf, errbuf) == -1)
 				rpcapd_log(LOGPRIO_ERROR, "Send to client failed: %s", errbuf);
 			goto end;
@@ -523,7 +524,8 @@ daemon_serviceloop(SOCKET sockctrl, int isactive, char *passiveClients,
 			retval = select((int)pars.sockctrl + 1, &rfds, NULL, NULL, &tv);
 			if (retval == -1)
 			{
-				sock_geterror("select() failed", errmsgbuf, PCAP_ERRBUF_SIZE);
+				sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+				    "select() failed");
 				if (rpcap_senderror(pars.sockctrl, pars.ssl, 0, PCAP_ERR_NETW, errmsgbuf, errbuf) == -1)
 					rpcapd_log(LOGPRIO_ERROR, "Send to client failed: %s", errbuf);
 				goto end;
@@ -763,7 +765,8 @@ daemon_serviceloop(SOCKET sockctrl, int isactive, char *passiveClients,
 #endif
 			if (retval == -1)
 			{
-				sock_geterror("select() failed", errmsgbuf, PCAP_ERRBUF_SIZE);
+				sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+				    "select() failed");
 				if (rpcap_senderror(pars.sockctrl, pars.ssl,
 				    0, PCAP_ERR_NETW,
 				    errmsgbuf, errbuf) == -1)
@@ -1368,11 +1371,16 @@ daemon_msg_auth_req(struct daemon_slpars *pars, uint32 plen)
 		goto error;
 
 	//
-	// Indicate to our peer what versions we support.
+	// Indicate to our peer what versions we support and what our
+	// version of the byte-order magic is (which will tell the
+	// client whether our byte order differs from theirs, in which
+	// case they will need to byte-swap some fields in some
+	// link-layer types' headers).
 	//
 	memset(authreply, 0, sizeof(struct rpcap_authreply));
 	authreply->minvers = RPCAP_MIN_VERSION;
 	authreply->maxvers = RPCAP_MAX_VERSION;
+	authreply->byte_order_magic = RPCAP_BYTE_ORDER_MAGIC;
 
 	// Send the reply.
 	if (sock_send(pars->sockctrl, pars->ssl, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) == -1)
@@ -1602,7 +1610,6 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 	pcap_if_t *alldevs = NULL;		// pointer to the header of the interface chain
 	pcap_if_t *d;				// temp pointer needed to scan the interface chain
 	struct pcap_addr *address;		// pcap structure that keeps a network address of an interface
-	struct rpcap_findalldevs_if *findalldevs_if;// rpcap structure that packet all the data of an interface together
 	uint32 replylen;			// length of reply payload
 	uint16 nif = 0;				// counts the number of interface listed
 
@@ -1703,13 +1710,17 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 	{
 		uint16 lname, ldescr;
 
-		findalldevs_if = (struct rpcap_findalldevs_if *) &sendbuf[sendbufidx];
-
-		if (sock_bufferize(NULL, sizeof(struct rpcap_findalldevs_if), NULL,
-		    &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errmsgbuf, PCAP_ERRBUF_SIZE) == -1)
-			goto error;
-
-		memset(findalldevs_if, 0, sizeof(struct rpcap_findalldevs_if));
+		// Note: the findalldevs_if entries are *not* neatly
+		// aligned on 4-byte boundaries, because they're
+		// preceded by strings that aren't padded to 4-byte
+		// boundaries, so we cannot just cast output buffer
+		// boundaries to struct rpcap_findalldevs_if pointers
+		// and store into them - we must fill in a structure and
+		// then copy the structure to the buffer, as not all
+		// systems support unaligned access (some, such as
+		// SPARC, crash; others, such as Arm, may just ignore
+		// the lower-order bits).
+		struct rpcap_findalldevs_if findalldevs_if;
 
 		/*
 		 * We've already established that the string lengths
@@ -1724,10 +1735,11 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 		else
 			lname = 0;
 
-		findalldevs_if->desclen = htons(ldescr);
-		findalldevs_if->namelen = htons(lname);
-		findalldevs_if->flags = htonl(d->flags);
+		findalldevs_if.desclen = htons(ldescr);
+		findalldevs_if.namelen = htons(lname);
+		findalldevs_if.flags = htonl(d->flags);
 
+		uint16_t naddrs = 0;
 		for (address = d->addresses; address != NULL; address = address->next)
 		{
 			/*
@@ -1739,14 +1751,20 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 #ifdef AF_INET6
 			case AF_INET6:
 #endif
-				findalldevs_if->naddr++;
+				naddrs++;
 				break;
 
 			default:
 				break;
 			}
 		}
-		findalldevs_if->naddr = htons(findalldevs_if->naddr);
+		findalldevs_if.naddr = htons(naddrs);
+		findalldevs_if.dummy = 0;
+
+		if (sock_bufferize(&findalldevs_if, sizeof(struct rpcap_findalldevs_if), sendbuf,
+		    &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errmsgbuf,
+		    PCAP_ERRBUF_SIZE) == -1)
+			goto error;
 
 		if (sock_bufferize(d->name, lname, sendbuf, &sendbufidx,
 		    RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errmsgbuf,
@@ -1872,7 +1890,7 @@ daemon_msg_open_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
 	// This is a fake open, since we do that only to get the needed parameters, then we close the device again
 	if ((fp = pcap_open_live(source,
 			1500 /* fake snaplen */,
-			0 /* no promis */,
+			0 /* no promisc */,
 			1000 /* fake timeout */,
 			errmsgbuf)) == NULL)
 		goto error;
@@ -2044,7 +2062,8 @@ daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
 	saddrlen = sizeof(struct sockaddr_storage);
 	if (getpeername(pars->sockctrl, (struct sockaddr *) &saddr, &saddrlen) == -1)
 	{
-		sock_geterror("getpeername()", errmsgbuf, PCAP_ERRBUF_SIZE);
+		sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+		    "getpeername() failed");
 		goto error;
 	}
 
@@ -2061,32 +2080,34 @@ daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
 		if (getnameinfo((struct sockaddr *) &saddr, saddrlen, peerhost,
 				sizeof(peerhost), NULL, 0, NI_NUMERICHOST))
 		{
-			sock_geterror("getnameinfo()", errmsgbuf, PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+			    "getnameinfo() failed");
 			goto error;
 		}
 
 		if (sock_initaddress(peerhost, portdata, &hints, &addrinfo, errmsgbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
 
-		if ((session->sockdata = sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errmsgbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
+		if ((session->sockdata = sock_open(peerhost, addrinfo, SOCKOPEN_CLIENT, 0, errmsgbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
 			goto error;
 	}
 	else		// Data connection is opened by the client toward the server
 	{
 		hints.ai_flags = AI_PASSIVE;
 
-		// Let's the server socket pick up a free network port for us
-		if (sock_initaddress(NULL, "0", &hints, &addrinfo, errmsgbuf, PCAP_ERRBUF_SIZE) == -1)
+		// Make the server socket pick up a free network port for us
+		if (sock_initaddress(NULL, NULL, &hints, &addrinfo, errmsgbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
 
-		if ((session->sockdata = sock_open(addrinfo, SOCKOPEN_SERVER, 1 /* max 1 connection in queue */, errmsgbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
+		if ((session->sockdata = sock_open(NULL, addrinfo, SOCKOPEN_SERVER, 1 /* max 1 connection in queue */, errmsgbuf, PCAP_ERRBUF_SIZE)) == INVALID_SOCKET)
 			goto error;
 
 		// get the complete sockaddr structure used in the data connection
 		saddrlen = sizeof(struct sockaddr_storage);
 		if (getsockname(session->sockdata, (struct sockaddr *) &saddr, &saddrlen) == -1)
 		{
-			sock_geterror("getsockname()", errmsgbuf, PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+			    "getsockname() failed");
 			goto error;
 		}
 
@@ -2094,7 +2115,8 @@ daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
 		if (getnameinfo((struct sockaddr *) &saddr, saddrlen, NULL,
 				0, portdata, sizeof(portdata), NI_NUMERICSERV))
 		{
-			sock_geterror("getnameinfo()", errmsgbuf, PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errmsgbuf, PCAP_ERRBUF_SIZE,
+			    "getnameinfo() failed");
 			goto error;
 		}
 	}
@@ -2162,7 +2184,8 @@ daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
 
 		if (socktemp == INVALID_SOCKET)
 		{
-			sock_geterror("accept()", errbuf, PCAP_ERRBUF_SIZE);
+			sock_geterrmsg(errbuf, PCAP_ERRBUF_SIZE,
+			   "accept() failed");
 			rpcapd_log(LOGPRIO_ERROR, "Accept of data connection failed: %s",
 			    errbuf);
 			goto error;
@@ -2337,7 +2360,7 @@ daemon_unpackapplyfilter(SOCKET sockctrl, SSL *ctrl_ssl, struct session *session
 	if (bf_prog.bf_len > RPCAP_BPF_MAXINSNS)
 	{
 		snprintf(errmsgbuf, PCAP_ERRBUF_SIZE,
-		    "Filter program is larger than the maximum size of %u instructions",
+		    "Filter program is larger than the maximum size of %d instructions",
 		    RPCAP_BPF_MAXINSNS);
 		return -2;
 	}
@@ -2818,19 +2841,25 @@ daemon_seraddr(struct sockaddr_storage *sockaddrin, struct rpcap_sockaddr *socka
 	if (sockaddrin == NULL) return;
 
 	// Warning: we support only AF_INET and AF_INET6
+	//
+	// Note: as noted above, the output structures are not
+	// neatly aligned on 4-byte boundaries, so we must fill
+	// in an aligned structure and then copy it to the output
+	// buffer with memcpy().
 	switch (sockaddrin->ss_family)
 	{
 	case AF_INET:
 		{
 		struct sockaddr_in *sockaddrin_ipv4;
-		struct rpcap_sockaddr_in *sockaddrout_ipv4;
+		struct rpcap_sockaddr_in sockaddrout_ipv4;
 
 		sockaddrin_ipv4 = (struct sockaddr_in *) sockaddrin;
-		sockaddrout_ipv4 = (struct rpcap_sockaddr_in *) sockaddrout;
-		sockaddrout_ipv4->family = htons(RPCAP_AF_INET);
-		sockaddrout_ipv4->port = htons(sockaddrin_ipv4->sin_port);
-		memcpy(&sockaddrout_ipv4->addr, &sockaddrin_ipv4->sin_addr, sizeof(sockaddrout_ipv4->addr));
-		memset(sockaddrout_ipv4->zero, 0, sizeof(sockaddrout_ipv4->zero));
+
+		sockaddrout_ipv4.family = htons(RPCAP_AF_INET);
+		sockaddrout_ipv4.port = htons(sockaddrin_ipv4->sin_port);
+		memcpy(&sockaddrout_ipv4.addr, &sockaddrin_ipv4->sin_addr, sizeof(sockaddrout_ipv4.addr));
+		memset(sockaddrout_ipv4.zero, 0, sizeof(sockaddrout_ipv4.zero));
+		memcpy(sockaddrout, &sockaddrout_ipv4, sizeof(struct rpcap_sockaddr_in));
 		break;
 		}
 
@@ -2838,15 +2867,16 @@ daemon_seraddr(struct sockaddr_storage *sockaddrin, struct rpcap_sockaddr *socka
 	case AF_INET6:
 		{
 		struct sockaddr_in6 *sockaddrin_ipv6;
-		struct rpcap_sockaddr_in6 *sockaddrout_ipv6;
+		struct rpcap_sockaddr_in6 sockaddrout_ipv6;
 
 		sockaddrin_ipv6 = (struct sockaddr_in6 *) sockaddrin;
-		sockaddrout_ipv6 = (struct rpcap_sockaddr_in6 *) sockaddrout;
-		sockaddrout_ipv6->family = htons(RPCAP_AF_INET6);
-		sockaddrout_ipv6->port = htons(sockaddrin_ipv6->sin6_port);
-		sockaddrout_ipv6->flowinfo = htonl(sockaddrin_ipv6->sin6_flowinfo);
-		memcpy(&sockaddrout_ipv6->addr, &sockaddrin_ipv6->sin6_addr, sizeof(sockaddrout_ipv6->addr));
-		sockaddrout_ipv6->scope_id = htonl(sockaddrin_ipv6->sin6_scope_id);
+
+		sockaddrout_ipv6.family = htons(RPCAP_AF_INET6);
+		sockaddrout_ipv6.port = htons(sockaddrin_ipv6->sin6_port);
+		sockaddrout_ipv6.flowinfo = htonl(sockaddrin_ipv6->sin6_flowinfo);
+		memcpy(&sockaddrout_ipv6.addr, &sockaddrin_ipv6->sin6_addr, sizeof(sockaddrout_ipv6.addr));
+		sockaddrout_ipv6.scope_id = htonl(sockaddrin_ipv6->sin6_scope_id);
+		memcpy(sockaddrout, &sockaddrout_ipv6, sizeof(struct rpcap_sockaddr_in6));
 		break;
 		}
 #endif
