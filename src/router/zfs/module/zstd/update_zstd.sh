@@ -1,5 +1,5 @@
 url="https://github.com/facebook/zstd"
-release="1.5.4"
+release="1.5.5"
 zstd="/tmp/zstd-${release}/"
 
 wget -O /tmp/zstd.tar.gz \
