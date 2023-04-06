@@ -2209,7 +2209,7 @@ arc_untransform(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 		 * (and generate an ereport) before leaving the ARC.
 		 */
 		ret = SET_ERROR(EIO);
-		spa_log_error(spa, zb);
+		spa_log_error(spa, zb, &buf->b_hdr->b_birth);
 		(void) zfs_ereport_post(FM_EREPORT_ZFS_AUTHENTICATION,
 		    spa, NULL, zb, NULL, 0);
 	}
@@ -4465,7 +4465,7 @@ arc_evict(void)
 	 */
 	int64_t prune = 0;
 	int64_t dn = wmsum_value(&arc_sums.arcstat_dnode_size);
-	w = wt * (arc_meta >> 16) >> 16;
+	w = wt * (int64_t)(arc_meta >> 16) >> 16;
 	if (zfs_refcount_count(&arc_mru->arcs_size[ARC_BUFC_METADATA]) +
 	    zfs_refcount_count(&arc_mfu->arcs_size[ARC_BUFC_METADATA]) -
 	    zfs_refcount_count(&arc_mru->arcs_esize[ARC_BUFC_METADATA]) -
@@ -4481,7 +4481,7 @@ arc_evict(void)
 		arc_prune_async(prune);
 
 	/* Evict MRU metadata. */
-	w = wt * (arc_meta * arc_pm >> 48) >> 16;
+	w = wt * (int64_t)(arc_meta * arc_pm >> 48) >> 16;
 	e = MIN((int64_t)(asize - arc_c), (int64_t)(mrum - w));
 	bytes = arc_evict_impl(arc_mru, ARC_BUFC_METADATA, e);
 	total_evicted += bytes;
@@ -4489,7 +4489,7 @@ arc_evict(void)
 	asize -= bytes;
 
 	/* Evict MFU metadata. */
-	w = wt * (arc_meta >> 16) >> 16;
+	w = wt * (int64_t)(arc_meta >> 16) >> 16;
 	e = MIN((int64_t)(asize - arc_c), (int64_t)(m - w));
 	bytes = arc_evict_impl(arc_mfu, ARC_BUFC_METADATA, e);
 	total_evicted += bytes;
@@ -4498,7 +4498,7 @@ arc_evict(void)
 
 	/* Evict MRU data. */
 	wt -= m - total_evicted;
-	w = wt * (arc_pd >> 16) >> 16;
+	w = wt * (int64_t)(arc_pd >> 16) >> 16;
 	e = MIN((int64_t)(asize - arc_c), (int64_t)(mrud - w));
 	bytes = arc_evict_impl(arc_mru, ARC_BUFC_DATA, e);
 	total_evicted += bytes;
@@ -5540,7 +5540,8 @@ arc_read_done(zio_t *zio)
 			ASSERT(BP_IS_PROTECTED(bp));
 			error = SET_ERROR(EIO);
 			if ((zio->io_flags & ZIO_FLAG_SPECULATIVE) == 0) {
-				spa_log_error(zio->io_spa, &acb->acb_zb);
+				spa_log_error(zio->io_spa, &acb->acb_zb,
+				    &zio->io_bp->blk_birth);
 				(void) zfs_ereport_post(
 				    FM_EREPORT_ZFS_AUTHENTICATION,
 				    zio->io_spa, NULL, &acb->acb_zb, zio, 0);
@@ -5833,7 +5834,7 @@ top:
 				 */
 				rc = SET_ERROR(EIO);
 				if ((zio_flags & ZIO_FLAG_SPECULATIVE) == 0) {
-					spa_log_error(spa, zb);
+					spa_log_error(spa, zb, &hdr->b_birth);
 					(void) zfs_ereport_post(
 					    FM_EREPORT_ZFS_AUTHENTICATION,
 					    spa, NULL, zb, NULL, 0);
