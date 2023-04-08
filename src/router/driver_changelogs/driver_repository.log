@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r7226 | brainslayer | 2023-04-08 13:34:38 +0600 (Sat, 08 Apr 2023) | 1 line
+
+ignore sync here
+------------------------------------------------------------------------
+r7225 | brainslayer | 2023-04-08 13:32:50 +0600 (Sat, 08 Apr 2023) | 1 line
+
+ignore sync here
+------------------------------------------------------------------------
+r7224 | brainslayer | 2023-04-08 13:22:13 +0600 (Sat, 08 Apr 2023) | 1 line
+
+send reponse a little bit earlier. doesnt matter anyway as it seems
+------------------------------------------------------------------------
+r7223 | brainslayer | 2023-04-08 13:10:51 +0600 (Sat, 08 Apr 2023) | 1 line
+
+rework initial channel changing for faster assoc
+------------------------------------------------------------------------
+r7222 | brainslayer | 2023-04-08 12:55:25 +0600 (Sat, 08 Apr 2023) | 1 line
+
+rework initial channel changing for faster assoc
+------------------------------------------------------------------------
+r7221 | brainslayer | 2023-04-08 12:54:14 +0600 (Sat, 08 Apr 2023) | 1 line
+
+rework initial channel changing for faster assoc
+------------------------------------------------------------------------
 r7220 | brainslayer | 2023-04-07 10:23:05 +0600 (Fri, 07 Apr 2023) | 1 line
 
 cleanup code and add documentation
