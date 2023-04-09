@@ -1388,6 +1388,9 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 	return 1;
 }
 
+#define VHT160RANGE(offset) (int[]) { offset+50, offset+30, offset+10, offset-10, offset-30, offset-50, 0 }
+#define VHT80RANGE(offset) (int[]) { offset+30, offset+10, offset-10, offset-30, 0 }
+#define VHT40RANGE(offset) (int[]) { offset+20, offset-20, 0 }
 /* check all channel combinations and sort out incompatible configurations */
 static void check_validchannels(struct wifi_channels *list, int bw, int nooverlap)
 {
@@ -1406,7 +1409,6 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 		chan->lll = 0;
 
 		if (bw == 40) {
-			int minus[] = { -20, 0 };
 			if (check_ranges("LOWER", list, chan, (int[]) { -20, 0 }, 40)) {
 				chan->luu = 1;
 			}
@@ -1417,65 +1419,65 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
-			if (check_ranges("LL", list, chan, (int[]) { -30 - 30, -20, -40, 0 }, 80)) {
+			if (check_ranges("LL", list, chan, VHT80RANGE(-30), 80)) {
 				chan->lul = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("UL", list, chan, (int[]) { -10 + 30, -40, -20, 0 }, 80)) {
+			if (check_ranges("UU", list, chan, VHT80RANGE(30), 80)) {
+				chan->ulu = 1;
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("UL", list, chan, VHT80RANGE(-10), 80)) {
 				chan->luu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LU", list, chan, (int[]) { 10 - 30, 20, 40, 0 }, 80)) {
+			if (check_ranges("LU", list, chan, VHT80RANGE(10), 80)) {
 				chan->ull = 1;
-				if (nooverlap)
-					goto next;
-			}
-			if (check_ranges("UU", list, chan, (int[]) { /*30 - 30, */ 20, 40, 60, 0 }, 80)) {
-				chan->ulu = 1;
 				if (nooverlap)
 					goto next;
 			}
 		}
 		if (bw == 160) {
-			if (check_ranges("LLL", list, chan, (int[]) { -70 - 70, -20, -40, -60, -80, -120, -140, 0 }, 160)) {
+			if (check_ranges("LLL", list, chan, VHT160RANGE(-70), 160)) {
 				chan->lll = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LLU", list, chan, (int[]) { -50 - 70, 20, -40, -60, -80, -100, -120, 0 }, 160)) {
+			if (check_ranges("UUU", list, chan, VHT160RANGE(70), 160)) {
+				chan->uuu = 1;
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("LLU", list, chan, VHT160RANGE(-50), 160)) {
 				chan->llu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LUL", list, chan, (int[]) { -30 - 70, 20, -40, -60, -80, -100, 0 }, 160)) {
-				chan->lul = 1;
-				if (nooverlap)
-					goto next;
-			}
-			if (check_ranges("LUU", list, chan, (int[]) { -10 - 70, 20, -20, -40, -60, -80, 0 }, 160)) {
-				chan->luu = 1;
-				if (nooverlap)
-					goto next;
-			}
-			if (check_ranges("ULL", list, chan, (int[]) { 10 - 70, -20, 20, 40, 60, 80, 0 }, 160)) {
-				chan->ull = 1;
-				if (nooverlap)
-					goto next;
-			}
-			if (check_ranges("ULU", list, chan, (int[]) { 30 - 70, 20, 40, 60, 80, 100, 0 }, 160)) {
-				chan->ulu = 1;
-				if (nooverlap)
-					goto next;
-			}
-			if (check_ranges("UUL", list, chan, (int[]) { 50 - 70, 20, 40, 60, 80, 100, 120, 0 }, 160)) {
+			if (check_ranges("UUL", list, chan, VHT160RANGE(50), 160)) {
 				chan->uul = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("UUU", list, chan, (int[]) { /* 0 , */ 20, 40, 60, 80, 100, 120, 140, 0 }, 160)) {
-				chan->uuu = 1;
+			if (check_ranges("LUL", list, chan, VHT160RANGE(-30), 160)) {
+				chan->lul = 1;
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("ULU", list, chan, VHT160RANGE(30), 160)) {
+				chan->ulu = 1;
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("LUU", list, chan, VHT160RANGE(-10), 160)) {
+				chan->luu = 1;
+				if (nooverlap)
+					goto next;
+			}
+			if (check_ranges("ULL", list, chan, VHT160RANGE(10), 160)) {
+				chan->ull = 1;
 				if (nooverlap)
 					goto next;
 			}
