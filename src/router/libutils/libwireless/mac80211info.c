@@ -1378,17 +1378,37 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 	int range;
 	while ((range = ranges[i++])) {
 		if (!isinlist(list, chan, range, mhz)) {
-//                      fprintf(stderr, "[%s] %d range check failed at %d\n", name, chan->freq, range);
+			fprintf(stderr, "[%s] %d range check failed at %d\n", name, chan->freq, range);
 			return 0;
 		}
 	}
-//      fprintf(stderr, "[%s] %d success\n", name, chan->freq);
+	fprintf(stderr, "[%s] %d success\n", name, chan->freq);
 	return 1;
 }
 
-#define VHT160RANGE(offset) (int[]) { offset + 70, offset + 50, offset + 30, offset + 10, offset - 10, offset - 30, offset - 50, offset - 70, 0 }
-#define VHT80RANGE(offset) (int[]) { offset + 30, offset + 10, offset - 10, offset - 30, 0 }
-#define VHT40RANGE(offset) (int[]) { offset + 20, offset - 20, 0 }
+/* zero ranges should not be checked since this is our end terminator */
+#define FILLOFFSET(value) \
+	if ((offset + value)) \
+	    range[idx++] = offset + value;
+
+static int *VHTRANGE(char *range, int width, int offset)
+{
+	static int range[9];
+	int idx = 0;
+	if (width == 160) {
+		FILLOFFSET(70);
+		FILLOFFSET(50);
+		FILLOFFSET(-50);
+		FILLOFFSET(-70);
+	}
+	FILLOFFSET(30);
+	FILLOFFSET(10);
+	FILLOFFSET(-10);
+	FILLOFFSET(-30);
+	range[idx++] = 0;
+	return range;
+}
+
 /* check all channel combinations and sort out incompatible configurations */
 static void check_validchannels(struct wifi_channels *list, int bw, int nooverlap)
 {
@@ -1417,64 +1437,64 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
-			if (check_ranges("LL", list, chan, VHT80RANGE(-30), 80)) {
+			if (check_ranges("LL", list, chan, VHTRANGE(range, 80, -30), 80)) {
 				chan->lul = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("UU", list, chan, VHT80RANGE(30), 80)) {
+			if (check_ranges("UU", list, chan, VHTRANGE(range, 80, 30), 80)) {
 				chan->ulu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("UL", list, chan, VHT80RANGE(-10), 80)) {
+			if (check_ranges("UL", list, chan, VHTRANGE(range, 80, -10), 80)) {
 				chan->luu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LU", list, chan, VHT80RANGE(10), 80)) {
+			if (check_ranges("LU", list, chan, VHTRANGE(range, 80, 10), 80)) {
 				chan->ull = 1;
 				if (nooverlap)
 					goto next;
 			}
 		}
 		if (bw == 160) {
-			if (check_ranges("LLL", list, chan, VHT160RANGE(-70), 160)) {
+			if (check_ranges("LLL", list, chan, VHTRANGE(range, 160, -70), 160)) {
 				chan->lll = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("UUU", list, chan, VHT160RANGE(70), 160)) {
+			if (check_ranges("UUU", list, chan, VHTRANGE(range, 160, 70), 160)) {
 				chan->uuu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LLU", list, chan, VHT160RANGE(-50), 160)) {
+			if (check_ranges("LLU", list, chan, VHTRANGE(range, 160, -50), 160)) {
 				chan->llu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("UUL", list, chan, VHT160RANGE(50), 160)) {
+			if (check_ranges("UUL", list, chan, VHTRANGE(range, 160, 50), 160)) {
 				chan->uul = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LUL", list, chan, VHT160RANGE(-30), 160)) {
+			if (check_ranges("LUL", list, chan, VHTRANGE(range, 160, -30), 160)) {
 				chan->lul = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("ULU", list, chan, VHT160RANGE(30), 160)) {
+			if (check_ranges("ULU", list, chan, VHTRANGE(range, 160, 30), 160)) {
 				chan->ulu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("LUU", list, chan, VHT160RANGE(-10), 160)) {
+			if (check_ranges("LUU", list, chan, VHTRANGE(range, 160, -10), 160)) {
 				chan->luu = 1;
 				if (nooverlap)
 					goto next;
 			}
-			if (check_ranges("ULL", list, chan, VHT160RANGE(10), 160)) {
+			if (check_ranges("ULL", list, chan, VHTRANGE(range, 160, 10), 160)) {
 				chan->ull = 1;
 				if (nooverlap)
 					goto next;
