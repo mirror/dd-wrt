@@ -1378,11 +1378,11 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 	int range;
 	while ((range = ranges[i++])) {
 		if (!isinlist(list, chan, range, mhz)) {
-			fprintf(stderr, "[%s] %d range check failed at %d\n", name, chan->freq, range);
+//			fprintf(stderr, "[%s] %d range check failed at %d\n", name, chan->freq, range);
 			return 0;
 		}
 	}
-	fprintf(stderr, "[%s] %d success\n", name, chan->freq);
+//	fprintf(stderr, "[%s] %d success\n", name, chan->freq);
 	return 1;
 }
 
