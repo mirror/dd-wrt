@@ -560,47 +560,46 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
 	// struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
-		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_RX_BYTES] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_RX_BYTES64] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_TX_BYTES64] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_RX_PACKETS] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_BEACON_RX] = { .type = NLA_U64},
-		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_SIGNAL_AVG] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_T_OFFSET] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_TX_BITRATE] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_RX_BITRATE] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_LLID] = { .type = NLA_U16 },
-		[NL80211_STA_INFO_PLID] = { .type = NLA_U16 },
-		[NL80211_STA_INFO_PLINK_STATE] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_TX_RETRIES] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_FAILED] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_BEACON_LOSS] = { .type = NLA_U32},
-		[NL80211_STA_INFO_RX_DROP_MISC] = { .type = NLA_U64},
-		[NL80211_STA_INFO_STA_FLAGS] =
-			{ .minlen = sizeof(struct nl80211_sta_flag_update) },
-		[NL80211_STA_INFO_LOCAL_PM] = { .type = NLA_U32},
-		[NL80211_STA_INFO_PEER_PM] = { .type = NLA_U32},
-		[NL80211_STA_INFO_NONPEER_PM] = { .type = NLA_U32},
-		[NL80211_STA_INFO_CHAIN_SIGNAL] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_CHAIN_SIGNAL_AVG] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_TID_STATS] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_BSS_PARAM] = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_RX_DURATION] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_TX_DURATION] = { .type = NLA_U64 },
+		[NL80211_STA_INFO_INACTIVE_TIME] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_BYTES] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_BYTES] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_BYTES64] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_TX_BYTES64] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_RX_PACKETS] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_BEACON_RX] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_SIGNAL_AVG] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_T_OFFSET] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_LLID] = {.type = NLA_U16 },
+		[NL80211_STA_INFO_PLID] = {.type = NLA_U16 },
+		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_TX_RETRIES] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_FAILED] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_BEACON_LOSS] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_DROP_MISC] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update) },
+		[NL80211_STA_INFO_LOCAL_PM] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_PEER_PM] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_NONPEER_PM] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_CHAIN_SIGNAL] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_CHAIN_SIGNAL_AVG] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_TID_STATS] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_BSS_PARAM] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_RX_DURATION] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_TX_DURATION] = {.type = NLA_U64 },
 		[NL80211_STA_INFO_ACK_SIGNAL] = {.type = NLA_U8 },
-		[NL80211_STA_INFO_ACK_SIGNAL_AVG] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_AIRTIME_LINK_METRIC] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_CONNECTED_TO_AS] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_CONNECTED_TO_GATE] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_RX_COMPRESSED] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_COMPRESSED] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_RX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_TX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_RADIONAME] = { .type = NLA_STRING },
+		[NL80211_STA_INFO_ACK_SIGNAL_AVG] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_AIRTIME_LINK_METRIC] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_CONNECTED_TO_AS] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_CONNECTED_TO_GATE] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_RX_COMPRESSED] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_COMPRESSED] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_COMPRESSED_BYTES64] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_TX_COMPRESSED_BYTES64] = {.type = NLA_U64 },
+		[NL80211_STA_INFO_RADIONAME] = {.type = NLA_STRING },
 	};
 
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
@@ -823,7 +822,6 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		if (is_ath10k(ifname + 1))
 			data.iftype = 1;
 		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
-
 
 		char *oldhistory = history;
 		if (oldhistory) {
@@ -1388,9 +1386,9 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 	return 1;
 }
 
-#define VHT160RANGE(offset) (int[]) { offset+50, offset+30, offset+10, offset-10, offset-30, offset-50, 0 }
-#define VHT80RANGE(offset) (int[]) { offset+30, offset+10, offset-10, offset-30, 0 }
-#define VHT40RANGE(offset) (int[]) { offset+20, offset-20, 0 }
+#define VHT160RANGE(offset) (int[]) { offset + 70, offset + 50, offset + 30, offset + 10, offset - 10, offset - 30, offset - 50, offset - 70, 0 }
+#define VHT80RANGE(offset) (int[]) { offset + 30, offset + 10, offset - 10, offset - 30, 0 }
+#define VHT40RANGE(offset) (int[]) { offset + 20, offset - 20, 0 }
 /* check all channel combinations and sort out incompatible configurations */
 static void check_validchannels(struct wifi_channels *list, int bw, int nooverlap)
 {
