@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r7233 | brainslayer | 2023-04-09 14:27:28 +0600 (Sun, 09 Apr 2023) | 1 line
+
+add same channel change mechanism zu 10.4 series to speedup assoc time
+------------------------------------------------------------------------
+r7232 | brainslayer | 2023-04-09 14:15:26 +0600 (Sun, 09 Apr 2023) | 1 line
+
+add same channel change mechanism zu 10.4 series to speedup assoc time
+------------------------------------------------------------------------
+r7231 | brainslayer | 2023-04-08 15:43:26 +0600 (Sat, 08 Apr 2023) | 1 line
+
+must reset channel
+------------------------------------------------------------------------
 r7230 | brainslayer | 2023-04-08 14:33:10 +0600 (Sat, 08 Apr 2023) | 1 line
 
 must reset channel
