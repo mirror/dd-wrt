@@ -1393,7 +1393,6 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 
 static int *VHTRANGE(char *range, int width, int offset)
 {
-	static int range[9];
 	int idx = 0;
 	if (width == 160) {
 		FILLOFFSET(70);
@@ -1434,7 +1433,7 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 				chan->ull = 1;
 			}
 		}
-
+		int range[9]; // maximum of 9 entries
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
 			if (check_ranges("LL", list, chan, VHTRANGE(range, 80, -30), 80)) {
