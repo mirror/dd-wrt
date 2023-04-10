@@ -16,9 +16,8 @@
    <http://www.gnu.org/licenses/>.  */
 
 /* vfork() is just a special case of clone().  */
-#include "asm.h"
-#include "regdef.h"
-
+#include <extra/asm.h>
+#include <extra/regdef.h>
 
 LOCALSZ= 1
 FRAMESZ= (((NARGSAVE+LOCALSZ)*SZREG)+ALSZ)&ALMASK
