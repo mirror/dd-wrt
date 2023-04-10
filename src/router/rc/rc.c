@@ -64,9 +64,6 @@
 #ifdef HAVE_GPIOWATCHER
 #include "gpiowatcher.c"
 #endif
-#ifdef HAVE_WLANLED
-#include "wlanled.c"
-#endif
 #include "ttraff.c"
 #ifdef HAVE_WPS
 #include "wpswatcher.c"

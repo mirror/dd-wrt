@@ -1,3 +1,4 @@
+#ifdef HAVE_WLANLED
 /*
  *   Copyright (C) 2012 Felix Fietkau <nbd@openwrt.org>
  *
@@ -344,7 +345,7 @@ static void setup_sigint(void)
 	sigaction(SIGINT, &s, NULL);
 }
 
-static int wlanled_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int ch;
 
@@ -384,10 +385,10 @@ static int wlanled_main(int argc, char **argv)
 		fprintf(stderr, "Failed to connect to nl80211\n");
 		return 1;
 	}
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
 		fprintf(stderr, "can't fork\n");
-		exit(0);
+		_exit(0);
 		break;
 	case 0:
 		(void)setsid();
@@ -402,3 +403,9 @@ static int wlanled_main(int argc, char **argv)
 
 	return 0;
 }
+#else
+int main(int argc, char **argv)
+{
+}
+
+#endif

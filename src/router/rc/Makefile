@@ -1111,9 +1111,9 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
 %.o : %.c
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wland et writetool
+all: rc init resetbutton wlanled wland et writetool
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1128,6 +1128,35 @@ ifneq ($(CONFIG_RT2880),y)
 endif
 	install init $(INSTALLDIR)/sbin	
 	install resetbutton $(INSTALLDIR)/sbin	
+
+ifeq ($(CONFIG_UBNTM),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_WA850RE),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_PERU),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_ALFANX),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_CPE880),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_HABANERO),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_CARAMBOLA),y)
+ifeq ($(CONFIG_FMS2111),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+endif
+ifeq ($(CONFIG_CPE890),y)
+	install wlanled $(INSTALLDIR)/sbin
+endif
+
+
 ifeq ($(CONFIG_QTN),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc qtn_monitor
 endif
@@ -1195,32 +1224,6 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc mtd
 ifeq ($(CONFIG_GPIOWATCHER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpiowatcher
-endif
-ifeq ($(CONFIG_UBNTM),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-ifeq ($(CONFIG_WA850RE),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-ifeq ($(CONFIG_PERU),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-ifeq ($(CONFIG_ALFANX),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-ifeq ($(CONFIG_CPE880),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-ifeq ($(CONFIG_HABANERO),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-ifeq ($(CONFIG_CARAMBOLA),y)
-ifeq ($(CONFIG_FMS2111),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
-endif
-endif
-ifeq ($(CONFIG_CPE890),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtracking
@@ -1296,6 +1299,10 @@ wland: wland.o
 resetbutton: resetbutton.o
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils
+
+wlanled: wlanled.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libnl-tiny -lnl-tiny
 
 init:
 	@echo "[LD] init"
