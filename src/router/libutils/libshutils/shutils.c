@@ -371,9 +371,9 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 
 #endif
 
-	switch (pid = vfork()) {
+	switch (pid = fork()) {
 	case -1:		/* error */
-		perror("vfork");
+		perror("fork");
 		return errno;
 	case 0:		/* child */
 		/*
