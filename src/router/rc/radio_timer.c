@@ -18,14 +18,27 @@
 #include <utils.h>
 #include <wlutils.h>
 
-extern void handle_wireless(void);
+#define start_service(a) eval("startservice",a);
+#define start_service_force(a) eval("startservice",a,"-f");
+#define start_service_f(a) eval("startservice_f",a);
+#define start_service_force_f(a) eval("startservice_f",a,"-f");
+#define start_services() eval("startservices");
+#define stop_service(a) eval("stopservice",a);
+#define stop_service_force(a) eval("stopservice","-f",a);
+#define stop_running(a) eval("stop_running");
+#define stop_service_f(a) eval("stopservice_f",a);
+#define stop_service_force_f(a) eval("stopservice_f",a,"-f");
+#define stop_services() eval("stopservices");
+#define restart(a) eval("restart",a);
+#define restart_f(a) eval("restart_f",a);
 
-static int radio_timer_main(int argc, char **argv)
+
+int main(int argc, char **argv)
 {
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
 		// can't fork
-		exit(0);
+		_exit(0);
 		break;
 	case 0:
 		/* 
