@@ -1387,23 +1387,24 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 }
 
 /* zero ranges should not be checked since this is our end terminator */
-#define FILLOFFSET(value) \
-	if ((offset + value)) \
+static void FILLOFFSET(char *range, int offset, int value) {
+	if ((offset + value))
 	    range[idx++] = offset + value;
+}
 
 static int *VHTRANGE(char *range, int width, int offset)
 {
 	int idx = 0;
 	if (width == 160) {
-		FILLOFFSET(70);
-		FILLOFFSET(50);
-		FILLOFFSET(-50);
-		FILLOFFSET(-70);
+		FILLOFFSET(range, offset, 70);
+		FILLOFFSET(range, offset, 50);
+		FILLOFFSET(range, offset, -50);
+		FILLOFFSET(range, offset, -70);
 	}
-	FILLOFFSET(30);
-	FILLOFFSET(10);
-	FILLOFFSET(-10);
-	FILLOFFSET(-30);
+	FILLOFFSET(range, offset, 30);
+	FILLOFFSET(range, offset, 10);
+	FILLOFFSET(range, offset, -10);
+	FILLOFFSET(range, offset, -30);
 	range[idx++] = 0;
 	return range;
 }
