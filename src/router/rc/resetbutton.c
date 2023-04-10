@@ -1795,7 +1795,7 @@ int main(int argc, char *argv[])
 	/* 
 	 * Run it under background 
 	 */
-	switch (vfork()) {
+	switch (fork()) {
 	case -1:
 		DEBUG("can't vfork\n");
 		exit(0);

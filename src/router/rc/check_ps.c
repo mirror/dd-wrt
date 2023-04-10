@@ -420,11 +420,11 @@ static int check_ps_main(int argc, char **argv)
 	switch (pid) {
 	case -1:
 		perror("vfork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		do_mon();
-		exit(0);
+		_exit(0);
 		break;
 	default:
 		_exit(0);

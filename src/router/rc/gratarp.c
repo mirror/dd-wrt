@@ -198,7 +198,7 @@ static int gratarp_main(int argc, char **argv)
 	switch (pid) {
 	case -1:
 		perror("vfork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		gratarp(argv[1]);

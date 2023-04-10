@@ -154,7 +154,7 @@ pid_t ddrun_shell(int timeout, int nowait)
 	if (waitfor(STDIN_FILENO, timeout) <= 0)
 		return 0;
 
-	switch ((pid = vfork())) {
+	switch ((pid = fork())) {
 	case -1:
 		perror("vfork");
 		return 0;
@@ -200,7 +200,7 @@ pid_t ddrun_shell(int timeout, int nowait)
 		 * We're still here? Some error happened. 
 		 */
 		perror(SHELL);
-		exit(errno);
+		_exit(errno);
 	default:
 		if (nowait)
 			return pid;

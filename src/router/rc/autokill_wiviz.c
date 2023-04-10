@@ -15,14 +15,14 @@ static int autokill_wiviz_main(int argc, char **argv)
 	switch (pid) {
 	case -1:
 		perror("vfork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		sleep(10);
 		killall("wiviz", SIGTERM);
 		unlink("/tmp/wiviz2-cfg");
 		unlink("/tmp/wiviz2-dump");
-		exit(0);
+		_exit(0);
 		break;
 	default:
 		_exit(0);
