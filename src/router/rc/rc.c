@@ -52,7 +52,6 @@
 #include "check_ps.c"
 //#include "resetbutton.c"
 #include "listen.c"
-#include "watchdog.c"
 #ifdef HAVE_WOL
 #include "wol.c"
 #endif
@@ -256,9 +255,6 @@ static struct MAIN maincalls[] = {
 	{ "restart", NULL, restart_main },
 	{ "stop_running", NULL, stop_running_main },
 	{ "softwarerevision", NULL, softwarerevision_main },
-#if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
-	{ "watchdog", NULL, &watchdog_main },
-#endif
 	// {"nvram", NULL, &nvram_main},
 #ifdef HAVE_ROAMING
 //      {"roaming_daemon", NULL, &roaming_daemon_main},

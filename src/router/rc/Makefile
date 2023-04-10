@@ -1113,7 +1113,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial radio_timer
+all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial radio_timer watchdog
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1159,7 +1159,12 @@ endif
 	install process_monitor $(INSTALLDIR)/sbin
 	install redial $(INSTALLDIR)/sbin
 	install radio_timer $(INSTALLDIR)/sbin
-
+ifneq ($(CONFIG_MICRO),y)
+	install watchdog $(INSTALLDIR)/sbin
+endif
+ifeq ($(CONFIG_ADM5120),y)
+	install watchdog $(INSTALLDIR)/sbin
+endif
 
 ifeq ($(CONFIG_QTN),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc qtn_monitor
@@ -1260,12 +1265,6 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
 #	cd $(INSTALLDIR)/sbin && ln -sf rc wland
-ifneq ($(CONFIG_MICRO),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
-endif
-ifeq ($(CONFIG_ADM5120),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
-endif
 ifeq ($(CONFIG_NORTHSTAR),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc rtkswitch
 endif
@@ -1319,6 +1318,10 @@ process_monitor: process_monitor.o
 redial: redial.o
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lshutils -lnvram
+
+watchdog: watchdog.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
 
 radio_timer: radio_timer.o
 	@echo "[LD] $@"
