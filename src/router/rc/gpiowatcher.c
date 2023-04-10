@@ -417,9 +417,9 @@ static int gpiowatcher_main(int argc, char *argv[])
 		fprintf(stderr, "g = %d, i = %d, o= %d\n", gpio, interval, exit_only);
 
 	if (use_fork) {
-		switch (fork()) {
+		switch (vfork()) {
 		case -1:
-			fprintf(stderr, "can't fork\n");
+			fprintf(stderr, "can't vfork\n");
 			exit(0);
 			break;
 		case 0:
@@ -427,7 +427,7 @@ static int gpiowatcher_main(int argc, char *argv[])
 			 * child process 
 			 */
 			if (debug)
-				fprintf(stderr, "fork ok\n");
+				fprintf(stderr, "vfork ok\n");
 			(void)setsid();
 			break;
 		default:

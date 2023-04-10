@@ -150,9 +150,9 @@ static int roaming_daemon(void)
 static int roaming_daemon_main(int argc, char *argv[])
 {
 
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
-		perror("fork failed");
+		perror("vfork failed");
 		exit(1);
 		break;
 	case 0:

@@ -10,10 +10,10 @@ static int event_main(int argc, char **argv)
 {
 	pid_t pid;
 
-	pid = fork();
+	pid = vfork();
 	switch (pid) {
 	case -1:
-		perror("fork failed");
+		perror("vfork failed");
 		exit(1);
 		break;
 	case 0:

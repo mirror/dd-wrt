@@ -154,9 +154,9 @@ pid_t ddrun_shell(int timeout, int nowait)
 	if (waitfor(STDIN_FILENO, timeout) <= 0)
 		return 0;
 
-	switch ((pid = fork())) {
+	switch ((pid = vfork())) {
 	case -1:
-		perror("fork");
+		perror("vfork");
 		return 0;
 	case 0:
 		/* 

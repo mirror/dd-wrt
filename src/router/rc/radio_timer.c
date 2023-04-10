@@ -22,16 +22,16 @@ extern void handle_wireless(void);
 
 static int radio_timer_main(int argc, char **argv)
 {
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
-		// can't fork
+		// can't vfork
 		exit(0);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
-		// fork ok
+		// vfork ok
 		(void)setsid();
 		break;
 	default:

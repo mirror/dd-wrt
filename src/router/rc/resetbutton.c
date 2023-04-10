@@ -1795,16 +1795,16 @@ int main(int argc, char *argv[])
 	/* 
 	 * Run it under background 
 	 */
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
-		DEBUG("can't fork\n");
+		DEBUG("can't vfork\n");
 		exit(0);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
-		DEBUG("fork ok\n");
+		DEBUG("vfork ok\n");
 		(void)setsid();
 		break;
 	default:
