@@ -19,6 +19,7 @@
 #include <rc.h>
 #include <cy_conf.h>
 #include <utils.h>
+#include "ntp.c"
 
 static void ntp_main(timer_t t, int arg);
 extern void do_redial(timer_t t, int arg);
@@ -46,12 +47,12 @@ void monitor_signal(int sig)
 		clear_process_timers();
 }
 
-static int process_monitor_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
 		// can't fork
-		exit(0);
+		_exit(0);
 		break;
 	case 0:
 		/* 

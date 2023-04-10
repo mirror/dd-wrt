@@ -51,7 +51,6 @@
 #include "ledtool.c"
 #include "check_ps.c"
 //#include "resetbutton.c"
-#include "process_monitor.c"
 #include "listen.c"
 #include "radio_timer.c"
 #include "watchdog.c"
@@ -75,7 +74,6 @@
 #endif
 #include "event.c"
 #include "gratarp.c"
-#include "ntp.c"
 
 struct MAIN {
 	char *callname;
@@ -358,8 +356,6 @@ static struct MAIN maincalls[] = {
 	{ "restart_dns", "restart_dns", NULL },
 	{ "ledtool", NULL, ledtool_main },
 	{ "check_ps", NULL, check_ps_main },
-//      {"resetbutton", NULL, resetbutton_main},
-	{ "process_monitor", NULL, process_monitor_main },
 	{ "listen", NULL, listen_main },
 	{ "radio_timer", NULL, radio_timer_main },
 #ifdef HAVE_MADWIFI

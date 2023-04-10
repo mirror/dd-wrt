@@ -416,15 +416,15 @@ static int check_ps_main(int argc, char **argv)
 		return 1;
 	}
 
-	pid = fork();
+	pid = vfork();
 	switch (pid) {
 	case -1:
 		perror("fork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		do_mon();
-		exit(0);
+		_exit(0);
 		break;
 	default:
 		_exit(0);
