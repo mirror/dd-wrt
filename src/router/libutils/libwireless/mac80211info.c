@@ -1398,7 +1398,6 @@ static void FILLOFFSET(int *idx, int *range, int offset, int value) {
 static int *VHTRANGE(int *range, int width, int offset)
 {
 	int idx = 0;
-//	fprintf(stderr, "vhtrange: width %d, offset %d\n", width, offset);
 	if (width == 160) {
 		FILLOFFSET(&idx,range, offset, 70);
 		FILLOFFSET(&idx,range, offset, 50);
@@ -1410,9 +1409,6 @@ static int *VHTRANGE(int *range, int width, int offset)
 	FILLOFFSET(&idx,range, offset, -10);
 	FILLOFFSET(&idx,range, offset, -30);
 	range[idx++] = 0;
-//	int i;
-//	for (i=0;i<idx;i++)
-//	    fprintf(stderr, "result %d\n", range[i]);
 	return range;
 }
 
