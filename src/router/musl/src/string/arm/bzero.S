@@ -51,14 +51,14 @@ bzero:
 	push	{r2, lr}
 	mov	r2, r1
 	mov	r1, #0
-	bl	HIDDEN_JUMPTARGET(memset)
+	bl	memset
 	POP_RET
 #else
 
 bzero:
 	mov	r2, r1
 	mov	r1, #0
-	b	HIDDEN_JUMPTARGET(memset)
+	b	memset
 #endif
 
 
