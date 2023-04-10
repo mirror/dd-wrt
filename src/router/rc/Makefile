@@ -1113,7 +1113,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial radio_timer watchdog
+all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial radio_timer watchdog hotplug servicemanager
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1159,6 +1159,8 @@ endif
 	install process_monitor $(INSTALLDIR)/sbin
 	install redial $(INSTALLDIR)/sbin
 	install radio_timer $(INSTALLDIR)/sbin
+	install hotplug $(INSTALLDIR)/sbin
+	install servicemanager $(INSTALLDIR)/sbin
 ifneq ($(CONFIG_MICRO),y)
 	install watchdog $(INSTALLDIR)/sbin
 endif
@@ -1213,7 +1215,6 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
-	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
 #	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
 	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
@@ -1273,16 +1274,16 @@ ifeq ($(CONFIG_PPPOESERVER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc delpppoeconnected
 	cd $(INSTALLDIR)/sbin && ln -sf rc addpppoetime
 endif
-	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
-	cd $(INSTALLDIR)/sbin && ln -sf rc startservice_f
-	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
-	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice_f
-	cd $(INSTALLDIR)/sbin && ln -sf rc startservices
-	cd $(INSTALLDIR)/sbin && ln -sf rc start_single_service
-	cd $(INSTALLDIR)/sbin && ln -sf rc stopservices
-	cd $(INSTALLDIR)/sbin && ln -sf rc restart
-	cd $(INSTALLDIR)/sbin && ln -sf rc restart_f
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_running
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager startservice
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager startservice_f
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager stopservice
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager stopservice_f
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager startservices
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager start_single_service
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager stopservices
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager restart
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager restart_f
+	cd $(INSTALLDIR)/sbin && ln -sf servicemanager stop_running
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_nfmark
 ifeq ($(CONFIG_PPTPD),y)
@@ -1316,6 +1317,14 @@ process_monitor: process_monitor.o
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram -lutils
 
 redial: redial.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lshutils -lnvram
+
+servicemanager: servicemanager.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
+
+hotplug: hotplug.o
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lshutils -lnvram
 
