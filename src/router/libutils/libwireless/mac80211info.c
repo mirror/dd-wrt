@@ -1377,6 +1377,7 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 	int i = 0;
 	int range;
 	while ((range = ranges[i++])) {
+//		fprintf(stderr, "[%s] %d range check at %d\n", name, chan->freq, range);
 		if (!isinlist(list, chan, range, mhz)) {
 //			fprintf(stderr, "[%s] %d range check failed at %d\n", name, chan->freq, range);
 			return 0;
@@ -1387,25 +1388,31 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 }
 
 /* zero ranges should not be checked since this is our end terminator */
-static void FILLOFFSET(char *range, int offset, int value) {
-	if ((offset + value))
-	    range[idx++] = offset + value;
+static void FILLOFFSET(int *idx, int *range, int offset, int value) {
+	if ((offset + value)) {
+	    range[*idx] = offset + value;
+	    (*idx) = (*idx) + 1;
+	}
 }
 
-static int *VHTRANGE(char *range, int width, int offset)
+static int *VHTRANGE(int *range, int width, int offset)
 {
 	int idx = 0;
+//	fprintf(stderr, "vhtrange: width %d, offset %d\n", width, offset);
 	if (width == 160) {
-		FILLOFFSET(range, offset, 70);
-		FILLOFFSET(range, offset, 50);
-		FILLOFFSET(range, offset, -50);
-		FILLOFFSET(range, offset, -70);
+		FILLOFFSET(&idx,range, offset, 70);
+		FILLOFFSET(&idx,range, offset, 50);
+		FILLOFFSET(&idx,range, offset, -50);
+		FILLOFFSET(&idx,range, offset, -70);
 	}
-	FILLOFFSET(range, offset, 30);
-	FILLOFFSET(range, offset, 10);
-	FILLOFFSET(range, offset, -10);
-	FILLOFFSET(range, offset, -30);
+	FILLOFFSET(&idx,range, offset, 30);
+	FILLOFFSET(&idx,range, offset, 10);
+	FILLOFFSET(&idx,range, offset, -10);
+	FILLOFFSET(&idx,range, offset, -30);
 	range[idx++] = 0;
+//	int i;
+//	for (i=0;i<idx;i++)
+//	    fprintf(stderr, "result %d\n", range[i]);
 	return range;
 }
 
