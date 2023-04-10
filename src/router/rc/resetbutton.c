@@ -1797,14 +1797,14 @@ int main(int argc, char *argv[])
 	 */
 	switch (vfork()) {
 	case -1:
-		DEBUG("can't vfork\n");
+		DEBUG("can't fork\n");
 		_exit(0);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
-		DEBUG("vfork ok\n");
+		DEBUG("fork ok\n");
 		(void)setsid();
 		break;
 	default:

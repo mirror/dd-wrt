@@ -98,16 +98,16 @@ static int softwarerevision_main(int argc, char **argv)
  */
 static int redial_main(int argc, char **argv)
 {
-	switch (vfork()) {
+	switch (fork()) {
 	case -1:
-		// can't vfork
+		// can't fork
 		exit(0);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
-		// vfork ok
+		// fork ok
 		(void)setsid();
 		break;
 	default:
@@ -161,10 +161,10 @@ static int redial_main(int argc, char **argv)
 		}
 
 		if (need_redial) {
-			pid = vfork();
+			pid = fork();
 			switch (pid) {
 			case -1:
-				perror("vfork failed");
+				perror("fork failed");
 				exit(1);
 			case 0:
 #ifdef HAVE_PPPOE
