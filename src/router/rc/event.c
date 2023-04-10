@@ -14,12 +14,12 @@ static int event_main(int argc, char **argv)
 	switch (pid) {
 	case -1:
 		perror("vfork failed");
-		_exit(1);
+		exit(1);
 		break;
 	case 0:
 		sleep(atoi(argv[1]));
 		kill(atoi(argv[2]), atoi(argv[3]));
-		_exit(0);
+		exit(0);
 		break;
 	default:
 		_exit(0);

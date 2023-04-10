@@ -387,7 +387,7 @@ static int wlanled_main(int argc, char **argv)
 	switch (vfork()) {
 	case -1:
 		fprintf(stderr, "can't vfork\n");
-		_exit(0);
+		exit(0);
 		break;
 	case 0:
 		(void)setsid();
