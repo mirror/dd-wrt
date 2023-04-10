@@ -9,6 +9,6 @@ pid_t vfork(void)
 #ifdef SYS_fork
 	return syscall(SYS_fork);
 #else
-	return syscall(SYS_clone, CLONE_VM|CLONE_VFORK|SIGCHLD, 0);
+	return syscall(SYS_clone, SIGCHLD, 0);
 #endif
 }
