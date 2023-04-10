@@ -1113,7 +1113,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wlanled wland et writetool ttraff process_monitor
+all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial radio_timer
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1157,6 +1157,8 @@ ifeq ($(CONFIG_CPE890),y)
 endif
 	install ttraff $(INSTALLDIR)/sbin
 	install process_monitor $(INSTALLDIR)/sbin
+	install redial $(INSTALLDIR)/sbin
+	install radio_timer $(INSTALLDIR)/sbin
 
 
 ifeq ($(CONFIG_QTN),y)
@@ -1216,7 +1218,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc getipmask
 	cd $(INSTALLDIR)/sbin && ln -sf rc setportprio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
-	cd $(INSTALLDIR)/sbin && ln -sf rc redial
+#	cd $(INSTALLDIR)/sbin && ln -sf rc redial
 	cd $(INSTALLDIR)/sbin && ln -sf rc setuserpasswd
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
@@ -1244,7 +1246,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
 #	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
-	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
+#	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
 #	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
@@ -1313,6 +1315,14 @@ ttraff: ttraff.o
 process_monitor: process_monitor.o
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram -lutils
+
+redial: redial.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lshutils -lnvram
+
+radio_timer: radio_timer.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
 
 init:
 	@echo "[LD] init"
