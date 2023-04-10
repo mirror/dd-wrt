@@ -294,14 +294,14 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #else
 #define FORK(func) \
 { \
-    switch ( fork(  ) ) \
+    switch ( vfork(  ) ) \
     { \
 	case -1: \
 	    break; \
 	case 0: \
 	    ( void )setsid(  ); \
 	    func; \
-	    _exit(0); \
+	    exit(0); \
 	    break; \
 	default: \
 	break; \
@@ -316,14 +316,14 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 { \
     int forkpid; \
     int forkstatus; \
-    switch ( forkpid = fork(  ) ) \
+    switch ( forkpid = vfork(  ) ) \
     { \
 	case -1: \
 	    break; \
 	case 0: \
 	    ( void )setsid(  ); \
 	    func; \
-	    _exit(0); \
+	    exit(0); \
 	    break; \
 	default: \
 	waitpid(forkpid, &forkstatus, 0); \
