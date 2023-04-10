@@ -635,7 +635,7 @@ function initChannelProperties() {
 	for (j = 0; j < document.forms[0].elements.length; j++) {
 		element = document.forms[0].elements[j];
 		if (element.name) {
-			if (element.name.substr(element.name.length - 8, 8) == '_channel' && element.getAttribute('rel') == 'ath9k') {
+			if (element.name.substr(element.name.length - 8, 8) == '_channel' && element.getAttribute('rel') == 'mac80211') {
 				setChannelProperties(element);
 			}
 		}
