@@ -43,10 +43,12 @@ NESTED(vfork,FRAMESZ,sp)
 
 	move	a0, v0
 #ifdef __PIC__
+	.hidden __syscall_ret
 	PTR_LA		t9, __syscall_ret
 	RESTORE_GP64
 	jr		t9
 #else
 	RESTORE_GP64
+	.hidden __syscall_ret
 	j		__syscall_ret
 #endif
