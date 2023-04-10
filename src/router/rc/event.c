@@ -22,7 +22,7 @@ static int event_main(int argc, char **argv)
 		exit(0);
 		break;
 	default:
-		exit(0);
+		_exit(0);
 		break;
 	}
 }

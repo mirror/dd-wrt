@@ -193,7 +193,7 @@ static void checknas(void)	// for broadcom v24 only
 #endif
 #ifndef HAVE_NOWIFI
 #ifdef HAVE_MADWIFI
-	start_service_force_f("checkhostapd");
+	start_service_force_f_arg("checkhostapd", 1);
 #endif
 #endif
 
@@ -398,7 +398,7 @@ static int do_mon(void)
 				dd_loginfo(v->name, "maybe died, we need to re-exec it\n");
 				stop_service(v->name);
 				killall(v->name, SIGKILL);
-				start_service_force_f("checkhostapd");
+				start_service_force_f_arg(v->name, 1);
 			}
 		}
 		printf("checking for %s done\n", v->name);
@@ -416,15 +416,15 @@ static int check_ps_main(int argc, char **argv)
 		return 1;
 	}
 
-	pid = vfork();
+	pid = fork();
 	switch (pid) {
 	case -1:
 		perror("fork failed");
-		_exit(1);
+		exit(1);
 		break;
 	case 0:
 		do_mon();
-		_exit(0);
+		exit(0);
 		break;
 	default:
 		_exit(0);
