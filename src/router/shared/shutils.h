@@ -301,7 +301,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 	case 0: \
 	    ( void )setsid(  ); \
 	    func; \
-	    exit(0); \
+	    _exit(0); \
 	    break; \
 	default: \
 	break; \
@@ -323,7 +323,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 	case 0: \
 	    ( void )setsid(  ); \
 	    func; \
-	    exit(0); \
+	    _exit(0); \
 	    break; \
 	default: \
 	waitpid(forkpid, &forkstatus, 0); \
