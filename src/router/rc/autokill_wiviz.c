@@ -11,10 +11,10 @@ static int autokill_wiviz_main(int argc, char **argv)
 {
 	pid_t pid;
 
-	pid = vfork();
+	pid = fork();
 	switch (pid) {
 	case -1:
-		perror("vfork failed");
+		perror("fork failed");
 		exit(1);
 		break;
 	case 0:

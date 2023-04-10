@@ -384,9 +384,9 @@ static int wlanled_main(int argc, char **argv)
 		fprintf(stderr, "Failed to connect to nl80211\n");
 		return 1;
 	}
-	switch (vfork()) {
+	switch (fork()) {
 	case -1:
-		fprintf(stderr, "can't vfork\n");
+		fprintf(stderr, "can't fork\n");
 		exit(0);
 		break;
 	case 0:

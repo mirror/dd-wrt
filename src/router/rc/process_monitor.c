@@ -48,16 +48,16 @@ void monitor_signal(int sig)
 
 static int process_monitor_main(int argc, char **argv)
 {
-	switch (vfork()) {
+	switch (fork()) {
 	case -1:
-		// can't vfork
+		// can't fork
 		exit(0);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
-		// vfork ok
+		// fork ok
 		(void)setsid();
 		break;
 	default:
