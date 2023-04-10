@@ -19,9 +19,6 @@
 #define _ARM_BX_H
 
 /* We need features.h first */
-#if !defined _FEATURES_H
-#error Please include features.h first
-#endif /* features.h not yet included */
 
 #if __ARM_ARCH > 4 || defined (__ARM_ARCH_4T__)
 # define ARCH_HAS_BX
