@@ -16,7 +16,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include <endian.h>
+#include "endian.h"
 #include <bits/arm_asm.h>
 #include <bits/arm_bx.h>
 

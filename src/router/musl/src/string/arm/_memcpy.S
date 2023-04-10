@@ -37,7 +37,7 @@
  * by Erik Andersen <andersen@codepoet.org>
  */
 
-#include <endian.h>
+#include "endian.h"
 #include <bits/arm_asm.h>
 #include <bits/arm_bx.h>
 
