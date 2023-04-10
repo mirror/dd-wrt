@@ -219,23 +219,23 @@ static void watchdog(void)
 	}
 }
 
-int main(int argc, char *argv[])
+static int watchdog_main(int argc, char *argv[])
 {
 
 	/* 
 	 * Run it under background 
 	 */
-	switch (vfork()) {
+	switch (fork()) {
 	case -1:
 		perror("fork failed");
-		_exit(1);
+		exit(1);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
 		watchdog();
-		_exit(0);
+		exit(0);
 		break;
 	default:
 		/* 

@@ -170,6 +170,41 @@ static void start_service_force_f(char *name)
 	start_service_force_f_arg(name, 0);
 }
 
+static int start_main(char *name, int argc, char **argv)
+{
+	pid_t pid;
+	int status;
+	int sig;
+	char *args[32] = { "/sbin/service", name, "main", NULL };
+	int i;
+	for (i = 1; i < argc && i < 30; i++)
+		args[i + 2] = argv[i];
+	args[2 + i] = NULL;
+	switch (pid = fork()) {
+	case -1:		/* error */
+		perror("fork");
+		return errno;
+	case 0:		/* child */
+		for (sig = 0; sig < (_NSIG - 1); sig++)
+			signal(sig, SIG_DFL);
+		execvp(args[0], args);
+		perror(argv[0]);
+		exit(errno);
+	default:		/* parent */
+		waitpid(pid, &status, 0);
+		if (WIFEXITED(status))
+			return WEXITSTATUS(status);
+		else
+			return status;
+	}
+	return errno;
+}
+
+static void start_main_f(char *name, int argc, char **argv)
+{
+	FORK(start_main(name, argc, argv));
+}
+
 static int stop_running(void)
 {
 	return *stops_running > 0;
@@ -286,74 +321,5 @@ static int restart_main_f(int argc, char **argv)
 	if (stops_running)
 		(*stops_running)++;
 	FORK(_restart_delay(name, 0));
-	return 0;
-}
-#include "services.c"
-
-int main(int argc, char *argv[])
-{
-	char *base = argv[0];
-
-	int force = (argc == 3 && !strcmp(argv[2], "-f"));
-	if (strstr(base, "stopservices")) {
-		stop_services_main(argc, argv);
-		goto out;
-	}
-	if (strstr(base, "start_single_service")) {
-		start_single_service_main(argc, argv);
-		goto out;
-	}
-	if (strstr(base, "stop_running")) {
-		stop_running_main(argc, argv);
-		goto out;
-	}
-	if (strstr(base, "startservices")) {
-		start_services_main(argc, argv);
-		goto out;
-	}
-
-	if (argc < 2) {
-		fprintf(stdout, "%s: servicename [-f]\n", base);
-		fprintf(stdout, "-f : forces start/stop of service and without any care if service was already started or stopped\n");
-		return 1;
-	}
-
-	if (strstr(base, "startservice_f")) {
-		if (force)
-			start_service_force_f_arg(argv[1], 1);
-		else
-			start_service_f(argv[1]);
-		goto out;
-	}
-	if (strstr(base, "startservice")) {
-		if (force)
-			start_service_force_arg(argv[1], 1);
-		else
-			start_service(argv[1]);
-		goto out;
-	}
-	if (strstr(base, "stopservice_f")) {
-		if (force)
-			stop_service_force_f(argv[1]);
-		else
-			stop_service_f(argv[1]);
-		goto out;
-	}
-	if (strstr(base, "stopservice")) {
-		if (force)
-			stop_service_force(argv[1]);
-		else
-			stop_service(argv[1]);
-		goto out;
-	}
-	if (strstr(base, "restart_f")) {
-			restart_main(argc, argv);
-		goto out;
-	}
-	if (strstr(base, "restart")) {
-			restart_main_f(argc, argv);
-		goto out;
-	}
-      out:;
 	return 0;
 }

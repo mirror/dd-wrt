@@ -1795,10 +1795,10 @@ int main(int argc, char *argv[])
 	/* 
 	 * Run it under background 
 	 */
-	switch (vfork()) {
+	switch (fork()) {
 	case -1:
 		DEBUG("can't fork\n");
-		_exit(0);
+		exit(0);
 		break;
 	case 0:
 		/* 

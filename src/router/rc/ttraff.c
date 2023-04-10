@@ -133,7 +133,7 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 	return;
 }
 
-int main(int argc, char **argv)
+static int ttraff_main(int argc, char **argv)
 {
 
 	char wan_if_buffer[33];
