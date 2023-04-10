@@ -140,7 +140,7 @@ static int ttraff_main(int argc, char **argv)
 	switch (vfork()) {
 	case -1:
 		// can't vfork
-		_exit(0);
+		exit(0);
 		break;
 	case 0:
 		/* 
