@@ -1601,7 +1601,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 //wl_basic.vht80p80chan="Wireless Channel 2 (80+80)";
 		show_caption(wp, "label", "wl_basic.label4", NULL);
 		if (is_mac80211(prefix))
-			websWrite(wp, "<select name=\"%s\" rel=\"wlan9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
+			websWrite(wp, "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 		else
 			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 #ifdef HAVE_MADWIFI
