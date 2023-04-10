@@ -64,7 +64,6 @@
 #ifdef HAVE_GPIOWATCHER
 #include "gpiowatcher.c"
 #endif
-#include "ttraff.c"
 #ifdef HAVE_WPS
 #include "wpswatcher.c"
 #endif
@@ -352,7 +351,6 @@ static struct MAIN maincalls[] = {
 	{ "mtd", NULL, mtd_main },
 	{ "hotplug", NULL, hotplug_main },
 	{ "nvram", NULL, nvram_main },
-	{ "ttraff", NULL, ttraff_main },
 	{ "filtersync", "filtersync", NULL },
 	{ "filter", "filter", NULL },
 	{ "setpasswd", "setpasswd", NULL },
@@ -369,9 +367,6 @@ static struct MAIN maincalls[] = {
 #endif
 #ifdef HAVE_GPIOWATCHER
 	{ "gpiowatcher", NULL, gpiowatcher_main },
-#endif
-#ifdef HAVE_WLANLED
-	{ "wlanled", NULL, wlanled_main },
 #endif
 #ifdef HAVE_WPS
 	{ "wpswatcher", NULL, wpswatcher_main },

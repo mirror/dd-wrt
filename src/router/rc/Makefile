@@ -1113,7 +1113,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wlanled wland et writetool
+all: rc init resetbutton wlanled wland et writetool ttraff
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1155,6 +1155,7 @@ endif
 ifeq ($(CONFIG_CPE890),y)
 	install wlanled $(INSTALLDIR)/sbin
 endif
+	install ttraff $(INSTALLDIR)/sbin
 
 
 ifeq ($(CONFIG_QTN),y)
@@ -1243,7 +1244,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
-	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
+#	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
 endif
@@ -1303,6 +1304,10 @@ resetbutton: resetbutton.o
 wlanled: wlanled.o
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libnl-tiny -lnl-tiny
+
+ttraff: ttraff.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils
 
 init:
 	@echo "[LD] init"
