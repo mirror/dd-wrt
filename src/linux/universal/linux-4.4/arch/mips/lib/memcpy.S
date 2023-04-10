@@ -23,10 +23,10 @@
  * dma-coherent systems.
  */
 #ifdef CONFIG_DMA_NONCOHERENT
-#undef CONFIG_CPU_HAS_PREFETCH
+//#undef CONFIG_CPU_HAS_PREFETCH
 #endif
 #ifdef CONFIG_MIPS_MALTA
-#undef CONFIG_CPU_HAS_PREFETCH
+//#undef CONFIG_CPU_HAS_PREFETCH
 #endif
 
 #include <asm/asm.h>
