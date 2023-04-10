@@ -153,11 +153,11 @@ static int roaming_daemon_main(int argc, char *argv[])
 	switch (vfork()) {
 	case -1:
 		perror("vfork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		roaming_daemon();
-		exit(0);
+		_exit(0);
 		break;
 	default:
 		_exit(0);

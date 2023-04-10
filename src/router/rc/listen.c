@@ -372,7 +372,7 @@ static int listen_main(int argc, char *argv[])
 	switch (pid) {
 	case -1:
 		perror("vfork failed");
-		exit(1);
+		_exit(1);
 	case 0:
 	      retry:
 		for (;;) {

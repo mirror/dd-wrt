@@ -101,7 +101,7 @@ static int redial_main(int argc, char **argv)
 	switch (vfork()) {
 	case -1:
 		// can't vfork
-		exit(0);
+		_exit(0);
 		break;
 	case 0:
 		/* 
@@ -165,7 +165,7 @@ static int redial_main(int argc, char **argv)
 			switch (pid) {
 			case -1:
 				perror("vfork failed");
-				exit(1);
+				_exit(1);
 			case 0:
 #ifdef HAVE_PPPOE
 				if (nvram_match("wan_proto", "pppoe")) {
@@ -246,7 +246,7 @@ static int redial_main(int argc, char **argv)
 					start_service_force("wan_redial");
 				}
 #endif
-				exit(0);
+				_exit(0);
 				break;
 			default:
 				waitpid(pid, &status, 0);

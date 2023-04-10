@@ -228,14 +228,14 @@ static int watchdog_main(int argc, char *argv[])
 	switch (vfork()) {
 	case -1:
 		perror("vfork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
 		watchdog();
-		exit(0);
+		_exit(0);
 		break;
 	default:
 		/* 
