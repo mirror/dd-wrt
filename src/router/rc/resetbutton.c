@@ -1798,7 +1798,7 @@ int main(int argc, char *argv[])
 	switch (vfork()) {
 	case -1:
 		DEBUG("can't vfork\n");
-		exit(0);
+		_exit(0);
 		break;
 	case 0:
 		/* 
