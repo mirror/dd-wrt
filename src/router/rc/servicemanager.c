@@ -180,9 +180,9 @@ static int start_main(char *name, int argc, char **argv)
 	for (i = 1; i < argc && i < 30; i++)
 		args[i + 2] = argv[i];
 	args[2 + i] = NULL;
-	switch (pid = fork()) {
+	switch (pid = vfork()) {
 	case -1:		/* error */
-		perror("fork");
+		perror("vfork");
 		return errno;
 	case 0:		/* child */
 		for (sig = 0; sig < (_NSIG - 1); sig++)

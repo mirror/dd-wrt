@@ -634,16 +634,16 @@ int main(int argc, char **argv)
 	/* 
 	 * Run it in the background 
 	 */
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
-		// can't fork
+		// can't vfork
 		exit(0);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
-		// fork ok
+		// vfork ok
 		(void)setsid();
 		break;
 	default:

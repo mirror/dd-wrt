@@ -368,10 +368,10 @@ static int listen_main(int argc, char *argv[])
 
 	cprintf("Starting listen on %s\n", interface);
 
-	pid = fork();
+	pid = vfork();
 	switch (pid) {
 	case -1:
-		perror("fork failed");
+		perror("vfork failed");
 		exit(1);
 	case 0:
 	      retry:

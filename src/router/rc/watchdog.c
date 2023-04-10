@@ -225,9 +225,9 @@ static int watchdog_main(int argc, char *argv[])
 	/* 
 	 * Run it under background 
 	 */
-	switch (fork()) {
+	switch (vfork()) {
 	case -1:
-		perror("fork failed");
+		perror("vfork failed");
 		exit(1);
 		break;
 	case 0:
