@@ -32,7 +32,7 @@ void *memmove(void *to, const void *from, size_t n)
 		return memcpy(to, from, n);
 	chunks = n / 8;
 	tmp_from += n;
-	tmp_to = to + n;
+	tmp_to = (unsigned char*)to + n;
 	if (!chunks)
 		goto lessthan8;
 	rem = (unsigned long )tmp_to % 4;
@@ -73,4 +73,3 @@ void *memmove(void *to, const void *from, size_t n)
 		goto copy_chunks;
 	goto lessthan8;
 }
-libc_hidden_def(memmove)
