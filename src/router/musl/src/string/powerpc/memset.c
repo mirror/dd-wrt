@@ -39,7 +39,7 @@ void *memset(void *to, int c, size_t n)
 	unsigned char *tmp_to;
 
 	chunks = n / 8;
-	tmp_to = to - 4;
+	tmp_to = (unsigned char*)to - 4;
 	c = expand_byte_word(c);
 	if (!chunks)
 		goto lessthan8;
@@ -79,4 +79,3 @@ void *memset(void *to, int c, size_t n)
 		goto copy_chunks;
 	goto lessthan8;
 }
-libc_hidden_def(memset)

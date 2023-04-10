@@ -31,7 +31,7 @@ void *memcpy(void *to, const void *from, size_t len)
 
 	chunks = len / 8;
 	tmp_from -= 4;
-	tmp_to = to - 4;
+	tmp_to = (unsigned char*)to - 4;
 	if (!chunks)
 		goto lessthan8;
 	rem = (unsigned long )tmp_to % 4;
@@ -79,4 +79,3 @@ void *memcpy(void *to, const void *from, size_t len)
 		goto copy_chunks;
 	goto lessthan8;
 }
-libc_hidden_def(memcpy)
