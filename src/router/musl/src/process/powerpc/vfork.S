@@ -15,11 +15,11 @@
 .global vfork
 .hidden vfork
 .type   vfork,@function
-.type   __syscall_error,@function
 
 vfork:
 	li	0, __NR_vfork
 	sc
 	bnslr+
-	b	__syscall_error
+	.hidden __syscall_ret
+	b	__syscall_ret
 
