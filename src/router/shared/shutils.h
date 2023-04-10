@@ -294,7 +294,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #else
 #define FORK(func) \
 { \
-    switch ( vfork(  ) ) \
+    switch ( fork(  ) ) \
     { \
 	case -1: \
 	    break; \
@@ -316,7 +316,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 { \
     int forkpid; \
     int forkstatus; \
-    switch ( forkpid = vfork(  ) ) \
+    switch ( forkpid = fork(  ) ) \
     { \
 	case -1: \
 	    break; \
