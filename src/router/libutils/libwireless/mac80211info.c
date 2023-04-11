@@ -1449,8 +1449,8 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 				loweridx=1;
 			
 			}
-		i
-		}nt range[9]; // maximum of 9 entries
+		}
+		int range[9]; // maximum of 9 entries
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
 			if (check_ranges("LL", list, chan, VHTRANGE(range, 80, -30), 80)) {
