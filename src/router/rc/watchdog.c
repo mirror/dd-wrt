@@ -219,7 +219,7 @@ static void watchdog(void)
 	}
 }
 
-static int watchdog_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
 	/* 
@@ -228,14 +228,14 @@ static int watchdog_main(int argc, char *argv[])
 	switch (fork()) {
 	case -1:
 		perror("fork failed");
-		exit(1);
+		_exit(1);
 		break;
 	case 0:
 		/* 
 		 * child process 
 		 */
 		watchdog();
-		exit(0);
+		_exit(0);
 		break;
 	default:
 		/* 

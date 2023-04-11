@@ -1798,7 +1798,7 @@ int main(int argc, char *argv[])
 	switch (fork()) {
 	case -1:
 		DEBUG("can't fork\n");
-		exit(0);
+		_exit(0);
 		break;
 	case 0:
 		/* 
