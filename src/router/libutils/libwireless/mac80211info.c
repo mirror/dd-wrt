@@ -1416,6 +1416,7 @@ static int *VHTRANGE(int *range, int width, int offset)
 static void check_validchannels(struct wifi_channels *list, int bw, int nooverlap)
 {
 	int i = 0;
+	int loweridx=0;
 	while (1) {
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
@@ -1431,13 +1432,25 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 
 		if (bw == 40) {
 			if (check_ranges("LOWER", list, chan, (int[]) { -20, 0 }, 40)) {
+				loweridx++;
+				if ((loweridx % 1) == 0 && nooverlap)
+				    goto next;
 				chan->luu = 1;
+			} else {
+				lowerifx=0;
+			
 			}
 			if (check_ranges("UPPER", list, chan, (int[]) { 20, 0 }, 40)) {
+				loweridx++;
+				if ((loweridx % 1) == 1 && nooverlap)
+				    goto next;
 				chan->ull = 1;
+			} else {
+				lowerifx=1;
+			
 			}
-		}
-		int range[9]; // maximum of 9 entries
+		i
+		}nt range[9]; // maximum of 9 entries
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
 		if (bw == 80) {
 			if (check_ranges("LL", list, chan, VHTRANGE(range, 80, -30), 80)) {
