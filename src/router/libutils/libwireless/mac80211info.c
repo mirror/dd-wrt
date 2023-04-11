@@ -1396,7 +1396,7 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 static void check_validchannels(struct wifi_channels *list, int bw, int nooverlap)
 {
 	int i = 0;
-	int lastwasupper = 0, lastwaslower = 0;
+	int lastwasupper = 0;
 	while (1) {
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
@@ -1418,22 +1418,20 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 				chan->ull = 1;
 			}
 
-			if (chan->luu && chan->ull) {
-				if (lastwasupper) {
-					chan->ull = 0;
+			if (nooverlap) {
+				if (chan->luu && chan->ull) {
+					if (lastwasupper) {
+						chan->ull = 0;
+						lastwasupper = 0;
+					} else {
+						chan->luu = 0;
+						lastwasupper = 1;
+					}
+				} else if (chan->luu) {
 					lastwasupper = 0;
-					lastwaslower = 1;
-				} else {
-					chan->luu = 0;
+				} else if (chan->ull) {
 					lastwasupper = 1;
-					lastwaslower = 0;
 				}
-			} else if (chan->luu) {
-				lastwasupper = 0;
-				lastwaslower = 1;
-			} else if (chan->ull) {
-				lastwasupper = 1;
-				lastwaslower = 0;
 			}
 		}
 		/* first entry in range is the dfs channel which must be considered to ensure its a valid channel */
