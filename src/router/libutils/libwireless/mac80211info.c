@@ -1433,7 +1433,7 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 		if (bw == 40) {
 			if (check_ranges("LOWER", list, chan, (int[]) { -20, 0 }, 40)) {
 				loweridx++;
-				if ((loweridx % 1) == 0 && nooverlap)
+				if ((loweridx&1) == 0 && nooverlap)
 				    goto next;
 				chan->luu = 1;
 			} else {
@@ -1442,7 +1442,7 @@ static void check_validchannels(struct wifi_channels *list, int bw, int nooverla
 			}
 			if (check_ranges("UPPER", list, chan, (int[]) { 20, 0 }, 40)) {
 				loweridx++;
-				if ((loweridx % 1) == 1 && nooverlap)
+				if ((loweridx&1) == 1 && nooverlap)
 				    goto next;
 				chan->ull = 1;
 			} else {
