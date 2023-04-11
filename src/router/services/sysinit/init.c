@@ -230,17 +230,6 @@ void start_post_sysinit(void)
 
 }
 
-void start_init_user(void)
-{
-	start_single_service();
-#ifdef HAVE_CHILLI
-	start_chilli();
-#endif
-#ifdef HAVE_WIFIDOG
-	start_wifidog();
-#endif
-}
-
 void start_init_restart(void)
 {
 

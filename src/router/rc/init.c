@@ -43,6 +43,7 @@
 #define stop_services() eval("stopservices");
 #define restart(a) eval("restart",a);
 #define restart_f(a) eval("restart_f",a);
+#define start_single_service() eval("start_single_service");
 
 static void set_term(int fd)
 {
@@ -614,7 +615,13 @@ int main(int argc, char **argv)
 			// by honor
 			lcdmessage("RESTART SERVICES");
 			cprintf("USER1\n");
-			start_service_force_f("init_user");
+			start_single_service();
+#ifdef HAVE_CHILLI
+			start_service_force_f("chilli");
+#endif
+#ifdef HAVE_WIFIDOG
+			start_service_force_f("wifidog");
+#endif
 
 			state = IDLE;
 			break;
