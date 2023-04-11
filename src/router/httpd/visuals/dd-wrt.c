@@ -3822,7 +3822,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			  wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	}
-	if (is_mac80211(prefix) && has_ac(prefix) && has_5ghz(prefix)) {
+	if (is_mac80211(prefix)) {
 		char wl_overlap[16];
 		sprintf(wl_overlap, "%s_overlap", prefix);
 		showRadio(wp, "wl_basic.overlap", wl_overlap);
@@ -4330,7 +4330,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 		}
 	}
-	if (is_mac80211(prefix) && has_ac(prefix) && has_5ghz(prefix)) {
+	if (is_mac80211(prefix)) {
 		char wl_overlap[16];
 		sprintf(wl_overlap, "%s_overlap", prefix);
 		showRadio(wp, "wl_basic.overlap", wl_overlap);
