@@ -1158,7 +1158,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan0_ssid", "ERC" },	/* Service set ID (network name) */
 #elif defined(HAVE_NDTRADE)
 	{ "wlan0_ssid", "ND Trade 2G" },	/* Service set ID (network name) */
+	{ "wlan0_channel", "2437" },	/* 6000/chan 200 -wlan0 frequency */
 	{ "wlan1_ssid", "ND Trade 5G" },	/* Service set ID (network name) */
+	{ "wlan1_channel", "5180" },	/* 6000/chan 200 -wlan0 frequency */
 #elif defined(HAVE_IPR)
 	{ "wl0_ssid", "IPR" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "IPR" },	/* Service set ID (network name) */
