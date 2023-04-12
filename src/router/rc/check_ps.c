@@ -183,9 +183,9 @@ static void checknas(void)	// for broadcom v24 only
 		// processes
 	{
 		stop_service("wlconf");
-		start_service_force_arg("wlconf", 1);
+		start_service_force("wlconf");
 		stop_service("nas");
-		start_service_force_arg("nas", 1);
+		start_service_force("nas");
 	}
 
 	return;
