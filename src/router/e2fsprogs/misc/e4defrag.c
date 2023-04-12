@@ -195,6 +195,19 @@ static struct frag_statistic_ino	frag_rank[SHOW_FRAG_FILES];
 #error posix_fadvise not available!
 #endif
 
+#ifndef HAVE_FALLOCATE64
+#define __SYSCALL_LL_E(x) \
+((union { long long ll; long l[2]; }){ .ll = x }).l[0], \
+((union { long long ll; long l[2]; }){ .ll = x }).l[1]
+#define __SYSCALL_LL_O(x) 0, __SYSCALL_LL_E((x))
+int fallocate64(int fd, int mode, off_t base, off_t len)
+{
+	return syscall(SYS_fallocate, fd, mode, __SYSCALL_LL_E(base),
+		__SYSCALL_LL_E(len));
+}
+
+#endif /* ! HAVE_FALLOCATE64 */
+
 /*
  * get_mount_point() -	Get device's mount point.
  *
@@ -1555,9 +1568,9 @@ static int file_defrag(const char *file, const struct stat64 *buf,
 	/* Allocate space for donor inode */
 	orig_group_tmp = orig_group_head;
 	do {
-		ret = fallocate(donor_fd, 0,
-		  (ext2_loff_t)orig_group_tmp->start->data.logical * block_size,
-		  (ext2_loff_t)orig_group_tmp->len * block_size);
+		ret = fallocate64(donor_fd, 0,
+		  (loff_t)orig_group_tmp->start->data.logical * block_size,
+		  (loff_t)orig_group_tmp->len * block_size);
 		if (ret < 0) {
 			if (mode_flag & DETAIL) {
 				PRINT_FILE_NAME(file);
