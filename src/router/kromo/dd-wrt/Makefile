@@ -877,6 +877,7 @@ ifeq ($(CONFIG_NDTRADE),y)
 	cp -f ndtrade/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f ndtrade/logo_about.png $(INSTALLDIR)/www/images/dd-logo.png
 	cp -f ndtrade/favicon.png $(INSTALLDIR)/www/favicon.ico
+	cp -f ndtrade/About.htm $(INSTALLDIR)/www/About.htm
 endif
 
 ifneq ($(CONFIG_USB),y)
