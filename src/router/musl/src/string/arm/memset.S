@@ -33,7 +33,7 @@
 	.p2align 4,,15
 	.global memset
 	.type memset,%function
-memset_arm:
+memset:
 	@ r0 = address
 	@ r1 = character
 	@ r2 = count
