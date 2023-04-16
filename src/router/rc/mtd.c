@@ -508,9 +508,11 @@ static int write_main(int argc, char *argv[])
 #else
 	int mtddev = getMTD("ddwrt");
 #endif
-	char devdev[32];
-	sprintf(devdev, "/dev/mtd%d", mtddev);
-	eval("ubidetach", "-p", devdev);
+	if (mtddev > 0) {
+		char devdev[32];
+		sprintf(devdev, "/dev/mtd%d", mtddev);
+		eval("ubidetach", "-p", devdev);
+	}
 #endif
 	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
 		dd_logerror("flash", "%s: Bad trx header\n", path);
