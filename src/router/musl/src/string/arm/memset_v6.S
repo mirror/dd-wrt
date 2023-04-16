@@ -17,8 +17,7 @@
    <http://www.gnu.org/licenses/>.  */
 #if __ARM_ARCH < 7
 
-#include <armdefs.h>
-
+#include "asmdefs.h"
 .text
 .global memset
 .type memset,%function
