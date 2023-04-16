@@ -45,8 +45,8 @@
    identify exactly which byte is causing the termination.  */
 
 /* Locals and temporaries.  */
-
-ENTRY (strchrnul)
+ENTRY_ALIAS(strchrnul)
+ENTRY (__strchrnul)
 	PTR_ARG (0)
 	/* Magic constant 0x40100401 to allow us to identify which lane
 	   matches the termination condition.  */
@@ -110,5 +110,5 @@ L(tail):
 	add	result, src, tmp1, lsr #1
 	ret
 
-END (strchrnul)
+END (__strchrnul)
 
