@@ -467,7 +467,7 @@ _memcpy:
 	ldrgtb	r3, [r1, #-1]!
 	strgtb	r3, [r0, #-1]!
 #endif
-	ret lr
+	BX(lr)
 	/* erg - unaligned destination */
 .Lmemcpy_bdestul:
 	cmp	r12, #2

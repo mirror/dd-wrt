@@ -22,6 +22,6 @@ ENTRY(memchr)
 	bne	1b
 	sub	r0, r0, #1
 2:	movne	r0, #0
-	ret	lr
+	BX(lr)
 END(memchr)
 #endif

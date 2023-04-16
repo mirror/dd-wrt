@@ -95,7 +95,7 @@ Llastword:				@ drop through to here once we find a
 	IT(t, ne)
 	addne   r0, r0, $1              @  must be zero)
 #endif
-	ret lr
+	BX(lr)
 #endif
 
 .size strlen,.-strlen
