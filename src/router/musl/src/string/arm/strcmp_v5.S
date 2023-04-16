@@ -63,7 +63,7 @@ strcmp:
 	cmpcs	r2, r3
 	beq	1b
 	sub	r0, r2, r3
-	ret lr
+	BX(lr)
 #endif
 
 .size strcmp,.-strcmp

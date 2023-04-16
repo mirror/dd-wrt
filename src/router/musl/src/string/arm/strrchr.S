@@ -20,5 +20,5 @@ ENTRY(strrchr)
 		teq	r2, #0
 		bne	1b
 		mov	r0, r3
-		ret	lr
+		BX(lr)
 END(strrchr)
