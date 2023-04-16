@@ -36,10 +36,10 @@
 #define dataq2		q1
 
 #ifdef BUILD_STPCPY
-# define STRCPY __stpcpy_aarch64
+# define STRCPY stpcpy
 # define IFSTPCPY(X,...) X,__VA_ARGS__
 #else
-# define STRCPY __strcpy_aarch64
+# define STRCPY strcpy
 # define IFSTPCPY(X,...)
 #endif
 
