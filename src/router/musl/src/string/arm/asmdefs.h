@@ -474,4 +474,54 @@
 
 #define L(l) .L ## l
 
+#ifdef __thumb2__
+# ifdef __ASSEMBLER__
+.thumb
+.syntax unified
+# endif /* __ASSEMBLER__ */
+#define IT(t, cond) i##t cond
+#else
+/* XXX: This can be removed if/when we require an assembler that supports
+   unified assembly syntax.  */
+#define IT(t, cond)
+/* Code to return from a thumb function stub.  */
+# if defined __ARM_ARCH_4T__ && defined __THUMB_INTERWORK__
+#  define POP_RET pop   {r2, r3}; bx    r3
+# else
+#  define POP_RET pop   {r2, pc}
+# endif
+#endif /* __thumb2__ */
+
+#if defined(__ARM_ARCH_6M__)
+/* Force arm mode to flush out errors on M profile cores.  */
+#undef IT
+#define THUMB1_ONLY 1
+#endif
+
+#if __ARM_ARCH > 4 || defined (__ARM_ARCH_4T__)
+# define ARCH_HAS_BX
+#endif
+
+#if defined(ARCH_HAS_BX)
+# define BX(reg)	bx reg
+# define BXC(cond, reg)	bx##cond reg
+#else
+# define BX(reg)	mov pc, reg
+# define BXC(cond, reg)	mov##cond pc, reg
+#endif
+
+	.irp	c,,eq,ne,cs,cc,mi,pl,vs,vc,hi,ls,ge,lt,gt,le,hs,lo
+	.macro	ret\c, reg
+#if __LINUX_ARM_ARCH__ < 6
+	mov\c	pc, \reg
+#else
+	.ifeqs	"\reg", "lr"
+	bx\c	\reg
+	.else
+	mov\c	pc, \reg
+	.endif
+#endif
+	.endm
+	.endr
+
 #endif
