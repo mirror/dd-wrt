@@ -14,6 +14,7 @@
    match early in a large data set.
 
  */
+#if __ARM_ARCH > 6
 
 @ 2011-02-07 david.gilbert@linaro.org
 @    Extracted from local git a5b438d861
@@ -166,3 +167,4 @@ memchr:
 	.fnend
 
 	.size	memchr, . - memchr
+#endif

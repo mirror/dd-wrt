@@ -12,6 +12,7 @@
    all ARMv7 processors.
 
  */
+#if __ARM_ARCH >= 7
 
 	.syntax unified
 	.arch armv7-a
@@ -96,3 +97,4 @@ memset:
 10:
 	bx	lr		@ goodbye
 	.size	memset, . - memset
+#endif
