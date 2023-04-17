@@ -1,4 +1,4 @@
-#if __ARM_ARCH < 6 || (__ARM_ARCH == 6 && __ARM_ARCH_6M__ < 1)
+#if __ARM_ARCH < 6
 /*
  * Copyright (c) 2002 ARM Ltd
  * All rights reserved.
