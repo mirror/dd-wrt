@@ -69,7 +69,7 @@
 
     // To avoid warning about deprecated instructions, add an explicit
     // arch. The code generated is exactly the same.
-    .arch armv6
+    .arch armv7-a
 
 #if defined(STPCPY)
     .macro m_push
