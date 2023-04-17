@@ -36,7 +36,7 @@
 
 // To avoid warning about deprecated instructions, add an explicit
 // arch. The code generated is exactly the same.
-.arch armv7-a
+.arch armv6
 
 ENTRY(strcpy)
 	pld	[r1, #0]
