@@ -1,4 +1,4 @@
-#if __ARM_ARCH < 7
+#if __ARM_ARCH < 6
 #include <string.h>
 
 char *strcpy(char *restrict dest, const char *restrict src)
