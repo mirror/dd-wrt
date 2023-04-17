@@ -162,7 +162,7 @@
 	nop
 #endif
 
-ENTRY(strcmp_a15)
+ENTRY(strcmp)
 #ifndef STRCMP_NO_PRECHECK
 	ldrb	r2, [src1]
 	ldrb	r3, [src2]
@@ -499,5 +499,5 @@ ENTRY(strcmp_a15)
 	.cfi_restore 7
 	sub	result, result, data2, lsr #24
 	bx	lr
-END(strcmp_a15)
+END(strcmp)
 #endif
