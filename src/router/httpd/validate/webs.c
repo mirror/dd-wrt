@@ -5025,9 +5025,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (is_ath10k(prefix)) {
 		copytonv_prefix(wp, "fwtype", prefix);
 	}
-	if (has_ac(prefix)) {
-		copytonv_prefix(wp, "overlap", prefix);
-	}
+#ifdef HAVE_ATH9K
+	copytonv_prefix(wp, "overlap", prefix);
+#endif
 	copytonv_prefix(wp, "atf", prefix);
 	copytonv_prefix(wp, "fc", prefix);
 #ifdef HAVE_BCMMODERN
