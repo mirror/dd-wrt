@@ -29,7 +29,7 @@
  * Android adaptation and tweak by Jim Huang <jserv@0xlab.org>.
  */
 
-#if __ARM_ARCH >= 6 && __ARM_ARCH < 7
+#if __ARM_ARCH == 6
 #include "asmdefs.h"
 
 .syntax unified
