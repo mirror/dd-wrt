@@ -348,7 +348,11 @@ static int set_provider_opts(cfg_t *cfg, ddns_info_t *info, int custom)
 	info->wildcard = cfg_getbool(cfg, "wildcard");
 	info->ttl = cfg_getint(cfg, "ttl");
 	info->proxied = cfg_getbool(cfg, "proxied");
+#if defined(ENABLE_SSL)
 	info->ssl_enabled = cfg_getbool(cfg, "ssl");
+#else
+	info->ssl_enabled = 0;
+#endif
 	str = cfg_getstr(cfg, "username");
 	if (str && strlen(str) <= sizeof(info->creds.username))
 		strlcpy(info->creds.username, str, sizeof(info->creds.username));
@@ -452,7 +456,11 @@ static int set_provider_opts(cfg_t *cfg, ddns_info_t *info, int custom)
 		 * If a custom checkip server is defined, the
 		 * checkip-ssl setting is fully honored.
 		 */
+#if defined(ENABLE_SSL)
 		info->checkip_ssl = cfg_getbool(cfg, "checkip-ssl");
+#else
+		info->checkip_ssl = 0;
+#endif
 	}
 
 	/* The checkip-command overrides any default or custom checkip-server */

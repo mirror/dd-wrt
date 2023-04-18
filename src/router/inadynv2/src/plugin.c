@@ -62,7 +62,11 @@ int plugin_register_v6(ddns_system_t *plugin)
 	plugin_v6->cloned = 1;
 	plugin_v6->checkip_name = "dns64.cloudflare-dns.com";
 	plugin_v6->checkip_url  = "/cdn-cgi/trace";
+#if defined(ENABLE_SSL)
 	plugin_v6->checkip_ssl  = DDNS_CHECKIP_SSL_SUPPORTED;
+#else
+	plugin_v6->checkip_ssl  = 0;
+#endif
 
 	sprintf(plugin_v6->name, "ipv6%s", plugin->name + 7);
 	return plugin_register(plugin_v6);
