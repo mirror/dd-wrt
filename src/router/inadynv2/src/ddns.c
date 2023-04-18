@@ -135,7 +135,11 @@ static int server_transaction(ddns_t *ctx, ddns_info_t *provider)
 	}
 
 	client = &provider->checkip;
+#if defined(ENABLE_SSL)
 	client->ssl_enabled = provider->checkip_ssl;
+#else
+	client->ssl_enabled = 0;
+#endif
 	DO(http_init(client, "Checking for IP# change", strstr(provider->system->name, "ipv6") ? TCP_FORCE_IPV6 : TCP_FORCE_IPV4));
 
 	/* Prepare request for IP server */
