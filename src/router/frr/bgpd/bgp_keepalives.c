@@ -36,6 +36,10 @@
 #include "bgpd/bgp_keepalives.h"
 /* clang-format on */
 
+DEFINE_MTYPE_STATIC(BGPD, BGP_PKAT, "Peer KeepAlive Timer");
+DEFINE_MTYPE_STATIC(BGPD, BGP_COND, "BGP Peer pthread Conditional");
+DEFINE_MTYPE_STATIC(BGPD, BGP_MUTEX, "BGP Peer pthread Mutex");
+
 /*
  * Peer KeepAlive Timer.
  * Associates a peer with the time of its last keepalive.
@@ -54,7 +58,7 @@ static struct hash *peerhash;
 
 static struct pkat *pkat_new(struct peer *peer)
 {
-	struct pkat *pkat = XMALLOC(MTYPE_TMP, sizeof(struct pkat));
+	struct pkat *pkat = XMALLOC(MTYPE_BGP_PKAT, sizeof(struct pkat));
 	pkat->peer = peer;
 	monotime(&pkat->last);
 	return pkat;
@@ -62,7 +66,7 @@ static struct pkat *pkat_new(struct peer *peer)
 
 static void pkat_del(void *pkat)
 {
-	XFREE(MTYPE_TMP, pkat);
+	XFREE(MTYPE_BGP_PKAT, pkat);
 }
 
 
@@ -115,7 +119,7 @@ static void peer_process(struct hash_bucket *hb, void *arg)
 		elapsed.tv_sec >= ka.tv_sec || timercmp(&diff, &tolerance, <);
 
 	if (send_keepalive) {
-		if (bgp_debug_neighbor_events(pkat->peer))
+		if (bgp_debug_keepalive(pkat->peer))
 			zlog_debug("%s [FSM] Timer (keepalive timer expire)",
 				   pkat->peer->host);
 
@@ -158,8 +162,8 @@ static void bgp_keepalives_finish(void *arg)
 	pthread_mutex_destroy(peerhash_mtx);
 	pthread_cond_destroy(peerhash_cond);
 
-	XFREE(MTYPE_TMP, peerhash_mtx);
-	XFREE(MTYPE_TMP, peerhash_cond);
+	XFREE(MTYPE_BGP_MUTEX, peerhash_mtx);
+	XFREE(MTYPE_BGP_COND, peerhash_cond);
 }
 
 /*
@@ -184,8 +188,8 @@ void *bgp_keepalives_start(void *arg)
 	 */
 	rcu_read_unlock();
 
-	peerhash_mtx = XCALLOC(MTYPE_TMP, sizeof(pthread_mutex_t));
-	peerhash_cond = XCALLOC(MTYPE_TMP, sizeof(pthread_cond_t));
+	peerhash_mtx = XCALLOC(MTYPE_BGP_MUTEX, sizeof(pthread_mutex_t));
+	peerhash_cond = XCALLOC(MTYPE_BGP_COND, sizeof(pthread_cond_t));
 
 	/* initialize mutex */
 	pthread_mutex_init(peerhash_mtx, NULL);
@@ -269,8 +273,9 @@ void bgp_keepalives_on(struct peer *peer)
 			peer_lock(peer);
 		}
 		SET_FLAG(peer->thread_flags, PEER_THREAD_KEEPALIVES_ON);
+		/* Force the keepalive thread to wake up */
+		pthread_cond_signal(peerhash_cond);
 	}
-	bgp_keepalives_wake();
 }
 
 void bgp_keepalives_off(struct peer *peer)
@@ -300,19 +305,15 @@ void bgp_keepalives_off(struct peer *peer)
 	}
 }
 
-void bgp_keepalives_wake(void)
-{
-	frr_with_mutex (peerhash_mtx) {
-		pthread_cond_signal(peerhash_cond);
-	}
-}
-
 int bgp_keepalives_stop(struct frr_pthread *fpt, void **result)
 {
 	assert(fpt->running);
 
-	atomic_store_explicit(&fpt->running, false, memory_order_relaxed);
-	bgp_keepalives_wake();
+	frr_with_mutex (peerhash_mtx) {
+		atomic_store_explicit(&fpt->running, false,
+				      memory_order_relaxed);
+		pthread_cond_signal(peerhash_cond);
+	}
 
 	pthread_join(fpt->thread, result);
 	return 0;

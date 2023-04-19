@@ -36,9 +36,7 @@
 #include "pbrd/pbr_zebra.h"
 #include "pbrd/pbr_vty.h"
 #include "pbrd/pbr_debug.h"
-#ifndef VTYSH_EXTRACT_PL
 #include "pbrd/pbr_vty_clippy.c"
-#endif
 
 DEFUN_NOSH(pbr_map, pbr_map_cmd, "pbr-map PBRMAP seq (1-700)",
 	   "Create pbr-map or enter pbr-map command mode\n"
@@ -935,12 +933,12 @@ static void vty_show_pbrms(struct vty *vty,
 
 		if (detail)
 			vty_out(vty,
-				"          Installed: %u(%d) Tableid: %d\n",
+				"          Installed: %u(%d) Tableid: %u\n",
 				pbrms->nhs_installed,
 				pbr_nht_get_installed(pbrms->nhgrp_name),
 				pbr_nht_get_table(pbrms->nhgrp_name));
 		else
-			vty_out(vty, "          Installed: %s Tableid: %d\n",
+			vty_out(vty, "          Installed: %s Tableid: %u\n",
 				pbr_nht_get_installed(pbrms->nhgrp_name) ? "yes"
 									 : "no",
 				pbr_nht_get_table(pbrms->nhgrp_name));
@@ -950,12 +948,12 @@ static void vty_show_pbrms(struct vty *vty,
 		pbrms_nexthop_group_write_individual_nexthop(vty, pbrms);
 		if (detail)
 			vty_out(vty,
-				"          Installed: %u(%d) Tableid: %d\n",
+				"          Installed: %u(%d) Tableid: %u\n",
 				pbrms->nhs_installed,
 				pbr_nht_get_installed(pbrms->internal_nhg_name),
 				pbr_nht_get_table(pbrms->internal_nhg_name));
 		else
-			vty_out(vty, "          Installed: %s Tableid: %d\n",
+			vty_out(vty, "          Installed: %s Tableid: %u\n",
 				pbr_nht_get_installed(pbrms->internal_nhg_name)
 					? "yes"
 					: "no",
@@ -1242,6 +1240,8 @@ DEFUN_NOSH(show_debugging_pbr,
 	vty_out(vty, "PBR debugging status:\n");
 
 	pbr_debug_config_write_helper(vty, false);
+
+	cmd_show_lib_debugs(vty);
 
 	return CMD_SUCCESS;
 }

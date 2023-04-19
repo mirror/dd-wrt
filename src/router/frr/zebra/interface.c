@@ -61,6 +61,7 @@ DEFINE_HOOK(zebra_if_extra_info, (struct vty * vty, struct interface *ifp),
 DEFINE_HOOK(zebra_if_config_wr, (struct vty * vty, struct interface *ifp),
 	    (vty, ifp));
 
+DEFINE_MTYPE(ZEBRA, ZIF_DESC, "Intf desc");
 
 static void if_down_del_nbr_connected(struct interface *ifp);
 
@@ -233,7 +234,7 @@ static int if_zebra_delete_hook(struct interface *ifp)
 		if_nhg_dependents_release(ifp);
 		zebra_if_nhg_dependents_free(zebra_if);
 
-		XFREE(MTYPE_TMP, zebra_if->desc);
+		XFREE(MTYPE_ZIF_DESC, zebra_if->desc);
 
 		THREAD_OFF(zebra_if->speed_update);
 
@@ -1435,7 +1436,8 @@ static void zebra_if_netconf_update_ctx(struct zebra_dplane_ctx *ctx,
 			if (IS_ZEBRA_DEBUG_KERNEL)
 				zlog_debug(
 					"%s: if %s(%u) zebra info pointer is NULL",
-					__func__, ifp->name, ifp->ifindex);
+					__func__, ifp ? ifp->name : "(null)",
+					ifp ? ifp->ifindex : ifindex);
 			return;
 		}
 		if (afi == AFI_IP) {
@@ -1573,9 +1575,14 @@ void zebra_if_dplane_result(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_IPSET_ENTRY_DELETE:
 	case DPLANE_OP_NEIGH_TABLE_UPDATE:
 	case DPLANE_OP_GRE_SET:
-	case DPLANE_OP_TC_INSTALL:
-	case DPLANE_OP_TC_UPDATE:
-	case DPLANE_OP_TC_DELETE:
+	case DPLANE_OP_TC_QDISC_INSTALL:
+	case DPLANE_OP_TC_QDISC_UNINSTALL:
+	case DPLANE_OP_TC_CLASS_ADD:
+	case DPLANE_OP_TC_CLASS_DELETE:
+	case DPLANE_OP_TC_CLASS_UPDATE:
+	case DPLANE_OP_TC_FILTER_ADD:
+	case DPLANE_OP_TC_FILTER_DELETE:
+	case DPLANE_OP_TC_FILTER_UPDATE:
 		break; /* should never hit here */
 	}
 }
@@ -2603,9 +2610,7 @@ static void interface_update_stats(void)
 #endif /* HAVE_NET_RT_IFLIST */
 }
 
-#ifndef VTYSH_EXTRACT_PL
 #include "zebra/interface_clippy.c"
-#endif
 /* Show all interfaces to vty. */
 DEFPY(show_interface, show_interface_cmd,
       "show interface vrf NAME$vrf_name [brief$brief] [json$uj]",
@@ -3279,14 +3284,8 @@ DEFUN (link_params_enable,
 			"Link-params: enable TE link parameters on interface %s",
 			ifp->name);
 
-	if (!if_link_params_get(ifp)) {
-		if (IS_ZEBRA_DEBUG_EVENT || IS_ZEBRA_DEBUG_MPLS)
-			zlog_debug(
-				"Link-params: failed to init TE link parameters  %s",
-				ifp->name);
-
-		return CMD_WARNING_CONFIG_FAILED;
-	}
+	if (!if_link_params_get(ifp))
+		if_link_params_enable(ifp);
 
 	/* force protocols to update LINK STATE due to parameters change */
 	if (if_is_operative(ifp))
@@ -3330,6 +3329,9 @@ DEFUN (link_params_metric,
 
 	metric = strtoul(argv[idx_number]->arg, NULL, 10);
 
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
+
 	/* Update TE metric if needed */
 	link_param_cmd_set_uint32(ifp, &iflp->te_metric, LP_TE_METRIC, metric);
 
@@ -3370,16 +3372,19 @@ DEFUN (link_params_maxbw,
 
 	/* Check that Maximum bandwidth is not lower than other bandwidth
 	 * parameters */
-	if ((bw <= iflp->max_rsv_bw) || (bw <= iflp->unrsv_bw[0])
-	    || (bw <= iflp->unrsv_bw[1]) || (bw <= iflp->unrsv_bw[2])
-	    || (bw <= iflp->unrsv_bw[3]) || (bw <= iflp->unrsv_bw[4])
-	    || (bw <= iflp->unrsv_bw[5]) || (bw <= iflp->unrsv_bw[6])
-	    || (bw <= iflp->unrsv_bw[7]) || (bw <= iflp->ava_bw)
-	    || (bw <= iflp->res_bw) || (bw <= iflp->use_bw)) {
+	if (iflp && ((bw <= iflp->max_rsv_bw) || (bw <= iflp->unrsv_bw[0]) ||
+		     (bw <= iflp->unrsv_bw[1]) || (bw <= iflp->unrsv_bw[2]) ||
+		     (bw <= iflp->unrsv_bw[3]) || (bw <= iflp->unrsv_bw[4]) ||
+		     (bw <= iflp->unrsv_bw[5]) || (bw <= iflp->unrsv_bw[6]) ||
+		     (bw <= iflp->unrsv_bw[7]) || (bw <= iflp->ava_bw) ||
+		     (bw <= iflp->res_bw) || (bw <= iflp->use_bw))) {
 		vty_out(vty,
 			"Maximum Bandwidth could not be lower than others bandwidth\n");
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Maximum Bandwidth if needed */
 	link_param_cmd_set_float(ifp, &iflp->max_bw, LP_MAX_BW, bw);
@@ -3406,12 +3411,15 @@ DEFUN (link_params_max_rsv_bw,
 
 	/* Check that bandwidth is not greater than maximum bandwidth parameter
 	 */
-	if (bw > iflp->max_bw) {
+	if (iflp && bw > iflp->max_bw) {
 		vty_out(vty,
 			"Maximum Reservable Bandwidth could not be greater than Maximum Bandwidth (%g)\n",
 			iflp->max_bw);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Maximum Reservable Bandwidth if needed */
 	link_param_cmd_set_float(ifp, &iflp->max_rsv_bw, LP_MAX_RSV_BW, bw);
@@ -3448,12 +3456,15 @@ DEFUN (link_params_unrsv_bw,
 
 	/* Check that bandwidth is not greater than maximum bandwidth parameter
 	 */
-	if (bw > iflp->max_bw) {
+	if (iflp && bw > iflp->max_bw) {
 		vty_out(vty,
 			"UnReserved Bandwidth could not be greater than Maximum Bandwidth (%g)\n",
 			iflp->max_bw);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Unreserved Bandwidth if needed */
 	link_param_cmd_set_float(ifp, &iflp->unrsv_bw[priority], LP_UNRSV_BW,
@@ -3478,6 +3489,9 @@ DEFUN (link_params_admin_grp,
 			safe_strerror(errno));
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Administrative Group if needed */
 	link_param_cmd_set_uint32(ifp, &iflp->admin_grp, LP_ADM_GRP, value);
@@ -3521,6 +3535,9 @@ DEFUN (link_params_inter_as,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
+
 	as = strtoul(argv[idx_number]->arg, NULL, 10);
 
 	/* Update Remote IP and Remote AS fields if needed */
@@ -3547,6 +3564,9 @@ DEFUN (no_link_params_inter_as,
 {
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	struct if_link_params *iflp = if_link_params_get(ifp);
+
+	if (!iflp)
+		return CMD_SUCCESS;
 
 	/* Reset Remote IP and AS neighbor */
 	iflp->rmt_as = 0;
@@ -3595,13 +3615,17 @@ DEFUN (link_params_delay,
 		 * Therefore, it is also allowed that the average
 		 * delay be equal to the min delay or max delay.
 		 */
-		if (IS_PARAM_SET(iflp, LP_MM_DELAY)
-		    && (delay < iflp->min_delay || delay > iflp->max_delay)) {
+		if (iflp && IS_PARAM_SET(iflp, LP_MM_DELAY) &&
+		    (delay < iflp->min_delay || delay > iflp->max_delay)) {
 			vty_out(vty,
 				"Average delay should be in range Min (%d) - Max (%d) delay\n",
 				iflp->min_delay, iflp->max_delay);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
+
+		if (!iflp)
+			iflp = if_link_params_enable(ifp);
+
 		/* Update delay if value is not set or change */
 		if (IS_PARAM_UNSET(iflp, LP_DELAY) || iflp->av_delay != delay) {
 			iflp->av_delay = delay;
@@ -3626,6 +3650,10 @@ DEFUN (link_params_delay,
 				low, high);
 			return CMD_WARNING_CONFIG_FAILED;
 		}
+
+		if (!iflp)
+			iflp = if_link_params_enable(ifp);
+
 		/* Update Delays if needed */
 		if (IS_PARAM_UNSET(iflp, LP_DELAY)
 		    || IS_PARAM_UNSET(iflp, LP_MM_DELAY)
@@ -3656,6 +3684,9 @@ DEFUN (no_link_params_delay,
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	struct if_link_params *iflp = if_link_params_get(ifp);
 
+	if (!iflp)
+		return CMD_SUCCESS;
+
 	/* Unset Delays */
 	iflp->av_delay = 0;
 	UNSET_PARAM(iflp, LP_DELAY);
@@ -3682,6 +3713,9 @@ DEFUN (link_params_delay_var,
 	uint32_t value;
 
 	value = strtoul(argv[idx_number]->arg, NULL, 10);
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Delay Variation if needed */
 	link_param_cmd_set_uint32(ifp, &iflp->delay_var, LP_DELAY_VAR, value);
@@ -3723,6 +3757,9 @@ DEFUN (link_params_pkt_loss,
 	if (fval > MAX_PKT_LOSS)
 		fval = MAX_PKT_LOSS;
 
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
+
 	/* Update Packet Loss if needed */
 	link_param_cmd_set_float(ifp, &iflp->pkt_loss, LP_PKT_LOSS, fval);
 
@@ -3762,12 +3799,15 @@ DEFUN (link_params_res_bw,
 
 	/* Check that bandwidth is not greater than maximum bandwidth parameter
 	 */
-	if (bw > iflp->max_bw) {
+	if (iflp && bw > iflp->max_bw) {
 		vty_out(vty,
 			"Residual Bandwidth could not be greater than Maximum Bandwidth (%g)\n",
 			iflp->max_bw);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Residual Bandwidth if needed */
 	link_param_cmd_set_float(ifp, &iflp->res_bw, LP_RES_BW, bw);
@@ -3808,12 +3848,15 @@ DEFUN (link_params_ava_bw,
 
 	/* Check that bandwidth is not greater than maximum bandwidth parameter
 	 */
-	if (bw > iflp->max_bw) {
+	if (iflp && bw > iflp->max_bw) {
 		vty_out(vty,
 			"Available Bandwidth could not be greater than Maximum Bandwidth (%g)\n",
 			iflp->max_bw);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Residual Bandwidth if needed */
 	link_param_cmd_set_float(ifp, &iflp->ava_bw, LP_AVA_BW, bw);
@@ -3854,12 +3897,15 @@ DEFUN (link_params_use_bw,
 
 	/* Check that bandwidth is not greater than maximum bandwidth parameter
 	 */
-	if (bw > iflp->max_bw) {
+	if (iflp && bw > iflp->max_bw) {
 		vty_out(vty,
 			"Utilised Bandwidth could not be greater than Maximum Bandwidth (%g)\n",
 			iflp->max_bw);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
+
+	if (!iflp)
+		iflp = if_link_params_enable(ifp);
 
 	/* Update Utilized Bandwidth if needed */
 	link_param_cmd_set_float(ifp, &iflp->use_bw, LP_USE_BW, bw);
