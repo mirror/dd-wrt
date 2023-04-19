@@ -52,6 +52,19 @@
 #define TIME_UNITS_PER_SEC (1000000)
 #define xmittime(r, s) (TIME_UNITS_PER_SEC * ((double)(s) / (double)(r)))
 
+enum {
+	COMPAT_TCA_HTB_UNSPEC,
+	COMPAT_TCA_HTB_PARMS,
+	COMPAT_TCA_HTB_INIT,
+	COMPAT_TCA_HTB_CTAB,
+	COMPAT_TCA_HTB_RTAB,
+	COMPAT_TCA_HTB_DIRECT_QLEN,
+	COMPAT_TCA_HTB_RATE64,
+	COMPAT_TCA_HTB_CEIL64,
+	COMPAT_TCA_HTB_PAD,
+	COMPAT_TCA_HTB_MAX,
+};
+
 static uint32_t tc_get_freq(void)
 {
 	int freq = 0;
@@ -213,7 +226,7 @@ static ssize_t netlink_qdisc_msg_encode(int cmd, struct zebra_dplane_ctx *ctx,
 				.rate2quantum = 10,
 				.version = 3,
 				.defcls = TC_MINOR_NOCLASS};
-			nl_attr_put(&req->n, datalen, TCA_HTB_INIT, &htb_glob,
+			nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_INIT, &htb_glob,
 				    sizeof(htb_glob));
 			break;
 		}
@@ -290,7 +303,7 @@ static ssize_t netlink_tclass_msg_encode(int cmd, struct zebra_dplane_ctx *ctx,
 
 		switch (dplane_ctx_tc_class_get_kind(ctx)) {
 		case TC_QDISC_HTB: {
-			struct tc_htb_opt htb_opt = {};
+			struct compat_tc_htb_opt htb_opt = {};
 
 			uint64_t rate = dplane_ctx_tc_class_get_rate(ctx),
 				 ceil = dplane_ctx_tc_class_get_ceil(ctx);
@@ -321,21 +334,21 @@ static ssize_t netlink_tclass_msg_encode(int cmd, struct zebra_dplane_ctx *ctx,
 			htb_opt.ceil.overhead = htb_opt.rate.overhead = 0;
 
 			if (rate >> 32 != 0) {
-				nl_attr_put(&req->n, datalen, TCA_HTB_RATE64,
+				nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_RATE64,
 					    &rate, sizeof(rate));
 			}
 
 			if (ceil >> 32 != 0) {
-				nl_attr_put(&req->n, datalen, TCA_HTB_CEIL64,
+				nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_CEIL64,
 					    &ceil, sizeof(ceil));
 			}
 
-			nl_attr_put(&req->n, datalen, TCA_HTB_PARMS, &htb_opt,
+			nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_PARMS, &htb_opt,
 				    sizeof(htb_opt));
 
-			nl_attr_put(&req->n, datalen, TCA_HTB_RTAB, rtab,
+			nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_RTAB, rtab,
 				    sizeof(rtab));
-			nl_attr_put(&req->n, datalen, TCA_HTB_CTAB, ctab,
+			nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_CTAB, ctab,
 				    sizeof(ctab));
 			break;
 		}
@@ -750,13 +763,13 @@ int netlink_qdisc_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 	}
 
 	if (tb[TCA_OPTIONS] != NULL) {
-		struct rtattr *options[TCA_HTB_MAX + 1];
+		struct rtattr *options[COMPAT_TCA_HTB_MAX + 1];
 
-		netlink_parse_rtattr_nested(options, TCA_HTB_MAX,
+		netlink_parse_rtattr_nested(options, COMPAT_TCA_HTB_MAX,
 					    tb[TCA_OPTIONS]);
 
 		/* TODO: more details */
-		/* struct tc_htb_glob *glob = RTA_DATA(options[TCA_HTB_INIT]);
+		/* struct tc_htb_glob *glob = RTA_DATA(options[COMPAT_TCA_HTB_INIT]);
 		 */
 	}
 
@@ -803,13 +816,13 @@ int netlink_tclass_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 
 
 	if (tb[TCA_OPTIONS] != NULL) {
-		struct rtattr *options[TCA_HTB_MAX + 1];
+		struct rtattr *options[COMPAT_TCA_HTB_MAX + 1];
 
-		netlink_parse_rtattr_nested(options, TCA_HTB_MAX,
+		netlink_parse_rtattr_nested(options, COMPAT_TCA_HTB_MAX,
 					    tb[TCA_OPTIONS]);
 
 		/* TODO: more details */
-		/* struct tc_htb_opt *opt = RTA_DATA(options[TCA_HTB_PARMS]); */
+		/* struct compat_tc_htb_opt *opt = RTA_DATA(options[COMPAT_TCA_HTB_PARMS]); */
 	}
 
 	return 0;

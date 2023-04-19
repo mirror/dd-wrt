@@ -157,8 +157,18 @@ struct compat_tc_ratespec {
 	unsigned short	mpu;
 	__u32		rate;
 };
+struct compat_tc_htb_opt {
+	struct compat_tc_ratespec 	rate;
+	struct compat_tc_ratespec 	ceil;
+	__u32	buffer;
+	__u32	cbuffer;
+	__u32	quantum;
+	__u32	level;		/* out only */
+	__u32	prio;
+};
 
 #else
+#define compat_tc_htb_opt tc_htb_opt
 #define compat_tc_ratespec tc_ratespec
 #endif
 
