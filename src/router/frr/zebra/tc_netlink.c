@@ -70,7 +70,7 @@ static uint32_t tc_get_freq(void)
 	return freq == 0 ? TC_FREQ_DEFAULT : freq;
 }
 
-static void tc_calc_rate_table(struct tc_ratespec *ratespec, uint32_t *table,
+static void tc_calc_rate_table(struct compat_tc_ratespec *ratespec, uint32_t *table,
 			       uint32_t mtu)
 {
 	if (mtu == 0)
