@@ -54,10 +54,6 @@
 
 #include "ospf_apiclient.h"
 
-/* *sigh* ... can't find a better way to hammer this into automake */
-#include "ospfd/ospf_dump_api.c"
-#include "ospfd/ospf_api.c"
-
 XREF_SETUP();
 
 DEFINE_MGROUP(OSPFCLIENT, "libospfapiclient");
@@ -451,12 +447,6 @@ int ospf_apiclient_lsa_originate(struct ospf_apiclient *oclient,
 		fprintf(stderr, "Cannot originate non-opaque LSA type %d\n",
 			lsa_type);
 		return OSPF_API_ILLEGALLSATYPE;
-	}
-
-	if ((size_t)opaquelen > sizeof(buf) - sizeof(struct lsa_header)) {
-		fprintf(stderr, "opaquelen(%d) is larger than buf size %zu\n",
-			opaquelen, sizeof(buf));
-		return OSPF_API_NOMEMORY;
 	}
 
 	/* Make a new LSA from parameters */
