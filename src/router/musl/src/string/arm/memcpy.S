@@ -16,6 +16,8 @@
     Unaligned accesses
 
  */
+#ifndef __ARM_NEON__
+
 #if __ARM_ARCH >= 6
 
 #include "asmdefs.h"
@@ -586,4 +588,5 @@ L(cpy_notaligned):
 	bx	lr
 
 END (memcpy)
+#endif
 #endif

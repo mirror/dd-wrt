@@ -12,7 +12,10 @@
    all ARMv7 processors.
 
  */
+
 #if __ARM_ARCH >= 7
+#ifndef __ARM_NEON__
+#include "asmdefs.h"
 
 	.syntax unified
 	.arch armv7-a
@@ -97,4 +100,5 @@ memset:
 10:
 	bx	lr		@ goodbye
 	.size	memset, . - memset
+#endif
 #endif
