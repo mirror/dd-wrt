@@ -1165,6 +1165,9 @@ endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS_EXTRA += -DHAVE_ERC
 endif
+ifeq ($(CONFIG_NDTRADE),y)
+CFLAGS_EXTRA += -DHAVE_NDTRADE
+endif
 
 ifeq ($(CONFIG_FTP),y)
 CFLAGS_EXTRA += -I$(TOP)/jansson/src

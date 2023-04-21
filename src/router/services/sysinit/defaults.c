@@ -778,8 +778,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "http_passwd", "$1$HHwZAUaN$Xj8iAs4882IkDVfBzO9GI1" },	/* Password */
 #elif HAVE_RAYTRONIK
 	{ "http_passwd", "$1$iuIXI3we$ZM4nJ4QVrzGySwLd/9PDF0" },	/* Password */
-#elif HAVE_NDTRADE
-	{ "http_passwd", "$1$u236h/PW$dCTOBdqPsZsNU8t2lH2b0/" },	/* Password */
 #else
 	{ "http_passwd", DEFAULT_PASS },	/* Password */
 #endif
