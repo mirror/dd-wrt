@@ -123,6 +123,8 @@ void start_mkfiles(void)
 	fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
 	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+#elif HAVE_NDTRADE
+	fprintf(fp, "ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n" "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n", http_passwd, http_passwd);
 	fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
