@@ -51,6 +51,13 @@
 #    ifdef ARCH_ARM32
 #      ifdef __clang__
 #        define ATTRIBUTES	_target_attribute("armv8-a,crc")
+#      elif defined(__ARM_PCS_VFP)
+	 /*
+	  * +simd is needed to avoid a "selected architecture lacks an FPU"
+	  * error with Debian arm-linux-gnueabihf-gcc when -mfpu is not
+	  * explicitly specified on the command line.
+	  */
+#        define ATTRIBUTES	_target_attribute("arch=armv8-a+crc+simd")
 #      else
 #        define ATTRIBUTES	_target_attribute("arch=armv8-a+crc")
 #      endif
@@ -243,7 +250,7 @@ crc32_arm_crc(u32 crc, const u8 *p, size_t len)
 #      define ATTRIBUTES	_target_attribute("arch=armv8-a+crc,fpu=crypto-neon-fp-armv8")
 #    else
 #      ifdef __clang__
-#        define ATTRIBUTES	_target_attribute("crc,crypto")
+#        define ATTRIBUTES	_target_attribute("crc,aes")
 #      else
 #        define ATTRIBUTES	_target_attribute("+crc,+crypto")
 #      endif
@@ -445,8 +452,17 @@ crc32_arm_crc_pmullcombine(u32 crc, const u8 *p, size_t len)
 #      define ATTRIBUTES    _target_attribute("fpu=crypto-neon-fp-armv8")
 #    else
 #      ifdef __clang__
-#        define ATTRIBUTES  _target_attribute("crypto")
+	 /*
+	  * This used to use "crypto", but that stopped working with clang 16.
+	  * Now only "aes" works.  "aes" works with older versions too, so use
+	  * that.  No "+" prefix; clang 15 and earlier doesn't accept that.
+	  */
+#        define ATTRIBUTES  _target_attribute("aes")
 #      else
+	 /*
+	  * With gcc, only "+crypto" works.  Both the "+" prefix and the
+	  * "crypto" (not "aes") are essential...
+	  */
 #        define ATTRIBUTES  _target_attribute("+crypto")
 #      endif
 #    endif
@@ -562,7 +578,7 @@ crc32_arm_pmullx4(u32 crc, const u8 *p, size_t len)
 #    define ATTRIBUTES
 #  else
 #    ifdef __clang__
-#      define ATTRIBUTES  _target_attribute("crypto,crc")
+#      define ATTRIBUTES  _target_attribute("aes,crc")
 #    else
 #      define ATTRIBUTES  _target_attribute("+crypto,+crc")
 #    endif
@@ -589,7 +605,7 @@ crc32_arm_pmullx4(u32 crc, const u8 *p, size_t len)
 #    define ATTRIBUTES
 #  else
 #    ifdef __clang__
-#      define ATTRIBUTES  _target_attribute("crypto,crc,sha3")
+#      define ATTRIBUTES  _target_attribute("aes,crc,sha3")
      /*
       * With gcc, arch=armv8.2-a is needed for the sha3 intrinsics, unless the
       * default target is armv8.3-a or later in which case it must be omitted.
