@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -490,7 +490,7 @@ Ip::Intercept::ProbeForTproxy(Ip::Address &test)
     }
 
 #else
-    debugs(3, 3, "TPROXY setsockopt() not supported on this platform. Disabling TPROXY.");
+    debugs(3, 3, "TPROXY setsockopt() not supported on this platform. Disabling TPROXY on port " << test);
 
 #endif
     if (doneSuid)

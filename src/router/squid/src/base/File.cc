@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -331,7 +331,7 @@ File::lock(const FileOpeningConfig &cfg)
                    " more time(s) after a failure: " << ex.what());
         }
         Must(attemptsLeft); // the catch statement handles the last attempt
-        xusleep(cfg.RetryGapUsec);
+        xusleep(cfg.retryGapUsec);
     }
     debugs(54, 9, "disabled");
 }

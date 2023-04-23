@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -192,7 +192,7 @@ main(void)
         return 0;
 }
   ]])],  [ squid_cv_working_gssapi=yes ], [ squid_cv_working_gssapi=no ], [:])])
-if test "x$squid_cv_working_gssapi" = "xno" -a `echo $LIBS | grep -i -c "\-L"` -gt 0; then
+if test "x$squid_cv_working_gssapi" = "xno" -a `echo $LIBS | grep -i -c "(-)L"` -gt 0; then
   AC_MSG_NOTICE([Check Runtime library path !])
 fi
 ])
@@ -284,7 +284,7 @@ main(void)
         return 0;
 }
   ]])], [ squid_cv_working_krb5=yes ], [ squid_cv_working_krb5=no ],[:])])
-if test "x$squid_cv_working_krb5" = "xno" -a `echo $LIBS | grep -i -c "\-L"` -gt 0; then
+if test "x$squid_cv_working_krb5" = "xno" -a `echo $LIBS | grep -i -c "(-)L"` -gt 0; then
   AC_MSG_NOTICE([Check Runtime library path !])
 fi
 ])

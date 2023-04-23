@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -154,6 +154,7 @@ static const struct {
     const char *text;
 }
 
+/// error messages that cannot be configured/customized externally
 error_hard_text[] = {
 
     {
@@ -180,10 +181,6 @@ error_hard_text[] = {
     {
         ERR_REQUEST_START_TIMEOUT,
         "request start timedout"
-    },
-    {
-        MGR_INDEX,
-        "mgr_index"
     }
 };
 

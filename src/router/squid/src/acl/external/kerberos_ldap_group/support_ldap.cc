@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -1114,7 +1114,11 @@ get_memberof(struct main_args *margs, char *user, char *domain, char *group)
                   "%s| %s: DEBUG: Error during initialisation of ldap connection: %s\n",
                   LogTime(), PROGRAM, strerror(errno));
         }
-        bindp = convert_domain_to_bind_path(domain);
+        if (margs->lbind) {
+            bindp = xstrdup(margs->lbind);
+        } else {
+            bindp = convert_domain_to_bind_path(domain);
+        }
     }
     if ((!domain || !ld) && margs->lurl && strstr(margs->lurl, "://")) {
         char *hostname;

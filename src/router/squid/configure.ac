@@ -1,11 +1,11 @@
-## Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[5.7],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[5.8],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -94,7 +94,7 @@ if test "x$squid_host_os" = "solaris" -a "x$GCC" != "x" ; then
 fi
 
 # If the user did not specify a C++ version.
-user_cxx=`echo "$PRESET_CXXFLAGS" | grep -o -E "\-std="`
+user_cxx=`echo "$PRESET_CXXFLAGS" | grep -o -E "(-)std="`
 if test "x$user_cxx" = "x"; then
   # Check for C++11 compiler support
   AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
@@ -2814,7 +2814,7 @@ AC_ARG_WITH([cppunit], AS_HELP_STRING([--without-cppunit],[Do not use cppunit te
 ])
 AS_IF([test "x$with_cppunit" != "xno"],[
   PKG_CHECK_MODULES([LIBCPPUNIT],[cppunit],[
-    squid_cv_cppunit_version="`pkg-config cppunit --version`"
+    squid_cv_cppunit_version="`pkg-config --modversion cppunit`"
     AC_MSG_NOTICE([using system installed cppunit version $squid_cv_cppunit_version])
     AS_UNSET(squid_cv_cppunit_version)
 
@@ -3727,7 +3727,6 @@ SQUID_DETECT_UDP_RECV_BUFSIZE
 SQUID_DETECT_TCP_SND_BUFSIZE
 SQUID_DETECT_TCP_RECV_BUFSIZE
 
-SQUID_CHECK_RECV_ARG_TYPE
 SQUID_CHECK_NEED_SYS_ERRLIST
 SQUID_CHECK_MAXPATHLEN
 
