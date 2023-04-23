@@ -761,7 +761,7 @@ static PHP_INI_MH(OnUpdate_mbstring_http_input)
 		php_error_docref("ref.mbstring", E_DEPRECATED, "Use of mbstring.http_input is deprecated");
 	}
 
-	if (!new_value || !ZSTR_VAL(new_value)) {
+	if (!new_value || !ZSTR_LEN(new_value)) {
 		const char *encoding = php_get_input_encoding();
 		MBSTRG(http_input_set) = 0;
 		_php_mb_ini_mbstring_http_input_set(encoding, strlen(encoding));
@@ -2617,15 +2617,27 @@ MBSTRING_API HashTable *php_mb_convert_encoding_recursive(HashTable *input, cons
 	ZEND_HASH_FOREACH_KEY_VAL(input, idx, key, entry) {
 		/* convert key */
 		if (key) {
-			key = php_mb_convert_encoding(ZSTR_VAL(key), ZSTR_LEN(key), to_encoding, from_encodings, num_from_encodings);
+			zend_string *converted_key = php_mb_convert_encoding(ZSTR_VAL(key), ZSTR_LEN(key), to_encoding, from_encodings, num_from_encodings);
+			if (!converted_key) {
+				continue;
+			}
+			key = converted_key;
 		}
 		/* convert value */
 		ZEND_ASSERT(entry);
 try_again:
 		switch(Z_TYPE_P(entry)) {
-			case IS_STRING:
-				ZVAL_STR(&entry_tmp, php_mb_convert_encoding(Z_STRVAL_P(entry), Z_STRLEN_P(entry), to_encoding, from_encodings, num_from_encodings));
+			case IS_STRING: {
+				zend_string *converted_key = php_mb_convert_encoding(Z_STRVAL_P(entry), Z_STRLEN_P(entry), to_encoding, from_encodings, num_from_encodings);
+				if (!converted_key) {
+					if (key) {
+						zend_string_release(key);
+					}
+					continue;
+				}
+				ZVAL_STR(&entry_tmp, converted_key);
 				break;
+			}
 			case IS_NULL:
 			case IS_TRUE:
 			case IS_FALSE:
@@ -2999,6 +3011,9 @@ PHP_FUNCTION(mb_encode_mimeheader)
 	if (charset_name != NULL) {
 		charset = php_mb_get_encoding(charset_name, 2);
 		if (!charset) {
+			RETURN_THROWS();
+		} else if (charset->mime_name == NULL || charset->mime_name[0] == '\0') {
+			zend_argument_value_error(2, "\"%s\" cannot be used for MIME header encoding", ZSTR_VAL(charset_name));
 			RETURN_THROWS();
 		}
 	} else {
@@ -4128,7 +4143,9 @@ PHP_FUNCTION(mb_send_mail)
 			|| orig_str.encoding->no_encoding == mbfl_no_encoding_pass) {
 		orig_str.encoding = mbfl_identify_encoding(&orig_str, MBSTRG(current_detect_order_list), MBSTRG(current_detect_order_list_size), MBSTRG(strict_detection));
 	}
-	pstr = mbfl_mime_header_encode(&orig_str, &conv_str, tran_cs, head_enc, CRLF, sizeof("Subject: [PHP-jp nnnnnnnn]" CRLF) - 1);
+	const char *line_sep = PG(mail_mixed_lf_and_crlf) ? "\n" : CRLF;
+	size_t line_sep_len = strlen(line_sep);
+	pstr = mbfl_mime_header_encode(&orig_str, &conv_str, tran_cs, head_enc, line_sep, strlen("Subject: [PHP-jp nnnnnnnn]") + line_sep_len);
 	if (pstr != NULL) {
 		subject_buf = subject = (char *)pstr->val;
 	}
@@ -4167,14 +4184,14 @@ PHP_FUNCTION(mb_send_mail)
 		n = ZSTR_LEN(str_headers);
 		mbfl_memory_device_strncat(&device, p, n);
 		if (n > 0 && p[n - 1] != '\n') {
-			mbfl_memory_device_strncat(&device, CRLF, sizeof(CRLF)-1);
+			mbfl_memory_device_strncat(&device, line_sep, line_sep_len);
 		}
 		zend_string_release_ex(str_headers, 0);
 	}
 
 	if (!zend_hash_str_exists(&ht_headers, "mime-version", sizeof("mime-version") - 1)) {
 		mbfl_memory_device_strncat(&device, PHP_MBSTR_MAIL_MIME_HEADER1, sizeof(PHP_MBSTR_MAIL_MIME_HEADER1) - 1);
-		mbfl_memory_device_strncat(&device, CRLF, sizeof(CRLF)-1);
+		mbfl_memory_device_strncat(&device, line_sep, line_sep_len);
 	}
 
 	if (!suppressed_hdrs.cnt_type) {
@@ -4185,7 +4202,7 @@ PHP_FUNCTION(mb_send_mail)
 			mbfl_memory_device_strncat(&device, PHP_MBSTR_MAIL_MIME_HEADER3, sizeof(PHP_MBSTR_MAIL_MIME_HEADER3) - 1);
 			mbfl_memory_device_strcat(&device, p);
 		}
-		mbfl_memory_device_strncat(&device, CRLF, sizeof(CRLF)-1);
+		mbfl_memory_device_strncat(&device, line_sep, line_sep_len);
 	}
 	if (!suppressed_hdrs.cnt_trans_enc) {
 		mbfl_memory_device_strncat(&device, PHP_MBSTR_MAIL_MIME_HEADER4, sizeof(PHP_MBSTR_MAIL_MIME_HEADER4) - 1);
@@ -4194,10 +4211,12 @@ PHP_FUNCTION(mb_send_mail)
 			p = "7bit";
 		}
 		mbfl_memory_device_strcat(&device, p);
-		mbfl_memory_device_strncat(&device, CRLF, sizeof(CRLF)-1);
+		mbfl_memory_device_strncat(&device, line_sep, line_sep_len);
 	}
 
-	mbfl_memory_device_unput(&device);
+	if (!PG(mail_mixed_lf_and_crlf)) {
+		mbfl_memory_device_unput(&device);
+	}
 	mbfl_memory_device_unput(&device);
 	mbfl_memory_device_output('\0', &device);
 	str_headers = zend_string_init((char *)device.buffer, strlen((char *)device.buffer), 0);
@@ -4395,6 +4414,10 @@ MBSTRING_API int php_mb_check_encoding(const char *input, size_t length, const m
 	uint32_t wchar_buf[128];
 	unsigned char *in = (unsigned char*)input;
 	unsigned int state = 0;
+
+	if (encoding->check != NULL) {
+		return encoding->check(in, length);
+	}
 
 	/* If the input string is not encoded in the given encoding, there is a significant chance
 	 * that this will be seen in the first bytes. Therefore, rather than converting an entire

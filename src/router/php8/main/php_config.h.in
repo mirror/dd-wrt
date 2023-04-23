@@ -1185,6 +1185,9 @@
 #undef HAVE_OCIENVNLSCREATE
 
 /* */
+#undef HAVE_OCILOBREAD2
+
+/* */
 #undef HAVE_OCISTMTFETCH2
 
 /* Defined to 1 if OCI8 configuration located Oracle's Instant Client
@@ -1533,6 +1536,9 @@
 /* Define to 1 if you have the `strcasecmp' function. */
 #undef HAVE_STRCASECMP
 
+/* Define to 1 if you have the `strerror_r' function. */
+#undef HAVE_STRERROR_R
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -1719,6 +1725,9 @@
 
 /* Have timelib_config.h */
 #undef HAVE_TIMELIB_CONFIG_H
+
+/* */
+#undef HAVE_TIMER_CREATE
 
 /* do we have times? */
 #undef HAVE_TIMES
@@ -2142,6 +2151,9 @@
 
 /* */
 #undef ZEND_FIBER_UCONTEXT
+
+/* Use zend max execution timers */
+#undef ZEND_MAX_EXECUTION_TIMERS
 
 /* */
 #undef ZEND_MM_ALIGNMENT

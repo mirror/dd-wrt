@@ -931,14 +931,26 @@ abstract class AbstractConstName implements ConstOrClassConstName
 class ConstName extends AbstractConstName {
     public string $const;
 
-    public function __construct(string $const)
+    public function __construct(?Name $namespace, string $const)
     {
+        if ($namespace && ($namespace = $namespace->slice(0, -1))) {
+            $const = $namespace->toString() . '\\' . $const;
+        }
         $this->const = $const;
     }
 
     public function isClassConst(): bool
     {
         return false;
+    }
+
+    public function isUnknown(): bool
+    {
+        $name = $this->__toString();
+        if (($pos = strrpos($name, '\\')) !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        return strtolower($name) === "unknown";
     }
 
     public function __toString(): string
@@ -1587,7 +1599,7 @@ class EvaluatedValue
                 if ($expr instanceof Expr\ClassConstFetch) {
                     $originatingConstName = new ClassConstName($expr->class, $expr->name->toString());
                 } else {
-                    $originatingConstName = new ConstName($expr->name->toString());
+                    $originatingConstName = new ConstName($expr->name->getAttribute('namespacedName'), $expr->name->toString());
                 }
 
                 if ($originatingConstName->isUnknown()) {
@@ -3630,7 +3642,7 @@ function handleStatements(FileInfo $fileInfo, array $stmts, PrettyPrinterAbstrac
             foreach ($stmt->consts as $const) {
                 $fileInfo->constInfos[] = parseConstLike(
                     $prettyPrinter,
-                    new ConstName($const->name->toString()),
+                    new ConstName($const->namespacedName, $const->name->toString()),
                     $const,
                     0,
                     $stmt->getDocComment(),
@@ -3870,10 +3882,10 @@ function funcInfoToCode(FileInfo $fileInfo, FuncInfo $funcInfo): string {
                 $arginfoType = $argType->toArginfoType();
                 if ($arginfoType->hasClassType()) {
                     $code .= sprintf(
-                        "\tZEND_%s_OBJ_TYPE_MASK(%s, %s, %s, %s, %s)\n",
+                        "\tZEND_%s_OBJ_TYPE_MASK(%s, %s, %s, %s%s)\n",
                         $argKind, $argInfo->getSendByString(), $argInfo->name,
                         $arginfoType->toClassTypeString(), $arginfoType->toTypeMask(),
-                        $argInfo->getDefaultValueAsArginfoString()
+                        !$argInfo->isVariadic ? ", " . $argInfo->getDefaultValueAsArginfoString() : ""
                     );
                 } else {
                     $code .= sprintf(

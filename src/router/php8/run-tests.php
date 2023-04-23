@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: e7cc6a7f28c525cc1ab5a3191e2438b4fbd1e478 $ */
+/* $Id: 0418b366bc313f9483072a35fa64b6a4f9ca6886 $ */
 
 /* Temporary variables while this file is being refactored. */
 /** @var ?JUnit */
@@ -581,6 +581,7 @@ function main(): void
                     $environment['SKIP_PERF_SENSITIVE'] = 1;
                     if ($switch === '--msan') {
                         $environment['SKIP_MSAN'] = 1;
+                        $environment['MSAN_OPTIONS'] = 'intercept_tls_get_addr=0';
                     }
 
                     $lsanSuppressions = __DIR__ . '/.github/lsan-suppressions.txt';
@@ -611,7 +612,7 @@ function main(): void
                     $show_progress = false;
                     break;
                 case '--version':
-                    echo '$Id: e7cc6a7f28c525cc1ab5a3191e2438b4fbd1e478 $' . "\n";
+                    echo '$Id: 0418b366bc313f9483072a35fa64b6a4f9ca6886 $' . "\n";
                     exit(1);
 
                 default:
@@ -2972,7 +2973,7 @@ function generate_diff_external(string $diff_cmd, string $exp_file, string $outp
 {
     $retval = shell_exec("{$diff_cmd} {$exp_file} {$output_file}");
 
-    return is_string($retval) ? $retval : 'Could not run external diff tool set through PHP_TEST_DIFF_CMD environment variable';
+    return is_string($retval) ? $retval : 'Could not run external diff tool set through TEST_PHP_DIFF_CMD environment variable';
 }
 
 function generate_diff(string $wanted, ?string $wanted_re, string $output): string

@@ -2496,7 +2496,7 @@ static zend_always_inline zend_result _zend_update_type_info(
 			if (opline->opcode == ZEND_ASSIGN_OBJ_OP) {
 				prop_info = zend_fetch_prop_info(op_array, ssa, opline, ssa_op);
 				orig = t1;
-				t1 = zend_fetch_prop_type(script, prop_info, &ce);
+				t1 = zend_fetch_prop_type(script, prop_info, NULL);
 				t2 = OP1_DATA_INFO();
 			} else if (opline->opcode == ZEND_ASSIGN_DIM_OP) {
 				if (t1 & MAY_BE_ARRAY_OF_REF) {
@@ -2507,7 +2507,7 @@ static zend_always_inline zend_result _zend_update_type_info(
 				t2 = OP1_DATA_INFO();
 			} else if (opline->opcode == ZEND_ASSIGN_STATIC_PROP_OP) {
 				prop_info = zend_fetch_static_prop_info(script, op_array, ssa, opline);
-				t1 = zend_fetch_prop_type(script, prop_info, &ce);
+				t1 = zend_fetch_prop_type(script, prop_info, NULL);
 				t2 = OP1_DATA_INFO();
 			} else {
 				if (t1 & MAY_BE_REF) {
@@ -2537,7 +2537,7 @@ static zend_always_inline zend_result _zend_update_type_info(
 					UPDATE_SSA_TYPE(orig, ssa_op->op1_def);
 					COPY_SSA_OBJ_TYPE(ssa_op->op1_use, ssa_op->op1_def);
 				}
-			} else if (opline->opcode == ZEND_ASSIGN_STATIC_PROP) {
+			} else if (opline->opcode == ZEND_ASSIGN_STATIC_PROP_OP) {
 				/* Nothing to do */
 			} else {
 				if (opline->opcode == ZEND_ASSIGN_OP && ssa_op->result_def >= 0 && (tmp & MAY_BE_RC1)) {
@@ -2569,12 +2569,26 @@ static zend_always_inline zend_result _zend_update_type_info(
 				} else if (opline->opcode == ZEND_ASSIGN_OBJ_OP) {
 					/* The return value must also satisfy the property type */
 					if (prop_info) {
-						tmp &= zend_fetch_prop_type(script, prop_info, NULL);
+						t1 = zend_fetch_prop_type(script, prop_info, &ce);
+						if ((t1 & (MAY_BE_LONG|MAY_BE_DOUBLE)) == MAY_BE_LONG
+						 && (tmp & (MAY_BE_LONG|MAY_BE_DOUBLE)) == MAY_BE_DOUBLE) {
+							/* DOUBLE may be auto-converted to LONG */
+							tmp |= MAY_BE_LONG;
+							tmp &= ~MAY_BE_DOUBLE;
+						}
+						tmp &= t1;
 					}
 				} else if (opline->opcode == ZEND_ASSIGN_STATIC_PROP_OP) {
 					/* The return value must also satisfy the property type */
 					if (prop_info) {
-						tmp &= zend_fetch_prop_type(script, prop_info, NULL);
+						t1 = zend_fetch_prop_type(script, prop_info, &ce);
+						if ((t1 & (MAY_BE_LONG|MAY_BE_DOUBLE)) == MAY_BE_LONG
+						 && (tmp & (MAY_BE_LONG|MAY_BE_DOUBLE)) == MAY_BE_DOUBLE) {
+							/* DOUBLE may be auto-converted to LONG */
+							tmp |= MAY_BE_LONG;
+							tmp &= ~MAY_BE_DOUBLE;
+						}
+						tmp &= t1;
 					}
 				} else {
 					if (tmp & MAY_BE_REF) {
@@ -3467,16 +3481,12 @@ static zend_always_inline zend_result _zend_update_type_info(
 						} else if (ssa_op->op1_use >= 0 && !ssa->var_info[ssa_op->op1_use].is_instanceof) {
 							ce = ssa->var_info[ssa_op->op1_use].ce;
 						}
-						if (prop_info) {
-							/* FETCH_OBJ_R/IS for plain property increments reference counter,
-							   so it can't be 1 */
-							if (ce && !ce->create_object && !result_may_be_separated(ssa, ssa_op)) {
-								tmp &= ~MAY_BE_RC1;
-							}
-						} else {
-							if (ce && !ce->create_object && !ce->__get && !result_may_be_separated(ssa, ssa_op)) {
-								tmp &= ~MAY_BE_RC1;
-							}
+						/* Unset properties will resort back to __get/__set */
+						if (ce
+						 && !ce->create_object
+						 && !ce->__get
+						 && !result_may_be_separated(ssa, ssa_op)) {
+							tmp &= ~MAY_BE_RC1;
 						}
 						if (opline->opcode == ZEND_FETCH_OBJ_IS) {
 							/* IS check may return null for uninitialized typed property. */

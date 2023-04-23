@@ -1,14 +1,214 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+13 Apr 2023, PHP 8.2.5
+
+- Core:
+  . Added optional support for max_execution_time in ZTS/Linux builds
+    (Kévin Dunglas)
+  . Fixed use-after-free in recursive AST evaluation. (ilutov)
+  . Fixed bug GH-8646 (Memory leak PHP FPM 8.1). (nielsdos)
+  . Re-add some CTE functions that were removed from being CTE by a mistake.
+    (mvorisek)
+  . Remove CTE flag from array_diff_ukey(), which was added by mistake.
+    (mvorisek)
+  . Fixed bug GH-10801 (Named arguments in CTE functions cause a segfault).
+    (nielsdos)
+  . Fixed bug GH-8789 (PHP 8.0.20 (ZTS) zend_signal_handler_defer crashes on
+    apache). (nielsdos)
+  . Fixed bug GH-10015 (zend_signal_handler_defer crashes on apache shutdown).
+    (nielsdos)
+  . Fixed bug GH-10810 (Fix NUL byte terminating Exception::__toString()).
+    (ilutov)
+  . Fix potential memory corruption when mixing __callStatic() and FFI. (ilutov)
+
+- Date:
+  . Fixed bug GH-10747 (Private and protected properties in serialized Date*
+    objects throw). (Derick)
+
+- FPM:
+  . Fixed bug GH-10611 (fpm_env_init_main leaks environ). (nielsdos)
+  . Destroy file_handle in fpm_main. (Jakub Zelenka, nielsdos)
+  . Fixed bug #74129 (Incorrect SCRIPT_NAME with apache ProxyPassMatch when
+    spaces are in path). (Jakub Zelenka)
+
+- FTP:
+  . Propagate success status of ftp_close(). (nielsdos)
+  . Fixed bug GH-10521 (ftp_get/ftp_nb_get resumepos offset is maximum 10GB).
+    (nielsdos)
+
+- IMAP:
+  . Fix build failure with Clang 16. (orlitzky)
+
+- MySQLnd:
+  . Fixed bug GH-8979 (Possible Memory Leak with SSL-enabled MySQL
+    connections). (nielsdos)
+
+- Opcache:
+  . Fixed build for macOS to cater with pkg-config settings. (David Carlier)
+  . Fixed bug GH-8065 (opcache.consistency_checks > 0 causes segfaults in
+    PHP >= 8.1.5 in fpm context). (nielsdos)
+
+- OpenSSL:
+  . Add missing error checks on file writing functions. (nielsdos)
+
+- PDO Firebird:
+  . Fixed bug GH-10908 (Bus error with PDO Firebird on RPI with 64 bit kernel
+    and 32 bit userland). (nielsdos)
+
+- Phar:
+  . Fixed bug GH-10766 (PharData archive created with Phar::Zip format does
+    not keep files metadata (datetime)). (nielsdos)
+  . Add missing error checks on EVP_MD_CTX_create() and EVP_VerifyInit().
+    (nielsdos)
+
+- PDO ODBC:
+  . Fixed missing and inconsistent error checks on SQLAllocHandle. (nielsdos)
+
+- PGSQL:
+  . Fixed typo in the array returned from pg_meta_data (extended mode).
+    (David Carlier)
+
+- SPL:
+  . Fixed bug GH-10519 (Array Data Address Reference Issue). (Nathan Freeman)
+  . Fixed bug GH-10907 (Unable to serialize processed SplFixedArrays in
+    PHP 8.2.4). (nielsdos)
+  . Fixed bug GH-10844 (ArrayIterator allows modification of readonly props).
+    (ilutov)
+
+- Standard:
+  . Fixed bug GH-10885 (stream_socket_server context leaks). (ilutov)
+  . Fixed bug GH-10052 (Browscap crashes PHP 8.1.12 on request shutdown
+    (apache2)). (nielsdos)
+  . Fixed oss-fuzz #57392 (Buffer-overflow in php_fgetcsv() with \0 delimiter
+    and enclosure). (ilutov)
+  . Fixed undefined behaviour in unpack(). (nielsdos)
+
+16 Mar 2023, PHP 8.2.4
+
+- Core:
+  . Fixed incorrect check condition in ZEND_YIELD. (nielsdos)
+  . Fixed incorrect check condition in type inference. (nielsdos)
+  . Fix incorrect check in zend_internal_call_should_throw(). (nielsdos)
+  . Fixed overflow check in OnUpdateMemoryConsumption. (nielsdos)
+  . Fixed bug GH-9916 (Entering shutdown sequence with a fiber suspended in a
+    Generator emits an unavoidable fatal error or crashes). (Arnaud)
+  . Fixed bug GH-10437 (Segfault/assertion when using fibers in shutdown
+    function after bailout). (trowski)
+  . Fixed SSA object type update for compound assignment opcodes. (nielsdos)
+  . Fixed language scanner generation build. (Daniel Black)
+  . Fixed zend_update_static_property() calling zend_update_static_property_ex()
+    misleadingly with the wrong return type. (nielsdos)
+  . Fix bug GH-10570 (Fixed unknown string hash on property fetch with integer
+    constant name). (nielsdos)
+  . Fixed php_fopen_primary_script() call resulted on zend_destroy_file_handle()
+    freeing dangling pointers on the handle as it was uninitialized. (nielsdos)
+
+- Curl:
+  . Fixed deprecation warning at compile time. (Max Kellermann)
+  . Fixed bug GH-10270 (Unable to return CURL_READFUNC_PAUSE in readfunc
+    callback). (Pierrick Charron)
+
+- Date:
+  . Fix GH-10447 ('p' format specifier does not yield 'Z' for 00:00). (Derick)
+  . Fix GH-10152 (Custom properties of Date's child classes are not
+    serialised). (Derick)
+
+- FFI:
+  . Fixed incorrect bitshifting and masking in ffi bitfield. (nielsdos)
+
+- Fiber:
+  . Fixed assembly on alpine x86. (nielsdos)
+  . Fixed bug GH-10496 (segfault when garbage collector is invoked inside of
+    fiber). (Bob, Arnaud)
+
+- FPM:
+  . Fixed bug GH-10315 (FPM unknown child alert not valid). (Jakub Zelenka)
+  . Fixed bug GH-10385 (FPM successful config test early exit). (nielsdos)
+
+- GMP:
+  . Properly implement GMP::__construct(). (nielsdos)
+
+- Intl:
+  . Fixed bug GH-10647 (Spoolchecker isSuspicious/areConfusable methods
+    error code's argument always returning NULL0. (Nathan Freeman)
+
+- JSON:
+  . Fixed JSON scanner and parser generation build.
+    (Daniel Black, Jakub Zelenka)
+
+- MBString:
+  . ext/mbstring: fix new_value length check. (Max Kellermann)
+  . Fix bug GH-10627 (mb_convert_encoding crashes PHP on Windows). (nielsdos)
+
+- Opcache:
+  . Fix incorrect page_size check. (nielsdos)
+  . Fix readonly modification check when using inc/dec operators on readonly
+    property with JIT. (ilutov)
+
+- OpenSSL:
+  . Fixed php_openssl_set_server_dh_param() DH params errors handling. (nielsdos)
+
+- PDO OCI:
+  . Fixed bug #60994 (Reading a multibyte CLOB caps at 8192 chars).
+    (Michael Voříšek)
+
+- PHPDBG:
+  . Fixed bug GH-10715 (heap buffer overflow on --run option misuse). (nielsdos)
+
+- PGSQL:
+  . Fix GH-10672 (pg_lo_open segfaults in the strict_types mode). (girgias)
+
+- Phar:
+  . Fix incorrect check in phar tar parsing. (nielsdos)
+
+- Random:
+  . Fix GH-10390 (Do not trust arc4random_buf() on glibc). (timwolla)
+  . Fix GH-10292 (Made the default value of the first param of srand() and
+    mt_srand() unknown). (kocsismate)
+
+- Reflection:
+  . Fixed bug GH-10623 (Reflection::getClosureUsedVariables opcode fix with
+    variadic arguments). (nielsdos)
+  . Fix Segfault when using ReflectionFiber suspended by an internal function.
+    (danog)
+
+- Session:
+  . Fixed ps_files_cleanup_dir() on failure code paths with -1 instead of 0 as
+    the latter was considered success by callers. (nielsdos).
+
+- Standard:
+  . Fixed bug GH-8086 (Introduce mail.mixed_lf_and_crlf INI). (Jakub Zelenka)
+  . Fixed bug GH-10292 (Made the default value of the first param of srand() and
+    mt_srand() unknown). (kocsismate)
+  . Fix incorrect check in cs_8559_5 in map_from_unicode(). (nielsdos)
+  . Fix bug GH-9697 for reset/end/next/prev() attempting to move pointer of
+    properties table for certain internal classes such as FFI classes
+  . Fix incorrect error check in browsecap for pcre2_match(). (nielsdos)
+
+- Streams:
+  . Fixed bug GH-10370 (File corruption in _php_stream_copy_to_stream_ex when
+    using copy_file_range). (nielsdos)
+  . Fixed bug GH-10548 (copy() fails on cifs mounts because of incorrect
+    copy_file_range() len). (nielsdos)
+
+- Tidy:
+  . Fix memory leaks when attempting to open a non-existing file or a file over
+    4GB. (Girgias)
+  . Add missing error check on tidyLoadConfig. (nielsdos)
+
+- Zlib:
+  . Fixed output_handler directive value's length which counted the string
+    terminator. (nieldos)
+
 14 Feb 2023, PHP 8.2.3
 
 - Core:
   . Fixed bug #81744 (Password_verify() always return true with some hash).
-    (CVE-2023-0567) (Tim Düsterhus)
+    (CVE-2023-0567). (Tim Düsterhus)
   . Fixed bug #81746 (1-byte array overrun in common path resolve code).
-    (CVE-2023-0568) (Niels Dossche)
+    (CVE-2023-0568). (Niels Dossche)
 
-- FPM:
+- SAPI:
   . Fixed bug GHSA-54hq-v5wp-fqgv (DOS vulnerability when parsing multipart
     request body). (CVE-2023-0662) (Jakub Zelenka)
 
@@ -24,6 +224,8 @@ PHP                                                                        NEWS
     (Arnaud)
   . Fix GH-9675 (Broken run_time_cache init for internal enum methods).
     (Petar Obradović, Bob)
+  . Fix GH-10248 (Assertion `!(zval_get_type(&(*(property))) == 10)' failed).
+    (nielsdos)
 
 - FPM:
   . Fixed bug #77106 (Missing separator in FPM FastCGI errors). (Jakub Zelenka)
@@ -534,4 +736,3 @@ PHP                                                                        NEWS
   . On Windows, the Zip extension is now built as shared library (DLL) by
     default. (cmb)
   . Implement fseek for zip stream when possible with libzip 1.9.1. (Remi)
-
