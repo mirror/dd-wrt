@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -652,31 +652,6 @@ store_client::readHeader(char const *buf, ssize_t len)
      * know the swap header size.
      */
     fileRead();
-}
-
-int
-storeClientCopyPending(store_client * sc, StoreEntry * e, void *data)
-{
-#if STORE_CLIENT_LIST_DEBUG
-    assert(sc == storeClientListSearch(e->mem_obj, data));
-#endif
-#ifndef SILLY_CODE
-
-    assert(sc);
-#endif
-
-    assert(sc->entry == e);
-#if SILLY_CODE
-
-    if (sc == NULL)
-        return 0;
-
-#endif
-
-    if (!sc->_callback.pending())
-        return 0;
-
-    return 1;
 }
 
 /*

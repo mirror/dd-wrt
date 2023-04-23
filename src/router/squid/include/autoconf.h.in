@@ -1373,9 +1373,6 @@
 /* Compiler supports %zu printf macro */
 #undef PRIuSIZE
 
-/* Base type of the second argument to recv(2) */
-#undef RECV_ARG_TYPE
-
 /* The size of `int64_t', as computed by sizeof. */
 #undef SIZEOF_INT64_T
 
