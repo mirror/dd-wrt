@@ -73,12 +73,13 @@ void _crypt_extended_init_r(void)
 		initialized = 1;
 		_crypt_extended_init();
 	}
+
 #ifdef ZTS
 	tsrm_mutex_unlock(php_crypt_extended_init_lock);
 #endif
 }
 
-/* MD% crypt implementation using the windows CryptoApi */
+/* MD5 crypt implementation using the windows CryptoApi */
 #define MD5_MAGIC "$1$"
 #define MD5_MAGIC_LEN 3
 
