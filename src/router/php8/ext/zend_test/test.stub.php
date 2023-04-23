@@ -12,6 +12,9 @@ namespace {
      */
     const ZEND_TEST_DEPRECATED = 42;
 
+    /** @var string */
+    const ZEND_CONSTANT_A = "global";
+
     require "Zend/zend_attributes.stub.php";
 
     interface _ZendTestInterface
@@ -40,6 +43,8 @@ namespace {
         public function returnsStatic(): static {}
 
         public function returnsThrowable(): Throwable {}
+
+        static public function variadicTest(string|Iterator ...$elements) : static {}
     }
 
     class _ZendTestChildClass extends _ZendTestClass
@@ -161,6 +166,8 @@ namespace {
     function zend_test_zend_ini_parse_uquantity(string $str): int {}
 
     function zend_test_zend_ini_str(): string {}
+
+    function zend_get_map_ptr_last(): int {}
 }
 
 namespace ZendTestNS {
@@ -179,6 +186,12 @@ namespace ZendTestNS {
 }
 
 namespace ZendTestNS2 {
+
+    /**
+     * @var string
+     * @cvalue ZEND_TEST_NS_CONSTANT_A
+     */
+    const ZEND_CONSTANT_A = UNKNOWN;
 
     class Foo {
         public ZendSubNS\Foo $foo;
@@ -202,6 +215,10 @@ namespace ZendTestNS2 {
 }
 
 namespace ZendTestNS2\ZendSubNS {
+
+    /** @var string */
+    const ZEND_CONSTANT_A = \ZendTestNS2\ZEND_CONSTANT_A;
+    // Reference another namespaced constant.
 
     class Foo {
         public function method(): void {}

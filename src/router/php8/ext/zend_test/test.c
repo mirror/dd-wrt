@@ -29,6 +29,7 @@
 #include "zend_interfaces.h"
 #include "zend_weakrefs.h"
 #include "Zend/Optimizer/zend_optimizer.h"
+#include "test.h"
 #include "test_arginfo.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(zend_test)
@@ -456,6 +457,12 @@ static ZEND_FUNCTION(zend_test_parameter_with_attribute)
 	RETURN_LONG(1);
 }
 
+static ZEND_FUNCTION(zend_get_map_ptr_last)
+{
+	ZEND_PARSE_PARAMETERS_NONE();
+	RETURN_LONG(CG(map_ptr_last));
+}
+
 static zend_object *zend_test_class_new(zend_class_entry *class_type)
 {
 	zend_object *obj = zend_objects_new(class_type);
@@ -539,6 +546,31 @@ static ZEND_METHOD(_ZendTestClass, returnsThrowable)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
 	zend_throw_error(NULL, "Dummy");
+}
+
+static ZEND_METHOD(_ZendTestClass, variadicTest) {
+	int      argc, i;
+	zval    *args = NULL;
+
+	ZEND_PARSE_PARAMETERS_START(0, -1)
+		Z_PARAM_VARIADIC('*', args, argc)
+	ZEND_PARSE_PARAMETERS_END();
+
+	for (i = 0; i < argc; i++) {
+		zval *arg = args + i;
+
+		if (Z_TYPE_P(arg) == IS_STRING) {
+			continue;
+		}
+		if (Z_TYPE_P(arg) == IS_OBJECT && instanceof_function(Z_OBJ_P(arg)->ce, zend_ce_iterator)) {
+			continue;
+		}
+
+		zend_argument_type_error(i + 1, "must be of class Iterator or a string, %s given", zend_zval_type_name(arg));
+		RETURN_THROWS();
+	}
+
+	object_init_ex(return_value, zend_get_called_scope(execute_data));
 }
 
 static ZEND_METHOD(_ZendTestChildClass, returnsThrowable)
@@ -650,6 +682,9 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_BOOLEAN("zend_test.replace_zend_execute_ex", "0", PHP_INI_SYSTEM, OnUpdateBool, replace_zend_execute_ex, zend_zend_test_globals, zend_test_globals)
 	STD_PHP_INI_BOOLEAN("zend_test.register_passes", "0", PHP_INI_SYSTEM, OnUpdateBool, register_passes, zend_zend_test_globals, zend_test_globals)
 	STD_PHP_INI_BOOLEAN("zend_test.print_stderr_mshutdown", "0", PHP_INI_SYSTEM, OnUpdateBool, print_stderr_mshutdown, zend_zend_test_globals, zend_test_globals)
+#ifdef HAVE_COPY_FILE_RANGE
+	STD_PHP_INI_ENTRY("zend_test.limit_copy_file_range", "-1", PHP_INI_ALL, OnUpdateLong, limit_copy_file_range, zend_zend_test_globals, zend_test_globals)
+#endif
 	STD_PHP_INI_ENTRY("zend_test.quantity_value", "0", PHP_INI_ALL, OnUpdateLong, quantity_value, zend_zend_test_globals, zend_test_globals)
 	STD_PHP_INI_ENTRY("zend_test.str_test", "", PHP_INI_ALL, OnUpdateStr, str_test, zend_zend_test_globals, zend_test_globals)
 	STD_PHP_INI_ENTRY("zend_test.not_empty_str_test", "val", PHP_INI_ALL, OnUpdateStrNotEmpty, not_empty_str_test, zend_zend_test_globals, zend_test_globals)
@@ -930,3 +965,17 @@ PHP_ZEND_TEST_API void bug_gh9090_void_int_char_var(int i, char *fmt, ...) {
 
     va_end(args);
 }
+
+#ifdef HAVE_COPY_FILE_RANGE
+/**
+ * This function allows us to simulate early return of copy_file_range by setting the limit_copy_file_range ini setting.
+ */
+PHP_ZEND_TEST_API ssize_t copy_file_range(int fd_in, off64_t *off_in, int fd_out, off64_t *off_out, size_t len, unsigned int flags)
+{
+	ssize_t (*original_copy_file_range)(int, off64_t *, int, off64_t *, size_t, unsigned int) = dlsym(RTLD_NEXT, "copy_file_range");
+	if (ZT_G(limit_copy_file_range) >= Z_L(0)) {
+		len = ZT_G(limit_copy_file_range);
+	}
+	return original_copy_file_range(fd_in, off_in, fd_out, off_out, len, flags);
+}
+#endif

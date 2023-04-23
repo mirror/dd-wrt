@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 786b35a1fbff38215431d5ae46a5816c70defce5 */
+ * Stub hash: 189db7e45ac72c06cbe324043ab5716955ac554b */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_test_array_return, 0, 0, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
@@ -97,6 +97,9 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_zend_test_zend_ini_str arginfo_zend_get_current_func_name
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_get_map_ptr_last, 0, 0, IS_LONG, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ZendTestNS2_namespaced_func, 0, 0, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
@@ -114,8 +117,7 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_ZendTestNS2_ZendSubNS_namespaced_deprecated_aliased_func arginfo_zend_test_void_return
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class__ZendTestClass_is_object, 0, 0, IS_LONG, 0)
-ZEND_END_ARG_INFO()
+#define arginfo_class__ZendTestClass_is_object arginfo_zend_get_map_ptr_last
 
 #define arginfo_class__ZendTestClass___toString arginfo_zend_get_current_func_name
 
@@ -123,6 +125,10 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class__ZendTestClass_returnsStat
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_class__ZendTestClass_returnsThrowable, 0, 0, Throwable, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class__ZendTestClass_variadicTest, 0, 0, IS_STATIC, 0)
+	ZEND_ARG_VARIADIC_OBJ_TYPE_MASK(0, elements, Iterator, MAY_BE_STRING)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_class__ZendTestChildClass_returnsThrowable, 0, 0, Exception, 0)
@@ -185,6 +191,7 @@ static ZEND_FUNCTION(zend_call_method);
 static ZEND_FUNCTION(zend_test_zend_ini_parse_quantity);
 static ZEND_FUNCTION(zend_test_zend_ini_parse_uquantity);
 static ZEND_FUNCTION(zend_test_zend_ini_str);
+static ZEND_FUNCTION(zend_get_map_ptr_last);
 static ZEND_FUNCTION(ZendTestNS2_namespaced_func);
 static ZEND_FUNCTION(ZendTestNS2_namespaced_deprecated_func);
 static ZEND_FUNCTION(ZendTestNS2_ZendSubNS_namespaced_func);
@@ -193,6 +200,7 @@ static ZEND_METHOD(_ZendTestClass, is_object);
 static ZEND_METHOD(_ZendTestClass, __toString);
 static ZEND_METHOD(_ZendTestClass, returnsStatic);
 static ZEND_METHOD(_ZendTestClass, returnsThrowable);
+static ZEND_METHOD(_ZendTestClass, variadicTest);
 static ZEND_METHOD(_ZendTestChildClass, returnsThrowable);
 static ZEND_METHOD(_ZendTestTrait, testMethod);
 static ZEND_METHOD(ZendTestParameterAttribute, __construct);
@@ -235,6 +243,7 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(zend_test_zend_ini_parse_quantity, arginfo_zend_test_zend_ini_parse_quantity)
 	ZEND_FE(zend_test_zend_ini_parse_uquantity, arginfo_zend_test_zend_ini_parse_uquantity)
 	ZEND_FE(zend_test_zend_ini_str, arginfo_zend_test_zend_ini_str)
+	ZEND_FE(zend_get_map_ptr_last, arginfo_zend_get_map_ptr_last)
 	ZEND_NS_FALIAS("ZendTestNS2", namespaced_func, ZendTestNS2_namespaced_func, arginfo_ZendTestNS2_namespaced_func)
 	ZEND_NS_DEP_FALIAS("ZendTestNS2", namespaced_deprecated_func, ZendTestNS2_namespaced_deprecated_func, arginfo_ZendTestNS2_namespaced_deprecated_func)
 	ZEND_NS_FALIAS("ZendTestNS2", namespaced_aliased_func, zend_test_void_return, arginfo_ZendTestNS2_namespaced_aliased_func)
@@ -257,6 +266,7 @@ static const zend_function_entry class__ZendTestClass_methods[] = {
 	ZEND_ME(_ZendTestClass, __toString, arginfo_class__ZendTestClass___toString, ZEND_ACC_PUBLIC|ZEND_ACC_DEPRECATED)
 	ZEND_ME(_ZendTestClass, returnsStatic, arginfo_class__ZendTestClass_returnsStatic, ZEND_ACC_PUBLIC)
 	ZEND_ME(_ZendTestClass, returnsThrowable, arginfo_class__ZendTestClass_returnsThrowable, ZEND_ACC_PUBLIC)
+	ZEND_ME(_ZendTestClass, variadicTest, arginfo_class__ZendTestClass_variadicTest, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	ZEND_FE_END
 };
 
@@ -351,6 +361,9 @@ static const zend_function_entry class_ZendTestNS2_ZendSubNS_Foo_methods[] = {
 static void register_test_symbols(int module_number)
 {
 	REGISTER_LONG_CONSTANT("ZEND_TEST_DEPRECATED", 42, CONST_PERSISTENT | CONST_DEPRECATED);
+	REGISTER_STRING_CONSTANT("ZEND_CONSTANT_A", "global", CONST_PERSISTENT);
+	REGISTER_STRING_CONSTANT("ZendTestNS2\\ZEND_CONSTANT_A", ZEND_TEST_NS_CONSTANT_A, CONST_PERSISTENT);
+	REGISTER_STRING_CONSTANT("ZendTestNS2\\ZendSubNS\\ZEND_CONSTANT_A", ZEND_TEST_NS_CONSTANT_A, CONST_PERSISTENT);
 }
 
 static zend_class_entry *register_class__ZendTestInterface(void)

@@ -640,14 +640,14 @@ static uint64_t zend_ffi_bit_field_read(void *ptr, zend_ffi_field *field) /* {{{
 	/* Read partial prefix byte */
 	if (pos != 0) {
 		size_t num_bits = 8 - pos;
-		mask = ((1U << num_bits) - 1U) << pos;
+		mask = (1U << num_bits) - 1U;
 		val = (*p++ >> pos) & mask;
 		insert_pos += num_bits;
 	}
 
 	/* Read full bytes */
 	while (p < last_p) {
-		val |= *p++ << insert_pos;
+		val |= (uint64_t) *p++ << insert_pos;
 		insert_pos += 8;
 	}
 
@@ -655,7 +655,7 @@ static uint64_t zend_ffi_bit_field_read(void *ptr, zend_ffi_field *field) /* {{{
 	if (p == last_p) {
 		size_t num_bits = last_bit % 8 + 1;
 		mask = (1U << num_bits) - 1U;
-		val |= (*p & mask) << insert_pos;
+		val |= (uint64_t) (*p & mask) << insert_pos;
 	}
 
 	return val;
@@ -2028,6 +2028,8 @@ static HashTable *zend_ffi_cdata_get_debug_info(zend_object *obj, int *is_temp) 
 	}
 
 	switch (type->kind) {
+		case ZEND_FFI_TYPE_VOID:
+			return NULL;
 		case ZEND_FFI_TYPE_BOOL:
 		case ZEND_FFI_TYPE_CHAR:
 		case ZEND_FFI_TYPE_ENUM:

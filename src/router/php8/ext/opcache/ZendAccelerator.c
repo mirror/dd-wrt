@@ -2353,18 +2353,18 @@ static zend_class_entry* zend_accel_inheritance_cache_add(zend_class_entry *ce, 
 	SHM_UNPROTECT();
 	zend_shared_alloc_lock();
 
-	entry = ce->inheritance_cache;
+	entry = proto->inheritance_cache;
 	while (entry) {
-		entry = zend_accel_inheritance_cache_find(entry, ce, parent, traits_and_interfaces, &needs_autoload);
+		entry = zend_accel_inheritance_cache_find(entry, proto, parent, traits_and_interfaces, &needs_autoload);
 		if (entry) {
+			zend_shared_alloc_unlock();
+			SHM_PROTECT();
 			if (!needs_autoload) {
-				zend_shared_alloc_unlock();
-				SHM_PROTECT();
-
 				zend_map_ptr_extend(ZCSG(map_ptr_last));
 				return entry->ce;
+			} else {
+				return NULL;
 			}
-			ZEND_ASSERT(0); // entry = entry->next; // This shouldn't be possible ???
 		}
 	}
 
@@ -3037,7 +3037,7 @@ static void accel_move_code_to_huge_pages(void)
 		int ret;
 
 		while (1) {
-			ret = fscanf(f, "%lx-%lx %4s %lx %9s %ld %s\n", &start, &end, perm, &offset, dev, &inode, name);
+			ret = fscanf(f, "%lx-%lx %4s %lx %9s %lu %s\n", &start, &end, perm, &offset, dev, &inode, name);
 			if (ret == 7) {
 				if (perm[0] == 'r' && perm[1] == '-' && perm[2] == 'x' && name[0] == '/') {
 					long unsigned int  seg_start = ZEND_MM_ALIGNED_SIZE_EX(start, huge_page_size);
@@ -3205,7 +3205,7 @@ static zend_result accel_post_startup(void)
 			size_t page_size;
 
 			page_size = zend_get_page_size();
-			if (!page_size && (page_size & (page_size - 1))) {
+			if (!page_size || (page_size & (page_size - 1))) {
 				zend_accel_error_noreturn(ACCEL_LOG_FATAL, "Failure to initialize shared memory structures - can't get page size.");
 				abort();
 			}
