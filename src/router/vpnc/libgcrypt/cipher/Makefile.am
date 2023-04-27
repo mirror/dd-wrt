@@ -67,7 +67,7 @@ rfc2268.c
 
 # We need to lower the optimization for this module.
 tiger.o: $(srcdir)/tiger.c
-	`echo $(COMPILE) -c $(srcdir)/tiger.c | sed -e 's/-O[2-9s]*/-O1/g' `
+	`echo $(COMPILE) -c $(srcdir)/tiger.c | sed -e 's/-Oz/-O1/g' | sed -e 's/-O[2-9s]*/-O1/g' `
 
 tiger.lo: $(srcdir)/tiger.c
-	`echo $(LTCOMPILE) -c $(srcdir)/tiger.c | sed -e 's/-O[2-9s]*/-O1/g' `
+	`echo $(LTCOMPILE) -c $(srcdir)/tiger.c | sed -e 's/-Oz/-O1/g' | sed -e 's/-O[2-9s]*/-O1/g' `
