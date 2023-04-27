@@ -9,6 +9,7 @@ inadyn-configure:
 					AR_FLAGS="cru $(LTOPLUGIN)" \
 					RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
+	$(MAKE) -C inadynv2/libconfuse clean
 	$(MAKE) -C inadynv2/libconfuse
 
 	cd inadynv2 && ./autogen.sh
