@@ -79,6 +79,7 @@ squid-configure: openssl
 	--without-heimdal-krb5 \
 	--without-libxml2 \
 	--without-gnutls \
+	--without-systemd \
 	--with-large-files \
 	--with-maxfd=4096 \
 	--with-filedescriptors=4096
