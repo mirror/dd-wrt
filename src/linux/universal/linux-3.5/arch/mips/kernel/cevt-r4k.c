@@ -111,7 +111,7 @@ static int c0_compare_int_pending(void)
 int c0_compare_int_usable(void)
 {
 	unsigned int delta;
-	unsigned int cnt;
+	unsigned int cnt = 0;
 
 	/*
 	 * IP7 already pending?  Try to clear it by acking the timer.
