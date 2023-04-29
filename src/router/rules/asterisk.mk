@@ -68,6 +68,11 @@ asterisk-configure: util-linux-configure jansson editline zlib sqlite
 	--without-iksemel \
 	--with-uuid=$(INSTALLDIR)/util-linux/usr \
 	ac_cv_header_locale_h=yes \
+	pkg_cv_SYSTEMD_LIBS="" \
+	SYSTEMD_CFLAGS=" " \
+	SYSTEMD_INCLUDE=" " \
+	SYSTEMD_LIB=' ' \
+	SYSTEMD_LIBS=' ' \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/sqlite/.libs -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
