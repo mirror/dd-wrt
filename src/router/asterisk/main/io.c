@@ -26,7 +26,6 @@
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
-
 #include "asterisk.h"
 
 #include <termios.h>
@@ -34,6 +33,7 @@
 
 #include "asterisk/io.h"
 #include "asterisk/utils.h"
+#undef HAVE_SYSTEMD
 #ifdef HAVE_SYSTEMD
 #include <systemd/sd-daemon.h>
 
