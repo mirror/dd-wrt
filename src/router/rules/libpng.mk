@@ -12,7 +12,7 @@ libpng: zlib
 libpng-clean:
 	make -C libpng clean
 	
-libpng-configure: zlib
+libpng-configure: zlib-configure zlib
 	cd libpng &&   ./configure --host=$(ARCH)-linux-uclibc  --disable-shared --enable-static CC="ccache $(ARCH)-linux-uclibc-gcc" CFLAGS="-fPIC $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" CPPFLAGS="-fPIC $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" 'LDFLAGS=-L$(TOP)/zlib'
 	$(MAKE) -C libpng
 	-mkdir -p $(TOP)/libpng/.libs/include

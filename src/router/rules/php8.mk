@@ -208,7 +208,7 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php8-configure: libpng libgd libxml2 zlib curl glib20 libzip openssl sqlite
+php8-configure: libpng-configure libpng libgd-configure libgd libxml2-configure libxml2 zlib-configure zlib curl-configure curl glib20-configure glib20 libzip-configure libzip openssl sqlite
 	rm -f php8/config.cache
 	rm -rf php8/autom4te.cach
 	cd php8 && touch configure.ac && autoconf
