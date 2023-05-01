@@ -8,7 +8,7 @@ libgd: libpng minidlna zlib
 libgd-clean:
 	make -C libgd clean
 	
-libgd-configure: libpng zlib
+libgd-configure: minidlna-configure minidlna libpng zlib
 	cd libgd && autoreconf -fi && ./configure --host=$(ARCH)-linux-uclibc  \
 	--with-jpeg=$(TOP)/minidlna/libjpeg-turbo-2.1.4 \
 	--without-xpm \
