@@ -27,7 +27,7 @@ e2fsprogs:
 	make -C e2fsprogs
 
 e2fsprogs-clean:
-	make -C e2fsprogs clean
+	-make -C e2fsprogs clean
 
 e2fsprogs-install:
 	make -C e2fsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs LDCONFIG=true
