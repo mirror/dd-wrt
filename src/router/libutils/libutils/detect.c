@@ -191,7 +191,7 @@ void setRouter(char *name)
 #elif HAVE_NDTRADE
 #ifdef HAVE_SUPERCHANNEL
 	nvram_set(NVROUTER_ALT, "KT412H-Hours");
-#elif
+#else
 	nvram_set(NVROUTER_ALT, "DW02-412H-8000");
 #endif
 #endif
