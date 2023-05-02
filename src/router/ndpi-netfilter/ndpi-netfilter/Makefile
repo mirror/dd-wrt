@@ -13,7 +13,8 @@ install:
 	$(MAKE) -C ipt install
 clean:
 	$(MAKE) -C src clean
-	$(MAKE) -C ipt clean
+#	$(MAKE) -C ipt clean
+
 distclean:
 	$(MAKE) clean
 	$(MAKE) -C src distclean
