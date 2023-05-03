@@ -2,7 +2,7 @@
 #  <tcp|udp>:<port>,<tcp|udp>:<port>,.....@<proto>
 
 tcp:81,tcp:8181@HTTP
-udp:5061-5062@SIP
+udp:5062@SIP
 tcp:860,udp:860,tcp:3260,udp:3260@iSCSI
 tcp:3000@ntop
 tcp:9002@Elasticsearch
@@ -49,6 +49,9 @@ host:"api-global.netflix.com"@Netflix
 ip:213.75.170.11/32:443@CustomProtocol
 ip:8.248.73.247:443@AmazonPrime
 ip:54.80.47.130@AmazonPrime
+
+ip:3.3.3.3:443@CustomProtocolA
+ip:3.3.3.3:444@CustomProtocolB
 
 #
 # Risk Exceptions

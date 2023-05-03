@@ -135,8 +135,8 @@ typedef enum {
   NDPI_PROTOCOL_ARMAGETRON            = 104,
   NDPI_PROTOCOL_CROSSFIRE             = 105,
   NDPI_PROTOCOL_DOFUS                 = 106,
-  NDPI_PROTOCOL_FREE_107              = 107, /* FREE */
-  NDPI_PROTOCOL_FREE_108              = 108, /* FREE */
+  NDPI_PROTOCOL_ADS_ANALYTICS_TRACK   = 107, /* Generic id for advertisement/analytics/tracking stuff */
+  NDPI_PROTOCOL_ADULT_CONTENT         = 108,
   NDPI_PROTOCOL_GUILDWARS             = 109,
   NDPI_PROTOCOL_AMAZON_ALEXA          = 110,
   NDPI_PROTOCOL_KERBEROS              = 111,
@@ -361,6 +361,10 @@ typedef enum {
   NDPI_PROTOCOL_ELASTICSEARCH         = 330,
   NDPI_PROTOCOL_TUYA_LP               = 331, /* TUYA LAN Protocol; IoT OS: https://github.com/tuya/tuya-iotos-embeded-sdk-wifi-ble-bk7231n */
   NDPI_PROTOCOL_TPLINK_SHP            = 332, /* TP-LINK Smart Home Protocol */
+  NDPI_PROTOCOL_SOURCE_ENGINE         = 333,
+  NDPI_PROTOCOL_BACNET                = 334,
+  NDPI_PROTOCOL_OICQ                  = 335,
+  NDPI_PROTOCOL_HOTS                  = 336, /* Heroes of the Storm */
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

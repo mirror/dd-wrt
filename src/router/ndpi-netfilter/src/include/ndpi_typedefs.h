@@ -1,7 +1,7 @@
 /*
  * ndpi_typedefs.h
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-23 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -65,6 +65,7 @@ typedef enum {
   ndpi_tzsp_tunnel,
   ndpi_l2tp_tunnel,
   ndpi_vxlan_tunnel,
+  ndpi_gre_tunnel,
 } ndpi_packet_tunnel;
 
 /*
@@ -530,13 +531,13 @@ struct ndpi_icmphdr {
 
 PACK_ON
 struct ndpi_icmp6hdr {
-  uint8_t     icmp6_type;   /* type field */
-  uint8_t     icmp6_code;   /* code field */
-  uint16_t    icmp6_cksum;  /* checksum field */
+  u_int8_t     icmp6_type;   /* type field */
+  u_int8_t     icmp6_code;   /* code field */
+  u_int16_t    icmp6_cksum;  /* checksum field */
   union {
-    uint32_t  icmp6_un_data32[1]; /* type-specific field */
-    uint16_t  icmp6_un_data16[2]; /* type-specific field */
-    uint8_t   icmp6_un_data8[4];  /* type-specific field */
+    u_int32_t  icmp6_un_data32[1]; /* type-specific field */
+    u_int16_t  icmp6_un_data16[2]; /* type-specific field */
+    u_int8_t   icmp6_un_data8[4];  /* type-specific field */
   } icmp6_dataun;
 } PACK_OFF;
 
@@ -546,7 +547,43 @@ PACK_ON
 struct ndpi_vxlanhdr {
   u_int16_t flags;
   u_int16_t groupPolicy;
-  u_int32_t vni;
+  u_int8_t vni[3];
+  u_int8_t reserved;
+} PACK_OFF;
+
+#ifndef IPPROTO_GRE
+#define IPPROTO_GRE 47
+#endif
+
+#define NDPI_GRE_CSUM        ntohs(0x8000)
+#define NDPI_GRE_ROUTING     ntohs(0x4000)
+#define NDPI_GRE_KEY         ntohs(0x2000)
+#define NDPI_GRE_SEQ         ntohs(0x1000)
+#define NDPI_GRE_STRICT      ntohs(0x0800)
+#define NDPI_GRE_REC         ntohs(0x0700)
+#define NDPI_GRE_ACK         ntohs(0x0080)
+#define NDPI_GRE_FLAGS       ntohs(0x00f8)
+#define NDPI_GRE_VERSION     ntohs(0x0007)
+
+#define NDPI_GRE_IS_CSUM(f)		((f) & NDPI_GRE_CSUM)
+#define NDPI_GRE_IS_ROUTING(f)	((f) & NDPI_GRE_ROUTING)
+#define NDPI_GRE_IS_KEY(f)		((f) & NDPI_GRE_KEY)
+#define NDPI_GRE_IS_SEQ(f)		((f) & NDPI_GRE_SEQ)
+#define NDPI_GRE_IS_STRICT(f)	((f) & NDPI_GRE_STRICT)
+#define NDPI_GRE_IS_REC(f)		((f) & NDPI_GRE_REC)
+#define NDPI_GRE_IS_FLAGS(f)		((f) & NDPI_GRE_FLAGS)
+#define NDPI_GRE_IS_ACK(f)		((f) & NDPI_GRE_ACK)
+#define NDPI_GRE_IS_VERSION_0(f) (((f) & NDPI_GRE_VERSION) == ntohs(0x0000))
+#define NDPI_GRE_IS_VERSION_1(f) (((f) & NDPI_GRE_VERSION) == ntohs(0x0001))
+
+#define NDPI_GRE_PROTO_PPP ntohs(0x880b)
+#define NDPI_PPP_HDRLEN	4	/* octets for standard ppp header */
+
+/* +++++++++++++++++++++++ GRE basic header +++++++++++++++++++++++ */
+PACK_ON
+struct ndpi_gre_basehdr {
+	uint16_t flags;
+	uint16_t protocol;
 } PACK_OFF;
 
 /* ************************************************************ */
@@ -730,6 +767,14 @@ struct ndpi_lru_cache {
   struct ndpi_lru_cache_entry *entries;
 };
 
+
+/* Aggressiveness values */
+
+#define NDPI_AGGRESSIVENESS_DISABLED			0x00 /* For all protocols */
+
+/* Ookla */
+#define NDPI_AGGRESSIVENESS_OOKLA_TLS			0x01 /* Enable detection over TLS (using ookla cache) */
+
 /* ************************************************** */
 
 struct ndpi_flow_tcp_struct {
@@ -754,9 +799,6 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_IRC */
   u_int8_t irc_stage;
-
-  /* NDPI_PROTOCOL_H323 */
-  u_int8_t h323_valid_packets;
 
   /* NDPI_PROTOCOL_GNUTELLA */
   u_int8_t gnutella_msg_id[3];
@@ -1020,7 +1062,8 @@ typedef enum {
   NDPI_CONFIDENCE_DPI_PARTIAL_CACHE,        /* Classification results based on some LRU cache with partial/incomplete DPI information */
   NDPI_CONFIDENCE_DPI_CACHE,                /* Classification results based on some LRU cache (i.e. correlation among sessions) */
   NDPI_CONFIDENCE_DPI,                      /* Deep packet inspection */
-  
+  NDPI_CONFIDENCE_DPI_AGGRESSIVE,           /* Aggressive DPI: it might be a false positive */
+
   /*
     IMPORTANT
 
@@ -1094,6 +1137,7 @@ typedef enum {
   */
   NDPI_PROTOCOL_CATEGORY_VIRTUAL_ASSISTANT,
   NDPI_PROTOCOL_CATEGORY_CYBERSECURITY,
+  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT,
   
   /* Some custom categories */
   CUSTOM_CATEGORY_MINING           = 99,
@@ -1261,9 +1305,9 @@ struct ndpi_detection_module_struct {
     risky_domain_automa, tls_cert_subject_automa,
     host_risk_mask_automa, common_alpns_automa;
   /* IMPORTANT: please, whenever you add a new automa:
-       * update ndpi_finalize_initialization()
-       * update automa_type above
-  */
+   * update ndpi_finalize_initialization()
+   * update automa_type above
+   */
 
   ndpi_str_hash *malicious_ja3_hashmap, *malicious_sha1_hashmap;
 
@@ -1272,11 +1316,11 @@ struct ndpi_detection_module_struct {
   spinlock_t host_automa_lock;
 
   ndpi_list *trusted_issuer_dn;
-  
-  void *ip_risk_mask_ptree;
-  void *ip_risk_ptree;
-  /* IP-based protocol detection */
-  void *protocols_ptree;
+
+  /* Patricia trees */
+  ndpi_patricia_tree_t *ip_risk_mask_ptree;
+  ndpi_patricia_tree_t *ip_risk_ptree; 
+  ndpi_patricia_tree_t *protocols_ptree;  /* IP-based protocol detection */
   
   /* *** If you add a new Patricia tree, please update ptree_type above! *** */
 
@@ -1348,6 +1392,9 @@ struct ndpi_detection_module_struct {
   int opportunistic_tls_pop_enabled;
   int opportunistic_tls_ftp_enabled;
 
+  u_int32_t aggressiveness_ookla;
+
+  u_int16_t ndpi_to_user_proto_id[NDPI_MAX_NUM_CUSTOM_PROTOCOLS]; /* custom protocolId mapping */
   ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
 
   u_int8_t direction_detect_disable:1, /* disable internal detection of packet direction */ _pad:7;
@@ -1660,6 +1707,9 @@ struct ndpi_flow_struct {
   u_int16_t all_packets_counter;
   u_int16_t packet_direction_complete_counter[2];      // can be 0 - 65000
 
+  /* NDPI_PROTOCOL_H323 */
+  u_int8_t h323_valid_packets;
+
   /* NDPI_PROTOCOL_BITTORRENT */
   u_int32_t bittorrent_seq;
   u_int8_t bittorrent_stage;		      // can be 0 - 255
@@ -1694,6 +1744,10 @@ struct ndpi_flow_struct {
 
   /* NDPI_PROTOCOL_Z3950 */
   u_int8_t z3950_stage : 2; // 0-3
+
+  /* NDPI_PROTOCOL_OOKLA */
+  u_int8_t ookla_stage : 1;
+
 
   /* NDPI_PROTOCOL_OPENVPN */
   u_int8_t ovpn_session_id[8];

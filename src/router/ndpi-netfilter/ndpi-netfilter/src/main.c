@@ -1025,8 +1025,8 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
                     const struct sk_buff *skb,int dir, ndpi_protocol *proto)
 {
         struct ndpi_flow_struct * flow;
-	uint32_t low_ip, up_ip, tmp_ip;
-	uint16_t low_port, up_port, tmp_port, protocol;
+	uint32_t low_ip, up_ip;
+	uint16_t low_port, up_port, protocol;
 	const struct iphdr *iph = NULL;
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 	const struct ipv6hdr *ip6h;
@@ -1111,11 +1111,10 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 		    }
 		}
 		if(0 && l_conf == NDPI_CONFIDENCE_UNKNOWN) {
-			if(low_ip > up_ip) { tmp_ip = low_ip; low_ip=up_ip; up_ip = tmp_ip; }
-			if(low_port > up_port) { tmp_port = low_port; low_port=up_port; up_port = tmp_port; }
-			    *proto = ndpi_guess_undetected_protocol (
-					n->ndpi_struct,flow,protocol,low_ip,low_port,up_ip,up_port);
-			    if(_DBG_TRACE_GUESSED)
+			//if(low_ip > up_ip) { uint32_t tmp_ip = low_ip; low_ip=up_ip; up_ip = tmp_ip; }
+			//if(low_port > up_port) { uint16_t tmp_port = low_port; low_port=up_port; up_port = tmp_port; }
+			*proto = ndpi_guess_undetected_protocol (n->ndpi_struct,flow,protocol);
+			if(_DBG_TRACE_GUESSED)
 				packet_trace(skb,ct,ct_ndpi," guess_undet "," [%d,%d]",
 						proto->app_protocol,proto->master_protocol);
 		}
@@ -1199,18 +1198,25 @@ static void ndpi_host_info(struct nf_ct_ext_ndpi *ct_ndpi) {
 	}
     }
 
-    if(ct_ndpi->flow_opt) return;
-    if( is_ndpi_proto(ct_ndpi,NDPI_PROTOCOL_TLS) ||
-	 is_ndpi_proto(ct_ndpi,NDPI_PROTOCOL_QUIC)) {
+    if(ct_ndpi->flow_opt && test_tlsdone(ct_ndpi)) return;
+
+    if (!(is_ndpi_proto(ct_ndpi,NDPI_PROTOCOL_TLS) ||
+	  is_ndpi_proto(ct_ndpi,NDPI_PROTOCOL_QUIC))) return;
+    {
 	char buf[512];
 	size_t l = 0;
 
-       	if(_DBG_TRACE_TLS)
-		pr_info("%s: TLS in progress, cert %d\n",__func__,flow->tls_quic.certificate_processed);
-	if(!flow->tls_quic.certificate_processed)
-		return;
+       	if(_DBG_TRACE_TLS) 
+		pr_info("%s: TLS hello_processed %d, cert_processed %d, extra_packets %d\n",__func__,
+				flow->protos.tls_quic.hello_processed,
+				flow->tls_quic.certificate_processed,
+				flow->extra_packets_func ? 1:0
+				);
 
-	set_tlsdone(ct_ndpi);
+	if(flow->protos.tls_quic.hello_processed &&
+		(flow->tls_quic.certificate_processed || !flow->extra_packets_func))
+		set_tlsdone(ct_ndpi);
+
 	if(flow->protos.tls_quic.ja3_server[0]) {
 	    ct_ndpi->ja3s = l+1;
 	    l += snprintf(&buf[l],sizeof(buf)-1-l,"%s",
@@ -1227,7 +1233,7 @@ static void ndpi_host_info(struct nf_ct_ext_ndpi *ct_ndpi) {
 	    uint32_t * sha1 = (uint32_t *)flow->protos.tls_quic.sha1_certificate_fingerprint;
 	    ct_ndpi->tlsfp = l+1;
 	    l += snprintf(&buf[l],sizeof(buf)-1-l,"%08x%08x%08x%08x%08x",
-			  sha1[0],sha1[1],sha1[2],sha1[3],sha1[4]);
+			  htonl(sha1[0]),htonl(sha1[1]),htonl(sha1[2]),htonl(sha1[3]),htonl(sha1[4]));
 	    buf[l++] = 0;
 	}
 	if(flow->protos.tls_quic.ssl_version) {
@@ -1240,16 +1246,32 @@ static void ndpi_host_info(struct nf_ct_ext_ndpi *ct_ndpi) {
 	    l += snprintf(&buf[l],sizeof(buf)-1-l,"%s",buf_ver);
 	    buf[l++] = 0;
 	}
+
         if(_DBG_TRACE_JA3)
- 	    pr_info("%s: TLS done. ja3s %s, ja3c %s, tlsfp %s, tlsv %s\n",
+ 	    pr_info("%s: TLS ja3s %s, ja3c %s, tlsfp %s, tlsv %s\n",
 		__func__,
 		ct_ndpi->ja3s  ? buf+ct_ndpi->ja3s-1 : "",
 		ct_ndpi->ja3c  ? buf+ct_ndpi->ja3c-1 : "",
 		ct_ndpi->tlsfp ? buf+ct_ndpi->tlsfp-1 : "",
 		ct_ndpi->tlsv  ? buf+ct_ndpi->tlsv-1  : "");
-
+       	if(_DBG_TRACE_TLS)
+		pr_info("%s: TLS %s\n",__func__,
+				test_tlsdone(ct_ndpi) ? "done":"in process");
 	if(l != 0) {
-	    ct_ndpi->flow_opt = kmalloc( l+1, GFP_ATOMIC);
+	    buf[l++] = 0;
+	    if(ct_ndpi->flow_opt) {
+		int old_l = strlen(ct_ndpi->flow_opt)+1;
+	    	if(old_l < l) {
+			char *new_flow_opt = kmalloc( l, GFP_ATOMIC);
+			if(!new_flow_opt) return;
+			kfree(ct_ndpi->flow_opt);
+			ct_ndpi->flow_opt = new_flow_opt;
+		}
+		memcpy(ct_ndpi->flow_opt,buf,l);
+		return;
+	    }
+	    ct_ndpi->flow_opt = kmalloc( l, GFP_ATOMIC);
+
 	    if(ct_ndpi->flow_opt)
 	        memcpy(ct_ndpi->flow_opt,buf,l);
 	}
@@ -1344,33 +1366,46 @@ static void ndpi_check_opt(struct ndpi_detection_module_struct *ndpi_struct,
 static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *proto) {
 
 	struct ndpi_flow_struct *flow = ct_ndpi->flow;
+	int ret = 0;
 	if(!flow) return 0;
 	if(_DBG_TRACE_GUESSED)
-		pr_info("%s:  ct_clevel %d, proto.app %d, flow clevel %d, g_host_id %d, g_id %d\n",__func__,
+		pr_info("%s:  ct_clevel %d, proto.app %d, flow clevel %d, g_host_id %d, g_id %d %s\n",__func__,
 				ct_ndpi->confidence,
 				proto->app_protocol,
 				flow->confidence,
 				flow->guessed_protocol_id_by_ip,
-				flow->guessed_protocol_id);
+				flow->guessed_protocol_id,
+				NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+					flow->guessed_protocol_id) != 0 ? "excluded":""
+				);
 	if(ct_ndpi->confidence >= NDPI_CONFIDENCE_DPI_CACHE) return 0;
 
 	if(proto->app_protocol != NDPI_PROTOCOL_UNKNOWN) return 0;
 
-	if(flow->guessed_protocol_id_by_ip != NDPI_PROTOCOL_UNKNOWN &&
-	   flow->ipdef_proto_level > flow->confidence) {
-		proto->app_protocol = flow->guessed_protocol_id_by_ip;
-		flow->confidence = flow->ipdef_proto_level;
-		if(_DBG_TRACE_GUESSED)
-			pr_info("%s: host app_protocol %d\n",__func__,proto->app_protocol);
-		return 1;
-	}
-	if(ct_ndpi->flow->guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN) {
-		proto->app_protocol = ct_ndpi->flow->guessed_protocol_id;
+	if(flow->guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN &&
+	   NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+						flow->guessed_protocol_id) == 0) {
+		proto->app_protocol = flow->guessed_protocol_id;
 		if(_DBG_TRACE_GUESSED)
 			pr_info("%s: guessed app_protocol %d\n",__func__,proto->app_protocol);
-		return 1;
+		ret = 1;
 	}
-	return 0;
+	if(flow->guessed_protocol_id_by_ip != NDPI_PROTOCOL_UNKNOWN &&
+	   flow->ipdef_proto_level >= flow->confidence) {
+	   	if(proto->app_protocol == NDPI_PROTOCOL_UNKNOWN) {
+			proto->app_protocol = flow->guessed_protocol_id_by_ip;
+			if(_DBG_TRACE_GUESSED)
+			    pr_info("%s: host app_protocol %d\n",__func__,proto->app_protocol);
+		} else
+		   	if(proto->master_protocol == NDPI_PROTOCOL_UNKNOWN) {
+			    proto->master_protocol = flow->guessed_protocol_id_by_ip;
+			    if(_DBG_TRACE_GUESSED)
+				pr_info("%s: host master_protocol %d\n",__func__,proto->master_protocol);
+			}
+		flow->confidence = flow->ipdef_proto_level;
+		ret = 1;
+	}
+	return ret;
 }
 static void check_tls_done(struct nf_ct_ext_ndpi *ct_ndpi,
 	uint8_t *detect_complete, uint8_t *tls ) {

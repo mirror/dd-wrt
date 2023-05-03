@@ -269,16 +269,17 @@ void print_payload_stat(struct payload_stats *p) {
 
 /* ***************************************************** */
 
-void ndpi_report_payload_stats() {
+void ndpi_report_payload_stats(int print) {
   struct payload_stats *p, *tmp;
   u_int num = 0;
 
-  printf("\n\nPayload Analysis\n");
+  if(print)
+    printf("\n\nPayload Analysis\n");
 
   HASH_SORT(pstats, payload_stats_sort_asc);
 
   HASH_ITER(hh, pstats, p, tmp) {
-    if(num <= max_num_reported_top_payloads)
+    if(print && num <= max_num_reported_top_payloads)
       print_payload_stat(p);
 
     ndpi_free(p->pattern);
@@ -990,7 +991,7 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
 	*src_to_dst_direction = 1;
     }
     if(enable_flow_stats) {
-      if(src_to_dst_direction) {
+      if(*src_to_dst_direction) {
         if(rflow->entropy->src2dst_pkt_count < max_num_packets_per_flow) {
           rflow->entropy->src2dst_pkt_len[rflow->entropy->src2dst_pkt_count] = l4_data_len;
           rflow->entropy->src2dst_pkt_time[rflow->entropy->src2dst_pkt_count] = when;
@@ -1894,6 +1895,120 @@ int ndpi_is_datalink_supported(int datalink_type) {
   }
 }
 
+static bool ndpi_is_valid_vxlan(const struct pcap_pkthdr *header, const u_char *packet, u_int16_t ip_offset, u_int16_t ip_len){
+  if(header->caplen < ip_offset + ip_len + sizeof(struct ndpi_udphdr) + sizeof(struct ndpi_vxlanhdr)) {
+    return false;
+  }
+  u_int32_t vxlan_dst_port  = ntohs(4789);
+  struct ndpi_udphdr *udp = (struct ndpi_udphdr *)&packet[ip_offset+ip_len];
+  u_int offset = ip_offset + ip_len + sizeof(struct ndpi_udphdr);
+  /**
+   * rfc-7348 
+   *    VXLAN Header:  This is an 8-byte field that has:
+
+    - Flags (8 bits): where the I flag MUST be set to 1 for a valid
+      VXLAN Network ID (VNI).  The other 7 bits (designated "R") are
+      reserved fields and MUST be set to zero on transmission and
+      ignored on receipt.
+
+    - VXLAN Segment ID/VXLAN Network Identifier (VNI): this is a
+      24-bit value used to designate the individual VXLAN overlay
+      network on which the communicating VMs are situated.  VMs in
+      different VXLAN overlay networks cannot communicate with each
+      other.
+
+    - Reserved fields (24 bits and 8 bits): MUST be set to zero on
+      transmission and ignored on receipt.
+         VXLAN Header:
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |R|R|R|R|I|R|R|R|            Reserved                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                VXLAN Network Identifier (VNI) |   Reserved    |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  */
+  if((udp->dest == vxlan_dst_port || udp->source == vxlan_dst_port) &&
+    (packet[offset] == 0x8) &&
+    (packet[offset + 1] == 0x0) &&
+    (packet[offset + 2] == 0x0) &&
+    (packet[offset + 3] == 0x0) &&
+    (packet[offset + 7] ==  0x0)) {
+    return true;
+    }
+  return false;
+}
+
+static inline u_int ndpi_skip_vxlan(u_int16_t ip_offset, u_int16_t ip_len){
+  return ip_offset + ip_len + sizeof(struct ndpi_udphdr) + sizeof(struct ndpi_vxlanhdr);
+}
+
+static uint32_t ndpi_is_valid_gre_tunnel(const struct pcap_pkthdr *header, 
+                const u_char *packet, const u_int16_t ip_offset, 
+                const u_int16_t ip_len) {
+  if(header->caplen < ip_offset + ip_len + sizeof(struct ndpi_gre_basehdr))
+    return 0; /* Too short for GRE header*/
+  uint32_t offset = ip_offset + ip_len;
+  struct ndpi_gre_basehdr *grehdr = (struct ndpi_gre_basehdr*)&packet[offset];
+  offset += sizeof(struct ndpi_gre_basehdr);
+  /*
+    rfc-1701
+    The GRE flags are encoded in the first two octets.  Bit 0 is the
+    most significant bit, bit 15 is the least significant bit.  Bits
+    13 through 15 are reserved for the Version field.  Bits 5 through
+    12 are reserved for future use and MUST be transmitted as zero.
+  */
+  if(NDPI_GRE_IS_FLAGS(grehdr->flags))
+    return 0;
+  if(NDPI_GRE_IS_REC(grehdr->flags))
+    return 0;
+  /*GRE rfc 2890 that update 1701*/
+  if(NDPI_GRE_IS_VERSION_0(grehdr->flags)) {
+    if(NDPI_GRE_IS_CSUM(grehdr->flags)) {
+      if(header->caplen < offset + 4)
+        return 0;
+      /*checksum field and offset field*/
+      offset += 4;
+    }
+    if(NDPI_GRE_IS_KEY(grehdr->flags)) {
+      if(header->caplen < offset + 4)
+        return 0;
+      offset += 4;
+    }
+    if(NDPI_GRE_IS_SEQ(grehdr->flags)) {
+      if(header->caplen < offset + 4)
+        return 0;
+      offset += 4;
+    }
+  } else if(NDPI_GRE_IS_VERSION_1(grehdr->flags)) { /*rfc-2637 section 4.1 enhanced gre*/
+    if(NDPI_GRE_IS_CSUM(grehdr->flags))
+      return 0;
+    if(NDPI_GRE_IS_ROUTING(grehdr->flags))
+      return 0;
+    if(!NDPI_GRE_IS_KEY(grehdr->flags))
+      return 0;
+    if(NDPI_GRE_IS_STRICT(grehdr->flags))
+      return 0;
+    if(grehdr->protocol != NDPI_GRE_PROTO_PPP) 
+      return 0;
+    /*key field*/
+    if(header->caplen < offset + 4)
+      return 0;
+    offset += 4;
+    if(NDPI_GRE_IS_SEQ(grehdr->flags)) {
+      if(header->caplen < offset + 4)
+        return 0;
+      offset += 4;
+    }
+    if(NDPI_GRE_IS_ACK(grehdr->flags)) {
+      if(header->caplen < offset + 4)
+        return 0;
+      offset += 4;
+    }
+  } else { /*support only ver 0, 1*/
+    return 0;
+  }
+  return offset;
+}
+
 /* ****************************************************** */
 
 struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
@@ -2408,7 +2523,31 @@ struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
 	    }
 	  }
 	}
+      }else if(ndpi_is_valid_vxlan(header, packet, ip_offset, ip_len)){
+	      tunnel_type = ndpi_vxlan_tunnel;
+        eth_offset = ndpi_skip_vxlan(ip_offset, ip_len);
+	      goto datalink_check;
       }
+    }
+  } else if(workflow->prefs.decode_tunnels && (proto == IPPROTO_GRE)) {
+    if(header->caplen < ip_offset + ip_len + sizeof(struct ndpi_gre_basehdr))
+      return(nproto); /* Too short for GRE header*/
+    u_int32_t offset = 0;
+    if((offset = ndpi_is_valid_gre_tunnel(header, packet, ip_offset, ip_len))) {
+      tunnel_type = ndpi_gre_tunnel;
+      struct ndpi_gre_basehdr *grehdr = (struct ndpi_gre_basehdr*)&packet[ip_offset + ip_len];
+      if(grehdr->protocol == ntohs(ETH_P_IP) || grehdr->protocol == ntohs(ETH_P_IPV6)) { 
+        ip_offset = offset;
+        goto iph_check; 
+      } else if(grehdr->protocol ==  NDPI_GRE_PROTO_PPP) {  // ppp protocol
+        ip_offset = offset + NDPI_PPP_HDRLEN; 
+        goto iph_check;
+      } else {
+        eth_offset = offset;
+        goto datalink_check;
+      }
+    } else {
+      return(nproto);
     }
   }
 

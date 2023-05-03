@@ -34,7 +34,7 @@ struct dump_data {
 	uint8_t		 data[];
 };
 
-#define MAX_PROTO_NAMES 320
+#define MAX_PROTO_NAMES 512
 
 int verbose = 0;
 char *proto_name[MAX_PROTO_NAMES];

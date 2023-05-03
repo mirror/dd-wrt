@@ -1,0 +1,8 @@
+The program is designed to work with only one tcp connection.
+
+The connection must start with SYN,SYN+ACK,ACK packets.
+
+The project https://github.com/caesar0301/pkt2flowt was used
+to separate the .pcap file into separate tcp connections
+
+Tested on Linux/x86_64 platform only!
