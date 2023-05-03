@@ -31,6 +31,8 @@ l7filters filters_list[] = {
 	{ "1kxun", NDPI_ONLY },
 	{ "accuweather", NDPI_ONLY },
 	{ "activision", NDPI_ONLY },
+	{ "ads_analytics_track", NDPI_ONLY },
+	{ "adult_content", NDPI_ONLY },
 	{ "afp", NDPI_ONLY },
 #endif
 	{ "aim", L7_ONLY },
@@ -63,6 +65,7 @@ l7filters filters_list[] = {
 	{ "avast", NDPI_ONLY },
 	{ "avastsecuredns", NDPI_ONLY },
 	{ "azure", NDPI_ONLY },
+	{ "bacnet", NDPI_ONLY },
 	{ "badoo", NDPI_ONLY },
 #endif
 	{ "battlefield1942", L7_ONLY },
@@ -235,11 +238,15 @@ l7filters filters_list[] = {
 #endif
 	{ "hddtemp", L7_ONLY },
 	{ "hotline", L7_ONLY },
-	{ "hotspot-shield", L7_ONLY },
+#ifdef HAVE_OPENDPI
+	{ "hots", NDPI_ONLY },
+#endif
 #ifdef HAVE_OPENDPI
 	{ "hotspotshield", NDPI_ONLY },
 	{ "hp_virtgrp", NDPI_ONLY },
 	{ "hsrp", NDPI_ONLY },
+#else
+	{ "hotspot-shield", L7_ONLY },
 #endif
 	{ "html", L7_ONLY },
 	{ "http", DPI },
@@ -387,6 +394,7 @@ l7filters filters_list[] = {
 #endif
 	{ "ogg", DPI },
 #ifdef HAVE_OPENDPI
+	{ "oicq", NDPI_ONLY },
 	{ "ookla", NDPI_ONLY },
 	{ "opendns", NDPI_ONLY },
 #endif
@@ -533,6 +541,7 @@ l7filters filters_list[] = {
 	{ "soulseek", PDPI },
 #ifdef HAVE_OPENDPI
 	{ "soundcloud", NDPI_ONLY },
+	{ "source_engine", NDPI_ONLY },
 	{ "spotify", NDPI_ONLY },
 #endif
 	{ "ssdp", DPI },
