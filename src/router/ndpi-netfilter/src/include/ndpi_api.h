@@ -429,20 +429,12 @@ NDPI_STATIC   ndpi_protocol ndpi_find_port_based_protocol(struct ndpi_detection_
    * @par    ndpi_struct  = the detection module
    * @par    flow         = the flow we're trying to guess, NULL if not available
    * @par    proto        = the l4 protocol number
-   * @par    shost        = source address in host byte order
-   * @par    sport        = source port number
-   * @par    dhost        = destination address in host byte order
-   * @par    dport        = destination port number
    * @return the struct ndpi_protocol that match the port base protocol
    *
    */
 NDPI_STATIC   ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 					       struct ndpi_flow_struct *flow,
-					       u_int8_t proto,
-					       u_int32_t shost,
-					       u_int16_t sport,
-					       u_int32_t dhost,
-					       u_int16_t dport);
+					       u_int8_t proto);
   /**
    * Check if the string passed match with a protocol
    *
@@ -989,6 +981,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_struct,
 				     char *name_or_ip, u_int name_len,
 				     ndpi_protocol_category_t *id);
+  void ndpi_self_check_host_match(FILE *error_out);
 #endif
   NDPI_STATIC void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow,
@@ -996,6 +989,11 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_set_detection_preferences(struct ndpi_detection_module_struct *ndpi_mod,
 				     ndpi_detection_preference pref,
 				     int value);
+
+  NDPI_STATIC u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
+					      u_int16_t user_proto_id);
+  NDPI_STATIC u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
+					      u_int16_t ndpi_proto_id);
 
   /* Tells to called on what l4 protocol given application protocol can be found */
   NDPI_STATIC ndpi_l4_proto_info ndpi_get_l4_proto_info(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t ndpi_proto_id);
@@ -1045,6 +1043,11 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 				 u_int16_t proto, int value);
   NDPI_STATIC int ndpi_get_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				 u_int16_t proto);
+
+  NDPI_STATIC int ndpi_set_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
+                                       u_int16_t proto, u_int32_t value);
+  NDPI_STATIC u_int32_t ndpi_get_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
+                                             u_int16_t proto);
 
   /**
    * Find a protocol id associated with a string automata
@@ -1112,7 +1115,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 				  const u_int8_t *src, u_int src_len);
   NDPI_STATIC u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len);
   NDPI_STATIC char* ndpi_base64_encode(unsigned char const* bytes_to_encode, size_t in_len); /* NOTE: caller MUST free the returned pointer */
-  NDPI_STATIC void ndpi_string_sha1_hash(const uint8_t *message, size_t len, u_char *hash /* 20-bytes */);
+  NDPI_STATIC void ndpi_string_sha1_hash(const u_int8_t *message, size_t len, u_char *hash /* 20-bytes */);
 
   NDPI_STATIC int ndpi_load_ipv4_ptree(struct ndpi_detection_module_struct *ndpi_str,
 			   const char *path, u_int16_t protocol_id);
@@ -1724,12 +1727,14 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 		    double alpha, double beta, double gamma, float significance);
   NDPI_STATIC void ndpi_hw_free(struct ndpi_hw_struct *hw);
   NDPI_STATIC int  ndpi_hw_add_value(struct ndpi_hw_struct *hw, const u_int64_t value, double *forecast,  double *confidence_band);
+  NDPI_STATIC void ndpi_hw_reset(struct ndpi_hw_struct *hw);
 
   /* ******************************* */
 
   NDPI_STATIC int ndpi_ses_init(struct ndpi_ses_struct *ses, double alpha, float significance);
   NDPI_STATIC int ndpi_ses_add_value(struct ndpi_ses_struct *ses, const double _value, double *forecast, double *confidence_band);
   NDPI_STATIC void ndpi_ses_fitting(double *values, u_int32_t num_values, float *ret_alpha);
+  NDPI_STATIC void ndpi_ses_reset(struct ndpi_ses_struct *ses);
 
   /* ******************************* */
 
@@ -1739,6 +1744,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_des_init(struct ndpi_des_struct *des, double alpha, double beta, float significance);
   NDPI_STATIC int ndpi_des_add_value(struct ndpi_des_struct *des, const double _value, double *forecast, double *confidence_band);
   NDPI_STATIC void ndpi_des_fitting(double *values, u_int32_t num_values, float *ret_alpha, float *ret_beta);
+  NDPI_STATIC void ndpi_des_reset(struct ndpi_des_struct *des);
 
   /* ******************************* */
 
@@ -1923,7 +1929,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 
   NDPI_STATIC ndpi_bitmap_iterator* ndpi_bitmap_iterator_alloc(ndpi_bitmap* b);
   NDPI_STATIC void ndpi_bitmap_iterator_free(ndpi_bitmap* b);
-  NDPI_STATIC bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, uint32_t *value);
+  NDPI_STATIC bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, u_int32_t *value);
 
   /* ******************************* */
 

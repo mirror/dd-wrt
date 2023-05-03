@@ -75,6 +75,8 @@
 /fuzz/fuzz_ds_ptree
 /fuzz/fuzz_ds_ahocorasick
 /fuzz/fuzz_libinjection
+/fuzz/fuzz_tls_certificate
+/fuzz/fuzz_gcrypt_light
 /fuzz/fuzz_ndpi_reader_alloc_fail_seed_corpus.zip
 /fuzz/fuzz_ndpi_reader_seed_corpus.zip
 /fuzz/fuzz_quic_get_crypto_data_seed_corpus.zip
@@ -94,6 +96,7 @@
 /fuzz/fuzz_ds_ptree_seed_corpus.zip
 /fuzz/fuzz_ds_ahocorasick_seed_corpus.zip
 /fuzz/fuzz_libinjection_seed_corpus.zip
+/fuzz/fuzz_tls_certificate_seed_corpus.zip
 /fuzz/fuzz_*.dict
 /influxdb/Makefile
 /libndpi.pc
@@ -139,3 +142,4 @@ compile
 /windows/packages/pthreads.redist.2.9.1.4
 /windows/bin/x64_Debug-ndpiReader/ndpiReader.exe
 /windows/obj/nDPI_Debug-ndpiReader_x64/nDPI.vcxproj.FileListAbsolute.txt
+/utils/tcp_check_seq/tcp_check_seq

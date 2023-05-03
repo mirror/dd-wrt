@@ -165,8 +165,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"armagetron",
 	"crossfire",
 	"dofus",
-	"fiesta",
-	"florensia",
+	"ads_analytics_track",
+	"adult_content",
 	"guildwars",
 	"amazonalexa",
 	"kerberos",
@@ -391,6 +391,10 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"elasticsearch",
 	"tuya_lp",
 	"tplink_shp",
+	"source_engine",
+	"bacnet",
+	"oicq",
+	"hots",
 	NULL,
 };
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };

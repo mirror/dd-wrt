@@ -2,7 +2,7 @@ UCFLAGS_DBUS:=-I$(TOP)/dbus/dbus
 ULDFLAGS_DBUS:=-L$(TOP)/dbus/dbus/.libs -ldbus-1
 
 
-avahi-configure: expat dbus libdaemon
+avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure libdaemon
 	# runstatedir does not work it defaults to /run, patch configure.ac 1007: avahi_runtime_dir="${localstatedir}/run"
 	mkdir -p avahi/build_utils
 	mkdir -p avahi/build_normal

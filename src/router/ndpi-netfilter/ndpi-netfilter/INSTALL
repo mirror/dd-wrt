@@ -382,6 +382,22 @@ tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, ran
   Use "echo 'X d' >/proc/net/xt_ndpi/risks" for disable risk with number X.
   Use "echo 'X a' >/proc/net/xt_ndpi/risks" for enable risk with number X.
 
+  Loading custom data for RISKY_DOMAIN, MALICIOUS_JA3, MALICIOUS_SHA1_CERTIFICATE
+
+  We need to create our own protocol with any name (for example "RISKS" ).
+  "echo 'add_custom RISKS' >/proc/net/xt_ndpi/proto"
+
+  For RISKY_DOMAIN we need add to host_proto
+  "echo 'RISKS:RISK_DOMAIN_bad.domain' >/proc/net/xt_ndpi/host_proto
+
+  For MALICIOUS_JA3 we need add to host_proto
+  "echo 'RISKS:RISK_JA3_xxxxxxxxxxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"
+
+  For MALICIOUS_SHA1_CERTIFICATE we need add to host_proto
+  "echo 'RISKS:RISK_SHA1CERT_xxxxxxxxxxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"
+
+
+
 Bittorrents-specific files:
 
 /proc/net/xt_ndpi/announce - show BT announces (from DHT)

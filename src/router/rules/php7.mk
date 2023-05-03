@@ -199,7 +199,7 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php7-configure: libpng libgd libxml2 zlib curl glib20 libzip openssl sqlite
+php7-configure: libpng-configure libpng libgd-configure libgd libxml2-configure libxml2 zlib-configure zlib curl-configure curl glib20-configure glib20 libzip-configure libzip openssl sqlite
 	rm -f php7/config.cache
 	rm -rf php7/autom4te.cach
 	cd php7 && touch configure.ac && autoconf

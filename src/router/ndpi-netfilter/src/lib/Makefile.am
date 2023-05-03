@@ -41,6 +41,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/avast.c \
 		     protocols/avast_securedns.c \
 		     protocols/amqp.c \
+		     protocols/bacnet.c \
 		     protocols/bgp.c \
 		     protocols/bittorrent.c \
 		     protocols/bjnp.c \
@@ -85,6 +86,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/halflife2_and_mods.c \
 		     protocols/hpvirtgrp.c \
 		     protocols/hsrp.c \
+		     protocols/hots.c \
 		     protocols/http.c \
 		     protocols/iax.c \
 		     protocols/icecast.c \
@@ -130,6 +132,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/noe.c \
 		     protocols/non_tcp_udp.c \
 		     protocols/ntp.c \
+		     protocols/oicq.c \
 		     protocols/openvpn.c \
 		     protocols/ookla.c \
 		     protocols/oracle.c \
@@ -160,6 +163,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/soap.c \
 		     protocols/socks45.c \
 		     protocols/softether.c \
+		     protocols/source_engine.c \
 		     protocols/spotify.c \
 		     protocols/ssdp.c \
 		     protocols/ssh.c \

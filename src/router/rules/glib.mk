@@ -91,7 +91,7 @@ endif
 endif
 
 
-glib20-configure: libffi zlib util-linux
+glib20-configure: libffi-configure libffi zlib-configure zlib util-linux-configure util-linux
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ar} ${shell which $(CROSS_COMPILE)gcc}-ar
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ranlib} ${shell which $(CROSS_COMPILE)gcc}-ranlib
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-nm} ${shell which $(CROSS_COMPILE)gcc}-nm

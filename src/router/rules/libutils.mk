@@ -11,6 +11,8 @@ ifeq ($(CONFIG_ATH9K),y)
 	TINY=libnltiny
 endif
 
+libutils-configure: jansson-configure
+	@true
 
 libutils-clean:
 	make -C libutils clean
