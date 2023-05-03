@@ -422,7 +422,7 @@ NDPI_STATIC u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct
 	    continue;
     }
 #endif
-    if(strcasecmp(p, name) == 0)
+    if(p && strcasecmp(p, name) == 0)
       return(i);
   }
 
@@ -432,7 +432,7 @@ NDPI_STATIC u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct
 /* ************************************************************************************* */
 /* ************************************************************************************* */
 
-void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
+static void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
 				      u_int16_t ndpi_proto_id, u_int16_t user_proto_id) {
   if(ndpi_proto_id < NDPI_MAX_SUPPORTED_PROTOCOLS)
     return; /* Nothing to map */
@@ -449,7 +449,7 @@ void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_st
 /* ************************************************************************************* */
 
 /* Map a custom user protocol into an internal nDPI protocol id */
-u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
+static u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
 					    u_int16_t user_proto_id) {
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
@@ -477,7 +477,7 @@ u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct 
 /* ************************************************************************************* */
 
 /* Map an internal nDPI protocol id to a custom user protocol */
-u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
+static u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
 						   u_int16_t ndpi_proto_id) {
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
   //NDPI_LOG_DBG2(ndpi_str, "[DEBUG] ***** %s(%u)\n", __FUNCTION__, ndpi_proto_id);

@@ -44,7 +44,7 @@ static const char* binary_file_ext[] = {
 					NULL
 };
 
-extern void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
+static void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                                struct ndpi_flow_struct *flow);
 
 static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,

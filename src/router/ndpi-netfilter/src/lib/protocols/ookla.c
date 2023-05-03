@@ -25,7 +25,7 @@
 
 /* #define DEBUG_OOKLA_LRU */
 
-const u_int16_t ookla_port = 8080;
+static const u_int16_t ookla_port = 8080;
 
 /* ************************************************************* */
 

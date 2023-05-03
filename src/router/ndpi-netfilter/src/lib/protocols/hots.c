@@ -33,7 +33,7 @@ static void ndpi_hots_add_connection(struct ndpi_detection_module_struct *ndpi_s
   NDPI_LOG_INFO(ndpi_struct, "found Heroes of the Storm packet\n");
 }
 
-void ndpi_search_hots(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_hots(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int i, ports[4] = {1119, 1120, 3724, 6113};

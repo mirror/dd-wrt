@@ -369,3 +369,11 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/merakicloud.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/bacnet.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/hots.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/oicq.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/source_engine.c"
+#undef NDPI_CURRENT_PROTO
