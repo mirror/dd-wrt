@@ -434,11 +434,7 @@ NDPI_STATIC   ndpi_protocol ndpi_find_port_based_protocol(struct ndpi_detection_
    */
 NDPI_STATIC   ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 					       struct ndpi_flow_struct *flow,
-					       u_int8_t proto,
-					       u_int32_t shost,
-					       u_int16_t sport,
-					       u_int32_t dhost,
-					       u_int16_t dport);
+					       u_int8_t proto);
   /**
    * Check if the string passed match with a protocol
    *
@@ -994,9 +990,9 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 				     ndpi_detection_preference pref,
 				     int value);
 
-  u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int16_t ndpi_map_user_proto_id_to_ndpi_id(struct ndpi_detection_module_struct *ndpi_str,
 					      u_int16_t user_proto_id);
-  u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
 					      u_int16_t ndpi_proto_id);
 
   /* Tells to called on what l4 protocol given application protocol can be found */
@@ -1048,9 +1044,9 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_get_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				 u_int16_t proto);
 
-  int ndpi_set_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_set_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
                                        u_int16_t proto, u_int32_t value);
-  u_int32_t ndpi_get_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC u_int32_t ndpi_get_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
                                              u_int16_t proto);
 
   /**
