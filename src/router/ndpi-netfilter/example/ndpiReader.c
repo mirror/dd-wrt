@@ -1,7 +1,7 @@
 /*
  * ndpiReader.c
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-23 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -97,6 +97,7 @@ u_int8_t verbose = 0, enable_flow_stats = 0;
 int nDPI_LogLevel = 0;
 char *_debug_protocols = NULL;
 char *_disabled_protocols = NULL;
+int aggressiveness[NDPI_MAX_SUPPORTED_PROTOCOLS];
 static u_int8_t stats_flag = 0;
 ndpi_init_prefs init_prefs = ndpi_no_prefs;
 u_int8_t human_readeable_string_len = 5;
@@ -126,7 +127,6 @@ static struct ndpi_detection_module_struct *ndpi_info_mod = NULL;
 extern u_int8_t enable_doh_dot_detection;
 extern u_int32_t max_num_packets_per_flow, max_packet_payload_dissection, max_num_reported_top_payloads;
 extern u_int16_t min_pattern_len, max_pattern_len;
-extern void ndpi_self_check_host_match(); /* Self check function */
 u_int8_t dump_internal_stats;
 
 struct ndpi_bin malloc_bins;
@@ -158,7 +158,7 @@ typedef struct node_a {
 
 // struct to add more statitcs in function printFlowStats
 typedef struct hash_stats{
-  char* domain_name;  
+  char* domain_name;
   int occurency;       /* how many time domain name occury in the flow */
   UT_hash_handle hh;   /* hashtable to collect the stats */
 }hash_stats;
@@ -253,7 +253,7 @@ static int dpdk_port_id = 0, dpdk_run_capture = 1;
 
 void test_lib(); /* Forward */
 
-extern void ndpi_report_payload_stats();
+extern void ndpi_report_payload_stats(int print);
 extern int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverted_logic);
 
 /* ********************************** */
@@ -321,11 +321,6 @@ void ndpiCheckHostStringMatch(char *testChar) {
 
   ndpi_str = ndpi_init_detection_module(init_prefs);
   ndpi_finalize_initialization(ndpi_str);
-
-  // Display ALL Host strings ie host_match[] ?
-  // void ac_automata_display (AC_AUTOMATA_t * thiz, char repcast);
-  //
-  // ac_automata_display( module->host_automa.ac_automa, 'n');
 
   testRes =  ndpi_match_string_subprotocol(ndpi_str,
                                            testChar, strlen(testChar), &match);
@@ -516,6 +511,7 @@ static void help(u_int long_help) {
          "  -z                        | Enable JA3+\n"
          "  -A                        | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
          "  -M                        | Memory allocation stats on data-path (only by the library). It works only on single-thread configuration\n"
+         "  -Z proto:value            | Set this value of aggressiveness for this protocol (0 to disable it). This flag can be used multiple times\n"
          ,
          human_readeable_string_len,
          min_pattern_len, max_pattern_len, max_num_packets_per_flow, max_packet_payload_dissection,
@@ -798,7 +794,7 @@ void printCSVHeader() {
  */
 static void parseOptions(int argc, char **argv) {
   int option_idx = 0;
-  int opt;
+  int opt, i;
 #ifndef USE_DPDK
   char *__pcap_file = NULL;
   int thread_id, do_capture = 0;
@@ -819,7 +815,10 @@ static void parseOptions(int argc, char **argv) {
   }
 #endif
 
-  while((opt = getopt_long(argc, argv, "a:Ab:B:e:Ec:C:dDf:g:i:Ij:k:K:S:hHp:pP:l:r:s:tu:v:V:n:rp:x:w:zq0123:456:7:89:m:MT:U:",
+  for(i = 0; i < NDPI_MAX_SUPPORTED_PROTOCOLS; i++)
+    aggressiveness[i] = -1; /* Use the default value */
+
+  while((opt = getopt_long(argc, argv, "a:Ab:B:e:Ec:C:dDFf:g:i:Ij:k:K:S:hHp:pP:l:r:s:tu:v:V:n:rp:x:w:zZ:q0123:456:7:89:m:MT:U:",
                            longopts, &option_idx)) != EOF) {
 #ifdef DEBUG_TRACE
     if(trace) fprintf(trace, " #### Handling option -%c [%s] #### \n", opt, optarg ? optarg : "");
@@ -828,7 +827,7 @@ static void parseOptions(int argc, char **argv) {
     switch (opt) {
     case 'a':
       ndpi_generate_options(atoi(optarg));
-      break;
+      exit(0);
 
     case 'A':
       dump_internal_stats = 1;
@@ -950,6 +949,35 @@ static void parseOptions(int argc, char **argv) {
       ndpi_free(_disabled_protocols);
       _disabled_protocols = ndpi_strdup(optarg);
       break;
+
+    case 'Z': /* proto_name:aggr_value */
+      {
+        struct ndpi_detection_module_struct *module_tmp;
+        NDPI_PROTOCOL_BITMASK all;
+        char *saveptr, *tmp_str, *proto_str, *aggr_str;
+
+        /* Use a temporary module with all protocols enabled */
+        module_tmp = ndpi_init_detection_module(0);
+        if(!module_tmp)
+          break;
+        NDPI_BITMASK_SET_ALL(all);
+        ndpi_set_protocol_detection_bitmask2(module_tmp, &all);
+        ndpi_finalize_initialization(module_tmp);
+
+        tmp_str = ndpi_strdup(optarg);
+        if(tmp_str) {
+          proto_str = strtok_r(tmp_str, ":", &saveptr);
+          if(proto_str) {
+            aggr_str = strtok_r(NULL, ":", &saveptr);
+            if(aggr_str) {
+              aggressiveness[ndpi_get_protocol_id(module_tmp, proto_str)] = atoi(aggr_str);
+            }
+          }
+        }
+        ndpi_free(tmp_str);
+        ndpi_exit_detection_module(module_tmp);
+        break;
+      }
 
     case 'h':
       help(0);
@@ -1542,20 +1570,20 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     case INFO_RTP:
       if(flow->rtp.stream_type != rtp_unknown) {
 	const char *what;
-	
+
 	switch(flow->rtp.stream_type) {
 	case rtp_screen_share:
 	  what = "screen_share";
 	  break;
-	  
+
 	case rtp_audio:
 	  what = "audio";
 	  break;
-	  
+
 	case rtp_video:
 	  what = "video";
 	  break;
-	  
+
 	case rtp_audio_video:
 	  what = "audio/video";
 	  break;
@@ -1564,7 +1592,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 	  what = NULL;
 	  break;
 	}
-	
+
 	if(what)
 	  fprintf(out, "[RTP Stream Type: %s]", what);
       }
@@ -1621,7 +1649,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     if(flow->http.server[0] != '\0')
       fprintf(out, "[Server: %s]", flow->http.server);
-    
+
     if(flow->http.user_agent[0] != '\0')
       fprintf(out, "[User-Agent: %s]", flow->http.user_agent);
 
@@ -1717,15 +1745,15 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     if(flow->flow_payload && (flow->flow_payload_len > 0)) {
       u_int i;
-      
+
       printf("[Payload: ");
 
       for(i=0; i<flow->flow_payload_len; i++)
 	printf("%c", isspace(flow->flow_payload[i]) ? '.' : flow->flow_payload[i]);
-	
+
       printf("]");
     }
-    
+
     fprintf(out, "\n");
   }
 }
@@ -1907,6 +1935,8 @@ static void node_proto_guess_walker(const void *node, ndpi_VISIT which, int dept
   struct ndpi_flow_info *flow = *(struct ndpi_flow_info **) node;
   u_int16_t thread_id = *((u_int16_t *) user_data), proto;
 
+  if(flow == NULL) return;
+
   if((which == ndpi_preorder) || (which == ndpi_leaf)) { /* Avoid walking the same node multiple times */
     if((!flow->detection_completed) && flow->ndpi_flow) {
       u_int8_t proto_guessed;
@@ -1922,6 +1952,8 @@ static void node_proto_guess_walker(const void *node, ndpi_VISIT which, int dept
     process_ndpi_collected_info(ndpi_thread_info[thread_id].workflow, flow);
 
     proto = flow->detected_protocol.app_protocol ? flow->detected_protocol.app_protocol : flow->detected_protocol.master_protocol;
+
+    proto = ndpi_map_user_proto_id_to_ndpi_id(ndpi_thread_info[thread_id].workflow->ndpi_struct, proto);
 
     ndpi_thread_info[thread_id].workflow->stats.protocol_counter[proto]       += flow->src2dst_packets + flow->dst2src_packets;
     ndpi_thread_info[thread_id].workflow->stats.protocol_counter_bytes[proto] += flow->src2dst_bytes + flow->dst2src_bytes;
@@ -2411,6 +2443,7 @@ static void debug_printf(u_int32_t protocol, void *id_struct,
 static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
   NDPI_PROTOCOL_BITMASK enabled_bitmask;
   struct ndpi_workflow_prefs prefs;
+  int i;
 
   memset(&prefs, 0, sizeof(prefs));
   prefs.decode_tunnels = decode_tunnels;
@@ -2455,10 +2488,10 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
       label = &label[1];
     else
       label = _customCategoryFilePath;
-    
+
     ndpi_load_categories_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _customCategoryFilePath, label);
   }
-  
+
   if(_riskyDomainFilePath)
     ndpi_load_risk_domain_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _riskyDomainFilePath);
 
@@ -2473,6 +2506,12 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
   ndpi_set_lru_cache_size(ndpi_thread_info[thread_id].workflow->ndpi_struct,
 			  NDPI_LRUCACHE_BITTORRENT, 32768);
   /* Enable/disable LRU caches TTL here */
+
+  /* Set aggressiviness here */
+  for(i = 0; i < NDPI_MAX_SUPPORTED_PROTOCOLS; i++) {
+    if(aggressiveness[i] != -1)
+      ndpi_set_protocol_aggressiveness(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, aggressiveness[i]);
+  }
 
   ndpi_finalize_initialization(ndpi_thread_info[thread_id].workflow->ndpi_struct);
 
@@ -2685,7 +2724,7 @@ static void printRiskStats() {
 static int hash_stats_sort_to_order(void *_a, void *_b) {
   struct hash_stats *a = (struct hash_stats*)_a;
   struct hash_stats *b = (struct hash_stats*)_b;
-  
+
   return (a->occurency - b->occurency);
 }
 
@@ -2695,7 +2734,7 @@ static int hash_stats_sort_to_order(void *_a, void *_b) {
 static int hash_stats_sort_to_print(void *_a, void *_b) {
   struct hash_stats *a = (struct hash_stats*)_a;
   struct hash_stats *b = (struct hash_stats*)_b;
-  
+
   return (b->occurency - a->occurency);
 }
 
@@ -2707,7 +2746,7 @@ static void printFlowsStats() {
   FILE *out = results_file ? results_file : stdout;
 
   if(enable_payload_analyzer)
-    ndpi_report_payload_stats();
+    ndpi_report_payload_stats(1);
 
   for(thread_id = 0; thread_id < num_threads; thread_id++)
     total_flows += ndpi_thread_info[thread_id].workflow->num_allocated_flows;
@@ -3063,15 +3102,15 @@ static void printFlowsStats() {
 		struct hash_stats *hostsHashT = NULL;
 		struct hash_stats *host_iter = NULL;
 		struct hash_stats *tmp = NULL;
-		int len_max = 0;    
-		      
+		int len_max = 0;
+
 	      	for (i = 0; i<num_flows; i++) {
-			
+
 		if(all_flows[i].flow->host_server_name[0] != '\0') {
-		
+
 			int len = strlen(all_flows[i].flow->host_server_name);
 			len_max = ndpi_max(len,len_max);
-				
+
 			struct hash_stats *hostFound;
 			HASH_FIND_STR(hostsHashT, all_flows[i].flow->host_server_name, hostFound);
 
@@ -3082,28 +3121,28 @@ static void printFlowsStats() {
 				if (HASH_COUNT(hostsHashT) == len_table_max) {
 				  int i=0;
 				  while (i<=toDelete) {
-					
+
 				    HASH_ITER(hh, hostsHashT, host_iter, tmp) {
 				      HASH_DEL(hostsHashT,host_iter);
 				      free(host_iter);
-				      i++;		
-				    }	
+				      i++;
+				    }
 				  }
-				      	
-				}			
+
+				}
 				HASH_ADD_KEYPTR(hh, hostsHashT, newHost->domain_name, strlen(newHost->domain_name), newHost);
-			}	
+			}
 			else
 			  hostFound->occurency++;
-			
-			
+
+
 		}
-		
+
 		if(all_flows[i].flow->ssh_tls.server_info[0] != '\0') {
-		
+
 			int len = strlen(all_flows[i].flow->host_server_name);
 			len_max = ndpi_max(len,len_max);
-				
+
 			struct hash_stats *hostFound;
 		  	HASH_FIND_STR(hostsHashT, all_flows[i].flow->ssh_tls.server_info, hostFound);
 
@@ -3111,41 +3150,41 @@ static void printFlowsStats() {
 		    		struct hash_stats *newHost = (struct hash_stats*)ndpi_malloc(sizeof(hash_stats));
 	      	    		newHost->domain_name = all_flows[i].flow->ssh_tls.server_info;
 		    		newHost->occurency = 1;
-	    
+
 	    			if ((HASH_COUNT(hostsHashT)) == len_table_max) {
 				  int i=0;
 				  while (i<toDelete) {
-		
+
 				    HASH_ITER(hh, hostsHashT, host_iter, tmp) {
 			 	     HASH_DEL(hostsHashT,host_iter);
 			  	    ndpi_free(host_iter);
-			   	   i++;		
+			   	   i++;
 			 	   }
-				  }	
-	      			
-	      	
+				  }
+
+
 	    			}
 				HASH_ADD_KEYPTR(hh, hostsHashT, newHost->domain_name, strlen(newHost->domain_name), newHost);
 			}
 			else
 			  hostFound->occurency++;
-			
-			
-		}	
-		
+
+
+		}
+
 		//sort the table by the least occurency
 		HASH_SORT(hostsHashT, hash_stats_sort_to_order);
 	}
 
 	//sort the table in decreasing order to print
       	HASH_SORT(hostsHashT, hash_stats_sort_to_print);
-      	
+
 	//print the element of the hash table
    	int j;
 	HASH_ITER(hh, hostsHashT, host_iter, tmp) {
-		
+
 		printf("\t%s", host_iter->domain_name);
-		//to print the occurency in aligned column	    	
+		//to print the occurency in aligned column
 		int diff = len_max-strlen(host_iter->domain_name);
 	    	for (j = 0; j <= diff+5;j++)
 	    		printf (" ");
@@ -3158,7 +3197,7 @@ static void printFlowsStats() {
 	   HASH_DEL(hostsHashT, host_iter);
 	   ndpi_free(host_iter);
 	}
-	    
+
   }
 
     /* Print all flows stats */
@@ -3434,16 +3473,29 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
     cumulative_stats.num_dissector_calls += ndpi_thread_info[thread_id].workflow->stats.num_dissector_calls;
 
     /* LRU caches */
-    for(i = 0; i < NDPI_LRUCACHE_MAX; i++)
-      ndpi_get_lru_cache_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &cumulative_stats.lru_stats[i]);
+    for(i = 0; i < NDPI_LRUCACHE_MAX; i++) {
+      struct ndpi_lru_cache_stats s;
+      ndpi_get_lru_cache_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &s);
+      cumulative_stats.lru_stats[i].n_insert += s.n_insert;
+      cumulative_stats.lru_stats[i].n_search += s.n_search;
+      cumulative_stats.lru_stats[i].n_found += s.n_found;
+    }
 
     /* Automas */
-    for(i = 0; i < NDPI_AUTOMA_MAX; i++)
-      ndpi_get_automa_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &cumulative_stats.automa_stats[i]);
+    for(i = 0; i < NDPI_AUTOMA_MAX; i++) {
+     struct ndpi_automa_stats s;
+      ndpi_get_automa_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &s);
+      cumulative_stats.automa_stats[i].n_search += s.n_search;
+      cumulative_stats.automa_stats[i].n_found += s.n_found;
+    }
 
     /* Patricia trees */
-    for(i = 0; i < NDPI_PTREE_MAX; i++)
-      ndpi_get_patricia_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &cumulative_stats.patricia_stats[i]);
+    for(i = 0; i < NDPI_PTREE_MAX; i++) {
+      struct ndpi_patricia_tree_stats s;
+      ndpi_get_patricia_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &s);
+      cumulative_stats.patricia_stats[i].n_search += s.n_search;
+      cumulative_stats.patricia_stats[i].n_found += s.n_found;
+    }
   }
 
   if(cumulative_stats.total_wire_bytes == 0)
@@ -3642,11 +3694,16 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 		cumulative_stats.dpi_packet_count[2] / (float)cumulative_stats.flow_count[2]);
       {
           static ndpi_confidence_t configence_order[NDPI_CONFIDENCE_MAX] = {
-                  NDPI_CONFIDENCE_UNKNOWN,NDPI_CONFIDENCE_MATCH_BY_PORT,
+                  NDPI_CONFIDENCE_UNKNOWN,
+		  NDPI_CONFIDENCE_MATCH_BY_PORT,
                   NDPI_CONFIDENCE_NBPF,
-                  NDPI_CONFIDENCE_DPI_PARTIAL,NDPI_CONFIDENCE_DPI_PARTIAL_CACHE,
-                  NDPI_CONFIDENCE_DPI_CACHE,NDPI_CONFIDENCE_DPI,
-                  NDPI_CONFIDENCE_MATCH_BY_IP,NDPI_CONFIDENCE_USERDEF };
+                  NDPI_CONFIDENCE_DPI_PARTIAL,
+		  NDPI_CONFIDENCE_DPI_PARTIAL_CACHE,
+                  NDPI_CONFIDENCE_DPI_CACHE,
+		  NDPI_CONFIDENCE_DPI,
+		  NDPI_CONFIDENCE_DPI_AGGRESSIVE,
+                  NDPI_CONFIDENCE_MATCH_BY_IP,
+		  NDPI_CONFIDENCE_USERDEF };
       for(i = 0; i < sizeof(cumulative_stats.flow_confidence)/sizeof(cumulative_stats.flow_confidence[0]); i++) {
         ndpi_confidence_t c = configence_order[i];
 	if(cumulative_stats.flow_confidence[c] != 0)
@@ -3747,7 +3804,8 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
       if(!quiet_mode) {
 	printf("\t%-20s packets: %-13llu bytes: %-13llu "
 	       "flows: %-13u\n",
-	       ndpi_get_proto_name(ndpi_thread_info[0].workflow->ndpi_struct, i),
+	       ndpi_get_proto_name(ndpi_thread_info[0].workflow->ndpi_struct,
+				   ndpi_map_ndpi_id_to_user_proto_id(ndpi_thread_info[0].workflow->ndpi_struct, i)),
 	       (long long unsigned int)cumulative_stats.protocol_counter[i],
 	       (long long unsigned int)cumulative_stats.protocol_counter_bytes[i],
 	       cumulative_stats.protocol_flows[i]);
@@ -3985,7 +4043,7 @@ static void ndpi_process_packet(u_char *args,
   if(packet_checked == NULL) {
     return ;
   }
-  
+
   memcpy(packet_checked, packet, header->caplen);
   p = ndpi_workflow_process_packet(ndpi_thread_info[thread_id].workflow, header, packet_checked, &flow_risk);
 
@@ -4835,6 +4893,7 @@ void sesUnitTest() {
   FILE *fd = fopen("/tmp/ses_result.csv", "w");
 
   assert(ndpi_ses_init(&ses, alpha, 0.05) == 0);
+  ndpi_ses_reset(&ses);
 
   if(trace) {
     printf("\nSingle Exponential Smoothing [alpha: %.1f]\n", alpha);
@@ -4907,6 +4966,7 @@ void desUnitTest() {
   FILE *fd = fopen("/tmp/des_result.csv", "w");
 
   assert(ndpi_des_init(&des, alpha, beta, 0.05) == 0);
+  ndpi_des_reset(&des);
 
   if(trace) {
     printf("\nDouble Exponential Smoothing [alpha: %.1f][beta: %.1f]\n", alpha, beta);
@@ -4949,6 +5009,7 @@ void desUnitStressTest() {
   double init_value = time(NULL) % 1000;
 
   assert(ndpi_des_init(&des, alpha, beta, 0.05) == 0);
+  ndpi_des_reset(&des);
 
   if(trace) {
     printf("\nDouble Exponential Smoothing [alpha: %.1f][beta: %.1f]\n", alpha, beta);
@@ -4997,6 +5058,7 @@ void hwUnitTest3() {
   u_int i, num = sizeof(v) / sizeof(double);
   float alpha = 0.5, beta = 0.5, gamma = 0.1;
   assert(ndpi_hw_init(&hw, num_learning_points, 0 /* 0=multiplicative, 1=additive */, alpha, beta, gamma, 0.05) == 0);
+  ndpi_hw_reset(&hw);
 
   if(trace)
     printf("\nHolt-Winters [alpha: %.1f][beta: %.1f][gamma: %.1f]\n", alpha, beta, gamma);
@@ -5092,7 +5154,7 @@ void zscoreUnitTest() {
 
   if(do_trace) {
     printf("outliers: %u\n", num_outliers);
-    
+
     for(i=0; i<num; i++)
       printf("%u %s\n", values[i], outliers[i] ? "OUTLIER" : "OK");
   }
@@ -5103,116 +5165,116 @@ void zscoreUnitTest() {
 /**
    @brief MAIN FUNCTION
 **/
-  int main(int argc, char **argv) {
-    int i, skip_unit_tests = 0;
+int main(int argc, char **argv) {
+  int i, skip_unit_tests = 0;
 
 #ifdef DEBUG_TRACE
-    trace = fopen("/tmp/ndpiReader.log", "a");
+  trace = fopen("/tmp/ndpiReader.log", "a");
 
-    if(trace) {
-      int i;
+  if(trace) {
+    int i;
 
-      fprintf(trace, " #### %s #### \n", __FUNCTION__);
-      fprintf(trace, " #### [argc: %u] #### \n", argc);
+    fprintf(trace, " #### %s #### \n", __FUNCTION__);
+    fprintf(trace, " #### [argc: %u] #### \n", argc);
 
-      for(i=0; i<argc; i++)
-	fprintf(trace, " #### [%d] [%s]\n", i, argv[i]);
-    }
+    for(i=0; i<argc; i++)
+      fprintf(trace, " #### [%d] [%s]\n", i, argv[i]);
+  }
 #endif
 
 
-    if(ndpi_get_api_version() != NDPI_API_VERSION) {
-      printf("nDPI Library version mismatch: please make sure this code and the nDPI library are in sync\n");
-      return(-1);
-    }
+  if(ndpi_get_api_version() != NDPI_API_VERSION) {
+    printf("nDPI Library version mismatch: please make sure this code and the nDPI library are in sync\n");
+    return(-1);
+  }
 
-    if(!skip_unit_tests) {
+  if(!skip_unit_tests) {
 #ifndef DEBUG_TRACE
-      /* Skip tests when debugging */
+    /* Skip tests when debugging */
 
 #ifdef HW_TEST
-      hwUnitTest2();
+    hwUnitTest2();
 #endif
 
 #ifdef STRESS_TEST
-      desUnitStressTest();
-      exit(0);
+    desUnitStressTest();
+    exit(0);
 #endif
 
-      zscoreUnitTest();
-      sesUnitTest();
-      desUnitTest();
+    zscoreUnitTest();
+    sesUnitTest();
+    desUnitTest();
 
-      /* Internal checks */
-      // binUnitTest();
-      //hwUnitTest();
-      jitterUnitTest();
-      rsiUnitTest();
-      hashUnitTest();
-      dgaUnitTest();
-      hllUnitTest();
-      bitmapUnitTest();
-      automataUnitTest();
-      analyzeUnitTest();
-      ndpi_self_check_host_match();
-      analysisUnitTest();
-      compressedBitmapUnitTest();
+    /* Internal checks */
+    // binUnitTest();
+    //hwUnitTest();
+    jitterUnitTest();
+    rsiUnitTest();
+    hashUnitTest();
+    dgaUnitTest();
+    hllUnitTest();
+    bitmapUnitTest();
+    automataUnitTest();
+    analyzeUnitTest();
+    ndpi_self_check_host_match(stderr);
+    analysisUnitTest();
+    compressedBitmapUnitTest();
 #endif
-    }
+  }
 
-    gettimeofday(&startup_time, NULL);
-    memset(ndpi_thread_info, 0, sizeof(ndpi_thread_info));
+  gettimeofday(&startup_time, NULL);
+  memset(ndpi_thread_info, 0, sizeof(ndpi_thread_info));
 
-    if(getenv("AHO_DEBUG"))
-      ac_automata_enable_debug(1);
-    parseOptions(argc, argv);
+  if(getenv("AHO_DEBUG"))
+    ac_automata_enable_debug(1);
+  parseOptions(argc, argv);
 
-    ndpi_info_mod = ndpi_init_detection_module(init_prefs);
+  ndpi_info_mod = ndpi_init_detection_module(init_prefs);
 
-    if(ndpi_info_mod == NULL) return -1;
+  if(ndpi_info_mod == NULL) return -1;
 
-    if(domain_to_check) {
-      ndpiCheckHostStringMatch(domain_to_check);
-      exit(0);
-    }
+  if(domain_to_check) {
+    ndpiCheckHostStringMatch(domain_to_check);
+    exit(0);
+  }
 
-    if(!quiet_mode) {
-      printf("\n-----------------------------------------------------------\n"
-	     "* NOTE: This is demo app to show *some* nDPI features.\n"
-	     "* In this demo we have implemented only some basic features\n"
-	     "* just to show you what you can do with the library. Feel \n"
-	     "* free to extend it and send us the patches for inclusion\n"
-	     "------------------------------------------------------------\n\n");
+  if(!quiet_mode) {
+    printf("\n-----------------------------------------------------------\n"
+	   "* NOTE: This is demo app to show *some* nDPI features.\n"
+	   "* In this demo we have implemented only some basic features\n"
+	   "* just to show you what you can do with the library. Feel \n"
+	   "* free to extend it and send us the patches for inclusion\n"
+	   "------------------------------------------------------------\n\n");
 
-      printf("Using nDPI (%s) [%d thread(s)]\n", ndpi_revision(), num_threads);
+    printf("Using nDPI (%s) [%d thread(s)]\n", ndpi_revision(), num_threads);
 
-      const char *gcrypt_ver = ndpi_get_gcrypt_version();
-      if(gcrypt_ver)
-	printf("Using libgcrypt version %s\n", gcrypt_ver);
-    }
+    const char *gcrypt_ver = ndpi_get_gcrypt_version();
+    if(gcrypt_ver)
+      printf("Using libgcrypt version %s\n", gcrypt_ver);
+  }
 
-    signal(SIGINT, sigproc);
+  signal(SIGINT, sigproc);
 
-    for(i=0; i<num_loops; i++)
-      test_lib();
+  for(i=0; i<num_loops; i++)
+    test_lib();
 
-    if(results_path)  ndpi_free(results_path);
-    if(results_file)  fclose(results_file);
-    if(extcap_dumper) pcap_dump_close(extcap_dumper);
-    if(extcap_fifo_h) pcap_close(extcap_fifo_h);
-    if(ndpi_info_mod) ndpi_exit_detection_module(ndpi_info_mod);
-    if(enable_malloc_bins)
-      ndpi_free_bin(&malloc_bins);
-    if(csv_fp)        fclose(csv_fp);
-    ndpi_free(_debug_protocols);
-    ndpi_free(_disabled_protocols);
+  if(results_path)  ndpi_free(results_path);
+  if(results_file)  fclose(results_file);
+  if(extcap_dumper) pcap_dump_close(extcap_dumper);
+  if(extcap_fifo_h) pcap_close(extcap_fifo_h);
+  if(ndpi_info_mod) ndpi_exit_detection_module(ndpi_info_mod);
+  if(enable_malloc_bins)
+    ndpi_free_bin(&malloc_bins);
+  if(csv_fp)        fclose(csv_fp);
+  ndpi_free(_debug_protocols);
+  ndpi_free(_disabled_protocols);
 
 #ifdef DEBUG_TRACE
-    if(trace) fclose(trace);
+  if(trace) fclose(trace);
 #endif
 
-    return 0;
-  }
+  return 0;
+}
 
 #ifdef _MSC_BUILD
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
