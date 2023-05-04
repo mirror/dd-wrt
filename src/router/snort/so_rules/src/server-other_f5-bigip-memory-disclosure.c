@@ -136,11 +136,17 @@ static RuleMetaData rule41547policy2 =
    "policy security-ips alert"
 };
 
+static RuleMetaData rule41547policy3 =
+{
+    "policy max-detect-ips drop"
+};
+
 static RuleMetaData *rule41547metadata[] =
 {
    &rule41547service1,
    &rule41547policy1,
    &rule41547policy2,
+   &rule41547policy3,
    NULL
 };
 
@@ -166,7 +172,7 @@ Rule rule41547 = {
    { 
       3,  /* genid */
       41547, /* sigid */
-      1, /* revision */
+      3, /* revision */
       "protocol-command-decode", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER TLS client hello session resumption detected",     /* message */
@@ -271,11 +277,17 @@ static RuleMetaData rule41548policy2 =
    "policy security-ips drop"
 };
 
+static RuleMetaData rule41548policy3 =
+{
+   "policy max-detect-ips drop"
+};
+
 static RuleMetaData *rule41548metadata[] =
 {
    &rule41548service1,
    &rule41548policy1,
    &rule41548policy2,
+   &rule41548policy3,
    NULL
 };
 
@@ -301,7 +313,7 @@ Rule rule41548 = {
    { 
       3,  /* genid */
       41548, /* sigid */
-      1, /* revision */
+      3, /* revision */
       "attempted-recon", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER F5 BIG-IP TLS session ticket implementation uninitialized memory disclosure attempt",     /* message */
@@ -399,7 +411,11 @@ int rule41547eval(void *p) {
    record.session_id_msb = *(cursor_normal+44);
 
    // retrieve the tls_session for this stream
+#ifndef BEFORE_2091300
+   getRuleData(sp, &(rule41547.info), (void*)(&tls_session), NULL);
+#else
    tls_session = (tls_session_data*)getRuleData(sp, rule41547.info.sigID);
+#endif
 
    // allocate and initalize the tls_session if it does not exist
    if(!tls_session)
@@ -409,7 +425,11 @@ int rule41547eval(void *p) {
       if(tls_session == NULL)
          return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+      if(storeRuleData(sp, &(rule41547.info), tls_session, NULL) < 0)
+#else
       if(storeRuleData(sp, tls_session, rule41547.info.sigID, &freeRuleData) < 0)
+#endif
       {
          freeRuleData(tls_session);
          return RULE_NOMATCH;
@@ -472,7 +492,11 @@ int rule41548eval(void *p) {
       return RULE_NOMATCH;
 
    // retrieve the tls_session for this stream
+#ifndef BEFORE_2091300
+   getRuleData(sp, &(rule41547.info), (void*)(&tls_session), NULL);
+#else
    tls_session = (tls_session_data*)getRuleData(sp, rule41547.info.sigID);
+#endif
 
    // if no tls_session data, server is defining a new session, bail.
    if(!tls_session)

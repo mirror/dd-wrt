@@ -100,7 +100,8 @@ int rule16533eval(void *p) {
    that I should have been using), but for now we just need this to compile.  And the vuln is so old,
    tbh the urgency to fix this just really isn't there.
 */ 
-#ifdef MISSING_COMB_ADDRS
+//#ifdef MISSING_COMB_ADDRS
+#if 0
     SFSnortPacket *sp = (SFSnortPacket *) p;
 
     uint32_t isatap_interface_id; 

@@ -112,8 +112,13 @@ static RuleReference *rule20135refs[] =
     NULL
 };
 /* metadata for sid 20135 */
-/* metadata:policy security-ips drop; */
+/* metadata:policy max-detect-ips drop; */
+static RuleMetaData rule20135policy0 =
+{
+    "policy max-detect-ips drop"
+};
 
+/* metadata:policy security-ips drop; */
 static RuleMetaData rule20135policy1 = 
 {
     "policy security-ips drop"
@@ -122,6 +127,7 @@ static RuleMetaData rule20135policy1 =
 
 static RuleMetaData *rule20135metadata[] =
 {
+    &rule20135policy0,
     &rule20135policy1,
     NULL
 };
@@ -148,7 +154,7 @@ Rule rule20135 = {
    { 
        3,  /* genid */
        20135, /* sigid */
-       2, /* revision */
+       3, /* revision */
        "attempted-admin", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
        "SERVER-OTHER HP OpenView Storage Data Protector buffer overflow attempt",     /* message */

@@ -128,7 +128,7 @@ Rule rule13475 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        13475, /* sigid */
-       12, /* revision */
+       13, /* revision */
    
        "attempted-dos", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -197,7 +197,11 @@ int rule13475eval(void *p) {
  
    // Store the Page and Sort OIDs if no data already exists
    // Get the pointer from the API
+#ifndef BEFORE_2091300
+   getRuleData(sp, &(rule13475.info), (void*)(&stored_data), NULL);
+#else
    stored_data = (uint8_t *)getRuleData(sp, rule13475.info.sigID);
+#endif 
 
    if(!stored_data) {
 
@@ -233,7 +237,11 @@ int rule13475eval(void *p) {
       if(!stored_data)
          return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+      if(storeRuleData(sp, &(rule13475.info), stored_data, NULL) < 0)
+#else
       if(storeRuleData(sp, stored_data, rule13475.info.sigID, &freeRuleData) < 0)
+#endif
       {
          freeRuleData(stored_data);
          return RULE_NOMATCH;

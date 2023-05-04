@@ -109,11 +109,17 @@ static RuleMetaData rule27906policy2 =
    "policy security-ips drop"
 };
 
+static RuleMetaData rule27906policy3 =
+{
+   "policy max-detect-ips drop"
+};
+
 static RuleMetaData *rule27906metadata[] =
 {
    &rule27906service1,
 //   &rule27906policy1,
    &rule27906policy2,
+   &rule27906policy3,
    NULL
 };
 
@@ -138,7 +144,7 @@ Rule rule27906 = {
    { 
       3,  /* genid */
       27906, /* sigid */
-      2, /* revision */
+      3, /* revision */
       "attempted-admin", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER MIT Kerberos KDC prep_reprocess_req null pointer dereference attempt",     /* message */

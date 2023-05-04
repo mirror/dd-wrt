@@ -150,6 +150,11 @@ static RuleMetaData rule13718policy1 =
 
 static RuleMetaData rule13718policy2 =
 {
+    "policy max-detect-ips drop"
+};
+
+static RuleMetaData rule13718service1 =
+{
     "service smtp"
 };
 
@@ -157,6 +162,7 @@ static RuleMetaData *rule13718metadata[] =
 {
     &rule13718policy1,
     &rule13718policy2,
+    &rule13718service1,
     NULL
 };
 RuleOption *rule13718options[] =
@@ -183,7 +189,7 @@ Rule rule13718 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        13718, /* sigid */
-       5, /* revision */
+       6, /* revision */
    
        "attempted-admin", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
