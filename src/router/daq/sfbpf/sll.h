@@ -2,6 +2,8 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
  *
+ * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+ *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
  * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence
@@ -35,7 +37,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sll.h,v 1.3 2012/09/07 19:30:43 maltizer Exp $ (LBL)
+ * @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/sll.h#2 $ (LBL)
  */
 
 /*

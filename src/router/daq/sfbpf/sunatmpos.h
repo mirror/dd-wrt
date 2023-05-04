@@ -2,6 +2,8 @@
  * Copyright (c) 1997 Yen Yen Lim and North Dakota State University
  * All rights reserved.
  *
+ * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -29,7 +31,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sunatmpos.h,v 1.1 2010/04/15 19:18:36 maltizer Exp $ (LBL)
+ * @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/sunatmpos.h#2 $ (LBL)
  */
 
 /* SunATM header for ATM packet */
