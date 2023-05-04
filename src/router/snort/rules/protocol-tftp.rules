@@ -1,0 +1,45 @@
+# Copyright 2001-2018 Sourcefire, Inc. All Rights Reserved.
+#
+# This file contains (i) proprietary rules that were created, tested and certified by
+# Sourcefire, Inc. (the "VRT Certified Rules") that are distributed under the VRT
+# Certified Rules License Agreement (v 2.0), and (ii) rules that were created by
+# Sourcefire and other third parties (the "GPL Rules") that are distributed under the
+# GNU General Public License (GPL), v2.
+# 
+# The VRT Certified Rules are owned by Sourcefire, Inc. The GPL Rules were created
+# by Sourcefire and other third parties. The GPL Rules created by Sourcefire are
+# owned by Sourcefire, Inc., and the GPL Rules not created by Sourcefire are owned by
+# their respective creators. Please see http://www.snort.org/snort/snort-team/ for a
+# list of third party owners and their respective copyrights.
+# 
+# In order to determine what rules are VRT Certified Rules or GPL Rules, please refer
+# to the VRT Certified Rules License Agreement (v2.0).
+#
+#---------------------
+# PROTOCOL-TFTP RULES
+#---------------------
+
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP PUT filename overflow attempt"; flow:to_server; content:"|00|"; depth:1; byte_test:1,<,3,0,relative; isdataat:101,relative; content:!"|00|"; within:100; distance:2; metadata:ruleset community; reference:bugtraq,20131; reference:bugtraq,22923; reference:bugtraq,7819; reference:bugtraq,8505; reference:cve,2003-0380; reference:cve,2003-0729; reference:cve,2006-4948; reference:cve,2006-6184; reference:cve,2008-1611; reference:cve,2009-2957; reference:cve,2009-2958; reference:nessus,18264; classtype:attempted-admin; sid:2337; rev:22;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP GET Admin.dll"; flow:to_server; content:"|00 01|"; depth:2; content:"admin.dll"; offset:2; nocase; metadata:ruleset community; reference:url,www.cert.org/advisories/CA-2001-26.html; classtype:successful-admin; sid:1289; rev:10;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP GET nc.exe"; flow:to_server; content:"|00 01|"; depth:2; content:"nc.exe"; offset:2; nocase; metadata:ruleset community; classtype:successful-admin; sid:1441; rev:10;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP GET shadow"; flow:to_server; content:"|00 01|"; depth:2; content:"shadow"; offset:2; nocase; metadata:ruleset community; classtype:successful-admin; sid:1442; rev:10;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP GET passwd"; flow:to_server; content:"|00 01|"; depth:2; content:"passwd"; offset:2; nocase; metadata:ruleset community; classtype:successful-admin; sid:1443; rev:10;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP parent directory"; flow:to_server; content:".."; offset:2; metadata:ruleset community; reference:cve,1999-0183; reference:cve,2002-1209; reference:cve,2011-4722; classtype:bad-unknown; sid:519; rev:14;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP root directory"; flow:to_server; content:"|00 01|/"; depth:3; metadata:ruleset community; reference:cve,1999-0183; classtype:bad-unknown; sid:520; rev:12;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP Put"; flow:to_server; content:"|00 02|"; depth:2; metadata:ruleset community; reference:cve,1999-0183; reference:url,github.com/rapid7/metasploit-framework/blob/unstable/unstable-modules/auxiliary/d20tftpbd.rb; classtype:bad-unknown; sid:518; rev:15;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP Get"; flow:to_server; content:"|00 01|"; depth:2; metadata:ruleset community; classtype:bad-unknown; sid:1444; rev:9;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP NULL command attempt"; flow:to_server; content:"|00 00|"; depth:2; metadata:ruleset community; reference:bugtraq,7575; classtype:bad-unknown; sid:2339; rev:8;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP GET transfer mode overflow attempt"; flow:to_server; content:"|00 01|"; content:"|00|"; distance:1; isdataat:100,relative; content:!"|00|"; within:100; reference:bugtraq,13821; reference:cve,2005-1812; classtype:attempted-admin; sid:3817; rev:6;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP 3COM server transport mode buffer overflow attempt"; flow:to_server; content:"|00|"; depth:1; pcre:"/^(\x01|\x02)[^\x00]+\x00[^\x00]{473}/Rs"; metadata:policy max-detect-ips drop; reference:bugtraq,21301; reference:cve,2006-6183; classtype:attempted-admin; sid:9621; rev:8;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP HP Intelligent Management Center TFTP server MODE remote code execution attempt - RRQ"; flow:to_server; content:"|00 01|"; depth:2; content:"|00|"; distance:0; content:!"|00|"; within:16; reference:bugtraq,47789; reference:cve,2008-1610; reference:cve,2011-1851; classtype:attempted-admin; sid:19014; rev:5;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP UDP UFO large packet denial of service attempt"; flow:stateless; content:"|00 01|"; depth:2; content:"blksize|00|"; byte_test:5,>=,1500,0,relative,string,dec; metadata:service tftp; reference:cve,2013-4563; classtype:attempted-dos; sid:32637; rev:2;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP HP Intelligent Management Center TFTP server MODE remote code execution attempt - WRQ"; flow:to_server; content:"|00 02|"; depth:2; content:"|00|"; distance:0; content:!"|00|"; within:16; metadata:policy max-detect-ips drop; reference:bugtraq,47789; reference:cve,2008-1610; reference:cve,2011-1851; classtype:attempted-admin; sid:19013; rev:9;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP Multiple TFTP product buffer overflow attempt"; flow:to_server; dsize:>515; metadata:policy max-detect-ips drop, service tftp; reference:bugtraq,20131; reference:bugtraq,45378; reference:bugtraq,46434; reference:bugtraq,47789; reference:bugtraq,8505; reference:cve,2003-0729; reference:cve,2006-4948; reference:cve,2008-1610; reference:cve,2010-4323; reference:cve,2011-1852; reference:url,secunia.com/advisories/43819; classtype:attempted-admin; sid:18767; rev:12;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP Open TFTP Server log generation buffer overflow attempt"; flow:to_server; content:"|00 05|"; depth:2; isdataat:482,relative; content:!"|00|"; within:480; distance:2; metadata:policy max-detect-ips drop, service tftp; reference:bugtraq,29111; reference:cve,2008-2161; reference:url,osvdb.org/show/osvdb/44904; classtype:attempted-admin; sid:13927; rev:8;)
+# alert udp any any -> $HOME_NET 69 (msg:"PROTOCOL-TFTP PUT Microsoft RIS filename overwrite attempt"; flow:to_server; content:"|00 02|"; depth:2; content:"images"; distance:0; nocase; content:"windows"; distance:0; nocase; content:"|00|"; distance:0; metadata:policy max-detect-ips drop; reference:cve,2006-5584; reference:url,technet.microsoft.com/en-us/security/bulletin/ms06-077; classtype:policy-violation; sid:9638; rev:11;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP PUT transfer mode overflow attempt"; flow:to_server; content:"|00 02|"; content:"|00|"; distance:1; isdataat:100,relative; content:!"|00|"; within:100; metadata:policy max-detect-ips drop; reference:bugtraq,13821; reference:bugtraq,21301; reference:cve,2005-1812; reference:cve,2006-6183; classtype:attempted-admin; sid:3818; rev:11;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP GET filename overflow attempt"; flow:to_server; content:"|00 01|"; depth:2; isdataat:100,relative; content:!"|00|"; within:100; metadata:policy max-detect-ips drop, ruleset community, service tftp; reference:bugtraq,20131; reference:bugtraq,22923; reference:bugtraq,36121; reference:bugtraq,5328; reference:cve,2002-0813; reference:cve,2006-4948; reference:cve,2007-1435; reference:cve,2009-2957; reference:cve,2009-2958; reference:nessus,18264; classtype:attempted-admin; sid:1941; rev:24;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 5010 (msg:"PROTOCOL-TFTP Comtrol RocketLinx factory reset request"; flow:to_server; content:"|00 00 00 2D 00 00 00 01 01 00 00 00 03 00 00 00 06 00 C0 4E 30 01 93|"; depth:23; classtype:bad-unknown; sid:39452; rev:1;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 5010 (msg:"PROTOCOL-TFTP Comtrol RocketLinx switch reboot request"; flow:to_server; content:"|00 00 00 2C 00 00 00 01 01 00 00 00 03 00 00 00 06 00 C0 4E 30 01 93|"; depth:23; classtype:bad-unknown; sid:39451; rev:1;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 5010 (msg:"PROTOCOL-TFTP Firmware upgrade request"; flow:to_server; dsize:9; content:"|00 00 00 1F 00 00 00 01 01|"; depth:9; classtype:bad-unknown; sid:39450; rev:1;)
+# alert udp any any -> any 69 (msg:"PROTOCOL-TFTP WRITE long filename attempt"; flow:to_server; content:"|00 02|"; depth:2; isdataat:100,relative; content:!"|00|"; within:100; metadata:service tftp; classtype:misc-activity; sid:45612; rev:1;)
