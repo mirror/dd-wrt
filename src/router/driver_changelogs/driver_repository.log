@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7269 | brainslayer | 2023-05-04 12:39:46 +0600 (Thu, 04 May 2023) | 1 line
+
+readd with correctoins
+------------------------------------------------------------------------
 r7268 | brainslayer | 2023-05-03 20:26:17 +0600 (Wed, 03 May 2023) | 1 line
 
 revert antenna chainmask settings for mwlwifi. it seems to cause troubles with intel chipsets
