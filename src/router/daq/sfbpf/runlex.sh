@@ -1,6 +1,5 @@
 #! /bin/sh
-#
-# Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+
 #
 # runlex.sh
 # Script to run Lex/Flex.
@@ -8,7 +7,6 @@
 # means that neither Flex nor Lex was found, so we report an error and
 # quit.
 #
-# @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/runlex.sh,v 1.1 2010/04/15 19:18:35 maltizer Exp $
 #
 
 #

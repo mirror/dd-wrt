@@ -2,8 +2,6 @@
  * Copyright (c) 1993, 1994, 1997
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code distributions
  * retain the above copyright notice and this paragraph in its entirety, (2)
@@ -20,7 +18,6 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/IP6_misc.h#2 $ (LBL)
  */
 
 /*

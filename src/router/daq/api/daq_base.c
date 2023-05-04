@@ -1,7 +1,7 @@
 /*
-** Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2010-2013 Sourcefire, Inc.
-** Author: Michael R. Altizer <maltizer@sourcefire.com>
+** Author: Michael R. Altizer <mialtize@cisco.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -68,6 +68,7 @@
 
 #include "daq.h"
 #include "daq_api.h"
+#include "daq_version.h"
 
 #define NAME_SIZE       512
 
@@ -310,8 +311,6 @@ DAQ_LINKAGE int daq_load_modules(const char *directory_list[])
 
         while((de = readdir(dirp)) != NULL)
         {
-            if (de->d_name == NULL)
-                continue;
             p = strrchr(de->d_name, '.');
             if (!p || strcmp(p, extension))
                 continue;
@@ -479,7 +478,7 @@ DAQ_LINKAGE void daq_free_module_list(DAQ_Module_Info_t *list, int size)
 {
     int idx;
 
-    if (!list || size <= 0)
+    if (!list || size < 0)
         return;
 
     for (idx = 0; idx < size; idx++)
@@ -515,7 +514,8 @@ DAQ_LINKAGE const char *daq_config_get_value(DAQ_Config_t *config, const char *k
 
 DAQ_LINKAGE void daq_config_set_value(DAQ_Config_t *config, const char *key, const char *value)
 {
-    DAQ_Dict *entry;
+    DAQ_Dict *entry, *new_entry;
+    char *new_value;
 
     if (!config || !key)
         return;
@@ -528,34 +528,53 @@ DAQ_LINKAGE void daq_config_set_value(DAQ_Config_t *config, const char *key, con
 
     if (!entry)
     {
-        entry = calloc(1, sizeof(struct _daq_dict_entry));
-        if (!entry)
+        new_entry = calloc(1, sizeof(struct _daq_dict_entry));
+        if (!new_entry)
         {
             fprintf(stderr, "%s: Could not allocate %lu bytes for a dictionary entry!\n",
-                    __FUNCTION__, (unsigned long) sizeof(struct _daq_dict_entry));
+                    __func__, (unsigned long) sizeof(struct _daq_dict_entry));
             return;
         }
-        entry->key = strdup(key);
-        if (!entry->key)
+        new_entry->key = strdup(key);
+        if (!new_entry->key)
         {
             fprintf(stderr, "%s: Could not allocate %lu bytes for a dictionary entry key!\n",
-                    __FUNCTION__, (unsigned long) (strlen(key) + 1));
+                    __func__, (unsigned long) (strlen(key) + 1));
+            free(new_entry);
             return;
         }
-        entry->next = config->values;
-        config->values = entry;
+        entry = new_entry;
     }
-    free(entry->value);
+    else
+        new_entry = NULL;
+
     if (value)
     {
-        entry->value = strdup(value);
-        if (!entry->value)
+        new_value = strdup(value);
+        if (!new_value)
         {
             fprintf(stderr, "%s: Could not allocate %lu bytes for a dictionary entry value!\n",
-                    __FUNCTION__, (unsigned long) (strlen(value) + 1));
+                    __func__, (unsigned long) (strlen(value) + 1));
+            if (new_entry)
+                free(new_entry);
             return;
         }
+        if (entry->value)
+            free(entry->value);
+        entry->value = new_value;
     }
+    else if (entry->value)
+    {
+        free(entry->value);
+        entry->value = NULL;
+    }
+
+    if (new_entry)
+    {
+        new_entry->next = config->values;
+        config->values = new_entry;
+    }
+
     DEBUG("Set config dictionary entry '%s' => '%s'.\n", entry->key, entry->value);
 }
 
@@ -598,4 +617,14 @@ DAQ_LINKAGE void daq_config_clear_values(DAQ_Config_t *config)
         free(entry->value);
         free(entry);
     }
+}
+
+DAQ_LINKAGE uint32_t daq_version_number(void)
+{
+    return DAQ_VERSION_NUMERIC;
+}
+
+DAQ_LINKAGE const char *daq_version_string(void)
+{
+    return DAQ_VERSION_STRING;
 }

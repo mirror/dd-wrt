@@ -2,7 +2,7 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+ * Some Portions Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
  * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
@@ -40,11 +40,6 @@
  *
  *	@(#)bpf.c	7.5 (Berkeley) 7/15/91
  */
-
-#if !(defined(lint) || defined(KERNEL) || defined(_KERNEL))
-static const char rcsid[] =
-    "@(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/sf_bpf_filter.c#2 $ (LBL)";
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

@@ -2,7 +2,6 @@
  * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
  * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
@@ -40,7 +39,6 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/sfbpf.h#2 $ (LBL)
  */
 
 /*
