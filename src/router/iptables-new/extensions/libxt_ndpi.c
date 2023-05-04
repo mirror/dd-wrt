@@ -396,7 +396,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"source_engine",
 	"bacnet",
 	"oicq",
-	"hots",
+	"heroes_of_the_storm",
 	NULL,
 };
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
