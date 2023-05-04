@@ -197,7 +197,6 @@ AC_ARG_ENABLE(pcap-module,
               [enable_pcap_module="$enableval"], [enable_pcap_module="$DEFAULT_ENABLE"])
 if test "$enable_pcap_module" = yes; then
     AC_CHECK_HEADER([pcap.h], [], [enable_pcap_module=no])
-    AC_CHECK_PCAP_VER("1.0.0")
     if test "$enable_pcap_module" = yes; then
         STATIC_LIBS="${STATIC_LIBS} -lpcap"
     fi
