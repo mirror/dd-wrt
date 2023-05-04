@@ -1,4 +1,5 @@
 /*
+ ** Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
  ** Portions Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -27,7 +28,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <unistd.h>
+#include <sys/unistd.h>
 
 #include <netinet/ip.h>
 

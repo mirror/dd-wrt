@@ -1,5 +1,6 @@
 #! /bin/sh
-
+#
+# Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
 #
 # runlex.sh
 # Script to run Lex/Flex.

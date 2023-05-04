@@ -3,6 +3,8 @@
  * Copyright (c) 2005 - 2009 CACE Technologies, Inc. Davis (California)
  * All rights reserved.
  *
+ * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -28,7 +30,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/win32-stdinc.h,v 1.1 2010/05/06 19:13:26 maltizer Exp $ (LBL)
+ * @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/win32-stdinc.h#2 $ (LBL)
  */
 #ifndef win32_stdinc_h
 #define win32_stdinc_h

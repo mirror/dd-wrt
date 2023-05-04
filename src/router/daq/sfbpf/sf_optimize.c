@@ -2,6 +2,7 @@
  * Copyright (c) 1988, 1989, 1990, 1991, 1993, 1994, 1995, 1996
  *	The Regents of the University of California.  All rights reserved.
  *
+ * Some portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
  * Some portions Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,7 +25,7 @@
  */
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_optimize.c,v 1.3 2013/06/28 14:57:30 rcombs Exp $ (LBL)";
+    "@(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/sf_optimize.c#2 $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H

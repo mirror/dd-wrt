@@ -2,6 +2,8 @@
  * Copyright (c) 1994, 1996
  *	The Regents of the University of California.  All rights reserved.
  *
+ * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -30,7 +32,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/namedb.h,v 1.2 2010/05/06 19:13:25 maltizer Exp $ (LBL)
+ * @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/namedb.h#2 $ (LBL)
  */
 
 #ifndef lib_pcap_namedb_h

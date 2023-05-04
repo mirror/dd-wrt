@@ -1,3 +1,8 @@
+2019-03-09 Hariharan Chandrashekar <harchand@cisco.com>
+
+	* ChangeLog, configure.ac, daq.vcxproj :
+	  Bump to 2.0.7 and added DAQ project file for supporting windows 64-bit.
+
 2015-07-15 17:13  mialtize
 
 	* ChangeLog, configure.ac, daq.spec, api/daq_api.h,
