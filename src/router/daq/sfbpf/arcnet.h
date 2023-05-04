@@ -2,8 +2,6 @@
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
- * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -32,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Id: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/arcnet.h#2 $ (LBL)
+ * @(#) $Id$ (LBL)
  *
  * from: NetBSD: if_arc.h,v 1.13 1999/11/19 20:41:19 thorpej Exp
  */

@@ -1,10 +1,7 @@
-/* @(#) $Header: //depot/firepower/daq-opensource/DAQ_2_0_7/sfbpf/ppp.h#2 $ (LBL) */
 /*
  * Point to Point Protocol (PPP) RFC1331
  *
  * Copyright 1989 by Carnegie Mellon.
- *
- * Some Portions Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this program for any
  * purpose and without fee is hereby granted, provided that this copyright

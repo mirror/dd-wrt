@@ -39,7 +39,7 @@ runlex.sh
 
 nodist_libsfbpf_la_SOURCES = sf_grammar.c sf_scanner.c tokdefs.h
 
-libsfbpf_la_CFLAGS = -Dyylval=sfbpf_lval
+libsfbpf_la_CFLAGS = $(AM_CFLAGS) -Dyylval=sfbpf_lval
 libsfbpf_la_LDFLAGS = -version-info 0:1:0 @XCCFLAGS@
 
 # use of $@ and $< here is a GNU idiom that borks BSD
