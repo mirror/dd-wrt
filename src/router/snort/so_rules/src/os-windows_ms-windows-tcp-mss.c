@@ -93,9 +93,15 @@ static RuleReference *rule26877refs[] =
 };
 
 /* metadata for sid 26877 */
+static RuleMetaData rule26877policy1 =
+{
+    "policy max-detect-ips drop"
+};
+
 /* metadata:; */
 static RuleMetaData *rule26877metadata[] =
 {
+   &rule26877policy1,
    NULL
 };
 
@@ -120,7 +126,7 @@ Rule rule26877 = {
    { 
       3,  /* genid */
       26877, /* sigid */
-      4, /* revision */
+      5, /* revision */
       "attempted-dos", /* classification */
       0,  /* hardcoded priority */
       "OS-WINDOWS Microsoft Windows TCPRecomputeMss denial of service attempt",     /* message */

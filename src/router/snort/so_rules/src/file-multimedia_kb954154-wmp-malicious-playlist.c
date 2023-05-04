@@ -185,7 +185,7 @@ Rule rule14252 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        14252, /* sigid */
-       16, /* revision */
+       17, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -262,7 +262,7 @@ Rule rule14253 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        14253, /* sigid */
-       16, /* revision */
+       17, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -339,7 +339,7 @@ Rule rule14254 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        14254, /* sigid */
-       16, /* revision */
+       17, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -464,7 +464,11 @@ static int ruleCVE_2008_2253Eval(void *p, uint8_t alignment)
    DEBUG_SO(printf("|%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x|", outbuf[0],  outbuf[1],  outbuf[2],  outbuf[3],  outbuf[4], outbuf[5],  outbuf[6],  outbuf[7],  outbuf[8],  outbuf[9], outbuf[10], outbuf[11], outbuf[12], outbuf[13], outbuf[14]);)
    DEBUG_SO(printf("samplerate=0x%08x    bitrate=0x%04x\n", samplerate, bitrate);)                  
 
+#ifndef BEFORE_2091300
+   getRuleData(sp, ruleinfo, (void*)(&samplerate2compare), NULL);
+#else
    samplerate2compare = (SampleRate *)getRuleData(sp, (uint32_t)ruleinfo->sigID);
+#endif
 
    if (samplerate2compare == NULL)
    {
@@ -475,7 +479,12 @@ static int ruleCVE_2008_2253Eval(void *p, uint8_t alignment)
 
        samplerate2compare->samplerate = samplerate;
        samplerate2compare->bitrate    = bitrate;           
+
+#ifndef BEFORE_2091300
+       if (storeRuleData(sp, ruleinfo, samplerate2compare, NULL) < 0)
+#else
        if (storeRuleData(sp, samplerate2compare, ruleinfo->sigID, &freeRuleData) < 0)
+#endif
            freeRuleData(samplerate2compare);
 
        return RULE_NOMATCH;
@@ -490,8 +499,12 @@ static int ruleCVE_2008_2253Eval(void *p, uint8_t alignment)
    // in order to check next consecutive audio files
    samplerate2compare->samplerate = samplerate;
    samplerate2compare->bitrate    = bitrate;
-   
+
+#ifndef BEFORE_2091300
+   if (storeRuleData(sp, ruleinfo, samplerate2compare, NULL) < 0)
+#else
    if (storeRuleData(sp, samplerate2compare, ruleinfo->sigID, &freeRuleData) < 0)
+#endif
        freeRuleData(samplerate2compare);
        
    return RULE_NOMATCH;

@@ -142,10 +142,16 @@ static RuleMetaData rule31361policy2 =
    "policy security-ips drop"
 };
 
+static RuleMetaData rule31361policy3 =
+{
+    "policy max-detect-ips drop"
+};
+
 static RuleMetaData *rule31361metadata[] =
 {
    &rule31361policy1,
    &rule31361policy2,
+   &rule31361policy3,
    NULL
 };
 
@@ -170,7 +176,7 @@ Rule rule31361 = {
    { 
       3,  /* genid */
       31361, /* sigid */
-      2, /* revision */
+      4, /* revision */
       "attempted-admin", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER OpenSSL DTLSv1.0 handshake fragment buffer overrun attempt",     /* message */
@@ -194,7 +200,11 @@ int check_msg_seq(SFSnortPacket *sp, dtls_hs_fragment *fragment,
    if(!fragment_table)
    {
       // retrieve the fragment table for this stream
+#ifndef BEFORE_2091300
+      getRuleData(sp, &(rule31361.info), (void*)(&fragment_table), NULL);
+#else
       fragment_table = (dtls_hs_fragment*)getRuleData(sp, rule31361.info.sigID);
+#endif
 
       // allocate and initalize the fragment table if it does not exist
       if(!fragment_table)
@@ -204,7 +214,11 @@ int check_msg_seq(SFSnortPacket *sp, dtls_hs_fragment *fragment,
          if(fragment_table == NULL)
             return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+         if(storeRuleData(sp, &(rule31361.info), fragment_table, NULL) < 0)
+#else
          if(storeRuleData(sp, fragment_table, rule31361.info.sigID, &freeRuleData) < 0)
+#endif
          {
             freeRuleData(fragment_table);
             return RULE_NOMATCH;

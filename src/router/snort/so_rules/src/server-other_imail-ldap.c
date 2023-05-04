@@ -89,6 +89,23 @@ RuleOption *ruleIMAIL_LDAPoptions[] =
     NULL
 };
 
+static RuleMetaData ruleIMAIL_LDAPservice0 =
+{
+   "service ldap"
+};
+
+static RuleMetaData ruleIMAIL_LDAPpolicy0 =
+{
+   "policy max-detect-ips drop"
+};
+
+static RuleMetaData *ruleIMAIL_LDAPmetadata[] =
+{
+   &ruleIMAIL_LDAPservice0,
+   &ruleIMAIL_LDAPpolicy0,
+   NULL
+};
+
 Rule ruleIMAIL_LDAP = {
    /* rule header */
    {
@@ -103,13 +120,13 @@ Rule ruleIMAIL_LDAP = {
    { 
        3,  /* genid (HARDCODED!!!) */
        10480, /* sigid d056361f-e644-4242-a918-92131e0b523d */
-       5, /* revision 9ffa9a9e-3274-4df9-b54e-a1978f964bbd */
+       6, /* revision 9ffa9a9e-3274-4df9-b54e-a1978f964bbd */
    
        "attempted-admin", /* classification, generic */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
        "SERVER-OTHER imail ldap buffer overflow exploit attempt",     /* message */
-       ruleIMAIL_LDAPrefs /* ptr to references */
-        ,NULL
+       ruleIMAIL_LDAPrefs, /* ptr to references */
+       ruleIMAIL_LDAPmetadata /* ptr to metadata */
    },
    ruleIMAIL_LDAPoptions, /* ptr to rule options */
    &ruleIMAIL_LDAPeval, /* ptr to rule detection function */

@@ -126,6 +126,12 @@ static RuleReference *rule_CiscoIkeBof_refs[] =
 };
 
 /* metadata */
+/* metadata:policy max-detect-ips drop; */
+static RuleMetaData rule_CiscoIkeBof_policy0 =
+{
+   "policy max-detect-ips drop"
+};
+
 /* metadata:policy security-ips drop; */
 static RuleMetaData rule_CiscoIkeBof_policy1 = 
 {
@@ -134,6 +140,7 @@ static RuleMetaData rule_CiscoIkeBof_policy1 =
 
 static RuleMetaData *rule_CiscoIkeBof_metadata[] =
 {
+   &rule_CiscoIkeBof_policy0,
    &rule_CiscoIkeBof_policy1,
    NULL
 };
@@ -159,7 +166,7 @@ Rule rule37675 = {
    { 
       3,  /* genid */
       37675, /* sigid */
-      3, /* revision */
+      5, /* revision */
       "attempted-admin", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER Cisco IOS invalid IKE fragment length memory corruption or exhaustion attempt",     /* message */
@@ -177,8 +184,7 @@ int rule37675eval(void *p) {
    SFSnortPacket *sp = (SFSnortPacket *) p;
 
    int i;
-   const uint8_t *next_payload_pos;
-   uint8_t payload_type, next_payload_type;
+   uint8_t payload_type, next_payload_type, flags;
    uint16_t payload_length;
 
    if(sp == NULL)
@@ -226,12 +232,13 @@ int rule37675eval(void *p) {
    {
       // We verify data availability above for first loop, below for subsequent loops
       next_payload_type = *cursor_normal;
+      flags = cursor_normal[1];
       payload_length = read_big_16(cursor_normal + 2);
 
       DEBUG_SO(fprintf(stderr,"  payload: type 0x%02X len 0x%04X\n",payload_type,payload_length);)
 
       // Cisco-Fragmentation Payload (0x84)
-      if(payload_type == 0x84)
+      if(payload_type == 0x84 && flags == 0x00)
       {
          // CVE-2016-1287:
          //  check for heap buffer overflow condition
@@ -248,32 +255,33 @@ int rule37675eval(void *p) {
             if(cursor_normal + 36 > end_of_buffer)
                return RULE_NOMATCH;
 
-            // verify we have a valid ISAKMP fragment version
+            // verify next payload is set to NONE (0x00)
+            // we have a valid ISAKMP fragment version
             // and if ISAKMP frag length > INT32_MAX, alert.
-            if((cursor_normal[25] == 0x10) || (cursor_normal[25] == 0x20))
-               if((cursor_normal[32] & 0x80) == 0x80)
-                  return RULE_MATCH;
+            if(cursor_normal[24] == 0x00)
+               if((cursor_normal[25] == 0x10) || (cursor_normal[25] == 0x20))
+                  if((cursor_normal[32] & 0x80) == 0x80)
+                     return RULE_MATCH;
          }
       }
 
-      // no next payload, bail
-      if(next_payload_type == 0)
+      // no next payload or payload_length == 0, bail
+      if(next_payload_type == 0 || payload_length == 0)
          return RULE_NOMATCH;
 
-      // calculate next payload position
-      next_payload_pos = cursor_normal + payload_length;
-
-      // integer overflow / zero-length payload check
-      if(next_payload_pos <= cursor_normal)
+      // check if we can jump payload_length
+      if(payload_length > end_of_buffer - cursor_normal)
          return RULE_NOMATCH;
+
+      // jump payload_length
+      cursor_normal += payload_length;
 
       // check next payload
       payload_type = next_payload_type;
-      cursor_normal = next_payload_pos;
 
       // verify we can read:
       //    next payload type (1 byte)
-      //    critical          (1 byte)
+      //    flags             (1 byte)
       //    payload length    (2 byte BE)
       if(cursor_normal + 4 > end_of_buffer)
          return RULE_NOMATCH;

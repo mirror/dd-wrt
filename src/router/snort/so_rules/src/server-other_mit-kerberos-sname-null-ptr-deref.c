@@ -128,10 +128,16 @@ static RuleMetaData rule_KerberosNullPtrDeref_policy1 =
    "policy security-ips drop"
 };
 
+static RuleMetaData rule_KerberosNullPtrDeref_policy2 =
+{
+   "policy max-detect-ips drop"
+};
+
 static RuleMetaData *rule_KerberosNullPtrDeref_metadata[] =
 {
    &rule_KerberosNullPtrDeref_service1,
    &rule_KerberosNullPtrDeref_policy1,
+   &rule_KerberosNullPtrDeref_policy2,
    NULL
 };
 
@@ -156,7 +162,7 @@ Rule rule34971 = {
    { 
       3,  /* genid */
       34971, /* sigid */
-      1, /* revision */
+      2, /* revision */
       "attempted-dos", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER MIT Kerberos KDC as-req sname null pointer dereference attempt",     /* message */
@@ -189,7 +195,7 @@ Rule rule34972 = {
    { 
       3,  /* genid */
       34972, /* sigid */
-      1, /* revision */
+      2, /* revision */
       "attempted-dos", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER MIT Kerberos KDC as-req sname null pointer dereference attempt",     /* message */

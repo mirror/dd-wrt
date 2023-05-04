@@ -1,4 +1,4 @@
-# Copyright 2001-2018 Sourcefire, Inc. All Rights Reserved.
+# Copyright 2001-2023 Sourcefire, Inc. All Rights Reserved.
 #
 # This file contains (i) proprietary rules that were created, tested and certified by
 # Sourcefire, Inc. (the "VRT Certified Rules") that are distributed under the VRT
@@ -19,7 +19,7 @@
 # X11 RULES
 #-----------
 
-# alert udp $EXTERNAL_NET any -> $HOME_NET 177 (msg:"X11 xdmcp query"; flow:to_server; content:"|00 01 00 03 00 01 00|"; fast_pattern:only; metadata:ruleset community; classtype:attempted-recon; sid:517; rev:7;)
 # alert udp $EXTERNAL_NET any -> $HOME_NET 177 (msg:"X11 xdmcp info query"; flow:to_server; content:"|00 01 00 02 00 01 00|"; fast_pattern:only; metadata:ruleset community; reference:nessus,10891; classtype:attempted-recon; sid:1867; rev:6;)
-# alert tcp $EXTERNAL_NET any -> $HOME_NET 6000 (msg:"X11 MIT Magic Cookie detected"; flow:established; content:"MIT-MAGIC-COOKIE-1"; fast_pattern:only; metadata:ruleset community; classtype:attempted-user; sid:1225; rev:11;)
-# alert tcp $EXTERNAL_NET any -> $HOME_NET 6000 (msg:"X11 xopen"; flow:established; content:"l|00 0B 00 00 00 00 00 00 00 00 00|"; fast_pattern:only; metadata:policy max-detect-ips drop, ruleset community; classtype:unknown; sid:1226; rev:14;)
+# alert tcp $EXTERNAL_NET any -> $HOME_NET 6000 (msg:"X11 xopen"; flow:established; content:"l|00 0B 00 00 00 00 00 00 00 00 00|"; fast_pattern:0,10; metadata:policy max-detect-ips drop, ruleset community; classtype:unknown; sid:1226; rev:15;)
+# alert tcp $EXTERNAL_NET any -> $HOME_NET 6000 (msg:"X11 MIT Magic Cookie detected"; flow:established; content:"MIT-MAGIC-COOKIE-1"; fast_pattern:only; metadata:ruleset community; classtype:attempted-user; sid:1225; rev:12;)
+# alert udp $EXTERNAL_NET any -> $HOME_NET 177 (msg:"X11 xdmcp query"; flow:to_server; content:"|00 01 00 03 00 01 00|"; fast_pattern:only; metadata:ruleset community; classtype:attempted-recon; sid:517; rev:7;)
