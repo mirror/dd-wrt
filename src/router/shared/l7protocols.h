@@ -239,7 +239,7 @@ l7filters filters_list[] = {
 	{ "hddtemp", L7_ONLY },
 	{ "hotline", L7_ONLY },
 #ifdef HAVE_OPENDPI
-	{ "hots", NDPI_ONLY },
+	{ "heroes_of_the_storm", NDPI_ONLY },
 #endif
 #ifdef HAVE_OPENDPI
 	{ "hotspotshield", NDPI_ONLY },
