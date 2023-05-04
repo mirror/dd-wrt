@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -92,10 +92,8 @@ struct _ListHead;    /* forward decleartion of ListHead data struct */
 typedef enum _RuleType
 {
     RULE_TYPE__NONE = 0,
-    RULE_TYPE__ACTIVATE,
     RULE_TYPE__ALERT,
     RULE_TYPE__DROP,
-    RULE_TYPE__DYNAMIC,
     RULE_TYPE__LOG,
     RULE_TYPE__PASS,
     RULE_TYPE__REJECT,
@@ -131,13 +129,6 @@ typedef struct _TagData
     int tag_direction;  /* source or dest, used for host tagging */
 } TagData;
 
-typedef struct _ActivateListNode
-{
-    int activated_by;
-    struct _ActivateListNode *next;
-
-} ActivateListNode;
- 
 struct _RuleListNode;
 
 typedef struct _ListHead

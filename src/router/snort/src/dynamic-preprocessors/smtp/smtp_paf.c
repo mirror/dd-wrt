@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -90,10 +90,10 @@ typedef struct _SmtpPafData
     DataEndState data_end_state;
     uint32_t length;
     SmtpPafState smtp_state;
-    SmtpCmdSearchInfo cmd_info;
-    MimeDataPafInfo data_info;
     bool end_of_data;
     bool alert_generated;
+    SmtpCmdSearchInfo cmd_info;
+    MimeDataPafInfo data_info;
 } SmtpPafData;
 
 /* State tracker for SMTP PAF */
@@ -400,7 +400,8 @@ static PAF_Status smtp_paf_eval(void* ssn, void** ps, const uint8_t* data,
         if (_dpd.fileAPI->check_paf_abort(ssn))
             return PAF_ABORT;
 
-        pfdata = calloc(1, sizeof(*pfdata));
+        pfdata = _dpd.snortAlloc(1, sizeof(*pfdata), PP_SMTP, PP_MEM_CATEGORY_SESSION);
+
         if (pfdata == NULL)
         {
             return PAF_ABORT;
@@ -440,6 +441,13 @@ bool is_data_end (void* ssn)
     return false;
 }
 
+void smtp_paf_cleanup(void *pafData)
+{
+    if (pafData) {
+	_dpd.snortFree(pafData, sizeof(SmtpPafData), PP_SMTP, PP_MEM_CATEGORY_SESSION);
+    }
+}
+
 #ifdef TARGET_BASED
 void register_smtp_paf_service (struct _SnortConfig *sc, int16_t app, tSfPolicyId policy)
 {
@@ -447,6 +455,7 @@ void register_smtp_paf_service (struct _SnortConfig *sc, int16_t app, tSfPolicyI
     {
         smtp_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, true, smtp_paf_eval, true);
         smtp_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, false,smtp_paf_eval, true);
+	_dpd.streamAPI->register_paf_free(smtp_paf_id, smtp_paf_cleanup);
     }
 }
 #endif
@@ -457,6 +466,7 @@ void register_smtp_paf_port(struct _SnortConfig *sc, unsigned int i, tSfPolicyId
     {
         smtp_paf_id = _dpd.streamAPI->register_paf_port(sc, policy, (uint16_t)i, true, smtp_paf_eval, true);
         smtp_paf_id = _dpd.streamAPI->register_paf_port(sc, policy, (uint16_t)i, false, smtp_paf_eval, true);
+	_dpd.streamAPI->register_paf_free(smtp_paf_id, smtp_paf_cleanup);
     }
 }
 

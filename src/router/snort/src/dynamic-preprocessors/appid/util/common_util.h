@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -50,6 +50,17 @@ typedef struct _config_item
 
 #define MAX_LINE    2048
 #define MAX_TOKS    256
+
+/* This structure should be same as struct define in util.h */
+typedef struct _ThrottleInfo
+{
+    time_t lastUpdate;
+    /*Within this duration (in seconds), maximal one distinct message is logged*/
+    uint32_t duration_to_log;
+    uint64_t count;
+    /*Till the message count reaches to count_to_log, maximal one distinct message is logged*/
+    uint64_t count_to_log;
+}ThrottleInfo;
 
 extern time_t packetTimeOffset;
 extern time_t packetTime;

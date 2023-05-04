@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -1011,6 +1011,7 @@ int detection_option_node_evaluate(detection_option_tree_node_t *node, detection
                         pattern_size = pmd->pattern_size;
 
                     // See "detection_leaf_node.c" (detection_leaf_node_eval).
+#ifdef TARGET_BASED
                     switch (detection_leaf_node_eval (node, eval_data))
                     {
                         case Leaf_Abort:
@@ -1027,6 +1028,7 @@ int detection_option_node_evaluate(detection_option_tree_node_t *node, detection
                             NODE_PROFILE_TMPSTART(node);
                             break;
                     }
+#endif
 
                     if (eval_rtn_result)
                     {
@@ -1034,7 +1036,7 @@ int detection_option_node_evaluate(detection_option_tree_node_t *node, detection
                                  !detection_filter_test(
                                  otn->detection_filter,
                                  GET_SRC_IP(eval_data->p), GET_DST_IP(eval_data->p),
-                                 eval_data->p->pkth->ts.tv_sec, eval_data,otn))
+                                 eval_data->p->pkth->ts.tv_sec, eval_data))
                         {
 #ifdef PERF_PROFILING
                             if (PROFILING_RULES)

@@ -2,7 +2,7 @@ Security Related bug reports (evasions, overflows, etc) should be sent to
 bugs@snort.org and Marty Roesch <roesch@snort.org>.
 
 Bug reports should be sent to bugs@snort.org and cc'd to
-snort-devel@lists.sourceforge.net (Snort Developers mailing list).
+snort-devel@lists.snort.org (Snort Developers mailing list).
 
 Please include the following information with your report:
 

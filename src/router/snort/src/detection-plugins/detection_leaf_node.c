@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -108,12 +108,14 @@ leaf_node_check_otn_service (OptTreeNode * otn, Packet * packet)
 
     if (PacketUnknown (packet))
     {
+#ifdef TARGET_BASED
         if (OtnAndPorts (otn))
             return (Leaf_Abort);
-
+#endif
         return (Leaf_CheckPorts);
     }
 
+#ifdef TARGET_BASED
     for (i = 0; i < OtnServiceCount (otn); i++)
     {
         const uint16_t ordinal = otn->sigInfo.services[ i ].service_ordinal;
@@ -122,19 +124,23 @@ leaf_node_check_otn_service (OptTreeNode * otn, Packet * packet)
             service_match = true;
         }
     }
+#endif
 
     if (service_match)
     {
         // identified service matches the rule
+#ifdef TARGET_BASED
         if (OtnAndPorts (otn))
             return (Leaf_CheckPorts);
-
+#endif
         return (Leaf_SkipPorts);
     }
     else
     {
+#ifdef TARGET_BASED
         if (!OtnOrPorts (otn))
             return (Leaf_Abort);
+#endif
     }
 
     return (Leaf_CheckPorts);
@@ -147,8 +153,11 @@ detection_leaf_node_eval (detection_option_tree_node_t * node,
     OptTreeNode *otn = (OptTreeNode*) node->option_data;
     Packet * packet = (Packet*) eval_data->p;
 
-    if (!IsAdaptiveConfigured())
+
+#ifdef TARGET_BASED
+    if (!IsAdaptiveConfigured() || PacketService(packet) <= 0) 
         return (Leaf_CheckPorts);
+#endif
 
     return leaf_node_check_otn_service (otn, packet);
 }

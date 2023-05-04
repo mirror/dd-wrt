@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ extern int file_line;
 
 
 static int ProcessDecodeDepth(DecodeConfig *config, char *ErrorString, int ErrStrLen,
-        char *decode_type, DecodeType type, const char *preproc_name)
+        char *decode_type, DecodeType type, const char *preproc_name, char **strtok_saveptr)
 {
     char *endptr;
     char *value;
@@ -78,7 +78,7 @@ static int ProcessDecodeDepth(DecodeConfig *config, char *ErrorString, int ErrSt
         return -1;
     }
 
-    value = strtok(NULL, CONF_SEPARATORS);
+    value = strtok_r(NULL, CONF_SEPARATORS, strtok_saveptr);
     if ( value == NULL )
     {
         snprintf(ErrorString, ErrStrLen,
@@ -198,7 +198,7 @@ bool is_mime_log_enabled(MAIL_LogConfig *log_config)
  *           0: no error
  *
  */
-int parse_mime_decode_args(DecodeConfig *decode_conf, char *arg, const char *preproc_name)
+int parse_mime_decode_args(DecodeConfig *decode_conf, char *arg, const char *preproc_name, char **strtok_saveptr)
 {
     int ret = 0;
     char errStr[ERRSTRLEN];
@@ -212,25 +212,25 @@ int parse_mime_decode_args(DecodeConfig *decode_conf, char *arg, const char *pre
 
     if ( !strcasecmp(CONF_MAX_MIME_MEM, arg) )
     {
-        ret = CheckValueInRange(strtok(NULL, CONF_SEPARATORS), CONF_MAX_MIME_MEM,
+        ret = CheckValueInRange(strtok_r(NULL, CONF_SEPARATORS, strtok_saveptr), CONF_MAX_MIME_MEM,
                 MIN_MIME_MEM, MAX_MIME_MEM, &value);
         decode_conf->max_mime_mem = (int)value;
     }
     else if ( !strcasecmp(CONF_B64_DECODE, arg) )
     {
-        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_B64_DECODE, DECODE_B64, preproc_name);
+        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_B64_DECODE, DECODE_B64, preproc_name, strtok_saveptr);
     }
     else if ( !strcasecmp(CONF_QP_DECODE, arg) )
     {
-        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_QP_DECODE, DECODE_QP, preproc_name);
+        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_QP_DECODE, DECODE_QP, preproc_name, strtok_saveptr);
     }
     else if ( !strcasecmp(CONF_UU_DECODE, arg) )
     {
-        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_UU_DECODE, DECODE_UU, preproc_name);
+        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_UU_DECODE, DECODE_UU, preproc_name, strtok_saveptr);
     }
     else if ( !strcasecmp(CONF_BITENC_DECODE, arg) )
     {
-        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_BITENC_DECODE, DECODE_BITENC, preproc_name);
+        ret = ProcessDecodeDepth(decode_conf, errStr, errStrLen, CONF_BITENC_DECODE, DECODE_BITENC, preproc_name, strtok_saveptr);
     }
     else
     {

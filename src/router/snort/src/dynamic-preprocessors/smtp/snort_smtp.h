@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -263,9 +263,8 @@ typedef struct _SMTP
      */
 
     tSfPolicyId policy_id;
-    tSfPolicyUserContextId config;
     uint32_t flow_id;
-
+    tSfPolicyUserContextId config;
 } SMTP;
 
 
@@ -285,6 +284,7 @@ int SMTP_GetFilename(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
 int SMTP_GetMailFrom(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
 int SMTP_GetRcptTo(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
 int SMTP_GetEmailHdrs(void *data, uint8_t **buf, uint32_t *len, uint32_t *type);
+int SMTP_SessionExist(void *data);
 void SMTP_MempoolInit(uint32_t, uint32_t);
 
 /**************************************************************************/

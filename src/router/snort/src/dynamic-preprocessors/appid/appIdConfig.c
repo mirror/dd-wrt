@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,9 @@
 #include "sf_dynamic_preprocessor.h"
 #include "appIdConfig.h"
 #include "common_util.h"
+#ifdef SIDE_CHANNEL
+#include "appId_ss.h"
+#endif
 
 #define APP_ID_MEMCAP_DEFAULT       (256*1024*1024ULL)
 #define APP_ID_MEMCAP_UPPER_BOUND   (3*1024*1024*1024ULL)
@@ -50,6 +53,14 @@ static void appIdConfigDump(tAppidStaticConfig* appidSC)
     _dpd.logMsg("    appStats Period:        %d secs\n", appidSC->app_stats_period);
     _dpd.logMsg("    appStats Rollover Size: %d bytes\n", appidSC->app_stats_rollover_size);
     _dpd.logMsg("    appStats Rollover time: %d secs\n", appidSC->app_stats_rollover_time);
+
+#ifdef SIDE_CHANNEL
+     AppIdPrintSSConfig(appidSC->appId_ss_config);
+#endif
+
+#ifdef REG_TEST
+    _dpd.logMsg("    AppID Reg Test Mode:    %s\n", appidSC->appid_reg_test_mode ? "true" : "false");
+#endif
     _dpd.logMsg("\n");
 }
 
@@ -61,11 +72,33 @@ void appIdConfigParse(tAppidStaticConfig* appidSC, char *args)
     char **stoks;
     int s_toks;
     char *endPtr;
+    char *ro_app_detector_dir;
 
     memset (appidSC, 0, sizeof(*appidSC));
 
+#ifdef SIDE_CHANNEL
+    if (NULL == (appidSC->appId_ss_config = (AppIdSSConfig *)_dpd.snortAlloc(1,
+        sizeof(*appidSC->appId_ss_config), PP_APP_ID, PP_MEM_CATEGORY_CONFIG)))
+    {
+        _dpd.fatalMsg("Appid failed to allocate memory for state sharing configuration\n");
+    }
+    if (_dpd.isSCEnabled())
+    {
+        appidSC->appId_ss_config->use_side_channel = true;
+    }
+#endif
+
     if ((args == NULL) || (strlen(args) == 0))
         return;
+
+    ro_app_detector_dir = getenv("APPID_DETECTOR_DIR");
+    if (ro_app_detector_dir)
+    {   
+        if (NULL == (appidSC->app_id_detector_path = strdup(ro_app_detector_dir)))
+        {   
+            _dpd.fatalMsg("Appid failed to allocate RO detector path\n");
+        }
+    }
 
     toks = _dpd.tokenSplit(args, ",", 0, &num_toks, 0);
     i = 0;
@@ -185,14 +218,17 @@ void appIdConfigParse(tAppidStaticConfig* appidSC, char *args)
         }
         else if(!strcasecmp(stoks[0], "app_detector_dir"))
         {
-            if ((s_toks != 2) || !*stoks[1])
+            if (!ro_app_detector_dir)
             {
-                _dpd.fatalMsg("%s(%d) => %s\n", *(_dpd.config_file), *(_dpd.config_line), "Invalid app_detector_dir");
-            }
+                if ((s_toks != 2) || !*stoks[1])
+                {
+                    _dpd.fatalMsg("%s(%d) => %s\n", *(_dpd.config_file), *(_dpd.config_line), "Invalid app_detector_dir");
+                }
 
-            if (NULL == (appidSC->app_id_detector_path = strdup(stoks[1])))
-            {
-                _dpd.fatalMsg("Appid failed to allocate detector path\n");
+                if (NULL == (appidSC->app_id_detector_path = strdup(stoks[1])))
+                {
+                    _dpd.fatalMsg("Appid failed to allocate detector path\n");
+                }
             }
         }
         else if(!strcasecmp(stoks[0], "instance_id"))
@@ -224,6 +260,55 @@ void appIdConfigParse(tAppidStaticConfig* appidSC, char *args)
                 return;
             }
         }
+        else if(!strcasecmp(stoks[0], "tp_config_path"))
+        {
+            if (appidSC->tp_config_path)
+            {
+                free((void *)appidSC->tp_config_path);
+                appidSC->tp_config_path = NULL;
+            }
+            if (s_toks != 2)
+            {
+                _dpd.fatalMsg("%s(%d) => %s\n", *(_dpd.config_file), *(_dpd.config_line), "Invalid TP configuration");
+            }
+            if (!(appidSC->tp_config_path = strdup(stoks[1])))
+            {
+                _dpd.errMsg("Failed to allocate a module file");
+                return;
+            }
+        }
+#ifdef REG_TEST
+#ifdef SIDE_CHANNEL
+        else if(!strcasecmp(stoks[0], "ss_startup_input_file"))
+        {
+            if ((s_toks != 2) || !*stoks[1])
+            {
+                _dpd.fatalMsg("%s(%d) => %s\n", *(_dpd.config_file), *(_dpd.config_line), "Invalid AppId state sharing startup input file");
+            }
+
+            if (NULL == (appidSC->appId_ss_config->startup_input_file = strdup(stoks[1])))
+            {
+                _dpd.fatalMsg("Appid failed to allocate memory for state sharing startup input file\n");
+            }
+        }
+        else if(!strcasecmp(stoks[0], "ss_runtime_output_file"))
+        {
+            if ((s_toks != 2) || !*stoks[1])
+            {
+                _dpd.fatalMsg("%s(%d) => %s\n", *(_dpd.config_file), *(_dpd.config_line), "Invalid AppId state sharing runtime output file");
+            }
+
+            if (NULL == (appidSC->appId_ss_config->runtime_output_file = strdup(stoks[1])))
+            {
+                _dpd.fatalMsg("Appid failed to allocate memory for state sharing runtime output file\n");
+            }
+        }
+#endif
+        else if(!strcasecmp(stoks[0], "appid_reg_test_mode"))
+        {
+            appidSC->appid_reg_test_mode = true;
+        }
+#endif
         else
         {
             DynamicPreprocessorFatalMessage("%s(%d) => Unknown AppId configuration option \"%s\"\n",
@@ -259,11 +344,12 @@ void AppIdAddGenericConfigItem(tAppIdConfig *pConfig, const char *name, void *pD
 {
     tAppidGenericConfigItem *pConfigItem;
 
-    if (!(pConfigItem = malloc(sizeof(*pConfigItem))) ||
+    if (!(pConfigItem = (tAppidGenericConfigItem*)_dpd.snortAlloc(1,
+        sizeof(*pConfigItem), PP_APP_ID, PP_MEM_CATEGORY_CONFIG)) ||
         !(pConfigItem->name = strdup(name)))
     {
         if (pConfigItem)
-            free(pConfigItem);
+            _dpd.snortFree(pConfigItem, sizeof(*pConfigItem), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
         _dpd.errMsg("Failed to allocate a config item.");
         return;
     }
@@ -302,7 +388,7 @@ void AppIdRemoveGenericConfigItem(tAppIdConfig *pConfig, const char *name)
         if (strcmp(pConfigItem->name, name) == 0)
         {
             free(pConfigItem->name);
-            free(pConfigItem);
+            _dpd.snortFree(pConfigItem, sizeof(*pConfigItem), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
             sflist_remove_node(&pConfig->genericConfigList, pNode);
             break;
         }

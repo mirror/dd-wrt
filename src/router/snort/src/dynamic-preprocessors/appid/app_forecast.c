@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -24,12 +24,10 @@ static AFActKey master_key;
 
 static inline void rekeyMasterAFActKey (SFSnortPacket *p, int dir, tAppId forecast)
 {
-    int i;
     sfaddr_t *src;
 
     src = dir ? GET_DST_IP(p) : GET_SRC_IP(p);
-    for (i = 0; i < 4; i++)
-        master_key.ip[i] = src->ia32[i];
+    memcpy(master_key.ip, sfaddr_get_ip6_ptr(src), sizeof(master_key.ip));
     master_key.forecast = forecast;
 }
 

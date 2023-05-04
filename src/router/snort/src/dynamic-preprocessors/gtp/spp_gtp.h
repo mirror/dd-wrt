@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2011-2013 Sourcefire, Inc.
 **
 **
@@ -103,12 +103,14 @@ typedef struct _GTPMsg
 #define GTP_EVENT_BAD_MSG_LEN        (1)
 #define GTP_EVENT_BAD_IE_LEN         (2)
 #define GTP_EVENT_OUT_OF_ORDER_IE    (3)
+#define GTP_TEID_MISSING             (4)
 /*
  * GTP preprocessor alert strings.
  */
 #define GTP_EVENT_BAD_MSG_LEN_STR	     "(spp_gtp) Message length is invalid"
 #define GTP_EVENT_BAD_IE_LEN_STR	     "(spp_gtp) Information element length is invalid"
 #define	GTP_EVENT_OUT_OF_ORDER_IE_STR	 "(spp_gtp) Information elements are out of order"
+#define GTP_TEID_MISSING_STR                 "(spp_gtp) TEID is Missing"
 
 typedef struct _GTP_Stats
 {

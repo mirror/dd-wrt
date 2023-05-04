@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -634,7 +634,7 @@ static void SipSessionCbClientProcess (SFSnortPacket *p, const SipHeaders *heade
 
 success:
     //client detection successful
-    sip_udp_client_mod.api->add_app(flowp, APP_ID_SIP, clientAppId, clientVersion);
+    sip_udp_client_mod.api->add_app(p, direction, pAppidActiveConfig, flowp, APP_ID_SIP, clientAppId, clientVersion);
 
     if(fd->userName)
         sip_udp_client_mod.api->add_user(flowp, (char *)fd->userName, APP_ID_SIP, 1);

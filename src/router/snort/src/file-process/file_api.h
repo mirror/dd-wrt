@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * ** Copyright (C) 2012-2013 Sourcefire, Inc.
  * ** AUTHOR: Hui Cao
  * **
@@ -159,7 +159,7 @@ typedef struct _FileSession
 
 } FileSession;
 
-#define FILE_API_VERSION   4
+#define FILE_API_VERSION   5
 
 #define DEFAULT_FILE_ID    0
 
@@ -168,7 +168,7 @@ typedef File_Verdict (*File_type_callback_func) (void* p, void* ssnptr,
         uint32_t file_type_id, bool upload, uint32_t file_id);
 typedef File_Verdict (*File_signature_callback_func) (void* p, void* ssnptr,
         uint8_t* file_sig, uint64_t file_size, FileState *state, bool upload,
-        uint32_t file_id);
+        uint32_t file_id, bool partial_file);
 typedef void (*Log_file_action_func) (void* ssnptr, int action);
 
 typedef int (*File_process_func)( void* p, uint8_t* file_data, int data_size, FilePosition position,
@@ -191,7 +191,8 @@ typedef void (*Enable_file_capture_func)(struct _SnortConfig* sc, File_signature
 typedef void (*Set_file_action_log_func)(Log_file_action_func);
 typedef void (*Install_file_service_func)(void);
 
-typedef int (*Set_log_buffers_func)(struct s_MAIL_LogState **log_state, struct s_MAIL_LogConfig *conf, void *mempool, void* scbPtr);
+typedef int (*Set_log_buffers_func)(struct s_MAIL_LogState **log_state, struct s_MAIL_LogConfig *conf, void *mempool, 
+                                    void* scbPtr, uint32_t preproc_id);
 typedef void (*Update_mime_mempool_func)(void*, int, int);
 typedef void (*Update_log_mempool_func)(void*, int, int);
 typedef void (*Display_mime_mempool_func)(void *memory_pool, struct _DecodeConfig *decode_conf_old, struct _DecodeConfig *decode_conf_new);
@@ -202,15 +203,15 @@ typedef void* (*Init_log_mempool_func)(uint32_t email_hdrs_log_depth, uint32_t m
 
 typedef int (*File_resume_block_add_file_func)(void *pkt, uint32_t file_sig,
         uint32_t timeout, File_Verdict verdict, uint32_t file_type_id, uint8_t *signature,
-        uint16_t cli_port, uint16_t srv_port, bool create_pinhole);
+        uint16_t cli_port, uint16_t srv_port, bool create_pinhole, bool direction);
 typedef File_Verdict (*File_resume_block_check_func)(void *pkt, uint32_t file_sig);
 typedef uint32_t (*Str_to_hash_func)(uint8_t *str, int length );
 typedef void (*File_signature_lookup_func)(void* p, bool is_retransmit);
 typedef void (*Set_mime_decode_config_defaults_func)(struct _DecodeConfig *decode_conf);
 typedef void (*Set_mime_log_config_defaults_func)(struct s_MAIL_LogConfig *log_config);
-typedef int (*Parse_mime_decode_args_func)(struct _DecodeConfig *decode_conf, char *arg, const char *preproc_name);
+typedef int (*Parse_mime_decode_args_func)(struct _DecodeConfig *decode_conf, char *arg, const char *preproc_name, char **saveptr);
 typedef const uint8_t * (*Process_mime_data_func)(void *packet, const uint8_t *start, const uint8_t *end,
-        struct _MimeState *mime_ssn, bool upload, bool paf_enabled, char *protocol);
+        struct _MimeState *mime_ssn, bool upload, bool paf_enabled, char *protocol, uint32_t preproc_id);
 typedef void (*Free_mime_session_func)(struct _MimeState *mime_ssn);
 typedef bool (*Is_decoding_enabled_func)(struct _DecodeConfig *decode_conf);
 typedef bool (*Check_decoding_conf_func)(struct _DecodeConfig *configNext, struct _DecodeConfig *config, const char *preproc_name);
@@ -243,7 +244,7 @@ typedef int (*Process_file_func)( struct _FileContext *ctx, void *p,
         uint8_t *file_data, int data_size, FilePosition position,
         bool suspend_block_verdict);
 typedef void *(*File_cache_update_entry_func) (struct _FileCache *fileCache, void* p, uint64_t file_id,
-        uint8_t *file_name, uint32_t file_name_size,  uint64_t file_size);
+        uint8_t *file_name, uint32_t file_name_size,  uint64_t file_size, bool reset, bool no_update_size);
 typedef int (*File_segment_process_func)( struct _FileCache *fileCache, void* p, uint64_t file_id,
         uint64_t file_size, const uint8_t* file_data, int data_size, uint64_t offset,
         bool upload);
@@ -255,6 +256,10 @@ typedef bool (*File_config_malware_check)(void *ssn, uint16_t app_id);
 typedef FileCharEncoding (*Get_character_encoding)(uint8_t *, uint32_t);
 typedef bool (*File_cache_mem_adjust_func)(struct _FileCache *fileCache, uint8_t *pWork);
 typedef void (*File_cache_mem_set_func)(struct _FileCache *fileCache, uint64_t memcap);
+typedef void (*File_event_log_dump_func)( struct _FileCache *fileCache, void* p, uint64_t file_id);
+typedef void (*File_signature_reset)(void *ssnptr);
+typedef void (*Set_file_partial_func)(void *p, FilePosition position, bool upload, bool is_partial);
+typedef char* (*File_get_filetype_func) (void *ssnptr); 
 
 typedef struct _file_api
 {
@@ -718,6 +723,18 @@ typedef struct _file_api
 
     File_cache_mem_adjust_func file_cache_shrink_to_memcap;
     File_cache_mem_set_func    file_cache_set_memcap;
+    File_signature_reset       file_signature_reset;   
+    /* Return a char string that indicates the file type
+     * Arguments:
+     *   void * ssnptr: session pointer
+     * Returns:
+     *   File Type name
+     */
+    File_get_filetype_func file_get_filetype; 
+
+    /* Logging a file event */
+    File_event_log_dump_func file_event_log_dump;
+    Set_file_partial_func set_file_partial;
 
 } FileAPI;
 

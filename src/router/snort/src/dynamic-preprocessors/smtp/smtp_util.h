@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@ int SMTP_CopyToAltBuffer(SFSnortPacket *, const uint8_t *, int);
 int SMTP_CopyEmailHdrs(const uint8_t *, int, MAIL_LogState *log_state );
 int SMTP_CopyEmailID(const uint8_t *, int , int, MAIL_LogState *log_state );
 void SMTP_LogFuncs(SMTPConfig *config, SFSnortPacket *p, MimeState *mime_ssn);
+int SMTP_Print_Mem_Stats(FILE *fd, char *buffer, PreprocMemInfo *meminfo);
 
 #ifdef DEBUG_MSGS
 const char * SMTP_PrintBuffer(SFSnortPacket *);

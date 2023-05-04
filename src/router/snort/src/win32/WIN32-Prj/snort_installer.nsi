@@ -1,17 +1,17 @@
 ; $Id$
 ;
-; NSIS Installation script for Snort 2.9.11.1 Win32
+; NSIS Installation script for Snort 2.9.20 Win32
 ; Written by Chris Reid <chris.reid@codecraftconsultants.com>
 ; Updated by Steven Sturges <ssturges@sourcefire.com>
 ;
-; This script will create a Win32 installer for Snort 2.9.11.1 (Win32 only).
+; This script will create a Win32 installer for Snort 2.9.20 (Win32 only).
 ; For more information about NSIS, see their homepage:
 ;     http://nsis.sourceforge.net/
 ;
 ; Note that this NSIS script is designed for NSIS version 2.09.
 ;
 
-Name "Snort 2.9.11.1"
+Name "Snort 2.9.20"
 
 CRCCheck On
 
@@ -23,7 +23,7 @@ CRCCheck On
 ;Configuration
 
   ;General
-  OutFile "Snort_2_9_11_1_Installer.exe"  ; The name of the installer executable
+  OutFile "Snort_2_9_20_Installer.exe"  ; The name of the installer executable
 
   ;Folder selection page
   InstallDir "C:\Snort"
@@ -84,7 +84,7 @@ Function .onInstSuccess
   StrCpy $0 "Snort has successfully been installed.$\r$\n"
   StrCpy $0 "$0$\r$\n"
   StrCpy $0 "$0$\r$\n"
-  StrCpy $0 "$0Snort also requires WinPcap 4.1.1 to be installed on this machine.$\r$\n"
+  StrCpy $0 "$0Snort also requires WinPcap 4.1.1 or higher to be installed on this machine.$\r$\n"
   StrCpy $0 "$0WinPcap can be downloaded from:$\r$\n"
   StrCpy $0 "$0    http://www.winpcap.org/ $\r$\n"
   StrCpy $0 "$0$\r$\n"

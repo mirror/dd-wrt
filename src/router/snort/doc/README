@@ -1,4 +1,4 @@
-Snort Version 2.9.11.1
+Snort Version 2.9.20
 
 by Martin Roesch and The Snort Team (http://www.snort.org/contact#team)
 
@@ -8,7 +8,7 @@ http://www.snort.org
 ******************************************************************************
 COPYRIGHT
 
-Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+Copyright (C) 2014-2021 Cisco and/or its affiliates. All rights reserved.
 Copyright (C) 2001-2013 Sourcefire Inc.
 Copyright (C) 1998-2001 Martin Roesch
 

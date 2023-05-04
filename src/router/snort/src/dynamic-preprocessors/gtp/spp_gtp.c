@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -146,6 +146,13 @@ void SetupGTP(void)
 #endif
 }
 
+#ifdef REG_TEST
+static inline void PrintGTPSize(void)
+{
+    _dpd.logMsg("\nGTP Session Size: %lu\n", (long unsigned int)sizeof(GTPData));
+}
+#endif
+
 /* Initializes the GTP preprocessor module and registers
  * it in the preprocessor list.
  *
@@ -190,6 +197,9 @@ static void GTPInit(struct _SnortConfig *sc, char *argp)
 #endif
     }
 
+#ifdef REG_TEST
+    PrintGTPSize();
+#endif
     sfPolicyUserPolicySet (gtp_config, policy_id);
     pDefaultPolicyConfig = (GTPConfig *)sfPolicyUserDataGetDefault(gtp_config);
     pPolicyConfig = (GTPConfig *)sfPolicyUserDataGetCurrent(gtp_config);

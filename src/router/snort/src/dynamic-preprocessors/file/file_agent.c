@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -88,7 +88,7 @@ static FileInfo* file_agent_get_file(void);
 static FileInfo *file_agent_finish_file(void);
 static File_Verdict file_agent_type_callback(void*, void*, uint32_t, bool,uint32_t);
 static File_Verdict file_agent_signature_callback(void*, void*, uint8_t*,
-        uint64_t, FileState *, bool, uint32_t);
+        uint64_t, FileState *, bool, uint32_t, bool);
 static int file_agent_queue_file(void*, void *);
 static int file_agent_init_socket(char *hostname, int portno);
 
@@ -190,7 +190,7 @@ static inline void file_agent_process_files(CircularBuffer *file_list,
         if (file)
         {
             _dpd.fileAPI->release_file(file->file_mem);
-            free(file);
+            _dpd.snortFree(file, sizeof(FileInfo), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
         }
     }
 }
@@ -333,7 +333,7 @@ static int file_agent_queue_file(void* ssnptr, void *file_mem)
         return -1;
     }
 
-    finfo = calloc(1, sizeof (*finfo));
+    finfo = _dpd.snortAlloc(1, sizeof(FileInfo), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
 
     if (!finfo)
     {
@@ -344,7 +344,7 @@ static int file_agent_queue_file(void* ssnptr, void *file_mem)
 
     if (!sha256)
     {
-	free(finfo);
+        _dpd.snortFree(finfo, sizeof(FileInfo), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
         return -1;
     }
 
@@ -354,10 +354,10 @@ static int file_agent_queue_file(void* ssnptr, void *file_mem)
 
     pthread_mutex_lock(&file_list_mutex);
 
-    if(cbuffer_write(file_list, finfo))
+    if (cbuffer_write(file_list, finfo)) 
     {
         pthread_mutex_unlock(&file_list_mutex);
-        free(finfo);
+        _dpd.snortFree(finfo, sizeof(FileInfo), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
         return -1;
     }
 
@@ -464,7 +464,7 @@ static int file_agent_save_file(FileInfo *file,  char *capture_dir)
 
     if (filename_len >= FILE_NAME_LEN )
     {
-        free(file);
+        _dpd.snortFree(file, sizeof(FileInfo), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
         return -1;
     }
 
@@ -663,7 +663,7 @@ static inline int file_agent_capture_error(FileCaptureState capture_state)
  * or capture/singature is aborted
  */
 static File_Verdict file_agent_signature_callback (void* p, void* ssnptr,
-        uint8_t* file_sig, uint64_t file_size, FileState *state, bool upload, uint32_t file_id)
+        uint8_t* file_sig, uint64_t file_size, FileState *state, bool upload, uint32_t file_id, bool is_partial)
 {
     FileCaptureInfo *file_mem = NULL;
     FileCaptureState capture_state;
@@ -722,7 +722,7 @@ static File_Verdict file_agent_signature_callback (void* p, void* ssnptr,
     }
 
     /*Save the file to our file queue*/
-    if (file_agent_queue_file(pkt->stream_session, file_mem) < 0)
+    if ((!is_partial) && (file_agent_queue_file(pkt->stream_session, file_mem) < 0))
     {
         file_inspect_stats.file_agent_memcap_failures++;
         _dpd.logMsg("File inspect: can't queue file!\n");

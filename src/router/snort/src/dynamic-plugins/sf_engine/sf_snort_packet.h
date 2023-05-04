@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
@@ -121,6 +121,14 @@ typedef struct _EtherHeader
 #endif /* IP_MAXPACKET */
 
 #define IP_HDR_LEN  20
+
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+#if defined(DAQ_VERSION) && DAQ_VERSION > 10
+#define GET_SFOUTER_IPH_PROTOID(p, pkt_header) ((uint32_t)(p->pkt_header->carrier_id) ? p->pkt_header->carrier_id : 0 )
+#else
+#define GET_SFOUTER_IPH_PROTOID(p, pkt_header) ((uint32_t)((p)->outer_ip4_header ? (IS_IP6(p) ? ((p)->outer_ip6h.next) : ((p)->outer_ip4h.ip_proto)):0))
+#endif
+#endif
 
 typedef struct _IPV4Header
 {
@@ -514,6 +522,7 @@ struct sfSDList;
 // forward declaration for snort expected session created due to this packet.
 struct _ExpectNode;
 
+// NOTE: Any modifcation to _SFSnortPacket, please bump up REQ_ENGINE_LIB_MINOR 
 typedef struct _SFSnortPacket
 {
     const SFDAQ_PktHdr_t *pkt_header; /* Is this GPF'd? */
@@ -597,6 +606,9 @@ typedef struct _SFSnortPacket
     uint8_t invalid_flags;
     uint8_t encapsulated;
     uint8_t GTPencapsulated;
+    uint8_t GREencapsulated;
+    uint8_t IPnIPencapsulated;
+    uint8_t non_ip_pkt;
     uint8_t next_layer_index;
 
 #ifndef NO_NON_ETHER_DECODER
@@ -752,6 +764,11 @@ typedef struct _SFSnortPacket
 #define FLAG_EARLY_REASSEMBLY 0x40000000  /* this packet. part of the expected stream, should have stream reassembly set */
 #define FLAG_RETRANSMIT       0x80000000  /* this packet is identified as re-transmitted one */
 #define FLAG_PURGE            0x0100000000 /* Stream will not flush the data */
+#define FLAG_H1_ABORT         0x0200000000  /* Used by H1 and H2 paf */
+#define FLAG_UPGRADE_PROTO    0x0400000000  /* Used by H1 paf */
+#define FLAG_PSEUDO_FLUSH     0x0800000000
+#define FLAG_FAST_BLOCK       0x1000000000
+#define FLAG_EVAL_DROP        0x2000000000  /* Packet with FLAG_EVAL_DROP is evaluated if it is needed to dropped */
 
 
 #define FLAG_PDU_FULL (FLAG_PDU_HEAD | FLAG_PDU_TAIL)

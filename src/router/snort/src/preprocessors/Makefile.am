@@ -30,7 +30,7 @@ session_api.c session_api.h \
 stream_api.c stream_api.h \
 spp_normalize.c spp_normalize.h \
 normalize.c normalize.h \
-sip_common.h
+sip_common.h cip_common.h
 
 
 INCLUDES = @INCLUDES@

@@ -267,6 +267,10 @@ SOURCE="..\..\dynamic-plugins\sf_engine\sf_decompression.h"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\dynamic-plugins\sf_decompression_define.h"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\dynamic-plugins\sf_engine\sf_ip.h"
 # End Source File
 # Begin Source File

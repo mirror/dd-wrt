@@ -1048,6 +1048,8 @@ SID   Description
 30    both true_client_ip and XFF hdrs present
 31    unknown method
 32    simple request (HTTP/0.9)
+33    Client unescaped URI
+34    Client Pipeline Max request
 
 
 The following alert is generated with generator ID 120:
@@ -1071,4 +1073,15 @@ SID   Description
 15    PDF file with unsupported compression type
 16    PDF file with cascaded FlateDecode filters
 17    PDF file parsing error
-
+18    HTTP server response before client request
+19    Multiple content length in http response
+20    Multiple content encoding in http response
+21    Multiple colon between key and value in http response header
+22    Invalid character between http response header and value
+23    Transfer Encoding:Chunked in HTTP 1.0 Request/Response Header
+24    Partial Decompression Failure in HTTP Response Body
+25    Invalid Header Folding
+26    Junk line before HTTP response header
+27    No end of header in HTTP Response
+28    Invalid chunk size or chunk size followed by junk characters
+29    Invalid version in HTTP response header

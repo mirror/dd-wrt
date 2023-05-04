@@ -2,7 +2,7 @@
 **
 **  sfcontrol.c
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Author(s):  Ron Dempster <rdempster@sourcefire.com>
 **

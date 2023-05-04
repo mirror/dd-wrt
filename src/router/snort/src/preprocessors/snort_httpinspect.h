@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include "mempool.h"
 #include "str_search.h"
 #include "util_jsnorm.h"
+#include "memory_stats.h"
 
 #include <zlib.h>
 
@@ -47,6 +48,7 @@ extern PreprocStats hi2InitPerfStats;
 extern PreprocStats hi2PayloadPerfStats;
 extern PreprocStats hi2PseudoPerfStats;
 #endif
+
 /**
 **  The definition of the configuration separators in the snort.conf
 **  configure line.
@@ -83,6 +85,12 @@ extern PreprocStats hi2PseudoPerfStats;
 
 #define XFF_MAX_PIPELINE_REQ 255
 
+
+#define CONTENT_NONE    0x00
+#define PARTIAL_CONTENT 0x01
+#define FULL_CONTENT    0x02
+#define GET_REQ_WITH_RANGE 0x04
+
 typedef enum _HttpRespCompressType
 {
     HTTP_RESP_COMPRESS_TYPE__GZIP     = 0x00000001,
@@ -100,12 +108,12 @@ typedef enum _DecompressStage
 typedef struct s_DECOMPRESS_STATE
 {
     uint8_t inflate_init;
+    uint16_t compress_fmt;
+    uint8_t decompress_data;
     int compr_bytes_read;
     int decompr_bytes_read;
     int compr_depth;
     int decompr_depth;
-    uint16_t compress_fmt;
-    uint8_t decompress_data;
     z_stream d_stream;
     MemBucket *bkt;
     bool deflate_initialized;
@@ -130,7 +138,7 @@ typedef struct s_HTTP_RESP_STATE
     uint32_t max_seq;
     bool flow_depth_excd;
     bool eoh_found;
-    bool look_for_partial_content;
+    uint8_t look_for_partial_content;
     uint8_t chunk_len_state;
 }HTTP_RESP_STATE;
 
@@ -160,12 +168,12 @@ typedef struct _HttpSessionData
     uint8_t log_flags;
     uint8_t cli_small_chunk_count;
     uint8_t srv_small_chunk_count;
-    MimeState *mime_ssn;
-    fd_session_p_t fd_state;
     uint8_t http_req_id;
     uint8_t http_resp_id;
     uint8_t is_response;
     uint8_t tList_count;
+    MimeState *mime_ssn;
+    fd_session_p_t fd_state;
     Transaction *tList_start;
     Transaction *tList_end;
 } HttpSessionData;
@@ -226,9 +234,9 @@ void ApplyFlowDepth(HTTPINSPECT_CONF *, Packet *, HttpSessionData *, int, int, u
 
 
 int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p);
-int ProcessGlobalConf(HTTPINSPECT_GLOBAL_CONF *, char *, int);
+int ProcessGlobalConf(HTTPINSPECT_GLOBAL_CONF *, char *, int, char **saveptr);
 int PrintGlobalConf(HTTPINSPECT_GLOBAL_CONF *);
-int ProcessUniqueServerConf(struct _SnortConfig *, HTTPINSPECT_GLOBAL_CONF *, char *, int);
+int ProcessUniqueServerConf(struct _SnortConfig *, HTTPINSPECT_GLOBAL_CONF *, char *, int, char **);
 int HttpInspectInitializeGlobalConfig(HTTPINSPECT_GLOBAL_CONF *, char *, int);
 HttpSessionData * SetNewHttpSessionData(Packet *, void *);
 void FreeHttpSessionData(void *data);
@@ -241,7 +249,8 @@ void HI_SearchInit(void);
 void HI_SearchFree(void);
 int HI_SearchStrFound(void *, void *, int , void *, void *);
 int GetHttpFlowDepth(void *, uint32_t);
-bool isHttpRespPartialCont(void *data);
+uint8_t isHttpRespPartialCont(void *data);
+bool GetHttpFastBlockingStatus();
 
 static inline HttpSessionData * GetHttpSessionData(Packet *p)
 {
@@ -254,7 +263,8 @@ static inline void freeTransactionNode(Transaction *tPtr)
 {
     if(tPtr->true_ip)
         sfaddr_free(tPtr->true_ip);
-    free(tPtr);
+    SnortPreprocFree(tPtr, sizeof (Transaction), PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+    hi_stats.mem_used -=  sizeof(Transaction);
 }
 
 static inline void deleteNode_tList(HttpSessionData *hsd)
@@ -296,6 +306,7 @@ static inline void ResetGzipState(DECOMPRESS_STATE *ds)
     inflateEnd(&(ds->d_stream));
 
     ds->inflate_init = 0;
+    ds->deflate_initialized = false;
     ds->compr_bytes_read = 0;
     ds->decompr_bytes_read = 0;
     ds->compress_fmt = 0;
@@ -326,7 +337,8 @@ static inline int SetLogBuffers(HttpSessionData *hsd, void* scbPtr)
 
         if (bkt != NULL)
         {
-            hsd->log_state = (HTTP_LOG_STATE *)calloc(1, sizeof(HTTP_LOG_STATE));
+            hsd->log_state = (HTTP_LOG_STATE *)SnortPreprocAlloc(1, sizeof(HTTP_LOG_STATE), 
+                                                    PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION); 
             if( hsd->log_state != NULL )
             {
                 bkt->scbPtr = scbPtr;

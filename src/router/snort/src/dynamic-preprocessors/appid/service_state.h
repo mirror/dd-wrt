@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -110,6 +110,10 @@ typedef struct _APP_ID_SERVICE_ID_STATE
      */
     sfaddr_t last_invalid_client;
 
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)   
+    uint16_t asId;
+#endif
+
     /** Count for number of unknown sessions saved
      */
     unsigned unknowns_logged;
@@ -119,18 +123,30 @@ typedef struct _APP_ID_SERVICE_ID_STATE
 
 typedef struct
 {
-    uint16_t port;
-    uint16_t proto;
-    uint32_t ip;
-    uint32_t level;
+    uint16_t  port;
+    uint16_t  proto;
+    uint32_t  ip;
+    uint32_t  level;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)   
+    uint16_t  asId;      
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+    uint32_t cid;
+#endif
 } AppIdServiceStateKey4;
 
 typedef struct
 {
-    uint16_t port;
-    uint16_t proto;
-    uint8_t ip[16];
-    uint32_t level;
+    uint16_t  port;
+    uint16_t  proto;
+    uint8_t   ip[16];
+    uint32_t  level;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)   
+    uint16_t  asId;    
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+    uint32_t cid;
+#endif
 } AppIdServiceStateKey6;
 
 typedef union
@@ -142,9 +158,33 @@ typedef union
 bool AppIdServiceStateReloadAdjust(bool idle, unsigned long memcap);
 int AppIdServiceStateInit(unsigned long memcap);
 void AppIdServiceStateCleanup(void);
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+void AppIdRemoveServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, 
+        uint32_t level, uint16_t asId, uint32_t cid);
+AppIdServiceIDState* AppIdGetServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port,
+        uint32_t level, uint16_t asId, uint32_t cid);
+AppIdServiceIDState* AppIdAddServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port,
+        uint32_t level, uint16_t asId, uint32_t cid);
+#else
+void AppIdRemoveServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level, uint32_t cid);
+AppIdServiceIDState* AppIdGetServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level, uint32_t cid);
+AppIdServiceIDState* AppIdAddServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level, uint32_t cid);
+#endif
+#else /* No carrier id */
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+void AppIdRemoveServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port,
+        uint32_t level, uint16_t asId);
+AppIdServiceIDState* AppIdGetServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port,
+        uint32_t level, uint16_t asId);
+AppIdServiceIDState* AppIdAddServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port,
+        uint32_t level, uint16_t asId);
+#else
 void AppIdRemoveServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level);
 AppIdServiceIDState* AppIdGetServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level);
 AppIdServiceIDState* AppIdAddServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level);
+#endif
+#endif
 void AppIdServiceStateDumpStats(void);
 
 #endif

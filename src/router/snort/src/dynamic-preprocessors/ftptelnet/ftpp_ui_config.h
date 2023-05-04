@@ -1,7 +1,7 @@
 /*
  * ftpp_ui_config.h
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -46,7 +46,6 @@
 #include "ipv6_port.h"
 #include "sfrt.h"
 #include "snort_bounds.h"
-#include "sfmemcap.h"
 /*
  * Defines
  */
@@ -317,7 +316,6 @@ typedef struct s_FTPTELNET_GLOBAL_CONF
     uint32_t ref_count;
 
     uint32_t xtra_filename_id;
-    MEMCAP  mc;
 
 }  FTPTELNET_GLOBAL_CONF;
 

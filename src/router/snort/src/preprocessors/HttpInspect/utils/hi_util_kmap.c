@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -52,6 +52,9 @@
 
 #include "hi_util_kmap.h"
 #include "hi_util_xmalloc.h"
+#include "sf_types.h"
+#include "memory_stats.h"
+#include "preprocids.h"
 
 //#define MEMASSERT(p) if(!p){printf("KMAP-No Memory: File: %s Line:%d!\n",__FILE__,__LINE__);exit(0);}
 
@@ -187,7 +190,7 @@ static KEYNODE *  KMapAddKeyNode(KMAP * km,void * key, int n, void * userdata )
     knode->key = (unsigned char*)s_malloc(n); // Alloc the key space
     if( !knode->key )
     {
-        free(knode);
+        SnortPreprocFree(knode, sizeof(KEYNODE), PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
         return 0;
     }
 

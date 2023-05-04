@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -52,8 +52,6 @@ typedef struct _CLIENT_POP3_DATA
     int detected;
     int got_user;
 } ClientPOP3Data;
-
-#define MIN_POP3_CMDS   3
 
 static POP3_CLIENT_APP_CONFIG pop3_config;
 
@@ -110,6 +108,8 @@ static const uint8_t AUTHEOC3[] = "AUTH \x00d\x00a";
 static const uint8_t AUTHEOC4[] = "AUTH \x00a";
 static const uint8_t STLSEOC[] = "STLS\x00d\x00a";
 static const uint8_t STLSEOC2[] = "STLS\x00a";
+static const uint8_t STLSEOC3[] = "STLS \x00d\x00a";
+static const uint8_t STLSEOC4[] = "STLS \x00a";
 
 typedef enum
 {
@@ -124,6 +124,8 @@ typedef enum
     PATTERN_AUTHEOC4,
     PATTERN_STLSEOC,
     PATTERN_STLSEOC2,
+    PATTERN_STLSEOC3,
+	PATTERN_STLSEOC4,
     PATTERN_POP3_OTHER // always last
 } Client_App_Pattern_Index;
 
@@ -139,6 +141,8 @@ static Client_App_Pattern patterns[] =
     {AUTHEOC4, sizeof(AUTHEOC4)-1, 1},
     {STLSEOC, sizeof(STLSEOC)-1, 1},
     {STLSEOC2, sizeof(STLSEOC2)-1, 1},
+    {STLSEOC3, sizeof(STLSEOC3)-1, 1},
+	{STLSEOC4, sizeof(STLSEOC4)-1, 1},
     /* These are represented by index >= PATTERN_POP3_OTHER */
     {DELE, sizeof(DELE)-1, 0},
     {LISTC, sizeof(LISTC)-1, 0},
@@ -165,7 +169,7 @@ static size_t longest_pattern;
 
 #define POP3_PORT   110
 
-#define POP3_COUNT_THRESHOLD 4
+#define POP3_COUNT_THRESHOLD 3
 
 #define POP3_OK "+OK"
 #define POP3_ERR "-ERR"
@@ -301,12 +305,12 @@ static int pop3_init(const InitServiceAPI * const init_api)
     init_api->RegisterPatternUser(&pop3_validate, IPPROTO_TCP, (uint8_t *)POP3_OK, sizeof(POP3_OK)-1, 0, "pop3", init_api->pAppidConfig);
     init_api->RegisterPatternUser(&pop3_validate, IPPROTO_TCP, (uint8_t *)POP3_ERR, sizeof(POP3_ERR)-1, 0, "pop3", init_api->pAppidConfig);
 
-	unsigned j;
-	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
-	{
-		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&pop3_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
-	}
+    unsigned j;
+    for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
+    {
+        _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
+        init_api->RegisterAppId(&pop3_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
+    }
     return 0;
 }
 
@@ -379,7 +383,7 @@ static int pop3_check_line(const uint8_t * *data, const uint8_t *end)
     return 1;
 }
 
-static int pop3_server_validate(POP3DetectorData *dd, const uint8_t *data, uint16_t size, tAppIdData *flowp, int server)
+static int pop3_server_validate(POP3DetectorData *dd, const uint8_t *data, uint16_t size, tAppIdData *flowp, int server, SFSnortPacket *pkt, const int dir, const tAppIdConfig *pConfig)
 {
     static const char ven_cppop[] = "cppop";
     static const char ven_cc[] = "Cubic Circle";
@@ -451,7 +455,7 @@ static int pop3_server_validate(POP3DetectorData *dd, const uint8_t *data, uint1
                 setAppIdFlag(flowp, APPID_SESSION_ENCRYPTED);
                 clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
                 /* we are potentially overriding the APP_ID_POP3 assessment that was made earlier. */
-                client_app_mod.api->add_app(flowp, APP_ID_POP3S, APP_ID_POP3S, NULL); // sets APPID_SESSION_CLIENT_DETECTED
+                client_app_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_POP3S, APP_ID_POP3S, NULL); // sets APPID_SESSION_CLIENT_DETECTED
             }
         }
         else if (dd->client.username) // possible only with non-TLS authentication therefor: APP_ID_POP3
@@ -464,14 +468,18 @@ static int pop3_server_validate(POP3DetectorData *dd, const uint8_t *data, uint1
             }
             else
             {
-                service_mod.api->add_user(flowp, dd->client.username, APP_ID_POP3, 1);
-                free(dd->client.username);
-                dd->client.username = NULL;
-                dd->need_continue = 0;
-                clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
-                dd->client.got_user = 1;
-                if (dd->client.detected)
-                    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
+               if (dd->client.state == POP3_CLIENT_STATE_TRANS)
+               {
+                    service_mod.api->add_user(flowp, dd->client.username, APP_ID_POP3, 1);
+                    free(dd->client.username);
+                    dd->client.username = NULL;
+                    dd->need_continue = 0;
+                    clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
+                    if (dd->client.detected)
+                        setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
+                }
+                else
+                    dd->client.got_user = 1;
             }
         }
         if (server && begin)
@@ -616,6 +624,12 @@ static int pop3_server_validate(POP3DetectorData *dd, const uint8_t *data, uint1
                                     memcpy((char *)sub->version, s, sub_len);
                                     ((char *)sub->version)[sub_len] = 0;
                                 }
+                                else
+                                {
+                                    _dpd.errMsg("pop3_server_validate: "
+                                            "Failed to allocate memory for version in sub\n");
+                                    free(sub);
+                                }
                             }
                         }
                     }
@@ -700,7 +714,7 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
         DumpHex(SF_DEBUG_FILE, data, size);
 #endif
 
-        if (pop3_server_validate(dd, data, size, flowp, 0))
+        if (pop3_server_validate(dd, data, size, flowp, 0, pkt, dir, pConfig))
             clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
         return CLIENT_APP_INPROCESS;
     }
@@ -742,6 +756,8 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
             {
             case PATTERN_STLSEOC:
             case PATTERN_STLSEOC2:
+            case PATTERN_STLSEOC3:
+			case PATTERN_STLSEOC4:
                 {
                     /* If the STLS command succeeds we will be in a TLS negotiation state.
                        Wait for the "+OK" from the server using this STLS hybrid state. */
@@ -832,7 +848,7 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
             if (pattern_index >= PATTERN_POP3_OTHER)
             {
                 /* We stayed in non-secure mode and received a TRANSACTION-state command: POP3 found */
-                client_app_mod.api->add_app(flowp, APP_ID_POP3, APP_ID_POP3, NULL); // sets APPID_SESSION_CLIENT_DETECTED
+                client_app_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_POP3, APP_ID_POP3, NULL); // sets APPID_SESSION_CLIENT_DETECTED
                 fd->detected = 1;
             }
             else
@@ -901,7 +917,7 @@ static int pop3_validate(ServiceValidationArgs* args)
             return SERVICE_SUCCESS;
     }
 
-    if (!pop3_server_validate(dd, data, size, flowp, 1))
+    if (!pop3_server_validate(dd, data, size, flowp, 1, pkt, dir, args->pConfig))
     {
         if (pd->count >= POP3_COUNT_THRESHOLD && !getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
         {

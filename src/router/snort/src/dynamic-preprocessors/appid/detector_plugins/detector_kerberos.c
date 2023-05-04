@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -280,7 +280,7 @@ static int krb_server_init(const InitServiceAPI * const init_api)
 #define ERROR_MSG_TYPE      0x1e
 
 static KRB_RETCODE krb_walk_client_packet(KRBState *krbs, const uint8_t *s, const uint8_t *end,
-                                          tAppIdData *flowp, SFSnortPacket *pkt)
+                                           tAppIdData *flowp, SFSnortPacket *pkt, int dir, const tAppIdConfig *pConfig)
 {
     static const uint8_t KRB_CLIENT_VERSION[] = "\x0a1\x003\x002\x001";
     static const uint8_t KRB_CLIENT_TYPE[] = "\x0a2\x003\x002\x001";
@@ -403,7 +403,7 @@ static KRB_RETCODE krb_walk_client_packet(KRBState *krbs, const uint8_t *s, cons
 #endif
                         if (!krbs->added)
                         {
-                            client_app_mod.api->add_app(flowp, APP_ID_KERBEROS, APP_ID_KERBEROS, krbs->ver);
+                            client_app_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_KERBEROS, APP_ID_KERBEROS, krbs->ver);
                             krbs->added = 1;
                         }
                         krbs->state = KRB_STATE_APP;
@@ -1008,7 +1008,7 @@ static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size
 
     if (dir == APP_ID_FROM_INITIATOR)
     {
-        if (krb_walk_client_packet(&fd->clnt_state, s, end, flowp, pkt) == KRB_FAILED)
+        if (krb_walk_client_packet(&fd->clnt_state, s, end, flowp, pkt, dir, pConfig) == KRB_FAILED)
         {
 #ifdef DEBUG_KERBEROS
             _dpd.debugMsg(DEBUG_LOG,"%p Failed\n",flowp);

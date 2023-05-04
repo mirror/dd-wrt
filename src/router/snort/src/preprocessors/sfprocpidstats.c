@@ -3,7 +3,7 @@
 **
 **  sfprocpidstats.c
 **
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 **
@@ -43,6 +43,7 @@
 #include <math.h>
 #include <errno.h>
 
+#include "snort.h"
 #include "util.h"
 
 #define PROC_STAT       "/proc/stat"
@@ -155,6 +156,7 @@ static int GetCpuNum(void)
 
 int sfInitProcPidStats(SFPROCPIDSTATS *sfProcPidStats)
 {
+    bool skipCpuStat = (bool)(snort_conf->suppress_config_log);
     /* Do not re-allocate memory */
     if (gpStatCPUs != NULL)
         return 0;
@@ -172,14 +174,16 @@ int sfInitProcPidStats(SFPROCPIDSTATS *sfProcPidStats)
                    PROC_STAT);
     }
 
-    gpStatCPUs   = (USERSYS *)calloc(giCPUs, sizeof(USERSYS));
-    if(!gpStatCPUs)
-        FatalError("PERFMONITOR: Error allocating CPU mem.");
+    if(!skipCpuStat)
+    {
+        gpStatCPUs   = (USERSYS *)calloc(giCPUs, sizeof(USERSYS));
+        if(!gpStatCPUs)
+            FatalError("PERFMONITOR: Error allocating CPU mem.");
 
-    gpStatCPUs_2 = (USERSYS *)calloc(giCPUs, sizeof(USERSYS));
-    if(!gpStatCPUs_2)
-        FatalError("PERFMONITOR: Error allocating CPU mem.");
-
+        gpStatCPUs_2 = (USERSYS *)calloc(giCPUs, sizeof(USERSYS));
+        if(!gpStatCPUs_2)
+            FatalError("PERFMONITOR: Error allocating CPU mem.");
+    }
     /*
     **  Allocate for sfProcPidStats CPUs
     */
@@ -189,10 +193,12 @@ int sfInitProcPidStats(SFPROCPIDSTATS *sfProcPidStats)
 
     sfProcPidStats->iCPUs = giCPUs;
 
-    if(GetProcStatCpu(gpStatCPUs, giCPUs))
+    if(!skipCpuStat)
+    {
+        if(GetProcStatCpu(gpStatCPUs, giCPUs))
         FatalError("PERFMONITOR: Error while reading '%s'.",
                 PROC_STAT);
-
+    }
     fclose(proc_stat);
 
     return 0;
@@ -223,7 +229,13 @@ int sfProcessProcPidStats(SFPROCPIDSTATS *sfProcPidStats)
 {
     static int iError = 0;
     int iCtr;
+    bool skipCpuStat = (bool)(snort_conf->suppress_config_log);
     u_long ulCPUjiffies;
+
+    if(skipCpuStat) {
+        memset(sfProcPidStats->SysCPUs,0,giCPUs*sizeof(CPUSTAT));
+        return 0;
+    }
 
     proc_stat = fopen(PROC_STAT, "r");
     if(!proc_stat)

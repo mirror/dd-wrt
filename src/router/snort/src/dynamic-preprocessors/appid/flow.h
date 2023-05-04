@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,7 @@
 #include "thirdparty_appid_api.h"
 #include "thirdparty_appid_types.h"
 #include "sflsq.h"
+#include "sfghash.h"
 
 #define SF_DEBUG_FILE   stdout
 #define NUMBER_OF_PTYPES    9
@@ -102,11 +103,15 @@ typedef struct _tTmpAppIdData
 #define SCAN_HTTP_VIA_FLAG          (1<<0)
 #define SCAN_HTTP_USER_AGENT_FLAG   (1<<1)
 #define SCAN_HTTP_HOST_URL_FLAG     (1<<2)
+#define SCAN_SSL_CERTIFICATE_FLAG   (1<<3)
 #define SCAN_SSL_HOST_FLAG          (1<<4)
 #define SCAN_HOST_PORT_FLAG         (1<<5)
 #define SCAN_HTTP_VENDOR_FLAG       (1<<6)
 #define SCAN_HTTP_XWORKINGWITH_FLAG (1<<7)
 #define SCAN_HTTP_CONTENT_TYPE_FLAG (1<<8)
+#define SCAN_HTTP_URI_FLAG          (1<<9)
+#define SCAN_CERTVIZ_ENABLED_FLAG   (1<<10)
+#define SCAN_SPOOFED_SNI_FLAG       (1<<11)
 
 typedef struct _fflow_info
 {
@@ -124,56 +129,64 @@ typedef struct _httpFields
     char *str;
 } HttpRewriteableFields;
 
+typedef struct _tunnelDest
+{
+    sfaddr_t ip;
+    uint16_t port;
+} tunnelDest;
+
 typedef struct _httpSession
 {
     char *host;
-    uint16_t host_buflen;
     char *url;
     char *uri;
+    uint16_t host_buflen;
     uint16_t uri_buflen;
+    uint16_t useragent_buflen;
+    uint16_t response_code_buflen;
     char *via;
     char *useragent;
-    uint16_t useragent_buflen;
     char *response_code;
-    uint16_t response_code_buflen;
     char *referer;
     uint16_t referer_buflen;
-    char *cookie;
     uint16_t cookie_buflen;
-    char *content_type;
     uint16_t content_type_buflen;
-    char *location;
     uint16_t location_buflen;
+    char *cookie;
+    char *content_type;
+    char *location;
     char *body;
     uint16_t body_buflen;
-    char *req_body;
     uint16_t req_body_buflen;
+    int total_found;
+    char *req_body;
     char *server;
     char *x_working_with;
     char *new_field[HTTP_FIELD_MAX+1];
-    uint16_t new_field_len[HTTP_FIELD_MAX+1];
 
+    uint16_t new_field_len[HTTP_FIELD_MAX+1];
     uint16_t fieldOffset[HTTP_FIELD_MAX+1];
     uint16_t fieldEndOffset[HTTP_FIELD_MAX+1];
 
+    bool new_field_contents;
+    bool skip_simple_detect;    // Flag to indicate if simple detection of client ID, payload ID, etc
+                                // should be skipped
     fflow_info *fflow;
 
-    bool new_field_contents;
     int chp_finished;
     tAppId chp_candidate;
     tAppId chp_alt_candidate;
     int chp_hold_flow;
     int ptype_req_counts[NUMBER_OF_PTYPES];
-    int total_found;
     unsigned app_type_flags;
+    int get_offsets_from_rebuilt;
     int num_matches;
     int num_scans;
-    int get_offsets_from_rebuilt;
-    bool skip_simple_detect;    // Flag to indicate if simple detection of client ID, payload ID, etc
-                                // should be skipped
+    int numXffFields;
     sfaddr_t* xffAddr;
     char** xffPrecedence;
-    int numXffFields;
+    tunnelDest *tunDest;
+    bool is_tunnel;
 
 #if RESPONSE_CODE_PACKET_THRESHHOLD
     unsigned response_code_packets;
@@ -193,20 +206,34 @@ typedef struct _dnsSession
     uint16_t  id;               // DNS msg ID
     uint16_t  host_offset;      // for host
     uint16_t  record_type;      // query: QTYPE
+    uint16_t  options_offset;   // offset at which DNS options such as EDNS begin in DNS query
     uint32_t  ttl;              // response: TTL
     char     *host;             // host (usually query, but could be response for reverse lookup)
 } dnsSession;
 
 struct _RNAServiceSubtype;
 
+typedef enum
+{
+    MATCHED_TLS_NONE = 0,
+    MATCHED_TLS_HOST,
+    MATCHED_TLS_FIRST_SAN,
+    MATCHED_TLS_CNAME,
+    MATCHED_TLS_ORG_UNIT
+} MATCHED_TLS_TYPE;
+
 typedef struct _tlsSession
 {
     char *tls_host;
     int   tls_host_strlen;
-    char *tls_cname;
     int   tls_cname_strlen;
+    char *tls_cname;
     char *tls_orgUnit;
     int   tls_orgUnit_strlen;
+    int   tls_first_san_strlen;
+    char *tls_first_san;
+    MATCHED_TLS_TYPE matched_tls_type;
+    bool  tls_handshake_done;
 } tlsSession;
 
 typedef struct AppIdData
@@ -220,6 +247,8 @@ typedef struct AppIdData
     uint16_t service_port;
     uint8_t proto;
     uint8_t previous_tcp_flags;
+    bool tried_reverse_service;
+    uint8_t tpReinspectByInitiator;
 
     AppIdFlowData *flowData;
 
@@ -229,10 +258,10 @@ typedef struct AppIdData
     /**RNAServiceElement for identifying detector*/
     const struct RNAServiceElement *serviceData;
     RNA_INSPECTION_STATE rnaServiceState;
+    FLOW_SERVICE_ID_STATE search_state;
     char *serviceVendor;
     char *serviceVersion;
     struct _RNAServiceSubtype *subtype;
-    FLOW_SERVICE_ID_STATE search_state;
     char *netbios_name;
     SF_LIST * candidate_service_list;
     int got_incompatible_services;
@@ -240,13 +269,12 @@ typedef struct AppIdData
     /**AppId matching client side */
     tAppId clientAppId;
     tAppId clientServiceAppId;
+    RNA_INSPECTION_STATE rnaClientState;
     char *clientVersion;
     /**RNAClientAppModule for identifying client detector*/
     const struct RNAClientAppModule *clientData;
-    RNA_INSPECTION_STATE rnaClientState;
     SF_LIST * candidate_client_list;
     unsigned int num_candidate_clients_tried;
-    bool tried_reverse_service;
 
     /**AppId matching payload*/
     tAppId payloadAppId;
@@ -260,9 +288,9 @@ typedef struct AppIdData
     char *username;
     tAppId usernameService;
 
+    uint32_t flowId;
     char *netbiosDomain;
 
-    uint32_t flowId;
 
     httpSession *hsession;
     tlsSession  *tsession;
@@ -272,20 +300,33 @@ typedef struct AppIdData
     unsigned response_code_packets;
 #endif
 
+    SFGHASH *multiPayloadList;
+
     tAppId referredAppId;
 
     tAppId tmpAppId;
     void *tpsession;
     uint16_t init_tpPackets;
     uint16_t resp_tpPackets;
-    uint8_t tpReinspectByInitiator;
-    char *payloadVersion;
 
     uint16_t session_packet_count;
+    uint16_t initiatorPcketCountWithoutReply;
+    char *payloadVersion;
+    uint64_t initiatorBytesWithoutServerReply;
     int16_t snortId;
 
     /* Length-based detectors. */
     tLengthKey length_sequence;
+    bool is_http2;
+    //appIds picked from encrypted session.
+    struct {
+        tAppId serviceAppId;
+        tAppId clientAppId;
+        tAppId payloadAppId;
+        tAppId miscAppId;
+        tAppId referredAppId;
+    } encrypted;
+    // New fields introduced for DNS Blacklisting
 
     struct
     {
@@ -299,32 +340,21 @@ typedef struct AppIdData
     struct AppIdData *expectedFlow;
     //struct FwEarlyData *fwData;
 
-    //appIds picked from encrypted session.
-    struct {
-        tAppId serviceAppId;
-        tAppId clientAppId;
-        tAppId payloadAppId;
-        tAppId miscAppId;
-        tAppId referredAppId;
-    } encrypted;
-    // New fields introduced for DNS Blacklisting
     dnsSession *dsession;
-    /*
-    char *dns_query;
-    int  dns_query_len ;
-    uint16_t dns_record_type;
-    uint16_t dns_response_type;
-    uint16_t dns_ttl;
-    char *dns_resp_page ;
-    */
+
     void * firewallEarlyData;
     tAppId pastIndicator;
     tAppId pastForecast;
 
-    bool is_http2;
     SEARCH_SUPPORT_TYPE search_support_type;
 
     uint16_t hostCacheVersion;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+    uint16_t serviceAsId; //This is specific to VRF
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+    uint32_t carrierId;
+#endif
 } tAppIdData;
 /**
  * Mark a flow with a particular flag

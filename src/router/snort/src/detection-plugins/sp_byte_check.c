@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Author: Martin Roesch
  **
@@ -498,15 +498,10 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
     }
     else
     {
-        if ( bytemath_variable_name && (strcmp(bytemath_variable_name,toks[2]) == 0) )
+        idx->cmp_value_var = find_value(toks[2]);
+        if ( idx->cmp_value_var == BYTE_EXTRACT_NO_VAR)
         {
-              idx->cmp_value_var= BYTE_MATH_VAR_INDEX;  // 2
-        }
-        else
-        {
-              idx->cmp_value_var = GetVarByName(toks[2]);
-              if ( idx->cmp_value_var == BYTE_EXTRACT_NO_VAR)
-                   ParseError(BYTE_TEST_INVALID_ERR_FMT, "byte_test : value", toks[2]);
+            ParseError(BYTE_TEST_INVALID_ERR_FMT, "byte_test : value", toks[2]);
         }
     }
 
@@ -529,15 +524,10 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
     }
     else
     {
-        if ( bytemath_variable_name && (strcmp(bytemath_variable_name,toks[3]) == 0) )
+        idx->offset_var = find_value(toks[3]);
+        if ( idx->offset_var == BYTE_EXTRACT_NO_VAR)
         {
-              idx->offset_var= BYTE_MATH_VAR_INDEX;  // 2
-        }
-        else
-        {
-              idx->offset_var = GetVarByName(toks[3]);
-              if ( idx->offset_var == BYTE_EXTRACT_NO_VAR)
-                   ParseError(BYTE_TEST_INVALID_ERR_FMT, "byte_test : offset", toks[3]);
+            ParseError(BYTE_TEST_INVALID_ERR_FMT, "byte_test : offset", toks[3]);
         }
     }
 
@@ -707,13 +697,14 @@ int ByteTest(void *option_data, Packet *p)
         {
             btd->cmp_value = (int32_t) bytemath_variable;
         }
-        else
+        else if(btd->cmp_value_var == COMMON_VAR_INDEX )
         {
-            if (btd->cmp_value_var < NUM_BYTE_EXTRACT_VARS)
-            {
-                GetByteExtractValue(&extract_cmp_value, btd->cmp_value_var);
-                btd->cmp_value = (int32_t) extract_cmp_value;
-            }
+            btd->cmp_value = (int32_t) common_var;
+        }
+        else if (btd->cmp_value_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_cmp_value, btd->cmp_value_var);
+            btd->cmp_value = (int32_t) extract_cmp_value;
         }
 
     }
@@ -723,13 +714,14 @@ int ByteTest(void *option_data, Packet *p)
         {
             btd->offset = (int32_t) bytemath_variable;
         }
-        else
+        else if(btd->offset_var == COMMON_VAR_INDEX )
         {
-            if (btd->offset_var < NUM_BYTE_EXTRACT_VARS)
-            {
-                GetByteExtractValue(&extract_offset, btd->offset_var);
-                btd->offset = (int32_t) extract_offset;
-            }
+            btd->offset = (int32_t) common_var;
+        }
+        else if (btd->offset_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_offset, btd->offset_var);
+            btd->offset = (int32_t) extract_offset;
         }
 
     }

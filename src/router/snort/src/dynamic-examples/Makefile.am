@@ -12,6 +12,7 @@ BUILT_SOURCES = \
 	include/sf_dynamic_define.h \
 	include/sf_dynamic_meta.h \
 	include/sf_dynamic_preprocessor.h \
+	include/sf_decompression_define.h \
 	include/sf_dynamic_preproc_lib.c \
 	include/sf_dynamic_preproc_lib.h \
 	include/sfghash.h \
@@ -52,7 +53,9 @@ BUILT_SOURCES = \
 	include/idle_processing.h \
 	include/file_api.h \
 	include/mpse_methods.h \
-	include/reload_api.h
+	include/reload_api.h \
+	include/smtp_api.h \
+	include/memory_stats.h
 
 sed_ipv6_headers = \
 	sed -e "s/->iph->ip_src/->ip4_header->source/" \
@@ -224,6 +227,9 @@ include/idle_processing.h: $(srcdir)/../idle_processing.h
 include/reload_api.h: $(srcdir)/../reload_api.h
 	@src_header=$?; dst_header=$@; $(massage_headers)
 
+include/smtp_api.h: $(srcdir)/../smtp_api.h
+	@src_header=$?; dst_header=$@; $(massage_headers)
+
 # From dynamic-plugins
 include/sf_dynamic_common.h: $(srcdir)/../dynamic-plugins/sf_dynamic_common.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
@@ -239,6 +245,9 @@ include/sf_dynamic_meta.h: $(srcdir)/../dynamic-plugins/sf_dynamic_meta.h
 
 include/sf_dynamic_preprocessor.h: $(srcdir)/../dynamic-plugins/sf_dynamic_preprocessor.h
 	@src_header=$?; dst_header=$@; $(massage_headers)
+
+include/sf_decompression_define.h: $(srcdir)/../dynamic-plugins/sf_decompression_define.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
 
 # From dynamic-plugins/sf_preproc_example
 include/sf_dynamic_preproc_lib.c: $(srcdir)/../dynamic-plugins/sf_preproc_example/sf_dynamic_preproc_lib.c
@@ -334,6 +343,9 @@ include/plugin_enum.h: $(srcdir)/../plugin_enum.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 	
 include/file_api.h: $(top_srcdir)/src/file-process/file_api.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/memory_stats.h: $(srcdir)/../memory_stats.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
 INCLUDES = @INCLUDES@

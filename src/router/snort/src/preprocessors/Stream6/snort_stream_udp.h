@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -57,6 +57,12 @@ int s5UdpGetPortFilterStatus(
         tSfPolicyId policyId,
         int parsing
         );
+int s5UdpGetIPSPortFilterStatus(
+        struct _SnortConfig *sc, 
+        unsigned short sport, 
+        unsigned short dport, 
+        tSfPolicyId policyId);
+void InspectPortFilterUdp (Packet *p);
 void StreamUdpConfigFree(StreamUdpConfig *);
 
 uint32_t StreamGetUdpPrunes(void);
@@ -65,5 +71,7 @@ void UdpSessionCleanup(void *scb);
 
 void SessionUDPReload(uint32_t max_sessions, uint16_t pruningTimeout, uint16_t nominalTimeout);
 unsigned SessionUDPReloadAdjust(unsigned maxWork);
+
+size_t get_udp_used_mempool();
 
 #endif /* STREAM_UDP_H_ */

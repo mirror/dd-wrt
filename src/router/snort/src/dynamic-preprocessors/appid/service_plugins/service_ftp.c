@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,7 @@ typedef enum
 {
     FTP_REPLY_BEGIN,
     FTP_REPLY_MULTI,
+    FTP_REPLY_LONG,
     FTP_REPLY_MID
 } FTPReplyState;
 
@@ -125,7 +126,9 @@ static int16_t ftp_data_app_id = 0;
 
 static int ftp_init(const InitServiceAPI * const init_api)
 {
+#ifdef TARGET_BASED
     ftp_data_app_id = init_api->dpd->addProtocolReference("ftp-data");
+#endif
 
     init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN1, sizeof(FTP_PATTERN1)-1, 0, "ftp", init_api->pAppidConfig);
     init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN2, sizeof(FTP_PATTERN2)-1, 0, "ftp", init_api->pAppidConfig);
@@ -303,6 +306,33 @@ static int CheckVendorVersion(const uint8_t *data, uint16_t init_offset,
     return 0;
 }
 
+static int ftp_parse_response(const uint8_t *data, uint16_t *offset,
+                              uint16_t size, ServiceFTPData *fd, FTPReplyState rstate)
+{   
+    for (; *offset < size; (*offset)++)
+    {   
+        if (data[*offset] == 0x0D)
+        {   
+            (*offset)++;
+            if (*offset >= size) return -1;
+            if (data[*offset] == 0x0D)
+            {   
+                (*offset)++;
+                if (*offset >= size) return -1;
+            }
+            if (data[*offset] != 0x0A) return -1;
+            fd->rstate = rstate;
+            break;
+        }
+        if (data[*offset] == 0x0A)
+        {   
+            fd->rstate = rstate;
+            break;
+        }
+    }
+    return 0;
+}
+
 static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
                               uint16_t size, ServiceFTPData *fd)
 {
@@ -389,62 +419,25 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
                 }
             }
 
-            fd->rstate = FTP_REPLY_MID;
-            for (; *offset < size; (*offset)++)
-            {
-                if (data[*offset] == 0x0D)
-                {
-                    (*offset)++;
-                    if (*offset >= size) return -1;
-                    if (data[*offset] == 0x0D)
-                    {
-                        (*offset)++;
-                        if (*offset >= size) return -1;
-                    }
-                    if (data[*offset] != 0x0A) return -1;
-                    fd->rstate = tmp_state;
-                    break;
-                }
-                if (data[*offset] == 0x0A)
-                {
-                    fd->rstate = tmp_state;
-                    break;
-                }
-            }
-            if (fd->rstate == FTP_REPLY_MID) return -1;
+	    fd->rstate = FTP_REPLY_MID;
+            if (ftp_parse_response(data, offset, size, fd, tmp_state))
+		return -1;
+	    if (fd->rstate == FTP_REPLY_MID)
+		fd->rstate = FTP_REPLY_LONG;
             break;
         case FTP_REPLY_MULTI:
             if (size - *offset < (int)sizeof(ServiceFTPCode))
             {
-                fd->rstate = FTP_REPLY_MID;
-                for (; *offset < size; (*offset)++)
-                {
-                    if (data[*offset] == 0x0D)
-                    {
-                        (*offset)++;
-                        if (*offset >= size) return -1;
-                        if (data[*offset] == 0x0D)
-                        {
-                            (*offset)++;
-                            if (*offset >= size) return -1;
-                        }
-                        if (data[*offset] != 0x0A) return -1;
-                        fd->rstate = FTP_REPLY_MULTI;
-                        break;
-                    }
-                    if (data[*offset] == 0x0A)
-                    {
-                        fd->rstate = FTP_REPLY_MULTI;
-                        break;
-                    }
-                }
-                if (fd->rstate == FTP_REPLY_MID) return -1;
+		fd->rstate = FTP_REPLY_MID;
+		if (ftp_parse_response(data, offset, size, fd, FTP_REPLY_MULTI))
+		    return -1;
+                if (fd->rstate == FTP_REPLY_MID) 
+		    fd->rstate = FTP_REPLY_LONG;
             }
             else
             {
                 code_hdr = (ServiceFTPCode *)(data + *offset);
-                if (size - (*offset) >= (int)sizeof(ServiceFTPCode) &&
-                    (code_hdr->sp == ' ' || code_hdr->sp == 0x09) &&
+                if ((code_hdr->sp == ' ' || code_hdr->sp == 0x09) &&
                     code_hdr->code[0] >= '1' && code_hdr->code[0] <= '5' &&
                     code_hdr->code[1] >= '1' && code_hdr->code[1] <= '5' &&
                     isdigit(code_hdr->code[2]))
@@ -459,31 +452,66 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
                     }
                 }
                 tmp_state = fd->rstate;
-                fd->rstate = FTP_REPLY_MID;
-                for (; *offset < size; (*offset)++)
-                {
-                    if (data[*offset] == 0x0D)
-                    {
-                        (*offset)++;
-                        if (*offset >= size) return -1;
-                        if (data[*offset] == 0x0D)
-                        {
-                            (*offset)++;
-                            if (*offset >= size) return -1;
-                        }
-                        if (data[*offset] != 0x0A) return -1;
-                        fd->rstate = tmp_state;
-                        break;
-                    }
-                    if (data[*offset] == 0x0A)
-                    {
-                        fd->rstate = tmp_state;
-                        break;
-                    }
-                }
-                if (fd->rstate == FTP_REPLY_MID) return -1;
+		fd->rstate = FTP_REPLY_MID;
+		if (ftp_parse_response(data, offset, size, fd, tmp_state))
+		    return -1;
+                if (fd->rstate == FTP_REPLY_MID)
+		   fd->rstate = FTP_REPLY_LONG;
             }
             break;
+	case FTP_REPLY_LONG:
+	    fd->rstate = FTP_REPLY_MID;
+	    if (ftp_parse_response(data, offset, size, fd, FTP_REPLY_LONG))
+		return -1;
+            if ((++(*offset)) >= size)
+            {
+                fd->rstate = FTP_REPLY_BEGIN;
+                break;
+            }
+	    if (fd->rstate == FTP_REPLY_MID)
+	    {
+                fd->rstate = FTP_REPLY_LONG;
+		break;
+	    }
+            if (size - *offset < (int)sizeof(ServiceFTPCode))
+            {   
+		fd->rstate = FTP_REPLY_MID;
+		if (ftp_parse_response(data, offset, size, fd, FTP_REPLY_LONG))
+		    return -1;
+                if (fd->rstate == FTP_REPLY_MID)
+                    fd->rstate = FTP_REPLY_LONG;
+            }
+            else
+	    {
+	        code_hdr = (ServiceFTPCode *)(data + *offset);
+                if(code_hdr->code[0] >= '1' && code_hdr->code[0] <= '5' &&
+                    code_hdr->code[1] >= '1' && code_hdr->code[1] <= '5' &&
+                    isdigit(code_hdr->code[2]))
+                {
+                    tmp = (code_hdr->code[0] - '0') * 100;
+                    tmp += (code_hdr->code[1] - '0') * 10;
+                    tmp += code_hdr->code[2] - '0';
+                    if (tmp == fd->code)
+                    {
+                        *offset += sizeof(ServiceFTPCode);
+			if (code_hdr->sp == ' ' || code_hdr->sp == 0x09)
+			{
+			    fd->rstate = FTP_REPLY_MID;
+			    if (ftp_parse_response(data, offset, size, fd, FTP_REPLY_BEGIN))
+				return -1;
+			}
+			else if (code_hdr->sp == '-')
+			{
+			    fd->rstate = FTP_REPLY_MID;
+			    if (ftp_parse_response(data, offset, size, fd, FTP_REPLY_MULTI))
+				return -1;
+			}
+			if (fd->rstate == FTP_REPLY_MID)
+                            fd->rstate = FTP_REPLY_LONG;
+                    }
+                }
+	    }
+            break;	
         default:
             return -1;
         }
@@ -932,17 +960,13 @@ static int ftp_validate(ServiceValidationArgs* args)
                     break;
                 case 234:
                     {
-                        setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
                         retval = SERVICE_SUCCESS;
                         /*
                         // we do not set the state to FTP_STATE_MONITOR here because we don't know
                         // if there will be SSL decryption to allow us to see what we are interested in.
                         // Let the WatchForCommandResult() usage elsewhere take care of it.
                         */
-                        setAppIdFlag(flowp,
-                                     APPID_SESSION_CONTINUE |
-                                     APPID_SESSION_ENCRYPTED |
-                                     APPID_SESSION_STICKY_SERVICE);
+                        setAppIdFlag(flowp, APPID_SESSION_CONTINUE | APPID_SESSION_ENCRYPTED | APPID_SESSION_STICKY_SERVICE);
                     }
                     break;
                 default:
@@ -953,7 +977,9 @@ static int ftp_validate(ServiceValidationArgs* args)
                 switch (code)
                 {
                 case 331:
+                    setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
                     fd->state = FTP_STATE_PASSWORD;
+                    retval = SERVICE_SUCCESS;
                     break;
                 case 332:
                     fd->state = FTP_STATE_ACCOUNT;

@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -427,7 +427,11 @@ int DAQ_Unprivileged (void)
 
 int DAQ_UnprivilegedStart (void)
 {
-    return ( daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_UNPRIV_START );
+#ifdef INLINE_FAILOPEN
+    return ( (daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_UNPRIV_START) || (ScUid() == -1 && ScGid() == -1) );
+#else
+    return ( (daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_UNPRIV_START) );
+#endif
 }
 
 int DAQ_CanReplace (void)
@@ -439,6 +443,25 @@ int DAQ_CanInject (void)
 {
     return ( daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_INJECT );
 }
+
+uint32_t DAQ_GetCapabilities(void)
+{
+    return ( daq_get_capabilities(daq_mod, daq_hand));
+}
+
+#if defined(DAQ_CAPA_CST_TIMEOUT)
+int DAQ_CanGetTimeout(void)
+{
+  return ( daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_CST_TIMEOUT);
+}
+#endif
+
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+int DAQ_CanGetVrf(void)
+{
+  return ( daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_VRF );
+}
+#endif
 
 int DAQ_CanWhitelist (void)
 {
@@ -775,6 +798,10 @@ int DAQ_QueryFlow(DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query)
     int rval,fd;
     MsgHeader_test *msg_header;
     uint8_t *msg;
+#if defined DAQ_QUERYFLOW_TYPE_IS_CONN_META_VALID
+    if (query->type == DAQ_QUERYFLOW_TYPE_IS_CONN_META_VALID)
+        return DAQ_ERROR_NOTSUP;
+#endif
 
     fd = * ((int * )hdr->priv_ptr);
     if (fd < 0)
@@ -818,6 +845,25 @@ int DAQ_QueryFlow(DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query)
 }
 #endif
 #endif
+
+#if defined(DAQ_VERSION) && DAQ_VERSION > 8 
+void DAQ_DebugPkt(uint8_t moduleId, uint8_t logLevel, const DAQ_Debug_Packet_Params_t *params, const char *msg, ...)
+{
+#ifdef LOGC_DEBUG_PACKET
+     va_list args_copy;
+     va_start(args_copy, msg);
+
+     daq_debug_packet(daq_mod,daq_hand, moduleId, logLevel, params, msg, args_copy);
+
+     va_end(args_copy);
+#else
+    {
+        //do nothing here.
+    }
+#endif
+}
+#endif
+
 #ifdef HAVE_DAQ_DP_ADD_DC
 /*
  * Initialize key for dynamic channel and call daq api method to notify firmware
@@ -877,6 +923,15 @@ void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, sfaddr_t* cliIP, ui
     else if ( ctrlPkt->mpls )
         dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_MPLS_TUNNEL;
 #endif
+#ifdef DAQ_DP_TUNNEL_TYPE_GRE_TUNNEL
+    // Checking non_ip_pkt to make sure eth-ip-gre-pppoe case doesn't hit
+    else if ( ctrlPkt->GREencapsulated && !ctrlPkt->non_ip_pkt)  
+        dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_GRE_TUNNEL;
+#endif
+#ifdef DAQ_DP_TUNNEL_TYPE_IPnIP_TUNNEL
+    else if ( ctrlPkt->IPnIPencapsulated )
+        dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_IPnIP_TUNNEL;
+#endif
     else if ( ctrlPkt->encapsulated )
         dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_OTHER_TUNNEL;
     else
@@ -901,5 +956,12 @@ void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, sfaddr_t* cliIP, ui
 #else
     daq_dp_add_dc( daq_mod, daq_hand, ctrlPkt->pkth, &dp_key, ctrlPkt->pkt );
 #endif
+}
+#endif
+
+#if defined(DAQ_VERSION) && DAQ_VERSION > 9
+int DAQ_Ioctl(unsigned int type, char *buf, size_t *size)
+{
+    return daq_ioctl(daq_mod, daq_hand, type, buf, size);
 }
 #endif

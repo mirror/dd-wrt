@@ -2,7 +2,7 @@
 **
 **  reg_test.h
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **
 **  This program is free software; you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License Version 2 as
@@ -38,6 +38,8 @@
 #define REG_TEST_FLAG_FILE_CACHE                (1 << 5)
 #define REG_TEST_FLAG_PORTSCAN_RELOAD           (1 << 6)
 #define REG_TEST_FLAG_SESSION_FORCE_RELOAD      (1 << 7)
+#define REG_TEST_FLAG_REPUTATION                (1 << 8)
+#define REG_TEST_FLAG_STREAM_DECODE             (1 << 9)
 
 #define REG_TEST_EMAIL_FLAG_MIME_MEMPOOL_ADJUST  (1 << 0)
 #define REG_TEST_EMAIL_FLAG_LOG_MEMPOOL_ADJUST   (1 << 1)

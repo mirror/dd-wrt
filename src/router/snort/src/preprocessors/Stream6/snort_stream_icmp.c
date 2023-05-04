@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 #include "mstring.h"
 #include "sfxhash.h"
 #include "util.h"
+#include "memory_stats.h"
 
 #include "spp_session.h"
 #include "session_api.h"
@@ -207,6 +208,7 @@ void IcmpSessionCleanup(SessionControlBlock *ssn)
     session_api->free_application_data(ssn);
 
     s5stats.icmp_sessions_released++;
+    s5stats.active_icmp_sessions--;
 }
 
 uint32_t StreamGetIcmpPrunes(void)
@@ -243,7 +245,8 @@ void StreamIcmpConfigFree(StreamIcmpConfig *config)
     if (config == NULL)
         return;
 
-    free(config);
+    SnortPreprocFree(config, sizeof(StreamIcmpConfig), 
+                     PP_STREAM, PP_MEM_CATEGORY_CONFIG);
 }
 
 int StreamVerifyIcmpConfig(StreamIcmpConfig *config, tSfPolicyId policy_id)
@@ -262,12 +265,20 @@ int StreamVerifyIcmpConfig(StreamIcmpConfig *config, tSfPolicyId policy_id)
 
 int StreamProcessIcmp(Packet *p)
 {
-    int status;
+    int status = 0;
 
     switch (p->icmph->type)
     {
     case ICMP_DEST_UNREACH:
-        status = ProcessIcmpUnreach(p);
+        s5stats.icmp_unreachable++;
+        if (p->icmph->code != ICMP_FRAG_NEEDED)
+        {
+            status = ProcessIcmpUnreach(p);
+        }
+        else
+        {
+            s5stats.icmp_unreachable_code4++;
+        }
         break;
 
     case ICMP_ECHO:
@@ -277,7 +288,6 @@ int StreamProcessIcmp(Packet *p)
 
     default:
         /* We only handle the above ICMP messages with stream5 */
-        status = 0;
         break;
     }
 
@@ -368,6 +378,7 @@ static int ProcessIcmpUnreach(Packet *p)
         ssn->ha_state.session_flags |= SSNFLAG_DROP_CLIENT;
         ssn->ha_state.session_flags |= SSNFLAG_DROP_SERVER;
         ssn->session_state |= STREAM_STATE_UNREACH;
+        s5stats.active_icmp_sessions++;
     }
 
     return 0;
@@ -377,6 +388,7 @@ static int ProcessIcmpEcho(Packet *p)
 {
     //SessionKey skey;
     //SessionControlBlock *ssn = NULL;
+    s5stats.active_icmp_sessions++;
 
     return 0;
 }
@@ -436,3 +448,10 @@ unsigned SessionICMPReloadAdjust(unsigned maxWork)
 }
 #endif
 
+size_t get_icmp_used_mempool()
+{
+    if (icmp_lws_cache && icmp_lws_cache->protocol_session_pool)
+        return icmp_lws_cache->protocol_session_pool->used_memory;
+
+    return 0;
+}

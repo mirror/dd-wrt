@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -110,5 +110,5 @@ void SSL_InitGlobals(void);
 int SSLPP_rule_eval(void *raw_packet, const uint8_t **cursor, void *data);
 void SSLPP_process(void *raw_packet, void *context);
 void SSLPP_drop_stats(int exiting);
-    
+void DisplaySSLPPStats (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f);
 #endif /* SSL_CONFIG_H */

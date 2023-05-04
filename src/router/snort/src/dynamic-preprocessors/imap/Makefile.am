@@ -47,6 +47,7 @@ endif
 
 
 EXTRA_DIST = \
+sf_imap.vcxproj \
 sf_imap.dsp
 
 all-local: $(LTLIBRARIES)

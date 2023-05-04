@@ -22,7 +22,7 @@
 /* Build with extended file inspection features. (Experimental) */
 #undef FEAT_FILE_INSPECT
 
-/* Build with application id support. (Experimental) */
+/* Build with application identification support. */
 #undef FEAT_OPEN_APPID
 
 /* Define if FreeBSD */
@@ -30,6 +30,9 @@
 
 /* Define to 1 if the system has the type `boolean'. */
 #undef HAVE_BOOLEAN
+
+/* Define to 1 if you have the <cpa.h> header file. */
+#undef HAVE_CPA_H
 
 /* Define to 1 if you have the `daq_acquire_with_meta' function. */
 #undef HAVE_DAQ_ACQUIRE_WITH_META
@@ -58,6 +61,12 @@
 /* Define to 1 if you have the `daq_hup_apply' function. */
 #undef HAVE_DAQ_HUP_APPLY
 
+/* DAQ version defines flags for locally destined traffic */
+#undef HAVE_DAQ_LOCALLY_DESTINED
+
+/* DAQ version defines flags for locally originated traffic */
+#undef HAVE_DAQ_LOCALLY_ORIGINATED
+
 /* DAQ version supports packet trace. */
 #undef HAVE_DAQ_PKT_TRACE
 
@@ -82,6 +91,9 @@
 /* Define to 1 if you have the <dumbnet.h> header file. */
 #undef HAVE_DUMBNET_H
 
+/* Define to 1 if you have the `gettid' function. */
+#undef HAVE_GETTID
+
 /* Define to 1 if you have the `inet_ntop' function. */
 #undef HAVE_INET_NTOP
 
@@ -99,6 +111,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <jemalloc.h> header file. */
+#undef HAVE_JEMALLOC_H
 
 /* Define to 1 if you have the `dnet' library (-ldnet). */
 #undef HAVE_LIBDNET
@@ -129,6 +144,9 @@
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `tirpc' library (-ltirpc). */
+#undef HAVE_LIBTIRPC
 
 /* Define to 1 if you have the `uuid' library (-luuid). */
 #undef HAVE_LIBUUID
@@ -177,6 +195,9 @@
 
 /* Define to 1 if you have the <pfring.h> header file. */
 #undef HAVE_PFRING_H
+
+/* Define to 1 if you have the `pthread_tryjoin_np' function. */
+#undef HAVE_PTHREAD_TRYJOIN_NP
 
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION

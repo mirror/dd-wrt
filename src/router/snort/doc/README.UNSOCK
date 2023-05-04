@@ -13,7 +13,7 @@ datalink, netlayer, and transport layer headers.
 
 Below is an example how unix sockets could be used. If you have any
 comments bug reports, and feature requests, please contact
-snort-devel@lists.sourceforge.net or drop me an email to fygrave at
+snort-devel@lists.snort.org or drop me an email to fygrave at
 tigerteam dot net.
 
 -Fyodor

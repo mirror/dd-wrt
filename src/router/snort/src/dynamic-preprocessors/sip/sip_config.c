@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -60,9 +60,14 @@
  * Min/Max values for each configurable parameter.
  */
 #define MIN_MAX_NUM_SESSION 1024
-#define MAX_MAX_NUM_SESSION 4194303
+/*
+ * The maximum value that can be used is 4 GB
+ * which 4194304 in KB on product. So will be using
+ * 1 more than this as maximum limit.
+ */
+#define MAX_MAX_NUM_SESSION 4194305
 #define MIN_MAX_NUM_DIALOG  1
-#define MAX_MAX_NUM_DIALOG  4194303
+#define MAX_MAX_NUM_DIALOG  4194305
 #define MIN_MAX_URI_LEN 0
 #define MAX_MAX_URI_LEN 65535
 #define MIN_MAX_CALL_ID_LEN 0
@@ -497,13 +502,15 @@ static SIPMethodNode* SIP_AddMethodToList(char *methodName, SIPMethodsFlag metho
         method =  method->nextm;
     }
 
-    method = (SIPMethodNode *) malloc(sizeof (SIPMethodNode));
+    method = (SIPMethodNode *) _dpd.snortAlloc(1, sizeof(SIPMethodNode),
+                                        PP_SIP, PP_MEM_CATEGORY_CONFIG);
     if (NULL == method)
         return NULL;
     method->methodName = strdup(methodName);
     if (NULL == method->methodName)
     {
-        free(method);
+        _dpd.snortFree(method, sizeof(SIPMethodNode),
+                       PP_SIP, PP_MEM_CATEGORY_CONFIG);
         return NULL;
     }
 
@@ -547,10 +554,12 @@ void SIP_FreeConfig (SIPConfig *config)
         if (NULL != curNode->methodName)
             free(curNode->methodName);
         nextNode = curNode->nextm;
-        free(curNode);
+        _dpd.snortFree(curNode, sizeof(SIPMethodNode), PP_SIP, 
+                       PP_MEM_CATEGORY_CONFIG);
         curNode = nextNode;
     }
-    free(config);
+    _dpd.snortFree(config, sizeof(SIPConfig), PP_SIP, 
+                   PP_MEM_CATEGORY_CONFIG);
 }
 /* Parses and processes the configuration arguments
  * supplied in the SIP preprocessor rule.

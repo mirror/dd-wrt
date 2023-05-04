@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
@@ -33,6 +33,7 @@
 
 #include "sf_dynamic_define.h"
 #include "sf_dynamic_meta.h"
+#include "sf_decompression_define.h"
 
 /* specifies that a function does not return
  * used for quieting Visual Studio warnings
@@ -114,10 +115,14 @@ typedef int (*RegisterPreprocRuleOpt)(
 typedef int (*PreprocRuleOptInit)(struct _SnortConfig *, void *);
 
 typedef void (*SessionDataFree)(void *);
-typedef int (*SetRuleData)(void *, void *, uint32_t, SessionDataFree);
-typedef void *(*GetRuleData)(void *, uint32_t);
+struct _RuleInformation;
+typedef int (*SetRuleData)(void *, const struct _RuleInformation *, void *, void *);
+typedef void (*GetRuleData)(void *, const struct _RuleInformation *, void **, void **);
 typedef void * (*AllocRuleData)(size_t);
 typedef void (*FreeRuleData)(void *);
+typedef void * (*DynamicDecompressInitFunc)(compression_type_t);
+typedef int (*DynamicDecompressDestroyFunc)(void *state);
+typedef int (*DynamicDecompressFunc)(void *, uint8_t *, uint32_t, uint8_t *, uint32_t, uint32_t *);
 
 /* Info Data passed to dynamic engine plugin must include:
  * version
@@ -135,7 +140,7 @@ typedef void (*FreeRuleData)(void *);
 #define ENGINE_DATA_VERSION 10
 
 typedef void *(*PCRECompileFunc)(const char *, int, const char **, int *, const unsigned char *);
-typedef void *(*PCREStudyFunc)(const void *, int, const char **);
+typedef void *(*PCREStudyFunc)(struct _SnortConfig *, const void *, int, const char **);
 typedef int (*PCREExecFunc)(const void *, const void *, const char *, int, int, int, int *, int);
 typedef void (*PCRECapture)(struct _SnortConfig *, const void *, const void *);
 typedef void(*PCREOvectorInfo)(int **, int *);
@@ -189,21 +194,24 @@ typedef struct _DynamicEngineData
     PCREOvectorInfo pcreOvectorInfo;
 
     GetHttpBufferFunc getHttpBuffer;
+    DynamicDecompressInitFunc decompressInit;
+    DynamicDecompressDestroyFunc decompressDestroy;
+    DynamicDecompressFunc decompress;
 } DynamicEngineData;
 
 extern DynamicEngineData _ded;
 
 /* Function prototypes for Dynamic Engine Plugins */
 void CloseDynamicEngineLibs(void);
-void LoadAllDynamicEngineLibs(const char * const path);
-int LoadDynamicEngineLib(const char * const library_name, int indent);
+void LoadAllDynamicEngineLibs(struct _SnortConfig *sc, const char * const path);
+int LoadDynamicEngineLib(struct _SnortConfig *sc, const char * const library_name, int indent);
 typedef int (*InitEngineLibFunc)(DynamicEngineData *);
 typedef int (*CompatibilityFunc)(DynamicPluginMeta *meta, DynamicPluginMeta *lib);
 
 int InitDynamicEngines(char *);
 void RemoveDuplicateEngines(void);
-int DumpDetectionLibRules(void);
-int ValidateDynamicEngines(void);
+int DumpDetectionLibRules(struct _SnortConfig *sc);
+int ValidateDynamicEngines(struct _SnortConfig *sc);
 
 /* This was necessary because of static code analysis not recognizing that
  * fatalMsg did not return - use instead of fatalMsg

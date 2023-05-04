@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -221,6 +221,25 @@ extern int ppm_suspend_this_rule;
     } \
 }
 
+/* To print the log if ppm is enabled and ppm_abort_this_pkt is 1 */
+#define PPM_LATENCY_TRACE() \
+    if( ppm_abort_this_pkt ) \
+    { \
+        if( pkt_trace_enabled ) \
+        { \
+            if( !PacketIsRebuilt(p)) \
+            { \
+                addPktTraceData(VERDICT_REASON_NO_BLOCK, snprintf(trace_line, MAX_TRACE_LINE, \
+                "PL flag : (1)")); \
+            } \
+            else \
+            { \
+                addPktTraceData(VERDICT_REASON_NO_BLOCK, snprintf(trace_line, MAX_TRACE_LINE, \
+                "PL/R flag : (1)")); \
+            } \
+        } \
+    } \
+
 /* use PPM_GET_TIME; first to get the current time */
 #define PPM_PACKET_TEST() \
     if( ppm_pt ) \
@@ -255,6 +274,11 @@ extern int ppm_suspend_this_rule;
             int ii; \
             ppm_suspend_this_rule = 1; \
             (root)->ppm_disable_cnt++; \
+            if( pkt_trace_enabled ) \
+            { \
+                addPktTraceData(VERDICT_REASON_NO_BLOCK, snprintf(trace_line, MAX_TRACE_LINE, \
+                "RL flag : (1)")); \
+            } \
             for ( ii = 0; ii< root->num_children; ii++) \
             { \
                 root->children[ii]->ppm_disable_cnt++; \

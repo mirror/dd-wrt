@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -251,6 +251,8 @@ static SDFSessionData * NewSDFSession(SDFConfig *config, SFSnortPacket *packet)
     session->part_match_index = 0;
     session->global_counter = 0;
     session->config_num = config->config_num;
+    session->last_pkt_seq_num = 0;
+    session->last_pkt_data_len = -1;
     /* Allocate counters in the session data */
     session->num_patterns = sdf_context->num_patterns;
     session->counters = calloc(session->num_patterns, sizeof(uint8_t));
@@ -357,7 +359,7 @@ static void SDFSearchRecursively(SDFConfig *config, SFSnortPacket *packet,
                             offset = offset + 1;
                             ob_length = ob_length - 2;
                         }
-
+                        
                         _dpd.obApi->addObfuscationEntry(packet, offset, ob_length,
                                                         SDF_OBFUSCATION_CHAR);
                     }
@@ -518,7 +520,7 @@ static void ProcessSDF(void *p, void *context)
     session = _dpd.sessionAPI->get_application_data(packet->stream_session, PP_SDF);
     if (session == NULL)
     {
-        char pseudo_start = 0;
+        char pseudo_start[1] = {'0'};
         /* Do port checks */
         if (SDFCheckPorts(config, packet) == 0)
         {
@@ -539,7 +541,7 @@ static void ProcessSDF(void *p, void *context)
             session = NewSDFSession(config, packet);
 
         /* Add one byte to support sensitive data starts with first byte */
-        begin = &pseudo_start;
+        begin = pseudo_start;
         buflen = 1;
         end = begin + buflen;
         SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
@@ -555,6 +557,38 @@ static void ProcessSDF(void *p, void *context)
     }
 
     PREPROC_PROFILE_START(sdfPerfStats);
+
+    /* By First checking ports and protocols for a given packet , Snort is able to limit the number of rules that must be evaluated.
+       prmFindRuleGroup()  will be called to make sure a match exists for the source and destination ports mentioned in the rule. 
+       Sometimes more than one rule group will be matched to the same packet. This is quick way to eliminate the rules without complex pattern matching. 
+       Sometimes same packet will be evaluated by Sensitive Data Preprocessor  more than once because packet is matched to more than one rule group.  
+       When evaluating same packet for each rule group by SDF,  PII count  will be incremented for the same packet which causes mis-firing alert. 
+       Need to avoid evaluating same packet multiple times by SDF.
+
+    */
+    if(packet->tcp_header)
+    {
+         if( (session->last_pkt_seq_num == packet->tcp_header->sequence) )
+         {
+              if( (_dpd.fileDataBuf->len == 0 ) ||
+                  (session->last_pkt_data_len != _dpd.fileDataBuf->len ))
+              {
+                    // Process the same packet if file data buffer len is diffrent or zero. 
+                    session->last_pkt_data_len = _dpd.fileDataBuf->len;
+              }
+              else
+              {
+                   // Do not evaluate the same packet if file data buffer len is same.
+                   session->last_pkt_data_len = _dpd.fileDataBuf->len;
+                   return;
+              }
+         }
+         else
+         {
+              session->last_pkt_seq_num = packet->tcp_header->sequence;
+              session->last_pkt_data_len = _dpd.fileDataBuf->len;
+         }
+    } 
 
     /* Inspect HTTP Body or Email attachments. */
     if (_dpd.fileDataBuf->len > 0)

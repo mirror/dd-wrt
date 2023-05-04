@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
@@ -61,6 +61,8 @@ typedef struct _SDFSessionData
     uint8_t *counters;
     int8_t *rtns_matched;
     uint32_t config_num;
+    uint32_t last_pkt_seq_num;
+    int last_pkt_data_len;
 } SDFSessionData;
 
 typedef struct _SDFContext

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Author(s):   Andrew R. Baker <andrewb@sourcefire.com>
 **
@@ -392,7 +392,7 @@ void OtnFree(void *data)
 
         for (i = 0; i < otn->proto_node_num; i++)
         {
-            RuleTreeNode *rtn = deleteRtnFromOtn(otn, i);
+            RuleTreeNode *rtn = deleteRtnFromOtn(NULL, otn, i);
             if (rtn != NULL)
                 free(rtn);
         }

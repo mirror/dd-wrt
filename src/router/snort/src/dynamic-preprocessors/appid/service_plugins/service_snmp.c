@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,8 @@ typedef enum
     SNMP_PDU_TRAP,
     SNMP_PDU_GET_BULK_REQUEST,
     SNMP_PDU_INFORM_REQUEST,
-    SNMP_PDU_TRAPV2
+    SNMP_PDU_TRAPV2,
+    SNMP_PDU_REPORT
 } SNMPPDUType;
 
 #pragma pack(1)
@@ -126,7 +127,9 @@ static int16_t app_id = 0;
 
 static int snmp_init(const InitServiceAPI * const init_api)
 {
+#ifdef TARGET_BASED
     app_id = init_api->dpd->addProtocolReference("snmp");
+#endif
 
     init_api->RegisterPattern(&snmp_validate, IPPROTO_UDP, SNMP_PATTERN_2, sizeof(SNMP_PATTERN_2), 2, "snmp", init_api->pAppidConfig);
     init_api->RegisterPattern(&snmp_validate, IPPROTO_UDP, SNMP_PATTERN_3, sizeof(SNMP_PATTERN_3), 2, "snmp", init_api->pAppidConfig);
@@ -487,7 +490,7 @@ static int snmp_validate(ServiceValidationArgs* args)
        }
         break;
     case SNMP_STATE_RESPONSE:
-        if (pdu == SNMP_PDU_GET_RESPONSE)
+        if (pdu == SNMP_PDU_GET_RESPONSE || pdu == SNMP_PDU_REPORT)
         {
             if (dir == APP_ID_FROM_RESPONDER) goto success;
             goto fail;
@@ -503,7 +506,7 @@ static int snmp_validate(ServiceValidationArgs* args)
         if (dir == APP_ID_FROM_INITIATOR) goto fail;
         break;
     case SNMP_STATE_R_RESPONSE:
-        if (pdu == SNMP_PDU_GET_RESPONSE)
+        if (pdu == SNMP_PDU_GET_RESPONSE || pdu == SNMP_PDU_REPORT)
         {
             if (dir == APP_ID_FROM_INITIATOR) goto success;
             goto fail;

@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 **
@@ -58,6 +58,7 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h> 
 
 #include "profiler.h"
 #ifdef PERF_PROFILING
@@ -109,6 +110,7 @@ static void _addServicesToStreamFilter(struct _SnortConfig *, tSfPolicyId);
 static void DNSFreeConfig(tSfPolicyUserContextId config);
 static int DNSCheckConfig(struct _SnortConfig *);
 static void DNSCleanExit(int, void *);
+int dns_print_mem_stats(FILE *fd, char* buffer, PreprocMemInfo *meminfo);
 
 /* Ultimately calls SnortEventqAdd */
 /* Arguments are: gid, sid, rev, classification, priority, message, rule_info */
@@ -155,7 +157,15 @@ void SetupDNS(void)
 #ifdef DUMP_BUFFER
     _dpd.registerBufferTracer(getDNSBuffers, DNS_BUFFER_DUMP_FUNC);
 #endif
+    _dpd.registerMemoryStatsFunc(PP_DNS, dns_print_mem_stats);
 }
+
+#ifdef REG_TEST
+static inline void PrintDNSSize(void)
+{
+    _dpd.logMsg("\nDNS Session Size: %lu\n", (long unsigned int)sizeof(DNSSessionData));
+}
+#endif
 
 /* Initializes the DNS preprocessor module and registers
  * it in the preprocessor list.
@@ -172,6 +182,10 @@ static void DNSInit( struct _SnortConfig *sc, char* argp )
     int policy_id = _dpd.getParserPolicy(sc);
 
     DNSConfig *pPolicyConfig = NULL;
+#ifdef REG_TEST
+    PrintDNSSize();
+#endif
+
     if (dns_config == NULL)
     {
         //create a context
@@ -218,7 +232,8 @@ static void DNSInit( struct _SnortConfig *sc, char* argp )
             "be configured once.\n", *(_dpd.config_file), *(_dpd.config_line));
     }
 
-    pPolicyConfig = (DNSConfig *)calloc(1, sizeof(DNSConfig));
+    pPolicyConfig = (DNSConfig *)_dpd.snortAlloc(1, sizeof(DNSConfig),
+                                                PP_DNS, PP_MEM_CATEGORY_CONFIG);
     if (!pPolicyConfig)
     {
         DynamicPreprocessorFatalMessage("Could not allocate memory for "
@@ -394,6 +409,46 @@ static void PrintDNSConfig(DNSConfig *config)
     _dpd.logMsg("\n");
 }
 
+int dns_print_mem_stats(FILE *fd, char* buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time = time(NULL);
+    int len = 0;
+    size_t total_heap_memory = meminfo[PP_MEM_CATEGORY_SESSION].used_memory 
+                              + meminfo[PP_MEM_CATEGORY_CONFIG].used_memory; 
+    if (fd)
+    {
+        len = fprintf(fd, ",%lu,%u,%u,%lu,%u,%u,%lu"
+                       , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                       , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                       , total_heap_memory);
+       return len;
+    }
+    if (buffer)
+    {
+        /*
+         * No stats apart from the one by the Infra
+         */  
+        len = snprintf(buffer, CS_STATS_BUF_SIZE,
+                       "\n\nMemory Statistics for DNS at: %s\n"
+                       "DNS Preprocessor Statistics:\n"
+                       , ctime(&curr_time));
+    }
+    else 
+    {
+        /*
+         * No stats apart from the one by the Infra
+         */  
+        _dpd.logMsg("\n");
+        _dpd.logMsg("Memory Statistics of DNS at: %s\n",
+                    ctime(&curr_time));
+    }
+    return len;
+}
+
 /* Retrieves the DNS data block registered with the stream
  * session associated w/ the current packet. If none exists,
  * allocates it and registers it with the stream API.
@@ -449,7 +504,8 @@ DNSSessionData * GetDNSSessionData(SFSnortPacket *p, DNSConfig *config)
         return NULL;
     }
 
-    dnsSessionData = calloc( 1, sizeof( DNSSessionData ));
+    dnsSessionData = _dpd.snortAlloc(1, sizeof(DNSSessionData), 
+                                     PP_DNS, PP_MEM_CATEGORY_SESSION);
 
     if ( !dnsSessionData )
         return NULL;
@@ -477,7 +533,8 @@ static void FreeDNSSessionData( void* application_data )
     DNSSessionData* dnsSessionData = (DNSSessionData*)application_data;
     if ( dnsSessionData )
     {
-        free( dnsSessionData );
+        _dpd.snortFree(dnsSessionData, sizeof(DNSSessionData),
+                           PP_DNS, PP_MEM_CATEGORY_SESSION);
     }
 }
 
@@ -1676,7 +1733,8 @@ static int DnsFreeConfigPolicy(
     //do any housekeeping before freeing DnsConfig
 
     sfPolicyUserDataClear (config, policyId);
-    free(pPolicyConfig);
+    _dpd.snortFree(pPolicyConfig, sizeof(DNSConfig),
+                   PP_DNS, PP_MEM_CATEGORY_CONFIG);
     return 0;
 }
 
@@ -1756,7 +1814,8 @@ static void DNSReload(struct _SnortConfig *sc, char *argp, void **new_config)
             "be configured once.\n", *(_dpd.config_file), *(_dpd.config_line));
     }
 
-    pPolicyConfig = (DNSConfig *)calloc(1,sizeof(DNSConfig));
+    pPolicyConfig = (DNSConfig *)_dpd.snortAlloc(1, sizeof(DNSConfig), 
+                                                PP_DNS, PP_MEM_CATEGORY_CONFIG);
     if (!pPolicyConfig)
     {
         DynamicPreprocessorFatalMessage("Could not allocate memory for "

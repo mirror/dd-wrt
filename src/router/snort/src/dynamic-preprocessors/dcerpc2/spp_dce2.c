@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <time.h> 
 
 #include "sf_types.h"
 #include "spp_dce2.h"
@@ -167,6 +168,7 @@ static bool dce2_file_cache_was_enabled = false;
 static bool dce2_ada_was_enabled = false;
 static bool dce2_ada_is_enabled = false;
 #endif
+int dce_print_mem_stats(FILE *, char *, PreprocMemInfo *);
 
 /********************************************************************
  * Function: DCE2_RegisterPreprocessor()
@@ -193,7 +195,7 @@ void DCE2_RegisterPreprocessor(void)
 #ifdef DUMP_BUFFER
     _dpd.registerBufferTracer(getDCERPC2Buffers, DCERPC2_BUFFER_DUMP_FUNC);
 #endif
-
+    _dpd.registerMemoryStatsFunc(PP_DCE2, dce_print_mem_stats);
 }
 
 /*********************************************************************
@@ -519,22 +521,6 @@ static void DCE2_Main(void *pkt, void *context)
         return;
     }
 
-    if (IsTCP(p))
-    {
-        if (DCE2_SsnIsMidstream(p))
-        {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Midstream - not inspecting.\n"));
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ALL, "%s\n", DCE2_DEBUG__END_MSG));
-            return;
-        }
-        else if (!DCE2_SsnIsEstablished(p))
-        {
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Not established - not inspecting.\n"));
-            DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ALL, "%s\n", DCE2_DEBUG__END_MSG));
-            return;
-        }
-    }
-
     PREPROC_PROFILE_START(dce2_pstat_main);
 
     if (DCE2_Process(p) == DCE2_RET__INSPECTED)
@@ -595,6 +581,7 @@ static void DCE2_PrintStats(int exiting)
 
     _dpd.logMsg("dcerpc2 Preprocessor Statistics\n");
     _dpd.logMsg("  Total sessions: "STDu64"\n", dce2_stats.sessions);
+    _dpd.logMsg(" Active sessions: "STDu64"\n", dce2_stats.sessions_active);
     if (dce2_stats.sessions > 0)
     {
         if (dce2_stats.sessions_autodetected > 0)
@@ -740,7 +727,6 @@ static void DCE2_PrintStats(int exiting)
                 }
             }
 
-#ifdef DEBUG_MSGS
             _dpd.logMsg("      Memory stats (bytes)\n");
             _dpd.logMsg("        Current total: %u\n", dce2_memory.smb_total);
             _dpd.logMsg("        Maximum total: %u\n", dce2_memory.smb_total_max);
@@ -758,7 +744,6 @@ static void DCE2_PrintStats(int exiting)
             _dpd.logMsg("        Maximum file tracking: %u\n", dce2_memory.smb_file_max);
             _dpd.logMsg("        Current request tracking: %u\n", dce2_memory.smb_req);
             _dpd.logMsg("        Maximum request tracking: %u\n", dce2_memory.smb_req_max);
-#endif
             /* SMB2 stats */
             if (!exiting)
             {
@@ -784,13 +769,11 @@ static void DCE2_PrintStats(int exiting)
             _dpd.logMsg("      Total sessions: "STDu64"\n", dce2_stats.tcp_sessions);
             _dpd.logMsg("      Packet stats\n");
             _dpd.logMsg("        Packets: "STDu64"\n", dce2_stats.tcp_pkts);
-#ifdef DEBUG_MSGS
             _dpd.logMsg("      Memory stats (bytes)\n");
             _dpd.logMsg("        Current total: %u\n", dce2_memory.tcp_total);
             _dpd.logMsg("        Maximum total: %u\n", dce2_memory.tcp_total_max);
             _dpd.logMsg("        Current session data: %u\n", dce2_memory.tcp_ssn);
             _dpd.logMsg("        Maximum session data: %u\n", dce2_memory.tcp_ssn_max);
-#endif
         }
 
         if (dce2_stats.udp_sessions > 0)
@@ -799,13 +782,11 @@ static void DCE2_PrintStats(int exiting)
             _dpd.logMsg("      Total sessions: "STDu64"\n", dce2_stats.udp_sessions);
             _dpd.logMsg("      Packet stats\n");
             _dpd.logMsg("        Packets: "STDu64"\n", dce2_stats.udp_pkts);
-#ifdef DEBUG_MSGS
             _dpd.logMsg("      Memory stats (bytes)\n");
             _dpd.logMsg("        Current total: %u\n", dce2_memory.udp_total);
             _dpd.logMsg("        Maximum total: %u\n", dce2_memory.udp_total_max);
             _dpd.logMsg("        Current session data: %u\n", dce2_memory.udp_ssn);
             _dpd.logMsg("        Maximum session data: %u\n", dce2_memory.udp_ssn_max);
-#endif
         }
 
         if ((dce2_stats.http_server_sessions > 0) || (dce2_stats.http_proxy_sessions > 0))
@@ -820,13 +801,11 @@ static void DCE2_PrintStats(int exiting)
                 _dpd.logMsg("        Server packets: "STDu64"\n", dce2_stats.http_server_pkts);
             if (dce2_stats.http_proxy_sessions > 0)
                 _dpd.logMsg("        Proxy packets: "STDu64"\n", dce2_stats.http_proxy_pkts);
-#ifdef DEBUG_MSGS
             _dpd.logMsg("      Memory stats (bytes)\n");
             _dpd.logMsg("        Current total: %u\n", dce2_memory.http_total);
             _dpd.logMsg("        Maximum total: %u\n", dce2_memory.http_total_max);
             _dpd.logMsg("        Current session data: %u\n", dce2_memory.http_ssn);
             _dpd.logMsg("        Maximum session data: %u\n", dce2_memory.http_ssn_max);
-#endif
         }
 
         if ((dce2_stats.co_pdus > 0) || (dce2_stats.cl_pkts > 0))
@@ -891,7 +870,6 @@ static void DCE2_PrintStats(int exiting)
                         dce2_stats.co_cli_seg_reassembled);
                 _dpd.logMsg("        Server PDU segmented reassembled: "STDu64"\n",
                         dce2_stats.co_srv_seg_reassembled);
-#ifdef DEBUG_MSGS
                 _dpd.logMsg("      Memory stats (bytes)\n");
                 _dpd.logMsg("        Current segmentation buffering: %u\n", dce2_memory.co_seg);
                 _dpd.logMsg("        Maximum segmentation buffering: %u\n", dce2_memory.co_seg_max);
@@ -899,7 +877,6 @@ static void DCE2_PrintStats(int exiting)
                 _dpd.logMsg("        Maximum fragment tracker: %u\n", dce2_memory.co_frag_max);
                 _dpd.logMsg("        Current context tracking: %u\n", dce2_memory.co_ctx);
                 _dpd.logMsg("        Maximum context tracking: %u\n", dce2_memory.co_ctx_max);
-#endif
             }
 
             if (dce2_stats.cl_pkts > 0)
@@ -941,13 +918,11 @@ static void DCE2_PrintStats(int exiting)
                 _dpd.logMsg("        Reassembled: "STDu64"\n", dce2_stats.cl_frag_reassembled);
                 if (dce2_stats.cl_max_seqnum > 0)
                     _dpd.logMsg("        Max seq num: "STDu64"\n", dce2_stats.cl_max_seqnum);
-#ifdef DEBUG_MSGS
                 _dpd.logMsg("      Memory stats (bytes)\n");
                 _dpd.logMsg("        Current activity tracker: %u\n", dce2_memory.cl_act);
                 _dpd.logMsg("        Maximum activity tracker: %u\n", dce2_memory.cl_act_max);
                 _dpd.logMsg("        Current fragment tracker: %u\n", dce2_memory.cl_frag);
                 _dpd.logMsg("        Maximum fragment tracker: %u\n", dce2_memory.cl_frag_max);
-#endif
             }
         }
     }
@@ -957,7 +932,6 @@ static void DCE2_PrintStats(int exiting)
     if (exiting)
         DCE2_StatsFree();
 
-#ifdef DEBUG_MSGS
     _dpd.logMsg("\n");
     _dpd.logMsg("  Memory stats (bytes)\n");
     _dpd.logMsg("    Current total: %u\n", dce2_memory.total);
@@ -972,7 +946,191 @@ static void DCE2_PrintStats(int exiting)
     _dpd.logMsg("    Maximum routing table total: %u\n", dce2_memory.rt_max);
     _dpd.logMsg("    Current initialization total: %u\n", dce2_memory.init);
     _dpd.logMsg("    Maximum initialization total: %u\n", dce2_memory.init_max);
-#endif
+}
+
+uint32_t dce_total_memcap(void)
+{
+    DCE2_Config *pDefaultPolicyConfig = NULL;
+    if (dce2_config)
+    { 
+         pDefaultPolicyConfig = (DCE2_Config *)sfPolicyUserDataGetDefault(dce2_config);
+         return pDefaultPolicyConfig->gconfig->memcap;
+    }
+    return 0;
+}
+
+uint32_t dce_free_total_memcap(void)
+{
+    if (dce2_config)
+    {
+         return dce_total_memcap() - dce2_memory.total;
+    }
+    return 0;
+}
+
+int dce_print_mem_stats(FILE *fd, char* buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time = time(NULL);
+    int len = 0;
+    size_t total_heap_memory = meminfo[PP_MEM_CATEGORY_SESSION].used_memory 
+                              + meminfo[PP_MEM_CATEGORY_CONFIG].used_memory 
+                              + meminfo[PP_MEM_CATEGORY_MISC].used_memory;
+    if (fd)
+    {
+        len = fprintf(fd, ","STDu64","STDu64","STDu64""
+                       ",%u,%u,%u,%u"
+                       ","STDu64",%u,%u,%u,%u"
+                       ","STDu64",%u,%u,%u,%u"
+                       ","STDu64","STDu64",%u,%u,%u,%u"
+                       ",%lu,%u,%u"
+                       ",%lu,%u,%u"
+                       ",%lu,%u,%u,%lu"
+                       , dce2_stats.sessions 
+                       , dce2_stats.sessions_active
+                       , dce2_stats.smb_sessions
+                       , dce2_memory.smb_total
+                       , dce2_memory.smb_total_max
+                       , dce2_memory.smb_ssn
+                       , dce2_memory.smb_ssn_max 
+                       , dce2_stats.tcp_sessions
+                       , dce2_memory.tcp_total
+                       , dce2_memory.tcp_total_max
+                       , dce2_memory.tcp_ssn
+                       , dce2_memory.tcp_ssn_max
+                       , dce2_stats.udp_sessions
+                       , dce2_memory.udp_total
+                       , dce2_memory.udp_total_max
+                       , dce2_memory.udp_ssn
+                       , dce2_memory.udp_ssn_max
+                       , dce2_stats.http_server_sessions 
+                       , dce2_stats.http_proxy_sessions
+                       , dce2_memory.http_total
+                       , dce2_memory.http_total_max
+                       , dce2_memory.http_ssn
+                       , dce2_memory.http_ssn_max
+                       , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                       , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                       , meminfo[PP_MEM_CATEGORY_MISC].used_memory
+                       , meminfo[PP_MEM_CATEGORY_MISC].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_MISC].num_of_free
+                       , total_heap_memory);
+       return len;
+    }
+
+    if (buffer)
+    {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "\n\nMemory Statistics for DCE at: %s\n"
+        "dcerpc2 Preprocessor Statistics:\n"
+        "                  Total sessions :  "STDu64"\n"
+        "                 Active sessions :  "STDu64"\n"
+        "              Total SMB sessions :  "STDu64"\n"
+        "              Total TCP sessions :  "STDu64"\n"
+        "              Total UDP sessions :  "STDu64"\n"
+        "      Total HTTP server sessions :  "STDu64"\n"
+        "       Total HTTP proxy sessions :  "STDu64"\n"
+        "\nTotal Memory stats :\n"
+        "                  Current memory :  %u\n"
+        "                  Maximum memory :  %u\n"
+        "                    Total memcap :  %u\n"
+        "                     Free memory :  %u\n"
+        "\nSMB Memory stats :\n"
+        "                  Current memory :  %u\n"
+        "                  Maximum memory :  %u\n"
+        "            Current session data :  %u\n"
+        "            Maximum session data :  %u\n"
+        "  Current segmentation buffering :  %u\n"
+        "  Maximum segmentation buffering :  %u\n"
+        "\nTCP Memory stats :\n"
+        "                  Current memory :  %u\n"
+        "                  Maximum memory :  %u\n"
+        "            Current session data :  %u\n"
+        "            Maximum session data :  %u\n"
+        "\nUDP Memory stats :\n"
+        "                  Current memory :  %u\n"
+        "                  Maximum memory :  %u\n"
+        "            Current session data :  %u\n"
+        "            Maximum session data :  %u\n"
+        "\nHTTP Memory stats :\n"
+        "                  Current memory :  %u\n"
+        "                  Maximum memory :  %u\n"
+        "            Current session data :  %u\n"
+        "            Maximum session data :  %u\n"
+        , ctime(&curr_time)
+        , dce2_stats.sessions
+        , dce2_stats.sessions_active
+        , dce2_stats.smb_sessions
+        , dce2_stats.tcp_sessions
+        , dce2_stats.udp_sessions
+        , dce2_stats.http_server_sessions
+        , dce2_stats.http_proxy_sessions
+        , dce2_memory.total
+        , dce2_memory.total_max
+        , dce_total_memcap()
+        , dce_free_total_memcap()
+        , dce2_memory.smb_total
+        , dce2_memory.smb_total_max
+        , dce2_memory.smb_ssn
+        , dce2_memory.smb_ssn_max
+        , dce2_memory.smb_seg
+        , dce2_memory.smb_seg_max
+        , dce2_memory.tcp_total
+        , dce2_memory.tcp_total_max
+        , dce2_memory.tcp_ssn
+        , dce2_memory.tcp_ssn_max
+        , dce2_memory.udp_total
+        , dce2_memory.udp_total_max
+        , dce2_memory.udp_ssn
+        , dce2_memory.udp_ssn_max
+        , dce2_memory.http_total
+        , dce2_memory.http_total_max
+        , dce2_memory.http_ssn
+        , dce2_memory.http_ssn_max);
+    }
+    else 
+    {
+        _dpd.logMsg("\n");
+        _dpd.logMsg("Memory Statistics of DCE at: %s\n",ctime(&curr_time));
+        _dpd.logMsg("dcerpc2 Preprocessor Statistics:\n");
+        _dpd.logMsg("                Total sessions :    "STDu64"\n", dce2_stats.sessions);
+        _dpd.logMsg("               Active sessions :    "STDu64"\n", dce2_stats.sessions_active);
+        _dpd.logMsg("            Total SMB sessions :    "STDu64"\n", dce2_stats.smb_sessions);
+        _dpd.logMsg("            Total TCP sessions :    "STDu64"\n", dce2_stats.tcp_sessions);
+        _dpd.logMsg("            Total UDP sessions :    "STDu64"\n", dce2_stats.udp_sessions);
+        _dpd.logMsg("    Total HTTP server sessions :    "STDu64"\n", dce2_stats.http_server_sessions);
+        _dpd.logMsg("     Total HTTP proxy sessions :    "STDu64"\n", dce2_stats.http_proxy_sessions);
+        _dpd.logMsg("Total Memory stats :\n");
+        _dpd.logMsg("                 Current total :    %u\n", dce2_memory.total);
+        _dpd.logMsg("                 Maximum total :    %u\n", dce2_memory.total_max);
+        _dpd.logMsg("                  Total memcap :    %u\n", dce_total_memcap());
+        _dpd.logMsg("                    Free total :    %u\n", dce_free_total_memcap());
+        _dpd.logMsg("SMB Memory stats :\n");
+        _dpd.logMsg("                 Current total :    %u\n", dce2_memory.smb_total);
+        _dpd.logMsg("                 Maximum total :    %u\n", dce2_memory.smb_total_max);
+        _dpd.logMsg("          Current session data :    %u\n", dce2_memory.smb_ssn);
+        _dpd.logMsg("          Maximum session data :    %u\n", dce2_memory.smb_ssn_max);
+        _dpd.logMsg("   Current segmentation buffer :    %u\n", dce2_memory.smb_seg);
+        _dpd.logMsg("   Maximum segmentation buffer :    %u\n", dce2_memory.smb_seg_max);
+        _dpd.logMsg("TCP Memory stats :\n");
+        _dpd.logMsg("                 Current total :    %u\n", dce2_memory.tcp_total);
+        _dpd.logMsg("                 Maximum total :    %u\n", dce2_memory.tcp_total_max);
+        _dpd.logMsg("          Current session data :    %u\n", dce2_memory.tcp_ssn);
+        _dpd.logMsg("          Maximum session data :    %u\n", dce2_memory.tcp_ssn_max);
+        _dpd.logMsg("UDP Memory stats :\n");	
+        _dpd.logMsg("                 Current total :    %u\n", dce2_memory.udp_total);
+        _dpd.logMsg("                 Maximum total :    %u\n", dce2_memory.udp_total_max);
+        _dpd.logMsg("          Current session data :    %u\n", dce2_memory.udp_ssn);
+        _dpd.logMsg("          Maximum session data :    %u\n", dce2_memory.udp_ssn_max);
+        _dpd.logMsg("HTTP Memory stats :\n");
+        _dpd.logMsg("                 Current total :    %u\n", dce2_memory.http_total);
+        _dpd.logMsg("                 Maximum total :    %u\n", dce2_memory.http_total_max);
+        _dpd.logMsg("          Current session data :    %u\n", dce2_memory.http_ssn);
+        _dpd.logMsg("          Maximum session data :    %u\n", dce2_memory.http_ssn_max);
+    }
+    return len;
 }
 
 /******************************************************************

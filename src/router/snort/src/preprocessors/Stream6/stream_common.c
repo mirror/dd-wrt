@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include "generators.h"
 #include "event_queue.h"
 #include "snort.h"
+#include "memory_stats.h"
 
 #include "session_api.h"
 
@@ -87,6 +88,32 @@ int StreamExpireSession(SessionControlBlock *scb)
     return 1;
 }
 
+void StreamDeleteSession(SessionControlBlock *scb)
+{
+    sfBase.iStreamTimeouts++;
+    scb->ha_state.session_flags |= SSNFLAG_TIMEDOUT;
+
+    switch (scb->protocol)
+    {
+        case IPPROTO_TCP:
+            s5stats.tcp_timeouts++;
+            break;
+        case IPPROTO_UDP:
+            s5stats.udp_timeouts++;
+            break;
+        case IPPROTO_ICMP:
+            s5stats.icmp_timeouts++;
+        case IPPROTO_IP:
+            s5stats.ip_timeouts++;
+            break;
+    }
+
+    if ( session_api->delete_session_by_key(scb, "timeout") != SFXHASH_OK )
+    {
+        LogMessage("WARNING: failed to delete session. \n");
+    }
+}
+
 int StreamExpire(Packet *p, SessionControlBlock *scb)
 {
     uint64_t pkttime = CalcJiffies(p);
@@ -135,7 +162,10 @@ void StreamActiveResponse(Packet* p, SessionControlBlock *scb)
 
         Active_KillSession(p, &flags);
         ++scb->response_count;
-        session_api->set_expire_timer(p, scb, delay);
+#if defined(DAQ_CAPA_CST_TIMEOUT)
+        if (!Daq_Capa_Timeout)
+#endif
+           session_api->set_expire_timer(p, scb, delay);
 
         scb->session_state &= ~(STREAM_STATE_DROP_CLIENT|STREAM_STATE_DROP_SERVER);
     }
@@ -183,8 +213,6 @@ void MarkupPacketFlags(Packet *p, SessionControlBlock *scb)
             p->packet_flags ^= PKT_STREAM_UNEST_UNI;
         }
     }
-    if ( scb->ha_state.session_flags & SSNFLAG_STREAM_ORDER_BAD )
-        p->packet_flags |= PKT_STREAM_ORDER_BAD;
 }
 
 #if 0
@@ -474,7 +502,8 @@ static void addRuleToIgnoreList(IgnoredRuleList **ppIgnoredRuleList, OptTreeNode
 {
     IgnoredRuleList *ignored_rule;
 
-    ignored_rule = SnortAlloc(sizeof(*ignored_rule));
+    ignored_rule = SnortPreprocAlloc(1, sizeof(*ignored_rule), PP_STREAM, 
+                           PP_MEM_CATEGORY_CONFIG);
     ignored_rule->otn = otn;
     ignored_rule->next = *ppIgnoredRuleList;
     *ppIgnoredRuleList = ignored_rule;
@@ -528,7 +557,8 @@ static void printIgnoredRules(
             }
         }
         next_ignored_rule = ignored_rule->next;
-        free(ignored_rule);
+        SnortPreprocFree(ignored_rule, sizeof(*ignored_rule), PP_STREAM,
+                  PP_MEM_CATEGORY_CONFIG);
         ignored_rule = next_ignored_rule;
     }
 
@@ -593,7 +623,7 @@ void StreamFreeConfig(StreamConfig *config)
         config->ip_config = NULL;
     }
 
-    free(config);
+    SnortPreprocFree(config, sizeof(*config), PP_STREAM, PP_MEM_CATEGORY_CONFIG);
 }
 
 int StreamSetRuntimeConfiguration( SessionControlBlock *scb, uint8_t protocol )
@@ -609,3 +639,25 @@ int StreamSetRuntimeConfiguration( SessionControlBlock *scb, uint8_t protocol )
     return 0;
 }
 
+bool getStreamIgnoreAnyConfig (struct _SnortConfig *sc, IpProto protocol)
+{
+    StreamConfig *config;
+    tSfPolicyId policyId;
+
+    for (policyId = 0; policyId < sfPolicyNumAllocated(sc->policy_config); policyId++) {
+
+        if ((config = getStreamPolicyConfig(policyId, 0))) {
+            switch (protocol) {
+               case IPPROTO_TCP :
+                   if ((config->tcp_config) && (config->tcp_config->default_policy->flags & STREAM_CONFIG_IGNORE_ANY))
+                       return true;
+               case IPPROTO_UDP :
+                   if ((config->udp_config) && (config->udp_config->default_policy->flags & STREAM_CONFIG_IGNORE_ANY))
+                       return true;
+               default:
+                   break;
+            }
+        }
+    }
+    return false;
+}

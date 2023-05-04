@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -1339,8 +1339,6 @@ void AddFuncToPeriodicCheckList(PeriodicFunc periodic_func, void *arg,
     PeriodicCheckFuncNode **list= &periodic_check_funcs;
     PeriodicCheckFuncNode *node;
 
-    if (list == NULL)
-        return;
 
     node = (PeriodicCheckFuncNode *)SnortAlloc(sizeof(PeriodicCheckFuncNode));
 
@@ -1662,26 +1660,30 @@ void RemoveOutputPlugin(char *keyword)
         return;
 
     /*If head node, remove head*/
-    if (strcasecmp(head->keyword, keyword) == 0)
+    if(head->keyword != NULL)
     {
-        output_config_funcs = head->next;
-        if (head->keyword != NULL)
+        if (strcasecmp(head->keyword, keyword) == 0)
+        {
+            output_config_funcs = head->next;
             free(head->keyword);
-        free(head);
-        return;
+            free(head);
+            return;
+        }
     }
 
     while (head->next != NULL)
     {
         OutputConfigFuncNode *next;
         next = head->next;
-        if (strcasecmp(next->keyword, keyword) == 0)
+        if(next->keyword != NULL )
         {
-            head->next = next->next;
-            if (next->keyword != NULL)
+            if (strcasecmp(next->keyword, keyword) == 0)
+            {
+                head->next = next->next;
                 free(next->keyword);
-            free(next);
-            break;
+                free(next);
+                break;
+            }
         }
         head = head->next;
     }

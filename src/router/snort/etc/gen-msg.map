@@ -167,6 +167,7 @@
 116 || 296 || snort_decoder: WARNING: IPv6 packet includes out-of-order extension headers
 116 || 297 || snort_decoder: WARNING: Two or more GTP encapsulation layers are present
 116 || 298 || snort_decoder: WARNING: GTP header length is invalid
+116 || 300 || snort_decoder: WARNING: Too many levels for decoding 
 116 || 400 || snort_decoder: WARNING: XMAS Attack Detected
 116 || 401 || snort_decoder: WARNING: Nmap XMAS Attack Detected
 116 || 402 || snort_decoder: WARNING: DOS NAPTHA Vulnerability Detected
@@ -269,6 +270,9 @@
 119 || 32 || http_inspect: SIMPLE REQUEST
 119 || 33 || http_inspect: UNESCAPED SPACE IN HTTP URI 
 119 || 34 || http_inspect: TOO MANY PIPELINED REQUESTS
+119 || 36 || http_inspect: INVALID RANGE UNIT FORMAT
+119 || 37 || http_inspect: RANGE FIELD PRESENT IN NON GET METHOD
+119 || 38 || http_inspect: ERROR IN RANGE FIELD OF REQUEST HEADER
 120 || 1 || http_inspect: ANOMALOUS HTTP SERVER ON UNDEFINED HTTP PORT
 120 || 2 || http_inspect: INVALID STATUS CODE IN HTTP RESPONSE
 120 || 3 || http_inspect: NO CONTENT-LENGTH OR TRANSFER-ENCODING IN HTTP RESPONSE
@@ -287,6 +291,20 @@
 120 || 16 || http_inspect: PDF FILE CASCADED COMPRESSION
 120 || 17 || http_inspect: PDF FILE PARSE FAILURE
 120 || 18 || http_inspect: PROTOCOL-OTHER HTTP server response before client request
+120 || 19 || http_inspect: MULTIPLE CONTENT LENGTH IN HTTP RESPONSE
+120 || 20 || http_inspect: MULTIPLE CONTENT ENCODING IN HTTP RESPONSE
+120 || 21 || http_inspect: MULTIPLE COLON BETWEEN KEY AND VALUE IN HTTP RESPONSE HEADER
+120 || 22 || http_inspect: INVALID CHARACTER BETWEEN KEY AND VALUE IN HTTP RESPONSE HEADER
+120 || 23 || http_inspect: TRANSFER ENCODING:CHUNKED IN HTTP 1.0 REQUEST/RESPONSE HEADER
+120 || 24 || http_inspect: PARTIAL DECOMPRESSION FAILURE IN HTTP RESPONSE BODY
+120 || 25 || http_inspect: INVALID HEADER FOLDING
+120 || 26 || http_inspect: JUNK LINE BEFORE HTTP RESPONSE HEADER
+120 || 27 || http_inspect: NO END OF HEADER IN HTTP RESPONSE
+120 || 28 || http_inspect: INVALID CHUNK SIZE OR CHUNK SIZE FOLLOWED BY JUNK CHARACTERS 
+120 || 29 || http_inspect: INVALID VERSION IN HTTP RESPONSE HEADER 
+120 || 30 || http_inspect: INVALID CONTENT RANGE UNIT FORMAT 
+120 || 31 || http_inspect: ERROR IN RANGE FIELD OF RESPONSE HEADER 
+120 || 32 || http_inspect: RANGE FIELD NOT PRESENT IN GET METHOD, BUT RESPONSE WITH PARTIAL CONTENT 
 121 || 1 || flow-portscan: Fixed Scale Scanner Limit Exceeded
 121 || 2 || flow-portscan: Sliding Scale Scanner Limit Exceeded
 121 || 3 || flow-portscan: Fixed Scale Talker Limit Exceeded
@@ -384,6 +402,7 @@
 129 || 18 || stream5: Data sent on stream after TCP Reset received
 129 || 19 || stream5: TCP window closed before receiving data
 129 || 20 || stream5: TCP session without 3-way handshake
+129 || 21 || stream5: ACK with window size 0 received post FIN,ACK
 130 || 1 || dcerpc: Maximum memory usage reached
 131 || 1 || dns: Obsolete DNS RData Type
 131 || 2 || dns: Experimental DNS RData Type

@@ -7,12 +7,14 @@ noinst_LIBRARIES = libspd.a
 BUILT_SOURCES = sf_snort_plugin_hdropts.c \
 sf_snort_packet.h \
 sf_snort_plugin_api.h \
-sf_decompression.h
+sf_decompression.h \
+sf_decompression_define.h
 
 nodist_libspd_a_SOURCES = sf_snort_plugin_hdropts.c \
 sf_snort_packet.h \
 sf_snort_plugin_api.h \
-sf_decompression.h
+sf_decompression.h \
+sf_decompression_define.h
 
 libspd_a_SOURCES = \
 detection_options.c detection_options.h \
@@ -112,10 +114,13 @@ sf_snort_plugin_api.h: ../dynamic-plugins/sf_engine/sf_snort_plugin_api.h
 sf_decompression.h: ../dynamic-plugins/sf_engine/sf_decompression.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
+sf_decompression_define.h: ../dynamic-plugins/sf_decompression_define.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
 sf_snort_packet.h: ../dynamic-plugins/sf_engine/sf_snort_packet.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
 clean-local:
-	rm -rf sf_snort_plugin_hdropts.c sf_snort_packet.h sf_snort_plugin_api.h sf_decompression.h
+	rm -rf sf_snort_plugin_hdropts.c sf_snort_packet.h sf_snort_plugin_api.h sf_decompression.h sf_decompression_define.h
 
 INCLUDES = @INCLUDES@

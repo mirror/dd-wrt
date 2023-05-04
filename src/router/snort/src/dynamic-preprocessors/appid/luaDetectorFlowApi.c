@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -55,8 +55,8 @@ static const uint64_t FLAGS_TABLE_LUA_TO_C[32] = {
     0,                                /* 17 */
     0,                                /* 18 */
     0,                                /* 19 */
-    0,                                /* 20 */
-    0,                                /* 21 */
+    APPID_SESSION_SSL_SESSION,        /* 20: sslSession */
+    APPID_SESSION_HTTP_SESSION,       /* 21: httpSession */
     APPID_SESSION_UDP_REVERSED,       /* 22: udpReversed */
     APPID_SESSION_INCOMPATIBLE,       /* 23: incompatible */
     APPID_SESSION_IGNORE_HOST,        /* 24: ignoreHost */
@@ -84,7 +84,7 @@ static const uint64_t FLAGS_TABLE_C_TO_LUA[32] = {
         0,             /* 10 */
         0,             /* 11 */
         0x00400000,    /* 12: APPID_SESSION_UDP_REVERSED */
-        0,             /* 13 */
+        0x00200000,    /* 13: APPID_SESSION_HTTP_SESSION */
         0x80000000,    /* 14: APPID_SESSION_SERVICE_DETECTED */
         0x04000000,    /* 15: APPID_SESSION_CLIENT_DETECTED */
         0x10000000,    /* 16: APPID_SESSION_NOT_A_SERVICE */
@@ -183,7 +183,8 @@ DetectorFlowUserData *pushDetectorFlowUserData (lua_State *L)
 #endif
         memset(pLuaData, 0, sizeof(*pLuaData));
 
-        if ((pLuaData->pDetectorFlow = (DetectorFlow *)calloc(1, sizeof(DetectorFlow))) == NULL)
+        if ((pLuaData->pDetectorFlow = (DetectorFlow *)_dpd.snortAlloc(1,
+            sizeof(*pDetectorFlow), PP_APP_ID, PP_MEM_CATEGORY_SESSION)) == NULL)
         {
             lua_pop(L, -1);
 
@@ -330,7 +331,7 @@ void freeDetectorFlow(
 #ifdef LUA_DETECTOR_DEBUG
         _dpd.debugMsg(DEBUG_LOG,"DetectorFlow %p: freeing\n\n",pDetectorFlow);
 #endif
-    free(pDetectorFlow);
+    _dpd.snortFree(pDetectorFlow, sizeof(*pDetectorFlow), PP_APP_ID, PP_MEM_CATEGORY_SESSION);
 
 }
 
@@ -497,7 +498,7 @@ static int DetectorFlow_getFlowKey(
 
 
 
-static const luaL_reg DetectorFlow_methods[] = {
+static const luaL_Reg DetectorFlow_methods[] = {
   /* Obsolete API names.  No longer use these!  They are here for backward
    * compatibility and will eventually be removed. */
   /*  - "new" is now "createFlow" (below) */
@@ -544,7 +545,7 @@ static int DetectorFlow_tostring (
   return 1;
 }
 
-static const luaL_reg DetectorFlow_meta[] = {
+static const luaL_Reg DetectorFlow_meta[] = {
   {"__gc",       DetectorFlow_gc},
   {"__tostring", DetectorFlow_tostring},
   {0, 0}

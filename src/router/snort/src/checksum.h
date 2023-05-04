@@ -3,7 +3,7 @@
 ** Copyright (C) 2000,2001 Christopher Cramer <cec@ee.duke.edu>
 ** Snort is Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton <mnorton@sourcefire.com>
 **
@@ -598,6 +598,32 @@ static inline unsigned short in_chksum_icmp6(pseudoheader6 *ph,
 
 
   return (unsigned short)(~cksum);
+}
+
+static inline uint16_t ones_compl_checksum(const char *buf, unsigned size)
+{
+    unsigned sum = 0;
+    int i;
+
+    /* Accumulate checksum */
+    for (i = 0; i < size - 1; i += 2)
+    {
+        uint16_t word16 = *(uint16_t *) &buf[i];
+        sum += word16;
+    }
+
+    /* Handle odd-sized case */
+    if (size & 1)
+    {
+        uint16_t word16 = (unsigned char) buf[i];
+        sum += word16;
+    }
+
+    /* Fold to get the ones-complement result */
+    while (sum >> 16) sum = (sum & 0xFFFF)+(sum >> 16);
+
+    /* Invert to get the negative in ones-complement arithmetic */
+    return (uint16_t)(~sum);
 }
 
 

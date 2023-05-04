@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -38,6 +38,7 @@
 #include "util.h"
 #include "mstring.h"
 #include "parser.h"
+#include "memory_stats.h"
 
 #include "sfutil/strvec.h"
 
@@ -307,7 +308,7 @@ static uint8_t* convertTextToHex(char *text, int *size)
         ParseError("No hexmode argument.");
     }
 
-    hex = (uint8_t*) SnortAlloc(num_toks);
+    hex = (uint8_t*) SnortPreprocAlloc(1, num_toks, PP_FILE, PP_MEM_CATEGORY_SESSION);
     *size = num_toks;
 
     memset(hex_buf, 0, sizeof(hex_buf));
@@ -405,8 +406,8 @@ static void ParseFileContent(RuleInfo *rule, char *args)
         for (predata = rule->magics; predata->next != NULL;
                 predata = predata->next);
     }
-
-    newdata = SnortAlloc(sizeof(*newdata));
+    
+    newdata = SnortPreprocAlloc(1, sizeof(*newdata), PP_FILE, PP_MEM_CATEGORY_SESSION);
 
     DEBUG_WRAP(DebugMessage(DEBUG_FILE,"Content args: %s\n", start_ptr););
 
@@ -521,7 +522,8 @@ static int file_rule_print(RuleInfo *rule)
     {
         int i;
         int buff_size = mdata->content_len * 2 + 1;
-        char *buff = SnortAlloc( buff_size);
+	char *buff = SnortPreprocAlloc(1, buff_size, PP_FILE, 
+                PP_MEM_CATEGORY_SESSION);
         char *start_ptr = buff;
 
         DebugMessage(DEBUG_FILE,"Magic offset: %d\n", mdata->offset);
@@ -534,7 +536,7 @@ static int file_rule_print(RuleInfo *rule)
             buff_size -= num_read;
         }
         DebugMessage(DEBUG_FILE,"Magic content: %s\n", buff);
-        free(buff);
+        SnortPreprocFree(buff, buff_size, PP_FILE, PP_MEM_CATEGORY_SESSION);
     }
     return rule->id;
 }
@@ -547,7 +549,8 @@ __add_id_to_list( uint32_t **list, uint32_t *list_size, const uint32_t id )
 
     (*list_size)++;
     _temp = *list;
-
+    
+    /* Not accounting this realloc and free for memory serviceability because of infra limitation*/
     if ( (*list = realloc(_temp, sizeof(**list)*(*list_size))) == NULL )
     {
         free(_temp);
@@ -662,8 +665,7 @@ void file_rule_parse(char *args, FileConfig* file_config)
     {
         return;
     }
-
-    rule = SnortAlloc(sizeof (*rule));
+    rule = SnortPreprocAlloc(1, sizeof (*rule), PP_FILE, PP_MEM_CATEGORY_SESSION);
     DEBUG_WRAP(DebugMessage(DEBUG_FILE,"Loading file configuration: %s\n",
             args););
 
@@ -726,15 +728,15 @@ static void _free_file_magic (MagicData  *magics)
     if (!magics)
         return;
     _free_file_magic(magics->next);
-    free (magics->content);
-    free (magics);
+    SnortPreprocFree(magics->content, sizeof(magics->content_len), PP_FILE, PP_MEM_CATEGORY_SESSION);
+    SnortPreprocFree(magics , sizeof(MagicData), PP_FILE, PP_MEM_CATEGORY_SESSION);
 }
 
 static void _free_file_rule(RuleInfo *rule)
 {
     if ( !rule )
         return;
-
+    /* Not changing the free here because memory is allocated using strdup */
     if ( rule->category )
         free(rule->category);
 
@@ -751,7 +753,7 @@ static void _free_file_rule(RuleInfo *rule)
             StringVector_Delete(rule->groups);
 
     _free_file_magic(rule->magics);
-    free(rule);
+    SnortPreprocFree(rule, sizeof(RuleInfo), PP_FILE, PP_MEM_CATEGORY_SESSION);
 }
 
 void file_rule_free(FileConfig* file_config)

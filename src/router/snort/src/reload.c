@@ -2,7 +2,7 @@
  **
  **  reload.c
  **
- **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  **
  **  This program is free software; you can redistribute it and/or modify
  **  it under the terms of the GNU General Public License Version 2 as
@@ -23,6 +23,10 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifdef HAVE_GETTID
+#define _GNU_SOURCE
 #endif
 
 #include <stdio.h>
@@ -130,8 +134,8 @@ int ReloadAdjustSessionRegister(SnortConfig* sc, const char* raName, tSfPolicyId
 
 #endif
 
-#if defined(SNORT_RELOAD) && !defined(WIN32) && defined(CONTROL_SOCKET)
-static volatile int reloadInProgress = 0;
+#if defined(SNORT_RELOAD) && !defined(WIN32) 
+volatile bool reloadInProgress = false;
 static pthread_mutex_t reload_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
@@ -140,6 +144,15 @@ static volatile int snort_swapped = 0;
 SnortConfig *snort_conf_new = NULL;
 static SnortConfig *snort_conf_old = NULL;
 #endif
+
+bool SnortDynamicLibsChanged(void)
+{
+#ifdef SNORT_RELOAD
+    if (detection_lib_changed)
+        return true;
+#endif
+    return false;
+}
 
 void CheckForReload(void)
 {
@@ -184,6 +197,8 @@ void CheckForReload(void)
 #endif
 
         snort_swapped = 1;
+         setNapRuntimePolicy( getParserPolicy(snort_conf) );
+         setIpsRuntimePolicy( getParserPolicy(snort_conf) );
 
         /* Do any reload for plugin data */
         idxPlugin = plugin_reload_funcs;
@@ -225,8 +240,8 @@ static int VerifyLibInfos(DynamicLibInfo *old_info, DynamicLibInfo *new_info)
                 if ((strcmp(old_path->path, new_path->path) == 0) &&
                     (old_path->ptype == new_path->ptype))
                 {
-                    if (old_path->last_mod_time != new_path->last_mod_time)
-                        return -1;
+                   if (old_path->last_mod_time != new_path->last_mod_time)
+                       return -1;
 
                     break;
                 }
@@ -243,6 +258,30 @@ static int VerifyLibInfos(DynamicLibInfo *old_info, DynamicLibInfo *new_info)
 
     return 0;
 }
+
+#if defined(SFLINUX) || defined(WRLINUX)
+static int VerifyDynamicLibInfo(DynamicLibInfo *old_info, DynamicLibInfo *new_info)
+{
+    if ((old_info != NULL) && (new_info != NULL))
+    {
+        if (old_info->type != new_info->type)
+        {
+            FatalError("%s(%d) Incompatible library types.\n",
+                       __FILE__, __LINE__);
+        }
+        if (strcmp(old_info->lib_paths[0]->path, new_info->lib_paths[0]->path) != 0)
+        {
+             return -1;
+        }
+    } 
+    else if (old_info != new_info)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+#endif
 
 static int VerifyOutputs(SnortConfig *old_config, SnortConfig *new_config)
 {
@@ -634,11 +673,14 @@ static int VerifyReload(SnortConfig *sc)
         return -1;
     }
 
+#if defined(SFLINUX) || defined(WRLINUX)
+    if (VerifyDynamicLibInfo(snort_conf->dyn_rules, sc->dyn_rules) == -1)
+#else
     if (VerifyLibInfos(snort_conf->dyn_rules, sc->dyn_rules) == -1)
+#endif
     {
-        ErrorMessage("Snort Reload: Any change to the dynamic detection "
-                     "configuration requires a restart.\n");
-        return -1;
+        LogMessage("Snort Reload: Dynamic detection libs have changed.\n");
+        detection_lib_changed = 1;
     }
 
     if (VerifyLibInfos(snort_conf->dyn_preprocs, sc->dyn_preprocs) == -1)
@@ -734,7 +776,18 @@ static SnortConfig * ReloadConfig(void)
     ParseRules(sc);
     RuleOptParseCleanup();
 
-    ReloadDynamicRules(sc);
+    /* Check if Dynamic detection libs have changed */
+    if (!detection_lib_changed) 
+    {
+        pthread_mutex_lock(&dynamic_rules_lock);
+        ReloadDynamicRules(sc);
+        pthread_mutex_unlock(&dynamic_rules_lock);
+    } 
+    else 
+    {
+        ReloadDynamicDetectionLibs(sc);
+        InitDynamicDetectionPlugins(sc);
+    }
 
     /* Handles Fatal Errors itself. */
     SnortEventqNew(sc->event_queue_config, sc->event_queue);
@@ -766,6 +819,8 @@ static SnortConfig * ReloadConfig(void)
 
     FilterConfigPreprocessors(sc);
     PostConfigPreprocessors(sc);
+    
+    sc->udp_ips_port_filter_list = ParseIpsPortList(sc, IPPROTO_UDP);
 
     /* Need to do this after dynamic detection stuff is initialized, too */
     FlowBitsVerify();
@@ -816,6 +871,12 @@ static SnortConfig * ReloadConfig(void)
 
 #ifdef PPM_MGR
     PPM_PRINT_CFG(&sc->ppm_cfg);
+#endif
+
+#if defined(DAQ_VERSION) && DAQ_VERSION > 9
+    // This is needed when PPM is disabled and enabling snort-engine debugs
+    if (!ppm_tpu)
+       ppm_tpu = (PPM_TICKS)get_ticks_per_usec();
 #endif
 
     // Restores the configured logging level, if it was suppressed earlier
@@ -870,7 +931,7 @@ void * ReloadConfigThread(void *data)
             pthread_mutex_lock(&reload_mutex);
             if (!reloadInProgress)
             {
-                reloadInProgress = 1;
+                reloadInProgress = true;
                 pthread_mutex_unlock(&reload_mutex);
 #endif
                 reload_total++;
@@ -909,9 +970,13 @@ void * ReloadConfigThread(void *data)
                      * attached to existing sessions. */
                     SwapPreprocConfigurations(snort_conf);
                     FreeSwappedPreprocConfigurations(snort_conf);
+#if defined (SIDE_CHANNEL) && defined (REG_TEST)
+                    if (snort_conf && snort_conf->file_config)
+                      FileSSConfigFree(snort_conf->file_config);
+#endif
 
 #ifdef CONTROL_SOCKET
-                    reloadInProgress = 0;
+                    reloadInProgress = false;
 #endif
                     /* Get out of the loop and exit */
                     break;
@@ -960,7 +1025,7 @@ void * ReloadConfigThread(void *data)
                     LogMessage("\n");
                 }
 #ifdef CONTROL_SOCKET
-                reloadInProgress = 0;
+                reloadInProgress = false;
             }
             else
                 pthread_mutex_unlock(&reload_mutex);
@@ -984,11 +1049,11 @@ static int ControlSocketReloadConfig(uint16_t type, const uint8_t *data, uint32_
     SnortConfig *new_sc;
 
     pthread_mutex_lock(&reload_mutex);
-    while (reloadInProgress)
+    while (reloadInProgress || SnortIsInitializing())
     {
         sleep(1);
     }
-    reloadInProgress = 1;
+    reloadInProgress = true;
     pthread_mutex_unlock(&reload_mutex);
 
     LogMessage("\n");
@@ -998,7 +1063,7 @@ static int ControlSocketReloadConfig(uint16_t type, const uint8_t *data, uint32_
     new_sc = ReloadConfig();
     if (new_sc == NULL)
     {
-        reloadInProgress = 0;
+        reloadInProgress = false;
         return -1;
     }
     *new_config = (void *)new_sc;
@@ -1033,6 +1098,8 @@ static int ControlSocketReloadSwap(uint16_t type, void *new_config, void **old_c
         snort_conf->raEntry = snort_conf->raSessionEntry;
         snort_conf->raSessionEntry = NULL;
     }
+    setNapRuntimePolicy( getParserPolicy(snort_conf) );
+    setIpsRuntimePolicy( getParserPolicy(snort_conf) );
 #if defined(REG_TEST)  && defined(PPM_MGR)
     if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
     {
@@ -1104,14 +1171,21 @@ static void ControlSocketReloadFree(uint16_t type, void *old_config, struct _THR
     }
 #endif
 
-    while (snort_conf->raEntry)
+    while (snort_conf->raEntry && !snort_exiting )
         sleep(1);
 
-    LogMessage("\n");
-    LogMessage("        --== Reload Complete ==--\n");
-    LogMessage("\n");
+    if( !snort_conf->raEntry )
+    {
+        LogMessage("\n");
+        LogMessage("        --== Reload Complete ==--\n");
+        LogMessage("\n");
+    }
+    else
+    {
+        LogMessage("            Reloading Aborted \n");
+    }
 
-    reloadInProgress = 0;
+    reloadInProgress = false;
 }
 
 #endif

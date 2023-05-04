@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
@@ -32,6 +32,7 @@
 #include "sf_dynamic_meta.h"
 #include "ipv6_port.h"
 #include "obfuscation.h"
+#include "memory_stats.h"
 
 /* specifies that a function does not return
  * used for quieting Visual Studio warnings
@@ -55,7 +56,7 @@
 #endif
 #endif
 
-#define PREPROCESSOR_DATA_VERSION 17
+#define PREPROCESSOR_DATA_VERSION 29
 
 #include "sf_dynamic_common.h"
 #include "sf_dynamic_engine.h"
@@ -71,6 +72,7 @@
 #include "idle_processing.h"
 #include "file_api.h"
 #include "reload_api.h"
+#include "smtp_api.h"
 
 struct _PreprocStats;
 
@@ -204,6 +206,7 @@ typedef int (*RegisterIdleHandler)(IdleProcessingHandler);
 #define SND_BLK_RESP_FLAG_DO_SERVER 2
 typedef void (*DynamicSendBlockResponse)(void *packet, const uint8_t* buffer, uint32_t buffer_len, unsigned flags);
 typedef void (*ActiveInjectDataFunc)(void *, uint32_t, const uint8_t *, uint32_t);
+typedef void (*ActiveSendForwardResetFunc)(void *);
 typedef void (*ActiveResponseFunc )(void *, const uint8_t *, uint32_t , uint32_t);
 // NOTE: DynamicActive_ResponseFunc must match func ptr def Active_ResponseFunc in active.h
 typedef void (*DynamicActive_ResponseFunc)(Packet *packet, void* data);
@@ -217,12 +220,28 @@ typedef int (*DynamicModifyFlow)(const DAQ_PktHdr_t *hdr, const DAQ_ModFlow_t* m
 typedef int (*DynamicQueryFlow)(const DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query);
 #endif
 
+#if defined(DAQ_VERSION) && DAQ_VERSION > 8
+typedef void (*DynamicDebugPkt)(uint8_t moduleId, uint8_t logLevel, const DAQ_Debug_Packet_Params_t *params, const char *msg, ...);
+#endif
+
+#if defined(DAQ_VERSION) && DAQ_VERSION > 9
+typedef int (*DynamicIoctl)(unsigned int type, char *buffer, size_t *len);
+#endif
+
 typedef int (*DynamicIsStrEmpty)(const char * );
 typedef void (*AddPeriodicCheck)(void (*pp_check_func) (int, void *), void *arg, uint16_t, uint32_t, uint32_t);
 typedef void (*AddPostConfigFuncs)(struct _SnortConfig *, void (*pp_post_config_func) (struct _SnortConfig *, void *), void *arg);
 typedef int (*AddOutPutModule)(const char *filename);
 typedef int (*CanWhitelist)(void);
 
+#if defined(DAQ_CAPA_CST_TIMEOUT)
+typedef bool (*CanGetTimeout)(void);
+typedef void (*GetDaqCapaTimeOutFunc)(bool);
+typedef void (*RegisterGetDaqCapaTimeoutFunc)(GetDaqCapaTimeOutFunc);
+GetDaqCapaTimeOutFunc getDaqCapaTimeoutFnPtr;
+#endif
+
+typedef uint32_t (*GetCapability)(void);
 typedef void (*DisableAllPoliciesFunc)(struct _SnortConfig *);
 typedef int (*ReenablePreprocBitFunc)(struct _SnortConfig *, unsigned int preproc_id);
 typedef int (*DynamicCheckValueInRangeFunc)(const char *, char *,
@@ -264,6 +283,11 @@ typedef void (*GetIntfDataFunc)(void *ssnptr,int32_t *ingressIntfIndex, int32_t 
                 int32_t *ingressZoneIndex, int32_t *egressZoneIndex) ;
 typedef void (*RegisterGetIntfDataFunc)(GetIntfDataFunc);
 
+typedef void (*SetTlsHostAppIdFunc)(void *ssnptr, const char *serverName, const char *commonName,
+            const char *orgName, const char *subjectAltName, bool isSniMismatch,
+            int32_t *serviceAppId, int32_t *clientAppId, int32_t *payloadAppId);
+typedef void (*RegisterSetTlsHostAppIdFunc)(SetTlsHostAppIdFunc);
+
 //
 // SSL Callbacks
 //
@@ -272,8 +296,8 @@ typedef void (*DynamicSetSSLPolicyEnabledFunc)(struct _SnortConfig *sc, tSfPolic
 typedef void (*SetSSLCallbackFunc)(void *);
 typedef void* (*GetSSLCallbackFunc)(void);
 
-typedef int (*_LoadLibraryFunc)(const char * const path, int indent);
-typedef void (*LoadAllLibsFunc)(const char * const path, _LoadLibraryFunc loadFunc);
+typedef int (*_LoadLibraryFunc)(struct _SnortConfig *sc, const char * const path, int indent);
+typedef void (*LoadAllLibsFunc)(struct _SnortConfig *sc, const char * const path, _LoadLibraryFunc loadFunc);
 typedef void * _PluginHandle;
 typedef _PluginHandle (*OpenDynamicLibraryFunc)(const char * const library_name, int useGlobal);
 typedef void (*_dlsym_func)(void);
@@ -291,6 +315,10 @@ typedef bool (*ReadModeFunc)(void);
 
 typedef int (*GetPerfIndicatorsFunc)(void *Request);
 
+typedef uint32_t (*GetSnortPacketLatencyFunc)(void);
+
+typedef double (*GetSnortPacketDropPortionFunc)(void);
+
 typedef bool (*IsTestModeFunc)(void);
 
 typedef struct _SnortConfig* (*GetCurrentSnortConfigFunc)(void);
@@ -305,8 +333,27 @@ typedef int (*ReloadAdjustRegisterFunc)(struct _SnortConfig* sc, const char* raN
                                         void *raUserData, ReloadAdjustUserFreeFunc raUserFreeFunc); 
 #endif
 
+typedef int (*DynamicSetPreserveFlow)(const void* p);
+
 // IPrep Last update count
 typedef void (*IprepUpdateCountFunc)(uint8_t);
+
+typedef int (*RegisterMemoryStatsFunc)(uint preproc,
+                                       int (*MemoryStatsDisplayFunc)(FILE *fd,
+                                                                     char *buffer,
+                                                                     PreprocMemInfo *meminfo));
+
+typedef void* (*SnortAllocFunc)(int num, unsigned long size, uint32_t preproc, uint32_t data);
+
+typedef void (*SnortFreeFunc)(void * ptr, uint32_t size, uint32_t preproc, uint32_t data);
+typedef bool (*ReputationProcessExternalIpFunc)(void *p, sfaddr_t* ip);
+typedef void (*RegisterReputationProcessExternalFunc)(ReputationProcessExternalIpFunc);
+typedef int (*ReputationGetEntryCountFunc)(void);
+typedef void (*RegisterReputationGetEntryCountFunc)(ReputationGetEntryCountFunc);
+/* FTP data transfer mode */
+typedef bool (*ftpGetModefunc)(void *ssnptr);
+typedef void (*RegisterFtpQueryModefunc)(ftpGetModefunc);
+typedef void (*LogMsgThrottled)(void*, const char *, ...);
 
 #define ENC_DYN_FWD 0x80000000
 #define ENC_DYN_NET 0x10000000
@@ -333,6 +380,7 @@ typedef struct _DynamicPreprocessorData
     LogMsgFunc errMsg;
     LogMsgFunc fatalMsg;
     DebugMsgFunc debugMsg;
+    LogMsgThrottled errMsgThrottled;
 
     PreprocRegisterFunc registerPreproc;
 #ifdef SNORT_RELOAD
@@ -479,6 +527,15 @@ typedef struct _DynamicPreprocessorData
 #ifdef HAVE_DAQ_QUERYFLOW
     DynamicQueryFlow dynamicQueryFlow;
 #endif
+
+#if defined(DAQ_VERSION) && DAQ_VERSION > 8
+    DynamicDebugPkt dynamicDebugPkt;
+#endif
+
+#if defined(DAQ_VERSION) && DAQ_VERSION > 9
+    DynamicIoctl dynamicIoctl;
+#endif
+
     AddPeriodicCheck addPeriodicCheck;
     AddPostConfigFuncs addPostConfigFunc;
     AddToPostConfList addFuncToPostConfigList;
@@ -496,6 +553,7 @@ typedef struct _DynamicPreprocessorData
 #ifdef ACTIVE_RESPONSE
     ActiveInjectDataFunc activeInjectData;
     ActiveResponseFunc activeSendResponse;
+    ActiveSendForwardResetFunc activeSendForwardReset;
     ActiveQueueResponseFunc activeQueueResponse;
 #endif
     GetSSLCallbackFunc getSSLCallback;
@@ -534,6 +592,8 @@ typedef struct _DynamicPreprocessorData
 
     /* Preproc's fetch Snort performance indicators.  Used by IAB. */
     GetPerfIndicatorsFunc getPerfIndicators;
+    GetSnortPacketLatencyFunc getPacketLatency;
+    GetSnortPacketDropPortionFunc getPacketDropPortion;
 
     LoadAllLibsFunc loadAllLibs;
     OpenDynamicLibraryFunc openDynamicLibrary;
@@ -556,14 +616,40 @@ typedef struct _DynamicPreprocessorData
     uint32_t traceMax;
     AddPktTraceDataFunc addPktTrace;
     GetPktTraceActionMsgFunc getPktTraceActionMsg;
-    IprepUpdateCountFunc setIPRepUpdateCount;
+
+#ifdef SNORT_RELOAD
     ReloadAdjustRegisterFunc reloadAdjustRegister;
+#endif
+
+#ifdef DAQ_MODFLOW_TYPE_PRESERVE_FLOW
+    DynamicSetPreserveFlow setPreserveFlow;
+#endif
+    IprepUpdateCountFunc setIPRepUpdateCount;
+    RegisterMemoryStatsFunc registerMemoryStatsFunc;
+    SnortAllocFunc snortAlloc;
+    SnortFreeFunc snortFree;
+#if defined(DAQ_CAPA_CST_TIMEOUT)
+    CanGetTimeout canGetTimeout;
+    RegisterGetDaqCapaTimeoutFunc registerGetDaqCapaTimeout;
+#endif
+    GetCapability getCapability;
+
+    ReputationGetEntryCountFunc reputation_get_entry_count;
+    RegisterReputationGetEntryCountFunc registerReputationGetEntryCount;
+    ReputationProcessExternalIpFunc reputation_process_external_ip;
+    RegisterReputationProcessExternalFunc registerReputationProcessExternal;
+    RegisterFtpQueryModefunc registerFtpmodeQuery;
+    ftpGetModefunc ftpGetMode;
+    
+    SetTlsHostAppIdFunc setTlsHostAppId;
+    RegisterSetTlsHostAppIdFunc registerSetTlsHostAppId;
+    SmtpAPI *smtpApi;
 } DynamicPreprocessorData;
 
 /* Function prototypes for Dynamic Preprocessor Plugins */
 void CloseDynamicPreprocessorLibs(void);
-int LoadDynamicPreprocessor(const char * const library_name, int indent);
-void LoadAllDynamicPreprocessors(const char * const path);
+int LoadDynamicPreprocessor(struct _SnortConfig *sc, const char * const library_name, int indent);
+void LoadAllDynamicPreprocessors(struct _SnortConfig *sc, const char * const path);
 typedef int (*InitPreprocessorLibFunc)(DynamicPreprocessorData *);
 
 int InitDynamicPreprocessors(void);

@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2012-2013 Sourcefire, Inc.
  *
  * Author: Michael Altizer <maltizer@sourcefire.com>
@@ -33,6 +33,8 @@
 #include "sidechannel_define.h"
 
 #define SIDE_CHANNEL_DATA_VERSION 1
+
+struct _SnortConfig;
 
 typedef int (*RegisterRXHandler)(uint16_t type, SCMProcessMsgFunc processMsgFunc, void *data);
 typedef int (*RegisterTXHandler)(uint16_t type, SCMProcessMsgFunc processMsgFunc, void *data);
@@ -80,9 +82,9 @@ typedef struct _DynamicSideChannelData
 } DynamicSideChannelData;
 
 /* Function prototypes for Dynamic Detection Plugins */
-int LoadDynamicSideChannelLib(const char * const library_name, int indent);
+int LoadDynamicSideChannelLib(struct _SnortConfig *sc, const char * const library_name, int indent);
 void CloseDynamicSideChannelLibs(void);
-void LoadAllDynamicSideChannelLibs(const char * const path);
+void LoadAllDynamicSideChannelLibs(struct _SnortConfig *sc, const char * const path);
 void RemoveDuplicateSideChannelPlugins(void);
 int InitDynamicSideChannelPlugins(void);
 

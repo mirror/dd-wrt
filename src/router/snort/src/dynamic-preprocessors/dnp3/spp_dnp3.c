@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -149,6 +149,13 @@ static void DNP3RegisterPortsWithSession( struct _SnortConfig *sc, dnp3_config_t
     }
 }
 
+#ifdef REG_TEST
+static inline void PrintDNP3Size(void)
+{
+    _dpd.logMsg("\nDNP3 Session Size: %lu\n", (long unsigned int)sizeof(dnp3_session_data_t));
+}
+#endif
+
 /* Allocate memory for preprocessor config, parse the args, set up callbacks */
 static void DNP3Init(struct _SnortConfig *sc, char *argp)
 {
@@ -160,6 +167,10 @@ static void DNP3Init(struct _SnortConfig *sc, char *argp)
     dnp3_policy = DNP3PerPolicyInit(sc, dnp3_context_id);
 
     ParseDNP3Args(sc, dnp3_policy, argp);
+
+#ifdef REG_TEST
+    PrintDNP3Size();
+#endif
 
     PrintDNP3Config(dnp3_policy);
 
@@ -261,6 +272,11 @@ static void DNP3InitializeMempool(tSfPolicyUserContextId context_id)
             max_sessions = default_config->memcap / sizeof(dnp3_session_data_t);
 
             dnp3_mempool = (MemPool *)malloc(sizeof(MemPool));
+            if (!dnp3_mempool)
+            {
+                DynamicPreprocessorFatalMessage("DNP3InitializeMempool: "
+                        "Unable to allocate memory for dnp3 mempool\n");
+            }
             //mempool is set to 0 in init
             if (mempool_init(dnp3_mempool, max_sessions, sizeof(dnp3_session_data_t)))
             {

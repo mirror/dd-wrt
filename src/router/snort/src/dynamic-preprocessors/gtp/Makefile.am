@@ -34,6 +34,7 @@ gtp_buffer_dump.c
 endif
 
 EXTRA_DIST = \
+sf_gtp.vcxproj \
 sf_gtp.dsp
 
 

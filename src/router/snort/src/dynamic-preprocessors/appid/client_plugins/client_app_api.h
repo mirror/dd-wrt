@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,10 @@ typedef CLIENT_APP_RETCODE (*RNAClientAppFCN)(const uint8_t *, uint16_t, const i
                                               tAppIdData *session, SFSnortPacket *pkt, struct _Detector *userData,
                                               const struct appIdConfig_ *pConfig);
 
+typedef int (*RNAClientAppCallbackFCN)(const uint8_t *, uint16_t, const int, tAppIdData *session,
+                                       const SFSnortPacket *pkt, struct _Detector *userData,
+                                       const struct appIdConfig_ *pConfig);
+
 typedef struct _INIT_CLIENT_API
 {
     void (*RegisterPattern)(RNAClientAppFCN fcn, uint8_t proto,
@@ -66,6 +70,7 @@ typedef struct _INIT_CLIENT_API
                                   const uint8_t * const pattern, unsigned size, int position,
                                   struct appIdConfig_ *pConfig);
     void (*RegisterAppId)(RNAClientAppFCN fcn, tAppId appId, uint32_t additionalInfo, struct appIdConfig_ *pConfig);
+    void (*RegisterDetectorCallback)(RNAClientAppCallbackFCN fcn, tAppId appId, struct _Detector *userdata, struct appIdConfig_ *pConfig);
     int debug;
     uint32_t instance_id;
     struct appIdConfig_ *pAppidConfig;  ///< AppId context for which this API should be used
@@ -88,7 +93,7 @@ typedef void (*RNAClientAppCleanFCN)(const CleanClientAppAPI * const);
 
 typedef void *(*ClientAppFlowdataGet)(tAppIdData *, unsigned);
 typedef int (*ClientAppFlowdataAdd)(tAppIdData *, void *, unsigned, AppIdFreeFCN);
-typedef void (*ClientAppAddApp)(tAppIdData *, tAppId, tAppId, const char *);
+typedef void (*ClientAppAddApp)(SFSnortPacket *p, int direction, const struct appIdConfig_ *pConfig, tAppIdData *, tAppId, tAppId, const char *);
 typedef void (*ClientAppAddInfo)(tAppIdData *, const char *);
 typedef void (*ClientAppAddUser)(tAppIdData *, const char *, tAppId, int);
 typedef void (*ClientAppAddPayload) (tAppIdData *, tAppId);
@@ -106,7 +111,7 @@ typedef struct _CLIENT_APP_API
 typedef struct RNAClientAppRecord_
 {
     struct RNAClientAppRecord_ *next;
-    const struct RNAClientAppModule *module;
+    struct RNAClientAppModule *module;
 } RNAClientAppRecord;
 
 typedef struct RNAClientAppModule
@@ -116,6 +121,8 @@ typedef struct RNAClientAppModule
     RNAClientAppInitFCN init;
     RNAClientAppCleanFCN clean;
     RNAClientAppFCN validate;
+    RNAClientAppCallbackFCN detectorCallback;
+    bool detectorContext;
     unsigned minimum_matches;
     const ClientAppApi *api;
     struct _Detector*  userData;

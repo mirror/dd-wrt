@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -705,7 +705,11 @@ PortObject * PortObjectDupPorts( PortObject * po )
       {
         poinew = PortObjectItemDup( poi );
         if(!poinew)
-              return 0;
+        {
+            free (ponew->name);
+            free (ponew);
+            return NULL;
+        }
         PortObjectAddItem( ponew, poinew, NULL );
       }
     }
@@ -994,7 +998,7 @@ int PortObjectIncludesPort (PortObject * po, int port )
 
 /*
  *  Locate a PortObject by Port number , this only locates the 1st one
- *  This was a hack fro testing....
+ *  This was a hack for testing....
  */
 PortObject * PortTableFindPortObjectByPort(  PortTable * p , int port )
 {
@@ -1218,7 +1222,7 @@ char * PortObjectCharPortArray ( char * parray, PortObject * po, int * nports )
  *  on or off.
  */
 static
-SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
+SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n, int nports )
 {
    int i, lport ,hport;
    SF_LIST        * plist;
@@ -1228,18 +1232,20 @@ SF_LIST * PortObjectItemListFromCharPortArray( char * parray, int n )
    if( !plist )
        return 0;
 
-   for(i=0;i<n;i++)
+   for(i=0; (i<n) && (nports > 0); i++)
    {
        if( parray[i] == 0 ) continue;
 
        /* Either a port or the start of a range */
        lport = hport = i;
+       nports--;
 
        for(i++;i<n;i++)
        {
            if( parray[i] )
            {
                hport = i;
+               nports--;
                continue;
            }
            break;
@@ -1297,11 +1303,15 @@ int PortObjectRemovePorts( PortObject * a,  PortObject * b )
 
     for(i=0;i<SFPO_MAX_PORTS;i++)
     {
-       if( pB[i] ) pA[i] = 0; /* remove portB from A */
+       if( pB[i] )
+       {
+           pA[i] = 0; /* remove portB from A */
+           nportsa--;
+       }
     }
 
     /* Convert the array into a Port Object list */
-    plist = PortObjectItemListFromCharPortArray( pA, SFPO_MAX_PORTS );
+    plist = PortObjectItemListFromCharPortArray( pA, SFPO_MAX_PORTS, nportsa );
 
     /* Release the old port list */
     sflist_free_all( a->item_list, free );
@@ -1337,7 +1347,7 @@ int  PortObjectNormalize (PortObject * po )
      PortObjectCharPortArray ( parray, po, &nports );
 
      /* Convert the array into a Port Object list */
-     plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS );
+     plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS, nports );
      if( !plist )
          return -1;
 
@@ -1380,7 +1390,8 @@ int  PortObjectNegate (PortObject * po )
      }
 
      /* Convert the array into a Port Object list */
-     plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS );
+     plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS,
+         SFPO_MAX_PORTS - nports );
 
      /* Release the old port list */
      sflist_free_all( po->item_list, free );
@@ -2150,6 +2161,106 @@ PortObject2 * PortTableCompileMergePortObjectList2(SFGHASH   * mhash,
 
     return ponew;
 }
+
+static inline void add_port_object(SF_LIST **parray, int port, PortObject *po)
+{
+    if (!parray[port])
+    {
+        parray [port] = (SF_LIST*) sflist_new();
+        if ( !parray[port] )
+            return;
+    }
+
+    if (parray[port]->tail && (parray[port]->tail->ndata == po))
+        return;
+
+    sflist_add_tail( parray [port], po );
+}
+
+// Update port object lists
+static inline void update_port_lists(SF_LIST **parray, PortObject *po)
+{
+    PortObjectItem *poi;
+    int port;
+    bool not_flag_set = FALSE;
+
+    for(poi=(PortObjectItem*)sflist_first(po->item_list);
+        poi != 0;
+        poi=(PortObjectItem*)sflist_next(po->item_list) )
+    {
+        if( poi->type == PORT_OBJECT_ANY)
+            return;
+
+        else if( poi->type == PORT_OBJECT_PORT)
+        {
+            if (poi->flags & PORT_OBJECT_NOT_FLAG)
+            {
+                not_flag_set = TRUE;
+                break;
+            }
+
+            add_port_object(parray, poi->lport, po);
+
+        }
+        else if( poi->type == PORT_OBJECT_RANGE)
+        {
+            if (poi->flags & PORT_OBJECT_NOT_FLAG)
+            {
+                not_flag_set = TRUE;
+                break;
+            }
+
+            for( port = poi->lport; port <= poi->hport; port++ )
+            {
+                add_port_object(parray, port, po);
+            }
+
+        }
+    }
+
+    if (not_flag_set)
+    {
+        for( port = 0; port < SFPO_MAX_PORTS; port++ )
+        {
+            add_port_object(parray, port, po);
+        }
+    }
+}
+
+// Create optimized port lists per port
+static inline SF_LIST **create_port_lists(PortTable * p)
+{
+    PortObject *po;
+    SF_LNODE   *lpos;
+
+    SF_LIST **parray = calloc(sizeof(SF_LIST *),SFPO_MAX_PORTS);
+
+    if(!parray)
+        return NULL;
+
+    /* Build a list of port objects touching port 'i' */
+    for(po=sflist_firstpos(p->pt_polist,&lpos);
+        po;
+        po=sflist_nextpos(p->pt_polist,&lpos) )
+    {
+        update_port_lists(parray, po);
+    }
+
+    return parray;
+}
+
+static inline void delete_port_lists(SF_LIST **parray)
+{
+    int port;
+
+    for( port = 0; port < SFPO_MAX_PORTS; port++ )
+    {
+        SF_LIST *list = (SF_LIST *) parray[port];
+        if (list)
+            sflist_free(list);
+    }
+}
+
 /*
  *
  *
@@ -2169,6 +2280,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
     int          pol_cnt;
     char  *      parray = NULL;
     int i;
+    SF_LIST **optimized_pl;
 
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"***\n***Merging PortObjects->PortObjects2\n***\n"););
 
@@ -2206,6 +2318,11 @@ int PortTableCompileMergePortObjects( PortTable * p )
 
     p->pt_plx_list = plx_list;
 
+    optimized_pl = create_port_lists(p);
+    if(!optimized_pl)
+    {
+        FatalError("Memory error in PortTableCompile()\n");
+    }
     /*
      *  For each port, merge rules from all port objects that touch the port
      *  into an optimal object, that may be shared with other ports.
@@ -2216,18 +2333,16 @@ int PortTableCompileMergePortObjects( PortTable * p )
 
         /* Build a list of port objects touching port 'i' */
         pol_cnt = 0;
-        for(po=sflist_firstpos(p->pt_polist,&lpos);
+        for(po=sflist_firstpos(optimized_pl[i],&lpos);
             po;
-            po=sflist_nextpos(p->pt_polist,&lpos) )
+            po=sflist_nextpos(optimized_pl[i],&lpos) )
         {
-            if( PortObjectHasPort ( po, i  ) )
+            if( pol_cnt < SFPO_MAX_LPORTS )
             {
-                if( pol_cnt < SFPO_MAX_LPORTS )
-                {
-                    pol[ pol_cnt++ ] = po;
-                }
+                pol[ pol_cnt++ ] = po;
             }
         }
+
         p->pt_port_object[i] = 0;
 
         if( !pol_cnt )
@@ -2252,6 +2367,8 @@ int PortTableCompileMergePortObjects( PortTable * p )
         DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"\n");fflush(stdout););
     }
 
+    delete_port_lists(optimized_pl);
+    free(optimized_pl);
     /*
      * Normalize the Ports so they indicate only the ports that
      * reference the composite port object
@@ -2324,6 +2441,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
     {
         SF_LIST     * plist;
         PortObject2 * po;
+        int nports;
 
         po = (PortObject2*)node->data;
         if( !po )
@@ -2342,11 +2460,13 @@ int PortTableCompileMergePortObjects( PortTable * p )
 
         /* Convert the bitop bits to a char array */
         memset(parray,0,SFPO_MAX_PORTS);
+        nports = 0;
         for(i=0;i<SFPO_MAX_PORTS;i++)
         {
           if(  boIsBitSet(po->bitop, i ) )
           {
              parray[ i ] = 1;
+             nports++;
           }
         }
 
@@ -2364,7 +2484,7 @@ int PortTableCompileMergePortObjects( PortTable * p )
         }
 
         /* Build a PortObjectItem list from the char array */
-        plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS );
+        plist = PortObjectItemListFromCharPortArray( parray, SFPO_MAX_PORTS, nports);
         if( !plist )
         {
            FatalError("MergePortObjects: No PortObjectItems in portobject\n");
@@ -2536,7 +2656,7 @@ int PortTableConsistencyCheck( PortTable *p )
 *
 * This builds a set of Port+Rule objects that are in some way an optimal
 * set of objects to indicate which rules to apply to which ports. Since
-* these groups are calculated consistency checking is done witht he finished
+* these groups are calculated consistency checking is done with the finished
 * objects.
 */
 int PortTableCompile( PortTable * p )
@@ -2558,7 +2678,8 @@ int PortTableCompile( PortTable * p )
 
     DEBUG_WRAP(DebugMessage(DEBUG_PORTLISTS,"Done\n");fflush(stdout););
 
-    PortTableConsistencyCheck(p);
+    if(ScTestMode())
+        PortTableConsistencyCheck(p);
 
     return 0;
 }
@@ -2620,7 +2741,10 @@ void RuleListSortUniq(
 
     currNode = sflist_firstpos(rl,&pos);
     if (currNode == NULL)
+    {
+        free(rlist);
         return;
+    }
 
     for(i=0; i < rl->count; i++)
     {
@@ -3733,7 +3857,10 @@ PortVarTable * PortVarTableCreate(void)
     /* Create default port objects */
     po = PortObjectNew();
     if( !po )
+    {
+         sfghash_delete(h);
          return 0;
+    }
 
     /* Default has an ANY port */
     PortObjectAddPortAny( po );

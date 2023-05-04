@@ -69,3 +69,4 @@ libsfutil_a_SOURCES = \
     $(OPENSSL_SHA)
 
 INCLUDES = @INCLUDES@
+

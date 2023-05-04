@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -371,8 +371,12 @@ static void ShutdownSegment(int32_t segment_num)
     mgmt_ptr->segment[segment_num].active  = 0;
     mgmt_ptr->segment[segment_num].version = 0;
 
-    munmap(mgmt_ptr->instance[shmusr_ptr->instance_num].shmemSegmentPtr[segment_num],
-        mgmt_ptr->segment[segment_num].size);
+    if (mgmt_ptr->instance[shmusr_ptr->instance_num].shmemSegmentPtr[segment_num] !=
+                    mgmt_ptr->instance[shmusr_ptr->instance_num].shmemZeroPtr) {
+        munmap(mgmt_ptr->instance[shmusr_ptr->instance_num].shmemSegmentPtr[segment_num],
+                mgmt_ptr->segment[segment_num].size);
+    }
+
     ShmemDestroy(shmusr_ptr->dataSeg[segment_num]);
 
     mgmt_ptr->segment[segment_num].size = 0;

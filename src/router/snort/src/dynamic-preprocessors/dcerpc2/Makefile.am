@@ -74,6 +74,7 @@ endif
 
 
 EXTRA_DIST = \
+sf_dce2.vcxproj \
 sf_dce2.dsp
 
 all-local: $(LTLIBRARIES)

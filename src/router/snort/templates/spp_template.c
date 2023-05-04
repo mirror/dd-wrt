@@ -1,24 +1,24 @@
 /* $Id$ */
 /* Snort Preprocessor Plugin Source File Template */
 
-/* spp_template 
- * 
+/* spp_template
+ *
  * Purpose:
  *
  * Preprocessors perform some function *once* for *each* packet.  This is
  * different from detection plugins, which are accessed depending on the
- * standard rules.  When adding a plugin to the system, be sure to 
- * add the "Setup" function to the InitPreprocessors() function call in 
+ * standard rules.  When adding a plugin to the system, be sure to
+ * add the "Setup" function to the InitPreprocessors() function call in
  * plugbase.c!
  *
  * Arguments:
- *   
- * This is the list of arguements that the plugin can take at the 
+ *
+ * This is the list of arguments that the plugin can take at the
  * "preprocessor" line in the rules file
  *
  * Effect:
  *
- * What the preprocessor does.  Check out some of the default ones 
+ * What the preprocessor does.  Check out some of the default ones
  * (e.g. spp_frag2) for a good example of this description.
  *
  * Comments:
@@ -33,9 +33,13 @@
 #include <rpc/types.h>
 
 /*
- * If you're going to issue any alerts from this preproc you 
+ * If you're going to issue any alerts from this preproc you
  * should include generators.h and event_wrapper.h
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "generators.h"
 #include "event_wrapper.h"
 
@@ -47,7 +51,7 @@
  * put in other inculdes as necessary
  */
 
-/* 
+/*
  * your preprocessor header file goes here if necessary, don't forget
  * to include the header file in plugbase.h too!
  */
@@ -61,13 +65,13 @@ typedef struct _TemplateData
     /* Your struct members here */
 } TemplateData;
 
-/* 
- * If you need to instantiate the preprocessor's 
- * data structure, do it here 
+/*
+ * If you need to instantiate the preprocessor's
+ * data structure, do it here
  */
 TemplateData SomeData;
 
-/* 
+/*
  * function prototypes go here
  */
 
@@ -80,7 +84,7 @@ static void PreprocRestartFunction(int, void *);
 /*
  * Function: SetupTemplate()
  *
- * Purpose: Registers the preprocessor keyword and initialization 
+ * Purpose: Registers the preprocessor keyword and initialization
  *          function into the preprocessor list.  This is the function that
  *          gets called from InitPreprocessors() in plugbase.c.
  *
@@ -91,9 +95,9 @@ static void PreprocRestartFunction(int, void *);
  */
 void SetupTemplate()
 {
-    /* 
-     * link the preprocessor keyword to the init function in 
-     * the preproc list 
+    /*
+     * link the preprocessor keyword to the init function in
+     * the preproc list
      */
     RegisterPreprocessor("keyword", TemplateInit);
 
@@ -116,17 +120,17 @@ static void TemplateInit(u_char *args)
 {
     DebugMessage(DEBUG_PLUGIN,"Preprocessor: Template Initialized\n");
 
-    /* 
-     * parse the argument list from the rules file 
+    /*
+     * parse the argument list from the rules file
      */
     ParseTemplateArgs(args);
 
-    /* 
+    /*
      * perform any other initialization functions that are required here
      */
 
-    /* 
-     * Set the preprocessor function into the function list 
+    /*
+     * Set the preprocessor function into the function list
      */
     AddFuncToPreprocList(PreprocFunction);
     AddFuncToCleanExitList(PreprocCleanExitFunction, NULL);
@@ -138,9 +142,9 @@ static void TemplateInit(u_char *args)
 /*
  * Function: ParseTemplateArgs(char *)
  *
- * Purpose: Process the preprocessor arguements from the rules file and 
+ * Purpose: Process the preprocessor arguments from the rules file and
  *          initialize the preprocessor's data struct.  This function doesn't
- *          have to exist if it makes sense to parse the args in the init 
+ *          have to exist if it makes sense to parse the args in the init
  *          function.
  *
  * Arguments: args => argument list
@@ -163,7 +167,7 @@ static void ParseTemplateArgs(char *args)
  *          as you like.  Try not to destroy the performance of the whole
  *          system by trying to do too much....
  *
- * Arguments: p => pointer to the current packet data struct 
+ * Arguments: p => pointer to the current packet data struct
  *
  * Returns: void function
  *
@@ -173,14 +177,14 @@ static void PreprocFunction(Packet *p)
 
     /* your preproc function goes here.... */
 
-    /* 
-     * if you need to issue an alert from your preprocessor, check out 
+    /*
+     * if you need to issue an alert from your preprocessor, check out
      * event_wrapper.h, there are some useful helper functions there
      */
 }
 
 
-/* 
+/*
  * Function: PreprocCleanExitFunction(int, void *)
  *
  * Purpose: This function gets called when Snort is exiting, if there's
@@ -188,19 +192,19 @@ static void PreprocFunction(Packet *p)
  *          it should be done here.
  *
  * Arguments: signal => the code of the signal that was issued to Snort
- *            data => any arguments or data structs linked to this 
+ *            data => any arguments or data structs linked to this
  *                    functioin when it was registered, may be
  *                    needed to properly exit
- *       
+ *
  * Returns: void function
- */                   
+ */
 static void PreprocCleanExitFunction(int signal, void *data)
 {
        /* clean exit code goes here */
 }
 
 
-/* 
+/*
  * Function: PreprocRestartFunction(int, void *)
  *
  * Purpose: This function gets called when Snort is restarting on a SIGHUP,
@@ -208,12 +212,12 @@ static void PreprocCleanExitFunction(int signal, void *data)
  *          it should be done here.
  *
  * Arguments: signal => the code of the signal that was issued to Snort
- *            data => any arguments or data structs linked to this 
+ *            data => any arguments or data structs linked to this
  *                    functioin when it was registered, may be
  *                    needed to properly exit
- *       
+ *
  * Returns: void function
- */                   
+ */
 static void PreprocRestartFunction(int signal, void *foo)
 {
        /* restart code goes here */

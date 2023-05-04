@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,7 @@
 #include "spp_smtp.h"
 #include "sf_preproc_info.h"
 #include "snort_smtp.h"
+#include "smtp_util.h"
 #include "smtp_config.h"
 #include "smtp_log.h"
 #include "smtp_paf.h"
@@ -63,6 +64,7 @@
 #include "snort_debug.h"
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
+#include "smtp_api.h"
 
 #include "profiler.h"
 #ifdef PERF_PROFILING
@@ -110,6 +112,7 @@ static void SMTPResetStatsFunction(int, void *);
 static void enablePortStreamServices(struct _SnortConfig *, SMTPConfig *, tSfPolicyId);
 static void SMTP_RegXtraDataFuncs(SMTPConfig *config);
 static void SMTP_PrintStats(int);
+static void DisplaySMTPStats (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f);
 #ifdef TARGET_BASED
 static void _addServicesToStreamFilter(struct _SnortConfig *, tSfPolicyId);
 #endif
@@ -126,7 +129,7 @@ static int SMTPReloadVerify(struct _SnortConfig *, void *);
 static void * SMTPReloadSwap(struct _SnortConfig *, void *);
 static void SMTPReloadSwapFree(void *);
 #endif
-
+void SmtpApiInit(SmtpAPI *api);
 
 /*
  * Function: SetupSMTP()
@@ -151,6 +154,12 @@ void SetupSMTP(void)
 #endif
 }
 
+#ifdef REG_TEST
+static inline void PrintSMTPSize(void)
+{
+    _dpd.logMsg("\nSMTP Session Size: %lu\n", (long unsigned int)sizeof(SMTP));
+}
+#endif
 
 /*
  * Function: SMTPInit(char *)
@@ -168,6 +177,12 @@ static void SMTPInit(struct _SnortConfig *sc, char *args)
     SMTPToken *tmp;
     tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
     SMTPConfig * pPolicyConfig = NULL;
+
+#ifdef REG_TEST
+    PrintSMTPSize();
+#endif
+    
+    _dpd.registerMemoryStatsFunc(PP_SMTP, SMTP_Print_Mem_Stats);
 
     if (smtp_config == NULL)
     {
@@ -194,7 +209,7 @@ static void SMTPInit(struct _SnortConfig *sc, char *args)
         _dpd.registerPreprocStats(SMTP_PROTO_REF_STR, SMTP_PrintStats);
         _dpd.addPreprocResetStats(SMTPResetStatsFunction, NULL, PRIORITY_LAST, PP_SMTP);
         _dpd.addPreprocConfCheck(sc, SMTPCheckConfig);
-
+        _dpd.controlSocketRegisterHandler(CS_TYPE_SMTP_STATS, NULL, NULL, &DisplaySMTPStats);
 #ifdef TARGET_BASED
         smtp_proto_id = _dpd.findProtocolReference(SMTP_PROTO_REF_STR);
         if (smtp_proto_id == SFTARGET_UNKNOWN_PROTOCOL)
@@ -219,7 +234,9 @@ static void SMTPInit(struct _SnortConfig *sc, char *args)
         DynamicPreprocessorFatalMessage("Can only configure SMTP preprocessor once.\n");
     }
 
-    pPolicyConfig = (SMTPConfig *)calloc(1, sizeof(SMTPConfig));
+    pPolicyConfig = (SMTPConfig *)_dpd.snortAlloc(1, sizeof(SMTPConfig), PP_SMTP,
+                                       PP_MEM_CATEGORY_CONFIG);
+
     if (pPolicyConfig == NULL)
     {
         DynamicPreprocessorFatalMessage("Not enough memory to create SMTP "
@@ -273,6 +290,7 @@ static void SMTPInit(struct _SnortConfig *sc, char *args)
 #ifdef DUMP_BUFFER
     _dpd.registerBufferTracer(getSMTPBuffers, SMTP_BUFFER_DUMP_FUNC);
 #endif
+    SmtpApiInit(_dpd.smtpApi);
 }
 
 /*
@@ -512,6 +530,49 @@ static int SMTPCheckConfig(struct _SnortConfig *sc)
     return 0;
 }
 
+static void DisplaySMTPStats (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f)
+{
+    char buffer[CS_STATS_BUF_SIZE + 1];
+    int len = 0;
+    if (smtp_stats.sessions) {
+        len += snprintf(buffer, CS_STATS_BUF_SIZE, "SMTP Preprocessor Statistics\n"
+                "  Total sessions                                    : " STDu64 "\n"
+                "  Max concurrent sessions                           : " STDu64 "\n"
+                "  Base64 attachments decoded                        : " STDu64 "\n"
+                "  Total Base64 decoded bytes                        : " STDu64 "\n"
+                "  Quoted-Printable attachments decoded              : " STDu64 "\n"
+                "  Total Quoted decoded bytes                        : " STDu64 "\n"
+                "  UU attachments decoded                            : " STDu64 "\n"
+                "  Total UU decoded bytes                            : " STDu64 "\n"
+                "  Non-Encoded MIME attachments extracted            : " STDu64 "\n"
+                "  Total Non-Encoded MIME bytes extracted            : " STDu64 "\n"
+                , smtp_stats.sessions
+                , smtp_stats.max_conc_sessions
+                , smtp_stats.mime_stats.attachments[DECODE_B64]
+                , smtp_stats.mime_stats.decoded_bytes[DECODE_B64]
+                , smtp_stats.mime_stats.attachments[DECODE_QP]
+                , smtp_stats.mime_stats.decoded_bytes[DECODE_QP]
+                , smtp_stats.mime_stats.attachments[DECODE_UU]
+                , smtp_stats.mime_stats.decoded_bytes[DECODE_UU]
+                , smtp_stats.mime_stats.attachments[DECODE_BITENC]
+                , smtp_stats.mime_stats.decoded_bytes[DECODE_BITENC]);
+
+        if ( smtp_stats.mime_stats.memcap_exceeded )
+            len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len, "  Sessions not decoded due to memory unavailability : "
+                    STDu64 "\n", smtp_stats.mime_stats.memcap_exceeded);
+
+        if ( smtp_stats.log_memcap_exceeded )
+            len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len, "  SMTP Sessions fastpathed due to memcap exceeded: "
+                    STDu64 "\n", smtp_stats.log_memcap_exceeded);
+    } else {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "No available SMTP Sessions\n Total sessions : " STDu64 "\n", smtp_stats.sessions);
+    }
+
+    if (-1 == f(te, (const uint8_t *)buffer, len)) {
+        _dpd.logMsg("Unable to send data to the frontend\n");
+    }
+}
+
 static void SMTP_PrintStats(int exiting)
 {
     _dpd.logMsg("SMTP Preprocessor Statistics\n");
@@ -561,7 +622,9 @@ static void SMTPReload(struct _SnortConfig *sc, char *args, void **new_config)
     if (pPolicyConfig != NULL)
         DynamicPreprocessorFatalMessage("Can only configure SMTP preprocessor once.\n");
 
-    pPolicyConfig = (SMTPConfig *)calloc(1, sizeof(SMTPConfig));
+    pPolicyConfig = (SMTPConfig *)_dpd.snortAlloc(1, sizeof(SMTPConfig), PP_SMTP, 
+                                       PP_MEM_CATEGORY_CONFIG);
+
     if (pPolicyConfig == NULL)
     {
         DynamicPreprocessorFatalMessage("Not enough memory to create SMTP "

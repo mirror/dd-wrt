@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -3835,22 +3835,32 @@ static int DCE2_ScCheckTransport(void *data)
 {
     unsigned int i;
     DCE2_ServerConfig *sc = (DCE2_ServerConfig *)data;
+    uint32_t *smb_ports = (uint32_t *)sc->smb_ports;
+    uint32_t *tcp_ports = (uint32_t *)sc->tcp_ports;
+    uint32_t *udp_ports = (uint32_t *)sc->udp_ports;
+    uint32_t *http_proxy_ports = (uint32_t *)sc->http_proxy_ports;
+    uint32_t *http_server_ports = (uint32_t *)sc->http_server_ports;
+    uint32_t *auto_smb_ports = (uint32_t *)sc->auto_smb_ports;
+    uint32_t *auto_tcp_ports = (uint32_t *)sc->auto_tcp_ports;
+    uint32_t *auto_udp_ports = (uint32_t *)sc->auto_udp_ports;
+    uint32_t *auto_http_proxy_ports = (uint32_t *)sc->auto_http_proxy_ports;
+    uint32_t *auto_http_server_ports = (uint32_t *)sc->auto_http_server_ports;
 
     if (data == NULL)
         return 0;
 
-    for (i = 0; i < DCE2_PORTS__MAX_INDEX - 3; i += 4)
+    for (i = 0; i < DCE2_PORTS__MAX_INDEX >> 2; i++)
     {
-        if (*((uint32_t *)&sc->smb_ports[i]) ||
-            *((uint32_t *)&sc->tcp_ports[i]) ||
-            *((uint32_t *)&sc->udp_ports[i]) ||
-            *((uint32_t *)&sc->http_proxy_ports[i]) ||
-            *((uint32_t *)&sc->http_server_ports[i]) ||
-            *((uint32_t *)&sc->auto_smb_ports[i]) ||
-            *((uint32_t *)&sc->auto_tcp_ports[i]) ||
-            *((uint32_t *)&sc->auto_udp_ports[i]) ||
-            *((uint32_t *)&sc->auto_http_proxy_ports[i]) ||
-            *((uint32_t *)&sc->auto_http_server_ports[i]))
+        if (smb_ports[i] ||
+            tcp_ports[i] ||
+            udp_ports[i] ||
+            http_proxy_ports[i] ||
+            http_server_ports[i] ||
+            auto_smb_ports[i] ||
+            auto_tcp_ports[i] ||
+            auto_udp_ports[i] ||
+            auto_http_proxy_ports[i] ||
+            auto_http_server_ports[i])
         {
             return 0;
         }
@@ -3908,13 +3918,17 @@ int DCE2_ScCheckTransports(DCE2_Config *config)
 static DCE2_Ret DCE2_ScCheckPortOverlap(const DCE2_ServerConfig *sc)
 {
     unsigned int i;
+    uint32_t *smb_ports = (uint32_t *)sc->smb_ports;
+    uint32_t *tcp_ports = (uint32_t *)sc->tcp_ports;
+    uint32_t *http_proxy_ports = (uint32_t *)sc->http_proxy_ports;
+    uint32_t *http_server_ports = (uint32_t *)sc->http_server_ports;
 
     /* All port array masks should be the same size */
-    for (i = 0; i < sizeof(sc->smb_ports) - 3; i += 4)
+    for (i = 0; i < sizeof(sc->smb_ports) >> 2; i++)
     {
         /* Take 4 bytes at a time and bitwise and them.  Should
          * be 0 if there are no overlapping ports. */
-        uint32_t overlap = *((uint32_t *)&sc->smb_ports[i]) & *((uint32_t *)&sc->tcp_ports[i]);
+        uint32_t overlap = smb_ports[i] & tcp_ports[i];
         uint32_t cached;
 
         if (overlap)
@@ -3925,8 +3939,8 @@ static DCE2_Ret DCE2_ScCheckPortOverlap(const DCE2_ServerConfig *sc)
             return DCE2_RET__ERROR;
         }
 
-        cached = *((uint32_t *)&sc->smb_ports[i]) | *((uint32_t *)&sc->tcp_ports[i]);
-        overlap = *((uint32_t *)&sc->http_proxy_ports[i]) & cached;
+        cached = smb_ports[i] | tcp_ports[i];
+        overlap = http_proxy_ports[i] & cached;
 
         if (overlap)
         {
@@ -3936,8 +3950,8 @@ static DCE2_Ret DCE2_ScCheckPortOverlap(const DCE2_ServerConfig *sc)
             return DCE2_RET__ERROR;
         }
 
-        cached |= *((uint32_t *)&sc->http_proxy_ports[i]);
-        overlap = *((uint32_t *)&sc->http_server_ports[i]) & cached;
+        cached |= http_proxy_ports[i];
+        overlap = http_server_ports[i] & cached;
 
         if (overlap)
         {

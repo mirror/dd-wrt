@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  *
@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -55,7 +56,91 @@
 #include "sf_snort_packet.h"
 #include "Unified2_common.h"
 
+#include "memory_stats.h"
+
 extern IMAP *imap_ssn;
+extern MemPool *imap_mempool;
+extern MemPool *imap_mime_mempool;
+
+int IMAP_Print_Mem_Stats(FILE *fd, char *buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time = time(NULL);
+    int len = 0;
+
+    if (fd)
+    {
+        len = fprintf(fd, ",%lu,%lu,%lu"
+                 ",%lu,%u,%u"
+                 ",%lu,%u,%u,%lu"
+                 , imap_stats.sessions
+                 , imap_stats.max_conc_sessions
+                 , imap_stats.cur_sessions
+                 , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                 , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                 , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                 , meminfo[PP_MEM_CATEGORY_SESSION].used_memory +
+                   meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+
+        return len;
+
+    } 
+
+    if (buffer) {
+        /*
+         * Old buffer output for control socket comm,
+         * like via, "show snort preprocessor-memory-usage"
+         * CLI preserved as is
+         */ 
+        len =  snprintf(buffer, CS_STATS_BUF_SIZE, "\n\nMemory Statistics of IMAP on: %s\n"
+             "IMAP Session Statistics:\n"
+             "       Total Sessions seen: " STDu64 "\n"
+             "   Max concurrent sessions: " STDu64 "\n"
+             "   Current Active sessions: " STDu64 "\n"
+             "\n   Memory Pool:\n"
+             "        Free Memory:\n"
+             "            IMAP Mime Pool: %14zu bytes\n"
+             "                 IMAP Pool: %14zu bytes\n"
+             "        Used Memory:\n"
+             "            IMAP Mime Pool: %14zu bytes\n"
+             "                 IMAP Pool: %14zu bytes\n"
+             "        -------------------       ---------------\n"             
+             "        Total Memory:       %14zu bytes\n"
+             , ctime(&curr_time)
+             , imap_stats.sessions
+             , imap_stats.max_conc_sessions
+             , imap_stats.cur_sessions
+             , (imap_mime_mempool) ? (imap_mime_mempool->max_memory - imap_mime_mempool->used_memory) : 0
+             , (imap_mempool) ? (imap_mempool->max_memory - imap_mempool->used_memory) : 0
+             , (imap_mime_mempool) ? imap_mime_mempool->used_memory : 0
+             , (imap_mempool) ? imap_mempool->used_memory : 0
+             , ((imap_mime_mempool) ? (imap_mime_mempool->max_memory) : 0) +
+                          ((imap_mempool) ? (imap_mempool->max_memory) : 0));
+
+        len += PopulateMemStatsBuffTrailer(buffer+len, len, meminfo);
+
+    } else {
+
+        _dpd.logMsg("IMAP Preprocessor Statistics\n");
+        _dpd.logMsg("  Total sessions                : %lu \n", imap_stats.sessions);
+        _dpd.logMsg("  Max concurrent sessions       : %lu \n", imap_stats.max_conc_sessions);
+        _dpd.logMsg("  Current sessions              : %lu \n", imap_stats.cur_sessions);
+        _dpd.logMsg("  IMAP Session \n");
+        _dpd.logMsg("     Used Memory  :%14lu\n", meminfo[PP_MEM_CATEGORY_SESSION].used_memory);
+        _dpd.logMsg("     No of Allocs :%14u\n", meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc);
+        _dpd.logMsg("     No of Frees  :%14u\n", meminfo[PP_MEM_CATEGORY_SESSION].num_of_free);
+        _dpd.logMsg("  IMAP Config \n");
+        _dpd.logMsg("     Used Memory  :%14lu\n", meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+        _dpd.logMsg("     No of Allocs :%14u\n", meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc);
+        _dpd.logMsg("     No of Frees  :%14u\n", meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free);
+        _dpd.logMsg("   Total memory used :%14lu\n", meminfo[PP_MEM_CATEGORY_SESSION].used_memory +
+                                                   meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+
+    }
+    return len;
+}
 
 void IMAP_GetEOL(const uint8_t *ptr, const uint8_t *end,
                  const uint8_t **eol, const uint8_t **eolm)

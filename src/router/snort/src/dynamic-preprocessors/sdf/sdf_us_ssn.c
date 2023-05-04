@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
@@ -199,6 +199,7 @@ int ParseSSNGroups(char *filename, struct _SDFConfig *config)
                 "for SSN groups.\n");
 
         fclose(ssn_file);
+        free(contents);
         return -1;
     }
 

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include "sfxhash.h"
 #include "util.h"
 #include "decode.h"
+#include "memory_stats.h"
 
 #include "spp_session.h"
 #include "session_api.h"
@@ -91,6 +92,7 @@ static SessionCache* udp_lws_cache = NULL;
 static void StreamParseUdpArgs(StreamUdpConfig *, char *, StreamUdpPolicy *);
 static void StreamPrintUdpConfig(StreamUdpPolicy *);
 static int ProcessUdp(SessionControlBlock *, Packet *, StreamUdpPolicy *, SFXHASH_NODE *);
+static int ProcessUdpCreate (Packet *);
 
 #ifdef ENABLE_HA
 
@@ -103,7 +105,11 @@ static SessionControlBlock *StreamUDPCreateSession(const SessionKey *key)
 {
     setNapRuntimePolicy(getDefaultPolicy());
 
-    return session_api->create_session(udp_lws_cache, NULL, key );
+    SessionControlBlock *scb = session_api->create_session(udp_lws_cache, NULL, key );
+    if (scb)
+        s5stats.active_udp_sessions++;
+
+    return scb;
 }
 
 static int StreamUDPDeleteSession(const SessionKey *key)
@@ -113,7 +119,10 @@ static int StreamUDPDeleteSession(const SessionKey *key)
     if (scb)
     {
         if( StreamSetRuntimeConfiguration( scb, scb->protocol ) == 0 )
-            session_api->delete_session( udp_lws_cache, scb, "ha sync" );
+        {
+            session_api->delete_session( udp_lws_cache, scb, "ha sync", false );
+            s5stats.active_udp_sessions--;
+        }
         else
             WarningMessage(" WARNING: Attempt to delete a UDP Session when no valid runtime configuration.\n" );
      }
@@ -165,7 +174,8 @@ void StreamUdpPolicyInit(StreamUdpConfig *config, char *args)
     if (config == NULL)
         return;
 
-    s5UdpPolicy = (StreamUdpPolicy *)SnortAlloc(sizeof(StreamUdpPolicy));
+    s5UdpPolicy = (StreamUdpPolicy *)SnortPreprocAlloc(1,
+                         sizeof(StreamUdpPolicy), PP_STREAM, PP_MEM_CATEGORY_CONFIG);
 
     StreamParseUdpArgs(config, args, s5UdpPolicy);
 
@@ -175,17 +185,21 @@ void StreamUdpPolicyInit(StreamUdpConfig *config, char *args)
     if (config->policy_list == NULL)
     {
         config->policy_list =
-            (StreamUdpPolicy **)SnortAlloc(sizeof(StreamUdpPolicy *));
+            (StreamUdpPolicy **)SnortPreprocAlloc(1, sizeof(StreamUdpPolicy *),
+                                      PP_STREAM, PP_MEM_CATEGORY_CONFIG);
     }
     else
     {
         StreamUdpPolicy **tmpPolicyList =
-            (StreamUdpPolicy **)SnortAlloc(sizeof(StreamUdpPolicy *) * config->num_policies);
+            (StreamUdpPolicy **)SnortPreprocAlloc(config->num_policies,
+                                      sizeof(StreamUdpPolicy *), PP_STREAM,
+                                      PP_MEM_CATEGORY_CONFIG);
 
         memcpy(tmpPolicyList, config->policy_list,
                sizeof(StreamUdpPolicy *) * (config->num_policies - 1));
 
-        free(config->policy_list);
+        SnortPreprocFree(config->policy_list, (config->num_policies - 1) *
+                         sizeof(StreamUdpPolicy *), PP_STREAM, PP_MEM_CATEGORY_CONFIG);
 
         config->policy_list = tmpPolicyList;
     }
@@ -405,6 +419,7 @@ void UdpSessionCleanup(void *ssn)
     session_api->free_application_data(scb);
 
     s5stats.udp_sessions_released++;
+    s5stats.active_udp_sessions--;
 
     RemoveUDPSession(&sfBase);
 }
@@ -473,6 +488,7 @@ static int NewUdpSession(Packet *p,
     session_api->set_expire_timer(p, scb, s5UdpPolicy->session_timeout);
 
     s5stats.udp_sessions_created++;
+    s5stats.active_udp_sessions++;
 
     AddUDPSession(&sfBase);
     if (perfmon_config && (perfmon_config->perf_flags & SFPERF_FLOWIP))
@@ -544,18 +560,31 @@ int StreamProcessUdp( Packet *p, SessionControlBlock *scb,
     if ( !scb->session_established )
     {
         int rc;
+#if defined(DAQ_CAPA_CST_TIMEOUT)
+        uint64_t timeout;
+        if (Daq_Capa_Timeout)
+        {
+          GetTimeout(p,&timeout);
+          s5UdpPolicy->session_timeout = timeout;
+        }
+#endif
+        scb->proto_policy = s5UdpPolicy;
+
         rc = isPacketFilterDiscard( p, s5UdpPolicy->flags & STREAM_CONFIG_IGNORE_ANY );
         if( ( rc == PORT_MONITOR_PACKET_DISCARD ) && !StreamExpectIsExpected( p, &hash_node ) )
         {
             //ignore the packet
+            scb->session_state &= ~STREAM_STATE_PORT_INSPECT;
             UpdateFilteredPacketStats(&sfBase, IPPROTO_UDP);
+            session_api->set_expire_timer(p, scb, s5UdpPolicy->session_timeout);
             PREPROC_PROFILE_END(s5UdpPerfStats);
             return 0;
         }
-
+ 
+        scb->session_state |= STREAM_STATE_PORT_INSPECT;
         scb->session_established = true;
-        scb->proto_policy = s5UdpPolicy;
         s5stats.total_udp_sessions++;
+        s5stats.active_udp_sessions++;
     }
 
     p->ssnptr = scb;
@@ -597,7 +626,6 @@ int StreamProcessUdp( Packet *p, SessionControlBlock *scb,
     }
     MarkupPacketFlags(p, scb);
     session_api->set_expire_timer(p, scb, s5UdpPolicy->session_timeout);
-
     PREPROC_PROFILE_END(s5UdpPerfStats);
 
     return 0;
@@ -721,6 +749,105 @@ static int ProcessUdp( SessionControlBlock *scb, Packet *p, StreamUdpPolicy *s5U
     return ACTION_NOTHING;
 }
 
+int ProcessUdpCreate (Packet *p) 
+{
+   SFXHASH_NODE *hash_node = NULL;
+   SessionControlBlock *scb;
+   StreamUdpPolicy *s5UdpPolicy;
+   PROFILE_VARS;
+
+   scb = p->ssnptr;
+   if (!scb) {
+       DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "[Stream] Could not find Udp session Control block "));
+       return 0;
+   }
+
+   s5UdpPolicy = scb->proto_policy;
+   if (s5UdpPolicy == NULL) {
+       DEBUG_WRAP(DebugMessage(DEBUG_STREAM,
+                               "[Stream] Could not find Udp Policy context "
+                               "for IP %s\n", inet_ntoa(GET_DST_ADDR(p))););
+       return 0; 
+    }
+
+    PREPROC_PROFILE_START(s5UdpPerfStats);
+    scb->session_established = true;
+    s5stats.total_udp_sessions++;
+
+    /*
+     * Check if the session is expired.
+     */
+    if (( scb->session_state & STREAM_STATE_TIMEDOUT )
+        || StreamExpire( p, scb )) {
+
+        scb->ha_state.session_flags |= SSNFLAG_TIMEDOUT;
+
+        /* Session is timed out */
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM_STATE,
+                    "Stream UDP session timedout!\n"););
+
+#ifdef ENABLE_HA
+        /* Notify the HA peer of the session cleanup/reset by way of a deletion notification. */
+        PREPROC_PROFILE_TMPEND(s5UdpPerfStats);
+        SessionHANotifyDeletion(scb);
+        PREPROC_PROFILE_TMPSTART(s5UdpPerfStats);
+        scb->ha_flags = (HA_FLAG_NEW | HA_FLAG_MODIFIED | HA_FLAG_MAJOR_CHANGE);
+#endif
+
+        /* Clean it up */
+        UdpSessionCleanup(scb);
+        ProcessUdp(scb, p, s5UdpPolicy, hash_node);
+
+    } else {
+        ProcessUdp(scb, p, s5UdpPolicy, hash_node);
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM_STATE,
+                    "Finished Stream UDP cleanly!\n"
+                    "---------------------------------------------------\n"););
+    }
+    MarkupPacketFlags(p, scb);
+    session_api->set_expire_timer(p, scb, s5UdpPolicy->session_timeout);
+    PREPROC_PROFILE_END(s5UdpPerfStats);
+
+    return 0;
+}
+
+void InspectPortFilterUdp (Packet *p)
+{
+    int rc;
+    SessionControlBlock *scb; 
+    StreamUdpPolicy *s5UdpPolicy;
+
+    scb = p->ssnptr;
+    if (!scb) {
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM,"[Stream] Sesssion control does not exist"));
+        return;
+    }
+
+    s5UdpPolicy = scb->proto_policy;
+    if (s5UdpPolicy == NULL) {
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM,
+                                "[Stream] Could not find Udp Policy context "
+                                "for IP %s\n", inet_ntoa(GET_DST_ADDR(p))););
+        return;
+    }
+    // If NAP had set port to be filtered, now check IPS portlist. 
+    if (!(scb->session_state & STREAM_STATE_PORT_INSPECT)) { 
+
+        rc = isPacketFilterDiscardUdp(p, s5UdpPolicy->flags & STREAM_CONFIG_IGNORE_ANY);
+        if (rc == PORT_MONITOR_PACKET_PROCESS) {
+            // Port is not present in NAP, but present in IPS portlist, flow will be tracked.  
+            scb->session_state |= STREAM_STATE_PORT_INSPECT;
+            // Complete UDP session/flow creation as it needs to tracked. 
+            ProcessUdpCreate(p);
+        }
+        /*
+         * If return value from isPacketFilterDiscardUdp() was PORT_MONITOR_PACKET_DISCARD, 
+         * packet is marked either inspected/filtered, based NAP/IPS portlist flag evaluation.
+         */
+    } 
+    return;
+}
+
 void UdpUpdateDirection(SessionControlBlock *ssn, char dir, sfaddr_t* ip, uint16_t port)
 {
     UdpSession *udpssn = (UdpSession *)ssn->proto_specific_data->data;
@@ -782,6 +909,15 @@ int s5UdpGetPortFilterStatus( struct _SnortConfig *sc, unsigned short port, tSfP
         return PORT_MONITOR_NONE;
 }
 
+int s5UdpGetIPSPortFilterStatus(struct _SnortConfig *sc, unsigned short sport, unsigned short dport, tSfPolicyId policyId)
+{
+    if ( sc->udp_ips_port_filter_list && sc->udp_ips_port_filter_list[policyId] )
+        return ( ((int) sc->udp_ips_port_filter_list[policyId]->port_filter[ sport ]) |
+             ((int) sc->udp_ips_port_filter_list[policyId]->port_filter[ dport ]) ) ;
+    else
+        return PORT_MONITOR_NONE;
+}
+
 void StreamUdpConfigFree(StreamUdpConfig *config)
 {
     int i;
@@ -796,11 +932,15 @@ void StreamUdpConfigFree(StreamUdpConfig *config)
 
         if (policy->bound_addrs != NULL)
             sfvar_free(policy->bound_addrs);
-        free(policy);
+        SnortPreprocFree(policy, sizeof(StreamUdpPolicy), PP_STREAM,
+                         PP_MEM_CATEGORY_CONFIG);
     }
 
-    free(config->policy_list);
-    free(config);
+    SnortPreprocFree(config->policy_list, config->num_policies *
+                     sizeof(StreamUdpPolicy *),
+                     PP_STREAM, PP_MEM_CATEGORY_CONFIG);
+    SnortPreprocFree(config, sizeof(StreamUdpConfig), PP_STREAM,
+                     PP_MEM_CATEGORY_CONFIG);
 }
 
 #ifdef SNORT_RELOAD
@@ -824,3 +964,10 @@ unsigned SessionUDPReloadAdjust(unsigned maxWork)
 }
 #endif
 
+size_t get_udp_used_mempool()
+{
+    if (udp_lws_cache && udp_lws_cache->protocol_session_pool)
+        return udp_lws_cache->protocol_session_pool->used_memory;
+
+    return 0;
+}

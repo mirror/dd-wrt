@@ -6,7 +6,7 @@
 **
 ** Aho-Corasick State Machine -  uses a Deterministic Finite Automata - DFA
 **
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton
 **
@@ -895,7 +895,8 @@ main (int argc, char **argv)
       exit (0);
     }
   acsm = acsmNew ();
-  strcpy (text, argv[1]);
+  strncpy (text, argv[1], sizeof(text) - 1);
+  text[sizeof(text) - 1] = '\0';
   for (i = 1; i < argc; i++)
     if (strcmp (argv[i], "-nocase") == 0)
       nocase = 1;

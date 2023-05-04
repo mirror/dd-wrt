@@ -17,12 +17,14 @@
 #define LITTLE 1
 
 #define BYTE_MATH_VAR_INDEX 2
+#define COMMON_VAR_INDEX 3
 
 #define MIN_RVAL 1
 #define MAX_RVAL 4294967295
 
 extern char *bytemath_variable_name;
 extern uint32_t bytemath_variable;
+extern uint32_t common_var;
 
 typedef struct _ByteMathData
 {
@@ -49,6 +51,6 @@ void AddVarName_Bytemath(ByteMathData *data);
 int ByteMathCompare(void *l, void *r);
 int ByteMath(void *, Packet *);
 void ByteMathFree(void *d);
-
+uint32_t find_value (char* );
 
 #endif  /* __SP_BYTE_MATH_H__ */

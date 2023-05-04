@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -857,6 +857,58 @@ int SSLPP_rule_eval(void *raw_packet, const uint8_t **cursor, void *data)
     return RULE_NOMATCH;
 }
 
+void DisplaySSLPPStats (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f)
+{
+    char buffer[CS_STATS_BUF_SIZE + 1];
+    int len = 0;
+
+    if(counts.decoded) {
+        len += snprintf(buffer, CS_STATS_BUF_SIZE, "SSL Preprocessor:\n"
+                "   SSL packets decoded: " FMTu64("-10") "\n"
+                "          Client Hello: " FMTu64("-10") "\n"
+                "          Server Hello: " FMTu64("-10") "\n"
+                "           Certificate: " FMTu64("-10") "\n"
+                "           Server Done: " FMTu64("-10") "\n"
+                "   Client Key Exchange: " FMTu64("-10") "\n"
+                "   Server Key Exchange: " FMTu64("-10") "\n"
+                "         Change Cipher: " FMTu64("-10") "\n"
+                "              Finished: " FMTu64("-10") "\n"
+                "    Client Application: " FMTu64("-10") "\n"
+                "    Server Application: " FMTu64("-10") "\n"
+                "                 Alert: " FMTu64("-10") "\n"
+                "  Unrecognized records: " FMTu64("-10") "\n"
+                "  Completed handshakes: " FMTu64("-10") "\n"
+                "        Bad handshakes: " FMTu64("-10") "\n"
+                "      Sessions ignored: " FMTu64("-10") "\n"
+                "    Detection disabled: " FMTu64("-10") "\n"
+                , counts.decoded
+                , counts.hs_chello
+                , counts.hs_shello
+                , counts.hs_cert
+                , counts.hs_sdone
+                , counts.hs_ckey
+                , counts.hs_skey
+                , counts.cipher_change
+                , counts.hs_finished
+                , counts.capp
+                , counts.sapp
+                , counts.alerts
+                , counts.unrecognized
+                , counts.completed_hs
+                , counts.bad_handshakes
+                , counts.stopped
+                , counts.disabled);
+#ifdef ENABLE_HA
+        len += DisplaySSLHAStats(buffer + len);
+#endif
+    } else {
+        len  = snprintf(buffer, CS_STATS_BUF_SIZE, "SSL Packet Details Not available\n SSL packets decoded: " FMTu64("-10") "\n", counts.decoded);
+    }
+
+    if (-1 == f(te, (const uint8_t *)buffer, len)) {
+        _dpd.logMsg("Unable to send data to the frontend\n");
+    }
+}
 
 void SSLPP_drop_stats(int exiting)
 {
