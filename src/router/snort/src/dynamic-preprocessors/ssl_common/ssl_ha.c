@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2012-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -370,6 +370,33 @@ static void SSLPrintHAConfig(SSLHAConfig *config)
         _dpd.logMsg("    Runtime Output File:   %s\n", config->runtime_output_file);
     if (config->shutdown_output_file)
         _dpd.logMsg("    Shutdown Output File:  %s\n", config->shutdown_output_file);
+}
+
+int DisplaySSLHAStats(char *buffer)
+{
+    SSLHAFuncsNode *node;
+    int i;
+	int len = 0;
+
+    len += snprintf(buffer, CS_STATS_BUF_SIZE,  "  High Availability\n"
+			"          Updates Received: %u\n"
+			"        Deletions Received: %u\n"
+			"        Updates Sent: %u\n"
+			"            Deletions Sent: %u\n"
+			, sslha_stats.update_messages_received
+			, sslha_stats.delete_messages_received
+			, sslha_stats.update_messages_sent
+			, sslha_stats.delete_messages_sent);
+
+    for (i = 0; i < n_ssl_ha_funcs && len < CS_STATS_BUF_SIZE; i++) {
+        node = ssl_ha_funcs[i];
+        if (!node)
+            continue;
+        len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "        Node %hhu/%hhu: %u produced, %u consumed, %u deleted\n",
+                    node->preproc_id, node->subcode, node->produced, node->consumed, node->deleted);
+    }
+
+    return len;
 }
 
 void SSLPrintHAStats(void)

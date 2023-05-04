@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -62,6 +62,9 @@
 #ifdef PERF_PROFILING
 PreprocStats reputationPerfStats;
 #endif
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
 
 
 const int MAJOR_VERSION = 1;
@@ -86,6 +89,8 @@ static void ReputationPrintStats(int);
 static void ReputationCleanExit(int, void *);
 static inline IPrepInfo*  ReputationLookup(sfaddr_t* ip);
 static inline IPdecision GetReputation(IPrepInfo *, SFSnortPacket *, uint32_t *);
+int reputation_get_entry_count(void);
+bool reputation_process_external_ip(void *p, sfaddr_t* ip);
 #ifdef SHARED_REP
 static void ReputationMaintenanceCheck(int, void *);
 #endif
@@ -111,7 +116,6 @@ static void ReputationReloadSwapFree(void *);
 static int ReputationReloadVerify(struct _SnortConfig *, void *);
 #endif
 
-
 /* Called at preprocessor setup time. Links preprocessor keyword
  * to corresponding preprocessor initialization function.
  *
@@ -131,6 +135,8 @@ void SetupReputation(void)
             ReputationReloadVerify, ReputationReloadSwap,
             ReputationReloadSwapFree);
 #endif
+    _dpd.registerReputationGetEntryCount(reputation_get_entry_count);
+    _dpd.registerReputationProcessExternal(reputation_process_external_ip);
 }
 #ifdef SHARED_REP
 static int Reputation_MgmtInfo(uint16_t type, const uint8_t *data,
@@ -220,11 +226,11 @@ static int Reputation_Lookup(uint16_t type, const uint8_t *data, uint32_t length
             break;
 
             case BLACKLISTED:
-            decision = "BLACKLISTED";
+            decision = "BLOCK-LIST";
             break;
 
             case WHITELISTED_UNBLACK:
-            decision = "WHITELISTED UNBLACK";
+            decision = "DO-NOT-BLOCK-LIST UNBLOCK";
             break;
 
             case MONITORED:
@@ -232,7 +238,7 @@ static int Reputation_Lookup(uint16_t type, const uint8_t *data, uint32_t length
             break;
 
             case WHITELISTED_TRUST:
-            decision = "WHITELISTED TRUST";
+            decision = "DO-NOT-BLOCK-LIST TRUST";
             break;
 
             default:
@@ -241,7 +247,7 @@ static int Reputation_Lookup(uint16_t type, const uint8_t *data, uint32_t length
         }
 
         snprintf(statusBuf, statusBufLen,
-            "Reputation Info: %s in list %d"
+            "Reputation Info: verdict %s in list %d"
 #ifdef DAQ_PKTHDR_UNKNOWN
             " from zone %d"
 #endif
@@ -775,7 +781,7 @@ static inline void ReputationProcess(SFSnortPacket *p)
         _dpd.inlineForceDropSession(p);
         flags |= SSNFLAG_FORCE_BLOCK;
         if (*_dpd.pkt_tracer_enabled)
-            _dpd.addPktTrace(VERDICT_REASON_REPUTATION, snprintf(_dpd.trace, _dpd.traceMax, "Reputation: packet blacklisted, drop\n"));
+            _dpd.addPktTrace(VERDICT_REASON_REPUTATION, snprintf(_dpd.trace, _dpd.traceMax, "Reputation: packet verdict block-list, drop\n"));
         else _dpd.addPktTrace(VERDICT_REASON_REPUTATION, 0);
 #endif
         // disable all preproc analysis and detection for this packet
@@ -798,6 +804,76 @@ static inline void ReputationProcess(SFSnortPacket *p)
         reputation_stats.whitelisted++;
     }
 }
+
+int reputation_get_entry_count(void)
+{
+    return (IPtables? sfrt_flat_num_entries((table_flat_t *)*IPtables) : 0);
+}
+
+bool reputation_process_external_ip(void *pkt, sfaddr_t *ip)
+{
+    IPdecision decision = DECISION_NULL;
+    IPrepInfo *result;
+    bool retval = false;
+    uint32_t flags = 0;
+    SFSnortPacket *p = (SFSnortPacket*)pkt;
+
+    if(!IPtables || !ip || !p)
+    {
+        return false;
+    }
+
+    reputation_eval_config = sfPolicyUserDataGetDefault(reputation_config);
+    reputation_eval_config->iplist = (table_flat_t *)*IPtables;
+    
+    result = ReputationLookup(ip);
+    if(result)
+    {
+        DEBUG_WRAP(ReputationPrintRepInfo(result,(uint8_t *) reputation_eval_config->iplist););
+        decision = GetReputation(result,p, &p->iplist_id);
+        
+        switch (decision)
+        {
+            case BLACKLISTED:
+                flags = SSNFLAG_DETECTION_DISABLED;
+                ALERT(REPUTATION_EVENT_BLACKLIST,REPUTATION_EVENT_BLACKLIST_STR);
+#ifdef POLICY_BY_ID_ONLY
+                _dpd.inlineForceDropSession(p);
+                flags |= SSNFLAG_FORCE_BLOCK;
+                if (*_dpd.pkt_tracer_enabled)
+                    _dpd.addPktTrace(VERDICT_REASON_REPUTATION, snprintf(_dpd.trace, _dpd.traceMax, "Reputation: packet verdict block-list based on IP fetched from URL, drop\n"));
+                else 
+                    _dpd.addPktTrace(VERDICT_REASON_REPUTATION, 0);
+#endif
+                // disable all preproc analysis and detection for this packet
+                _dpd.disablePacketAnalysis(p);
+                _dpd.sessionAPI->set_session_flags( p->stream_session, flags );
+                reputation_stats.blacklisted++;
+                retval = true;
+                break;
+            case WHITELISTED_TRUST:
+                ALERT(REPUTATION_EVENT_WHITELIST,REPUTATION_EVENT_WHITELIST_STR);
+                p->flags |= FLAG_IGNORE_PORT;
+                _dpd.disablePacketAnalysis(p);
+                _dpd.sessionAPI->set_session_flags( p->stream_session, SSNFLAG_DETECTION_DISABLED );
+                reputation_stats.whitelisted++;
+                retval = true;
+                break;
+            case MONITORED:
+                if(!(p->flags & FLAG_IPREP_DATA_SET)) // Monitor the flow if it is not already monitored
+                {
+                    ALERT(REPUTATION_EVENT_MONITOR,REPUTATION_EVENT_MONITOR_STR);
+                    p->flags |= FLAG_IPREP_DATA_SET;
+                    reputation_stats.monitored++;
+                }
+                break;
+            case DECISION_NULL:
+            default:
+                break;
+        }
+    }
+    return retval;
+} 
 
 /* Main runtime entry point for Reputation preprocessor.
  * Analyzes Reputation packets for anomalies/exploits.
@@ -926,9 +1002,9 @@ static void ReputationPrintStats(int exiting)
     _dpd.logMsg("  Total Memory Allocated: "STDu64"\n", reputation_stats.memoryAllocated);
 
     if (reputation_stats.blacklisted > 0)
-        _dpd.logMsg("  Number of packets blacklisted: "STDu64"\n", reputation_stats.blacklisted);
+        _dpd.logMsg("  Number of block-list packets: "STDu64"\n", reputation_stats.blacklisted);
     if (reputation_stats.whitelisted > 0)
-        _dpd.logMsg("  Number of packets whitelisted: "STDu64"\n", reputation_stats.whitelisted);
+        _dpd.logMsg("  Number of do-not-block-list packets: "STDu64"\n", reputation_stats.whitelisted);
     if (reputation_stats.monitored > 0)
         _dpd.logMsg("  Number of packets monitored: "STDu64"\n", reputation_stats.monitored);
 
@@ -1011,8 +1087,12 @@ static int ReputationReloadVerify(struct _SnortConfig *sc, void *swap_config)
 
     if (pPolicyConfig->memcap != pCurrentConfig->memcap)
     {
-        _dpd.errMsg("Reputation reload: Changing memcap settings requires a restart.\n");
-        return -1;
+        _dpd.logMsg( "Reputation reload: Memcap changed, current memcap = %u , new memcap = %u \n", pCurrentConfig->memcap, pPolicyConfig->memcap);
+#ifdef REG_TEST
+        if ( REG_TEST_FLAG_REPUTATION & getRegTestFlags() )
+            printf("[REPUTATION]: Memcap changed, current memcap = %u, new memcap = %u \n",  pCurrentConfig->memcap, pPolicyConfig->memcap);
+#endif
+
     }
 
 #ifdef SHARED_REP

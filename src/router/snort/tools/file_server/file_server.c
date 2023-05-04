@@ -1,7 +1,7 @@
 /*
 **
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2012-2013 Sourcefire, Inc.
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -96,7 +96,7 @@ static int ReadHeader(int socket_fd, FileMessageHeader *hdr)
 
     do
     {
-        numread = read(socket_fd, (*(uint8_t **)&hdr) + total,
+        numread = read(socket_fd, ((unsigned char *)hdr) + total,
                 sizeof(*hdr) - total);
         if (!numread)
             return 0;

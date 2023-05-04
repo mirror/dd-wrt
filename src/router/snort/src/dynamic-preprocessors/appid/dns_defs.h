@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 #define PATTERN_SOA_REC    6
 #define PATTERN_NS_REC     2
 #define PATTERN_PTR_REC   12
+#define PATTERN_ANY_REC  255
 
 #pragma pack(1)
 

@@ -23,7 +23,7 @@ Preprocessor Configuration
 DNP3 configuration is split into two parts: the preprocessor config, and the
 rule options. The preprocessor config starts with:
 
-preprocesor dnp3:
+preprocessor dnp3:
 
 Options are as follows:
 

@@ -1,7 +1,7 @@
 /*
  * ftpp_ui_client_lookup.c
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -48,6 +48,7 @@
 #include "ftpp_return_codes.h"
 #include "snort_ftptelnet.h"
 #include "sfrt.h"
+#include "memory_stats.h"
 
 static void clientConfFree(void *pData);
 
@@ -305,7 +306,8 @@ static void clientConfFree(void *pData)
         if (clientConf->referenceCount == 0)
         {
             FTPTelnetCleanupFTPClientConf((void *)clientConf);
-            free(clientConf);
+            _dpd.snortFree(clientConf, sizeof(FTP_CLIENT_PROTO_CONF),
+                           PP_FTPTELNET, PP_MEM_CATEGORY_CONFIG);
         }
     }
 }

@@ -1,0 +1,1250 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|x64">
+      <Configuration>Template</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{E8E29B7C-BDA1-4D36-93E9-B0596C35827F}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Debug\</OutDir>
+    <IntDir>.\Debug\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>.\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <TypeLibraryName>.\Debug\sf_dynamic_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TypeLibraryName>.\Debug\sf_dynamic_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <TypeLibraryName>.\Release\sf_dynamic_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TypeLibraryName>.\Release\sf_dynamic_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\sfutil\bitop.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\cpuclock.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\event.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\file-process\file_api.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\file-process\file_mail_common.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\idle_processing.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ipv6_port.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\mempool.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\mpse_methods.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include\%(Filename).h </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include\%(Filename).h </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include\%(Filename).h </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include\%(Filename).h </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\obfuscation.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\pcap_pkthdr32.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\plugin_enum.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocids.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\profiler.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\rule_option_types.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\segment_mem.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\session_api.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\Session\session_common.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\Session\session_expect.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_base64decode.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_dynamic_common.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_dynamic_define.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_dynamic_engine.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_dynamic_meta.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_preproc_example\sf_dynamic_preproc_lib.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_dynamic_preprocessor.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_email_attach_decode.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_ip.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_protocols.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_sdlist.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_sdlist_types.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_seqnums.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\sf_snort_packet.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_api.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_types.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\control\sfcontrol.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfhashfcn.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfPolicy.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfPolicyUserData.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_dir.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_flat.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_flat_dir.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_trie.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\examples\sfsnort_dynamic_detection_lib.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfxhash.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\signature.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\sip_common.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\snort_bounds.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\snort_debug.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_dpd.debugMsgFile = /" -e "s/DebugMessageLine = /*_dpd.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _dpd.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _dpd.debugWideMsg/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_dpd.debugMsgFile = /" -e "s/DebugMessageLine = /*_dpd.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _dpd.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _dpd.debugWideMsg/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_dpd.debugMsgFile = /" -e "s/DebugMessageLine = /*_dpd.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _dpd.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _dpd.debugWideMsg/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_dpd.debugMsgFile = /" -e "s/DebugMessageLine = /*_dpd.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _dpd.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _dpd.debugWideMsg/" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;..\include\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\Session\snort_session.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="..\ssl_common\ssl.h" />
+    <ClInclude Include="..\ssl_common\ssl_config.h" />
+    <ClInclude Include="..\ssl_common\ssl_ha.h" />
+    <ClInclude Include="..\ssl_common\ssl_include.h" />
+    <ClInclude Include="..\ssl_common\ssl_inspect.h" />
+    <ClInclude Include="..\ssl_common\ssl_session.h" />
+    <CustomBuild Include="..\..\preprocessors\str_search.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\stream_api.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/Packet /SFSnortPacket /" -e "s/decode.h/sf_snort_packet.h/" -e "/sfportobject\.h/d" -e "s/PortObject/void/g" ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocessors\Stream6\stream_common.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\treenodes.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).h.new  
+c:\cygwin\bin\sed -f ..\treenodes.sed ../include/%(Filename).h.new &gt; ../include/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h.new;..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\Unified2_common.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\util_unfold.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\win32\WIN32-Code\inet_aton.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\win32\WIN32-Code\inet_pton.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\mempool.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\segment_mem.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_base64decode.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_preproc_example\sf_dynamic_preproc_lib.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_email_attach_decode.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/SnortStrnStr/_dpd.SnortStrnStr/" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/SnortStrnStr/_dpd.SnortStrnStr/" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/SnortStrnStr/_dpd.SnortStrnStr/" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/SnortStrnStr/_dpd.SnortStrnStr/" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_ip.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_sdlist.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" -e "s/ErrorMessage/_dpd.errMsg/" -e "s/LogMessage /_dpd.logMsg /" -e "/util.h/d" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\libs\sfparser.c" />
+    <CustomBuild Include="..\..\sfutil\sfPolicyUserData.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include  
+copy %(FullPath) ..\include\%(Filename).c.new  
+c:\cygwin\bin\sed -e "/SharedObjectAddStarts/d" -e "/SharedObjectAddEnds/d" -e "/SharedObjectDeleteBegins/,/SharedObjectDeleteEnds/d" -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" ../include/%(Filename).c.new &gt; ../include/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;..\include\$(InputName).c.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_dir.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_flat.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfrt_flat_dir.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\examples\sfsnort_dynamic_detection_lib.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClCompile Include="..\ssl_common\ssl.c" />
+    <ClCompile Include="..\ssl_common\ssl_config.c" />
+    <ClCompile Include="..\ssl_common\ssl_ha.c" />
+    <ClCompile Include="..\ssl_common\ssl_inspect.c" />
+    <CustomBuild Include="..\..\win32\WIN32-Code\strtok_r.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\util_unfold.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir ..\include 
+copy %(FullPath) ..\include </Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\include\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

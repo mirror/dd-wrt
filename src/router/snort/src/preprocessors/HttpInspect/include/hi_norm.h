@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,5 +44,6 @@
 int hi_normalization(HI_SESSION *Session, int iInspectMode, HttpSessionData *hsd);
 int hi_norm_uri(HI_SESSION *Session, u_char *uribuf,int *uribuf_size,
                 const u_char *uri, int uri_size, uint16_t *encodeType);
+unsigned int NormalizeRandomNulls (unsigned char *src, unsigned int src_len, unsigned char *dst);
 
 #endif

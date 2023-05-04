@@ -2,7 +2,7 @@
 **
 **  spp_perfmonitor.c
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Marc Norton <mnorton@sourcefire.com>
 **  Dan Roelker <droelker@sourcefire.com>
@@ -53,6 +53,8 @@
 #include "profiler.h"
 #include "session_api.h"
 #include "reload.h"
+#include "control/sfcontrol_funcs.h"
+#include "control/sfcontrol.h"
 #ifdef SNORT_RELOAD
 #ifdef REG_TEST
 #include "reg_test.h"
@@ -119,6 +121,12 @@ static void PerfMonitorReloadSwapFree(void *);
 static bool PerfmonitorReloadAdjustFunc(bool idle, tSfPolicyId raPolicyId, void* userData);
 #endif
 
+static int FlowIPStart(uint16_t type, const uint8_t *data, uint32_t length,
+                        void **new_context, char *statusBuf, int statusBuf_len);
+static int FlowIPStop(uint16_t type, const uint8_t *data, uint32_t length,
+                        void **new_context, char *statusBuf, int statusBuf_len);
+static void FlowIPShow(uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f);
+
 #ifdef PERF_PROFILING
 PreprocStats perfmonStats;
 #endif
@@ -146,6 +154,9 @@ void SetupPerfMonitor(void)
                          PerfmonReloadVerify, PerfMonitorReloadSwap,
                          PerfMonitorReloadSwapFree);
 #endif
+    ControlSocketRegisterHandler(CS_TYPE_FLOWIP_START, &FlowIPStart, NULL, NULL);
+    ControlSocketRegisterHandler(CS_TYPE_FLOWIP_STOP, &FlowIPStop, NULL, NULL);
+    ControlSocketRegisterHandler(CS_TYPE_FLOWIP_SHOW, NULL, NULL, &FlowIPShow);
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Preprocessor: PerfMonitor is setup...\n"););
 }
@@ -932,3 +943,41 @@ static bool PerfmonitorReloadAdjustFunc(bool idle, tSfPolicyId raPolicyId, void*
 
 #endif
 
+static int FlowIPStart(uint16_t type, const uint8_t *data, uint32_t length,
+                        void **new_context, char *statusBuf, int statusBuf_len)
+{
+    char *args = (char*) data;
+    ParsePerfMonitorArgs(snort_conf, perfmon_config, args);
+    InitPerfStats(perfmon_config);
+#ifndef WIN32
+    PerfMonitorChangeLogFilesPermission();
+#endif
+    PerfMonitorOpenLogFiles(snort_conf,NULL);
+    return 0;
+}
+
+static int FlowIPStop(uint16_t type, const uint8_t *data, uint32_t length,
+                        void **new_context, char *statusBuf, int statusBuf_len)
+{
+    sfCloseFlowIPStatsFile(perfmon_config);
+    FreeFlowIPStats(&sfFlow);
+
+    if (perfmon_config->flowip_file != NULL)
+        free(perfmon_config->flowip_file);
+ 
+    perfmon_config->perf_flags &= ~SFPERF_FLOWIP;
+    return 0;
+}
+
+static void FlowIPShow(uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f)
+{
+    char buffer[CS_STATS_BUF_SIZE + 1];
+    int len = 0;
+    if(perfmon_config->perf_flags & SFPERF_FLOWIP)
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "\nFlow IP Profiling is enabled.\n\n");
+    else
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "\nFlow IP Profiling is disabled.\n\n");
+
+    if(-1 == f(te, (const uint8_t *)buffer, len))
+        LogMessage("Unable to send data to the frontend\n");
+}

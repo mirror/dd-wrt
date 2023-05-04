@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
@@ -494,8 +494,10 @@ ENGINE_LINKAGE int MatchDecryptedRC4(
     const uint8_t *key, uint16_t keylen, const uint8_t *encrypted_data,
     uint8_t *plain_data, uint16_t datalen
 );
-ENGINE_LINKAGE int storeRuleData(void *, void *, uint32_t, SessionDataFree);
-ENGINE_LINKAGE void *getRuleData(void *, uint32_t);
+ENGINE_LINKAGE int storeRuleData(void *packet, const RuleInformation *info,
+    void *rule_data, void *compression_data);
+ENGINE_LINKAGE void getRuleData(void *packet, const RuleInformation *info,
+    void **p_rule_data, void **p_compression_data);
 ENGINE_LINKAGE void *allocRuleData(size_t);
 ENGINE_LINKAGE void freeRuleData(void *);
 

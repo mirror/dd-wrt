@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 #include "flow.h"
 #include "serviceConfig.h"
 #include "appIdConfig.h"
+#include "thirdparty_appid_utils.h"
 struct _SERVICE_MATCH;
 
 void CleanupServices(tAppIdConfig *pConfig);
@@ -59,6 +60,7 @@ void ServiceRegisterPatternDetector(RNAServiceValidationFCN fcn,
                                     const char *name);
 int AppIdDiscoverService(SFSnortPacket *p, APPID_SESSION_DIRECTION direction, tAppIdData *rnaData, const tAppIdConfig *pConfig);
 tAppId getPortServiceId(uint8_t proto, uint16_t port, const tAppIdConfig *pConfig);
+tAppId getProtocolServiceId(uint8_t proto, const tAppIdConfig *pConfig);
 
 void AppIdFreeServiceIDState(AppIdServiceIDState *id_state);
 
@@ -83,7 +85,7 @@ void AppIdFreeDhcpData(DhcpFPData *dd);
 
 void dumpPorts(FILE *stream, const tAppIdConfig *pConfig);
 
-const tRNAServiceElement *ServiceGetServiceElement(RNAServiceValidationFCN fcn, struct _Detector *userdata, tAppIdConfig *pConfig);
+tRNAServiceElement *ServiceGetServiceElement(RNAServiceValidationFCN fcn, struct _Detector *userdata, tAppIdConfig *pConfig);
 
 extern tRNAServiceValidationModule *active_service_list;
 
@@ -143,6 +145,8 @@ static inline void PopulateExpectedFlow(tAppIdData* parent, tAppIdData* expected
     }
     expected->rnaServiceState = RNA_STATE_FINISHED;
     expected->rnaClientState = RNA_STATE_FINISHED;
+    if (thirdparty_appid_module)
+        thirdparty_appid_module->session_state_set(expected->tpsession, TP_STATE_TERMINATED);
 }
 
 #endif /* __SERVICE_BASE_H__ */

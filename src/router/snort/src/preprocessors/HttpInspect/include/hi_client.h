@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,11 @@
 
 #define XFF_TOP_PRECEDENCE (1)
 #define XFF_BOT_PRECEDENCE (255)
+
+#define HTTP_RANGE_NONE                  0
+#define HTTP_RANGE_WITH_FULL_CONTENT_REQ 1
+#define RANGE_WITH_PARTIAL_CONTENT_REQ   2
+#define RANGE_WITH_REQ_ERROR             3
 
 typedef struct s_COOKIE_PTR
 {
@@ -121,6 +126,7 @@ typedef struct s_HEADER_PTR
     COOKIE_PTR cookie;
     CONTLEN_PTR content_len;
     CONT_ENCODING_PTR content_encoding;
+    uint8_t range_flag;
     bool is_chunked;
 #if defined(FEAT_OPEN_APPID)
     HEADER_LOCATION userAgent, referer, method, via, responseCode, server, xWorkingWith, contentType;
@@ -179,6 +185,7 @@ typedef struct s_HI_CLIENT_REQ
     uint16_t post_encode_type;
     const u_char *content_type;
     const u_char *content_disp;
+    uint8_t range_flag;
 
 }  HI_CLIENT_REQ;
 
@@ -198,6 +205,7 @@ typedef struct s_HI_CLIENT_HDR_ARGS
     int strm_ins; 
     int hst_name_hdr;
     uint8_t true_clnt_xff;
+    uint8_t prev_true_clnt_xff;
     uint8_t top_precedence;
     uint8_t new_precedence;
 } HI_CLIENT_HDR_ARGS;

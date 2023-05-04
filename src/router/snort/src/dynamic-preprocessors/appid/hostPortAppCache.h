@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,7 @@ typedef struct _tHostPortVal {
 void hostPortAppCacheDynamicInit();
 void hostPortAppCacheDynamicFini();
 tHostPortVal *hostPortAppCacheDynamicFind(const sfaddr_t *ip, uint16_t port, uint16_t proto);
-int hostPortAppCacheDynamicAdd(const struct in6_addr *ip, uint16_t port, uint16_t proto, APP_ID_TYPE type, tAppId appId);
+int hostPortAppCacheDynamicAdd(const struct in6_addr *ip, uint16_t port, uint16_t proto, APP_ID_TYPE type, tAppId appId, bool sendUpdate);
 void hostPortAppCacheDynamicDump();
 
 void hostPortAppCacheInit(struct appIdConfig_ *pConfig);
@@ -60,4 +60,9 @@ void hostPortAppCacheDump(const struct appIdConfig_ *pConfig);
 
 void updateHostCacheVersion(uint16_t *session_version);
 bool isHostCacheUpdated(uint16_t session_version);
+
+#ifdef SIDE_CHANNEL
+int ConsumeSSHostCache(const uint8_t *buf, uint32_t len);
+#endif
+
 #endif

@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2004-2013 Sourcefire, Inc.
 ** Copyright (C) 2001-2004 Jeff Nathan <jeff@snort.org>
 **
@@ -380,6 +380,7 @@ static void DetectARPattacks(Packet *p, void *context)
     PROFILE_VARS;
     sfPolicyUserPolicySet (arp_spoof_config, getNapRuntimePolicy());
     aconfig = (ArpSpoofConfig *)sfPolicyUserDataGetCurrent(arp_spoof_config);
+    uint32_t *arp_spa;
 
     /* is the packet valid? */
     if ( aconfig == NULL || p->ah == NULL)
@@ -485,8 +486,9 @@ static void DetectARPattacks(Packet *p, void *context)
         return;
 
     /* LookupIPMacEntryByIP() is too slow, will be fixed later */
+    arp_spa = (uint32_t *)&p->ah->arp_spa[0];
     if ((ipme = LookupIPMacEntryByIP(aconfig->ipmel,
-                                     *(uint32_t *)&p->ah->arp_spa)) == NULL)
+                                     *arp_spa)) == NULL)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
                 "MODNAME: LookupIPMacEntryByIp returned NULL\n"););

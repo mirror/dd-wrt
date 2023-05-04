@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** Writen by Bhagyashree Bantwal <bbantwal@cisco.com>
@@ -90,7 +90,7 @@ typedef enum {
     ACT_UNESCAPE
 } ActionJSNorm;
 
-int hex_lookup[256];
+static int hex_lookup[256];
 int valid_chars[256];
 
 char decoded_out[6335];

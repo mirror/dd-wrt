@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,8 @@
 #include "smb.h"
 #include "sf_snort_packet.h"
 #include "sf_types.h"
+#include "stream_api.h"
+#include "session_api.h"
 #include "profiler.h"
 #include "snort_debug.h"
 #include "sf_dynamic_preprocessor.h"
@@ -94,6 +96,8 @@ typedef struct _DCE2_SmbComInfo
     uint16_t cmd_size;
 
 } DCE2_SmbComInfo;
+
+unsigned smb_upload_ret_cb_id = 0;
 
 // Inline accessor functions for DCE2_SmbComInfo
 
@@ -705,7 +709,7 @@ static inline DCE2_SmbFileTracker * DCE2_SmbGetFileTracker(DCE2_SmbSsnData *,
         const uint16_t);
 static DCE2_SmbFileTracker * DCE2_SmbFindFileTracker(DCE2_SmbSsnData *, const uint16_t,
         const uint16_t, const uint16_t);
-static void DCE2_SmbRemoveFileTracker(DCE2_SmbSsnData *, DCE2_SmbFileTracker *);
+static DCE2_Ret DCE2_SmbRemoveFileTracker(DCE2_SmbSsnData *, DCE2_SmbFileTracker *);
 static inline void DCE2_SmbCleanFileTracker(DCE2_SmbFileTracker *);
 static inline void DCE2_SmbCleanTransactionTracker(DCE2_SmbTransactionTracker *);
 static inline void DCE2_SmbCleanRequestTracker(DCE2_SmbRequestTracker *);
@@ -720,7 +724,7 @@ static uint8_t* DCE2_SmbGetString(const uint8_t *, uint32_t, bool, uint16_t *);
 static inline void DCE2_Update_Ftracker_from_ReqTracker(DCE2_SmbFileTracker *ftracker, DCE2_SmbRequestTracker *cur_rtracker);
 static inline void DCE2_SmbResetFileChunks(DCE2_SmbFileTracker *);
 static inline void DCE2_SmbAbortFileAPI(DCE2_SmbSsnData *);
-static inline void DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *);
+static inline DCE2_SmbRetransmitPending DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *);
 static inline void DCE2_SmbSetNewFileAPIFileTracker(DCE2_SmbSsnData *);
 static int DCE2_SmbFileOffsetCompare(const void *, const void *);
 static void DCE2_SmbFileChunkFree(void *);
@@ -898,6 +902,9 @@ void DCE2_SmbInitGlobals(void)
     memset(&smb_wcts, 0, sizeof(smb_wcts));
     memset(&smb_bccs, 0, sizeof(smb_bccs));
 
+    if (!smb_upload_ret_cb_id)
+        smb_upload_ret_cb_id = _dpd.streamAPI->register_event_handler(DCE2_Process_Retransmitted);
+ 
     // Sets up the function to call for the command and valid word and byte
     // counts for the command.  Ensuring valid word and byte counts is very
     // important to processing the command as it will assume the command is
@@ -1816,6 +1823,7 @@ DCE2_SmbSsnData * DCE2_SmbSsnInit(SFSnortPacket *p)
     ssd->rtracker.mid = DCE2_SENTINEL;
     ssd->smbfound = false;
     ssd->max_file_depth = _dpd.fileAPI->get_max_file_depth(_dpd.getCurrentSnortConfig(), false);
+    ssd->smbretransmit = false;
 
     DCE2_ResetRopts(&ssd->sd.ropts);
 
@@ -2670,6 +2678,7 @@ void DCE2_SmbProcess(DCE2_SmbSsnData *ssd)
         }
     }
 
+    ssd->max_file_depth = _dpd.fileAPI->get_max_file_depth(_dpd.getCurrentSnortConfig(), false);
     if (ssd->sd.flags & DCE2_SSN_FLAG__SMB2)
         DCE2_Smb2Process(ssd);
     else
@@ -3441,6 +3450,10 @@ static void DCE2_SmbProcessCommand(DCE2_SmbSsnData *ssd, const SmbNtHdr *smb_hdr
                         && (ssd->cur_rtracker->writeraw_remaining != 0))
                     return;
                 break;
+            /*This is to handle packet that got verdict as pending & will be put in retry queue */
+            case SMB_COM_CLOSE:
+                if (status == DCE2_RET__NOT_INSPECTED)
+                    return;
             default:
                 break;
         }
@@ -4086,7 +4099,7 @@ static DCE2_Ret DCE2_SmbClose(DCE2_SmbSsnData *ssd, const SmbNtHdr *smb_hdr,
     }
     else
     {
-        DCE2_SmbRemoveFileTracker(ssd, ssd->cur_rtracker->ftracker);
+        return DCE2_SmbRemoveFileTracker(ssd, ssd->cur_rtracker->ftracker);
     }
 
     return DCE2_RET__SUCCESS;
@@ -8233,12 +8246,12 @@ static DCE2_SmbFileTracker * DCE2_SmbFindFileTracker(DCE2_SmbSsnData *ssd,
  * Returns:
  *
  ********************************************************************/
-static void DCE2_SmbRemoveFileTracker(DCE2_SmbSsnData *ssd, DCE2_SmbFileTracker *ftracker)
+static DCE2_Ret DCE2_SmbRemoveFileTracker(DCE2_SmbSsnData *ssd, DCE2_SmbFileTracker *ftracker)
 {
     PROFILE_VARS;
 
     if (ftracker == NULL)
-        return;
+        return DCE2_RET__ERROR;
 
     PREPROC_PROFILE_START(dce2_pstat_smb_fid);
 
@@ -8246,7 +8259,19 @@ static void DCE2_SmbRemoveFileTracker(DCE2_SmbSsnData *ssd, DCE2_SmbFileTracker 
                 "Removing file tracker with Fid: 0x%04X\n", ftracker->fid_v1));
 
     if (ssd->fapi_ftracker == ftracker)
-        DCE2_SmbFinishFileAPI(ssd);
+    {
+       /* If the finish API returns pending set , we return from here 
+        * with not inspected and do not remove the file & request 
+        * trackers for upcoming retry packet.
+        */
+
+        DCE2_SmbRetransmitPending flag = DCE2_SmbFinishFileAPI(ssd);
+        if (flag == DCE2_SMB_RETRANSMIT_PENDING__SET) 
+        { 
+            PREPROC_PROFILE_END(dce2_pstat_smb_fid);
+            return DCE2_RET__NOT_INSPECTED;
+        }
+     }
 
 #ifdef ACTIVE_RESPONSE
     if (ssd->fb_ftracker == ftracker)
@@ -8261,6 +8286,7 @@ static void DCE2_SmbRemoveFileTracker(DCE2_SmbSsnData *ssd, DCE2_SmbFileTracker 
     DCE2_SmbRemoveFileTrackerFromRequestTrackers(ssd, ftracker);
 
     PREPROC_PROFILE_END(dce2_pstat_smb_fid);
+    return DCE2_RET__SUCCESS;
 }
 
 /********************************************************************
@@ -9461,7 +9487,7 @@ void DCE2_SmbInitDeletePdu(void)
     SmbNtHdr *smb_hdr = (SmbNtHdr *)((uint8_t *)nb_hdr + sizeof(*nb_hdr));
     SmbDeleteReq *del_req = (SmbDeleteReq *)((uint8_t *)smb_hdr + sizeof(*smb_hdr));
     uint8_t *del_req_fmt = (uint8_t *)del_req + sizeof(*del_req);
-    uint16_t smb_flg2 = 0x4001;
+    uint16_t smb_flg2 = 0xc843;
     uint16_t search_attrs = 0x0006;
 
     memset(dce2_smb_delete_pdu, 0, sizeof(dce2_smb_delete_pdu));
@@ -9499,9 +9525,11 @@ static void DCE2_SmbInjectDeletePdu(DCE2_SmbSsnData *ssd, DCE2_SmbFileTracker *f
     smb_hdr->smb_tid = SmbHtons(&ftracker->tid_v1);
     smb_hdr->smb_uid = SmbHtons(&ftracker->uid_v1);
     del_req->smb_bcc = 1 + file_name_len;
-    memcpy(del_filename, ftracker->file_name, file_name_len);
-
-    _dpd.activeInjectData((void *)ssd->sd.wire_pkt, 0, (uint8_t *)nb_hdr, len);
+    if (SmbUnicode(smb_hdr)) 
+        memcpy(del_filename, ftracker->file_name + UTF_16_LE_BOM_LEN, file_name_len - UTF_16_LE_BOM_LEN);
+    else
+        memcpy(del_filename, ftracker->file_name, file_name_len);
+   _dpd.activeInjectData((void *)ssd->sd.wire_pkt, 0, (uint8_t *)nb_hdr, len);
 }
 
 static void DCE2_SmbFinishFileBlockVerdict(DCE2_SmbSsnData *ssd)
@@ -9548,7 +9576,7 @@ static File_Verdict DCE2_SmbGetFileVerdict(void *p, void *ssnptr)
 }
 #endif
 
-static inline void DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *ssd)
+static inline DCE2_SmbRetransmitPending DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *ssd)
 {
     void *ssnptr = ssd->sd.wire_pkt->stream_session;
     void *p = (void *)ssd->sd.wire_pkt;
@@ -9557,11 +9585,37 @@ static inline void DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *ssd)
     PROFILE_VARS;
 
     if (ftracker == NULL)
-        return;
+        return DCE2_SMB_RETRANSMIT_PENDING__UNSET;
 
     PREPROC_PROFILE_START(dce2_pstat_smb_file);
 
     upload = _dpd.fileAPI->get_file_direction(ssnptr);
+
+    /*This is a case of retrasmitted packet in upload sceanrio with Pending verdict*/
+    if ((ssd->smbretransmit))
+    {
+         ssd->smbretransmit = false;
+         _dpd.fileAPI->file_signature_lookup(p, true);
+         File_Verdict verdict = _dpd.fileAPI->get_file_verdict(ssnptr);
+         if ((verdict == FILE_VERDICT_BLOCK) || (verdict == FILE_VERDICT_REJECT))
+         {
+             ssd->fb_ftracker = ftracker;
+             ssd->fapi_ftracker = NULL;
+             PREPROC_PROFILE_END(dce2_pstat_smb_file);
+             return DCE2_SMB_RETRANSMIT_PENDING__UNSET;
+         }
+         else if (verdict == FILE_VERDICT_PENDING)
+         {
+             PREPROC_PROFILE_END(dce2_pstat_smb_file_api);
+             return DCE2_SMB_RETRANSMIT_PENDING__SET;
+         }
+         else /*if we get some other verdict , clean up*/
+         { 
+             ssd->fapi_ftracker = NULL;
+             PREPROC_PROFILE_END(dce2_pstat_smb_file);
+             return DCE2_SMB_RETRANSMIT_PENDING__UNSET;
+         }
+    }
 
     if (_dpd.fileAPI->get_file_processed_size(ssnptr) != 0)
     {
@@ -9584,6 +9638,13 @@ static inline void DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *ssd)
 
                     if ((verdict == FILE_VERDICT_BLOCK) || (verdict == FILE_VERDICT_REJECT))
                         ssd->fb_ftracker = ftracker;
+
+                    else if ((verdict == FILE_VERDICT_PENDING) && (smb_upload_ret_cb_id != 0))
+                    {
+                        _dpd.streamAPI->set_event_handler(ssnptr, smb_upload_ret_cb_id, SE_REXMIT);
+                        PREPROC_PROFILE_END(dce2_pstat_smb_file_api);
+                        return DCE2_SMB_RETRANSMIT_PENDING__SET;
+                    }
                 }
             }
 #else
@@ -9599,6 +9660,7 @@ static inline void DCE2_SmbFinishFileAPI(DCE2_SmbSsnData *ssd)
     ssd->fapi_ftracker = NULL;
 
     PREPROC_PROFILE_END(dce2_pstat_smb_file);
+    return DCE2_SMB_RETRANSMIT_PENDING__UNSET;
 }
 
 static inline bool DCE2_SmbIsVerdictSuspend(bool upload, FilePosition position)
@@ -10113,4 +10175,16 @@ static inline void DCE2_Update_Ftracker_from_ReqTracker(DCE2_SmbFileTracker *ftr
     cur_rtracker->file_name = NULL;
     cur_rtracker->file_name_len = 0;
     return;
+}
+
+void DCE2_Process_Retransmitted(SFSnortPacket *p)
+{
+     DCE2_SsnData *sd = (DCE2_SsnData *)DCE2_SsnGetAppData(p);
+     if (sd != NULL) 
+     {
+         sd->wire_pkt = p;
+         DCE2_SmbSsnData *ssd = (DCE2_SmbSsnData *)sd;
+         ssd->smbretransmit = true;
+         DCE2_SmbRemoveFileTracker(ssd, &(ssd->ftracker));
+     }
 }

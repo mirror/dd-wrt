@@ -1,7 +1,7 @@
 /*
  * ftpp_si.c
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -57,11 +57,12 @@
 #include "ftpp_ui_client_lookup.h"
 #include "ftpp_ui_server_lookup.h"
 #include "ftpp_si.h"
+#include "spp_ftptelnet.h"
 #include "stream_api.h"
 #include "snort_ftptelnet.h"
 #include "sfPolicyUserData.h"
 #include "ssl_include.h"
-#include "sfmemcap.h"
+#include "memory_stats.h"
 
 #ifndef WIN32
 # include <ctype.h>
@@ -127,7 +128,11 @@ static void TelnetFreeSession(void *preproc_session)
         }
     }
 
-    free(ssn);
+    ftp_telnet_stats.telnet_sessions--;
+    ftp_telnet_stats.heap_memory -= sizeof(TELNET_SESSION);
+
+    _dpd.snortFree(ssn, sizeof(TELNET_SESSION),
+                   PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
 }
 
 /*
@@ -184,7 +189,17 @@ static int TelnetStatefulSessionInspection(SFSnortPacket *p,
 {
     if (p->stream_session)
     {
-        TELNET_SESSION *NewSession = (TELNET_SESSION *)calloc(1, sizeof(TELNET_SESSION));
+        TELNET_SESSION *NewSession = (TELNET_SESSION *)_dpd.snortAlloc(1,
+                                                       sizeof(TELNET_SESSION),
+                                                       PP_FTPTELNET,
+                                                       PP_MEM_CATEGORY_SESSION);
+
+        ftp_telnet_stats.telnet_sessions++;
+        if (ftp_telnet_stats.telnet_sessions > ftp_telnet_stats.max_telnet_sessions)
+            ftp_telnet_stats.max_telnet_sessions = ftp_telnet_stats.telnet_sessions;
+
+        ftp_telnet_stats.heap_memory += sizeof(TELNET_SESSION); 
+
         tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
 
         if (NewSession == NULL)
@@ -669,13 +684,6 @@ static void FTPFreeSession(void *preproc_session)
 
     if (pPolicyConfig != NULL)
     {
-        if (ssn->path)
-        {
-            sfmemcap_free(&pPolicyConfig->mc,ssn->path);
-        }
-        if (ssn->cwd_path)
-            sfmemcap_free(&pPolicyConfig->mc,ssn->cwd_path);
-
         pPolicyConfig->ref_count--;
         if ((pPolicyConfig->ref_count == 0) &&
             (ssn->global_conf != ftp_telnet_config))
@@ -691,16 +699,23 @@ static void FTPFreeSession(void *preproc_session)
 
     if (ssn->filename)
     {
-        free(ssn->filename);
+        ftp_telnet_stats.heap_memory -= (strlen(ssn->filename) + 1);
+        _dpd.snortFree(ssn->filename, (strlen(ssn->filename) + 1),
+                       PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
     }
 
     if ( ssl_cb )
         ssl_cb->session_free(ssn->flow_id);
 
+    ftp_telnet_stats.ftp_sessions--;
+    ftp_telnet_stats.heap_memory -= sizeof(FTP_SESSION);
+#ifdef TARGET_BASED
     FTP_DATA_SESSION *datassn = ssn->datassn;
     if(datassn && (ssn == datassn->ftpssn))
         datassn->ftpssn = NULL;
-    free(ssn);
+    _dpd.snortFree(ssn, sizeof(FTP_SESSION),
+                   PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
+#endif
 }
 
 #ifdef TARGET_BASED
@@ -710,7 +725,8 @@ static void FTPFreeSession(void *preproc_session)
  */
 FTP_DATA_SESSION * FTPDataSessionNew(SFSnortPacket *p)
 {
-    FTP_DATA_SESSION *ftpdata = calloc(1, sizeof *ftpdata);
+    FTP_DATA_SESSION *ftpdata = _dpd.snortAlloc(1, sizeof *ftpdata,
+                                       PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
 
     if (!ftpdata)
         return NULL;
@@ -723,9 +739,17 @@ FTP_DATA_SESSION * FTPDataSessionNew(SFSnortPacket *p)
 
     if (!ftpdata->ftp_key)
     {
-        free(ftpdata);
+        _dpd.snortFree(ftpdata, sizeof *ftpdata,
+                       PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
         ftpdata = NULL;
+        return ftpdata;
     }
+
+    ftp_telnet_stats.ftp_data_sessions++;
+    if (ftp_telnet_stats.ftp_data_sessions > ftp_telnet_stats.max_ftp_data_sessions)
+        ftp_telnet_stats.max_ftp_data_sessions = ftp_telnet_stats.ftp_data_sessions;
+    
+    ftp_telnet_stats.heap_memory += (sizeof (*ftpdata) + sizeof(StreamSessionKey));
 
     return ftpdata;
 }
@@ -750,18 +774,26 @@ void FTPDataSessionFree(void *p_ssn)
     /* ftp-data key shouldn't exist without this but */
     if (ssn->ftp_key)
     {
-        free(ssn->ftp_key);
+      // This Key is accounted in Stream during alloc
+        _dpd.snortFree(ssn->ftp_key, sizeof(StreamSessionKey),
+                       PP_STREAM, PP_MEM_CATEGORY_SESSION);
     }
 
     if (ssn->filename)
     {
-        free(ssn->filename);
+        ftp_telnet_stats.heap_memory -= (strlen(ssn->filename) + 1);
+        _dpd.snortFree(ssn->filename, (strlen(ssn->filename) + 1),
+                       PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
     }
 
     if ( ssl_cb )
         ssl_cb->session_free(ssn->flow_id);
 
-    free(ssn);
+    ftp_telnet_stats.ftp_data_sessions--;
+    ftp_telnet_stats.heap_memory -= sizeof(FTP_DATA_SESSION);
+
+    _dpd.snortFree(ssn, sizeof(FTP_DATA_SESSION),
+                   PP_FTPTELNET, PP_MEM_CATEGORY_SESSION);
 }
 
 /* Function: FTPDataDirection
@@ -822,12 +854,8 @@ static inline int FTPResetSession(FTP_SESSION *FtpSession)
     FtpSession->data_chan_index = 0;
     FtpSession->data_xfer_index = 0;
     FtpSession->ftp_cmd_pipe_index = 1;
+    FtpSession->rest_cmd_offset = 0;
 
-    FtpSession->path_hash = 0;
-    FtpSession->path = NULL;
-    FtpSession->cwd_path = NULL;
-    FtpSession->path_memory_alloc = 0;
-    FtpSession->cwd_memory_alloc = 0;
     FtpSession->event_list.stack_count = 0;
 
     return FTPP_SUCCESS;
@@ -871,7 +899,17 @@ static int FTPStatefulSessionInspection(SFSnortPacket *p,
 
         if (*piInspectMode)
         {
-            FTP_SESSION *NewSession = (FTP_SESSION *)calloc(1, sizeof(FTP_SESSION));
+            FTP_SESSION *NewSession = (FTP_SESSION *)_dpd.snortAlloc(1,
+                                                      sizeof(FTP_SESSION),
+                                                      PP_FTPTELNET, 
+                                                      PP_MEM_CATEGORY_SESSION);
+
+            ftp_telnet_stats.ftp_sessions++;
+            if (ftp_telnet_stats.ftp_sessions > ftp_telnet_stats.max_ftp_sessions)
+                ftp_telnet_stats.max_ftp_sessions = ftp_telnet_stats.ftp_sessions;
+   
+            ftp_telnet_stats.heap_memory += sizeof(FTP_SESSION);
+
             tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
 
             if (NewSession == NULL)

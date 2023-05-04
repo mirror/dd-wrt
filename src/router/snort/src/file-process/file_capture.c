@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -38,11 +38,13 @@
 #include "file_config.h"
 #include "file_stats.h"
 #include "file_service.h"
+#include "memory_stats.h"
 
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <time.h>
 
 SafeMemPool *file_mempool = NULL;
 File_Capture_Stats file_capture_stats;
@@ -63,7 +65,7 @@ static void verify_file_capture_info(FileContext* context,
                 (fileInfo->file_size + context->current_data_len
                         != context->processed_bytes))
         {
-            FILE_DEBUG_MSGS("File capture size failed w.r.t processed size!\n");
+            FILE_DEBUG("File capture size failed w.r.t processed size!");
         }
     }
     else
@@ -72,7 +74,7 @@ static void verify_file_capture_info(FileContext* context,
                 (fileInfo->file_size + context->current_data_len
                         != context->file_size))
         {
-            FILE_DEBUG_MSGS("File capture size failed w.r.t final file size!\n");
+            FILE_DEBUG("File capture size failed w.r.t final file size!");
         }
     }
 }
@@ -104,7 +106,7 @@ static void verifiy_file_capture(FileContext* context,
     {
         if (sha256[i] != context->sha256[i])
         {
-            FILE_DEBUG_MSGS("File capture buffer is wrong!\n");
+            FILE_DEBUG("File capture buffer is wrong! SHA256 mismatch");
             break;
         }
     }
@@ -135,7 +137,7 @@ static void* _init_file_mempool(int64_t max_file_mem, int64_t block_size)
 
     max_files = max_file_mem_in_bytes / block_size ;
 
-    file_mempool = (SafeMemPool *)calloc(1, sizeof(SafeMemPool));
+    file_mempool = (SafeMemPool *)SnortPreprocAlloc(1, sizeof(SafeMemPool), PP_FILE, PP_MEM_CATEGORY_MEMPOOL);
 
     if ((!file_mempool)||
             (safe_mempool_init(file_mempool, max_files, block_size) != 0))
@@ -205,7 +207,6 @@ void file_capture_stop( FileContext* context)
     if (fileInfo)
     {
         /*free mempool*/
-        FILE_DEBUG_MSGS("Stop file capture!\n");
         if(!fileInfo->reserved)
         {
             _free_file_buffer(fileInfo);
@@ -235,7 +236,7 @@ static inline FileCaptureInfo * _create_file_buffer(SafeMemPool *file_mempool)
 
     if(fileInfo == NULL)
     {
-        FILE_DEBUG_MSGS("Failed to get file capture memory!\n");
+        FILE_DEBUG("Failed to get file capture memory!");
         file_capture_stats.file_memcap_failures_total++;
         return NULL;
     }
@@ -270,14 +271,14 @@ static inline int _save_to_file_buffer(SafeMemPool *file_mempool,
 {
     FileCaptureInfo *fileInfo = (FileCaptureInfo *) context->file_capture;
     FileCaptureInfo *lastBlock = fileInfo->last;
-    int64_t available_bytes;
+    uint64_t available_bytes;
     FileConfig *file_config =  (FileConfig *)(snort_conf->file_config);
 
     DEBUG_WRAP(verify_file_capture_info(context, fileInfo););
 
     if ( data_size + (signed)fileInfo->file_size > max_size)
     {
-        FILE_DEBUG_MSGS("Exceeding max file capture size!\n");
+        FILE_DEBUG("Exceeding max file capture size!");
         file_capture_stats.file_size_exceeded++;
         context->file_state.capture_state = FILE_CAPTURE_MAX;
         return -1;
@@ -285,6 +286,11 @@ static inline int _save_to_file_buffer(SafeMemPool *file_mempool,
 
     /* Check whether current file block can hold file data*/
     available_bytes = file_config->file_capture_block_size - lastBlock->length;
+    if ( available_bytes >  file_config->file_capture_block_size)
+    {
+        context->file_state.capture_state = FILE_CAPTURE_MEMCAP;
+        return -1;
+    }
 
     if ( data_size > available_bytes)
     {
@@ -307,6 +313,7 @@ static inline int _save_to_file_buffer(SafeMemPool *file_mempool,
 
             if(new_block == NULL)
             {
+                FILE_ERROR("Failed to save in file buffer: FILE_CAPTURE_MEMCAP");
                 context->file_state.capture_state = FILE_CAPTURE_MEMCAP;
                 return -1;
             }
@@ -370,6 +377,7 @@ int file_capture_process( FileContext* context, uint8_t* file_data,
 
     context->current_data = file_data;
     context->current_data_len = data_size;
+    FILE_DEBUG("Processing capture: context: %p, data_size: %d, position: %d", context, data_size, position);
 
     switch (position)
     {
@@ -378,6 +386,11 @@ int file_capture_process( FileContext* context, uint8_t* file_data,
         break;
     case SNORT_FILE_END:
         break;
+    case SNORT_FILE_START:
+    case SNORT_FILE_MIDDLE:
+        if(FILE_SIG_FLUSH == context->file_state.sig_state){
+            break;
+        }
     default:
 
         /* For File position is either SNORT_FILE_START
@@ -391,7 +404,7 @@ int file_capture_process( FileContext* context, uint8_t* file_data,
 
             if (!fileInfo)
             {
-                FILE_DEBUG_MSGS("Can't get file capture memory!\n");
+                FILE_ERROR("Processing file capture: Can't get file capture memory, FILE_CAPTURE_MEMCAP");
                 context->file_state.capture_state = FILE_CAPTURE_MEMCAP;
                 return -1;
             }
@@ -403,13 +416,14 @@ int file_capture_process( FileContext* context, uint8_t* file_data,
 
         if (!fileInfo)
         {
+            FILE_ERROR("Processing file capture: File info not available");
             return -1;
         }
 
         if (_save_to_file_buffer(file_mempool, context, file_data, data_size,
                 file_config->file_capture_max_size))
         {
-            FILE_DEBUG_MSGS("Can't save to file buffer!\n");
+            FILE_ERROR("Processing file capture: Can't save to file buffer!");
             return -1;
         }
     }
@@ -446,6 +460,7 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
 
     if (!ssnptr||!file_config||!file_mem)
     {
+        FILE_ERROR("Capture failed: No session/memory/config");
         return ERROR_capture(FILE_CAPTURE_FAIL);
     }
 
@@ -453,11 +468,13 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
 
     if (!context || !context->file_capture_enabled)
     {
+        FILE_ERROR("Capture failed: Not enabled");
         return ERROR_capture(FILE_CAPTURE_FAIL);
     }
 
     if (context->file_state.capture_state != FILE_CAPTURE_SUCCESS)
     {
+        FILE_ERROR("Capture failed: %d",context->file_state.capture_state);
         return ERROR_capture(context->file_state.capture_state);
     }
 
@@ -468,15 +485,17 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
      */
     fileSize = context->file_size;
 
-    if ( fileSize < (unsigned) file_config->file_capture_min_size)
+    if ((!context->partial_file) && (fileSize < (unsigned) file_config->file_capture_min_size))
     {
         file_capture_stats.file_size_min++;
+        FILE_ERROR("Capture failed: FILE_CAPTURE_MIN, size: %d",fileSize);
         return ERROR_capture(FILE_CAPTURE_MIN);
     }
 
     if ( fileSize > (unsigned) file_config->file_capture_max_size)
     {
         file_capture_stats.file_size_max++;
+        FILE_ERROR("Capture failed: FILE_CAPTURE_MAX, size: %d",fileSize);
         return ERROR_capture(FILE_CAPTURE_MAX);
     }
 
@@ -491,6 +510,7 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
         if (!fileInfo)
         {
             file_capture_stats.file_memcap_failures_reserve++;
+            FILE_ERROR("Capture failed: FILE_CAPTURE_MEMCAP");
             return ERROR_capture(FILE_CAPTURE_MEMCAP);
         }
 
@@ -502,6 +522,7 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
 
     if (!fileInfo)
     {
+        FILE_ERROR("Capture failed: FILE_CAPTURE_MEMCAP");
         return ERROR_capture(FILE_CAPTURE_MEMCAP);
     }
 
@@ -511,6 +532,7 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
     if (_save_to_file_buffer(file_mempool, context, context->current_data,
             context->current_data_len, file_config->file_capture_max_size) )
     {
+        FILE_ERROR("Capture failed: %d",context->file_state.capture_state);
         return ERROR_capture(context->file_state.capture_state);
     }
 
@@ -525,9 +547,13 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
      * might use this information to change shared memory buffer
      * that might be released and then used by other sessions
      */
-    context->file_capture = NULL;
-    context->file_capture_enabled = false;
+    if(context->file_state.sig_state != FILE_SIG_FLUSH)
+    {
+        context->file_capture = NULL;
+        context->file_capture_enabled = false;
+    }
     DEBUG_WRAP(verifiy_file_capture(context, fileInfo););
+    FILE_INFO("Capture successful");
 
     return FILE_CAPTURE_SUCCESS;
 }
@@ -548,6 +574,7 @@ void* file_capture_read(FileCaptureInfo *fileInfo, uint8_t **buff, int *size)
 {
     if (!fileInfo || !buff || !size)
     {
+        FILE_ERROR("Failed to read capture");
         return NULL;
     }
 
@@ -619,8 +646,66 @@ void file_caputure_close(void)
 
     if (safe_mempool_destroy(file_mempool) == 0)
     {
-        free(file_mempool);
+        SnortPreprocFree(file_mempool, sizeof(SafeMemPool), PP_FILE, PP_MEM_CATEGORY_MEMPOOL);
         file_mempool = NULL;
     }
 
+}
+
+int FilePrintMemStats(FILE *fd, char* buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time = time(NULL);
+    int len = 0;
+    size_t total_heap_memory = meminfo[PP_MEM_CATEGORY_SESSION].used_memory 
+                              + meminfo[PP_MEM_CATEGORY_CONFIG].used_memory 
+                              + meminfo[PP_MEM_CATEGORY_MEMPOOL].used_memory;
+    if (fd)
+    {
+        len = fprintf(fd, ",%lu,%u,%u"
+                      ",%lu,%u,%u"
+                      ",%lu,%u,%u,%lu"
+                      , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                      , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                      , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                      , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                      , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                      , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                      , meminfo[PP_MEM_CATEGORY_MEMPOOL].used_memory
+                      , meminfo[PP_MEM_CATEGORY_MEMPOOL].num_of_alloc
+                      , meminfo[PP_MEM_CATEGORY_MEMPOOL].num_of_free
+                      , total_heap_memory);
+       return len;
+   }
+   if (buffer)
+   {
+       len = snprintf(buffer, CS_STATS_BUF_SIZE, "\n\nMemory Statistics for File at: %s\n"
+       "Total buffers allocated:           "FMTu64("-10")" \n" 
+       "Total buffers freed:               "FMTu64("-10")" \n" 
+       "Total buffers released:            "FMTu64("-10")" \n"
+       "Total file mempool:                "FMTu64("-10")" \n" 
+       "Total allocated file mempool:      "FMTu64("-10")" \n"
+       "Total freed file mempool:          "FMTu64("-10")" \n"
+       "Total released file mempool:       "FMTu64("-10")" \n"
+       , ctime(&curr_time)
+       , file_capture_stats.file_buffers_allocated_total
+       , file_capture_stats.file_buffers_freed_total
+       , file_capture_stats.file_buffers_released_total
+       , (file_mempool)?(file_mempool->total):0
+       , (file_mempool)?(safe_mempool_allocated(file_mempool)):0
+       , (file_mempool)?(safe_mempool_freed(file_mempool)):0
+       , (file_mempool)?(safe_mempool_released(file_mempool)):0);
+    }
+    else
+    {
+       LogMessage("\n");
+       LogMessage("Memory Statistics for File at:%s\n" , ctime(&curr_time));
+       LogMessage("Total buffers allocated:           "FMTu64("-10")" \n", file_capture_stats.file_buffers_allocated_total);
+       LogMessage("Total buffers freed:               "FMTu64("-10")" \n", file_capture_stats.file_buffers_freed_total);
+       LogMessage("Total buffers released:            "FMTu64("-10")" \n", file_capture_stats.file_buffers_released_total);
+       LogMessage("Total file mempool:                "FMTu64("-10")" \n", (file_mempool)?(file_mempool->total):0);
+       LogMessage("Total allocated file mempool:      "FMTu64("-10")" \n", (file_mempool)?(safe_mempool_allocated(file_mempool)):0);
+       LogMessage("Total freed file mempool:          "FMTu64("-10")" \n", (file_mempool)?(safe_mempool_freed(file_mempool)):0);
+       LogMessage("Total released file mempool:       "FMTu64("-10")" \n", (file_mempool)?(safe_mempool_released(file_mempool)):0);
+    }
+    return len;
 }

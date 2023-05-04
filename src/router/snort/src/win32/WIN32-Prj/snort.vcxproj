@@ -1,0 +1,812 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|x64">
+      <Configuration>Template</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <Keyword>MFCProj</Keyword>
+    <ProjectGuid>{04BE9F40-3FB8-4AAD-8502-2E683F524F7B}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\snort___Win32_Debug\</OutDir>
+    <IntDir>.\snort___Win32_Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\snort___Win32_Release\</OutDir>
+    <IntDir>.\snort___Win32_Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>.\snort___Win32_Release\</OutDir>
+    <IntDir>.\snort___Win32_Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>true</MinimalRebuild>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>..\..\dynamic-output\plugins;..\Win32-Includes\zlib;..\..\..;..\..;..\..\control;..\..\sfutil;..\..\target-based;..\Win32-Includes;..\Win32-Includes\libnet;..\Win32-Includes\WinPCAP;..\..\output-plugins;..\..\detection-plugins;..\..\dynamic-plugins;..\..\preprocessors;..\..\preprocessors\portscan;..\..\preprocessors\HttpInspect\Include;..\..\preprocessors\Stream6;..\..\preprocessors\Session;..\..\..\daq\api;..\..\..\daq\sfbpf;..\Win32-Includes\libdnet;..\..\file-process;..\..\file-process\libs;..\..\side-channel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;DEBUG;OUTPUT_DLL;_CONSOLE;__BEGIN_DECLS=;__END_DECLS=;ENABLE_RESPOND;ENABLE_WIN32_SERVICE;ZLIB;ENABLE_RESPONSE3;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;ENABLE_REACT;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_PAF;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;NORMALIZER;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\snort___Win32_Debug\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\snort___Win32_Debug\snort.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\snort___Win32_Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\snort___Win32_Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <TypeLibraryName>.\snort___Win32_Debug\snort.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\snort___Win32_Debug\snort.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\snort___Win32_Debug\snort.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\..\..\daq\Debug;..\Win32-Libraries;..\Win32-Libraries\libdnet;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib.lib;dnet.lib;daq.lib;Packet.lib;iphlpapi.lib;wsock32.lib;advapi32.lib;pcre.lib;wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>..\..\dynamic-output\plugins;..\Win32-Includes\zlib;..\..\..;..\..;..\..\control;..\..\sfutil;..\..\target-based;..\Win32-Includes;..\Win32-Includes\libnet;..\Win32-Includes\WinPCAP;..\..\output-plugins;..\..\detection-plugins;..\..\dynamic-plugins;..\..\preprocessors;..\..\preprocessors\portscan;..\..\preprocessors\HttpInspect\Include;..\..\preprocessors\Stream6;..\..\preprocessors\Session;..\..\..\daq\api;..\..\..\daq\sfbpf;..\Win32-Includes\libdnet;..\..\file-process;..\..\file-process\libs;..\..\side-channel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;DEBUG;OUTPUT_DLL;_CONSOLE;__BEGIN_DECLS=;__END_DECLS=;ENABLE_RESPOND;ENABLE_WIN32_SERVICE;ZLIB;ENABLE_RESPONSE3;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;ENABLE_REACT;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_PAF;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;NORMALIZER;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\snort___Win32_Debug\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\snort___Win32_Debug\snort.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\snort___Win32_Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\snort___Win32_Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <TypeLibraryName>.\snort___Win32_Debug\snort.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\snort___Win32_Debug\snort.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\snort___Win32_Debug\snort.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\..\..\daq\Debug;..\Win32-Libraries;..\Win32-Libraries\libdnet;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib.lib;dnet.lib;daq.lib;Packet.lib;iphlpapi.lib;wsock32.lib;advapi32.lib;pcre.lib;wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>..\..\dynamic-output\plugins;..\Win32-Includes\zlib;..\..\..;..\..;..\..\control;..\..\sfutil;..\..\target-based;..\Win32-Includes;..\Win32-Includes\libnet;..\Win32-Includes\WinPCAP;..\..\output-plugins;..\..\detection-plugins;..\..\dynamic-plugins;..\..\preprocessors;..\..\preprocessors\portscan;..\..\preprocessors\HttpInspect\Include;..\..\preprocessors\Stream6;..\..\preprocessors\Session;..\..\..\daq\api;..\..\..\daq\sfbpf;..\Win32-Includes\libdnet;..\..\file-process;..\..\file-process\libs;..\..\side-channel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;OUTPUT_DLL;_CONSOLE;__BEGIN_DECLS=;__END_DECLS=;ENABLE_RESPOND;ENABLE_WIN32_SERVICE;ZLIB;ENABLE_RESPONSE3;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;ENABLE_REACT;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_PAF;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;NORMALIZER;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\snort___Win32_Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\snort___Win32_Release\snort.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\snort___Win32_Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\snort___Win32_Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <TypeLibraryName>.\snort___Win32_Release\snort.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\snort___Win32_Release\snort.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\snort___Win32_Release\snort.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\..\..\daq\Release;..\Win32-Libraries;..\Win32-Libraries\libdnet;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib.lib;dnet.lib;daq.lib;Packet.lib;iphlpapi.lib;wsock32.lib;advapi32.lib;pcre.lib;wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>..\..\dynamic-output\plugins;..\Win32-Includes\zlib;..\..\..;..\..;..\..\control;..\..\sfutil;..\..\target-based;..\Win32-Includes;..\Win32-Includes\libnet;..\Win32-Includes\WinPCAP;..\..\output-plugins;..\..\detection-plugins;..\..\dynamic-plugins;..\..\preprocessors;..\..\preprocessors\portscan;..\..\preprocessors\HttpInspect\Include;..\..\preprocessors\Stream6;..\..\preprocessors\Session;..\..\..\daq\api;..\..\..\daq\sfbpf;..\Win32-Includes\libdnet;..\..\file-process;..\..\file-process\libs;..\..\side-channel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;OUTPUT_DLL;_CONSOLE;__BEGIN_DECLS=;__END_DECLS=;ENABLE_RESPOND;ENABLE_WIN32_SERVICE;ZLIB;ENABLE_RESPONSE3;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;ENABLE_REACT;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_PAF;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;NORMALIZER;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\snort___Win32_Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\snort___Win32_Release\snort.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\snort___Win32_Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\snort___Win32_Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <TypeLibraryName>.\snort___Win32_Release\snort.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\snort___Win32_Release\snort.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\snort___Win32_Release\snort.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\..\..\daq\Release;..\..\win64\WIN64-Libraries;..\..\win64\WIN64-Libraries\libdnet;%(AdditionalLibraryDirectories);C:\Python27\libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib.lib;dnet.lib;daq.lib;Packet.lib;iphlpapi.lib;wsock32.lib;advapi32.lib;pcre.lib;wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\detection-plugins\detection_options.c" />
+    <ClCompile Include="..\..\detection-plugins\sf_snort_plugin_hdropts.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_asn1.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_asn1_detect.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_base64_data.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_base64_decode.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_byte_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_byte_math.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_byte_extract.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_byte_jump.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_clientserver.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_cvs.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_dsize_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_file_data.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_file_type.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_flowbits.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ftpbounce.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_hdr_opt_wrap.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_icmp_code_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_icmp_id_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_icmp_seq_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_icmp_type_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ip_fragbits.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ip_id_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ip_proto.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ip_same_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ip_tos_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ipoption_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_isdataat.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_pattern_match.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_pcre.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_pkt_data.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_react.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_replace.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_respond3.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_rpc_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_session.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_tcp_ack_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_tcp_flag_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_tcp_seq_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_tcp_win_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_ttl_check.c" />
+    <ClCompile Include="..\..\detection-plugins\sp_urilen_check.c" />
+    <ClCompile Include="..\..\memory_stats.c" />
+    <ClCompile Include="..\..\output-plugins\spo_alert_fast.c" />
+    <ClCompile Include="..\..\output-plugins\spo_alert_full.c" />
+    <ClCompile Include="..\..\output-plugins\spo_alert_sf_socket.c" />
+    <ClCompile Include="..\..\output-plugins\spo_alert_syslog.c" />
+    <ClCompile Include="..\..\output-plugins\spo_alert_test.c" />
+    <ClCompile Include="..\..\output-plugins\spo_alert_unixsock.c" />
+    <ClCompile Include="..\..\output-plugins\spo_csv.c" />
+    <ClCompile Include="..\..\output-plugins\spo_log_ascii.c" />
+    <ClCompile Include="..\..\output-plugins\spo_log_null.c" />
+    <ClCompile Include="..\..\output-plugins\spo_log_tcpdump.c" />
+    <ClCompile Include="..\..\output-plugins\spo_unified2.c" />
+    <ClCompile Include="..\..\parser\IpAddrSet.c" />
+    <ClCompile Include="..\..\pkt_tracer.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\anomaly_detection\hi_ad.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\client\hi_client.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\client\hi_client_norm.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\event_output\hi_eo_log.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\mode_inspection\hi_mi.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\normalization\hi_norm.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\server\hi_server.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\server\hi_server_norm.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\session_inspection\hi_si.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\user_interface\hi_ui_config.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\user_interface\hi_ui_iis_unicode_map.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\user_interface\hi_ui_server_lookup.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\utils\hi_cmd_lookup.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\utils\hi_paf.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\utils\hi_util_hbm.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\utils\hi_util_kmap.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\utils\hi_util_xmalloc.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\files\file_decomp.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\files\file_decomp_PDF.c" />
+    <ClCompile Include="..\..\preprocessors\HttpInspect\files\file_decomp_SWF.c" />
+    <ClCompile Include="..\..\preprocessors\Stream6\snort_stream_icmp.c" />
+    <ClCompile Include="..\..\preprocessors\Stream6\snort_stream_ip.c" />
+    <ClCompile Include="..\..\preprocessors\Stream6\snort_stream_tcp.c" />
+    <ClCompile Include="..\..\preprocessors\Stream6\snort_stream_udp.c" />
+    <ClCompile Include="..\..\preprocessors\Stream6\stream_common.c" />
+    <ClCompile Include="..\..\preprocessors\Stream6\stream_paf.c" />
+    <ClCompile Include="..\..\preprocessors\Session\session_common.c" />
+    <ClCompile Include="..\..\preprocessors\Session\session_expect.c" />
+    <ClCompile Include="..\..\preprocessors\Session\snort_session.c" />
+    <ClCompile Include="..\..\preprocessors\normalize.c" />
+    <ClCompile Include="..\..\preprocessors\perf-base.c" />
+    <ClCompile Include="..\..\preprocessors\perf-event.c" />
+    <ClCompile Include="..\..\preprocessors\perf-flow.c" />
+    <ClCompile Include="..\..\preprocessors\perf.c" />
+    <ClCompile Include="..\..\preprocessors\perf_indicators.c" />
+    <ClCompile Include="..\..\preprocessors\portscan.c" />
+    <ClCompile Include="..\..\preprocessors\session_api.c" />
+    <ClCompile Include="..\..\preprocessors\sfprocpidstats.c" />
+    <ClCompile Include="..\..\preprocessors\snort_httpinspect.c" />
+    <ClCompile Include="..\..\preprocessors\spp_arpspoof.c" />
+    <ClCompile Include="..\..\preprocessors\spp_bo.c" />
+    <ClCompile Include="..\..\preprocessors\spp_frag3.c" />
+    <ClCompile Include="..\..\preprocessors\spp_httpinspect.c" />
+    <ClCompile Include="..\..\preprocessors\spp_normalize.c" />
+    <ClCompile Include="..\..\preprocessors\spp_perfmonitor.c" />
+    <ClCompile Include="..\..\preprocessors\spp_rpc_decode.c" />
+    <ClCompile Include="..\..\preprocessors\spp_session.c" />
+    <ClCompile Include="..\..\preprocessors\spp_sfportscan.c" />
+    <ClCompile Include="..\..\preprocessors\spp_stream6.c" />
+    <ClCompile Include="..\..\preprocessors\str_search.c" />
+    <ClCompile Include="..\..\preprocessors\stream_api.c" />
+    <ClCompile Include="..\..\reload.c" />
+    <ClCompile Include="..\..\sfutil\acsmx.c" />
+    <ClCompile Include="..\..\sfutil\acsmx2.c" />
+    <ClCompile Include="..\..\sfutil\asn1.c" />
+    <ClCompile Include="..\..\sfutil\bnfa_search.c" />
+    <ClCompile Include="..\..\event_queue.c" />
+    <ClCompile Include="..\..\sfutil\getopt_long.c" />
+    <ClCompile Include="..\..\sfutil\ipobj.c" />
+    <ClCompile Include="..\..\sfutil\md5.c" />
+    <ClCompile Include="..\..\sfutil\mpse.c" />
+    <ClCompile Include="..\..\sfutil\sf_base64decode.c" />
+    <ClCompile Include="..\..\sfutil\sf_email_attach_decode.c" />
+    <ClCompile Include="..\..\sfutil\sf_ip.c" />
+    <ClCompile Include="..\..\sfutil\sf_iph.c" />
+    <ClCompile Include="..\..\sfutil\sf_ipvar.c" />
+    <ClCompile Include="..\..\sfutil\sf_sechash.c" />
+    <ClCompile Include="..\..\sfutil\sf_textlog.c" />
+    <ClCompile Include="..\..\sfutil\sf_vartable.c" />
+    <ClCompile Include="..\..\sfutil\sfActionQueue.c" />
+    <ClCompile Include="..\..\sfutil\sfeventq.c" />
+    <ClCompile Include="..\..\sfutil\sfghash.c" />
+    <ClCompile Include="..\..\sfutil\sfhashfcn.c" />
+    <ClCompile Include="..\..\sfutil\sfksearch.c" />
+    <ClCompile Include="..\..\sfutil\sflsq.c" />
+    <ClCompile Include="..\..\sfutil\sfmemcap.c" />
+    <ClCompile Include="..\..\sfutil\sfPolicy.c" />
+    <ClCompile Include="..\..\sfutil\sfPolicyUserData.c" />
+    <ClCompile Include="..\..\sfutil\sfportobject.c" />
+    <ClCompile Include="..\..\sfutil\sfprimetable.c" />
+    <ClCompile Include="..\..\sfutil\sfrf.c" />
+    <ClCompile Include="..\..\sfutil\sfrim.c" />
+    <ClCompile Include="..\..\sfutil\sfrt.c" />
+    <ClCompile Include="..\..\sfutil\sfrt_dir.c" />
+    <ClCompile Include="..\..\sfutil\sfsnprintfappend.c" />
+    <ClCompile Include="..\..\sfutil\sfthd.c" />
+    <ClCompile Include="..\..\sfutil\sfxhash.c" />
+    <ClCompile Include="..\..\sfutil\sha2.c" />
+    <ClCompile Include="..\..\sfutil\strvec.c" />
+    <ClCompile Include="..\..\sfutil\util_jsnorm.c" />
+    <ClCompile Include="..\..\sfutil\util_math.c" />
+    <ClCompile Include="..\..\sfutil\util_net.c" />
+    <ClCompile Include="..\..\sfutil\util_str.c" />
+    <ClCompile Include="..\..\sfutil\util_unfold.c" />
+    <ClCompile Include="..\..\sfutil\util_utf.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_convert_dynamic.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_dynamic_plugins.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_dynamic_decompression.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sp_dynamic.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sp_preprocopt.c" />
+    <ClCompile Include="..\..\target-based\sf_attribute_table.c" />
+    <ClCompile Include="..\..\target-based\sf_attribute_table_parser.c" />
+    <ClCompile Include="..\..\target-based\sftarget_hostentry.c" />
+    <ClCompile Include="..\..\target-based\sftarget_protocol_reference.c" />
+    <ClCompile Include="..\..\target-based\sftarget_reader.c" />
+    <ClCompile Include="..\..\control\sfcontrol.c" />
+    <ClCompile Include="..\..\dynamic-output\plugins\output_base.c" />
+    <ClCompile Include="..\..\dynamic-output\libs\output_lib.c" />
+    <ClCompile Include="..\..\dynamic-output\plugins\output_plugin.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\file-process\libs\file_config.c" />
+    <ClCompile Include="..\..\file-process\libs\file_identifier.c" />
+    <ClCompile Include="..\..\file-process\libs\file_lib.c" />
+    <ClCompile Include="..\..\file-process\circular_buffer.c" />
+    <ClCompile Include="..\..\file-process\file_capture.c" />
+    <ClCompile Include="..\..\file-process\file_mempool.c" />
+    <ClCompile Include="..\..\file-process\file_segment_process.c" />
+    <ClCompile Include="..\..\file-process\file_mime_config.c" />
+    <ClCompile Include="..\..\file-process\file_mime_process.c" />
+    <ClCompile Include="..\..\file-process\file_resume_block.c" />
+    <ClCompile Include="..\..\file-process\file_service.c" />
+    <ClCompile Include="..\..\file-process\file_service_config.c" />
+    <ClCompile Include="..\..\file-process\file_stats.c" />
+    <ClCompile Include="..\..\active.c" />
+    <ClCompile Include="..\..\byte_extract.c" />
+    <ClCompile Include="..\..\debug.c" />
+    <ClCompile Include="..\..\decode.c" />
+    <ClCompile Include="..\..\detect.c" />
+    <ClCompile Include="..\..\detection_filter.c" />
+    <ClCompile Include="..\..\detection_util.c" />
+    <ClCompile Include="..\..\encode.c" />
+    <ClCompile Include="..\..\event_wrapper.c" />
+    <ClCompile Include="..\..\fpcreate.c" />
+    <ClCompile Include="..\..\fpdetect.c" />
+    <ClCompile Include="..\..\hashstring.c" />
+    <ClCompile Include="..\..\idle_processing.c" />
+    <ClCompile Include="..\..\log.c" />
+    <ClCompile Include="..\..\log_text.c" />
+    <ClCompile Include="..\..\mempool.c" />
+    <ClCompile Include="..\..\mstring.c" />
+    <ClCompile Include="..\..\obfuscation.c" />
+    <ClCompile Include="..\..\packet_time.c" />
+    <ClCompile Include="..\..\parser.c" />
+    <ClCompile Include="..\..\pcrm.c" />
+    <ClCompile Include="..\..\plugbase.c" />
+    <ClCompile Include="..\..\profiler.c" />
+    <ClCompile Include="..\..\rate_filter.c" />
+    <ClCompile Include="..\..\sf_sdlist.c" />
+    <ClCompile Include="..\..\sfdaq.c" />
+    <ClCompile Include="..\..\sfthreshold.c" />
+    <ClCompile Include="..\..\signature.c" />
+    <ClCompile Include="..\..\snort.c" />
+    <ClCompile Include="..\..\snprintf.c" />
+    <ClCompile Include="..\..\strlcatu.c" />
+    <ClCompile Include="..\..\strlcpyu.c" />
+    <ClCompile Include="..\..\tag.c" />
+    <ClCompile Include="..\..\util.c" />
+    <ClCompile Include="..\WIN32-Code\getopt.c" />
+    <ClCompile Include="..\WIN32-Code\inet_aton.c" />
+    <ClCompile Include="..\WIN32-Code\inet_pton.c" />
+    <ClCompile Include="..\WIN32-Code\misc.c" />
+    <ClCompile Include="..\WIN32-Code\strtok_r.c" />
+    <ClCompile Include="..\WIN32-Code\syslog.c" />
+    <ClCompile Include="..\WIN32-Code\win32_service.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\detection-plugins\detection_options.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_asn1.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_asn1_detect.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_base64_data.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_base64_decode.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_byte_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_byte_math.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_byte_extract.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_byte_jump.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_clientserver.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_cvs.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_dsize_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_file_data.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_file_type.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_flowbits.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ftpbounce.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_hdr_opt_wrap.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_icmp_code_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_icmp_id_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_icmp_seq_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_icmp_type_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ip_fragbits.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ip_id_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ip_proto.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ip_same_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ip_tos_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ipoption_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_isdataat.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_pattern_match.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_pcre.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_pkt_data.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_react.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_replace.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_respond.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_rpc_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_session.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_tcp_ack_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_tcp_flag_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_tcp_seq_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_tcp_win_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_ttl_check.h" />
+    <ClInclude Include="..\..\detection-plugins\sp_urilen_check.h" />
+    <ClInclude Include="..\..\memory_stats.h" />
+    <ClInclude Include="..\..\output-plugins\spo_alert_fast.h" />
+    <ClInclude Include="..\..\output-plugins\spo_alert_full.h" />
+    <ClInclude Include="..\..\output-plugins\spo_alert_sf_socket.h" />
+    <ClInclude Include="..\..\output-plugins\spo_alert_syslog.h" />
+    <ClInclude Include="..\..\output-plugins\spo_alert_test.h" />
+    <ClInclude Include="..\..\output-plugins\spo_alert_unixsock.h" />
+    <ClInclude Include="..\..\output-plugins\spo_csv.h" />
+    <ClInclude Include="..\..\output-plugins\spo_log_ascii.h" />
+    <ClInclude Include="..\..\output-plugins\spo_log_null.h" />
+    <ClInclude Include="..\..\output-plugins\spo_log_tcpdump.h" />
+    <ClInclude Include="..\..\output-plugins\spo_unified2.h" />
+    <ClInclude Include="..\..\parser\IpAddrSet.h" />
+    <ClInclude Include="..\..\pkt_tracer.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\file_decomp.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\file_decomp_PDF.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\file_decomp_SWF.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_ad.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_client.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_client_norm.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_cmd_lookup.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_eo.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_eo_events.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_eo_log.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_include.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_mi.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_norm.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_paf.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_return_codes.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_server.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_server_norm.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_si.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_ui_config.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_ui_iis_unicode_map.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_ui_server_lookup.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_util.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_util_hbm.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_util_kmap.h" />
+    <ClInclude Include="..\..\preprocessors\HttpInspect\include\hi_util_xmalloc.h" />
+    <ClInclude Include="..\..\preprocessors\Stream6\snort_stream_icmp.h" />
+    <ClInclude Include="..\..\preprocessors\Stream6\snort_stream_ip.h" />
+    <ClInclude Include="..\..\preprocessors\Stream6\snort_stream_tcp.h" />
+    <ClInclude Include="..\..\preprocessors\Stream6\snort_stream_udp.h" />
+    <ClInclude Include="..\..\preprocessors\Stream6\stream_common.h" />
+    <ClInclude Include="..\..\preprocessors\Stream6\stream_paf.h" />
+    <ClInclude Include="..\..\preprocessors\Session\session_common.h" />
+    <ClInclude Include="..\..\preprocessors\Session\session_expect.h" />
+    <ClInclude Include="..\..\preprocessors\Session\snort_session.h" />
+    <ClInclude Include="..\..\preprocessors\normalize.h" />
+    <ClInclude Include="..\..\preprocessors\perf-base.h" />
+    <ClInclude Include="..\..\preprocessors\perf-event.h" />
+    <ClInclude Include="..\..\preprocessors\perf-flow.h" />
+    <ClInclude Include="..\..\preprocessors\perf.h" />
+    <ClInclude Include="..\..\preprocessors\perf_indicators.h" />
+    <ClInclude Include="..\..\preprocessors\portscan.h" />
+    <ClInclude Include="..\..\preprocessors\session_api.h" />
+    <ClInclude Include="..\..\preprocessors\sfprocpidstats.h" />
+    <ClInclude Include="..\..\preprocessors\snort_httpinspect.h" />
+    <ClInclude Include="..\..\preprocessors\spp_arpspoof.h" />
+    <ClInclude Include="..\..\preprocessors\spp_bo.h" />
+    <ClInclude Include="..\..\preprocessors\spp_frag3.h" />
+    <ClInclude Include="..\..\preprocessors\spp_httpinspect.h" />
+    <ClInclude Include="..\..\preprocessors\spp_normalize.h" />
+    <ClInclude Include="..\..\preprocessors\spp_perfmonitor.h" />
+    <ClInclude Include="..\..\preprocessors\spp_rpc_decode.h" />
+    <ClInclude Include="..\..\preprocessors\spp_session.h" />
+    <ClInclude Include="..\..\preprocessors\spp_sfportscan.h" />
+    <ClInclude Include="..\..\preprocessors\spp_stream6.h" />
+    <ClInclude Include="..\..\preprocessors\str_search.h" />
+    <ClInclude Include="..\..\preprocessors\stream_api.h" />
+    <ClInclude Include="..\..\reload.h" />
+    <ClInclude Include="..\..\sfutil\acsmx.h" />
+    <ClInclude Include="..\..\sfutil\acsmx2.h" />
+    <ClInclude Include="..\..\sfutil\asn1.h" />
+    <ClInclude Include="..\..\sfutil\bitop.h" />
+    <ClInclude Include="..\..\sfutil\bitop_funcs.h" />
+    <ClInclude Include="..\..\sfutil\bnfa_search.h" />
+    <ClInclude Include="..\..\event_queue.h" />
+    <ClInclude Include="..\..\sfutil\getopt.h" />
+    <ClInclude Include="..\..\sfutil\getopt1.h" />
+    <ClInclude Include="..\..\sfutil\ipobj.h" />
+    <ClInclude Include="..\..\sfutil\md5.h" />
+    <ClInclude Include="..\..\sfutil\mpse.h" />
+    <ClInclude Include="..\..\sfutil\sf_base64decode.h" />
+    <ClInclude Include="..\..\sfutil\sf_email_attach_decode.h" />
+    <ClInclude Include="..\..\sfutil\sf_ip.h" />
+    <ClInclude Include="..\..\sfutil\sf_ipvar.h" />
+    <ClInclude Include="..\..\sfutil\sf_sechash.h" />
+    <ClInclude Include="..\..\sfutil\sf_seqnums.h" />
+    <ClInclude Include="..\..\sfutil\sf_textlog.h" />
+    <ClInclude Include="..\..\sfutil\sf_vartable.h" />
+    <ClInclude Include="..\..\sfutil\sfActionQueue.h" />
+    <ClInclude Include="..\..\sfutil\sfeventq.h" />
+    <ClInclude Include="..\..\sfutil\sfghash.h" />
+    <ClInclude Include="..\..\sfutil\sfhashfcn.h" />
+    <ClInclude Include="..\..\sfutil\sfksearch.h" />
+    <ClInclude Include="..\..\sfutil\sflsq.h" />
+    <ClInclude Include="..\..\sfutil\sfmemcap.h" />
+    <ClInclude Include="..\..\sfutil\sfPolicy.h" />
+    <ClInclude Include="..\..\sfutil\sfPolicyData.h" />
+    <ClInclude Include="..\..\sfutil\sfPolicyUserData.h" />
+    <ClInclude Include="..\..\sfutil\sfportobject.h" />
+    <ClInclude Include="..\..\sfutil\sfprimetable.h" />
+    <ClInclude Include="..\..\sfutil\sfrf.h" />
+    <ClInclude Include="..\..\sfutil\sfrim.h" />
+    <ClInclude Include="..\..\sfutil\sfrt.h" />
+    <ClInclude Include="..\..\sfutil\sfrt_dir.h" />
+    <ClInclude Include="..\..\sfutil\sfrt_trie.h" />
+    <ClInclude Include="..\..\sfutil\sfsnprintfappend.h" />
+    <ClInclude Include="..\..\sfutil\sfthd.h" />
+    <ClInclude Include="..\..\sfutil\sfxhash.h" />
+    <ClInclude Include="..\..\sfutil\sha2.h" />
+    <ClInclude Include="..\..\sfutil\strvec.h" />
+    <ClInclude Include="..\..\sfutil\Unified2_common.h" />
+    <ClInclude Include="..\..\sfutil\util_jsnorm.h" />
+    <ClInclude Include="..\..\sfutil\util_math.h" />
+    <ClInclude Include="..\..\sfutil\util_net.h" />
+    <ClInclude Include="..\..\sfutil\util_str.h" />
+    <ClInclude Include="..\..\sfutil\util_unfold.h" />
+    <ClInclude Include="..\..\sfutil\util_utf.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_convert_dynamic.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_dynamic_common.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_dynamic_detection.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_dynamic_engine.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_dynamic_meta.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_dynamic_preprocessor.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_dynamic_decompression.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sp_dynamic.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sp_preprocopt.h" />
+    <ClInclude Include="..\..\target-based\sf_attribute_table.h" />
+    <ClInclude Include="..\..\target-based\sftarget_hostentry.h" />
+    <ClInclude Include="..\..\target-based\sftarget_protocol_reference.h" />
+    <ClInclude Include="..\..\target-based\sftarget_reader.h" />
+    <ClInclude Include="..\..\control\sfcontrol.h" />
+    <ClInclude Include="..\..\control\sfcontrol_funcs.h" />
+    <ClInclude Include="..\..\dynamic-output\plugins\output.h" />
+    <ClInclude Include="..\..\dynamic-output\plugins\output_api.h" />
+    <ClInclude Include="..\..\dynamic-output\plugins\output_common.h" />
+    <ClInclude Include="..\..\dynamic-output\plugins\output_lib.h" />
+    <ClInclude Include="..\..\file-process\libs\file_config.h" />
+    <ClInclude Include="..\..\file-process\libs\file_identifier.h" />
+    <ClInclude Include="..\..\file-process\libs\file_lib.h" />
+    <ClInclude Include="..\..\file-process\circular_buffer.h" />
+    <ClInclude Include="..\..\file-process\file_api.h" />
+    <ClInclude Include="..\..\file-process\file_capture.h" />
+    <ClInclude Include="..\..\file-process\file_mempool.h" />
+    <ClInclude Include="..\..\file-process\file_segment_process.h" />
+    <ClInclude Include="..\..\file-process\file_mime_config.h" />
+    <ClInclude Include="..\..\file-process\file_mime_process.h" />
+    <ClInclude Include="..\..\file-process\file_resume_block.h" />
+    <ClInclude Include="..\..\file-process\file_service.h" />
+    <ClInclude Include="..\..\file-process\file_service_config.h" />
+    <ClInclude Include="..\..\file-process\file_stats.h" />
+    <ClInclude Include="..\..\active.h" />
+    <ClInclude Include="..\..\bounds.h" />
+    <ClInclude Include="..\..\byte_extract.h" />
+    <ClInclude Include="..\..\cdefs.h" />
+    <ClInclude Include="..\..\checksum.h" />
+    <ClInclude Include="..\..\debug.h" />
+    <ClInclude Include="..\..\decode.h" />
+    <ClInclude Include="..\..\detect.h" />
+    <ClInclude Include="..\..\detection_filter.h" />
+    <ClInclude Include="..\..\detection_util.h" />
+    <ClInclude Include="..\..\encode.h" />
+    <ClInclude Include="..\..\event.h" />
+    <ClInclude Include="..\..\event_wrapper.h" />
+    <ClInclude Include="..\..\fpcreate.h" />
+    <ClInclude Include="..\..\fpdetect.h" />
+    <ClInclude Include="..\..\generators.h" />
+    <ClInclude Include="..\..\hashstring.h" />
+    <ClInclude Include="..\..\idle_processing.h" />
+    <ClInclude Include="..\..\idle_processing_funcs.h" />
+    <ClInclude Include="..\..\ipv6_port.h" />
+    <ClInclude Include="..\..\log.h" />
+    <ClInclude Include="..\..\log_text.h" />
+    <ClInclude Include="..\..\mempool.h" />
+    <ClInclude Include="..\..\mstring.h" />
+    <ClInclude Include="..\..\obfuscation.h" />
+    <ClInclude Include="..\..\packet_time.h" />
+    <ClInclude Include="..\..\parser.h" />
+    <ClInclude Include="..\..\pcap_pkthdr32.h" />
+    <ClInclude Include="..\..\pcrm.h" />
+    <ClInclude Include="..\..\plugbase.h" />
+    <ClInclude Include="..\..\plugin_enum.h" />
+    <ClInclude Include="..\..\preprocids.h" />
+    <ClInclude Include="..\..\profiler.h" />
+    <ClInclude Include="..\..\protocols.h" />
+    <ClInclude Include="..\..\rate_filter.h" />
+    <ClInclude Include="..\..\rules.h" />
+    <ClInclude Include="..\..\sf_sdlist.h" />
+    <ClInclude Include="..\..\sf_sdlist_types.h" />
+    <ClInclude Include="..\..\sf_types.h" />
+    <ClInclude Include="..\..\sfdaq.h" />
+    <ClInclude Include="..\..\sfthreshold.h" />
+    <ClInclude Include="..\..\signature.h" />
+    <ClInclude Include="..\..\smalloc.h" />
+    <ClInclude Include="..\..\snort.h" />
+    <ClInclude Include="..\..\snprintf.h" />
+    <ClInclude Include="..\..\spo_plugbase.h" />
+    <ClInclude Include="..\..\strlcatu.h" />
+    <ClInclude Include="..\..\strlcpyu.h" />
+    <ClInclude Include="..\..\tag.h" />
+    <ClInclude Include="..\..\timersub.h" />
+    <ClInclude Include="..\..\util.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\bittypes.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\bucket_lookup.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\count_packets.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\Devioctl.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\Gnuc.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\ip6_misc.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\memory_t.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\normal_lookup.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\Ntddndis.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\Ntddpack.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\Packet32.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\pcap-bpf.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\pcap-int.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\pcap-stdinc.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\pcap.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\pthread.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\remote-ext.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\sched.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\semaphore.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\tcp_session.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\time_calls.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\tme.h" />
+    <ClInclude Include="..\WIN32-Includes\WinPCAP\Win32-Extensions.h" />
+    <ClInclude Include="..\WIN32-Includes\zlib\zconf.h" />
+    <ClInclude Include="..\WIN32-Includes\zlib\zlib.h" />
+    <ClInclude Include="..\WIN32-Includes\rpc\auth.h" />
+    <ClInclude Include="..\WIN32-Includes\NET\Bpf.h" />
+    <ClInclude Include="..\WIN32-Includes\rpc\clnt.h" />
+    <ClInclude Include="..\WIN32-Includes\config.h" />
+    <ClInclude Include="..\WIN32-Includes\getopt.h" />
+    <ClInclude Include="..\WIN32-Includes\getopt1.h" />
+    <ClInclude Include="..\WIN32-Includes\gnuc.h" />
+    <ClInclude Include="..\WIN32-Includes\inttypes.h" />
+    <ClInclude Include="..\WIN32-Code\name.h" />
+    <ClInclude Include="..\WIN32-Includes\pcre.h" />
+    <ClInclude Include="..\WIN32-Includes\pcreposix.h" />
+    <ClInclude Include="..\WIN32-Includes\rpc\rpc_msg.h" />
+    <ClInclude Include="..\WIN32-Includes\stdint.h" />
+    <ClInclude Include="..\WIN32-Includes\syslog.h" />
+    <ClInclude Include="..\WIN32-Includes\UNISTD.H" />
+    <ClInclude Include="..\WIN32-Includes\rpc\xdr.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\target-based\sf_attribute_table.y">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">c:\cygwin\bin\bison -d -psfat_ -o../../target-based/%(Filename).c ../../target-based/%(Filename).y</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c:\cygwin\bin\bison -d -psfat_ -o../../target-based/%(Filename).c ../../target-based/%(Filename).y</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\target-based\$(InputName).c;..\..\target-based\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\target-based\$(InputName).c;..\..\target-based\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c:\cygwin\bin\bison -d -psfat_ -o../../target-based/%(Filename).c ../../target-based/%(Filename).y</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c:\cygwin\bin\bison -d -psfat_ -o../../target-based/%(Filename).c ../../target-based/%(Filename).y</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\target-based\$(InputName).c;..\..\target-based\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\target-based\$(InputName).c;..\..\target-based\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\target-based\sf_attribute_table_parser.l">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">c:\cygwin\bin\flex -i -Psfat -o../../target-based/%(Filename).c ../../target-based/%(Filename).l</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c:\cygwin\bin\flex -i -Psfat -o../../target-based/%(Filename).c ../../target-based/%(Filename).l</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\target-based\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\target-based\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c:\cygwin\bin\flex -i -Psfat -o../../target-based/%(Filename).c ../../target-based/%(Filename).l</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c:\cygwin\bin\flex -i -Psfat -o../../target-based/%(Filename).c ../../target-based/%(Filename).l</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\target-based\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\target-based\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\WIN32-Code\MSG00001.bin" />
+    <CustomBuild Include="..\WIN32-Code\name.mc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\WIN32-Code\name.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="snort_initialize.vcxproj">
+      <Project>{74156258-05d1-4489-8be4-3ec288373c65}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

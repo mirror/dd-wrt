@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -35,13 +35,14 @@
 #include "sip_common.h"
 #include "appInfoTable.h"
 #include "thirdparty_appid_utils.h"
+#include "sfghash.h"
 
 #define PP_APP_ID   1
 
 #define MIN_SFTP_PACKET_COUNT   30
 #define MAX_SFTP_PACKET_COUNT   55
 
-/*#define  RNA_FULL_CLEANUP   1 */
+/*#define  APPID_FULL_CLEANUP   1 */
 
 typedef enum
 {
@@ -86,7 +87,7 @@ void AppIdAddUser(tAppIdData *flowp, const char *username, tAppId appId, int suc
 void AppIdAddDnsQueryInfo(tAppIdData *flow,
                           uint16_t id,
                           const uint8_t *host, uint8_t host_len, uint16_t host_offset,
-                          uint16_t record_type);
+                          uint16_t record_type, uint16_t options_offset, bool root_query);
 void AppIdAddDnsResponseInfo(tAppIdData *flow,
                              uint16_t id,
                              const uint8_t *host, uint8_t host_len, uint16_t host_offset,
@@ -94,15 +95,24 @@ void AppIdAddDnsResponseInfo(tAppIdData *flow,
 void AppIdResetDnsInfo(tAppIdData *flow);
 
 void AppIdAddPayload(tAppIdData *flow, tAppId payload_id);
+void AppIdAddMultiPayload(tAppIdData *flow, tAppId payload_id);
 tAppIdData* appSharedDataAlloc(uint8_t proto, const struct in6_addr *ip, uint16_t initiator_port);
 tAppId getOpenAppId(void *ssnptr);
+
+void appSetServiceDetectorCallback(RNAServiceCallbackFCN fcn, tAppId appId, struct _Detector *userdata, tAppIdConfig *pConfig);
+void appSetClientDetectorCallback(RNAClientAppCallbackFCN fcn, tAppId appId, struct _Detector *userdata, tAppIdConfig *pConfig);
 
 void appSetServiceValidator(RNAServiceValidationFCN fcn, tAppId appId, unsigned extractsInfo, tAppIdConfig *pConfig);
 void appSetLuaServiceValidator(RNAServiceValidationFCN fcn, tAppId appId, unsigned extractsInfo, struct _Detector *dat);
 void appSetClientValidator(RNAClientAppFCN fcn, tAppId appId, unsigned extractsInfo, tAppIdConfig *pConfig);
 void appSetLuaClientValidator(RNAClientAppFCN fcn, tAppId appId, unsigned extractsInfo, struct _Detector *data);
 int sslAppGroupIdLookup(void *ssnptr, const char * serverName, const char * commonName, tAppId *serviceAppId, tAppId *clientAppId, tAppId *payloadAppId);
+
 tAppId getAppId(void *ssnptr);
+void CheckDetectorCallback(const SFSnortPacket *p, tAppIdData *session, APPID_SESSION_DIRECTION direction, tAppId appId, const tAppIdConfig *pConfig);
+void setTlsHost(void *ssnptr, const char *serverName, const char *commonName,
+        const char *orgName, const char *subjectAltName, bool isSniMismatch,
+        tAppId *serviceAppId, tAppId *clientAppId, tAppId *payloadAppId);
 
 #ifdef FW_TRACKER_DEBUG
 void logAppIdInfo(SFSnortPacket *p, char *message, tAppId id);
@@ -125,9 +135,17 @@ extern PreprocStats tpLibPerfStats;
 #endif
 
 extern unsigned dhcp_fp_table_size;
+extern unsigned long app_id_ongoing_session;
+extern unsigned long app_id_total_alloc;
 extern unsigned long app_id_raw_packet_count;
 extern unsigned long app_id_processed_packet_count;
 extern unsigned long app_id_ignored_packet_count;
+extern unsigned long app_id_session_heap_alloc_count;
+extern unsigned long app_id_session_freelist_alloc_count;
+extern unsigned long app_id_flow_data_free_list_count;
+extern unsigned long app_id_data_free_list_count;
+extern unsigned long app_id_tmp_free_list_count;
+
 extern int app_id_debug;
 extern unsigned isIPv4HostMonitored(uint32_t ip4, int32_t zone);
 extern void checkSandboxDetection(tAppId appId);
@@ -193,7 +211,7 @@ static inline int TPIsAppIdAvailable(void * tpSession)
 static inline int isTPProcessingDone(tAppIdData *flow)
 {
     if (thirdparty_appid_module &&
-	!getAppIdFlag(flow, APPID_SESSION_NO_TPI) &&
+        !getAppIdFlag(flow, APPID_SESSION_NO_TPI) &&
         (!TPIsAppIdDone(flow->tpsession) ||
         getAppIdFlag(flow, APPID_SESSION_APP_REINSPECT | APPID_SESSION_APP_REINSPECT_SSL)))
         return 0;
@@ -283,6 +301,26 @@ static inline tAppId pickClientAppId(tAppIdData *flow)
     return APP_ID_NONE;
 }
 
+static inline bool isSvcHttpType(tAppId app_id)
+{
+    switch(app_id)
+    {
+        case APP_ID_HTTP:
+        case APP_ID_HTTPS:
+        case APP_ID_FTPS:
+        case APP_ID_IMAPS:
+        case APP_ID_IRCS:
+        case APP_ID_LDAPS:
+        case APP_ID_NNTPS:
+        case APP_ID_POP3S:
+        case APP_ID_SMTPS:
+        case APP_ID_SSHELL:
+        case APP_ID_SSL:
+            return true;
+    }
+    return false;
+}
+
 static inline tAppId pickPayloadId(tAppIdData *flow)
 {
     if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
@@ -292,14 +330,25 @@ static inline tAppId pickPayloadId(tAppIdData *flow)
     // we are not worried about the APP_ID_UNKNOWN case here
     if (appInfoEntryFlagGet(flow->tpPayloadAppId, APPINFO_FLAG_DEFER_PAYLOAD, appIdActiveConfigGet()))
         return flow->tpPayloadAppId;
-    else if (flow->payloadAppId > APP_ID_NONE)
+    if (flow->payloadAppId > APP_ID_NONE)
         return flow->payloadAppId;
-    else if (flow->tpPayloadAppId > APP_ID_NONE)
+    if (flow->tpPayloadAppId > APP_ID_NONE)
         return flow->tpPayloadAppId;
-
+    /* APP_ID_UNKNOWN is valid only for HTTP type services */
+    if (flow->payloadAppId == APP_ID_UNKNOWN &&
+        isSvcHttpType(flow->serviceAppId))
+        return APP_ID_UNKNOWN;
     return APP_ID_NONE;
 }
 
+static inline SFGHASH* pickMultiPayloadList(tAppIdData *flow)
+{
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
+        return NULL;
+    if (flow->multiPayloadList)
+        return flow->multiPayloadList;
+    return NULL;
+}
 static inline tAppId pickReferredPayloadId(tAppIdData *flow)
 {
     if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
@@ -337,7 +386,8 @@ static inline tAppId fwPickPayloadAppId(tAppIdData *session)
 {
     tAppId appId;
     appId = pickPayloadId(session);
-    if (appId == APP_ID_NONE)
+    if (appId == APP_ID_NONE ||
+        (appId == APP_ID_SPDY && session && session->hsession && session->hsession->url == NULL && session->encrypted.payloadAppId>APP_ID_NONE))
         appId = session->encrypted.payloadAppId;
     return appId;
 }
@@ -349,6 +399,13 @@ static inline tAppId fwPickReferredPayloadAppId(tAppIdData *session)
     if (appId == APP_ID_NONE)
         appId = session->encrypted.referredAppId;
     return appId;
+}
+
+static inline SFGHASH* fwPickMultiPayloadList(tAppIdData *session)
+{
+    SFGHASH* multiPayloadList = NULL;
+    multiPayloadList = pickMultiPayloadList(session);
+    return multiPayloadList;
 }
 
 static inline tAppIdData* appSharedGetData(const SFSnortPacket *p)

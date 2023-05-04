@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include "flow.h"
 #include "service_api.h"
 
+#include <tirpc/rpc/rpcent.h>
 #if defined(FREEBSD) || defined(OPENBSD)
 #include "rpc/rpc.h"
 #endif
@@ -157,6 +158,7 @@ typedef struct _SERVICE_RPC_DATA
 static int rpc_init(const InitServiceAPI * const init_api);
 static int rpc_validate(ServiceValidationArgs* args);
 static int rpc_tcp_validate(ServiceValidationArgs* args);
+static void rpc_clean(const CleanServiceAPI * const clean_api);
 
 static tRNAServiceElement svc_element =
 {
@@ -203,7 +205,8 @@ tRNAServiceValidationModule rpc_service_mod =
 {
     "RPC",
     &rpc_init,
-    pp
+    pp,
+    .clean = rpc_clean
 };
 
 typedef struct _RPC_PROGRAM
@@ -213,7 +216,7 @@ typedef struct _RPC_PROGRAM
     char *name;
 } RPCProgram;
 
-static RPCProgram *rpc_programs;
+static RPCProgram *rpc_programs = NULL;
 
 static uint8_t rpc_reply_accepted_pattern[8] = {0,0,0,1,0,0,0,0};
 static uint8_t rpc_reply_denied_pattern[8] = {0,0,0,1,0,0,0,1};
@@ -230,7 +233,9 @@ static int rpc_init(const InitServiceAPI * const init_api)
     struct rpcent *rpc;
     RPCProgram *prog;
 
+#ifdef TARGET_BASED
     app_id = init_api->dpd->addProtocolReference("sunrpc");
+#endif
 
     if (!rpc_programs)
     {
@@ -401,6 +406,7 @@ static int validate_packet(const uint8_t *data, uint16_t size, int dir,
                         dip = GET_DST_IP(pkt);
                         sip = GET_SRC_IP(pkt);
                         tmp = ntohl(pmr->port);
+#ifdef TARGET_BASED
                         pf = rpc_service_mod.api->flow_new(flowp, pkt, dip, 0, sip, (uint16_t)tmp, (uint8_t)ntohl(rd->proto), app_id, 0);
                         if (pf)
                         {
@@ -417,6 +423,7 @@ static int validate_packet(const uint8_t *data, uint16_t size, int dir,
                                                       APPID_SESSION_DISCOVER_APP |
                                                       APPID_SESSION_DISCOVER_USER));
                         }
+#endif
                     }
                     break;
                 default:
@@ -554,8 +561,8 @@ static int rpc_tcp_validate(ServiceValidationArgs* args)
     uint32_t fragsize;
     int ret;
     int retval = -1;
-    const ServiceRPCCall *call;
-    const ServiceRPCReply *reply;
+    ServiceRPCCall *call;
+    ServiceRPCReply *reply;
 
     static char subname[64];
     RNAServiceSubtype sub;
@@ -657,7 +664,8 @@ static int rpc_tcp_validate(ServiceValidationArgs* args)
             size -= length;
             if (rd->tcppos[dir] >= sizeof(ServiceRPCAuth))
             {
-                length = ntohl(((ServiceRPCCall *)rd->tcpdata[dir])->cred.length);
+                call = (ServiceRPCCall *)rd->tcpdata[dir];
+                length = ntohl(call->cred.length);
                 if (length > (rd->tcpsize[dir] & ~RPC_TCP_FRAG_MASK) ||
                     rd->tcpfragpos[dir]+length > (rd->tcpsize[dir] & ~RPC_TCP_FRAG_MASK))
                     goto bail;
@@ -676,8 +684,9 @@ static int rpc_tcp_validate(ServiceValidationArgs* args)
             size -= length;
             if (rd->tcppos[dir] >= rd->tcpauthsize[dir])
             {
-                ((ServiceRPCCall *)rd->tcpdata[dir])->cred.flavor = 0;
-                ((ServiceRPCCall *)rd->tcpdata[dir])->cred.length = 0;
+                call = (ServiceRPCCall *)rd->tcpdata[dir];
+                call->cred.flavor = 0;
+                call->cred.length = 0;
                 rd->tcpstate[dir] = RPC_TCP_STATE_VERIFY;
                 rd->tcppos[dir] = 0;
             }
@@ -698,9 +707,15 @@ static int rpc_tcp_validate(ServiceValidationArgs* args)
             if (rd->tcppos[dir] >= sizeof(ServiceRPCAuth))
             {
                 if (dir == APP_ID_FROM_INITIATOR)
-                    length = ntohl(((ServiceRPCCall *)rd->tcpdata[dir])->verify.length);
+                {
+                    call = (ServiceRPCCall *)rd->tcpdata[dir];
+                    length = ntohl(call->verify.length);
+                }
                 else
-                    length = ntohl(((ServiceRPCReply *)rd->tcpdata[dir])->verify.length);
+                {
+                    reply = (ServiceRPCReply *)rd->tcpdata[dir];
+                    length = ntohl(reply->verify.length);
+                }
                 if (length > (rd->tcpsize[dir] & ~RPC_TCP_FRAG_MASK) ||
                     rd->tcpfragpos[dir]+length > (rd->tcpsize[dir] & ~RPC_TCP_FRAG_MASK))
                     goto bail;
@@ -722,8 +737,9 @@ static int rpc_tcp_validate(ServiceValidationArgs* args)
             {
                 if (dir == APP_ID_FROM_INITIATOR)
                 {
-                    ((ServiceRPCCall *)rd->tcpdata[dir])->verify.flavor = 0;
-                    ((ServiceRPCCall *)rd->tcpdata[dir])->verify.length = 0;
+                    call = (ServiceRPCCall *)rd->tcpdata[dir];
+                    call->verify.flavor = 0;
+                    call->verify.length = 0;
                     rd->tcpstate[dir] = RPC_TCP_STATE_PARTIAL;
                     rd->tcppos[dir] = sizeof(ServiceRPCCall);
                     if (rd->tcpfragpos[dir] >= (rd->tcpsize[dir] & ~RPC_TCP_FRAG_MASK))
@@ -752,8 +768,9 @@ static int rpc_tcp_validate(ServiceValidationArgs* args)
                 }
                 else
                 {
-                    ((ServiceRPCReply *)rd->tcpdata[dir])->verify.flavor = 0;
-                    ((ServiceRPCReply *)rd->tcpdata[dir])->verify.length = 0;
+                    reply = (ServiceRPCReply *)rd->tcpdata[dir];
+                    reply->verify.flavor = 0;
+                    reply->verify.length = 0;
                     rd->tcpstate[dir] = RPC_TCP_STATE_REPLY_HEADER;
                     if (rd->tcpfragpos[dir]+sizeof(uint32_t) > (rd->tcpsize[dir] & ~RPC_TCP_FRAG_MASK))
                         goto bail;
@@ -914,3 +931,19 @@ bail:
     goto done;
 }
 
+static void rpc_clean(const CleanServiceAPI * const clean_api)
+{
+    RPCProgram *prog = NULL;
+
+    while(rpc_programs)
+    {
+        prog = rpc_programs;
+
+        rpc_programs = rpc_programs->next;
+
+        if(prog->name)
+            free(prog->name);
+
+        free(prog);
+    }
+}

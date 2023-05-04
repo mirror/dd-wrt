@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -29,6 +29,7 @@
 #include "session_api.h"
 #include "active.h"
 #include "pkt_tracer.h"
+#include "preprocessors/Session/session_common.h"
 
 Verdict_Reason verdict_reason = VERDICT_REASON_NO_BLOCK; // preproc# causing a packet drop
 volatile int pkt_trace_cli_flag; // set by message socket
@@ -51,9 +52,11 @@ typedef struct _DebugSessionConstraints
 
 static bool alreadySentTrace;
 static bool pkt_trace_enabled_by_lina;
+static bool pkt_trace_enabled_by_clish_bk;
 static bool pkt_trace_enabled_by_clish;
 static DebugSessionConstraints pkt_tracer_debug_info;
 static char pkt_tracer_debug_session[DEBUG_SESSION_ID_SIZE];
+static char pkt_tracer_debug_session_bk[DEBUG_SESSION_ID_SIZE];
 static char pktTraceData[MAX_TRACE_SIZE];
 static uint32_t pktTraceDataLen = 0;
 static bool first_trace_line = true;
@@ -199,13 +202,7 @@ bool pktTracerDebugCheck(Packet* p)
     if (p && p->pkth && p->pkth->flags & DAQ_PKT_FLAG_TRACE_ENABLED)
     {
         pkt_trace_enabled_by_lina = true;
-        if (first_trace_line)
-        {
-            first_trace_line = false;
-            LogMessage("PktTracerDbg \n"); // empty line
         }
-        LogMessage("PktTracerDbg Tracing enabled by Lina\n"); // troubleshooting message
-    }
     else
         pkt_trace_enabled_by_lina = false;
 #else
@@ -216,115 +213,64 @@ bool pktTracerDebugCheck(Packet* p)
     if (!pkt_trace_cli_flag || !p || !(p->iph_api))
         return pkt_trace_enabled_by_lina;
 
-    StreamSessionKey local_key;
-    memset(&local_key, 0, sizeof(local_key));
     sfaddr_t *src = GET_SRC_IP(p);
     sfaddr_t *dst = GET_DST_IP(p);
-    uint16_t srcPort = p->sp;
-    uint16_t dstPort = p->dp;
-    uint16_t sport, dport;
+    uint16_t sport = p->sp;
+    uint16_t dport = p->dp;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+    uint16_t sAsId = DAQ_GetSourceAddressSpaceID(p->pkth);
+    uint16_t dAsId = DAQ_GetDestinationAddressSpaceID(p->pkth);
+#endif
 
-    StreamSessionKey *key = &local_key;
-    key->protocol = (uint8_t) GET_IPH_PROTO(p);
-    switch (key->protocol)
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+    uint32_t cid = GET_OUTER_IPH_PROTOID(p, pkth);
+#endif
+
+    uint8_t protocol = GET_IPH_PROTO(p);
+    switch (protocol)
     {
         case IPPROTO_TCP:
         case IPPROTO_UDP:
-            sport = srcPort;
-            dport = dstPort;
             break;
         case IPPROTO_ICMP:
-            if (srcPort == ICMP_ECHOREPLY)
+            if (sport == ICMP_ECHOREPLY)
             {
                 dport = ICMP_ECHO; /* Treat ICMP echo reply the same as request */
                 sport = 0;
             }
             else /* otherwise, every ICMP type gets different key */
-            {
-                sport = srcPort;
                 dport = 0;
-            }
             break;
         case IPPROTO_ICMPV6:
-            if (srcPort == ICMP6_REPLY)
+            if (sport == ICMP6_REPLY)
             {
                 dport = ICMP6_ECHO; /* Treat ICMPv6 echo reply the same as request */
                 sport = 0;
             }
             else /* otherwise, every ICMP type gets different key */
-            {
-                sport = srcPort;
                 dport = 0;
-            }
             break;
         default:
             sport = dport = 0;
             break;
     }
 
-    if (sfip_fast_lt6(src, dst))
-    {
-        COPY4(key->ip_l, sfaddr_get_ip6_ptr(src));
-        key->port_l = sport;
-        COPY4(key->ip_h, sfaddr_get_ip6_ptr(dst));
-        key->port_h = dport;
-    }
-    else if (sfip_fast_eq6(src, dst))
-    {
-        COPY4(key->ip_l, sfaddr_get_ip6_ptr(src));
-        COPY4(key->ip_h, sfaddr_get_ip6_ptr(dst));
-        if (sport < dport)
-        {
-            key->port_l = sport;
-            key->port_h = dport;
-        }
-        else
-        {
-            key->port_l = dport;
-            key->port_h = sport;
-        }
-    }
-    else
-    {
-        COPY4(key->ip_l, sfaddr_get_ip6_ptr(dst));
-        key->port_l = dport;
-        COPY4(key->ip_h, sfaddr_get_ip6_ptr(src));
-        key->port_h = sport;
-    }
-
-    if ((!pkt_tracer_debug_info.protocol || pkt_tracer_debug_info.protocol == key->protocol) &&
-        (((!pkt_tracer_debug_info.sport || pkt_tracer_debug_info.sport == key->port_l) &&
-          (!pkt_tracer_debug_info.sip_flag || memcmp(&pkt_tracer_debug_info.sip, key->ip_l, sizeof(pkt_tracer_debug_info.sip)) == 0) &&
-          (!pkt_tracer_debug_info.dport || pkt_tracer_debug_info.dport == key->port_h) &&
-          (!pkt_tracer_debug_info.dip_flag || memcmp(&pkt_tracer_debug_info.dip, key->ip_h, sizeof(pkt_tracer_debug_info.dip)) == 0)) ||
-         ((!pkt_tracer_debug_info.sport || pkt_tracer_debug_info.sport == key->port_h) &&
-           (!pkt_tracer_debug_info.sip_flag || memcmp(&pkt_tracer_debug_info.sip, key->ip_h, sizeof(pkt_tracer_debug_info.sip)) == 0) &&
-           (!pkt_tracer_debug_info.dport || pkt_tracer_debug_info.dport == key->port_l) &&
-           (!pkt_tracer_debug_info.dip_flag || memcmp(&pkt_tracer_debug_info.dip, key->ip_l, sizeof(pkt_tracer_debug_info.dip)) == 0))))
+    if ((!pkt_tracer_debug_info.protocol || pkt_tracer_debug_info.protocol == protocol) &&
+        (((!pkt_tracer_debug_info.sport || pkt_tracer_debug_info.sport == sport) &&
+          (!pkt_tracer_debug_info.sip_flag || memcmp(&pkt_tracer_debug_info.sip, src, sizeof(pkt_tracer_debug_info.sip)) == 0) &&
+          (!pkt_tracer_debug_info.dport || pkt_tracer_debug_info.dport == dport) &&
+          (!pkt_tracer_debug_info.dip_flag || memcmp(&pkt_tracer_debug_info.dip, dst, sizeof(pkt_tracer_debug_info.dip)) == 0)) ||
+         ((!pkt_tracer_debug_info.sport || pkt_tracer_debug_info.sport == dport) &&
+           (!pkt_tracer_debug_info.sip_flag || memcmp(&pkt_tracer_debug_info.sip, dst, sizeof(pkt_tracer_debug_info.sip)) == 0) &&
+           (!pkt_tracer_debug_info.dport || pkt_tracer_debug_info.dport == sport) &&
+           (!pkt_tracer_debug_info.dip_flag || memcmp(&pkt_tracer_debug_info.dip, src, sizeof(pkt_tracer_debug_info.dip)) == 0))))
     {
         int af;
-        const struct in6_addr* sip;
-        const struct in6_addr* dip;
+        const struct in6_addr* sip = (const struct in6_addr*)src;
+        const struct in6_addr* dip = (const struct in6_addr*)dst;
         unsigned offset;
-        uint16_t sport;
-        uint16_t dport;
         char sipstr[INET6_ADDRSTRLEN];
         char dipstr[INET6_ADDRSTRLEN];
-
-        if (p->packet_flags & PKT_FROM_CLIENT)
-        {
-            sip = (const struct in6_addr*)key->ip_l;
-            dip = (const struct in6_addr*)key->ip_h;
-            sport = key->port_l;
-            dport = key->port_h;
-        }
-        else
-        {
-            sip = (const struct in6_addr*)key->ip_h;
-            dip = (const struct in6_addr*)key->ip_l;
-            sport = key->port_h;
-            dport = key->port_l;
-        }
 
         sipstr[0] = 0;
         if (sip->s6_addr32[0] || sip->s6_addr32[1] || sip->s6_addr16[4] || (sip->s6_addr16[5] && sip->s6_addr16[5] != 0xFFFF))
@@ -350,8 +296,25 @@ bool pktTracerDebugCheck(Packet* p)
             offset = 12;
         }
         inet_ntop(af, &dip->s6_addr[offset], dipstr, sizeof(dipstr));
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u AS %u-%u CID %u",
+                 sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)protocol,
+                 sAsId, dAsId, (unsigned)cid);
+#else
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u CID %u",
+                 sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)protocol, (unsigned)cid);
+#endif
+#else /* No Carrier id */
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u AS %u-%u",
+                 sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)protocol,
+                 sAsId, dAsId);
+#else
         snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u",
-            sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)key->protocol);
+                 sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)protocol);
+#endif
+#endif
         pkt_trace_enabled_by_clish = true;
         return true;
     }
@@ -361,7 +324,7 @@ bool pktTracerDebugCheck(Packet* p)
 // Get name-string from DAQ_Verdict (must sync with DAQ_Verdict defined at daq_common.h)
 static char* getVerdictStr(DAQ_Verdict vd)
 {
-    static char* vName[] = {"PASS", "BLOCK", "REPLACE", "WHITELIST", "BLACKLIST",
+    static char* vName[] = {"PASS", "BLOCK", "REPLACE", "ALLOWFLOW", "BLOCKFLOW",
                             "IGNORE", "RETRY", "Error in reading verdict!"};
 
     if (vd > MAX_DAQ_VERDICT)
@@ -375,7 +338,7 @@ static char* getModuleStr(Verdict_Reason module)
     static char* mName[] = {"Packet Information", "Session String", "None", "a module", "DAQ Retry", "Snort",
         "AppID", "SSL", "Firewall", "Captive Portal", "Safe Search", "SI", "Prefilter", "FTP",
         "Stream", "Session", "Defragmentation", "Snort React", "Snort Response", "SI/Reputation",
-        "X-Link2State", "Back Orifice", "SMB", "File Process", "IPS"};
+        "X-Link2State", "Back Orifice", "SMB", "File Process", "IPS", "Snort - Fast-Block"};
 
     if (module >= MAX_VERDICT_REASON)
         module = VERDICT_REASON_UNKNOWN;
@@ -404,14 +367,6 @@ void addPktTraceData(int reason, int traceLen)
 
     if (traceLen <= 0) return;
 
-    if (module == VERDICT_REASON_SSNSTR) // update debug session string
-    {
-        strncpy(pkt_tracer_debug_session, trace_line,
-            (traceLen >= DEBUG_SESSION_ID_SIZE)? DEBUG_SESSION_ID_SIZE-1 : traceLen);
-        pkt_tracer_debug_session[DEBUG_SESSION_ID_SIZE-1] = '\0';
-        return;
-    }
-
     if (pkt_trace_enabled_by_clish) // tracing enabled by 'system support tracer'
     {
         if (first_trace_line)
@@ -437,11 +392,16 @@ void addPktTraceData(int reason, int traceLen)
 // Writes pktTraceData buffer into PDTS or /var/log/message
 void writePktTraceData(DAQ_Verdict verdict, unsigned int napId, unsigned int ipsId, const Packet* p)
 {
+    uint32_t snortId = (snort_conf->event_log_id >> 16);
     alreadySentTrace = false;
+
+    if (p->packet_flags & PKT_FAST_BLOCK)
+        verdict_reason = VERDICT_REASON_FASTBLOCK;
+
     if (pkt_trace_enabled_by_clish)
     {
-        LogMessage("PktTracerDbg %s NAP id %u, IPS id %u, Verdict %s\n", pkt_tracer_debug_session,
-            napId, ipsId, getVerdictStr(verdict));
+        LogMessage("PktTracerDbg %s Snort id %u, NAP id %u, IPS id %u, Verdict %s\n",
+            pkt_tracer_debug_session, snortId, napId, ipsId, getVerdictStr(verdict));
         if (verdict_reason != VERDICT_REASON_NO_BLOCK)
             LogMessage("PktTracerDbg %s ===> Blocked by %s\n", pkt_tracer_debug_session, getModuleStr(verdict_reason));
     }
@@ -452,14 +412,16 @@ void writePktTraceData(DAQ_Verdict verdict, unsigned int napId, unsigned int ips
         if (pktTraceDataLen >= MAX_TRACE_SIZE)
             len = 0;
         else if (verdict_reason == VERDICT_REASON_NO_BLOCK)
-            len = snprintf(pktTraceData+pktTraceDataLen, MAX_TRACE_SIZE - pktTraceDataLen, "NAP id %u, IPS id %u, Verdict %s\n",
-                    napId, ipsId, getVerdictStr(verdict));
+            len = snprintf(pktTraceData+pktTraceDataLen, MAX_TRACE_SIZE - pktTraceDataLen, "Snort id %u, NAP id %u, IPS id %u, Verdict %s\n",
+                    snortId, napId, ipsId, getVerdictStr(verdict));
         else
-            len = snprintf(pktTraceData+pktTraceDataLen, MAX_TRACE_SIZE - pktTraceDataLen, "NAP id %u, IPS id %u, Verdict %s, %s %s\n", napId, ipsId,
-                getVerdictStr(verdict), "Blocked by", getModuleStr(verdict_reason));
+            len = snprintf(pktTraceData+pktTraceDataLen, MAX_TRACE_SIZE - pktTraceDataLen, "Snort id %u, NAP id %u, IPS id %u, Verdict %s, %s %s\n",
+                    snortId, napId, ipsId, getVerdictStr(verdict), "Blocked by", getModuleStr(verdict_reason));
         if (len > 0)
         {
             pktTraceDataLen += len;
+            if (pktTraceDataLen >= MAX_TRACE_SIZE)
+                pktTraceDataLen = MAX_TRACE_SIZE-1;
             pktTraceData[MAX_TRACE_SIZE-1] = '\0';
         }
         // Send to DAQ
@@ -473,7 +435,7 @@ void writePktTraceData(DAQ_Verdict verdict, unsigned int napId, unsigned int ips
         mod.value = (void *) &mod_tr;
         DAQ_ModifyFlow(p->pkth, &mod);
         if (pkt_trace_enabled_by_clish) // troubleshooting message in CLISH
-            LogMessage("PktTracerDbg Trace buffer and verdict reason are sent to DAQ's PDTS\n");
+            LogMessage("PktTracerDbg Trace buffer and verdict reason are sent to DAQ\n");
         if (verdict_reason != VERDICT_REASON_NO_BLOCK)
             alreadySentTrace = true;
     }
@@ -571,6 +533,74 @@ void sendReason(const Packet* p)
     mod.value = (void*)&verdict_reason;
     DAQ_ModifyFlow(p->pkth, &mod);
     if (pkt_trace_enabled_by_clish) // troubleshooting message in CLISH
-        LogMessage("PktTracerDbg Verdict reason is sent to DAQ's PDTS\n");
+        LogMessage("PktTracerDbg Verdict reason is sent to DAQ\n");
 }
 #endif
+
+void SavePktTrace()
+{
+    pkt_trace_enabled_by_clish_bk = pkt_trace_enabled_by_clish;
+    if( pkt_trace_enabled_by_clish )
+        memcpy(pkt_tracer_debug_session_bk, pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE); 
+}
+
+void RestorePktTrace()
+{
+    pkt_trace_enabled_by_clish = pkt_trace_enabled_by_clish_bk;
+    if(pkt_trace_enabled_by_clish)
+        memcpy(pkt_tracer_debug_session, pkt_tracer_debug_session_bk, DEBUG_SESSION_ID_SIZE);
+}
+
+
+bool pktTracerDebugCheckSsn(void* ssn)
+{
+    char sipstr[INET6_ADDRSTRLEN];
+    char dipstr[INET6_ADDRSTRLEN];
+    SessionControlBlock *scb = ( SessionControlBlock * ) ssn;
+    pkt_trace_enabled_by_clish = false;
+
+    if (!pkt_trace_cli_flag || !scb)
+        return false;		
+
+    if ((!pkt_tracer_debug_info.protocol || pkt_tracer_debug_info.protocol == scb->protocol) &&
+            (((!pkt_tracer_debug_info.sport || pkt_tracer_debug_info.sport == ntohs(scb->client_port)) &&
+              (!pkt_tracer_debug_info.sip_flag || memcmp(&pkt_tracer_debug_info.sip, &scb->client_ip.ip, sizeof(pkt_tracer_debug_info.sip)) == 0) &&
+              (!pkt_tracer_debug_info.dport || pkt_tracer_debug_info.dport == ntohs(scb->server_port)) &&
+              (!pkt_tracer_debug_info.dip_flag || memcmp(&pkt_tracer_debug_info.dip, &scb->server_ip.ip, sizeof(pkt_tracer_debug_info.dip)) == 0))))
+    {
+
+        sfip_ntop(&scb->client_ip, sipstr, sizeof(sipstr));
+        sfip_ntop(&scb->server_ip, dipstr, sizeof(dipstr));
+        uint16_t sport = ntohs(scb->client_port);
+        uint16_t dport = ntohs(scb->server_port);  
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID) 
+        uint32_t cid = scb->key->carrierId; 
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+        uint16_t sAsId = scb->key->addressSpaceId_l;
+        uint16_t dAsId = scb->key->addressSpaceId_h;
+
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u AS %u-%u CID %u",
+                 sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)scb->protocol,
+                 sAsId, dAsId, cid);
+#else
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u CID %u",
+                sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)scb->protocol, cid);
+#endif
+#else /* No Carrier id */
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+        uint16_t sAsId = scb->key->addressSpaceId_l;
+        uint16_t dAsId = scb->key->addressSpaceId_h;
+
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u AS %u-%u",
+                 sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)scb->protocol,
+                 sAsId, dAsId);
+#else
+        snprintf(pkt_tracer_debug_session, DEBUG_SESSION_ID_SIZE, "%s-%u - %s-%u %u",
+                sipstr, (unsigned)sport, dipstr, (unsigned)dport, (unsigned)scb->protocol);
+#endif
+#endif
+        pkt_trace_enabled_by_clish = true;
+        return true;
+    }
+    return false;
+}

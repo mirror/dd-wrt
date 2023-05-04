@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,7 @@
 #include "snort_debug.h"
 #include "util.h"
 #include "parser.h"
+#include "memory_stats.h"
 
 #include "hi_ui_config.h"
 #include "hi_ui_server_lookup.h"
@@ -280,6 +281,152 @@ static void HttpInspect(Packet *p, void *context)
     return;
 }
 
+
+size_t hi_get_free_mempool(MemPool *mempool)
+{
+    if (mempool)
+        return mempool->max_memory - mempool->used_memory;
+    return 0;
+}
+
+size_t hi_get_used_mempool(MemPool *mempool)
+{
+    if (mempool)
+        return mempool->used_memory;
+    return 0;
+}
+
+size_t hi_get_max_mempool(MemPool *mempool)
+{   
+    if (mempool)
+        return mempool->max_memory;
+    return 0;
+}
+
+int HttpPrintMemStats(FILE *fd, char* buffer, PreprocMemInfo *meminfo)
+{   
+    time_t curr_time = time(NULL);
+    int len = 0;
+    // Adding stats to be printed , place holder 
+    if (fd)
+    {
+        len = fprintf(fd, ",%lu,%lu,%lu,%lu,%lu,%lu"
+               ",%zu,%zu,%zu"
+               ",%zu,%zu,%zu"
+               ",%zu,%zu,%zu"
+               ",%zu,%zu,%zu"
+               ",%lu,%u,%u"
+               ",%lu,%u,%u"
+               ",%lu,%u,%u"
+               , hi_stats.session_count
+               , hi_stats.post
+               , hi_stats.get
+               , hi_stats.post_params
+               , hi_stats.req_headers
+               , hi_stats.resp_headers
+               , hi_get_free_mempool(http_mempool)
+               , hi_get_used_mempool(http_mempool)
+               , hi_get_max_mempool(http_mempool)
+               , hi_get_free_mempool(mime_decode_mempool)
+               , hi_get_used_mempool(mime_decode_mempool)
+               , hi_get_max_mempool(mime_decode_mempool)
+               , hi_get_free_mempool(hi_gzip_mempool)
+               , hi_get_used_mempool(hi_gzip_mempool)
+               , hi_get_max_mempool(hi_gzip_mempool)
+               , hi_get_free_mempool(mime_log_mempool)
+               , hi_get_used_mempool(mime_log_mempool)
+               , hi_get_max_mempool(mime_log_mempool)
+               , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+               , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+               , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+               , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+               , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+               , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+               , meminfo[PP_MEM_CATEGORY_MEMPOOL].used_memory
+               , meminfo[PP_MEM_CATEGORY_MEMPOOL].num_of_alloc
+               , meminfo[PP_MEM_CATEGORY_MEMPOOL].num_of_free
+               ); 
+        return len;
+    }
+
+    if (buffer)
+    {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "Memory Statistics of httpinspect on: %s\n"
+             " Http Inspect Statistics\n"
+             "    Current active session                      : %lu\n"
+             "    No of POST methods encountered              : %lu\n"
+             "    No of GET methods encountered               : %lu\n"
+             "    No of successfully extract post params      : %lu\n"
+             "    No of successfully extract request params   : %lu\n"
+             "    No of successfully extract response params  : %lu\n"
+             "\n  Http Memory Pool:\n"
+             "       Free Memory:        %14zu bytes\n"
+             "       Used Memory:        %14zu bytes\n"
+             "       Max Memory :        %14zu bytes\n"
+             "\n  Mime Decode Memory Pool:\n"
+             "       Free Memory:        %14zu bytes\n"
+             "       Used Memory:        %14zu bytes\n"
+             "       Max Memory :        %14zu bytes\n"
+             "\n  Http gzip Memory Pool:\n"
+             "       Free Memory:        %14zu bytes\n"
+             "       Used Memory:        %14zu bytes\n"
+             "       Max Memory :        %14zu bytes\n"
+             "\n  Http Mime log Memory Pool:\n"
+             "       Free Memory:        %14zu bytes\n"
+             "       Used Memory:        %14zu bytes\n"
+             "       Max Memory :        %14zu bytes\n"
+             , ctime(&curr_time)
+             , hi_stats.session_count
+             , hi_stats.post
+             , hi_stats.get
+             , hi_stats.post_params
+             , hi_stats.req_headers
+             , hi_stats.resp_headers
+             , hi_get_free_mempool(http_mempool)
+             , hi_get_used_mempool(http_mempool)
+             , hi_get_max_mempool(http_mempool)
+             , hi_get_free_mempool(mime_decode_mempool)
+             , hi_get_used_mempool(mime_decode_mempool)
+             , hi_get_max_mempool(mime_decode_mempool)
+             , hi_get_free_mempool(hi_gzip_mempool)
+             , hi_get_used_mempool(hi_gzip_mempool)
+             , hi_get_max_mempool(hi_gzip_mempool)
+             , hi_get_free_mempool(mime_log_mempool)
+             , hi_get_used_mempool(mime_log_mempool)
+             , hi_get_max_mempool(mime_log_mempool)
+             );
+    
+    } else {
+
+        LogMessage(" Memory Statistics of Http Inspect on: %s\n ",ctime(&curr_time));
+        LogMessage("    Current active session          : %lu\n", hi_stats.session_count);
+        LogMessage("    No of POST methods encountered  : %lu\n", hi_stats.post);
+        LogMessage("    No of GET methods encountered   : %lu\n", hi_stats.get);
+        LogMessage("    No of successfully extract post params      : %lu\n", hi_stats.post_params);
+        LogMessage("    No of successfully extract request params   : %lu\n", hi_stats.req_headers);
+        LogMessage("    No of successfully extract response params  : %lu\n", hi_stats.resp_headers);
+        LogMessage(" Http Memory Pool       :\n");
+        LogMessage("      Free Memory:    %14zu bytes\n", hi_get_free_mempool(http_mempool));
+        LogMessage("      Used Memory:    %14zu bytes\n", hi_get_used_mempool(http_mempool));
+        LogMessage("      Max Memory :    %14zu bytes\n", hi_get_max_mempool(http_mempool));
+        LogMessage(" Mime Decode Memory Pool   :\n");
+        LogMessage("      Free Memory:    %14zu bytes\n", hi_get_free_mempool(mime_decode_mempool));
+        LogMessage("      Used Memory:    %14zu bytes\n", hi_get_used_mempool(mime_decode_mempool));
+        LogMessage("      Max Memory :    %14zu bytes\n", hi_get_max_mempool(mime_decode_mempool));
+        LogMessage(" Http Gzip Memory Pool     :\n");
+        LogMessage("      Free Memory:    %14zu bytes\n", hi_get_free_mempool(hi_gzip_mempool));
+        LogMessage("      Used Memory:    %14zu bytes\n", hi_get_used_mempool(hi_gzip_mempool));
+        LogMessage("      Max Memory :    %14zu bytes\n", hi_get_max_mempool(hi_gzip_mempool));
+        LogMessage(" Http Mime log Memory Pool :\n");
+        LogMessage("      Free Memory:    %14zu bytes\n", hi_get_free_mempool(mime_log_mempool));
+        LogMessage("      Used Memory:    %14zu bytes\n", hi_get_used_mempool(mime_log_mempool));
+        LogMessage("      Max Memory :    %14zu bytes\n", hi_get_max_mempool(mime_log_mempool));
+  
+    }
+ 
+       return len;
+}
+
 static void HttpInspectDropStats(int exiting)
 {
     if(!hi_stats.total)
@@ -339,6 +486,17 @@ static void HttpInspectDropStats(int exiting)
     }
     LogMessage("    Http/2 Rebuilt Packets:               %-10I64u\n", hi_stats.h2_rebuilt_packets);
     LogMessage("    Total packets processed:              %-10I64u\n", hi_stats.total);
+    LogMessage("    Non-mempool session memory:           %-10I64u\n", hi_stats.mem_used + 
+                                                       (hi_paf_get_size() * hi_stats.session_count));
+    LogMessage("    http_mempool used:                    %-10I64u\n",
+                                                       http_mempool ? http_mempool->used_memory:0);
+    LogMessage("    hi_gzip_mempool used:                    %-10I64u\n",
+                                                       hi_gzip_mempool ? hi_gzip_mempool->used_memory:0);
+    LogMessage("    mime_decode_mempool used:                    %-10I64u\n",
+                                                       mime_decode_mempool ? mime_decode_mempool->used_memory:0);
+    LogMessage("    mime_log_mempool used:                    %-10I64u\n",
+                                                       mime_log_mempool ? mime_log_mempool->used_memory:0);
+    LogMessage("    Current active session:               %-10I64u\n", hi_stats.session_count);
 #else
     LogMessage("    POST methods:                         "FMTu64("-10")"\n", hi_stats.post);
     LogMessage("    GET methods:                          "FMTu64("-10")"\n", hi_stats.get);
@@ -390,6 +548,17 @@ static void HttpInspectDropStats(int exiting)
     }
     LogMessage("    Http/2 Rebuilt Packets:               "FMTu64("-10")"\n", hi_stats.h2_rebuilt_packets);
     LogMessage("    Total packets processed:              "FMTu64("-10")"\n", hi_stats.total);
+    LogMessage("    Non-mempool session memory:           "FMTu64("-10")"\n", hi_stats.mem_used + 
+                                                       (hi_paf_get_size() * hi_stats.session_count));
+    LogMessage("    http_mempool used:                    "FMTu64("-10")"\n",
+                                                       http_mempool ? http_mempool->used_memory:0);
+    LogMessage("    hi_gzip_mempool used:                 "FMTu64("-10")"\n",
+                                                       hi_gzip_mempool ? hi_gzip_mempool->used_memory:0);
+    LogMessage("    mime_decode_mempool used:             "FMTu64("-10")"\n",
+                                                       mime_decode_mempool ? mime_decode_mempool->used_memory:0);
+    LogMessage("    mime_log_mempool used:                "FMTu64("-10")"\n",
+                                                       mime_log_mempool ? mime_log_mempool->used_memory:0);
+    LogMessage("    Current active session:               "FMTu64("-10")"\n", hi_stats.session_count);
 #endif
 }
 
@@ -406,13 +575,15 @@ static void HttpInspectCleanExit(int signal, void *data)
 
     if (mempool_destroy(hi_gzip_mempool) == 0)
     {
-        free(hi_gzip_mempool);
+        SnortPreprocFree(hi_gzip_mempool, sizeof(MemPool), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_MEMPOOL);
         hi_gzip_mempool = NULL;
     }
 
     if (mempool_destroy(http_mempool) == 0)
     {
-        free(http_mempool);
+        SnortPreprocFree(http_mempool, sizeof(MemPool), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_MEMPOOL);
         http_mempool = NULL;
     }
     if (mempool_destroy(mime_decode_mempool) == 0)
@@ -516,6 +687,13 @@ static void CheckMemcap(HTTPINSPECT_GLOBAL_CONF *pPolicyConfig,
     }
 }
 
+#ifdef REG_TEST
+static inline void PrintHTTPSize(void)
+{
+    LogMessage("\nHTTP Session Size: %lu\n", (long unsigned int)sizeof(HttpSessionData));
+}
+#endif
+
 /*
  **  NAME
  **    HttpInspectInit::
@@ -545,16 +723,21 @@ static void HttpInspectInit(struct _SnortConfig *sc, char *args)
     int  iErrStrLen = ERRSTRLEN;
     int  iRet;
     char *pcToken;
+    char *saveptr;
     HTTPINSPECT_GLOBAL_CONF *pPolicyConfig = NULL;
     tSfPolicyId policy_id = getParserPolicy(sc);
 
     ErrorString[0] = '\0';
 
+#ifdef REG_TEST
+    PrintHTTPSize();
+#endif
+
     if ((args == NULL) || (strlen(args) == 0))
         ParseError("No arguments to HttpInspect configuration.");
 
     /* Find out what is getting configured */
-    pcToken = strtok(args, CONF_SEPARATORS);
+    pcToken = strtok_r(args, CONF_SEPARATORS, &saveptr);
     if (pcToken == NULL)
     {
         FatalError("%s(%d)strtok returned NULL when it should not.",
@@ -563,7 +746,9 @@ static void HttpInspectInit(struct _SnortConfig *sc, char *args)
 
     if (!xffFields)
     {
-        if ((xffFields = calloc(1, HTTP_MAX_XFF_FIELDS * sizeof(char *))) == NULL)
+        xffFields = SnortPreprocAlloc(1, HTTP_MAX_XFF_FIELDS * sizeof(char *), 
+                         PP_HTTPINSPECT, PP_MEM_CATEGORY_CONFIG);
+        if (xffFields == NULL)
         {
             FatalError("http_inspect: %s(%d) failed to allocate memory for XFF fields\n", 
                        __FILE__, __LINE__);
@@ -626,7 +811,10 @@ static void HttpInspectInit(struct _SnortConfig *sc, char *args)
 
         HttpInspectRegisterRuleOptions(sc);
 
-        pPolicyConfig = (HTTPINSPECT_GLOBAL_CONF *)SnortAlloc(sizeof(HTTPINSPECT_GLOBAL_CONF));
+        pPolicyConfig = (HTTPINSPECT_GLOBAL_CONF *) SnortPreprocAlloc(1, 
+                                                         sizeof(HTTPINSPECT_GLOBAL_CONF), 
+                                                         PP_HTTPINSPECT, 
+                                                         PP_MEM_CATEGORY_CONFIG);
         if (!pPolicyConfig)
         {
              ParseError("HTTP INSPECT preprocessor: memory allocate failed.\n");
@@ -638,8 +826,7 @@ static void HttpInspectInit(struct _SnortConfig *sc, char *args)
                                                  ErrorString, iErrStrLen);
         if (iRet == 0)
         {
-            iRet = ProcessGlobalConf(pPolicyConfig,
-                                     ErrorString, iErrStrLen);
+            iRet = ProcessGlobalConf(pPolicyConfig, ErrorString, iErrStrLen, &saveptr);
 
             if (iRet == 0)
             {
@@ -664,7 +851,7 @@ static void HttpInspectInit(struct _SnortConfig *sc, char *args)
                 ParseError("Invalid http inspect token: %s.", pcToken);
         }
 
-        iRet = ProcessUniqueServerConf(sc, pPolicyConfig, ErrorString, iErrStrLen);
+        iRet = ProcessUniqueServerConf(sc, pPolicyConfig, ErrorString, iErrStrLen, &saveptr);
     }
 
 
@@ -733,6 +920,8 @@ static void HttpInspectInit(struct _SnortConfig *sc, char *args)
 */
 void SetupHttpInspect(void)
 {
+RegisterMemoryStatsFunction(PP_HTTPINSPECT, HttpPrintMemStats);
+
 #ifndef SNORT_RELOAD
     RegisterPreprocessor(GLOBAL_KEYWORD, HttpInspectInit);
     RegisterPreprocessor(SERVER_KEYWORD, HttpInspectInit);
@@ -985,7 +1174,9 @@ static int HttpEncodeInit(struct _SnortConfig *sc, char *name, char *parameters,
     unsigned pos;
     HttpEncodeData *idx= NULL;
 
-    idx = (HttpEncodeData *) SnortAlloc(sizeof(HttpEncodeData));
+    idx = (HttpEncodeData *) SnortPreprocAlloc(1, sizeof(HttpEncodeData), PP_HTTPINSPECT, 
+                                  PP_MEM_CATEGORY_CONFIG);
+    hi_stats.mem_used += sizeof(HttpEncodeData);
 
     if(idx == NULL)
     {
@@ -1162,7 +1353,9 @@ static void HttpEncodeCleanup(void *dataPtr)
     HttpEncodeData *idx = dataPtr;
     if (idx)
     {
-        free(idx);
+        SnortPreprocFree(idx, sizeof(HttpEncodeData), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
+        hi_stats.mem_used -= sizeof(HttpEncodeData);
     }
 }
 
@@ -1367,7 +1560,9 @@ static int ProcessGzipAndFDMemPools( struct _SnortConfig *sc,
 
         if( have_gzip )
         {
-            hi_gzip_mempool = (MemPool *)SnortAlloc(sizeof(MemPool));
+            hi_gzip_mempool = (MemPool *)SnortPreprocAlloc(1, sizeof(MemPool), 
+                                              PP_HTTPINSPECT, 
+                                              PP_MEM_CATEGORY_MEMPOOL);
 
             if( (hi_gzip_mempool == 0) ||
                 (mempool_init(hi_gzip_mempool, max_sessions,
@@ -1437,7 +1632,8 @@ static int HttpInspectCheckConfig(struct _SnortConfig *sc)
 
         max_sessions_logged = defaultConfig->memcap / (MAX_URI_EXTRACTED + MAX_HOSTNAME);
 
-        http_mempool = (MemPool *)SnortAlloc(sizeof(MemPool));
+        http_mempool = (MemPool *)SnortPreprocAlloc(1, sizeof(MemPool), PP_HTTPINSPECT, 
+                                       PP_MEM_CATEGORY_MEMPOOL); 
         if (mempool_init(http_mempool, max_sessions_logged, (MAX_URI_EXTRACTED + MAX_HOSTNAME)) != 0)
         {
             FatalError("http_inspect:  Could not allocate HTTP mempool.\n");
@@ -1484,12 +1680,18 @@ static void HttpInspectFreeConfigs(tSfPolicyUserContextId config)
 {
     int i;
 
-    for (i = 0; (i < HTTP_MAX_XFF_FIELDS) && (oldXffFields[i]); i++)
+    if(oldXffFields)
     {
-        free(oldXffFields[i]);
+        for (i = 0; (i < HTTP_MAX_XFF_FIELDS) && (oldXffFields[i]); i++)
+        {
+            free(oldXffFields[i]);
+            oldXffFields[i] = NULL;
+        }
+
+        SnortPreprocFree(oldXffFields, HTTP_MAX_XFF_FIELDS * sizeof(char *),
+             PP_HTTPINSPECT, PP_MEM_CATEGORY_CONFIG);
+        oldXffFields = NULL;
     }
-    free(oldXffFields);
-    oldXffFields = NULL;
 
     if (config == NULL)
         return;
@@ -1514,15 +1716,17 @@ static void HttpInspectFreeConfig(HTTPINSPECT_GLOBAL_CONF *config)
         for( i=0; i<HTTP_MAX_XFF_FIELDS; i++ )
             if( config->global_server->xff_headers[i] != NULL )
             {
-                free(  config->global_server->xff_headers[i] );
+                free(  config->global_server->xff_headers[i] ); 
                 config->global_server->xff_headers[i] = NULL;
             }
 
         http_cmd_lookup_cleanup(&(config->global_server->cmd_lookup));
-        free(config->global_server);
+        SnortPreprocFree(config->global_server, sizeof(HTTPINSPECT_CONF), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_CONFIG);
     }
 
-    free(config);
+    SnortPreprocFree(config, sizeof(HTTPINSPECT_GLOBAL_CONF), 
+         PP_HTTPINSPECT, PP_MEM_CATEGORY_CONFIG);
 }
 
 #ifdef SNORT_RELOAD
@@ -1533,6 +1737,7 @@ static void _HttpInspectReload(struct _SnortConfig *sc, tSfPolicyUserContextId h
     int  iRet;
     HTTPINSPECT_GLOBAL_CONF *pPolicyConfig = NULL;
     char *pcToken;
+    char *saveptr;
     tSfPolicyId policy_id = getParserPolicy(sc);
 
     ErrorString[0] = '\0';
@@ -1541,7 +1746,7 @@ static void _HttpInspectReload(struct _SnortConfig *sc, tSfPolicyUserContextId h
         ParseError("No arguments to HttpInspect configuration.");
 
     /* Find out what is getting configured */
-    pcToken = strtok(args, CONF_SEPARATORS);
+    pcToken = strtok_r(args, CONF_SEPARATORS, &saveptr);
     if (pcToken == NULL)
     {
         FatalError("%s(%d)strtok returned NULL when it should not.",
@@ -1551,7 +1756,9 @@ static void _HttpInspectReload(struct _SnortConfig *sc, tSfPolicyUserContextId h
     if (!oldXffFields)
     {
         oldXffFields = xffFields;
-        if ((xffFields = calloc(1, HTTP_MAX_XFF_FIELDS * sizeof(char *))) == NULL)
+        xffFields = SnortPreprocAlloc(1, HTTP_MAX_XFF_FIELDS * sizeof(char *), 
+                          PP_HTTPINSPECT, PP_MEM_CATEGORY_CONFIG);
+        if (xffFields == NULL)
         {
             FatalError("http_inspect: %s(%d) failed to allocate memory for XFF fields\n", 
                        __FILE__, __LINE__);
@@ -1574,7 +1781,10 @@ static void _HttpInspectReload(struct _SnortConfig *sc, tSfPolicyUserContextId h
 
         HttpInspectRegisterRuleOptions(sc);
 
-        pPolicyConfig = (HTTPINSPECT_GLOBAL_CONF *)SnortAlloc(sizeof(HTTPINSPECT_GLOBAL_CONF));
+        pPolicyConfig = (HTTPINSPECT_GLOBAL_CONF *) SnortPreprocAlloc(1, 
+                                                         sizeof(HTTPINSPECT_GLOBAL_CONF), 
+                                                         PP_HTTPINSPECT,
+                                                         PP_MEM_CATEGORY_CONFIG);
         if (!pPolicyConfig)
         {
              ParseError("HTTP INSPECT preprocessor: memory allocate failed.\n");
@@ -1584,8 +1794,7 @@ static void _HttpInspectReload(struct _SnortConfig *sc, tSfPolicyUserContextId h
                                                  ErrorString, iErrStrLen);
         if (iRet == 0)
         {
-            iRet = ProcessGlobalConf(pPolicyConfig,
-                                     ErrorString, iErrStrLen);
+            iRet = ProcessGlobalConf(pPolicyConfig, ErrorString, iErrStrLen, &saveptr);
 
             if (iRet == 0)
             {
@@ -1611,7 +1820,7 @@ static void _HttpInspectReload(struct _SnortConfig *sc, tSfPolicyUserContextId h
                 ParseError("Invalid http inspect token: %s.", pcToken);
         }
 
-        iRet = ProcessUniqueServerConf(sc, pPolicyConfig, ErrorString, iErrStrLen);
+        iRet = ProcessUniqueServerConf(sc, pPolicyConfig, ErrorString, iErrStrLen, &saveptr);
     }
 
     if (iRet)
@@ -1717,7 +1926,8 @@ static bool HttpGzipReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userDa
     /* This check will be true, when the gzip_mempool is disabled and mempool cleaning is also completed  */
     if( hi_gzip_mempool->used_memory + hi_gzip_mempool->free_memory == 0 )
     {
-        free(hi_gzip_mempool);
+        SnortPreprocFree(hi_gzip_mempool, sizeof(MemPool), PP_HTTPINSPECT,
+             PP_MEM_CATEGORY_MEMPOOL);
         hi_gzip_mempool = NULL;
 		return true;
     }
@@ -1734,7 +1944,8 @@ static bool HttpFdReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData
     /* This check will be true, when the fd_mempool is disabled and mempool cleaning is also completed  */
     if( hi_fd_conf.fd_MemPool->used_memory + hi_fd_conf.fd_MemPool->free_memory == 0 )
     {
-        free(hi_fd_conf.fd_MemPool);
+        SnortPreprocFree(hi_fd_conf.fd_MemPool, hi_fd_conf.Max_Memory, PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_MEMPOOL);
         hi_fd_conf.fd_MemPool = NULL;
 		return true;
     }
@@ -1812,14 +2023,23 @@ static int HttpInspectReloadVerify(struct _SnortConfig *sc, void *swap_config)
 
     policy_id = getParserPolicy(sc);
 
+    LogMessage("HTTPInspect: gzip old=%s, fd old=%s\n", curr_gzip ? "true": "false", curr_fd ? "true": "false");
     if( curr_gzip || curr_fd )
     {
         /* Look for the case where the current and swap configs have differing gzip & fd options. */
         swap_fd = (sfPolicyUserDataIterate(sc, hi_swap_config, HttpInspectFileDecomp) != 0);
         swap_gzip = (sfPolicyUserDataIterate(sc, hi_swap_config, HttpInspectExtractGzip) != 0);
 
+        LogMessage("HTTPInspect: gzip new=%s, fd new=%s\n", swap_gzip ? "true": "false", swap_fd ? "true": "false");
         if(defaultSwapConfig)
         {
+             LogMessage("HTTPInspect: old gzip memcap=%u, new gzip memcap=%u\n", defaultConfig->max_gzip_mem, defaultSwapConfig->max_gzip_mem);
+             if(curr_gzip)
+                 LogMessage("HTTPInspect: HTTP-GZIP-MEMPOOL used=%zu, free=%zu, max=%zu, obj_size=%zu\n",
+                         hi_gzip_mempool->used_memory, hi_gzip_mempool->free_memory, hi_gzip_mempool->max_memory, hi_gzip_mempool->obj_size);
+             if(curr_fd)
+                 LogMessage("HTTPInspect: HTTP-FD-MEMPOOL used=%zu, free=%zu, max=%zu, obj_size=%zu\n",
+                         hi_fd_conf.fd_MemPool->used_memory, hi_fd_conf.fd_MemPool->free_memory, hi_fd_conf.fd_MemPool->max_memory, hi_fd_conf.fd_MemPool->obj_size);
              if(defaultSwapConfig->max_gzip_mem < defaultConfig->max_gzip_mem)
              {
                   /* Change in max_gzip_mem value changes the number of max_sessions of hi_gzip_mempool and max_gzip_sessions.
@@ -1851,6 +2071,8 @@ static int HttpInspectReloadVerify(struct _SnortConfig *sc, void *swap_config)
     {
         if (defaultSwapConfig != NULL)
         {
+            LogMessage("HTTPInspect: HTTP-MEMPOOL old memcap=%d, new_memcap=%d, used=%zu, free=%zu, max=%zu, obj_size=%zu\n",
+                    defaultConfig->memcap, defaultSwapConfig->memcap, http_mempool->used_memory, http_mempool->free_memory, http_mempool->max_memory, http_mempool->obj_size);
              if (defaultSwapConfig->memcap < defaultConfig->memcap)
                   ReloadAdjustRegister(sc, "HTTP-MEMPOOL", policy_id, &HttpMempoolReloadAdjust, NULL, NULL);
         }
@@ -1871,7 +2093,8 @@ static int HttpInspectReloadVerify(struct _SnortConfig *sc, void *swap_config)
 
             max_sessions_logged = defaultSwapConfig->memcap / (MAX_URI_EXTRACTED + MAX_HOSTNAME);
 
-            http_mempool = (MemPool *)SnortAlloc(sizeof(MemPool));
+            http_mempool = (MemPool *) SnortPreprocAlloc(1, sizeof(MemPool), PP_HTTPINSPECT, 
+                                            PP_MEM_CATEGORY_MEMPOOL); 
 
             if (mempool_init(http_mempool, max_sessions_logged,(MAX_URI_EXTRACTED + MAX_HOSTNAME)) != 0)
             {
@@ -1890,6 +2113,9 @@ static int HttpInspectReloadVerify(struct _SnortConfig *sc, void *swap_config)
          */
         if(defaultSwapConfig)
         {
+            LogMessage("HTTPInspect: HTTP-MIME-MEMPOOL old memcap=%d, new_memcap=%d, used=%zu, free=%zu, max=%zu, obj_size=%zu\n",
+                    defaultConfig->decode_conf.max_mime_mem, defaultSwapConfig->decode_conf.max_mime_mem, mime_decode_mempool->used_memory,
+                    mime_decode_mempool->free_memory, mime_decode_mempool->max_memory, mime_decode_mempool->obj_size);
              if( defaultSwapConfig->decode_conf.max_mime_mem  < defaultConfig->decode_conf.max_mime_mem )
                   ReloadAdjustRegister(sc, "HTTP-MIME-MEMPOOL", policy_id, &HttpMimeReloadAdjust, NULL, NULL);
         }
@@ -1917,6 +2143,9 @@ static int HttpInspectReloadVerify(struct _SnortConfig *sc, void *swap_config)
             /* If memcap of HTTP mIme changes, log mempool need to be adjusted bcz mempool max_mempory will be changed.
               * Registering here to adjust Log memory Pool when memcap changes.
               */
+            LogMessage("HTTPInspect: HTTP-LOG-MEMPOOL old memcap=%d, new_memcap=%d, used=%zu, free=%zu, max=%zu, obj_size=%zu\n",
+                    defaultConfig->mime_conf.memcap, defaultSwapConfig->mime_conf.memcap, mime_log_mempool->used_memory, mime_log_mempool->free_memory,
+                    mime_log_mempool->max_memory, mime_log_mempool->obj_size);
             if (defaultSwapConfig->mime_conf.memcap < defaultConfig->mime_conf.memcap)
                  ReloadAdjustRegister(sc, "HTTP-LOG-MEMPOOL", policy_id, &HttpLogReloadAdjust, NULL, NULL);
        }

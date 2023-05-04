@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,9 @@
 #endif
 
 #include "hi_util_hbm.h"
+#include "preprocids.h"
 #include "util.h"
+#include "memory_stats.h"
 
 /*
 *
@@ -72,7 +74,8 @@ HBM_STRUCT * hbm_prep(unsigned char * pat, int m)
 {
      HBM_STRUCT    *p;
 
-     p = (HBM_STRUCT*)SnortAlloc(sizeof(HBM_STRUCT));
+     p = (HBM_STRUCT *)SnortPreprocAlloc(1, sizeof(HBM_STRUCT), PP_HTTPINSPECT, 
+                            PP_MEM_CATEGORY_CONFIG);
 
      if( !hbm_prepx( p, pat, m ) )
      {
@@ -131,15 +134,20 @@ unsigned char * hbm_match(HBM_STRUCT * px, unsigned char *text, int n)
     q = t - m1;
     while( k >= 4 )
     {
-      if( pat[k] != q[k] )goto NoMatch;  k--;
-      if( pat[k] != q[k] )goto NoMatch;  k--;
-      if( pat[k] != q[k] )goto NoMatch;  k--;
-      if( pat[k] != q[k] )goto NoMatch;  k--;
+      if( pat[k] != q[k] ) goto NoMatch;
+      k--;
+      if( pat[k] != q[k] ) goto NoMatch;
+      k--;
+      if( pat[k] != q[k] ) goto NoMatch;
+      k--;
+      if( pat[k] != q[k] ) goto NoMatch;
+      k--;
     }
     /* Finish Match Loop */
     while( k >= 0 )
     {
-      if( pat[k] != q[k] )goto NoMatch;  k--;
+      if( pat[k] != q[k] ) goto NoMatch;
+      k--;
     }
     /* If matched - return 1st char of pattern in text */
     return q;

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,8 @@
 #include "dce2_list.h"
 
 #define SMB2_FLAGS_ASYNC_COMMAND  0x00000002
+
+#define SMB2_STATUS_PENDING  0x00000103
 
 typedef struct _Smb2Hdr
 {
@@ -87,6 +89,7 @@ typedef struct _Smb2ErrorResponseHdr
     uint32_t byte_count;      /* The number of bytes of error_data */
     uint8_t  error_data[1];   /* If byte_count is 0, this MUST be 0*/
 } Smb2ErrorResponseHdr;
+
 
 /* SMB2 command codes */
 #define SMB2_COM_NEGOTIATE        0x00
@@ -242,6 +245,16 @@ typedef struct _Smb2TreeDisConnectHdr
     uint16_t  reserved;                /* reserved */
 } Smb2TreeDisConnectHdr;
 
+typedef struct _Smb2CreateContextHdr
+{
+    uint32_t next;            /* next context header*/
+    uint16_t name_offset;     /* name offset */
+    uint16_t name_length;     /* name length */
+    uint16_t reserved;        /* reserved */
+    uint16_t data_offset;     /* data offset */
+    uint32_t data_length;     /* data length */
+} Smb2CreateContextHdr;
+
 #define SMB2_HEADER_LENGTH 64
 
 #define SMB2_ERROR_RESPONSE_STRUC_SIZE 9
@@ -265,6 +278,9 @@ typedef struct _Smb2TreeDisConnectHdr
 #define SMB2_TREE_DISCONNECT_STRUC_SIZE 4
 
 #define SMB2_FILE_ENDOFFILE_INFO 0x14
+
+#define SMB2_CREATE_DURABLE_RECONNECT "DHnC"
+#define SMB2_CREATE_DURABLE_RECONNECT_V2 "DH2C"
 
 /* Initialize smb2 processing, setup cap for smb2 memory usage */
 void DCE2_Smb2Init(uint64_t memcap);

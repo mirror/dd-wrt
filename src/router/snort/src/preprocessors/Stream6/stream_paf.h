@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,9 @@ uint16_t s5_paf_port_registration (void* pv, uint16_t port, bool c2s, bool flush
 uint16_t s5_paf_port_registration_all (void* pv, uint16_t port, bool c2s, bool flush);
 uint16_t s5_paf_service_registration (void* pv, uint16_t service, bool c2s, bool flush);
 
-enum FlushMode
+int cb_mask_cmp(void* pv, uint16_t service, bool c2s, uint16_t cb_mask);
+
+typedef enum _FlushMode
 {
     FLUSH_MODE_NORMAL = 0,
     FLUSH_MODE_PRE_DISCARD,

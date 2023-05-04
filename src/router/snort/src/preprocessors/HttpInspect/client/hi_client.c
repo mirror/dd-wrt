@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -68,6 +68,8 @@
 #include "sfutil/util_unfold.h"
 #include "hi_cmd_lookup.h"
 #include "detection_util.h"
+#include "hi_paf.h"
+#include "memory_stats.h"
 
 #if defined(FEAT_OPEN_APPID)
 #include "spp_stream6.h"
@@ -83,6 +85,8 @@
 #define HEADER_LENGTH__TRUE_IP (sizeof(HEADER_NAME__TRUE_IP)-1)
 #define HEADER_NAME__HOSTNAME "Host"
 #define HEADER_LENGTH__HOSTNAME 4
+#define HEADER_NAME__RANGE "Range"
+#define HEADER_LENGTH__RANGE 5
 #define HEADER_NAME__TRANSFER_ENCODING "Transfer-encoding"
 #define HEADER_LENGTH__TRANSFER_ENCODING 17
 #define HEADER_NAME__CONTENT_TYPE "Content-Type"
@@ -355,6 +359,10 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                     {
                         hi_eo_client_event_log(Session, HI_EO_CLIENT_CHUNK_SIZE_MISMATCH,
                                 NULL, NULL);
+                        SnortEventqAdd(
+                                GENERATOR_SPP_HTTP_INSPECT_CLIENT,
+                                HI_EO_CLIENT_CHUNK_SIZE_MISMATCH+1, 1, 0, 2,
+                                HI_EO_CLIENT_CHUNK_SIZE_MISMATCH_STR, NULL);
                     }
                 }
                 else
@@ -1821,7 +1829,9 @@ const u_char *extract_http_cookie(const u_char *p, const u_char *end, HEADER_PTR
     if (header_ptr->cookie.cookie)
     {
         /* unusal, multiple cookies... alloc new cookie pointer */
-        COOKIE_PTR *extra_cookie = calloc(1, sizeof(COOKIE_PTR));
+        COOKIE_PTR *extra_cookie = (COOKIE_PTR *)SnortPreprocAlloc(1, sizeof(COOKIE_PTR),
+                                                      PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+        hi_stats.mem_used += sizeof(COOKIE_PTR);
         if (!extra_cookie)
         {
             /* Failure to allocate, stop where we are... */
@@ -1872,7 +1882,9 @@ const u_char *extract_http_cookie(const u_char *p, const u_char *end, HEADER_PTR
 
 Transaction* createNode_tList(sfaddr_t *tmp, uint8_t req_id)
 {
-    Transaction *tList_node = (Transaction*)SnortAlloc(sizeof(Transaction));
+    Transaction *tList_node = (Transaction*)SnortPreprocAlloc(1, sizeof(Transaction),
+                                                 PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+    hi_stats.mem_used += sizeof(Transaction);
     tList_node->true_ip = tmp;
     tList_node->tID = req_id;
     tList_node->next = NULL;
@@ -2036,8 +2048,24 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
                      */
                      if (!IP_EQUALITY(hdrs_args->sd->tList_end->true_ip, tmp))
                      {
-                          sfaddr_free(hdrs_args->sd->tList_end->true_ip);
-                          hdrs_args->sd->tList_end->true_ip = tmp;
+                          if (hdrs_args->top_precedence)
+                          {
+                             /* If we've precedence configuration, then add new IP to the List */
+                             sfaddr_free(hdrs_args->sd->tList_end->true_ip);
+                             hdrs_args->sd->tList_end->true_ip = tmp;
+
+                          }
+                          else if ((hdrs_args->prev_true_clnt_xff & TRUE_CLIENT_IP_HDR) && (hdrs_args->true_clnt_xff & XFF_HDR) )
+                          {
+                             /* when no precedence configured, First X-Forwarded-For IP should print though True-Client-IP present in GET request */
+                             sfaddr_free(hdrs_args->sd->tList_end->true_ip);
+                             hdrs_args->sd->tList_end->true_ip = tmp;
+                          }
+                          else
+                          {
+                             sfaddr_free(tmp);
+                          }  
+
                           // alert
                           if( ((hdrs_args->true_clnt_xff & XFF_HEADERS) == 0) &&
                               hi_eo_generate_event(Session, HI_EO_CLIENT_MULTIPLE_TRUEIP_IN_SESSION))
@@ -2061,7 +2089,7 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
         header_ptr->header.uri_end = end;
         return end;
     }
-
+    hdrs_args->prev_true_clnt_xff = hdrs_args->true_clnt_xff;
     return p;
 
 }
@@ -2199,6 +2227,127 @@ const u_char *extract_http_hostname(HI_SESSION *Session, const u_char *p, const 
     return p;
 }
 
+/* extract_http_range will extract "0-" and flag it as full
+ * content, when the unit is bytes. Otherwise flag error or
+ * partial content accordingly. Syntax as follows,
+ *   Range: <units>=<ranges separated with ,>
+ */
+static const u_char *extract_http_range(HI_SESSION *Session,
+              const u_char *p, const u_char *start, const u_char *end,
+              HEADER_PTR *header_ptr)
+{
+    u_char *crlf = NULL;
+    const u_char *unit_start = NULL;
+    const u_char *unit_end = NULL;
+
+    SkipBlankSpace(start,end,&p);
+    if (hi_util_in_bounds(start, end, p) && *p == ':')
+    {
+        p++;
+        CheckSkipAlertMultipleColon(Session, start, end, &p, HI_SI_CLIENT_MODE);
+        while (hi_util_in_bounds(start, end, p) && ( *p == ' ' || *p == '\t' || *p == '\n'))
+        {
+            p++;
+        }
+
+        if (hi_util_in_bounds(start, end, p))
+        {
+            /* extract units and look for '=' token */
+            unit_start = p;
+            while (hi_util_in_bounds(start, end, p) && ( *p != '='))
+            {
+                p++;
+            }
+
+            if (*p != '=')
+            {
+                if (hi_eo_generate_event(Session, HI_EO_CLIENT_INVALID_RANGE_UNIT_FMT))
+                {
+                    hi_eo_client_event_log(Session, HI_EO_CLIENT_INVALID_RANGE_UNIT_FMT, NULL, NULL);
+                }
+                header_ptr->range_flag = RANGE_WITH_REQ_ERROR;
+                return end;
+            }
+
+            unit_end = (p - 1);
+            p++;
+            SkipBlankSpace(start,end,&p);
+
+            while (hi_util_in_bounds(start, end, p) && ( *p == ','))
+            {
+                p++;
+            }
+            SkipBlankSpace(start,end,&p);
+
+            if (hi_util_in_bounds(start, end, p))
+            {
+                /* Look for "0-" and unit as bytes, then set it as full content */
+                if (*p == '0')
+                {
+                    p++;
+                    if (hi_util_in_bounds(start, end, p))
+                    {
+                        if (*p == '-')
+                        {
+                            p++;
+                            if (hi_util_in_bounds(start, end, p) && ( *p == '\r' || *p == '\n'))
+                            {
+                                if (((unit_end - unit_start) >= 5) &&
+                                    (!strncasecmp((const char *)unit_start, RANGE_UNIT_BYTE, 5)))
+                                {
+                                    header_ptr->range_flag = HTTP_RANGE_WITH_FULL_CONTENT_REQ;
+                                }
+                                else
+                                {
+                                    header_ptr->range_flag = RANGE_WITH_PARTIAL_CONTENT_REQ;
+                                }
+
+                                crlf = (u_char *)SnortStrnStr((const char *)p, end - p, "\n");
+                                if (crlf)
+                                {
+                                    p = crlf;
+                                    return p;
+                                }
+                                else
+                                {
+                                    header_ptr->header.uri_end = end;
+                                    return end;
+                                }
+                            } 
+                        }
+                    }
+                }
+
+                crlf = (u_char *)SnortStrnStr((const char *)p, end - p, "\n");
+                if (crlf)
+                {
+                    p = crlf;
+                    header_ptr->range_flag = RANGE_WITH_PARTIAL_CONTENT_REQ;
+                    return p;
+                }
+                else
+                {
+                    header_ptr->header.uri_end = end;
+                    header_ptr->range_flag = RANGE_WITH_REQ_ERROR;
+                    return end;
+                }
+            }
+        }
+    }    
+
+    header_ptr->range_flag = RANGE_WITH_REQ_ERROR;
+    crlf = (u_char *)SnortStrnStr((const char *)p, end - p, "\n");
+    if (crlf)
+    {
+        p = crlf;
+        return p;
+    }
+    else
+    {
+        header_ptr->header.uri_end = end;
+        return end;
+    }
+}
 
 const u_char *extract_http_content_length(HI_SESSION *Session,
         HTTPINSPECT_CONF *ServerConf, const u_char *p, const u_char *start,
@@ -2553,8 +2702,11 @@ static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
         else if ( IsHeaderFieldName(p, end, HEADER_NAME__TRANSFER_ENCODING,
                                     HEADER_LENGTH__TRANSFER_ENCODING) && hsd)
         {
-            p = p + HEADER_LENGTH__TRANSFER_ENCODING;
-            p = extract_http_transfer_encoding(Session, hsd, p, start, end, hdrs_args->hdr_ptr, HI_SI_CLIENT_MODE);
+            if (!hi_paf_disable_te(ssnptr, true))
+            {
+                p = p + HEADER_LENGTH__TRANSFER_ENCODING;
+                p = extract_http_transfer_encoding(Session, hsd, p, start, end, hdrs_args->hdr_ptr, HI_SI_CLIENT_MODE);
+            }
         }
     }
 #if defined(FEAT_OPEN_APPID)
@@ -2579,6 +2731,11 @@ static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
                 p = extract_http_client_header(Session, p, start, end, hdrs_args->hdr_ptr, &hdrs_args->hdr_ptr->referer);
             }
         }
+        if (IsHeaderFieldName(p, end, HEADER_NAME__RANGE, HEADER_LENGTH__RANGE))
+        {
+            p = p + HEADER_LENGTH__RANGE;
+            p = extract_http_range(Session, p, start, end, hdrs_args->hdr_ptr);
+        }
     }
     else if(((p - offset) == 0) && ((*p == 'V') || (*p == 'v')))
     {
@@ -2589,6 +2746,15 @@ static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
                 p = p + HEADER_LENGTH__VIA;
                 p = extract_http_client_header(Session, p, start, end, hdrs_args->hdr_ptr, &hdrs_args->hdr_ptr->via);
             }
+        }
+    }
+#else
+    else if (((p - offset) == 0) && ((*p == 'R') || (*p == 'r')))
+    {
+        if (IsHeaderFieldName(p, end, HEADER_NAME__RANGE, HEADER_LENGTH__RANGE))
+        {
+            p = p + HEADER_LENGTH__RANGE;
+            p = extract_http_range(Session, p, start, end, hdrs_args->hdr_ptr);
         }
     }
 #endif /* defined(FEAT_OPEN_APPID) */
@@ -2922,7 +3088,8 @@ static inline const u_char *hi_client_extract_header(
                     COOKIE_PTR *cookie = Client->request.cookie.next; \
                     do { \
                         Client->request.cookie.next = Client->request.cookie.next->next; \
-                        free(cookie); \
+                        SnortPreprocFree(cookie, sizeof(COOKIE_PTR), PP_HTTPINSPECT, \
+                             PP_MEM_CATEGORY_SESSION); \
                         cookie = Client->request.cookie.next; \
                     } while(cookie); \
                 }\
@@ -3162,6 +3329,12 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
             Client->request.method = HI_UNKNOWN_METHOD;
         }
     }
+    /* If the Http method is set to UNKNOWN and its not a valid http packet 
+     *(i.e. packet has junk characters ) then we return without populating
+     * the URI buffers for inspection */
+
+    if ((Client->request.method == HI_UNKNOWN_METHOD ) && ScPafEnabled() && !(hi_paf_valid_http(p->ssnptr)))
+        return HI_INVALID_ARG;
 
     if (!sans_uri )
     {
@@ -3200,7 +3373,18 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
         //
         // uri_ptr.end points to end of URI & HTTP version identifier.
         if (hi_util_in_bounds(start, end, uri_ptr.uri_end + 1))
+        {
+            header_ptr.range_flag = HTTP_RANGE_NONE;
             ptr = hi_client_extract_header(Session, ServerConf, &header_ptr, uri_ptr.uri_end+1, end, hsd, stream_ins, p->ssnptr);
+            if (header_ptr.range_flag != HTTP_RANGE_NONE)
+            {
+                Client->request.range_flag = header_ptr.range_flag;
+            }
+            else
+            {
+                Client->request.range_flag = HTTP_RANGE_NONE;
+            }
+        }
 
         if (header_ptr.header.uri)
         {
@@ -3339,9 +3523,12 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
         /*callback into appId with header values extracted. */
         CallHttpHeaderProcessors(p, &headers);
 
-        free((void *)headers.userAgent.start);
-        free((void *)headers.referer.start);
-        free((void *)headers.via.start);
+        SnortPreprocFree((void *)headers.userAgent.start,
+             (headers.userAgent.len) * sizeof(char), PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+        SnortPreprocFree((void *)headers.referer.start, 
+             (headers.referer.len) * sizeof(char), PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+        SnortPreprocFree((void *)headers.via.start, 
+             (headers.via.len) * sizeof(char), PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
     }
 
 #endif /* defined(FEAT_OPEN_APPID) */

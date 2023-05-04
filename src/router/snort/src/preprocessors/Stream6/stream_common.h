@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -125,6 +125,7 @@
 #define STREAM_STATE_MIDSTREAM             0x0040
 #define STREAM_STATE_TIMEDOUT              0x0080
 #define STREAM_STATE_UNREACH               0x0100
+#define STREAM_STATE_PORT_INSPECT          0x0200
 #define STREAM_STATE_CLOSED                0x0800
 
 /*  D A T A   S T R U C T U R E S  **********************************/
@@ -136,6 +137,7 @@ typedef struct _FlushMgr
     uint8_t    flush_policy;
     uint8_t    flush_type;
     uint8_t    auto_disable;
+    bool       flush;
     //uint8_t    spare;
 
 } FlushMgr;
@@ -313,6 +315,13 @@ typedef struct _StreamStats
     uint32_t   ip_timeouts;
     uint32_t   events;
     uint32_t   internalEvents;
+    uint32_t   active_tcp_sessions;
+    uint64_t   active_tcp_memory;
+    uint32_t   active_udp_sessions;
+    uint32_t   active_icmp_sessions;
+    uint32_t   active_ip_sessions;
+    uint32_t   icmp_unreachable;
+    uint32_t   icmp_unreachable_code4;
     tPortFilterStats  tcp_port_filter;
     tPortFilterStats  udp_port_filter;
 } StreamStats;
@@ -369,6 +378,7 @@ int StreamAnyAnyFlow( uint16_t *portList, OptTreeNode *otn, RuleTreeNode *rtn, i
                       IgnoredRuleList **ppIgnoredRuleList, int ignoreAnyAnyRules );
 void s5PrintPortFilter( uint16_t portList[] );
 int StreamSetRuntimeConfiguration( SessionControlBlock *scb, uint8_t protocol );
+bool getStreamIgnoreAnyConfig (struct _SnortConfig *sc, IpProto protocol);
 
 // shared stream state
 extern StreamStats s5stats;
@@ -378,6 +388,9 @@ extern MemPool s5FlowMempool;
 extern uint32_t session_mem_in_use;
 extern SessionConfiguration *stream_session_config;
 extern tSfPolicyUserContextId stream_online_config;
+extern tSfPolicyUserContextId stream_parsing_config;
 extern tSfActionQueueId decoderActionQ;
+
+void StreamDeleteSession(SessionControlBlock *scb);
 
 #endif /* STREAM_COMMON_H_ */

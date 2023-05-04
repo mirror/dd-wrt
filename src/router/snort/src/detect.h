@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -103,6 +103,12 @@ static inline void DisablePacketAnalysis( Packet *p )
 {
     DisableAllPreprocessors ( p );
     do_detect = do_detect_content = 0;
+}
+
+static inline void EnableContentPreprocDetection( Packet *p, PreprocEnableMask enabled_pps )
+{
+    EnableContentDetect();
+    EnablePreprocessors( p, enabled_pps );
 }
 
 /* counter for number of times we evaluate rules.  Used to

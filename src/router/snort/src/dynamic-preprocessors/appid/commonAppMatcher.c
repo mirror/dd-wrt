@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include "detector_base.h"
 #include "detector_api.h"
 #include "detector_http.h"
+#include "detector_cip.h"
 #include "service_ssl.h"
 #include "luaDetectorApi.h"
 #include "luaDetectorModule.h"
@@ -89,9 +90,10 @@ static void DisplayConfig(tAppidStaticConfig* appidSC, tAppIdConfig *aic)
     NetworkSet *net_list;
 
     if (appidSC->appid_thirdparty_dir)
-    {
         _dpd.logMsg("    3rd Party Dir: %s\n", appidSC->appid_thirdparty_dir);
-    }
+    if (appidSC->tp_config_path)
+        _dpd.logMsg("    3rd Party Conf: %s\n", appidSC->tp_config_path);
+
     net_list = aic->net_list;
     _dpd.logMsg("    Monitoring Networks for any zone:\n");
     for (i = 0; i < net_list->count; i++)
@@ -380,7 +382,7 @@ static void AppIdConfigureAnalyze(char *toklist[], uint32_t flag, tAppIdConfig *
                         ias6->addr_flags, zone);
                 if (zone >= 0)
                 {
-                    if (!(net_list = appIdConfig.net_list_by_zone[zone]))
+                    if (!(net_list = pConfig->net_list_by_zone[zone]))
                     {
                         if (NetworkSet_New(&net_list))
                             _dpd.errMsg("%s", "Failed to create a network set");
@@ -1037,7 +1039,8 @@ else
 
 int AppIdCommonInit(tAppidStaticConfig *appidSC)
 {
-    if (!(pAppidActiveConfig = (tAppIdConfig *)calloc(1, sizeof(*pAppidActiveConfig))))
+    if (!(pAppidActiveConfig = (tAppIdConfig *)_dpd.snortAlloc(1,
+        sizeof(*pAppidActiveConfig), PP_APP_ID, PP_MEM_CATEGORY_CONFIG)))
     {
         _dpd.errMsg("Config: Failed to allocate memory for AppIdConfig");
         return -1;
@@ -1120,8 +1123,10 @@ int AppIdCommonFini(void)
         http_detector_clean(&pAppidActiveConfig->detectorHttpConfig);
         service_ssl_clean(&pAppidActiveConfig->serviceSslConfig);
         service_dns_host_clean(&pAppidActiveConfig->serviceDnsConfig);
+        CipClean();
         rnaFwConfigState = RNA_FW_CONFIG_STATE_UNINIT;
-        free(pAppidActiveConfig);
+        _dpd.snortFree(pAppidActiveConfig, sizeof(*pAppidActiveConfig),
+                PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
         pAppidActiveConfig = NULL;
         pAppidPassiveConfig = NULL;
         return 0;
@@ -1131,7 +1136,8 @@ int AppIdCommonFini(void)
 
 int AppIdCommonReload(tAppidStaticConfig* appidSC, void **new_context)
 {
-    tAppIdConfig *pNewConfig = (tAppIdConfig *) calloc(1, sizeof(*pNewConfig));
+    tAppIdConfig *pNewConfig = (tAppIdConfig *)_dpd.snortAlloc(1,
+                      sizeof(*pNewConfig), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
     if (!pNewConfig)
     {
         _dpd.fatalMsg("AppID failed to allocate memory for reload AppIdConfig");
@@ -1230,7 +1236,7 @@ void AppIdCommonUnload(void *old_context)
     service_ssl_clean(&pOldConfig->serviceSslConfig);
     service_dns_host_clean(&pOldConfig->serviceDnsConfig);
 
-    free(pOldConfig);
+    _dpd.snortFree(pOldConfig, sizeof(*pOldConfig), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
     pAppidPassiveConfig = NULL;
 }
 

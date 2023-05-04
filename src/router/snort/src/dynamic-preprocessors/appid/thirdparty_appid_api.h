@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@ struct ThirdPartyConfig
     unsigned chp_body_collection_disabled:1;
     unsigned tp_allow_probes:1;
     unsigned http_upgrade_reporting_enabled:1;
-    char     appid_tp_dir[TP_PATH_MAX];
+    char     tp_config_path[TP_PATH_MAX];
     int      numXffFields;
     char**   xffFields;
     int      oldNumXffFields;

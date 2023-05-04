@@ -101,7 +101,7 @@
 
 \begin{document}
 
-\title{SNORT\textsuperscript{\textregistered} Users Manual\\2.9.11.1}
+\title{SNORT\textsuperscript{\textregistered} Users Manual\\2.9.20}
 
 \author{The Snort Project}
 
@@ -115,7 +115,7 @@ Copyright \copyright 2001-2003 Chris Green
 
 Copyright \copyright 2003-2013 Sourcefire, Inc.
 
-Copyright \copyright 2014-2017 Cisco and/or its affiliates. All rights reserved.
+Copyright \copyright 2014-2021 Cisco and/or its affiliates. All rights reserved.
 
 \tableofcontents{}
 
@@ -742,11 +742,11 @@ packets Snort did not forward, e.g. due to a block rule.
 \item \texttt{Replace}
 packets Snort modified.
 
-\item \texttt{Whitelist}
+\item \texttt{AllowFlow}
 packets that caused Snort to allow a flow to pass w/o inspection by any
 analysis program.
 
-\item \texttt{Blacklist}
+\item \texttt{BlockFlow}
 packets that caused Snort to block a flow from passing.
 
 \item \texttt{Ignore}
@@ -1098,7 +1098,7 @@ This information is only output in IDS mode (when snort is run with the
 \texttt{-c <conf>} option).
 
 \begin{itemize}
-\item Alerts is the number of activate, alert, and block actions processed as
+\item Alerts is the number of alert, and block actions processed as
 determined by the rule actions.  Here block includes block, drop, and reject
 actions.
 \end{itemize}
@@ -1136,28 +1136,28 @@ pass).
 \item Replace = packets Snort modified, for example, due to normalization or
 replace rules.  This can only happen in inline mode with a compatible DAQ.
 
-\item Whitelist = packets that caused Snort to allow a flow to pass w/o
-inspection by any analysis program.  Like blacklist, this is done by the DAQ or
+\item AllowFlow = packets that caused Snort to allow a flow to pass w/o
+inspection by any analysis program.  Like BlockFlow, this is done by the DAQ or
 by Snort on subsequent packets.
 
-\item Blacklist = packets that caused Snort to block a flow from passing.  This
+\item BlockFlow = packets that caused Snort to block a flow from passing.  This
 is the case when a block TCP rule fires.  If the DAQ supports this in hardware,
 no further packets will be seen by Snort for that session.  If not, snort will
 block each packet and this count will be higher.
 
 \item Ignore = packets that caused Snort to allow a flow to pass w/o inspection
-by this instance of Snort.  Like blacklist, this is done by the DAQ or by Snort
+by this instance of Snort.  Like BlockFlow, this is done by the DAQ or by Snort
 on subsequent packets.
 
-\item Int Blklst = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that are
-being blocked.  These packets could get the Blacklist verdict if \texttt{config
+\item Int Blkflw = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that are
+being blocked.  These packets could get the BlockFlow verdict if \texttt{config
 tunnel\_verdicts} was set for the given protocol.  Note that these counts are
 output only if non-zero.  Also, this count is incremented on the first packet
 in the flow that alerts.  The alerting packet and all following packets on the
 flow will be counted under Block.
 
-\item Int Whtlst = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that are
-being allowed.  These packets could get the Whitelist verdict if \texttt{config
+\item Int Alwflw = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that are
+being allowed.  These packets could get the AllowFlow verdict if \texttt{config
 tunnel\_verdicts} was set for the given protocol.  Note that these counts are
 output only if non-zero.  Also, this count is incremented for all packets on
 the flow starting with the alerting packet.
@@ -1181,8 +1181,8 @@ Verdicts:
       Allow:      3716022 (100.000%)
       Block:            0 (  0.000%)
     Replace:            0 (  0.000%)
-  Whitelist:            0 (  0.000%)
-  Blacklist:            0 (  0.000%)
+  AllowFlow:            0 (  0.000%)
+  BlockFlow:            0 (  0.000%)
      Ignore:            0 (  0.000%)
 ===============================================================================
 \end{verbatim}
@@ -1556,7 +1556,7 @@ list:
 
 \url{http://marc.theaimsgroup.com/?l=snort-users}
 
-at \verb?snort-users@lists.sourceforge.net? provide informative announcements
+at \verb?snort-users@lists.snort.org? provide informative announcements
 as well as a venue for community discussion and support. There's a lot to
 Snort, so sit back with a beverage of your choosing and read the documentation
 and mailing list archives.
@@ -2443,13 +2443,13 @@ mode to either \texttt{passive}, \texttt{inline} or \texttt{inline\_test}. \\
 \texttt{config disable\_replace} & Disables content replace option. Default
 behaviour is to replace content. \\
 
-\hline \texttt{config tunnel\_verdicts: gtp|teredo|6in4|4in6} & By default, whitelist
-and blacklist verdicts are handled internally by Snort for GTP, Teredo, 6in4 and 4in6
+\hline \texttt{config tunnel\_verdicts: gtp|teredo|6in4|4in6} & By default, AllowFlow
+and BlockFlow verdicts are handled internally by Snort for GTP, Teredo, 6in4 and 4in6
 encapsulated traffic.  This means Snort actually gives the DAQ a pass or block
 verdict instead.  This is to workaround cases where the DAQ would apply
 the verdict to the whole tunnel instead of the individual session within the
 tunnel.  If your DAQ decodes GTP, Teredo, 6in4 or 4in6 correctly, setting this config
-will allow the whitelist or blacklist verdict to go to the DAQ.  There is a
+will allow the AllowFlow or BlockFlow verdict to go to the DAQ.  There is a
 modest performance boost by doing this where possible since Snort won't see the
 remaining packets on the session. \\
 
@@ -3401,7 +3401,7 @@ encompasses many, if not all, of the current portscanning techniques.
 sfPortscan was designed to be able to detect the different types of scans Nmap
 can produce.
 
-sfPortscan will currently alert/block for the following types of Nmap scans:
+sfPortscan will currently alert for the following types of Nmap scans:
 
 \begin{itemize}
 \item TCP Portscan
@@ -3414,7 +3414,7 @@ types of scans; one host scans multiple ports on another host. Most of the port
 queries will be negative, since most hosts have relatively few services
 available.
 
-sfPortscan also alerts/blocks for the following types of decoy portscans:
+sfPortscan also alerts for the following types of decoy portscans:
 
 \begin{itemize}
 \item TCP Decoy Portscan
@@ -3426,7 +3426,7 @@ Decoy portscans are much like the Nmap portscans described above, only the
 attacker has a spoofed source address inter-mixed with the real scanning
 address. This tactic helps hide the true identity of the attacker.
 
-sfPortscan alerts/blocks for the following types of distributed portscans:
+sfPortscan alerts for the following types of distributed portscans:
 
 \begin{itemize}
 \item TCP Distributed Portscan
@@ -3445,7 +3445,7 @@ type of scan through the scanned host.
 
 \end{note}
 
-sfPortscan alerts/blocks for the following types of portsweeps:
+sfPortscan alerts for the following types of portsweeps:
 
 \begin{itemize}
 \item TCP Portsweep
@@ -3466,7 +3466,7 @@ will most likely not see many negative responses.
 
 \end{note}
 
-sfPortscan alerts/blocks on the following filtered portscans and portsweeps:
+sfPortscan alerts on the following filtered portscans and portsweeps:
 
 \begin{itemize}
 \item TCP Filtered Portscan
@@ -3495,9 +3495,6 @@ they can send out many connection attempts within a very small amount of time.
 A filtered alert may go off before responses from the remote hosts are
 received.
 
-sfPortscan has the capability to detect and block portscan. If the intrusion rule
-action is alert, then snort will act as a portscan detector. If the intrusion
-rule action is drop/sdrop/reject, then snort will act as a portscan blocker.
 sfPortscan only generates one alert for each host pair in question during the
 time window (more on windows below). On TCP scan alerts, sfPortscan will also
 display any open ports that were scanned. On TCP sweep alerts however,
@@ -4258,6 +4255,28 @@ max uri logging size defined in snort : 2048
 max hostname logging size defined in snort : 256
 
 \end{note}
+
+\item \texttt{normalize\_random\_nulls\_in\_text}
+
+This option normalizes the text content with randomly encoded null bytes in 16LE,16BE,32LE and
+32BE UTF encodings to UTF8 in the server response. It relies on file preprocessor to determine
+if the content is text. Hence file preprocessor should be enabled and configured with prepackaged
+file magics wihtout which this option is not effective.
+
+\begin {note}
+This opton relies on file prepreprocessor to determine if content can safely be considered as text
+before normalizing. However, it is possible that non text file types unknown to file preprocessor
+may get normalized as this option treats file types unknown to file preprocessor as text. Such cases
+may result in false positives or false negatives in detection. 
+
+\end{note}
+
+\item \texttt{fast\_blocking}
+
+This option enables inspecting http data before the data is flushed. This enables early IPS rule
+evaluation so that the block rules will take into effect and the connection is blocked at the earliest
+instead of blocking later after flushing the data. This config will be effective only when inline
+normalisation is enabled.
 
 \item \texttt{disabled}
 
@@ -5342,7 +5361,7 @@ the unified2.
 \item \texttt{legacy\_mode}
 By default, HTTP2 traffic is not supported. You can use "legacy\_mode no"
 to enable HTTP2 support.
-If http\_legacy mode is configured, HTTP2 inspection is disabled.
+If http legacy mode is configured, HTTP2 inspection is disabled.
 
 \end{slist}
 
@@ -9402,7 +9421,7 @@ Overload modifiers to existing \texttt{pcre} rule options:
 
 \subsection{Reputation Preprocessor}
 \label{sub:reputation}
-Reputation preprocessor provides basic IP blacklist/whitelist capabilities, to 
+Reputation preprocessor provides basic IP block-list/do-not-block-list capabilities, to 
 block/drop/pass traffic from IP addresses listed. In the past, we use standard 
 Snort rules to implement Reputation-based IP blocking. This preprocessor will 
 address the performance issue and make the IP reputation management easier. 
@@ -9426,11 +9445,11 @@ Option & Argument & Required & Default\\
 \hline
 \texttt{scan\_local} & NONE & NO & OFF\\
 \hline
-\texttt{blacklist} & \texttt{<list file name>} & NO & NONE\\
+\texttt{BlockFlow} & \texttt{<list file name>} & NO & NONE\\
 \hline
-\texttt{whitelist} & \texttt{<list file name>} & NO & NONE\\
+\texttt{AllowFlow} & \texttt{<list file name>} & NO & NONE\\
 \hline
-\texttt{priority} & [blacklist whitelist] & NO & \texttt{priority whitelist}\\
+\texttt{priority} & [BlockFlow AllowFlow] & NO & \texttt{priority AllowFlow}\\
 \hline
 \texttt{nested\_ip} & [inner outer both] & NO & \texttt{nested\_ip inner}\\
 \hline
@@ -9461,11 +9480,11 @@ Option & Argument & Required & Default\\
 \end{itemize}
 \end{itemize}
 
-\item[] \texttt{blacklist/whitelist}
+\item[] \texttt{BlockFlow/AllowFlow}
 \begin{itemize}
 \item[]    The IP lists are loaded from external files. It supports relative 
-           paths for inclusion and \$variables for path. Multiple blacklists or 
-           whitelists are supported.
+           paths for inclusion and \$variables for path. Multiple BlockFlows or 
+           AllowFlows are supported.
           
  \item[]   Note: if the same IP is redefined later, it will overwrite the 
            previous one. In other words, IP lists always favors the last file or
@@ -9474,15 +9493,15 @@ Option & Argument & Required & Default\\
 
 \item[] \texttt{priority}
 \begin{itemize}
-\item[]   Specify either blacklist or whitelist has higher priority when 
-           source/destination is on blacklist while destination/source is on 
-           whitelist. By default, whitelist has higher priority. In other words,
+\item[]   Specify either BlockFlow or AllowFlow has higher priority when 
+           source/destination is on BlockFlow while destination/source is on 
+           AllowFlow. By default, AllowFlow has higher priority. In other words,
            the packet will be passed when either source or destination is 
-           whitelisted.
+           AllowFlowed.
            
 \item[]    Note: this only defines priority when there is a decision conflict, 
            during run-time. During initialization time, if the same IP address 
-           is defined in whitelist and blacklist, whoever the last one defined 
+           is defined in AllowFlow and BlockFlow, whoever the last one defined 
            will be the final one. Priority does not work on this case.
 \end{itemize}
 
@@ -9494,13 +9513,13 @@ Option & Argument & Required & Default\\
 
 \item[] \texttt{white}
 \begin{itemize}
-\item[]   Specify the meaning of whitelist. When white means unblack, it 
-           unblacks IPs that are in blacklists; when white means trust, the 
+\item[]   Specify the meaning of AllowFlow. When white means unblack, it 
+           unblacks IPs that are in BlockFlows; when white means trust, the 
            packet gets bypassed, without further detection by snort. You can 
            only specify either unblack or trust.
            
- \item[]   Note: when white means unblack, whitelist always has higher priority
-           than blacklist.
+ \item[]   Note: when white means unblack, AllowFlow always has higher priority
+           than BlockFlow.
 \end{itemize}
 
 \end{itemize}
@@ -9509,26 +9528,26 @@ Option & Argument & Required & Default\\
 \footnotesize
 \begin{verbatim}
     preprocessor reputation:\ 
-                   blacklist /etc/snort/default.blacklist, \
-                   whitelist /etc/snort/default.whitelist
+                   block-list /etc/snort/default.blacklist, \
+                   do-not-block-list /etc/snort/default.whitelist
    
     preprocessor reputation: \
                    nested_ip both, \
-                   blacklist /etc/snort/default.blacklist, \
-                   whitelist /etc/snort/default.whitelist
+                   block-list /etc/snort/default.blacklist, \
+                   do-not-block-list /etc/snort/default.whitelist
    
     preprocessor reputation: \
                    memcap  4095, scan_local, nested_ip both, \
-                   priority whitelist,  \
-                   blacklist /etc/snort/default.blacklist, \
-                   whitelist /etc/snort/default.whitelist,
+                   priority do-not-block-list,  \
+                   block-list /etc/snort/default.blacklist, \
+                   do-not-block-list /etc/snort/default.whitelist,
                    white trust
    
     $REP_BLACK_FILE1 = ../dshield.list
     $REP_BLACK_FILE2 = ../snort.org.list
     preprocessor reputation: \
-                blacklist $REP_BLACK_FILE1,\
-                blacklist $REP_BLACK_FILE2
+                block-list $REP_BLACK_FILE1,\
+                block-list $REP_BLACK_FILE2
     
 \end{verbatim}
 \normalsize
@@ -9590,8 +9609,8 @@ Option & Argument & Required & Default\\
 \item[] \footnotesize
 \begin{verbatim}  
   preprocessor reputation: \
-        blacklist /etc/snort/default.blacklist
-        whitelist /etc/snort/default.whitelist
+        block-list /etc/snort/default.blacklist
+        do-not-block-list /etc/snort/default.whitelist
   
   In file "default.blacklist"
         # These two entries will match all ipv4 addresses  
@@ -9612,9 +9631,9 @@ Reputation preprocessor uses GID 136 to register events.
 \hline
 SID & Description\\
 \hline
- 1  & Packet is blacklisted. \\
+ 1  & Packet is BlockFlowed. \\
 \hline
- 2  & Packet is whitelisted. \\
+ 2  & Packet is AllowFlowed. \\
 \hline
  3  & Packet is inspected. \\
 \hline
@@ -9649,7 +9668,7 @@ SID & Description\\
   memory. If this option isn't set, standard memory is used.  This option must 
   specify a path or directory where IP lists will be loaded in shared memory. 
   One snort instance will create and maintain the shared IP lists. 
-  We use instance ID 1, specified in the snort \texttt{-G} option to be the master snort.
+  We use instance ID 1, specified in the snort \texttt{-G} option to be the primary snort.
   All the other snort instances are clients (readers). 
  
   \item[] \textit{Syntax}
@@ -9697,8 +9716,8 @@ SID & Description\\
        /user/reputation/iplists
       \end{verbatim}
 
-      In order to separate whitelist with blacklist, you need to specify 
-      whitelist with \texttt{.wlf} extension and blacklist with \texttt{.blf} extension.
+      In order to separate AllowFlow with BlockFlow, you need to specify 
+      AllowFlow with \texttt{.wlf} extension and BlockFlow with \texttt{.blf} extension.
    \item In snort config file, specify shared memory support with the path to IP files.\\
       For example: 
 
@@ -9713,7 +9732,7 @@ SID & Description\\
        shared_refresh 300
       \end{verbatim}
 
-   \item Start shared memory master(writer) with \texttt{-G} 0 option. Note: only one master
+   \item Start shared memory primary(writer) with \texttt{-G} 0 option. Note: only one primary 
       should be enabled.
    \item Start shared memory clients (readers) with \texttt{-G}  1 or other IDs. Note: for 
       one ID, only one snort instance should be enabled.
@@ -11189,10 +11208,10 @@ For proper functioning of the preprocessor:
 \end{itemize}
 
 \subsubsection{Preprocessor Configuration}
-AppId dynamic preprocessor can be enabled during build time. The
-following options must be included in ./configure:
+AppId dynamic preprocessor is enabled by default(from snort-2.9.12).
+The preprocessor can be disabled during build time by including the following option in ./configure:
 
---enable-open-appid
+--disable-open-appid
 
 The configuration name is "appid":
 
@@ -14188,8 +14207,8 @@ The rule header contains the information that defines the who, where, and what
 of a packet, as well as what to do in the event that a packet with all the
 attributes indicated in the rule should show up. The first item in a rule is
 the rule action. The rule action tells Snort what to do when it finds a packet
-that matches the rule criteria. There are 5 available default actions in Snort,
-alert, log, pass, activate, and dynamic. In addition, if you are running Snort
+that matches the rule criteria. There are 3 available default actions in Snort,
+alert, log, pass. In addition, if you are running Snort
 in inline mode, you have additional options which include drop, reject, and
 sdrop. 
 
@@ -14201,11 +14220,6 @@ log the packet
 \item log - log the packet 
 
 \item pass - ignore the packet 
-
-\item activate - alert and then turn on another dynamic rule  
-
-\item dynamic - remain idle until activated by an activate rule , then act as a
-log rule
 
 \item drop - block and log the packet
 
@@ -14388,45 +14402,8 @@ Operator}
 \subsection{Activate/Dynamic Rules}
 \label{dynamic rules}
 
-\begin{note}
-
-Activate and Dynamic rules are being phased out in favor of a combination of
+Activate and Dynamic rules are phased out in favor of a combination of
 tagging (\ref{tag section}) and flowbits (\ref{flowbits}). 
-
-\end{note}
-
-Activate/dynamic rule pairs give Snort a powerful capability. You can now have
-one rule activate another when its action is performed for a set number of
-packets. This is very useful if you want to set Snort up to perform follow on
-recording when a specific rule goes off. Activate rules act just like alert
-rules, except they have a {*}required{*} option field: activates.  Dynamic
-rules act just like log rules, but they have a different option field:
-activated\_by. Dynamic rules have a second required field as well, count. 
-
-Activate rules are just like alerts but also tell Snort to add a rule when a
-specific network event occurs. Dynamic rules are just like log rules except are
-dynamically enabled when the activate rule id goes off. 
-
-Put 'em together and they look like Figure \ref{activate/dynamic rule example}.
-
-\begin{figure}
-\begin{verbatim}
-    activate tcp !$HOME_NET any -> $HOME_NET 143 (flags:PA; \
-        content:"|E8C0FFFFFF|/bin"; activates:1;  \
-        msg:"IMAP buffer overflow!";)
-    dynamic tcp !$HOME_NET any -> $HOME_NET 143 (activated_by:1; count:50;)
-\end{verbatim}
-
-\caption{Activate/Dynamic Rule Example}
-\label{activate/dynamic rule example}
-\end{figure}
-
-These rules tell Snort to alert when it detects an IMAP buffer overflow and
-collect the next 50 packets headed for port 143 coming from outside \$HOME\_NET
-headed to \$HOME\_NET. If the buffer overflow happened and was successful,
-there's a very good possibility that useful data will be contained within the
-next 50 (or whatever) packets going to that same service port on the network,
-so there's value in collecting those packets for later analysis.
 
 \section{Rule Options}
 
@@ -18348,43 +18325,6 @@ this:
     pass tcp any any -> 192.168.1.1 80 (flags:S; tag:session,exclusive;)
 \end{verbatim}
 
-\subsection{activates}
-
-The \texttt{activates} keyword allows the rule writer to specify a rule to add
-when a specific network event occurs. See Section \ref{dynamic rules} for more
-information.
-
-\subsubsection{Format}
-
-\begin{verbatim}
-    activates:1;
-\end{verbatim}
-
-\subsection{activated\_by}
-
-The \texttt{activated\_by} keyword allows the rule writer to dynamically enable
-a rule when a specific activate rule is triggered.  See Section \ref{dynamic
-rules} for more information.
-
-\subsubsection{Format}
-
-\begin{verbatim}
-    activated_by:1;
-\end{verbatim}
-
-\subsection{count}
-
-The \texttt{count} keyword must be used in combination with the
-\texttt{activated\_by} keyword.  It allows the rule writer to specify how many
-packets to leave the rule enabled for after it is activated.  See Section
-\ref{dynamic rules} for more information.
-
-\subsubsection{Format}
-
-\begin{verbatim}
-    activated_by:1; count:50;
-\end{verbatim}
-
 \subsection{replace}
 \label{replace}
 
@@ -18506,25 +18446,6 @@ Snort rule by closing connection and sending a notice. \\
 
 The tag keyword allow rules to log more than just the single packet that
 triggered the rule. \\
-
-\hline
-\texttt{activates} &
-
-This keyword  allows the rule writer to specify a rule to add when a specific
-network event occurs. \\
-
-\hline
-\texttt{activated\_by} &
-
-This keyword allows the rule writer to dynamically enable a rule when a
-specific activate rule is triggered. \\
-
-\hline
-\texttt{count} &
-
-This keyword must be used in combination with the \texttt{activated\_by}
-keyword.  It allows the rule writer to specify how many packets to leave the
-rule enabled for after it is activated. \\
 
 \hline
 \texttt{replace} & 
@@ -20116,7 +20037,7 @@ this stuff for their own IDS purposes). Bug fixes are what goes into
 \section{Submitting Patches}
 
 Patches to Snort should be sent to the
-\verb!snort-devel@lists.sourceforge.net!
+\verb!snort-devel@lists.snort.org!
 mailing list.  Patches should done with the command
 \verb!diff -nu snort-orig snort-new!.
 

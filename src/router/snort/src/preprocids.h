@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -80,8 +80,10 @@
 #define PP_PREFILTER_RULE_ENGINE  33  // used externally
 #define PP_HTTPMOD                34
 #define PP_HTTP2                  35
-#define PP_MAX                    36
-
+#define PP_CIP                    36
+#define PP_S7COMMPLUS             37
+#define PP_MAX                    38
+#define PP_ALL                    50
 #define PP_ENABLE_ALL (~0)
 #define PP_DISABLE_ALL 0x0
 

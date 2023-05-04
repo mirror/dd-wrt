@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -405,10 +405,19 @@ typedef struct _NbssHdr
 
 } NbssHdr;
 
+/*NbssLen should be used by SMB1 */
 static inline uint32_t NbssLen(const NbssHdr *nb)
 {
-    /* Treat first bit of flags as the upper byte to length */
+    /* Treat first bit of flags as the upper byte to length
+     * [MS-SMB] 2.1 Transport - Length can be maximum 0x1FFFF*/
     return ((nb->flags & 0x01) << 16) | ntohs(nb->length);
+}
+
+/*NbssLen2 should be used by SMB2/SMB3 */
+static inline uint32_t NbssLen2(const NbssHdr *nb)
+{
+    /*The Length is 3 bytes. [MS-SMB2] 2.1 Transport*/
+    return ((nb->flags << 16) | ntohs(nb->length));
 }
 
 static inline uint8_t NbssType(const NbssHdr *nb)
@@ -604,7 +613,8 @@ static inline uint32_t SmbId(const SmbNtHdr *hdr)
     uint8_t *idf = (uint8_t *)hdr->smb_idf;
     return *idf << 24 | *(idf + 1) << 16 | *(idf + 2) << 8 | *(idf + 3);
 #else
-    return ntohl(*((uint32_t *)hdr->smb_idf));
+    uint32_t *tmp = (uint32_t *)hdr->smb_idf;
+    return ntohl(*tmp);
 #endif  /* WORDS_MUSTALIGN */
 }
 

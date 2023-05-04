@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -417,10 +417,26 @@ static int PrintObfuscatedData(FILE* fp, Packet *p)
     {
         uint8_t buf[UINT16_MAX];
         uint16_t dlen = p->data - p->pkt;
+        int ret;
 
-        SafeMemcpy(buf, p->pkt, dlen, buf, buf + sizeof(buf));
-        SafeMemcpy(buf + dlen, payload, payload_len,
+        ret = SafeMemcpy(buf, p->pkt, dlen, buf, buf + sizeof(buf));
+        if (ret != SAFEMEM_SUCCESS) 
+        {
+           DEBUG_WRAP(DebugMessage(DEBUG_LOG,
+                   "%s: SafeMemcpy() Failed !!!",  __FUNCTION__);)
+           free(payload);
+           return -1;
+        }
+
+        ret = SafeMemcpy(buf + dlen, payload, payload_len,
                 buf, buf + sizeof(buf));
+        if (ret != SAFEMEM_SUCCESS)
+        {
+            DEBUG_WRAP(DebugMessage(DEBUG_LOG,
+                    "%s: SafeMemcpy() Failed !!!",  __FUNCTION__);)
+            free(payload);
+            return -1;
+        }
 
         PrintNetData(fp, buf, dlen + payload_len, NULL);
     }
@@ -1756,6 +1772,10 @@ void PrintTcpOptions(FILE * fp, Packet * p)
             case TCPOPT_SACKOK:
                 fwrite("SackOK ", 7, 1, fp);
                 break;
+
+            case TCPOPT_TFO:
+                fwrite("TFO ", 4, 1, fp);
+                break; 
 
             case TCPOPT_ECHO:
                 memset((char *) tmp, 0, 5);

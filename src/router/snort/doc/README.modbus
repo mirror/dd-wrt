@@ -23,7 +23,7 @@ Preprocessor Configuration
 Modbus configuration is split into two parts: the preprocessor config, and the
 rule options. The preprocessor config starts with:
 
-preprocesor modbus:
+preprocessor modbus:
 
 Options are as follows:
 

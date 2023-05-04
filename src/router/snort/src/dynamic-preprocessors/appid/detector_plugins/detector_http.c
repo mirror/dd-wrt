@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include "str_search.h"
 #include "appInfoTable.h"
+#include "common_util.h"
 #include "detector_api.h"
 #include "httpCommon.h"
 #include "http_url_patterns.h"
@@ -1562,7 +1563,8 @@ tAppId scanCHP (PatternType ptype, char *buf, int buf_size, MatchedCHPAction *mp
                 break;
             if (!hsession->fflow)
             {
-                if (!(hsession->fflow = (fflow_info*)calloc(1,sizeof(fflow_info))))
+                if (!(hsession->fflow = (fflow_info*)_dpd.snortAlloc(1,
+                    sizeof(fflow_info), PP_APP_ID, PP_MEM_CATEGORY_SESSION)))
                 {
                     appidStaticConfig->chp_fflow_disabled = 1;
                     break;
@@ -1576,7 +1578,8 @@ tAppId scanCHP (PatternType ptype, char *buf, int buf_size, MatchedCHPAction *mp
                 break;
             if (!hsession->fflow)
             {
-                if (!(hsession->fflow = (fflow_info*)calloc(1,sizeof(fflow_info))))
+                if (!(hsession->fflow = (fflow_info*)_dpd.snortAlloc(1,
+                    sizeof(fflow_info), PP_APP_ID, PP_MEM_CATEGORY_SESSION)))
                 {
                     appidStaticConfig->chp_fflow_disabled = 1;
                     break;
@@ -1590,7 +1593,8 @@ tAppId scanCHP (PatternType ptype, char *buf, int buf_size, MatchedCHPAction *mp
                 break;
             if (!hsession->fflow)
             {
-                if (!(hsession->fflow = (fflow_info*)calloc(1,sizeof(fflow_info))))
+                if (!(hsession->fflow = (fflow_info*)_dpd.snortAlloc(1,
+                     sizeof(fflow_info), PP_APP_ID, PP_MEM_CATEGORY_SESSION)))
                 {
                     appidStaticConfig->chp_fflow_disabled = 1;
                     break;
@@ -1604,7 +1608,8 @@ tAppId scanCHP (PatternType ptype, char *buf, int buf_size, MatchedCHPAction *mp
                 break;
             if (!hsession->fflow)
             {
-                if (!(hsession->fflow = (fflow_info*)calloc(1,sizeof(fflow_info))))
+                if (!(hsession->fflow = (fflow_info*)_dpd.snortAlloc(1,
+                    sizeof(fflow_info), PP_APP_ID, PP_MEM_CATEGORY_SESSION)))
                 {
                     appidStaticConfig->chp_fflow_disabled = 1;
                     break;
@@ -1618,7 +1623,8 @@ tAppId scanCHP (PatternType ptype, char *buf, int buf_size, MatchedCHPAction *mp
                 break;
             if (!hsession->fflow)
             {
-                if (!(hsession->fflow = (fflow_info*)calloc(1,sizeof(fflow_info))))
+                if (!(hsession->fflow = (fflow_info*)_dpd.snortAlloc(1,
+                    sizeof(fflow_info), PP_APP_ID, PP_MEM_CATEGORY_SESSION)))
                 {
                     appidStaticConfig->chp_fflow_disabled = 1;
                     break;
@@ -1632,7 +1638,8 @@ tAppId scanCHP (PatternType ptype, char *buf, int buf_size, MatchedCHPAction *mp
                 break;
             if (!hsession->fflow)
             {
-                if (!(hsession->fflow = (fflow_info*)calloc(1,sizeof(fflow_info))))
+                if (!(hsession->fflow = (fflow_info*)_dpd.snortAlloc(1,
+                    sizeof(fflow_info), PP_APP_ID, PP_MEM_CATEGORY_SESSION)))
                 {
                     appidStaticConfig->chp_fflow_disabled = 1;
                     break;
@@ -2229,7 +2236,7 @@ tAppId getAppIdFromUrl(char *host, char *url, char **version,
     int host_len;
     int referer_len = 0;
     int referer_path_len = 0;
-    int path_len;
+    int path_len = 0;
     tMlmpPattern patterns[3];
     tMlpPattern query;
     HostUrlDetectorPattern *data;
@@ -2293,13 +2300,16 @@ tAppId getAppIdFromUrl(char *host, char *url, char **version,
             free(temp_host);
             return 0;
         }
-        path_len = url_len - host_len;
-        path = url + host_len;
+
+        path = strchr(url, '/');
+        if (path)
+            path_len = url + url_len - path;
     }
-    else
+
+    if (!path_len)
     {
-        path = NULL;
-        path_len = 0;
+        path = "/";
+        path_len = 1;
     }
 
     patterns[0].pattern = (uint8_t *) host;
@@ -2446,6 +2456,11 @@ void getServerVendorVersion(const uint8_t *data, int len, char **version, char *
                                 tmp[subname_len] = 0;
                                 sub->service = tmp;
                             }
+                            else
+                            {
+                                 _dpd.errMsg("getServerVendorVersion: "
+                                         "Failed to allocate memory for service in sub\n");
+                            }
                             subver_len = p - subver;
                             if (subver_len > 0 && *subver)
                             {
@@ -2454,6 +2469,11 @@ void getServerVendorVersion(const uint8_t *data, int len, char **version, char *
                                     memcpy(tmp, subver, subver_len);
                                     tmp[subver_len] = 0;
                                     sub->version = tmp;
+                                }
+                                else
+                                {
+                                     _dpd.errMsg("getServerVendorVersion: "
+                                             "Failed to allocate memory for version in sub\n");
                                 }
                             }
                             sub->next = *subtype;
@@ -2484,6 +2504,11 @@ void getServerVendorVersion(const uint8_t *data, int len, char **version, char *
                     tmp[subname_len] = 0;
                     sub->service = tmp;
                 }
+                else
+                {
+                     _dpd.errMsg("getServerVendorVersion: "
+                             "Failed to allocate memory for service in sub\n");
+                }
                 subver_len = p - subver;
                 if (subver_len > 0 && *subver)
                 {
@@ -2492,6 +2517,11 @@ void getServerVendorVersion(const uint8_t *data, int len, char **version, char *
                         memcpy(tmp, subver, subver_len);
                         tmp[subver_len] = 0;
                         sub->version = tmp;
+                    }
+                    else
+                    {
+                         _dpd.errMsg("getServerVendorVersion: "
+                                 "Failed to allocate memory for version in sub\n");
                     }
                 }
                 sub->next = *subtype;
@@ -2640,7 +2670,7 @@ static CLIENT_APP_RETCODE http_client_validate(const uint8_t *data, uint16_t siz
                                                tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
                                                const tAppIdConfig *pConfig)
 {
-    http_client_mod.api->add_app(flowp, APP_ID_HTTP, APP_ID_HTTP + GENERIC_APP_OFFSET, NULL);
+    http_client_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_HTTP, APP_ID_HTTP + GENERIC_APP_OFFSET, NULL);
     flowp->rnaClientState = RNA_STATE_FINISHED;
     http_service_mod.api->add_service(flowp, pkt, dir, &http_service_element,
                                       APP_ID_HTTP, NULL, NULL, NULL, NULL);

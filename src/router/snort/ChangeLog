@@ -1,3 +1,1305 @@
+2022-05-13 Jaganmohanrao valluri <javallur@cisco.com>
+snort 2.9.20
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_ssl.c :
+	  Fixed a scenario where SSL traffic was not detected correctly.
+
+	* src/dynamic-preprocessors/smtp/snort_smtp.c :
+	  Fixed a possible memory corruption.
+
+	* src/dynamic-preprocessors/imap/imap_util.c
+	  src/dynamic-preprocessors/pop/pop_util.c
+	  src/dynamic-preprocessors/smtp/smtp_util.c
+	  src/preprocessors/spp_httpinspect.c :
+	  Fixed malformed packet debug engine output.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed security zones info in intrusion events.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Fixed URL lookup failure.
+
+	* src/preprocessors/HttpInspect/server/hi_server.c :
+	  Fixed a possible memory leak.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_dns.c
+	  src/dynamic-preprocessors/appid/fw_appid.c
+	  src/dynamic-preprocessors/appid/fw_appid.h
+	  src/dynamic-preprocessors/appid/detector_plugins/service_plugins/service_api.h :
+	  Added support for dns root queries and underflow.
+
+	* src/dynamic-preprocessors/smtp/snort_smtp.c 
+	  src/Makefile.am
+	  src/dynamic-examples/Makefile.am
+	  src/dynamic-plugins/sf_dynamic_plugins.c
+	  src/dynamic-plugins/sf_dynamic_preprocessor.h
+	  src/dynamic-preprocessors/Makefile.am
+	  src/dynamic-preprocessors/smtp/snort_smtp.h
+	  src/dynamic-preprocessors/smtp/spp_smtp.c
+	  src/smtp_api.h : 
+	  Added support to get extra data from SMTP and HTTP into IPS event.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_imap.c
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_pop3.c :
+	  Added support for login success and failure eventing for IMAP and POP3.
+
+	* src/dynamic-preprocessors/appid/hi_server.c :
+	  Added support to handle empty string for SNI/CN/SAN/ORG.
+
+2021-12-01 Jaganmohanrao valluri <javallur@cisco.com>
+snort 2.9.19
+
+	* src/snort.c :
+	  Fixed an issue where verdict will be applied onto next session when timeout occurs in some scenarios.	  
+
+	* rc/file-process/file_service.c :
+	  Removed an excessively flooding log.
+	
+	* src/dynamic-preprocessors/modbus/modbus_decode.c :
+	  Fixed possible integer overflow.
+
+	* src/fpcreate.c :
+	  Added fix to GCC compiled snort to use AC-BNFA-Q search-method when Intel-cpm is enabled.
+
+	* src/generators.h
+	  src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Added fix to not to drop packets when window size is 0 by TCP normalizer and Added new alert with GID 129 and SID 21 when such packets are seen.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_imap.c
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_pop3.c :
+	  Added support for Appid to detect login success and failure for IMAP and POP3 protocols.
+	
+	* src/dynamic-preprocessors/reputation/reputation_config.c
+	  src/dynamic-preprocessors/reputation/spp_reputation.c
+	  src/dynamic-preprocessors/reputation/spp_reputation.h
+	  src/pkt_tracer.c
+	  src/snort.c
+	  src/util.c :
+	  Fixed terminology to be bias-free in log/error messages.
+
+	* src/snort.c :
+	  Fixed a potential race condition.
+
+
+2021-08-17 Jaganmohanrao valluri <javallur@cisco.com>
+snort 2.9.18.1
+
+	* snort/src/dynamic-preprocessors/dcerpc2/dce2_smb.c:
+	  Fixed possible memory corruption in SMB preprocessor.
+
+2021-05-26 Ramachandrareddy Dhanireddy <rdhanire@cisco.com>
+snort 2.9.18
+
+	* src/file-process/file_service.c,
+	  src/generators.h,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/server/hi_server.c,
+	  src/preprocessors/snort_httpinspect.c,
+	  src/preprocessors/snort_httpinspect.h :
+	  Added range field support in HTTP preprocessor.
+
+	* src/preprocessors/HttpInspect/client/hi_client.c :
+	  Added alert for http chunk size mismatch.
+
+	* src/detection-plugins/detection_leaf_node.c :
+	  Fixed a condition in which alert would not be generated.
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_snmp.c :
+	  Added support to detect snmp 'report pdu'.
+
+	* src/dynamic-preprocessors/dcerpc2/dce2_paf.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_smb.h :
+	  Fixed possible memory corruption in smb preprocessor.
+
+	* src/preprocessors/Stream6/snort_stream_icmp.c,
+	  src/preprocessors/Stream6/stream_common.h,
+	  src/preprocessors/spp_stream6.c :
+	  Fixed handling ICMP error code -4.
+
+	* src/dynamic-preprocessors/dcerpc2/dce2_memory.c,
+	  src/dynamic-preprocessors/dcerpc2/spp_dce2.c,
+	  src/memory_stats.c :
+	  Added additional stats for SMB preprocessor.
+
+	* src/dynamic-preprocessors/appid/appInfoTable.c :
+	  Fixed an error when debugmsgs option enabled in compilation.
+
+2021-03-19 Divakar Y <divakyad@cisco.com>
+snort 2.9.17.1
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c : 
+	  Fixed wrong reference to configuration during reload.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c : 
+	  Fixed possible memleak in appid.
+	
+	* src/detect.c, 
+	  src/preprocessors/snort_httpinspect.c :
+	  Fixed a race-condition in http preproc and IPS.
+
+	* configure.in :
+	  Fixed compilation issues when intel-soft-cpm is enabled.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c,
+	  src/preprocessors/Stream6/stream_common.h,
+	  src/preprocessors/spp_stream6.c :
+	  Fixed a race-condition in stream preproc.
+
+2020-10-30 Divakar Y <divakyad@cisco.com>
+snort 2.9.17
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c,
+	  src/preprocessors/spp_stream6.c :
+	  Fixed Memory leak in reassembly networks and ports config during reload.
+
+	* src/file-process/file_resume_block.c,
+	  src/file-process/file_service.c,
+	  src/file-process/file_lib.c,
+	  src/file-process/file_lib.h :
+	  Fixed resume-block for SMBv2 partial content retry and pending verdicts.
+	
+	* src/win32/WIN32-Prj/snort_installer.nsi : 
+	  Added user visible message to choose 4.1.1 or any higher version of winpcap, in windows 32 installer.
+
+	* src/win32/WIN32-Prj/snort_installer_x64.nsi,
+	  src/win32/WIN32-Prj/snort_installer.nsi : 
+	  Fixed popup message that was not honoring windows silent uninstaller option.
+
+	* src/preprocessors/snort_httpinspect.c : 
+	  Fix to populate original client IP for drop events, when inline normalization is disabled.
+
+	* src/dynamic-preprocessors/appid/luaDetectorApi.c :
+	  Fixed AppID caching proxy IP instead of tunneled IP in the dynamic cache during ultrasurf traffic. 
+
+	* src/detection-plugins/sp_react.c,
+	  src/dynamic-preprocessors/sdf/spp_sdf.c,
+	  src/parser.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c,
+	  tools/u2streamer/Unified2File.c, 
+	  src/dynamic-preprocessors/appid/luaDetectorApi.c,
+	  src/dynamic-preprocessors/appid/appInfoTable.c,
+	  snort/src/dynamic-plugins/sf_dynamic_plugins.c,
+	  src/memory_stats.c,
+	  src/sfutil/sfportobject.c,
+	  src/snort.h :
+	  Fixed multiple static analysis issues.
+
+	* src/dynamic-preprocessors/appid/appInfoTable.c :
+	  Fixed a potential race condition. 
+
+	* configure.in,
+	  src/reload.c :
+	  Fix to not rely on the last-modified-time for loading the dynamic detection libs.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_smtp.c,
+	  src/file-process/file_capture.c,
+	  src/file-process/file_resume_block.c,
+	  src/file-process/file_segment_process.c,
+	  src/file-process/file_service.c : 
+	  Added debug messages in file-process packet flow.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_smtp.c :
+	  Fix to address cases of ambiguous codes between SMTP & FTP and when SMTP server does not support EHLO.
+
+	* src/file-process/file_segment_process.c : 
+	  Fixed issue of generating multiple events for a single file transfer over SMB.
+
+	* src/dynamic-preprocessors/appid/appIdConfig.h,
+	  src/dynamic-preprocessors/appid/appInfoTable.c,
+	  src/dynamic-preprocessors/appid/appInfoTable.h,
+	  src/dynamic-preprocessors/appid/flow.h,
+	  src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/dynamic-preprocessors/appid/flow.h : 
+	  Fixed false positives for ultrasurf.
+
+	* src/dynamic-preprocessors/sip/spp_sip.c :
+	  Fixed SIP pre-processor to detect SSL encrypted SIP traffic better.
+
+	* src/dynamic-preprocessors/appid/luaDetectorApi.c,
+	  etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/file-process/file_service.c,
+	  src/generators.h,
+	  src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_client.h,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/include/hi_server.h,
+	  src/preprocessors/HttpInspect/server/hi_server.c,
+	  src/preprocessors/snort_httpinspect.c,
+	  src/preprocessors/snort_httpinspect.h : 
+	  Added support for HTTP range field parsing to detect if HTTP response/request is indeed partial or full content.
+
+	* src/preprocessors/spp_session.c :
+	  Fixed TCP memcap oversize.
+
+	* src/dynamic-preprocessors/dcerpc2/dce2_stats.h,
+	  src/dynamic-preprocessors/dcerpc2/snort_dce2.c,
+	  src/dynamic-preprocessors/dcerpc2/spp_dce2.c,
+	  src/dynamic-preprocessors/ftptelnet/ftpp_si.c,
+	  src/dynamic-preprocessors/ftptelnet/pp_ftp.c,
+	  src/dynamic-preprocessors/ftptelnet/spp_ftptelnet.c,
+	  src/dynamic-preprocessors/ftptelnet/spp_ftptelnet.h,
+	  src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/preprocessors/HttpInspect/client/hi_client_norm.c,
+	  src/preprocessors/HttpInspect/include/hi_include.h,
+	  src/preprocessors/HttpInspect/include/hi_paf.h,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c,
+	  src/preprocessors/Stream6/snort_stream_icmp.c,
+	  src/preprocessors/Stream6/snort_stream_icmp.h,
+	  src/preprocessors/Stream6/snort_stream_ip.c,
+	  src/preprocessors/Stream6/snort_stream_ip.h,
+	  src/preprocessors/Stream6/snort_stream_tcp.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.h,
+	  src/preprocessors/Stream6/snort_stream_udp.c,
+	  src/preprocessors/Stream6/snort_stream_udp.h,
+	  src/preprocessors/Stream6/stream_common.h,
+	  src/preprocessors/snort_httpinspect.c,
+	  src/preprocessors/snort_httpinspect.h,
+	  src/preprocessors/spp_httpinspect.c,
+	  src/preprocessors/spp_httpinspect.h,
+	  src/preprocessors/spp_stream6.c, 
+	  src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/dynamic-preprocessors/appid/fw_appid.h,
+	  src/dynamic-preprocessors/appid/spp_appid.c : 
+	  Enhanced statistics dumped during snort exit and SIGUSR1.
+
+	* src/dynamic-preprocessors/imap/imap_paf.c,
+	  src/dynamic-preprocessors/imap/snort_imap.h,
+	  src/dynamic-preprocessors/pop/pop_paf.c,
+	  src/dynamic-preprocessors/pop/snort_pop.h,
+	  src/dynamic-preprocessors/sip/spp_sip.h,
+	  src/dynamic-preprocessors/smtp/smtp_paf.c,
+	  src/dynamic-preprocessors/smtp/snort_smtp.h,
+	  src/dynamic-preprocessors/appid/flow.h,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ssl.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_list.h,
+	  src/dynamic-preprocessors/ftptelnet/ftpp_si.h,
+	  src/file-process/file_segment_process.h,
+	  src/file-process/libs/file_lib.h,
+	  src/preprocessors/sip_common.h,
+	  src/preprocessors/snort_httpinspect.h : 
+	  Optimized structures in several preprocessors.
+
+	* src/dynamic-preprocessors/dcerpc2/dce2_smb.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_smb.h
+	  src/file-process/file_service.c :
+	  Fixed SMBv1 file block for pending verdict retry packets.
+
+	* src/dynamic-preprocessors/dcerpc2/dce2_smb.c : 
+	  Fixed SMBv1 unknown file size upload block.
+	
+	* src/detect.c,
+	  src/detect.h,
+	  src/parser.c,
+	  src/parser.h,
+	  src/preprocessors/Session/session_common.h,
+	  src/preprocessors/Stream6/snort_stream_udp.c,
+	  src/preprocessors/Stream6/snort_stream_udp.h,
+	  src/preprocessors/spp_stream6.c,
+	  src/preprocessors/Stream6/stream_common.c,
+	  src/preprocessors/Stream6/stream_common.h,
+	  src/preprocessors/spp_stream6.c,
+	  src/reload.c,
+	  src/snort.c,
+	  src/snort.h :
+	  Fixed incorrect filtering of UDP traffic when "ignore_any_rules" is configured.
+	
+	* src/detection-plugins/sp_session.c,
+	  src/detection-plugins/sp_session.h,
+	  src/sfutil/util_jsnorm.c : 
+	  Fixed GCC 10.1.1 compilation issues.
+	
+	* src/decode.c,
+	  src/decode.h,
+	  src/log_text.c,
+	  src/log.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Added support to detect TCP Fast Open packets. 
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed TCP segment queue hole issue as per the RFC793 recommendation for OOO Ack packet handling.
+	
+	* src/detection-plugins/detection_leaf_node.c,
+	  src/detection-plugins/detection_options.c,
+	  src/dynamic-preprocessors/appid/appInfoTable.c,
+	  src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_base.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ftp.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rexec.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rpc.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rshell.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_snmp.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_tftp.c,
+	  src/dynamic-preprocessors/ftptelnet/ftpp_si.c,
+	  src/dynamic-preprocessors/ftptelnet/pp_ftp.c,
+	  src/dynamic-preprocessors/ftptelnet/snort_ftptelnet.c,
+	  src/dynamic-preprocessors/ftptelnet/spp_ftptelnet.c,
+	  src/fpcreate.c,
+	  src/parser.c,
+	  src/preprocessors/Session/session_common.h,
+	  src/preprocessors/spp_session.c,
+	  src/reload.c,
+	  src/snort.c :
+	  Fixed build when some configure options were disabled.
+
+	* src/detection-plugins/sp_byte_math.c :
+	  Fixed byte_math operation for multiplication integer overflow.
+
+	* src/dynamic-preprocessors/appid/appId.h,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ssl.c : 
+	  Fix to include 853 port in SSL detector for DNS over TLS runs on SSL.
+
+	* src/dynamic-plugins/sf_dynamic_plugins.c,
+	  src/dynamic-plugins/sf_dynamic_preprocessor.h,
+	  src/dynamic-preprocessors/appid/Makefile_defs,
+	  src/dynamic-preprocessors/appid/luaDetectorApi.c,
+	  src/dynamic-preprocessors/appid/util/common_util.h : 
+	  Fix for excessive logging of lua detector invalid LUA (null).
+
+	* snort/src/detection-plugins/sp_byte_check.c,
+	  src/detection-plugins/sp_byte_extract.c,
+	  src/detection-plugins/sp_byte_jump.c, 
+	  src/detection-plugins/sp_byte_math.c,
+	  src/detection-plugins/sp_byte_math.h,
+	  src/detection-plugins/sp_isdataat.c,
+	  src/detection-plugins/sp_pattern_match.c : 
+	  Added support for allowing common names across rule options.
+
+	* src/memory_stats.c :
+	  Removed a redundant log.
+
+	* spp_sip.c :
+	  Fixed handling encrypted traffic by SIP preprocessor.
+	
+	* snort/configure.in,
+	  snort/doc/README.s7commplus,
+	  snort/etc/sf_rule_options,
+	  snort/etc/sf_rule_validation.conf,
+	  snort/src/dynamic-preprocessors/Makefile.am,
+	  snort/src/dynamic-preprocessors/s7commplus/Makefile.am,
+	  snort/src/dynamic-preprocessors/s7commplus/s7comm_decode.c,
+	  snort/src/dynamic-preprocessors/s7commplus/s7comm_decode.h,
+	  snort/src/dynamic-preprocessors/s7commplus/s7comm_paf.c,
+	  snort/src/dynamic-preprocessors/s7commplus/s7comm_paf.h,
+	  snort/src/dynamic-preprocessors/s7commplus/s7comm_roptions.c,
+	  snort/src/dynamic-preprocessors/s7commplus/s7comm_roptions.h,
+	  snort/src/dynamic-preprocessors/s7commplus/spp_s7comm.c,
+	  snort/src/dynamic-preprocessors/s7commplus/spp_s7comm.h,
+	  snort/src/generators.h,
+	  snort/src/preprocids.h :
+	  Added support for s7Commplus protocol.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed out of order FIN packet leading to segment trimming.
+
+	* src/output-plugins/spo_unified2.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fix to populate original IP in dropped events when inline normalization is enabled.
+
+	* snort/src/sfutil/sf_ip.h :
+	  Fixed compiler warnings.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_dns.c :
+	  Fixed DNS application detector failing to detect DNS traffic in some scenarios.
+
+2020-07-24 Hariharan Chandrashekar <harchand@cisco.com>
+snort 2.9.16.1
+
+	* src/dynamic-preprocessors/appid/appIdConfig.h,
+	  src/dynamic-preprocessors/appid/appInfoTable.c,
+	  src/dynamic-preprocessors/appid/flow.h,
+	  src/dynamic-preprocessors/appid/fw_appid.c :
+	  Added packet counters to make sure flows with one-way data don't pend forever.
+
+	* src/detection-plugins/sp_flowbits.c,
+	  src/snort.c :
+	  Fixed potential race condition between reload and exit path.
+
+	* src/detection-plugins/sp_session.c,
+	  src/preprocessors/Stream6/stream_paf.h,
+	  src/sfutil/util_jsnorm.c :
+	  Added support for GCC version 10.1.1.
+
+2020-03-15 Hariharan Chandrashekar <harchand@cisco.com>
+snort 2.9.16
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Addressed an issue when out-of-order FIN is received by dropping it.
+
+	* src/output-plugins/spo_unified2.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed an issue in which xtradata is not added to the alert in unified file.
+
+	* src/reload.c,
+	  src/snort.c :
+	  Fixed potential race condition between reload and exit path (main thread).
+
+	* etc/file_magic.conf :
+	  Updated the file magic to detect ALZ file types.
+
+	* src/sfutil/sf_ip.h :
+	  Added support for gcc version 9.2.1.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_dns.c :
+	  Fixed an issue in which APPID returns no match.
+
+	* src/dynamic-preprocessors/dcerpc2/sf_dce2.vcxproj,
+	  src/dynamic-preprocessors/dnp3/sf_dnp3.vcxproj,
+	  src/dynamic-preprocessors/dns/sf_dns.vcxproj,
+	  src/dynamic-preprocessors/dynamic_preprocessors.vcxproj,
+	  src/dynamic-preprocessors/ftptelnet/sf_ftptelnet.vcxproj,
+	  src/dynamic-preprocessors/gtp/sf_gtp.vcxproj,
+	  src/dynamic-preprocessors/imap/sf_imap.vcxproj,
+	  src/dynamic-preprocessors/libs/sfdynamic_preproc_libs.vcxproj,
+	  src/dynamic-preprocessors/modbus/sf_modbus.vcxproj,
+	  src/dynamic-preprocessors/pop/sf_pop.vcxproj,
+	  src/dynamic-preprocessors/reputation/sf_reputation.vcxproj,
+	  src/dynamic-preprocessors/sdf/sf_sdf.vcxproj,
+	  src/dynamic-preprocessors/sf_dynamic_initialize/sf_dynamic_initialize.vcxproj,
+	  src/dynamic-preprocessors/sip/sf_sip.vcxproj,
+	  src/dynamic-preprocessors/smtp/sf_smtp.vcxproj,
+	  src/dynamic-preprocessors/ssh/sf_ssh.vcxproj,
+	  src/dynamic-preprocessors/ssl/sf_ssl.vcxproj,
+	  src/win32/WIN32-Prj/build_all.vcxproj,
+	  src/win32/WIN32-Prj/sf_engine.vcxproj,
+	  src/win32/WIN32-Prj/sf_engine_initialize.vcxproj,
+	  src/win32/WIN32-Prj/snort.vcxproj,
+	  src/win32/WIN32-Prj/snort_initialize.vcxproj,
+	  src/win32/WIN32-Prj/snort_installer_x64.nsi,
+	  src/win32/WIN32-Prj/snort_x64.dsw,
+	  src/win64/WIN64-Libraries/Packet.lib,
+	  src/win64/WIN64-Libraries/libdnet/dnet.lib,
+	  src/win64/WIN64-Libraries/pcre.lib,
+	  src/win64/WIN64-Libraries/wpcap.lib,
+	  src/win64/WIN64-Libraries/zlib.lib,
+	  tools/u2spewfoo/u2spewfoo.vcxproj :
+	  Added 64-bit support for Windows 10 operating system.
+
+	* src/dynamic-preprocessors/pop/snort_pop.c :
+	  Fixed an issue where POP preprocessor was not generating alert in some cases.
+
+	* src/dynamic-preprocessors/gtp/gtp_parser.c :
+	  Fixed the alerting logic for GTP v2 with missing TEID.
+
+	* src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Fixed file policy not working with character prefix in chunk size.
+
+	* configure.in,
+	  src/reload.c,
+	  src/side-channel/sidechannel.c,
+	  src/snort.c,
+	  src/target-based/sftarget_reader.c,
+	  src/util.h :
+	  Added support for glibc version 2.30.
+
+	* src/decode.h,
+	  src/dynamic-plugins/sf_engine/sf_snort_packet.h,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c,
+	  src/preprocessors/Stream6/stream_paf.c,
+	  src/preprocessors/snort_httpinspect.c,
+	  src/preprocessors/snort_httpinspect.h,
+	  src/preprocessors/stream_api.h :
+	  Added support for early inspection of HTTP payload before flushing in pre-ack mode.
+
+	* src/file-process/file_api.h,
+	  src/file-process/file_service.c,
+	  src/preprocessors/HttpInspect/include/hi_norm.h,
+	  src/preprocessors/HttpInspect/include/hi_ui_config.h,
+	  src/preprocessors/HttpInspect/server/hi_server_norm.c,
+	  src/preprocessors/snort_httpinspect.c :
+	  Normalize randomly encoded nulls interspersed in the HTTP server response to UTF-8.
+
+2019-12-15 Hariharan Chandrashekar <harchand@cisco.com>
+snort 2.9.15.1
+
+	* src/file-process/file_ss.c :
+	  Fixed the right order of precedence. Thanks to David Binderman for reporting this.
+
+	* src/dynamic-preprocessors/ssl_common/ssl_config.c :
+	  Fixed snort core seen during ssl re-configuration.
+
+	* src/fpdetect.c,
+	  src/log_text.c, src/profiler.h :
+	  Fixed compiler warnings.
+
+	* src/file-process/file_segment_process.c :
+	  Fixed file access issues on files from SMB share.
+
+	* configure.in,
+	  src/reload.c, src/side-channel/sidechannel.c,
+	  src/snort.c, src/target-based/sftarget_reader.c, src/util.h :
+	  Added support for glibc version 2.30.
+
+2019-10-02 Hariharan Chandrashekar <harchand@cisco.com>
+snort 2.9.15
+
+	* src/snort.c,
+	  src/control/sfcontrol.c,
+	  src/preprocessors/Session/stream5_ha.c,
+	  src/preprocessors/session_api.h,
+	  src/dynamic-plugins/sp_dynamic.c :
+	  Fixed a potential race condition.
+
+	* src/detect.c :
+	  Fixed static analysis issues.
+
+	* src/detect.c,
+	  src/detect.h,
+	  src/file-process/file_service.c,
+	  src/reload.c,
+	  src/sfdaq.h,
+	  src/snort.c,
+	  src/snort.h :
+	  Added new debugs to print detection, file_processing and Preproc time consumption info and verdict.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Added NULL check before dereferencing tcp_header.
+
+	* src/file-process/libs/file_lib.h,
+	  src/sfdaq.h :
+	  Fix to make daq_pktHdr globally visible and removed the extra Packet variable from the FILE_PKT_DEBUG macro.
+
+	* snort/etc/file_magic.conf :
+	  Added support to detect new Korean file formats .egg and .alz to the file preprocessor.
+	  
+	* src/dynamic-preprocessors/gtp/gtp_parser.c,
+	  src/dynamic-preprocessors/gtp/spp_gtp.h :
+	  Fix to generate ALERT if TEID value is zero in GTP v1 and v2 packets.
+
+	* src/detect.c :
+	  Added a check before printing the Packet latency trace when detection is enabled or not.
+
+	* src/file-process/file_capture.c,
+	  src/file-process/file_mime_process.c,
+	  src/file-process/file_resume_block.c,
+	  src/file-process/file_segment_process.c,
+	  src/file-process/file_service.c,
+	  src/file-process/libs/file_lib.c,
+	  src/file-process/libs/file_lib.h,
+	  src/sfdaq.h :
+	  Added debug messages in file-process packet flow.
+
+	* src/dynamic-plugins/sp_dynamic.c,
+	  src/reload.c,
+	  src/reload.h,
+	  src/snort.c :
+	  Fixed dynamic rules from getting disabled after multiple reloads.
+
+	* src/pkt_tracer.c :
+	  Fix to print packet trace information in the direction of the packet on the wire.
+
+	* etc/file_magic.conf :
+	  Added new file magic to detect RAR file-type.
+
+	* src/dynamic-plugins/sf_dynamic_preprocessor.h :
+	  Updated preproc version.
+
+	* src/dynamic-plugins/sf_dynamic_preprocessor.h :
+	  Provided an API to query non-flow related information from DAQ.
+
+	* src/dynamic-plugins/sf_dynamic_plugins.c,
+	  src/dynamic-plugins/sf_dynamic_preprocessor.h,
+	  src/sfdaq.c,
+	  src/sfdaq.h :
+	  Added a generic api DAQ_Ioctl for dynamic preprocs to use for various daq clis.
+		  
+	* src/dynamic-preprocessors/appid/Makefile_defs,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_imap.c,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_pop3.c,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_smtp.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_base.h,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ftp.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_netbios.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_nntp.c :
+	  Fix to whitelist ftp data sessions when no file policy exists.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Fixed -Wparentheses warning.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Fixed the algorithm that triggers port only detection.
+
+	* src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/preprocessors/HttpInspect/include/hi_paf.h,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Fixed an issue where HTTP was wrongly processing non HTTP traffic on port 443.
+
+	* src/dynamic-preprocessors/appid/appIdConfig.h,
+	  src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_base.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_base.h :
+	  Fixed IPS alerts generation for ICMP packets.
+
+	* src/file-process/file_resume_block.c :
+	  Fixed signature lookup when the context is not present.
+
+	* src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Added a new state to handle HTTP responses, having no status message followed by status code.
+
+	* src/dynamic-plugins/sf_dynamic_plugins.c,
+	  src/dynamic-plugins/sf_dynamic_preprocessor.h,
+	  src/dynamic-preprocessors/ftptelnet/snort_ftptelnet.c,
+	  src/dynamic-preprocessors/ftptelnet/snort_ftptelnet.h :
+	  Added DPD callbacks for receiving ftp transfer mode before generating file events.
+
+	* snort/etc/file_magic.conf :
+	  Fixed RTF file magic to a more generic value.
+
+	* src/preprocessors/spp_httpinspect.c :
+	  Added debug logs during HTTP Reload.
+
+	* src/dynamic-preprocessors/reputation/shmem/shmem_mgmt.c :
+	  Fix to bypass munmap if shmemSegptr points to zeroSegptr.
+
+	* src/parser.c :
+	  Added rule SID check during Snort validation.
+
+	* src/pkt_tracer.c :
+	  Corrected endianness representation for some of the parameters in the debug log.
+
+2019-07-26 Hariharan Chandrashekar <harchand@cisco.com>
+snort 2.9.14.1
+	* src/sfdaq.c :
+	  Fixed packet drop scenario.
+
+2019-04-23 Hariharan Chandrashekar <harchand@cisco.com>
+Snort 2.9.14.0
+	All files: updated copyright to 2019.
+
+	* src/build.h : updating build number to 15003.
+	
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Fix to block https traffic going through proxy.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Reset navl packet counters when shifting to new req/resp.
+
+	* src/file-process/file_ss.c :
+	  Fixed enabling side channel during some race conditions.
+
+	* src/appIdApi.h,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_http.c,
+	  src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/dynamic-preprocessors/appid/thirdparty_appid_types.h :
+	  Improving appId detection for proxied traffic.
+
+	* src/control/sfcontrol.c,
+	  src/preprocessors/spp_httpinspect.c,
+	  src/detection-plugins/sp_isdataat.c,
+	  src/detection-plugins/sp_isdataat.h,
+	  src/preprocessors/HttpInspect/include/hi_eo_log.h,
+	  src/dynamic-preprocessors/appid/luaDetectorModule.c,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_cip.c,
+	  src/file-process/file_resume_block.c,
+	  src/file-process/file_service.h,
+	  src/file-process/file_service_config.c,
+	  src/file-process/file_ss.c,
+	  src/file-process/file_ss.h,
+	  src/file-process/libs/file_config.h,
+	  src/reload.c,
+	  src/snort.c :
+	  Fixed potential race conditions across snort code base.
+
+	* src/dynamic-preprocessors/appid/hostPortAppCache.c :
+	  Added support for wild card port numbers in host cache and overwriting port service AppId.
+
+	* src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Fixed the chunk extensions parsing in the HTTP responses leading to the correct construction of the PDU.	
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed missing inspection for out of order HTTP flows.
+
+	* src/dynamic-preprocessors/appid/appInfoTable.c :
+	  Allow spaces in appid.conf and userappid.conf.
+
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_pop3.c :
+	  Added support for new STLS client patterns to help better detect POP3S over SSL.
+
+	* src/dynamic-preprocessors/dcerpc2/dce2_smb2.c,
+	  src/file-process/file_segment_process.c :
+	  Fixed decrement of segment_mem_in_use counter when no pruning is done.
+
+	* doc/README.http_inspect,
+	  etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Fixed HTTP issue caused due to invalid versions.
+
+	* src/parser.c :
+	  Fixed static analysis issues.
+
+	* src/decode.c :
+	  Removed Duplicate length checks when decoding IPv6 Extensions.
+
+	* src/preprocessors/sfprocpidstats.c :
+	  Changed the sfprocpidstat to calculate CPU statistics when --suppress-config-log option is not supplied.
+
+	* src/file-process/libs/file_lib.h :
+	  Reset the max file id's default value.
+
+	* src/dynamic-preprocessors/appid/appId_ss.c,
+	  src/dynamic-preprocessors/appid/appInfoTable.c :
+	  Logging the aggressiveness setting for BitTorrent, Ultrasurf, Psiphon & fixing paranthesis in 'If' condition.
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_ftp.c :
+	  Fixed FTP detection issues when a multi-line server response is split across multiple packets.
+	
+	* src/dynamic-preprocessors/appid/appIdConfig.c,
+	  src/dynamic-preprocessors/appid/appIdConfig.h,
+	  src/dynamic-preprocessors/appid/commonAppMatcher.c,
+	  src/dynamic-preprocessors/appid/spp_appid.c,
+	  src/dynamic-preprocessors/appid/thirdparty_appid_api.h,
+	  src/dynamic-preprocessors/appid/thirdparty_appid_utils.c :
+	  Added a new AppId preproc config option which specifies path to NAVL related cofiguration.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Fix to set TOR as payloadAppId if NAVL detects it over an HTTP SSL Tunnel.
+	
+	* src/dynamic-preprocessors/imap/imap_config.c,
+	  src/dynamic-preprocessors/pop/pop_config.c,
+	  src/dynamic-preprocessors/smtp/smtp_config.c,
+	  src/file-process/file_api.h,
+	  src/file-process/file_mime_config.c,
+	  src/file-process/file_mime_config.h,
+	  src/preprocessors/perf_indicators.h,
+	  src/preprocessors/snort_httpinspect.c,
+	  src/preprocessors/snort_httpinspect.h,
+	  src/preprocessors/spp_httpinspect.c :
+	  Fix Snort2 with a newer ICC without fixing the [bad] binary-crossing strtok assumptions.
+
+	* src/preprocessors/spp_sfportscan.c :
+	  Fix for filling the ip4hdr in the port scan packet creation.
+
+	* src/checksum.h,
+	  src/encode.c :
+	  Updated the checksum correctly for reset and locally modified packets for GRE flow.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed issue in handling TCP timestamp options in Snort.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Fixed compilation warning.
+	
+	* src/dynamic-plugins/sf_dynamic_preprocessor.h,
+	  src/dynamic-preprocessors/sdf/spp_sdf.c,
+	  src/dynamic-preprocessors/sdf/spp_sdf.h :
+	  Fixed Sensitive Data Threshold Configuration.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/preprocessors/Session/session_expect.c :
+	  Fix for setting application_protocol_ordinal by the caller.
+
+	* src/file-process/file_resume_block.c,
+	  src/file-process/file_ss.c :
+	  Removed unused variables.
+	
+	* src/dynamic-preprocessors/appid/detector_plugins/detector_smtp.c :
+	  Added support for detecting Mac based SMTP Microsoft Outlook client application
+
+	* src/dynamic-preprocessors/sip/sip_config.c :
+	  Fixed policy deployment failure due to SIP preprocessor config validation.
+	
+	* src/dynamic-preprocessors/appid/luaDetectorApi.c :
+	  Including more informations for lua errors while loading patterns.
+
+	* src/dynamic-preprocessors/sdf/sdf_credit_card.c,
+	  src/dynamic-preprocessors/sdf/sdf_pattern_match.c :
+	  Fix to treat any pii without following by non-digit as full pattern match and fire alert.
+
+	* src/dynamic-preprocessors/reputation/shmem/shmem_lib.c :
+	  Fixed snort process exit when processing reputation and if another snort was launched that does the same work.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fix to not flush the urgent data to preprocs and the segment be trimmed.
+
+	* src/dynamic-preprocessors/appid/appIdApi.c :
+	  Stop marking the HTTP inspection as done if the SSL detector is in progress and no URL is extracted.
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_rexec.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rshell.c :
+	  Fix here is to set the AppId for rsh/rexec control sessions initially to allow the data session 
+	  and doing the rest of the validation later.
+
+	* src/control/sfcontrol.h,
+	  src/preprocessors/spp_perfmonitor.c :
+	  Fix for enabling flow profiling mode without restarting snort detection engine.
+	
+	* src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/preprocessors/HttpInspect/include/hi_client.h :
+	  Fixed x-forward-for-like headers when there are multiple proxies.
+
+	* src/file-process/file_service.c :
+	  Fix to update the file_config when we update the file_context.
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_base.c :
+	  Fix to prevent re-allocation of memory for SMB AppId data.
+
+	* src/dynamic-preprocessors/Makefile.am :
+	  Add -f option to the mv command for fixing make distcheck failure during file overwrite.
+
+	* doc/README.http_inspect,
+	  etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  A new preprocessor alert is added 120:27 to alert if there is no proper end of header.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed uninitialized members of StreamTracker for midstream sessions.
+
+	* src/preprocessors/session_api.h,
+	  src/preprocessors/spp_session.c :
+	  Removal of Blocklist timeout code.
+
+	* src/preprocessors/spp_session.c :
+	  Fix for snort to check for expired sessions and stop matching new packets with expired sessions.
+
+	* src/dynamic-plugins/sf_dynamic_plugins.c,
+	  src/dynamic-plugins/sf_dynamic_preprocessor.h,
+	  src/snort.c :
+	  Fix to get daq capabilities for snort firewall in optimized way.
+
+	* tools/appid_detector_builder.sh :
+	  Fixed API name used by OpenAppId LUA detector builder.
+
+	* src/dynamic-preprocessors/appid/luaDetectorApi.c,
+	  src/dynamic-preprocessors/appid/luaDetectorModule.c :
+	  Locking LUA detectors during snort reload free.
+
+	* src/dynamic-preprocessors/appid/luaDetectorApi.c,
+	  src/dynamic-preprocessors/appid/luaDetectorFlowApi.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ssl.c :
+	  Setting AppId for RSHELL/REXEC stderr data sessions.
+
+	* src/memory_stats.c,
+	  src/memory_stats.h,
+	  src/snort.c
+	  src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/dynamic-preprocessors/appid/luaDetectorModule.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rpc.c,
+	  src/dynamic-preprocessors/appid/spp_appid.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_base.c :
+	  Fixed issues reported by valgrind.
+
+	* src/dynamic-preprocessors/appid/appIdApi.c,
+	  src/dynamic-preprocessors/appid/fw_appid.c :	
+	  Fix for FTP Active detection issues in case of multi-line server responses.
+
+	* src/dynamic-preprocessors/ftptelnet/ftpp_si.h,
+	  src/dynamic-preprocessors/ftptelnet/ftpp_ui_config.h,
+	  src/dynamic-preprocessors/ftptelnet/pp_ftp.c,
+	  src/dynamic-preprocessors/ftptelnet/snort_ftptelnet.c,
+	  src/dynamic-preprocessors/ftptelnet/spp_ftptelnet.c,
+	  src/file-process/file_api.h,
+	  src/file-process/file_resume_block.c,
+	  src/file-process/file_resume_block.h,
+	  src/file-process/file_segment_process.c,
+	  src/file-process/file_service.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed File policy with the rule block with reset that was not blocking the file upload.
+
+	* src/dynamic-preprocessors/reputation/shmem/shmem_mgmt.c :
+	  Fixed snort process exit while processing Security Intelligence.
+
+2019-03-21 Bhumika Sachdeva <bsachdev@cisco.com>
+Snort 2.9.13.0
+	
+	* src/dynamic-preprocessors/sip/sip_config.c :
+	  Changed number of max sessions SIP can handle.
+	
+	* src/dynamic-preprocessors/appid/luaDetectorModule.c :
+	  Fixed an issue in loading of bunch of lua detector.
+
+	* src/dynamic-preprocessors/sdf/sdf_credit_card.c,
+	  src/dynamic-preprocessors/sdf/sdf_pattern_match.c :
+	  Fixed an issue with processing of pattern matching. 
+
+	* src/dynamic-preprocessors/appid/appIdApi.c :
+	  Fixed an issue with HTTP inspection in case SSL detector is in process and no URL has been extracted.
+
+	* src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/preprocessors/HttpInspect/include/hi_client.h :
+	  Fixing of x-forward-for-like headers in case of multiple proxies by snort.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Blocking the flush of urgent data to preprocs and trimming of segment in case urgent flag is set and urgent pointer > 0.
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_rexec.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rshell.c :
+	  Set the AppId for rsh/rexec control sessions initially to allow the data session and doing the rest of the validation.
+
+	* src/file-process/file_service.c :
+	  Fixed the Snort process failure while processing file policy on SMB2 traffic.
+
+	* src/dynamic-preprocessors/appid/service_plugins/service_base.c :
+	  Modified the prevention of re-allocation of memory for SMB AppId data.
+
+	* src/dynamic-preprocessors/appid/luaDetectorModule.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_base.c :
+	  Fixed memory leak issues.
+
+	* src/control/sfcontrol.c,
+	  src/detection-plugins/Makefile.am,
+	  src/dynamic-examples/Makefile.am,
+	  src/dynamic-plugins/Makefile.am,
+	  src/dynamic-plugins/sf_decompression_define.h,
+	  src/dynamic-plugins/sf_dynamic_decompression.c,
+	  src/dynamic-plugins/sf_dynamic_decompression.h,
+	  src/dynamic-plugins/sf_dynamic_detection.h,
+	  src/dynamic-plugins/sf_dynamic_engine.h,
+	  src/dynamic-plugins/sf_dynamic_meta.h,
+	  src/dynamic-plugins/sf_dynamic_plugins.c,
+	  src/dynamic-plugins/sf_dynamic_preprocessor.h,
+	  src/dynamic-plugins/sf_dynamic_side_channel.h,
+	  src/dynamic-plugins/sf_engine/bmh.c,
+	  src/dynamic-plugins/sf_engine/examples/12759.c,
+	  src/dynamic-plugins/sf_engine/examples/detection_lib_meta.h,
+	  src/dynamic-plugins/sf_engine/examples/rule_storeandforward.c,
+	  src/dynamic-plugins/sf_engine/examples/rule_storeandforward2.c,
+	  src/dynamic-plugins/sf_engine/sf_decompression.c,
+	  src/dynamic-plugins/sf_engine/sf_decompression.h,
+	  src/dynamic-plugins/sf_engine/sf_snort_detection_engine.c,
+	  src/dynamic-plugins/sf_engine/sf_snort_plugin_api.c,
+	  src/dynamic-plugins/sf_engine/sf_snort_plugin_api.h,
+	  src/dynamic-plugins/so_rule_mem_adjust.h,
+	  src/dynamic-plugins/sp_dynamic.c,
+	  src/dynamic-preprocessors/Makefile.am,
+	  src/dynamic-preprocessors/appid/service_plugins/service_netbios.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_rpc.c,
+	  src/dynamic-preprocessors/appid/thirdparty_appid_utils.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_config.c,
+	  src/dynamic-preprocessors/dcerpc2/includes/smb.h,
+	  src/dynamic-preprocessors/sip/sip_dialog.c,
+	  src/dynamic-preprocessors/sip/sip_roptions.c,
+	  src/preprocessors/HttpInspect/utils/hi_util_hbm.c,
+	  src/preprocessors/spp_arpspoof.c,
+	  src/reload.c,
+	  src/snort.c,
+	  src/snort.h,
+	  snort_build/Makefile.common,
+	  snort_build/common-snort-opts.makefile :
+	  Snort now supports reload on snort rules update.
+
+	* configure.in,
+	  src/control/sfcontrol.c :
+	  Addressed FreeBSD Build error.
+
+	* src/preprocessors/perf-base.c :
+	  Fixed an issue with Inspection engine performance statistics showing 0 drops in case of non-zero drops.
+
+	* src/control/sfcontrol.c :
+	  Fixed an issue where snort was stuck in cleanup.
+
+	* preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Handling of junk characters after chunk size in HTTP response.
+
+	* src/detection-plugins/sp_byte_math.c :
+	  Handled a zero value case with division operator.
+
+	* src/preprocessors/Stream6/snort_stream_tcp.c :
+	  Updated TCP policy for client and server session while flushing the client or server segment list.
+
+	* doc/README.http_inspect,
+	  etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Handled a new pre-processor alert in case of improper end of HTTP header.
+
+	* src/dynamic-preprocessors/reputation/shmem/shmem_lib.c,
+	  src/detection-plugins/sp_isdataat.c,
+	  src/detection-plugins/sp_isdataat.h :
+	  Fixed a potential race condition.
+
+	* src/dynamic-preprocessors/appid/appIdStats.c,
+	  src/dynamic-preprocessors/appid/appInfoTable.c,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_http.c,
+	  src/dynamic-preprocessors/appid/detector_plugins/detector_pop3.c,
+	  src/dynamic-preprocessors/appid/fw_appid.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ssh.c,
+	  src/dynamic-preprocessors/appid/service_plugins/service_ssl.c,
+	  src/dynamic-preprocessors/appid/thirdparty_appid_utils.c,
+	  src/dynamic-preprocessors/dnp3/spp_dnp3.c,
+	  src/dynamic-preprocessors/ftptelnet/pp_ftp.c,
+	  src/sfutil/bnfa_search.c,
+	  src/sfutil/sf_textlog.c :
+	  Validation of malloc return values.
+
+	* src/preprocessors/sfprocpidstats.c :
+	  Modified the sfprocpidstat to only calculate CPU statistics when --suppress-config-log option is not supplied.
+
+
+2018-09-18 Puneeth Kumar C V <puneetku@cisco.com>
+Snort 2.9.12.0
+
+	* doc/README.http_inspect, etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/server/hi_server.c,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Fixed an issue where in if we have a junk line before HTTP response header, the header was wrongly parsed.
+	  A new preprocessor alert with gid:120 and sid:26 is alerted if any junk lines before HTTP response header is detected.
+
+	* etc/gen-msg.map, preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/include/hi_server.h,
+	  src/preprocessors/HttpInspect/server/hi_server.c :
+	  If any of the standard header fields like Transfer-Encoding, content-encoding, content-length,
+	  content-type are preceded by \t, then a new alert is added with gid:120 and sid:25.
+
+	* doc/README.http_inspect, doc/snort_manual.pdf, etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/preprocessors/snort_httpinspect.h,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/server/hi_server.c,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Fixed GZIP evasions wherein a HTTP response with content-encoding:gzip contains a body which has some gzip related anomaly.
+	  A new alert with gid:120 and sid:24 has been added to detect mixed gzip encode and plain text response.
+	
+	* src/preprocessors/HttpInspect/server/hi_server.c :
+	  Memory leak in decompression when using zlib version 1.2.11. Thanks Elof for reporting it and Thanks Anuj Patel for sending the patch.
+
+	* src/: dynamic-preprocessors/dcerpc2/dce2_smb2.c,
+	  dynamic-preprocessors/dcerpc2/dce2_smb.h,
+	  dynamic-preprocessors/dcerpc2/dce2_smb2.c,
+	  dynamic-preprocessors/dcerpc2/dce2_smb2.h,
+	  dynamic-preprocessors/dcerpc2/dce2_paf.c, includes/smb.h,
+	  dynamic-preprocessors/dcerpc2/spp_dce2.c,
+	  file-process/file_api.h, file-process/file_segment_process.c,
+	  file-process/file_segment_process.h,
+	  SMB improvements for file processing.
+
+	* src/dynamic-preprocessors/appid/: appInfoTable.h, fw_appid.c,
+	  fw_appid.h, hostPortAppCache.c, luaDetectorApi.c,
+	  luaDetectorApi.h, luaDetectorFlowApi.c,
+	  client_plugins/client_app_aim.c, client_plugins/client_app_api.h,
+	  client_plugins/client_app_base.c,
+	  client_plugins/client_app_base.h,
+	  client_plugins/client_app_bit.c,
+	  client_plugins/client_app_bit_tracker.c,
+	  client_plugins/client_app_msn.c, client_plugins/client_app_rtp.c,
+	  client_plugins/client_app_ssh.c,
+	  client_plugins/client_app_timbuktu.c,
+	  client_plugins/client_app_tns.c, client_plugins/client_app_vnc.c,
+	  client_plugins/client_app_ym.c, detector_plugins/detector_http.c,
+	  detector_plugins/detector_imap.c,
+	  detector_plugins/detector_kerberos.c,
+	  detector_plugins/detector_pattern.c,
+	  detector_plugins/detector_pop3.c,
+	  detector_plugins/detector_sip.c,
+	  detector_plugins/detector_smtp.c, service_plugins/service_api.h,
+	  service_plugins/service_base.c, service_plugins/service_base.h :
+	  Fixed an issue in a scenario where BitTorrent pattern is seen only on the 3rd packet of the session because of which we miss our client detection.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Re-enabling third party AppId detection for out-of-order/not-ok flows.
+
+	* src/dynamic-preprocessors/appid/: flow.h, fw_appid.c :
+	  Added support for HTTP CONNECT command to handle BitTorrent connections over proxy.
+
+	* src/encode.c, src/reload.h, src/sfdaq.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_co.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_config.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_smb.c,
+	  src/dynamic-preprocessors/dcerpc2/dce2_smb2.c,
+	  src/dynamic-preprocessors/dcerpc2/spp_dce2.c,
+	  src/dynamic-preprocessors/sdf/spp_sdf.c,
+	  src/preprocessors/spp_frag3.c, src/preprocessors/spp_session.c,
+	  src/preprocessors/spp_sfportscan.c,
+	  src/preprocessors/Stream6/snort_stream_ip.c,
+	  src/preprocessors/Stream6/snort_stream_tcp.c, src/sfutil/acsmx.c,
+	  src/sfutil/sfksearch.c, src/sfutil/sfportobject.c,
+	  tools/u2spewfoo/u2spewfoo.c :
+	  Fixed Snort warnings when compiled in OpenBSD with clang/llvm. Thanks to Markus for reporting this.
+
+	* src/dynamic-preprocessors/file/spp_file.c :
+	  Fixed an issue where file inspect not working after reload.
+
+	* src/dynamic-preprocessors/Makefile.am :
+	  Fixed an issue where snort was not coming up with AppId enabled on OpenBSD.
+
+	* src/: snort.c, dynamic-plugins/sf_dynamic_preprocessor.h,
+	  preprocessors/perf.c, preprocessors/Stream6/snort_stream_icmp.c,
+	  preprocessors/Stream6/snort_stream_ip.c,
+	  preprocessors/Stream6/snort_stream_tcp.c,
+	  preprocessors/Stream6/snort_stream_udp.c :
+	  Fixed compilation issue with --disable-reload.
+
+	* configure.in, doc/README.appid, doc/snort_manual.tex,
+	  rpm/README.build_rpms, rpm/generate-all-rpms, rpm/snort.spec,
+	  src/dynamic-preprocessors/appid/Makefile_defs :
+	  Compile AppID by default.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Changes to AppId to ignore malformed packets.
+
+	* src/: dynamic-preprocessors/dcerpc2/dce2_smb2.c,
+	  file-process/file_segment_process.c,
+	  file-process/file_segment_process.h :
+	  Fix an issue where memory is over allocated due to SMB traffic.
+
+	* src/dynamic-preprocessors/appid/: appIdApi.c, appIdConfig.h,
+	  appInfoTable.c, fw_appid.c, hostPortAppCache.c :
+	  Added support for wild card port numbers in host cache and overwriting port service AppId.
+
+	* src/mstring.c :
+	  Fixed an issue with msplit() not behaving properly in some scenarios.
+
+	* src/dynamic-preprocessors/appid/: fw_appid.c, test/appIdTests.c :
+	  Fixed an issue where retransmitted packet incorrectly treated as out of order.
+
+	* src/preprocessors/spp_frag3.c :
+	  Fixed snort crash in some scenraios.
+
+	* src/dynamic-preprocessors/appid/: fw_appid.c,
+	  service_plugins/service_ssl.c :
+	  Fixed an issue wherein if we have multiple ssl certificates, they were concatinated.
+
+	* src/dynamic-preprocessors/appid/fw_appid.c :
+	  Using Inner IP header to determine the protocol & direction for AppId.
+
+	* src/: reload.c, preprocessors/spp_normalize.c,
+	  preprocessors/Stream6/snort_stream_tcp.c :
+	  Fixed an issue where snort cores due to wrong/stale policy IDs in the flush path.
+
+	* src/detection-plugins/sp_pattern_match.c :
+	  Fixed an issue with intrusion rule that was trigerring false negatives.
+
+	* src/sfutil/sfportobject.c, src/decode.c, src/fpcreate.c,
+	  src/plugbase.c, src/util.c,
+	  src/dynamic-preprocessors/sdf/sdf_us_ssn.c :
+	  Fixed static analysis issues.
+
+	* src/preprocessors/Stream6/: snort_stream_tcp.c, stream_common.c :
+	  Fixed early setting of PKT_STREAM_ORDER_BAD when out of order packet is seen.
+
+	* src/preprocessors/: session_api.h, spp_session.c :
+	  This change will allow us to use the session stream key to lookup the session instead
+	  of directly storing the S pointer
+
+	* src/: event_wrapper.c, event_wrapper.h, preprocessors/portscan.c :
+	  Fixed an issue where Port Scan doesn't block scans
+
+	* src/: obfuscation.c,
+	  dynamic-preprocessors/appid/detector_plugins/detector_http.c,
+	  dynamic-preprocessors/file/file_agent.c,
+	  dynamic-preprocessors/file/file_inspect_config.c,
+	  dynamic-preprocessors/sdf/sdf_us_ssn.c,
+	  file-process/file_capture.c :
+	  Fixed bugs reported by open source community. Thanks for David Binderman for reporting this.
+
+	* src/snort.c :
+	  Avoid possible double free and memory corruption in snortcleanup().
+
+	* doc/snort_manual.pdf, src/reg_test.h 
+	  src/dynamic-preprocessors/reputation/spp_reputation.c :
+	  Prevent restart when Reputation memcap changes.
+
+	* src/dynamic-preprocessors/appid/luaDetectorModule.c :
+	  Fixed an issue where AppId continues to try & load the remaining detectors instead of returning after
+	  finding an invalid one.  
+
+	* src/snort.c :
+	  Reduced the number of session prunings when snort is idle.
+
+	* src/dynamic-preprocessors/ftptelnet/pp_ftp.c :
+	  Fixed an issue which can cause buffer overflow and memory corruption in FTP control path.
+
+	* src/reload.c :
+	  Synchronise reload and restart in snort.
+
+	* src/snort_bounds.h : 
+	  Fixed possible buffer overrun.
+
+	* src/dynamic-preprocessors/appid/: fw_appid.c, fw_appid.h,
+	  luaDetectorApi.c, spp_appid.c, client_plugins/client_app_base.c,
+	  service_plugins/service_base.c, test/Makefile.am :
+	  Remove misleading exit log about DetectorFini. 
+
+	* src/dynamic-preprocessors/appid/:
+	  client_plugins/client_app_rtp.c, client_plugins/client_app_rtp.h,
+	  test/Makefile.am, test/appIdTests.c, test/client_app_rtp_test.c,
+	  test/client_app_rtp_test.h :
+	  Fix for the issue where RTP doesn't get detected when there is SSRC switch.
+
+	* src/dynamic-preprocessors/appid/: fw_appid.c,
+	  detector_plugins/detector_smtp.c, service_plugins/service_ftp.c :
+	  Fixed an issue where is SMTP is detected too late.
+
+	* src/dynamic-plugins/sf_dynamic_plugins.c,
+	  dynamic-preprocessors/appid/appIdConfig.h,
+	  dynamic-preprocessors/appid/fw_appid.c : 
+	  Added mutex protections into the framework API to protect against some thread contention.
+
+	* src/preprocessors/: session_api.h, spp_session.c,
+	  Session/session_expect.c :
+	  Changes to allow simulated packets to match an existing session.
+
+	* src/: snort.c, dynamic-plugins/sf_dynamic_plugins.c,
+	  dynamic-plugins/sf_dynamic_preprocessor.h,
+	  dynamic-preprocessors/reputation/spp_reputation.c,
+	  preprocessors/session_api.h, preprocessors/spp_session.c,
+	  preprocessors/Session/session_common.h, sfutil/sfPolicyData.h :
+	  Re-evaluate IP reputation on all flows except black listed flows after reputation update.
+
+	* doc/README.http_inspect, etc/gen-msg.map,
+	  preproc_rules/preprocessor.rules,
+	  src/preprocessors/HttpInspect/client/hi_client.c,
+	  src/preprocessors/HttpInspect/event_output/hi_eo_log.c,
+	  src/preprocessors/HttpInspect/include/hi_eo_events.h,
+	  src/preprocessors/HttpInspect/include/hi_paf.h,
+	  src/preprocessors/HttpInspect/server/hi_server.c,
+	  src/preprocessors/HttpInspect/utils/hi_paf.c :
+	  Added handling chunked encoding in HTTP1.0 request and response.
+
+	* src/preprocessors/: snort_httpinspect.c,
+	  HttpInspect/client/hi_client.c, HttpInspect/include/hi_client.h,
+	  Stream6/snort_stream_tcp.c, Stream6/stream_paf.c :
+	  Fixed an issue where in HTTPS post file detection not working.
+
+	* src/: parser.c, snort.h, detection-plugins/sp_pcre.c,
+	  dynamic-plugins/sf_convert_dynamic.c,
+	  dynamic-plugins/sf_dynamic_engine.h,
+	  dynamic-plugins/sf_dynamic_plugins.c,
+	  dynamic-plugins/sf_engine/sf_snort_plugin_pcre.c,
+	  output-plugins/spo_log_tcpdump.c, preprocessors/spp_normalize.c,
+	  preprocessors/Stream6/snort_stream_tcp.c : 
+	  Fixed an issue with Snort using incorrect snort config in reload path.
+
+	* src/: decode.c, preprocessors/portscan.c,
+	  preprocessors/spp_frag3.c :
+	  Fixed an issue with IP Protocol scanning not getting detected.
+
+	* src/decode.c :
+	  Fixed heap out of bounds read in DecodeCiscoMeta().
+
+	* src/decode.c : 
+	  Fixed 1 byte buffer overflow in CheckIPV6HopOptions.
+
+	* src/dynamic-preprocessors/appid/: commonAppMatcher.c :
+	  Fix for the issue where hosts were not being discovered if the ND rule had IPv6 network and zone.
+
+	* src/sfutil/Unified2_common.h :
+	  Fixed an issue with Unified2IDSEventIPv6 structure's app_name field has incorrect size.
+
+	* src/util.c :
+	  Fixed an issue where logging packet can cause a segmentation fault in single-pcap mode when printing timestamp. 
+	  Thanks to Stephan Zeisbarg for reporting this issue.
+
+	* src/preprocessors/portscan.c :
+	  Fix Protocol sweep alert.
+
+
 2017-12-06 Meghana R <meraghav@cisco.com>
 Snort 2.9.11.1
 
@@ -2503,7 +3805,7 @@ Snort 2.9.7.0-rc
       preprocessors/Stream6/snort_stream_ip.c,
       preprocessors/Stream6/snort_stream_tcp.c,
       preprocessors/Stream6/snort_stream_udp.c:
-      Fixed issue with blacklisting of flow traffic.
+      Fixed issue with blocklisting of flow traffic.
 
     * src/preprocessors:
       spp_session.c, spp_stream6.c:
@@ -4621,7 +5923,7 @@ Snort 2.9.5
       eliminate read-mode check when determining window
 
     * src/preprocessors/Stream5/snort_stream5_tcp.c:
-      don't reassemble on the tracked whitelisted flows
+      don't reassemble on the tracked allowlisted flows
       fix sequence number validation on ack to zero window syn+ack
       fix timestamp tracking to use window base instead of next expected
 
@@ -4690,7 +5992,7 @@ Snort 2.9.5
       Also, export REQ_ENGINE_LIB_MAJOR and REQ_ENGINE_LIB_MINOR from snort
 
     * src/preprocessors/Stream5/snort_stream5_tcp.c:
-      allow stream5 to track whitelisted sessions
+      allow stream5 to track allowlisted sessions
 
     * src/: snort.c, dynamic-preprocessors/dnp3/spp_dnp3.c,
       preprocessors/Stream5/snort_stream5_tcp.c,
@@ -5313,7 +6615,7 @@ Snort 2.9.5
       for ftp-data channel.
 
     * src/: decode.c, decode.h, encode.c, sf_protocols.h, snort.c:
-      Whitelist encrypted ESP tunnels if decoding ESP traffic. 
+      Allowlist encrypted ESP tunnels if decoding ESP traffic. 
 
     * src/detection-plugins/sp_react.c:
       Fix issue where react action was lost when Snort reloads. 
@@ -5506,8 +6808,8 @@ Snort 2.9.4.6
 
     * doc/README.counts, doc/snort_manual.pdf, doc/snort_manual.tex,
       src/decode.c, src/parser.c, src/snort.h:
-      Added config tunnel_verdicts and tunnel bypass for whitelist and
-      blacklist verdicts for 6in4 or 4in6 encapsulated traffic.
+      Added config tunnel_verdicts and tunnel bypass for allowlist and
+      blocklist verdicts for 6in4 or 4in6 encapsulated traffic.
 
     * src/preprocessors/spp_frag3.c:
       Don't update IP options length and count in frag3 after allocating
@@ -5640,8 +6942,8 @@ Snort 2.9.4
     * doc/README.counts, doc/snort_manual.tex, doc/snort_manual.pdf,
       src/active.c, src/active.h, src/decode.c, src/parser.c,
       src/parser.h, src/snort.c, src/snort.h, src/util.c:
-      added config tunnel_verdicts and tunnel bypass for whitelist and
-      blacklist verdicts for gtp or teredo encapsulated traffic.
+      added config tunnel_verdicts and tunnel bypass for allowlist and
+      blocklist verdicts for gtp or teredo encapsulated traffic.
 
     * src/dynamic-preprocessors/smtp/: snort_smtp.c, snort_smtp.h:
       Handle MS Exchange X-EXPS and XEXCH50 commands in the SMTP
@@ -6275,7 +7577,7 @@ Snort 2.9.4 Beta
       added 134:3 and IPs and ports to log messages for PPM packet events
 
     * src/snort.c:
-      force drop TCP/UDP now gets DAQ blacklist instead of DAQ block verdict
+      force drop TCP/UDP now gets DAQ blocklist instead of DAQ block verdict
 
     * doc/README.stream5, etc/gen-msg.map,
       preproc_rules/preprocessor.rules, src/generators.h,
@@ -6556,7 +7858,7 @@ Snort 2.9.3 RC
     * src/: sfdaq.c, sfdaq.h, dynamic-plugins/sf_dynamic_plugins.c,
       dynamic-plugins/sf_dynamic_preprocessor.h:
 
-      Add API for checking whether DAQ can whitelist.
+      Add API for checking whether DAQ can allowlist.
 
     * src/: parser.c, parser.h, snort.c:
 
@@ -7737,7 +9039,7 @@ Snort 2.9.2 Beta
       dynamic-preprocessors/reputation/reputation_config.c,
       dynamic-preprocessors/reputation/shmem/shmem_datamgmt.c,
       dynamic-preprocessors/reputation/shmem/shmem_datamgmt.h:
-        The paths to whitelist & blacklist files are now relative to
+        The paths to allowlist & blocklist files are now relative to
         the location of snort.conf.
 
     * src/preprocessors/Stream5/snort_stream5_session.c:
@@ -7860,7 +9162,7 @@ Snort 2.9.1.1
       tools/Makefile.am:
         - Added support for shared memory between Snort processes.
           This is used in the IP Reputation preprocessor to share a single copy
-          of IP whitelists & blacklists.
+          of IP allowlists & blocklists.
         - Added a control channel, so that commands may be issued to
           a running Snort process by way of a Unix socket.
 
@@ -8125,7 +9427,7 @@ Snort 2.9.1 RC
       src/dynamic-preprocessors/Makefile.am, configure.in,
       src/preprocids.h, etc/gen-msg.map:
         Added the IP Reputation preprocessor. This preprocessor provides
-        the ability to whitelist and blacklist packets based on IP addresses.
+        the ability to allowlist and blocklist packets based on IP addresses.
         See README.reputation for more information.
 
     * src/: sf_types.h, dynamic-plugins/sf_dynamic_plugins.c,
@@ -8413,7 +9715,7 @@ Snort 2.9.1 Beta
         for HTTP response bodies & decoded email attachments.
     * src/: snort.c, preprocessors/spp_stream5.c,
       preprocessors/stream_api.h:
-        Update Snort to return a DAQ verdict of whitelist (meaning don't
+        Update Snort to return a DAQ verdict of allowlist (meaning don't
         send Snort any more packets) for sessions that are being ignored
         in both directions or ports that are configured to ignore.  For
         DAQ modules and hardware that supports it, this should result in

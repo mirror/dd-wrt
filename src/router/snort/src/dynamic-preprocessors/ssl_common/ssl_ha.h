@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2012-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,6 +63,7 @@ void SSLHAConfigFree(void *config);
 void SSLHAPostConfigInit(struct _SnortConfig *sc, int unused, void *arg);
 void SSLCleanHA(void);
 void SSLPrintHAStats(void);
+int DisplaySSLHAStats(char *buffer);
 void SSLResetHAStats(void);
 void SSLProcessHA(int ssl_index, bool update, void *data, uint32_t ssl_size);
 

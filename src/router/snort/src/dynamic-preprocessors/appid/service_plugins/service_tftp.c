@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -100,7 +100,7 @@ static int16_t app_id;
 static int tftp_init(const InitServiceAPI * const init_api)
 {
     unsigned i;
-
+#ifdef TARGET_BASED
     app_id = init_api->dpd->addProtocolReference("tftp");
 
     for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
@@ -108,6 +108,7 @@ static int tftp_init(const InitServiceAPI * const init_api)
         _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
         init_api->RegisterAppId(&tftp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
     }
+#endif
 
     return 0;
 }

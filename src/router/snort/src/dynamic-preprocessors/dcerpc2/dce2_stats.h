@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 typedef struct _DCE2_Stats
 {
     uint64_t sessions;
+    uint64_t sessions_active;
     uint64_t sessions_autodetected;
     uint64_t sessions_aborted;
     uint64_t bad_autodetects;

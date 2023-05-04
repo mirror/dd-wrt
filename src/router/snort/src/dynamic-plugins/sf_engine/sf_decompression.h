@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -32,21 +32,7 @@
 
 #include <stdint.h>
 #include "sf_snort_plugin_api.h"
-
-/* Types */
-typedef enum compression_type
-{
-    COMPRESSION_TYPE_DEFLATE = 1,
-    COMPRESSION_TYPE_GZIP,
-    COMPRESSION_TYPE_MAX
-} compression_type_t;
-
-/* Return Codes */
-#define SNORT_DECOMPRESS_OK 0
-#define SNORT_DECOMPRESS_OUTPUT_TRUNC  1
-#define SNORT_DECOMPRESS_BAD_ARGUMENT (-1)
-#define SNORT_DECOMPRESS_BAD_DATA     (-2)
-#define SNORT_DECOMPRESS_ERROR (-3)
+#include "sf_decompression_define.h"
 
 
 /* API Functions */

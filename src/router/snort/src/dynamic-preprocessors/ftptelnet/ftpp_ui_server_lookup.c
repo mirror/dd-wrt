@@ -1,7 +1,7 @@
 /*
  * ftpp_ui_server_lookup.c
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Kevin Liu <kliu@sourcefire.com>
@@ -45,6 +45,7 @@
 #include "ftpp_ui_config.h"
 #include "ftpp_return_codes.h"
 #include "snort_ftptelnet.h"
+#include "memory_stats.h"
 
 static void serverConfFree(void *pData);
 
@@ -326,7 +327,8 @@ static void serverConfFree(void *pData)
         if (serverConf->referenceCount == 0)
         {
             FTPTelnetCleanupFTPServerConf((void *)serverConf);
-            free(serverConf);
+            _dpd.snortFree(serverConf, sizeof(FTP_SERVER_PROTO_CONF),
+                           PP_FTPTELNET, PP_MEM_CATEGORY_CONFIG);
         }
     }
 }

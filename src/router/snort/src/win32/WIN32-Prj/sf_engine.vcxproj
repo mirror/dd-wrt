@@ -1,0 +1,363 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|x64">
+      <Configuration>Template</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <Keyword>MFCProj</Keyword>
+    <ProjectGuid>{81E98225-ED05-4843-8E55-0059223759CB}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\SF_Engine_Release\</OutDir>
+    <IntDir>.\SF_Engine_Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>.\SF_Engine_Release\</OutDir>
+    <IntDir>.\SF_Engine_Release\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\SF_Engine_Debug\</OutDir>
+    <IntDir>.\SF_Engine_Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>..\..\dynamic-plugins;..\..\dynamic-plugins\sf_engine;..\Win32-Includes;..\Win32-Includes\zlib;..\..\..\daq\api;..\..\..\daq\sfbpf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;ENABLE_PAF;SF_SNORT_ENGINE_DLL;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_RESPOND;ENABLE_REACT;ZLIB;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\SF_Engine_Release\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\SF_Engine_Release\sf_engine.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\SF_Engine_Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\SF_Engine_Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\SF_Engine_Release\sf_engine.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\SF_Engine_Release\sf_engine.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\SF_Engine_Release\sf_engine.dll</OutputFile>
+      <ImportLibrary>.\SF_Engine_Release\sf_engine.lib</ImportLibrary>
+      <AdditionalLibraryDirectories>..\Win32-Libraries;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib1.lib;Ws2_32.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>..\..\dynamic-plugins;..\..\dynamic-plugins\sf_engine;..\Win32-Includes;..\Win32-Includes\zlib;..\..\..\daq\api;..\..\..\daq\sfbpf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;ENABLE_PAF;SF_SNORT_ENGINE_DLL;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_RESPOND;ENABLE_REACT;ZLIB;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\SF_Engine_Release\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\SF_Engine_Release\sf_engine.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\SF_Engine_Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\SF_Engine_Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\SF_Engine_Release\sf_engine.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\SF_Engine_Release\sf_engine.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\SF_Engine_Release\sf_engine.dll</OutputFile>
+      <ImportLibrary>.\SF_Engine_Release\sf_engine.lib</ImportLibrary>
+      <AdditionalLibraryDirectories>..\Win32-Libraries;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib1.lib;Ws2_32.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>true</MinimalRebuild>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>..\Win32-Includes\zlib;..\..\dynamic-plugins;..\..\dynamic-plugins\sf_engine;..\Win32-Includes;..\..\..\daq\api;..\..\..\daq\sfbpf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;DEBUG;ENABLE_PAF;SF_SNORT_ENGINE_DLL;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_RESPOND;ENABLE_REACT;ZLIB;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\SF_Engine_Debug\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\SF_Engine_Debug\sf_engine.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\SF_Engine_Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\SF_Engine_Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\SF_Engine_Debug\sf_engine.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\SF_Engine_Debug\sf_engine.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\SF_Engine_Debug\sf_engine.dll</OutputFile>
+      <ImportLibrary>.\SF_Engine_Debug\sf_engine.lib</ImportLibrary>
+      <AdditionalLibraryDirectories>..\Win32-Libraries;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib1.lib;Ws2_32.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>..\Win32-Includes\zlib;..\..\dynamic-plugins;..\..\dynamic-plugins\sf_engine;..\Win32-Includes;..\..\..\daq\api;..\..\..\daq\sfbpf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;DEBUG;ENABLE_PAF;SF_SNORT_ENGINE_DLL;_WINDOWS;_USRDLL;ACTIVE_RESPONSE;GRE;MPLS;TARGET_BASED;PERF_PROFILING;ENABLE_RESPOND;ENABLE_REACT;ZLIB;WIN32;HAVE_CONFIG_H;SIGNAL_SNORT_READ_ATTR_TBL=30;BYTE_ORDER=LITTLE_ENDIAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\SF_Engine_Debug\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\SF_Engine_Debug\sf_engine.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\SF_Engine_Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\SF_Engine_Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\SF_Engine_Debug\sf_engine.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\SF_Engine_Debug\sf_engine.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\SF_Engine_Debug\sf_engine.dll</OutputFile>
+      <ImportLibrary>.\SF_Engine_Debug\sf_engine.lib</ImportLibrary>
+      <AdditionalLibraryDirectories>..\Win32-Libraries;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlib1.lib;Ws2_32.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\bmh.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\md5.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_decompression.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_sechash.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_detection_engine.c">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_api.c">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..;..\Win32-Includes\mysql;..\Win32-Includes\libnet;..\..\output-plugins;..\..\detection-plugins;..\..\preprocessors;..\..\preprocessors\flow;..\..\preprocessors\portscan;..\..\preprocessors\flow\int-snort;..\..\preprocessors\HttpInspect\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_byte.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_content.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_hdropts.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_loop.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_pcre.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_rc4.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MODULUS_HASH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sfghash.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sfhashfcn.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sfprimetable.c" />
+    <ClCompile Include="..\..\dynamic-plugins\sf_engine\sha2.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\bmh.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\debug.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\ipv6_port.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\md5.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sf_decompression.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_decompression_define.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sf_ip.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sf_sechash.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sf_snort_detection_engine.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sf_snort_packet.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_api.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sfghash.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sfhashfcn.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sfprimetable.h" />
+    <ClInclude Include="..\..\dynamic-plugins\sf_engine\sha2.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="sf_engine_initialize.vcxproj">
+      <Project>{afe7c6d1-5f41-4198-a7b3-88abe6ccb623}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

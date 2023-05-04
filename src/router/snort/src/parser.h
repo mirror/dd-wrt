@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000-2001 Andrew R. Baker <andrewb@uab.edu>
@@ -233,6 +233,7 @@ extern int file_line;
 /* rule setup funcs */
 SnortConfig * ParseSnortConf(void);
 void ParseRules(SnortConfig *);
+IpsPortFilter** ParseIpsPortList (SnortConfig*, IpProto);
 
 void ParseOutput(SnortConfig *, SnortPolicy *, char *);
 void OrderRuleLists(SnortConfig *, char *);
@@ -361,6 +362,7 @@ void ConfigPacketSnaplen(SnortConfig *, char *);
 void ConfigPcreMatchLimit(SnortConfig *, char *);
 void ConfigPcreMatchLimitRecursion(SnortConfig *, char *);
 void ConfigPerfFile(SnortConfig *sc, char *);
+void ConfigDumpPeriodicMemStatsFile(SnortConfig *, char *);
 void ConfigPidPath(SnortConfig *, char *);
 void ConfigPolicy(SnortConfig *, char *);
 void ConfigIpsPolicyMode(SnortConfig *, char *);
@@ -408,12 +410,14 @@ void ConfigBufferDump(SnortConfig *, char *);
 #endif
 
 int addRtnToOtn(
+        SnortConfig *sc,
         OptTreeNode *otn,
         tSfPolicyId policyId,
         RuleTreeNode *rtn
         );
 
 RuleTreeNode* deleteRtnFromOtn(
+        SnortConfig *sc,
         OptTreeNode *otn,
         tSfPolicyId policyId
         );

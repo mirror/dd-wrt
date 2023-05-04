@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000,2001 Andrew R. Baker <andrewb@uab.edu>
@@ -24,7 +24,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
+#include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -101,6 +101,7 @@
 #include "file_service_config.h"
 #include "dynamic-plugins/sp_dynamic.h"
 #include "dynamic-output/plugins/output.h"
+#include "stream_common.h"
 
 #ifdef SIDE_CHANNEL
 # include "sidechannel.h"
@@ -125,10 +126,8 @@
 /* Rule list order keywords
  * This is separate from keywords because activation was used
  * instead of activate */
-#define RULE_LIST_TYPE__ACTIVATION  "activation"
 #define RULE_LIST_TYPE__ALERT       "alert"
 #define RULE_LIST_TYPE__DROP        "drop"
-#define RULE_LIST_TYPE__DYNAMIC     "dynamic"
 #define RULE_LIST_TYPE__LOG         "log"
 #define RULE_LIST_TYPE__PASS        "pass"
 #define RULE_LIST_TYPE__REJECT     "reject"
@@ -148,10 +147,7 @@
 /* Rule options
  * Only the basic ones are here.  The detection options and preprocessor
  * detection options define their own */
-#define RULE_OPT__ACTIVATED_BY      "activated_by"
-#define RULE_OPT__ACTIVATES         "activates"
 #define RULE_OPT__CLASSTYPE         "classtype"
-#define RULE_OPT__COUNT             "count"
 #define RULE_OPT__DETECTION_FILTER  "detection_filter"
 #define RULE_OPT__GID               "gid"
 #define RULE_OPT__MSG               "msg"
@@ -447,7 +443,6 @@ int decode_rule_count = 0;   /* number of decoder rules generated */
 int preproc_rule_count = 0;  /* number of preprocessor rules generated */
 int head_count = 0;          /* number of header blocks (chain heads?) */
 int otn_count = 0;           /* number of chains */
-int dynamic_rule_count = 0;
 
 static port_list_t port_list;
 
@@ -458,14 +453,8 @@ static rule_count_t ipCnt;
 
 rule_index_map_t *ruleIndexMap = NULL;   /* rule index -> sid:gid map */
 
-static tSfPolicyId currHeadNodePolicy = 0;
-static OptTreeNode *currHeadNodeOtn  = NULL;
-
-
-static void ParseActivate(SnortConfig *, SnortPolicy *, char *);
 static void ParseAlert(SnortConfig *, SnortPolicy *, char *);
 static void ParseDrop(SnortConfig *, SnortPolicy *, char *);
-static void ParseDynamic(SnortConfig *, SnortPolicy *, char *);
 static void ParseLog(SnortConfig *, SnortPolicy *, char *);
 static void ParsePass(SnortConfig *, SnortPolicy *, char *);
 static void ParseReject(SnortConfig *, SnortPolicy *, char *);
@@ -505,11 +494,9 @@ int ParseBool(char *arg);
 static const KeywordFunc snort_conf_keywords[] =
 {
     /* Rule keywords */
-    { SNORT_CONF_KEYWORD__ACTIVATE, KEYWORD_TYPE__RULE, 0, 0, ParseActivate },
     { SNORT_CONF_KEYWORD__ALERT,    KEYWORD_TYPE__RULE, 0, 0, ParseAlert },
     { SNORT_CONF_KEYWORD__DROP,     KEYWORD_TYPE__RULE, 0, 0, ParseDrop },
     { SNORT_CONF_KEYWORD__BLOCK,    KEYWORD_TYPE__RULE, 0, 0, ParseDrop },
-    { SNORT_CONF_KEYWORD__DYNAMIC,  KEYWORD_TYPE__RULE, 0, 0, ParseDynamic },
     { SNORT_CONF_KEYWORD__LOG,      KEYWORD_TYPE__RULE, 0, 0, ParseLog },
     { SNORT_CONF_KEYWORD__PASS,     KEYWORD_TYPE__RULE, 0, 0, ParsePass },
     { SNORT_CONF_KEYWORD__REJECT,   KEYWORD_TYPE__RULE, 0, 0, ParseReject },
@@ -551,14 +538,8 @@ static const KeywordFunc snort_conf_keywords[] =
     { NULL, KEYWORD_TYPE__ALL, 0, 0, NULL }   /* Marks end of array */
 };
 
-static void ParseOtnActivatedBy(SnortConfig *, RuleTreeNode *,
-                                OptTreeNode *, RuleType, char *);
-static void ParseOtnActivates(SnortConfig *, RuleTreeNode *,
-                              OptTreeNode *, RuleType, char *);
 static void ParseOtnClassType(SnortConfig *, RuleTreeNode *,
                               OptTreeNode *, RuleType, char *);
-static void ParseOtnCount(SnortConfig *, RuleTreeNode *,
-                          OptTreeNode *, RuleType, char *);
 static void ParseOtnDetectionFilter(SnortConfig *, RuleTreeNode *,
                                     OptTreeNode *, RuleType, char *);
 static void ParseOtnGid(SnortConfig *, RuleTreeNode *,
@@ -584,10 +565,7 @@ static void ParseOtnThreshold(SnortConfig *, RuleTreeNode *,
 
 static const RuleOptFunc rule_options[] =
 {
-    { RULE_OPT__ACTIVATED_BY,     1, 1, 1, ParseOtnActivatedBy },
-    { RULE_OPT__ACTIVATES,        1, 1, 1, ParseOtnActivates },
     { RULE_OPT__CLASSTYPE,        1, 1, 0, ParseOtnClassType },
-    { RULE_OPT__COUNT,            1, 1, 1, ParseOtnCount },
     { RULE_OPT__DETECTION_FILTER, 1, 1, 1, ParseOtnDetectionFilter },
     { RULE_OPT__GID,              1, 1, 0, ParseOtnGid },
     { RULE_OPT__LOGTO,            1, 1, 0, ParseOtnLogTo },
@@ -782,7 +760,6 @@ static int ContinuationCheck(char *);
 static ListHead * CreateRuleType(SnortConfig *, char *, RuleType, int, ListHead *);
 static int GetChecksumFlags(char *);
 static int GetPolicyMode(char *,int );
-static void LinkDynamicRules(SnortConfig *);
 static void OtnInit(SnortConfig *);
 static void _ParseRuleTypeDeclaration(SnortConfig *, FILE *, char *, int);
 static void printRuleListOrder(RuleListNode *);
@@ -816,7 +793,7 @@ static void TransferOutputConfigs(OutputConfig *, OutputConfig **);
 static OutputConfig * DupOutputConfig(OutputConfig *);
 static void RemoveOutputConfigs(OutputConfig **, int);
 static void XferHeader(RuleTreeNode *, RuleTreeNode *);
-static OptTreeNode * ParseRuleOptions(SnortConfig *, RuleTreeNode *,
+static OptTreeNode * ParseRuleOptions(SnortConfig *, RuleTreeNode **,
                                       char *, RuleType, int);
 #ifndef SOURCEFIRE
 static void DefineAllIfaceVars(SnortConfig *);
@@ -830,7 +807,6 @@ static void DumpList(IpAddrNode *, int);
 static void DumpChain(char *, int, int);
 static void DumpRuleChains(RuleListNode *);
 #endif
-static void SetLinks(SnortConfig *, int);
 static int ProcessIP(SnortConfig *, char *, RuleTreeNode *, int, int);
 static int TestHeader(RuleTreeNode *, RuleTreeNode *);
 static void FreeRuleTreeNode(RuleTreeNode *rtn);
@@ -853,9 +829,8 @@ static int ParseNetworkBindingLine(tSfPolicyConfig *, int, char **, char *);
 static int ParseVlanBindingLine(tSfPolicyConfig *, int, char **, char *);
 static int ParsePolicyIdBindingLine(tSfPolicyConfig *, int, char **, char *);
 
-static OptTreeNode * firstHeadNode(SnortConfig *, int, RuleType, tSfPolicyId *);
-static OptTreeNode * nextHeadNode(SnortConfig *, int, RuleType, tSfPolicyId *);
 static RuleTreeNode * findHeadNode(SnortConfig *, RuleTreeNode *, tSfPolicyId);
+static inline RuleTreeNode * createDynamicRuleTypeRtn(SnortConfig *, RuleTreeNode *);
 
 // only keep drop rules
 // if we are inline (and can actually drop),
@@ -1841,6 +1816,52 @@ static int ParsePortList(RuleTreeNode *rtn, PortVarTable *pvt, PortTable *noname
     return 0;
 }
 
+/*
+ * ParseIpsPortList() will create portlist for portocol specific and only for IPS policy at the snort 
+ * process bringup, it will be used to enable/disable detection on packet. 
+ */
+IpsPortFilter** ParseIpsPortList (SnortConfig *sc, IpProto protocol)
+{   
+    tSfPolicyId policyId;
+    IpsPortFilter *ips_portfilter;
+    bool ignore_any = false;
+
+    // Allocate memory for each policy to hold port filter list 
+    IpsPortFilter **ips_port_filter_list = ( IpsPortFilter** ) SnortAlloc( sizeof(IpsPortFilter*) * sfPolicyNumAllocated(sc->policy_config) );
+    
+    if ( !ips_port_filter_list ) 
+    {
+        ParseError("IPS portlist memory allocation failed\n");
+        return NULL;
+    }
+    
+    ignore_any = getStreamIgnoreAnyConfig(sc, protocol);
+    for (policyId = 0; policyId < sfPolicyNumAllocated(sc->policy_config); policyId++) 
+    {
+        ips_portfilter = NULL;
+        // Create port filter list for default and IPS policy    
+        if ( (policyId == 0) || (!getStreamPolicyConfig(policyId, 0)) )
+        {
+            ips_portfilter = ( IpsPortFilter* ) SnortAlloc( sizeof(IpsPortFilter) );
+            if ( ips_portfilter ) 
+            {
+                ips_portfilter->parserPolicyId = policyId;
+                setPortFilterList(sc, ips_portfilter->port_filter, IPPROTO_UDP, ignore_any, policyId);
+                ips_port_filter_list[ policyId ] = ips_portfilter;
+            } else 
+            {
+                ParseError("Failed to allocate memory for port filter list policy id :%d \n",policyId);
+                return NULL;
+            }
+        } else 
+        {
+            // NAP policy port filter list is created in pre-processor check
+            ips_port_filter_list[ policyId ] = NULL;
+        }
+    }
+    return ips_port_filter_list;
+}
+
 /****************************************************************************
  *
  * Function: CheckForIPListConflicts
@@ -2132,6 +2153,9 @@ void ConfigurePreprocessors(SnortConfig *sc, int configure_dynamic)
     char *stored_file_name = file_name;
     int stored_file_line = file_line;
     tSfPolicyId i;
+#ifndef REG_TEST
+    struct rusage ru;
+#endif
 
     if (sc == NULL)
         return;
@@ -2229,6 +2253,22 @@ void ConfigurePreprocessors(SnortConfig *sc, int configure_dynamic)
     /* Reset these since we're done with configuring dynamic preprocessors */
     file_name = stored_file_name;
     file_line = stored_file_line;
+#ifndef REG_TEST
+    if (ScTestMode())
+    {
+        if (configure_dynamic)
+        {
+            getrusage(RUSAGE_SELF, &ru);
+            LogMessage("MaxRss at the end of dynamic preproc config:%li\n",  ru.ru_maxrss);
+        }
+        else
+        {
+            getrusage(RUSAGE_SELF, &ru);
+            LogMessage("MaxRss at the end of static preproc config:%li\n", ru.ru_maxrss);
+        }
+    }
+#endif
+
 }
 
 #ifdef SIDE_CHANNEL
@@ -2748,7 +2788,7 @@ void ResolveOutputPlugins(SnortConfig *cmd_line, SnortConfig *config_file)
     }
 
     /* Don't try to configure defaults if running in test mode */
-    if (!ScTestMode())
+    if (!ScTestModeNewConf(cmd_line))
     {
         if (config_file == NULL)
         {
@@ -2904,7 +2944,7 @@ static int mergeDuplicateOtn(SnortConfig *sc, OptTreeNode *otn_dup,
     {
         //existing OTN is newer version. Keep existing and discard the new one.
         //OTN is for new policy group, salvage RTN
-        deleteRtnFromOtn(otn_new, getParserPolicy(sc));
+        deleteRtnFromOtn(sc, otn_new, getParserPolicy(sc));
 
         ParseMessage("GID %d SID %d duplicates previous rule. Using %s.",
                      otn_new->sigInfo.generator, otn_new->sigInfo.id,
@@ -2922,7 +2962,7 @@ static int mergeDuplicateOtn(SnortConfig *sc, OptTreeNode *otn_dup,
         //otherwise ignore it
         if (rtn_dup == NULL)
         {
-            addRtnToOtn(otn_dup, getParserPolicy(sc), rtn_new);
+            addRtnToOtn(sc, otn_dup, getParserPolicy(sc), rtn_new);
         }
         else
         {
@@ -2936,17 +2976,17 @@ static int mergeDuplicateOtn(SnortConfig *sc, OptTreeNode *otn_dup,
 
     for (i = 0; i < otn_dup->proto_node_num; i++)
     {
-        rtnTmp2 = deleteRtnFromOtn(otn_dup, i);
+        rtnTmp2 = deleteRtnFromOtn(sc, otn_dup, i);
 
         if ((rtnTmp2 && (i != getParserPolicy(sc))))
         {
-            addRtnToOtn(otn_new, i, rtnTmp2);
+            addRtnToOtn(sc, otn_new, i, rtnTmp2);
         }
     }
 
     if (rtn_dup)
     {
-        if (ScConfErrorOut())
+        if (ScConfErrorOutNewConf(sc))
         {
             ParseError("GID %d SID %d in rule duplicates previous rule.",
                     otn_new->sigInfo.generator, otn_new->sigInfo.id);
@@ -2982,6 +3022,54 @@ static int mergeDuplicateOtn(SnortConfig *sc, OptTreeNode *otn_dup,
     return 1;
 }
 
+/* createDynamicRuleTypeRtn
+ *
+ * This api is only getting called whenever will see those
+ * GID/SID pairs whose rule action type is getting modulated 
+ * from code depending upon few runtime parameters. 
+ *
+ * In present scenario for 
+ * GID - GENERATOR_FILE_SIGNATURE/GENERATOR_FILE_TYPE, rule action 
+ * type is getting modified depending upon file verdict.
+ * 
+ * I/P - SnortConfig -
+ *       old_rtn     -   This is the old RTN which has been created
+ *                       irrespective of above mentioned scenario.
+ *                       As a new RTN will be created with type NONE,
+ *                       will destroy this old RTN.
+ *
+ * O/P - rtn         -   This is RTN which has been created with 
+ *                       RULE_TYPE_NONE specify that rule type will 
+ *                       be decided at the run time.
+ */
+static inline RuleTreeNode * createDynamicRuleTypeRtn(SnortConfig *sc, RuleTreeNode *old_rtn)
+{
+    RuleTreeNode test_rtn;
+    RuleTreeNode *rtn;
+    ListHead *list = old_rtn->listhead;
+
+    memset(&test_rtn, 0, sizeof(RuleTreeNode));
+
+    /* Making own key by changing the type to NONE */
+    test_rtn.flags |= ANY_DST_PORT;
+    test_rtn.flags |= ANY_SRC_PORT;
+    test_rtn.flags |= ANY_DST_IP;
+    test_rtn.flags |= ANY_SRC_IP;
+    test_rtn.flags |= BIDIRECTIONAL;
+
+    /* 
+     * Initialising the rule type as NONE since type value will be 
+     * dynamic for GENERATOR_FILE_SIGNATURE/GENERATOR_FILE_TYPE
+     */
+    test_rtn.type = RULE_TYPE__NONE;
+    test_rtn.listhead = list;
+
+    DestroyRuleTreeNode(old_rtn);
+
+    /* Creating the RTN node for File policy internal IPS rules(147:1/146)*/
+    rtn = ProcessHeadNode(sc, &test_rtn, list);
+    return rtn;
+}
 
 /****************************************************************************
  *
@@ -3003,7 +3091,7 @@ static int mergeDuplicateOtn(SnortConfig *sc, OptTreeNode *otn_dup,
  *      The new OptTreeNode on success or NULL on error.
  *
  ***************************************************************************/
-OptTreeNode * ParseRuleOptions(SnortConfig *sc, RuleTreeNode *rtn,
+OptTreeNode * ParseRuleOptions(SnortConfig *sc, RuleTreeNode **rtn_addr,
                                char *rule_opts, RuleType rule_type, int protocol)
 {
     OptTreeNode *otn;
@@ -3012,6 +3100,7 @@ OptTreeNode * ParseRuleOptions(SnortConfig *sc, RuleTreeNode *rtn,
     char *dopt_keyword = NULL;
     OptFpList *fpl = NULL;
     int got_sid = 0;
+    RuleTreeNode *rtn = *rtn_addr;
 
     otn = (OptTreeNode *)SnortAlloc(sizeof(OptTreeNode));
 
@@ -3021,19 +3110,21 @@ OptTreeNode * ParseRuleOptions(SnortConfig *sc, RuleTreeNode *rtn,
     otn->sigInfo.generator        = GENERATOR_SNORT_ENGINE;
     otn->sigInfo.rule_type        = SI_RULE_TYPE_DETECT; /* standard rule */
     otn->sigInfo.rule_flushing    = SI_RULE_FLUSHING_ON; /* usually just standard rules cause a flush*/
+#ifdef TARGET_BASED
     otn->sigInfo.service_override = ServiceOverride_Nil;
+#endif
 
     /* Set the default rule state */
-    otn->rule_state = ScDefaultRuleState();
+    otn->rule_state = ScDefaultRuleStateNewConf(sc);
 
     if (rule_opts == NULL)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES, "No rule options.\n"););
 
-        if (ScRequireRuleSid())
+        if (ScRequireRuleSidNewConf(sc))
             ParseError("Each rule must contain a Rule-sid.");
 
-        addRtnToOtn(otn, getParserPolicy(sc), rtn);
+        addRtnToOtn(sc, otn, getParserPolicy(sc), rtn);
 
         otn->ruleIndex = RuleIndexMapAdd(ruleIndexMap,
                                          otn->sigInfo.generator,
@@ -3196,12 +3287,21 @@ OptTreeNode * ParseRuleOptions(SnortConfig *sc, RuleTreeNode *rtn,
         if (dopt_keyword != NULL)
             free(dopt_keyword);
 
-        if (!got_sid && !ScTestMode())
+		/* Each rule must have a sid irrespective of snort
+		 * in test mode or IPS/IDS mode.*/
+        if (!got_sid)
             ParseError("Each rule must contain a rule sid.");
 
         DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,"OptListEnd\n"););
 
-        addRtnToOtn(otn, getParserPolicy(sc), rtn);
+        if ((otn->sigInfo.generator == GENERATOR_FILE_SIGNATURE &&
+            otn->sigInfo.id == FILE_SIGNATURE_SHA256) ||
+            otn->sigInfo.generator == GENERATOR_FILE_TYPE)
+        {
+            rtn = createDynamicRuleTypeRtn(sc, rtn);
+            *rtn_addr = rtn;
+        }
+        addRtnToOtn(sc, otn, getParserPolicy(sc), rtn);
 
         /* Check for duplicate SID */
         otn_dup = OtnLookup(sc->otn_map, otn->sigInfo.generator, otn->sigInfo.id);
@@ -4486,120 +4586,6 @@ static char * ExpandVars(SnortConfig *sc, char *string)
     return estring;
 }
 
-/******************************************************************
- *
- * Function: LinkDynamicRules()
- *
- * Purpose: Move through the activation and dynamic lists and link
- *          the activation rules to the rules that they activate.
- *
- * Arguments:
- *  SnortConfig *
- *
- * Returns: void function
- *
- ******************************************************************/
-static void LinkDynamicRules(SnortConfig *sc)
-{
-    if (sc == NULL)
-        return;
-
-    SetLinks(sc, IPPROTO_TCP);
-    SetLinks(sc, IPPROTO_UDP);
-    SetLinks(sc, IPPROTO_ICMP);
-}
-
-/******************************************************************
- *
- * Function: SetLinks()
- *
- * Purpose: Move through the activation and dynamic lists and link
- *          the activation rules to the rules that they activate.
- *
- * Arguments: activator => the activation rules
- *            activatee => the rules being activated
- *
- * Returns: void function
- *
- ******************************************************************/
-static void SetLinks(SnortConfig *sc, int proto)
-{
-    OptTreeNode *otn;
-
-    RuleTreeNode *rtn;
-    SFGHASH *actHash = NULL;
-    tSfPolicyId policyId = 0;
-
-    //create a temporary hash with key as policyId, activation number
-    //and data elements as otn/rtn for activated_by.
-    struct _activateKey {
-        int policyId;
-        int activates;
-    } activateKey;
-
-    struct _activateData {
-        RuleTreeNode *rtn;
-        OptTreeNode  *otn;
-    } *activateData;
-
-    actHash = sfghash_new(10000,sizeof(struct _activateKey),0,free);
-
-    /* walk thru the RTN list */
-    for (otn = firstHeadNode(sc, proto, RULE_TYPE__ACTIVATE, &policyId);
-         otn;
-         otn = nextHeadNode(sc, proto, RULE_TYPE__ACTIVATE, &policyId))
-    {
-        if (otn->activates)
-        {
-            //add to hash
-            if ((activateData = calloc(sizeof(struct _activateData), 1)) != NULL)
-            {
-                activateKey.policyId = policyId;
-                activateKey.activates = otn->activates;
-                activateData->rtn = otn->proto_nodes[getParserPolicy(sc)];
-                activateData->otn = otn;
-
-                sfghash_add(actHash, &activateKey, activateData);
-            }
-
-        }
-    }
-
-    for (otn = firstHeadNode(sc, proto, RULE_TYPE__DYNAMIC, &policyId);
-         otn;
-         otn = nextHeadNode(sc, proto, RULE_TYPE__DYNAMIC, &policyId))
-    {
-        ActivateListNode *act_list;
-
-        rtn = otn->proto_nodes[getParserPolicy(sc)];
-
-        //for (act_list = rtn->activate_list[policyId];
-        for (act_list = rtn->activate_list;
-             act_list;
-             act_list = act_list->next)
-        {
-            activateKey.policyId = policyId;
-            activateKey.activates = act_list->activated_by;
-
-            activateData = sfghash_find(actHash, &activateKey);
-            if(activateData)
-            {
-                activateData->otn->RTN_activation_ptr = otn->proto_nodes[getParserPolicy(sc)];
-                //activateData->RTN_activation_ptr = otn->proto_node[policyId];
-                activateData->otn->OTN_activation_ptr = otn;
-                sfghash_remove(actHash, &activateKey);
-            }
-            else
-            {
-                //activate rule is present but the activated rule is missing
-            }
-        }
-    }
-
-    sfghash_delete(actHash);
-    actHash = NULL;
-}
-
 char * ProcessFileOption(SnortConfig *sc, const char *filespec)
 {
     char *filename = NULL;
@@ -4865,7 +4851,7 @@ int CheckRuleStates(SnortConfig *sc)
                     if (otn->sigInfo.shared && (otn->ds_list[PLUGIN_DYNAMIC] == NULL))
                     {
                         /* If still shared... */
-                        ParseWarning("Encoded Rule Plugin SID: %d, GID: %d not "
+                        ErrorMessage("Encoded Rule Plugin SID: %d, GID: %d not "
                                    "registered properly.  Disabling this rule.\n",
                                    otn->sigInfo.id, otn->sigInfo.generator);
                         oneErr = 1;
@@ -5345,7 +5331,10 @@ static void _ParseRuleTypeDeclaration(SnortConfig *sc, FILE *fp, char *arg, int 
 
             /* Just continue for blank line */
             if (toks == NULL)
+            {
+                free (input);
                 continue;
+            }
 
             /* Got end of rule type */
             if ((num_toks == 1) && (strcmp(toks[0], "}") == 0))
@@ -5440,7 +5429,10 @@ static void _ParseRuleTypeDeclaration(SnortConfig *sc, FILE *fp, char *arg, int 
 
         /* Just continue for blank line */
         if (toks == NULL)
+        {
+            free(input);
             continue;
+        }
 
         /* Got end of rule type */
         if ((num_toks == 1) && (strcmp(toks[0], "}") == 0))
@@ -5858,7 +5850,6 @@ static void InitParser(void)
     preproc_rule_count = 0;
     head_count = 0;
     otn_count = 0;
-    dynamic_rule_count = 0;
 
     memset(&tcpCnt, 0, sizeof(tcpCnt));
     memset(&udpCnt, 0, sizeof(udpCnt));
@@ -5928,14 +5919,9 @@ void ParseRules(SnortConfig *sc)
     LogMessage("    %d decoder rules\n", decode_rule_count);
     LogMessage("    %d preprocessor rules\n", preproc_rule_count);
     LogMessage("%d Option Chains linked into %d Chain Headers\n", otn_count, head_count);
-    LogMessage("%d Dynamic rules\n", dynamic_rule_count);
     LogMessage("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     LogMessage("\n");
 
-
-    /* plug all the dynamic rules together */
-    if (dynamic_rule_count != 0)
-        LinkDynamicRules(sc);
 
 #ifdef DEBUG_MSGS
     DumpRuleChains(sc->rule_lists);
@@ -6160,7 +6146,7 @@ static void ParseConfigFile(SnortConfig *sc, SnortPolicy *p, char *fname)
 
                 if ( node->mode == RULE_TYPE__DROP )
                 {
-                    if ( ScTreatDropAsAlert() )
+                    if ( ScTreatDropAsAlertNewConf(sc) )
                         ParseRule(sc, p, args, RULE_TYPE__ALERT, node->RuleList);
 
                     else if ( ScKeepDropRules(sc) ||  ScLoadAsDropRules(sc) )
@@ -6168,7 +6154,7 @@ static void ParseConfigFile(SnortConfig *sc, SnortPolicy *p, char *fname)
                 }
                 else if ( node->mode == RULE_TYPE__SDROP )
                 {
-                    if ( ScKeepDropRules(sc) && !ScTreatDropAsAlert() )
+                    if ( ScKeepDropRules(sc) && !ScTreatDropAsAlertNewConf(sc) )
                         ParseRule(sc, p, args, node->mode, node->RuleList);
 
                     else if ( ScLoadAsDropRules(sc) )
@@ -6210,6 +6196,9 @@ static void ParseConfigFile(SnortConfig *sc, SnortPolicy *p, char *fname)
             continuation = 1;
         }
     }
+
+    if (saved_line != NULL)
+        free(saved_line);
 
     fclose(fp);
     free(buf);
@@ -7655,10 +7644,11 @@ void ConfigIpv6Frag(SnortConfig *sc, char *args)
 
         arg_toks = mSplit(opt_toks[i], " \t", 2, &num_args, 0);
 
-        if(!arg_toks[1])
+        if(num_args != 2 || !arg_toks[1])
         {
              ParseError("ipv6_frag option '%s' requires an argument.",
                         arg_toks[0]);
+             continue;
         }
 
         if(!strcasecmp(arg_toks[0], "bsd_icmp_frag_alert"))
@@ -7681,12 +7671,6 @@ void ConfigIpv6Frag(SnortConfig *sc, char *args)
             long val;
             char *endp;
 
-            if(!args)
-            {
-                 ParseError("Setting the ipv6_frag_timeout requires an "
-                            "integer argument.");
-            }
-
             val = strtol(arg_toks[1], &endp, 0);
             if(val <= 0 || val > 3600)
             {
@@ -7707,12 +7691,6 @@ void ConfigIpv6Frag(SnortConfig *sc, char *args)
         {
             long val;
             char *endp;
-
-            if(!args)
-            {
-                 ParseError("Setting the ipv6_max_frag_sessions requires an "
-                            "integer argument.");
-            }
 
             val = strtol(arg_toks[1], &endp, 0);
             if (val <= 0)
@@ -8137,6 +8115,14 @@ void ConfigPerfFile(SnortConfig *sc, char *args)
         return;
 
     sc->perf_file = SnortStrdup(args);
+}
+
+void ConfigDumpPeriodicMemStatsFile(SnortConfig *sc, char *args)
+{
+    if ((sc == NULL) || (args == NULL))
+        return;
+
+    sc->memdump_file = SnortStrdup(args);
 }
 
 void ConfigPacketCount(SnortConfig *sc, char *args)
@@ -9485,7 +9471,7 @@ static void ParseRule(SnortConfig *sc, SnortPolicy *p, char *args,
 
     DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,"Parsing Rule Options...\n"););
 
-    otn = ParseRuleOptions(sc, rtn, roptions, rule_type, protocol);
+    otn = ParseRuleOptions(sc, &rtn, roptions, rule_type, protocol);
     if (otn == NULL)
     {
         /* This otn is a dup and we're choosing to keep the old one */
@@ -9651,12 +9637,6 @@ static void PrintRtnPorts(RuleTreeNode *rtn_list)
 #endif
 #endif
 
-static void ParseActivate(SnortConfig *sc, SnortPolicy *p, char *args)
-{
-    DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES, "Activation rule\n"););
-    ParseRule(sc, p, args, RULE_TYPE__ACTIVATE, &sc->Activation);
-}
-
 static void ParseAlert(SnortConfig *sc, SnortPolicy *p, char *args)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES, "Alert\n"););
@@ -9668,17 +9648,11 @@ static void ParseDrop(SnortConfig *sc, SnortPolicy *p, char *args)
     DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,"Drop\n"););
 
     /* Parse as an alert if we're treating drops as alerts */
-    if (ScTreatDropAsAlert())
+    if (ScTreatDropAsAlertNewConf(sc))
         ParseRule(sc, p, args, RULE_TYPE__ALERT, &sc->Alert);
 
     else if ( ScKeepDropRules(sc) || ScLoadAsDropRules(sc) )
         ParseRule(sc, p, args, RULE_TYPE__DROP, &sc->Drop);
-}
-
-static void ParseDynamic(SnortConfig *sc, SnortPolicy *p, char *args)
-{
-    DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES, "Dynamic rule\n"););
-    ParseRule(sc, p, args, RULE_TYPE__DYNAMIC, &sc->Dynamic);
 }
 
 static void ParseLog(SnortConfig *sc, SnortPolicy *p, char *args)
@@ -9706,7 +9680,7 @@ static void ParseSdrop(SnortConfig *sc, SnortPolicy *p, char *args)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES, "SDrop\n"););
 
-    if ( ScKeepDropRules(sc) && !ScTreatDropAsAlert() )
+    if ( ScKeepDropRules(sc) && !ScTreatDropAsAlertNewConf(sc) )
         ParseRule(sc, p, args, RULE_TYPE__SDROP, &sc->SDrop);
 }
 
@@ -10156,108 +10130,6 @@ static void ParseSuppress(SnortConfig *sc, SnortPolicy *p, char *args)
     mSplitFree(&toks, num_toks);
 }
 
-/****************************************************************************
- * Function: ParseOtnActivatedBy()
- *
- * Purpose: Set an activation link record
- *
- * Arguments:
- *  OptTreeNode *
- *      The otn for this rule option
- *  RuleType
- *      The rule type of the rule using this option
- *  char *
- *      The arguments to this rule option
- *
- * Returns: None
- *
- ****************************************************************************/
-static void ParseOtnActivatedBy(SnortConfig *sc, RuleTreeNode *rtn,
-                                OptTreeNode *otn, RuleType rtype, char *args)
-{
-    ActivateListNode *node;
-    long int act_num;
-    char *endptr;
-
-    if (args == NULL)
-        ParseError("Activates by rule option requires an argument.");
-
-    if (rtype != RULE_TYPE__DYNAMIC)
-    {
-        ParseError("Can only use 'activated_by' rule option with "
-                   "'dynamic' rules.");
-    }
-
-    node = (ActivateListNode *)SnortAlloc(sizeof(ActivateListNode));
-
-    if (rtn->activate_list == NULL)
-    {
-        rtn->activate_list = node;
-    }
-    else
-    {
-        ActivateListNode *tmp = rtn->activate_list;
-
-        while (tmp->next != NULL)
-            tmp = tmp->next;
-
-        tmp->next = node;
-    }
-
-    act_num = SnortStrtol(args, &endptr, 0);
-    if ((errno == ERANGE) || (*endptr != '\0') ||
-        (act_num < 0) || (act_num > INT32_MAX))
-    {
-        ParseError("Invalid argument to 'activates' rule option: %s.  "
-                   "Must be a positive integer.", args);
-    }
-
-    node->activated_by = (int)act_num;
-    otn->activated_by = (int)act_num;
-}
-
-/****************************************************************************
- * Function: ParseOtnActivates()
- *
- * Purpose: Set an activation link record
- *
- * Arguments:
- *  OptTreeNode *
- *      The otn for this rule option
- *  RuleType
- *      The rule type of the rule using this option
- *  char *
- *      The arguments to this rule option
- *
- * Returns: None
- *
- ****************************************************************************/
-static void ParseOtnActivates(SnortConfig *sc, RuleTreeNode *rtn,
-                              OptTreeNode *otn, RuleType rtype, char *args)
-{
-    long int act_num;
-    char *endptr;
-
-    if (args == NULL)
-        ParseError("Activates rule option requires an argument.");
-
-    if (rtype != RULE_TYPE__ACTIVATE)
-    {
-        ParseError("Can only use 'activates' rule option with "
-                   "'activate' rules.");
-    }
-
-    act_num = SnortStrtol(args, &endptr, 0);
-    if ((errno == ERANGE) || (*endptr != '\0') ||
-        (act_num < 0) || (act_num > INT32_MAX))
-    {
-        ParseError("Invalid argument to 'activates' rule option: %s.  "
-                   "Must be a positive integer.", args);
-    }
-
-    otn->activates = (int)act_num;
-}
-
 static void ParseOtnClassType(SnortConfig *sc, RuleTreeNode *rtn,
                               OptTreeNode *otn, RuleType rtype, char *args)
 {
@@ -10286,50 +10158,6 @@ static void ParseOtnClassType(SnortConfig *sc, RuleTreeNode *rtn,
     otn->event_data.classification = class_type->id;
     if (otn->event_data.priority == 0)
         otn->event_data.priority = class_type->priority;
-}
-
-/****************************************************************************
- * Function: ParseOtnCount()
- *
- * Purpose: set the number of packets to leave dynamic rule enabled for.
- *
- * Arguments:
- *  OptTreeNode *
- *      The otn for this rule option
- *  RuleType
- *      The rule type of the rule using this option
- *  char *
- *      The arguments to this rule option
- *
- * Returns: None
- *
- ***************************************************************************/
-static void ParseOtnCount(SnortConfig *sc, RuleTreeNode *rtn,
-                          OptTreeNode *otn, RuleType rtype, char *args)
-{
-    long int count;
-    char *endptr;
-
-    if (args == NULL)
-        ParseError("Count rule option requires an argument.");
-
-    if (rtype != RULE_TYPE__DYNAMIC)
-    {
-        ParseError("Can only use 'count' rule option with "
-                   "'dynamic' rules.");
-    }
-
-    count = SnortStrtol(args, &endptr, 0);
-    if ((errno == ERANGE) || (*endptr != '\0') || (count < 0))
-    {
-        ParseError("Invalid argument to 'count' rule option: %s.  "
-                   "Must be a positive integer.", args);
-    }
-
-    otn->activation_counter = (int)count;
-
-    DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,"Set activation counter to %d\n",
-                            otn->activation_counter););
 }
 
 static void ParseOtnDetectionFilter(SnortConfig *sc, RuleTreeNode *rtn,
@@ -11212,8 +11040,6 @@ static void CreateDefaultRules(SnortConfig *sc)
     if (sc == NULL)
         return;
 
-    CreateRuleType(sc, RULE_LIST_TYPE__ACTIVATION, RULE_TYPE__ACTIVATE, 1, &sc->Activation);
-    CreateRuleType(sc, RULE_LIST_TYPE__DYNAMIC, RULE_TYPE__DYNAMIC, 1, &sc->Dynamic);
     CreateRuleType(sc, RULE_LIST_TYPE__PASS, RULE_TYPE__PASS, 0, &sc->Pass); /* changed on Jan 06 */
     CreateRuleType(sc, RULE_LIST_TYPE__DROP, RULE_TYPE__DROP, 1, &sc->Drop);
     CreateRuleType(sc, RULE_LIST_TYPE__SDROP, RULE_TYPE__SDROP, 0, &sc->SDrop);
@@ -11227,16 +11053,12 @@ static RuleType GetRuleType(char *arg)
     if (arg == NULL)
         return RULE_TYPE__NONE;
 
-    if (strcasecmp(arg, SNORT_CONF_KEYWORD__ACTIVATE) == 0)
-        return RULE_TYPE__ACTIVATE;
-    else if (strcasecmp(arg, SNORT_CONF_KEYWORD__ALERT) == 0)
+    if (strcasecmp(arg, SNORT_CONF_KEYWORD__ALERT) == 0)
         return RULE_TYPE__ALERT;
     else if (strcasecmp(arg, SNORT_CONF_KEYWORD__DROP) == 0)
         return RULE_TYPE__DROP;
     else if (strcasecmp(arg, SNORT_CONF_KEYWORD__BLOCK) == 0)
         return RULE_TYPE__DROP;
-    else if (strcasecmp(arg, SNORT_CONF_KEYWORD__DYNAMIC) == 0)
-        return RULE_TYPE__DYNAMIC;
     else if (strcasecmp(arg, SNORT_CONF_KEYWORD__LOG) == 0)
         return RULE_TYPE__LOG;
     else if (strcasecmp(arg, SNORT_CONF_KEYWORD__PASS) == 0)
@@ -11366,6 +11188,8 @@ static void port_entry_free(port_entry_t *pentry)
 
 static int port_list_add_entry( port_list_t * plist, port_entry_t * pentry)
 {
+    int ret;
+
     if( !plist )
     {
         port_entry_free(pentry);
@@ -11378,9 +11202,15 @@ static int port_list_add_entry( port_list_t * plist, port_entry_t * pentry)
         return -1;
     }
 
-    SafeMemcpy( &plist->pl_array[plist->pl_cnt], pentry, sizeof(port_entry_t),
+    ret = SafeMemcpy( &plist->pl_array[plist->pl_cnt], pentry, sizeof(port_entry_t),
                 &plist->pl_array[plist->pl_cnt],
                 (char*)(&plist->pl_array[plist->pl_cnt]) + sizeof(port_entry_t));
+    if (ret != SAFEMEM_SUCCESS)
+    {
+        ParseError("%s SafeMemcpy() Failed !!!", __FUNCTION__);
+        return -1;
+    }
+
     plist->pl_cnt++;
 
     return 0;
@@ -11554,7 +11384,7 @@ static rule_port_tables_t * PortTablesNew(void)
     rpt->ip_src->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
     rpt->ip_dst->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
 
-#ifndef TARGET_BASED
+#ifdef TARGET_BASED
     // if TARGET_BASED is not enabled, ensure that these
     // port tables are NULL.
     rpt->ns_tcp_src = NULL;
@@ -12172,6 +12002,12 @@ void ParseMessage(const char *format, ...)
         LogMessage("%s\n", buf);
 }
 
+typedef struct _RuleTreeNodeKey
+{
+    RuleTreeNode *rtn;
+    tSfPolicyId policyId;
+} RuleTreeNodeKey;
+
 // RuleTreeNode *getRtnFromOtn() made in line
 
 /**Delete rtn from OTN.
@@ -12182,6 +12018,7 @@ void ParseMessage(const char *format, ...)
  * @return pointer to deleted RTN, NULL otherwise.
  */
 RuleTreeNode * deleteRtnFromOtn(
+        SnortConfig *sc,
         OptTreeNode *otn,
         tSfPolicyId policyId
         )
@@ -12194,12 +12031,61 @@ RuleTreeNode * deleteRtnFromOtn(
         rtn = getRtnFromOtn(otn, policyId);
         otn->proto_nodes[policyId] = NULL;
 
+        if (rtn)
+        {
+            RuleTreeNodeKey key;
+            key.policyId = policyId;
+            key.rtn = rtn;
+
+            if (sc && sc->rtn_hash_table)
+            {
+                sfxhash_remove(sc->rtn_hash_table, &key);
+            }
+        }
+
         return rtn;
     }
 
     return NULL;
 }
 
+uint32_t rtn_hash_func(SFHASHFCN *p, unsigned char *k, int n)
+{
+    uint32_t a,b,c;
+    RuleTreeNodeKey* rtnk = (RuleTreeNodeKey *)k;
+    RuleTreeNode *rtn = rtnk->rtn;
+
+    a = rtn->type;
+    b = rtn->flags;
+    c = (uint32_t)(uintptr_t)rtn->listhead;
+
+    mix(a,b,c);
+
+    a += (uint32_t)(uintptr_t)rtn->src_portobject;
+    b += (uint32_t)(uintptr_t)rtn->dst_portobject;
+    c += (uint32_t)(uintptr_t)rtnk->policyId;
+
+    final(a,b,c);
+
+    return c;
+}
+
+int rtn_compare_func(const void *k1, const void *k2, size_t n)
+{
+    RuleTreeNodeKey* rtnk1 = (RuleTreeNodeKey *)k1;
+    RuleTreeNodeKey* rtnk2 = (RuleTreeNodeKey *)k2;
+
+    if (!rtnk1 || !rtnk2)
+        return 1;
+
+    if (rtnk1->policyId != rtnk2->policyId)
+        return 1;
+
+    if (TestHeader( rtnk1->rtn, rtnk2->rtn))
+        return 0;
+    else
+        return 1;
+}
 
 /**Add RTN to OTN for a particular OTN.
  * @param otn pointer to structure OptTreeNode.
@@ -12210,11 +12096,14 @@ RuleTreeNode * deleteRtnFromOtn(
  *         -ve otherwise
  */
 int addRtnToOtn(
+        SnortConfig *sc,
         OptTreeNode *otn,
         tSfPolicyId policyId,
         RuleTreeNode *rtn
         )
 {
+    RuleTreeNodeKey key;
+
     if (otn->proto_node_num <= policyId)
     {
         /* realloc the list, initialize missing elements to 0 and add
@@ -12245,6 +12134,25 @@ int addRtnToOtn(
     }
 
     otn->proto_nodes[policyId] = rtn;
+
+    // Optimized for parsing only, this check avoids adding run time rtn
+    if (!sc)
+        return 0;
+
+    if (!sc->rtn_hash_table)
+    {
+        sc->rtn_hash_table = sfxhash_new(10000, sizeof(RuleTreeNodeKey), 0, 0, 0, NULL, NULL, 1);
+
+        if (sc->rtn_hash_table == NULL)
+            FatalError("Failed to create rule tree node hash table");
+
+        sfxhash_set_keyops(sc->rtn_hash_table, rtn_hash_func, rtn_compare_func);
+
+    }
+
+    key.policyId = policyId;
+    key.rtn = rtn;
+    sfxhash_add(sc->rtn_hash_table, &key, rtn);
 
     return 0; //success
 }
@@ -12346,108 +12254,19 @@ static void IntegrityCheckRules(SnortConfig *sc)
 }
 
 /**returns matched header node.
- */
-static OptTreeNode * firstHeadNode(SnortConfig *sc, int proto,
-                                   RuleType type, tSfPolicyId *policyId)
-{
-    RuleTreeNode *rtn;
-    SFGHASH_NODE *hashNode;
-
-    /* This is a global var */
-    currHeadNodePolicy = 0;
-
-    for (hashNode = sfghash_findfirst(sc->otn_map);
-         hashNode;
-         hashNode = sfghash_findnext(sc->otn_map))
-    {
-        currHeadNodeOtn = (OptTreeNode *)hashNode->data;
-        for (currHeadNodePolicy = 0;
-             currHeadNodePolicy < currHeadNodeOtn->proto_node_num;
-             currHeadNodePolicy++)
-        {
-            rtn = getRtnFromOtn(currHeadNodeOtn, currHeadNodePolicy);
-
-            if (rtn && (rtn->type == type)
-                    && (rtn->proto == proto))
-            {
-                *policyId = currHeadNodePolicy;
-                return currHeadNodeOtn;
-            }
-        }
-    }
-
-    return NULL;
-}
-
-static OptTreeNode * nextHeadNode(SnortConfig *sc, int proto,
-                                  RuleType type, tSfPolicyId *policyId)
-{
-    SFGHASH_NODE *hashNode;
-    RuleTreeNode *rtn;
-
-    if (currHeadNodeOtn)
-    {
-        for (;
-             currHeadNodePolicy < currHeadNodeOtn->proto_node_num;
-             currHeadNodePolicy++)
-        {
-            rtn = getRtnFromOtn(currHeadNodeOtn, currHeadNodePolicy);
-
-            if (rtn && (rtn->type == type)
-                    && (rtn->proto == proto))
-            {
-                *policyId = currHeadNodePolicy;
-                return currHeadNodeOtn;
-            }
-        }
-    }
-
-    for (hashNode = sfghash_findnext(sc->otn_map);
-         hashNode;
-         hashNode = sfghash_findnext(sc->otn_map))
-    {
-        currHeadNodeOtn = (OptTreeNode *)hashNode->data;
-
-        for (currHeadNodePolicy = 0;
-             currHeadNodePolicy < currHeadNodeOtn->proto_node_num;
-             currHeadNodePolicy++)
-        {
-            rtn = getRtnFromOtn(currHeadNodeOtn, currHeadNodePolicy);
-
-            if (rtn && (rtn->type == type)
-                && (rtn->proto == proto))
-            {
-                *policyId = currHeadNodePolicy;
-                return currHeadNodeOtn;
-            }
-        }
-    }
-
-    return NULL;
-}
-
-/**returns matched header node.
 */
 static RuleTreeNode * findHeadNode(SnortConfig *sc, RuleTreeNode *testNode,
                                    tSfPolicyId policyId)
 {
-    RuleTreeNode *rtn;
-    OptTreeNode *otn;
-    SFGHASH_NODE *hashNode;
-
-    for (hashNode = sfghash_findfirst(sc->otn_map);
-         hashNode;
-         hashNode = sfghash_findnext(sc->otn_map))
+    if (sc->rtn_hash_table)
     {
-        otn = (OptTreeNode *)hashNode->data;
-        rtn = getRtnFromOtn(otn, policyId);
-
-        //(protocol, rule_type) match
-        if (TestHeader(rtn, testNode))
-            return rtn;
+        RuleTreeNodeKey key;
+        key.policyId = policyId;
+        key.rtn = testNode;
+        return ((RuleTreeNode *)sfxhash_find(sc->rtn_hash_table, &key));
     }
-
-    return NULL;
+    else
+        return NULL;
 }
 
 void configOptsPrint()

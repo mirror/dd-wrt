@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -59,6 +59,11 @@
 #include "spp_normalize.h"
 #include "sfdaq.h"
 #include "sfrf.h"
+
+#ifdef REG_TEST
+#include "reg_test.h"
+#include <stdio.h>
+#endif
 
 extern tSfActionQueueId decoderActionQ;
 extern MemPool decoderAlertMemPool;
@@ -613,6 +618,8 @@ void UpdateDecodeRulesArray(uint32_t sid, int value, int all_rules)
     }
 }
 
+static ThrottleInfo log_throttleInfo = {0, 60, 0, 100};
+
 // this must be called iff the layer is successfully decoded because, when
 // enabled, the normalizer assumes that the encoding is structurally sound
 static inline void PushLayer(PROTO_ID type, Packet* p, const uint8_t* hdr, uint32_t len)
@@ -626,8 +633,17 @@ static inline void PushLayer(PROTO_ID type, Packet* p, const uint8_t* hdr, uint3
     }
     else
     {
-        LogMessage("(snort_decoder) WARNING: decoder got too many layers;"
-            " next proto is %u.\n", type);
+        LogThrottledByTimeCount(&log_throttleInfo,
+                "(snort_decoder) WARNING: Too many levels for decoding;"
+                "next proto is %u.\n", type);
+        SnortEventqAdd(GENERATOR_SNORT_DECODE,
+                DECODE_DECODING_DEPTH_EXCEEDED,
+                1,
+                0,
+                1,
+                DECODE_DECODING_DEPTH_EXCEEDED_STR,
+                NULL);
+        pc.alert_pkts++;
     }
 }
 
@@ -1298,6 +1314,8 @@ void DecodeMPLS(const uint8_t* pkt, const uint32_t len, Packet* p)
     iRet = ScMplsPayloadCheck(*(uint8_t *)tmpMplsHdr, iRet);
 #endif
 
+    p->non_ip_pkt = 1;
+
     switch (iRet)
     {
         case MPLS_PAYLOADTYPE_IPV4:
@@ -1830,6 +1848,7 @@ void DecodePPPoEPkt(const uint8_t* pkt, const uint32_t len, Packet* p)
     if (ntohs(p->eh->ether_type) != ETHERNET_TYPE_PPPoE_DISC)
     {
         PushLayer(PROTO_PPPOE, p, pkt, PPPOE_HEADER_LEN);
+        p->non_ip_pkt = 1;
         DecodePppPktEncapsulated(pkt + PPPOE_HEADER_LEN, len - PPPOE_HEADER_LEN, p);
         return;
     }
@@ -2128,13 +2147,32 @@ void IP4AddrTests (Packet* p)
 {
     uint8_t msb_src, msb_dst;
 
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)   
+    uint16_t sAsId;
+    uint16_t dAsId;
+
+    sAsId = DAQ_GetSourceAddressSpaceID(p->pkth);
+    dAsId = DAQ_GetDestinationAddressSpaceID(p->pkth);
+
     // check all 32 bits ...
-    if( p->iph->ip_src.s_addr == p->iph->ip_dst.s_addr )
+    if((p->iph->ip_src.s_addr == p->iph->ip_dst.s_addr)
+            && (sAsId == dAsId))
     {
         DecoderEvent(p, DECODE_BAD_TRAFFIC_SAME_SRCDST,
-                        DECODE_BAD_TRAFFIC_SAME_SRCDST_STR, 1, 1);
-
+                     DECODE_BAD_TRAFFIC_SAME_SRCDST_STR, 1, 1);
+        if( pkt_trace_enabled ) 
+        { 
+            addPktTraceData(VERDICT_REASON_SNORT, snprintf(trace_line, MAX_TRACE_LINE, 
+                        "Packet is blocked since same source and destination")); 
+        } 
     }
+#else
+    if(p->iph->ip_src.s_addr == p->iph->ip_dst.s_addr)
+    {
+        DecoderEvent(p, DECODE_BAD_TRAFFIC_SAME_SRCDST,
+                     DECODE_BAD_TRAFFIC_SAME_SRCDST_STR, 1, 1);
+    }
+#endif
 
     // check all 32 bits ...
     if ( Event_Enabled(DECODE_IP4_SRC_BROADCAST ) )
@@ -2533,6 +2571,7 @@ static inline void DecodeIPv4Proto(const uint8_t proto,
             pc.ip4ip4++;
             if ( ScTunnelBypassEnabled(TUNNEL_4IN4) )
                 Active_SetTunnelBypass();
+            p->IPnIPencapsulated = 1;
             DecodeIP(pkt, len, p);
             return;
 #endif
@@ -2754,28 +2793,42 @@ void DecodeIP(const uint8_t * pkt, const uint32_t len, Packet * p)
     }
 
 
+#ifdef HAVE_DAQ_DECRYPTED_SSL
+    if (!(p->pkth->flags & DAQ_PKT_FLAG_DECRYPTED_SSL) && ScIpChecksums())
+#else
     if (ScIpChecksums())
+#endif
     {
-        /* routers drop packets with bad IP checksums, we don't really
-         * need to check them (should make this a command line/config
-         * option
-         */
-        int16_t csum = in_chksum_ip((const unsigned short *)p->iph, hlen);
-
-        if(csum)
+#if defined(DAQ_VERSION) && DAQ_VERSION > 12
+        if ((((const uint8_t *)p->inner_iph - p->pkt) > p->pkth->checksum_offset) ||
+                   p->pkth->checksum_error_flag)
+#endif
         {
-            p->error_flags |= PKT_ERR_CKSUM_IP;
-            DEBUG_WRAP(DebugMessage(DEBUG_DECODE, "Bad IP checksum\n"););
+            /* routers drop packets with bad IP checksums, we don't really
+             * need to check them (should make this a command line/config
+             * option
+             */
+           int16_t csum = in_chksum_ip((const unsigned short *)p->iph, hlen);
 
-            if ( ScIdsMode() )
-                queueExecDrop(execIpChksmDrop, p);
-        }
+           if(csum)
+           {
+                p->error_flags |= PKT_ERR_CKSUM_IP;
+                DEBUG_WRAP(DebugMessage(DEBUG_DECODE, "Bad IP checksum\n"););
+#ifdef REG_TEST
+                if (getRegTestFlags() & REG_TEST_FLAG_STREAM_DECODE)
+                    printf("Bad IP checksum | ");
+#endif
+
+                if ( ScIdsMode() )
+                    queueExecDrop(execIpChksmDrop, p);
+           }
 #ifdef DEBUG_MSGS
-        else
-        {
-            DebugMessage(DEBUG_DECODE, "IP Checksum: OK\n");
-        }
+           else
+           {
+                DebugMessage(DEBUG_DECODE, "IP Checksum: OK\n");
+           }
 #endif /* DEBUG */
+        }
     }
 
     PushLayer(PROTO_IP4, p, pkt, hlen);
@@ -3538,13 +3591,33 @@ static inline void IPV6MiscTests(Packet *p)
      * that is not so here.  The sfip_compare makes that assumption for
      * compatibility, but sfip_contains does not.  Hence, sfip_contains
      * is used here in the interrim. */
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)   
+    uint16_t sAsId;
+    uint16_t dAsId;
+
+    sAsId = DAQ_GetSourceAddressSpaceID(p->pkth);
+    dAsId = DAQ_GetDestinationAddressSpaceID(p->pkth);
+
+    if( sfip_fast_eq6((sfaddr_t*)&hdr6->ip6_src.s6_addr, (sfaddr_t*)&hdr6->ip6_dst.s6_addr)
+            && (sAsId == dAsId))
+    {
+        DecoderEvent(p, DECODE_BAD_TRAFFIC_SAME_SRCDST,
+                     DECODE_BAD_TRAFFIC_SAME_SRCDST_STR,
+                     1, 1);
+        if( pkt_trace_enabled ) 
+        { 
+            addPktTraceData(VERDICT_REASON_SNORT, snprintf(trace_line, MAX_TRACE_LINE, 
+                        "Packet is blocked since same source and destination")); 
+        } 
+    }
+#else
     if( sfip_fast_eq6((sfaddr_t*)&hdr6->ip6_src.s6_addr, (sfaddr_t*)&hdr6->ip6_dst.s6_addr))
     {
         DecoderEvent(p, DECODE_BAD_TRAFFIC_SAME_SRCDST,
                      DECODE_BAD_TRAFFIC_SAME_SRCDST_STR,
-                     1,1);
+                     1, 1);
     }
-
+#endif
     if(sfip_is_loopback((sfaddr_t*)&hdr6->ip6_src.s6_addr) || sfip_is_loopback((sfaddr_t*)&hdr6->ip6_dst.s6_addr))
     {
         DecoderEvent(p, DECODE_BAD_TRAFFIC_LOOPBACK,
@@ -3728,13 +3801,6 @@ void DecodeIPV6Options(int type, const uint8_t *pkt, uint32_t len, Packet *p)
     switch (type)
     {
         case IPPROTO_HOPOPTS:
-            if (len < sizeof(IP6HopByHop))
-            {
-                DecoderEvent(p, DECODE_IPV6_TRUNCATED_EXT,
-                             DECODE_IPV6_TRUNCATED_EXT_STR,
-                             1, 1);
-                return;
-            }
             hdrlen = sizeof(IP6Extension) + (exthdr->ip6e_len << 3);
 
             if ( CheckIPV6HopOptions(pkt, len, p) == 0 )
@@ -3742,13 +3808,6 @@ void DecodeIPV6Options(int type, const uint8_t *pkt, uint32_t len, Packet *p)
             break;
 
         case IPPROTO_DSTOPTS:
-            if (len < sizeof(IP6Dest))
-            {
-                DecoderEvent(p, DECODE_IPV6_TRUNCATED_EXT,
-                             DECODE_IPV6_TRUNCATED_EXT_STR,
-                             1, 1);
-                return;
-            }
             if (exthdr->ip6e_nxt == IPPROTO_ROUTING)
             {
                 DecoderEvent(p, DECODE_IPV6_DSTOPTS_WITH_ROUTING,
@@ -3762,13 +3821,6 @@ void DecodeIPV6Options(int type, const uint8_t *pkt, uint32_t len, Packet *p)
             break;
 
         case IPPROTO_ROUTING:
-            if (len < sizeof(IP6Route))
-            {
-                DecoderEvent(p, DECODE_IPV6_TRUNCATED_EXT,
-                             DECODE_IPV6_TRUNCATED_EXT_STR,
-                             1, 1);
-                return;
-            }
 
             /* Routing type 0 extension headers are evil creatures. */
             {
@@ -3797,14 +3849,10 @@ void DecodeIPV6Options(int type, const uint8_t *pkt, uint32_t len, Packet *p)
             break;
 
         case IPPROTO_FRAGMENT:
-            if (len <= sizeof(IP6Frag))
+            if (len == sizeof(IP6Frag))
             {
-                if ( len < sizeof(IP6Frag) )
-                    DecoderEvent(p, DECODE_IPV6_TRUNCATED_EXT,
-                        DECODE_IPV6_TRUNCATED_EXT_STR, 1, 1);
-                else
-                    DecoderEvent(p, DECODE_ZERO_LENGTH_FRAG,
-                        DECODE_ZERO_LENGTH_FRAG_STR, 1, 1);
+                DecoderEvent(p, DECODE_ZERO_LENGTH_FRAG,
+                    DECODE_ZERO_LENGTH_FRAG_STR, 1, 1);
                 return;
             }
             else
@@ -3957,6 +4005,7 @@ void DecodeIPV6Extensions(uint8_t next, const uint8_t *pkt, uint32_t len, Packet
             if ( ScTunnelBypassEnabled(TUNNEL_4IN6) )
                 Active_SetTunnelBypass();
             CheckIPv6ExtensionOrder(p);
+            p->IPnIPencapsulated = 1;
             DecodeIP(pkt, len, p);
             return;
         case IPPROTO_IPV6:
@@ -4419,7 +4468,6 @@ void DecodeICMP6(const uint8_t *pkt, const uint32_t len, Packet *p)
  */
 void DecodeICMPEmbeddedIP6(const uint8_t *pkt, const uint32_t len, Packet *p)
 {
-    uint16_t orig_frag_offset;
 
     /* lay the IP struct over the raw data */
     IP6RawHdr* hdr = (IP6RawHdr*)pkt;
@@ -4458,23 +4506,9 @@ void DecodeICMPEmbeddedIP6(const uint8_t *pkt, const uint32_t len, Packet *p)
         pc.discards++;
         return;
     }
-
-    if ( len < IP6_HDR_LEN )
-    {
-        DEBUG_WRAP(DebugMessage(DEBUG_DECODE,
-            "ICMP6: IP6 len (%d bytes) < IP6 hdr len (%d bytes), packet discarded\n",
-            len, IP6_HDR_LEN););
-
-        DecoderEvent(p, DECODE_ICMP_ORIG_DGRAM_LT_ORIG_IP,
-                        DECODE_ICMP_ORIG_DGRAM_LT_ORIG_IP_STR, 1, 1);
-
-        pc.discards++;
-        return;
-    }
+   
     sfiph_orig_build(p, pkt, AF_INET6);
 
-    orig_frag_offset = ntohs(GET_ORIG_IPH_OFF(p));
-    orig_frag_offset &= 0x1FFF;
 
     // XXX NOT YET IMPLEMENTED - fragments inside ICMP payload
 
@@ -4677,6 +4711,7 @@ void DecodeESP(const uint8_t *pkt, uint32_t len, Packet *p)
     switch (next_header)
     {
        case IPPROTO_IPIP:
+            p->IPnIPencapsulated = 1;
             DecodeIP(esp_payload, len, p);
             p->packet_flags &= ~PKT_UNSURE_ENCAP;
             break;
@@ -4879,6 +4914,8 @@ void DecodeGRE(const uint8_t *pkt, const uint32_t len, Packet *p)
                         pkt, len);
         return;
     }
+
+    p->GREencapsulated = 1;
 
     /* Note: Since GRE doesn't have a field to indicate header length and
      * can contain a few options, we need to walk through the header to
@@ -5375,15 +5412,19 @@ void DecodeUDP(const uint8_t * pkt, const uint32_t len, Packet * p)
              * 1) Fragmented, OR
              * 2) UDP header chksum value is 0.
              */
-            if( !fragmented_udp_flag && p->udph->uh_chk )
+            if(!fragmented_udp_flag && p->udph->uh_chk )
             {
-                csum = in_chksum_udp(&ph,
-                    (uint16_t *)(p->udph), uhlen);
+#if defined(DAQ_VERSION) && DAQ_VERSION > 12
+                 if ((((const uint8_t *)p->inner_udph - p->pkt) > p->pkth->checksum_offset) ||
+                                      (p->pkth->checksum_error_flag))
+#endif
+                     csum = in_chksum_udp(&ph,(uint16_t *)(p->udph), uhlen);
             }
             else
             {
-                csum = 0;
+                     csum = 0;
             }
+            
         }
         else
         {
@@ -5408,8 +5449,11 @@ void DecodeUDP(const uint8_t * pkt, const uint32_t len, Packet * p)
              */
             else if( !fragmented_udp_flag )
             {
-                csum = in_chksum_udp6(&ph6,
-                    (uint16_t *)(p->udph), uhlen);
+#if defined(DAQ_VERSION) && DAQ_VERSION > 12
+                if ((((const uint8_t *)p->inner_udph - p->pkt) > p->pkth->checksum_offset) ||
+                                      (p->pkth->checksum_error_flag)) 
+#endif
+                     csum = in_chksum_udp6(&ph6,(uint16_t *)(p->udph), uhlen);
             }
             else
             {
@@ -5594,57 +5638,67 @@ void DecodeTCP(const uint8_t * pkt, const uint32_t len, Packet * p)
     if (ScTcpChecksums())
 #endif
     {
-        uint16_t csum;
-        if(IS_IP4(p))
+#if defined(DAQ_VERSION) && DAQ_VERSION > 12
+        if ((((const uint8_t *)p->tcph - p->pkt) > p->pkth->checksum_offset) ||
+                   p->pkth->checksum_error_flag)
+#endif
         {
-            pseudoheader ph;
-            ph.sip = p->iph->ip_src.s_addr;
-            ph.dip = p->iph->ip_dst.s_addr;
-            /* setup the pseudo header for checksum calculation */
-            ph.zero = 0;
-            ph.protocol = GET_IPH_PROTO(p);
-            ph.len = htons((u_short)len);
-
-            /* if we're being "stateless" we probably don't care about the TCP
-             * checksum, but it's not bad to keep around for shits and giggles */
-            /* calculate the checksum */
-            csum = in_chksum_tcp(&ph, (uint16_t *)(p->tcph), len);
-        }
-        /* IPv6 traffic */
-        else
-        {
-            IP6RawHdr* hdr6 = (IP6RawHdr*)p->iph;
-            pseudoheader6 ph6;
-            COPY4(ph6.sip, hdr6->ip6_src.s6_addr32);
-            COPY4(ph6.dip, hdr6->ip6_dst.s6_addr32);
-            ph6.zero = 0;
-            ph6.protocol = GET_IPH_PROTO(p);
-            ph6.len = htons((u_short)len);
-
-            csum = in_chksum_tcp6(&ph6, (uint16_t *)(p->tcph), len);
-        }
-
-        if(csum)
-        {
-            /* Don't drop the packet if this is encapuslated in Teredo or ESP.
-               Just get rid of the TCP header and stop decoding. */
-            if (p->packet_flags & PKT_UNSURE_ENCAP)
+            uint16_t csum;
+            if(IS_IP4(p))
             {
-                p->tcph = NULL;
-                return;
+                pseudoheader ph;
+                ph.sip = p->iph->ip_src.s_addr;
+                ph.dip = p->iph->ip_dst.s_addr;
+                  /* setup the pseudo header for checksum calculation */
+                ph.zero = 0;
+                ph.protocol = GET_IPH_PROTO(p);
+                ph.len = htons((u_short)len);
+
+                   /* if we're being "stateless" we probably don't care about the TCP
+                     * checksum, but it's not bad to keep around for shits and giggles */
+                   /* calculate the checksum */
+                csum = in_chksum_tcp(&ph, (uint16_t *)(p->tcph), len);
+            }
+            /* IPv6 traffic */
+            else
+            {
+                IP6RawHdr* hdr6 = (IP6RawHdr*)p->iph;
+                pseudoheader6 ph6;
+                COPY4(ph6.sip, hdr6->ip6_src.s6_addr32);
+                COPY4(ph6.dip, hdr6->ip6_dst.s6_addr32);
+                ph6.zero = 0;
+                ph6.protocol = GET_IPH_PROTO(p);
+                ph6.len = htons((u_short)len);
+
+                csum = in_chksum_tcp6(&ph6, (uint16_t *)(p->tcph), len);
             }
 
-            p->error_flags |= PKT_ERR_CKSUM_TCP;
-            DEBUG_WRAP(DebugMessage(DEBUG_DECODE, "Bad TCP checksum\n",
+            if(csum)
+            {
+            /* Don't drop the packet if this is encapuslated in Teredo or ESP.
+               Just get rid of the TCP header and stop decoding. */
+                if (p->packet_flags & PKT_UNSURE_ENCAP)
+                {
+                    p->tcph = NULL;
+                    return;
+                }
+
+                p->error_flags |= PKT_ERR_CKSUM_TCP;
+                DEBUG_WRAP(DebugMessage(DEBUG_DECODE, "Bad TCP checksum\n",
                                     "0x%x versus 0x%x\n", csum,
                                     ntohs(p->tcph->th_sum)););
+#ifdef REG_TEST
+                if (getRegTestFlags() & REG_TEST_FLAG_STREAM_DECODE)
+                    printf("Bad TCP checksum\n");
+#endif
 
-            if ( ScIdsMode() )
-                queueExecDrop(execTcpChksmDrop, p);
-        }
-        else
-        {
-            DEBUG_WRAP(DebugMessage(DEBUG_DECODE,"TCP Checksum: OK\n"););
+                if ( ScIdsMode() )
+                    queueExecDrop(execTcpChksmDrop, p);
+            }
+            else
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_DECODE,"TCP Checksum: OK\n"););
+            }
         }
     }
 
@@ -6044,6 +6098,11 @@ void DecodeTCPOptions(const uint8_t *start, uint32_t o_len, Packet *p)
         case TCPOPT_TRAILER_CSUM:
             experimental_option_found = 1;
             code = OptLenValidate(option_ptr, end_ptr, len_ptr, TCPOLEN_TRAILER_CSUM,
+                                  &p->tcp_options[opt_count], &byte_skip);
+            break;
+
+        case TCPOPT_TFO:
+            code = OptLenValidate(option_ptr, end_ptr, len_ptr, -1,
                                   &p->tcp_options[opt_count], &byte_skip);
             break;
 

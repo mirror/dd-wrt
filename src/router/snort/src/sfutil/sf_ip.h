@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 1998-2013 Sourcefire, Inc.
 ** Adam Keeton
 ** Kevin Liu <kliu@sourcefire.com>
@@ -311,7 +311,8 @@ static inline SFIP_RET _ip4_cmp(u_int32_t ip1, u_int32_t ip2) {
 /* Support function for sfip_compare */
 static inline SFIP_RET _ip6_cmp(const sfaddr_t *ip1, const sfaddr_t *ip2) {
     SFIP_RET ret;
-    const uint32_t *p1, *p2;
+    const struct in6_addr p1 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip1);
+    const struct in6_addr p2 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip2);
 
     /* XXX
      * Argument are assumed trusted!
@@ -319,13 +320,10 @@ static inline SFIP_RET _ip6_cmp(const sfaddr_t *ip1, const sfaddr_t *ip2) {
      * on validated pointers.
      * XXX */
 
-    p1 = sfaddr_get_ip6_ptr(ip1);
-    p2 = sfaddr_get_ip6_ptr(ip2);
-
-    if( (ret = _ip4_cmp(p1[0], p2[0])) != SFIP_EQUAL) return ret;
-    if( (ret = _ip4_cmp(p1[1], p2[1])) != SFIP_EQUAL) return ret;
-    if( (ret = _ip4_cmp(p1[2], p2[2])) != SFIP_EQUAL) return ret;
-    if( (ret = _ip4_cmp(p1[3], p2[3])) != SFIP_EQUAL) return ret;
+    if( (ret = _ip4_cmp(p1.s6_addr32[0], p2.s6_addr32[0])) != SFIP_EQUAL) return ret;
+    if( (ret = _ip4_cmp(p1.s6_addr32[1], p2.s6_addr32[1])) != SFIP_EQUAL) return ret;
+    if( (ret = _ip4_cmp(p1.s6_addr32[2], p2.s6_addr32[2])) != SFIP_EQUAL) return ret;
+    if( (ret = _ip4_cmp(p1.s6_addr32[3], p2.s6_addr32[3])) != SFIP_EQUAL) return ret;
 
     return ret;
 }
@@ -404,57 +402,51 @@ static inline int sfip_fast_eq4(const sfaddr_t *ip1, const sfaddr_t *ip2) {
 }
 
 static inline int sfip_fast_lt6(const sfaddr_t *ip1, const sfaddr_t *ip2) {
-    const uint32_t *p1, *p2;
+    const struct in6_addr p1 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip1);
+    const struct in6_addr p2 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip2);
 
-    p1 = sfaddr_get_ip6_ptr(ip1);
-    p2 = sfaddr_get_ip6_ptr(ip2);
+    if(p1.s6_addr32[0] < p2.s6_addr32[0]) return 1;
+    else if(p1.s6_addr32[0] > p2.s6_addr32[0]) return 0;
 
-    if(*p1 < *p2) return 1;
-    else if(*p1 > *p2) return 0;
+    if(p1.s6_addr32[1] < p2.s6_addr32[1]) return 1;
+    else if(p1.s6_addr32[1] > p2.s6_addr32[1]) return 0;
 
-    if(p1[1] < p2[1]) return 1;
-    else if(p1[1] > p2[1]) return 0;
+    if(p1.s6_addr32[2] < p2.s6_addr32[2]) return 1;
+    else if(p1.s6_addr32[2] > p2.s6_addr32[2]) return 0;
 
-    if(p1[2] < p2[2]) return 1;
-    else if(p1[2] > p2[2]) return 0;
-
-    if(p1[3] < p2[3]) return 1;
-    else if(p1[3] > p2[3]) return 0;
+    if(p1.s6_addr32[3] < p2.s6_addr32[3]) return 1;
+    else if(p1.s6_addr32[3] > p2.s6_addr32[3]) return 0;
 
     return 0;
 }
 
 static inline int sfip_fast_gt6(const sfaddr_t *ip1, const sfaddr_t *ip2) {
-    const uint32_t *p1, *p2;
+    const struct in6_addr p1 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip1);
+    const struct in6_addr p2 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip2);
 
-    p1 = sfaddr_get_ip6_ptr(ip1);
-    p2 = sfaddr_get_ip6_ptr(ip2);
+    if(p1.s6_addr32[0] > p2.s6_addr32[0]) return 1;
+    else if(p1.s6_addr32[0] < p2.s6_addr32[0]) return 0;
 
-    if(*p1 > *p2) return 1;
-    else if(*p1 < *p2) return 0;
+    if(p1.s6_addr32[1] > p2.s6_addr32[1]) return 1;
+    else if(p1.s6_addr32[1] < p2.s6_addr32[1]) return 0;
 
-    if(p1[1] > p2[1]) return 1;
-    else if(p1[1] < p2[1]) return 0;
+    if(p1.s6_addr32[2] > p2.s6_addr32[2]) return 1;
+    else if(p1.s6_addr32[2] < p2.s6_addr32[2]) return 0;
 
-    if(p1[2] > p2[2]) return 1;
-    else if(p1[2] < p2[2]) return 0;
-
-    if(p1[3] > p2[3]) return 1;
-    else if(p1[3] < p2[3]) return 0;
+    if(p1.s6_addr32[3] > p2.s6_addr32[3]) return 1;
+    else if(p1.s6_addr32[3] < p2.s6_addr32[3]) return 0;
 
     return 0;
 }
 
 static inline int sfip_fast_eq6(const sfaddr_t *ip1, const sfaddr_t *ip2) {
-    const uint32_t *p1, *p2;
+    const struct in6_addr p1 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip1);
+    const struct in6_addr p2 = *(struct in6_addr *)sfaddr_get_ip6_ptr(ip2);
 
-    p1 = sfaddr_get_ip6_ptr(ip1);
-    p2 = sfaddr_get_ip6_ptr(ip2);
-
-    if(*p1 != *p2) return 0;
-    if(p1[1] != p2[1]) return 0;
-    if(p1[2] != p2[2]) return 0;
-    if(p1[3] != p2[3]) return 0;
+    if(p1.s6_addr32[0] != p2.s6_addr32[0]) return 0;
+    if(p1.s6_addr32[1] != p2.s6_addr32[1]) return 0;
+    if(p1.s6_addr32[2] != p2.s6_addr32[2]) return 0;
+    if(p1.s6_addr32[3] != p2.s6_addr32[3]) return 0;
 
     return 1;
 }

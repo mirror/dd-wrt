@@ -8,7 +8,7 @@
 ** author: marc norton
 ** date:   started 12/21/05
 **
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** General Design
@@ -278,6 +278,7 @@ int queue_add (QUEUE * s, int state)
   else
   {
       q = (QNODE *) BNFA_MALLOC (sizeof(QNODE),queue_memory);
+      if(!q) return -1;
       q->state = state;
       q->next = 0;
       s->tail->next = q;

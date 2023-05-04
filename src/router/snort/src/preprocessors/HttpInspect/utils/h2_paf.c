@@ -20,6 +20,7 @@
 #include "snort_debug.h"
 #include "profiler.h"
 #include "snort_httpinspect.h"
+#include "memory_stats.h"
 
 #include "h2_common.h"
 
@@ -99,7 +100,8 @@ static PAF_Status h2_paf (
     {
         bool upg;
         
-        sd = calloc(1, sizeof(http2_session_data));
+        sd = (http2_session_data*) SnortPreprocAlloc(1, sizeof(http2_session_data), 
+                                        PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);  
 
         if (!sd)
         {
@@ -166,7 +168,8 @@ void h2_paf_clear(void* userdata)
     if (h2_pkt)
     {
         if (h2_pkt->h2Hdr)
-            free(h2_pkt->h2Hdr);
+            SnortPreprocFree(h2_pkt->h2Hdr, sizeof(H2Hdr), PP_HTTPINSPECT, 
+                 PP_MEM_CATEGORY_SESSION);
         Encode_Delete(h2_pkt);
         h2_pkt = NULL;
     }
@@ -195,6 +198,15 @@ int h2_paf_register_port (
     return 0;
 }
 
+static void h2_paf_cleanup(void *pafData)
+{
+#ifdef HAVE_LIBNGHTTP2
+    if (pafData)
+        SnortPreprocFree(pafData, sizeof(http2_session_data), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
+#endif
+}
+
 int h2_paf_register_service (
         struct _SnortConfig *sc, uint16_t service, bool client, bool server, tSfPolicyId pid, bool auto_on)
 {
@@ -208,11 +220,15 @@ int h2_paf_register_service (
             return -1;
 
     if ( client )
+    {
         h2_paf_id = stream_api->register_paf_service(sc, pid, service, true, h2_paf, auto_on);
-
+        stream_api->register_paf_free(h2_paf_id, h2_paf_cleanup);
+    }
     if ( server )
+    {
         h2_paf_id = stream_api->register_paf_service(sc, pid, service, false, h2_paf, auto_on);
-
+        stream_api->register_paf_free(h2_paf_id, h2_paf_cleanup);
+    }
     return 0;
 }
 
@@ -224,6 +240,7 @@ static inline int h2_pseudo(void *ssn, uint32_t bytes, uint8_t* data, H2Hdr *hd,
 
     uint8_t fp = stream_api->get_flush_policy_dir();
     uint32_t dir;
+    int ret;
 
     if (fp)
     {
@@ -237,7 +254,7 @@ static inline int h2_pseudo(void *ssn, uint32_t bytes, uint8_t* data, H2Hdr *hd,
     if (!h2_pkt)
         h2_pkt = Encode_New();
     else if (h2_pkt->h2Hdr)
-        free(h2_pkt->h2Hdr);
+        SnortPreprocFree(h2_pkt->h2Hdr, sizeof(H2Hdr), PP_HTTPINSPECT, 0);
 
     if ( !p->packet_flags || (dir & p->packet_flags) )
         enc_flags = ENC_FLAG_FWD;
@@ -259,11 +276,19 @@ static inline int h2_pseudo(void *ssn, uint32_t bytes, uint8_t* data, H2Hdr *hd,
             return 0;
         }
 
-        SafeMemcpy((uint8_t *)h2_pkt->data, data, bytes, (uint8_t *)h2_pkt->data, h2_pkt_end);
+        ret = SafeMemcpy((uint8_t *)h2_pkt->data, data, bytes, (uint8_t *)h2_pkt->data, h2_pkt_end);
+        if (ret != SAFEMEM_SUCCESS)
+        {
+           DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
+                   "%s: SafeMemcpy() Failed !!!",  __FUNCTION__);)
+           return 0;
+        }
+
         h2_pkt->packet_flags |= (PKT_REBUILT_STREAM|PKT_STREAM_EST|PKT_STREAM_ORDER_OK);
         h2_pkt->dsize = (uint16_t)bytes;
 
-        h2_pkt->h2Hdr = (H2Hdr*)SnortAlloc(sizeof(H2Hdr));
+        h2_pkt->h2Hdr = (H2Hdr *)SnortPreprocAlloc(1, sizeof(H2Hdr), PP_HTTPINSPECT, 
+                                     PP_MEM_CATEGORY_SESSION); 
         if (h2_pkt->h2Hdr != NULL)
         {
             copy_hd(h2_pkt->h2Hdr, *hd);

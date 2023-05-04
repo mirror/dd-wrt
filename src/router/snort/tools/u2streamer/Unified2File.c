@@ -41,7 +41,6 @@
 int Unified2File_Open(char *filepath, Unified2File **u2_file)
 {
     Unified2File *tmp;
-    char fn[1024];
 
     if(!filepath || !u2_file)
         return SF_EINVAL;
@@ -61,7 +60,7 @@ int Unified2File_Open(char *filepath, Unified2File **u2_file)
     if((tmp->fd = open(filepath, O_RDONLY)) == -1)
     {
         fprintf(stderr, "Unable to open file '%s': %s",
-                fn, strerror(errno));
+                filepath, strerror(errno));
         free(tmp);
         return SF_EOPEN;  /* XXX better return code */
     }

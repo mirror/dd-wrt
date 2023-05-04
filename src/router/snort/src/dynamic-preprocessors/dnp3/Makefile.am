@@ -44,6 +44,7 @@ endif
 
 
 EXTRA_DIST = \
+sf_dnp3.vcxproj \
 sf_dnp3.dsp
 
 all-local: $(LTLIBRARIES)

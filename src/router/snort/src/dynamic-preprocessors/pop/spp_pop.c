@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@
 #include "pop_config.h"
 #include "pop_log.h"
 #include "pop_paf.h"
+#include "pop_util.h"
 
 #include "preprocids.h"
 #include "sf_snort_packet.h"
@@ -157,6 +158,12 @@ void SetupPOP(void)
 
 }
 
+#ifdef REG_TEST
+static inline void PrintPOPSize(void)
+{
+    _dpd.logMsg("\nPOP Session Size: %lu\n", (long unsigned int)sizeof(POP));
+}
+#endif
 
 /*
  * Function: POPInit(char *)
@@ -174,6 +181,12 @@ static void POPInit(struct _SnortConfig *sc, char *args)
     POPToken *tmp;
     tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
     POPConfig * pPolicyConfig = NULL;
+
+#ifdef REG_TEST
+    PrintPOPSize();
+#endif
+
+    _dpd.registerMemoryStatsFunc(PP_POP, POP_Print_Mem_Stats);
 
     if (pop_config == NULL)
     {
@@ -225,7 +238,8 @@ static void POPInit(struct _SnortConfig *sc, char *args)
         DynamicPreprocessorFatalMessage("Can only configure POP preprocessor once.\n");
     }
 
-    pPolicyConfig = (POPConfig *)calloc(1, sizeof(POPConfig));
+    pPolicyConfig = (POPConfig *)_dpd.snortAlloc(1, sizeof(POPConfig), PP_POP, 
+                                      PP_MEM_CATEGORY_CONFIG);
     if (pPolicyConfig == NULL)
     {
         DynamicPreprocessorFatalMessage("Not enough memory to create POP "
@@ -575,7 +589,8 @@ static void POPReload(struct _SnortConfig *sc, char *args, void **new_config)
     if (pPolicyConfig != NULL)
         DynamicPreprocessorFatalMessage("Can only configure POP preprocessor once.\n");
 
-    pPolicyConfig = (POPConfig *)calloc(1, sizeof(POPConfig));
+    pPolicyConfig = (POPConfig *)_dpd.snortAlloc(1, sizeof(POPConfig), PP_POP, 
+                                      PP_MEM_CATEGORY_CONFIG);
     if (pPolicyConfig == NULL)
     {
         DynamicPreprocessorFatalMessage("Not enough memory to create POP "

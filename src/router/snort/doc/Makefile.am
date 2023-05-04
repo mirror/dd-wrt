@@ -74,7 +74,11 @@ docdir = ${datadir}/doc/${PACKAGE}
 SUFFIXES = .tex .dvi .ps
 
 .tex.dvi:
-	pslatex $< && pslatex $< && pslatex $<
+	if [ -f /etc/centos-release ]; then \
+		latex $< && latex $< && latex $<; \
+	else \
+		pslatex $< && pslatex $< && pslatex $<; \
+	fi
 
 .dvi.ps:
 	dvips $< -o

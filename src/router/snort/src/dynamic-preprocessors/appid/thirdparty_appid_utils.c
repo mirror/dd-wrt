@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2015-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2015-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2011 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,7 +34,7 @@ static _PluginHandle module_handle = NULL;
 static struct ThirdPartyConfig thirdpartyConfig;
 ThirdPartyAppIDModule* thirdparty_appid_module = NULL;
 
-static int LoadCallback(const char * const path, int indent)
+static int LoadCallback(struct _SnortConfig *sc, const char * const path, int indent)
 {
     _PluginHandle handle_tmp;
     ThirdPartyAppIDModule* module_tmp;
@@ -97,6 +97,10 @@ static void getXffFields(void)
         thirdpartyConfig.numXffFields = sizeof(defaultXffFields) / sizeof(defaultXffFields[0]);
     }
     thirdpartyConfig.xffFields = malloc(thirdpartyConfig.numXffFields * sizeof(char*));
+    if(!thirdpartyConfig.xffFields)
+    {
+         _dpd.errMsg("getXffFields: Failed to allocate memory for xffFields in thirdpartyConfig\n");
+    }
     for (i = 0; i < thirdpartyConfig.numXffFields; i++)
         thirdpartyConfig.xffFields[i] = strndup(xffFields[i], UINT8_MAX);
 }
@@ -122,7 +126,7 @@ void ThirdPartyAppIDInit(struct AppidStaticConfig *appidStaticConfig)
         dir = thirdparty_appid_dir;
     }
 
-    _dpd.loadAllLibs(dir, LoadCallback);
+    _dpd.loadAllLibs(NULL, dir, LoadCallback);
     if (thirdparty_appid_module == NULL)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_APPID, "No 3rd party AppID module loaded.\n"););
@@ -138,7 +142,14 @@ void ThirdPartyAppIDInit(struct AppidStaticConfig *appidStaticConfig)
         thirdpartyConfig.http_upgrade_reporting_enabled = 1;
     else
         thirdpartyConfig.http_upgrade_reporting_enabled = 0;
-    thirdpartyConfig.appid_tp_dir[0] = '\0';    // use default path
+
+    if (appidStaticConfig->tp_config_path)
+    {
+        strncpy(thirdpartyConfig.tp_config_path, appidStaticConfig->tp_config_path, TP_PATH_MAX);
+        thirdpartyConfig.tp_config_path[TP_PATH_MAX-1] = '\0';
+    }
+    else
+        thirdpartyConfig.tp_config_path[0] = '\0'; // use default path
 
     thirdpartyUtils.logMsg           = _dpd.logMsg;
     thirdpartyUtils.getSnortInstance = _dpd.getSnortInstance;

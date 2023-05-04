@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -502,6 +502,9 @@ static int ssh_validate(ServiceValidationArgs* args)
                                 memcpy(ss->vendor, ven, len);
                                 ss->vendor[len] = 0;
                             }
+                            else
+                                _dpd.errMsg("ssh_validate: "
+                                        "Memory allocation for vendir in ServiceSSHData failed\n");
                             ver++;
                             len = end - ver;
                             ss->version = malloc(len+1);
@@ -510,6 +513,9 @@ static int ssh_validate(ServiceValidationArgs* args)
                                 memcpy(ss->version, ver, len);
                                 ss->version[len] = 0;
                             }
+                            else
+                                _dpd.errMsg("ssh_validate: "
+                                        "Memory allocation for version in ServiceSSHData failed\n");
                         }
                         else
                         {
@@ -520,6 +526,9 @@ static int ssh_validate(ServiceValidationArgs* args)
                                 memcpy(ss->version, ven, len);
                                 ss->version[len] = 0;
                             }
+                            else
+                                _dpd.errMsg("ssh_validate: "
+                                        "Memory allocation for version in ServiceSSHData failed\n");
                         }
                         goto inprocess;
                     }

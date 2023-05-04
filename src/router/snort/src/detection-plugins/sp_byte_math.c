@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -64,7 +64,7 @@
 #include <strings.h>
 #endif
 #include <errno.h>
-
+#include "limits.h"
 #include "sf_types.h"
 #include "snort_bounds.h"
 #include "byte_extract.h"
@@ -122,8 +122,36 @@ void AddVarName_Bytemath(ByteMathData *);
 
 char *bytemath_variable_name = NULL;
 uint32_t bytemath_variable;
+uint32_t common_var;
 
+uint32_t find_value (char *token)
+{
+    if (token == NULL)
+        return BYTE_EXTRACT_NO_VAR;
 
+    uint32_t match_e = 0 ,match_b = 0;
+    /* check byte_math already has the same name */
+    if ( bytemath_variable_name && (strcmp(bytemath_variable_name,token) == 0) )
+        match_b = BYTE_MATH_VAR_INDEX;
+
+    /* check byte_extract already has the same name */
+     match_e = GetVarByName(token);
+
+    /* if same name found in both pick the latest one else the matched one */
+     if ( (match_e != BYTE_EXTRACT_NO_VAR)  && (match_b == BYTE_MATH_VAR_INDEX) )
+     {
+         return COMMON_VAR_INDEX;
+     }
+     else if ( (match_e != BYTE_EXTRACT_NO_VAR)  && (match_b != BYTE_MATH_VAR_INDEX) )
+     {
+         return  match_e;
+     }
+     else if ( (match_e == BYTE_EXTRACT_NO_VAR)  && (match_b == BYTE_MATH_VAR_INDEX) )
+     {
+         return  BYTE_MATH_VAR_INDEX;
+     }
+     return  BYTE_EXTRACT_NO_VAR;
+}
 
 uint32_t ByteMathHash(void *d)
 {
@@ -432,10 +460,6 @@ static ByteMathOverrideData * ByteMathParse(char *data, ByteMathData *idx, OptTr
                 continue;
 
            }
-           else
-           {
-               ParseError("byte_math option bytes_to_extract is already configured once\n");
-           }
         }
 
         else if (!strncmp(cptr,"oper",4))
@@ -567,16 +591,9 @@ static ByteMathOverrideData * ByteMathParse(char *data, ByteMathData *idx, OptTr
         {
            cptr=ByteMath_tok_extract(cptr,"result");
            /* set result variable */
-           if ( GetVarByName(cptr) == BYTE_EXTRACT_NO_VAR )
-           {
-                idx->result_var =  SnortStrdup(cptr);
-           }
-           else
-           {
-               ParseError("byte_Math:: result variable name is already used in byte_extract rule \n");
-           }
-           if (!idx->result_var)
-                  ParseError("byte_Math::result_var malloc failure");
+            idx->result_var =  SnortStrdup(cptr);
+            if (!idx->result_var)
+                ParseError("byte_Math::result_var malloc failure");
 
            if (idx->result_var && isdigit(idx->result_var[0]))
            {
@@ -795,11 +812,12 @@ int ByteMath(void *option_data, Packet *p)
     {
         GetByteExtractValue(&extract_rvalue, btd->rvalue_var);
         btd->rvalue = (int32_t) extract_rvalue;
-        if (!btd->rvalue)
+        if (!btd->rvalue && (btd->operator == BM_DIVIDE))
         {
-          ParseError("byte_math rule option has invalid rvalue from byte_extract."
-                     "Valid rvalue range %u-%u.",
-                     MIN_RVAL,MAX_RVAL);
+           DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
+                      "byte math input value zero for Divide operator is invalid\n"););
+           PREPROC_PROFILE_END(byteMathPerfStats);
+           return DETECTION_OPTION_NO_MATCH;
         }
     }
 
@@ -910,17 +928,47 @@ int ByteMath(void *option_data, Packet *p)
         payload_bytes_grabbed, btd->offset, btd->rvalue, btd->rvalue, value, value); );
     switch(btd->operator)
     {
-        case BM_PLUS: *value += btd->rvalue;
-                      success = 1;
-                      break;
+        case BM_PLUS: if ((UINT_MAX - *value) < btd->rvalue)
+                      {
+                          LogMessage("%s-%d > %s-%d Buffer Overflow during ADDITION\n",
+                                     inet_ntoa(GET_SRC_IP(p)),ntohs(p->tcph->th_sport),
+                                     inet_ntoa(GET_DST_IP(p)),ntohs(p->tcph->th_dport));   
+                          return DETECTION_OPTION_NO_MATCH;
+                      }
+                      else
+                      {
+                          *value += btd->rvalue;
+                          success = 1;
+                          break;
+                      }
 
-        case BM_MINUS: *value -= btd->rvalue;
-                       success = 1;
-                       break;
+        case BM_MINUS: if (*value < btd->rvalue)
+                       { 
+                           LogMessage("%s-%d > %s-%d Buffer Underflow during SUBTRACTION\n",
+                                      inet_ntoa(GET_SRC_IP(p)),ntohs(p->tcph->th_sport),
+                                      inet_ntoa(GET_DST_IP(p)),ntohs(p->tcph->th_dport));   
+                           return DETECTION_OPTION_NO_MATCH;
+                       }
+                       else
+                       {
+                           *value -= btd->rvalue;
+                           success = 1;
+                           break;
+                       }
 
-        case BM_MULTIPLY: *value *= btd->rvalue;
-                     success = 1;
-                     break;
+        case BM_MULTIPLY: if ( (*value) && ((UINT_MAX/(*value)) < btd->rvalue))
+                          {
+                              LogMessage("%s-%d > %s-%d Buffer Overflow during MULTIPLY\n",
+                                          inet_ntoa(GET_SRC_IP(p)),ntohs(p->tcph->th_sport),
+                                          inet_ntoa(GET_DST_IP(p)),ntohs(p->tcph->th_dport));   
+                              return DETECTION_OPTION_NO_MATCH;
+                          }
+                          else
+                          {
+                             *value *= btd->rvalue;
+                             success = 1;
+                             break;
+                          }
 
         case BM_DIVIDE: *value = (*value/ btd->rvalue);
                      success = 1;
@@ -941,6 +989,7 @@ int ByteMath(void *option_data, Packet *p)
     if (success)
     {
         rval = DETECTION_OPTION_MATCH;
+        common_var = *value;
     }
 
     /* if the test isn't successful, this function *must* return 0 */
@@ -951,7 +1000,7 @@ int ByteMath(void *option_data, Packet *p)
 void ByteMathFree(void *d)
 {
     ByteMathData *data = (ByteMathData *)d;
-    if (data)
+    if (data && data->result_var)
     {
       free(data->result_var);
       data->result_var=NULL;
@@ -985,19 +1034,7 @@ void ClearByteMathVarNames(OptFpList *fpl)
 /* Given a variable name, retrieve its index. For use by other options.dynamic-plugin support */
 int8_t GetVarByName_check(char *name)
 {
-
-    if (name == NULL)
-        return BYTE_EXTRACT_NO_VAR;
-
-    if (bytemath_variable_name && (!strcmp(bytemath_variable_name,name)))
-    {
-          return 0;
-    }
-    else
-    {
-        return (GetVarByName(name));
-    }
-    return BYTE_EXTRACT_NO_VAR;
+    return (find_value(name));
 }
 
 void AddVarName_Bytemath(ByteMathData *data)

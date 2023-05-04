@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -105,6 +105,7 @@ typedef struct _IMAP_Stats
     uint64_t conc_sessions;
     uint64_t max_conc_sessions;
     uint64_t log_memcap_exceeded;
+    uint64_t cur_sessions;
     MimeStats mime_stats;
 
 } IMAP_Stats;

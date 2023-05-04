@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
  **
@@ -126,7 +126,7 @@ typedef struct _Unified2IDSEventIPv6
     uint16_t vlanId;
     uint16_t pad2;/*could be IPS Policy local id to support local sensor alerts*/
 #if defined(FEAT_OPEN_APPID)
-    char     app_name[16];
+    char     app_name[MAX_EVENT_APPNAME_LEN];
 #endif /* defined(FEAT_OPEN_APPID) */
 } Unified2IDSEventIPv6;
 

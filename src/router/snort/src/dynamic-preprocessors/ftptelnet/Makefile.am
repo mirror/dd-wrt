@@ -66,6 +66,7 @@ endif
 
 
 EXTRA_DIST = \
+sf_ftptelnet.vcxproj \
 sf_ftptelnet.dsp
 
 all-local: $(LTLIBRARIES)

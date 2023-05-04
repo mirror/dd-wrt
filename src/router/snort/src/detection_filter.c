@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -108,13 +108,13 @@ void detection_filter_print_config(DetectionFilterConfig *df)
 int detection_filter_test (
     void* pv,
     sfaddr_t* sip, sfaddr_t* dip,
-    long curtime, detection_option_eval_data_t *eval_data, OptTreeNode *otn)
+    long curtime, detection_option_eval_data_t *eval_data)
 {
     if (pv == NULL)
         return 0;
 
     return sfthd_test_rule(detection_filter_hash, (THD_NODE*)pv,
-                           sip, dip, curtime, eval_data, otn);
+                           sip, dip, curtime, eval_data);
 }
 
 /* empty out active entries */

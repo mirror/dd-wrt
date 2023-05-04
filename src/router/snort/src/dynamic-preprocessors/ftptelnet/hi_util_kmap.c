@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -75,9 +75,9 @@ static void * s_malloc( int n )
 /*
 *
 */
-static void s_free( void * p )
+static void s_free( void * p , int n)
 {
-    if( p ) xfree( p );
+    if( p ) xfree( p , n );
 }
 /*
 *
@@ -113,7 +113,7 @@ static int KMapFreeNodeList(KMAP * km )
     {
         if( k->key )
         {
-            s_free( k->key );
+            s_free( k->key , k->nkey );
         }
         if( km->userfree && k->userdata )
         {
@@ -121,7 +121,7 @@ static int KMapFreeNodeList(KMAP * km )
         }
         kold = k;
         k = k->next;
-        s_free(kold);
+        s_free(kold, sizeof(KEYNODE));
     }
 
     return 0;
@@ -141,7 +141,7 @@ static void KMapFreeNode( KMAP * km, KMAPNODE * r)
         KMapFreeNode( km, r->child );
     }
 
-    s_free( r );
+    s_free( r , sizeof(KMAPNODE) );
 }
 /*
 *  Free the KMAP and all of it's memory and nodes
@@ -164,7 +164,7 @@ void KMapDelete( KMAP * km )
     /* Free the node list */
     KMapFreeNodeList( km );
 
-    s_free(km);
+    s_free(km, sizeof(KMAP));
 }
 
 /*

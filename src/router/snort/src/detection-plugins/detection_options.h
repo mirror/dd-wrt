@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -102,6 +102,7 @@ typedef struct _detection_option_eval_data
     Packet *p;
     char flowbit_failed;
     char flowbit_noalert;
+    uint8_t detection_filter_count;
 } detection_option_eval_data_t;
 
 int add_detection_option(struct _SnortConfig *, option_type_t type, void *option_data, void **existing_data);

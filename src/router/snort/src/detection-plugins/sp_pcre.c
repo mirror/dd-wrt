@@ -2,7 +2,7 @@
 /*
 ** Copyright (C) 2003 Brian Caswell <bmc@snort.org>
 ** Copyright (C) 2003 Michael J. Pomraning <mjp@securepipe.com>
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -438,30 +438,30 @@ void SnortPcreParse(struct _SnortConfig *sc, char *data, PcreData *pcre_data, Op
 
     if (pcre_data->pe)
     {
-        if ((ScPcreMatchLimit() != -1) && !(pcre_data->options & SNORT_OVERRIDE_MATCH_LIMIT))
+        if ((ScPcreMatchLimitNewConf(sc) != -1) && !(pcre_data->options & SNORT_OVERRIDE_MATCH_LIMIT))
         {
             if (pcre_data->pe->flags & PCRE_EXTRA_MATCH_LIMIT)
             {
-                pcre_data->pe->match_limit = ScPcreMatchLimit();
+                pcre_data->pe->match_limit = ScPcreMatchLimitNewConf(sc);
             }
             else
             {
                 pcre_data->pe->flags |= PCRE_EXTRA_MATCH_LIMIT;
-                pcre_data->pe->match_limit = ScPcreMatchLimit();
+                pcre_data->pe->match_limit = ScPcreMatchLimitNewConf(sc);
             }
         }
 
 #ifdef PCRE_EXTRA_MATCH_LIMIT_RECURSION
-        if ((ScPcreMatchLimitRecursion() != -1) && !(pcre_data->options & SNORT_OVERRIDE_MATCH_LIMIT))
+        if ((ScPcreMatchLimitRecursionNewConf(sc) != -1) && !(pcre_data->options & SNORT_OVERRIDE_MATCH_LIMIT))
         {
             if (pcre_data->pe->flags & PCRE_EXTRA_MATCH_LIMIT_RECURSION)
             {
-                pcre_data->pe->match_limit_recursion = ScPcreMatchLimitRecursion();
+                pcre_data->pe->match_limit_recursion = ScPcreMatchLimitRecursionNewConf(sc);
             }
             else
             {
                 pcre_data->pe->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
-                pcre_data->pe->match_limit_recursion = ScPcreMatchLimitRecursion();
+                pcre_data->pe->match_limit_recursion = ScPcreMatchLimitRecursionNewConf(sc);
             }
         }
 #endif
@@ -469,20 +469,20 @@ void SnortPcreParse(struct _SnortConfig *sc, char *data, PcreData *pcre_data, Op
     else
     {
         if (!(pcre_data->options & SNORT_OVERRIDE_MATCH_LIMIT) &&
-             ((ScPcreMatchLimit() != -1) || (ScPcreMatchLimitRecursion() != -1)))
+             ((ScPcreMatchLimitNewConf(sc) != -1) || (ScPcreMatchLimitRecursionNewConf(sc) != -1)))
         {
             pcre_data->pe = (pcre_extra *)SnortAlloc(sizeof(pcre_extra));
-            if (ScPcreMatchLimit() != -1)
+            if (ScPcreMatchLimitNewConf(sc) != -1)
             {
                 pcre_data->pe->flags |= PCRE_EXTRA_MATCH_LIMIT;
-                pcre_data->pe->match_limit = ScPcreMatchLimit();
+                pcre_data->pe->match_limit = ScPcreMatchLimitNewConf(sc);
             }
 
 #ifdef PCRE_EXTRA_MATCH_LIMIT_RECURSION
-            if (ScPcreMatchLimitRecursion() != -1)
+            if (ScPcreMatchLimitRecursionNewConf(sc) != -1)
             {
                 pcre_data->pe->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
-                pcre_data->pe->match_limit_recursion = ScPcreMatchLimitRecursion();
+                pcre_data->pe->match_limit_recursion = ScPcreMatchLimitRecursionNewConf(sc);
             }
 #endif
         }

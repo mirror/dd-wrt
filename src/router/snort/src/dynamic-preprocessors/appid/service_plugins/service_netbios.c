@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@
 #define NBNS_OPCODE_REFRESHALT      9
 #define NBNS_OPCODE_MHREGISTRATION 15
 
-#define NBSS_COUNT_THRESHOLD 4
+#define NBSS_COUNT_THRESHOLD 2
 
 #define NBNS_REPLYCODE_MAX  7
 
@@ -942,7 +942,7 @@ static int nbss_validate(ServiceValidationArgs* args)
                 }
                 else if (tmp >= 4 && nd->length >= 4 &&
                          !(*((uint32_t *)data)) &&
-                         !dcerpc_validate(data+4, ((int)min(tmp, nd->length)) - 4) > 0)
+                         dcerpc_validate(data+4, ((int)min(tmp, nd->length)) - 4) > 0)
                 {
                     nd->serviceAppId = APP_ID_DCE_RPC;
                     nd->miscAppId = APP_ID_NETBIOS_SSN;

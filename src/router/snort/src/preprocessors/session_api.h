@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * ** AUTHOR: d mcpherson
  * **
@@ -60,7 +60,7 @@
 #define STREAM_DEFAULT_MAX_ICMP_SESSIONS 65536 /* 64k ICMP sessions by default */
 #define STREAM_DEFAULT_MAX_IP_SESSIONS   16384 /* 16k IP sessions by default */
 #define STREAM_DEFAULT_TCP_CACHE_PRUNING_TIMEOUT    30            /*  30 seconds */
-#define STREAM_DEFAULT_TCP_CACHE_NOMINAL_TIMEOUT    ( 60 * 60 )   /*  1 hour */
+#define STREAM_DEFAULT_TCP_CACHE_NOMINAL_TIMEOUT    ( 60 * 60 )   /*  60 minutes */
 #define STREAM_DEFAULT_UDP_CACHE_PRUNING_TIMEOUT    30            /*  30 seconds */
 #define STREAM_DEFAULT_UDP_CACHE_NOMINAL_TIMEOUT    ( 3 * 60 )    /*  3 minutes */
 #define STREAM_MAX_CACHE_TIMEOUT                    ( 12 * 60 * 60 )  /*  12 hours */
@@ -68,6 +68,7 @@
 #define STREAM_MAX_PRUNE_LOG_MAX     STREAM_RIDICULOUS_HI_MEMCAP  /* 1GB packet data stored */
 #define STREAM_DELAY_SESSION_DELETION true   /* set if session deletion to be delayed */
 #define STREAM_DELAY_TIMEOUT_AFTER_CONNECTION_ENDED   (3 * 60)    /*  3 minutes */
+#define STREAM_DELAY_SCB_DELETION                      1          /* 1 second */
 
 #define STREAM_EXPECTED_CHANNEL_TIMEOUT 300
 
@@ -135,7 +136,7 @@
 // HA Session flags helper macros
 #define HA_IGNORED_SESSION_FLAGS   ( SSNFLAG_COUNTED_INITIALIZE | SSNFLAG_COUNTED_ESTABLISH | \
                                      SSNFLAG_COUNTED_CLOSING | SSNFLAG_LOGGED_QUEUE_FULL)
-#define HA_CRITICAL_SESSION_FLAGS  ( SSNFLAG_DROP_CLIENT | SSNFLAG_DROP_SERVER | SSNFLAG_RESET )
+
 #define HA_TCP_MAJOR_SESSION_FLAGS ( SSNFLAG_ESTABLISHED )
 
 #define UNKNOWN_PORT 0
@@ -154,16 +155,24 @@
 typedef struct _StreamSessionKey
 {
 /* XXX If this data structure changes size, HashKeyCmp must be updated! */
-    uint32_t   ip_l[4]; /* Low IP */
-    uint32_t   ip_h[4]; /* High IP */
-    uint16_t   port_l; /* Low Port - 0 if ICMP */
-    uint16_t   port_h; /* High Port - 0 if ICMP */
-    uint16_t   vlan_tag;
-    uint8_t    protocol;
-    char       pad;
-    uint32_t   mplsLabel; /* MPLS label */
-    uint16_t   addressSpaceId;
-    uint16_t   addressSpaceIdPad1;
+    uint32_t  ip_l[4]; /* Low IP */
+    uint32_t  ip_h[4]; /* High IP */
+    uint16_t  port_l; /* Low Port - 0 if ICMP */
+    uint16_t  port_h; /* High Port - 0 if ICMP */
+    uint16_t  vlan_tag;
+    uint8_t   protocol;
+    char      pad;
+    uint32_t  mplsLabel; /* MPLS label */
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+    uint16_t  addressSpaceId_l; /* Low ASID */      
+    uint16_t  addressSpaceId_h; /* Higher ASID */     
+#else
+    uint16_t  addressSpaceId;
+    uint16_t  addressSpaceIdPad1;
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+    uint32_t  carrierId;
+#endif
 /* XXX If this data structure changes size, HashKeyCmp must be updated! */
 } StreamSessionKey;
 
@@ -219,6 +228,8 @@ typedef enum {
 typedef uint32_t ( *StreamHAProducerFunc )( void *ssnptr, uint8_t *buf );
 typedef int ( *StreamHAConsumerFunc )( void *ssnptr, const uint8_t *data, uint8_t length );
 #endif
+
+extern uint32_t HA_CRITICAL_SESSION_FLAGS;
 
 // Protocol types for creating session cache
 #define SESSION_PROTO_TCP 0x00
@@ -285,7 +296,16 @@ typedef struct _session_api
       *   Session Key
       */
      int (*get_session_key_by_ip_port)(sfaddr_t*, uint16_t, sfaddr_t*, uint16_t, char, uint16_t,
-                                       uint32_t, uint16_t, SessionKey *);
+                                       uint32_t,
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+                                       uint16_t, uint16_t,
+#else
+                                       uint16_t, 
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+                                       uint32_t,
+#endif
+                                       SessionKey *);
 
      /* Lookup by session key and return Session Control Block
       *
@@ -295,6 +315,14 @@ typedef struct _session_api
       *
       */
      void *(*get_session_by_key)(struct _SessionCache*, const SessionKey *);
+
+     /* Lookup by session key and return Session Control Block - relys on the SessionKey to determine which cache
+      *
+      * Parameters
+      *   Session Key
+      *
+      */
+     void *(*get_session_handle)(const SessionKey *);
 
      /* Create a new session
       *
@@ -327,8 +355,9 @@ typedef struct _session_api
       *   Session cache (protocol specific)
       *   Session Control Block
       *   Reason
+      *   Delete sycnhronous
       */
-     int (*delete_session)(struct _SessionCache*, void *, char *);
+     int (*delete_session)(struct _SessionCache*, void *, char *, bool);
 
       /* Delete a session but without providing the session cache.
       *
@@ -812,7 +841,16 @@ typedef struct _session_api
      *     Stream session pointer
      */
     void *(*get_session_ptr_from_ip_port)(sfaddr_t*, uint16_t, sfaddr_t*, uint16_t, char,
-                                          uint16_t, uint32_t, uint16_t);
+                                          uint16_t, uint32_t,
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+                                          uint16_t, uint16_t
+#else
+                                          uint16_t
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+                                          , uint32_t
+#endif 
+                                          );
 
     /** Retrieve the session key given a stream session pointer.
      *
@@ -864,8 +902,16 @@ typedef struct _session_api
      * Returns
      *     Application Data reference (pointer)
      */
-    void *(*get_application_data_from_ip_port)(sfaddr_t*, uint16_t, sfaddr_t*, uint16_t, char,
-                                               uint16_t, uint32_t, uint16_t, uint32_t);
+    void *(*get_application_data_from_ip_port)(sfaddr_t*, uint16_t, sfaddr_t*, uint16_t, 
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+                                               uint16_t, uint16_t, 
+#else
+                                               uint16_t,
+#endif      
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+                                               uint32_t,
+#endif                                       
+                                               char, uint16_t, uint32_t, uint32_t);
 
     void (*disable_preproc_for_session)( void *, uint32_t );
     void (*enable_preproc_for_port)( struct _SnortConfig *, uint32_t, uint32_t, uint16_t );

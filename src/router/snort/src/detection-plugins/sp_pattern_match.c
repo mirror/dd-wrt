@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -584,14 +584,11 @@ static void PayloadSearchOffset(struct _SnortConfig *sc, char *data, OptTreeNode
     }
     else
     {
-        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
-              pmd->offset_var= BYTE_MATH_VAR_INDEX;
-        else
+        pmd->offset_var = find_value(data);
+        if (pmd->offset_var == BYTE_EXTRACT_NO_VAR)
         {
-            pmd->offset_var = GetVarByName(data);
-            if (pmd->offset_var == BYTE_EXTRACT_NO_VAR)
-                  ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "offset", data);
-       }
+            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "offset", data);
+        }
     }
 
     DEBUG_WRAP(DebugMessage(DEBUG_PARSER, "Pattern offset = %d\n",
@@ -621,13 +618,10 @@ static void PayloadSearchDepth(struct _SnortConfig *sc, char *data, OptTreeNode 
     }
     else
     {
-        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
-              pmd->depth_var= BYTE_MATH_VAR_INDEX;
-        else
+        pmd->depth_var = find_value(data);
+        if (pmd->depth_var == BYTE_EXTRACT_NO_VAR)
         {
-           pmd->depth_var = GetVarByName(data);
-           if (pmd->depth_var == BYTE_EXTRACT_NO_VAR)
-              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "depth", data);
+            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "depth", data);
         }
     }
 
@@ -651,13 +645,10 @@ static void PayloadSearchDistance(struct _SnortConfig *sc, char *data, OptTreeNo
     }
     else
     {
-        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
-              pmd->distance_var= BYTE_MATH_VAR_INDEX;
-        else
+        pmd->distance_var = find_value(data);
+        if (pmd->distance_var == BYTE_EXTRACT_NO_VAR)
         {
-           pmd->distance_var = GetVarByName(data);
-           if (pmd->distance_var == BYTE_EXTRACT_NO_VAR)
-              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "distance", data);
+            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "distance", data);
         }
     }
 
@@ -691,13 +682,10 @@ static void PayloadSearchWithin(struct _SnortConfig *sc, char *data, OptTreeNode
     }
     else
     {
-        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
-              pmd->within_var= BYTE_MATH_VAR_INDEX;
-        else
+        pmd->within_var = find_value(data);
+        if (pmd->within_var == BYTE_EXTRACT_NO_VAR)
         {
-           pmd->within_var = GetVarByName(data);
-           if (pmd->within_var == BYTE_EXTRACT_NO_VAR)
-              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "within", data);
+            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "within", data);
         }
     }
 
@@ -2061,28 +2049,34 @@ static int uniSearchHash(const char *data, int dlen, PatternMatchData *pmd)
     /* Get byte_math/byte_extract variables */
     if (pmd->offset_var >= 0 )
     {
-        if(pmd->offset_var == BYTE_MATH_VAR_INDEX )
-             pmd->offset = (int32_t) bytemath_variable;
-        else
+        if(pmd->offset_var == BYTE_MATH_VAR_INDEX)
         {
-            if (pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
-            {
-               GetByteExtractValue(&extract_offset, pmd->offset_var);
-               pmd->offset = (int32_t) extract_offset;
-            }
+            pmd->offset = (int32_t) bytemath_variable;
+        }
+        else if(pmd->offset_var == COMMON_VAR_INDEX)
+        {
+            pmd->offset = (int32_t) common_var;
+        }
+        else if (pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_offset, pmd->offset_var);
+            pmd->offset = (int32_t) extract_offset;
         }
     }
     if (pmd->distance_var >= 0 )
     {
-        if(pmd->distance_var == BYTE_MATH_VAR_INDEX )
-             pmd->distance = (int32_t) bytemath_variable;
-        else
+        if(pmd->distance_var == BYTE_MATH_VAR_INDEX)
         {
-            if (pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
-            {
-               GetByteExtractValue(&extract_distance, pmd->distance_var);
-               pmd->distance = (int32_t) extract_distance;
-            }
+            pmd->distance = (int32_t) bytemath_variable;
+        }
+        else if(pmd->distance_var == COMMON_VAR_INDEX)
+        {
+            pmd->distance = (int32_t) common_var;
+        }
+        else if (pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_distance, pmd->distance_var);
+            pmd->distance = (int32_t) extract_distance;
         }
     }
 
@@ -2276,56 +2270,68 @@ static int uniSearchReal(const char *data, int dlen, PatternMatchData *pmd, int 
     }
 
     /* Get byte_math/byte_extract variables */
-   if (pmd->offset_var >= 0 )
+   if (pmd->offset_var >= 0)
    {
-        if(pmd->offset_var == BYTE_MATH_VAR_INDEX )
-             pmd->offset = (int32_t) bytemath_variable;
-        else
+        if(pmd->offset_var == BYTE_MATH_VAR_INDEX)
         {
-            if (pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
-            {
-               GetByteExtractValue(&extract_offset, pmd->offset_var);
-               pmd->offset = (int32_t) extract_offset;
-            }
+            pmd->offset = (int32_t) bytemath_variable;
+        }
+        else if(pmd->offset_var == COMMON_VAR_INDEX)
+        {
+            pmd->offset = (int32_t) common_var;
+        }
+        else if (pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_offset, pmd->offset_var);
+            pmd->offset = (int32_t) extract_offset;
         }
     }
-    if (pmd->depth_var >= 0 )
+    if (pmd->depth_var >= 0)
     {
-        if(pmd->depth_var == BYTE_MATH_VAR_INDEX )
-             pmd->depth = (int32_t) bytemath_variable;
-        else
+        if(pmd->depth_var == BYTE_MATH_VAR_INDEX)
         {
-            if (pmd->depth_var < NUM_BYTE_EXTRACT_VARS)
-            {
-               GetByteExtractValue(&extract_depth, pmd->depth_var);
-               pmd->depth = (int32_t) extract_depth;
-            }
+            pmd->depth = (int32_t) bytemath_variable;
+        }
+        else if(pmd->depth_var == COMMON_VAR_INDEX)
+        {
+            pmd->depth = (int32_t) common_var;
+        }
+        else if (pmd->depth_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_depth, pmd->depth_var);
+            pmd->depth = (int32_t) extract_depth;
         }
     }
-    if (pmd->distance_var >= 0 )
+    if (pmd->distance_var >= 0)
     {
-        if(pmd->distance_var == BYTE_MATH_VAR_INDEX )
-             pmd->distance = (int32_t) bytemath_variable;
-        else
+        if(pmd->distance_var == BYTE_MATH_VAR_INDEX)
+        { 
+            pmd->distance = (int32_t) bytemath_variable;
+        }
+        else if(pmd->distance == COMMON_VAR_INDEX)
         {
-            if (pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
-            {
-               GetByteExtractValue(&extract_distance, pmd->distance_var);
-               pmd->distance = (int32_t) extract_distance;
-            }
+            pmd->distance = (int32_t) common_var;
+        }
+        else if (pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_distance, pmd->distance_var);
+            pmd->distance = (int32_t) extract_distance;
         }
     }
-    if (pmd->within_var >= 0 )
+    if (pmd->within_var >= 0)
     {
-        if(pmd->within_var == BYTE_MATH_VAR_INDEX )
-             pmd->within = (int32_t) bytemath_variable;
-        else
+        if(pmd->within_var == BYTE_MATH_VAR_INDEX)
         {
-            if (pmd->within_var < NUM_BYTE_EXTRACT_VARS)
-            {
-               GetByteExtractValue(&extract_within, pmd->within_var);
-               pmd->within = (int32_t) extract_within;
-            }
+            pmd->within = (int32_t) bytemath_variable;
+        }
+        else if(pmd->within_var == COMMON_VAR_INDEX)
+        {
+            pmd->within = (int32_t) common_var;
+        }
+        else if (pmd->within_var < NUM_BYTE_EXTRACT_VARS)
+        {
+            GetByteExtractValue(&extract_within, pmd->within_var);
+            pmd->within = (int32_t) extract_within;
         }
     }
 
@@ -2428,7 +2434,10 @@ static int uniSearchReal(const char *data, int dlen, PatternMatchData *pmd, int 
     // case where the match is inverted and there is at least some data.
     if ((int)pmd->pattern_size > depth)
     {
-        if (pmd->exception_flag && (depth >= 0))
+        // The condition ((char *)doe_ptr == end_ptr) is for the corner case,
+        // where the pattern match is exactly at the end of the payload and it
+        // is a negated content match.
+        if (pmd->exception_flag && (((char *)doe_ptr == end_ptr) || depth > 0))
             return 0;
 
         return -1;

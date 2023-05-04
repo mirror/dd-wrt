@@ -105,6 +105,11 @@ EXTRA_DIST= \
 ./WIN32-Libraries/wpcap.lib \
 ./WIN32-Libraries/zlib.lib \
 ./WIN32-Libraries/zlib1.lib \
+../win64/WIN64-Libraries/Packet.lib \
+../win64/WIN64-Libraries/libdnet/dnet.lib \
+../win64/WIN64-Libraries/pcre.lib \
+../win64/WIN64-Libraries/wpcap.lib \
+../win64/WIN64-Libraries/zlib.lib \
 ./WIN32-Prj/build_releases.bat \
 ./WIN32-Prj/LibnetNT.dll \
 ./WIN32-Prj/pcre.dll \
@@ -122,6 +127,14 @@ EXTRA_DIST= \
 ./WIN32-Prj/build_all.dsp \
 ./WIN32-Prj/sf_engine.dsp \
 ./WIN32-Prj/sf_engine_initialize.dsp \
-./WIN32-Prj/snort.dsw
+./WIN32-Prj/snort.dsw \
+./WIN32-Prj/build_all.vcxproj \
+./WIN32-Prj/sf_engine.vcxproj \
+./WIN32-Prj/sf_engine_initialize.vcxproj \
+./WIN32-Prj/snort.vcxproj \
+./WIN32-Prj/snort_initialize.vcxproj \
+./WIN32-Prj/snort_installer_x64.nsi \
+./WIN32-Prj/snort_x64.dsw
+
 
 noinst_LIBRARIES =

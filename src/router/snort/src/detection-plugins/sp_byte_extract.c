@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2010-2013 Sourcefire, Inc.
  ** Author: Ryan Jordan <ryan.jordan@sourcefire.com>
  **
@@ -363,15 +363,9 @@ static int ByteExtractParse(ByteExtractData *data, char *args)
     /* third: variable name */
     if (token)
     {
-         if( bytemath_variable_name && (strcmp(bytemath_variable_name, token) == 0) )
-         {
-              ParseError("byte_extract : variable name is already used in byte_math rule \n");
-         }
-         else
-             data->name = SnortStrdup(token);
-
-         isvalidstr(token,"byte_extract");
-         token = strtok_r(NULL, ",", &saveptr);
+        data->name = SnortStrdup(token);
+        isvalidstr(token,"byte_extract");
+        token = strtok_r(NULL, ",", &saveptr);
     }
 
     /* optional arguments */
@@ -785,6 +779,7 @@ int DetectByteExtract(void *option_data, Packet *p)
 
     /* this rule option always "matches" if the read is performed correctly */
     PREPROC_PROFILE_END(byteExtractPerfStats);
+    common_var = *value;
     return DETECTION_OPTION_MATCH;
 }
 

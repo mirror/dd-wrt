@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -890,7 +890,8 @@ static void Unified2LogAlert(Packet *p, const char *msg, void *arg, Event *event
             p->ssnptr, p, event->sig_generator, event->sig_id,
             event->event_id, event->ref_time.tv_sec);
 
-    if ( p->xtradata_mask )
+    if ( p->xtradata_mask && !(p->packet_flags & PKT_STREAM_INSERT) 
+        && !(p->packet_flags & PKT_REBUILT_STREAM) )
     {
         LogFunction *log_funcs;
         uint32_t max_count = stream_api->get_xtra_data_map(&log_funcs);
@@ -1024,6 +1025,17 @@ static void _Unified2LogPacketAlert(Packet *p, const char *msg,
     }
 
     Unified2Write(write_pkt_buffer, write_len, config);
+   
+    if ( p->xtradata_mask && (Active_GetDisposition() >= ACTIVE_DROP) )
+    {
+        LogFunction *log_funcs;
+        uint32_t max_count = stream_api->get_xtra_data_map(&log_funcs);
+
+        if ( max_count > 0 )
+            AlertExtraData(
+                p->ssnptr, config, log_funcs, max_count, p->xtradata_mask,
+                event->event_id, event->ref_time.tv_sec);
+    }
 }
 
 /**

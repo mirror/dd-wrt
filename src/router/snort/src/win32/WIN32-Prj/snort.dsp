@@ -1443,6 +1443,14 @@ SOURCE="..\..\dynamic-plugins\sf_dynamic_preprocessor.h"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\dynamic-plugins\sf_dynamic_decompression.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\dynamic-plugins\sf_dynamic_decompression.h"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\dynamic-plugins\sp_dynamic.c"
 # End Source File
 # Begin Source File

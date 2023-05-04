@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -160,6 +160,7 @@ static DCE2_SsnData * DCE2_NewSession(SFSnortPacket *p, tSfPolicyId policy_id)
 #endif
 
     dce2_stats.sessions++;
+    dce2_stats.sessions_active++;
     DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Created (%p)\n", (void *)sd));
 
     sd->trans = trans;
@@ -1350,5 +1351,6 @@ static void DCE2_SsnFree(void *data)
         }
     }
 #endif
+    dce2_stats.sessions_active--;
 }
 

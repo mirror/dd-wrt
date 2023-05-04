@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -56,9 +56,9 @@
 #define ALERT(x,y) { _dpd.alertAdd(GENERATOR_SPP_REPUTATION, x, 1, 0, 3, y, 0 ); }
 
 #define REPUTATION_EVENT_BLACKLIST       1
-#define REPUTATION_EVENT_BLACKLIST_STR     "(spp_reputation) packets blacklisted"
+#define REPUTATION_EVENT_BLACKLIST_STR     "(spp_reputation) packets block-list"
 #define REPUTATION_EVENT_WHITELIST       2
-#define REPUTATION_EVENT_WHITELIST_STR     "(spp_reputation) packets whitelisted"
+#define REPUTATION_EVENT_WHITELIST_STR     "(spp_reputation) packets do-not-block-list"
 #define REPUTATION_EVENT_MONITOR         3
 #define REPUTATION_EVENT_MONITOR_STR       "(spp_reputation) packets monitored"
 

@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2005-2013 Sourcefire, Inc.
  ** AUTHOR: Steven Sturges
  **
@@ -99,6 +99,9 @@ typedef struct _ExpectHashKey
     uint16_t port1;
     uint16_t port2;
     uint32_t protocol;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+    uint32_t carrierid;
+#endif
 } ExpectHashKey;
 
 typedef struct _ExpectNode
@@ -258,6 +261,9 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, sfaddr_t* cli
         hashKey.port1 = cliPort;
         sfaddr_copy_to_raw(&hashKey.ip2, srvIP);
         hashKey.port2 = srvPort;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+        hashKey.carrierid = GET_OUTER_IPH_PROTOID(ctrlPkt, pkth); 
+#endif
         reversed_key = 0;
     }
     else
@@ -266,6 +272,9 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, sfaddr_t* cli
         hashKey.port1 = srvPort;
         sfaddr_copy_to_raw(&hashKey.ip2, cliIP);
         hashKey.port2 = cliPort;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+        hashKey.carrierid = GET_OUTER_IPH_PROTOID(ctrlPkt, pkth); 
+#endif
         reversed_key = 1;
         DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "reversed\n"););
     }
@@ -609,8 +618,13 @@ int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node)
 
         sfip_ntop(srcIP, src_ip, sizeof(src_ip));
         sfip_ntop(dstIP, dst_ip, sizeof(dst_ip));
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+        DebugMessage(DEBUG_STREAM, "Checking isExpected %s-%u -> %s-%u %u %u\n", src_ip,
+                p->sp, dst_ip, p->dp, GET_IPH_PROTO(p), GET_OUTER_IPH_PROTOID(p, pkth));
+#else
         DebugMessage(DEBUG_STREAM, "Checking isExpected %s-%u -> %s-%u %u\n", src_ip,
                 p->sp, dst_ip, p->dp, GET_IPH_PROTO(p));
+#endif
     }
 #endif
 
@@ -623,6 +637,9 @@ int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node)
         hashKey.port2 = 0;
         port1 = 0;
         port2 = p->sp;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+        hashKey.carrierid = GET_OUTER_IPH_PROTOID(p, pkth);
+#endif
         reversed_key = 1;
         DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "reversed\n"););
     }
@@ -634,6 +651,9 @@ int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node)
         hashKey.port2 = p->dp;
         port1 = p->sp;
         port2 = 0;
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+        hashKey.carrierid = GET_OUTER_IPH_PROTOID(p, pkth);
+#endif
         reversed_key = 0;
     }
     hashKey.protocol = (uint32_t)GET_IPH_PROTO(p);
@@ -744,6 +764,7 @@ char StreamExpectProcessNode(Packet *p, SessionControlBlock* lws, SFXHASH_NODE *
         lws->ha_flags |= HA_FLAG_MODIFIED;
 #endif
         session_api->set_application_protocol_id( lws, node->appId );
+        p->application_protocol_ordinal = node->appId;
     }
 #endif
 

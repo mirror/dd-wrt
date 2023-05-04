@@ -1,7 +1,7 @@
 /*
  * ftpp_si.h
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -137,6 +137,7 @@ typedef struct s_TELNET_SESSION
 typedef struct s_FTP_SESSION
 {
     FTP_TELNET_SESSION ft_ssn;
+    tSfPolicyId policy_id;
 
     /* The client construct contains all the info associated with a
      * client request. */
@@ -153,7 +154,6 @@ typedef struct s_FTP_SESSION
     FTP_SERVER_PROTO_CONF *server_conf;
 
     /* The global configuration for this session */
-    tSfPolicyId policy_id;
     tSfPolicyUserContextId global_conf;
 
     /* The data channel info */
@@ -165,38 +165,30 @@ typedef struct s_FTP_SESSION
     sfaddr_t      serverIP;
     uint16_t serverPort;
     uint32_t ftp_cmd_pipe_index;
+    uint32_t rest_cmd_offset;
+    uint16_t control_clientPort;
+    uint16_t control_serverPort;
 
     /* A file is being transfered on ftp-data channel */
     char *filename;
-    char *path;
     int file_xfer_info; /* -1: ignore, 0: unknown, >0: filename length */
     bool data_xfer_dir;
 
     /* Command/data channel encryption */
     bool encr_state_chello;
+    unsigned char flags;
     int encr_state;
     uint32_t flow_id;
-    uint32_t path_hash;
 
     /* Alertable event list */
     FTP_EVENTS event_list;
     void *datassn;
-    char *cwd_path;
     sfaddr_t      control_clientIP;
     sfaddr_t      control_serverIP;
-    uint16_t control_clientPort;
-    uint16_t control_serverPort;
-    uint16_t path_len;
-    uint16_t path_memory_alloc;
-    uint16_t cwd_memory_alloc;
-    unsigned char flags;
 
 } FTP_SESSION;
 
-#define FTP_FLG_MALWARE  (1<<0)
 #define FTP_FLG_MALWARE_ENABLED (1<<1)
-#define FTP_FLG_MALWARE_CHECK   (1<<2)
-
 
 #ifdef TARGET_BASED
 

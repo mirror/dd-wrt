@@ -47,7 +47,9 @@ sip_buffer_dump.h
 endif
 
 EXTRA_DIST = \
+sf_sip.vcxproj \
 sf_sip.dsp
+
 
 all-local: $(LTLIBRARIES)
 	$(MAKE) DESTDIR=`pwd`/../build install-dynamicpreprocessorLTLIBRARIES

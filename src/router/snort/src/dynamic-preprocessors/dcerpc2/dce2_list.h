@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -76,10 +76,10 @@ typedef struct _DCE2_List
     DCE2_ListType type;
     DCE2_MemType mtype;
     uint32_t num_nodes;
+    int flags;
     DCE2_ListKeyCompare compare;
     DCE2_ListDataFree data_free;
     DCE2_ListKeyFree key_free;
-    int flags;
     struct _DCE2_ListNode *head;
     struct _DCE2_ListNode *tail;
     struct _DCE2_ListNode *current;
@@ -141,10 +141,10 @@ typedef struct _DCE2_CQueue
     DCE2_MemType mtype;
     DCE2_CQueueDataFree data_free;
     int size;
+    int cur_idx;
     void **queue;
     int head_idx;
     int tail_idx;
-    int cur_idx;
 
 } DCE2_CQueue;
 
