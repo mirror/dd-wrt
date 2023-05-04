@@ -7,7 +7,7 @@ SNORT_VERSION=2.9.20.0
 
 
 PATH:=$(PATH):/opt/intel/compiler70/ia32/bin
-CC=$(shell if PATH=$(PATH) which icc > /dev/null 2>&1; then echo icc; else echo gcc; fi)
+#CC=$(shell if PATH=$(PATH) which icc > /dev/null 2>&1; then echo icc; else echo gcc; fi)
 
 # RANDSTRING=$(shell perl -e 'for($$i=0;$$i<128;$$i++){$$_ .= unpack("h*",chr(int(rand(256))));} print')
 # For now, a static rand string is good enough, since we are not using it yet.
@@ -176,7 +176,7 @@ ifneq (${SEEN}, 1)
 	@echo "Unsupported snort version - ${SNORT_VERSION}"
 	@false
 endif
-	@$(CC) -c $(MYCFLAGS) -o $@.o $@.c
+	$(CC) -c $(MYCFLAGS) -o $@.o $@.c
 
 $(cats):
 	@echo -n "generating $@ ... "
@@ -185,12 +185,12 @@ $(cats):
 
 $(libs): $(cats) $(utils) $(files)
 	@echo -n "building $@ ... "
-	@$(CC) -c $(MYCFLAGS) -D DETECTION_LIB_NAME=\"$@\" -o $@.o $@.c
-	@$(CC) -c $(MYCFLAGS) -D DETECTION_LIB_NAME=\"$@\" -o _meta.o _meta.c
-	@$(CC) $@_*.o _meta.o $@.o so-util_base.o ${MYUTILS} -o $@.so $(LD_FLAGS)
-	@$(SNORT) -q --dynamic-engine-lib=$(ENGINE) \
-		--dynamic-detection-lib=./$@.so \
-		--dump-dynamic-rules=./
+	$(CC) -c $(MYCFLAGS) -D DETECTION_LIB_NAME=\"$@\" -o $@.o $@.c
+	$(CC) -c $(MYCFLAGS) -D DETECTION_LIB_NAME=\"$@\" -o _meta.o _meta.c
+	$(CC) $@_*.o _meta.o $@.o so-util_base.o ${MYUTILS} -o $@.so $(LD_FLAGS)
+#	@$(SNORT) -q --dynamic-engine-lib=$(ENGINE) \
+#		--dynamic-detection-lib=./$@.so \
+#		--dump-dynamic-rules=./
 	@echo done
 	-@rm _meta.o
 
