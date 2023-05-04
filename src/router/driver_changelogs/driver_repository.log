@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r7271 | brainslayer | 2023-05-04 20:04:13 +0600 (Thu, 04 May 2023) | 1 line
+
+switch back to previous toolchain for qca firmwares
+------------------------------------------------------------------------
+r7270 | brainslayer | 2023-05-04 20:01:11 +0600 (Thu, 04 May 2023) | 1 line
+
+switch back to previous toolchain for qca firmwares
+------------------------------------------------------------------------
 r7269 | brainslayer | 2023-05-04 12:39:46 +0600 (Thu, 04 May 2023) | 1 line
 
 readd with correctoins
