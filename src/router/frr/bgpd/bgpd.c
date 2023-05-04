@@ -1492,9 +1492,11 @@ void peer_xfer_config(struct peer *peer_dst, struct peer *peer_src)
 	peer_dst->v_delayopen = peer_src->v_delayopen;
 
 	/* password apply */
-	if (peer_src->password && !peer_dst->password)
+	if (peer_src->password) {
+		XFREE(MTYPE_PEER_PASSWORD, peer_dst->password);
 		peer_dst->password =
 			XSTRDUP(MTYPE_PEER_PASSWORD, peer_src->password);
+	}
 
 	FOREACH_AFI_SAFI (afi, safi) {
 		peer_dst->afc[afi][safi] = peer_src->afc[afi][safi];
@@ -3799,6 +3801,23 @@ int bgp_delete(struct bgp *bgp)
 #ifdef ENABLE_BGP_VNC
 	rfapi_delete(bgp);
 #endif
+
+	/* Free memory allocated with aggregate address configuration. */
+	FOREACH_AFI_SAFI (afi, safi) {
+		struct bgp_aggregate *aggregate = NULL;
+
+		for (struct bgp_dest *dest =
+			     bgp_table_top(bgp->aggregate[afi][safi]);
+		     dest; dest = bgp_route_next(dest)) {
+			aggregate = bgp_dest_get_bgp_aggregate_info(dest);
+			if (aggregate == NULL)
+				continue;
+
+			bgp_dest_set_bgp_aggregate_info(dest, NULL);
+			bgp_free_aggregate_info(aggregate);
+		}
+	}
+
 	bgp_cleanup_routes(bgp);
 
 	for (afi = 0; afi < AFI_MAX; ++afi) {
@@ -5601,20 +5620,9 @@ void peer_on_policy_change(struct peer *peer, afi_t afi, safi_t safi,
 			return;
 
 		if (CHECK_FLAG(peer->cap, PEER_CAP_REFRESH_OLD_RCV) ||
-		    CHECK_FLAG(peer->cap, PEER_CAP_REFRESH_NEW_RCV)) {
-			if (CHECK_FLAG(peer->af_cap[afi][safi],
-				       PEER_CAP_ORF_PREFIX_SM_ADV) &&
-			    (CHECK_FLAG(peer->af_cap[afi][safi],
-					PEER_CAP_ORF_PREFIX_RM_RCV) ||
-			     CHECK_FLAG(peer->af_cap[afi][safi],
-					PEER_CAP_ORF_PREFIX_RM_OLD_RCV)))
-				peer_clear_soft(peer, afi, safi,
-						BGP_CLEAR_SOFT_IN_ORF_PREFIX);
-			else
-				bgp_route_refresh_send(
-					peer, afi, safi, 0, 0, 0,
-					BGP_ROUTE_REFRESH_NORMAL);
-		}
+		    CHECK_FLAG(peer->cap, PEER_CAP_REFRESH_NEW_RCV))
+			bgp_route_refresh_send(peer, afi, safi, 0, 0, 0,
+					       BGP_ROUTE_REFRESH_NORMAL);
 	}
 }
 
@@ -6844,11 +6852,18 @@ static void peer_prefix_list_update(struct prefix_list *plist)
 
 				/* If we touch prefix-list, we need to process
 				 * new updates. This is important for ORF to
-				 * work correctly as well.
+				 * work correctly.
 				 */
-				if (peer->afc_nego[afi][safi])
-					peer_on_policy_change(peer, afi, safi,
-							      0);
+				if (CHECK_FLAG(peer->af_cap[afi][safi],
+					       PEER_CAP_ORF_PREFIX_SM_ADV) &&
+				    (CHECK_FLAG(peer->af_cap[afi][safi],
+						PEER_CAP_ORF_PREFIX_RM_RCV) ||
+				     CHECK_FLAG(
+					     peer->af_cap[afi][safi],
+					     PEER_CAP_ORF_PREFIX_RM_OLD_RCV)))
+					peer_clear_soft(
+						peer, afi, safi,
+						BGP_CLEAR_SOFT_IN_ORF_PREFIX);
 			}
 		}
 		for (ALL_LIST_ELEMENTS(bgp->group, node, nnode, group)) {
