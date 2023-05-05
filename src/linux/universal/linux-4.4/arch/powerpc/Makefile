@@ -166,7 +166,7 @@ ifeq ($(CONFIG_PPC32),y)
 ifeq ($(CONFIG_PPC_E500MC),y)
 CFLAGS-y += $(call cc-option,-mcpu=e500mc,-mcpu=powerpc)
 else
-CFLAGS-$(CONFIG_E500) += $(call cc-option,-mcpu=8540 -msoft-float,-mcpu=powerpc)
+CFLAGS-$(CONFIG_E500) += $(call cc-option,-mcpu=8548 -msoft-float,-mcpu=powerpc)
 endif
 endif
 
