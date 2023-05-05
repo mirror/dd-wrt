@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,7 +54,7 @@ extern void ParsePattern(char *, OptTreeNode *, int);
 extern void ParseProtectedPattern(char *, OptTreeNode *, int);
 extern void *pcreCompile(const char *pattern, int options, const char **errptr,
     int *erroffset, const unsigned char *tableptr);
-extern void *pcreStudy(const void *code, int options, const char **errptr);
+extern void *pcreStudy(struct _SnortConfig *sc, const void *code, int options, const char **errptr);
 
 extern int SnortPcre(void *option_data, Packet *p);
 extern int FlowBitsCheck(void *option_data, Packet *p);
@@ -541,7 +541,7 @@ static int ConvertPcreOption(SnortConfig *sc, Rule *rule, int index, OptTreeNode
         return -1;
     }
 
-    pcre_data->pe = pcreStudy(
+    pcre_data->pe = pcreStudy(sc,
         pcre_data->re,
         pcre_info->compile_flags,
         &error

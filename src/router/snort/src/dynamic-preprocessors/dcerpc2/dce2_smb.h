@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,7 @@
 // instead of a string compare.
 #define DCE2_SMB_ID   0xff534d42  /* \xffSMB */
 #define DCE2_SMB2_ID  0xfe534d42  /* \xfeSMB */
+#define DCE2_SMB_ID_SIZE    4
 
 // MS-FSCC Section 2.1.5 - Pathname
 #define DCE2_SMB_MAX_PATH_LEN  32760
@@ -97,6 +98,14 @@ typedef enum _DCE2_SmbFileDirection
 
 } DCE2_SmbFileDirection;
 
+/* This structure is to maintain that we have received a pending veridct in case of upload & we will not delete the trackers*/
+typedef enum _DCE2_SmbRetransmitPending
+{
+   DCE2_SMB_RETRANSMIT_PENDING__UNSET = 0,
+   DCE2_SMB_RETRANSMIT_PENDING__SET
+
+} DCE2_SmbRetransmitPending;
+
 /********************************************************************
  * Structures
  ********************************************************************/
@@ -135,8 +144,8 @@ typedef struct _DCE2_SmbFileTracker
 
     bool is_ipc;
     bool is_smb2;
-    uint8_t *file_name;
     uint16_t file_name_len;
+    uint8_t *file_name;
     union
     {
         struct
@@ -195,13 +204,24 @@ typedef enum _DCE2_SmbVersion
     DCE2_SMB_VERISON_2
 } DCE2_SmbVersion;
 
+
 typedef struct _Smb2Request
 {
     uint64_t message_id;   /* identifies a message uniquely on connection */
-	uint64_t offset;       /* data offset */
-	uint64_t file_id;      /* file id */
-	struct _Smb2Request *next;
-	struct _Smb2Request *previous;
+    uint16_t command;
+    union {
+        struct {
+            uint64_t offset;       /* data offset */
+            uint64_t file_id;      /* file id */
+        }read_req;
+        struct {
+            char *file_name;        /*file name*/
+            uint16_t file_name_len; /*size*/
+            bool durable_reconnect; /*durable reconenct? */
+        }create_req;
+    };
+    struct _Smb2Request *next;
+    struct _Smb2Request *previous;
 } Smb2Request;
 
 typedef struct _DCE2_SmbTransactionTracker
@@ -234,6 +254,7 @@ typedef struct _DCE2_SmbRequestTracker
     // For WriteRaw
     bool writeraw_writethrough;
     uint32_t writeraw_remaining;
+    uint16_t file_name_len;
 
     // For Transaction/Transaction2/NtTransact
     DCE2_SmbTransactionTracker ttracker;
@@ -248,7 +269,6 @@ typedef struct _DCE2_SmbRequestTracker
     // Used for requests to cache data that will ultimately end up in
     // the file tracker upon response.
     uint8_t *file_name;
-    uint16_t file_name_len;
     uint64_t file_size;
     uint64_t file_offset;
     bool sequential_only;
@@ -284,8 +304,6 @@ typedef struct _DCE2_SmbSsnData
     // For tracking requests / responses
     DCE2_SmbRequestTracker rtracker;
     DCE2_Queue *rtrackers;
-    uint16_t max_outstanding_requests;
-    uint16_t outstanding_requests;
 
     // The current pid/mid node for this request/response
     DCE2_SmbRequestTracker *cur_rtracker;
@@ -310,6 +328,9 @@ typedef struct _DCE2_SmbSsnData
 #endif
 
     bool smbfound;
+    bool smbretransmit;
+    uint16_t max_outstanding_requests;
+    uint16_t outstanding_requests;
     // Maximum file depth as returned from file API
     int64_t max_file_depth;
 
@@ -345,7 +366,7 @@ void DCE2_SmbSsnFree(void *);
 #ifdef ACTIVE_RESPONSE
 void DCE2_SmbInitDeletePdu(void);
 #endif
-
+void DCE2_Process_Retransmitted(SFSnortPacket *);
 /*********************************************************************
  * Function: DCE2_SmbAutodetect()
  *

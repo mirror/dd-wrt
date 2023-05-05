@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2010-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -105,15 +105,10 @@ void SetupNormalizer (void)
 
 #define PROTO_BITS (PROTO_BIT__IP|PROTO_BIT__ICMP|PROTO_BIT__TCP)
 
-static inline int ScNapPassiveModeNewConf(SnortConfig* sc)
-{
-    return (((sc->targeted_policies[getParserPolicy(sc)])->nap_policy_mode) == POLICY_MODE__PASSIVE );
-}
-
 static NormalizerContext* Init_GetContext (struct _SnortConfig *sc)
 {
     NormalizerContext* pc = NULL;
-    tSfPolicyId policy_id = getParserPolicy(NULL);
+    tSfPolicyId policy_id = getParserPolicy(sc);
 
     if ( ScNapPassiveModeNewConf(sc) )
         return NULL;
@@ -133,11 +128,14 @@ static NormalizerContext* Init_GetContext (struct _SnortConfig *sc)
     {
         pc = (NormalizerContext* )SnortAlloc(sizeof(NormalizerContext));
         sfPolicyUserDataSetCurrent(base_set, pc);
-
-        AddFuncToPreprocList( sc, Preproc_Execute, PP_NORMALIZE_PRIORITY,  PP_NORMALIZE, PROTO_BITS);
+        if( pc->regFunc != reload)
+        {
+            AddFuncToPreprocList( sc, Preproc_Execute, PP_NORMALIZE_PRIORITY,  PP_NORMALIZE, PROTO_BITS);
+            pc->regFunc = init;
+        }
         session_api->enable_preproc_all_ports( sc, PP_NORMALIZE, PROTO_BITS );          
     }
-    pc->normMode = ScNapInlineTestMode() ? NORM_MODE_WOULDA : NORM_MODE_ON;
+    pc->normMode = ScNapInlineTestModeNewConf(sc) ? NORM_MODE_WOULDA : NORM_MODE_ON;
 
     return pc;
 }
@@ -789,8 +787,12 @@ static NormalizerContext* Reload_GetContext (struct _SnortConfig *sc, void **new
         pc = (NormalizerContext* )SnortAlloc(sizeof(NormalizerContext));
         sfPolicyUserDataSetCurrent(swap_set, pc);
 
-        AddFuncToPreprocList(
-            sc, Preproc_Execute, PP_NORMALIZE_PRIORITY, PP_NORMALIZE, PROTO_BITS);
+        if( pc->regFunc != init)
+        {
+            AddFuncToPreprocList(
+                sc, Preproc_Execute, PP_NORMALIZE_PRIORITY, PP_NORMALIZE, PROTO_BITS);
+            pc->regFunc = reload;
+        }
         session_api->enable_preproc_all_ports( sc, PP_NORMALIZE, PROTO_BITS );          
   
     }

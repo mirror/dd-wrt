@@ -224,11 +224,7 @@ int rule16728eval(void *p) {
         {
             // check if the first AndX request is NOT 0xFF (No further commands)
             // content:"|FF|", offset 28, depth 1, relative;
-#ifndef MISSING_NOT_FLAG_FIX
             if (contentMatch(p, rule16728options[3]->option_u.content, &cursor_normal) > 0)
-#else
-            if (!(contentMatch(p, rule16728options[3]->option_u.content, &cursor_normal) > 0))
-#endif
             {
                 if(getBuffer(sp, CONTENT_BUF_NORMALIZED, &cursor_header, &end_of_payload) <= 0)
                     return RULE_NOMATCH;

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 ** Author: Steven Sturges <ssturges@sourcefire.com>
 **
@@ -55,7 +55,7 @@
 #define PROFILING_RULES ScProfileRules()
 #endif
 
-#define NODE_PROFILE_VARS uint64_t node_ticks_start, node_ticks_end, node_ticks_delta, node_deltas = 0
+#define NODE_PROFILE_VARS uint64_t node_ticks_start = 0, node_ticks_end = 0, node_ticks_delta = 0, node_deltas = 0
 
 #define NODE_PROFILE_START(node) \
     if (PROFILING_RULES) { \

@@ -84,11 +84,41 @@ static RuleReference *rule13958refs[] =
 /* metadata for sid 13958 */
 /* metadata:; */
 
+static RuleMetaData rule13958policy0 =
+{
+   "policy max-detect-ips drop"
+};
+
+static RuleMetaData rule13958service1 =
+{
+   "service ftp-data"
+};
+
+static RuleMetaData rule13958service2 =
+{
+   "service http"
+};
+
+static RuleMetaData rule13958service3 =
+{
+   "service imap"
+};
+
+static RuleMetaData rule13958service4 =
+{
+   "service pop3"
+};
 
 static RuleMetaData *rule13958metadata[] =
 {
+    &rule13958policy0,
+    &rule13958service1,
+    &rule13958service2,
+    &rule13958service3,
+    &rule13958service4,
     NULL
 };
+
 RuleOption *rule13958options[] =
 {
     &rule13958option0,
@@ -101,7 +131,7 @@ Rule rule13958 = {
    /* rule header, akin to => tcp any any -> any any               */{
        IPPROTO_TCP, /* proto */
        "$EXTERNAL_NET", /* SRCIP     */
-       "$HTTP_PORTS", /* SRCPORT   */
+       "$FILE_DATA_PORTS", /* SRCPORT   */
        0, /* DIRECTION */
        "$HOME_NET", /* DSTIP     */
        "any", /* DSTPORT   */
@@ -110,7 +140,7 @@ Rule rule13958 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        13958, /* sigid */
-       9, /* revision */
+       10, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */

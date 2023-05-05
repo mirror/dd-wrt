@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -257,7 +257,7 @@ inprocess:
     return CLIENT_APP_INPROCESS;
 
 done:
-    bit_tracker_client_mod.api->add_app(flowp, APP_ID_BITTORRENT, APP_ID_BITTRACKER_CLIENT, NULL);
+    bit_tracker_client_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_BITTORRENT, APP_ID_BITTRACKER_CLIENT, NULL);
     setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }

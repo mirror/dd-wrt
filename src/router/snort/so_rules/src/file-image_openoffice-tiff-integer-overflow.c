@@ -143,12 +143,17 @@ static RuleMetaData ruleCVE_2007_2834policy2 =
     "policy security-ips drop"
 };
 
+static RuleMetaData ruleCVE_2007_2834policy3 =
+{
+    "policy max-detect-ips drop"
+};
 
 static RuleMetaData *ruleCVE_2007_2834metadata[] =
 {
     &ruleCVE_2007_2834service1,
     &ruleCVE_2007_2834policy1,
     &ruleCVE_2007_2834policy2,
+    &ruleCVE_2007_2834policy3,
     NULL
 };
 
@@ -176,7 +181,7 @@ Rule rule15975 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        15975, /* sigid */
-       5, /* revision */
+       6, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -213,7 +218,7 @@ Rule rule15976 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        15976, /* sigid */
-       5, /* revision */
+       6, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,6 +59,7 @@
 #include "hi_norm.h"
 #include "hi_util.h"
 #include "hi_return_codes.h"
+#include "memory_stats.h"
 
 #include "snort_bounds.h"
 
@@ -140,7 +141,9 @@ int hi_split_header_cookie(HI_SESSION *Session, u_char *header, int *i_header_le
         cookie = cookie->next;
         if (last_cookie && (last_cookie != first_cookie))
         {
-            free(last_cookie);
+            SnortPreprocFree(last_cookie, sizeof(COOKIE_PTR), PP_HTTPINSPECT, 
+                 PP_MEM_CATEGORY_SESSION);
+            hi_stats.mem_used -= sizeof(COOKIE_PTR);
         }
         last_cookie = cookie;
         if (!cookie)

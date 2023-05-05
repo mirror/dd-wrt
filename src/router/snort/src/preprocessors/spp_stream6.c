@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,10 +54,12 @@
 #include "stream_api.h"
 #include "stream_paf.h"
 #include "stream_common.h"
+#include "session_common.h"
 #include "snort_stream_tcp.h"
 #include "snort_stream_udp.h"
 #include "snort_stream_icmp.h"
 #include "snort_stream_ip.h"
+#include "snort_session.h"
 #include "checksum.h"
 #include "mstring.h"
 #include "parser/IpAddrSet.h"
@@ -73,6 +75,9 @@
 #include "sfPolicy.h"
 #include "sp_flowbits.h"
 #include "stream5_ha.h"
+#include "memory_stats.h"
+#include "mempool.h"
+#include "control/sfcontrol_funcs.h"
 
 #ifdef TARGET_BASED
 #include "sftarget_protocol_reference.h"
@@ -87,6 +92,9 @@ extern PreprocStats s5UdpPerfStats;
 extern PreprocStats s5IcmpPerfStats;
 extern PreprocStats s5IpPerfStats;
 #endif
+
+extern SessionCache *proto_session_caches[SESSION_PROTO_MAX];
+extern MemPool sessionFlowMempool;
 
 extern OptTreeNode *otn_tmp;
 
@@ -118,7 +126,7 @@ static bool old_config_freed = false;
 #ifdef MPLS
 static void updateMplsHeaders(Packet *, SessionControlBlock *);
 #endif
-
+int stream_print_mem_stats(FILE *, char *, PreprocMemInfo *);
 static void StreamPolicyInitTcp(struct _SnortConfig *, char *);
 static void StreamPolicyInitUdp(struct _SnortConfig *, char *);
 static void StreamPolicyInitIcmp(struct _SnortConfig *, char *);
@@ -129,6 +137,7 @@ static void StreamResetStats(int, void *);
 static int StreamVerifyConfig(struct _SnortConfig *);
 static void StreamPrintSessionConfig(SessionConfiguration *);
 static void StreamPrintStats(int);
+static void DisplayStreamStatistics (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f);
 static void StreamProcess(Packet *p, void *context);
 static inline int IsEligible(Packet *p);
 #ifdef TARGET_BASED
@@ -191,6 +200,7 @@ static void s5UnsetPortFilterStatus( struct _SnortConfig *, IpProto protocol, ui
 static void setServiceFilterStatus( struct _SnortConfig *sc, int service, int status, tSfPolicyId policyId, int parsing );
 #endif
 static void StreamForceSessionExpiration(void *ssnptr);
+static void StreamForceDeleteSession(void *ssnptr );
 static void registerReassemblyPort( char *network, uint16_t port, int reassembly_direction );
 static void unregisterReassemblyPort( char *network, uint16_t port, int reassembly_direction );
 static unsigned StreamRegisterHandler(Stream_Callback);
@@ -224,6 +234,10 @@ static bool StreamShowRebuiltPackets();
 static bool StreamIsSessionHttp2Upg(void* ssnptr);
 static void StreamSetSessionHttp2Upg(void* ssnptr);
 static int RegisterFTPFlushCallback (FTP_Processor_Flush_Callback cb);
+static void setFtpFilePosition (void *scbptr,bool flush);
+#ifdef HAVE_DAQ_DECRYPTED_SSL
+static int StreamSimulateTcpAck(void *ssnptr, uint8_t dir, uint32_t len);
+#endif
 
 StreamAPI s5api = {
     /* .version = */ STREAM_API_VERSION5,
@@ -268,6 +282,7 @@ StreamAPI s5api = {
     /* .register_reassembly_port = */ registerReassemblyPort,
     /* .register_reassembly_port = */ unregisterReassemblyPort,
     /* .expire_session = */ StreamForceSessionExpiration,
+    /* .force_delete_session = */ StreamForceDeleteSession,    
     /* .register_event_handler = */ StreamRegisterHandler,
     /* .set_event_handler = */ StreamSetHandler,
     /* .set_reset_policy = */ StreamResetPolicy,
@@ -292,12 +307,17 @@ StreamAPI s5api = {
     /* .is_session_http2_upg */ StreamIsSessionHttp2Upg,
     /* .set_session_http2_upg */ StreamSetSessionHttp2Upg,
     /* .get_preproc_flags */ StreamGetPreprocFlags,
-    /* .register_ftp_flush_cb */ RegisterFTPFlushCallback
-
+    /* .register_ftp_flush_cb */ RegisterFTPFlushCallback,
+    /* .set_ftp_file_position */ setFtpFilePosition
+#ifdef HAVE_DAQ_DECRYPTED_SSL
+    ,
+    /* .simulate_tcp_ack_in_peer_stream_tracker = */ StreamSimulateTcpAck
+#endif
 };
 
 void SetupStream6(void)
 {
+    RegisterMemoryStatsFunction(PP_STREAM, stream_print_mem_stats);
 #ifndef SNORT_RELOAD
     RegisterPreprocessor("stream5_tcp", StreamPolicyInitTcp);
     RegisterPreprocessor("stream5_udp", StreamPolicyInitUdp);
@@ -316,7 +336,9 @@ void SetupStream6(void)
 
     // init pointer to stream api dispatch table...
     stream_api = &s5api;
-
+	
+    /* Registering for SFR CLI */
+	ControlSocketRegisterHandler(CS_TYPE_STREAM_STATS, NULL, NULL, &DisplayStreamStatistics);
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "Stream preprocessor setup complete.\n"););
 }
 
@@ -365,7 +387,9 @@ static StreamConfig *initStreamPolicyConfig( struct _SnortConfig *sc, bool reloa
     pCurrentPolicyConfig = ( StreamConfig * ) sfPolicyUserDataGetCurrent( stream_parsing_config );
     if( pCurrentPolicyConfig == NULL )
     {
-        pCurrentPolicyConfig = ( StreamConfig * ) SnortAlloc( sizeof( StreamConfig ) );
+        pCurrentPolicyConfig = ( StreamConfig * ) SnortPreprocAlloc( 1,
+                                            sizeof( StreamConfig ), PP_STREAM,
+                                            PP_MEM_CATEGORY_CONFIG );
         sfPolicyUserDataSetCurrent( stream_parsing_config, pCurrentPolicyConfig );
         // get pointer to the session configuration...if it's NULL bad news, session not
         // configured so Fatal Error...
@@ -480,7 +504,9 @@ static void StreamPolicyInitTcp( struct _SnortConfig *sc, char *args )
 
     if( config->tcp_config == NULL )
     {
-        config->tcp_config = ( StreamTcpConfig * ) SnortAlloc( sizeof( StreamTcpConfig ) );
+        config->tcp_config = ( StreamTcpConfig * ) SnortPreprocAlloc( 1,
+                                            sizeof( StreamTcpConfig ), PP_STREAM,
+                                            PP_MEM_CATEGORY_CONFIG );
         StreamInitTcp( );
         StreamTcpInitFlushPoints( );
         StreamTcpRegisterRuleOptions( sc );
@@ -501,7 +527,9 @@ static void StreamPolicyInitUdp( struct _SnortConfig *sc, char *args )
 
     if( config->udp_config == NULL )
     {
-        config->udp_config = ( StreamUdpConfig * ) SnortAlloc( sizeof( StreamUdpConfig ) );
+        config->udp_config = ( StreamUdpConfig * ) SnortPreprocAlloc(1, 
+                                            sizeof( StreamUdpConfig ), PP_STREAM,
+                                            PP_MEM_CATEGORY_CONFIG);
         StreamInitUdp( );
     }
 
@@ -519,7 +547,9 @@ static void StreamPolicyInitIcmp( struct _SnortConfig *sc, char *args )
 
     if( config->icmp_config == NULL )
     {
-        config->icmp_config = ( StreamIcmpConfig * ) SnortAlloc( sizeof( StreamIcmpConfig ) );
+        config->icmp_config = ( StreamIcmpConfig * ) SnortPreprocAlloc( 1, 
+                                            sizeof( StreamIcmpConfig ), PP_STREAM,
+                                            PP_MEM_CATEGORY_CONFIG );
         StreamInitIcmp( );
     }
 
@@ -537,7 +567,9 @@ static void StreamPolicyInitIp( struct _SnortConfig *sc, char *args )
 
     if( config->ip_config == NULL )
     {
-        config->ip_config = ( StreamIpConfig * ) SnortAlloc( sizeof( StreamIpConfig ) );
+        config->ip_config = ( StreamIpConfig * ) SnortPreprocAlloc( 1, 
+                                            sizeof( StreamIpConfig ), PP_STREAM,
+                                            PP_MEM_CATEGORY_CONFIG );
         StreamInitIp( );
     }
 
@@ -629,8 +661,11 @@ static int StreamVerifyConfig(struct _SnortConfig *sc)
     if( rval )
         return rval;
 
-    stream_online_config = stream_parsing_config;
-    stream_parsing_config = NULL;
+    if (!stream_online_config)
+    {
+        stream_online_config = stream_parsing_config;
+        stream_parsing_config = NULL;
+    }
 
 #ifdef TARGET_BASED
     initServiceFilterStatus( sc );
@@ -661,6 +696,10 @@ static void StreamResetStats(int signal, void *foo)
 
 static void StreamCleanExit(int signal, void *foo)
 {
+#ifdef ENABLE_QUICK_EXIT
+    LogMessage("Snort quick exit enabled\n");
+    return;
+#else
     /* Protocol specific cleanup actions */
     StreamCleanTcp();
     StreamCleanUdp();
@@ -669,6 +708,89 @@ static void StreamCleanExit(int signal, void *foo)
 
     StreamFreeConfigs(stream_online_config);
     stream_online_config = NULL;
+#endif
+}
+
+static void DisplayStreamStatistics (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f)
+{
+    char buffer[CS_STATS_BUF_SIZE + 1];
+    int len = 0;
+    int total_sessions = s5stats.total_tcp_sessions + s5stats.total_udp_sessions +
+        s5stats.total_icmp_sessions + s5stats.total_ip_sessions;
+
+    if (total_sessions) {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "Stream statistics:\n"
+                "            Total sessions: %u\n"
+                "              TCP sessions: %u\n"
+                "              UDP sessions: %u\n"
+                "             ICMP sessions: %u\n"
+                "               IP sessions: %u\n"
+                "                TCP Prunes: %u\n"
+                "                UDP Prunes: %u\n"
+                "               ICMP Prunes: %u\n"
+                "                 IP Prunes: %u\n"
+                "TCP StreamTrackers Created: %u\n"
+                "TCP StreamTrackers Deleted: %u\n"
+                "              TCP Timeouts: %u\n"
+                "              TCP Overlaps: %u\n"
+                "       TCP Segments Queued: %u\n"
+                "     TCP Segments Released: %u\n"
+                "       TCP Rebuilt Packets: %u\n"
+                "         TCP Segments Used: %u\n"
+                "              TCP Discards: %u\n"
+                "                  TCP Gaps: %u\n"
+                "      UDP Sessions Created: %u\n"
+                "      UDP Sessions Deleted: %u\n"
+                "              UDP Timeouts: %u\n"
+                "              UDP Discards: %u\n"
+                "                    Events: %u\n"
+                "           Internal Events: %u\n"
+                "           TCP Port Filter\n"
+                "                  Filtered: %u\n"
+                "                 Inspected: %u\n"
+                "                   Tracked: %u\n"
+                "           UDP Port Filter\n"
+                "                  Filtered: %u\n"
+                "                 Inspected: %u\n"
+                "                   Tracked: %u\n"
+                , total_sessions
+                , s5stats.total_tcp_sessions
+                , s5stats.total_udp_sessions
+                , s5stats.total_icmp_sessions
+                , s5stats.total_ip_sessions
+                , StreamGetTcpPrunes()
+                , StreamGetUdpPrunes()
+                , StreamGetIcmpPrunes()
+                , StreamGetIpPrunes()
+                , s5stats.tcp_streamtrackers_created
+                , s5stats.tcp_streamtrackers_released
+                , s5stats.tcp_timeouts
+                , s5stats.tcp_overlaps
+                , s5stats.tcp_streamsegs_created
+                , s5stats.tcp_streamsegs_released
+                , s5stats.tcp_rebuilt_packets
+                , s5stats.tcp_rebuilt_seqs_used
+                , s5stats.tcp_discards
+                , s5stats.tcp_gaps
+                , s5stats.udp_sessions_created
+                , s5stats.udp_sessions_released
+                , s5stats.udp_timeouts
+                , s5stats.udp_discards
+                , s5stats.events
+                , s5stats.internalEvents
+                , s5stats.tcp_port_filter.filtered
+                , s5stats.tcp_port_filter.inspected
+                , s5stats.tcp_port_filter.session_tracked
+                , s5stats.udp_port_filter.filtered
+                , s5stats.udp_port_filter.inspected
+                , s5stats.udp_port_filter.session_tracked);
+    } else {
+        len  = snprintf(buffer, CS_STATS_BUF_SIZE, "Stream statistics not available\n Total sessions: %u", total_sessions);
+    }
+
+    if (-1 == f(te, (const uint8_t *)buffer, len)) {
+        LogMessage("Unable to send data to the frontend\n");
+    }
 }
 
 static void StreamPrintStats(int exiting)
@@ -678,10 +800,20 @@ static void StreamPrintStats(int exiting)
             s5stats.total_udp_sessions +
             s5stats.total_icmp_sessions +
             s5stats.total_ip_sessions);
+
     LogMessage("              TCP sessions: %u\n", s5stats.total_tcp_sessions);
+    LogMessage("       Active TCP sessions: %u\n", s5stats.active_tcp_sessions);
+    LogMessage("  Non mempool TCP sess mem: %u\n", session_mem_in_use);
+    LogMessage("          TCP mempool used: %"PRIu64"\n", get_tcp_used_mempool());
     LogMessage("              UDP sessions: %u\n", s5stats.total_udp_sessions);
+    LogMessage("       Active UDP sessions: %u\n", s5stats.active_udp_sessions);
+    LogMessage("          UDP mempool used: %"PRIu64"\n", get_udp_used_mempool());
     LogMessage("             ICMP sessions: %u\n", s5stats.total_icmp_sessions);
+    LogMessage("      Active ICMP sessions: %u\n", s5stats.active_icmp_sessions);
+    LogMessage("         ICMP mempool used: %"PRIu64"\n", get_icmp_used_mempool());
     LogMessage("               IP sessions: %u\n", s5stats.total_ip_sessions);
+    LogMessage("        Active IP sessions: %u\n", s5stats.active_ip_sessions);
+    LogMessage("           IP mempool used: %"PRIu64"\n", get_ip_used_mempool());
 
     LogMessage("                TCP Prunes: %u\n", StreamGetTcpPrunes());
     LogMessage("                UDP Prunes: %u\n", StreamGetUdpPrunes());
@@ -701,6 +833,8 @@ static void StreamPrintStats(int exiting)
     LogMessage("      UDP Sessions Deleted: %u\n", s5stats.udp_sessions_released);
     LogMessage("              UDP Timeouts: %u\n", s5stats.udp_timeouts);
     LogMessage("              UDP Discards: %u\n", s5stats.udp_discards);
+    LogMessage("     ICMP Dest unreachable: %u\n", s5stats.icmp_unreachable);
+    LogMessage(" ICMP Fragmentation needed: %u\n", s5stats.icmp_unreachable_code4);
     LogMessage("                    Events: %u\n", s5stats.events);
     LogMessage("           Internal Events: %u\n", s5stats.internalEvents);
     LogMessage("           TCP Port Filter\n");
@@ -717,6 +851,190 @@ static void StreamPrintStats(int exiting)
     SessionPrintHAStats();
 #endif
 
+}
+
+#define GET_MEMPOOL(protocol) \
+    proto_session_caches[protocol] ? \
+        proto_session_caches[protocol]->protocol_session_pool : NULL
+
+size_t stream_get_free_mempool(MemPool *mempool)
+{
+    if (mempool)
+        return mempool->max_memory - mempool->used_memory;
+
+    return 0;
+}
+
+size_t stream_get_used_mempool(MemPool *mempool)
+{
+    if (mempool)
+        return mempool->used_memory;
+
+    return 0;
+}
+
+size_t stream_get_max_mempool(MemPool *mempool)
+{   
+    if (mempool)
+        return mempool->max_memory;
+    
+    return 0;
+}
+
+int stream_print_mem_stats(FILE *fd, char* buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time;
+    int len = 0;
+    uint32_t total_sessions = s5stats.total_tcp_sessions + s5stats.total_udp_sessions +
+          s5stats.total_icmp_sessions + s5stats.total_ip_sessions;
+
+    if (fd)
+    {
+        size_t total_heap_memory = meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                              + meminfo[PP_MEM_CATEGORY_CONFIG].used_memory;
+        size_t total_pool_memory = stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_TCP))
+                 + stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_UDP))
+                 + stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP))
+                 + stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_IP))
+                 + stream_get_max_mempool(&sessionFlowMempool);
+           
+        len = fprintf(fd, ",%u,%u,%u"
+               ",%u,%u,%u"
+               ",%u,%u,%u"
+               ",%lu,%u,%u"
+               ",%lu,%u,%u,%lu,%lu"
+               , total_sessions
+               , s5stats.total_tcp_sessions
+               , s5stats.active_tcp_sessions
+               , s5stats.total_udp_sessions
+               , s5stats.active_udp_sessions
+               , s5stats.total_icmp_sessions
+               , s5stats.active_icmp_sessions
+               , s5stats.total_ip_sessions
+               , s5stats.active_ip_sessions
+               , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+               , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+               , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+               , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+               , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+               , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+               , total_pool_memory
+               , total_pool_memory + total_heap_memory);
+
+        return len;
+    }
+
+    curr_time = time(NULL);
+
+    if (buffer)
+    {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "\n\nMemory Statistics of Stream on: %s\n"
+             "Stream Session Statistics:\n"
+             "            Total sessions: %u\n"
+             "              TCP sessions: %u\n"
+             "       Active TCP sessions: %u\n"
+             "              UDP sessions: %u\n"
+             "       Active UDP sessions: %u\n"
+             "             ICMP sessions: %u\n"
+             "      Active ICMP sessions: %u\n"
+             "               IP sessions: %u\n"
+             "        Active IP sessions: %u\n"
+             "\n   TCP Memory Pool:\n"
+             "        Free Memory:        %14zu bytes\n"
+             "        Used Memory:        %14zu bytes\n"
+             "        Max Memory :        %14zu bytes\n"
+             "\n   UDP Memory Pool:\n"
+             "        Free Memory:        %14zu bytes\n"
+             "        Used Memory:        %14zu bytes\n"
+             "        Max Memory :        %14zu bytes\n"
+             "\n   ICMP Memory Pool:\n"
+             "        Free Memory:        %14zu bytes\n"
+             "        Used Memory:        %14zu bytes\n"
+             "        Max Memory :        %14zu bytes\n"
+             "\n   IP Memory Pool:\n"
+             "        Free Memory:        %14zu bytes\n"
+             "        Used Memory:        %14zu bytes\n"
+             "        Max Memory :        %14zu bytes\n"
+             "\n   Session Flow Memory Pool:\n"
+             "        Free Memory:        %14zu bytes\n"
+             "        Used Memory:        %14zu bytes\n"
+             "        Max Memory :        %14zu bytes\n"
+             , ctime(&curr_time)
+             , total_sessions
+             , s5stats.total_tcp_sessions
+             , s5stats.active_tcp_sessions
+             , s5stats.total_udp_sessions
+             , s5stats.active_udp_sessions
+             , s5stats.total_icmp_sessions
+             , s5stats.active_icmp_sessions
+             , s5stats.total_ip_sessions
+             , s5stats.active_ip_sessions
+             , stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_TCP)) 
+             , stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_TCP))
+             , stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_TCP))
+             , stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_UDP))                                 
+             , stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_UDP))
+             , stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_UDP))
+             , stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP))                                 
+             , stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP))
+             , stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP))
+             , stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_IP))                                 
+             , stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_IP))
+             , stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_IP))
+             , stream_get_free_mempool(&sessionFlowMempool)
+             , stream_get_used_mempool(&sessionFlowMempool)
+             , stream_get_max_mempool(&sessionFlowMempool));
+    } else {
+        LogMessage("\n");
+        LogMessage("Memory Statistics of Stream on: %s\n",ctime(&curr_time));
+        LogMessage("Stream Session Statistics:\n");
+        LogMessage("            Total sessions: %u\n", total_sessions);
+        LogMessage("              TCP sessions: %u\n", s5stats.total_tcp_sessions);
+        LogMessage("       Active TCP sessions: %u\n", s5stats.active_tcp_sessions);
+        LogMessage("              UDP sessions: %u\n", s5stats.total_udp_sessions);
+        LogMessage("       Active UDP sessions: %u\n", s5stats.active_udp_sessions);
+        LogMessage("             ICMP sessions: %u\n", s5stats.total_icmp_sessions);
+        LogMessage("      Active ICMP sessions: %u\n", s5stats.active_icmp_sessions);
+        LogMessage("               IP sessions: %u\n", s5stats.total_ip_sessions);
+        LogMessage("        Active IP sessions: %u\n", s5stats.active_ip_sessions);
+        LogMessage("   TCP Memory Pool:\n");
+        LogMessage("        Free Memory:        %14zu bytes\n",
+                   stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_TCP)));
+        LogMessage("        Used Memory:        %14zu bytes\n",
+                   stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_TCP)));
+        LogMessage("        Max Memory :        %14zu bytes\n",
+                   stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_TCP)));
+        LogMessage("   UDP Memory Pool:\n");
+        LogMessage("        Free Memory:        %14zu bytes\n",
+                   stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_UDP)));
+        LogMessage("        Used Memory:        %14zu bytes\n",
+                   stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_UDP)));
+        LogMessage("        Max Memory :        %14zu bytes\n",
+                   stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_UDP)));
+        LogMessage("   ICMP Memory Pool:\n");
+        LogMessage("        Free Memory:        %14zu bytes\n",
+                   stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP)));
+        LogMessage("        Used Memory:        %14zu bytes\n",
+                   stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP)));
+        LogMessage("        Max Memory :        %14zu bytes\n",
+                   stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_ICMP)));
+        LogMessage("   IP Memory Pool:\n");
+        LogMessage("        Free Memory:        %14zu bytes\n",
+                   stream_get_free_mempool(GET_MEMPOOL(SESSION_PROTO_IP)));
+        LogMessage("        Used Memory:        %14zu bytes\n",
+                   stream_get_used_mempool(GET_MEMPOOL(SESSION_PROTO_IP)));
+        LogMessage("        Max Memory :        %14zu bytes\n",
+                   stream_get_max_mempool(GET_MEMPOOL(SESSION_PROTO_IP)));
+        LogMessage("   Session Flow Memory Pool:\n");
+        LogMessage("        Free Memory:        %14zu bytes\n",
+                   stream_get_free_mempool(&sessionFlowMempool));
+        LogMessage("        Used Memory:        %14zu bytes\n",
+                   stream_get_used_mempool(&sessionFlowMempool));
+        LogMessage("        Max Memory :        %14zu bytes\n",
+                   stream_get_max_mempool(&sessionFlowMempool));
+    }
+
+    return len;
 }
 
 static void checkOnewayStatus( uint32_t protocol, SessionControlBlock *scb )
@@ -737,7 +1055,8 @@ static void updateMplsHeaders(Packet *p, SessionControlBlock *scb )
              if( p->layers[layerIndex].proto == PROTO_MPLS && p->layers[layerIndex].start != NULL )
              {
                    scb->clientMplsHeader->length = p->layers[layerIndex].length;
-                   scb->clientMplsHeader->start  = (uint8_t*)SnortMalloc(scb->clientMplsHeader->length);
+                   scb->clientMplsHeader->start  = (uint8_t*)SnortPreprocAlloc(1, scb->clientMplsHeader->length,
+                                                                    PP_STREAM, PP_MEM_CATEGORY_SESSION);
                    memcpy(scb->clientMplsHeader->start,p->layers[layerIndex].start,scb->clientMplsHeader->length);
                    break;
              }
@@ -750,7 +1069,8 @@ static void updateMplsHeaders(Packet *p, SessionControlBlock *scb )
              if( p->layers[layerIndex].proto == PROTO_MPLS && p->layers[layerIndex].start != NULL )
              {
                    scb->serverMplsHeader->length = p->layers[layerIndex].length;
-                   scb->serverMplsHeader->start  = (uint8_t*)SnortMalloc(scb->serverMplsHeader->length);
+                   scb->serverMplsHeader->start  = (uint8_t*)SnortPreprocAlloc(1, scb->serverMplsHeader->length,
+                                                                    PP_STREAM, 0);
                    memcpy(scb->serverMplsHeader->start,p->layers[layerIndex].start, scb->serverMplsHeader->length);
                    break;
              }
@@ -1202,6 +1522,22 @@ static char StreamSetReassembly(void *ssnptr,
     return StreamSetReassemblyTcp(ssn, flush_policy, dir, flags);
 }
 
+#ifdef HAVE_DAQ_DECRYPTED_SSL
+static int StreamSimulateTcpAck(void *ssnptr,
+        uint8_t dir,
+        uint32_t len)
+{
+    SessionControlBlock *ssn = (SessionControlBlock *)ssnptr;
+
+    if (!ssn || ssn->protocol != IPPROTO_TCP)
+        return -1;
+
+    stream_session_config = ssn->session_config;
+
+    return StreamSimulatePeerTcpAckp(ssn, dir, len);
+}
+#endif
+
 static char StreamGetReassemblyFlushPolicy(void *ssnptr, char dir)
 {
     SessionControlBlock *ssn = (SessionControlBlock *)ssnptr;
@@ -1401,6 +1737,69 @@ int isPacketFilterDiscard( Packet *p, int ignore_any_rules )
     return PORT_MONITOR_PACKET_PROCESS;
 }
 
+int isPacketFilterDiscardUdp ( Packet *p, int ignore_any_rules )
+{
+    uint8_t action_ips = 0, action_nap = 0;
+    tPortFilterStats *pPortFilterStats = NULL;
+    SessionControlBlock *scb;
+    tSfPolicyId policy_id_ips = getIpsRuntimePolicy();
+    tSfPolicyId policy_id_nap = getNapRuntimePolicy();
+    SnortPolicy *policy;
+    PreprocEnableMask enabled_pps;   
+    bool nap_inspect = false;
+
+    scb = p->ssnptr;
+    if ( !scb ) {
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "Session control block of packet is NULL.\n"););
+        return PORT_MONITOR_PACKET_DISCARD;
+    }
+    
+    if ( session_api->protocol_tracking_enabled( SESSION_PROTO_UDP ) &&
+        ( snort_conf->udp_ips_port_filter_list ) ) {
+        action_ips = s5UdpGetIPSPortFilterStatus (snort_conf, p->sp, p->dp, policy_id_ips);
+    }
+
+    pPortFilterStats = &s5stats.udp_port_filter;
+
+    // Check if NAP has marked it as inspect/filter. 
+    action_nap = s5UdpGetPortFilterStatus (NULL, p->sp, policy_id_nap, 0) | 
+                 s5UdpGetPortFilterStatus (NULL, p->dp, policy_id_nap, 0);
+    if ( !( action_nap & PORT_MONITOR_SESSION_BITS ) && ( action_nap & PORT_MONITOR_INSPECT ) && ignore_any_rules ) {
+        nap_inspect = true ;
+    }
+
+    if ( !( action_ips & PORT_MONITOR_SESSION_BITS ) ) {
+        if ( !( action_ips & PORT_MONITOR_INSPECT ) && ignore_any_rules ) {
+            // Port not present in IPS port list too, disable detection. 
+            DisableDetect( p );
+        } else {
+            /*
+             * If nap_inspect is true it implies NAP marked it for inspect, now IPS too marking for inspect,
+             * so no change in counter.
+             * If nap_inspect is false ie: NAP marked for filter, now IPS marks it to inspect undo the NAP counter. 
+             */ 
+            if ( !nap_inspect ) {
+                sfBase.total_udp_filtered_packets--;
+                pPortFilterStats->filtered--;
+                pPortFilterStats->inspected++;
+            }
+        }
+        return PORT_MONITOR_PACKET_DISCARD;
+    }
+    // Undo NAPs increment and enable detection 
+    if ( nap_inspect )
+       pPortFilterStats->inspected--;
+    else 
+       pPortFilterStats->filtered--;
+
+    pPortFilterStats->session_tracked++;
+    policy = snort_conf->targeted_policies[ getNapRuntimePolicy() ];
+    enabled_pps = policy->pp_enabled[ p->dp ] | policy->pp_enabled[ p->sp ];
+    EnableContentPreprocDetection (p,enabled_pps);
+
+    return PORT_MONITOR_PACKET_PROCESS;
+}
+
 static uint8_t StreamRegisterPAFPort( struct _SnortConfig *sc, tSfPolicyId id, uint16_t server_port,
         bool to_server, PAF_Callback cb, bool autoEnable)
 {
@@ -1579,6 +1978,14 @@ static void StreamForceSessionExpiration( void *ssnptr )
     }
 }
 
+static void StreamForceDeleteSession(void *ssnptr )
+{
+    SessionControlBlock *scb = ( SessionControlBlock * ) ssnptr;
+
+    if(scb)
+        StreamDeleteSession( scb );
+}
+
 static void registerReassemblyPort( char *network, uint16_t port, int reassembly_direction )
 {
     registerPortForReassembly( network, port, reassembly_direction );
@@ -1747,6 +2154,13 @@ void StreamCallHandler( Packet* p, unsigned id )
     stream_cb[ id ]( p );
 }
 
+static void setFtpFilePosition (void *scbptr,bool flush)
+{
+  SetFTPFileLocation(scbptr,flush);
+  return;
+}
+
+
 static int StreamSetApplicationProtocolIdExpectedPreassignCallbackId( const Packet *ctrlPkt,
         sfaddr_t* srcIP, uint16_t srcPort, sfaddr_t* dstIP, uint16_t dstPort,
         uint8_t protocol, int16_t protoId, uint32_t preprocId, void *protoData,
@@ -1802,10 +2216,13 @@ static void StreamTcpReload( struct _SnortConfig *sc, char *args, void **new_con
 
     if( config->tcp_config == NULL )
     {
-        config->tcp_config = ( StreamTcpConfig * ) SnortAlloc( sizeof( StreamTcpConfig ) );
+        config->tcp_config = ( StreamTcpConfig * ) SnortPreprocAlloc( 1, 
+                                               sizeof( StreamTcpConfig ),
+                                               PP_STREAM, PP_MEM_CATEGORY_CONFIG );
 
         StreamTcpInitFlushPoints();
         StreamTcpRegisterRuleOptions( sc );
+        AddFuncToPreprocPostConfigList( sc, StreamPostConfigTcp, config->tcp_config );
     }
 
     /* Call the protocol specific initializer */
@@ -1823,7 +2240,9 @@ static void StreamUdpReload(struct _SnortConfig *sc, char *args, void **new_conf
         return;
 
     if( config->udp_config == NULL )
-        config->udp_config = ( StreamUdpConfig * ) SnortAlloc( sizeof( StreamUdpConfig ) );
+        config->udp_config = ( StreamUdpConfig * ) SnortPreprocAlloc( 1, 
+                                                 sizeof( StreamUdpConfig ),
+                                                 PP_STREAM, PP_MEM_CATEGORY_CONFIG );
 
     /* Call the protocol specific initializer */
     StreamUdpPolicyInit( config->udp_config, args );
@@ -1840,7 +2259,8 @@ static void StreamIcmpReload(struct _SnortConfig *sc, char *args, void **new_con
         return;
 
     if( config->icmp_config == NULL )
-        config->icmp_config = ( StreamIcmpConfig * ) SnortAlloc( sizeof( StreamIcmpConfig ) );
+        config->icmp_config = ( StreamIcmpConfig * ) SnortPreprocAlloc(1, sizeof( StreamIcmpConfig ),
+                                                      PP_STREAM, PP_MEM_CATEGORY_CONFIG);
 
     /* Call the protocol specific initializer */
     StreamIcmpPolicyInit( config->icmp_config, args );
@@ -1857,7 +2277,9 @@ static void StreamIpReload(struct _SnortConfig *sc, char *args, void **new_confi
         return;
 
     if( config->ip_config == NULL )
-        config->ip_config = ( StreamIpConfig * ) SnortAlloc( sizeof( *config->ip_config ) );
+        config->ip_config = ( StreamIpConfig * ) SnortPreprocAlloc( 1,
+                                                      sizeof( *config->ip_config ),
+                                                      PP_STREAM, PP_MEM_CATEGORY_CONFIG );
 
     /* Call the protocol specific initializer */
     StreamIpPolicyInit( config->ip_config, args );

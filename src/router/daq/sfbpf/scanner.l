@@ -20,11 +20,6 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/scanner.l,v 1.2 2010/05/06 19:13:25 maltizer Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

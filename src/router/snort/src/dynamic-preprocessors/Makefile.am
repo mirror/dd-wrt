@@ -51,6 +51,7 @@ include/sf_snort_packet.h \
 include/sf_protocols.h \
 include/sf_snort_plugin_api.h \
 include/sf_decompression.h \
+include/sf_decompression_define.h \
 include/sfPolicyUserData.h \
 include/snort_debug.h \
 include/snort_bounds.h \
@@ -88,7 +89,9 @@ include/perf_indicators.h \
 include/mpse_methods.h \
 include/file_api.h \
 include/reload_api.h \
-include/reg_test.h
+include/smtp_api.h \
+include/reg_test.h \
+include/memory_stats.h
 
 preproclib_LTLIBRARIES += libsf_dynamic_utils.la
 
@@ -144,6 +147,7 @@ BUILT_SOURCES = \
 	include/sf_protocols.h \
 	include/sf_snort_plugin_api.h \
 	include/sf_decompression.h \
+	include/sf_decompression_define.h \
 	include/pcap_pkthdr32.h \
 	include/session_api.h \
 	include/stream_api.h \
@@ -194,7 +198,9 @@ BUILT_SOURCES = \
 	include/mpse_methods.h \
 	include/sfdebug.h \
 	include/sip_common.h \
+	include/cip_common.h \
 	include/reload_api.h \
+	include/smtp_api.h \
 	include/reg_test.h \
 	include/reg_test.c \
 	ssl_common/ssl.h \
@@ -208,7 +214,8 @@ BUILT_SOURCES = \
 	ssl_common/ssl_ha.h \
 	ssl_common/ssl_ha.c \
 	libs/sfparser.c \
-	libs/sfcommon.h
+	libs/sfcommon.h \
+	include/memory_stats.h
 
 if FEAT_OPEN_APPID
 BUILT_SOURCES += include/appId.h  include/appIdApi.h include/thirdparty_appid_types.h \
@@ -320,7 +327,7 @@ copy_error_message = \
 	       -e "/util.h/d" \
 	       -e "/snort.h/d" \
                         $$dst_header > $$dst_header.new; \
-                mv $$dst_header.new $$dst_header; \
+                mv -f $$dst_header.new $$dst_header; \
         fi
 
 copy_no_static_hash = \
@@ -328,7 +335,7 @@ copy_no_static_hash = \
                 echo "Updating " $$dst_header; \
                 sed -e "s/\#ifndef MODULUS_HASH/\#ifdef STATIC_HASH/" \
                         $$dst_header > $$dst_header.new; \
-                mv $$dst_header.new $$dst_header; \
+                mv -f $$dst_header.new $$dst_header; \
         fi
 
 replace_policy_globals = \
@@ -342,7 +349,7 @@ replace_policy_globals = \
 		    -e "s/ReloadAdjustRegister/_dpd.reloadAdjustRegister/" \
 		    -e "s/session_api/_dpd.sessionAPI/" \
 		        $$dst_header > $$dst_header.new; \
-		mv $$dst_header.new $$dst_header; \
+		mv -f $$dst_header.new $$dst_header; \
 	fi
 
 copy_headers = \
@@ -419,6 +426,9 @@ include/sidechannel_define.h: $(srcdir)/../side-channel/sidechannel_define.h
 	@src_header=$?; dst_header=$@; $(massage_headers)
 
 include/reload_api.h: $(srcdir)/../reload_api.h
+	@src_header=$?; dst_header=$@; $(massage_headers)
+
+include/smtp_api.h: $(srcdir)/../smtp_api.h
 	@src_header=$?; dst_header=$@; $(massage_headers)
 
 include/reg_test.h: $(srcdir)/../reg_test.h
@@ -576,6 +586,9 @@ include/sf_snort_plugin_api.h: $(srcdir)/../dynamic-plugins/sf_engine/sf_snort_p
 include/sf_decompression.h: $(srcdir)/../dynamic-plugins/sf_engine/sf_decompression.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
+include/sf_decompression_define.h: $(srcdir)/../dynamic-plugins/sf_decompression_define.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
 # Session API/String Searching, massage it to use SFSnortPacket
 include/session_api.h: $(srcdir)/../preprocessors/session_api.h
 	@src_header=$?; dst_header=$@; $(massage_headers)
@@ -621,6 +634,9 @@ include/mpse_methods.h: $(srcdir)/../sfutil/mpse_methods.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
 include/sip_common.h: $(srcdir)/../preprocessors/sip_common.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/cip_common.h: $(srcdir)/../preprocessors/cip_common.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
 include/appId.h: $(srcdir)/appid/appId.h
@@ -695,11 +711,15 @@ include/appdata_adjuster.h: $(srcdir)/../reload-adjust/appdata_adjuster.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 endif
 
+include/memory_stats.h: $(srcdir)/../memory_stats.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
 if FEAT_FILE_INSPECT
 FILE_INSPECT_DIR = file
 endif
 
-SUBDIRS = . libs ftptelnet pop imap smtp ssh dns ssl dcerpc2 sdf sip reputation gtp modbus dnp3 $(FILE_INSPECT_DIR)
+SUBDIRS = . libs ftptelnet pop imap smtp ssh dns ssl dcerpc2 sdf sip reputation gtp modbus dnp3 s7commplus $(FILE_INSPECT_DIR)
+
 if FEAT_OPEN_APPID
 SUBDIRS += appid
 endif
@@ -708,7 +728,9 @@ clean-local:
 	rm -rf include build
 
 EXTRA_DIST = \
+dynamic_preprocessors.vcxproj \
 dynamic_preprocessors.dsp \
+sf_dynamic_initialize/sf_dynamic_initialize.vcxproj \
 sf_dynamic_initialize/sf_dynamic_initialize.dsp \
 treenodes.sed
 
@@ -727,6 +749,7 @@ include/sf_snort_packet.h \
 include/sf_protocols.h \
 include/sf_snort_plugin_api.h \
 include/sf_decompression.h \
+include/sf_decompression_define.h \
 include/sf_types.h \
 include/sfsnort_dynamic_detection_lib.h \
 include/sfsnort_dynamic_detection_lib.c \
@@ -766,6 +789,7 @@ include/file_mail_common.h \
 include/mpse_methods.h \
 include/sfdebug.h \
 include/sip_common.h \
+include/cip_common.h \
 include/reload_api.h \
 include/reg_test.h \
 include/reg_test.c \
@@ -779,7 +803,8 @@ ssl_common/ssl_inspect.h \
 ssl_common/ssl_inspect.c \
 ssl_common/ssl_ha.h \
 ssl_common/ssl_ha.c \
-libs/sfparser.c
+libs/sfparser.c \
+include/memory_stats.h
 
 if FEAT_OPEN_APPID
 exported_files += include/appId.h include/appIdApi.h include/thirdparty_appid_types.h \

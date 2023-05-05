@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,11 @@ typedef struct _GTP_C_Hdr
 
 } GTP_C_Hdr;
 
+typedef struct _GTP_C_Hdr_v1_2
+{
+    GTP_C_Hdr hdr;
+    uint32_t teid;
+} GTP_C_Hdr_v1_2;
 
 typedef struct _GTP_C_Hdr_v0
 {
@@ -519,6 +524,7 @@ int gtp_parse(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
     int status;
     GTP_C_Hdr *hdr;
     GTP_MsgType *msgType;
+    GTP_C_Hdr_v1_2 *hdrv1_2;
 
     /*Initialize key values*/
 
@@ -526,7 +532,9 @@ int gtp_parse(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
 
     DEBUG_WRAP(DebugMessage(DEBUG_GTP, "Start parsing...\n"));
 
-    hdr = (GTP_C_Hdr *) buff;
+    hdrv1_2 = (GTP_C_Hdr_v1_2 *) buff;
+
+    hdr = &(hdrv1_2->hdr);
 
     /*Check the length*/
     DEBUG_WRAP(DebugMessage(DEBUG_GTP, "Basic header length: %d\n", GTP_MIN_HEADER_LEN));
@@ -576,11 +584,18 @@ int gtp_parse(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
         status = gtp_parse_v0(msg, buff, gtp_len);
         break;
     case 1: /*GTP v1*/
-
+        if ((msg->msg_type > 3) && (hdrv1_2->teid == 0)) 
+        {
+            ALERT(GTP_TEID_MISSING, GTP_TEID_MISSING_STR);
+        }
         status = gtp_parse_v1(msg, buff, gtp_len);
         break;
 
     case 2:/*GTP v2 */
+        if ((msg->msg_type > 3) && (hdr->flag & 0x08) && (hdrv1_2->teid == 0)) 
+        {
+            ALERT(GTP_TEID_MISSING, GTP_TEID_MISSING_STR);
+        }
         status = gtp_parse_v2(msg, buff, gtp_len);
 
         break;

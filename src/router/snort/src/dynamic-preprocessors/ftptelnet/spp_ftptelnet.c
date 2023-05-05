@@ -1,7 +1,7 @@
 /*
  * spp_ftptelnet.c
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -45,6 +45,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <time.h> 
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -62,12 +63,16 @@
 
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
+#ifdef REG_TEST
+#include "ftpp_si.h"
+#endif
 
 #ifdef DUMP_BUFFER
 #include "ftptelnet_buffer_dump.h"
 #endif
 
 #include "reg_test.h"
+#include "memory_stats.h"
 
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 2;
@@ -102,6 +107,7 @@ PreprocStats telnetPerfStats;
 PreprocStats ftpdataPerfStats;
 #endif
 #endif
+FTPTelnet_Stats ftp_telnet_stats;
 
 /*
  * Global Variables
@@ -122,6 +128,7 @@ int16_t telnet_app_id = 0;
 /* static function prototypes */
 static void FTPTelnetReset(int, void *);
 static void FTPTelnetResetStats(int, void *);
+static void FTPTelnetStats(int);
 
 #ifdef SNORT_RELOAD
 static void FtpTelnetReloadGlobal(struct _SnortConfig *, char *, void **);
@@ -130,6 +137,7 @@ static int FtpTelnetReloadVerify(struct _SnortConfig *, void *);
 static void * FtpTelnetReloadSwap(struct _SnortConfig *, void *);
 static void FtpTelnetReloadSwapFree(void *);
 #endif
+int ftptelnet_print_mem_stats(FILE *, char*, PreprocMemInfo *);
 
 extern char *maxToken;
 
@@ -227,6 +235,13 @@ void FTPTelnetCleanExit(int sig, void *args)
 
 extern char* mystrtok (char* s, const char* delim);
 
+#ifdef REG_TEST
+static inline void PrintFTPSize(void)
+{
+    _dpd.logMsg("\nFTP Session Size: %lu\n", (long unsigned int)sizeof(FTP_SESSION));
+}
+#endif
+
 static void FTPTelnetInit(struct _SnortConfig *sc, char *args)
 {
     char  *pcToken;
@@ -237,6 +252,10 @@ static void FTPTelnetInit(struct _SnortConfig *sc, char *args)
     FTPTELNET_GLOBAL_CONF *pPolicyConfig = NULL;
 
     ErrorString[0] = '\0';
+
+#ifdef REG_TEST
+    PrintFTPSize();
+#endif
 
     if ((args == NULL) || (strlen(args) == 0))
     {
@@ -268,11 +287,14 @@ static void FTPTelnetInit(struct _SnortConfig *sc, char *args)
         _dpd.addPreprocReset(FTPTelnetReset, NULL, PRIORITY_APPLICATION, PP_FTPTELNET);
         _dpd.addPreprocResetStats(FTPTelnetResetStats, NULL, PRIORITY_APPLICATION, PP_FTPTELNET);
         _dpd.addPreprocConfCheck(sc, FTPConfigCheck);
+        _dpd.registerPreprocStats("ftp_telnet", FTPTelnetStats);
 
 #ifdef PERF_PROFILING
         _dpd.addPreprocProfileFunc("ftptelnet_ftp", (void*)&ftpPerfStats, 0, _dpd.totalPerfStats, NULL);
         _dpd.addPreprocProfileFunc("ftptelnet_telnet", (void*)&telnetPerfStats, 0, _dpd.totalPerfStats, NULL);
+#ifdef TARGET_BASED
         _dpd.addPreprocProfileFunc("ftptelnet_ftpdata", (void*)&ftpdataPerfStats, 0, _dpd.totalPerfStats, NULL);
+#endif
 #endif
 
 #ifdef TARGET_BASED
@@ -308,8 +330,10 @@ static void FTPTelnetInit(struct _SnortConfig *sc, char *args)
                 *_dpd.config_file, *_dpd.config_line);
         }
 
-        pPolicyConfig =
-            (FTPTELNET_GLOBAL_CONF *)calloc(1, sizeof(FTPTELNET_GLOBAL_CONF));
+        pPolicyConfig = (FTPTELNET_GLOBAL_CONF *)_dpd.snortAlloc(1,
+                                                  sizeof(FTPTELNET_GLOBAL_CONF),
+                                                  PP_FTPTELNET,
+                                                  PP_MEM_CATEGORY_CONFIG);
 
         if (pPolicyConfig == NULL)
         {
@@ -461,6 +485,7 @@ void SetupFTPTelnet(void)
 #ifdef DUMP_BUFFER
     _dpd.registerBufferTracer(getFTPTelnetBuffers, FTPTELNET_BUFFER_DUMP_FUNC);
 #endif
+    _dpd.registerMemoryStatsFunc(PP_FTPTELNET, ftptelnet_print_mem_stats);
 }
 
 static void FTPTelnetReset(int signal, void *data)
@@ -471,6 +496,91 @@ static void FTPTelnetReset(int signal, void *data)
 static void FTPTelnetResetStats(int signal, void *data)
 {
     return;
+}
+
+static void FTPTelnetStats(int exiting)
+{
+    _dpd.logMsg("FTPTelnet Preprocessor Statistics\n");
+    _dpd.logMsg("  Current active FTP sessions                   : " STDu64 "\n",
+                ftp_telnet_stats.ftp_sessions);
+    _dpd.logMsg("  Max concurrent FTP sessions                   : " STDu64 "\n",
+                ftp_telnet_stats.max_ftp_sessions);
+    _dpd.logMsg("  Total FTP Data sessions                       : " STDu64 "\n",
+                ftp_telnet_stats.ftp_data_sessions);
+    _dpd.logMsg("  Max concurrent FTP Data sessions              : " STDu64 "\n",
+                ftp_telnet_stats.max_ftp_data_sessions);
+    _dpd.logMsg("  Current active Telnet sessions                : " STDu64 "\n",
+                ftp_telnet_stats.telnet_sessions);
+    _dpd.logMsg("  Max concurrent Telnet sessions                : " STDu64 "\n",
+                ftp_telnet_stats.max_telnet_sessions);
+    _dpd.logMsg("  Current ftp_telnet session non-mempool memory : " STDu64 "\n",
+                ftp_telnet_stats.heap_memory);
+}
+
+int ftptelnet_print_mem_stats(FILE *fd, char* buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time = time(NULL);
+    int len = 0;
+    size_t total_heap_memory = meminfo[PP_MEM_CATEGORY_SESSION].used_memory 
+                              + meminfo[PP_MEM_CATEGORY_CONFIG].used_memory; 
+    if (fd)
+    {
+        len = fprintf(fd, ","STDu64","STDu64","STDu64"" 
+                       ","STDu64","STDu64","STDu64""
+                       ",%lu,%u,%u,%lu,%u,%u,%lu"
+                       , ftp_telnet_stats.ftp_sessions
+                       , ftp_telnet_stats.max_ftp_sessions
+                       , ftp_telnet_stats.ftp_data_sessions
+                       , ftp_telnet_stats.max_ftp_data_sessions
+                       , ftp_telnet_stats.telnet_sessions
+                       , ftp_telnet_stats.max_telnet_sessions
+                       , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                       , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                       , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                       , total_heap_memory);
+       return len;
+    }
+    if (buffer)
+    {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE,
+                       "\n\nMemory Statistics for FTPTelnet at: %s\n"
+                       "FTPTelnet Preprocessor Statistics:\n"
+                       "       Current active FTP sessions :  "STDu64"\n"
+                       "       Max concurrent FTP sessions :  "STDu64"\n"
+                       "           Total FTP Data sessions :  "STDu64"\n"
+                       "  Max concurrent FTP Data sessions :  "STDu64"\n"
+                       "    Current active Telnet sessions :  "STDu64"\n"
+                       "    Max concurrent Telnet sessions :  "STDu64"\n"
+                       , ctime(&curr_time)
+                       , ftp_telnet_stats.ftp_sessions
+                       , ftp_telnet_stats.max_ftp_sessions
+                       , ftp_telnet_stats.ftp_data_sessions
+                       , ftp_telnet_stats.max_ftp_data_sessions
+                       , ftp_telnet_stats.telnet_sessions
+                       , ftp_telnet_stats.max_telnet_sessions);
+    }
+    else 
+    {
+        _dpd.logMsg("\n");
+        _dpd.logMsg("Memory Statistics of FTPTelnet at: %s\n",
+                    ctime(&curr_time));
+        _dpd.logMsg("       Current active FTP sessions :    "STDu64"\n",
+                    ftp_telnet_stats.ftp_sessions);
+        _dpd.logMsg("       Max concurrent FTP sessions :    "STDu64"\n",
+                    ftp_telnet_stats.max_ftp_sessions);
+        _dpd.logMsg("           Total FTP Data sessions :    "STDu64"\n",
+                    ftp_telnet_stats.ftp_data_sessions);
+        _dpd.logMsg("  Max concurrent FTP Data sessions :    "STDu64"\n",
+                    ftp_telnet_stats.max_ftp_data_sessions);
+        _dpd.logMsg("    Current active Telnet sessions :    "STDu64"\n",
+                    ftp_telnet_stats.telnet_sessions);
+        _dpd.logMsg("    Max concurrent Telnet sessions :    "STDu64"\n",
+                    ftp_telnet_stats.max_telnet_sessions);
+    }
+    return len;
 }
 
 #ifdef SNORT_RELOAD
@@ -518,8 +628,10 @@ static void _FtpTelnetReload(struct _SnortConfig *sc, tSfPolicyUserContextId ftp
                 *_dpd.config_file, *_dpd.config_line);
         }
 
-        pPolicyConfig =
-            (FTPTELNET_GLOBAL_CONF *)calloc(1, sizeof(FTPTELNET_GLOBAL_CONF));
+        pPolicyConfig = (FTPTELNET_GLOBAL_CONF *)_dpd.snortAlloc(1,
+                                                  sizeof(FTPTELNET_GLOBAL_CONF),
+                                                  PP_FTPTELNET,
+                                                  PP_MEM_CATEGORY_CONFIG);
 
         if (pPolicyConfig == NULL)
         {
@@ -704,16 +816,6 @@ static void * FtpTelnetReloadSwap(struct _SnortConfig *sc, void *new_config)
     ftp_telnet_config = ftp_telnet_swap_config;
 
     sfPolicyUserDataIterate (sc, old_config, FtpTelnetReloadSwapPolicy);
-
-#ifdef REG_TEST
-    if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
-    {
-    	FTPTELNET_GLOBAL_CONF *pPolicyConfig = NULL;
-
-    	pPolicyConfig  = (FTPTELNET_GLOBAL_CONF *)sfPolicyUserDataGet(ftp_telnet_config, _dpd.getDefaultPolicy());
-    	printf("Setting FTP memcap value to %lu\n", pPolicyConfig->mc.memcap);
-    }
-#endif
 
     if (sfPolicyUserPolicyGetActive(old_config) == 0)
         return (void *)old_config;

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -416,7 +416,7 @@ inprocess:
     return CLIENT_APP_INPROCESS;
 
 done:
-    tns_client_mod.api->add_app(flowp, APP_ID_ORACLE_TNS, APP_ID_ORACLE_DATABASE, fd->version);
+    tns_client_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_ORACLE_TNS, APP_ID_ORACLE_DATABASE, fd->version);
     if(user_start && user_end && ((user_size = user_end - user_start) > 0))
     {
         /* we truncate extra long usernames */

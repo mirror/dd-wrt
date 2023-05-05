@@ -65,7 +65,9 @@ sfdaq.c sfdaq.h \
 reload.c reload.h reload_api.h \
 idle_processing.c idle_processing.h idle_processing_funcs.h \
 appIdApi.h \
-reg_test.h reg_test.c
+smtp_api.h \
+reg_test.h reg_test.c \
+memory_stats.h memory_stats.c
 
 if BUILD_CONTROL_SOCKET
 snort_SOURCES += dump.c dump.h

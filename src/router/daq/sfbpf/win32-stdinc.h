@@ -28,7 +28,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/win32-stdinc.h,v 1.1 2010/05/06 19:13:26 maltizer Exp $ (LBL)
  */
 #ifndef win32_stdinc_h
 #define win32_stdinc_h

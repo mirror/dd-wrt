@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,7 @@
 #include "sfsnprintfappend.h"
 #include "sf_iph.h"
 #include "session_api.h"
+#include "sfdaq.h"
 
 #include "portscan.h"
 
@@ -439,7 +440,35 @@ static int MakePortscanPkt(PS_PKT *ps_pkt, PS_PROTO *proto, int proto_type,
 
     if (p != g_tmp_pkt)
     {
+#if defined(HAVE_DAQ_ADDRESS_SPACE_ID) && defined(DAQ_VERSION) && DAQ_VERSION > 6
+      DAQ_PktHdr_t phdr;
+      memcpy(&phdr, &p->pkth, sizeof(*p->pkth));
+      if (p->pkth->flags & DAQ_PKT_FLAG_REAL_ADDRESSES)
+      {
+        phdr.flags &= ~(DAQ_PKT_FLAG_REAL_SIP_V6 | DAQ_PKT_FLAG_REAL_DIP_V6);
+        if (flags & ENC_FLAG_FWD)
+        {
+          phdr.flags |= phdr.flags & (DAQ_PKT_FLAG_REAL_SIP_V6 | DAQ_PKT_FLAG_REAL_DIP_V6);
+          phdr.real_sIP = p->pkth->real_sIP;
+          phdr.real_dIP = p->pkth->real_dIP;
+        }
+        else
+        {
+          if (p->pkth->flags & DAQ_PKT_FLAG_REAL_SIP_V6)
+            phdr.flags |= DAQ_PKT_FLAG_REAL_DIP_V6;
+          if (p->pkth->flags & DAQ_PKT_FLAG_REAL_DIP_V6)
+            phdr.flags |= DAQ_PKT_FLAG_REAL_SIP_V6;
+          phdr.real_sIP = p->pkth->real_dIP;
+          phdr.real_dIP = p->pkth->real_sIP;
+        }
+
+      }
+      Encode_Format_With_DAQ_Info(flags, p, g_tmp_pkt, PSEUDO_PKT_PS, &phdr, 0);
+#elif defined(HAVE_DAQ_ACQUIRE_WITH_META) && defined(DAQ_VERSION) && DAQ_VERSION > 6
+      Encode_Format_With_DAQ_Info(flags, p, g_tmp_pkt, PSEUDO_PKT_PS, 0);
+#else
         Encode_Format(flags, p, g_tmp_pkt, PSEUDO_PKT_PS);
+#endif
     }
 
     switch (proto_type)
@@ -1178,10 +1207,21 @@ static void ParseLogFile(struct _SnortConfig *sc, PortscanConfig *config, char *
     }
 }
 
+#ifdef REG_TEST
+static inline void PrintPORTSCANSize(void)
+{
+    LogMessage("\nPORTSCAN Session Size: %lu\n", (long unsigned int)sizeof(PS_TRACKER));
+}
+#endif
+
 static void PortscanInit(struct _SnortConfig *sc, char *args)
 {
     tSfPolicyId policy_id = getParserPolicy(sc);
     PortscanConfig *pPolicyConfig = NULL;
+
+#ifdef REG_TEST
+    PrintPORTSCANSize();
+#endif
 
     if (portscan_config == NULL)
     {

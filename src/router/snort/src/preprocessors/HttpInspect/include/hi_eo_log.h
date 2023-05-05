@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 static inline int hi_eo_generate_event(HI_SESSION *Session, int iAlert)
 {
     if(iAlert && !(Session->norm_flags & HI_BODY) &&
-       !Session->server_conf->no_alerts)
+       Session->server_conf && !Session->server_conf->no_alerts)
     {
         return HI_BOOL_TRUE;
     }

@@ -1612,28 +1612,46 @@ DEFUN (no_router_bgp,
 			for (ALL_LIST_ELEMENTS_RO(bm->bgp, node, tmp_bgp)) {
 				if (tmp_bgp->inst_type != BGP_INSTANCE_TYPE_VRF)
 					continue;
-				if (CHECK_FLAG(tmp_bgp->af_flags[AFI_IP][SAFI_UNICAST],
-					       BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT) ||
-				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6][SAFI_UNICAST],
-					       BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT) ||
-				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP][SAFI_UNICAST],
-					       BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT) ||
-				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6][SAFI_UNICAST],
-					       BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT) ||
-				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP][SAFI_UNICAST],
+				if (CHECK_FLAG(
+					    tmp_bgp->af_flags[AFI_IP]
+							     [SAFI_UNICAST],
+					    BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT) ||
+				    CHECK_FLAG(
+					    tmp_bgp->af_flags[AFI_IP6]
+							     [SAFI_UNICAST],
+					    BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT) ||
+				    CHECK_FLAG(
+					    tmp_bgp->af_flags[AFI_IP]
+							     [SAFI_UNICAST],
+					    BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT) ||
+				    CHECK_FLAG(
+					    tmp_bgp->af_flags[AFI_IP6]
+							     [SAFI_UNICAST],
+					    BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT) ||
+				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP]
+								[SAFI_UNICAST],
 					       BGP_CONFIG_VRF_TO_VRF_EXPORT) ||
-				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6][SAFI_UNICAST],
+				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6]
+								[SAFI_UNICAST],
 					       BGP_CONFIG_VRF_TO_VRF_EXPORT) ||
 				    (bgp == bgp_get_evpn() &&
-				    (CHECK_FLAG(tmp_bgp->af_flags[AFI_L2VPN][SAFI_EVPN],
-						BGP_L2VPN_EVPN_ADV_IPV4_UNICAST) ||
-				     CHECK_FLAG(tmp_bgp->af_flags[AFI_L2VPN][SAFI_EVPN],
-						BGP_L2VPN_EVPN_ADV_IPV4_UNICAST_GW_IP) ||
-				     CHECK_FLAG(tmp_bgp->af_flags[AFI_L2VPN][SAFI_EVPN],
-						BGP_L2VPN_EVPN_ADV_IPV6_UNICAST) ||
-				     CHECK_FLAG(tmp_bgp->af_flags[AFI_L2VPN][SAFI_EVPN],
-						BGP_L2VPN_EVPN_ADV_IPV6_UNICAST_GW_IP))) ||
-				    (hashcount(tmp_bgp->vnihash))) {
+				     (CHECK_FLAG(
+					      tmp_bgp->af_flags[AFI_L2VPN]
+							       [SAFI_EVPN],
+					      BGP_L2VPN_EVPN_ADV_IPV4_UNICAST) ||
+				      CHECK_FLAG(
+					      tmp_bgp->af_flags[AFI_L2VPN]
+							       [SAFI_EVPN],
+					      BGP_L2VPN_EVPN_ADV_IPV4_UNICAST_GW_IP) ||
+				      CHECK_FLAG(
+					      tmp_bgp->af_flags[AFI_L2VPN]
+							       [SAFI_EVPN],
+					      BGP_L2VPN_EVPN_ADV_IPV6_UNICAST) ||
+				      CHECK_FLAG(
+					      tmp_bgp->af_flags[AFI_L2VPN]
+							       [SAFI_EVPN],
+					      BGP_L2VPN_EVPN_ADV_IPV6_UNICAST_GW_IP))) ||
+				    (tmp_bgp->l3vni)) {
 					vty_out(vty,
 						"%% Cannot delete default BGP instance. Dependent VRF instances exist\n");
 					return CMD_WARNING_CONFIG_FAILED;
@@ -10849,10 +10867,10 @@ static char *bgp_peer_description_stripped(char *desc, uint32_t size)
 {
 	static char stripped[BUFSIZ];
 	uint32_t i = 0;
-	uint32_t last_space = 0;
+	uint32_t last_space = size;
 
 	while (i < size) {
-		if (*(desc + i) == 0) {
+		if (*(desc + i) == '\0') {
 			stripped[i] = '\0';
 			return stripped;
 		}
@@ -10862,10 +10880,7 @@ static char *bgp_peer_description_stripped(char *desc, uint32_t size)
 		i++;
 	}
 
-	if (last_space > size)
-		stripped[size + 1] = '\0';
-	else
-		stripped[last_space] = '\0';
+	stripped[last_space] = '\0';
 
 	return stripped;
 }

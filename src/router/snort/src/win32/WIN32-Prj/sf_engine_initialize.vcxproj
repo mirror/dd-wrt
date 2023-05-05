@@ -1,0 +1,329 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|x64">
+      <Configuration>Template</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{AFE7C6D1-5F41-4198-A7B3-88ABE6CCB623}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\SF_Engine_Initialize_Debug\</OutDir>
+    <IntDir>.\SF_Engine_Initialize_Debug\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\SF_Engine_Initialize_Release\</OutDir>
+    <IntDir>.\SF_Engine_Initialize_Release\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>.\SF_Engine_Initialize_Release\</OutDir>
+    <IntDir>.\SF_Engine_Initialize_Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <TypeLibraryName>.\SF_Engine_Initialize_Debug\sf_engine_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TypeLibraryName>.\SF_Engine_Initialize_Debug\sf_engine_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <TypeLibraryName>.\SF_Engine_Initialize_Release\sf_engine_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TypeLibraryName>.\SF_Engine_Initialize_Release\sf_engine_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\ipv6_port.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../../dynamic-plugins/sf_engine/%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../../dynamic-plugins/sf_engine/%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../../dynamic-plugins/sf_engine/%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/-&gt;iph-&gt;ip_src/-&gt;ip4_header-&gt;source/" -e "s/-&gt;iph-&gt;ip_dst/-&gt;ip4_header-&gt;destination/" -e "s/-&gt;iph-&gt;/-&gt;ip4_header-&gt;/" -e "s/-&gt;iph$/-&gt;ip4_header/" -e "s/orig_iph$/orig_ip4_header/" -e "s/ip_verhl/version_headerlength/" -e "s/ip_tos/type_service/" -e "s/ip_len/data_length/" -e "s/ip_id/identifier/" -e "s/ip_off/offset/" -e "s/ip_ttl/time_to_live/" -e "s/ip_proto/proto/" -e "s/ip_csum/checksum/" -e "s/p-&gt;iph$/p-&gt;ip4_header/" ../../dynamic-plugins/sf_engine/%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\md5.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\preprocids.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_ip.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_protocols.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_sechash.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sf_types.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfghash.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfhashfcn.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfprimetable.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sha2.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\snort_debug.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_ded.debugMsgFile = /" -e "s/DebugMessageLine = /*_ded.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _ded.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _ded.debugWideMsg/" ../../dynamic-plugins/sf_engine/%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_ded.debugMsgFile = /" -e "s/DebugMessageLine = /*_ded.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _ded.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _ded.debugWideMsg/" ../../dynamic-plugins/sf_engine/%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_ded.debugMsgFile = /" -e "s/DebugMessageLine = /*_ded.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _ded.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _ded.debugWideMsg/" ../../dynamic-plugins\sf_engine\%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).h.new  
+c:\cygwin\bin\sed -e "s/DebugMessageFile = /*_ded.debugMsgFile = /" -e "s/DebugMessageLine = /*_ded.debugMsgLine = /" -e "s/%3b DebugMessageFunc$/%3b _ded.debugMsg/" -e "s/%3b DebugWideMessageFunc$/%3b _ded.debugWideMsg/" ../../dynamic-plugins\sf_engine\%(Filename).h.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).h;..\..\dynamic-plugins\sf_engine\$(InputName).h.new;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\sfutil\md5.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_ip.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sf_sechash.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfghash.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfhashfcn.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/\#ifndef MODULUS_HASH/\#ifdef STATIC_HASH/" ../../dynamic-plugins/sf_engine/%(Filename).c.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/\#ifndef MODULUS_HASH/\#ifdef STATIC_HASH/" ../../dynamic-plugins/sf_engine/%(Filename).c.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;..\..\dynamic-plugins\sf_engine\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;..\..\dynamic-plugins\sf_engine\$(InputName).c.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/\#ifndef MODULUS_HASH/\#ifdef STATIC_HASH/" ../../dynamic-plugins/sf_engine/%(Filename).c.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/\#ifndef MODULUS_HASH/\#ifdef STATIC_HASH/" ../../dynamic-plugins/sf_engine/%(Filename).c.new &gt; ../../dynamic-plugins/sf_engine/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;..\..\dynamic-plugins\sf_engine\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;..\..\dynamic-plugins\sf_engine\$(InputName).c.new;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sfprimetable.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\sfutil\sha2.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\dynamic-plugins\sf_engine</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\dynamic-plugins\sf_engine\$(InputName).c;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

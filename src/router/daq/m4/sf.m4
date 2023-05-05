@@ -50,17 +50,17 @@ AC_DEFUN([AC_SF_COMPILER_SETUP],
     fi
 
     if test "$GCC" = yes ; then
-        AX_CFLAGS_GCC_OPTION(-Wall)
-        AX_CFLAGS_GCC_OPTION(-Wwrite-strings)
-        AX_CFLAGS_GCC_OPTION(-Wsign-compare)
-        AX_CFLAGS_GCC_OPTION(-Wcast-align)
-        AX_CFLAGS_GCC_OPTION(-Wextra)
-        AX_CFLAGS_GCC_OPTION(-Wformat)
-        AX_CFLAGS_GCC_OPTION(-Wformat-security)
-        AX_CFLAGS_GCC_OPTION(-Wno-unused-parameter)
-        AX_CFLAGS_GCC_OPTION(-fno-strict-aliasing)
-        AX_CFLAGS_GCC_OPTION(-fdiagnostics-show-option)
-        AX_CFLAGS_GCC_OPTION(-pedantic -std=c99 -D_GNU_SOURCE)
+        AX_CHECK_COMPILE_FLAG(-Wall, [AM_CFLAGS="${AM_CFLAGS} -Wall"])
+        AX_CHECK_COMPILE_FLAG(-Wwrite-strings, [AM_CFLAGS="${AM_CFLAGS} -Wwrite-strings"])
+        AX_CHECK_COMPILE_FLAG(-Wsign-compare, [AM_CFLAGS="${AM_CFLAGS} -Wsign-compare"])
+        AX_CHECK_COMPILE_FLAG(-Wcast-align, [AM_CFLAGS="${AM_CFLAGS} -Wcast-align"])
+        AX_CHECK_COMPILE_FLAG(-Wextra, [AM_CFLAGS="${AM_CFLAGS} -Wextra"])
+        AX_CHECK_COMPILE_FLAG(-Wformat, [AM_CFLAGS="${AM_CFLAGS} -Wformat"])
+        AX_CHECK_COMPILE_FLAG(-Wformat-security, [AM_CFLAGS="${AM_CFLAGS} -Wformat-security"])
+        AX_CHECK_COMPILE_FLAG(-Wno-unused-parameter, [AM_CFLAGS="${AM_CFLAGS} -Wno-unused-parameter"])
+        AX_CHECK_COMPILE_FLAG(-fno-strict-aliasing, [AM_CFLAGS="${AM_CFLAGS} -fno-strict-aliasing"])
+        AX_CHECK_COMPILE_FLAG(-fdiagnostics-show-option, [AM_CFLAGS="${AM_CFLAGS} -fdiagnostics-show-option"])
+        AX_CHECK_COMPILE_FLAG(-pedantic -std=c99 -D_GNU_SOURCE, [AM_CFLAGS="${AM_CFLAGS} --pedantic -std=c99 -D_GNU_SOURCE"])
     fi
 ])
 

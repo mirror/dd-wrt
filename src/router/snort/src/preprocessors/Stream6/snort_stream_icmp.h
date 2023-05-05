@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,5 +43,7 @@ void IcmpSessionCleanup(SessionControlBlock *ssn);
 
 void SessionICMPReload(uint32_t max_sessions, uint16_t pruningTimeout, uint16_t nominalTimeout);
 unsigned SessionICMPReloadAdjust(unsigned maxWork);
+
+size_t get_icmp_used_mempool();
 
 #endif /* STREAM_ICMP_H_ */

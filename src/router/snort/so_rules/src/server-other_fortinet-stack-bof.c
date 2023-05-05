@@ -103,9 +103,16 @@ static RuleMetaData rule34967policy1 =
    "policy security-ips drop"
 };
 
+/* metadata:policy max-detect-ips drop; */
+static RuleMetaData rule34967policy2 =
+{
+   "policy max-detect-ips drop"
+};
+
 static RuleMetaData *rule34967metadata[] =
 {
    &rule34967policy1,
+   &rule34967policy2,
    NULL
 };
 
@@ -130,7 +137,7 @@ Rule rule34967 = {
    { 
       3,  /* genid */
       34967, /* sigid */
-      1, /* revision */
+      2, /* revision */
       "attempted-admin", /* classification */
       0,  /* hardcoded priority */
       "SERVER-OTHER Fortinet FSSO stack buffer overflow attempt",     /* message */

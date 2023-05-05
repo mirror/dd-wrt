@@ -32,6 +32,7 @@ ssl_buffer_dump.h
 endif
 
 EXTRA_DIST = \
+sf_ssl.vcxproj \
 sf_ssl.dsp
 
 all-local: $(LTLIBRARIES)

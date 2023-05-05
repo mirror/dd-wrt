@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -218,7 +218,8 @@ void IMAP_InitCmds(IMAPConfig *config)
         return;
 
     /* add one to CMD_LAST for NULL entry */
-    config->cmds = (IMAPToken *)calloc(CMD_LAST + 1, sizeof(IMAPToken));
+    config->cmds = (IMAPToken *)_dpd.snortAlloc(CMD_LAST + 1, sizeof(IMAPToken), PP_IMAP, 
+                                     PP_MEM_CATEGORY_CONFIG);
     if (config->cmds == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => failed to allocate memory for imap "
@@ -241,7 +242,8 @@ void IMAP_InitCmds(IMAPConfig *config)
     }
 
     /* initialize memory for command searches */
-    config->cmd_search = (IMAPSearch *)calloc(CMD_LAST, sizeof(IMAPSearch));
+    config->cmd_search = (IMAPSearch *)_dpd.snortAlloc(CMD_LAST, sizeof(IMAPSearch), PP_IMAP, 
+                                            PP_MEM_CATEGORY_CONFIG);
     if (config->cmd_search == NULL)
     {
         DynamicPreprocessorFatalMessage("%s(%d) => failed to allocate memory for imap "
@@ -326,7 +328,7 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
 
     DEBUG_WRAP(DebugMessage(DEBUG_IMAP, "Creating new session data structure\n"););
 
-    ssn = (IMAP *)calloc(1, sizeof(IMAP));
+    ssn = (IMAP *)_dpd.snortAlloc(1, sizeof(IMAP), PP_IMAP, PP_MEM_CATEGORY_SESSION);
     if (ssn == NULL)
     {
         DynamicPreprocessorFatalMessage("Failed to allocate IMAP session data\n");
@@ -342,7 +344,7 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     imap_ssn->mime_ssn.mime_stats = &(imap_stats.mime_stats);
     imap_ssn->mime_ssn.methods = &(mime_methods);
 
-    if (( ret = _dpd.fileAPI->set_log_buffers(&(imap_ssn->mime_ssn.log_state), &(pPolicyConfig->log_config),imap_mempool, p->stream_session)) < 0)
+    if (( ret = _dpd.fileAPI->set_log_buffers(&(imap_ssn->mime_ssn.log_state), &(pPolicyConfig->log_config),imap_mempool, p->stream_session, PP_IMAP)) < 0)
     {
         if( ret == -1 )
         {
@@ -352,7 +354,7 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
             }
             imap_stats.log_memcap_exceeded++;
         }
-        free(ssn);
+	_dpd.snortFree(ssn, sizeof(*ssn), PP_IMAP, PP_MEM_CATEGORY_SESSION);
         return NULL;
     }
 
@@ -393,6 +395,7 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     pPolicyConfig->ref_count++;
     imap_stats.sessions++;
     imap_stats.conc_sessions++;
+    imap_stats.cur_sessions++;
     if(imap_stats.max_conc_sessions < imap_stats.conc_sessions)
        imap_stats.max_conc_sessions = imap_stats.conc_sessions;
 
@@ -548,20 +551,25 @@ static void IMAP_SessionFree(void *session_data)
     if(imap->mime_ssn.decode_state != NULL)
     {
         mempool_free(imap_mime_mempool, imap->mime_ssn.decode_bkt);
-        free(imap->mime_ssn.decode_state);
+	_dpd.snortFree(imap->mime_ssn.decode_state, sizeof(Email_DecodeState), PP_IMAP, 
+             PP_MEM_CATEGORY_SESSION);
     }
 
     if(imap->mime_ssn.log_state != NULL)
     {
         mempool_free(imap_mempool, imap->mime_ssn.log_state->log_hdrs_bkt);
-        free(imap->mime_ssn.log_state);
+	_dpd.snortFree(imap->mime_ssn.log_state, sizeof(MAIL_LogState), PP_IMAP, 
+             PP_MEM_CATEGORY_SESSION);
     }
     if ( ssl_cb )
         ssl_cb->session_free(imap->flow_id);
 
-    free(imap);
+    _dpd.snortFree(imap, sizeof(*imap), PP_IMAP, PP_MEM_CATEGORY_SESSION);
     if(imap_stats.conc_sessions)
        imap_stats.conc_sessions--;
+
+    if(imap_stats.cur_sessions)
+	imap_stats.cur_sessions--;
 }
 
 static int IMAP_FreeConfigsPolicy(
@@ -598,18 +606,18 @@ void IMAP_FreeConfig(IMAPConfig *config)
         IMAPToken *tmp = config->cmds;
 
         for (; tmp->name != NULL; tmp++)
-            free(tmp->name);
+	    _dpd.snortFree(tmp->name, sizeof(*(tmp->name)), PP_IMAP, PP_MEM_CATEGORY_CONFIG);
 
-        free(config->cmds);
+	_dpd.snortFree(config->cmds, sizeof(*(config->cmds)), PP_IMAP, PP_MEM_CATEGORY_CONFIG);
     }
 
     if (config->cmd_search_mpse != NULL)
         _dpd.searchAPI->search_instance_free(config->cmd_search_mpse);
 
     if (config->cmd_search != NULL)
-        free(config->cmd_search);
+	_dpd.snortFree(config->cmd_search, sizeof(*(config->cmd_search)), PP_IMAP, PP_MEM_CATEGORY_CONFIG);
 
-    free(config);
+    _dpd.snortFree(config, sizeof(*config), PP_IMAP, PP_MEM_CATEGORY_CONFIG);
 }
 
 
@@ -821,7 +829,7 @@ static void IMAP_ProcessServerPacket(SFSnortPacket *p)
                 dumpBuffer(IMAP_SERVER_BODY_DATA_DUMP,ptr,len);
 #endif
 
-                ptr = _dpd.fileAPI->process_mime_data(p, ptr, end, &(imap_ssn->mime_ssn), 0, true, "IMAP");
+                ptr = _dpd.fileAPI->process_mime_data(p, ptr, end, &(imap_ssn->mime_ssn), 0, true, "IMAP", PP_IMAP);
 
                 if( ptr < data_end)
                     len = len - (data_end - ptr);

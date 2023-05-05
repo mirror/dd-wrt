@@ -2,7 +2,7 @@
 **
 **  sfcontrol.h
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Author(s):  Ron Dempster <rdempster@sourcefire.com>
 **
@@ -35,6 +35,17 @@
 #define CS_TYPE_RELOAD          0x0002
 #define CS_TYPE_IS_PROCESSING   0x0003
 #define CS_TYPE_DUMP_PACKETS    0x0004
+#define CS_TYPE_MEM_USAGE       0x0005
+#define CS_TYPE_ACTION_STATS    0x0006
+#define CS_TYPE_STREAM_STATS    0x0007
+#define CS_TYPE_SMTP_STATS      0x0008
+#define CS_TYPE_SSL_STATS       0x0009
+#define CS_TYPE_SIP_STATS       0x000A
+#define CS_TYPE_FLOWIP_START    0x000D
+#define CS_TYPE_FLOWIP_STOP     0x000E
+#define CS_TYPE_FLOWIP_SHOW     0x000F
+#define CS_TYPE_MEM_STATS_CFG   0x0011
+#define CS_TYPE_MEM_STATS_SHOW  0x0012
 #define CS_TYPE_MAX             0x1FFF
 #define CS_HEADER_VERSION       0x0001
 #define CS_HEADER_SUCCESS       0x0000
@@ -43,7 +54,9 @@
 #ifdef REG_TEST
 #define CS_CONFIG_SWAP          0x000A
 #endif
-
+/* For SFR Display */
+#define MEM_STATS_BUF_SIZE 7680 //CS_STATS_BUF_SIZE * (no. of preprocessors) * 2 = 1280 * 3 * 2
+#define CS_STATS_BUF_SIZE 1280
 #pragma pack(1)
 typedef struct _CS_MESSAGE_DATA_HEADER
 {

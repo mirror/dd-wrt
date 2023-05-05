@@ -3,7 +3,7 @@
 **
 **  fpcreate.c
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Dan Roelker <droelker@sourcefire.com>
 **  Marc Norton <mnorton@sourcefire.com>
@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1005,13 +1006,16 @@ int fpSetDetectSearchMethod(FastPatternConfig *fp, char *method)
        fp->search_method = MPSE_LOWMEM;
        LogMessage("   Search-Method = Low-Mem\n");
     }
-#ifdef INTEL_SOFT_CPM
     else if( !strcasecmp(method,"intel-cpm") )
     {
+#ifdef INTEL_SOFT_CPM
        fp->search_method = MPSE_INTEL_CPM;
        LogMessage("   Search-Method = Intel CPM\n");
-    }
+#else
+       fp->search_method = MPSE_AC_BNFA_Q;
+       LogMessage("   Search-Method = AC-BNFA-Q\n");
 #endif
+    }
     else
     {
        return -1;
@@ -1942,10 +1946,12 @@ static int fpCreateInitRuleMap (
 
     prm->prmNumSrcGroups= 0;
     prm->prmNumDstGroups= 0;
+#ifdef TARGET_BASED
     prm->prmNumNoServiceSrcRules= 0;
     prm->prmNumNoServiceDstRules= 0;
     prm->prmNumNoServiceSrcGroups= 0;
     prm->prmNumNoServiceDstGroups= 0;
+#endif
 
     /* Process src PORT groups */
     if(src )
@@ -2055,11 +2061,12 @@ static int fpCreateInitRuleMap (
             if( !po->data ) continue;
 
             /* Add up the total ns_src rules */
+#ifdef TARGET_BASED
             prm->prmNumNoServiceSrcRules += po->rule_hash->count;
 
             /* Increment the port group count */
             prm->prmNumNoServiceSrcGroups ++;
-
+#endif
             /* Add this port group to the ns_src table at each port that uses it */
             for( poi = (PortObjectItem*)sflist_first(po->item_list); poi;
                     poi = (PortObjectItem*)sflist_next(po->item_list) )
@@ -2076,13 +2083,17 @@ static int fpCreateInitRuleMap (
                          */
                         if(  poi->lport < MAX_PORTS )
 #endif
+#ifdef TARGET_BASED
                             prm->prmNoServiceSrcPort[ poi->lport ] = (PORT_GROUP*)po->data;
+#endif
                         break;
                     case PORT_OBJECT_RANGE:
+#ifdef TARGET_BASED
                         for(i= poi->lport;i<= poi->hport;i++ )
                         {
                             prm->prmNoServiceSrcPort[ i ] = (PORT_GROUP*)po->data;
                         }
+#endif
                         break;
                 }
             }
@@ -2099,11 +2110,13 @@ static int fpCreateInitRuleMap (
             if( !po ) continue;
             if( !po->data ) continue;
 
+#ifdef TARGET_BASED
             /* Add up the total ns_dst rules */
             prm->prmNumNoServiceDstRules += po->rule_hash->count;
 
             /* Increment the port group count */
             prm->prmNumNoServiceDstGroups ++;
+#endif
 
             /* Add this port group to the ns_dst table at each port that uses it */
             for( poi = (PortObjectItem*)sflist_first(po->item_list);
@@ -2122,13 +2135,17 @@ static int fpCreateInitRuleMap (
                          */
                         if(  poi->lport < MAX_PORTS )
 #endif
+#ifdef TARGET_BASED
                             prm->prmNoServiceDstPort[ poi->lport ] = (PORT_GROUP*)po->data;
+#endif
                         break;
                     case PORT_OBJECT_RANGE:
+#ifdef TARGET_BASED
                         for(i= poi->lport;i<= poi->hport;i++ )
                         {
                             prm->prmNoServiceDstPort[ i ] = (PORT_GROUP*)po->data;
                         }
+#endif
                         break;
                 }
             }
@@ -2146,29 +2163,37 @@ static int fpCreateRuleMaps(SnortConfig *sc, rule_port_tables_t *p)
     if (sc->prmTcpRTNX == NULL)
         return 1;
 
+#ifdef TARGET_BASED
     if (fpCreateInitRuleMap(sc->prmTcpRTNX, p->tcp_src, p->tcp_dst, p->tcp_anyany, p->tcp_nocontent, p->ns_tcp_src, p->ns_tcp_dst ))
         return -1;
+#endif
 
     sc->prmUdpRTNX = prmNewMap();
     if (sc->prmUdpRTNX == NULL)
         return -1;
 
+#ifdef TARGET_BASED
     if (fpCreateInitRuleMap(sc->prmUdpRTNX, p->udp_src, p->udp_dst, p->udp_anyany, p->udp_nocontent, p->ns_udp_src, p->ns_udp_dst))
         return -1;
+#endif
 
     sc->prmIpRTNX = prmNewMap();
     if (sc->prmIpRTNX == NULL)
         return 1;
 
+#ifdef TARGET_BASED
     if (fpCreateInitRuleMap(sc->prmIpRTNX, p->ip_src, p->ip_dst, p->ip_anyany, p->ip_nocontent, p->ns_ip_src, p->ns_ip_dst))
         return -1;
+#endif
 
     sc->prmIcmpRTNX = prmNewMap();
     if (sc->prmIcmpRTNX == NULL)
         return 1;
 
+#ifdef TARGET_BASED
     if (fpCreateInitRuleMap(sc->prmIcmpRTNX, p->icmp_src, p->icmp_dst, p->icmp_anyany, p->icmp_nocontent, p->ns_icmp_src, p->ns_icmp_dst))
         return -1;
+#endif
 
     return 0;
 }
@@ -2968,6 +2993,7 @@ static int fpCreateServiceMaps(SnortConfig *sc)
 void fpBuildServicePortGroupByServiceOtnList(SnortConfig *sc, SFGHASH *p, const char *srvc, SF_LIST *list, FastPatternConfig *fp)
 {
     OptTreeNode * otn;
+    int status;
     PORT_GROUP *pg = (PORT_GROUP *)SnortAlloc(sizeof(PORT_GROUP));
 
     if (fpAllocPms(sc, pg, fp) != 0)
@@ -3004,7 +3030,24 @@ void fpBuildServicePortGroupByServiceOtnList(SnortConfig *sc, SFGHASH *p, const 
         return;
 
     /* Add the port_group using it's service name */
-    sfghash_add(p, srvc, pg);
+    status = sfghash_add(p, srvc, pg);
+    switch(status)
+    {
+        case SFGHASH_OK :
+             /* port_group is successfully added using it's service name */
+             break;
+        case SFGHASH_ERR :
+             LogMessage("fpBuildServicePortGroupByServiceOtnList : Hash table is NULL. \n");
+             break;
+        case SFGHASH_INTABLE :
+             break;
+        case SFGHASH_NOMEM :
+             LogMessage("Failed to allocate memory to port_group/service.\n");
+             break;
+        default :
+             break;
+
+    }
 }
 
 /*
@@ -3304,6 +3347,15 @@ int fpCreateFastPacketDetection(SnortConfig *sc)
 {
     rule_port_tables_t *port_tables;
     FastPatternConfig *fp;
+    
+#ifndef REG_TEST
+    struct rusage ru;
+    if (ScTestMode())
+    {
+        getrusage(RUSAGE_SELF, &ru);
+        LogMessage("\nMaxRss at the end of rules:%li\n", ru.ru_maxrss);
+    }
+#endif
 
     /* This is somewhat necessary because of how the detection option trees
      * are added via a callback from the pattern matcher */
@@ -3398,7 +3450,13 @@ int fpCreateFastPacketDetection(SnortConfig *sc)
     if (fp->search_method == MPSE_INTEL_CPM)
         IntelPmCompile(sc);
 #endif
-
+#ifndef REG_TEST
+    if (ScTestMode())
+    {
+        getrusage(RUSAGE_SELF, &ru);
+        LogMessage("\nMaxRss at the end of detection rules:%li\n", ru.ru_maxrss);
+    }
+#endif
     return 0;
 }
 

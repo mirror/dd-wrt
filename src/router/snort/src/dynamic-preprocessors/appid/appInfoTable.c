@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include <limits.h>
 #include "appId.h"
 #include "appInfoTable.h"
+#include "common_util.h"
 #include "Unified2_common.h"
 
 #define APP_MAPPING_FILE "appMapping.data"
@@ -39,14 +40,19 @@
 #define USR_CONFIG_FILE "userappid.conf"
 
 #define MAX_TABLE_LINE_LEN      1024
+// Generic delimiter for conf file
 #define CONF_SEPARATORS         "\t\n\r"
+// Delimiter for appid.conf  and userappid.conf file
+#define CONF_SEPARATORS_USR_APPID         " \t\n\r"
 #define MIN_MAX_TP_FLOW_DEPTH   1
 #define MAX_MAX_TP_FLOW_DEPTH   1000000
 #define MIN_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL    1
 #define MAX_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL    1000000
 #define MIN_HOST_PORT_APP_CACHE_LOOKUP_RANGE       1
 #define MAX_HOST_PORT_APP_CACHE_LOOKUP_RANGE       1000000
-
+#define MIN_MAX_BYTES_BEFORE_SERVICE_FAIL 4096
+#define MIN_MAX_PACKET_BEFORE_SERVICE_FAIL 5
+#define MIN_MAX_PACKET_BEFORE_SERVICE_FAIL_IGNORE_BYTES 15
 struct DynamicArray
 { 
     void **table;
@@ -62,7 +68,7 @@ static inline struct DynamicArray* dynamicArrayCreate(unsigned indexStart)
 {
     struct DynamicArray *array;
 
-    if ((array = calloc(1, sizeof(*array))))
+    if ((array = _dpd.snortAlloc(1, sizeof(*array), PP_APP_ID, PP_MEM_CATEGORY_CONFIG)))
     {
         array->stepSize = 1; 
         array->indexStart = indexStart;
@@ -81,11 +87,11 @@ static inline void dynamicArrayDestroy(struct DynamicArray *array)
     {
         entry = array->table[i];
         free(entry->appName);
-        free(entry);
+        _dpd.snortFree(entry, sizeof(*entry), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
     }
 
     free(array->table);
-    free(array);
+    _dpd.snortFree(array, sizeof(*array), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
 }
 
 static inline void dynamicArraySetIndex(struct DynamicArray *array, unsigned index, void* data)
@@ -175,6 +181,9 @@ static inline char *strdupToLower(const char *source)
             }
         }
     }
+    else
+        _dpd.errMsg("strdupToLower: Failed to allocate memory for destination\n");
+
     return dest;
 }
 
@@ -275,7 +284,7 @@ AppInfoTableEntry* appInfoEntryCreate(const char *appName, tAppIdConfig *pConfig
             return NULL;
         }
 
-        if ((entry = calloc(1, sizeof(*entry))))
+        if ((entry = _dpd.snortAlloc(1, sizeof(*entry), PP_APP_ID, PP_MEM_CATEGORY_CONFIG)))
         {
             entry->appId = appId;
             entry->serviceId = entry->appId;
@@ -285,7 +294,7 @@ AppInfoTableEntry* appInfoEntryCreate(const char *appName, tAppIdConfig *pConfig
             if (!entry->appName)
             {
                 _dpd.errMsg("failed to allocate appName");
-                free(entry);
+                _dpd.snortFree(entry, sizeof(*entry), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
                 return NULL;
             }
 
@@ -310,7 +319,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
     tAppId appId;
     uint32_t clientId, serviceId, payloadId;
     char filepath[PATH_MAX];
-    char *appName;
+    char *appName=NULL;
     char *snortName=NULL;
 
     pConfig->AppInfoTableDyn = dynamicArrayCreate(SF_APPID_DYNAMIC_MIN);
@@ -328,7 +337,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
 
     while (fgets(buf, sizeof(buf), tableFile))
     {
-        token = strtok(buf, CONF_SEPARATORS);
+        token = strtok(buf, CONF_SEPARATORS );
         if (!token)
         {
             _dpd.errMsg("Could not read id for Rna Id\n");
@@ -337,7 +346,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
 
         appId = strtol(token, NULL, 10);
 
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS );
         if (!token)
         {
             _dpd.errMsg("Could not read appName. Line %s\n", buf);
@@ -351,7 +360,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
             continue;
         }
 
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS );
         if (!token)
         {
             _dpd.errMsg("Could not read service id for Rna Id\n");
@@ -361,7 +370,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
 
         serviceId = strtol(token, NULL, 10);
 
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS );
         if (!token)
         {
             _dpd.errMsg("Could not read client id for Rna Id\n");
@@ -371,7 +380,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
 
         clientId = strtol(token, NULL, 10);
 
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS );
         if (!token)
         {
             _dpd.errMsg("Could not read payload id for Rna Id\n");
@@ -382,7 +391,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
         payloadId = strtol(token, NULL, 10);
 
         /* snort service key, if it exists */
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS );
         if (token)
         {
             snortName = strdup(token);
@@ -394,8 +403,7 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
             }
         }
 
-
-        entry = calloc(1, sizeof(*entry));
+        entry = _dpd.snortAlloc(1, sizeof(*entry), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
         if (!entry)
         {
             _dpd.errMsg("AppInfoTable: Memory allocation failure\n");
@@ -409,9 +417,11 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
 
         if (snortName)
         {
+#ifdef TARGET_BASED
             entry->snortId = _dpd.addProtocolReference(snortName);
             free(snortName);
             snortName = NULL;
+#endif
         }
 
         entry->appName = appName;
@@ -448,8 +458,16 @@ void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
     appidSC->host_port_app_cache_lookup_interval = 10;
     appidSC->host_port_app_cache_lookup_range = 100000;
     appidSC->is_host_port_app_cache_runtime = 1;
+    appidSC->check_host_port_app_cache = 0;
+    appidSC->check_host_cache_unknown_ssl = 0;
     appidSC->recheck_for_unknown_appid = 0;
-
+    appidSC->send_state_sharing_updates = 1;
+    appidSC->allow_port_wildcard_host_cache = 0;
+    appidSC->recheck_for_portservice_appid = 0;
+    appidSC->max_packet_before_service_fail = MIN_MAX_PACKET_BEFORE_SERVICE_FAIL;
+    appidSC->max_bytes_before_service_fail = MIN_MAX_BYTES_BEFORE_SERVICE_FAIL;
+    appidSC->max_packet_service_fail_ignore_bytes = MIN_MAX_PACKET_BEFORE_SERVICE_FAIL_IGNORE_BYTES;
+    appidSC->http_tunnel_detect = HTTP_TUNNEL_DETECT_RESTART;
     snprintf(filepath, sizeof(filepath), "%s/odp/%s", appidSC->app_id_detector_path, APP_CONFIG_FILE);
     appIdConfLoad (appidSC, filepath);
     snprintf(filepath, sizeof(filepath), "%s/../%s", appidSC->app_id_detector_path, USR_CONFIG_FILE);
@@ -463,8 +481,9 @@ void appInfoTableFini(tAppIdConfig *pConfig)
     while ((entry = pConfig->AppInfoList))
     {
         pConfig->AppInfoList = entry->next;
-        free(entry->appName);
-        free(entry);
+        if (entry->appName)	
+            free(entry->appName);
+        _dpd.snortFree(entry, sizeof(*entry), PP_APP_ID, PP_MEM_CATEGORY_CONFIG);
     }
 
     dynamicArrayDestroy(pConfig->AppInfoTableDyn);
@@ -608,7 +627,7 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
     while (fgets(buf, sizeof(buf), config_file) != NULL)
     {
         line++;
-        token = strtok(buf, CONF_SEPARATORS);
+        token = strtok(buf, CONF_SEPARATORS_USR_APPID);
         if (token == NULL)
         {
             _dpd.errMsg("Could not read configuration at line %s:%u\n", path, line);
@@ -616,7 +635,7 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
         }
         conf_type = token;
 
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS_USR_APPID);
         if (token == NULL)
         {
             _dpd.errMsg("Could not read configuration value at line %s:%u\n", path, line);
@@ -624,7 +643,7 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
         }
         conf_key = token;
 
-        token = strtok(NULL, CONF_SEPARATORS);
+        token = strtok(NULL, CONF_SEPARATORS_USR_APPID);
         if (token == NULL)
         {
             _dpd.errMsg("Could not read configuration value at line %s:%u\n", path, line);
@@ -684,12 +703,36 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
                     appidSC->is_host_port_app_cache_runtime = 0;
                 }
             }
+            else if (!(strcasecmp(conf_key, "check_host_port_app_cache")))
+            {
+                if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: hostPortCache lookup performed for every flow.\n"););
+                    appidSC->check_host_port_app_cache = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "check_host_cache_unknown_ssl")))
+            {
+                if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: hostPortCache lookup performed for SSL flows not having either of server name or certificate.\n"););
+                    appidSC->check_host_cache_unknown_ssl = 1;
+                }
+            }
             else if (!(strcasecmp(conf_key, "recheck_for_unknown_appid")))
             {
                 if (!(strcasecmp(conf_val, "enabled")))
                 {
                     DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: Flows with unknown AppID's will not be ignored.\n"););
                     appidSC->recheck_for_unknown_appid = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "recheck_for_portservice_appid")))
+            {
+                if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: Checking hostPortCache for flows with only port service AppID.\n"););
+                    appidSC->recheck_for_portservice_appid = 1;
                 }
             }
             else if (!(strcasecmp(conf_key, "tp_allow_probes")))
@@ -769,12 +812,51 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
                     continue;
                 }
             }
+            else if (!(strcasecmp(conf_key, "max_bytes_before_service_fail")))
+            {
+                uint64_t max_bytes_before_service_fail = atoi(conf_val);
+                if (max_bytes_before_service_fail < MIN_MAX_BYTES_BEFORE_SERVICE_FAIL)
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: invalid max_bytes_before_service_fail %"PRIu64" must be greater than %u\n.", max_bytes_before_service_fail, MIN_MAX_BYTES_BEFORE_SERVICE_FAIL ););
+                }
+                else
+                    appidSC->max_bytes_before_service_fail = max_bytes_before_service_fail;
+            }
+            else if (!(strcasecmp(conf_key, "max_packet_before_service_fail")))
+            {
+                uint16_t max_packet_before_service_fail = atoi(conf_val);
+                if (max_packet_before_service_fail < MIN_MAX_PACKET_BEFORE_SERVICE_FAIL)
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: invalid max_packet_before_service_fail %"PRIu16", must be greater than  %u \n.", max_packet_before_service_fail, MIN_MAX_PACKET_BEFORE_SERVICE_FAIL););
+                }
+                else
+                    appidSC->max_packet_before_service_fail = max_packet_before_service_fail;
+            }
+            else if (!(strcasecmp(conf_key, "max_packet_service_fail_ignore_bytes")))
+            {
+                uint16_t max_packet_service_fail_ignore_bytes = atoi(conf_val);
+                if (max_packet_service_fail_ignore_bytes < MIN_MAX_PACKET_BEFORE_SERVICE_FAIL_IGNORE_BYTES)
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: invalid max_packet_service_fail_ignore_bytes  %"PRIu16", must be greater than %u\n.", max_packet_service_fail_ignore_bytes, MIN_MAX_PACKET_BEFORE_SERVICE_FAIL_IGNORE_BYTES););
+                }
+                else
+                    appidSC->max_packet_service_fail_ignore_bytes= max_packet_service_fail_ignore_bytes;
+            }
+            else if (!(strcasecmp(conf_key, "http_tunnel_detect")))
+            {
+                if (!(strcasecmp(conf_val, "restart_and_reset")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: HTTP tunnel detect set to restart and reset.\n"););
+                    appidSC->http_tunnel_detect = HTTP_TUNNEL_DETECT_RESTART_AND_RESET;
+                    continue;
+                }
+            }
             /* App Priority bit set*/
             else if (!(strcasecmp(conf_key, "app_priority")))
             {
                 int temp_appid;
                 temp_appid = strtol(conf_val, NULL, 10 );
-                token = strtok(NULL, CONF_SEPARATORS);
+                token = strtok(NULL, CONF_SEPARATORS_USR_APPID);
                 if (token == NULL)
                 {
                     _dpd.errMsg("Could not read app_priority at line %u\n", line);
@@ -801,7 +883,7 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
                     referred_app_index += sprintf(referred_app_list, "%d ", atoi(conf_val));
                     appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_REFERRED, pConfig);
 
-                    while ((token = strtok(NULL, CONF_SEPARATORS)) != NULL)
+                    while ((token = strtok(NULL, CONF_SEPARATORS_USR_APPID)) != NULL)
                     {
                         referred_app_index += sprintf(referred_app_list+referred_app_index, "%d ", atoi(token));
                         appInfoEntryFlagSet(atoi(token), APPINFO_FLAG_REFERRED, pConfig);
@@ -851,6 +933,80 @@ static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
                 {
                     _dpd.logMsg("AppId: ignoring invalid option for http2_detection: %s\n", conf_val);
                 }
+            }
+            else if (!(strcasecmp(conf_key, "send_state_sharing_updates")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+		{
+                    _dpd.logMsg("AppId: Disabling state sharing updates.\n");
+                    appidSC->send_state_sharing_updates = 0;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "allow_port_wildcard_host_cache")))
+            {
+                if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    _dpd.logMsg("AppId: Enabling wild card for port numbers in hostPortAppCache.\n");
+                    appidSC->allow_port_wildcard_host_cache = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "bittorrent_aggressiveness")))
+            {
+                int aggressiveness = atoi(conf_val);
+                _dpd.logMsg("AppId: bittorrent_aggressiveness %d\n", aggressiveness);
+                if (aggressiveness >= 50)
+                {
+                    appidSC->recheck_for_unknown_appid = 1;
+                    appidSC->recheck_for_portservice_appid = 1;
+                    appidSC->host_port_app_cache_lookup_interval = 5;
+                    appidSC->max_tp_flow_depth = 25;
+                    appInfoEntryFlagSet(APP_ID_BITTORRENT, APPINFO_FLAG_DEFER, pConfig);
+                    appInfoEntryFlagSet(APP_ID_BITTORRENT, APPINFO_FLAG_DEFER_PAYLOAD, pConfig);
+                }
+                if (aggressiveness >= 80)
+                {
+                    appidSC->allow_port_wildcard_host_cache = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "ultrasurf_aggressiveness")))
+            {
+                int aggressiveness = atoi(conf_val);
+                _dpd.logMsg("AppId: ultrasurf_aggressiveness %d\n", aggressiveness);
+                if (aggressiveness >= 50)
+                {
+                    appidSC->check_host_cache_unknown_ssl = 1;
+                    appidSC->max_tp_flow_depth = 25;
+                    appInfoEntryFlagSet(APP_ID_ULTRASURF, APPINFO_FLAG_DEFER, pConfig);
+                    appInfoEntryFlagSet(APP_ID_ULTRASURF, APPINFO_FLAG_DEFER_PAYLOAD, pConfig);
+                }
+                if (aggressiveness >= 80)
+                {
+                    appidSC->recheck_for_unknown_appid = 1;
+                    appidSC->allow_port_wildcard_host_cache = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "psiphon_aggressiveness")))
+            {
+                int aggressiveness = atoi(conf_val);
+                _dpd.logMsg("AppId: psiphon_aggressiveness %d\n", aggressiveness);
+                if (aggressiveness >= 50)
+                {
+                    appidSC->check_host_cache_unknown_ssl = 1;
+                    appidSC->max_tp_flow_depth = 25;
+                    appInfoEntryFlagSet(APP_ID_PSIPHON, APPINFO_FLAG_DEFER, pConfig);
+                    appInfoEntryFlagSet(APP_ID_PSIPHON, APPINFO_FLAG_DEFER_PAYLOAD, pConfig);
+                }
+                if (aggressiveness >= 80)
+                {
+                    appidSC->recheck_for_unknown_appid = 1;
+                    appidSC->allow_port_wildcard_host_cache = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "multipayload_max_packets")))
+            {
+                appidSC->multipayload_max_packets = atoi(conf_val);
+                _dpd.logMsg("AppId: Multipayload feature will scan up to %d packets.\n", 
+                    appidSC->multipayload_max_packets);
             }
         }
     }

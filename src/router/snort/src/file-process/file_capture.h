@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  **
@@ -29,6 +29,7 @@
 
 #include "file_api.h"
 #include "file_lib.h"
+#include "memory_stats.h"
 
 struct _FileCaptureInfo
 {
@@ -163,5 +164,5 @@ void file_capture_mem_usage(void);
  *  this must be called when snort exits
  */
 void file_caputure_close(void);
-
+int FilePrintMemStats(FILE *fd, char* buffer, PreprocMemInfo *meminfo);
 #endif

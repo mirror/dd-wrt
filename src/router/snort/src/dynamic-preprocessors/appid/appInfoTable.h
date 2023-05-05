@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,8 @@
 #include "service_api.h"
 
 #define APP_PRIORITY_DEFAULT 2
+#define HTTP_TUNNEL_DETECT_RESTART 0
+#define HTTP_TUNNEL_DETECT_RESTART_AND_RESET 1
 
 typedef enum
 {
@@ -46,7 +48,10 @@ typedef enum
     APPINFO_FLAG_TP_CLIENT = (1<<11),
     APPINFO_FLAG_DEFER_PAYLOAD =  (1<<12),
     APPINFO_FLAG_SEARCH_ENGINE =  (1<<13),
-    APPINFO_FLAG_SUPPORTED_SEARCH = (1<<14)
+    APPINFO_FLAG_SUPPORTED_SEARCH = (1<<14),
+
+    APPINFO_FLAG_CLIENT_DETECTOR_CALLBACK = (1<<15),
+    APPINFO_FLAG_SERVICE_DETECTOR_CALLBACK = (1<<16)
 } tAppInfoFlags;
 
 struct _AppInfoTableEntry
@@ -58,8 +63,8 @@ struct _AppInfoTableEntry
     uint32_t   payloadId;
     int16_t    snortId;
     uint32_t   flags;
-    const tRNAClientAppModule *clntValidator;
-    const tRNAServiceElement *svrValidator;
+    tRNAClientAppModule *clntValidator;
+    tRNAServiceElement *svrValidator;
     uint32_t  priority;
     char       *appName;
 };
@@ -95,6 +100,14 @@ static inline unsigned appInfoEntryFlagGet (tAppId app_id, unsigned flags, const
     AppInfoTableEntry* entry = appInfoEntryGet(app_id, pConfig);
     if (entry)
         return (entry->flags & flags);
+    return 0;
+}
+
+static inline uint32_t appInfoEntryFlags (tAppId app_id, const tAppIdConfig *pConfig)
+{
+    AppInfoTableEntry* entry = appInfoEntryGet(app_id, pConfig);
+    if (entry)
+        return entry->flags;
     return 0;
 }
 

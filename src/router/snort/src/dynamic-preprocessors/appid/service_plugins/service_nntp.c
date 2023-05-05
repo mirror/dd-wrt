@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,7 @@
 
 #define NNTP_PORT   119
 
-#define NNTP_COUNT_THRESHOLD 4
+#define NNTP_COUNT_THRESHOLD 2
 
 typedef enum
 {

@@ -167,28 +167,28 @@ Verdicts are rendered by Snort on each packet:
 * Replace = packets Snort modified, for example, due to normalization or
   replace rules.  This can only happen in inline mode with a compatible DAQ.
 
-* Whitelist = packets that caused Snort to allow a flow to pass w/o inspection
-  by any analysis program.  Like blacklist, this is done by the DAQ or by Snort
+* AllowFlow = packets that caused Snort to allow a flow to pass w/o inspection
+  by any analysis program.  Like blocklist, this is done by the DAQ or by Snort
   on subsequent packets.
 
-* Blacklist = packets that caused Snort to block a flow from passing.  This is
+* BlockFlow = packets that caused Snort to block a flow from passing.  This is
   the case when a block TCP rule fires.  If the DAQ supports this in hardware,
   no further packets will be seen by Snort for that session.  If not, snort
   will block each packet and this count will be higher.
 
 * Ignore = packets that caused Snort to allow a flow to pass w/o inspection
-  by this instance of Snort.  Like blacklist, this is done by the DAQ or by
+  by this instance of Snort.  Like blocklist, this is done by the DAQ or by
   Snort on subsequent packets.
 
-* Int Blklst = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that
-  are being blocked.  These packets could get the Blacklist verdict if 
+* Int Blkflw = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that
+  are being blocked.  These packets could get the BlockFlow verdict if 
   config tunnel_verdicts was set for the given protocol.  Note that these 
   counts are output only if non-zero.  Also, this count is incremented on 
   the first packet in the flow that alerts.  The alerting packet and all
   following packets on the flow will be counted under Block.
 
-* Int Whtlst = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that
-  are being allowed.  These packets could get the Whitelist verdict if 
+* Int Alwflw = packets that are GTP, Teredo, 6in4 or 4in6 encapsulated that
+  are being allowed.  These packets could get the AllowFlow verdict if 
   config tunnel_verdicts was set for the given protocol.  Note that these
   counts are output only if non-zero.  Also, this count is incremented
   for all packets on the flow starting with the alerting packet.
@@ -210,8 +210,8 @@ Verdicts:
       Allow:      3716022 (100.000%)
       Block:            0 (  0.000%)
     Replace:            0 (  0.000%)
-  Whitelist:            0 (  0.000%)
-  Blacklist:            0 (  0.000%)
+  AllowFlow:            0 (  0.000%)
+  BlockFlow:            0 (  0.000%)
      Ignore:            0 (  0.000%)
 ===============================================================================
 

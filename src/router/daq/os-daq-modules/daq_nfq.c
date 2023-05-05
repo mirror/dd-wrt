@@ -24,10 +24,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <unistd.h>
 
 #include <netinet/ip.h>
 
@@ -127,7 +127,7 @@ static int nfq_daq_get_setup (
         if ( !entry->value || !*entry->value )
         {
             snprintf(errBuf, errMax,
-                "%s: variable needs value (%s)\n", __FUNCTION__, entry->key);
+                "%s: variable needs value (%s)\n", __func__, entry->key);
                 return DAQ_ERROR;
         }
         else if ( !strcmp(entry->key, "device") )
@@ -137,7 +137,7 @@ static int nfq_daq_get_setup (
             {
                 snprintf(errBuf, errMax,
                     "%s: can't allocate memory for device (%s)\n",
-                    __FUNCTION__, entry->value);
+                    __func__, entry->value);
                 return DAQ_ERROR;
             }
         }
@@ -147,7 +147,7 @@ static int nfq_daq_get_setup (
             if ( !impl->protos )
             {
                 snprintf(errBuf, errMax, "%s: bad proto (%s)\n",
-                    __FUNCTION__, entry->value);
+                    __func__, entry->value);
                 return DAQ_ERROR;
             }
         }
@@ -160,7 +160,7 @@ static int nfq_daq_get_setup (
             if ( *end || impl->qid < 0 || impl->qid > 65535 )
             {
                 snprintf(errBuf, errMax, "%s: bad queue (%s)\n",
-                    __FUNCTION__, entry->value);
+                    __func__, entry->value);
                 return DAQ_ERROR;
             }
         }
@@ -172,7 +172,7 @@ static int nfq_daq_get_setup (
             if ( *end || impl->qlen < 0 || impl->qlen > 65535 )
             {
                 snprintf(errBuf, errMax, "%s: bad queue length (%s)\n",
-                        __FUNCTION__, entry->value);
+                        __func__, entry->value);
                 return DAQ_ERROR;
             }
         }
@@ -180,7 +180,7 @@ static int nfq_daq_get_setup (
         {
             snprintf(errBuf, errMax,
                 "%s: unsupported variable (%s=%s)\n",
-                    __FUNCTION__, entry->key, entry->value);
+                    __func__, entry->key, entry->value);
                 return DAQ_ERROR;
         }
     }
@@ -208,7 +208,7 @@ static int nfq_daq_initialize (
     if ( !impl )
     {
         snprintf(errBuf, errMax, "%s: failed to allocate nfq context\n",
-            __FUNCTION__);
+            __func__);
         return DAQ_ERROR_NOMEM;
     }
 
@@ -221,7 +221,7 @@ static int nfq_daq_initialize (
     if ( (impl->buf = malloc(MSG_BUF_SIZE)) == NULL )
     {
         snprintf(errBuf, errMax, "%s: failed to allocate nfq buffer\n",
-            __FUNCTION__);
+            __func__);
         nfq_daq_shutdown(impl);
         return DAQ_ERROR_NOMEM;
     }
@@ -231,7 +231,7 @@ static int nfq_daq_initialize (
     if ( !(impl->nf_handle = nfq_open()) )
     {
         snprintf(errBuf, errMax, "%s: failed to get handle for nfq\n",
-            __FUNCTION__);
+            __func__);
         nfq_daq_shutdown(impl);
         return DAQ_ERROR;
     }
@@ -246,7 +246,7 @@ static int nfq_daq_initialize (
         (IP6(impl) && nfq_unbind_pf(impl->nf_handle, PF_INET6) < 0) )
     {
         snprintf(errBuf, errMax, "%s: failed to unbind protocols for nfq\n",
-            __FUNCTION__);
+            __func__);
         //nfq_daq_shutdown(impl);
         //return DAQ_ERROR;
     }
@@ -268,7 +268,7 @@ static int nfq_daq_initialize (
         (IP6(impl) && nfq_bind_pf(impl->nf_handle, PF_INET6) < 0) )
     {
         snprintf(errBuf, errMax, "%s: failed to bind protocols for nfq\n",
-            __FUNCTION__);
+            __func__);
         nfq_daq_shutdown(impl);
         return DAQ_ERROR;
     }
@@ -282,7 +282,7 @@ static int nfq_daq_initialize (
         impl->nf_handle, impl->qid, daq_nfq_callback, impl)) )
     {
         snprintf(errBuf, errMax, "%s: nf queue creation failed\n",
-            __FUNCTION__);
+            __func__);
         nfq_daq_shutdown(impl);
         return DAQ_ERROR;
     }
@@ -291,7 +291,7 @@ static int nfq_daq_initialize (
     if ( nfq_set_mode(impl->nf_queue, NFQNL_COPY_PACKET, IP_MAXPACKET) < 0 )
     {
         snprintf(errBuf, errMax, "%s: unable to set packet copy mode\n",
-            __FUNCTION__);
+            __func__);
         nfq_daq_shutdown(impl);
         return DAQ_ERROR;
     }
@@ -301,7 +301,7 @@ static int nfq_daq_initialize (
             nfq_set_queue_maxlen(impl->nf_queue, impl->qlen))
     {
         snprintf(errBuf, errMax, "%s: unable to set queue length\n",
-                __FUNCTION__);
+                __func__);
         nfq_daq_shutdown(impl);
         return DAQ_ERROR;
     }
@@ -320,7 +320,7 @@ static int nfq_daq_initialize (
         if ( !impl->link )
         {
             snprintf(errBuf, errMax, "%s: can't open %s!\n",
-                __FUNCTION__, impl->device);
+                __func__, impl->device);
             nfq_daq_shutdown(impl);
             return DAQ_ERROR;
         }
@@ -331,7 +331,7 @@ static int nfq_daq_initialize (
 
         if ( !impl->net )
         {
-            snprintf(errBuf, errMax, "%s: can't open ip!\n", __FUNCTION__);
+            snprintf(errBuf, errMax, "%s: can't open ip!\n", __func__);
             nfq_daq_shutdown(impl);
             return DAQ_ERROR;
         }
@@ -439,7 +439,7 @@ static int daq_nfq_callback(
     if ( !ph || SetPktHdr(impl, nfad, &hdr, &pkt) )
     {
         DPE(impl->error, "%s: can't setup packet header",
-            __FUNCTION__);
+            __func__);
         return -1;
     }
 
@@ -517,7 +517,7 @@ static int nfq_daq_acquire (
             if ( errno == EINTR )
                 break;
             DPE(impl->error, "%s: select = %s",
-                __FUNCTION__, strerror(errno));
+                __func__, strerror(errno));
             return DAQ_ERROR;
         }
 
@@ -535,7 +535,7 @@ static int nfq_daq_acquire (
                 if ( stat < 0 )
                 {
                     DPE(impl->error, "%s: nfq_handle_packet = %s",
-                        __FUNCTION__, strerror(errno));
+                        __func__, strerror(errno));
                     return DAQ_ERROR;
                 }
                 n++;
@@ -563,7 +563,7 @@ static int nfq_daq_inject (
     if ( sent != len )
     {
         DPE(impl->error, "%s: failed to send",
-            __FUNCTION__);
+            __func__);
         return DAQ_ERROR;
     }
     impl->stats.packets_injected++;
@@ -581,7 +581,7 @@ static int nfq_daq_set_filter (void* handle, const char* filter)
     if (sfbpf_compile(impl->snaplen, dlt, &fcode, filter, 1, 0) < 0)
     {
         DPE(impl->error, "%s: failed to compile bpf '%s'",
-            __FUNCTION__, filter);
+            __func__, filter);
         return DAQ_ERROR;
     }
 

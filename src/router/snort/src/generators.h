@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -153,6 +153,8 @@
 #define     DECODE_GTP_MULTIPLE_ENCAPSULATION     297
 #define     DECODE_GTP_BAD_LEN                    298
 
+#define     DECODE_DECODING_DEPTH_EXCEEDED        300
+
 //-----------------------------------------------------
 // remember to add rules to preproc_rules/decoder.rules
 // add the new decoder rules to the following enum.
@@ -285,6 +287,10 @@ enum {
 #define     HI_CLIENT_UNESCAPED_SPACE_URI           33
 #define     HI_CLIENT_PIPELINE_MAX                  34
 
+#define     HI_CLIENT_INVALID_RANGE_UNIT_FMT        36
+#define     HI_CLIENT_RANGE_NON_GET_METHOD          37
+#define     HI_CLIENT_RANGE_FIELD_ERROR             38
+
 // these are either server specific or both client / server
 #define GENERATOR_SPP_HTTP_INSPECT                 120 
 #define     HI_ANOM_SERVER_ALERT                    1   /* done */
@@ -304,6 +310,10 @@ enum {
 #define     HI_SERVER_PDF_UNSUP_COMP_TYPE           15
 #define     HI_SERVER_PDF_CASC_COMP                 16
 #define     HI_SERVER_PDF_PARSE_FAILURE             17
+
+#define     HI_SERVER_INVALID_CONTENT_RANGE_UNIT_FMT 30
+#define     HI_SERVER_RANGE_FIELD_ERROR             31
+#define     HI_SERVER_NON_RANGE_GET_PARTIAL_METHOD  32
 
 
 #define GENERATOR_PSNG                             122
@@ -433,6 +443,7 @@ enum {
 #define     STREAM_DATA_AFTER_RST_RCVD            18
 #define     STREAM_WINDOW_SLAM                    19
 #define     STREAM_NO_3WHS                        20
+#define     STREAM_WIN_SZ_0_TCP_FIN_WAIT_1        21
 
 #define GENERATOR_DNS                             131
 #define     DNS_EVENT_OBSOLETE_TYPES                1
@@ -533,6 +544,9 @@ enum {
 // #define GENERATOR_FILE_TYPE                      146 //Defined in file_service.h
 // #define GENERATOR_FILE_SIGNATURE                 147 //Defined in file_service.h
 
+#define GENERATOR_SPP_CIP                           148
+#define GENERATOR_SPP_S7COMMPLUS                    149
+
 
 /*  This is where all the alert messages will be archived for each
     internal alerts */
@@ -592,6 +606,7 @@ enum {
 #define STREAM_DATA_AFTER_RST_RCVD_STR "Data sent on stream after TCP Reset received"
 #define STREAM_WINDOW_SLAM_STR "TCP window closed before receiving data"
 #define STREAM_NO_3WHS_STR "TCP session without 3-way handshake"
+#define STREAM_WIN_SZ_0_TCP_FIN_WAIT_1_STR "TCP window size is zero for ACK packet received after FIN,ACK"
 
 #define STREAM_INTERNAL_EVENT_STR ""
 
@@ -818,5 +833,7 @@ enum {
 #define DECODE_MPLS_RESERVEDLABEL_STR "(snort_decoder) WARNING: MPLS Label 4, 5,.. or 15 Appears in Header"
 #define DECODE_MPLS_LABEL_STACK_STR "(snort_decoder) WARNING: Too Many MPLS headers"
 #define DECODE_MULTICAST_MPLS_STR "(snort_decoder) WARNING: Multicast MPLS traffic detected"
+
+#define DECODE_DECODING_DEPTH_EXCEEDED_STR "(snort_decoder) WARNING: Too many levels for decoding"
 
 #endif /* __GENERATORS_H__ */

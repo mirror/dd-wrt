@@ -1,4 +1,5 @@
 #include "h2_common.h"
+#include "memory_stats.h"
 
 enum type_of_message
 {
@@ -22,21 +23,28 @@ nv_list_node *create_nv(int namelen, int valuelen)
     if (namelen < 0 || valuelen < 0)
         return NULL;
 
-    nv_list_node *temp = (nv_list_node *)SnortAlloc(sizeof(nv_list_node));
+    nv_list_node *temp = (nv_list_node *)SnortPreprocAlloc(1, sizeof(nv_list_node),
+                                              PP_HTTPINSPECT, 
+                                              PP_MEM_CATEGORY_SESSION);
     if (NULL == temp)
         return NULL;
 
-    temp->nv.name = (uint8_t  *)SnortAlloc(namelen);
+    temp->nv.name = (uint8_t *)SnortPreprocAlloc(1, namelen, 
+                                    PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
     if (NULL == temp->nv.name)
     {
-        free(temp);
+        SnortPreprocFree(temp, sizeof(nv_list_node), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
         return NULL;
     }
-    temp->nv.value = (uint8_t  *)SnortAlloc(valuelen);
+    temp->nv.value = (uint8_t  *)SnortPreprocAlloc(1, valuelen, PP_HTTPINSPECT, 
+                                      PP_MEM_CATEGORY_SESSION);
     if (NULL == temp->nv.value)
     {
-        free(temp->nv.name);
-        free(temp);
+        SnortPreprocFree(temp->nv.name, sizeof(*(temp->nv.name)), 
+             PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+        SnortPreprocFree(temp, sizeof(nv_list_node), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
         return NULL;
     }
     temp->nv.namelen = namelen;
@@ -56,9 +64,12 @@ int free_headers(nv_list_node **headers)
     {
         nv_list_node *prev = temp;
         temp = temp->next;
-        free(prev->nv.name);
-        free(prev->nv.value);
-        free(prev);
+        SnortPreprocFree(prev->nv.name, sizeof(*(prev->nv.name)), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
+        SnortPreprocFree(prev->nv.value, sizeof(*(prev->nv.value)), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
+        SnortPreprocFree(prev, sizeof(nv_list_node), PP_HTTPINSPECT,
+             PP_MEM_CATEGORY_SESSION);
     }
     *headers = NULL;
     return 0;
@@ -146,6 +157,7 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
     uint32_t authority_len = 10;
     uint32_t length = 0;
     int ret = 0;
+    uint32_t plen = 0, hlen = 0, mlen = 0, slen = 0;
 
     nv_list_node *nvtemp = headers;
     if ((NULL == headers) || (NULL == out))
@@ -163,7 +175,9 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
                     (memcmp(nvtemp->nv.name,":status", scheme_status_method_len) == 0))
                 {
                     type = RESPONSE;
-                    status = (char *)SnortAlloc((nvtemp->nv.valuelen +1) * sizeof(char));
+                    status = (char *) SnortPreprocAlloc(1, (nvtemp->nv.valuelen +1) * sizeof(char), 
+                                           PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+                    slen = nvtemp->nv.valuelen + 1;
                     if (NULL == status)
                     {
                         ret = -1;
@@ -177,7 +191,9 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
                     memcmp(nvtemp->nv.name,":method", scheme_status_method_len) == 0))
                 {
                     type = REQUEST;
-                    method = (char *)SnortAlloc((nvtemp->nv.valuelen +1) * sizeof(char));
+                    method = (char *)SnortPreprocAlloc(1, (nvtemp->nv.valuelen +1) * sizeof(char),
+                                          PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+                    mlen = nvtemp->nv.valuelen + 1;
                     if (NULL == method)
                     {
                         ret = -1;
@@ -193,7 +209,9 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
             {
                 if(!path && (memcmp(nvtemp->nv.name,":path",path_len)==0))
                 {
-                    path = (char *)SnortAlloc((nvtemp->nv.valuelen +1) * sizeof(char));
+                    path = (char *)SnortPreprocAlloc(1, (nvtemp->nv.valuelen +1) * sizeof(char),
+                                        PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+                    plen = nvtemp->nv.valuelen + 1;
                     if (NULL == path)
                     {
                         ret = -1;
@@ -209,7 +227,9 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
                 // Http 2.0 has host parameter in authority
                 if (!host && (memcmp(nvtemp->nv.name,":authority",authority_len)==0))
                 {
-                    host = (char *)SnortAlloc((nvtemp->nv.valuelen+1) * sizeof(char));
+                    host = (char *)SnortPreprocAlloc(1, (nvtemp->nv.valuelen +1) * sizeof(char),
+                                        PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
+                    hlen = nvtemp->nv.valuelen + 1;
                     if (NULL == host)
                     {
                         ret = -1;
@@ -236,7 +256,8 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
 
         if (NULL != method && NULL != path && NULL != host)
         {
-            out->message =  (char *)SnortAlloc((length) * sizeof(char));
+            out->message = (char *)SnortPreprocAlloc(1, (length) * sizeof(char),
+                                        PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
             if(NULL != out->message)
             {
                 snprintf(out->message, length, "%s %s %s\r\n", method, path, version);
@@ -254,7 +275,8 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
             if(strcmp(method, "CONNECT") == 0)
             {
                 length += strlen(host);
-                out->message =  (char *)SnortAlloc((length) * sizeof(char));
+                out->message = (char *)SnortPreprocAlloc(1, (length) * sizeof(char),
+                                            PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
                 if(NULL != out->message)
                 {
                     snprintf(out->message, length, "%s %s %s\r\n", method, host, version);
@@ -284,7 +306,8 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
         //length = length + strlen(version) + +strlen(status)+3;
         length+= 3;
 
-        out->message = (char *)SnortAlloc((length) * sizeof(char));
+        out->message = (char *)SnortPreprocAlloc(1, (length) * sizeof(char),
+                                    PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
         if (NULL != out->message)
         {
             snprintf(out->message, length, "%s %s\r\n",version,status);
@@ -332,13 +355,17 @@ int copy_headers(nv_list_node *headers, struct output_data *out)
     }
 cleanup:
     if (NULL != path)
-        free(path);
+        SnortPreprocFree(path, plen * sizeof(char), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
     if (NULL != host)
-        free(host);
+        SnortPreprocFree(host , hlen * sizeof(char), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
     if (NULL != method)
-        free(method);
+        SnortPreprocFree(method , mlen * sizeof(char), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
     if (NULL != status)
-        free(status);
+        SnortPreprocFree(status , slen * sizeof(char), PP_HTTPINSPECT, 
+             PP_MEM_CATEGORY_SESSION);
 
     return ret;
 }
@@ -388,7 +415,8 @@ http2_stream_data *http2_create_stream(nghttp2_frame_hd hd,
 {
     http2_stream_data *temp = NULL;
 
-    temp = (http2_stream_data *)SnortAlloc(sizeof(http2_stream_data));
+    temp = (http2_stream_data *)SnortPreprocAlloc(1, sizeof(http2_stream_data),
+                                     PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
     if (NULL != temp)
     {
         temp->hd.stream_id = hd.stream_id;
@@ -476,8 +504,9 @@ void http2_free_stream(http2_stream_data **stream_data)
         {
             free_headers(&(temp->headers));
             if (NULL != temp->data)
-                free(temp->data);
-            free(*stream_data);
+                free(temp->data);  // unable to find the size 
+            SnortPreprocFree(*stream_data, sizeof(http2_stream_data),
+                 PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
             *stream_data = NULL;
         }
     }
@@ -491,7 +520,8 @@ return_data_list_node *http2_add_return_data(http2_session_data *session_data)
     if (NULL == session_data)
         return temp;
 
-    temp = (return_data_list_node *)SnortAlloc(sizeof(return_data_list_node));
+    temp = (return_data_list_node *)SnortPreprocAlloc(1, sizeof(return_data_list_node),
+                                         PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
 
     if (NULL != temp)
     {
@@ -655,7 +685,9 @@ static int on_data_chunk_recv_callback(nghttp2_session *session,
         if (NULL == temp->data)
         {
             // Accumulate data till it reaches PAF_MAX
-            temp->data = (uint8_t*)SnortAlloc((ScPafMax() + ETHERNET_MTU) * sizeof(char));
+            temp->data = (uint8_t*)SnortPreprocAlloc(1, 
+                                        (ScPafMax() + ETHERNET_MTU)*sizeof(char),
+                                        PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
             if (NULL == temp->data)
                 return 0;
 
@@ -676,7 +708,9 @@ static int on_data_chunk_recv_callback(nghttp2_session *session,
                                __FUNCTION__, session_data->num_of_return_data +1);)
                     return 0;
                 }
-                current->return_data.message = (char *)SnortAlloc(temp->databuf_off * sizeof(char));
+                current->return_data.message = (char *)SnortPreprocAlloc(1, 
+                                                            temp->databuf_off * sizeof(char),
+                                                            PP_HTTPINSPECT, PP_MEM_CATEGORY_SESSION);
                 if (NULL != current->return_data.message)
                 {
                     memcpy(current->return_data.message,temp->data, temp->databuf_off);
@@ -722,7 +756,10 @@ static int on_frame_recv_callback(nghttp2_session *session _U_,
                         http2_free_stream(&temp);
                         return 0;
                     }
-                    current->return_data.message = (char *)SnortAlloc(temp->databuf_off * sizeof(char));
+                    current->return_data.message = (char *)SnortPreprocAlloc(1, 
+                                                                temp->databuf_off*sizeof(char),
+                                                                PP_HTTPINSPECT, 
+                                                                PP_MEM_CATEGORY_SESSION);
                     if (NULL == current->return_data.message)
                     {
                         DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,

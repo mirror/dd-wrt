@@ -26,8 +26,11 @@ part of building an RPM is writing a correct SPEC file. We've already done
 that for you (and it is heavily commented as well). The snort.spec
 file can build the following packages:
 
-	plain		Snort (this package, required)
-	openappid	Snort with openAppId support (optional)
+	plain		Snort without openAppId support
+	openappid	Snort with openAppId support
+
+NOTE: Starting from version 2.9.12, Snort has openAppId enabled by default.
+Please refer to 'rpmbuild Package Options' to see how to disable it.
 
 
 Prerequisites
@@ -58,8 +61,8 @@ rpm {package options} -ta {path/to/snort-n.n.n.tar.gz}
 
 rpmbuild Package Options
 ========================
-	--with openappid
-		Builds a binary/package with support for openAppId.
+	--without openappid
+		Builds a binary/package without the support for openAppId.
 
 See below for some examples.
 

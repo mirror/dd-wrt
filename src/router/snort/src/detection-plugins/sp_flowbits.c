@@ -1,7 +1,7 @@
 /*
  ** $Id$
 
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2003-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -99,6 +99,10 @@ void FlowBitsGrpFree(void *);
 static void FlowBitsInit(struct _SnortConfig *, char *, OptTreeNode *, int);
 static void FlowBitsParse(struct _SnortConfig *, char *, FLOWBITS_OP *, OptTreeNode *);
 static void FlowBitsCleanExit(int, void *);
+
+#ifdef SNORT_RELOAD
+extern volatile bool reloadInProgress;
+#endif
 
 /****************************************************************************
  *
@@ -1187,6 +1191,13 @@ void FlowBitsVerify(void)
 
 static void FlowBitsCleanExit(int signal, void *data)
 {
+#ifdef SNORT_RELOAD
+    if (reloadInProgress)
+    {
+        return;
+    }
+#endif
+
     if (flowbits_hash != NULL)
     {
         sfghash_delete(flowbits_hash);

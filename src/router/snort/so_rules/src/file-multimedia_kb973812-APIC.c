@@ -141,6 +141,25 @@ static RuleOption rule15920option5 =
     }
 };
 
+// file_data;
+static CursorInfo rule15920file_data2 =
+{
+   0, /* offset */
+   CONTENT_BUF_NORMALIZED /* flags */
+};
+
+static RuleOption rule15920option6 =
+{
+#ifndef MISSINGFILEDATA
+   OPTION_TYPE_FILE_DATA,
+#else
+   OPTION_TYPE_SET_CURSOR,
+#endif
+   {
+      &rule15920file_data2
+   }
+};
+
 /* references for sid 15920 */
 /* reference: cve "2009-2499"; */
 static RuleReference rule15920ref1 = 
@@ -170,6 +189,20 @@ static RuleMetaData rule15920service1 =
     "service http"
 };
 
+static RuleMetaData rule15920service2 =
+{
+    "service pop3"
+};
+
+static RuleMetaData rule15920service3 =
+{
+    "service imap"
+};
+
+static RuleMetaData rule15920service4 =
+{
+    "service ftp-data"
+};
 
 //static RuleMetaData rule15920policy1 =
 //{
@@ -189,6 +222,9 @@ static RuleMetaData rule15920policy3 =
 static RuleMetaData *rule15920metadata[] =
 {
     &rule15920service1,
+    &rule15920service2,
+    &rule15920service3,
+    &rule15920service4,
 //    &rule15920policy1,
 //    &rule15920policy2,
     &rule15920policy3,
@@ -203,6 +239,7 @@ RuleOption *rule15920options[] =
     &rule15920option3,
     &rule15920option4,
     &rule15920option5,
+    &rule15920option6,
     NULL
 };
 
@@ -211,7 +248,7 @@ Rule rule15920 = {
    /* rule header, akin to => tcp any any -> any any               */{
        IPPROTO_TCP, /* proto */
        "$EXTERNAL_NET", /* SRCIP     */
-       "$HTTP_PORTS", /* SRCPORT   */
+       "$FILE_DATA_PORTS", /* SRCPORT   */
    
        0, /* DIRECTION */
        "$HOME_NET", /* DSTIP     */
@@ -222,7 +259,7 @@ Rule rule15920 = {
    { 
        3,  /* genid */
        15920, /* sigid */
-       9, /* revision */
+       10, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -253,6 +290,16 @@ int rule15920eval(void *p) {
     if (checkFlow(p, rule15920options[0]->option_u.flowFlags) > 0 ) {
         // flowbits:isset "file.mp3";
         if (processFlowbits(p, rule15920options[1]->option_u.flowBit) > 0) {
+
+           // file_data;
+            #ifndef MISSINGFILEDATA
+            if(fileData(p, rule15920options[6]->option_u.cursor, &cursor_normal) <= 0)
+               return RULE_NOMATCH;
+            #else
+            if(setCursor(p, rule15920options[6]->option_u.cursor, &cursor_normal) <= 0)
+               return RULE_NOMATCH;
+            #endif
+
             // content:"APIC", depth 0;
             if (contentMatch(p, rule15920options[2]->option_u.content, &cursor_normal) > 0) {
 
@@ -272,7 +319,6 @@ int rule15920eval(void *p) {
                     frameSize |= *cursor_normal++ << 16;
                     frameSize |= *cursor_normal++ << 8;
                     frameSize |= *cursor_normal++;
-
 
                     DEBUG_WRAP(printf("frameSize=0x%08x (%d)\n", frameSize, frameSize));
 

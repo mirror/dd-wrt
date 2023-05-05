@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -742,7 +742,7 @@ static CLIENT_APP_RETCODE client_validate(const uint8_t *data, uint16_t size, co
     id = csdPatternTreeSearch(data, size, flowp->proto, pkt, &service, true, (tAppIdConfig *)pConfig);
     if (!id) goto fail;
 
-    pattern_tcp_client_mod.api->add_app(flowp, id, id, NULL);
+    pattern_tcp_client_mod.api->add_app(pkt, dir, pConfig, flowp, id, id, NULL);
     return CLIENT_APP_SUCCESS;
 
 inprocess:

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -267,7 +267,8 @@ static PAF_Status sip_paf(void* ssn, void** ps, const uint8_t* data,
 
     if (pfdata == NULL)
     {
-        pfdata = calloc(1, sizeof(*pfdata));
+        pfdata = _dpd.snortAlloc(1, sizeof(*pfdata),
+                                 PP_SIP, PP_MEM_CATEGORY_SESSION);
         if (pfdata == NULL)
         {
             return PAF_ABORT;
@@ -336,6 +337,13 @@ static PAF_Status sip_paf(void* ssn, void** ps, const uint8_t* data,
     return PAF_SEARCH;
 }
 
+static void sip_paf_cleanup(void *pafData)
+{
+    if (pafData)
+        _dpd.snortFree(pafData, sizeof(SIPPafData), PP_SIP,
+                       PP_MEM_CATEGORY_SESSION);
+}
+
 #ifdef TARGET_BASED
 void register_sip_paf_service (struct _SnortConfig *sc, int16_t app, tSfPolicyId policy)
 {
@@ -343,6 +351,7 @@ void register_sip_paf_service (struct _SnortConfig *sc, int16_t app, tSfPolicyId
     {
         sip_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, true, sip_paf, true);
         sip_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, false, sip_paf, true);
+        _dpd.streamAPI->register_paf_free(sip_paf_id, sip_paf_cleanup);
     }
 }
 #endif

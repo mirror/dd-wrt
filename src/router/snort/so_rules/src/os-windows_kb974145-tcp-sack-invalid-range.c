@@ -126,7 +126,7 @@ Rule rule16408 = {
    { 
        3,  /* genid */
        16408, /* sigid */
-       13, /* revision */
+       14, /* revision */
        "attempted-dos", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
        "OS-WINDOWS Microsoft Windows TCP SACK invalid range denial of service attempt",     /* message */
@@ -190,7 +190,11 @@ int rule16408eval(void *p) {
     ack = ntohl(sp->tcp_header->acknowledgement);
 
     /* If there are 3 ACKs after SACK whose left or right value is not in the valid range, it is a malicious traffic */
+#ifndef BEFORE_2091300
+    getRuleData(sp, &(rule16408.info), (void*)(&ackcount), NULL);
+#else
     ackcount = (AckCount *)getRuleData(sp, (uint32_t)rule16408.info.sigID);
+#endif
 
     if (ackcount != NULL)
     {
@@ -270,8 +274,12 @@ int rule16408eval(void *p) {
                             ackcount = (AckCount *)allocRuleData(sizeof(AckCount));
                             if (ackcount == NULL)
                                return RULE_NOMATCH;
-        
+
+#ifndef BEFORE_2091300
+                            if(storeRuleData(sp, &(rule16408.info), ackcount, NULL) < 0)
+#else
                             if(storeRuleData(sp, ackcount, rule16408.info.sigID, &freeRuleData) < 0)
+#endif
                             {
                                freeRuleData(ackcount);
                                return RULE_NOMATCH;

@@ -29,7 +29,6 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/atmuni31.h,v 1.1 2010/04/15 19:18:35 maltizer Exp $ (LBL)
  */
 
 /* Based on UNI3.1 standard by ATM Forum */

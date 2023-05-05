@@ -18,7 +18,6 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/ethertype.h,v 1.1 2010/04/15 19:18:35 maltizer Exp $ (LBL)
  */
 
 /*

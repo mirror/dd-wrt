@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,7 @@
 #include "spp_imap.h"
 #include "sf_preproc_info.h"
 #include "snort_imap.h"
+#include "imap_util.h"
 #include "imap_config.h"
 #include "imap_log.h"
 #include "imap_paf.h"
@@ -156,6 +157,12 @@ void SetupIMAP(void)
 
 }
 
+#ifdef REG_TEST
+static inline void PrintIMAPSize(void)
+{
+    _dpd.logMsg("\nIMAP Session Size: %lu\n", (long unsigned int)sizeof(IMAP));
+}
+#endif
 
 /*
  * Function: IMAPInit(char *)
@@ -173,6 +180,12 @@ static void IMAPInit(struct _SnortConfig *sc, char *args)
     IMAPToken *tmp;
     tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
     IMAPConfig * pPolicyConfig = NULL;
+
+#ifdef REG_TEST
+    PrintIMAPSize();
+#endif
+
+    _dpd.registerMemoryStatsFunc(PP_IMAP, IMAP_Print_Mem_Stats);
 
     if (imap_config == NULL)
     {
@@ -220,7 +233,8 @@ static void IMAPInit(struct _SnortConfig *sc, char *args)
         DynamicPreprocessorFatalMessage("Can only configure IMAP preprocessor once.\n");
     }
 
-    pPolicyConfig = (IMAPConfig *)calloc(1, sizeof(IMAPConfig));
+    pPolicyConfig = (IMAPConfig *)_dpd.snortAlloc(1, sizeof(IMAPConfig), PP_IMAP, 
+                                       PP_MEM_CATEGORY_CONFIG);
     if (pPolicyConfig == NULL)
     {
         DynamicPreprocessorFatalMessage("Not enough memory to create IMAP "
@@ -580,7 +594,8 @@ static void IMAPReload(struct _SnortConfig *sc, char *args, void **new_config)
     if (pPolicyConfig != NULL)
         DynamicPreprocessorFatalMessage("Can only configure IMAP preprocessor once.\n");
 
-    pPolicyConfig = (IMAPConfig *)calloc(1, sizeof(IMAPConfig));
+    pPolicyConfig = (IMAPConfig *)_dpd.snortAlloc(1, sizeof(IMAPConfig), PP_IMAP, 
+                                       PP_MEM_CATEGORY_CONFIG);
     if (pPolicyConfig == NULL)
     {
         DynamicPreprocessorFatalMessage("Not enough memory to create IMAP "

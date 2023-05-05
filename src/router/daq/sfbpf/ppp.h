@@ -1,4 +1,3 @@
-/* @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/ppp.h,v 1.1 2010/04/15 19:18:35 maltizer Exp $ (LBL) */
 /*
  * Point to Point Protocol (PPP) RFC1331
  *

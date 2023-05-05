@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -262,10 +262,21 @@ int Encode_Format (EncodeFlags f, const Packet* p, Packet* c, PseudoPacketType t
     pkth->egress_index = phdr->egress_index;
     pkth->egress_group = phdr->egress_group;
     pkth->flags = phdr->flags & (~DAQ_PKT_FLAG_HW_TCP_CS_GOOD);
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+    pkth->address_space_id_src = phdr->address_space_id_src;
+    pkth->address_space_id_dst = phdr->address_space_id_dst;
+#else
     pkth->address_space_id = phdr->address_space_id;
+#endif
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID) && defined(DAQ_VERSION) && DAQ_VERSION > 10
+    pkth->carrier_id = phdr->carrier_id;
+#endif
     pkth->opaque = opaque;
     if( type == PSEUDO_PKT_TCP || type == PSEUDO_PKT_IP )
         pkth->priv_ptr = phdr->priv_ptr;
+#if defined(DAQ_VERSION) && DAQ_VERSION > 8
+    pkth->proto = phdr->proto;
+#endif
 #ifdef HAVE_DAQ_FLOW_ID
     pkth->flow_id = phdr->flow_id;
 #endif
@@ -745,6 +756,9 @@ static void FPath_Format (EncodeFlags f, const Packet* p, Packet* c, Layer* lyr)
 
 static void VLAN_Format (EncodeFlags f, const Packet* p, Packet* c, Layer* lyr)
 {
+#ifdef HAVE_DAQ_REAL_ADDRESSES
+      if (!(p->pkth->flags & DAQ_PKT_FLAG_IGNORE_VLAN))
+#endif
     c->vh = (VlanTagHdr*)lyr->start;
 }
 
@@ -1701,10 +1715,57 @@ static ENC_STATUS XXX_Update (Packet* p, Layer* lyr, uint32_t* len)
     return ENC_OK;
 }
 
+static ENC_STATUS GRE_Update (Packet* p, Layer* lyr, uint32_t* len)
+{
+    GREHdr* h = (GREHdr*)(lyr->start);
+    *len += lyr->length;
+    if(GRE_CHKSUM(h))
+    {
+        if(lyr->length >= 6)
+        {
+            uint16_t *csum = (uint16_t *) (lyr->start + 4);
+            *csum = 0;
+            *csum = ones_compl_checksum((const char *)h, *len);           
+        }
+    }
+    return ENC_OK;
+}
+
 static void XXX_Format (EncodeFlags f, const Packet* p, Packet* c, Layer* lyr)
 {
     // nop
 }
+
+static ENC_STATUS GRE_Encode (EncState* enc, Buffer* in, Buffer* out)
+{
+    int n = enc->p->layers[enc->layer-1].length;
+
+    GREHdr* hi = (GREHdr *)enc->p->layers[enc->layer-1].start;
+    GREHdr* ho = (GREHdr *)(out->base + out->end);
+    PROTO_ID next = NextEncoder(enc);
+
+    UPDATE_BOUND(out, n);
+    memcpy(ho, hi, n);
+
+    if ( next < PROTO_MAX )
+    {
+        ENC_STATUS err = encoders[next].fencode(enc, in, out);
+        if (ENC_OK != err ) return err;
+    }
+    if(GRE_CHKSUM(ho))
+    {
+        if(n >= 6)
+        {
+            int len = BUFF_DIFF(out, ho);
+            uint16_t *csum = (uint16_t *) ((uint8_t *)ho + 4);
+            *csum = 0;	
+            *csum = ones_compl_checksum((const char *)ho, len);			 
+        }
+    }
+
+    return ENC_OK;
+}
+
 
 //-------------------------------------------------------------------------
 // function table:
@@ -1728,7 +1789,7 @@ static EncoderFunctions encoders[PROTO_MAX] = {
     { XXX_Encode,  XXX_Update,   XXX_Format,  },  // ICMP_IP6
     { XXX_Encode,  XXX_Update,   VLAN_Format  },
 #ifdef GRE
-    { XXX_Encode,  XXX_Update,   GRE_Format   },
+    { GRE_Encode,  GRE_Update,   GRE_Format   },
     { XXX_Encode,  XXX_Update,   XXX_Format   },  // ERSPAN
 #endif
     { PPPoE_Encode,XXX_Update,   XXX_Format   },

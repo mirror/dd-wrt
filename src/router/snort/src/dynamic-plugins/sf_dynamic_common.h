@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  */
@@ -90,6 +90,7 @@ typedef enum {
     VERDICT_REASON_SMB,
     VERDICT_REASON_FILE,
     VERDICT_REASON_IPS,
+    VERDICT_REASON_FASTBLOCK,
 
     MAX_VERDICT_REASON
 } Verdict_Reason;

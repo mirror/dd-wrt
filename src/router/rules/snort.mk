@@ -17,6 +17,7 @@ snort-configure: libnet daq-configure pcre-configure daq pcre zlib
 		--host=$(ARCH)-linux-gnu \
 		--without-mysql \
 		--without-postgresql \
+		--disable-open-appid \
 		--enable-pthread \
 		--enable-gre \
 		--enable-dynamicplugin \
@@ -59,6 +60,7 @@ snort-configure: libnet daq-configure pcre-configure daq pcre zlib
 		--host=$(ARCH)-linux-gnu \
 		--without-mysql \
 		--without-postgresql \
+		--disable-open-appid \
 		--enable-pthread \
 		--enable-gre \
 		--enable-dynamicplugin \
@@ -86,7 +88,7 @@ endif
 
 snort: libnet pcre
 	$(MAKE) -C snort CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"
-	$(MAKE) -C snort/so_rules/src
+	$(MAKE) -C snort/so_rules/src CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc -I$(TOP)/daq/install/include -I$(TOP)/pcre -I$(TOP)/zlib"
 
 snort-clean:
 	$(MAKE) -C snort clean CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"

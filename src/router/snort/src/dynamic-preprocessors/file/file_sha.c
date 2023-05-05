@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  **
@@ -30,6 +30,9 @@
 
 #include "sf_types.h"
 #include "file_sha.h"
+#include "memory_stats.h"
+#include "preprocids.h"
+#include "sf_dynamic_preprocessor.h"
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -47,18 +50,19 @@ char conv_to_hex[UINT8_MAX + 1];
  */
 ShaHash *sha_table_new(char sha_bytes)
 {
-    ShaHash *table = malloc(sizeof(*table));
+    ShaHash *table = _dpd.snortAlloc(1, sizeof(ShaHash), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION); 
 
     if (!table)
         return NULL;
 
     table->nrows = SHA_TABLE_ROWS;
 
-    table->entries = calloc(table->nrows, sizeof(*(table->entries)));
-
+    table->entries = _dpd.snortAlloc(table->nrows, sizeof(*(table->entries)), PP_FILE_INSPECT,
+            PP_MEM_CATEGORY_SESSION);
+ 
     if (!table->entries)
     {
-        free(table);
+        _dpd.snortFree(table, sizeof(ShaHash), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
         return NULL;
     }
 
@@ -151,7 +155,7 @@ int sha_table_add( ShaHash *table, void *sha, void *data )
     index = *(ShaKeyType *)sha;
     oldNode = (ShaHashNode *)table->entries[index];
 
-    newNode = calloc(1, sizeof (*newNode));
+    newNode = _dpd.snortAlloc(1, sizeof (*newNode), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
     if (!newNode)
         return SHAHASH_NOMEM;
 
@@ -188,12 +192,13 @@ void sha_table_delete( ShaHash *table )
         {
             old = node;
             node = node->next;
-            free(old->sha);
-            free(old);
+            _dpd.snortFree(old->sha, SHA256_HASH_SIZE, PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
+            _dpd.snortFree(old, sizeof(ShaHashNode), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
         }
     }
-    free(table->entries);
-    free(table);
+    _dpd.snortFree(table->entries, sizeof(ShaHashNode) * table->count, PP_FILE_INSPECT, 
+            PP_MEM_CATEGORY_SESSION);
+    _dpd.snortFree(table, sizeof(ShaHash), PP_FILE_INSPECT, PP_MEM_CATEGORY_SESSION);
 }
 
 static void init_char_to_hex_array(void)

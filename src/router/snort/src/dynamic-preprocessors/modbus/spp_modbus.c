@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -118,10 +118,21 @@ void SetupModbus(void)
 #endif
 }
 
+#ifdef REG_TEST
+static inline void PrintMODBUSSize(void)
+{
+    _dpd.logMsg("\nMODBUS Session Size: %lu\n", (long unsigned int)sizeof(modbus_session_data_t));
+}
+#endif
+
 /* Allocate memory for preprocessor config, parse the args, set up callbacks */
 static void ModbusInit(struct _SnortConfig *sc, char *argp)
 {
     modbus_config_t *modbus_policy = NULL;
+
+#ifdef REG_TEST
+    PrintMODBUSSize();
+#endif
 
     if (modbus_context_id == NULL)
     {

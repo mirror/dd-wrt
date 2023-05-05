@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * ** Copyright (C) 2005-2013 Sourcefire, Inc.
  * ** AUTHOR: Steven Sturges
  * **
@@ -119,6 +119,8 @@ typedef enum {
     PAF_PERFORMED_LMT_FLUSH, /* previously performed PAF_LIMIT  */
     PAF_DISCARD_START, /*start of the discard point */
     PAF_DISCARD_END, /*end of the discard point */
+    PAF_PSEUDO_FLUSH_SEARCH, /* payload can be pseudo flushed before flushing */
+    PAF_PSEUDO_FLUSH_SKIP, /* HTTP chunked payload can be pseudo flushed */
     PAF_IGNORE,  /* Used for HTTP2.0*/
 } PAF_Status;
 
@@ -476,6 +478,7 @@ typedef struct _stream_api
      *     Session Ptr
      */
     void (*expire_session)(void *);
+    void (*force_delete_session)(void *);
 
     /* register returns a non-zero id for use with set; zero is error */
     unsigned (*register_event_handler)(Stream_Callback);
@@ -630,6 +633,24 @@ typedef struct _stream_api
      */
     int (*register_ftp_flush_cb)(FTP_Processor_Flush_Callback);
 
+    /* set the ftp file position
+     *
+     * parameters
+     *   ssnptr -session pointer
+     *   flage -flush flage
+     */
+    void (*set_ftp_file_position)(void *ssnptr, bool flush);
+
+#ifdef HAVE_DAQ_DECRYPTED_SSL
+    /* Simulate ACK in peer Streamtracker
+     *
+     * Parameters
+     *   ssnptr - sesssion pointer
+     *   dir    - direction to be ACKed in( 0:C to S, 1:S to C )
+     *   len    - Number of bytes to be ACKed
+     */
+    int (*simulate_tcp_akc_in_peer_stream_tracker)(void *ssnptr, uint8_t dir, uint32_t len);
+#endif
 } StreamAPI;
 /* To be set by Stream */
 extern StreamAPI *stream_api;

@@ -39,7 +39,6 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sfbpf.h,v 1.3 2013/06/28 14:57:30 rcombs Exp $ (LBL)
  */
 
 /*

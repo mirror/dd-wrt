@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -193,7 +193,7 @@ inprocess:
     return CLIENT_APP_INPROCESS;
 
 done:
-    vnc_client_mod.api->add_app(flowp, APP_ID_VNC_RFB, APP_ID_VNC, (const char *) fd->version);
+    vnc_client_mod.api->add_app(pkt, dir, pConfig, flowp, APP_ID_VNC_RFB, APP_ID_VNC, (const char *) fd->version);
     setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }

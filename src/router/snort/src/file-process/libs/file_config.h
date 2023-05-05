@@ -1,7 +1,7 @@
 /*
 **
 **
-**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2012-2013 Sourcefire, Inc.
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,14 @@ typedef struct _IdentifierMemoryBlock
     struct _IdentifierMemoryBlock *next;  /*next node*/
 }IdentifierMemoryBlock;
 
+#if defined (SIDE_CHANNEL) && defined (REG_TEST)
+typedef struct _FileSSConfig
+{
+  char *startup_input_file;
+  char *runtime_output_file;
+}FileSSConfig;
+#endif
+
 typedef struct _fileConfig
 {
     IdentifierNode *identifier_root; /*Root of magic tries*/
@@ -57,6 +65,12 @@ typedef struct _fileConfig
     int64_t show_data_depth;
 #endif
     int64_t file_depth;
+#ifdef SIDE_CHANNEL
+    bool use_side_channel;
+#ifdef REG_TEST
+    FileSSConfig *file_ss_config;
+#endif
+#endif
 } FileConfig;
 
 /* Return all rule id's that match a a given "type" string.  */

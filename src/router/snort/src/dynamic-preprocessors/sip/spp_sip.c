@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -53,6 +53,7 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <string.h>
+#include <time.h>
 #ifndef WIN32
 #include <strings.h>
 #include <sys/time.h>
@@ -114,6 +115,7 @@ static void registerPortsForDispatch( struct _SnortConfig *sc, SIPConfig *policy
 static void registerPortsForReassembly( SIPConfig *policy, int direction );
 static void _addPortsToStreamFilter(struct _SnortConfig *, SIPConfig *, tSfPolicyId);
 static void SIP_PrintStats(int);
+static void DisplaySIPStats (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f);
 #ifdef TARGET_BASED
 static void _addServicesToStreamFilter(struct _SnortConfig *, tSfPolicyId);
 #endif
@@ -146,6 +148,50 @@ static void SIPReloadSwapFree(void *);
 
 static SIPMsg sipMsg;
 
+int SIPPrintMemStats(FILE *fd, char *buffer, PreprocMemInfo *meminfo)
+{
+    int len = 0;
+    time_t curr_time;
+
+    if (fd)
+    {
+        len = fprintf(fd, ",%lu,%u"
+                 ",%lu,%u,%u"
+                 ",%lu,%u,%u,%lu"
+                 , sip_stats.sessions
+                 , numSessions
+                 , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                 , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                 , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                 , meminfo[PP_MEM_CATEGORY_SESSION].used_memory +
+                   meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+
+        return len;
+    }
+
+    curr_time = time(NULL); 
+
+    if (buffer)
+    {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "\n\nMemory Statistics of SIP on: %s\n"
+            "    Total Sessions          : %lu\n"
+            "    Current Active Sessions : %u\n\n"
+            , ctime(&curr_time)
+            , sip_stats.sessions
+            , numSessions);
+    } else {
+        _dpd.logMsg("\n");
+        _dpd.logMsg("Memory Statistics of SIP on: %s\n", ctime(&curr_time));
+        _dpd.logMsg("    Total Sessions          : %lu\n", sip_stats.sessions); 
+        _dpd.logMsg("    Current Active Sessions : %u\n\n", numSessions);
+    }
+
+    return len;
+}
+
 /* Called at preprocessor setup time. Links preprocessor keyword
  * to corresponding preprocessor initialization function.
  *
@@ -156,6 +202,7 @@ static SIPMsg sipMsg;
  */
 void SetupSIP(void)
 {
+    _dpd.registerMemoryStatsFunc(PP_SIP, SIPPrintMemStats);
     /* Link preprocessor keyword to initialization function
      * in the preprocessor list. */
 #ifndef SNORT_RELOAD
@@ -181,6 +228,14 @@ SIPConfig *getParsingSIPConfig(struct _SnortConfig *sc)
         sip_parsing_config = sfPolicyUserDataGetCurrent(sip_config);
     return sip_parsing_config;
 }
+
+#ifdef REG_TEST
+static inline void PrintSIPSize(void)
+{
+    _dpd.logMsg("\nSIP Session Size: %lu\n", (long unsigned int)sizeof(SIPData));
+}
+#endif
+
 /* Initializes the SIP preprocessor module and registers
  * it in the preprocessor list.
  *
@@ -196,6 +251,12 @@ static void SIPInit(struct _SnortConfig *sc, char *argp)
     tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
     SIPConfig *pDefaultPolicyConfig = NULL;
     SIPConfig *pPolicyConfig = NULL;
+
+#ifdef REG_TEST
+    PrintSIPSize();
+#endif
+	/* For SFR CLI */
+	_dpd.controlSocketRegisterHandler(CS_TYPE_SIP_STATS, NULL, NULL, &DisplaySIPStats);
 
     if (sip_config == NULL)
     {
@@ -235,7 +296,8 @@ static void SIPInit(struct _SnortConfig *sc, char *argp)
                 "configured once.\n");
     }
 
-    pPolicyConfig = (SIPConfig *)calloc(1, sizeof(SIPConfig));
+    pPolicyConfig = (SIPConfig *)_dpd.snortAlloc(1, sizeof(SIPConfig), PP_SIP, 
+                                                 PP_MEM_CATEGORY_CONFIG);
     if (!pPolicyConfig)
     {
         DynamicPreprocessorFatalMessage("Could not allocate memory for "
@@ -388,11 +450,21 @@ static void SIPmain( void* ipacketp, void* contextp )
     assert((IsUDP(packetp) || IsTCP(packetp)) &&
         packetp->payload && packetp->payload_size);
 
-    if (IsTCP(packetp) && (!_dpd.readyForProcess(packetp)))
+    if (IsTCP(packetp))
     {
-        /* Packet will be rebuilt, so wait for it */
-        DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Packet will be reassembled\n"));
-        return;
+        if (!_dpd.readyForProcess(packetp))
+        {
+            /* Packet will be rebuilt, so wait for it */
+            DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Packet will be reassembled\n"));
+            return;
+        }
+        if (_dpd.sessionAPI->get_application_data(packetp->stream_session, PP_SSL) &&
+            !_dpd.streamAPI->is_session_decrypted(packetp->stream_session))
+        {
+            /* Packet is a non-SIP/encrypted SIP one, skip those */
+            DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Packet is encrypted or not a SIP packet\n"));
+            return;
+        }
     }
 
     PREPROC_PROFILE_START(sipPerfStats);
@@ -536,7 +608,8 @@ SIPData * SIPGetNewSession(SFSnortPacket *packetp, tSfPolicyId policy_id)
     {
         MaxSessionsAlerted = 0;
     }
-    datap = (SIPData *)calloc(1, sizeof(SIPData));
+    datap = (SIPData *)_dpd.snortAlloc(1, sizeof(SIPData), PP_SIP,
+                                       PP_MEM_CATEGORY_SESSION);
 
     if ( !datap )
         return NULL;
@@ -605,7 +678,7 @@ static void FreeSIPData( void* idatap )
 
     if (config == NULL)
     {
-        free(ssn);
+        _dpd.snortFree(ssn, sizeof(SIPData), PP_SIP, PP_MEM_CATEGORY_SESSION);
         return;
     }
 
@@ -613,7 +686,7 @@ static void FreeSIPData( void* idatap )
     if ((config->ref_count == 0) &&	(ssn->config != sip_config))
     {
         sfPolicyUserDataClear (ssn->config, ssn->policy_id);
-        free(config);
+        _dpd.snortFree(config, sizeof(SIPConfig), PP_SIP, PP_MEM_CATEGORY_CONFIG);
 
         if (sfPolicyUserPolicyGetActive(ssn->config) == 0)
         {
@@ -623,7 +696,7 @@ static void FreeSIPData( void* idatap )
 
     }
 
-    free(ssn);
+    _dpd.snortFree(ssn, sizeof(SIPData), PP_SIP, PP_MEM_CATEGORY_SESSION);
 }
 /* **********************************************************************
  * Validates given port as an SIP server port.
@@ -806,6 +879,43 @@ void SIPFreeConfig(tSfPolicyUserContextId config)
     sfPolicyUserDataFreeIterate (config, SIPFreeConfigPolicy);
     sfPolicyConfigDelete(config);
 }
+
+static void DisplaySIPStats (uint16_t type, void *old_context, struct _THREAD_ELEMENT *te, ControlDataSendFunc f)
+{
+    char buffer[CS_STATS_BUF_SIZE + 1];
+    int i = 0;
+    int len = 0;
+
+    if (sip_stats.sessions) {
+        len += snprintf(buffer, CS_STATS_BUF_SIZE,  "SIP Preprocessor Statistics\n"
+            "  Total sessions: "STDu64"\n", sip_stats.sessions);
+        if (sip_stats.events)
+            len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "  SIP anomalies : "STDu64"\n", sip_stats.events);
+
+        if (sip_stats.dialogs)
+            len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "  Total  dialogs: "STDu64"\n", sip_stats.dialogs);
+
+        len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "  Requests: "STDu64"\n", sip_stats.requests[0]);
+        while (NULL != StandardMethods[i].name && len < CS_STATS_BUF_SIZE) {
+            len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "%16s:   "STDu64"\n",
+                    StandardMethods[i].name, sip_stats.requests[StandardMethods[i].methodFlag]);
+            i++;
+        }
+        len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "  Responses: "STDu64"\n", sip_stats.responses[TOTAL_RESPONSES]);
+        for (i = 1; i <NUM_OF_RESPONSE_TYPES && len < CS_STATS_BUF_SIZE; i++) {
+            len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  "             %dxx:   "STDu64"\n", i, sip_stats.responses[i]);
+        }
+        len += snprintf(buffer+len, CS_STATS_BUF_SIZE-len,  " Ignore sessions:   "STDu64"\n"
+            " Ignore channels:   "STDu64"\n", sip_stats.ignoreSessions, sip_stats.ignoreChannels);
+    } else {
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "SIP Stats not available\n Total Sessions:"STDu64"\n", sip_stats.sessions );
+    }
+
+    if (-1 == f(te, (const uint8_t *)buffer, len)) {
+        _dpd.logMsg("Unable to send data to the frontend\n");
+    }
+}
+
 /******************************************************************
  * Print statistics being kept by the preprocessor.
  *
@@ -872,7 +982,8 @@ static void SIPReload(struct _SnortConfig *sc, char *args, void **new_config)
         DynamicPreprocessorFatalMessage("SIP preprocessor can only be configured once.\n");
     }
 
-    pPolicyConfig = (SIPConfig *)calloc(1, sizeof(SIPConfig));
+    pPolicyConfig = (SIPConfig *)_dpd.snortAlloc(1, sizeof(SIPConfig), PP_SIP,
+                                                 PP_MEM_CATEGORY_CONFIG);
     if (!pPolicyConfig)
     {
         DynamicPreprocessorFatalMessage("Could not allocate memory for "

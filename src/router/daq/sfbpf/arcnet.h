@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Id: arcnet.h,v 1.1 2010/04/15 19:18:34 maltizer Exp $ (LBL)
+ * @(#) $Id$ (LBL)
  *
  * from: NetBSD: if_arc.h,v 1.13 1999/11/19 20:41:19 thorpej Exp
  */

@@ -1,0 +1,416 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "build_all"=".\build_all.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name dynamic_preprocessors
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_engine
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name daq
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name snort
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name u2spewfoo
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "daq"="..\..\..\daq\daq.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "dynamic_preprocessors"="..\..\dynamic-preprocessors\dynamic_preprocessors.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_ftptelnet
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_smtp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_ssh
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dns
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_ssl
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dce2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_sdf
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_sip
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_imap
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_pop
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dnp3
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_modbus
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_reputation
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_gtp
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dce2"="..\..\dynamic-preprocessors\dcerpc2\sf_dce2.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dnp3"="..\..\dynamic-preprocessors\dnp3\sf_dnp3.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dns"="..\..\dynamic-preprocessors\dns\sf_dns.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dynamic_initialize"="..\..\dynamic-preprocessors\sf_dynamic_initialize\sf_dynamic_initialize.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sf_engine"=".\sf_engine.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_engine_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_engine_initialize"=".\sf_engine_initialize.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sf_ftptelnet"="..\..\dynamic-preprocessors\ftptelnet\sf_ftptelnet.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_gtp"="..\..\dynamic-preprocessors\gtp\sf_gtp.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sf_imap"="..\..\dynamic-preprocessors\imap\sf_imap.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_modbus"="..\..\dynamic-preprocessors\modbus\sf_modbus.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_pop"="..\..\dynamic-preprocessors\pop\sf_pop.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_reputation"="..\..\dynamic-preprocessors\reputation\sf_reputation.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_sdf"="..\..\dynamic-preprocessors\sdf\sf_sdf.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_sip"="..\..\dynamic-preprocessors\sip\sf_sip.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_smtp"="..\..\dynamic-preprocessors\smtp\sf_smtp.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sfdynamic_preproc_libs
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_ssh"="..\..\dynamic-preprocessors\ssh\sf_ssh.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_ssl"="..\..\dynamic-preprocessors\ssl\sf_ssl.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sfdynamic_preproc_libs"="..\..\dynamic-preprocessors\libs\sfdynamic_preproc_libs.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "snort"=".\snort.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name snort_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "snort_initialize"=".\snort_initialize.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "u2spewfoo"="..\..\..\tools\u2spewfoo\u2spewfoo.vcxproj" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

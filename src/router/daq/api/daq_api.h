@@ -1,7 +1,7 @@
 /*
 ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2010-2013 Sourcefire, Inc.
-** Author: Michael R. Altizer <maltizer@sourcefire.com>
+** Author: Michael R. Altizer <mialtize@cisco.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -81,7 +81,7 @@ struct _daq_module
     /* Return the index of the given named device if possible. */
     int (*get_device_index) (void *handle, const char *device);
     /* Modify a flow */
-    int (*modify_flow) (void *handle, const DAQ_PktHdr_t *hdr, DAQ_ModFlow_t *modify);
+    int (*modify_flow) (void *handle, const DAQ_PktHdr_t *hdr, const DAQ_ModFlow_t *modify);
     /* Read new configuration */
     int (*hup_prep) (void *handle, void **new_config);
     /* Swap new and old configuration */
@@ -94,12 +94,16 @@ struct _daq_module
      * @param [in] hdr         DAQ packet header of the control channel packet.
      * @param [in] dp_key      Key structure of the data channel flow
      * @param [in] packet_data Packet of the companion control channel packet.
+     * @param [in] params      Parameters to control the PST/EFT entry.
      * @return                 Error code of the API. 0 - success.
      */
-     int (*dp_add_dc) (void *handle, const DAQ_PktHdr_t * hdr, DAQ_DP_key_t * dp_key, const uint8_t * packet_data);
+    int (*dp_add_dc) (void *handle, const DAQ_PktHdr_t *hdr, DAQ_DP_key_t *dp_key,
+                      const uint8_t *packet_data, DAQ_Data_Channel_Params_t *params);
+    /* Query a flow */
+    int (*query_flow) (void *handle, const DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t *query);
 };
 
-#define DAQ_API_VERSION    0x00010002
+#define DAQ_API_VERSION    0x00010007
 
 #define DAQ_ERRBUF_SIZE 256
 /* This is a convenience macro for safely printing to DAQ error buffers.  It must be called on a known-size character array. */

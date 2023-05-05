@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2011-2013 Sourcefire, Inc.
 **
 **
@@ -93,13 +93,11 @@ typedef struct _SIP_DialogList
  */
 typedef struct _sipData
 {
-
     uint32_t state_flags;
+    tSfPolicyId policy_id;
     SIP_DialogList dialogs;
     SIP_Roptions ropts;
-    tSfPolicyId policy_id;
     tSfPolicyUserContextId config;
-
 } SIPData;
 
 typedef struct _SIPMsg

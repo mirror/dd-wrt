@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,13 @@ struct _NormalizerContext;
 typedef int (*Normalizer)(
     struct _NormalizerContext*, Packet*, uint8_t layer, int changes);
 
+typedef enum registerFunc 
+{
+        unIntialized = 0,
+        init,
+        reload
+} registerFunc;
+
 typedef struct _NormalizerContext
 {
     uint32_t normalizer_flags;
@@ -45,6 +52,7 @@ typedef struct _NormalizerContext
     // these must be in the same order PROTO_IDs are defined!
     // if entry is NULL, proto doesn't have normalization or it is disabled
     Normalizer normalizers[PROTO_MAX];
+    registerFunc regFunc;
 } NormalizerContext;
 
 int Norm_SetConfig(NormalizerContext*);

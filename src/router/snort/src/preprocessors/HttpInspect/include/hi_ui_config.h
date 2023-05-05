@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -285,6 +285,8 @@ typedef struct s_HTTPINSPECT_GLOBAL_CONF
     uint32_t xtra_jsnorm_id;
     DecodeConfig decode_conf;
     MAIL_LogConfig mime_conf;
+    bool normalize_nulls;
+    bool fast_blocking;
 }  HTTPINSPECT_GLOBAL_CONF;
 
 #define INVALID_HEX_VAL -1

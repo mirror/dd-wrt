@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2013-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -65,6 +65,8 @@ typedef struct _ssl_callback_interface
     bool (*is_session_ssl)(SFSnortPacket* p);
     int  (*get_ssl_flow_flags)(SFSnortPacket* p, void *sd, uint32_t *ssn_flags);
     void (*register_ha_funcs)(void);
+    bool (*reload_mem_adjust_available)(void);
+    void (*register_reload_mem_adjust)(struct _SnortConfig *sc, void *reload_config);
 } ssl_callback_interface_t;
 
 

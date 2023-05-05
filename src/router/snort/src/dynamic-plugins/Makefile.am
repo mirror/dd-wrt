@@ -20,6 +20,9 @@ sp_preprocopt.c \
 sp_preprocopt.h \
 sf_convert_dynamic.c \
 sf_convert_dynamic.h \
+sf_dynamic_decompression.c \
+sf_dynamic_decompression.h \
+sf_decompression_define.h \
 so_rule_mem_adjust.h
 
 INCLUDES = @INCLUDES@

@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Marc Norton
@@ -189,15 +189,20 @@ const unsigned char * hbm_match(HBM_STRUCT * px, const unsigned char * text, int
       q = t - m1;
       while( k >= 4 )
       {
-        if( pat[k] != q[k] )goto NoMatch;  k--;
-        if( pat[k] != q[k] )goto NoMatch;  k--;
-        if( pat[k] != q[k] )goto NoMatch;  k--;
-        if( pat[k] != q[k] )goto NoMatch;  k--;
+        if( pat[k] != q[k] ) goto NoMatch;
+        k--;
+        if( pat[k] != q[k] ) goto NoMatch;
+        k--;
+        if( pat[k] != q[k] ) goto NoMatch;
+        k--;
+        if( pat[k] != q[k] ) goto NoMatch;
+        k--;
       }
       /* Finish Match Loop */
       while( k >= 0 )
       {
-        if( pat[k] != q[k] )goto NoMatch;  k--;
+        if( pat[k] != q[k] ) goto NoMatch;
+        k--;
       }
       /* If matched - return 1st char of pattern in text */
       return q;
@@ -229,15 +234,20 @@ NoMatch:
       q = t - m1;
       while( k >= 4 )
       {
-        if( pat[k] != toupper(q[k]) )goto NoMatchNC;  k--;
-        if( pat[k] != toupper(q[k]) )goto NoMatchNC;  k--;
-        if( pat[k] != toupper(q[k]) )goto NoMatchNC;  k--;
-        if( pat[k] != toupper(q[k]) )goto NoMatchNC;  k--;
+        if( pat[k] != toupper(q[k]) ) goto NoMatchNC;
+        k--;
+        if( pat[k] != toupper(q[k]) ) goto NoMatchNC;
+        k--;
+        if( pat[k] != toupper(q[k]) ) goto NoMatchNC;
+        k--;
+        if( pat[k] != toupper(q[k]) ) goto NoMatchNC;
+        k--;
       }
       /* Finish Match Loop */
       while( k >= 0 )
       {
-        if( pat[k] != toupper(q[k]) )goto NoMatchNC;  k--;
+        if( pat[k] != toupper(q[k]) ) goto NoMatchNC;
+        k--;
       }
       /* If matched - return 1st char of pattern in text */
       return q;

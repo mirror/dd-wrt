@@ -1,4 +1,4 @@
-# Copyright 2001-2018 Sourcefire, Inc. All Rights Reserved.
+# Copyright 2001-2023 Sourcefire, Inc. All Rights Reserved.
 #
 # This file contains (i) proprietary rules that were created, tested and certified by
 # Sourcefire, Inc. (the "VRT Certified Rules") that are distributed under the VRT
@@ -19,4 +19,3 @@
 # SCADA RULES
 #-------------
 
-# alert tcp $EXTERNAL_NET any -> $HOME_NET 2537 (msg:"SCADA Schneider Electric Accutech http request overflow attempt"; flow:to_server,established; content:"GET /"; depth:5; isdataat:128,relative; content:!" HTTP/1.1"; within:128; reference:bugtraq,57651; reference:cve,2013-0658; classtype:attempted-admin; sid:39941; rev:1;)

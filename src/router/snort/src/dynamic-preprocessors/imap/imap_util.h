@@ -1,6 +1,6 @@
 /****************************************************************************
  * 
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@
 
 void IMAP_GetEOL(const uint8_t *, const uint8_t *, const uint8_t **, const uint8_t **);
 void IMAP_DecodeType(const char *start, int length, bool cnt_xf);
+int IMAP_Print_Mem_Stats(FILE *fd, char *buffer, PreprocMemInfo *meminfo);
 
 #ifdef DEBUG_MSGS
 const char * IMAP_PrintBuffer(SFSnortPacket *);

@@ -1,6 +1,6 @@
 /*
 ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
-** Author: Michael R. Altizer <maltizer@sourcefire.com>
+** Author: Michael R. Altizer <mialtize@cisco.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -163,7 +163,7 @@ static NetmapInstance *create_instance(const char *device, NetmapInstance *paren
     instance = calloc(1, sizeof(NetmapInstance));
     if (!instance)
     {
-        snprintf(errbuf, errlen, "%s: Could not allocate a new instance structure.", __FUNCTION__);
+        snprintf(errbuf, errlen, "%s: Could not allocate a new instance structure.", __func__);
         goto err;
     }
 
@@ -177,7 +177,7 @@ static NetmapInstance *create_instance(const char *device, NetmapInstance *paren
     if (instance->fd < 0)
     {
         snprintf(errbuf, errlen, "%s: Could not open /dev/netmap: %s (%d)",
-                    __FUNCTION__, strerror(errno), errno);
+                    __func__, strerror(errno), errno);
         goto err;
     }
 
@@ -224,7 +224,7 @@ static int start_instance(Netmap_Context_t *nmc, NetmapInstance *instance)
     if (ioctl(instance->fd, NIOCREGIF, &instance->req))
     {
         DPE(nmc->errbuf, "%s: Netmap registration for %s failed: %s (%d)",
-                __FUNCTION__, instance->req.nr_name, strerror(errno), errno);
+                __func__, instance->req.nr_name, strerror(errno), errno);
         return DAQ_ERROR;
     }
 
@@ -241,7 +241,7 @@ static int start_instance(Netmap_Context_t *nmc, NetmapInstance *instance)
         if (instance->mem == MAP_FAILED)
         {
             DPE(nmc->errbuf, "%s: Could not MMAP the buffer memory region for %s: %s (%d)",
-                    __FUNCTION__, instance->req.nr_name, strerror(errno), errno);
+                    __func__, instance->req.nr_name, strerror(errno), errno);
             return DAQ_ERROR;
         }
     }
@@ -302,7 +302,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
     nmc = calloc(1, sizeof(Netmap_Context_t));
     if (!nmc)
     {
-        snprintf(errbuf, errlen, "%s: Couldn't allocate memory for the new Netmap context!", __FUNCTION__);
+        snprintf(errbuf, errlen, "%s: Couldn't allocate memory for the new Netmap context!", __func__);
         rval = DAQ_ERROR_NOMEM;
         goto err;
     }
@@ -310,7 +310,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
     nmc->device = strdup(config->name);
     if (!nmc->device)
     {
-        snprintf(errbuf, errlen, "%s: Couldn't allocate memory for the device string!", __FUNCTION__);
+        snprintf(errbuf, errlen, "%s: Couldn't allocate memory for the device string!", __func__);
         rval = DAQ_ERROR_NOMEM;
         goto err;
     }
@@ -322,7 +322,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
     if (*dev == ':' || ((len = strlen(dev)) > 0 && *(dev + len - 1) == ':') || 
             (config->mode == DAQ_MODE_PASSIVE && strstr(dev, "::")))
     {
-        snprintf(errbuf, errlen, "%s: Invalid interface specification: '%s'!", __FUNCTION__, nmc->device);
+        snprintf(errbuf, errlen, "%s: Invalid interface specification: '%s'!", __func__, nmc->device);
         goto err;
     }
 
@@ -331,7 +331,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
         len = strcspn(dev, ":");
         if (len >= sizeof(intf))
         {
-            snprintf(errbuf, errlen, "%s: Interface name too long! (%zu)", __FUNCTION__, len);
+            snprintf(errbuf, errlen, "%s: Interface name too long! (%zu)", __func__, len);
             goto err;
         }
         if (len != 0)
@@ -340,7 +340,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
             if (nmc->intf_count >= NETMAP_MAX_INTERFACES)
             {
                 snprintf(errbuf, errlen, "%s: Using more than %d interfaces is not supported!",
-                            __FUNCTION__, NETMAP_MAX_INTERFACES);
+                            __func__, NETMAP_MAX_INTERFACES);
                 goto err;
             }
             snprintf(intf, len + 1, "%s", dev);
@@ -361,7 +361,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
                     if (create_bridge(nmc, name1, name2) != DAQ_SUCCESS)
                     {
                         snprintf(errbuf, errlen, "%s: Couldn't create the bridge between %s and %s!",
-                                    __FUNCTION__, name1, name2);
+                                    __func__, name1, name2);
                         goto err;
                     }
                     num_intfs = 0;
@@ -379,7 +379,7 @@ static int netmap_daq_initialize(const DAQ_Config_t * config, void **ctxt_ptr, c
     if (!nmc->instances || (config->mode != DAQ_MODE_PASSIVE && num_intfs != 0))
     {
         snprintf(errbuf, errlen, "%s: Invalid interface specification: '%s'!",
-                    __FUNCTION__, nmc->device);
+                    __func__, nmc->device);
         goto err;
     }
 
@@ -420,13 +420,13 @@ static int netmap_daq_set_filter(void *handle, const char *filter)
     nmc->filter = strdup(filter);
     if (!nmc->filter)
     {
-        DPE(nmc->errbuf, "%s: Couldn't allocate memory for the filter string!", __FUNCTION__);
+        DPE(nmc->errbuf, "%s: Couldn't allocate memory for the filter string!", __func__);
         return DAQ_ERROR;
     }
 
     if (sfbpf_compile(nmc->snaplen, DLT_EN10MB, &fcode, nmc->filter, 1, 0) < 0)
     {
-        DPE(nmc->errbuf, "%s: BPF state machine compilation failed!", __FUNCTION__);
+        DPE(nmc->errbuf, "%s: BPF state machine compilation failed!", __func__);
         return DAQ_ERROR;
     }
 
@@ -638,7 +638,7 @@ poll:
                 The user should call daq_breakloop to actually exit. */
             if (ret < 0 && errno != EINTR)
             {
-                DPE(nmc->errbuf, "%s: Poll failed: %s (%d)", __FUNCTION__, strerror(errno), errno);
+                DPE(nmc->errbuf, "%s: Poll failed: %s (%d)", __func__, strerror(errno), errno);
                 return DAQ_ERROR;
             }
             /* If the poll times out, return control to the caller. */
@@ -652,11 +652,11 @@ poll:
                     if (pfd[i].revents & (POLLHUP | POLLERR | POLLNVAL))
                     {
                         if (pfd[i].revents & POLLHUP)
-                            DPE(nmc->errbuf, "%s: Hang-up on a packet socket", __FUNCTION__);
+                            DPE(nmc->errbuf, "%s: Hang-up on a packet socket", __func__);
                         else if (pfd[i].revents & POLLERR)
-                            DPE(nmc->errbuf, "%s: Encountered error condition on a packet socket", __FUNCTION__);
+                            DPE(nmc->errbuf, "%s: Encountered error condition on a packet socket", __func__);
                         else if (pfd[i].revents & POLLNVAL)
-                            DPE(nmc->errbuf, "%s: Invalid polling request on a packet socket", __FUNCTION__);
+                            DPE(nmc->errbuf, "%s: Invalid polling request on a packet socket", __func__);
                         return DAQ_ERROR;
                     }
                 }
@@ -688,14 +688,14 @@ static int netmap_daq_inject(void *handle, const DAQ_PktHdr_t *hdr,
     if (!instance)
     {
         DPE(nmc->errbuf, "%s: Unrecognized ingress interface specified: %u",
-                __FUNCTION__, hdr->ingress_index);
+                __func__, hdr->ingress_index);
         return DAQ_ERROR_NODEV;
     }
 
     if (!reverse && !(instance = instance->peer))
     {
         DPE(nmc->errbuf, "%s: Specified ingress interface (%u) has no peer for forward injection.",
-                __FUNCTION__, hdr->ingress_index);
+                __func__, hdr->ingress_index);
         return DAQ_ERROR_NODEV;
     }
 
@@ -726,7 +726,7 @@ static int netmap_daq_inject(void *handle, const DAQ_PktHdr_t *hdr,
     } while (instance->cur_tx_ring != start_tx_ring);
 
     /* If we got here, it means we couldn't find an available TX slot, so tell the user to try again. */
-    DPE(nmc->errbuf, "%s: Could not find an available TX slot.  Try again.", __FUNCTION__);
+    DPE(nmc->errbuf, "%s: Could not find an available TX slot.  Try again.", __func__);
     return DAQ_ERROR_AGAIN;
 }
 
@@ -864,5 +864,6 @@ const DAQ_Module_t netmap_daq_module_data =
     /* .hup_prep = */ NULL,
     /* .hup_apply = */ NULL,
     /* .hup_post = */ NULL,
-    /* .dp_add_dc = */ NULL
+    /* .dp_add_dc = */ NULL,
+    /* .query_flow = */ NULL
 };

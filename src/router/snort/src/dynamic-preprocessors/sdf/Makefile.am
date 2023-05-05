@@ -29,6 +29,7 @@ sdf_detection_option.c \
 sdf_detection_option.h
 
 EXTRA_DIST = \
+sf_sdf.vcxproj \
 sf_sdf.dsp
 
 all-local: $(LTLIBRARIES)

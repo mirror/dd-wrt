@@ -69,10 +69,10 @@ OpenBSD/FreeBSD
 
 Application Identification Configuration
 ================================================================================
-AppId dynamic preprocessor can be enabled during build time. The 
-following options must be included in ./configure:
+AppId dynamic preprocessor is enabled by default(from snort-2.9.12).
+The preprocessor can be disabled during build time by including the following option in ./configure:
 
---enable-open-appid
+--disable-open-appid
 
 The configuration name is "appid": 
 

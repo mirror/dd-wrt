@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,7 +54,6 @@
 #include "sfthd.h"
 #include "util.h"
 #include "sfPolicy.h"
-#include "detection-plugins/sp_clientserver.h"
 
 //  Debug Printing
 //#define THD_DEBUG
@@ -689,14 +688,14 @@ static char * printIP(unsigned u )
 
 int sfthd_test_rule(SFXHASH *rule_hash, THD_NODE *sfthd_node,
                     sfaddr_t* sip, sfaddr_t* dip, long curtime,
-                    detection_option_eval_data_t *eval_data, OptTreeNode *otn)
+                    detection_option_eval_data_t *eval_data)
 {
     int status;
 
     if ((rule_hash == NULL) || (sfthd_node == NULL))
         return 0;
 
-    status = sfthd_test_local(rule_hash, sfthd_node, sip, dip, curtime, eval_data, otn);
+    status = sfthd_test_local(rule_hash, sfthd_node, sip, dip, curtime, eval_data);
 
     return (status < -1) ? 1 : status;
 }
@@ -893,16 +892,13 @@ int sfthd_test_local(
     sfaddr_t*    sip,
     sfaddr_t*    dip,
     time_t       curtime,
-    detection_option_eval_data_t *eval_data,
-    OptTreeNode *otn)
+    detection_option_eval_data_t *eval_data)
 {
     THD_IP_NODE_KEY key;
     THD_IP_NODE     data,*sfthd_ip_node;
     int             status=0;
     sfaddr_t*       ip;
     tSfPolicyId policy_id = getIpsRuntimePolicy();
-    ClientServerData *csd = NULL;
-    bool inc = false;
 
 #ifdef THD_DEBUG
     printf("THD_DEBUG: Key THD_NODE IP=%s,",printIP((unsigned)sfthd_node->ip_address) );
@@ -911,9 +907,6 @@ int sfthd_test_local(
     printf("THD_DEBUG:        PKT  DIP=%s\n",printIP((unsigned)dip) );
     fflush(stdout);
 #endif
-
-    if (otn)
-       csd = (ClientServerData *)otn->opt_func->context;
 
     /* -1 means don't do any limit or thresholding */
     if ( sfthd_node->count == THD_NO_THRESHOLD)
@@ -970,40 +963,33 @@ int sfthd_test_local(
         /* Increment the event count */
         if(eval_data)
         {
-            /* if only_stream  option present in rule,  count will be incremented only on re-built packets.
-               if no_stream present count will be incremented only on  raw packets.*/
-            if(csd && (( csd->only_reassembled & ONLY_STREAM  ||  csd->ignore_reassembled & IGNORE_STREAM ) ||
-                       ( csd->only_reassembled & ONLY_FRAG  ||  csd->ignore_reassembled & IGNORE_FRAG) ))
-            {
+             if(eval_data->detection_filter_count == 0)
+             {
+                 eval_data->detection_filter_count = 1;
                  sfthd_ip_node->count++;
-                 inc = true;
-            }
-            else
-            {
-                 /* if no option present count will be ncremented either on raw / re-built packets not on both */
-                 if( !(eval_data->p->packet_flags & PKT_STREAM_INSERT) || (eval_data->p->packet_flags & PKT_REBUILT_STREAM))
-                 {
-                     sfthd_ip_node->count++;
-                     inc = true;
-                 }
-            }
+             }
         }
         else
         {
             sfthd_ip_node->count++;
-            inc = true;
         }
     }
-    else 
+    else if (status != SFXHASH_OK)
     {
         /* hash error */
         return 1; /*  check the next threshold object */
     }
+    else
+    {  
+        /* Was not in the table - it was added - work with our copy of the data */
+        sfthd_ip_node = &data;
+        if(eval_data)
+        {
+            eval_data->detection_filter_count = 1;
+        }
+    }
+    return sfthd_test_non_suppress(sfthd_node, sfthd_ip_node, curtime);
 
-    if(inc)
-        return sfthd_test_non_suppress(sfthd_node, sfthd_ip_node, curtime);
-
-    return 1;
 }
 
 /*
@@ -1212,7 +1198,7 @@ int sfthd_test_threshold(
         /*
          *   Test SUPPRESSION and THRESHOLDING
          */
-        status = sfthd_test_local(thd->ip_nodes, sfthd_node, sip, dip, curtime, NULL, NULL);
+        status = sfthd_test_local(thd->ip_nodes, sfthd_node, sip, dip, curtime, NULL);
 
         if( status < 0 ) /* -1 == Don't log and stop looking */
         {

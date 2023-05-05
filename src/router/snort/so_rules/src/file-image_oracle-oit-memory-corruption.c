@@ -121,7 +121,7 @@ static RuleOption rule_OitMemoryCorruption_option3 =
 static RuleReference rule_OitMemoryCorruption_ref1 = 
 {
    "url", /* type */
-   "http://www.talosintelligence.com/vulnerability-reports/" /* value */
+   "www.talosintelligence.com/vulnerability-reports/" /* value */
 };
 
 static RuleReference *rule_OitMemoryCorruption_refs[] =
@@ -190,7 +190,7 @@ Rule rule41372 = {
    { 
       3,  /* genid */
       41372, /* sigid */
-      1, /* revision */
+      2, /* revision */
       "attempted-admin", /* classification */
       0,  /* hardcoded priority */
       "FILE-IMAGE Oracle Outside In libvs_gif out of bounds write attempt",     /* message */
@@ -225,7 +225,7 @@ Rule rule41373 = {
    { 
       3,  /* genid */
       41373, /* sigid */
-      1, /* revision */
+      2, /* revision */
       "attempted-admin", /* classification */
       0,  /* hardcoded priority */
       "FILE-IMAGE Oracle Outside In libvs_gif out of bounds write attempt",     /* message */

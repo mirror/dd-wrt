@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -64,6 +64,9 @@ typedef struct _ServiceValidationArgs
     char *app_id_debug_session;
 } ServiceValidationArgs;
 typedef int (*RNAServiceValidationFCN)(ServiceValidationArgs*);
+typedef int (*RNAServiceCallbackFCN)(const uint8_t *, uint16_t, const int, tAppIdData *session,
+                                     const SFSnortPacket *pkt, struct _Detector *userData,
+                                     const struct appIdConfig_ *pConfig);
 #define MakeRNAServiceValidationPrototype(name) static int name(ServiceValidationArgs* args)
 
 struct _INIT_SERVICE_API;
@@ -90,6 +93,7 @@ typedef struct _INIT_SERVICE_API
                                 const uint8_t *pattern, unsigned size, int position,
                                 const char *name, struct appIdConfig_ *pConfig);
     void (*RegisterAppId)(RNAServiceValidationFCN fcn, tAppId appId, uint32_t additionalInfo, struct appIdConfig_ *pConfig);
+    void (*RegisterDetectorCallback)(RNAServiceCallbackFCN fcn, tAppId appId, struct _Detector *userdata, struct appIdConfig_ *pConfig);
     int debug;
     uint32_t instance_id;
     DynamicPreprocessorData *dpd;
@@ -107,6 +111,8 @@ struct RNAServiceElement
 {
     struct RNAServiceElement *next;
     RNAServiceValidationFCN validate;
+    RNAServiceCallbackFCN detectorCallback;
+    bool detectorContext;
     /**pointer to user data. Value of userdata pointer and validate pointer forms key for comparison.
      */
     struct _Detector *userdata;
@@ -151,12 +157,13 @@ typedef int (*IncompatibleData)(tAppIdData *flow, const SFSnortPacket *pkt, int 
                                 const tRNAServiceElement *svc_element, unsigned flow_data_index, const struct appIdConfig_ *pConfig, AppIdServiceIDState *id_state);
 typedef void (*AddHostInfo)(tAppIdData *flow, SERVICE_HOST_INFO_CODE code, const void *info);
 typedef void (*AddPayload)(tAppIdData *, tAppId);
+typedef void (*AddMultiPayload)(tAppIdData *, tAppId);
 typedef void (*AddUser)(tAppIdData *, const char *, tAppId, int);
 typedef void (*AddMisc)(tAppIdData *, tAppId);
 typedef void (*AddDnsQueryInfo)(tAppIdData *flow,
                                 uint16_t id,
                                 const uint8_t *host, uint8_t host_len, uint16_t host_offset,
-                                uint16_t record_type);
+                                uint16_t record_type, uint16_t options_offset, bool root_query);
 typedef void (*AddDnsResponseInfo)(tAppIdData *flow,
                                    uint16_t id,
                                    const uint8_t *host, uint8_t host_len, uint16_t host_offset,
@@ -178,6 +185,7 @@ typedef struct _SERVICE_API
     IncompatibleData incompatible_data;
     AddHostInfo  add_host_info;
     AddPayload add_payload;
+    AddMultiPayload add_multipayload;
     AddUser add_user;
     AddServiceConsumeSubtype add_service_consume_subtype;
     AddMisc add_misc;

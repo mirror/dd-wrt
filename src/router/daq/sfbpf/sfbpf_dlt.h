@@ -40,7 +40,6 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sfbpf_dlt.h,v 1.3 2014/06/10 13:38:55 cwaxman Exp $ (LBL)
  */
 
 /*

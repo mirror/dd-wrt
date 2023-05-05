@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 ** 
 ** Brian Caswell <bmc@snort.org>
@@ -28,6 +28,7 @@
 #define ISDATAAT_RELATIVE_FLAG 0x01
 #define ISDATAAT_RAWBYTES_FLAG 0x02
 #define ISDATAAT_NOT_FLAG      0x04
+#define ISDATAAT_MAX_ARG       3
 
 typedef struct _IsDataAtData
 {

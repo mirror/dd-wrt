@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,24 @@
 #include "snort_httpinspect.h"
 #include "hi_client.h"
 
+#define RANGE_UNIT_BYTE "bytes"
+
+#ifndef HTTP_RESP_RANGE_NONE
+#define HTTP_RESP_RANGE_NONE                 0
+#endif
+#define RANGE_WITH_RESP_FULL_CONTENT         1
+#define RANGE_WITH_RESP_PARTIAL_CONTENT      2
+#define RANGE_WITH_RESP_ERROR                3
+#define RANGE_WITH_RESP_NON_BYTE             4
+#define RANGE_WITH_UNKNOWN_CONTENT_RANGE     5
+#define RANGE_WITH_RESP_UNKNOWN_CONTENT_SIZE 6
+#define RANGE_WITH_RESP_SKIP                 7
+
+#define ACCEPT_RANGE_UNKNOWN 0
+#define ACCEPT_RANGE_NONE    1
+#define ACCEPT_RANGE_BYTES   2
+#define ACCEPT_RANGE_OTHER   3
+
 typedef struct s_HI_SERVER_RESP
 {
     const u_char *status_code;
@@ -63,6 +81,8 @@ typedef struct s_HI_SERVER_RESP
     uint16_t header_encode_type;
     uint16_t cookie_encode_type;
 
+    uint8_t accept_range_flag;
+    uint8_t range_flag;
 } HI_SERVER_RESP;
 
 
@@ -73,5 +93,5 @@ typedef struct s_HI_SERVER
 } HI_SERVER;
 
 int hi_server_inspection(void *, Packet *, HttpSessionData *);
-
+int hi_server_is_known_header(const u_char *p, const u_char *end);
 #endif

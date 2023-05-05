@@ -18,7 +18,6 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/IP6_misc.h,v 1.1 2010/05/06 19:13:25 maltizer Exp $ (LBL)
  */
 
 /*

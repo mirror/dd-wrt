@@ -142,7 +142,7 @@ Rule rule13803 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        13803, /* sigid */
-       14, /* revision */
+       15, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -180,14 +180,22 @@ int rule13803eval(void *p) {
             if(getBuffer(sp, CONTENT_BUF_NORMALIZED, &cursor_normal, &end_of_payload) <= 0)
                return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+            getRuleData(sp, &(rule13803.info), (void*)(&tagcount), NULL);
+#else
             tagcount = (TagCount *)getRuleData(sp, (uint32_t)rule13803.info.sigID);
+#endif
 
             if(!tagcount) {
                tagcount = (TagCount *)allocRuleData(sizeof(TagCount));
                if (tagcount == NULL)
                   return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+               if(storeRuleData(sp, &(rule13803.info), tagcount, NULL) < 0)
+#else
                if(storeRuleData(sp, tagcount, rule13803.info.sigID, &freeRuleData) < 0)
+#endif
                {
                   freeRuleData(tagcount);
                   return RULE_NOMATCH;

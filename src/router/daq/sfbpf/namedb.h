@@ -30,7 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/namedb.h,v 1.2 2010/05/06 19:13:25 maltizer Exp $ (LBL)
  */
 
 #ifndef lib_pcap_namedb_h

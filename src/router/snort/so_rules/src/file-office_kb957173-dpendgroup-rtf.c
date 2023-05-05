@@ -218,7 +218,7 @@ Rule rule15125 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        15125, /* sigid */
-       12, /* revision */
+       13, /* revision */
    
        "attempted-user", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -268,14 +268,22 @@ int rule15125eval(void *p) {
    }
 
    // Get-store-initialize session data
+#ifndef BEFORE_2091300
+   getRuleData(sp, &(rule15125.info), (void*)(&dpCount), NULL);
+#else
    dpCount = (dpgroupcount *)getRuleData(sp, (uint32_t)rule15125.info.sigID);
+#endif
 
    if(!dpCount) {
       dpCount = (dpgroupcount *)allocRuleData(sizeof(dpgroupcount));
       if (dpCount == NULL)
          return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+      if(storeRuleData(sp, &(rule15125.info), dpCount, NULL) < 0)
+#else
       if(storeRuleData(sp, dpCount, rule15125.info.sigID, &freeRuleData) < 0)
+#endif
       {
          freeRuleData(dpCount);
          return RULE_NOMATCH;

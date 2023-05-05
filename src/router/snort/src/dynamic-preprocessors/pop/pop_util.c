@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  *
@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -51,11 +52,96 @@
 
 #include "snort_pop.h"
 #include "pop_util.h"
+#include "pop_config.h"
 #include "sf_dynamic_preprocessor.h"
 #include "sf_snort_packet.h"
 #include "Unified2_common.h"
 
+#include "memory_stats.h"
+
 extern POP *pop_ssn;
+
+extern MemPool *pop_mime_mempool;
+extern MemPool *pop_mempool;
+extern POP_Stats pop_stats;
+
+int POP_Print_Mem_Stats(FILE *fd, char *buffer, PreprocMemInfo *meminfo)
+{
+    time_t curr_time = time(NULL);
+    int len = 0;
+
+    if (fd)
+    {   
+        len = fprintf(fd, ",%lu,%lu,%lu"
+                 ",%lu,%u,%u"
+                 ",%lu,%u,%u,%lu"
+                 , pop_stats.sessions
+                 , pop_stats.max_conc_sessions
+                 , pop_stats.cur_sessions
+                 , meminfo[PP_MEM_CATEGORY_SESSION].used_memory
+                 , meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc
+                 , meminfo[PP_MEM_CATEGORY_SESSION].num_of_free
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].used_memory
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc
+                 , meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free
+                 , meminfo[PP_MEM_CATEGORY_SESSION].used_memory +
+                   meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+
+        return len;
+
+    } 
+    
+    if (buffer) {
+        /*
+         * Old buffer output for control socket comm,
+         * like via, "show snort preprocessor-memory-usage"
+         * CLI preserved as is
+         */
+        len = snprintf(buffer, CS_STATS_BUF_SIZE, "\n\nMemory Statistics of POP on: %s\n"
+             "POP Session Statistics:\n"
+             "       Total Sessions seen: " STDu64 "\n"
+             "   Max concurrent sessions: " STDu64 "\n"
+             "   Current Active sessions: " STDu64 "\n"
+             "\n   Memory Pool:\n"
+             "         Free Memory:\n"
+             "             POP Mime Pool: %14zu bytes\n"
+             "                  POP Pool: %14zu bytes\n"
+             "         Used Memory:\n"
+             "             POP Mime Pool: %14zu bytes\n"
+             "                  POP Pool: %14zu bytes\n"
+             "        -------------------       ---------------\n"
+             "         Total Memory:      %14zu bytes\n"
+             , ctime(&curr_time)
+             , pop_stats.sessions
+             , pop_stats.max_conc_sessions
+             , pop_stats.cur_sessions
+             , (pop_mime_mempool) ? (pop_mime_mempool->max_memory - pop_mime_mempool->used_memory) : 0
+             , (pop_mempool) ? (pop_mempool->max_memory - pop_mempool->used_memory) : 0
+             , (pop_mime_mempool) ? pop_mime_mempool->used_memory : 0
+             , (pop_mempool) ? pop_mempool->used_memory : 0
+             , ((pop_mime_mempool) ? (pop_mime_mempool->max_memory) : 0) +
+                          ((pop_mempool) ? (pop_mempool->max_memory) : 0));
+
+        len += PopulateMemStatsBuffTrailer(buffer+len, len, meminfo);
+    } else {
+
+        _dpd.logMsg("POP Preprocessor Statistics\n");
+        _dpd.logMsg("  Total sessions                : %lu \n", pop_stats.sessions);
+        _dpd.logMsg("  Max concurrent sessions       : %lu \n", pop_stats.max_conc_sessions);
+        _dpd.logMsg("  Current sessions              : %lu \n", pop_stats.cur_sessions);
+        _dpd.logMsg("  POP Session \n");
+        _dpd.logMsg("     Used Memory  :%14lu\n", meminfo[PP_MEM_CATEGORY_SESSION].used_memory);
+        _dpd.logMsg("     No of Allocs :%14u\n", meminfo[PP_MEM_CATEGORY_SESSION].num_of_alloc);
+        _dpd.logMsg("     No of Frees  :%14u\n", meminfo[PP_MEM_CATEGORY_SESSION].num_of_free);
+        _dpd.logMsg("  POP Config \n");
+        _dpd.logMsg("     Used Memory  :%14lu\n", meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+        _dpd.logMsg("     No of Allocs :%14u\n", meminfo[PP_MEM_CATEGORY_CONFIG].num_of_alloc);
+        _dpd.logMsg("     No of Frees  :%14u\n", meminfo[PP_MEM_CATEGORY_CONFIG].num_of_free);
+        _dpd.logMsg("   Total memory used :%14lu\n", meminfo[PP_MEM_CATEGORY_SESSION].used_memory +
+                                                   meminfo[PP_MEM_CATEGORY_CONFIG].used_memory);
+    }
+    return len;
+}
 
 void POP_GetEOL(const uint8_t *ptr, const uint8_t *end,
                  const uint8_t **eol, const uint8_t **eolm)

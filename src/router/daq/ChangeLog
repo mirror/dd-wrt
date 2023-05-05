@@ -1,10 +1,550 @@
-2015-07-15 17:13  mialtize
+Changes in 2.2.2 Release on 2017-07-05:
+---------------------------------------
+mialtize (Michael Altizer)
+	* daq_dump: Fix compilation on FreeBSD and OpenBSD
+	* daq_netmap: Add NULL query_flow API entry
+	* daq_pcap: Add 'immediate' configuration variable
+	* daq_pcap: Don't leak filename when initialize fails
+		This variable allows configuring libpcap in immediate delivery mode,
+		which notably disables TPACKET_V3 usage and avoids some of its
+		potentially undesirable behavior changes.
+		The minimum version requirement for libpcap has been bumped to 1.5.0
+		(released November 2013) to support this change.
+	* api: Don't return success when the module doesn't support query_flow
 
-	* ChangeLog, configure.ac, daq.spec, api/daq_api.h,
-	  os-daq-modules/daq_static_modules.c (IMS_5_4_0): Bugs Fixed:
-	  CSCuv26782 Change description: Add lost Netmap DAQ module.  Sync
-	  Changelog from 2.0.5 release tarball.  Bump to 2.0.6.  Update RPM
-	  spec file for appropriate library name.  Reviewedboard Link:
-	  http://kingart.cisco.com/reviews/r/30004/ Karma Granted By: Ron
-	  Testing Done: Documentation:
+mashasan (Masud Hasan)
+	* api: Add packet tracing flow modifier
 
+stechew (Steve Chew)
+	* api: Add preserve flow flow modifier
+
+Changes in 2.2.1 Release on 2016-10-05:
+---------------------------------------
+mialtize (Michael Altizer)
+	* Fix erroneous version string generation.
+	* Fix some OS X compiler warnings in base and the dump DAQ module.
+
+Changes in 2.2.0 Release on 2016-09-21:
+---------------------------------------
+mialtize (Michael Altizer)
+	* Add text output to the dump DAQ module.
+	* Add daq_version_number() and daq_version_string() API calls.
+	* Switch to my newer, less dead e-mail address.
+	* Update LibDAQ version to 2.2.0 and library major version to 4.
+
+rdempste (Ron Dempster)
+	* Update dp_add_dc() to take additional parameters for timeout length and
+	flags.  Also update DAQ_DP_key_t to support mixed family address
+	specifications.
+
+anagunas (Anand Gunasekaran)
+	* Add QOS-related counters to End of Flow statistics.
+
+Changes in 2.1.0 Release on 2016-06-21:
+---------------------------------------
+mialtize (Michael Altizer)
+	* Add extended flow modification support.  It now allows for storing an
+	opaque HA state blob and setting a QoS ID in addition to the original
+	opaque value setting functionality.
+	* Add flow querying support.  Currently supports querying scrubbed TCP
+	options and opaque HA state blobs.
+	* Add new metapacket type for HA state blobs (DAQ_METAHDR_TYPE_HA_STATE).
+	* Add DAQ_PKT_FLAG_ERROR_PACKET to mark packets with known errors.
+	* Add DAQ_PKT_FLAG_FLOWID_IS_VALID to indicate that the flow ID value in
+	the packet header is valid.
+	* Add DAQ_PKT_FLAG_LOCALLY_DESTINED and DAQ_PKT_FLAG_LOCALLY_ORIGINATED to
+	indicate locally destined and originated packets respectively.
+	* Add DAQ_PKT_FLAG_HA_STATE_AVAIL to indicate that HA state for the flow
+	associated with the packet is available to be queried.
+	* Increment DAQ API version to 0x00010003.
+	* Stop clobbering AM_CFLAGS.
+	* Replace AX_CFLAGS_GCC_OPTION with AX_CHECK_COMPILE_FLAG in SF autoconf
+	macros.
+	* Autoconf updates based on modern best practices.
+	* Replace deprecated __FUNCTION__ identifier with __func__.
+	* Remove RCS variable headers from source files.
+	* daq_afpacket: Add FANOUT configuration to support kernel-based
+	loadbalancing.  See the README for details.
+	* daq_afpacket: Improve SO_ERROR message and provide variable VLAN TPID
+	when available.
+	* daq_afpacket: Fix injection on passive interfaces as they do not have a
+	TX ring.
+	* Update LibDAQ version to 2.1.0 and library major version to 3.
+
+rdempste (Ron Dempster)
+	* Add capability flags for indicating the ability of backing hardware to
+	decode certain tunnel types (GTP, Teredo, GRE, 4-in-4, 6-in-4, 4-in-6,
+	6-in-6, and MPLS).
+	* Add MPLS DAQ dynamic protocol tunnel type.
+	* Add DAQ_PKT_FLAG_IGNORE_VLAN to inform the application that it should
+	ignore any VLAN tags on the packet.
+	* Add "real" IPs and ports to the DAQ packet header to propagate external
+	addresses for NAT'ed connections.
+	* Add DAQ_PKT_FLAG_REAL_ADDRESSES, DAQ_PKT_FLAG_REAL_SIP_V6, and
+	DAQ_PKT_FLAG_REAL_DIP_V6 to indicate that "real" IPs and ports in the DAQ
+	packet header are valid and whether they are IPv6.
+	* Add DAQ_PKT_FLAG_SCRUBBED_TCP_OPTS to indicate that scrubbed TCP options
+	may be available to be queried.
+
+cwaxman (Carter Waxman)
+	* daq_pcap: Force packet counter rollover to be checked every billionth
+	packet.  (Thanks to Elof <elof@sentor.se>)
+
+stechew (Steve Chew)
+	* Add DAQ_PKT_FLAG_RETRY_PACKET to indicate that the packet is an
+	internally re-sent packet from the retry queue.
+
+rahburma (Rahul Burman)
+	* Modify daq_common.h includes to address win32 Snort build failure.
+
+Changes in 2.0.6 Release on 2015-07-15:
+---------------------------------------
+2015-07-15 13:50  mialtize
+    * os-daq-modules/daq_static_modules.c:
+      Fixed missing netmap static module definition.
+
+Changes in 2.0.5 Release on 2015-04-22:
+---------------------------------------
+2015-04-22 18:58  jocornet
+
+    * api/daq_common.h:
+      Fixed build issue on windows. 
+
+2015-04-01 14:56 maltizer
+
+    * configure.ac, os-daq-modules/Makefile.am,
+      os-daq-modules/daq_dump.c, os-daq-modules/daq_netmap.c,
+      os-daq-modules/daq_static_modules.h, sfbpf/Makefile.am:
+      Fixed build issues on FreeBSD. 
+      Fixed overflowable snaplen in dump module.
+      Fixed issues with netmap module.
+
+Changes in 2.0.4 Released on 2014-09-06:
+----------------------------------------
+2014-07-21 16:05  stechew
+
+	* api/daq_common.h: 
+	  Changed name from 'priv_flow_id' to 'flow_id'.  Changed the
+	  'flow_id' field to an uint32_t rather than void * since that's
+	  how it is used and will be safer to pass around.  
+
+2014-07-08 16:19  jocornet
+	* m4/sf.m4, sfbpf/Makefile.am: 
+	  Fix DAQ macros to allow users to edit libpcap version in cache
+	  file. Also fixed a parallel build error for individual
+	  make targets in spfbf.  Thanks to Mike Frysinger for noting the
+	  issue and proposing the fix.  
+
+2014-06-19 15:55  mialtize
+	* os-daq-modules/daq_netmap.c: 
+	* README, configure.ac, api/daq_common.h,
+	  os-daq-modules/Makefile.am, os-daq-modules/daq_afpacket.c: 
+	  Add new open source netmap DAQ module for Linux/FreeBSD; see the
+	  README for more details.  Clean up error reporting during
+	  AFPacket DAQ module initialization.
+	  
+Changes in 2.0.3 Released on 2014-06-06:
+----------------------------------------
+2014-06-06 10:00  cwaxman
+
+	* api/daq.h, api/daq_api.h, api/daq_base.c,
+	  api/daq_mod_ops.c, os-daq-modules/daq_afpacket.c,
+	  os-daq-modules/daq_pcap.c, os-daq-modules/daq_static_modules.c,
+	  os-daq-modules/daq_static_modules.h, sfbpf/sf_bpf_filter.c,
+	  sfbpf/sf_bpf_printer.c, sfbpf/sf_gencode.c,
+	  sfbpf/sf_nametoaddr.c, sfbpf/sfbpf-int.h,
+	      sfbpf/sfbpf_dlt.h:
+	  Update copyright.
+
+	* configure.ac:
+	  Fixed FreeBSD 10 compatibility (Thanks to Joshua Kinard for
+	  reporting the issue).
+
+2014-01-17 21:31  cwaxman
+
+	* os-daq-modules/daq_pcap.c:
+	  Fix compatibility with libpcap 1.5.1 and 1.5.2.
+
+Changes in 2.0.2 Released on 2013-11-30:
+----------------------------------------
+2013-11-05 10:18  maltizer
+
+	* os-daq-modules/daq_ipfw.c: 
+	  Don't treat being interrupted by a signal as an error.
+
+	* configure.ac, daq.spec, os-daq-modules/daq_afpacket.c:
+	  Fix frame length sanity check.
+
+	* README, configure.ac, os-daq-modules/daq_afpacket.c:
+	  Fix AFPacket DAQ module to attempt to reconstruct the automatically
+	  stripped VLAN header prior to passing it to the reader.  Also, use
+	  AFPacket TX Ring instead of sendto to improve TX performance.  (Requires
+	  a newer Linux kernel version, README and configure.ac updated to reflect
+	  this.)
+
+
+Changes in 2.0.1 Released on 2013-07-22:
+----------------------------------------
+2013-06-28 11:00  rcombs
+
+    * daq.h, daq_api.h, daq_base.c, daq_common.h, daq_mod_ops.c, 
+      daq_afpacket.c, daq_dump.c, daq_ipfw.c, daq_ipq.c, daq_nfq.c, 
+      daq_pcap.c, daq_static_modules.c, daq_static_modules.h, 
+      sf_bpf_filter.c, sf_bpf_printer.c, sf_gencode.c, sf_nametoaddr.c, 
+      sf_optimize.c, sfbpf-int.c, sfbpf-int.h, sfbpf.h, 
+      sfbpf_dlt.h:
+      Update copyright year.
+
+    * daq_dump.c, daq_ipfw.c, daq_ipq.c, daq_nfq.c: 
+      Ensure verdict is in range before bumping peg counts.
+      Thanks to John Menerick <omgclouds@gmail.com> for reporting the
+      issue.
+
+Changes in 2.0.0 Released on 2012-10-09:
+----------------------------------------
+2012-10-01 16:15  ssturges
+
+    * daq.spec: 
+      Update DAQ spec file to reflect 2.0.0.
+
+2012-09-07 15:30  maltizer
+
+    * sfbpf/sll.h:
+      Fix sfbpf compilation on Solaris.
+
+2012-09-06 17:56  hsugar
+
+    * api/daq.h: 
+      Add a DAQ version for conditional compiles.
+
+2012-09-06 11:17  maltizer
+
+    * COPYING, configure.ac, api/Makefile.am, api/daq.h, api/daq_api.h,
+      api/daq_base.c, api/daq_common.h, api/daq_mod_ops.c,
+      os-daq-modules/daq_afpacket.c, os-daq-modules/daq_dump.c,
+      os-daq-modules/daq_ipfw.c, os-daq-modules/daq_ipq.c,
+      os-daq-modules/daq_nfq.c, os-daq-modules/daq_pcap.c,
+      os-daq-modules/daq_static_modules.c,
+      os-daq-modules/daq_static_modules.h, sfbpf/sf_bpf_printer.c:
+      Add address_space_id fields to DAQ packet headers and flow
+      messages.  Rev LibDAQ to major 2.  Update the address of the FSF.
+
+Changes in 1.1.1 Released on 2012-07-18:
+----------------------------------------
+2012-01-11 17:59  maltizer
+
+    * configure.ac, daq.spec, os-daq-modules/Makefile.am:
+      Fix build when configuring with --disable-shared (don't build
+      dynamic modules).  Add note to AFPacket section of README warning
+      against RHEL5's kernel.  Update LibDAQ version to 1.1.1.
+
+2012-01-04 00:54  maltizer
+
+    * api/daq_common.h:
+      Fix flag definition.
+
+2011-12-23 14:25  maltizer
+
+    * configure.ac, daq.spec, api/daq_common.h:
+      Add the DAQ_PKT_FLAG_NOT_FORWARDING flag
+
+2011-11-04 13:28  maltizer
+
+    * configure.ac, daq.spec, api/Makefile.am:
+      Update the SO major revision of libdaq to 1.
+
+
+Changes in 0.6.2 Released on 2011-10-06:
+----------------------------------------
+2011-09-21 16:22  rcombs
+
+    * configure.ac, os-daq-modules/Makefile.am:
+      fix dnet vs dumbnet in a more righteous way
+
+2011-07-18 10:05  rdempster
+
+    * sfbpf/Makefile.am:
+      Remove GNU Make specific declarations and replace with srcdir
+      literals.
+
+Changes in 0.6 Released on 2011-08-23:
+--------------------------------------
+
+2011-06-08 17:26  rcombs
+
+    * daq.dsp, daq.spec, api/daq.h, api/daq_common.h:
+      convert spec file to unix flavor; fix windows build
+
+2011-05-27 12:07  rdempster
+
+    * configure.ac, os-daq-modules/daq-modules-config.in:
+      Fix up some typos and shell errors.
+
+2011-05-13 15:50  rdempster
+
+    * configure.ac, daq.spec, api/daq.h, api/daq_common.h,
+      m4/ax_cflags_gcc_option.m4, os-daq-modules/Makefile.am,
+      os-daq-modules/daq-modules-config.in,
+      os-daq-modules/daq_afpacket.c, os-daq-modules/daq_dump.c,
+      os-daq-modules/daq_ipfw.c, os-daq-modules/daq_ipq.c,
+      os-daq-modules/daq_nfq.c, os-daq-modules/daq_pcap.c,
+      sfbpf/Makefile.am, sfbpf/sf-redefines.h, sfbpf/sf_bpf_filter.c,
+      sfbpf/sf_bpf_printer.c, sfbpf/sf_gencode.c, sfbpf/sfbpf-int.h: 
+      Update daq to gracefully handle dnet as dumbnet on ubuntu.
+      Make libpcap export pcap_version, so that it works with the daq
+      configure script.
+
+2011-05-13 15:46  rcombs
+
+    * os-daq-modules/daq_nfq.c:
+      convert sec to ms; disable ENOBUFS
+
+2011-02-15 17:59  maltizer
+
+    * os-daq-modules/daq_pcap.c:
+      Fix typo in pcap DAQ module's buffer_size variable parsing.
+
+2010-12-08 11:03  rcombs
+
+    * os-daq-modules/daq_ipfw.c:
+      use ipv4 instead of raw
+
+2010-12-08 10:53  rcombs
+
+    * README, os-daq-modules/daq_ipq.c, os-daq-modules/daq_nfq.c:
+      discriminate between ip4 and ip6 raw packets
+
+2010-12-08 10:30  rcombs
+
+    * os-daq-modules/Makefile.am: Bugs Fixed: 81786 Change description:
+      add missing additional libraries; remove sort which isn't
+      supported on OpenBSD 4.7 and up.  Test case description:
+      Documentation: Set Status Whiteboard:
+
+2010-11-01 15:33  maltizer
+
+    * os-daq-modules/daq_afpacket.c: Bugs Fixed: 80711 Change
+      description: Be more defensive against empty interface strings
+      being passed in.  Test case description: Documentation: Set
+      Status Whiteboard:
+
+2010-10-21 12:15  rcombs
+
+    * os-daq-modules/daq_dump.c: 
+      fix msg buf size
+
+2010-09-24 13:22  bbantwal
+
+    * m4/sf.m4: check for pcap version 1.0.0 and above while building
+      daq
+
+Changes in 0.1 Released on 2010-09-03:
+-------------------------------------
+
+2010-08-24 11:23  maltizer
+
+    * os-daq-modules/daq_afpacket.c:
+      DAQ_VERDICT_REPLACE should translate to DAQ_VERDICT_PASS for 
+      AFPacket (fix AFPacket in-place replaces).
+
+2010-08-23 15:12  bbantwal
+
+    * README:
+      divert sockets do not work with bridges on FreeBSD and OpenBSD. 
+      Updating the documentation of daq with details to setup NAT with divert
+      sockets.
+
+2010-08-23 11:38  rcombs
+
+    * README:
+      made OpenBSD notes more better
+
+2010-08-19 16:46  rcombs
+
+    * README, os-daq-modules/daq_ipfw.c, os-daq-modules/daq_ipq.c,
+      os-daq-modules/daq_nfq.c: 
+      add caveat on bridge/divert
+
+2010-08-16 16:45  bbantwal
+
+    * configure.ac:
+      "--enable" options were treated like "--disable"
+
+2010-08-16 10:17  rdempster
+
+    * README, os-daq-modules/daq_ipfw.c, os-daq-modules/daq_ipq.c,
+      os-daq-modules/daq_nfq.c, os-daq-modules/daq_pcap.c:
+      Normalize Makefiles
+
+2010-08-12 13:39  bbantwal
+
+    * os-daq-modules/daq_nfq.c:
+      configure the queue len for nfq daq by adding a new
+      config option called queue_len
+
+2010-08-12 12:01  bbantwal
+
+    * os-daq-modules/daq_nfq.c:
+      if errno is set to EINTR we need to restart the PacketLoop and not
+      print an error message and exit.
+
+2010-08-12 11:59  bbantwal
+
+    * os-daq-modules/: daq_ipq.c, daq_nfq.c:
+      check the case where the config->name is not NULL but
+      has an empty string.
+
+2010-08-11 17:49  bbantwal
+
+    * os-daq-modules/: daq_ipq.c, daq_nfq.c:
+      ipq and nfq fatal error when used with interface or readback modes.
+
+2010-08-09 14:51  rcombs
+
+    * os-daq-modules/daq_ipfw.c:
+      don't count forwarding injects
+
+Changes in 0.1 Released on 2010-07-27:
+-------------------------------------
+
+2010-07-06 12:48  rcombs
+
+    * os-daq-modules/daq_pcap.c:
+      incremented version
+
+2010-07-06 11:21  rcombs
+
+    * os-daq-modules/daq_pcap.c:
+      call pcap_dispatch() with remaining packet count
+
+2010-06-30 11:55  rcombs
+
+    * README: 
+      add dnet install tip
+
+2010-06-15 17:19  maltizer
+
+    * os-daq-modules/daq_pcap.c:
+      Make the PCAP DAQ module handle pcap_stats()'s 32-bit values
+      wrapping.  (This is done the old Snort way because I don't feel
+      like messing with endianness vs. unions.)
+
+2010-06-10 15:35  ssturges
+
+    * sfbpf/Makefile.am: 
+      Fix Makefile to use non gmake variables
+
+2010-06-10 15:31  rcombs
+
+    * configure.ac, api/daq_common.h, os-daq-modules/daq_dump.c,
+      os-daq-modules/daq_ipq.c, os-daq-modules/daq_nfq.c:
+      added flag to indicate that unpriveleged mode is *not* supported; and changed error messages
+      to exclude \n etc for consistency.
+
+2010-06-09 13:31  rcombs
+
+    * configure.ac, daq.spec, os-daq-modules/Makefile.am,
+      sfbpf/Makefile.am:
+      updates for rpm support
+
+2010-06-08 14:48  maltizer
+
+    * os-daq-modules/daq_pcap.c:
+      Fix BPF handling with custom PCAP modules to make local copies of
+      the BPF program.
+
+2010-06-07 10:46  rcombs
+
+    * os-daq-modules/daq_ipq.c:
+      update version, fetch msgerr.
+
+2010-06-01 10:25  rcombs
+
+    * api/daq_common.h, os-daq-modules/daq_ipfw.c,
+      os-daq-modules/daq_ipq.c, os-daq-modules/daq_nfq.c: 
+      add DAQ_CAPA_INJECT_RAW to indicate proper encoding for injection
+
+2010-05-25 12:35  rcombs
+
+    * os-daq-modules/: daq_afpacket.c, daq_ipfw.c, daq_ipq.c,
+      daq_nfq.c: 
+      fix bpf compilation (raw, not eth, for nfq, ipq, and ipfw) and make
+      non-pcap modules count packets_received the same as pcap.
+
+2010-05-21 11:43  rcombs
+
+    * os-daq-modules/: daq_ipq.c, daq_nfq.c:
+      allow explicit configuration of ip injection for ipq
+      and nfq
+
+2010-05-21 11:14  rcombs
+
+    * os-daq-modules/: daq_ipfw.c, daq_ipq.c, daq_nfq.c:
+      changed OS DAQ modules to use dictionary for
+      configuration of non-standard values (eg ipfw divert port, nfq
+      queue id, ipq inject device).
+
+2010-05-18 14:46  rcombs
+
+    * os-daq-modules/daq_dump.c:
+      moved output file name from getenv to daq dict.
+
+2010-05-18 13:36  rcombs
+
+    * os-daq-modules/daq_pcap.c: Fix bpf error handling.
+
+2010-05-17 15:35  maltizer
+
+    * api/daq_base.c, api/daq_common.h, os-daq-modules/daq_afpacket.c,
+      os-daq-modules/daq_dump.c, os-daq-modules/daq_ipfw.c,
+      os-daq-modules/daq_ipq.c, os-daq-modules/daq_nfq.c,
+      os-daq-modules/daq_pcap.c:
+      added daq var load-mode to specify packet acquisition mode
+
+2010-05-12 09:17  ssturges
+
+    * sfbpf/Makefile.am:
+      missing files to extra dist
+
+2010-05-06 18:40  ssturges
+
+    * daq.dsp:
+      Add win32 project file.
+
+2010-05-06 18:33  maltizer
+
+    * api/daq.h, api/daq_mod_ops.c, sfbpf/sf_gencode.c:
+      Win32 DAQ compile fixes
+
+2010-04-22 16:45  maltizer
+
+    * m4/sf.m4: 
+      Use lib64 on 64-bit systems.  Remove useless polluting call in libdaq
+      autoconfig.
+
+2010-04-20 15:49  maltizer
+
+    * os-daq-modules/Makefile.am, os-daq-modules/daq_pcap.c,
+      sfbpf/sfbpf.h:
+      Fix DAQ compilation on Mac and *BSD.
+
+2010-04-15 15:18  maltizer
+
+    * Makefile.am, configure.ac, api/Makefile.am, api/daq.h,
+      api/daq_api.h, api/daq_base.c, api/daq_common.h,
+      api/daq_mod_ops.c, m4/sf.m4, os-daq-modules/Makefile.am,
+      os-daq-modules/daq-modules-config.in,
+      os-daq-modules/daq_afpacket.c, os-daq-modules/daq_dump.c,
+      os-daq-modules/daq_ipfw.c, os-daq-modules/daq_ipq.c,
+      os-daq-modules/daq_nfq.c, os-daq-modules/daq_pcap.c,
+      os-daq-modules/daq_static_modules.c,
+      os-daq-modules/daq_static_modules.h, sfbpf/Makefile.am,
+      sfbpf/arcnet.h, sfbpf/atmuni31.h, sfbpf/ethertype.h,
+      sfbpf/gencode.h, sfbpf/grammar.y, sfbpf/ieee80211.h,
+      sfbpf/ipnet.h, sfbpf/llc.h, sfbpf/namedb.h, sfbpf/nlpid.h,
+      sfbpf/ppp.h, sfbpf/runlex.sh, sfbpf/scanner.l,
+      sfbpf/sf_bpf_filter.c, sfbpf/sf_bpf_printer.c,
+      sfbpf/sf_gencode.c, sfbpf/sf_nametoaddr.c, sfbpf/sf_optimize.c,
+      sfbpf/sfbpf-int.c, sfbpf/sfbpf-int.h, sfbpf/sfbpf.h,
+      sfbpf/sfbpf_dlt.h, sfbpf/sll.h, sfbpf/sunatmpos.h:
+      LibDAQ Integration - Add LibDAQ, DAQ modules

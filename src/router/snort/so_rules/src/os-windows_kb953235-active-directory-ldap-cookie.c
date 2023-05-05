@@ -127,7 +127,7 @@ Rule rule13835 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        13835, /* sigid */
-       11, /* revision */
+       12, /* revision */
    
        "attempted-dos", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -314,14 +314,22 @@ int rule13835eval(void *p) {
 
    // Compute checksum of cookie
    // We use this value to determine a cookie is a duplicate
+#ifndef BEFORE_2091300
+    getRuleData(sp, &(rule13835.info), (void*)(&hash), NULL);
+#else
     hash = (LdapCookieHash *)getRuleData(sp, (uint32_t)rule13835.info.sigID);
+#endif
 
     if(!hash) {
         hash = (LdapCookieHash *)allocRuleData(sizeof(LdapCookieHash));
         if (hash == NULL)
            return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+        if(storeRuleData(sp, &(rule13835.info), hash, NULL) < 0)
+#else
         if(storeRuleData(sp, hash, rule13835.info.sigID, &freeRuleData) < 0)
+#endif
         {
            freeRuleData(hash);
            return RULE_NOMATCH;

@@ -1,0 +1,165 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|x64">
+      <Configuration>Template</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{74156258-05D1-4489-8BE4-3EC288373C65}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Template|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Snort_Initialize_Debug\</OutDir>
+    <IntDir>.\Snort_Initialize_Debug\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\Snort_Initialize_Release\</OutDir>
+    <IntDir>.\Snort_Initialize_Release\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>.\Snort_Initialize_Release\</OutDir>
+    <IntDir>.\Snort_Initialize_Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <TypeLibraryName>.\Snort_Initialize_Debug\snort_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TypeLibraryName>.\Snort_Initialize_Debug\snort_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <TypeLibraryName>.\Snort_Initialize_Release\snort_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TypeLibraryName>.\Snort_Initialize_Release\snort_initialize.tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\sf_snort_packet.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_api.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\detection-plugins</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\detection-plugins\$(InputName).h;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\dynamic-plugins\sf_engine\sf_snort_plugin_hdropts.c">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy %(FullPath) ..\..\detection-plugins\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/_ded.errMsg/ErrorMessage/g" -e "s/sf_snort_packet.h/decode.h/g" -e "s/SFSnortPacket/Packet/g" -e "s/ip4_header/iph/g" -e "s/tcp_header/tcph/g" -e "s/proto/ip_proto/g" -e "s/type_service/ip_tos/g" -e "s/time_to_live/ip_ttl/g" -e "s/num_ip_options/ip_option_count/g" -e "s/IPOptions/Options/g" -e "s/option_code/code/g" -e  "s/acknowledgement/th_ack/g" -e "s/sequence/th_seq/g" -e "s/tcph-&gt;flags/tcph-&gt;th_flags/g" -e "s/tcph-&gt;window/tcph-&gt;th_win/g" -e "s/num_tcp_options/tcp_option_count/g" -e "s/icmp_header/icmph/g" -e "s/ICMP_ECHO_REPLY/ICMP_ECHOREPLY/g" -e "s/ICMP_ECHO_REQUEST/ICMP_ECHO/g" -e "s/icmph_union.echo.id/s_icmp_id/g" -e "s/icmph_union.echo.seq/s_icmp_seq/g" ../../detection-plugins/%(Filename).c.new &gt; ../../detection-plugins/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy %(FullPath) ..\..\detection-plugins\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/_ded.errMsg/ErrorMessage/g" -e "s/sf_snort_packet.h/decode.h/g" -e "s/SFSnortPacket/Packet/g" -e "s/ip4_header/iph/g" -e "s/tcp_header/tcph/g" -e "s/proto/ip_proto/g" -e "s/type_service/ip_tos/g" -e "s/time_to_live/ip_ttl/g" -e "s/num_ip_options/ip_option_count/g" -e "s/IPOptions/Options/g" -e "s/option_code/code/g" -e  "s/acknowledgement/th_ack/g" -e "s/sequence/th_seq/g" -e "s/tcph-&gt;flags/tcph-&gt;th_flags/g" -e "s/tcph-&gt;window/tcph-&gt;th_win/g" -e "s/num_tcp_options/tcp_option_count/g" -e "s/icmp_header/icmph/g" -e "s/ICMP_ECHO_REPLY/ICMP_ECHOREPLY/g" -e "s/ICMP_ECHO_REQUEST/ICMP_ECHO/g" -e "s/icmph_union.echo.id/s_icmp_id/g" -e "s/icmph_union.echo.seq/s_icmp_seq/g" ../../detection-plugins/%(Filename).c.new &gt; ../../detection-plugins/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\detection-plugins\$(InputName).c;..\..\detection-plugins\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\detection-plugins\$(InputName).c;..\..\detection-plugins\$(InputName).c.new;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy %(FullPath) ..\..\detection-plugins\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/_ded.errMsg/ErrorMessage/g" -e "s/sf_snort_packet.h/decode.h/g" -e "s/SFSnortPacket/Packet/g" -e "s/ip4_header/iph/g" -e "s/tcp_header/tcph/g" -e "s/proto/ip_proto/g" -e "s/type_service/ip_tos/g" -e "s/time_to_live/ip_ttl/g" -e "s/num_ip_options/ip_option_count/g" -e "s/IPOptions/Options/g" -e "s/option_code/code/g" -e  "s/acknowledgement/th_ack/g" -e "s/sequence/th_seq/g" -e "s/tcph-&gt;flags/tcph-&gt;th_flags/g" -e "s/tcph-&gt;window/tcph-&gt;th_win/g" -e "s/num_tcp_options/tcp_option_count/g" -e "s/icmp_header/icmph/g" -e "s/ICMP_ECHO_REPLY/ICMP_ECHOREPLY/g" -e "s/ICMP_ECHO_REQUEST/ICMP_ECHO/g" -e "s/icmph_union.echo.id/s_icmp_id/g" -e "s/icmph_union.echo.seq/s_icmp_seq/g" -e "/sf_snort_detection_engine.h/d" ../../detection-plugins/%(Filename).c.new &gt; ../../detection-plugins/%(Filename).c</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy %(FullPath) ..\..\detection-plugins\%(Filename).c.new  
+c:\cygwin\bin\sed -e "s/_ded.errMsg/ErrorMessage/g" -e "s/sf_snort_packet.h/decode.h/g" -e "s/SFSnortPacket/Packet/g" -e "s/ip4_header/iph/g" -e "s/tcp_header/tcph/g" -e "s/proto/ip_proto/g" -e "s/type_service/ip_tos/g" -e "s/time_to_live/ip_ttl/g" -e "s/num_ip_options/ip_option_count/g" -e "s/IPOptions/Options/g" -e "s/option_code/code/g" -e  "s/acknowledgement/th_ack/g" -e "s/sequence/th_seq/g" -e "s/tcph-&gt;flags/tcph-&gt;th_flags/g" -e "s/tcph-&gt;window/tcph-&gt;th_win/g" -e "s/num_tcp_options/tcp_option_count/g" -e "s/icmp_header/icmph/g" -e "s/ICMP_ECHO_REPLY/ICMP_ECHOREPLY/g" -e "s/ICMP_ECHO_REQUEST/ICMP_ECHO/g" -e "s/icmph_union.echo.id/s_icmp_id/g" -e "s/icmph_union.echo.seq/s_icmp_seq/g" -e "/sf_snort_detection_engine.h/d" ../../detection-plugins/%(Filename).c.new &gt; ../../detection-plugins/%(Filename).c</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\detection-plugins\$(InputName).c;..\..\detection-plugins\$(InputName).c.new;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\detection-plugins\$(InputName).c;..\..\detection-plugins\$(InputName).c.new;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

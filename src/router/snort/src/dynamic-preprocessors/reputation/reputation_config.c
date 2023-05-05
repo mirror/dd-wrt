@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1181,8 +1181,7 @@ static char* GetListInfo(INFO info)
     ListInfo *info_value;
     base = (uint8_t *)segment_basePtr();
     info_value = (ListInfo *)(&base[info]);
-    if (!info_value)
-        return NULL;
+
     switch(info_value->listType)
     {
     case DECISION_NULL:
@@ -1621,8 +1620,9 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
     /* Sanity check(s) */
     if ( !argp )
     {
-        _dpd.logMsg("WARNING: Can't find any whitelist/blacklist entries. "
-                "Reputation Preprocessor disabled.\n");
+        _dpd.logMsg("WARNING: Can't find any %s/%s entries. "
+                "Reputation Preprocessor disabled.\n",
+                REPUTATION_WHITELIST_KEYWORD, REPUTATION_BLACKLIST_KEYWORD);
         return;
     }
 
@@ -1644,8 +1644,9 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
 
     if ((config->numEntries <= 0) && (!config->sharedMem.path))
     {
-        _dpd.logMsg("WARNING: Can't find any whitelist/blacklist entries. "
-                "Reputation Preprocessor disabled.\n");
+        _dpd.logMsg("WARNING: Can't find any %s/%s entries. "
+                "Reputation Preprocessor disabled.\n",
+                REPUTATION_WHITELIST_KEYWORD, REPUTATION_BLACKLIST_KEYWORD);
         free(argcpyp);
         return;
     }
@@ -1681,7 +1682,7 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
         else if ( !strcasecmp( cur_tokenp, REPUTATION_BLACKLIST_KEYWORD ))
         {
             cur_tokenp = strtok( NULL, REPUTATION_CONFIG_VALUE_SEPERATORS);
-            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Loading blacklist from %s\n",cur_tokenp ););
+            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Loading %s from %s\n", REPUTATION_BLACKLIST_KEYWORD, cur_tokenp ););
             if(cur_tokenp == NULL)
             {
                 DynamicPreprocessorFatalMessage("%s(%d) => Bad list filename in IP List.\n",
@@ -1700,7 +1701,7 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
         else if ( !strcasecmp( cur_tokenp, REPUTATION_WHITELIST_KEYWORD ))
         {
             cur_tokenp = strtok( NULL, REPUTATION_CONFIG_VALUE_SEPERATORS);
-            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Loading whitelist from %s\n",cur_tokenp ););
+            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Loading %s from %s\n", REPUTATION_WHITELIST_KEYWORD, cur_tokenp ););
             if(cur_tokenp == NULL)
             {
                 DynamicPreprocessorFatalMessage("%s(%d) => Bad list filename in IP List.\n",

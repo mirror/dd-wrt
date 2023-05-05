@@ -35,7 +35,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sll.h,v 1.3 2012/09/07 19:30:43 maltizer Exp $ (LBL)
  */
 
 /*

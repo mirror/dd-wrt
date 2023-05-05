@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,16 +21,16 @@
  ****************************************************************************/
 
 /**
-**  @file       hi_client_norm.c
+**  @file       hi_server_norm.c
 **
 **  @author     Daniel Roelker <droelker@sourcefire.com>
 **
-**  @brief      HTTP client normalization routines
+**  @brief      HTTP Server normalization routines
 **
 **  We deal with the normalization of HTTP client requests headers and
 **  URI.
 **
-**  In this file, we handle all the different HTTP request URI evasions.  The
+**  In this file, we handle all the different HTTP request/response URI evasions.  The
 **  list is:
 **      - ASCII decoding
 **      - UTF-8 decoding
@@ -429,3 +429,31 @@ int hi_server_norm(HI_SESSION *Session, HttpSessionData *hsd)
 
     return HI_SUCCESS;
 }
+
+
+/* This function assumes that only text input is passed to it always.
+ * It parses the input buffer for randomized UTF encoded characters
+ * and normalizes them to UTF 8  whether they are accompanied with BOM or not.
+ * In effect, it boils down to removing nulls from the passed text.
+ * It returns the number of valid bytes in the text after normalization.
+ */
+uint32_t NormalizeRandomNulls (u_char *src, uint32_t src_len, u_char *dst)
+{
+    uint16_t bytes = 0;
+
+    while (src_len)
+    {
+        if(*src)
+        {
+            *dst++ = *src++;
+            bytes++;
+        }
+        else
+        {
+            src++;
+        }
+        src_len--;
+    }
+    return bytes;
+}
+

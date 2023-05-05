@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2004-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -66,11 +66,11 @@
 #include "ftpp_return_codes.h"
 #include "ftp_cmd_lookup.h"
 #include "ftp_bounce_lookup.h"
+#include "spp_ftptelnet.h"
 //#include "decode.h"
 #include "snort_debug.h"
 #include "stream_api.h"
 //#include "plugbase.h"
-#include "sfmemcap.h"
 
 #ifndef MAXHOSTNAMELEN /* Why doesn't Windows define this? */
 #define MAXHOSTNAMELEN 256
@@ -82,10 +82,10 @@
 extern int16_t ftp_data_app_id;
 extern unsigned s_ftpdata_eof_cb_id;
 #endif
-#define DEFAULT_FTP_MEMCAP (PATH_MAX*1024)
 #ifdef DUMP_BUFFER
 #include "ftptelnet_buffer_dump.h"
 #endif
+#include "memory_stats.h"
 
 #define DEFAULT_MEM_ALLOC 512
 
@@ -943,8 +943,6 @@ int initialize_ftp(FTP_SESSION *Session, SFSnortPacket *p, int iMode)
     char ignoreTelnetErase = FTPP_APPLY_TNC_ERASE_CMDS;
     FTPTELNET_GLOBAL_CONF *global_conf = (FTPTELNET_GLOBAL_CONF *)sfPolicyUserDataGet(Session->global_conf, Session->policy_id);
 
-    if (!global_conf->mc.memcap)
-         global_conf->mc.memcap  = DEFAULT_FTP_MEMCAP;
     /* Normalize this packet ala telnet */
     if (((iMode == FTPP_SI_CLIENT_MODE) &&
          (Session->client_conf->ignore_telnet_erase_cmds.on == 1)) ||
@@ -1263,10 +1261,14 @@ static int do_stateful_checks(FTP_SESSION *Session, SFSnortPacket *p,
                 Session->data_xfer_index = 0;
                 if (rsp_code == 350)
                 {
+#ifdef TARGET_BASED
                     FTP_DATA_SESSION *ftpdata = Session->datassn;
                     if(ftpdata)
                         ftpdata->flags |= FTPDATA_FLG_REST;
+#endif
                 }
+                else
+                    Session->rest_cmd_offset= 0;
                 Session->data_chan_index = 0;
                 Session->data_chan_state &= ~DATA_CHAN_REST_CMD_ISSUED;
             }
@@ -1323,118 +1325,7 @@ static int do_stateful_checks(FTP_SESSION *Session, SFSnortPacket *p,
 
     return iRet;
 }
-#ifdef TARGET_BASED
-/*
- * Function: ftp_path_update(FTP_SESSION *ftpssn, FTP_CLIENT_REQ *req, int rsp_code,unsigned long memcap)
- *
- * Purpose: Update the Present working directory path in FTPSSN form change working directory command path
- *
- * Arguments: Session        => Pointer to session info
- *            req            => Pointer to the request.
- *            rsp_code       => Response code
- *            memcap         => MEMCAP value for FTP
- *
- * Note: Windows FTP client doesn't support REST hence not handling “\” in the path.
- *
- * Returns: int => return code indicating error or success
- *
- * */
-static int ftp_path_update(FTP_SESSION *ftpssn, FTP_CLIENT_REQ *req, int rsp_code, FTPTELNET_GLOBAL_CONF *global_conf)
-{
-    if( ftpssn->cwd_path && rsp_code == 250 )
-    {
-        char       *path = NULL;
-        uint32_t   pwdlen = 0,token_len = 0;
-        char       *token;
-        pwdlen       = ftpssn->path_len;
-        if (!ftpssn->path)
-        {
-            ftpssn->path = (char *)sfmemcap_alloc(&global_conf->mc,DEFAULT_MEM_ALLOC);
 
-            if (ftpssn->path)
-                ftpssn->path_memory_alloc = DEFAULT_MEM_ALLOC;
-            else
-            {
-                ftpssn->path_memory_alloc = 0;
-                ftpssn->path_len = 0;
-                return 0;
-            }
-        }
-        if (ftpssn->cwd_path[0] == '/')
-        {
-            ftpssn->path[0] = '/';
-            ftpssn->path[1] = '\0';
-            pwdlen = 1;
-        }
-        token = strtok(ftpssn->cwd_path, "/");
-        while (token != NULL)
-        {
-            if (!strcmp(token, ".."))
-            {
-                if(pwdlen > 1)
-                {
-                    int j = pwdlen - 2;
-                    while (j > 0 && ftpssn->path[j] != '/')
-                        j--;
-                    if (j != 0)
-                    {
-                        ftpssn->path[j+1] = '\0';
-                        pwdlen = j+1;
-                    }
-                    else
-                    {
-                        ftpssn->path[0] = '\0';
-                        pwdlen = 0;
-                    }
-                }
-            }
-            else if (!strcmp(token, "."))
-            {
-                /* go to the next /
-                 * do nothing */
-            }
-            else
-            {
-                token_len = strlen(token);
-                if (pwdlen + token_len + 2 > PATH_MAX)
-                    break;
-                if (pwdlen + token_len + 2 > ftpssn->path_memory_alloc)
-                {
-                    unsigned long neededMemory = ((ftpssn->path_memory_alloc + token_len + 2 + (DEFAULT_MEM_ALLOC - 1)) / DEFAULT_MEM_ALLOC)*DEFAULT_MEM_ALLOC;
-                    path = (char *)sfmemcap_alloc(&global_conf->mc, neededMemory);
-                    if (path)
-                    {
-                        memcpy(path,ftpssn->path,pwdlen+1);
-                        sfmemcap_free(&global_conf->mc,ftpssn->path);
-                        ftpssn->path_memory_alloc = neededMemory;
-                        ftpssn->path = path;
-                    }
-                    else
-                    {
-                        sfmemcap_free(&global_conf->mc,ftpssn->path);
-                        ftpssn->path_memory_alloc = 0;
-                        ftpssn->path = NULL;
-                        ftpssn->path_len = 0;
-                        return 0;
-                    }
-                }
-                if (ftpssn->path)
-                {
-                    strcat(ftpssn->path, token);
-                    pwdlen += token_len;
-                    ftpssn->path[pwdlen++] = '/';
-                    ftpssn->path[pwdlen] = '\0';
-                }
-            }
-            token = strtok(NULL, "/");
-        }
-        ftpssn->path_len = pwdlen;
-        ftpssn->path_hash = _dpd.fileAPI->str_to_hash((uint8_t *)ftpssn->path,pwdlen);
-    }
-	return 1;
-}
-
-#endif
 /*
  * Function: check_ftp(FTP_SESSION *Session, Packet *p, int iMode)
  *
@@ -1474,7 +1365,9 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
     FTPTELNET_GLOBAL_CONF *global_conf = (FTPTELNET_GLOBAL_CONF *)sfPolicyUserDataGet(ftpssn->global_conf, ftpssn->policy_id);
     FTP_CLIENT_REQ *req;
     FTP_CMD_CONF *CmdConf = NULL;
+#ifdef TARGET_BASED
     FTP_DATA_SESSION *datassn;
+#endif
 
     const unsigned char *read_ptr;
     const unsigned char *end = p->payload + p->payload_size;
@@ -1862,69 +1755,10 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
                 iRet = FTPP_ALERT;
             }
 #ifdef TARGET_BASED
-             if (!(ftpssn->flags & FTP_FLG_MALWARE_ENABLED) && !(ftpssn->flags & FTP_FLG_MALWARE_CHECK) &&
+             if (!(ftpssn->flags & FTP_FLG_MALWARE_ENABLED) &&
                      _dpd.fileAPI->file_config_malware_check(p->stream_session, ftp_data_app_id))
              {
                  ftpssn->flags |= FTP_FLG_MALWARE_ENABLED;
-                 ftpssn->flags |= FTP_FLG_MALWARE_CHECK;
-             }
-             if (ftpssn->flags & FTP_FLG_MALWARE_ENABLED)
-             {
-                 if (rsp_code == 257 && req->param_begin != NULL && req->param_size > 0 && req->param_size < PATH_MAX
-                         &&  !strncmp("PWD",ftpssn->client.request.cmd_begin,ftpssn->client.request.cmd_size))
-                 {
-                     int len = 0;
-#ifdef HAVE_MEMRCHR
-                     char *param_end = (char*)memrchr(req->param_begin,'"',req->param_size);
-#else
-                     char *param_end = NULL;
-                     char *tmp = req->param_begin;
-                     unsigned n = req->param_size;
-
-                     while ( (tmp = (char*)memchr((char*)tmp, '"', n)) )
-                     {
-                         param_end = tmp++;
-                         n = req->param_size - (tmp - req->param_begin);
-                     }
-#endif
-                     if (param_end)
-                         len = param_end - req->param_begin - 1;
-
-                     if (len > 0)
-                     {
-                         if (ftpssn->path_memory_alloc < len + 2)
-                         {
-                             unsigned long neededMemory = ((len + 2 + (DEFAULT_MEM_ALLOC - 1)) / DEFAULT_MEM_ALLOC ) * DEFAULT_MEM_ALLOC;
-
-                             if (ftpssn->path)
-                                 sfmemcap_free(&global_conf->mc,ftpssn->path);
-
-                             ftpssn->path = (char *)sfmemcap_alloc(&global_conf->mc, neededMemory);
-
-                             if (ftpssn->path)
-                                 ftpssn->path_memory_alloc = neededMemory;
-                             else
-                             {
-                                 ftpssn->path_memory_alloc = 0;
-                                 ftpssn->path_len = 0;
-                             }
-                         }
-
-                         if (ftpssn->path)
-                         {
-                             memcpy(ftpssn->path, req->param_begin + 1, len);
-                             ftpssn->path[len] = '\0';
-                             if (ftpssn->path[len-1] != '/')
-                             {
-                                 ftpssn->path[len++] = '/';
-                                 ftpssn->path[len] = '\0';
-                             }
-                             ftpssn->path_len = len;
-                             ftpssn->path_hash = _dpd.fileAPI->str_to_hash((uint8_t *)ftpssn->path,strlen(ftpssn->path));
-                         }
-                     }
-                 }
-                 ftp_path_update(ftpssn,  req, rsp_code, global_conf);
              }
 #endif
             if (global_conf->inspection_type ==
@@ -1967,34 +1801,7 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
             DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET, "FTP command: CMD: %.*s : "
                 "P len %d : P %.*s\n", req->cmd_size, req->cmd_begin,
                 req->param_size, req->param_size, req->param_begin));
-#ifdef TARGET_BASED
-            if ( (ftpssn->flags & FTP_FLG_MALWARE_ENABLED) && !strncmp("CWD",req->cmd_begin, req->cmd_size))
-            {
-                  if ((req->param_begin != NULL) && (req->param_size > 0))
-                  {
-                       if (req->param_size + 1 > ftpssn->cwd_memory_alloc)
-                       {
-                           unsigned long neededMemory = ((req->param_size + 1 + (DEFAULT_MEM_ALLOC - 1)) / DEFAULT_MEM_ALLOC) * DEFAULT_MEM_ALLOC;
 
-                           if (ftpssn->cwd_path)
-                               sfmemcap_free(&global_conf->mc,ftpssn->cwd_path);
-
-                           ftpssn->cwd_path  = (char *)sfmemcap_alloc(&global_conf->mc, neededMemory);
-
-                           if (ftpssn->cwd_path)
-                               ftpssn->cwd_memory_alloc = neededMemory;
-                           else
-                               ftpssn->cwd_memory_alloc = 0;
-                       }
-
-                       if (ftpssn->cwd_path)
-                       {
-                           memcpy(ftpssn->cwd_path, req->param_begin, req->param_size);
-                           ftpssn->cwd_path[req->param_size] = '\0';
-                       }
-                  }
-            }
-#endif
             if (CmdConf)
             {
                 if ((req->param_size > CmdConf->max_param_len))
@@ -2028,7 +1835,7 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
                     if ((req->param_begin != NULL) && (req->param_size > 0))
                     {
                         char *return_ptr = 0;
-			unsigned long offset = 0;
+                        unsigned long offset = 0;
 
                         errno = 0;
                         offset = strtoul(req->param_begin, &return_ptr, 10);
@@ -2037,6 +1844,7 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
                         {
                             ftpssn->data_chan_state |= DATA_CHAN_REST_CMD_ISSUED;
                             ftpssn->data_xfer_index = ftpssn->ftp_cmd_pipe_index;
+                            ftpssn->rest_cmd_offset = offset;
                         }
                     }
                 }
@@ -2052,7 +1860,10 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
                          * FTP_DATA_SESSION for tracking. */
                         if (ftpssn->filename)
                         {
-                            free(ftpssn->filename);
+                            _dpd.snortFree(ftpssn->filename,
+                                           (strlen(ftpssn->filename) + 1),
+                                           PP_FTPTELNET,
+                                           PP_MEM_CATEGORY_SESSION);
                             ftpssn->filename = NULL;
                             ftpssn->file_xfer_info = FTPP_FILE_IGNORE;
                         }
@@ -2063,26 +1874,39 @@ int check_ftp(FTP_SESSION  *ftpssn, SFSnortPacket *p, int iMode)
                         if (((req->param_begin != NULL) && (req->param_size > 0))
                                 && (CmdConf->file_get_cmd || CmdConf->file_put_cmd))
                         {
-                            ftpssn->filename = (char *)malloc(req->param_size+1);
+                            ftpssn->filename = (char *)_dpd.snortAlloc(1,
+                                                      req->param_size + 1,
+                                                      PP_FTPTELNET,
+                                                      PP_MEM_CATEGORY_SESSION);
+                            ftp_telnet_stats.heap_memory += req->param_size+1;
                             if (ftpssn->filename)
                             {
                                 memcpy(ftpssn->filename, req->param_begin, req->param_size);
                                 ftpssn->filename[req->param_size] = '\0';
                                 ftpssn->file_xfer_info = req->param_size;
-                                 if (ftpssn->flags & FTP_FLG_MALWARE_ENABLED)
-                                 {
-                                     IP_COPY_VALUE(ftpssn->control_clientIP, GET_SRC_IP(p));
-                                     IP_COPY_VALUE(ftpssn->control_serverIP, GET_DST_IP(p));
-                                     ftpssn->control_serverPort = ntohs(p->tcp_header->destination_port);
-                                     ftpssn->control_clientPort = ntohs(p->tcp_header->source_port);
-                                     datassn = (FTP_DATA_SESSION *)ftpssn->datassn;
-                                     if(datassn)
-                                     {
-                                         datassn->path_hash = (_dpd.fileAPI->str_to_hash((uint8_t *)ftpssn->filename, strlen(ftpssn->filename))
-                                                                 + ftpssn->path_hash);
-                                     }
-                                  }
-                             }
+                                if (ftpssn->flags & FTP_FLG_MALWARE_ENABLED)
+                                {
+                                    IP_COPY_VALUE(ftpssn->control_clientIP, GET_SRC_IP(p));
+                                    IP_COPY_VALUE(ftpssn->control_serverIP, GET_DST_IP(p));
+                                    ftpssn->control_serverPort = ntohs(p->tcp_header->destination_port);
+                                    ftpssn->control_clientPort = ntohs(p->tcp_header->source_port);
+#ifdef TARGET_BASED
+                                    datassn = (FTP_DATA_SESSION *)ftpssn->datassn;
+                                    if(datassn)
+                                    {
+                                        char *file_name = strrchr(ftpssn->filename, '/');
+                                        if(!file_name)
+                                            file_name = ftpssn->filename;
+                                        datassn->path_hash = _dpd.fileAPI->str_to_hash((uint8_t *)file_name, strlen(file_name));
+                                    }
+#endif
+                                }
+                            }
+                            else
+                            {
+                                _dpd.errMsg("check_ftp: "
+                                        "Memory allocation failed for filename in ftpssn\n");
+                            }
                             // 0 for Download, 1 for Upload
                             ftpssn->data_xfer_dir = CmdConf->file_get_cmd ? false : true;
                             FTP_DATA_SESSION *ftpdata = ftpssn->datassn;

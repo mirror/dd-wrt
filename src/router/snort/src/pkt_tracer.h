@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -34,10 +34,13 @@ extern char trace_line[MAX_TRACE_LINE];
 int DebugPktTracer(uint16_t type, const uint8_t *data, uint32_t length, void **new_context,
         char* statusBuf, int statusBuf_len);
 bool pktTracerDebugCheck(Packet* p);
+bool pktTracerDebugCheckSsn(void* ssn);
 void addPktTraceData(int module, int traceLen);
 void addPktTraceInfo(void *packet);
 void writePktTraceData(DAQ_Verdict verdict, unsigned int napId, unsigned int ipsId, const Packet* p);
 const char* getPktTraceActMsg();
+void SavePktTrace();
+void RestorePktTrace();
 
 extern Verdict_Reason verdict_reason;
 #if defined(HAVE_DAQ_EXT_MODFLOW) && defined(HAVE_DAQ_VERDICT_REASON)

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@ static int SIP_deleteDialog(SIP_DialogData *, SIP_DialogList *);
 #ifdef DEBUG_MSGS
 void SIP_displayMedias(SIP_MediaList *dList);
 #endif
-
 
 
 /********************************************************************
@@ -257,15 +256,28 @@ static int SIP_processResponse(SIPMsg *sipMsg, SIP_DialogData *dialog, SIP_Dialo
 
     		if (SIP_DLG_CREATE == currDialog->state)
     		   currDialog->state = SIP_DLG_EARLY;
-    		SIP_updateMedias(sipMsg->mediaSession, &dialog->mediaSessions);
-    		break;
-    	case RESPONSE2XX:
 
-    		if (SIP_DLG_REINVITING == currDialog->state)
-    		{
-    			SIP_deleteDialog(currDialog->nextD, dList);
-    			if (SIP_checkMediaChange(sipMsg, dialog) == SIP_FAILURE)
-    			{
+            /*183 session progress can have SDP body for which we need to set mediaUpdated flag so that AppId can create pinhole for RTP/RTCP media session*/
+			if ((183 == sipMsg->status_code) && (SIP_METHOD_INVITE == currDialog->creator) &&
+					(SIP_checkMediaChange(sipMsg, dialog) == SIP_FAILURE))
+			{
+				SIP_updateMedias(sipMsg->mediaSession, &dialog->mediaSessions);
+				SIP_ignoreChannels(currDialog, p);
+				sipMsg->mediaUpdated = 1;
+			}
+			else
+			{
+				SIP_updateMedias(sipMsg->mediaSession, &dialog->mediaSessions);
+			}
+
+			break;
+		case RESPONSE2XX:
+
+			if (SIP_DLG_REINVITING == currDialog->state)
+			{
+				SIP_deleteDialog(currDialog->nextD, dList);
+				if (SIP_checkMediaChange(sipMsg, dialog) == SIP_FAILURE)
+				{
     				SIP_updateMedias(sipMsg->mediaSession, &dialog->mediaSessions);
     				SIP_ignoreChannels(currDialog, p);
                     sipMsg->mediaUpdated = 1;
@@ -405,12 +417,48 @@ static int SIP_ignoreChannels( SIP_DialogData *dialog, SFSnortPacket *p)
     	DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Ignoring channels Destine IP: %s Port: %u\n",
     			sfip_to_str(&mdataB->maddress), mdataB->mport););
     	/* Call into Streams to mark data channel as something to ignore. */
+#if !defined(SFLINUX) && defined(DAQ_CAPA_CARRIER_ID)
+       uint32_t cid = GET_SFOUTER_IPH_PROTOID(p, pkt_header);
+
 #ifdef HAVE_DAQ_ADDRESS_SPACE_ID
-        ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport, &mdataB->maddress,
-    	                                                    mdataB->mport, IPPROTO_UDP, 0, 0, p->pkt_header->address_space_id);
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+      uint16_t sAsId = p->pkt_header->address_space_id_src;
+      uint16_t dAsId = p->pkt_header->address_space_id_dst;
+
+      ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport,
+                                                          &mdataB->maddress,
+                                                          mdataB->mport,
+                                                          IPPROTO_UDP, 0, 0,
+                                                          sAsId, dAsId, cid);                           
 #else
-        ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport, &mdataB->maddress,
-    	                                                    mdataB->mport, IPPROTO_UDP, 0, 0, 0);
+      ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport, &mdataB->maddress,
+                                                          mdataB->mport, IPPROTO_UDP, 0, 0, 
+                                                          p->pkt_header->address_space_id, cid);
+#endif
+#else
+      ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport, &mdataB->maddress,
+                                                          mdataB->mport, IPPROTO_UDP, 0, 0, 0, cid);
+#endif
+#else /* No carrier id support */
+#ifdef HAVE_DAQ_ADDRESS_SPACE_ID
+#if !defined(SFLINUX) && defined(DAQ_CAPA_VRF)
+      uint16_t sAsId = p->pkt_header->address_space_id_src;
+      uint16_t dAsId = p->pkt_header->address_space_id_dst;
+
+      ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport,
+                                                          &mdataB->maddress,
+                                                          mdataB->mport,
+                                                          IPPROTO_UDP, 0, 0,
+                                                          sAsId, dAsId);
+#else
+      ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport, &mdataB->maddress,
+                                                          mdataB->mport, IPPROTO_UDP, 0, 0,
+                                                          p->pkt_header->address_space_id);
+#endif
+#else
+      ssn = _dpd.sessionAPI->get_session_ptr_from_ip_port(&mdataA->maddress,mdataA->mport, &mdataB->maddress,
+                                                          mdataB->mport, IPPROTO_UDP, 0, 0, 0);
+#endif
 #endif
     	if ( _dpd.sessionAPI->is_session_verified( ssn ) )
     	{
@@ -577,7 +625,8 @@ static SIP_DialogData* SIP_addDialog(SIPMsg *sipMsg, SIP_DialogData *currDialog,
 
 	sip_stats.dialogs++;
 
-	dialog = (SIP_DialogData *) calloc(1, sizeof(SIP_DialogData));
+	dialog = (SIP_DialogData *) _dpd.snortAlloc(1, sizeof(SIP_DialogData), PP_SIP,
+                                                    PP_MEM_CATEGORY_SESSION);
 	if (NULL == dialog)
 		return NULL;
 
@@ -640,10 +689,10 @@ static int SIP_deleteDialog(SIP_DialogData *currDialog, SIP_DialogList *dList)
     		currDialog->nextD->prevD = currDialog->prevD;
     }
     sip_freeMediaList(currDialog->mediaSessions);
-    free(currDialog);
+    _dpd.snortFree(currDialog, sizeof(SIP_DialogData), PP_SIP, PP_MEM_CATEGORY_SESSION);
     if( dList->num_dialogs > 0)
         dList->num_dialogs--;
-	return SIP_SUCCESS;
+    return SIP_SUCCESS;
 }
 
 /*********************************************************************
@@ -797,7 +846,8 @@ void sip_freeDialogs (SIP_DialogList *list)
 				curNode->creator, curNode->dlgID.callIdHash,curNode->dlgID.fromTagHash,curNode->dlgID.toTagHash,curNode->state));
 		nextNode = curNode->nextD;
 		sip_freeMediaList(curNode->mediaSessions);
-		free(curNode);
+		_dpd.snortFree(curNode, sizeof(SIP_DialogData), PP_SIP,
+                               PP_MEM_CATEGORY_SESSION);
 		curNode = nextNode;
 	}
 

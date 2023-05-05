@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -36,12 +36,14 @@
 #include "sf_types.h"
 #include "util.h"
 #include "mstring.h"
+#include "memory_stats.h"
 #include "parser.h"
 
 #include "file_service_config.h"
 #include "file_config.h"
 #include "file_lib.h"
 #include "file_capture.h"
+#include "file_ss.h"
 
 #define FILE_SERVICE_OPT__TYPE_DEPTH            "file_type_depth"
 #define FILE_SERVICE_OPT__SIG_DEPTH             "file_signature_depth"
@@ -108,11 +110,46 @@ static inline void file_service_config_defaults(FileConfig *file_config)
 
 FileConfig* file_service_config_create(void)
 {
-    FileConfig *file_config = SnortAlloc(sizeof(*file_config));
+    FileConfig *file_config = SnortPreprocAlloc(1, sizeof(*file_config), PP_FILE, PP_MEM_CATEGORY_CONFIG);
 
     file_service_config_defaults(file_config);
     return file_config;
 }
+
+#if defined (SIDE_CHANNEL)
+void check_sidechannel_enabled(void *config)
+{
+  FileConfig *file_config = (FileConfig *)config;
+  if(ScSideChannelEnabled())
+  {
+    file_config->use_side_channel = true;
+
+    LogMessage("File service config: \n");
+
+    LogMessage("    File side channel enabled =  %d \n",file_config->use_side_channel);
+  }
+  return;
+}
+#endif
+#if defined (SIDE_CHANNEL) && defined (REG_TEST)
+void FileSSConfigFree(void *config)
+{
+  FileConfig *file_config = (FileConfig *)config;
+  FileSSConfig *file_ss_config = file_config->file_ss_config;
+    if (file_ss_config == NULL)
+        return;
+    /* Not changing the free here because memory is allocated using strdup */
+    if (file_ss_config->startup_input_file)
+        free(file_ss_config->startup_input_file);
+
+    /* Not changing the free here because memory is allocated using strdup */
+    if (file_ss_config->runtime_output_file)
+        free(file_ss_config->runtime_output_file);
+
+    SnortPreprocFree(file_ss_config, sizeof(FileSSConfig), PP_FILE, PP_MEM_CATEGORY_CONFIG);
+    return;
+}
+#endif
 
 #ifdef SNORT_RELOAD
 /* Verify the file service configuration, changing memory settings and depth
@@ -140,6 +177,9 @@ int file_sevice_config_verify(SnortConfig *old, SnortConfig *new)
         next = &tmp;
         file_service_config_defaults(next);
     }
+#if defined (SIDE_CHANNEL) && !defined (REG_TEST)
+    check_sidechannel_enabled(curr);
+#endif
 
     /* check configurations */
     if (curr->file_capture_memcap != next->file_capture_memcap)
@@ -218,10 +258,12 @@ static void file_service_display_conf(FileConfig *config)
             config->file_capture_min_size,
             config->file_capture_min_size == DEFAULT_FILE_CAPTURE_MIN_SIZE ?
                     "(Default) bytes" : " bytes" );
+#if defined (SIDE_CHANNEL) && defined (REG_TEST)
+    FilePrintSSConfig(config->file_ss_config);
+#endif
 
     LogMessage("\n");
 }
-
 /*The main function for parsing rule option*/
 void file_service_config(struct _SnortConfig* sc, char *args, void *conf)
 {
@@ -241,6 +283,13 @@ void file_service_config(struct _SnortConfig* sc, char *args, void *conf)
     }
 
     file_service_config_defaults(file_config);
+#if defined (SIDE_CHANNEL) && defined (REG_TEST)
+    if (NULL == (file_config->file_ss_config = (FileSSConfig *)SnortPreprocAlloc(1, 
+            sizeof(FileSSConfig), PP_FILE, PP_MEM_CATEGORY_CONFIG)))
+      return;
+    else if(ScSideChannelEnabled())
+      file_config->use_side_channel = true;
+#endif
 
     toks = mSplit(args, ",", 0, &num_toks, 0);  /* get rule option pairs */
 
@@ -357,6 +406,16 @@ void file_service_config(struct _SnortConfig* sc, char *args, void *conf)
             file_config->show_data_depth = (int64_t)value;
             if (file_config->show_data_depth == 0)
                 file_config->show_data_depth = FILE_SERVICE_SIG_DEPTH_MAX;
+        }
+#endif
+#if defined (SIDE_CHANNEL) && defined (REG_TEST)
+        else if(!strcasecmp(opts[0], "ss_startup_input_file"))
+        {
+            file_config->file_ss_config->startup_input_file = strdup(opts[1]);
+        }
+        else if(!strcasecmp(opts[0], "ss_runtime_output_file"))
+        {
+            file_config->file_ss_config->runtime_output_file = strdup(opts[1]);
         }
 #endif
         else

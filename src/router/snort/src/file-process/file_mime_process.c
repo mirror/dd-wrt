@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -38,8 +38,10 @@
 #include "decode.h"
 #include "detection_util.h"
 
+#include "memory_stats.h"
 #include "stream_api.h"
 #include "reg_test.h"
+#include <file_lib.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
@@ -291,7 +293,7 @@ static void set_file_name_from_log(FILE_LogState *log_state, void *ssn)
  *         -1: fail
  *
  */
-int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempool, void* scbPtr)
+int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempool, void* scbPtr, uint32_t preproc_id)
 {
     MemPool *log_mempool = (MemPool *)mempool;
 
@@ -304,7 +306,7 @@ int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempo
         if(bkt == NULL)
             return -1;
 
-        *log_state = (MAIL_LogState *)calloc(1, sizeof(MAIL_LogState));
+        *log_state = (MAIL_LogState *)SnortPreprocAlloc(1, sizeof(MAIL_LogState), preproc_id, 0);
         if((*log_state) != NULL)
         {
             bkt->scbPtr = scbPtr;
@@ -332,7 +334,7 @@ int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempo
     return 0;
 }
 
-static void set_mime_buffers(MimeState *ssn, void* scbPtr)
+static void set_mime_buffers(MimeState *ssn, void* scbPtr, uint32_t preproc_id)
 {
     if ((ssn != NULL) && (ssn->decode_state == NULL))
     {
@@ -341,7 +343,7 @@ static void set_mime_buffers(MimeState *ssn, void* scbPtr)
 
         if (bkt != NULL)
         {
-            ssn->decode_state = calloc(1, sizeof(Email_DecodeState));
+            ssn->decode_state = SnortPreprocAlloc(1, sizeof(Email_DecodeState), preproc_id, 0);
             if((ssn->decode_state) != NULL )
             {
                 bkt->scbPtr = scbPtr;
@@ -390,7 +392,7 @@ void* init_mime_mempool(int max_mime_mem, int max_depth,
 
     max_sessions = max_mime_mem / ( 2 * encode_depth);
 
-    mime_mempool = (MemPool *)calloc(1, sizeof(MemPool));
+    mime_mempool = (MemPool *)SnortPreprocAlloc(1, sizeof(MemPool), PP_FILE, PP_MEM_CATEGORY_MEMPOOL);
 
     if ((!mime_mempool)||(mempool_init(mime_mempool, max_sessions,
             (2 * encode_depth)) != 0))
@@ -417,7 +419,7 @@ void* init_log_mempool(uint32_t email_hdrs_log_depth, uint32_t memcap,
 
     max_sessions_logged = memcap/max_bkt_size;
 
-    log_mempool = calloc(1, sizeof(*log_mempool));
+    log_mempool = (MemPool *)SnortPreprocAlloc(1, sizeof(*log_mempool), PP_FILE, PP_MEM_CATEGORY_MEMPOOL);
 
     if ((!log_mempool)||(mempool_init(log_mempool, max_sessions_logged,
             max_bkt_size) != 0))
@@ -553,12 +555,12 @@ static inline void process_decode_type(const char *start, int length, bool cnt_x
     return;
 }
 
-static inline void setup_decode(const char *data, int size, bool cnt_xf, MimeState *mime_ssn, void* scbPtr)
+static inline void setup_decode(const char *data, int size, bool cnt_xf, MimeState *mime_ssn, void* scbPtr, uint32_t preproc_id)
 {
     /* Check for Encoding Type */
     if( file_api->is_decoding_enabled(mime_ssn->decode_conf) && !mime_ssn->decode_conf->ignore_data)
     {
-        set_mime_buffers(mime_ssn, scbPtr);
+        set_mime_buffers(mime_ssn, scbPtr, preproc_id);
         if(mime_ssn->decode_state != NULL)
         {
             ResetBytesRead((Email_DecodeState *)(mime_ssn->decode_state));
@@ -580,7 +582,7 @@ static inline void setup_decode(const char *data, int size, bool cnt_xf, MimeSta
  * @return  i       index into p->payload where we stopped looking at data
  */
 static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
-        const uint8_t *data_end_marker, MimeState *mime_ssn)
+        const uint8_t *data_end_marker, MimeState *mime_ssn, uint32_t preproc_id)
 {
     const uint8_t *eol;
     const uint8_t *eolm;
@@ -623,7 +625,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
             /* no header seen */
             if (ptr == start_hdr)
             {
-                setup_decode((const char *)ptr, eolm  - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr);
+                setup_decode((const char *)ptr, eolm  - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr, preproc_id);
             }
 
             return eol;
@@ -769,7 +771,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
         {
             if ((mime_ssn->data_state == STATE_MIME_HEADER) && !(mime_ssn->state_flags & MIME_FLAG_EMAIL_ATTACH))
             {
-                setup_decode((const char *)content_type_ptr, (eolm - content_type_ptr), false, mime_ssn, p->ssnptr);
+                setup_decode((const char *)content_type_ptr, (eolm - content_type_ptr), false, mime_ssn, p->ssnptr, preproc_id);
             }
 
             mime_ssn->state_flags &= ~MIME_FLAG_IN_CONTENT_TYPE;
@@ -778,7 +780,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
         else if ((mime_ssn->state_flags &
                 (MIME_FLAG_IN_CONT_TRANS_ENC | MIME_FLAG_FOLDING)) == MIME_FLAG_IN_CONT_TRANS_ENC)
         {
-            setup_decode((const char *)cont_trans_enc, (eolm - cont_trans_enc), true, mime_ssn, p->ssnptr);
+            setup_decode((const char *)cont_trans_enc, (eolm - cont_trans_enc), true, mime_ssn, p->ssnptr, preproc_id);
 
             mime_ssn->state_flags &= ~MIME_FLAG_IN_CONT_TRANS_ENC;
 
@@ -806,7 +808,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
                 if ((mime_ssn->data_state == STATE_MIME_HEADER) && !(mime_ssn->state_flags & MIME_FLAG_EMAIL_ATTACH))
                 {
                     // setting up decode assuming possible file data after content-disposition header
-                    setup_decode(NULL, eolm - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr);
+                    setup_decode(NULL, eolm - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr, preproc_id);
                 }
                 mime_ssn->state_flags &= ~MIME_FLAG_IN_CONT_DISP;
                 mime_ssn->state_flags &= ~MIME_FLAG_IN_CONT_DISP_CONT;
@@ -820,7 +822,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
             if ((mime_ssn->data_state == STATE_MIME_HEADER) && !(mime_ssn->state_flags & MIME_FLAG_EMAIL_ATTACH))
             {
                 // setting up decode assuming possible file data after unknown header
-                setup_decode(NULL, eolm - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr);
+                setup_decode(NULL, eolm - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr, preproc_id);
             }
         }
 
@@ -950,7 +952,7 @@ static void reset_mime_state(MimeState *mime_ssn)
  * Assume PAF is enabled
  */
 const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const uint8_t *end,
-        MimeState *mime_ssn, bool upload, FilePosition position)
+        MimeState *mime_ssn, bool upload, FilePosition position, uint32_t preproc_id)
 {
     Packet *p = (Packet *)packet;
     bool done_data = false;
@@ -1022,7 +1024,7 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
         }
 #endif
 
-        start = process_mime_header(p, start, end, mime_ssn);
+        start = process_mime_header(p, start, end, mime_ssn, preproc_id);
         if (start == NULL)
             return NULL;
 
@@ -1043,7 +1045,7 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
         {
         case STATE_MIME_HEADER:
             DEBUG_WRAP(DebugMessage(DEBUG_FILE, "MIME HEADER STATE ~~~~~~~~~~~~~~~~~~~~~~\n"););
-            start = process_mime_header(p, start, end, mime_ssn);
+            start = process_mime_header(p, start, end, mime_ssn, preproc_id);
             update_file_name(mime_ssn->log_state);
             break;
         case STATE_DATA_BODY:
@@ -1097,19 +1099,20 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
  * This should be called when mime data is available
  */
 const uint8_t * process_mime_data(void *packet, const uint8_t *start,
-        const uint8_t *data_end_marker, MimeState *mime_ssn, bool upload, bool paf_enabled, char *preproc_name)
+        const uint8_t *data_end_marker, MimeState *mime_ssn, bool upload, bool paf_enabled, char *preproc_name, uint32_t preproc_id)
 {
     const uint8_t *attach_start = start;
     const uint8_t *attach_end;
     Packet *p = (Packet *)packet;
     FilePosition position = SNORT_FILE_START;
     preprocessor = preproc_name;
+    SAVE_DAQ_PKT_HDR(p);
 
     if (paf_enabled)
     {
        position = file_api->get_file_position(p);
        process_mime_data_paf(packet, attach_start, data_end_marker,
-                            mime_ssn, upload, position);
+                            mime_ssn, upload, position, preproc_id);
        return data_end_marker;
     }
 
@@ -1123,7 +1126,7 @@ const uint8_t * process_mime_data(void *packet, const uint8_t *start,
             attach_end = start;
             finalFilePosition(&position);
             process_mime_data_paf(packet, attach_start, attach_end,
-                    mime_ssn, upload, position);
+                    mime_ssn, upload, position, preproc_id);
             position = SNORT_FILE_START;
             attach_start = start + 1;
         }
@@ -1135,7 +1138,7 @@ const uint8_t * process_mime_data(void *packet, const uint8_t *start,
     {
         updateFilePosition(&position, file_api->get_file_processed_size(p->ssnptr));
         process_mime_data_paf(packet, attach_start, data_end_marker,
-                mime_ssn, upload, position);
+                mime_ssn, upload, position, preproc_id);
     }
     preprocessor = 0;
 
@@ -1191,15 +1194,16 @@ void free_mime_session(MimeState *mime_ssn)
     if(mime_ssn->decode_state != NULL)
     {
         mempool_free(mime_ssn->mime_mempool, mime_ssn->decode_bkt);
-        free(mime_ssn->decode_state);
+        SnortPreprocFree(mime_ssn->decode_state, sizeof(Email_DecodeState), PP_FILE, 
+                PP_MEM_CATEGORY_SESSION);
     }
     if(mime_ssn->log_state != NULL)
     {
         mempool_free(mime_ssn->log_mempool, mime_ssn->log_state->log_hdrs_bkt);
-        free(mime_ssn->log_state);
+        SnortPreprocFree(mime_ssn->log_state, sizeof(FILE_LogState), PP_FILE, PP_MEM_CATEGORY_SESSION);
     }
 
-    free(mime_ssn);
+    SnortPreprocFree(mime_ssn, sizeof(MimeState),  PP_FILE, PP_MEM_CATEGORY_SESSION);
 }
 
 /*

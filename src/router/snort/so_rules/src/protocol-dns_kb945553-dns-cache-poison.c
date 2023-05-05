@@ -198,7 +198,7 @@ Rule rule13667 = {
    { 
        3,  /* genid (HARDCODED!!!) */
        13667, /* sigid */
-       18, /* revision */
+       19, /* revision */
    
        "misc-attack", /* classification */
        0,  /* hardcoded priority XXX NOT PROVIDED BY GRAMMAR YET! */
@@ -297,14 +297,22 @@ static int rule13667eval(void *p) {
 //
 //            if (byteTest(p, rule13667options[1/*2*/]->option_u.byte, cursor_normal) > 0) {
 //printf("byte_test worked\n");
+#ifndef BEFORE_2091300
+                getRuleData(sp, &(rule13667.info), (void*)(&hash), NULL);
+#else
                 hash = (DnsHash *)getRuleData(sp, (uint32_t)rule13667.info.sigID);
+#endif
 
                 if(!hash) {
                     hash = (DnsHash *)allocRuleData(sizeof(DnsHash));
                     if (hash == NULL)
                        return RULE_NOMATCH;
 
+#ifndef BEFORE_2091300
+                    if(storeRuleData(sp, &(rule13667.info), hash, NULL) < 0)
+#else
                     if(storeRuleData(sp, hash, rule13667.info.sigID, &freeRuleData) < 0)
+#endif
                     {
                        freeRuleData(hash);
                        return RULE_NOMATCH;

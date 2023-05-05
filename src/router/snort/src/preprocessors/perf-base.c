@@ -3,7 +3,7 @@
 **
 ** perf-base.c
 **
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 ** Marc Norton <mnorton@sourcefire.com>
@@ -1169,7 +1169,7 @@ static void GetPktDropStats(SFBASE *sfBase, SFBASE_STATS *sfBaseStats)
     else
     {
         const DAQ_Stats_t* ps = DAQ_GetStats();
-        recv = ps->packets_received;
+        recv = ps->hw_packets_received;
         drop = ps->hw_packets_dropped;
         if (perfmon_config->base_reset)
         {

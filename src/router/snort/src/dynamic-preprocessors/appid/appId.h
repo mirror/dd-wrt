@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -1006,6 +1006,12 @@ typedef enum
     APP_ID_HTTP_SSL_TUNNEL=3860,
     APP_ID_FTP_ACTIVE=4002,
     APP_ID_FTP_PASSIVE=4003,
+    APP_ID_PSIPHON=4075,
+    APP_ID_DNS_OVER_TLS=4615,
+    APP_ID_ENIP=5001,
+    APP_ID_CIP=5002,
+    APP_ID_CIP_UNKNOWN=5003,
+    APP_ID_CIP_MALFORMED=5005,
     APP_ID_UNKNOWN_UI = 65535  /*This causes the UI to render Unknown instead of pending or blank */
 } appIdEnum;
 
@@ -1041,5 +1047,8 @@ typedef enum {
 #define FINGERPRINT_UDP_FLAGS_XENIX 0x00000800
 #define FINGERPRINT_UDP_FLAGS_NT    0x00001000
 #define FINGERPRINT_UDP_FLAGS_MASK  (FINGERPRINT_UDP_FLAGS_XENIX | FINGERPRINT_UDP_FLAGS_NT)
+
+#define NEW_PAYLOAD_STATE           0xA0000000
+#define OLD_PAYLOAD_STATE           0xB0000000
 
 #endif  /* __APP_ID_H__ */

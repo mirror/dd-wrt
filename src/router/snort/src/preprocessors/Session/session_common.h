@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@
 #include "session_api.h"
 #include "mempool.h"
 #include "sf_types.h"
+#include "plugbase.h"
 
 #ifdef TARGET_BASED
 #include "target-based/sftarget_hostentry.h"
@@ -48,6 +49,10 @@
 #define STREAM_MAX_SSN_TIMEOUT      3600 * 24 /* max timeout (approx 1 day) */
 #define STREAM_MIN_SSN_TIMEOUT      1         /* min timeout (1 second) */
 #define STREAM_MIN_ALT_HS_TIMEOUT   0         /* min timeout (0 seconds) */
+/* Lower timeout value in seconds to clean up the session
+ * for receiving valid RST for a ongoing/hanged tcp session.
+ */
+#define STREAM_SSN_RST_TIMEOUT      180
 #define STREAM_TRACK_YES            1
 #define STREAM_TRACK_NO             0
 
@@ -250,6 +255,7 @@ uint32_t GetSessionPruneLogMax( void );
 uint32_t GetSessionMemCap( void );
 void SessionFreeConfig( SessionConfiguration * );
 int isPacketFilterDiscard( Packet *p, int ignore_any_rules );
+int isPacketFilterDiscardUdp( Packet *p, int ignore_any_rules );
 
 typedef void ( *set_dir_ports_cb )( Packet *p, SessionControlBlock *scb );
 typedef int ( *flush_stream_cb )( Packet *p, SessionControlBlock *scb );

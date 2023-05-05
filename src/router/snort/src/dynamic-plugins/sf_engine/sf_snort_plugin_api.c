@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
@@ -570,10 +570,10 @@ ENGINE_LINKAGE void setAltDetect(uint8_t *buf, uint16_t altLen)
  *    nothing
  *
  */
-ENGINE_LINKAGE int storeRuleData(void *p, void *rule_data,
-        uint32_t sid, SessionDataFree sdf)
+ENGINE_LINKAGE int storeRuleData(void *p, const RuleInformation *info,
+                                 void *rule_data, void *rule_compression_data)
 {
-    if ( _ded.setRuleData(p, rule_data, sid, sdf) != 0 )
+    if ( _ded.setRuleData(p, info, rule_data, rule_compression_data) != 0 )
         return RULE_NOMATCH;
 
     return RULE_MATCH;
@@ -588,9 +588,10 @@ ENGINE_LINKAGE int storeRuleData(void *p, void *rule_data,
  *    pointer to rule specific session data, NULL if none available
  *
  */
-ENGINE_LINKAGE void *getRuleData(void *p, uint32_t sid)
+ENGINE_LINKAGE void getRuleData(void *p, const RuleInformation *info,
+                                void **rule_data, void **rule_compression_data)
 {
-    return _ded.getRuleData(p, sid);
+    _ded.getRuleData(p, info, rule_data, rule_compression_data);
 }
 
 ENGINE_LINKAGE void * allocRuleData(size_t size)

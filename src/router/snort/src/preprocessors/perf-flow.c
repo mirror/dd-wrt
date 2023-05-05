@@ -4,7 +4,7 @@
 ** perf-flow.c
 **
 **
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton <mnorton@sourcefire.com>
 ** Dan Roelker <droelker@sourcefire.com>
@@ -322,6 +322,9 @@ static sfSFSValue *findFlowIPStats(SFFLOW *sfFlow, sfaddr_t* src_addr, sfaddr_t*
         IP_COPY_VALUE(key.ipB, src_addr);
         *swapped = 1;
     }
+
+    if (!sfFlow->ipMap)
+        return NULL;
 
     value = sfxhash_find(sfFlow->ipMap, &key);
     if (!value)
@@ -829,6 +832,9 @@ static void DisplayFlowIPStats(SFFLOW *sfFlow)
     char ipA[41], ipB[41];
     uint64_t total = 0;
 
+    if (!sfFlow->ipMap)
+        return;
+
     LogMessage("\n");
     LogMessage("\n");
     LogMessage("IP Flows (%d unique IP pairs)\n", sfxhash_count(sfFlow->ipMap));
@@ -856,6 +862,9 @@ static void WriteFlowIPStats(SFFLOW *sfFlow, FILE *fp)
     char ipA[41], ipB[41];
 
     if (!fp)
+        return;
+
+    if (!sfFlow->ipMap)
         return;
 
     fprintf(fp, "%u,%u\n", (uint32_t)time(NULL), sfxhash_count(sfFlow->ipMap));

@@ -55,6 +55,7 @@ endif
 
 
 EXTRA_DIST = \
+sf_reputation.vcxproj \
 sf_reputation.dsp
 
 all-local: $(LTLIBRARIES)

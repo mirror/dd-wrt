@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -506,17 +506,20 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
         if (fseek(file, 0, SEEK_END))
         {
             _dpd.errMsg("Unable to seek lua detector '%s'\n",globs.gl_pathv[n]);
+            fclose(file);
             continue;
         }
         validatorBufferLen = ftell(file);
         if (validatorBufferLen == -1)
         {
             _dpd.errMsg("Unable to return offset on lua detector '%s'\n",globs.gl_pathv[n]);
+            fclose(file);
             continue;
         }
         if (fseek(file, 0, SEEK_SET))
         {
             _dpd.errMsg("Unable to seek lua detector '%s'\n",globs.gl_pathv[n]);
+            fclose(file);
             continue;
         }
 
@@ -529,6 +532,7 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
         {
             _dpd.errMsg("Failed to read lua detector %s\n",globs.gl_pathv[n]);
             free(validatorBuffer);
+            fclose(file);
             continue;
         }
 
@@ -567,6 +571,8 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
         {
            _dpd.errMsg("Failed to open lua for lua detector %s\n",globs.gl_pathv[n]);
             free(validatorBuffer);
+            globfree(&globs);
+            fclose(file);
             return; 
         }
 
@@ -653,7 +659,8 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
             _dpd.errMsg("cannot run validator %s, error: %s\n",detectorName, lua_tostring(myLuaState, -1));
             lua_close(myLuaState);
             free(validatorBuffer);
-            return;
+            fclose(file);
+            continue;
         }
 
         newDetector = createDetector(myLuaState, detectorName);
@@ -662,6 +669,8 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
             _dpd.errMsg("cannot allocate detector %s\n",detectorName);
             lua_close(myLuaState);
             free(validatorBuffer);
+            globfree(&globs);
+            fclose(file);
             return;
         }
 
@@ -713,6 +722,8 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
             _dpd.errMsg( "Failed to add to list.");
             freeDetector(newDetector);
             lua_close(myLuaState);
+            globfree(&globs);
+            fclose(file);
             return;
         }
         memcpy(newDetector->digest, digest, sizeof(newDetector->digest));
@@ -723,6 +734,8 @@ static void loadCustomLuaModules(tAppidStaticConfig* appidSC, char *path, tAppId
             _dpd.errMsg("cannot allocate perStats %s\n",detectorName);
             freeDetector(newDetector);
             lua_close(myLuaState);
+            globfree(&globs);
+            fclose(file);
             return;
         }
 
@@ -963,7 +976,11 @@ void UnloadLuaModules(tAppIdConfig *pConfig)
         for (detector = detector_list; detector; detector = detector->next)
         {
             if (detector->wasActive && detector->client.appFpId)
+            {
+                pthread_mutex_lock(&detector->luaReloadMutex);
                 luaClientFini(detector);
+                pthread_mutex_unlock(&detector->luaReloadMutex);
+            }
             detector->wasActive = 0;
 
             // Detector cleanup is done. Move pAppidOldConfig to the current

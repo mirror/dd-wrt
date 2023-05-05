@@ -1,12 +1,11 @@
 APPID_SRC_DIR = ${top_srcdir}/src/dynamic-preprocessors/appid
 
 INCLUDES = -I${top_builddir}/src/dynamic-preprocessors/include \
-	-I${top_builddir}/src/dynamic-preprocessors/libs \
+        -I$(APPID_SRC_DIR)/../libs \
 	-I$(APPID_SRC_DIR)/util \
 	-I$(APPID_SRC_DIR)/service_plugins \
 	-I$(APPID_SRC_DIR)/client_plugins  \
-	-I$(APPID_SRC_DIR)/detector_plugins \ 
-        -I${srcdir}/../libs
+	-I$(APPID_SRC_DIR)/detector_plugins  
 
 APPID_SOURCES =  \
 	$(APPID_SRC_DIR)/commonAppMatcher.c  \
@@ -22,6 +21,8 @@ APPID_SOURCES =  \
 	$(APPID_SRC_DIR)/spp_appid.c \
 	$(APPID_SRC_DIR)/appId.c \
 	$(APPID_SRC_DIR)/appId.h \
+        $(APPID_SRC_DIR)/appId_ss.h \
+        $(APPID_SRC_DIR)/appId_ss.c \
 	$(APPID_SRC_DIR)/appIdApi.c \
 	$(APPID_SRC_DIR)/commonAppMatcher.h \
 	$(APPID_SRC_DIR)/flow.h \
@@ -62,12 +63,12 @@ APPID_SOURCES +=  \
 	$(APPID_SRC_DIR)/client_plugins/client_app_bit.c \
 	$(APPID_SRC_DIR)/client_plugins/client_app_bit_tracker.c \
 	$(APPID_SRC_DIR)/client_plugins/client_app_rtp.c \
-	$(APPID_SRC_DIR)/client_plugins/client_app_rtp.h \
 	$(APPID_SRC_DIR)/client_plugins/client_app_ssh.c \
 	$(APPID_SRC_DIR)/client_plugins/client_app_timbuktu.c \
 	$(APPID_SRC_DIR)/client_plugins/client_app_tns.c \
 	$(APPID_SRC_DIR)/client_plugins/client_app_vnc.c \
-	$(APPID_SRC_DIR)/client_plugins/clientAppConfig.h
+	$(APPID_SRC_DIR)/client_plugins/clientAppConfig.h \
+        $(APPID_SRC_DIR)/client_plugins/client_app_rtp.h
 
 APPID_SOURCES +=  \
 	$(APPID_SRC_DIR)/service_plugins/service_util.h \
@@ -152,7 +153,9 @@ APPID_SOURCES +=  \
 	$(APPID_SRC_DIR)/detector_plugins/detector_pattern.c \
 	$(APPID_SRC_DIR)/detector_plugins/detector_pattern.h \
 	$(APPID_SRC_DIR)/detector_plugins/detector_dns.c \
-	$(APPID_SRC_DIR)/detector_plugins/detector_dns.h
+	$(APPID_SRC_DIR)/detector_plugins/detector_dns.h \
+	$(APPID_SRC_DIR)/detector_plugins/detector_cip.c \
+	$(APPID_SRC_DIR)/detector_plugins/detector_cip.h
 
 APPID_SOURCES +=  \
 	$(APPID_SRC_DIR)/util/common_util.h \

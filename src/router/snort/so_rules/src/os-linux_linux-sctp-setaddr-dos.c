@@ -109,9 +109,16 @@ static RuleReference *rule38346refs[] =
 };
 
 /* metadata for sid 38346 */
+
+static RuleMetaData rule38346policy1 =
+{
+    "policy max-detect-ips drop"
+};
+
 /* metadata:; */
 static RuleMetaData *rule38346metadata[] =
 {
+   &rule38346policy1,
    NULL
 };
 
@@ -137,7 +144,7 @@ Rule rule38346 = {
    { 
       3,  /* genid */
       38346, /* sigid */
-      1, /* revision */
+      2, /* revision */
       "attempted-dos", /* classification */
       0,  /* hardcoded priority */
       "OS-LINUX Linux kernel SCTP INIT null pointer dereference attempt",     /* message */

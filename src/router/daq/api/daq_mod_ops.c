@@ -1,7 +1,6 @@
-/*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+/* Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2010-2013 Sourcefire, Inc.
-** Author: Michael R. Altizer <maltizer@sourcefire.com>
+** Author: Michael R. Altizer <mialtize@cisco.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -340,7 +339,7 @@ DAQ_LINKAGE int daq_hup_post(const DAQ_Module_t *module, void *handle, void *old
     return module->hup_post(handle, old_config);
 }
 
-DAQ_LINKAGE int daq_modify_flow(const DAQ_Module_t *module, void *handle, const DAQ_PktHdr_t *hdr, DAQ_ModFlow_t *modify)
+DAQ_LINKAGE int daq_modify_flow(const DAQ_Module_t *module, void *handle, const DAQ_PktHdr_t *hdr, const DAQ_ModFlow_t *modify)
 {
     if (!module)
         return DAQ_ERROR_NOMOD;
@@ -349,6 +348,17 @@ DAQ_LINKAGE int daq_modify_flow(const DAQ_Module_t *module, void *handle, const 
         return DAQ_SUCCESS;
 
     return module->modify_flow(handle, hdr, modify);
+}
+
+DAQ_LINKAGE int daq_query_flow(const DAQ_Module_t *module, void *handle, const DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t *query)
+{
+    if (!module)
+        return DAQ_ERROR_NOMOD;
+
+    if (!module->query_flow)
+        return DAQ_ERROR_NOTSUP;
+
+    return module->query_flow(handle, hdr, query);
 }
 
 /*
@@ -370,7 +380,8 @@ DAQ_LINKAGE uint32_t daq_get_type(const DAQ_Module_t *module)
     return module->type;
 }
 
-DAQ_LINKAGE int daq_dp_add_dc(const DAQ_Module_t *module, void *handle, const DAQ_PktHdr_t *hdr, DAQ_DP_key_t *dp_key, const uint8_t *packet_data)
+DAQ_LINKAGE int daq_dp_add_dc(const DAQ_Module_t *module, void *handle, const DAQ_PktHdr_t *hdr,
+                              DAQ_DP_key_t *dp_key, const uint8_t *packet_data, DAQ_Data_Channel_Params_t *params)
 {
     if (!module)
         return DAQ_ERROR_NOMOD;
@@ -381,5 +392,5 @@ DAQ_LINKAGE int daq_dp_add_dc(const DAQ_Module_t *module, void *handle, const DA
     if (!module->dp_add_dc)
         return DAQ_SUCCESS;
 
-    return module->dp_add_dc(handle, hdr, dp_key, packet_data);
+    return module->dp_add_dc(handle, hdr, dp_key, packet_data, params);
 }

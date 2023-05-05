@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2022 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -82,6 +82,13 @@ typedef struct appidGenericConfigItem_
     void    *pData; ///< Module configuration data
 } tAppidGenericConfigItem;
 
+typedef enum
+{
+    APPID_REQ_UNINITIALIZED = 0,
+    APPID_REQ_YES,
+    APPID_REQ_NO
+} tAppIdReq;
+
 /**
  * \typedef tAppIdConfig
  *
@@ -99,7 +106,7 @@ typedef struct appIdConfig_
     NetworkSet  *net_list_by_zone[MAX_ZONES];    ///< list of networks we're analyzing
     tAppId      tcp_port_only[65536];       ///< Service IDs for port-only TCP services
     tAppId      udp_port_only[65536];       ///< Service IDs for port-only UDP services
-    tAppId      ip_protocol[255];           ///< Service IDs for non-TCP / UDP protocol services
+    tAppId      ip_protocol[256];           ///< Service IDs for non-TCP / UDP protocol services
 
     SF_LIST     client_app_args;            ///< List of Client App arguments
 
@@ -138,7 +145,20 @@ typedef struct appIdConfig_
     struct ClientPortPattern  *clientPortPattern;
 
     SF_LIST                 genericConfigList;      ///< List of tAppidGenericConfigItem structures
+
+    tAppIdReq isAppIdAlwaysRequired;
 } tAppIdConfig;
+
+#ifdef SIDE_CHANNEL
+typedef struct _AppIdSSConfig
+{
+#ifdef REG_TEST
+    char *startup_input_file;
+    char *runtime_output_file;
+#endif
+    bool use_side_channel;
+} AppIdSSConfig;
+#endif
 
 /**
  * \struct tAppidStaticConfig
@@ -154,6 +174,7 @@ struct AppidStaticConfig
 {
     unsigned    disable_safe_search;
     const char *appid_thirdparty_dir;         /* directory where thirdparty modules are located.*/
+    char* tp_config_path;
     char* app_stats_filename;
     unsigned long app_stats_period;
     unsigned long app_stats_rollover_size;
@@ -177,10 +198,26 @@ struct AppidStaticConfig
     unsigned tp_allow_probes;
     unsigned host_port_app_cache_lookup_interval;
     unsigned host_port_app_cache_lookup_range;
+    unsigned multipayload_max_packets;
+    unsigned http_tunnel_detect;
+    uint64_t max_bytes_before_service_fail;
+    uint16_t max_packet_before_service_fail;
+    uint16_t max_packet_service_fail_ignore_bytes;
     bool http2_detection_enabled;    // internal HTTP/2 detection
     bool is_host_port_app_cache_runtime;
+    bool check_host_port_app_cache;
+    bool check_host_cache_unknown_ssl;
     bool recheck_for_unknown_appid;
+    bool send_state_sharing_updates;
+    bool allow_port_wildcard_host_cache;
+    bool recheck_for_portservice_appid;
     tAppIdConfig* newAppIdConfig;    // Used only during reload
+#ifdef SIDE_CHANNEL
+    AppIdSSConfig *appId_ss_config;
+#endif
+#ifdef REG_TEST
+    bool appid_reg_test_mode;
+#endif
 };
 typedef struct AppidStaticConfig tAppidStaticConfig;
 
