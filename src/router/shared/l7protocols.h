@@ -575,7 +575,7 @@ l7filters filters_list[] = {
 	{ "subspace", L7_ONLY, 0 },
 	{ "subversion", L7_ONLY, 0 },
 #ifdef HAVE_OPENDPI
-	{ "susp dns traffic", NPDI_RISK, 23 },
+	{ "susp dns traffic", NDPI_RISK, 23 },
 	{ "susp entropy", NDPI_RISK, 35 },
 	{ "syncthing", NDPI_ONLY, 0 },
 	{ "syslog", NDPI_ONLY, 0 },
