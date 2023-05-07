@@ -1393,36 +1393,6 @@ static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 	}
 }
 
-static char *fw_get_filter_services(void)
-{
-
-	l7filters *filters = filters_list;
-	char temp[128] = "";
-	char *proto[] = { "l7", "p2p", "dpi", "risk"};
-	char *services = NULL;
-
-	while (filters->name)	// add l7 and p2p filters
-	{
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, strlen(proto[filters->protocol]), proto[filters->protocol]);
-		if (!services) {
-			services = malloc(strlen(temp) + 1);
-			services[0] = 0;
-		} else
-			services = realloc(services, strlen(services) + strlen(temp) + 1);
-		strcat(services, temp);
-		filters++;
-	}
-	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
-	strcat(services, nvram_safe_get("filter_services"));	// this is
-	// user
-	// defined
-	// filters
-	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services_1")) + 1);
-	strcat(services, nvram_safe_get("filter_services_1"));
-
-	return services;
-}
-
 struct TELEMETRY {
 	unsigned char ip1;
 	unsigned char ip2;
@@ -1636,7 +1606,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	nvram_seti("dnsmasq_ms_telemetry", 0);
 	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
-	services = fw_get_filter_services();
+	services = get_filter_services();
 
 	/*
 	 * filter_port_grp5=My ICQ<&nbsp;>Game boy 
