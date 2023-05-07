@@ -1398,12 +1398,12 @@ static char *fw_get_filter_services(void)
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char *proto[] = { "l7", "p2p", "dpi" };
+	char *proto[] = { "l7", "p2p", "dpi", "risk"};
 	char *services = NULL;
 
 	while (filters->name)	// add l7 and p2p filters
 	{
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, filters->protocol == 0 ? 2 : 3, proto[filters->protocol]);
+		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, strlen(proto[filters->protocol]), proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
 			services[0] = 0;
@@ -1713,6 +1713,11 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			else if (!strcmp(protocol, "dpi")) {
 				insmod("xt_ndpi");
 				save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, realname, log_drop);
+			}
+			else if (!strcmp(protocol, "risk")) {
+				insmod("xt_ndpi");
+				int risk = get_risk_by_name(realname);
+				save2file_A("advgrp_%d -m ndpi --risk %d -j %s", seq, risk, log_drop);
 			}
 #endif
 			else if (!strcmp(protocol, "p2p")) {
