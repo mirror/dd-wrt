@@ -1233,25 +1233,29 @@ void _init(void)
         }*/
 
 	FILE *f_proto = fopen("/proc/net/xt_ndpi/risks","r");
-	if(!f_proto)
-		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: no risks file");
-	index = 0;
-	while(!feof(f_proto)) {
-		int  ri;
-		char re;
-		c = fgets(buf,sizeof(buf)-1,f_proto);
-		if(!c) break;
-		if(sscanf(buf,"%d %c ",&ri,&re) != 2) 
-			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risks format.");
+	if(f_proto) {
+		index = 0;
+		while(!feof(f_proto)) {
+			int  ri;
+			char re;
+			c = fgets(buf,sizeof(buf)-1,f_proto);
+			if(!c) break;
+			if(sscanf(buf,"%d %c ",&ri,&re) != 2) {
+				printf("xt_ndpi: bad risks format.");
+				break;
+			}
 		
-		if(ri < 0 || ri >= 64)
-			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risk index.");
-		if(risk_index_max < ri)
-			risk_index_max = ri;
-		if(re == 'd')
-			risk_map |= (1ull << ri);
-	}
+			if(ri < 0 || ri >= 64) {
+				printf("xt_ndpi: bad risk index.");
+				break;
+			}
+			if(risk_index_max < ri)
+				risk_index_max = ri;
+			if(re == 'd')
+				risk_map |= (1ull << ri);
+		}
 	fclose(f_proto);
+	}
 
 
 #define MT_OPT(np,protoname,nargs) { i=(np); \
