@@ -424,6 +424,8 @@ char *num_to_protocol(int num)
 #ifdef HAVE_OPENDPI
 	case 101:
 		return "dpi";
+	case 102:
+		return "risk";
 #endif
 	default:
 		return "unknown";
@@ -1717,7 +1719,7 @@ void qos_add_svc(webs_t wp)
 	if (get_svc(add_svc, protocol, ports))
 		return;
 
-	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0) {
+	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0) {
 		int slen = strlen(add_svc);
 
 		for (i = 0; i < slen; i++)
@@ -2638,7 +2640,7 @@ void qos_save(webs_t wp)
 				name[j] = tolower(name[j]);
 		}
 #ifdef HAVE_OPENDPI
-		if (strcmp(protocol, "dpi") == 0) {
+		if (strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0) {
 			int slen = strlen(name);
 
 			for (j = 0; j < slen; j++)
