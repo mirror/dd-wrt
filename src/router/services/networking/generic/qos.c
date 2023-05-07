@@ -514,7 +514,7 @@ static void aqos_tables(void)
 			int count = 0;
 			while (s_filters[count].name != NULL) {
 				if (!strcmp(s_filters[count].name, proto)) {
-					char *protos[6] = { "tcp", "udp", "both", "l7", "dpi", "p2p" };
+					char *protos[6] = { "tcp", "udp", "both", "l7", "dpi", "p2p", "risk" };
 					strcpy(proto2, protos[s_filters[count].proto - 1]);
 					strcpy(proto1, s_filters[count].name);
 					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
@@ -928,6 +928,14 @@ static int svqos_iptables(void)
 			insmod("xt_ndpi");
 			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(level));
 			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(level));
+		}
+		if (strstr(type, "risk")) {
+			insmod("xt_ndpi");
+			int risk = get_risk_by_name(name);
+			char lvl[32];
+			sprintf(lvl, "%d", risk);
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 #endif
 
