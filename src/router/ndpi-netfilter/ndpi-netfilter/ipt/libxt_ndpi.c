@@ -158,7 +158,8 @@ static int set_risk(uint64_t *risk,int v) {
 static int str2risk(const char *s, uint64_t *res) {
 	uint64_t risk = 0;
 	int v;
-	char *e,*tmp,*c;
+	char *e;
+	const char *c;
 
 	if(s[0] == '0' && s[1] == 'x') {
 		*res = strtoull(s+2,&e,16);
@@ -167,16 +168,10 @@ static int str2risk(const char *s, uint64_t *res) {
 		return *e ? -1:0;
 	}
 	*res = 0ULL;
-	tmp = strdup(s);
-	if(!tmp) {
-		printf("Error: out of memory\n");
-		return -ENOMEM;
-	}
-	for(c=tmp,v=0; *c; c++) {
+	for(c=s,v=0; *c; c++) {
 		if(*c == ',') {
 			if(set_risk(&risk,v))
 				return -EINVAL;
-
 			v = 0;
 			continue;
 		}
@@ -376,7 +371,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_RISK) {
-		if(str2risk(optarg+1,&info->risk))
+		if(str2risk(optarg,&info->risk))
 			return false;
 
         	*flags |= FLAGS_RISK;
