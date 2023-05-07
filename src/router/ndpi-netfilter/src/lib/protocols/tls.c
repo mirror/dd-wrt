@@ -914,7 +914,7 @@ NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_str
         flow->protos.tls_quic.fingerprint_set = 1;
 
       {
-      int rc1;
+      int rc1 = 0;
       char sha1_str[ 20 /* sha1_siz */ * 2 + 1];
       static const char hexalnum[] = "0123456789ABCDEF";
       size_t i;
@@ -938,7 +938,6 @@ NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_str
 	static const char pref_str[]="RISK_SHA1CERT_";
         char risk_sha1_str[sizeof(pref_str) + 20 /* sha1_siz */ * 2 + 1];
         u_int32_t val;
-	int rc1;
 	size_t len = sizeof(pref_str)-1;
 
 	strcpy(risk_sha1_str,pref_str);
