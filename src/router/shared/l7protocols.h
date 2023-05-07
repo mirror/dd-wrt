@@ -14,8 +14,7 @@ typedef struct _l7filters {
 #define L7_ONLY 0
 #define PDPI_ONLY 1
 #define NDPI_ONLY 2
-#define WINDDOWS_SPY 3
-#define NDPI_RISK 4
+#define NDPI_RISK 3
 
 #ifdef HAVE_OPENDPI
 #define DPI 2			//open dpi based
