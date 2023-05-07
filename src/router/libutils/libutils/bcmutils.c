@@ -1741,8 +1741,10 @@ char *get_filter_services(void)
 
 	while (filters->name)	// add l7 and p2p filters
 	{
-		if (filters->protocol == NDPI_RISK)
+		if (filters->protocol == NDPI_RISK) {
+		    filters++;
 		    continue;
+		}
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, strlen(proto[filters->protocol]), proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
