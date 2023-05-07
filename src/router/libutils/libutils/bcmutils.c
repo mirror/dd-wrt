@@ -1727,6 +1727,7 @@ int get_risk_by_name(char *name)
 	{
 	    if (!strcmp(filters->name, name))
 		return filters->level;
+	filters++;
 	}
     return 0;
 }
