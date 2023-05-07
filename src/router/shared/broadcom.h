@@ -213,6 +213,20 @@ void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
 	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0)); \
 	} while(0)
 
+#define showRadioDefaultOnPrefix(wp, propname, nv, prefix) \
+	do { \
+	char nvname[32]; \
+	sprintf(nvname,"%s_%s",prefix,nv); \
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1)); \
+	} while(0)
+
+#define showRadioDefaultOffPrefix(wp, propname, nv, prefix) \
+	do { \
+	char nvname[32]; \
+	sprintf(nvname,"%s_%s",prefix,nv); \
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0)); \
+	} while(0)
+
 static void showRadio(webs_t wp, char *propname, char *nvname)
 {
 	showRadioDefaultOff(wp, propname, nvname);
@@ -221,6 +235,16 @@ static void showRadio(webs_t wp, char *propname, char *nvname)
 static void showRadioInv(webs_t wp, char *propname, char *nvname)
 {
 	showRadioDefaultOn(wp, propname, nvname);
+}
+
+static void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix)
+{
+	showRadioDefaultOffPrefix(wp, propname, nv, prefix);
+}
+
+static void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix)
+{
+	showRadioDefaultOnPrefix(wp, propname, nv, prefix);
 }
 
 #define service_restart() kill(1, SIGUSR1)
