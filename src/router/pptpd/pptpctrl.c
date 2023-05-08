@@ -326,6 +326,7 @@ static int pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetaddr
                 /* send from pty off via GRE */
                 if (pty_fd != -1 && FD_ISSET(pty_fd, &fds) && decaps_hdlc(pty_fd, encaps_gre, gre_fd) < 0) {
                         syslog(LOG_ERR, "CTRL: PTY read or GRE write failed (pty,gre)=(%d,%d)", pty_fd, gre_fd);
+                        ret = -1; //auth failed?
                         break;
                 }
                 /* send from GRE off to pty */
@@ -334,7 +335,6 @@ static int pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetaddr
                                 syslog(LOG_ERR, "CTRL: GRE-tunnel has collapsed (GRE read or PTY write failed (gre,pty)=(%d,%d))", gre_fd, pty_fd);
                         } else {
                                 syslog(LOG_ERR, "CTRL: GRE read or PTY write failed (gre,pty)=(%d,%d)", gre_fd, pty_fd);
-                                ret = -1; //auth failed?
                         }
                         break;
                 }
