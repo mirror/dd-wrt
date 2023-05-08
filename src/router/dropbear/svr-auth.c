@@ -442,6 +442,8 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 		add_blocklist("dropbear", svr_ses.remotehost);
 		add_blocklist("dropbear", svr_ses.remotehost);
 		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
 		dropbear_exit("Max auth tries reached - user '%s'",
 				userstr);
 	}
