@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,12 @@
 #include "tlog.h"
 #include "util.h"
 #include <arpa/inet.h>
+#include <ctype.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <libgen.h>
 #include <linux/capability.h>
 #include <linux/limits.h>
 #include <linux/netlink.h>
@@ -35,6 +37,7 @@
 #include <netinet/tcp.h>
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -42,6 +45,7 @@
 #include <sys/prctl.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include <sys/sysinfo.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -108,7 +112,17 @@ unsigned long get_tick_count(void)
 	return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
 
-char *gethost_by_addr(char *host, int maxsize, struct sockaddr *addr)
+char *dir_name(char *path)
+{
+	if (strstr(path, "/") == NULL) {
+		safe_strncpy(path, "./", PATH_MAX);
+		return path;
+	}
+
+	return dirname(path);
+}
+
+char *get_host_by_addr(char *host, int maxsize, struct sockaddr *addr)
 {
 	struct sockaddr_storage *addr_store = (struct sockaddr_storage *)addr;
 	host[0] = 0;
@@ -172,7 +186,7 @@ errout:
 	return -1;
 }
 
-int getsocknet_inet(int fd, struct sockaddr *addr, socklen_t *addr_len)
+int getsocket_inet(int fd, struct sockaddr *addr, socklen_t *addr_len)
 {
 	struct sockaddr_storage addr_store;
 	socklen_t addr_store_len = sizeof(addr_store);
@@ -296,7 +310,7 @@ int parse_ip(const char *value, char *ip, int *port)
 	return 0;
 }
 
-static int _check_is_ipv4(const char *ip)
+int check_is_ipv4(const char *ip)
 {
 	const char *ptr = ip;
 	char c = 0;
@@ -330,7 +344,8 @@ static int _check_is_ipv4(const char *ip)
 
 	return 0;
 }
-static int _check_is_ipv6(const char *ip)
+
+int check_is_ipv6(const char *ip)
 {
 	const char *ptr = ip;
 	char c = 0;
@@ -380,22 +395,65 @@ int check_is_ipaddr(const char *ip)
 {
 	if (strstr(ip, ".")) {
 		/* IPV4 */
-		return _check_is_ipv4(ip);
+		return check_is_ipv4(ip);
 	} else if (strstr(ip, ":")) {
 		/* IPV6 */
-		return _check_is_ipv6(ip);
+		return check_is_ipv6(ip);
 	}
 	return -1;
 }
 
-int parse_uri(char *value, char *scheme, char *host, int *port, char *path)
+int parse_uri(const char *value, char *scheme, char *host, int *port, char *path)
+{
+	return parse_uri_ext(value, scheme, NULL, NULL, host, port, path);
+}
+
+void urldecode(char *dst, const char *src)
+{
+	char a, b;
+	while (*src) {
+		if ((*src == '%') && ((a = src[1]) && (b = src[2])) && (isxdigit(a) && isxdigit(b))) {
+			if (a >= 'a') {
+				a -= 'a' - 'A';
+			}
+
+			if (a >= 'A') {
+				a -= ('A' - 10);
+			} else {
+				a -= '0';
+			}
+
+			if (b >= 'a') {
+				b -= 'a' - 'A';
+			}
+
+			if (b >= 'A') {
+				b -= ('A' - 10);
+			} else {
+				b -= '0';
+			}
+			*dst++ = 16 * a + b;
+			src += 3;
+		} else if (*src == '+') {
+			*dst++ = ' ';
+			src++;
+		} else {
+			*dst++ = *src++;
+		}
+	}
+	*dst++ = '\0';
+}
+
+int parse_uri_ext(const char *value, char *scheme, char *user, char *password, char *host, int *port, char *path)
 {
 	char *scheme_end = NULL;
 	int field_len = 0;
-	char *process_ptr = value;
-	char host_name[PATH_MAX];
+	const char *process_ptr = value;
+	char user_pass_host_part[PATH_MAX];
+	char *user_password = NULL;
+	char *host_part = NULL;
 
-	char *host_end = NULL;
+	const char *host_end = NULL;
 
 	scheme_end = strstr(value, "://");
 	if (scheme_end) {
@@ -413,24 +471,44 @@ int parse_uri(char *value, char *scheme, char *host, int *port, char *path)
 
 	host_end = strstr(process_ptr, "/");
 	if (host_end == NULL) {
-		return parse_ip(process_ptr, host, port);
+		host_end = process_ptr + strlen(process_ptr);
 	};
 
 	field_len = host_end - process_ptr;
-	if (field_len >= (int)sizeof(host_name)) {
+	if (field_len >= (int)sizeof(user_pass_host_part)) {
 		return -1;
 	}
-	memcpy(host_name, process_ptr, field_len);
-	host_name[field_len] = 0;
+	memcpy(user_pass_host_part, process_ptr, field_len);
+	user_pass_host_part[field_len] = 0;
 
-	if (parse_ip(host_name, host, port) != 0) {
+	host_part = strstr(user_pass_host_part, "@");
+	if (host_part != NULL) {
+		*host_part = '\0';
+		host_part = host_part + 1;
+		user_password = user_pass_host_part;
+		char *sep = strstr(user_password, ":");
+		if (sep != NULL) {
+			*sep = '\0';
+			sep = sep + 1;
+			if (password) {
+				urldecode(password, sep);
+			}
+		}
+		if (user) {
+			urldecode(user, user_password);
+		}
+	} else {
+		host_part = user_pass_host_part;
+	}
+
+	if (host != NULL && parse_ip(host_part, host, port) != 0) {
 		return -1;
 	}
 
 	process_ptr += field_len;
 
 	if (path) {
-		strncpy(path, process_ptr, PATH_MAX);
+		strcpy(path, process_ptr);
 	}
 	return 0;
 }
@@ -538,7 +616,7 @@ static int _ipset_support_timeout(void)
 	return -1;
 }
 
-static int _ipset_operate(const char *ipsetname, const unsigned char addr[], int addr_len, unsigned long timeout,
+static int _ipset_operate(const char *ipset_name, const unsigned char addr[], int addr_len, unsigned long timeout,
 						  int operate)
 {
 	struct nlmsghdr *netlink_head = NULL;
@@ -569,7 +647,7 @@ static int _ipset_operate(const char *ipsetname, const unsigned char addr[], int
 		return -1;
 	}
 
-	if (strlen(ipsetname) >= IPSET_MAXNAMELEN) {
+	if (strlen(ipset_name) >= IPSET_MAXNAMELEN) {
 		errno = ENAMETOOLONG;
 		return -1;
 	}
@@ -589,7 +667,7 @@ static int _ipset_operate(const char *ipsetname, const unsigned char addr[], int
 
 	proto = IPSET_PROTOCOL;
 	_ipset_add_attr(netlink_head, IPSET_ATTR_PROTOCOL, sizeof(proto), &proto);
-	_ipset_add_attr(netlink_head, IPSET_ATTR_SETNAME, strlen(ipsetname) + 1, ipsetname);
+	_ipset_add_attr(netlink_head, IPSET_ATTR_SETNAME, strlen(ipset_name) + 1, ipset_name);
 
 	nested[0] = (struct ipset_netlink_attr *)(buffer + NETLINK_ALIGN(netlink_head->nlmsg_len));
 	netlink_head->nlmsg_len += NETLINK_ALIGN(sizeof(struct ipset_netlink_attr));
@@ -628,14 +706,14 @@ static int _ipset_operate(const char *ipsetname, const unsigned char addr[], int
 	return rc;
 }
 
-int ipset_add(const char *ipsetname, const unsigned char addr[], int addr_len, unsigned long timeout)
+int ipset_add(const char *ipset_name, const unsigned char addr[], int addr_len, unsigned long timeout)
 {
-	return _ipset_operate(ipsetname, addr, addr_len, timeout, IPSET_ADD);
+	return _ipset_operate(ipset_name, addr, addr_len, timeout, IPSET_ADD);
 }
 
-int ipset_del(const char *ipsetname, const unsigned char addr[], int addr_len)
+int ipset_del(const char *ipset_name, const unsigned char addr[], int addr_len)
 {
-	return _ipset_operate(ipsetname, addr, addr_len, 0, IPSET_DEL);
+	return _ipset_operate(ipset_name, addr, addr_len, 0, IPSET_DEL);
 }
 
 unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
@@ -684,6 +762,24 @@ errout:
 	return -1;
 }
 
+int SSL_base64_encode(const void *in, int in_len, char *out)
+{
+	int outlen = 0;
+
+	if (in_len == 0) {
+		return 0;
+	}
+
+	outlen = EVP_EncodeBlock((unsigned char *)out, in, in_len);
+	if (outlen < 0) {
+		goto errout;
+	}
+
+	return outlen;
+errout:
+	return -1;
+}
+
 int create_pid_file(const char *pid_file)
 {
 	int fd = 0;
@@ -693,7 +789,7 @@ int create_pid_file(const char *pid_file)
 	/*  create pid file, and lock this file */
 	fd = open(pid_file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1) {
-		fprintf(stderr, "create pid file failed, %s\n", strerror(errno));
+		fprintf(stderr, "create pid file %s failed, %s\n", pid_file, strerror(errno));
 		return -1;
 	}
 
@@ -733,6 +829,123 @@ errout:
 		close(fd);
 	}
 	return -1;
+}
+
+int generate_cert_key(const char *key_path, const char *cert_path, const char *san, int days)
+{
+	int ret = -1;
+#if (OPENSSL_VERSION_NUMBER <= 0x30000000L)
+	RSA *rsa = NULL;
+	BIGNUM *bn = NULL;
+#endif
+	X509_EXTENSION *cert_ext = NULL;
+	BIO *cert_file = NULL;
+	BIO *key_file = NULL;
+	X509 *cert = NULL;
+	EVP_PKEY *pkey = NULL;
+	const int RSA_KEY_LENGTH = 2048;
+
+	if (key_path == NULL || cert_path == NULL) {
+		return ret;
+	}
+
+	key_file = BIO_new_file(key_path, "wb");
+	cert_file = BIO_new_file(cert_path, "wb");
+	cert = X509_new();
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+	pkey = EVP_RSA_gen(RSA_KEY_LENGTH);
+#else
+	bn = BN_new();
+	rsa = RSA_new();
+	pkey = EVP_PKEY_new();
+	if (rsa == NULL || pkey == NULL || bn == NULL) {
+		goto out;
+	}
+
+	EVP_PKEY_assign(pkey, EVP_PKEY_RSA, rsa);
+	BN_set_word(bn, RSA_F4);
+	if (RSA_generate_key_ex(rsa, RSA_KEY_LENGTH, bn, NULL) != 1) {
+		goto out;
+	}
+#endif
+
+	if (key_file == NULL || cert_file == NULL || cert == NULL || pkey == NULL) {
+		goto out;
+	}
+
+	ASN1_INTEGER_set(X509_get_serialNumber(cert), 1);           // serial number
+	X509_gmtime_adj(X509_get_notBefore(cert), 0);               // now
+	X509_gmtime_adj(X509_get_notAfter(cert), days * 24 * 3600); // accepts secs
+
+	X509_set_pubkey(cert, pkey);
+
+	X509_NAME *name = X509_get_subject_name(cert);
+
+	const unsigned char *country = (unsigned char *)"smartdns";
+	const unsigned char *company = (unsigned char *)"smartdns";
+	const unsigned char *common_name = (unsigned char *)"smartdns";
+
+	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, country, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, company, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, common_name, -1, -1, 0);
+
+	if (san != NULL) {
+		cert_ext = X509V3_EXT_conf_nid(NULL, NULL, NID_subject_alt_name, san);
+		if (cert_ext == NULL) {
+			goto out;
+		}
+		X509_add_ext(cert, cert_ext, -1);
+	}
+
+	X509_set_issuer_name(cert, name);
+	X509_sign(cert, pkey, EVP_sha256());
+
+	ret = PEM_write_bio_PrivateKey(key_file, pkey, NULL, NULL, 0, NULL, NULL);
+	if (ret != 1) {
+		goto out;
+	}
+
+	ret = PEM_write_bio_X509(cert_file, cert);
+	if (ret != 1) {
+		goto out;
+	}
+
+	chmod(key_path, S_IRUSR);
+	chmod(cert_path, S_IRUSR);
+
+	ret = 0;
+out:
+	if (cert_ext) {
+		X509_EXTENSION_free(cert_ext);
+	}
+
+	if (pkey) {
+		EVP_PKEY_free(pkey);
+	}
+
+#if (OPENSSL_VERSION_NUMBER <= 0x30000000L)
+	if (rsa && pkey == NULL) {
+		RSA_free(rsa);
+	}
+
+	if (bn) {
+		BN_free(bn);
+	}
+#endif
+
+	if (cert_file) {
+		BIO_free_all(cert_file);
+	}
+
+	if (key_file) {
+		BIO_free_all(key_file);
+	}
+
+	if (cert) {
+		X509_free(cert);
+	}
+
+	return ret;
 }
 
 #if OPENSSL_API_COMPAT < 0x10100000
@@ -813,7 +1026,7 @@ static int parse_extensions(const char *, size_t, char *, const char **);
 static int parse_server_name_extension(const char *, size_t, char *, const char **);
 
 /* Parse a TLS packet for the Server Name Indication extension in the client
- * hello handshake, returning the first servername found (pointer to static
+ * hello handshake, returning the first server name found (pointer to static
  * array)
  *
  * Returns:
@@ -942,7 +1155,7 @@ static int parse_extensions(const char *data, size_t data_len, char *hostname, c
 		/* Check if it's a server name extension */
 		if (data[pos] == 0x00 && data[pos + 1] == 0x00) {
 			/* There can be only one extension of each type, so we break
-			 * our state and move p to beinnging of the extension here */
+			 * our state and move p to beginning of the extension here */
 			if (pos + 4 + len > data_len) {
 				return -5;
 			}
@@ -1013,6 +1226,16 @@ void get_compiled_time(struct tm *tm)
 	tm->tm_hour = hour;
 	tm->tm_min = min;
 	tm->tm_sec = sec;
+}
+
+unsigned long get_system_mem_size(void)
+{
+	struct sysinfo memInfo;
+	sysinfo(&memInfo);
+	long long totalMem = memInfo.totalram;
+	totalMem *= memInfo.mem_unit;
+
+	return totalMem;
 }
 
 int is_numeric(const char *str)
@@ -1195,27 +1418,27 @@ int dns_packet_save(const char *dir, const char *type, const char *from, const v
 
 	struct tm *ptm;
 	struct tm tm;
-	struct timeval tmval;
+	struct timeval tm_val;
 	struct stat sb;
 
 	if (stat(dir, &sb) != 0) {
 		mkdir(dir, 0750);
 	}
 
-	if (gettimeofday(&tmval, NULL) != 0) {
+	if (gettimeofday(&tm_val, NULL) != 0) {
 		return -1;
 	}
 
-	ptm = localtime_r(&tmval.tv_sec, &tm);
+	ptm = localtime_r(&tm_val.tv_sec, &tm);
 	if (ptm == NULL) {
 		return -1;
 	}
 
-	ret = snprintf(time_s, sizeof(time_s) - 1, "%.4d-%.2d-%.2d %.2d:%.2d:%.2d.%.3d", ptm->tm_year + 1900,
-				   ptm->tm_mon + 1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, (int)(tmval.tv_usec / 1000));
-	ret = snprintf(filename, sizeof(filename) - 1, "%s/%s-%.4d%.2d%.2d-%.2d%.2d%.2d%.1d.packet", dir, type,
-				   ptm->tm_year + 1900, ptm->tm_mon + 1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec,
-				   (int)(tmval.tv_usec / 100000));
+	snprintf(time_s, sizeof(time_s) - 1, "%.4d-%.2d-%.2d %.2d:%.2d:%.2d.%.3d", ptm->tm_year + 1900, ptm->tm_mon + 1,
+			 ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, (int)(tm_val.tv_usec / 1000));
+	snprintf(filename, sizeof(filename) - 1, "%s/%s-%.4d%.2d%.2d-%.2d%.2d%.2d%.1d.packet", dir, type,
+			 ptm->tm_year + 1900, ptm->tm_mon + 1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec,
+			 (int)(tm_val.tv_usec / 100000));
 
 	data = malloc(PACKET_BUF_SIZE);
 	if (data == NULL) {
@@ -1374,6 +1597,79 @@ static int _dns_debug_display(struct dns_packet *packet)
 				inet_ntop(AF_INET6, addr, req_host, sizeof(req_host));
 				printf("domain: %s AAAA: %s TTL:%d\n", name, req_host, ttl);
 			} break;
+			case DNS_T_HTTPS: {
+				char name[DNS_MAX_CNAME_LEN] = {0};
+				char target[DNS_MAX_CNAME_LEN] = {0};
+				struct dns_https_param *p = NULL;
+				int priority = 0;
+				int ret = 0;
+
+				ret = dns_get_HTTPS_svcparm_start(rrs, &p, name, DNS_MAX_CNAME_LEN, &ttl, &priority, target,
+												DNS_MAX_CNAME_LEN);
+				if (ret != 0) {
+					printf("get HTTPS svcparm failed\n");
+					break;
+				}
+
+				printf("domain: %s HTTPS: %s TTL: %d priority: %d\n", name, target, ttl, priority);
+
+				for (; p; p = dns_get_HTTPS_svcparm_next(rrs, p)) {
+					switch (p->key) {
+					case DNS_HTTPS_T_MANDATORY: {
+						printf("  HTTPS: mandatory: %s\n", p->value);
+					} break;
+					case DNS_HTTPS_T_ALPN: {
+						char alph[64] = {0};
+						int total_alph_len = 0;
+						char *ptr = (char *)p->value;
+						do {
+							int alphlen = *ptr;
+							memcpy(alph + total_alph_len, ptr + 1, alphlen);
+							total_alph_len += alphlen;
+							ptr += alphlen + 1;
+							alph[total_alph_len] = ',';
+							total_alph_len++;
+							alph[total_alph_len] = ' ';
+							total_alph_len++;
+						} while (ptr - (char *)p->value < p->len);
+						if (total_alph_len > 2) {
+							alph[total_alph_len - 2] = '\0';
+						}
+						printf("  HTTPS: alpn: %s\n", alph);
+					} break;
+					case DNS_HTTPS_T_NO_DEFAULT_ALPN: {
+						printf("  HTTPS: no_default_alpn: %s\n", p->value);
+					} break;
+					case DNS_HTTPS_T_PORT: {
+						int port = *(unsigned short *)(p->value);
+						printf("  HTTPS: port: %d\n", port);
+					} break;
+					case DNS_HTTPS_T_IPV4HINT: {
+						printf("  HTTPS: ipv4hint: %d\n", p->len / 4);
+						for (int k = 0; k < p->len / 4; k++) {
+							char ip[16] = {0};
+							inet_ntop(AF_INET, p->value + k * 4, ip, sizeof(ip));
+							printf("    ipv4: %s\n", ip);
+						}
+					} break;
+					case DNS_HTTPS_T_ECH: {
+						printf("  HTTPS: ech: ");
+						for (int k = 0; k < p->len; k++) {
+							printf("%02x ", p->value[k]);
+						}
+						printf("\n");
+					} break;
+					case DNS_HTTPS_T_IPV6HINT: {
+						printf("  HTTPS: ipv6hint: %d\n", p->len / 16);
+						for (int k = 0; k < p->len / 16; k++) {
+							char ip[64] = {0};
+							inet_ntop(AF_INET6, p->value + k * 16, ip, sizeof(ip));
+							printf("    ipv6: %s\n", ip);
+						}
+					} break;
+					}
+				}
+			} break;
 			case DNS_T_NS: {
 				char cname[DNS_MAX_CNAME_LEN];
 				char name[DNS_MAX_CNAME_LEN] = {0};
@@ -1413,7 +1709,8 @@ int dns_packet_debug(const char *packet_file)
 	struct _dns_read_packet_info *info = NULL;
 	char buff[DNS_PACKSIZE];
 
-	tlog_setlogscreen_only(1);
+	tlog_set_maxlog_count(0);
+	tlog_setlogscreen(1);
 	tlog_setlevel(TLOG_DEBUG);
 
 	info = _dns_read_packet_file(packet_file);

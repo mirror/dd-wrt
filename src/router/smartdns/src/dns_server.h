@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #define _SMART_DNS_SERVER_H
 
 #include "dns.h"
-#include <stdint.h>
 #include "dns_client.h"
+#include <stdint.h>
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -34,6 +34,10 @@ struct dns_server_query_option {
 	struct dns_opt_ecs ecs_dns;
 	struct dns_query_ecs_ip ecs_ip;
 };
+
+int dns_is_ipv6_ready(void);
+
+void dns_server_check_ipv6_ready(void);
 
 int dns_server_init(void);
 
@@ -53,7 +57,7 @@ typedef int (*dns_result_callback)(const char *domain, dns_rtcode_t rtcode, dns_
 int dns_server_query(const char *domain, int qtype, struct dns_server_query_option *server_query_option,
 					 dns_result_callback callback, void *user_ptr);
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 }
 #endif
 #endif

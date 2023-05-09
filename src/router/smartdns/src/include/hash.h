@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -211,9 +211,9 @@ static inline uint32_t hash32_ptr(const void *ptr)
 	return (uint32_t)val;
 }
 
-static inline uint32_t hash_string(const char *s)
+static inline uint32_t hash_string_initval(const char *s, uint32_t initval)
 {
-	uint32_t h = 0;
+	uint32_t h = initval;
 
 	while (*s) {
 		h = h * 31 + *s;
@@ -221,6 +221,11 @@ static inline uint32_t hash_string(const char *s)
 	}
 
 	return h;
+}
+
+static inline uint32_t hash_string(const char *s)
+{
+	return hash_string_initval(s, 0);
 }
 
 static inline uint32_t hash_string_array(const char **a)
