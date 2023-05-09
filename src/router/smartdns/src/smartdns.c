@@ -246,6 +246,7 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 		struct client_dns_server_flag_udp *flag_udp = &flags->udp;
 		flag_udp->ttl = server->ttl;
 	} break;
+#ifdef HAVE_OPENSSL
 	case DNS_SERVER_HTTPS: {
 		struct client_dns_server_flag_https *flag_http = &flags->https;
 		flag_http->spi_len = dns_client_spki_decode(server->spki, (unsigned char *)flag_http->spki);
@@ -263,6 +264,7 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 		flag_tls->skip_check_cert = server->skip_check_cert;
 
 	} break;
+#endif
 	case DNS_SERVER_TCP:
 		break;
 	default:
@@ -386,6 +388,7 @@ static int _smartdns_set_ecs_ip(void)
 	return ret;
 }
 
+#ifdef HAVE_OPENSSL
 static int _smartdns_create_cert(void)
 {
 	uid_t uid = 0;
@@ -422,7 +425,6 @@ static int _smartdns_create_cert(void)
 	return 0;
 }
 
-#ifdef HAVE_OPENSSL
 static int _smartdns_init_ssl(void)
 {
 #if OPENSSL_API_COMPAT < 0x10100000L
@@ -716,10 +718,12 @@ static int _smartdns_init_pre(void)
 
 	_set_rlimit();
 
+#ifdef HAVE_OPENSSL
 	if (_smartdns_create_cert() != 0) {
 		tlog(TLOG_ERROR, "create cert failed.");
 		return -1;
 	}
+#endif
 
 	return 0;
 }

@@ -761,7 +761,7 @@ int SSL_base64_decode(const char *in, unsigned char *out)
 errout:
 	return -1;
 }
-
+#ifdef HAVE_OPENSSL
 int SSL_base64_encode(const void *in, int in_len, char *out)
 {
 	int outlen = 0;
@@ -779,7 +779,31 @@ int SSL_base64_encode(const void *in, int in_len, char *out)
 errout:
 	return -1;
 }
-
+#else
+int SSL_base64_encode(const void *_in, int inlen, char *out)
+{
+	char *in = (char*)_in;
+	static const char b64str[64] = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	int outlen=0;
+	while (inlen && outlen) {
+		*out++ = b64str[(in[0] >> 2) & 0x3f];
+		outlen++;
+		*out++ = b64str[((in[0] << 4) + (--inlen ? in[1] >> 4 : 0)) & 0x3f];
+		outlen++;
+		*out++ = (inlen ? b64str[((in[1] << 2) + (--inlen ? in[2] >> 6 : 0)) & 0x3f] : '=');
+		outlen++;
+		*out++ = inlen ? b64str[in[2] & 0x3f] : '=';
+		outlen++;
+		if (inlen)
+			inlen--;
+		if (inlen)
+			in += 3;
+	}
+	*out = '\0';
+	outlen++;
+	return outlen;
+}
+#endif
 int create_pid_file(const char *pid_file)
 {
 	int fd = 0;
@@ -830,7 +854,7 @@ errout:
 	}
 	return -1;
 }
-
+#ifdef HAVE_OPENSSL
 int generate_cert_key(const char *key_path, const char *cert_path, const char *san, int days)
 {
 	int ret = -1;
@@ -947,7 +971,7 @@ out:
 
 	return ret;
 }
-
+#endif
 #if OPENSSL_API_COMPAT < 0x10100000
 #define THREAD_STACK_SIZE (16 * 1024)
 static pthread_mutex_t *lock_cs;

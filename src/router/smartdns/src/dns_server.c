@@ -1068,6 +1068,7 @@ static void _dns_server_conn_release(struct dns_server_conn_head *conn)
 		conn->fd = -1;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (conn->type == DNS_CONN_TYPE_TLS_CLIENT || conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
 		if (tls_client->ssl != NULL) {
@@ -1082,7 +1083,7 @@ static void _dns_server_conn_release(struct dns_server_conn_head *conn)
 			tls_server->ssl_ctx = NULL;
 		}
 	}
-
+#endif
 	list_del_init(&conn->list);
 	free(conn);
 }
@@ -5634,7 +5635,7 @@ errout:
 	}
 	return -1;
 }
-
+#ifdef HAVE_OPENSSL
 static ssize_t _ssl_read(struct dns_server_conn_tls_client *conn, void *buff, int num)
 {
 	ssize_t ret = 0;
@@ -5812,16 +5813,20 @@ static int _dns_server_socket_ssl_recv(struct dns_server_conn_tls_client *tls_cl
 
 	return ret;
 }
-
+#endif
 static int _dns_server_tcp_socket_send(struct dns_server_conn_tcp_client *tcp_client, void *data, int data_len)
 {
 	if (tcp_client->head.type == DNS_CONN_TYPE_TCP_CLIENT) {
 		return send(tcp_client->head.fd, data, data_len, MSG_NOSIGNAL);
-	} else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
+	} 
+#ifdef HAVE_OPENSSL
+	else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
 			   tcp_client->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		int ret = _dns_server_socket_ssl_send((struct dns_server_conn_tls_client *)tcp_client, data, data_len);
 		return ret;
-	} else {
+	} 
+#endif
+	else {
 		return -1;
 	}
 }
@@ -5830,10 +5835,14 @@ static int _dns_server_tcp_socket_recv(struct dns_server_conn_tcp_client *tcp_cl
 {
 	if (tcp_client->head.type == DNS_CONN_TYPE_TCP_CLIENT) {
 		return recv(tcp_client->head.fd, data, data_len, MSG_NOSIGNAL);
-	} else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
+	} 
+#ifdef HAVE_OPENSSL
+	else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
 			   tcp_client->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		return _dns_server_socket_ssl_recv((struct dns_server_conn_tls_client *)tcp_client, data, data_len);
-	} else {
+	} 
+#endif
+	else {
 		return -1;
 	}
 }
@@ -6014,7 +6023,7 @@ static int _dns_server_process_tcp(struct dns_server_conn_tcp_client *dnsserver,
 
 	return 0;
 }
-
+#ifdef HAVE_OPENSSL
 static int _dns_server_tls_accept(struct dns_server_conn_tls_server *tls_server, struct epoll_event *event,
 								  unsigned long now)
 {
@@ -6147,7 +6156,7 @@ errout:
 	_dns_server_client_close(&tls_client->head);
 	return ret;
 }
-
+#endif
 static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_event *event, unsigned long now)
 {
 	int ret = 0;
@@ -6167,6 +6176,7 @@ static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_e
 			tlog(TLOG_DEBUG, "process TCP packet from %s failed.",
 				 get_host_by_addr(name, sizeof(name), (struct sockaddr *)&tcpclient->addr));
 		}
+#ifdef HAVE_OPENSSL
 	} else if (conn->type == DNS_CONN_TYPE_TLS_SERVER) {
 		struct dns_server_conn_tls_server *tls_server = (struct dns_server_conn_tls_server *)conn;
 		ret = _dns_server_tls_accept(tls_server, event, now);
@@ -6178,6 +6188,7 @@ static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_e
 			tlog(TLOG_DEBUG, "process TLS packet from %s failed.",
 				 get_host_by_addr(name, sizeof(name), (struct sockaddr *)&tls_client->addr));
 		}
+#endif
 	} else {
 		tlog(TLOG_ERROR, "unsupported dns server type %d", conn->type);
 		_dns_server_client_close(conn);
@@ -6490,6 +6501,7 @@ static void _dns_server_close_socket_server(void)
 	list_for_each_entry_safe(conn, tmp, &server.conn_list, list)
 	{
 		switch (conn->type) {
+#ifdef HAVE_OPENSSL
 		case DNS_CONN_TYPE_HTTPS_SERVER:
 		case DNS_CONN_TYPE_TLS_SERVER: {
 			struct dns_server_conn_tls_server *tls_server = (struct dns_server_conn_tls_server *)conn;
@@ -6500,6 +6512,7 @@ static void _dns_server_close_socket_server(void)
 			_dns_server_client_close(conn);
 			break;
 		}
+#endif
 		case DNS_CONN_TYPE_UDP_SERVER:
 		case DNS_CONN_TYPE_TCP_SERVER:
 			_dns_server_client_close(conn);
@@ -6828,7 +6841,7 @@ errout:
 	}
 	return -1;
 }
-
+#ifdef HAVE_OPENSSL
 static int _dns_server_socket_tls_ssl_pass_callback(char *buf, int size, int rwflag, void *userdata)
 {
 	struct dns_bind_ip *bind_ip = userdata;
@@ -6932,7 +6945,7 @@ errout:
 	}
 	return -1;
 }
-
+#endif
 static int _dns_server_socket(void)
 {
 	int i = 0;
@@ -6950,6 +6963,7 @@ static int _dns_server_socket(void)
 				goto errout;
 			}
 			break;
+#ifdef HAVE_OPENSSL
 		case DNS_BIND_TYPE_HTTPS:
 			if (_dns_server_socket_tls(bind_ip, DNS_CONN_TYPE_HTTPS_SERVER) != 0) {
 				goto errout;
@@ -6960,6 +6974,7 @@ static int _dns_server_socket(void)
 				goto errout;
 			}
 			break;
+#endif
 		default:
 			break;
 		}
