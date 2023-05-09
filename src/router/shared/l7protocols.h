@@ -49,7 +49,7 @@ l7filters filters_list[] = {
 	{ "amazonvideo", NDPI_ONLY, 0, NULL },
 	{ "amongus", NDPI_ONLY, 0, NULL },
 	{ "amqp", NDPI_ONLY, 0, NULL },
-	{ "anonymous subscriber", NDPI_RISK, 45, NULL },
+	{ "anonymous subscriber", NDPI_RISK, 45, "icloud_private_relay" },
 	{ "anydesk", NDPI_ONLY, 0, NULL },
 	{ "apple", NDPI_ONLY, 0, NULL },
 	{ "appleicloud", NDPI_ONLY, 0, NULL },
@@ -97,7 +97,7 @@ l7filters filters_list[] = {
 	{ "ciscovpn", DPI, 0, NULL },
 	{ "citrix", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "clear-text credentials", NDPI_RISK, 36, NULL },
+	{ "clear-text credentials", NDPI_RISK, 36, "telnet,rsh,imap,smtp,irc,ftp_control,http,pop" },
 	{ "cloudflare", NDPI_ONLY, 0, NULL },
 	{ "cloudflarewarp", NDPI_ONLY, 0, NULL },
 #endif
@@ -115,7 +115,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "cpha", NDPI_ONLY, 0, NULL },
 	{ "crashlytics", NDPI_ONLY, 0, NULL },
-	{ "crawler/bot", NDPI_RISK, 44, NULL },
+	{ "crawler/bot", NDPI_RISK, 44, "http" },
 	{ "crossfire", NDPI_ONLY, 0, NULL },
 	{ "crynet", NDPI_ONLY, 0, NULL },
 	{ "csgo", NDPI_ONLY, 0, NULL },
@@ -131,7 +131,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "dazn", NDPI_ONLY, 0, NULL },
 	{ "deezer", NDPI_ONLY, 0, NULL },
-	{ "desktop/file sharing", NDPI_RISK, 30, NULL },
+	{ "desktop/file sharing", NDPI_RISK, 30, "vnc,rdp,teamviewer" },
 #endif
 	{ "dhcp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -146,7 +146,10 @@ l7filters filters_list[] = {
 #endif
 	{ "dns", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "dns message fragmented", NDPI_RISK, 38, "dns" },
+	{ "dns packet large", NDPI_RISK, 37, "dns" },
 	{ "dns susp dga domain", NDPI_RISK, 16, "dns" },
+	{ "dns traffic susp", NDPI_RISK, 23, "dns" },
 	{ "dnscrypt", NDPI_ONLY, 0, NULL },
 	{ "dofus", NDPI_ONLY, 0, NULL },
 	{ "doh_dot", NDPI_ONLY, 0, NULL },
@@ -165,7 +168,7 @@ l7filters filters_list[] = {
 	{ "egp", NDPI_ONLY, 0, NULL },
 	{ "elasticsearch", NDPI_ONLY, 0, NULL },
 	{ "ethernetip", NDPI_ONLY, 0, NULL },
-	{ "error code", NDPI_RISK, 43, NULL },
+	{ "error code", NDPI_RISK, 43, "dns,snmp,http" },
 #endif
 	{ "exe", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -183,7 +186,6 @@ l7filters filters_list[] = {
 	{ "flash", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "forticlient", NDPI_ONLY, 0, NULL },
-	{ "fragmented dns message", NDPI_RISK, 38, NULL },
 #endif
 	{ "freegate_dns", L7_ONLY, 0, NULL },
 	{ "freegate_http", L7_ONLY, 0, NULL },
@@ -295,7 +297,7 @@ l7filters filters_list[] = {
 	{ "icq_login", L7_ONLY, 0, NULL },
 	{ "ident", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "idn domain name", NDPI_RISK, 42, NULL },
+	{ "idn domain name", NDPI_RISK, 42, "dns,http,quic,fastcgi,tls,smtp" },
 	{ "iec60870", NDPI_ONLY, 0, NULL },
 	{ "iflix", NDPI_ONLY, 0, NULL },
 	{ "igmp", NDPI_ONLY, 0, NULL },
@@ -332,7 +334,6 @@ l7filters filters_list[] = {
 #endif
 	{ "kugoo", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "large dns packet", NDPI_RISK, 37, NULL },
 	{ "lastfm", NDPI_ONLY, 0, NULL },
 	{ "ldap", NDPI_ONLY, 0, NULL },
 	{ "likee", NDPI_ONLY, 0, NULL },
@@ -351,8 +352,8 @@ l7filters filters_list[] = {
 	{ "lpd", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "malformed packet", NDPI_RISK, 17, "icmp,icmpv6,munin,tivoconnect,collectd,ipsec,tls,natpmp,fastcgi,dns,tftp,http" },
-	{ "malicious ja3 fingerp.", NDPI_RISK, 28, NULL },
-	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, NULL },
+	{ "malicious ja3 fingerp.", NDPI_RISK, 28, "tls" },
+	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, "tls" },
 	{ "maplestory", NDPI_ONLY, 0, NULL },
 	{ "mdns", NDPI_ONLY, 0, NULL },
 	{ "megaco", NDPI_ONLY, 0, NULL },
@@ -363,8 +364,8 @@ l7filters filters_list[] = {
 	{ "microsoft", NDPI_ONLY, 0, NULL },
 	{ "microsoft365", NDPI_ONLY, 0, NULL },
 	{ "mining", NDPI_ONLY, 0, NULL },
-	{ "minor issues", NDPI_RISK, 49, NULL },
-	{ "missing sni tls extn", NDPI_RISK, 24, NULL },
+	{ "minor issues", NDPI_RISK, 49, "dns" },
+	{ "missing sni tls extn", NDPI_RISK, 24, "tls" },
 	{ "modbus", NDPI_ONLY, 0, NULL },
 #endif
 	{ "mohaa", L7_ONLY, 0, NULL },
@@ -435,7 +436,7 @@ l7filters filters_list[] = {
 	{ "pcanywhere", DPI, 0, NULL },
 	{ "pdf", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "periodic flow", NDPI_RISK, 48, NULL },
+//      { "periodic flow", NDPI_RISK, 48, NULL }, /* unused */
 #endif
 	{ "perl", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -450,7 +451,7 @@ l7filters filters_list[] = {
 	{ "pop3", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "pops", NDPI_ONLY, 0, NULL },
-	{ "possible exploit", NDPI_RISK, 40, NULL },
+	{ "possible exploit", NDPI_RISK, 40, "tls,fastcgi,http,quic" },
 	{ "postgresql", NDPI_ONLY, 0, NULL },
 #endif
 	{ "postscript", L7_ONLY, 0, NULL },
@@ -505,8 +506,8 @@ l7filters filters_list[] = {
 	{ "replaytv-ivs", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "riotgames", NDPI_ONLY, 0, NULL },
-	{ "risky asn", NDPI_RISK, 26, NULL },
-	{ "risky domain name", NDPI_RISK, 27, NULL },
+//      { "risky asn", NDPI_RISK, 26, NULL },
+	{ "risky domain name", NDPI_RISK, 27, "dns" },
 #endif
 	{ "rlogin", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -596,8 +597,7 @@ l7filters filters_list[] = {
 	{ "subspace", L7_ONLY, 0, NULL },
 	{ "subversion", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "susp dns traffic", NDPI_RISK, 23, NULL },
-	{ "susp entropy", NDPI_RISK, 35, NULL },
+	{ "susp entropy", NDPI_RISK, 35, "icmp" },
 	{ "syncthing", NDPI_ONLY, 0, NULL },
 	{ "syslog", NDPI_ONLY, 0, NULL },
 	{ "tailscale", NDPI_ONLY, 0, NULL },
@@ -605,7 +605,7 @@ l7filters filters_list[] = {
 	{ "tar", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "targusdataspeed", NDPI_ONLY, 0, NULL },
-	{ "tcp connection issues", NDPI_RISK, 50, NULL },
+	{ "tcp connection issues", NDPI_RISK, 50, "all" },
 #endif
 	{ "teamfortress2", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -625,7 +625,7 @@ l7filters filters_list[] = {
 #endif
 	{ "tesla", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "text with non-printable chars", NDPI_RISK, 39, NULL },
+	{ "text with non-printable chars", NDPI_RISK, 39, "tls,fastcgi,quic,http,dns" },
 #endif
 	{ "tftp", DPI, 0, NULL },
 	{ "thecircle", L7_ONLY, 0, NULL },
@@ -673,9 +673,9 @@ l7filters filters_list[] = {
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
 	{ "ultrasurf", NDPI_ONLY, 0, NULL },
-	{ "uncommon tls alpn", NDPI_RISK, 31, NULL },
-	{ "unidirectional traffic", NDPI_RISK, 46, NULL },
-	{ "unsafe protocol", NDPI_RISK, 22, NULL },
+	{ "uncommon tls alpn", NDPI_RISK, 31, "tls" },
+	{ "unidirectional traffic", NDPI_RISK, 46, "all" },
+	{ "unsafe protocol", NDPI_RISK, 22, "all" },
 #endif
 	{ "unset", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
