@@ -1731,6 +1731,18 @@ int get_risk_by_name(char *name)
 	}
     return 0;
 }
+
+char *get_dep_by_name(char *name)
+{
+	l7filters *filters = filters_list;
+	while (filters->name)
+	{
+	    if (!strcmp(filters->name, name))
+		return filters->matchdep;
+	filters++;
+	}
+    return 0;
+}
 char *get_filter_services(void)
 {
 
@@ -1741,10 +1753,10 @@ char *get_filter_services(void)
 
 	while (filters->name)	// add l7 and p2p filters
 	{
-		if (filters->protocol == NDPI_RISK) {
+/*		if (filters->protocol == NDPI_RISK) {
 		    filters++;
 		    continue;
-		}
+		}*/
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, strlen(proto[filters->protocol]), proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
