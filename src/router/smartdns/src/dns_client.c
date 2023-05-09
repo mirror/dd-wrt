@@ -279,6 +279,8 @@ static int _dns_client_send_udp(struct dns_server_info *server_info, void *packe
 static void _dns_client_clear_wakeup_event(void);
 static void _dns_client_do_wakeup_event(void);
 static int _dns_client_setup_ecs(char *ip, int subnet, struct dns_client_ecs *ecs_ipv4,
+								 struct dns_client_ecs *ecs_ipv6);
+
 #ifdef HAVE_OPENSSL
 static ssize_t _ssl_read(struct dns_server_info *server, void *buff, int num)
 {
