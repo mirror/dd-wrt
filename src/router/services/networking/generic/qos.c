@@ -932,10 +932,11 @@ static int svqos_iptables(void)
 		if (strstr(type, "risk")) {
 			insmod("xt_ndpi");
 			int risk = get_risk_by_name(name);
+			char *dep = get_dep_by_name(name);
 			char lvl[32];
 			sprintf(lvl, "%d", risk);
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(level));
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 #endif
 
