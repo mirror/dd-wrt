@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2022Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2022 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #ifndef _NFTSET_H
 #define _NFTSET_H
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -29,7 +29,7 @@ int nftset_add(const char *familyname, const char *tablename, const char *setnam
 int nftset_del(const char *familyname, const char *tablename, const char *setname, const unsigned char addr[],
 			   int addr_len);
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 }
 #endif
 

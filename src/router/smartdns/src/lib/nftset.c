@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2022 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "../tlog.h"
 #include <errno.h>
 #include <linux/netfilter.h>
-#include <linux/netfilter/nf_tables.h>
 #include <linux/netfilter/nfnetlink.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -36,6 +35,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef NFNL_SUBSYS_NFTABLES
+#include <linux/netfilter/nf_tables.h>
 
 struct nlmsgreq {
 	struct nlmsghdr h;
@@ -45,6 +46,27 @@ struct nlmsgreq {
 enum { PAYLOAD_MAX = 2048 };
 
 static int nftset_fd;
+
+static int _nftset_get_nffamily_from_str(const char *family)
+{
+	if (strncmp(family, "inet", sizeof("inet")) == 0) {
+		return NFPROTO_INET;
+	} else if (strncmp(family, "ip", sizeof("ip")) == 0) {
+		return NFPROTO_IPV4;
+	} else if (strncmp(family, "ip6", sizeof("ip6")) == 0) {
+		return NFPROTO_IPV6;
+	} else if (strncmp(family, "arp", sizeof("arp")) == 0) {
+		return NFPROTO_ARP;
+	} else if (strncmp(family, "netdev", sizeof("netdev")) == 0) {
+		return NFPROTO_NETDEV;
+	} else if (strncmp(family, "bridge", sizeof("bridge")) == 0) {
+		return NFPROTO_BRIDGE;
+	} else if (strncmp(family, "decnet", sizeof("decnet")) == 0) {
+		return NFPROTO_DECNET;
+	} else {
+		return NFPROTO_UNSPEC;
+	}
+}
 
 static struct rtattr *_nftset_nlmsg_tail(struct nlmsghdr *n)
 {
@@ -67,7 +89,10 @@ static int _nftset_addattr(struct nlmsghdr *n, int maxlen, __u16 type, const voi
 
 	void *rta_data = RTA_DATA(attr);
 
-	memcpy(rta_data, data, alen);
+	if ((data != NULL) && (alen > 0)) {
+		memcpy(rta_data, data, alen);
+	}
+	memset((uint8_t *)rta_data + alen, 0, RTA_ALIGN(len) - len);
 
 	n->nlmsg_len = newlen;
 
@@ -174,20 +199,28 @@ static int _nftset_socket_init(void)
 	return 0;
 }
 
-static int _nftset_socket_send(void *msg, int msg_len)
+static int _nftset_socket_request(void *msg, int msg_len, void *ret_msg, int ret_msg_len)
 {
-	char recvbuff[1024];
 	int ret = -1;
 	struct pollfd pfds;
 	int do_recv = 0;
-	int last_errno = 0;
+	int len = 0;
 
 	if (_nftset_socket_init() != 0) {
 		return -1;
 	}
 
+	/* clear pending error message*/
 	for (;;) {
-		int len = send(nftset_fd, msg, msg_len, 0);
+		uint8_t buff[1024];
+		ret = recv(nftset_fd, buff, sizeof(buff), MSG_DONTWAIT);
+		if (ret < 0) {
+			break;
+		}
+	}
+
+	for (;;) {
+		len = send(nftset_fd, msg, msg_len, 0);
 		if (len == msg_len) {
 			break;
 		}
@@ -203,7 +236,7 @@ static int _nftset_socket_send(void *msg, int msg_len)
 		return -1;
 	}
 
-	if (dns_conf_nftset_debug_enable == 0) {
+	if (ret_msg == NULL || ret_msg_len <= 0) {
 		return 0;
 	}
 
@@ -219,37 +252,116 @@ static int _nftset_socket_send(void *msg, int msg_len)
 		return -1;
 	}
 
-	memset(recvbuff, 0, sizeof(recvbuff));
+	memset(ret_msg, 0, ret_msg_len);
+	len = 0;
 	for (;;) {
-		ret = recv(nftset_fd, recvbuff, 1024, 0);
+		ret = recv(nftset_fd, ret_msg + len, ret_msg_len - len, 0);
 		if (ret < 0) {
 			if (errno == EAGAIN && do_recv == 1) {
 				break;
 			}
 
-			if (errno == EAGAIN && last_errno != 0) {
-				errno = last_errno;
-			}
 			return -1;
 		}
 
 		do_recv = 1;
+		len += ret;
 
-		struct nlmsghdr *nlh = (struct nlmsghdr *)recvbuff;
+		struct nlmsghdr *nlh = (struct nlmsghdr *)ret_msg;
 		if (nlh->nlmsg_type == NLMSG_ERROR) {
 			struct nlmsgerr *err = (struct nlmsgerr *)NLMSG_DATA(nlh);
 			if (err->error != 0) {
 				errno = -err->error;
-				last_errno = errno;
 				return -1;
 			}
+
+			continue;
+		}
+
+		if (nlh->nlmsg_type & (NFNL_SUBSYS_NFTABLES << 8)) {
+			if (nlh->nlmsg_type & NLMSG_DONE) {
+				break;
+			}
+		}
+
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	return 0;
+}
+
+static int _nftset_socket_send(void *msg, int msg_len)
+{
+	char recvbuff[1024];
+
+	if (dns_conf_nftset_debug_enable == 0) {
+		return _nftset_socket_request(msg, msg_len, NULL, 0);
+	}
+
+	return _nftset_socket_request(msg, msg_len, recvbuff, sizeof(recvbuff));
+}
+
+static int _nftset_get_nftset(int nffamily, const char *table_name, const char *setname, void *buf, void **nextbuf)
+{
+	struct nlmsgreq *req = (struct nlmsgreq *)buf;
+	memset(buf, 0, sizeof(struct nlmsgreq));
+
+	req->h.nlmsg_len = NLMSG_LENGTH(sizeof(struct nfgenmsg));
+	req->h.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+	req->h.nlmsg_type = NFNL_SUBSYS_NFTABLES << 8 | NFT_MSG_GETSET;
+	req->h.nlmsg_seq = time(NULL);
+
+	req->m.nfgen_family = nffamily;
+	req->m.res_id = NFNL_SUBSYS_NFTABLES;
+	req->m.version = 0;
+
+	struct nlmsghdr *n = &req->h;
+
+	_nftset_addattr_string(n, PAYLOAD_MAX, NFTA_SET_ELEM_LIST_SET, setname);
+	_nftset_addattr_string(n, PAYLOAD_MAX, NFTA_SET_ELEM_LIST_TABLE, table_name);
+
+	if (nextbuf) {
+		*nextbuf = (uint8_t *)buf + req->h.nlmsg_len;
+	}
+
+	return 0;
+}
+
+static int _nftset_get_flags(int nffamily, const char *tablename, const char *setname, uint32_t *flags)
+{
+	uint8_t buf[PAYLOAD_MAX];
+	uint8_t result[PAYLOAD_MAX];
+	void *next = buf;
+	int buffer_len = 0;
+
+	if (flags == NULL) {
+		return -1;
+	}
+
+	_nftset_get_nftset(nffamily, tablename, setname, next, &next);
+	buffer_len = (uint8_t *)next - buf;
+	int ret = _nftset_socket_request(buf, buffer_len, result, sizeof(result));
+	if (ret < 0) {
+		return -1;
+	}
+
+	struct nlmsghdr *nlh = (struct nlmsghdr *)result;
+	struct nfgenmsg *nfmsg = (struct nfgenmsg *)NLMSG_DATA(nlh);
+	struct nfattr *nfa = (struct nfattr *)NFM_NFA(nfmsg);
+	*flags = 0;
+	for (; NFA_OK(nfa, nlh->nlmsg_len); nfa = NFA_NEXT(nfa, nlh->nlmsg_len)) {
+		if (nfa->nfa_type == NFTA_SET_FLAGS) {
+			*flags = ntohl(*(uint32_t *)NFA_DATA(nfa));
+			break;
 		}
 	}
 
 	return 0;
 }
 
-static int _nftset_del_element(const char *table_name, const char *setname, const void *data, int data_len, void *buf,
+static int _nftset_del_element(int nffamily, const char *table_name, const char *setname, const void *data,
+							   int data_len, const void *data_interval, int data_interval_len, void *buf,
 							   void **nextbuf)
 {
 	struct nlmsgreq *req = (struct nlmsgreq *)buf;
@@ -264,7 +376,7 @@ static int _nftset_del_element(const char *table_name, const char *setname, cons
 		req->h.nlmsg_flags |= NLM_F_ACK;
 	}
 
-	req->m.nfgen_family = NFPROTO_INET;
+	req->m.nfgen_family = nffamily;
 
 	struct nlmsghdr *n = &req->h;
 
@@ -277,6 +389,18 @@ static int _nftset_del_element(const char *table_name, const char *setname, cons
 	_nftset_addattr(n, PAYLOAD_MAX, NFTA_DATA_VALUE, data, data_len);
 	_nftset_addattr_nest_end(n, nest_elem_key);
 	_nftset_addattr_nest_end(n, nest_elem);
+
+	/* interval attribute */
+	if (data_interval && data_interval_len > 0) {
+		struct rtattr *nest_interval_end = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_LIST_ELEM);
+		_nftset_addattr_uint32(n, PAYLOAD_MAX, NFTA_SET_ELEM_FLAGS, htonl(NFT_SET_ELEM_INTERVAL_END));
+		struct rtattr *nest_elem_interval_key = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_SET_ELEM_KEY);
+
+		_nftset_addattr(n, PAYLOAD_MAX, NFTA_DATA_VALUE, data_interval, data_interval_len);
+		_nftset_addattr_nest_end(n, nest_elem_interval_key);
+		_nftset_addattr_nest_end(n, nest_interval_end);
+	}
+
 	_nftset_addattr_nest_end(n, nest_list);
 
 	if (nextbuf) {
@@ -286,8 +410,9 @@ static int _nftset_del_element(const char *table_name, const char *setname, cons
 	return 0;
 }
 
-static int _nftset_add_element(const char *table_name, const char *setname, const void *data, int data_len,
-							   unsigned long timeout, void *buf, void **nextbuf)
+static int _nftset_add_element(int nffamily, const char *table_name, const char *setname, const void *data,
+							   int data_len, const void *data_interval, int data_interval_len, unsigned long timeout,
+							   void *buf, void **nextbuf)
 {
 	struct nlmsgreq *req = (struct nlmsgreq *)buf;
 	memset(buf, 0, sizeof(struct nlmsgreq));
@@ -301,25 +426,35 @@ static int _nftset_add_element(const char *table_name, const char *setname, cons
 		req->h.nlmsg_flags |= NLM_F_ACK;
 	}
 
-	req->m.nfgen_family = NFPROTO_INET;
+	req->m.nfgen_family = nffamily;
 
 	struct nlmsghdr *n = &req->h;
 
 	_nftset_addattr_string(n, PAYLOAD_MAX, NFTA_SET_ELEM_LIST_TABLE, table_name);
 	_nftset_addattr_string(n, PAYLOAD_MAX, NFTA_SET_ELEM_LIST_SET, setname);
 	struct rtattr *nest_list = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_SET_ELEM_LIST_ELEMENTS);
-	struct rtattr *nest_elem = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED);
 
+	struct rtattr *nest_elem = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_LIST_ELEM);
 	struct rtattr *nest_elem_key = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_SET_ELEM_KEY);
 	_nftset_addattr(n, PAYLOAD_MAX, NFTA_DATA_VALUE, data, data_len);
 	_nftset_addattr_nest_end(n, nest_elem_key);
-
 	if (timeout > 0) {
 		uint64_t timeout_value = htobe64(timeout * 1000);
 		_nftset_addattr(n, PAYLOAD_MAX, NFTA_SET_ELEM_TIMEOUT, &timeout_value, sizeof(timeout_value));
 	}
-
 	_nftset_addattr_nest_end(n, nest_elem);
+
+	/* interval attribute */
+	if (data_interval && data_interval_len > 0) {
+		struct rtattr *nest_interval_end = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_LIST_ELEM);
+		_nftset_addattr_uint32(n, PAYLOAD_MAX, NFTA_SET_ELEM_FLAGS, htonl(NFT_SET_ELEM_INTERVAL_END));
+		struct rtattr *nest_elem_interval_key = _nftset_addattr_nest(n, PAYLOAD_MAX, NLA_F_NESTED | NFTA_SET_ELEM_KEY);
+
+		_nftset_addattr(n, PAYLOAD_MAX, NFTA_DATA_VALUE, data_interval, data_interval_len);
+		_nftset_addattr_nest_end(n, nest_elem_interval_key);
+		_nftset_addattr_nest_end(n, nest_interval_end);
+	}
+
 	_nftset_addattr_nest_end(n, nest_list);
 
 	if (nextbuf) {
@@ -329,19 +464,79 @@ static int _nftset_add_element(const char *table_name, const char *setname, cons
 	return 0;
 }
 
-int nftset_del(const char *familyname, const char *tablename, const char *setname, const unsigned char addr[],
-			   int addr_len)
+static int _nftset_process_setflags(uint32_t flags, const unsigned char addr[], int addr_len, unsigned long *timeout,
+									uint8_t **interval_addr, int *interval_addr_len)
+{
+	uint8_t *addr_end = *interval_addr;
+
+	if ((flags & NFT_SET_TIMEOUT) == 0 && timeout != NULL) {
+		*timeout = 0;
+	}
+
+	if ((flags & NFT_SET_INTERVAL) && addr_end != NULL) {
+		if (addr_len == 4) {
+			addr_end[0] = addr[0];
+			addr_end[1] = addr[1];
+			addr_end[2] = addr[2];
+			addr_end[3] = addr[3] + 1;
+			if (addr_end[3] == 0) {
+				return -1;
+			}
+
+			*interval_addr_len = 4;
+		} else if (addr_len == 16) {
+			memcpy(addr_end, addr, 16);
+			addr_end[15] = addr[15] + 1;
+			if (addr_end[15] == 0) {
+				return -1;
+			}
+			*interval_addr_len = 16;
+		}
+	} else {
+		*interval_addr = NULL;
+		*interval_addr_len = 0;
+	}
+
+	return 0;
+}
+
+static int _nftset_del(int nffamily, const char *tablename, const char *setname, const unsigned char addr[],
+					   int addr_len, const unsigned char addr_end[], int addr_end_len)
 {
 	uint8_t buf[PAYLOAD_MAX];
 	void *next = buf;
 	int buffer_len = 0;
 
 	_nftset_start_batch(next, &next);
-	_nftset_del_element(tablename, setname, addr, addr_len, next, &next);
+	_nftset_del_element(nffamily, tablename, setname, addr, addr_len, addr_end, addr_end_len, next, &next);
 	_nftset_end_batch(next, &next);
 	buffer_len = (uint8_t *)next - buf;
+	return _nftset_socket_send(buf, buffer_len);
+}
 
-	int ret = _nftset_socket_send(buf, buffer_len);
+int nftset_del(const char *familyname, const char *tablename, const char *setname, const unsigned char addr[],
+			   int addr_len)
+{
+	int nffamily = _nftset_get_nffamily_from_str(familyname);
+
+	uint8_t addr_end_buff[16] = {0};
+	uint8_t *addr_end = addr_end_buff;
+	uint32_t flags = 0;
+	int addr_end_len = 0;
+	int ret = -1;
+
+	ret = _nftset_get_flags(nffamily, tablename, setname, &flags);
+	if (ret == 0) {
+		ret = _nftset_process_setflags(flags, addr, addr_len, 0, &addr_end, &addr_end_len);
+		if (ret != 0) {
+			return -1;
+		}
+	} else {
+		addr_end = NULL;
+		addr_end_len = 0;
+	}
+
+	ret = _nftset_del(nffamily, tablename, setname, addr, addr_len, addr_end, addr_end_len);
 	if (ret != 0 && errno != ENOENT) {
 		tlog(TLOG_ERROR, "nftset delete failed, family:%s, table:%s, set:%s, error:%s", familyname, tablename, setname,
 			 strerror(errno));
@@ -354,17 +549,40 @@ int nftset_add(const char *familyname, const char *tablename, const char *setnam
 			   int addr_len, unsigned long timeout)
 {
 	uint8_t buf[PAYLOAD_MAX];
+	uint8_t addr_end_buff[16] = {0};
+	uint8_t *addr_end = addr_end_buff;
+	uint32_t flags = 0;
+	int addr_end_len = 0;
 	void *next = buf;
 	int buffer_len = 0;
 	int ret = -1;
+	int nffamily = _nftset_get_nffamily_from_str(familyname);
 
 	if (dns_conf_nftset_timeout_enable == 0) {
 		timeout = 0;
 	}
 
-	nftset_del(familyname, tablename, setname, addr, addr_len);
+	ret = _nftset_get_flags(nffamily, tablename, setname, &flags);
+	if (ret == 0) {
+		ret = _nftset_process_setflags(flags, addr, addr_len, &timeout, &addr_end, &addr_end_len);
+		if (ret != 0) {
+			if (dns_conf_nftset_debug_enable) {
+				tlog(TLOG_ERROR, "nftset add failed, family:%s, table:%s, set:%s, error:%s", familyname, tablename,
+					 setname, "ip is invalid");
+			}
+			return -1;
+		}
+	} else {
+		addr_end = NULL;
+		addr_end_len = 0;
+	}
+
+	if (timeout > 0) {
+		_nftset_del(nffamily, tablename, setname, addr, addr_len, addr_end, addr_end_len);
+	}
+
 	_nftset_start_batch(next, &next);
-	_nftset_add_element(tablename, setname, addr, addr_len, timeout, next, &next);
+	_nftset_add_element(nffamily, tablename, setname, addr, addr_len, addr_end, addr_end_len, timeout, next, &next);
 	_nftset_end_batch(next, &next);
 	buffer_len = (uint8_t *)next - buf;
 
@@ -376,3 +594,19 @@ int nftset_add(const char *familyname, const char *tablename, const char *setnam
 
 	return ret;
 }
+
+#else
+
+int nftset_add(const char *familyname, const char *tablename, const char *setname, const unsigned char addr[],
+			   int addr_len, unsigned long timeout)
+{
+	return 0;
+}
+
+int nftset_del(const char *familyname, const char *tablename, const char *setname, const unsigned char addr[],
+			   int addr_len)
+{
+	return 0;
+}
+
+#endif

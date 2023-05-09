@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 #include <unistd.h>
 
-#define MAX_LINE_LEN 1024
+#define MAX_LINE_LEN 8192
 #define MAX_KEY_LEN 64
 #define CONF_INT_MAX (~(1 << 31))
 #define CONF_INT_MIN (1 << 31)
@@ -49,6 +49,13 @@ struct config_item_int {
 	int max;
 };
 
+struct config_item_int_base {
+	int *data;
+	int min;
+	int max;
+	int base;
+};
+
 struct config_item_string {
 	char *data;
 	size_t size;
@@ -62,6 +69,12 @@ struct config_item_size {
 	size_t *data;
 	size_t min;
 	size_t max;
+};
+
+struct config_item_ssize {
+	ssize_t *data;
+	ssize_t min;
+	ssize_t max;
 };
 
 struct config_enum_list {
@@ -81,6 +94,13 @@ struct config_enum {
 			.data = value, .min = min_value, .max = max_value                                                          \
 		}                                                                                                              \
 	}
+#define CONF_INT_BASE(key, value, min_value, max_value, base_value)                                                    \
+	{                                                                                                                  \
+		key, conf_int_base, &(struct config_item_int_base)                                                             \
+		{                                                                                                              \
+			.data = value, .min = min_value, .max = max_value, .base = base_value                                      \
+		}                                                                                                              \
+	}
 #define CONF_STRING(key, value, len_value)                                                                             \
 	{                                                                                                                  \
 		key, conf_string, &(struct config_item_string)                                                                 \
@@ -98,6 +118,13 @@ struct config_enum {
 #define CONF_SIZE(key, value, min_value, max_value)                                                                    \
 	{                                                                                                                  \
 		key, conf_size, &(struct config_item_size)                                                                     \
+		{                                                                                                              \
+			.data = value, .min = min_value, .max = max_value                                                          \
+		}                                                                                                              \
+	}
+#define CONF_SSIZE(key, value, min_value, max_value)                                                                    \
+	{                                                                                                                  \
+		key, conf_ssize, &(struct config_item_ssize)                                                                     \
 		{                                                                                                              \
 			.data = value, .min = min_value, .max = max_value                                                          \
 		}                                                                                                              \
@@ -131,11 +158,15 @@ extern int conf_custom(const char *item, void *data, int argc, char *argv[]);
 
 extern int conf_int(const char *item, void *data, int argc, char *argv[]);
 
+extern int conf_int_base(const char *item, void *data, int argc, char *argv[]);
+
 extern int conf_string(const char *item, void *data, int argc, char *argv[]);
 
 extern int conf_yesno(const char *item, void *data, int argc, char *argv[]);
 
 extern int conf_size(const char *item, void *data, int argc, char *argv[]);
+
+extern int conf_ssize(const char *item, void *data, int argc, char *argv[]);
 
 extern int conf_enum(const char *item, void *data, int argc, char *argv[]);
 
@@ -143,7 +174,7 @@ extern int conf_enum(const char *item, void *data, int argc, char *argv[]);
  * Example:
  *  int num = 0;
  *
- *  struct config_item itmes [] = {
+ *  struct config_item items [] = {
  *       CONF_INT("CONF_NUM", &num, -1, 10),
  *       CONF_END();
  *  }
