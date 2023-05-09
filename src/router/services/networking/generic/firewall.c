@@ -1695,7 +1695,10 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			} else if (!strcmp(protocol, "risk")) {
 				insmod("xt_ndpi");
 				int risk = get_risk_by_name(realname);
-				save2file_A("advgrp_%d -m ndpi --risk %d -j %s", seq, risk, log_drop);
+				char *dep = get_dep_by_name(realname);
+				if (risk && dep) {
+					save2file_A("advgrp_%d -m ndpi --proto %s --risk %d -j %s", seq, dep, risk, log_drop);
+				}
 			}
 #endif
 			else if (!strcmp(protocol, "p2p")) {
