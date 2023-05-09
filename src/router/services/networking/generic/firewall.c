@@ -1611,6 +1611,9 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	/*
 	 * filter_port_grp5=My ICQ<&nbsp;>Game boy 
 	 */
+#ifdef HAVE_OPENDPI
+	char *dpi_collect = NULL;
+#endif
 	wordlist = nvram_nget("filter_port_grp%d", seq);
 	split(word, wordlist, next, delim) {
 
@@ -1681,10 +1684,15 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			}
 #ifdef HAVE_OPENDPI
 			else if (!strcmp(protocol, "dpi")) {
-				insmod("xt_ndpi");
-				save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, realname, log_drop);
-			}
-			else if (!strcmp(protocol, "risk")) {
+				int first = dpi_collect ? 0 : 1;
+				dpi_collect = realloc(dpi_collect, dpi_collect ? strlen(dpi_collect) + strlen(realname) + 2 : strlen(realname) + 1);
+				if (first)
+					strcpy(dpi_collect, realname);
+				else {
+					strcat(dpi_collect, ",");
+					strcat(dpi_collect, realname);
+				}
+			} else if (!strcmp(protocol, "risk")) {
 				insmod("xt_ndpi");
 				int risk = get_risk_by_name(realname);
 				save2file_A("advgrp_%d -m ndpi --risk %d -j %s", seq, risk, log_drop);
@@ -1745,6 +1753,12 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 
 		}
 	}
+#ifdef HAVE_OPENDPI
+	if (dpi_collect) {
+		insmod("xt_ndpi");
+		save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, dpi_collect, log_drop);
+	}
+#endif
 	/*
 	 * p2p catchall 
 	 */
@@ -3148,7 +3162,7 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
 	/* Enable stateful inspection */
 	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
-//	eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
+//      eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
 	/* Accept DHCPv6 traffic */
 	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
