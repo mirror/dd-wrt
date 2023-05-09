@@ -1686,9 +1686,9 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			else if (!strcmp(protocol, "dpi")) {
 				int first = dpi_collect ? 0 : 1;
 				dpi_collect = realloc(dpi_collect, dpi_collect ? strlen(dpi_collect) + strlen(realname) + 2 : strlen(realname) + 1);
-				if (first)
+				if (first) {
 					strcpy(dpi_collect, realname);
-				else {
+				} else {
 					strcat(dpi_collect, ",");
 					strcat(dpi_collect, realname);
 				}
@@ -1760,6 +1760,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	if (dpi_collect) {
 		insmod("xt_ndpi");
 		save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, dpi_collect, log_drop);
+		free(dpi_collect);
 	}
 #endif
 	/*
