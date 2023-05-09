@@ -282,7 +282,7 @@ l7filters filters_list[] = {
 	{ "http susp header", NDPI_RISK, 14, "http" },
 	{ "http susp user-agent", NDPI_RISK, 11, "http" },
 	{ "http susp url", NDPI_RISK, 13, "http" },
-	{ "http/tls/quic numveric hostname/sni", NDPI_RISK, 12, "http,tls,quic" },
+	{ "http/tls/quic numeric hostname/sni", NDPI_RISK, 12, "http,tls,quic" },
 	{ "hulu", NDPI_ONLY, 0, NULL },
 	{ "i3d", NDPI_ONLY, 0, NULL },
 	{ "iax", NDPI_ONLY, 0, NULL },
