@@ -881,6 +881,7 @@ typedef struct filters		// l7 and p2p filters
 extern void free_filters(filters * filter);
 
 extern filters *get_filters_list(void);
+int get_risk_by_name(char *name);
 
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
