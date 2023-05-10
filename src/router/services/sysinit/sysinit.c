@@ -64,6 +64,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>
+#include <utils.h>
 
 #include <glob.h>
 #include <revision.h>
@@ -3484,7 +3485,7 @@ void start_nvram(void)
 	nvram_unset("filter_services7");
 
 	int seq;
-	for (seq = 1; seq <= NR_RULES; seq++) {
+	for (seq = 1; seq <= 20; seq++) {
 		char enabled[32];
 		sprintf(enabled, "tod%d_enabled",seq);
 		nvram_unset(enabled);
