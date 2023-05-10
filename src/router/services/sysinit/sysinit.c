@@ -3483,6 +3483,13 @@ void start_nvram(void)
 	nvram_unset("filter_services6");
 	nvram_unset("filter_services7");
 
+	int seq;
+	for (seq = 1; seq <= NR_RULES; seq++) {
+		char enabled[32];
+		sprintf(enabled, "tod%d_enabled",seq);
+		nvram_unset(enabled);
+	}
+
 	nvram_unset("3gcontrol");
 	nvram_unset("3gdata");
 	nvram_unset("wan_3g_mode");
@@ -3892,6 +3899,8 @@ void start_nvram(void)
 		nvram_commit();
 		eval("reboot");
 	}
+
+
 	return;
 }
 
