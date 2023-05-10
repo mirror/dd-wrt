@@ -5159,7 +5159,7 @@ else
   if test "$ac_cv_lib_util_openpty" = yes; then
     $as_echo "#define HAVE_OPENPTY 1" >>confdefs.h
 
-    XTRALIBS_CTRL="-lutil"
+    XTRALIBS_CTRL="$XTRALIBS_CTRL -lutil"
   fi
 fi
 if test "$ac_cv_header_libintl_h" = yes; then
