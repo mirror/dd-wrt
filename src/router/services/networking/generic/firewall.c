@@ -3169,7 +3169,8 @@ static void run_firewall6(char *vifs)
 //      eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
 	/* Accept DHCPv6 traffic */
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
+//	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
 	/* Allow the localnet access us */
 	eval("ip6tables", "-A", "INPUT", "-i", nvram_safe_get("lan_ifname"), "-j", log_accept);
 	/* Allow Link-Local addresses */
