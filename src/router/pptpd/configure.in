@@ -213,7 +213,7 @@ if test "$ac_cv_lib_c_openpty" = yes; then
 else
   if test "$ac_cv_lib_util_openpty" = yes; then
     AC_DEFINE(HAVE_OPENPTY)
-    XTRALIBS_CTRL="-lutil"
+    XTRALIBS_CTRL="$XTRALIBS_CTRL -lutil"
   fi
 fi
 if test "$ac_cv_header_libintl_h" = yes; then
