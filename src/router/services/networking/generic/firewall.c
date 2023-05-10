@@ -2167,21 +2167,51 @@ int filtersync_main(int argc, char *argv[])
 	 */
 	now_hrmin = bt->tm_hour * 100 + bt->tm_min;
 	now_wday = bt->tm_wday;
-	for (seq = 1; seq <= NR_RULES; seq++) {
-		if (if_tod_intime(seq) > 0)
-			changed = 1;
-	}
 
+	for (seq = 1; seq <= NR_RULES; seq++) {
+		int state = if_tod_intime(seq);
+		char enabled[32];
+		sprintf(enabled, "tod%d_enabled",seq);
+		switch (state) {
+		case 2:	// is in time now
+			if (!nvram_match(enabled, "1")) {
+				changed = 1;
+			}
+			break;
+		case 0:	// is out of time
+			if (nvram_match(enabled, "1")) {
+				changed = 1;
+			}
+			break;
+		default:	// 1 means everyday. so no update is required
+			break;
+		}
+	}
 #ifdef HAVE_SFE
 	if (changed && nvram_match("sfe", "1")) {
 		stop_sfe();
 	}
 #endif
 	for (seq = 1; seq <= NR_RULES; seq++) {
-		if (if_tod_intime(seq) > 0)
-			update_filter(1, seq);
-		else
-			update_filter(0, seq);
+		int state = if_tod_intime(seq);
+		char enabled[32];
+		sprintf(enabled, "tod%d_enabled",seq);
+		switch (state) {
+		case 2:	// is in time now
+			if (!nvram_match(enabled, "1")) {
+				nvram_set(enabled, "1");
+				update_filter(1, seq);
+			}
+			break;
+		case 0:	// is out of time
+			if (nvram_match(enabled, "1")) {
+				nvram_unset(enabled);
+				update_filter(0, seq);
+			}
+			break;
+		default:	// 1 means everyday. so no update is required
+			break;
+		}
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
 #ifdef HAVE_SFE
@@ -3169,7 +3199,7 @@ static void run_firewall6(char *vifs)
 //      eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
 	/* Accept DHCPv6 traffic */
-//	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
+//      eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
 	/* Allow the localnet access us */
 	eval("ip6tables", "-A", "INPUT", "-i", nvram_safe_get("lan_ifname"), "-j", log_accept);
