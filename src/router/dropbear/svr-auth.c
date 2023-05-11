@@ -269,6 +269,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
 		dropbear_log(LOG_WARNING,
 				"Login attempt for nonexistent user");
+		add_blocklist("dropbear", svr_ses.remotehost);
 		ses.authstate.checkusername_failed = 1;
 		return DROPBEAR_FAILURE;
 	}
@@ -439,6 +440,8 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 		} else {
 			userstr = ses.authstate.pw_name;
 		}
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
 		add_blocklist("dropbear", svr_ses.remotehost);
 		add_blocklist("dropbear", svr_ses.remotehost);
 		add_blocklist("dropbear", svr_ses.remotehost);

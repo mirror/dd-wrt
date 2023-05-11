@@ -1,3 +1,4 @@
+
 /*
  * L7-filter Supported Protocols 
  */
@@ -9,12 +10,13 @@ typedef struct _l7filters {
 
 	char *name;
 	int protocol;		// 1=p2p, 0=l7, 2=opendpi
-
+	unsigned char level;	// risk code
+	char *matchdep;		// for risk only
 } l7filters;
 #define L7_ONLY 0
 #define PDPI_ONLY 1
 #define NDPI_ONLY 2
-#define WINDDOWS_SPY 3
+#define NDPI_RISK 3
 
 #ifdef HAVE_OPENDPI
 #define DPI 2			//open dpi based
@@ -26,695 +28,756 @@ typedef struct _l7filters {
 //Added ,  (in extra), dazhihui, .
 
 l7filters filters_list[] = {
-	{ "100bao", L7_ONLY },
+	{ "100bao", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "1kxun", NDPI_ONLY },
-	{ "accuweather", NDPI_ONLY },
-	{ "activision", NDPI_ONLY },
-	{ "ads_analytics_track", NDPI_ONLY },
-	{ "adult_content", NDPI_ONLY },
-	{ "afp", NDPI_ONLY },
+	{ "1kxun", NDPI_ONLY, 0, NULL },
+	{ "accuweather", NDPI_ONLY, 0, NULL },
+	{ "activision", NDPI_ONLY, 0, NULL },
+	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
+	{ "adult_content", NDPI_ONLY, 0, NULL },
+	{ "afp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "aim", L7_ONLY },
-	{ "aimwebcontent", L7_ONLY },
+	{ "aim", L7_ONLY, 0, NULL },
+	{ "aimwebcontent", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ajp", NDPI_ONLY },
-	{ "alibaba", NDPI_ONLY },
-	{ "alicloud", NDPI_ONLY },
-	{ "amazon", NDPI_ONLY },
-	{ "amazonalexa", NDPI_ONLY },
-	{ "amazonaws", NDPI_ONLY },
-	{ "amazonvideo", NDPI_ONLY },
-	{ "amongus", NDPI_ONLY },
-	{ "amqp", NDPI_ONLY },
-	{ "anydesk", NDPI_ONLY },
-	{ "apple", NDPI_ONLY },
-	{ "appleicloud", NDPI_ONLY },
-	{ "appleitunes", NDPI_ONLY },
-#endif
-#ifdef HAVE_OPENDPI
-	{ "applepush", NDPI_ONLY },
-	{ "applesiri", NDPI_ONLY },
-	{ "applestore", NDPI_ONLY },
-	{ "appletvplus", NDPI_ONLY },
-#endif
-	{ "ares", PDPI_ONLY },
-	{ "armagetron", DPI },
-	{ "audiogalaxy", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "avast", NDPI_ONLY },
-	{ "avastsecuredns", NDPI_ONLY },
-	{ "azure", NDPI_ONLY },
-	{ "bacnet", NDPI_ONLY },
-	{ "badoo", NDPI_ONLY },
-#endif
-	{ "battlefield1942", L7_ONLY },
-	{ "battlefield2", L7_ONLY },
-	{ "battlefield2142", L7_ONLY },
-	{ "bearshare", PDPI_ONLY },
-	{ "bgp", DPI },
-	{ "biff", L7_ONLY },
-	{ "bittorrent", PDPI },
-#ifdef HAVE_OPENDPI
-	{ "bjnp", NDPI_ONLY },
-	{ "bloomberg", NDPI_ONLY },
-	{ "cachefly", NDPI_ONLY },
-	{ "capwap", NDPI_ONLY },
-	{ "cassandra", NDPI_ONLY },
-	{ "checkmk", NDPI_ONLY },
-#endif
-	{ "chikka", L7_ONLY },
-	{ "cimd", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "ciscoskinny", NDPI_ONLY },
-#endif
-	{ "ciscovpn", DPI },
-	{ "citrix", DPI },
-#ifdef HAVE_OPENDPI
-	{ "cloudflare", NDPI_ONLY },
-	{ "cloudflarewarp", NDPI_ONLY },
-#endif
-	{ "clubbox", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "cnn", NDPI_ONLY },
-	{ "coap", NDPI_ONLY },
-#endif
-	{ "code_red", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "collectd", NDPI_ONLY },
-	{ "corba", NDPI_ONLY },
-#endif
-	{ "counterstrike-source", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "cpha", NDPI_ONLY },
-	{ "crashlytics", NDPI_ONLY },
-	{ "crossfire", NDPI_ONLY },
-	{ "crynet", NDPI_ONLY },
-	{ "csgo", NDPI_ONLY },
-#endif
-	{ "cvs", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "cybersec", NDPI_ONLY },
-	{ "datasaver", NDPI_ONLY },
-	{ "dailymotion", NDPI_ONLY },
-#endif
-	{ "dayofdefeat-source", L7_ONLY },
-	{ "dazhihui", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "dazn", NDPI_ONLY },
-	{ "deezer", NDPI_ONLY },
-#endif
-	{ "dhcp", DPI },
-#ifdef HAVE_OPENDPI
-	{ "dhcpv6", NDPI_ONLY },
-	{ "diameter", NDPI_ONLY },
-	{ "directv", NDPI_ONLY },
+	{ "ajp", NDPI_ONLY, 0, NULL },
+	{ "alibaba", NDPI_ONLY, 0, NULL },
+	{ "alicloud", NDPI_ONLY, 0, NULL },
+	{ "amazon", NDPI_ONLY, 0, NULL },
+	{ "amazonalexa", NDPI_ONLY, 0, NULL },
+	{ "amazonaws", NDPI_ONLY, 0, NULL },
+	{ "amazonvideo", NDPI_ONLY, 0, NULL },
+	{ "amongus", NDPI_ONLY, 0, NULL },
+	{ "amqp", NDPI_ONLY, 0, NULL },
+	{ "anonymous subscriber", NDPI_RISK, 45, "icloud_private_relay" },
+	{ "anydesk", NDPI_ONLY, 0, NULL },
+	{ "apple", NDPI_ONLY, 0, NULL },
+	{ "appleicloud", NDPI_ONLY, 0, NULL },
+	{ "appleitunes", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
-	{ "discord", NDPI_ONLY },
-	{ "disneyplus", NDPI_ONLY },
-	{ "dnp3", NDPI_ONLY },
+	{ "applepush", NDPI_ONLY, 0, NULL },
+	{ "applesiri", NDPI_ONLY, 0, NULL },
+	{ "applestore", NDPI_ONLY, 0, NULL },
+	{ "appletvplus", NDPI_ONLY, 0, NULL },
 #endif
-	{ "dns", DPI },
+	{ "ares", PDPI_ONLY, 0, NULL },
+	{ "armagetron", DPI, 0, NULL },
+	{ "audiogalaxy", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "dnscrypt", NDPI_ONLY },
-	{ "dofus", NDPI_ONLY },
-	{ "doh_dot", NDPI_ONLY },
+	{ "avast", NDPI_ONLY, 0, NULL },
+	{ "avastsecuredns", NDPI_ONLY, 0, NULL },
+	{ "azure", NDPI_ONLY, 0, NULL },
+	{ "bacnet", NDPI_ONLY, 0, NULL },
+	{ "badoo", NDPI_ONLY, 0, NULL },
 #endif
-	{ "doom3", L7_ONLY },
+	{ "battlefield1942", L7_ONLY, 0, NULL },
+	{ "battlefield2", L7_ONLY, 0, NULL },
+	{ "battlefield2142", L7_ONLY, 0, NULL },
+	{ "bearshare", PDPI_ONLY, 0, NULL },
+	{ "bgp", DPI, 0, NULL },
+	{ "biff", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "drda", NDPI_ONLY },
-	{ "dropbox", NDPI_ONLY },
-	{ "dtls", NDPI_ONLY },
-	{ "eaq", NDPI_ONLY },
-	{ "ebay", NDPI_ONLY },
-	{ "edgecast", NDPI_ONLY },
+	{ "binary app transfer", NDPI_RISK, 4, "http" },
 #endif
-	{ "edonkey", PDPI },
+	{ "bittorrent", PDPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "egp", NDPI_ONLY },
-	{ "elasticsearch", NDPI_ONLY },
-	{ "ethernetip", NDPI_ONLY },
+	{ "bjnp", NDPI_ONLY, 0, NULL },
+	{ "bloomberg", NDPI_ONLY, 0, NULL },
+	{ "cachefly", NDPI_ONLY, 0, NULL },
+	{ "capwap", NDPI_ONLY, 0, NULL },
+	{ "cassandra", NDPI_ONLY, 0, NULL },
+	{ "checkmk", NDPI_ONLY, 0, NULL },
 #endif
-	{ "exe", L7_ONLY },
+	{ "chikka", L7_ONLY, 0, NULL },
+	{ "cimd", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "facebook", NDPI_ONLY },
-	{ "facebookvoip", NDPI_ONLY },
+	{ "ciscoskinny", NDPI_ONLY, 0, NULL },
 #endif
+	{ "ciscovpn", DPI, 0, NULL },
+	{ "citrix", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "fastcgi", NDPI_ONLY },
+	{ "clear-text credentials", NDPI_RISK, 36, "telnet,rsh,imap,smtp,irc,ftp_control,http,pop" },
+	{ "cloudflare", NDPI_ONLY, 0, NULL },
+	{ "cloudflarewarp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "filetopia", DPI },
-	{ "finger", L7_ONLY },
+	{ "clubbox", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "fix", NDPI_ONLY },
+	{ "cnn", NDPI_ONLY, 0, NULL },
+	{ "coap", NDPI_ONLY, 0, NULL },
 #endif
-	{ "flash", L7_ONLY },
+	{ "code_red", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "forticlient", NDPI_ONLY },
+	{ "collectd", NDPI_ONLY, 0, NULL },
+	{ "corba", NDPI_ONLY, 0, NULL },
 #endif
-	{ "freegate_dns", L7_ONLY },
-	{ "freegate_http", L7_ONLY },
-	{ "freenet", L7_ONLY },
-	{ "ftp", DPI },
+	{ "counterstrike-source", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ftp_control", NDPI_ONLY },
-	{ "ftps", NDPI_ONLY },
-	{ "ftp_data", NDPI_ONLY },
-	{ "fuze", NDPI_ONLY },
-	{ "genshinimpact", NDPI_ONLY },
+	{ "cpha", NDPI_ONLY, 0, NULL },
+	{ "crashlytics", NDPI_ONLY, 0, NULL },
+	{ "crawler/bot", NDPI_RISK, 44, "http" },
+	{ "crossfire", NDPI_ONLY, 0, NULL },
+	{ "crynet", NDPI_ONLY, 0, NULL },
+	{ "csgo", NDPI_ONLY, 0, NULL },
 #endif
-	{ "gif", L7_ONLY },
+	{ "cvs", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "git", NDPI_ONLY },
-	{ "github", NDPI_ONLY },
-	{ "gitlab", NDPI_ONLY },
+	{ "cybersec", NDPI_ONLY, 0, NULL },
+	{ "datasaver", NDPI_ONLY, 0, NULL },
+	{ "dailymotion", NDPI_ONLY, 0, NULL },
 #endif
-	{ "gkrellm", L7_ONLY },
+	{ "dayofdefeat-source", L7_ONLY, 0, NULL },
+	{ "dazhihui", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "gmail", NDPI_ONLY },
+	{ "dazn", NDPI_ONLY, 0, NULL },
+	{ "deezer", NDPI_ONLY, 0, NULL },
+	{ "desktop/file sharing", NDPI_RISK, 30, "vnc,rdp,teamviewer" },
 #endif
-	{ "gnucleuslan", L7_ONLY },
-	{ "gnutella", PDPI },
-	{ "goboogy", L7_ONLY },
-	{ "gogobox", L7_ONLY },
+	{ "dhcp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "google", NDPI_ONLY },
-	{ "googleclassroom", NDPI_ONLY },
-	{ "googlecloud", NDPI_ONLY },
-	{ "googledocs", NDPI_ONLY },
-	{ "googledrive", NDPI_ONLY },
-	{ "googlehangoutduo", NDPI_ONLY },
-	{ "googlemaps", NDPI_ONLY },
-	{ "googleplus", NDPI_ONLY },
-	{ "googleservices", NDPI_ONLY },
-#endif
-	{ "gopher", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "goto", NDPI_ONLY },
-	{ "gre", NDPI_ONLY },
-#endif
-	{ "gtalk", L7_ONLY },
-	{ "gtalk1", L7_ONLY },
-	{ "gtalk2", L7_ONLY },
-	{ "gtalk_file", L7_ONLY },
-	{ "gtalk_file_1", L7_ONLY },
-	{ "gtalk_vista", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "gtp", NDPI_ONLY },
-	{ "gtp_c", NDPI_ONLY },
-	{ "gtp_prime", NDPI_ONLY },
-	{ "gtp_u", NDPI_ONLY },
-#endif
-	{ "guildwars", DPI },
-	{ "h323", DPI },
-#ifdef HAVE_OPENDPI
-	{ "halflife2", NDPI_ONLY },
-#endif
-	{ "halflife2-deathmatch", L7_ONLY },
-	{ "hamachi1", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "hbo", NDPI_ONLY },
-#endif
-	{ "hddtemp", L7_ONLY },
-	{ "hotline", L7_ONLY },
-#ifdef HAVE_OPENDPI
-	{ "heroes_of_the_storm", NDPI_ONLY },
+	{ "dhcpv6", NDPI_ONLY, 0, NULL },
+	{ "diameter", NDPI_ONLY, 0, NULL },
+	{ "directv", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
-	{ "hotspotshield", NDPI_ONLY },
-	{ "hp_virtgrp", NDPI_ONLY },
-	{ "hsrp", NDPI_ONLY },
+	{ "discord", NDPI_ONLY, 0, NULL },
+	{ "disneyplus", NDPI_ONLY, 0, NULL },
+	{ "dnp3", NDPI_ONLY, 0, NULL },
+#endif
+	{ "dns", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "dns message fragmented", NDPI_RISK, 38, "dns" },
+	{ "dns packet large", NDPI_RISK, 37, "dns" },
+	{ "dns susp dga domain", NDPI_RISK, 16, "dns" },
+	{ "dns traffic susp", NDPI_RISK, 23, "dns" },
+	{ "dnscrypt", NDPI_ONLY, 0, NULL },
+	{ "dofus", NDPI_ONLY, 0, NULL },
+	{ "doh_dot", NDPI_ONLY, 0, NULL },
+#endif
+	{ "doom3", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "drda", NDPI_ONLY, 0, NULL },
+	{ "dropbox", NDPI_ONLY, 0, NULL },
+	{ "dtls", NDPI_ONLY, 0, NULL },
+	{ "eaq", NDPI_ONLY, 0, NULL },
+	{ "ebay", NDPI_ONLY, 0, NULL },
+	{ "edgecast", NDPI_ONLY, 0, NULL },
+#endif
+	{ "edonkey", PDPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "egp", NDPI_ONLY, 0, NULL },
+	{ "elasticsearch", NDPI_ONLY, 0, NULL },
+	{ "ethernetip", NDPI_ONLY, 0, NULL },
+	{ "error code", NDPI_RISK, 43, "dns,snmp,http" },
+#endif
+	{ "exe", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "facebook", NDPI_ONLY, 0, NULL },
+	{ "facebookvoip", NDPI_ONLY, 0, NULL },
+#endif
+#ifdef HAVE_OPENDPI
+	{ "fastcgi", NDPI_ONLY, 0, NULL },
+#endif
+	{ "filetopia", DPI, 0, NULL },
+	{ "finger", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "fix", NDPI_ONLY, 0, NULL },
+#endif
+	{ "flash", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "forticlient", NDPI_ONLY, 0, NULL },
+#endif
+	{ "freegate_dns", L7_ONLY, 0, NULL },
+	{ "freegate_http", L7_ONLY, 0, NULL },
+	{ "freenet", L7_ONLY, 0, NULL },
+	{ "ftp", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "ftp_control", NDPI_ONLY, 0, NULL },
+	{ "ftps", NDPI_ONLY, 0, NULL },
+	{ "ftp_data", NDPI_ONLY, 0, NULL },
+	{ "fuze", NDPI_ONLY, 0, NULL },
+	{ "genshinimpact", NDPI_ONLY, 0, NULL },
+#endif
+	{ "gif", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "git", NDPI_ONLY, 0, NULL },
+	{ "github", NDPI_ONLY, 0, NULL },
+	{ "gitlab", NDPI_ONLY, 0, NULL },
+#endif
+	{ "gkrellm", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "gmail", NDPI_ONLY, 0, NULL },
+#endif
+	{ "gnucleuslan", L7_ONLY, 0, NULL },
+	{ "gnutella", PDPI, 0, NULL },
+	{ "goboogy", L7_ONLY, 0, NULL },
+	{ "gogobox", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "google", NDPI_ONLY, 0, NULL },
+	{ "googleclassroom", NDPI_ONLY, 0, NULL },
+	{ "googlecloud", NDPI_ONLY, 0, NULL },
+	{ "googledocs", NDPI_ONLY, 0, NULL },
+	{ "googledrive", NDPI_ONLY, 0, NULL },
+	{ "googlehangoutduo", NDPI_ONLY, 0, NULL },
+	{ "googlemaps", NDPI_ONLY, 0, NULL },
+	{ "googleplus", NDPI_ONLY, 0, NULL },
+	{ "googleservices", NDPI_ONLY, 0, NULL },
+#endif
+	{ "gopher", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "goto", NDPI_ONLY, 0, NULL },
+	{ "gre", NDPI_ONLY, 0, NULL },
+#endif
+	{ "gtalk", L7_ONLY, 0, NULL },
+	{ "gtalk1", L7_ONLY, 0, NULL },
+	{ "gtalk2", L7_ONLY, 0, NULL },
+	{ "gtalk_file", L7_ONLY, 0, NULL },
+	{ "gtalk_file_1", L7_ONLY, 0, NULL },
+	{ "gtalk_vista", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "gtp", NDPI_ONLY, 0, NULL },
+	{ "gtp_c", NDPI_ONLY, 0, NULL },
+	{ "gtp_prime", NDPI_ONLY, 0, NULL },
+	{ "gtp_u", NDPI_ONLY, 0, NULL },
+#endif
+	{ "guildwars", DPI, 0, NULL },
+	{ "h323", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "halflife2", NDPI_ONLY, 0, NULL },
+#endif
+	{ "halflife2-deathmatch", L7_ONLY, 0, NULL },
+	{ "hamachi1", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "hbo", NDPI_ONLY, 0, NULL },
+#endif
+	{ "hddtemp", L7_ONLY, 0, NULL },
+	{ "hotline", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "heroes_of_the_storm", NDPI_ONLY, 0, NULL },
+#endif
+#ifdef HAVE_OPENDPI
+	{ "hotspotshield", NDPI_ONLY, 0, NULL },
+	{ "hp_virtgrp", NDPI_ONLY, 0, NULL },
+	{ "hsrp", NDPI_ONLY, 0, NULL },
 #else
-	{ "hotspot-shield", L7_ONLY },
-#endif
-	{ "html", L7_ONLY },
-	{ "http", DPI },
-	{ "http-dap", L7_ONLY },
-	{ "http-freshdownload", L7_ONLY },
-	{ "http-itunes", L7_ONLY },
-	{ "http-rtsp", L7_ONLY },
+	{ "hotspot-shield", L7_ONLY, 0, NULL },
+#endif
+	{ "html", L7_ONLY, 0, NULL },
+	{ "http", DPI, 0, NULL },
+	{ "http-dap", L7_ONLY, 0, NULL },
+	{ "http-freshdownload", L7_ONLY, 0, NULL },
+	{ "http-itunes", L7_ONLY, 0, NULL },
+	{ "http-rtsp", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "http_connect", NDPI_ONLY, 0, NULL },
+	{ "http_proxy", NDPI_ONLY, 0, NULL },
+#endif
+	{ "httpaudio", L7_ONLY, 0, NULL },
+	{ "httpcachehit", L7_ONLY, 0, NULL },
+	{ "httpcachemiss", L7_ONLY, 0, NULL },
+	{ "httpvideo", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "http obsolete server", NDPI_RISK, 47, "http" },
+	{ "http susp content", NDPI_RISK, 25, "http" },
+	{ "http susp header", NDPI_RISK, 14, "http" },
+	{ "http susp user-agent", NDPI_RISK, 11, "http" },
+	{ "http susp url", NDPI_RISK, 13, "http" },
+	{ "http/tls/quic numeric hostname/sni", NDPI_RISK, 12, "http,tls,quic" },
+	{ "hulu", NDPI_ONLY, 0, NULL },
+	{ "i3d", NDPI_ONLY, 0, NULL },
+	{ "iax", NDPI_ONLY, 0, NULL },
+	{ "icecast", NDPI_ONLY, 0, NULL },
+	{ "icloudprivaterelay", NDPI_ONLY, 0, NULL },
+	{ "icmp", NDPI_ONLY, 0, NULL },
+	{ "icmpv6", NDPI_ONLY, 0, NULL },
+#endif
+	{ "icq_file", L7_ONLY, 0, NULL },
+	{ "icq_file_1", L7_ONLY, 0, NULL },
+	{ "icq_file_2", L7_ONLY, 0, NULL },
+	{ "icq_login", L7_ONLY, 0, NULL },
+	{ "ident", L7_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "idn domain name", NDPI_RISK, 42, "dns,http,quic,fastcgi,tls,smtp" },
+	{ "iec60870", NDPI_ONLY, 0, NULL },
+	{ "iflix", NDPI_ONLY, 0, NULL },
+	{ "igmp", NDPI_ONLY, 0, NULL },
+	{ "iheartradio", NDPI_ONLY, 0, NULL },
+#endif
+	{ "imap", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "imaps", NDPI_ONLY, 0, NULL },
+#endif
+	{ "imesh", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "http_connect", NDPI_ONLY },
-	{ "http_proxy", NDPI_ONLY },
+	{ "imo", NDPI_ONLY, 0, NULL },
+	{ "instagram", NDPI_ONLY, 0, NULL },
+	{ "ip_in_ip", NDPI_ONLY, 0, NULL },
+	{ "ip_pim", NDPI_ONLY, 0, NULL },
 #endif
-	{ "httpaudio", L7_ONLY },
-	{ "httpcachehit", L7_ONLY },
-	{ "httpcachemiss", L7_ONLY },
-	{ "httpvideo", L7_ONLY },
+	{ "ipp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "hulu", NDPI_ONLY },
-	{ "i3d", NDPI_ONLY },
-	{ "iax", NDPI_ONLY },
-	{ "icecast", NDPI_ONLY },
-	{ "icloudprivaterelay", NDPI_ONLY },
-	{ "icmp", NDPI_ONLY },
-	{ "icmpv6", NDPI_ONLY },
+	{ "ipsec", NDPI_ONLY, 0, NULL },
 #endif
-	{ "icq_file", L7_ONLY },
-	{ "icq_file_1", L7_ONLY },
-	{ "icq_file_2", L7_ONLY },
-	{ "icq_login", L7_ONLY },
-	{ "ident", L7_ONLY },
+	{ "irc", DPI, 0, NULL },
+	{ "jabber", DPI, 0, NULL },
+	{ "jpeg", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "iec60870", NDPI_ONLY },
-	{ "iflix", NDPI_ONLY },
-	{ "igmp", NDPI_ONLY },
-	{ "iheartradio", NDPI_ONLY },
+	{ "kakaotalk", NDPI_ONLY, 0, NULL },
+	{ "kakaotalk_voice", NDPI_ONLY, 0, NULL },
 #endif
-	{ "imap", DPI },
+	{ "kazaa", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "imaps", NDPI_ONLY },
+	{ "kerberos", NDPI_ONLY, 0, NULL },
+	{ "kismet", NDPI_ONLY, 0, NULL },
+	{ "known proto on non std port", NDPI_RISK, 5, "all" },
+	{ "kontiki", NDPI_ONLY, 0, NULL },
 #endif
-	{ "imesh", L7_ONLY },
+	{ "kugoo", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "imo", NDPI_ONLY },
-	{ "instagram", NDPI_ONLY },
-	{ "ip_in_ip", NDPI_ONLY },
-	{ "ip_pim", NDPI_ONLY },
+	{ "lastfm", NDPI_ONLY, 0, NULL },
+	{ "ldap", NDPI_ONLY, 0, NULL },
+	{ "likee", NDPI_ONLY, 0, NULL },
+	{ "line", NDPI_ONLY, 0, NULL },
+	{ "line_call", NDPI_ONLY, 0, NULL },
+	{ "linkedin", NDPI_ONLY, 0, NULL },
+	{ "lisp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ipp", DPI },
+	{ "live365", L7_ONLY, 0, NULL },
+	{ "liveforspeed", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ipsec", NDPI_ONLY },
+	{ "livestream", NDPI_ONLY, 0, NULL },
+	{ "llmnr", NDPI_ONLY, 0, NULL },
+	{ "lotusnotes", NDPI_ONLY, 0, NULL },
 #endif
-	{ "irc", DPI },
-	{ "jabber", DPI },
-	{ "jpeg", L7_ONLY },
+	{ "lpd", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "kakaotalk", NDPI_ONLY },
-	{ "kakaotalk_voice", NDPI_ONLY },
+	{ "malformed packet", NDPI_RISK, 17, "icmp,icmpv6,munin,tivoconnect,collectd,ipsec,tls,natpmp,fastcgi,dns,tftp,http" },
+	{ "malicious ja3 fingerp.", NDPI_RISK, 28, "tls" },
+	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, "tls" },
+	{ "maplestory", NDPI_ONLY, 0, NULL },
+	{ "mdns", NDPI_ONLY, 0, NULL },
+	{ "megaco", NDPI_ONLY, 0, NULL },
+	{ "memcached", NDPI_ONLY, 0, NULL },
+	{ "meraki_cloud", NDPI_ONLY, 0, NULL },
+	{ "messenger", NDPI_ONLY, 0, NULL },
+	{ "mgcp", NDPI_ONLY, 0, NULL },
+	{ "microsoft", NDPI_ONLY, 0, NULL },
+	{ "microsoft365", NDPI_ONLY, 0, NULL },
+	{ "mining", NDPI_ONLY, 0, NULL },
+	{ "minor issues", NDPI_RISK, 49, "dns" },
+	{ "missing sni tls extn", NDPI_RISK, 24, "tls" },
+	{ "modbus", NDPI_ONLY, 0, NULL },
 #endif
-	{ "kazaa", PDPI_ONLY },
+	{ "mohaa", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "kerberos", NDPI_ONLY },
-	{ "kismet", NDPI_ONLY },
-	{ "kontiki", NDPI_ONLY },
+	{ "mongodb", NDPI_ONLY, 0, NULL },
+	{ "munin", NDPI_ONLY, 0, NULL },
 #endif
-	{ "kugoo", L7_ONLY },
+	{ "mp3", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "lastfm", NDPI_ONLY },
-	{ "ldap", NDPI_ONLY },
-	{ "likee", NDPI_ONLY },
-	{ "line", NDPI_ONLY },
-	{ "line_call", NDPI_ONLY },
-	{ "linkedin", NDPI_ONLY },
-	{ "lisp", NDPI_ONLY },
+	{ "mpeg_ts", NDPI_ONLY, 0, NULL },
+	{ "mpegdash", NDPI_ONLY, 0, NULL },
+	{ "mqtt", NDPI_ONLY, 0, NULL },
+	{ "ms_onedrive", NDPI_ONLY, 0, NULL },
 #endif
-	{ "live365", L7_ONLY },
-	{ "liveforspeed", L7_ONLY },
+	{ "msn-filetransfer", L7_ONLY, 0, NULL },
+	{ "msnmessenger", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "livestream", NDPI_ONLY },
-	{ "llmnr", NDPI_ONLY },
-	{ "lotusnotes", NDPI_ONLY },
+	{ "mssql-tds", NDPI_ONLY, 0, NULL },
 #endif
-	{ "lpd", L7_ONLY },
+	{ "mute", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "maplestory", NDPI_ONLY },
-	{ "mdns", NDPI_ONLY },
-	{ "megaco", NDPI_ONLY },
-	{ "memcached", NDPI_ONLY },
-	{ "meraki_cloud", NDPI_ONLY },
-	{ "messenger", NDPI_ONLY },
-	{ "mgcp", NDPI_ONLY },
-	{ "microsoft", NDPI_ONLY },
-	{ "microsoft365", NDPI_ONLY },
-	{ "mining", NDPI_ONLY },
-	{ "modbus", NDPI_ONLY },
+	{ "mysql", NDPI_ONLY, 0, NULL },
 #endif
-	{ "mohaa", L7_ONLY },
+	{ "napster", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "mongodb", NDPI_ONLY },
-	{ "munin", NDPI_ONLY },
+	{ "natpmp", NDPI_ONLY, 0, NULL },
+	{ "nats", NDPI_ONLY, 0, NULL },
 #endif
-	{ "mp3", L7_ONLY },
+	{ "nbns", L7_ONLY, 0, NULL },
+	{ "ncp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "mpeg_ts", NDPI_ONLY },
-	{ "mpegdash", NDPI_ONLY },
-	{ "mqtt", NDPI_ONLY },
-	{ "ms_onedrive", NDPI_ONLY },
+	{ "nestlogsink", NDPI_ONLY, 0, NULL },
 #endif
-	{ "msn-filetransfer", L7_ONLY },
-	{ "msnmessenger", L7_ONLY },
+	{ "netbios", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "mssql-tds", NDPI_ONLY },
+	{ "netflix", NDPI_ONLY, 0, NULL },
+	{ "netflow", NDPI_ONLY, 0, NULL },
+	{ "nfs", NDPI_ONLY, 0, NULL },
 #endif
-	{ "mute", PDPI_ONLY },
+	{ "nimda", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "mysql", NDPI_ONLY },
+	{ "nintendo", NDPI_ONLY, 0, NULL },
 #endif
-	{ "napster", L7_ONLY },
+	{ "nntp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "natpmp", NDPI_ONLY },
-	{ "nats", NDPI_ONLY },
+	{ "noe", NDPI_ONLY, 0, NULL },
+	{ "ntop", NDPI_ONLY, 0, NULL },
 #endif
-	{ "nbns", L7_ONLY },
-	{ "ncp", L7_ONLY },
+	{ "ntp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "nestlogsink", NDPI_ONLY },
+	{ "ocs", NDPI_ONLY, 0, NULL },
+	{ "ocsp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "netbios", DPI },
+	{ "ogg", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "netflix", NDPI_ONLY },
-	{ "netflow", NDPI_ONLY },
-	{ "nfs", NDPI_ONLY },
+	{ "oicq", NDPI_ONLY, 0, NULL },
+	{ "ookla", NDPI_ONLY, 0, NULL },
+	{ "opendns", NDPI_ONLY, 0, NULL },
 #endif
-	{ "nimda", L7_ONLY },
 #ifdef HAVE_OPENDPI
-	{ "nintendo", NDPI_ONLY },
+	{ "openvpn", NDPI_ONLY, 0, NULL },
+	{ "oracle", NDPI_ONLY, 0, NULL },
+	{ "ospf", NDPI_ONLY, 0, NULL },
+	{ "outlook", NDPI_ONLY, 0, NULL },
+	{ "pandora", NDPI_ONLY, 0, NULL },
+	{ "pastebin", NDPI_ONLY, 0, NULL },
 #endif
-	{ "nntp", L7_ONLY },
+	{ "pcanywhere", DPI, 0, NULL },
+	{ "pdf", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "noe", NDPI_ONLY },
-	{ "ntop", NDPI_ONLY },
+//      { "periodic flow", NDPI_RISK, 48, NULL }, /* unused */
 #endif
-	{ "ntp", DPI },
+	{ "perl", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ocs", NDPI_ONLY },
-	{ "ocsp", NDPI_ONLY },
+	{ "pgm", NDPI_ONLY, 0, NULL },
+	{ "pinterest", NDPI_ONLY, 0, NULL },
+	{ "playstation", NDPI_ONLY, 0, NULL },
+	{ "playstore", NDPI_ONLY, 0, NULL },
+	{ "pluralsight", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ogg", DPI },
+	{ "png", L7_ONLY, 0, NULL },
+	{ "poco", L7_ONLY, 0, NULL },
+	{ "pop3", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "oicq", NDPI_ONLY },
-	{ "ookla", NDPI_ONLY },
-	{ "opendns", NDPI_ONLY },
+	{ "pops", NDPI_ONLY, 0, NULL },
+	{ "possible exploit", NDPI_RISK, 40, "tls,fastcgi,http,quic" },
+	{ "postgresql", NDPI_ONLY, 0, NULL },
 #endif
+	{ "postscript", L7_ONLY, 0, NULL },
+	{ "pplive", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "openvpn", NDPI_ONLY },
-	{ "oracle", NDPI_ONLY },
-	{ "ospf", NDPI_ONLY },
-	{ "outlook", NDPI_ONLY },
-	{ "pandora", NDPI_ONLY },
-	{ "pastebin", NDPI_ONLY },
+	{ "ppstream", NDPI_ONLY, 0, NULL },
+	{ "pptp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "pcanywhere", DPI },
-	{ "pdf", L7_ONLY },
-	{ "perl", L7_ONLY },
+	{ "pre_icq_login", L7_ONLY, 0, NULL },
+	{ "pre_msn_login", L7_ONLY, 0, NULL },
+	{ "pre_urlblock", L7_ONLY, 0, NULL },
+	{ "pre_yahoo_login", L7_ONLY, 0, NULL },
+	{ "pressplay", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "pgm", NDPI_ONLY },
-	{ "pinterest", NDPI_ONLY },
-	{ "playstation", NDPI_ONLY },
-	{ "playstore", NDPI_ONLY },
-	{ "pluralsight", NDPI_ONLY },
+	{ "psiphon", NDPI_ONLY, 0, NULL },
 #endif
-	{ "png", L7_ONLY },
-	{ "poco", L7_ONLY },
-	{ "pop3", DPI },
+	{ "qianlong", L7_ONLY, 0, NULL },
+	{ "qq", DPI, 0, NULL },
+	{ "qq_login", L7_ONLY, 0, NULL },
+	{ "qq_login_1", L7_ONLY, 0, NULL },
+	{ "qq_tcp_file", L7_ONLY, 0, NULL },
+	{ "qq_udp_file", L7_ONLY, 0, NULL },
+	{ "qqdownload_1", L7_ONLY, 0, NULL },
+	{ "qqdownload_2", L7_ONLY, 0, NULL },
+	{ "qqdownload_3", L7_ONLY, 0, NULL },
+	{ "qqfile", L7_ONLY, 0, NULL },
+	{ "qqgame", L7_ONLY, 0, NULL },
+	{ "qqlive", DPI, 0, NULL },
+	{ "qqlive2", L7_ONLY, 0, NULL },
+	{ "quake-halflife", L7_ONLY, 0, NULL },
+	{ "quake1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "pops", NDPI_ONLY },
-	{ "postgresql", NDPI_ONLY },
+	{ "quic", NDPI_ONLY, 0, NULL },
 #endif
-	{ "postscript", L7_ONLY },
-	{ "pplive", DPI },
+	{ "quicktime", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ppstream", NDPI_ONLY },
-	{ "pptp", NDPI_ONLY },
+	{ "radius", NDPI_ONLY, 0, NULL },
 #endif
-	{ "pre_icq_login", L7_ONLY },
-	{ "pre_msn_login", L7_ONLY },
-	{ "pre_urlblock", L7_ONLY },
-	{ "pre_yahoo_login", L7_ONLY },
-	{ "pressplay", L7_ONLY },
+	{ "radmin", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "psiphon", NDPI_ONLY },
+	{ "raknet", NDPI_ONLY, 0, NULL },
 #endif
-	{ "qianlong", L7_ONLY },
-	{ "qq", DPI },
-	{ "qq_login", L7_ONLY },
-	{ "qq_login_1", L7_ONLY },
-	{ "qq_tcp_file", L7_ONLY },
-	{ "qq_udp_file", L7_ONLY },
-	{ "qqdownload_1", L7_ONLY },
-	{ "qqdownload_2", L7_ONLY },
-	{ "qqdownload_3", L7_ONLY },
-	{ "qqfile", L7_ONLY },
-	{ "qqgame", L7_ONLY },
-	{ "qqlive", DPI },
-	{ "qqlive2", L7_ONLY },
-	{ "quake-halflife", L7_ONLY },
-	{ "quake1", L7_ONLY },
+	{ "rar", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "quic", NDPI_ONLY },
+	{ "rce injection", NDPI_RISK, 3, "http,http_connect,http_proxy" },
 #endif
-	{ "quicktime", DPI },
+	{ "rdp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "radius", NDPI_ONLY },
+	{ "reddit", NDPI_ONLY, 0, NULL },
+	{ "redis", NDPI_ONLY, 0, NULL },
 #endif
-	{ "radmin", L7_ONLY },
+	{ "replaytv-ivs", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "raknet", NDPI_ONLY },
+	{ "riotgames", NDPI_ONLY, 0, NULL },
+//      { "risky asn", NDPI_RISK, 26, NULL },
+	{ "risky domain name", NDPI_RISK, 27, "dns" },
 #endif
-	{ "rar", L7_ONLY },
-	{ "rdp", DPI },
+	{ "rlogin", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "reddit", NDPI_ONLY },
-	{ "redis", NDPI_ONLY },
+	{ "rpc", NDPI_ONLY, 0, NULL },
 #endif
-	{ "replaytv-ivs", L7_ONLY },
+	{ "rpm", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "riotgames", NDPI_ONLY },
+	{ "rsh", NDPI_ONLY, 0, NULL },
+	{ "rsync", NDPI_ONLY, 0, NULL },
+	{ "rtcp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "rlogin", L7_ONLY },
+	{ "rtf", L7_ONLY, 0, NULL },
+	{ "rtmp", DPI, 0, NULL },
+	{ "rtp", DPI, 0, NULL },
+	{ "rtsp", DPI, 0, NULL },
+	{ "runesofmagic", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "rpc", NDPI_ONLY },
+	{ "rx", NDPI_ONLY, 0, NULL },
+	{ "s7comm", NDPI_ONLY, 0, NULL },
+	{ "salesforce", NDPI_ONLY, 0, NULL },
+	{ "sap", NDPI_ONLY, 0, NULL },
+	{ "sctp", NDPI_ONLY, 0, NULL },
+	{ "sd-rtn", NDPI_ONLY, 0, NULL },
+	{ "sflow", NDPI_ONLY, 0, NULL },
 #endif
-	{ "rpm", L7_ONLY },
 #ifdef HAVE_OPENDPI
-	{ "rsh", NDPI_ONLY },
-	{ "rsync", NDPI_ONLY },
-	{ "rtcp", NDPI_ONLY },
+	{ "showtime", NDPI_ONLY, 0, NULL },
+	{ "signal", NDPI_ONLY, 0, NULL },
+	{ "signalvoip", NDPI_ONLY, 0, NULL },
+	{ "sina(weibo)", NDPI_ONLY, 0, NULL },
 #endif
-	{ "rtf", L7_ONLY },
-	{ "rtmp", DPI },
-	{ "rtp", DPI },
-	{ "rtsp", DPI },
-	{ "runesofmagic", L7_ONLY },
+	{ "sip", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "rx", NDPI_ONLY },
-	{ "s7comm", NDPI_ONLY },
-	{ "salesforce", NDPI_ONLY },
-	{ "sap", NDPI_ONLY },
-	{ "sctp", NDPI_ONLY },
-	{ "sd-rtn", NDPI_ONLY },
-	{ "sflow", NDPI_ONLY },
+	{ "siriusxmradio", NDPI_ONLY, 0, NULL },
+	{ "skype_teams", NDPI_ONLY, 0, NULL },
+	{ "skype_teamscall", NDPI_ONLY, 0, NULL },
 #endif
+	{ "skypeout", L7_ONLY, 0, NULL },
+	{ "skypetoskype", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "showtime", NDPI_ONLY },
-	{ "signal", NDPI_ONLY },
-	{ "signalvoip", NDPI_ONLY },
-	{ "sina(weibo)", NDPI_ONLY },
+	{ "slack", NDPI_ONLY, 0, NULL },
 #endif
-	{ "sip", DPI },
+	{ "smb", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "siriusxmradio", NDPI_ONLY },
-	{ "skype_teams", NDPI_ONLY },
-	{ "skype_teamscall", NDPI_ONLY },
+	{ "smb insecure vers", NDPI_RISK, 20, "smb" },
+	{ "smbv1", NDPI_ONLY, 0, NULL },
+	{ "smbv23", NDPI_ONLY, 0, NULL },
+	{ "smpp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "skypeout", L7_ONLY },
-	{ "skypetoskype", L7_ONLY },
+	{ "smtp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "slack", NDPI_ONLY },
+	{ "smtps", NDPI_ONLY, 0, NULL },
+	{ "snapchat", NDPI_ONLY, 0, NULL },
+	{ "snapchatcall", NDPI_ONLY, 0, NULL },
 #endif
-	{ "smb", DPI },
+	{ "snmp", DPI, 0, NULL },
+	{ "snmp-mon", L7_ONLY, 0, NULL },
+	{ "snmp-trap", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "smbv1", NDPI_ONLY },
-	{ "smbv23", NDPI_ONLY },
-	{ "smpp", NDPI_ONLY },
+	{ "soap", NDPI_ONLY, 0, NULL },
 #endif
-	{ "smtp", DPI },
+	{ "socks", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "smtps", NDPI_ONLY },
-	{ "snapchat", NDPI_ONLY },
-	{ "snapchatcall", NDPI_ONLY },
+	{ "softether", NDPI_ONLY, 0, NULL },
+	{ "someip", NDPI_ONLY, 0, NULL },
 #endif
-	{ "snmp", DPI },
-	{ "snmp-mon", L7_ONLY },
-	{ "snmp-trap", L7_ONLY },
+	{ "soribada", L7_ONLY, 0, NULL },
+	{ "soulseek", PDPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "soap", NDPI_ONLY },
+	{ "soundcloud", NDPI_ONLY, 0, NULL },
+	{ "source_engine", NDPI_ONLY, 0, NULL },
+	{ "spotify", NDPI_ONLY, 0, NULL },
+	{ "sql injection", NDPI_RISK, 2, "http,http_connect,http_proxy" },
 #endif
-	{ "socks", DPI },
+	{ "ssdp", DPI, 0, NULL },
+	{ "ssh", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "softether", NDPI_ONLY },
-	{ "someip", NDPI_ONLY },
+	{ "ssh obsolete cli ver/cipher", NDPI_RISK, 18, "ssh" },
+	{ "ssh obsolete ser ver/cipher", NDPI_RISK, 19, "ssh" },
 #endif
-	{ "soribada", L7_ONLY },
-	{ "soulseek", PDPI },
+	{ "ssl", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "soundcloud", NDPI_ONLY },
-	{ "source_engine", NDPI_ONLY },
-	{ "spotify", NDPI_ONLY },
+	{ "starcraft", NDPI_ONLY, 0, NULL },
+	{ "steam", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ssdp", DPI },
-	{ "ssh", DPI },
-	{ "ssl", DPI },
+	{ "stun", DPI, 0, NULL },
+	{ "subspace", L7_ONLY, 0, NULL },
+	{ "subversion", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "starcraft", NDPI_ONLY },
-	{ "steam", NDPI_ONLY },
+	{ "susp entropy", NDPI_RISK, 35, "icmp" },
+	{ "syncthing", NDPI_ONLY, 0, NULL },
+	{ "syslog", NDPI_ONLY, 0, NULL },
+	{ "tailscale", NDPI_ONLY, 0, NULL },
 #endif
-	{ "stun", DPI },
-	{ "subspace", L7_ONLY },
-	{ "subversion", L7_ONLY },
+	{ "tar", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "syncthing", NDPI_ONLY },
-	{ "syslog", NDPI_ONLY },
-	{ "tailscale", NDPI_ONLY },
+	{ "targusdataspeed", NDPI_ONLY, 0, NULL },
+	{ "tcp connection issues", NDPI_RISK, 50, "all" },
 #endif
-	{ "tar", L7_ONLY },
+	{ "teamfortress2", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "targusdataspeed", NDPI_ONLY },
+	{ "teams", NDPI_ONLY, 0, NULL },
 #endif
-	{ "teamfortress2", L7_ONLY },
+	{ "teamspeak", DPI, 0, NULL },
+	{ "teamviewer", DPI, 0, NULL },
+	{ "teamviewer1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "teams", NDPI_ONLY },
+	{ "tencentvideo", NDPI_ONLY, 0, NULL },
+	{ "telegram", NDPI_ONLY, 0, NULL },
 #endif
-	{ "teamspeak", DPI },
-	{ "teamviewer", DPI },
-	{ "teamviewer1", L7_ONLY },
+	{ "telnet", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "tencentvideo", NDPI_ONLY },
-	{ "telegram", NDPI_ONLY },
+	{ "tencent", NDPI_ONLY, 0, NULL },
+	{ "teredo", NDPI_ONLY, 0, NULL },
 #endif
-	{ "telnet", DPI },
+	{ "tesla", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "tencent", NDPI_ONLY },
-	{ "teredo", NDPI_ONLY },
+	{ "text with non-printable chars", NDPI_RISK, 39, "tls,fastcgi,quic,http,dns" },
 #endif
-	{ "tesla", L7_ONLY },
-	{ "tftp", DPI },
-	{ "thecircle", L7_ONLY },
+	{ "tftp", DPI, 0, NULL },
+	{ "thecircle", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "threema", NDPI_ONLY },
+	{ "threema", NDPI_ONLY, 0, NULL },
 #endif
-	{ "thunder5_see", L7_ONLY },
-	{ "thunder5_tcp", L7_ONLY },
+	{ "thunder5_see", L7_ONLY, 0, NULL },
+	{ "thunder5_tcp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "tidal", NDPI_ONLY },
-	{ "tiktok", NDPI_ONLY },
-	{ "tinc", NDPI_ONLY },
-	{ "tivoconnect", NDPI_ONLY },
-	{ "tls", NDPI_ONLY },
-	{ "tocaboca", NDPI_ONLY },
+	{ "tidal", NDPI_ONLY, 0, NULL },
+	{ "tiktok", NDPI_ONLY, 0, NULL },
+	{ "tinc", NDPI_ONLY, 0, NULL },
+	{ "tivoconnect", NDPI_ONLY, 0, NULL },
+	{ "tls", NDPI_ONLY, 0, NULL },
+	{ "tls cert about to expire", NDPI_RISK, 41, "tls" },
+	{ "tls cert expired", NDPI_RISK, 9, "tls" },
+	{ "tls cert mismatch", NDPI_RISK, 10, "tls" },
+	{ "tls cert validity too long", NDPI_RISK, 32, "tls" },
+	{ "tls fatal alert", NDPI_RISK, 34, "tls" },
+	{ "tls not carrying https", NDPI_RISK, 15, "tls" },
+	{ "tls obsolete (v1.1 or older)", NDPI_RISK, 7, "tls" },
+	{ "tls self signed cert", NDPI_RISK, 6, "tls" },
+	{ "tls susp esni usage", NDPI_RISK, 20, "tls" },
+	{ "tls susp extn", NDPI_RISK, 33, "tls" },
+	{ "tls weak cipher", NDPI_RISK, 8, "tls" },
+
+	{ "tocaboca", NDPI_ONLY, 0, NULL },
 #endif
-	{ "tonghuashun", L7_ONLY },
-	{ "tor", DPI },
+	{ "tonghuashun", L7_ONLY, 0, NULL },
+	{ "tor", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "tplink_shp", NDPI_ONLY },
-	{ "truphone", NDPI_ONLY },
+	{ "tplink_shp", NDPI_ONLY, 0, NULL },
+	{ "truphone", NDPI_ONLY, 0, NULL },
 #endif
-	{ "tsp", L7_ONLY },
+	{ "tsp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "tuenti", NDPI_ONLY },
-	{ "tumblr", NDPI_ONLY },
-	{ "tunein", NDPI_ONLY },
-	{ "tunnelbear", NDPI_ONLY },
-	{ "tuya_lp", NDPI_ONLY },
-	{ "tvuplayer", NDPI_ONLY },
-	{ "twitch", NDPI_ONLY },
-	{ "twitter", NDPI_ONLY },
-	{ "ubntac2", NDPI_ONLY },
-	{ "ubuntuone", NDPI_ONLY },
-	{ "ultrasurf", NDPI_ONLY },
+	{ "tuenti", NDPI_ONLY, 0, NULL },
+	{ "tumblr", NDPI_ONLY, 0, NULL },
+	{ "tunein", NDPI_ONLY, 0, NULL },
+	{ "tunnelbear", NDPI_ONLY, 0, NULL },
+	{ "tuya_lp", NDPI_ONLY, 0, NULL },
+	{ "tvuplayer", NDPI_ONLY, 0, NULL },
+	{ "twitch", NDPI_ONLY, 0, NULL },
+	{ "twitter", NDPI_ONLY, 0, NULL },
+	{ "ubntac2", NDPI_ONLY, 0, NULL },
+	{ "ubuntuone", NDPI_ONLY, 0, NULL },
+	{ "ultrasurf", NDPI_ONLY, 0, NULL },
+	{ "uncommon tls alpn", NDPI_RISK, 31, "tls" },
+	{ "unidirectional traffic", NDPI_RISK, 46, "all" },
+	{ "unsafe protocol", NDPI_RISK, 22, "all" },
 #endif
-	{ "unset", L7_ONLY },
+	{ "unset", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "usenet", NDPI_ONLY },
+	{ "usenet", NDPI_ONLY, 0, NULL },
 #endif
-	{ "uucp", L7_ONLY },
-	{ "validcertssl", L7_ONLY },
-	{ "ventrilo", L7_ONLY },
+	{ "uucp", L7_ONLY, 0, NULL },
+	{ "validcertssl", L7_ONLY, 0, NULL },
+	{ "ventrilo", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "vevo", NDPI_ONLY },
-	{ "vhua", NDPI_ONLY },
-	{ "viber", NDPI_ONLY },
-	{ "vimeo", NDPI_ONLY },
-	{ "vk", NDPI_ONLY },
-	{ "vmware", NDPI_ONLY },
+	{ "vevo", NDPI_ONLY, 0, NULL },
+	{ "vhua", NDPI_ONLY, 0, NULL },
+	{ "viber", NDPI_ONLY, 0, NULL },
+	{ "vimeo", NDPI_ONLY, 0, NULL },
+	{ "vk", NDPI_ONLY, 0, NULL },
+	{ "vmware", NDPI_ONLY, 0, NULL },
 #endif
-	{ "vnc", DPI },
+	{ "vnc", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "vrrp", NDPI_ONLY },
-	{ "vudu", NDPI_ONLY },
-	{ "vxlan", NDPI_ONLY },
-	{ "warcraft3", NDPI_ONLY },
+	{ "vrrp", NDPI_ONLY, 0, NULL },
+	{ "vudu", NDPI_ONLY, 0, NULL },
+	{ "vxlan", NDPI_ONLY, 0, NULL },
+	{ "warcraft3", NDPI_ONLY, 0, NULL },
 #endif
-	{ "waste", PDPI_ONLY },
+	{ "waste", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "waze", NDPI_ONLY },
-	{ "webex", NDPI_ONLY },
+	{ "waze", NDPI_ONLY, 0, NULL },
+	{ "webex", NDPI_ONLY, 0, NULL },
 #endif
-	{ "webmail_163", L7_ONLY },
-	{ "webmail_gmail", L7_ONLY },
-	{ "webmail_hinet", L7_ONLY },
-	{ "webmail_hotmail", L7_ONLY },
-	{ "webmail_pchome", L7_ONLY },
-	{ "webmail_qq", L7_ONLY },
-	{ "webmail_seednet", L7_ONLY },
-	{ "webmail_sina", L7_ONLY },
-	{ "webmail_sohu", L7_ONLY },
-	{ "webmail_tom", L7_ONLY },
-	{ "webmail_url", L7_ONLY },
-	{ "webmail_yahoo", L7_ONLY },
-	{ "webmail_yam", L7_ONLY },
+	{ "webmail_163", L7_ONLY, 0, NULL },
+	{ "webmail_gmail", L7_ONLY, 0, NULL },
+	{ "webmail_hinet", L7_ONLY, 0, NULL },
+	{ "webmail_hotmail", L7_ONLY, 0, NULL },
+	{ "webmail_pchome", L7_ONLY, 0, NULL },
+	{ "webmail_qq", L7_ONLY, 0, NULL },
+	{ "webmail_seednet", L7_ONLY, 0, NULL },
+	{ "webmail_sina", L7_ONLY, 0, NULL },
+	{ "webmail_sohu", L7_ONLY, 0, NULL },
+	{ "webmail_tom", L7_ONLY, 0, NULL },
+	{ "webmail_url", L7_ONLY, 0, NULL },
+	{ "webmail_yahoo", L7_ONLY, 0, NULL },
+	{ "webmail_yam", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "websocket", NDPI_ONLY },
-	{ "wechat", NDPI_ONLY },
-	{ "whatsapp", NDPI_ONLY },
-	{ "whatsappcall", NDPI_ONLY },
-	{ "whatsappfiles", NDPI_ONLY },
+	{ "websocket", NDPI_ONLY, 0, NULL },
+	{ "wechat", NDPI_ONLY, 0, NULL },
+	{ "whatsapp", NDPI_ONLY, 0, NULL },
+	{ "whatsappcall", NDPI_ONLY, 0, NULL },
+	{ "whatsappfiles", NDPI_ONLY, 0, NULL },
 #endif
-	{ "whois", L7_ONLY },
+	{ "whois", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "whois-das", NDPI_ONLY },
-	{ "wikipedia", NDPI_ONLY },
-	{ "windowsupdate", NDPI_ONLY },
+	{ "whois-das", NDPI_ONLY, 0, NULL },
+	{ "wikipedia", NDPI_ONLY, 0, NULL },
+	{ "windowsupdate", NDPI_ONLY, 0, NULL },
 #endif
-	{ "winmx", L7_ONLY },
+	{ "winmx", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "wireguard", NDPI_ONLY },
-	{ "worldofkungfu", NDPI_ONLY },
+	{ "wireguard", NDPI_ONLY, 0, NULL },
+	{ "worldofkungfu", NDPI_ONLY, 0, NULL },
 #endif
-	{ "worldofwarcraft", DPI },
+	{ "worldofwarcraft", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "wsd", NDPI_ONLY },
+	{ "wsd", NDPI_ONLY, 0, NULL },
 #endif
-	{ "x11", L7_ONLY },
+	{ "x11", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "xbox", NDPI_ONLY },
+	{ "xbox", NDPI_ONLY, 0, NULL },
 #endif
-	{ "xboxlive", L7_ONLY },
-	{ "xdcc", PDPI_ONLY },
+	{ "xboxlive", L7_ONLY, 0, NULL },
+	{ "xdcc", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "xdmcp", NDPI_ONLY },
-	{ "xiaomi", NDPI_ONLY },
+	{ "xdmcp", NDPI_ONLY, 0, NULL },
+	{ "xiaomi", NDPI_ONLY, 0, NULL },
+	{ "xss attack", NDPI_RISK, 1, "http,http_connect,http_proxy" },
 #endif
-	{ "xunlei", L7_ONLY },
-	{ "yahoo", DPI },
-	{ "yahoo_camera", L7_ONLY },
-	{ "yahoo_file", L7_ONLY },
-	{ "yahoo_login", L7_ONLY },
-	{ "yahoo_voice", L7_ONLY },
+	{ "xunlei", L7_ONLY, 0, NULL },
+	{ "yahoo", DPI, 0, NULL },
+	{ "yahoo_camera", L7_ONLY, 0, NULL },
+	{ "yahoo_file", L7_ONLY, 0, NULL },
+	{ "yahoo_login", L7_ONLY, 0, NULL },
+	{ "yahoo_voice", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "yandex", NDPI_ONLY },
-	{ "yandex_cloud", NDPI_ONLY },
-	{ "yandex_direct", NDPI_ONLY },
-	{ "yandex_disk", NDPI_ONLY },
-	{ "yandex_mail", NDPI_ONLY },
-	{ "yandex_market", NDPI_ONLY },
-	{ "yandex_metrika", NDPI_ONLY },
-	{ "yandex_music", NDPI_ONLY },
+	{ "yandex", NDPI_ONLY, 0, NULL },
+	{ "yandex_cloud", NDPI_ONLY, 0, NULL },
+	{ "yandex_direct", NDPI_ONLY, 0, NULL },
+	{ "yandex_disk", NDPI_ONLY, 0, NULL },
+	{ "yandex_mail", NDPI_ONLY, 0, NULL },
+	{ "yandex_market", NDPI_ONLY, 0, NULL },
+	{ "yandex_metrika", NDPI_ONLY, 0, NULL },
+	{ "yandex_music", NDPI_ONLY, 0, NULL },
 #endif
-	{ "youtube", DPI },
+	{ "youtube", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "youtubeupload", NDPI_ONLY },
-	{ "z3950", NDPI_ONLY },
-	{ "zabbix", NDPI_ONLY },
-	{ "zattoo", NDPI_ONLY },
-	{ "zeromq", NDPI_ONLY },
+	{ "youtubeupload", NDPI_ONLY, 0, NULL },
+	{ "z3950", NDPI_ONLY, 0, NULL },
+	{ "zabbix", NDPI_ONLY, 0, NULL },
+	{ "zattoo", NDPI_ONLY, 0, NULL },
+	{ "zeromq", NDPI_ONLY, 0, NULL },
 #endif
-	{ "zip", L7_ONLY },
-	{ "zmaap", L7_ONLY },
+	{ "zip", L7_ONLY, 0, NULL },
+	{ "zmaap", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "zoom", NDPI_ONLY },
+	{ "zoom", NDPI_ONLY, 0, NULL },
 #endif
-	{ 0, 0 },
+	{ 0, 0, 0, NULL },
 };

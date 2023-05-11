@@ -1542,6 +1542,7 @@ struct blocklist {
 	char ip[INET6_ADDRSTRLEN];
 	time_t end;
 	int count;
+	int attempts;
 	struct blocklist *next;
 } __attribute__((packed));
 
@@ -1607,6 +1608,7 @@ void add_blocklist(const char *service, char *ip)
 			entry->count++;
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
+				entry->attempts = 1;
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip, BLOCKTIME);
 			}
 			goto end;
@@ -1622,6 +1624,7 @@ void add_blocklist(const char *service, char *ip)
 	strcpy(&last->next->ip[0], ip);
 	last->next->end = 0;
 	last->next->count = 0;
+	last->next->attempts = 0;
 	last->next->next = NULL;
       end:;
 	dump_blocklist();
@@ -1651,8 +1654,9 @@ int check_blocklist(const char *service, char *ip)
 		if (!strcmp(ip, &entry->ip[0])) {
 			if (entry->end > cur) {
 				// each try from a block client extends by another 5 minutes;
-				entry->end = time(NULL) + BLOCKTIME * 60;
-				dd_loginfo(service, "client %s is blocked, terminate connection", ip);
+				entry->attempts++;
+				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
+				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes", ip, (BLOCKTIME * entry->attempts));
 				ret = -1;
 				change = 1;
 				goto end;

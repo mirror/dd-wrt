@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 #include "http_parse.h"
 #include "hash.h"
 #include "hashtable.h"
-#include "util.h"
 #include "jhash.h"
 #include "list.h"
+#include "util.h"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -230,7 +230,7 @@ static int _http_head_parse_response(struct http_head *http_head, char *key, cha
 		if (*tmp_ptr != ' ') {
 			continue;
 		}
-		
+
 		*tmp_ptr = '\0';
 		ret_code = field_start;
 		ret_msg = tmp_ptr + 1;

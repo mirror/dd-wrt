@@ -13,7 +13,6 @@
 
 .text
 .global vfork
-.hidden vfork
 .type   vfork,@function
 
 vfork:

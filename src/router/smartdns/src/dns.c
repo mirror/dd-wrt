@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@
 	do {                                                                                                               \
 		(void)(expr);                                                                                                  \
 	} while (0)
+
+#define member_size(type, member) sizeof(((type *)0)->member)
 
 /* read short and move pointer */
 static unsigned short _dns_read_short(unsigned char **buffer)
@@ -111,7 +113,7 @@ static int _dns_get_domain_from_packet(unsigned char *packet, int packet_size, u
 
 	/*[len]string[len]string...[0]0 */
 	while (1) {
-		if (ptr >= packet + packet_size || ptr < packet || output_len >= size - 1 || ptr_jump > 4) {
+		if (ptr >= packet + packet_size || ptr < packet || output_len >= size - 1 || ptr_jump > 32) {
 			return -1;
 		}
 
@@ -272,6 +274,10 @@ static int _dns_encode_domain(struct dns_context *context, const char *domain)
 		total_len++;
 		if (dict_offset >= 0) {
 			int offset = 0xc000 | dict_offset;
+			if (_dns_left_len(context) < 2) {
+				return -1;
+			}
+
 			_dns_write_short(&ptr_num, offset);
 			context->ptr++;
 			ptr_num = NULL;
@@ -291,6 +297,10 @@ static int _dns_encode_domain(struct dns_context *context, const char *domain)
 		num++;
 		context->ptr++;
 		domain++;
+	}
+
+	if (_dns_left_len(context) < 1) {
+		return -1;
 	}
 
 	*ptr_num = num;
@@ -542,6 +552,112 @@ static int _dns_get_rr_head(struct dns_context *context, char *domain, int maxsi
 	return len;
 }
 
+struct dns_rr_nested *dns_add_rr_nested_start(struct dns_rr_nested *rr_nested_buffer, struct dns_packet *packet,
+											  dns_rr_type type, dns_type_t rtype, const char *domain, int ttl)
+{
+	int len = 0;
+	memset(rr_nested_buffer, 0, sizeof(*rr_nested_buffer));
+	rr_nested_buffer->type = type;
+	int ret = 0;
+
+	/* resource record */
+	/* |domain          |
+	 * |qtype  | qclass |
+	 * |       ttl      |
+	 * | rrlen | rrdata |
+	 */
+	ret = _dns_add_rrs_start(packet, &rr_nested_buffer->context);
+	if (ret < 0) {
+		return NULL;
+	}
+	rr_nested_buffer->rr_start = rr_nested_buffer->context.ptr;
+
+	/* add rr head */
+	len = _dns_add_rr_head(&rr_nested_buffer->context, domain, rtype, DNS_C_IN, ttl, 0);
+	if (len < 0) {
+		return NULL;
+	}
+	rr_nested_buffer->rr_len_ptr = rr_nested_buffer->context.ptr - 2;
+	rr_nested_buffer->rr_head_len = len;
+
+	return rr_nested_buffer;
+}
+
+int dns_add_rr_nested_memcpy(struct dns_rr_nested *rr_nested, const void *data, int data_len)
+{
+	if (rr_nested == NULL || data == NULL || data_len <= 0) {
+		return -1;
+	}
+
+	if (_dns_left_len(&rr_nested->context) < data_len) {
+		return -1;
+	}
+
+	memcpy(rr_nested->context.ptr, data, data_len);
+	rr_nested->context.ptr += data_len;
+
+	return 0;
+}
+
+int dns_add_rr_nested_end(struct dns_rr_nested *rr_nested, dns_type_t rtype)
+{
+	if (rr_nested == NULL || rr_nested->rr_start == NULL) {
+		return -1;
+	}
+
+	int len = rr_nested->context.ptr - rr_nested->rr_start;
+	unsigned char *ptr = rr_nested->rr_len_ptr;
+	if (ptr == NULL || _dns_left_len(&rr_nested->context) < 2) {
+		return -1;
+	}
+
+	/* NO SVC keys, reset ptr */
+	if (len <= 14) {
+		rr_nested->context.ptr = rr_nested->rr_start;
+		return 0;
+	}
+
+	_dns_write_short(&ptr, len - rr_nested->rr_head_len);
+
+	return _dns_rr_add_end(rr_nested->context.packet, rr_nested->type, rtype, len);
+}
+
+void *dns_get_rr_nested_start(struct dns_rrs *rrs, char *domain, int maxsize, int *qtype, int *ttl, int *rr_len)
+{
+	struct dns_context data_context;
+	int qclass = 0;
+	int ret = 0;
+
+	_dns_init_context_by_rrs(rrs, &data_context);
+	ret = _dns_get_rr_head(&data_context, domain, DNS_MAX_CNAME_LEN, qtype, &qclass, ttl, rr_len);
+	if (ret < 0) {
+		return NULL;
+	}
+
+	if (qclass != DNS_C_IN) {
+		return NULL;
+	}
+
+	if (*rr_len < 2) {
+		return NULL;
+	}
+
+	return data_context.ptr;
+}
+
+void *dns_get_rr_nested_next(struct dns_rrs *rrs, void *rr_nested, int rr_nested_len)
+{
+	void *end = rrs->data + rrs->len;
+	void *p = rr_nested + rr_nested_len;
+	if (p == end) {
+		return NULL;
+	} else if (p > end) {
+		return NULL;
+	}
+
+	return p;
+}
+
 static int _dns_add_RAW(struct dns_packet *packet, dns_rr_type rrtype, dns_type_t rtype, const char *domain, int ttl,
 						const void *raw, int raw_len)
 {
@@ -747,7 +863,7 @@ int dns_get_A(struct dns_rrs *rrs, char *domain, int maxsize, int *ttl, unsigned
 	return _dns_get_RAW(rrs, domain, maxsize, ttl, addr, &len);
 }
 
-int dns_add_PTR(struct dns_packet *packet, dns_rr_type type, const char *domain, int ttl, char *cname)
+int dns_add_PTR(struct dns_packet *packet, dns_rr_type type, const char *domain, int ttl, const char *cname)
 {
 	int rr_len = strnlen(cname, DNS_MAX_CNAME_LEN) + 1;
 	return _dns_add_RAW(packet, type, DNS_T_PTR, domain, ttl, cname, rr_len);
@@ -789,7 +905,7 @@ int dns_add_SOA(struct dns_packet *packet, dns_rr_type type, const char *domain,
 	/*| mname        |
 	 *| rname        |
 	 *| serial       |
-	 *| refersh      |
+	 *| refresh      |
 	 *| retry        |
 	 *| expire       |
 	 *| minimum      |
@@ -797,6 +913,11 @@ int dns_add_SOA(struct dns_packet *packet, dns_rr_type type, const char *domain,
 	unsigned char data[sizeof(*soa)];
 	unsigned char *ptr = data;
 	int len = 0;
+
+	if (soa == NULL || domain == NULL || packet == NULL) {
+		return -1;
+	}
+
 	safe_strncpy((char *)ptr, soa->mname, DNS_MAX_CNAME_LEN);
 	ptr += strnlen(soa->mname, DNS_MAX_CNAME_LEN - 1) + 1;
 	safe_strncpy((char *)ptr, soa->rname, DNS_MAX_CNAME_LEN);
@@ -826,7 +947,7 @@ int dns_get_SOA(struct dns_rrs *rrs, char *domain, int maxsize, int *ttl, struct
 	/*| mname        |
 	 *| rname        |
 	 *| serial       |
-	 *| refersh      |
+	 *| refresh      |
 	 *| retry        |
 	 *| expire       |
 	 *| minimum      |
@@ -917,7 +1038,7 @@ int dns_get_OPT_ECS(struct dns_rrs *rrs, unsigned short *opt_code, unsigned shor
 	return 0;
 }
 
-int dns_add_OPT_TCP_KEEYALIVE(struct dns_packet *packet, unsigned short timeout)
+int dns_add_OPT_TCP_KEEPALIVE(struct dns_packet *packet, unsigned short timeout)
 {
 	unsigned short timeout_net = htons(timeout);
 	int data_len = 0;
@@ -929,7 +1050,7 @@ int dns_add_OPT_TCP_KEEYALIVE(struct dns_packet *packet, unsigned short timeout)
 	return _dns_add_opt_RAW(packet, DNS_OPT_T_TCP_KEEPALIVE, &timeout_net, data_len);
 }
 
-int dns_get_OPT_TCP_KEEYALIVE(struct dns_rrs *rrs, unsigned short *opt_code, unsigned short *opt_len,
+int dns_get_OPT_TCP_KEEPALIVE(struct dns_rrs *rrs, unsigned short *opt_code, unsigned short *opt_len,
 							  unsigned short *timeout)
 {
 	unsigned char opt_data[DNS_MAX_OPT_LEN];
@@ -966,6 +1087,184 @@ int dns_get_OPT_TCP_KEEYALIVE(struct dns_rrs *rrs, unsigned short *opt_code, uns
 	return 0;
 }
 
+int dns_add_HTTPS_start(struct dns_rr_nested *svcparam_buffer, struct dns_packet *packet, dns_rr_type type,
+						const char *domain, int ttl, int priority, const char *target)
+{
+	svcparam_buffer = dns_add_rr_nested_start(svcparam_buffer, packet, type, DNS_T_HTTPS, domain, ttl);
+	if (svcparam_buffer == NULL) {
+		return -1;
+	}
+
+	int target_len = 0;
+	if (target == NULL) {
+		target = "";
+	}
+
+	target_len = strnlen(target, DNS_MAX_CNAME_LEN) + 1;
+	if (_dns_left_len(&svcparam_buffer->context) < 2 + target_len) {
+		return -1;
+	}
+
+	/* add rr data */
+	_dns_write_short(&svcparam_buffer->context.ptr, priority);
+	safe_strncpy((char *)svcparam_buffer->context.ptr, target, target_len);
+	svcparam_buffer->context.ptr += target_len;
+
+	return 0;
+}
+
+int dns_HTTPS_add_raw(struct dns_rr_nested *svcparam, unsigned short key, unsigned char *value, unsigned short len)
+{
+	if (_dns_left_len(&svcparam->context) < 2 + len) {
+		return -1;
+	}
+
+	dns_add_rr_nested_memcpy(svcparam, &key, 2);
+	dns_add_rr_nested_memcpy(svcparam, &len, 2);
+	dns_add_rr_nested_memcpy(svcparam, value, len);
+	return 0;
+}
+
+int dns_HTTPS_add_port(struct dns_rr_nested *svcparam, unsigned short port)
+{
+	if (_dns_left_len(&svcparam->context) < 6) {
+		return -1;
+	}
+
+	unsigned short value = DNS_HTTPS_T_PORT;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+	value = 2;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+	value = htons(port);
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	return 0;
+}
+
+int dns_HTTPS_add_alpn(struct dns_rr_nested *svcparam, const char *alpn, int alpn_len)
+{
+	if (_dns_left_len(&svcparam->context) < 2 + 2 + alpn_len) {
+		return -1;
+	}
+
+	unsigned short value = DNS_HTTPS_T_ALPN;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	value = alpn_len;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+	dns_add_rr_nested_memcpy(svcparam, alpn, alpn_len);
+
+	return 0;
+}
+
+int dns_HTTPS_add_ech(struct dns_rr_nested *svcparam, void *ech, int ech_len)
+{
+	if (_dns_left_len(&svcparam->context) < 2 + 2 + ech_len) {
+		return -1;
+	}
+
+	unsigned short value = DNS_HTTPS_T_ECH;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	value = ech_len;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+	dns_add_rr_nested_memcpy(svcparam, ech, ech_len);
+
+	return 0;
+}
+
+int dns_HTTPS_add_ipv4hint(struct dns_rr_nested *svcparam, unsigned char *addr[], int addr_num)
+{
+	if (_dns_left_len(&svcparam->context) < 4 + addr_num * DNS_RR_A_LEN) {
+		return -1;
+	}
+
+	unsigned short value = DNS_HTTPS_T_IPV4HINT;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	value = addr_num * DNS_RR_A_LEN;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	for (int i = 0; i < addr_num; i++) {
+		dns_add_rr_nested_memcpy(svcparam, addr[i], DNS_RR_A_LEN);
+	}
+
+	return 0;
+}
+
+int dns_HTTPS_add_ipv6hint(struct dns_rr_nested *svcparam, unsigned char *addr[], int addr_num)
+{
+	if (_dns_left_len(&svcparam->context) < 4 + addr_num * DNS_RR_AAAA_LEN) {
+		return -1;
+	}
+
+	unsigned short value = DNS_HTTPS_T_IPV6HINT;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	value = addr_num * DNS_RR_AAAA_LEN;
+	dns_add_rr_nested_memcpy(svcparam, &value, 2);
+
+	for (int i = 0; i < addr_num; i++) {
+		dns_add_rr_nested_memcpy(svcparam, addr[i], DNS_RR_AAAA_LEN);
+	}
+
+	return 0;
+}
+
+int dns_add_HTTPS_end(struct dns_rr_nested *svcparam)
+{
+	return dns_add_rr_nested_end(svcparam, DNS_T_HTTPS);
+}
+
+int dns_get_HTTPS_svcparm_start(struct dns_rrs *rrs, struct dns_https_param **https_param, char *domain, int maxsize,
+								int *ttl, int *priority, char *target, int target_size)
+{
+	int qtype = 0;
+	unsigned char *data = NULL;
+	int rr_len = 0;
+
+	data = dns_get_rr_nested_start(rrs, domain, maxsize, &qtype, ttl, &rr_len);
+	if (data == NULL) {
+		return -1;
+	}
+
+	if (qtype != DNS_T_HTTPS) {
+		return -1;
+	}
+
+	if (rr_len < 2) {
+		return -1;
+	}
+
+	*priority = _dns_read_short(&data);
+	rr_len -= 2;
+	if (rr_len <= 0) {
+		return -1;
+	}
+
+	int len = strnlen((char *)data, rr_len);
+	safe_strncpy(target, (char *)data, target_size);
+	data += len + 1;
+	rr_len -= len + 1;
+	if (rr_len < 0) {
+		return -1;
+	}
+
+	if (rr_len == 0) {
+		*https_param = NULL;
+		return 0;
+	}
+
+	*https_param = (struct dns_https_param *)data;
+
+	return 0;
+}
+
+struct dns_https_param *dns_get_HTTPS_svcparm_next(struct dns_rrs *rrs, struct dns_https_param *param)
+{
+	return dns_get_rr_nested_next(rrs, param, sizeof(struct dns_https_param) + param->len);
+}
+
 /*
  * Format:
  * |DNS_NAME\0(string)|qtype(short)|qclass(short)|
@@ -992,10 +1291,6 @@ int dns_add_domain(struct dns_packet *packet, const char *domain, int qtype, int
 int dns_get_domain(struct dns_rrs *rrs, char *domain, int maxsize, int *qtype, int *qclass)
 {
 	struct dns_context context;
-
-	if (rrs->type != DNS_T_CNAME) {
-		return -1;
-	}
 
 	_dns_init_context_by_rrs(rrs, &context);
 	return _dns_get_qr_head(&context, domain, maxsize, qtype, qclass);
@@ -1279,7 +1574,7 @@ static int _dns_encode_CNAME(struct dns_context *context, struct dns_rrs *rrs)
 		return -1;
 	}
 
-	/* when code domain, len must plus 1, because of length at the begining */
+	/* when code domain, len must plus 1, because of length at the beginning */
 	rr_len = 1;
 	ret = _dns_encode_rr_head(context, domain, qtype, qclass, ttl, rr_len, &rr_len_ptr);
 	if (ret < 0) {
@@ -1390,12 +1685,12 @@ static int _dns_encode_SOA(struct dns_context *context, struct dns_rrs *rrs)
 	return 0;
 }
 
-static int _dns_decode_opt_ecs(struct dns_context *context, struct dns_opt_ecs *ecs)
+static int _dns_decode_opt_ecs(struct dns_context *context, struct dns_opt_ecs *ecs, int opt_len)
 {
 	// TODO
 
 	int len = 0;
-	if (_dns_left_len(context) < 4) {
+	if (opt_len < 4) {
 		return -1;
 	}
 
@@ -1419,31 +1714,30 @@ static int _dns_decode_opt_ecs(struct dns_context *context, struct dns_opt_ecs *
 	return 0;
 }
 
-static int _dns_decode_opt_cookie(struct dns_context *context, struct dns_opt_cookie *cookie)
+static int _dns_decode_opt_cookie(struct dns_context *context, struct dns_opt_cookie *cookie, int opt_len)
 {
 	// TODO
-	int len = _dns_left_len(context);
-	if (len < 8) {
+	if (opt_len < (int)member_size(struct dns_opt_cookie, client_cookie)) {
 		return -1;
 	}
 
-	len = 8;
+	int len = 8;
 	memcpy(cookie->client_cookie, context->ptr, len);
 	context->ptr += len;
 
-	len = _dns_left_len(context);
-	if (len == 0) {
+	opt_len -= len;
+	if (opt_len <= 0) {
 		cookie->server_cookie_len = 0;
 		return 0;
 	}
 
-	if (len < 8) {
+	if (opt_len < 8 || opt_len > (int)member_size(struct dns_opt_cookie, server_cookie)) {
 		return -1;
 	}
 
-	memcpy(cookie->server_cookie, context->ptr, len);
-	cookie->server_cookie_len = len;
-	context->ptr += len;
+	memcpy(cookie->server_cookie, context->ptr, opt_len);
+	cookie->server_cookie_len = opt_len;
+	context->ptr += opt_len;
 
 	tlog(TLOG_DEBUG, "OPT COOKIE");
 	return 0;
@@ -1566,7 +1860,7 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 {
 	unsigned short opt_code = 0;
 	unsigned short opt_len = 0;
-	unsigned short ercode = (ttl >> 16) & 0xFFFF;
+	unsigned short errcode = (ttl >> 16) & 0xFFFF;
 	unsigned short ever = (ttl)&0xFFFF;
 	unsigned char *start = context->ptr;
 	struct dns_packet *packet = context->packet;
@@ -1609,14 +1903,14 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 		return -1;
 	}
 
-	if (ercode != 0) {
-		tlog(TLOG_ERROR, "extend rcode invalid.");
-		return -1;
+	if (errcode != 0) {
+		tlog(TLOG_DEBUG, "extend rcode invalid, %d", errcode);
+		return 0;
 	}
 
 	while (context->ptr - start < rr_len) {
 		if (_dns_left_len(context) < 4) {
-			tlog(TLOG_WARN, "data length is invalid, %d:%d", _dns_left_len(context),
+			tlog(TLOG_DEBUG, "data length is invalid, %d:%d", _dns_left_len(context),
 				 (int)(context->ptr - context->data));
 			return -1;
 		}
@@ -1624,7 +1918,7 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 		opt_len = _dns_read_short(&context->ptr);
 
 		if (_dns_left_len(context) < opt_len) {
-			tlog(TLOG_ERROR, "read opt data failed, opt_code = %d, opt_le = %d", opt_code, opt_len);
+			tlog(TLOG_DEBUG, "read opt data failed, opt_code = %d, opt_len = %d", opt_code, opt_len);
 			return -1;
 		}
 
@@ -1632,7 +1926,7 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 		switch (opt_code) {
 		case DNS_OPT_T_ECS: {
 			struct dns_opt_ecs ecs;
-			ret = _dns_decode_opt_ecs(context, &ecs);
+			ret = _dns_decode_opt_ecs(context, &ecs, opt_len);
 			if (ret != 0) {
 				tlog(TLOG_ERROR, "decode ecs failed.");
 				return -1;
@@ -1646,7 +1940,7 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 		} break;
 		case DNS_OPT_T_COOKIE: {
 			struct dns_opt_cookie cookie;
-			ret = _dns_decode_opt_cookie(context, &cookie);
+			ret = _dns_decode_opt_cookie(context, &cookie, opt_len);
 			if (ret != 0) {
 				tlog(TLOG_ERROR, "decode cookie failed.");
 				return -1;
@@ -1661,6 +1955,151 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 			break;
 		}
 	}
+
+	return 0;
+}
+
+static int _dns_encode_HTTPS(struct dns_context *context, struct dns_rrs *rrs)
+{
+	int ret = 0;
+	int qtype = 0;
+	int qclass = 0;
+	char domain[DNS_MAX_CNAME_LEN];
+	char target[DNS_MAX_CNAME_LEN] = {0};
+	unsigned char *rr_len_ptr = NULL;
+	unsigned char *start = NULL;
+	unsigned char *rr_start = NULL;
+	int ttl = 0;
+	int priority = 0;
+	struct dns_https_param *param = NULL;
+
+	ret =
+		dns_get_HTTPS_svcparm_start(rrs, &param, domain, DNS_MAX_CNAME_LEN, &ttl, &priority, target, DNS_MAX_CNAME_LEN);
+	if (ret < 0) {
+		tlog(TLOG_DEBUG, "get https param failed.");
+		return 0;
+	}
+
+	qtype = DNS_T_HTTPS;
+	qclass = DNS_C_IN;
+
+	ret = _dns_encode_rr_head(context, domain, qtype, qclass, ttl, 0, &rr_len_ptr);
+	if (ret < 0) {
+		return -1;
+	}
+
+	rr_start = context->ptr;
+	if (_dns_left_len(context) < 2) {
+		tlog(TLOG_ERROR, "left len is invalid.");
+		return -1;
+	}
+
+	_dns_write_short(&context->ptr, priority);
+	ret = _dns_encode_domain(context, target);
+	if (ret < 0) {
+		return -1;
+	}
+
+	start = context->ptr;
+	for (; param != NULL; param = dns_get_HTTPS_svcparm_next(rrs, param)) {
+		if (context->ptr - start > rrs->len || _dns_left_len(context) <= 0) {
+			return -1;
+		}
+
+		if (param->len + 4 > _dns_left_len(context)) {
+			return -1;
+		}
+
+		_dns_write_short(&context->ptr, param->key);
+		_dns_write_short(&context->ptr, param->len);
+		switch (param->key) {
+		case DNS_HTTPS_T_MANDATORY:
+		case DNS_HTTPS_T_NO_DEFAULT_ALPN:
+		case DNS_HTTPS_T_ALPN:
+		case DNS_HTTPS_T_PORT:
+		case DNS_HTTPS_T_IPV4HINT:
+		case DNS_HTTPS_T_ECH:
+		case DNS_HTTPS_T_IPV6HINT: {
+			memcpy(context->ptr, param->value, param->len);
+			context->ptr += param->len;
+		} break;
+		default:
+			/* skip unknown key */
+			context->ptr -= 4;
+			break;
+		}
+	}
+
+	if (_dns_left_len(context) < 2) {
+		return -1;
+	}
+
+	_dns_write_short(&rr_len_ptr, context->ptr - rr_start);
+
+	return 0;
+}
+
+static int _dns_decode_HTTPS(struct dns_context *context, const char *domain, dns_rr_type type, unsigned int ttl,
+							 int rr_len)
+{
+	unsigned char *start = context->ptr;
+
+	struct dns_packet *packet = context->packet;
+	int ret = 0;
+	unsigned short priority;
+	unsigned short key;
+	unsigned short value_len;
+	unsigned char *value = NULL;
+	char target[DNS_MAX_CNAME_LEN] = {0};
+	struct dns_rr_nested param;
+
+	if (rr_len < 2) {
+		tlog(TLOG_DEBUG, "https len is invalid.");
+		return -1;
+	}
+
+	priority = _dns_read_short(&context->ptr);
+	ret = _dns_decode_domain(context, target, sizeof(target));
+	if (ret < 0) {
+		return -1;
+	}
+
+	dns_add_HTTPS_start(&param, packet, DNS_RRS_AN, domain, ttl, priority, target);
+
+	while (context->ptr - start < rr_len) {
+		if (_dns_left_len(context) < 4) {
+			tlog(TLOG_WARN, "data length is invalid, %d:%d", _dns_left_len(context),
+				 (int)(context->ptr - context->data));
+			return -1;
+		}
+		key = _dns_read_short(&context->ptr);
+		value_len = _dns_read_short(&context->ptr);
+		value = context->ptr;
+
+		if (_dns_left_len(context) < value_len) {
+			tlog(TLOG_ERROR, "read https data failed, svcParam key = %d, https_len = %d", key, value_len);
+			return -1;
+		}
+
+		switch (key) {
+		case DNS_HTTPS_T_MANDATORY:
+		case DNS_HTTPS_T_ALPN:
+		case DNS_HTTPS_T_NO_DEFAULT_ALPN:
+		case DNS_HTTPS_T_PORT:
+		case DNS_HTTPS_T_IPV4HINT:
+		case DNS_HTTPS_T_ECH:
+		case DNS_HTTPS_T_IPV6HINT: {
+			dns_HTTPS_add_raw(&param, key, value, value_len);
+		} break;
+		default:
+			tlog(TLOG_DEBUG, "DNS HTTPS key = %d not supported", key);
+			break;
+		}
+
+		context->ptr += value_len;
+	}
+
+	dns_add_HTTPS_end(&param);
 
 	return 0;
 }
@@ -1718,7 +2157,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = dns_add_A(packet, type, domain, ttl, addr);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add A failed, %s", domain);
+			tlog(TLOG_DEBUG, "add A failed, %s", domain);
 			return -1;
 		}
 	} break;
@@ -1733,7 +2172,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = dns_add_CNAME(packet, type, domain, ttl, cname);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add CNAME failed, %s", domain);
+			tlog(TLOG_DEBUG, "add CNAME failed, %s", domain);
 			return -1;
 		}
 	} break;
@@ -1747,7 +2186,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = dns_add_SOA(packet, type, domain, ttl, &soa);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add SOA failed, %s", domain);
+			tlog(TLOG_DEBUG, "add SOA failed, %s", domain);
 			return -1;
 		}
 	} break;
@@ -1761,7 +2200,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = dns_add_NS(packet, type, domain, ttl, ns);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add NS failed, %s", domain);
+			tlog(TLOG_DEBUG, "add NS failed, %s", domain);
 			return -1;
 		}
 	} break;
@@ -1775,7 +2214,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = dns_add_PTR(packet, type, domain, ttl, name);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add PTR failed, %s", domain);
+			tlog(TLOG_DEBUG, "add PTR failed, %s", domain);
 			return -1;
 		}
 	} break;
@@ -1789,7 +2228,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = dns_add_AAAA(packet, type, domain, ttl, addr);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add AAAA failed, %s", domain);
+			tlog(TLOG_DEBUG, "add AAAA failed, %s", domain);
 			return -1;
 		}
 	} break;
@@ -1808,6 +2247,19 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		dns_set_OPT_payload_size(packet, qclass);
 	} break;
+	case DNS_T_HTTPS: {
+		unsigned char *https_start = context->ptr;
+		ret = _dns_decode_HTTPS(context, domain, type, ttl, rr_len);
+		if (ret < 0) {
+			tlog(TLOG_DEBUG, "decode HTTPS failed, %s", domain);
+			return -1;
+		}
+
+		if (context->ptr - https_start != rr_len) {
+			tlog(TLOG_DEBUG, "opt length mismatch, %s\n", domain);
+			return -1;
+		}
+	} break;
 	default: {
 		unsigned char raw_data[1024];
 		if (_dns_left_len(context) < rr_len || rr_len >= (int)sizeof(raw_data)) {
@@ -1823,7 +2275,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 
 		ret = _dns_add_RAW(packet, type, qtype, domain, ttl, raw_data, rr_len);
 		if (ret < 0) {
-			tlog(TLOG_ERROR, "add raw failed, %s", domain);
+			tlog(TLOG_DEBUG, "add raw failed, %s", domain);
 			return -1;
 		}
 
@@ -1833,7 +2285,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 	}
 
 	if (context->ptr - start != rr_len) {
-		tlog(TLOG_ERROR, "length mismatch, %s, %ld:%d", domain, (long)(context->ptr - start), rr_len);
+		tlog(TLOG_DEBUG, "length mismatch, %s, %ld:%d", domain, (long)(context->ptr - start), rr_len);
 		return -1;
 	}
 
@@ -1859,6 +2311,16 @@ static int _dns_encode_qd(struct dns_context *context, struct dns_rrs *rrs)
 		return -1;
 	}
 
+	if (domain[0] == '-') {
+		/* for google and cloudflare */
+		unsigned char *ptr = context->ptr - 7;
+		memcpy(ptr, "\xC0\x12", 2);
+		ptr += 2;
+		_dns_write_short(&ptr, qtype);
+		_dns_write_short(&ptr, qclass);
+		context->ptr = ptr;
+	}
+
 	return 0;
 }
 
@@ -1882,6 +2344,12 @@ static int _dns_encode_an(struct dns_context *context, struct dns_rrs *rrs)
 		break;
 	case DNS_T_SOA:
 		ret = _dns_encode_SOA(context, rrs);
+		if (ret < 0) {
+			return -1;
+		}
+		break;
+	case DNS_T_HTTPS:
+		ret = _dns_encode_HTTPS(context, rrs);
 		if (ret < 0) {
 			return -1;
 		}

@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 
 #define _GNU_SOURCE
+#include "smartdns.h"
 #include "art.h"
 #include "atomic.h"
 #include "dns_client.h"
@@ -40,13 +41,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ucontext.h>
 
-#define MAX_LINE_LEN 1024
 #define MAX_KEY_LEN 64
-#define SMARTDNS_PID_FILE "/var/run/smartdns.pid"
+#define SMARTDNS_PID_FILE "/run/smartdns.pid"
+#define SMARTDNS_LEGACY_PID_FILE "/var/run/smartdns.pid"
 #define TMP_BUFF_LEN_32 32
 
 static int verbose_screen;
@@ -54,7 +56,7 @@ static int verbose_screen;
 int capget(struct __user_cap_header_struct *header, struct __user_cap_data_struct *cap);
 int capset(struct __user_cap_header_struct *header, struct __user_cap_data_struct *cap);
 
-static int get_uid_gid(int *uid, int *gid)
+static int get_uid_gid(uid_t *uid, gid_t *gid)
 {
 	struct passwd *result = NULL;
 	struct passwd pwd;
@@ -63,7 +65,9 @@ static int get_uid_gid(int *uid, int *gid)
 	int ret = -1;
 
 	if (dns_conf_user[0] == '\0') {
-		return -1;
+		*uid = getuid();
+		*gid = getgid();
+		return 0;
 	}
 
 	bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
@@ -107,8 +111,8 @@ static int drop_root_privilege(void)
 	header.version = _LINUX_CAPABILITY_VERSION;
 #endif
 	header.pid = 0;
-	int uid = 0;
-	int gid = 0;
+	uid_t uid = 0;
+	gid_t gid = 0;
 	int unused __attribute__((unused)) = 0;
 
 	if (get_uid_gid(&uid, &gid) != 0) {
@@ -147,7 +151,7 @@ static void _help(void)
 		"  -p [pid]      pid file path, '-' means don't create pid file.\n"
 		"  -S            ignore segment fault signal.\n"
 		"  -x            verbose screen.\n"
-		"  -v            dispaly version.\n"
+		"  -v            display version.\n"
 		"  -h            show this help message.\n"
 
 		"Online help: http://pymumu.github.io/smartdns\n"
@@ -172,11 +176,11 @@ static void _show_version(void)
 	printf("smartdns %s\n", str_ver);
 }
 
-static int _smartdns_load_from_resolv(void)
+static int _smartdns_load_from_resolv_file(const char *resolv_file)
 {
 	FILE *fp = NULL;
 	char line[MAX_LINE_LEN];
-	char key[MAX_KEY_LEN];
+	char key[MAX_KEY_LEN] = {0};
 	char value[MAX_LINE_LEN];
 	char ns_ip[DNS_MAX_IPLEN];
 	int port = PORT_NOT_DEFINED;
@@ -185,9 +189,9 @@ static int _smartdns_load_from_resolv(void)
 	int filed_num = 0;
 	int line_num = 0;
 
-	fp = fopen(dns_resolv_file, "r");
+	fp = fopen(resolv_file, "r");
 	if (fp == NULL) {
-		tlog(TLOG_ERROR, "open %s failed, %s", dns_resolv_file, strerror(errno));
+		tlog(TLOG_ERROR, "open %s failed, %s", resolv_file, strerror(errno));
 		return -1;
 	}
 
@@ -214,6 +218,7 @@ static int _smartdns_load_from_resolv(void)
 		safe_strncpy(dns_conf_servers[dns_conf_server_num].server, ns_ip, DNS_MAX_IPLEN);
 		dns_conf_servers[dns_conf_server_num].port = port;
 		dns_conf_servers[dns_conf_server_num].type = DNS_SERVER_UDP;
+		dns_conf_servers[dns_conf_server_num].set_mark = -1;
 		dns_conf_server_num++;
 		ret = 0;
 	}
@@ -221,6 +226,71 @@ static int _smartdns_load_from_resolv(void)
 	fclose(fp);
 
 	return ret;
+}
+
+static int _smartdns_load_from_resolv(void)
+{
+	return _smartdns_load_from_resolv_file(dns_resolv_file);
+}
+
+static int _smartdns_load_from_default_resolv(void)
+{
+	return _smartdns_load_from_resolv_file(DNS_RESOLV_FILE);
+}
+
+static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags, struct dns_servers *server)
+{
+	memset(flags, 0, sizeof(*flags));
+	switch (server->type) {
+	case DNS_SERVER_UDP: {
+		struct client_dns_server_flag_udp *flag_udp = &flags->udp;
+		flag_udp->ttl = server->ttl;
+	} break;
+#ifdef HAVE_OPENSSL
+	case DNS_SERVER_HTTPS: {
+		struct client_dns_server_flag_https *flag_http = &flags->https;
+		flag_http->spi_len = dns_client_spki_decode(server->spki, (unsigned char *)flag_http->spki);
+		safe_strncpy(flag_http->hostname, server->hostname, sizeof(flag_http->hostname));
+		safe_strncpy(flag_http->path, server->path, sizeof(flag_http->path));
+		safe_strncpy(flag_http->httphost, server->httphost, sizeof(flag_http->httphost));
+		safe_strncpy(flag_http->tls_host_verify, server->tls_host_verify, sizeof(flag_http->tls_host_verify));
+		flag_http->skip_check_cert = server->skip_check_cert;
+	} break;
+	case DNS_SERVER_TLS: {
+		struct client_dns_server_flag_tls *flag_tls = &flags->tls;
+		flag_tls->spi_len = dns_client_spki_decode(server->spki, (unsigned char *)flag_tls->spki);
+		safe_strncpy(flag_tls->hostname, server->hostname, sizeof(flag_tls->hostname));
+		safe_strncpy(flag_tls->tls_host_verify, server->tls_host_verify, sizeof(flag_tls->tls_host_verify));
+		flag_tls->skip_check_cert = server->skip_check_cert;
+
+	} break;
+#endif
+	case DNS_SERVER_TCP:
+		break;
+	default:
+		return -1;
+		break;
+	}
+
+	flags->type = server->type;
+	flags->server_flag = server->server_flag;
+	flags->result_flag = server->result_flag;
+	flags->set_mark = server->set_mark;
+	flags->drop_packet_latency_ms = server->drop_packet_latency_ms;
+	safe_strncpy(flags->proxyname, server->proxyname, sizeof(flags->proxyname));
+	if (server->ipv4_ecs.enable) {
+		flags->ipv4_ecs.enable = 1;
+		safe_strncpy(flags->ipv4_ecs.ip, server->ipv4_ecs.ip, sizeof(flags->ipv4_ecs.ip));
+		flags->ipv4_ecs.subnet = server->ipv4_ecs.subnet;
+	}
+
+	if (server->ipv6_ecs.enable) {
+		flags->ipv6_ecs.enable = 1;
+		safe_strncpy(flags->ipv6_ecs.ip, server->ipv6_ecs.ip, sizeof(flags->ipv6_ecs.ip));
+		flags->ipv6_ecs.subnet = server->ipv6_ecs.subnet;
+	}
+
+	return 0;
 }
 
 static int _smartdns_add_servers(void)
@@ -233,43 +303,12 @@ static int _smartdns_add_servers(void)
 	struct client_dns_server_flags flags;
 
 	for (i = 0; i < (unsigned int)dns_conf_server_num; i++) {
-		memset(&flags, 0, sizeof(flags));
-		switch (dns_conf_servers[i].type) {
-		case DNS_SERVER_UDP: {
-			struct client_dns_server_flag_udp *flag_udp = &flags.udp;
-			flag_udp->ttl = dns_conf_servers[i].ttl;
-		} break;
-#ifdef HAVE_OPENSSL
-		case DNS_SERVER_HTTPS: {
-			struct client_dns_server_flag_https *flag_http = &flags.https;
-			flag_http->spi_len = dns_client_spki_decode(dns_conf_servers[i].spki, (unsigned char *)flag_http->spki);
-			safe_strncpy(flag_http->hostname, dns_conf_servers[i].hostname, sizeof(flag_http->hostname));
-			safe_strncpy(flag_http->path, dns_conf_servers[i].path, sizeof(flag_http->path));
-			safe_strncpy(flag_http->httphost, dns_conf_servers[i].httphost, sizeof(flag_http->httphost));
-			safe_strncpy(flag_http->tls_host_verify, dns_conf_servers[i].tls_host_verify,
-						 sizeof(flag_http->tls_host_verify));
-			flag_http->skip_check_cert = dns_conf_servers[i].skip_check_cert;
-		} break;
-		case DNS_SERVER_TLS: {
-			struct client_dns_server_flag_tls *flag_tls = &flags.tls;
-			flag_tls->spi_len = dns_client_spki_decode(dns_conf_servers[i].spki, (unsigned char *)flag_tls->spki);
-			safe_strncpy(flag_tls->hostname, dns_conf_servers[i].hostname, sizeof(flag_tls->hostname));
-			safe_strncpy(flag_tls->tls_host_verify, dns_conf_servers[i].tls_host_verify,
-						 sizeof(flag_tls->tls_host_verify));
-			flag_tls->skip_check_cert = dns_conf_servers[i].skip_check_cert;
-
-		} break;
-#endif
-		case DNS_SERVER_TCP:
-			break;
-		default:
+		if (_smartdns_prepare_server_flags(&flags, &dns_conf_servers[i]) != 0) {
+			tlog(TLOG_ERROR, "prepare server flags failed, %s:%d", dns_conf_servers[i].server,
+				 dns_conf_servers[i].port);
 			return -1;
-			break;
 		}
 
-		flags.type = dns_conf_servers[i].type;
-		flags.server_flag = dns_conf_servers[i].server_flag;
-		flags.result_flag = dns_conf_servers[i].result_flag;
 		ret = dns_client_add_server(dns_conf_servers[i].server, dns_conf_servers[i].port, dns_conf_servers[i].type,
 									&flags);
 		if (ret != 0) {
@@ -291,11 +330,44 @@ static int _smartdns_add_servers(void)
 			if (server == NULL) {
 				continue;
 			}
-			ret = dns_client_add_to_group(group->group_name, server->server, server->port, server->type);
+
+			if (_smartdns_prepare_server_flags(&flags, server) != 0) {
+				tlog(TLOG_ERROR, "prepare server flags failed, %s:%d", server->server, server->port);
+				return -1;
+			}
+
+			ret = dns_client_add_to_group(group->group_name, server->server, server->port, server->type, &flags);
 			if (ret != 0) {
 				tlog(TLOG_ERROR, "add server %s to group %s failed", server->server, group->group_name);
 				return -1;
 			}
+		}
+	}
+
+	return 0;
+}
+
+static int _proxy_add_servers(void)
+{
+	unsigned long i = 0;
+	struct hlist_node *tmp = NULL;
+	struct dns_proxy_names *proxy = NULL;
+	struct dns_proxy_servers *server = NULL;
+	struct dns_proxy_servers *server_tmp = NULL;
+
+	hash_for_each_safe(dns_proxy_table.proxy, i, tmp, proxy, node)
+	{
+		list_for_each_entry_safe(server, server_tmp, &proxy->server_list, list)
+		{
+			struct proxy_info info;
+			memset(&info, 0, sizeof(info));
+			info.type = server->type;
+			info.port = server->port;
+			safe_strncpy(info.server, server->server, PROXY_MAX_IPLEN);
+			safe_strncpy(info.username, server->username, PROXY_MAX_NAMELEN);
+			safe_strncpy(info.password, server->password, PROXY_MAX_NAMELEN);
+			info.use_domain = server->use_domain;
+			proxy_add(proxy->proxy_name, &info);
 		}
 	}
 
@@ -315,7 +387,44 @@ static int _smartdns_set_ecs_ip(void)
 
 	return ret;
 }
+
 #ifdef HAVE_OPENSSL
+static int _smartdns_create_cert(void)
+{
+	uid_t uid = 0;
+	gid_t gid = 0;
+
+	if (dns_conf_need_cert == 0) {
+		return 0;
+	}
+
+	if (dns_conf_bind_ca_file[0] != 0 && dns_conf_bind_ca_key_file[0] != 0) {
+		return 0;
+	}
+
+	conf_get_conf_fullpath("smartdns-cert.pem", dns_conf_bind_ca_file, sizeof(dns_conf_bind_ca_file));
+	conf_get_conf_fullpath("smartdns-key.pem", dns_conf_bind_ca_key_file, sizeof(dns_conf_bind_ca_key_file));
+	if (access(dns_conf_bind_ca_file, F_OK) == 0 && access(dns_conf_bind_ca_key_file, F_OK) == 0) {
+		return 0;
+	}
+
+	if (generate_cert_key(dns_conf_bind_ca_key_file, dns_conf_bind_ca_file, NULL, 365 * 3) != 0) {
+		tlog(TLOG_WARN, "Generate default ssl cert and key file failed. %s", strerror(errno));
+		return -1;
+	}
+
+	int unused __attribute__((unused)) = 0;
+
+	if (get_uid_gid(&uid, &gid) != 0) {
+		return 0;
+	}
+
+	unused = chown(dns_conf_bind_ca_file, uid, gid);
+	unused = chown(dns_conf_bind_ca_key_file, uid, gid);
+
+	return 0;
+}
+
 static int _smartdns_init_ssl(void)
 {
 #if OPENSSL_API_COMPAT < 0x10100000L
@@ -353,6 +462,7 @@ static int _smartdns_init(void)
 {
 	int ret = 0;
 	const char *logfile = _smartdns_log_path();
+	int i = 0;
 
 	ret = tlog_init(logfile, dns_conf_log_size, dns_conf_log_num, 0, 0);
 	if (ret != 0) {
@@ -360,8 +470,14 @@ static int _smartdns_init(void)
 		goto errout;
 	}
 
-	tlog_setlogscreen(verbose_screen);
+	if (verbose_screen != 0 || dns_conf_log_console != 0) {
+		tlog_setlogscreen(1);
+	}
+
 	tlog_setlevel(dns_conf_log_level);
+	if (dns_conf_log_file_mode > 0) {
+		tlog_set_permission(tlog_get_root(), dns_conf_log_file_mode, dns_conf_log_file_mode);
+	}
 
 	tlog(TLOG_NOTICE, "smartdns starting...(Copyright (C) Nick Peng <pymumu@gmail.com>, build: %s %s)", __DATE__,
 		 __TIME__);
@@ -373,17 +489,44 @@ static int _smartdns_init(void)
 	}
 #endif
 
-	if (dns_conf_server_num <= 0) {
-		if (_smartdns_load_from_resolv() != 0) {
-			tlog(TLOG_ERROR, "load dns from resolv failed.");
-			goto errout;
+	for (i = 0; i < 180 && dns_conf_server_num <= 0; i++) {
+		ret = _smartdns_load_from_resolv();
+		if (ret == 0) {
+			continue;
 		}
+
+		/* try load from default resolv.conf file */
+		if (i > 30 && strncmp(dns_resolv_file, DNS_RESOLV_FILE, MAX_LINE_LEN) != 0) {
+			ret = _smartdns_load_from_default_resolv();
+			if (ret == 0) {
+				continue;
+			}
+		}
+
+		tlog(TLOG_DEBUG, "load dns from resolv failed, retry after 1s, retry times %d.", i + 1);
+		sleep(1);
+	}
+
+	if (dns_conf_server_num <= 0) {
+		tlog(TLOG_ERROR, "no dns server found, exit...");
+		goto errout;
 	}
 
 	ret = fast_ping_init();
 	if (ret != 0) {
 		tlog(TLOG_ERROR, "start ping failed.\n");
 		goto errout;
+	}
+
+	ret = proxy_init();
+	if (ret != 0) {
+		tlog(TLOG_ERROR, "start proxy failed.\n");
+		goto errout;
+	}
+
+	ret = _proxy_add_servers();
+	if (ret != 0) {
+		tlog(TLOG_ERROR, "add proxy servers failed.");
 	}
 
 	ret = dns_server_init();
@@ -397,6 +540,7 @@ static int _smartdns_init(void)
 		tlog(TLOG_ERROR, "start dns client failed.\n");
 		goto errout;
 	}
+
 	ret = _smartdns_add_servers();
 	if (ret != 0) {
 		tlog(TLOG_ERROR, "add servers failed.");
@@ -423,6 +567,7 @@ static void _smartdns_exit(void)
 {
 	tlog(TLOG_INFO, "smartdns exit...");
 	dns_client_exit();
+	proxy_exit();
 	fast_ping_exit();
 	dns_server_exit();
 #ifdef HAVE_OPENSSL
@@ -498,42 +643,121 @@ static void _reg_signal(void)
 
 static int _smartdns_create_logdir(void)
 {
-	int uid = 0;
-	int gid = 0;
+	uid_t uid = 0;
+	gid_t gid = 0;
+	struct stat sb;
 	char logdir[PATH_MAX] = {0};
-	safe_strncpy(logdir, _smartdns_log_path(), PATH_MAX);
-	dirname(logdir);
-
-	if (access(logdir, F_OK) == 0) {
-		return 0;
-	}
-
-	if (mkdir(logdir, 0750) != 0) {
-		if (errno == EEXIST) {
-			return 0;
-		}
-
-		return -1;
-	}
-
 	int unused __attribute__((unused)) = 0;
+
+	safe_strncpy(logdir, _smartdns_log_path(), PATH_MAX);
+	dir_name(logdir);
 
 	if (get_uid_gid(&uid, &gid) != 0) {
 		return -1;
 	}
 
-	unused = chown(logdir, uid, gid);
+	mkdir(logdir, 0750);
+	if (stat(logdir, &sb) == 0 && sb.st_uid == uid && sb.st_gid == gid && (sb.st_mode & 0700) == 0700) {
+		return 0;
+	}
+
+	if (chown(logdir, uid, gid) != 0) {
+		/* disable log */
+		tlog_set_maxlog_count(0);
+	}
+
+	unused = chmod(logdir, 0750);
+	unused = chown(_smartdns_log_path(), uid, gid);
+	return 0;
+}
+
+static int _smartdns_create_cache_dir(void)
+{
+	uid_t uid = 0;
+	gid_t gid = 0;
+	struct stat sb;
+	char cache_dir[PATH_MAX] = {0};
+	int unused __attribute__((unused)) = 0;
+
+	safe_strncpy(cache_dir, dns_conf_get_cache_dir(), PATH_MAX);
+	dir_name(cache_dir);
+
+	if (get_uid_gid(&uid, &gid) != 0) {
+		return -1;
+	}
+
+	mkdir(cache_dir, 0750);
+	if (stat(cache_dir, &sb) == 0 && sb.st_uid == uid && sb.st_gid == gid && (sb.st_mode & 0700) == 0700) {
+		return 0;
+	}
+
+	if (chown(cache_dir, uid, gid) != 0) {
+		if (dns_conf_cache_file[0] == '\0') {
+			safe_strncpy(dns_conf_cache_file, SMARTDNS_TMP_CACHE_FILE, sizeof(dns_conf_cache_file));
+		}
+	}
+
+	unused = chmod(cache_dir, 0750);
+	unused = chown(dns_conf_get_cache_dir(), uid, gid);
+	return 0;
+}
+
+static int _set_rlimit(void)
+{
+	struct rlimit value;
+	value.rlim_cur = 40;
+	value.rlim_max = 40;
+	setrlimit(RLIMIT_NICE, &value);
 	return 0;
 }
 
 static int _smartdns_init_pre(void)
 {
 	_smartdns_create_logdir();
+	_smartdns_create_cache_dir();
+
+	_set_rlimit();
+
+#ifdef HAVE_OPENSSL
+	if (_smartdns_create_cert() != 0) {
+		tlog(TLOG_ERROR, "create cert failed.");
+		return -1;
+	}
+#endif
 
 	return 0;
 }
 
+#ifdef TEST
+
+static smartdns_post_func _smartdns_post = NULL;
+static void *_smartdns_post_arg = NULL;
+
+int smartdns_reg_post_func(smartdns_post_func func, void *arg)
+{
+	_smartdns_post = func;
+	_smartdns_post_arg = arg;
+	return 0;
+}
+
+#define smartdns_test_notify(retval) smartdns_test_notify_func(fd_notify, retval)
+static void smartdns_test_notify_func(int fd_notify, uint64_t retval)
+{
+	/* notify parent kickoff */
+	if (fd_notify > 0) {
+		write(fd_notify, &retval, sizeof(retval));
+	}
+
+	if (_smartdns_post != NULL) {
+		_smartdns_post(_smartdns_post_arg);
+	}
+}
+
+int smartdns_main(int argc, char *argv[], int fd_notify)
+#else
+#define smartdns_test_notify(retval)
 int main(int argc, char *argv[])
+#endif
 {
 	int ret = 0;
 	int is_foreground = 0;
@@ -542,9 +766,15 @@ int main(int argc, char *argv[])
 	char pid_file[MAX_LINE_LEN];
 	int signal_ignore = 0;
 	sigset_t empty_sigblock;
+	struct stat sb;
 
 	safe_strncpy(config_file, SMARTDNS_CONF_FILE, MAX_LINE_LEN);
-	safe_strncpy(pid_file, SMARTDNS_PID_FILE, MAX_LINE_LEN);
+
+	if (stat("/run", &sb) == 0 && S_ISDIR(sb.st_mode)) {
+		safe_strncpy(pid_file, SMARTDNS_PID_FILE, MAX_LINE_LEN);
+	} else {
+		safe_strncpy(pid_file, SMARTDNS_LEGACY_PID_FILE, MAX_LINE_LEN);
+	}
 
 	/* patch for Asus router:  unblock all signal*/
 	sigemptyset(&empty_sigblock);
@@ -618,11 +848,11 @@ int main(int argc, char *argv[])
 		goto errout;
 	}
 
-	atexit(_smartdns_exit);
-
-	return _smartdns_run();
-
+	smartdns_test_notify(1);
+	ret = _smartdns_run();
+	_smartdns_exit();
+	return ret;
 errout:
-
+	smartdns_test_notify(2);
 	return 1;
 }

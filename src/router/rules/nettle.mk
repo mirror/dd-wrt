@@ -10,7 +10,7 @@ nettle-configure: pcre zlib openssl gmp
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-nettle: openssl gmp
+nettle: openssl gmp pcre
 	make -C nettle desdata CC_FOR_BUILD="gcc"
 	make -C nettle CC_FOR_BUILD="gcc"
 

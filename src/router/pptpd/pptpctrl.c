@@ -80,7 +80,7 @@ char **gargv;                  /* Command line argument vector */
 
 /* Local function prototypes */
 static void bail(int sigraised);
-static void pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetaddrs);
+static int pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetaddrs);
 
 static int startCall(char **pppaddrs, struct in_addr *inetaddrs);
 static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs);
@@ -106,6 +106,8 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs);
                 strlcpy(X, argv[arg++], sizeof(X)); \
         else \
                 *X = '\0'
+void add_blocklist(const char *service, char *ip);
+int check_blocklist(const char *service, char *ip);
 
 int main(int argc, char **argv)
 {
@@ -184,6 +186,10 @@ int main(int argc, char **argv)
                 bail(0);        /* NORETURN */
         }
         inetaddrs[1] = addr.sin_addr;
+	if (check_blocklist("pptpd", inet_ntoa(addr.sin_addr))) {
+                close(clientSocket);
+                bail(0);        /* NORETURN */
+	    }
 
         /* Set non-blocking */
         if ((flags = fcntl(clientSocket, F_GETFL, arg /* ignored */)) == -1 ||
@@ -206,7 +212,9 @@ int main(int argc, char **argv)
         NOTE_VALUE(PNS, call_id_pair, htons(-1));
 
         syslog(LOG_INFO, "CTRL: Client %s control connection started", inet_ntoa(addr.sin_addr));
-        pptp_handle_ctrl_connection(pppaddrs, inetaddrs);
+        if (pptp_handle_ctrl_connection(pppaddrs, inetaddrs)) {
+    	    add_blocklist("pptpd", inet_ntoa(addr.sin_addr));
+        }
         syslog(LOG_DEBUG, "CTRL: Reaping child PPP[%i]", pppfork);
         if (pppfork > 0)
                 waitpid(pppfork, NULL, 0);
@@ -232,9 +240,9 @@ int main(int argc, char **argv)
  *       inetaddrs - local and client socket address
  * retn: 0 success, -1 failure
  */
-static void pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetaddrs)
+static int pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetaddrs)
 {
-
+	int ret = 0;
         /* For echo requests used to check link is alive */
         int echo_wait = FALSE;          /* Waiting for echo? */
         u_int32_t echo_count = 0;       /* Sequence # of echo */
@@ -318,6 +326,7 @@ static void pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetadd
                 /* send from pty off via GRE */
                 if (pty_fd != -1 && FD_ISSET(pty_fd, &fds) && decaps_hdlc(pty_fd, encaps_gre, gre_fd) < 0) {
                         syslog(LOG_ERR, "CTRL: PTY read or GRE write failed (pty,gre)=(%d,%d)", pty_fd, gre_fd);
+                        ret = -1; //auth failed?
                         break;
                 }
                 /* send from GRE off to pty */
@@ -461,7 +470,7 @@ leave_clear_call:
         if (pty_fd != -1)
                 close(pty_fd);
         pty_fd = -1;
-        return;
+        return ret;
 #ifdef init
 #undef init
 #endif

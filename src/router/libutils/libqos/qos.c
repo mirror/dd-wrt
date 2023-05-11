@@ -184,6 +184,17 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
+	if (strstr(type, "risk")) {
+		insmod("xt_ndpi");
+		int risk = get_risk_by_name(name);
+		char *dep = get_dep_by_name(name);
+		if (dep && risk) {
+			char lvl[32];
+			sprintf(lvl, "%d", risk);
+			eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		}
+	}
 #endif
 
 	if (strstr(type, "p2p")) {
@@ -253,6 +264,17 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+	}
+	if (strstr(type, "risk")) {
+		insmod("xt_ndpi");
+		int risk = get_risk_by_name(name);
+		char *dep = get_dep_by_name(name);
+		if (dep && risk) {
+			char lvl[32];
+			sprintf(lvl, "%d", risk);
+			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		}
 	}
 #endif
 
@@ -340,6 +362,20 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
+	}
+	if (strstr(type, "risk")) {
+		insmod("xt_ndpi");
+		int risk = get_risk_by_name(name);
+		char *dep = get_dep_by_name(name);
+		if (dep && risk) {
+			char lvl[32];
+			sprintf(lvl, "%d", risk);
+
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", client, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", client, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", client, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", client, "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		}
 	}
 #endif
 

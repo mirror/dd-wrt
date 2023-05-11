@@ -1720,17 +1720,44 @@ void rep(char *in, char from, char to)
 
 #include "l7protocols.h"
 
+int get_risk_by_name(char *name)
+{
+	l7filters *filters = filters_list;
+	while (filters->name)
+	{
+	    if (!strcmp(filters->name, name))
+		return filters->level;
+	filters++;
+	}
+    return 0;
+}
+
+char *get_dep_by_name(char *name)
+{
+	l7filters *filters = filters_list;
+	while (filters->name)
+	{
+	    if (!strcmp(filters->name, name))
+		return filters->matchdep;
+	filters++;
+	}
+    return 0;
+}
 char *get_filter_services(void)
 {
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char *proto[] = { "l7", "p2p", "dpi" };
+	char *proto[] = { "l7", "p2p", "dpi", "risk" };
 	char *services = NULL;
 
 	while (filters->name)	// add l7 and p2p filters
 	{
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, filters->protocol == 0 ? 2 : 3, proto[filters->protocol]);
+/*		if (filters->protocol == NDPI_RISK) {
+		    filters++;
+		    continue;
+		}*/
+		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, strlen(proto[filters->protocol]), proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
 			services[0] = 0;
@@ -1828,6 +1855,8 @@ filters *get_filters_list(void)
 			s_filters[count].proto = 5;
 		if (!strcmp(protocol, "p2p"))
 			s_filters[count].proto = 6;
+		if (!strcmp(protocol, "risk"))
+			s_filters[count].proto = 7;
 
 		/*
 		 * $PORT 

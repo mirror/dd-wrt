@@ -499,7 +499,8 @@ static int set_risk(uint64_t *risk,int v) {
 static int str2risk(const char *s, uint64_t *res) {
 	uint64_t risk = 0;
 	int v;
-	char *e,*tmp,*c;
+	char *e;
+	const char *c;
 
 	if(s[0] == '0' && s[1] == 'x') {
 		*res = strtoull(s+2,&e,16);
@@ -508,16 +509,10 @@ static int str2risk(const char *s, uint64_t *res) {
 		return *e ? -1:0;
 	}
 	*res = 0ULL;
-	tmp = strdup(s);
-	if(!tmp) {
-		printf("Error: out of memory\n");
-		return -ENOMEM;
-	}
-	for(c=tmp,v=0; *c; c++) {
+	for(c=s,v=0; *c; c++) {
 		if(*c == ',') {
 			if(set_risk(&risk,v))
 				return -EINVAL;
-
 			v = 0;
 			continue;
 		}
@@ -717,7 +712,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_RISK) {
-		if(str2risk(optarg+1,&info->risk))
+		if(str2risk(optarg,&info->risk))
 			return false;
 
         	*flags |= FLAGS_RISK;
@@ -900,9 +895,10 @@ ndpi_mt_check (unsigned int flags)
 	if(flags & FLAGS_JA3C)  nopt++;
 	if(flags & FLAGS_TLSFP) nopt++;
 	if(flags & FLAGS_TLSV)  nopt++;
+	if(flags & FLAGS_RISK)  nopt++;
 	if(flags & FLAGS_INPROGRESS) nopt++;
 	if(nopt != 1)
-		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja3s|--ja3c|--tlsfp|--tlsv|--inprogress %x %d",flags,nopt);
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja3s|--ja3c|--tlsfp|--risk|--tlsv|--inprogress %x %d",flags,nopt);
 }
 
 static int cmp_pname(const void *p1, const void *p2) {
@@ -1233,25 +1229,29 @@ void _init(void)
         }*/
 
 	FILE *f_proto = fopen("/proc/net/xt_ndpi/risks","r");
-	if(!f_proto)
-		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: no risks file");
-	index = 0;
-	while(!feof(f_proto)) {
-		int  ri;
-		char re;
-		c = fgets(buf,sizeof(buf)-1,f_proto);
-		if(!c) break;
-		if(sscanf(buf,"%d %c ",&ri,&re) != 2) 
-			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risks format.");
+	if(f_proto) {
+		index = 0;
+		while(!feof(f_proto)) {
+			int  ri;
+			char re;
+			c = fgets(buf,sizeof(buf)-1,f_proto);
+			if(!c) break;
+			if(sscanf(buf,"%d %c ",&ri,&re) != 2) {
+				printf("xt_ndpi: bad risks format.");
+				break;
+			}
 		
-		if(ri < 0 || ri >= 64)
-			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risk index.");
-		if(risk_index_max < ri)
-			risk_index_max = ri;
-		if(re == 'd')
-			risk_map |= (1ull << ri);
-	}
+			if(ri < 0 || ri >= 64) {
+				printf("xt_ndpi: bad risk index.");
+				break;
+			}
+			if(risk_index_max < ri)
+				risk_index_max = ri;
+			if(re == 'd')
+				risk_map |= (1ull << ri);
+		}
 	fclose(f_proto);
+	}
 
 
 #define MT_OPT(np,protoname,nargs) { i=(np); \

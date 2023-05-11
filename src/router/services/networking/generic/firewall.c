@@ -1393,36 +1393,6 @@ static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 	}
 }
 
-static char *fw_get_filter_services(void)
-{
-
-	l7filters *filters = filters_list;
-	char temp[128] = "";
-	char *proto[] = { "l7", "p2p", "dpi" };
-	char *services = NULL;
-
-	while (filters->name)	// add l7 and p2p filters
-	{
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, filters->protocol == 0 ? 2 : 3, proto[filters->protocol]);
-		if (!services) {
-			services = malloc(strlen(temp) + 1);
-			services[0] = 0;
-		} else
-			services = realloc(services, strlen(services) + strlen(temp) + 1);
-		strcat(services, temp);
-		filters++;
-	}
-	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
-	strcat(services, nvram_safe_get("filter_services"));	// this is
-	// user
-	// defined
-	// filters
-	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services_1")) + 1);
-	strcat(services, nvram_safe_get("filter_services_1"));
-
-	return services;
-}
-
 struct TELEMETRY {
 	unsigned char ip1;
 	unsigned char ip2;
@@ -1636,11 +1606,14 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	nvram_seti("dnsmasq_ms_telemetry", 0);
 	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
-	services = fw_get_filter_services();
+	services = get_filter_services();
 
 	/*
 	 * filter_port_grp5=My ICQ<&nbsp;>Game boy 
 	 */
+#ifdef HAVE_OPENDPI
+	char *dpi_collect = NULL;
+#endif
 	wordlist = nvram_nget("filter_port_grp%d", seq);
 	split(word, wordlist, next, delim) {
 
@@ -1711,8 +1684,21 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			}
 #ifdef HAVE_OPENDPI
 			else if (!strcmp(protocol, "dpi")) {
+				int first = dpi_collect ? 0 : 1;
+				dpi_collect = realloc(dpi_collect, dpi_collect ? strlen(dpi_collect) + strlen(realname) + 2 : strlen(realname) + 1);
+				if (first) {
+					strcpy(dpi_collect, realname);
+				} else {
+					strcat(dpi_collect, ",");
+					strcat(dpi_collect, realname);
+				}
+			} else if (!strcmp(protocol, "risk")) {
 				insmod("xt_ndpi");
-				save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, realname, log_drop);
+				int risk = get_risk_by_name(realname);
+				char *dep = get_dep_by_name(realname);
+				if (risk && dep) {
+					save2file_A("advgrp_%d -m ndpi --proto %s --risk %d -j %s", seq, dep, risk, log_drop);
+				}
 			}
 #endif
 			else if (!strcmp(protocol, "p2p")) {
@@ -1770,6 +1756,13 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 
 		}
 	}
+#ifdef HAVE_OPENDPI
+	if (dpi_collect) {
+		insmod("xt_ndpi");
+		save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, dpi_collect, log_drop);
+		free(dpi_collect);
+	}
+#endif
 	/*
 	 * p2p catchall 
 	 */
@@ -2174,21 +2167,51 @@ int filtersync_main(int argc, char *argv[])
 	 */
 	now_hrmin = bt->tm_hour * 100 + bt->tm_min;
 	now_wday = bt->tm_wday;
-	for (seq = 1; seq <= NR_RULES; seq++) {
-		if (if_tod_intime(seq) > 0)
-			changed = 1;
-	}
 
+	for (seq = 1; seq <= NR_RULES; seq++) {
+		int state = if_tod_intime(seq);
+		char enabled[32];
+		sprintf(enabled, "tod%d_enabled",seq);
+		switch (state) {
+		case 2:	// is in time now
+			if (!nvram_match(enabled, "1")) {
+				changed = 1;
+			}
+			break;
+		case 0:	// is out of time
+			if (nvram_match(enabled, "1")) {
+				changed = 1;
+			}
+			break;
+		default:	// 1 means everyday. so no update is required
+			break;
+		}
+	}
 #ifdef HAVE_SFE
 	if (changed && nvram_match("sfe", "1")) {
 		stop_sfe();
 	}
 #endif
 	for (seq = 1; seq <= NR_RULES; seq++) {
-		if (if_tod_intime(seq) > 0)
-			update_filter(1, seq);
-		else
-			update_filter(0, seq);
+		int state = if_tod_intime(seq);
+		char enabled[32];
+		sprintf(enabled, "tod%d_enabled",seq);
+		switch (state) {
+		case 2:	// is in time now
+			if (!nvram_match(enabled, "1")) {
+				nvram_set(enabled, "1");
+				update_filter(1, seq);
+			}
+			break;
+		case 0:	// is out of time
+			if (nvram_match(enabled, "1")) {
+				nvram_unset(enabled);
+				update_filter(0, seq);
+			}
+			break;
+		default:	// 1 means everyday. so no update is required
+			break;
+		}
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
 #ifdef HAVE_SFE
@@ -3173,10 +3196,11 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
 	/* Enable stateful inspection */
 	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
-//	eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
+//      eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
 	/* Accept DHCPv6 traffic */
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
+//      eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
 	/* Allow the localnet access us */
 	eval("ip6tables", "-A", "INPUT", "-i", nvram_safe_get("lan_ifname"), "-j", log_accept);
 	/* Allow Link-Local addresses */

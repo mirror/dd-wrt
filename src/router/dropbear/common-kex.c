@@ -39,6 +39,8 @@
 #include "curve25519.h"
 #include "crypto_desc.h"
 
+void add_blocklist(const char *service, char *ip);
+
 static void kexinitialise(void);
 static void gen_new_keys(void);
 #ifndef DISABLE_ZLIB
@@ -862,7 +864,6 @@ static void read_kex_algos() {
 	algo = buf_match_algo(ses.payload, sshkex, kexguess2, &goodguess);
 	allgood &= goodguess;
 	if (algo == NULL || algo->data == NULL) {
-		/* kexguess2, ext-info-c, ext-info-s should not match negotiation */
 		erralgo = "kex";
 		goto error;
 	}

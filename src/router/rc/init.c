@@ -266,7 +266,8 @@ static void unmount_fs(void)
 void shutdown_system(void)
 {
 	int sig;
-	while (pidof("async_commit") > 0)	// wait for any process of this type to finish
+	int deadcount = 0;
+	while (pidof("async_commit") > 0 && (deadcount++) < 10)	// wait for any process of this type to finish
 	{
 		dd_loginfo("init", "wait for nvram write to finish\n");
 		sleep(1);
