@@ -355,7 +355,7 @@ struct nvram_param *load_defaults(void)
 	struct nvram_param *srouter_defaults = NULL;
 	FILE *in = fopen("/etc/defaults.bin", "rb");
 	if (in == NULL)
-		return;
+		return NULL;
 	unsigned int i;
 	defaultnum = (unsigned int)getc(in);
 	defaultnum |= (unsigned int)getc(in) << 8;
