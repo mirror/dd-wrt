@@ -398,7 +398,7 @@ static int do_mon(void)
 				dd_loginfo(v->name, "maybe died, we need to re-exec it\n");
 				stop_service(v->name);
 				killall(v->name, SIGKILL);
-				start_service_force_f("checkhostapd");
+				start_service_force_f(v->name);
 			}
 		}
 		printf("checking for %s done\n", v->name);
