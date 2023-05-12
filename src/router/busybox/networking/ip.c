@@ -262,7 +262,7 @@
 //--------------123456789.123456789.123456789.123456789.123456789.123456789.123456789.123....79
 //usage:#define iptunnel_trivial_usage
 //usage:       "add|change|del|show [NAME]\n"
-//usage:       "	[mode ipip|gre|sit] [remote ADDR] [local ADDR] [ttl TTL]"
+//usage:       "	[mode ipip|gre|sit|etherip] [remote ADDR] [local ADDR] [ttl TTL]"
 //usage:#define iptunnel_full_usage "\n\n"
 //usage:       "iptunnel add|change|del|show [NAME]\n"
 //usage:       "	[mode ipip|gre|sit|etherip] [remote ADDR] [local ADDR]\n"
