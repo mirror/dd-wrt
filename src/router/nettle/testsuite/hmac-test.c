@@ -866,4 +866,27 @@ test_main(void)
 	    SHEX("0126bdb87800af214341456563780100"),
 	    SHEX("bad70b61c41095bc47e1141cfaed4272"
 		 "6a5ceebd62ce75dbbb9ad76cda9f72f7"));
+
+  /* RFC 7836 */
+  HMAC_TEST(streebog512,
+	    SHEX("000102030405060708090a0b0c0d0e0f"
+		 "101112131415161718191a1b1c1d1e1f"),
+	    SHEX("0126bdb87800af214341456563780100"),
+	    SHEX("a59bab22ecae19c65fbde6e5f4e9f5d8"
+	         "549d31f037f9df9b905500e171923a77"
+		 "3d5f1530f2ed7e964cb2eedc29e9ad2f"
+		 "3afe93b2814f79f5000ffc0366c251e6"));
+
+  HMAC_TEST(streebog256,
+	    SHEX("000102030405060708090a0b0c0d0e0f"
+		 "101112131415161718191a1b1c1d1e1f"),
+	    SHEX("0126bdb87800af214341456563780100"),
+	    SHEX("a1aa5f7de402d7b3d323f2991c8d4534"
+	         "013137010a83754fd0af6d7cd4922ed9"));
+
+  HMAC_TEST(sm3,
+	    SDATA("monkey monkey monkey monkey"),
+	    SDATA("abc"),
+            SHEX("7a9388e2ca5343b5d76e7c2c3d84f239"
+                 "f306c0b60d5e0dc4d2771e42860a6a2b"));
 }

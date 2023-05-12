@@ -1,6 +1,6 @@
 C x86_64/ecc-secp224r1-modp.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2013 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,27 +28,30 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->)
+')
 
 	.file "ecc-secp224r1-modp.asm"
 
 GMP_NUMB_BITS(64)
 
-define(<RP>, <%rsi>)
-define(<T0>, <%rdi>) C Overlaps unused modulo input
-define(<T1>, <%rcx>)
-define(<H0>, <%rax>)
-define(<H1>, <%rdx>)
-define(<H2>, <%r8>)
-define(<F0>, <%r9>)
-define(<F1>, <%r10>)
-define(<F2>, <%r11>)
+define(`RP', `%rsi')
+define(`XP', `%rdx')
+define(`T0', `%rdi')	C Overlaps unused modulo input
+define(`T1', `%rcx')
+define(`H0', `%rax')
+define(`H1', `%r8')
+define(`H2', `%r9')
+define(`F0', `%rsi')	C Overlaps RP
+define(`F1', `%r10')
+define(`F2', `%r11')
 
 	C ecc_secp224r1_modp (const struct ecc_modulo *m, mp_limb_t *rp)
 PROLOGUE(_nettle_ecc_secp224r1_modp)
-	W64_ENTRY(2, 0)
-	mov	48(RP), H0
-	mov	56(RP), H1
+	W64_ENTRY(3, 0)
+	push	RP
+
+	mov	48(XP), H0
+	mov	56(XP), H1
 	C Set (F2,F1,F0)  <--  (H1,H0) << 32
 	mov	H0, F0
 	mov	H0, F1
@@ -61,15 +64,15 @@ PROLOGUE(_nettle_ecc_secp224r1_modp)
 	or	T0, F1
 
 	xor	H2, H2
-	mov	16(RP), T0
-	mov	24(RP), T1
+	mov	16(XP), T0
+	mov	24(XP), T1
 	sub	F0, T0
 	sbb	F1, T1
 	sbb	F2, H0
 	sbb	$0, H1		C No further borrow
 
-	adc	32(RP), H0
-	adc	40(RP), H1
+	adc	32(XP), H0
+	adc	40(XP), H1
 	adc	$0, H2
 
 	C Set (F2,F1,F0)  <--  (H2,H1,H0) << 32
@@ -92,8 +95,8 @@ PROLOGUE(_nettle_ecc_secp224r1_modp)
 	or	T0, F1
 	or	T1, F2
 
-	mov	(RP), T0
-	mov	8(RP), T1
+	mov	(XP), T0
+	mov	8(XP), T1
 	sub	F0, T0
 	sbb	F1, T1
 	sbb	F2, H0
@@ -121,11 +124,12 @@ PROLOGUE(_nettle_ecc_secp224r1_modp)
 	adc	F2, H0
 	adc	$0, H1
 
+	pop	RP
 	mov	T0, (RP)
 	mov	T1, 8(RP)
 	mov	H0, 16(RP)
 	mov	H1, 24(RP)
 
-	W64_EXIT(2, 0)
+	W64_EXIT(3, 0)
 	ret
 EPILOGUE(_nettle_ecc_secp224r1_modp)

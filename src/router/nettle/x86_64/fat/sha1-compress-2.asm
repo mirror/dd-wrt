@@ -1,6 +1,6 @@
 C x86_64/fat/sha1-compress-2.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2018 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,7 +28,7 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->)
+')
 
-define(<fat_transform>, <_$1_sha_ni>)
-include_src(<x86_64/sha_ni/sha1-compress.asm>)
+define(`fat_transform', `_$1_sha_ni')
+include_src(`x86_64/sha_ni/sha1-compress.asm')

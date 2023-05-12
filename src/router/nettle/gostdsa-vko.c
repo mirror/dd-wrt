@@ -87,7 +87,7 @@ gostdsa_vko (const struct ecc_scalar *priv,
   if (mpn_zero_p (UKM, size))
     UKM[0] = 1;
 
-  ecc_mod_mul (&ecc->q, TEMP, priv->p, UKM); /* TEMP = UKM * priv */
+  ecc_mod_mul_canonical (&ecc->q, TEMP, priv->p, UKM, TEMP); /* TEMP = UKM * priv */
   ecc->mul (ecc, XYZ, TEMP, pub->p, scratch + 4*size); /* XYZ = UKM * priv * pub */
   ecc->h_to_a (ecc, 0, TEMP, XYZ, scratch + 5*size); /* TEMP = XYZ */
   mpn_get_base256_le (out, bsize, TEMP, size);

@@ -45,8 +45,8 @@
 mp_size_t
 _eddsa_sign_itch (const struct ecc_curve *ecc)
 {
-  assert (_eddsa_compress_itch (ecc) <= ecc->mul_g_itch);
-  return 5*ecc->p.size + ecc->mul_g_itch;
+  assert (ecc->mul_g_itch <= _eddsa_compress_itch (ecc));
+  return 5*ecc->p.size + _eddsa_compress_itch (ecc);
 }
 
 void
@@ -91,7 +91,7 @@ _eddsa_sign (const struct ecc_curve *ecc,
   eddsa->digest (ctx, 2*nbytes, hash);
   _eddsa_hash (&ecc->q, hp, 2*nbytes, hash);
 
-  ecc_mod_mul (&ecc->q, sp, hp, k2);
+  ecc_mod_mul (&ecc->q, sp, hp, k2, sp);
   ecc_mod_add (&ecc->q, sp, sp, rp); /* FIXME: Can be plain add */
   if (ecc->p.bit_size == 255)
     {
@@ -117,7 +117,7 @@ _eddsa_sign (const struct ecc_curve *ecc,
 
   cy = mpn_submul_1 (sp, ecc->q.m, ecc->p.size, q);
   assert (cy < 2);
-  cy -= cnd_add_n (cy, sp, ecc->q.m, ecc->p.size);
+  cy -= mpn_cnd_add_n (cy, sp, sp, ecc->q.m, ecc->p.size);
   assert (cy == 0);
 
   mpn_get_base256_le (signature + nbytes, nbytes, sp, ecc->q.size);

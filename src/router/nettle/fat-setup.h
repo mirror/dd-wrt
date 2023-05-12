@@ -93,6 +93,9 @@
 #define ENV_VERBOSE "NETTLE_FAT_VERBOSE"
 #define ENV_OVERRIDE "NETTLE_FAT_OVERRIDE"
 
+struct chacha_ctx;
+struct salsa20_ctx;
+
 /* DECLARE_FAT_FUNC(name, ftype)
  *
  *   name is the public function, e.g., _nettle_aes_encrypt.
@@ -154,14 +157,25 @@
 
 typedef void void_func (void);
 
+struct aes_table;
 typedef void aes_crypt_internal_func (unsigned rounds, const uint32_t *keys,
 				      const struct aes_table *T,
 				      size_t length, uint8_t *dst,
 				      const uint8_t *src);
 
+struct gcm_key;
+typedef void ghash_set_key_func (struct gcm_key *ctx, const union nettle_block16 *key);
+typedef const uint8_t *
+ghash_update_func (const struct gcm_key *ctx, union nettle_block16 *state,
+		   size_t blocks, const uint8_t *data);
+
 typedef void *(memxor_func)(void *dst, const void *src, size_t n);
+typedef void *(memxor3_func)(void *dst_in, const void *a_in, const void *b_in, size_t n);
 
 typedef void salsa20_core_func (uint32_t *dst, const uint32_t *src, unsigned rounds);
+typedef void salsa20_crypt_func (struct salsa20_ctx *ctx, unsigned rounds,
+				 size_t length, uint8_t *dst,
+				 const uint8_t *src);
 
 typedef void sha1_compress_func(uint32_t *state, const uint8_t *input);
 typedef void sha256_compress_func(uint32_t *state, const uint8_t *input, const uint32_t *k);
@@ -176,3 +190,33 @@ typedef void umac_nh_n_func (uint64_t *out, unsigned n, const uint32_t *key,
 			     unsigned length, const uint8_t *msg);
 
 typedef void chacha_core_func(uint32_t *dst, const uint32_t *src, unsigned rounds);
+
+typedef void chacha_crypt_func(struct chacha_ctx *ctx,
+			       size_t length,
+			       uint8_t *dst,
+			       const uint8_t *src);
+
+struct aes128_ctx;
+typedef void aes128_set_key_func (struct aes128_ctx *ctx, const uint8_t *key);
+typedef void aes128_invert_key_func (struct aes128_ctx *dst, const struct aes128_ctx *src);
+typedef void aes128_crypt_func (const struct aes128_ctx *ctx, size_t length, uint8_t *dst,
+	       const uint8_t *src);
+
+struct aes192_ctx;
+typedef void aes192_set_key_func (struct aes192_ctx *ctx, const uint8_t *key);
+typedef void aes192_invert_key_func (struct aes192_ctx *dst, const struct aes192_ctx *src);
+typedef void aes192_crypt_func (const struct aes192_ctx *ctx, size_t length, uint8_t *dst,
+	       const uint8_t *src);
+
+struct aes256_ctx;
+typedef void aes256_set_key_func (struct aes256_ctx *ctx, const uint8_t *key);
+typedef void aes256_invert_key_func (struct aes256_ctx *dst, const struct aes256_ctx *src);
+typedef void aes256_crypt_func (const struct aes256_ctx *ctx, size_t length, uint8_t *dst,
+	       const uint8_t *src);
+
+typedef void cbc_aes128_encrypt_func (const struct aes128_ctx *ctx, uint8_t *iv,
+				      size_t length, uint8_t *dst, const uint8_t *src);
+typedef void cbc_aes192_encrypt_func (const struct aes192_ctx *ctx, uint8_t *iv,
+				      size_t length, uint8_t *dst, const uint8_t *src);
+typedef void cbc_aes256_encrypt_func (const struct aes256_ctx *ctx, uint8_t *iv,
+				      size_t length, uint8_t *dst, const uint8_t *src);

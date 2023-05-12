@@ -48,6 +48,9 @@ const struct nettle_mac * const _nettle_macs[] = {
   &nettle_hmac_sha256,
   &nettle_hmac_sha384,
   &nettle_hmac_sha512,
+  &nettle_hmac_streebog256,
+  &nettle_hmac_streebog512,
+  &nettle_hmac_sm3,
   NULL
 };
 

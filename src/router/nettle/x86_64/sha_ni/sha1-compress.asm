@@ -1,6 +1,6 @@
 C x86_64/sha_ni/sha1-compress.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2018 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,34 +28,34 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->)
+')
 
 C Register usage.
 
 C Arguments
-define(<STATE>,<%rdi>)dnl
-define(<INPUT>,<%rsi>)dnl
+define(`STATE',`%rdi')dnl
+define(`INPUT',`%rsi')dnl
 
-define(<MSG0>,<%xmm0>)
-define(<MSG1>,<%xmm1>)
-define(<MSG2>,<%xmm2>)
-define(<MSG3>,<%xmm3>)
-define(<ABCD>,<%xmm4>)
-define(<E0>,<%xmm5>)
-define(<E1>,<%xmm6>)
-define(<ABCD_ORIG>, <%xmm7>)
-define(<E_ORIG>, <%xmm8>)
-define(<SWAP_MASK>,<%xmm9>)
+define(`MSG0',`%xmm0')
+define(`MSG1',`%xmm1')
+define(`MSG2',`%xmm2')
+define(`MSG3',`%xmm3')
+define(`ABCD',`%xmm4')
+define(`E0',`%xmm5')
+define(`E1',`%xmm6')
+define(`ABCD_ORIG', `%xmm7')
+define(`E_ORIG', `%xmm8')
+define(`SWAP_MASK',`%xmm9')
 
 C QROUND(M0, M1, M2, M3, E0, E1, TYPE)
-define(<QROUND>, <
+define(`QROUND', `
 	sha1nexte $1, $5
 	movdqa	ABCD, $6
 	sha1msg2 $1, $2
-	sha1rnds4 <$>$7, $5, ABCD
+	sha1rnds4 `$'$7, $5, ABCD
 	sha1msg1 $1, $4
 	pxor	$1, $3
->)
+')
 
 	.file "sha1-compress.asm"
 

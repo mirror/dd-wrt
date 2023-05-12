@@ -35,7 +35,7 @@ test_main (void)
 	  ecc->add_hh (ecc, p, z, z, scratch);
 	  test_ecc_mul_h (i, 0, p);
 
-	  ecc->add_hhh (ecc, p, g, p, scratch);
+	  ecc->add_hhh (ecc, p, p, g, scratch);
 	  test_ecc_mul_h (i, 1, p);
 
 	  ecc->add_hh (ecc, p, z, g, scratch);

@@ -36,10 +36,27 @@
 #define NETTLE_SALSA20_INTERNAL_H_INCLUDED
 
 #include "nettle-types.h"
-
-#define _salsa20_core _nettle_salsa20_core
+#include "salsa20.h"
 
 void
-_salsa20_core(uint32_t *dst, const uint32_t *src, unsigned rounds);
+_nettle_salsa20_core(uint32_t *dst, const uint32_t *src, unsigned rounds);
+
+void
+_nettle_salsa20_crypt(struct salsa20_ctx *ctx, unsigned rounds,
+		      size_t length, uint8_t *dst,
+		      const uint8_t *src);
+
+/* Functions available only in some configurations */
+void
+_nettle_salsa20_2core(uint32_t *dst, const uint32_t *src, unsigned rounds);
+
+void
+_nettle_salsa20_crypt_1core(struct salsa20_ctx *ctx, unsigned rounds,
+			    size_t length, uint8_t *dst,
+			    const uint8_t *src);
+void
+_nettle_salsa20_crypt_2core(struct salsa20_ctx *ctx, unsigned rounds,
+			    size_t length, uint8_t *dst,
+			    const uint8_t *src);
 
 #endif /* NETTLE_SALSA20_INTERNAL_H_INCLUDED */

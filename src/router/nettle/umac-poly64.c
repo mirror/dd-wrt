@@ -63,7 +63,7 @@ poly64_mul (uint32_t kh, uint32_t kl, uint64_t y)
 }
 
 uint64_t
-_umac_poly64 (uint32_t kh, uint32_t kl, uint64_t y, uint64_t m)
+_nettle_umac_poly64 (uint32_t kh, uint32_t kl, uint64_t y, uint64_t m)
 {
   if ( (m >> 32) == 0xffffffff)
     {

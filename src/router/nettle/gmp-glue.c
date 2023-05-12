@@ -39,10 +39,54 @@
 
 #include "gmp-glue.h"
 
-void
-cnd_swap (mp_limb_t cnd, mp_limb_t *ap, mp_limb_t *bp, mp_size_t n)
+#if NETTLE_USE_MINI_GMP
+mp_limb_t
+mpn_cnd_add_n (mp_limb_t cnd, mp_limb_t *rp,
+	       const mp_limb_t *ap, const mp_limb_t *bp, mp_size_t n)
 {
-  mp_limb_t mask = - (mp_limb_t) (cnd != 0);
+  mp_limb_t cy, mask;
+  mp_size_t  i;
+
+  mask = -(mp_limb_t) (cnd != 0);
+
+  for (i = 0, cy = 0; i < n; i++)
+    {
+      mp_limb_t rl = ap[i] + cy;
+      mp_limb_t bl = bp[i] & mask;
+      cy = (rl < cy);
+      rl += bl;
+      cy += (rl < bl);
+      rp[i] = rl;
+    }
+  return cy;
+}
+
+mp_limb_t
+mpn_cnd_sub_n (mp_limb_t cnd, mp_limb_t *rp,
+	       const mp_limb_t *ap, const mp_limb_t *bp, mp_size_t n)
+{
+  mp_limb_t cy, mask;
+  mp_size_t  i;
+
+  mask = -(mp_limb_t) (cnd != 0);
+
+  for (i = 0, cy = 0; i < n; i++)
+    {
+      mp_limb_t al = ap[i];
+      mp_limb_t bl = bp[i] & mask;
+      mp_limb_t sl;
+      sl = al - cy;
+      cy = (al < cy) + (sl < bl);
+      sl -= bl;
+      rp[i] = sl;
+    }
+  return cy;
+}
+
+void
+mpn_cnd_swap (mp_limb_t cnd, volatile mp_limb_t *ap, volatile mp_limb_t *bp, mp_size_t n)
+{
+  volatile mp_limb_t mask = - (mp_limb_t) (cnd != 0);
   mp_size_t i;
   for (i = 0; i < n; i++)
     {
@@ -55,43 +99,21 @@ cnd_swap (mp_limb_t cnd, mp_limb_t *ap, mp_limb_t *bp, mp_size_t n)
     }
 }
 
-/* Additional convenience functions. */
+#endif /* NETTLE_USE_MINI_GMP */
 
 int
-mpz_limbs_cmp (mpz_srcptr a, const mp_limb_t *bp, mp_size_t bn)
+sec_zero_p (const mp_limb_t *ap, mp_size_t n)
 {
-  mp_size_t an = mpz_size (a);
-  assert (mpz_sgn (a) >= 0);
-  assert (bn >= 0);
+  volatile mp_limb_t w;
+  mp_size_t i;
 
-  if (an < bn)
-    return -1;
-  if (an > bn)
-    return 1;
-  if (an == 0)
-    return 0;
+  for (i = 0, w = 0; i < n; i++)
+    w |= ap[i];
 
-  return mpn_cmp (mpz_limbs_read(a), bp, an);
+  return w == 0;
 }
 
-/* Get a pointer to an n limb area, for read-only operation. n must be
-   greater or equal to the current size, and the mpz is zero-padded if
-   needed. */
-const mp_limb_t *
-mpz_limbs_read_n (mpz_ptr x, mp_size_t n)
-{
-  mp_size_t xn = mpz_size (x);
-  mp_ptr xp;
-  
-  assert (xn <= n);
-
-  xp = mpz_limbs_modify (x, n);
-
-  if (xn < n)
-    mpn_zero (xp + xn, n - xn);
-
-  return xp;
-}
+/* Additional convenience functions. */
 
 void
 mpz_limbs_copy (mp_limb_t *xp, mpz_srcptr x, mp_size_t n)

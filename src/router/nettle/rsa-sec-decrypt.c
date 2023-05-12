@@ -55,12 +55,19 @@ rsa_sec_decrypt(const struct rsa_public_key *pub,
   TMP_GMP_DECL (em, uint8_t);
   int res;
 
+  /* First check that input is in range. */
+  if (mpz_sgn (gibberish) < 0 || mpz_cmp (gibberish, pub->n) >= 0)
+    return 0;
+
   TMP_GMP_ALLOC (m, mpz_size(pub->n));
   TMP_GMP_ALLOC (em, key->size);
 
-  res = _rsa_sec_compute_root_tr (pub, key, random_ctx, random, m,
-				  mpz_limbs_read(gibberish),
-				  mpz_size(gibberish));
+  /* We need a copy because m can be shorter than key_size,
+   * but _rsa_sec_compute_root_tr expect all inputs to be
+   * normalized to a key_size long buffer length */
+  mpz_limbs_copy(m, gibberish, mpz_size(pub->n));
+
+  res = _rsa_sec_compute_root_tr (pub, key, random_ctx, random, m, m);
 
   mpn_get_base256 (em, key->size, m, mpz_size(pub->n));
 

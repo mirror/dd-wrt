@@ -36,7 +36,7 @@
 #include "gost28147-internal.h"
 
 /* pre-initialized GOST lookup tables based on rotated S-Box */
-const struct gost28147_param _gost28147_param_test_3411 =
+const struct gost28147_param _nettle_gost28147_param_test_3411 =
 {
   {
     { /* 0 */
@@ -303,7 +303,7 @@ const struct gost28147_param _gost28147_param_test_3411 =
   }
 };
 
-const struct gost28147_param _gost28147_param_CryptoPro_3411 =
+const struct gost28147_param _nettle_gost28147_param_CryptoPro_3411 =
 {
   {
     { /* 0 */
@@ -590,8 +590,10 @@ const struct gost28147_param _gost28147_param_CryptoPro_3411 =
   } while (0)
 
 /* encrypt a block with the given key */
-void _gost28147_encrypt_block (const uint32_t *key, const uint32_t sbox[4][256],
-			       const uint32_t *in, uint32_t *out)
+void
+_nettle_gost28147_encrypt_block (const uint32_t *key,
+				 const uint32_t sbox[4][256],
+				 const uint32_t *in, uint32_t *out)
 {
   uint32_t l, r;
 
