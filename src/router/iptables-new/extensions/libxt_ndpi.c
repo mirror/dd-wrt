@@ -658,6 +658,9 @@ ndpi_mt4_print(const void *entry, const struct xt_entry_match *match,
 
 static void read_risk(void) 
 {
+	char buf[128];
+	uint32_t index;
+
 	if (!risk_init) {
 		FILE *f_proto = fopen("/proc/net/xt_ndpi/risks","r");
 		if(f_proto) {
