@@ -38,6 +38,7 @@ static void async_event(int pipe, time_t now);
 static void fatal_event(struct event_desc *ev, char *msg);
 static int read_event(int fd, struct event_desc *evp, char **msg);
 static void poll_resolv(int force, int do_reload, time_t now);
+int airbag_init(void);
 
 int main (int argc, char **argv)
 {
@@ -75,7 +76,7 @@ int main (int argc, char **argv)
 #ifdef HAVE_TFTP
   int tftp_prefix_missing = 0;
 #endif
-
+  airbag_init();
 #if defined(HAVE_IDN) || defined(HAVE_LIBIDN2) || defined(LOCALEDIR)
   setlocale(LC_ALL, "");
 #endif
