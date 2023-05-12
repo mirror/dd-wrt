@@ -142,6 +142,23 @@ extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...);
 extern int f_exists(const char *path);	// note: anything but a directory
 
+extern char *get_filter_services(void);
+
+typedef struct filters		// l7 and p2p filters
+{
+
+	char *name;
+	unsigned short portfrom;
+	unsigned short portto;
+	unsigned char proto;	// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
+} filters;
+
+extern void free_filters(filters * filter);
+
+extern filters *get_filters_list(void);
+extern int get_risk_by_name(char *name);
+extern char *get_dep_by_name(char *name);
+
 extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
 
 extern int strhas(char *list, char *key);

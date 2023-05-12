@@ -867,23 +867,6 @@ extern void milkfish_sip_message(webs_t wp);
 extern void ej_show_registrations(webs_t wp, int argc, char_t ** argv);
 #endif
 
-extern char *get_filter_services(void);
-
-typedef struct filters		// l7 and p2p filters
-{
-
-	char *name;
-	unsigned short portfrom;
-	unsigned short portto;
-	unsigned char proto;	// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
-} filters;
-
-extern void free_filters(filters * filter);
-
-extern filters *get_filters_list(void);
-int get_risk_by_name(char *name);
-char *get_dep_by_name(char *name);
-
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
 #endif
