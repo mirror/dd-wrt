@@ -19,7 +19,8 @@
     ASSERT(dk[expect->length] == 17);					\
   } while (0)
 
-#define MAX_DKLEN SHA512_DIGEST_SIZE
+/* Streebog test has particularly long testcase */
+#define MAX_DKLEN 100
 
 void
 test_main (void)
@@ -29,6 +30,8 @@ test_main (void)
   struct hmac_sha256_ctx sha256ctx;
   struct hmac_sha512_ctx sha512ctx;
   struct hmac_gosthash94cp_ctx gosthash94cpctx;
+  struct hmac_streebog512_ctx streebog512ctx;
+  struct hmac_streebog256_ctx streebog256ctx;
 
   /* Test vectors for PBKDF2 from RFC 6070. */
 
@@ -111,6 +114,12 @@ test_main (void)
   PBKDF2_HMAC_TEST(pbkdf2_hmac_sha256, LDATA("passwd"), 1, LDATA("salt"),
 		   SHEX("55ac046e56e3089fec1691c22544b605"));
 
+  PBKDF2_HMAC_TEST(pbkdf2_hmac_sha384, LDATA("passwd"), 1, LDATA("salt"),
+		   SHEX("cd3443723a41cf1460cca9efeede428a"));
+
+  PBKDF2_HMAC_TEST(pbkdf2_hmac_sha512, LDATA("passwd"), 1, LDATA("salt"),
+		   SHEX("c74319d99499fc3e9013acff597c23c5"));
+
   /* From TC26 document, MR 26.2.001-2012 */
 
   hmac_gosthash94cp_set_key (&gosthash94cpctx, LDATA("password"));
@@ -134,4 +143,30 @@ test_main (void)
 
   PBKDF2_HMAC_TEST (pbkdf2_hmac_gosthash94cp, LDATA("password"), 1, LDATA("salt"),
 	       SHEX("7314e7c04fb2e662c543674253f68bd0b73445d07f241bed872882da21662d58"));
+
+  /* From TC26 document R 50.1.111-2016 */
+  hmac_streebog512_set_key (&streebog512ctx, LDATA("password"));
+  PBKDF2_TEST (&streebog512ctx, hmac_streebog512_update, hmac_streebog512_digest,
+	       STREEBOG512_DIGEST_SIZE, 1, LDATA("salt"),
+	       SHEX("64770af7f748c3b1c9ac831dbcfd85c26111b30a8a657ddc3056b80ca73e040d2854fd36811f6d825cc4ab66ec0a68a490a9e5cf5156b3a2b7eecddbf9a16b47"));
+  PBKDF2_TEST (&streebog512ctx, hmac_streebog512_update, hmac_streebog512_digest,
+	       STREEBOG512_DIGEST_SIZE, 4096, LDATA("salt"),
+	       SHEX("e52deb9a2d2aaff4e2ac9d47a41f34c20376591c67807f0477e32549dc341bc7867c09841b6d58e29d0347c996301d55df0d34e47cf68f4e3c2cdaf1d9ab86c3"));
+
+  hmac_streebog512_set_key (&streebog512ctx, LDATA("passwordPASSWORDpassword"));
+  PBKDF2_TEST (&streebog512ctx, hmac_streebog512_update, hmac_streebog512_digest,
+	       STREEBOG512_DIGEST_SIZE, 4096, LDATA("saltSALTsaltSALTsaltSALTsaltSALTsalt"),
+	       SHEX("b2d8f1245fc4d29274802057e4b54e0a0753aa22fc53760b301cf008679e58fe4bee9addcae99ba2b0b20f431a9c5e50f395"
+		    "c89387d0945aedeca6eb4015dfc2bd2421ee9bb71183ba882ceebfef259f33f9e27dc6178cb89dc37428cf9cc52a2baa2d3a"));
+
+  hmac_streebog512_set_key (&streebog512ctx, LDATA("pass\0word"));
+  PBKDF2_TEST (&streebog512ctx, hmac_streebog512_update, hmac_streebog512_digest,
+	       STREEBOG512_DIGEST_SIZE, 4096, LDATA("sa\0lt"),
+	       SHEX("50df062885b69801a3c10248eb0a27ab6e522ffeb20c991c660f001475d73a4e167f782c18e97e92976d9c1d970831ea78ccb879f67068cdac1910740844e830"));
+
+  /* Generated */
+  hmac_streebog256_set_key (&streebog256ctx, LDATA("password"));
+  PBKDF2_TEST (&streebog256ctx, hmac_streebog256_update, hmac_streebog256_digest,
+	       STREEBOG256_DIGEST_SIZE, 1, LDATA("salt"),
+	       SHEX("d789458d143b9abebc4ef63ca8e576c72b13c7d4289db23fc1e946f84cd605bc"));
 }

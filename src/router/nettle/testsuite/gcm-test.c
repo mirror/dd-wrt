@@ -4,6 +4,7 @@
 #include "testutils.h"
 #include "nettle-internal.h"
 #include "gcm.h"
+#include "ghash-internal.h"
 
 static void
 test_gcm_hash (const struct tstring *msg, const struct tstring *ref)
@@ -23,6 +24,42 @@ test_gcm_hash (const struct tstring *msg, const struct tstring *ref)
       print_hex (16, digest);
       fprintf(stderr, "Expected:");
       tstring_print_hex(ref);
+      fprintf(stderr, "\n");
+      FAIL();
+    }
+}
+
+static void
+test_ghash_internal (const struct tstring *key,
+		     const struct tstring *iv,
+		     const struct tstring *message,
+		     const struct tstring *digest)
+{
+  ASSERT (key->length == GCM_BLOCK_SIZE);
+  ASSERT (iv->length == GCM_BLOCK_SIZE);
+  ASSERT (digest->length == GCM_BLOCK_SIZE);
+  ASSERT (message->length % GCM_BLOCK_SIZE == 0);
+  struct gcm_key gcm_key;
+  union nettle_block16 state;
+
+  memcpy (state.b, key->data, GCM_BLOCK_SIZE);
+  _ghash_set_key (&gcm_key, &state);
+
+  memcpy (state.b, iv->data, GCM_BLOCK_SIZE);
+  _ghash_update (&gcm_key, &state, message->length / GCM_BLOCK_SIZE, message->data);
+  if (!MEMEQ(GCM_BLOCK_SIZE, state.b, digest->data))
+    {
+      fprintf (stderr, "gcm_hash (internal) failed\n");
+      fprintf(stderr, "Key: ");
+      tstring_print_hex(key);
+      fprintf(stderr, "\nIV: ");
+      tstring_print_hex(iv);
+      fprintf(stderr, "\nMessage: ");
+      tstring_print_hex(message);
+      fprintf(stderr, "\nOutput: ");
+      print_hex(GCM_BLOCK_SIZE, state.b);
+      fprintf(stderr, "\nExpected:");
+      tstring_print_hex(digest);
       fprintf(stderr, "\n");
       FAIL();
     }
@@ -169,6 +206,29 @@ test_main(void)
 		 "c3c0c95156809539fcf0e2429a6b5254"
 		 "16aedbf5a0de6a57a637b39b"),
 	    SHEX("619cc5aefffe0bfa462af43c1699d050"));
+
+  /* Test 128 bytes */
+  test_aead(&nettle_gcm_aes128, NULL,
+	    SHEX("feffe9928665731c6d6a8f9467308308"),
+	    SHEX(""),
+	    SHEX("d9313225f88406e5a55909c5aff5269a"
+		 "86a7a9531534f7da2e4c303d8a318a72"
+		 "1c3c0c95956809532fcf0e2449a6b525"
+		 "b16aedf5aa0de657ba637b391aafd255"
+		 "5ae376bc5e9f6a1b08e34db7a6ee0736"
+		 "9ba662ea12f6f197e6bc3ed69d2480f3"
+		 "ea5691347f2ba69113eb37910ebc18c8"
+		 "0f697234582016fa956ca8f63ae6b473"),
+	    SHEX("42831ec2217774244b7221b784d0d49c"
+		 "e3aa212f2c02a4e035c17e2329aca12e"
+		 "21d514b25466931c7d8f6a5aac84aa05"
+		 "1ba30b396a0aac973d58e091473f5985"
+		 "874b1178906ddbeab04ab2fe6cce8c57"
+		 "8d7e961bd13fd6a8c56b66ca5e576492"
+		 "1a48cd8bda04e66343e73055118b69b9"
+		 "ced486813846958a11e602c03cfc232b"),
+	    SHEX("cafebabefacedbaddecaf888"),
+	    SHEX("796836f1246c9d735c5e1be0a715ccc3"));
 
   /* Test case 7 */
   test_aead(&nettle_gcm_aes192, NULL,
@@ -555,5 +615,60 @@ test_main(void)
 		 SHEX("65f8245330febf15 6fd95e324304c258"));
   test_gcm_hash (SDATA("abcdefghijklmnopqr"),
 		 SHEX("d07259e85d4fc998 5a662eed41c8ed1d"));
-}
 
+  /* Test internal ghash function. */
+  test_ghash_internal(SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("0000000000000000 0000000000000000"));
+
+  test_ghash_internal(SHEX("8000000000000000 0000000000000000"), /* 1 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("0011223344556677 89abcdef01234567"));
+
+  test_ghash_internal(SHEX("8000000000000000 0000000000000000"),
+		      SHEX("0123456789abcdef fedcba9876543210"), /* XOR:ed to the message */
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("01326754cdfeab98 7777777777777777"));
+
+  test_ghash_internal(SHEX("4000000000000000 0000000000000000"), /* x polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("e1089119a22ab33b c4d5e6f78091a2b3"));
+
+  test_ghash_internal(SHEX("0800000000000000 0000000000000000"), /* x^4 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("54e1122334455667 789abcdef0123456"));
+
+  test_ghash_internal(SHEX("0000000080000000 0000000000000000"), /* x^32 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("01f870078e112233 4455667789abcdef"));
+
+  test_ghash_internal(SHEX("0000000000000001 0000000000000000"), /* x^63 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("1e0f1ff13ff0e00f 1c22446688aaccef"));
+
+  test_ghash_internal(SHEX("0000000000000000 8000000000000000"), /* x^64 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("ee078ff89ff87007 8e11223344556677"));
+
+  test_ghash_internal(SHEX("0000000000000000 0000000100000000"), /* x^95 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("efc44c3a800f1ff1 3ff0e00f1c224466"));
+
+  test_ghash_internal(SHEX("0000000000000000 0000000080000000"), /* x^96 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("77e2261d40078ff8 9ff870078e112233"));
+
+  test_ghash_internal(SHEX("0000000000000000 0000000000000001"), /* x^127 polynomial */
+		      SHEX("0000000000000000 0000000000000000"),
+		      SHEX("0011223344556677 89abcdef01234567"),
+		      SHEX("1503b3c4a3c44c3a 800f1ff13ff0e00f"));
+}

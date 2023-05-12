@@ -96,7 +96,7 @@ _nettle_chacha_core_c(uint32_t *dst, const uint32_t *src, unsigned rounds);
   } while(0)
 
 void
-_chacha_core(uint32_t *dst, const uint32_t *src, unsigned rounds)
+_nettle_chacha_core(uint32_t *dst, const uint32_t *src, unsigned rounds)
 {
   uint32_t x[_CHACHA_STATE_LENGTH];
   unsigned i;

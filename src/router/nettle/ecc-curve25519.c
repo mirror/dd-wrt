@@ -37,7 +37,6 @@
 
 #include <assert.h>
 
-#include "ecc.h"
 #include "ecc-internal.h"
 
 #define USE_REDC 0
@@ -50,7 +49,7 @@
 
 #define ecc_curve25519_modp _nettle_ecc_curve25519_modp
 void
-ecc_curve25519_modp (const struct ecc_modulo *m, mp_limb_t *rp);
+ecc_curve25519_modp (const struct ecc_modulo *m, mp_limb_t *rp, mp_limb_t *xp);
 #else
 
 #if PHIGH_BITS == 0
@@ -58,16 +57,16 @@ ecc_curve25519_modp (const struct ecc_modulo *m, mp_limb_t *rp);
 #endif
 
 static void
-ecc_curve25519_modp(const struct ecc_modulo *m UNUSED, mp_limb_t *rp)
+ecc_curve25519_modp(const struct ecc_modulo *m UNUSED, mp_limb_t *rp, mp_limb_t *xp)
 {
   mp_limb_t hi, cy;
 
-  cy = mpn_addmul_1 (rp, rp + ECC_LIMB_SIZE, ECC_LIMB_SIZE,
+  cy = mpn_addmul_1 (xp, xp + ECC_LIMB_SIZE, ECC_LIMB_SIZE,
 		     (mp_limb_t) 19 << PHIGH_BITS);
-  hi = rp[ECC_LIMB_SIZE-1];
+  hi = xp[ECC_LIMB_SIZE-1];
   cy = (cy << PHIGH_BITS) + (hi >> (GMP_NUMB_BITS - PHIGH_BITS));
   rp[ECC_LIMB_SIZE-1] = (hi & (GMP_NUMB_MASK >> PHIGH_BITS))
-    + sec_add_1 (rp, rp, ECC_LIMB_SIZE - 1, 19 * cy);
+    + sec_add_1 (rp, xp, ECC_LIMB_SIZE - 1, 19 * cy);
 }
 #endif /* HAVE_NATIVE_ecc_curve25519_modp */
 
@@ -78,7 +77,7 @@ ecc_curve25519_modp(const struct ecc_modulo *m UNUSED, mp_limb_t *rp)
 #endif
 
 static void
-ecc_curve25519_modq (const struct ecc_modulo *q, mp_limb_t *rp)
+ecc_curve25519_modq (const struct ecc_modulo *q, mp_limb_t *rp, mp_limb_t *xp)
 {
   mp_size_t n;
   mp_limb_t cy;
@@ -86,48 +85,21 @@ ecc_curve25519_modq (const struct ecc_modulo *q, mp_limb_t *rp)
   /* n is the offset where we add in the next term */
   for (n = ECC_LIMB_SIZE; n-- > 0;)
     {
-      cy = mpn_submul_1 (rp + n,
+      cy = mpn_submul_1 (xp + n,
 			 q->B_shifted, ECC_LIMB_SIZE,
-			 rp[n + ECC_LIMB_SIZE]);
+			 xp[n + ECC_LIMB_SIZE]);
       /* Top limb of mBmodq_shifted is zero, so we get cy == 0 or 1 */
       assert (cy < 2);
-      cnd_add_n (cy, rp+n, q->m, ECC_LIMB_SIZE);
+      mpn_cnd_add_n (cy, xp+n, xp+n, q->m, ECC_LIMB_SIZE);
     }
 
-  cy = mpn_submul_1 (rp, q->m, ECC_LIMB_SIZE,
-		     rp[ECC_LIMB_SIZE-1] >> (GMP_NUMB_BITS - QHIGH_BITS));
+  cy = mpn_submul_1 (xp, q->m, ECC_LIMB_SIZE,
+		     xp[ECC_LIMB_SIZE-1] >> (GMP_NUMB_BITS - QHIGH_BITS));
   assert (cy < 2);
-  cnd_add_n (cy, rp, q->m, ECC_LIMB_SIZE);
+  mpn_cnd_add_n (cy, rp, xp, q->m, ECC_LIMB_SIZE);
 }
 
-/* Needs 2*ecc->size limbs at rp, and 2*ecc->size additional limbs of
-   scratch space. No overlap allowed. */
-static void
-ecc_mod_pow_2kp1 (const struct ecc_modulo *m,
-		  mp_limb_t *rp, const mp_limb_t *xp,
-		  unsigned k, mp_limb_t *tp)
-{
-  if (k & 1)
-    {
-      ecc_mod_sqr (m, tp, xp);
-      k--;
-    }
-  else
-    {
-      ecc_mod_sqr (m, rp, xp);
-      ecc_mod_sqr (m, tp, rp);
-      k -= 2;
-    }
-  while (k > 0)
-    {
-      ecc_mod_sqr (m, rp, tp);
-      ecc_mod_sqr (m, tp, rp);
-      k -= 2;
-    }
-  ecc_mod_mul (m, rp, tp, xp);
-}
-
-/* Computes a^{(p-5)/8} = a^{2^{252}-3} mod m. Needs 5 * n scratch
+/* Computes a^{(p-5)/8} = a^{2^{252}-3} mod m. Needs 4 * n scratch
    space. */
 static void
 ecc_mod_pow_252m3 (const struct ecc_modulo *m,
@@ -135,7 +107,7 @@ ecc_mod_pow_252m3 (const struct ecc_modulo *m,
 {
 #define a7 scratch
 #define t0 (scratch + ECC_LIMB_SIZE)
-#define t1 (scratch + 3*ECC_LIMB_SIZE)
+#define tp (scratch + 2*ECC_LIMB_SIZE)
 
   /* a^{2^252 - 3} = a^{(p-5)/8}, using the addition chain
      2^252 - 3
@@ -152,73 +124,63 @@ ecc_mod_pow_252m3 (const struct ecc_modulo *m,
      = 1 + 4 (2^125+1)(1+2(2^62+1)(2^31+1)(7+8(2^14+1)(2^7+1)(1+2(2^3+1)*7)))
   */ 
      
-  ecc_mod_pow_2kp1 (m, t0, ap, 1, t1);	/* a^3 */
-  ecc_mod_sqr (m, rp, t0);		/* a^6 */
-  ecc_mod_mul (m, a7, rp, ap);		/* a^7 */
-  ecc_mod_pow_2kp1 (m, rp, a7, 3, t0);	/* a^63 = a^{2^6-1} */
-  ecc_mod_sqr (m, t0, rp);		/* a^{2^7-2} */
-  ecc_mod_mul (m, rp, t0, ap);		/* a^{2^7-1} */
-  ecc_mod_pow_2kp1 (m, t0, rp, 7, t1);	/* a^{2^14-1}*/
-  ecc_mod_pow_2kp1 (m, rp, t0, 14, t1);	/* a^{2^28-1} */
-  ecc_mod_sqr (m, t0, rp);		/* a^{2^29-2} */
-  ecc_mod_sqr (m, t1, t0);		/* a^{2^30-4} */
-  ecc_mod_sqr (m, t0, t1);		/* a^{2^31-8} */
-  ecc_mod_mul (m, rp, t0, a7);		/* a^{2^31-1} */
-  ecc_mod_pow_2kp1 (m, t0, rp, 31, t1);	/* a^{2^62-1} */  
-  ecc_mod_pow_2kp1 (m, rp, t0, 62, t1);	/* a^{2^124-1}*/
-  ecc_mod_sqr (m, t0, rp);		/* a^{2^125-2} */
-  ecc_mod_mul (m, rp, t0, ap);		/* a^{2^125-1} */
-  ecc_mod_pow_2kp1 (m, t0, rp, 125, t1);/* a^{2^250-1} */
-  ecc_mod_sqr (m, rp, t0);		/* a^{2^251-2} */
-  ecc_mod_sqr (m, t0, rp);		/* a^{2^252-4} */
-  ecc_mod_mul (m, rp, t0, ap);	    	/* a^{2^252-3} */
-#undef t0
-#undef t1
+  ecc_mod_pow_2kp1 (m, a7, ap, 1, tp);	/* a^3 */
+  ecc_mod_sqr (m, a7, a7, tp);		/* a^6 */
+  ecc_mod_mul (m, a7, a7, ap, tp);	/* a^7 */
+  ecc_mod_pow_2kp1 (m, rp, a7, 3, tp);	/* a^63 = a^{2^6-1} */
+  ecc_mod_sqr (m, rp, rp, tp);		/* a^{2^7-2} */
+  ecc_mod_mul (m, rp, rp, ap, tp);	/* a^{2^7-1} */
+  ecc_mod_pow_2kp1 (m, t0, rp, 7, tp);	/* a^{2^14-1}*/
+  ecc_mod_pow_2kp1 (m, rp, t0, 14, tp);	/* a^{2^28-1} */
+  ecc_mod_sqr (m, rp, rp, tp);		/* a^{2^29-2} */
+  ecc_mod_sqr (m, rp, rp, tp);		/* a^{2^30-4} */
+  ecc_mod_sqr (m, rp, rp, tp);		/* a^{2^31-8} */
+  ecc_mod_mul (m, rp, rp, a7, tp);	/* a^{2^31-1} */
+  ecc_mod_pow_2kp1 (m, t0, rp, 31, tp);	/* a^{2^62-1} */
+  ecc_mod_pow_2kp1 (m, rp, t0, 62, tp);	/* a^{2^124-1}*/
+  ecc_mod_sqr (m, rp, rp, tp);		/* a^{2^125-2} */
+  ecc_mod_mul (m, rp, rp, ap, tp);	/* a^{2^125-1} */
+  ecc_mod_pow_2kp1 (m, t0, rp, 125, tp);/* a^{2^250-1} */
+  ecc_mod_sqr (m, rp, t0, tp);		/* a^{2^251-2} */
+  ecc_mod_sqr (m, rp, rp, tp);		/* a^{2^252-4} */
+  ecc_mod_mul (m, rp, rp, ap, tp);    	/* a^{2^252-3} */
 #undef a7
+#undef t0
+#undef tp
 }
 
-/* Needs 5*ECC_LIMB_SIZE scratch space. */
-#define ECC_25519_INV_ITCH (5*ECC_LIMB_SIZE)
+/* Scratch as for ecc_mod_pow_252m3 above. */
+#define ECC_25519_INV_ITCH (4*ECC_LIMB_SIZE)
 
-static void ecc_curve25519_inv (const struct ecc_modulo *p,
-			   mp_limb_t *rp, const mp_limb_t *ap,
-			   mp_limb_t *scratch)
+static void
+ecc_curve25519_inv (const struct ecc_modulo *p,
+		    mp_limb_t *rp, const mp_limb_t *ap,
+		    mp_limb_t *scratch)
 {
-#define t0 scratch
-
   /* Addition chain
 
        p - 2 = 2^{255} - 21
              = 1 + 2 (1 + 4 (2^{252}-3))
   */
-  ecc_mod_pow_252m3 (p, rp, ap, t0);
-  ecc_mod_sqr (p, t0, rp);
-  ecc_mod_sqr (p, rp, t0);
-  ecc_mod_mul (p, t0, ap, rp);
-  ecc_mod_sqr (p, rp, t0);
-  ecc_mod_mul (p, t0, ap, rp);
-  mpn_copyi (rp, t0, ECC_LIMB_SIZE); /* FIXME: Eliminate copy? */
-#undef t0
+  ecc_mod_pow_252m3 (p, rp, ap, scratch);
+  ecc_mod_sqr (p, rp, rp, scratch);
+  ecc_mod_sqr (p, rp, rp, scratch);
+  ecc_mod_mul (p, rp, ap, rp, scratch);
+  ecc_mod_sqr (p, rp, rp, scratch);
+  ecc_mod_mul (p, rp, ap, rp, scratch);
 }
 
-/* First, do a canonical reduction, then check if zero */
 static int
 ecc_curve25519_zero_p (const struct ecc_modulo *p, mp_limb_t *xp)
 {
-  mp_limb_t cy;
-  mp_limb_t w;
-  mp_size_t i;
+/* First, reduce to < 2p. */
 #if PHIGH_BITS > 0
   mp_limb_t hi = xp[ECC_LIMB_SIZE-1];
   xp[ECC_LIMB_SIZE-1] = (hi & (GMP_NUMB_MASK >> PHIGH_BITS))
     + sec_add_1 (xp, xp, ECC_LIMB_SIZE - 1, 19 * (hi >> (GMP_NUMB_BITS - PHIGH_BITS)));
 #endif
-  cy = mpn_sub_n (xp, xp, p->m, ECC_LIMB_SIZE);
-  cnd_add_n (cy, xp, p->m, ECC_LIMB_SIZE);
 
-  for (i = 0, w = 0; i < ECC_LIMB_SIZE; i++)
-    w |= xp[i];
-  return w == 0;
+  return ecc_mod_zero_p (p, xp);
 }
 
 /* Compute x such that x^2 = u/v (mod p). Returns one on success, zero
@@ -235,54 +197,54 @@ ecc_curve25519_zero_p (const struct ecc_modulo *p, mp_limb_t *xp)
 #error Broken curve25519 parameters
 #endif
 
-/* Needs 4*n space + scratch for ecc_mod_pow_252m3. */
-#define ECC_25519_SQRT_ITCH (9*ECC_LIMB_SIZE)
+/* Needs 2*n space + scratch for ecc_mod_pow_252m3. */
+#define ECC_25519_SQRT_RATIO_ITCH (6*ECC_LIMB_SIZE)
 
 static int
-ecc_curve25519_sqrt(const struct ecc_modulo *p, mp_limb_t *rp,
-	       const mp_limb_t *up, const mp_limb_t *vp,
-	       mp_limb_t *scratch)
+ecc_curve25519_sqrt_ratio(const struct ecc_modulo *p, mp_limb_t *rp,
+			  const mp_limb_t *up, const mp_limb_t *vp,
+			  mp_limb_t *scratch)
 {
   int pos, neg;
 
 #define uv3 scratch
 #define uv7 (scratch + ECC_LIMB_SIZE)
-#define uv7p (scratch + 2*ECC_LIMB_SIZE)
-#define v2 (scratch + 2*ECC_LIMB_SIZE)
-#define uv (scratch + 3*ECC_LIMB_SIZE)
-#define v4 (scratch + 3*ECC_LIMB_SIZE)
 
-#define scratch_out (scratch + 4 * ECC_LIMB_SIZE)
+#define v2 uv7
+#define uv uv3
+#define v4 uv7
+
+#define scratch_out (scratch + 2 * ECC_LIMB_SIZE)
 
 #define x2 scratch
 #define vx2 (scratch + ECC_LIMB_SIZE)
 #define t0 (scratch + 2*ECC_LIMB_SIZE)
 
-					/* Live values */
-  ecc_mod_sqr (p, v2, vp);		/* v2 */
-  ecc_mod_mul (p, uv, up, vp);		/* uv, v2 */
-  ecc_mod_mul (p, uv3, uv, v2);		/* uv3, v2 */
-  ecc_mod_sqr (p, v4, v2);		/* uv3, v4 */
-  ecc_mod_mul (p, uv7, uv3, v4);	/* uv3, uv7 */
-  ecc_mod_pow_252m3 (p, uv7p, uv7, scratch_out); /* uv3, uv7p */
-  ecc_mod_mul (p, rp, uv7p, uv3);	/* none */
+						/* Live values */
+  ecc_mod_sqr (p, v2, vp, scratch_out);		/* v2 */
+  ecc_mod_mul (p, uv, up, vp, scratch_out);	/* uv, v2 */
+  ecc_mod_mul (p, uv3, uv, v2, scratch_out);	/* uv3, v2 */
+  ecc_mod_sqr (p, v4, v2, scratch_out);		/* uv3, v4 */
+  ecc_mod_mul (p, uv7, uv3, v4, scratch_out);	/* uv7 */
+  ecc_mod_pow_252m3 (p, rp, uv7, scratch_out);	/* uv3, uv7p */
+  ecc_mod_mul (p, rp, rp, uv3, scratch_out);	/* none */
 
   /* Check sign. If square root exists, have v x^2 = ±u */
-  ecc_mod_sqr (p, x2, rp);
-  ecc_mod_mul (p, vx2, x2, vp);
+  ecc_mod_sqr (p, x2, rp, t0);
+  ecc_mod_mul (p, vx2, x2, vp, t0);
   ecc_mod_add (p, t0, vx2, up);
   neg = ecc_curve25519_zero_p (p, t0);
   ecc_mod_sub (p, t0, up, vx2);
   pos = ecc_curve25519_zero_p (p, t0);
 
-  ecc_mod_mul (p, t0, rp, ecc_sqrt_z);
+  ecc_mod_mul (p, t0, rp, ecc_sqrt_z, t0);
   cnd_copy (neg, rp, t0, ECC_LIMB_SIZE);
   return pos | neg;
 
 #undef uv3
 #undef uv7
-#undef uv7p
 #undef v2
+#undef uv
 #undef v4
 #undef scratch_out
 #undef x2
@@ -298,7 +260,8 @@ const struct ecc_curve _nettle_curve25519 =
     ECC_BMODP_SIZE,
     0,
     ECC_25519_INV_ITCH,
-    ECC_25519_SQRT_ITCH,
+    0,
+    ECC_25519_SQRT_RATIO_ITCH,
 
     ecc_p,
     ecc_Bmodp,
@@ -309,7 +272,8 @@ const struct ecc_curve _nettle_curve25519 =
     ecc_curve25519_modp,
     ecc_curve25519_modp,
     ecc_curve25519_inv,
-    ecc_curve25519_sqrt,
+    NULL,
+    ecc_curve25519_sqrt_ratio,
   },
   {
     253,
@@ -317,6 +281,7 @@ const struct ecc_curve _nettle_curve25519 =
     ECC_BMODQ_SIZE,
     0,
     ECC_MOD_INV_ITCH (ECC_LIMB_SIZE),
+    0,
     0,
 
     ecc_q,
@@ -328,6 +293,7 @@ const struct ecc_curve _nettle_curve25519 =
     ecc_curve25519_modq,
     ecc_curve25519_modq,
     ecc_mod_inv,
+    NULL,
     NULL,
   },
 

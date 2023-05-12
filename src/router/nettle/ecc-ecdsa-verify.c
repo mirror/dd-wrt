@@ -98,14 +98,14 @@ ecc_ecdsa_verify (const struct ecc_curve *ecc,
      division, I think), and write an ecc_add_ppp. */
 
   /* Compute sinv */
-  ecc->q.invert (&ecc->q, sinv, sp, sinv + 2*ecc->p.size);
+  ecc->q.invert (&ecc->q, sinv, sp, sinv + ecc->p.size);
 
   /* u1 = h / s, P1 = u1 * G */
   ecc_hash (&ecc->q, hp, length, digest);
-  ecc_mod_mul (&ecc->q, u1, hp, sinv);
+  ecc_mod_mul_canonical (&ecc->q, u1, hp, sinv, u1);
 
   /* u2 = r / s, P2 = u2 * Y */
-  ecc_mod_mul (&ecc->q, u2, rp, sinv);
+  ecc_mod_mul_canonical (&ecc->q, u2, rp, sinv, u2);
 
    /* Total storage: 5*ecc->p.size + ecc->mul_itch */
   ecc->mul (ecc, P2, u2, pp, u2 + ecc->p.size);
@@ -132,12 +132,12 @@ ecc_ecdsa_verify (const struct ecc_curve *ecc,
 	 private key by guessing.
        */
       /* Total storage: 6*ecc->p.size + ecc->add_hhh_itch */
-      ecc->add_hhh (ecc, P1, P1, P2, P1 + 3*ecc->p.size);
+      ecc->add_hhh (ecc, P2, P2, P1, P1 + 3*ecc->p.size);
     }
   /* x coordinate only, modulo q */
-  ecc->h_to_a (ecc, 2, P2, P1, P1 + 3*ecc->p.size);
+  ecc->h_to_a (ecc, 2, P1, P2, P1 + 3*ecc->p.size);
 
-  return (mpn_cmp (rp, P2, ecc->p.size) == 0);
+  return (mpn_cmp (rp, P1, ecc->p.size) == 0);
 #undef P2
 #undef P1
 #undef sinv

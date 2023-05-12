@@ -1,3 +1,294 @@
+NEWS for the Nettle 3.8.1 release
+
+	This is a bugfix release, fixing a few portability issues
+	reported for Nettle-3.8.
+
+	Bug fixes:
+
+	* Avoid non-posix m4 argument references in the chacha
+	  implementation for arm64, powerpc64 and s390x. Reported by
+	  Christian Weisgerber, fix contributed by Mamone Tarsha.
+
+	* Use explicit .machine pseudo-ops where needed in s390x
+	  assembly files. Bug report by Andreas K. Huettel, fix
+	  contributed by Mamone Tarsha.
+
+	Optimizations:
+
+	* Implemented runtime detection of cpu features for OpenBSD on
+	  arm64. Contributed by Christian Weisgerber.
+
+	The new version is intended to be fully source and binary
+	compatible with Nettle-3.6. The shared library names are
+	libnettle.so.8.6 and libhogweed.so.6.6, with sonames
+	libnettle.so.8 and libhogweed.so.6.
+
+NEWS for the Nettle 3.8 release
+
+	This release includes a couple of new features, and many
+	performance improvements. It adds assembly code for two more
+	architectures: ARM64 and S390x.
+
+	The new version is intended to be fully source and binary
+	compatible with Nettle-3.6. The shared library names are
+	libnettle.so.8.5 and libhogweed.so.6.5, with sonames
+	libnettle.so.8 and libhogweed.so.6.
+
+	New features:
+
+	* AES keywrap (RFC 3394), contributed by Nicolas Mora.
+
+	* SM3 hash function, contributed by Tianjia Zhang.
+
+	* New functions cbc_aes128_encrypt, cbc_aes192_encrypt,
+	  cbc_aes256_encrypt.
+
+	  On processors where AES is fast enough, e.g., x86_64 with
+	  aesni instructions, the overhead of using Nettle's general
+	  cbc_encrypt can be significant. The new functions can be
+	  implemented in assembly, to do multiple blocks with reduced
+	  per-block overhead.
+
+	  Note that there's no corresponding new decrypt functions,
+	  since the general cbc_decrypt doesn't suffer from the same
+	  performance problem.
+
+	Bug fixes:
+
+	* Fix fat builds for x86_64 windows, these appear to never
+          have worked.
+
+	Optimizations:
+
+	* New ARM64 implementation of AES, GCM, Chacha, SHA1 and
+	  SHA256, for processors supporting crypto extensions. Great
+	  speedups, and fat builds are supported. Contributed by
+	  Mamone Tarsha.
+
+	* New s390x implementation of AES, GCM, Chacha, memxor, SHA1,
+	  SHA256, SHA512 and SHA3. Great speedups, and fat builds are
+	  supported. Contributed by Mamone Tarsha.
+
+	* New PPC64 assembly for ecc modulo/redc operations,
+	  contributed by Amitay Isaacs, Martin Schwenke and Alastair
+	  D´Silva.
+
+	* The x86_64 AES implementation using aesni instructions has
+	  been reorganized with one separate function per key size,
+	  each interleaving the processing of two blocks at a time
+	  (when the caller processes multiple blocks with each call).
+	  This gives a modest performance improvement on some
+	  processors.
+
+	* Rewritten and faster x86_64 poly1305 assembly.
+
+	Known issues:
+
+	* Nettle's testsuite doesn't work out-of-the-box on recent
+	  MacOS, due to /bin/sh discarding the DYLD_LIBRARY_PATH
+	  environment variable. Nettle's test scripts handle this in
+	  some cases, but currently fails the test cases that are
+	  themselves written as /bin/sh scripts. As a workaround, use
+
+	  make check EMULATOR='env DYLD_LIBRARY_PATH=$(TEST_SHLIB_DIR)'
+
+	Miscellaneous:
+
+	* Updated manual to current makeinfo conventions, with no
+	  explicit node pointers. Generate pdf version with texi2pdf,
+	  to get working hyper links.
+
+	* Added square root functions for NIST ecc curves, as a
+	  preparation for supporting compact point representation.
+
+	* Reworked internal GCM/ghash interfaces, simplifying assembly
+	  implementations. Deleted unused GCM C implementation
+	  variants with less than 8-bit lookup table.
+
+NEWS for the Nettle 3.7.3 release
+
+	This is bugfix release, fixing bugs that could make the RSA
+	decryption functions crash on invalid inputs.
+
+	Upgrading to the new version is strongly recommended. For
+	applications that want to support older versions of Nettle,
+	the bug can be worked around by adding a check that the RSA
+	ciphertext is in the range 0 < ciphertext < n, before
+	attempting to decrypt it.
+
+	Thanks to Paul Schaub and Justus Winter for reporting these
+	problems.
+
+	The new version is intended to be fully source and binary
+	compatible with Nettle-3.6. The shared library names are
+	libnettle.so.8.4 and libhogweed.so.6.4, with sonames
+	libnettle.so.8 and libhogweed.so.6.
+
+	Bug fixes:
+
+	* Fix crash for zero input to rsa_sec_decrypt and
+	  rsa_decrypt_tr. Potential denial of service vector.
+
+	* Ensure that all of rsa_decrypt_tr and rsa_sec_decrypt return
+	  failure for out of range inputs, instead of either crashing,
+	  or silently reducing input modulo n. Potential denial of
+	  service vector.
+
+	* Ensure that rsa_decrypt returns failure for out of range
+	  inputs, instead of silently reducing input modulo n.
+
+	* Ensure that rsa_sec_decrypt returns failure if the message
+	  size is too large for the given key. Unlike the other bugs,
+	  this would typically be triggered by invalid local
+	  configuration, rather than by processing untrusted remote
+	  data.
+
+NEWS for the Nettle 3.7.2 release
+
+	This is a bugfix release, fixing a bug in ECDSA signature
+	verification that could lead to a denial of service attack
+	(via an assertion failure) or possibly incorrect results. It
+	also fixes a few related problems where scalars are required
+	to be canonically reduced modulo the ECC group order, but in
+	fact may be slightly larger.
+
+	Upgrading to the new version is strongly recommended.
+
+	Even when no assert is triggered in ecdsa_verify, ECC point
+	multiplication may get invalid intermediate values as input,
+	and produce incorrect results. It's trivial to construct
+	alleged signatures that result in invalid intermediate values.
+	It appears difficult to construct an alleged signature that
+	makes the function misbehave in such a way that an invalid
+	signature is accepted as valid, but such attacks can't be
+	ruled out without further analysis.
+
+	Thanks to Guido Vranken for setting up the fuzzer tests that
+	uncovered this problem.
+
+	The new version is intended to be fully source and binary
+	compatible with Nettle-3.6. The shared library names are
+	libnettle.so.8.3 and libhogweed.so.6.3, with sonames
+	libnettle.so.8 and libhogweed.so.6.
+
+	Bug fixes:
+
+	* Fixed bug in ecdsa_verify, and added a corresponding test
+          case.
+
+	* Similar fixes to ecc_gostdsa_verify and gostdsa_vko.
+
+	* Similar fixes to eddsa signatures. The problem is less severe
+          for these curves, because (i) the potentially out or range
+          value is derived from output of a hash function, making it
+          harder for the attacker to to hit the narrow range of
+          problematic values, and (ii) the ecc operations are
+          inherently more robust, and my current understanding is that
+          unless the corresponding assert is hit, the verify
+          operation should complete with a correct result.
+
+	* Fix to ecdsa_sign, which with a very low probability could
+          return out of range signature values, which would be
+          rejected immediately by a verifier.
+
+NEWS for the Nettle 3.7.1 release
+
+	This is primarily a bug fix release, fixing a couple of
+	problems found in Nettle-3.7.
+
+	The new version is intended to be fully source and binary
+	compatible with Nettle-3.6. The shared library names are
+	libnettle.so.8.2 and libhogweed.so.6.2, with sonames
+	libnettle.so.8 and libhogweed.so.6.
+
+	Bug fixes:
+
+	* Fix bug in chacha counter update logic. The problem affected
+	  ppc64 and ppc64el, with the new altivec assembly code
+	  enabled. Reported by Andreas Metzler, after breakage in
+	  GnuTLS tests on ppc64.
+
+	* Support for big-endian ARM platforms has been restored.
+	  Fixes contributed by Michael Weiser.
+
+	* Fix build problem on OpenBSD/powerpc64, reported by Jasper
+	  Lievisse Adriaanse.
+
+	* Fix corner case bug in ECDSA verify, it would produce
+	  incorrect result in the unlikely case of an all-zero
+	  message hash. Reported by Guido Vranken.
+
+	New features:
+
+	* Support for pbkdf2_hmac_sha384 and pbkdf2_hmac_sha512,
+	  contributed by Nicolas Mora.
+
+	Miscellaneous:
+
+	* Poorly performing ARM Neon code for doing single-block
+	  Salsa20 and Chacha has been deleted. The code to do two or
+	  three blocks in parallel, introduced in Nettle-3.7, is
+	  unchanged.
+
+NEWS for the Nettle 3.7 release
+
+	This release adds one new feature, the bcrypt password hashing
+	function, and lots of optimizations. There's also one
+	important change to how Nettle is configured: Fat builds are
+	now on by default.
+
+	The release adds PowerPC64 assembly for a few algorithms,
+	resulting in great speedups. Benchmarked on a Power9 machine,
+	speedup was 13 times for AES256-CTR and AES256-GCM, and 3.5
+	times for Chacha. For fat builds (now the default), the new
+	code is used automatically, on processors supporting the needed
+	instruction set extensions.
+
+	The new version is intended to be fully source and binary
+	compatible with Nettle-3.6. The shared library names are
+	libnettle.so.8.1 and libhogweed.so.6.1, with sonames
+	libnettle.so.8 and libhogweed.so.6.
+
+	New features:
+
+	* Support for bcrypt, contributed by Stephen R. van den Berg.
+
+	Optimizations:
+
+	* Much faster AES and GCM on PowerPC64 processors supporting
+	  the corresponding crypto extensions. Contributed by Mamone
+	  Tarsha.
+
+	* Speed of Chacha improved on PowerPC64, x86_64 and ARM Neon.
+
+	* Speed of Salsa20 improved on x86_64 and ARM Neon.
+
+	* Overhaul of some elliptic curve primitives, improving ECDSA
+	  signature speed.
+
+	Configure:
+
+	* Fat builds are enabled by default on the architectures where
+	  it is supported (x86_64, arm and powerpc64). To disable
+	  runtime selection, and instead specify the processor flavor
+	  at configure time, you need to pass --disable-fat to the
+	  configure script.
+
+	Known issues:
+
+	* The ARM assembly code in this release doesn't work correctly
+	  on big-endian ARM systems. This will hopefully be fixed in a
+	  later release.
+
+	Miscellaneous:
+
+	* Use a few more gmp-6.1 functions: mpn_cnd_add_n,
+	  mpn_cnd_sub_n, mpn_cnd_swap. Delete corresponding internal
+	  Nettle functions.
+
+	* Convert all assembly files to use the default m4 quote
+	  characters.
+
 NEWS for the Nettle 3.6 release
 
 	This release adds a couple of new features, most notable being
@@ -5,7 +296,7 @@ NEWS for the Nettle 3.6 release
 
 	It is not binary compatible with earlier releases. The shared
 	library names are libnettle.so.8.0 and libhogweed.so.6.0, with
-	sonames nibnettle.so.8 and libhogweed.so.6. The changed
+	sonames libnettle.so.8 and libhogweed.so.6. The changed
 	sonames are mainly to avoid upgrade problems with recent
 	GnuTLS versions, that depend on Nettle internals outside of
 	the advertised ABI. But also because of the removal of

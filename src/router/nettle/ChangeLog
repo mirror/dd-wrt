@@ -1,3 +1,1322 @@
+2022-07-26  Niels Möller  <nisse@lysator.liu.se>
+
+	* Released nettle-3.8.1.
+
+	* configure.ac: Bump package version, to 3.8.1.
+	(LIBNETTLE_MINOR): Bump minor number, to 8.6.
+	(LIBHOGWEED_MINOR): Bump minor number, to 6.6.
+
+2022-06-12  Niels Möller  <nisse@lysator.liu.se>
+
+	From Christian Weisgerber:
+	* fat-arm64.c (get_arm64_features): Enable runtime feature
+	detection for openbsd.
+
+2022-06-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* Released nettle-3.8.
+
+2022-05-23  Niels Möller  <nisse@lysator.liu.se>
+
+	* Makefile.in (OPT_SOURCES): Add missing file fat-arm64.c.
+
+	* config.guess: Update to 2022-05-08 version.
+	* config.sub: Update to 2022-01-03 version.
+
+2022-05-20  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac: Bump package version, to 3.8.
+	(LIBNETTLE_MINOR): Bump minor number, to 8.5.
+	(LIBHOGWEED_MINOR): Bump minor number, to 6.5.
+
+2022-05-05  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (CBC): Document cbc_aes128_encrypt,
+	cbc_aes192_encrypt and cbc_aes256_encrypt.
+
+2022-04-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (Copyright): Deleted incomplete and out of date
+	list of authors. Replaced by...
+	* AUTHORS: New updated list of authors and contributions.
+
+2022-02-23  Niels Möller  <nisse@lysator.liu.se>
+
+	Analogous s390x update, by Mamone Tarsha:
+	* fat-s390x.c (fat_init): Update fat init for new _ghash_set_key
+	and _ghash_update functions, delete setup for old gcm functions.
+	* s390x/fat/ghash-update-2.asm: New file.
+	* s390x/fat/ghash-set-key-2.asm: New file.
+	* s390x/fat/gcm-hash.asm: Deleted.
+	* s390x/msa_x4/gcm-hash.asm: Deleted, split into two new files...
+	* s390x/msa_x4/ghash-update.asm: New file.
+	* s390x/msa_x4/ghash-set-key.asm: New file
+
+2022-02-22  Niels Möller  <nisse@lysator.liu.se>
+
+	* fat-ppc.c (fat_init): Update fat init for new _ghash_set_key
+	and _ghash_update functions, delete setup for old gcm functions.
+
+	* powerpc64/fat/ghash-update-2.asm: New file.
+	* powerpc64/fat/ghash-set-key-2.asm: New file.
+	* powerpc64/fat/gcm-hash.asm: Deleted.
+
+	* powerpc64/p8/gcm-hash.asm: Deleted, split into two new files...
+	* powerpc64/p8/ghash-update.asm: New file.
+	* powerpc64/p8/ghash-set-key.asm: New file
+
+2022-02-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* fat-arm64.c (fat_init): Update fat init for new _ghash_set_key
+	and _ghash_update functions, delete setup for old gcm functions.
+
+	* arm64/fat/ghash-update-2.asm: New file.
+	* arm64/fat/ghash-set-key-2.asm: New file.
+	* arm64/fat/gcm-hash.asm: Deleted.
+
+	* ghash-update.c (_nettle_ghash_update_c): New name, for fat builds.
+
+	* arm64/crypto/gcm-hash.asm: Deleted, split into two new files...
+	* arm64/crypto/ghash-set-key.asm: New file.
+	* arm64/crypto/ghash-update.asm: New file.
+
+2022-02-19  Niels Möller  <nisse@lysator.liu.se>
+
+	* fat-x86_64.c (fat_init): Update fat init for new _ghash_set_key
+	and _ghash_update functions, delete setup for old gcm functions.
+	* fat-setup.h (ghash_set_key_func, ghash_update_func): New
+	typedefs.
+	(gcm_init_key_func, gcm_hash_func): Deleted typedefs.
+	* x86_64/fat/ghash-update.asm: New file.
+	* x86_64/fat/ghash-update-2.asm: New file.
+	* x86_64/fat/ghash-set-key-2.asm: New file.
+	* x86_64/fat/gcm-hash.asm: Deleted.
+	* ghash-set-key.c (_nettle_ghash_set_key_c): New name, for fat
+	builds.
+	* configure.ac (asm_nettle_optional_list): Add ghash-set-key-2.asm
+	ghash-update-2.asm.
+
+	* ghash-set-key.c (_ghash_digest): Deleted, and also deleted
+	assembly implementations.
+	* gcm.c (gcm_digest): Replace call to _ghash_digest with block16_xor.
+
+	* x86_64/pclmul/gcm-hash.asm: Deleted, split into two new files...
+	* x86_64/pclmul/ghash-set-key.asm: New file.
+	* x86_64/pclmul/ghash-update.asm: New file.
+
+	* configure.ac (asm_replace_list): Add ghash-set-key.asm ghash-update.asm.
+	(asm_nettle_optional_list): Delete gcm-hash.asm gcm-hash8.asm.
+	* x86_64/ghash-update.asm: New file, based on old gcm-hash8.asm,
+	but without any handling of partial blocks.
+	* x86_64/gcm-hash8.asm: Deleted.
+
+	* ghash-set-key.c (_ghash_digest): Moved function from...
+	* ghash-update.c (_ghash_digest): ...old location.
+
+2022-02-18  Niels Möller  <nisse@lysator.liu.se>
+
+	* block-internal.h (block16_zero): New function.
+
+	* ghash-internal.h: New file, declaring new internal ghash interface.
+	* gcm-internal.h: Deleted file.
+	* ghash-update.c (gcm_gf_shift_8): Moved here (from gcm.c)
+	(gcm_gf_mul): Likewise.
+	(_ghash_update): New function, extracted from _nettle_gcm_hash_c.
+	(_ghash_digest): New function.
+	* ghash-set-key.c (_ghash_set_key): New file and function.
+	Extracted from _nettle_gcm_init_key_c and _nettle_gcm_set_key.
+
+	* gcm.c (INC32): Deleted macro, used in only one place.
+	(gcm_set_key): Update to use _ghash_set_key.
+	(gcm_hash): Renamed, was _gcm_hash, and implemented in terms of
+	_ghash_update.
+	(bswap_if_le): New function (copied from nist-keywrap.c).
+	(gcm_hash_sizes): Use bswap_if_le and _ghash_update.
+	(gcm_set_iv): Updated to use gcm_hash and block16_zero.
+	(gcm_digest): Use _ghash_digest.
+
+	* testsuite/gcm-test.c (test_ghash_internal): Updated to use
+	_ghash_set_key and _ghash_update.
+
+	* Makefile.in (nettle_SOURCES): Add ghash-set-key.c ghash-update.c.
+	(DISTFILES): Replaced gcm-internal.h with ghash-internal.h.
+
+2022-02-17  Niels Möller  <nisse@lysator.liu.se>
+
+	* gcm.c: Require that GCM_TABLE_BITS == 8. Delete old code for
+	GCM_TABLE_BITS == 0 and GCM_TABLE_BITS == 4.
+	* gcm-internal.h: Delete checks for GCM_TABLE_BITS != 8.
+	* fat-x86_64.c: Likewise.
+	* fat-s390x.c: Likewise.
+	* fat-ppc.c: Likewise.
+	* fat-arm64.c: Likewise.
+
+2022-02-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* fat-x86_64.c: Add fat setup for gcm.
+	* x86_64/fat/gcm-hash.asm: New file.
+
+	* Makefile.in (distdir): Add x86_64/pclmul directory.
+	* configure.ac: New configure option --enable-x86-pclmul.
+	(asm_path): Add x86_64/pclmul, if above option is set.
+	* x86_64/pclmul/gcm-hash.asm: New file, initial implementation of
+	GCM using the pclmulqdq instructions.
+
+2022-02-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* gcm-internal.h (_gcm_hash): Arrange so that this is an alias for
+	the appropriate implementation. Updated all users.
+	* gcm.c (_nettle_gcm_set_key): New internal function, intended to
+	make tests of internal ghash functions easier.
+	(gcm_set_key): Use it.
+	* testsuite/gcm-test.c (test_ghash_internal): New function.
+	(test_main): Add tests of internal ghash functions, with keys
+	corresponding to various single-bit polynomials.
+
+2022-01-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/poly1305-test.c (poly1305_internal): Renamed function,
+	was test_poly1305_internal.
+	(test_poly1305_internal): New helper function.
+	(test_fixed): New function, to test internal functions with fixed
+	test inputs.
+	(test_random): Use test_poly1305_internal.
+	(test_main): Call test_fixed.
+
+	* misc/poly1305-gen-example.pike: Program to generate poly1305
+	inputs with a given digest.
+
+2022-01-27  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/poly1305-internal.asm: Rewrote. Rearrange folding, so
+	that all the multiply instructions needed to process a block are
+	independent of each other. Measured speedup of 16% on AMD zen2 and
+	28% on Intel broadwell, and expected to be generally faster.
+	* asm.m4 (P1305): Rearrange struct contents, to fit 64-bit entries
+	S0 and H2. Total struct size unchanged.
+
+2022-01-25  Niels Möller  <nisse@lysator.liu.se>
+
+	Chacha implementation for arm64, contributed by Mamone Tarsha.
+	* arm64/chacha-core-internal.asm: New file.
+	* arm64/chacha-2core.asm: New file.
+	* arm64/chacha-4core.asm: New file
+
+2022-01-24  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/ecc-secp224r1-modp.asm: New file, contributed by
+	Amitay Isaacs.
+	* powerpc64/ecc-curve25519-modp.asm: New file, contributed by
+	Martin Schwenke & Alastair D´Silva
+	* powerpc64/ecc-curve448-modp.asm: New file, contributed by Martin
+	Schwenke & Amitay Isaacs.
+
+2022-01-23  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/poly1305-test.c (test_poly1305_internal): New function.
+	(ref_poly1305_internal): New function.
+	(test_random): New function.
+	(test_main): Call test_random.
+
+	Arrange so that GMP or mini-gmp is always available for tests.
+	* testsuite/testutils.h [!WITH_HOGWEED]: Include mini-gmp.h.
+	* testsuite/testutils.c [!WITH_HOGWEED]: Include mini-gmp.c.
+
+2022-01-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/ecc-secp192r1-modp.asm: New file, contributed by
+	Amitay Isaacs.
+	* powerpc64/ecc-secp384r1-modp.asm: New file, contributed by
+	Martin Schwenke, Amitay Isaacs & Alastair D´Silva.
+	* powerpc64/ecc-secp521r1-modp.asm: New file, contributed by
+	Martin Schwenke & Alastair D´Silva.
+
+2022-01-17  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/testutils.c (test_ecc_point_valid_p): New function,
+	moved from...
+	* testsuite/ecdsa-keygen-test.c (ecc_valid_p): ... old copy.
+	* testsuite/gostdsa-keygen-test.c (ecc_valid_p): ... old copy.
+	* testsuite/testutils.h: Declare it.
+	(test_randomize) [NETTLE_USE_MINI_GMP]: Use inline function rather
+	than macro for dummy definition, to avoid compile time warnings.
+
+2022-01-10  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/ecc-secp256r1-redc.asm: Reduce number of registers
+	used, eliminating save and restore of callee-save registers.
+	Speedup of 7% reported for POWER9 (and marginal speedup of secp256
+	sign and verify operations).
+
+2022-01-04  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac (ELFV2_ABI): New substituted variable, set on
+	powerpc64 based on the _CALL_ELF define.
+	* config.m4.in (ELFV2_ABI): Substituted here.
+	* powerpc64/machine.m4: Use ELFV2_ABI rather than WORDS_BIGENDIAN
+	to select abi flavor. Intended to support ppc64be + musl, which,
+	unlike other big-endian configurations, uses ELFv2.
+
+2021-12-09  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/ecc-secp256r1-redc.asm: New folding scheme with one less
+	carry propagation phase, and fewer registers, avoiding save and
+	restore of callee-save registers. 17% speedup of this function on
+	AMD Ryzen 5, resulting in a modest improvement in ecdsa
+	performance.
+
+	* powerpc64/ecc-secp256r1-redc.asm: New file, contributed by
+	Amitay Isaacs.
+
+2021-11-29  Niels Möller  <nisse@lysator.liu.se>
+
+	From Tianjia Zhang: SM3 hash function.
+	* sm3.h: New file.
+	* sm3.c: New file.
+	* sm3-meta.c: New file.
+	* hmac-sm3.c: New file.
+	* hmac-sm3-meta.c: New file.
+	* testsuite/sm3-test.c: New file.
+	* nettle.texinfo: Document SM3.
+
+2021-11-19  Niels Möller  <nisse@lysator.liu.se>
+
+	* gmp-glue.c (mpz_limbs_cmp): Deleted function. Usage replaced
+	with mpz_roinit_n and mpz_cmp.
+	(mpz_limbs_read_n): Deleted function. Usage in tests only,
+	replaced with mpz_limbs_copy.
+
+2021-11-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/eddsa-compress-test.c (test_main): Use test_randomize.
+	* testsuite/ecc-redc-test.c (test_main): Likewise.
+	* testsuite/ecc-mul-g-test.c (test_main): Likewise.
+	* testsuite/ecc-mul-a-test.c (test_main): Likewise.
+
+	* testsuite/ecc-modinv-test.c (test_modulo): Trim allocation for
+	result area.
+	(test_main): Use test_randomize.
+	* testsuite/ecc-sqrt-test.c (test_sqrt): Trim allocation.
+	(test_sqrt_ratio): Trim allocation. Fix sqrt_ratio test for v = 0,
+	failure is expected.
+	(test_main): Use test_randomize.
+
+2021-11-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/testutils.c (get_random_seed): Move function here.
+	(test_randomize): New function.
+	* testsuite/ecc-mod-test.c (get_random_seed): Delete old copy.
+	(test_main): Use test_randomize.
+	* testsuite/rsa-compute-root-test.c (get_random_seed): Delete old copy.
+	(test_main): Use test_randomize.
+
+	* ecc-secp224r1.c (ecc_secp224r1_sqrt): Fix result for zero
+	input, which needs handling as a special case in the
+	Tonelli-Shanks algorithm.
+
+	* testsuite/ecc-sqrt-test.c (test_sqrt_ratio): Check that sqrt(0)
+	returns 0.
+	(test_sqrt_ratio): Check that sqrt (0/1) returns 0.
+
+2021-11-11  Niels Möller  <nisse@lysator.liu.se>
+
+	* eccdata.c (output_curve): Output ecc_sqrt_z and ECC_SQRT_E only
+	when computed. Fixes uninitialized value bug from previous change.
+
+	* ecc-secp384r1.c (ecc_mod_pow_288m32m1): New function.
+	(ecc_secp384r1_inv): Use ecc_mod_pow_288m32m1.
+	(ecc_secp384r1_sqrt): Likewise.
+
+	* eccdata.c (output_curve): Delete generation of unused values
+	ecc_sqrt_t and ECC_SQRT_T_BITS.
+
+2021-11-10  Niels Möller  <nisse@lysator.liu.se>
+
+	* eccdata.c (output_bignum_redc): New function.
+	(output_curve): Generate both redc and non-redc versions of
+	ecc_sqrt_z. Fixes secp224r1 sqrt, in configs using redc.
+
+2021-11-08  Niels Möller  <nisse@lysator.liu.se>
+
+	Square root functions, based on patch by Wim Lewis.
+	* ecc-internal.h (ecc_mod_sqrt_func): New typedef.
+	(struct ecc_modulo): Add sqrt function pointer and sqrt_itch.
+	Update all curve definitions.
+	* ecc-secp192r1.c (ECC_SECP192R1_SQRT_ITCH): New constant.
+	(ecc_secp192r1_sqrt): New function.
+	* ecc-secp256r1.c (ecc_secp256r1_sqrt): New function.
+	* ecc-secp384r1.c (ecc_secp384r1_sqrt): New function.
+	* ecc-secp521r1.c (ecc_secp521r1_sqrt): New function.
+	* ecc-secp224r1.c (ecc_secp224r1_sqrt): New function, using
+	Tonelli-Shanks' algorithm.
+
+	* testsuite/ecc-sqrt-test.c (test_sqrt): New function.
+	(test_sqrt_ratio): Renamed function (was test_modulo).
+	(test_main): Test sqrt function, for curves that define it.
+
+	* ecc-secp224r1.c (ecc_mod_pow_127m1): New function.
+
+2021-11-07  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-internal.h (struct ecc_modulo): Renamed sqrt_itch to
+	sqrt_ratio_itch.
+	* eddsa-decompress.c (_eddsa_decompress_itch): Updated.
+
+	* ecc-curve448.c (ECC_CURVE448_SQRT_RATIO_ITCH): Renamed, from ...
+	(ECC_CURVE448_SQRT_ITCH): ... old name.
+	(ecc_curve448_sqrt_ratio): Renamed, from ...
+	(ecc_curve448_sqrt): ... old name.
+	(_nettle_curve448): Updated.
+
+	* ecc-curve25519.c (ECC_25519_SQRT_RATIO_ITCH): Renamed, from ...
+	(ECC_25519_SQRT_ITCH): ... old name
+	(ecc_curve25519_sqrt_ratio): Renamed, from ...
+	(ecc_curve25519_sqrt): ... old name.
+	(_nettle_curve25519): Updated.
+
+	* ecc-internal.h (ecc_mod_sqrt_ratio_func): Renamed typedef...
+	(ecc_mod_sqrt_func): ... from old name.
+	(struct ecc_modulo): Renamed corresponding function pointer to
+	sqrt_ratio. Updated all uses.
+
+2021-10-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-arith.c (ecc_mod_equal_p): New function, moved from
+	ecc-modinv-test.c. Based on patch by Wim Lewis.
+	* testsuite/ecc-modinv-test.c (mod_eq_p): Deleted, replaced with ecc_mod_equal_p.
+
+2021-10-26  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-arith.c (ecc_mod_zero_p): New function.
+	* ecc-curve25519.c (ecc_curve25519_zero_p): Use it.
+	* ecc-curve448.c (ecc_curve448_zero_p): Deleted, usage replaced
+	with ecc_mod_zero_p.
+	* testsuite/ecc-modinv-test.c (mod_eq_p): Rewritten to use
+	ecc_mod_zero_p, and require that one input is canonically reduced.
+	(zero_p): Deleted, usage replaced with ecc_mod_zero_p.
+
+2021-10-23  Niels Möller  <nisse@lysator.liu.se>
+
+	* gmp-glue.c (sec_zero_p): New function.
+	* ecc-curve25519.c (ecc_curve25519_zero_p): Use it.
+	* ecc-curve448.c (ecc_curve448_zero_p): Use it.
+	* ecc-random.c (ecdsa_in_range): Use it.
+	(zero_p): Delete static function.
+
+2021-10-22  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-secp256r1.c: Rework ad-hoc reduction functions. In
+	particular, arranged to always use single-limb quotients, no q2
+	quotient carry.
+	(ecc_secp256r1_modp): Reimplemented, closer to 2/1 division,
+	(ecc_secp256r1_modq): Reimplemented, closer to divappr2 division.
+
+2021-10-06  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/ecc-mod-test.c: Extend tests to give better coverage
+	of corner cases, with input close to a multiple of the modulo.
+
+2021-09-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* Makefile.in (nettle.pdf): Generate pdf manual using texi2pdf,
+	rather than texi2dvi + dvips + ps2pdf, which makes hyperlinks work
+	better.
+
+	* nettle.texinfo: Delete explicit node pointers in nettle.texinfo
+	Instead, rely on makeinfo's automatic pointer creation.
+	(Cipher functions): Split into nodes, with proper menu.
+
+2021-09-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* cbc.h (cbc_aes128_encrypt, cbc_aes192_encrypt)
+	(cbc_aes256_encrypt): Change interface, take cipher context
+	pointer and iv as separate arguments. Update C and x86_64
+	implementations and corresponding glue code.
+
+	* testsuite/testutils.c (test_aead): Test encrypt/decrypt with
+	message split into pieces.
+
+2021-09-12  Niels Möller  <nisse@lysator.liu.se>
+
+	* Merged CBC-AES changes into master branch.
+
+2021-09-09  Niels Möller  <nisse@lysator.liu.se>
+
+	Implementation of CBC-AES for x86_64 aesni. Roughly 40%-50%
+	speedup benchmarked on Ryzen 5.
+	* x86_64/aesni/cbc-aes128-encrypt.asm: New file.
+	* x86_64/aesni/cbc-aes192-encrypt.asm: New file.
+	* x86_64/aesni/cbc-aes256-encrypt.asm: New file.
+	* x86_64/fat/cbc-aes128-encrypt-2.asm: New file.
+	* x86_64/fat/cbc-aes192-encrypt-2.asm: New file.
+	* x86_64/fat/cbc-aes256-encrypt-2.asm: New file.
+	* configure.ac (asm_nettle_optional_list, asm_replace_list): Add
+	new asm files.
+	* fat-setup.h (cbc_aes128_encrypt_func, cbc_aes192_encrypt_func)
+	(cbc_aes256_encrypt_func): New typedefs.
+	* fat-x86_64.c (fat_init): Use new functions, when aesni is available
+
+2021-09-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* cbc-aes128-encrypt.c (nettle_cbc_aes128_encrypt): New file and
+	function.
+	* cbc-aes192-encrypt.c (cbc_aes192_set_encrypt_key): New file.
+	* cbc-aes256-encrypt.c (cbc_aes256_set_encrypt_key): New file.
+	* cbc.h (cbc_aes128_ctx, struct cbc_aes192_ctx, cbc_aes256_ctx):
+	New context structs. Declare new functions.
+	* Makefile.in (nettle_SOURCES): Add new files.
+	* nettle-internal.c (nettle_cbc_aes128, nettle_cbc_aes192)
+	(nettle_cbc_aes256): New algorithm structs, for tests and
+	benchmarking.
+	* testsuite/testutils.c (test_aead): Skip tests of decryption and
+	authentication, if corresponding function pointers are NULL.
+	* testsuite/cbc-test.c (test_main): Add tests of new cbc
+	functions.
+	* examples/nettle-benchmark.c (time_aead): Skip decrypt benchmark,
+	if corresponding function pointer is NULL.
+
+2021-09-09  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/fat/cpuid.asm: Fix usage of W64_ENTRY and W64_EXIT, to
+	make fat builds work on 64-bit windows.
+
+2021-08-16  Niels Möller  <nisse@lysator.liu.se>
+
+	S390x functions for sha1, sha256 and sha512, from Mamone Tarsha:
+	* s390x/msa/sha1-compress.asm: New file.
+	* s390x/msa_x1/sha256-compress.asm: Likewise.
+	* s390x/msa_x2/sha512-compress.asm: Likewise.
+	* s390x/fat/sha1-compress-2.asm: Likewise.
+	* s390x/fat/sha256-compress-2.asm: Likewise.
+	* s390x/fat/sha512-compress-2.asm: Likewise.
+	* fat-s390x.c: Update fat setup.
+	* Makefile.in (distdir): Add s390x/msa_x1.
+
+2021-08-10  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/aesni/aes128-encrypt.asm: New file, with 2-way loop.
+	* x86_64/aesni/aes128-decrypt.asm: Likewise.
+	* x86_64/aesni/aes192-encrypt.asm: Likewise.
+	* x86_64/aesni/aes192-decrypt.asm: Likewise.
+	* x86_64/aesni/aes256-encrypt.asm: Likewise.
+	* x86_64/aesni/aes256-decrypt.asm: Likewise.
+	* x86_64/aesni/aes-encrypt-internal.asm: Deleted.
+	* x86_64/aesni/aes-decrypt-internal.asm: Deleted.
+	* x86_64/fat/: Corresponding new and deleted files.
+	* fat-x86_64.c: Update fat setup accordingly.
+
+2021-08-09  Niels Möller  <nisse@lysator.liu.se>
+
+	Arm64 AES functions, from Mamone Tarsha:
+	* arm64/crypto/aes128-decrypt.asm: New file.
+	* arm64/crypto/aes128-encrypt.asm: New file.
+	* arm64/crypto/aes192-decrypt.asm: New file.
+	* arm64/crypto/aes192-encrypt.asm: New file.
+	* arm64/crypto/aes256-decrypt.asm: New file.
+	* arm64/crypto/aes256-encrypt.asm: New file.
+	* arm64/fat/aes128-decrypt-2.asm: New file.
+	* arm64/fat/aes128-encrypt-2.asm: New file.
+	* arm64/fat/aes192-decrypt-2.asm: New file.
+	* arm64/fat/aes192-encrypt-2.asm: New file.
+	* arm64/fat/aes256-decrypt-2.asm: New file.
+	* arm64/fat/aes256-encrypt-2.asm: New file.
+	* configure.ac: Add aes to arm64 FAT_TEST_LIST.
+	* fat-arm64.c: Update fat setup.
+
+2021-08-06  Niels Möller  <nisse@lysator.liu.se>
+
+	S390x xor functions, from Mamone Tarsha:
+	* configure.ac: New configure option --enable-s390x-vf.
+	* fat-s390x.c: Fat setup for memxor3.
+	* s390x/vf/memxor3.asm: New file.
+	* s390x/memxor.asm: New file.
+	* s390x/machine.m4 (XOR_LEN): New macro.
+	* s390x/fat/memxor3-2.asm: New file.
+
+2021-07-24  Niels Möller  <nisse@lysator.liu.se>
+
+	Merged s390x code.
+
+	GCM and fat build support for s390x, contributed by Mamone Tarsha:
+	* s390x/machine.m4: New file.
+	* s390x/msa_x4/gcm-hash.asm: New file.
+	* fat-s390x.c: New file.
+	* s390x/fat/cpu-facility.asm: New file.
+	* s390x/fat/: New wrapper files for aes and gcm assembly.
+
+2021-07-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* Makefile.in (OPT_SOURCES): Add fat-s390x.c.
+
+2021-05-09  Niels Möller  <nisse@lysator.liu.se>
+
+	Implementation of AES using s390x "message security assist"
+	extensions. Contributed by Mamone Tarsha:
+	* s390x/msa_x1/aes128-decrypt.asm: New file.
+	* s390x/msa_x1/aes128-encrypt.asm: New file.
+	* s390x/msa_x1/aes128-set-decrypt-key.asm: New file.
+	* s390x/msa_x1/aes128-set-encrypt-key.asm: New file.
+	* s390x/msa_x2/aes192-decrypt.asm: New file.
+	* s390x/msa_x2/aes192-encrypt.asm: New file.
+	* s390x/msa_x2/aes192-set-decrypt-key.asm: New file.
+	* s390x/msa_x2/aes192-set-encrypt-key.asm: New file.
+	* s390x/msa_x2/aes256-decrypt.asm: New file.
+	* s390x/msa_x2/aes256-encrypt.asm: New file.
+	* s390x/msa_x2/aes256-set-decrypt-key.asm: New file.
+	* s390x/msa_x2/aes256-set-encrypt-key.asm: New file.
+	* configure.ac: Renamed option to --enable-s390x-msa. Enables both
+	mas_x1 and msa_x2.
+	(asm_replace_list): Add more aes files.
+	* Makefile.in (distdir): Add s390x/msa_x1 s390x/msa_x2 directories.
+
+2021-04-01  Niels Möller  <nisse@lysator.liu.se>
+
+	Move aes128_encrypt and similar functions to their own files. To
+	make it easier for assembly implementations to override specific
+	AES variants.
+	* aes-decrypt.c: Split file, keep only legacy function aes_decrypt here.
+	* aes-decrypt-table.c (_nettle_aes_decrypt_table): New file, moved
+	table here.
+	* aes128-decrypt.c (aes128_decrypt): New file, moved function here.
+	* aes192-decrypt.c (aes192_decrypt): New file, moved function here.
+	* aes256-decrypt.c (aes256_decrypt): New file, moved function here.
+	* aes-encrypt.c: Split file, keep only legacy function aes_encrypt here.
+	* aes128-encrypt.c (aes128_encrypt): New file, moved function here.
+	* aes192-encrypt.c (aes192_encrypt): New file, moved function here.
+	* aes256-encrypt.c (aes256_encrypt): New file, moved function here.
+	* Makefile.in (nettle_SOURCES): Add new files.
+
+2021-03-28  Niels Möller  <nisse@lysator.liu.se>
+
+	Initial config for s390x, contributed by Mamone Tarsha.
+	* configure.ac: Add flag --enable-s390x-msa-x1. Add ABI check for
+	s390x, and setup asm_path.
+	* Makefile.in (distdir): Add s390x directory.
+	* s390x/README: New file
+
+2021-07-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac (FAT_TEST_LIST): Add sha2 to aarch64 fat tests.
+
+	From Mamone Tarsha:
+	* arm64/fat/sha256-compress-2.asm: New file.
+	* arm64/crypto/sha256-compress.asm: New file.
+	* fat-arm64.c: Add setup for nettle_sha1_compress.
+
+2021-06-30  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac (FAT_TEST_LIST): Add sha1 to aarch64 fat tests.
+
+	From Mamone Tarsha:
+	* fat-arm64.c: Add setup for nettle_sha1_compress.
+	* arm64/fat/sha1-compress-2.asm: New file.
+
+2021-06-01  Niels Möller  <nisse@lysator.liu.se>
+
+	From Mamone Tarsha:
+	* arm64/crypto/sha1-compress.asm: New file.
+
+2021-05-17  Niels Möller  <nisse@lysator.liu.se>
+
+	Bug fixes merged from from 3.7.3 release (starting from 2021-05-06).
+	* rsa-decrypt-tr.c (rsa_decrypt_tr): Check up-front that input is
+	in range.
+	* rsa-sec-decrypt.c (rsa_sec_decrypt): Likewise.
+	* rsa-decrypt.c (rsa_decrypt): Likewise.
+	* testsuite/rsa-encrypt-test.c (test_main): Add tests with input > n.
+
+2021-05-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* rsa-sign-tr.c (rsa_sec_blind): Delete mn argument.
+	(_rsa_sec_compute_root_tr): Delete mn argument, instead require
+	that input size matches key size. Rearrange use of temporary
+	storage, to support in-place operation, x == m. Update all
+	callers.
+
+	* rsa-decrypt-tr.c (rsa_decrypt_tr): Make zero-padded copy of
+	input, for calling _rsa_sec_compute_root_tr.
+	* rsa-sec-decrypt.c (rsa_sec_decrypt): Likewise.
+
+	* testsuite/rsa-encrypt-test.c (test_main): Test calling all of
+	rsa_decrypt, rsa_decrypt_tr, and rsa_sec_decrypt with zero input.
+
+2021-05-06  Niels Möller  <nisse@lysator.liu.se>
+
+	* pkcs1-sec-decrypt.c (_pkcs1_sec_decrypt): Check that message
+	length is valid, for given key size.
+	* testsuite/rsa-sec-decrypt-test.c (test_main): Add test cases for
+	calls to rsa_sec_decrypt specifying a too large message length.
+
+2021-05-23  Niels Möller  <nisse@lysator.liu.se>
+
+	From Nicolas Mora: Implement aes key wrap and key unwrap (RFC 3394).
+	* nist-keywrap.c (bswap_if_le, nist_keywrap16, nist_keyunwrap16)
+	(aes128_keywrap, aes192_keywrap, aes256_keywrap)
+	(aes128_keyunwrap, aes192_keyunwrap, aes256_keyunwrap): New file,
+	new functions.
+	* nist-keywrap.h: New header file.
+	* Makefile.in (nettle_SOURCES): Add nist-keywrap.c.
+	(HEADERS): Add nist-keywrap.h.
+	* testsuite/aes-keywrap-test.c (test_main): New tests.
+	* testsuite/Makefile.in (TS_NETTLE_SOURCES): Add aes-keywrap-test.c.
+
+2021-04-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p8/aes-encrypt-internal.asm (SWAP_MASK): Change macro
+	name to use all uppercase.
+	* powerpc64/p8/aes-decrypt-internal.asm (SWAP_MASK): Likewise.
+
+2021-04-11  Niels Möller  <nisse@lysator.liu.se>
+
+	* config.guess: Update to 2021-01-25 version, from savannah's
+	config.git. Needed to recognize M1 Macs.
+	* config.sub: Similarly update to 2021-03-10 version.
+
+2021-03-24  Niels Möller  <nisse@lysator.liu.se>
+
+	* .gitlab-ci.yml: Add remote tests for s390x.
+
+2021-03-22  Niels Möller  <nisse@lysator.liu.se>
+
+	Arm64 improvements, including fat build support. Contributed by
+	Mamone Tarsha:
+	* configure.ac (asm_path): Setup for arm64 fat builds.
+	* fat-arm64.c: New file.
+	* fat-arm64.c: New file.
+	* arm64/fat/gcm-hash.asm: New file.
+	* arm64/crypto/gcm-hash.asm: Improved docs. Use m4 macros rather
+	than as macros.
+	(LOAD_REV_PARTIAL_BLOCK): New macro.
+	* arm64/README: Improved docs.
+
+2021-03-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* Released nettle-3.7.2 with ecc bug-fixes only.
+
+	* NEWS: NEWS entries for 3.7.2.
+
+2021-03-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* gostdsa-vko.c (gostdsa_vko): Use ecc_mod_mul_canonical to
+	compute the scalar used for ecc multiplication.
+
+	* eddsa-hash.c (_eddsa_hash): Ensure result is canonically
+	reduced. Two of the three call sites need that.
+
+	* ecc-gostdsa-verify.c (ecc_gostdsa_verify): Use ecc_mod_mul_canonical
+	to compute the scalars used for ecc multiplication.
+
+	* ecc-ecdsa-sign.c (ecc_ecdsa_sign): Ensure s output is reduced to
+	canonical range.
+
+	* ecc-ecdsa-verify.c (ecc_ecdsa_verify): Use ecc_mod_mul_canonical
+	to compute the scalars used for ecc multiplication.
+	* testsuite/ecdsa-verify-test.c (test_main): Add test case that
+	triggers an assert on 64-bit platforms, without above fix.
+	* testsuite/ecdsa-sign-test.c (test_main): Test case generating
+	the same signature.
+
+2021-03-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* eddsa-verify.c (equal_h): Use ecc_mod_mul_canonical.
+
+2021-03-11  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-arith.c (ecc_mod_mul_canonical, ecc_mod_sqr_canonical):
+	New functions.
+	* ecc-internal.h: Declare and document new functions.
+	* curve448-eh-to-x.c (curve448_eh_to_x): Use ecc_mod_sqr_canonical.
+	* curve25519-eh-to-x.c (curve25519_eh_to_x): Use ecc_mod_mul_canonical.
+	* ecc-eh-to-a.c (ecc_eh_to_a): Likewise.
+	* ecc-j-to-a.c (ecc_j_to_a): Likewise.
+	* ecc-mul-m.c (ecc_mul_m): Likewise.
+
+2021-03-04  Niels Möller  <nisse@lysator.liu.se>
+
+	Merged initial arm64 code.
+
+2021-02-03  Niels Möller  <nisse@lysator.liu.se>
+
+	* arm64/crypto/gcm-hash.asm: Renamed directory, moved file,...
+	* arm64/v8/gcm-hash.asm: ... old name.
+
+2021-02-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* arm64/v8/gcm-hash.asm: Add ".arch armv8-a+crypto" directive.
+	Supported by both GNU as and clang (the latter at least from
+	version 3.9.1).
+	* configure.ac: Don't add -march=armv8-a+crypto to CFLAGS.
+
+2021-01-31  Niels Möller  <nisse@lysator.liu.se>
+
+	* arm64/v8/gcm-hash.asm: New file, contributed by Maamoun TK and
+	Michael Weiser.
+	* arm64/README: New file. Document endianness issues, contributed
+	by Michael Weiser.
+
+2021-02-17  Niels Möller  <nisse@lysator.liu.se>
+
+	* Released Nettle-3.7.1.
+
+2021-02-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* examples/nettle-openssl.c (nettle_openssl_arcfour128): Deleted
+	glue to openssl arcfour.
+	(openssl_arcfour128_set_encrypt_key)
+	(openssl_arcfour128_set_decrypt_key): Deleted.
+	* nettle-internal.h: Deleted declaration.
+	* examples/nettle-benchmark.c (aeads): Delete benchmarking.
+
+2021-02-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac: Bump package version, to 3.7.1.
+	(LIBNETTLE_MINOR): Bump minor number, to 8.2.
+	(LIBHOGWEED_MINOR): Bump minor number, to 6.2.
+
+2021-02-10  Niels Möller  <nisse@lysator.liu.se>
+
+	* chacha-crypt.c (_nettle_chacha_crypt_4core): Fix for the case
+	that counter increment should be 3 (129 <= message length <= 192).
+	(_nettle_chacha_crypt32_4core): Likewise.
+
+	* testsuite/chacha-test.c (test_chacha_rounds): New function, for
+	tests with non-standard round count. Extracted from _test_chacha.
+	(_test_chacha): Deleted rounds argument. Reorganized crypt/crypt32
+	handling. When testing message prefixes of varying length, also
+	encrypt the remainder of the message, to catch errors in counter
+	value update.
+	(test_main): Add a few tests with large messages (16 blocks, 1024
+	octets), to improve test coverage for _nettle_chacha_crypt_4core
+	and _nettle_chacha_crypt32_4core.
+
+2021-01-25  Niels Möller  <nisse@lysator.liu.se>
+
+	* arm/neon/salsa20-core-internal.asm: Deleted file. This ARM Neon
+	implementation reportedly gave a speedup of 45% on Cortex A9,
+	compared to the C implementation, when it was added back in 2013.
+	That appears to no longer be the case with more recent processors
+	and compilers. And it's even significantly slower than the C
+	implementation on some platforms, including the Raspberry Pi 4.
+	With the introduction of salsa20-2core.asm, performance of this
+	function is also less important.
+	* arm/neon/chacha-core-internal.asm: Deleted file, for analogous reasons.
+	* arm/fat/salsa20-core-internal-2.asm: Deleted file.
+	* arm/fat/chacha-core-internal-2.asm: Deleted file.
+	* fat-arm.c (_nettle_salsa20_core, _nettle_chacha_core): Delete fat setup.
+
+2021-01-31  Niels Möller  <nisse@lysator.liu.se>
+
+	New variants, contributed by Nicolas Mora.
+	* pbkdf2-hmac-sha384.c (pbkdf2_hmac_sha384): New file and function.
+	* pbkdf2-hmac-sha512.c (pbkdf2_hmac_sha512): New file and function.
+	* testsuite/pbkdf2-test.c (test_main): Corresponding tests.
+
+2021-01-20  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-ecdsa-verify.c (ecc_ecdsa_verify): Fix corner case with
+	all-zero hash. Reported by Guido Vranken.
+	* testsuite/ecdsa-verify-test.c: Add corresponding test case.
+
+2021-01-10  Niels Möller  <nisse@lysator.liu.se>
+
+	* fat-ppc.c: Don't use __GLIBC_PREREQ in the same preprocessor
+	conditional as defined(__GLIBC_PREREQ), but move to a nested #if
+	conditional. Fixes compile error on OpenBSD/powerpc64, reported by
+	Jasper Lievisse Adriaanse.
+
+2021-01-04  Niels Möller  <nisse@lysator.liu.se>
+
+	* Released Nettle-3.7.
+
+2020-12-27  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac: Enable fat build by default.
+
+2020-12-26  Niels Möller  <nisse@lysator.liu.se>
+
+	* NEWS: News entries for Nettle-3.7.
+
+	* Makefile.in (distdir): Distribute the README files in assembly
+	directories.
+
+	* configure.ac: Bump package version, to 3.7.
+	(LIBNETTLE_MINOR): Bump minor number, to 8.1.
+	(LIBHOGWEED_MINOR): Bump minor number, to 6.1.
+
+2020-12-21  Niels Möller  <nisse@lysator.liu.se>
+
+	From Mamone Tarsha:
+	* fat-ppc.c: Check glibc version, and use getauxval only when available.
+
+2020-12-12  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p7/chacha-4core.asm: More interleaving of independent
+	instructions, gives slight speedup on Power9.
+
+2020-12-01  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p7/chacha-4core.asm: Use protected zone below stack
+	pointer to save registers, without modifying the stack pointer.
+	(QR): Instruction level interleaving in the main loop, written by
+	Torbjörn Granlund.
+
+2020-11-30  Niels Möller  <nisse@lysator.liu.se>
+
+	* m4-utils.m4 (m4_unquote): New macro, copied from GMP's
+	mpn/asm-defs.m4.
+
+	* chacha-crypt.c: (_nettle_chacha_crypt_4core)
+	(_nettle_chacha_crypt32_4core): New functions.
+	(_nettle_chacha_crypt_2core, _nettle_chacha_crypt32_2core):
+	Deleted, no longer needed.
+	* chacha-internal.h: Add prototypes for _nettle_chacha_4core and
+	related functions.
+	* configure.ac (asm_nettle_optional_list): Add chacha-4core.asm.
+	* powerpc64/fat/chacha-4core.asm: New file.
+	* powerpc64/p7/chacha-4core.asm: New file.
+	* fat-ppc.c (fat_init): When altivec is available, use
+	_nettle_chacha_crypt_4core and _nettle_chacha_crypt32_4core
+	instead of _2core variants.
+
+	* chacha-crypt.c (_nettle_chacha_crypt32_3core): Fix bug in
+	handling of counter; this function should not propagate any carry.
+
+	* aes-internal.h: Delete name mangling of internal symbols. Update
+	all internal references to use _nettle prefix.
+	* camellia-internal.h: Likewise.
+	* chacha-internal.h: Likewise.
+	* ctr-internal.h: Likewise.
+	* dsa-internal.h: Likewise.
+	* gost28147-internal.h: Likewise.
+	* poly1305-internal.h: Likewise.
+	* salsa20-internal.h: Likewise.
+	* sha3-internal.h: Likewise.
+	* umac-internal.h: Likewise.
+
+2020-11-26  Niels Möller  <nisse@lysator.liu.se>
+
+	Enable powerpc64 gcm code in fat builds. Based on patch
+	contributed by Mamone Tarsha:
+	* powerpc64/fat/gcm-hash.asm: New file.
+	* configure.ac: Add HAVE_NATIVE_fat_gcm_init_key and
+	HAVE_NATIVE_fat_gcm_hash.
+	* gcm.c (gcm_init_key): Renamed, to ...
+	(_nettle_gcm_init_key_c): ... new name. Add fat setup conditionals.
+	(gcm_hash): Renamed, to...
+	(_nettle_gcm_hash_c): ... new name. Add fat setup conditionals.
+	* fat-setup.h (gcm_init_key_func, gcm_hash_func): New typedefs.
+	* fat-ppc.c: Select implementations of _nettle_gcm_init_key and _nettle_gcm_hash.
+	* gcm-internal.h: New file.
+	* Makefile.in (DISTFILES): Add gcm-internal.h.
+
+	* powerpc64/p8/gcm-hash.asm: New file, contributed by Mamone
+	Tarsha. Implements _nettle_gcm_init_key and _nettle_gcm_hash.
+
+2020-11-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p7/chacha-2core.asm: Simplify counter carry handling
+	using the vaddcuw instruction.
+
+	Merge changes by Marco Bodrato and Torbjorn Granlund, from the
+	gmp/mini-gmp copy of this file.
+	* run-tests: Delete special handling of zero arguments. Update
+	WINEPATH, instead of overwriting it.
+
+2020-11-27  Niels Möller  <nisse@lysator.liu.se>
+
+	* aclocal.m4: Replace some calls to exit with return, since exit
+	requires stdlib.h. Including patch contributed by Adrien Béraud.
+
+	* testsuite/version-test.c: Include version.h. Patch contributed
+	by Brian Smith.
+
+2020-11-25  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p7/chacha-2core.asm: Add byte swapping of output, for
+	big-endian builds.
+
+2020-11-24  Niels Möller  <nisse@lysator.liu.se>
+
+	Enable ppc chacha_2core in fat builds.
+	* configure.ac: Add HAVE_NATIVE_fat_chacha_2core.
+	* chacha-crypt.c: Check HAVE_NATIVE_fat_chacha_2core.
+	* chacha-internal.h (_chacha_crypt_2core, _chacha_crypt32_2core):
+	Add declarations.
+	* fat-ppc.c (fat_init): Use _nettle_chacha_crypt_2core and
+	_nettle_chacha_crypt32_2core when altivec is available.
+	* powerpc64/fat/chacha-2core.asm: New file, including p7 version.
+
+2020-11-23  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p7/chacha-2core.asm: New file.
+
+	* chacha-crypt.c (_chacha_crypt_2core, _chacha_crypt32_2core): New
+	variants of chacha_crypt, using _chacha_2core to do two blocks at
+	a time.
+	* chacha-internal.h (_chacha_2core, _chacha_2core32): Add declarations.
+	* configure.ac (asm_nettle_optional_list): Add chacha-2core.asm.
+
+2020-11-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-inv.c (ecc_mod_inv): Use passed in scratch for all
+	scratch needs, don't use memory after the result area.
+	* ecc-ecdsa-sign.c (ecc_ecdsa_sign): Update invert call.
+	* ecc-ecdsa-verify.c (ecc_ecdsa_verify): Likewise.
+	* ecc-eh-to-a.c (ecc_eh_to_a): Likewise.
+	* ecc-j-to-a.c (ecc_j_to_a): Likewise.
+	* ecc-gostdsa-verify.c (ecc_gostdsa_verify): Likewise.
+	* curve25519-eh-to-x.c (curve25519_eh_to_x): Likewise.
+	* curve448-eh-to-x.c (curve448_eh_to_x): Update invert call, and
+	reduce scratch need from 9*size to 5*size.
+	* ecc-internal.h (ECC_MOD_INV_ITCH, ECC_J_TO_A_ITCH)
+	(ECC_EH_TO_A_ITCH): Update accordingly, but no change in total
+	scratch need.
+
+2020-11-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-internal.h (ECC_J_TO_A_ITCH): Generalize, and take invert
+	itch as an argument, similarly to ECC_EH_TO_A_ITCH. Updated all
+	secp and gost curve definitions to use it.
+
+2020-10-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-secp384r1.c (ecc_secp384r1_inv): New function, modular
+	inverse using powering.
+	(_nettle_secp_384r1): Analogous updates. Increases signing
+	performance roughly 15% on x86_64.
+
+2020-10-20  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-inv.c (ecc_mod_inv_redc): Deleted, no longer needed.
+	(ecc_mod_inv_destructive): Deleted, merged with ecc_mod_inv.
+
+	* ecc-secp256r1.c (ecc_secp256r1_inv): New function, modular
+	inverse using powering.
+	(_nettle_secp_256r1): Analogous updates. Increases signing
+	performance roughly 6% on x86_64.
+
+	* ecc-secp224r1.c (ecc_secp224r1_inv): New function, modular
+	inverse using powering.
+	(_nettle_secp_224r1): Analogous updates. Increases signing
+	performance roughly 17% on x86_64.
+
+2020-10-19  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-secp521r1.c (ecc_secp521r1_inv): New function, modular
+	inverse using powering.
+	(_nettle_secp_521r1): Analogous updates. Increases signing
+	performance roughly 15% on x86_64.
+
+2020-10-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-secp192r1.c (ecc_secp192r1_inv): New function, modular
+	inverse using powering.
+	(_nettle_secp_192r1): Use it for p.invert, and also update
+	h_to_a_itch. Increases signing performance roughly 25% on x86_64.
+
+	* testsuite/ecc-modinv-test.c (test_modulo): Allow invert function
+	to return a non-canonical representation.
+
+2020-11-08  Niels Möller  <nisse@lysator.liu.se>
+
+	Merge refactoring of ecc modulo and reduce functions.
+	* eddsa-sign.c (_eddsa_sign_itch): Update, since now point
+	multiplication needs less scratch than point compression.
+	* eddsa-pubkey.c (_eddsa_public_key_itch): Likewise.
+
+	* ecc-internal.h: Update *_ITCH macros for point multiplication
+	and signatures. They need slightly less scratch after optimization
+	of the point addition functions.
+
+	* ecc-mul-m.c (ecc_mul_m): Reduce scratch need.
+	(ecc_mul_m): Optimize swapping, with only a single mpn_cnd_swap
+	per iteration.
+
+	* ecc-add-jja.c (ecc_add_jja): Reduce scratch need.
+	* ecc-add-jjj.c (ecc_add_jjj): Reduce scratch need.
+	* ecc-internal.h (ECC_ADD_JJA_ITCH, ECC_ADD_JJJ_ITCH): Now 5*size.
+	(ECC_MUL_M_ITCH): New 8*size.
+
+2020-11-06  Niels Möller  <nisse@lysator.liu.se>
+
+	After these changes, both curve25519 and curve448 need 4*size for
+	invert and 6*size for sqrt.
+	* ecc-curve448.c (ecc_mod_pow_446m224m1): Reduce scratch need.
+	(ecc_curve448_inv): Likewise.
+	(ecc_curve448_sqrt): Likewise.
+	* ecc-curve25519.c (ecc_curve25519_sqrt): Reduce scratch need.
+
+	* ecc-add-jja.c (ecc_add_jja): Delete an unneeded copy.
+
+2020-11-05  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-dup-jj.c (ecc_dup_jj): Reduce scratch need.
+	* ecc-internal.h (ECC_DUP_JJ_ITCH): Now 4*size.
+
+2020-11-03  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-dup-eh.c (ecc_dup_eh): Reduce scratch need.
+	* ecc-dup-th.c (ecc_dup_th): Analogous changes.
+	* ecc-internal.h (ECC_DUP_EH_ITCH, ECC_DUP_TH_ITCH): Now 3*size.
+
+	* ecc-internal.h (ecc_add_func): Document in-place operation.
+	* ecc-mul-a-eh.c (ecc_mul_a_eh): Fix call to ecc->add_hhh accordingly.
+	* testsuite/ecc-add-test.c (test_main): Likewise.
+
+	* ecc-add-eh.c (ecc_add_eh): Reduce scratch need.
+	* ecc-add-th.c (ecc_add_th): Analogous changes.
+	* ecc-add-ehh.c (ecc_add_ehh): Reduce scratch need.
+	* ecc-add-thh.c (ecc_add_thh): Analogous changes.
+	* ecc-internal.h (ECC_ADD_EH_ITCH, ECC_ADD_EHH_ITCH)
+	(ECC_ADD_TH_ITCH, ECC_ADD_THH_ITCH): Now 4*size.
+
+2020-11-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-curve25519.c (ecc_mod_pow_252m3): Reduce scratch need.
+	(ecc_curve25519_inv): Likewise.
+	(ecc_curve25519_sqrt): Likewise.
+
+2020-11-01  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-arith.c (ecc_mod_mul, ecc_mod_sqr): Separate argument
+	for scratch area, reducing required size of result area. Update
+	all callers to naïvely keep using result in scratch area.
+	(ecc_mod_pow_2k, ecc_mod_pow_2k_mul): Simplified, also reducing
+	required size of result area.
+
+	* testsuite/testutils.c (test_ecc_point): Show curve bits on failure.
+
+2020-10-31  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-internal.h (typedef ecc_mod_func): Updated all assembly
+	implementations.
+
+	* testsuite/ecc-mod-test.c (test_one): Extend tests, to also test
+	with different destination area.
+	* testsuite/ecc-redc-test.c (test_main): Likewise.
+
+2020-10-30  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-internal.h (typedef ecc_mod_func): Add separate result
+	argument. Updated all C implementations and callers.
+
+2020-10-29  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod.c (ecc_mod): More unified handling of final carry
+	folding. Also eliminates a goto statement.
+
+2020-11-07  Niels Möller  <nisse@lysator.liu.se>
+
+	Merged initial powerpc64 implementation of chacha.
+	* configure.ac: New command line option --enable-power-altivec.
+	Update asm_path logic, and add altivec to FAT_TEST_LIST.
+	* fat-ppc.c (get_ppc_features): Add logic to check for altivec and
+	vsx support, and select aither C or altivec implementation of
+	chacha_core.
+	* powerpc64/p7/chacha-core-internal.asm: New file.
+
+2020-09-25  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p7/chacha-core-internal.asm: New file.
+	* Makefile.in (distdir): Add powerpc64/p7.
+
+2020-10-29  Niels Möller  <nisse@lysator.liu.se>
+
+	* blowfish.c (blowfish_set_key): Add casts to uint32_t. Avoids
+	undefined behavior, since shifting an 8-bit value left by 24 bits
+	overflows the range of signed int. Reported by Guido Vranken.
+
+2020-10-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* gmp-glue.h (cnd_add_n, cnd_sub_n, cnd_swap): Deleted, use
+	corresponding functions mpn_cnd_add_n, mpn_cnd_sub_n,
+	mpn_cnd_swap, available from GMP version 6.1.0. Update all
+	callers, in particular, mpn_cnd_add_n and mpn_cnd_sub_n has one
+	more argument than the old functions.
+
+	* gmp-glue.c (mpn_cnd_add_n, mpn_cnd_sub_n, mpn_cnd_swap)
+	[NETTLE_USE_MINI_GMP]: Fallback definitions or mini-gmp builds.
+
+2020-10-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-arith.c (ecc_mod_pow_2k, ecc_mod_pow_2k_mul): Moved
+	functions here.
+	* ecc-internal.h (ecc_mod_pow_2kp1): New macro, calling the more
+	general ecc_mod_pow_2k_mul.
+	* ecc-curve25519.c (ecc_mod_pow_2kp1): Deleted static function.
+	* ecc-curve448.c (ecc_mod_pow_2k, ecc_mod_pow_2kp1): Deleted
+	static functions.
+
+2020-10-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-mod-inv.c (ecc_mod_inv_destructive): New helper function,
+	not preserving input argument. Extracted from old ecc_mod_inv.
+	(ecc_mod_inv): Call ecc_mod_inv_destructive.
+	(ecc_mod_inv_redc): New inversion function, with input and output
+	in redc form.
+
+	* ecc-secp224r1.c: Select between ecc_mod_inv and ecc_mod_inv_redc.
+	* ecc-secp256r1.c: Likewise.
+
+	* ecc-j-to-a.c (ecc_j_to_a): Simplify redc-related logic, taking
+	advantage of ecc->p.invert handling redc, when appropriate. Reduce
+	scratch need from 5n to 4n in the process (assuming inversion
+	needs 2n).
+
+	* testsuite/ecc-modinv-test.c (ref_modinv): Updated to do redc, if
+	appropriate.
+
+2020-09-25  Niels Möller  <nisse@lysator.liu.se>
+
+	* gcm.c (gcm_fill): Added separate implementations for big- and
+	little-endian, to use uint64_t stores and less overhead.
+
+2020-09-24  Niels Möller  <nisse@lysator.liu.se>
+
+	* aclocal.m4 (GMP_ASM_POWERPC_R_REGISTERS): Prefer to use register
+	names. Can be tested by configuring with CC='gcc -Wa,-mregnames'.
+
+2020-09-21  Niels Möller  <nisse@lysator.liu.se>
+
+	* m4-utils.m4: New file with m4 utilities, copied from GMP's
+	mpn/asm-defs.m4.
+	* Makefile.in (DISTFILES): Add m4-utils.m4.
+	(%.asm): Include m4-utils.m4 for preprocessing of .asm files, and
+	include config.m4 before machine.m4.
+
+	* aclocal.m4 (GMP_ASM_POWERPC_R_REGISTERS): New configure test,
+	adapted from corresponding test in GMP's acinlude.m4.
+	* configure.ac (ASM_PPC_WANT_R_REGISTERS): New substituted
+	variable. Set using GMP_ASM_POWERPC_R_REGISTERS, when powerpc64
+	assembly code is enabled.
+	* config.m4.in: Substituted here.
+	* powerpc64/machine.m4: Check ASM_PPC_WANT_R_REGISTERS, and
+	if needed, replace register names like r0, r1, ... with integers.
+
+2020-09-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* Makefile.in (DISTFILES): Add missing file blowfish-internal.h.
+
+2020-09-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* asm.m4: Delete use of changequote, stick to the m4 default
+	quoting characters `'. Updated all assembly and m4 files.
+	* x86_64/machine.m4 (W64_ENTRY, W64_EXIT): Delete quoting workaround.
+
+2020-09-12  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/salsa20-2core.asm: Fix incorrect W64_EXIT.
+
+2020-08-29  Niels Möller  <nisse@lysator.liu.se>
+
+	Initial powerpc64 assembly support, contributed by Mamone Tarsha:
+	* configure.ac: New configure option --enable-power-crypto-ext.
+	(asm_path): Setup this and related variables for powerpc64.
+	* powerpc64/machine.m4: New file.
+	* powerpc64/README: New file.
+	* powerpc64/p8/aes-encrypt-internal.asm: New file.
+	* powerpc64/p8/aes-decrypt-internal.asm: New file.
+	* powerpc64/fat/aes-encrypt-internal-2.asm: New file.
+	* powerpc64/fat/aes-decrypt-internal-2.asm: New file.
+	* fat-ppc.c: New file.
+	* Makefile.in (OPT_SOURCES): Add fat-ppc.c.
+	(distdir): Add powerpc64 directories.
+	* aes-decrypt-internal.c (_nettle_aes_decrypt_c): Alternative
+	name, for fat builds.
+	* aes-encrypt-internal.c (_nettle_aes_encrypt_c): Likewise.
+
+2020-07-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac (FAT_TEST_LIST): New substituted variable. Set for
+	fat builds, otherwise empty.
+	* Makefile.in (check-fat): New target, using $(FAT_TEST_LIST).
+
+2020-07-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* chacha-crypt.c (chacha_crypt) [HAVE_NATIVE_chacha_3core]: Use
+	_chacha_3core.
+
+	* arm/neon/chacha-3core.asm: New file, 3-way interleaving of
+	chacha.
+
+2020-07-11  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/chacha-test.c (test_main): Delete obsolete tests for
+	chacha with 128-bit keys. #if:ed out since 2014-03-04, see below.
+	(test_chacha_core): New function, test chacha with simple input
+	structure.
+
+2020-07-10  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/salsa20-2core.asm: New file.
+	* x86_64/salsa20-crypt.asm: Deleted, since the 2core assembly is
+	faster.
+
+2020-07-08  Niels Möller  <nisse@lysator.liu.se>
+
+	Rearrange salsa20, enabling ARM fat builds to use sala20_2core.
+	* salsa20-crypt-internal.c (_salsa20_crypt_2core)
+	(_salsa20_crypt_1core): New file, new functions. One or the other
+	is used for implementing salsa20_crypt and salsa20r12_crypt,
+	depending on availability of salsa20_2core.
+	* salsa20-crypt.c (salsa20_crypt): Call _salsa20_crypt.
+	* salsa20r12-crypt.c (salsa20r12_crypt): Likewise.
+	* salsa20-internal.h: Declare new internal functions.
+	* Makefile.in (nettle_SOURCES): Add salsa20-crypt-internal.c.
+	* fat-setup.h (salsa20_crypt_func): New typedef.
+	* fat-arm.c (_salsa20_crypt): Select _salsa20_crypt
+	implementation, use 2core version when Neon instructions are
+	available.
+	* arm/fat/salsa20-2core.asm: New file, including Neon
+	implementation. Trigger configure's HAVE_NATIVE_fat_salsa20_2core,
+	* configure.ac: Add HAVE_NATIVE_fat_salsa20_2core, to identify the
+	case that salsa20_2core is defined, but runtime checks are needed
+	to determine if it is usable.
+
+2020-07-06  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/salsa20-test.c (test_salsa20_core): New function, test
+	salsa20 with simple input structure.
+
+	* configure.ac: Obey --enable-arm-neon=yes, even if not explicitly
+	targetting ARM v6 or later.
+
+2020-07-01  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/bcrypt-test.c: New file. Moved bcrypt tests here.
+
+	Support for bcrypt, contributed by Stephen R. van den Berg.
+	* blowfish-bcrypt.c (blowfish_bcrypt_hash)
+	(blowfish_bcrypt_verify): New file, new functions.
+	* blowfish-internal.h: New header file, declaring internals needed
+	for bcrypt.
+	* testsuite/blowfish-test.c: Add bcrypt tests.
+	* nettle.texinfo (Cipher functions): Document bcrypt.
+
+2020-06-30  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (Miscellaneous hash functions): New section, with
+	Streebog documentation, contributed by Dmitry Baryshkov.
+	(Top): Added some missing entries to the detailed node listing
+
+2020-06-29  Niels Möller  <nisse@lysator.liu.se>
+
+	* .gitlab-ci.yml: Add cross tests for powerpc64le, based on patch
+	by Maamoun TK.
+
+2020-06-25  Niels Möller  <nisse@lysator.liu.se>
+
+	* x86_64/chacha-core-internal.asm (QROUND): Fix use of macro
+	arguments. Spotted by Torbjörn Granlund.
+
+2020-06-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* examples/nettle-benchmark.c (main): Delete call to
+	time_overhead. The attempt to measure function call overhead is
+	not very useful or accurate. The benchmarking loop is optimized
+	away by gcc-10, making the benchmark program hang.
+	(bench_nothing, time_overhead): Deleted.
+
 2020-04-29  Niels Möller  <nisse@lysator.liu.se>
 
 	* Released Nettle-3.6.
@@ -131,9 +1450,8 @@
 2020-03-14  Niels Möller  <nisse@lysator.liu.se>
 
 	From H.J. Lu:
-	* configure.ac (ASM_X86_ENDBR)
-	(ASM_X86_MARK_CETASM_X86_MARK_CET_ALIGN): New substituted
-	variables.
+	* configure.ac (ASM_X86_ENDBR, ASM_X86_MARK_CET_ALIGN): New
+	substituted variables.
 	* config.m4.in: Substituted here. Add ASM_X86_MARK_CET to
 	diversion inserted at end of assembly files.
 	* asm.m4 (PROLOGUE): Add ASM_X86_ENDBR at entry point.

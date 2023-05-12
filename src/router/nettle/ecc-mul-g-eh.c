@@ -45,7 +45,7 @@ ecc_mul_g_eh (const struct ecc_curve *ecc, mp_limb_t *r,
 	      const mp_limb_t *np, mp_limb_t *scratch)
 {
   /* Scratch need determined by the ecc_add_eh call. Current total is
-     9 * ecc->p.size, at most 648 bytes. */
+     7 * ecc->p.size, at most 392 bytes (for curve448). */
 #define tp scratch
 #define scratch_out (scratch + 3*ecc->p.size)
 

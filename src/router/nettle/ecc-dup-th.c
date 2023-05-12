@@ -42,6 +42,14 @@ ecc_dup_th (const struct ecc_curve *ecc,
 	    mp_limb_t *r, const mp_limb_t *p,
 	    mp_limb_t *scratch)
 {
+#define x1 p
+#define y1 (p + ecc->p.size)
+#define z1 (p + 2*ecc->p.size)
+
+#define x2 r
+#define y2 (r + ecc->p.size)
+#define z2 (r + 2*ecc->p.size)
+
   /* Formulas (from djb,
      http://www.hyperelliptic.org/EFD/g1p/auto-twisted-projective.html#doubling-dbl-2008-bbjlp):
 
@@ -73,37 +81,32 @@ ecc_dup_th (const struct ecc_curve *ecc,
 
      3M+4S
   */
-  /* FIXME: Could reduce scratch need by reusing D storage. */
-#define B scratch
-#define C (scratch  + ecc->p.size)
-#define D (scratch  + 2*ecc->p.size)
-#define F (scratch  + 3*ecc->p.size)
-#define J (scratch  + 4*ecc->p.size)
 
-  /* B */
-  ecc_mod_add (&ecc->p, F, p, p + ecc->p.size);
-  ecc_mod_sqr (&ecc->p, B, F);
+#define C scratch
+#define D (scratch + 1*ecc->p.size)
+#define B (scratch + 2*ecc->p.size)
 
-  /* C */
-  ecc_mod_sqr (&ecc->p, C, p);
-  /* D */
-  ecc_mod_sqr (&ecc->p, D, p + ecc->p.size);
-  /* Can use r as scratch, even for in-place operation. */
-  ecc_mod_sqr (&ecc->p, r, p + 2*ecc->p.size);
-  /* F, */
-  ecc_mod_sub (&ecc->p, F, D, C);
-  /* B - C - D */
-  ecc_mod_add (&ecc->p, C, C, D);
-  ecc_mod_sub (&ecc->p, B, B, C);
-  /* J */
-  ecc_mod_add (&ecc->p, r, r, r);
-  ecc_mod_sub (&ecc->p, J, r, F);
+#define F C
 
-  /* x' */
-  ecc_mod_mul (&ecc->p, r, B, J);
-  /* y' */
-  ecc_mod_mul (&ecc->p, r + ecc->p.size, F, C);
-  /* z' */
-  ecc_mod_mul (&ecc->p, B, F, J);
-  mpn_copyi (r + 2*ecc->p.size, B, ecc->p.size);
+  ecc_mod_sqr (&ecc->p, C, x1, C);	/* C */
+  ecc_mod_sqr (&ecc->p, D, y1, D);	/* C, D */
+  ecc_mod_add (&ecc->p, B, x1, y1);
+  ecc_mod_sqr (&ecc->p, B, B, x2);	/* C, D, B */
+
+  /* C+D stored at y' */
+  ecc_mod_add (&ecc->p, y2, C, D);
+  /* B - C - C stored at x' */
+  ecc_mod_sub (&ecc->p, x2, B, y2);
+
+  ecc_mod_sub (&ecc->p, F, D, C);	/* F */
+
+  /* Use D as scratch for the following multiplies. */
+  ecc_mod_mul (&ecc->p, y2, y2, F, D);
+
+  /* H and J stored at z' */
+  ecc_mod_sqr (&ecc->p, z2, z1, D);
+  ecc_mod_add (&ecc->p, z2, z2, z2);
+  ecc_mod_sub (&ecc->p, z2, z2, F);
+  ecc_mod_mul (&ecc->p, x2, x2, z2, D);
+  ecc_mod_mul (&ecc->p, z2, z2, F, D);
 }

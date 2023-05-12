@@ -117,7 +117,7 @@ ctr_crypt(const void *ctx, nettle_cipher_func *f,
 #if USE_CTR_CRYPT16
   if (block_size == 16)
     {
-      _ctr_crypt16(ctx, f, ctr_fill16, ctr, length, dst, src);
+      _nettle_ctr_crypt16(ctx, f, ctr_fill16, ctr, length, dst, src);
       return;
     }
 #endif

@@ -55,6 +55,7 @@ rsa_decrypt_for_test(const struct rsa_public_key *pub,
 #endif
 
 #define PAYLOAD_SIZE 50
+#define DECRYPTED_SIZE 256
 void
 test_main(void)
 {
@@ -63,7 +64,7 @@ test_main(void)
   struct knuth_lfib_ctx random_ctx;
 
   uint8_t plaintext[PAYLOAD_SIZE];
-  uint8_t decrypted[PAYLOAD_SIZE];
+  uint8_t decrypted[DECRYPTED_SIZE];
   uint8_t verifybad[PAYLOAD_SIZE];
   unsigned n_size = 1024;
   mpz_t gibberish;
@@ -98,6 +99,20 @@ test_main(void)
                                     (nettle_random_func *) knuth_lfib_random,
                                     PAYLOAD_SIZE, decrypted, gibberish) == 1);
       ASSERT (MEMEQ (PAYLOAD_SIZE, plaintext, decrypted));
+
+      ASSERT (pub.size > 10);
+      ASSERT (pub.size <= DECRYPTED_SIZE);
+
+      /* Check that too large message length is rejected, largest
+	 valid size is pub.size - 11. */
+      ASSERT (!rsa_decrypt_for_test (&pub, &key, &random_ctx,
+				     (nettle_random_func *) knuth_lfib_random,
+				     pub.size - 10, decrypted, gibberish));
+
+      /* This case used to result in arithmetic underflow and a crash. */
+      ASSERT (!rsa_decrypt_for_test (&pub, &key, &random_ctx,
+				     (nettle_random_func *) knuth_lfib_random,
+				     pub.size, decrypted, gibberish));
 
       /* bad one */
       memcpy(decrypted, verifybad, PAYLOAD_SIZE);

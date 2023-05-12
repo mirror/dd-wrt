@@ -34,9 +34,6 @@
 
 #include "nettle-types.h"
 
-/* Name mangling */
-#define _ctr_crypt16 _nettle_ctr_crypt16
-
 /* Size limit for temporary stack buffers. */
 #define CTR_BUFFER_LIMIT 512
 
@@ -47,10 +44,10 @@ typedef void
 nettle_fill16_func(uint8_t *ctr, size_t n, union nettle_block16 *buffer);
 
 void
-_ctr_crypt16(const void *ctx, nettle_cipher_func *f,
-	     nettle_fill16_func *fill, uint8_t *ctr,
-	     size_t length, uint8_t *dst,
-	     const uint8_t *src);
+_nettle_ctr_crypt16(const void *ctx, nettle_cipher_func *f,
+		    nettle_fill16_func *fill, uint8_t *ctr,
+		    size_t length, uint8_t *dst,
+		    const uint8_t *src);
 
 
 #endif /* NETTLE_CTR_INTERNAL_H_INCLUDED */

@@ -1,6 +1,6 @@
 C arm/ecc-secp384r1-modp.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2013 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,33 +28,35 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->) 
+')
 
 	.file "ecc-secp384r1-modp.asm"
 	.arm
 
-define(<RP>, <r1>)
-define(<T0>, <r0>)
-define(<T1>, <r2>)
-define(<T2>, <r3>)
-define(<T3>, <r4>)
-define(<F0>, <r5>)
-define(<F1>, <r6>)
-define(<F2>, <r7>)
-define(<F3>, <r8>)
-define(<F4>, <r10>)
-define(<N>, <r12>)
-define(<H>, <lr>)
+define(`RP', `r1')
+define(`XP', `r2')
+
+define(`T0', `r0')
+define(`T1', `r3')
+define(`T2', `r4')
+define(`T3', `r5')
+define(`F0', `r6')
+define(`F1', `r7')
+define(`F2', `r8')
+define(`F3', `r10')
+define(`F4', `r11')
+define(`N', `r12')
+define(`H', `lr')
 	
 	C ecc_secp384r1_modp (const struct ecc_modulo *m, mp_limb_t *rp)
 	.text
 	.align 2
 
 PROLOGUE(_nettle_ecc_secp384r1_modp)
-	push	{r4,r5,r6,r7,r8,r10,lr}
+	push	{r4,r5,r6,r7,r8,r10,r11,lr}
 
-	add	RP, RP, #80
-	ldm	RP, {T0, T1, T2, T3}	C 20-23
+	add	XP, XP, #80
+	ldm	XP, {T0, T1, T2, T3}	C 20-23
 
 	C First get top 4 limbs, which need folding twice, as
 	C
@@ -91,8 +93,8 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adcs	F4, F4, #0
 
 	C Add in to high part
-	sub	RP, RP, #32
-	ldm	RP, {T0, T1, T2, T3}	C 12-15
+	sub	XP, XP, #32
+	ldm	XP, {T0, T1, T2, T3}	C 12-15
 	mov	H, #0
 	adds	F0, T0, F0
 	adcs	F1, T1, F1
@@ -101,8 +103,8 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adcs	F4, F4, #0			C Do F4 later
 
 	C Add to low part, keeping carry (positive or negative) in H
-	sub	RP, RP, #48
-	ldm	RP, {T0, T1, T2, T3}	C 0-3
+	sub	XP, XP, #48
+	ldm	XP, {T0, T1, T2, T3}	C 0-3
 	mov	H, #0
 	adds	T0, T0, F0
 	adcs	T1, T1, F1
@@ -116,10 +118,10 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adds	T3, T3, F0
 	adc	H, H, #0
 	
-	stm	RP!, {T0,T1,T2,T3}	C 0-3
+	stm	XP!, {T0,T1,T2,T3}	C 0-3
 	mov	N, #2
 .Loop:
-	ldm	RP, {T0,T1,T2,T3}	C 4-7
+	ldm	XP, {T0,T1,T2,T3}	C 4-7
 
 	C First, propagate carry
 	adds	T0, T0, H
@@ -137,7 +139,7 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adc	H, H, #0
 
 	C +B^3 terms
-	ldr	F0, [RP, #+48]		C 16
+	ldr	F0, [XP, #+48]		C 16
 	adds	T0, T0, F1
 	adcs	T1, T1, F2
 	adcs	T2, T2, F3
@@ -145,8 +147,8 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adc	H, H, #0
 
 	C -B
-	ldr	F1, [RP, #+52]		C 17-18
-	ldr	F2, [RP, #+56]
+	ldr	F1, [XP, #+52]		C 17-18
+	ldr	F2, [XP, #+56]
 	subs	T0, T0, F3
 	sbcs	T1, T1, F0
 	sbcs	T2, T2, F1
@@ -154,14 +156,14 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	sbcs	H, H, #0
 
 	C +1
-	ldr	F3, [RP, #+60]		C 19
+	ldr	F3, [XP, #+60]		C 19
 	adds	T0, T0, F0
 	adcs	T1, T1, F1
 	adcs	T2, T2, F2
 	adcs	T3, T3, F3
 	adc	H, H, #0
 	subs	N, N, #1
-	stm	RP!, {T0,T1,T2,T3}
+	stm	XP!, {T0,T1,T2,T3}
 	bne	.Loop
 
 	C Fold high limbs, we need to add in
@@ -170,9 +172,9 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	C
 	C We always have F4 >= 0, but we can have H < 0.
 	C Sign extension gets tricky when F4 = 0 and H < 0.
-	sub	RP, RP, #48
+	sub	XP, XP, #48
 
-	ldm	RP, {T0,T1,T2,T3}	C 0-3
+	ldm	XP, {T0,T1,T2,T3}	C 0-3
 
 	C     H  H  0 -H  H
 	C  ----------------
@@ -201,8 +203,8 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adcs	T3, T3, F3
 	adc	H, H, F0	C	0+cy	H+cy	-2+cy
 
-	stm	RP!, {T0,T1,T2,T3}	C 0-3
-	ldm	RP, {T0,T1,T2,T3}	C 4-7
+	stm	XP!, {T0,T1,T2,T3}	C 0-3
+	ldm	XP, {T0,T1,T2,T3}	C 4-7
 	
 	C   F4  0 -F4
 	C ---------
@@ -226,8 +228,8 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adcs	T2, T2, F2
 	adcs	T3, T3, F3
 
-	stm	RP!, {T0,T1,T2,T3}	C 4-7
-	ldm	RP, {T0,T1,T2,T3}	C 8-11
+	stm	XP!, {T0,T1,T2,T3}	C 4-7
+	ldm	XP, {T0,T1,T2,T3}	C 8-11
 
 	adcs	T0, T0, F4
 	adcs	T1, T1, H
@@ -235,11 +237,11 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adcs	T3, T3, H
 	adc	H, H, #0
 	
-	stm	RP, {T0,T1,T2,T3}	C 8-11
+	stm	XP, {T0,T1,T2,T3}	C 8-11
 
 	C Final (unlikely) carry
-	sub	RP, RP, #32
-	ldm	RP, {T0,T1,T2,T3}	C 0-3
+	sub	XP, XP, #32
+	ldm	XP!, {T0,T1,T2,T3}	C 0-3
 	C Fold H into F0-F4
 	mov	F0, H
 	asr	H, #31
@@ -254,17 +256,17 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adcs	T3, T3, F3
 	
 	stm	RP!, {T0,T1,T2,T3}	C 0-3
-	ldm	RP, {T0,T1,T2,T3}	C 4-7
+	ldm	XP!, {T0,T1,T2,T3}	C 4-7
 	adcs	T0, T0, F4
 	adcs	T1, T1, H
 	adcs	T2, T2, H
 	adcs	T3, T3, H
 	stm	RP!, {T0,T1,T2,T3}	C 4-7
-	ldm	RP, {T0,T1,T2,T3}	C 8-11
+	ldm	XP, {T0,T1,T2,T3}	C 8-11
 	adcs	T0, T0, H
 	adcs	T1, T1, H
 	adcs	T2, T2, H
 	adcs	T3, T3, H
-	stm	RP!, {T0,T1,T2,T3}	C 8-11
-	pop	{r4,r5,r6,r7,r8,r10,pc}
+	stm	RP, {T0,T1,T2,T3}	C 8-11
+	pop	{r4,r5,r6,r7,r8,r10,r11,pc}
 EPILOGUE(_nettle_ecc_secp384r1_modp)

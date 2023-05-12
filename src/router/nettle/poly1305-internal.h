@@ -41,23 +41,18 @@
 extern "C" {
 #endif
 
-/* Name mangling */
-#define _poly1305_set_key _nettle_poly1305_set_key
-#define _poly1305_digest _nettle_poly1305_digest
-#define _poly1305_block _nettle_poly1305_block
-
 /* Low level functions/macros for the poly1305 construction. */
 
 #define POLY1305_DIGEST_SIZE 16
 #define POLY1305_KEY_SIZE 16
 
 /* Low-level internal interface. */
-void _poly1305_set_key(struct poly1305_ctx *ctx, const uint8_t key[POLY1305_KEY_SIZE]);
+void _nettle_poly1305_set_key(struct poly1305_ctx *ctx, const uint8_t key[POLY1305_KEY_SIZE]);
 /* Extracts digest, and adds it to s, the encrypted nonce. */
-void _poly1305_digest (struct poly1305_ctx *ctx, union nettle_block16 *s);
-/* Internal function. Process one block. */
-void _poly1305_block (struct poly1305_ctx *ctx, const uint8_t *m,
-		      unsigned high);
+void _nettle_poly1305_digest (struct poly1305_ctx *ctx, union nettle_block16 *s);
+/* Process one block. */
+void _nettle_poly1305_block (struct poly1305_ctx *ctx, const uint8_t *m,
+			     unsigned high);
 
 #ifdef __cplusplus
 }
