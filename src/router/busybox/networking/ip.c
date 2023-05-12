@@ -314,17 +314,17 @@
 //usage:#define ip_full_usage "\n\n"
 //usage:       "OPTIONS := -f[amily] inet|inet6|link | -o[neline]\n"
 //usage:	IF_FEATURE_IP_ADDRESS("\n"
-//usage:	"ip addr "ipaddr_trivial_usage)
+//usage:	"ip addr "ipaddr_full_usage)
 //usage:	IF_FEATURE_IP_ROUTE("\n"
-//usage:	"ip route "iproute_trivial_usage)
+//usage:	"ip route "iproute_full_usage)
 //usage:	IF_FEATURE_IP_LINK("\n"
-//usage:	"ip link "iplink_trivial_usage)
+//usage:	"ip link "iplink_full_usage)
 //usage:	IF_FEATURE_IP_TUNNEL("\n"
-//usage:	"ip tunnel "iptunnel_trivial_usage)
+//usage:	"ip tunnel "iptunnel_full_usage)
 //usage:	IF_FEATURE_IP_NEIGH("\n"
-//usage:	"ip neigh "ipneigh_trivial_usage)
+//usage:	"ip neigh "ipneigh_full_usage)
 //usage:	IF_FEATURE_IP_RULE("\n"
-//usage:	"ip rule "iprule_trivial_usage)
+//usage:	"ip rule "iprule_full_usage)
 
 #include "libbb.h"
 
