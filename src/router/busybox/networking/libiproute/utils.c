@@ -79,7 +79,7 @@ uint8_t FAST_FUNC get_u8(char *arg, const char *errmsg)
 	invarg_1_to_2(arg, errmsg); /* does not return */
 }
 
-uint16_t FAST_FUNC get_u16(char *arg, const char *errmsg)
+uint16_t FAST_FUNC get_u16(const char *arg, const char *errmsg)
 {
 	unsigned long res;
 	char *ptr;
@@ -94,7 +94,30 @@ uint16_t FAST_FUNC get_u16(char *arg, const char *errmsg)
 	invarg_1_to_2(arg, errmsg); /* does not return */
 }
 
-int FAST_FUNC get_addr_1(inet_prefix *addr, char *name, int family)
+static void set_address_type(inet_prefix *addr)
+{
+	switch (addr->family) {
+	case AF_INET:
+		if (!addr->data[0])
+			addr->flags |= ADDRTYPE_INET_UNSPEC;
+		else if (IN_MULTICAST(ntohl(addr->data[0])))
+			addr->flags |= ADDRTYPE_INET_MULTI;
+		else
+			addr->flags |= ADDRTYPE_INET;
+		break;
+	case AF_INET6:
+		if (IN6_IS_ADDR_UNSPECIFIED(addr->data))
+			addr->flags |= ADDRTYPE_INET_UNSPEC;
+		else if (IN6_IS_ADDR_MULTICAST(addr->data))
+			addr->flags |= ADDRTYPE_INET_MULTI;
+		else
+			addr->flags |= ADDRTYPE_INET;
+		break;
+	}
+}
+
+
+int FAST_FUNC get_addr_1(inet_prefix *addr, const char *name, int family)
 {
 	memset(addr, 0, sizeof(*addr));
 
@@ -150,6 +173,7 @@ int FAST_FUNC get_addr_1(inet_prefix *addr, char *name, int family)
 #endif
 	addr->bytelen = 4;
 	addr->bitlen = -1;
+	set_address_type(addr);
 
 	return 0;
 }
@@ -213,7 +237,7 @@ static void get_prefix_1(inet_prefix *dst, char *arg, int family)
 	bb_error_msg_and_die("an %s %s is expected rather than \"%s\"", "inet", "prefix", arg);
 }
 
-int FAST_FUNC get_addr(inet_prefix *dst, char *arg, int family)
+int FAST_FUNC get_addr(inet_prefix *dst, const char *arg, int family)
 {
 	if (family == AF_PACKET) {
 		bb_error_msg_and_die("\"%s\" may be inet %s, but it is not allowed in this context", arg, "address");

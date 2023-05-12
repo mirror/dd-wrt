@@ -158,7 +158,7 @@
 //usage:#define iplink_full_usage "\n"
 //usage:       "iplink add [link IFACE] IFACE [address MAC] type TYPE [ARGS]\n"
 //usage:       "iplink delete IFACE type TYPE [ARGS]\n"
-//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM\n"
+//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM | vxlan VXLANARGS\n"
 //usage:       "	VLANARGS := id VLANID [protocol 802.1q|802.1ad] [reorder_hdr on|off]\n"
 //usage:       "		[gvrp on|off] [mvrp on|off] [loose_binding on|off]\n"
 //usage:       "iplink show [IFACE]"
