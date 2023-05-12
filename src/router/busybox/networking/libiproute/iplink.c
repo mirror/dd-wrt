@@ -1232,9 +1232,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 				vlan_parse_opt(argv, &req.n, sizeof(req));
 			else if (strcmp(type_str, "vrf") == 0)
 				vrf_parse_opt(argv, &req.n, sizeof(req));
+#if ENABLE_VXLAN
 			else if (strcmp(type_str, "vxlan") == 0)
 				vxlan_parse_opt(argv, &req.n, sizeof(req));
-
+#endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}
 

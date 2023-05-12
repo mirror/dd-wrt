@@ -32,6 +32,14 @@
 //config:	help
 //config:	Short form of "ip link"
 //config:
+//config:config VXLAN
+//config:	bool "vxlan support"
+//config:	default y
+//config:	select FEATURE_VXLAN
+//config:	depends on IPLINK
+//config:	help
+//config:	vxlan support for iplink"
+//config:
 //config:config IPROUTE
 //config:	bool "iproute (15 kb)"
 //config:	default y
