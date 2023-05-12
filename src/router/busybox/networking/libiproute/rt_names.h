@@ -19,7 +19,7 @@ extern const char* ll_type_n2a(int type, char *buf) FAST_FUNC;
 
 extern const char* ll_addr_n2a(unsigned char *addr, int alen, int type,
 				char *buf, int blen) FAST_FUNC;
-extern int ll_addr_a2n(unsigned char *lladdr, int len, char *arg) FAST_FUNC;
+extern int ll_addr_a2n(unsigned char *lladdr, int len, const char *arg) FAST_FUNC;
 
 extern const char* ll_proto_n2a(unsigned short id, char *buf, int len) FAST_FUNC;
 extern int ll_proto_a2n(unsigned short *id, char *buf) FAST_FUNC;
