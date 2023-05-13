@@ -144,7 +144,7 @@ void start_samba3(void)
 			"aio write size = 2048\n"	//
 			"large readwrite = yes\n"	//
 			"security = user\n"	//
-			"oplocks = yes\n"	//
+			"oplocks = no\n"	//
 			"mangled names = no\n"	//
 			"max stat cache size = 64\n"	//
 			"workgroup = %s\n"	//
