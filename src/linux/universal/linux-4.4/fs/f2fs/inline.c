@@ -412,17 +412,15 @@ static int f2fs_move_inline_dirents(struct inode *dir, struct page *ipage,
 
 	dentry_blk = kmap_atomic(page);
 
+	/*
+	 * Start by zeroing the full block, to ensure that all unused space is
+	 * zeroed and no uninitialized memory is leaked to disk.
+	 */
+	memset(dentry_blk, 0, F2FS_BLKSIZE);
+
 	/* copy data from inline dentry block to new dentry block */
 	memcpy(dentry_blk->dentry_bitmap, inline_dentry->dentry_bitmap,
 					INLINE_DENTRY_BITMAP_SIZE);
-	memset(dentry_blk->dentry_bitmap + INLINE_DENTRY_BITMAP_SIZE, 0,
-			SIZE_OF_DENTRY_BITMAP - INLINE_DENTRY_BITMAP_SIZE);
-	/*
-	 * we do not need to zero out remainder part of dentry and filename
-	 * field, since we have used bitmap for marking the usage status of
-	 * them, besides, we can also ignore copying/zeroing reserved space
-	 * of dentry block, because them haven't been used so far.
-	 */
 	memcpy(dentry_blk->dentry, inline_dentry->dentry,
 			sizeof(struct f2fs_dir_entry) * NR_INLINE_DENTRY);
 	memcpy(dentry_blk->filename, inline_dentry->filename,

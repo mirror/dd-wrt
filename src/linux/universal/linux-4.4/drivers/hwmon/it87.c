@@ -419,6 +419,8 @@ static const struct it87_devices it87_devices[] = {
 #define has_vid(data)		((data)->features & FEAT_VID)
 #define has_in7_internal(data)	((data)->features & FEAT_IN7_INTERNAL)
 #define has_six_fans(data)	((data)->features & FEAT_SIX_FANS)
+#define has_scaling(data)	((data)->features & (FEAT_12MV_ADC | \
+						     FEAT_10_9MV_ADC))
 
 struct it87_sio_data {
 	enum chips type;
@@ -2292,7 +2294,7 @@ static int it87_probe(struct platform_device *pdev)
 	enable_pwm_interface = it87_check_pwm(dev);
 
 	/* Starting with IT8721F, we handle scaling of internal voltages */
-	if (has_12mv_adc(data)) {
+	if (has_scaling(data)) {
 		if (sio_data->internal & (1 << 0))
 			data->in_scaled |= (1 << 3);	/* in3 is AVCC */
 		if (sio_data->internal & (1 << 1))

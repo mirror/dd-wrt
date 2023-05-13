@@ -151,7 +151,7 @@ static void etm4_enable_hw(void *info)
 		writel_relaxed(drvdata->ss_pe_cmp[i],
 			       drvdata->base + TRCSSPCICRn(i));
 	}
-	for (i = 0; i < drvdata->nr_addr_cmp; i++) {
+	for (i = 0; i < drvdata->nr_addr_cmp * 2; i++) {
 		writeq_relaxed(drvdata->addr_val[i],
 			       drvdata->base + TRCACVRn(i));
 		writeq_relaxed(drvdata->addr_acc[i],
