@@ -384,11 +384,12 @@ static int geneve_hlen(struct genevehdr *gh)
 	return sizeof(*gh) + gh->opt_len * 4;
 }
 
-static struct sk_buff **geneve_gro_receive(struct sk_buff **head,
+
+static struct sk_buff *geneve_gro_receive(struct list_head *head,
 					   struct sk_buff *skb,
 					   struct udp_offload *uoff)
 {
-	struct sk_buff *p, **pp = NULL;
+	struct sk_buff *p, *pp = NULL;
 	struct genevehdr *gh, *gh2;
 	unsigned int hlen, gh_len, off_gnv;
 	const struct packet_offload *ptype;
@@ -417,7 +418,7 @@ static struct sk_buff **geneve_gro_receive(struct sk_buff **head,
 
 	flush = 0;
 
-	for (p = *head; p; p = p->next) {
+	list_for_each_entry(p, head, list) {
 		if (!NAPI_GRO_CB(p)->same_flow)
 			continue;
 
