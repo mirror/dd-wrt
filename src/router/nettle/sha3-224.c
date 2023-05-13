@@ -54,8 +54,9 @@ sha3_224_update (struct sha3_224_ctx *ctx,
 		 size_t length,
 		 const uint8_t *data)
 {
-  ctx->index = _sha3_update (&ctx->state, SHA3_224_BLOCK_SIZE, ctx->block,
-			     ctx->index, length, data);
+  ctx->index = _nettle_sha3_update (&ctx->state,
+				    SHA3_224_BLOCK_SIZE, ctx->block,
+				    ctx->index, length, data);
 }
 
 void

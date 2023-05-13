@@ -1,6 +1,6 @@
 C x86_64/ecc-secp384r1-modp.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2013, 2015 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,31 +28,36 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->)
+')
 
 	.file "ecc-secp384r1-modp.asm"
 
-define(<RP>, <%rsi>)
-define(<D5>, <%rax>)
-define(<T0>, <%rbx>)
-define(<T1>, <%rcx>)
-define(<T2>, <%rdx>)
-define(<T3>, <%rbp>)
-define(<T4>, <%rdi>)
-define(<T5>, <%r8>)
-define(<H0>, <%r9>)
-define(<H1>, <%r10>)
-define(<H2>, <%r11>)
-define(<H3>, <%r12>)
-define(<H4>, <%r13>)
-define(<H5>, <%r14>)
-define(<C2>, <%r15>)
-define(<C0>, H5)	C Overlap
-define(<TMP>, RP)	C Overlap
+C Input arguments:
+C %rdi (unused)
+define(`RP', `%rsi')
+define(`XP', `%rdx')
 
+define(`D5', `%rax')
+define(`T0', `%rbx')
+define(`T1', `%rcx')
+define(`T2', `%rdi')
+define(`T3', `%rbp')
+define(`T4', `%rsi')
+define(`T5', `%r8')
+define(`H0', `%r9')
+define(`H1', `%r10')
+define(`H2', `%r11')
+define(`H3', `%r12')
+define(`H4', `%r13')
+define(`H5', `%r14')
+define(`C2', `%r15')
+define(`C0', H5)	C Overlap
+define(`TMP', XP)	C Overlap
+
+	C void ecc_secp384r1_modp (const struct ecc_modulo *m, mp_limb_t *rp, mp_limb_t *xp)
 
 PROLOGUE(_nettle_ecc_secp384r1_modp)
-	W64_ENTRY(2, 0)
+	W64_ENTRY(3, 0)
 
 	push	%rbx
 	push	%rbp
@@ -61,6 +66,7 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	push	%r14
 	push	%r15
 
+	push	RP	C Output pointer
 	C First get top 2 limbs, which need folding twice.
 	C B^10 = B^6 + B^4 + 2^32 (B-1)B^4.
 	C We handle the terms as follow:
@@ -74,8 +80,8 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	C in 2.5 limbs. The low limb saved in D5, high 1.5 limbs added
 	C in.
 
-	mov	80(RP), H4
-	mov	88(RP), H5
+	mov	80(XP), H4
+	mov	88(XP), H5
 	C Shift right 32 bits, into H1, H0
 	mov	H4, H0
 	mov	H5, H1
@@ -100,29 +106,27 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	adc	$0, C2
 
 	C Add in to high part
-	add	48(RP), H0
-	adc	56(RP), H1
+	add	48(XP), H0
+	adc	56(XP), H1
 	adc	$0, C2		C Do C2 later
 
 	C +1 term
-	mov	(RP), T0
+	mov	(XP), T0
 	add	H0, T0
-	mov	8(RP), T1
+	mov	8(XP), T1
 	adc	H1, T1
-	mov	16(RP), T2
-	mov	64(RP), H2
+	mov	16(XP), T2
+	mov	64(XP), H2
 	adc	H2, T2
-	mov	24(RP), T3
-	mov	72(RP), H3
+	mov	24(XP), T3
+	mov	72(XP), H3
 	adc	H3, T3
-	mov	32(RP), T4
+	mov	32(XP), T4
 	adc	H4, T4
-	mov	40(RP), T5
+	mov	40(XP), T5
 	adc	H5, T5
 	sbb	C0, C0
 	neg	C0		C FIXME: Switch sign of C0?
-
-	push	RP
 
 	C +B^2 term
 	add	H0, T2
@@ -207,20 +211,20 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	sub	H1, H0
 	sbb	$0, H1
 
-	pop	RP
+	pop	XP		C Original RP argument
 
 	add	H0, T0
-	mov	T0, (RP)
+	mov	T0, (XP)
 	adc	H1, T1
-	mov	T1, 8(RP)
+	mov	T1, 8(XP)
 	adc	C0, T2
-	mov	T2, 16(RP)
+	mov	T2, 16(XP)
 	adc	$0, T3
-	mov	T3, 24(RP)
+	mov	T3, 24(XP)
 	adc	$0, T4
-	mov	T4, 32(RP)
+	mov	T4, 32(XP)
 	adc	$0, T5
-	mov	T5, 40(RP)
+	mov	T5, 40(XP)
 
 	pop	%r15
 	pop	%r14
@@ -229,6 +233,6 @@ PROLOGUE(_nettle_ecc_secp384r1_modp)
 	pop	%rbp
 	pop	%rbx
 
-	W64_EXIT(2, 0)
+	W64_EXIT(3, 0)
 	ret
 EPILOGUE(_nettle_ecc_secp384r1_modp)

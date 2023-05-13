@@ -131,35 +131,34 @@ int
 _rsa_sec_compute_root_tr(const struct rsa_public_key *pub,
 			 const struct rsa_private_key *key,
 			 void *random_ctx, nettle_random_func *random,
-			 mp_limb_t *x, const mp_limb_t *m, size_t mn)
+			 mp_limb_t *x, const mp_limb_t *m)
 {
+  mp_size_t nn;
   mpz_t mz;
   mpz_t xz;
   int res;
 
-  mpz_init(mz);
   mpz_init(xz);
 
-  mpn_copyi(mpz_limbs_write(mz, mn), m, mn);
-  mpz_limbs_finish(mz, mn);
+  nn = mpz_size (pub->n);
 
-  res = rsa_compute_root_tr(pub, key, random_ctx, random, xz, mz);
+  res = rsa_compute_root_tr(pub, key, random_ctx, random, xz,
+			    mpz_roinit_n(mz, m, nn));
 
   if (res)
-    mpz_limbs_copy(x, xz, mpz_size(pub->n));
+    mpz_limbs_copy(x, xz, nn);
 
-  mpz_clear(mz);
   mpz_clear(xz);
   return res;
 }
 #else
 /* Blinds m, by computing c = m r^e (mod n), for a random r. Also
-   returns the inverse (ri), for use by rsa_unblind. */
+   returns the inverse (ri), for use by rsa_unblind. Must have c != m,
+   no in-place operation.*/
 static void
 rsa_sec_blind (const struct rsa_public_key *pub,
                void *random_ctx, nettle_random_func *random,
-               mp_limb_t *c, mp_limb_t *ri, const mp_limb_t *m,
-               mp_size_t mn)
+               mp_limb_t *c, mp_limb_t *ri, const mp_limb_t *m)
 {
   const mp_limb_t *ep = mpz_limbs_read (pub->e);
   const mp_limb_t *np = mpz_limbs_read (pub->n);
@@ -177,15 +176,15 @@ rsa_sec_blind (const struct rsa_public_key *pub,
 
   /* c = m*(r^e) mod n */
   itch = mpn_sec_powm_itch(nn, ebn, nn);
-  i2 = mpn_sec_mul_itch(nn, mn);
+  i2 = mpn_sec_mul_itch(nn, nn);
   itch = MAX(itch, i2);
-  i2 = mpn_sec_div_r_itch(nn + mn, nn);
+  i2 = mpn_sec_div_r_itch(2*nn, nn);
   itch = MAX(itch, i2);
   i2 = mpn_sec_invert_itch(nn);
   itch = MAX(itch, i2);
 
-  TMP_GMP_ALLOC (tp, nn + mn + itch);
-  scratch = tp + nn + mn;
+  TMP_GMP_ALLOC (tp, 2*nn  + itch);
+  scratch = tp + 2*nn;
 
   /* ri = r^(-1) */
   do
@@ -198,9 +197,8 @@ rsa_sec_blind (const struct rsa_public_key *pub,
   while (!mpn_sec_invert (ri, tp, np, nn, 2 * nn * GMP_NUMB_BITS, scratch));
 
   mpn_sec_powm (c, rp, nn, ep, ebn, np, nn, scratch);
-  /* normally mn == nn, but m can be smaller in some cases */
-  mpn_sec_mul (tp, c, nn, m, mn, scratch);
-  mpn_sec_div_r (tp, nn + mn, np, nn, scratch);
+  mpn_sec_mul (tp, c, nn, m, nn, scratch);
+  mpn_sec_div_r (tp, 2*nn, np, nn, scratch);
   mpn_copyi(c, tp, nn);
 
   TMP_GMP_FREE (r);
@@ -208,7 +206,7 @@ rsa_sec_blind (const struct rsa_public_key *pub,
   TMP_GMP_FREE (tp);
 }
 
-/* m = c ri mod n */
+/* m = c ri mod n. Allows x == c. */
 static void
 rsa_sec_unblind (const struct rsa_public_key *pub,
                  mp_limb_t *x, mp_limb_t *ri, const mp_limb_t *c)
@@ -246,7 +244,6 @@ sec_equal(const mp_limb_t *a, const mp_limb_t *b, size_t limbs)
       z |= (a[i] ^ b[i]);
     }
 
-  /* FIXME: Might compile to a branch instruction on some platforms. */
   return z == 0;
 }
 
@@ -299,7 +296,7 @@ int
 _rsa_sec_compute_root_tr(const struct rsa_public_key *pub,
 			 const struct rsa_private_key *key,
 			 void *random_ctx, nettle_random_func *random,
-			 mp_limb_t *x, const mp_limb_t *m, size_t mn)
+			 mp_limb_t *x, const mp_limb_t *m)
 {
   TMP_GMP_DECL (c, mp_limb_t);
   TMP_GMP_DECL (ri, mp_limb_t);
@@ -307,7 +304,7 @@ _rsa_sec_compute_root_tr(const struct rsa_public_key *pub,
   size_t key_limb_size;
   int ret;
 
-  key_limb_size = NETTLE_OCTET_SIZE_TO_LIMB_SIZE(key->size);
+  key_limb_size = mpz_size(pub->n);
 
   /* mpz_powm_sec handles only odd moduli. If p, q or n is even, the
      key is invalid and rejected by rsa_private_key_prepare. However,
@@ -321,19 +318,18 @@ _rsa_sec_compute_root_tr(const struct rsa_public_key *pub,
     }
 
   assert(mpz_size(pub->n) == key_limb_size);
-  assert(mn <= key_limb_size);
 
   TMP_GMP_ALLOC (c, key_limb_size);
   TMP_GMP_ALLOC (ri, key_limb_size);
   TMP_GMP_ALLOC (scratch, _rsa_sec_compute_root_itch(key));
 
-  rsa_sec_blind (pub, random_ctx, random, x, ri, m, mn);
+  rsa_sec_blind (pub, random_ctx, random, c, ri, m);
 
-  _rsa_sec_compute_root(key, c, x, scratch);
+  _rsa_sec_compute_root(key, x, c, scratch);
 
-  ret = rsa_sec_check_root(pub, c, x);
+  ret = rsa_sec_check_root(pub, x, c);
 
-  rsa_sec_unblind(pub, x, ri, c);
+  rsa_sec_unblind(pub, x, ri, x);
 
   cnd_mpn_zero(1 - ret, x, key_limb_size);
 
@@ -357,17 +353,17 @@ rsa_compute_root_tr(const struct rsa_public_key *pub,
 		    mpz_t x, const mpz_t m)
 {
   TMP_GMP_DECL (l, mp_limb_t);
+  mp_size_t nn = mpz_size(pub->n);
   int res;
 
-  mp_size_t l_size = NETTLE_OCTET_SIZE_TO_LIMB_SIZE(key->size);
-  TMP_GMP_ALLOC (l, l_size);
+  TMP_GMP_ALLOC (l, nn);
+  mpz_limbs_copy(l, m, nn);
 
-  res = _rsa_sec_compute_root_tr (pub, key, random_ctx, random, l,
-				  mpz_limbs_read(m), mpz_size(m));
+  res = _rsa_sec_compute_root_tr (pub, key, random_ctx, random, l, l);
   if (res) {
-    mp_limb_t *xp = mpz_limbs_write (x, l_size);
-    mpn_copyi (xp, l, l_size);
-    mpz_limbs_finish (x, l_size);
+    mp_limb_t *xp = mpz_limbs_write (x, nn);
+    mpn_copyi (xp, l, nn);
+    mpz_limbs_finish (x, nn);
   }
 
   TMP_GMP_FREE (l);

@@ -1,6 +1,6 @@
 C x86_64/ecc-curve448-modp.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2019 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,42 +28,44 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->)
+')
 
 	.file "ecc-curve448-modp.asm"
 
-define(<RP>, <%rsi>)
-define(<X0>, <%rax>)
-define(<X1>, <%rbx>)
-define(<X2>, <%rcx>)
-define(<X3>, <%rdx>)
-define(<X4>, <%rbp>)
-define(<X5>, <%rdi>)
-define(<X6>, <%r8>)
-define(<X7>, <%r9>)
-define(<T0>, <%r10>)
-define(<T1>, <%r11>)
-define(<T2>, <%r12>)
+define(`RP', `%rsi')
+define(`XP', `%rdx')
+define(`X0', `%rax')
+define(`X1', `%rbx')
+define(`X2', `%rcx')
+define(`X3', `%rbp')
+define(`X4', `%rdi')
+define(`X5', `%r8')
+define(`X6', `%r9')
+define(`X7', `%r10')
+define(`T0', `%r11')
+define(`T1', `%r12')
+define(`T2', `%r13')
 
 PROLOGUE(_nettle_ecc_curve448_modp)
-	W64_ENTRY(2, 0)
+	W64_ENTRY(3, 0)
 
 	push	%rbx
 	push	%rbp
 	push	%r12
+	push	%r13
 
 	C First load the values to be shifted by 32.
-	mov 88(RP), X1
+	mov 88(XP), X1
 	mov X1, X0
-	mov 96(RP), X2
+	mov 96(XP), X2
 	mov X1, T0
-	mov 104(RP), X3
+	mov 104(XP), X3
 	mov X2, T1
-	mov 56(RP), X4
+	mov 56(XP), X4
 	mov X3, T2
-	mov 64(RP), X5
-	mov 72(RP), X6
-	mov 80(RP), X7
+	mov 64(XP), X5
+	mov 72(XP), X6
+	mov 80(XP), X7
 
 	C Multiply by 2^32
 	shl $32, X0
@@ -82,22 +84,22 @@ PROLOGUE(_nettle_ecc_curve448_modp)
 	adc $0, X7
 
 	C Main additions
-	add 56(RP), X0
-	adc 64(RP), X1
-	adc 72(RP), X2
-	adc 80(RP), X3
+	add 56(XP), X0
+	adc 64(XP), X1
+	adc 72(XP), X2
+	adc 80(XP), X3
 	adc T0, X4
 	adc T1, X5
 	adc T2, X6
 	adc $0, X7
 
-	add (RP), X0
-	adc 8(RP), X1
-	adc 16(RP), X2
-	adc 24(RP), X3
-	adc 32(RP), X4
-	adc 40(RP), X5
-	adc 48(RP), X6
+	add (XP), X0
+	adc 8(XP), X1
+	adc 16(XP), X2
+	adc 24(XP), X3
+	adc 32(XP), X4
+	adc 40(XP), X5
+	adc 48(XP), X6
 	adc $0, X7
 
 	C X7 wraparound
@@ -135,10 +137,11 @@ PROLOGUE(_nettle_ecc_curve448_modp)
 	adc $0, X6
 	mov X6, 48(RP)
 
+	pop	%r13
 	pop	%r12
 	pop	%rbp
 	pop	%rbx
 
-	W64_EXIT(2, 0)
+	W64_EXIT(3, 0)
 	ret
 EPILOGUE(_nettle_ecc_curve448_modp)

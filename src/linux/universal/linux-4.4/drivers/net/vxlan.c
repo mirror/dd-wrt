@@ -541,12 +541,11 @@ static struct vxlanhdr *vxlan_gro_remcsum(struct sk_buff *skb,
 	return vh;
 }
 
-static struct sk_buff *vxlan_gro_receive(struct sock *sk,
-					 struct list_head *head,
-					 struct sk_buff *skb)
+static struct sk_buff *vxlan_gro_receive(struct list_head *head,
+					  struct sk_buff *skb,
+					  struct udp_offload *uoff)
 {
-	struct sk_buff *pp = NULL;
-	struct sk_buff *p;
+	struct sk_buff *p, *pp = NULL;
 	struct vxlanhdr *vh, *vh2;
 	unsigned int hlen, off_vx;
 	int flush = 1;

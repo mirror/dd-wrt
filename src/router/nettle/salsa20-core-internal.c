@@ -94,7 +94,7 @@ _nettle_salsa20_core_c(uint32_t *dst, const uint32_t *src, unsigned rounds);
   } while(0)
 
 void
-_salsa20_core(uint32_t *dst, const uint32_t *src, unsigned rounds)
+_nettle_salsa20_core(uint32_t *dst, const uint32_t *src, unsigned rounds)
 {
   uint32_t x[_SALSA20_INPUT_LENGTH];
   unsigned i;

@@ -402,6 +402,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 static int risk_index_max = 0;
 static uint64_t risk_map = 0;
+static int risk_init=0;
 
 #define EXT_OPT_BASE 0
 // #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
@@ -655,13 +656,48 @@ ndpi_mt4_print(const void *entry, const struct xt_entry_match *match,
 	_ndpi_mt4_save(entry,match,0);
 }
 
+static void read_risk(void) 
+{
+	char buf[128],*c;
+	uint32_t index;
+
+	if (!risk_init) {
+		FILE *f_proto = fopen("/proc/net/xt_ndpi/risks","r");
+		if(f_proto) {
+			risk_init=1;
+			index = 0;
+			while(!feof(f_proto)) {
+				int  ri;
+				char re;
+				c = fgets(buf,sizeof(buf)-1,f_proto);
+				if(!c) break;
+				if(sscanf(buf,"%d %c ",&ri,&re) != 2) {
+					printf("xt_ndpi: bad risks format.");
+					break;
+				}
+			
+				if(ri < 0 || ri >= 64) {
+					printf("xt_ndpi: bad risk index.");
+					break;
+				}
+				if(risk_index_max < ri)
+					risk_index_max = ri;
+				if(re == 'd')
+					risk_map |= (1ull << ri);
+			}
+		fclose(f_proto);
+		}
+	}
+}
+
 static int 
 ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
                   const void *entry, struct xt_entry_match **match)
 {
 	struct xt_ndpi_mtinfo *info = (void *)(*match)->data;
         int i;
-
+    	
+    	read_risk();
 	info->invert = invert;
 
 	if(c == NDPI_OPT_ERROR) {
@@ -1227,31 +1263,6 @@ void _init(void)
 		ndpi_mt_opts[i].has_arg = 0;
                 ndpi_mt_opts[i].val = i;
         }*/
-
-	FILE *f_proto = fopen("/proc/net/xt_ndpi/risks","r");
-	if(f_proto) {
-		index = 0;
-		while(!feof(f_proto)) {
-			int  ri;
-			char re;
-			c = fgets(buf,sizeof(buf)-1,f_proto);
-			if(!c) break;
-			if(sscanf(buf,"%d %c ",&ri,&re) != 2) {
-				printf("xt_ndpi: bad risks format.");
-				break;
-			}
-		
-			if(ri < 0 || ri >= 64) {
-				printf("xt_ndpi: bad risk index.");
-				break;
-			}
-			if(risk_index_max < ri)
-				risk_index_max = ri;
-			if(re == 'd')
-				risk_map |= (1ull << ri);
-		}
-	fclose(f_proto);
-	}
 
 
 #define MT_OPT(np,protoname,nargs) { i=(np); \

@@ -384,12 +384,12 @@ static int geneve_hlen(struct genevehdr *gh)
 	return sizeof(*gh) + gh->opt_len * 4;
 }
 
-static struct sk_buff *geneve_gro_receive(struct sock *sk,
-					  struct list_head *head,
-					  struct sk_buff *skb)
+
+static struct sk_buff *geneve_gro_receive(struct list_head *head,
+					   struct sk_buff *skb,
+					   struct udp_offload *uoff)
 {
-	struct sk_buff *pp = NULL;
-	struct sk_buff *p;
+	struct sk_buff *p, *pp = NULL;
 	struct genevehdr *gh, *gh2;
 	unsigned int hlen, gh_len, off_gnv;
 	const struct packet_offload *ptype;

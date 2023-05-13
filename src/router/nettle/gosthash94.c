@@ -108,7 +108,7 @@ gost_block_compress (struct gosthash94_ctx *ctx, const uint32_t *block,
               ((w[5] & 0xff000000) >> 8) | (w[7] & 0xff000000);
 
           /* encryption: s_i := E_{key_i} (h_i) */
-          _gost28147_encrypt_block (key, sbox, &ctx->hash[i], &s[i]);
+          _nettle_gost28147_encrypt_block (key, sbox, &ctx->hash[i], &s[i]);
 
           if (i == 0)
             {
@@ -314,7 +314,7 @@ gosthash94_update (struct gosthash94_ctx *ctx,
 		   size_t length, const uint8_t *msg)
 {
   gosthash94_update_int (ctx, length, msg,
-			 _gost28147_param_test_3411.sbox);
+			 _nettle_gost28147_param_test_3411.sbox);
 }
 
 /**
@@ -330,7 +330,7 @@ gosthash94cp_update (struct gosthash94_ctx *ctx,
 		     size_t length, const uint8_t *msg)
 {
   gosthash94_update_int (ctx, length, msg,
-			 _gost28147_param_CryptoPro_3411.sbox);
+			 _nettle_gost28147_param_CryptoPro_3411.sbox);
 }
 
 /**
@@ -373,7 +373,7 @@ gosthash94_digest (struct gosthash94_ctx *ctx,
 		   size_t length, uint8_t *result)
 {
   gosthash94_write_digest (ctx, length, result,
-			   _gost28147_param_test_3411.sbox);
+			   _nettle_gost28147_param_test_3411.sbox);
 }
 
 void
@@ -381,5 +381,5 @@ gosthash94cp_digest (struct gosthash94_ctx *ctx,
 		     size_t length, uint8_t *result)
 {
   gosthash94_write_digest (ctx, length, result,
-			   _gost28147_param_CryptoPro_3411.sbox);
+			   _nettle_gost28147_param_CryptoPro_3411.sbox);
 }

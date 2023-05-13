@@ -1,6 +1,6 @@
 C arm/memxor.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2013 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,7 +28,7 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->) 
+')
 
 C Possible speedups:
 C
@@ -38,16 +38,16 @@ C cycles, regardless of alignment.
 
 C Register usage:
 
-define(<DST>, <r0>)
-define(<SRC>, <r1>)
-define(<N>, <r2>)
-define(<CNT>, <r6>)
-define(<TNC>, <r12>)
+define(`DST', `r0')
+define(`SRC', `r1')
+define(`N', `r2')
+define(`CNT', `r6')
+define(`TNC', `r12')
 
 C little-endian and big-endian need to shift in different directions for
 C alignment correction
-define(<S0ADJ>, IF_LE(<lsr>, <lsl>))
-define(<S1ADJ>, IF_LE(<lsl>, <lsr>))
+define(`S0ADJ', IF_LE(`lsr', `lsl'))
+define(`S1ADJ', IF_LE(`lsl', `lsr'))
 
 	.syntax unified
 
@@ -150,13 +150,13 @@ PROLOGUE(nettle_memxor)
 	C Store bytes, one by one.
 .Lmemxor_leftover:
 	C bring uppermost byte down for saving while preserving lower ones
-IF_BE(<	ror	r3, #24>)
+IF_BE(`	ror	r3, #24')
 	strb	r3, [DST], #+1
 	subs	N, #1
 	beq	.Lmemxor_done
 	subs	TNC, #8
 	C bring down next byte, no need to preserve
-IF_LE(<	lsr	r3, #8>)
+IF_LE(`	lsr	r3, #8')
 	bne	.Lmemxor_leftover
 	b	.Lmemxor_bytes
 .Lmemxor_odd_done:

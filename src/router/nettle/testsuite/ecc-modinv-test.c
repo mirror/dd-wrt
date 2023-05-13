@@ -1,7 +1,9 @@
 #include "testutils.h"
+#include <assert.h>
 
 static int
-ref_modinv (mp_limb_t *rp, const mp_limb_t *ap, const mp_limb_t *mp, mp_size_t mn)
+ref_modinv (mp_limb_t *rp, const mp_limb_t *ap,
+	    const mp_limb_t *mp, mp_size_t mn, int use_redc)
 {
   mpz_t g, s, a, m;
   int res;
@@ -19,22 +21,21 @@ ref_modinv (mp_limb_t *rp, const mp_limb_t *ap, const mp_limb_t *mp, mp_size_t m
 	  mpz_add (s, s, m);
 	  ASSERT (mpz_sgn (s) > 0);
 	}
-      mpz_limbs_copy (rp, s, mn);
       res = 1;
     }
   else
     res = 0;
 
+  if (use_redc)
+    {
+      mpz_mul_2exp (s, s, 2 * mn * GMP_NUMB_BITS);
+      mpz_mod (s, s, m);
+    }
+
+  mpz_limbs_copy (rp, s, mn);
   mpz_clear (g);
   mpz_clear (s);
   return res;
-}
-
-static int
-zero_p (const struct ecc_modulo *m, const mp_limb_t *xp)
-{
-  return mpn_zero_p (xp, m->size)
-    || mpn_cmp (xp, m->m, m->size) == 0;
 }
 
 #define MAX_ECC_SIZE (1 + 521 / GMP_NUMB_BITS)
@@ -42,7 +43,7 @@ zero_p (const struct ecc_modulo *m, const mp_limb_t *xp)
 
 static void
 test_modulo (gmp_randstate_t rands, const char *name,
-	     const struct ecc_modulo *m)
+	     const struct ecc_modulo *m, int use_redc)
 {
   mp_limb_t *a;
   mp_limb_t *ai;
@@ -54,7 +55,7 @@ test_modulo (gmp_randstate_t rands, const char *name,
   mpz_init (r);
 
   a = xalloc_limbs (m->size);
-  ai = xalloc_limbs (2*m->size);
+  ai = xalloc_limbs (m->size);
   ref = xalloc_limbs (m->size);;
   scratch = xalloc_limbs (m->invert_itch);
 
@@ -62,7 +63,7 @@ test_modulo (gmp_randstate_t rands, const char *name,
   mpn_zero (a, m->size);
   memset (ai, 17, m->size * sizeof(*ai));
   m->invert (m, ai, a, scratch);
-  if (!zero_p (m, ai))
+  if (!ecc_mod_zero_p (m, ai))
     {
       fprintf (stderr, "%s->invert failed for zero input (bit size %u):\n",
 	       name, m->bit_size);
@@ -77,7 +78,7 @@ test_modulo (gmp_randstate_t rands, const char *name,
   /* Check behaviour for a = m */
   memset (ai, 17, m->size * sizeof(*ai));
   m->invert (m, ai, m->m, scratch);
-  if (!zero_p (m, ai))
+  if (!ecc_mod_zero_p (m, ai))
     {
       fprintf (stderr, "%s->invert failed for a = p input (bit size %u):\n",
 	       name, m->bit_size);
@@ -99,7 +100,7 @@ test_modulo (gmp_randstate_t rands, const char *name,
 
       mpz_limbs_copy (a, r, m->size);
 
-      if (!ref_modinv (ref, a, m->m, m->size))
+      if (!ref_modinv (ref, a, m->m, m->size, use_redc))
 	{
 	  if (verbose)
 	    fprintf (stderr, "Test %u (bit size %u) not invertible mod %s.\n",
@@ -107,7 +108,7 @@ test_modulo (gmp_randstate_t rands, const char *name,
 	  continue;
 	}
       m->invert (m, ai, a, scratch);
-      if (mpn_cmp (ref, ai, m->size))
+      if (!ecc_mod_equal_p (m, ai, ref, scratch))
 	{
 	  fprintf (stderr, "%s->invert failed (test %u, bit size %u):\n",
 		   name, j, m->bit_size);
@@ -119,6 +120,7 @@ test_modulo (gmp_randstate_t rands, const char *name,
 	  mpn_out_str (stderr, 16, ai, m->size);
 	  fprintf (stderr, " (bad)\nr = ");
 	  mpn_out_str (stderr, 16, ref, m->size);
+	  printf ("\n");
 
 	  abort ();
 	}
@@ -138,11 +140,12 @@ test_main (void)
   unsigned i;
 
   gmp_randinit_default (rands);
+  test_randomize(rands);
 
   for (i = 0; ecc_curves[i]; i++)
     {
-      test_modulo (rands, "p", &ecc_curves[i]->p);
-      test_modulo (rands, "q", &ecc_curves[i]->q);
+      test_modulo (rands, "p", &ecc_curves[i]->p, ecc_curves[i]->use_redc);
+      test_modulo (rands, "q", &ecc_curves[i]->q, 0);
     }
   gmp_randclear (rands);
 }

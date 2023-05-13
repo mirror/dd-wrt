@@ -41,6 +41,8 @@
 #include "ripemd160.h"
 #include "sha1.h"
 #include "sha2.h"
+#include "streebog.h"
+#include "sm3.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +77,14 @@ extern "C" {
 #define hmac_gosthash94cp_set_key nettle_hmac_gosthash94cp_set_key
 #define hmac_gosthash94cp_update nettle_hmac_gosthash94cp_update
 #define hmac_gosthash94cp_digest nettle_hmac_gosthash94cp_digest
+#define hmac_streebog256_set_key nettle_hmac_streebog256_set_key
+#define hmac_streebog256_digest nettle_hmac_streebog256_digest
+#define hmac_streebog512_set_key nettle_hmac_streebog512_set_key
+#define hmac_streebog512_update nettle_hmac_streebog512_update
+#define hmac_streebog512_digest nettle_hmac_streebog512_digest
+#define hmac_sm3_set_key nettle_hmac_sm3_set_key
+#define hmac_sm3_update nettle_hmac_sm3_update
+#define hmac_sm3_digest nettle_hmac_sm3_digest
 
 void
 hmac_set_key(void *outer, void *inner, void *state,
@@ -239,6 +249,48 @@ void
 hmac_gosthash94cp_digest(struct hmac_gosthash94cp_ctx *ctx,
 			 size_t length, uint8_t *digest);
 
+
+/* hmac-streebog */
+struct hmac_streebog512_ctx HMAC_CTX(struct streebog512_ctx);
+
+void
+hmac_streebog512_set_key(struct hmac_streebog512_ctx *ctx,
+		    size_t key_length, const uint8_t *key);
+
+void
+hmac_streebog512_update(struct hmac_streebog512_ctx *ctx,
+		   size_t length, const uint8_t *data);
+
+void
+hmac_streebog512_digest(struct hmac_streebog512_ctx *ctx,
+		   size_t length, uint8_t *digest);
+
+#define hmac_streebog256_ctx hmac_streebog512_ctx
+
+void
+hmac_streebog256_set_key(struct hmac_streebog256_ctx *ctx,
+		    size_t key_length, const uint8_t *key);
+
+#define hmac_streebog256_update hmac_streebog512_update
+
+void
+hmac_streebog256_digest(struct hmac_streebog256_ctx *ctx,
+		   size_t length, uint8_t *digest);
+
+/* hmac-sm3 */
+struct hmac_sm3_ctx HMAC_CTX(struct sm3_ctx);
+
+void
+hmac_sm3_set_key(struct hmac_sm3_ctx *ctx,
+		 size_t key_length, const uint8_t *key);
+
+void
+hmac_sm3_update(struct hmac_sm3_ctx *ctx,
+		size_t length, const uint8_t *data);
+
+void
+hmac_sm3_digest(struct hmac_sm3_ctx *ctx,
+		size_t length, uint8_t *digest);
 
 #ifdef __cplusplus
 }

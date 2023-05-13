@@ -70,38 +70,38 @@ ecc_add_eh (const struct ecc_curve *ecc,
      y3 = z1*G*(D-C)	2 mul		F, G
      z3 = F*G		mul
   */
-#define C (scratch)
-#define D (scratch + 1*ecc->p.size)
-#define T (scratch + 2*ecc->p.size)
-#define E (scratch + 3*ecc->p.size)
-#define B (scratch + 4*ecc->p.size)
-#define F D
+#define T scratch
+#define E (scratch + 1*ecc->p.size)
 #define G E
+#define C (scratch + 2*ecc->p.size)
+#define D (scratch + 3*ecc->p.size)
+#define B D
 
-  ecc_mod_mul (&ecc->p, C, x1, x2);
-  ecc_mod_mul (&ecc->p, D, y1, y2);
+  /* Use T as scratch, clobber E */
+  ecc_mod_mul (&ecc->p, C, x1, x2, T);	/* C */
+  ecc_mod_mul (&ecc->p, D, y1, y2, T);	/* C, D */
   ecc_mod_add (&ecc->p, x3, x1, y1);
   ecc_mod_add (&ecc->p, y3, x2, y2);
-  ecc_mod_mul (&ecc->p, T, x3, y3);
+  ecc_mod_mul (&ecc->p, T, x3, y3, T);	/* C, D, T */
   ecc_mod_sub (&ecc->p, T, T, C);
   ecc_mod_sub (&ecc->p, T, T, D);
-  ecc_mod_mul (&ecc->p, x3, C, D);
-  ecc_mod_mul (&ecc->p, E, x3, ecc->b);
+  /* Can now use x3 as scratch, without breaking in-place operation. */
+  ecc_mod_mul (&ecc->p, T, T, z1, x3);
 
-  ecc_mod_sub (&ecc->p, C, D, C);
-  ecc_mod_sqr (&ecc->p, B, z1);
-  ecc_mod_sub (&ecc->p, F, B, E);
-  ecc_mod_add (&ecc->p, G, B, E);
+  ecc_mod_mul (&ecc->p, E, C, D, x3);	/* C, D, T, E */
+  ecc_mod_mul (&ecc->p, E, E, ecc->b, x3);
 
-  /* x3 */
-  ecc_mod_mul (&ecc->p, B, F, T);
-  ecc_mod_mul (&ecc->p, x3, B, z1);
+  ecc_mod_sub (&ecc->p, C, D, C);	/* C, T, E */
+  ecc_mod_mul (&ecc->p, C, C, z1, x3);
 
-  /* y3 */
-  ecc_mod_mul (&ecc->p, B, G, z1);
-  ecc_mod_mul (&ecc->p, y3, B, C); /* Clobbers z1 in case r == p. */
+  ecc_mod_sqr (&ecc->p, B, z1, x3);	/* C, T, E, B */
+  ecc_mod_sub (&ecc->p, x3, B, E);
+  ecc_mod_add (&ecc->p, G, B, E);	/* C, T, G */
 
-  /* z3 */
-  ecc_mod_mul (&ecc->p, B, F, G);
-  mpn_copyi (z3, B, ecc->p.size);
+  /* Can now use y3 as scratch, without breaking in-place operation. */
+  ecc_mod_mul (&ecc->p, y3, C, G, y3);	/* T G */
+
+  /* Can use C--D as scratch */
+  ecc_mod_mul (&ecc->p, z3, x3, G, C);	/* T */
+  ecc_mod_mul (&ecc->p, x3, x3, T, C);
 }

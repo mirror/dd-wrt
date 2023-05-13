@@ -47,10 +47,10 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 void
-_ctr_crypt16(const void *ctx, nettle_cipher_func *f,
-	     nettle_fill16_func *fill, uint8_t *ctr,
-	     size_t length, uint8_t *dst,
-	     const uint8_t *src)
+_nettle_ctr_crypt16(const void *ctx, nettle_cipher_func *f,
+		    nettle_fill16_func *fill, uint8_t *ctr,
+		    size_t length, uint8_t *dst,
+		    const uint8_t *src)
 {
   if (dst != src && !((uintptr_t) dst % sizeof(uint64_t)))
     {

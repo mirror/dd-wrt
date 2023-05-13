@@ -39,7 +39,7 @@
 #include "ecc-internal.h"
 
 /* Binary algorithm needs 6*ecc->p.size + scratch for ecc_add_ehh,
-   total 12 ecc->p.size
+   total 10 ecc->p.size
 
    Window algorithm needs (3<<w) * ecc->p.size for the table,
    3*ecc->p.size for a temporary point, and scratch for
@@ -167,7 +167,7 @@ ecc_mul_a_eh (const struct ecc_curve *ecc,
 
       bits &= TABLE_MASK;
       sec_tabselect (tp, 3*ecc->p.size, table, TABLE_SIZE, bits);
-      ecc->add_hhh (ecc, r, tp, r, scratch_out);
+      ecc->add_hhh (ecc, r, r, tp, scratch_out);
     }
 #undef table
 #undef tp

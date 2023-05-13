@@ -1,6 +1,6 @@
 C arm/ecc-secp192r1-modp.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2013 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,38 +28,39 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->) 
+')
 
 	.file "ecc-secp192r1-modp.asm"
 	.arm
 
-define(<HP>, <r0>) C Overlaps unused modulo argument
-define(<RP>, <r1>)
+define(`HP', `r0') C Overlaps unused modulo argument
+define(`RP', `r1')
+define(`XP', `r2')
 
-define(<T0>, <r2>)
-define(<T1>, <r3>)
-define(<T2>, <r4>)
-define(<T3>, <r5>)
-define(<T4>, <r6>)
-define(<T5>, <r7>)
-define(<T6>, <r8>)
-define(<T7>, <r10>)
-define(<H0>, <T0>) C Overlaps T0 and T1
-define(<H1>, <T1>)
-define(<C2>, <HP>)
-define(<C4>, <r12>)
+define(`T0', `r3')
+define(`T1', `r4')
+define(`T2', `r5')
+define(`T3', `r6')
+define(`T4', `r7')
+define(`T5', `r8')
+define(`T6', `r10')
+define(`T7', `r11')
+define(`H0', `T0') C Overlaps T0 and T1
+define(`H1', `T1')
+define(`C2', `HP')
+define(`C4', `r12')
 
 	C ecc_secp192r1_modp (const struct ecc_modulo *m, mp_limb_t *rp)
 	.text
 	.align 2
 
 PROLOGUE(_nettle_ecc_secp192r1_modp)
-	push	{r4,r5,r6,r7,r8,r10}
+	push	{r4,r5,r6,r7,r8,r10,r11}
 	C Reduce two words at a time
-	add	HP, RP, #48
-	add	RP, RP, #8
+	add	HP, XP, #48
+	add	XP, XP, #8
 	ldmdb	HP!, {H0,H1}
-	ldm	RP, {T2,T3,T4,T5,T6,T7}
+	ldm	XP, {T2,T3,T4,T5,T6,T7}
 	mov	C4, #0
 	adds	T4, T4, H0
 	adcs	T5, T5, H1
@@ -77,7 +78,7 @@ PROLOGUE(_nettle_ecc_secp192r1_modp)
 	C Need to add carry to T0 and T2, do T2 later
 	adc	C2, C2, #0
 
-	ldmdb	RP!, {T0, T1}
+	ldmdb	XP!, {T0, T1}
 	adcs	T0, T0, T6
 	adcs	T1, T1, T7
 	adcs	T2, T2, T6
@@ -101,6 +102,6 @@ PROLOGUE(_nettle_ecc_secp192r1_modp)
 
 	stm	RP, {T0,T1,T2,T3,T4,T5}
 
-	pop	{r4,r5,r6,r7,r8,r10}
+	pop	{r4,r5,r6,r7,r8,r10,r11}
 	bx	lr
 EPILOGUE(_nettle_ecc_secp192r1_modp)

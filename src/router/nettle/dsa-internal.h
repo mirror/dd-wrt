@@ -36,12 +36,10 @@
 
 #include "nettle-types.h"
 
-#define _dsa_hash _nettle_dsa_hash
-
 /* Internal functions. */
 void
-_dsa_hash (mpz_t h, unsigned bit_size,
-	   size_t length, const uint8_t *digest);
+_nettle_dsa_hash (mpz_t h, unsigned bit_size,
+		  size_t length, const uint8_t *digest);
 
 
 #endif /* NETTLE_DSA_INTERNAL_H_INCLUDED */

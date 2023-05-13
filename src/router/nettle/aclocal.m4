@@ -31,7 +31,7 @@ AC_CACHE_VAL(lsh_cv_sys_ccpic,[
   fi
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $CCPIC"
-  AC_TRY_COMPILE([], [exit(0);],
+  AC_TRY_COMPILE([], [return 0;],
     lsh_cv_sys_ccpic="$CCPIC", lsh_cv_sys_ccpic='')
   CFLAGS="$OLD_CFLAGS"
 ])
@@ -369,7 +369,7 @@ cat >conftest.c <<EOF
 int
 main ()
 {
-  exit(0);
+  return 0;
 }
 EOF
 gmp_compile="$1 conftest.c"
@@ -410,7 +410,7 @@ else
 int
 main ()
 {
-  exit (0);
+  return 0;
 }
 EOF
   for i in .exe ,ff8 ""; do
@@ -554,4 +554,28 @@ EOF
 	EXTRA_HOGWEED_LINKER_FLAGS="-Wl,--version-script=libhogweed.map"
 	AC_SUBST(EXTRA_HOGWEED_LINKER_FLAGS)
   fi
+])
+
+dnl  GMP_ASM_POWERPC_R_REGISTERS
+dnl  ---------------------------
+dnl  Determine whether the assembler takes powerpc registers with an "r" as
+dnl  in "r6", or as plain "6".  The latter is standard, but NeXT, Rhapsody,
+dnl  and MacOS-X require the "r" forms.
+dnl
+dnl  See also mpn/powerpc32/powerpc-defs.m4 which uses the result of this
+dnl  test.
+
+AC_DEFUN([GMP_ASM_POWERPC_R_REGISTERS],
+[AC_CACHE_CHECK([if the assembler needs r on registers],
+               gmp_cv_asm_powerpc_r_registers,
+[GMP_TRY_ASSEMBLE(
+[	$gmp_cv_asm_text
+	mtctr	r6],
+[gmp_cv_asm_powerpc_r_registers=yes],
+[GMP_TRY_ASSEMBLE(
+[	.text
+	mtctr	6],
+[gmp_cv_asm_powerpc_r_registers=no],
+[AC_MSG_ERROR([neither "mtctr 6" nor "mtctr r6" works])])])])
+ASM_PPC_WANT_R_REGISTERS="$gmp_cv_asm_powerpc_r_registers"
 ])

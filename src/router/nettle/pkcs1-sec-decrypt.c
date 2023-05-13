@@ -63,7 +63,9 @@ _pkcs1_sec_decrypt (size_t length, uint8_t *message,
   volatile int ok;
   size_t i, t;
 
-  assert (padded_message_length >= length);
+  /* Message independent branch */
+  if (length + 11 > padded_message_length)
+    return 0;
 
   t = padded_message_length - length - 1;
 
@@ -99,8 +101,8 @@ _pkcs1_sec_decrypt_variable(size_t *length, uint8_t *message,
 
   /* length is discovered in a side-channel silent way.
    * not_found goes to 0 when the terminator is found.
-   * offset strts at 3 as it includes the terminator and
-   * the fomat bytes already */
+   * offset starts at 3 as it includes the terminator and
+   * the format bytes already */
   offset = 3;
   for (i = 2; i < padded_message_length; i++)
     {

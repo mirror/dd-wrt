@@ -1,6 +1,6 @@
 C arm/ecc-secp256r1-redc.asm
 
-ifelse(<
+ifelse(`
    Copyright (C) 2013 Niels Möller
 
    This file is part of GNU Nettle.
@@ -28,34 +28,36 @@ ifelse(<
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
->) 
+')
 
 	.file "ecc-secp256r1-redc.asm"
 	.arm
 
-define(<RP>, <r1>)
+define(`RP', `r1')	C Overlaps T1 below
+define(`XP', `r2')
 
-define(<T0>, <r0>) C Overlaps unused modulo argument
-define(<T1>, <r2>)
-define(<T2>, <r3>)
-define(<T3>, <r4>)
-define(<T4>, <r5>)
-define(<T5>, <r6>)
-define(<T6>, <r7>)
-define(<T7>, <r8>)
-define(<F0>, <r10>)
-define(<F1>, <r11>)
-define(<F2>, <r12>)
-define(<F3>, <lr>)
+define(`T0', `r0')	C Overlaps unused modulo argument
+define(`T1', `r1')
+define(`T2', `r3')
+define(`T3', `r4')
+define(`T4', `r5')
+define(`T5', `r6')
+define(`T6', `r7')
+define(`T7', `r8')
+define(`F0', `r10')
+define(`F1', `r11')
+define(`F2', `r12')
+define(`F3', `lr')
 
 	C ecc_secp256r1_redc (const struct ecc_modulo *m, mp_limb_t *rp)
 	.text
 	.align 2
 
 PROLOGUE(_nettle_ecc_secp256r1_redc)
-	push	{r4,r5,r6,r7,r8,r10,r11,lr}
+	C Pushes RP last
+	push	{r1, r4,r5,r6,r7,r8,r10,r11,lr}
 
-	ldm	RP!, {T0,T1,T2,T3,T4,T5,T6,T7}
+	ldm	XP!, {T0,T1,T2,T3,T4,T5,T6,T7}
 
 	C Set <F3,F2,F1> to the high 4 limbs of (B^2-B+1)<T2,T1,T0>
 	C         T2 T1
@@ -88,7 +90,7 @@ PROLOGUE(_nettle_ecc_secp256r1_redc)
 	mov	T3, T6
 	adcs	T4, T7, F0
 
-	ldm	RP!, {T5,T6,T7}
+	ldm	XP!, {T5,T6,T7}
 	adcs	T5, T5, F1
 	adcs	T6, T6, F2
 	adcs	T7, T7, F3
@@ -112,7 +114,7 @@ PROLOGUE(_nettle_ecc_secp256r1_redc)
 	mov	T3, T6
 	adcs	T4, T7, F0
 
-	ldm	RP!, {T5,T6,T7}
+	ldm	XP!, {T5,T6,T7}
 	adcs	T5, T5, F1
 	adcs	T6, T6, F2
 	adcs	T7, T7, F3
@@ -143,7 +145,7 @@ PROLOGUE(_nettle_ecc_secp256r1_redc)
 	adcs	T5, T5, #0
 	adcs	T6, T6, T0
 	adcs	T7, T7, F0
-	ldm	RP!, {T0, T1}
+	ldm	XP!, {T0, T1}
 	mov	F3, #0
 	adcs	F1, F1, T0
 	adcs	F2, F2, T1
@@ -156,6 +158,8 @@ PROLOGUE(_nettle_ecc_secp256r1_redc)
 	adc	F3, F3, #0
 	rsb	F3, F3, #0
 
+	pop	{XP}	C Original RP
+
 	adcs	T0, T2, #0
 	adcs	T1, T3, #0
 	adcs	T2, T4, #0
@@ -166,8 +170,7 @@ PROLOGUE(_nettle_ecc_secp256r1_redc)
 	adcs	T6, F1, F3
 	adcs	T7, F2, #0
 
-	sub	RP, RP, #64
-	stm	RP, {T0,T1,T2,T3,T4,T5,T6,T7}
+	stm	XP, {T0,T1,T2,T3,T4,T5,T6,T7}
 
 	pop	{r4,r5,r6,r7,r8,r10,r11,pc}
 EPILOGUE(_nettle_ecc_secp256r1_redc)

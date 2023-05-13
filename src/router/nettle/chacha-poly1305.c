@@ -80,8 +80,8 @@ chacha_poly1305_set_nonce (struct chacha_poly1305_ctx *ctx,
 
   chacha_set_nonce96 (&ctx->chacha, nonce);
   /* Generate authentication key */
-  _chacha_core (u.x, ctx->chacha.state, CHACHA_ROUNDS);
-  _poly1305_set_key (&ctx->poly1305, u.subkey);
+  _nettle_chacha_core (u.x, ctx->chacha.state, CHACHA_ROUNDS);
+  _nettle_poly1305_set_key (&ctx->poly1305, u.subkey);
   /* For final poly1305 processing */
   memcpy (ctx->s.b, u.subkey + 16, 16);
   /* Increment block count */
@@ -91,7 +91,7 @@ chacha_poly1305_set_nonce (struct chacha_poly1305_ctx *ctx,
 }
 
 /* FIXME: Duplicated in poly1305-aes128.c */
-#define COMPRESS(ctx, data) _poly1305_block(&(ctx)->poly1305, (data), 1)
+#define COMPRESS(ctx, data) _nettle_poly1305_block(&(ctx)->poly1305, (data), 1)
 
 static void
 poly1305_update (struct chacha_poly1305_ctx *ctx,
@@ -107,7 +107,7 @@ poly1305_pad (struct chacha_poly1305_ctx *ctx)
     {
       memset (ctx->block + ctx->index, 0,
 	      POLY1305_BLOCK_SIZE - ctx->index);
-      _poly1305_block(&ctx->poly1305, ctx->block, 1);
+      _nettle_poly1305_block(&ctx->poly1305, ctx->block, 1);
       ctx->index = 0;
     }
 }
@@ -161,8 +161,8 @@ chacha_poly1305_digest (struct chacha_poly1305_ctx *ctx,
   LE_WRITE_UINT64 (buf, ctx->auth_size);
   LE_WRITE_UINT64 (buf + 8, ctx->data_size);
 
-  _poly1305_block (&ctx->poly1305, buf, 1);
+  _nettle_poly1305_block (&ctx->poly1305, buf, 1);
 
-  _poly1305_digest (&ctx->poly1305, &ctx->s);
+  _nettle_poly1305_digest (&ctx->poly1305, &ctx->s);
   memcpy (digest, &ctx->s.b, length);
 }

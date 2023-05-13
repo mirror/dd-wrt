@@ -263,6 +263,7 @@ define kernelfeatures
 		echo "CONFIG_IP6_NF_MANGLE=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_RAW is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_NAT=m" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_VXLAN is not set/CONFIG_VXLAN=m/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_JFFS2)" != "y" ]; then \
 		sed -i 's/\CONFIG_JFFS2=m/# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \

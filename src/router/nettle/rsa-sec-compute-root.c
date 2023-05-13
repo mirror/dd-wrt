@@ -184,7 +184,7 @@ _rsa_sec_compute_root (const struct rsa_private_key *key,
   sec_mod_mul (scratch_out, r_mod_q, qn, mpz_limbs_read (key->c), cn, pp, pn,
 	       scratch_out + cn + qn);
   cy = mpn_sub_n (r_mod_p, r_mod_p, scratch_out, pn);
-  cnd_add_n (cy, r_mod_p, pp, pn);
+  mpn_cnd_add_n (cy, r_mod_p, r_mod_p, pp, pn);
 
   /* Finally, compute x = r_mod_q + q r_mod_p' */
   sec_mul (scratch_out, qp, qn, r_mod_p, pn, scratch_out + pn + qn);

@@ -62,6 +62,13 @@ struct openssl_cipher_ctx {
   EVP_CIPHER_CTX *evp;
 };
 
+/* We use Openssl's EVP api for all openssl hashes. This API selects
+   platform-specific implementations if appropriate, e.g., using x86
+   AES-NI instructions. */
+struct openssl_hash_ctx {
+  EVP_MD_CTX *evp;
+};
+
 void
 nettle_openssl_init(void)
 {
@@ -291,31 +298,6 @@ nettle_openssl_gcm_aes256 = {
   openssl_evp_gcm_digest
 };
 
-/* Arcfour */
-static void
-openssl_arcfour128_set_encrypt_key(void *ctx, const uint8_t *key)
-{
-  openssl_evp_set_encrypt_key(ctx, key, EVP_rc4());
-}
-
-static void
-openssl_arcfour128_set_decrypt_key(void *ctx, const uint8_t *key)
-{
-  openssl_evp_set_decrypt_key(ctx, key, EVP_rc4());
-}
-
-const struct nettle_aead
-nettle_openssl_arcfour128 = {
-  "openssl arcfour128", sizeof(struct openssl_cipher_ctx),
-  1, 16, 0, 0,
-  openssl_arcfour128_set_encrypt_key,
-  openssl_arcfour128_set_decrypt_key,
-  NULL, NULL,
-  (nettle_crypt_func *)openssl_evp_encrypt,
-  (nettle_crypt_func *)openssl_evp_decrypt,
-  NULL,  
-};
-
 /* Blowfish */
 static void
 openssl_bf128_set_encrypt_key(void *ctx, const uint8_t *key)
@@ -383,76 +365,47 @@ nettle_openssl_cast128 = {
 
 /* Hash functions */
 
-/* md5 */
-static nettle_hash_init_func openssl_md5_init;
 static void
-openssl_md5_init(void *ctx)
-{
-  MD5_Init(ctx);
-}
-
-static nettle_hash_update_func openssl_md5_update;
-static void
-openssl_md5_update(void *ctx,
-		   size_t length,
-		   const uint8_t *src)
-{
-  MD5_Update(ctx, src, length);
-}
-
-static nettle_hash_digest_func openssl_md5_digest;
-static void
-openssl_md5_digest(void *ctx,
-		   size_t length, uint8_t *dst)
-{
-  assert(length == SHA_DIGEST_LENGTH);
-  MD5_Final(dst, ctx);
-  MD5_Init(ctx);
-}
-
-const struct nettle_hash
-nettle_openssl_md5 = {
-  "openssl md5", sizeof(SHA_CTX),
-  SHA_DIGEST_LENGTH, SHA_CBLOCK,
-  openssl_md5_init,
-  openssl_md5_update,
-  openssl_md5_digest
-};
-
-/* sha1 */
-static nettle_hash_init_func openssl_sha1_init;
-static void
-openssl_sha1_init(void *ctx)
-{
-  SHA1_Init(ctx);
-}
-
-static nettle_hash_update_func openssl_sha1_update;
-static void
-openssl_sha1_update(void *ctx,
+openssl_hash_update(void *p,
 		    size_t length,
 		    const uint8_t *src)
 {
-  SHA1_Update(ctx, src, length);
+  struct openssl_hash_ctx *ctx = p;
+  EVP_DigestUpdate(ctx->evp, src, length);
 }
 
-static nettle_hash_digest_func openssl_sha1_digest;
-static void
-openssl_sha1_digest(void *ctx,
-		    size_t length, uint8_t *dst)
-{
-  assert(length == SHA_DIGEST_LENGTH);
-  SHA1_Final(dst, ctx);
-  SHA1_Init(ctx);
-}
-
-const struct nettle_hash
-nettle_openssl_sha1 = {
-  "openssl sha1", sizeof(SHA_CTX),
-  SHA_DIGEST_LENGTH, SHA_CBLOCK,
-  openssl_sha1_init,
-  openssl_sha1_update,
-  openssl_sha1_digest
+#define OPENSSL_HASH(NAME, name)					\
+static void								\
+openssl_##name##_init(void *p)						\
+{									\
+  struct openssl_hash_ctx *ctx = p;					\
+  if ((ctx->evp = EVP_MD_CTX_new()) == NULL)			\
+    return;								\
+									\
+  EVP_DigestInit(ctx->evp, EVP_##name());				\
+}									\
+									\
+static void								\
+openssl_##name##_digest(void *p,					\
+		    size_t length, uint8_t *dst)			\
+{									\
+  struct openssl_hash_ctx *ctx = p;					\
+  assert(length == NAME##_DIGEST_LENGTH);				\
+									\
+  EVP_DigestFinal(ctx->evp, dst, NULL);					\
+  EVP_DigestInit(ctx->evp, EVP_##name());				\
+}									\
+									\
+const struct nettle_hash						\
+nettle_openssl_##name = {						\
+  "openssl " #name, sizeof(struct openssl_hash_ctx),			\
+  NAME##_DIGEST_LENGTH, NAME##_CBLOCK,					\
+  openssl_##name##_init,						\
+  openssl_hash_update,							\
+  openssl_##name##_digest						\
 };
-  
+
+OPENSSL_HASH(MD5, md5)
+OPENSSL_HASH(SHA, sha1)
+
 #endif /* WITH_OPENSSL */

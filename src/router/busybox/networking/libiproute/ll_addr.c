@@ -38,7 +38,7 @@ const char* FAST_FUNC ll_addr_n2a(unsigned char *addr, int alen, int type, char 
 	return buf;
 }
 
-int FAST_FUNC ll_addr_a2n(unsigned char *lladdr, int len, char *arg)
+int FAST_FUNC ll_addr_a2n(unsigned char *lladdr, int len, const char *arg)
 {
 	int i;
 

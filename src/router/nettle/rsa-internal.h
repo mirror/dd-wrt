@@ -78,11 +78,11 @@ _rsa_sec_compute_root(const struct rsa_private_key *key,
                       mp_limb_t *scratch);
 
 /* Safe side-channel silent variant, using RSA blinding, and checking the
- * result after CRT. */
+ * result after CRT. In-place calls, with x == m, is allowed. */
 int
 _rsa_sec_compute_root_tr(const struct rsa_public_key *pub,
 			 const struct rsa_private_key *key,
 			 void *random_ctx, nettle_random_func *random,
-			 mp_limb_t *x, const mp_limb_t *m, size_t mn);
+			 mp_limb_t *x, const mp_limb_t *m);
 
 #endif /* NETTLE_RSA_INTERNAL_H_INCLUDED */

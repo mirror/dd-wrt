@@ -12,26 +12,30 @@ test_ecdsa (const struct ecc_curve *ecc,
 	    const char *r, const char *s)
 {
   struct dsa_signature ref;
+  mpz_t t;
   mpz_t z;
   mpz_t k;
   mp_limb_t *rp = xalloc_limbs (ecc->p.size);
   mp_limb_t *sp = xalloc_limbs (ecc->p.size);
+  mp_limb_t *zp = xalloc_limbs (ecc->p.size);
+  mp_limb_t *kp = xalloc_limbs (ecc->p.size);
   mp_limb_t *scratch = xalloc_limbs (ecc_ecdsa_sign_itch (ecc));
 
   dsa_signature_init (&ref);
 
   mpz_init_set_str (z, sz, 16);
   mpz_init_set_str (k, sk, 16);
+  mpz_limbs_copy (zp, z, ecc->p.size);
+  mpz_limbs_copy (kp, k, ecc->p.size);
 
-  ecc_ecdsa_sign (ecc, mpz_limbs_read_n (z, ecc->p.size),
-		  mpz_limbs_read_n (k, ecc->p.size),
+  ecc_ecdsa_sign (ecc, zp, kp,
 		  h->length, h->data, rp, sp, scratch);
 
   mpz_set_str (ref.r, r, 16);
   mpz_set_str (ref.s, s, 16);
 
-  if (mpz_limbs_cmp (ref.r, rp, ecc->p.size) != 0
-      || mpz_limbs_cmp (ref.s, sp, ecc->p.size) != 0)
+  if (mpz_cmp (ref.r, mpz_roinit_n (t, rp, ecc->p.size)) != 0
+      || mpz_cmp (ref.s, mpz_roinit_n (t, sp, ecc->p.size)) != 0)
     {
       fprintf (stderr, "_ecdsa_sign failed, bit_size = %u\n", ecc->p.bit_size);
       fprintf (stderr, "r     = ");
@@ -48,6 +52,8 @@ test_ecdsa (const struct ecc_curve *ecc,
 
   free (rp);
   free (sp);
+  free (zp);
+  free (kp);
   free (scratch);
 
   dsa_signature_clear (&ref);
@@ -58,6 +64,19 @@ test_ecdsa (const struct ecc_curve *ecc,
 void
 test_main (void)
 {
+  /* Producing the signature for corresponding test in
+     ecdsa-verify-test.c, with special u1 and u2. */
+  test_ecdsa (&_nettle_secp_224r1,
+	      "99b5b787484def12894ca507058b3bf5"
+	      "43d72d82fa7721d2e805e5e6",
+	      "2",
+	      SHEX("cdb887ac805a3b42e22d224c85482053"
+		   "16c755d4a736bb2032c92553"),
+	      "706a46dc76dcb76798e60e6d89474788"
+	      "d16dc18032d268fd1a704fa6", /* r */
+	      "3a41e1423b1853e8aa89747b1f987364"
+	      "44705d6d6d8371ea1f578f2e"); /* s */
+
   /* Test cases for the smaller groups, verified with a
      proof-of-concept implementation done for Yubico AB. */
   test_ecdsa (&_nettle_secp_192r1,

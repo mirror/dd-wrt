@@ -32,6 +32,14 @@
 //config:	help
 //config:	Short form of "ip link"
 //config:
+//config:config VXLAN
+//config:	bool "vxlan support"
+//config:	default y
+//config:	select FEATURE_VXLAN
+//config:	depends on IPLINK
+//config:	help
+//config:	vxlan support for iplink"
+//config:
 //config:config IPROUTE
 //config:	bool "iproute (15 kb)"
 //config:	default y
@@ -158,7 +166,7 @@
 //usage:#define iplink_full_usage "\n"
 //usage:       "iplink add [link IFACE] IFACE [address MAC] type TYPE [ARGS]\n"
 //usage:       "iplink delete IFACE type TYPE [ARGS]\n"
-//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM\n"
+//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM | vxlan VXLANARGS\n"
 //usage:       "	VLANARGS := id VLANID [protocol 802.1q|802.1ad] [reorder_hdr on|off]\n"
 //usage:       "		[gvrp on|off] [mvrp on|off] [loose_binding on|off]\n"
 //usage:       "iplink show [IFACE]"
@@ -262,7 +270,7 @@
 //--------------123456789.123456789.123456789.123456789.123456789.123456789.123456789.123....79
 //usage:#define iptunnel_trivial_usage
 //usage:       "add|change|del|show [NAME]\n"
-//usage:       "	[mode ipip|gre|sit] [remote ADDR] [local ADDR] [ttl TTL]"
+//usage:       "	[mode ipip|gre|sit|etherip] [remote ADDR] [local ADDR] [ttl TTL]"
 //usage:#define iptunnel_full_usage "\n\n"
 //usage:       "iptunnel add|change|del|show [NAME]\n"
 //usage:       "	[mode ipip|gre|sit|etherip] [remote ADDR] [local ADDR]\n"
@@ -306,17 +314,17 @@
 //usage:#define ip_full_usage "\n\n"
 //usage:       "OPTIONS := -f[amily] inet|inet6|link | -o[neline]\n"
 //usage:	IF_FEATURE_IP_ADDRESS("\n"
-//usage:	"ip addr "ipaddr_trivial_usage)
+//usage:	"ip addr "ipaddr_full_usage)
 //usage:	IF_FEATURE_IP_ROUTE("\n"
-//usage:	"ip route "iproute_trivial_usage)
+//usage:	"ip route "iproute_full_usage)
 //usage:	IF_FEATURE_IP_LINK("\n"
-//usage:	"ip link "iplink_trivial_usage)
+//usage:	"ip link "iplink_full_usage)
 //usage:	IF_FEATURE_IP_TUNNEL("\n"
-//usage:	"ip tunnel "iptunnel_trivial_usage)
+//usage:	"ip tunnel "iptunnel_full_usage)
 //usage:	IF_FEATURE_IP_NEIGH("\n"
-//usage:	"ip neigh "ipneigh_trivial_usage)
+//usage:	"ip neigh "ipneigh_full_usage)
 //usage:	IF_FEATURE_IP_RULE("\n"
-//usage:	"ip rule "iprule_trivial_usage)
+//usage:	"ip rule "iprule_full_usage)
 
 #include "libbb.h"
 

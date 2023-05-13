@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Copyright (C) 2000, 2001, 2002, 2004, 2005, 2011, 2012  Niels Möller
+# Copyright (C) 2000-2002, 2004, 2005, 2011, 2012, 2016, 2020  Niels Möller
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ if [ -n "$TEST_SHLIB_DIR" ] ; then
   # For Windows
   PATH="${TEST_SHLIB_DIR}:${PATH}"
   # For Wine
-  WINEPATH="${TEST_SHLIB_DIR}"
+  WINEPATH="${TEST_SHLIB_DIR}${WINEPATH:+;$WINEPATH}"
 
   export LD_LIBRARY_PATH
   export DYLD_LIBRARY_PATH
@@ -54,6 +54,8 @@ find_program () {
 	*)
 	  if [ -x "$1" ] ; then
 	      echo "./$1"
+	  elif [ -x "$1.exe" ] ; then
+	      echo "./$1.exe"
 	  else
 	      echo "$srcdir/$1"
 	  fi
@@ -116,11 +118,7 @@ do
   shift
 done
 
-if [ $# -eq 0 ] ; then
-  for f in *-test; do test_program "./$f"; done
-else
-  for f in "$@" ; do test_program `find_program "$f"`; done
-fi
+for f in "$@" ; do test_program `find_program "$f"`; done
 
 if [ $failed -eq 0 ] ; then
   banner="All $all tests passed"
