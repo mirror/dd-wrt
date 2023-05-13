@@ -66,9 +66,16 @@ for i in $(seq 1 $tunnels); do
 		if [ $($nv get oet${i}_proto) -eq 0 ]; then
 			$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j $ACCEPT >/dev/null 2>&1
 		fi
-		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]; then
+		if [ $($nv get oet${i}_proto) -eq 3 ]; then
+			$ipt -I INPUT -p udp --sport oet${i}_srcmin:oet${i}_srcmax  -j $ACCEPT >/dev/null 2>&1
+		fi
+		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ] && `$nv get oet${i}_proto` -ne 3 ]]; then
 			$ipt -I FORWARD -i oet${i} -j $ACCEPT >/dev/null 2>&1
 			$ipt -I INPUT -i oet${i} -j $ACCEPT >/dev/null 2>&1
+		fi
+		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -eq 3 ]]; then
+			$ipt -I FORWARD -i vxlan${i} -j $ACCEPT >/dev/null 2>&1
+			$ipt -I INPUT -i vxlan${i} -j $ACCEPT >/dev/null 2>&1
 		fi
 		if [ $($nv get oet${i}_proto) -eq 2 ] && [ $($nv get oet${i}_obf) -eq 1 ]; then
 			insmod xt_WGOBFS
