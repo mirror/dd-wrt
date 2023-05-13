@@ -541,16 +541,16 @@ static struct vxlanhdr *vxlan_gro_remcsum(struct sk_buff *skb,
 	return vh;
 }
 
-static struct sk_buff *vxlan_gro_receive(struct sock *sk,
-					 struct list_head *head,
-					 struct sk_buff *skb)
+static struct sk_buff **vxlan_gro_receive(struct sk_buff **head,
+					  struct sk_buff *skb,
+					  struct udp_offload *uoff)
 {
-	struct sk_buff *pp = NULL;
-	struct sk_buff *p;
+	struct sk_buff *p, **pp = NULL;
 	struct vxlanhdr *vh, *vh2;
 	unsigned int hlen, off_vx;
 	int flush = 1;
-	struct vxlan_sock *vs = rcu_dereference_sk_user_data(sk);
+	struct vxlan_sock *vs = container_of(uoff, struct vxlan_sock,
+					     udp_offloads);
 	u32 flags;
 	struct gro_remcsum grc;
 
@@ -583,7 +583,7 @@ static struct sk_buff *vxlan_gro_receive(struct sock *sk,
 
 	flush = 0;
 
-	list_for_each_entry(p, head, list) {
+	for (p = *head; p; p = p->next) {
 		if (!NAPI_GRO_CB(p)->same_flow)
 			continue;
 
