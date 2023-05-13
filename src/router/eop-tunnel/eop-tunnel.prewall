@@ -255,6 +255,29 @@ for i in $(seq 1 $tunnels); do
     			fi
 			echo enable > ${i}.pid
 		fi
+		# vxlan
+		if [ $($nv get oet${i}_proto) -eq 3 ]; then
+			insmod udp_tunnel
+			insmod ip6_udp_tunnel
+			insmod vxlan
+			logger -p user.info "Enable VXLAN id oet${i} interface oet${i} on address $($nv get oet${i}_local) with peer $($nv get oet${i}_rem)"
+			if [[ ! -z "$($nv get oet${i}_group)" ]]; then
+				$IP link add vxlan${i} type vxlan id oet${i}_id group $($nv get oet${i}_group) dev $($nv get oet${i}_dev) dstport $($nv get oet${i}_dstport) srcport $($nv get oet${i}_srcmin) $($nv get oet${i}_srcmax)
+			else
+				$IP link add vxlan${i} type vxlan id oet${i}_id remote $($nv get oet${i}_rem) local $($nv get oet${i}_local) dstport $($nv get oet${i}_dstport) srcport $($nv get oet${i}_srcmin) $($nv get oet${i}_srcmax)
+			fi
+			if [ $($nv get oet${i}_bridged) -eq 1 ]; then
+				ifconfig vxlan${i} up >/dev/null 2>&1
+				ifconfig vxlan${i} promisc >/dev/null 2>&1
+				brctl addif $(getbridge vxlan${i}) vxlan${i} >/dev/null 2>&1
+				setportprio $(getbridge vxlan${i}) vxlan${i}
+				emf add iface $(getbridge vxlan${i}) vxlan${i} >/dev/null 2>&1
+			else
+				ifconfig vxlan${i} promisc up >/dev/null 2>&1
+				$IP addr add $($nv get vxlan${i}_ipaddr)/$(getmask $($nv get vxlan${i}_netmask)) dev oet${i} >/dev/null 2>&1
+			fi
+			echo enable > ${i}.pid
+		fi
 	fi
 done
 service set_routes start
