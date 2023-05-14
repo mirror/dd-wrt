@@ -71,7 +71,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<div class=\"setting\">\n");
 			{
 				show_caption(wp, "label", "eoip.proto", NULL);
-				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, %s)\">\n", tun, tun, nvram_nget("oet%d_bridged", tun));
+				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, %s)\">\n", tun, tun, nvram_nget("oet%d_bridged", tun),, nvram_nget("oet%d_vxlanbridged", tun));
 
 				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
@@ -1059,7 +1059,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button red_btn\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
-		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun));
+		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun) ,nvram_nget("vxlan%d_bridged", tun));
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
