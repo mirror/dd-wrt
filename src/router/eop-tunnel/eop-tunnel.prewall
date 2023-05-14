@@ -262,86 +262,86 @@ for i in $(seq 1 $tunnels); do
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
 			insmod vxlan
-			logger -p user.info "Enable VXLAN id oet${i} interface vxlan${i}"
+			logger -p user.info "Enable VXLAN id $($nv get oet${i}) interface vxlan${i}"
 			VXLANARG=""
-			#detect ipv6 addr handling
+			# detect ipv6 addr handling
 			if [[ ! -z "$($nv get oet${i}_mcast)" && "$($nv get oet${i}_mcast)" == "1" ]]; then
-				if [[ $(expr $($nv get oet${i}_group) : ".*") -ge 16 ]]; then
-					VXLANARG += "-6"
-				endif
+				[[ ! -z $($nv get oet${i}_rem6) ]] && if [[ "$(expr $($nv get oet${i}_group) : '.*')" -ge 16 ]]; then
+					VXLANARG="$VXLANARG -6"
+				fi
 			else
-				# detect ipv6 addr
-				if [[ $(expr $($nv get oet${i}_rem6) : ".*") -ge 16 ]]; then
-					VXLANARG += "-6"
-				endif			
-				if [[ $(expr $($nv get oet${i}_local6) : ".*") -ge 16 ]]; then
-					VXLANARG += "-6"
-				endif
+				[[ ! -z $($nv get oet${i}_rem6) ]] && if [[ "$(expr $($nv get oet${i}_rem6) : '.*')" -ge 16 ]]; then
+					VXLANARG="$VXLANARG -6"
+				fi	
+				[[ ! -z $($nv get oet${i}_local6) ]] && if [[ "$(expr $($nv get oet${i}_local6) : '.*')" -ge 16 ]]; then
+					VXLANARG="$VXLANARG -6"
+				fi
 			fi
-			VXLANARG += "link add vxlan${i} type vxlan id oet${i}_id"
-			if [[ ! -z "$($nv get oet${i}_mcast)" ]]; then
-				VXLANARG += "group $($nv get oet${i}_group)"
+			VXLANARG="$VXLANARG link add vxlan${i} type vxlan id $($nv get oet${i}_id)"
+			if [[ ! -z "$($nv get oet${i}_mcast)" && "$($nv get oet${i}_mcast)" == "1" ]]; then
+				VXLANARG="$VXLANARG group $($nv get oet${i}_group)"
 			else
-				VXLANARG += "remote $($nv get oet${i}_rem6)"
+				VXLANARG="$VXLANARG remote $($nv get oet${i}_rem6)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_local6)" ]]; then
-				VXLANARG += "local $($nv get oet${i}_local6)"
+				VXLANARG="$VXLANARG local $($nv get oet${i}_local6)"
 			fi
-			if [[ ! -z "$($nv get oet${i}_dev)" || "$($nv get oet${i}_dev)" != "any" ]]; then
-				VXLANARG += "dev $($nv get oet${i}_dev)"
+			if [[ ! -z "$($nv get oet${i}_dev)" && "$($nv get oet${i}_dev)" != "any" ]]; then
+				VXLANARG="$VXLANARG dev $($nv get oet${i}_dev)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_dstport)" ]]; then
-				VXLANARG += "dstport $($nv get oet${i}_dstport)"
+				VXLANARG="$VXLANARG dstport $($nv get oet${i}_dstport)"
 			else
 				# defaults to 4789
-				VXLANARG += "dstport 0"
-			endif
+				VXLANARG="$VXLANARG dstport 0"
+			fi
 			if [[ ! -z "$($nv get oet${i}_srcport)" && "$($nv get oet${i}_srcmin)" != "0" && "$($nv get oet${i}_srcmax)" != "0" ]]; then
-				VXLANARG += "srcport $($nv get oet${i}_srcmin) $($nv get oet${i}_srcmax)"
+				VXLANARG="$VXLANARG srcport $($nv get oet${i}_srcmin) $($nv get oet${i}_srcmax)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_ttl)" && "$($nv get oet${i}_ttl)" != "0" ]]; then			
-				VXLANARG += "ttl $($nv get oet${i}_ttl)"
+				VXLANARG="$VXLANARG ttl $($nv get oet${i}_ttl)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_tos)" && "$($nv get oet${i}_tos)" != "0" ]]; then			
-				VXLANARG += "tos $($nv get oet${i}_tos)"
+				VXLANARG="$VXLANARG tos $($nv get oet${i}_tos)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_lrn)" && "$($nv get oet${i}_lrn)" == "1" ]]; then			
-				VXLANARG += "learning"
+				VXLANARG="$VXLANARG learning"
 			else
-				VXLANARG += "nolearning"
+				VXLANARG="$VXLANARG nolearning"
 			fi
 			if [[ ! -z "$($nv get oet${i}_proxy)" && "$($nv get oet${i}_proxy)" == "1" ]]; then			
-				VXLANARG += "proxy"
+				VXLANARG="$VXLANARG proxy"
 			else
-				VXLANARG += "noproxy"
+				VXLANARG="$VXLANARG noproxy"
 			fi
-			if [[ ! -z "$($nv get oet${i}_rsc)" && "$($nv get oet${i}_rsc)" == "1"]]; then			
-				VXLANARG += "rsc"
+			if [[ ! -z $($nv get oet${i}_rsc) && "$($nv get oet${i}_rsc)" == "1" ]]; then			
+				VXLANARG="$VXLANARG rsc"
 			else
-				VXLANARG += "norsc"
+				VXLANARG="$VXLANARG norsc"
 			fi
-			if [[ ! -z "$($nv get oet${i}_l2miss)" && "$($nv get oet${i}_l2miss)" == "1"]]; then			
-				VXLANARG += "l2miss"
+			if [[ ! -z "$($nv get oet${i}_l2miss)" && "$($nv get oet${i}_l2miss)" == "1" ]]; then			
+				VXLANARG="$VXLANARG l2miss"
 			else
-				VXLANARG += "nol2miss"
+				VXLANARG="$VXLANARG nol2miss"
 			fi
 			if [[ ! -z "$($nv get oet${i}_l3miss)" && "$($nv get oet${i}_l3miss)" == "1" ]]; then			
-				VXLANARG += "l3miss"
+				VXLANARG="$VXLANARG l3miss"
 			else
-				VXLANARG += "nol3miss"
+				VXLANARG="$VXLANARG nol3miss"
 			fi
 			if [[ ! -z "$($nv get oet${i}_ageing)" ]]; then			
-				VXLANARG += "ageing $($nv get oet${i}_ageing)"
+				VXLANARG="$VXLANARG ageing $($nv get oet${i}_ageing)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_df)" && "$($nv get oet${i}_df)" == "1" ]]; then			
-				VXLANARG += "df"
+				VXLANARG="$VXLANARG df"
 			fi
-			if [[ ! -z "$($nv get oet${i}_fl)" && "$($nv get oet${i}_fl)" -ge 0 ]]; then			
-				VXLANARG += "flowlabel $($nv get oet${i}_fl)"
+			[[ ! -z $($nv get oet${i}_fl) ]] && if [[ "$($nv get oet${i}_fl)" -ge 0 ]]; then			
+				VXLANARG="$VXLANARG flowlabel $($nv get oet${i}_fl)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_gbp)" && "$($nv get oet${i}_gbp)" == "1" ]]; then			
-				VXLANARG += "gbp"
+				VXLANARG="$VXLANARG gbp"
 			fi
+			echo $IP $VXLANARG
 			$IP $VXLANARG
 			if [ $($nv get oet${i}_bridged) -eq 1 ]; then
 				ifconfig vxlan${i} up >/dev/null 2>&1
@@ -351,7 +351,7 @@ for i in $(seq 1 $tunnels); do
 				emf add iface $(getbridge vxlan${i}) vxlan${i} >/dev/null 2>&1
 			else
 				ifconfig vxlan${i} promisc up >/dev/null 2>&1
-				$IP addr add $($nv get vxlan${i}_ipaddr)/$(getmask $($nv get vxlan${i}_netmask)) dev oet${i} >/dev/null 2>&1
+				$IP addr add $($nv get vxlan${i}_ipaddr)/$(getmask $($nv get vxlan${i}_netmask)) dev vxlan${i} >/dev/null 2>&1
 			fi
 			echo enable > ${i}.pid
 		fi
