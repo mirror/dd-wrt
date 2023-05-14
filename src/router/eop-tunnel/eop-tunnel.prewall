@@ -343,7 +343,7 @@ for i in $(seq 1 $tunnels); do
 			fi
 			echo $IP $VXLANARG
 			$IP $VXLANARG
-			if [ $($nv get oet${i}_bridged) -eq 1 ]; then
+			if [ $($nv get vxlan${i}_bridged) -eq 1 ]; then
 				ifconfig vxlan${i} up >/dev/null 2>&1
 				ifconfig vxlan${i} promisc >/dev/null 2>&1
 				brctl addif $(getbridge vxlan${i}) vxlan${i} >/dev/null 2>&1
