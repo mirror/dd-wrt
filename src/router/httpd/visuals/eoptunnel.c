@@ -1027,9 +1027,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idshowmcast%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idremoteip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idlocalip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
 		websWrite(wp, "toggle_layer_ext(document.eop.oet%d_en, 'idmcast%d', 'idremoteip6%d', %s);\n", tun, tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idvxlansettings%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idremoteip6%d',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "false" : nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showobf',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_obf", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_wdog', %s);\n", tun, tun, (nvram_nmatchi(1, "oet%d_failgrp", tun) || nvram_nmatchi(1, "oet%d_wdog", tun)) ? "true" : "false");
