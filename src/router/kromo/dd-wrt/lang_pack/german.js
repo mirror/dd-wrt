@@ -1953,6 +1953,7 @@ eoip.tunnel="Tunnel";
 eoip.legend="Ethernet Über IP tunneln";
 eoip.srv="EoIP Tunnel";
 eoip.genkey="Erzeuge Schlüssel";
+eoip.mcast_group="Multicast Gruppe";
 eoip.wireguard_oet_natout ="NAT über Tunnel";
 eoip.wireguard_showadvanced="Erweiterte Einstellungen";
 eoip.wireguard_rtupscript="Route up Skript";
