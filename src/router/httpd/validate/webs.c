@@ -2029,6 +2029,7 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_tos", i);
 		copytonv(wp, "oet%d_ageing", i);
 		copytonv(wp, "oet%d_mcast", i);
+		copytonv(wp, "oet%d_fl", i);
 		copytonv_checkbox(wp, "oet%d_lrn", i);
 		copytonv_checkbox(wp, "oet%d_proxy", i);
 		copytonv_checkbox(wp, "oet%d_rsc", i);
@@ -2477,6 +2478,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("l2miss", i, i - 1);
 		copytunvalue("l3miss", i, i - 1);
 		copytunvalue("df", i, i - 1);
+		copytunvalue("fl", i, i - 1);
 #ifdef HAVE_WIREGUARD
 		copytunvalue("obf", i, i - 1);
 		copytunvalue("obfkey", i, i - 1);
@@ -2550,7 +2552,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("l2miss", tunnels);
 	deltunvalue("l3miss", tunnels);
 	deltunvalue("df", tunnels);
-
+	deltunvalue("fl", tunnels);
 #ifdef HAVE_WIREGUARD
 	deltunvalue("obf", tunnels);
 	deltunvalue("obfkey", tunnels);
