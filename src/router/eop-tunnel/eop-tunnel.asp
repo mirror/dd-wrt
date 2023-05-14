@@ -148,11 +148,11 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 		show_layer_ext(F, "idvxlanbridged" + index, false);
 	} else {
 		show_layer_ext(F, "idwireguard" + index, false);
-		show_layer_ext(F, "idl2support" + index, true);
 		show_layer_ext(F, "idwginput" + index, false);
 		if (value == 3) {
 			show_layer_ext(F, "idshowmcast" + index, true);
 			show_layer_ext(F, "idlocalip" + index, false);
+			show_layer_ext(F, "idl2support" + index, false);
 			show_layer_ext(F, "idlocalip6" + index, true);
 			show_layer_ext(F, "idbridged" + index, false);
 			if (vxlanbrvalue == 1) {
@@ -161,6 +161,7 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 				show_layer_ext(F, "idvxlanbridged" + index, true);
 			}
 		} else {
+			show_layer_ext(F, "idl2support" + index, true);
 			show_layer_ext(F, "idshowmcast" + index, false);
 			show_layer_ext(F, "idlocalip" + index, false);
 			show_layer_ext(F, "idlocalip6" + index, false);
