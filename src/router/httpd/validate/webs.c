@@ -967,7 +967,7 @@ char *copytonv_checkbox(webs_t wp, const char *fmt, ...)
 	if (wl)
 		nvram_set(varbuf, wl);
 	else
-		nvram_unset(varbuf, "0");
+		nvram_set(varbuf, "0");
 	return wl;
 }
 
