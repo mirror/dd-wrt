@@ -71,7 +71,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<div class=\"setting\">\n");
 			{
 				show_caption(wp, "label", "eoip.proto", NULL);
-				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, %s, %s)\">\n", tun, tun, nvram_nget("oet%d_bridged", tun), nvram_nget("oet%d_vxlanbridged", tun));
+				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, %s, %s)\">\n", tun, tun, nvram_nget("oet%d_bridged", tun), nvram_nget("vxlan%d_bridged", tun));
 
 				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
