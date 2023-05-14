@@ -2274,7 +2274,7 @@ static void deltunvalue_prefix(char *prefix, char *valuename, int tun)
 
 static void deltunvalue(char *valuename, int tun)
 {
-	deltunvalue("oet", valuename, tun);
+	deltunvalue_prefix("oet", valuename, tun);
 }
 
 void add_tunnel(webs_t wp)
