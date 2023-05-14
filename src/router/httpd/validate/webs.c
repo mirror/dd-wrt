@@ -2028,6 +2028,7 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_ttl", i);
 		copytonv(wp, "oet%d_tos", i);
 		copytonv(wp, "oet%d_ageing", i);
+		copytonv(wp, "oet%d_mcast", i);
 		copytonv_checkbox(wp, "oet%d_lrn", i);
 		copytonv_checkbox(wp, "oet%d_proxy", i);
 		copytonv_checkbox(wp, "oet%d_rsc", i);
@@ -2469,6 +2470,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("ttl", i, i - 1);
 		copytunvalue("tos", i, i - 1);
 		copytunvalue("ageing", i, i - 1);
+		copytunvalue("mcast", i, i - 1);
 		copytunvalue("lrn", i, i - 1);
 		copytunvalue("proxy", i, i - 1);
 		copytunvalue("rsc", i, i - 1);
@@ -2531,7 +2533,6 @@ void del_tunnel(webs_t wp)
 	deltunvalue("proto", tunnels);
 	deltunvalue("bridged", tunnels);
 	deltunvalue("port", tunnels);
-
 	deltunvalue("rem6", tunnels);
 	deltunvalue("local6", tunnels);
 	deltunvalue("group", tunnels);
@@ -2542,6 +2543,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("ttl", tunnels);
 	deltunvalue("tos", tunnels);
 	deltunvalue("ageing", tunnels);
+	deltunvalue("mcast", tunnels);
 	deltunvalue("lrn", tunnels);
 	deltunvalue("proxy", tunnels);
 	deltunvalue("rsc", tunnels);
