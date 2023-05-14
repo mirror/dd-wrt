@@ -2036,6 +2036,17 @@ static void vxlan_xmit_one(struct sk_buff *skb, struct net_device *dev,
 				flags |= VXLAN_F_UDP_CSUM;
 			else
 				flags &= ~VXLAN_F_UDP_CSUM;
+		} else {
+			if (vxlan->cfg.df == VXLAN_DF_SET) {
+				df = htons(IP_DF);
+			} else if (vxlan->cfg.df == VXLAN_DF_INHERIT) {
+				struct ethhdr *eth = eth_hdr(skb);
+
+				if (ntohs(eth->h_proto) == ETH_P_IPV6 ||
+				    (ntohs(eth->h_proto) == ETH_P_IP &&
+				     old_iph->frag_off & htons(IP_DF)))
+					df = htons(IP_DF);
+			}
 		}
 
 		memset(&fl4, 0, sizeof(fl4));
@@ -2631,6 +2642,7 @@ static const struct nla_policy vxlan_policy[IFLA_VXLAN_MAX + 1] = {
 	[IFLA_VXLAN_REMCSUM_RX]	= { .type = NLA_U8 },
 	[IFLA_VXLAN_GBP]	= { .type = NLA_FLAG, },
 	[IFLA_VXLAN_REMCSUM_NOPARTIAL]	= { .type = NLA_FLAG },
+	[IFLA_VXLAN_DF]		= { .type = NLA_U8 },
 };
 
 static int vxlan_validate(struct nlattr *tb[], struct nlattr *data[])
@@ -2663,6 +2675,15 @@ static int vxlan_validate(struct nlattr *tb[], struct nlattr *data[])
 		if (ntohs(p->high) < ntohs(p->low)) {
 			pr_debug("port range %u .. %u not valid\n",
 				 ntohs(p->low), ntohs(p->high));
+			return -EINVAL;
+		}
+	}
+
+	if (data[IFLA_VXLAN_DF]) {
+		enum ifla_vxlan_df df = nla_get_u8(data[IFLA_VXLAN_DF]);
+
+		if (df < 0 || df > VXLAN_DF_MAX) {
+			pr_debug("Invalid DF attribute");
 			return -EINVAL;
 		}
 	}
@@ -2977,6 +2998,7 @@ static int vxlan_newlink(struct net *src_net, struct net_device *dev,
 	if (data[IFLA_VXLAN_TTL])
 		conf.ttl = nla_get_u8(data[IFLA_VXLAN_TTL]);
 
+
 	if (!data[IFLA_VXLAN_LEARNING] || nla_get_u8(data[IFLA_VXLAN_LEARNING]))
 		conf.flags |= VXLAN_F_LEARN;
 
@@ -3040,6 +3062,9 @@ static int vxlan_newlink(struct net *src_net, struct net_device *dev,
 	if (tb[IFLA_MTU])
 		conf.mtu = nla_get_u32(tb[IFLA_MTU]);
 
+	if (data[IFLA_VXLAN_DF])
+		conf.df = nla_get_u8(data[IFLA_VXLAN_DF]);
+
 	err = vxlan_dev_configure(src_net, dev, &conf);
 	switch (err) {
 	case -ENODEV:
@@ -3075,6 +3100,7 @@ static size_t vxlan_get_size(const struct net_device *dev)
 		nla_total_size(sizeof(struct in6_addr)) + /* IFLA_VXLAN_LOCAL{6} */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_TTL */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_TOS */
+		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_DF */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_LEARNING */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_PROXY */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_RSC */
@@ -3138,6 +3164,7 @@ static int vxlan_fill_info(struct sk_buff *skb, const struct net_device *dev)
 
 	if (nla_put_u8(skb, IFLA_VXLAN_TTL, vxlan->cfg.ttl) ||
 	    nla_put_u8(skb, IFLA_VXLAN_TOS, vxlan->cfg.tos) ||
+	    nla_put_u8(skb, IFLA_VXLAN_DF, vxlan->cfg.df) ||
 	    nla_put_u8(skb, IFLA_VXLAN_LEARNING,
 			!!(vxlan->flags & VXLAN_F_LEARN)) ||
 	    nla_put_u8(skb, IFLA_VXLAN_PROXY,
