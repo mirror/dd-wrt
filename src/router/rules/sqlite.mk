@@ -11,3 +11,4 @@ sqlite-install:
 	rm -rf $(INSTALLDIR)/sqlite/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/sqlite/usr/lib/*.a
 	rm -rf $(INSTALLDIR)/sqlite/usr/share
+	rm -rf $(INSTALLDIR)/sqlite/usr/bin
