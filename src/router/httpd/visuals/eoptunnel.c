@@ -860,7 +860,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				char word[32];
 				char *next;
 				snprintf(temp, sizeof(temp), "oet%d_dev", tun);
-				char *cmp = nvram_default_get(tmp, "any");
+				char *cmp = nvram_default_get(temp, "any");
 				bzero(bufferif, 512);
 				getIfList(bufferif, NULL);
 				websWrite(wp, "<div class=\"setting\">\n");
