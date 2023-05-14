@@ -953,6 +953,24 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	return wl;
 }
 
+char *copytonv_checkbox(webs_t wp, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+
+	char *wl = websGetVar(wp, varbuf, NULL);
+	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
+	if (wl)
+		nvram_set(varbuf, wl);
+	else
+		nvram_unset(varbuf);
+	return wl;
+}
+
 char *copytonv_prefix(webs_t wp, const char *var, const char *prefix)
 {
 	return copytonv(wp, "%s_%s", prefix, var);
@@ -1498,7 +1516,6 @@ void ping_wol(webs_t wp)
 		nvram_set("manual_wol_network", manual_wol_network);
 		nvram_set("manual_wol_port", manual_wol_port);
 	}
-
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real)
 		return;
@@ -2001,6 +2018,21 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_ipaddrmask", i);
 		copytonv(wp, "oet%d_obf", i);
 		copytonv(wp, "oet%d_obfkey", i);
+		coyytonv(wp, "oet%d_rem6", i);
+		coyytonv(wp, "oet%d_local6", i);
+		coyytonv(wp, "oet%d_group", i);
+		coyytonv(wp, "oet%d_dev", i);
+		coyytonv(wp, "oet%d_dstport", i);
+		coyytonv(wp, "oet%d_srcportmin", i);
+		coyytonv(wp, "oet%d_srcportmax", i);
+		coyytonv(wp, "oet%d_ttl", i);
+		coyytonv(wp, "oet%d_tos", i);
+		coyytonv(wp, "oet%d_ageing", i);
+		coyytonv_checkbox(wp, "oet%d_lrn", i);
+		coyytonv_checkbox(wp, "oet%d_proxy", i);
+		coyytonv_checkbox(wp, "oet%d_rsc", i);
+		coyytonv_checkbox(wp, "oet%d_l2miss", i);
+		coyytonv_checkbox(wp, "oet%d_l3miss", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
@@ -2426,6 +2458,21 @@ void del_tunnel(webs_t wp)
 		copytunvalue("proto", i, i - 1);
 		copytunvalue("bridged", i, i - 1);
 		copytunvalue("port", i, i - 1);
+		copytunvalue("rem6", i, i - 1);
+		copytunvalue("local6", i, i - 1);
+		copytunvalue("group", i, i - 1);
+		copytunvalue("dev", i, i - 1);
+		copytunvalue("dstport", i, i - 1);
+		copytunvalue("srcportmin", i, i - 1);
+		copytunvalue("srcportmax", i, i - 1);
+		copytunvalue("ttl", i, i - 1);
+		copytunvalue("tos", i, i - 1);
+		copytunvalue("ageing", i, i - 1);
+		copytunvalue("lrn", i, i - 1);
+		copytunvalue("proxy", i, i - 1);
+		copytunvalue("rsc", i, i - 1);
+		copytunvalue("l2miss", i, i - 1);
+		copytunvalue("l3miss", i, i - 1);
 #ifdef HAVE_WIREGUARD
 		copytunvalue("obf", i, i - 1);
 		copytunvalue("obfkey", i, i - 1);
@@ -2482,6 +2529,23 @@ void del_tunnel(webs_t wp)
 	deltunvalue("proto", tunnels);
 	deltunvalue("bridged", tunnels);
 	deltunvalue("port", tunnels);
+
+	deltunvalue("rem6", tunnels);
+	deltunvalue("local6", tunnels);
+	deltunvalue("group", tunnels);
+	deltunvalue("dev", tunnels);
+	deltunvalue("dstport", tunnels);
+	deltunvalue("srcportmin", tunnels);
+	deltunvalue("srcportmax", tunnels);
+	deltunvalue("ttl", tunnels);
+	deltunvalue("tos", tunnels);
+	deltunvalue("ageing", tunnels);
+	deltunvalue("lrn", tunnels);
+	deltunvalue("proxy", tunnels);
+	deltunvalue("rsc", tunnels);
+	deltunvalue("l2miss", tunnels);
+	deltunvalue("l3miss", tunnels);
+
 #ifdef HAVE_WIREGUARD
 	deltunvalue("obf", tunnels);
 	deltunvalue("obfkey", tunnels);
@@ -5848,7 +5912,7 @@ void port_vlan_table_save(webs_t wp)
 	int max = blen + 7;
 #ifdef HAVE_SWCONFIG
 	if (has_igmpsnooping())
-		max+=2;
+		max += 2;
 #endif
 
 	vlans = malloc(sizeof(int) * max);
@@ -5890,7 +5954,7 @@ void port_vlan_table_save(webs_t wp)
 			}
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, flag);
 			char *s_portval = websGetVar(wp, portid, "");
-			
+
 #ifdef HAVE_SWCONFIG
 			if (flag < 17000 || flag > 21000)
 #else
@@ -5909,7 +5973,7 @@ void port_vlan_table_save(webs_t wp)
 					snprintf(buff, 6, "%d", vlan);
 				strcat(portvlan, buff);
 				vlans[vlan] = 1;
-#if 0 //def HAVE_SWCONFIG
+#if 0				//def HAVE_SWCONFIG
 				if (flag < 16000) {
 					char buff[32];
 					snprintf(buff, 9, "%d", vlan);
@@ -5964,10 +6028,10 @@ void port_vlan_table_save(webs_t wp)
 		}
 	}*/
 	debug_free(vlans);
-//	if (ports == 5) {
-	//	nvram_set("port5vlans", portvlan);
-//	} else
-//		nvram_set("port7vlans", portvlan);
+//      if (ports == 5) {
+	//      nvram_set("port5vlans", portvlan);
+//      } else
+//              nvram_set("port7vlans", portvlan);
 
 	strcpy(br0vlans, "");
 	c = nvram_safe_get("lan_ifnames");
