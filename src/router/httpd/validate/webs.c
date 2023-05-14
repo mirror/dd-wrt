@@ -1991,6 +1991,7 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_peers", i);
 		copytonv(wp, "oet%d_id", i);
 		copytonv(wp, "oet%d_bridged", i);
+		copytonv(wp, "vxlan%d_bridged", i);
 		copytonv(wp, "oet%d_port", i);
 		copytonv(wp, "oet%d_mtu", i);
 		copytonv(wp, "oet%d_spbr_ip", i);
@@ -2330,6 +2331,7 @@ void add_tunnel(webs_t wp)
 		default_seti("mtu", 1500 - overhead);
 	default_seti("proto", 2);
 	default_seti("bridged", 1);
+	default_vxseti("bridged", 1);
 	default_seti("peers", 0);
 #undef default_set
 #undef default_seti
@@ -2479,6 +2481,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("mtu", i, i - 1);
 		copytunvalue("proto", i, i - 1);
 		copytunvalue("bridged", i, i - 1);
+		copytunvalue_prefix("vxlan", "bridged", i, i - 1);
 		copytunvalue("port", i, i - 1);
 		copytunvalue("rem6", i, i - 1);
 		copytunvalue("local6", i, i - 1);
@@ -2555,6 +2558,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("mtu", tunnels);
 	deltunvalue("proto", tunnels);
 	deltunvalue("bridged", tunnels);
+	deltunvalue_prefix("vxlan", "bridged", tunnels);
 	deltunvalue("port", tunnels);
 	deltunvalue("rem6", tunnels);
 	deltunvalue("local6", tunnels);
