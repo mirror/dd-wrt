@@ -236,7 +236,7 @@ for i in $(seq 1 $tunnels); do
 		fi
 		if [ $($nv get oet${i}_proto) -eq 0 ]; then
 			insmod etherip
-			if [ $($nv get oet${i}_local) == "0.0.0.0" ]; then
+			if [ "$($nv get oet${i}_local)" == "0.0.0.0" ]; then
 				logger -p user.info "Enable RFC 3378 EtherIP Tunnel interface oet${i} with peer $($nv get oet${i}_rem)"
 				$IP tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			else
@@ -265,16 +265,16 @@ for i in $(seq 1 $tunnels); do
 			logger -p user.info "Enable VXLAN id oet${i} interface vxlan${i}"
 			VXLANARG=""
 			#detect ipv6 addr handling
-			if [[ ! -z "$($nv get oet${i}_mcast)" ]]; then
+			if [[ ! -z "$($nv get oet${i}_mcast)" && "$($nv get oet${i}_mcast)" == "1" ]]; then
 				if [[ $(expr $($nv get oet${i}_group) : ".*") -ge 16 ]]; then
 					VXLANARG += "-6"
 				endif
 			else
 				# detect ipv6 addr
-				if [[ $(expr $($nv get oet${i}_rem) : ".*") -ge 16 ]]; then
+				if [[ $(expr $($nv get oet${i}_rem6) : ".*") -ge 16 ]]; then
 					VXLANARG += "-6"
 				endif			
-				if [[ $(expr $($nv get oet${i}_local) : ".*") -ge 16 ]]; then
+				if [[ $(expr $($nv get oet${i}_local6) : ".*") -ge 16 ]]; then
 					VXLANARG += "-6"
 				endif
 			fi
@@ -282,10 +282,10 @@ for i in $(seq 1 $tunnels); do
 			if [[ ! -z "$($nv get oet${i}_mcast)" ]]; then
 				VXLANARG += "group $($nv get oet${i}_group)"
 			else
-				VXLANARG += "remote $($nv get oet${i}_rem)"
+				VXLANARG += "remote $($nv get oet${i}_rem6)"
 			fi
-			if [[ ! -z "$($nv get oet${i}_local)" ]]; then
-				VXLANARG += "local $($nv get oet${i}_local)"
+			if [[ ! -z "$($nv get oet${i}_local6)" ]]; then
+				VXLANARG += "local $($nv get oet${i}_local6)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_dev)" || "$($nv get oet${i}_dev)" != "any" ]]; then
 				VXLANARG += "dev $($nv get oet${i}_dev)"
@@ -296,13 +296,13 @@ for i in $(seq 1 $tunnels); do
 				# defaults to 4789
 				VXLANARG += "dstport 0"
 			endif
-			if [[ ! -z "$($nv get oet${i}_srcport)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_srcport)" && "$($nv get oet${i}_srcmin)" != "0" && "$($nv get oet${i}_srcmax)" != "0" ]]; then
 				VXLANARG += "srcport $($nv get oet${i}_srcmin) $($nv get oet${i}_srcmax)"
 			fi
-			if [[ ! -z "$($nv get oet${i}_ttl)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_ttl)" && "$($nv get oet${i}_ttl)" != "0" ]]; then			
 				VXLANARG += "ttl $($nv get oet${i}_ttl)"
 			fi
-			if [[ ! -z "$($nv get oet${i}_tos)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_tos)" && "$($nv get oet${i}_tos)" != "0" ]]; then			
 				VXLANARG += "tos $($nv get oet${i}_tos)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_lrn)" && "$($nv get oet${i}_lrn)" == "1" ]]; then			
