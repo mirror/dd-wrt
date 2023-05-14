@@ -1484,6 +1484,11 @@ void getIfLists(char *eths, int size)
 	getIfList(eths2, "oet");
 	strcat(eths, " ");
 	strcat(eths, eths2);
+
+	bzero(eths2, 256);
+	getIfList(eths2, "vxlan");
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #ifdef HAVE_WAVESAT
 	bzero(eths2, 256);
 	getIfList(eths2, "ofdm");
