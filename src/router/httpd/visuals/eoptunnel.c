@@ -867,9 +867,9 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				{
 					show_caption(wp, "label", "share.intrface", NULL);
 					websWrite(wp, "<select name=\"%s\">\n", temp);
+					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", temp) == 0 ? "selected=\"selected\"" : "");
 					websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", temp) ? "selected=\"selected\"" : "");
 					websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", temp) ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", temp) == 0 ? "selected=\"selected\"" : "");
 					foreach(word, bufferif, next) {
 						if (nvram_match("lan_ifname", word))
 							continue;
@@ -899,7 +899,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				{
 					show_caption(wp, "label", "eoip.sportrange", NULL);
 					websWrite(wp,
-						  "<input name=\"%s\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,65535,eoip.sportrange)\" class=\"num\" value=\"%s\" /> ~ <input name=\"%s\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,65535,eoip.sportrange)\" class=\"num\" value=\"%s\" />\n",
+						  "<input name=\"%s\" size=\"5\" maxlength=\"5\" class=\"num\" value=\"%s\" /> ~ <input name=\"%s\" size=\"5\" maxlength=\"5\" class=\"num\" value=\"%s\" />\n",
 						  min, nvram_default_get(min, "0"), max, nvram_default_get(max, "0"));
 				}
 				websWrite(wp, "</div>\n");
