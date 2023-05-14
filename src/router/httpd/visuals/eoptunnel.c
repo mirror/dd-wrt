@@ -1012,6 +1012,19 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "</div>\n");
 			}
 			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idvxlanbridged%d\">\n", tun);
+			{
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "share.ip", NULL);
+					websWrite(wp, "<input type=\"hidden\" name=\"vxlan%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
+					snprintf(temp, sizeof(temp), "vxlan%d_ipaddr", tun);
+					snprintf(temp2, sizeof(temp2), "vxlan%d_netmask", tun);
+					show_ip_cidr(wp, NULL, temp, 0, "share.ip", temp2, "share.subnet");
+				}
+				websWrite(wp, "</div>\n");
+			}
+			websWrite(wp, "</div>\n");
 			// Alternative input for ipaddress and netmask to add multiple addresses including IPv6 e.g.: 10.0.0.2/16, fc00::2/96
 			// nvram variable oet%d_ipaddrmask
 			websWrite(wp, "<div id=\"idwginput%d\">\n", tun);
