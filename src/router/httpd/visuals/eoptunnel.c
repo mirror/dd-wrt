@@ -860,16 +860,16 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				char word[32];
 				char *next;
 				snprintf(temp, sizeof(temp), "oet%d_dev", tun);
-				nvram_default_get(temp, "any");
+				char *cmp = nvram_default_get(tmp, "any");
 				bzero(bufferif, 512);
 				getIfList(bufferif, NULL);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "share.intrface", NULL);
 					websWrite(wp, "<select name=\"%s\">\n", temp);
-					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", temp) == 0 ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", temp) ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", temp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", cmp) == 0 ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", cmp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", cmp) ? "selected=\"selected\"" : "");
 					foreach(word, bufferif, next) {
 						if (nvram_match("lan_ifname", word))
 							continue;
@@ -877,7 +877,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 							continue;
 						if (isbridged(word))
 							continue;
-						websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, temp) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
+						websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, cmp) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
 					}
 					websWrite(wp, "</select>\n");
 				}
