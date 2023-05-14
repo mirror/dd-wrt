@@ -36,7 +36,7 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid, char *type
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
 void show_caption_simple(webs_t wp, const char *cap);
 
-EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 {
 
 	int tun;
@@ -79,6 +79,9 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_WIREGUARD
 				websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\"  + eoip.wireguard + \"</option>\");\n", nvram_matchi(temp, 2) ? "selected=\\\"selected\\\"" : "");
 #endif
+#ifdef HAVE_IPV6
+				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >\"  + eoip.vxlan + \"</option>\");\n", nvram_matchi(temp, 3) ? "selected=\\\"selected\\\"" : "");
+#endif
 				websWrite(wp, "//]]>\n</script>\n");
 				websWrite(wp, "</select>\n");
 			}
@@ -90,6 +93,17 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_caption(wp, "label", "eoip.tunnelID", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_id", tun);
 					websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,65535,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
+			}
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idvxlan%d\">\n", tun);
+			{
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.tunnelID", NULL);
+					snprintf(temp, sizeof(temp), "oet%d_id", tun);
+					websWrite(wp, "<input size=\"8\" maxlength=\"8\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,16777215,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 				}
 				websWrite(wp, "</div>\n");
 			}
@@ -343,26 +357,27 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "eoip.wireguard_dnspbr", NULL);
 					websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
-					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s onclick=\"changedns46(this, %d)\" />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s onclick=\"changedns46(this, %d)\" />\n", temp,
+						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun);
 				}
 				websWrite(wp, "</div>\n");
 				websWrite(wp, "<div id=\"idoet%d_dns46\">\n", tun);	//for show or hide dns4 and dns6
-					snprintf(temp, sizeof(temp), "oet%d_dns4", tun);
+				snprintf(temp, sizeof(temp), "oet%d_dns4", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_dns4", NULL);
+					websWrite(wp, "<input size=\"16\" maxlength=\"16\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "9.9.9.9"));
+				}
+				websWrite(wp, "</div>\n");
+				if (nvram_matchi("ipv6_enable", 1)) {
+					snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
-						show_caption(wp, "label", "eoip.wireguard_dns4", NULL);
-						websWrite(wp, "<input size=\"16\" maxlength=\"16\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "9.9.9.9"));
+						show_caption(wp, "label", "eoip.wireguard_dns6", NULL);
+						websWrite(wp, "<input size=\"40\" maxlength=\"40\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "2620:fe::9"));
 					}
 					websWrite(wp, "</div>\n");
-					if (nvram_matchi("ipv6_enable", 1)) {
-						snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_dns6", NULL);
-							websWrite(wp, "<input size=\"40\" maxlength=\"40\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "2620:fe::9"));
-						}
-						websWrite(wp, "</div>\n");
-					}
+				}
 				websWrite(wp, "</div>\n");
 				// */
 				//end Split DNS
@@ -523,8 +538,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					snprintf(temp, sizeof(temp), "oet%d_clka%d", tun, peer);
 					{
 						show_caption(wp, "label", "eoip.wireguard_clka", NULL);
-						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%d\" />\n", temp, 
-							 nvram_default_geti(temp, 25));
+						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%d\" />\n", temp,
+							  nvram_default_geti(temp, 25));
 					}
 					websWrite(wp, "</div>\n");
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
@@ -787,6 +802,169 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</div>\n");
 			}
 			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idshowmcast%d\">\n", tun);
+			{
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.mcast", NULL);
+					snprintf(temp, sizeof(temp), "oet%d_mcast", tun);
+					websWrite(wp,
+						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', false)\" />", temp,
+						  (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
+					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					websWrite(wp,
+						  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', true)\" />", temp,
+						  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
+					show_caption_simple(wp, "share.disable");
+				}
+				websWrite(wp, "</div>\n");
+			}
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idmcast%d\">\n", tun);
+			{
+				websWrite(wp, "<div class=\"setting\">\n");
+				snprintf(temp, sizeof(temp), "oet%d_group", tun);
+				{
+					show_caption(wp, "label", "eoip.mcast_group", NULL);
+					websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
+			}
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idremoteip6%d\">\n", tun);
+			{
+				websWrite(wp, "<div class=\"setting\">\n");
+				snprintf(temp, sizeof(temp), "oet%d_rem6", tun);
+				{
+					show_caption(wp, "label", "eoip.remoteIP", NULL);
+					websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
+			}
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idlocalip6%d\">\n", tun);
+			{
+				websWrite(wp, "<div class=\"setting\">\n");
+				snprintf(temp, sizeof(temp), "oet%d_local6", tun);
+				{
+					show_caption(wp, "label", "eoip.localIP", NULL);
+					websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
+			}
+			websWrite(wp, "<div id=\"idvxlansettings%d\">\n", tun);
+			{
+
+				char bufferif[512];
+				char word[32];
+				snprintf(temp, sizeof(temp), "oet%d_dev", tun);
+				nvram_default_get(temp, "any");
+				bzero(bufferif, 512);
+				getIfList(bufferif, NULL);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "share.intrface", NULL);
+					websWrite(wp, "<select name=\"%s\">\n", temp);
+					websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", temp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", temp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", temp) == 0 ? "selected=\"selected\"" : "");
+					foreach(word, bufferif, next) {
+						if (nvram_match("lan_ifname", word))
+							continue;
+						if (nvram_match("wan_ifname", word))
+							continue;
+						if (isbridged(word))
+							continue;
+						websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, temp) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
+					}
+					websWrite(wp, "</select>\n");
+				}
+				websWrite(wp, "</div>\n");
+				snprintf(temp, sizeof(temp), "oet%d_dstport", tun);
+				nvram_default_get(temp, "4789");
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.dport", NULL);
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
+
+				char min[32];
+				char max[32];
+				snprintf(min, sizeof(min), "oet%d_srcmin", tun);
+				snprintf(max, sizeof(max), "oet%d_srcmax", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.sportrange", NULL);
+					websWrite(wp,
+						  "<input name=\"%s\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,65535,eoip.sportrange)\" class=\"num\" value=\"%s\" /> ~ <input name=\"%s\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,65535,eoip.sportrange)\" class=\"num\" value=\"%s\" />\n",
+						  min, nvram_default_get(min, "0"), max, nvram_default_get(max, "0"));
+				}
+				websWrite(wp, "</div>\n");
+
+				snprintf(temp, sizeof(temp), "oet%d_ttl", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.ttl", NULL);
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_defaukt_get(temp, "0"));
+				}
+				websWrite(wp, "</div>\n");
+
+				snprintf(temp, sizeof(temp), "oet%d_tos", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.tos", NULL);
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0"));
+				}
+				websWrite(wp, "</div>\n");
+
+				snprintf(temp, sizeof(temp), "oet%d_lrn", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.lrn", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				snprintf(temp, sizeof(temp), "oet%d_proxy", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.proxy", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				snprintf(temp, sizeof(temp), "oet%d_rsc", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.rsc", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				snprintf(temp, sizeof(temp), "oet%d_l2miss", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.l2miss", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				snprintf(temp, sizeof(temp), "oet%d_l3miss", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.l3miss", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+
+				snprintf(temp, sizeof(temp), "oet%d_ageing", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.ageing", NULL);
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "300"));
+				}
+				websWrite(wp, "</div>\n");
+
+			}
+			websWrite(wp, "</div>\n");
+
 			websWrite(wp, "<div id=\"idl2support%d\">\n", tun);
 			{
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -840,6 +1018,9 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_mcast',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_vxlansettings',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_remoteip6',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "false" : nvram_nmatchi(3, "oet%d_en", tun) ? : "true":"false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showobf',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_obf", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_wdog', %s);\n", tun, tun, (nvram_nmatchi(1, "oet%d_failgrp", tun) || nvram_nmatchi(1, "oet%d_wdog", tun)) ? "true" : "false");
