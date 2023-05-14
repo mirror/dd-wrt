@@ -305,33 +305,39 @@ for i in $(seq 1 $tunnels); do
 			if [[ ! -z "$($nv get oet${i}_tos)" ]]; then			
 				VXLANARG += "tos $($nv get oet${i}_tos)"
 			fi
-			if [[ ! -z "$($nv get oet${i}_lrn)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_lrn)" && "$($nv get oet${i}_lrn)" == "1" ]]; then			
 				VXLANARG += "learning"
 			else
 				VXLANARG += "nolearning"
 			fi
-			if [[ ! -z "$($nv get oet${i}_proxy)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_proxy)" && "$($nv get oet${i}_proxy)" == "1" ]]; then			
 				VXLANARG += "proxy"
 			else
 				VXLANARG += "noproxy"
 			fi
-			if [[ ! -z "$($nv get oet${i}_rsc)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_rsc)" && "$($nv get oet${i}_rsc)" == "1"]]; then			
 				VXLANARG += "rsc"
 			else
 				VXLANARG += "norsc"
 			fi
-			if [[ ! -z "$($nv get oet${i}_l2miss)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_l2miss)" && "$($nv get oet${i}_l2miss)" == "1"]]; then			
 				VXLANARG += "l2miss"
 			else
 				VXLANARG += "nol2miss"
 			fi
-			if [[ ! -z "$($nv get oet${i}_l3miss)" ]]; then			
+			if [[ ! -z "$($nv get oet${i}_l3miss)" && "$($nv get oet${i}_l3miss)" == "1" ]]; then			
 				VXLANARG += "l3miss"
 			else
 				VXLANARG += "nol3miss"
 			fi
 			if [[ ! -z "$($nv get oet${i}_ageing)" ]]; then			
 				VXLANARG += "ageing $($nv get oet${i}_ageing)"
+			fi
+			if [[ ! -z "$($nv get oet${i}_df)" && "$($nv get oet${i}_df)" == "1" ]]; then			
+				VXLANARG += "df"
+			fi
+			if [[ ! -z "$($nv get oet${i}_gbp)" && "$($nv get oet${i}_gbp)" == "1" ]]; then			
+				VXLANARG += "gbp"
 			fi
 			$IP $VXLANARG
 			if [ $($nv get oet${i}_bridged) -eq 1 ]; then
