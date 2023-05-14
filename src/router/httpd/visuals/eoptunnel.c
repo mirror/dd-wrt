@@ -809,11 +809,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					show_caption(wp, "label", "eoip.mcast", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_mcast", tun);
 					websWrite(wp,
-						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', false)\" />", temp,
+						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', true)\" />", temp,
 						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun,tun);
 					show_caption(wp, NULL, "share.enable", "&nbsp;");
 					websWrite(wp,
-						  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', true)\" />", temp,
+						  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', false)\" />", temp,
 						  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""), tun,tun);
 					show_caption_simple(wp, "share.disable");
 				}
@@ -1027,11 +1027,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idshowmcast%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idremoteip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idlocalip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idshowmcast%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idremoteip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idlocalip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
 		websWrite(wp, "toggle_layer_ext(document.eop.oet%d_en, 'idmcast%d', 'idremoteip6%d', %s);\n", tun, tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idvxlansettings%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idvxlansettings%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showobf',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_obf", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_wdog', %s);\n", tun, tun, (nvram_nmatchi(1, "oet%d_failgrp", tun) || nvram_nmatchi(1, "oet%d_wdog", tun)) ? "true" : "false");
