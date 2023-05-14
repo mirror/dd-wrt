@@ -241,18 +241,6 @@ static void die_must_be_on_off(const char *msg)
 	bb_error_msg_and_die("argument of \"%s\" must be \"on\" or \"off\"", msg);
 }
 
-static bool matches(const char *prefix, const char *string)
-{
-	if (!*prefix)
-		return true;
-	while (*string && *prefix == *string) {
-		prefix++;
-		string++;
-	}
-
-	return !!*prefix;
-}
-
 /* Return value becomes exitcode. It's okay to not return at all */
 static int do_set(char **argv)
 {
@@ -659,8 +647,8 @@ enum {
 #define IFLA_VXLAN_MAX	(__IFLA_VXLAN_MAX - 1)
 
 struct ifla_vxlan_port_range {
-	__be16	low;
-	__be16	high;
+	uint16_t	low;
+	uint16_t	high;
 };
 
 enum ifla_vxlan_df {
@@ -682,31 +670,6 @@ static void check_duparg(__u64 *attrs, int type, const char *key,
 		return;
 	}
 	duparg2(key, argv);
-}
-
-static int get_u32_alt(__u32 *val, const char *arg, int base)
-{
-	unsigned long res;
-	char *ptr;
-
-	if (!arg || !*arg)
-		return -1;
-	res = strtoul(arg, &ptr, base);
-
-	/* empty string or trailing non-digits */
-	if (!ptr || ptr == arg || *ptr)
-		return -1;
-
-	/* overflow */
-	if (res == ULONG_MAX && errno == ERANGE)
-		return -1;
-
-	/* in case UL > 32 bits */
-	if (res > 0xFFFFFFFFUL)
-		return -1;
-
-	*val = res;
-	return 0;
 }
 
 /* This uses a non-standard parsing (ie not inet_aton, or inet_pton)
@@ -739,10 +702,9 @@ static inline bool is_addrtype_inet_not_multi(const inet_prefix *p)
 }
 
 
-static int nodev(const char *dev)
+static void nodev(const char *dev)
 {
-	fprintf(stderr, "Cannot find device \"%s\"\n", dev);
-	return -1;
+	bb_error_msg_and_die("Cannot find device \"%s\"", dev);
 }
 
 #ifndef LABEL_MAX_MASK
@@ -751,8 +713,7 @@ static int nodev(const char *dev)
 
 static void invarg(const char *msg, const char *arg)
 {
-	fprintf(stderr, "Error: argument \"%s\" is wrong: %s\n", arg, msg);
-	exit(-1);
+	bb_error_msg_and_die("Error: argument \"%s\" is wrong: %s", arg, msg);
 }
 
 static int addattr(struct nlmsghdr *n, int maxlen, int type)
@@ -760,23 +721,20 @@ static int addattr(struct nlmsghdr *n, int maxlen, int type)
 	return addattr_l(n, maxlen, type, NULL, 0);
 }
 
-static int addattr16(struct nlmsghdr *n, int maxlen, int type, __u16 data)
+static int addattr16(struct nlmsghdr *n, int maxlen, int type, uint16_t data)
 {
-	return addattr_l(n, maxlen, type, &data, sizeof(__u16));
+	return addattr_l(n, maxlen, type, &data, sizeof(uint16_t));
 }
 
 
-static int get_be16(__be16 *val, const char *arg, const char *msg)
+static int get_be16(const char *arg, const char *msg)
 {
-	*val = get_u16(arg, msg);
-	*val = htons(*val);
-
-	return *val;
+	return htons(get_u16(arg, msg));
 }
 
-static void print_explain(FILE *f)
+static void print_explain(void)
 {
-	fprintf(f,
+	bb_error_msg_and_die(
 		"Usage: ... vxlan id VNI\n"
 		"		[ { group | remote } IP_ADDRESS ]\n"
 		"		[ local ADDR ]\n"
@@ -805,18 +763,18 @@ static void print_explain(FILE *f)
 		"	TOS	:= { NUMBER | inherit }\n"
 		"	TTL	:= { 1..255 | auto | inherit }\n"
 		"	DF	:= { unset | set | inherit }\n"
-		"	LABEL := 0-1048575\n"
-	);
+		"	LABEL := 0-1048575");
 }
 
 static void explain(void)
 {
-	print_explain(stderr);
+	print_explain();
 }
 
 static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 {
 	inet_prefix saddr, daddr;
+	int arg;
 	uint32_t vni = 0;
 	uint8_t learning = 1;
 	uint16_t dstport = 0;
@@ -826,61 +784,154 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		       !(n->nlmsg_flags & NLM_F_CREATE));
 	bool selected_family = false;
 
+	static const char keywords[] ALIGN1 =
+		"id\0"
+		"vni\0"
+		"group\0"
+		"remote\0"
+		"local\0"
+		"dev\0"
+		"ttl\0"
+		"hoplimit\0"
+		"tos\0"
+		"dsfield\0"
+		"df\0"
+		"label\0"
+		"flowlabel\0"
+		"ageing\0"
+		"maxaddress\0"
+		"port\0"
+		"srcport\0"
+		"dstport\0"
+		"learning\0"
+		"nolearning\0"
+		"proxy\0"
+		"noproxy\0"
+		"rsc\0"
+		"norsc\0"
+		"l2miss\0"
+		"nol2miss\0"
+		"l3miss\0"
+		"nol3miss\0"
+		"udpcsum\0"
+		"noudpcsum\0"
+		"udp6zerocsumtx\0"
+		"noudp6zerocsumtx\0"
+		"udp6zerocsumrx\0"
+		"noudp6zerocsumrx\0"
+		"remcsumtx\0"
+		"noremcsumtx\0"
+		"remcsumrx\0"
+		"noremcsumrx\0"
+		"external\0"
+		"noexternal\0"
+		"gbp\0"
+		"nogbp\0"
+		"gpe\0"
+		"nogpe\0"
+		"help\0"
+	;
+
+	enum {
+		ARG_id = 0,
+		ARG_vni,
+		ARG_group,
+		ARG_remote,
+		ARG_local,
+		ARG_dev,
+		ARG_ttl,
+		ARG_hoplimit,
+		ARG_tos,
+		ARG_dsfield,
+		ARG_df,
+		ARG_label,
+		ARG_flowlabel,
+		ARG_ageing,
+		ARG_maxaddress,
+		ARG_port,
+		ARG_srcport,
+		ARG_dstport,
+		ARG_learning,
+		ARG_nolearning,
+		ARG_proxy,
+		ARG_noproxy,
+		ARG_rsc,
+		ARG_norsc,
+		ARG_l2miss,
+		ARG_nol2miss,
+		ARG_l3miss,
+		ARG_nol3miss,
+		ARG_udpcsum,
+		ARG_noudpcsum,
+		ARG_udp6zerocsumtx,
+		ARG_noudp6zerocsumtx,
+		ARG_udp6zerocsumrx,
+		ARG_noudp6zerocsumrx,
+		ARG_remcsumtx,
+		ARG_noremcsumtx,
+		ARG_remcsumrx,
+		ARG_noremcsumrx,
+		ARG_external,
+		ARG_noexternal,
+		ARG_gbp,
+		ARG_nogbp,
+		ARG_gpe,
+		ARG_nogpe,
+		ARG_help,
+	};
+
 	saddr.family = daddr.family = AF_UNSPEC;
 
 	inet_prefix_reset(&saddr);
 	inet_prefix_reset(&daddr);
 
 	while (*argv) {
-		if (!matches(*argv, "id") ||
-		    !matches(*argv, "vni")) {
+		arg = index_in_substrings(keywords, *argv);
+		if (arg < 0)
+			invarg_1_to_2(*argv, "type vxlan");
+		if (arg == ARG_id || arg == ARG_vni) {
 			/* We will add ID attribute outside of the loop since we
 			 * need to consider metadata information as well.
 			 */
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_ID, "id", *argv);
-			vni = get_u32(*argv, "invalid id");
+			vni = get_u32(*argv, "id");
 			if (vni >= 1u << 24)
 				invarg("invalid id", *argv);
-		} else if (!matches(*argv, "group")) {
+		} else if (arg == ARG_group) {
 			if (is_addrtype_inet_not_multi(&daddr)) {
-				fprintf(stderr, "vxlan: both group and remote");
-				fprintf(stderr, " cannot be specified\n");
-				return -1;
+				bb_error_msg_and_die("vxlan: both group and remote cannot be specified");
 			}
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_GROUP, "group", *argv);
 			get_addr(&daddr, *argv, saddr.family);
 			if (!is_addrtype_inet_multi(&daddr))
 				invarg("invalid group address", *argv);
-		} else if (!matches(*argv, "remote")) {
+		} else if (arg == ARG_remote) {
 			if (is_addrtype_inet_multi(&daddr)) {
-				fprintf(stderr, "vxlan: both group and remote");
-				fprintf(stderr, " cannot be specified\n");
-				return -1;
+				bb_error_msg_and_die("vxlan: both group and remote cannot be specified");
 			}
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_GROUP, "remote", *argv);
 			get_addr(&daddr, *argv, saddr.family);
 			if (!is_addrtype_inet_not_multi(&daddr))
 				invarg("invalid remote address", *argv);
-		} else if (!matches(*argv, "local")) {
+		} else if (arg == ARG_local) {
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_LOCAL, "local", *argv);
 			get_addr(&saddr, *argv, daddr.family);
 			if (!is_addrtype_inet_not_multi(&saddr))
 				invarg("invalid local address", *argv);
-		} else if (!matches(*argv, "dev")) {
+		} else if (arg == ARG_dev) {
 			unsigned int link;
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_LINK, "dev", *argv);
 			link = xll_name_to_index(*argv);
 			if (!link)
-				exit(nodev(*argv));
+				nodev(*argv);
 			addattr32(n, size, IFLA_VXLAN_LINK, link);
-		} else if (!matches(*argv, "ttl") ||
-			   !matches(*argv, "hoplimit")) {
+		} else if (arg == ARG_ttl || arg == ARG_hoplimit) {
 			unsigned int uval;
 			__u8 ttl = 0;
 
@@ -897,9 +948,8 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				ttl = uval;
 				addattr8(n, size, IFLA_VXLAN_TTL, ttl);
 			}
-		} else if (!matches(*argv, "tos") ||
-			   !matches(*argv, "dsfield")) {
-			__u32 uval;
+		} else if (arg == ARG_tos || arg == ARG_dsfield) {
+			uint32_t uval;
 			__u8 tos;
 
 			NEXT_ARG();
@@ -911,7 +961,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			} else
 				tos = 1;
 			addattr8(n, size, IFLA_VXLAN_TOS, tos);
-		} else if (!matches(*argv, "df")) {
+		} else if (arg == ARG_df) {
 			enum ifla_vxlan_df df;
 
 			NEXT_ARG();
@@ -927,126 +977,123 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				       *argv);
 
 			addattr8(n, size, IFLA_VXLAN_DF, df);
-		} else if (!matches(*argv, "label") ||
-			   !matches(*argv, "flowlabel")) {
-			__u32 uval;
+		} else if (arg == ARG_label || arg == ARG_flowlabel) {
+			uint32_t uval;
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_LABEL, "flowlabel",
 				     *argv);
-			if (get_u32_alt(&uval, *argv, 0) ||
-			    (uval & ~LABEL_MAX_MASK))
+			uval = get_u32(*argv, "flowlabel");
+			if ((uval & ~LABEL_MAX_MASK))
 				invarg("invalid flowlabel", *argv);
 			addattr32(n, size, IFLA_VXLAN_LABEL, htonl(uval));
-		} else if (!matches(*argv, "ageing")) {
-			__u32 age;
+		} else if (arg == ARG_ageing) {
+			uint32_t age;
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_AGEING, "ageing",
 				     *argv);
 			if (strcmp(*argv, "none") == 0)
 				age = 0;
-			else if (get_u32_alt(&age, *argv, 0))
-				invarg("ageing timer", *argv);
+			else 
+			    age = get_u32(*argv, "ageing timer");
 			addattr32(n, size, IFLA_VXLAN_AGEING, age);
-		} else if (!matches(*argv, "maxaddress")) {
-			__u32 maxaddr;
+		} else if (arg == ARG_maxaddress) {
+			uint32_t maxaddr;
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_LIMIT,
 				     "maxaddress", *argv);
 			if (strcmp(*argv, "unlimited") == 0)
 				maxaddr = 0;
-			else if (get_u32_alt(&maxaddr, *argv, 0))
-				invarg("max addresses", *argv);
+			else maxaddr = get_u32(*argv, "max addresses");
 			addattr32(n, size, IFLA_VXLAN_LIMIT, maxaddr);
-		} else if (!matches(*argv, "port") ||
-			   !matches(*argv, "srcport")) {
+		} else if (arg == ARG_port || arg == ARG_srcport) {
 			struct ifla_vxlan_port_range range = { 0, 0 };
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_PORT_RANGE, "srcport",
 				     *argv);
-			get_be16(&range.low, *argv, "min port");
+			range.low = get_be16(*argv, "min port");
 			NEXT_ARG();
-			get_be16(&range.high, *argv, "max port");
+			range.high = get_be16(*argv, "max port");
 			if (range.low || range.high) {
 				addattr_l(n, size, IFLA_VXLAN_PORT_RANGE,
 					  &range, sizeof(range));
 			}
-		} else if (!matches(*argv, "dstport")) {
+		} else if (arg == ARG_dstport) {
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_PORT, "dstport", *argv);
 			dstport = get_u16(*argv, "dst port");
-		} else if (!matches(*argv, "nolearning")) {
+		} else if (arg == ARG_nolearning) {
 			check_duparg(&attrs, IFLA_VXLAN_LEARNING, *argv, *argv);
 			learning = 0;
-		} else if (!matches(*argv, "learning")) {
+		} else if (arg == ARG_learning) {
 			check_duparg(&attrs, IFLA_VXLAN_LEARNING, *argv, *argv);
 			learning = 1;
-		} else if (!matches(*argv, "noproxy")) {
+		} else if (arg == ARG_noproxy) {
 			check_duparg(&attrs, IFLA_VXLAN_PROXY, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_PROXY, 0);
-		} else if (!matches(*argv, "proxy")) {
+		} else if (arg == ARG_proxy) {
 			check_duparg(&attrs, IFLA_VXLAN_PROXY, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_PROXY, 1);
-		} else if (!matches(*argv, "norsc")) {
+		} else if (arg == ARG_norsc) {
 			check_duparg(&attrs, IFLA_VXLAN_RSC, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_RSC, 0);
-		} else if (!matches(*argv, "rsc")) {
+		} else if (arg == ARG_rsc) {
 			check_duparg(&attrs, IFLA_VXLAN_RSC, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_RSC, 1);
-		} else if (!matches(*argv, "nol2miss")) {
+		} else if (arg == ARG_nol2miss) {
 			check_duparg(&attrs, IFLA_VXLAN_L2MISS, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_L2MISS, 0);
-		} else if (!matches(*argv, "l2miss")) {
+		} else if (arg == ARG_l2miss) {
 			check_duparg(&attrs, IFLA_VXLAN_L2MISS, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_L2MISS, 1);
-		} else if (!matches(*argv, "nol3miss")) {
+		} else if (arg == ARG_nol3miss) {
 			check_duparg(&attrs, IFLA_VXLAN_L3MISS, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_L3MISS, 0);
-		} else if (!matches(*argv, "l3miss")) {
+		} else if (arg == ARG_l3miss) {
 			check_duparg(&attrs, IFLA_VXLAN_L3MISS, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_L3MISS, 1);
-		} else if (!matches(*argv, "udpcsum")) {
+		} else if (arg == ARG_udpcsum) {
 			check_duparg(&attrs, IFLA_VXLAN_UDP_CSUM, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_UDP_CSUM, 1);
-		} else if (!matches(*argv, "noudpcsum")) {
+		} else if (arg == ARG_noudpcsum) {
 			check_duparg(&attrs, IFLA_VXLAN_UDP_CSUM, *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_UDP_CSUM, 0);
-		} else if (!matches(*argv, "udp6zerocsumtx")) {
+		} else if (arg == ARG_udp6zerocsumtx) {
 			check_duparg(&attrs, IFLA_VXLAN_UDP_ZERO_CSUM6_TX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_UDP_ZERO_CSUM6_TX, 1);
-		} else if (!matches(*argv, "noudp6zerocsumtx")) {
+		} else if (arg == ARG_noudp6zerocsumtx) {
 			check_duparg(&attrs, IFLA_VXLAN_UDP_ZERO_CSUM6_TX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_UDP_ZERO_CSUM6_TX, 0);
-		} else if (!matches(*argv, "udp6zerocsumrx")) {
+		} else if (arg == ARG_udp6zerocsumrx) {
 			check_duparg(&attrs, IFLA_VXLAN_UDP_ZERO_CSUM6_RX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_UDP_ZERO_CSUM6_RX, 1);
-		} else if (!matches(*argv, "noudp6zerocsumrx")) {
+		} else if (arg == ARG_noudp6zerocsumrx) {
 			check_duparg(&attrs, IFLA_VXLAN_UDP_ZERO_CSUM6_RX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_UDP_ZERO_CSUM6_RX, 0);
-		} else if (!matches(*argv, "remcsumtx")) {
+		} else if (arg == ARG_remcsumtx) {
 			check_duparg(&attrs, IFLA_VXLAN_REMCSUM_TX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_REMCSUM_TX, 1);
-		} else if (!matches(*argv, "noremcsumtx")) {
+		} else if (arg == ARG_noremcsumtx) {
 			check_duparg(&attrs, IFLA_VXLAN_REMCSUM_TX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_REMCSUM_TX, 0);
-		} else if (!matches(*argv, "remcsumrx")) {
+		} else if (arg == ARG_remcsumrx) {
 			check_duparg(&attrs, IFLA_VXLAN_REMCSUM_RX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_REMCSUM_RX, 1);
-		} else if (!matches(*argv, "noremcsumrx")) {
+		} else if (arg == ARG_noremcsumrx) {
 			check_duparg(&attrs, IFLA_VXLAN_REMCSUM_RX,
 				     *argv, *argv);
 			addattr8(n, size, IFLA_VXLAN_REMCSUM_RX, 0);
-		} else if (!matches(*argv, "external")) {
+		} else if (arg == ARG_external) {
 			check_duparg(&attrs, IFLA_VXLAN_COLLECT_METADATA,
 				     *argv, *argv);
 			metadata = 1;
@@ -1054,54 +1101,42 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			/* we will add LEARNING attribute outside of the loop */
 			addattr8(n, size, IFLA_VXLAN_COLLECT_METADATA,
 				 metadata);
-		} else if (!matches(*argv, "noexternal")) {
+		} else if (arg == ARG_noexternal) {
 			check_duparg(&attrs, IFLA_VXLAN_COLLECT_METADATA,
 				     *argv, *argv);
 			metadata = 0;
 			addattr8(n, size, IFLA_VXLAN_COLLECT_METADATA,
 				 metadata);
-		} else if (!matches(*argv, "gbp")) {
+		} else if (arg == ARG_gbp) {
 			check_duparg(&attrs, IFLA_VXLAN_GBP, *argv, *argv);
 			addattr_l(n, size, IFLA_VXLAN_GBP, NULL, 0);
-		} else if (!matches(*argv, "gpe")) {
+		} else if (arg == ARG_gpe) {
 			check_duparg(&attrs, IFLA_VXLAN_GPE, *argv, *argv);
 			addattr_l(n, size, IFLA_VXLAN_GPE, NULL, 0);
-		} else if (matches(*argv, "help") == 0) {
+		} else if (arg == ARG_help) {
 			explain();
-			return -1;
 		} else {
-			fprintf(stderr, "vxlan: unknown command \"%s\"?\n", *argv);
-			explain();
-			return -1;
+			bb_error_msg_and_die("vxlan: unknown command \"%s\"?", *argv);
 		}
 		argv++;
 	}
 
 	if (metadata && VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID)) {
-		fprintf(stderr, "vxlan: both 'external' and vni cannot be specified\n");
-		return -1;
+		bb_error_msg_and_die("vxlan: both 'external' and vni cannot be specified");
 	}
 
 	if (!metadata && !VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID) && !set_op) {
-		fprintf(stderr, "vxlan: missing virtual network identifier\n");
-		return -1;
+		bb_error_msg_and_die("vxlan: missing virtual network identifier");
 	}
 
 	if (is_addrtype_inet_multi(&daddr) &&
 	    !VXLAN_ATTRSET(attrs, IFLA_VXLAN_LINK)) {
-		fprintf(stderr, "vxlan: 'group' requires 'dev' to be specified\n");
-		return -1;
+		bb_error_msg_and_die("vxlan: 'group' requires 'dev' to be specified");
 	}
 
 	if (!VXLAN_ATTRSET(attrs, IFLA_VXLAN_PORT) &&
 	    VXLAN_ATTRSET(attrs, IFLA_VXLAN_GPE)) {
 		dstport = 4790;
-	} else if (!VXLAN_ATTRSET(attrs, IFLA_VXLAN_PORT) && !set_op) {
-		fprintf(stderr, "vxlan: destination port not specified\n"
-			"Will use Linux kernel default (non-standard value)\n");
-		fprintf(stderr,
-			"Use 'dstport 4789' to get the IANA assigned value\n"
-			"Use 'dstport 0' to get default and quiet this message\n");
 	}
 
 	if (VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID))
