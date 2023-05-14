@@ -2023,8 +2023,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_group", i);
 		copytonv(wp, "oet%d_dev", i);
 		copytonv(wp, "oet%d_dstport", i);
-		copytonv(wp, "oet%d_srcportmin", i);
-		copytonv(wp, "oet%d_srcportmax", i);
+		copytonv(wp, "oet%d_srcmin", i);
+		copytonv(wp, "oet%d_srcmax", i);
 		copytonv(wp, "oet%d_ttl", i);
 		copytonv(wp, "oet%d_tos", i);
 		copytonv(wp, "oet%d_ageing", i);
@@ -2465,8 +2465,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("group", i, i - 1);
 		copytunvalue("dev", i, i - 1);
 		copytunvalue("dstport", i, i - 1);
-		copytunvalue("srcportmin", i, i - 1);
-		copytunvalue("srcportmax", i, i - 1);
+		copytunvalue("srcmin", i, i - 1);
+		copytunvalue("srcmax", i, i - 1);
 		copytunvalue("ttl", i, i - 1);
 		copytunvalue("tos", i, i - 1);
 		copytunvalue("ageing", i, i - 1);
@@ -2538,8 +2538,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("group", tunnels);
 	deltunvalue("dev", tunnels);
 	deltunvalue("dstport", tunnels);
-	deltunvalue("srcportmin", tunnels);
-	deltunvalue("srcportmax", tunnels);
+	deltunvalue("srcmin", tunnels);
+	deltunvalue("srcmax", tunnels);
 	deltunvalue("ttl", tunnels);
 	deltunvalue("tos", tunnels);
 	deltunvalue("ageing", tunnels);
