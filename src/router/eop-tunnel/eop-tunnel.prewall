@@ -336,6 +336,9 @@ for i in $(seq 1 $tunnels); do
 			if [[ ! -z "$($nv get oet${i}_df)" && "$($nv get oet${i}_df)" == "1" ]]; then			
 				VXLANARG += "df"
 			fi
+			if [[ ! -z "$($nv get oet${i}_fl)" && "$($nv get oet${i}_fl)" -ge 0 ]]; then			
+				VXLANARG += "flowlabel $($nv get oet${i}_fl)"
+			fi
 			if [[ ! -z "$($nv get oet${i}_gbp)" && "$($nv get oet${i}_gbp)" == "1" ]]; then			
 				VXLANARG += "gbp"
 			fi
