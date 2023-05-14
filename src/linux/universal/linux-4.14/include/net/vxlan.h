@@ -214,6 +214,7 @@ struct vxlan_config {
 	unsigned long		age_interval;
 	unsigned int		addrmax;
 	bool			no_share;
+	enum ifla_vxlan_df	df;
 };
 
 struct vxlan_dev_node {
