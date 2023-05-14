@@ -133,6 +133,11 @@ function changeproto(F, index, value, brvalue) {
 	} else {
 		show_layer_ext(F, "idmtik" + index, false);
 	}
+	if (value == 3) {
+		show_layer_ext(F, "idvxlan" + index, true);
+	} else {
+		show_layer_ext(F, "idvxlan" + index, false);
+	}
 
 	if (value == 2) {
 		show_layer_ext(F, "idwireguard" + index, true);
