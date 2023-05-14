@@ -127,7 +127,7 @@ function changedns46(F, index) {
 	}
 }
 
-function changeproto(F, index, value, brvalue) {
+function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 	if (value == 1) {
 		show_layer_ext(F, "idmtik" + index, true);
 	} else {
@@ -155,7 +155,7 @@ function changeproto(F, index, value, brvalue) {
 			show_layer_ext(F, "idlocalip" + index, false);
 			show_layer_ext(F, "idlocalip6" + index, true);
 			show_layer_ext(F, "idbridged" + index, false);
-			if (brvalue == 1) {
+			if (vxlanbrvalue == 1) {
 				show_layer_ext(F, "idvxlanbridged" + index, false);
 			} else {
 				show_layer_ext(F, "idvxlanbridged" + index, true);
