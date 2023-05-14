@@ -259,7 +259,18 @@ ifneq ($(CONFIG_LIBMBIM),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libgio*
 endif
 endif
+	rm -rf $(INSTALLDIR)/glib20/usr/libexec
+	rm -rf $(INSTALLDIR)/glib20/usr/lib/gio
 	rm -f $(INSTALLDIR)/glib20/usr/lib/*.a
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-8*
+ifneq ($(CONFIG_FRR),y)
+ifneq ($(CONFIG_MC),y)
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-16*
+endif
+endif
+ifneq ($(CONFIG_MC),y)
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libglib-2*
+endif
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-32*
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-posix*
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libintl.so.8
