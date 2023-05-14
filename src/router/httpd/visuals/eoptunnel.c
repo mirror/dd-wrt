@@ -857,6 +857,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 
 				char bufferif[512];
 				char word[32];
+				char *next;
 				snprintf(temp, sizeof(temp), "oet%d_dev", tun);
 				nvram_default_get(temp, "any");
 				bzero(bufferif, 512);
@@ -906,7 +907,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.ttl", NULL);
-					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_defaukt_get(temp, "0"));
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0"));
 				}
 				websWrite(wp, "</div>\n");
 
@@ -1020,7 +1021,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_mcast',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_vxlansettings',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_remoteip6',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "false" : nvram_nmatchi(3, "oet%d_en", tun) ? : "true":"false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_remoteip6',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "false" : nvram_nmatchi(3, "oet%d_en", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showobf',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_obf", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_wdog', %s);\n", tun, tun, (nvram_nmatchi(1, "oet%d_failgrp", tun) || nvram_nmatchi(1, "oet%d_wdog", tun)) ? "true" : "false");
