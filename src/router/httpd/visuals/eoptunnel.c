@@ -868,8 +868,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					show_caption(wp, "label", "share.intrface", NULL);
 					websWrite(wp, "<select name=\"%s\">\n", temp);
 					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", cmp) == 0 ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", cmp) ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", cmp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n", cmp, nvram_match("lan_ifname", cmp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", cmp, nvram_match("wan_ifname", cmp) ? "selected=\"selected\"" : "");
 					foreach(word, bufferif, next) {
 						if (nvram_match("lan_ifname", word))
 							continue;
