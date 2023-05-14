@@ -2473,6 +2473,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("rsc", i, i - 1);
 		copytunvalue("l2miss", i, i - 1);
 		copytunvalue("l3miss", i, i - 1);
+		copytunvalue("df", i, i - 1);
 #ifdef HAVE_WIREGUARD
 		copytunvalue("obf", i, i - 1);
 		copytunvalue("obfkey", i, i - 1);
@@ -2545,6 +2546,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("rsc", tunnels);
 	deltunvalue("l2miss", tunnels);
 	deltunvalue("l3miss", tunnels);
+	deltunvalue("df", tunnels);
 
 #ifdef HAVE_WIREGUARD
 	deltunvalue("obf", tunnels);
