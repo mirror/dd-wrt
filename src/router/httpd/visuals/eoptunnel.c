@@ -810,11 +810,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					snprintf(temp, sizeof(temp), "oet%d_mcast", tun);
 					websWrite(wp,
 						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', true)\" />", temp,
-						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun,tun);
+						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun, tun);
 					show_caption(wp, NULL, "share.enable", "&nbsp;");
 					websWrite(wp,
 						  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', false)\" />", temp,
-						  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""), tun,tun);
+						  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""), tun, tun);
 					show_caption_simple(wp, "share.disable");
 				}
 				websWrite(wp, "</div>\n");
@@ -857,25 +857,31 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			{
 
 				char bufferif[512];
+				char wan_if_buffer[33];
 				char word[32];
 				char *next;
 				snprintf(temp, sizeof(temp), "oet%d_dev", tun);
 				char *cmp = nvram_default_get(temp, "any");
+				char *wanface = safe_get_wan_face(wan_if_buffer);
 				bzero(bufferif, 512);
 				getIfList(bufferif, NULL);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "share.intrface", NULL);
 					websWrite(wp, "<select name=\"%s\">\n", temp);
-					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", cmp) == 0 ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n", cmp, nvram_match("lan_ifname", cmp) ? "selected=\"selected\"" : "");
-					websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", cmp, nvram_match("wan_ifname", cmp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", !strcmp("any", cmp) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"), nvram_match("lan_ifname", cmp) ? "selected=\"selected\"" : "");
+					if (strcmp(wanface, "br0")) {
+						websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface, !strcmp(wanface, cmp) ? "selected=\"selected\"" : "");
+					}
 					foreach(word, bufferif, next) {
 						if (nvram_match("lan_ifname", word))
 							continue;
-						if (nvram_match("wan_ifname", word))
-							continue;
-						if (!strncmp(word, "vxlan",5))
+						if (strcmp(wanface, "br0")) {
+							if (!strcmp(wanface, cmp))
+								continue;
+						}
+						if (!strncmp(word, "vxlan", 5))
 							continue;
 						if (isbridged(word))
 							continue;
@@ -1059,7 +1065,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button red_btn\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
-		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun) ,nvram_nget("vxlan%d_bridged", tun));
+		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun), nvram_nget("vxlan%d_bridged", tun));
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
