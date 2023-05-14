@@ -2039,9 +2039,12 @@ void tunnel_save(webs_t wp)
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
+		copymergetonv(wp, "vxlan%d_ipaddr", i);
 		char temp[32];
 		char buf[32];
 		sprintf(temp, "oet%d_netmask", i);
+		nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
+		sprintf(temp, "vxlan%d_netmask", i);
 		nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
 		sprintf(temp, "oet%d_peers", i);
 		int peers = nvram_geti(temp);
@@ -2247,21 +2250,31 @@ static void delpeer(int tun, int peer)
 
 }
 #endif
-static void copytunvalue(char *valuename, int from, int to)
+static void copytunvalue_prefix(char *prefix, char *valuename, int from, int to)
 {
 	char name[32];
-	sprintf(name, "oet%d_%s", from, valuename);
+	sprintf(name, "%s%d_%s", prefix, from, valuename);
 	char *c = nvram_safe_get(name);
-	sprintf(name, "oet%d_%s", to, valuename);
+	sprintf(name, "%s%d_%s", prefix, to, valuename);
 	nvram_set(name, c);
 
+}
+static void copytunvalue(char *valuename, int from, int to)
+{
+	copytunvalue_prefix("oet", valuename, from, to);
+
+}
+
+static void deltunvalue_prefix(char *prefix, char *valuename, int tun)
+{
+	char name[32];
+	sprintf(name, "%s%d_%s", prefix, tun, valuename);
+	nvram_unset(name);
 }
 
 static void deltunvalue(char *valuename, int tun)
 {
-	char name[32];
-	sprintf(name, "oet%d_%s", tun, valuename);
-	nvram_unset(name);
+	deltunvalue("oet", valuename, tun);
 }
 
 void add_tunnel(webs_t wp)
@@ -2271,6 +2284,8 @@ void add_tunnel(webs_t wp)
 	nvram_seti("oet_tunnels", tunnels);
 #define default_set(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
 #define default_seti(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nseti(val, "oet%d_%s",tunnels,name)
+#define default_vxset(name,val) if (*(nvram_nget("vxlan%d_%s",tunnels, name))==0)nvram_nset(val, "vxlan%d_%s",tunnels,name)
+#define default_vxseti(name,val) if (*(nvram_nget("vxlan%d_%s",tunnels, name))==0)nvram_nseti(val, "vxlan%d_%s",tunnels,name)
 	default_seti("en", 1);
 	default_seti("mit", 1);
 	default_seti("natout", 1);
@@ -2303,6 +2318,8 @@ void add_tunnel(webs_t wp)
 //      default_set("netmask", "255.255.255.0");
 	default_set("ipaddr", "");
 	default_set("netmask", "");
+	default_vxset("ipaddr", "");
+	default_vxset("netmask", "");
 	default_seti("id", 1);
 	default_seti("obf", 0);
 	default_set("obfkey", "");
@@ -2456,6 +2473,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
 		copytunvalue("netmask", i, i - 1);
+		copytunvalue_prefix("vxlan","ipaddr", i, i - 1);
+		copytunvalue_prefix("vxlan","netmask", i, i - 1);
 		copytunvalue("id", i, i - 1);
 		copytunvalue("mtu", i, i - 1);
 		copytunvalue("proto", i, i - 1);
@@ -2530,6 +2549,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
 	deltunvalue("netmask", tunnels);
+	deltunvalue_prefix("vxlan","ipaddr", tunnels);
+	deltunvalue_prefix("vxlan","netmask", tunnels);
 	deltunvalue("id", tunnels);
 	deltunvalue("mtu", tunnels);
 	deltunvalue("proto", tunnels);
