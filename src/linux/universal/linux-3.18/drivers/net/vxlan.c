@@ -131,6 +131,7 @@ struct vxlan_dev {
 	__u16		  port_max;
 	__u8		  tos;		/* TOS override */
 	__u8		  ttl;
+	__u8		  df;
 	u32		  flags;	/* VXLAN_F_* in vxlan.h */
 
 	struct work_struct sock_work;
@@ -1758,6 +1759,7 @@ static void vxlan_xmit_one(struct sk_buff *skb, struct net_device *dev,
 		ttl = 1;
 
 	tos = vxlan->tos;
+	df = vxlan->df;
 	if (tos == 1)
 		tos = ip_tunnel_get_dsfield(old_iph, skb);
 
@@ -2296,6 +2298,15 @@ static int vxlan_validate(struct nlattr *tb[], struct nlattr *data[])
 		}
 	}
 
+	if (data[IFLA_VXLAN_DF]) {
+		enum ifla_vxlan_df df = nla_get_u8(data[IFLA_VXLAN_DF]);
+
+		if (df < 0 || df > VXLAN_DF_MAX) {
+			pr_debug("Invalid DF attribute");
+			return -EINVAL;
+		}
+	}
+
 	return 0;
 }
 
@@ -2531,6 +2542,10 @@ static int vxlan_newlink(struct net *net, struct net_device *dev,
 	if (data[IFLA_VXLAN_TTL])
 		vxlan->ttl = nla_get_u8(data[IFLA_VXLAN_TTL]);
 
+	if (data[IFLA_VXLAN_DF])
+		vxlan->df = nla_get_u8(data[IFLA_VXLAN_DF]);
+
+
 	if (!data[IFLA_VXLAN_LEARNING] || nla_get_u8(data[IFLA_VXLAN_LEARNING]))
 		vxlan->flags |= VXLAN_F_LEARN;
 
@@ -2635,6 +2650,7 @@ static size_t vxlan_get_size(const struct net_device *dev)
 		nla_total_size(sizeof(struct in6_addr)) + /* IFLA_VXLAN_LOCAL{6} */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_TTL */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_TOS */
+		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_DF */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_LEARNING */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_PROXY */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_RSC */
@@ -2695,6 +2711,7 @@ static int vxlan_fill_info(struct sk_buff *skb, const struct net_device *dev)
 
 	if (nla_put_u8(skb, IFLA_VXLAN_TTL, vxlan->ttl) ||
 	    nla_put_u8(skb, IFLA_VXLAN_TOS, vxlan->tos) ||
+	    nla_put_u8(skb, IFLA_VXLAN_DF, vxlan->df) ||
 	    nla_put_u8(skb, IFLA_VXLAN_LEARNING,
 			!!(vxlan->flags & VXLAN_F_LEARN)) ||
 	    nla_put_u8(skb, IFLA_VXLAN_PROXY,
