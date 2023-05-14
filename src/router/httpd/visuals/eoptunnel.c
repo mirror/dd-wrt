@@ -979,6 +979,20 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 				}
 				websWrite(wp, "</div>\n");
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.bridging", NULL);
+					snprintf(temp, sizeof(temp), "vxlan%d_bridged", tun);
+					websWrite(wp,
+						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idvxlanbridged%d', false)\" />", temp,
+						  (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
+					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					websWrite(wp,
+						  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idvxlanbridged%d', true)\" />", temp,
+						  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
+					show_caption_simple(wp, "share.disable");
+				}
+				websWrite(wp, "</div>\n");
 
 			}
 			websWrite(wp, "</div>\n");
