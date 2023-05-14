@@ -128,18 +128,39 @@ function changedns46(F, index) {
 }
 
 function changeproto(F, index, value, brvalue, vxlanbrvalue) {
-	if (value == 1) {
-		show_layer_ext(F, "idmtik" + index, true);
-	} else {
+	if (value == 0) {
 		show_layer_ext(F, "idmtik" + index, false);
-	}
-	if (value == 3) {
-		show_layer_ext(F, "idvxlan" + index, true);
-	} else {
 		show_layer_ext(F, "idvxlan" + index, false);
-	}
-
-	if (value == 2) {
+		show_layer_ext(F, "idwireguard" + index, false);
+		show_layer_ext(F, "idwginput" + index, false);
+		show_layer_ext(F, "idl2support" + index, true);
+		show_layer_ext(F, "idshowmcast" + index, false);
+		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idlocalip6" + index, false);
+		show_layer_ext(F, "idvxlansettings" + index, false);
+		if (brvalue == 1) {
+			show_layer_ext(F, "idbridged" + index, false);
+		} else {
+			show_layer_ext(F, "idbridged" + index, true);
+		}
+	} else if (value == 1) {
+		show_layer_ext(F, "idmtik" + index, true);
+		show_layer_ext(F, "idvxlan" + index, false);
+		show_layer_ext(F, "idwireguard" + index, false);
+		show_layer_ext(F, "idwginput" + index, false);
+		show_layer_ext(F, "idl2support" + index, true);
+		show_layer_ext(F, "idshowmcast" + index, false);
+		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idlocalip6" + index, false);
+		show_layer_ext(F, "idvxlansettings" + index, false);
+		if (brvalue == 1) {
+			show_layer_ext(F, "idbridged" + index, false);
+		} else {
+			show_layer_ext(F, "idbridged" + index, true);
+		}
+	} else if (value == 2) {
+		show_layer_ext(F, "idmtik" + index, false);
+		show_layer_ext(F, "idvxlan" + index, false);
 		show_layer_ext(F, "idwireguard" + index, true);
 		show_layer_ext(F, "idl2support" + index, false);
 		show_layer_ext(F, "idwginput" + index, true);
@@ -147,32 +168,21 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 		show_layer_ext(F, "idbridged" + index, false);
 		show_layer_ext(F, "idvxlanbridged" + index, false);
 		show_layer_ext(F, "idvxlansettings" + index, false);
-	} else {
+	} else if (value == 3) {
+		show_layer_ext(F, "idmtik" + index, false);
+		show_layer_ext(F, "idvxlan" + index, true);
 		show_layer_ext(F, "idwireguard" + index, false);
 		show_layer_ext(F, "idwginput" + index, false);
-		if (value == 3) {
-			show_layer_ext(F, "idshowmcast" + index, true);
-			show_layer_ext(F, "idlocalip" + index, false);
-			show_layer_ext(F, "idl2support" + index, false);
-			show_layer_ext(F, "idlocalip6" + index, true);
-			show_layer_ext(F, "idbridged" + index, false);
-			show_layer_ext(F, "idvxlansettings" + index, true);
-			if (vxlanbrvalue == 1) {
-				show_layer_ext(F, "idvxlanbridged" + index, false);
-			} else {
-				show_layer_ext(F, "idvxlanbridged" + index, true);
-			}
+		show_layer_ext(F, "idshowmcast" + index, true);
+		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idl2support" + index, false);
+		show_layer_ext(F, "idlocalip6" + index, true);
+		show_layer_ext(F, "idbridged" + index, false);
+		show_layer_ext(F, "idvxlansettings" + index, true);
+		if (vxlanbrvalue == 1) {
+			show_layer_ext(F, "idvxlanbridged" + index, false);
 		} else {
-			show_layer_ext(F, "idl2support" + index, true);
-			show_layer_ext(F, "idshowmcast" + index, false);
-			show_layer_ext(F, "idlocalip" + index, false);
-			show_layer_ext(F, "idlocalip6" + index, false);
-			show_layer_ext(F, "idvxlansettings" + index, false);
-			if (brvalue == 1) {
-				show_layer_ext(F, "idbridged" + index, false);
-			} else {
-				show_layer_ext(F, "idbridged" + index, true);
-			}
+			show_layer_ext(F, "idvxlanbridged" + index, true);
 		}
 	}
 }
