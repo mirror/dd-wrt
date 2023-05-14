@@ -875,6 +875,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 							continue;
 						if (nvram_match("wan_ifname", word))
 							continue;
+						if (!strncmp(word, "vxlan",5))
+							continue;
 						if (isbridged(word))
 							continue;
 						websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, cmp) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
