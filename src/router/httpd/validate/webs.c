@@ -2033,6 +2033,7 @@ void tunnel_save(webs_t wp)
 		copytonv_checkbox(wp, "oet%d_rsc", i);
 		copytonv_checkbox(wp, "oet%d_l2miss", i);
 		copytonv_checkbox(wp, "oet%d_l3miss", i);
+		copytonv_checkbox(wp, "oet%d_df", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
