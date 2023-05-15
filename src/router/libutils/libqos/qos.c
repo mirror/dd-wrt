@@ -158,6 +158,8 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 	if (idx == 10)
 		idx = 0;
 
+	if (name && !strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry"))
+		return;
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
@@ -236,6 +238,8 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 
 	if (idx == 10)
 		idx = 0;
+	if (name && !strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry"))
+		return;
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-p", "udp", "-m", "udp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
@@ -319,6 +323,9 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 
 	if (idx == 10)
 		idx = 0;
+
+	if (name && !strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry"))
+		return;
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "udp", "-m", "udp", "--dport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
