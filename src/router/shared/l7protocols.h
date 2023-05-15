@@ -670,6 +670,9 @@ l7filters filters_list[] = {
 	{ "tvuplayer", NDPI_ONLY, 0, NULL },
 	{ "twitch", NDPI_ONLY, 0, NULL },
 	{ "twitter", NDPI_ONLY, 0, NULL },
+#endif
+	{ "ubnt-telemetry", L7_ONLY },
+#ifdef HAVE_OPENDPI
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
 	{ "ultrasurf", NDPI_ONLY, 0, NULL },
@@ -728,6 +731,9 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "whois-das", NDPI_ONLY, 0, NULL },
 	{ "wikipedia", NDPI_ONLY, 0, NULL },
+#endif
+	{ "windows-telemetry", L7_ONLY },
+#ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY, 0, NULL },
 #endif
 	{ "winmx", L7_ONLY, 0, NULL },
