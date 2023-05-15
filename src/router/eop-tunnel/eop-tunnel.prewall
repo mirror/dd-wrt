@@ -329,6 +329,21 @@ for i in $(seq 1 $tunnels); do
 			else
 				VXLANARG="$VXLANARG nol3miss"
 			fi
+			if [[ ! -z "$($nv get oet${i}_udpcsum)" && "$($nv get oet${i}_udpcsum)" == "1" ]]; then			
+				VXLANARG="$VXLANARG udpcsum"
+			else
+				VXLANARG="$VXLANARG noudpcsum"
+			fi
+			if [[ ! -z "$($nv get oet${i}_udp6zerocsumtx)" && "$($nv get oet${i}_udp6zerocsumtx)" == "1" ]]; then			
+				VXLANARG="$VXLANARG udp6zerocsumtx"
+			else
+				VXLANARG="$VXLANARG noudp6zerocsumtx"
+			fi
+			if [[ ! -z "$($nv get oet${i}_udp6zerocsumrx)" && "$($nv get oet${i}_udp6zerocsumrx)" == "1" ]]; then			
+				VXLANARG="$VXLANARG udp6zerocsumrx"
+			else
+				VXLANARG="$VXLANARG noudp6zerocsumrx"
+			fi
 			if [[ ! -z "$($nv get oet${i}_ageing)" ]]; then			
 				VXLANARG="$VXLANARG ageing $($nv get oet${i}_ageing)"
 			fi
