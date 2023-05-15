@@ -1759,9 +1759,17 @@ static void vxlan_xmit_one(struct sk_buff *skb, struct net_device *dev,
 		ttl = 1;
 
 	tos = vxlan->tos;
-	df = vxlan->df;
 	if (tos == 1)
 		tos = ip_tunnel_get_dsfield(old_iph, skb);
+	if (vxlan->df == VXLAN_DF_SET) {
+		df = htons(IP_DF);
+	} else if (vxlan->df == VXLAN_DF_INHERIT) {
+		struct ethhdr *eth = eth_hdr(skb);
+		if (ntohs(eth->h_proto) == ETH_P_IPV6 ||
+		    (ntohs(eth->h_proto) == ETH_P_IP &&
+		     old_iph->frag_off & htons(IP_DF)))
+			df = htons(IP_DF);
+	}
 
 	src_port = udp_flow_src_port(dev_net(dev), skb, vxlan->port_min,
 				     vxlan->port_max, true);
