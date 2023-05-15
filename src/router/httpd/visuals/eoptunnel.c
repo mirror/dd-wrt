@@ -964,6 +964,30 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				}
 				websWrite(wp, "</div>\n");
 
+				snprintf(temp, sizeof(temp), "oet%d_udpcsum", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.udpcsum", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+
+				snprintf(temp, sizeof(temp), "oet%d_udp6zerocsumtx", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.udp6zerocsumtx", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+
+				snprintf(temp, sizeof(temp), "oet%d_udp6zerocsumrx", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.udp6zerocsumrx", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+
 				snprintf(temp, sizeof(temp), "oet%d_df", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
