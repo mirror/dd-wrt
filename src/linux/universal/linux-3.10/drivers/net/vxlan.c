@@ -115,6 +115,7 @@ struct vxlan_dev {
 	__u16		  port_max;
 	__u8		  tos;		/* TOS override */
 	__u8		  ttl;
+	__u8		  df;
 	u32		  flags;	/* VXLAN_F_* below */
 
 	unsigned long	  age_interval;
@@ -1026,6 +1027,15 @@ static netdev_tx_t vxlan_xmit_one(struct sk_buff *skb, struct net_device *dev,
 	tos = vxlan->tos;
 	if (tos == 1)
 		tos = ip_tunnel_get_dsfield(old_iph, skb);
+	if (vxlan->df == VXLAN_DF_SET) {
+		df = htons(IP_DF);
+	} else if (vxlan->df == VXLAN_DF_INHERIT) {
+		struct ethhdr *eth = eth_hdr(skb);
+		if (ntohs(eth->h_proto) == ETH_P_IPV6 ||
+		    (ntohs(eth->h_proto) == ETH_P_IP &&
+		     old_iph->frag_off & htons(IP_DF)))
+			df = htons(IP_DF);
+	}
 
 	src_port = vxlan_src_port(vxlan, skb);
 
@@ -1355,6 +1365,7 @@ static const struct nla_policy vxlan_policy[IFLA_VXLAN_MAX + 1] = {
 	[IFLA_VXLAN_LINK]	= { .type = NLA_U32 },
 	[IFLA_VXLAN_LOCAL]	= { .len = FIELD_SIZEOF(struct iphdr, saddr) },
 	[IFLA_VXLAN_TOS]	= { .type = NLA_U8 },
+	[IFLA_VXLAN_DF]	= { .type = NLA_U8 },
 	[IFLA_VXLAN_TTL]	= { .type = NLA_U8 },
 	[IFLA_VXLAN_LEARNING]	= { .type = NLA_U8 },
 	[IFLA_VXLAN_AGEING]	= { .type = NLA_U32 },
@@ -1464,6 +1475,9 @@ static int vxlan_newlink(struct net *net, struct net_device *dev,
 	if (data[IFLA_VXLAN_TTL])
 		vxlan->ttl = nla_get_u8(data[IFLA_VXLAN_TTL]);
 
+	if (data[IFLA_VXLAN_DF])
+		vxlan->df = nla_get_u8(data[IFLA_VXLAN_DF]);
+
 	if (!data[IFLA_VXLAN_LEARNING] || nla_get_u8(data[IFLA_VXLAN_LEARNING]))
 		vxlan->flags |= VXLAN_F_LEARN;
 
@@ -1524,6 +1538,7 @@ static size_t vxlan_get_size(const struct net_device *dev)
 		nla_total_size(sizeof(__be32))+	/* IFLA_VXLAN_LOCAL */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_TTL */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_TOS */
+		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_DF */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_LEARNING */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_PROXY */
 		nla_total_size(sizeof(__u8)) +	/* IFLA_VXLAN_RSC */
@@ -1559,6 +1574,7 @@ static int vxlan_fill_info(struct sk_buff *skb, const struct net_device *dev)
 
 	if (nla_put_u8(skb, IFLA_VXLAN_TTL, vxlan->ttl) ||
 	    nla_put_u8(skb, IFLA_VXLAN_TOS, vxlan->tos) ||
+	    nla_put_u8(skb, IFLA_VXLAN_TOS, vxlan->df) ||
 	    nla_put_u8(skb, IFLA_VXLAN_LEARNING,
 			!!(vxlan->flags & VXLAN_F_LEARN)) ||
 	    nla_put_u8(skb, IFLA_VXLAN_PROXY,
