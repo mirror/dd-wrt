@@ -32,6 +32,7 @@ for i in $(seq 1 $tunnels); do
 		$ipt -D INPUT -i oet${i} -j $ACCEPT
 		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j $ACCEPT
 		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j $ACCEPT
+		$ipt -D INPUT -p udp --sport oet${i}_srcmin:oet${i}_srcmax  -j $ACCEPT
 		$ipt -D FORWARD $IN_IF -o $WAN_IF -j $FW_CHAIN
 		$ipt -F $FW_CHAIN
 		$ipt -X $FW_CHAIN
@@ -69,7 +70,7 @@ for i in $(seq 1 $tunnels); do
 		if [ $($nv get oet${i}_proto) -eq 3 ]; then
 			$ipt -I INPUT -p udp --sport oet${i}_srcmin:oet${i}_srcmax  -j $ACCEPT >/dev/null 2>&1
 		fi
-		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ] && `$nv get oet${i}_proto` -ne 3 ]]; then
+		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 && `$nv get oet${i}_proto` -ne 3 ]]; then
 			$ipt -I FORWARD -i oet${i} -j $ACCEPT >/dev/null 2>&1
 			$ipt -I INPUT -i oet${i} -j $ACCEPT >/dev/null 2>&1
 		fi
