@@ -916,7 +916,8 @@ static int svqos_iptables(void)
 			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
 			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
-
+		if (!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry"))
+			continue;
 		if (strstr(type, "l7")) {
 			insmod("ipt_layer7");
 			insmod("xt_layer7");
