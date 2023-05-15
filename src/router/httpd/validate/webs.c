@@ -2036,6 +2036,9 @@ void tunnel_save(webs_t wp)
 		copytonv_checkbox(wp, "oet%d_rsc", i);
 		copytonv_checkbox(wp, "oet%d_l2miss", i);
 		copytonv_checkbox(wp, "oet%d_l3miss", i);
+		copytonv_checkbox(wp, "oet%d_udpcsum", i);
+		copytonv_checkbox(wp, "oet%d_udp6zerocsumtx", i);
+		copytonv_checkbox(wp, "oet%d_udp6zerocsumrx", i);
 		copytonv_checkbox(wp, "oet%d_df", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
@@ -2499,6 +2502,9 @@ void del_tunnel(webs_t wp)
 		copytunvalue("rsc", i, i - 1);
 		copytunvalue("l2miss", i, i - 1);
 		copytunvalue("l3miss", i, i - 1);
+		copytunvalue("udpcsum", i, i - 1);
+		copytunvalue("udp6zerocsumtx", i, i - 1);
+		copytunvalue("udp6zerocsumrx", i, i - 1);
 		copytunvalue("df", i, i - 1);
 		copytunvalue("fl", i, i - 1);
 #ifdef HAVE_WIREGUARD
@@ -2576,6 +2582,9 @@ void del_tunnel(webs_t wp)
 	deltunvalue("rsc", tunnels);
 	deltunvalue("l2miss", tunnels);
 	deltunvalue("l3miss", tunnels);
+	deltunvalue("udpcsum", tunnels);
+	deltunvalue("udp6zerocsumtx", tunnels);
+	deltunvalue("udp6zerocsumrx", tunnels);
 	deltunvalue("df", tunnels);
 	deltunvalue("fl", tunnels);
 #ifdef HAVE_WIREGUARD
