@@ -57,7 +57,7 @@ static void show_oet_num(webs_t wp, const char *label, const char *fmt, int id, 
 {
 	char temp[64];
 
-	snprintf(temp, sizeof(temp), fmt, tun);
+	snprintf(temp, sizeof(temp), fmt, id);
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", label, NULL);
