@@ -65,9 +65,9 @@ static void show_oet_num(webs_t wp, const char *label, const char *fmt, int id, 
 		if (ext)
 			snprintf(attrib, sizeof(attrib), ext, id);
 		if (def != -1)
-			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%d\" %s/>\n", size, maxlenth, temp, nvram_default_geti(temp, def), attrib);
+			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%d\" %s/>\n", size, maxlength, temp, nvram_default_geti(temp, def), attrib);
 		else
-			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%s\" %s/>\n", size, maxlenth, temp, nvram_safe_get(temp), attrib);
+			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%s\" %s/>\n", size, maxlength, temp, nvram_safe_get(temp), attrib);
 	}
 	websWrite(wp, "</div>\n");
 }
