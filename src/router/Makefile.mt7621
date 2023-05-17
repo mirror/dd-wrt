@@ -653,7 +653,7 @@ r6800:
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350-webflash.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220-webflash.img -b AYA -r A001 -v 0x0086 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/wac124-webflash.img -b CTL -r A003 -v 0x0402 -f
-	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700-webflash.img -b AYA -r A001 -v 0x1054 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700-webflash.img -b AYB -r A001 -v 0x1054 -f
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=128 conv=sync
