@@ -1790,7 +1790,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		/*atm rarly used protocols */
 //		save2file_A("advgrp_%d -p tcp -m ndpi --proto applejuice -j %s", seq, log_drop);
 //		save2file_A("advgrp_%d -p tcp -m ndpi --proto directconnect -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --proto fasttrack -j %s", seq, log_drop);
+//		save2file_A("advgrp_%d -m ndpi --proto fasttrack -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -p tcp -m ndpi --proto filetopia -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m ndpi --proto gnutella -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
