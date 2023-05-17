@@ -66,6 +66,7 @@ void setPassword(char *passwd)
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 #endif
+	fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
 	fclose(fp);
 }
 
