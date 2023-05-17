@@ -602,7 +602,7 @@ r6800:
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/wac124.img -b CTL -r A003 -v 0x0402
-	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYA -r A001 -v 0x1054
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYB -r A001 -v 0x1054
 
 	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage > $(ARCH)-uclibc/r6800-webflash.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6850.uimage > $(ARCH)-uclibc/r6850-webflash.img
