@@ -38,7 +38,6 @@ void show_caption_simple(webs_t wp, const char *cap);
 
 static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext)
 {
-
 	char temp[64];
 	snprintf(temp, sizeof(temp), fmt, id);
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -53,41 +52,52 @@ static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int
 	websWrite(wp, "</div>\n");
 }
 
-static void show_oet_num(webs_t wp, const char *label, const char *fmt, int id, int size, int maxlength, int def, const char *ext)
+static void show_oet_num(webs_t wp, const char *label, int size, int maxlength, int def, int id, const char *ext, const char *fmt, ...)
 {
-	char temp[64];
+	va_list args;
+	va_start(args, fmt);
+	char *buf;
 
-	snprintf(temp, sizeof(temp), fmt, id);
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", label, NULL);
 		char attrib[64] = { 0 };
 		if (ext)
 			snprintf(attrib, sizeof(attrib), ext, id);
+		vasprintf(&buf, fmt, args);
 		if (def != -1)
-			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%d\" %s/>\n", size, maxlength, temp, nvram_default_geti(temp, def), attrib);
+			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%d\" %s/>\n", size, maxlength, buf, nvram_default_geti(buf, def), attrib);
 		else
-			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%s\" %s/>\n", size, maxlength, temp, nvram_safe_get(temp), attrib);
+			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" class=\"num\" value=\"%s\" %s/>\n", size, maxlength, buf, nvram_safe_get(buf), attrib);
+		free(buf);
 	}
 	websWrite(wp, "</div>\n");
+	va_end(args);
 }
 
-static void show_oet_textfield(webs_t wp, const char *label, const char *fmt, int id, int size, int maxlength, const char *def, const char *ext)
+static void show_oet_textfield(webs_t wp, int pass, const char *label, int size, int maxlength, const char *def, int id, const char *ext, const char *fmt, ...)
 {
-	char temp[64];
-	snprintf(temp, sizeof(temp), fmt, id);
+	va_list args;
+	va_start(args, fmt);
+	char *buf;
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		char attrib[64] = { 0 };
+		vasprintf(&buf, fmt, args);
 		if (ext)
 			snprintf(attrib, sizeof(attrib), ext, id);
 		show_caption(wp, "label", label, NULL);
-		websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" %s/>\n", size, maxlength, temp, nvram_default_get(temp, def), attrib);
+		if (pass)
+			websWrite(wp, "<input type=\"password\" size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" %s/>\n", size, maxlength, buf, nvram_default_get(buf, def), attrib);
+		else
+			websWrite(wp, "<input size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" %s/>\n", size, maxlength, buf, nvram_default_get(buf, def), attrib);
+		free(buf);
 	}
 	websWrite(wp, "</div>\n");
+	va_end(args);
 }
 
-EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 {
 
 	int tun;
@@ -139,12 +149,12 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idmtik%d\">\n", tun);
 			{
-				show_oet_num(wp, "eoip.tunnelID", "oet%d_id", tun, 4, 3, -1, "onblur=\"valid_range(this,0,65535,eoip.tunnelID)\"");
+				show_oet_num(wp, "eoip.tunnelID", 4, 3, -1, tun, "onblur=\"valid_range(this,0,65535,eoip.tunnelID)\"", "oet%d_id", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idvxlan%d\">\n", tun);
 			{
-				show_oet_num(wp, "eoip.tunnelID", "oet%d_id", tun, 8, 8, -1, "onblur=\"valid_range(this,0,16777215,eoip.tunnelID)\"");
+				show_oet_num(wp, "eoip.tunnelID", 8, 8, -1, tun, "onblur=\"valid_range(this,0,16777215,eoip.tunnelID)\"", "oet%d_id", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
@@ -176,15 +186,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 
 				websWrite(wp, "<div id=\"idoet%d_showobf\">\n", tun);	//for show or hide advanced options
 				{
-					snprintf(temp, sizeof(temp), "oet%d_obfkey", tun);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "share.key", NULL);
-						websWrite(wp,
-							  "<input type=\"password\" size=\"32\" maxlength=\"32\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
-							  temp, nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
+					show_oet_textfield(wp, 1, "share.key", 32, 32, "", tun, "onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"", "oet%d_obfkey", tun);
 				}
 				websWrite(wp, "</div>\n");
 
@@ -200,14 +202,14 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				}
 				websWrite(wp, "</div>\n");
 
-				show_oet_num(wp, "eoip.wireguard_localport", "oet%d_port", tun, 5, 5, 51820, NULL);
+				show_oet_num(wp, "eoip.wireguard_localport", 5, 5, 51820, tun, NULL, "oet%d_port", tun);
 
 				{
 					int mtu = 1500;
 					if (!nvram_match("wan_proto", "disabled"))
 						mtu = nvram_geti("wan_mtu");
 					mtu -= nvram_matchi("ipv6_enable", 1) ? 80 : 60;
-					show_oet_num(wp, "idx.mtu", "oet%d_mtu", tun, 5, 5, mtu, NULL);
+					show_oet_num(wp, "idx.mtu", 5, 5, mtu, tun, NULL, "oet%d_mtu", tun);
 				}
 
 				websWrite(wp, "<div class=\"center\">\n");
@@ -221,10 +223,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "</div>\n");
 
 				//public key show
-				show_oet_textfield(wp, "eoip.wireguard_localkey", "oet%d_public", tun, 32, 48, "", "readonly=\"readonly\"");
+				show_oet_textfield(wp, 0, "eoip.wireguard_localkey", 32, 48, "", tun, "readonly=\"readonly\"", "oet%d_public", tun);
 
 				//egc: DNS 
-				show_oet_textfield(wp, "eoip.wireguard_oet_dns", "oet%d_dns", tun, 32, 48, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.wireguard_oet_dns", 32, 48, "", tun, NULL, "oet%d_dns", tun);
 
 				//Inbound firewall controlled by nvram parameter: oet${i}_firewallin default 0 = disabled, Checkbox
 				show_oet_checkbox(wp, "eoip.wireguard_firewallin", "oet%d_firewallin", tun, 0, NULL);
@@ -253,24 +255,17 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				//websWrite(wp, "<div id=\"idoet%d_showadvanced\" style=\"display:none\">\n", tun);  //for show or hide advanced options
 
 				//egc set private key
-				snprintf(temp, sizeof(temp), "oet%d_private", tun);
-				websWrite(wp, "<div class=\"setting\">\n");
-				{
-					show_caption(wp, "label", "eoip.wireguard_localprivatekey", NULL);
-					websWrite(wp, "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n", temp,
-						  nvram_safe_get(temp));
-				}
-				websWrite(wp, "</div>\n");
+				show_oet_textfield(wp, 1, "eoip.wireguard_localprivatekey", 48, 48, "", tun, "onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"", "oet%d_private", tun);
 
 				//route up script
-				show_oet_textfield(wp, "eoip.wireguard_rtupscript", "oet%d_rtupscript", tun, 48, 64, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.wireguard_rtupscript", 48, 64, "", tun, NULL, "oet%d_rtupscript", tun);
 
 				//route down script
 				snprintf(temp, sizeof(temp), "oet%d_rtdownscript", tun);
-				show_oet_textfield(wp, "eoip.wireguard_rtdownscript", "oet%d_rtdownscript", tun, 48, 64, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.wireguard_rtdownscript", 48, 64, "", tun, NULL, "oet%d_rtdownscript", tun);
 
 				//fwmark
-				show_oet_num(wp, "eoip.wireguard_fwmark", "oet%d_fwmark", tun, 5, 5, -1, NULL);
+				show_oet_num(wp, "eoip.wireguard_fwmark", 5, 5, -1, tun, NULL, "oet%d_fwmark", tun);
 
 				//egc full wan access, NAT over WAN, nvram param: oet%d_wanac, Checkbox
 				show_oet_checkbox(wp, "service.vpnd_allowcnwan", "oet%d_wanac", tun, 1, NULL);
@@ -295,7 +290,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				//end spbr switch
 				websWrite(wp, "<div id=\"idoet%d_spbr\">\n", tun);	//for show or hide pbr
 				//egc: PBR input box
-				show_oet_textfield(wp, "eoip.wireguard_oet_spbr_ip", "oet%d_spbr_ip", tun, 78, 1024, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.wireguard_oet_spbr_ip", 78, 1024, "", tun, NULL, "oet%d_spbr_ip", tun);
 				//Split DNS oet%d_dnspbr
 				/*
 				   snprintf(temp, sizeof(temp), "oet%d_dnspbr", tun);
@@ -319,7 +314,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					show_oet_checkbox(wp, "eoip.wireguard_dnspbr", "oet%d_dnspbr", tun, 0, "onclick=\"changedns46(this, %d)\"");
 					if (nvram_matchi("ipv6_enable", 1)) {
 						snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
-						show_oet_textfield(wp, "eoip.wireguard_dns6", "oet%d_dns6", tun, 40, 40, "2620:fe::9", NULL);
+						show_oet_textfield(wp, 0, "eoip.wireguard_dns6", 40, 40, "2620:fe::9", tun, NULL, "oet%d_dns6", tun);
 					}
 					websWrite(wp, "</div>\n");
 				}
@@ -343,7 +338,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				//end dpbr switch
 				websWrite(wp, "<div id=\"idoet%d_dpbr\">\n", tun);	//for show or hide pbr
 				//egc: PBR input box
-				show_oet_textfield(wp, "eoip.wireguard_oet_dpbr_ip", "oet%d_dpbr_ip", tun, 78, 1024, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.wireguard_oet_dpbr_ip", 78, 1024, "", tun, NULL, "oet%d_dpbr_ip", tun);
 				websWrite(wp, "</div>\n");	//end show hide dpbr
 
 				//egc Check if tunnel is part of fail group, Checkbox
@@ -401,7 +396,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "<div id=\"idoet%d_wdog\">\n", tun);
 				websWrite(wp, "<fieldset>\n");
 				show_caption_legend(wp, "service.vpn_wdog");
-				show_oet_textfield(wp, "share.srvipname", "oet%d_failip", tun, 20, 48, "8.8.8.8", NULL);
+				show_oet_textfield(wp, 0, "share.srvipname", 20, 48, "8.8.8.8", tun, NULL, "oet%d_failip", tun);
 				websWrite(wp, "</fieldset>\n");
 				websWrite(wp, "</div>\n");
 
@@ -440,38 +435,12 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "</div>\n");
 					//end show Client config
 					websWrite(wp, "<div id=\"idclconfig%d_peer%d\">\n", tun, peer);
-					websWrite(wp, "<div class=\"setting\">\n");
-					snprintf(temp, sizeof(temp), "oet%d_clip%d", tun, peer);
 					{
-						show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
-						websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
+						show_oet_textfield(wp, 0, "eoip.wireguard_peerip", 48, 128, "0.0.0.0/0", tun, NULL, "oet%d_clip%d", tun, peer);
+						show_oet_textfield(wp, 0, "eoip.wireguard_wireguard_peerdns", 48, 128, "0.0.0.0", tun, NULL, "oet%d_cldns%d", tun, peer);
+						show_oet_textfield(wp, 0, "eoip.wireguard_wireguard_peerdns", 40, 48, "", tun, NULL, "oet%d_clend%d", tun, peer);
+						show_oet_num(wp, "eoip.wireguard_clka", 5, 5, 25, tun, NULL, "oet%d_clka%d", tun, peer);
 					}
-					websWrite(wp, "</div>\n");
-
-					websWrite(wp, "<div class=\"setting\">\n");
-					snprintf(temp, sizeof(temp), "oet%d_cldns%d", tun, peer);
-					{
-						show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
-						websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0"));
-					}
-					websWrite(wp, "</div>\n");
-
-					websWrite(wp, "<div class=\"setting\">\n");
-					snprintf(temp, sizeof(temp), "oet%d_clend%d", tun, peer);
-					{
-						show_caption(wp, "label", "eoip.wireguard_clend", NULL);
-						websWrite(wp, "<input size=\"40\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
-
-					websWrite(wp, "<div class=\"setting\">\n");
-					snprintf(temp, sizeof(temp), "oet%d_clka%d", tun, peer);
-					{
-						show_caption(wp, "label", "eoip.wireguard_clka", NULL);
-						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%d\" />\n", temp,
-							  nvram_default_geti(temp, 25));
-					}
-					websWrite(wp, "</div>\n");
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
 					websWrite(wp, "</fieldset><br>\n");
 
@@ -516,15 +485,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 
 						websWrite(wp, "<div id=\"idshowobf%d_peer%d\">\n", tun, peer);	//for show or hide advanced options
 						{
-							snprintf(temp, sizeof(temp), "oet%d_obfkey%d", tun, peer);
-							websWrite(wp, "<div class=\"setting\">\n");
-							{
-								show_caption(wp, "label", "share.key", NULL);
-								websWrite(wp,
-									  "<input type=\"password\" size=\"32\" maxlength=\"32\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
-									  temp, nvram_safe_get(temp));
-							}
-							websWrite(wp, "</div>\n");
+							show_oet_textfield(wp, 1, "share.key", 32, 32, "", tun, "onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"", "oet%d_obfkey%d", tun, peer);
 						}
 						websWrite(wp, "</div>\n");
 					}
@@ -549,24 +510,9 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					}
 					websWrite(wp, "</div>\n");
 
-					snprintf(temp, sizeof(temp), "oet%d_ka%d", tun, peer);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_ka", NULL);
-						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_ka)\" value=\"%s\" />\n", temp,
-							  nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
-
+					show_oet_num(wp, "eoip.wireguard_ka", 5, 5, -1, tun, NULL, "oet%d_ka%d", tun, peer);
 					//public key peer input
-					snprintf(temp, sizeof(temp), "oet%d_peerkey%d", tun, peer);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_peerkey", NULL);
-						websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
-
+					show_oet_textfield(wp, 0, "eoip.wireguard_peerkey", 48, 48, "", tun, NULL, "oet%d_peerkey%d", tun, peer);
 					snprintf(temp, sizeof(temp), "oet%d_usepsk%d", tun, peer);
 					nvram_default_get(temp, "0");
 					websWrite(wp, "<div class=\"setting\">\n");
@@ -596,14 +542,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 							websWrite(wp, "//]]>\n</script>\n");
 						}
 						websWrite(wp, "</div>\n");
+						show_oet_textfield(wp, 0, "eoip.wireguard_psk", 48, 48, "", tun, NULL, "oet%d_psk%d", tun, peer);
 
-						snprintf(temp, sizeof(temp), "oet%d_psk%d", tun, peer);
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_psk", NULL);
-							websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-						}
-						websWrite(wp, "</div>\n");
 					}
 					websWrite(wp, "</div>\n");
 					int hasqr = 0;
@@ -752,17 +692,17 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idmcast%d\">\n", tun);
 			{
-				show_oet_textfield(wp, "eoip.mcast_group", "oet%d_group", tun, 48, 128, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.mcast_group", 48, 128, "", tun, NULL, "oet%d_group", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idremoteip6%d\">\n", tun);
 			{
-				show_oet_textfield(wp, "eoip.remoteIP", "oet%d_rem6", tun, 48, 128, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.remoteIP", 48, 128, "", tun, NULL, "oet%d_rem6", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idlocalip6%d\">\n", tun);
 			{
-				show_oet_textfield(wp, "eoip.localIP", "oet%d_local6", tun, 48, 128, "", NULL);
+				show_oet_textfield(wp, 0, "eoip.localIP", 48, 128, "", tun, NULL, "oet%d_local6", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idvxlansettings%d\">\n", tun);
@@ -802,7 +742,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "</select>\n");
 				}
 				websWrite(wp, "</div>\n");
-				show_oet_num(wp, "eoip.dport", "oet%d_dstport", tun, 5, 5, 4789, NULL);
+				show_oet_num(wp, "eoip.dport", 5, 5, 4789, tun, NULL, "oet%d_dstport", tun);
 
 				char min[32];
 				char max[32];
@@ -816,8 +756,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						  min, nvram_default_get(min, "0"), max, nvram_default_get(max, "0"));
 				}
 				websWrite(wp, "</div>\n");
-				show_oet_num(wp, "eoip.ttl", "oet%d_ttl", tun, 5, 5, 0, NULL);
-				show_oet_num(wp, "eoip.tos", "oet%d_tos", tun, 5, 5, 0, NULL);
+				show_oet_num(wp, "eoip.ttl", 5, 5, 0, tun, NULL, "oet%d_ttl", tun);
+				show_oet_num(wp, "eoip.tos", 5, 5, 0, tun, NULL, "oet%d_tos", tun);
 
 				show_oet_checkbox(wp, "eoip.lrn", "oet%d_lrn", tun, 1, NULL);
 				show_oet_checkbox(wp, "eoip.proxy", "oet%d_proxy", tun, 0, NULL);
@@ -831,8 +771,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				/* kernel 3.10 or higher */
 				show_oet_checkbox(wp, "eoip.df", "oet%d_df", tun, 0, NULL);
 
-				show_oet_num(wp, "eoip.ageing", "oet%d_ageing", tun, 5, 5, 300, NULL);
-				show_oet_num(wp, "eoip.flowlabel", "oet%d_fl", tun, 5, 5, -1, NULL);
+				show_oet_num(wp, "eoip.ageing", 5, 5, 300, tun, NULL, "oet%d_ageing", tun);
+				show_oet_num(wp, "eoip.flowlabel", 5, 5, -1, tun, NULL, "oet%d_fl", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.bridging", NULL);
@@ -899,7 +839,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			// nvram variable oet%d_ipaddrmask
 			websWrite(wp, "<div id=\"idwginput%d\">\n", tun);
 			{
-				show_oet_textfield(wp, "share.ipaddrmask", "oet%d_ipaddrmask", tun, 48, 128, "", NULL);
+				show_oet_textfield(wp, 0, "share.ipaddrmask", 48, 128, "", tun, NULL, "oet%d_ipaddrmask", tun);
 				//end alternative input
 			}
 			websWrite(wp, "</div>\n");
