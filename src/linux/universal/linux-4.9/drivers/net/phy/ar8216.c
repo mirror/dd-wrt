@@ -647,8 +647,8 @@ ar8216_read_port_status(struct ar8xxx_priv *priv, int port)
 	return ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 }
 
-static int void ar8216_sw_set_port_link(struct switch_dev *dev, int port,
-			     struct switch_port_link *link);
+static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	struct ar8327_data *data = priv->chip_data;
@@ -656,40 +656,41 @@ static int void ar8216_sw_set_port_link(struct switch_dev *dev, int port,
 	if (port == AR8216_PORT_CPU) {
 		return -EINVAL;
 	}
-	if (speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
+	if (link->speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
 		return -EINVAL;
-	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port), t);
+	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
 		 AR8216_PORT_STATUS_SPEED_S;
-	t& = ~AR8216_PORT_STATUS_LINK_AUTO;
-	t& = ~AR8216_PORT_STATUS_DUPLEX;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
 
 	if (link->duplex)
 		t |= AR8216_PORT_STATUS_DUPLEX;
 	if (link->aneg) {
-		t| = AR8216_PORT_STATUS_LINK_AUTO;
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
 	} else {
-		switch (speed) {
-		case SWITCH_PORT_SPEED_10;
-			t|=AR8216_PORT_SPEED_10M <<
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
 			 AR8216_PORT_STATUS_SPEED_S;
 			break;
-		case SWITCH_PORT_SPEED_100;
-			t|=AR8216_PORT_SPEED_100M <<
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
 			 AR8216_PORT_STATUS_SPEED_S;
 			break;
-		case SWITCH_PORT_SPEED_1000;
+		case SWITCH_PORT_SPEED_1000:
 			if (!ar8xxx_has_gige(priv))
 				return  -EINVAL;
-			t|=AR8216_PORT_SPEED_1000M <<
+			t |= AR8216_PORT_SPEED_1000M <<
 			 AR8216_PORT_STATUS_SPEED_S;
 			break;
 		default:
-			t| = AR8216_PORT_STATUS_LINK_AUTO;
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
 			break;
 		}
 	}
-	t = ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), t);
+	return 0;
 }
 
 static void
