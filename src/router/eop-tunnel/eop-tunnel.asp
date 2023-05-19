@@ -166,6 +166,7 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 		show_layer_ext(F, "idwireguard" + index, true);
 		show_layer_ext(F, "idl2support" + index, false);
 		show_layer_ext(F, "idwginput" + index, true);
+		show_layer_ext(F, "idshowmcast" + index, false);
 		show_layer_ext(F, "idlocalip" + index, false);
 		show_layer_ext(F, "idbridged" + index, false);
 		show_layer_ext(F, "idvxlanbridged" + index, false);
