@@ -61,7 +61,7 @@ static void show_oet_num(webs_t wp, const char *label, int size, int maxlength, 
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", label, NULL);
-		char attrib[64] = { 0 };
+		char attrib[128] = { 0 };
 		if (ext)
 			snprintf(attrib, sizeof(attrib), ext, id);
 		vasprintf(&buf, fmt, args);
@@ -82,7 +82,7 @@ static void show_oet_textfield(webs_t wp, int pass, const char *label, int size,
 	char *buf;
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
-		char attrib[64] = { 0 };
+		char attrib[128] = { 0 };
 		vasprintf(&buf, fmt, args);
 		if (ext)
 			snprintf(attrib, sizeof(attrib), ext, id);
