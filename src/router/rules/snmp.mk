@@ -107,6 +107,7 @@ snmp-configure: nvram libutils
 	cd snmp && autoconf
 	cd snmp && autoheader
 	cd snmp && autoreconf -vfi
+	cd snmp && automake --add-missing
 	-cd snmp && mkdir build_mac80211
 	-cd snmp && mkdir build_standard
 	-cd snmp && cd build_mac80211 && ../configure  --quiet \
