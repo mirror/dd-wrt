@@ -398,19 +398,17 @@ _ifTable_initialize_interface(ifTable_registration * reg_ptr, u_long flags)
      * register ifTableLastChanged
      */
     {
-        const oid       iftlc_oid[] = { IFTABLE_LAST_CHANGE };
-        netsnmp_register_watched_scalar2(netsnmp_create_handler_registration
-                                        ("ifTableLastChanged", NULL,
-                                         iftlc_oid, OID_LENGTH(iftlc_oid),
-                                         HANDLER_CAN_RONLY),
-                                        netsnmp_create_watcher_info((void
-                                                                     *)
-                                                                    &ifTable_if_ctx.
-                                                                    last_changed,
-                                                                    sizeof
-                                                                    (u_long),
-                                                                    ASN_TIMETICKS,
-                                                                    WATCHER_FIXED_SIZE));
+        static const oid iftlc_oid[] = { IFTABLE_LAST_CHANGE };
+        netsnmp_handler_registration *reginfo;
+        netsnmp_watcher_info *winfo;
+
+        reginfo = netsnmp_create_handler_registration
+                        ("ifTableLastChanged", NULL,
+                         iftlc_oid, OID_LENGTH(iftlc_oid), HANDLER_CAN_RONLY);
+        winfo = netsnmp_create_watcher_info(&ifTable_if_ctx.last_changed,
+                                            sizeof(u_long), ASN_TIMETICKS,
+                                            WATCHER_FIXED_SIZE);
+        netsnmp_register_watched_scalar2(reginfo, winfo);
     }
 #endif                          /* USING_MIBII_INTERFACES_MODULE */
 
@@ -442,48 +440,13 @@ ifTable_valid_columns_set(netsnmp_column_info *vc)
 int
 ifTable_index_to_oid(netsnmp_index * oid_idx, ifTable_mib_index * mib_idx)
 {
-    int             err = SNMP_ERR_NOERROR;
+    if (oid_idx->len < 1)
+        return SNMP_ERR_GENERR;
 
-    /*
-     * temp storage for parsing indexes
-     */
-    /*
-     * ifIndex(1)/InterfaceIndex/ASN_INTEGER/long(long)//l/A/w/e/R/d/H
-     */
-    netsnmp_variable_list var_ifIndex;
+    oid_idx->oids[0] = mib_idx->ifIndex;
+    oid_idx->len = 1;
 
-    /*
-     * set up varbinds
-     */
-    memset(&var_ifIndex, 0x00, sizeof(var_ifIndex));
-    var_ifIndex.type = ASN_INTEGER;
-
-    /*
-     * chain temp index varbinds together
-     */
-    var_ifIndex.next_variable = NULL;
-
-
-    DEBUGMSGTL(("verbose:ifTable:ifTable_index_to_oid", "called\n"));
-
-    /*
-     * ifIndex(1)/InterfaceIndex/ASN_INTEGER/long(long)//l/A/w/e/R/d/H 
-     */
-    snmp_set_var_value(&var_ifIndex, (u_char *) & mib_idx->ifIndex,
-                       sizeof(mib_idx->ifIndex));
-
-
-    err = build_oid_noalloc(oid_idx->oids, oid_idx->len, &oid_idx->len,
-                            NULL, 0, &var_ifIndex);
-    if (err)
-        snmp_log(LOG_ERR, "error %d converting index to oid\n", err);
-
-    /*
-     * parsing may have allocated memory. free it.
-     */
-    snmp_reset_var_buffers(&var_ifIndex);
-
-    return err;
+    return SNMP_ERR_NOERROR;
 }                               /* ifTable_index_to_oid */
 
 /**
@@ -579,7 +542,7 @@ ifTable_release_data(ifTable_data * data)
  * allocate resources for a ifTable_rowreq_ctx
  */
 ifTable_rowreq_ctx *
-ifTable_allocate_rowreq_ctx(void *user_init_ctx)
+ifTable_allocate_rowreq_ctx(netsnmp_interface_entry *ifentry)
 {
     ifTable_rowreq_ctx *rowreq_ctx =
         SNMP_MALLOC_TYPEDEF(ifTable_rowreq_ctx);
@@ -600,13 +563,8 @@ ifTable_allocate_rowreq_ctx(void *user_init_ctx)
     /*
      * if we allocated data, call init routine
      */
-    if (!(rowreq_ctx->rowreq_flags & MFD_ROW_DATA_FROM_USER)) {
-        if (SNMPERR_SUCCESS !=
-            ifTable_rowreq_ctx_init(rowreq_ctx, user_init_ctx)) {
-            ifTable_release_rowreq_ctx(rowreq_ctx);
-            rowreq_ctx = NULL;
-        }
-    }
+    if (!(rowreq_ctx->rowreq_flags & MFD_ROW_DATA_FROM_USER))
+        rowreq_ctx->data.ifentry = ifentry;
 
     return rowreq_ctx;
 }                               /* ifTable_allocate_rowreq_ctx */
@@ -623,7 +581,10 @@ ifTable_release_rowreq_ctx(ifTable_rowreq_ctx * rowreq_ctx)
 
     netsnmp_assert(NULL != rowreq_ctx);
 
-    ifTable_rowreq_ctx_cleanup(rowreq_ctx);
+    if (rowreq_ctx->data.ifentry) {
+        netsnmp_access_interface_entry_free(rowreq_ctx->data.ifentry);
+        rowreq_ctx->data.ifentry = NULL;
+    }
 
     if (rowreq_ctx->undo) {
         ifTable_release_data(rowreq_ctx->undo);
@@ -1048,7 +1009,7 @@ _mfd_ifTable_get_values(netsnmp_mib_handler *handler,
 
         /*
          * if the buffer wasn't used previously for the old data (i.e. it
-         * was allcoated memory)  and the get routine replaced the pointer,
+         * was allocated memory)  and the get routine replaced the pointer,
          * we need to free the previous pointer.
          */
         if (old_string && (old_string != requests->requestvb->buf) &&
@@ -1909,6 +1870,11 @@ _container_item_free(ifTable_rowreq_ctx * rowreq_ctx, void *context)
     ifTable_release_rowreq_ctx(rowreq_ctx);
 }                               /* _container_item_free */
 
+static void __container_item_free(void *rowreq_ctx, void *context)
+{
+    _container_item_free(rowreq_ctx, context);
+}
+
 /**
  * @internal
  */
@@ -1930,9 +1896,7 @@ _container_free(netsnmp_container *container)
     /*
      * free all items. inefficient, but easy.
      */
-    CONTAINER_CLEAR(container,
-                    (netsnmp_container_obj_func *) _container_item_free,
-                    NULL);
+    CONTAINER_CLEAR(container, __container_item_free, NULL);
 }                               /* _container_free */
 
 /**
@@ -1994,26 +1958,12 @@ _ifTable_container_shutdown(ifTable_interface_ctx * if_ctx)
 ifTable_rowreq_ctx *
 ifTable_row_find_by_mib_index(ifTable_mib_index * mib_idx)
 {
-    ifTable_rowreq_ctx *rowreq_ctx;
     oid             oid_tmp[MAX_OID_LEN];
-    netsnmp_index   oid_idx;
+    netsnmp_index   oid_idx = { MAX_OID_LEN, oid_tmp };
     int             rc;
 
-    /*
-     * set up storage for OID
-     */
-    oid_idx.oids = oid_tmp;
-    oid_idx.len = sizeof(oid_tmp) / sizeof(oid);
-
-    /*
-     * convert
-     */
     rc = ifTable_index_to_oid(&oid_idx, mib_idx);
-    if (MFD_SUCCESS != rc)
-        return NULL;
-
-    rowreq_ctx = (ifTable_rowreq_ctx*)CONTAINER_FIND(ifTable_if_ctx.container, &oid_idx);
-
-    return rowreq_ctx;
+    return rc == MFD_SUCCESS ?
+        CONTAINER_FIND(ifTable_if_ctx.container, &oid_idx) : NULL;
 }
 #endif /* NETSNMP_FEATURE_REMOVE_IFTABLE_EXTERNAL_ACCESS */

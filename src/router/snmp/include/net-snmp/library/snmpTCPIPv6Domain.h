@@ -1,7 +1,7 @@
 #ifndef _SNMPTCPIPV6DOMAIN_H
 #define _SNMPTCPIPV6DOMAIN_H
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

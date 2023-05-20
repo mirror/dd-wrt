@@ -320,7 +320,7 @@
 /* #undef HAVE_FSTAB_H */
 
 /* Define to 1 if you have the `getaddrinfo' function. */
-/* #undef HAVE_GETADDRINFO */
+#define HAVE_GETADDRINFO 1
 
 /* Define to 1 if you have the `getdtablesize' function. */
 /* #undef HAVE_GETDTABLESIZE */

@@ -4,9 +4,7 @@
 *
 ***************************************************************************
 
-This guide describes how to build Net-SNMP with Microsoft Visual Studio,
-Cygwin, MinGW or Mingw-w64.  As developers build with other Win32
-environments, their notes will be included here.
+This guide describes how to build Net-SNMP binaries for Windows.
 
 The sections in this guide are:
 
@@ -25,13 +23,12 @@ Microsoft Visual C++ - Building with IPv6
 Microsoft Visual C++ - Building your own applications with snmplib
 Microsoft Visual C++ - Extending the Agent
 GCC on Windows
-Cygwin - Building
 MinGW - Building
 MinGW - Building with OpenSSL
 Configuring Net-SNMP
 How to Register the Net-SNMP Agent and Trap Daemon as Windows services
 Notes on SET support for WIN32 ports
-Notes on preprocessor defines for Microsoft Visual Studio, MinGW and Cygwin
+Notes on preprocessor defines
 Acknowledgements
 
 
@@ -41,7 +38,7 @@ Acknowledgements
 *
 ***************************************************************************
 
-All applications build with Microsoft Studio, Cygwin, MinGW and Mingw-w64.
+All applications build with Microsoft Studio, MinGW and Mingw-w64.
 
   -  All of the applications work (snmpwalk, snmpget, snmpset, snmptrap, ...).
   -  The system, snmp, ip, tcp, udp and icmp MIB-groups work.
@@ -53,10 +50,6 @@ All applications build with Microsoft Studio, Cygwin, MinGW and Mingw-w64.
   -  Running the agent on a non-standard UDP or TCP port works.
   -  Snmpd can be registered as a Windows service.
   -  Snmptrapd can be registered as a Windows service.
-  -  Some build environments allow long pathnames that contain
-     embedded spaces.  As this is not true for Cygwin "configure",
-     the documented example scripts will refer to "c:/usr"
-     as the base directory for installed Net-SNMP software.
   -  When using the winExtDLL extension agent, the Net-SNMP agent will
      load the Windows SNMP Service extension DLLs.
 
@@ -109,13 +102,16 @@ The next subsection relates to items that are built using Visual Studio
 *
 ***************************************************************************
 
-As of Net-SNMP 5.4, the Net-SNMP agent is able to load the Windows SNMP
-service extension DLLs by using the Net-SNMP winExtDLL extension.
+The Net-SNMP agent is able to load the Windows SNMP service extension DLLs by
+using the Net-SNMP winExtDLL extension.
 
 The Windows SNMP service must be installed, but the service must be disabled.
 This is required so that the extension DLLs are available for loading, and
 also because this extension and the existing Windows extensions use the
 Windows SNMP API from snmpapi.dll.
+
+Additionally, Net-SNMP must be built in 32-bit mode. This is because Microsoft
+only provides a 32-bit version of the SNMP extension DLLs.
 
 An alternative to winExtDLL is to proxy requests from Net-SNMP to the Windows
 SNMP service.  See the section 'Co-existence with Microsoft SNMP services'.
@@ -138,6 +134,20 @@ Limitations
   see also https://connect.microsoft.com/onecare/feedback/ViewFeedback.aspx?FeedbackID=504908.
 
 
+Installing the Windows SNMP Service
+-----------------------------------
+
+The procedure for installing the Windows SNMP service on Windows 10 is as
+follows:
+
+1. Use the Windows + I key combination to open the Settings App.
+2. Go to the Apps category and move to Apps & features tab.
+3. Tap on the Optional features button.
+4. On the new page, click on the Add a feature button.
+5. Scroll down to Simple Network Management Protocol (SNMP) and select it.
+6. Press the Install button to install SNMP on your PC.
+
+
 Enabling the Windows SNMP extension agents
 ------------------------------------------
 
@@ -146,7 +156,7 @@ When installing Net-SNMP using the binary available from the web site, select
 
 The recommended way to start snmpd is with the following command line:
 
- snmpd.exe -I-udp,udpTable,tcp,tcpTable,icmp,ip,interfaces,system_mib,sysORTable
+ snmpd.exe -I-udp,udpTable,tcp,tcpTable,icmp,ip,interfaces,snmp_mib,system_mib,sysORTable
 
 The above command will exclude all the Net-SNMP extensions that overlap with
 the default Windows (2003) extensions included with Windows.  Other Net-SNMP
@@ -178,8 +188,7 @@ To see what Windows modules are being loaded, you can shut down the
 service and then run snmpd.exe from the command line with winExtDLL
 debugging enabled using (all on one line):
 
- snmpd.exe -Lo -I-udp,udpTable,tcp,tcpTable,icmp,ip,interfaces,system_mib,
- sysORTable -DwinExtDLL
+ snmpd.exe -Lo -I-udp,udpTable,tcp,tcpTable,icmp,ip,interfaces,snmp_mib,system_mib,sysORTable -DwinExtDLL
 
 The Windows DLL snmpmib.dll (SNMPMIB) contains SNMP traffic statistics
 (.1.3.6.1.2.1.11).  As we are using Net-SNMP and not the Windows SNMP Service,
@@ -693,17 +702,6 @@ There are multiple versions of GCC (the GNU Compiler Collection) in common use
 on Microsoft Windows operating systems. This section will attempt to point the
 user to the information required to choose the one to best suit their needs.
 
-Cygwin
-
-The Cygwin compiler and toolkit provides a Unix style shell and environment
-for Windows based systems. The cygwin1.dll provides a POSIX emulation layer
-that simplifies porting Unix / Linux applications to Windows. The Cygwin dlls
-are required if an application is to be distributed. The dependency on the
-The Cygwin tool chain and documentation can be found at:
-
-http://sources.redhat.com/cygwin/
-
-
 MinGW and Mingw-w64
 
 The MinGW projects provide a Windows native version of gcc. The tool chain
@@ -719,40 +717,6 @@ MSYS + MinGW
 The MinGW and MSYS tools and documentation can be found at:
 
 http://www.mingw.org
-
-
-***************************************************************************
-*
-* Cygwin - Building
-*
-***************************************************************************
-
-An alternate way to build and run Net-SNMP on Win32 is to use the Cygwin
-environment.  Detailed information about the Cygwin environment is available
-on the web at: http://sources.redhat.com/cygwin/.
-
-Cygwin allows you to compile almost the complete agent and applications.
-As an example, the following configure options create a working set of
-programs:
-
-ENV_SEPARATOR=":" \
-./configure \
-	--with-mib-modules="host agentx disman/event-mib examples/example" \
-	--with-out-mib-modules=host/hr_network \
-
-If you want to disable SNMPv3 auth and privacy features, add:
-	--without-openssl \
-
-If you want to use IPv6 transports, add:
-	--enable-ipv6
-
-Note: the source code should *not* be in a folder that contains a space.
-For example, compiling in your 'My Documents' folder or your Desktop folder
-(usually c:\Documents and Settings\xxxx\Desktop) is not supported.
-
-If the folder that Net-SNMP was installed to is ever changed, modify the
-system environment variables or registry keys as explained in the
-'Configuration_Overview.html' file located in win32/dist/htmlhelp.
 
 
 ***************************************************************************
@@ -1114,22 +1078,21 @@ tcpConnState of tcpConnTable is writable and the only value which may
 be set by a management station is deleteTCB(12)
 
 
-***************************************************************************
+*******************************
 *
-* Notes on preprocessor defines for Microsoft Visual Studio, MinGW and Cygwin
+* Notes on preprocessor defines
 *
-***************************************************************************
+*******************************
 
 When adding Windows specific code, proceed as follows:
-- Add a configure test in the appropriate file under configure.d for MinGW
-  and Cygwin.
+- Add a configure test in the appropriate file under configure.d for MinGW.
 - Add the symbol defined by the configure test to
   win32/net-snmp/net-snmp-config.h and also to
   win32/net-snmp/net-snmp-config.h.in. If the feature is supported by
   Microsoft visual Studio, define the symbol. Otherwise undefine it.
 
-Try to avoid to add #ifdef's that use the WIN32, _MSC_VER, mingw32 and/or
-cygwin macros. These macros are defined as follows:
+Try to avoid to add #ifdef's that use the WIN32, _MSC_VER and/or mingw32
+macros. These macros are defined as follows:
 
 Define:          Description:
 -------          ------------
@@ -1143,8 +1106,6 @@ _MSC_VER         Defined by Microsoft Visual Studio only
 __MINGW32__      Defined by MinGW and Mingw-w64
 
 __MINGW64__      Defined by Mingw-w64 only
-
-cygwin           Defined by Cygwin only
 
 
 ***************************************************************************

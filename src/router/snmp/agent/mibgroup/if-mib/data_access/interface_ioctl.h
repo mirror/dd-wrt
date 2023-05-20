@@ -19,8 +19,15 @@ extern          "C" {
 /**/
 
 int
+netsnmp_convert_arphrd_type(int arphrd_type);
+
+int
 netsnmp_access_interface_ioctl_physaddr_get(int fd,
                                             netsnmp_interface_entry *ifentry);
+
+void
+netsnmp_process_link_flags(netsnmp_interface_entry *ifentry,
+                           unsigned int os_flags);
 
 int
 netsnmp_access_interface_ioctl_flags_get(int fd,

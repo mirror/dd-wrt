@@ -62,8 +62,8 @@ int
 usmDHGetUserKeyChange(struct usmUser *user, int for_auth_key,
                       u_char **keyobj, size_t *keyobj_len)
 {
-    DH             *dh;
-    const BIGNUM   *pub_key;
+    DH             *dh = NULL;
+    const BIGNUM   *pub_key = NULL;
 
     dh = usmDHGetUserDHptr(user, for_auth_key);
 
@@ -155,15 +155,7 @@ usmDHUserKeyTable_release_data(usmDHUserKeyTable_data * data)
     netsnmp_assert(user->next == (struct usmUser *) -1);
     netsnmp_assert(user->prev == (struct usmUser *) -1);
 
-    /*
-     * TODO:202:r: |-> release memory for the usmDHUserKeyTable data context.
-     */
-    if (user) {
-        SNMP_FREE(user->authKey);
-        SNMP_FREE(user->privKey);
-    }
-
-    free(data);
+    usm_free_user(user);
 }                               /* usmDHUserKeyTable_release_data */
 
 

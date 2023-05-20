@@ -15,7 +15,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
-#if HAVE_IO_H
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 
@@ -29,10 +29,10 @@
 #else
 #include <strings.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 #include <errno.h>

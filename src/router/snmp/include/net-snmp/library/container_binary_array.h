@@ -12,7 +12,6 @@ extern          "C" {
 
 #include <net-snmp/library/asn1.h>
 #include <net-snmp/library/container.h>
-#include <net-snmp/library/factory.h>
 
     /*
      * initialize binary array container. call at startup.
@@ -27,7 +26,7 @@ extern          "C" {
     /*
      * get a factory for producing binary_array objects
      */
-    netsnmp_factory *     netsnmp_container_get_binary_array_factory(void);
+    struct netsnmp_factory_s *netsnmp_container_get_binary_array_factory(void);
 
 
     int netsnmp_binary_array_remove(netsnmp_container *c, const void *key,

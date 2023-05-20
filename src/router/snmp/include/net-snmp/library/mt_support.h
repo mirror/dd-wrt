@@ -44,7 +44,7 @@ extern          "C" {
 
 #if defined(NETSNMP_REENTRANT) || defined(WIN32)
 
-#if HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 typedef pthread_mutex_t mutex_type;
 #ifdef pthread_mutexattr_default

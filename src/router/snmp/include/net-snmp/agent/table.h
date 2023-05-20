@@ -14,7 +14,7 @@
  * Use is subject to license terms specified in the COPYING file
  * distributed with the Net-SNMP package.
  */
-/*
+/**
  * @file table.h
  *
  * @addtogroup table

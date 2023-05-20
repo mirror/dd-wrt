@@ -4,12 +4,12 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include "host_res.h"
@@ -199,7 +199,7 @@ var_hrprint(struct variable * vp,
 static int      HRP_index;
 static char   **HRP_name;
 static int      HRP_nbrnames;
-#if HAVE_LPSTAT || HAVE_CGETNEXT || HAVE_PRINTCAP
+#if defined(HAVE_LPSTAT) || defined(HAVE_CGETNEXT) || defined(HAVE_PRINTCAP)
 static int      HRP_maxnames;
 #endif
 
@@ -208,13 +208,13 @@ static int      HRP_maxnames;
 void
 Init_HR_Print(void)
 {
-#if HAVE_LPSTAT || HAVE_CGETNEXT || HAVE_PRINTCAP
+#if defined(HAVE_LPSTAT) || defined(HAVE_CGETNEXT) || defined(HAVE_PRINTCAP)
     int             i;
-#if HAVE_PRINTCAP
+#if defined(HAVE_PRINTCAP)
     FILE           *p;
-#elif HAVE_CGETNEXT
+#elif defined(HAVE_CGETNEXT)
     const char     *caps[] = { "/etc/printcap", NULL };
-#elif HAVE_LPSTAT
+#elif defined(HAVE_LPSTAT)
     int	            fd;
     FILE           *p;
 #endif
@@ -229,7 +229,7 @@ Init_HR_Print(void)
         SNMP_FREE(HRP_name);
     }
 
-#if HAVE_PRINTCAP
+#ifdef HAVE_PRINTCAP
     if ((p = fopen("/etc/printcap", "r")) != NULL) {
         char            buf[BUFSIZ], *ptr;
         while (fgets(buf, sizeof buf, p)) {
@@ -244,7 +244,7 @@ Init_HR_Print(void)
             if ((ptr = strchr(buf, '|')))
                 *ptr = 0;
             ptr = buf;
-#elif HAVE_CGETNEXT
+#elif defined(HAVE_CGETNEXT)
     {
         char           *buf = NULL, *ptr;
         while (cgetnext(&buf, caps) > 0) {
@@ -253,7 +253,7 @@ Init_HR_Print(void)
             if ((ptr = strchr(buf, '|')))
                 *ptr = 0;
             ptr = buf;
-#elif HAVE_LPSTAT
+#elif defined(HAVE_LPSTAT)
     if ((p = run_lpstat(&fd)) != NULL) {
         char            buf[BUFSIZ], ptr[BUFSIZ];
         while (fgets(buf, sizeof buf, p)) {
@@ -278,11 +278,11 @@ Init_HR_Print(void)
 #endif
         }
 finish:
-#if HAVE_PRINTCAP
+#if defined(HAVE_PRINTCAP)
         fclose(p);
-#elif HAVE_CGETNEXT
+#elif defined(HAVE_CGETNEXT)
         cgetclose();
-#elif HAVE_LPSTAT
+#elif defined(HAVE_LPSTAT)
         fclose(p);
         close(fd);
 #endif

@@ -72,15 +72,85 @@ _ioctl_get(int fd, int which, struct ifreq *ifrq, const char* name)
 
     strlcpy(ifrq->ifr_name, name, sizeof(ifrq->ifr_name));
     rc = ioctl(fd, which, ifrq);
-    if (rc < 0) {
-        snmp_log(LOG_ERR,"ioctl %d returned %d\n", which, rc);
+    if (rc < 0)
         rc = -3;
-    }
 
     if(ourfd >= 0)
         close(ourfd);
 
     return rc;
+}
+
+int netsnmp_convert_arphrd_type(int arphrd_type)
+{
+    /*
+     * arphrd defines vary greatly. ETHER seems to be the only common one
+     */
+#ifdef ARPHRD_ETHER
+    switch (arphrd_type) {
+    case ARPHRD_ETHER:
+        return IANAIFTYPE_ETHERNETCSMACD;
+#if defined(ARPHRD_TUNNEL) || defined(ARPHRD_IPGRE) || defined(ARPHRD_SIT)
+#ifdef ARPHRD_TUNNEL
+    case ARPHRD_TUNNEL:
+    case ARPHRD_TUNNEL6:
+#endif
+#ifdef ARPHRD_IPGRE
+    case ARPHRD_IPGRE:
+#endif
+#ifdef ARPHRD_SIT
+    case ARPHRD_SIT:
+#endif
+        return IANAIFTYPE_TUNNEL;
+#endif
+#ifdef ARPHRD_INFINIBAND
+    case ARPHRD_INFINIBAND:
+        return IANAIFTYPE_INFINIBAND;
+#endif
+#ifdef ARPHRD_SLIP
+    case ARPHRD_SLIP:
+    case ARPHRD_CSLIP:
+    case ARPHRD_SLIP6:
+    case ARPHRD_CSLIP6:
+        return IANAIFTYPE_SLIP;
+#endif
+#ifdef ARPHRD_PPP
+    case ARPHRD_PPP:
+        return IANAIFTYPE_PPP;
+#endif
+#ifdef ARPHRD_LOOPBACK
+    case ARPHRD_LOOPBACK:
+        return IANAIFTYPE_SOFTWARELOOPBACK;
+#endif
+#ifdef ARPHRD_FDDI
+    case ARPHRD_FDDI:
+        return IANAIFTYPE_FDDI;
+#endif
+#ifdef ARPHRD_ARCNET
+    case ARPHRD_ARCNET:
+        return IANAIFTYPE_ARCNET;
+#endif
+#ifdef ARPHRD_LOCALTLK
+    case ARPHRD_LOCALTLK:
+        return IANAIFTYPE_LOCALTALK;
+#endif
+#ifdef ARPHRD_HIPPI
+    case ARPHRD_HIPPI:
+        return IANAIFTYPE_HIPPI;
+#endif
+#ifdef ARPHRD_ATM
+    case ARPHRD_ATM:
+        return IANAIFTYPE_ATM;
+#endif
+        /*
+         * XXX: more if_arp.h:ARPHRD_xxx to IANAifType mappings... 
+         */
+    default:
+        DEBUGMSGTL(("access:interface:ioctl", "unknown entry type %d\n",
+                    arphrd_type));
+        return IANAIFTYPE_OTHER;
+    } /* switch */
+#endif /* ARPHRD_LOOPBACK */
 }
 
 #ifdef SIOCGIFHWADDR
@@ -129,91 +199,11 @@ netsnmp_access_interface_ioctl_physaddr_get(int fd,
         rc = _ioctl_get(fd, SIOCGIFHWADDR, &ifrq, ifentry->name);
         if (rc < 0) {
             memset(ifentry->paddr, (0), IFHWADDRLEN);
-            rc = -3; /* msg already logged */
-        }
-        else {
+            rc = -3;
+        } else {
             memcpy(ifentry->paddr, ifrq.ifr_hwaddr.sa_data, IFHWADDRLEN);
-
-            /*
-             * arphrd defines vary greatly. ETHER seems to be the only common one
-             */
-#ifdef ARPHRD_ETHER
-            switch (ifrq.ifr_hwaddr.sa_family) {
-            case ARPHRD_ETHER:
-                ifentry->type = IANAIFTYPE_ETHERNETCSMACD;
-                break;
-#if defined(ARPHRD_TUNNEL) || defined(ARPHRD_IPGRE) || defined(ARPHRD_SIT)
-#ifdef ARPHRD_TUNNEL
-            case ARPHRD_TUNNEL:
-            case ARPHRD_TUNNEL6:
-#endif
-#ifdef ARPHRD_IPGRE
-            case ARPHRD_IPGRE:
-#endif
-#ifdef ARPHRD_SIT
-            case ARPHRD_SIT:
-#endif
-                ifentry->type = IANAIFTYPE_TUNNEL;
-                break;          /* tunnel */
-#endif
-#ifdef ARPHRD_INFINIBAND
-            case ARPHRD_INFINIBAND:
-                ifentry->type = IANAIFTYPE_INFINIBAND;
-                break;
-#endif
-#ifdef ARPHRD_SLIP
-            case ARPHRD_SLIP:
-            case ARPHRD_CSLIP:
-            case ARPHRD_SLIP6:
-            case ARPHRD_CSLIP6:
-                ifentry->type = IANAIFTYPE_SLIP;
-                break;          /* slip */
-#endif
-#ifdef ARPHRD_PPP
-            case ARPHRD_PPP:
-                ifentry->type = IANAIFTYPE_PPP;
-                break;          /* ppp */
-#endif
-#ifdef ARPHRD_LOOPBACK
-            case ARPHRD_LOOPBACK:
-                ifentry->type = IANAIFTYPE_SOFTWARELOOPBACK;
-                break;          /* softwareLoopback */
-#endif
-#ifdef ARPHRD_FDDI
-            case ARPHRD_FDDI:
-                ifentry->type = IANAIFTYPE_FDDI;
-                break;
-#endif
-#ifdef ARPHRD_ARCNET
-            case ARPHRD_ARCNET:
-                ifentry->type = IANAIFTYPE_ARCNET;
-                break;
-#endif
-#ifdef ARPHRD_LOCALTLK
-            case ARPHRD_LOCALTLK:
-                ifentry->type = IANAIFTYPE_LOCALTALK;
-                break;
-#endif
-#ifdef ARPHRD_HIPPI
-            case ARPHRD_HIPPI:
-                ifentry->type = IANAIFTYPE_HIPPI;
-                break;
-#endif
-#ifdef ARPHRD_ATM
-            case ARPHRD_ATM:
-                ifentry->type = IANAIFTYPE_ATM;
-                break;
-#endif
-                /*
-                 * XXX: more if_arp.h:ARPHRD_xxx to IANAifType mappings... 
-                 */
-            default:
-                DEBUGMSGTL(("access:interface:ioctl", "unknown entry type %d\n",
-                            ifrq.ifr_hwaddr.sa_family));
-		ifentry->type = IANAIFTYPE_OTHER;
-            } /* switch */
-#endif /* ARPHRD_LOOPBACK */
-
+            ifentry->type =
+                netsnmp_convert_arphrd_type(ifrq.ifr_hwaddr.sa_family);
         }
     }
 
@@ -221,6 +211,40 @@ netsnmp_access_interface_ioctl_physaddr_get(int fd,
 }
 #endif /* SIOCGIFHWADDR */
 
+void
+netsnmp_process_link_flags(netsnmp_interface_entry *ifentry,
+                           unsigned int os_flags)
+{
+    ifentry->ns_flags |= NETSNMP_INTERFACE_FLAGS_HAS_IF_FLAGS;
+    ifentry->os_flags = os_flags;
+
+    /*
+     * ifOperStatus description:
+     *   If ifAdminStatus is down(2) then ifOperStatus should be down(2).
+     */
+    if (ifentry->os_flags & IFF_UP) {
+        ifentry->admin_status = IFADMINSTATUS_UP;
+        if (ifentry->os_flags & IFF_RUNNING)
+            ifentry->oper_status = IFOPERSTATUS_UP;
+        else
+            ifentry->oper_status = IFOPERSTATUS_DOWN;
+    } else {
+        ifentry->admin_status = IFADMINSTATUS_DOWN;
+        ifentry->oper_status = IFOPERSTATUS_DOWN;
+    }
+
+    /*
+     * ifConnectorPresent description:
+     *   This object has the value 'true(1)' if the interface sublayer has a
+     *   physical connector and the value 'false(2)' otherwise."
+     * So, at very least, false(2) should be returned for loopback devices.
+     */
+    if (ifentry->os_flags & IFF_LOOPBACK) {
+        ifentry->connector_present = 0;
+    } else {
+        ifentry->connector_present = 1;
+    }
+}
 
 #ifdef SIOCGIFFLAGS
 /**
@@ -246,40 +270,9 @@ netsnmp_access_interface_ioctl_flags_get(int fd,
     rc = _ioctl_get(fd, SIOCGIFFLAGS, &ifrq, ifentry->name);
     if (rc < 0) {
         ifentry->ns_flags &= ~NETSNMP_INTERFACE_FLAGS_HAS_IF_FLAGS;
-        return rc; /* msg already logged */
-    }
-    else {
-        ifentry->ns_flags |= NETSNMP_INTERFACE_FLAGS_HAS_IF_FLAGS;
-        ifentry->os_flags = ifrq.ifr_flags;
-
-        /*
-         * ifOperStatus description:
-         *   If ifAdminStatus is down(2) then ifOperStatus should be down(2).
-         */
-        if(ifentry->os_flags & IFF_UP) {
-            ifentry->admin_status = IFADMINSTATUS_UP;
-            if(ifentry->os_flags & IFF_RUNNING)
-                ifentry->oper_status = IFOPERSTATUS_UP;
-            else
-                ifentry->oper_status = IFOPERSTATUS_DOWN;
-        }
-        else {
-            ifentry->admin_status = IFADMINSTATUS_DOWN;
-            ifentry->oper_status = IFOPERSTATUS_DOWN;
-        }
-
-        /*
-         * ifConnectorPresent description:
-         *   This object has the value 'true(1)' if the interface sublayer has a
-         *   physical connector and the value 'false(2)' otherwise."
-         * So, at very least, false(2) should be returned for loopback devices.
-         */
-        if(ifentry->os_flags & IFF_LOOPBACK) {
-            ifentry->connector_present = 0;
-        }
-        else {	
-            ifentry->connector_present = 1;
-        }
+        return rc;
+    } else {
+        netsnmp_process_link_flags(ifentry, ifrq.ifr_flags);
     }
     
     return rc;
@@ -380,9 +373,8 @@ netsnmp_access_interface_ioctl_mtu_get(int fd,
     rc = _ioctl_get(fd, SIOCGIFMTU, &ifrq, ifentry->name);
     if (rc < 0) {
         ifentry->mtu = 0;
-        return rc; /* msg already logged */
-    }
-    else {
+        return rc;
+    } else {
         ifentry->mtu = ifrq.ifr_mtu;
     }
 
@@ -413,7 +405,7 @@ netsnmp_access_interface_ioctl_ifindex_get(int fd, const char *name)
     rc = _ioctl_get(fd, SIOCGIFINDEX, &ifrq, name);
     if (rc < 0) {
         DEBUGMSGTL(("access:interface:ioctl",
-                   "ifindex_get error on inerface '%s'\n", name));
+                   "ifindex_get error on interface '%s'\n", name));
         return 0;
     }
 

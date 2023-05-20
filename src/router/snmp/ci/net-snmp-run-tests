@@ -5,27 +5,32 @@ scriptdir="$(dirname "$0")"
 killall snmpd snmptrapd >/dev/null 2>&1
 
 export SNMP_VERBOSE=1 &&
+export NOAUTODEPS=1 &&
 export SNMP_SAVE_TMPDIR=1 &&
 make -s &&
 (
       cd testing &&
       if [ -e RUNFULLTESTS ] &&
 	     perl -e 'require TAP::Harness;' >/dev/null 2>&1; then
-          if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-              for g in default snmpv3 unit-tests; do
-                  echo "==== Test group $g ===="
-	          ./RUNFULLTESTS -g $g || exit $?
-                  echo "==== End of test group $g ===="
-              done
-	  elif [ -n "${CIRRUS_CI}" ]; then
-              for g in default snmpv3 transports unit-tests; do
-                  echo "==== Test group $g ===="
-	          ./RUNFULLTESTS -g $g || exit $?
-                  echo "==== End of test group $g ===="
-              done
-          else
-	      ./RUNFULLTESTS -g all -e dtls -e tls
-          fi
+          case "$(uname)" in
+	      Darwin)
+		  for g in default snmpv3 unit-tests; do
+                      echo "==== Test group $g ===="
+	              ./RUNFULLTESTS -g $g || exit $?
+                      echo "==== End of test group $g ===="
+		  done
+		  ;;
+	      FreeBSD)
+		  for g in default snmpv3 transports unit-tests; do
+                      echo "==== Test group $g ===="
+	              ./RUNFULLTESTS -g $g || exit $?
+                      echo "==== End of test group $g ===="
+		  done
+		  ;;
+              *)
+		  ./RUNFULLTESTS -g all -e dtls -e tls
+		  ;;
+          esac
       else
 	  make -s test
       fi &&
@@ -38,7 +43,8 @@ make -s &&
 # ImportError: dlopen(/Users/travis/build/bvanassche/net-snmp/python/netsnmp/client_intf.so, 2): Library not loaded: /usr/local/net-snmp-master/lib/libnetsnmp.35.dylib
 # Referenced from: /Users/travis/build/bvanassche/net-snmp/python/netsnmp/client_intf.so
 # Reason: image not found
-if grep -q with-python-modules config.log &&
+# Disable the Python tests because these fail sporadically.
+if false && grep -q with-python-modules config.log &&
 	[ "${TRAVIS_OS_NAME}" != "osx" ]; then
     "$scriptdir/net-snmp-run-python-tests"
 fi

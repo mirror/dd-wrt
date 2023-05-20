@@ -1587,13 +1587,10 @@ fixExec2Error(int action,
              size_t var_val_len,
              u_char * statP, oid * name, size_t name_len)
 {
-    netsnmp_old_extend *exten = NULL;
-    unsigned int idx;
-
-    idx = name[name_len-1] -1;
-    exten = &compatability_entries[ idx ];
-
 #if !defined(NETSNMP_NO_WRITE_SUPPORT) && ENABLE_EXTEND_WRITE_ACCESS
+    unsigned int idx = name[name_len - 1] - 1;
+    const netsnmp_old_extend *exten = &compatability_entries[idx];
+
     switch (action) {
     case MODE_SET_RESERVE1:
         if (var_val_type != ASN_INTEGER) {

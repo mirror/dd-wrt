@@ -1,4 +1,9 @@
 image:
+  - Ubuntu
+  - Ubuntu1604
+  # - Ubuntu2004 - Disabled because apt-get fails.
+  - macos
+  - macos-mojave
   - Visual Studio 2019
 
 environment:
@@ -10,8 +15,6 @@ environment:
     - BUILD: MinGW32
     - BUILD: MSYS2
     - BUILD: MinGW64
-    - BUILD: Cygwin32
-    - BUILD: Cygwin64
 
 artifacts:
   - path: installer
@@ -19,10 +22,13 @@ artifacts:
 clone_depth: 5
 
 install:
-  - 'call "ci\openssl.bat"'
+  - cmd: 'ci\openssl.bat'
+  - sh:  'if [ $BUILD = MSVCDYNAMIC64 ]; then sudo ci/install.sh; fi'
 
 build_script:
-  - 'call "ci\build.bat"'
+  - cmd: 'ci\build.bat'
+  - sh:  'if [ $BUILD = MSVCDYNAMIC64 ]; then ci/build.sh; fi'
 
 test_script:
-  - 'call "ci\test.bat"'
+  - cmd: 'ci\test.bat'
+  - sh:  'if [ $BUILD = MSVCDYNAMIC64 ] && [ $(uname) != Darwin ]; then ci/test.sh; fi'

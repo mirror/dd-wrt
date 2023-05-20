@@ -122,7 +122,7 @@ if test "x$developer" = "xyes" -a "x$GCC" = "xyes"; then
     #
     netsnmp_save_CFLAGS="$CFLAGS"
     for opt in -Wall -Wextra -Wstrict-prototypes -Wwrite-strings -Wcast-qual \
-        -Wimplicit-fallthrough=2 -Wlogical-op                                \
+        -Wimplicit-fallthrough=2 -Wlogical-op -Wundef                        \
         -Wno-format-truncation -Wno-missing-field-initializers               \
         -Wno-sign-compare -Wno-unused-parameter
     do

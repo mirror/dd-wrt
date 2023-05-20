@@ -15,10 +15,10 @@
 #endif
 #include <ctype.h>
 #include <sys/types.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifdef HAVE_LIMITS_H

@@ -43,9 +43,7 @@ extern "C" {
 #define NETSNMP_PARSE_ARGS_ERROR         -3
     
 /**
- *  Parse an argument list and initialize \link netsnmp_session
- *  session\endlink
- *  from it.
+ *  Parse an argument list and initialize netsnmp_session from it.
  *  @param argc Number of elements in argv
  *  @param argv string array of at least argc elements
  *  @param session

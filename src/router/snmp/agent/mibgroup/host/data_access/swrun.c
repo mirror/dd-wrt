@@ -17,7 +17,7 @@
 #include "swrun.h"
 #include "swrun_private.h"
 
-#if HAVE_PCRE_H
+#ifdef HAVE_PCRE_H
 #include <pcre.h>
 #endif
 
@@ -100,7 +100,7 @@ swrun_max_processes( void )
 #endif /* NETSNMP_FEATURE_REMOVE_SWRUN_MAX_PROCESSES */
 
 #ifndef NETSNMP_FEATURE_REMOVE_SWRUN_COUNT_PROCESSES_BY_REGEX
-#if HAVE_PCRE_H
+#ifdef HAVE_PCRE_H
 int
 swrun_count_processes_by_regex( char *name, netsnmp_regex_ptr regexp )
 {

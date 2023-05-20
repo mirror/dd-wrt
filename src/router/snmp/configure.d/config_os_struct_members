@@ -161,12 +161,7 @@ AC_CHECK_MEMBERS([struct nlist.n_value,
 AC_CHECK_MEMBERS([struct sigaction.sa_sigaction],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#ifdef HAVE_SYS_SIGNAL_H
-#include <sys/signal.h>
-#endif
+#include <signal.h>
     ]])
 
 #       struct sockaddr

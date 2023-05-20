@@ -12,10 +12,10 @@
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 

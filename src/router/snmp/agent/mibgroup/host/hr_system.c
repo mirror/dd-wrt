@@ -45,7 +45,7 @@
 #include <signal.h>
 #include <errno.h>
 
-#if HAVE_LM_H
+#ifdef HAVE_LM_H
 #include <lm.h>
 #endif
 
@@ -273,7 +273,7 @@ var_hrsys(struct variable * vp,
 #ifdef linux
     FILE           *fp;
 #endif
-#if NETSNMP_CAN_USE_SYSCTL && defined(CTL_KERN) && defined(KERN_MAXPROC)
+#if defined(NETSNMP_CAN_USE_SYSCTL) && defined(CTL_KERN) && defined(KERN_MAXPROC)
     static int      maxproc_mib[] = { CTL_KERN, KERN_MAXPROC };
     size_t          buf_size;
 #endif
@@ -343,7 +343,7 @@ var_hrsys(struct variable * vp,
     case HRSYS_MAXPROCS:
 #if defined(NR_TASKS)
         long_return = NR_TASKS; /* <linux/tasks.h> */
-#elif NETSNMP_CAN_USE_SYSCTL && defined(CTL_KERN) && defined(KERN_MAXPROC)
+#elif defined(NETSNMP_CAN_USE_SYSCTL) && defined(CTL_KERN) && defined(KERN_MAXPROC)
 	{
 	    int nproc = 0;
 
