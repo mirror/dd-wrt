@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #endif
 #include <sys/types.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if HAVE_STRING_H

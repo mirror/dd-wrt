@@ -40,13 +40,13 @@ extern          "C" {
     void            u64Copy(struct counter64 *pu64one,
                             const struct counter64 *pu64two);
 
-    int             netsnmp_c64_check_for_32bit_wrap(struct counter64 *old_val,
+    int             netsnmp_c64_check_for_32bit_wrap(const struct counter64 *old_val,
                                                      struct counter64 *new_val,
                                                      int adjust);
     NETSNMP_IMPORT
     int             netsnmp_c64_check32_and_update(struct counter64 *prev_val,
                                                    struct counter64 *new_val,
-                                                   struct counter64 *old_prev_val,
+                                                   const struct counter64 *old_prev_val,
                                                    int *need_wrap_check);
 
 #ifdef __cplusplus

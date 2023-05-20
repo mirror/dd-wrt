@@ -14,18 +14,18 @@
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_SYS_SOCKIO_H
+#ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
 #if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#if HAVE_SYS_MBUF_H
+#ifdef HAVE_SYS_MBUF_H
 #include <sys/mbuf.h>
 #endif
 
 
-#if HAVE_SYS_STREAM_H
+#ifdef HAVE_SYS_STREAM_H
 #include <sys/stream.h>
 #endif
 #if HAVE_NET_ROUTE_H
@@ -114,6 +114,7 @@ int _netsnmp_ioctl_route_set_v4(netsnmp_route_entry * entry)
     DEBUGSTR = inet_ntoa(gateway.sin_addr);
     DEBUGMSGTL(("access:route","    via %s\n", DEBUGSTR));
 
+    memset(&mask, 0, sizeof(mask));
     mask.sin_family = AF_INET;
     if (entry->rt_pfx_len != 0)
 	mask.sin_addr.s_addr = netsnmp_ipaddress_ipv4_mask(entry->rt_pfx_len);

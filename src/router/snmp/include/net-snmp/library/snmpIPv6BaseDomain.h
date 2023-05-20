@@ -3,7 +3,7 @@
 #ifndef SNMPIPV6BASE_H
 #define SNMPIPV6BASE_H
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

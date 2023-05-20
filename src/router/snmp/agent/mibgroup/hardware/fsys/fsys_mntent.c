@@ -9,7 +9,7 @@
 #if HAVE_MNTENT_H
 #include <mntent.h>
 #endif
-#if HAVE_SYS_MNTTAB_H
+#ifdef HAVE_SYS_MNTTAB_H
 #include <sys/mnttab.h>
 #endif
 #if HAVE_SYS_VFS_H
@@ -227,7 +227,7 @@ netsnmp_fsys_arch_load( void )
 
         if ( _fsys_remote( entry->device, entry->type ))
             entry->flags |= NETSNMP_FS_FLAG_REMOTE;
-#if HAVE_HASMNTOPT
+#ifdef HAVE_HASMNTOPT
         if (hasmntopt( m, NETSNMP_REMOVE_CONST(char *, "ro") ))
             entry->flags |= NETSNMP_FS_FLAG_RONLY;
         else

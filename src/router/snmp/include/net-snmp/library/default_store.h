@@ -19,7 +19,7 @@
  *    then remember to run 'perl/default_store/gen' to update the
  *    corresponding perl interface.
  */
-/*
+/**
  * @file default_store.h: storage space for defaults
  *
  * @addtogroup default_store

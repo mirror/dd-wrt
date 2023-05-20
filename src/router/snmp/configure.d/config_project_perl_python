@@ -87,7 +87,7 @@ if test "x$install_perl" != "xno" ; then
     if test "x$enable_perl_cc_checks" != "xno" ; then
         AC_MSG_CHECKING([for Perl cc])
         changequote(, )
-        PERLCC=`$myperl -V:cc | $myperl -n -e 'print if (s/^\s*cc=.([-=\w\s\/]+).;\s*/$1/);'`
+        PERLCC=`$myperl -V:cc | $myperl -n -e 'print if (s/^\s*cc=.([-=\w\s\/.]+).;\s*/$1/);'`
         changequote([, ])
         if test "x$PERLCC" != "x" ; then
             AC_MSG_RESULT([$PERLCC])
@@ -98,44 +98,44 @@ if test "x$install_perl" != "xno" ; then
                 AC_MSG_ERROR([Could not determine the compiler that was used to build $myperl. Either set the environment variable PERLPROG to a different perl binary or use --without-perl-modules to build without Perl.])
             fi
         fi
-    fi
 
-    #       Was GCC used to build the perl binary?
-    #
-    if test "x$install_perl" != "xno" ; then
-        AC_MSG_CHECKING([whether $PERLCC is a GNU C compiler])
-        OLDCC=$CC
-        CC="$PERLCC"
-        AC_COMPILE_IFELSE([
-            AC_LANG_PROGRAM([], [[
+	#       Was GCC used to build the perl binary?
+	#
+	if test "x$install_perl" != "xno" ; then
+	    AC_MSG_CHECKING([whether $PERLCC is a GNU C compiler])
+	    OLDCC=$CC
+	    CC="$PERLCC"
+	    AC_COMPILE_IFELSE([
+		AC_LANG_PROGRAM([], [[
 #ifndef __GNUC__
   choke me
 #endif
-            ]])], [perlcc_is_gnu=yes], [perlcc_is_gnu=no])
-        AC_MSG_RESULT([$perlcc_is_gnu])
-        CC=$OLDCC
+		]])], [perlcc_is_gnu=yes], [perlcc_is_gnu=no])
+	    AC_MSG_RESULT([$perlcc_is_gnu])
+	    CC=$OLDCC
 
-        #       Check compatability:  Gnu Net-SNMP vs Non-Gnu perl
-        #
-        if test "x$GCC" = "xyes" -a "x$perlcc_is_gnu" = "xno" ; then
-            if test "x$install_perl" = "xtry" ; then
-      	        install_perl="no"
-      	    else
-      	        AC_MSG_ERROR([This build is using a GNU C compiler ($CC) while Perl has been compiled with a non-GNU (or non-working) compiler ($PERLCC). This likely won't work for building with Perl support. Either specify a different compiler (--with-cc=PATH), disable this check (--disable-perl-cc-checks) or build without Perl (--without-perl-modules).])
-      	    fi
-        fi
-    fi
+	    #       Check compatability:  Gnu Net-SNMP vs Non-Gnu perl
+	    #
+	    if test "x$GCC" = "xyes" -a "x$perlcc_is_gnu" = "xno" ; then
+		if test "x$install_perl" = "xtry" ; then
+			install_perl="no"
+		    else
+			AC_MSG_ERROR([This build is using a GNU C compiler ($CC) while Perl has been compiled with a non-GNU (or non-working) compiler ($PERLCC). This likely won't work for building with Perl support. Either specify a different compiler (--with-cc=PATH), disable this check (--disable-perl-cc-checks) or build without Perl (--without-perl-modules).])
+		    fi
+	    fi
+	fi
 
-    #       Check compatability:  Non-Gnu Net-SNMP vs Gnu perl
-    #
-    if test "x$install_perl" != "xno" ; then
-        if test "x$GCC" != "xyes" -a "x$perlcc_is_gnu" = "xyes" ; then
-      	    if test "x$install_perl" = "xtry" ; then
-      	        install_perl="no"
-      	    else
-                AC_MSG_ERROR([This build is using a non-GNU C compiler ($CC) while Perl has been compiled with a GNU compiler ($PERLCC). This likely won't work for building with Perl support. Either specify a different compiler (--with-cc=PATH), disable this check (--disable-perl-cc-checks) or build without Perl (--without-perl-modules).])
-      	    fi
-        fi
+	#       Check compatability:  Non-Gnu Net-SNMP vs Gnu perl
+	#
+	if test "x$install_perl" != "xno" ; then
+	    if test "x$GCC" != "xyes" -a "x$perlcc_is_gnu" = "xyes" ; then
+		    if test "x$install_perl" = "xtry" ; then
+			install_perl="no"
+		    else
+		    AC_MSG_ERROR([This build is using a non-GNU C compiler ($CC) while Perl has been compiled with a GNU compiler ($PERLCC). This likely won't work for building with Perl support. Either specify a different compiler (--with-cc=PATH), disable this check (--disable-perl-cc-checks) or build without Perl (--without-perl-modules).])
+		    fi
+	    fi
+	fi
     fi
 
     #       Are we clear to proceed?

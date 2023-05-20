@@ -82,10 +82,10 @@
 #include <sys/param.h>
 #include <linux/sockios.h>
 #include <sys/file.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <linux/types.h>
 #include <ctype.h>
 #include <linux/errqueue.h>

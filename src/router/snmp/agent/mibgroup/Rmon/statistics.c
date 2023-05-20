@@ -20,7 +20,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_STDLIB
+#ifdef HAVE_STDLIB
 #include <stdlib.h>
 #endif
 #if TIME_WITH_SYS_TIME

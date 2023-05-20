@@ -120,10 +120,8 @@ proxy_parse_config(const char *token, char *line)
         argv[argn] = strdup(buff);
         if (!argv[argn]) {
             config_perror("could not allocate memory for argv[n]");
-            while(argn--)
-                SNMP_FREE(argv[argn]);
             SNMP_FREE(buff);
-            return;
+            goto out;
         }
 	argn++;
     }
@@ -146,19 +144,13 @@ proxy_parse_config(const char *token, char *line)
     
     if (arg < 0) {
         config_perror("failed to parse proxy args");
-        /* Free the memory allocated */
-        while(argn--)
-            SNMP_FREE(argv[argn]);
-        return;
+        goto out;
     }
     DEBUGMSGTL(("proxy_config", "done parsing args\n"));
 
     if (arg >= argn) {
         config_perror("missing base oid");
-        /* Free the memory allocated */
-        while(argn--)
-            SNMP_FREE(argv[argn]);   
-        return;
+        goto out;
     }
 
     /*
@@ -173,6 +165,7 @@ proxy_parse_config(const char *token, char *line)
      * so this isn't needed. 
      */
     ss = snmp_open(&session);
+    SNMP_FREE(session.community);
     /*
      * usm_set_reportErrorOnUnknownID(1); 
      */
@@ -181,10 +174,7 @@ proxy_parse_config(const char *token, char *line)
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmpget", &session);
-        /* Free the memory allocated */
-        while(argn--)
-            SNMP_FREE(argv[argn]);
-        return;
+        goto out;
     }
 
     newp = (struct simple_proxy *) calloc(1, sizeof(struct simple_proxy));
@@ -197,9 +187,7 @@ proxy_parse_config(const char *token, char *line)
         config_perror("illegal proxy oid specified\n");
         /*deallocate the memory previously allocated*/
         SNMP_FREE(newp);
-        while(argn--)
-            SNMP_FREE(argv[argn]);
-        return;
+        goto out;
     }
 
     if (arg < argn) {
@@ -209,10 +197,7 @@ proxy_parse_config(const char *token, char *line)
             snmp_perror("proxy");
             config_perror("illegal variable name specified (base oid)\n");
             SNMP_FREE(newp);
-            /* Free the memory allocated */
-            while(argn--)
-                SNMP_FREE(argv[argn]);
-            return;
+            goto out;
         }
     }
     if ( context_string )
@@ -259,6 +244,8 @@ proxy_parse_config(const char *token, char *line)
         reg->contextName = strdup(context_string);
 
     netsnmp_register_handler(reg);
+
+out:
     /* Free the memory allocated */
     while(argn--)
         SNMP_FREE(argv[argn]);

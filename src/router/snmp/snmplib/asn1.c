@@ -181,7 +181,7 @@ SOFTWARE.
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
@@ -771,7 +771,7 @@ asn_build_int(u_char * data,
     while ((((integer & mask) == 0) || ((integer & mask) == mask))
            && intsize > 1) {
         intsize--;
-        integer <<= 8;
+        integer = (u_long)integer << 8;
     }
     data = asn_build_header(data, datalength, type, intsize);
     if (_asn_build_header_check(errpre, data, *datalength, intsize))
@@ -780,11 +780,11 @@ asn_build_int(u_char * data,
     *datalength -= intsize;
     mask = ((u_long) 0xFF) << (8 * (sizeof(long) - 1));
     /*
-     * mask is 0xFF000000 on a big-endian machine 
+     * mask is 0xFF000000 if sizeof(long) == 4.
      */
     while (intsize--) {
         *data++ = (u_char) ((integer & mask) >> (8 * (sizeof(long) - 1)));
-        integer <<= 8;
+        integer = (u_long)integer << 8;
     }
     DEBUGDUMPSETUP("send", initdatap, data - initdatap);
     DEBUGMSG(("dumpv_send", "  Integer:\t%ld (0x%.2lX)\n", *intp, *intp));

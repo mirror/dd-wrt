@@ -191,6 +191,8 @@ my $perl_define =
 my $perl_inc = $opensslincdir ? "/I $opensslincdir" : "";
 
 my $perl_cflags = ExtUtils::Embed::ccopts();
+# Do not use $perl_cflags if these come from a Perl executable built with gcc.
+$perl_cflags = "" if $perl_cflags =~ / -pipe/;
 
 my %makefile_subs = (
     "app" => [ "^APPS=",       "APPS=" . join(" ", @apps)	    ],

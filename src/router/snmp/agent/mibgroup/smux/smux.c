@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 
-#if HAVE_IO_H                   /* win32 */
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 #include <stdio.h>
@@ -23,7 +23,7 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_ERR_H
+#ifdef HAVE_ERR_H
 #include <err.h>
 #endif
 #if TIME_WITH_SYS_TIME
@@ -37,27 +37,27 @@
 # endif
 #endif
 #include <errno.h>
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
 #include <sys/stat.h>
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_SYS_FILIO_H
+#ifdef HAVE_SYS_FILIO_H
 #include <sys/filio.h>
 #endif
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-#if HAVE_ARPA_INET_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
-#if HAVE_SYS_IOCTL_H
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
 

@@ -4,7 +4,7 @@
 #include <net-snmp/types.h>
 #include <net-snmp/output_api.h>
 
-#if HAVE_SYSLOG_H
+#ifdef HAVE_SYSLOG_H
 #include <syslog.h>
 #endif
 #include <stdio.h>

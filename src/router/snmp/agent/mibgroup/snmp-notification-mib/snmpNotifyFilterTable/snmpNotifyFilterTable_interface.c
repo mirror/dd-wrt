@@ -1024,7 +1024,7 @@ _mfd_snmpNotifyFilterTable_get_values(netsnmp_mib_handler *handler, netsnmp_hand
 
         /*
          * if the buffer wasn't used previously for the old data (i.e. it
-         * was allcoated memory)  and the get routine replaced the pointer,
+         * was allocated memory)  and the get routine replaced the pointer,
          * we need to free the previous pointer.
          */
         if (old_string && (old_string != requests->requestvb->buf) &&
@@ -1840,6 +1840,7 @@ _mfd_snmpNotifyFilterTable_irreversible_commit(netsnmp_mib_handler
  * DATA ACCESS
  *
  ***********************************************************************/
+#if 0
 /**
  * @internal
  */
@@ -1883,6 +1884,7 @@ _container_free(netsnmp_container *container)
                     (netsnmp_container_obj_func *) _container_item_free,
                     NULL);
 }                               /* _container_free */
+#endif
 
 /**
  * @internal
@@ -1915,29 +1917,20 @@ _snmpNotifyFilterTable_container_init(snmpNotifyFilterTable_interface_ctx *
  * shutdown the container with functions or wrappers
  */
 void
- 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    _snmpNotifyFilterTable_container_shutdown
-    (snmpNotifyFilterTable_interface_ctx * if_ctx) {
+_snmpNotifyFilterTable_container_shutdown
+    (snmpNotifyFilterTable_interface_ctx *if_ctx)
+{
     DEBUGMSGTL(("internal:snmpNotifyFilterTable:_snmpNotifyFilterTable_container_shutdown", "called\n"));
 
     snmpNotifyFilterTable_container_shutdown(if_ctx->container);
 
-    _container_free(if_ctx->container);
-
+    /*
+     * Do not free the container here since
+     * shutdown_snmpNotifyFilterTable_data_storage() will free this container
+     * anyway.
+     */
+    /* _container_free(if_ctx->container); */
+    if_ctx->container = NULL;
 }                               /* _snmpNotifyFilterTable_container_shutdown */
 
 /***********************************************************************

@@ -1,7 +1,7 @@
 #ifndef _SNMPTCPDOMAIN_H
 #define _SNMPTCPDOMAIN_H
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

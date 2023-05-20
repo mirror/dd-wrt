@@ -142,10 +142,15 @@ typedef struct netsnmp_handler_registration_s {
  * function handler definitions 
  */
 
+/**
+ * @typedef Netsnmp_Node_Handler
+ * @param[in] handler pointer to MIB handler.
+ * @param[in] reginfo pointer to registration struct.
+ * @param[in] reqinfo pointer to current transaction.
+ * @param[in] requests SNMP requests to process.
+ */
 typedef int (Netsnmp_Node_Handler) (netsnmp_mib_handler *handler,
-    /** pointer to registration struct */
     netsnmp_handler_registration *reginfo,
-    /** pointer to current transaction */
     netsnmp_agent_request_info *reqinfo,
     netsnmp_request_info *requests);
 

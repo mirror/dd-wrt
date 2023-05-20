@@ -402,7 +402,7 @@ init_var_route(void)
 
 #ifndef solaris2
 
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
 static union {
     struct sockaddr_in sin;
     u_short         data[128];
@@ -443,7 +443,7 @@ var_ipRouteEntry(struct variable * vp,
     u_char         *cp;
     oid            *op;
     static in_addr_t addr_ret;
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
     struct sockaddr_in *sa;
 #endif
 #if !defined(linux) && !defined(hpux11)
@@ -505,7 +505,7 @@ var_ipRouteEntry(struct variable * vp,
         Route_Scan_Reload();
 #endif
         for (RtIndex = 0; RtIndex < rtsize; RtIndex++) {
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
             sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_dst);
             cp = (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
@@ -548,7 +548,7 @@ var_ipRouteEntry(struct variable * vp,
     switch (vp->magic) {
     case IPROUTEDEST:
         *var_len = sizeof(addr_ret);
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
         sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_dst);
         return (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
@@ -607,7 +607,7 @@ var_ipRouteEntry(struct variable * vp,
         return (u_char *) & long_return;
     case IPROUTENEXTHOP:
         *var_len = sizeof(addr_ret);
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
         sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_gateway);
         return (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
@@ -650,7 +650,7 @@ var_ipRouteEntry(struct variable * vp,
         return (u_char *) & long_return;
     case IPROUTEMASK:
         *var_len = sizeof(addr_ret);
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
         /*
          * XXX - Almost certainly not right
          * but I don't have a suitable system to test this on 
@@ -1177,7 +1177,7 @@ Route_Scan_Reload(void)
 
 #else
 
-#if HAVE_SYS_MBUF_H
+#ifdef HAVE_SYS_MBUF_H
 netsnmp_feature_require(string_append_int);
 netsnmp_feature_require(interface_legacy);
 static void
@@ -1429,7 +1429,7 @@ qsort_compare(const void *v1, const void *v2)
 {
     RTENTRY * const *r1 = (RTENTRY * const *) v1;
     RTENTRY * const *r2 = (RTENTRY * const *) v2;
-#if NEED_KLGETSA
+#ifdef NEED_KLGETSA
     register u_long dst1 =
         ntohl(klgetsa((const struct sockaddr_in *) (*r1)->rt_dst)->
               sin_addr.s_addr);

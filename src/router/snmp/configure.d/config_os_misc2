@@ -27,7 +27,10 @@ fi
 
 #       Check for OpenSSL
 #
-if test "x$ac_cv_lib_crypto_EVP_md5" != "xyes" -a "x$ac_cv_lib_eay32_EVP_md5" != "xyes" -o "x$ac_cv_header_openssl_hmac_h" != "xyes"; then
+if test \( "x$ac_cv_func_EVP_md5" != "xyes" -a \
+           "x$ac_cv_lib_crypto_EVP_md5" != "xyes" -a \
+	   "x$ac_cv_lib_eay32_EVP_md5" != "xyes" \) -o \
+	"x$ac_cv_header_openssl_hmac_h" != "xyes"; then
     if test "x$askedopenssl" = "xyes"; then
         AC_MSG_ERROR(Asked to use OpenSSL but I couldn't find it.)
     fi

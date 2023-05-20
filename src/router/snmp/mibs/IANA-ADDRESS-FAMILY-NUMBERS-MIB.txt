@@ -6,7 +6,7 @@ IMPORTS
     TEXTUAL-CONVENTION                  FROM SNMPv2-TC;
 
 ianaAddressFamilyNumbers MODULE-IDENTITY
-    LAST-UPDATED "201911040000Z"  -- November 4, 2019
+    LAST-UPDATED "202009140000Z"  -- September 14, 2020
     ORGANIZATION "IANA"
     CONTACT-INFO
         "Postal:    Internet Assigned Numbers Authority
@@ -22,6 +22,15 @@ ianaAddressFamilyNumbers MODULE-IDENTITY
         textual convention."
 
     -- revision history
+
+    REVISION     "202009140000Z"  -- September 14, 2020
+    DESCRIPTION  "Added missing value 16398."
+
+    REVISION     "202009020000Z"  -- September 2, 2020
+    DESCRIPTION  "Added assignments 29-30."
+
+    REVISION     "202005120000Z"  -- May 12, 2020
+    DESCRIPTION  "Assigned value 16398."
 
     REVISION     "201911040000Z"  -- November 4, 2019
     DESCRIPTION  "Assigned value 16397."
@@ -108,6 +117,8 @@ AddressFamilyNumbers ::= TEXTUAL-CONVENTION
         mplsTpSectionEndpointIdentifier(26),  -- MPLS-TP Section Endpoint Identifier
         mplsTpLspEndpointIdentifier(27),  -- MPLS-TP LSP Endpoint Identifier
         mplsTpPseudowireEndpointIdentifier(28),  -- MPLS-TP Pseudowire Endpoint Identifier
+        mtIpMultiTopologyIpVersion4 (29),  -- MT IP: Multi-Topology IP version 4
+        mtIpv6MultiTopologyIpVersion6 (30),  -- MT IPv6: Multi-Topology IP version 6
         eigrpCommonServiceFamily(16384),  -- EIGRP Common Service Family
         eigrpIpv4ServiceFamily(16385),  -- EIGRP IPv4 Service Family
         eigrpIpv6ServiceFamily(16386),  -- EIGRP IPv6 Service Family
@@ -122,6 +133,7 @@ AddressFamilyNumbers ::= TEXTUAL-CONVENTION
         rBridgePortID(16395),  -- RBridge Port ID
         trillNickname(16396),  -- TRILL Nickname
         universallyUniqueIdentifier(16397),  -- Universally Unique Identifier (UUID)
+        routingPolicyAfi(16398),  -- Routing Policy AFI
         reserved(65535)
 
         Requests for new values should be made to IANA via
@@ -156,6 +168,8 @@ AddressFamilyNumbers ::= TEXTUAL-CONVENTION
                 mplsTpSectionEndpointIdentifier(26),
                 mplsTpLspEndpointIdentifier(27),
                 mplsTpPseudowireEndpointIdentifier(28),
+                mtipmultitopologyipversion4 (29),
+                mtipv6multitopologyipversion6 (30),
                 eigrpCommonServiceFamily(16384),
                 eigrpIpv4ServiceFamily(16385),
                 eigrpIpv6ServiceFamily(16386),
@@ -170,6 +184,7 @@ AddressFamilyNumbers ::= TEXTUAL-CONVENTION
                 rBridgePortID(16395),
                 trillNickname(16396),
                 universallyUniqueIdentifier(16397),
+                routingPolicyAfi(16398),
                 reserved(65535)
             }
     END

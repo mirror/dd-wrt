@@ -9,7 +9,7 @@
  */
 #include <sys/types.h>
 
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #ifdef solaris2
 #define _XPG4_2
 #endif

@@ -88,9 +88,7 @@ struct netsnmp_fsys_info_s {
      * Possibly not all needed ??
      */
 netsnmp_fsys_info *netsnmp_fsys_get_first( void );
-netsnmp_fsys_info *netsnmp_fsys_get_next( netsnmp_fsys_info* );
-netsnmp_fsys_info *netsnmp_fsys_get_byIdx(  int,   int );
-netsnmp_fsys_info *netsnmp_fsys_get_next_byIdx(int,int );
+netsnmp_fsys_info *netsnmp_fsys_get_next(const netsnmp_fsys_info *);
 
 netsnmp_fsys_info *netsnmp_fsys_by_device(  char*, int );
 netsnmp_fsys_info *netsnmp_fsys_by_path(    char*, int );
@@ -99,12 +97,12 @@ netsnmp_cache *netsnmp_fsys_get_cache( void );
 int  netsnmp_fsys_load( netsnmp_cache *cache, void *data );
 void netsnmp_fsys_free( netsnmp_cache *cache, void *data );
 
-int netsnmp_fsys_size( netsnmp_fsys_info* );
-int netsnmp_fsys_used( netsnmp_fsys_info* );
-int netsnmp_fsys_avail(netsnmp_fsys_info* );
+int netsnmp_fsys_size(const netsnmp_fsys_info*);
+int netsnmp_fsys_used(const netsnmp_fsys_info*);
+int netsnmp_fsys_avail(const netsnmp_fsys_info*);
 
-unsigned long long netsnmp_fsys_size_ull( netsnmp_fsys_info* );
-unsigned long long netsnmp_fsys_used_ull( netsnmp_fsys_info* );
-unsigned long long netsnmp_fsys_avail_ull(netsnmp_fsys_info* );
+unsigned long long netsnmp_fsys_size_ull(const netsnmp_fsys_info*);
+unsigned long long netsnmp_fsys_used_ull(const netsnmp_fsys_info*);
+unsigned long long netsnmp_fsys_avail_ull(const netsnmp_fsys_info*);
 
 void netsnmp_fsys_calculate32( netsnmp_fsys_info *f);

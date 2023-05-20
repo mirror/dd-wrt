@@ -15,10 +15,10 @@
 #include <unistd.h>
 #endif
 
-#if HAVE_SYS_PROTOSW_H
+#ifdef HAVE_SYS_PROTOSW_H
 #include <sys/protosw.h>
 #endif
-#if HAVE_ARPA_INET_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
@@ -31,19 +31,19 @@
 #undef TCP_NODELAY
 #undef TCP_MAXSEG
 #endif
-#if HAVE_NETINET_TCP_H
+#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#if HAVE_NETINET_TCPIP_H
+#ifdef HAVE_NETINET_TCPIP_H
 #include <netinet/tcpip.h>
 #endif
-#if HAVE_NETINET_TCP_TIMER_H
+#ifdef HAVE_NETINET_TCP_TIMER_H
 #include <netinet/tcp_timer.h>
 #endif
-#if HAVE_NETINET_TCP_VAR_H
+#ifdef HAVE_NETINET_TCP_VAR_H
 #include <netinet/tcp_var.h>
 #endif
-#if HAVE_NETINET_TCP_FSM_H
+#ifdef HAVE_NETINET_TCP_FSM_H
 #include <netinet/tcp_fsm.h>
 #endif
 

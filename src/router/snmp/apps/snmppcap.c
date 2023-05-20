@@ -32,6 +32,9 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/library/large_fd_set.h>
+#include <net-snmp/agent/snmp_agent.h>
+#include <net-snmp/agent/snmp_vars.h>
+#include <net-snmp/agent/mib_modules.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -73,6 +76,12 @@ typedef struct mystuff {
 const void *recv_data;
 int recv_datalen;
 
+/*
+ * Are we acting as an agent, processing packets, or are we just
+ * parsing them and dumping them?
+ */
+int acting_as_agent = 0;
+
 int
 snmppcap_recv(netsnmp_transport *t, void *buf, int bufsiz, void **opaque, int *opaque_len)
 {
@@ -82,6 +91,19 @@ snmppcap_recv(netsnmp_transport *t, void *buf, int bufsiz, void **opaque, int *o
     } else {
         return -1;
     }
+}
+
+int
+snmppcap_send(netsnmp_transport *t, const void *buf, int size,
+	                     void **opaque, int *olength)
+{
+    /*
+     * This seems silly - we have a buffer full of an SNMP packet
+     * but all we want is the parsed PDU.
+     */
+    printf( "Reply:\n" );
+    printf( "/* TODO: re-parse the data into a PDU? */\n" );
+    return 0;
 }
 
 /*
@@ -105,6 +127,12 @@ snmppcap_callback(int op, netsnmp_session *sess, int reqid, netsnmp_pdu *pdu,
     for (vars = pdu->variables; vars; vars = vars->next_variable) {
        printf( "   " );
        print_variable(vars->name, vars->name_length, vars );
+    }
+
+    if (acting_as_agent) {
+	pdu->flags = UCD_MSG_FLAG_ALWAYS_IN_VIEW;	/* Bypass VACM for now */
+	pdu->version = sess->version;
+	return handle_snmp_packet( op, sess, reqid, pdu, NULL );
     }
     return 0;
 }
@@ -164,6 +192,28 @@ usage(void)
     fprintf(stderr, "USAGE: snmppcap [OPTIONS] FILE\n\n");
     /* can't use snmp_parse_args_usage because it assumes an agent */
     snmp_parse_args_descriptions(stderr);
+    fprintf(stderr, "\nsnmppcap options:\n");
+    fprintf(stderr,
+	    "\t-Ca\tAct as agent and respond to request (try with -Dresponse)\n");
+}
+
+static void
+optProc(int argc, char *const *argv, int opt)
+{
+    switch (opt) {
+    case 'C':
+        while (*optarg) {
+            switch (*optarg++) {
+	    case 'a':
+		acting_as_agent = 1;
+		break;
+	    default:
+		fprintf(stderr,
+			"Unknown flag passed to -C: %c\n", optarg[-1]);
+		exit(1);
+	    }
+	}
+    }
 }
 
 int main(int argc, char **argv)
@@ -177,11 +227,7 @@ int main(int argc, char **argv)
     mystuff_t mystuff;
 
     ss = SNMP_MALLOC_TYPEDEF(netsnmp_session);
-    /*
-     * snmp_parse_args usage here is totally overkill, but trying to
-     * parse -D
-     */
-    switch (arg = snmp_parse_args(argc, argv, ss, "", NULL)) {
+    switch (arg = snmp_parse_args(argc, argv, ss, "C:", optProc)) {
     case NETSNMP_PARSE_ARGS_ERROR:
         exit(1);
     case NETSNMP_PARSE_ARGS_SUCCESS_EXIT:
@@ -207,6 +253,17 @@ int main(int argc, char **argv)
         fprintf(stderr, "Only Ethernet pcaps currently supported\n");
         return 2;
     }
+
+    const char *app_name = "snmppcap";
+    if (acting_as_agent) {
+	if (init_agent(app_name) != 0) {
+	    snmp_log(LOG_ERR, "Agent initialization failed\n");
+	    return 4;
+	}
+	init_mib_modules();
+    }
+    init_snmp(app_name);
+
     transport = SNMP_MALLOC_TYPEDEF(netsnmp_transport);
     if ( transport == NULL ) {
         fprintf(stderr, "Could not malloc transport\n" );
@@ -218,6 +275,8 @@ int main(int argc, char **argv)
      */
     transport->sock = FAKE_FD;        /* nobody actually uses this as a file descriptor */
     transport->f_recv = snmppcap_recv;
+    transport->f_send = snmppcap_send;
+    transport->msgMaxSize = SNMP_MAX_PACKET_LEN;
 
     ss->callback = snmppcap_callback;
     ss->callback_magic = (void *)&mystuff;
@@ -238,6 +297,10 @@ int main(int argc, char **argv)
     snmp_add(ss, transport, NULL, NULL);
 
     pcap_loop(p, -1, handle_pcap, (void *)&mystuff);
+
+    pcap_close(p);
+
+    SNMP_FREE(ss);
 
     return 0;
 }

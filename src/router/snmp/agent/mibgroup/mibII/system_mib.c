@@ -29,10 +29,10 @@
 #endif
 #include <sys/types.h>
 
-#if HAVE_UTSNAME_H
+#ifdef HAVE_UTSNAME_H
 #include <utsname.h>
 #else
-#if HAVE_SYS_UTSNAME_H
+#ifdef HAVE_SYS_UTSNAME_H
 #include <sys/utsname.h>
 #endif
 #endif
@@ -248,7 +248,7 @@ init_system_mib(void)
             utsName.machine);
     version_descr[ sizeof(version_descr)-1 ] = 0;
 #else
-#if HAVE_EXECV
+#ifdef HAVE_EXECV
     struct extensible extmp;
 
     /*

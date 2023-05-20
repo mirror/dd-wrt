@@ -10,39 +10,39 @@
 #define _WANT_TCPCB 1
 #include <sys/types.h>
 #include <sys/socket.h>
-#if HAVE_SYS_IOCTL_H
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
 #if defined(NETSNMP_IFNET_NEEDS_KERNEL) && !defined(_KERNEL)
 #define _KERNEL 1
 #define _I_DEFINED_KERNEL
 #endif
-#if NETSNMP_IFNET_NEEDS_KERNEL_STRUCTURES
+#ifdef NETSNMP_IFNET_NEEDS_KERNEL_STRUCTURES
 #define _KERNEL_STRUCTURES
 #endif
 #include <sys/param.h>
 #ifdef _I_DEFINED_KERNEL
 #undef _KERNEL
 #endif
-#if HAVE_SYS_SOCKETVAR_H
+#ifdef HAVE_SYS_SOCKETVAR_H
 # include <sys/socketvar.h>
 #endif
 
-#if STDC_HEADERS
+#ifdef STDC_HEADERS
 #include <string.h>
 #include <stdlib.h>
 #else
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_SYS_SYSCTL_H
+#ifdef HAVE_SYS_SYSCTL_H
 #ifdef _I_DEFINED_KERNEL
 #undef _KERNEL
 #endif
@@ -51,10 +51,10 @@
 #define _KERNEL 1
 #endif
 #endif
-#if HAVE_SYS_SYSMP_H
+#ifdef HAVE_SYS_SYSMP_H
 #include <sys/sysmp.h>
 #endif
-#if HAVE_SYS_TCPIPSTATS_H
+#ifdef HAVE_SYS_TCPIPSTATS_H
 #include <sys/tcpipstats.h>
 #endif
 #ifdef _I_DEFINED_KERNEL
@@ -64,10 +64,10 @@
 #ifdef _I_DEFINED_KERNEL
 #define _KERNEL 1
 #endif
-#if HAVE_NET_IF_VAR_H
+#ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-#if HAVE_NET_IF_DL_H
+#ifdef HAVE_NET_IF_DL_H
 #include <net/if_dl.h>
 #endif
 #ifdef HAVE_NET_IF_MIB_H
@@ -77,79 +77,79 @@
 #undef _KERNEL
 #endif
 #include <netinet/in_systm.h>
-#if HAVE_SYS_HASHING_H
+#ifdef HAVE_SYS_HASHING_H
 #include <sys/hashing.h>
 #endif
-#if HAVE_SYS_SOCKIO_H
+#ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
-#if HAVE_NETINET6_IN6_VAR_H
+#ifdef HAVE_NETINET6_IN6_VAR_H
 #include <netinet6/in6_var.h>
 #endif
 #include <netinet/ip6.h>
-#if HAVE_NETINET_IP_VAR_H
+#ifdef HAVE_NETINET_IP_VAR_H
 # include <netinet/ip_var.h>
 #endif
-#if HAVE_NETINET_ICMP6_H
+#ifdef HAVE_NETINET_ICMP6_H
 # include <netinet/icmp6.h>
 #endif
-#if HAVE_NETINET6_IP6_VAR_H
+#ifdef HAVE_NETINET6_IP6_VAR_H
 # include <sys/queue.h>
 # include <netinet6/ip6_var.h>
 #endif
 #include <net/route.h>
-#if HAVE_NETINET_IP_H
+#ifdef HAVE_NETINET_IP_H
 # include <netinet/ip.h>
 #endif
-#if HAVE_NETINET_IN_PCB_H
+#ifdef HAVE_NETINET_IN_PCB_H
 # include <netinet/in_pcb.h>
 #endif
-#if HAVE_NETINET6_IN6_PCB_H
+#ifdef HAVE_NETINET6_IN6_PCB_H
 # include <netinet6/in6_pcb.h>
 #endif
-#if HAVE_NETINET6_TCP6_H
+#ifdef HAVE_NETINET6_TCP6_H
 # define TCP6
 #endif
 #ifndef TCP6
 # if HAVE_NETINET_TCP_H
 #  include <netinet/tcp.h>
 # endif
-# if HAVE_NETINET_TCP_TIMER_H
+# ifdef HAVE_NETINET_TCP_TIMER_H
 #  include <netinet/tcp_timer.h>
 # endif
-# if HAVE_NETINET_TCP_VAR_H
+# ifdef HAVE_NETINET_TCP_VAR_H
 #  include <netinet/tcp_var.h>
 # endif
-# if HAVE_NETINET_TCP_FSM_H
+# ifdef HAVE_NETINET_TCP_FSM_H
 #  include <netinet/tcp_fsm.h>
 # endif
 #endif
-#if HAVE_NETINET6_TCP6_H
+#ifdef HAVE_NETINET6_TCP6_H
 # include <netinet6/tcp6.h>
 #endif
-#if HAVE_NETINET6_TCP6_TIMER_H
+#ifdef HAVE_NETINET6_TCP6_TIMER_H
 #include <netinet6/tcp6_timer.h>
 #endif
-#if HAVE_NETINET6_TCP6_VAR_H
+#ifdef HAVE_NETINET6_TCP6_VAR_H
 #include <netinet6/tcp6_var.h>
 #endif
-#if HAVE_NETINET6_TCP6_FSM_H
+#ifdef HAVE_NETINET6_TCP6_FSM_H
 #include <netinet6/tcp6_fsm.h>
 #endif
-#if HAVE_INET_MIB2_H
+#ifdef HAVE_INET_MIB2_H
 #include <inet/mib2.h>
 #endif
 #ifdef HAVE_SYSLOG_H
 #include <syslog.h>
 #endif
 
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
 #if defined(HAVE_KVM_GETFILE2) || !defined(openbsd5)
 #undef HAVE_KVM_GETFILES
 #endif
 #endif
 
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
 #include <kvm.h>
 #include <sys/sysctl.h>
 #define _KERNEL
