@@ -1,0 +1,20 @@
+[
+    {
+        "id": "genres",
+        "label": "Use genre tags from Last.fm",
+        "type": "bool",
+        "default": "true"
+    },
+    {
+        "id": "concerts",
+        "type": "bool",
+        "label": "Download concert information",
+        "default": "true"
+    },
+    {
+        "id": "popular",
+        "type": "bool",
+        "label": "Download popular track information",
+        "default": "true"
+    }
+]
