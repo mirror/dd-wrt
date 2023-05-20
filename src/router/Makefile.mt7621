@@ -568,7 +568,7 @@ r6800:
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/wac124.img -b CTL -r A003 -v 0x0402 -f
-	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYA -r A001 -v 0x1054 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYB -r A001 -v 0x1054 -f
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128 conv=sync
@@ -943,7 +943,7 @@ ifeq ($(CONFIG_R6800),y)
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/wac124.img -b CTL -r A003 -v 0x0402 -f
-	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYA -r A001 -v 0x1054 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYB -r A001 -v 0x1054 -f
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128 conv=sync
@@ -977,7 +977,7 @@ ifeq ($(CONFIG_R6800),y)
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/wac124.img -b CTL -r A003 -v 0x0402
-	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYA -r A001 -v 0x1054
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700.img -b AYB -r A001 -v 0x1054
 
 	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage > $(ARCH)-uclibc/r6800-webflash.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6850.uimage > $(ARCH)-uclibc/r6850-webflash.img
@@ -1028,7 +1028,7 @@ ifeq ($(CONFIG_R6800),y)
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350-webflash.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220-webflash.img -b AYA -r A001 -v 0x0086 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/wac124-webflash.img -b CTL -r A003 -v 0x0402 -f
-	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700-webflash.img -b AYA -r A001 -v 0x1054 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/3700-webflash.img -b AYB -r A001 -v 0x1054 -f
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=128 conv=sync
