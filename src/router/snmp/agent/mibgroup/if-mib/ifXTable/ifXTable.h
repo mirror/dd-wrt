@@ -25,9 +25,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(if-mib/ifTable/ifTable)
-config_require(if-mib/ifXTable/ifXTable_interface)
-config_require(if-mib/ifXTable/ifXTable_data_access)
+config_require(if-mib/ifTable/ifTable);
+config_require(if-mib/ifXTable/ifXTable_interface);
+config_require(if-mib/ifXTable/ifXTable_data_access);
     /* *INDENT-ON*  */
 
     /*

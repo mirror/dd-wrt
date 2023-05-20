@@ -24,9 +24,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(ip-mib/ipIfStatsTable/ipIfStatsTable_interface)
-config_require(ip-mib/ipIfStatsTable/ipIfStatsTable_data_access)
-config_require(ip-mib/ipIfStatsTable/ipIfStatsTable_data_get)
+config_require(ip-mib/ipIfStatsTable/ipIfStatsTable_interface);
+config_require(ip-mib/ipIfStatsTable/ipIfStatsTable_data_access);
+config_require(ip-mib/ipIfStatsTable/ipIfStatsTable_data_get);
     /* *INDENT-ON*  */
 
     /*

@@ -18,13 +18,13 @@
  *    be handled in the *_hpux.h header file.
  */
 #if defined( linux )
-config_require(ip-mib/data_access/scalars_linux)
+config_require(ip-mib/data_access/scalars_linux);
 #elif defined( freebsd4 ) || defined( netbsd5 ) || defined( openbsd4 ) || defined( dragonfly ) || defined( darwin )
-config_require(ip-mib/data_access/scalars_sysctl)
+config_require(ip-mib/data_access/scalars_sysctl);
 #else
 /*
  * couldn't determine the correct file!
  * require a bogus file to generate an error.
  */
-config_require(ip-mib/data_access/scalars-unknown-arch)
+config_require(ip-mib/data_access/scalars-unknown-arch);
 #endif

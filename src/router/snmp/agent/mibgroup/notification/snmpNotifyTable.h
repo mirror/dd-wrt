@@ -18,9 +18,9 @@
  */
 
 
-config_require(notification/snmpNotifyTable_data)
-config_require(target)
-config_add_mib(SNMP-NOTIFICATION-MIB)
+config_require(notification/snmpNotifyTable_data);
+config_require(target);
+config_add_mib(SNMP-NOTIFICATION-MIB);
 
 #include "snmpNotifyTable_data.h"
 

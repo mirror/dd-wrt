@@ -5,7 +5,7 @@
 #ifndef _MIBGROUP_HRDISK_H
 #define _MIBGROUP_HRDISK_H
 
-config_require(host/hr_device)
+config_require(host/hr_device);
 
 extern void     init_hr_disk(void);
 extern void     shutdown_hr_disk(void);

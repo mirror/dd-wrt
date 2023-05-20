@@ -5,7 +5,7 @@
 #ifndef _MIBGROUP_SNMP_BGP_H
 #define _MIBGROUP_SNMP_BGP_H
 
-config_require(smux/smux)
+config_require(smux/smux);
 
      extern FindVarMethod var_bgp;
      extern void     init_snmp_bgp(void);

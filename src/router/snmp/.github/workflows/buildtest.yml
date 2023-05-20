@@ -8,6 +8,14 @@ jobs:
   build_and_test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [regular, disable-set, mini, read-only]
+
+    env:
+      MODE: ${{ matrix.mode }}
+
     steps:
     - uses: actions/checkout@v2
 

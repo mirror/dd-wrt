@@ -1,4 +1,3 @@
-from distutils.core import setup, Extension
 from setuptools import setup, Extension, find_packages
 import os
 import re

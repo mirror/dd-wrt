@@ -4,7 +4,7 @@
 #ifndef _MIBGROUP_LOADAVE_H
 #define _MIBGROUP_LOADAVE_H
 
-config_require(util_funcs/header_simple_table)
+config_require(util_funcs/header_simple_table);
 
      void            init_loadave(void);
      extern FindVarMethod var_extensible_loadave;

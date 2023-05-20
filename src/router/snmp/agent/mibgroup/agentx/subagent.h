@@ -1,14 +1,14 @@
 #ifndef _AGENTX_SUBAGENT_H
 #define _AGENTX_SUBAGENT_H
 
-config_belongs_in(agent_module)
+config_belongs_in(agent_module);
 
-config_require(agentx/protocol)
-config_require(agentx/client)
-config_require(agentx/agentx_config)
+config_require(agentx/protocol);
+config_require(agentx/client);
+config_require(agentx/agentx_config);
 
 #ifndef NETSNMP_TRANSPORT_CALLBACK_DOMAIN
-config_error(agentx/subagent depends on the Callback transport)
+config_error(agentx/subagent depends on the Callback transport);
 #endif
 
      int             subagent_init(void);

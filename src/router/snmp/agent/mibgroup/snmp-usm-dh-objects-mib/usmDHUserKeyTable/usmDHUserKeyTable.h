@@ -22,10 +22,10 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_interface)
-config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_data_access)
-config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_data_get)
-config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_data_set)
+config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_interface);
+config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_data_access);
+config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_data_get);
+config_require(snmp-usm-dh-objects-mib/usmDHUserKeyTable/usmDHUserKeyTable_data_set);
     /* *INDENT-ON*  */
 
     /*

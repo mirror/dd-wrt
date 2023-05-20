@@ -7,22 +7,22 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 #include <sys/types.h>
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #include <ctype.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -255,12 +255,12 @@ ctime_to_timet(const char *str)
      */
 
 #ifdef HAVE_STRUCT_TM_TM_ISDST
-#if HAVE_DECL_DAYLIGHT
+#if HAVE_DECL_DAYLIGHT==1
     tm.tm_isdst = !!daylight;
 #else
     tm.tm_isdst = 0;
 #endif
-#if HAVE_DECL_TIMEZONE && defined(HAVE_SCALAR_TIMEZONE)
+#if defined(HAVE_DECL_TIMEZONE) && defined(HAVE_SCALAR_TIMEZONE)
     tm.tm_sec -= timezone;
 #endif
 #endif

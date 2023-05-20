@@ -1,14 +1,14 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <stdio.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -302,7 +302,7 @@ void
 free_trap1_fmt(void)
 {
     if (print_format1 && print_format1 != trap1_std_str)
-        free((char *) print_format1);
+        free(print_format1);
     print_format1 = NULL;
 }
 
@@ -318,7 +318,7 @@ void
 free_trap2_fmt(void)
 {
     if (print_format2 && print_format2 != trap2_std_str)
-        free((char *) print_format2);
+        free(print_format2);
     print_format2 = NULL;
 }
 

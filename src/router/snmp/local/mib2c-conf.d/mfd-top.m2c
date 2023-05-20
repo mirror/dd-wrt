@@ -90,12 +90,12 @@
 
 /* other required module components */
     /* *INDENT-OFF*  */
-config_add_mib($name.module)
-config_require($name.module/${name}/${name}_interface)
-config_require($name.module/${name}/${name}_data_access)
+config_add_mib($name.module);
+config_require($name.module/${name}/${name}_interface);
+config_require($name.module/${name}/${name}_data_access);
 @if $m2c_create_fewer_files != 1@
-config_require($name.module/${name}/${name}_data_get)
-config_require($name.module/${name}/${name}_data_set)
+config_require($name.module/${name}/${name}_data_get);
+config_require($name.module/${name}/${name}_data_set);
     /* *INDENT-ON*  */
 
 /* OID and column number definitions for $context */

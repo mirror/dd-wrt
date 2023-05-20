@@ -15,7 +15,7 @@ cat >>"$2.c" <<EOF
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/library/large_fd_set.h>
-#include <net-snmp/library/snmpIPBaseDomain.h>
+#include "snmplib/transports/snmpIPBaseDomain.h"
 #include <utilities/execute.h>
 
 /* testing specific header */

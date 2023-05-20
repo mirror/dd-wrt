@@ -6,7 +6,7 @@
 
 void            init_errormib(void);
 
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
      void            setPerrorstatus(const char *);
      void            seterrorstatus(const char *, int);

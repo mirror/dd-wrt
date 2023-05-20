@@ -1,10 +1,10 @@
 #ifndef IQUERY_H
 #define IQUERY_H
 
-config_belongs_in(agent_module)
+config_belongs_in(agent_module);
 
 #ifndef NETSNMP_TRANSPORT_CALLBACK_DOMAIN
-config_error(utilities/iquery depends on the Callback transport)
+config_error(utilities/iquery depends on the Callback transport);
 #endif
 
 void init_iquery(void);

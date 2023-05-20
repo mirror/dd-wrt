@@ -8,19 +8,19 @@
 /***********************************************************************
  * configure macros
  */
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
 /*
  * conflicts with the new MFD rewrite
  */
-config_exclude(if-mib/ifTable/ifTable)
+config_exclude(if-mib/ifTable/ifTable);
 
 #if !defined(WIN32) && !defined(cygwin)
-config_require(if-mib/data_access/interface)
+config_require(if-mib/data_access/interface);
 #endif
 
 #if defined(solaris2)
-config_require(kernel_sunos5)
+config_require(kernel_sunos5);
 #endif
 
 /*
@@ -28,7 +28,7 @@ config_require(kernel_sunos5)
  * Not sure if that can be translated into a config_arch_require, so be
  * indiscriminate for now.
  */
-config_require(mibII/var_route)
+config_require(mibII/var_route);
 
 /***********************************************************************
  */

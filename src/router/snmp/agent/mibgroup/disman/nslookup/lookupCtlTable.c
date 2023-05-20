@@ -579,7 +579,7 @@ run_lookup(struct lookupTable_data *item)
 
     else if (addressType == INETADDRESSTYPE_DNS) {
         struct hostent *lookup;
-#if HAVE_GETADDRINFO
+#ifdef HAVE_GETADDRINFO
         int             res;
         struct addrinfo *ais;
         struct addrinfo hints = { 0, AF_INET6, SOCK_DGRAM };
@@ -626,7 +626,7 @@ run_lookup(struct lookupTable_data *item)
             }
         }
 
-#if HAVE_GETADDRINFO
+#ifdef HAVE_GETADDRINFO
         netsnmp_get_monotonic_clock(&tpstart);
         res = netsnmp_getaddrinfo(address, NULL, &hints, &ais);
         netsnmp_get_monotonic_clock(&tpend);
@@ -676,7 +676,7 @@ run_lookup(struct lookupTable_data *item)
             }
             freeaddrinfo(ais);
         }
-#elif HAVE_GETHOSTBYNAME2
+#elif defined(HAVE_GETHOSTBYNAME2)
         netsnmp_get_monotonic_clock(&tpstart);
         lookup = gethostbyname2(address, AF_INET6);
         netsnmp_get_monotonic_clock(&tpend);

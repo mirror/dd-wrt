@@ -1,11 +1,11 @@
 #ifndef _AGENTX_MASTER_H
 #define _AGENTX_MASTER_H
 
-config_belongs_in(agent_module)
+config_belongs_in(agent_module);
 
-config_require(agentx/protocol)
-config_require(agentx/master_admin)
-config_require(agentx/agentx_config)
+config_require(agentx/protocol);
+config_require(agentx/master_admin);
+config_require(agentx/agentx_config);
 
      void            init_master(void);
      void            real_init_master(void);

@@ -5,9 +5,9 @@
 #include <netinet/in.h>
 #endif
 
-config_require(IPv6Base)
-config_require(SocketBase)
-config_require(TCPBase)
+config_require(IPv6Base);
+config_require(SocketBase);
+config_require(TCPBase);
 
 #include <net-snmp/library/snmpIPv6BaseDomain.h>
 

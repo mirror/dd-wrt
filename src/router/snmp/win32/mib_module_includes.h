@@ -79,7 +79,7 @@
 #include "mibgroup/ucd-snmp/proxy.h"
 #endif
 
-#if HAVE_REGEX_H
+#ifdef HAVE_REGEX_H
 #include "mibgroup/ucd-snmp/logmatch.h"
 #endif
 

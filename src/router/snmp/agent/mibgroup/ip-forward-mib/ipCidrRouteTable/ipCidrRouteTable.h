@@ -25,9 +25,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(ip-forward-mib/data_access/route)
-config_require(ip-forward-mib/ipCidrRouteTable/ipCidrRouteTable_interface)
-config_require(ip-forward-mib/ipCidrRouteTable/ipCidrRouteTable_data_access)
+config_require(ip-forward-mib/data_access/route);
+config_require(ip-forward-mib/ipCidrRouteTable/ipCidrRouteTable_interface);
+config_require(ip-forward-mib/ipCidrRouteTable/ipCidrRouteTable_data_access);
     /* *INDENT-ON*  */
 
     /*

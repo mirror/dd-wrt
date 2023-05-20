@@ -15,7 +15,7 @@
 
 #include <net-snmp/agent/old_api.h>
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -270,7 +270,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
                        netsnmp_request_info *requests)
 {
 
-#if MIB_CLIENTS_ARE_EVIL
+#ifdef MIB_CLIENTS_ARE_EVIL
     oid             save[MAX_OID_LEN];
     size_t          savelen = 0;
 #endif
@@ -308,7 +308,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
 
     for (; requests; requests = requests->next) {
 
-#if MIB_CLIENTS_ARE_EVIL
+#ifdef MIB_CLIENTS_ARE_EVIL
         savelen = requests->requestvb->name_length;
         memcpy(save, requests->requestvb->name, savelen * sizeof(oid));
 #endif
@@ -361,7 +361,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
                 /*
                  * no result returned 
                  */
-#if MIB_CLIENTS_ARE_EVIL
+#ifdef MIB_CLIENTS_ARE_EVIL
                 if (access == NULL) {
                     if (netsnmp_oid_equals(requests->requestvb->name,
                                          requests->requestvb->name_length,

@@ -9,7 +9,7 @@
 /*
  * need ipaddress functions to get ipversions of an interface
 */
-config_require(ip-mib/data_access/ipaddress)
+config_require(ip-mib/data_access/ipaddress);
 
 #ifdef __cplusplus
 extern          "C" {

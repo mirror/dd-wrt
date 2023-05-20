@@ -15,8 +15,8 @@
 #include <netinet/in.h>
 #endif
 
-config_require(UDPBase)
-config_require(IPv4Base)
+config_require(UDPBase);
+config_require(IPv4Base);
 
 #include <net-snmp/library/snmpIPv4BaseDomain.h>
 #include <net-snmp/library/snmpUDPBaseDomain.h>

@@ -15,7 +15,7 @@
     /*
      * Directive to include utility module 
      */
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
     /*
      * we have to define the index ourselves, because perfstat structures

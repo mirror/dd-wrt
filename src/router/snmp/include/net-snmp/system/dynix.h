@@ -98,7 +98,7 @@
  * Might as well include this here, since a significant
  * number of files seem to need it.  DTS 
  */
-#if HAVE_SYS_SELECT_H
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 

@@ -21,10 +21,10 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -1128,7 +1128,7 @@ Host_serv(const char *host, const char *serv, int family, int socktype)
     hints.ai_socktype = socktype;       /* 0, SOCK_STREAM, SOCK_DGRAM, etc. */
 
     if ((n = netsnmp_getaddrinfo(host, serv, &hints, &res)) != 0) {
-#if HAVE_GAI_STRERROR
+#ifdef HAVE_GAI_STRERROR
         snmp_log(LOG_ERR, "host_serv error for %s, %s: %s",
                  (host == NULL) ? "(no hostname)" : host,
                  (serv == NULL) ? "(no service name)" : serv,

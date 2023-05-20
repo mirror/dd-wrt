@@ -26,10 +26,10 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -537,7 +537,7 @@ get_user_passphrases(void)
 
     } else if (!oldpass) {
         len = strlen(buf);
-        if (buf[len - 1] == '\n')
+        if (len && buf[len - 1] == '\n')
             buf[--len] = '\0';
         oldpass = (char *) calloc(1, len + 1);
         if (oldpass)
@@ -553,7 +553,7 @@ get_user_passphrases(void)
 
     } else if (!newpass) {
         len = strlen(buf);
-        if (buf[len - 1] == '\n')
+        if (len && buf[len - 1] == '\n')
             buf[--len] = '\0';
         newpass = (char *) calloc(1, len + 1);
         if (newpass)
@@ -744,7 +744,7 @@ snmp_getpassphrase(const char *prompt, int bvisible)
      * Copy the input and zero out the read-in buffer.
      */
     len = strlen(buffer);
-    if (buffer[len - 1] == '\n')
+    if (len && buffer[len - 1] == '\n')
         buffer[--len] = '\0';
 
     bufp = (char *) calloc(1, len + 1);

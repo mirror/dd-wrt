@@ -7,7 +7,7 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/data_access/interface.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -147,7 +147,7 @@ dot3stats_interface_ioctl_ifindex_get (int fd, const char *name) {
 #endif /* SIOCGIFINDEX */
 }
 
-# if HAVE_LINUX_RTNETLINK_H /* { NETLINK */
+# if defined(HAVE_LINUX_RTNETLINK_H) /* { NETLINK */
 /*
  * The following code is based upon code I got from Stephen Hemminger
  */

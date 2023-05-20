@@ -11,7 +11,7 @@
  *
  *  When this module is compiled into the agent (run configure with
  *  --with-mib-modules="examples/notification") then it should send
- *  out traps, which when received by the snmptrapd demon will look
+ *  out traps, which when received by the snmptrapd daemon will look
  *  roughly like:
  *
  *  2002-05-08 08:57:05 localhost.localdomain [udp:127.0.0.1:32865]:

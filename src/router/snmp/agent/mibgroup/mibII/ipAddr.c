@@ -21,10 +21,10 @@
 #define _KERNEL 1
 #define _I_DEFINED_KERNEL
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #ifdef irix6
 #define _STANDALONE 1
 #endif
@@ -34,7 +34,7 @@
 #include <sys/socket.h>
 #endif
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -938,7 +938,7 @@ var_ipAddrEntry(struct variable *vp,
         return (u_char *) & long_return;
 
     case IPADREASMMAX:
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #else
         long_return = -1;

@@ -23,9 +23,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(tcp-mib/data_access/tcpConn)
-config_require(tcp-mib/tcpConnectionTable/tcpConnectionTable_interface)
-config_require(tcp-mib/tcpConnectionTable/tcpConnectionTable_data_access)
+config_require(tcp-mib/data_access/tcpConn);
+config_require(tcp-mib/tcpConnectionTable/tcpConnectionTable_interface);
+config_require(tcp-mib/tcpConnectionTable/tcpConnectionTable_data_access);
     /* *INDENT-ON*  */
 
     /*

@@ -25,7 +25,7 @@
 #define _KERNEL 1
 #define _I_DEFINED_KERNEL
 #endif
-#if NETSNMP_IFNET_NEEDS_KERNEL_STRUCTURES
+#ifdef NETSNMP_IFNET_NEEDS_KERNEL_STRUCTURES
 #define _KERNEL_STRUCTURES
 #endif
 #include <net/if.h>
@@ -37,10 +37,10 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/ip_var.h>
-#if HAVE_NETINET_ICMP6_H
+#ifdef HAVE_NETINET_ICMP6_H
 #include <netinet/icmp6.h>
 #endif
-#if HAVE_NETINET6_IP6_VAR_H
+#ifdef HAVE_NETINET6_IP6_VAR_H
 #include <sys/queue.h>
 #include <netinet6/ip6_var.h>
 #endif
@@ -586,7 +586,7 @@ _systemstats_v6_load_systemstats(netsnmp_container* container, u_int load_flags)
     entry->stats.InHdrErrors = ip6stat.ip6s_badoptions + ip6stat.ip6s_tooshort
                              + ip6stat.ip6s_toosmall + ip6stat.ip6s_badvers
 			     + ip6stat.ip6s_toomanyhdr;
-#if HAVE_STRUCT_IP6STAT_IP6S_EXTHDRTOOLONG
+#ifdef HAVE_STRUCT_IP6STAT_IP6S_EXTHDRTOOLONG
     entry->stats.InHdrErrors += ip6stat.ip6s_exthdrtoolong;
 #endif
     entry->stats.columnAvail[IPSYSTEMSTATSTABLE_INHDRERRORS] = 1;

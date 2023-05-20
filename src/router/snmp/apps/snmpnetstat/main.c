@@ -43,7 +43,7 @@ char            copyright[] = "@(#) Copyright (c) 1983, 1988, 1993\n\
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/utilities.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_NETDB_H
@@ -501,6 +501,7 @@ main(int argc, char *argv[])
     exit_code = 0;
 
   out:
+    netsnmp_cleanup_session(&session);
     SOCK_CLEANUP;
     return exit_code;
 }

@@ -5,7 +5,7 @@
 #ifndef NSVACMACCESSTABLE_H
 #define NSVACMACCESSTABLE_H
 
-config_add_mib(NET-SNMP-VACM-MIB)
+config_add_mib(NET-SNMP-VACM-MIB);
 
 /*
  * function declarations 

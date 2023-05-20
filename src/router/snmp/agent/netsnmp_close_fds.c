@@ -1,10 +1,10 @@
 #include <net-snmp/net-snmp-config.h>
 
 #include <stdio.h>
-#if HAVE_DIRENT_H
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

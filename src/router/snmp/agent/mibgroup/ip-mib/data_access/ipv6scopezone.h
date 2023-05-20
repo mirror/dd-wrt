@@ -17,9 +17,9 @@
  *    HPUX11 had different reuirements than other HPUX, that should
  *    be handled in the *_hpux.h header file.
  */
-config_require(ip-mib/data_access/ipv6scopezone_common)
+config_require(ip-mib/data_access/ipv6scopezone_common);
 #if defined( linux )
-config_require(ip-mib/data_access/ipv6scopezone_linux)
+config_require(ip-mib/data_access/ipv6scopezone_linux);
 #else
 /*
  * couldn't determine the correct file!

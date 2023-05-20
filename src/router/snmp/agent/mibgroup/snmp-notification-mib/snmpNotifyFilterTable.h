@@ -1,1 +1,1 @@
-config_require(snmp-notification-mib/snmpNotifyFilterTable/snmpNotifyFilterTable)
+config_require(snmp-notification-mib/snmpNotifyFilterTable/snmpNotifyFilterTable);

@@ -20,7 +20,7 @@
 /*
  * we may use header_complex from the header_complex module 
  */
-config_require(header_complex)
+config_require(header_complex);
 
 #ifndef _MIBGROUP_EXPVALUETABLE_H
 #define _MIBGROUP_EXPVALUETABLE_H

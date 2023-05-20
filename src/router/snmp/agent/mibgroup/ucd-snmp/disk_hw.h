@@ -7,8 +7,8 @@
 
 void            init_disk_hw(void);
 
-config_require(util_funcs/header_simple_table)
-config_require(hardware/fsys)
+config_require(util_funcs/header_simple_table);
+config_require(hardware/fsys);
 
      extern FindVarMethod var_extensible_disk;
 

@@ -303,7 +303,7 @@ var_extensible_mem(struct variable *vp,
     case MEMSHARED:
     case MEMBUFFER:
     case MEMCACHED:
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;
@@ -385,12 +385,12 @@ int pages_swapped(void) {
 
                 /* Get memory region. */
                 count = VM_REGION_EXTENDED_INFO_COUNT;
-#if HAVE_VM_REGION_64
+#ifdef HAVE_VM_REGION_64
                 ret = vm_region64(tasks[j], &address, &size,
                                   VM_REGION_EXTENDED_INFO,
                                   (vm_region_extended_info_t)&info, &count,
                                   &object_name);
-#elif HAVE_VM_REGION
+#elif defined(HAVE_VM_REGION)
                 ret = vm_region(tasks[j], &address, &size,
                                 VM_REGION_EXTENDED_INFO,
                                 (vm_region_extended_info_t)&info, &count,

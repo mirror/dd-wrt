@@ -6,10 +6,10 @@
 #define _MIBGROUP_TCPTABLE_H
 
 #ifdef solaris2
-config_require(kernel_sunos5)
+config_require(kernel_sunos5);
 #endif
 #if !defined(NETSNMP_ENABLE_MFD_REWRITES)
-config_require(mibII/ip)
+config_require(mibII/ip);
 #endif
 
 #ifdef linux

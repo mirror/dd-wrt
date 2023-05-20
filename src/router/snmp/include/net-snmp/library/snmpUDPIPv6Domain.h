@@ -16,8 +16,8 @@ extern          "C" {
 
 #include <net-snmp/library/snmp_transport.h>
 
-config_require(IPv6Base)
-config_require(UDPBase)
+config_require(IPv6Base);
+config_require(UDPBase);
 
 #include <net-snmp/library/snmpIPv6BaseDomain.h>
 

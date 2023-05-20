@@ -14,7 +14,7 @@
 /*
  * wrapper for the disman name lookup mib code files 
  */
-config_require(disman/nslookup/lookupCtlTable)
-config_require(disman/nslookup/lookupResultsTable)
-config_add_mib(DISMAN-NSLOOKUP-MIB)
+config_require(disman/nslookup/lookupCtlTable);
+config_require(disman/nslookup/lookupResultsTable);
+config_add_mib(DISMAN-NSLOOKUP-MIB);
 

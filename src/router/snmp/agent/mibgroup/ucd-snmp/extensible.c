@@ -1,20 +1,20 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -24,7 +24,7 @@
 #ifdef HAVE_MACHINE_PARAM_H
 #include <machine/param.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #ifdef HAVE_SYS_VMMETER_H
@@ -73,10 +73,10 @@
 #include <sys/vfs.h>
 #endif
 #if (!defined(HAVE_STATVFS)) && defined(HAVE_STATFS)
-#if HAVE_SYS_MOUNT_H
+#ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#if HAVE_SYS_SYSCTL_H
+#ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
 #define statvfs statfs
@@ -90,10 +90,10 @@
 #ifdef HAVE_SYS_FIXPOINT_H
 #include <sys/fixpoint.h>
 #endif
-#if HAVE_MALLOC_H
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 #include <ctype.h>
@@ -458,7 +458,7 @@ var_extensible_shell(struct variable * vp,
                                                   exten->output, &len);
 	    }
             *var_len = strlen(exten->output);
-            if (exten->output[*var_len - 1] == '\n')
+            if (*var_len && exten->output[*var_len - 1] == '\n')
                 exten->output[--(*var_len)] = '\0';
             return ((u_char *) (exten->output));
         case ERRORFIX:
@@ -613,7 +613,7 @@ var_extensible_relocatable(struct variable *vp,
             *cp = 0;
         strlcpy(errmsg, cp1, sizeof(errmsg));
         *var_len = strlen(errmsg);
-        if (errmsg[*var_len - 1] == '\n')
+        if (*var_len && errmsg[*var_len - 1] == '\n')
             errmsg[--(*var_len)] = '\0';
         return ((u_char *) (errmsg));
     case ERRORFIX:

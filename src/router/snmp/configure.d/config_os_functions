@@ -216,7 +216,14 @@ AC_CACHE_VAL(
 #ifdef HAVE_SYS_FS_TYPES_H
 #include <sys/fs_types.h>
 #endif
-int main ()
+#ifdef HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+
+int main(void)
 {
 struct fs_data fsd;
 /* Ultrix's statfs returns 1 for success,

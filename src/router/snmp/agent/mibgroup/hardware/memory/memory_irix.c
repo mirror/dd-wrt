@@ -3,15 +3,15 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/hardware/memory.h>
 
-#if HAVE_SYS_SWAP_H
+#ifdef HAVE_SYS_SWAP_H
 #include <sys/swap.h>
 #endif
 
-#if HAVE_SYS_SYSGET_H
+#ifdef HAVE_SYS_SYSGET_H
 #include <sys/sysget.h>
 #endif
 
-#if HAVE_SYS_SYSMP_H
+#ifdef HAVE_SYS_SYSMP_H
 #include <sys/sysmp.h>
 #endif
 

@@ -36,7 +36,7 @@
 netsnmp_feature_require(oid_stash);
 #endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

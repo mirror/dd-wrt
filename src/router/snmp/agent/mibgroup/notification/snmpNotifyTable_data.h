@@ -15,9 +15,9 @@
 /*
  * we may use header_complex from the header_complex module
  */
-config_require(header_complex)
-config_require(target/target)
-config_require(snmp-notification-mib/snmpNotifyFilterTable/snmpNotifyFilterTable_data_storage)
+config_require(header_complex);
+config_require(target/target);
+config_require(snmp-notification-mib/snmpNotifyFilterTable/snmpNotifyFilterTable_data_storage);
 
 #define NOTIFY_NAME_MAX       32
 #define NOTIFY_TAG_MAX       255

@@ -26,7 +26,7 @@
  *  All debugging output is done via the standard debugging routines
  *  with a token name of "helper:debug", so use the -Dhelper:debug
  *  command line flag to see the output when running the snmpd
- *  demon. It's not recommended you compile this into a handler chain
+ *  daemon. It's not recommended you compile this into a handler chain
  *  during compile time, but instead use the "injectHandler" token in
  *  the snmpd.conf file (or similar) to add it to the chain later:
  *

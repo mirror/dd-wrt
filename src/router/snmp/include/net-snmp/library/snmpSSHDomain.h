@@ -1,14 +1,14 @@
 #ifndef _SNMPSSHDOMAIN_H
 #define _SNMPSSHDOMAIN_H
 
-config_require(IPv4Base)
-config_require(SocketBase)
+config_require(IPv4Base);
+config_require(SocketBase);
 
 #ifdef NETSNMP_TRANSPORT_SSH_DOMAIN
 
 #include <net-snmp/library/snmp_transport.h>
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

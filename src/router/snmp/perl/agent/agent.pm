@@ -87,7 +87,7 @@ use vars qw(@ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION $AUTOLOAD);
 	SNMP_ERR_AUTHORIZATIONERROR
 	SNMP_ERR_NOTWRITABLE
 );
-$VERSION = '5.0903';
+$VERSION = '5.0904';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -229,7 +229,7 @@ NetSNMP::agent - Perl extension for the net-snmp agent.
 
 This module implements an API set to make a SNMP agent act as a snmp
 agent, a snmp subagent (using the AgentX subagent protocol) and/or
-embedded perl-APIs directly within the traditional net-snmp agent demon.
+embedded perl-APIs directly within the traditional net-snmp agent daemon.
 
 Also see the tutorial about the genaral Net-SNMP C API, which this
 module implements in a perl-way, and a perl specific tutorial at:
