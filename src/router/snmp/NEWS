@@ -3,76 +3,6 @@ Please see the CHANGES file for a more detailed list of specific bugs/patches
 that have been fixed/applied, and the ChangeLog file for a comprehensive
 listing of all changes made to the code.
 
-*5.9.4*:
-
-    libsnmp:
-      - Remove the SNMP_SWIPE_MEM() macro Remove this macro since it is not
-	used in the Net-SNMP code base.
-
-    - misc bug fixes
-
-*5.9.3*:
-    security:
-      - These two CVEs can be exploited by a user with read-only credentials:
-          - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
-            NET-SNMP-VACM-MIB can cause an out-of-bounds memory access.
-          - CVE-2022-24809 A malformed OID in a GET-NEXT to the nsVacmAccessTable
-            can cause a NULL pointer dereference.
-      - These CVEs can be exploited by a user with read-write credentials:
-          - CVE-2022-24806 Improper Input Validation when SETing malformed
-            OIDs in master agent and subagent simultaneously
-          - CVE-2022-24807 A malformed OID in a SET request to
-            SNMP-VIEW-BASED-ACM-MIB::vacmAccessTable can cause an
-            out-of-bounds memory access.
-          - CVE-2022-24808 A malformed OID in a SET request to
-            NET-SNMP-AGENT-MIB::nsLogTable can cause a NULL pointer dereference
-          - CVE-2022-24810 A malformed OID in a SET to the nsVacmAccessTable
-            can cause a NULL pointer dereference.
-      - To avoid these flaws, use strong SNMPv3 credentials and do not share them.
-        If you must use SNMPv1 or SNMPv2c, use a complex community string
-        and enhance the protection by restricting access to a given IP address range.
-      - Thanks are due to Yu Zhang of VARAS@IIE and Nanyu Zhong of VARAS@IIE for
-        reporting the following CVEs that have been fixed in this release, and
-        to Arista Networks for providing fixes.
-
-    misc:
-      - Snmp-create-v3-user: Fix the snmpd.conf path   @datadir@ is
-    expanded in ${datarootdir} so datarootdir must be set before
-    @datadir@ is used.
-
-    general: Many bug fixes
-
-*5.9.2*:
-    security:
-      - These two CVEs can be exploited by a user with read-only credentials:
-          - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
-            NET-SNMP-VACM-MIB can cause an out-of-bounds memory access.
-          - CVE-2022-24809 A malformed OID in a GET-NEXT to the nsVacmAccessTable
-            can cause a NULL pointer dereference.
-      - These CVEs can be exploited by a user with read-write credentials:
-          - CVE-2022-24806 Improper Input Validation when SETing malformed
-            OIDs in master agent and subagent simultaneously
-          - CVE-2022-24807 A malformed OID in a SET request to
-            SNMP-VIEW-BASED-ACM-MIB::vacmAccessTable can cause an
-            out-of-bounds memory access.
-          - CVE-2022-24808 A malformed OID in a SET request to
-            NET-SNMP-AGENT-MIB::nsLogTable can cause a NULL pointer dereference
-          - CVE-2022-24810 A malformed OID in a SET to the nsVacmAccessTable
-            can cause a NULL pointer dereference.
-      - To avoid these flaws, use strong SNMPv3 credentials and do not share them.
-        If you must use SNMPv1 or SNMPv2c, use a complex community string
-        and enhance the protection by restricting access to a given IP address range.
-      - Thanks are due to Yu Zhang of VARAS@IIE and Nanyu Zhong of VARAS@IIE for
-        reporting the following CVEs that have been fixed in this release, and
-        to Arista Networks for providing fixes.
-
-    misc:
-      - Snmp-create-v3-user: Fix the snmpd.conf path   @datadir@ is
-	expanded in ${datarootdir} so datarootdir must be set before
-	@datadir@ is used.
-
-    general: Many bug fixes
-
 *5.9.1*:
     General: Many bug fixes
 
@@ -1217,7 +1147,7 @@ UCD-SNMP NEWS:
  Ports:
     - HPUX 11
     - Dynix/PTX 4.4
-    - The snmpd daemon can properly run as a windows service
+    - The snmpd demon can properly run as a windows service
 
 *4.2.3*
  New:

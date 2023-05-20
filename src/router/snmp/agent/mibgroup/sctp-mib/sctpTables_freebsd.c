@@ -239,6 +239,6 @@ sctpTables_arch_load(sctpTables_containers * containers, u_long * flags)
 	offset += sizeof(struct xsctp_tcb);
 	xinp = (struct xsctp_inpcb *)(buf + offset);
   }
-  free(buf);
+  free((void *)buf);
   return ret;
 }

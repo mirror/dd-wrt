@@ -30,6 +30,7 @@ netsnmp_feature_child_of(ipaddress_arch_entry_copy, ipaddress_common);
 netsnmp_feature_require(ipaddress_ioctl_entry_copy);
 #endif /* NETSNMP_FEATURE_REQUIRE_IPADDRESS_ARCH_ENTRY_COPY */
 
+#if defined (NETSNMP_ENABLE_IPV6)
 #include <linux/types.h>
 #include <asm/types.h>
 #if defined(HAVE_LINUX_RTNETLINK_H)
@@ -39,6 +40,7 @@ netsnmp_feature_require(ipaddress_ioctl_entry_copy);
 #define SUPPORT_PREFIX_FLAGS 1
 #endif /* RTMGRP_IPV6_PREFIX */
 #endif /* HAVE_LINUX_RTNETLINK_H */
+#endif
 
 #include "ipaddress.h"
 #include "ipaddress_ioctl.h"
@@ -218,7 +220,7 @@ _load_v6(netsnmp_container *container, int idx_offset)
                 "cannot get ip address information"
                 "as netlink socket is not available\n"));
     return -1;
-#else /* HAVE_LINUX_RTNETLINK_H */
+#else
     FILE           *in;
     char            line[80], addr[40];
     char            if_name[IFNAMSIZ+1];/* +1 for '\0' because of the ugly sscanf below */ 
@@ -428,10 +430,8 @@ _load_v6(netsnmp_container *container, int idx_offset)
         return rc;
 
     return idx_offset;
-#endif /* HAVE_LINUX_RTNETLINK_H */
 }
 
-#ifdef HAVE_LINUX_RTNETLINK_H
 struct address_flag_info
 netsnmp_access_other_info_get(int index, int family)
 {
@@ -519,8 +519,10 @@ netsnmp_access_other_info_get(int index, int family)
 out:
     close(sd);
     return addr;
+#endif
 }
 
+#ifdef HAVE_LINUX_RTNETLINK_H
 int
 netsnmp_access_ipaddress_extra_prefix_info(int index, u_long *preferedlt,
                                            ulong *validlt, char *addr)
@@ -619,5 +621,6 @@ out:
     close(sd);
     return ret;
 }
-#endif /* HAVE_LINUX_RTNETLINK_H */
-#endif /* defined(NETSNMP_ENABLE_IPV6) */
+#endif
+#endif
+

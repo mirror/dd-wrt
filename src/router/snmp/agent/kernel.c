@@ -18,24 +18,24 @@
 #include <net-snmp/net-snmp-config.h>
 
 #include <sys/types.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <stdio.h>
 #include <errno.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #endif
-#ifdef HAVE_FCNTL_H
+#if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_KVM_H
+#if HAVE_KVM_H
 #include <kvm.h>
 #endif
 
@@ -57,7 +57,7 @@ init_kmem(const char *file)
 {
     int res = TRUE;
 
-#ifdef HAVE_KVM_OPENFILES
+#if HAVE_KVM_OPENFILES
     char            err[4096];
 
     kd = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, err);
@@ -105,7 +105,7 @@ klookup(unsigned long off, void *target, size_t siz)
         return 0;
     result = kvm_read(kd, off, target, siz);
     if (result != siz) {
-#ifdef HAVE_KVM_OPENFILES
+#if HAVE_KVM_OPENFILES
         snmp_log(LOG_ERR, "kvm_read(*, %lx, %p, %x) = %d: %s\n", off,
                  target, (unsigned) siz, result, kvm_geterr(kd));
 #else

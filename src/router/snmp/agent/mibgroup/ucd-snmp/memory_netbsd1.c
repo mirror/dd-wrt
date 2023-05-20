@@ -165,7 +165,7 @@ var_extensible_mem(struct variable *vp,
     static char     errmsg[1024];
 
     static struct uvmexp uvmexp;
-    size_t          uvmexp_size = sizeof(uvmexp);
+    int             uvmexp_size = sizeof(uvmexp);
     int             uvmexp_mib[] = { CTL_VM, VM_UVMEXP };
     static struct vmtotal total;
     size_t          total_size = sizeof(total);
@@ -181,22 +181,13 @@ var_extensible_mem(struct variable *vp,
     /*
      * Memory info 
      */
-    if (sysctl(uvmexp_mib, 2, &uvmexp, &uvmexp_size, NULL, 0) == -1) {
-        snmp_log(LOG_ERR, "sysctl VM_UVMEXP failed (errno %d)\n", errno);
-        return NULL;
-    }
-    if (sysctl(total_mib, 2, &total, &total_size, NULL, 0) == -1) {
-        snmp_log(LOG_ERR, "sysctl VM_METER failed (errno %d)\n", errno);
-        return NULL;
-    }
+    sysctl(uvmexp_mib, 2, &uvmexp, &uvmexp_size, NULL, 0);
+    sysctl(total_mib, 2, &total, &total_size, NULL, 0);
 
     /*
      * Physical memory 
      */
-    if (sysctl(phys_mem_mib, 2, &phys_mem, &phys_mem_size, NULL, 0) == -1) {
-        snmp_log(LOG_ERR, "sysctl HW_USERMEM failed (errno %d)\n", errno);
-        return NULL;
-    }
+    sysctl(phys_mem_mib, 2, &phys_mem, &phys_mem_size, NULL, 0);
 
     long_ret = 0;               /* set to 0 as default */
 
@@ -233,7 +224,7 @@ var_extensible_mem(struct variable *vp,
     case MEMUSEDSWAPTXT:
     case MEMTOTALREALTXT:
     case MEMUSEDREALTXT:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;

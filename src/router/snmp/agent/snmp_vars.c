@@ -61,13 +61,13 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <net-snmp/net-snmp-config.h>
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #include <sys/types.h>
@@ -75,60 +75,60 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #include <errno.h>
 
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
-#ifdef HAVE_SYS_STREAM_H
+#if HAVE_SYS_STREAM_H
 #   ifdef sysv5UnixWare7
 #      define _KMEMUSER 1 /* <sys/stream.h> needs this for queue_t */
 #   endif
 #include <sys/stream.h>
 #endif
-#ifdef HAVE_SYS_SOCKETVAR_H
+#if HAVE_SYS_SOCKETVAR_H
 # include <sys/socketvar.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_IN_SYSTM_H
+#if HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif
-#ifdef HAVE_NETINET_IP_H
+#if HAVE_NETINET_IP_H
 #include <netinet/ip.h>
 #endif
 #ifdef NETSNMP_ENABLE_IPV6
-#ifdef HAVE_NETINET_IP6_H
+#if HAVE_NETINET_IP6_H
 #include <netinet/ip6.h>
 #endif
 #endif
-#ifdef HAVE_SYS_QUEUE_H
+#if HAVE_SYS_QUEUE_H
 #include <sys/queue.h>
 #endif
-#ifdef HAVE_NET_ROUTE_H
+#if HAVE_NET_ROUTE_H
 #include <net/route.h>
 #endif
-#ifdef HAVE_NETINET_IP_VAR_H
+#if HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
 #ifdef NETSNMP_ENABLE_IPV6
-#ifdef HAVE_NETNETSNMP_ENABLE_IPV6_IP6_VAR_H
+#if HAVE_NETNETSNMP_ENABLE_IPV6_IP6_VAR_H
 #include <netinet6/ip6_var.h>
 #endif
 #endif
-#ifdef HAVE_NETINET_IN_PCB_H
+#if HAVE_NETINET_IN_PCB_H
 #include <netinet/in_pcb.h>
 #endif
-#ifdef HAVE_INET_MIB2_H
+#if HAVE_INET_MIB2_H
 #include <inet/mib2.h>
 #endif
 

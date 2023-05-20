@@ -1,7 +1,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/types.h>
 #include <net-snmp/library/system.h>
-#include "snmpIPBaseDomain.h"
+#include <net-snmp/library/snmpIPBaseDomain.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -49,7 +49,7 @@ int netsnmp_parse_ep_str(struct netsnmp_ep_str *ep_str, const char *endpoint)
                 cp[0] = '\0';
                 cp++;
             } else {
-                goto err;
+                goto invalid;
             }
         } else if (*cp != '@' && (*cp != ':' || cp[1] == ':')) {
             addrstr = cp;
@@ -69,17 +69,14 @@ int netsnmp_parse_ep_str(struct netsnmp_ep_str *ep_str, const char *endpoint)
             *cp++ = '\0';
             portstr = cp;
             if (!netsnmp_isnumber(cp))
-                goto err;
+                goto invalid;
         } else if (cp && *cp) {
-            goto err;
+            goto invalid;
         }
     }
 
-    if (addrstr) {
-        ep_str->addr = strdup(addrstr);
-        if (!ep_str->addr)
-            goto err;
-    }
+    if (addrstr)
+        strlcpy(ep_str->addr, addrstr, sizeof(ep_str->addr));
     if (iface)
         strlcpy(ep_str->iface, iface, sizeof(ep_str->iface));
     if (portstr) {
@@ -87,15 +84,13 @@ int netsnmp_parse_ep_str(struct netsnmp_ep_str *ep_str, const char *endpoint)
         if (port <= 0xffff)
             strlcpy(ep_str->port, portstr, sizeof(ep_str->port));
         else
-            goto err;
+            goto invalid;
     }
 
     free(dup);
     return 1;
 
-err:
-    free(ep_str->addr);
-    ep_str->addr = NULL;
+invalid:
     free(dup);
     return 0;
 }

@@ -15,7 +15,7 @@ mysubdir=agent
 #
 # what to install
 #
-SUBDIRS=helpers
+SUBDIRS=helpers mibgroup
 FTSUBDIRS=mibgroup helpers
 
 INSTALLSBINPROGS= @SNMPD@
@@ -273,12 +273,9 @@ FTAGENTOBJS=snmpd.ft @other_ftagentobjs@
 #
 # Define OBJS and LOBJS for clean target (just this directory)
 #
-OBJS		= $(LIBAGENTOBJS)  $(MIBOBJS)   $(AGENTOBJS)   \
-		  mib_modules.o  auto_nlist.o
-LOBJS		= $(LLIBAGENTOBJS) $(LMIBOBJS)  $(LAGENTOBJS)  \
-		  mib_modules.lo auto_nlist.lo
-FTOBJS		= $(LLIBAGENTFTS)  $(FTMIBOBJS) $(FTAGENTOBJS) \
-		  mib_modules.ft auto_nlist.ft
+OBJS		= $(LIBAGENTOBJS)  $(AGENTOBJS)  mib_modules.o  auto_nlist.o
+LOBJS		= $(LLIBAGENTOBJS) $(LAGENTOBJS) mib_modules.lo auto_nlist.lo
+FTOBJS		= $(LLIBAGENTFTS) $(FTAGENTOBJS) mib_modules.ft auto_nlist.ft
 
 FEATUREFILE     = $(top_builddir)/include/net-snmp/agent/features.h
 
@@ -303,11 +300,11 @@ snmpd$(EXEEXT):	${LAGENTOBJS} $(USELIBS) $(AGENTLIB) $(HELPERLIB) $(MIBLIB) $(LI
 	$(LINK) $(CFLAGS) -o $@ ${LAGENTOBJS} ${LDFLAGS} ${OUR_AGENT_LIBS}
 
 libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION):    ${LLIBAGENTOBJS} $(USELIBS)
-	$(LIB_LD_CMD) $(AGENTLIB) ${LLIBAGENTOBJS} $(USELIBS) ${LAGENTLIBS} $(LDFLAGS) $(PERLLDOPTS_FOR_LIBS) @AGENTLIBS@
+	$(LIB_LD_CMD) $(AGENTLIB) ${LLIBAGENTOBJS} $(USELIBS) ${LAGENTLIBS} @LD_NO_UNDEFINED@ $(LDFLAGS) $(PERLLDOPTS_FOR_LIBS) @AGENTLIBS@
 	$(RANLIB) $(AGENTLIB)
 
 libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION): ${LMIBOBJS} $(AGENTLIB) $(USELIBS) subdirs
-	$(LIB_LD_CMD) $(MIBLIB) ${LMIBOBJS} $(AGENTLIB) $(USELIBS) $(LDFLAGS) ${LMIBLIBS} $(PERLLDOPTS_FOR_LIBS) @AGENTLIBS@
+	$(LIB_LD_CMD) $(MIBLIB) ${LMIBOBJS} $(AGENTLIB) $(USELIBS) @LD_NO_UNDEFINED@ $(LDFLAGS) ${LMIBLIBS} $(PERLLDOPTS_FOR_LIBS) @AGENTLIBS@
 	$(RANLIB) $(MIBLIB)
 
 agentlib: $(AGENTLIB)

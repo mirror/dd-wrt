@@ -14,32 +14,32 @@
 #include <limits.h>
 #include <stdio.h>
 #include <errno.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <sys/types.h>
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
@@ -1895,7 +1895,7 @@ parse_err:
 
 #ifdef TESTING
 
-void testit(netsnmp_pdu *pdu1)
+testit(netsnmp_pdu *pdu1)
 {
     char            packet1[BUFSIZ];
     char            packet2[BUFSIZ];
@@ -1964,7 +1964,7 @@ void testit(netsnmp_pdu *pdu1)
 
 
 
-int main(void)
+main()
 {
     netsnmp_pdu     pdu1;
     oid             oid_buf[] = { 1, 3, 6, 1, 2, 1, 10 };

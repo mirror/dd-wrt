@@ -15,14 +15,13 @@
 #
 # Process this file with autoconf to produce a configure script.
 #
-AC_INIT([Net-SNMP],[5.9.4.pre2])
-AC_PREREQ([1.10])
+AC_INIT([Net-SNMP], [5.9.1], [net-snmp-coders@lists.sourceforge.net])
+AC_PREREQ([2.63])
 AC_CONFIG_SRCDIR([agent/snmpd.c])
 AC_REVISION([$Revision$])
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([include/net-snmp/net-snmp-config.h])
-AM_INIT_AUTOMAKE([foreign 1.11 subdir-objects -Wall -Werror])
+AC_CONFIG_HEADER(include/net-snmp/net-snmp-config.h)
 
 AC_MSG_CACHE_INIT()
 

@@ -241,25 +241,25 @@ var_ipRouteEntry(struct variable *vp,
         long_return = (rtp->rtm_flags & RTF_UP) ? 1 : 0;
         return (u_char *) & long_return;
     case IPROUTEMETRIC2:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC3:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC4:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC5:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
@@ -285,7 +285,7 @@ var_ipRouteEntry(struct variable *vp,
             ? 2 : (rtp->rtm_flags & RTF_DYNAMIC) ? 4 : 1;
         return (u_char *) & long_return;
     case IPROUTEAGE:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
@@ -402,7 +402,7 @@ init_var_route(void)
 
 #ifndef solaris2
 
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
 static union {
     struct sockaddr_in sin;
     u_short         data[128];
@@ -443,7 +443,7 @@ var_ipRouteEntry(struct variable * vp,
     u_char         *cp;
     oid            *op;
     static in_addr_t addr_ret;
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
     struct sockaddr_in *sa;
 #endif
 #if !defined(linux) && !defined(hpux11)
@@ -457,7 +457,7 @@ var_ipRouteEntry(struct variable * vp,
      ** this optimisation fails, if there is only a single route avail.
      ** it is a very special case, but better leave it out ...
      **/
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
     saveNameLen = 0;
 #endif
     if (rtsize <= 1)
@@ -505,7 +505,7 @@ var_ipRouteEntry(struct variable * vp,
         Route_Scan_Reload();
 #endif
         for (RtIndex = 0; RtIndex < rtsize; RtIndex++) {
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
             sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_dst);
             cp = (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
@@ -548,7 +548,7 @@ var_ipRouteEntry(struct variable * vp,
     switch (vp->magic) {
     case IPROUTEDEST:
         *var_len = sizeof(addr_ret);
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
         sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_dst);
         return (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
@@ -600,14 +600,14 @@ var_ipRouteEntry(struct variable * vp,
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC5:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTENEXTHOP:
         *var_len = sizeof(addr_ret);
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
         sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_gateway);
         return (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
@@ -650,12 +650,12 @@ var_ipRouteEntry(struct variable * vp,
         return (u_char *) & long_return;
     case IPROUTEMASK:
         *var_len = sizeof(addr_ret);
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
         /*
          * XXX - Almost certainly not right
          * but I don't have a suitable system to test this on 
          */
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         addr_ret = 0;
@@ -914,7 +914,7 @@ load_rtentries(struct radix_node *pt)
                 DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
                 return;
             }
-#ifdef HAVE_STRUCT_IFNET_IF_XNAME
+#if HAVE_STRUCT_IFNET_IF_XNAME
 #if defined(netbsd1) || defined(openbsd2)
             strlcpy(name, ifnet.if_xname, sizeof(name));
 #else
@@ -948,7 +948,7 @@ load_rtentries(struct radix_node *pt)
                     break;
             }
         }
-#ifdef CHECK_RT_FLAGS
+#if CHECK_RT_FLAGS
         if (((rt.rt_flags & RTF_CLONING) != RTF_CLONING)
             && ((rt.rt_flags & RTF_LLINFO) != RTF_LLINFO)) {
 #endif
@@ -972,7 +972,7 @@ load_rtentries(struct radix_node *pt)
              */
             memcpy((char *) rthead[rtsize], (char *) &rt, sizeof(RTENTRY));
             rtsize++;
-#ifdef CHECK_RT_FLAGS
+#if CHECK_RT_FLAGS
         }
 #endif
 
@@ -1177,7 +1177,7 @@ Route_Scan_Reload(void)
 
 #else
 
-#ifdef HAVE_SYS_MBUF_H
+#if HAVE_SYS_MBUF_H
 netsnmp_feature_require(string_append_int);
 netsnmp_feature_require(interface_legacy);
 static void
@@ -1429,7 +1429,7 @@ qsort_compare(const void *v1, const void *v2)
 {
     RTENTRY * const *r1 = (RTENTRY * const *) v1;
     RTENTRY * const *r2 = (RTENTRY * const *) v2;
-#ifdef NEED_KLGETSA
+#if NEED_KLGETSA
     register u_long dst1 =
         ntohl(klgetsa((const struct sockaddr_in *) (*r1)->rt_dst)->
               sin_addr.s_addr);
@@ -1501,7 +1501,7 @@ var_ipRouteEntry(struct variable *vp,
      ** this optimisation fails, if there is only a single route avail.
      ** it is a very special case, but better leave it out ...
      **/
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
     saveNameLen = 0;
 #endif
     if (route_row == NULL) {
@@ -1980,7 +1980,7 @@ var_ipRouteEntry(struct variable * vp,
         return (u_char *) & long_return;
 
     case IPROUTEAGE:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
@@ -2047,7 +2047,7 @@ snmp_socket_length(int family)
     case AF_LINK:
 #ifdef _MAX_SA_LEN
         length = _MAX_SA_LEN;
-#elif defined(SOCK_MAXADDRLEN)
+#elif SOCK_MAXADDRLEN
         length = SOCK_MAXADDRLEN;
 #else
         length = sizeof(struct sockaddr_dl);

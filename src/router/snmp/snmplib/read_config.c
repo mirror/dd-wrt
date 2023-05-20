@@ -69,26 +69,26 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -97,39 +97,39 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_SYS_SELECT_H
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
 #include <errno.h>
-#ifdef HAVE_IO_H
+#if HAVE_IO_H
 #include <io.h>
 #endif
 
-#ifdef HAVE_DIRENT_H
+#if HAVE_DIRENT_H
 # include <dirent.h>
 # define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
 # define dirent direct
 # define NAMLEN(dirent) (dirent)->d_namlen
-# ifdef HAVE_SYS_NDIR_H
+# if HAVE_SYS_NDIR_H
 #  include <sys/ndir.h>
 # endif
-# ifdef HAVE_SYS_DIR_H
+# if HAVE_SYS_DIR_H
 #  include <sys/dir.h>
 # endif
-# ifdef HAVE_NDIR_H
+# if HAVE_NDIR_H
 #  include <ndir.h>
 # endif
 #endif
@@ -512,8 +512,6 @@ read_config_find_handler(struct config_line *line_handlers,
 {
     struct config_line *lptr;
 
-    netsnmp_assert(token);
-
     for (lptr = line_handlers; lptr != NULL; lptr = lptr->next) {
         if (!strcasecmp(token, lptr->config_token)) {
             return lptr;
@@ -531,9 +529,6 @@ run_config_handler(struct config_line *lptr,
                    const char *token, char *cptr, int when)
 {
     char           *cp;
-
-    netsnmp_assert(token);
-
     lptr = read_config_find_handler(lptr, token);
     if (lptr != NULL) {
         if (when == EITHER_CONFIG || lptr->config_time == when) {
@@ -614,7 +609,6 @@ snmp_config_when(char *line, int when)
             return SNMPERR_GENERR;
         }
         cptr = strtok_r(NULL, SNMP_CONFIG_DELIMETERS, &st);
-        netsnmp_assert(cptr);
         lptr = read_config_find_handler(lptr, cptr);
     } else {
         /*
@@ -765,9 +759,6 @@ read_config(const char *filename,
     char           *line = NULL;  /* current line buffer */
     size_t          linesize = 0; /* allocated size of line */
 
-    netsnmp_assert(line_handler);
-    netsnmp_assert(line_handler->config_token);
-
     /* reset file counter when recursion depth is 0 */
     if (depth == 0)
         files = 0;
@@ -842,7 +833,7 @@ read_config(const char *filename,
 
             linelen += strlen(line + linelen);
 
-            if (linelen && line[linelen - 1] == '\n') {
+            if (line[linelen - 1] == '\n') {
               line[linelen - 1] = '\0';
               break;
             }

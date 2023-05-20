@@ -71,7 +71,6 @@ extern          "C" {
      *********************************************************************
      * function declarations
      */
-    netsnmp_container *snmpNotifyFilter_storage_container_create(void);
     void            init_snmpNotifyFilterTable_data_storage(void);
     void            shutdown_snmpNotifyFilterTable_data_storage(void);
 

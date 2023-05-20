@@ -141,9 +141,7 @@ DEBUG("Running tests:\n");
 DEBUG("-" x 78, "\n");
 
 $ENV{'PATH'}="$opts{'builddir'}/agent/.libs:$opts{'builddir'}/apps/.libs:$opts{'builddir'}:$ENV{'PATH'}";
-my $orig_ld_lib = $ENV{'LD_LIBRARY_PATH'};
-$orig_ld_lib = "" if !defined($orig_ld_lib);
-$ENV{'LD_LIBRARY_PATH'}=`find $opts{'builddir'} -name '*.so' | grep -v NetSNMP/agent/default_store | sed 's,/[^/]*\$,,' | sort -u | tr '\n' :` . $orig_ld_lib;
+$ENV{'LD_LIBRARY_PATH'}=`find $opts{'builddir'} -name '*.so' | grep -v NetSNMP/agent/default_store | sed 's,/[^/]*\$,,' | sort -u | tr '\n' :`;
 $ENV{'PERL5LIB'}="$opts{'srcdir'}/perl:$opts{'srcdir'}/perl/SNMP:$opts{'srcdir'}/perl/blib/lib:$opts{'srcdir'}/testing/fulltests/perl:$opts{'srcdir'}/testing/fulltests/support";
 DEBUG("PATH: $ENV{'PATH'}\n");
 DEBUG("LD_LIBRARY_PATH: $ENV{'LD_LIBRARY_PATH'}\n");

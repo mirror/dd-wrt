@@ -10,12 +10,12 @@
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
-#ifdef HAVE_SYS_TIME_H
+#if HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
 #include <net/if_dl.h>
-#ifdef HAVE_SYS_STREAM_H
+#if HAVE_SYS_STREAM_H
 #include <sys/stream.h>
 #endif
 #include <net/route.h>
@@ -33,57 +33,57 @@
 #define GATEWAY                 /* MultiNet is always configured this way! */
 #include <stdio.h>
 #include <sys/types.h>
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_SELECT_H
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_SYSLOG_H
+#if HAVE_SYSLOG_H
 #include <syslog.h>
 #endif
-#ifdef HAVE_MACHINE_PARAM_H
+#if HAVE_MACHINE_PARAM_H
 #include <machine/param.h>
 #endif
-#ifdef HAVE_SYS_MBUF_H
+#if HAVE_SYS_MBUF_H
 #include <sys/mbuf.h>
 #endif
-#ifdef HAVE_NET_IF_H
+#if HAVE_NET_IF_H
 #include <net/if.h>
 #endif
 #ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-#ifdef HAVE_SYS_HASHING_H
+#if HAVE_SYS_HASHING_H
 #include <sys/hashing.h>
 #endif
-#ifdef HAVE_NETINET_IN_VAR_H
+#if HAVE_NETINET_IN_VAR_H
 #include <netinet/in_var.h>
 #endif
 #define KERNEL                  /* to get routehash and RTHASHSIZ */
-#ifdef HAVE_SYS_STREAM_H
+#if HAVE_SYS_STREAM_H
 #include <sys/stream.h>
 #endif
-#ifdef HAVE_NET_ROUTE_H
+#if HAVE_NET_ROUTE_H
 #include <net/route.h>
 #endif
 #undef	KERNEL
@@ -116,28 +116,28 @@
 #ifndef NULL
 #define NULL 0
 #endif
-#ifdef HAVE_KVM_OPENFILES
+#if HAVE_KVM_OPENFILES
 #include <fcntl.h>
 #endif
-#ifdef HAVE_KVM_H
+#if HAVE_KVM_H
 #include <kvm.h>
 #endif
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_INET_MIB2_H
+#if HAVE_INET_MIB2_H
 #include <inet/mib2.h>
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#if HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#ifdef HAVE_NET_IF_DL_H
+#if HAVE_NET_IF_DL_H
 #ifndef dynix
 #include <net/if_dl.h>
 #else
@@ -145,7 +145,7 @@
 #endif
 #endif
 
-#ifdef HAVE_NLIST_H
+#if HAVE_NLIST_H
 #include <nlist.h>
 #endif
 

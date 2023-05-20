@@ -30,7 +30,7 @@ struct extensible {
 
 struct myproc {
     char            name[STRMAX];
-#ifdef HAVE_PCRE_H
+#if HAVE_PCRE_H
     netsnmp_regex_ptr regexp;
 #endif
     char            fixcmd[STRMAX];

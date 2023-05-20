@@ -14,7 +14,7 @@
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -266,7 +266,7 @@ isZeroU64(const struct counter64 *pu64)
  * @retval -2 : unexpected high value (changed by more than 1)
  */
 int
-netsnmp_c64_check_for_32bit_wrap(const struct counter64 *old_val,
+netsnmp_c64_check_for_32bit_wrap(struct counter64 *old_val,
                                  struct counter64 *new_val,
                                  int adjust)
 {
@@ -340,7 +340,7 @@ netsnmp_c64_check_for_32bit_wrap(const struct counter64 *old_val,
 int
 netsnmp_c64_check32_and_update(struct counter64 *prev_val,
                                struct counter64 *new_val,
-                               const struct counter64 *old_prev_val,
+                               struct counter64 *old_prev_val,
                                int *need_wrap_check)
 {
     int rc;
@@ -352,7 +352,7 @@ netsnmp_c64_check32_and_update(struct counter64 *prev_val,
      *    prev->stats += (new->stats - prev->old_stats)
      */
     if ((NULL == need_wrap_check) || (0 != *need_wrap_check)) {
-        rc = netsnmp_c64_check_for_32bit_wrap(old_prev_val, new_val, 1);
+        rc = netsnmp_c64_check_for_32bit_wrap(old_prev_val,new_val, 1);
         if (rc < 0) {
             DEBUGMSGTL(("c64","32 bit check failed\n"));
             return -1;

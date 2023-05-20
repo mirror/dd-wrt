@@ -13,17 +13,17 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -62,9 +62,9 @@
 #define TICKET_CLIENT(x)	(x)->enc_part2->client
 #endif				/* NETSNMP_USE_KERBEROS_HEIMDAL */
 
-#ifdef HAVE_ET_COM_ERR_H
+#if HAVE_ET_COM_ERR_H
 #include <et/com_err.h>
-#elif defined(HAVE_COM_ERR_H)
+#elif HAVE_COM_ERR_H
 #include <com_err.h>
 #else
 static const char *error_message(int ret) { return "(?)"; }

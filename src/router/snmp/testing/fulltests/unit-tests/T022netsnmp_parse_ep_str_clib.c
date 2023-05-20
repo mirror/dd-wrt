@@ -5,7 +5,7 @@
 struct one_test_data {
     const char *in;
     int res;
-    struct { const char *addr; const char *iface; const char *port; } expected;
+    struct netsnmp_ep_str expected;
 };
 
 static struct one_test_data test_data[] = {
@@ -44,8 +44,7 @@ SOCK_STARTUP;
         res = netsnmp_parse_ep_str(&ep_str, p->in);
         OKF(res == p->res, ("%s: return value %d <> %d", p->in, res, p->res));
         if (res && p->res) {
-            OKF((!ep_str.addr && !p->expected.addr[0]) ||
-                strcmp(ep_str.addr,  p->expected.addr)  == 0,
+            OKF(strcmp(ep_str.addr,  p->expected.addr)  == 0,
                 ("%s: network address %s <> %s", p->in, ep_str.addr,
                  p->expected.addr));
             OKF(strcmp(ep_str.iface, p->expected.iface) == 0,
@@ -54,7 +53,6 @@ SOCK_STARTUP;
             OKF(strcmp(ep_str.port, p->expected.port) == 0,
                 ("%s: port %s <> %s", p->in, ep_str.port, p->expected.port));
         }
-        free(ep_str.addr);
     }
 }
 

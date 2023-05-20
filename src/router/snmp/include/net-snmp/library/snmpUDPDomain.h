@@ -14,14 +14,14 @@ extern          "C" {
 #include <net-snmp/library/snmp_transport.h>
 #include <net-snmp/library/asn1.h>
 
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(UDPIPv4Base);
+config_require(UDPIPv4Base)
 #include <net-snmp/library/snmpUDPIPv4BaseDomain.h>
 
 netsnmp_transport *

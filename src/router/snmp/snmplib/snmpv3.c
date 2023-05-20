@@ -22,38 +22,38 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_TIMES_H
+#if HAVE_SYS_TIMES_H
 #include <sys/times.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 #include <ctype.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #       include <stdlib.h>
 #endif
 
@@ -233,12 +233,12 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
         }
 
     case 'n':
-        session->contextName = strdup(optarg);
+        session->contextName = optarg;
         session->contextNameLen = strlen(optarg);
         break;
 
     case 'u':
-        session->securityName = strdup(optarg);
+        session->securityName = optarg;
         session->securityNameLen = strlen(optarg);
         break;
 
@@ -266,12 +266,8 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
     case 'a': {
         int auth_type = usm_lookup_auth_type(optarg);
         if (auth_type > 0) {
-            const oid *auth_proto;
-
-            auth_proto = sc_get_auth_oid(auth_type,
-                                         &session->securityAuthProtoLen);
-            session->securityAuthProto = snmp_duplicate_objid(auth_proto,
-                                             session->securityAuthProtoLen);
+            session->securityAuthProto =
+                sc_get_auth_oid(auth_type, &session->securityAuthProtoLen);
          } else {
             fprintf(stderr,
                     "Invalid authentication protocol specified after -3a flag: %s\n",
@@ -281,9 +277,7 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
     }
         break;
 
-    case 'x': {
-        const oid *priv_proto;
-
+    case 'x':
         priv_type = usm_lookup_priv_type(optarg);
         if (priv_type < 0) {
             fprintf(stderr,
@@ -291,11 +285,10 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
                     optarg);
             return (-1);
         }
-        priv_proto = sc_get_priv_oid(priv_type, &session->securityPrivProtoLen);
-        session->securityPrivProto = snmp_duplicate_objid(priv_proto,
-                                         session->securityPrivProtoLen);
+        session->securityPrivProto =
+            sc_get_priv_oid(priv_type, &session->securityPrivProtoLen);
         break;
-    }
+
     case 'A':
         *Apsz = strdup(optarg);
         if (NULL == *Apsz) {

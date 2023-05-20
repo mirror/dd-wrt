@@ -14,11 +14,11 @@
 /*
  * needed by util_funcs.h 
  */
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -88,9 +88,9 @@ static int ps_numdisks;			/* number of disks in system, may change while running
 
 #if defined(HAVE_GETDEVS) || defined(HAVE_DEVSTAT_GETDEVS)
 #include <sys/param.h>
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
 #include <sys/resource.h>       /* for CPUSTATES in devstat.h */
-#elif defined(HAVE_SYS_DKSTAT_H)
+#elif HAVE_SYS_DKSTAT_H
 #include <sys/dkstat.h>
 #endif
 #include <devstat.h>
@@ -102,7 +102,7 @@ static int ps_numdisks;			/* number of disks in system, may change while running
 
 #endif                          /* freebsd */
 
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
   #define GETDEVS(x) devstat_getdevs(NULL, (x))
 #else
   #define GETDEVS(x) getdevs((x))
@@ -465,7 +465,7 @@ add_device(char *path, int addNewDisks )
 static void 
 diskio_parse_config_disks(const char *token, char *cptr)
 {
-#if defined(HAVE_FSTAB_H) || defined(HAVE_GETMNTENT) || defined(HAVE_STATFS)
+#if HAVE_FSTAB_H || HAVE_GETMNTENT || HAVE_STATFS
     char path[STRMAX];
 
 
@@ -1019,7 +1019,7 @@ var_diskio(struct variable * vp,
 /* disk load average patch by Rojer */
 
 struct dev_la {
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         struct bintime prev;
 #else
         struct timeval prev;
@@ -1093,7 +1093,7 @@ void devla_getstats(unsigned int regno, void *dummy) {
                 }
 
         for (i=0; i<ndevs; i++) {
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
                 busy_time = devstat_compute_etime(&lastat->dinfo->devices[i].busy_time, &devloads[i].prev);
 #else
                 busy_time = devla_timeval_diff(&devloads[i].prev, &lastat->dinfo->devices[i].busy_time);
@@ -1189,14 +1189,14 @@ var_diskio(struct variable * vp,
         *var_len = strlen(stat->dinfo->devices[indx].device_name);
         return (u_char *) stat->dinfo->devices[indx].device_name;
     case DISKIO_NREAD:
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         long_ret = (signed long) stat->dinfo->devices[indx].bytes[DEVSTAT_READ] & 0xFFFFFFFF;
 #else
         long_ret = (signed long) stat->dinfo->devices[indx].bytes_read;
 #endif
         return (u_char *) & long_ret;
     case DISKIO_NWRITTEN:
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         long_ret = (signed long) stat->dinfo->devices[indx].bytes[DEVSTAT_WRITE] & 0xFFFFFFFF;
 #else
         long_ret = (signed long) stat->dinfo->devices[indx].bytes_written;
@@ -1204,7 +1204,7 @@ var_diskio(struct variable * vp,
         return (u_char *) & long_ret;
     case DISKIO_NREADX:
         *var_len = sizeof(struct counter64);
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         longlong_ret = stat->dinfo->devices[indx].bytes[DEVSTAT_READ];
 #else
         longlong_ret = stat->dinfo->devices[indx].bytes_read;
@@ -1214,7 +1214,7 @@ var_diskio(struct variable * vp,
         return (u_char *) & c64_ret;
     case DISKIO_NWRITTENX:
         *var_len = sizeof(struct counter64);
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         longlong_ret = stat->dinfo->devices[indx].bytes[DEVSTAT_WRITE];
 #else
         longlong_ret = stat->dinfo->devices[indx].bytes_written;
@@ -1223,14 +1223,14 @@ var_diskio(struct variable * vp,
         c64_ret.high = longlong_ret >> 32;
         return (u_char *) & c64_ret;
     case DISKIO_READS:
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         long_ret = (signed long) stat->dinfo->devices[indx].operations[DEVSTAT_READ] & 0xFFFFFFFF;
 #else
         long_ret = (signed long) stat->dinfo->devices[indx].num_reads;
 #endif
         return (u_char *) & long_ret;
     case DISKIO_WRITES:
-#ifdef HAVE_DEVSTAT_GETDEVS
+#if HAVE_DEVSTAT_GETDEVS
         long_ret = (signed long) stat->dinfo->devices[indx].operations[DEVSTAT_WRITE] & 0xFFFFFFFF;
 #else
         long_ret = (signed long) stat->dinfo->devices[indx].num_writes;

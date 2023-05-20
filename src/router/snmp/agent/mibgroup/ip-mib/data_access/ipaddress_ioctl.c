@@ -244,7 +244,7 @@ _netsnmp_ioctl_ipaddress_container_load_v4(netsnmp_container *container,
          * get broadcast
          */
         memset(&addr_info, 0, sizeof(struct address_flag_info));
-#if defined (NETSNMP_ENABLE_IPV6) && defined(HAVE_LINUX_RTNETLINK_H)
+#if defined (NETSNMP_ENABLE_IPV6)
         addr_info = netsnmp_access_other_info_get(entry->if_index, AF_INET);
         if(addr_info.bcastflg) {
            bcastentry = netsnmp_access_ipaddress_entry_create();
@@ -499,8 +499,9 @@ _netsnmp_ioctl_ipaddress_set_v4(netsnmp_ipaddress_entry * entry)
          * search for unused alias
          */
         alias_idx = _next_alias(name);
-        snprintf(ifrq.ifr_name, sizeof(ifrq.ifr_name), "%s:%d",
+        snprintf(ifrq.ifr_name,sizeof(ifrq.ifr_name), "%s:%d",
                  name, alias_idx);
+        ifrq.ifr_name[sizeof(ifrq.ifr_name) - 1] = 0;
     }
     else
         strlcpy(ifrq.ifr_name, (char *) extras->name, sizeof(ifrq.ifr_name));

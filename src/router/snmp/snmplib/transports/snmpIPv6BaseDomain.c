@@ -15,7 +15,7 @@
 #ifdef NETSNMP_ENABLE_IPV6
 
 #include <net-snmp/types.h>
-#include "snmpIPBaseDomain.h"
+#include <net-snmp/library/snmpIPBaseDomain.h>
 #include <net-snmp/library/snmpIPv6BaseDomain.h>
 #include <net-snmp/library/system.h>
 #include <net-snmp/library/snmp_assert.h>
@@ -24,27 +24,27 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <ctype.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#ifdef HAVE_NET_IF_H
+#if HAVE_NET_IF_H
 #include <net/if.h>
 #endif
 
@@ -67,7 +67,7 @@ static const struct in6_addr in6addr_any; /*IN6ADDR_ANY_INIT*/
 #endif
 
 
-#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_SCOPE_ID
+#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_SCOPE_ID
 static unsigned
 netsnmp_if_nametoindex(const char *ifname)
 {
@@ -188,7 +188,7 @@ int netsnmp_ipv6_ostring_to_sockaddr(struct sockaddr_in6 *sin6, const void *o,
 static int netsnmp_resolve_v6_hostname(struct in6_addr *addr,
                                        const char *hostname)
 {
-#ifdef HAVE_GETADDRINFO
+#if HAVE_GETADDRINFO
     struct addrinfo hint = { 0 };
     struct addrinfo *addrs;
     int             err;
@@ -207,7 +207,7 @@ static int netsnmp_resolve_v6_hostname(struct in6_addr *addr,
         DEBUGMSGTL(("netsnmp_sockaddr_in6", "Failed to resolve IPv6 hostname\n"));
     }
     return 1;
-#elif defined(HAVE_GETIPNODEBYNAME)
+#elif HAVE_GETIPNODEBYNAME
     struct hostent *hp;
     int             err;
 
@@ -220,7 +220,7 @@ static int netsnmp_resolve_v6_hostname(struct in6_addr *addr,
     DEBUGMSGTL(("netsnmp_sockaddr_in6", "hostname (resolved okay)\n"));
     memcpy(addr, hp->h_addr, hp->h_length);
     return 1;
-#elif defined(HAVE_GETHOSTBYNAME)
+#elif HAVE_GETHOSTBYNAME
     struct hostent *hp;
 
     hp = netsnmp_gethostbyname(hostname);
@@ -299,7 +299,7 @@ netsnmp_sockaddr_in6_3(struct netsnmp_ep *ep,
         addr->sin6_port = htons(atoi(ep_str.port));
     if (ep_str.iface[0])
         strlcpy(ep->iface, ep_str.iface, sizeof(ep->iface));
-    if (ep_str.addr && ep_str.addr[0]) {
+    if (ep_str.addr[0]) {
         char *scope_id;
 
         scope_id = strchr(ep_str.addr, '%');
@@ -313,7 +313,6 @@ netsnmp_sockaddr_in6_3(struct netsnmp_ep *ep,
             !netsnmp_resolve_v6_hostname(&addr->sin6_addr, ep_str.addr)) {
             DEBUGMSGTL(("netsnmp_sockaddr_in6", "failed to parse %s\n",
                         ep_str.addr));
-            free(ep_str.addr);
             return 0;
         }
     }
@@ -322,7 +321,6 @@ netsnmp_sockaddr_in6_3(struct netsnmp_ep *ep,
                 inet_ntop(AF_INET6, &addr->sin6_addr, debug_addr,
                           sizeof(debug_addr)), (int)addr->sin6_scope_id,
                 ntohs(addr->sin6_port)));
-    free(ep_str.addr);
     return 1;
 }
 

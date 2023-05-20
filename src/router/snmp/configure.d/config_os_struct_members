@@ -25,10 +25,10 @@ AC_CHECK_MEMBERS([struct arphd.at_next],,,[
 #include <sys/time.h>
 #endif
 #include <net/if.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_IF_ETHER_H
+#if HAVE_NETINET_IF_ETHER_H
 #include <netinet/if_ether.h>
 #endif
     ]])
@@ -52,7 +52,7 @@ fi
 AC_CHECK_MEMBERS([struct dirent.d_type],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_DIRENT_H
+#if HAVE_DIRENT_H
 #include <dirent.h>
 #endif
     ]])
@@ -84,10 +84,10 @@ AC_CHECK_MEMBERS([struct ipstat.ips_cantfrag,
                   struct ipstat.ips_reassembled],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_IP_VAR_H
+#if HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
     ]])
@@ -97,10 +97,10 @@ AC_CHECK_MEMBERS([struct ipstat.ips_cantfrag,
 AC_CHECK_MEMBERS([struct ip6stat.ip6s_exthdrtoolong ],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET6_IP6_VAR_H
+#if HAVE_NETINET6_IP6_VAR_H
 #include <netinet6/ip6_var.h>
 #endif
     ]])
@@ -111,10 +111,10 @@ AC_CHECK_MEMBERS([struct ipstat.ips_cantforward,
                   struct ipstat.ips_fragtimeout],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_IP_VAR_H
+#if HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
     ]])
@@ -127,10 +127,10 @@ AC_CHECK_MEMBERS([struct mbstat.m_clusters,
                   struct mbstat.m_mbufs],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MBUF_H
+#if HAVE_SYS_MBUF_H
 #include <sys/mbuf.h>
 #endif
     ]])
@@ -150,7 +150,7 @@ AC_CHECK_MEMBERS([struct nlist.n_value,
                   struct nlist64.n_value],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_NLIST_H
+#if HAVE_NLIST_H
 #include <nlist.h>
 #endif
     ]])
@@ -161,7 +161,12 @@ AC_CHECK_MEMBERS([struct nlist.n_value,
 AC_CHECK_MEMBERS([struct sigaction.sa_sigaction],,,[
     AC_INCLUDES_DEFAULT()
     [
-#include <signal.h>
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_SIGNAL_H
+#include <sys/signal.h>
+#endif
     ]])
 
 #       struct sockaddr
@@ -215,7 +220,7 @@ AC_CHECK_MEMBERS([struct sockaddr_in6.sin6_scope_id],,,[
 AC_CHECK_SIZEOF([sockaddr_un.sun_path],,[
     AC_INCLUDES_DEFAULT
     [
-#ifdef HAVE_SYS_UN_H
+#if HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
 struct sockaddr_un sockaddr_un;
@@ -231,7 +236,7 @@ AC_CHECK_MEMBERS([struct statfs.f_favail,
                   struct statfs.f_frsize],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_SYS_STATFS_H
+#if HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
 #ifdef HAVE_SYS_PARAM_H
@@ -253,10 +258,10 @@ AC_CHECK_MEMBERS([struct statvfs.f_files,
                   struct statvfs.mnt_dir],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_SYS_STATFS_H
+#if HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
-#ifdef HAVE_SYS_STATVFS_H
+#if HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
     ]])
@@ -270,7 +275,7 @@ AC_CHECK_MEMBERS([struct swdevt.sw_nblksenabled],,,[
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_CONF_H
+#if HAVE_SYS_CONF_H
 #include <sys/conf.h>
 #endif
     ]])
@@ -304,11 +309,11 @@ AC_CHECK_MEMBERS([struct tcpstat.tcp_rcvmemdrop],,,[
 AC_CHECK_MEMBERS([struct tm.tm_gmtoff, struct tm.tm_isdst],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -317,11 +322,11 @@ AC_CHECK_MEMBERS([struct tm.tm_gmtoff, struct tm.tm_isdst],,,[
     ]])
 
 AC_CHECK_DECLS([daylight,timezone],,,[
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -331,11 +336,11 @@ AC_CHECK_DECLS([daylight,timezone],,,[
 
 AC_MSG_CHECKING([whether timezone is a scalar])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -358,7 +363,7 @@ AC_CHECK_MEMBERS([struct timezone.tz_dsttime],,,[
 #ifdef HAVE_SYS_TIMEB_H
 # include <sys/timeb.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
@@ -381,16 +386,16 @@ AC_CHECK_MEMBERS([struct udpstat.udps_discard,
                   struct udpstat.udps_opackets],,,[
     AC_INCLUDES_DEFAULT()
     [
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_IP_VAR_H
+#if HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
-#ifdef HAVE_NETINET_UDP_H
+#if HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
-#ifdef HAVE_NETINET_UDP_VAR_H
+#if HAVE_NETINET_UDP_VAR_H
 #include <netinet/udp_var.h>
 #endif
     ]])
@@ -622,7 +627,7 @@ AC_CACHE_CHECK([type of rtentry structure],
         # BSD 4.4 compatible structure
         #    ('rt_nodes' array)
         #
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        AC_TRY_COMPILE([
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -640,7 +645,7 @@ AC_CACHE_CHECK([type of rtentry structure],
 #undef KERNEL
 #undef _KERNEL
 #include <net/route.h>
-        ]], [[
+        ],[
 
 #ifndef HAVE_STRUCT_RTENTRY_RT_DST
 #define rt_dst rt_nodes->rn_key
@@ -649,13 +654,13 @@ AC_CACHE_CHECK([type of rtentry structure],
   struct rtentry rt; 
   rt.rt_nodes[0].rn_flags = 1;
   rt.rt_dst;
-        ]])],[ac_cv_RTENTRY_TYPE="BSD-4.4"],[])
+        ], ac_cv_RTENTRY_TYPE="BSD-4.4")
 
         if test "x$ac_cv_RTENTRY_TYPE" = "x"; then
         # BSD 4.3 compatible structure
         #    ('rt_hash')
         #
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        AC_TRY_COMPILE([
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -673,11 +678,11 @@ AC_CACHE_CHECK([type of rtentry structure],
 #undef KERNEL
 #undef _KERNEL
 #include <net/route.h>
-        ]], [[
+        ],[
 
 struct rtentry rt; 
 rt.rt_hash;
-        ]])],[ac_cv_RTENTRY_TYPE="BSD-4.3"],[])
+        ], ac_cv_RTENTRY_TYPE="BSD-4.3")
         fi
 
         if test "x$ac_cv_RTENTRY_TYPE" = "x"; then
@@ -724,7 +729,7 @@ AC_DEFINE_UNQUOTED(RTENTRY,struct ${ac_cv_struct_rtentry},
 AC_MSG_CHECKING([syslog prioritynames])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-#ifdef HAVE_SYSLOG_H
+#if HAVE_SYSLOG_H
 #define SYSLOG_NAMES
 #include <syslog.h>
 #endif

@@ -19,30 +19,30 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_MALLOC_H
+#if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include <ctype.h>
 #include <sys/types.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
@@ -54,11 +54,11 @@
 #include "vacm_vars.h"
 #include "util_funcs/header_generic.h"
 
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -997,9 +997,6 @@ access_parse_oid(oid * oidIndex, size_t oidLen,
         return 1;
     }
     groupNameL = oidIndex[0];
-    if ((groupNameL + 1) > (int) oidLen) {
-        return 1;
-    }
     contextPrefixL = oidIndex[groupNameL + 1];  /* the initial name length */
     if ((int) oidLen != groupNameL + contextPrefixL + 4) {
         return 1;

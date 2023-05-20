@@ -5,7 +5,7 @@
        TEXTUAL-CONVENTION          FROM SNMPv2-TC;
 
    ianaifType MODULE-IDENTITY
-       LAST-UPDATED "202208170000Z" -- August 17, 2022
+       LAST-UPDATED "202004020000Z" -- April 2, 2020
        ORGANIZATION "IANA"
        CONTACT-INFO "        Internet Assigned Numbers Authority
 
@@ -14,32 +14,10 @@
                              Los Angeles, CA 90094-2536
 
                      Tel:    +1 310-301-5800
-                     E-Mail: iana@iana.org"
+                     E-Mail: iana&iana.org"
        DESCRIPTION  "This MIB module defines the IANAifType Textual
                      Convention, and thus the enumerated values of
                      the ifType object defined in MIB-II's ifTable."
-
-       REVISION     "202208170000Z"  -- August 17, 2022
-       DESCRIPTION  "Changed gpon description to refer to G.984."
-
-       REVISION     "202105170000Z"  -- May 17, 2021
-       DESCRIPTION  "Registration of new IANAifType 303."
-
-       REVISION     "202104230000Z"  -- April 23, 2021
-       DESCRIPTION  "Registration of new tunnelType 19 and
-                     combined 2018-06-28 revision statements"
-
-       REVISION     "202104220000Z"  -- April 22, 2021
-       DESCRIPTION  "Registration of new IANAifType 302."
-
-       REVISION     "202102180000Z"  -- February 18, 2021
-       DESCRIPTION  "Registration of new IANAifType 301."
-
-       REVISION     "202008270000Z"  -- August 27, 2020
-       DESCRIPTION  "Updated Interface Types (ifType) registry name."
-
-       REVISION     "202007100000Z"  -- July 10, 2020
-       DESCRIPTION  "Registration of new IANAifType 300."
 
        REVISION     "202004020000Z"  -- April 2, 2020
        DESCRIPTION  "Added reference to ifType definitions registry."
@@ -66,7 +44,10 @@
        DESCRIPTION  "Added missing commas for 291-293."
 
        REVISION     "201806280000Z"  -- June 28, 2018
-       DESCRIPTION  "Registration of new IANAifTypes 293-294."
+       DESCRIPTION  "Registration of new IANAifType 294."
+
+       REVISION     "201806280000Z"  -- June 28, 2018
+       DESCRIPTION  "Registration of new IANAifType 293."
 
        REVISION     "201806220000Z"  -- June 22, 2018
        DESCRIPTION  "Registration of new IANAifType 292."
@@ -381,7 +362,7 @@
 
                Interface types must not be directly added to the
                IANAifType-MIB MIB module.  They must instead be added
-               to the 'Interface Types (ifType)' registry at
+               to the 'ifType definitions' registry at
                https://www.iana.org/assignments/smi-numbers.
 
                The relationship between the assignment of ifType
@@ -660,7 +641,7 @@
                    ilan (247), -- Internal LAN on a bridge per IEEE 802.1ap
                    pip (248), -- Provider Instance Port on a bridge per IEEE 802.1ah PBB
                    aluELP (249), -- Alcatel-Lucent Ethernet Link Protection
-                   gpon (250), -- Gigabit-capable passive optical networks (G-PON) as per ITU-T G.984
+                   gpon (250), -- Gigabit-capable passive optical networks (G-PON) as per ITU-T G.948
                    vdsl2 (251), -- Very high speed digital subscriber line Version 2 (as per ITU-T Recommendation G.993.2)
                    capwapDot11Profile (252), -- WLAN Profile Interface
                    capwapDot11Bss (253), -- WLAN BSS Interface
@@ -705,11 +686,7 @@
                    microwaveRadioLinkTerminal (296), -- radio link interface for one or several aggregated microwave carriers
                    ieee8021axDrni (297), -- IEEE 802.1AX Distributed Resilient Network Interface
                    ax25 (298), -- AX.25 network interfaces
-                   ieee19061nanocom (299), -- Nanoscale and Molecular Communication
-                   cpri (300), -- Common Public Radio Interface
-                   omni (301), -- Overlay Multilink Network Interface (OMNI)
-                   roe (302), -- Radio over Ethernet Interface
-                   p2pOverLan (303) -- Point to Point over LAN interface
+                   ieee19061nanocom (299) -- Nanoscale and Molecular Communication
                    }
 
 IANAtunnelType ::= TEXTUAL-CONVENTION
@@ -750,25 +727,24 @@ IANAtunnelType ::= TEXTUAL-CONVENTION
             identical to the policy for assigning IANAifType
             values."
     SYNTAX     INTEGER {
-                   other(1),           -- none of the following
-                   direct(2),          -- no intermediate header
-                   gre(3),             -- GRE encapsulation
-                   minimal(4),         -- Minimal encapsulation
-                   l2tp(5),            -- L2TP encapsulation
-                   pptp(6),            -- PPTP encapsulation
-                   l2f(7),             -- L2F encapsulation
-                   udp(8),             -- UDP encapsulation
-                   atmp(9),            -- ATMP encapsulation
-                   msdp(10),           -- MSDP encapsulation
-                   sixToFour(11),      -- 6to4 encapsulation
-                   sixOverFour(12),    -- 6over4 encapsulation
-                   isatap(13),         -- ISATAP encapsulation
-                   teredo(14),         -- Teredo encapsulation
-                   ipHttps(15),        -- IPHTTPS
-                   softwireMesh(16),   -- softwire mesh tunnel
-                   dsLite(17),         -- DS-Lite tunnel
-                   aplusp(18),         -- A+P encapsulation
-                   ipsectunnelmode(19) -- IpSec tunnel mode encapsulation
+                   other(1),         -- none of the following
+                   direct(2),        -- no intermediate header
+                   gre(3),           -- GRE encapsulation
+                   minimal(4),       -- Minimal encapsulation
+                   l2tp(5),          -- L2TP encapsulation
+                   pptp(6),          -- PPTP encapsulation
+                   l2f(7),           -- L2F encapsulation
+                   udp(8),           -- UDP encapsulation
+                   atmp(9),          -- ATMP encapsulation
+                   msdp(10),         -- MSDP encapsulation
+                   sixToFour(11),    -- 6to4 encapsulation
+                   sixOverFour(12),  -- 6over4 encapsulation
+                   isatap(13),       -- ISATAP encapsulation
+                   teredo(14),       -- Teredo encapsulation
+                   ipHttps(15),      -- IPHTTPS
+                   softwireMesh(16), -- softwire mesh tunnel
+                   dsLite(17),       -- DS-Lite tunnel
+                   aplusp(18)        -- A+P encapsulation
                }
 
    END

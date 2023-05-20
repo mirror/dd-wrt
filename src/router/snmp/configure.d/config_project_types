@@ -66,9 +66,7 @@ netsnmp_save_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -Werror"
 
 AC_MSG_CHECKING([for the type of the fifth argument of select()])
-arg_type="struct timeval"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [
-# The compiler supports -Werror.
+arg_type=void
 for t in "struct timeval" "struct __ms_timeval"; do
 AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([
@@ -79,25 +77,17 @@ AC_COMPILE_IFELSE(
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
 #endif
 #include <stddef.h>
 ], [return select(0, NULL, NULL, NULL, ($t *)NULL)])],
     [arg_type=$t; break])
 done
-], [
-: # The compiler does not support -Werror.
-])
 AC_MSG_RESULT(${arg_type})
 AC_DEFINE_UNQUOTED([NETSNMP_SELECT_TIMEVAL], [${arg_type}],
         [Type of the fifth argument of select()])
 
 AC_MSG_CHECKING([for the type of the third argument of ioctlsocket()])
-arg_type=unknown
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [
-# The compiler supports -Werror.
+arg_type=void
 for t in "unsigned int" "unsigned long"; do
 AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([
@@ -113,9 +103,6 @@ AC_COMPILE_IFELSE(
 ], [return ioctlsocket(0, 0, ($t *)NULL)])],
     [arg_type=$t; break])
 done
-], [
-: # The compiler does not support -Werror.
-])
 AC_MSG_RESULT(${arg_type})
 AC_DEFINE_UNQUOTED([NETSNMP_IOCTLSOCKET_ARG], [${arg_type}],
         [Type of the third argument of ioctlsocket()])

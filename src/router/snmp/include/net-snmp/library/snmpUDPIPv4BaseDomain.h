@@ -8,15 +8,15 @@
 #ifndef SNMPUDPIPV4BASE_H
 #define SNMPUDPIPV4BASE_H
 
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(UDPBase);
-config_require(IPv4Base);
+config_require(UDPBase)
+config_require(IPv4Base)
 
 #include <net-snmp/library/snmpIPv4BaseDomain.h>
 #include <net-snmp/library/snmpUDPBaseDomain.h>

@@ -17,17 +17,17 @@
 #include <net-snmp/net-snmp-features.h>
 
 #include <sys/types.h>
-#ifdef HAVE_IO_H
+#if HAVE_IO_H
 #include <io.h>
 #endif
 #ifdef HAVE_SPAWN_H
 #include <spawn.h>
 #endif
 #include <stdio.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_MALLOC_H
+#if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #ifdef __alpha
@@ -36,7 +36,7 @@
 #define _myBSD
 #endif
 #endif
-#ifdef HAVE_SYS_WAIT_H
+#if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifdef __alpha
@@ -51,38 +51,38 @@
 #ifndef WIFEXITED
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_FCNTL_H
+#if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #include <errno.h>
 #include <signal.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 #include <ctype.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_BASETSD_H
+#if HAVE_BASETSD_H
 #include <basetsd.h>
 #define ssize_t SSIZE_T
 #endif
-#ifdef HAVE_RAISE
+#if HAVE_RAISE
 #define alarm raise
 #endif
 #ifdef HAVE_SYS_STAT_H
@@ -110,7 +110,7 @@ typedef __u8 u8;           /* ditto */
 #include "util_funcs.h"
 #include "utilities/execute.h"
 
-#ifdef HAVE_LIMITS_H
+#if HAVE_LIMITS_H
 #include "limits.h"
 #endif
 #ifdef USING_UCD_SNMP_ERRORMIB_MODULE
@@ -153,7 +153,7 @@ make_tempfile(void)
 int
 shell_command(struct extensible *ex)
 {
-#ifdef HAVE_SYSTEM
+#if HAVE_SYSTEM
     const char     *ofname;
     char           *shellline = NULL;
     FILE           *shellout;
@@ -261,7 +261,7 @@ get_exec_output(struct extensible *ex)
     ex->result = -1;
     NETSNMP_LOGONCE((LOG_WARNING, "support for run_exec_command not available\n"));
 #else
-#ifdef HAVE_EXECV
+#if HAVE_EXECV
     char            cachefile[STRMAX];
     char            cache[NETSNMP_MAXCACHESIZE];
     int             cachebytes;

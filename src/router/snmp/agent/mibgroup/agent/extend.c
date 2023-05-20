@@ -354,8 +354,8 @@ extend_load_cache(netsnmp_cache *cache, void *magic)
         ret = run_exec_command(  cmd_buf, extension->input, out_buf, &out_len);
     DEBUGMSG(( "nsExtendTable:cache", ": %s : %d\n", cmd_buf, ret));
     if (ret >= 0) {
-        if (out_len > 0 && out_buf[out_len - 1] == '\n')
-            out_buf[--out_len] = '\0';	/* Strip trailing newline */
+        if (out_buf[   out_len-1 ] == '\n')
+            out_buf[ --out_len   ] =  '\0';	/* Stomp on trailing newline */
         extension->output   = strdup( out_buf );
         extension->out_len  = out_len;
         /*
@@ -573,12 +573,8 @@ extend_parse_config(const char *token, char *cptr)
     if (!strcmp( token, "execFix"   ) ||
         !strcmp( token, "extendfix" ) ||
         !strcmp( token, "execFix2" )) {
-        strlcpy(exec_name2, exec_name, sizeof(exec_name2));
-        if (snprintf(exec_name, sizeof(exec_name), "%sFix", exec_name2) >=
-            sizeof(exec_name)) {
-            config_perror("ERROR: argument too long");
-            return;
-        }
+        strcpy( exec_name2, exec_name );
+        strcat( exec_name, "Fix" );
         flags |= NS_EXTEND_FLAGS_WRITEABLE;
         /* XXX - Check for shell... */
     }
@@ -1591,10 +1587,13 @@ fixExec2Error(int action,
              size_t var_val_len,
              u_char * statP, oid * name, size_t name_len)
 {
-#if !defined(NETSNMP_NO_WRITE_SUPPORT) && ENABLE_EXTEND_WRITE_ACCESS
-    unsigned int idx = name[name_len - 1] - 1;
-    const netsnmp_old_extend *exten = &compatability_entries[idx];
+    netsnmp_old_extend *exten = NULL;
+    unsigned int idx;
 
+    idx = name[name_len-1] -1;
+    exten = &compatability_entries[ idx ];
+
+#if !defined(NETSNMP_NO_WRITE_SUPPORT) && ENABLE_EXTEND_WRITE_ACCESS
     switch (action) {
     case MODE_SET_RESERVE1:
         if (var_val_type != ASN_INTEGER) {

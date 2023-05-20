@@ -30,10 +30,10 @@ netsnmp_feature_require(container_linked_list);
 #   include "mibgroup/ip-mib/ipv6InterfaceTable/ipv6InterfaceTable.h"
 #endif
 
-struct cd_container {
+typedef struct cd_container_s {
     netsnmp_container *current;
     netsnmp_container *deleted;
-};
+} cd_container;
 
 /*
  * flag so we know not to set row/table last change times
@@ -50,7 +50,9 @@ static int fadeout = IFTABLE_REMOVE_MISSING_AFTER;
  */
 static int replace_old = 0;
 
-static void __delete_missing_interface(void *rowreq_ctx, void *container);
+static void
+_delete_missing_interface(ifTable_rowreq_ctx *rowreq_ctx,
+                          netsnmp_container *container);
 
 /** @ingroup interface 
  * @defgroup data_access data_access: Routines to access data
@@ -78,7 +80,6 @@ parse_interface_fadeout(const char *token, char *line)
 {
     fadeout = atoi(line);
 }
-
 static void
 parse_interface_replace_old(const char *token, char *line)
 {
@@ -305,15 +306,12 @@ send_linkUpDownNotifications(oid *notification_oid, size_t notification_oid_len,
 }
 
 /**
- * Update ifTable.
- * @param rowreq_ctx ifTable row to examine.
- * @param cdc Operating system interface information. @cdc->current [in] is the
- *   result of the latest interface scan. @cdc->deleted [out] are the rows that
- *   should be deleted by the caller from ifTable.
+ * check entry for update
+ *
  */
 static void
-_check_interface_entry_for_updates(ifTable_rowreq_ctx *rowreq_ctx,
-                                   struct cd_container *cdc)
+_check_interface_entry_for_updates(ifTable_rowreq_ctx * rowreq_ctx,
+                                   cd_container *cdc)
 {
     char            oper_changed = 0;
     int lastchanged = rowreq_ctx->data.ifLastChange;
@@ -323,7 +321,8 @@ _check_interface_entry_for_updates(ifTable_rowreq_ctx *rowreq_ctx,
      * check for matching entry. We can do this directly, since
      * both containers use the same index.
      */
-    netsnmp_interface_entry *ifentry = CONTAINER_FIND(ifcontainer, rowreq_ctx);
+    netsnmp_interface_entry *ifentry =
+        (netsnmp_interface_entry*)CONTAINER_FIND(ifcontainer, rowreq_ctx);
 
 #ifdef USING_IP_MIB_IPV4INTERFACETABLE_IPV4INTERFACETABLE_MODULE
     /*
@@ -439,14 +438,10 @@ _check_interface_entry_for_updates(ifTable_rowreq_ctx *rowreq_ctx,
             }
         }
 #endif
-    } else {
-        rowreq_ctx->data.ifLastChange = lastchanged;
     }
-}
 
-static void __check_interface_entry_for_updates(void *rowreq_ctx, void *cdc)
-{
-    _check_interface_entry_for_updates(rowreq_ctx, cdc);
+    else
+        rowreq_ctx->data.ifLastChange = lastchanged;
 }
 
 /**
@@ -477,7 +472,9 @@ _check_and_replace_old(netsnmp_interface_entry *ifentry,
     }
     ITERATOR_RELEASE(it);
 
-    CONTAINER_FOR_EACH(to_delete, __delete_missing_interface, container);
+    CONTAINER_FOR_EACH(to_delete,
+                       (netsnmp_container_obj_func *) _delete_missing_interface,
+                       container);
     CONTAINER_FREE(to_delete);
 }
 
@@ -489,7 +486,6 @@ _add_new_interface(netsnmp_interface_entry *ifentry,
                    netsnmp_container *container)
 {
     ifTable_rowreq_ctx *rowreq_ctx;
-    int rc;
 
     DEBUGMSGTL(("ifTable:access", "creating new entry\n"));
 
@@ -498,44 +494,39 @@ _add_new_interface(netsnmp_interface_entry *ifentry,
      * the container and set ifTableLastChanged.
      */
     rowreq_ctx = ifTable_allocate_rowreq_ctx(ifentry);
-    if (!rowreq_ctx) {
-        snmp_log(LOG_ERR,
-                 "memory allocation failed while loading ifTable cache.\n");
-        netsnmp_access_interface_entry_free(ifentry);
-        return;
-    }
-    if (ifTable_indexes_set(rowreq_ctx, ifentry->index) != MFD_SUCCESS) {
-        snmp_log(LOG_ERR, "error setting index while loading ifTable cache.\n");
-        ifTable_release_rowreq_ctx(rowreq_ctx);
-        return;
-    }
+    if ((NULL != rowreq_ctx) &&
+        (MFD_SUCCESS == ifTable_indexes_set(rowreq_ctx, ifentry->index))) {
+        if (replace_old)
+                _check_and_replace_old(ifentry, container);
 
-    if (replace_old)
-        _check_and_replace_old(ifentry, container);
-
-    rc = CONTAINER_INSERT(container, rowreq_ctx);
-    netsnmp_assert(rc == 0);
-    if (0 == _first_load) {
-        rowreq_ctx->data.ifLastChange = netsnmp_get_agent_uptime();
-        ifTable_lastChange_set(rowreq_ctx->data.ifLastChange);
-    }
+        CONTAINER_INSERT(container, rowreq_ctx);
+        if (0 == _first_load) {
+            rowreq_ctx->data.ifLastChange = netsnmp_get_agent_uptime();
+            ifTable_lastChange_set(rowreq_ctx->data.ifLastChange);
+        }
 #ifdef USING_IP_MIB_IPV4INTERFACETABLE_IPV4INTERFACETABLE_MODULE
-    /*
-     * give ipv4If table a crack at the entry
-     */
-    ipv4InterfaceTable_check_entry_for_updates(rowreq_ctx, ifentry);
+        /*
+         * give ipv4If table a crack at the entry
+         */
+        ipv4InterfaceTable_check_entry_for_updates(rowreq_ctx, ifentry);
 #endif
 #ifdef USING_IP_MIB_IPV6INTERFACETABLE_IPV6INTERFACETABLE_MODULE
-    /*
-     * give ipv6If table a crack at the entry
-     */
-    ipv6InterfaceTable_check_entry_for_updates(rowreq_ctx, ifentry);
+        /*
+         * give ipv6If table a crack at the entry
+         */
+        ipv6InterfaceTable_check_entry_for_updates(rowreq_ctx, ifentry);
 #endif
-}
-
-static void __add_new_interface(void *ifentry, void *container)
-{
-    _add_new_interface(ifentry, container);
+    } else {
+        if (rowreq_ctx) {
+            snmp_log(LOG_ERR, "error setting index while loading "
+                     "ifTable cache.\n");
+            ifTable_release_rowreq_ctx(rowreq_ctx);
+        } else {
+            snmp_log(LOG_ERR, "memory allocation failed while loading "
+                     "ifTable cache.\n");
+            netsnmp_access_interface_entry_free(ifentry);
+        }
+    }
 }
 
 /**
@@ -551,11 +542,6 @@ _delete_missing_interface(ifTable_rowreq_ctx *rowreq_ctx,
     CONTAINER_REMOVE(container, rowreq_ctx);
 
     ifTable_release_rowreq_ctx(rowreq_ctx);
-}
-
-static void __delete_missing_interface(void *rowreq_ctx, void *container)
-{
-    _delete_missing_interface(rowreq_ctx, container);
 }
 
 /**
@@ -587,7 +573,12 @@ ifTable_container_shutdown(netsnmp_container *container_ptr)
 }                               /* ifTable_container_shutdown */
 
 /**
- * Query the list of interfaces from the operating system and update ifTable.
+ * load initial data
+ *
+ * TODO:350:M: Implement ifTable data load
+ * This function will also be called by the cache helper to load
+ * the container again (after the container free function has been
+ * called to free the previous contents).
  *
  * @param container container to which items should be inserted
  *
@@ -602,7 +593,7 @@ ifTable_container_shutdown(netsnmp_container *container_ptr)
  *  While loading the data, the only important thing is the indexes.
  *  If access to your data is cheap/fast (e.g. you have a pointer to a
  *  structure in memory), it would make sense to update the data here.
- *  If, however, the accessing the data involves more work (e.g. parsing
+ *  If, however, the accessing the data invovles more work (e.g. parsing
  *  some other existing data, or peforming calculations to derive the data),
  *  then you can limit yourself to setting the indexes and saving any
  *  information you will need later. Then use the saved information in
@@ -617,7 +608,7 @@ ifTable_container_shutdown(netsnmp_container *container_ptr)
 int
 ifTable_container_load(netsnmp_container *container)
 {
-    struct cd_container cdc;
+    cd_container cdc;
 
     DEBUGMSGTL(("verbose:ifTable:ifTable_container_load", "called\n"));
 
@@ -642,20 +633,25 @@ ifTable_container_load(netsnmp_container *container)
      * we just got a fresh copy of interface data. compare it to
      * what we've already got, and make any adjustements...
      */
-    CONTAINER_FOR_EACH(container, __check_interface_entry_for_updates, &cdc);
+    CONTAINER_FOR_EACH(container, (netsnmp_container_obj_func *)
+                       _check_interface_entry_for_updates, &cdc);
 
     /*
      * now remove any missing interfaces
      */
     if (NULL != cdc.deleted) {
-       CONTAINER_FOR_EACH(cdc.deleted, __delete_missing_interface, container);
+       CONTAINER_FOR_EACH(cdc.deleted,
+                          (netsnmp_container_obj_func *) _delete_missing_interface,
+                          container);
        CONTAINER_FREE(cdc.deleted);
     }
 
     /*
      * now add any new interfaces
      */
-    CONTAINER_FOR_EACH(cdc.current, __add_new_interface, container);
+    CONTAINER_FOR_EACH(cdc.current,
+                       (netsnmp_container_obj_func *) _add_new_interface,
+                       container);
 
     /*
      * free the container. we've either claimed each ifentry, or released it,

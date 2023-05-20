@@ -17,7 +17,7 @@
 
 #include <net-snmp/agent/table_data.h>
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

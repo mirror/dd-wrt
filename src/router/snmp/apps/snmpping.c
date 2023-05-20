@@ -45,21 +45,21 @@
 
 #include <ctype.h>
 
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
 #include <sys/types.h>
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_IO_H
+#if HAVE_IO_H
 #include <io.h>
 #endif
 
@@ -664,7 +664,6 @@ int main(int argc, char **argv)
     cleanup_ctlTable( ss, index, indexlen );
 
     snmp_close(ss);
-    netsnmp_cleanup_session(&session);
     SOCK_CLEANUP;
     return 0;
 }

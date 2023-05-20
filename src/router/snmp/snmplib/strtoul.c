@@ -29,12 +29,12 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef HAVE_LIMITS_H
+#if HAVE_LIMITS_H
 #include <limits.h>
 #endif
 #include <ctype.h>
 #include <errno.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 

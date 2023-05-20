@@ -13,26 +13,26 @@
 
 #include "mibII/mibII_common.h"
 
-#ifdef HAVE_NETINET_TCP_H
+#if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#ifdef HAVE_NETINET_TCP_TIMER_H
+#if HAVE_NETINET_TCP_TIMER_H
 #include <netinet/tcp_timer.h>
 #endif
-#ifdef HAVE_NETINET_TCPIP_H
+#if HAVE_NETINET_TCPIP_H
 #include <netinet/tcpip.h>
 #endif
-#ifdef HAVE_NETINET_TCP_VAR_H
+#if HAVE_NETINET_TCP_VAR_H
 #include <netinet/tcp_var.h>
 #endif
 
-#ifdef HAVE_KVM_GETFILES
+#if HAVE_KVM_GETFILES
 #if defined(HAVE_KVM_GETFILE2) || !defined(openbsd5)
 #undef HAVE_KVM_GETFILES
 #endif
 #endif
 
-#ifdef HAVE_KVM_GETFILES
+#if HAVE_KVM_GETFILES
 #include <kvm.h>
 #include <sys/sysctl.h>
 #define _KERNEL /* for DTYPE_SOCKET */

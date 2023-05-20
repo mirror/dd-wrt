@@ -4,7 +4,7 @@
  */
 /*
  * Portions of this file are copyrighted by:
- * Copyright Â© 2003 Sun Microsystems, Inc. All rights reserved.
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
  * Use is subject to license terms specified in the COPYING file
  * distributed with the Net-SNMP package.
  *
@@ -34,17 +34,17 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -53,7 +53,7 @@
 #include <netinet/in.h>
 #endif
 
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -75,10 +75,6 @@
 #include <net-snmp/library/snmpusm.h>
 #include <net-snmp/library/transform_oids.h>
 #include <net-snmp/library/snmp_enum.h>
-
-#ifdef HAVE_OPENSSL_DH_H
-#include <openssl/dh.h>
-#endif
 
 netsnmp_feature_child_of(usm_all, libnetsnmp);
 netsnmp_feature_child_of(usm_support, usm_all);
@@ -766,27 +762,14 @@ usm_free_user(struct usmUser *user)
         SNMP_FREE(user->privKeyKu);
     }
 
-#ifdef NETSNMP_USE_OPENSSL
-    if (user->usmDHUserAuthKeyChange)
-    {
-        DH_free(user->usmDHUserAuthKeyChange);
-        user->usmDHUserAuthKeyChange = NULL;
-    }
-
-    if (user->usmDHUserPrivKeyChange)
-    {
-        DH_free(user->usmDHUserPrivKeyChange);
-        user->usmDHUserPrivKeyChange = NULL;
-    }
-#endif
 
     /*
      * FIX  Why not put this check *first?*
      */
-    if (user->prev != NULL && user->prev != (struct usmUser *)-1) {   /* ack, this shouldn't happen */
+    if (user->prev != NULL) {   /* ack, this shouldn't happen */
         user->prev->next = user->next;
     }
-    if (user->next != NULL && user->next != (struct usmUser *)-1) {
+    if (user->next != NULL) {
         user->next->prev = user->prev;
         if (user->prev != NULL) /* ack this is really bad, because it means
                                  * * we'll loose the head of some structure tree */

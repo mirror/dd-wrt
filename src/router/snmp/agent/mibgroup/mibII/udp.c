@@ -9,7 +9,7 @@
 #ifdef HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
-#ifdef HAVE_NETINET_UDP_VAR_H
+#if HAVE_NETINET_UDP_VAR_H
 #include <netinet/udp_var.h>
 #endif
 
@@ -151,12 +151,6 @@ init_udp(void)
 #define USES_TRADITIONAL_UDPSTAT
 #endif
 
-#ifdef UDP_NSTATS
-typedef struct udpstat {
-	uint64_t st[UDP_NSTATS];
-};
-#define UDP_STAT_STRUCTURE	struct udpstat
-#endif
 
 #if !defined(UDP_STAT_STRUCTURE)
 #define UDP_STAT_STRUCTURE	struct udpstat
@@ -244,7 +238,7 @@ udp_handler(netsnmp_mib_handler          *handler,
 #define udpstat          udpstat.udpstat
 #endif
     case UDPINDATAGRAMS:
-#ifdef HAVE_STRUCT_UDPSTAT_UDPS_IPACKETS
+#if HAVE_STRUCT_UDPSTAT_UDPS_IPACKETS
         ret_value = udpstat.udps_ipackets;
         break;
 #else
@@ -253,7 +247,7 @@ udp_handler(netsnmp_mib_handler          *handler,
 #endif
 
     case UDPNOPORTS:
-#ifdef HAVE_STRUCT_UDPSTAT_UDPS_NOPORT
+#if HAVE_STRUCT_UDPSTAT_UDPS_NOPORT
         ret_value = udpstat.udps_noport;
         break;
 #else
@@ -262,7 +256,7 @@ udp_handler(netsnmp_mib_handler          *handler,
 #endif
 
     case UDPOUTDATAGRAMS:
-#ifdef HAVE_STRUCT_UDPSTAT_UDPS_OPACKETS
+#if HAVE_STRUCT_UDPSTAT_UDPS_OPACKETS
         ret_value = udpstat.udps_opackets;
         break;
 #else

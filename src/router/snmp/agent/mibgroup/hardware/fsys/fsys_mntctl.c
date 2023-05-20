@@ -4,16 +4,16 @@
 #include <net-snmp/agent/hardware/fsys.h>
 
 #include <stdio.h>
-#ifdef HAVE_SYS_MNTCTL_H
+#if HAVE_SYS_MNTCTL_H
 #include <sys/mntctl.h>
 #endif
-#ifdef HAVE_SYS_VMOUNT_H
+#if HAVE_SYS_VMOUNT_H
 #include <sys/vmount.h>
 #endif
-#ifdef HAVE_SYS_STATFS_H
+#if HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
-#ifdef HAVE_SYS_STATVFS_H
+#if HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
 

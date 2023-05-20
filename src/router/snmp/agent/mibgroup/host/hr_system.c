@@ -16,7 +16,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -36,7 +36,7 @@
 #include "sys/proc.h"
 #endif
 #ifndef mingw32
-#ifdef HAVE_UTMPX_H
+#if HAVE_UTMPX_H
 #include <utmpx.h>
 #else
 #include <utmp.h>
@@ -45,7 +45,7 @@
 #include <signal.h>
 #include <errno.h>
 
-#ifdef HAVE_LM_H
+#if HAVE_LM_H
 #include <lm.h>
 #endif
 
@@ -115,7 +115,7 @@ static long     get_max_solaris_processes(void);
 static int      get_load_dev(void);
 static int      count_users(void);
 extern int      count_processes(void);
-#ifdef USING_HOST_DATA_ACCESS_SWRUN_MODULE
+#if USING_HOST_DATA_ACCESS_SWRUN_MODULE
 static int      count_kthreads = 1;
 
 static void parse_count_kthreads(const char *token, const char *line)
@@ -202,7 +202,7 @@ init_hr_system(void)
 #ifdef NPROC_SYMBOL
     auto_nlist(NPROC_SYMBOL, 0, 0);
 #endif
-#ifdef USING_HOST_DATA_ACCESS_SWRUN_MODULE
+#if USING_HOST_DATA_ACCESS_SWRUN_MODULE
     snmpd_register_const_config_handler("count_kthreads",
                                         parse_count_kthreads, NULL,
 					"0|1    0 to exclude kernel threads from hrSystemProcesses.0");
@@ -273,7 +273,7 @@ var_hrsys(struct variable * vp,
 #ifdef linux
     FILE           *fp;
 #endif
-#if defined(NETSNMP_CAN_USE_SYSCTL) && defined(CTL_KERN) && defined(KERN_MAXPROC)
+#if NETSNMP_CAN_USE_SYSCTL && defined(CTL_KERN) && defined(KERN_MAXPROC)
     static int      maxproc_mib[] = { CTL_KERN, KERN_MAXPROC };
     size_t          buf_size;
 #endif
@@ -318,7 +318,7 @@ var_hrsys(struct variable * vp,
         }
         strlcpy(string,bootparam,sizeof(string));
 #else
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         sprintf(string, "ask Dave");    /* XXX */
@@ -329,12 +329,12 @@ var_hrsys(struct variable * vp,
         long_return = count_users();
         return (u_char *) & long_return;
     case HRSYS_PROCS:
-#ifdef USING_HOST_DATA_ACCESS_SWRUN_MODULE
+#if USING_HOST_DATA_ACCESS_SWRUN_MODULE
         long_return = swrun_count_processes(count_kthreads);
-#elif defined(USING_HOST_HR_SWRUN_MODULE)
+#elif USING_HOST_HR_SWRUN_MODULE
         long_return = count_processes();
 #else
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
@@ -343,7 +343,7 @@ var_hrsys(struct variable * vp,
     case HRSYS_MAXPROCS:
 #if defined(NR_TASKS)
         long_return = NR_TASKS; /* <linux/tasks.h> */
-#elif defined(NETSNMP_CAN_USE_SYSCTL) && defined(CTL_KERN) && defined(KERN_MAXPROC)
+#elif NETSNMP_CAN_USE_SYSCTL && defined(CTL_KERN) && defined(KERN_MAXPROC)
 	{
 	    int nproc = 0;
 
@@ -367,7 +367,7 @@ var_hrsys(struct variable * vp,
 	    long_return = nproc;
 	}
 #else
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
@@ -676,7 +676,7 @@ count_users(void)
 {
     int             total = 0;
 #ifndef WIN32
-#ifdef HAVE_UTMPX_H
+#if HAVE_UTMPX_H
 #define setutent setutxent
 #define pututline pututxline
 #define getutent getutxent

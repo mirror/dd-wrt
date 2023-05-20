@@ -31,45 +31,45 @@ SOFTWARE.
 
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #include <stdio.h>
 #include <ctype.h>
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_SELECT_H
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_NCURSES_CURSES_H
+#if HAVE_NCURSES_CURSES_H
 #include <ncurses/curses.h>
-#elif defined(HAVE_CURSES_H)
+#elif HAVE_CURSES_H
 #include <curses.h>
 #endif
 #include <signal.h>
@@ -190,7 +190,7 @@ add(netsnmp_pdu *pdu, const char *mibnodename,
         snmp_perror(mibnodename);
         fprintf(stderr, "couldn't find mib node %s, giving up\n",
                 mibnodename);
-#ifdef HAVE_CURSES_H
+#if HAVE_CURSES_H
         endwin();
 #endif
         exit(1);
@@ -229,7 +229,7 @@ collect_procs(netsnmp_session *ss, netsnmp_pdu *pdu,
         status = snmp_synch_response(ss, pdu, &response);
         if (status != STAT_SUCCESS || !response) {
             snmp_sess_perror(progname, ss);
-#ifdef HAVE_CURSES_H
+#if HAVE_CURSES_H
             endwin();
 #endif
             exit(1);
@@ -237,7 +237,7 @@ collect_procs(netsnmp_session *ss, netsnmp_pdu *pdu,
         if (response->errstat != SNMP_ERR_NOERROR) {
             fprintf(stderr, "%s: Error in packet: %s\n", progname,
                     snmp_errstring(response->errstat));
-#ifdef HAVE_CURSES_H
+#if HAVE_CURSES_H
             endwin();
 #endif
             exit(1);
@@ -322,7 +322,7 @@ collect_perf(netsnmp_session *ss, struct hrSWRunTable **fproc)
         status = snmp_synch_response(ss, pdu, &response);
         if (status != STAT_SUCCESS || !response) {
             snmp_sess_perror(progname, ss);
-#ifdef HAVE_CURSES_H
+#if HAVE_CURSES_H
             endwin();
 #endif
             exit(1);
@@ -730,14 +730,13 @@ snmpps(int argc, char *argv[])
         pinx++;
     }
 
-    free_perf(procs, count);
     snmp_close(ss);
     SOCK_CLEANUP;
     return 0;
 }
 
 
-#ifdef HAVE_CURSES_H
+#if HAVE_CURSES_H
 static void endtop(int sig)
 {
     endwin();

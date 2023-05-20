@@ -1,49 +1,49 @@
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_FCNTL_H
+#if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #include <signal.h>
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_MACHINE_PARAM_H
+#if HAVE_MACHINE_PARAM_H
 #include <machine/param.h>
 #endif
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_VMMETER_H
+#if HAVE_SYS_VMMETER_H
 #if !(defined(bsdi2) || defined(netbsd1))
 #include <sys/vmmeter.h>
 #endif
 #endif
-#ifdef HAVE_SYS_CONF_H
+#if HAVE_SYS_CONF_H
 #include <sys/conf.h>
 #endif
-#ifdef HAVE_ASM_PAGE_H
+#if HAVE_ASM_PAGE_H
 #include <asm/page.h>
 #endif
-#ifdef HAVE_SYS_SWAP_H
+#if HAVE_SYS_SWAP_H
 #include <sys/swap.h>
 #endif
-#ifdef HAVE_SYS_FS_H
+#if HAVE_SYS_FS_H
 #include <sys/fs.h>
 #else
-#ifdef HAVE_UFS_FS_H
+#if HAVE_UFS_FS_H
 #include <ufs/fs.h>
 #else
 #ifdef HAVE_SYS_STAT_H
@@ -60,52 +60,52 @@
 #ifdef HAVE_UFS_UFS_INODE_H
 #include <ufs/ufs/inode.h>
 #endif
-#ifdef HAVE_UFS_FFS_FS_H
+#if HAVE_UFS_FFS_FS_H
 #include <ufs/ffs/fs.h>
 #endif
 #endif
 #endif
-#ifdef HAVE_MTAB_H
+#if HAVE_MTAB_H
 #include <mtab.h>
 #endif
 #include <errno.h>
-#ifdef HAVE_FSTAB_H
+#if HAVE_FSTAB_H
 #include <fstab.h>
 #endif
-#ifdef HAVE_SYS_STATFS_H
+#if HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
-#ifdef HAVE_SYS_STATVFS_H
+#if HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
-#ifdef HAVE_SYS_VFS_H
+#if HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif
 #if (!defined(HAVE_STATVFS)) && defined(HAVE_STATFS)
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
+#if HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#if HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
 #define statvfs statfs
 #endif
-#ifdef HAVE_VM_VM_H
+#if HAVE_VM_VM_H
 #include <vm/vm.h>
 #endif
-#ifdef HAVE_VM_SWAP_PAGER_H
+#if HAVE_VM_SWAP_PAGER_H
 #include <vm/swap_pager.h>
 #endif
-#ifdef HAVE_SYS_FIXPOINT_H
+#if HAVE_SYS_FIXPOINT_H
 #include <sys/fixpoint.h>
 #endif
-#ifdef HAVE_MALLOC_H
+#if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #endif
 

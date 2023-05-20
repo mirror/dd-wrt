@@ -47,7 +47,7 @@ require NetSNMP::OID;
 	NETSNMPTRAPD_PRE_HANDLER
 );
 
-$VERSION = '5.0904';
+$VERSION = '5.0901';
 
 # sub new {
 #     my $type = shift;
@@ -116,7 +116,7 @@ been configured using --enable-embedded-perl.  Registration of
 functions is then done through the snmptrapd.conf configuration
 file.  This module can NOT be used in a normal perl script to
 receive traps.  It is intended solely for embedded use within the
-snmptrapd daemon.
+snmptrapd demon.
 
 =head1 DESCRIPTION
 
@@ -144,18 +144,18 @@ Registered functions should return one of the following values:
 
 =item NETSNMPTRAPD_HANDLER_OK
 
-Handling the trap succeeded, but lets the snmptrapd daemon check for
+Handling the trap succeeded, but lets the snmptrapd demon check for
 further appropriate handlers.
 
 =item NETSNMPTRAPD_HANDLER_FAIL
 
-Handling the trap failed, but lets the snmptrapd daemon check for
+Handling the trap failed, but lets the snmptrapd demon check for
 further appropriate handlers.
 
 =item NETSNMPTRAPD_HANDLER_BREAK
 
 Stops evaluating the list of handlers for this specific trap, but lets
-the snmptrapd daemon apply global handlers.
+the snmptrapd demon apply global handlers.
 
 =item NETSNMPTRAPD_HANDLER_FINISH
 

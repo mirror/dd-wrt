@@ -4,7 +4,7 @@
 #include <net-snmp/net-snmp-config.h>
 
 #include <net-snmp/types.h>
-#include "snmpIPBaseDomain.h"
+#include <net-snmp/library/snmpIPBaseDomain.h>
 #include <net-snmp/library/snmpIPv4BaseDomain.h>
 #include <net-snmp/library/snmp_assert.h>
 
@@ -12,24 +12,24 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <ctype.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
@@ -105,18 +105,17 @@ netsnmp_sockaddr_in3(struct netsnmp_ep *ep,
         addr->sin_port = htons(atoi(ep_str.port));
     if (ep_str.iface[0])
         strlcpy(ep->iface, ep_str.iface, sizeof(ep->iface));
-    if (ep_str.addr && strcmp(ep_str.addr, "255.255.255.255") == 0) {
+    if (strcmp(ep_str.addr, "255.255.255.255") == 0) {
         /*
          * The explicit broadcast address hack
          */
         DEBUGMSGTL(("netsnmp_sockaddr_in", "Explicit UDP broadcast\n"));
         addr->sin_addr.s_addr = INADDR_NONE;
-    } else if (ep_str.addr && strcmp(ep_str.addr, "") != 0) {
+    } else if (strcmp(ep_str.addr, "") != 0) {
         ret = netsnmp_gethostbyname_v4(ep_str.addr, &addr->sin_addr.s_addr);
         if (ret < 0) {
             DEBUGMSGTL(("netsnmp_sockaddr_in",
                         "couldn't resolve hostname \"%s\"\n", ep_str.addr));
-            free(ep_str.addr);
             return 0;
         }
         DEBUGMSGTL(("netsnmp_sockaddr_in",
@@ -129,7 +128,6 @@ netsnmp_sockaddr_in3(struct netsnmp_ep *ep,
 
     DEBUGMSGTL(("netsnmp_sockaddr_in", "return { AF_INET, %s:%hu }\n",
                 inet_ntoa(addr->sin_addr), ntohs(addr->sin_port)));
-    free(ep_str.addr);
     return 1;
 }
 

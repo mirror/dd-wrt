@@ -3,13 +3,13 @@
 #ifndef SNMPIPV4BASE_H
 #define SNMPIPV4BASE_H
 
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
 #include <net-snmp/library/snmp_transport.h>
 
-config_require(IPBase);
+config_require(IPBase)
 
 #ifdef __cplusplus
 extern          "C" {

@@ -147,8 +147,6 @@ handle_nsLoggingTable(netsnmp_mib_handler *handler,
                 continue;
             logh = (netsnmp_log_handler*)netsnmp_extract_iterator_context(request);
             table_info  =                netsnmp_extract_table_info(request);
-            if (!table_info || !table_info->indexes)
-                continue;
 
             switch (table_info->colnum) {
             case NSLOGGING_TYPE:
@@ -203,8 +201,6 @@ handle_nsLoggingTable(netsnmp_mib_handler *handler,
             }
             logh = (netsnmp_log_handler*)netsnmp_extract_iterator_context(request);
             table_info  =                 netsnmp_extract_table_info(request);
-            if (!table_info || !table_info->indexes)
-                continue;
 
             switch (table_info->colnum) {
             case NSLOGGING_TYPE:
@@ -398,8 +394,6 @@ handle_nsLoggingTable(netsnmp_mib_handler *handler,
                 continue;
             logh = (netsnmp_log_handler*)netsnmp_extract_iterator_context(request);
             table_info  =                 netsnmp_extract_table_info(request);
-            if (!table_info || !table_info->indexes)
-                continue;
 
             switch (table_info->colnum) {
             case NSLOGGING_TYPE:

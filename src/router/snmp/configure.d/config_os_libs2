@@ -267,58 +267,25 @@ if test "x$tryopenssl" != "xno" -a "x$tryopenssl" != "xinternal"; then
             AC_CHECK_LIB(RSAglue, RSA_PKCS1_RSAref)
         fi
 
-	ifdef(
-	  [PKG_CHECK_EXISTS],
-	  [
-	    PKG_CHECK_EXISTS([openssl],
-	      [PKG_CHECK_MODULES([OPENSSL], [openssl])])
-	    if test "x${PKG_CONFIG}" != "x"; then
-	      AC_MSG_NOTICE([OPENSSL_CFLAGS=${OPENSSL_CFLAGS}])
-	      AC_MSG_NOTICE([OPENSSL_LIBS=${OPENSSL_LIBS}])
-              CRYPTO=use_pkg_config_for_openssl
-	      LIBCRYPTO="-lssl ${OPENSSL_LIBS}"
-              netsnmp_save_LIBS="$LIBS"
-	      LIBS="-lssl ${OPENSSL_LIBS}"
-	      AC_CHECK_FUNC([EVP_md5])
-              LIBS="$netsnmp_save_LIBS"
-	    fi
-          ],
-	  [
-	    AC_MSG_ERROR([pkg-config must be installed before autoconf is run.])
-	  ]
-	)
+        AC_MSG_CHECKING([for -leay32])
+        netsnmp_save_LIBS="$LIBS"
+        LIBS="-leay32"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([
+                #include <openssl/evp.h>],
+                [return EVP_md5();])],
+            [AC_MSG_RESULT(yes); ac_cv_lib_eay32_EVP_md5=yes; CRYPTO="eay32"],
+            [AC_MSG_RESULT(no)]
+        )
+        LIBS="$netsnmp_save_LIBS"
 
-	if test "x${PKG_CONFIG}" = "x"; then
-	    AC_MSG_NOTICE([Could not find pkg-config.])
-            AC_MSG_CHECKING([for -leay32])
-            netsnmp_save_LIBS="$LIBS"
-            LIBS="-leay32"
-            AC_LINK_IFELSE([AC_LANG_PROGRAM([
-                    #include <openssl/evp.h>],
-                    [return EVP_md5();])],
-                [AC_MSG_RESULT(yes)
-		 ac_cv_lib_eay32_EVP_md5=yes
-		 CRYPTO="eay32"
-		 LIBCRYPTO="-leay32"
-		],
-                [AC_MSG_RESULT(no)]
-            )
-            LIBS="$netsnmp_save_LIBS"
-    
-            if test x$CRYPTO = x; then
-                AC_CHECK_LIB([crypto], [EVP_md5],
-                             [CRYPTO="crypto"; LIBCRYPTO="-lcrypto"], [
-                    unset ac_cv_lib_crypto_EVP_md5
-                    AC_CHECK_LIB([crypto], [EVP_md5],
-                                 [CRYPTO="crypto"; LIBCRYPTO="-lcrypto -lz"],
-				 [], [-lz])
-                ])
-            fi
-	fi
+        if test x$CRYPTO = x; then
+            AC_CHECK_LIB([crypto], [EVP_md5], [CRYPTO="crypto"])
+        fi
 
         if test x$CRYPTO != x; then
             AC_DEFINE(HAVE_LIBCRYPTO, 1,
                 [Define to 1 if you have the OpenSSL library (-lcrypto or -leay32).])
+            LIBCRYPTO="-l${CRYPTO}"
             netsnmp_save_LIBS="$LIBS"
             LIBS="$LIBCRYPTO"
             AC_CHECK_FUNCS([AES_cfb128_encrypt]dnl
@@ -348,14 +315,10 @@ if test "x$tryopenssl" != "xno" -a "x$tryopenssl" != "xinternal"; then
             LIBS="$netsnmp_save_LIBS"
         fi
         netsnmp_save_LIBS="$LIBS"
-        LIBS="-lssl $LIBCRYPTO"
-        AC_CHECK_FUNCS([ERR_get_error_all]dnl
-                       [OpenSSL_add_all_algorithms OPENSSL_sk_num]dnl
-                       [OPENSSL_sk_value]dnl
-                       [SSL_get1_peer_certificate]dnl
+        LIBS="-lssl"
+        AC_CHECK_FUNCS([TLS_method TLSv1_method DTLS_method DTLSv1_method]dnl
                        [SSL_library_init SSL_load_error_strings]dnl
-                       [TLS_method TLSv1_method DTLS_method DTLSv1_method]dnl
-                       )
+		       [ERR_get_error_all])
         LIBS="$netsnmp_save_LIBS"
         if echo " $transport_result_list " | $GREP "DTLS" > /dev/null; then
 	    if test x$ac_cv_func_DTLSv1_method = xyes -o \

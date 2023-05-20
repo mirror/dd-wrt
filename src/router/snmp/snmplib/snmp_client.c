@@ -52,41 +52,41 @@ SOFTWARE.
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <sys/types.h>
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_SYS_SELECT_H
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_SYSLOG_H
+#if HAVE_SYSLOG_H
 #include <syslog.h>
 #endif
 
@@ -444,7 +444,7 @@ _copy_varlist(netsnmp_variable_list * var,      /* source varList */
             malloc(sizeof(netsnmp_variable_list));
         if (snmp_clone_var(var, newvar)) {
             if (newvar)
-                free(newvar);
+                free((char *) newvar);
             snmp_free_varbind(newhead);
             return NULL;
         }
@@ -491,7 +491,7 @@ _copy_pdu_vars(netsnmp_pdu *pdu,        /* source PDU */
                int copy_count)
 {                               /* !=0 number of variables to copy */
     netsnmp_variable_list *var;
-#ifdef TEMPORARILY_DISABLED
+#if TEMPORARILY_DISABLED
     int             copied;
 #endif
     int             drop_idx;
@@ -508,24 +508,24 @@ _copy_pdu_vars(netsnmp_pdu *pdu,        /* source PDU */
     while (var && (skip_count-- > 0))   /* skip over pdu variables */
         var = var->next_variable;
 
-#ifdef TEMPORARILY_DISABLED
+#if TEMPORARILY_DISABLED
     copied = 0;
     if (pdu->flags & UCD_MSG_FLAG_FORCE_PDU_COPY)
         copied = 1;             /* We're interested in 'empty' responses too */
 #endif
 
     newpdu->variables = _copy_varlist(var, drop_idx, copy_count);
-#ifdef TEMPORARILY_DISABLED
+#if TEMPORARILY_DISABLED
     if (newpdu->variables)
         copied = 1;
 #endif
 
-#ifdef ALSO_TEMPORARILY_DISABLED
+#if ALSO_TEMPORARILY_DISABLED
     /*
      * Error if bad errindex or if target PDU has no variables copied 
      */
     if ((drop_err && (ii < pdu->errindex))
-#ifdef TEMPORARILY_DISABLED
+#if TEMPORARILY_DISABLED
         /*
          * SNMPv3 engineID probes are allowed to be empty.
          * See the comment in snmp_api.c for further details 
@@ -853,8 +853,7 @@ snmp_set_var_value(netsnmp_variable_list * vars,
                 = (const u_long *) value;
             *(vars->val.integer) = *val_ulong;
             if (*(vars->val.integer) > 0xffffffff) {
-                NETSNMP_LOGONCE((LOG_INFO,
-                                 "truncating integer value > 32 bits\n"));
+                snmp_log(LOG_ERR,"truncating integer value > 32 bits\n");
                 *(vars->val.integer) &= 0xffffffff;
             }
         }
@@ -866,8 +865,7 @@ snmp_set_var_value(netsnmp_variable_list * vars,
                 = (const unsigned long long *) value;
             *(vars->val.integer) = (long) *val_ullong;
             if (*(vars->val.integer) > 0xffffffff) {
-                NETSNMP_LOGONCE((LOG_INFO,
-                                 "truncating integer value > 32 bits\n"));
+                snmp_log(LOG_ERR,"truncating integer value > 32 bits\n");
                 *(vars->val.integer) &= 0xffffffff;
             }
         }
@@ -879,8 +877,7 @@ snmp_set_var_value(netsnmp_variable_list * vars,
                 = (const uintmax_t *) value;
             *(vars->val.integer) = (long) *val_uintmax_t;
             if (*(vars->val.integer) > 0xffffffff) {
-                NETSNMP_LOGONCE((LOG_INFO,
-                                 "truncating integer value > 32 bits\n"));
+                snmp_log(LOG_ERR,"truncating integer value > 32 bits\n");
                 *(vars->val.integer) &= 0xffffffff;
             }
         }

@@ -23,40 +23,40 @@
 #include <openssl/dh.h>
 #endif /* HAVE_OPENSSL_DH_H && HAVE_LIBCRYPTO */
 
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #include <stdio.h>
 #include <ctype.h>
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_SELECT_H
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
@@ -477,7 +477,7 @@ main(int argc, char *argv[])
          * Change the user supplied on command line.
          */
         if ((passwd_user != NULL) && (strlen(passwd_user) > 0)) {
-            session.securityName = strdup(passwd_user);
+            session.securityName = passwd_user;
         } else {
             /*
              * Use own key object if no user was supplied.
@@ -1046,7 +1046,6 @@ close_session:
     snmp_close(ss);
 
 out:
-    netsnmp_cleanup_session(&session);
     SOCK_CLEANUP;
     return exitval;
 }

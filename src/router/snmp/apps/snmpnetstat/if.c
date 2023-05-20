@@ -38,10 +38,10 @@
 #include <net-snmp/net-snmp-includes.h>
 
 #include <stdint.h>
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_NET_IF_H
+#if HAVE_NET_IF_H
 #include <net/if.h>
 #endif
 #ifndef _XOPEN_SOURCE

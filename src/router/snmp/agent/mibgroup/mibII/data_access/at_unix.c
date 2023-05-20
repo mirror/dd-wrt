@@ -136,7 +136,7 @@ var_atEntry(struct variable *vp,
     case IPMEDIAIFINDEX:       /* also ATIFINDEX */
         *var_len = sizeof long_return;
         long_return = lowIfIndex ? lowIfIndex : 1;
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         if (lowIfIndex == 0)
             return NULL;
 #endif

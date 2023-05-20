@@ -15,7 +15,7 @@
 #include <net-snmp/net-snmp-features.h>
 #include <stdlib.h>
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -1505,6 +1505,8 @@ write_usmUserStatus(int action,
                 if (usmStatusCheck(uptr)) {
                     uptr->userStatus = RS_ACTIVE;
                 } else {
+                    SNMP_FREE(engineID);
+                    SNMP_FREE(newName);
                     return SNMP_ERR_INCONSISTENTVALUE;
                 }
             } else if (long_ret == RS_CREATEANDWAIT) {

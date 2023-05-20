@@ -5,7 +5,7 @@
  */
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

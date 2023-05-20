@@ -13,11 +13,13 @@
  * Use is subject to license terms specified in the COPYING file
  * distributed with the Net-SNMP package.
  */
-/**
- * @file data_list.h
+/*
+ * @file netsnmp_data_list.h
  *
  * @addtogroup agent
- * @addtogroup library
+ * @addtogroup library *
+ *
+ * $Id$
  *
  * External definitions for functions and variables in netsnmp_data_list.c.
  *

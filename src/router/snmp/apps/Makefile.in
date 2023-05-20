@@ -233,11 +233,11 @@ snmpps$(EXEEXT):    snmpps.$(OSUFFIX) $(USELIBS)
 snmpping$(EXEEXT):    snmpping.$(OSUFFIX) $(USELIBS)
 	$(LINK) ${CFLAGS} -o $@ snmpping.$(OSUFFIX) ${LDFLAGS} ${LIBS} -lm
 
-snmppcap$(EXEEXT):    snmppcap.$(OSUFFIX) $(USEAGENTLIBS)
-	$(LINK) ${CFLAGS} -o $@ snmppcap.$(OSUFFIX) ${LDFLAGS} ${USEAGENTLIBS} ${LIBS} -lpcap
+snmppcap$(EXEEXT):    snmppcap.$(OSUFFIX) $(USELIBS)
+	$(LINK) ${CFLAGS} -o $@ snmppcap.$(OSUFFIX) ${LDFLAGS} ${LIBS} -lpcap
 
 libnetsnmptrapd.$(LIB_EXTENSION)$(LIB_VERSION): $(LLIBTRAPD_OBJS)
-	$(LIB_LD_CMD) $@ ${LLIBTRAPD_OBJS} $(MIBLIB) $(MYSQL_LIBS) $(USELIBS) $(PERLLDOPTS_FOR_LIBS) $(LDFLAGS)
+	$(LIB_LD_CMD) $@ ${LLIBTRAPD_OBJS} $(MIBLIB) $(USELIBS) $(PERLLDOPTS_FOR_LIBS) $(LDFLAGS)
 	$(RANLIB) $@
 
 snmpinforminstall:

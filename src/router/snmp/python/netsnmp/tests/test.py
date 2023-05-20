@@ -74,33 +74,12 @@ class BasicTests(unittest.TestCase):
 
         print("v1 snmpget result: ", res, "\n")
         self.assertEqual(len(res), 1)
-        self.assertIsNotNone(res[0])
-        self.assertNotEqual(len(res), '')
 
         print("v1 get var: ", var.tag, var.iid, "=", var.val, '(', var.type, ')')
         self.assertEqual(var.tag, 'sysDescr')
         self.assertEqual(var.iid, '0')
         self.assertEqual(var.val, res[0])
         self.assertEqual(var.type, 'OCTETSTR')
-
-    def test_v1_get_no_such_oid(self):
-        print("\n")
-        print("---v1 GET test of nonexistent OID -------------------\n")
-        var = netsnmp.Varbind('.1.3.6.1.2.1.1.1.123', '0')
-        res = netsnmp.snmpget(var, **snmp_dest())
-
-        print("v1 snmpget result: ", res, "\n")
-        self.assertEqual(len(res), 1)
-        self.assertIsNone(res[0])
-
-        print("v1 get var: ", var.tag, var.iid, "=", var.val, '(', var.type, ')')
-        self.assertIsNotNone(var.tag)
-        self.assertEqual(var.tag, '.1.3.6.1.2.1.1.1.123')
-        self.assertIsNotNone(var.iid)
-        self.assertEqual(var.iid, '0')
-        self.assertIsNone(var.val)
-        self.assertIsNone(var.type)
-
 
     def test_v1_getnext(self):
         print("\n")
@@ -144,10 +123,6 @@ class BasicTests(unittest.TestCase):
 
         print("v1 varlist walk in: ")
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertEqual(var.iid, '')
-            self.assertIsNone(var.type)
-            self.assertIsNone(var.val)
             print("  ", var.tag, var.iid, "=", var.val, '(', var.type, ')')
 
         res = netsnmp.snmpwalk(varlist, **snmp_dest())
@@ -155,10 +130,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(res) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
 
     def test_v1_walk_2(self):
@@ -194,10 +165,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
 
         vals = sess.getnext(varlist)
@@ -205,10 +172,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
 
         varlist = netsnmp.VarList(netsnmp.Varbind('sysUpTime'),
@@ -222,10 +185,6 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(vals, None) # GetBulk is not supported for v1
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNone(var.type)
-            self.assertIsNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
 
     def test_v1_set_2(self):
@@ -289,10 +248,6 @@ class BasicTests(unittest.TestCase):
                                   netsnmp.Varbind('sysContact', 0),
                                   netsnmp.Varbind('sysLocation', 0))
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNone(var.type)
-            self.assertIsNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -301,11 +256,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertTrue(var.tag.find('.') >= 0)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -325,11 +275,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertTrue(var.tag.find('.') >= 0)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -377,10 +322,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -397,10 +338,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -417,10 +354,6 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(len(vals) > 0)
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -516,10 +449,6 @@ class SetTests(unittest.TestCase):
         self.assertEqual(varlist[2].val, '3')
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 
@@ -542,10 +471,6 @@ class SetTests(unittest.TestCase):
         self.assertNotEqual(varlist[2].tag, 'snmpTargetAddrRowStatus')
 
         for var in varlist:
-            self.assertIsNotNone(var.tag)
-            self.assertIsNotNone(var.iid)
-            self.assertIsNotNone(var.type)
-            self.assertIsNotNone(var.val)
             print(var.tag, var.iid, "=", var.val, '(', var.type, ')')
         print("\n")
 

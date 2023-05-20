@@ -31,6 +31,7 @@
 
 #include <stdlib.h> /* free() */
 #include <net-snmp/types.h>
+#include <net-snmp/library/factory.h>
 #include <net-snmp/library/snmp_logging.h>
 #include <net-snmp/library/tools.h>
 
@@ -43,9 +44,8 @@ extern "C" {
      * function pointer definitions
      *
      *************************************************************************/
+    struct netsnmp_iterator_s; /** forward declare */
     struct netsnmp_container_s; /** forward declare */
-    struct netsnmp_factory_s;   /** forward declare */
-    struct netsnmp_iterator_s;  /** forward declare */
 
     /*
      * function for performing an operation on a container which
@@ -309,9 +309,9 @@ extern "C" {
      * register a new container factory
      */
     int netsnmp_container_register_with_compare(const char* name,
-                                                struct netsnmp_factory_s *f,
+                                                netsnmp_factory *f,
                                                 netsnmp_container_compare *c);
-    int netsnmp_container_register(const char* name, struct netsnmp_factory_s *f);
+    int netsnmp_container_register(const char* name, netsnmp_factory *f);
 
     /*
      * search for and create a container from a list of types or a
@@ -329,7 +329,7 @@ extern "C" {
                                      netsnmp_container *new_index);
 
 
-    struct netsnmp_factory_s *netsnmp_container_get_factory(const char *type);
+    netsnmp_factory *netsnmp_container_get_factory(const char *type);
 
     /*
      * common comparison routines
@@ -402,6 +402,11 @@ extern "C" {
 #define CONTAINER_COMPARE(x,l,r)    (x)->compare(l,r)
 #define CONTAINER_FOR_EACH(x,f,c)   (x)->for_each(x,f,c)
 
+    /*
+     * if you are getting multiple definitions of these three
+     * inline functions, you most likely have optimizations turned off.
+     * Either turn them back on, or define NETSNMP_NO_INLINE
+     */
     /*
      * insert k into all containers
      */

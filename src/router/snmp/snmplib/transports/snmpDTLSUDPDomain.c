@@ -23,7 +23,7 @@
 netsnmp_feature_require(cert_util);
 netsnmp_feature_require(sockaddr_size);
 
-#include "snmpIPBaseDomain.h"
+#include <net-snmp/library/snmpIPBaseDomain.h>
 #include <net-snmp/library/snmpDTLSUDPDomain.h>
 #include <net-snmp/library/snmpUDPIPv6Domain.h>
 #include <net-snmp/library/snmp_assert.h>
@@ -33,30 +33,30 @@ netsnmp_feature_require(sockaddr_size);
 #include <ctype.h>
 #include <errno.h>
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_NETDB_H
+#if HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#ifdef HAVE_SYS_UIO_H
+#if HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
 

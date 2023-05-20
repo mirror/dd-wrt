@@ -12,7 +12,7 @@
 #error "Please include <net-snmp/net-snmp-config.h> before this file"
 #endif
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

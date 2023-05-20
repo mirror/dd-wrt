@@ -167,7 +167,7 @@ SOFTWARE.
 #include "gw.h"
 #endif
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -181,7 +181,7 @@ SOFTWARE.
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
@@ -771,7 +771,7 @@ asn_build_int(u_char * data,
     while ((((integer & mask) == 0) || ((integer & mask) == mask))
            && intsize > 1) {
         intsize--;
-        integer = (u_long)integer << 8;
+        integer <<= 8;
     }
     data = asn_build_header(data, datalength, type, intsize);
     if (_asn_build_header_check(errpre, data, *datalength, intsize))
@@ -780,11 +780,11 @@ asn_build_int(u_char * data,
     *datalength -= intsize;
     mask = ((u_long) 0xFF) << (8 * (sizeof(long) - 1));
     /*
-     * mask is 0xFF000000 if sizeof(long) == 4.
+     * mask is 0xFF000000 on a big-endian machine 
      */
     while (intsize--) {
         *data++ = (u_char) ((integer & mask) >> (8 * (sizeof(long) - 1)));
-        integer = (u_long)integer << 8;
+        integer <<= 8;
     }
     DEBUGDUMPSETUP("send", initdatap, data - initdatap);
     DEBUGMSG(("dumpv_send", "  Integer:\t%ld (0x%.2lX)\n", *intp, *intp));
@@ -3098,8 +3098,7 @@ asn_realloc_rbuild_string(u_char ** pkt, size_t * pkt_len,
     }
 
     *offset += strlength;
-    if (str)
-        memcpy(*pkt + *pkt_len - *offset, str, strlength);
+    memcpy(*pkt + *pkt_len - *offset, str, strlength);
 
     if (asn_realloc_rbuild_header
         (pkt, pkt_len, offset, r, type, strlength)) {
