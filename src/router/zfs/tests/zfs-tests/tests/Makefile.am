@@ -250,6 +250,7 @@ nobase_dist_datadir_zfs_tests_tests_DATA += \
 	functional/cli_root/zpool_upgrade/zpool_upgrade.cfg \
 	functional/cli_root/zpool_upgrade/zpool_upgrade.kshlib \
 	functional/cli_root/zpool_wait/zpool_wait.kshlib \
+	functional/cli_root/zhack/library.kshlib \
 	functional/cli_user/misc/misc.cfg \
 	functional/cli_user/zfs_list/zfs_list.cfg \
 	functional/cli_user/zfs_list/zfs_list.kshlib \
@@ -414,6 +415,8 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/alloc_class/alloc_class_011_neg.ksh \
 	functional/alloc_class/alloc_class_012_pos.ksh \
 	functional/alloc_class/alloc_class_013_pos.ksh \
+	functional/alloc_class/alloc_class_014_neg.ksh \
+	functional/alloc_class/alloc_class_015_pos.ksh \
 	functional/alloc_class/cleanup.ksh \
 	functional/alloc_class/setup.ksh \
 	functional/append/file_append.ksh \
@@ -932,7 +935,10 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/cli_root/zfs/zfs_001_neg.ksh \
 	functional/cli_root/zfs/zfs_002_pos.ksh \
 	functional/cli_root/zfs/zfs_003_neg.ksh \
-	functional/cli_root/zhack/zhack_label_checksum.ksh \
+	functional/cli_root/zhack/zhack_label_repair_001.ksh \
+	functional/cli_root/zhack/zhack_label_repair_002.ksh \
+	functional/cli_root/zhack/zhack_label_repair_003.ksh \
+	functional/cli_root/zhack/zhack_label_repair_004.ksh \
 	functional/cli_root/zpool_add/add_nested_replacing_spare.ksh \
 	functional/cli_root/zpool_add/add-o_ashift.ksh \
 	functional/cli_root/zpool_add/add_prop_ashift.ksh \
@@ -1052,6 +1058,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/cli_root/zpool_import/import_cachefile_paths_changed.ksh \
 	functional/cli_root/zpool_import/import_cachefile_shared_device.ksh \
 	functional/cli_root/zpool_import/import_devices_missing.ksh \
+	functional/cli_root/zpool_import/import_log_missing.ksh \
 	functional/cli_root/zpool_import/import_paths_changed.ksh \
 	functional/cli_root/zpool_import/import_rewind_config_changed.ksh \
 	functional/cli_root/zpool_import/import_rewind_device_replaced.ksh \
@@ -1095,6 +1102,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/cli_root/zpool_initialize/zpool_initialize_start_and_cancel_neg.ksh \
 	functional/cli_root/zpool_initialize/zpool_initialize_start_and_cancel_pos.ksh \
 	functional/cli_root/zpool_initialize/zpool_initialize_suspend_resume.ksh \
+	functional/cli_root/zpool_initialize/zpool_initialize_uninit.ksh \
 	functional/cli_root/zpool_initialize/zpool_initialize_unsupported_vdevs.ksh \
 	functional/cli_root/zpool_initialize/zpool_initialize_verify_checksums.ksh \
 	functional/cli_root/zpool_initialize/zpool_initialize_verify_initialized.ksh \
@@ -1145,6 +1153,10 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/cli_root/zpool_scrub/zpool_scrub_multiple_copies.ksh \
 	functional/cli_root/zpool_scrub/zpool_scrub_offline_device.ksh \
 	functional/cli_root/zpool_scrub/zpool_scrub_print_repairing.ksh \
+	functional/cli_root/zpool_scrub/zpool_error_scrub_001_pos.ksh \
+	functional/cli_root/zpool_scrub/zpool_error_scrub_002_pos.ksh \
+	functional/cli_root/zpool_scrub/zpool_error_scrub_003_pos.ksh \
+	functional/cli_root/zpool_scrub/zpool_error_scrub_004_pos.ksh \
 	functional/cli_root/zpool_set/cleanup.ksh \
 	functional/cli_root/zpool_set/setup.ksh \
 	functional/cli_root/zpool/setup.ksh \
