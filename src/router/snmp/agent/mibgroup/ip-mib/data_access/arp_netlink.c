@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <sys/types.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <linux/types.h>

@@ -5,13 +5,13 @@
 #include "hardware/fsys/hw_fsys.h"
 #include "hardware/fsys/hw_fsys_private.h"
 
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_SYS_MOUNT_H
+#ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#if HAVE_SYS_STATVFS_H
+#ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
 

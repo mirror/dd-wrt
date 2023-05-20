@@ -25,9 +25,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(if-mib/ifTable/ifTable)
-config_require(ip-mib/ipv6InterfaceTable/ipv6InterfaceTable_interface)
-config_require(ip-mib/ipv6InterfaceTable/ipv6InterfaceTable_data_access)
+config_require(if-mib/ifTable/ifTable);
+config_require(ip-mib/ipv6InterfaceTable/ipv6InterfaceTable_interface);
+config_require(ip-mib/ipv6InterfaceTable/ipv6InterfaceTable_data_access);
     /* *INDENT-ON*  */
 
     /*

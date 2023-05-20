@@ -15,8 +15,8 @@
 #ifndef HRSWRUNTABLE_H
 #define HRSWRUNTABLE_H
 
-config_require(host/data_access/swrun)
-config_require(host/hrSWRunPerfTable)
+config_require(host/data_access/swrun);
+config_require(host/hrSWRunPerfTable);
 
 /*
  * function declarations 

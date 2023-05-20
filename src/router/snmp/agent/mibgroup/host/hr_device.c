@@ -14,7 +14,7 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -252,7 +252,7 @@ really_try_next:
             (NULL!=(tmp_str=((*device_descr[type])(dev_idx))))) {
             strlcpy(string, tmp_str, sizeof(string));
         } else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
             goto try_next;
 #else
             sprintf(string, "a black box of some sort");
@@ -271,7 +271,7 @@ really_try_next:
         if (device_status[type] != NULL)
             long_return = ((*device_status[type]) (dev_idx));
         else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
             goto try_next;
 #else
             long_return = 2;    /* Assume running */
@@ -283,7 +283,7 @@ really_try_next:
         if (device_errors[type] != NULL)
             long_return = (*device_errors[type]) (dev_idx);
         else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
             goto try_next;
 #else
             long_return = 0;    /* Assume OK */

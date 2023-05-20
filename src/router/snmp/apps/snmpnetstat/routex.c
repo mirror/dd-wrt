@@ -36,7 +36,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 
@@ -51,7 +51,7 @@
 
 netsnmp_feature_require(sockaddr_size);
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_NETDB_H

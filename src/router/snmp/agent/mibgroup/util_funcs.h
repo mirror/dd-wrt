@@ -4,8 +4,8 @@
 #ifndef _MIBGROUP_UTIL_FUNCS_H
 #define _MIBGROUP_UTIL_FUNCS_H
 
-config_require(util_funcs/header_generic)
-config_require(util_funcs/header_simple_table)
+config_require(util_funcs/header_generic);
+config_require(util_funcs/header_simple_table);
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

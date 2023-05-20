@@ -45,19 +45,19 @@ int      ARP_Scan_Next(in_addr_t *, char *, int *, u_long *, u_short *);
 #endif
 
 #if defined(WIN32) || defined(cygwin)
-config_require(mibII/data_access/at_iphlpapi)
+config_require(mibII/data_access/at_iphlpapi);
 #elif defined(solaris2)
-config_require(kernel_sunos5)
-config_require(mibII/data_access/at_solaris)
+config_require(kernel_sunos5);
+config_require(mibII/data_access/at_solaris);
 #elif defined(linux)
-config_require(mibII/data_access/at_linux)
-config_require(mibII/data_access/at_unix)
+config_require(mibII/data_access/at_linux);
+config_require(mibII/data_access/at_unix);
 #elif defined(HAVE_SYS_SYSCTL_H) && (defined(RTF_LLINFO) || defined(RTF_LLDATA))
-config_require(mibII/data_access/at_sysctl)
-config_require(mibII/data_access/at_unix)
+config_require(mibII/data_access/at_sysctl);
+config_require(mibII/data_access/at_unix);
 #elif defined(HAVE_NLIST_H)
-config_require(mibII/data_access/at_nlist)
-config_require(mibII/data_access/at_unix)
+config_require(mibII/data_access/at_nlist);
+config_require(mibII/data_access/at_unix);
 #endif
 
 #endif                          /* _MIBGROUP_AT_H */

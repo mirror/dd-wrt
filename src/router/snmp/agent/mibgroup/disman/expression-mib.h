@@ -14,8 +14,8 @@
 /*
  * wrapper for the disman expression mib code files 
  */
-config_require(disman/expression/expExpressionTable)
-config_require(disman/expression/expErrorTable)
-config_require(disman/expression/expObjectTable)
-config_require(disman/expression/expValueTable)
-config_add_mib(DISMAN-EXPRESSION-MIB)
+config_require(disman/expression/expExpressionTable);
+config_require(disman/expression/expErrorTable);
+config_require(disman/expression/expObjectTable);
+config_require(disman/expression/expValueTable);
+config_add_mib(DISMAN-EXPRESSION-MIB);

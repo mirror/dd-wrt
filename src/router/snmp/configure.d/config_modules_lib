@@ -197,12 +197,8 @@ do
 
     AC_MSG_CHECKING([[for heimdal]])
     AC_CACHE_VAL(ac_cv_heimdal,
-    [AC_TRY_COMPILE(
-      [#include <krb5.h>],
-      [const char *v = heimdal_version;],
-      ac_cv_heimdal=yes,
-      ac_cv_heimdal=no
-    )])
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <krb5.h>]], [[const char *v = heimdal_version;]])],[ac_cv_heimdal=yes],[ac_cv_heimdal=no
+    ])])
     AC_MSG_RESULT($ac_cv_heimdal)
     if test $ac_cv_heimdal = yes; then
       AC_DEFINE(NETSNMP_USE_KERBEROS_HEIMDAL, 1,

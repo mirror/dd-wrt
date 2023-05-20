@@ -774,5 +774,5 @@ netsnmp_container_simple_free(void *data, void *context)
     DEBUGMSGTL(("verbose:container",
                 "netsnmp_container_simple_free) called for %p/%p\n",
                 data, context));
-    free((void*)data); /* SNMP_FREE wasted on param */
+    free(data); /* SNMP_FREE wasted on param */
 }

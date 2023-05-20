@@ -4,7 +4,7 @@
 #ifndef _MIBGROUP_PROC_H
 #define _MIBGROUP_PROC_H
 
-config_require(util_funcs)
+config_require(util_funcs);
 
      void            init_proc(void);
 

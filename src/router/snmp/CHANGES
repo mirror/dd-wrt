@@ -3,7 +3,62 @@ that have been applied in released versions.  Please see the NEWS file for
 a summary of the major changes, and the ChangeLog file for a comprehensive
 listing of all changes made to the code.
 
+*5.9.4*:
+
+    libsnmp:
+      - Remove the SNMP_SWIPE_MEM() macro Remove this macro since it is not
+	used in the Net-SNMP code base.
+
+    - misc bug fixes
+
 *5.9.3*:
+    security:
+      - These two CVEs can be exploited by a user with read-only credentials:
+          - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
+            NET-SNMP-VACM-MIB can cause an out-of-bounds memory access.
+          - CVE-2022-24809 A malformed OID in a GET-NEXT to the nsVacmAccessTable
+            can cause a NULL pointer dereference.
+      - These CVEs can be exploited by a user with read-write credentials:
+          - CVE-2022-24806 Improper Input Validation when SETing malformed
+            OIDs in master agent and subagent simultaneously
+          - CVE-2022-24807 A malformed OID in a SET request to
+            SNMP-VIEW-BASED-ACM-MIB::vacmAccessTable can cause an
+            out-of-bounds memory access.
+          - CVE-2022-24808 A malformed OID in a SET request to
+            NET-SNMP-AGENT-MIB::nsLogTable can cause a NULL pointer dereference
+          - CVE-2022-24810 A malformed OID in a SET to the nsVacmAccessTable
+            can cause a NULL pointer dereference.
+      - To avoid these flaws, use strong SNMPv3 credentials and do not share them.
+        If you must use SNMPv1 or SNMPv2c, use a complex community string
+        and enhance the protection by restricting access to a given IP address range.
+      - Thanks are due to Yu Zhang of VARAS@IIE and Nanyu Zhong of VARAS@IIE for
+        reporting the following CVEs that have been fixed in this release, and
+        to Arista Networks for providing fixes.
+
+    Windows:
+      - WinExtDLL: Fix multiple compiler warnings
+      - WinExtDLL: Make long strings occupy a single line Make it easier to
+    look up error messages in the source code by making long strings
+    occupy a single source code line.
+      - WinExtDLL: Restore MIB-II support Make winExtDLL work on 64-bit
+    Windows systems") caused snmpd to skip MIB-II on 64-bit systems.
+
+    IF-MIB: Update ifTable entries even if the interface name has changed
+    At least on Linux a network interface index may be reused for a
+    network interface with a different name. Hence this patch that
+    enables replacing network interface information even if the network
+    interface name has changed.
+
+    unspecified:
+      - Moved transport code into a separate subdirectory in snmplib
+      - Snmplib: remove inline versions of container funcs".
+
+    misc:
+      - snmp-create-v3-user: Fix the snmpd.conf path   @datadir@ is
+    expanded in ${datarootdir} so datarootdir must be set before
+    @datadir@ is used.
+
+*5.9.2*:
     security:
       - These two CVEs can be exploited by a user with read-only credentials:
           - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
@@ -49,9 +104,6 @@ listing of all changes made to the code.
       - snmp-create-v3-user: Fix the snmpd.conf path   @datadir@ is
 	expanded in ${datarootdir} so datarootdir must be set before
 	@datadir@ is used.
-
-*5.9.2*:
-    skipped due to a last minute library versioning found bug -- use 5.9.3 instead
 
 *5.9.1*:
     General: Many bug fixes

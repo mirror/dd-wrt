@@ -944,19 +944,14 @@ netsnmp_openssl_cert_issued_by(X509 *issuer, X509 *cert)
 
 
 #ifndef NETSNMP_FEATURE_REMOVE_OPENSSL_ERR_LOG
-#ifndef ERR_GET_FUNC
-/* removed in OpenSSL 3.0 */
-#define ERR_GET_FUNC(e) -1
-#endif
-
 void
 netsnmp_openssl_err_log(const char *prefix)
 {
     unsigned long err;
     for (err = ERR_get_error(); err; err = ERR_get_error()) {
         snmp_log(LOG_ERR,"%s: %ld\n", prefix ? prefix: "openssl error", err);
-        snmp_log(LOG_ERR, "library=%d, function=%d, reason=%d\n",
-                 ERR_GET_LIB(err), ERR_GET_FUNC(err), ERR_GET_REASON(err));
+        snmp_log(LOG_ERR, "library=%d, reason=%d\n", ERR_GET_LIB(err),
+                 ERR_GET_REASON(err));
     }
 }
 #endif /* NETSNMP_FEATURE_REMOVE_OPENSSL_ERR_LOG */

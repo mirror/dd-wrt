@@ -95,7 +95,7 @@
 
 #include <net-snmp/agent/table_iterator.h>
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

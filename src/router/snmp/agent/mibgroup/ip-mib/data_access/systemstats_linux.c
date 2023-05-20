@@ -143,7 +143,7 @@ _systemstats_v4(netsnmp_container* container, u_int load_flags)
     if (start) {
 
         len = strlen(line);
-        if (line[len - 1] == '\n')
+        if (len && line[len - 1] == '\n')
             line[len - 1] = '\0';
 
         while (*start && *start == ' ')
@@ -383,7 +383,7 @@ _systemstats_v6_load_file(netsnmp_systemstats_entry *entry, FILE *devin)
             break;
 
         len = strlen(line);
-        if (line[len - 1] == '\n')
+        if (len && line[len - 1] == '\n')
             line[len - 1] = '\0';
 
         if (('I' != line[0]) || ('6' != line[2]))

@@ -24,10 +24,10 @@
 #include <spawn.h>
 #endif
 #include <stdio.h>
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_MALLOC_H
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #ifdef __alpha
@@ -51,25 +51,25 @@
 #ifndef WIFEXITED
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #include <errno.h>
 #include <signal.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -110,7 +110,7 @@ typedef __u8 u8;           /* ditto */
 #include "util_funcs.h"
 #include "utilities/execute.h"
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 #include "limits.h"
 #endif
 #ifdef USING_UCD_SNMP_ERRORMIB_MODULE
@@ -153,7 +153,7 @@ make_tempfile(void)
 int
 shell_command(struct extensible *ex)
 {
-#if HAVE_SYSTEM
+#ifdef HAVE_SYSTEM
     const char     *ofname;
     char           *shellline = NULL;
     FILE           *shellout;

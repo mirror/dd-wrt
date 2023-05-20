@@ -14,7 +14,7 @@
 /*
  * wrapper for the disman ping mib code files 
  */
-config_require(disman/ping/pingCtlTable)
-config_require(disman/ping/pingResultsTable)
-config_require(disman/ping/pingProbeHistoryTable)
-config_add_mib(DISMAN-PING-MIB)
+config_require(disman/ping/pingCtlTable);
+config_require(disman/ping/pingResultsTable);
+config_require(disman/ping/pingProbeHistoryTable);
+config_add_mib(DISMAN-PING-MIB);

@@ -14,7 +14,7 @@
 /*
  * Directive to include utility module 
  */
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
     /*
      * Make 64-bit pstat calls 

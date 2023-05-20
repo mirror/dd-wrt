@@ -27,7 +27,7 @@
 
 #include <net-snmp/library/snmp_api.h>
 #include <net-snmp/library/snmp_client.h>
-#if HAVE_GETOPT_H
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #else
 #include <net-snmp/library/getopt.h>

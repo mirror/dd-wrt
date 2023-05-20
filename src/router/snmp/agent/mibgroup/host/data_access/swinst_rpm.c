@@ -97,7 +97,7 @@ netsnmp_swinst_arch_load( netsnmp_container *container, u_int flags)
 
     rpmdbMatchIterator    mi;
     Header                h;
-#if HAVE_HEADERGET
+#ifdef HAVE_HEADERGET
     const char           *g;
     rpmtd                 td_name, td_version, td_release, td_group, td_time;
 #else
@@ -109,7 +109,7 @@ netsnmp_swinst_arch_load( netsnmp_container *container, u_int flags)
     int                   i = 1;
     netsnmp_swinst_entry *entry;
 
-#if HAVE_HEADERGET
+#ifdef HAVE_HEADERGET
     td_name = rpmtdNew();
     td_version = rpmtdNew();
     td_release = rpmtdNew();
@@ -133,7 +133,7 @@ netsnmp_swinst_arch_load( netsnmp_container *container, u_int flags)
         CONTAINER_INSERT(container, entry);
 
         h = headerLink( h );
-#if HAVE_HEADERGET
+#ifdef HAVE_HEADERGET
         headerGet(h, RPMTAG_NAME, td_name, HEADERGET_EXT);
         headerGet(h, RPMTAG_VERSION, td_version, HEADERGET_EXT);
         headerGet(h, RPMTAG_RELEASE, td_release, HEADERGET_EXT);
@@ -171,7 +171,7 @@ netsnmp_swinst_arch_load( netsnmp_container *container, u_int flags)
             memcpy(entry->swDate, dt, entry->swDate_len);
         }
 
-#if HAVE_HEADERGET
+#ifdef HAVE_HEADERGET
         rpmtdFreeData(td_name);
         rpmtdFreeData(td_version);
         rpmtdFreeData(td_release);
@@ -182,7 +182,7 @@ netsnmp_swinst_arch_load( netsnmp_container *container, u_int flags)
     }
     rpmdbFreeIterator( mi );
     rpmtsFree( ts );
-#if HAVE_HEADERGET
+#ifdef HAVE_HEADERGET
     rpmtdFree(td_name);
     rpmtdFree(td_version);
     rpmtdFree(td_release);

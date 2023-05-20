@@ -1,8 +1,8 @@
 #ifndef SCHEDTABLE_H
 #define SCHEDTABLE_H
 
-config_require(disman/schedule/schedCore)
-config_add_mib(DISMAN-SCHEDULE-MIB)
+config_require(disman/schedule/schedCore);
+config_add_mib(DISMAN-SCHEDULE-MIB);
 
 /*
  * function declarations 

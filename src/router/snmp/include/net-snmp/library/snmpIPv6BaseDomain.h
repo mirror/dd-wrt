@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 #endif
 
-config_require(IPBase)
+config_require(IPBase);
 
 #include <net-snmp/library/snmp_transport.h>
 

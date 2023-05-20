@@ -1,3 +1,4 @@
+#define __NetBSD_Version__ 1
 #include "netbsd.h"
 
 #define netbsd1 netbsd1         /* we're really close to this */

@@ -13,7 +13,7 @@
  */
 
 
-config_require(header_complex)
+config_require(header_complex);
 
     /*
      * enum definitions from the covered mib sections 

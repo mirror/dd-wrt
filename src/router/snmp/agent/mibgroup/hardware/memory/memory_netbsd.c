@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/sysctl.h>
-#if HAVE_SYS_VMMETER_H
+#ifdef HAVE_SYS_VMMETER_H
 #include <sys/vmmeter.h>
 #endif
 #include <sys/swap.h>

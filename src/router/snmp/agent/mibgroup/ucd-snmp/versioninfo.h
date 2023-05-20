@@ -28,8 +28,8 @@ extern WriteMethod save_persistent;
 #define VERSAVEPERSISTENT 13
 #define VERDEBUGGING 20
 
-config_require(util_funcs/header_generic)
-config_require(util_funcs/restart)
-config_require(util_funcs)
+config_require(util_funcs/header_generic);
+config_require(util_funcs/restart);
+config_require(util_funcs);
 
 #endif                          /* _MIBGROUP_VERSIONINFO_H */

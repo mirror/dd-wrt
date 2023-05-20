@@ -17,10 +17,10 @@
 #include <net-snmp/net-snmp-features.h>
 
 #include <sys/types.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
@@ -355,7 +355,7 @@ proxy_free_filled_in_session_args(netsnmp_session *session, void **configured)
         session->community_len = 0;
     }
 
-    free((u_char *)(*configured));
+    free(*configured);
     *configured = NULL;
 }
 

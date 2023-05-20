@@ -7,21 +7,21 @@
 
 #include <stdio.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #include <signal.h>
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
 #else
-#if HAVE_SYS_TIME_H
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #else
 #include <time.h>
@@ -35,7 +35,7 @@
 #include "struct.h"
 #include "disk_hw.h"
 #include "util_funcs/header_simple_table.h"
-#if USING_UCD_SNMP_ERRORMIB_MODULE
+#ifdef USING_UCD_SNMP_ERRORMIB_MODULE
 #include "errormib.h"
 #else
 #define setPerrorstatus(x) snmp_log_perror(x)

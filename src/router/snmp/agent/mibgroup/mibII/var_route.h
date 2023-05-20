@@ -5,9 +5,9 @@
 #ifndef _MIBGROUP_VAR_ROUTE_H
 #define _MIBGROUP_VAR_ROUTE_H
 
-config_require(mibII/ip)
+config_require(mibII/ip);
 #ifdef solaris2
-config_require(kernel_sunos5)
+config_require(kernel_sunos5);
 #endif
 
 #if defined(HAVE_IPHLPAPI_H)

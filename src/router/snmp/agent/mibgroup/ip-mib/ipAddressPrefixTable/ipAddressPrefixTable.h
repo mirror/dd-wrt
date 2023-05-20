@@ -22,9 +22,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(ip-mib/ipAddressTable/ipAddressTable)
-config_require(ip-mib/ipAddressPrefixTable/ipAddressPrefixTable_interface)
-config_require(ip-mib/ipAddressPrefixTable/ipAddressPrefixTable_data_access)
+config_require(ip-mib/ipAddressTable/ipAddressTable);
+config_require(ip-mib/ipAddressPrefixTable/ipAddressPrefixTable_interface);
+config_require(ip-mib/ipAddressPrefixTable/ipAddressPrefixTable_data_access);
     /* *INDENT-ON*  */
 
     /*

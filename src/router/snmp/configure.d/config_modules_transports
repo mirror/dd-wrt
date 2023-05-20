@@ -49,7 +49,12 @@ while test "x$new_transport_list" != "x"; do
       transport_src="transports/snmp"$i"Domain.c"
       transport_hdr="snmp"$i"Domain.h"
       rel_transport_src="snmplib/"$transport_src
-      rel_transport_hdr="include/net-snmp/library/"$transport_hdr
+      case $i in
+	  IPBase)
+	      rel_transport_hdr="snmplib/transports/$transport_hdr";;
+	  *)
+	      rel_transport_hdr="include/net-snmp/library/$transport_hdr";;
+      esac
       lc_i=`echo $i | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
       ctor_fn="netsnmp_"$lc_i"_ctor"
       if test -f "$srcdir/$rel_transport_src"; then

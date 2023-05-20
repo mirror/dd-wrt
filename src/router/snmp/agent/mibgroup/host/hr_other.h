@@ -5,7 +5,7 @@
 #ifndef _MIBGROUP_HROTHER_H
 #define _MIBGROUP_HROTHER_H
 
-config_require(host/hr_device)
+config_require(host/hr_device);
 
 void            init_hr_other(void);
 

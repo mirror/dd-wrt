@@ -4,19 +4,19 @@
 #ifdef NETSNMP_TRANSPORT_UNIX_DOMAIN
 
 #if defined(cygwin) || defined(mingw32) || defined(mingw32msvc)
-    config_error(Unix domain protocol support unavailable for this platform)
+    config_error(Unix domain protocol support unavailable for this platform);
 #endif
 
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_SYS_UN_H
+#ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
 
 #include <net-snmp/library/snmp_transport.h>
 
-config_require(SocketBase)
+config_require(SocketBase);
 
 #ifdef __cplusplus
 extern          "C" {

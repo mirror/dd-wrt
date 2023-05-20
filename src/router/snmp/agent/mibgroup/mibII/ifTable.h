@@ -3,4 +3,4 @@
  *
  */
 
-config_require(if-mib/ifTable)
+config_require(if-mib/ifTable);

@@ -17,17 +17,17 @@
  *    HPUX11 had different reuirements than other HPUX, that should
  *    be handled in the *_hpux.h header file.
  */
-config_require(ip-mib/data_access/arp_common)
+config_require(ip-mib/data_access/arp_common);
 #if defined( HAVE_LINUX_RTNETLINK_H )
-config_require(ip-mib/data_access/arp_netlink)
+config_require(ip-mib/data_access/arp_netlink);
 #elif defined( linux )
-config_require(ip-mib/data_access/arp_linux)
+config_require(ip-mib/data_access/arp_linux);
 #elif defined( freebsd7 ) || defined ( netbsd5 ) || defined( openbsd4 ) || defined( dragonfly ) || defined( darwin )
-config_require(ip-mib/data_access/arp_sysctl)
+config_require(ip-mib/data_access/arp_sysctl);
 #else
 /*
  * couldn't determine the correct file!
  */
-config_error(the arp data access library is not available in this environment.)
+config_error(the arp data access library is not available in this environment.);
 #endif
 

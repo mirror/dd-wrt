@@ -25,13 +25,13 @@ SOFTWARE.
 ******************************************************************/
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -53,7 +53,7 @@ SOFTWARE.
 #include <ctype.h>
 #if !defined(mingw32) && defined(HAVE_SYS_TIME_H)
 # include <sys/time.h>
-# if TIME_WITH_SYS_TIME
+# ifdef TIME_WITH_SYS_TIME
 #  include <time.h>
 # endif
 #else
@@ -62,7 +62,7 @@ SOFTWARE.
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #ifdef HAVE_SYSLOG_H
@@ -80,7 +80,7 @@ SOFTWARE.
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 

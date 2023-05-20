@@ -1,20 +1,20 @@
 #include <net-snmp/net-snmp-config.h>
 
 #ifdef NETSNMP_CAN_USE_NLIST
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#if HAVE_KVM_H
+#ifdef HAVE_KVM_H
 #include <kvm.h>
 #elif defined(HAVE_NLIST_H)
 #include <nlist.h>
@@ -146,7 +146,7 @@ static void
 init_nlist(struct nlist nl[])
 {
     int             ret;
-#if HAVE_KVM_OPENFILES
+#ifdef HAVE_KVM_OPENFILES
     kvm_t          *kernel;
     char            kvm_errbuf[4096];
 

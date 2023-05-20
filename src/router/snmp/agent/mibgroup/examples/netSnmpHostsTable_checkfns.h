@@ -12,7 +12,7 @@
 #define NETSNMPHOSTSTABLE_CHECKFNS_H
 
 /** make sure we load the functions that you can modify */
-config_require(examples/netSnmpHostsTable_checkfns_local)
+config_require(examples/netSnmpHostsTable_checkfns_local);
 
 #ifdef __cplusplus
 extern "C" {

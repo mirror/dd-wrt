@@ -13,7 +13,7 @@ netsnmp_feature_require(tls_fingerprint_build);
 netsnmp_feature_require(row_create);
 
 #include <ctype.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -558,6 +558,7 @@ main(int argc, char **argv)
 
     netsnmp_row_create(ss, var_list, rs_idx);
 
+    netsnmp_cleanup_session(&session);
     SOCK_CLEANUP;
     return 0;
 }

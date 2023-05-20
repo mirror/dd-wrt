@@ -19,13 +19,13 @@
  * Dependency requirements 
  */
 #ifdef solaris2
-config_require(kernel_sunos5)
+config_require(kernel_sunos5);
 #endif
 
     /*
      * Directive to include utility module 
      */
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
     /*
      * MIB wants CPU_SYSTEM which is sysinfo CPU_KERNEL + CPU_WAIT 

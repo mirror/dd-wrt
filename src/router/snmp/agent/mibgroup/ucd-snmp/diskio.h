@@ -1,8 +1,8 @@
 #ifndef _MIBGROUP_DISKIO_H
 #define _MIBGROUP_DISKIO_H
 
-config_require(util_funcs/header_simple_table)
-config_add_mib(UCD-DISKIO-MIB)
+config_require(util_funcs/header_simple_table);
+config_add_mib(UCD-DISKIO-MIB);
 
     /*
      * Define all our functions using prototyping for ANSI compilers 

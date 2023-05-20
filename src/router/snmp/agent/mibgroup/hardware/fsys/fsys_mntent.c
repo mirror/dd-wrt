@@ -6,25 +6,25 @@
 #include "hardware/fsys/hw_fsys_private.h"
 
 #include <stdio.h>
-#if HAVE_MNTENT_H
+#ifdef HAVE_MNTENT_H
 #include <mntent.h>
 #endif
 #ifdef HAVE_SYS_MNTTAB_H
 #include <sys/mnttab.h>
 #endif
-#if HAVE_SYS_VFS_H
+#ifdef HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_SYS_MOUNT_H
+#ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#if HAVE_SYS_STATFS_H
+#ifdef HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
-#if HAVE_SYS_STATVFS_H
+#ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
 

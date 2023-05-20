@@ -525,6 +525,7 @@ STARTPROG() {
     if test -f $CFG_FILE; then
 	COMMAND="$COMMAND -C -c $CFG_FILE"
     fi
+    COMMAND="$COMMAND -f"
     if [ "x$PORT_SPEC" != "x" ]; then
         COMMAND="$COMMAND $PORT_SPEC"
     fi
@@ -537,7 +538,7 @@ STARTPROG() {
         echo $COMMAND >> $LOG_FILE.command
     fi
     {
-	{ $COMMAND -f; } >$LOG_FILE.stdout 2>&1
+	{ $COMMAND; } >$LOG_FILE.stdout 2>&1
 	echo $? >$LOG_FILE.exitcode
     } &
 }

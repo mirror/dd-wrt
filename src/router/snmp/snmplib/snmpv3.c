@@ -22,11 +22,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -35,7 +35,7 @@
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -44,7 +44,7 @@
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
@@ -53,7 +53,7 @@
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #       include <stdlib.h>
 #endif
 
@@ -233,12 +233,12 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
         }
 
     case 'n':
-        session->contextName = optarg;
+        session->contextName = strdup(optarg);
         session->contextNameLen = strlen(optarg);
         break;
 
     case 'u':
-        session->securityName = optarg;
+        session->securityName = strdup(optarg);
         session->securityNameLen = strlen(optarg);
         break;
 
@@ -266,8 +266,12 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
     case 'a': {
         int auth_type = usm_lookup_auth_type(optarg);
         if (auth_type > 0) {
-            session->securityAuthProto =
-                sc_get_auth_oid(auth_type, &session->securityAuthProtoLen);
+            const oid *auth_proto;
+
+            auth_proto = sc_get_auth_oid(auth_type,
+                                         &session->securityAuthProtoLen);
+            session->securityAuthProto = snmp_duplicate_objid(auth_proto,
+                                             session->securityAuthProtoLen);
          } else {
             fprintf(stderr,
                     "Invalid authentication protocol specified after -3a flag: %s\n",
@@ -277,7 +281,9 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
     }
         break;
 
-    case 'x':
+    case 'x': {
+        const oid *priv_proto;
+
         priv_type = usm_lookup_priv_type(optarg);
         if (priv_type < 0) {
             fprintf(stderr,
@@ -285,10 +291,11 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
                     optarg);
             return (-1);
         }
-        session->securityPrivProto =
-            sc_get_priv_oid(priv_type, &session->securityPrivProtoLen);
+        priv_proto = sc_get_priv_oid(priv_type, &session->securityPrivProtoLen);
+        session->securityPrivProto = snmp_duplicate_objid(priv_proto,
+                                         session->securityPrivProtoLen);
         break;
-
+    }
     case 'A':
         *Apsz = strdup(optarg);
         if (NULL == *Apsz) {

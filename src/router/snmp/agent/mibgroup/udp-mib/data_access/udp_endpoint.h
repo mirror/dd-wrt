@@ -17,18 +17,18 @@
  *    HPUX11 had different reuirements than other HPUX, that should
  *    be handled in the *_hpux.h header file.
  */
-config_require(udp-mib/data_access/udp_endpoint_common)
+config_require(udp-mib/data_access/udp_endpoint_common);
 #if defined( linux )
-config_require(udp-mib/data_access/udp_endpoint_linux)
-config_require(util_funcs/get_pid_from_inode)
+config_require(udp-mib/data_access/udp_endpoint_linux);
+config_require(util_funcs/get_pid_from_inode);
 #elif defined( solaris2 )
-config_require(udp-mib/data_access/udp_endpoint_solaris2)
+config_require(udp-mib/data_access/udp_endpoint_solaris2);
 #elif defined(freebsd4) || defined(dragonfly) || defined(darwin)
-config_require(udp-mib/data_access/udp_endpoint_freebsd4)
+config_require(udp-mib/data_access/udp_endpoint_freebsd4);
 #elif defined(openbsd4)
-config_require(udp-mib/data_access/udp_endpoint_openbsd)
+config_require(udp-mib/data_access/udp_endpoint_openbsd);
 #elif defined(netbsd1)
-config_require(udp-mib/data_access/udp_endpoint_netbsd)
+config_require(udp-mib/data_access/udp_endpoint_netbsd);
 #else
-config_require(udp-mib/data_access/udp_endpoint_unsup)
+config_require(udp-mib/data_access/udp_endpoint_unsup);
 #endif

@@ -18,8 +18,8 @@
  * we use header_generic from the util_funcs module
  */
 
-config_require(util_funcs/header_generic)
-config_add_mib(SNMP-USER-BASED-SM-MIB)
+config_require(util_funcs/header_generic);
+config_add_mib(SNMP-USER-BASED-SM-MIB);
 
     /*
      * Magic number definitions: 

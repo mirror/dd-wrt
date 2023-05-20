@@ -17,6 +17,6 @@ extern int	Check_HR_FileSys_AutoFs(const struct netsnmp_fsys_info_s *entry);
 extern int      Get_FSIndex(char *);
 extern long     Get_FSSize(char *);     /* Temporary */
 
-config_exclude( host/hr_filesys )
+config_exclude( host/hr_filesys );
 
 #endif                          /* _MIBGROUP_HRFSYS_H */

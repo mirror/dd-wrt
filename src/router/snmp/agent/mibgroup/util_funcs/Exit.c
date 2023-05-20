@@ -7,7 +7,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 

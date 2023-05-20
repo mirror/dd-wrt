@@ -37,7 +37,7 @@
 #include <net-snmp/net-snmp-config.h>
 
 #include <stdint.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_WINSOCK_H

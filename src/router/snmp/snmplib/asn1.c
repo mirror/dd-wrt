@@ -167,7 +167,7 @@ SOFTWARE.
 #include "gw.h"
 #endif
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -3098,7 +3098,8 @@ asn_realloc_rbuild_string(u_char ** pkt, size_t * pkt_len,
     }
 
     *offset += strlength;
-    memcpy(*pkt + *pkt_len - *offset, str, strlength);
+    if (str)
+        memcpy(*pkt + *pkt_len - *offset, str, strlength);
 
     if (asn_realloc_rbuild_header
         (pkt, pkt_len, offset, r, type, strlength)) {

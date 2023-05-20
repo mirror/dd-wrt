@@ -1,13 +1,13 @@
 #ifndef _SNMPTLSTCPDOMAIN_H
 #define _SNMPTLSTCPDOMAIN_H
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(IPv4Base)
-config_require(SocketBase)
-config_require(TLSBase)
+config_require(IPv4Base);
+config_require(SocketBase);
+config_require(TLSBase);
 
 #include <net-snmp/library/snmpIPv4BaseDomain.h>
 

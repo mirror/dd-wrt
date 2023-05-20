@@ -1,7 +1,7 @@
 #ifndef SCHEDCORE_H
 #define SCHEDCORE_H
 
-config_require(utilities/iquery)
+config_require(utilities/iquery);
 
     /*
      * Values for schedType field

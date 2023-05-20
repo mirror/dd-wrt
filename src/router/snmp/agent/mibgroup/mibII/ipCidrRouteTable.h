@@ -6,10 +6,10 @@
 #define IPCIDRROUTETABLE_H
 
 /** other required module components */
-config_require(mibII/ipCidrRouteTable_access)
-config_require(mibII/ipCidrRouteTable_checkfns)
-config_add_mib(IP-FORWARD-MIB)
-config_add_mib(IANA-RTPROTO-MIB)
+config_require(mibII/ipCidrRouteTable_access);
+config_require(mibII/ipCidrRouteTable_checkfns);
+config_add_mib(IP-FORWARD-MIB);
+config_add_mib(IANA-RTPROTO-MIB);
 
 /*
  * function declarations 

@@ -5,7 +5,7 @@
 #ifndef _MIBGROUP_HRPART_H
 #define _MIBGROUP_HRPART_H
 
-config_require(host/hr_disk)
+config_require(host/hr_disk);
 
 extern void     init_hr_partition(void);
 extern FindVarMethod var_hrpartition;
