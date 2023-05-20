@@ -70,10 +70,10 @@ SOFTWARE.
 #  include <time.h>
 # endif
 #endif
-#if HAVE_SYS_SELECT_H
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #include <errno.h>
@@ -85,7 +85,7 @@ SOFTWARE.
 #include <net-snmp/library/snmp_assert.h>
 #include "agent_global_vars.h"
 
-#if HAVE_SYSLOG_H
+#ifdef HAVE_SYSLOG_H
 #include <syslog.h>
 #endif
 
@@ -2965,7 +2965,7 @@ netsnmp_check_requests_status(netsnmp_agent_session *asp,
         if (requests->status != SNMP_ERR_NOERROR &&
             (!look_for_specific || requests->status == look_for_specific)
             && (look_for_specific || asp->index == 0
-                || requests->index < asp->index)) {
+                || requests->index <= asp->index)) {
             asp->index = requests->index;
             asp->status = requests->status;
         }
@@ -3768,7 +3768,9 @@ handle_pdu(netsnmp_agent_session *asp)
     case SNMP_MSG_INTERNAL_SET_RESERVE1:
 #endif /* NETSNMP_NO_WRITE_SUPPORT */
         asp->vbcount = count_varbinds(asp->pdu->variables);
-        asp->requests = calloc(asp->vbcount, sizeof(netsnmp_request_info));
+        asp->requests =
+            calloc(asp->vbcount ? asp->vbcount : 1,
+                   sizeof(netsnmp_request_info));
         /*
          * collect varbinds 
          */

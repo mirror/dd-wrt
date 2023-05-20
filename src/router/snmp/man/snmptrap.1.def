@@ -109,7 +109,36 @@ which are handled in the same way as the
 .B snmpset
 command.
 .PP
-For example:
+The
+.I
+AGENT
+argument is only embedded in SNMP TRAP PDUs but not in SNMP INFORM PDUs. If
+.I AGENT
+is not an empty string, it must be an IPv4 address. This limitation comes from
+RFC 1157, in which the agent address field is defined as follows:
+.IP
+agent-addr NetworkAddress, -- address of object generating trap
+.PP
+From RFC 1155:
+.IP
+NetworkAddress ::=
+.br
+    CHOICE {
+.br
+        internet IpAddress
+.br
+    }
+.br
+[ ... ]
+.br
+IpAddress ::=
+.br
+    [APPLICATION 0]          -- in network-byte order
+.br
+        IMPLICIT OCTET STRING (SIZE (4))
+.PP
+An example of how to use
+.B snmptrap:
 .PP
 snmptrap \-v 1 \-c public manager enterprises.spider test\-hub 3 0 '' interfaces.iftable.ifentry.ifindex.1 i 1
 .PP

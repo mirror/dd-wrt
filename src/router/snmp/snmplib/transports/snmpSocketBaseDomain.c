@@ -27,7 +27,7 @@
 #if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 #include <errno.h>

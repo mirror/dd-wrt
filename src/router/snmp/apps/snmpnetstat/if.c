@@ -41,7 +41,7 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_NET_IF_H
+#ifdef HAVE_NET_IF_H
 #include <net/if.h>
 #endif
 #ifndef _XOPEN_SOURCE

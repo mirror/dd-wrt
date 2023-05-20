@@ -1,9 +1,7 @@
 #include <net-snmp/net-snmp-config.h>
 
 #include <ctype.h>
-#if HAVE_STDDEF_H
 #include <stddef.h>
-#endif
 #include <stdio.h>
 #if HAVE_STRING_H
 #include <string.h>

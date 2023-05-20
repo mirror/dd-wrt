@@ -125,8 +125,12 @@ void netsnmp_init_openssl(void) {
 #ifdef HAVE_SSL_LOAD_ERROR_STRINGS
     SSL_load_error_strings();
 #endif
+#ifdef HAVE_ERR_LOAD_BIO_STRINGS
     ERR_load_BIO_strings();
+#endif
+#ifdef HAVE_OPENSSL_ADD_ALL_ALGORITHMS
     OpenSSL_add_all_algorithms();
+#endif
 }
 
 /** netsnmp_openssl_cert_get_name: get subject name field from cert
@@ -520,18 +524,54 @@ netsnmp_openssl_cert_dump_extensions(X509 *ocert)
     }
 }
 
-static int _htmap[NS_HASH_MAX + 1] = {
-    0, NID_md5WithRSAEncryption, NID_sha1WithRSAEncryption,
-    NID_sha224WithRSAEncryption, NID_sha256WithRSAEncryption,
-    NID_sha384WithRSAEncryption, NID_sha512WithRSAEncryption };
+static const struct {
+    uint16_t nid;
+    uint16_t ht;
+} _htmap[] = {
+    { 0, NS_HASH_NONE },
+#ifdef NID_md5WithRSAEncryption
+    { NID_md5WithRSAEncryption, NS_HASH_MD5 },
+#endif
+#ifdef NID_sha1WithRSAEncryption
+    { NID_sha1WithRSAEncryption, NS_HASH_SHA1 },
+#endif
+#ifdef NID_ecdsa_with_SHA1
+    { NID_ecdsa_with_SHA1, NS_HASH_SHA1 },
+#endif
+#ifdef NID_sha224WithRSAEncryption
+    { NID_sha224WithRSAEncryption, NS_HASH_SHA224 },
+#endif
+#ifdef NID_ecdsa_with_SHA224
+    { NID_ecdsa_with_SHA224, NS_HASH_SHA224 },
+#endif
+#ifdef NID_sha256WithRSAEncryption
+    { NID_sha256WithRSAEncryption, NS_HASH_SHA256 },
+#endif
+#ifdef NID_ecdsa_with_SHA256
+    { NID_ecdsa_with_SHA256, NS_HASH_SHA256 },
+#endif
+#ifdef NID_sha384WithRSAEncryption
+    { NID_sha384WithRSAEncryption, NS_HASH_SHA384 },
+#endif
+#ifdef NID_ecdsa_with_SHA384
+    { NID_ecdsa_with_SHA384, NS_HASH_SHA384 },
+#endif
+#ifdef NID_sha512WithRSAEncryption
+    { NID_sha512WithRSAEncryption, NS_HASH_SHA512 },
+#endif
+#ifdef NID_ecdsa_with_SHA512
+    { NID_ecdsa_with_SHA512, NS_HASH_SHA512 },
+#endif
+};
 
 int
 _nid2ht(int nid)
 {
     int i;
-    for (i=1; i<= NS_HASH_MAX; ++i) {
-        if (nid == _htmap[i])
-            return i;
+
+    for (i = 0; i < sizeof(_htmap) / sizeof(_htmap[0]); i++) {
+        if (_htmap[i].nid == nid)
+            return _htmap[i].ht;
     }
     return 0;
 }
@@ -540,9 +580,13 @@ _nid2ht(int nid)
 int
 _ht2nid(int ht)
 {
-    if ((ht < 0) || (ht > NS_HASH_MAX))
-        return 0;
-    return _htmap[ht];
+    int i;
+
+    for (i = 0; i < sizeof(_htmap) / sizeof(_htmap[0]); i++) {
+        if (_htmap[i].ht == ht)
+            return _htmap[i].nid;
+    }
+    return 0;
 }
 #endif /* NETSNMP_FEATURE_REMOVE_OPENSSL_HT2NID */
 
@@ -648,11 +692,12 @@ netsnmp_openssl_get_cert_chain(SSL *ssl)
     char                  *fingerprint;
     netsnmp_container     *chain_map;
     netsnmp_cert_map      *cert_map;
-    int                    i;
+    int                    i, sk_num_res;
 
     netsnmp_assert_or_return(ssl != NULL, NULL);
-    
-    if (NULL == (ocert = SSL_get_peer_certificate(ssl))) {
+
+    ocert = SSL_get_peer_certificate(ssl);
+    if (!ocert) {
         /** no peer cert */
         snmp_log(LOG_ERR, "SSL peer has no certificate\n");
         return NULL;
@@ -690,7 +735,8 @@ netsnmp_openssl_get_cert_chain(SSL *ssl)
 
     /** check for a chain to a CA */
     ochain = SSL_get_peer_cert_chain(ssl);
-    if ((NULL == ochain) || (0 == sk_num((const void *)ochain))) {
+    sk_num_res = sk_num((const void *)ochain);
+    if (!ochain || sk_num_res == 0) {
         DEBUGMSGT(("ssl:cert:chain", "peer has no cert chain\n"));
     }
     else {
@@ -698,7 +744,8 @@ netsnmp_openssl_get_cert_chain(SSL *ssl)
          * loop over chain, adding fingerprint / cert for each
          */
         DEBUGMSGT(("ssl:cert:chain", "examining cert chain\n"));
-        for(i = 0; i < sk_num((const void *)ochain); ++i) {
+        sk_num_res = sk_num((const void *)ochain);
+        for(i = 0; i < sk_num_res; ++i) {
             ocert_tmp = (X509*)sk_value((const void *)ochain,i);
             fingerprint = netsnmp_openssl_cert_get_fingerprint(ocert_tmp, -1);
             if (NULL == fingerprint)
@@ -716,7 +763,7 @@ netsnmp_openssl_get_cert_chain(SSL *ssl)
         /*
          * if we broke out of loop before finishing, clean up
          */
-        if (i < sk_num((const void *)ochain)) 
+        if (i < sk_num_res)
             CONTAINER_FREE_ALL(chain_map, NULL);
     } /* got peer chain */
 
@@ -821,8 +868,7 @@ _cert_get_san_type(X509 *ocert, int mapType)
 
     if (lower)
         for ( ; *lower; ++lower )
-            if (isascii(*lower))
-                *lower = tolower(0xFF & *lower);
+            *lower = tolower(0xFF & *lower);
     DEBUGMSGT(("openssl:cert:extension:san", "#%d type %d: %s\n", i,
                oname ? oname->type : -1, buf ? buf : "NULL"));
 
@@ -898,6 +944,11 @@ netsnmp_openssl_cert_issued_by(X509 *issuer, X509 *cert)
 
 
 #ifndef NETSNMP_FEATURE_REMOVE_OPENSSL_ERR_LOG
+#ifndef ERR_GET_FUNC
+/* removed in OpenSSL 3.0 */
+#define ERR_GET_FUNC(e) -1
+#endif
+
 void
 netsnmp_openssl_err_log(const char *prefix)
 {

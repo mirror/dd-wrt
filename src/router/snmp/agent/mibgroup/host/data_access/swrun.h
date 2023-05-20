@@ -34,7 +34,7 @@ config_exclude(host/hr_swrun)
 # endif
 #elif defined( aix4 ) || defined( aix5 ) || defined( aix6 ) || defined( aix7 )
     config_require(host/data_access/swrun_procinfo)
-#elif HAVE_KVM_GETPROCS
+#elif defined(HAVE_KVM_GETPROCS)
     config_require(host/data_access/swrun_kinfo)
 #elif defined( linux )
     config_require(host/data_access/swrun_procfs_status)

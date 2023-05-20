@@ -131,7 +131,7 @@
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if HAVE_STDLIB_H

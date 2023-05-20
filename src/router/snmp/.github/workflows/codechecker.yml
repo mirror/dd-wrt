@@ -1,0 +1,77 @@
+name: CodeChecker
+
+on: [workflow_dispatch]
+#on:
+#  push:
+#    branches: [ master ]
+
+jobs:
+  codechecker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: install required packages
+      run: sudo apt-get install libatm-dev libperl-dev libpopt-dev libsensors4-dev libssh2-1-dev libxml2-dev uuid-dev libkrb5-dev python3-setuptools
+
+    - name: install clang v12
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 12
+        sudo apt-get install clang clang-tidy
+
+    - name: install packages required by CodeChecker
+      run: |
+        sudo apt-get install doxygen gcc-multilib python-virtualenv
+
+    - name: install nodejs version 12.x
+      run: |
+        curl -sL https://deb.nodesource.com/setup_12.x | sudo bash -
+        sudo apt-get install nodejs
+
+    - name: install CodeChecker v6.14
+      run: |
+        git clone https://github.com/Ericsson/CodeChecker.git /opt/codechecker
+        git -C /opt/codechecker/ checkout -b b6.14.0 v6.14.0
+        make -C /opt/codechecker venv
+        . /opt/codechecker/venv/bin/activate
+        make -C /opt/codechecker package
+
+    - name: CodeChecker version
+      run: |
+        source /opt/codechecker/venv/bin/activate
+        export PATH=/opt/codechecker/build/CodeChecker/bin:$PATH;
+        CodeChecker version
+
+    - name: configure
+      run: MODE=regular; ci/net-snmp-configure ${GITHUB_REF##*/}
+
+    - name: Codechecker log
+      run: |
+        source /opt/codechecker/venv/bin/activate
+        export PATH=/opt/codechecker/build/CodeChecker/bin:$PATH
+        CodeChecker log -o codechecker-log.json -b "make"
+
+    - name: Codechecker analyze
+      run: |
+        source /opt/codechecker/venv/bin/activate
+        export PATH=/opt/codechecker/build/CodeChecker/bin:$PATH
+        echo "-*/conftest.c"    > codechecker.skipfile
+        echo "-*/conftest.cpp" >> codechecker.skipfile
+        echo "-*/tmp.*.c"      >> codechecker.skipfile
+        CodeChecker analyze -j $(nproc) --clean --skip codechecker.skipfile -o ./results  --report-hash context-free-v2 codechecker-log.json
+        #CodeChecker analyze -j $(nproc) --clean --skip codechecker.skipfile --ctu -e sensitive -o ./results  --report-hash context-free-v2 codechecker-log.json
+
+    - name: CodeChecker parse
+      run: |
+        source /opt/codechecker/venv/bin/activate;
+        export PATH=/opt/codechecker/build/CodeChecker/bin:$PATH
+        CodeChecker parse -e html ./results -o ./reports_html
+
+    - name: Archive CodeChecker results
+      uses: actions/upload-artifact@v2
+      with:
+        name: CodeChecker reports
+        path: reports_html

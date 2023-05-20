@@ -18,31 +18,31 @@
 #include <net-snmp/net-snmp-features.h>
 #include "mibII_common.h"
 
-#if HAVE_NETINET_TCP_H
+#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#if HAVE_NETINET_TCP_TIMER_H
+#ifdef HAVE_NETINET_TCP_TIMER_H
 #include <netinet/tcp_timer.h>
 #endif
-#if HAVE_NETINET_TCPIP_H
+#ifdef HAVE_NETINET_TCPIP_H
 #include <netinet/tcpip.h>
 #endif
-#if HAVE_NETINET_TCP_VAR_H
+#ifdef HAVE_NETINET_TCP_VAR_H
 #include <netinet/tcp_var.h>
 #endif
-#if HAVE_NETLINK_NETLINK_H
+#ifdef HAVE_NETLINK_NETLINK_H
 #include <netlink/netlink.h>
 #include <netlink/msg.h>
 #include <linux/inet_diag.h>
 #endif
 
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
 #if defined(HAVE_KVM_GETFILE2) || !defined(openbsd5)
 #undef HAVE_KVM_GETFILES
 #endif
 #endif
 
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
 #include <kvm.h>
 #include <sys/sysctl.h>
 #define _KERNEL
@@ -239,7 +239,7 @@ tcpTable_handler(netsnmp_mib_handler          *handler,
     netsnmp_variable_list *requestvb;
     netsnmp_table_request_info *table_info;
     TCPTABLE_ENTRY_TYPE	  *entry;
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
     int      StateMap[] = { 1, 2, 3, 4, 5, 8, 6, 10, 9, 7, 11 };
 #endif
     oid      subid;
@@ -265,7 +265,7 @@ tcpTable_handler(netsnmp_mib_handler          *handler,
 
             switch (subid) {
             case TCPCONNSTATE:
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
                 state = StateMap[entry->TCPTABLE_STATE];
 #else
                 state = entry->TCPTABLE_STATE;
@@ -381,7 +381,7 @@ tcpTable_next_entry( void **loop_context,
     netsnmp_variable_list *idx;
     long port;
 
-#if HAVE_KVM_GETFILES
+#ifdef HAVE_KVM_GETFILES
     while (i < tcp_size && (tcp_head[i].so_protocol != IPPROTO_TCP
 	    || tcp_head[i].so_family != AF_INET))
 	i++;
@@ -607,7 +607,7 @@ tcpTable_load(netsnmp_cache *cache, void *vmagic)
 
 static const int linux_states[12] = { 1, 5, 3, 4, 6, 7, 11, 1, 8, 9, 2, 10 };
 
-#if HAVE_NETLINK_NETLINK_H
+#ifdef HAVE_NETLINK_NETLINK_H
 
 #if 0 //!defined(HAVE_LIBNL3)
 /* libnl3 API implemented on top of the libnl1 API */
@@ -757,7 +757,7 @@ tcpTable_load(netsnmp_cache *cache, void *vmagic)
 
     tcpTable_free(cache, NULL);
 
-#if HAVE_NETLINK_NETLINK_H
+#ifdef HAVE_NETLINK_NETLINK_H
 	if (tcpTable_load_netlink() == 0) {
 		return 0;
 	}
@@ -868,7 +868,7 @@ tcpTable_load(netsnmp_cache *cache, void *vmagic)
     return -1;
 }
 
-#elif HAVE_KVM_GETFILES
+#elif defined(HAVE_KVM_GETFILES)
 
 int
 tcpTable_load(netsnmp_cache *cache, void *vmagic)

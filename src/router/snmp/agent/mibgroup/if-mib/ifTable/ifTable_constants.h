@@ -105,6 +105,9 @@ extern          "C" {
  *
  * since a Textual Convention may be referenced more than once in a
  * MIB, protect againt redefinitions of the enum values.
+ *
+ * See also
+ * https://www.iana.org/assignments/smi-numbers/smi-numbers.xhtml#smi-numbers-5
  */
 #ifndef IANAIFTYPE_ENUMS
 #define IANAIFTYPE_ENUMS

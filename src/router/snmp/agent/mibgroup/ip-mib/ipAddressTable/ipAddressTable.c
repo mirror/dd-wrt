@@ -53,14 +53,14 @@ _init_ipAddressTable(int majorID, int minorID, void *serverargs,
     netsnmp_access_interface_init();
 
     /*
-     * TODO:300:o: Perform ipAddressTable one-time module initialization.
+     * Since this function is invoked after the configuration has been read
+     * and since the configuration is reread after a SIGHUP, call the shutdown
+     * function before calling the initialization function.
      */
-
-    /*
-     * here we initialize all the tables we're planning on supporting
-     */
-    if (should_init("ipAddressTable"))
+    if (should_init("ipAddressTable")) {
+        shutdown_table_ipAddressTable();
         initialize_table_ipAddressTable();
+    }
 
     return 0;
 }

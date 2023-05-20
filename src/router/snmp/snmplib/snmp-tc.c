@@ -14,7 +14,7 @@
 #if HAVE_STRING_H
 #include <string.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

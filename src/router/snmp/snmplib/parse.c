@@ -84,7 +84,7 @@ SOFTWARE.
 #  include <time.h>
 # endif
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
@@ -580,7 +580,6 @@ static void     init_tree_roots(void);
 static void     merge_anon_children(struct tree *, struct tree *);
 static void     unlink_tbucket(struct tree *);
 static void     unlink_tree(struct tree *);
-static int      getoid(FILE *, struct subid_s *, int);
 static struct node *parse_objectid(FILE *, char *);
 static int      get_tc(const char *, int, int *, struct enum_list **,
                        struct range_list **, char **);
@@ -827,13 +826,16 @@ static struct node *
 alloc_node(int modid)
 {
     struct node    *np;
-    np = (struct node *) calloc(1, sizeof(struct node));
-    if (np) {
-        np->tc_index = -1;
-        np->modid = modid;
-	np->filename = strdup(File);
-	np->lineno = mibLine;
-    }
+
+    np = calloc(1, sizeof(struct node));
+    if (!np)
+        return NULL;
+
+    np->tc_index = -1;
+    np->modid = modid;
+    np->filename = strdup(File);
+    np->lineno = mibLine;
+
     return np;
 }
 
@@ -933,25 +935,16 @@ free_node(struct node *np)
     free_ranges(&np->ranges);
     free_indexes(&np->indexes);
     free_varbinds(&np->varbinds);
-    if (np->label)
-        free(np->label);
-    if (np->hint)
-        free(np->hint);
-    if (np->units)
-        free(np->units);
-    if (np->description)
-        free(np->description);
-    if (np->reference)
-        free(np->reference);
-    if (np->defaultValue)
-        free(np->defaultValue);
-    if (np->parent)
-        free(np->parent);
-    if (np->augments)
-        free(np->augments);
-    if (np->filename)
-	free(np->filename);
-    free((char *) np);
+    free(np->label);
+    free(np->hint);
+    free(np->units);
+    free(np->description);
+    free(np->reference);
+    free(np->defaultValue);
+    free(np->parent);
+    free(np->augments);
+    free(np->filename);
+    free(np);
 }
 
 static void
@@ -1866,18 +1859,22 @@ do_linkup(struct module *mp, struct node *np)
 }
 
 
-/*
+/**
+ * Read an OID from a file.
+ * @param[in]  file   File to read from.
+ * @param[out] id_arg Array to store the OID in.
+ * @param[in]  length Number of elements in the @id_arg array.
+ *
  * Takes a list of the form:
  * { iso org(3) dod(6) 1 }
  * and creates several nodes, one for each parent-child pair.
  * Returns 0 on error.
  */
 static int
-getoid(FILE * fp, struct subid_s *id,   /* an array of subids */
-       int length)
-{                               /* the length of the array */
-    register int    count;
-    int             type;
+getoid(FILE * fp, struct subid_s *id_arg, int length)
+{
+    struct subid_s *id = id_arg;
+    int             i, count, type;
     char            token[MAXTOKEN];
 
     if ((type = get_token(fp, token, MAXTOKEN)) != LEFTBRACKET) {
@@ -1905,11 +1902,11 @@ getoid(FILE * fp, struct subid_s *id,   /* an array of subids */
                          get_token(fp, token, MAXTOKEN)) != RIGHTPAREN) {
                         print_error("Expected a closing parenthesis",
                                     token, type);
-                        return 0;
+                        goto free_labels;
                     }
                 } else {
                     print_error("Expected a number", token, type);
-                    return 0;
+                    goto free_labels;
                 }
             } else {
                 continue;
@@ -1921,11 +1918,19 @@ getoid(FILE * fp, struct subid_s *id,   /* an array of subids */
             id->subid = strtoul(token, NULL, 10);
         } else {
             print_error("Expected label or number", token, type);
-            return 0;
+            goto free_labels;
         }
         type = get_token(fp, token, MAXTOKEN);
     }
     print_error("Too long OID", token, type);
+    --count;
+
+free_labels:
+    for (i = 0; i <= count; i++) {
+        free(id_arg[i].label);
+        id_arg[i].label = NULL;
+    }
+
     return 0;
 }
 
@@ -2013,8 +2018,13 @@ parse_objectid(FILE * fp, char *name)
             np = alloc_node(nop->modid);
             if (np == NULL)
                 goto err;
-            if (root == NULL)
+            if (root == NULL) {
                 root = np;
+            } else {
+                netsnmp_assert(oldnp);
+                oldnp->next = np;
+            }
+            oldnp = np;
 
             np->parent = strdup(op->label);
             if (count == (length - 2)) {
@@ -2026,10 +2036,8 @@ parse_objectid(FILE * fp, char *name)
                     goto err;
             } else {
                 if (!nop->label) {
-                    nop->label = (char *) malloc(20 + ANON_LEN);
-                    if (nop->label == NULL)
+                    if (asprintf(&nop->label, "%s%d", ANON, anonymous++) < 0)
                         goto err;
-                    sprintf(nop->label, "%s%d", ANON, anonymous++);
                 }
                 np->label = strdup(nop->label);
             }
@@ -2038,13 +2046,6 @@ parse_objectid(FILE * fp, char *name)
             else
                 print_error("Warning: This entry is pretty silly",
                             np->label, CONTINUE);
-
-            /*
-             * set up next entry 
-             */
-            if (oldnp)
-                oldnp->next = np;
-            oldnp = np;
         }                       /* end if(op->label... */
     }
 
@@ -2053,8 +2054,8 @@ out:
      * free the loid array 
      */
     for (count = 0, op = loid; count < length; count++, op++) {
-        if (op->label)
-            free(op->label);
+        free(op->label);
+        op->label = NULL;
     }
 
     return root;
@@ -2725,6 +2726,15 @@ parse_objecttype(FILE * fp, char *name)
                     return NULL;
                 }
 
+                /*
+                 * Ensure strlen(defbuf) is above zero
+                 */
+                if (strlen(defbuf) == 0) {
+                    print_error("Bad DEFAULTVALUE", quoted_string_buffer,
+                                type);
+                    free_node(np);
+                    return NULL;
+                }
                 defbuf[strlen(defbuf) - 1] = 0;
                 np->defaultValue = strdup(defbuf);
             }

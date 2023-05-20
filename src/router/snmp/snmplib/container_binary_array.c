@@ -15,7 +15,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_IO_H
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 #include <stdio.h>
@@ -39,6 +39,7 @@
 #include <net-snmp/library/container_binary_array.h>
 #include <net-snmp/library/tools.h>
 #include <net-snmp/library/snmp_assert.h>
+#include "factory.h"
 
 typedef struct binary_array_table_s {
     size_t                     max_size;   /* Size of the current data table */
@@ -55,48 +56,6 @@ typedef struct binary_array_iterator_s {
 
 static netsnmp_iterator *_ba_iterator_get(netsnmp_container *c);
 
-/**********************************************************************
- *
- * 
- *
- */
-static void
-array_qsort(void **data, int first, int last, netsnmp_container_compare *f)
-{
-    int i, j;
-    void *mid, *tmp;
-    
-    i = first;
-    j = last;
-    mid = data[(first+last)/2];
-    
-    do {
-        while (i < last && (*f)(data[i], mid) < 0)
-            ++i;
-        while (j > first && (*f)(mid, data[j]) < 0)
-            --j;
-
-        if(i < j) {
-            tmp = data[i];
-            data[i] = data[j];
-            data[j] = tmp;
-            ++i;
-            --j;
-        }
-        else if (i == j) {
-            ++i;
-            --j;
-            break;
-        }
-    } while(i <= j);
-
-    if (j > first)
-        array_qsort(data, first, j, f);
-    
-    if (i < last)
-        array_qsort(data, i, last, f);
-}
-
 static int
 Sort_Array(netsnmp_container *c)
 {
@@ -111,8 +70,7 @@ Sort_Array(netsnmp_container *c)
         /*
          * Sort the table 
          */
-        if (t->count > 1)
-            array_qsort(t->data, 0, t->count - 1, c->compare);
+        qsort(t->data, t->count, sizeof(void *), c->compare);
         t->dirty = 0;
 
         /*
@@ -141,13 +99,10 @@ linear_search(const void *val, netsnmp_container *c)
 
     for (; pos < t->count; ++pos) {
         if (c->compare(t->data[pos], val) == 0)
-            break;
+            return pos;
     }
 
-    if (pos >= t->count)
-        return -1;
-
-    return pos;
+    return -1;
 }
 
 static int
@@ -250,6 +205,12 @@ netsnmp_binary_array_release(netsnmp_container *c)
     SNMP_FREE(c);
 }
 
+/**
+ * Set or test the options of a binary array container.
+ * @param c: Container.
+ * @param set: Set (1) or test (0).
+ * @param flags: Zero or more CONTAINER_KEY_* flags.
+ */
 int
 netsnmp_binary_array_options_set(netsnmp_container *c, int set, u_int flags)
 {
@@ -266,12 +227,13 @@ netsnmp_binary_array_options_set(netsnmp_container *c, int set, u_int flags)
                 t->dirty = 1; /* force sort */
                 Sort_Array(c);
             }
-        } else
-            flags = (u_int)-1; /* unsupported flag */
-    }
-    else
+            return flags;
+        } else {
+            return -1; /* unsupported flag */
+        }
+    } else {
         return ((c->flags & flags) == flags);
-    return flags;
+    }
 }
 
 NETSNMP_STATIC_INLINE size_t
@@ -347,6 +309,31 @@ netsnmp_binary_array_get_at(netsnmp_container *c, size_t pos, void **entry)
     return 0;
 }
 
+/**
+ * Returns 1 if and only if the elements in @c are sorted in ascending order.
+ *
+ * To do: stop calling this function after
+ * https://github.com/net-snmp/net-snmp/issues/107 and
+ * https://github.com/net-snmp/net-snmp/issues/293 have been fixed.
+ */
+static int _ba_is_sorted(const netsnmp_container *c)
+{
+    /*
+     * The code below has been commented out because it negatively affects
+     * performance.
+     */
+#if 0
+    const binary_array_table *t = c->container_data;
+    int i;
+
+    for (i = 0; i + 1 < t->count; ++i)
+        if (c->compare(t->data[i], t->data[i + 1]) > 0)
+            return 0;
+#endif
+
+    return 1;
+}
+
 int
 netsnmp_binary_array_remove_at(netsnmp_container *c, size_t index, void **save)
 {
@@ -380,6 +367,8 @@ netsnmp_binary_array_remove_at(netsnmp_container *c, size_t index, void **save)
 
         ++c->sync;
     }
+
+    netsnmp_assert(t->dirty || _ba_is_sorted(c));
 
     return 0;
 }
@@ -485,7 +474,7 @@ netsnmp_binary_array_insert_before(netsnmp_container *c, size_t index,
     if (NULL == entry)
         return -1;
 
-    if (index > (t->count + 1)) {
+    if (index > t->count) {
         DEBUGMSGTL(("container:insert:before", "index out of range\n"));
         return -1;
     }
@@ -494,6 +483,8 @@ netsnmp_binary_array_insert_before(netsnmp_container *c, size_t index,
       * check if we need to resize the array
       */
     _ba_resize_check(t);
+
+    netsnmp_assert(t->count < t->max_size);
 
     /*
      * shift array
@@ -507,8 +498,13 @@ netsnmp_binary_array_insert_before(netsnmp_container *c, size_t index,
     t->data[index] = NETSNMP_REMOVE_CONST(void *, entry);
     ++t->count;
 
+    netsnmp_assert(index < t->count);
+    netsnmp_assert(t->count <= t->max_size);
+
     if (dirty)
         t->dirty = 1;
+
+    netsnmp_assert(t->dirty || _ba_is_sorted(c));
 
     ++c->sync;
 
@@ -519,7 +515,9 @@ NETSNMP_STATIC_INLINE int
 netsnmp_binary_array_insert(netsnmp_container *c, const void *const_entry)
 {
     binary_array_table *t = (binary_array_table*)c->container_data;
-    int             dirty = 0, i = -2;
+    const int duplicates_allowed = c->flags & CONTAINER_KEY_ALLOW_DUPLICATES;
+    const int sorted = !(c->flags & CONTAINER_KEY_UNSORTED);
+    int             i = -2;
     size_t          next, pos;
     void           *entry = NETSNMP_REMOVE_CONST(void *, const_entry);
 
@@ -529,9 +527,9 @@ netsnmp_binary_array_insert(netsnmp_container *c, const void *const_entry)
     /*
      * check key if we have at least 1 item and duplicates aren't allowed
      */
-    if (! (c->flags & CONTAINER_KEY_ALLOW_DUPLICATES) && t->count) {
+    if (!duplicates_allowed && t->count) {
         i = binary_search(entry, c, 1, &next);
-        if (i > 0) {
+        if (i >= 0) {
             DEBUGMSGTL(("container","not inserting duplicate key\n"));
             return -1;
         }
@@ -540,26 +538,27 @@ netsnmp_binary_array_insert(netsnmp_container *c, const void *const_entry)
     /*
      * if unsorted, just add at the end
      */
-    if (c->flags & CONTAINER_KEY_UNSORTED) {
+    if (!sorted) {
         pos = t->count;
-        dirty = 1;
     } else {
         /** if we haven't searched for key yet, do it now */
         if (-2 == i) {
             if (0 == t->count) {
                 next = 0;
                 i = -1;
-            } else
+            } else {
                 i = binary_search(entry, c, 1, &next);
+            }
         }
 
         pos = next;
-        if ( i > 0 )  /* if key found, advance past any dups */
+        /* if key found, advance past any duplicates */
+        if (duplicates_allowed && i >= 0)
             while (pos < t->count && c->compare(t->data[pos], entry) == 0)
                 ++pos;
     }
 
-    return netsnmp_binary_array_insert_before(c, pos, entry, dirty);
+    return netsnmp_binary_array_insert_before(c, pos, entry, !sorted);
 }
 
 /**********************************************************************
@@ -826,7 +825,6 @@ netsnmp_factory *
 netsnmp_container_get_binary_array_factory(void)
 {
     static netsnmp_factory f = { "binary_array",
-                                 (netsnmp_factory_produce_f*)
                                  netsnmp_container_get_binary_array };
     
     return &f;

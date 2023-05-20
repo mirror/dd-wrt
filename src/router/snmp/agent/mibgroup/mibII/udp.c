@@ -9,7 +9,7 @@
 #ifdef HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
-#if HAVE_NETINET_UDP_VAR_H
+#ifdef HAVE_NETINET_UDP_VAR_H
 #include <netinet/udp_var.h>
 #endif
 

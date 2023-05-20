@@ -60,7 +60,7 @@ static unsigned long ERR_get_error_all(const char **file, int *line,
                                        const char **func,
                                        const char **data, int *flags)
 {
-    *func = NULL;
+    *func = "(?)";
     return ERR_get_error_line_data(file, line, data, flags);
 }
 #endif
@@ -222,8 +222,9 @@ netsnmp_tlsbase_verify_server_cert(SSL *ssl, _netsnmpTLSBaseData *tlsdata) {
     
     netsnmp_assert_or_return(ssl != NULL, SNMPERR_GENERR);
     netsnmp_assert_or_return(tlsdata != NULL, SNMPERR_GENERR);
-    
-    if (NULL == (remote_cert = SSL_get_peer_certificate(ssl))) {
+
+    remote_cert = SSL_get_peer_certificate(ssl);
+    if (!remote_cert) {
         /* no peer cert */
         DEBUGMSGTL(("tls_x509:verify",
                     "remote connection provided no certificate (yet)\n"));
@@ -276,11 +277,9 @@ netsnmp_tlsbase_verify_server_cert(SSL *ssl, _netsnmpTLSBaseData *tlsdata) {
                                             oname->d.ia5);
 
                         /* convert to lowercase for comparisons */
-                        for (j = 0 ;
-                             *check_name && j < sizeof(buf)-1;
-                             ++check_name, ++j ) {
-                            if (isascii(*check_name))
-                                buf[j] = tolower(0xFF & *check_name);
+                        for (j = 0; *check_name && j < sizeof(buf)-1;
+                             ++check_name, ++j) {
+                            buf[j] = tolower(0xFF & *check_name);
                         }
                         if (j < sizeof(buf))
                             buf[j] = '\0';
@@ -355,7 +354,8 @@ netsnmp_tlsbase_verify_client_cert(SSL *ssl, _netsnmpTLSBaseData *tlsdata) {
          above.
        + fingerprint verification happens below.
     */
-    if (NULL == (remote_cert = SSL_get_peer_certificate(ssl))) {
+    remote_cert = SSL_get_peer_certificate(ssl);
+    if (!remote_cert) {
         /* no peer cert */
         DEBUGMSGTL(("tls_x509:verify",
                     "remote connection provided no certificate (yet)\n"));
@@ -1197,17 +1197,10 @@ void _openssl_log_error(int rc, SSL *con, const char *location) {
         /* if we have a text translation: */
         if (data && (flags & ERR_TXT_STRING)) {
             snmp_log(LOG_ERR, "  Textual Error: %s\n", data);
-            /*
-             * per openssl man page: If it has been allocated by
-             * OPENSSL_malloc(), *flags&ERR_TXT_MALLOCED is true.
-             *
-             * arggh... stupid openssl prototype for ERR_get_error_line_data
-             * wants a const char **, but returns something that we might
-             * need to free??
-             */
-            if (flags & ERR_TXT_MALLOCED)
-                OPENSSL_free(NETSNMP_REMOVE_CONST(void *, data));        }
+        }
     }
-    
+    /* clear openssl error ring buffer */
+    ERR_clear_error();
+
     snmp_log(LOG_ERR, "---- End of OpenSSL Errors ----\n");
 }

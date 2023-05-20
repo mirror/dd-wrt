@@ -43,7 +43,7 @@ static int
 snmp_res_init_mutex(mutex_type *mutex)
 {
     int rc = 0;
-#if HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_H
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
@@ -84,7 +84,7 @@ snmp_res_destroy_mutex(int groupID, int resourceID)
 	return EFAULT;
     }
 
-#if HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_H
     rc = pthread_mutex_destroy(mutex);
 #elif defined(WIN32)
     DeleteCriticalSection(mutex);
@@ -103,7 +103,7 @@ snmp_res_lock(int groupID, int resourceID)
 	return EFAULT;
     }
 
-#if HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_H
     rc = pthread_mutex_lock(mutex);
 #elif defined(WIN32)
     EnterCriticalSection(mutex);
@@ -122,7 +122,7 @@ snmp_res_unlock(int groupID, int resourceID)
 	return EFAULT;
     }
 
-#if HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_H
     rc = pthread_mutex_unlock(mutex);
 #elif defined(WIN32)
     LeaveCriticalSection(mutex);

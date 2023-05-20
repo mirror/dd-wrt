@@ -121,7 +121,7 @@ netsnmp_arch_interface_container_load(netsnmp_container* container,
         entry->type = ife.ifType;
         entry->mtu = ife.ifMtu;
         entry->speed = ife.ifSpeed;
-        entry->speed_high = entry->speed / 1000000;
+        entry->speed_high = ife.ifHighSpeed;
         entry->ns_flags |= NETSNMP_INTERFACE_FLAGS_HAS_HIGH_SPEED;
         entry->oper_status = ife.ifOperStatus;
         entry->admin_status = ife.ifAdminStatus;

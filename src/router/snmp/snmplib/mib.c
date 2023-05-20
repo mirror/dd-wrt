@@ -69,7 +69,7 @@ SOFTWARE.
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if TIME_WITH_SYS_TIME
@@ -90,7 +90,7 @@ SOFTWARE.
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_SYS_SELECT_H
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 
@@ -3008,7 +3008,7 @@ set_function(struct tree *subtree)
  * When called, out_len must hold the maximum length of the output array.
  *
  * @param input     the input string.
- * @param output    the oid wirte.
+ * @param output    the oid write.
  * @param out_len   number of subid's in output.
  * 
  * @return 1 if successful.
@@ -3019,7 +3019,7 @@ set_function(struct tree *subtree)
  */
 int
 read_objid(const char *input, oid * output, size_t * out_len)
-{                               /* number of subid's in "output" */
+{
 #ifndef NETSNMP_DISABLE_MIB_LOADING
     struct tree    *root = tree_top;
     char            buf[SPRINT_MAX_LEN];
@@ -3726,13 +3726,13 @@ build_oid_segment(netsnmp_variable_list * var)
  * Concatenate a prefix and the OIDs of a variable list.
  *
  * @param[out]    in         Output buffer.
- * @param[in]     in_len     Maximum number of OID components that fit in @in.
+ * @param[in]     in_len     Maximum number of OID components that fit in @p in.
  * @param[out]    out_len    Number of OID components of the result.
  * @param[in]     prefix     OID to be copied to the start of the output buffer.
- * @param[in]     prefix_len Number of OID components to copy from @prefix.
- * @param[in/out] indexes    Variable list for which var->name should be set
+ * @param[in]     prefix_len Number of OID components to copy from @p prefix.
+ * @param[in,out] indexes    Variable list for which var->name should be set
  *                           for each variable var in the list and whose OIDs
- *                           should be appended to @in.
+ *                           should be appended to @p in.
  */
 int
 build_oid_noalloc(oid * in, size_t in_len, size_t * out_len,
@@ -4945,7 +4945,7 @@ print_tree_node(u_char ** buf, size_t * buf_len,
             cp = NULL;
             break;
         }
-#if NETSNMP_ENABLE_TESTING_CODE
+#ifdef NETSNMP_ENABLE_TESTING_CODE
         if (!cp && (tp->ranges || tp->enums)) { /* ranges without type ? */
             snprintf(str, sizeof(str), "?0 with %s %s ?",
                     tp->ranges ? "Range" : "", tp->enums ? "Enum" : "");
@@ -5097,7 +5097,7 @@ print_tree_node(u_char ** buf, size_t * buf_len,
             snprintf(str, sizeof(str), "status_%d", tp->status);
             cp = str;
         }
-#if NETSNMP_ENABLE_TESTING_CODE
+#ifdef NETSNMP_ENABLE_TESTING_CODE
         if (!cp && (tp->indexes)) {     /* index without status ? */
             snprintf(str, sizeof(str), "?0 with %s ?",
                      tp->indexes ? "Index" : "");
@@ -5274,13 +5274,13 @@ get_module_node(const char *fname,
 static int
 node_to_oid(struct tree *tp, oid * objid, size_t * objidlen)
 {
-    int             numids, lenids;
+    size_t          numids, lenids;
     oid            *op;
 
     if (!tp || !objid || !objidlen)
         return 0;
 
-    lenids = (int) *objidlen;
+    lenids = *objidlen;
     op = objid + lenids;        /* points after the last element */
 
     for (numids = 0; tp; tp = tp->parent, numids++) {
@@ -5290,7 +5290,7 @@ node_to_oid(struct tree *tp, oid * objid, size_t * objidlen)
         *op = tp->subid;
     }
 
-    *objidlen = (size_t) numids;
+    *objidlen = numids;
     if (numids > lenids) {
         return 0;
     }
@@ -5298,7 +5298,7 @@ node_to_oid(struct tree *tp, oid * objid, size_t * objidlen)
     if (numids < lenids)
         memmove(objid, op, numids * sizeof(oid));
 
-    return (numids);
+    return numids;
 }
 
 /*
@@ -5683,6 +5683,8 @@ _add_strings_to_oid(void *tp, char *cp,
         case '"':
         case '\'':
             doingquote = *cp++;
+            if (*cp == '\0')
+                goto bad_id;
             /*
              * insert length if requested 
              */

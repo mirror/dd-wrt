@@ -5,17 +5,17 @@
 #include <net-snmp/net-snmp-config.h>
 #include "mibII_common.h"
 
-#if HAVE_NETINET_IP_ICMP_H
+#ifdef HAVE_NETINET_IP_ICMP_H
 #include <netinet/ip_icmp.h>
 #endif
 
 #ifdef NETSNMP_ENABLE_IPV6
-#if HAVE_NETINET_ICMP6_H
+#ifdef HAVE_NETINET_ICMP6_H
 #include <netinet/icmp6.h>
 #endif
 #endif /* NETSNMP_ENABLE_IPV6 */
 
-#if HAVE_NETINET_ICMP_VAR_H
+#ifdef HAVE_NETINET_ICMP_VAR_H
 #include <netinet/icmp_var.h>
 #endif
 

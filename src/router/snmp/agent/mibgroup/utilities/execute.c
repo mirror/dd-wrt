@@ -4,7 +4,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_IO_H
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 #include <stdio.h>
@@ -22,10 +22,10 @@
 #if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
-#if HAVE_SYS_SELECT_H
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
 
@@ -158,7 +158,7 @@ run_shell_command(const char *command, const char *input,
 #endif
 }
 
-#if HAVE_EXECV
+#ifdef HAVE_EXECV
 /*
  * Split the given command up into separate tokens,
  * ready to be passed to 'execv'
@@ -204,7 +204,7 @@ int
 run_exec_command(const char *command, const char *input,
                  char *output, int *out_len)
 {
-#if HAVE_EXECV
+#ifdef HAVE_EXECV
     int ipipe[2];
     int opipe[2];
     int i;
