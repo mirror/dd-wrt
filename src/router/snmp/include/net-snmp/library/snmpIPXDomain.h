@@ -7,7 +7,7 @@ extern          "C" {
 
 #include <net-snmp/library/snmp_transport.h>
 #include <net-snmp/library/asn1.h>
-#ifdef HAVE_NETIPX_IPX_H
+#if HAVE_NETIPX_IPX_H
 #include <netipx/ipx.h>
 #endif
 

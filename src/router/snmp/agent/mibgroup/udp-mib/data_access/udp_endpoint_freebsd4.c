@@ -13,10 +13,10 @@
 
 #include "mibII/mibII_common.h"
 
-#ifdef HAVE_NETINET_UDP_H
+#if HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
-#ifdef HAVE_NETINET_UDP_VAR_H
+#if HAVE_NETINET_UDP_VAR_H
 #include <netinet/udp_var.h>
 #endif
 

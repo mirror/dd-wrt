@@ -9,18 +9,18 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 
-#ifdef HAVE_IO_H
+#if HAVE_IO_H
 #include <io.h>
 #endif
 #include <stdio.h>
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_MALLOC_H
+#if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -33,7 +33,6 @@
 #include <net-snmp/library/container_null.h>
 #include <net-snmp/library/tools.h>
 #include <net-snmp/library/snmp_assert.h>
-#include "factory.h"
 
 netsnmp_feature_child_of(container_null, container_types);
 
@@ -172,6 +171,7 @@ netsnmp_factory *
 netsnmp_container_get_null_factory(void)
 {
     static netsnmp_factory f = { "null",
+                                 (netsnmp_factory_produce_f*)
                                  netsnmp_container_get_null};
     
     DEBUGMSGTL(("container:null:get_null_factory","in\n"));

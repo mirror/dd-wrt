@@ -1,26 +1,26 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 
-#ifdef HAVE_IO_H
+#if HAVE_IO_H
 #include <io.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <ctype.h>
 #include <sys/types.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_SYS_WAIT_H
+#if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifdef HAVE_LIMITS_H
@@ -452,7 +452,7 @@ setPassPersist(int action,
             netsnmp_internal_pass_set_format(buf2, var_val, var_val_type,
                                              var_val_len);
             free(persistpassthru->command);
-            if (asprintf(&persistpassthru->command, "set\n%s\n%s", buf,
+            if (asprintf(&persistpassthru->command, "set\n%s\n%s\n", buf,
                          buf2) < 0) {
                 persistpassthru->command = NULL;
                 return SNMP_ERR_GENERR;
@@ -536,7 +536,7 @@ init_persist_pipes(void)
 static int process_stopped(int idx)
 {
     if (persist_pipes[idx].pid != NETSNMP_NO_SUCH_PROCESS) {
-#ifdef HAVE_WAITPID
+#if HAVE_WAITPID
         return waitpid(persist_pipes[idx].pid, NULL, WNOHANG) > 0;
 #elif defined(WIN32) && !defined (mingw32) && !defined(HAVE_SIGNAL)
         return WaitForSingleObject(persist_pipes[idx].pid, 0) == WAIT_OBJECT_0;
@@ -732,7 +732,7 @@ close_persist_pipe(int iindex)
 #ifdef HAVE_SIGNAL
         (void)kill(persist_pipes[iindex].pid, SIGKILL);
 #endif
-#ifdef HAVE_WAITPID
+#if HAVE_WAITPID
         waitpid(persist_pipes[iindex].pid, NULL, 0);
 #elif defined(WIN32) && !defined (mingw32) && !defined (HAVE_SIGNAL)
         if (!CloseHandle(persist_pipes[iindex].pid)) {

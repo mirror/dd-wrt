@@ -5,13 +5,13 @@
 #include "hardware/fsys/hw_fsys.h"
 #include "hardware/fsys/hw_fsys_private.h"
 
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
+#if HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#ifdef HAVE_SYS_STATVFS_H
+#if HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
 
@@ -135,7 +135,9 @@ netsnmp_fsys_arch_load( void )
             continue;
 
         strlcpy( entry->path,   stats[i].f_mntonname,   sizeof(entry->path));
+        entry->path[sizeof(entry->path)-1] = '\0';
         strlcpy( entry->device, stats[i].f_mntfromname, sizeof(entry->device));
+        entry->device[sizeof(entry->device)-1] = '\0';
         entry->units = stats[i].f_bsize;    /* or f_frsize */
         entry->size  = stats[i].f_blocks;
         entry->used  = (stats[i].f_blocks - stats[i].f_bfree);

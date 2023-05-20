@@ -54,6 +54,7 @@
 ./if.lo: ../../include/net-snmp/library/data_list.h
 ./if.lo: ../../include/net-snmp/library/check_varbind.h
 ./if.lo: ../../include/net-snmp/library/container.h
+./if.lo: ../../include/net-snmp/library/factory.h
 ./if.lo: ../../include/net-snmp/library/container_binary_array.h
 ./if.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./if.lo: ../../include/net-snmp/library/container_iterator.h
@@ -128,6 +129,7 @@
 ./inet.lo: ../../include/net-snmp/library/data_list.h
 ./inet.lo: ../../include/net-snmp/library/check_varbind.h
 ./inet.lo: ../../include/net-snmp/library/container.h
+./inet.lo: ../../include/net-snmp/library/factory.h
 ./inet.lo: ../../include/net-snmp/library/container_binary_array.h
 ./inet.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./inet.lo: ../../include/net-snmp/library/container_iterator.h
@@ -200,6 +202,7 @@
 ./inet6.lo: ../../include/net-snmp/library/data_list.h
 ./inet6.lo: ../../include/net-snmp/library/check_varbind.h
 ./inet6.lo: ../../include/net-snmp/library/container.h
+./inet6.lo: ../../include/net-snmp/library/factory.h
 ./inet6.lo: ../../include/net-snmp/library/container_binary_array.h
 ./inet6.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./inet6.lo: ../../include/net-snmp/library/container_iterator.h
@@ -272,6 +275,7 @@
 ./inetx.lo: ../../include/net-snmp/library/data_list.h
 ./inetx.lo: ../../include/net-snmp/library/check_varbind.h
 ./inetx.lo: ../../include/net-snmp/library/container.h
+./inetx.lo: ../../include/net-snmp/library/factory.h
 ./inetx.lo: ../../include/net-snmp/library/container_binary_array.h
 ./inetx.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./inetx.lo: ../../include/net-snmp/library/container_iterator.h
@@ -344,6 +348,7 @@
 ./main.lo: ../../include/net-snmp/library/data_list.h
 ./main.lo: ../../include/net-snmp/library/check_varbind.h
 ./main.lo: ../../include/net-snmp/library/container.h
+./main.lo: ../../include/net-snmp/library/factory.h
 ./main.lo: ../../include/net-snmp/library/container_binary_array.h
 ./main.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./main.lo: ../../include/net-snmp/library/container_iterator.h
@@ -416,6 +421,7 @@
 ./route.lo: ../../include/net-snmp/library/data_list.h
 ./route.lo: ../../include/net-snmp/library/check_varbind.h
 ./route.lo: ../../include/net-snmp/library/container.h
+./route.lo: ../../include/net-snmp/library/factory.h
 ./route.lo: ../../include/net-snmp/library/container_binary_array.h
 ./route.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./route.lo: ../../include/net-snmp/library/container_iterator.h
@@ -488,6 +494,7 @@
 ./routex.lo: ../../include/net-snmp/library/data_list.h
 ./routex.lo: ../../include/net-snmp/library/check_varbind.h
 ./routex.lo: ../../include/net-snmp/library/container.h
+./routex.lo: ../../include/net-snmp/library/factory.h
 ./routex.lo: ../../include/net-snmp/library/container_binary_array.h
 ./routex.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./routex.lo: ../../include/net-snmp/library/container_iterator.h
@@ -560,6 +567,7 @@
 ./winstub.lo: ../../include/net-snmp/library/data_list.h
 ./winstub.lo: ../../include/net-snmp/library/check_varbind.h
 ./winstub.lo: ../../include/net-snmp/library/container.h
+./winstub.lo: ../../include/net-snmp/library/factory.h
 ./winstub.lo: ../../include/net-snmp/library/container_binary_array.h
 ./winstub.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./winstub.lo: ../../include/net-snmp/library/container_iterator.h

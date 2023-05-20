@@ -14,35 +14,35 @@
 /*
  * all platforms use this generic code
  */
-config_require(host/data_access/swrun);
-config_exclude(host/hr_swrun);
+config_require(host/data_access/swrun)
+config_exclude(host/hr_swrun)
 
 /*
  * select the appropriate architecture-specific interface code
  */
 #if   defined( darwin )
-    config_require(host/data_access/swrun_darwin);
+    config_require(host/data_access/swrun_darwin)
 #elif defined( HAVE_SYS_PSTAT_H )
-    config_require(host/data_access/swrun_pstat);
+    config_require(host/data_access/swrun_pstat)
 #elif defined( dynix )
-    config_require(host/data_access/swrun_prpsinfo);
+    config_require(host/data_access/swrun_prpsinfo)
 #elif defined( solaris2 )
 # if _SLASH_PROC_METHOD_
-    config_require(host/data_access/swrun_procfs_psinfo);
+    config_require(host/data_access/swrun_procfs_psinfo)
 # else
-    config_require(host/data_access/swrun_kvm_proc);
+    config_require(host/data_access/swrun_kvm_proc)
 # endif
 #elif defined( aix4 ) || defined( aix5 ) || defined( aix6 ) || defined( aix7 )
-    config_require(host/data_access/swrun_procinfo);
-#elif defined(HAVE_KVM_GETPROCS)
-    config_require(host/data_access/swrun_kinfo);
+    config_require(host/data_access/swrun_procinfo)
+#elif HAVE_KVM_GETPROCS
+    config_require(host/data_access/swrun_kinfo)
 #elif defined( linux )
-    config_require(host/data_access/swrun_procfs_status);
+    config_require(host/data_access/swrun_procfs_status)
 #elif defined( cygwin )
-    config_require(host/data_access/swrun_cygwin);
+    config_require(host/data_access/swrun_cygwin)
 #else
-    config_warning(This platform does not yet support hrSWRunTable rewrites);
-    config_require(host/data_access/swrun_null);
+    config_warning(This platform does not yet support hrSWRunTable rewrites)
+    config_require(host/data_access/swrun_null)
 #endif
 
 void init_swrun(void);

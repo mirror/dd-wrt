@@ -120,7 +120,7 @@ SOFTWARE.
 #endif                          /* WIN32 */
 
 #include <net-snmp/types.h>     /* For definition of in_addr_t */
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

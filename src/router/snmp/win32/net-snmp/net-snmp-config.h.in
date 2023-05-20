@@ -320,7 +320,7 @@
 /* #undef HAVE_FSTAB_H */
 
 /* Define to 1 if you have the `getaddrinfo' function. */
-#define HAVE_GETADDRINFO 1
+/* #undef HAVE_GETADDRINFO */
 
 /* Define to 1 if you have the `getdtablesize' function. */
 /* #undef HAVE_GETDTABLESIZE */
@@ -1845,7 +1845,7 @@ enum {
 #define NETSNMP_CAN_USE_NLIST
 #endif
 
-#ifdef HAVE_DMALLOC_H
+#if HAVE_DMALLOC_H
 #define DMALLOC_FUNC_CHECK
 #endif
 

@@ -166,8 +166,6 @@ typedef struct mib2_ifEntry {
      */
     int             ifCollisions;
     int             flags;           /* interface flags (IFF_*) */
-
-    Gauge           ifHighSpeed;
 } mib2_ifEntry_t;
 
 /*-

@@ -29,12 +29,8 @@ ix.oids = &ox;
 iy.oids = &oy;
 i1.len = i2.len = i3.len = i4.len = i5.len = ix.len = iy.len = 1;
 
-for (i = 0; i < sizeof(b)/sizeof(b[0]); ++i) {
-    OKF(CONTAINER_INSERT(c, b[i]) == 0,
-        ("Inserting %" NETSNMP_PRIo "d succeeded", b[i]->oids[0]));
-    OKF(CONTAINER_INSERT(c, b[i]) != 0,
-        ("Inserting %" NETSNMP_PRIo "d failed", b[i]->oids[0]));
-}
+for (i = 0; i < sizeof(b)/sizeof(b[0]); ++i)
+    CONTAINER_INSERT(c, b[i]);
 
 for (ip = CONTAINER_FIRST(c); ip; ip = CONTAINER_NEXT(c, ip)) {
     for (i = sizeof(b)/sizeof(b[0]) - 1; i >= 0; --i)
@@ -69,9 +65,8 @@ for (i = 0; i < sizeof(a)/sizeof(a[0]); ++i) {
                   a[i]->oids[0]));
 }
 
-while ((ip = CONTAINER_FIRST(c))) {
-    OK(CONTAINER_REMOVE(c, ip) == 0, "Removing succeeded");
-}
+while ((ip = CONTAINER_FIRST(c)))
+  CONTAINER_REMOVE(c, ip);
 CONTAINER_FREE(c);
 
 snmp_shutdown(test_name);

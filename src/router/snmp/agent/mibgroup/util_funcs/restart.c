@@ -10,7 +10,7 @@
 
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <signal.h>
@@ -47,21 +47,21 @@ restart_doit(int a)
      *  The use of sigprocmask() is unspecified in a multithreaded process; see
      *  pthread_sigmask(3).
      */
-#ifdef HAVE_SIGPROCMASK
+#if HAVE_SIGPROCMASK
     {
         sigset_t empty_set;
 
         sigemptyset(&empty_set);
         sigprocmask(SIG_SETMASK, &empty_set, NULL);
     }
-#elif defined(HAVE_SIGBLOCK)
+#elif HAVE_SIGBLOCK
     sigsetmask(0);
 #endif
 
     /*
      * do the exec
      */
-#ifdef HAVE_EXECV
+#if HAVE_EXECV
     execv(argvrestartname, argvrestartp);
     setPerrorstatus(argvrestartname);
 #endif

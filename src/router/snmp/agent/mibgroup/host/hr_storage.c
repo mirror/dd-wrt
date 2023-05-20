@@ -12,17 +12,17 @@
 #endif
 
 #include <sys/types.h>
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -30,41 +30,41 @@
 #endif
 
 #if (!defined(mingw32) && !defined(WIN32))
-#ifdef HAVE_UTMPX_H
+#if HAVE_UTMPX_H
 #include <utmpx.h>
 #else
 #include <utmp.h>
 #endif
 #endif /* mingw32 */
 #ifndef dynix
-#ifdef HAVE_SYS_VM_H
+#if HAVE_SYS_VM_H
 #include <sys/vm.h>
 #if (!defined(KERNEL) || defined(MACH_USER_API)) && defined(HAVE_SYS_VMMETER_H) /*OS X does not #include <sys/vmmeter.h> if (defined(KERNEL) && !defined(MACH_USER_API)) */
 #include <sys/vmmeter.h>
 #endif
 #else
-#ifdef HAVE_VM_VM_H
+#if HAVE_VM_VM_H
 #include <vm/vm.h>
-#ifdef HAVE_MACHINE_TYPES_H
+#if HAVE_MACHINE_TYPES_H
 #include <machine/types.h>
 #endif
-#ifdef HAVE_SYS_VMMETER_H
+#if HAVE_SYS_VMMETER_H
 #include <sys/vmmeter.h>
 #endif
-#ifdef HAVE_VM_VM_PARAM_H
+#if HAVE_VM_VM_PARAM_H
 #include <vm/vm_param.h>
 #endif
 #else
-#ifdef HAVE_SYS_VMPARAM_H
+#if HAVE_SYS_VMPARAM_H
 #include <sys/vmparam.h>
 #endif
-#ifdef HAVE_SYS_VMMAC_H
+#if HAVE_SYS_VMMAC_H
 #include <sys/vmmac.h>
 #endif
-#ifdef HAVE_SYS_VMMETER_H
+#if HAVE_SYS_VMMETER_H
 #include <sys/vmmeter.h>
 #endif
-#ifdef HAVE_SYS_VMSYSTM_H
+#if HAVE_SYS_VMSYSTM_H
 #include <sys/vmsystm.h>
 #endif
 #endif                          /* vm/vm.h */
@@ -76,13 +76,13 @@
 #include <vm/vm_param.h>
 #include <vm/vm_extern.h>
 #endif
-#ifdef HAVE_KVM_H
+#if HAVE_KVM_H
 #include <kvm.h>
 #endif
-#ifdef HAVE_FCNTL_H
+#if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef HAVE_SYS_POOL_H
+#if HAVE_SYS_POOL_H
 #if defined(MBPOOL_SYMBOL) && defined(MCLPOOL_SYMBOL)
 #define __POOL_EXPOSE
 #include <sys/pool.h>
@@ -90,15 +90,15 @@
 #undef HAVE_SYS_POOL_H
 #endif
 #endif
-#ifdef HAVE_SYS_MBUF_H
+#if HAVE_SYS_MBUF_H
 #include <sys/mbuf.h>
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#if HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #if defined(CTL_HW) && defined(HW_PAGESIZE)
 #define USE_SYSCTL
 #endif
-#ifdef USE_MACH_HOST_STATISTICS
+#if USE_MACH_HOST_STATISTICS
 #include <mach/mach.h>
 #elif defined(CTL_VM) && (defined(VM_METER) || defined(VM_UVMEXP))
 #define USE_SYSCTL_VM
@@ -119,19 +119,19 @@
 #include "hr_filesys.h"
 #include <net-snmp/agent/auto_nlist.h>
 
-#ifdef HAVE_MNTENT_H
+#if HAVE_MNTENT_H
 #include <mntent.h>
 #endif
-#ifdef HAVE_SYS_MNTTAB_H
+#if HAVE_SYS_MNTTAB_H
 #include <sys/mnttab.h>
 #endif
-#ifdef HAVE_SYS_STATVFS_H
+#if HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
-#ifdef HAVE_SYS_VFS_H
+#if HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
+#if HAVE_SYS_MOUNT_H
 #ifdef __osf__
 #undef m_next
 #undef m_data
@@ -147,17 +147,17 @@
 #include <sys/pstat.h>
 #endif
 #if defined(solaris2)
-#ifdef HAVE_SYS_SWAP_H
+#if HAVE_SYS_SWAP_H
 #include <sys/swap.h>
 #endif
 #endif
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_NBUTIL_H
+#if HAVE_NBUTIL_H
 #include <nbutil.h>
 #endif
 
@@ -564,7 +564,7 @@ really_try_next:
         if (store_idx > NETSNMP_MEM_TYPE_MAX)
             if (storageUseNFS && Check_HR_FileSys_NFS())
                 storage_type_id[storage_type_len - 1] = 10;     /* Network Disk */
-#if defined(HAVE_HASMNTOPT) && !(defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7))
+#if HAVE_HASMNTOPT && !(defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7))
             /* 
              * hasmntopt takes "const struct mntent*", but HRFS_entry has been
              * defined differently for AIX, so skip this for AIX
@@ -603,7 +603,7 @@ really_try_next:
         }
     case HRSTORE_UNITS:
         if (store_idx > NETSNMP_MEM_TYPE_MAX)
-#ifdef HRFS_HAS_FRSIZE
+#if HRFS_HAS_FRSIZE
             long_return = stat_buf.f_frsize;
 #else
             long_return = stat_buf.f_bsize;
@@ -634,7 +634,7 @@ really_try_next:
         return (u_char *) & long_return;
     case HRSTORE_FAILS:
         if (store_idx > NETSNMP_MEM_TYPE_MAX)
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
 	    goto try_next;
 #else
             long_return = 0;

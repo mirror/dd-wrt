@@ -8,17 +8,17 @@
 #include <net-snmp/net-snmp-features.h>
 #include "mibII_common.h"
 
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_SYS_PROTOSW_H
+#if HAVE_SYS_PROTOSW_H
 #include <sys/protosw.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
@@ -31,25 +31,19 @@
 #undef TCP_NODELAY
 #undef TCP_MAXSEG
 #endif
-#ifdef HAVE_NETINET_TCP_H
+#if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#ifdef HAVE_NETINET_TCPIP_H
+#if HAVE_NETINET_TCPIP_H
 #include <netinet/tcpip.h>
 #endif
-#ifdef HAVE_NETINET_TCP_TIMER_H
+#if HAVE_NETINET_TCP_TIMER_H
 #include <netinet/tcp_timer.h>
 #endif
-#ifdef HAVE_NETINET_TCP_VAR_H
-#ifdef openbsd7
-#define _KERNEL /* OpenBSD 7.3 */
-#endif
+#if HAVE_NETINET_TCP_VAR_H
 #include <netinet/tcp_var.h>
-#ifdef openbsd7
-#undef _KERNEL
 #endif
-#endif
-#ifdef HAVE_NETINET_TCP_FSM_H
+#if HAVE_NETINET_TCP_FSM_H
 #include <netinet/tcp_fsm.h>
 #endif
 
@@ -195,11 +189,6 @@ init_tcp(void)
 #define USES_TRADITIONAL_TCPSTAT
 #endif
 
-#ifdef TCP_NSTATS
-typedef uint32_t tcp_stats[TCP_NSTATS];
-#define TCP_STAT_STRUCTURE	tcp_stats
-#endif
-
 #ifdef dragonfly
 #define TCP_STAT_STRUCTURE	struct tcp_stats
 #define USES_TRADITIONAL_TCPSTAT
@@ -335,75 +324,6 @@ tcp_handler(netsnmp_mib_handler          *handler,
 #endif			/* linux */
         netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
         continue;
-#elif defined(TCP_NSTAT)
-    case TCPRTOALGORITHM:      /* Assume Van Jacobsen's algorithm */
-        ret_value = 4;
-        type = ASN_INTEGER;
-        break;
-    case TCPRTOMIN:
-#ifdef TCPTV_NEEDS_HZ
-        ret_value = TCPTV_MIN;
-#else
-        ret_value = TCPTV_MIN / PR_SLOWHZ * 1000;
-#endif
-        type = ASN_INTEGER;
-        break;
-    case TCPRTOMAX:
-#ifdef TCPTV_NEEDS_HZ
-        ret_value = TCPTV_REXMTMAX;
-#else
-        ret_value = TCPTV_REXMTMAX / PR_SLOWHZ * 1000;
-#endif
-        type = ASN_INTEGER;
-        break;
-    case TCPMAXCONN:
-        ret_value = -1;		/* Dynamic maximum */
-        type = ASN_INTEGER;
-        break;
-    case TCPACTIVEOPENS:
-        ret_value = tcpstat[TCP_STAT_CONNATTEMPT];
-        break;
-    case TCPPASSIVEOPENS:
-        ret_value = tcpstat[TCP_STAT_ACCEPTS];
-        break;
-        /*
-         * NB:  tcps_drops is actually the sum of the two MIB
-         *      counters tcpAttemptFails and tcpEstabResets.
-         */
-    case TCPATTEMPTFAILS:
-        ret_value = tcpstat[TCP_STAT_CONNDROPS];
-        break;
-    case TCPESTABRESETS:
-        ret_value = tcpstat[TCP_STAT_DROPS];
-        break;
-    case TCPCURRESTAB:
-#ifdef USING_MIBII_TCPTABLE_MODULE
-        ret_value = TCP_Count_Connections();
-#else
-        ret_value = 0;
-#endif
-        type = ASN_GAUGE;
-        break;
-    case TCPINSEGS:
-        ret_value = tcpstat[TCP_STAT_RCVTOTAL];
-        break;
-    case TCPOUTSEGS:
-        /*
-         * RFC 1213 defines this as the number of segments sent
-         * "excluding those containing only retransmitted octets"
-         */
-        ret_value = tcpstat[TCP_STAT_SNDTOTAL] - tcpstat[TCP_STAT_SNDREXMITPACK];
-        break;
-    case TCPRETRANSSEGS:
-        ret_value = tcpstat[TCP_STAT_SNDREXMITPACK];
-        break;
-    case TCPINERRS:
-        ret_value = tcpstat[TCP_STAT_RCVBADSUM] + tcpstat[TCP_STAT_RCVBADOFF]
-            + tcpstat[TCP_STAT_RCVMEMDROP] + tcpstat[TCP_STAT_RCVSHORT];
-        break;
-    case TCPOUTRSTS:
-        ret_value = tcpstat[TCP_STAT_SNDCTRL] - tcpstat[TCP_STAT_CLOSED];
-        break;
 #elif defined(USES_TRADITIONAL_TCPSTAT) && !defined(_USE_FIRST_PROTOCOL)
 #ifdef HAVE_SYS_TCPIPSTATS_H
     /*

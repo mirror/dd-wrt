@@ -34,7 +34,7 @@
 #include <sys/sysctl.h>
 #include <sys/vmmeter.h>
 
-#ifdef HAVE_SYS_VMPARAM_H
+#if HAVE_SYS_VMPARAM_H
 #include <sys/vmparam.h>
 #else
 #include <vm/vm_param.h>
@@ -294,13 +294,13 @@ var_extensible_vmstat(struct variable *vp,
         long_ret = rate(long_ret);
         return ((u_char *) (&long_ret));
     case IOSENT:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;
         return ((u_char *) (&long_ret));
     case IORECEIVE:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;

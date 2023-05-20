@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 #endif
 
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -95,8 +95,7 @@ static int test_etime(void);
 int
 main(int argc, char **argv)
 {
-    int             rval = SNMPERR_SUCCESS;
-    int             failcount NETSNMP_ATTRIBUTE_UNUSED = 0;
+    int             rval = SNMPERR_SUCCESS, failcount = 0;
     char            ch;
 
     local_progname = argv[0];

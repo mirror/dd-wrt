@@ -21,17 +21,17 @@
 
 #include <ctype.h>
 
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-#ifdef HAVE_ARPA_NAMESER_H
+#if HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>
 #endif
 
 #include <errno.h>
 #include <stdio.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

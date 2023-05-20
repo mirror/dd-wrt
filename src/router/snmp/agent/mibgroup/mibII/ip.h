@@ -7,23 +7,23 @@
 #define _MIBGROUP_IP_H
 
 
-config_require(mibII/ifTable);
+config_require(mibII/ifTable)
 #if !defined(darwin) || defined(HAVE_STRUCT_IN_IFADDR_IA_SUBNETMASK)
 /*
  * To do: port mibII/ipAddr and mibII/var_route to Darwin versions that do not
  * export struct in_ifaddr.
  */
-config_require(mibII/ipAddr);
-config_require(mibII/var_route mibII/route_write);
+config_require(mibII/ipAddr)
+config_require(mibII/var_route mibII/route_write)
 #endif /* !defined(darwin) || defined(HAVE_STRUCT_IN_IFADDR_IA_SUBNETMASK) */
-config_require(mibII/at);
+config_require(mibII/at)
 
 #ifdef solaris2
-config_require(kernel_sunos5);
+config_require(kernel_sunos5)
 #elif defined(linux)
-config_require(mibII/kernel_linux);
-#elif defined(netbsd5) || defined(netbsdelf5)
-config_require(mibII/kernel_netbsd);
+config_require(mibII/kernel_linux)
+#elif defined(netbsd) || defined(netbsdelf)
+config_require(mibII/kernel_netbsd)
 #endif
 
 #include "var_route.h"

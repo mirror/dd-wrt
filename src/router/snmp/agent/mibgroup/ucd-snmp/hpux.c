@@ -5,13 +5,13 @@
 #include <net-snmp/net-snmp-config.h>
 
 #include <signal.h>
-#ifdef HAVE_MACHINE_PARAM_H
+#if HAVE_MACHINE_PARAM_H
 #include <machine/param.h>
 #endif
-#ifdef HAVE_SYS_VMMETER_H
+#if HAVE_SYS_VMMETER_H
 #include <sys/vmmeter.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #endif
 

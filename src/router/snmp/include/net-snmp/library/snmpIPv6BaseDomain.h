@@ -3,11 +3,11 @@
 #ifndef SNMPIPV6BASE_H
 #define SNMPIPV6BASE_H
 
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(IPBase);
+config_require(IPBase)
 
 #include <net-snmp/library/snmp_transport.h>
 

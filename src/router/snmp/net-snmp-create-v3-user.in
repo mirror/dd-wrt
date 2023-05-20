@@ -4,7 +4,7 @@
 # to Net-SNMP config file.
 
 if @PSCMD@ | egrep ' snmpd *$' > /dev/null 2>&1 ; then
-    echo "Apparently at least one snmpd daemon is already running."
+    echo "Apparently at least one snmpd demon is already running."
     echo "You must stop them in order to use this command."
     exit 1
 fi
@@ -134,10 +134,8 @@ if test ! -d "$outfile"; then
     touch "$outfile"
 fi
 echo "$line" >> "$outfile"
-prefix=@prefix@
-datarootdir=@datarootdir@
-# To suppress shellcheck complaints about $prefix and $datarootdir.
-: "$prefix" "$datarootdir"
+# Avoid that configure complains that this script ignores @datarootdir@
+echo "@datarootdir@" >/dev/null
 outfile="@datadir@/snmp/snmpd.conf"
 line="$token $user"
 echo "adding the following line to $outfile:"

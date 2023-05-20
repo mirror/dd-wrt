@@ -6,25 +6,25 @@
 #include "hardware/fsys/hw_fsys_private.h"
 
 #include <stdio.h>
-#ifdef HAVE_MNTENT_H
+#if HAVE_MNTENT_H
 #include <mntent.h>
 #endif
-#ifdef HAVE_SYS_MNTTAB_H
+#if HAVE_SYS_MNTTAB_H
 #include <sys/mnttab.h>
 #endif
-#ifdef HAVE_SYS_VFS_H
+#if HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif
-#ifdef HAVE_SYS_PARAM_H
+#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
+#if HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#ifdef HAVE_SYS_STATFS_H
+#if HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
-#ifdef HAVE_SYS_STATVFS_H
+#if HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
 
@@ -227,7 +227,7 @@ netsnmp_fsys_arch_load( void )
 
         if ( _fsys_remote( entry->device, entry->type ))
             entry->flags |= NETSNMP_FS_FLAG_REMOTE;
-#ifdef HAVE_HASMNTOPT
+#if HAVE_HASMNTOPT
         if (hasmntopt( m, NETSNMP_REMOVE_CONST(char *, "ro") ))
             entry->flags |= NETSNMP_FS_FLAG_RONLY;
         else

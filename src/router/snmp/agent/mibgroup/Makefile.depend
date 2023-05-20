@@ -54,6 +54,7 @@
 ./header_complex.lo: ../../include/net-snmp/library/data_list.h
 ./header_complex.lo: ../../include/net-snmp/library/check_varbind.h
 ./header_complex.lo: ../../include/net-snmp/library/container.h
+./header_complex.lo: ../../include/net-snmp/library/factory.h
 ./header_complex.lo: ../../include/net-snmp/library/container_binary_array.h
 ./header_complex.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./header_complex.lo: ../../include/net-snmp/library/container_iterator.h
@@ -166,6 +167,7 @@
 ./testhandler.lo: ../../include/net-snmp/library/data_list.h
 ./testhandler.lo: ../../include/net-snmp/library/check_varbind.h
 ./testhandler.lo: ../../include/net-snmp/library/container.h
+./testhandler.lo: ../../include/net-snmp/library/factory.h
 ./testhandler.lo: ../../include/net-snmp/library/container_binary_array.h
 ./testhandler.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./testhandler.lo: ../../include/net-snmp/library/container_iterator.h
@@ -276,6 +278,7 @@
 ./util_funcs.lo: ../../include/net-snmp/library/data_list.h
 ./util_funcs.lo: ../../include/net-snmp/library/check_varbind.h
 ./util_funcs.lo: ../../include/net-snmp/library/container.h
+./util_funcs.lo: ../../include/net-snmp/library/factory.h
 ./util_funcs.lo: ../../include/net-snmp/library/container_binary_array.h
 ./util_funcs.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./util_funcs.lo: ../../include/net-snmp/library/container_iterator.h
@@ -393,6 +396,7 @@
 ./Rmon/agutil.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/agutil.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/agutil.lo: ../../include/net-snmp/library/container.h
+./Rmon/agutil.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/agutil.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/agutil.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/agutil.lo: ../../include/net-snmp/library/container_iterator.h
@@ -503,6 +507,7 @@
 ./Rmon/alarm.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/alarm.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/alarm.lo: ../../include/net-snmp/library/container.h
+./Rmon/alarm.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/alarm.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/alarm.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/alarm.lo: ../../include/net-snmp/library/container_iterator.h
@@ -614,6 +619,7 @@
 ./Rmon/alarmTable.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/alarmTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/alarmTable.lo: ../../include/net-snmp/library/container.h
+./Rmon/alarmTable.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/alarmTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/alarmTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/alarmTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -724,6 +730,7 @@
 ./Rmon/event.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/event.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/event.lo: ../../include/net-snmp/library/container.h
+./Rmon/event.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/event.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/event.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/event.lo: ../../include/net-snmp/library/container_iterator.h
@@ -834,6 +841,7 @@
 ./Rmon/history.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/history.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/history.lo: ../../include/net-snmp/library/container.h
+./Rmon/history.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/history.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/history.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/history.lo: ../../include/net-snmp/library/container_iterator.h
@@ -944,6 +952,7 @@
 ./Rmon/rows.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/rows.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/rows.lo: ../../include/net-snmp/library/container.h
+./Rmon/rows.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/rows.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/rows.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/rows.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1054,6 +1063,7 @@
 ./Rmon/statistics.lo: ../../include/net-snmp/library/data_list.h
 ./Rmon/statistics.lo: ../../include/net-snmp/library/check_varbind.h
 ./Rmon/statistics.lo: ../../include/net-snmp/library/container.h
+./Rmon/statistics.lo: ../../include/net-snmp/library/factory.h
 ./Rmon/statistics.lo: ../../include/net-snmp/library/container_binary_array.h
 ./Rmon/statistics.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./Rmon/statistics.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1165,6 +1175,7 @@
 ./agent/extend.lo: ../../include/net-snmp/library/data_list.h
 ./agent/extend.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/extend.lo: ../../include/net-snmp/library/container.h
+./agent/extend.lo: ../../include/net-snmp/library/factory.h
 ./agent/extend.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/extend.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/extend.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1276,6 +1287,7 @@
 ./agent/nsCache.lo: ../../include/net-snmp/library/data_list.h
 ./agent/nsCache.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/nsCache.lo: ../../include/net-snmp/library/container.h
+./agent/nsCache.lo: ../../include/net-snmp/library/factory.h
 ./agent/nsCache.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/nsCache.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/nsCache.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1386,6 +1398,7 @@
 ./agent/nsDebug.lo: ../../include/net-snmp/library/data_list.h
 ./agent/nsDebug.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/nsDebug.lo: ../../include/net-snmp/library/container.h
+./agent/nsDebug.lo: ../../include/net-snmp/library/factory.h
 ./agent/nsDebug.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/nsDebug.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/nsDebug.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1496,6 +1509,7 @@
 ./agent/nsLogging.lo: ../../include/net-snmp/library/data_list.h
 ./agent/nsLogging.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/nsLogging.lo: ../../include/net-snmp/library/container.h
+./agent/nsLogging.lo: ../../include/net-snmp/library/factory.h
 ./agent/nsLogging.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/nsLogging.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/nsLogging.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1606,6 +1620,7 @@
 ./agent/nsModuleTable.lo: ../../include/net-snmp/library/data_list.h
 ./agent/nsModuleTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/nsModuleTable.lo: ../../include/net-snmp/library/container.h
+./agent/nsModuleTable.lo: ../../include/net-snmp/library/factory.h
 ./agent/nsModuleTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/nsModuleTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/nsModuleTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1716,6 +1731,7 @@
 ./agent/nsTransactionTable.lo: ../../include/net-snmp/library/data_list.h
 ./agent/nsTransactionTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/nsTransactionTable.lo: ../../include/net-snmp/library/container.h
+./agent/nsTransactionTable.lo: ../../include/net-snmp/library/factory.h
 ./agent/nsTransactionTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/nsTransactionTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/nsTransactionTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1827,6 +1843,7 @@
 ./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/data_list.h
 ./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/container.h
+./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/factory.h
 ./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agent/nsVacmAccessTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -1937,6 +1954,7 @@
 ./agentx/agentx_config.lo: ../../include/net-snmp/library/data_list.h
 ./agentx/agentx_config.lo: ../../include/net-snmp/library/check_varbind.h
 ./agentx/agentx_config.lo: ../../include/net-snmp/library/container.h
+./agentx/agentx_config.lo: ../../include/net-snmp/library/factory.h
 ./agentx/agentx_config.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agentx/agentx_config.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agentx/agentx_config.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2048,6 +2066,7 @@
 ./agentx/client.lo: ../../include/net-snmp/library/data_list.h
 ./agentx/client.lo: ../../include/net-snmp/library/check_varbind.h
 ./agentx/client.lo: ../../include/net-snmp/library/container.h
+./agentx/client.lo: ../../include/net-snmp/library/factory.h
 ./agentx/client.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agentx/client.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agentx/client.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2160,6 +2179,7 @@
 ./agentx/master.lo: ../../include/net-snmp/library/data_list.h
 ./agentx/master.lo: ../../include/net-snmp/library/check_varbind.h
 ./agentx/master.lo: ../../include/net-snmp/library/container.h
+./agentx/master.lo: ../../include/net-snmp/library/factory.h
 ./agentx/master.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agentx/master.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agentx/master.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2271,6 +2291,7 @@
 ./agentx/master_admin.lo: ../../include/net-snmp/library/data_list.h
 ./agentx/master_admin.lo: ../../include/net-snmp/library/check_varbind.h
 ./agentx/master_admin.lo: ../../include/net-snmp/library/container.h
+./agentx/master_admin.lo: ../../include/net-snmp/library/factory.h
 ./agentx/master_admin.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agentx/master_admin.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agentx/master_admin.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2387,6 +2408,7 @@
 ./agentx/protocol.lo: ../../include/net-snmp/library/data_list.h
 ./agentx/protocol.lo: ../../include/net-snmp/library/check_varbind.h
 ./agentx/protocol.lo: ../../include/net-snmp/library/container.h
+./agentx/protocol.lo: ../../include/net-snmp/library/factory.h
 ./agentx/protocol.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agentx/protocol.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agentx/protocol.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2460,6 +2482,7 @@
 ./agentx/subagent.lo: ../../include/net-snmp/library/data_list.h
 ./agentx/subagent.lo: ../../include/net-snmp/library/check_varbind.h
 ./agentx/subagent.lo: ../../include/net-snmp/library/container.h
+./agentx/subagent.lo: ../../include/net-snmp/library/factory.h
 ./agentx/subagent.lo: ../../include/net-snmp/library/container_binary_array.h
 ./agentx/subagent.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./agentx/subagent.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2577,6 +2600,7 @@
 ./deliver/deliverByNotify.lo: ../../include/net-snmp/library/data_list.h
 ./deliver/deliverByNotify.lo: ../../include/net-snmp/library/check_varbind.h
 ./deliver/deliverByNotify.lo: ../../include/net-snmp/library/container.h
+./deliver/deliverByNotify.lo: ../../include/net-snmp/library/factory.h
 ./deliver/deliverByNotify.lo: ../../include/net-snmp/library/container_binary_array.h
 ./deliver/deliverByNotify.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./deliver/deliverByNotify.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2687,6 +2711,7 @@
 ./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteEventNotificationTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2797,6 +2822,7 @@
 ./disman/mteEventTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteEventTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteEventTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteEventTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteEventTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteEventTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteEventTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -2910,6 +2936,7 @@
 ./disman/mteObjectsTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteObjectsTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteObjectsTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteObjectsTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteObjectsTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteObjectsTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteObjectsTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3021,6 +3048,7 @@
 ./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteTriggerBooleanTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3133,6 +3161,7 @@
 ./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteTriggerDeltaTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3245,6 +3274,7 @@
 ./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteTriggerExistenceTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3357,6 +3387,7 @@
 ./disman/mteTriggerTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteTriggerTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteTriggerTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteTriggerTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteTriggerTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteTriggerTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteTriggerTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3473,6 +3504,7 @@
 ./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/data_list.h
 ./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/container.h
+./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/factory.h
 ./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./disman/mteTriggerThresholdTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3585,6 +3617,7 @@
 ./examples/data_set.lo: ../../include/net-snmp/library/data_list.h
 ./examples/data_set.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/data_set.lo: ../../include/net-snmp/library/container.h
+./examples/data_set.lo: ../../include/net-snmp/library/factory.h
 ./examples/data_set.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/data_set.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/data_set.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3694,6 +3727,7 @@
 ./examples/delayed_instance.lo: ../../include/net-snmp/library/data_list.h
 ./examples/delayed_instance.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/delayed_instance.lo: ../../include/net-snmp/library/container.h
+./examples/delayed_instance.lo: ../../include/net-snmp/library/factory.h
 ./examples/delayed_instance.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/delayed_instance.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/delayed_instance.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3804,6 +3838,7 @@
 ./examples/example.lo: ../../include/net-snmp/library/data_list.h
 ./examples/example.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/example.lo: ../../include/net-snmp/library/container.h
+./examples/example.lo: ../../include/net-snmp/library/factory.h
 ./examples/example.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/example.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/example.lo: ../../include/net-snmp/library/container_iterator.h
@@ -3914,6 +3949,7 @@
 ./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/data_list.h
 ./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/container.h
+./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/factory.h
 ./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/netSnmpHostsTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4028,6 +4064,7 @@
 ./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/data_list.h
 ./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/container.h
+./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/factory.h
 ./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/netSnmpHostsTable_access.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4139,6 +4176,7 @@
 ./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/data_list.h
 ./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/container.h
+./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/factory.h
 ./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/netSnmpHostsTable_checkfns.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4214,6 +4252,7 @@
 ./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/data_list.h
 ./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/container.h
+./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/factory.h
 ./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/netSnmpHostsTable_checkfns_local.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4289,6 +4328,7 @@
 ./examples/notification.lo: ../../include/net-snmp/library/data_list.h
 ./examples/notification.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/notification.lo: ../../include/net-snmp/library/container.h
+./examples/notification.lo: ../../include/net-snmp/library/factory.h
 ./examples/notification.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/notification.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/notification.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4399,6 +4439,7 @@
 ./examples/scalar_int.lo: ../../include/net-snmp/library/data_list.h
 ./examples/scalar_int.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/scalar_int.lo: ../../include/net-snmp/library/container.h
+./examples/scalar_int.lo: ../../include/net-snmp/library/factory.h
 ./examples/scalar_int.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/scalar_int.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/scalar_int.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4508,6 +4549,7 @@
 ./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/data_list.h
 ./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/container.h
+./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/factory.h
 ./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/ucdDemoPublic.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4619,6 +4661,7 @@
 ./examples/watched.lo: ../../include/net-snmp/library/data_list.h
 ./examples/watched.lo: ../../include/net-snmp/library/check_varbind.h
 ./examples/watched.lo: ../../include/net-snmp/library/container.h
+./examples/watched.lo: ../../include/net-snmp/library/factory.h
 ./examples/watched.lo: ../../include/net-snmp/library/container_binary_array.h
 ./examples/watched.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./examples/watched.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4728,6 +4771,7 @@
 ./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/data_list.h
 ./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/container.h
+./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/factory.h
 ./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hrSWInstalledTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4839,6 +4883,7 @@
 ./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/data_list.h
 ./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/container.h
+./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/factory.h
 ./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hrSWRunPerfTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -4951,6 +4996,7 @@
 ./host/hrSWRunTable.lo: ../../include/net-snmp/library/data_list.h
 ./host/hrSWRunTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hrSWRunTable.lo: ../../include/net-snmp/library/container.h
+./host/hrSWRunTable.lo: ../../include/net-snmp/library/factory.h
 ./host/hrSWRunTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hrSWRunTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hrSWRunTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5063,6 +5109,7 @@
 ./host/hr_device.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_device.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_device.lo: ../../include/net-snmp/library/container.h
+./host/hr_device.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_device.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_device.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_device.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5142,6 +5189,7 @@
 ./host/hr_disk.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_disk.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_disk.lo: ../../include/net-snmp/library/container.h
+./host/hr_disk.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_disk.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_disk.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_disk.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5222,6 +5270,7 @@
 ./host/hr_filesys.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_filesys.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_filesys.lo: ../../include/net-snmp/library/container.h
+./host/hr_filesys.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_filesys.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_filesys.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_filesys.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5334,6 +5383,7 @@
 ./host/hr_network.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_network.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_network.lo: ../../include/net-snmp/library/container.h
+./host/hr_network.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_network.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_network.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_network.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5445,6 +5495,7 @@
 ./host/hr_other.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_other.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_other.lo: ../../include/net-snmp/library/container.h
+./host/hr_other.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_other.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_other.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_other.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5525,6 +5576,7 @@
 ./host/hr_partition.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_partition.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_partition.lo: ../../include/net-snmp/library/container.h
+./host/hr_partition.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_partition.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_partition.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_partition.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5606,6 +5658,7 @@
 ./host/hr_print.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_print.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_print.lo: ../../include/net-snmp/library/container.h
+./host/hr_print.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_print.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_print.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_print.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5688,6 +5741,7 @@
 ./host/hr_proc.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_proc.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_proc.lo: ../../include/net-snmp/library/container.h
+./host/hr_proc.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_proc.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_proc.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_proc.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5802,6 +5856,7 @@
 ./host/hr_storage.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_storage.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_storage.lo: ../../include/net-snmp/library/container.h
+./host/hr_storage.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_storage.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_storage.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_storage.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5915,6 +5970,7 @@
 ./host/hr_swinst.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_swinst.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_swinst.lo: ../../include/net-snmp/library/container.h
+./host/hr_swinst.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_swinst.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_swinst.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_swinst.lo: ../../include/net-snmp/library/container_iterator.h
@@ -5995,6 +6051,7 @@
 ./host/hr_swrun.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_swrun.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_swrun.lo: ../../include/net-snmp/library/container.h
+./host/hr_swrun.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_swrun.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_swrun.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_swrun.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6076,6 +6133,7 @@
 ./host/hr_system.lo: ../../include/net-snmp/library/data_list.h
 ./host/hr_system.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hr_system.lo: ../../include/net-snmp/library/container.h
+./host/hr_system.lo: ../../include/net-snmp/library/factory.h
 ./host/hr_system.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hr_system.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hr_system.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6188,6 +6246,7 @@
 ./host/hrh_filesys.lo: ../../include/net-snmp/library/data_list.h
 ./host/hrh_filesys.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hrh_filesys.lo: ../../include/net-snmp/library/container.h
+./host/hrh_filesys.lo: ../../include/net-snmp/library/factory.h
 ./host/hrh_filesys.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hrh_filesys.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hrh_filesys.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6301,6 +6360,7 @@
 ./host/hrh_storage.lo: ../../include/net-snmp/library/data_list.h
 ./host/hrh_storage.lo: ../../include/net-snmp/library/check_varbind.h
 ./host/hrh_storage.lo: ../../include/net-snmp/library/container.h
+./host/hrh_storage.lo: ../../include/net-snmp/library/factory.h
 ./host/hrh_storage.lo: ../../include/net-snmp/library/container_binary_array.h
 ./host/hrh_storage.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./host/hrh_storage.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6414,6 +6474,7 @@
 ./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/data_list.h
 ./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/check_varbind.h
 ./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/container.h
+./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/factory.h
 ./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ip-mib/ip_scalars.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6525,6 +6586,7 @@
 ./mibII/at.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/at.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/at.lo: ../../include/net-snmp/library/container.h
+./mibII/at.lo: ../../include/net-snmp/library/factory.h
 ./mibII/at.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/at.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/at.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6636,6 +6698,7 @@
 ./mibII/icmp.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/icmp.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/icmp.lo: ../../include/net-snmp/library/container.h
+./mibII/icmp.lo: ../../include/net-snmp/library/factory.h
 ./mibII/icmp.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/icmp.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/icmp.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6752,6 +6815,7 @@
 ./mibII/interfaces.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/interfaces.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/interfaces.lo: ../../include/net-snmp/library/container.h
+./mibII/interfaces.lo: ../../include/net-snmp/library/factory.h
 ./mibII/interfaces.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/interfaces.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/interfaces.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6871,6 +6935,7 @@
 ./mibII/ip.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/ip.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/ip.lo: ../../include/net-snmp/library/container.h
+./mibII/ip.lo: ../../include/net-snmp/library/factory.h
 ./mibII/ip.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/ip.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/ip.lo: ../../include/net-snmp/library/container_iterator.h
@@ -6987,6 +7052,7 @@
 ./mibII/ipAddr.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/ipAddr.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/ipAddr.lo: ../../include/net-snmp/library/container.h
+./mibII/ipAddr.lo: ../../include/net-snmp/library/factory.h
 ./mibII/ipAddr.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/ipAddr.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/ipAddr.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7101,6 +7167,7 @@
 ./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/container.h
+./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/factory.h
 ./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/ipCidrRouteTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7217,6 +7284,7 @@
 ./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/container.h
+./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/factory.h
 ./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/ipCidrRouteTable_access.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7328,6 +7396,7 @@
 ./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/container.h
+./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/factory.h
 ./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/ipCidrRouteTable_checkfns.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7402,6 +7471,7 @@
 ./mibII/ipv6.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/ipv6.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/ipv6.lo: ../../include/net-snmp/library/container.h
+./mibII/ipv6.lo: ../../include/net-snmp/library/factory.h
 ./mibII/ipv6.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/ipv6.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/ipv6.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7514,6 +7584,7 @@
 ./mibII/kernel_linux.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/kernel_linux.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/kernel_linux.lo: ../../include/net-snmp/library/container.h
+./mibII/kernel_linux.lo: ../../include/net-snmp/library/factory.h
 ./mibII/kernel_linux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/kernel_linux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/kernel_linux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7624,6 +7695,7 @@
 ./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/container.h
+./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/factory.h
 ./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/kernel_netbsd.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7734,6 +7806,7 @@
 ./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/container.h
+./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/factory.h
 ./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/kernel_sysctl.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7844,6 +7917,7 @@
 ./mibII/mta_sendmail.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/mta_sendmail.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/mta_sendmail.lo: ../../include/net-snmp/library/container.h
+./mibII/mta_sendmail.lo: ../../include/net-snmp/library/factory.h
 ./mibII/mta_sendmail.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/mta_sendmail.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/mta_sendmail.lo: ../../include/net-snmp/library/container_iterator.h
@@ -7954,6 +8028,7 @@
 ./mibII/route_write.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/route_write.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/route_write.lo: ../../include/net-snmp/library/container.h
+./mibII/route_write.lo: ../../include/net-snmp/library/factory.h
 ./mibII/route_write.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/route_write.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/route_write.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8065,6 +8140,7 @@
 ./mibII/setSerialNo.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/setSerialNo.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/setSerialNo.lo: ../../include/net-snmp/library/container.h
+./mibII/setSerialNo.lo: ../../include/net-snmp/library/factory.h
 ./mibII/setSerialNo.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/setSerialNo.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/setSerialNo.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8175,6 +8251,7 @@
 ./mibII/snmp_mib.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/snmp_mib.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/snmp_mib.lo: ../../include/net-snmp/library/container.h
+./mibII/snmp_mib.lo: ../../include/net-snmp/library/factory.h
 ./mibII/snmp_mib.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/snmp_mib.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/snmp_mib.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8288,6 +8365,7 @@
 ./mibII/sysORTable.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/sysORTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/sysORTable.lo: ../../include/net-snmp/library/container.h
+./mibII/sysORTable.lo: ../../include/net-snmp/library/factory.h
 ./mibII/sysORTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/sysORTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/sysORTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8401,6 +8479,7 @@
 ./mibII/system_mib.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/system_mib.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/system_mib.lo: ../../include/net-snmp/library/container.h
+./mibII/system_mib.lo: ../../include/net-snmp/library/factory.h
 ./mibII/system_mib.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/system_mib.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/system_mib.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8519,6 +8598,7 @@
 ./mibII/tcp.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/tcp.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/tcp.lo: ../../include/net-snmp/library/container.h
+./mibII/tcp.lo: ../../include/net-snmp/library/factory.h
 ./mibII/tcp.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/tcp.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/tcp.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8635,6 +8715,7 @@
 ./mibII/tcpTable.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/tcpTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/tcpTable.lo: ../../include/net-snmp/library/container.h
+./mibII/tcpTable.lo: ../../include/net-snmp/library/factory.h
 ./mibII/tcpTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/tcpTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/tcpTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8748,6 +8829,7 @@
 ./mibII/udp.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/udp.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/udp.lo: ../../include/net-snmp/library/container.h
+./mibII/udp.lo: ../../include/net-snmp/library/factory.h
 ./mibII/udp.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/udp.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/udp.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8864,6 +8946,7 @@
 ./mibII/udpTable.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/udpTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/udpTable.lo: ../../include/net-snmp/library/container.h
+./mibII/udpTable.lo: ../../include/net-snmp/library/factory.h
 ./mibII/udpTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/udpTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/udpTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -8975,6 +9058,7 @@
 ./mibII/updates.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/updates.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/updates.lo: ../../include/net-snmp/library/container.h
+./mibII/updates.lo: ../../include/net-snmp/library/factory.h
 ./mibII/updates.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/updates.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/updates.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9085,6 +9169,7 @@
 ./mibII/vacm_conf.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/vacm_conf.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/vacm_conf.lo: ../../include/net-snmp/library/container.h
+./mibII/vacm_conf.lo: ../../include/net-snmp/library/factory.h
 ./mibII/vacm_conf.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/vacm_conf.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/vacm_conf.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9196,6 +9281,7 @@
 ./mibII/vacm_context.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/vacm_context.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/vacm_context.lo: ../../include/net-snmp/library/container.h
+./mibII/vacm_context.lo: ../../include/net-snmp/library/factory.h
 ./mibII/vacm_context.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/vacm_context.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/vacm_context.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9306,6 +9392,7 @@
 ./mibII/vacm_vars.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/vacm_vars.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/vacm_vars.lo: ../../include/net-snmp/library/container.h
+./mibII/vacm_vars.lo: ../../include/net-snmp/library/factory.h
 ./mibII/vacm_vars.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/vacm_vars.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/vacm_vars.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9419,6 +9506,7 @@
 ./mibII/var_route.lo: ../../include/net-snmp/library/data_list.h
 ./mibII/var_route.lo: ../../include/net-snmp/library/check_varbind.h
 ./mibII/var_route.lo: ../../include/net-snmp/library/container.h
+./mibII/var_route.lo: ../../include/net-snmp/library/factory.h
 ./mibII/var_route.lo: ../../include/net-snmp/library/container_binary_array.h
 ./mibII/var_route.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./mibII/var_route.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9535,6 +9623,7 @@
 ./misc/ipfwacc.lo: ../../include/net-snmp/library/data_list.h
 ./misc/ipfwacc.lo: ../../include/net-snmp/library/check_varbind.h
 ./misc/ipfwacc.lo: ../../include/net-snmp/library/container.h
+./misc/ipfwacc.lo: ../../include/net-snmp/library/factory.h
 ./misc/ipfwacc.lo: ../../include/net-snmp/library/container_binary_array.h
 ./misc/ipfwacc.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./misc/ipfwacc.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9645,6 +9734,7 @@
 ./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/data_list.h
 ./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/check_varbind.h
 ./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/container.h
+./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/factory.h
 ./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/container_binary_array.h
 ./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./notification-log-mib/notification_log.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9757,6 +9847,7 @@
 ./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/data_list.h
 ./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/container.h
+./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/factory.h
 ./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./notification/snmpNotifyFilterProfileTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9870,6 +9961,7 @@
 ./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/data_list.h
 ./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/check_varbind.h
 ./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/container.h
+./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/factory.h
 ./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/container_binary_array.h
 ./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./notification/snmpNotifyFilterProfileTable_data.lo: ../../include/net-snmp/library/container_iterator.h
@@ -9982,6 +10074,7 @@
 ./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/data_list.h
 ./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/container.h
+./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/factory.h
 ./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./notification/snmpNotifyTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10111,6 +10204,7 @@
 ./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/data_list.h
 ./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/check_varbind.h
 ./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/container.h
+./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/factory.h
 ./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/container_binary_array.h
 ./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./notification/snmpNotifyTable_data.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10231,6 +10325,7 @@
 ./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpAssocLocalAddrTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10342,6 +10437,7 @@
 ./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpAssocRemAddrTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10453,6 +10549,7 @@
 ./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpAssocTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10564,6 +10661,7 @@
 ./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpLookupLocalPortTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10675,6 +10773,7 @@
 ./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpLookupRemHostNameTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10786,6 +10885,7 @@
 ./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpLookupRemIPAddrTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -10897,6 +10997,7 @@
 ./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpLookupRemPortTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11008,6 +11109,7 @@
 ./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpLookupRemPrimIPAddrTable.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11119,6 +11221,7 @@
 ./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpScalars.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11230,6 +11333,7 @@
 ./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpScalars_common.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11340,6 +11444,7 @@
 ./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpScalars_freebsd.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11450,6 +11555,7 @@
 ./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpScalars_linux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11560,6 +11666,7 @@
 ./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpScalars_solaris2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11671,6 +11778,7 @@
 ./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpTables_common.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11789,6 +11897,7 @@
 ./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpTables_freebsd.lo: ../../include/net-snmp/library/container_iterator.h
@@ -11905,6 +12014,7 @@
 ./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpTables_linux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12019,6 +12129,7 @@
 ./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/data_list.h
 ./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/check_varbind.h
 ./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/container.h
+./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/factory.h
 ./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./sctp-mib/sctpTables_solaris2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12136,6 +12247,7 @@
 ./smux/smux.lo: ../../include/net-snmp/library/data_list.h
 ./smux/smux.lo: ../../include/net-snmp/library/check_varbind.h
 ./smux/smux.lo: ../../include/net-snmp/library/container.h
+./smux/smux.lo: ../../include/net-snmp/library/factory.h
 ./smux/smux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./smux/smux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./smux/smux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12246,6 +12358,7 @@
 ./smux/snmp_bgp.lo: ../../include/net-snmp/library/data_list.h
 ./smux/snmp_bgp.lo: ../../include/net-snmp/library/check_varbind.h
 ./smux/snmp_bgp.lo: ../../include/net-snmp/library/container.h
+./smux/snmp_bgp.lo: ../../include/net-snmp/library/factory.h
 ./smux/snmp_bgp.lo: ../../include/net-snmp/library/container_binary_array.h
 ./smux/snmp_bgp.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./smux/snmp_bgp.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12356,6 +12469,7 @@
 ./smux/snmp_ospf.lo: ../../include/net-snmp/library/data_list.h
 ./smux/snmp_ospf.lo: ../../include/net-snmp/library/check_varbind.h
 ./smux/snmp_ospf.lo: ../../include/net-snmp/library/container.h
+./smux/snmp_ospf.lo: ../../include/net-snmp/library/factory.h
 ./smux/snmp_ospf.lo: ../../include/net-snmp/library/container_binary_array.h
 ./smux/snmp_ospf.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./smux/snmp_ospf.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12466,6 +12580,7 @@
 ./smux/snmp_rip2.lo: ../../include/net-snmp/library/data_list.h
 ./smux/snmp_rip2.lo: ../../include/net-snmp/library/check_varbind.h
 ./smux/snmp_rip2.lo: ../../include/net-snmp/library/container.h
+./smux/snmp_rip2.lo: ../../include/net-snmp/library/factory.h
 ./smux/snmp_rip2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./smux/snmp_rip2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./smux/snmp_rip2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12576,6 +12691,7 @@
 ./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/data_list.h
 ./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/check_varbind.h
 ./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/container.h
+./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/factory.h
 ./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/container_binary_array.h
 ./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./snmpv3/snmpEngine.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12688,6 +12804,7 @@
 ./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/data_list.h
 ./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/check_varbind.h
 ./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/container.h
+./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/factory.h
 ./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/container_binary_array.h
 ./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./snmpv3/snmpMPDStats.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12800,6 +12917,7 @@
 ./snmpv3/usmConf.lo: ../../include/net-snmp/library/data_list.h
 ./snmpv3/usmConf.lo: ../../include/net-snmp/library/check_varbind.h
 ./snmpv3/usmConf.lo: ../../include/net-snmp/library/container.h
+./snmpv3/usmConf.lo: ../../include/net-snmp/library/factory.h
 ./snmpv3/usmConf.lo: ../../include/net-snmp/library/container_binary_array.h
 ./snmpv3/usmConf.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./snmpv3/usmConf.lo: ../../include/net-snmp/library/container_iterator.h
@@ -12909,6 +13027,7 @@
 ./snmpv3/usmStats.lo: ../../include/net-snmp/library/data_list.h
 ./snmpv3/usmStats.lo: ../../include/net-snmp/library/check_varbind.h
 ./snmpv3/usmStats.lo: ../../include/net-snmp/library/container.h
+./snmpv3/usmStats.lo: ../../include/net-snmp/library/factory.h
 ./snmpv3/usmStats.lo: ../../include/net-snmp/library/container_binary_array.h
 ./snmpv3/usmStats.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./snmpv3/usmStats.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13021,6 +13140,7 @@
 ./snmpv3/usmUser.lo: ../../include/net-snmp/library/data_list.h
 ./snmpv3/usmUser.lo: ../../include/net-snmp/library/check_varbind.h
 ./snmpv3/usmUser.lo: ../../include/net-snmp/library/container.h
+./snmpv3/usmUser.lo: ../../include/net-snmp/library/factory.h
 ./snmpv3/usmUser.lo: ../../include/net-snmp/library/container_binary_array.h
 ./snmpv3/usmUser.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./snmpv3/usmUser.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13131,6 +13251,7 @@
 ./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/data_list.h
 ./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/check_varbind.h
 ./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/container.h
+./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/factory.h
 ./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/container_binary_array.h
 ./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./target/snmpTargetAddrEntry.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13243,6 +13364,7 @@
 ./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/data_list.h
 ./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/check_varbind.h
 ./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/container.h
+./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/factory.h
 ./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/container_binary_array.h
 ./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./target/snmpTargetAddrEntry_data.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13354,6 +13476,7 @@
 ./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/data_list.h
 ./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/check_varbind.h
 ./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/container.h
+./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/factory.h
 ./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/container_binary_array.h
 ./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./target/snmpTargetParamsEntry.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13465,6 +13588,7 @@
 ./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/data_list.h
 ./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/check_varbind.h
 ./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/container.h
+./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/factory.h
 ./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/container_binary_array.h
 ./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./target/snmpTargetParamsEntry_data.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13575,6 +13699,7 @@
 ./target/target.lo: ../../include/net-snmp/library/data_list.h
 ./target/target.lo: ../../include/net-snmp/library/check_varbind.h
 ./target/target.lo: ../../include/net-snmp/library/container.h
+./target/target.lo: ../../include/net-snmp/library/factory.h
 ./target/target.lo: ../../include/net-snmp/library/container_binary_array.h
 ./target/target.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./target/target.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13688,6 +13813,7 @@
 ./target/target_counters.lo: ../../include/net-snmp/library/data_list.h
 ./target/target_counters.lo: ../../include/net-snmp/library/check_varbind.h
 ./target/target_counters.lo: ../../include/net-snmp/library/container.h
+./target/target_counters.lo: ../../include/net-snmp/library/factory.h
 ./target/target_counters.lo: ../../include/net-snmp/library/container_binary_array.h
 ./target/target_counters.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./target/target_counters.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13798,6 +13924,7 @@
 ./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/data_list.h
 ./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/check_varbind.h
 ./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/container.h
+./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/factory.h
 ./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/container_binary_array.h
 ./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./tsm-mib/snmpTsmConfigurationUsePrefix.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13908,6 +14035,7 @@
 ./tunnel/tunnel.lo: ../../include/net-snmp/library/data_list.h
 ./tunnel/tunnel.lo: ../../include/net-snmp/library/check_varbind.h
 ./tunnel/tunnel.lo: ../../include/net-snmp/library/container.h
+./tunnel/tunnel.lo: ../../include/net-snmp/library/factory.h
 ./tunnel/tunnel.lo: ../../include/net-snmp/library/container_binary_array.h
 ./tunnel/tunnel.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./tunnel/tunnel.lo: ../../include/net-snmp/library/container_iterator.h
@@ -13976,6 +14104,119 @@
 ./tunnel/tunnel.lo: if-mib/ifTable/ifTable.h
 ./tunnel/tunnel.lo: if-mib/ifTable/ifTable_data_access.h
 ./tunnel/tunnel.lo: if-mib/ifTable/ifTable_defs.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/net-snmp-config.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/net-snmp-includes.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/definitions.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/types.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/oid.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/types.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/varbind_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_client.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/pdu_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/asn1.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/output_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/netsnmp-attribute-format.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_debug.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_logging.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/session_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/callback.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_transport.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_service.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpCallbackDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpUnixDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpUDPDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpUDPIPv4BaseDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpIPv4BaseDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpUDPBaseDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpTCPDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpUDPIPv6Domain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpIPv6BaseDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpTCPIPv6Domain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpIPXDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpAAL5PVCDomain.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/ucd_compat.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/mib.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/mib_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/parse.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/oid_stash.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/net-snmp-features.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_impl.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp-tc.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/getopt.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/utilities.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/system.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/tools.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/int64.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/mt_support.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_alarm.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/data_list.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/check_varbind.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/factory.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/container_binary_array.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/container_list_ssll.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/container_iterator.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_assert.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/version.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/config_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/read_config.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/default_store.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_parse_args.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_enum.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/vacm.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/snmpv3_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpv3.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/transform_oids.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/keytools.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/scapi.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/lcd_time.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmp_secmod.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpv3-security-includes.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmpusm.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/snmptsm.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/net-snmp-agent-includes.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/mib_module_config.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/agent_module_config.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/snmp_agent.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/snmp_vars.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/agent_handler.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/var_struct.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/agent_registry.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/library/fd_event_manager.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/ds_agent.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/agent_read_config.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/agent_trap.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/all_helpers.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/instance.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/baby_steps.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/scalar.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/scalar_group.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/watcher.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/multiplexer.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/null.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/debug_handler.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/cache_handler.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/old_api.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/read_only.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/row_merge.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/serialize.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/bulk_to_next.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/mode_end_call.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table_data.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table_dataset.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table_tdata.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table_iterator.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table_container.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/table_array.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/mfd.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/snmp_get_statistic.h
+./ucd-snmp/disk.lo: ../../include/net-snmp/agent/auto_nlist.h struct.h
+./ucd-snmp/disk.lo: ./ucd-snmp/disk.h mibdefs.h
+./ucd-snmp/disk.lo: util_funcs/header_simple_table.h ./ucd-snmp/errormib.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/net-snmp-config.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/net-snmp-includes.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/definitions.h
@@ -14026,6 +14267,7 @@
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14086,7 +14328,7 @@
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/agent/mfd.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/agent/snmp_get_statistic.h
 ./ucd-snmp/disk_hw.lo: ../../include/net-snmp/agent/hardware/fsys.h struct.h
-./ucd-snmp/disk_hw.lo: mibdefs.h ./ucd-snmp/disk_hw.h
+./ucd-snmp/disk_hw.lo: ./ucd-snmp/disk.h mibdefs.h ./ucd-snmp/disk_hw.h
 ./ucd-snmp/disk_hw.lo: util_funcs/header_simple_table.h ./ucd-snmp/errormib.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/net-snmp-config.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/net-snmp-includes.h
@@ -14138,6 +14380,7 @@
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/diskio.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/diskio.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14250,6 +14493,7 @@
 ./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/dlmod.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14360,6 +14604,7 @@
 ./ucd-snmp/errormib.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/errormib.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/errormib.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/errormib.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/errormib.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/errormib.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/errormib.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14472,6 +14717,7 @@
 ./ucd-snmp/extensible.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/extensible.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/extensible.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/extensible.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/extensible.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/extensible.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/extensible.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14589,6 +14835,7 @@
 ./ucd-snmp/file.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/file.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/file.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/file.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/file.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/file.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/file.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14700,6 +14947,7 @@
 ./ucd-snmp/hpux.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/hpux.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/hpux.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/hpux.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/hpux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/hpux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/hpux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14810,6 +15058,7 @@
 ./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/lmSensors.lo: ../../include/net-snmp/library/container_iterator.h
@@ -14921,6 +15170,7 @@
 ./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/lmsensorsMib.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15033,6 +15283,7 @@
 ./ucd-snmp/loadave.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/loadave.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/loadave.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/loadave.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/loadave.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/loadave.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/loadave.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15147,6 +15398,7 @@
 ./ucd-snmp/memory.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15258,6 +15510,7 @@
 ./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_aix4.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15370,6 +15623,7 @@
 ./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_darwin7.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15482,6 +15736,7 @@
 ./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_dynix.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15594,6 +15849,7 @@
 ./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_freebsd2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15709,6 +15965,7 @@
 ./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_hpux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15821,6 +16078,7 @@
 ./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_netbsd1.lo: ../../include/net-snmp/library/container_iterator.h
@@ -15933,6 +16191,7 @@
 ./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/memory_solaris2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16046,6 +16305,7 @@
 ./ucd-snmp/pass.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/pass.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/pass.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/pass.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/pass.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/pass.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/pass.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16160,6 +16420,7 @@
 ./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/pass_common.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16274,6 +16535,7 @@
 ./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/pass_persist.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16388,6 +16650,7 @@
 ./ucd-snmp/proc.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/proc.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/proc.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/proc.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/proc.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/proc.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/proc.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16503,6 +16766,7 @@
 ./ucd-snmp/proxy.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/proxy.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/proxy.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/proxy.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/proxy.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/proxy.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/proxy.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16613,6 +16877,7 @@
 ./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/versioninfo.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16726,6 +16991,7 @@
 ./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16838,6 +17104,7 @@
 ./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_aix4.lo: ../../include/net-snmp/library/container_iterator.h
@@ -16949,6 +17216,7 @@
 ./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_bsdi4.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17061,6 +17329,7 @@
 ./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_darwin7.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17173,6 +17442,7 @@
 ./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_dynix.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17284,6 +17554,7 @@
 ./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_freebsd2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17397,6 +17668,7 @@
 ./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_hpux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17508,6 +17780,7 @@
 ./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_linux.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17621,6 +17894,7 @@
 ./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_netbsd1.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17733,6 +18007,7 @@
 ./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/data_list.h
 ./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/check_varbind.h
 ./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/container.h
+./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/factory.h
 ./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/container_binary_array.h
 ./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./ucd-snmp/vmstat_solaris2.lo: ../../include/net-snmp/library/container_iterator.h
@@ -17926,6 +18201,7 @@
 ./util_funcs/header_generic.lo: ../../include/net-snmp/library/data_list.h
 ./util_funcs/header_generic.lo: ../../include/net-snmp/library/check_varbind.h
 ./util_funcs/header_generic.lo: ../../include/net-snmp/library/container.h
+./util_funcs/header_generic.lo: ../../include/net-snmp/library/factory.h
 ./util_funcs/header_generic.lo: ../../include/net-snmp/library/container_binary_array.h
 ./util_funcs/header_generic.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./util_funcs/header_generic.lo: ../../include/net-snmp/library/container_iterator.h
@@ -18036,6 +18312,7 @@
 ./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/data_list.h
 ./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/check_varbind.h
 ./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/container.h
+./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/factory.h
 ./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/container_binary_array.h
 ./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./util_funcs/header_simple_table.lo: ../../include/net-snmp/library/container_iterator.h
@@ -18146,6 +18423,7 @@
 ./util_funcs/restart.lo: ../../include/net-snmp/library/data_list.h
 ./util_funcs/restart.lo: ../../include/net-snmp/library/check_varbind.h
 ./util_funcs/restart.lo: ../../include/net-snmp/library/container.h
+./util_funcs/restart.lo: ../../include/net-snmp/library/factory.h
 ./util_funcs/restart.lo: ../../include/net-snmp/library/container_binary_array.h
 ./util_funcs/restart.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./util_funcs/restart.lo: ../../include/net-snmp/library/container_iterator.h
@@ -18256,6 +18534,7 @@
 ./utilities/execute.lo: ../../include/net-snmp/library/data_list.h
 ./utilities/execute.lo: ../../include/net-snmp/library/check_varbind.h
 ./utilities/execute.lo: ../../include/net-snmp/library/container.h
+./utilities/execute.lo: ../../include/net-snmp/library/factory.h
 ./utilities/execute.lo: ../../include/net-snmp/library/container_binary_array.h
 ./utilities/execute.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./utilities/execute.lo: ../../include/net-snmp/library/container_iterator.h
@@ -18368,6 +18647,7 @@
 ./utilities/iquery.lo: ../../include/net-snmp/library/data_list.h
 ./utilities/iquery.lo: ../../include/net-snmp/library/check_varbind.h
 ./utilities/iquery.lo: ../../include/net-snmp/library/container.h
+./utilities/iquery.lo: ../../include/net-snmp/library/factory.h
 ./utilities/iquery.lo: ../../include/net-snmp/library/container_binary_array.h
 ./utilities/iquery.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./utilities/iquery.lo: ../../include/net-snmp/library/container_iterator.h
@@ -18479,6 +18759,7 @@
 ./utilities/override.lo: ../../include/net-snmp/library/data_list.h
 ./utilities/override.lo: ../../include/net-snmp/library/check_varbind.h
 ./utilities/override.lo: ../../include/net-snmp/library/container.h
+./utilities/override.lo: ../../include/net-snmp/library/factory.h
 ./utilities/override.lo: ../../include/net-snmp/library/container_binary_array.h
 ./utilities/override.lo: ../../include/net-snmp/library/container_list_ssll.h
 ./utilities/override.lo: ../../include/net-snmp/library/container_iterator.h

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
@@ -21,19 +21,19 @@
 #define _KERNEL 1
 #define _I_DEFINED_KERNEL
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NET_IF_H
+#if HAVE_NET_IF_H
 #include <net/if.h>
 #endif
 #ifdef _I_DEFINED_KERNEL
 #undef _KERNEL
 #endif
-#ifdef HAVE_NET_IF_VAR_H
+#if HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-#ifdef HAVE_NETINET_IN_VAR_H
+#if HAVE_NETINET_IN_VAR_H
 #ifdef HAVE_SYS_QUEUE_H
 #include <sys/queue.h>
 #endif

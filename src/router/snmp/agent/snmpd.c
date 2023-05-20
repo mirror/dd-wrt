@@ -39,77 +39,77 @@
 #include <net-snmp/net-snmp-features.h>
 #include <net-snmp/types.h>
 
-#ifdef HAVE_IO_H
+#if HAVE_IO_H
 #include <io.h>
 #endif
 #include <stdio.h>
 #include <errno.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef HAVE_STDLIB_H
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_SYS_SELECT_H
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_NET_IF_H
+#if HAVE_NET_IF_H
 #include <net/if.h>
 #endif
-#ifdef HAVE_INET_MIB2_H
+#if HAVE_INET_MIB2_H
 #include <inet/mib2.h>
 #endif
-#ifdef HAVE_SYS_IOCTL_H
+#if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#ifdef HAVE_SYS_FILE_H
+#if HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef HAVE_SYS_WAIT_H
+#if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
 #include <signal.h>
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_PROCESS_H
+#if HAVE_PROCESS_H              /* Win32-getpid */
 #include <process.h>
 #endif
-#ifdef HAVE_LIMITS_H
+#if HAVE_LIMITS_H
 #include <limits.h>
 #endif
-#ifdef HAVE_PWD_H
+#if HAVE_PWD_H
 #include <pwd.h>
 #endif
-#ifdef HAVE_GRP_H
+#if HAVE_GRP_H
 #include <grp.h>
 #endif
 #ifdef HAVE_CRTDBG_H
@@ -236,7 +236,7 @@ usage(char *prog)
 	   "\t\t\t  Don't put space(s) between -D and TOKEN(s).\n"
 #endif
            "  -f\t\t\tdo not fork from the shell\n",
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
            "  -g GID\t\tchange to this numeric gid after opening\n"
 	   "\t\t\t  transport endpoints\n"
 #endif
@@ -264,7 +264,7 @@ usage(char *prog)
            "  \t\t\t  (followed by the startup parameter list)\n"
            "  \t\t\t  Note that some parameters are not relevant when running as a service\n"
 #endif
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
            "  -u UID\t\tchange to this uid (numeric or textual) after\n"
 	   "\t\t\t  opening transport endpoints\n"
 #endif
@@ -289,8 +289,6 @@ usage(char *prog)
            "  -S d|i|0-7\t\tuse -Ls <facility> instead\n"
            "\n"
            );
-    SOCK_CLEANUP;
-    exit(1);
 }
 
 static void
@@ -383,7 +381,7 @@ main(int argc, char *argv[])
 #endif
 {
     static const char options[] = "aAc:CdD::fhHI:l:L:m:M:n:p:P:qrsS:UvV-:Y:"
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
         "g:u:"
 #endif
 #if defined(USING_AGENTX_SUBAGENT_MODULE)|| defined(USING_AGENTX_MASTER_MODULE)
@@ -402,7 +400,7 @@ main(int argc, char *argv[])
 #ifndef WIN32
     int             prepared_sockets = 0;
 #endif
-#ifdef HAVE_GETPID
+#if HAVE_GETPID
     int fd;
     FILE           *PID;
 #endif
@@ -496,6 +494,7 @@ main(int argc, char *argv[])
         case '-':
             if (strcasecmp(optarg, "help") == 0) {
                 usage(argv[0]);
+                goto out;
             }
             if (strcasecmp(optarg, "version") == 0) {
                 version();
@@ -549,14 +548,14 @@ main(int argc, char *argv[])
             dont_fork = 1;
             break;
 
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
         case 'g':
             if (optarg != NULL) {
                 char           *ecp;
                 int             gid;
 
                 gid = strtoul(optarg, &ecp, 10);
-#if defined(HAVE_GETGRNAM) && defined(HAVE_PWD_H)
+#if HAVE_GETGRNAM && HAVE_PWD_H
                 if (*ecp) {
                     struct group  *info;
 
@@ -727,14 +726,14 @@ main(int argc, char *argv[])
 				      NETSNMP_DS_AGENT_LEAVE_PIDFILE);
             break;
 
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
         case 'u':
             if (optarg != NULL) {
                 char           *ecp;
                 int             uid;
 
                 uid = strtoul(optarg, &ecp, 10);
-#if defined(HAVE_GETPWNAM) && defined(HAVE_PWD_H)
+#if HAVE_GETPWNAM && HAVE_PWD_H
                 if (*ecp) {
                     struct passwd  *info;
 
@@ -784,6 +783,7 @@ main(int argc, char *argv[])
             fprintf(stderr, "%s: Illegal argument -X:"
 		            "AgentX support not compiled in.\n", argv[0]);
             usage(argv[0]);
+            goto out;
 #endif
             break;
 
@@ -938,7 +938,7 @@ main(int argc, char *argv[])
         }
     }
 
-#ifdef HAVE_GETPID
+#if HAVE_GETPID
     if (pid_file != NULL) {
         /*
          * unlink the pid_file, if it exists, prior to open.  Without
@@ -1004,7 +1004,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SETUID
     if ((uid = netsnmp_ds_get_int(NETSNMP_DS_APPLICATION_ID, 
 				  NETSNMP_DS_AGENT_USERID)) > 0) {
-#if defined(HAVE_GETPWNAM) && defined(HAVE_PWD_H) && defined(HAVE_INITGROUPS)
+#if HAVE_GETPWNAM && HAVE_PWD_H && HAVE_INITGROUPS
         struct passwd *info;
 
         /*
@@ -1150,32 +1150,6 @@ static void join_stdin_waiter_thread(void)
 }
 #endif
 
-static void
-snmpd_reconfig(void)
-{
-#ifdef HAVE_SIGPROCMASK
-    sigset_t set;
-    int ret;
-
-    sigemptyset(&set);
-    sigaddset(&set, SIGHUP);
-    ret = sigprocmask(SIG_BLOCK, &set, NULL);
-    netsnmp_assert(ret == 0);
-#endif
-    reconfig = 0;
-    snmp_log(LOG_INFO, "Reconfiguring daemon\n");
-    /* Stop and restart logging.  This allows logfiles to be rotated etc. */
-    netsnmp_logging_restart();
-    snmp_log(LOG_INFO, "NET-SNMP version %s restarted\n",
-             netsnmp_get_version());
-    update_config();
-    send_easy_trap(SNMP_TRAP_ENTERPRISESPECIFIC, 3);
-#ifdef HAVE_SIGPROCMASK
-    ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
-    netsnmp_assert(ret == 0);
-#endif
-}
-
 /*******************************************************************-o-******
  * receive
  *
@@ -1195,7 +1169,7 @@ receive(void)
     int             numfds;
     netsnmp_large_fd_set readfds, writefds, exceptfds;
     struct timeval  timeout, *tvp = &timeout;
-    int             count, block, i;
+    int             count, block, i, ret;
 #ifdef	USING_SMUX_MODULE
     int             sd;
 #endif                          /* USING_SMUX_MODULE */
@@ -1217,8 +1191,29 @@ receive(void)
      * Loop-forever: execute message handlers for sockets with data
      */
     while (netsnmp_running) {
-        if (reconfig)
-            snmpd_reconfig();
+        if (reconfig) {
+#if HAVE_SIGPROCMASK
+            sigset_t set;
+
+            sigemptyset(&set);
+            sigaddset(&set, SIGHUP);
+            ret = sigprocmask(SIG_BLOCK, &set, NULL);
+            netsnmp_assert(ret == 0);
+#endif
+            reconfig = 0;
+            snmp_log(LOG_INFO, "Reconfiguring daemon\n");
+	    /*  Stop and restart logging.  This allows logfiles to be
+		rotated etc.  */
+	    netsnmp_logging_restart();
+	    snmp_log(LOG_INFO, "NET-SNMP version %s restarted\n",
+		     netsnmp_get_version());
+            update_config();
+            send_easy_trap(SNMP_TRAP_ENTERPRISESPECIFIC, 3);
+#if HAVE_SIGPROCMASK
+            ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
+            netsnmp_assert(ret == 0);
+#endif
+        }
 
         /*
          * default to sleeping for a really long time. INT_MAX

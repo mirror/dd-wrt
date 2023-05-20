@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #endif
 #include <stdio.h>
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

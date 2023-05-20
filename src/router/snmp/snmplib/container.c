@@ -20,7 +20,6 @@
 #include <net-snmp/library/container_binary_array.h>
 #include <net-snmp/library/container_list_ssll.h>
 #include <net-snmp/library/container_null.h>
-#include "factory.h"
 
 #include <stdint.h>
 
@@ -285,15 +284,7 @@ netsnmp_container_get(const char *type)
     return NULL;
 }
 
-/**
- * Allocate a new container of a given type.
- *
- * @param type A colon-separated string with the container name, followed by
- * a colon-separated list of container types.
- *
- * Creates a new container. The type of the container is the first type
- * mentioned in @type for which a factory has been registered with
- * netsnmp_container_register_with_compare() or netsnmp_container_register().
+/*------------------------------------------------------------------
  */
 netsnmp_container *
 netsnmp_container_find(const char *type)
@@ -302,16 +293,13 @@ netsnmp_container_find(const char *type)
     netsnmp_container *c = ct ? (netsnmp_container *)(ct->factory->produce()) : NULL;
 
     /*
-     * provide default compare and ncompare
+     * provide default compare
      */
     if (c) {
         if (ct->compare)
             c->compare = ct->compare;
         else if (NULL == c->compare)
             c->compare = netsnmp_compare_netsnmp_index;
-
-        if (NULL == c->ncompare)
-            c->ncompare = netsnmp_ncompare_netsnmp_index;
     }
 
     return c;
@@ -596,62 +584,64 @@ netsnmp_container_data_dup(netsnmp_container *dup, netsnmp_container *c)
  *
  */
 int
-netsnmp_compare_netsnmp_index(const void *lhs_arg, const void *rhs_arg)
+netsnmp_compare_netsnmp_index(const void *lhs, const void *rhs)
 {
-    const netsnmp_index *lhs = lhs_arg;
-    const netsnmp_index *rhs = rhs_arg;
     int rc;
-
-    netsnmp_assert(lhs && rhs);
+    netsnmp_assert((NULL != lhs) && (NULL != rhs));
     DEBUGIF("compare:index") {
         DEBUGMSGT(("compare:index", "compare "));
-        DEBUGMSGSUBOID(("compare:index", lhs->oids, lhs->len));
+        DEBUGMSGSUBOID(("compare:index", ((const netsnmp_index *) lhs)->oids,
+                     ((const netsnmp_index *) lhs)->len));
         DEBUGMSG(("compare:index", " to "));
-        DEBUGMSGSUBOID(("compare:index", rhs->oids, rhs->len));
+        DEBUGMSGSUBOID(("compare:index", ((const netsnmp_index *) rhs)->oids,
+                     ((const netsnmp_index *) rhs)->len));
         DEBUGMSG(("compare:index", "\n"));
     }
-    rc = snmp_oid_compare(lhs->oids, lhs->len, rhs->oids, rhs->len);
+    rc = snmp_oid_compare(((const netsnmp_index *) lhs)->oids,
+                          ((const netsnmp_index *) lhs)->len,
+                          ((const netsnmp_index *) rhs)->oids,
+                          ((const netsnmp_index *) rhs)->len);
     DEBUGMSGT(("compare:index", "result was %d\n", rc));
     return rc;
 }
 
 int
-netsnmp_ncompare_netsnmp_index(const void *lhs_arg, const void *rhs_arg)
+netsnmp_ncompare_netsnmp_index(const void *lhs, const void *rhs)
 {
-    const netsnmp_index *lhs = lhs_arg;
-    const netsnmp_index *rhs = rhs_arg;
     int rc;
-
-    netsnmp_assert(lhs && rhs);
+    netsnmp_assert((NULL != lhs) && (NULL != rhs));
     DEBUGIF("compare:index") {
         DEBUGMSGT(("compare:index", "compare "));
-        DEBUGMSGSUBOID(("compare:index", lhs->oids, lhs->len));
+        DEBUGMSGSUBOID(("compare:index", ((const netsnmp_index *) lhs)->oids,
+                     ((const netsnmp_index *) lhs)->len));
         DEBUGMSG(("compare:index", " to "));
-        DEBUGMSGSUBOID(("compare:index", rhs->oids, rhs->len));
+        DEBUGMSGSUBOID(("compare:index", ((const netsnmp_index *) rhs)->oids,
+                     ((const netsnmp_index *) rhs)->len));
         DEBUGMSG(("compare:index", "\n"));
     }
-    rc = snmp_oid_ncompare(lhs->oids, lhs->len, rhs->oids, rhs->len, rhs->len);
+    rc = snmp_oid_ncompare(((const netsnmp_index *) lhs)->oids,
+                           ((const netsnmp_index *) lhs)->len,
+                           ((const netsnmp_index *) rhs)->oids,
+                           ((const netsnmp_index *) rhs)->len,
+                           ((const netsnmp_index *) rhs)->len);
     DEBUGMSGT(("compare:index", "result was %d\n", rc));
     return rc;
 }
 
 int
-netsnmp_compare_cstring(const void *lhs_arg, const void *rhs_arg)
+netsnmp_compare_cstring(const void * lhs, const void * rhs)
 {
-    const container_type *lhs = lhs_arg;
-    const container_type *rhs = rhs_arg;
-
-    return strcmp(lhs->name, rhs->name);
+    return strcmp(((const container_type*)lhs)->name,
+                  ((const container_type*)rhs)->name);
 }
 
 #ifndef NETSNMP_FEATURE_REMOVE_CONTAINER_NCOMPARE_CSTRING
 int
-netsnmp_ncompare_cstring(const void *lhs_arg, const void *rhs_arg)
+netsnmp_ncompare_cstring(const void * lhs, const void * rhs)
 {
-    const container_type *lhs = lhs_arg;
-    const container_type *rhs = rhs_arg;
-
-    return strncmp(lhs->name, rhs->name, strlen(rhs->name));
+    return strncmp(((const container_type*)lhs)->name,
+                   ((const container_type*)rhs)->name,
+                   strlen(((const container_type*)rhs)->name));
 }
 #endif /* NETSNMP_FEATURE_REMOVE_CONTAINER_NCOMPARE_CSTRING */
 
@@ -774,5 +764,5 @@ netsnmp_container_simple_free(void *data, void *context)
     DEBUGMSGTL(("verbose:container",
                 "netsnmp_container_simple_free) called for %p/%p\n",
                 data, context));
-    free(data); /* SNMP_FREE wasted on param */
+    free((void*)data); /* SNMP_FREE wasted on param */
 }

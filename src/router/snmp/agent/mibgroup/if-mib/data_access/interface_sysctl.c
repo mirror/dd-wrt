@@ -13,7 +13,7 @@
 
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
-#ifdef HAVE_SYS_IOCTL_H
+#if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #else
 #error "BSD should have sys/ioctl header"

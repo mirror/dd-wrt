@@ -224,13 +224,13 @@ var_extensible_vmstat(struct variable *vp,
         long_ret = rate(long_ret);
         return ((u_char *) (&long_ret));
     case IOSENT:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;
         return ((u_char *) (&long_ret));
     case IORECEIVE:
-#ifdef NETSNMP_NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;

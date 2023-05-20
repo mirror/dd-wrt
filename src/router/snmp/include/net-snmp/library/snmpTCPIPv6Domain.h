@@ -1,13 +1,13 @@
 #ifndef _SNMPTCPIPV6DOMAIN_H
 #define _SNMPTCPIPV6DOMAIN_H
 
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(IPv6Base);
-config_require(SocketBase);
-config_require(TCPBase);
+config_require(IPv6Base)
+config_require(SocketBase)
+config_require(TCPBase)
 
 #include <net-snmp/library/snmpIPv6BaseDomain.h>
 

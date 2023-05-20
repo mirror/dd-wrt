@@ -18,7 +18,7 @@
 
 #include <sys/types.h>
 
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #endif
 

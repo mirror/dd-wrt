@@ -29,16 +29,16 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -48,7 +48,7 @@
 #include <netinet/in.h>
 #endif
 
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include "memcheck.h"
@@ -554,7 +554,7 @@ sc_init(void)
     gettimeofday(&tv, (struct timezone *) 0);
 
     netsnmp_srandom((unsigned)(tv.tv_sec ^ tv.tv_usec));
-#elif defined(NETSNMP_USE_PKCS11)
+#elif NETSNMP_USE_PKCS11
     DEBUGTRACE;
     rval = pkcs_init();
 #else
@@ -595,7 +595,7 @@ sc_random(u_char * buf, size_t * buflen)
 #ifdef NETSNMP_USE_OPENSSL
     RAND_bytes(buf, *buflen);   /* will never fail */
     MAKE_MEM_DEFINED(buf, *buflen);
-#elif defined(NETSNMP_USE_PKCS11)  /* NETSNMP_USE_PKCS11 */
+#elif NETSNMP_USE_PKCS11			/* NETSNMP_USE_PKCS11 */
     pkcs_random(buf, *buflen);
 #else                           /* NETSNMP_USE_INTERNAL_MD5 */
     /*
@@ -789,7 +789,7 @@ sc_generate_keyed_hash(const oid * authtypeOID, size_t authtypeOIDlen,
         *maclen = buf_len;
     memcpy(MAC, buf, *maclen);
 
-#elif defined(NETSNMP_USE_PKCS11)            /* NETSNMP_USE_PKCS11 */
+#elif NETSNMP_USE_PKCS11                    /* NETSNMP_USE_PKCS11 */
 
 #ifndef NETSNMP_DISABLE_MD5
     if (NETSNMP_USMAUTH_HMACMD5 == auth_type) {
@@ -815,7 +815,7 @@ sc_generate_keyed_hash(const oid * authtypeOID, size_t authtypeOIDlen,
         *maclen = buf_len;
     memcpy(MAC, buf, *maclen);
 
-#elif defined(NETSNMP_USE_INTERNAL_CRYPTO)
+#elif NETSNMP_USE_INTERNAL_CRYPTO
     if (*maclen > properlength)
         *maclen = properlength;
 #ifndef NETSNMP_DISABLE_MD5
@@ -994,7 +994,7 @@ sc_hash_type_quit:
 #endif
     return (rval);
 
-#elif defined(NETSNMP_USE_INTERNAL_CRYPTO)
+#elif NETSNMP_USE_INTERNAL_CRYPTO
 #ifndef NETSNMP_DISABLE_MD5
     if (NETSNMP_USMAUTH_HMACMD5 == auth_type) {
         if (*MAC_len < MD5_DIGEST_LENGTH)
@@ -1017,7 +1017,7 @@ sc_hash_type_quit:
         return (SNMPERR_GENERR);
     }
     return (rval);
-#elif defined(NETSNMP_USE_PKCS11)        /* NETSNMP_USE_PKCS11 */
+#elif NETSNMP_USE_PKCS11                  /* NETSNMP_USE_PKCS11 */
 
 #ifndef NETSNMP_DISABLE_MD5
     if (NETSNMP_USMAUTH_HMACMD5 == auth_type) {
@@ -1580,7 +1580,7 @@ sc_decrypt(const oid * privtype, size_t privtypelen,
     memset(my_iv, 0, sizeof(my_iv));
     return rval;
 }				/* USE OPEN_SSL */
-#elif defined(NETSNMP_USE_PKCS11)        /* USE PKCS */
+#elif NETSNMP_USE_PKCS11                  /* USE PKCS */
 {
     int             rval = SNMPERR_SUCCESS;
     u_char	    pkcs_des_key[8];

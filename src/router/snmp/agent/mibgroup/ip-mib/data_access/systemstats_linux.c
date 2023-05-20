@@ -143,7 +143,7 @@ _systemstats_v4(netsnmp_container* container, u_int load_flags)
     if (start) {
 
         len = strlen(line);
-        if (len && line[len - 1] == '\n')
+        if (line[len - 1] == '\n')
             line[len - 1] = '\0';
 
         while (*start && *start == ' ')
@@ -164,6 +164,8 @@ _systemstats_v4(netsnmp_container* container, u_int load_flags)
         entry = netsnmp_access_systemstats_entry_create(1, 0,
                     "ipSystemStatsTable.ipv4");
         if(NULL == entry) {
+            netsnmp_access_systemstats_container_free(container,
+                                                      NETSNMP_ACCESS_SYSTEMSTATS_FREE_NOFLAGS);
             return -3;
         }
 
@@ -383,7 +385,7 @@ _systemstats_v6_load_file(netsnmp_systemstats_entry *entry, FILE *devin)
             break;
 
         len = strlen(line);
-        if (len && line[len - 1] == '\n')
+        if (line[len - 1] == '\n')
             line[len - 1] = '\0';
 
         if (('I' != line[0]) || ('6' != line[2]))

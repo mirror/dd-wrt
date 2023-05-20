@@ -12,16 +12,16 @@
 
 #include "mibII/mibII_common.h"
 
-#ifdef HAVE_NETINET_TCP_H
+#if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#ifdef HAVE_NETINET_TCP_TIMER_H
+#if HAVE_NETINET_TCP_TIMER_H
 #include <netinet/tcp_timer.h>
 #endif
-#ifdef HAVE_NETINET_TCPIP_H
+#if HAVE_NETINET_TCPIP_H
 #include <netinet/tcpip.h>
 #endif
-#ifdef HAVE_NETINET_TCP_VAR_H
+#if HAVE_NETINET_TCP_VAR_H
 #include <netinet/tcp_var.h>
 #endif
 

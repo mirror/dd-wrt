@@ -63,7 +63,7 @@ int             AGUTIL_get_oid_value(u_char * var_val, u_char var_val_type,
 
 u_long          AGUTIL_sys_up_time(void);
 
-#ifdef OPTICALL_ACESS
+#if OPTICALL_ACESS
 #define ETH_STATS_T UID_PORT_STATISTICS_T
 #else
 typedef struct {
