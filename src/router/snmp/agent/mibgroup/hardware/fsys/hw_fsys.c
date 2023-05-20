@@ -1,3 +1,4 @@
+#define __USE_MINGW_ANSI_STDIO 0
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -132,7 +133,7 @@ netsnmp_fsys_info *netsnmp_fsys_get_first(void) {
     return CONTAINER_FIRST(_fsys_container);
 }
 
-netsnmp_fsys_info *netsnmp_fsys_get_next(netsnmp_fsys_info *this_ptr) {
+netsnmp_fsys_info *netsnmp_fsys_get_next(const netsnmp_fsys_info *this_ptr) {
     return CONTAINER_NEXT(_fsys_container, this_ptr);
 }
 
@@ -142,17 +143,18 @@ _fsys_create_entry(void)
     netsnmp_fsys_info *sp;
 
     sp = SNMP_MALLOC_TYPEDEF(netsnmp_fsys_info);
-    if (sp) {
-        /*
-         * Set up the index value.
-         *
-         * All this trouble, just for a simple integer.
-         * Surely there must be a better way?
-         */
-        sp->idx.len  = 1;
-        sp->idx.oids = SNMP_MALLOC_TYPEDEF( oid );
-        sp->idx.oids[0] = ++_fsys_idx;
-    }
+    if (!sp)
+        return NULL;
+
+    /*
+     * Set up the index value.
+     *
+     * All this trouble, just for a simple integer.
+     * Surely there must be a better way?
+     */
+    sp->idx.len  = 1;
+    sp->idx.oids = SNMP_MALLOC_TYPEDEF( oid );
+    sp->idx.oids[0] = ++_fsys_idx;
 
     DEBUGMSGTL(("fsys:new", "Create filesystem entry (index = %d)\n", _fsys_idx));
     CONTAINER_INSERT(_fsys_container, sp);
@@ -267,7 +269,8 @@ _fsys_to_K( unsigned long long size, unsigned long long units )
 }
 
 unsigned long long
-netsnmp_fsys_size_ull( netsnmp_fsys_info *f) {
+netsnmp_fsys_size_ull(const netsnmp_fsys_info *f)
+{
     if ( !f ) {
         return 0;
     }
@@ -275,7 +278,8 @@ netsnmp_fsys_size_ull( netsnmp_fsys_info *f) {
 }
 
 unsigned long long
-netsnmp_fsys_used_ull( netsnmp_fsys_info *f) {
+netsnmp_fsys_used_ull(const netsnmp_fsys_info *f)
+{
     if ( !f ) {
         return 0;
     }
@@ -283,7 +287,8 @@ netsnmp_fsys_used_ull( netsnmp_fsys_info *f) {
 }
 
 unsigned long long
-netsnmp_fsys_avail_ull( netsnmp_fsys_info *f) {
+netsnmp_fsys_avail_ull(const netsnmp_fsys_info *f)
+{
     if ( !f ) {
         return 0;
     }
@@ -292,19 +297,22 @@ netsnmp_fsys_avail_ull( netsnmp_fsys_info *f) {
 
 
 int
-netsnmp_fsys_size( netsnmp_fsys_info *f) {
+netsnmp_fsys_size(const netsnmp_fsys_info *f)
+{
     unsigned long long v = netsnmp_fsys_size_ull(f);
     return (int)v;
 }
 
 int
-netsnmp_fsys_used( netsnmp_fsys_info *f) {
+netsnmp_fsys_used(const netsnmp_fsys_info *f)
+{
     unsigned long long v = netsnmp_fsys_used_ull(f);
     return (int)v;
 }
 
 int
-netsnmp_fsys_avail( netsnmp_fsys_info *f) {
+netsnmp_fsys_avail(const netsnmp_fsys_info *f)
+{
     unsigned long long v = netsnmp_fsys_avail_ull(f);
     return (int)v;
 }

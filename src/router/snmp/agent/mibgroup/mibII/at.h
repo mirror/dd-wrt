@@ -6,7 +6,7 @@
 #ifndef _MIBGROUP_AT_H
 #define _MIBGROUP_AT_H
 
-#if HAVE_NET_ROUTE_H
+#ifdef HAVE_NET_ROUTE_H
 #include <net/route.h>
 #endif
 

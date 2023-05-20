@@ -37,26 +37,26 @@
 #  include <time.h>
 # endif
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_NETINET_IN_SYSTM_H
+#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif
-#if HAVE_NETINET_IP_H
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
 #endif
 #ifdef NETSNMP_ENABLE_IPV6
-#if HAVE_NETINET_IP6_H
+#ifdef HAVE_NETINET_IP6_H
 #include <netinet/ip6.h>
 #endif
 #endif
-#if HAVE_SYS_QUEUE_H
+#ifdef HAVE_SYS_QUEUE_H
 #include <sys/queue.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#if HAVE_SYS_SOCKETVAR_H
+#ifdef HAVE_SYS_SOCKETVAR_H
 #ifndef dynix
 #include <sys/socketvar.h>
 #else
@@ -64,27 +64,27 @@
 #endif
 #endif
 #endif
-#if HAVE_SYS_STREAM_H
+#ifdef HAVE_SYS_STREAM_H
 #   ifdef sysv5UnixWare7
 #      define _KMEMUSER 1   /* <sys/stream.h> needs this for queue_t */
 #   endif
 #include <sys/stream.h>
 #endif
-#if HAVE_NET_ROUTE_H
+#ifdef HAVE_NET_ROUTE_H
 #include <net/route.h>
 #endif
-#if HAVE_NETINET_IP_VAR_H
+#ifdef HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
 #ifdef NETSNMP_ENABLE_IPV6
-#if HAVE_NETNETSNMP_ENABLE_IPV6_IP6_VAR_H
+#ifdef HAVE_NETNETSNMP_ENABLE_IPV6_IP6_VAR_H
 #include <netinet6/ip6_var.h>
 #endif
 #endif
-#if HAVE_NETINET_IN_PCB_H
+#ifdef HAVE_NETINET_IN_PCB_H
 #include <netinet/in_pcb.h>
 #endif
-#if HAVE_INET_MIB2_H
+#ifdef HAVE_INET_MIB2_H
 #include <inet/mib2.h>
 #endif
 
@@ -214,7 +214,6 @@ snmpd_set_agent_address(const char *token, char *cptr)
          * append to the older specification string 
          */
         snprintf(buf, sizeof(buf), "%s,%s", ptr, cptr);
-	buf[sizeof(buf) - 1] = '\0';
     } else {
         strlcpy(buf, cptr, sizeof(buf));
     }

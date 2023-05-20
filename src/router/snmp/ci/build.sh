@@ -19,16 +19,18 @@ esac
 case "$(uname -a)" in
     MSYS*x86_64*)
 	pacman --noconfirm --sync --needed openssl-devel
+	pacman --noconfirm --sync --needed pkg-config
 	;;
     MINGW64*)
-	pacman --noconfirm --sync --needed mingw-w64-x86_64-libmariadbclient
 	pacman --noconfirm --sync --needed mingw-w64-x86_64-gcc
+	pacman --noconfirm --sync --needed mingw-w64-x86_64-libmariadbclient
 	pacman --noconfirm --sync --needed mingw-w64-x86_64-openssl
+	pacman --noconfirm --sync --needed mingw-w64-x86_64-pkg-config
 	export PATH="/mingw64/bin:$PATH"
 	;;
 esac
-echo "compiler path: $(type -p gcc)"
-"${scriptdir}"/net-snmp-configure V5-8-patches || exit $?
+echo "compiler path: $(type -p "${CC:-gcc}")"
+"${scriptdir}"/net-snmp-configure V5-9-patches || exit $?
 case "$MODE" in
     mini*)
 	# Net-SNMP uses static dependencies, the Makefile.depend files have
@@ -49,5 +51,3 @@ case "$MODE" in
     disable-set|mini*|read-only)
         exit 0;;
 esac
-[ -n "$APPVEYOR" ]			 && exit 0
-"${scriptdir}"/net-snmp-run-tests        || exit $?

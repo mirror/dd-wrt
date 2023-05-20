@@ -499,9 +499,8 @@ _netsnmp_ioctl_ipaddress_set_v4(netsnmp_ipaddress_entry * entry)
          * search for unused alias
          */
         alias_idx = _next_alias(name);
-        snprintf(ifrq.ifr_name,sizeof(ifrq.ifr_name), "%s:%d",
+        snprintf(ifrq.ifr_name, sizeof(ifrq.ifr_name), "%s:%d",
                  name, alias_idx);
-        ifrq.ifr_name[sizeof(ifrq.ifr_name) - 1] = 0;
     }
     else
         strlcpy(ifrq.ifr_name, (char *) extras->name, sizeof(ifrq.ifr_name));

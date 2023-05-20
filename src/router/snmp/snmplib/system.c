@@ -55,10 +55,10 @@ SOFTWARE.
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
-#if HAVE_IO_H
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
-#if HAVE_DIRECT_H
+#ifdef HAVE_DIRECT_H
 #include <direct.h>
 #endif
 #if HAVE_UNISTD_H
@@ -81,26 +81,26 @@ SOFTWARE.
 
 #include <sys/types.h>
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_NET_IF_H
+#ifdef HAVE_NET_IF_H
 #include <net/if.h>
 #endif
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
 
-#if HAVE_SYS_SOCKIO_H
+#ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
 
-#if HAVE_SYS_IOCTL_H
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
 
@@ -112,14 +112,14 @@ SOFTWARE.
 #include <sys/file.h>
 #endif
 
-#if HAVE_KSTAT_H
+#ifdef HAVE_KSTAT_H
 #include <kstat.h>
 #endif
 
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_SYS_SYSCTL_H
+#ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
 
@@ -145,19 +145,19 @@ SOFTWARE.
 #include <sys/pstat.h>
 #endif
 
-#if HAVE_SYS_UTSNAME_H
+#ifdef HAVE_SYS_UTSNAME_H
 #include <sys/utsname.h>
 #endif
 
-#if HAVE_SYS_SYSTEMCFG_H
+#ifdef HAVE_SYS_SYSTEMCFG_H
 #include <sys/systemcfg.h>
 #endif
 
-#if HAVE_SYS_SYSTEMINFO_H
+#ifdef HAVE_SYS_SYSTEMINFO_H
 #include <sys/systeminfo.h>
 #endif
 
-#if HAVE_CRT_EXTERNS_H
+#ifdef HAVE_CRT_EXTERNS_H
 #include <crt_externs.h>        /* for _NSGetArgv() */
 #endif
 
@@ -165,10 +165,10 @@ SOFTWARE.
 #include <mach-o/dyld.h>
 #endif
 
-#if HAVE_PWD_H
+#ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
-#if HAVE_GRP_H
+#ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
 
@@ -176,7 +176,7 @@ SOFTWARE.
 #include <limits.h>
 #endif
 
-#if HAVE_ARPA_INET_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
@@ -282,8 +282,8 @@ netsnmp_daemonize(int quit_immediately, int stderr_log)
 {
     int i = 0;
     DEBUGMSGT(("daemonize","deamonizing...\n"));
-#if HAVE_FORK
-#if HAVE__NSGETEXECUTABLEPATH
+#ifdef HAVE_FORK
+#ifdef HAVE__NSGETEXECUTABLEPATH
      char            path [PATH_MAX] = "";
      uint32_t        size = sizeof (path);
 
@@ -303,7 +303,7 @@ netsnmp_daemonize(int quit_immediately, int stderr_log)
      * Fork to return control to the invoking process and to
      * guarantee that we aren't a process group leader.
      */
-#if HAVE_FORKALL
+#ifdef HAVE_FORKALL
     i = forkall();
 #else
     i = fork();
@@ -329,7 +329,7 @@ netsnmp_daemonize(int quit_immediately, int stderr_log)
         /*
          * Fork to let the process/session group leader exit.
          */
-#if HAVE_FORKALL
+#ifdef HAVE_FORKALL
 	i = forkall();
 #else
 	i = fork();
@@ -642,7 +642,7 @@ get_boottime(void)
 #if defined(hpux10) || defined(hpux11)
     pstat_getstatic(&pst_buf, sizeof(struct pst_static), 1, 0);
     boottime_csecs = pst_buf.boot_time * 100;
-#elif NETSNMP_CAN_USE_SYSCTL
+#elif defined(NETSNMP_CAN_USE_SYSCTL)
     mib[0] = CTL_KERN;
     mib[1] = KERN_BOOTTIME;
 
@@ -859,7 +859,11 @@ netsnmp_getaddrinfo(const char *name, const char *service,
 	DEBUGMSG(("dns:getaddrinfo", ":\"%s\"", service));
 
     if (hints)
-	DEBUGMSG(("dns:getaddrinfo", " with hint ({ ... })"));
+	DEBUGMSG(("dns:getaddrinfo",
+                  " with hints ({.ai_flags = %#x, .ai_family = %s})",
+                  hints->ai_flags, hints->ai_family == 0 ? "0" :
+                  hints->ai_family == AF_INET ? "AF_INET" :
+                  hints->ai_family == AF_INET6 ? "AF_INET6" : "?"));
     else
 	DEBUGMSG(("dns:getaddrinfo", " with no hint"));
 
@@ -906,10 +910,34 @@ netsnmp_getaddrinfo(const char *name, const char *service,
 
 #endif /* DNSSEC_LOCAL_VALIDATION */
     *res = addrs;
-    if ((0 == err) && addrs && addrs->ai_addr) {
-        DEBUGMSGTL(("dns:getaddrinfo", "answer { AF_INET, %s:%hu }\n",
-                    inet_ntoa(((struct sockaddr_in*)addrs->ai_addr)->sin_addr),
-                    ntohs(((struct sockaddr_in*)addrs->ai_addr)->sin_port)));
+    DEBUGIF("dns:getaddrinfo") {
+        if (err == 0 && addrs && addrs->ai_addr) {
+            const char *fam = "?";
+            char dst[64] = "?";
+            uint16_t port = 0;
+
+            switch (addrs->ai_addr->sa_family) {
+            case AF_INET: {
+                struct sockaddr_in *sin = (struct sockaddr_in *)addrs->ai_addr;
+
+                fam = "AF_INET";
+                inet_ntop(AF_INET, &sin->sin_addr, dst, sizeof(dst));
+                port = ntohs(sin->sin_port);
+                break;
+            }
+            case AF_INET6: {
+                struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)
+                    addrs->ai_addr;
+
+                fam = "AF_INET6";
+                inet_ntop(AF_INET6, &sin6->sin6_addr, dst, sizeof(dst));
+                port = ntohs(sin6->sin6_port);
+                break;
+            }
+            }
+            DEBUGMSGTL(("dns:getaddrinfo", "answer { %s, %s:%hu }\n", fam, dst,
+                        port));
+        }
     }
     return err;
 #else
@@ -993,7 +1021,7 @@ netsnmp_gethostbyname(const char *name)
 struct hostent *
 netsnmp_gethostbyaddr(const void *addr, socklen_t len, int type)
 {
-#if HAVE_GETHOSTBYADDR
+#ifdef HAVE_GETHOSTBYADDR
     struct hostent *hp = NULL;
     char buf[64];
 
@@ -1356,7 +1384,7 @@ int
 netsnmp_os_prematch(const char *ospmname,
                     const char *ospmrelprefix)
 {
-#if HAVE_SYS_UTSNAME_H
+#ifdef HAVE_SYS_UTSNAME_H
   static int printOSonce = 1;
   struct utsname utsbuf;
   if ( 0 > uname(&utsbuf))
@@ -1422,14 +1450,14 @@ netsnmp_feature_child_of(str_to_uid, user_information);
  */
 int netsnmp_str_to_uid(const char *useroruid) {
     int uid;
-#if HAVE_GETPWNAM && HAVE_PWD_H
+#if defined(HAVE_GETPWNAM) && defined(HAVE_PWD_H)
     struct passwd *pwd;
 #endif
 
     uid = atoi(useroruid);
 
     if (uid == 0) {
-#if HAVE_GETPWNAM && HAVE_PWD_H
+#if defined(HAVE_GETPWNAM) && defined(HAVE_PWD_H)
         pwd = getpwnam(useroruid);
         uid = pwd ? pwd->pw_uid : 0;
         endpwent();
@@ -1460,7 +1488,7 @@ int netsnmp_str_to_gid(const char *grouporgid)
     gid = atoi(grouporgid);
 
     if (gid == 0) {
-#if HAVE_GETGRNAM && HAVE_GRP_H
+#if defined(HAVE_GETGRNAM) && defined(HAVE_GRP_H)
         struct group  *grp;
 
         grp = getgrnam(grouporgid);

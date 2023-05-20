@@ -4,7 +4,7 @@
  */
 /*
  * Portions of this file are copyrighted by:
- * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Copyright Â© 2003 Sun Microsystems, Inc. All rights reserved.
  * Use is subject to license terms specified in the COPYING file
  * distributed with the Net-SNMP package.
  */
@@ -1626,6 +1626,7 @@ set_if_info(mib2_ifEntry_t *ifp, unsigned index, char *name, uint64_t flags,
             int mtu)
 { 
     boolean_t havespeed = B_FALSE;
+    uint64_t ifspeed = 0;
 
     /*
      * Set basic information 
@@ -1639,26 +1640,32 @@ set_if_info(mib2_ifEntry_t *ifp, unsigned index, char *name, uint64_t flags,
     ifp->flags = flags;
     ifp->ifMtu = mtu;
     ifp->ifSpeed = 0;
+    ifp->ifHighSpeed = 0;
 
     /*
      * Get link speed
      */
-    if ((getKstatInt(NULL, name, "ifspeed", &ifp->ifSpeed) == 0)) {
+    if ((getKstat(name, "ifspeed", &ifspeed) == 0)) {
         /*
          * check for SunOS patch with half implemented ifSpeed 
          */
-        if (ifp->ifSpeed > 0 && ifp->ifSpeed < 10000) {
-            ifp->ifSpeed *= 1000000;
+        if (ifspeed > 0 && ifspeed < 10000) {
+            ifspeed *= 1000000;
         }
 	havespeed = B_TRUE;
-    } else if (getKstatInt(NULL, name, "ifSpeed", &ifp->ifSpeed) == 0) {
+    } else if (getKstat(name, "ifSpeed", &ifspeed) == 0) {
         /*
          * this is good 
          */
 	havespeed = B_TRUE;
-    } else if (getKstatInt("link", name, "ifspeed", &ifp->ifSpeed) == 0) {
-	havespeed = B_TRUE;
     }
+
+    if (ifspeed > 0xffffffff) {
+        ifp->ifSpeed = 0xffffffff;
+    } else {
+        ifp->ifSpeed = ifspeed;
+    }
+    ifp->ifHighSpeed = ifspeed / 1000000;
 
     /* make ifOperStatus depend on link status if available */
     if (ifp->ifAdminStatus == 1) {

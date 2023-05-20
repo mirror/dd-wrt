@@ -16,9 +16,9 @@
 #include "if-mib/ifTable/ifTable.h"
 #include "if-mib/data_access/interface.h"
 #include "interface_private.h"
-#if HAVE_PCRE_H
+#if defined(HAVE_PCRE_H)
 #include <pcre.h>
-#elif HAVE_REGEX_H
+#elif defined(HAVE_REGEX_H)
 #include <sys/types.h>
 #include <regex.h>
 #endif
@@ -311,6 +311,7 @@ netsnmp_access_interface_entry_create(const char *name, oid if_index)
         entry->index = netsnmp_access_interface_index_find(name);
     else
         entry->index = if_index;
+    netsnmp_assert(entry->index != 0);
     _access_interface_entry_save_name(name, entry->index);
 
     if (name)
@@ -322,7 +323,7 @@ netsnmp_access_interface_entry_create(const char *name, oid if_index)
     entry->connector_present = 1;
 
     entry->oid_index.len = 1;
-    entry->oid_index.oids = (oid *) & entry->index;
+    entry->oid_index.oids = &entry->index;
 
     return entry;
 }
@@ -342,18 +343,10 @@ netsnmp_access_interface_entry_free(netsnmp_interface_entry * entry)
      * since the whole entry is about to be freed
      */
 
-    if (NULL != entry->old_stats)
-        free(entry->old_stats);
-
-    if (NULL != entry->name)
-        free(entry->name);
-
-    if (NULL != entry->descr)
-        free(entry->descr);
-
-    if (NULL != entry->paddr)
-        free(entry->paddr);
-
+    free(entry->old_stats);
+    free(entry->name);
+    free(entry->descr);
+    free(entry->paddr);
     free(entry);
 }
 
@@ -677,7 +670,6 @@ netsnmp_access_interface_entry_calculate_stats(netsnmp_interface_entry *entry)
  * copy interface entry data (after checking for counter wraps)
  *
  * @retval -2 : malloc failed
- * @retval -1 : interfaces not the same
  * @retval  0 : no error
  */
 int
@@ -685,11 +677,6 @@ netsnmp_access_interface_entry_copy(netsnmp_interface_entry * lhs,
                                     netsnmp_interface_entry * rhs)
 {
     DEBUGMSGTL(("access:interface", "copy\n"));
-    
-    if ((NULL == lhs) || (NULL == rhs) ||
-        (NULL == lhs->name) || (NULL == rhs->name) ||
-        (0 != strncmp(lhs->name, rhs->name, strlen(rhs->name))))
-        return -1;
 
     /*
      * update stats
@@ -701,14 +688,11 @@ netsnmp_access_interface_entry_copy(netsnmp_interface_entry * lhs,
      * update data
      */
     lhs->ns_flags = rhs->ns_flags;
-    if((NULL != lhs->descr) && (NULL != rhs->descr) &&
-       (0 == strcmp(lhs->descr, rhs->descr)))
-        ;
-    else {
+    if (!lhs->descr || !rhs->descr || strcmp(lhs->descr, rhs->descr) != 0) {
         SNMP_FREE(lhs->descr);
         if (rhs->descr) {
             lhs->descr = strdup(rhs->descr);
-            if(NULL == lhs->descr)
+            if (!lhs->descr)
                 return -2;
         }
     }
@@ -840,7 +824,7 @@ int netsnmp_access_interface_max_reached(const char *name)
 int netsnmp_access_interface_include(const char *name)
 {
     netsnmp_include_if_list *if_ptr;
-#if HAVE_PCRE_H
+#ifdef HAVE_PCRE_H
     int                      found_ndx[3];
 #endif
 
@@ -856,11 +840,11 @@ int netsnmp_access_interface_include(const char *name)
 
 
     for (if_ptr = include_list; if_ptr; if_ptr = if_ptr->next) {
-#if HAVE_PCRE_H
+#if defined(HAVE_PCRE_H)
         if (pcre_exec(if_ptr->regex_ptr, NULL, name, strlen(name), 0, 0,
                       found_ndx, 3) >= 0)
             return TRUE;
-#elif HAVE_REGEX_H
+#elif defined(HAVE_REGEX_H)
         if (regexec(if_ptr->regex_ptr, name, 0, NULL, 0) == 0)
             return TRUE;
 #else
@@ -980,10 +964,10 @@ _parse_include_if_config(const char *token, char *cptr)
 {
     netsnmp_include_if_list *if_ptr, *if_new;
     char                    *name, *st;
-#if HAVE_PCRE_H
+#if defined(HAVE_PCRE_H)
     const char              *pcre_error;
     int                     pcre_error_offset;
-#elif HAVE_REGEX_H
+#elif defined(HAVE_REGEX_H)
     int                     r = 0;
 #endif
 
@@ -1012,14 +996,14 @@ _parse_include_if_config(const char *token, char *cptr)
             config_perror("Out of memory");
             goto err;
         }
-#if HAVE_PCRE_H
+#if defined(HAVE_PCRE_H)
         if_new->regex_ptr = pcre_compile(if_new->name, 0,  &pcre_error,
                                          &pcre_error_offset, NULL);
         if (!if_new->regex_ptr) {
             config_perror(pcre_error);
             goto err;
         }
-#elif HAVE_REGEX_H
+#elif defined(HAVE_REGEX_H)
         if_new->regex_ptr = malloc(sizeof(regex_t));
         if (!if_new->regex_ptr) {
             config_perror("Out of memory");
@@ -1063,9 +1047,9 @@ _free_include_if_config(void)
 
     while (if_ptr) {
         if_next = if_ptr->next;
-#if HAVE_PCRE_H
+#if defined(HAVE_PCRE_H)
         free(if_ptr->regex_ptr);
-#elif HAVE_REGEX_H
+#elif defined(HAVE_REGEX_H)
         regfree(if_ptr->regex_ptr);
         free(if_ptr->regex_ptr);
 #endif

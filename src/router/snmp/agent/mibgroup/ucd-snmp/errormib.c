@@ -20,30 +20,30 @@
 #  include <time.h>
 # endif
 #endif
-#if HAVE_MACHINE_PARAM_H
+#ifdef HAVE_MACHINE_PARAM_H
 #include <machine/param.h>
 #endif
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_SYS_VMMETER_H
+#ifdef HAVE_SYS_VMMETER_H
 #if !(defined(bsdi2) || defined(netbsd1))
 #include <sys/vmmeter.h>
 #endif
 #endif
-#if HAVE_SYS_CONF_H
+#ifdef HAVE_SYS_CONF_H
 #include <sys/conf.h>
 #endif
-#if HAVE_ASM_PAGE_H
+#ifdef HAVE_ASM_PAGE_H
 #include <asm/page.h>
 #endif
-#if HAVE_SYS_SWAP_H
+#ifdef HAVE_SYS_SWAP_H
 #include <sys/swap.h>
 #endif
-#if HAVE_SYS_FS_H
+#ifdef HAVE_SYS_FS_H
 #include <sys/fs.h>
 #else
-#if HAVE_UFS_FS_H
+#ifdef HAVE_UFS_FS_H
 #include <ufs/fs.h>
 #else
 #ifdef HAVE_SYS_STAT_H
@@ -60,25 +60,25 @@
 #ifdef HAVE_UFS_UFS_INODE_H
 #include <ufs/ufs/inode.h>
 #endif
-#if HAVE_UFS_FFS_FS_H
+#ifdef HAVE_UFS_FFS_FS_H
 #include <ufs/ffs/fs.h>
 #endif
 #endif
 #endif
-#if HAVE_MTAB_H
+#ifdef HAVE_MTAB_H
 #include <mtab.h>
 #endif
 #include <errno.h>
-#if HAVE_FSTAB_H
+#ifdef HAVE_FSTAB_H
 #include <fstab.h>
 #endif
-#if HAVE_SYS_STATFS_H
+#ifdef HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
-#if HAVE_SYS_STATVFS_H
+#ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
-#if HAVE_SYS_VFS_H
+#ifdef HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif
 #if (!defined(HAVE_STATVFS)) && defined(HAVE_STATFS)
@@ -93,13 +93,13 @@
 #endif
 #define statvfs statfs
 #endif
-#if HAVE_VM_VM_H
+#ifdef HAVE_VM_VM_H
 #include <vm/vm.h>
 #endif
-#if HAVE_VM_SWAP_PAGER_H
+#ifdef HAVE_VM_SWAP_PAGER_H
 #include <vm/swap_pager.h>
 #endif
-#if HAVE_SYS_FIXPOINT_H
+#ifdef HAVE_SYS_FIXPOINT_H
 #include <sys/fixpoint.h>
 #endif
 #if HAVE_MALLOC_H

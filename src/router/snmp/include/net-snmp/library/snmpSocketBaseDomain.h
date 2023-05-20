@@ -1,7 +1,7 @@
 #ifndef SNMPSOCKETBASEDOMAIN_H
 #define SNMPSOCKETBASEDOMAIN_H
 
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 

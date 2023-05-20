@@ -159,7 +159,7 @@ var_atEntry(struct variable *vp,
     memcpy((char *) name, (char *) lowest, oid_length * sizeof(oid));
     *length = oid_length;
     *write_method = write_arp;
-    netsnmp_assert(0 <= i && i < pIpNetTable->dwNumEntries);
+    netsnmp_assert(i < pIpNetTable->dwNumEntries);
     *arp_row = pIpNetTable->table[i];
 
     switch (vp->magic) {

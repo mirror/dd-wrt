@@ -97,23 +97,23 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_ARPA_INET_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#if HAVE_SYS_SELECT_H
+#ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 #include <errno.h>
-#if HAVE_IO_H
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 
@@ -512,6 +512,8 @@ read_config_find_handler(struct config_line *line_handlers,
 {
     struct config_line *lptr;
 
+    netsnmp_assert(token);
+
     for (lptr = line_handlers; lptr != NULL; lptr = lptr->next) {
         if (!strcasecmp(token, lptr->config_token)) {
             return lptr;
@@ -529,6 +531,9 @@ run_config_handler(struct config_line *lptr,
                    const char *token, char *cptr, int when)
 {
     char           *cp;
+
+    netsnmp_assert(token);
+
     lptr = read_config_find_handler(lptr, token);
     if (lptr != NULL) {
         if (when == EITHER_CONFIG || lptr->config_time == when) {
@@ -609,6 +614,7 @@ snmp_config_when(char *line, int when)
             return SNMPERR_GENERR;
         }
         cptr = strtok_r(NULL, SNMP_CONFIG_DELIMETERS, &st);
+        netsnmp_assert(cptr);
         lptr = read_config_find_handler(lptr, cptr);
     } else {
         /*
@@ -758,6 +764,9 @@ read_config(const char *filename,
     FILE           *ifile;
     char           *line = NULL;  /* current line buffer */
     size_t          linesize = 0; /* allocated size of line */
+
+    netsnmp_assert(line_handler);
+    netsnmp_assert(line_handler->config_token);
 
     /* reset file counter when recursion depth is 0 */
     if (depth == 0)

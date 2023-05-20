@@ -35,14 +35,14 @@
 #endif
 #include <ctype.h>
 #include <sys/types.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_ARPA_INET_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
@@ -997,6 +997,9 @@ access_parse_oid(oid * oidIndex, size_t oidLen,
         return 1;
     }
     groupNameL = oidIndex[0];
+    if ((groupNameL + 1) > (int) oidLen) {
+        return 1;
+    }
     contextPrefixL = oidIndex[groupNameL + 1];  /* the initial name length */
     if ((int) oidLen != groupNameL + contextPrefixL + 4) {
         return 1;

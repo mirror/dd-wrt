@@ -536,13 +536,10 @@ STARTPROG() {
         OUTPUTENVVARS $LOG_FILE.command
         echo $COMMAND >> $LOG_FILE.command
     fi
-    if [ "x$OSTYPE" = "xmsys" ]; then
-      $COMMAND > $LOG_FILE.stdout 2>&1 &
-      ## COMMAND="cmd.exe //c start //min $COMMAND"
-      ## start $COMMAND > $LOG_FILE.stdout 2>&1
-    else
-      $COMMAND > $LOG_FILE.stdout 2>&1
-    fi
+    {
+	{ $COMMAND -f; } >$LOG_FILE.stdout 2>&1
+	echo $? >$LOG_FILE.exitcode
+    } &
 }
 
 #------------------------------------ -o-

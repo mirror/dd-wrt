@@ -2,6 +2,9 @@
 #define ASN1_H
 
 #include <net-snmp/library/oid.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 
 #ifdef __cplusplus
 extern          "C" {

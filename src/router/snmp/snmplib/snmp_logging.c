@@ -41,7 +41,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#if HAVE_SYSLOG_H
+#ifdef HAVE_SYSLOG_H
 #include <syslog.h>
 #ifndef LOG_CONS                /* Interesting Ultrix feature */
 #include <sys/syslog.h>
@@ -57,7 +57,7 @@
 #  include <time.h>
 # endif
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 

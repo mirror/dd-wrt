@@ -287,4 +287,4 @@ extern          "C" {
 }
 #endif
 #endif                          /* _TOOLS_H */
-/* @} */
+/** @} */

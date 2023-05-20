@@ -211,7 +211,7 @@ __sprint_num_objid(char **buf, size_t *buf_len, const oid *objid, int len)
    end = *buf + *buf_len;
    (*buf)[0] = '\0';
    for (i = 0; i < len; i++)
-       p += snprintf(p, end - p, ".%lu", *objid++);
+       p += snprintf(p, end - p, ".%" NETSNMP_PRIo "u", *objid++);
 
    return SUCCESS;
 }
@@ -349,7 +349,7 @@ __scan_num_objid(const char *buf, oid *objid, size_t *len)
    cp = buf;
    while (*buf) {
       if (*buf++ == '.') {
-         sscanf(cp, "%lu", objid++);
+         sscanf(cp, "%" NETSNMP_PRIo "u", objid++);
          /* *objid++ = atoi(cp); */
          (*len)++;
          cp = buf;
@@ -359,7 +359,7 @@ __scan_num_objid(const char *buf, oid *objid, size_t *len)
          }
       }
    }
-   sscanf(cp, "%lu", objid++);
+   sscanf(cp, "%" NETSNMP_PRIo "u", objid++);
    /* *objid++ = atoi(cp); */
    (*len)++;
    return SUCCESS;
@@ -496,7 +496,7 @@ __concat_oid_str(oid *doid_arr, size_t *doid_arr_len, const char *soid_str)
        return FAILURE;
    cp = strtok_r(soid_buf,".",&st);
    while (cp) {
-     sscanf(cp, "%lu", &(doid_arr[(*doid_arr_len)++]));
+     sscanf(cp, "%" NETSNMP_PRIo "u", &(doid_arr[(*doid_arr_len)++]));
      /* doid_arr[(*doid_arr_len)++] =  atoi(cp); */
      cp = strtok_r(NULL,".",&st);
    }
@@ -1316,7 +1316,7 @@ netsnmp_delete_session(PyObject *self, PyObject *args)
 
 static int build_python_varbind(PyObject *varbind, netsnmp_variable_list *vars,
                                 int varlist_ind, int sprintval_flag, int *len,
-                                char **str_buf)
+                                char **str_buf, int getlabel_flag)
 {
     struct tree *tp;
     int type;
@@ -1326,7 +1326,6 @@ static int build_python_varbind(PyObject *varbind, netsnmp_variable_list *vars,
     int buf_over = 0;
     const char *tag;
     const char *iid;
-    int getlabel_flag = NO_FLAGS;
 
     if (!PyObject_HasAttrString(varbind, "tag"))
         return TYPE_OTHER;
@@ -1521,9 +1520,12 @@ netsnmp_get_or_getnext(PyObject *self, PyObject *args, int pdu_type,
 	vars && (varlist_ind < varlist_len);
 	vars = vars->next_variable, varlist_ind++) {
 
+      if (err_ind >= 1 && varlist_ind >= err_ind - 1)
+          continue;
+
       varbind = PySequence_GetItem(varlist, varlist_ind);
       type = build_python_varbind(varbind, vars, varlist_ind, sprintval_flag,
-                                  &len, &str_buf);
+                                  &len, &str_buf, getlabel_flag);
       if (type != TYPE_OTHER) {
           /* save in return tuple as well */
           if ((type == SNMP_ENDOFMIBVIEW) ||
@@ -1832,7 +1834,7 @@ netsnmp_walk(PyObject *self, PyObject *args)
 
               varbind = py_netsnmp_construct_varbind();
               if (varbind && build_python_varbind(varbind, vars, varlist_ind,
-                                       sprintval_flag, &len, &str_buf) !=
+                                       sprintval_flag, &len, &str_buf, getlabel_flag) !=
                   TYPE_OTHER) {
                   const int hex = is_hex(str_buf, len);
 
@@ -2055,7 +2057,7 @@ netsnmp_getbulk(PyObject *self, PyObject *args)
 
 	  varbind = py_netsnmp_construct_varbind();
           if (varbind && build_python_varbind(varbind, vars, varbind_ind,
-                              sprintval_flag, &len, &str_buf) != TYPE_OTHER) {
+                              sprintval_flag, &len, &str_buf, getlabel_flag) != TYPE_OTHER) {
             const int hex = is_hex(str_buf, len);
 
             /* push varbind onto varbinds */

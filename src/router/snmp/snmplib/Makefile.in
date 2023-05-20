@@ -57,7 +57,6 @@ INCLUDESUBDIRHEADERS=README \
 	data_list.h \
 	default_store.h \
 	dir_utils.h \
-	factory.h \
 	fd_event_manager.h \
 	file_utils.h \
 	getopt.h \
@@ -231,11 +230,11 @@ all: standardall
 
 # how to build the libraries.
 libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION):    $(TOBJS)
-	$(LIB_LD_CMD) $@ $(TOBJS) @LD_NO_UNDEFINED@ $(LDFLAGS) @LNETSNMPLIBS@
+	$(LIB_LD_CMD) $@ $(TOBJS) $(LDFLAGS) @LNETSNMPLIBS@
 	$(RANLIB) $@
 
 libsnmp.$(LIB_EXTENSION)$(LIB_VERSION):    $(TOBJS)
-	$(LIB_LD_CMD) $@ $(TOBJS) @LD_NO_UNDEFINED@ $(LDFLAGS) @LNETSNMPLIBS@
+	$(LIB_LD_CMD) $@ $(TOBJS) $(LDFLAGS) @LNETSNMPLIBS@
 	$(RANLIB) $@
 
 #

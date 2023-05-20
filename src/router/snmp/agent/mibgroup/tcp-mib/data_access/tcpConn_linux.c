@@ -242,7 +242,9 @@ _load4(netsnmp_container *container, u_int load_flags)
          * add entry to container
          */
         entry->arbitrary_index = CONTAINER_SIZE(container) + 1;
-        CONTAINER_INSERT(container, entry);
+        if (CONTAINER_INSERT(container, entry) < 0) {
+            netsnmp_access_tcpconn_entry_free(entry);
+        }
     }
 
     fclose(in);
@@ -389,7 +391,9 @@ _load6(netsnmp_container *container, u_int load_flags)
          * add entry to container
          */
         entry->arbitrary_index = CONTAINER_SIZE(container) + 1;
-        CONTAINER_INSERT(container, entry);
+        if (CONTAINER_INSERT(container, entry) < 0) {
+            netsnmp_access_tcpconn_entry_free(entry);
+        }
     }
 
     fclose(in);

@@ -127,7 +127,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
 #ifdef NETSNMP_USE_OPENSSL
     EVP_MD_CTX     *ctx = NULL;
     const EVP_MD   *hashfn = NULL;
-#elif NETSNMP_USE_INTERNAL_CRYPTO
+#elif defined(NETSNMP_USE_INTERNAL_CRYPTO)
     SHA_CTX csha1;
     MD5_CTX cmd5;
     char    cryptotype = 0;
@@ -193,7 +193,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
         goto generate_Ku_quit;
     }
 
-#elif NETSNMP_USE_INTERNAL_CRYPTO
+#elif defined(NETSNMP_USE_INTERNAL_CRYPTO)
 #ifndef NETSNMP_DISABLE_MD5
     if (NETSNMP_USMAUTH_HMACMD5 == auth_type) {
         if (!MD5_Init(&cmd5))
@@ -219,7 +219,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
         }
 #ifdef NETSNMP_USE_OPENSSL
         EVP_DigestUpdate(ctx, buf, USM_LENGTH_KU_HASHBLOCK);
-#elif NETSNMP_USE_INTERNAL_CRYPTO
+#elif defined(NETSNMP_USE_INTERNAL_CRYPTO)
         if (TYPE_SHA1 == cryptotype) {
             rval = !SHA1_Update(&csha1, buf, USM_LENGTH_KU_HASHBLOCK);
         } else {
@@ -248,7 +248,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
      * what about free() 
      */
     }
-#elif NETSNMP_USE_INTERNAL_CRYPTO
+#elif defined(NETSNMP_USE_INTERNAL_CRYPTO)
     if (TYPE_SHA1 == cryptotype) {
         SHA1_Final(Ku, &csha1);
     } else {

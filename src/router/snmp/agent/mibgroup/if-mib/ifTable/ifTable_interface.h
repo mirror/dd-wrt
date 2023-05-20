@@ -44,6 +44,7 @@ extern          "C" {
 
 #include "ifTable.h"
 
+    struct netsnmp_interface_entry_s;
 
     /*
      ********************************************************************
@@ -69,7 +70,7 @@ extern          "C" {
     u_int           ifTable_dirty_get(void);
     void            ifTable_dirty_set(u_int status);
 
-    ifTable_rowreq_ctx *ifTable_allocate_rowreq_ctx(void *);
+    ifTable_rowreq_ctx *ifTable_allocate_rowreq_ctx(struct netsnmp_interface_entry_s *);
     void            ifTable_release_rowreq_ctx(ifTable_rowreq_ctx *
                                                rowreq_ctx);
 
