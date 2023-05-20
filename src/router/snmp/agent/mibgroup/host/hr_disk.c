@@ -26,7 +26,7 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_KVM_H
+#ifdef HAVE_KVM_H
 #include <kvm.h>
 #endif
 #if HAVE_DIRENT_H
@@ -43,20 +43,20 @@
 #  include <ndir.h>
 # endif
 #endif
-#if HAVE_SYS_IOCTL_H
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
 
-#if HAVE_SYS_DKIO_H
+#ifdef HAVE_SYS_DKIO_H
 #include <sys/dkio.h>
 #endif
-#if HAVE_SYS_DISKIO_H           /* HP-UX only ? */
+#ifdef HAVE_SYS_DISKIO_H           /* HP-UX only ? */
 #include <sys/diskio.h>
 #endif
-#if HAVE_LINUX_HDREG_H
+#ifdef HAVE_LINUX_HDREG_H
 #include <linux/hdreg.h>
 #endif
-#if HAVE_SYS_DISKLABEL_H
+#ifdef HAVE_SYS_DISKLABEL_H
 #define DKTYPENAMES
 #include <sys/disklabel.h>
 #ifndef dragonfly
@@ -712,7 +712,7 @@ Add_HR_Disk_entry(const char *devpart_string,
             first_partn;
         disk_devices[HR_number_disk_types].disk_partition_last =
             last_partn;
-#if DEBUG_TEST
+#ifdef DEBUG_TEST
         DEBUGMSGTL(("host/hr_disk",
                     "Add_HR %02d '%s' first=%d last=%d\n",
                     HR_number_disk_types, devpart_string, lodev, hidev));
@@ -727,7 +727,7 @@ Add_HR_Disk_entry(const char *devpart_string,
                     "WARNING! Add_HR_Disk_entry '%s' incomplete, %d created\n",
                     devpart_string, nbr_created));
     }
-#if DEBUG_TEST
+#ifdef DEBUG_TEST
     else
         DEBUGMSGTL(("host/hr_disk",
                     "Add_HR_Disk_entry '%s' completed, %d created\n",

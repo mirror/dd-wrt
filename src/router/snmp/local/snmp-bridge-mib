@@ -998,7 +998,7 @@ sub readindexes()
 
 	opendir(DIR, $brifdir) or return -1;
 	my @interfaces = readdir(DIR);
-	next if ($#interfaces lt 2);
+	next if ($#interfaces < 2);
 	foreach my $if (@interfaces) {
 		next if $if eq ".";
 		next if  $if eq "..";

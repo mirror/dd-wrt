@@ -287,7 +287,7 @@ _${context}_container_init(${context}_interface_ctx *if_ctx)
  *  Note that during the loop, the only important thing is the indexes.
  *  If access to your data is cheap/fast (e.g. you have a pointer to a
  *  structure in memory), it would make sense to update the data here.
- *  If, however, the accessing the data invovles more work (e.g. parsing
+ *  If, however, the accessing the data involves more work (e.g. parsing
  *  some other existing data, or peforming calculations to derive the data),
  *  then you should limit yourself to setting the indexes. Extracting the
  *  can be put off until the desired row is found. See the notes on
@@ -1006,7 +1006,7 @@ $example_end
     Note that during the loop, the only important thing is the indexes.
     If access to your data is cheap/fast (e.g. you have a pointer to a
     structure in memory), it would make sense to update the data here.
-    If, however, the accessing the data invovles more work (e.g. parsing
+    If, however, the accessing the data involves more work (e.g. parsing
     some other existing data, or peforming calculations to derive the data),
     then you should limit yourslef to setting the indexes. Extracting the
     can be put off until the desired row is found See the notes on

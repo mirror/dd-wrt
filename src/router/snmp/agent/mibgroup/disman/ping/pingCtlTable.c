@@ -36,8 +36,9 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#include <sys/types.h>
+#include <linux/param.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 
 #include "pingCtlTable.h"

@@ -70,7 +70,7 @@
 #include "mibgroup/ucd-snmp/versioninfo.h"
 #include "mibgroup/ucd-snmp/pass.h"
 #include "mibgroup/ucd-snmp/pass_persist.h"
-#include "mibgroup/ucd-snmp/disk.h"
+#include "mibgroup/ucd-snmp/disk_hw.h"
 #include "mibgroup/ucd-snmp/loadave.h"
 #include "mibgroup/ucd-snmp/extensible.h"
 #include "mibgroup/agent/extend.h"

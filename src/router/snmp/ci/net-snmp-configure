@@ -12,6 +12,30 @@ ssl_include_path() {
     esac
 }
 
+rpm_version() {
+    if type -p rpm >&/dev/null; then
+	rpm -q --qf '%{version}\n' "$1" 2>/dev/null | grep -v 'not installed'
+    fi
+}
+
+dpkg_version() {
+    if type -p dpkg-query >&/dev/null; then
+	dpkg-query --show -f '${Version}\n' "$1" 2>/dev/null | grep -v '^$'
+    fi
+}
+
+pacman_version() {
+    if type -p pacman >&/dev/null; then
+	pacman -Q "$1" 2>/dev/null | sed -n 's/^[^[:blank:]]*[[:blank:]]*//p'
+    fi
+}
+
+apk_version() {
+    if type -p apk >&/dev/null; then
+	apk info -d "$1" | sed -n "s/^$1-\(.*\)-r[0-9]* description:/\1/p"
+    fi
+}
+
 freebsd_pkg_version() {
     local pkg ver
 
@@ -21,6 +45,13 @@ freebsd_pkg_version() {
 	    [ -n "$ver" ] && echo "$ver" && return
     done
     return 1
+}
+
+# Given the name of a compiler executable ($1), derive the compiler type (gcc,
+# clang, xlc, ...).
+compiler_type() {
+    "$1" -v 2>&1 |
+        sed -n 's/^gcc version .*/gcc/p;s/^clang version .*/clang/p;s/.*xlc.*IBM.*xlc.*/xlc/p'
 }
 
 branch_name="$1"
@@ -35,67 +66,41 @@ elif [ "${branch_name#V5-7-}" != "${branch_name}" ]; then
   is_5_7_or_above="true"
 fi
 
-libatmver="$(for p in linux-atm-devel; do
-                rpm -q --qf '%{version}\n' $p 2>/dev/null |
-                  grep -v 'not installed';
-              done |
-              head -n1;
-	      for p in libatm1-dev; do
-	        dpkg-query --show -f '${Version}\n' $p 2>/dev/null;
-              done | grep -v '^$';
-              pacman -Q no-such-library 2>/dev/null |
-                sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')"
+libatmver="$(rpm_version linux-atm-devel;
+	     dpkg_version libatm1-dev)"
 echo "libatmver=$libatmver"
 
-libmysqlver="$(for p in libmariadb-devel; do
-                rpm -q --qf '%{version}\n' $p 2>/dev/null |
-                  grep -v 'not installed';
-              done |
-              head -n1;
+libmysqlver="$(rpm_version libmariadb-devel;
 	      for p in libmariadbclient-dev libmariadb-client-lgpl-dev; do
-	        dpkg-query --show -f '${Version}\n' $p 2>/dev/null;
-              done | grep -v '^$';
-              pacman -Q mingw-w64-x86_64-libmariadbclient 2>/dev/null |
-                sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')"
+	        dpkg_version "$p";
+              done;
+              pacman_version mingw-w64-x86_64-libmariadbclient)"
 echo "libmysqlver=$libmysqlver"
 
-libsensorsver="$(for p in libsensors4-devel; do
-                rpm -q --qf '%{version}\n' $p 2>/dev/null |
-                  grep -v 'not installed';
-              done |
-              head -n1;
-	      for p in libsensors4-dev; do
-	        dpkg-query --show -f '${Version}\n' $p 2>/dev/null;
-              done | grep -v '^$';
-              pacman -Q no-such-package 2>/dev/null |
-                sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')"
+libsensorsver="$(rpm_version libsensors4-devel;
+		 dpkg_version libsensors4-dev)"
 echo "libsensorsver=$libsensorsver"
 
 if ! echo "$*" | grep -Eq 'with-openssl=(no|internal)|without-openssl'; then
     case "$(uname -a)" in
 	FreeBSD*)
-	    opensslver="$(freebsd_pkg_version libressl-devel openssl111 openssl\
-	                  2>/dev/null)"
+	    opensslver="$(freebsd_pkg_version libressl-devel openssl111 openssl)"
 	    if [ -z "$opensslver" ]; then
 		opensslver="$(openssl version 2>&1 |
-				{ read -r a b c; echo "$b"; })"
+				{ read -r a b c; echo "$b"; echo "$a $c" >/dev/null; })"
 	    fi
 	    ;;
 	Linux*)
 	    opensslver="$(
 	    for p in openssl-devel libopenssl-devel libressl-devel; do
-	      rpm -q --qf '%{version}\n' $p 2>/dev/null |
-                grep -v 'not installed';
+	      rpm_version "$p";
             done;
-	    dpkg-query --show -f '${Version}\n' libssl-dev 2>/dev/null;
-	    pacman -Q mingw-w64-x86_64-openssl 2>/dev/null |
-	      sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')";;
+	    dpkg_version libssl-dev;
+	    pacman_version mingw-w64-x86_64-openssl)";;
 	MSYS*x86_64*)
-	    opensslver="$(pacman -Q openssl-devel 2>/dev/null |
-	      sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')";;
+	    opensslver="$(pacman_version openssl-devel)";;
 	MINGW64*)
-	    opensslver="$(pacman -Q mingw-w64-x86_64-openssl 2>/dev/null |
-	      sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')";;
+	    opensslver="$(pacman_version mingw-w64-x86_64-openssl)";;
 	*)
 	    opensslver=1.0;;
     esac
@@ -110,15 +115,13 @@ case "$(uname)" in
 	libssh2ver="$(freebsd_pkg_version libssh2 2>/dev/null)";;
     Linux*)
 	libssh2ver="$(for p in openssh-devel libssh2-devel libssh-devel; do
-                rpm -q --qf '%{version}\n' $p 2>/dev/null |
-                  grep -v 'not installed';
+                rpm_version "$p";
               done |
               head -n1;
               for p in libopenssh2 libssh2-1-dev libssh-dev; do
-                dpkg-query --show -f '${Version}\n' $p 2>/dev/null;
-              done | grep -v '^$';
-              pacman -Q mingw-w64-x86_64-libssh2 2>/dev/null |
-                sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')"
+                dpkg_version "$p";
+              done;
+              pacman_version mingw-w64-x86_64-libssh2)"
 	;;
 esac
 echo "libssh2ver=$libssh2ver"
@@ -127,25 +130,22 @@ case "$(uname)" in
     FreeBSD*)
 	perldevver="$(freebsd_pkg_version perl5 2>/dev/null)";;
     Linux*)
-	perldevver="$(for p in perl; do
-                rpm -q --qf '%{version}\n' $p 2>/dev/null |
-                  grep -v 'not installed';
-              done |
-              head -n1;
-	      for p in libperl-dev; do
-	        dpkg-query --show -f '${Version}\n' $p 2>/dev/null;
-              done | grep -v '^$';
-              pacman -Q mingw-w64-x86_64-perl 2>/dev/null |
-                sed -n 's/^[^[:blank:]]*[[:blank:]]*//p')"
+	perldevver="$(rpm_version perl;
+		      dpkg_version libperl-dev;
+		      pacman_version mingw-w64-x86_64-perl)"
 	;;
 esac
 echo "perldevver=$perldevver"
+# Set the perlcc variable.
+eval "perl$(perl -V:cc)"
+perlcc=$(compiler_type "$perlcc")
+echo "perlcc=$perlcc"
 
 options=()
 options+=(--enable-developer)
 options+=(--enable-ipv6)
 options+=("--prefix=/usr/local/net-snmp-${branch_name}")
-options+=("--with-cflags=$cflags")
+options+=("--with-cflags=$CFLAGS")
 options+=(--with-defaults)
 transports=()
 # Mib names can be found as follows:
@@ -177,7 +177,7 @@ case "$(uname)" in
           *)
               $is_5_7_or_above && mibs+=(deliver/deliverByNotify)
               mibs+=(disman/event)
-              #mibs+=(disman/expression) - to do: figure out why this fails on Travis
+              mibs+=(disman/expression)
               mibs+=(disman/mteEventNotificationTable)
               mibs+=(disman/mteEventTable)
               mibs+=(disman/mteObjectsTable)
@@ -226,7 +226,8 @@ case "$(uname)" in
       if false && [ -n "$libmysqlver" ]; then
 	  options+=(--with-mysql)
       fi
-      if [ -n "$perldevver" ]; then
+      if [ -n "$perldevver" ] && [ "$perlcc" = "$(compiler_type "${CC:-cc}")" ];
+      then
 	  options+=(--with-perl-modules)
       else
 	  options+=(--disable-embedded-perl --without-perl-modules)
@@ -234,7 +235,9 @@ case "$(uname)" in
       if [ -n "$libatmver" ]; then
 	  transports+=(AAL5PVC)
       fi
-      transports+=(IPX)
+      if [ -e /usr/include/netipx/ipx.h ]; then
+	  transports+=(IPX)
+      fi
       transports+=(STD)
       $is_5_8_or_above && transports+=(UDPshared)
       options+=("--with-default-snmp-version=2")
@@ -259,8 +262,8 @@ case "$(uname)" in
               mibs+=(Rmon)
               ;;
       esac
+      options+=("--with-openssl=$(brew --prefix openssl)")
       if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
-          options+=("--with-openssl=$(brew --prefix openssl)")
           # On Travis OS/X linking the Perl modules fails with "undefined symbol
           # _BN_bin2bn" etc.
           options+=(--disable-embedded-perl --without-perl-modules)
@@ -348,7 +351,7 @@ fi
 if [ "$with_openssl" != "internal" ] && $is_5_8_or_above &&
        [ -e "$(ssl_include_path)/aes.h" ] &&
        [ -e "$(ssl_include_path)/evp.h" ]; then
-       options+=(--enable-blumenthal-aes)
+    options+=(--enable-blumenthal-aes)
 fi
 security_modules=(usm tsm)
 if [ -e /usr/include/krb5.h ]; then
@@ -401,4 +404,5 @@ esac
 set -x
 ./configure "${options[@]}" --with-transports="${transports[*]}" \
             --with-security-modules="${security_modules[*]}"	 \
-	    --with-mib-modules="${mibs[*]}" "$@"
+	    --with-mib-modules="${mibs[*]}" \
+	    CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" "$@"

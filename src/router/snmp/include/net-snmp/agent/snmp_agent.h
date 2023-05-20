@@ -13,7 +13,7 @@
  * Use is subject to license terms specified in the COPYING file
  * distributed with the Net-SNMP package.
  */
-/*
+/**
  * @file snmp_agent.h
  *
  * @addtogroup agent

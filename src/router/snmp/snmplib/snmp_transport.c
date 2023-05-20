@@ -641,7 +641,7 @@ netsnmp_tdomain_transport_tspec(netsnmp_tdomain_spec *tspec)
     const char * const *spec = NULL;
     int                 any_found = 0;
     char buf[SNMP_MAXPATH];
-    char **lspec = NULL;
+    const char **lspec = NULL;
     char *tokenized_domain = NULL;
 
     application = tspec->application;
@@ -755,7 +755,7 @@ netsnmp_tdomain_transport_tspec(netsnmp_tdomain_spec *tspec)
                 lspec[0] = strtok_r(tokenized_domain, ",", &ptr);
                 while ((lspec[commas++] = strtok_r(NULL, ",", &ptr)))
                     ;
-                spec = (const char * const *)lspec;
+                spec = lspec;
             }
         } else {
             spec = netsnmp_lookup_default_domains(application);

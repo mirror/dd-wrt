@@ -81,7 +81,7 @@ for dd in agent bin sbin ; do
 done
 
 bf=include/net-snmp/net-snmp-config.h
-if [ ! -s "$bf" ] ; then
+if [ ! -s "$SNMP_UPDIR/$bf" ] ; then
    echo "No \"$bf\" in $SNMP_UPDIR . Some tests will be skipped"
 fi
 unset bf

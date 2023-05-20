@@ -717,6 +717,50 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 #endif
 }
 
+static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct ar8327_data *data = priv->chip_data;
+	u32 t;
+	if (port == AR8216_PORT_CPU || port == 6) {
+		return -EINVAL;
+	}
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
+		 AR8216_PORT_STATUS_SPEED_S;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
+
+	if (link->duplex)
+		t |= AR8216_PORT_STATUS_DUPLEX;
+	if (link->aneg) {
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
+	} else {
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			t |= AR8216_PORT_SPEED_1000M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		default:
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
+			break;
+		}
+	}
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	msleep(100);
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	return 0;
+}
+
 static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
@@ -1574,6 +1618,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
+	.set_port_link = ar8327_sw_set_port_link,
 /* The following op is disabled as it hogs the CPU and degrades performance.
    An implementation has been attempted in 4d8a66d but reading MIB data is slow
    on ar8xxx switches.

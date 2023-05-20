@@ -210,7 +210,7 @@ AGUTIL_sys_up_time(void)
 void
 SYSTEM_get_eth_statistics(VAR_OID_T * data_source, ETH_STATS_T * where)
 {
-#if OPTICALL_ACESS
+#ifdef OPTICALL_ACESS
     where->ifIndex = data_source->objid[data_source->length - 1];
     agent_get_Rmon_ethernet_statistics(where->ifIndex, 1,       /* exact */
                                        where);

@@ -755,7 +755,9 @@ static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
 			break;
 		}
 	}
-	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port),t);
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	msleep(100);
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
 	return 0;
 }
 

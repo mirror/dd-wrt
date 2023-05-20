@@ -1,7 +1,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 
-#if HAVE_IO_H
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 #if HAVE_STDLIB_H
@@ -17,10 +17,10 @@
 #endif
 #include <ctype.h>
 #include <sys/types.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifdef HAVE_LIMITS_H
@@ -536,7 +536,7 @@ init_persist_pipes(void)
 static int process_stopped(int idx)
 {
     if (persist_pipes[idx].pid != NETSNMP_NO_SUCH_PROCESS) {
-#if HAVE_WAITPID
+#ifdef HAVE_WAITPID
         return waitpid(persist_pipes[idx].pid, NULL, WNOHANG) > 0;
 #elif defined(WIN32) && !defined (mingw32) && !defined(HAVE_SIGNAL)
         return WaitForSingleObject(persist_pipes[idx].pid, 0) == WAIT_OBJECT_0;
@@ -732,7 +732,7 @@ close_persist_pipe(int iindex)
 #ifdef HAVE_SIGNAL
         (void)kill(persist_pipes[iindex].pid, SIGKILL);
 #endif
-#if HAVE_WAITPID
+#ifdef HAVE_WAITPID
         waitpid(persist_pipes[iindex].pid, NULL, 0);
 #elif defined(WIN32) && !defined (mingw32) && !defined (HAVE_SIGNAL)
         if (!CloseHandle(persist_pipes[iindex].pid)) {

@@ -170,9 +170,13 @@ nsVacmAccessTable_handler(netsnmp_mib_handler *handler,
             entry = (struct vacm_accessEntry *)
                 netsnmp_extract_iterator_context(request);
             table_info = netsnmp_extract_table_info(request);
+            if (!table_info || !table_info->indexes)
+                continue;
 
             /* Extract the authType token from the list of indexes */
             idx = table_info->indexes->next_variable->next_variable->next_variable->next_variable;
+            if (idx->val_len >= sizeof(atype))
+                continue;
             memset(atype, 0, sizeof(atype));
             memcpy(atype, (char *)idx->val.string, idx->val_len);
             viewIdx = se_find_value_in_slist(VACM_VIEW_ENUM_NAME, atype);
@@ -212,6 +216,8 @@ nsVacmAccessTable_handler(netsnmp_mib_handler *handler,
             entry = (struct vacm_accessEntry *)
                 netsnmp_extract_iterator_context(request);
             table_info = netsnmp_extract_table_info(request);
+            if (!table_info || !table_info->indexes)
+                continue;
             ret = SNMP_ERR_NOERROR;
 
             switch (table_info->colnum) {
@@ -247,6 +253,8 @@ nsVacmAccessTable_handler(netsnmp_mib_handler *handler,
                  * Extract the authType token from the list of indexes
                  */
                 idx = table_info->indexes->next_variable->next_variable->next_variable->next_variable;
+                if (idx->val_len >= sizeof(atype))
+                    continue;
                 memset(atype, 0, sizeof(atype));
                 memcpy(atype, (char *)idx->val.string, idx->val_len);
                 viewIdx = se_find_value_in_slist(VACM_VIEW_ENUM_NAME, atype);
@@ -294,8 +302,10 @@ nsVacmAccessTable_handler(netsnmp_mib_handler *handler,
                          idx = idx->next_variable;  model = *idx->val.integer;
                          idx = idx->next_variable;  level = *idx->val.integer;
                          entry = vacm_createAccessEntry( gName, cPrefix, model, level );
-                         entry->storageType = ST_NONVOLATILE;
-                         netsnmp_insert_iterator_context(request, (void*)entry);
+                         if (entry) {
+                             entry->storageType = ST_NONVOLATILE;
+                             netsnmp_insert_iterator_context(request, (void*)entry);
+                         }
                     }
                 }
             }
@@ -321,6 +331,8 @@ nsVacmAccessTable_handler(netsnmp_mib_handler *handler,
 
             /* Extract the authType token from the list of indexes */
             idx = table_info->indexes->next_variable->next_variable->next_variable->next_variable;
+            if (idx->val_len >= sizeof(atype))
+                continue;
             memset(atype, 0, sizeof(atype));
             memcpy(atype, (char *)idx->val.string, idx->val_len);
             viewIdx = se_find_value_in_slist(VACM_VIEW_ENUM_NAME, atype);

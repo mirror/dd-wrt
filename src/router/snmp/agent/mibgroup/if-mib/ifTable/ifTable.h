@@ -351,12 +351,6 @@ config_exclude(mibII/interfaces)
     int             ifTable_post_request(ifTable_registration *
                                          user_context, int rc);
 
-    int             ifTable_rowreq_ctx_init(ifTable_rowreq_ctx *
-                                            rowreq_ctx,
-                                            void *user_init_ctx);
-    void            ifTable_rowreq_ctx_cleanup(ifTable_rowreq_ctx *
-                                               rowreq_ctx);
-
     int             ifTable_check_dependencies(ifTable_rowreq_ctx *
                                                rowreq_ctx);
     int             ifTable_commit(ifTable_rowreq_ctx * rowreq_ctx);
@@ -444,8 +438,6 @@ config_exclude(mibII/interfaces)
                                    size_t * ifSpecific_val_ptr_len_ptr);
 
 
-    int             ifTable_indexes_set_tbl_idx(ifTable_mib_index *
-                                                tbl_idx, long ifIndex_val);
     int             ifTable_indexes_set(ifTable_rowreq_ctx * rowreq_ctx,
                                         long ifIndex_val);
 

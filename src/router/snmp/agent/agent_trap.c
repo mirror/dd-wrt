@@ -28,7 +28,7 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 #if HAVE_STDLIB_H
@@ -49,10 +49,10 @@
 #  include <time.h>
 # endif
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #include <net-snmp/utilities.h>
@@ -1662,6 +1662,7 @@ netsnmp_create_v3user_notification_session(const char *dest, const char *user,
     /** free any allocated mem in session */
     SNMP_FREE(session.securityAuthProto);
     SNMP_FREE(session.securityPrivProto);
+    SNMP_FREE(session.contextEngineID);
 
     return ss;
 }
@@ -1790,6 +1791,7 @@ snmpd_parse_config_trapsess(const char *word, char *cptr)
                                      ss->version, name, tag, profile);
 
   cleanup:
+    SNMP_FREE(session.community);
     if (session.securityEngineIDLen > 0)
         SNMP_FREE(session.securityEngineID);
     SNMP_FREE(clientaddr_save);

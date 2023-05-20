@@ -28,6 +28,7 @@
 #include <net-snmp/library/snmp_assert.h>
 
 #include <net-snmp/library/container_list_ssll.h>
+#include "factory.h"
 
 netsnmp_feature_child_of(container_linked_list, container_types);
 netsnmp_feature_child_of(container_fifo, container_types);
@@ -69,37 +70,33 @@ static netsnmp_iterator *_ssll_iterator_get(netsnmp_container *c);
 
 
 static void *
-_get(netsnmp_container *c, const void *key, int exact)
+_get(netsnmp_container *c, const void *key, int return_next)
 {
-    sl_container *sl = (sl_container*)c;
-    sl_node  *curr = sl->head;
+    sl_container *sl = (sl_container *)c;
+    sl_node *curr = sl->head;
     int rc = 0;
-    
-    /*
-     * note: get-next on unsorted list is meaningless. we
-     * don't try to search whole array, looking for the next highest.
-     */
-    if( (NULL != curr) && (NULL != key)) {
-        while (curr) {
-            rc = sl->c.compare(curr->data, key);
-            if (rc == 0)
-                break;
-            else if (rc > 0) {
-                if (0 == sl->unsorted) {
-                    /*
-                     * if sorted, we can stop.
-                     */
-                    break;
-                }
-            }
-            curr = curr->next;
+
+    /* If the key is NULL, return the first item in the container. */
+    if (!key)
+        return curr ? curr->data : NULL;
+
+    for ( ; curr; curr = curr->next) {
+        rc = sl->c.compare(curr->data, key);
+        if (rc < 0)
+            continue;
+        if (rc == 0) {
+            if (return_next)
+                curr = curr->next;
+            break;
         }
-        
-        if((curr) && (!exact) && (rc == 0)) {
-            curr = curr->next;
+        if (!sl->unsorted) {
+            /* If sorted, we can stop. */
+            if (!return_next)
+                curr = NULL;
+            break;
         }
     }
-    
+
     return curr ? curr->data : NULL;
 }
 
@@ -123,7 +120,7 @@ _ssll_find(netsnmp_container *c, const void *data)
     if((NULL == c) || (NULL == data))
         return NULL;
 
-    return _get(c, data, 1);
+    return _get(c, data, 0);
 }
 
 static void *
@@ -132,7 +129,7 @@ _ssll_find_next(netsnmp_container *c, const void *data)
     if(NULL == c)
         return NULL;
 
-    return _get(c, data, 0);
+    return _get(c, data, 1);
 }
 
 static int
@@ -339,20 +336,8 @@ netsnmp_container_get_ssll(void)
     sl->c.for_each = _ssll_for_each;
     sl->c.clear = _ssll_clear;
 
-       
-    return (netsnmp_container*)sl;
+    return &sl->c;
 }
-
-netsnmp_factory *
-netsnmp_container_get_ssll_factory(void)
-{
-    static netsnmp_factory f = {"sorted_singly_linked_list",
-                                (netsnmp_factory_produce_f*)
-                                netsnmp_container_get_ssll };
-    
-    return &f;
-}
-
 
 netsnmp_container *
 netsnmp_container_get_usll(void)
@@ -387,37 +372,26 @@ netsnmp_container_get_fifo(void)
     return netsnmp_container_get_singly_linked_list(1);
 }
 
-netsnmp_factory *
-netsnmp_container_get_usll_factory(void)
-{
-    static netsnmp_factory f = {"unsorted_singly_linked_list-lifo",
-                                (netsnmp_factory_produce_f*)
-                                netsnmp_container_get_usll };
-    
-    return &f;
-}
-
-netsnmp_factory *
-netsnmp_container_get_fifo_factory(void)
-{
-    static netsnmp_factory f = {"unsorted_singly_linked_list-fifo",
-                                (netsnmp_factory_produce_f*)
-                                netsnmp_container_get_fifo };
-    
-    return &f;
-}
-
 void
 netsnmp_container_ssll_init(void)
 {
-    netsnmp_container_register("sorted_singly_linked_list",
-                               netsnmp_container_get_ssll_factory());
-    netsnmp_container_register("unsorted_singly_linked_list",
-                               netsnmp_container_get_usll_factory());
-    netsnmp_container_register("lifo",
-                               netsnmp_container_get_usll_factory());
-    netsnmp_container_register("fifo",
-                               netsnmp_container_get_fifo_factory());
+    static netsnmp_factory ssll = {
+        "sorted_singly_linked_list",
+        netsnmp_container_get_ssll
+    };
+    static netsnmp_factory usll = {
+        "unsorted_singly_linked_list-lifo",
+        netsnmp_container_get_usll
+    };
+    static netsnmp_factory fifo = {
+        "unsorted_singly_linked_list-fifo",
+        netsnmp_container_get_fifo
+    };
+
+    netsnmp_container_register("sorted_singly_linked_list", &ssll);
+    netsnmp_container_register("unsorted_singly_linked_list", &usll);
+    netsnmp_container_register("lifo", &usll);
+    netsnmp_container_register("fifo", &fifo);
 }
 
 

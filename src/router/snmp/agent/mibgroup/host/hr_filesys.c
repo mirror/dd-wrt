@@ -205,7 +205,7 @@ struct mntent  *HRFS_entry;
 #define	FULL_DUMP	0
 #define	PART_DUMP	1
 
-static u_char  *when_dumped(char *filesys, int level, size_t * length);
+static u_char *when_dumped(const char *filesys, int level, size_t *length);
 
         /*********************
 	 *
@@ -866,7 +866,7 @@ End_HR_FileSys(void)
 
 
 static u_char  *
-when_dumped(char *filesys, int level, size_t * length)
+when_dumped(const char *filesys, int level, size_t *length)
 {
     time_t          dumpdate = 0, tmp;
     FILE           *dump_fp;

@@ -41,7 +41,7 @@
  * SOFTWARE.
  */
 
-#if 0 //defined(__aarch64__)
+#if defined(__aarch64__)
 
 #include <sys/simd.h>
 #include <sys/spa_checksum.h>

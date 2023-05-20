@@ -46,14 +46,14 @@ char            copyright[] = "@(#) Copyright (c) 1983, 1988, 1993\n\
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
 #include "main.h"
 #include "netstat.h"
 
-#if HAVE_WINSOCK_H
+#ifdef HAVE_WINSOCK_H
 #include "winstub.h"
 #endif
 

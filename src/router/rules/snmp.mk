@@ -117,7 +117,7 @@ snmp-configure: nvram libutils
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
 				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" \
 				--enable-mini-agent \
 				--disable-debugging \
@@ -163,7 +163,7 @@ snmp-configure: nvram libutils
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
 				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl" \
 				--enable-mini-agent \
 				--disable-debugging \

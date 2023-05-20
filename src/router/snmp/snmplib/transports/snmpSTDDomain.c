@@ -236,14 +236,9 @@ netsnmp_std_transport(const char *instring, size_t instring_len,
             close(outfd[0]);
             close(outfd[1]);
 
-            /* call exec */
             NETSNMP_IGNORE_RESULT(system(instring));
             /* XXX: TODO: use exec form instead; needs args */
             /* execv(instring, NULL); */
-            exit(0);
-
-            /* ack...  we should never ever get here */
-            snmp_log(LOG_ERR, "STD transport returned after execv()\n");
         }
     }            
 
