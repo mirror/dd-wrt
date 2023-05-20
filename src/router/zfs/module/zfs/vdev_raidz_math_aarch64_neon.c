@@ -25,7 +25,7 @@
 #include <sys/isa_defs.h>
 #include <sys/types.h>
 
-#if 0 //defined(__aarch64__)
+#if defined(__aarch64__)
 
 #include "vdev_raidz_math_aarch64_neon_common.h"
 
