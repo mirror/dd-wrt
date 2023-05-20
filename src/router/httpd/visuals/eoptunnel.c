@@ -66,9 +66,9 @@ static void show_oet_radio(webs_t wp, const char *label, const char *fmt, int id
 		if (extfalse)
 			snprintf(attrib2, sizeof(attrib2), extfalse, id, id);
 		show_caption(wp, "label", label, NULL);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, tun, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, tun, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
@@ -89,9 +89,9 @@ static void show_oet_radio_peer(webs_t wp, const char *label, const char *fmt, i
 		if (extfalse)
 			snprintf(attrib2, sizeof(attrib2), extfalse, id, peer);
 		show_caption(wp, "label", label, NULL);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, tun, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, tun, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
@@ -143,7 +143,7 @@ static void show_oet_textfield(webs_t wp, int pass, const char *label, int size,
 	va_end(args);
 }
 
-EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 {
 
 	int tun;
@@ -165,7 +165,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n");
 			{
 				show_caption(wp, "label", "eoip.proto", NULL);
-				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, %s, %s)\">\n", tun, tun, nvram_nget("oet%d_bridged", tun), nvram_nget("vxlan%d_bridged", tun));
+				websWrite(wp, "<select name=\"%s\" onclick=\"changeproto(this, %d, this.value, %s, %s)\">\n", temp, tun, nvram_nget("oet%d_bridged", tun), nvram_nget("vxlan%d_bridged", tun));
 
 				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
@@ -268,7 +268,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
 						show_caption(wp, "label", "eoip.wireguard_spbr", NULL);
-						websWrite(wp, "<select name=\"oet%d_spbr\" onclick=\"changespbr(this, %d, this.value)\">\n", tun, tun);
+						websWrite(wp, "<select name=\"%s\" onclick=\"changespbr(this, %d, this.value)\">\n", temp, tun);
 						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 						websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.wireguard_spbr0 + \"</option>\");\n", nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
 						websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.wireguard_spbr1 + \"</option>\");\n", nvram_matchi(temp, 1) ? "selected=\\\"selected\\\"" : "");
@@ -315,7 +315,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
 						show_caption(wp, "label", "eoip.wireguard_dpbr", NULL);
-						websWrite(wp, "<select name=\"oet%d_dpbr\" onclick=\"changedpbr(this, %d, this.value)\">\n", tun, tun);
+						websWrite(wp, "<select name=\"%s\" onclick=\"changedpbr(this, %d, this.value)\">\n", temp, tun);
 						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 						websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.wireguard_dpbr0 + \"</option>\");\n", nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
 						websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.wireguard_dpbr1 + \"</option>\");\n", nvram_matchi(temp, 1) ? "selected=\\\"selected\\\"" : "");
@@ -339,21 +339,19 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 						websWrite(wp, "<div id=\"idoet%d_tunnelstate\">\n", tun);	//show or hide tunnel state only if failgrp is checked
 						{
-							//Tunnel state
-							snprintf(temp, sizeof(temp), "oet%d_failstate", tun);
 							websWrite(wp, "<div class=\"setting\">\n");
-							{
-								show_caption(wp, "label", "eoip.wireguard_failstate", NULL);
-								websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp,
-									  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
-								show_caption(wp, NULL, "eoip.wireguard_standby", "&nbsp;");
-								websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"2\" name=\"%s\" %s />", temp,
-									  (nvram_default_matchi(temp, 2, 0) ? "checked=\"checked\"" : ""));
-								show_caption(wp, NULL, "eoip.wireguard_running", "&nbsp;");
-								websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp,
-									  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
-								show_caption_simple(wp, "eoip.wireguard_failed");
-							}
+							snprintf(temp, sizeof(temp), "oet%d_failstate", tun);
+							show_caption(wp, "label", "eoip.wireguard_failstate", NULL);
+							websWrite(wp, "<select name=\"%s\">\n", temp);
+							websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+							websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.wireguard_standby + \"</option>\");\n",
+								  nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
+							websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\"  + eoip.wireguard_running + \"</option>\");\n",
+								  nvram_matchi(temp, 2) ? "selected=\\\"selected\\\"" : "");
+							websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.wireguard_failed + \"</option>\");\n",
+								  nvram_matchi(temp, 1) ? "selected=\\\"selected\\\"" : "");
+							websWrite(wp, "//]]>\n</script>\n");
+							websWrite(wp, "</select>\n");
 							websWrite(wp, "</div>\n");
 							//end tunnel state
 						}
