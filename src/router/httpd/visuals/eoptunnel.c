@@ -429,7 +429,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");
 
 					//egc: route allowed IP's, controlled by nvram oet${i}_aip_rten${p}
-					show_oet_radio(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL, NULL);
+					show_oet_radio_alt(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL, NULL);
 
 					show_oet_num(wp, "eoip.wireguard_ka", 5, 5, -1, tun, NULL, "oet%d_ka%d", tun, peer);
 					//public key peer input
