@@ -78,9 +78,9 @@ static void show_oet_radio(webs_t wp, const char *label, const char *fmt, int id
 		char attrib1[128] = { 0 };
 		char attrib2[128] = { 0 };
 		if (exttrue)
-			snprintf(attrib1, sizeof(attrib1), exttrue, id);
+			snprintf(attrib1, sizeof(attrib1), exttrue, id, id);
 		if (extfalse)
-			snprintf(attrib2, sizeof(attrib2), extfalse, id);
+			snprintf(attrib2, sizeof(attrib2), extfalse, id, id);
 		show_caption(wp, "label", label, NULL);
 		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, attrib1, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""));
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
