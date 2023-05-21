@@ -36,11 +36,46 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid, char *type
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
 void show_caption_simple(webs_t wp, const char *cap);
 
+static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext)
+{
+	char temp[64];
+	snprintf(temp, sizeof(temp), fmt, id);
+	websWrite(wp, "<div class=\"setting\">\n");
+	{
+		show_caption(wp, "label", label, NULL);
+		websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
+		char attrib[64] = { 0 };
+		if (ext)
+			snprintf(attrib, sizeof(attrib), ext, id);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s %s/>\n", temp, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib);
+	}
+	websWrite(wp, "</div>\n");
+}
 
-void show_checkbox_2(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext);
-void show_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext);
+static void show_oet_radio(webs_t wp, const char *label, const char *fmt, int id, int def, const char *exttrue, const char *extfalse)
+{
+	char temp[64];
 
-static void show_oet_radio_alt(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *exttrue, const char *extfalse)
+	snprintf(temp, sizeof(temp), fmt, id);
+	websWrite(wp, "<div class=\"setting\">\n");
+	{
+		char attrib1[128] = { 0 };
+		char attrib2[128] = { 0 };
+		if (exttrue)
+			snprintf(attrib1, sizeof(attrib1), exttrue, id, id);
+		if (extfalse)
+			snprintf(attrib2, sizeof(attrib2), extfalse, id, id);
+		show_caption(wp, "label", label, NULL);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
+		show_caption(wp, NULL, "share.enable", "&nbsp;");
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
+		show_caption_simple(wp, "share.disable");
+	}
+	websWrite(wp, "</div>\n");
+
+}
+
+static void show_oet_radio_peer(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *exttrue, const char *extfalse)
 {
 	char temp[64];
 
@@ -60,22 +95,6 @@ static void show_oet_radio_alt(webs_t wp, const char *label, const char *fmt, in
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
-
-}
-
-static void show_oet_radio(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext, const char *arg, const char *state1, const char *state2)
-{
-	char attrib1[128] = { 0 };
-	char attrib2[128] = { 0 };
-	char attrib1_1[128] = { 0 };
-	char attrib2_1[128] = { 0 };
-	if (ext) {
-		snprintf(attrib1, sizeof(attrib1), "onclick=\"%s(this,%s,%s)\"", ext, arg, state1);
-		snprintf(attrib2, sizeof(attrib2), "onclick=\"%s(this,%s,%s)\"", ext, arg, state2);
-		show_oet_radio_alt(wp, label, fmt, id, peer, def, attrib1, attrib2);
-	} else {
-		show_oet_radio_alt(wp, label, fmt, id, peer, def, NULL, NULL);
-	}
 
 }
 
@@ -124,7 +143,7 @@ static void show_oet_textfield(webs_t wp, int pass, const char *label, int size,
 	va_end(args);
 }
 
-EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 {
 
 	int tun;
@@ -139,7 +158,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<legend>");
 		show_caption_simple(wp, "eoip.tunnel");
 		websWrite(wp, " %s</legend>\n", getNetworkLabel(wp, oet));
-		show_oet_radio(wp, "eoip.srv", "oet%d_en", tun, tun, 0, "show_layer_ext", "'idoet%d'", "true", "false");
+		show_oet_radio(wp, "eoip.srv", "oet%d_en", tun, 0, "onclick=\"show_layer_ext(this, 'idoet%d', true)\"", "onclick=\"show_layer_ext(this, 'idoet%d', false)\"");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
 		{
 			snprintf(temp, sizeof(temp), "oet%d_proto", tun);
@@ -174,9 +193,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 			{
 #ifdef HAVE_WIREGUARD
-				show_checkbox(wp, "service.vpn_mit", "oet%d_mit", tun, 0, NULL);
-				show_checkbox(wp, "eoip.wireguard_oet_natout", "oet%d_natout", tun, 0, NULL);
-				show_oet_radio(wp, "eoip.wireguard_obfuscation", "oet%d_obf", tun, tun, 0, "show_layer_ext", "'idoet%d_showobf'", "true", "false");
+				show_oet_checkbox(wp, "service.vpn_mit", "oet%d_mit", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.wireguard_oet_natout", "oet%d_natout", tun, 0, NULL);
+				show_oet_radio(wp, "eoip.wireguard_obfuscation", "oet%d_obf", tun, 0, "onclick=\"show_layer_ext(this, 'idoet%d_showobf', true)\"",
+					       "onclick=\"show_layer_ext(this, 'idoet%d_showobf', false)\"");
 				websWrite(wp, "<div id=\"idoet%d_showobf\">\n", tun);	//for show or hide advanced options
 				{
 					show_oet_textfield(wp, 1, "share.key", 32, 32, "", tun, "onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"", "oet%d_obfkey", tun);
@@ -210,13 +230,14 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				show_oet_textfield(wp, 0, "eoip.wireguard_oet_dns", 32, 48, "", tun, NULL, "oet%d_dns", tun);
 
 				//Inbound firewall controlled by nvram parameter: oet${i}_firewallin default 0 = disabled, Checkbox
-				show_checkbox(wp, "eoip.wireguard_firewallin", "oet%d_firewallin", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.wireguard_firewallin", "oet%d_firewallin", tun, 0, NULL);
 
 				//egc Kill switch nvram param: oet%d_killswitch, Checkbox
-				show_checkbox(wp, "eoip.wireguard_killswitch", "oet%d_killswitch", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.wireguard_killswitch", "oet%d_killswitch", tun, 0, NULL);
 
 				//show or hide advanced options
-				show_oet_radio(wp, "eoip.wireguard_showadvanced", "oet%d_showadvanced", tun, tun, 0, "show_layer_ext", "'idoet%d_showadvanced'", "true", "false");
+				show_oet_radio(wp, "eoip.wireguard_showadvanced", "oet%d_showadvanced", tun, 0, "onclick=\"show_layer_ext(this, 'idoet%d_showadvanced', true)\"",
+					       "onclick=\"show_layer_ext(this, 'idoet%d_showadvanced', false)\"");
 				//end show
 
 				websWrite(wp, "<div id=\"idoet%d_showadvanced\">\n", tun);	//for show or hide advanced options
@@ -237,10 +258,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_oet_num(wp, "eoip.wireguard_fwmark", 5, 5, -1, tun, NULL, "oet%d_fwmark", tun);
 
 					//egc full wan access, NAT over WAN, nvram param: oet%d_wanac, Checkbox
-					show_checkbox(wp, "service.vpnd_allowcnwan", "oet%d_wanac", tun, 1, NULL);
+					show_oet_checkbox(wp, "service.vpnd_allowcnwan", "oet%d_wanac", tun, 1, NULL);
 
 					//egc full lan access, NAT over br0 nvram param: oet%d_lanac, Checkbox
-					show_checkbox(wp, "eoip.wireguard_lanac", "oet%d_lanac", tun, 0, NULL);
+					show_oet_checkbox(wp, "eoip.wireguard_lanac", "oet%d_lanac", tun, 0, NULL);
 
 					//egc Reverse PBR switch nvram param: oet%d_spbr
 					snprintf(temp, sizeof(temp), "oet%d_spbr", tun);
@@ -280,7 +301,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 					websWrite(wp, "<div id=\"idoet%d_dns46\">\n", tun);	//for show or hide dns4 and dns6
 					{
-						show_checkbox(wp, "eoip.wireguard_dnspbr", "oet%d_dnspbr", tun, 0, "onclick=\"changedns46(this, %d)\"");
+						show_oet_checkbox(wp, "eoip.wireguard_dnspbr", "oet%d_dnspbr", tun, 0, "onclick=\"changedns46(this, %d)\"");
 						if (nvram_matchi("ipv6_enable", 1)) {
 							snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
 							show_oet_textfield(wp, 0, "eoip.wireguard_dns6", 40, 40, "2620:fe::9", tun, NULL, "oet%d_dns6", tun);
@@ -314,7 +335,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div id=\"idoet%d_failgrp\">\n", tun);	//show/hide failgrp
 					{
 
-						show_oet_radio(wp, "eoip.wireguard_failgrp", "oet%d_failgrp", tun, tun, 0, "failover_show", "%d", "this.value", "this.value");
+						show_oet_radio(wp, "eoip.wireguard_failgrp", "oet%d_failgrp", tun, 0, "onclick=\"failover_show(this, %d, this.value)\"", "onclick=\"failover_show(this, %d, this.value)\"");
 
 						websWrite(wp, "<div id=\"idoet%d_tunnelstate\">\n", tun);	//show or hide tunnel state only if failgrp is checked
 						{
@@ -341,7 +362,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 					websWrite(wp, "<div id=\"idoet%d_wdog2\">\n", tun);
 					{
-						show_oet_radio(wp, "service.vpn_wdog", "oet%d_wdog", tun, tun, 0, "wdog_show", "%d", "this.value", "this.value");
+						show_oet_radio(wp, "service.vpn_wdog", "oet%d_wdog", tun, 0, "onclick=\"wdog_show(this, %d, this.value)\"", "onclick=\"wdog_show(this, %d, this.value)\"");
 					}
 					websWrite(wp, "</div>\n");
 
@@ -374,7 +395,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					//websWrite(wp, "<legend>Client config file</legend>\n");
 					show_caption_legend(wp, "eoip.wireguard_cllegend");
 					//Show/Hide Client Config
-					show_oet_radio(wp, "eoip.wireguard_cllegend", "oet%d_clconfig%d", tun, peer, 0, "show_layer_ext", "'idclconfig%d_peer%d'", "true", "false");
+					show_oet_radio_peer(wp, "eoip.wireguard_cllegend", "oet%d_clconfig%d", tun, peer, 0, "onclick=\"show_layer_ext(this, 'idclconfig%d_peer%d', true)\"",
+							    "onclick=\"show_layer_ext(this, 'idclconfig%d_peer%d', false)\"");
 
 					//end show Client config
 					websWrite(wp, "<div id=\"idclconfig%d_peer%d\">\n", tun, peer);
@@ -387,7 +409,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
 					websWrite(wp, "</fieldset><br>\n");
 
-					show_oet_radio(wp, "eoip.wireguard_endpoint", "oet%d_endpoint%d", tun, peer, 0, "show_layer_ext", "'idendpoint%d_peer%d'", "true", "false");
+					show_oet_radio_peer(wp, "eoip.wireguard_endpoint", "oet%d_endpoint%d", tun, peer, 0, "onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', true)\"",
+							    "onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', false)\"");
 					websWrite(wp, "<div id=\"idendpoint%d_peer%d\">\n", tun, peer);
 					{
 						snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
@@ -400,7 +423,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 								  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
 						}
 						websWrite(wp, "</div>\n");
-						show_oet_radio(wp, "eoip.wireguard_obfuscation", "oet%d_obf%d", tun, peer, 0, "show_layer_ext", "'idshowobf%d_peer%d'", "true", "false");
+						show_oet_radio_peer(wp, "eoip.wireguard_obfuscation", "oet%d_obf%d", tun, peer, 0, "onclick=\"show_layer_ext(this, 'idshowobf%d_peer%d', true)\"",
+								    "onclick=\"show_layer_ext(this, 'idshowobf%d_peer%d', false)\"");
 						websWrite(wp, "<div id=\"idshowobf%d_peer%d\">\n", tun, peer);	//for show or hide advanced options
 						{
 							show_oet_textfield(wp, 1, "share.key", 32, 32, "", tun, "onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"", "oet%d_obfkey%d", tun, peer);
@@ -417,13 +441,14 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");
 
 					//egc: route allowed IP's, controlled by nvram oet${i}_aip_rten${p}
-					show_checkbox_2(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL);
+					show_oet_radio_peer(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL, NULL);
 
 					show_oet_num(wp, "eoip.wireguard_ka", 5, 5, -1, tun, NULL, "oet%d_ka%d", tun, peer);
 					//public key peer input
 					show_oet_textfield(wp, 0, "eoip.wireguard_peerkey", 48, 48, "", tun, NULL, "oet%d_peerkey%d", tun, peer);
 
-					show_oet_radio(wp, "eoip.wireguard_usepsk", "oet%d_usepsk%d", tun, peer, 0, "show_layer_ext", "'idpsk%d_peer%d'", "true", "false");
+					show_oet_radio_peer(wp, "eoip.wireguard_usepsk", "oet%d_usepsk%d", tun, peer, 0, "onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', true)\"",
+							    "onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', false)\"");
 
 					websWrite(wp, "<div id=\"idpsk%d_peer%d\">\n", tun, peer);
 					{
@@ -569,8 +594,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idshowmcast%d\">\n", tun);
 			{
-				show_oet_radio_alt(wp, "eoip.mcast", "oet%d_mcast", tun, tun, 0, "onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', true)\"",
-						   "onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', false)\"");
+				show_oet_radio(wp, "eoip.mcast", "oet%d_mcast", tun, 0, "onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', true)\"",
+					       "onclick=\"toggle_layer_ext(this, 'idmcast%d', 'idremoteip6%d', false)\"");
 
 			}
 			websWrite(wp, "</div>\n");
@@ -643,27 +668,27 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				show_oet_num(wp, "eoip.ttl", 5, 5, 0, tun, NULL, "oet%d_ttl", tun);
 				show_oet_num(wp, "eoip.tos", 5, 5, 0, tun, NULL, "oet%d_tos", tun);
 
-				show_checkbox(wp, "eoip.lrn", "oet%d_lrn", tun, 1, NULL);
-				show_checkbox(wp, "eoip.proxy", "oet%d_proxy", tun, 0, NULL);
-				show_checkbox(wp, "eoip.rsc", "oet%d_rsc", tun, 0, NULL);
-				show_checkbox(wp, "eoip.l2miss", "oet%d_l2miss", tun, 0, NULL);
-				show_checkbox(wp, "eoip.l3miss", "oet%d_l3miss", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.lrn", "oet%d_lrn", tun, 1, NULL);
+				show_oet_checkbox(wp, "eoip.proxy", "oet%d_proxy", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.rsc", "oet%d_rsc", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.l2miss", "oet%d_l2miss", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.l3miss", "oet%d_l3miss", tun, 0, NULL);
 				/* kernel 4.4 or higher */
-				show_checkbox(wp, "eoip.udpcsum", "oet%d_udpcsum", tun, 0, NULL);
-				show_checkbox(wp, "eoip.udp6zerocsumtx", "oet%d_udp6zerocsumtx", tun, 0, NULL);
-				show_checkbox(wp, "eoip.udp6zerocsumrx", "oet%d_udp6zerocsumrx", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.udpcsum", "oet%d_udpcsum", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.udp6zerocsumtx", "oet%d_udp6zerocsumtx", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.udp6zerocsumrx", "oet%d_udp6zerocsumrx", tun, 0, NULL);
 				/* kernel 3.10 or higher */
-				show_checkbox(wp, "eoip.df", "oet%d_df", tun, 0, NULL);
+				show_oet_checkbox(wp, "eoip.df", "oet%d_df", tun, 0, NULL);
 
 				show_oet_num(wp, "eoip.ageing", 5, 5, 300, tun, NULL, "oet%d_ageing", tun);
 				show_oet_num(wp, "eoip.flowlabel", 5, 5, -1, tun, NULL, "oet%d_fl", tun);
-				show_oet_radio(wp, "eoip.bridging", "vxlan%d_bridged", tun, tun, 0, "show_layer_ext", "'idvxlanbridged%d'", "false", "true");
+				show_oet_radio(wp, "eoip.bridging", "vxlan%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxlanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idbridged%d', true)\"");
 			}
 			websWrite(wp, "</div>\n");
 
 			websWrite(wp, "<div id=\"idl2support%d\">\n", tun);
 			{
-				show_oet_radio(wp, "eoip.bridging", "oet%d_bridged", tun, tun, 0, "show_layer_ext", "'idbridged%d'", "false", "true");
+				show_oet_radio(wp, "eoip.bridging", "oet%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxlanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idbridged%d', true)\"");
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idbridged%d\">\n", tun);
