@@ -1,0 +1,48 @@
+Index: module/zfs/vdev_raidz_math.c
+===================================================================
+--- module/zfs/vdev_raidz_math.c	(revision 52639)
++++ module/zfs/vdev_raidz_math.c	(working copy)
+@@ -61,7 +61,7 @@ static const raidz_impl_ops_t *const raidz_all_mat
+ #if defined(__x86_64) && defined(HAVE_AVX512BW)	/* only x86_64 for now */
+ 	&vdev_raidz_avx512bw_impl,
+ #endif
+-#if defined(__aarch64__) && !defined(__FreeBSD__)
++#if 0 // defined(__aarch64__) && !defined(__FreeBSD__)
+ 	&vdev_raidz_aarch64_neon_impl,
+ 	&vdev_raidz_aarch64_neonx2_impl,
+ #endif
+Index: module/zfs/vdev_raidz_math_aarch64_neon.c
+===================================================================
+--- module/zfs/vdev_raidz_math_aarch64_neon.c	(revision 52639)
++++ module/zfs/vdev_raidz_math_aarch64_neon.c	(working copy)
+@@ -25,7 +25,7 @@
+ #include <sys/isa_defs.h>
+ #include <sys/types.h>
+ 
+-#if defined(__aarch64__)
++#if 0 //defined(__aarch64__)
+ 
+ #include "vdev_raidz_math_aarch64_neon_common.h"
+ 
+@@ -222,7 +222,7 @@ const raidz_impl_ops_t vdev_raidz_aarch64_neon_imp
+ #endif /* defined(__aarch64__) */
+ 
+ 
+-#if defined(__aarch64__)
++#if 0 //defined(__aarch64__)
+ /* BEGIN CSTYLED */
+ const uint8_t
+ __attribute__((aligned(256))) gf_clmul_mod_lt[4*256][16] = {
+Index: module/zfs/vdev_raidz_math_aarch64_neonx2.c
+===================================================================
+--- module/zfs/vdev_raidz_math_aarch64_neonx2.c	(revision 52639)
++++ module/zfs/vdev_raidz_math_aarch64_neonx2.c	(working copy)
+@@ -24,7 +24,7 @@
+ 
+ #include <sys/isa_defs.h>
+ 
+-#if defined(__aarch64__)
++#if 0 // defined(__aarch64__)
+ 
+ #include "vdev_raidz_math_aarch64_neon_common.h"
+ 
