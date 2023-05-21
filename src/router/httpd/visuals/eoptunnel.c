@@ -682,13 +682,13 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 
 				show_oet_num(wp, "eoip.ageing", 5, 5, 300, tun, NULL, "oet%d_ageing", tun);
 				show_oet_num(wp, "eoip.flowlabel", 5, 5, -1, tun, NULL, "oet%d_fl", tun);
-				show_oet_radio(wp, "eoip.bridging", "vxlan%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxlanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idbridged%d', true)\"");
+				show_oet_radio(wp, "eoip.bridging", "vxlan%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxvlanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idvxvlanbridged%d', true)\"");
 			}
 			websWrite(wp, "</div>\n");
 
 			websWrite(wp, "<div id=\"idl2support%d\">\n", tun);
 			{
-				show_oet_radio(wp, "eoip.bridging", "oet%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxlanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idbridged%d', true)\"");
+				show_oet_radio(wp, "eoip.bridging", "oet%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idbridged%d', true)\"");
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idbridged%d\">\n", tun);
