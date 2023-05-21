@@ -52,6 +52,22 @@ static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int
 	websWrite(wp, "</div>\n");
 }
 
+static void show_oet_checkbox_peer(webs_t wp, const char *label, const char *fmt, int id,int peer, int def, const char *ext)
+{
+	char temp[64];
+	snprintf(temp, sizeof(temp), fmt, id,peer);
+	websWrite(wp, "<div class=\"setting\">\n");
+	{
+		show_caption(wp, "label", label, NULL);
+		websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
+		char attrib[64] = { 0 };
+		if (ext)
+			snprintf(attrib, sizeof(attrib), ext, id);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s %s/>\n", temp, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib);
+	}
+	websWrite(wp, "</div>\n");
+}
+
 static void show_oet_radio(webs_t wp, const char *label, const char *fmt, int id, int def, const char *exttrue, const char *extfalse)
 {
 	char temp[64];
@@ -62,13 +78,13 @@ static void show_oet_radio(webs_t wp, const char *label, const char *fmt, int id
 		char attrib1[128] = { 0 };
 		char attrib2[128] = { 0 };
 		if (exttrue)
-			snprintf(attrib1, sizeof(attrib1), exttrue, id, id);
+			snprintf(attrib1, sizeof(attrib1), exttrue, id);
 		if (extfalse)
-			snprintf(attrib2, sizeof(attrib2), extfalse, id, id);
+			snprintf(attrib2, sizeof(attrib2), extfalse, id);
 		show_caption(wp, "label", label, NULL);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, attrib1, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""));
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, attrib2, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""));
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
@@ -89,9 +105,9 @@ static void show_oet_radio_peer(webs_t wp, const char *label, const char *fmt, i
 		if (extfalse)
 			snprintf(attrib2, sizeof(attrib2), extfalse, id, peer);
 		show_caption(wp, "label", label, NULL);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib1);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s %s />", temp, attrib1, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""));
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, id, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""), attrib2);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s %s />", temp, attrib2, (nvram_default_matchi(temp, 0, def) ? "checked=\"checked\"" : ""));
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
@@ -441,7 +457,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "</div>\n");
 
 					//egc: route allowed IP's, controlled by nvram oet${i}_aip_rten${p}
-					show_oet_radio_peer(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL, NULL);
+					show_oet_checkbox_peer(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL);
 
 					show_oet_num(wp, "eoip.wireguard_ka", 5, 5, -1, tun, NULL, "oet%d_ka%d", tun, peer);
 					//public key peer input
@@ -682,7 +698,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 
 				show_oet_num(wp, "eoip.ageing", 5, 5, 300, tun, NULL, "oet%d_ageing", tun);
 				show_oet_num(wp, "eoip.flowlabel", 5, 5, -1, tun, NULL, "oet%d_fl", tun);
-				show_oet_radio(wp, "eoip.bridging", "vxlan%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxvlanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idvxvlanbridged%d', true)\"");
+				show_oet_radio(wp, "eoip.bridging", "vxlan%d_bridged", tun, 0, "onclick=\"show_layer_ext(this, 'idvxvanbridged%d', false)\"", "onclick=\"show_layer_ext(this, 'idvxvanbridged%d', true)\"");
 			}
 			websWrite(wp, "</div>\n");
 
