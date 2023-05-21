@@ -36,20 +36,25 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid, char *type
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
 void show_caption_simple(webs_t wp, const char *cap);
 
-static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext)
+
+static void show_oet_checkbox_2(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext)
 {
 	char temp[64];
-	snprintf(temp, sizeof(temp), fmt, id);
+	snprintf(temp, sizeof(temp), fmt, id,peer);
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", label, NULL);
 		websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
 		char attrib[64] = { 0 };
 		if (ext)
-			snprintf(attrib, sizeof(attrib), ext, id);
+			snprintf(attrib, sizeof(attrib), ext, id,peer);
 		websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s %s/>\n", temp, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib);
 	}
 	websWrite(wp, "</div>\n");
+}
+static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext)
+{
+	show_oet_checkbox_2(wp,label,fmt,id,id,def,ext);
 }
 
 static void show_oet_radio_alt(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *exttrue, const char *extfalse)
@@ -429,7 +434,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");
 
 					//egc: route allowed IP's, controlled by nvram oet${i}_aip_rten${p}
-					show_oet_radio_alt(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL, NULL);
+					show_oet_checkbox_2(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL);
 
 					show_oet_num(wp, "eoip.wireguard_ka", 5, 5, -1, tun, NULL, "oet%d_ka%d", tun, peer);
 					//public key peer input
