@@ -37,25 +37,8 @@ void show_caption(webs_t wp, const char *class, const char *cap, const char *ext
 void show_caption_simple(webs_t wp, const char *cap);
 
 
-static void show_oet_checkbox_2(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext)
-{
-	char temp[64];
-	snprintf(temp, sizeof(temp), fmt, id,peer);
-	websWrite(wp, "<div class=\"setting\">\n");
-	{
-		show_caption(wp, "label", label, NULL);
-		websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
-		char attrib[64] = { 0 };
-		if (ext)
-			snprintf(attrib, sizeof(attrib), ext, id,peer);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s %s/>\n", temp, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib);
-	}
-	websWrite(wp, "</div>\n");
-}
-static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext)
-{
-	show_oet_checkbox_2(wp,label,fmt,id,id,def,ext);
-}
+void show_checkbox_2(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext);
+void show_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext);
 
 static void show_oet_radio_alt(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *exttrue, const char *extfalse)
 {
@@ -191,8 +174,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 			{
 #ifdef HAVE_WIREGUARD
-				show_oet_checkbox(wp, "service.vpn_mit", "oet%d_mit", tun, 0, NULL);
-				show_oet_checkbox(wp, "eoip.wireguard_oet_natout", "oet%d_natout", tun, 0, NULL);
+				show_checkbox(wp, "service.vpn_mit", "oet%d_mit", tun, 0, NULL);
+				show_checkbox(wp, "eoip.wireguard_oet_natout", "oet%d_natout", tun, 0, NULL);
 				show_oet_radio(wp, "eoip.wireguard_obfuscation", "oet%d_obf", tun, tun, 0, "show_layer_ext", "'idoet%d_showobf'", "true", "false");
 				websWrite(wp, "<div id=\"idoet%d_showobf\">\n", tun);	//for show or hide advanced options
 				{
@@ -227,10 +210,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				show_oet_textfield(wp, 0, "eoip.wireguard_oet_dns", 32, 48, "", tun, NULL, "oet%d_dns", tun);
 
 				//Inbound firewall controlled by nvram parameter: oet${i}_firewallin default 0 = disabled, Checkbox
-				show_oet_checkbox(wp, "eoip.wireguard_firewallin", "oet%d_firewallin", tun, 0, NULL);
+				show_checkbox(wp, "eoip.wireguard_firewallin", "oet%d_firewallin", tun, 0, NULL);
 
 				//egc Kill switch nvram param: oet%d_killswitch, Checkbox
-				show_oet_checkbox(wp, "eoip.wireguard_killswitch", "oet%d_killswitch", tun, 0, NULL);
+				show_checkbox(wp, "eoip.wireguard_killswitch", "oet%d_killswitch", tun, 0, NULL);
 
 				//show or hide advanced options
 				show_oet_radio(wp, "eoip.wireguard_showadvanced", "oet%d_showadvanced", tun, tun, 0, "show_layer_ext", "'idoet%d_showadvanced'", "true", "false");
@@ -254,10 +237,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_oet_num(wp, "eoip.wireguard_fwmark", 5, 5, -1, tun, NULL, "oet%d_fwmark", tun);
 
 					//egc full wan access, NAT over WAN, nvram param: oet%d_wanac, Checkbox
-					show_oet_checkbox(wp, "service.vpnd_allowcnwan", "oet%d_wanac", tun, 1, NULL);
+					show_checkbox(wp, "service.vpnd_allowcnwan", "oet%d_wanac", tun, 1, NULL);
 
 					//egc full lan access, NAT over br0 nvram param: oet%d_lanac, Checkbox
-					show_oet_checkbox(wp, "eoip.wireguard_lanac", "oet%d_lanac", tun, 0, NULL);
+					show_checkbox(wp, "eoip.wireguard_lanac", "oet%d_lanac", tun, 0, NULL);
 
 					//egc Reverse PBR switch nvram param: oet%d_spbr
 					snprintf(temp, sizeof(temp), "oet%d_spbr", tun);
@@ -297,7 +280,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 					websWrite(wp, "<div id=\"idoet%d_dns46\">\n", tun);	//for show or hide dns4 and dns6
 					{
-						show_oet_checkbox(wp, "eoip.wireguard_dnspbr", "oet%d_dnspbr", tun, 0, "onclick=\"changedns46(this, %d)\"");
+						show_checkbox(wp, "eoip.wireguard_dnspbr", "oet%d_dnspbr", tun, 0, "onclick=\"changedns46(this, %d)\"");
 						if (nvram_matchi("ipv6_enable", 1)) {
 							snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
 							show_oet_textfield(wp, 0, "eoip.wireguard_dns6", 40, 40, "2620:fe::9", tun, NULL, "oet%d_dns6", tun);
@@ -434,7 +417,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");
 
 					//egc: route allowed IP's, controlled by nvram oet${i}_aip_rten${p}
-					show_oet_checkbox_2(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL);
+					show_checkbox_2(wp, "eoip.wireguard_route_allowedip", "oet%d_aip_rten%d", tun, peer, 1, NULL);
 
 					show_oet_num(wp, "eoip.wireguard_ka", 5, 5, -1, tun, NULL, "oet%d_ka%d", tun, peer);
 					//public key peer input
@@ -660,17 +643,17 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				show_oet_num(wp, "eoip.ttl", 5, 5, 0, tun, NULL, "oet%d_ttl", tun);
 				show_oet_num(wp, "eoip.tos", 5, 5, 0, tun, NULL, "oet%d_tos", tun);
 
-				show_oet_checkbox(wp, "eoip.lrn", "oet%d_lrn", tun, 1, NULL);
-				show_oet_checkbox(wp, "eoip.proxy", "oet%d_proxy", tun, 0, NULL);
-				show_oet_checkbox(wp, "eoip.rsc", "oet%d_rsc", tun, 0, NULL);
-				show_oet_checkbox(wp, "eoip.l2miss", "oet%d_l2miss", tun, 0, NULL);
-				show_oet_checkbox(wp, "eoip.l3miss", "oet%d_l3miss", tun, 0, NULL);
+				show_checkbox(wp, "eoip.lrn", "oet%d_lrn", tun, 1, NULL);
+				show_checkbox(wp, "eoip.proxy", "oet%d_proxy", tun, 0, NULL);
+				show_checkbox(wp, "eoip.rsc", "oet%d_rsc", tun, 0, NULL);
+				show_checkbox(wp, "eoip.l2miss", "oet%d_l2miss", tun, 0, NULL);
+				show_checkbox(wp, "eoip.l3miss", "oet%d_l3miss", tun, 0, NULL);
 				/* kernel 4.4 or higher */
-				show_oet_checkbox(wp, "eoip.udpcsum", "oet%d_udpcsum", tun, 0, NULL);
-				show_oet_checkbox(wp, "eoip.udp6zerocsumtx", "oet%d_udp6zerocsumtx", tun, 0, NULL);
-				show_oet_checkbox(wp, "eoip.udp6zerocsumrx", "oet%d_udp6zerocsumrx", tun, 0, NULL);
+				show_checkbox(wp, "eoip.udpcsum", "oet%d_udpcsum", tun, 0, NULL);
+				show_checkbox(wp, "eoip.udp6zerocsumtx", "oet%d_udp6zerocsumtx", tun, 0, NULL);
+				show_checkbox(wp, "eoip.udp6zerocsumrx", "oet%d_udp6zerocsumrx", tun, 0, NULL);
 				/* kernel 3.10 or higher */
-				show_oet_checkbox(wp, "eoip.df", "oet%d_df", tun, 0, NULL);
+				show_checkbox(wp, "eoip.df", "oet%d_df", tun, 0, NULL);
 
 				show_oet_num(wp, "eoip.ageing", 5, 5, 300, tun, NULL, "oet%d_ageing", tun);
 				show_oet_num(wp, "eoip.flowlabel", 5, 5, -1, tun, NULL, "oet%d_fl", tun);
