@@ -162,6 +162,26 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 
 }
 
+void show_checkbox_2(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext)
+{
+	char temp[64];
+	snprintf(temp, sizeof(temp), fmt, id,peer);
+	websWrite(wp, "<div class=\"setting\">\n");
+	{
+		show_caption(wp, "label", label, NULL);
+		websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
+		char attrib[128] = { 0 };
+		if (ext)
+			snprintf(attrib, sizeof(attrib), ext, id,peer);
+		websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s %s/>\n", temp, (nvram_default_matchi(temp, 1, def) ? "checked=\"checked\"" : ""), attrib);
+	}
+	websWrite(wp, "</div>\n");
+}
+void show_checkbox(webs_t wp, const char *label, const char *fmt, int id, int def, const char *ext)
+{
+	show_oet_checkbox_2(wp,label,fmt,id,id,def,ext);
+}
+
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext)
 {
 	show_caption_pp(wp, class, caption, NULL, ext);
