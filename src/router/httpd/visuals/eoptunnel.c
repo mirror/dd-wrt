@@ -400,8 +400,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div id=\"idclconfig%d_peer%d\">\n", tun, peer);
 					{
 						show_oet_textfield(wp, 0, "eoip.wireguard_peerip", 48, 128, "0.0.0.0/0", tun, NULL, "oet%d_clip%d", tun, peer);
-						show_oet_textfield(wp, 0, "eoip.wireguard_wireguard_peerdns", 48, 128, "0.0.0.0", tun, NULL, "oet%d_cldns%d", tun, peer);
-						show_oet_textfield(wp, 0, "eoip.wireguard_wireguard_peerdns", 40, 48, "", tun, NULL, "oet%d_clend%d", tun, peer);
+						show_oet_textfield(wp, 0, "eoip.wireguard_peerdns", 48, 128, "0.0.0.0", tun, NULL, "oet%d_cldns%d", tun, peer);
+						show_oet_textfield(wp, 0, "eoip.wireguard_clend", 40, 48, "", tun, NULL, "oet%d_clend%d", tun, peer);
 						show_oet_num(wp, "eoip.wireguard_clka", 5, 5, 25, tun, NULL, "oet%d_clka%d", tun, peer);
 					}
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
