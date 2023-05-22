@@ -267,7 +267,6 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					show_oet_textfield(wp, 0, "eoip.wireguard_rtupscript", 48, 64, "", tun, NULL, "oet%d_rtupscript", tun);
 
 					//route down script
-					snprintf(temp, sizeof(temp), "oet%d_rtdownscript", tun);
 					show_oet_textfield(wp, 0, "eoip.wireguard_rtdownscript", 48, 64, "", tun, NULL, "oet%d_rtdownscript", tun);
 
 					//fwmark
@@ -292,35 +291,19 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						websWrite(wp, "//]]>\n</script>\n");
 						websWrite(wp, "</select>\n");
 					}
-					websWrite(wp, "</div>\n");
-					//end spbr switch
-					websWrite(wp, "<div id=\"idoet%d_spbr\">\n", tun);	//for show or hide pbr
-					//egc: PBR input box
-					show_oet_textfield(wp, 0, "eoip.wireguard_oet_spbr_ip", 78, 1024, "", tun, NULL, "oet%d_spbr_ip", tun);
-					//Split DNS oet%d_dnspbr
-					/*
-					   snprintf(temp, sizeof(temp), "oet%d_dnspbr", tun);
-					   websWrite(wp, "<div class=\"setting\">\n");
-					   {
-					   show_caption(wp, "label", "eoip.wireguard_dnspbr", NULL);
-					   websWrite(wp,
-					   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
-					   show_caption(wp, NULL, "share.enable", "&nbsp;");
-					   websWrite(wp,
-					   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
-					   show_caption_simple(wp, "share.disable");
-					   }
-					   websWrite(wp, "</div>\n");
-					 */
-					//alternative use checkbox
-					// /*
-
-					websWrite(wp, "<div id=\"idoet%d_dns46\">\n", tun);	//for show or hide dns4 and dns6
-					{
+					websWrite(wp, "</div>\n");	//end spbr switch
+					
+					websWrite(wp, "<div id=\"idoet%d_spbr\">\n", tun);	//for show or hide spbr input
+					{	//egc: SPBR input box
+						show_oet_textfield(wp, 0, "eoip.wireguard_oet_spbr_ip", 78, 1024, "", tun, NULL, "oet%d_spbr_ip", tun);
 						show_oet_checkbox(wp, "eoip.wireguard_dnspbr", "oet%d_dnspbr", tun, 0, "onclick=\"changedns46(this, %d)\"");
-						if (nvram_matchi("ipv6_enable", 1)) {
-							snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
-							show_oet_textfield(wp, 0, "eoip.wireguard_dns6", 40, 40, "2620:fe::9", tun, NULL, "oet%d_dns6", tun);
+						websWrite(wp, "<div id=\"idoet%d_dns46\">\n", tun);	//for show or hide dns4 and dns6
+						{
+							show_oet_textfield(wp, 0, "eoip.wireguard_dns4", 16, 16, "9.9.9.9", tun, NULL, "oet%d_dns4", tun);
+							if (nvram_matchi("ipv6_enable", 1)) {
+								snprintf(temp, sizeof(temp), "oet%d_dns6", tun);
+								show_oet_textfield(wp, 0, "eoip.wireguard_dns6", 40, 40, "2620:fe::9", tun, NULL, "oet%d_dns6", tun);
+							}
 						}
 						websWrite(wp, "</div>\n");
 					}
@@ -339,12 +322,12 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						websWrite(wp, "//]]>\n</script>\n");
 						websWrite(wp, "</select>\n");
 					}
-					websWrite(wp, "</div>\n");
-
-					//end dpbr switch
-					websWrite(wp, "<div id=\"idoet%d_dpbr\">\n", tun);	//for show or hide pbr
-					//egc: PBR input box
-					show_oet_textfield(wp, 0, "eoip.wireguard_oet_dpbr_ip", 78, 1024, "", tun, NULL, "oet%d_dpbr_ip", tun);
+					websWrite(wp, "</div>\n");	//end dpbr switch
+					
+					websWrite(wp, "<div id=\"idoet%d_dpbr\">\n", tun);	//for show or hide dpbr
+					{	//egc: DPBR input box
+						show_oet_textfield(wp, 0, "eoip.wireguard_oet_dpbr_ip", 78, 1024, "", tun, NULL, "oet%d_dpbr_ip", tun);
+					}
 					websWrite(wp, "</div>\n");	//end show hide dpbr
 
 					//egc Check if tunnel is part of fail group, Checkbox
@@ -372,7 +355,6 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 							//end tunnel state
 						}
 						websWrite(wp, "</div>\n");	//end show hide tunnelstae
-
 					}
 					websWrite(wp, "</div>\n");	//end show hide failgrp
 
