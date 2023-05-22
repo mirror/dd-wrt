@@ -52,10 +52,10 @@ static void show_oet_checkbox(webs_t wp, const char *label, const char *fmt, int
 	websWrite(wp, "</div>\n");
 }
 
-static void show_oet_checkbox_peer(webs_t wp, const char *label, const char *fmt, int id,int peer, int def, const char *ext)
+static void show_oet_checkbox_peer(webs_t wp, const char *label, const char *fmt, int id, int peer, int def, const char *ext)
 {
 	char temp[64];
-	snprintf(temp, sizeof(temp), fmt, id,peer);
+	snprintf(temp, sizeof(temp), fmt, id, peer);
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", label, NULL);
@@ -159,7 +159,7 @@ static void show_oet_textfield(webs_t wp, int pass, const char *label, int size,
 	va_end(args);
 }
 
-EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 {
 
 	int tun;
@@ -292,7 +292,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						websWrite(wp, "</select>\n");
 					}
 					websWrite(wp, "</div>\n");	//end spbr switch
-					
+
 					websWrite(wp, "<div id=\"idoet%d_spbr\">\n", tun);	//for show or hide spbr input
 					{	//egc: SPBR input box
 						show_oet_textfield(wp, 0, "eoip.wireguard_oet_spbr_ip", 78, 1024, "", tun, NULL, "oet%d_spbr_ip", tun);
@@ -323,7 +323,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						websWrite(wp, "</select>\n");
 					}
 					websWrite(wp, "</div>\n");	//end dpbr switch
-					
+
 					websWrite(wp, "<div id=\"idoet%d_dpbr\">\n", tun);	//for show or hide dpbr
 					{	//egc: DPBR input box
 						show_oet_textfield(wp, 0, "eoip.wireguard_oet_dpbr_ip", 78, 1024, "", tun, NULL, "oet%d_dpbr_ip", tun);
