@@ -25,7 +25,7 @@ static int apfs_xattr_from_query(struct apfs_query *query,
 {
 	struct apfs_xattr_val *xattr_val;
 	struct apfs_xattr_key *xattr_key;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	int datalen = query->len - sizeof(*xattr_val);
 	int namelen = query->key_len - sizeof(*xattr_key);
 
@@ -185,7 +185,6 @@ out:
 
 /**
  * apfs_xattr_inline_read - Read the value of an inline xattr
- * @parent:	inode the attribute belongs to
  * @xattr:	the xattr structure
  * @buffer:	where to copy the attribute value
  * @size:	size of @buffer
@@ -197,9 +196,7 @@ out:
  * Returns the number of bytes used/required, or a negative error code in case
  * of failure.
  */
-static int apfs_xattr_inline_read(struct inode *parent,
-				  struct apfs_xattr *xattr,
-				  void *buffer, size_t size, bool only_whole)
+static int apfs_xattr_inline_read(struct apfs_xattr *xattr, void *buffer, size_t size, bool only_whole)
 {
 	int length = xattr->xdata_len;
 
@@ -271,10 +268,10 @@ int ____apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 	if (xattr.has_dstream)
 		ret = apfs_xattr_extents_read(inode, &xattr, buffer, size, only_whole);
 	else
-		ret = apfs_xattr_inline_read(inode, &xattr, buffer, size, only_whole);
+		ret = apfs_xattr_inline_read(&xattr, buffer, size, only_whole);
 
 done:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -388,7 +385,7 @@ static int apfs_delete_any_xattr(struct inode *inode)
 		ret = -EAGAIN;
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -686,7 +683,7 @@ done:
 	kfree(old_dstream);
 	kfree(raw_val);
 	kfree(raw_key);
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 int APFS_XATTR_SET_MAXOPS(void)
@@ -801,7 +798,7 @@ ssize_t apfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
 	}
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	up_read(&nxi->nx_big_sem);
 	return ret;
 }

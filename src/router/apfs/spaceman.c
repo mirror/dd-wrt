@@ -248,7 +248,7 @@ struct apfs_fq_rec {
  */
 static int apfs_fq_rec_from_query(struct apfs_query *query, struct apfs_fq_rec *fqrec)
 {
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	struct apfs_spaceman_free_queue_key *key;
 
 	if (query->key_len != sizeof(*key))
@@ -351,7 +351,7 @@ static int apfs_flush_fq_rec(struct apfs_node *root, u64 xid, u64 *len)
 	*len = fqrec.len;
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return err;
 }
 
@@ -362,7 +362,7 @@ fail:
 static u64 apfs_free_queue_oldest_xid(struct apfs_node *root)
 {
 	struct apfs_spaceman_free_queue_key *key;
-	char *raw = root->object.bh->b_data;
+	char *raw = root->object.data;
 	int len, off;
 
 	len = apfs_node_locate_key(root, 0, &off);
@@ -417,7 +417,7 @@ static int apfs_flush_free_queue(struct super_block *sb, unsigned qid)
 	set_buffer_csum(sm->sm_bh);
 
 fail:
-	apfs_node_put(fq_root);
+	apfs_node_free(fq_root);
 	return err;
 }
 
@@ -659,8 +659,8 @@ int apfs_free_queue_insert(struct super_block *sb, u64 bno, u64 count)
 	set_buffer_csum(sm->sm_bh);
 
 fail:
-	apfs_free_query(sb, query);
-	apfs_node_put(fq_root);
+	apfs_free_query(query);
+	apfs_node_free(fq_root);
 	return err;
 }
 

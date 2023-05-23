@@ -8,7 +8,6 @@
 
 #include <linux/buffer_head.h>
 #include <linux/fs.h>
-#include <linux/kref.h>
 #include <linux/list.h>
 #include <linux/types.h>
 #include <linux/version.h>
@@ -56,13 +55,15 @@ static inline bool sb_rdonly(const struct super_block *sb) { return sb->s_flags 
 struct apfs_object {
 	struct super_block *sb;
 	u64 block_nr;
-	u64 oid;		/* Often the same as the block number */
+	u64 oid;
 
 	/*
-	 * Buffer head containing the one block of the object.  TODO: support
-	 * objects with more than one block.
+	 * Buffer head containing the one block of the object, may be NULL if
+	 * the object is only in memory. TODO: support objects with more than
+	 * one block.
 	 */
-	struct buffer_head *bh;
+	struct buffer_head *o_bh;
+	char *data; /* The raw object */
 };
 
 /* Constants used in managing the size of a node's table of contents */
@@ -85,8 +86,6 @@ struct apfs_node {
 	int val_free_list_len;	/* Length of the fragmented free value space */
 
 	struct apfs_object object; /* Object holding the node */
-
-	struct kref refcount;
 };
 
 /**
@@ -716,7 +715,7 @@ do {									\
 /* btree.c */
 extern struct apfs_query *apfs_alloc_query(struct apfs_node *node,
 					   struct apfs_query *parent);
-extern void apfs_free_query(struct super_block *sb, struct apfs_query *query);
+extern void apfs_free_query(struct apfs_query *query);
 extern int apfs_btree_query(struct super_block *sb, struct apfs_query **query);
 extern struct apfs_node *apfs_omap_read_node(struct super_block *sb, u64 id);
 extern int apfs_omap_lookup_block(struct super_block *sb, struct apfs_node *tbl,
@@ -830,8 +829,7 @@ extern int apfs_fileattr_set(struct user_namespace *mnt_userns, struct dentry *d
 
 /* key.c */
 extern int apfs_filename_cmp(struct super_block *sb, const char *name1, unsigned int len1, const char *name2, unsigned int len2);
-extern int apfs_keycmp(struct super_block *sb,
-		       struct apfs_key *k1, struct apfs_key *k2);
+extern int apfs_keycmp(struct apfs_key *k1, struct apfs_key *k2);
 extern int apfs_read_cat_key(void *raw, int size, struct apfs_key *key, bool hashed);
 extern int apfs_read_free_queue_key(void *raw, int size, struct apfs_key *key);
 extern int apfs_read_omap_key(void *raw, int size, struct apfs_key *key);
@@ -851,8 +849,7 @@ extern void apfs_node_query_first(struct apfs_query *query);
 extern int apfs_bno_from_query(struct apfs_query *query, u64 *bno);
 extern int apfs_node_split(struct apfs_query *query);
 extern int apfs_node_locate_key(struct apfs_node *node, int index, int *off);
-extern void apfs_node_get(struct apfs_node *node);
-extern void apfs_node_put(struct apfs_node *node);
+extern void apfs_node_free(struct apfs_node *node);
 extern void apfs_node_free_range(struct apfs_node *node, u16 off, u16 len);
 extern int apfs_node_replace(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
 extern int apfs_node_insert(struct apfs_query *query, void *key, int key_len, void *val, int val_len);
