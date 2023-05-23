@@ -6,6 +6,7 @@ LINK =	$(CC) $(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/pcre
 ALL_INCS = -I src/core \
 	-I src/event \
 	-I src/event/modules \
+	-I src/event/quic \
 	-I src/os/unix \
 	-I objs \
 	-I src/http \
@@ -54,6 +55,7 @@ CORE_DEPS = src/core/nginx.h \
 	src/event/ngx_event_posted.h \
 	src/event/ngx_event_connect.h \
 	src/event/ngx_event_pipe.h \
+	src/event/ngx_event_udp.h \
 	src/os/unix/ngx_time.h \
 	src/os/unix/ngx_errno.h \
 	src/os/unix/ngx_alloc.h \
@@ -73,6 +75,7 @@ CORE_DEPS = src/core/nginx.h \
 	src/os/unix/ngx_process_cycle.h \
 	src/os/unix/ngx_linux_config.h \
 	src/os/unix/ngx_linux.h \
+	src/core/ngx_bpf.h \
 	src/core/ngx_thread_pool.h \
 	src/event/ngx_event_openssl.h \
 	src/core/ngx_regex.h \
@@ -82,6 +85,7 @@ CORE_DEPS = src/core/nginx.h \
 CORE_INCS = -I src/core \
 	-I src/event \
 	-I src/event/modules \
+	-I src/event/quic \
 	-I src/os/unix \
 	-I objs
 
@@ -458,7 +462,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_stat_module.o \
 	objs/addon/nginx-rtmp-module/ngx_rtmp_control_module.o \
 	objs/ngx_modules.o \
-	-ldl -lpthread -lpthread -lcrypt -lpcre -lssl -lcrypto -ldl -lpthread -lz \
+	-lpthread -lcrypt -lpcre -lssl -lcrypto -lpthread -lz \
 	-Wl,-E
 	
 
