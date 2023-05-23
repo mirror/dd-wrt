@@ -12,13 +12,6 @@
 
 #if !(NGX_WIN32)
 
-struct ngx_udp_connection_s {
-    ngx_rbtree_node_t   node;
-    ngx_connection_t   *connection;
-    ngx_buf_t          *buffer;
-};
-
-
 static void ngx_close_accepted_udp_connection(ngx_connection_t *c);
 static ssize_t ngx_udp_shared_recv(ngx_connection_t *c, u_char *buf,
     size_t size);
@@ -46,18 +39,8 @@ ngx_event_recvmsg(ngx_event_t *ev)
     ngx_connection_t  *c, *lc;
     static u_char      buffer[65535];
 
-#if (NGX_HAVE_MSGHDR_MSG_CONTROL)
-
-#if (NGX_HAVE_IP_RECVDSTADDR)
-    u_char             msg_control[CMSG_SPACE(sizeof(struct in_addr))];
-#elif (NGX_HAVE_IP_PKTINFO)
-    u_char             msg_control[CMSG_SPACE(sizeof(struct in_pktinfo))];
-#endif
-
-#if (NGX_HAVE_INET6 && NGX_HAVE_IPV6_RECVPKTINFO)
-    u_char             msg_control6[CMSG_SPACE(sizeof(struct in6_pktinfo))];
-#endif
-
+#if (NGX_HAVE_ADDRINFO_CMSG)
+    u_char             msg_control[CMSG_SPACE(sizeof(ngx_addrinfo_t))];
 #endif
 
     if (ev->timedout) {
@@ -92,25 +75,13 @@ ngx_event_recvmsg(ngx_event_t *ev)
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
 
-#if (NGX_HAVE_MSGHDR_MSG_CONTROL)
-
+#if (NGX_HAVE_ADDRINFO_CMSG)
         if (ls->wildcard) {
+            msg.msg_control = &msg_control;
+            msg.msg_controllen = sizeof(msg_control);
 
-#if (NGX_HAVE_IP_RECVDSTADDR || NGX_HAVE_IP_PKTINFO)
-            if (ls->sockaddr->sa_family == AF_INET) {
-                msg.msg_control = &msg_control;
-                msg.msg_controllen = sizeof(msg_control);
-            }
-#endif
-
-#if (NGX_HAVE_INET6 && NGX_HAVE_IPV6_RECVPKTINFO)
-            if (ls->sockaddr->sa_family == AF_INET6) {
-                msg.msg_control = &msg_control6;
-                msg.msg_controllen = sizeof(msg_control6);
-            }
-#endif
+            ngx_memzero(&msg_control, sizeof(msg_control));
         }
-
 #endif
 
         n = recvmsg(lc->fd, &msg, 0);
@@ -129,7 +100,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
             return;
         }
 
-#if (NGX_HAVE_MSGHDR_MSG_CONTROL)
+#if (NGX_HAVE_ADDRINFO_CMSG)
         if (msg.msg_flags & (MSG_TRUNC|MSG_CTRUNC)) {
             ngx_log_error(NGX_LOG_ALERT, ev->log, 0,
                           "recvmsg() truncated data");
@@ -159,7 +130,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
         local_sockaddr = ls->sockaddr;
         local_socklen = ls->socklen;
 
-#if (NGX_HAVE_MSGHDR_MSG_CONTROL)
+#if (NGX_HAVE_ADDRINFO_CMSG)
 
         if (ls->wildcard) {
             struct cmsghdr  *cmsg;
@@ -171,59 +142,9 @@ ngx_event_recvmsg(ngx_event_t *ev)
                  cmsg != NULL;
                  cmsg = CMSG_NXTHDR(&msg, cmsg))
             {
-
-#if (NGX_HAVE_IP_RECVDSTADDR)
-
-                if (cmsg->cmsg_level == IPPROTO_IP
-                    && cmsg->cmsg_type == IP_RECVDSTADDR
-                    && local_sockaddr->sa_family == AF_INET)
-                {
-                    struct in_addr      *addr;
-                    struct sockaddr_in  *sin;
-
-                    addr = (struct in_addr *) CMSG_DATA(cmsg);
-                    sin = (struct sockaddr_in *) local_sockaddr;
-                    sin->sin_addr = *addr;
-
+                if (ngx_get_srcaddr_cmsg(cmsg, local_sockaddr) == NGX_OK) {
                     break;
                 }
-
-#elif (NGX_HAVE_IP_PKTINFO)
-
-                if (cmsg->cmsg_level == IPPROTO_IP
-                    && cmsg->cmsg_type == IP_PKTINFO
-                    && local_sockaddr->sa_family == AF_INET)
-                {
-                    struct in_pktinfo   *pkt;
-                    struct sockaddr_in  *sin;
-
-                    pkt = (struct in_pktinfo *) CMSG_DATA(cmsg);
-                    sin = (struct sockaddr_in *) local_sockaddr;
-                    sin->sin_addr = pkt->ipi_addr;
-
-                    break;
-                }
-
-#endif
-
-#if (NGX_HAVE_INET6 && NGX_HAVE_IPV6_RECVPKTINFO)
-
-                if (cmsg->cmsg_level == IPPROTO_IPV6
-                    && cmsg->cmsg_type == IPV6_PKTINFO
-                    && local_sockaddr->sa_family == AF_INET6)
-                {
-                    struct in6_pktinfo   *pkt6;
-                    struct sockaddr_in6  *sin6;
-
-                    pkt6 = (struct in6_pktinfo *) CMSG_DATA(cmsg);
-                    sin6 = (struct sockaddr_in6 *) local_sockaddr;
-                    sin6->sin6_addr = pkt6->ipi6_addr;
-
-                    break;
-                }
-
-#endif
-
             }
         }
 
@@ -317,6 +238,8 @@ ngx_event_recvmsg(ngx_event_t *ev)
         c->recv = ngx_udp_shared_recv;
         c->send = ngx_udp_send;
         c->send_chain = ngx_udp_send_chain;
+
+        c->need_flush_buf = 1;
 
         c->log = log;
         c->pool->log = log;
@@ -494,8 +417,8 @@ ngx_udp_rbtree_insert_value(ngx_rbtree_node_t *temp,
             udpt = (ngx_udp_connection_t *) temp;
             ct = udpt->connection;
 
-            rc = ngx_cmp_sockaddr(c->sockaddr, c->socklen,
-                                  ct->sockaddr, ct->socklen, 1);
+            rc = ngx_memn2cmp(udp->key.data, udpt->key.data,
+                              udp->key.len, udpt->key.len);
 
             if (rc == 0 && c->listening->wildcard) {
                 rc = ngx_cmp_sockaddr(c->local_sockaddr, c->local_socklen,
@@ -548,6 +471,8 @@ ngx_insert_udp_connection(ngx_connection_t *c)
     ngx_crc32_final(hash);
 
     udp->node.key = hash;
+    udp->key.data = (u_char *) c->sockaddr;
+    udp->key.len = c->socklen;
 
     cln = ngx_pool_cleanup_add(c->pool, 0);
     if (cln == NULL) {

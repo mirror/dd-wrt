@@ -73,6 +73,7 @@ struct ngx_listening_s {
     unsigned            reuseport:1;
     unsigned            add_reuseport:1;
     unsigned            keepalive:2;
+    unsigned            quic:1;
 
     unsigned            deferred_accept:1;
     unsigned            delete_deferred:1;
@@ -147,6 +148,10 @@ struct ngx_connection_s {
 
     ngx_proxy_protocol_t  *proxy_protocol;
 
+#if (NGX_QUIC || NGX_COMPAT)
+    ngx_quic_stream_t     *quic;
+#endif
+
 #if (NGX_SSL || NGX_COMPAT)
     ngx_ssl_connection_t  *ssl;
 #endif
@@ -172,6 +177,7 @@ struct ngx_connection_s {
     unsigned            timedout:1;
     unsigned            error:1;
     unsigned            destroyed:1;
+    unsigned            pipeline:1;
 
     unsigned            idle:1;
     unsigned            reusable:1;
@@ -184,6 +190,7 @@ struct ngx_connection_s {
     unsigned            tcp_nopush:2;    /* ngx_connection_tcp_nopush_e */
 
     unsigned            need_last_buf:1;
+    unsigned            need_flush_buf:1;
 
 #if (NGX_HAVE_SENDFILE_NODISKIO || NGX_COMPAT)
     unsigned            busy_count:2;
