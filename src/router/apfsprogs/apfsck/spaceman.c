@@ -97,7 +97,7 @@ void ip_bmap_mark_as_used(u64 paddr, u64 length)
 void container_bmap_mark_as_used(u64 paddr, u64 length)
 {
 	/* Avoid out-of-bounds writes to the allocation bitmap */
-	if (paddr + length >= sb->s_block_count || paddr + length < paddr)
+	if (paddr + length > sb->s_block_count || paddr + length < paddr)
 		report(NULL /* context */, "Out-of-range block number.");
 
 	bmap_mark_as_used(sb->s_bitmap, paddr, length);
@@ -418,24 +418,99 @@ static void check_spaceman_tier2_device(struct apfs_spaceman_phys *raw)
 		report("Spaceman device", "non-zero padding.");
 }
 
-/**
- * check_allocation_boundaries - Check the boundaries of an allocation zone
- * @azb: pointer to the raw boundaries structure
- * @dev: index for the device
- *
- * Allocation zones are undocumented, so we can't do much more than report them
- * as unsupported if they are in use.
- */
-static void check_allocation_boundaries(
-		struct apfs_spaceman_allocation_zone_boundaries *azb, int dev)
-{
-	if (!azb->saz_zone_start && !azb->saz_zone_end)
-		return;
+struct alloc_zone {
+	struct alloc_zone *next;	/* Next entry in linked list */
+	u16 id;				/* Zone id */
+	u64 start;			/* Start of zone */
+	u64 end;			/* End of zone */
+};
 
-	if (dev == APFS_SD_MAIN)
-		report_unknown("Allocation zones");
-	else
-		report_unknown("Fusion drive");
+static struct alloc_zone *alloc_zone_list = NULL;
+
+static void check_alloc_zone_sanity(u64 start, u64 end)
+{
+	if (start & (sb->s_blocksize - 1))
+		report("Allocation zone", "start isn't multiple of block size.");
+	if (end & (sb->s_blocksize - 1))
+		report("Allocation zone", "end isn't multiple of block size.");
+	if (start >= end)
+		report("Allocation zone", "invalid range.");
+}
+
+/* Puts alloc zones in a list to check for overlap */
+static void check_new_alloc_zone(u16 id, u64 start, u64 end)
+{
+	struct alloc_zone **zone_p = NULL;
+	struct alloc_zone *zone = NULL;
+	struct alloc_zone *new = NULL;
+
+	check_alloc_zone_sanity(start, end);
+
+	zone_p = &alloc_zone_list;
+	zone = *zone_p;
+	while (zone) {
+		if (zone->id == id)
+			report("Allocation zones", "repeated id.");
+		if (start < zone->end && end > zone->start)
+			report("Allocations zones", "overlapping ranges.");
+		zone_p = &zone->next;
+		zone = *zone_p;
+	}
+
+	new = calloc(1, sizeof(*new));
+	if (!new)
+		system_error();
+	new->id = id;
+	new->start = start;
+	new->end = end;
+	*zone_p = new;
+}
+
+static void free_checked_alloc_zones(void)
+{
+	struct alloc_zone *curr = alloc_zone_list;
+
+	alloc_zone_list = NULL;
+	while (curr) {
+		struct alloc_zone *next = NULL;
+
+		next = curr->next;
+		curr->next = NULL;
+		free(curr);
+		curr = next;
+	}
+}
+
+/* If old zones are reported, just check that the index is valid */
+static void check_prev_alloc_zones(struct apfs_spaceman_allocation_zone_info_phys *az)
+{
+	struct apfs_spaceman_allocation_zone_boundaries *azb = NULL;
+	u16 prev_index;
+	int j;
+
+	prev_index = le16_to_cpu(az->saz_previous_boundary_index);
+	if (prev_index > APFS_SM_ALLOCZONE_NUM_PREVIOUS_BOUNDARIES)
+		report("Allocation zones", "out-of-range previous index.");
+
+	for (j = 0; j < APFS_SM_ALLOCZONE_NUM_PREVIOUS_BOUNDARIES; ++j) {
+		azb = &az->saz_previous_boundaries[j];
+
+		if (prev_index == 0) {
+			/* No previous zones should be reported */
+			if (azb->saz_zone_start || azb->saz_zone_end)
+				report("Previous allocation zones", "missing index.");
+			continue;
+		}
+
+		if (!azb->saz_zone_start && !azb->saz_zone_end) {
+			/* No zone reported in this slot */
+			if (j == prev_index - 1 && !azb->saz_zone_start)
+				report("Allocation zones", "latest is missing.");
+			continue;
+		}
+
+		check_alloc_zone_sanity(le64_to_cpu(azb->saz_zone_start), le64_to_cpu(azb->saz_zone_end));
+	}
 }
 
 /**
@@ -451,25 +526,26 @@ static void check_spaceman_datazone(struct apfs_spaceman_datazone_info_phys *dz)
 
 	for (dev = 0; dev < APFS_SD_COUNT; ++dev) {
 		for (i = 0; i < APFS_SM_DATAZONE_ALLOCZONE_COUNT; ++i) {
-			struct apfs_spaceman_allocation_zone_info_phys *az;
-			struct apfs_spaceman_allocation_zone_boundaries *azb;
-			int j;
+			struct apfs_spaceman_allocation_zone_info_phys *az = NULL;
+			struct apfs_spaceman_allocation_zone_boundaries *azb = NULL;
 
 			az = &dz->sdz_allocation_zones[dev][i];
-			if (az->saz_zone_id || az->saz_previous_boundary_index)
-				report_unknown("Allocation zones");
+			azb = &az->saz_current_boundaries;
+
+			if (az->saz_zone_id) {
+				if (dev != APFS_SD_MAIN)
+					report_unknown("Fusion drive");
+				check_new_alloc_zone(le16_to_cpu(az->saz_zone_id), le64_to_cpu(azb->saz_zone_start), le64_to_cpu(azb->saz_zone_end));
+			} else if (azb->saz_zone_start || azb->saz_zone_end) {
+				report("Allocation zone", "has no id.");
+			}
+
 			if (az->saz_reserved)
 				report("Datazone", "reserved field in use.");
 
-			azb = &az->saz_current_boundaries;
-			check_allocation_boundaries(azb, dev);
-			for (j = 0;
-			     j < APFS_SM_ALLOCZONE_NUM_PREVIOUS_BOUNDARIES;
-			     ++j) {
-				azb = &az->saz_previous_boundaries[j];
-				check_allocation_boundaries(azb, dev);
-			}
+			check_prev_alloc_zones(az);
 		}
+		free_checked_alloc_zones();
 	}
 }
 
@@ -531,22 +607,9 @@ static void check_spaceman_free_queues(struct apfs_spaceman_free_queue *sfq)
 static void compare_container_bitmaps(u64 *sm_bmap, u64 *real_bmap, u64 chunks)
 {
 	unsigned long long bmap_size = sb->s_blocksize * chunks;
-	unsigned long long count64;
-	u64 i;
 
-	/*
-	 * TODO: sometimes the bitmaps don't match; maybe this has something to
-	 * do with the file count issue mentioned at check_container()?
-	 */
-	if (!memcmp(sm_bmap, real_bmap, bmap_size))
-		return;
-	report_weird("Container allocation bitmap");
-
-	/* At least verify that all used blocks are marked as such */
-	count64 = bmap_size / sizeof(count64);
-	for (i = 0; i < count64; ++i)
-		if ((sm_bmap[i] | real_bmap[i]) != sm_bmap[i])
-			report("Space manager", "bad allocation bitmap.");
+	if (memcmp(sm_bmap, real_bmap, bmap_size) != 0)
+		report("Space manager", "bad allocation bitmap.");
 }
 
 /**
@@ -766,8 +829,12 @@ void check_spaceman(u64 oid)
 	check_internal_pool(raw);
 	free(sb->s_ip_bitmap);
 
-	if (raw->sm_fs_reserve_block_count || raw->sm_fs_reserve_alloc_count)
-		report_unknown("Reserved allocation blocks");
+	if (le64_to_cpu(raw->sm_fs_reserve_block_count) != sm->sm_reserve_block_num)
+		report("Space manager", "wrong block reservation total.");
+	if (le64_to_cpu(raw->sm_fs_reserve_alloc_count) != sm->sm_reserve_alloc_num)
+		report("Space manager", "wrong reserve block allocation total.");
+	if (sm->sm_reserve_block_num - sm->sm_reserve_alloc_num > sm->sm_free)
+		report("Space manager", "block reservation not respected.");
 
 	compare_container_bitmaps(sm->sm_bitmap, sb->s_bitmap,
 				  sm->sm_chunk_count);

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <apfs/checksum.h>
 #include <apfs/raw.h>
@@ -22,14 +23,15 @@ int obj_verify_csum(struct apfs_obj_phys *obj)
 }
 
 /**
- * read_object_nocheck - Read an object header from disk
- * @bno: block number for the object
- * @obj: object struct to receive the results
+ * read_object_nocheck_internal - Read an object header from disk
+ * @bno:	block number for the object
+ * @obj:	object struct to receive the results
+ * @noheader:	does this object have no header?
  *
  * Returns a pointer to the raw data of the object in memory, without running
  * any checks other than the Fletcher verification.
  */
-void *read_object_nocheck(u64 bno, struct object *obj)
+static void *read_object_nocheck_internal(u64 bno, struct object *obj, bool noheader)
 {
 	struct apfs_obj_phys *raw;
 
@@ -37,6 +39,13 @@ void *read_object_nocheck(u64 bno, struct object *obj)
 		   fd, bno * sb->s_blocksize);
 	if (raw == MAP_FAILED)
 		system_error();
+
+	if (noheader) {
+		struct apfs_obj_phys zeroes = {0};
+		if (memcmp(raw, &zeroes, sizeof(*raw)) != 0)
+			report("No-header object", "has a header.");
+		return raw;
+	}
 
 	/* This one check is always needed */
 	if (!obj_verify_csum(raw)) {
@@ -54,13 +63,19 @@ void *read_object_nocheck(u64 bno, struct object *obj)
 	return raw;
 }
 
+void *read_object_nocheck(u64 bno, struct object *obj)
+{
+	return read_object_nocheck_internal(bno, obj, false /* noheader */);
+}
+
 /**
  * parse_object_flags - Check consistency of object flags
- * @flags: the flags
+ * @flags:	the flags
+ * @encrypted:	is the object encrypted?
  *
  * Returns the storage type flags to be checked by the caller.
  */
-u32 parse_object_flags(u32 flags)
+u32 parse_object_flags(u32 flags, bool encrypted)
 {
 	if ((flags & APFS_OBJECT_TYPE_FLAGS_DEFINED_MASK) != flags)
 		report("Object header", "undefined flag in use.");
@@ -68,51 +83,87 @@ u32 parse_object_flags(u32 flags)
 		report("Object header", "nonpersistent flag is set.");
 	if (flags & APFS_OBJ_NOHEADER)
 		report("Object header", "noheader flag is set.");
-	if (flags & APFS_OBJ_ENCRYPTED)
-		report_unknown("Encrypted object");
+
+	/*
+	 * So-called encrypted objects don't actually appear to be encrypted at
+	 * all, no idea what this is about.
+	 */
+	if ((bool)(flags & APFS_OBJ_ENCRYPTED) != encrypted)
+		report("Object header", "wrong encryption flag.");
+
 	return flags & APFS_OBJ_STORAGETYPE_MASK;
 }
 
 /**
- * read_object - Read an object header from disk and run some checks
+ * read_object_internal - Read an object header from disk and run some checks
  * @oid:	object id
  * @omap_table:	hash table for the object map (NULL if no translation is needed)
  * @obj:	object struct to receive the results
+ * @noheader:	does this object lack a header?
  *
  * Returns a pointer to the raw data of the object in memory, after checking
  * the consistency of some of its fields.
  */
-void *read_object(u64 oid, struct htable_entry **omap_table, struct object *obj)
+static void *read_object_internal(u64 oid, struct htable_entry **omap_table, struct object *obj, bool noheader)
 {
 	struct apfs_obj_phys *raw;
-	struct omap_record *omap_rec;
+	struct omap_record *omap_rec = NULL;
 	u64 bno;
 	u64 xid;
 	u32 storage_type;
 
-	if (omap_table) {
-		omap_rec = get_omap_record(oid, omap_table);
-		if (omap_rec->o_seen)
-			report("Object map record", "oid was used twice.");
-		omap_rec->o_seen = true;
+	assert(omap_table || !noheader);
 
-		bno = omap_rec->o_bno;
-		if (!bno)
-			report("Object map", "record missing for id 0x%llx.",
-			       (unsigned long long)oid);
+	if (omap_table) {
+		omap_rec = get_latest_omap_record(oid, sb->s_xid, omap_table);
+		if (!omap_rec || !omap_rec->bno)
+			report("Object map", "record missing for id 0x%llx.", (unsigned long long)oid);
+		if ((bool)(omap_rec->flags & APFS_OMAP_VAL_NOHEADER) != noheader)
+			report("Object map", "wrong setting for noheader flag.");
+		if (!ongoing_query) {
+			/* Query code will revisit already parsed nodes */
+			if (vsb && vsb->v_in_snapshot) {
+				if (omap_rec->seen_for_snap)
+					report("Object map record", "oid used twice for same snapshot.");
+				omap_rec->seen_for_snap = true;
+			} else {
+				if (omap_rec->seen_for_latest)
+					report("Object map record", "oid used twice in latest checkpoint.");
+				omap_rec->seen_for_latest = true;
+			}
+		}
+		bno = omap_rec->bno;
 	} else {
 		bno = oid;
 	}
 
-	raw = read_object_nocheck(bno, obj);
+	if (noheader) {
+		raw = read_object_nocheck_internal(bno, obj, noheader);
+		obj->oid = oid;
+		obj->block_nr = bno;
+		obj->xid = omap_rec->xid;
+	} else {
+		raw = read_object_nocheck(bno, obj);
+	}
+
 	if (!ongoing_query) { /* Query code will revisit already parsed nodes */
-		if (vsb)
-			++vsb->v_block_count;
 		if ((obj->type == APFS_OBJECT_TYPE_SPACEMAN_CIB) ||
 		     (obj->type == APFS_OBJECT_TYPE_SPACEMAN_CAB)) {
 			ip_bmap_mark_as_used(bno, 1 /* length */);
+		} else if (omap_table) {
+			/* Virtual objects may be shared between snapshots */
+			if (!omap_rec->seen) {
+				container_bmap_mark_as_used(bno, 1 /* length */);
+				/* The volume super itself doesn't count here */
+				if (vsb && obj->type != APFS_OBJECT_TYPE_FS)
+					++vsb->v_block_count;
+			}
+			omap_rec->seen = true;
 		} else {
 			container_bmap_mark_as_used(bno, 1 /* length */);
+			/* Volume superblocks in snapshots don't count either */
+			if (vsb && obj->type != APFS_OBJECT_TYPE_FS)
+				++vsb->v_block_count;
 		}
 	}
 
@@ -127,24 +178,43 @@ void *read_object(u64 oid, struct htable_entry **omap_table, struct object *obj)
 		       (unsigned long long)bno);
 
 	xid = obj->xid;
-	if (!xid || sb->s_xid < xid)
-		report("Object header", "bad transaction id in block 0x%llx.",
-		       (unsigned long long)bno);
+	if (!xid)
+		report("Object header", "null transaction id in block 0x%llx.", (unsigned long long)bno);
+	if (sb->s_xid < xid) {
+		/*
+		 * When a snapshot is deleted, the following one is given its
+		 * physical extents; so its extent reference tree gets altered
+		 * under the current transaction.
+		 */
+		if (!vsb->v_in_snapshot || obj->subtype != APFS_OBJECT_TYPE_BLOCKREFTREE)
+			report("Object header", "bad transaction id in block 0x%llx.", (unsigned long long)bno);
+	}
 	if (vsb && vsb->v_first_xid > xid)
 		report_weird("Transaction id in block is older than volume");
-	if (omap_table && xid != omap_rec->o_xid)
+	if (omap_table && xid != omap_rec->xid)
 		report("Object header",
 		       "transaction id in omap key doesn't match block 0x%llx.",
 		       (unsigned long long)bno);
 
+	storage_type = parse_object_flags(obj->flags, vsb && vsb->v_encrypted && obj->subtype == APFS_OBJECT_TYPE_FSTREE);
+
 	/* Ephemeral objects are handled by read_ephemeral_object() */
-	storage_type = parse_object_flags(obj->flags);
 	if (omap_table && storage_type != APFS_OBJ_VIRTUAL)
 		report("Object header", "wrong flag for virtual object.");
 	if (!omap_table && storage_type != APFS_OBJ_PHYSICAL)
 		report("Object header", "wrong flag for physical object.");
 
 	return raw;
+}
+
+void *read_object(u64 oid, struct htable_entry **omap_table, struct object *obj)
+{
+	return read_object_internal(oid, omap_table, obj, false /* noheader */);
+}
+
+void *read_object_noheader(u64 oid, struct htable_entry **omap_table, struct object *obj)
+{
+	return read_object_internal(oid, omap_table, obj, true /* noheader */);
 }
 
 /**
@@ -242,7 +312,7 @@ void *read_ephemeral_object(u64 oid, struct object *obj)
 	if (obj->xid != sb->s_xid)
 		report("Ephemeral object", "not part of latest transaction.");
 
-	storage_type = parse_object_flags(obj->flags);
+	storage_type = parse_object_flags(obj->flags, false);
 	if (storage_type != APFS_OBJ_EPHEMERAL)
 		report("Object header", "wrong flag for ephemeral object.");
 

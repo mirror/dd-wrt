@@ -16,10 +16,13 @@
 #include <apfs/types.h>
 #include "apfsck.h"
 #include "btree.h"
+#include "crypto.h"
+#include "dir.h"
 #include "extents.h"
 #include "htable.h"
 #include "inode.h"
 #include "object.h"
+#include "snapshot.h"
 #include "spaceman.h"
 #include "super.h"
 
@@ -207,7 +210,7 @@ static void check_main_flags(u64 flags)
 	if (flags & (APFS_NX_RESERVED_1 | APFS_NX_RESERVED_2))
 		report("Container superblock", "reserved flag in use.");
 	if (flags & APFS_NX_CRYPTO_SW)
-		report_unknown("Encryption");
+		report_unknown("Software encryption");
 }
 
 /**
@@ -340,20 +343,14 @@ static void check_ephemeral_information(__le64 *info)
  * software_strlen - Calculate the length of a software info string
  * @str: the string
  *
- * Also checks that the string has a proper null-termination, and only null
- * characters afterwards.
+ * Also checks that the string has a proper null-termination.
  */
 static int software_strlen(u8 *str)
 {
 	int length = strnlen((char *)str, APFS_MODIFIED_NAMELEN);
-	u8 *end = str + APFS_MODIFIED_NAMELEN;
 
 	if (length == APFS_MODIFIED_NAMELEN)
 		report("Volume software id", "no NULL-termination.");
-	for (str += length + 1; str != end; ++str) {
-		if (*str)
-			report("Volume software id", "goes on after NULL.");
-	}
 	return length;
 }
 
@@ -373,6 +370,9 @@ static void check_software_information(struct apfs_modified_by *formatted_by,
 	mods_over = false;
 	end_mod_by = modified_by + APFS_MAX_HIST;
 	xid = sb->s_xid + 1; /* Last possible xid */
+
+	vsb->v_first_xid = le64_to_cpu(formatted_by->last_xid);
+	vsb->v_last_xid = vsb->v_first_xid;
 
 	for (; modified_by != end_mod_by; ++modified_by) {
 		length = software_strlen(modified_by->id);
@@ -396,13 +396,15 @@ static void check_software_information(struct apfs_modified_by *formatted_by,
 			report("Volume modification info",
 			       "entries are not in order.");
 		xid = le64_to_cpu(modified_by->last_xid);
+
+		if (xid > vsb->v_last_xid)
+			vsb->v_last_xid = xid;
 	}
 
 	length = software_strlen(formatted_by->id);
 	if (!length)
 		report("Volume superblock", "creation information is missing.");
 
-	vsb->v_first_xid = le64_to_cpu(formatted_by->last_xid);
 	if (xid <= vsb->v_first_xid)
 		report("Volume creation info", "transaction is too recent.");
 }
@@ -419,7 +421,7 @@ static void check_volume_flags(u64 flags)
 		report("Volume superblock", "reserved flag in use.");
 
 	if (!(flags & APFS_FS_UNENCRYPTED))
-		report_unknown("Encryption");
+		vsb->v_encrypted = true;
 	else if (flags & (APFS_FS_EFFACEABLE | APFS_FS_ONEKEY))
 		report("Volume superblock", "inconsistent crypto flags.");
 
@@ -463,14 +465,49 @@ static void check_incompat_vol_features(u64 flags)
 {
 	if ((flags & APFS_SUPPORTED_INCOMPAT_MASK) != flags)
 		report("Volume superblock", "unknown incompatible feature.");
+	if (flags & APFS_INCOMPAT_RESERVED_40)
+		report("Volume superblock", "reserved incompatible feature.");
 	if (flags & APFS_INCOMPAT_DATALESS_SNAPS)
 		report_unknown("Dataless snapshots");
 	if (flags & APFS_INCOMPAT_ENC_ROLLED)
 		report_unknown("Change of encryption keys");
+	if (flags & APFS_INCOMPAT_INCOMPLETE_RESTORE)
+		report_unknown("Incomplete restore");
 
 	if ((bool)(flags & APFS_INCOMPAT_CASE_INSENSITIVE) &&
 	    (bool)(flags & APFS_INCOMPAT_NORMALIZATION_INSENSITIVE))
 		report("Volume superblock", "redundant flag for case sensitivity.");
+}
+
+/**
+ * role_is_valid - Does the give number match a possible volume role?
+ * @role: the role number to check
+ */
+static bool role_is_valid(u16 role)
+{
+	switch (role) {
+	case APFS_VOL_ROLE_NONE:
+	case APFS_VOL_ROLE_SYSTEM:
+	case APFS_VOL_ROLE_USER:
+	case APFS_VOL_ROLE_RECOVERY:
+	case APFS_VOL_ROLE_VM:
+	case APFS_VOL_ROLE_PREBOOT:
+	case APFS_VOL_ROLE_INSTALLER:
+	case APFS_VOL_ROLE_DATA:
+	case APFS_VOL_ROLE_BASEBAND:
+	case APFS_VOL_ROLE_UPDATE:
+	case APFS_VOL_ROLE_XART:
+	case APFS_VOL_ROLE_HARDWARE:
+	case APFS_VOL_ROLE_BACKUP:
+	case APFS_VOL_ROLE_RESERVED_7:
+	case APFS_VOL_ROLE_RESERVED_8:
+	case APFS_VOL_ROLE_ENTERPRISE:
+	case APFS_VOL_ROLE_RESERVED_10:
+	case APFS_VOL_ROLE_PRELOGIN:
+		return true;
+	default:
+		return false;
+	}
 }
 
 /**
@@ -479,10 +516,21 @@ static void check_incompat_vol_features(u64 flags)
  */
 static void check_volume_role(u16 role)
 {
-	if ((role & APFS_VOL_ROLES_VALID_MASK) != role)
+	if (!role_is_valid(role))
 		report("Volume superblock", "invalid role in use.");
-	if (role & APFS_VOL_ROLE_RESERVED_200)
+	if (role == APFS_VOL_ROLE_RESERVED_7 || role == APFS_VOL_ROLE_RESERVED_8 || role == APFS_VOL_ROLE_RESERVED_10)
 		report("Volume superblock", "reserved role in use.");
+}
+
+static bool meta_crypto_is_empty(struct apfs_wrapped_meta_crypto_state *wmcs)
+{
+	if (wmcs->major_version || wmcs->minor_version || wmcs->cpflags)
+		return false;
+	if (wmcs->persistent_class || wmcs->key_os_version)
+		return false;
+	if (wmcs->key_revision || wmcs->unused)
+		return false;
+	return true;
 }
 
 /**
@@ -491,6 +539,10 @@ static void check_volume_role(u16 role)
  */
 static void check_meta_crypto(struct apfs_wrapped_meta_crypto_state *wmcs)
 {
+	/* This seems to contradict the reference, but it happens sometimes */
+	if (meta_crypto_is_empty(wmcs))
+		return;
+
 	if (le16_to_cpu(wmcs->major_version) != APFS_WMCS_MAJOR_VERSION)
 		report("Volume meta_crypto", "wrong major version.");
 	if (le16_to_cpu(wmcs->minor_version) != APFS_WMCS_MINOR_VERSION)
@@ -500,47 +552,192 @@ static void check_meta_crypto(struct apfs_wrapped_meta_crypto_state *wmcs)
 		report("Volume meta_crypto", "unknown flag.");
 
 	if (le32_to_cpu(wmcs->persistent_class) != APFS_PROTECTION_CLASS_F)
-		report_unknown("Encryption");
+		report_unknown("Encrypted metadata");
 	if (le16_to_cpu(wmcs->key_revision) != 1) /* Key has been changed */
-		report_unknown("Encryption");
+		report_unknown("Encrypted metadata");
 
 	if (wmcs->unused)
 		report("Volume meta_crypto", "reserved field in use.");
 }
 
 /**
- * map_volume_super - Find the volume superblock and map it into memory
- * @vol:	volume number
- * @vsb:	volume superblock struct to receive the results
- *
- * Returns the in-memory location of the volume superblock, or NULL if there
- * is no volume with this number.
+ * get_volume_group - Find or create the volume group struct with the given uuid
  */
-static struct apfs_superblock *map_volume_super(int vol,
-						struct volume_superblock *vsb)
+static struct volume_group *get_volume_group(char uuid[16])
 {
-	struct apfs_nx_superblock *msb_raw = sb->s_raw;
-	char *vol_name;
-	u64 vol_id;
+	struct volume_group *vg = sb->s_volume_group;
 
-	vol_id = le64_to_cpu(msb_raw->nx_fs_oid[vol]);
-	if (vol_id == 0) {
-		if (vol > sb->s_max_vols)
-			report("Container superblock", "too many volumes.");
-		for (++vol; vol < APFS_NX_MAX_FILE_SYSTEMS; ++vol)
-			if (msb_raw->nx_fs_oid[vol])
-				report("Container superblock",
-				       "volume array goes on after NULL.");
-		return NULL;
+	/* This shouldn't happen according to the reference, but it does */
+	if (uuid_is_null(uuid))
+		report_weird("Volume group uuid");
+
+	if (vg) {
+		if (memcmp(vg->vg_id, uuid, 16) != 0)
+			report_unknown("Two volume groups");
+		return vg;
 	}
 
-	vsb->v_raw = read_object(vol_id, sb->s_omap_table, &vsb->v_obj);
+	vg = calloc(1, sizeof(*vg));
+	if (!vg)
+		system_error();
+	memcpy(vg->vg_id, uuid, 16);
+	sb->s_volume_group = vg;
+	return vg;
+}
+
+/**
+ * parse_volume_group_info - Parse the current volume's metadata for group info
+ */
+static void parse_volume_group_info(void)
+{
+	struct volume_group *vg = NULL;
+	char *vg_uuid = vsb->v_raw->apfs_volume_group_id;
+
+	if (apfs_volume_is_in_group()) {
+		vg = get_volume_group(vg_uuid);
+		if (vsb->v_in_snapshot)
+			return;
+		if (apfs_is_data_volume_in_group()) {
+			if (vg->vg_data_seen)
+				report("Volume group", "two data volumes.");
+			vg->vg_data_seen = true;
+		} else if (apfs_is_system_volume_in_group()) {
+			if (vg->vg_system_seen)
+				report("Volume group", "two system volumes.");
+			vg->vg_system_seen = true;
+		} else {
+			report("Volume group", "volume is neither data nor system.");
+		}
+	} else {
+		if (!uuid_is_null(vg_uuid))
+			report("Volume group", "member has no feature flag.");
+	}
+}
+
+static void parse_cloneinfo_epoch(struct volume_superblock *vsb)
+{
+	struct apfs_superblock *raw = vsb->v_raw;
+	u64 id_epoch, xid;
+
+	/*
+	 * These "cloneinfo" fields are a way to determine if this volume was
+	 * modified by an older, buggy implementation that may have corrupted
+	 * the INODE_WAS_EVER_CLONED flags. I will report that as corruption
+	 * either way, so these checks will also assume that it never happens.
+	 */
+	id_epoch = le64_to_cpu(raw->apfs_cloneinfo_id_epoch);
+	xid = le64_to_cpu(raw->apfs_cloneinfo_xid);
+
+	if (id_epoch) {
+		/*
+		 * This is the only epoch I have encountered so far. It would
+		 * appear to imply that the first inode created may have a
+		 * corrupted flag, but that was probably not the intention. In
+		 * fact, I've even seen a volume with this epoch that never had
+		 * any user inodes at all.
+		 */
+		if (id_epoch != APFS_MIN_USER_INO_NUM)
+			report_unknown("Cloneinfo id epoch");
+	}
+
+	if (xid) {
+		if (xid != vsb->v_last_xid)
+			report("Volume superblock", "out of date cloneinfo xid");
+	}
+
+	/*
+	 * The reference says that no xid implies no epoch, but that doesn't
+	 * seem to be true for unmodified volumes.
+	 */
+	if (id_epoch && !xid) {
+		if (vsb->v_first_xid != vsb->v_last_xid)
+			report("Volume superblock", "cloneinfo epoch with no xid.");
+	}
+}
+
+/**
+ * integrity_meta_256_from_off - Get a pointer to the 256 bits on an im offset
+ * @raw:	pointer to the raw integrity metadata
+ * @offset:	offset of the 256-bit value in @raw
+ */
+static char *integrity_meta_256_from_off(struct apfs_integrity_meta_phys *raw, u32 offset)
+{
+	char *value_p = (char *)raw + offset;
+	int sz_256 = 256 / 8;
+
+	if (offset & 0x7)
+		report("Integrity metadata", "offset is not aligned to 8 bytes.");
+	if (offset < sizeof(*raw))
+		report("Integrity metadata", "offset overlaps with structure.");
+	if (offset >= sb->s_blocksize || offset + sz_256 > sb->s_blocksize)
+		report("Integrity metadata", "offset is out of bounds.");
+	return value_p;
+}
+
+static void parse_integrity_meta(u64 oid)
+{
+	struct apfs_integrity_meta_phys *meta = NULL;
+	struct object obj;
+	u32 flags, hash_type;
+	char *hash = NULL;
+	int i;
+
+	assert(vsb->v_omap_table);
+
+	meta = read_object(oid, vsb->v_omap_table, &obj);
+	if (obj.type != APFS_OBJECT_TYPE_INTEGRITY_META)
+		report("Integrity metadata", "wrong object type.");
+	if (obj.subtype != APFS_OBJECT_TYPE_INVALID)
+		report("Integrity metadata", "wrong object subtype.");
+
+	if (le32_to_cpu(meta->im_version) == APFS_INTEGRITY_META_VERSION_INVALID)
+		report("Integrity metadata", "invalid version.");
+	if (le32_to_cpu(meta->im_version) > APFS_INTEGRITY_META_VERSION_HIGHEST)
+		report("Integrity metadata", "undocumented new version.");
+
+	flags = le32_to_cpu(meta->im_flags);
+	if (flags & (~((u32)APFS_SEAL_BROKEN)))
+		report("Integrity metadata", "undocumented flags.");
+	if (flags & APFS_SEAL_BROKEN || meta->im_broken_xid)
+		report_unknown("Broken seal volume");
+
+	hash_type = le32_to_cpu(meta->im_hash_type);
+	if (hash_type < APFS_HASH_MIN || hash_type > APFS_HASH_MAX)
+		report("Integrity metadata", "undocumented hash type.");
+	if (hash_type != APFS_HASH_SHA256)
+		report_unknown("Unusual hash for sealed volume");
+
+	hash = integrity_meta_256_from_off(meta, le32_to_cpu(meta->im_root_hash_offset));
+	memcpy(vsb->v_hash, hash, 256 / 8);
+	hash = NULL;
+
+	for (i = 0; i < 9; ++i) {
+		if (meta->im_reserved[i])
+			report("Integrity metadata", "reserved field is in use.");
+	}
+
+	munmap(meta, sb->s_blocksize);
+}
+
+/**
+ * read_volume_super - Read the volume superblock and run some checks
+ * @vol:	volume number
+ * @vsb:	volume superblock struct to receive the results
+ * @obj:	volume superblock object
+ */
+void read_volume_super(int vol, struct volume_superblock *vsb, struct object *obj)
+{
+	char *vol_name = NULL;
+	struct spaceman *sm = &sb->s_spaceman;
+	u64 alloc_count, reserve_blkcnt, quota_blkcnt;
+
 	if (vsb->v_obj.type != APFS_OBJECT_TYPE_FS)
 		report("Volume superblock", "wrong object type.");
 	if (vsb->v_obj.subtype != APFS_OBJECT_TYPE_INVALID)
 		report("Volume superblock", "wrong object subtype.");
 
-	if (le32_to_cpu(vsb->v_raw->apfs_fs_index) != vol)
+	vsb->v_index = le32_to_cpu(vsb->v_raw->apfs_fs_index);
+	if (vsb->v_index != vol)
 		report("Volume superblock", "wrong reported volume number.");
 	if (le32_to_cpu(vsb->v_raw->apfs_magic) != APFS_MAGIC)
 		report("Volume superblock", "wrong magic.");
@@ -551,10 +748,27 @@ static struct apfs_superblock *map_volume_super(int vol,
 	check_incompat_vol_features(le64_to_cpu(
 				vsb->v_raw->apfs_incompatible_features));
 
-	if (vsb->v_raw->apfs_fs_reserve_block_count)
-		report_unknown("Volume block reservation");
-	if (vsb->v_raw->apfs_fs_quota_block_count)
-		report_unknown("Volume block quota");
+	alloc_count = le64_to_cpu(vsb->v_raw->apfs_fs_alloc_count);
+	reserve_blkcnt = le64_to_cpu(vsb->v_raw->apfs_fs_reserve_block_count);
+	quota_blkcnt = le64_to_cpu(vsb->v_raw->apfs_fs_quota_block_count);
+	if (reserve_blkcnt) {
+		sm->sm_reserve_block_num += reserve_blkcnt;
+		if (alloc_count > reserve_blkcnt)
+			sm->sm_reserve_alloc_num += reserve_blkcnt;
+		else
+			sm->sm_reserve_alloc_num += alloc_count;
+	}
+	if (quota_blkcnt) {
+		if (alloc_count > quota_blkcnt)
+			report("Volume superblock", "exceeded allocation quota.");
+		/*
+		 * These are actually equal in the few cases I've observed, but
+		 * I highly doubt that's a general rule.
+		 */
+		if (reserve_blkcnt > quota_blkcnt)
+			report("Volume superblock", "block reserves exceed quota.");
+	}
+
 	check_meta_crypto(&vsb->v_raw->apfs_meta_crypto);
 
 	vsb->v_next_obj_id = le64_to_cpu(vsb->v_raw->apfs_next_obj_id);
@@ -589,6 +803,10 @@ static struct apfs_superblock *map_volume_super(int vol,
 				(APFS_OBJ_PHYSICAL | APFS_OBJECT_TYPE_BTREE))
 		report("Volume superblock", "wrong type for snapshot tree.");
 
+	/* The official fsck performs this one check on these two fields */
+	if (le64_to_cpu(vsb->v_raw->apfs_total_blocks_freed) > le64_to_cpu(vsb->v_raw->apfs_total_blocks_alloced))
+		report("Volume superblock", "more blocks freed than ever alloced.");
+
 	if (le16_to_cpu(vsb->v_raw->reserved) != 0)
 		report("Volume superblock", "reserved field is in use.");
 	if (le64_to_cpu(vsb->v_raw->apfs_root_to_xid) != 0)
@@ -599,13 +817,247 @@ static struct apfs_superblock *map_volume_super(int vol,
 		report_unknown("Revert to a snapshot");
 	if (le64_to_cpu(vsb->v_raw->apfs_revert_to_sblock_oid) != 0)
 		report_unknown("Revert to a volume superblock");
-	if (le64_to_cpu(vsb->v_raw->apfs_num_snapshots) != 0)
-		report_unknown("Snapshots");
 
+	parse_cloneinfo_epoch(vsb);
+
+	if (apfs_volume_is_sealed()) {
+		/* The reference seems to be wrong about the role */
+		if (apfs_volume_role() && apfs_volume_role() != APFS_VOL_ROLE_SYSTEM)
+			report("Sealed volume", "wrong role.");
+		if (le32_to_cpu(vsb->v_raw->apfs_fext_tree_type) != (APFS_OBJ_PHYSICAL | APFS_OBJECT_TYPE_BTREE))
+			report("Sealed volume", "invalid value of fext tree type.");
+		if (!vsb->v_raw->apfs_fext_tree_oid)
+			report("Sealed volume", "missing fext tree.");
+		if (!vsb->v_raw->apfs_integrity_meta_oid)
+			report("Sealed volume", "missing integrity metadata.");
+	} else {
+		if (vsb->v_raw->apfs_fext_tree_oid || vsb->v_raw->apfs_integrity_meta_oid)
+			report("Volume superblock", "no sealed feature flag.");
+		if (vsb->v_raw->apfs_fext_tree_type && le32_to_cpu(vsb->v_raw->apfs_fext_tree_type) != (APFS_OBJ_PHYSICAL | APFS_OBJECT_TYPE_BTREE))
+			report("Volume superblock", "invalid value of fext tree type.");
+	}
+
+	if (vsb->v_raw->reserved_type && le32_to_cpu(vsb->v_raw->reserved_type) != (APFS_OBJ_PHYSICAL | APFS_OBJECT_TYPE_BTREE))
+		report("Volume superblock", "invalid value of reserved type.");
+	if (vsb->v_raw->reserved_oid)
+		report("Volume superblock", "reserved oid is set.");
+
+	parse_volume_group_info();
+
+	vsb->v_extref_oid = le64_to_cpu(vsb->v_raw->apfs_extentref_tree_oid);
+	vsb->v_omap_oid = le64_to_cpu(vsb->v_raw->apfs_omap_oid);
+	vsb->v_snap_meta_oid = le64_to_cpu(vsb->v_raw->apfs_snap_meta_tree_oid);
+	vsb->v_fext_tree_oid = le64_to_cpu(vsb->v_raw->apfs_fext_tree_oid);
+	vsb->v_integrity_oid = le64_to_cpu(vsb->v_raw->apfs_integrity_meta_oid);
+}
+
+/**
+ * map_volume_super - Find the volume superblock and map it into memory
+ * @vol:	volume number
+ * @vsb:	volume superblock struct to receive the results
+ *
+ * Returns the in-memory location of the volume superblock, or NULL if there
+ * is no volume with this number.
+ */
+static struct apfs_superblock *map_volume_super(int vol,
+						struct volume_superblock *vsb)
+{
+	struct apfs_nx_superblock *msb_raw = sb->s_raw;
+	u64 vol_id;
+
+	vol_id = le64_to_cpu(msb_raw->nx_fs_oid[vol]);
+	if (vol_id == 0) {
+		if (vol > sb->s_max_vols)
+			report("Container superblock", "too many volumes.");
+		for (++vol; vol < APFS_NX_MAX_FILE_SYSTEMS; ++vol)
+			if (msb_raw->nx_fs_oid[vol])
+				report("Container superblock",
+				       "volume array goes on after NULL.");
+		return NULL;
+	}
+
+	vsb->v_raw = read_object(vol_id, sb->s_omap_table, &vsb->v_obj);
+	read_volume_super(vol, vsb, &vsb->v_obj);
 	return vsb->v_raw;
 }
 
 static struct object *parse_reaper(u64 oid);
+
+/**
+ * check_volume_group - Check that a volume group (if any) was complete
+ * @vg: the volume group (may be NULL)
+ */
+static void check_volume_group(struct volume_group *vg)
+{
+	if (!vg)
+		return;
+	if (!vg->vg_system_seen)
+		report("Volume group", "system volume is missing.");
+	if (!vg->vg_data_seen)
+		report_weird("Volume group with no data");
+}
+
+/**
+ * alloc_volume_super - Allocate an in-memory volume superblock struct
+ * @snap:	is this a snapshot?
+ */
+struct volume_superblock *alloc_volume_super(bool snap)
+{
+	struct volume_superblock *ret = NULL;
+
+	ret = calloc(1, sizeof(*ret));
+	if (!ret)
+		system_error();
+	ret->v_in_snapshot = snap;
+
+	if (!snap) {
+		ret->v_omap_table = alloc_htable();
+		ret->v_snap_table = alloc_htable();
+		ret->v_extent_table = alloc_htable();
+	}
+	ret->v_cnid_table = alloc_htable();
+	ret->v_dstream_table = alloc_htable();
+	ret->v_inode_table = alloc_htable();
+	ret->v_dirstat_table = alloc_htable();
+	ret->v_crypto_table = alloc_htable();
+
+	return ret;
+}
+
+static void check_snap_meta_ext(u64 oid)
+{
+	struct apfs_snap_meta_ext *sme = NULL;
+	struct object obj;
+
+	/* Older implementations of apfs just don't set this */
+	if (!oid)
+		return;
+
+	if (vsb->v_snap_max_xid == 0)
+		report("Volume superblock", "has extended snap meta but no snapshots.");
+
+	sme = read_object(oid, vsb->v_omap_table, &obj);
+	if (obj.type != APFS_OBJECT_TYPE_SNAP_META_EXT)
+		report("Extended snapshot metadata", "wrong object type.");
+	if (obj.subtype != APFS_OBJECT_TYPE_INVALID)
+		report("Extended snapshot metadata", "wrong object subtype.");
+
+	if (le32_to_cpu(sme->sme_version) != 1)
+		report("Extended snapshot metadata", "wrong version.");
+	if (sme->sme_flags)
+		report("Extended snapshot metadata", "undocumented flags.");
+	if (!sme->sme_snap_xid)
+		report("Extended snapshot metadata", "null transaction id.");
+
+	/*
+	 * The current transaction has the same content as the latest snapshot,
+	 * but this may be impossible to check if that snapshot got deleted.
+	 */
+	if (vsb->v_in_snapshot && le64_to_cpu(sme->sme_snap_xid) != sb->s_xid)
+		report("Extended snapshot metadata", "wrong transaction id.");
+
+	munmap(sme, sb->s_blocksize);
+}
+
+/**
+ * check_volume_super - Parse and check the whole current volume superblock
+ */
+void check_volume_super(void)
+{
+	struct apfs_superblock *vsb_raw = vsb->v_raw;
+
+	if (!vsb->v_in_snapshot) {
+		vsb->v_omap = parse_omap_btree(vsb->v_omap_oid);
+		vsb->v_snap_meta = parse_snap_meta_btree(vsb->v_snap_meta_oid);
+	}
+
+	/* A virtual object, so it must be parsed after the omap */
+	if (apfs_volume_is_sealed())
+		parse_integrity_meta(vsb->v_integrity_oid);
+
+	/* The first tree is for the latest xid, the others are for snapshots */
+	if (!vsb->v_in_snapshot) {
+		vsb->v_extent_ref = parse_extentref_btree(vsb->v_extref_oid);
+	} else {
+		/* We want the most recent snapshots first */
+		struct listed_btree *new = NULL;
+
+		new = calloc(1, sizeof(*new));
+		if (!new)
+			system_error();
+		new->btree = parse_extentref_btree(vsb->v_extref_oid);
+		new->next = vsb->v_snap_extrefs;
+		vsb->v_snap_extrefs = new;
+	}
+
+	if (apfs_volume_is_sealed())
+		vsb->v_fext = parse_fext_btree(vsb->v_fext_tree_oid);
+	vsb->v_cat = parse_cat_btree(le64_to_cpu(vsb_raw->apfs_root_tree_oid), vsb->v_omap_table);
+
+	check_snap_meta_ext(le64_to_cpu(vsb_raw->apfs_snap_meta_ext_oid));
+
+	if (!vsb->v_in_snapshot) {
+		free_snap_table(vsb->v_snap_table);
+		vsb->v_snap_table = NULL;
+	}
+	free_inode_table(vsb->v_inode_table);
+	vsb->v_inode_table = NULL;
+	free_dstream_table(vsb->v_dstream_table);
+	vsb->v_dstream_table = NULL;
+	free_cnid_table(vsb->v_cnid_table);
+	vsb->v_cnid_table = NULL;
+	if (!vsb->v_in_snapshot) {
+		free_extent_table(vsb->v_extent_table);
+		vsb->v_extent_table = NULL;
+		free_omap_table(vsb->v_omap_table);
+		vsb->v_omap_table = NULL;
+	} else {
+		check_and_reset_extent_table(vsb->v_extent_table);
+	}
+	free_dirstat_table(vsb->v_dirstat_table);
+	vsb->v_dirstat_table = NULL;
+	free_crypto_table(vsb->v_crypto_table);
+	vsb->v_crypto_table = NULL;
+
+	if (!vsb->v_has_root)
+		report("Catalog", "the root directory is missing.");
+	if (!vsb->v_has_priv)
+		report("Catalog", "the private directory is missing.");
+
+	if (le64_to_cpu(vsb_raw->apfs_num_files) != vsb->v_file_count) {
+		/* Sometimes this is off by one.  TODO: why? */
+		report_weird("File count in volume superblock");
+	}
+	if (le64_to_cpu(vsb_raw->apfs_num_directories) != vsb->v_dir_count)
+		report("Volume superblock", "bad directory count.");
+	if (le64_to_cpu(vsb_raw->apfs_num_symlinks) != vsb->v_symlink_count)
+		report("Volume superblock", "bad symlink count.");
+	if (le64_to_cpu(vsb_raw->apfs_num_other_fsobjects) != vsb->v_special_count)
+		report("Volume superblock", "bad special file count.");
+
+	/*
+	 * Older snapshots may have been deleted after this one was created, so
+	 * there is no way to check apfs_num_snapshots exactly.
+	 *
+	 * TODO: check that each snapshot has more snaps than the previous one?
+	 */
+	if (vsb->v_in_snapshot) {
+		if (le64_to_cpu(vsb_raw->apfs_num_snapshots) < vsb->v_snap_count)
+			report("Volume superblock", "bad snapshot count.");
+	} else {
+		if (le64_to_cpu(vsb_raw->apfs_num_snapshots) != vsb->v_snap_count)
+			report("Volume superblock", "bad snapshot count.");
+	}
+
+	/*
+	 * The original omap for a snapshot is not preserved, so there is no way
+	 * to know the real value of v_block_count back then.
+	 */
+	if (!vsb->v_in_snapshot) {
+		if (le64_to_cpu(vsb_raw->apfs_fs_alloc_count) != vsb->v_block_count)
+			report("Volume superblock", "bad block count.");
+	}
+}
 
 /**
  * check_container - Check the whole container for a given checkpoint
@@ -614,6 +1066,7 @@ static struct object *parse_reaper(u64 oid);
 static void check_container(struct super_block *sb)
 {
 	int vol;
+	bool reaper_vol_seen = false;
 
 	sb->s_omap_table = alloc_htable();
 
@@ -625,77 +1078,32 @@ static void check_container(struct super_block *sb)
 	for (vol = 0; vol < APFS_NX_MAX_FILE_SYSTEMS; ++vol) {
 		struct apfs_superblock *vsb_raw;
 
-		vsb = calloc(1, sizeof(*vsb));
-		if (!vsb)
-			system_error();
-		vsb->v_omap_table = alloc_htable();
-		vsb->v_extent_table = alloc_htable();
-		vsb->v_cnid_table = alloc_htable();
-		vsb->v_dstream_table = alloc_htable();
-		vsb->v_inode_table = alloc_htable();
+		vsb = alloc_volume_super(false);
 
 		vsb_raw = map_volume_super(vol, vsb);
 		if (!vsb_raw) {
 			free(vsb);
 			break;
 		}
-
-		/* Check for corruption in the volume object map... */
-		vsb->v_omap = parse_omap_btree(
-				le64_to_cpu(vsb_raw->apfs_omap_oid));
-		/* ...in the extent reference tree... */
-		vsb->v_extent_ref = parse_extentref_btree(
-				le64_to_cpu(vsb_raw->apfs_extentref_tree_oid));
-		/* ...in the catalog... */
-		vsb->v_cat = parse_cat_btree(
-				le64_to_cpu(vsb_raw->apfs_root_tree_oid),
-				vsb->v_omap_table);
-		/* ...and in the snapshot metadata tree */
-		vsb->v_snap_meta = parse_snap_meta_btree(
-				le64_to_cpu(vsb_raw->apfs_snap_meta_tree_oid));
-
-		free_inode_table(vsb->v_inode_table);
-		vsb->v_inode_table = NULL;
-		free_dstream_table(vsb->v_dstream_table);
-		vsb->v_dstream_table = NULL;
-		free_cnid_table(vsb->v_cnid_table);
-		vsb->v_cnid_table = NULL;
-		free_extent_table(vsb->v_extent_table);
-		vsb->v_extent_table = NULL;
-		free_omap_table(vsb->v_omap_table);
-		vsb->v_omap_table = NULL;
-
-		if (!vsb->v_has_root)
-			report("Catalog", "the root directory is missing.");
-		if (!vsb->v_has_priv)
-			report("Catalog", "the private directory is missing.");
-
-		if (le64_to_cpu(vsb_raw->apfs_num_files) !=
-							vsb->v_file_count)
-			/* Sometimes this is off by one.  TODO: why? */
-			report_weird("File count in volume superblock");
-		if (le64_to_cpu(vsb_raw->apfs_num_directories) !=
-							vsb->v_dir_count)
-			report("Volume superblock", "bad directory count.");
-		if (le64_to_cpu(vsb_raw->apfs_num_symlinks) !=
-							vsb->v_symlink_count)
-			report("Volume superblock", "bad symlink count.");
-		if (le64_to_cpu(vsb_raw->apfs_num_other_fsobjects) !=
-							vsb->v_special_count)
-			report("Volume superblock", "bad special file count.");
-		if (le64_to_cpu(vsb_raw->apfs_fs_alloc_count) !=
-							vsb->v_block_count - 1)
-			/* The volume superblock itself does not count */
-			report("Volume superblock", "bad block count.");
-
+		if (vsb->v_obj.oid == sb->s_reaper_fs_id)
+			reaper_vol_seen = true;
+		check_volume_super();
 		sb->s_volumes[vol] = vsb;
+		vsb = NULL;
 	}
-	vsb = NULL;
+
+	/* For now we just check that the reaper's volume exists */
+	if (sb->s_reaper_fs_id && !reaper_vol_seen)
+		report("Reaper", "volume id is invalid.");
 
 	free_omap_table(sb->s_omap_table);
 	sb->s_omap_table = NULL;
 
 	check_spaceman(le64_to_cpu(sb->s_raw->nx_spaceman_oid));
+
+	check_volume_group(sb->s_volume_group);
+	free(sb->s_volume_group);
+	sb->s_volume_group = NULL;
 }
 
 /**
@@ -705,7 +1113,6 @@ static void check_container(struct super_block *sb)
 static void parse_main_super(struct super_block *sb)
 {
 	u64 chunk_count;
-	u64 keybag_bno, keybag_blocks;
 	int i;
 
 	assert(sb->s_raw);
@@ -781,11 +1188,9 @@ static void parse_main_super(struct super_block *sb)
 	}
 
 	/* Containers with no encryption may still have a value here, why? */
-	keybag_bno = le64_to_cpu(sb->s_raw->nx_keylocker.pr_start_paddr);
-	keybag_blocks = le64_to_cpu(sb->s_raw->nx_keylocker.pr_block_count);
-	if (keybag_bno || keybag_blocks)
-		report_weird("Container keybag");
-	container_bmap_mark_as_used(keybag_bno, keybag_blocks);
+	check_keybag(le64_to_cpu(sb->s_raw->nx_keylocker.pr_start_paddr), le64_to_cpu(sb->s_raw->nx_keylocker.pr_block_count));
+	/* TODO: actually check all this stuff */
+	container_bmap_mark_as_used(le64_to_cpu(sb->s_raw->nx_mkb_locker.pr_start_paddr), le64_to_cpu(sb->s_raw->nx_mkb_locker.pr_block_count));
 
 	if (sb->s_raw->nx_fusion_mt_oid || sb->s_raw->nx_fusion_wbc_oid ||
 	    sb->s_raw->nx_fusion_wbc.pr_start_paddr ||
@@ -858,7 +1263,7 @@ static u32 parse_cpoint_map_blocks(u64 desc_base, u32 desc_blocks, u32 *index)
 		raw = read_object_nocheck(bno, &obj);
 		if (obj.oid != bno)
 			report("Checkpoint map", "wrong object id.");
-		if (parse_object_flags(obj.flags) != APFS_OBJ_PHYSICAL)
+		if (parse_object_flags(obj.flags, false) != APFS_OBJ_PHYSICAL)
 			report("Checkpoint map", "wrong storage type.");
 		if (obj.type != APFS_OBJECT_TYPE_CHECKPOINT_MAP)
 			report("Checkpoint map", "wrong object type.");
@@ -959,7 +1364,7 @@ void parse_filesystem(void)
 
 		bno = desc_base + index;
 		raw = read_object_nocheck(bno, &obj);
-		if (parse_object_flags(obj.flags) != APFS_OBJ_EPHEMERAL)
+		if (parse_object_flags(obj.flags, false) != APFS_OBJ_EPHEMERAL)
 			report("Checkpoint superblock", "bad storage type.");
 		if (obj.type != APFS_OBJECT_TYPE_NX_SUPERBLOCK)
 			report("Checkpoint superblock", "bad object type.");
@@ -1021,13 +1426,55 @@ static struct object *parse_reaper(u64 oid)
 	if (reaper->subtype != APFS_OBJECT_TYPE_INVALID)
 		report("Reaper", "wrong object subtype.");
 
+	buffer_size = le32_to_cpu(raw->nr_state_buffer_size);
+	if (buffer_size != sb->s_blocksize - sizeof(*raw))
+		report("Reaper", "wrong state buffer size.");
+
 	/* Docs on the reaper are very incomplete, so let's hope it's empty */
-	if (raw->nr_completed_id || raw->nr_head || raw->nr_tail ||
-	    raw->nr_rlcount || raw->nr_type || raw->nr_size ||
-	    raw->nr_oid || raw->nr_xid || raw->nr_nrle_flags)
-		report_unknown("Nonempty reaper");
-	if (le64_to_cpu(raw->nr_next_reap_id) != 1)
-		report_unknown("Nonempty reaper");
+	if (raw->nr_head) {
+		struct apfs_nx_reap_list_phys *list_raw = NULL;
+		struct object list = {0};
+
+		sb->s_reaper_fs_id = le64_to_cpu(raw->nr_fs_oid);
+
+		if (le64_to_cpu(raw->nr_next_reap_id) <= le64_to_cpu(raw->nr_completed_id))
+			report("Reaper", "next read id before completed.");
+
+		if (raw->nr_tail != raw->nr_head)
+			report_unknown("Nonempty reaper");
+		if (le64_to_cpu(raw->nr_head) - le64_to_cpu(raw->nr_tail) + 1 != le32_to_cpu(raw->nr_rlcount))
+			report("Reaper", "wrong reap list count.");
+
+		list_raw = read_ephemeral_object(le64_to_cpu(raw->nr_head), &list);
+		if (list.type != APFS_OBJECT_TYPE_NX_REAP_LIST)
+			report("Reaper list", "wrong object type.");
+		if (list.subtype != APFS_OBJECT_TYPE_INVALID)
+			report("Reaper list", "wrong object subtype.");
+
+		if (list_raw->nrl_max != cpu_to_le32((sb->s_blocksize - sizeof(*list_raw)) / sizeof(struct apfs_nx_reap_list_entry)))
+			report("Reaper list", "wrong maximum entry count.");
+
+		if (list_raw->nrl_next || list_raw->nrl_flags || list_raw->nrl_count)
+			report_unknown("Nonempty reaper list");
+		if (list_raw->nrl_first != cpu_to_le32(-1) || list_raw->nrl_last != cpu_to_le32(-1))
+			report_unknown("Nonempty reaper list");
+		/* TODO: nrl_free? */
+
+		munmap(list_raw, sb->s_blocksize);
+	} else {
+		if (raw->nr_completed_id || raw->nr_head || raw->nr_rlcount || raw->nr_type)
+			report("Reaper", "should be empty.");
+		if (raw->nr_size || raw->nr_oid || raw->nr_xid || raw->nr_nrle_flags)
+			report("Reaper", "should be empty.");
+		if (le64_to_cpu(raw->nr_next_reap_id) != 1)
+			report("Reaper", "should be empty.");
+		for (i = 0; i < buffer_size; ++i) {
+			if (raw->nr_state_buffer[i])
+				report("Reaper", "should be empty.");
+		}
+		if (raw->nr_fs_oid)
+			report("Reaper", "is empty but belongs to a volume.");
+	}
 
 	flags = le32_to_cpu(raw->nr_flags);
 	if ((flags & APFS_NR_FLAGS_VALID_MASK) != flags)
@@ -1035,18 +1482,7 @@ static struct object *parse_reaper(u64 oid)
 	if (!(flags & APFS_NR_BHM_FLAG))
 		report("Reaper", "reserved flag must always be set.");
 	if (flags & APFS_NR_CONTINUE)
-		report_unknown("Nonempty reaper");
-
-	if (raw->nr_fs_oid)
-		report_unknown("Reaper belonging to a volume");
-
-	buffer_size = le32_to_cpu(raw->nr_state_buffer_size);
-	if (buffer_size != sb->s_blocksize - sizeof(*raw))
-		report("Reaper", "wrong state buffer size.");
-	for (i = 0; i < buffer_size; ++i) {
-		if (raw->nr_state_buffer[i])
-			report_unknown("Nonempty reaper");
-	}
+		report_unknown("Object being reaped");
 
 	munmap(raw, sb->s_blocksize);
 	return reaper;

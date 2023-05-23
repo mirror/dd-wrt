@@ -46,6 +46,27 @@ void free_htable(struct htable_entry **table,
 }
 
 /**
+ * apply_on_htable - Apply a function to all entries in a hash table
+ * @table:	the hash table
+ * @fn:		function to apply
+ */
+void apply_on_htable(struct htable_entry **table, void (*fn)(struct htable_entry *))
+{
+	struct htable_entry *current;
+	struct htable_entry *next;
+	int i;
+
+	for (i = 0; i < HTABLE_BUCKETS; ++i) {
+		current = table[i];
+		while (current) {
+			next = current->h_next;
+			fn(current);
+			current = next;
+		}
+	}
+}
+
+/**
  * get_htable_entry - Find or create an entry in a hash table
  * @id:		id of the entry
  * @size:	size of the entry
@@ -83,13 +104,49 @@ struct htable_entry *get_htable_entry(u64 id, int size,
 }
 
 /**
+ * htable_entry_exists - Check if an entry exists in a hash table
+ * @id:		id of the entry
+ * @table:	the hash table
+ */
+bool htable_entry_exists(u64 id, struct htable_entry **table)
+{
+	int index = id % HTABLE_BUCKETS; /* Trivial hash function */
+	struct htable_entry *entry = *(table + index);
+
+	/* In each linked list, entries are ordered by id */
+	while (entry) {
+		if (id == entry->h_id)
+			return true;
+		if (id < entry->h_id)
+			return false;
+		entry = entry->h_next;
+	}
+	return false;
+}
+
+static void free_cnid(struct htable_entry *entry)
+{
+	struct listed_cnid *cnid = (struct listed_cnid *)entry;
+
+	if (cnid->c_state & CNID_IN_SIBLING_LINK) {
+		if (cnid->c_state & ~CNID_IN_SIBLING_LINK)
+			report("Catalog", "sibling link oid reused elsewhere.");
+	}
+
+	free(entry);
+}
+
+/**
  * free_cnid_table - Free the cnid hash table and all its entries
  * @table: table to free
+ *
+ * Also performs some consistency checks that can only be done after the whole
+ * catalog has been parsed.
  */
 void free_cnid_table(struct htable_entry **table)
 {
 	/* No checks needed here, just call free() on each entry */
-	free_htable(table, (void (*)(struct htable_entry *))free);
+	free_htable(table, free_cnid);
 }
 
 /**

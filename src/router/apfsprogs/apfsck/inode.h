@@ -17,6 +17,8 @@ struct apfs_sibling_map_key;
 #define XATTR_BMAP_SYMLINK	0x01	/* Symlink target xattr */
 #define XATTR_BMAP_RSRC_FORK	0x02	/* Resource fork xattr */
 #define XATTR_BMAP_SECURITY	0x04	/* Security xattr */
+#define XATTR_BMAP_FINDER_INFO	0x08	/* Finder info xattr */
+#define XATTR_BMAP_COMPRESSED	0x10	/* Compression header xattr */
 
 /*
  * Inode data in memory
@@ -39,9 +41,15 @@ struct inode {
 	char		*i_name;	/* Name of primary link */
 	u64		i_parent_id;	/* Parent id for the primary link */
 	struct dstream	*i_dstream;	/* The inode's dstream (can be NULL) */
+	u64		i_purg_flags;	/* Inode purgeable flags */
+	char		*i_purg_name;	/* Purgeable dentry name (can be NULL) */
+	u32		i_owner;	/* Id of the owner user */
+	struct dirstat	*i_dirstat;	/* Directory statistics (can be NULL) */
+	struct compress	*i_compress;	/* Compression data (can be NULL) */
 
 	/* Inode stats measured by the fsck */
 	u8		i_xattr_bmap;	/* Bitmap of system xattrs for inode */
+	u16		i_xfield_bmap;	/* Bitmap of xfields for inode */
 	u32		i_child_count;	/* Number of children of directory */
 	u32		i_link_count;	/* Number of dentries for file */
 	char		*i_first_name;	/* Name of first dentry encountered */

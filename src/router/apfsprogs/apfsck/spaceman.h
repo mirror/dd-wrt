@@ -32,6 +32,8 @@ struct spaceman {
 	u64 sm_chunks;	/* Number of chunks */
 	u64 sm_blocks;	/* Number of blocks */
 	u64 sm_free;	/* Number of free blocks */
+	u64 sm_reserve_block_num; /* Blocks that are reserved for volumes */
+	u64 sm_reserve_alloc_num; /* Blocks already alloced by those volumes */
 };
 
 /*

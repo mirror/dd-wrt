@@ -259,6 +259,32 @@ static void read_file_extent_key(void *raw, int size, struct key *key)
 }
 
 /**
+ * read_file_info_key - Parse an on-disk file info key and check its consistency
+ * @raw:	pointer to the raw key
+ * @size:	size of the raw key
+ * @key:	key structure to store the result
+ */
+static void read_file_info_key(void *raw, int size, struct key *key)
+{
+	struct apfs_file_info_key *raw_key;
+	u64 info_and_lba;
+
+	if (size != sizeof(struct apfs_file_info_key))
+		report("File info record", "wrong size of key.");
+	raw_key = raw;
+
+	info_and_lba = le64_to_cpu(raw_key->info_and_lba);
+	if ((info_and_lba >> APFS_FILE_INFO_TYPE_SHIFT) != APFS_FILE_INFO_DATA_HASH)
+		report("File info record", "undocumented type.");
+
+	key->number = info_and_lba & APFS_FILE_INFO_LBA_MASK;
+	key->name = NULL;
+
+	if (key->number & (sb->s_blocksize - 1))
+		report("File info record", "offset isn't multiple of block size.");
+}
+
+/**
  * read_sibling_link_key - Parse an on-disk sibling link key and check its
  *			   consistency
  * @raw:	pointer to the raw key
@@ -303,14 +329,18 @@ void read_cat_key(void *raw, int size, struct key *key)
 	case APFS_TYPE_FILE_EXTENT:
 		read_file_extent_key(raw, size, key);
 		return;
-	case APFS_TYPE_SNAP_NAME:
-		read_snap_name_key(raw, size, key);
+	case APFS_TYPE_FILE_INFO:
+		read_file_info_key(raw, size, key);
 		return;
 	case APFS_TYPE_SIBLING_LINK:
 		read_sibling_link_key(raw, size, key);
 		return;
 	case APFS_TYPE_EXTENT:
 		report("Catalog tree", "has extent reference record.");
+	case APFS_TYPE_SNAP_METADATA:
+		report("Catalog tree", "has snapshot metadata record.");
+	case APFS_TYPE_SNAP_NAME:
+		report("Catalog tree", "has snapshot name record.");
 	default:
 		/* All other key types are just the header */
 		if (size != sizeof(struct apfs_key_header))
@@ -319,6 +349,29 @@ void read_cat_key(void *raw, int size, struct key *key)
 		key->name = NULL;
 		return;
 	}
+}
+
+/**
+ * read_fext_key - Parse an on-disk fext key
+ * @raw:	pointer to the raw key
+ * @size:	size of the raw key
+ * @key:	key structure to store the result
+ */
+void read_fext_key(void *raw, int size, struct key *key)
+{
+	struct apfs_fext_tree_key *raw_key;
+
+	if (size != sizeof(*raw_key))
+		report("File extents tree", "wrong size of key.");
+	raw_key = raw;
+
+	key->id = le64_to_cpu(raw_key->private_id);
+	key->type = 0;
+	key->number = le64_to_cpu(raw_key->logical_addr);
+	key->name = NULL;
+
+	if (key->number & (sb->s_blocksize - 1))
+		report("Fext record", "offset isn't multiple of block size.");
 }
 
 /**
@@ -340,6 +393,49 @@ void read_extentref_key(void *raw, int size, struct key *key)
 
 	key->id = cat_cnid((struct apfs_key_header *)raw);
 	key->type = type;
+	key->number = 0;
+	key->name = NULL;
+}
+
+/**
+ * read_snap_key - Parse an on-disk key from the snapshot metadata tree
+ * @raw:	pointer to the raw key
+ * @size:	size of the raw key
+ * @key:	key structure to store the result
+ */
+void read_snap_key(void *raw, int size, struct key *key)
+{
+	if (size < sizeof(struct apfs_key_header))
+		report("Snapshot metadata tree", "key is too small.");
+	key->id = cat_cnid((struct apfs_key_header *)raw);
+	key->type = cat_type((struct apfs_key_header *)raw);
+
+	switch (key->type) {
+	case APFS_TYPE_SNAP_METADATA:
+		if (size != sizeof(struct apfs_key_header))
+			report("Snapshot metadata record", "wrong size of key.");
+		key->number = 0;
+		key->name = NULL;
+		return;
+	case APFS_TYPE_SNAP_NAME:
+		if (key->id != (~0ULL & APFS_OBJ_ID_MASK))
+			report("Snapshot name record", "invalid key header.");
+		return read_snap_name_key(raw, size, key);
+	default:
+		report("Snapshot metadata tree", "invalid key type.");
+	}
+}
+
+void read_omap_snap_key(void *raw, int size, struct key *key)
+{
+	__le64 *xid;
+
+	if (size != sizeof(*xid))
+		report("Omap snapshot tree", "wrong size of key.");
+	xid = raw;
+
+	key->id = le64_to_cpu(*xid);
+	key->type = 0;
 	key->number = 0;
 	key->name = NULL;
 }

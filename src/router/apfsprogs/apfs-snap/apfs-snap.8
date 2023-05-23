@@ -1,0 +1,32 @@
+.\" apfs-snap.8 - manpage for apfs-snap
+.\"
+.\" Copyright (C) 2022 Ernesto A. Fernández <ernesto@corellium.com>
+.\"
+.TH apfs-snap 8 "September 2022" "apfsprogs 0.1"
+.SH NAME
+apfs-snap \- take an snapshot of an APFS filesystem
+.SH SYNOPSIS
+.B apfs-snap
+.I mountpoint
+.I name
+.SH DESCRIPTION
+.B apfs-snap
+is an experimental tool that takes a snapshot of the APFS filesystem mounted
+on the given
+.IR mountpoint .
+The label for the new snapshot must be specified in
+.IR name .
+.SH OPTIONS
+.TP
+.B \-v
+Print the version number of
+.B apfs-snap
+and exit.
+.SH REPORTING BUGS
+Please report bugs via email or, if preferred, file a github issue at
+\%https://github.com/eafer/apfsprogs/issues.
+.SH AUTHOR
+Written by Ernesto A. Fernández <ernesto@corellium.com>.
+.SH SEE ALSO
+.BR apfsck (8),
+.BR mkapfs (8)
