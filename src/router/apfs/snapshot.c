@@ -75,7 +75,7 @@ static int apfs_create_snap_metadata_rec(struct inode *mntpoint, struct apfs_nod
 	struct apfs_snap_metadata_key raw_key;
 	struct apfs_snap_metadata_val *raw_val = NULL;
 	int val_len;
-	struct timespec64 now;
+	struct timespec now;
 	u64 xid = APFS_NXI(sb)->nx_xid;
 	int err;
 
@@ -111,7 +111,7 @@ static int apfs_create_snap_metadata_rec(struct inode *mntpoint, struct apfs_nod
 	raw_val->extentref_tree_oid = vsb_raw->apfs_extentref_tree_oid;
 	raw_val->sblock_oid = cpu_to_le64(sblock_oid);
 	now = current_time(mntpoint);
-	raw_val->create_time = cpu_to_le64(timespec64_to_ns(&now));
+	raw_val->create_time = cpu_to_le64(timespec_to_ns(&now));
 	raw_val->change_time = raw_val->create_time;
 	raw_val->extentref_tree_type = vsb_raw->apfs_extentref_tree_type;
 	raw_val->flags = 0;
