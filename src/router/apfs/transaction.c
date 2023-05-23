@@ -7,10 +7,6 @@
 #include <linux/rmap.h>
 #include "apfs.h"
 
-#define TRANSACTION_MAIN_QUEUE_MAX	4096
-#define TRANSACTION_BUFFERS_MAX		65536
-#define TRANSACTION_STARTS_MAX		65536
-
 /**
  * apfs_cpoint_init_area - Initialize the new blocks of a checkpoint area
  * @sb:		superblock structure
@@ -47,6 +43,12 @@ static int apfs_cpoint_init_area(struct super_block *sb, u64 base, u32 blks,
 		}
 		memcpy(new_bh->b_data, old_bh->b_data, sb->s_blocksize);
 		brelse(old_bh);
+
+		if (nxi->nx_flags & APFS_CHECK_NODES && !apfs_obj_verify_csum(sb, new_bh)) {
+			apfs_err(sb, "bad checksum for checkpoint area block");
+			brelse(new_bh);
+			return -EFSBADCRC;
+		}
 
 		new_obj = (struct apfs_obj_phys *)new_bh->b_data;
 		type = le32_to_cpu(new_obj->o_type);
@@ -93,13 +95,17 @@ static int apfs_cpoint_init_desc(struct super_block *sb)
 	u32 new_sb_index;
 	int err;
 
-	if (!desc_blks || !desc_len)
+	if (!desc_blks || !desc_len) {
+		apfs_err(sb, "bad checkpoint descriptor area");
 		return -EFSCORRUPTED;
+	}
 
 	err = apfs_cpoint_init_area(sb, desc_base, desc_blks,
 				    desc_next, desc_len);
-	if (err)
+	if (err) {
+		apfs_err(sb, "failed to init area");
 		return err;
+	}
 
 	/* Now update the superblock with the new checkpoint */
 
@@ -147,13 +153,17 @@ static int apfs_cpoint_init_data(struct super_block *sb)
 	u32 data_len = le32_to_cpu(raw_sb->nx_xp_data_len);
 	int err;
 
-	if (!data_blks || !data_len)
+	if (!data_blks || !data_len) {
+		apfs_err(sb, "bad checkpoint data area");
 		return -EFSCORRUPTED;
+	}
 
 	err = apfs_cpoint_init_area(sb, data_base, data_blks,
 				    data_next, data_len);
-	if (err)
+	if (err) {
+		apfs_err(sb, "failed to init area");
 		return err;
+	}
 
 	/* Apparently the previous checkpoint gets invalidated right away */
 	apfs_assert_in_transaction(sb, &raw_sb->nx_o);
@@ -217,14 +227,17 @@ static int apfs_update_mapping_blocks(struct super_block *sb)
 		int j;
 
 		bh = apfs_sb_bread(sb, desc_base + desc_curr);
-		if (!bh)
+		if (!bh) {
+			apfs_err(sb, "failed to read cpm block");
 			return -EINVAL;
+		}
 		ASSERT(buffer_trans(bh));
 		cpm = (struct apfs_checkpoint_map_phys *)bh->b_data;
 		apfs_assert_in_transaction(sb, &cpm->cpm_o);
 
 		map_count = le32_to_cpu(cpm->cpm_count);
 		if (map_count > apfs_max_maps_per_block(sb)) {
+			apfs_err(sb, "block has too many maps (%d)", map_count);
 			brelse(bh);
 			return -EFSCORRUPTED;
 		}
@@ -271,26 +284,24 @@ int apfs_cpoint_data_free(struct super_block *sb, u64 bno)
 {
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_nx_superblock *raw_sb = nxi->nx_raw;
-	u64 data_base = le64_to_cpu(raw_sb->nx_xp_data_base);
 	u32 data_next = le32_to_cpu(raw_sb->nx_xp_data_next);
 	u32 data_blks = le32_to_cpu(raw_sb->nx_xp_data_blocks);
 	u32 data_len = le32_to_cpu(raw_sb->nx_xp_data_len);
-	u32 data_index = le32_to_cpu(raw_sb->nx_xp_data_index);
 	u32 i, bno_i;
 
 	/*
 	 * We can't leave a hole in the data area, so we need to shift all
 	 * blocks that come after @bno one position back.
 	 */
-	u64 div = bno - data_base + data_blks - data_index;
-	bno_i = do_div(div, data_blks);
+	bno_i = apfs_index_in_data_area(sb, bno);
 	for (i = bno_i; i < data_len - 1; ++i) {
 		struct buffer_head *old_bh, *new_bh;
 		int err;
 
-		new_bh = apfs_getblk(sb, data_base + (data_index + i) % data_blks);
-		old_bh = apfs_sb_bread(sb, data_base + (data_index + i + 1) % data_blks);
+		new_bh = apfs_getblk(sb, apfs_data_index_to_bno(sb, i));
+		old_bh = apfs_sb_bread(sb, apfs_data_index_to_bno(sb, i + 1));
 		if (!new_bh || !old_bh) {
+			apfs_err(sb, "failed to map blocks in data area");
 			brelse(new_bh);
 			brelse(old_bh);
 			return -EIO;
@@ -328,12 +339,18 @@ static int apfs_checkpoint_start(struct super_block *sb)
 	ASSERT(!(sb->s_flags & SB_RDONLY));
 
 	err = apfs_cpoint_init_desc(sb);
-	if (err)
+	if (err) {
+		apfs_err(sb, "failed to init descriptor area");
 		return err;
+	}
 	err = apfs_cpoint_init_data(sb);
-	if (err)
+	if (err) {
+		apfs_err(sb, "failed to init data area");
 		return err;
+	}
 	err = apfs_update_mapping_blocks(sb);
+	if (err)
+		apfs_err(sb, "failed to update checkpoint mappings");
 
 	return err;
 }
@@ -445,12 +462,16 @@ int apfs_transaction_start(struct super_block *sb, struct apfs_max_ops maxops)
 		nx_trans->t_starts_count = 0;
 
 		err = apfs_checkpoint_start(sb);
-		if (err)
+		if (err) {
+			apfs_err(sb, "failed to start a new checkpoint");
 			goto fail;
+		}
 
 		err = apfs_read_spaceman(sb);
-		if (err)
+		if (err) {
+			apfs_err(sb, "failed to read the spaceman");
 			goto fail;
+		}
 	}
 
 	/* Don't start transactions unless we are sure they fit in disk */
@@ -458,8 +479,10 @@ int apfs_transaction_start(struct super_block *sb, struct apfs_max_ops maxops)
 		/* Commit what we have so far to flush the queues */
 		nx_trans->t_state |= APFS_NX_TRANS_FORCE_COMMIT;
 		err = apfs_transaction_commit(sb);
-		if (err)
+		if (err) {
+			apfs_err(sb, "commit failed");
 			goto fail;
+		}
 		return -ENOSPC;
 	}
 
@@ -470,20 +493,26 @@ int apfs_transaction_start(struct super_block *sb, struct apfs_max_ops maxops)
 		/* Backup the old tree roots; the node struct issues make this ugly */
 		vol_trans->t_old_cat_root = *sbi->s_cat_root;
 		get_bh(vol_trans->t_old_cat_root.object.o_bh);
-		vol_trans->t_old_omap_root = *sbi->s_omap_root;
+		vol_trans->t_old_omap_root = *sbi->s_omap->omap_root;
 		get_bh(vol_trans->t_old_omap_root.object.o_bh);
 
 		err = apfs_map_volume_super(sb, true /* write */);
-		if (err)
+		if (err) {
+			apfs_err(sb, "CoW failed for volume super");
 			goto fail;
+		}
 
 		/* TODO: don't copy these nodes for transactions that don't use them */
 		err = apfs_read_omap(sb, true /* write */);
-		if (err)
+		if (err) {
+			apfs_err(sb, "CoW failed for omap");
 			goto fail;
+		}
 		err = apfs_read_catalog(sb, true /* write */);
-		if (err)
+		if (err) {
+			apfs_err(sb, "Cow failed for catalog");
 			goto fail;
+		}
 	}
 
 	nx_trans->t_starts_count++;
@@ -531,24 +560,25 @@ static void apfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
 }
 
 /**
- * apfs_transaction_commit_nx - Definitely commit the current transaction
+ * apfs_transaction_flush_all_inodes - Flush inode metadata to the buffer heads
  * @sb: superblock structure
+ *
+ * This messes a lot with the disk layout, so it must be called ahead of time
+ * if we need it to be stable for the rest or the transaction (for example, if
+ * we are setting up a snapshot).
  */
-static int apfs_transaction_commit_nx(struct super_block *sb)
+int apfs_transaction_flush_all_inodes(struct super_block *sb)
 {
 	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
-	struct apfs_sb_info *sbi;
 	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
-	struct apfs_bh_info *bhi, *tmp;
 	int err = 0, curr_err;
 
 	ASSERT(!(sb->s_flags & SB_RDONLY));
 	ASSERT(nx_trans->t_old_msb);
 
-	/* Before committing the bhs, write all inode metadata to them */
 	while (!list_empty(&nx_trans->t_inodes)) {
-		struct apfs_inode_info *ai;
-		struct inode *inode;
+		struct apfs_inode_info *ai = NULL;
+		struct inode *inode = NULL;
 
 		ai = list_first_entry(&nx_trans->t_inodes, struct apfs_inode_info, i_list);
 		inode = &ai->vfs_inode;
@@ -577,11 +607,50 @@ static int apfs_transaction_commit_nx(struct super_block *sb)
 		nx_trans->t_state = 0;
 
 		/* Transaction aborted by ->evict_inode(), error code is lost */
-		if (sb->s_flags & SB_RDONLY)
+		if (sb->s_flags & SB_RDONLY) {
+			apfs_err(sb, "abort during inode eviction");
 			return -EROFS;
+		}
 	}
-	if (err)
+
+	return err;
+}
+
+/**
+ * apfs_transaction_commit_nx - Definitely commit the current transaction
+ * @sb: superblock structure
+ */
+static int apfs_transaction_commit_nx(struct super_block *sb)
+{
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_sb_info *sbi;
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	struct apfs_bh_info *bhi, *tmp;
+	int err = 0;
+
+	ASSERT(!(sb->s_flags & SB_RDONLY));
+	ASSERT(nx_trans->t_old_msb);
+
+	/* Before committing the bhs, write all inode metadata to them */
+	err = apfs_transaction_flush_all_inodes(sb);
+	if (err) {
+		apfs_err(sb, "failed to flush all inodes");
 		return err;
+	}
+
+	/*
+	 * Now that nothing else will be freed, flush the last update to the
+	 * free queues so that it can be committed to disk with the other bhs
+	 */
+	if (sm->sm_free_cache_base) {
+		err = apfs_free_queue_insert_nocache(sb, sm->sm_free_cache_base, sm->sm_free_cache_blkcnt);
+		if (err) {
+			apfs_err(sb, "fq cache flush failed (0x%llx-0x%llx)", sm->sm_free_cache_base, sm->sm_free_cache_blkcnt);
+			return err;
+		}
+		sm->sm_free_cache_base = sm->sm_free_cache_blkcnt = 0;
+	}
 
 	list_for_each_entry_safe(bhi, tmp, &nx_trans->t_buffers, list) {
 		struct buffer_head *bh = bhi->bh;
@@ -603,11 +672,13 @@ static int apfs_transaction_commit_nx(struct super_block *sb)
 		clear_buffer_dirty(bh);
 		lock_buffer(bh);
 		bh->b_end_io = apfs_end_buffer_write_sync;
-		submit_bh(REQ_OP_WRITE, REQ_SYNC, bh);
+		apfs_submit_bh(REQ_OP_WRITE, REQ_SYNC, bh);
 	}
 	err = apfs_checkpoint_end(sb);
-	if (err)
+	if (err) {
+		apfs_err(sb, "failed to end the checkpoint");
 		return err;
+	}
 
 	/* Success: forget the old container and volume superblocks */
 	brelse(nx_trans->t_old_msb);
@@ -717,7 +788,7 @@ int apfs_transaction_commit(struct super_block *sb)
 	if (apfs_transaction_need_commit(sb)) {
 		err = apfs_transaction_commit_nx(sb);
 		if (err) {
-			apfs_warn(sb, "transaction commit failed");
+			apfs_err(sb, "transaction commit failed");
 			return err;
 		}
 	}
@@ -825,7 +896,7 @@ void apfs_transaction_abort(struct super_block *sb)
 
 	ASSERT(nx_trans->t_old_msb);
 	nx_trans->t_state = 0;
-	apfs_warn(sb, "aborting transaction");
+	apfs_err(sb, "aborting transaction");
 
 	--nxi->nx_xid;
 	list_for_each_entry_safe(bhi, tmp, &nx_trans->t_buffers, list) {
@@ -864,8 +935,8 @@ void apfs_transaction_abort(struct super_block *sb)
 		vol_trans->t_old_vsb = NULL;
 
 		/* XXX: restore the old b-tree root nodes */
-		brelse(sbi->s_omap_root->object.o_bh);
-		*(sbi->s_omap_root) = vol_trans->t_old_omap_root;
+		brelse(sbi->s_omap->omap_root->object.o_bh);
+		*(sbi->s_omap->omap_root) = vol_trans->t_old_omap_root;
 		vol_trans->t_old_omap_root.object.o_bh = NULL;
 		vol_trans->t_old_omap_root.object.data = NULL;
 		brelse(sbi->s_cat_root->object.o_bh);
