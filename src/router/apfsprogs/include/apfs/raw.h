@@ -47,6 +47,11 @@
 #define APFS_OBJECT_TYPE_GBITMAP		0x00000019
 #define APFS_OBJECT_TYPE_GBITMAP_TREE		0x0000001a
 #define APFS_OBJECT_TYPE_GBITMAP_BLOCK		0x0000001b
+#define APFS_OBJECT_TYPE_ER_RECOVERY_BLOCK	0x0000001c
+#define APFS_OBJECT_TYPE_SNAP_META_EXT		0x0000001d
+#define APFS_OBJECT_TYPE_INTEGRITY_META		0x0000001e
+#define APFS_OBJECT_TYPE_FEXT_TREE		0x0000001f
+#define APFS_OBJECT_TYPE_RESERVED_20		0x00000020
 #define APFS_OBJECT_TYPE_INVALID		0x00000000
 #define APFS_OBJECT_TYPE_TEST			0x000000ff
 
@@ -120,12 +125,23 @@ struct apfs_omap_val {
 	__le64 ov_paddr;
 } __packed;
 
+/*
+ * Structure of a value in an omap's snapshot tree
+ */
+struct apfs_omap_snapshot {
+	__le32 oms_flags;
+	__le32 oms_pad;
+	__le64 oms_oid;
+} __packed;
+
 /* B-tree node flags */
 #define APFS_BTNODE_ROOT		0x0001
 #define APFS_BTNODE_LEAF		0x0002
 #define APFS_BTNODE_FIXED_KV_SIZE	0x0004
+#define APFS_BTNODE_HASHED		0x0008
+#define APFS_BTNODE_NOHEADER		0x0010
 #define APFS_BTNODE_CHECK_KOFF_INVAL	0x8000
-#define APFS_BTNODE_MASK		0x0007	/* Valid on-disk flags */
+#define APFS_BTNODE_MASK		0x001f	/* Valid on-disk flags */
 
 /* B-tree location constants */
 #define APFS_BTOFF_INVALID		0xffff
@@ -178,13 +194,17 @@ struct apfs_btree_node_phys {
 #define APFS_BTREE_PHYSICAL		0x00000010
 #define APFS_BTREE_NONPERSISTENT	0x00000020
 #define APFS_BTREE_KV_NONALIGNED	0x00000040
+#define APFS_BTREE_HASHED		0x00000080
+#define APFS_BTREE_NOHEADER		0x00000100
 #define APFS_BTREE_FLAGS_VALID_MASK	(APFS_BTREE_UINT64_KEYS \
 					| APFS_BTREE_SEQUENTIAL_INSERT \
 					| APFS_BTREE_ALLOW_GHOSTS \
 					| APFS_BTREE_EPHEMERAL \
 					| APFS_BTREE_PHYSICAL \
 					| APFS_BTREE_NONPERSISTENT \
-					| APFS_BTREE_KV_NONALIGNED)
+					| APFS_BTREE_KV_NONALIGNED \
+					| APFS_BTREE_HASHED \
+					| APFS_BTREE_NOHEADER)
 
 /*
  * Structure used to store information about a B-tree that won't change
@@ -236,6 +256,9 @@ enum {
 	APFS_KIND_INVALID	= 255 /* This is weird, won't fit in 4 bits */
 };
 
+#define APFS_OWNING_OBJ_ID_INVALID	(~0ULL)
+#define APFS_OWNING_OBJ_ID_UNKNOWN	(~1ULL)
+
 /*
  * Structure of a physical extent record
  */
@@ -266,6 +289,30 @@ struct apfs_dstream_id_val {
 	__le32 refcnt;
 } __packed;
 
+#define APFS_CP_MAX_WRAPPEDKEYSIZE	128
+
+/*
+ * Structure used to store the encryption state for PFKs
+ */
+struct apfs_wrapped_crypto_state {
+	__le16 major_version;
+	__le16 minor_version;
+	__le32 cpflags;
+	__le32 persistent_class;
+	__le32 key_os_version;
+	__le16 key_revision;
+	__le16 key_len;
+	u8 persistent_key[0];
+} __packed;
+
+/*
+ * Structure of a crypto state record
+ */
+struct apfs_crypto_state_val {
+	__le32 refcnt;
+	struct apfs_wrapped_crypto_state state;
+} __packed;
+
 /* Inode numbers for special inodes */
 #define APFS_INVALID_INO_NUM		0
 
@@ -273,9 +320,12 @@ struct apfs_dstream_id_val {
 #define APFS_ROOT_DIR_INO_NUM		2	/* Root directory */
 #define APFS_PRIV_DIR_INO_NUM		3	/* Private directory */
 #define APFS_SNAP_DIR_INO_NUM		6	/* Snapshots metadata */
+#define APFS_PURGEABLE_DIR_INO_NUM	7	/* Parent of purgeable files */
 
 /* Smallest inode number available for user content */
 #define APFS_MIN_USER_INO_NUM		16
+
+#define APFS_UNIFIED_ID_SPACE_MARK	0x0800000000000000
 
 /* Inode internal flags */
 #define APFS_INODE_IS_APFS_PRIVATE		0x00000001
@@ -295,15 +345,51 @@ struct apfs_dstream_id_val {
 #define APFS_INODE_HAS_RSRC_FORK		0x00004000
 #define APFS_INODE_NO_RSRC_FORK			0x00008000
 #define APFS_INODE_ALLOCATION_SPILLEDOVER	0x00010000
+#define APFS_INODE_FAST_PROMOTE			0x00020000
+#define APFS_INODE_HAS_UNCOMPRESSED_SIZE	0x00040000
+#define APFS_INODE_IS_PURGEABLE			0x00080000
+#define APFS_INODE_WANTS_TO_BE_PURGEABLE	0x00100000
+#define APFS_INODE_IS_SYNC_ROOT			0x00200000
+#define APFS_INODE_SNAPSHOT_COW_EXEMPTION	0x00400000
+/* This flag is not documented */
+#define APFS_INODE_HAS_PURGEABLE_FLAGS		0x02000000
 
 /* Masks for internal flags */
-#define APFS_VALID_INTERNAL_INODE_FLAGS		0x0001ffdf
+#define APFS_VALID_INTERNAL_INODE_FLAGS	(APFS_INODE_IS_APFS_PRIVATE \
+					| APFS_INODE_MAINTAIN_DIR_STATS \
+					| APFS_INODE_DIR_STATS_ORIGIN \
+					| APFS_INODE_PROT_CLASS_EXPLICIT \
+					| APFS_INODE_WAS_CLONED \
+					| APFS_INODE_HAS_SECURITY_EA \
+					| APFS_INODE_BEING_TRUNCATED \
+					| APFS_INODE_HAS_FINDER_INFO \
+					| APFS_INODE_IS_SPARSE \
+					| APFS_INODE_WAS_EVER_CLONED \
+					| APFS_INODE_ACTIVE_FILE_TRIMMED \
+					| APFS_INODE_PINNED_TO_MAIN \
+					| APFS_INODE_PINNED_TO_TIER2 \
+					| APFS_INODE_HAS_RSRC_FORK \
+					| APFS_INODE_NO_RSRC_FORK \
+					| APFS_INODE_ALLOCATION_SPILLEDOVER \
+					| APFS_INODE_FAST_PROMOTE \
+					| APFS_INODE_HAS_UNCOMPRESSED_SIZE \
+					| APFS_INODE_IS_PURGEABLE \
+					| APFS_INODE_WANTS_TO_BE_PURGEABLE \
+					| APFS_INODE_IS_SYNC_ROOT \
+					| APFS_INODE_SNAPSHOT_COW_EXEMPTION \
+					| APFS_INODE_HAS_PURGEABLE_FLAGS)
 #define APFS_INODE_INHERITED_INTERNAL_FLAGS	(APFS_INODE_MAINTAIN_DIR_STATS)
 #define APFS_INDOE_CLONED_INTERNAL_FLAGS	(APFS_INODE_HAS_RSRC_FORK \
 						| APFS_INODE_NO_RSRC_FORK \
 						| APFS_INODE_HAS_FINDER_INFO)
 #define APFS_INODE_PINNED_MASK			(APFS_INODE_PINNED_TO_MAIN \
 						| APFS_INODE_PINNED_TO_TIER2)
+
+/* BSD flags */
+#define APFS_INOBSD_NODUMP			0x00000001
+#define APFS_INOBSD_IMMUTABLE			0x00000002
+#define APFS_INOBSD_APPEND			0x00000004
+#define APFS_INOBSD_COMPRESSED			0x00000020
 
 /*
  * Structure of an inode as stored as a B-tree value
@@ -327,7 +413,7 @@ struct apfs_inode_val {
 	__le32 group;
 /*50*/	__le16 mode;
 	__le16 pad1;
-	__le64 pad2;
+	__le64 uncompressed_size;
 /*5C*/	u8 xfields[];
 } __packed;
 
@@ -349,6 +435,8 @@ struct apfs_inode_val {
 #define APFS_INO_EXT_TYPE_RESERVED_12 12
 #define APFS_INO_EXT_TYPE_SPARSE_BYTES 13
 #define APFS_INO_EXT_TYPE_RDEV 14
+#define APFS_INO_EXT_TYPE_PURGEABLE_FLAGS 15
+#define APFS_INO_EXT_TYPE_ORIG_SYNC_ROOT_ID 16
 
 /* Extended field flags */
 #define APFS_XF_DATA_DEPENDENT		0x01
@@ -452,7 +540,8 @@ enum {
 	APFS_TYPE_DIR_STATS		= 10,
 	APFS_TYPE_SNAP_NAME		= 11,
 	APFS_TYPE_SIBLING_MAP		= 12,
-	APFS_TYPE_MAX_VALID		= 12,
+	APFS_TYPE_FILE_INFO		= 13,
+	APFS_TYPE_MAX_VALID		= 13,
 	APFS_TYPE_MAX			= 15,
 	APFS_TYPE_INVALID		= 15,
 };
@@ -496,6 +585,13 @@ struct apfs_dstream_id_key {
 	struct apfs_key_header hdr;
 } __packed;
 
+/*
+ * Structure of the key for a crypto state record
+ */
+struct apfs_crypto_state_key {
+	struct apfs_key_header hdr;
+} __packed;
+
 /* Bit masks for the 'name_len_and_hash' field of a directory entry */
 #define APFS_DREC_LEN_MASK	0x000003ff
 #define APFS_DREC_HASH_MASK	0xfffffc00
@@ -507,8 +603,14 @@ struct apfs_dstream_id_key {
 /* Bit masks for the 'type' field of a directory entry */
 enum {
 	APFS_DREC_TYPE_MASK	= 0x000f,
-	APFS_DREC_RESERVED_10	= 0x0010
+	APFS_DREC_RESERVED_10	= 0x0010,
+
+	/* These flags are not documented */
+	APFS_DREC_PURGEABLE_2	= 0x0200,
+	APFS_DREC_PURGEABLE_8	= 0x0800,
 };
+
+#define APFS_DREC_PURGEABLE	(APFS_DREC_PURGEABLE_2 | APFS_DREC_PURGEABLE_8)
 
 /*
  * Structure of the key for a directory entry - no hash, used on normalization
@@ -537,6 +639,13 @@ struct apfs_xattr_key {
 	struct apfs_key_header hdr;
 	__le16 name_len;
 	u8 name[0];
+} __packed;
+
+/*
+ * Structure of the key for a snapshot metadata record
+ */
+struct apfs_snap_metadata_key {
+	struct apfs_key_header hdr;
 } __packed;
 
 /*
@@ -741,7 +850,29 @@ struct apfs_nx_reaper_phys {
 	__le32			nr_nrle_flags;
 	__le32			nr_state_buffer_size;
 	u8			nr_state_buffer[];
-};
+} __packed;
+
+struct apfs_nx_reap_list_entry {
+	__le32	nrle_next;
+	__le32	nrle_flags;
+	__le32	nrle_type;
+	__le32	nrle_size;
+	__le64	nrle_fs_oid;
+	__le64	nrle_oid;
+	__le64	nrle_xid;
+} __packed;
+
+struct apfs_nx_reap_list_phys {
+	struct apfs_obj_phys		nrl_o;
+	__le64				nrl_next;
+	__le32				nrl_flags;
+	__le32				nrl_max;
+	__le32				nrl_count;
+	__le32				nrl_first;
+	__le32				nrl_last;
+	__le32				nrl_free;
+	struct apfs_nx_reap_list_entry	nrl_entries[];
+} __packed;
 
 /* EFI constants */
 #define APFS_NX_EFI_JUMPSTART_MAGIC	0x5244534A
@@ -758,7 +889,7 @@ struct apfs_nx_efi_jumpstart {
 	__le32			nej_num_extents;
 	__le64			nej_reserved[16];
 	struct apfs_prange	nej_rec_extents[];
-};
+} __packed;
 
 /* Main container */
 
@@ -862,6 +993,10 @@ struct apfs_nx_superblock {
 	__le64 nx_fusion_mt_oid;
 /*550*/	__le64 nx_fusion_wbc_oid;
 	struct apfs_prange nx_fusion_wbc;
+
+	__le64 nx_newest_mounted_version;
+
+/*570*/	struct apfs_prange nx_mkb_locker;
 } __packed;
 
 /*
@@ -919,6 +1054,7 @@ struct apfs_checkpoint_map_phys {
 						| APFS_FS_ONEKEY)
 
 /* Volume roles */
+#define APFS_VOLUME_ENUM_SHIFT		6
 #define APFS_VOL_ROLE_NONE		0x0000
 #define APFS_VOL_ROLE_SYSTEM		0x0001
 #define APFS_VOL_ROLE_USER		0x0002
@@ -926,9 +1062,17 @@ struct apfs_checkpoint_map_phys {
 #define APFS_VOL_ROLE_VM		0x0008
 #define APFS_VOL_ROLE_PREBOOT		0x0010
 #define APFS_VOL_ROLE_INSTALLER		0x0020
-#define APFS_VOL_ROLE_DATA		0x0040
-#define APFS_VOL_ROLE_BASEBAND		0x0080
-#define APFS_VOL_ROLE_RESERVED_200	0x0200
+#define APFS_VOL_ROLE_DATA		(1 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_BASEBAND		(2 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_UPDATE		(3 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_XART		(4 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_HARDWARE		(5 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_BACKUP		(6 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_RESERVED_7	(7 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_RESERVED_8	(8 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_ENTERPRISE	(9 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_RESERVED_10	(10 << APFS_VOLUME_ENUM_SHIFT)
+#define APFS_VOL_ROLE_PRELOGIN		(11 << APFS_VOLUME_ENUM_SHIFT)
 #define APFS_VOL_ROLES_VALID_MASK	(APFS_VOL_ROLE_SYSTEM \
 					| APFS_VOL_ROLE_USER \
 					| APFS_VOL_ROLE_RECOVERY \
@@ -937,16 +1081,28 @@ struct apfs_checkpoint_map_phys {
 					| APFS_VOL_ROLE_INSTALLER \
 					| APFS_VOL_ROLE_DATA \
 					| APFS_VOL_ROLE_BASEBAND \
-					| APFS_VOL_ROLE_RESERVED_200)
+					| APFS_VOL_ROLE_UPDATE \
+					| APFS_VOL_ROLE_XART \
+					| APFS_VOL_ROLE_HARDWARE \
+					| APFS_VOL_ROLE_BACKUP \
+					| APFS_VOL_ROLE_RESERVED_7 \
+					| APFS_VOL_ROLE_RESERVED_8 \
+					| APFS_VOL_ROLE_ENTERPRISE \
+					| APFS_VOL_ROLE_RESERVED_10 \
+					| APFS_VOL_ROLE_PRELOGIN)
 
 /* Optional volume feature flags */
 #define APFS_FEATURE_DEFRAG_PRERELEASE		0x00000001LL
 #define APFS_FEATURE_HARDLINK_MAP_RECORDS	0x00000002LL
 #define APFS_FEATURE_DEFRAG			0x00000004LL
+#define APFS_FEATURE_STRICTATIME		0x00000008LL
+#define APFS_FEATURE_VOLGRP_SYSTEM_INO_SPACE	0x00000010LL
 
 #define APFS_SUPPORTED_FEATURES_MASK	(APFS_FEATURE_DEFRAG \
 					| APFS_FEATURE_DEFRAG_PRERELEASE \
-					| APFS_FEATURE_HARDLINK_MAP_RECORDS)
+					| APFS_FEATURE_HARDLINK_MAP_RECORDS \
+					| APFS_FEATURE_STRICTATIME \
+					| APFS_FEATURE_VOLGRP_SYSTEM_INO_SPACE)
 
 /* Read-only compatible volume feature flags */
 #define APFS_SUPPORTED_ROCOMPAT_MASK		(0x0ULL)
@@ -956,11 +1112,17 @@ struct apfs_checkpoint_map_phys {
 #define APFS_INCOMPAT_DATALESS_SNAPS		0x00000002LL
 #define APFS_INCOMPAT_ENC_ROLLED		0x00000004LL
 #define APFS_INCOMPAT_NORMALIZATION_INSENSITIVE	0x00000008LL
+#define APFS_INCOMPAT_INCOMPLETE_RESTORE	0x00000010LL
+#define APFS_INCOMPAT_SEALED_VOLUME		0x00000020LL
+#define APFS_INCOMPAT_RESERVED_40		0x00000040LL
 
-#define APFS_SUPPORTED_INCOMPAT_MASK  (APFS_INCOMPAT_CASE_INSENSITIVE \
-				      | APFS_INCOMPAT_DATALESS_SNAPS \
-				      | APFS_INCOMPAT_ENC_ROLLED \
-				      | APFS_INCOMPAT_NORMALIZATION_INSENSITIVE)
+#define APFS_SUPPORTED_INCOMPAT_MASK (APFS_INCOMPAT_CASE_INSENSITIVE \
+				     | APFS_INCOMPAT_DATALESS_SNAPS \
+				     | APFS_INCOMPAT_ENC_ROLLED \
+				     | APFS_INCOMPAT_NORMALIZATION_INSENSITIVE \
+				     | APFS_INCOMPAT_INCOMPLETE_RESTORE \
+				     | APFS_INCOMPAT_SEALED_VOLUME \
+				     | APFS_INCOMPAT_RESERVED_40)
 
 #define APFS_MODIFIED_NAMELEN	      32
 
@@ -984,6 +1146,11 @@ struct apfs_modified_by {
 #define APFS_PROTECTION_CLASS_C		3
 #define APFS_PROTECTION_CLASS_D		4 /* No protection */
 #define APFS_PROTECTION_CLASS_F		6 /* No protection, nonpersistent key */
+
+/* Encryption identifiers */
+#define APFS_CRYPTO_SW_ID		4
+#define APFS_CRYPTO_RESERVED_5		5
+#define APFS_UNASSIGNED_CRYPTO_ID	(~0ULL)
 
 /*
  * Structure used to store the encryption state
@@ -1058,6 +1225,21 @@ struct apfs_superblock {
 
 /*3C8*/	__le64 apfs_root_to_xid;
 	__le64 apfs_er_state_oid;
+
+	__le64 apfs_cloneinfo_id_epoch;
+	__le64 apfs_cloneinfo_xid;
+
+	__le64 apfs_snap_meta_ext_oid;
+
+	char apfs_volume_group_id[16];
+
+	__le64 apfs_integrity_meta_oid;
+
+	__le64 apfs_fext_tree_oid;
+	__le32 apfs_fext_tree_type;
+
+	__le32 reserved_type;
+	__le64 reserved_oid;
 } __packed;
 
 /* Extended attributes constants */
@@ -1068,6 +1250,7 @@ struct apfs_superblock {
 #define APFS_XATTR_NAME_COMPRESSED	"com.apple.decmpfs"
 #define APFS_XATTR_NAME_RSRC_FORK	"com.apple.ResourceFork"
 #define APFS_XATTR_NAME_SECURITY	"com.apple.system.Security"
+#define APFS_XATTR_NAME_FINDER_INFO	"com.apple.FinderInfo"
 
 /* Extended attributes flags */
 enum {
@@ -1094,6 +1277,229 @@ struct apfs_xattr_val {
 struct apfs_xattr_dstream {
 	__le64 xattr_obj_id;
 	struct apfs_dstream dstream;
+} __packed;
+
+/*
+ * Structure of the value of a snapshot metadata record
+ */
+struct apfs_snap_metadata_val {
+	__le64 extentref_tree_oid;
+	__le64 sblock_oid;
+	__le64 create_time;
+	__le64 change_time;
+	__le64 inum;
+	__le32 extentref_tree_type;
+	__le32 flags;
+	__le16 name_len;
+	u8 name[0];
+} __packed;
+
+/*
+ * Structure of the value of a snapshot name record
+ */
+struct apfs_snap_name_val {
+	__le64 snap_xid;
+} __packed;
+
+/*
+ * Structure of the extended snapshot metadata
+ */
+struct apfs_snap_meta_ext {
+	struct apfs_obj_phys sme_o;
+
+	__le32	sme_version;
+	__le32	sme_flags;
+	__le64	sme_snap_xid;
+	char 	sme_uuid[16];
+	__le64	sme_token;
+} __packed;
+
+#define APFS_OBJECT_TYPE_KEYBAG	0x6b657973 /* Spells 'syek' */
+
+#define	APFS_VOL_KEYBAG_ENTRY_MAX_SIZE		512
+#define APFS_FV_PERSONAL_RECOVERY_KEY_UUID	"EBC6C064-0000-11AA-AA11-00306543ECAC"
+
+/* Keybag entry types */
+enum {
+	KB_TAG_UNKNOWN			= 0,
+	KB_TAG_RESERVED_1		= 1,
+
+	KB_TAG_VOLUME_KEY		= 2,
+	KB_TAG_VOLUME_UNLOCK_RECORDS	= 3,
+	KB_TAG_VOLUME_PASSPHRASE_HINT	= 4,
+
+	KB_TAG_WRAPPING_M_KEY		= 5,
+	KB_TAG_VOLUME_M_KEY		= 6,
+
+	KB_TAG_RESERVED_F8		= 0xF8
+};
+
+/*
+ * Structure of a single entry in the keybag
+ */
+struct apfs_keybag_entry {
+	char 	ke_uuid[16];
+	__le16	ke_tag;
+	__le16	ke_keylen;
+	__le32	padding;
+	u8	ke_keydata[0];
+} __packed;
+
+#define APFS_KEYBAG_VERSION	2
+
+/*
+ * Structure of the locker in the keybag
+ */
+struct apfs_kb_locker {
+	__le16				kl_version;
+	__le16				kl_nkeys;
+	__le32				kl_nbytes;
+	__le64				padding;
+	struct apfs_keybag_entry	kl_entries[0];
+} __packed;
+
+/*
+ * Integrity metadata for a sealed volume
+ */
+struct apfs_integrity_meta_phys {
+	struct apfs_obj_phys im_o;
+
+	__le32	im_version;
+	__le32	im_flags;
+	__le32	im_hash_type;
+	__le32	im_root_hash_offset;
+	__le64	im_broken_xid;
+	__le64	im_reserved[9];
+} __packed;
+
+/*
+ * Version numbers for the integrity metadata structure
+ */
+enum {
+	APFS_INTEGRITY_META_VERSION_INVALID	= 0,
+	APFS_INTEGRITY_META_VERSION_1		= 1,
+	APFS_INTEGRITY_META_VERSION_2		= 2,
+	APFS_INTEGRITY_META_VERSION_HIGHEST	= APFS_INTEGRITY_META_VERSION_2
+};
+
+/* Flags used by integrity metadata */
+#define APFS_SEAL_BROKEN (1U << 0)
+
+/*
+ * Constants used to identify hash algorithms
+ */
+enum {
+	APFS_HASH_INVALID	= 0,
+	APFS_HASH_SHA256	= 0x1,
+	APFS_HASH_SHA512_256	= 0x2,
+	APFS_HASH_SHA384	= 0x3,
+	APFS_HASH_SHA512	= 0x4,
+
+	APFS_HASH_MIN		= APFS_HASH_SHA256,
+	APFS_HASH_MAX		= APFS_HASH_SHA512,
+	APFS_HASH_DEFAULT	= APFS_HASH_SHA256,
+};
+
+#define APFS_HASH_CCSHA256_SIZE		32
+#define APFS_HASH_CCSHA512_256_SIZE	32
+#define APFS_HASH_CCSHA384_SIZE		48
+#define APFS_HASH_CCSHA512_SIZE		64
+
+#define APFS_HASH_MAX_SIZE		64
+
+/*
+ * Structure of a key in a fext tree
+ */
+struct apfs_fext_tree_key {
+	__le64 private_id;
+	__le64 logical_addr;
+} __packed;
+
+/*
+ * Structure of a value in a fext tree
+ */
+struct apfs_fext_tree_val {
+	__le64 len_and_flags;
+	__le64 phys_block_num;
+} __packed;
+
+/*
+ * Structure of the key for a file info record
+ */
+struct apfs_file_info_key {
+	struct apfs_key_header hdr;
+	__le64 info_and_lba;
+} __packed;
+
+#define APFS_FILE_INFO_LBA_MASK		0x00ffffffffffffffULL
+#define APFS_FILE_INFO_TYPE_MASK	0xff00000000000000ULL
+#define APFS_FILE_INFO_TYPE_SHIFT	56
+
+/*
+ * A hash of file data
+ */
+struct apfs_file_data_hash_val {
+	__le16	hashed_len;
+	u8	hash_size;
+	u8	hash[0];
+} __packed;
+
+#define APFS_FILE_INFO_DATA_HASH	1
+
+/*
+ * Structure of the value for a file info record
+ */
+struct apfs_file_info_val {
+	union {
+		struct apfs_file_data_hash_val dhash;
+	};
+} __packed;
+
+#define APFS_BTREE_NODE_HASH_SIZE_MAX	64
+
+/*
+ * Structure of the value of an index record for a hashed catalog tree
+ */
+struct apfs_btn_index_node_val {
+	__le64	binv_child_oid;
+	/*
+	 * The reference seems to be wrong about the hash size, at least for
+	 * SHA-256. TODO: check what happens with other hash functions.
+	 */
+	u8	binv_child_hash[APFS_HASH_CCSHA256_SIZE];
+} __packed;
+
+/*
+ * Compressed file header
+ */
+struct apfs_compress_hdr {
+	__le32 signature;
+	__le32 algo;
+	__le64 size;
+} __packed;
+
+#define APFS_COMPRESS_ZLIB_ATTR		3
+#define APFS_COMPRESS_ZLIB_RSRC		4
+#define APFS_COMPRESS_PLAIN_ATTR	9
+#define APFS_COMPRESS_PLAIN_RSRC	10
+#define APFS_COMPRESS_LZBITMAP_RSRC	14
+
+struct apfs_compress_rsrc_hdr {
+	__be32 data_offs;
+	__be32 mgmt_offs;
+	__be32 data_size;
+	__be32 mgmt_size;
+} __packed;
+
+#define APFS_COMPRESS_BLOCK		0x10000
+
+struct apfs_compress_rsrc_data {
+	__le32 unknown;
+	__le32 num;
+	struct apfs_compress_rsrc_block {
+		__le32 offs;
+		__le32 size;
+	} __packed block[0];
 } __packed;
 
 #endif	/* _RAW_H */

@@ -10,6 +10,10 @@ apfsck \- check an APFS filesystem
 [\-cuvw]
 .I device
 .SH DESCRIPTION
+Unless you are an APFS developer, you are probably not interested in this tool.
+It's only intended for testing, and it could potentially be dangerous if run
+on a maliciously crafted filesystem.
+.PP
 .B apfsck
 is an experimental tool that checks an APFS filesystem for corruption.  When an
 issue is found it is reported, but no repair is attempted.  For that purpose,
@@ -32,8 +36,8 @@ Report unexplained inconsistencies that may or may not be corruption.
 .SH EXIT STATUS
 The exit status is 0 if there was nothing to report, 1 otherwise.
 .SH REPORTING BUGS
-Please submit any issues that you find to the project's mailing list at
-<linux-apfs@googlegroups.com>.
+Please report bugs via email or, if preferred, file a github issue at
+\%https://github.com/eafer/apfsprogs/issues.
 .SH AUTHOR
 Written by Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>.
 .SH SEE ALSO

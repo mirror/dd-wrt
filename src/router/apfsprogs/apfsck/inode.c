@@ -9,11 +9,53 @@
 #include <apfs/raw.h>
 #include <apfs/types.h>
 #include "apfsck.h"
+#include "compress.h"
+#include "dir.h"
 #include "extents.h"
 #include "htable.h"
 #include "inode.h"
 #include "key.h"
 #include "super.h"
+
+/**
+ * xbmap_set - Set an xfield type in the xfield bitmap
+ * @bmap: the xfield bitmap
+ * @type: the extended field type
+ */
+static inline void xbmap_set(u16 *bmap, u8 type)
+{
+	*bmap |= 1 << type;
+}
+
+/**
+ * xbmap_test - Test if an xfield type is present in the xfield bitmap
+ * @bmap: the xfield bitmap
+ * @type: the extended field type
+ */
+static inline bool xbmap_test(u16 bmap, u8 type)
+{
+	return bmap & (1 << type);
+}
+
+/**
+ * check_finder_info - Check the inode flag that reports finder info
+ * @inode: the inode to check
+ *
+ * I've encountered some old images that put the finder info in a xattr instead
+ * of an xfield, but they still set the inode flag, so this check has to be done
+ * after all xattrs have been parsed.
+ */
+static void check_finder_info(struct inode *inode)
+{
+	bool xfield = xbmap_test(inode->i_xfield_bmap, APFS_INO_EXT_TYPE_FINDER_INFO);
+	bool xattr = inode->i_xattr_bmap & XATTR_BMAP_FINDER_INFO;
+	bool flag = inode->i_flags & APFS_INODE_HAS_FINDER_INFO;
+
+	if (xfield && xattr)
+		report("Inode record", "duplicated finder info.");
+	if (flag != (xfield || xattr))
+		report("Inode record", "wrong setting for finder info flag.");
+}
 
 /**
  * check_inode_stats - Verify the stats gathered by the fsck vs the metadata
@@ -31,6 +73,13 @@ static void check_inode_stats(struct inode *inode)
 			report("Inode record", "directory has hard links.");
 		if (inode->i_nchildren != inode->i_child_count)
 			report("Inode record", "wrong directory child count.");
+		if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM && inode->i_nchildren != 0)
+			report("Orphan directory", "has children of its own.");
+	} else if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM) {
+		if (inode->i_link_count != 1)
+			report("Orphan inode", "not really orphaned.");
+		if (inode->i_nlink != 0)
+			report("Orphan inode", "has a link count.");
 	} else {
 		if (inode->i_nlink != inode->i_link_count)
 			report("Inode record", "wrong link count.");
@@ -40,6 +89,10 @@ static void check_inode_stats(struct inode *inode)
 	if (dstream) {
 		if (dstream->d_sparse_bytes != inode->i_sparse_bytes)
 			report("Inode record", "wrong count of sparse bytes.");
+		if (dstream->d_refcnt > 1 && !(inode->i_flags & (APFS_INODE_WAS_CLONED | APFS_INODE_WAS_EVER_CLONED)))
+			report("Inode record", "wrong flags for cloned inode.");
+		if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM)
+			dstream->d_orphan = true;
 	} else {
 		if (inode->i_sparse_bytes)
 			report("Inode record", "sparse bytes without dstream.");
@@ -55,6 +108,38 @@ static void check_inode_stats(struct inode *inode)
 	if ((bool)(inode->i_xattr_bmap & XATTR_BMAP_SECURITY) !=
 	    (bool)(inode->i_flags & APFS_INODE_HAS_SECURITY_EA))
 		report("Inode record", "wrong flag for access control list.");
+
+	if ((bool)(inode->i_purg_name) != (bool)(inode->i_flags & APFS_INODE_IS_PURGEABLE))
+		report("Inode record", "wrong purgeability flag.");
+
+	check_finder_info(inode);
+}
+
+static void check_purgeable_name(struct inode *inode)
+{
+	const char *format = "0x%llx-0x%llx:%u";
+	char *buf;
+	int buflen;
+	struct dstream *dstream = NULL;
+	unsigned long long filesize;
+
+	dstream = inode->i_dstream;
+	filesize = dstream ? dstream->d_bytes : 0;
+
+	buflen = snprintf(NULL, 0, format, filesize, (unsigned long long)inode->i_ino, (unsigned int)inode->i_owner);
+	if (buflen < 0)
+		system_error();
+	buf = calloc(1, ++buflen);
+	if (!buf)
+		system_error();
+	buflen = snprintf(buf, buflen, format, filesize, (unsigned long long)inode->i_ino, (unsigned int)inode->i_owner);
+	if (buflen < 0)
+		system_error();
+
+	if (strcmp(inode->i_purg_name, buf) != 0)
+		report("Purgeable inode", "wrong name for purgeable dentry.");
+
+	free(buf);
 }
 
 /**
@@ -75,14 +160,32 @@ static void free_inode_names(struct inode *inode)
 	if (!inode->i_first_name)
 		report("Catalog", "inode with no dentries.");
 
+	if (inode->i_flags & APFS_INODE_ACTIVE_FILE_TRIMMED) {
+		/* No idea if any of this is actually required */
+		if (strcmp(inode->i_name, ".overprovisioning_file"))
+			report("Overprovisioning file", "wrong name.");
+		if (inode->i_link_count != 1)
+			report("Overprovisioning file", "has hard links.");
+	}
+
+	if (inode->i_purg_name) {
+		check_purgeable_name(inode);
+		free(inode->i_purg_name);
+		inode->i_purg_name = NULL;
+	}
+
 	if (current) {
 		/* Primary link has lowest id, so it comes first in the list */
 		if (strcmp(inode->i_name, (char *)current->s_name))
 			report("Inode record", "wrong name for primary link.");
 		if (inode->i_parent_id != current->s_parent_ino)
 			report("Inode record", "bad parent for primary link.");
-	} else {
-		/* No siblings, so the primary link is the first and only */
+	} else if (inode->i_first_parent != APFS_PRIV_DIR_INO_NUM) {
+		/*
+		 * No siblings, so the primary link is the first and only.
+		 * Files moved to the private directory preserve their original
+		 * name and parent_id, so there's nothing to check.
+		 */
 		if (strcmp(inode->i_name, inode->i_first_name))
 			report("Inode record", "wrong name for only link.");
 		if (inode->i_parent_id != inode->i_first_parent)
@@ -98,9 +201,7 @@ static void free_inode_names(struct inode *inode)
 
 		/* Put all filesystem object ids in a list to check for reuse */
 		cnid = get_listed_cnid(current->s_id);
-		if (cnid->c_state != CNID_UNUSED)
-			report("Catalog", "a filesystem object id was reused.");
-		cnid->c_state = CNID_USED;
+		cnid_set_state_flag(cnid, CNID_IN_SIBLING_LINK);
 
 		if (!current->s_checked)
 			report("Catalog", "orphaned or missing sibling link.");
@@ -112,6 +213,12 @@ static void free_inode_names(struct inode *inode)
 		free(current);
 		current = next;
 		++count;
+	}
+
+	if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM) {
+		if (count != 0)
+			report("Orphan inode", "has sibling links.");
+		return;
 	}
 
 	/* Inodes with one link can have a sibling record, but don't need it */
@@ -130,23 +237,61 @@ static void free_inode_names(struct inode *inode)
 static void free_inode(struct htable_entry *entry)
 {
 	struct inode *inode = (struct inode *)entry;
+	struct compress *compress = inode->i_compress;
 	struct listed_cnid *cnid;
 
-	/* The inodes must be freed before the cnids */
+	/* All of these must still be around for the inodes to access */
 	assert(vsb->v_cnid_table);
+	assert(vsb->v_dirstat_table);
+	assert(vsb->v_dstream_table);
 
 	/* To check for reuse, put all filesystem object ids in a list */
 	cnid = get_listed_cnid(inode->i_ino);
-	if (cnid->c_state != CNID_UNUSED)
-		report("Catalog", "a filesystem object id was used twice.");
-	if (inode->i_ino != inode->i_private_id)
-		cnid->c_state = CNID_USED;
-	else /* The inode and its dstream share an id */
-		cnid->c_state = CNID_DSTREAM_ALLOWED;
+	cnid_set_state_flag(cnid, CNID_IN_INODE);
+
+	if (compress) {
+		apfs_compress_open(compress);
+		apfs_compress_check(compress);
+		verify_dstream_hashes(compress->rsrc_dstream, compress);
+		apfs_compress_close(compress);
+		free(compress->decmpfs);
+		free(compress);
+		inode->i_compress = NULL;
+	}
 
 	check_inode_stats(inode);
 	free_inode_names(inode);
 	free(entry);
+}
+
+static void collect_dirstats(struct htable_entry *entry)
+{
+	struct inode *inode = (struct inode *)entry;
+	u16 filetype = inode->i_mode & S_IFMT;
+	struct dirstat *stat = inode->i_dirstat;
+	struct dirstat *parent_stat = NULL;
+
+	if (inode->i_parent_id >= APFS_MIN_USER_INO_NUM) {
+		parent_stat = get_inode(inode->i_parent_id)->i_dirstat;
+		if (stat && parent_stat && stat != parent_stat)
+			report("Inode record", "dirstat id differs from parent.");
+	}
+
+	if (inode->i_flags & APFS_INODE_MAINTAIN_DIR_STATS) {
+		assert(stat);
+		if (!stat->ds_seen)
+			report("Inode record", "missing a dirstats record.");
+		if (!(inode->i_flags & APFS_INODE_DIR_STATS_ORIGIN) && !parent_stat)
+			report("Directory statistics", "origin missing.");
+		stat->ds_child_count += inode->i_nchildren;
+	} else if (parent_stat) {
+		if (inode->i_flags & APFS_INODE_DIR_STATS_ORIGIN)
+			report_unknown("Nested dirstat origins.");
+		if (filetype == S_IFDIR)
+			report("Inode record", "should gather dir stats for ancestor.");
+		else if (inode->i_dstream)
+			parent_stat->ds_total_size += inode->i_dstream->d_size;
+	}
 }
 
 /**
@@ -158,6 +303,12 @@ static void free_inode(struct htable_entry *entry)
  */
 void free_inode_table(struct htable_entry **table)
 {
+	/*
+	 * Collect directory statistics, and check that descendant directories
+	 * inherit the APFS_INODE_MAINTAIN_DIR_STATS flag.
+	 */
+	apply_on_htable(table, collect_dirstats);
+
 	free_htable(table, free_inode);
 }
 
@@ -244,9 +395,6 @@ static int read_rdev_xfield(char *xval, int len, struct inode *inode)
 	rdev = (__le32 *)xval;
 
 	inode->i_rdev = le32_to_cpu(*rdev);
-	if (!inode->i_rdev)
-		report("Device ID xfield", "null ID in use.");
-
 	return sizeof(*rdev);
 }
 
@@ -287,6 +435,7 @@ static int read_dstream_xfield(char *xval, int len, struct inode *inode)
 	struct apfs_dstream *dstream_raw;
 	struct dstream *dstream;
 	u64 size, alloced_size;
+	u64 crypid;
 
 	if ((inode->i_mode & S_IFMT) != S_IFREG)
 		report("Inode record", "has dstream but isn't a regular file.");
@@ -297,8 +446,22 @@ static int read_dstream_xfield(char *xval, int len, struct inode *inode)
 
 	size = le64_to_cpu(dstream_raw->size);
 	alloced_size = le64_to_cpu(dstream_raw->alloced_size);
-	if (dstream_raw->default_crypto_id)
-		report_unknown("Dstream encryption");
+	crypid = le64_to_cpu(dstream_raw->default_crypto_id);
+	if (crypid && crypid != APFS_CRYPTO_SW_ID) {
+		/*
+		 * I'm not yet sure how this crypto cloning thing is supposed
+		 * to work, but it's very common (TODO).
+		 */
+		if (crypid == APFS_UNASSIGNED_CRYPTO_ID) {
+			if (!(inode->i_flags & APFS_INODE_WAS_CLONED))
+				report("Dstream xfield", "not a clone but has unassigned crypto.");
+		} else {
+			struct crypto_state *crypto = get_crypto_state(crypid);
+			++crypto->c_references;
+			if (inode->i_flags & APFS_INODE_ACTIVE_FILE_TRIMMED)
+				crypto->c_overprov = true;
+		}
+	}
 
 	dstream = get_dstream(inode->i_private_id);
 	if (dstream->d_references) {
@@ -316,11 +479,61 @@ static int read_dstream_xfield(char *xval, int len, struct inode *inode)
 		dstream->d_size = size;
 		dstream->d_alloced_size = alloced_size;
 	}
+	dstream->d_xattr = false;
 
 	dstream->d_references++;
 	dstream->d_owner = dstream->d_id;
 	inode->i_dstream = dstream;
 	return sizeof(*dstream_raw);
+}
+
+/**
+ * read_dir_stats_xfield - Parse a dir stats xfield and check its consistency
+ * @xval:	pointer to the xfield value
+ * @len:	remaining length of the inode value
+ * @inode:	struct to receive the results
+ *
+ * Returns the length of the xfield value.
+ */
+static int read_dir_stats_xfield(char *xval, int len, struct inode *inode)
+{
+	u16 filetype = inode->i_mode & S_IFMT;
+	__le64 *oid = NULL;
+	struct dirstat *stats = NULL;
+
+	/* TODO: I'm yet to see a file with stats, this is probably wrong */
+	if (filetype != S_IFDIR)
+		report("Dir stats xfield", "inode is not a directory.");
+
+	if (len < sizeof(*oid))
+		report("Dir stats xfield", "doesn't fit in inode record.");
+	oid = (__le64 *)xval;
+
+	stats = inode->i_dirstat = get_dirstat(le64_to_cpu(*oid));
+	if (inode->i_flags & APFS_INODE_DIR_STATS_ORIGIN) {
+		/* TODO: this will be a problem for nested origins */
+		if (stats->ds_origin_seen)
+			report("Dir stats", "has two origins.");
+		stats->ds_origin_seen = true;
+		stats->ds_origin = inode->i_ino;
+	}
+	return sizeof(*oid);
+}
+
+static int read_purgeable_flags_xfield(char *xval, int len, struct inode *inode)
+{
+	__le64 *flags;
+
+	if (len < sizeof(*flags))
+		report("Purgeable flags xfield", "doesn't fit in inode record.");
+	flags = (__le64 *)xval;
+	/*
+	 * TODO: Figure out these flags. So far I have only seen them set to
+	 * 0x10005, in a directory that was not purgeable itself, but had mostly
+	 * purgeable entries.
+	 */
+	inode->i_purg_flags = le64_to_cpu(*flags);
+	return sizeof(*flags);
 }
 
 /**
@@ -338,29 +551,11 @@ void check_xfield_flags(u8 flags)
 }
 
 /**
- * xbmap_set - Set an xfield type in the xfield bitmap
- * @bmap: the xfield bitmap
- * @type: the extended field type
- */
-static inline void xbmap_set(u16 *bmap, u8 type)
-{
-	*bmap |= 1 << type;
-}
-
-/**
- * xbmap_test - Test if an xfield type is present in the xfield bitmap
- * @bmap: the xfield bitmap
- * @type: the extended field type
- */
-static inline bool xbmap_test(u16 bmap, u8 type)
-{
-	return bmap & (1 << type);
-}
-
-/**
  * check_xfield_inode_flags - Check that xfields are consistent with inode flags
  * @bmap:	bitmap of xfield types seen in the inode
  * @flags:	inode flags
+ *
+ * This doesn't check the finder info flag, that happens when we free the inode.
  */
 static void check_xfield_inode_flags(u16 bmap, u64 flags)
 {
@@ -371,13 +566,8 @@ static void check_xfield_inode_flags(u16 bmap, u64 flags)
 	    (bool)(flags & APFS_INODE_IS_SPARSE))
 		report("Inode record", "wrong setting for sparse flag.");
 
-	/* Some inodes don't have finder info but still have the flag... */
-	if (xbmap_test(bmap, APFS_INO_EXT_TYPE_FINDER_INFO) &&
-	    !(flags & APFS_INODE_HAS_FINDER_INFO))
-		report("Inode record", "wrong setting for finder info flag.");
-	if (!xbmap_test(bmap, APFS_INO_EXT_TYPE_FINDER_INFO) &&
-	    (flags & APFS_INODE_HAS_FINDER_INFO))
-		report_weird("Finder info flag in inode record");
+	if (xbmap_test(bmap, APFS_INO_EXT_TYPE_PURGEABLE_FLAGS) != (bool)(flags & APFS_INODE_HAS_PURGEABLE_FLAGS))
+		report("Inode record", "wrong setting for purgeable flags option.");
 }
 
 /**
@@ -391,6 +581,7 @@ static void check_xfield_inode_flags(u16 bmap, u64 flags)
 static void parse_inode_xfields(struct apfs_xf_blob *xblob, int len,
 				struct inode *inode)
 {
+	u16 filetype = inode->i_mode & S_IFMT;
 	struct apfs_x_field *xfield;
 	u16 type_bitmap = 0;
 	char *xval;
@@ -456,7 +647,7 @@ static void parse_inode_xfields(struct apfs_xf_blob *xblob, int len,
 			report_unknown("Document id xfield");
 			break;
 		case APFS_INO_EXT_TYPE_FINDER_INFO:
-			xlen = 4;
+			xlen = 32;
 			report_unknown("Finder info xfield");
 			break;
 		case APFS_INO_EXT_TYPE_RDEV:
@@ -473,8 +664,16 @@ static void parse_inode_xfields(struct apfs_xf_blob *xblob, int len,
 				report("Data stream xfield", "wrong flags.");
 			break;
 		case APFS_INO_EXT_TYPE_DIR_STATS_KEY:
-			xlen = sizeof(struct apfs_dir_stats_val);
-			report_unknown("Directory statistics xfield");
+			xlen = read_dir_stats_xfield(xval, len, inode);
+			if (xflags != (APFS_XF_SYSTEM_FIELD | APFS_XF_DO_NOT_COPY))
+				report("Dir stats xfield", "wrong flags.");
+			break;
+		case APFS_INO_EXT_TYPE_PURGEABLE_FLAGS:
+			xlen = read_purgeable_flags_xfield(xval, len, inode);
+			break;
+		case APFS_INO_EXT_TYPE_ORIG_SYNC_ROOT_ID:
+			xlen = 8;
+			report_unknown("Sync root id xfield");
 			break;
 		case APFS_INO_EXT_TYPE_RESERVED_6:
 		case APFS_INO_EXT_TYPE_RESERVED_9:
@@ -509,6 +708,10 @@ static void parse_inode_xfields(struct apfs_xf_blob *xblob, int len,
 		report("Inode record", "length of xfields does not add up.");
 
 	check_xfield_inode_flags(type_bitmap, inode->i_flags);
+	inode->i_xfield_bmap = type_bitmap;
+
+	if ((filetype == S_IFCHR || filetype == S_IFBLK) && !xbmap_test(type_bitmap, APFS_INO_EXT_TYPE_RDEV))
+		report("Inode record", "device file with no device ID.");
 }
 
 /**
@@ -529,14 +732,48 @@ static void check_inode_internal_flags(u64 flags)
 	if (flags & APFS_INODE_BEING_TRUNCATED)
 		report_crash("Inode internal flags");
 
-	if (flags & APFS_INODE_PINNED_TO_MAIN ||
-	    flags & APFS_INODE_PINNED_TO_TIER2 ||
-	    flags & APFS_INODE_ALLOCATION_SPILLEDOVER)
+	if (flags & APFS_INODE_PINNED_MASK) {
+		/*
+		 * Preboot volume seems to be mostly pinned to main, even in
+		 * non-fusion drives.
+		 */
+		if ((flags & APFS_INODE_PINNED_TO_TIER2) || apfs_volume_role() != APFS_VOL_ROLE_PREBOOT)
+			report_unknown("Fusion drive");
+		if ((flags & APFS_INODE_PINNED_TO_TIER2) && (flags & APFS_INODE_PINNED_TO_MAIN))
+			report("Inode record", "pinned to both tiers.");
+	}
+	if (flags & APFS_INODE_ALLOCATION_SPILLEDOVER)
 		report_unknown("Fusion drive");
-	if (flags & APFS_INODE_MAINTAIN_DIR_STATS)
-		report_unknown("Directory statistics");
+
 	if (flags & APFS_INODE_IS_APFS_PRIVATE)
 		report_unknown("Private implementation inode");
+
+	if (flags & APFS_INODE_WAS_CLONED && !(flags & APFS_INODE_WAS_EVER_CLONED))
+		report("Inode record", "inconsistent clone flags.");
+}
+
+/**
+ * inos_valid_for_sysvol_in_group - Can a system vol in a group use these inos?
+ * @ino:	inode number
+ * @parent_ino:	parent inode number
+ */
+static bool inos_valid_for_sysvol_in_group(u64 ino, u64 parent_ino)
+{
+	/*
+	 * Reserved inode numbers in volume groups always seem to come
+	 * from the data range, even if this contradicts the reference.
+	 */
+	if (ino < APFS_MIN_USER_INO_NUM && parent_ino < APFS_MIN_USER_INO_NUM)
+		return true;
+	if (ino < APFS_UNIFIED_ID_SPACE_MARK + APFS_MIN_USER_INO_NUM)
+		return false;
+
+	if (parent_ino < APFS_MIN_USER_INO_NUM)
+		return true;
+	if (parent_ino < APFS_UNIFIED_ID_SPACE_MARK + APFS_MIN_USER_INO_NUM)
+		return false;
+
+	return true;
 }
 
 /**
@@ -553,6 +790,7 @@ void check_inode_ids(u64 ino, u64 parent_ino)
 		switch (ino) {
 		case APFS_INVALID_INO_NUM:
 		case APFS_ROOT_DIR_PARENT:
+		case APFS_PURGEABLE_DIR_INO_NUM:
 			report("Inode record", "invalid inode number.");
 		case APFS_ROOT_DIR_INO_NUM:
 		case APFS_PRIV_DIR_INO_NUM:
@@ -576,11 +814,20 @@ void check_inode_ids(u64 ino, u64 parent_ino)
 		case APFS_ROOT_DIR_INO_NUM:
 		case APFS_PRIV_DIR_INO_NUM:
 		case APFS_SNAP_DIR_INO_NUM:
+		case APFS_PURGEABLE_DIR_INO_NUM:
 			/* These are fine */
 			break;
 		default:
 			report("Inode record", "reserved parent inode number.");
 		}
+	}
+
+	if (apfs_is_data_volume_in_group()) {
+		if (ino >= APFS_UNIFIED_ID_SPACE_MARK || parent_ino >= APFS_UNIFIED_ID_SPACE_MARK)
+			report("Inode record", "bad number for data volume inode.");
+	} else if (apfs_is_system_volume_in_group()) {
+		if (!inos_valid_for_sysvol_in_group(ino, parent_ino))
+			report("Inode record", "bad number for system volume inode.");
 	}
 }
 
@@ -597,7 +844,7 @@ void parse_inode_record(struct apfs_inode_key *key,
 {
 	struct inode *inode;
 	u16 mode, filetype;
-	u32 def_prot_class;
+	u32 def_prot_class, bsd_flags;
 
 	if (len < sizeof(*val))
 		report("Inode record", "value is too small.");
@@ -610,6 +857,10 @@ void parse_inode_record(struct apfs_inode_key *key,
 
 	inode->i_parent_id = le64_to_cpu(val->parent_id);
 	check_inode_ids(inode->i_ino, inode->i_parent_id);
+	if (inode->i_parent_id == APFS_PRIV_DIR_INO_NUM) {
+		/* The reported parent id is not updated when orphaned */
+		report("Inode record", "parent is private directory.");
+	}
 
 	if (inode->i_ino == APFS_ROOT_DIR_INO_NUM)
 		vsb->v_has_root = true;
@@ -618,12 +869,19 @@ void parse_inode_record(struct apfs_inode_key *key,
 
 	inode->i_flags = le64_to_cpu(val->internal_flags);
 	check_inode_internal_flags(inode->i_flags);
+	if (inode->i_ino != inode->i_private_id && !(inode->i_flags & (APFS_INODE_WAS_CLONED | APFS_INODE_WAS_EVER_CLONED)))
+		report("Inode record", "not a clone but changed private id.");
 
 	def_prot_class = le32_to_cpu(val->default_protection_class);
-	/* These protection classes have been seen in unencrypted volumes */
-	if (def_prot_class != APFS_PROTECTION_CLASS_DIR_NONE &&
-	    def_prot_class != APFS_PROTECTION_CLASS_D)
-		report_unknown("Encryption");
+	if (def_prot_class > APFS_PROTECTION_CLASS_F || def_prot_class == 5)
+		report("Inode record", "invalid default protection class");
+
+	bsd_flags = le32_to_cpu(val->bsd_flags);
+	if (bsd_flags & APFS_INOBSD_COMPRESSED) {
+		inode->i_compress = calloc(1, sizeof(*inode->i_compress));
+		if (!inode->i_compress)
+			system_error();
+	}
 
 	mode = le16_to_cpu(val->mode);
 	filetype = mode & S_IFMT;
@@ -642,8 +900,6 @@ void parse_inode_record(struct apfs_inode_key *key,
 			vsb->v_dir_count++;
 		break;
 	case S_IFLNK:
-		if ((mode & ~S_IFMT) != 0x1ed)
-			report("Symlink inode", "wrong permissions.");
 		vsb->v_symlink_count++;
 		break;
 	case S_IFSOCK:
@@ -657,15 +913,15 @@ void parse_inode_record(struct apfs_inode_key *key,
 	}
 
 	inode->i_nlink = le32_to_cpu(val->nlink);
+	inode->i_owner = le32_to_cpu(val->owner);
 
-	if (le16_to_cpu(val->pad1) || le64_to_cpu(val->pad2))
+	if (le16_to_cpu(val->pad1))
 		report("Inode record", "padding should be zeroes.");
+	if (!(inode->i_flags & APFS_INODE_HAS_UNCOMPRESSED_SIZE) && le64_to_cpu(val->uncompressed_size))
+		report("Inode record", "should not report uncompressed size.");
 
 	parse_inode_xfields((struct apfs_xf_blob *)val->xfields,
 			    len - sizeof(*val), inode);
-
-	if ((filetype == S_IFCHR || filetype == S_IFBLK) && !inode->i_rdev)
-		report("Inode record", "device file with no device ID.");
 }
 
 /**

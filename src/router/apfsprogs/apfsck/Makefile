@@ -1,5 +1,5 @@
-SRCS = apfsck.c btree.c dir.c extents.c htable.c \
-       inode.c key.c object.c spaceman.c super.c xattr.c
+SRCS = apfsck.c btree.c compress.c crypto.c dir.c extents.c htable.c \
+       inode.c key.c object.c snapshot.c spaceman.c super.c xattr.c
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -17,7 +17,7 @@ override CFLAGS += -Wall -Wno-address-of-packed-member -fno-strict-aliasing -I$(
 
 apfsck: $(OBJS) $(LIBRARY)
 	@echo '  Linking...'
-	$(CC) $(CFLAGS) -o apfsck $(OBJS) $(LDLTO) $(LIBRARY)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o apfsck $(OBJS) $(LDLTO) $(LIBRARY)
 	@echo '  Build complete'
 
 # Build the common libraries

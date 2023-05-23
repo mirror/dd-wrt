@@ -17,6 +17,12 @@ static struct spaceman_info {
 	u64 chunk_count;
 	u32 cib_count;
 	u64 ip_blocks;
+
+	u64 used_blocks_end;	/* Block right after the last one we allocate */
+	u64 used_chunks_end;	/* Chunk right after the last one we allocate */
+
+	u64 first_chunk_bmap;	/* Block number for the first chunk's bitmap */
+	u64 first_cib;		/* Block number for first chunk-info block */
 } sm_info;
 
 /**
@@ -48,20 +54,55 @@ static inline u32 cibs_per_cab(void)
 	return (param->blocksize - cab_size) / sizeof(__le64);
 }
 
+#define MIN(X, Y) ((X) <= (Y) ? (X) : (Y))
+
+/**
+ * count_used_blocks_in_chunk - Calculate number of allocated blocks in a chunk
+ * @chunkno:	chunk number to check
+ */
+static u32 count_used_blocks_in_chunk(u64 chunkno)
+{
+	u32 first_chunk_ip_blocks;
+
+	if (chunkno >= sm_info.used_chunks_end)
+		return 0;
+
+	/* The internal pool may not fit whole in the chunk */
+	first_chunk_ip_blocks = MIN(sm_info.ip_blocks, blocks_per_chunk() - IP_BASE);
+
+	if (chunkno == 0) {
+		u32 blocks = 0;
+
+		/* This stuff always goes in the first chunk */
+		blocks += 1;			/* Block zero */
+		blocks += CPOINT_DESC_BLOCKS;	/* Checkpoint descriptor blocks */
+		blocks += CPOINT_DATA_BLOCKS;	/* Checkpoint data blocks */
+		blocks += 2;			/* Container object map and its root */
+		blocks += 6;			/* Volume superblock and its trees */
+		blocks += IP_BMAP_BLOCKS;	/* Internal pool bitmap blocks */
+
+		blocks += first_chunk_ip_blocks;
+		return blocks;
+	}
+
+	/* Later chunks are only needed for the rest of the internal pool */
+	if (chunkno != sm_info.used_chunks_end - 1)
+		return blocks_per_chunk();
+
+	/* Last chunk */
+	return (sm_info.ip_blocks - first_chunk_ip_blocks) % blocks_per_chunk();
+}
+
 /**
  * count_used_blocks - Calculate the number of blocks used by the mkfs
  */
-static inline u32 count_used_blocks(void)
+static u32 count_used_blocks(void)
 {
 	u32 blocks = 0;
+	u64 chunkno;
 
-	blocks += 1;			/* Block zero */
-	blocks += CPOINT_DESC_BLOCKS;	/* Checkpoint descriptor blocks */
-	blocks += CPOINT_DATA_BLOCKS;	/* Checkpoint data blocks */
-	blocks += 2;			/* Container object map and its root */
-	blocks += 6;			/* Volume superblock and its trees */
-	blocks += IP_BMAP_BLOCKS;	/* Internal pool bitmap blocks */
-	blocks += sm_info.ip_blocks;	/* Internal pool blocks */
+	for (chunkno = 0; chunkno < sm_info.used_chunks_end; ++chunkno)
+		blocks += count_used_blocks_in_chunk(chunkno);
 	return blocks;
 }
 
@@ -89,7 +130,7 @@ static void bmap_mark_as_used(u64 *bitmap, u64 paddr, u64 length)
  */
 static void make_alloc_bitmap(void)
 {
-	void *bmap = get_zeroed_block(FIRST_CHUNK_BITMAP_BNO);
+	void *bmap = get_zeroed_blocks(sm_info.first_chunk_bmap, sm_info.used_chunks_end);
 
 	/* Block zero */
 	bmap_mark_as_used(bmap, 0, 1);
@@ -106,7 +147,7 @@ static void make_alloc_bitmap(void)
 	/* Internal pool blocks */
 	bmap_mark_as_used(bmap, IP_BASE, sm_info.ip_blocks);
 
-	munmap(bmap, param->blocksize);
+	munmap(bmap, sm_info.used_chunks_end * param->blocksize);
 }
 
 /*
@@ -128,25 +169,22 @@ static void make_alloc_bitmap(void)
 static u64 make_chunk_info(struct apfs_chunk_info *chunk, u64 start)
 {
 	u64 remaining_blocks = param->block_count - start;
+	u64 chunkno = start / blocks_per_chunk();
 	u32 block_count, free_count;
 
 	chunk->ci_xid = cpu_to_le64(MKFS_XID);
 	chunk->ci_addr = cpu_to_le64(start);
 
-	/* The first chunk is the only one that's not a hole */
-	if (!start) {
-		chunk->ci_bitmap_addr = cpu_to_le64(FIRST_CHUNK_BITMAP_BNO);
-		make_alloc_bitmap();
-	}
+	/* Later chunks are just holes */
+	if (start < sm_info.used_blocks_end)
+		chunk->ci_bitmap_addr = cpu_to_le64(sm_info.first_chunk_bmap + chunkno);
 
 	block_count = blocks_per_chunk();
 	if (remaining_blocks < block_count) /* This is the final chunk */
 		block_count = remaining_blocks;
 	chunk->ci_block_count = cpu_to_le32(block_count);
 
-	free_count = block_count;
-	if (!start) /* The mkfs puts all of its blocks in the first chunk */
-		free_count -= count_used_blocks();
+	free_count = block_count - count_used_blocks_in_chunk(chunkno);
 	chunk->ci_free_count = cpu_to_le32(free_count);
 
 	start += block_count;
@@ -215,8 +253,8 @@ static void make_devices(struct apfs_spaceman_phys *sm)
 	dev->sm_addr_offset = cpu_to_le32(CIB_ADDR_BASE_OFF);
 	cib_addr = (void *)sm + CIB_ADDR_BASE_OFF;
 	for (i = 0; i < cib_count; ++i) {
-		cib_addr[i] = cpu_to_le64(FIRST_CIB_BNO + i);
-		start = make_chunk_info_block(FIRST_CIB_BNO + i, i, start);
+		cib_addr[i] = cpu_to_le64(sm_info.first_cib + i);
+		start = make_chunk_info_block(sm_info.first_cib + i, i, start);
 	}
 
 	/* For the tier2 device, just set the offset; the address is null */
@@ -259,9 +297,9 @@ static void make_ip_bitmap(void)
 	void *bmap = get_zeroed_block(IP_BMAP_BASE);
 
 	/* Chunk-info blocks */
-	bmap_mark_as_used(bmap, FIRST_CIB_BNO - IP_BASE, sm_info.cib_count);
+	bmap_mark_as_used(bmap, sm_info.first_cib - IP_BASE, sm_info.cib_count);
 	/* Allocation bitmap block */
-	bmap_mark_as_used(bmap, FIRST_CHUNK_BITMAP_BNO - IP_BASE, 1);
+	bmap_mark_as_used(bmap, sm_info.first_chunk_bmap - IP_BASE, sm_info.used_chunks_end);
 
 	munmap(bmap, param->blocksize);
 }
@@ -334,6 +372,17 @@ void make_spaceman(u64 bno, u64 oid)
 	sm_info.cib_count = DIV_ROUND_UP(sm_info.chunk_count, chunks_per_cib());
 	sm_info.ip_blocks = (sm_info.chunk_count + sm_info.cib_count) * 3;
 
+	/* Only the ip size matters, all other used blocks come before it */
+	sm_info.used_blocks_end = IP_BASE + sm_info.ip_blocks;
+	sm_info.used_chunks_end = DIV_ROUND_UP(sm_info.used_blocks_end, blocks_per_chunk());
+
+	/*
+	 * Put the chunk bitmaps at the beginning of the internal pool, and
+	 * the cibs right after them.
+	 */
+	sm_info.first_chunk_bmap = IP_BASE;
+	sm_info.first_cib = sm_info.first_chunk_bmap + sm_info.used_chunks_end;
+
 	sm->sm_block_size = cpu_to_le32(param->blocksize);
 	sm->sm_blocks_per_chunk = cpu_to_le32(blocks_per_chunk());
 	sm->sm_chunks_per_cib = cpu_to_le32(chunks_per_cib());
@@ -343,6 +392,7 @@ void make_spaceman(u64 bno, u64 oid)
 	make_ip_free_queue(&sm->sm_fq[APFS_SFQ_IP]);
 	make_main_free_queue(&sm->sm_fq[APFS_SFQ_MAIN]);
 	make_internal_pool(sm);
+	make_alloc_bitmap();
 
 	set_object_header(&sm->sm_o, oid,
 			  APFS_OBJ_EPHEMERAL | APFS_OBJECT_TYPE_SPACEMAN,

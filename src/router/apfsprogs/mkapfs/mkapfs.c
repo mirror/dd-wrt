@@ -50,7 +50,17 @@ __attribute__((noreturn)) void system_error(void)
 }
 
 /**
- * get_device_size - Get the block count of the device or image being checked
+ * fatal - Print a message and exit with an error code
+ * @message: text to print
+ */
+__attribute__((noreturn)) void fatal(const char *message)
+{
+	fprintf(stderr, "%s: %s\n", progname, message);
+	exit(1);
+}
+
+/**
+ * get_device_size - Get the block count of the device or image being formatted
  * @blocksize: the filesystem blocksize
  */
 static u64 get_device_size(unsigned int blocksize)
@@ -134,8 +144,10 @@ static void complete_parameters(void)
 		param->label = "untitled";
 
 	/* Make sure the volume label fits, along with its null termination */
-	if (strlen(param->label) + 1 > APFS_VOLNAME_LEN)
+	if (strlen(param->label) + 1 > APFS_VOLNAME_LEN) {
 		fprintf(stderr, "%s: volume label is too long\n", progname);
+		exit(1);
+	}
 
 	if (!param->main_uuid)
 		param->main_uuid = get_random_uuid();

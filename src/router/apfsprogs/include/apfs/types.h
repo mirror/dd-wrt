@@ -13,9 +13,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #define EAGAIN	1
 #define ENODATA	2
+#define ENOMEM	3
+#define EINVAL	4
 
 #define __packed	__attribute__((packed))
 
@@ -39,9 +42,24 @@ typedef uint64_t	u64;
 #define cpu_to_le64(x)	((__force __le64)(u64)(x))
 #define le64_to_cpu(x)	((__force u64)(__le64)(x))
 
+static inline uint32_t be32_to_cpu(__be32 in)
+{
+	uint32_t out = 0;
+	uint8_t *in_p = (uint8_t *)&in;
+	uint8_t *out_p = (uint8_t *)&out;
+
+	out_p[0] = in_p[3];
+	out_p[1] = in_p[2];
+	out_p[2] = in_p[1];
+	out_p[3] = in_p[0];
+	return out;
+}
+
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 #define __ROUND_MASK(x, y) ((__typeof__(x))((y)-1))
 #define ROUND_UP(x, y) ((((x)-1) | __ROUND_MASK(x, y))+1)
+
+#define MIN(X, Y)	((X) <= (Y) ? (X) : (Y))
 
 #define NSEC_PER_SEC	1000000000L
 

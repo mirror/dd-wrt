@@ -59,8 +59,6 @@ struct parameters {
 #define SPACEMAN_BNO			(CPOINT_DATA_BASE + 1)
 #define	IP_FREE_QUEUE_BNO		(CPOINT_DATA_BASE + 2)
 #define MAIN_FREE_QUEUE_BNO		(CPOINT_DATA_BASE + 3)
-#define FIRST_CHUNK_BITMAP_BNO		IP_BASE
-#define FIRST_CIB_BNO			(IP_BASE + 1)
 #define MAIN_OMAP_BNO			20000
 #define MAIN_OMAP_ROOT_BNO		20001
 #define FIRST_VOL_BNO			20002
@@ -75,6 +73,29 @@ extern struct parameters *param;	/* Filesystem parameters */
 extern int fd;				/* File descriptor for the device */
 
 extern __attribute__((noreturn)) void system_error(void);
+extern __attribute__((noreturn)) void fatal(const char *message);
+
+/**
+ * get_zeroed_blocks - Map and zero contiguous filesystem blocks
+ * @bno:	first block number
+ * @count:	number of blocks
+ *
+ * Returns a pointer to the mapped area; the caller must unmap it after use.
+ */
+static inline void *get_zeroed_blocks(u64 bno, u64 count)
+{
+	void *blocks;
+	size_t size = param->blocksize * count;
+
+	if (size / count != param->blocksize)
+		fatal("overflow detected on disk area mapping");
+
+	blocks = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, bno * param->blocksize);
+	if (blocks == MAP_FAILED)
+		system_error();
+	memset(blocks, 0, size);
+	return blocks;
+}
 
 /**
  * get_zeroed_block - Map and zero a filesystem block
@@ -84,14 +105,7 @@ extern __attribute__((noreturn)) void system_error(void);
  */
 static inline void *get_zeroed_block(u64 bno)
 {
-	void *block;
-
-	block = mmap(NULL, param->blocksize, PROT_READ | PROT_WRITE,
-		     MAP_SHARED, fd, bno * param->blocksize);
-	if (block == MAP_FAILED)
-		system_error();
-	memset(block, 0, param->blocksize);
-	return block;
+	return get_zeroed_blocks(bno, 1);
 }
 
 /**

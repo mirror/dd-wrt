@@ -47,6 +47,20 @@ static inline void init_extref_key(u64 bno, struct key *key)
 }
 
 /**
+ * init_fext_key - Initialize an in-memory key for a fext query
+ * @id:		dstream id
+ * @addr:	logical address
+ * @key:	apfs_key structure to initialize
+ */
+static inline void init_fext_key(u64 id, u64 addr, struct key *key)
+{
+	key->id = id;
+	key->type = 0;
+	key->number = addr;
+	key->name = NULL;
+}
+
+/**
  * init_inode_key - Initialize an in-memory key for an inode query
  * @ino:	inode number
  * @key:	key structure to initialize
@@ -117,5 +131,8 @@ extern void read_cat_key(void *raw, int size, struct key *key);
 extern void read_omap_key(void *raw, int size, struct key *key);
 extern void read_extentref_key(void *raw, int size, struct key *key);
 extern void read_free_queue_key(void *raw, int size, struct key *key);
+extern void read_snap_key(void *raw, int size, struct key *key);
+extern void read_omap_snap_key(void *raw, int size, struct key *key);
+extern void read_fext_key(void *raw, int size, struct key *key);
 
 #endif	/* _KEY_H */
