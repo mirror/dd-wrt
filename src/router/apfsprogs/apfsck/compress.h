@@ -1,6 +1,7 @@
 #ifndef _COMPRESS_H
 #define _COMPRESS_H
 
+#include <fcntl.h>
 #include <apfs/types.h>
 
 struct apfs_compress_file_data {
