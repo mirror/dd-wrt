@@ -9,9 +9,11 @@
 
 /**
  * apfs_filename_cmp - Normalize and compare two APFS filenames
- * @sb:			filesystem superblock
- * @name1, @name2:	names to compare
- * @len1, @len2:	length of the names
+ * @sb:		filesystem superblock
+ * @name1:	first name to compare
+ * @len1:	length of @name1
+ * @name2:	second name to compare
+ * @len2:	length of the @name2
  *
  * Returns 0 if @name1 and @name2 are equal, or non-zero otherwise.
  */
@@ -46,15 +48,14 @@ int apfs_filename_cmp(struct super_block *sb,
 
 /**
  * apfs_keycmp - Compare two keys
- * @sb:		filesystem superblock
- * @k1, @k2:	keys to compare
+ * @k1:	first key to compare
+ * @k2:	second key to compare
  *
  * returns   0 if @k1 and @k2 are equal
  *	   < 0 if @k1 comes before @k2 in the btree
  *	   > 0 if @k1 comes after @k2 in the btree
  */
-int apfs_keycmp(struct super_block *sb,
-		struct apfs_key *k1, struct apfs_key *k2)
+int apfs_keycmp(struct apfs_key *k1, struct apfs_key *k2)
 {
 	if (k1->id != k2->id)
 		return k1->id < k2->id ? -1 : 1;

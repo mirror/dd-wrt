@@ -10,16 +10,31 @@
 #include <linux/blk_types.h>
 #include "apfs.h"
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+#include <linux/sched/mm.h>
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
 #include <linux/fileattr.h>
 #endif
 
 #define MAX_PFK_LEN	512
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+
+static int apfs_read_folio(struct file *file, struct folio *folio)
+{
+	return mpage_read_folio(folio, apfs_get_block);
+}
+
+#else
+
 static int apfs_readpage(struct file *file, struct page *page)
 {
 	return mpage_readpage(page, apfs_get_block);
 }
+
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) /* Misses mpage_readpages() */
 
@@ -45,7 +60,7 @@ static int apfs_readpages(struct file *file, struct address_space *mapping,
  * Does nothing if the record already exists.  TODO: support cloned files.
  * Returns 0 on success or a negative error code in case of failure.
  */
-int apfs_create_dstream_rec(struct apfs_dstream_info *dstream)
+static int apfs_create_dstream_rec(struct apfs_dstream_info *dstream)
 {
 	struct super_block *sb = dstream->ds_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
@@ -72,7 +87,7 @@ int apfs_create_dstream_rec(struct apfs_dstream_info *dstream)
 	if (ret)
 		goto out;
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 #define APFS_CREATE_DSTREAM_REC_MAXOPS	1
@@ -136,7 +151,7 @@ static int apfs_put_dstream_rec(struct apfs_dstream_info *dstream)
 		ret = -EFSCORRUPTED;
 		goto out;
 	}
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	raw_val = *(struct apfs_dstream_id_val *)(raw + query->off);
 	refcnt = le32_to_cpu(raw_val.refcnt);
 
@@ -148,7 +163,7 @@ static int apfs_put_dstream_rec(struct apfs_dstream_info *dstream)
 	raw_val.refcnt = cpu_to_le32(refcnt - 1);
 	ret = apfs_btree_replace(query, NULL /* key */, 0 /* key_len */, &raw_val, sizeof(raw_val));
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -203,7 +218,7 @@ static int apfs_create_crypto_rec(struct inode *inode)
 					&raw_val, sizeof(raw_val));
 	}
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 #define APFS_CREATE_CRYPTO_REC_MAXOPS	1
@@ -258,13 +273,13 @@ int apfs_crypto_adj_refcnt(struct super_block *sb, u64 crypto_id, int delta)
 	ret = apfs_query_join_transaction(query);
 	if (ret)
 		return ret;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	raw_val = (void *)raw + query->off;
 
 	le32_add_cpu(&raw_val->refcnt, delta);
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 int APFS_CRYPTO_ADJ_REFCNT_MAXOPS(void)
@@ -306,7 +321,7 @@ static int apfs_crypto_set_key(struct super_block *sb, u64 crypto_id, struct apf
 	ret = apfs_btree_query(sb, &query);
 	if (ret)
 		goto out;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	raw_val = (void *)raw + query->off;
 
 	new_val->refcnt = raw_val->refcnt;
@@ -315,7 +330,7 @@ static int apfs_crypto_set_key(struct super_block *sb, u64 crypto_id, struct apf
 				 new_val, sizeof(*new_val) + pfk_len);
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 #define APFS_CRYPTO_SET_KEY_MAXOPS	1
@@ -351,7 +366,7 @@ static int apfs_crypto_get_key(struct super_block *sb, u64 crypto_id, struct apf
 	ret = apfs_btree_query(sb, &query);
 	if (ret)
 		goto out;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	raw_val = (void *)raw + query->off;
 
 	pfk_len = le16_to_cpu(raw_val->state.key_len);
@@ -363,13 +378,19 @@ static int apfs_crypto_get_key(struct super_block *sb, u64 crypto_id, struct apf
 	memcpy(val, raw_val, sizeof(*val) + pfk_len);
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+static int apfs_write_begin(struct file *file, struct address_space *mapping,
+			    loff_t pos, unsigned int len,
+			    struct page **pagep, void **fsdata)
+#else
 static int apfs_write_begin(struct file *file, struct address_space *mapping,
 			    loff_t pos, unsigned int len, unsigned int flags,
 			    struct page **pagep, void **fsdata)
+#endif
 {
 	struct inode *inode = mapping->host;
 	struct apfs_dstream_info *dstream = &APFS_I(inode)->i_dstream;
@@ -383,6 +404,9 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 	loff_t i_blks_end;
 	struct apfs_max_ops maxops;
 	int err;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	unsigned int flags = 0;
+#endif
 
 	if (unlikely(pos >= APFS_MAX_FILE_SIZE))
 		return -EFBIG;
@@ -408,8 +432,13 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 			goto out_abort;
 	}
 
-	page = grab_cache_page_write_begin(mapping, index,
-					   flags | AOP_FLAG_NOFS);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	flags = memalloc_nofs_save();
+	page = grab_cache_page_write_begin(mapping, index);
+	memalloc_nofs_restore(flags);
+#else
+	page = grab_cache_page_write_begin(mapping, index, flags | AOP_FLAG_NOFS);
+#endif
 	if (!page) {
 		err = -ENOMEM;
 		goto out_abort;
@@ -505,23 +534,37 @@ out_abort:
 	return err;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
 static void apfs_noop_invalidatepage(struct page *page, unsigned int offset, unsigned int length)
+#else
+static void apfs_noop_invalidate_folio(struct folio *folio, size_t offset, size_t length)
+#endif
 {
 }
 
 /* bmap is not implemented to avoid issues with CoW on swapfiles */
 static const struct address_space_operations apfs_aops = {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	.read_folio	= apfs_read_folio,
+#else
 	.readpage	= apfs_readpage,
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
 	.readahead      = apfs_readahead,
 #else
 	.readpages      = apfs_readpages,
 #endif
+
 	.write_begin	= apfs_write_begin,
 	.write_end	= apfs_write_end,
 
 	/* The intention is to keep bhs around until the transaction is over */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
 	.invalidatepage	= apfs_noop_invalidatepage,
+#else
+	.invalidate_folio = apfs_noop_invalidate_folio,
+#endif
 };
 
 /**
@@ -572,7 +615,7 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 	struct apfs_inode_info *ai = APFS_I(inode);
 	struct apfs_dstream_info *dstream = &ai->i_dstream;
 	struct apfs_inode_val *inode_val;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	char *xval = NULL;
 	int xlen;
 	u32 rdev = 0, bsd_flags;
@@ -693,7 +736,7 @@ static struct apfs_query *apfs_inode_lookup(const struct inode *inode)
 	if (!ret)
 		return query;
 
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ERR_PTR(ret);
 }
 
@@ -763,7 +806,7 @@ struct inode *apfs_iget(struct super_block *sb, u64 cnid)
 		goto fail;
 	}
 	err = apfs_inode_from_query(query, inode);
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	if (err)
 		goto fail;
 	up_read(&nxi->nx_big_sem);
@@ -932,7 +975,7 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 static int apfs_inode_rename(struct inode *inode, char *new_name,
 			     struct apfs_query *query)
 {
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	struct apfs_inode_val *new_val = NULL;
 	int buflen, namelen;
 	struct apfs_x_field xkey;
@@ -984,7 +1027,7 @@ fail:
 static int apfs_create_dstream_xfield(struct inode *inode,
 				      struct apfs_query *query)
 {
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	struct apfs_inode_val *new_val;
 	struct apfs_dstream dstream_raw = {0};
 	struct apfs_x_field xkey;
@@ -1052,7 +1095,7 @@ static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	inode_raw = (void *)raw + query->off;
 
 	xlen = apfs_find_xfield(inode_raw->xfields,
@@ -1086,7 +1129,7 @@ static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
 static int apfs_create_sparse_xfield(struct inode *inode, struct apfs_query *query)
 {
 	struct apfs_dstream_info *dstream = &APFS_I(inode)->i_dstream;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	struct apfs_inode_val *new_val;
 	__le64 sparse_bytes;
 	struct apfs_x_field xkey;
@@ -1145,7 +1188,7 @@ static int apfs_inode_resize_sparse(struct inode *inode, struct apfs_query *quer
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	inode_raw = (void *)raw + query->off;
 
 	xlen = apfs_find_xfield(inode_raw->xfields,
@@ -1181,7 +1224,6 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	struct apfs_inode_info *ai = APFS_I(inode);
 	struct apfs_dstream_info *dstream = &ai->i_dstream;
 	struct apfs_query *query;
-	struct buffer_head *bh;
 	struct apfs_btree_node_phys *node_raw;
 	struct apfs_inode_val *inode_raw;
 	int err;
@@ -1213,8 +1255,7 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	err = apfs_query_join_transaction(query);
 	if (err)
 		goto fail;
-	bh = query->node->object.bh;
-	node_raw = (void *)bh->b_data;
+	node_raw = (void *)query->node->object.data;
 	apfs_assert_in_transaction(sb, &node_raw->btn_o);
 	inode_raw = (void *)node_raw + query->off;
 
@@ -1246,7 +1287,7 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	}
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return err;
 }
 int APFS_UPDATE_INODE_MAXOPS(void)
@@ -1284,7 +1325,7 @@ static int apfs_delete_inode(struct inode *inode)
 	if (IS_ERR(query))
 		return PTR_ERR(query);
 	ret = apfs_btree_remove(query);
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 
 	apfs_assert_in_transaction(sb, &vsb_raw->apfs_o);
 	switch (inode->i_mode & S_IFMT) {
@@ -1473,7 +1514,7 @@ int apfs_create_inode_rec(struct super_block *sb, struct inode *inode,
 	kfree(raw_val);
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 int APFS_CREATE_INODE_REC_MAXOPS(void)

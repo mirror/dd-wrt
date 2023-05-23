@@ -37,23 +37,20 @@ static bool apfs_node_is_valid(struct super_block *sb,
 	return records * entry_size <= index_size;
 }
 
-static void apfs_node_release(struct kref *kref)
+void apfs_node_free(struct apfs_node *node)
 {
-	struct apfs_node *node =
-		container_of(kref, struct apfs_node, refcount);
+	struct apfs_object *obj = &node->object;
 
-	brelse(node->object.bh);
+	if (obj->o_bh) {
+		obj->data = NULL;
+		brelse(obj->o_bh);
+		obj->o_bh = NULL;
+	} else {
+		kfree(obj->data);
+		obj->data = NULL;
+	}
+
 	kfree(node);
-}
-
-void apfs_node_get(struct apfs_node *node)
-{
-	kref_get(&node->refcount);
-}
-
-void apfs_node_put(struct apfs_node *node)
-{
-	kref_put(&node->refcount, apfs_node_release);
 }
 
 /**
@@ -128,20 +125,19 @@ struct apfs_node *apfs_read_node(struct super_block *sb, u64 oid, u32 storage,
 	node->object.sb = sb;
 	node->object.block_nr = bh->b_blocknr;
 	node->object.oid = oid;
-	node->object.bh = bh;
-
-	kref_init(&node->refcount);
+	node->object.o_bh = bh;
+	node->object.data = bh->b_data;
 
 	if (nxi->nx_flags & APFS_CHECK_NODES &&
 	    !apfs_obj_verify_csum(sb, &raw->btn_o)) {
 		/* TODO: don't check this twice for virtual/physical objects */
 		apfs_alert(sb, "bad checksum for node in block 0x%zx", bh->b_blocknr);
-		apfs_node_put(node);
+		apfs_node_free(node);
 		return ERR_PTR(-EFSBADCRC);
 	}
 	if (!apfs_node_is_valid(sb, node)) {
 		apfs_alert(sb, "bad node in block 0x%zx", bh->b_blocknr);
-		apfs_node_put(node);
+		apfs_node_free(node);
 		return ERR_PTR(-EFSCORRUPTED);
 	}
 
@@ -276,8 +272,8 @@ static struct apfs_node *apfs_create_node(struct super_block *sb, u32 storage)
 	node->object.sb = sb;
 	node->object.block_nr = bh->b_blocknr;
 	node->object.oid = oid;
-	node->object.bh = bh;
-	kref_init(&node->refcount);
+	node->object.o_bh = bh;
+	node->object.data = bh->b_data;
 	return node;
 
 fail:
@@ -354,8 +350,8 @@ int apfs_delete_node(struct apfs_query *query)
 void apfs_update_node(struct apfs_node *node)
 {
 	struct super_block *sb = node->object.sb;
-	struct buffer_head *bh = node->object.bh;
-	struct apfs_btree_node_phys *raw = (void *)bh->b_data;
+	struct buffer_head *bh = node->object.o_bh;
+	struct apfs_btree_node_phys *raw = (void *)node->object.data;
 	struct apfs_nloc *free_head;
 	u32 tflags, type;
 	int toc_off;
@@ -389,6 +385,7 @@ void apfs_update_node(struct apfs_node *node)
 	if (!free_head->len)
 		free_head->off = cpu_to_le16(APFS_BTOFF_INVALID);
 
+	(void)bh;
 	ASSERT(buffer_trans(bh));
 	ASSERT(buffer_csum(bh));
 }
@@ -412,7 +409,7 @@ int apfs_node_locate_key(struct apfs_node *node, int index, int *off)
 	if (index >= node->records)
 		return 0;
 
-	raw = (struct apfs_btree_node_phys *)node->object.bh->b_data;
+	raw = (struct apfs_btree_node_phys *)node->object.data;
 	if (apfs_node_has_fixed_kv_size(node)) {
 		struct apfs_kvoff *entry;
 
@@ -457,7 +454,7 @@ static int apfs_node_locate_data(struct apfs_node *node, int index, int *off)
 	if (index >= node->records)
 		return 0;
 
-	raw = (struct apfs_btree_node_phys *)node->object.bh->b_data;
+	raw = (struct apfs_btree_node_phys *)node->object.data;
 	if (apfs_node_has_fixed_kv_size(node)) {
 		/* These node types have fixed length keys and data */
 		struct apfs_kvoff *entry;
@@ -516,7 +513,7 @@ static void apfs_create_toc_entry(struct apfs_query *query)
 {
 	struct apfs_node *node = query->node;
 	struct super_block *sb = node->object.sb;
-	struct apfs_btree_node_phys *raw = (void *)node->object.bh->b_data;
+	struct apfs_btree_node_phys *raw = (void *)node->object.data;
 	int value_end;
 	int recs = node->records;
 	int index = query->index;
@@ -562,7 +559,7 @@ static void apfs_create_toc_entry(struct apfs_query *query)
 static int apfs_key_from_query(struct apfs_query *query, struct apfs_key *key)
 {
 	struct super_block *sb = query->node->object.sb;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	void *raw_key = (void *)(raw + query->key_off);
 	bool hashed;
 	int err = 0;
@@ -629,7 +626,7 @@ static int apfs_node_next(struct super_block *sb, struct apfs_query *query)
 	if (err)
 		return err;
 
-	cmp = apfs_keycmp(sb, &curr_key, query->key);
+	cmp = apfs_keycmp(&curr_key, query->key);
 
 	if (cmp > 0) /* Records are out of order */
 		return -EFSCORRUPTED;
@@ -709,7 +706,7 @@ int apfs_node_query(struct super_block *sb, struct apfs_query *query)
 		if (err)
 			return err;
 
-		cmp = apfs_keycmp(sb, &curr_key, query->key);
+		cmp = apfs_keycmp(&curr_key, query->key);
 		if (cmp == 0 && !(query->flags & APFS_QUERY_MULTIPLE))
 			break;
 	} while (left != right);
@@ -759,7 +756,7 @@ int apfs_bno_from_query(struct apfs_query *query, u64 *bno)
 {
 	struct super_block *sb = query->node->object.sb;
 	struct apfs_omap_val *omap_val;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 
 	if (query->len != sizeof(*omap_val))
 		return -EFSCORRUPTED;
@@ -794,7 +791,7 @@ static int apfs_btree_inc_height(struct apfs_query *query)
 	__le64 *raw_oid;
 	u32 storage = apfs_query_storage(query);
 
-	root_raw = (void *)root->object.bh->b_data;
+	root_raw = (void *)root->object.data;
 	apfs_assert_in_transaction(sb, &root_raw->btn_o);
 
 	if (query->parent || query->depth)
@@ -814,7 +811,7 @@ static int apfs_btree_inc_height(struct apfs_query *query)
 	new_node->data = root->data + sizeof(*info);
 	new_node->key_free_list_len = root->key_free_list_len;
 	new_node->val_free_list_len = root->val_free_list_len;
-	new_raw = (void *)new_node->object.bh->b_data;
+	new_raw = (void *)new_node->object.data;
 	/* Don't copy the object header, already set by apfs_create_node() */
 	memcpy((void *)new_raw + sizeof(new_raw->btn_o),
 	       (void *)root_raw + sizeof(root_raw->btn_o),
@@ -828,13 +825,13 @@ static int apfs_btree_inc_height(struct apfs_query *query)
 	/* Add a new level to the query chain */
 	root_query = query->parent = apfs_alloc_query(root, NULL /* parent */);
 	if (!query->parent) {
-		apfs_node_put(new_node);
+		apfs_node_free(new_node);
 		return -ENOMEM;
 	}
 	root_query->key = query->key;
 	root_query->flags = query->flags;
-	apfs_node_put(query->node);
 	query->node = new_node;
+	query->depth = 1;
 
 	/* Now assemble the new root with only the first key */
 	root_query->key_len = apfs_node_locate_key(root, 0 /* index */,
@@ -894,8 +891,8 @@ static int apfs_copy_record_range(struct apfs_node *dest_node,
 	int err;
 	int i;
 
-	dest_raw = (void *)dest_node->object.bh->b_data;
-	src_raw = (void *)src_node->object.bh->b_data;
+	dest_raw = (void *)dest_node->object.data;
+	src_raw = (void *)src_node->object.data;
 
 	ASSERT(!dest_node->records);
 	ASSERT(!apfs_node_is_root(dest_node));
@@ -948,7 +945,7 @@ static int apfs_copy_record_range(struct apfs_node *dest_node,
 	err = 0;
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return err;
 }
 
@@ -963,7 +960,7 @@ fail:
 static int apfs_attach_child(struct apfs_query *query, struct apfs_node *child)
 {
 	struct apfs_object *object = &child->object;
-	struct apfs_btree_node_phys *raw = (void *)object->bh->b_data;
+	struct apfs_btree_node_phys *raw = (void *)object->data;
 	int key_len, key_off;
 	__le64 raw_oid = cpu_to_le64(object->oid);
 
@@ -973,6 +970,38 @@ static int apfs_attach_child(struct apfs_query *query, struct apfs_node *child)
 
 	return apfs_btree_insert(query, (void *)raw + key_off, key_len,
 				 &raw_oid, sizeof(raw_oid));
+}
+
+/**
+ * apfs_node_temp_dup - Make an in-memory duplicate of a node
+ * @original:	node to duplicate
+ * @duplicate:	on success, the duplicate node
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_node_temp_dup(const struct apfs_node *original, struct apfs_node **duplicate)
+{
+	struct super_block *sb = original->object.sb;
+	struct apfs_node *dup = NULL;
+	char *buffer = NULL;
+
+	dup = kmalloc(sizeof(*dup), GFP_KERNEL);
+	if (!dup)
+		return -ENOMEM;
+	*dup = *original;
+	dup->object.o_bh = NULL;
+	dup->object.data = NULL;
+
+	buffer = kmalloc(sb->s_blocksize, GFP_KERNEL);
+	if (!buffer) {
+		kfree(dup);
+		return -ENOMEM;
+	}
+	memcpy(buffer, original->object.data, sb->s_blocksize);
+	dup->object.data = buffer;
+
+	*duplicate = dup;
+	return 0;
 }
 
 /**
@@ -988,9 +1017,7 @@ int apfs_node_split(struct apfs_query *query)
 	struct super_block *sb = query->node->object.sb;
 	struct apfs_node *old_node;
 	struct apfs_btree_node_phys *old_raw;
-	char *buffer = NULL;
-	struct apfs_node buf_node;
-	struct buffer_head buf_bh;
+	struct apfs_node *tmp_node = NULL;
 	u32 storage = apfs_query_storage(query);
 	int record_count, new_rec_count, old_rec_count;
 	int err;
@@ -1004,22 +1031,16 @@ int apfs_node_split(struct apfs_query *query)
 	}
 	old_node = query->node;
 
-	old_raw = (void *)old_node->object.bh->b_data;
+	old_raw = (void *)old_node->object.data;
 	apfs_assert_in_transaction(sb, &old_raw->btn_o);
 
 	/*
-	 * XXX: to defragment the original node, we put all records in a
-	 * temporary buffer fake node before dealing them out.  This is absurd,
-	 * and completely unacceptable because of the stack allocations.
+	 * To defragment the original node, we put all records in a temporary
+	 * in-memory node before dealing them out.
 	 */
-	buffer = kmalloc(sb->s_blocksize, GFP_KERNEL);
-	if (!buffer)
-		return -ENOMEM;
-	memcpy(buffer, old_raw, sb->s_blocksize);
-	buf_bh = *old_node->object.bh;
-	buf_bh.b_data = buffer;
-	buf_node = *old_node;
-	buf_node.object.bh = &buf_bh;
+	err = apfs_node_temp_dup(old_node, &tmp_node);
+	if (err)
+		return err;
 
 	/*
 	 * The first half of the records go in the original node. If there's
@@ -1031,7 +1052,7 @@ int apfs_node_split(struct apfs_query *query)
 	old_node->records = 0;
 	old_node->key_free_list_len = 0;
 	old_node->val_free_list_len = 0;
-	err = apfs_copy_record_range(old_node, &buf_node, 0, old_rec_count);
+	err = apfs_copy_record_range(old_node, tmp_node, 0, old_rec_count);
 	if (err)
 		goto out;
 	apfs_update_node(old_node);
@@ -1053,34 +1074,33 @@ int apfs_node_split(struct apfs_query *query)
 		new_node->records = 0;
 		new_node->key_free_list_len = 0;
 		new_node->val_free_list_len = 0;
-		err = apfs_copy_record_range(new_node, &buf_node, old_rec_count, record_count);
+		err = apfs_copy_record_range(new_node, tmp_node, old_rec_count, record_count);
 		if (err) {
-			apfs_node_put(new_node);
+			apfs_node_free(new_node);
 			goto out;
 		}
-		new_raw = (void *)new_node->object.bh->b_data;
+		new_raw = (void *)new_node->object.data;
 		apfs_assert_in_transaction(sb, &new_raw->btn_o);
 		new_raw->btn_level = old_raw->btn_level;
 		apfs_update_node(new_node);
 
 		err = apfs_attach_child(query->parent, new_node);
 		if (err) {
-			apfs_node_put(new_node);
+			apfs_node_free(new_node);
 			goto out;
 		}
 
 		/* Point the query back to the original record */
 		if (query->index >= old_rec_count) {
 			/* The record got moved to the new node */
-			apfs_node_put(query->node);
-			apfs_node_get(new_node);
+			apfs_node_free(query->node);
 			query->node = new_node;
 			query->index -= old_rec_count;
+		} else {
+			apfs_node_free(new_node);
 		}
-
-		apfs_node_put(new_node);
 	}
-	apfs_free_query(sb, query->parent);
+	apfs_free_query(query->parent);
 	query->parent = NULL; /* The caller only gets the leaf */
 
 	/* Updating these fields isn't really necessary, but it's cleaner */
@@ -1090,7 +1110,7 @@ int apfs_node_split(struct apfs_query *query)
 					      &query->key_off);
 
 out:
-	kfree(buffer);
+	apfs_node_free(tmp_node);
 	return err;
 }
 
@@ -1156,8 +1176,7 @@ typedef u16 (*offcalc)(struct apfs_node *, u16);
 static void apfs_node_free_list_add(struct apfs_node *node, u16 off, u16 len)
 {
 	struct super_block *sb = node->object.sb;
-	struct buffer_head *bh = node->object.bh;
-	struct apfs_btree_node_phys *node_raw = (void *)bh->b_data;
+	struct apfs_btree_node_phys *node_raw = (void *)node->object.data;
 	struct apfs_nloc *head, *new;
 	offcalc off_to_rel;
 
@@ -1195,8 +1214,7 @@ static void apfs_node_free_list_add(struct apfs_node *node, u16 off, u16 len)
 void apfs_node_free_range(struct apfs_node *node, u16 off, u16 len)
 {
 	struct super_block *sb = node->object.sb;
-	struct buffer_head *bh = node->object.bh;
-	struct apfs_btree_node_phys *raw = (void *)bh->b_data;
+	struct apfs_btree_node_phys *raw = (void *)node->object.data;
 
 	apfs_assert_in_transaction(sb, &raw->btn_o);
 
@@ -1230,8 +1248,7 @@ static void apfs_node_free_list_unlink(struct apfs_nloc *prev, struct apfs_nloc 
 static int apfs_node_free_list_alloc(struct apfs_node *node, u16 len, bool value)
 {
 	struct super_block *sb = node->object.sb;
-	struct buffer_head *bh = node->object.bh;
-	struct apfs_btree_node_phys *node_raw = (void *)bh->b_data;
+	struct apfs_btree_node_phys *node_raw = (void *)node->object.data;
 	struct apfs_nloc *head, *curr, *prev;
 	offcalc rel_to_off;
 	int *list_len;
@@ -1337,7 +1354,7 @@ int apfs_node_replace(struct apfs_query *query, void *key, int key_len, void *va
 {
 	struct apfs_node *node = query->node;
 	struct super_block *sb = node->object.sb;
-	struct apfs_btree_node_phys *node_raw = (void *)node->object.bh->b_data;
+	struct apfs_btree_node_phys *node_raw = (void *)node->object.data;
 	int old_free = node->free, old_data = node->data;
 	int old_key_free_len = node->key_free_list_len;
 	int old_val_free_len = node->val_free_list_len;
@@ -1439,7 +1456,7 @@ fail:
 int apfs_node_insert(struct apfs_query *query, void *key, int key_len, void *val, int val_len)
 {
 	struct apfs_node *node = query->node;
-	struct apfs_btree_node_phys *node_raw = (void *)node->object.bh->b_data;
+	struct apfs_btree_node_phys *node_raw = (void *)node->object.data;
 	int toc_entry_size;
 	int old_free, old_data, old_key_free_len, old_val_free_len;
 	int key_off, val_off, err = 0;
@@ -1565,15 +1582,15 @@ int apfs_create_single_rec_node(struct apfs_query *query, void *key, int key_len
 	new_node->key = new_node->free = sizeof(*new_raw);
 	new_node->data = sb->s_blocksize; /* Nonroot */
 
-	prev_raw = (void *)prev_node->object.bh->b_data;
-	new_raw = (void *)new_node->object.bh->b_data;
+	prev_raw = (void *)prev_node->object.data;
+	new_raw = (void *)new_node->object.data;
 	apfs_assert_in_transaction(sb, &new_raw->btn_o);
 	new_raw->btn_level = prev_raw->btn_level;
 	apfs_update_node(new_node);
 
 	prev_node = NULL;
 	prev_raw = NULL;
-	apfs_node_put(query->node);
+	apfs_node_free(query->node);
 
 	query->node = new_node;
 	query->index = -1;

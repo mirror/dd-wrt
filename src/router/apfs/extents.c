@@ -31,7 +31,7 @@ int apfs_extent_from_query(struct apfs_query *query,
 	struct super_block *sb = query->node->object.sb;
 	struct apfs_file_extent_val *ext;
 	struct apfs_file_extent_key *ext_key;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 	u64 ext_len;
 
 	if (query->len != sizeof(*ext) || query->key_len != sizeof(*ext_key))
@@ -111,7 +111,7 @@ static int apfs_extent_read(struct apfs_dstream_info *dstream, sector_t dsblock,
 	}
 
 done:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -236,7 +236,7 @@ static int apfs_shrink_extent_head(struct apfs_query *query, struct apfs_dstream
 	err = apfs_extent_from_query(query, &extent);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	key = *(struct apfs_file_extent_key *)(raw + query->key_off);
 	val = *(struct apfs_file_extent_val *)(raw + query->off);
 
@@ -287,7 +287,7 @@ static int apfs_shrink_extent_tail(struct apfs_query *query, struct apfs_dstream
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 
 	err = apfs_extent_from_query(query, &extent);
 	if (err)
@@ -322,7 +322,7 @@ static int apfs_shrink_extent_tail(struct apfs_query *query, struct apfs_dstream
  */
 static inline bool apfs_query_found_extent(struct apfs_query *query)
 {
-	void *raw = query->node->object.bh->b_data;
+	void *raw = query->node->object.data;
 	struct apfs_key_header *hdr;
 
 	if (query->key_len < sizeof(*hdr))
@@ -427,7 +427,7 @@ static int apfs_update_tail_extent(struct apfs_dstream_info *dstream, const stru
 	ret = apfs_crypto_adj_refcnt(sb, new_crypto, 1);
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -452,7 +452,7 @@ static int apfs_split_extent(struct apfs_query *query, u64 div)
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 
 	err = apfs_extent_from_query(query, &extent);
 	if (err)
@@ -581,7 +581,7 @@ search_and_insert:
 		if (ret)
 			goto out;
 		/* The query should point to the previous record, start again */
-		apfs_free_query(sb, query);
+		apfs_free_query(query);
 		second_run = true;
 		goto search_and_insert;
 	} else if (prev_end == extent->logical_addr + extent->len) {
@@ -604,7 +604,7 @@ search_and_insert:
 		if (ret)
 			goto out;
 		/* The split may make the query invalid */
-		apfs_free_query(sb, query);
+		apfs_free_query(query);
 		second_run = true;
 		goto search_and_insert;
 	} else {
@@ -617,7 +617,7 @@ search_and_insert:
 	ret = apfs_crypto_adj_refcnt(sb, new_crypto, 1);
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -698,8 +698,8 @@ static int apfs_insert_phys_extent(struct apfs_dstream_info *dstream, const stru
 					 &raw_val, sizeof(raw_val));
 
 fail:
-	apfs_free_query(sb, query);
-	apfs_node_put(extref_root);
+	apfs_free_query(query);
+	apfs_node_free(extref_root);
 	return ret;
 }
 
@@ -717,7 +717,7 @@ static int apfs_phys_ext_from_query(struct apfs_query *query, struct apfs_phys_e
 	struct super_block *sb = query->node->object.sb;
 	struct apfs_phys_ext_key *key;
 	struct apfs_phys_ext_val *val;
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 
 	if (query->len != sizeof(*val) || query->key_len != sizeof(*key))
 		return -EFSCORRUPTED;
@@ -774,7 +774,7 @@ static int apfs_put_phys_extent(struct apfs_phys_extent *pext, struct apfs_query
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	val = raw + query->off;
 	val->refcnt = cpu_to_le32(pext->refcnt);
 	return 0;
@@ -816,7 +816,7 @@ static int apfs_shrink_phys_ext_head(struct apfs_query *query, u64 start)
 	err = apfs_phys_ext_from_query(query, &pextent);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 	key = *(struct apfs_phys_ext_key *)(raw + query->key_off);
 	val = *(struct apfs_phys_ext_val *)(raw + query->off);
 
@@ -856,7 +856,7 @@ static int apfs_shrink_phys_ext_tail(struct apfs_query *query, u64 end)
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 
 	err = apfs_phys_ext_from_query(query, &pextent);
 	if (err)
@@ -898,7 +898,7 @@ static int apfs_split_phys_ext(struct apfs_query *query, u64 div)
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
-	raw = query->node->object.bh->b_data;
+	raw = query->node->object.data;
 
 	err = apfs_phys_ext_from_query(query, &pextent);
 	if (err)
@@ -1003,7 +1003,7 @@ search_and_insert:
 		if (ret)
 			goto fail;
 		/* The split may make the query invalid */
-		apfs_free_query(sb, query);
+		apfs_free_query(query);
 		second_run = true;
 		goto search_and_insert;
 	} else {
@@ -1013,8 +1013,8 @@ search_and_insert:
 	}
 
 fail:
-	apfs_free_query(sb, query);
-	apfs_node_put(extref_root);
+	apfs_free_query(query);
+	apfs_node_free(extref_root);
 	return ret;
 }
 
@@ -1112,7 +1112,7 @@ static int apfs_create_hole(struct apfs_dstream_info *dstream, u64 start, u64 en
 	dstream->ds_sparse_bytes += end - start;
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -1370,7 +1370,7 @@ static int apfs_shrink_dstream_last_extent(struct apfs_dstream_info *dstream, lo
 	}
 
 out:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 

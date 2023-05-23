@@ -18,7 +18,7 @@
  */
 static int apfs_child_from_query(struct apfs_query *query, u64 *child)
 {
-	char *raw = query->node->object.bh->b_data;
+	char *raw = query->node->object.data;
 
 	if (query->len != 8) /* The data on a nonleaf node is the child id */
 		return -EFSCORRUPTED;
@@ -170,7 +170,7 @@ int apfs_omap_lookup_block(struct super_block *sb, struct apfs_node *tbl,
 	apfs_omap_cache_save(sb, id, *block);
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -218,7 +218,7 @@ int apfs_create_omap_rec(struct super_block *sb, u64 oid, u64 bno)
 	apfs_omap_cache_save(sb, oid, bno);
 
 fail:
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -253,7 +253,7 @@ int apfs_delete_omap_rec(struct super_block *sb, u64 oid)
 	if (!ret)
 		apfs_omap_cache_delete(sb, oid);
 
-	apfs_free_query(sb, query);
+	apfs_free_query(query);
 	return ret;
 }
 
@@ -278,7 +278,6 @@ struct apfs_query *apfs_alloc_query(struct apfs_node *node,
 		return NULL;
 
 	/* To be released by free_query. */
-	apfs_node_get(node);
 	query->node = node;
 	query->key = parent ? parent->key : NULL;
 	query->flags = parent ?
@@ -293,17 +292,18 @@ struct apfs_query *apfs_alloc_query(struct apfs_node *node,
 
 /**
  * apfs_free_query - Free a query structure
- * @sb:		filesystem superblock
- * @query:	query to free
+ * @query: query to free
  *
  * Also frees the ancestor queries, if they are kept.
  */
-void apfs_free_query(struct super_block *sb, struct apfs_query *query)
+void apfs_free_query(struct apfs_query *query)
 {
 	while (query) {
 		struct apfs_query *parent = query->parent;
 
-		apfs_node_put(query->node);
+		/* The caller decides whether to free the root node */
+		if (query->depth != 0)
+			apfs_node_free(query->node);
 		kfree(query);
 		query = parent;
 	}
@@ -349,12 +349,12 @@ static int apfs_query_set_before_first(struct super_block *sb, struct apfs_query
 
 		parent = *query;
 		*query = apfs_alloc_query(node, parent);
-		apfs_node_put(node);
-		node = NULL;
 		if (!*query) {
+			apfs_node_free(node);
 			*query = parent;
 			return -ENOMEM;
 		}
+		node = NULL;
 	}
 
 	apfs_alert(sb, "b-tree is corrupted");
@@ -411,7 +411,7 @@ next_node:
 		/* Move back up one level and continue the query */
 		parent = (*query)->parent;
 		(*query)->parent = NULL; /* Don't free the parent */
-		apfs_free_query(sb, *query);
+		apfs_free_query(*query);
 		*query = parent;
 		goto next_node;
 	} else if (err) {
@@ -441,18 +441,19 @@ next_node:
 	 */
 	parent = *query;
 	*query = apfs_alloc_query(node, parent);
-	apfs_node_put(node);
-	node = NULL;
 	if (!*query) {
+		apfs_node_free(node);
 		*query = parent;
 		return -ENOMEM;
 	}
+	node = NULL;
 	goto next_node;
 }
 
 /**
  * apfs_omap_read_node - Find and read a node from a b-tree
- * @id:		id for the seeked node
+ * @sb: filesystem superblock
+ * @id: id for the seeked node
  *
  * Returns NULL is case of failure, otherwise a pointer to the resulting
  * apfs_node structure.
@@ -482,15 +483,17 @@ int apfs_query_join_transaction(struct apfs_query *query)
 	u64 oid = node->object.oid;
 	u32 storage = apfs_query_storage(query);
 
-	if (buffer_trans(node->object.bh)) /* Already in the transaction */
+	if (buffer_trans(node->object.o_bh)) /* Already in the transaction */
 		return 0;
 	/* Ephemeral objects are always checkpoint data */
 	ASSERT(storage != APFS_OBJ_EPHEMERAL);
+	/* Root nodes should join the transaction before the query is created */
+	ASSERT(!apfs_node_is_root(node));
 
 	node = apfs_read_node(sb, oid, storage, true /* write */);
 	if (IS_ERR(node))
 		return PTR_ERR(node);
-	apfs_node_put(query->node);
+	apfs_node_free(query->node);
 	query->node = node;
 
 	if (storage == APFS_OBJ_PHYSICAL && query->parent) {
@@ -532,7 +535,7 @@ static void apfs_btree_change_rec_count(struct apfs_query *query, int change,
 	ASSERT(apfs_node_is_root(root));
 
 	sb = root->object.sb;
-	root_raw = (void *)root->object.bh->b_data;
+	root_raw = (void *)root->object.data;
 	info = (void *)root_raw + sb->s_blocksize - sizeof(*info);
 
 	apfs_assert_in_transaction(sb, &root_raw->btn_o);
@@ -567,7 +570,7 @@ void apfs_btree_change_node_count(struct apfs_query *query, int change)
 	ASSERT(apfs_node_is_root(root));
 
 	sb = root->object.sb;
-	root_raw = (void *)root->object.bh->b_data;
+	root_raw = (void *)root->object.data;
 	info = (void *)root_raw + sb->s_blocksize - sizeof(*info);
 
 	apfs_assert_in_transaction(sb, &root_raw->btn_o);
@@ -586,7 +589,7 @@ static int apfs_query_refresh(struct apfs_query *old_query)
 {
 	struct apfs_node *node = old_query->node;
 	struct super_block *sb = node->object.sb;
-	char *raw = node->object.bh->b_data;
+	char *raw = node->object.data;
 	struct apfs_query *new_query, *ancestor;
 	struct apfs_key new_key;
 	bool hashed = apfs_is_normalization_insensitive(sb);
@@ -626,12 +629,12 @@ static int apfs_query_refresh(struct apfs_query *old_query)
 	}
 
 	/* Replace the parent of the original query with the new valid one */
-	apfs_free_query(sb, old_query->parent);
+	apfs_free_query(old_query->parent);
 	old_query->parent = new_query->parent;
 	new_query->parent = NULL;
 
 fail:
-	apfs_free_query(sb, new_query);
+	apfs_free_query(new_query);
 	return err;
 }
 
@@ -685,7 +688,7 @@ int apfs_btree_insert(struct apfs_query *query, void *key, int key_len,
 
 again:
 	node = query->node;
-	node_raw = (void *)node->object.bh->b_data;
+	node_raw = (void *)node->object.data;
 	apfs_assert_in_transaction(node->object.sb, &node_raw->btn_o);
 
 	err = apfs_node_insert(query, key, key_len, val, val_len);
@@ -740,7 +743,7 @@ int apfs_btree_remove(struct apfs_query *query)
 		return err;
 
 	node = query->node;
-	node_raw = (void *)query->node->object.bh->b_data;
+	node_raw = (void *)query->node->object.data;
 	apfs_assert_in_transaction(node->object.sb, &node_raw->btn_o);
 
 	if (node->records == 1) {
@@ -839,7 +842,7 @@ int apfs_btree_replace(struct apfs_query *query, void *key, int key_len,
 
 again:
 	node = query->node;
-	node_raw = (void *)node->object.bh->b_data;
+	node_raw = (void *)node->object.data;
 	apfs_assert_in_transaction(sb, &node_raw->btn_o);
 
 	/* The first key in a node must match the parent record's */
