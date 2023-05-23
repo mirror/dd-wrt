@@ -31,7 +31,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_staticfile_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 static void mod_staticfile_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -134,7 +134,7 @@ mod_staticfile_process (request_st * const r, plugin_config * const pconf)
 
 URIHANDLER_FUNC(mod_staticfile_subrequest) {
     if (NULL != r->handler_module) return HANDLER_GO_ON;
-    if (!http_method_get_head_post(r->http_method)) return HANDLER_GO_ON;
+    if (!http_method_get_head_query_post(r->http_method)) return HANDLER_GO_ON;
     /* r->physical.path is non-empty for handle_subrequest_start */
     /*if (buffer_is_blank(&r->physical.path)) return HANDLER_GO_ON;*/
 
@@ -145,6 +145,8 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_staticfile_plugin_init(plugin *p);
 int mod_staticfile_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

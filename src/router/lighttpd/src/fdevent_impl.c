@@ -6,13 +6,16 @@
 #include "log.h"
 
 #include <sys/types.h>
-#include <unistd.h>
+#include "sys-unistd.h" /* <unistd.h> */
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef _WIN32
-#include <winsock2.h>   /* closesocket */
+#ifdef _MSC_VER
+#pragma comment(lib, "ws2_32.lib")
+#endif
+#include <winsock2.h>   /* closesocket(), WSAPoll() */
 #endif
 
 #ifdef FDEVENT_USE_LINUX_EPOLL
@@ -30,10 +33,6 @@ static int fdevent_solaris_port_init(struct fdevents *ev);
 #ifdef FDEVENT_USE_SOLARIS_DEVPOLL
 __attribute_cold__
 static int fdevent_solaris_devpoll_init(struct fdevents *ev);
-#endif
-#ifdef FDEVENT_USE_LIBEV
-__attribute_cold__
-static int fdevent_libev_init(struct fdevents *ev);
 #endif
 #ifdef FDEVENT_USE_POLL
 __attribute_cold__
@@ -74,19 +73,14 @@ fdevent_config (const char **event_handler_name, log_error_st *errh)
       #ifdef FDEVENT_USE_SELECT
         { FDEVENT_HANDLER_SELECT,         "select" },
       #endif
-      #ifdef FDEVENT_USE_LIBEV
-        { FDEVENT_HANDLER_LIBEV,          "libev" },
-      #endif
         { FDEVENT_HANDLER_UNSET,          NULL }
     };
 
     const char *event_handler = *event_handler_name;
     fdevent_handler_t et = FDEVENT_HANDLER_UNSET;
 
-  #ifndef FDEVENT_USE_LIBEV
     if (NULL != event_handler && 0 == strcmp(event_handler, "libev"))
         event_handler = NULL;
-  #endif
   #ifdef FDEVENT_USE_POLL
     if (NULL != event_handler && 0 == strcmp(event_handler, "select"))
         event_handler = "poll";
@@ -167,11 +161,6 @@ fdevent_show_event_handlers (void)
      #else
       "\t- kqueue (FreeBSD)\n"
      #endif
-     #ifdef FDEVENT_USE_LIBEV
-      "\t+ libev (generic)\n"
-     #else
-      "\t- libev (generic)\n"
-     #endif
       ;
 }
 
@@ -186,7 +175,9 @@ fdevent_init (const char *event_handler, int *max_fds, int *cur_fds, log_error_s
     int type = fdevent_config(&event_handler, errh);
     if (type <= 0) return NULL;
 
+  #ifndef _WIN32
     fdevent_socket_nb_cloexec_init();
+  #endif
 
       #ifdef FDEVENT_USE_SELECT
     /* select limits itself
@@ -200,18 +191,11 @@ fdevent_init (const char *event_handler, int *max_fds, int *cur_fds, log_error_s
     *max_fds = (int)maxfds;
     ++maxfds; /*(+1 for event-handler fd)*/
 
-    ev = calloc(1, sizeof(*ev));
-    force_assert(NULL != ev);
+    ev = ck_calloc(1, sizeof(*ev));
     ev->errh = errh;
     ev->cur_fds = cur_fds;
     ev->event_handler = event_handler;
-    ev->fdarray = calloc(maxfds, sizeof(*ev->fdarray));
-    if (NULL == ev->fdarray) {
-        log_error(ev->errh, __FILE__, __LINE__,
-          "server.max-fds too large? (%u)", maxfds-1);
-        free(ev);
-        return NULL;
-    }
+    ev->fdarray = ck_calloc(maxfds, sizeof(*ev->fdarray));
     ev->maxfds = maxfds;
 
     switch(type) {
@@ -243,11 +227,6 @@ fdevent_init (const char *event_handler, int *max_fds, int *cur_fds, log_error_s
      #ifdef FDEVENT_USE_FREEBSD_KQUEUE
       case FDEVENT_HANDLER_FREEBSD_KQUEUE:
         if (0 == fdevent_freebsd_kqueue_init(ev)) return ev;
-        break;
-     #endif
-     #ifdef FDEVENT_USE_LIBEV
-      case FDEVENT_HANDLER_LIBEV:
-        if (0 == fdevent_libev_init(ev)) return ev;
         break;
      #endif
       /*case FDEVENT_HANDLER_UNSET:*/
@@ -302,35 +281,28 @@ static void
 fdevent_sched_run (fdevents * const ev)
 {
     for (fdnode *fdn = ev->pendclose; fdn; ) {
-        int fd, rc;
+        int fd = fdn->fd;
+        /*(inlined fdio_close_socket() for tighter loop; worthwhile?)*/
       #ifdef _WIN32
-        rc = (uintptr_t)fdn & 0x3;
-      #endif
-        fdn = (fdnode *)((uintptr_t)fdn & ~0x3);
-        fd = fdn->fd;
-      #ifdef _WIN32
-        if (rc == 0x1) {
-            rc = closesocket(fd);
-        }
-        else if (rc == 0x2) {
-            rc = close(fd);
-        }
+        if (0 != closesocket(fd)) /* WSAPoll() valid only on SOCKET */
       #else
-        rc = close(fd);
+        if (0 != close(fd))
       #endif
+            log_serror(ev->errh, __FILE__, __LINE__, "close() %d", fd);
 
-        if (0 != rc) {
-            log_perror(ev->errh, __FILE__, __LINE__, "close failed %d", fd);
-        }
-        else {
-            --(*ev->cur_fds);
-        }
+        --(*ev->cur_fds);
 
         fdnode * const fdn_tmp = fdn;
         fdn = (fdnode *)fdn->ctx; /* next */
+      #ifdef _WIN32
+        /*(remove 0x3 flags from fdarray fdn before call to unregister below)*/
+        ev->fdarray[fdn_tmp->fda_ndx] = fdn_tmp;
+        fdevent_unregister(ev, fdn_tmp);
+      #else
         /*(fdevent_unregister)*/
-        free(fdn_tmp); /*fdnode_free(fdn_tmp);*/
         ev->fdarray[fd] = NULL;
+        free(fdn_tmp); /*fdnode_free(fdn_tmp);*/
+      #endif
     }
     ev->pendclose = NULL;
 }
@@ -343,7 +315,7 @@ fdevent_poll (fdevents * const ev, const int timeout_ms)
     if (n >= 0)
         fdevent_sched_run(ev);
     else if (errno != EINTR)
-        log_perror(ev->errh, __FILE__, __LINE__, "fdevent_poll failed");
+        log_serror(ev->errh, __FILE__, __LINE__, "fdevent_poll()");
     return n;
 }
 
@@ -420,8 +392,7 @@ fdevent_linux_sysepoll_init (fdevents *ev)
     fdevent_setfd_cloexec(ev->epoll_fd);
   #endif
 
-    ev->epoll_events = malloc(ev->maxfds * sizeof(*ev->epoll_events));
-    force_assert(NULL != ev->epoll_events);
+    ev->epoll_events = ck_calloc(ev->maxfds, sizeof(*ev->epoll_events));
 
     return 0;
 }
@@ -432,7 +403,7 @@ fdevent_linux_sysepoll_init (fdevents *ev)
 #ifdef FDEVENT_USE_FREEBSD_KQUEUE
 
 #include <sys/event.h>
-#include <sys/time.h>
+#include "sys-time.h"
 #include <fcntl.h>
 
 static int
@@ -552,8 +523,7 @@ fdevent_freebsd_kqueue_init (fdevents *ev)
     ev->reset      = fdevent_freebsd_kqueue_reset;
     ev->free       = fdevent_freebsd_kqueue_free;
     ev->kq_fd      = -1;
-    ev->kq_results = calloc(ev->maxfds, sizeof(*ev->kq_results));
-    force_assert(NULL != ev->kq_results);
+    ev->kq_results = ck_calloc(ev->maxfds, sizeof(*ev->kq_results));
     return 0;
 }
 
@@ -652,8 +622,7 @@ fdevent_solaris_port_init (fdevents *ev)
     ev->event_del   = fdevent_solaris_port_event_del;
     ev->poll        = fdevent_solaris_port_poll;
     ev->free        = fdevent_solaris_port_free;
-    ev->port_events = malloc(ev->maxfds * sizeof(*ev->port_events));
-    force_assert(NULL != ev->port_events);
+    ev->port_events = ck_calloc(ev->maxfds, sizeof(*ev->port_events));
 
     if ((ev->port_fd = port_create()) < 0) return -1;
 
@@ -753,148 +722,19 @@ fdevent_solaris_devpoll_init (fdevents *ev)
     ev->reset      = fdevent_solaris_devpoll_reset;
     ev->free       = fdevent_solaris_devpoll_free;
     ev->devpoll_fd = -1;
-    ev->devpollfds = malloc(sizeof(*ev->devpollfds) * ev->maxfds);
-    force_assert(NULL != ev->devpollfds);
+    ev->devpollfds = ck_calloc(ev->maxfds, sizeof(*ev->devpollfds));
     return 0;
 }
 
 #endif /* FDEVENT_USE_SOLARIS_DEVPOLL */
 
 
-#ifdef FDEVENT_USE_LIBEV
-
-#if (defined(__APPLE__) && defined(__MACH__)) \
-  || defined(__FreeBSD__) || defined(__NetBSD__) \
-  || defined(__OpenBSD__) || defined(__DragonFly__)
-/* libev EV_ERROR conflicts with kqueue sys/event.h EV_ERROR */
-#undef EV_ERROR
-#endif
-
-#include <ev.h>
-
-static void
-fdevent_libev_io_watcher_cb (struct ev_loop *loop, ev_io *w, int revents)
-{
-    fdevents *ev = w->data;
-    fdnode *fdn = ev->fdarray[w->fd];
-    int rv = 0;
-    UNUSED(loop);
-
-    if (revents & EV_READ)  rv |= FDEVENT_IN;
-    if (revents & EV_WRITE) rv |= FDEVENT_OUT;
-    if (revents & EV_ERROR) rv |= FDEVENT_ERR;
-
-    if (0 == ((uintptr_t)fdn & 0x3))
-        (*fdn->handler)(fdn->ctx, rv);
-}
-
-static int
-fdevent_libev_event_del (fdevents *ev, fdnode *fdn)
-{
-    ev_io *watcher = fdn->handler_ctx;
-    if (!watcher) return 0;
-    fdn->handler_ctx = NULL;
-
-    ev_io_stop(ev->libev_loop, watcher);
-    free(watcher);
-
-    return 0;
-}
-
-static int
-fdevent_libev_event_set (fdevents *ev, fdnode *fdn, int events)
-{
-    ev_io *watcher = fdn->handler_ctx;
-    int ev_events = 0;
-
-    if (events & FDEVENT_IN)  ev_events |= EV_READ;
-    if (events & FDEVENT_OUT) ev_events |= EV_WRITE;
-
-    if (!watcher) {
-        fdn->handler_ctx = watcher = calloc(1, sizeof(ev_io));
-        force_assert(watcher);
-        fdn->fde_ndx = fdn->fd;
-
-        ev_io_init(watcher, fdevent_libev_io_watcher_cb, fdn->fd, ev_events);
-        watcher->data = ev;
-        ev_io_start(ev->libev_loop, watcher);
-    }
-    else {
-        if ((watcher->events & (EV_READ | EV_WRITE)) != ev_events) {
-            ev_io_stop(ev->libev_loop, watcher);
-            ev_io_set(watcher, watcher->fd, ev_events);
-            ev_io_start(ev->libev_loop, watcher);
-        }
-    }
-
-    return 0;
-}
-
-static void
-fdevent_libev_timeout_watcher_cb (struct ev_loop *loop, ev_timer *w, int revents)
-{
-    UNUSED(loop);
-    UNUSED(w);
-    UNUSED(revents);
-}
-
-static ev_timer timeout_watcher;
-
-static int
-fdevent_libev_poll (fdevents *ev, int timeout_ms)
-{
-    timeout_watcher.repeat = (timeout_ms > 0) ? timeout_ms/1000.0 : 0.001;
-
-    ev_timer_again(ev->libev_loop, &timeout_watcher);
-    ev_run(ev->libev_loop, EVRUN_ONCE);
-
-    return 0;
-}
-
-__attribute_cold__
-static int
-fdevent_libev_reset (fdevents *ev)
-{
-    UNUSED(ev);
-    ev_default_fork();
-    return 0;
-}
-
-__attribute_cold__
-static void
-fdevent_libev_free (fdevents *ev)
-{
-    UNUSED(ev);
-}
-
-__attribute_cold__
-static int
-fdevent_libev_init (fdevents *ev)
-{
-    struct ev_timer * const timer = &timeout_watcher;
-    memset(timer, 0, sizeof(*timer));
-
-    ev->type      = FDEVENT_HANDLER_LIBEV;
-    ev->event_set = fdevent_libev_event_set;
-    ev->event_del = fdevent_libev_event_del;
-    ev->poll      = fdevent_libev_poll;
-    ev->reset     = fdevent_libev_reset;
-    ev->free      = fdevent_libev_free;
-
-    if (NULL == (ev->libev_loop = ev_default_loop(0))) return -1;
-
-    ev_timer_init(timer, fdevent_libev_timeout_watcher_cb, 0.0, 1.0);
-
-    return 0;
-}
-
-#endif /* FDEVENT_USE_LIBEV */
-
-
 #ifdef FDEVENT_USE_POLL
 
 #ifdef HAVE_POLL_H
 #include <poll.h>
+#elif defined(_WIN32)
+#define poll(fdArray,fds,timeout) WSAPoll((fdArray),(fds),(timeout))
 #else
 #include <sys/poll.h>
 #endif
@@ -904,7 +744,7 @@ fdevent_poll_event_del (fdevents *ev, fdnode *fdn)
 {
     int fd = fdn->fd;
     int k = fdn->fde_ndx;
-    if ((uint32_t)k >= ev->used || ev->pollfds[k].fd != fd)
+    if ((uint32_t)k >= ev->used || (int)ev->pollfds[k].fd != fd)
         return (errno = EINVAL, -1);
 
     ev->pollfds[k].fd = -1;
@@ -912,10 +752,9 @@ fdevent_poll_event_del (fdevents *ev, fdnode *fdn)
     /* ev->pollfds[k].revents = 0; */
 
     if (ev->unused.size == ev->unused.used) {
+        ck_realloc_u32((void **)&ev->unused.ptr, ev->unused.size,
+                       16, sizeof(*ev->unused.ptr));
         ev->unused.size += 16;
-        ev->unused.ptr = realloc(ev->unused.ptr,
-                                 sizeof(*(ev->unused.ptr)) * ev->unused.size);
-        force_assert(NULL != ev->unused.ptr);
     }
 
     ev->unused.ptr[ev->unused.used++] = k;
@@ -934,7 +773,7 @@ fdevent_poll_event_set (fdevents *ev, fdnode *fdn, int events)
   #endif
 
     if (k >= 0) {
-        if ((uint32_t)k >= ev->used || ev->pollfds[k].fd != fd)
+        if ((uint32_t)k >= ev->used || (int)ev->pollfds[k].fd != fd)
             return (errno = EINVAL, -1);
         ev->pollfds[k].events = events;
         return 0;
@@ -945,9 +784,9 @@ fdevent_poll_event_set (fdevents *ev, fdnode *fdn, int events)
     }
     else {
         if (ev->size == ev->used) {
+            ck_realloc_u32((void **)&ev->pollfds, ev->size,
+                           16, sizeof(*ev->pollfds));
             ev->size += 16;
-            ev->pollfds = realloc(ev->pollfds, sizeof(*ev->pollfds) * ev->size);
-            force_assert(NULL != ev->pollfds);
         }
 
         k = ev->used++;
@@ -963,16 +802,36 @@ fdevent_poll_event_set (fdevents *ev, fdnode *fdn, int events)
 static int
 fdevent_poll_poll (fdevents *ev, int timeout_ms)
 {
-    struct pollfd * const restrict pfds = ev->pollfds;
+    const int n = poll(ev->pollfds, ev->used, timeout_ms);
     fdnode ** const fdarray = ev->fdarray;
-    const int n = poll(pfds, ev->used, timeout_ms);
-    for (int i = 0, m = 0; m < n; ++i) {
-        if (0 == pfds[i].revents) continue;
+  #ifdef _WIN32
+    /* XXX: O(m x n) search through fdarray; improve later for many fds
+     * Since number of ready events is typically going to be small,
+     * walk fdarray and for each fdn, scan ready pollfds (rather than
+     * walking ready pollfds and then scanning fdarray for matching fd) */
+    const int nfds = (int)ev->used;
+    const int count = ev->count;
+    for (int m = 0, a = 0; m < n && a < count; ++a) {
+        struct pollfd * const restrict pfds = ev->pollfds;
+        const fdnode * const fdn = fdarray[a];
+        SOCKET fd = (SOCKET)((fdnode *)((uintptr_t)fdn & ~0x3))->fd;
+        for (int i = 0; i < nfds; ++i) {
+            if (0 == pfds[i].revents || fd != pfds[i].fd) continue;
+            if (0 == ((uintptr_t)fdn & 0x3))
+                (*fdn->handler)(fdn->ctx, pfds[i].revents);
+            ++m;
+            break;
+        }
+    }
+  #else
+    for (int i = 0, m = 0; m < n; ++i, ++m) {
+        struct pollfd * const restrict pfds = ev->pollfds;
+        while (0 == pfds[i].revents) ++i;
         fdnode *fdn = fdarray[pfds[i].fd];
         if (0 == ((uintptr_t)fdn & 0x3))
             (*fdn->handler)(fdn->ctx, pfds[i].revents);
-        ++m;
     }
+  #endif
     return n;
 }
 
@@ -1020,7 +879,9 @@ fdevent_select_reset (fdevents *ev)
     FD_ZERO(&(ev->select_set_read));
     FD_ZERO(&(ev->select_set_write));
     FD_ZERO(&(ev->select_set_error));
+  #ifndef _WIN32
     ev->select_max_fd = -1;
+  #endif
     return 0;
 }
 
@@ -1040,7 +901,12 @@ fdevent_select_event_set (fdevents *ev, fdnode *fdn, int events)
     int fd = fdn->fde_ndx = fdn->fd;
 
     /* we should be protected by max-fds, but you never know */
+  #ifdef _WIN32
+    force_assert(ev->count < ((int)FD_SETSIZE));
+  #else
     force_assert(fd < ((int)FD_SETSIZE));
+    if (fd > ev->select_max_fd) ev->select_max_fd = fd;
+  #endif
 
     if (events & FDEVENT_IN)
         FD_SET(fd, &(ev->select_set_read));
@@ -1054,40 +920,13 @@ fdevent_select_event_set (fdevents *ev, fdnode *fdn, int events)
 
     FD_SET(fd, &(ev->select_set_error));
 
-    if (fd > ev->select_max_fd) ev->select_max_fd = fd;
-
     return 0;
-}
-
-static int
-fdevent_select_event_get_revent (const fdevents *ev, int ndx)
-{
-    int revents = 0;
-    if (FD_ISSET(ndx, &ev->select_read))  revents |= FDEVENT_IN;
-    if (FD_ISSET(ndx, &ev->select_write)) revents |= FDEVENT_OUT;
-    if (FD_ISSET(ndx, &ev->select_error)) revents |= FDEVENT_ERR;
-    return revents;
-}
-
-static int
-fdevent_select_event_next_fdndx (const fdevents *ev, int ndx)
-{
-    const int max_fd = ev->select_max_fd + 1;
-    for (int i = (ndx < 0) ? 0 : ndx + 1; i < max_fd; ++i) {
-        if (FD_ISSET(i, &(ev->select_read)))  return i;
-        if (FD_ISSET(i, &(ev->select_write))) return i;
-        if (FD_ISSET(i, &(ev->select_error))) return i;
-    }
-
-    return -1;
 }
 
 static int
 fdevent_select_poll (fdevents *ev, int timeout_ms)
 {
-    int n;
     struct timeval tv;
-
     tv.tv_sec =  timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
 
@@ -1095,18 +934,50 @@ fdevent_select_poll (fdevents *ev, int timeout_ms)
     ev->select_write = ev->select_set_write;
     ev->select_error = ev->select_set_error;
 
-    n = select(ev->select_max_fd + 1,
-               &ev->select_read, &ev->select_write, &ev->select_error, &tv);
-    for (int ndx = -1, i = 0; i < n; ++i) {
-        fdnode *fdn;
-        ndx = fdevent_select_event_next_fdndx(ev, ndx);
-        if (-1 == ndx) break;
-        fdn = ev->fdarray[ndx];
-        if (0 == ((uintptr_t)fdn & 0x3)) {
-            int revents = fdevent_select_event_get_revent(ev, ndx);
-            (*fdn->handler)(fdn->ctx, revents);
+  #ifdef _WIN32
+
+    const int nfds = ev->count;
+    const int n =
+      select(nfds, &ev->select_read, &ev->select_write, &ev->select_error, &tv);
+    if (n <= 0) return n;
+    fdnode **fda = ev->fdarray;
+    for (int ndx = -1, i = n; ++ndx < nfds; ) {
+        const fdnode *fdn = *fda++;
+        int fd = ((fdnode *)((uintptr_t)fdn & ~0x3))->fd;
+        int revents = 0;
+        if (FD_ISSET(fd, &ev->select_read))  revents |= FDEVENT_IN;
+        if (FD_ISSET(fd, &ev->select_write)) revents |= FDEVENT_OUT;
+        if (FD_ISSET(fd, &ev->select_error)) revents |= FDEVENT_ERR;
+        if (revents) {
+            if (0 == ((uintptr_t)fdn & 0x3))
+                (*fdn->handler)(fdn->ctx, revents);
+            if (0 == --i)
+                break;
         }
     }
+
+  #else
+
+    const int nfds = ev->select_max_fd + 1;
+    const int n =
+      select(nfds, &ev->select_read, &ev->select_write, &ev->select_error, &tv);
+    if (n <= 0) return n;
+    for (int ndx = -1, i = n; ++ndx < nfds; ) {
+        int revents = 0;
+        if (FD_ISSET(ndx, &ev->select_read))  revents |= FDEVENT_IN;
+        if (FD_ISSET(ndx, &ev->select_write)) revents |= FDEVENT_OUT;
+        if (FD_ISSET(ndx, &ev->select_error)) revents |= FDEVENT_ERR;
+        if (revents) {
+            const fdnode *fdn = ev->fdarray[ndx];
+            if (0 == ((uintptr_t)fdn & 0x3))
+                (*fdn->handler)(fdn->ctx, revents);
+            if (0 == --i)
+                break;
+        }
+    }
+
+  #endif
+
     return n;
 }
 

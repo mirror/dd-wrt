@@ -288,6 +288,8 @@ const char * sock_addr_inet_ntop(const sock_addr * const restrict saddr, char * 
        #if defined(HAVE_INET_PTON) /*(expect inet_ntop if inet_pton)*/
         return inet_ntop(AF_INET,(const void *)&saddr->ipv4.sin_addr,buf,sz);
        #else /*(inet_ntoa() not thread-safe)*/
+        UNUSED(buf);
+        UNUSED(sz);
         return inet_ntoa(saddr->ipv4.sin_addr);
        #endif
      #ifdef HAVE_IPV6
@@ -331,12 +333,12 @@ int sock_addr_stringify_append_buffer(buffer * const restrict b, const sock_addr
     switch (saddr->plain.sa_family) {
       case AF_INET:
         if (0 != sock_addr_inet_ntop_append_buffer(b, saddr)) return -1;
-        buffer_append_string_len(b, CONST_STR_LEN(":"));
+        buffer_append_char(b, ':');
         buffer_append_int(b, ntohs(saddr->ipv4.sin_port));
         return 0;
      #ifdef HAVE_IPV6
       case AF_INET6:
-        buffer_append_string_len(b, CONST_STR_LEN("["));
+        buffer_append_char(b, '[');
         if (0 != sock_addr_inet_ntop_append_buffer(b, saddr)) {
           #ifdef __COVERITY__
             force_assert(buffer_clen(b) > 0); /*(appended "[")*/
@@ -411,9 +413,9 @@ int sock_addr_nameinfo_append_buffer(buffer * const restrict b, const sock_addr 
               "NOTICE: getnameinfo failed; using ip-address instead: %s",
               gai_strerror(rc));
 
-            buffer_append_string_len(b, CONST_STR_LEN("["));
+            buffer_append_char(b, '[');
             sock_addr_inet_ntop_append_buffer(b, saddr);
-            buffer_append_string_len(b, CONST_STR_LEN("]"));
+            buffer_append_char(b, ']');
         } else {
             buffer_append_string(b, hbuf);
         }
@@ -689,7 +691,11 @@ int sock_addr_from_buffer_hints_numeric(sock_addr * const restrict saddr, sockle
     else if (1 == sock_addr_inet_pton(saddr, b->ptr, family, port)) {
         *len = (family == AF_INET)
           ? sizeof(struct sockaddr_in)   /* family == AF_INET */
+         #ifdef HAVE_IPV6
           : sizeof(struct sockaddr_in6); /* family == AF_INET6 */
+         #else
+          : 0; /*(should not happen; sock_addr_inet_pton() would not succeed)*/
+         #endif
         return 1;
     }
   #if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)

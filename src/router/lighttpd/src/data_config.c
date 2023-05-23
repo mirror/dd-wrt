@@ -40,7 +40,7 @@ static void data_config_free(data_unset *d) {
 	free(ds->comp_tag.ptr);
 
 	array_free(ds->value);
-	vector_config_weak_clear(&ds->children);
+	free(ds->children.data);
 
 	free(ds->string.ptr);
   #ifdef HAVE_PCRE2_H
@@ -62,14 +62,10 @@ data_config *data_config_init(void) {
 		data_config_free,
 		NULL
 	};
-	data_config *ds;
-
-	ds = calloc(1, sizeof(*ds));
-	force_assert(ds);
+	data_config *ds = ck_calloc(1, sizeof(*ds));
 
 	ds->comp_key = "";
 	ds->value = array_init(4);
-	vector_config_weak_init(&ds->children);
 
 	ds->type = TYPE_CONFIG;
 	ds->fn = &config_fn;

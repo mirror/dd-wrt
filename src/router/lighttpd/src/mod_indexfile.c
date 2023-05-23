@@ -22,7 +22,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_indexfile_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 static void mod_indexfile_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -158,6 +158,8 @@ URIHANDLER_FUNC(mod_indexfile_subrequest) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_indexfile_plugin_init(plugin *p);
 int mod_indexfile_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

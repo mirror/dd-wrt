@@ -32,7 +32,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_expire_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 FREE_FUNC(mod_expire_free) {
@@ -208,15 +208,27 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
                         buffer_truncate(&ds->key, klen-1);
                 }
                 a = cpv->v.a;
+                if (!array_get_element_klen(a, CONST_STR_LEN("text/javascript"))
+                    && !array_get_element_klen(a, CONST_STR_LEN("text/"))) {
+                    array *m;
+                    *(const array **)&m = a;
+                    data_unset * const du =
+                      array_extract_element_klen(m,
+                        CONST_STR_LEN("application/javascript"));
+                    if (du) {
+                        buffer_copy_string_len(&du->key, "text/javascript", 15);
+                        array_replace(m, du);
+                    }
+                }
                 break;
               default:/* should not happen */
-                break;
+                continue;
             }
 
             /* parse array values into structured data */
             if (NULL != a && a->used) {
-                p->toffsets =
-                  realloc(p->toffsets, sizeof(time_t) * (p->tused + a->used*2));
+                ck_realloc_u32((void **)&p->toffsets, p->tused,
+                               a->used*2, sizeof(*p->toffsets));
                 time_t *toff = p->toffsets + p->tused;
                 for (uint32_t k = 0; k < a->used; ++k, toff+=2, p->tused+=2) {
                     buffer *v = &((data_string *)a->data[k])->value;
@@ -293,10 +305,12 @@ REQUEST_FUNC(mod_expire_handler) {
 	buffer *vb;
 	const data_string *ds;
 
-	/* Add caching headers only to http_status 200 OK or 206 Partial Content */
-	if (r->http_status != 200 && r->http_status != 206) return HANDLER_GO_ON;
-	/* Add caching headers only to GET or HEAD requests */
-	if (!http_method_get_or_head(r->http_method)) return HANDLER_GO_ON;
+	/* Add caching headers only to http_status
+	 * 200 OK or 204 No Content or 206 Partial Content */
+	if (r->http_status != 200 && r->http_status != 204 && r->http_status != 206)
+		return HANDLER_GO_ON;
+	/* Add caching headers only to GET, HEAD, QUERY requests */
+	if (!http_method_get_head_query(r->http_method)) return HANDLER_GO_ON;
 	/* Add caching headers only if not already present */
 	vb = http_header_response_get(r, HTTP_HEADER_CACHE_CONTROL, CONST_STR_LEN("Cache-Control"));
 	if (NULL != vb) return HANDLER_GO_ON;
@@ -326,6 +340,8 @@ REQUEST_FUNC(mod_expire_handler) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_expire_plugin_init(plugin *p);
 int mod_expire_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

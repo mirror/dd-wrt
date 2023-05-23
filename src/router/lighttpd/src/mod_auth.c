@@ -65,9 +65,8 @@ http_auth_cache_entry_init (const struct http_auth_require_t * const require, co
      *(store pointer to http_auth_require_t, which is persistent
      * and will be different for each realm + permissions combo)*/
     http_auth_cache_entry * const ae =
-      malloc(sizeof(http_auth_cache_entry) + ulen + pwlen
-             + (k == username ? 0 : klen));
-    force_assert(ae);
+      ck_malloc(sizeof(http_auth_cache_entry) + ulen + pwlen
+                + (k == username ? 0 : klen));
     ae->require = require;
     ae->ctime = log_monotonic_secs;
     ae->dalgo = dalgo;
@@ -106,14 +105,14 @@ http_auth_cache_free (http_auth_cache *ac)
 static http_auth_cache *
 http_auth_cache_init (const array *opts)
 {
-    http_auth_cache *ac = malloc(sizeof(http_auth_cache));
-    force_assert(ac);
+    http_auth_cache *ac = ck_malloc(sizeof(http_auth_cache));
     ac->sptree = NULL;
     ac->max_age = 600; /* 10 mins */
     for (uint32_t i = 0, used = opts->used; i < used; ++i) {
         data_unset *du = opts->data[i];
         if (buffer_is_equal_string(&du->key, CONST_STR_LEN("max-age")))
-            ac->max_age = (time_t)config_plugin_value_to_int32(du, ac->max_age);
+            ac->max_age = (time_t)
+              config_plugin_value_to_int32(du, 600); /* 10 min if invalid num */
     }
     return ac;
 }
@@ -223,8 +222,7 @@ INIT_FUNC(mod_auth_init) {
 	static http_auth_scheme_t http_auth_scheme_basic  = { "basic",  mod_auth_check_basic,  NULL };
 	static http_auth_scheme_t http_auth_scheme_digest = { "digest", mod_auth_check_digest, NULL };
 	static const http_auth_scheme_t http_auth_scheme_extern = { "extern", mod_auth_check_extern, NULL };
-	plugin_data *p = calloc(1, sizeof(*p));
-	force_assert(p);
+	plugin_data *p = ck_calloc(1, sizeof(*p));
 
 	/* register http_auth_scheme_* */
 	http_auth_scheme_basic.p_d = p;
@@ -282,8 +280,7 @@ static data_auth *data_auth_init(void)
       data_auth_free,
       NULL, /* insert_dup must not be called on this data */
     };
-    data_auth * const dauth = calloc(1, sizeof(*dauth));
-    force_assert(NULL != dauth);
+    data_auth * const dauth = ck_calloc(1, sizeof(*dauth));
     dauth->type       = TYPE_OTHER;
     dauth->fn         = &fn;
 
@@ -392,12 +389,12 @@ static int mod_auth_require_parse (http_auth_require_t * const require, const bu
           case 4:
             if (0 == memcmp(str, CONST_STR_LEN("user"))) {
                 /*("user=" is 5)*/
-                array_set_key_value(&require->user, str+5, len-5, CONST_STR_LEN(""));
+                array_insert_value(&require->user, str+5, len-5);
                 continue;
             }
             else if (0 == memcmp(str, CONST_STR_LEN("host"))) {
                 /*("host=" is 5)*/
-                array_set_key_value(&require->host, str+5, len-5, CONST_STR_LEN(""));
+                array_insert_value(&require->host, str+5, len-5);
                 log_error(errh, __FILE__, __LINE__,
                   "warning parsing auth.require 'require' field: "
                   "'host' not implemented; field value: %s", b->ptr);
@@ -407,7 +404,7 @@ static int mod_auth_require_parse (http_auth_require_t * const require, const bu
           case 5:
             if (0 == memcmp(str, CONST_STR_LEN("group"))) {
                 /*("group=" is 6)*/
-                array_set_key_value(&require->group, str+6, len-6, CONST_STR_LEN(""));
+                array_insert_value(&require->group, str+6, len-6);
               #if 0/*(supported by mod_authn_ldap, but not all other backends)*/
                 log_error(errh, __FILE__, __LINE__,
                   "warning parsing auth.require 'require' field: "
@@ -532,6 +529,18 @@ static handler_t mod_auth_require_parse_array(const array *value, array * const 
 				  "invalid algorithm in: "
 				  "auth.require = ( \"...\" => ( ..., \"algorithm\" => \"...\" ) )");
 				return HANDLER_ERROR;
+			}
+
+			for (uint32_t o = 0; o < n; ++o) {
+				const buffer *k = &((data_array *)value->data[o])->key;
+				if (buffer_clen(&da_file->key) >= buffer_clen(k)
+				    && 0 == strncmp(da_file->key.ptr, k->ptr, buffer_clen(k))) {
+					log_error(errh, __FILE__, __LINE__,
+					  "auth.require path (\"%s\") will never match due to "
+					  "earlier match (\"%s\"); fix by sorting longer paths "
+					  "before shorter paths", da_file->key.ptr, k->ptr);
+					break;
+				}
 			}
 
 			if (require) { /*(always true at this point)*/
@@ -694,6 +703,8 @@ static handler_t mod_auth_uri_handler(request_st * const r, void *p_d) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_auth_plugin_init(plugin *p);
 int mod_auth_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
@@ -851,7 +862,7 @@ mod_auth_check_basic(request_st * const r, void *p_d, const struct http_auth_req
     default:
         log_error(r->conf.errh, __FILE__, __LINE__,
           "password doesn't match for %s username: %s IP: %s",
-          r->uri.path.ptr, user, r->con->dst_addr_buf.ptr);
+          r->uri.path.ptr, user, r->dst_addr_buf->ptr);
         r->keep_alive = -1; /*(disable keep-alive if bad password)*/
         rc = mod_auth_send_401_unauthorized_basic(r, require->realm);
         break;
@@ -981,7 +992,7 @@ static void
 mod_auth_append_nonce (buffer *b, unix_time64_t cur_ts, const struct http_auth_require_t *require, int dalgo, int *rndptr)
 {
     buffer_append_uint_hex(b, (uintmax_t)cur_ts);
-    buffer_append_string_len(b, CONST_STR_LEN(":"));
+    buffer_append_char(b, ':');
     const buffer * const nonce_secret = require->nonce_secret;
     int rnd;
     if (NULL == nonce_secret)
@@ -991,7 +1002,7 @@ mod_auth_append_nonce (buffer *b, unix_time64_t cur_ts, const struct http_auth_r
           ? (void)(rnd = *rndptr)
           : li_rand_pseudo_bytes((unsigned char *)&rnd, sizeof(rnd));
         buffer_append_uint_hex(b, (uintmax_t)rnd);
-        buffer_append_string_len(b, CONST_STR_LEN(":"));
+        buffer_append_char(b, ':');
     }
 
     size_t n;
@@ -1115,7 +1126,7 @@ mod_auth_digest_authentication_info (buffer *b, unix_time64_t cur_ts, const stru
     buffer_clear(b);
     buffer_append_string_len(b, CONST_STR_LEN("nextnonce=\""));
     mod_auth_append_nonce(b, cur_ts, require, dalgo, NULL);
-    buffer_append_string_len(b, CONST_STR_LEN("\""));
+    buffer_append_char(b, '"');
 }
 
 
@@ -1422,7 +1433,7 @@ mod_auth_digest_validate_params (request_st * const r, const struct http_auth_re
         log_error(r->conf.errh, __FILE__, __LINE__,
           "digest: auth failed: uri mismatch (%s != %.*s), IP: %s",
           r->target_orig.ptr, (int)dp->len[e_uri], dp->ptr[e_uri],
-          r->con->dst_addr_buf.ptr);
+          r->dst_addr_buf->ptr);
         return mod_auth_send_400_bad_request(r);
     }
 
@@ -1535,7 +1546,7 @@ mod_auth_check_digest (request_st * const r, void *p_d, const struct http_auth_r
         /* digest not ok */
         log_error(r->conf.errh, __FILE__, __LINE__,
           "digest: auth failed for %.*s: wrong password, IP: %s",
-          (int)ai.ulen, ai.username, r->con->dst_addr_buf.ptr);
+          (int)ai.ulen, ai.username, r->dst_addr_buf->ptr);
         r->keep_alive = -1; /*(disable keep-alive if bad password)*/
         return mod_auth_send_401_unauthorized_digest(r, require, 0);
     }

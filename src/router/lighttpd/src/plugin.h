@@ -3,25 +3,7 @@
 #include "first.h"
 
 #include "base_decls.h"
-#include "buffer.h"
-#include "array.h"
 #include "plugin_config.h"
-
-
-/**
- * The status array can carry all the status information you want
- * the key to the array is <module-prefix>.<name>
- * and the values are counters
- *
- * example:
- *   fastcgi.backends        = 10
- *   fastcgi.active-backends = 6
- *   fastcgi.backend.<key>.load = 24
- *   fastcgi.backend.<key>....
- *
- *   fastcgi.backend.<key>.disconnects = ...
- */
-extern array plugin_stats;
 
 
 #define SERVER_FUNC(x) \
@@ -81,7 +63,7 @@ struct plugin {
 	handler_t (* handle_sighup)          (server *srv, void *p_d);        /* at a sighup */
 	handler_t (* handle_waitpid)         (server *srv, void *p_d, pid_t pid, int status); /* upon a child process exit */
 
-	void *(* init)                       ();
+	void *(* init)                       (void);
 	handler_t (* priv_defaults)          (server *srv, void *p_d);
 	handler_t (* set_defaults)           (server *srv, void *p_d);
 	handler_t (* worker_init)            (server *srv, void *p_d); /* at server startup (each worker after fork()) */
@@ -91,39 +73,5 @@ struct plugin {
 	size_t version;
 	void *lib;       /* dlopen handle */
 };
-
-__attribute_cold__
-int plugins_load(server *srv);
-
-__attribute_cold__
-void plugins_free(server *srv);
-
-handler_t plugins_call_handle_uri_clean(request_st *r);
-handler_t plugins_call_handle_subrequest_start(request_st *r);
-handler_t plugins_call_handle_response_start(request_st *r);
-handler_t plugins_call_handle_request_env(request_st *r);
-handler_t plugins_call_handle_request_done(request_st *r);
-handler_t plugins_call_handle_docroot(request_st *r);
-handler_t plugins_call_handle_physical(request_st *r);
-handler_t plugins_call_handle_request_reset(request_st *r);
-
-handler_t plugins_call_handle_connection_accept(connection *con);
-handler_t plugins_call_handle_connection_shut_wr(connection *con);
-handler_t plugins_call_handle_connection_close(connection *con);
-
-void plugins_call_handle_trigger(server *srv);
-handler_t plugins_call_handle_waitpid(server *srv, pid_t pid, int status);
-
-__attribute_cold__
-void plugins_call_handle_sighup(server *srv);
-
-__attribute_cold__
-handler_t plugins_call_init(server *srv);
-
-__attribute_cold__
-handler_t plugins_call_set_defaults(server *srv);
-
-__attribute_cold__
-handler_t plugins_call_worker_init(server *srv);
 
 #endif

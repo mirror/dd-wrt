@@ -22,7 +22,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include <krb5.h>
 #include <gssapi.h>
@@ -56,7 +56,7 @@ INIT_FUNC(mod_authn_gssapi_init) {
       { "gssapi", mod_authn_gssapi_check, NULL };
     static http_auth_backend_t http_auth_backend_gssapi =
       { "gssapi", mod_authn_gssapi_basic, NULL, NULL };
-    plugin_data *p = calloc(1, sizeof(*p));
+    plugin_data *p = ck_calloc(1, sizeof(*p));
 
     /* register http_auth_scheme_gssapi and http_auth_backend_gssapi */
     http_auth_scheme_gssapi.p_d = p;
@@ -167,7 +167,7 @@ static void mod_authn_gssapi_log_gss_error(log_error_st *errh, const char *file,
     gss_buffer_desc status_string;
 
     buffer_copy_string(msg, func);
-    buffer_append_string_len(msg, CONST_STR_LEN("("));
+    buffer_append_char(msg, '(');
     if (extra) buffer_append_string(msg, extra);
     buffer_append_string_len(msg, CONST_STR_LEN("):"));
 
@@ -185,7 +185,7 @@ static void mod_authn_gssapi_log_gss_error(log_error_st *errh, const char *file,
         if (!GSS_ERROR(maj_stat)) {
             buffer_append_string_len(msg, CONST_STR_LEN(" ("));
             buffer_append_string(msg, status_string.value);
-            buffer_append_string_len(msg, CONST_STR_LEN(")"));
+            buffer_append_char(msg, ')');
             gss_release_buffer(&min_stat, &status_string);
         }
     } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
@@ -411,17 +411,14 @@ static handler_t mod_authn_gssapi_check_spnego(request_st * const r, plugin_data
         goto end;
     }
 
-    if (!(acc_flags & GSS_C_CONF_FLAG)) {
-        log_error(r->conf.errh, __FILE__, __LINE__, "No confidentiality for user: %s", (char *)token_out.value);
-        goto end;
-    }
-
     /* check the allow-rules */
     if (!http_auth_match_rules(require, token_out.value, NULL, NULL)) {
         goto end;
     }
 
     if (p->conf.auth_gssapi_store_creds) {
+        if (!(acc_flags & GSS_C_CONF_FLAG))
+            log_error(r->conf.errh, __FILE__, __LINE__, "No confidentiality for user: %s", (char *)token_out.value);
         if (!(acc_flags & GSS_C_DELEG_FLAG)) {
             log_error(r->conf.errh, __FILE__, __LINE__, "Unable to delegate credentials for user: %s", (char *)token_out.value);
             goto end;
@@ -780,7 +777,7 @@ static handler_t mod_authn_gssapi_basic(request_st * const r, void *p_d, const h
             /* ret == KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN or no authz rules match */
             log_error(r->conf.errh, __FILE__, __LINE__,
               "password doesn't match for %s username: %s IP: %s",
-              r->uri.path.ptr, username->ptr, r->con->dst_addr_buf.ptr);
+              r->uri.path.ptr, username->ptr, r->dst_addr_buf->ptr);
             return mod_authn_gssapi_send_401_unauthorized_basic(r);
         }
 }
@@ -797,6 +794,9 @@ REQUEST_FUNC(mod_authn_gssapi_handle_reset) {
     return HANDLER_GO_ON;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_authn_gssapi_plugin_init(plugin *p);
 int mod_authn_gssapi_plugin_init(plugin *p) {
     p->version     = LIGHTTPD_VERSION_ID;

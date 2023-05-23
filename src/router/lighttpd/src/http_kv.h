@@ -19,6 +19,7 @@ typedef enum {
 	HTTP_METHOD_UNSET = -1,
 	HTTP_METHOD_GET,               /* [RFC2616], Section 9.3 */
 	HTTP_METHOD_HEAD,              /* [RFC2616], Section 9.4 */
+	HTTP_METHOD_QUERY,             /* [RFCxxxx], Section 2 */
 	HTTP_METHOD_POST,              /* [RFC2616], Section 9.5 */
 	HTTP_METHOD_PUT,               /* [RFC2616], Section 9.6 */
 	HTTP_METHOD_DELETE,            /* [RFC2616], Section 9.7 */
@@ -57,46 +58,43 @@ typedef enum {
 	HTTP_METHOD_VERSION_CONTROL    /* [RFC3253], Section 3.5 */
 } http_method_t;
 
-typedef enum { HTTP_VERSION_UNSET = -1, HTTP_VERSION_1_0, HTTP_VERSION_1_1, HTTP_VERSION_2 } http_version_t;
+typedef enum {
+    HTTP_VERSION_UNSET = -1
+   ,HTTP_VERSION_1_0
+   ,HTTP_VERSION_1_1
+   ,HTTP_VERSION_2
+   ,HTTP_VERSION_3
+} http_version_t;
 
-#if 0 /*(unused)*/
 __attribute_pure__
-const char *get_http_status_name(int i);
-#endif
-
-__attribute_pure__
-const char *get_http_version_name(int i);
-
-/*(deprecated)*/
-#define get_http_method_name(i) http_method_buf(i)->ptr
-
-#if 0 /*(unused)*/
-__attribute_nonnull__()
-__attribute_pure__
-int get_http_version_key(const char *s, size_t slen);
-#endif
+const buffer *http_version_buf (http_version_t i);
 
 __attribute_pure__
 const buffer *http_method_buf (http_method_t i);
 
 __attribute_nonnull__()
 __attribute_pure__
-http_method_t get_http_method_key(const char *s, size_t slen);
+http_method_t http_method_key_get (const char *s, size_t slen);
 
 __attribute_nonnull__()
-void http_status_append(buffer *b, int status);
+void http_status_append (buffer *b, int status);
+
+#define http_method_get_or_head(method)         ((method) <= HTTP_METHOD_HEAD)
+#define http_method_get_head_query(method)      ((method) <= HTTP_METHOD_QUERY)
+#define http_method_get_head_query_post(method) ((method) <= HTTP_METHOD_POST)
 
 __attribute_nonnull__()
-void http_version_append(buffer *b, http_version_t version);
-
-#define http_method_get_or_head(method)   ((method) <= HTTP_METHOD_HEAD)
-#define http_method_get_head_post(method) ((method) <= HTTP_METHOD_POST)
+static inline void http_version_append (buffer * const b, const http_version_t version);
+static inline void http_version_append (buffer * const b, const http_version_t version)
+{
+    buffer_append_buffer(b, http_version_buf(version));
+}
 
 __attribute_nonnull__()
 static inline void http_method_append (buffer * const b, const http_method_t method);
-static inline void http_method_append (buffer * const b, const http_method_t method) {
-    const buffer * const kv = http_method_buf(method);
-    buffer_append_string_len(b, BUF_PTR_LEN(kv));
+static inline void http_method_append (buffer * const b, const http_method_t method)
+{
+    buffer_append_buffer(b, http_method_buf(method));
 }
 
 

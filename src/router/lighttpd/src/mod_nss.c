@@ -42,10 +42,7 @@
  * not implemented:
  * - session ticket rotation (see comments above)
  * - OCSP Must Staple detection
- * - ssl.honor-cipher-order
  * - ssl.verifyclient.depth
- * - ssl.dh-file
- * - ssl.ec-curve
  * - ssl.openssl.ssl-conf-cmd Ciphersuite
  *
  * future:
@@ -143,11 +140,7 @@ typedef struct {
     /*(used only during startup; not patched)*/
     unsigned char ssl_enabled; /* only interesting for setting up listening sockets. don't use at runtime */
     unsigned char ssl_honor_cipher_order; /* determine SSL cipher in server-preferred order, not client-order */
-    unsigned char ssl_empty_fragments;
-    unsigned char ssl_use_sslv2;
-    unsigned char ssl_use_sslv3;
     const buffer *ssl_cipher_list;
-    const buffer *ssl_ec_curve;
     array *ssl_conf_cmd;
 
     /*(copied from plugin_data for socket ssl_ctx config)*/
@@ -173,7 +166,6 @@ typedef struct {
     unsigned char ssl_verifyclient_export_cert;
     unsigned char ssl_read_ahead;
     unsigned char ssl_log_noise;
-    unsigned char ssl_disable_client_renegotiation;
     const buffer *ssl_verifyclient_username;
     const buffer *ssl_acme_tls_1;
 } plugin_config;
@@ -211,9 +203,7 @@ typedef struct {
 static handler_ctx *
 handler_ctx_init (void)
 {
-    handler_ctx *hctx = calloc(1, sizeof(*hctx));
-    force_assert(hctx);
-    return hctx;
+    return ck_calloc(1, sizeof(handler_ctx));
 }
 
 
@@ -368,7 +358,7 @@ mod_nss_secitem_wipe (SECItem * const d)
 
 INIT_FUNC(mod_nss_init)
 {
-    plugin_data_singleton = (plugin_data *)calloc(1, sizeof(plugin_data));
+    plugin_data_singleton = (plugin_data *)ck_calloc(1, sizeof(plugin_data));
     return plugin_data_singleton;
 }
 
@@ -410,9 +400,7 @@ static int mod_nss_init_once_nss (void)
     if (NSS_SetDomesticPolicy() < 0)
         return 0;
 
-    local_send_buffer = malloc(LOCAL_SEND_BUFSIZE);
-    force_assert(NULL != local_send_buffer);
-
+    local_send_buffer = ck_malloc(LOCAL_SEND_BUFSIZE);
     return 1;
 }
 
@@ -425,6 +413,17 @@ static void mod_nss_free_nss (void)
 
     free(local_send_buffer);
     ssl_is_init = 0;
+}
+
+
+static int
+mod_nss_cert_is_active (const CERTCertificate *crt)
+{
+    PRTime notBefore, notAfter;
+    SECStatus rc = CERT_GetCertTimes(crt, &notBefore, &notAfter);
+    const unix_time64_t now = log_epoch_secs;
+    return (rc == SECSuccess
+            && notBefore/1000000 <= now && now <= notAfter/1000000);
 }
 
 
@@ -473,8 +472,11 @@ mod_nss_load_pem_file (const char *fn, log_error_st *errh)
                 b += sizeof(PEM_BEGIN_TRUSTED_CERT)-1)
             ++count;
         if (0 == count) {
-            rc = 0;
-            break;
+            if (NULL != strstr((char *)f.data, "-----")) {
+                rc = 0;
+                break;
+            }
+            /*(fall through and treat as DER)*/
         }
 
         PLArenaPool *arena = PORT_NewArena(4096);
@@ -489,10 +491,22 @@ mod_nss_load_pem_file (const char *fn, log_error_st *errh)
         }
 
         chain->arena = arena;
-        chain->len = count;
-        chain->certs = (SECItem *)PORT_ArenaAlloc(arena, count*sizeof(SECItem));
+        chain->len = count ? count : 1;
+        chain->certs = (SECItem *)PORT_ArenaZAlloc(arena,
+                                                   chain->len*sizeof(SECItem));
         if (NULL == chain->certs)
             break;
+
+        if (0 == count) {
+            /* treat as DER */
+            if (NULL == SECITEM_AllocItem(arena, chain->certs+0, f.len)) {
+                PORT_SetError(SEC_ERROR_IO);
+                break;
+            }
+            memcpy(chain->certs[0].data, f.data, (chain->certs[0].len = f.len));
+            rc = 0;
+            break;
+        }
 
         int i = 0;
         for (char *e = (char *)f.data; (b = strstr(e, PEM_BEGIN_CERT)); ++i) {
@@ -503,9 +517,6 @@ mod_nss_load_pem_file (const char *fn, log_error_st *errh)
             if (NULL == e) break;
             uint32_t len = (uint32_t)(e - b);
             e += sizeof(PEM_END_CERT)-1;
-            chain->certs[i].type = 0;
-            chain->certs[i].data = NULL;
-            chain->certs[i].len  = 0;
             if (NULL == NSSBase64_DecodeBuffer(arena, chain->certs+i, b, len))
                 break;
         }
@@ -517,9 +528,6 @@ mod_nss_load_pem_file (const char *fn, log_error_st *errh)
             if (NULL == e) break;
             uint32_t len = (uint32_t)(e - b);
             e += sizeof(PEM_END_TRUSTED_CERT)-1;
-            chain->certs[i].type = 0;
-            chain->certs[i].data = NULL;
-            chain->certs[i].len  = 0;
             if (NULL == NSSBase64_DecodeBuffer(arena, chain->certs+i, b, len))
                 break;
         }
@@ -554,6 +562,11 @@ mod_nss_load_pem_crts (const char *fn, log_error_st *errh, CERTCertificateList *
         CERT_DestroyCertificateList(*pchain);
         *pchain = NULL;
     }
+    else if (!mod_nss_cert_is_active(cert)) {
+        log_error(errh, __FILE__, __LINE__,
+          "NSS: inactive/expired X509 certificate '%s'", fn);
+    }
+
     return cert;
 }
 
@@ -760,12 +773,20 @@ mod_nss_load_config_pkey (const char *fn, CERTCertificate *cert, log_error_st *e
         else if ((b = strstr((char *)f.data, PEM_BEGIN_ANY_PKEY))
                  && (e = strstr(b, PEM_END_ANY_PKEY)))
             b += sizeof(PEM_BEGIN_ANY_PKEY)-1;
+        else if (NULL == strstr((char *)f.data, "-----")) {
+            der = f; /*(copy struct)*/
+            f.type = 0;
+            f.data = NULL;
+            f.len = 0;
+            b = (char *)der.data;
+        }
         else
             break;
         if (*b == '\r') ++b;
         if (*b == '\n') ++b;
 
-        if (NULL == NSSBase64_DecodeBuffer(NULL, &der, b, (uint32_t)(e - b)))
+        if (NULL == der.data
+            && NULL == NSSBase64_DecodeBuffer(NULL, &der, b, (uint32_t)(e - b)))
             break;
 
         slot = PK11_GetInternalKeySlot();
@@ -894,7 +915,7 @@ mod_nss_merge_config_cpv (plugin_config * const pconf, const config_plugin_value
         pconf->ssl_read_ahead = (0 != cpv->v.u);
         break;
       case 6: /* ssl.disable-client-renegotiation */
-        pconf->ssl_disable_client_renegotiation = (0 != cpv->v.u);
+        /*(ignored; unsafe renegotiation disabled by default)*/
         break;
       case 7: /* ssl.verifyclient.activate */
         pconf->ssl_verifyclient = (0 != cpv->v.u);
@@ -1165,8 +1186,7 @@ network_nss_load_pemfile (server *srv, const buffer *pemfile, const buffer *priv
                                                    certUsageSSLServer,
                                                    PR_FALSE);
 
-    plugin_cert *pc = calloc(1, sizeof(plugin_cert));
-    force_assert(pc);
+    plugin_cert *pc = ck_calloc(1, sizeof(plugin_cert));
     pc->ssl_pemfile_pkey = pkey;
     pc->ssl_pemfile_x509 = ssl_pemfile_x509;
     pc->ssl_credex.certChain = ssl_pemfile_chain;
@@ -1190,6 +1210,12 @@ network_nss_load_pemfile (server *srv, const buffer *pemfile, const buffer *priv
                   "certificate %s marked OCSP Must-Staple, "
                   "but ssl.stapling-file not provided", pemfile->ptr);
     }
+
+  #if 0
+    PRTime notBefore, notAfter;
+    SECStatus rc = CERT_GetCertTimes(crt, &notBefore, &notAfter);
+    pc->notAfter = (rc == SECSuccess) ? notAfter/1000000 : 0;
+  #endif
 
     return pc;
 }
@@ -1345,7 +1371,8 @@ mod_nss_alpn_select_cb (void *arg, PRFileDesc *ssl,
                   case 0:
                     if (!hctx->r->conf.h2proto) continue;
                     hctx->alpn = MOD_NSS_ALPN_H2;
-                    hctx->r->http_version = HTTP_VERSION_2;
+                    if (hctx->r->handler_module == NULL)/*(not mod_sockproxy)*/
+                        hctx->r->http_version = HTTP_VERSION_2;
                     break;
                   case 1:
                     hctx->alpn = MOD_NSS_ALPN_HTTP11;
@@ -1532,6 +1559,8 @@ mod_nss_ssl_conf_cmd (server *srv, plugin_config_socket *s)
                     flag = 0;
                     ++v;
                 }
+                else if (*v == '+')
+                    ++v;
                 for (e = v; light_isalpha(*e); ++e) ;
                 switch ((int)(e-v)) {
                   case 11:
@@ -1619,22 +1648,11 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
             return -1;
     }
 
-    if (s->ssl_ec_curve) {
-        if (!mod_nss_ssl_conf_curves(srv, s, s->ssl_ec_curve))
-            return -1;
-    }
-
-    if (!s->ssl_use_sslv3 && !s->ssl_use_sslv2)
-        mod_nss_ssl_conf_proto(srv, s, NULL, NULL); /* set default range */
+    mod_nss_ssl_conf_proto(srv, s, NULL, NULL); /* set default range */
 
     if (s->ssl_conf_cmd && s->ssl_conf_cmd->used) {
         if (0 != mod_nss_ssl_conf_cmd(srv, s)) return -1;
     }
-
-    if (s->ssl_use_sslv3)
-        s->protos.min = SSL_LIBRARY_VERSION_3_0;
-    if (s->ssl_use_sslv2)
-        s->protos.min = SSL_LIBRARY_VERSION_2;
 
     /* future: add additional configuration of s->model here
      *         rather than in mod_nss_handle_con_accept() */
@@ -1690,39 +1708,25 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 }
 
 
+#define LIGHTTPD_DEFAULT_CIPHER_LIST \
+"EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384"
+
+
 static int
 mod_nss_set_defaults_sockets(server *srv, plugin_data *p)
 {
     static const config_plugin_keys_t cpk[] = {
       { CONST_STR_LEN("ssl.engine"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("ssl.cipher-list"),
         T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.honor-cipher-order"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.dh-file"),
-        T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.ec-curve"),
-        T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("ssl.openssl.ssl-conf-cmd"),
         T_CONFIG_ARRAY_KVSTRING,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("ssl.pemfile"), /* included to process global scope */
         T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.empty-fragments"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.use-sslv2"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.use-sslv3"),
-        T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.stek-file"),
         T_CONFIG_STRING,
@@ -1731,10 +1735,10 @@ mod_nss_set_defaults_sockets(server *srv, plugin_data *p)
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
     };
-    static const buffer default_ssl_cipher_list = { CONST_STR_LEN("HIGH"), 0 };
+    static const buffer default_ssl_cipher_list =
+      { CONST_STR_LEN(LIGHTTPD_DEFAULT_CIPHER_LIST), 0 };
 
-    p->ssl_ctxs = calloc(srv->config_context->used, sizeof(plugin_ssl_ctx));
-    force_assert(p->ssl_ctxs);
+    p->ssl_ctxs = ck_calloc(srv->config_context->used, sizeof(plugin_ssl_ctx));
 
     int rc = HANDLER_GO_ON;
     plugin_data_base srvplug;
@@ -1745,7 +1749,6 @@ mod_nss_set_defaults_sockets(server *srv, plugin_data *p)
 
     plugin_config_socket defaults;
     memset(&defaults, 0, sizeof(defaults));
-    defaults.ssl_honor_cipher_order = 1; /* default server preference for PFS */
     defaults.ssl_session_ticket     = 1; /* enabled by default */
     defaults.ssl_compression        = 0; /* disable for security */
     defaults.ssl_cipher_list        = &default_ssl_cipher_list;
@@ -1760,16 +1763,10 @@ mod_nss_set_defaults_sockets(server *srv, plugin_data *p)
 
         plugin_config_socket conf;
         memcpy(&conf, &defaults, sizeof(conf));
-
-        /*(preserve prior behavior; not inherited)*/
-        /*(forcing inheritance might break existing configs where SSL is enabled
-         * by default in the global scope, but not $SERVER["socket"]=="*:80") */
-        conf.ssl_enabled = 0;
-
         config_plugin_value_t *cpv = ps->cvlist + ps->cvlist[i].v.u2[0];
         for (; -1 != cpv->k_id; ++cpv) {
-            /* ignore ssl.pemfile (k_id=6); included to process global scope */
-            if (!is_socket_scope && cpv->k_id != 6) {
+            /* ignore ssl.pemfile (k_id=3); included to process global scope */
+            if (!is_socket_scope && cpv->k_id != 3) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "NSS: %s is valid only in global scope or "
                   "$SERVER[\"socket\"] condition", cpk[cpv->k_id].k);
@@ -1782,51 +1779,25 @@ mod_nss_set_defaults_sockets(server *srv, plugin_data *p)
                 --count_not_engine;
                 break;
               case 1: /* ssl.cipher-list */
-                if (!buffer_is_blank(cpv->v.b))
+                if (!buffer_is_blank(cpv->v.b)) {
                     conf.ssl_cipher_list = cpv->v.b;
+                    /*(historical use might list non-PFS ciphers)*/
+                    conf.ssl_honor_cipher_order = 1;
+                    log_error(srv->errh, __FILE__, __LINE__,
+                      "%s is deprecated.  "
+                      "Please prefer lighttpd secure TLS defaults, or use "
+                      "ssl.openssl.ssl-conf-cmd \"CipherString\" to set custom "
+                      "cipher list.", cpk[cpv->k_id].k);
+                }
                 break;
-              case 2: /* ssl.honor-cipher-order */
-                conf.ssl_honor_cipher_order = (0 != cpv->v.u);
-                break;
-              case 3: /* ssl.dh-file */
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "NSS: ignoring ssl.dh-file; not implemented"
-                  "obsoleted by RFC7919");
-                break;
-              case 4: /* ssl.ec-curve */
-                if (!buffer_is_blank(cpv->v.b))
-                    conf.ssl_ec_curve = cpv->v.b;
-                break;
-              case 5: /* ssl.openssl.ssl-conf-cmd */
+              case 2: /* ssl.openssl.ssl-conf-cmd */
                 *(const array **)&conf.ssl_conf_cmd = cpv->v.a;
                 break;
-              case 6: /* ssl.pemfile */
+              case 3: /* ssl.pemfile */
                 /* ignore here; included to process global scope when
                  * ssl.pemfile is set, but ssl.engine is not "enable" */
                 break;
-              case 7: /* ssl.empty-fragments */
-                conf.ssl_empty_fragments = (0 != cpv->v.u);
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "NSS: ignoring ssl.empty-fragments; openssl-specific "
-                  "counter-measure against a SSL 3.0/TLS 1.0 protocol "
-                  "vulnerability affecting CBC ciphers, which cannot be handled"
-                  " by some broken (Microsoft) SSL implementations.");
-                break;
-              case 8: /* ssl.use-sslv2 */
-                conf.ssl_use_sslv2 = (0 != cpv->v.u);
-                log_error(srv->errh, __FILE__, __LINE__, "NSS: "
-                  "ssl.use-sslv2 is deprecated and will soon be removed.  "
-                  "Many modern TLS libraries no longer support SSLv2.");
-                break;
-              case 9: /* ssl.use-sslv3 */
-                conf.ssl_use_sslv3 = (0 != cpv->v.u);
-                log_error(srv->errh, __FILE__, __LINE__, "NSS: "
-                  "ssl.use-sslv3 is deprecated and will soon be removed.  "
-                  "Many modern TLS libraries no longer support SSLv3.  "
-                  "If needed, use: "
-                  "ssl.openssl.ssl-conf-cmd = (\"MinProtocol\" => \"SSLv3\")");
-                break;
-              case 10:/* ssl.stek-file */
+              case 4: /* ssl.stek-file */
                 log_error(srv->errh, __FILE__, __LINE__, "NSS: "
                   "ssl.stek-file is not supported in mod_nss; ignoring.");
                 break;
@@ -1953,7 +1924,7 @@ SETDEFAULTS_FUNC(mod_nss_set_defaults)
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.disable-client-renegotiation"),
-        T_CONFIG_BOOL,
+        T_CONFIG_BOOL, /*(directive ignored)*/
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.verifyclient.activate"),
         T_CONFIG_BOOL,
@@ -1977,7 +1948,7 @@ SETDEFAULTS_FUNC(mod_nss_set_defaults)
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("debug.log-ssl-noise"),
-        T_CONFIG_SHORT,
+        T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.verifyclient.ca-file"),
         T_CONFIG_STRING,
@@ -2068,12 +2039,8 @@ SETDEFAULTS_FUNC(mod_nss_set_defaults)
                 }
                 break;
               case 5: /* ssl.read-ahead */
-                break;
               case 6: /* ssl.disable-client-renegotiation */
-                /* (force disabled, the default, if HTTP/2 enabled in server) */
-                if (srv->srvconf.h2proto)
-                    cpv->v.u = 1; /* disable client renegotiation */
-                break;
+                /*(ignored; unsafe renegotiation disabled by default)*/
               case 7: /* ssl.verifyclient.activate */
               case 8: /* ssl.verifyclient.enforce */
                 break;
@@ -2127,7 +2094,6 @@ SETDEFAULTS_FUNC(mod_nss_set_defaults)
     p->defaults.ssl_verifyclient_enforce = 1;
     p->defaults.ssl_verifyclient_depth = 9;
     p->defaults.ssl_verifyclient_export_cert = 0;
-    p->defaults.ssl_disable_client_renegotiation = 1;
     p->defaults.ssl_read_ahead = 0;
 
     /* initialize p->defaults from global config context */
@@ -2296,12 +2262,7 @@ connection_read_cq_ssl (connection * const con, chunkqueue * const cq, off_t max
         mem = chunkqueue_get_memory(cq, &mem_len);
 
         len = PR_Read(ssl, mem, (PRInt32)mem_len);
-        if (len > 0) {
-            chunkqueue_use_memory(cq, ckpt, len);
-            con->bytes_read += len;
-        } else {
-            chunkqueue_use_memory(cq, ckpt, 0);
-        }
+        chunkqueue_use_memory(cq, ckpt, len > 0 ? len : 0);
     } while (len > 0);
 
     if (hctx->alpn && hctx->handshake) {
@@ -2347,7 +2308,8 @@ CONNECTION_FUNC(mod_nss_handle_con_accept)
     con->plugin_ctx[p->id] = hctx;
     buffer_blank(&r->uri.authority);
 
-    plugin_ssl_ctx * const s = p->ssl_ctxs + srv_sock->sidx;
+    plugin_ssl_ctx *s = p->ssl_ctxs + srv_sock->sidx;
+    if (NULL == s->model) s = p->ssl_ctxs; /*(inherit from global scope)*/
     hctx->ssl_session_ticket = s->ssl_session_ticket;
 
     con->network_read = connection_read_cq_ssl;
@@ -2361,13 +2323,6 @@ CONNECTION_FUNC(mod_nss_handle_con_accept)
 
     /* future: move more config from here to config model in network_init_ssl().
      * Callbacks need to be set here to be able to set callback arg to hctx */
-
-    if (!hctx->conf.ssl_disable_client_renegotiation
-        && SSL_OptionSet(hctx->ssl, SSL_ENABLE_RENEGOTIATION,
-                                    SSL_RENEGOTIATE_REQUIRES_XTN) < 0) {
-        elog(r->conf.errh, __FILE__, __LINE__, "SSL_ENABLE_RENEGOTIATION");
-        return HANDLER_ERROR;
-    }
 
     if (SSL_ResetHandshake(hctx->ssl, PR_TRUE) < 0) {
         elog(r->conf.errh, __FILE__, __LINE__, "SSL_ResetHandshake()");
@@ -2561,7 +2516,7 @@ https_add_ssl_client_verify_err (buffer * const b, unsigned int status)
     const char *s = PR_ErrorToName(status);
     if (s)
         buffer_append_string_len(b, s, strlen(s));
-    buffer_append_string_len(b, CONST_STR_LEN(":"));
+    buffer_append_char(b, ':');
     s = PR_ErrorToString(status, PR_LANGUAGE_I_DEFAULT);
     buffer_append_string_len(b, s, strlen(s));
 }
@@ -2653,8 +2608,6 @@ http_cgi_ssl_env (request_st * const r, handler_ctx * const hctx)
       case SSL_LIBRARY_VERSION_TLS_1_2: s="TLSv1.2";n=sizeof("TLSv1.2")-1;break;
       case SSL_LIBRARY_VERSION_TLS_1_1: s="TLSv1.1";n=sizeof("TLSv1.1")-1;break;
       case SSL_LIBRARY_VERSION_TLS_1_0: s="TLSv1.0";n=sizeof("TLSv1.0")-1;break;
-      case SSL_LIBRARY_VERSION_3_0:     s="SSLv3.0";n=sizeof("SSLv3.0")-1;break;
-      case SSL_LIBRARY_VERSION_2:       s="SSLv2.0";n=sizeof("SSLv2.0")-1;break;
       default: break;
     }
     if (s) http_header_env_set(r, CONST_STR_LEN("SSL_PROTOCOL"), s, n);
@@ -2741,6 +2694,8 @@ TRIGGER_FUNC(mod_nss_handle_trigger) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_nss_plugin_init (plugin *p);
 int mod_nss_plugin_init (plugin *p)
 {
@@ -2778,20 +2733,13 @@ mod_nss_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *curv
 
 
 static PRUint16
-mod_nss_ssl_conf_proto_val (server *srv, plugin_config_socket *s, const buffer *b, int max)
+mod_nss_ssl_conf_proto_val (server *srv, const buffer *b, int max)
 {
     /* use of SSL v3 should be avoided, and SSL v2 is not supported here */
-    /*(choosing not to support s->ssl_use_sslv2 or SSL_LIBRARY_VERSION_2 here)*/
     if (NULL == b) /* default: min TLSv1.2, max TLSv1.3 */
         return max ? SSL_LIBRARY_VERSION_TLS_1_3 : SSL_LIBRARY_VERSION_TLS_1_2;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("None"))) /*"disable" limit*/
-        return max
-          ? SSL_LIBRARY_VERSION_TLS_1_3
-          : (s->ssl_use_sslv3
-              ? SSL_LIBRARY_VERSION_3_0
-              : SSL_LIBRARY_VERSION_TLS_1_0);
-    else if (buffer_eq_icase_slen(b, CONST_STR_LEN("SSLv3")))
-        return SSL_LIBRARY_VERSION_3_0;
+        return max ? SSL_LIBRARY_VERSION_TLS_1_3 : SSL_LIBRARY_VERSION_TLS_1_0;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.0")))
         return SSL_LIBRARY_VERSION_TLS_1_0;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.1")))
@@ -2818,8 +2766,8 @@ mod_nss_ssl_conf_proto_val (server *srv, plugin_config_socket *s, const buffer *
 static void
 mod_nss_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *minb, const buffer *maxb)
 {
-    s->protos.min = mod_nss_ssl_conf_proto_val(srv, s, minb, 0);
-    s->protos.max = mod_nss_ssl_conf_proto_val(srv, s, maxb, 1);
+    s->protos.min = mod_nss_ssl_conf_proto_val(srv, minb, 0);
+    s->protos.max = mod_nss_ssl_conf_proto_val(srv, maxb, 1);
     /* XXX: could check values against SSL_VersionRangeGetSupported() */
 }
 
@@ -3602,8 +3550,7 @@ mod_nss_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *cip
     free(ciphers);
     if (-1 == rc) return 0;
 
-    if (((s->protos.min && s->protos.min <= SSL_LIBRARY_VERSION_3_0)
-         || s->ssl_use_sslv3)
+    if (s->protos.min && s->protos.min <= SSL_LIBRARY_VERSION_3_0
         && countciphers(cipher_state, SSLV3) == 0) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, srv->errh,
           "NSSCipherSuite: SSL3 is enabled but no SSL3 ciphers are enabled.");

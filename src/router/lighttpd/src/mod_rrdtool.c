@@ -3,16 +3,17 @@
 #include "base.h"
 #include "fdevent.h"
 #include "log.h"
+#include "response.h"
 
 #include "plugin.h"
 #include <sys/types.h>
-#include <sys/stat.h>
+#include "sys-stat.h"
 #include "sys-time.h"
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
 
 typedef struct {
@@ -42,7 +43,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_rrd_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 static void mod_rrd_free_config(plugin_data * const p) {
@@ -185,8 +186,7 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
             switch (cpv->k_id) {
               case 0: /* rrdtool.db-name */
                 if (!buffer_is_blank(cpv->v.b)) {
-                    rrd_config *rrd = calloc(1, sizeof(rrd_config));
-                    force_assert(rrd);
+                    rrd_config *rrd = ck_calloc(1, sizeof(rrd_config));
                     rrd->path_rrd = cpv->v.b;
                     cpv->v.v = rrd;
                     cpv->vtype = T_CONFIG_LOCAL;
@@ -335,11 +335,11 @@ static int mod_rrd_write_data(server *srv, plugin_data *p, rrd_config *s) {
                             BUF_PTR_LEN(s->path_rrd),
                             CONST_STR_LEN(" N:"));
     buffer_append_int(cmd, s->bytes_read);
-    buffer_append_string_len(cmd, CONST_STR_LEN(":"));
+    buffer_append_char(cmd, ':');
     buffer_append_int(cmd, s->bytes_written);
-    buffer_append_string_len(cmd, CONST_STR_LEN(":"));
+    buffer_append_char(cmd, ':');
     buffer_append_int(cmd, s->requests);
-    buffer_append_string_len(cmd, CONST_STR_LEN("\n"));
+    buffer_append_char(cmd, '\n');
 
     if (-1 == safe_write(p->write_fd, BUF_PTR_LEN(cmd))) {
         log_error(srv->errh, __FILE__, __LINE__, "rrdtool-write: failed");
@@ -422,20 +422,17 @@ REQUESTDONE_FUNC(mod_rrd_account) {
 
     mod_rrd_patch_config(r, p);
     rrd_config * const rrd = p->conf.rrd;
-    if (NULL == rrd) return HANDLER_GO_ON;
-    ++rrd->requests;
-    if (r->http_version <= HTTP_VERSION_1_1) {
-        rrd->bytes_written += (r->con->bytes_written - r->bytes_written_ckpt);
-        rrd->bytes_read    += (r->con->bytes_read    - r->bytes_read_ckpt);
+    if (NULL != rrd) {
+        ++rrd->requests;
+        rrd->bytes_written += http_request_stats_bytes_out(r);
+        rrd->bytes_read    += http_request_stats_bytes_in(r);
     }
-    else {
-        rrd->bytes_written += r->write_queue.bytes_out;
-        rrd->bytes_read    += r->read_queue.bytes_in;
-    }
-
     return HANDLER_GO_ON;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_rrdtool_plugin_init(plugin *p);
 int mod_rrdtool_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

@@ -12,7 +12,7 @@ except NameError:
 	string_types = str
 
 package = 'lighttpd'
-version = '1.4.64'
+version = '1.4.70'
 
 underscorify_reg = re.compile('[^A-Z0-9]')
 def underscorify(id):
@@ -244,6 +244,7 @@ vars.AddVariables(
 	BoolVariable('with_brotli', 'enable brotli compression', 'no'),
 	PackageVariable('with_dbi', 'enable dbi support', 'no'),
 	BoolVariable('with_fam', 'enable FAM/gamin support', 'no'),
+	BoolVariable('with_libdeflate', 'enable libdeflate compression', 'no'),
 	BoolVariable('with_maxminddb', 'enable MaxMind GeoIP2 support', 'no'),
 	BoolVariable('with_krb5', 'enable krb5 auth support', 'no'),
 	BoolVariable('with_ldap', 'enable ldap auth support', 'no'),
@@ -296,6 +297,7 @@ env.Append(CPPFLAGS = [
 	'-D_FILE_OFFSET_BITS=64',
 	'-D_LARGEFILE_SOURCE',
 	'-D_LARGE_FILES',
+	'-D_DEFAULT_SOURCE',
 	'-D_GNU_SOURCE',
 ])
 
@@ -332,6 +334,7 @@ if 1:
 		LIBCRYPT = '',
 		LIBCRYPTO = '',
 		LIBDBI = '',
+		LIBDEFLATE = '',
 		LIBDL = '',
 		LIBGNUTLS = '',
 		LIBGSSAPI_KRB5 = '',
@@ -428,6 +431,9 @@ if 1:
 		'mmap',
 		'pipe2',
 		'poll',
+		'posix_spawn',
+		'posix_spawn_file_actions_addclosefrom_np',
+		'posix_spawn_file_actions_addfchdir_np',
 		'pread',
 		'preadv',
 		'pwrite',
@@ -530,6 +536,14 @@ if 1:
 			LIBS = [ 'fam' ],
 		)
 		autoconf.haveFunc('FAMNoExists')
+
+	if env['with_libdeflate']:
+		if not autoconf.CheckLibWithHeader('deflate', 'libdeflate.h', 'C'):
+			fail("Couldn't find libdeflate")
+		autoconf.env.Append(
+			CPPFLAGS = [ '-DHAVE_LIBDEFLATE' ],
+			LIBDEFLATE = 'libdeflate',
+		)
 
 	if env['with_maxminddb']:
 		if not autoconf.CheckLibWithHeader('maxminddb', 'maxminddb.h', 'C'):

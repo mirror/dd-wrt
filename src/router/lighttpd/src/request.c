@@ -19,6 +19,44 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+__attribute_cold__
+__attribute_noinline__
+void
+http_request_state_append (buffer * const b, request_state_t state)
+{
+    static const struct sn { const char *s; uint32_t n; } states[] = {
+      { CONST_STR_LEN("connect") }
+     ,{ CONST_STR_LEN("req-start") }
+     ,{ CONST_STR_LEN("read") }
+     ,{ CONST_STR_LEN("req-end") }
+     ,{ CONST_STR_LEN("readpost") }
+     ,{ CONST_STR_LEN("handle-req") }
+     ,{ CONST_STR_LEN("resp-start") }
+     ,{ CONST_STR_LEN("write") }
+     ,{ CONST_STR_LEN("resp-end") }
+     ,{ CONST_STR_LEN("error") }
+     ,{ CONST_STR_LEN("close") }
+     ,{ CONST_STR_LEN("(unknown)") }
+    };
+    const struct sn * const p =
+      states +((uint32_t)state <= CON_STATE_CLOSE ? state : CON_STATE_CLOSE+1);
+    buffer_append_string_len(b, p->s, p->n);
+}
+
+__attribute_cold__
+__attribute_noinline__
+__attribute_pure__
+const char *
+http_request_state_short (request_state_t state)
+{
+    /*((char *) returned, but caller must use only one char)*/
+    static const char sstates[] = ".qrQRhsWSECx";
+    return
+      sstates+((uint32_t)state <= CON_STATE_CLOSE ? state : CON_STATE_CLOSE+1);
+}
+
+
 __attribute_noinline__
 __attribute_nonnull__()
 __attribute_pure__
@@ -48,6 +86,7 @@ __attribute_pure__
 static const char * http_request_check_line_minimal (const char * const restrict s, const uint_fast32_t len) {
     for (uint_fast32_t i = 0; i < len; ++i) {
         if (__builtin_expect( (s[i] == '\0'), 0)) return s+i;
+        if (__builtin_expect( (s[i] == '\r'), 0)) return s+i;
         if (__builtin_expect( (s[i] == '\n'), 0)) return s+i;
     }
     return NULL;
@@ -253,7 +292,7 @@ int http_request_host_normalize(buffer * const b, const int scheme_port) {
     } while (0);
 
     if (0 != port && port != scheme_port) {
-        buffer_append_string_len(b, CONST_STR_LEN(":"));
+        buffer_append_char(b, ':');
         buffer_append_int(b, (int)port);
     }
 
@@ -528,13 +567,19 @@ http_request_validate_pseudohdrs (request_st * const restrict r, const int schem
 {
     /* :method is required to indicate method
      * CONNECT method must have :method and :authority
+     *   unless RFC8441 CONNECT extension, which must follow 'other' (below)
      * All other methods must have at least :method :scheme :path */
 
     if (HTTP_METHOD_UNSET == r->http_method)
         return http_request_header_line_invalid(r, 400,
           "missing pseudo-header method -> 400");
 
-    if (__builtin_expect( (HTTP_METHOD_CONNECT != r->http_method), 1)) {
+    if (HTTP_METHOD_CONNECT != r->http_method)
+        r->h2_connect_ext = 0;
+
+    if (__builtin_expect( (HTTP_METHOD_CONNECT != r->http_method), 1)
+        || __builtin_expect( (r->h2_connect_ext != 0), 0)) {
+
         if (!scheme)
             return http_request_header_line_invalid(r, 400,
               "missing pseudo-header scheme -> 400");
@@ -590,9 +635,9 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
     /* Note: k and v might not be '\0' terminated strings;
      * care must be taken to avoid libc funcs which expect z-strings */
     const char * const restrict k = hpctx->k;
-    const char * const restrict v = hpctx->v;
+    const char * restrict v = hpctx->v;
     const uint32_t klen = hpctx->klen;
-    const uint32_t vlen = hpctx->vlen;
+    uint32_t vlen = hpctx->vlen;
 
     if (0 == klen)
         return http_request_header_line_invalid(r, 400,
@@ -624,24 +669,32 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
             /* (note: relies on implementation details using ls-hpack in h2.c)
              * (hpctx->id mapped from lsxpack_header_t hpack_index, which only
              *  matches key, not also value, if lsxpack_header_t flags does not
-             *  have LSXPACK_HPACK_VAL_MATCHED set, so HTTP_HEADER_H2_METHOD_GET
+             *  have LSXPACK_HPACK_VAL_MATCHED set, so HTTP_HEADER_H2_METHOD
              *  below indicates any method, not only "GET") */
             if (__builtin_expect( (hpctx->id == HTTP_HEADER_H2_UNKNOWN), 0)) {
                 switch (klen-1) {
+                 #if 0
                   case 4:
                     if (0 == memcmp(k+1, "path", 4))
                         hpctx->id = HTTP_HEADER_H2_PATH;
                     break;
                   case 6:
                     if (0 == memcmp(k+1, "method", 6))
-                        hpctx->id = HTTP_HEADER_H2_METHOD_GET;
+                        hpctx->id = HTTP_HEADER_H2_METHOD;
                     else if (0 == memcmp(k+1, "scheme", 6))
-                        hpctx->id = HTTP_HEADER_H2_SCHEME_HTTP;
+                        hpctx->id = HTTP_HEADER_H2_SCHEME;
                     break;
+                 #endif
+                  case 8:
+                    if (0 == memcmp(k+1, "protocol", 8))
+                        hpctx->id = HTTP_HEADER_H2_PROTOCOL;
+                    break;
+                 #if 0
                   case 9:
                     if (0 == memcmp(k+1, "authority", 9))
                         hpctx->id = HTTP_HEADER_H2_AUTHORITY;
                     break;
+                 #endif
                   default:
                     break;
                 }
@@ -660,23 +713,20 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
                 /* insert as "Host" header */
                 http_request_header_set_Host(r, v, vlen);
                 return 0;
-              case HTTP_HEADER_H2_METHOD_GET:  /*(any method, not only "GET")*/
-              case HTTP_HEADER_H2_METHOD_POST:
+              case HTTP_HEADER_H2_METHOD:
                 if (__builtin_expect( (HTTP_METHOD_UNSET != r->http_method), 0))
                     break;
-                r->http_method = get_http_method_key(v, vlen);
+                r->http_method = http_method_key_get(v, vlen);
                 if (HTTP_METHOD_UNSET >= r->http_method)
                     return http_request_header_line_invalid(r, 501,
                       "unknown http-method -> 501");
                 return 0;
-              case HTTP_HEADER_H2_PATH:            /*(any path, not only "/")*/
-              case HTTP_HEADER_H2_PATH_INDEX_HTML:
+              case HTTP_HEADER_H2_PATH:
                 if (__builtin_expect( (!buffer_is_blank(&r->target)), 0))
                     break;
                 buffer_copy_string_len(&r->target, v, vlen);
                 return 0;
-              case HTTP_HEADER_H2_SCHEME_HTTP: /*(any scheme, not only "http")*/
-              case HTTP_HEADER_H2_SCHEME_HTTPS:
+              case HTTP_HEADER_H2_SCHEME:
                 if (__builtin_expect( (hpctx->scheme), 0))
                     break;
                 hpctx->scheme = 1; /*(marked present, but otherwise ignored)*/
@@ -698,6 +748,14 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
                 return http_request_header_line_invalid(r, 400,
                   "unknown pseudo-header scheme -> 400");
                #endif
+              case HTTP_HEADER_H2_PROTOCOL:
+                /* support only ":protocol: websocket" for now */
+                if (vlen != 9 || 0 != memcmp(v, "websocket", 9))
+                    return http_request_header_line_invalid(r, 405,
+                      "unhandled :protocol value -> 405");
+                /*(future: might be enum of recognized :protocol: ext values)*/
+                r->h2_connect_ext = 1;
+                return 0;
               default:
                 return http_request_header_line_invalid(r, 400,
                   "invalid pseudo-header -> 400");
@@ -725,6 +783,16 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
             if (x)
                 return http_request_header_char_invalid(r, *x,
                   "invalid character in header -> 400");
+
+            /* remove leading and trailing whitespace (strict RFC conformance)*/
+            if (__builtin_expect( (*v <= 0x20), 0)) {
+                while ((*v == ' ' || *v == '\t') && (++v, --vlen)) ;
+                if (0 == vlen)
+                    return 0;
+            }
+            if (__builtin_expect( (v[vlen-1] <= 0x20), 0)) {
+                while (v[vlen-1] == ' ' || v[vlen-1] == '\t') --vlen;
+            }
 
             if (__builtin_expect( (hpctx->id == HTTP_HEADER_H2_UNKNOWN), 0)) {
                 uint32_t j = 0;
@@ -846,7 +914,7 @@ static int http_request_parse_reqline(request_st * const restrict r, const char 
         return http_request_header_line_invalid(r, 400, "incomplete request line -> 400");
   #endif
 
-    r->http_method = get_http_method_key(ptr, i);
+    r->http_method = http_method_key_get(ptr, i);
     if (HTTP_METHOD_UNSET >= r->http_method)
         return http_request_header_line_invalid(r, 501, "unknown http-method -> 501");
 
@@ -913,7 +981,7 @@ int http_request_parse_target(request_st * const r, int scheme_port) {
     buffer_copy_string_len(&r->uri.scheme, "https", scheme_port == 443 ? 5 : 4);
 
     buffer * const target = &r->target;
-    if (r->http_method == HTTP_METHOD_CONNECT
+    if ((r->http_method == HTTP_METHOD_CONNECT && !r->h2_connect_ext)
         || (r->http_method == HTTP_METHOD_OPTIONS
             && target->ptr[0] == '*'
             && target->ptr[1] == '\0')) {

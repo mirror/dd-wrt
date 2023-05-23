@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 - 2021 LiteSpeed Technologies Inc
+Copyright (c) 2018 - 2023 LiteSpeed Technologies Inc
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ extern "C" {
 
 #define LSHPACK_MAJOR_VERSION 2
 #define LSHPACK_MINOR_VERSION 3
-#define LSHPACK_PATCH_VERSION 0
+#define LSHPACK_PATCH_VERSION 1
 
 #define lshpack_strlen_t lsxpack_strlen_t
 #define LSHPACK_MAX_STRLEN LSXPACK_MAX_STRLEN
@@ -219,7 +219,11 @@ lshpack_dec_set_max_capacity (struct lshpack_dec *, unsigned);
  * These structures are not very complicated.
  */
 
+#ifdef _WIN32
+#include "../compat/_WIN32/sys/queue.h"
+#else
 #include <sys/queue.h>
+#endif
 
 #ifdef __OpenBSD__
 #define STAILQ_HEAD             SIMPLEQ_HEAD

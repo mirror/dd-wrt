@@ -13,7 +13,7 @@
 #include "base.h"
 #include "buffer.h"
 #include "chunk.h"
-#include "plugin.h"
+#include "plugins.h"
 #include "plugin_config.h"
 #include "request.h"
 #include "response.h"
@@ -57,21 +57,19 @@ request_init_data (request_st * const r, connection * const con, server * const 
     r->tmp_buf = srv->tmp_buf;
     r->resp_body_scratchpad = -1;
     r->server_name = &r->uri.authority;
+    r->dst_addr = &con->dst_addr;
+    r->dst_addr_buf = &con->dst_addr_buf;
 
     /* init plugin-specific per-request structures */
-    r->plugin_ctx = calloc(1, (srv->plugins.used + 1) * sizeof(void *));
-    force_assert(NULL != r->plugin_ctx);
-
-    r->cond_cache = calloc(srv->config_context->used, sizeof(cond_cache_t));
-    force_assert(NULL != r->cond_cache);
+    r->plugin_ctx = ck_calloc(srv->plugins.used + 1, sizeof(void *));
+    r->cond_cache = ck_calloc(srv->config_context->used, sizeof(cond_cache_t));
 
   #ifdef HAVE_PCRE
     if (srv->config_captures) {
         r->cond_captures = srv->config_captures;
-        r->cond_match = calloc(srv->config_captures, sizeof(cond_match_t *));
-        force_assert(NULL != r->cond_match);
-        r->cond_match_data = calloc(srv->config_captures, sizeof(cond_match_t));
-        force_assert(NULL != r->cond_match_data);
+        r->cond_match = ck_calloc(srv->config_captures, sizeof(cond_match_t *));
+        r->cond_match_data = ck_calloc(srv->config_captures,
+                                       sizeof(cond_match_t));
     }
   #endif
 
@@ -89,8 +87,14 @@ request_reset (request_st * const r)
     r->loops_per_request = 0;
     r->keep_alive = 0;
 
-    r->h2state = 0; /* H2_STATE_IDLE */
-    r->h2id = 0;
+    memset(&r->x, 0, sizeof(r->x));
+    /* clear initial members of r->x union */
+    /*r->x.h1.bytes_written_ckpt = 0;*/
+    /*r->x.h1.bytes_read_ckpt = 0;*/
+    /*r->x.h1.te_chunked = 0;*/
+    /*r->x.h2.state = 0;*/ /* H2_STATE_IDLE */
+    /*r->x.h2.id = 0;*/
+
     r->http_method = HTTP_METHOD_UNSET;
     r->http_version = HTTP_VERSION_UNSET;
 
@@ -98,7 +102,6 @@ request_reset (request_st * const r)
 
     r->http_host = NULL;
     r->reqbody_length = 0;
-    r->te_chunked = 0;
     r->resp_body_scratchpad = -1;
     r->rqst_htags = 0;
 
@@ -107,6 +110,7 @@ request_reset (request_st * const r)
     /*r->error_handler_saved_method = HTTP_METHOD_UNSET;*/
     /*(error_handler_saved_method value is not valid
      * unless error_handler_saved_status is set)*/
+    r->h2_connect_ext = 0;
 
     buffer_clear(&r->uri.scheme);
 
@@ -296,8 +300,7 @@ request_acquire (connection * const con)
         reqpool = (request_st *)r->con; /*(reuse r->con as next ptr)*/
     }
     else {
-        r = calloc(1, sizeof(request_st));
-        force_assert(r);
+        r = ck_calloc(1, sizeof(request_st));
         request_init_data(r, con, con->srv);
     }
 

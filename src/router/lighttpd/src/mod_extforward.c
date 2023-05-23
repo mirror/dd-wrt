@@ -104,34 +104,44 @@ static int extforward_check_proxy;
 /* context , used for restore remote ip */
 
 typedef struct {
-	/* per-request state */
-	sock_addr saved_remote_addr;
-	buffer saved_remote_addr_buf;
+    /* per-request state */
+    sock_addr dst_addr;
+    buffer dst_addr_buf;
+} handler_rctx;
 
-	/* hap-PROXY protocol prior to receiving first request */
-	int(*saved_network_read)(connection *, chunkqueue *, off_t);
+typedef struct {
+    int con_is_trusted;
 
-	/* connection-level state applied to requests in handle_request_env */
-	array *env;
-	int ssl_client_verify;
-	uint32_t request_count;
+    /* connection-level state applied to requests in handle_request_env */
+    int ssl_client_verify;
+    array *env;
+
+    /* hap-PROXY protocol prior to receiving first request */
+    int(*saved_network_read)(connection *, chunkqueue *, off_t);
 } handler_ctx;
 
 
+static handler_rctx * handler_rctx_init(void) {
+    return ck_calloc(1, sizeof(handler_rctx));
+}
+
+static void handler_rctx_free(handler_rctx *rctx) {
+    free(rctx->dst_addr_buf.ptr);
+    free(rctx);
+}
+
 static handler_ctx * handler_ctx_init(void) {
-	handler_ctx * hctx;
-	hctx = calloc(1, sizeof(*hctx));
-	force_assert(hctx);
-	return hctx;
+    return ck_calloc(1, sizeof(handler_ctx));
 }
 
 static void handler_ctx_free(handler_ctx *hctx) {
-	free(hctx->saved_remote_addr_buf.ptr);
-	free(hctx);
+    if (NULL != hctx->env)
+        array_free(hctx->env);
+    free(hctx);
 }
 
 INIT_FUNC(mod_extforward_init) {
-	return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 FREE_FUNC(mod_extforward_free) {
@@ -227,10 +237,8 @@ static void * mod_extforward_parse_forwarder(server *srv, const array *forwarder
     }
 
     struct forwarder_cfg * const fwd =
-      malloc(sizeof(struct forwarder_cfg)+sizeof(struct sock_addr_mask)*nmasks);
-    force_assert(fwd);
-    memset(fwd, 0,
-           sizeof(struct forwarder_cfg) + sizeof(struct sock_addr_mask)*nmasks);
+      ck_calloc(1, sizeof(struct forwarder_cfg)
+                 + sizeof(struct sock_addr_mask)*nmasks);
     fwd->forwarder = forwarder;
     fwd->forward_all = forward_all;
     fwd->addrs_used = 0;
@@ -238,6 +246,7 @@ static void * mod_extforward_parse_forwarder(server *srv, const array *forwarder
         data_string * const ds = (data_string *)forwarder->data[j];
         char * const nm_slash = strchr(ds->key.ptr, '/');
         if (NULL == nm_slash) continue;
+        if (ds->key.ptr[0] == '/') continue; /*no mask for unix domain sockets*/
         if (buffer_is_blank(&ds->value)) continue; /* ignored */
 
         char *err;
@@ -252,7 +261,14 @@ static void * mod_extforward_parse_forwarder(server *srv, const array *forwarder
         struct sock_addr_mask * const sm = fwd->addrs + fwd->addrs_used++;
         sm->bits = nm_bits;
         *nm_slash = '\0';
-        rc = sock_addr_from_str_numeric(&sm->addr, ds->key.ptr, srv->errh);
+        if (ds->key.ptr[0] == '['
+            && ds->key.ptr+1 < nm_slash && nm_slash[-1] == ']') {
+            nm_slash[-1] = '\0';
+            rc = sock_addr_from_str_numeric(&sm->addr,ds->key.ptr+1,srv->errh);
+            nm_slash[-1] = ']';
+        }
+        else
+            rc = sock_addr_from_str_numeric(&sm->addr,ds->key.ptr,  srv->errh);
         *nm_slash = '/';
         if (1 != rc) {
             free(fwd);
@@ -510,6 +526,19 @@ static int is_connection_trusted(connection * const con, plugin_data *p)
     return is_proxy_trusted(p, BUF_PTR_LEN(&con->dst_addr_buf));
 }
 
+static int is_connection_trusted_cached(connection * const con, plugin_data *p)
+{
+    if (p->conf.forward_all) return (1 == p->conf.forward_all);
+
+    handler_ctx ** const hctx = (handler_ctx **)&con->plugin_ctx[p->id];
+    if (!*hctx)
+        *hctx = handler_ctx_init();
+    else if ((*hctx)->con_is_trusted != -1)
+        return (*hctx)->con_is_trusted;
+    return ((*hctx)->con_is_trusted =
+      is_proxy_trusted(p, BUF_PTR_LEN(&con->dst_addr_buf)));
+}
+
 /*
  * Return last address of proxy that is not trusted.
  * Do not accept "all" keyword here.
@@ -528,54 +557,37 @@ static const buffer *last_not_in_array(array *a, plugin_data *p)
 }
 
 static int mod_extforward_set_addr(request_st * const r, plugin_data *p, const char *addr, size_t addrlen) {
-	connection * const con = r->con;
 	sock_addr sock;
-	handler_ctx *hctx = con->plugin_ctx[p->id];
-
-	/* Preserve changed addr for lifetime of h2 connection; upstream proxy
-	 * should not reuse same h2 connection for requests from different clients*/
-	if (hctx && !buffer_is_unset(&hctx->saved_remote_addr_buf)
-	    && r->http_version > HTTP_VERSION_1_1) { /*(e.g. HTTP_VERSION_2)*/
-		if (extforward_check_proxy) /* save old address */
-			http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"),
-			                    BUF_PTR_LEN(&hctx->saved_remote_addr_buf));
-		return 1;
-	}
-
-	if (r->conf.log_request_handling) {
-		log_error(r->conf.errh, __FILE__, __LINE__, "using address: %s", addr);
-	}
-
 	sock.plain.sa_family = AF_UNSPEC;
 	if (1 != sock_addr_from_str_numeric(&sock, addr, r->conf.errh)) return 0;
 	if (sock.plain.sa_family == AF_UNSPEC) return 0;
 
-	/* we found the remote address, modify current connection and save the old address */
-	if (hctx) {
-		if (!buffer_is_unset(&hctx->saved_remote_addr_buf)) {
-			if (r->conf.log_request_handling) {
-				log_error(r->conf.errh, __FILE__, __LINE__,
-				  "-- mod_extforward_uri_handler already patched this connection, resetting state");
-			}
-			con->dst_addr = hctx->saved_remote_addr;
-			buffer_move(&con->dst_addr_buf, &hctx->saved_remote_addr_buf);
-		}
-	} else {
-		con->plugin_ctx[p->id] = hctx = handler_ctx_init();
+	if (!r->plugin_ctx[p->id]) {
+		handler_rctx * const rctx = r->plugin_ctx[p->id] = handler_rctx_init();
+		r->dst_addr = &rctx->dst_addr;
+		r->dst_addr_buf = &rctx->dst_addr_buf;
 	}
+  #if 0 /*(not expected)*/
+	else if (r->conf.log_request_handling)
+		log_error(r->conf.errh, __FILE__, __LINE__,
+		  "-- mod_extforward_uri_handler already patched this connection, resetting state");
+  #endif
+
+	if (r->conf.log_request_handling)
+		log_error(r->conf.errh, __FILE__, __LINE__, "using address: %s", addr);
+
+  #if 0 /*(no longer necessary since not overwriting con->dst_addr_buf)*/
 	/* save old address */
 	if (extforward_check_proxy) {
 		http_header_env_set(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"),
 		                    BUF_PTR_LEN(&con->dst_addr_buf));
 	}
-	hctx->request_count = con->request_count;
-	hctx->saved_remote_addr = con->dst_addr;
-	buffer_move(&hctx->saved_remote_addr_buf, &con->dst_addr_buf);
-	/* patch connection address */
-	con->dst_addr = sock;
-	buffer_copy_string_len(&con->dst_addr_buf, addr, addrlen);
+  #endif
 
-	/* Now, clean the conf_cond cache, because we may have changed the results of tests */
+	/* set (virtual) remote address for request */
+	*(sock_addr *)r->dst_addr = sock;
+	buffer_copy_string_len(r->dst_addr_buf, addr, addrlen);
+	/* reset conf_cond cache; results may change */
 	config_cond_cache_reset_item(r, COMP_HTTP_REMOTE_IP);
 
 	return 1;
@@ -1063,15 +1075,12 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 
 	if (NULL == p->conf.headers) return HANDLER_GO_ON;
 
-	/* Do not reparse headers for same request, e.g after HANDER_COMEBACK
+	/* Do not reparse headers for same request, e.g. after HANDLER_COMEBACK
 	 * from mod_rewrite, mod_magnet MAGNET_RESTART_REQUEST, mod_cgi
 	 * cgi.local-redir, or gw_backend reconnect.  This has the implication
 	 * that mod_magnet and mod_cgi with local-redir should not modify
-	 * Forwarded or related headers and expect effects here. */
-	handler_ctx *hctx = r->con->plugin_ctx[p->id];
-	if (NULL != hctx && !buffer_is_unset(&hctx->saved_remote_addr_buf)
-	    && hctx->request_count == r->con->request_count)
-		return HANDLER_GO_ON;
+	 * Forwarded or related headers and expect effects here */
+	if (r->plugin_ctx[p->id]) return HANDLER_GO_ON;
 
 	const buffer *forwarded = NULL;
 	int is_forwarded_header = 0;
@@ -1085,7 +1094,7 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 		}
 	}
 
-	if (forwarded && is_connection_trusted(r->con, p)) {
+	if (forwarded && is_connection_trusted_cached(r->con, p)) {
 		return (is_forwarded_header)
 		  ? mod_extforward_Forwarded(r, p, forwarded)
 		  : mod_extforward_X_Forwarded_For(r, p, forwarded);
@@ -1103,13 +1112,13 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 
 
 REQUEST_FUNC(mod_extforward_handle_request_env) {
-    plugin_data *p = p_d;
-    handler_ctx *hctx = r->con->plugin_ctx[p->id];
+    handler_ctx * const hctx = r->con->plugin_ctx[((plugin_data *)p_d)->id];
     if (NULL == hctx || NULL == hctx->env) return HANDLER_GO_ON;
-    for (uint32_t i=0; i < hctx->env->used; ++i) {
+    const array * restrict env = hctx->env;
+    for (uint32_t i = 0; i < env->used; ++i) {
         /* note: replaces values which may have been set by mod_openssl
          * (when mod_extforward is listed after mod_openssl in server.modules)*/
-        data_string *ds = (data_string *)hctx->env->data[i];
+        const data_string *ds = (const data_string *)env->data[i];
         http_header_env_set(r, BUF_PTR_LEN(&ds->key), BUF_PTR_LEN(&ds->value));
     }
     return HANDLER_GO_ON;
@@ -1117,31 +1126,21 @@ REQUEST_FUNC(mod_extforward_handle_request_env) {
 
 
 REQUEST_FUNC(mod_extforward_restore) {
-	/* Preserve changed addr for lifetime of h2 connection; upstream proxy
-	 * should not reuse same h2 connection for requests from different clients*/
-	if (r->http_version > HTTP_VERSION_1_1) /*(e.g. HTTP_VERSION_2)*/
-		return HANDLER_GO_ON;
-	/* XXX: should change this to not occur at request reset,
-	*       but instead at connection reset */
-	plugin_data *p = p_d;
-	connection * const con = r->con;
-	handler_ctx *hctx = con->plugin_ctx[p->id];
+    handler_rctx **rctx =
+      (handler_rctx **)&r->plugin_ctx[((plugin_data *)p_d)->id];
+    if (*rctx) {
+        handler_rctx_free(*rctx);
+        *rctx = NULL;
 
-	if (!hctx) return HANDLER_GO_ON;
+        connection * const con = r->con;
+        r->dst_addr = &con->dst_addr;
+        r->dst_addr_buf = &con->dst_addr_buf;
+        /* reset conf_cond cache; results may change */
+        /* (even though other mods not expected to parse config in reset hook)*/
+        config_cond_cache_reset_item(r, COMP_HTTP_REMOTE_IP);
+    }
 
-	if (!buffer_is_unset(&hctx->saved_remote_addr_buf)) {
-		con->dst_addr = hctx->saved_remote_addr;
-		buffer_move(&con->dst_addr_buf, &hctx->saved_remote_addr_buf);
-		/* Now, clean the conf_cond cache, because we may have changed the results of tests */
-		config_cond_cache_reset_item(r, COMP_HTTP_REMOTE_IP);
-	}
-
-	if (NULL == hctx->env) {
-		handler_ctx_free(hctx);
-		con->plugin_ctx[p->id] = NULL;
-	}
-
-	return HANDLER_GO_ON;
+    return HANDLER_GO_ON;
 }
 
 
@@ -1150,18 +1149,10 @@ CONNECTION_FUNC(mod_extforward_handle_con_close)
     plugin_data *p = p_d;
     handler_ctx *hctx = con->plugin_ctx[p->id];
     if (NULL != hctx) {
-        if (NULL != hctx->saved_network_read) {
-            con->network_read = hctx->saved_network_read;
-        }
-        if (!buffer_is_unset(&hctx->saved_remote_addr_buf)) {
-            con->dst_addr = hctx->saved_remote_addr;
-            buffer_move(&con->dst_addr_buf, &hctx->saved_remote_addr_buf);
-        }
-        if (NULL != hctx->env) {
-            array_free(hctx->env);
-        }
-        handler_ctx_free(hctx);
         con->plugin_ctx[p->id] = NULL;
+        if (NULL != hctx->saved_network_read)
+            con->network_read = hctx->saved_network_read;
+        handler_ctx_free(hctx);
     }
 
     return HANDLER_GO_ON;
@@ -1180,6 +1171,7 @@ CONNECTION_FUNC(mod_extforward_handle_con_accept)
     if (is_connection_trusted(con, p)) {
         handler_ctx *hctx = handler_ctx_init();
         con->plugin_ctx[p->id] = hctx;
+        hctx->con_is_trusted = -1; /*(masquerade IP not yet known/checked)*/
         hctx->saved_network_read = con->network_read;
         con->network_read = mod_extforward_network_read;
     }
@@ -1194,6 +1186,8 @@ CONNECTION_FUNC(mod_extforward_handle_con_accept)
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_extforward_plugin_init(plugin *p);
 int mod_extforward_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
@@ -1295,7 +1289,7 @@ The following types have already been registered for the <type> field :
 #define PP2_TYPE_NETNS            0x30
 
 /*
-For the type PP2_TYPE_SSL, the value is itselv a defined like this :
+For the type PP2_TYPE_SSL, the value is itself defined like this :
  */
 
 struct pp2_tlv_ssl {
@@ -1335,9 +1329,17 @@ static int hap_PROXY_recv (const int fd, union hap_PROXY_hdr * const hdr, const 
 
     do {
         ret = recv(fd, hdr, sizeof(*hdr), MSG_PEEK|MSG_DONTWAIT|MSG_NOSIGNAL);
-    } while (-1 == ret && errno == EINTR);
+    }
+  #ifdef _WIN32
+    while (-1 == ret && WSAGetLastError() == WSAEINTR);
+  #else
+    while (-1 == ret && errno == EINTR);
+  #endif
 
     if (-1 == ret)
+      #ifdef _WIN32
+        return (WSAGetLastError() == WSAEWOULDBLOCK) ? 0 : -1;
+      #else
         return (errno == EAGAIN
                 #ifdef EWOULDBLOCK
                 #if EAGAIN != EWOULDBLOCK
@@ -1345,6 +1347,7 @@ static int hap_PROXY_recv (const int fd, union hap_PROXY_hdr * const hdr, const 
                 #endif
                 #endif
                ) ? 0 : -1;
+      #endif
 
     if (ret >= 16 && 0 == memcmp(&hdr->v2, v2sig, 12)
         && (hdr->v2.ver_cmd & 0xF0) == 0x20) {
@@ -1561,10 +1564,12 @@ static int mod_extforward_hap_PROXY_v2 (connection * const con,
       case 0x31:  /* UNIX domain socket */
         {
             char *src_addr = (char *)hdr->v2.addr.unx.src_addr;
-            char *z = memchr(src_addr, '\0', UNIX_PATH_MAX);
+            char *z = memchr(src_addr, '\0', sizeof(hdr->v2.addr.unx.src_addr));
             if (NULL == z) return -1; /* invalid addr; too long */
-            len = (uint32_t)(z - src_addr + 1); /*(+1 for '\0')*/
-            sock_addr_assign(&con->dst_addr, AF_UNIX, 0, src_addr);
+            len = (uint32_t)(z - src_addr);
+            /*if (0 == len) return -1;*//* abstract socket not supported; err?*/
+            if (0 != sock_addr_assign(&con->dst_addr, AF_UNIX, 0, src_addr))
+                return -1; /* invalid addr; too long */
             buffer_copy_string_len(&con->dst_addr_buf, src_addr, len);
         }
        #if 0 /*(dst_addr should be identical to src_addr for AF_UNIX)*/

@@ -16,6 +16,7 @@ struct cond_match_t;    /* declaration */
 struct stat_cache_entry;/* declaration */
 
 typedef struct request_config {
+    fdlog_st *errh;
     unsigned int http_parseopts;
     uint32_t max_request_field_size;
     const array *mimetypes;
@@ -24,7 +25,6 @@ typedef struct request_config {
     const buffer *document_root;
     const buffer *server_name;
     const buffer *server_tag;
-    fdlog_st *errh;
 
     unsigned int max_request_size;
     unsigned short max_keep_alive_requests;
@@ -33,26 +33,26 @@ typedef struct request_config {
     unsigned short max_write_idle;
     unsigned short stream_request_body;
     unsigned short stream_response_body;
-    unsigned char high_precision_timestamps;
-    unsigned char allow_http11;
-    unsigned char follow_symlink;
-    unsigned char etag_flags;
-    unsigned char force_lowercase_filenames; /*(case-insensitive file systems)*/
-    unsigned char use_xattr;
-    unsigned char range_requests;
-    unsigned char error_intercept;
+    unsigned int high_precision_timestamps:1;
+    unsigned int allow_http11:1;
+    unsigned int range_requests:1;
+    unsigned int follow_symlink:1;
+    unsigned int etag_flags:3;
+    unsigned int use_xattr:1;
+    unsigned int force_lowercase_filenames:2;/*(case-insensitive file systems)*/
+    unsigned int error_intercept:1;
 
-    unsigned char h2proto; /*(global setting copied for convenient access)*/
+    unsigned int h2proto:2; /*(global setting copied for convenient access)*/
 
     /* debug */
-    unsigned char log_file_not_found;
-    unsigned char log_request_header;
-    unsigned char log_request_handling;
-    unsigned char log_response_header;
-    unsigned char log_condition_handling;
-    unsigned char log_timeouts;
-    unsigned char log_state_handling;
-    unsigned char log_request_header_on_error;
+    unsigned int log_request_handling:1;
+    unsigned int log_state_handling:1;
+    unsigned int log_condition_handling:1;
+    unsigned int log_response_header:1;
+    unsigned int log_request_header:1;
+    unsigned int log_request_header_on_error:1;
+    unsigned int log_file_not_found:1;
+    unsigned int log_timeouts:1;
 
     unsigned int bytes_per_second; /* connection bytes/sec limit */
     unsigned int global_bytes_per_second;/*total bytes/sec limit for scope*/
@@ -104,6 +104,7 @@ typedef struct {
 
 /* the order of the items should be the same as they are processed
  * read before write as we use this later e.g. <= CON_STATE_REQUEST_END */
+/* NB: must sync with http_request_state_short(), http_request_state_append() */
 typedef enum {
     CON_STATE_CONNECT,
     CON_STATE_REQUEST_START,
@@ -121,10 +122,22 @@ typedef enum {
 struct request_st {
     request_state_t state; /*(modules should not modify request state)*/
     int http_status;
-    uint32_t h2state;      /*(modules should not modify request h2state)*/
-    uint32_t h2id;
-     int32_t h2_rwin;
-     int32_t h2_swin;
+
+    union {
+      struct {
+        uint32_t state;    /*(modules should not modify request state)*/
+        uint32_t id;
+         int32_t rwin;
+         int32_t swin;
+         int16_t rwin_fudge;
+         uint8_t prio;
+      } h2;
+      struct {
+           off_t bytes_written_ckpt; /*used by http_request_stats_bytes_out()*/
+           off_t bytes_read_ckpt;    /*used by http_request_stats_bytes_in() */
+           off_t te_chunked;
+      } h1;
+    } x;
 
     http_method_t http_method;
     http_version_t http_version;
@@ -151,7 +164,6 @@ struct request_st {
     array env; /* used to pass lighttpd internal stuff */
 
     off_t reqbody_length; /* request Content-Length */
-    off_t te_chunked;
     off_t resp_body_scratchpad;
 
     buffer *http_host; /* copy of array value buffer ptr; not alloc'ed */
@@ -162,6 +174,9 @@ struct request_st {
 
     buffer pathinfo;
     buffer server_name_buf;
+
+    void *dst_addr;
+    buffer *dst_addr_buf;
 
     /* response */
     uint32_t resp_header_len;
@@ -180,8 +195,6 @@ struct request_st {
     buffer *tmp_buf;                    /* shared; same as srv->tmp_buf */
     response_dechunk *gw_dechunk;
 
-    off_t bytes_written_ckpt; /* used by mod_accesslog */
-    off_t bytes_read_ckpt;    /* used by mod_accesslog */
     unix_timespec64_t start_hp;
 
     int error_handler_saved_status; /* error-handler */
@@ -193,7 +206,22 @@ struct request_st {
 
     struct stat_cache_entry *tmp_sce; /*(value valid only in sequential code)*/
     int cond_captures;
+    int h2_connect_ext;
 };
+
+
+/* intended only for use by lighttpd base code, not by modules */
+#define request_set_state(r, n) ((r)->state = (n))
+
+/* intended only for use by lighttpd base code, not by modules */
+__attribute_cold__
+static inline void
+request_set_state_error(request_st * const r, const request_state_t state);
+static inline void
+request_set_state_error(request_st * const r, const request_state_t state)
+{
+    request_set_state(r, state);
+}
 
 
 typedef struct http_header_parse_ctx {
@@ -205,6 +233,7 @@ typedef struct http_header_parse_ctx {
     uint8_t pseudo;
     uint8_t scheme;
     uint8_t trailers;
+    uint8_t log_request_header;
     int8_t id;
     uint32_t max_request_field_size;
     unsigned int http_parseopts;
@@ -220,5 +249,47 @@ int http_request_host_normalize(buffer *b, int scheme_port);
 int http_request_host_policy(buffer *b, unsigned int http_parseopts, int scheme_port);
 
 int64_t li_restricted_strtoint64 (const char *v, const uint32_t vlen, const char ** const err);
+
+
+/* "base class" for h2con, h3con, ... */
+typedef struct hxcon {
+    request_st *r[8];
+    uint32_t rused;
+} hxcon;
+
+
+/* convenience macros/functions for display purposes */
+
+#define http_request_state_is_keep_alive(r) \
+  (CON_STATE_READ == (r)->state && !buffer_is_blank(&(r)->target_orig))
+
+#define http_con_state_is_keep_alive(con) \
+  ((con)->hx                              \
+   ? 0 == (con)->hx->rused                \
+   : http_request_state_is_keep_alive(&(con)->request))
+
+#define http_con_state_append(b, con)                            \
+   (http_con_state_is_keep_alive(con)                            \
+    ? buffer_append_string_len((b), CONST_STR_LEN("keep-alive")) \
+    : http_request_state_append((b), (con)->request.state))
+
+#define http_con_state_short(con)     \
+   (http_con_state_is_keep_alive(con) \
+    ? "k"                             \
+    : http_request_state_short((con)->request.state))
+
+#define http_request_stats_bytes_in(r) \
+   ((r)->read_queue.bytes_out          \
+    - ((r)->http_version > HTTP_VERSION_1_1 ? 0 : (r)->x.h1.bytes_read_ckpt))
+
+#define http_request_stats_bytes_out(r) \
+   ((r)->write_queue.bytes_out          \
+    - ((r)->http_version > HTTP_VERSION_1_1 ? 0 : (r)->x.h1.bytes_written_ckpt))
+
+__attribute_pure__
+const char * http_request_state_short (request_state_t state);
+
+void http_request_state_append (buffer *b, request_state_t state);
+
 
 #endif

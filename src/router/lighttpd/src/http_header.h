@@ -22,18 +22,16 @@
  *       as extending the bitmap greater than 64-bits may make quick bitmasks
  *       check more expensive, and the cost for looking up unmarked headers
  *       (HTTP_HEADER_OTHER) is not substantially more.  In the future, this
- *       list may be revisitied and reviewed, and less frequent headers removed
+ *       list may be revisited and reviewed, and less frequent headers removed
  *       or replaced.
  */
 enum http_header_h2_e { /* pseudo-headers */
   HTTP_HEADER_H2_UNKNOWN         = -1
  ,HTTP_HEADER_H2_AUTHORITY       = -2
- ,HTTP_HEADER_H2_METHOD_GET      = -3
- ,HTTP_HEADER_H2_METHOD_POST     = -4
- ,HTTP_HEADER_H2_PATH            = -5
- ,HTTP_HEADER_H2_PATH_INDEX_HTML = -6
- ,HTTP_HEADER_H2_SCHEME_HTTP     = -7
- ,HTTP_HEADER_H2_SCHEME_HTTPS    = -8
+ ,HTTP_HEADER_H2_METHOD          = -3
+ ,HTTP_HEADER_H2_PATH            = -4
+ ,HTTP_HEADER_H2_SCHEME          = -5
+ ,HTTP_HEADER_H2_PROTOCOL        = -6
 };
 enum http_header_e {
   HTTP_HEADER_OTHER = 0
@@ -76,6 +74,7 @@ enum http_header_e {
  ,HTTP_HEADER_ONION_LOCATION
  ,HTTP_HEADER_P3P
  ,HTTP_HEADER_PRAGMA
+ ,HTTP_HEADER_PRIORITY
  ,HTTP_HEADER_RANGE
  ,HTTP_HEADER_REFERER
  ,HTTP_HEADER_REFERRER_POLICY

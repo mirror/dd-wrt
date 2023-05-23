@@ -6,8 +6,7 @@ include(CheckVariableExists)
 include(CheckTypeSize)
 include(CheckLibraryExists)
 include(CMakeDetermineCCompiler)
-include(FindThreads)
-include(FindPkgConfig)
+find_package(PkgConfig)
 
 include(LighttpdMacros)
 
@@ -37,9 +36,11 @@ option(WITH_ZSTD "with zstd-support for mod_deflate [default: off]")
 option(WITH_KRB5 "with Kerberos5-support for mod_auth [default: off]")
 option(WITH_LDAP "with LDAP-support for mod_auth mod_vhostdb_ldap [default: off]")
 option(WITH_PAM "with PAM-support for mod_auth [default: off]")
-option(WITH_LUA "with lua 5.1 for mod_magnet [default: off]")
+option(WITH_LUA "with lua for mod_magnet [default: off]")
+option(WITH_LUA_VERSION "specify lua version for mod_magnet")
 # option(WITH_VALGRIND "with internal support for valgrind [default: off]")
 option(WITH_FAM "fam/gamin for reducing number of stat() calls [default: off]")
+option(WITH_LIBDEFLATE "with libdeflate-support for mod_deflate [default: off]")
 option(WITH_LIBEV "libev support for fdevent handlers [default: off]")
 option(WITH_LIBUNWIND "with libunwind to print backtraces in asserts [default: off]")
 option(WITH_MAXMINDDB "with MaxMind GeoIP2-support mod_maxminddb [default: off]")
@@ -88,11 +89,6 @@ else()
 	set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
-if(WITH_LIBEV)
-	find_package(LibEV REQUIRED)
-	set(HAVE_LIBEV 1)
-endif()
-
 if(WITH_LIBUNWIND)
 	pkg_check_modules(LIBUNWIND REQUIRED libunwind)
 	set(HAVE_LIBUNWIND 1)
@@ -119,7 +115,6 @@ check_include_files(sys/un.h HAVE_SYS_UN_H)
 check_include_files(sys/wait.h HAVE_SYS_WAIT_H)
 check_include_files(sys/time.h HAVE_SYS_TIME_H)
 check_include_files(unistd.h HAVE_UNISTD_H)
-check_include_files(pthread.h HAVE_PTHREAD_H)
 check_include_files(getopt.h HAVE_GETOPT_H)
 check_include_files(inttypes.h HAVE_INTTYPES_H)
 check_include_files(poll.h HAVE_POLL_H)
@@ -149,6 +144,9 @@ check_function_exists(crypt HAVE_CRYPT)
 set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 check_type_size(socklen_t HAVE_SOCKLEN_T)
 set(CMAKE_EXTRA_INCLUDE_FILES)
+if(WIN32)
+set(HAVE_SOCKLEN_T 1)
+endif()
 
 check_include_files(malloc.h HAVE_MALLOC_H)
 if(HAVE_MALLOC_H)
@@ -209,6 +207,13 @@ check_function_exists(poll HAVE_POLL)
 if(NOT HAVE_POLL)
 check_include_files(sys/select.h HAVE_SYS_SELECT_H)
 check_function_exists(select HAVE_SELECT)
+endif()
+
+check_include_files(spawn.h HAVE_SPAWN_H)
+if(HAVE_SPAWN_H)
+check_function_exists(posix_spawn HAVE_POSIX_SPAWN)
+check_function_exists(posix_spawn_file_actions_addclosefrom_np HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP)
+check_function_exists(posix_spawn_file_actions_addfchdir_np HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR_NP)
 endif()
 
 set(CMAKE_EXTRA_INCLUDE_FILES time.h)
@@ -276,6 +281,9 @@ check_c_source_compiles("
 		struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;
 		return 0;
 	}" HAVE_IPV6)
+if(WIN32)
+set(HAVE_IPV6 1)
+endif()
 if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 set(CMAKE_REQUIRED_LIBRARIES)
 endif()
@@ -296,14 +304,12 @@ check_c_source_compiles("
 	" HAVE_STRUCT_TM_GMTOFF)
 
 ## refactor me
-macro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
+macro(XCONFIG _package _link_FLAGS _cflags)
 # reset the variables at the beginning
-	set(${_include_DIR})
-	set(${_link_DIR})
 	set(${_link_FLAGS})
 	set(${_cflags})
 
-	find_program(${_package}CONFIG_EXECUTABLE NAMES ${_package} PATHS /usr/local/bin )
+	find_program(${_package}CONFIG_EXECUTABLE NAMES ${_package})
 
 	# if pkg-config has been found
 	if(${_package}CONFIG_EXECUTABLE)
@@ -321,7 +327,7 @@ macro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
 	else()
 		message(STATUS "found ${_package}: no")
 	endif()
-endmacro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
+endmacro()
 
 if(WITH_XATTR)
 	check_include_files("sys/types.h;sys/xattr.h" HAVE_SYS_XATTR_H)
@@ -340,28 +346,37 @@ else()
 endif()
 
 if(WITH_MYSQL)
-	xconfig(mysql_config MYSQL_INCDIR MYSQL_LIBDIR MYSQL_LDFLAGS MYSQL_CFLAGS)
-
-	set(CMAKE_REQUIRED_INCLUDES /usr/include/mysql)
-	check_include_files(mysql.h HAVE_MYSQL_H)
-	set(CMAKE_REQUIRED_INCLUDES)
-	if(HAVE_MYSQL_H)
-		check_library_exists(mysqlclient mysql_real_connect "" HAVE_MYSQL)
+	xconfig(mysql_config MYSQL_LDFLAGS MYSQL_CFLAGS)
+	if(MYSQL_LDFLAGS)
+		set(HAVE_MYSQL TRUE)
 	endif()
 else()
-	unset(HAVE_MYSQL_H)
 	unset(HAVE_MYSQL)
 endif()
 
 if(WITH_PGSQL)
-	xconfig(pg_config PGSQL_INCDIR PGSQL_LIBDIR PGSQL_LDFLAGS PGSQL_CFLAGS)
+	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
+		find_package(PostgreSQL)
+		if(PostgreSQL_FOUND)
+			set(PGSQL_LIBRARY PostgreSQL::PostgreSQL)
+			set(HAVE_PGSQL TRUE)
+		endif()
+	else()
+		find_path(POSTGRESQL_INCLUDE_DIR
+			NAMES libpq-fe.h
+			PATH_SUFFIXES pgsql postgresql)
 
-	check_include_files(libpq-fe.h HAVE_PGSQL_H)
-	if(HAVE_PGSQL_H)
-		check_library_exists(pq PQsetdbLogin "" HAVE_PGSQL)
+		if(POSTGRESQL_INCLUDE_DIR)
+			check_library_exists(pq PQsetdbLogin "" HAVE_PGSQL)
+			if(HAVE_PGSQL)
+				set(PGSQL_LIBRARY pq)
+			endif()
+			include_directories(${POSTGRESQL_INCLUDE_DIR})
+		else()
+			set(HAVE_PGSQL FALSE)
+		endif()
 	endif()
 else()
-	unset(HAVE_PGSQL_H)
 	unset(HAVE_PGSQL)
 endif()
 
@@ -378,20 +393,14 @@ endif()
 set(CRYPTO_LIBRARY "")
 
 if(WITH_OPENSSL)
-	if(APPLE)
-		set(CMAKE_REQUIRED_INCLUDES /opt/local/include)
-	endif()
-	check_include_files(openssl/ssl.h HAVE_OPENSSL_SSL_H)
-	if(APPLE)
-		set(CMAKE_REQUIRED_INCLUDES)
-	endif()
-	if(HAVE_OPENSSL_SSL_H)
-		check_library_exists(crypto RAND_bytes "" HAVE_LIBCRYPTO)
-		if(HAVE_LIBCRYPTO)
-			set(CRYPTO_LIBRARY crypto)
-			check_library_exists(ssl SSL_new "" HAVE_LIBSSL)
-			set(HAVE_OPENSSL 1)
-		endif()
+	find_package(OpenSSL)
+	if(OPENSSL_FOUND)
+		set(HAVE_OPENSSL_SSL_H 1)
+		set(HAVE_LIBSSL 1)
+		set(CRYPTO_LIBRARY OpenSSL::Crypto)
+	else()
+		unset(HAVE_OPENSSL_SSL_H)
+		unset(HAVE_LIBSSL)
 	endif()
 else()
 	unset(HAVE_OPENSSL_SSL_H)
@@ -400,27 +409,19 @@ endif()
 
 if(WITH_WOLFSSL)
 	pkg_check_modules(WOLFSSL QUIET wolfssl)
-	if(NOT ${WITH_WOLFSSL} EQUAL "")
-		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h ${WITH_WOLFSSL}/include)
-	elseif(WOLFSSL_FOUND)
-		set(WOLFSSL_INCLUDE_DIR ${WOLFSSL_INCLUDE_DIRS})
-	elseif(APPLE)
-		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h /opt/local/include)
-	else()
-		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h /usr/local/include)
-	endif()
 
-	if(NOT ${WITH_WOLFSSL} EQUAL "")
-		find_library(WOLFSSL_LIBRARY
-			NAMES wolfssl
-			PATHS ${WITH_WOLFSSL}/lib
-		)
-	elseif(WOLFSSL_FOUND)
-		set(WOLFSSL_LIBRARY ${WOLFSSL_LIBRARY_DIRS})
+	if(WOLFSSL_FOUND)
+		set(WOLFSSL_INCLUDE_DIR ${WOLFSSL_INCLUDE_DIRS})
+		if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+			set(WOLFSSL_LIBRARY ${WOLFSSL_LINK_LIBRARIES})
+		else()
+			set(WOLFSSL_LIBRARY ${WOLFSSL_LIBRARIES})
+		endif()
 	else()
+		find_path(WOLFSSL_INCLUDE_DIR NAMES wolfssl/ssl.h PATHS ${WITH_WOLFSSL})
 		find_library(WOLFSSL_LIBRARY
 			NAMES wolfssl
-			PATHS /usr/local/lib /opt/local/lib /usr/lib
+			PATHS ${WITH_WOLFSSL}
 		)
 	endif()
 
@@ -448,7 +449,7 @@ if(WITH_WOLFSSL)
 		endif()
 		set(CMAKE_REQUIRED_INCLUDES)
 		set(CMAKE_REQUIRED_LIBRARIES)
-		include_directories(${WOLFSSL_INCLUDE_DIR} ${WOLFSSL_INCLUDE_DIR}/wolfssl)
+		include_directories(${WOLFSSL_INCLUDE_DIR})
 	endif()
 	unset(WOLFSSL_LIBRARY)
 	unset(WOLFSSL_INCLUDE_DIR)
@@ -533,7 +534,7 @@ if(WITH_PCRE2)
 		set(PCRE_CFLAGS "${PCRE2_CFLAGS}")
 	else()
 		## if we have pcre2-config, use it
-		xconfig(pcre2-config PCRE_INCDIR PCRE_LIBDIR PCRE_LDFLAGS PCRE_CFLAGS)
+		xconfig(pcre2-config PCRE_LDFLAGS PCRE_CFLAGS)
 	endif()
 	if(PCRE_LDFLAGS OR PCRE_CFLAGS)
 		message(STATUS "found pcre2 at: LDFLAGS: ${PCRE_LDFLAGS} CFLAGS: ${PCRE_CFLAGS}")
@@ -551,15 +552,11 @@ if(WITH_PCRE2)
 			check_library_exists(pcre2-8 pcre_match "" HAVE_PCRE)
 			set(PCRE_LDFLAGS -lpcre2-8)
 		else()
-			find_path(PCRE_INCLUDE_DIR pcre2.h
-			/usr/local/include
-			/usr/include
-			)
+			find_path(PCRE_INCLUDE_DIR pcre2.h)
 
 			set(PCRE_NAMES pcre2-8)
 			find_library(PCRE_LIBRARY
 			NAMES ${PCRE_NAMES}
-			PATHS /usr/lib /usr/local/lib
 			)
 
 			if(PCRE_INCLUDE_DIR AND PCRE_LIBRARY)
@@ -581,8 +578,11 @@ if(WITH_PCRE2)
 		message(FATAL_ERROR "libpcre2-8 couldn't be found")
 	endif()
 elseif(WITH_PCRE)
-	## if we have pcre-config, use it
-	xconfig(pcre-config PCRE_INCDIR PCRE_LIBDIR PCRE_LDFLAGS PCRE_CFLAGS)
+	pkg_check_modules(PCRE libpcre)
+	if(NOT PCRE_FOUND)
+		## if we have pcre-config, use it
+		xconfig(pcre-config PCRE_LDFLAGS PCRE_CFLAGS)
+	endif()
 	if(PCRE_LDFLAGS OR PCRE_CFLAGS)
 		message(STATUS "found pcre at: LDFLAGS: ${PCRE_LDFLAGS} CFLAGS: ${PCRE_CFLAGS}")
 
@@ -599,15 +599,11 @@ elseif(WITH_PCRE)
 			check_library_exists(pcre pcre_exec "" HAVE_PCRE)
 			set(PCRE_LDFLAGS -lpcre)
 		else()
-			find_path(PCRE_INCLUDE_DIR pcre.h
-			/usr/local/include
-			/usr/include
-			)
+			find_path(PCRE_INCLUDE_DIR pcre.h)
 
 			set(PCRE_NAMES pcre)
 			find_library(PCRE_LIBRARY
 			NAMES ${PCRE_NAMES}
-			PATHS /usr/lib /usr/local/lib
 			)
 
 			if(PCRE_INCLUDE_DIR AND PCRE_LIBRARY)
@@ -645,7 +641,7 @@ endif()
 
 
 if(WITH_XML)
-	xconfig(xml2-config XML2_INCDIR XML2_LIBDIR XML2_LDFLAGS XML2_CFLAGS)
+	xconfig(xml2-config XML2_LDFLAGS XML2_CFLAGS)
 	if(XML2_LDFLAGS OR XML2_CFLAGS)
 		message(STATUS "found xml2 at: LDFLAGS: ${XML2_LDFLAGS} CFLAGS: ${XML2_CFLAGS}")
 
@@ -704,37 +700,15 @@ else()
 endif()
 
 if(WITH_ZLIB)
-	if(NOT WIN32)
-		check_include_files(zlib.h HAVE_ZLIB_H)
-		check_library_exists(z deflate "" HAVE_LIBZ)
-		set(ZLIB_LIBRARY z)
-	else()
-		find_path(ZLIB_INCLUDE_DIR zlib.h
-			/usr/local/include
-			/usr/include
-		)
-
-		set(ZLIB_NAMES z zlib zdll)
-			find_library(ZLIB_LIBRARY
-			NAMES ${ZLIB_NAMES}
-			PATHS /usr/lib /usr/local/lib
-		)
-
-		if(ZLIB_INCLUDE_DIR AND ZLIB_LIBRARY)
-			set(CMAKE_REQUIRED_INCLUDES ${ZLIB_INCLUDE_DIR})
-			set(CMAKE_REQUIRED_LIBRARIES ${ZLIB_LIBRARY})
-			get_filename_component(ZLIB_NAME ${ZLIB_LIBRARY} NAME)
-			check_include_files(zlib.h HAVE_ZLIB_H)
-			check_library_exists(${ZLIB_NAME} deflate "" HAVE_LIBZ)
-			set(CMAKE_REQUIRED_INCLUDES)
-			set(CMAKE_REQUIRED_LIBRARIES)
-			include_directories(${ZLIB_INCLUDE_DIR})
-		endif()
+	find_package(ZLIB)
+	if(ZLIB_FOUND)
+		set(ZLIB_LIBRARY ZLIB::ZLIB)
+		set(HAVE_ZLIB_H TRUE)
+		set(HAVE_LIBZ TRUE)
 	endif()
 else()
 	unset(HAVE_ZLIB_H)
 	unset(HAVE_LIBZ)
-	unset(ZLIB_INCLUDE_DIR)
 	unset(ZLIB_LIBRARY)
 endif()
 
@@ -747,8 +721,16 @@ else()
 endif()
 
 if(WITH_BZIP)
-	check_include_files(bzlib.h HAVE_BZLIB_H)
-	check_library_exists(bz2 BZ2_bzCompress "" HAVE_LIBBZ2)
+	find_package(BZip2)
+	if(BZIP2_FOUND)
+		if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+			set(BZIP_LIBRARY BZip2::BZip2)
+		else()
+			set(BZIP_LIBRARY ${BZIP2_LIBRARIES})
+		endif()
+		set(HAVE_BZLIB_H TRUE)
+		set(HAVE_LIBBZ2 TRUE)
+	endif()
 else()
 	unset(HAVE_BZLIB_H)
 	unset(HAVE_LIBBZ2)
@@ -774,6 +756,14 @@ else()
 	unset(HAVE_LIBLBER)
 endif()
 
+if(WITH_LIBDEFLATE)
+	check_include_files(libdeflate.h HAVE_LIBDEFLATE_H)
+	check_library_exists(deflate libdeflate_alloc_compressor "" HAVE_LIBDEFLATE)
+else()
+	unset(HAVE_LIBDEFLATE_H)
+	unset(HAVE_LIBDEFLATE)
+endif()
+
 if(WITH_PAM)
 	check_include_files(security/pam_appl.h HAVE_SECURITY_PAM_APPL_H)
 	check_library_exists(pam pam_start "" HAVE_PAM)
@@ -783,14 +773,18 @@ else()
 endif()
 
 if(WITH_LUA)
-	pkg_search_module(LUA REQUIRED lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
+	if(WITH_LUA_VERSION)
+		pkg_search_module(LUA REQUIRED ${WITH_LUA_VERSION})
+	else()
+		pkg_search_module(LUA REQUIRED lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
+	endif()
 	message(STATUS "found lua at: INCDIR: ${LUA_INCLUDE_DIRS} LIBDIR: ${LUA_LIBRARY_DIRS} LDFLAGS: ${LUA_LDFLAGS} CFLAGS: ${LUA_CFLAGS}")
 	set(HAVE_LUA_H  1 "Have liblua header")
 else()
 	unset(HAVE_LUA_H)
 endif()
 
-if(WITH_FAM AND NOT HAVE_SYS_INOTIFY_H)
+if(WITH_FAM AND NOT HAVE_SYS_INOTIFY_H AND NOT HAVE_KQUEUE)
 	check_include_files(fam.h HAVE_FAM_H)
 	check_library_exists(fam FAMOpen2 "" HAVE_LIBFAM)
 	if(HAVE_LIBFAM)
@@ -820,19 +814,14 @@ else()
 	unset(HAVE_LIBDL)
 endif()
 
-set(LIGHTTPD_VERSION_ID 10400)
+set(LIGHTTPD_VERSION_ID 0x104${PROJECT_VERSION_PATCH})
 set(PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
-set(PACKAGE_VERSION "${CPACK_PACKAGE_VERSION}")
-
-if(NOT SBINDIR)
-	set(SBINDIR "sbin")
-endif()
-
-if(NOT LIGHTTPD_MODULES_DIR)
-	set(LIGHTTPD_MODULES_DIR "lib${LIB_SUFFIX}/lighttpd")
-endif()
+set(PACKAGE_VERSION "${PROJECT_VERSION}")
 
 if(NOT WIN32)
+	if(NOT LIGHTTPD_MODULES_DIR)
+		set(LIGHTTPD_MODULES_DIR "${CMAKE_INSTALL_LIBDIR}/lighttpd")
+	endif()
 	set(LIGHTTPD_LIBRARY_DIR "${CMAKE_INSTALL_PREFIX}/${LIGHTTPD_MODULES_DIR}")
 else()
 	## We use relative path in windows
@@ -850,26 +839,74 @@ set(COMMON_SRC
 	base64.c buffer.c burl.c log.c
 	http_header.c http_kv.c keyvalue.c chunk.c
 	http_chunk.c fdevent.c fdevent_fdnode.c gw_backend.c
-	stat_cache.c plugin.c http_etag.c array.c
+	stat_cache.c http_etag.c array.c
 	algo_md5.c algo_sha1.c algo_splaytree.c
 	configfile-glue.c
 	http-header-glue.c
 	http_cgi.c
 	http_date.c
+	plugin.c
+	reqpool.c
 	request.c
 	sock_addr.c
 	rand.c
 	fdlog_maint.c
 	fdlog.c
+	sys-setjmp.c
 	ck.c
 )
-
 if(WIN32)
-	message(STATUS "Adding local getopt implementation.")
-	set(COMMON_SRC ${COMMON_SRC} xgetopt.c)
+	set(COMMON_SRC ${COMMON_SRC} fdevent_win32.c fs_win32.c)
 endif()
 
-add_executable(lemon lemon.c)
+  set(BUILTIN_MODS
+    mod_rewrite.c
+    mod_redirect.c
+    mod_access.c
+    mod_alias.c
+    mod_indexfile.c
+    mod_staticfile.c
+    mod_setenv.c
+    mod_expire.c
+    mod_simple_vhost.c
+    mod_evhost.c
+    mod_fastcgi.c
+    mod_scgi.c
+  )
+
+if(BUILD_STATIC)
+  set(BUILTIN_MODS ${BUILTIN_MODS}
+    mod_accesslog.c
+    mod_ajp13.c
+    mod_auth.c mod_auth_api.c
+    mod_authn_file.c
+    mod_cgi.c
+    mod_deflate.c
+    mod_dirlisting.c
+    mod_extforward.c
+    mod_proxy.c
+    mod_rrdtool.c
+    mod_sockproxy.c
+    mod_ssi.c
+    mod_status.c
+    mod_userdir.c
+    mod_vhostdb.c mod_vhostdb_api.c
+    mod_webdav.c
+    mod_wstunnel.c
+  )
+endif()
+
+if(CMAKE_CROSSCOMPILING)
+	# custom compile lemon using native compiler
+	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lemon
+		COMMAND cc
+		ARGS    ${CMAKE_CURRENT_SOURCE_DIR}/lemon.c -o ${CMAKE_CURRENT_BINARY_DIR}/lemon
+		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lemon.c
+		COMMENT "Generating lemon from lemon.c using native compiler"
+	)
+else()
+	add_executable(lemon lemon.c)
+endif()
 
 ## Build parsers by using lemon...
 lemon_parser(configparser.y)
@@ -878,14 +915,14 @@ set(L_INSTALL_TARGETS)
 
 add_executable(lighttpd-angel lighttpd-angel.c)
 set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd-angel)
-add_target_properties(lighttpd-angel COMPILE_FLAGS "-DSBIN_DIR=\\\\\"${CMAKE_INSTALL_PREFIX}/${SBINDIR}\\\\\"")
+add_target_properties(lighttpd-angel COMPILE_FLAGS "-DSBIN_DIR=\\\\\"${CMAKE_INSTALL_FULL_SBINDIR}\\\\\"")
 
-add_executable(lighttpd
+set(SERVER_SRC
 	server.c
 	response.c
 	connections.c
+	h1.c
 	h2.c
-	reqpool.c
 	sock_addr_cache.c
 	ls-hpack/lshpack.c
 	algo_xxhash.c
@@ -894,46 +931,44 @@ add_executable(lighttpd
 	network.c
 	network_write.c
 	data_config.c
-	vector.c
 	configfile.c
 	configparser.c
-	${COMMON_SRC}
 )
+
+if(WIN32 AND NOT BUILD_STATIC)
+set(COMMON_SRC ${COMMON_SRC} mod_auth_api.c mod_vhostdb_api.c)
+add_executable(lighttpd ${SERVER_SRC} ${COMMON_SRC} ${BUILTIN_MODS})
+SET_TARGET_PROPERTIES(lighttpd PROPERTIES ENABLE_EXPORTS ON)
+SET_TARGET_PROPERTIES(lighttpd PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+else()
+add_executable(lighttpd ${SERVER_SRC} ${COMMON_SRC} ${BUILTIN_MODS})
+endif()
 set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd)
 
-add_and_install_library(mod_access mod_access.c)
 add_and_install_library(mod_accesslog mod_accesslog.c)
 add_and_install_library(mod_ajp13 mod_ajp13.c)
-add_and_install_library(mod_alias mod_alias.c)
+if(WIN32 AND NOT BUILD_STATIC)
+add_and_install_library(mod_auth "mod_auth.c")
+else()
 add_and_install_library(mod_auth "mod_auth.c;mod_auth_api.c")
-add_and_install_library(mod_authn_file "mod_authn_file.c")
-if(NOT WIN32)
-	add_and_install_library(mod_cgi mod_cgi.c)
 endif()
+add_and_install_library(mod_authn_file "mod_authn_file.c")
+add_and_install_library(mod_cgi mod_cgi.c)
 add_and_install_library(mod_deflate mod_deflate.c)
 add_and_install_library(mod_dirlisting mod_dirlisting.c)
-add_and_install_library(mod_evasive mod_evasive.c)
-add_and_install_library(mod_evhost mod_evhost.c)
-add_and_install_library(mod_expire mod_expire.c)
 add_and_install_library(mod_extforward mod_extforward.c)
-add_and_install_library(mod_fastcgi mod_fastcgi.c)
-add_and_install_library(mod_indexfile mod_indexfile.c)
+add_and_install_library(mod_h2 "h2.c;ls-hpack/lshpack.c;algo_xxhash.c")
 add_and_install_library(mod_proxy mod_proxy.c)
-add_and_install_library(mod_redirect mod_redirect.c)
-add_and_install_library(mod_rewrite mod_rewrite.c)
 add_and_install_library(mod_rrdtool mod_rrdtool.c)
-add_and_install_library(mod_scgi mod_scgi.c)
-add_and_install_library(mod_secdownload "mod_secdownload.c;algo_hmac.c")
-add_and_install_library(mod_setenv mod_setenv.c)
-add_and_install_library(mod_simple_vhost mod_simple_vhost.c)
 add_and_install_library(mod_sockproxy mod_sockproxy.c)
 add_and_install_library(mod_ssi mod_ssi.c)
-add_and_install_library(mod_staticfile mod_staticfile.c)
 add_and_install_library(mod_status mod_status.c)
-add_and_install_library(mod_uploadprogress mod_uploadprogress.c)
 add_and_install_library(mod_userdir mod_userdir.c)
-add_and_install_library(mod_usertrack mod_usertrack.c)
+if(WIN32 AND NOT BUILD_STATIC)
+add_and_install_library(mod_vhostdb "mod_vhostdb.c")
+else()
 add_and_install_library(mod_vhostdb "mod_vhostdb.c;mod_vhostdb_api.c")
+endif()
 add_and_install_library(mod_webdav mod_webdav.c)
 add_and_install_library(mod_wstunnel mod_wstunnel.c)
 
@@ -944,7 +979,6 @@ add_executable(test_configfile
 	data_config.c
 	http_header.c
 	http_kv.c
-	vector.c
 	log.c
 	fdlog.c
 	sock_addr.c
@@ -957,7 +991,6 @@ add_executable(test_mod
 	t/test_mod.c
 	t/test_mod_access.c
 	t/test_mod_alias.c
-	t/test_mod_evasive.c
 	t/test_mod_evhost.c
 	t/test_mod_indexfile.c
 	t/test_mod_simple_vhost.c
@@ -973,10 +1006,10 @@ add_executable(test_common
 	t/test_base64.c
 	t/test_buffer.c
 	t/test_burl.c
+	t/test_http_header.c
+	t/test_http_kv.c
 	t/test_keyvalue.c
 	t/test_request.c
-	http_header.c
-	http_kv.c
 	log.c
 	fdlog.c
 	sock_addr.c
@@ -1006,15 +1039,15 @@ if(WITH_MAXMINDDB)
 	target_link_libraries(mod_maxminddb maxminddb)
 endif()
 
-if(HAVE_MYSQL_H AND HAVE_MYSQL)
+if(HAVE_MYSQL)
 	add_and_install_library(mod_vhostdb_mysql "mod_vhostdb_mysql.c")
-	target_link_libraries(mod_vhostdb_mysql mysqlclient)
-	include_directories(/usr/include/mysql)
+	target_link_libraries(mod_vhostdb_mysql ${MYSQL_LDFLAGS})
+	add_target_properties(mod_vhostdb_mysql COMPILE_FLAGS ${MYSQL_CFLAGS})
 endif()
 
-if(HAVE_PGSQL_H AND HAVE_PGSQL)
+if(HAVE_PGSQL)
 	add_and_install_library(mod_vhostdb_pgsql "mod_vhostdb_pgsql.c")
-	target_link_libraries(mod_vhostdb_pgsql pq)
+	target_link_libraries(mod_vhostdb_pgsql ${PGSQL_LIBRARY})
 endif()
 
 if(HAVE_DBI_H AND HAVE_DBI)
@@ -1043,6 +1076,9 @@ if(HAVE_UUID_UUID_H)
 endif()
 
 target_link_libraries(mod_webdav ${L_MOD_WEBDAV})
+if(BUILD_STATIC)
+	target_link_libraries(lighttpd ${L_MOD_WEBDAV} ${XML2_LDFLAGS})
+endif()
 
 set(L_MOD_AUTHN_FILE)
 if(HAVE_LIBCRYPT)
@@ -1055,6 +1091,8 @@ if(BUILD_SANITIZE_ADDRESS AND HAVE_LIBCRYPT)
 	# if libcrypt isn't loaded at that time calling crypt later ends up
 	# calling a nullptr.
 	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103930
+	target_link_libraries(lighttpd crypt)
+elseif(BUILD_STATIC AND HAVE_LIBCRYPT)
 	target_link_libraries(lighttpd crypt)
 endif()
 
@@ -1085,7 +1123,7 @@ if(WITH_SASL)
 	target_link_libraries(mod_authn_sasl ${L_MOD_AUTHN_SASL})
 endif()
 
-if(HAVE_ZLIB_H OR HAVE_ZSTD_H OR HAVE_BZLIB_H OR HAVE_BROTLI)
+if(HAVE_ZLIB_H OR HAVE_ZSTD_H OR HAVE_BZLIB_H OR HAVE_BROTLI OR HAVE_LIBDEFLATE)
 	if(HAVE_ZLIB_H)
 		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} ${ZLIB_LIBRARY})
 	endif()
@@ -1093,12 +1131,18 @@ if(HAVE_ZLIB_H OR HAVE_ZSTD_H OR HAVE_BZLIB_H OR HAVE_BROTLI)
 		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} zstd)
 	endif()
 	if(HAVE_BZLIB_H)
-		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} bz2)
+		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} ${BZIP_LIBRARY})
 	endif()
 	if(HAVE_BROTLI)
 		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} brotlienc)
 	endif()
+	if(HAVE_LIBDEFLATE)
+		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} deflate)
+	endif()
 	target_link_libraries(mod_deflate ${L_MOD_DEFLATE})
+	if(BUILD_STATIC)
+		target_link_libraries(lighttpd ${L_MOD_DEFLATE})
+	endif()
 endif()
 
 if(HAVE_LIBFAM)
@@ -1113,6 +1157,7 @@ endif()
 
 if(HAVE_XXHASH)
 	target_link_libraries(lighttpd xxhash)
+	target_link_libraries(mod_h2   xxhash)
 	target_link_libraries(test_mod xxhash)
 endif()
 
@@ -1123,7 +1168,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_WITHDEBINFO} -O2")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WARN_LDFLAGS}")
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WARN_LDFLAGS}")
-	if((NOT APPLE) AND (NOT CMAKE_SYSTEM_NAME MATCHES "SunOS"))
+	if(NOT APPLE AND NOT WIN32 AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
 		add_target_properties(lighttpd LINK_FLAGS "-Wl,-export-dynamic")
 	endif()
 endif()
@@ -1132,16 +1177,6 @@ set_target_properties(lighttpd PROPERTIES CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_P
 
 if(WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNVALGRIND")
-	add_target_properties(lighttpd COMPILE_FLAGS "-DLI_DECLARE_EXPORTS")
-	target_link_libraries(mod_proxy ws2_32)
-	target_link_libraries(mod_fastcgi ws2_32)
-	target_link_libraries(mod_scgi ws2_32)
-	target_link_libraries(mod_ssi ws2_32)
-
-	if(MINGW)
-		target_link_libraries(lighttpd msvcr70)
-		add_target_properties(lighttpd LINK_FLAGS "-Wl,-subsystem,console")
-	endif()
 endif()
 
 if(NOT BUILD_STATIC)
@@ -1156,13 +1191,11 @@ if(NOT ${CRYPTO_LIBRARY} EQUAL "")
 	target_link_libraries(mod_auth ${CRYPTO_LIBRARY})
 	set(L_MOD_AUTHN_FILE ${L_MOD_AUTHN_FILE} ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_authn_file ${L_MOD_AUTHN_FILE})
-	target_link_libraries(mod_secdownload ${CRYPTO_LIBRARY})
-	target_link_libraries(mod_usertrack ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_wstunnel ${CRYPTO_LIBRARY})
 	target_link_libraries(test_mod ${CRYPTO_LIBRARY})
 endif()
 
-if(HAVE_OPENSSL)
+if(OPENSSL_FOUND)
 	add_and_install_library(mod_openssl "mod_openssl.c")
 	set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ssl crypto)
 	target_link_libraries(mod_openssl ${L_MOD_OPENSSL})
@@ -1182,20 +1215,12 @@ if(HAVE_LIBMBEDTLS AND HAVE_LIBMEDCRYPTO AND HAVE_LIBMEDX509)
 	add_and_install_library(mod_mbedtls "mod_mbedtls.c")
 	set(L_MOD_MBEDTLS ${L_MOD_MBEDTLS} mbedtls mbedcrypto mbedx509)
 	target_link_libraries(mod_mbedtls ${L_MOD_MBEDTLS})
-	# not doing "cross module" linkage yet (e.g. mod_authn, secdownload)
 endif()
 
 if(HAVE_LIBSSL3 AND HAVE_LIBSMIME3 AND HAVE_LIBNSS3 AND HAVE_LIBNSSUTIL3)
 	add_and_install_library(mod_nss "mod_nss.c")
 	set(L_MOD_NSS ${L_MOD_NSS} ssl3 smime3 nss3 nssutil3)
 	target_link_libraries(mod_nss ${L_MOD_NSS})
-endif()
-
-if(WITH_LIBEV)
-	target_link_libraries(lighttpd ${LIBEV_LDFLAGS})
-	add_target_properties(lighttpd COMPILE_FLAGS ${LIBEV_CFLAGS})
-	target_link_libraries(test_mod ${LIBEV_LDFLAGS})
-	add_target_properties(test_mod COMPILE_FLAGS ${LIBEV_CFLAGS})
 endif()
 
 if(WITH_LIBUNWIND)
@@ -1227,17 +1252,17 @@ endif()
 
 if(NOT WIN32)
 install(TARGETS ${L_INSTALL_TARGETS}
-	RUNTIME DESTINATION ${SBINDIR}
-	LIBRARY DESTINATION ${LIGHTTPD_MODULES_DIR}
-	ARCHIVE DESTINATION ${LIGHTTPD_MODULES_DIR}/static)
+	RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
+	LIBRARY DESTINATION ${LIGHTTPD_LIBRARY_DIR}
+	ARCHIVE DESTINATION ${LIGHTTPD_LIBRARY_DIR}/static)
 else()
 ## HACK to make win32 to install our libraries in desired directory..
 install(TARGETS lighttpd
-	RUNTIME DESTINATION ${SBINDIR}
+	RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
 	ARCHIVE DESTINATION lib/static)
 list(REMOVE_ITEM L_INSTALL_TARGETS lighttpd)
 install(TARGETS ${L_INSTALL_TARGETS}
-	RUNTIME DESTINATION ${SBINDIR}/lib
+	RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}/lib
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib/static)
 endif()

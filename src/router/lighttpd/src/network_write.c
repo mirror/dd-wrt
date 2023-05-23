@@ -8,10 +8,10 @@
 
 #include <sys/types.h>
 #include "sys-socket.h"
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
 
 
 /* on linux 2.4.x you get either sendfile or LFS */
@@ -41,6 +41,17 @@
 # define NETWORK_WRITE_USE_DARWIN_SENDFILE
 #endif
 
+#if defined(__APPLE__) && defined(__MACH__)
+/* sendfile() on iOS/tvOS sendfile() raises SIGSYS insead of returning ENOSYS
+ * https://github.com/ndfred/iperf-ios/issues/17
+ * https://github.com/dotnet/runtime/pull/69436 */
+#include <TargetConditionals.h> /* TARGET_OS_IPHONE, TARGET_OS_MAC */
+#if TARGET_OS_IPHONE            /* iOS, tvOS, or watchOS device */
+#undef NETWORK_WRITE_USE_SENDFILE
+#undef NETWORK_WRITE_USE_DARWIN_SENDFILE
+#endif
+#endif
+
 #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILEV && defined(__sun)
 # ifdef NETWORK_WRITE_USE_SENDFILE
 #  error "can't have more than one sendfile implementation"
@@ -62,17 +73,21 @@
 #if defined HAVE_SYS_UIO_H && defined HAVE_WRITEV
 # define NETWORK_WRITE_USE_WRITEV
 #endif
+#ifdef _WIN32
+# define NETWORK_WRITE_USE_WRITEV
+#endif
 
-#if defined HAVE_SYS_MMAN_H && defined HAVE_MMAP && defined ENABLE_MMAP
+#if defined(HAVE_MMAP) || defined(_WIN32) /*(see local sys-mmap.h)*/
+#ifdef ENABLE_MMAP
 # define NETWORK_WRITE_USE_MMAP
+#endif
 #endif
 
 
 __attribute_cold__
 static int network_write_error(int fd, log_error_st *errh) {
-  #if defined(__WIN32)
-    int lastError = WSAGetLastError();
-    switch (lastError) {
+  #ifdef _WIN32
+    switch (WSAGetLastError()) {
       case WSAEINTR:
       case WSAEWOULDBLOCK:
         return -3;
@@ -81,10 +96,10 @@ static int network_write_error(int fd, log_error_st *errh) {
       case WSAECONNABORTED:
         return -2;
       default:
-        log_error(errh,__FILE__,__LINE__,"send failed: %d %d",lastError,fd);
+        log_serror(errh, __FILE__, __LINE__, "send() %d", fd);
         return -1;
     }
-  #else /* __WIN32 */
+  #else
     switch (errno) {
       case EAGAIN:
       case EINTR:
@@ -93,10 +108,10 @@ static int network_write_error(int fd, log_error_st *errh) {
       case ECONNRESET:
         return -2;
       default:
-        log_perror(errh,__FILE__,__LINE__,"write failed: %d",fd);
+        log_perror(errh, __FILE__, __LINE__, "write() %d", fd);
         return -1;
     }
-  #endif /* __WIN32 */
+  #endif
 }
 
 __attribute_cold__
@@ -108,11 +123,11 @@ static int network_remove_finished_chunks(chunkqueue * const cq, const off_t len
 
 inline
 static ssize_t network_write_data_len(int fd, const char *data, off_t len) {
-  #if defined(__WIN32)
+  #ifdef _WIN32
     return send(fd, data, len, 0);
-  #else /* __WIN32 */
+  #else
     return write(fd, data, len);
-  #endif /* __WIN32 */
+  #endif
 }
 
 static int network_write_accounting(const int fd, chunkqueue * const cq, off_t * const p_max_bytes, log_error_st * const errh, const ssize_t wr, const off_t toSend) {
@@ -147,31 +162,19 @@ static int network_write_mem_chunk(const int fd, chunkqueue * const cq, off_t * 
 
 
 
-#if !defined(NETWORK_WRITE_USE_MMAP)
-
+__attribute_noinline__
 static int network_write_file_chunk_no_mmap(const int fd, chunkqueue * const cq, off_t * const p_max_bytes, log_error_st * const errh) {
     chunk* const c = cq->first;
-    off_t offset, toSend;
+    off_t toSend = c->file.length - c->offset;
     char buf[16384]; /* max read 16kb in one step */
 
-    offset = c->offset;
-    toSend = c->file.length - c->offset;
     if (toSend > *p_max_bytes) toSend = *p_max_bytes;
     if (toSend <= 0) return network_remove_finished_chunks(cq, toSend);
+    if (toSend > (off_t)sizeof(buf)) toSend = (off_t)sizeof(buf);
 
     if (c->file.fd < 0 && 0 != chunkqueue_open_file_chunk(cq, errh)) return -1;
 
-    if (toSend > (off_t)sizeof(buf)) toSend = (off_t)sizeof(buf);
-
-  #ifndef HAVE_PREAD
-    if (-1 == lseek(c->file.fd, offset, SEEK_SET)) {
-        log_perror(errh, __FILE__, __LINE__, "lseek");
-        return -1;
-    }
-    toSend = read(c->file.fd, buf, toSend);
-  #else
-    toSend =pread(c->file.fd, buf, toSend, offset);
-  #endif
+    toSend = chunk_file_pread(c->file.fd, buf, toSend, c->offset);
     if (toSend <= 0) {
         log_perror(errh, __FILE__, __LINE__, "read");/* err or unexpected EOF */
         return -1;
@@ -181,142 +184,38 @@ static int network_write_file_chunk_no_mmap(const int fd, chunkqueue * const cq,
     return network_write_accounting(fd, cq, p_max_bytes, errh, wr, toSend);
 }
 
-#endif
-
 
 
 
 #if defined(NETWORK_WRITE_USE_MMAP)
 
-#include "sys-mmap.h"
+#include "sys-setjmp.h"
 
-#include <setjmp.h>
-#include <signal.h>
-
-#define MMAP_CHUNK_SIZE (512*1024)
-
-static off_t mmap_align_offset(off_t start) {
-    static long pagesize = 0;
-    if (0 == pagesize) {
-        pagesize = sysconf(_SC_PAGESIZE);
-        force_assert(pagesize < MMAP_CHUNK_SIZE);
-    }
-    force_assert(start >= (start % pagesize));
-    return start - (start % pagesize);
-}
-
-static volatile int sigbus_jmp_valid;
-static sigjmp_buf sigbus_jmp;
-
-static void sigbus_handler(int sig) {
-    UNUSED(sig);
-    if (sigbus_jmp_valid) siglongjmp(sigbus_jmp, 1);
-    ck_bt_abort(__FILE__, __LINE__, "SIGBUS");
+static off_t
+network_write_setjmp_write_cb (void *fd, const void *data, off_t len)
+{
+    return network_write_data_len((int)(uintptr_t)fd, data, len);
 }
 
 /* next chunk must be FILE_CHUNK. send mmap()ed file with write() */
 static int network_write_file_chunk_mmap(const int fd, chunkqueue * const cq, off_t * const p_max_bytes, log_error_st * const errh) {
-    chunk* const c = cq->first;
-    off_t offset, toSend, file_end;
-    size_t mmap_offset, mmap_avail;
-    const char *data;
+    chunk * const restrict c = cq->first;
+    const chunk_file_view * const restrict cfv = (!c->file.is_temp)
+      ? chunkqueue_chunk_file_view(cq->first, 0, errh)/*use default 512k block*/
+      : NULL;
+    if (NULL == cfv)
+        return network_write_file_chunk_no_mmap(fd, cq, p_max_bytes, errh);
 
-    file_end = c->file.length; /*file end offset in this chunk*/
-    offset = c->offset;
-    toSend = c->file.length - c->offset;
+    off_t toSend = c->file.length - c->offset;
     if (toSend > *p_max_bytes) toSend = *p_max_bytes;
     if (toSend <= 0) return network_remove_finished_chunks(cq, toSend);
 
-    if (c->file.fd < 0 && 0 != chunkqueue_open_file_chunk(cq, errh)) return -1;
-
-    /* mmap buffer if offset is outside old mmap area or not mapped at all */
-    if (MAP_FAILED == c->file.mmap.start
-        || offset < c->file.mmap.offset
-        || offset >= (off_t)(c->file.mmap.offset + c->file.mmap.length)) {
-
-        if (MAP_FAILED != c->file.mmap.start) {
-            munmap(c->file.mmap.start, c->file.mmap.length);
-            c->file.mmap.start = MAP_FAILED;
-        }
-
-        /* Optimizations for the future:
-         *
-         * adaptive mem-mapping
-         *   the problem:
-         *     we mmap() the whole file. If someone has a lot of large files and
-         *     32-bit machine the virtual address area will be exhausted and we
-         *     will have a failing mmap() call.
-         *   solution:
-         *     only mmap 16M in one chunk and move the window as soon as we have
-         *     finished the first 8M
-         *
-         * read-ahead buffering
-         *   the problem:
-         *     sending out several large files in parallel trashes read-ahead
-         *     of the kernel leading to long wait-for-seek times.
-         *   solutions: (increasing complexity)
-         *     1. use madvise
-         *     2. use a internal read-ahead buffer in the chunk-structure
-         *     3. use non-blocking IO for file-transfers
-         *   */
-
-        c->file.mmap.offset = mmap_align_offset(offset);
-
-        /* all mmap()ed areas are MMAP_CHUNK_SIZE
-         * except the last which might be smaller */
-        c->file.mmap.length = MMAP_CHUNK_SIZE;
-        if (c->file.mmap.offset > file_end - (off_t)c->file.mmap.length) {
-            c->file.mmap.length = file_end - c->file.mmap.offset;
-        }
-
-        c->file.mmap.start = mmap(NULL, c->file.mmap.length, PROT_READ,
-                                  MAP_SHARED, c->file.fd, c->file.mmap.offset);
-        if (MAP_FAILED == c->file.mmap.start) {
-            log_perror(errh, __FILE__, __LINE__,
-              "mmap failed: %s %d %lld %zu", c->mem->ptr, c->file.fd,
-              (long long)c->file.mmap.offset, c->file.mmap.length);
-            return -1;
-        }
-
-      #if defined(HAVE_MADVISE)
-        /* don't advise files < 64Kb */
-        if (c->file.mmap.length > (64*1024)) {
-            /* darwin 7 is returning EINVAL all the time and I don't know how to
-             * detect this at runtime.
-             *
-             * ignore the return value for now */
-            madvise(c->file.mmap.start, c->file.mmap.length, MADV_WILLNEED);
-        }
-      #endif
-    }
-
-    force_assert(offset >= c->file.mmap.offset);
-    mmap_offset = offset - c->file.mmap.offset;
-    force_assert(c->file.mmap.length > mmap_offset);
-    mmap_avail = c->file.mmap.length - mmap_offset;
-    if (toSend > (off_t) mmap_avail) toSend = mmap_avail;
-
-    data = c->file.mmap.start + mmap_offset;
-
-    /* setup SIGBUS handler, but don't activate sigbus_jmp_valid yet */
-    if (0 == sigsetjmp(sigbus_jmp, 1)) {
-        signal(SIGBUS, sigbus_handler);
-
-        sigbus_jmp_valid = 1;
-        ssize_t wr = network_write_data_len(fd, data, toSend);
-        sigbus_jmp_valid = 0;
-        return network_write_accounting(fd, cq, p_max_bytes, errh, wr, toSend);
-    } else {
-        sigbus_jmp_valid = 0;
-
-        log_error(errh, __FILE__, __LINE__,
-          "SIGBUS in mmap: %s %d", c->mem->ptr, c->file.fd);
-
-        munmap(c->file.mmap.start, c->file.mmap.length);
-        c->file.mmap.start = MAP_FAILED;
-        return -1;
-    }
-
+    const off_t mmap_avail = chunk_file_view_dlen(cfv, c->offset);
+    const char * const data = chunk_file_view_dptr(cfv, c->offset);
+    if (toSend > mmap_avail) toSend = mmap_avail;
+    off_t wr = sys_setjmp_eval3(network_write_setjmp_write_cb,
+                                (void *)(uintptr_t)fd, data, toSend);
+    return network_write_accounting(fd,cq,p_max_bytes,errh,(ssize_t)wr,toSend);
 }
 
 #endif /* NETWORK_WRITE_USE_MMAP */
@@ -338,6 +237,8 @@ static int network_write_file_chunk_mmap(const int fd, chunkqueue * const cq, of
 #elif defined(_XOPEN_IOV_MAX)
 /* minimum value for sysconf(_SC_IOV_MAX); posix requires this to be at least 16, which is good enough - no need to call sysconf() */
 # define SYS_MAX_CHUNKS _XOPEN_IOV_MAX
+#elif defined(_WIN32)
+# define SYS_MAX_CHUNKS 32
 #else
 # error neither UIO_MAXIOV nor IOV_MAX nor _XOPEN_IOV_MAX are defined
 #endif
@@ -351,6 +252,13 @@ static int network_write_file_chunk_mmap(const int fd, chunkqueue * const cq, of
 # define MAX_CHUNKS STACK_MAX_ALLOC_CHUNKS
 #else
 # define MAX_CHUNKS SYS_MAX_CHUNKS
+#endif
+
+#ifdef _WIN32
+/* rewrite iov to WSABUF */
+#define iovec _WSABUF
+#define iov_len len
+#define iov_base buf
 #endif
 
 /* next chunk must be MEM_CHUNK. send multiple mem chunks using writev() */
@@ -374,7 +282,13 @@ static int network_writev_mem_chunks(const int fd, chunkqueue * const cq, off_t 
     }
     if (0 == num_chunks) return network_remove_finished_chunks(cq, 0);
 
+  #ifdef _WIN32
+    DWORD dw;
+    ssize_t wr = WSASend(fd, chunks, num_chunks, &dw, 0, NULL, NULL);
+    if (0 == wr) wr = (ssize_t)dw;
+  #else
     ssize_t wr = writev(fd, chunks, num_chunks);
+  #endif
     return network_write_accounting(fd, cq, p_max_bytes, errh, wr, toSend);
 }
 

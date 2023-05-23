@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+#include "sys-unistd.h" /* unlink() */
 
 #include "mod_ssi.c"
 #include "fdlog.h"
@@ -37,21 +37,34 @@ static void test_mod_ssi_write_testfile (int fd, const char *buf, size_t len)
 static void
 test_mod_ssi_read_fd (request_st * const r, handler_ctx * const hctx)
 {
-    /* TODO: add adjustments for _WIN32 */
-    char fn[] = "/tmp/lighttpd_mod_ssi_XXXXXX";
     struct stat st;
     chunkqueue * const cq = &r->write_queue;
 
+    const char *tmpdir = getenv("TMPDIR");
+  #ifdef _WIN32
+    if (NULL == tmpdir) tmpdir = getenv("TEMP");
+  #endif
+    if (NULL == tmpdir) tmpdir = "/tmp";
+    size_t tmpdirlen = strlen(tmpdir);
+    buffer fnb = { NULL, 0, 0 };
+    buffer_copy_path_len2(&fnb, tmpdir, tmpdirlen,
+                          CONST_STR_LEN("lighttpd_mod_ssi.XXXXXX"));
+    if (fnb.ptr[tmpdirlen] == '/') ++tmpdirlen;
+  #ifdef _WIN32
+    else if (fnb.ptr[tmpdirlen] == '\\') ++tmpdirlen;
+  #endif
+    char * const fn = fnb.ptr;
     int fd = fdevent_mkostemp(fn, 0);
     if (fd < 0) {
         perror("mkstemp()");
+        buffer_free_ptr(&fnb);
         exit(1);
     }
     if (0 != fstat(fd, &st)) {
         perror("fstat()");
+        buffer_free_ptr(&fnb);
         exit(1);
     }
-    unlink(fn);
 
     const char ssi_simple[] =
       "<!--#echo var=\"SCRIPT_NAME\" -->";
@@ -73,6 +86,7 @@ test_mod_ssi_read_fd (request_st * const r, handler_ctx * const hctx)
     mod_ssi_read_fd(r, hctx, &st, fd);
     assert(NULL == cq->first);
 
+  #ifndef _WIN32 /* TODO: command for cmd.exe */
     hctx->conf.ssi_exec = 1;
     test_mod_ssi_write_testfile(fd, ssi_exec, sizeof(ssi_exec)-1);
     test_mod_ssi_reset(r, hctx);
@@ -88,8 +102,13 @@ test_mod_ssi_read_fd (request_st * const r, handler_ctx * const hctx)
     }
     assert(0 == memcmp(buf, "2\n", 2));
     hctx->conf.ssi_exec = 0;
+  #endif
 
-    char fni[] = "/tmp/lighttpd_mod_ssi_inc_XXXXXX";
+    buffer fnib = { NULL, 0, 0 };
+    buffer_copy_path_len2(&fnib, tmpdir, strlen(tmpdir),
+                          CONST_STR_LEN("lighttpd_mod_ssi_inc.XXXXXX"));
+    char * const fni = fnib.ptr;
+    const size_t fnilen = buffer_clen(&fnib);
     int fdi = fdevent_mkostemp(fni, 0);
     if (fdi < 0) {
         perror("mkstemp()");
@@ -107,21 +126,22 @@ test_mod_ssi_read_fd (request_st * const r, handler_ctx * const hctx)
     buffer * const b = buffer_init();
     buffer_copy_string_len(b, CONST_STR_LEN(ssi_include_shtml));
     buffer_append_str3(b, CONST_STR_LEN("<!--#include virtual=\""),
-                          fni+5, strlen(fni)-5, /*(step over "/tmp/")*/
-                          CONST_STR_LEN("\" -->\n"));
+                          fni+tmpdirlen, fnilen-tmpdirlen,
+                          CONST_STR_LEN("\" -->\n")); /*(step over "/tmp/")*/
     buffer_append_str3(b, CONST_STR_LEN("<!--#include file=\""),
-                          fni+5, strlen(fni)-5, /*(step over "/tmp/")*/
-                          CONST_STR_LEN("\" -->\n"));
+                          fni+tmpdirlen, fnilen-tmpdirlen,
+                          CONST_STR_LEN("\" -->\n")); /*(step over "/tmp/")*/
     test_mod_ssi_write_testfile(fd, BUF_PTR_LEN(b));
     buffer_free(b);
     test_mod_ssi_reset(r, hctx);
     array_set_key_value(hctx->ssi_cgi_env,
                         CONST_STR_LEN("SCRIPT_NAME"),
                         CONST_STR_LEN("/ssi-include.shtml"));
-    buffer_copy_string_len(&r->physical.doc_root, CONST_STR_LEN("/tmp"));
+    buffer_copy_string_len(&r->physical.doc_root, tmpdir, strlen(tmpdir));
     buffer_copy_string_len(&r->uri.path, CONST_STR_LEN("/ssi-include.shtml"));
     buffer_copy_string_len(&r->physical.rel_path, CONST_STR_LEN("/ssi-include.shtml"));
-    buffer_copy_string_len(&r->physical.path, CONST_STR_LEN("/tmp/ssi-include.shtml"));
+    buffer_copy_path_len2(&r->physical.path, tmpdir, strlen(tmpdir),
+                          CONST_STR_LEN("ssi-include.shtml"));
     mod_ssi_read_fd(r, hctx, &st, fd);
     chunkqueue_read_squash(cq, r->conf.errh);
     assert(buffer_eq_slen(cq->first->mem,
@@ -132,9 +152,12 @@ test_mod_ssi_read_fd (request_st * const r, handler_ctx * const hctx)
                                         "ssi-include\n")));
 
     unlink(fni);
+    buffer_free_ptr(&fnib);
 
     test_mod_ssi_reset(r, hctx);
     close(fd);
+    unlink(fn);
+    buffer_free_ptr(&fnb);
 }
 
 void test_mod_ssi (void);

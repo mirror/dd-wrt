@@ -21,7 +21,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_alias_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 static void mod_alias_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -68,7 +68,7 @@ static int mod_alias_check_order(server * const srv, const array * const a) {
             while (*data != dj && *data != dk) ++data;
             if (*data == dj) {
                 log_error(srv->errh, __FILE__, __LINE__,
-                  "url.alias: `%s' will never match as `%s' matched first",
+                  "alias.url: `%s' will never match as `%s' matched first",
                   key->ptr, prefix->ptr);
                 return 0;
             }
@@ -181,6 +181,8 @@ PHYSICALPATH_FUNC(mod_alias_physical_handler) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_alias_plugin_init(plugin *p);
 int mod_alias_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

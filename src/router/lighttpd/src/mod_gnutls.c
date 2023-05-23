@@ -48,6 +48,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/x509-ext.h>
 #include <gnutls/abstract.h>
+#include <gnutls/socket.h>
 
 #ifdef GNUTLS_SKIP_GLOBAL_INIT
 GNUTLS_SKIP_GLOBAL_INIT
@@ -87,12 +88,7 @@ typedef struct {
     /*(used only during startup; not patched)*/
     unsigned char ssl_enabled; /* only interesting for setting up listening sockets. don't use at runtime */
     unsigned char ssl_honor_cipher_order; /* determine SSL cipher in server-preferred order, not client-order */
-    unsigned char ssl_empty_fragments;
-    unsigned char ssl_use_sslv2;
-    unsigned char ssl_use_sslv3;
     const buffer *ssl_cipher_list;
-    const buffer *ssl_dh_file;
-    const buffer *ssl_ec_curve;
     array *ssl_conf_cmd;
 
     /*(copied from plugin_data for socket ssl_ctx config)*/
@@ -123,7 +119,6 @@ typedef struct {
     unsigned char ssl_verifyclient_export_cert;
     unsigned char ssl_read_ahead;
     unsigned char ssl_log_noise;
-    unsigned char ssl_disable_client_renegotiation;
     const buffer *ssl_verifyclient_username;
     const buffer *ssl_acme_tls_1;
   #if GNUTLS_VERSION_NUMBER < 0x030600
@@ -166,9 +161,7 @@ typedef struct {
 static handler_ctx *
 handler_ctx_init (void)
 {
-    handler_ctx *hctx = calloc(1, sizeof(*hctx));
-    force_assert(hctx);
-    return hctx;
+    return ck_calloc(1, sizeof(handler_ctx));
 }
 
 
@@ -423,7 +416,7 @@ mod_gnutls_session_ticket_key_check (server *srv, const plugin_data *p, const un
 
 INIT_FUNC(mod_gnutls_init)
 {
-    plugin_data_singleton = (plugin_data *)calloc(1, sizeof(plugin_data));
+    plugin_data_singleton = (plugin_data *)ck_calloc(1, sizeof(plugin_data));
     return plugin_data_singleton;
 }
 
@@ -442,9 +435,7 @@ static int mod_gnutls_init_once_gnutls (void)
     if (gnutls_global_init() != GNUTLS_E_SUCCESS)
         return 0;
 
-    local_send_buffer = malloc(LOCAL_SEND_BUFSIZE);
-    force_assert(NULL != local_send_buffer);
-
+    local_send_buffer = ck_malloc(LOCAL_SEND_BUFSIZE);
     return 1;
 }
 
@@ -464,8 +455,9 @@ static void mod_gnutls_free_gnutls (void)
 }
 
 
+__attribute_noinline__
 static void
-mod_gnutls_free_config_crts (gnutls_datum_t *d)
+mod_gnutls_free_config_crts_data (gnutls_datum_t *d)
 {
     if (NULL == d) return;
     gnutls_x509_crt_t *crts = (gnutls_x509_crt_t *)(void *)d->data;
@@ -473,6 +465,13 @@ mod_gnutls_free_config_crts (gnutls_datum_t *d)
     for (unsigned int i = 0; i < u; ++i)
         gnutls_x509_crt_deinit(crts[i]);
     gnutls_free(crts);
+}
+
+
+static void
+mod_gnutls_free_config_crts (gnutls_datum_t *d)
+{
+    mod_gnutls_free_config_crts_data(d);
     gnutls_free(d);
 }
 
@@ -487,6 +486,16 @@ mod_gnutls_free_config_crls (gnutls_datum_t *d)
         gnutls_x509_crl_deinit(crls[i]);
     gnutls_free(crls);
     gnutls_free(d);
+}
+
+
+static int
+mod_gnutls_cert_is_active (gnutls_x509_crt_t crt)
+{
+    const time_t before = gnutls_x509_crt_get_activation_time(crt);
+    const time_t after  = gnutls_x509_crt_get_expiration_time(crt);
+    const unix_time64_t now = log_epoch_secs;
+    return (before <= now && now <= after);
 }
 
 
@@ -509,12 +518,26 @@ mod_gnutls_load_config_crts (const char *fn, log_error_st *errh)
     rc = gnutls_x509_crt_list_import2((gnutls_x509_crt_t **)&d->data, &d->size,
                                       &f, GNUTLS_X509_FMT_PEM,
                                       GNUTLS_X509_CRT_LIST_SORT);
+    if (rc < 0) {
+        mod_gnutls_free_config_crts_data(d);
+        d->data = NULL;
+        d->size = 0;
+        if (0 == gnutls_x509_crt_list_import2((gnutls_x509_crt_t **)&d->data,
+                                              &d->size, &f, GNUTLS_X509_FMT_DER,
+                                              GNUTLS_X509_CRT_LIST_SORT))
+            rc = 0;
+    }
     mod_gnutls_datum_wipe(&f);
     if (rc < 0) {
         elogf(errh, __FILE__, __LINE__, rc,
               "gnutls_x509_crt_list_import2() %s", fn);
         mod_gnutls_free_config_crts(d);
         return NULL;
+    }
+    else if (
+      !mod_gnutls_cert_is_active(((gnutls_x509_crt_t *)(void *)d->data)[0])) {
+        log_error(errh, __FILE__, __LINE__,
+          "GnuTLS: inactive/expired X509 certificate '%s'", fn);
     }
 
     return d;
@@ -567,6 +590,13 @@ mod_gnutls_load_config_pkey (const char *fn, log_error_st *errh)
         return NULL;
     }
     rc = gnutls_privkey_import_x509_raw(pkey, &f, GNUTLS_X509_FMT_PEM, NULL, 0);
+    if (rc < 0) {
+        gnutls_privkey_deinit(pkey);
+        if (0 == gnutls_privkey_init(&pkey)
+            && 0 == gnutls_privkey_import_x509_raw(pkey, &f,
+                                                   GNUTLS_X509_FMT_DER,NULL,0))
+            rc = 0;
+    }
     mod_gnutls_datum_wipe(&f);
     if (rc < 0) {
         elogf(errh, __FILE__, __LINE__, rc,
@@ -675,7 +705,7 @@ mod_gnutls_merge_config_cpv (plugin_config * const pconf, const config_plugin_va
         pconf->ssl_read_ahead = (0 != cpv->v.u);
         break;
       case 6: /* ssl.disable-client-renegotiation */
-        pconf->ssl_disable_client_renegotiation = (0 != cpv->v.u);
+        /*(ignored; unsafe renegotiation disabled by default)*/
         break;
       case 7: /* ssl.verifyclient.activate */
         pconf->ssl_verifyclient = (0 != cpv->v.u);
@@ -1170,8 +1200,7 @@ network_gnutls_load_pemfile (server *srv, const buffer *pemfile, const buffer *p
         return NULL;
     }
 
-    plugin_cert *pc = malloc(sizeof(plugin_cert));
-    force_assert(pc);
+    plugin_cert *pc = ck_malloc(sizeof(plugin_cert));
     pc->ssl_cred = ssl_cred;
     pc->trust_inited = 0;
 
@@ -1192,8 +1221,7 @@ network_gnutls_load_pemfile (server *srv, const buffer *pemfile, const buffer *p
         return NULL;
     }
 
-    plugin_cert *pc = malloc(sizeof(plugin_cert));
-    force_assert(pc);
+    plugin_cert *pc = ck_malloc(sizeof(plugin_cert));
     pc->ssl_cred = NULL;
     pc->trust_inited = 0;
     pc->ssl_pemfile_x509 = d;
@@ -1224,6 +1252,11 @@ network_gnutls_load_pemfile (server *srv, const buffer *pemfile, const buffer *p
                   "certificate %s marked OCSP Must-Staple, "
                   "but ssl.stapling-file not provided", pemfile->ptr);
     }
+
+  #if 0
+    pc->notAfter = TIME64_CAST(gnutls_x509_crt_get_expiration_time(
+                                 ((gnutls_x509_crt_t *)(void *)d->data)[0]));
+  #endif
 
     return pc;
 
@@ -1386,7 +1419,8 @@ mod_gnutls_ALPN (handler_ctx * const hctx, const unsigned char * const in, const
             if (in[i] == 'h' && in[i+1] == '2') {
                 if (!hctx->r->conf.h2proto) continue;
                 hctx->alpn = MOD_GNUTLS_ALPN_H2;
-                hctx->r->http_version = HTTP_VERSION_2;
+                if (hctx->r->handler_module == NULL)/*(e.g. not mod_sockproxy)*/
+                    hctx->r->http_version = HTTP_VERSION_2;
                 return GNUTLS_E_SUCCESS;
             }
             continue;
@@ -1611,6 +1645,12 @@ static int
 mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *ciphersuites, const buffer *cipherstring);
 
 
+#if GNUTLS_VERSION_NUMBER < 0x030600
+static int
+mod_gnutls_ssl_conf_dhparameters(server *srv, plugin_config_socket *s, const buffer *dhparameters);
+#endif
+
+
 static int
 mod_gnutls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *curvelist);
 
@@ -1640,6 +1680,14 @@ mod_gnutls_ssl_conf_cmd (server *srv, plugin_config_socket *s)
         else if (buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("Curves"))
               || buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("Groups")))
             curves = &ds->value;
+      #if GNUTLS_VERSION_NUMBER < 0x030600
+        else if (buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("DHParameters"))){
+            if (!buffer_is_blank(&ds->value)) {
+                if (!mod_gnutls_ssl_conf_dhparameters(srv, s, &ds->value))
+                    rc = -1;
+            }
+        }
+      #endif
         else if (buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("MaxProtocol")))
             maxb = &ds->value;
         else if (buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("MinProtocol")))
@@ -1659,6 +1707,8 @@ mod_gnutls_ssl_conf_cmd (server *srv, plugin_config_socket *s)
                     flag = 0;
                     ++v;
                 }
+                else if (*v == '+')
+                    ++v;
                 for (e = v; light_isalpha(*e); ++e) ;
                 switch ((int)(e-v)) {
                   case 11:
@@ -1715,9 +1765,8 @@ mod_gnutls_ssl_conf_cmd (server *srv, plugin_config_socket *s)
         rc = -1;
 
     if (curves) {
-        if (!s->ssl_ec_curve)
-            buffer_append_string_len(&s->priority_str,
-                                     CONST_STR_LEN("-CURVE-ALL:"));
+        buffer_append_string_len(&s->priority_str,
+                                 CONST_STR_LEN("-CURVE-ALL:"));
         if (!mod_gnutls_ssl_conf_curves(srv, s, curves))
             rc = -1;
     }
@@ -1737,11 +1786,6 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
      * default: NORMAL (since GnuTLS 3.3.0, could also use NULL for defaults)
      * SUITEB128 and SUITEB192 are stricter than NORMAL
      * (and are attempted to be supported in mod_gnutls_ssl_conf_ciphersuites())
-     *
-     * gnutls defaults to %PARTIAL_RENEGOTIATION (see manual)
-     * mod_gnutls does not attempt to support
-     *   hctx->conf.ssl_disable_client_renegotiation == 0
-     * though possible with %UNSAFE_RENEGOTATION
      */
 
   #if GNUTLS_VERSION_NUMBER < 0x030600
@@ -1757,54 +1801,11 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
     }
 
   #if GNUTLS_VERSION_NUMBER < 0x030600
-    if (s->ssl_dh_file) {
-        /* "Prior to GnuTLS 3.6.0 for the ephemeral or anonymous Diffie-Hellman
-         * (DH) TLS ciphersuites the application was required to generate or
-         * provide DH parameters. That is no longer necessary as GnuTLS utilizes
-         * DH parameters and negotiation from [RFC7919]."
-         */
-        /* In other words, the following should not be used in 3.6.0 or later:
-         *   gnutls_certificate_set_dh_params()
-         *   gnutls_certificate_set_known_dh_params()
-         * However, if support is implemented in mod_gnutls, must also free in
-         * mod_gnutls_free_config() as gnutls_certificate_free_credentials()
-         * does not free RSA or DH params manually associated with credential */
-        gnutls_datum_t f = { NULL, 0 };
-        rc = gnutls_dh_params_init(&s->dh_params);
-        if (rc < 0) return -1;
-        rc = mod_gnutls_load_file(s->ssl_dh_file->ptr, &f, srv->errh);
-        if (rc < 0) return -1;
-        rc = gnutls_dh_params_import_pkcs3(s->dh_params,&f,GNUTLS_X509_FMT_PEM);
-        mod_gnutls_datum_wipe(&f);
-        if (rc < 0) {
-            elogf(srv->errh, __FILE__, __LINE__, rc,
-                  "gnutls_dh_params_import_pkcs3() %s", s->ssl_dh_file->ptr);
-            return -1;
-        }
-    }
-    else {
-      #if GNUTLS_VERSION_NUMBER < 0x030506
-        /* (this might take a while; you should upgrade to newer gnutls) */
-        rc = gnutls_dh_params_init(&s->dh_params);
-        if (rc < 0) return -1;
-        unsigned int bits =
-          gnutls_sec_param_to_pk_bits(GNUTLS_PK_DH, GNUTLS_SEC_PARAM_HIGH);
-        rc = gnutls_dh_params_generate2(s->dh_params, bits);
-        if (rc < 0) {
-            elogf(srv->errh, __FILE__, __LINE__, rc,
-                  "gnutls_dh_params_generate2()");
-            return -1;
-        }
-      #endif
-    }
-  #endif /* GNUTLS_VERSION_NUMBER < 0x030600 */
-
-    if (s->ssl_ec_curve) {
-        buffer_append_string_len(&s->priority_str,
-                                 CONST_STR_LEN("-CURVE-ALL:"));
-        if (!mod_gnutls_ssl_conf_curves(srv, s, s->ssl_ec_curve))
+    {
+        if (!mod_gnutls_ssl_conf_dhparameters(srv, s, NULL))
             return -1;
     }
+  #endif
 
     if (s->ssl_conf_cmd && s->ssl_conf_cmd->used) {
         if (0 != mod_gnutls_ssl_conf_cmd(srv, s)) return -1;
@@ -1818,15 +1819,13 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
         buffer_append_string_len(&s->priority_str,
                                  CONST_STR_LEN("%NO_TICKETS:"));
 
-    if (!s->ssl_use_sslv3 && !s->ssl_use_sslv2
-        && NULL == strstr(s->priority_str.ptr, "-VERS-ALL:"))
+    if (NULL == strstr(s->priority_str.ptr, "-VERS-ALL:"))
         mod_gnutls_ssl_conf_proto(srv, s, NULL, NULL);
 
     /* explicitly disable SSLv3 unless enabled in config
      * (gnutls library would also need to be compiled with legacy support) */
-    if (!s->ssl_use_sslv3)
-        buffer_append_string_len(&s->priority_str,
-                                 CONST_STR_LEN("-VERS-SSL3.0:"));
+    buffer_append_string_len(&s->priority_str,
+                             CONST_STR_LEN("-VERS-SSL3.0:"));
 
     /* gnutls_priority_init2() is available since GnuTLS 3.6.3 and could be
      * called once with s->priority_base, and a second time with s->priority_str
@@ -1837,7 +1836,7 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
     if (NULL == s->priority_base) s->priority_base = "NORMAL";
     buffer_copy_string_len(b, s->priority_base, strlen(s->priority_base));
     if (!buffer_is_blank(&s->priority_str)) {
-        buffer_append_string_len(b, CONST_STR_LEN(":"));
+        buffer_append_char(b, ':');
         uint32_t len = buffer_clen(&s->priority_str);
         if (s->priority_str.ptr[len-1] == ':')
             --len; /* remove trailing ':' */
@@ -1865,39 +1864,25 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 }
 
 
+#define LIGHTTPD_DEFAULT_CIPHER_LIST \
+"EECDH+AESGCM:AES256+EECDH:CHACHA20:!SHA1:!SHA256:!SHA384"
+
+
 static int
 mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
 {
     static const config_plugin_keys_t cpk[] = {
       { CONST_STR_LEN("ssl.engine"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("ssl.cipher-list"),
         T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.honor-cipher-order"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.dh-file"),
-        T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.ec-curve"),
-        T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("ssl.openssl.ssl-conf-cmd"),
         T_CONFIG_ARRAY_KVSTRING,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("ssl.pemfile"), /* included to process global scope */
         T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.empty-fragments"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.use-sslv2"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.use-sslv3"),
-        T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.stek-file"),
         T_CONFIG_STRING,
@@ -1906,10 +1891,10 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
     };
-    static const buffer default_ssl_cipher_list = { CONST_STR_LEN("HIGH"), 0 };
+    static const buffer default_ssl_cipher_list =
+      { CONST_STR_LEN(LIGHTTPD_DEFAULT_CIPHER_LIST), 0 };
 
-    p->ssl_ctxs = calloc(srv->config_context->used, sizeof(plugin_ssl_ctx));
-    force_assert(p->ssl_ctxs);
+    p->ssl_ctxs = ck_calloc(srv->config_context->used, sizeof(plugin_ssl_ctx));
 
     int rc = HANDLER_GO_ON;
     plugin_data_base srvplug;
@@ -1920,7 +1905,6 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
 
     plugin_config_socket defaults;
     memset(&defaults, 0, sizeof(defaults));
-    defaults.ssl_honor_cipher_order = 1; /* default server preference for PFS */
     defaults.ssl_session_ticket     = 1; /* enabled by default */
     defaults.ssl_cipher_list        = &default_ssl_cipher_list;
 
@@ -1934,16 +1918,10 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
 
         plugin_config_socket conf;
         memcpy(&conf, &defaults, sizeof(conf));
-
-        /*(preserve prior behavior; not inherited)*/
-        /*(forcing inheritance might break existing configs where SSL is enabled
-         * by default in the global scope, but not $SERVER["socket"]=="*:80") */
-        conf.ssl_enabled = 0;
-
         config_plugin_value_t *cpv = ps->cvlist + ps->cvlist[i].v.u2[0];
         for (; -1 != cpv->k_id; ++cpv) {
-            /* ignore ssl.pemfile (k_id=6); included to process global scope */
-            if (!is_socket_scope && cpv->k_id != 6) {
+            /* ignore ssl.pemfile (k_id=3); included to process global scope */
+            if (!is_socket_scope && cpv->k_id != 3) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "GnuTLS: %s is valid only in global scope or "
                   "$SERVER[\"socket\"] condition", cpk[cpv->k_id].k);
@@ -1956,56 +1934,25 @@ mod_gnutls_set_defaults_sockets(server *srv, plugin_data *p)
                 --count_not_engine;
                 break;
               case 1: /* ssl.cipher-list */
-                if (!buffer_is_blank(cpv->v.b))
+                if (!buffer_is_blank(cpv->v.b)) {
                     conf.ssl_cipher_list = cpv->v.b;
+                    /*(historical use might list non-PFS ciphers)*/
+                    conf.ssl_honor_cipher_order = 1;
+                    log_error(srv->errh, __FILE__, __LINE__,
+                      "%s is deprecated.  "
+                      "Please prefer lighttpd secure TLS defaults, or use "
+                      "ssl.openssl.ssl-conf-cmd \"CipherString\" to set custom "
+                      "cipher list.", cpk[cpv->k_id].k);
+                }
                 break;
-              case 2: /* ssl.honor-cipher-order */
-                conf.ssl_honor_cipher_order = (0 != cpv->v.u);
-                break;
-              case 3: /* ssl.dh-file */
-               #if GNUTLS_VERSION_NUMBER < 0x030600
-                if (!buffer_is_blank(cpv->v.b))
-                    conf.ssl_dh_file = cpv->v.b;
-               #else
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "GnuTLS: ignoring ssl.dh-file; "
-                  "obsoleted in GnuTLS 3.6.0 and later implementing RFC7919");
-               #endif
-                break;
-              case 4: /* ssl.ec-curve */
-                if (!buffer_is_blank(cpv->v.b))
-                    conf.ssl_ec_curve = cpv->v.b;
-                break;
-              case 5: /* ssl.openssl.ssl-conf-cmd */
+              case 2: /* ssl.openssl.ssl-conf-cmd */
                 *(const array **)&conf.ssl_conf_cmd = cpv->v.a;
                 break;
-              case 6: /* ssl.pemfile */
+              case 3: /* ssl.pemfile */
                 /* ignore here; included to process global scope when
                  * ssl.pemfile is set, but ssl.engine is not "enable" */
                 break;
-              case 7: /* ssl.empty-fragments */
-                conf.ssl_empty_fragments = (0 != cpv->v.u);
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "GnuTLS: ignoring ssl.empty-fragments; openssl-specific "
-                  "counter-measure against a SSL 3.0/TLS 1.0 protocol "
-                  "vulnerability affecting CBC ciphers, which cannot be handled"
-                  " by some broken (Microsoft) SSL implementations.");
-                break;
-              case 8: /* ssl.use-sslv2 */
-                conf.ssl_use_sslv2 = (0 != cpv->v.u);
-                log_error(srv->errh, __FILE__, __LINE__, "GnuTLS: "
-                  "ssl.use-sslv2 is deprecated and will soon be removed.  "
-                  "Many modern TLS libraries no longer support SSLv2.");
-                break;
-              case 9: /* ssl.use-sslv3 */
-                conf.ssl_use_sslv3 = (0 != cpv->v.u);
-                log_error(srv->errh, __FILE__, __LINE__, "GnuTLS: "
-                  "ssl.use-sslv3 is deprecated and will soon be removed.  "
-                  "Many modern TLS libraries no longer support SSLv3.  "
-                  "If needed, use: "
-                  "ssl.openssl.ssl-conf-cmd = (\"MinProtocol\" => \"SSLv3\")");
-                break;
-              case 10:/* ssl.stek-file */
+              case 4: /* ssl.stek-file */
                 if (!buffer_is_blank(cpv->v.b))
                     p->ssl_stek_file = cpv->v.b->ptr;
                 break;
@@ -2141,7 +2088,7 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.disable-client-renegotiation"),
-        T_CONFIG_BOOL,
+        T_CONFIG_BOOL, /*(directive ignored)*/
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.verifyclient.activate"),
         T_CONFIG_BOOL,
@@ -2165,7 +2112,7 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("debug.log-ssl-noise"),
-        T_CONFIG_SHORT,
+        T_CONFIG_BOOL,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.verifyclient.ca-file"),
         T_CONFIG_STRING,
@@ -2242,12 +2189,8 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
                 }
                 break;
               case 5: /* ssl.read-ahead */
-                break;
               case 6: /* ssl.disable-client-renegotiation */
-                /* (force disabled, the default, if HTTP/2 enabled in server) */
-                if (srv->srvconf.h2proto)
-                    cpv->v.u = 1; /* disable client renegotiation */
-                break;
+                /*(ignored; unsafe renegotiation disabled by default)*/
               case 7: /* ssl.verifyclient.activate */
               case 8: /* ssl.verifyclient.enforce */
                 break;
@@ -2301,7 +2244,6 @@ SETDEFAULTS_FUNC(mod_gnutls_set_defaults)
     p->defaults.ssl_verifyclient_enforce = 1;
     p->defaults.ssl_verifyclient_depth = 9;
     p->defaults.ssl_verifyclient_export_cert = 0;
-    p->defaults.ssl_disable_client_renegotiation = 1;
     p->defaults.ssl_read_ahead = 0;
 
     /* initialize p->defaults from global config context */
@@ -2377,15 +2319,13 @@ mod_gnutls_read_err(connection *con, handler_ctx *hctx, int rc)
      #endif
       case GNUTLS_E_REHANDSHAKE:
         if (!hctx->handshake) return -1; /*(not expected during handshake)*/
-        if (hctx->conf.ssl_disable_client_renegotiation)/*(mod_gnutls default)*/
-            return -1;
        #if 0
         if (gnutls_safe_renegotiation_status(hctx->ssl)) {
             hctx->handshake = 0;
             return con->network_read(con, cq, max_bytes);
         }
        #else
-        return 0; /*(ignore client renegotiation request; generally unsafe)*/
+        return -1;
        #endif
       case GNUTLS_E_WARNING_ALERT_RECEIVED:
       case GNUTLS_E_FATAL_ALERT_RECEIVED:
@@ -2505,6 +2445,63 @@ connection_write_cq_ssl (connection * const con, chunkqueue * const cq, off_t ma
 }
 
 
+#if GNUTLS_VERSION_NUMBER >= 0x030704
+static int
+connection_write_cq_ssl_ktls (connection * const con, chunkqueue * const cq, off_t max_bytes)
+{
+    /* gnutls_record_send_file() interface has non-intuitive behavior if
+     * gnutls_transport_is_ktls_enabled() *is not* enabled for GNUTLS_KTLS_SEND
+     * (If not enabled, offset is *relative* to current underlying file pointer,
+     *  which is different from sendfile())
+     * Therefore, callers should ensure GNUTLS_KTLS_SEND is enabled before
+     * configuring: con->network_write = connection_write_cq_ssl_ktls */
+
+    handler_ctx * const hctx = con->plugin_ctx[plugin_data_singleton->id];
+    if (!hctx->handshake) return 0;
+
+    if (hctx->pending_write) {
+        int wr = gnutls_record_send(hctx->ssl, NULL, 0);
+        if (wr <= 0)
+            return mod_gnutls_write_err(con, hctx, wr, hctx->pending_write);
+        max_bytes -= wr;
+        hctx->pending_write = 0;
+        chunkqueue_mark_written(cq, wr);
+    }
+
+    if (__builtin_expect( (0 != hctx->close_notify), 0))
+        return mod_gnutls_close_notify(hctx);
+
+    /* not done: scan cq for FILE_CHUNK within first max_bytes rather than
+     * only using gnutls_record_send_file() if the first chunk is FILE_CHUNK.
+     * Checking first chunk for FILE_CHUNK means that initial response headers
+     * and beginning of file will be read into memory before subsequent writes
+     * use gnutls_record_send_file().  TBD: possible to be further optimized? */
+
+    for (chunk *c; (c = cq->first) && c->type == FILE_CHUNK; ) {
+        off_t len = c->file.length - c->offset;
+        if (len > max_bytes) len = max_bytes;
+        if (0 == len) break; /*(FILE_CHUNK or max_bytes should not be 0)*/
+        if (-1 == c->file.fd && 0 != chunkqueue_open_file_chunk(cq, hctx->errh))
+            return -1;
+
+        ssize_t wr =
+          gnutls_record_send_file(hctx->ssl, c->file.fd, &c->offset, (size_t)len);
+        if (wr < 0)
+            return mod_gnutls_write_err(con, hctx, (int)wr, 0);
+        /* undo gnutls_record_send_file before chunkqueue_mark_written redo */
+        c->offset -= wr;
+
+        chunkqueue_mark_written(cq, wr);
+        max_bytes -= wr;
+
+        if (wr < len) return 0; /* try again later */
+    }
+
+    return connection_write_cq_ssl(con, cq, max_bytes);
+}
+#endif
+
+
 static int
 mod_gnutls_ssl_handshake (handler_ctx *hctx)
 {
@@ -2515,10 +2512,21 @@ mod_gnutls_ssl_handshake (handler_ctx *hctx)
     /*(rc == GNUTLS_E_SUCCESS)*/
 
     hctx->handshake = 1;
+  #if GNUTLS_VERSION_NUMBER >= 0x030704
+    gnutls_transport_ktls_enable_flags_t kflags =
+      gnutls_transport_is_ktls_enabled(hctx->ssl);
+    if (kflags == GNUTLS_KTLS_SEND || kflags == GNUTLS_KTLS_DUPLEX)
+        hctx->con->network_write = connection_write_cq_ssl_ktls;
+  #endif
   #if GNUTLS_VERSION_NUMBER >= 0x030200
     if (hctx->alpn == MOD_GNUTLS_ALPN_H2) {
         if (0 != mod_gnutls_alpn_h2_policy(hctx))
             return -1;
+      #if GNUTLS_VERSION_NUMBER >= 0x030704
+        /*(not expecting FILE_CHUNKs in write_queue with h2,
+         * so skip ktls and gnutls_record_send_file; reset to default)*/
+        hctx->con->network_write = connection_write_cq_ssl;
+      #endif
     }
     else if (hctx->alpn == MOD_GNUTLS_ALPN_ACME_TLS_1) {
         /* Once TLS handshake is complete, return -1 to result in
@@ -2557,12 +2565,7 @@ connection_read_cq_ssl (connection * const con, chunkqueue * const cq, off_t max
         mem = chunkqueue_get_memory(cq, &mem_len);
 
         len = gnutls_record_recv(ssl, mem, mem_len);
-        if (len > 0) {
-            chunkqueue_use_memory(cq, ckpt, len);
-            con->bytes_read += len;
-        } else {
-            chunkqueue_use_memory(cq, ckpt, 0);
-        }
+        chunkqueue_use_memory(cq, ckpt, len > 0 ? len : 0);
     } while (len > 0 && (pend = gnutls_record_check_pending(ssl)));
 
     if (len < 0) {
@@ -2602,7 +2605,8 @@ CONNECTION_FUNC(mod_gnutls_handle_con_accept)
     con->plugin_ctx[p->id] = hctx;
     buffer_blank(&r->uri.authority);
 
-    plugin_ssl_ctx * const s = p->ssl_ctxs + srv_sock->sidx;
+    plugin_ssl_ctx *s = p->ssl_ctxs + srv_sock->sidx;
+    if (NULL == s->priority_cache) s = p->ssl_ctxs; /*(inherit from global)*/
     hctx->ssl_session_ticket = s->ssl_session_ticket;
     int flags = GNUTLS_SERVER | GNUTLS_NO_SIGNAL | GNUTLS_NONBLOCK;
              /* ??? add feature: GNUTLS_ENABLE_EARLY_START ??? */
@@ -2992,6 +2996,8 @@ TRIGGER_FUNC(mod_gnutls_handle_trigger) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_gnutls_plugin_init (plugin *p);
 int mod_gnutls_plugin_init (plugin *p)
 {
@@ -3053,17 +3059,6 @@ static const char suite_TLSv10[] =
   "+AES-128-CBC:"
   "+CAMELLIA-256-CBC:"
   "+CAMELLIA-128-CBC:"
-;
-
-/* SSLv3 cipher list (supported in gnutls) */
-/* XXX: intentionally not including overlapping eNULL ciphers */
-static const char suite_SSLv3[] =
-  "+AES-256-CBC:"
-  "+AES-128-CBC:"
-  "+CAMELLIA-256-CBC:"
-  "+CAMELLIA-128-CBC:"
-  "+3DES-CBC:"
-  "+DES-CBC:"
 ;
 
 /* HIGH cipher list (mapped from openssl list to gnutls) */
@@ -3256,12 +3251,6 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
                 continue;
             }
 
-            if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("SSLv3"))) {
-                buffer_append_string_len(plist,
-                  CONST_STR_LEN(suite_SSLv3));
-                continue;
-            }
-
             /* handle a popular recommendations
              *   ssl.cipher-list = "EECDH+AESGCM:EDH+AESGCM"
              *   ssl.cipher-list = "AES256+EECDH:AES256+EDH"
@@ -3358,6 +3347,56 @@ mod_gnutls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer *
 }
 
 
+#if GNUTLS_VERSION_NUMBER < 0x030600
+static int
+mod_gnutls_ssl_conf_dhparameters(server *srv, plugin_config_socket *s, const buffer *dhparameters)
+{
+    if (dhparameters) {
+        /* "Prior to GnuTLS 3.6.0 for the ephemeral or anonymous Diffie-Hellman
+         * (DH) TLS ciphersuites the application was required to generate or
+         * provide DH parameters. That is no longer necessary as GnuTLS utilizes
+         * DH parameters and negotiation from [RFC7919]."
+         */
+        /* In other words, the following should not be used in 3.6.0 or later:
+         *   gnutls_certificate_set_dh_params()
+         *   gnutls_certificate_set_known_dh_params()
+         * However, if support is implemented in mod_gnutls, must also free in
+         * mod_gnutls_free_config() as gnutls_certificate_free_credentials()
+         * does not free RSA or DH params manually associated with credential */
+        gnutls_datum_t f = { NULL, 0 };
+        rc = gnutls_dh_params_init(&s->dh_params);
+        if (rc < 0) return 0;
+        rc = mod_gnutls_load_file(dhparameters->ptr, &f, srv->errh);
+        if (rc < 0) return 0;
+        rc = gnutls_dh_params_import_pkcs3(s->dh_params,&f,GNUTLS_X509_FMT_PEM);
+        mod_gnutls_datum_wipe(&f);
+        if (rc < 0) {
+            elogf(srv->errh, __FILE__, __LINE__, rc,
+                  "gnutls_dh_params_import_pkcs3() %s", dhparameters->ptr);
+            return 0;
+        }
+    }
+    else {
+      #if GNUTLS_VERSION_NUMBER < 0x030506
+        /* (this might take a while; you should upgrade to newer gnutls) */
+        rc = gnutls_dh_params_init(&s->dh_params);
+        if (rc < 0) return 0;
+        unsigned int bits =
+          gnutls_sec_param_to_pk_bits(GNUTLS_PK_DH, GNUTLS_SEC_PARAM_HIGH);
+        rc = gnutls_dh_params_generate2(s->dh_params, bits);
+        if (rc < 0) {
+            elogf(srv->errh, __FILE__, __LINE__, rc,
+                  "gnutls_dh_params_generate2()");
+            return 0;
+        }
+      #endif
+    }
+
+    return 1;
+}
+#endif /* GNUTLS_VERSION_NUMBER < 0x030600 */
+
+
 static int
 mod_gnutls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *curvelist)
 {
@@ -3400,9 +3439,9 @@ mod_gnutls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *c
             continue;
         }
 
-        buffer_append_string_len(plist, CONST_STR_LEN("+"));
+        buffer_append_char(plist, '+');
         buffer_append_string_len(plist, names[i+1], strlen(names[i+1]));
-        buffer_append_string_len(plist, CONST_STR_LEN(":"));
+        buffer_append_char(plist, ':');
     }
 
     return 1;
@@ -3410,16 +3449,12 @@ mod_gnutls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *c
 
 
 static int
-mod_gnutls_ssl_conf_proto_val (server *srv, plugin_config_socket *s, const buffer *b, int max)
+mod_gnutls_ssl_conf_proto_val (server *srv, const buffer *b, int max)
 {
     if (NULL == b) /* default: min TLSv1.2, max TLSv1.3 */
         return max ? GNUTLS_TLS1_3 : GNUTLS_TLS1_2;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("None"))) /*"disable" limit*/
-        return max
-          ? GNUTLS_TLS1_3
-          : (s->ssl_use_sslv3 ? GNUTLS_SSL3 : GNUTLS_TLS1_0);
-    else if (buffer_eq_icase_slen(b, CONST_STR_LEN("SSLv3")))
-        return GNUTLS_SSL3;
+        return max ? GNUTLS_TLS1_3 : GNUTLS_TLS1_0;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.0")))
         return GNUTLS_TLS1_0;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.1")))
@@ -3447,8 +3482,8 @@ static void
 mod_gnutls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *minb, const buffer *maxb)
 {
     /* use of SSL v3 should be avoided, and SSL v2 is not supported */
-    int n = mod_gnutls_ssl_conf_proto_val(srv, s, minb, 0);
-    int x = mod_gnutls_ssl_conf_proto_val(srv, s, maxb, 1);
+    int n = mod_gnutls_ssl_conf_proto_val(srv, minb, 0);
+    int x = mod_gnutls_ssl_conf_proto_val(srv, maxb, 1);
     if (n < 0) return;
     if (x < 0) return;
     buffer * const b = &s->priority_str;

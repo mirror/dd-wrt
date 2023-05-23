@@ -24,7 +24,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_redirect_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 FREE_FUNC(mod_redirect_free) {
@@ -202,6 +202,9 @@ URIHANDLER_FUNC(mod_redirect_uri_handler) {
     return rc;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_redirect_plugin_init(plugin *p);
 int mod_redirect_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

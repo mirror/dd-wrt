@@ -1,18 +1,18 @@
 #include "first.h"
 
 #include "stat_cache.h"
+
+#include "sys-stat.h"
+#include "sys-unistd.h" /* <unistd.h> */
+
 #include "log.h"
 #include "fdevent.h"
 #include "http_etag.h"
 #include "algo_splaytree.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
 
 #if defined(HAVE_SYS_XATTR_H)
@@ -23,13 +23,6 @@
 
 #ifdef HAVE_SYS_EXTATTR_H
 # include <sys/extattr.h>
-#endif
-
-#ifndef HAVE_LSTAT
-#define lstat stat
-#ifndef S_ISLNK
-#define S_ISLNK(mode) (0)
-#endif
 #endif
 
 /*
@@ -57,6 +50,7 @@ typedef struct stat_cache {
 static stat_cache sc;
 
 
+__attribute_noinline__
 static void * stat_cache_sptree_find(splay_tree ** const sptree,
                                      const char * const name,
                                      uint32_t len)
@@ -136,6 +130,9 @@ static void * stat_cache_sptree_find(splay_tree ** const sptree,
  && !(defined(HAVE_SYS_EVENT_H) && defined(HAVE_KQUEUE))
 
 #include <sys/inotify.h>
+#ifndef IN_EXCL_UNLINK /*(not defined in some very old glibc headers)*/
+#define IN_EXCL_UNLINK 0x04000000
+#endif
 
 /*(translate FAM API to inotify; this is specific to stat_cache.c use of FAM)*/
 #define fam fd /*(translate struct stat_cache_fam scf->fam -> scf->fd)*/
@@ -240,9 +237,7 @@ typedef struct stat_cache_fam {
 __attribute_returns_nonnull__
 static fam_dir_entry * fam_dir_entry_init(const char *name, size_t len)
 {
-    fam_dir_entry * const fam_dir = calloc(1, sizeof(*fam_dir));
-    force_assert(NULL != fam_dir);
-
+    fam_dir_entry * const fam_dir = ck_calloc(1, sizeof(*fam_dir));
     buffer_copy_string_len(&fam_dir->name, name, len);
     fam_dir->refcnt = 0;
   #if defined HAVE_SYS_EVENT_H && defined HAVE_KQUEUE
@@ -293,7 +288,7 @@ static void fam_dir_tag_refcnt(splay_tree *t, int *keys, int *ndx)
 }
 
 __attribute_noinline__
-static void fam_dir_periodic_cleanup() {
+static void fam_dir_periodic_cleanup(void) {
     stat_cache_fam * const scf = sc.scf;
     int max_ndx, i;
     int keys[512]; /* 2k size on stack */
@@ -559,7 +554,7 @@ static handler_t stat_cache_handle_fdevent(void *ctx, int revent)
 		 *  do not change here so that periodic jobs clean up memory)*/
 		/*sc.stat_cache_engine = STAT_CACHE_ENGINE_NONE; */
 		fdevent_fdnode_event_del(scf->ev, scf->fdn);
-		fdevent_unregister(scf->ev, scf->fd);
+		fdevent_unregister(scf->ev, scf->fdn);
 		scf->fdn = NULL;
 
 		FAMClose(&scf->fam);
@@ -570,14 +565,21 @@ static handler_t stat_cache_handle_fdevent(void *ctx, int revent)
 }
 
 static stat_cache_fam * stat_cache_init_fam(fdevents *ev, log_error_st *errh) {
-	stat_cache_fam *scf = calloc(1, sizeof(*scf));
-	force_assert(scf);
+	stat_cache_fam *scf = ck_calloc(1, sizeof(*scf));
 	scf->fd = -1;
 	scf->ev = ev;
 	scf->errh = errh;
 
   #ifdef HAVE_SYS_INOTIFY_H
+   #if !defined(IN_NONBLOCK) || !defined(IN_CLOEXEC)
+	scf->fd = inotify_init();
+	if (scf->fd >= 0 && 0 != fdevent_fcntl_set_nb_cloexec(scf->fd)) {
+		close(scf->fd);
+		scf->fd = -1;
+	}
+   #else
 	scf->fd = inotify_init1(IN_NONBLOCK|IN_CLOEXEC);
+   #endif
 	if (scf->fd < 0) {
 		log_perror(errh, __FILE__, __LINE__, "inotify_init1()");
 		free(scf);
@@ -791,10 +793,10 @@ static fam_dir_entry * fam_dir_monitor(stat_cache_fam *scf, char *fn, uint32_t d
 
 
 __attribute_malloc__
+__attribute_noinline__
 __attribute_returns_nonnull__
 static stat_cache_entry * stat_cache_entry_init(void) {
-    stat_cache_entry *sce = calloc(1, sizeof(*sce));
-    force_assert(NULL != sce);
+    stat_cache_entry *sce = ck_calloc(1, sizeof(*sce));
     sce->fd = -1;
     sce->refcnt = 1;
     return sce;
@@ -1264,10 +1266,12 @@ stat_cache_entry * stat_cache_get_entry(const buffer * const name) {
 	/* Note: paths are expected to be normalized before calling stat_cache,
 	 * e.g. without repeated '/' */
 
+  #ifndef _WIN32
 	if (name->ptr[0] != '/') {
 		errno = EINVAL;
 		return NULL;
 	}
+  #endif
 
 	/*
 	 * check if the directory for this file has changed
@@ -1325,6 +1329,7 @@ stat_cache_entry * stat_cache_get_entry(const buffer * const name) {
 	if (NULL == sce) {
 
 		/* fix broken stat/open for symlinks to reg files with appended slash on freebsd,osx */
+		/* (local fs_win32_stati64UTF8() checks, but repeat since not obvious)*/
 		if (final_slash && S_ISREG(st.st_mode)) {
 			errno = ENOTDIR;
 			return NULL;
@@ -1444,6 +1449,9 @@ int stat_cache_path_contains_symlink(const buffer *name, log_error_st *errh) {
             return -1;
         }
     } while ((s_cur = strrchr(buf, '/')) > buf); /*(&buf[0]==buf; NULL < buf)*/
+  #else
+    UNUSED(name);
+    UNUSED(errh);
   #endif
 
     return 0;

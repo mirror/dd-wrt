@@ -1,5 +1,9 @@
 #include "first.h"
 
+#include "sys-stat.h"
+#include "sys-unistd.h" /* <unistd.h> */
+#include "sys-wait.h"
+
 #include "base.h"
 #include "burl.h"
 #include "chunk.h"
@@ -18,19 +22,14 @@
 #include "stat_cache.h"
 #include "sys-crypto.h"
 
-#include <sys/stat.h>
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
-#endif
-
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <ctype.h>
 #include <limits.h>
+#ifndef _WIN32
 #include <glob.h>
+#endif
 
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
@@ -239,6 +238,8 @@ static void config_burl_normalize_cond (server * const srv) {
         switch(config->cond) {
         case CONFIG_COND_NE:
         case CONFIG_COND_EQ:
+        case CONFIG_COND_PREFIX:
+        case CONFIG_COND_SUFFIX:
             /* (can use this routine as long as it does not perform
              *  any regex-specific normalization of first arg) */
             pcre_keyvalue_burl_normalize_key(&config->string, tb);
@@ -319,6 +320,24 @@ static void config_check_module_duplicates (server *srv) {
 }
 
 __attribute_pure__
+__attribute_noinline__
+static int config_has_opt_enabled (const server * const srv, const char * const opt, const uint32_t olen) {
+    for (uint32_t i = 0; i < srv->config_context->used; ++i) {
+        const data_config * const config =
+          (const data_config *)srv->config_context->data[i];
+        const data_unset * const du =
+          array_get_data_unset(config->value, opt, olen);
+        if (NULL == du) continue;
+        if (du->type == TYPE_ARRAY
+            ? ((data_array *)du)->value.used != 0
+            : config_plugin_value_tobool(du, 0))
+            return 1;
+    }
+    return 0;
+}
+
+__attribute_pure__
+__attribute_noinline__
 static const char * config_has_opt_and_value (const server * const srv, const char * const opt, const uint32_t olen, const char * const v, const uint32_t vlen) {
     for (uint32_t i = 0; i < srv->config_context->used; ++i) {
         const data_config * const config =
@@ -332,6 +351,21 @@ static const char * config_has_opt_and_value (const server * const srv, const ch
     return NULL;
 }
 
+__attribute_noinline__
+static void config_compat_module_remove (server *srv, const char *module, uint32_t len) {
+    array *modules = array_init(srv->srvconf.modules->used);
+
+    for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
+        const data_string *ds = (data_string *)srv->srvconf.modules->data[i];
+        if (!buffer_eq_slen(&ds->value, module, len))
+            array_insert_value(modules, BUF_PTR_LEN(&ds->value));
+    }
+
+    array_free(srv->srvconf.modules);
+    srv->srvconf.modules = modules;
+}
+
+__attribute_noinline__
 static void config_compat_module_prepend (server *srv, const char *module, uint32_t len) {
     array *modules = array_init(srv->srvconf.modules->used+4);
     array_insert_value(modules, module, len);
@@ -430,6 +464,24 @@ static void config_compat_module_load (server *srv) {
             if (NULL == dyn_name)
                 dyn_name = m->ptr;
         }
+    }
+
+    /* check if some default modules are used and enabled
+     * (Each dynamically loaded modules takes at least 20k memory,
+     *  so avoid loading some default modules unless used and enabled) */
+
+    if (!config_has_opt_enabled(srv, CONST_STR_LEN("index-file.names"))
+        && !config_has_opt_enabled(srv, CONST_STR_LEN("server.indexfiles"))) {
+        if (!prepend_mod_indexfile)
+            config_compat_module_remove(srv, CONST_STR_LEN("mod_indexfile"));
+        prepend_mod_indexfile = 0;
+    }
+
+    if (!config_has_opt_enabled(srv, CONST_STR_LEN("dir-listing.activate"))
+        && !config_has_opt_enabled(srv, CONST_STR_LEN("server.dir-listing"))) {
+        if (!append_mod_dirlisting)
+            config_compat_module_remove(srv, CONST_STR_LEN("mod_dirlisting"));
+        append_mod_dirlisting = 0;
     }
 
     /* prepend default modules */
@@ -573,6 +625,8 @@ static int config_http_parseopts (server *srv, const array *a) {
             opt = HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REJECT;
         else if (buffer_eq_slen(k, CONST_STR_LEN("url-query-20-plus")))
             opt = HTTP_PARSEOPT_URL_NORMALIZE_QUERY_20_PLUS;
+        else if (buffer_eq_slen(k, CONST_STR_LEN("url-invalid-utf8-reject")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_INVALID_UTF8_REJECT;
         else if (buffer_eq_slen(k, CONST_STR_LEN("header-strict"))) {
             srv->srvconf.http_header_strict = val;
             continue;
@@ -630,7 +684,8 @@ static int config_http_parseopts (server *srv, const array *a) {
         }
         if (!(opts & (HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED
                      |HTTP_PARSEOPT_URL_NORMALIZE_REQUIRED))) {
-            opts |= HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED;
+            opts |= HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED
+                 |  HTTP_PARSEOPT_URL_NORMALIZE_INVALID_UTF8_REJECT;
             if (decode_2f
                 && !(opts & HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_REJECT))
                 opts |= HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE;
@@ -700,7 +755,7 @@ static int config_insert_srvconf(server *srv) {
         T_CONFIG_SHORT,
         T_CONFIG_SCOPE_SERVER }
      ,{ CONST_STR_LEN("server.max-request-field-size"),
-        T_CONFIG_INT,
+        T_CONFIG_SHORT,
         T_CONFIG_SCOPE_SERVER }
      ,{ CONST_STR_LEN("server.chunkqueue-chunk-sz"),
         T_CONFIG_INT,
@@ -734,7 +789,7 @@ static int config_insert_srvconf(server *srv) {
         T_CONFIG_SCOPE_SERVER }
      ,{ CONST_STR_LEN("ssl.engine"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("debug.log-request-header-on-error"),
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_SERVER }
@@ -827,7 +882,7 @@ static int config_insert_srvconf(server *srv) {
                 srv->srvconf.max_conns = (unsigned short)cpv->v.u;
                 break;
               case 19:/* server.max-request-field-size */
-                srv->srvconf.max_request_field_size = cpv->v.u;
+                srv->srvconf.max_request_field_size = cpv->v.shrt;
                 break;
               case 20:/* server.chunkqueue-chunk-sz */
                 chunkqueue_set_chunk_size(cpv->v.u);
@@ -903,6 +958,9 @@ static int config_insert_srvconf(server *srv) {
 
     if (0 == srv->srvconf.port)
         srv->srvconf.port = ssl_enabled ? 443 : 80;
+
+    if (config_feature_bool(srv, "server.h2proto", 1))
+        array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_h2"));
 
     config_check_module_duplicates(srv);
 
@@ -1031,8 +1089,7 @@ static int config_insert(server *srv) {
     };
 
     int rc = 0;
-    config_data_base * const p = calloc(1, sizeof(config_data_base));
-    force_assert(p);
+    config_data_base * const p = ck_calloc(1, sizeof(config_data_base));
     srv->config_data_base = p;
 
     if (!config_plugin_values_init(srv, p, cpk, "base"))
@@ -1070,6 +1127,12 @@ static int config_insert(server *srv) {
                     char *t = b->ptr; /*(make empty if tag is whitespace-only)*/
                     while (*t==' ' || *t=='\t' || *t=='\r' || *t=='\n') ++t;
                     if (*t == '\0') buffer_truncate(b, 0);
+                    if (buffer_is_blank(b) && 0 != i)
+                        cpv->v.b = NULL;
+                    else { /* prep for use by h2.c:h2_send_headers() */
+                        buffer_string_prepare_append(b, 6);
+                        memcpy(b->ptr+buffer_clen(b)+1, "server", 6);
+                    }
                 }
                 else if (0 != i)
                     cpv->v.b = NULL;
@@ -1091,11 +1154,13 @@ static int config_insert(server *srv) {
                 break;
               case 13:/* server.follow-symlink */
                #ifndef HAVE_LSTAT
+               #ifndef _WIN32
                 if (0 == cpv->v.u)
                     log_error(srv->errh, __FILE__, __LINE__,
                       "Your system lacks lstat(). "
-                      "We can not differ symlinks from files. "
-                      "Please remove server.follow-symlinks from your config.");
+                      "We can not differentiate symlinks from files. "
+                      "Please remove server.follow-symlink from your config.");
+               #endif
                #endif
                 break;
               case 14:/* server.protocol-http11 */
@@ -1110,8 +1175,7 @@ static int config_insert(server *srv) {
                     cpv->v.shrt |=FDEVENT_STREAM_RESPONSE;
                 break;
               case 18:{/*server.kbytes-per-second */
-                off_t * const cnt = malloc(2*sizeof(off_t));
-                force_assert(cnt);
+                off_t * const cnt = ck_malloc(2*sizeof(off_t));
                 cnt[0] = 0;
                 cnt[1] = (off_t)cpv->v.shrt << 10;
                 cpv->v.v = cnt;
@@ -1119,7 +1183,18 @@ static int config_insert(server *srv) {
                 break;
               }
               case 19:/* connection.kbytes-per-second */
-              case 20:/* mimetype.assign */
+                break;
+              case 20:{/* mimetype.assign */
+                /* translate "application/javascript" to "text/javascript" */
+                data_string * const ds = (data_string *)
+                  array_get_data_unset(cpv->v.a, CONST_STR_LEN(".js"));
+                if (NULL != ds /*(note: this does not catch w/ ";charset=...")*/
+                    && buffer_eq_slen(&ds->value,
+                                      CONST_STR_LEN("application/javascript")))
+                    buffer_copy_string_len(&ds->value,
+                                           CONST_STR_LEN("text/javascript"));
+                break;
+              }
               case 21:/* mimetype.use-xattr */
               case 22:/* etag.use-inode */
               case 23:/* etag.use-mtime */
@@ -1141,7 +1216,7 @@ static int config_insert(server *srv) {
     }
 
     p->defaults.errh = srv->errh;
-    p->defaults.max_keep_alive_requests = 100;
+    p->defaults.max_keep_alive_requests = 1000;
     p->defaults.max_keep_alive_idle = 5;
     p->defaults.max_read_idle = 60;
     p->defaults.max_write_idle = 360;
@@ -1189,7 +1264,9 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
 
     /* settings might be enabled during plugins_call_set_defaults() */
     p->defaults.high_precision_timestamps =
-      srv->srvconf.high_precision_timestamps;
+      srv->srvconf.high_precision_timestamps =
+        config_feature_bool(srv, "server.metrics-high-precision",
+                            srv->srvconf.high_precision_timestamps);
 
     /* configure default server_tag if not set
      * (if configured to blank, unset server_tag)*/
@@ -1206,6 +1283,10 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
 
             /* all var.* is known as user defined variable */
             if (strncmp(k->ptr, "var.", sizeof("var.") - 1) == 0)
+                continue;
+            /* mod_dirlisting not loaded if dir-listing.activate not enabled */
+            if (strncmp(k->ptr, "dir-listing.", sizeof("dir-listing.") - 1) == 0
+                && strcmp(k->ptr, "dir-listing.activate") != 0)
                 continue;
 
             if (!array_get_element_klen(srv->srvconf.config_touched,
@@ -1226,6 +1307,43 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
             log_error(srv->errh, __FILE__, __LINE__,
               "Configuration contains deprecated keys. Going down.");
         return 0;
+    }
+
+    /* check if condition regex captures are used by modules (redirect,rewrite)
+     * and convert back to regex if condition was simplified to non-regex by
+     * configparser_simplify_regex() */
+    if (__builtin_expect( (srv->config_captures != 0), 0)) {
+        for (uint32_t i = 1; i < srv->config_context->used; ++i) {
+            data_config * const dc =
+              (data_config *)srv->config_context->data[i];
+            if (__builtin_expect( (0 == dc->capture_idx), 1))
+                continue;
+            switch (dc->cond) {
+              case CONFIG_COND_EQ:
+              case CONFIG_COND_PREFIX:
+              case CONFIG_COND_SUFFIX:
+                break;
+              /*case CONFIG_COND_NE:*/
+              /*case CONFIG_COND_MATCH:*/
+              /*case CONFIG_COND_NOMATCH:*/
+              /*case CONFIG_COND_ELSE:*/
+              default:
+                continue;
+            }
+            buffer * const b = &dc->string;
+            if (dc->cond != CONFIG_COND_SUFFIX || b->ptr[0] == '.') {
+                buffer_extend(b, 1);
+                memmove(b->ptr+1, b->ptr, buffer_clen(b)-1);
+                b->ptr[0] = (dc->cond == CONFIG_COND_SUFFIX) ? '\\' : '^';
+            }
+            if (dc->cond != CONFIG_COND_PREFIX)
+                buffer_append_char(b, '$');
+            dc->cond = CONFIG_COND_MATCH;
+            /*(config_pcre_keyvalue())*/
+            const int pcre_jit = config_feature_bool(srv, "server.pcre_jit", 1);
+            if (!data_config_pcre_compile(dc, pcre_jit, srv->errh))
+                return 0;
+        }
     }
 
   #ifdef HAVE_PCRE2_H
@@ -1475,7 +1593,8 @@ void config_init(server *srv) {
       | HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED
       | HTTP_PARSEOPT_URL_NORMALIZE_CTRLS_REJECT
       | HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE
-      | HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE;
+      | HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE
+      | HTTP_PARSEOPT_URL_NORMALIZE_INVALID_UTF8_REJECT;
 
     srv->srvconf.modules = array_init(16);
     srv->srvconf.modules_dir = LIBRARY_DIR;
@@ -1563,6 +1682,10 @@ static void config_log_error_open_syslog(server *srv, log_error_st *errh, const 
         }
     }
     openlog("lighttpd", LOG_CONS|LOG_PID, -1==facility ? LOG_DAEMON : facility);
+  #else
+    UNUSED(srv);
+    UNUSED(errh);
+    UNUSED(syslog_facility);
   #endif
 }
 
@@ -1665,7 +1788,19 @@ int config_log_error_open(server *srv) {
         errfd = -1;
     }
 
-    if (0 != fdevent_set_stdin_stdout_stderr(-1, -1, errfd)) {
+  #ifdef _WIN32
+    if (-1 == errfd) {
+    }
+    else if (-1 != _dup2(errfd, STDERR_FILENO)
+             && SetStdHandle(STD_ERROR_HANDLE,
+                             (HANDLE)_get_osfhandle(STDERR_FILENO))) {
+        fdevent_setfd_cloexec(STDERR_FILENO);
+    }
+    else
+  #else
+    if (0 != fdevent_set_stdin_stdout_stderr(-1, -1, errfd))
+  #endif
+    {
         log_perror(srv->errh, __FILE__, __LINE__, "setting stderr failed");
       #ifdef FD_CLOEXEC
         if (-1 != errfd && NULL == serrh) close(errfd);
@@ -1707,439 +1842,336 @@ void config_log_error_close(server *srv) {
 typedef struct {
 	const char *source;
 	const char *input;
-	size_t offset;
-	size_t size;
+	int offset;
+	int size;
 
 	int line_pos;
 	int line;
 
 	int in_key;
-	int in_brace;
+	int parens;
 	int in_cond;
 	int simulate_eol;
+	log_error_st *errh;
 } tokenizer_t;
 
-static int config_skip_newline(tokenizer_t *t) {
-	int skipped = 1;
-	force_assert(t->input[t->offset] == '\r' || t->input[t->offset] == '\n');
-	if (t->input[t->offset] == '\r' && t->input[t->offset + 1] == '\n') {
-		skipped ++;
-		t->offset ++;
-	}
-	t->offset ++;
-	return skipped;
+__attribute_pure__
+static int config_skip_newline(const tokenizer_t * const t) {
+    const char * const s = t->input + t->offset;
+    /*force_assert(s[0] == '\r' || s[0] == '\n');*/
+    return 1 + (s[0] == '\r' && s[1] == '\n');
 }
 
-static int config_skip_comment(tokenizer_t *t) {
-	int i;
-	force_assert(t->input[t->offset] == '#');
-	for (i = 1; t->input[t->offset + i] &&
-	     (t->input[t->offset + i] != '\n' && t->input[t->offset + i] != '\r');
-	     i++);
-	t->offset += i;
-	return i;
+__attribute_noinline__
+__attribute_pure__
+static int config_skip_comment(const tokenizer_t * const t) {
+    /*assert(t->input[t->offset] == '#');*/
+    const char *s = t->input + t->offset;
+    do { ++s; } while (*s && *s != '\r' && *s != '\n');
+    return (int)(s - t->input);
 }
 
 __attribute_cold__
-static int config_tokenizer_err(server *srv, const char *file, unsigned int line, tokenizer_t *t, const char *msg) {
-    log_error(srv->errh, file, line, "source: %s line: %d pos: %d %s",
-              t->source, t->line, t->line_pos, msg);
+static int config_tokenizer_err(tokenizer_t *t, const char *file, unsigned int line, const char *msg) {
+    log_error(t->errh, file, line, "source: %s line: %d pos: %d %s",
+              t->source, t->line, t->offset - t->line_pos, msg);
     return -1;
 }
 
-static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *token) {
-	int tid = 0;
-	size_t i;
-
-	if (t->simulate_eol) {
-		t->simulate_eol = 0;
-		t->in_key = 1;
-		tid = TK_EOL;
-		buffer_copy_string_len(token, CONST_STR_LEN("(EOL)"));
-	}
-
-	while (tid == 0 && t->offset < t->size && t->input[t->offset]) {
-		char c = t->input[t->offset];
-		const char *start = NULL;
-
-		switch (c) {
-		case '=':
-			if (t->in_brace) {
-				if (t->input[t->offset + 1] == '>') {
-					t->offset += 2;
-
-					buffer_copy_string_len(token, CONST_STR_LEN("=>"));
-
-					tid = TK_ARRAY_ASSIGN;
-				} else {
-					return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-							"use => for assignments in arrays");
-				}
-			} else if (t->in_cond) {
-				if (t->input[t->offset + 1] == '=') {
-					t->offset += 2;
-
-					buffer_copy_string_len(token, CONST_STR_LEN("=="));
-
-					tid = TK_EQ;
-				} else if (t->input[t->offset + 1] == '~') {
-					t->offset += 2;
-
-					buffer_copy_string_len(token, CONST_STR_LEN("=~"));
-
-					tid = TK_MATCH;
-				} else {
-					return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-							"only =~ and == are allowed in the condition");
-				}
-				t->in_key = 1;
-				t->in_cond = 0;
-			} else if (t->in_key) {
-				tid = TK_ASSIGN;
-
-				buffer_copy_string_len(token, t->input + t->offset, 1);
-
-				t->offset++;
-				t->line_pos++;
-			} else {
-				return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-						"unexpected equal-sign: =");
-			}
-
-			break;
-		case '!':
-			if (t->in_cond) {
-				if (t->input[t->offset + 1] == '=') {
-					t->offset += 2;
-
-					buffer_copy_string_len(token, CONST_STR_LEN("!="));
-
-					tid = TK_NE;
-				} else if (t->input[t->offset + 1] == '~') {
-					t->offset += 2;
-
-					buffer_copy_string_len(token, CONST_STR_LEN("!~"));
-
-					tid = TK_NOMATCH;
-				} else {
-					return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-							"only !~ and != are allowed in the condition");
-				}
-				t->in_key = 1;
-				t->in_cond = 0;
-			} else {
-				return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-						"unexpected exclamation-marks: !");
-			}
-
-			break;
-		case '\t':
-		case ' ':
-			t->offset++;
-			t->line_pos++;
-			break;
-		case '\n':
-		case '\r':
-			if (t->in_brace == 0) {
-				int done = 0;
-				while (!done && t->offset < t->size) {
-					switch (t->input[t->offset]) {
-					case '\r':
-					case '\n':
-						config_skip_newline(t);
-						t->line_pos = 1;
-						t->line++;
-						break;
-
-					case '#':
-						t->line_pos += config_skip_comment(t);
-						break;
-
-					case '\t':
-					case ' ':
-						t->offset++;
-						t->line_pos++;
-						break;
-
-					default:
-						done = 1;
-					}
-				}
-				t->in_key = 1;
-				tid = TK_EOL;
-				buffer_copy_string_len(token, CONST_STR_LEN("(EOL)"));
-			} else {
-				config_skip_newline(t);
-				t->line_pos = 1;
-				t->line++;
-			}
-			break;
-		case ',':
-			if (t->in_brace > 0) {
-				tid = TK_COMMA;
-
-				buffer_copy_string_len(token, CONST_STR_LEN("(COMMA)"));
-			}
-
-			t->offset++;
-			t->line_pos++;
-			break;
-		case '"':
-			/* search for the terminating " */
-			start = t->input + t->offset + 1;
-			buffer_copy_string_len(token, CONST_STR_LEN(""));
-
-			for (i = 1; t->input[t->offset + i]; i++) {
-				if (t->input[t->offset + i] == '\\' &&
-				    t->input[t->offset + i + 1] == '"') {
-
-					buffer_append_string_len(token, start, t->input + t->offset + i - start);
-
-					start = t->input + t->offset + i + 1;
-
-					/* skip the " */
-					i++;
-					continue;
-				}
-
-
-				if (t->input[t->offset + i] == '"') {
-					tid = TK_STRING;
-
-					buffer_append_string_len(token, start, t->input + t->offset + i - start);
-
-					break;
-				}
-			}
-
-			if (t->input[t->offset + i] == '\0') {
-				return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-						"missing closing quote");
-			}
-
-			t->offset += i + 1;
-			t->line_pos += i + 1;
-
-			break;
-		case '(':
-			t->offset++;
-			t->in_brace++;
-
-			tid = TK_LPARAN;
-
-			buffer_copy_string_len(token, CONST_STR_LEN("("));
-			break;
-		case ')':
-			t->offset++;
-			t->in_brace--;
-
-			tid = TK_RPARAN;
-
-			buffer_copy_string_len(token, CONST_STR_LEN(")"));
-			break;
-		case '$':
-			t->offset++;
-
-			tid = TK_DOLLAR;
-			t->in_cond = 1;
-			t->in_key = 0;
-
-			buffer_copy_string_len(token, CONST_STR_LEN("$"));
-
-			break;
-
-		case '+':
-			if (t->input[t->offset + 1] == '=') {
-				t->offset += 2;
-				buffer_copy_string_len(token, CONST_STR_LEN("+="));
-				tid = TK_APPEND;
-			} else {
-				t->offset++;
-				tid = TK_PLUS;
-				buffer_copy_string_len(token, CONST_STR_LEN("+"));
-			}
-			break;
-
-		case ':':
-			if (t->input[t->offset+1] == '=') {
-				t->offset += 2;
-				tid = TK_FORCE_ASSIGN;
-				buffer_copy_string_len(token, CONST_STR_LEN(":="));
-			} else {
-				return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-						"unexpected character ':'");
-			}
-			break;
-
-		case '{':
-			t->offset++;
-
-			tid = TK_LCURLY;
-
-			buffer_copy_string_len(token, CONST_STR_LEN("{"));
-
-			break;
-
-		case '}':
-			t->offset++;
-
-			tid = TK_RCURLY;
-
-			buffer_copy_string_len(token, CONST_STR_LEN("}"));
-
-			for (; t->offset < t->size; ++t->offset,++t->line_pos) {
-				c = t->input[t->offset];
-				if (c == '\r' || c == '\n') {
-					break;
-				}
-				else if (c == '#') {
-					t->line_pos += config_skip_comment(t);
-					break;
-				}
-				else if (c != ' ' && c != '\t') {
-					t->simulate_eol = 1;
-					break;
-				} /* else (c == ' ' || c == '\t') */
-			}
-
-			break;
-
-		case '[':
-			t->offset++;
-
-			tid = TK_LBRACKET;
-
-			buffer_copy_string_len(token, CONST_STR_LEN("["));
-
-			break;
-
-		case ']':
-			t->offset++;
-
-			tid = TK_RBRACKET;
-
-			buffer_copy_string_len(token, CONST_STR_LEN("]"));
-
-			break;
-		case '#':
-			t->line_pos += config_skip_comment(t);
-
-			break;
-		default:
-			if (t->in_cond) {
-				for (i = 0; t->input[t->offset + i] &&
-				     (isalpha((unsigned char)t->input[t->offset + i])
-				      || t->input[t->offset + i] == '_'); ++i);
-
-				if (i && t->input[t->offset + i]) {
-					tid = TK_SRVVARNAME;
-					buffer_copy_string_len(token, t->input + t->offset, i);
-
-					t->offset += i;
-					t->line_pos += i;
-				} else {
-					return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-							"invalid character in condition");
-				}
-			} else if (isdigit((unsigned char)c)) {
-				/* take all digits */
-				for (i = 0; t->input[t->offset + i] && isdigit((unsigned char)t->input[t->offset + i]);  i++);
-
-				/* was there it least a digit ? */
-				if (i) {
-					tid = TK_INTEGER;
-
-					buffer_copy_string_len(token, t->input + t->offset, i);
-
-					t->offset += i;
-					t->line_pos += i;
-				}
-			} else {
-				/* the key might consist of [-.0-9a-z] */
-				for (i = 0; t->input[t->offset + i] &&
-				     (isalnum((unsigned char)t->input[t->offset + i]) ||
-				      t->input[t->offset + i] == '.' ||
-				      t->input[t->offset + i] == '_' || /* for env.* */
-				      t->input[t->offset + i] == '-'
-				      ); i++);
-
-				if (i && t->input[t->offset + i]) {
-					buffer_copy_string_len(token, t->input + t->offset, i);
-
-					if (strcmp(token->ptr, "include") == 0) {
-						tid = TK_INCLUDE;
-					} else if (strcmp(token->ptr, "include_shell") == 0) {
-						tid = TK_INCLUDE_SHELL;
-					} else if (strcmp(token->ptr, "global") == 0) {
-						tid = TK_GLOBAL;
-					} else if (strcmp(token->ptr, "else") == 0) {
-						tid = TK_ELSE;
-					} else {
-						tid = TK_LKEY;
-					}
-
-					t->offset += i;
-					t->line_pos += i;
-				} else if (0 == i
-				           && ((uint8_t *)t->input)[t->offset+0] == 0xc2
-				           && ((uint8_t *)t->input)[t->offset+1] == 0xa0) {
-					/* treat U+00A0	(c2 a0) "NO-BREAK SPACE" as whitespace */
-					/* http://www.fileformat.info/info/unicode/char/a0/index.htm */
-					t->offset+=2;
-					t->line_pos+=2;
-				} else {
-					return config_tokenizer_err(srv, __FILE__, __LINE__, t,
-							"invalid character in variable name");
-				}
-			}
-			break;
-		}
-	}
-
-	if (tid) {
-		*token_id = tid;
-		return 1;
-	} else if (t->offset < t->size) {
-		log_error(srv->errh, __FILE__, __LINE__, "%d, %s", tid, token->ptr);
-	}
-	return 0;
+static int config_tokenizer(tokenizer_t *t, buffer *token) {
+    if (t->simulate_eol) {
+        t->simulate_eol = 0;
+        t->in_key = 1;
+        buffer_copy_string_len(token, CONST_STR_LEN("(EOL)"));
+        return TK_EOL;
+    }
+
+    while (t->offset < t->size) {
+        const char * const s = t->input + t->offset;
+        switch (s[0]) {
+          case '\t':
+          case ' ':
+            t->offset++;
+            break;
+          case '=':
+            if (t->parens) {
+                if (s[1] != '>')
+                    return config_tokenizer_err(t, __FILE__, __LINE__,
+                             "use => for assignments in arrays");
+                t->offset += 2;
+                buffer_copy_string_len(token, s, 2); /* "=>" */
+                return TK_ARRAY_ASSIGN;
+            }
+            else if (t->in_cond) {
+                int tid;
+                switch (s[1]) {
+                  case '=': tid = TK_EQ;     break;
+                  case '~': tid = TK_MATCH;  break;
+                  case '^': tid = TK_PREFIX; break;
+                  case '$': tid = TK_SUFFIX; break;
+                  default:
+                    return config_tokenizer_err(t, __FILE__, __LINE__,
+                             "only == =~ =^ =$ are allowed in the condition");
+                }
+                t->offset += 2;
+                t->in_key = 1;
+                t->in_cond = 0;
+                buffer_copy_string_len(token, s, 2); /* "==" "=~" "=^" "=$" */
+                return tid;
+            }
+            else if (t->in_key) {
+                t->offset++;
+                buffer_copy_string_len(token, s, 1); /* "=" */
+                return TK_ASSIGN;
+            }
+            else
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "unexpected equal-sign: =");
+          case '!':
+            if (t->in_cond) {
+                int tid;
+                switch (s[1]) {
+                  case '=': tid = TK_NE;      break;
+                  case '~': tid = TK_NOMATCH; break;
+                  default:
+                    return config_tokenizer_err(t, __FILE__, __LINE__,
+                             "only !~ and != are allowed in the condition");
+                }
+                t->offset += 2;
+                t->in_key = 1;
+                t->in_cond = 0;
+                buffer_copy_string_len(token, s, 2); /* "!=" "!~" */
+                return tid;
+            }
+            else
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "unexpected exclamation-marks: !");
+          case '\n':
+          case '\r':
+            do {
+                switch (t->input[t->offset]) {
+                  case '\r':
+                  case '\n':
+                    t->offset += config_skip_newline(t);
+                    t->line_pos = t->offset;
+                    t->line++;
+                    continue;
+                  case '#':
+                    t->offset = config_skip_comment(t);
+                    continue;
+                  case '\t':
+                  case ' ':
+                    t->offset++;
+                    continue;
+                  default:
+                    break;
+                }
+                break;
+            } while (t->offset < t->size);
+            if (!t->parens) {
+                t->in_key = 1;
+                buffer_copy_string_len(token, CONST_STR_LEN("(EOL)"));
+                return TK_EOL;
+            }
+            break;
+          case ',':
+            t->offset++;
+            if (t->parens) {
+                buffer_copy_string_len(token, CONST_STR_LEN("(COMMA)"));
+                return TK_COMMA;
+            }
+            break;
+          case '"':
+           {
+            /* search for the terminating " */
+            const char *start = s + 1;   /*buffer_blank(token);*/
+            buffer_copy_string_len(token, CONST_STR_LEN(""));
+
+            int i;
+            for (i = 1; s[i] && s[i] != '"'; ++i) {
+                if (s[i] == '\\' && s[i+1] == '"') {
+                    buffer_append_string_len(token, start, s + i - start);
+                    start = s + ++i; /* step over '"' */
+                }
+            }
+
+            if (s[i] == '\0') {
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "missing closing quote");
+            }
+
+            t->offset += i + 1;
+            buffer_append_string_len(token, start, s + i - start);
+            return TK_STRING;
+           }
+          case '(':
+            t->offset++;
+            t->parens++;
+            buffer_copy_string_len(token, s, 1); /* "(" */
+            return TK_LPARAN;
+          case ')':
+            if (!t->parens)
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "close-parens seen open-parens");
+            t->offset++;
+            t->parens--;
+            buffer_copy_string_len(token, s, 1); /* ")" */
+            return TK_RPARAN;
+          case '$':
+            t->offset++;
+            t->in_cond = 1;
+            t->in_key = 0;
+            buffer_copy_string_len(token, s, 1); /* "$" */
+            return TK_DOLLAR;
+          case '+':
+            if (s[1] == '=') {
+                t->offset += 2;
+                buffer_copy_string_len(token, s, 2); /* "+=" */
+                return TK_APPEND;
+            }
+            else {
+                t->offset++;
+                buffer_copy_string_len(token, s, 1); /* "+" */
+                return TK_PLUS;
+            }
+          case ':':
+            if (s[1] != '=')
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "unexpected character ':'");
+            t->offset += 2;
+            buffer_copy_string_len(token, s, 2); /* ":=" */
+            return TK_FORCE_ASSIGN;
+          case '{':
+            t->offset++;
+            buffer_copy_string_len(token, s, 1); /* "{" */
+            return TK_LCURLY;
+          case '}':
+            while (++t->offset < t->size) {
+                int c = t->input[t->offset];
+                if (c == '\r' || c == '\n') {
+                    break;
+                }
+                else if (c == '#') {
+                    t->offset = config_skip_comment(t);
+                    break;
+                }
+                else if (c != ' ' && c != '\t') {
+                    t->simulate_eol = 1;
+                    break;
+                } /* else (c == ' ' || c == '\t') */
+            }
+            buffer_copy_string_len(token, s, 1); /* "}" */
+            return TK_RCURLY;
+          case '[':
+            t->offset++;
+            buffer_copy_string_len(token, s, 1); /* "[" */
+            return TK_LBRACKET;
+          case ']':
+            t->offset++;
+            buffer_copy_string_len(token, s, 1); /* "]" */
+            return TK_RBRACKET;
+          case '#':
+            t->offset = config_skip_comment(t);
+            break;
+          case '\0':
+            config_tokenizer_err(t, __FILE__, __LINE__, "stray NUL");
+            return 0;
+          default:
+            if (t->in_cond) {
+                int i = 0;
+                while (light_isalpha(s[i]) || s[i] == '_') ++i;
+                if (i && s[i]) {
+                    t->offset += i;
+                    buffer_copy_string_len(token, s, i);
+                    return TK_SRVVARNAME;
+                }
+                else
+                    return config_tokenizer_err(t, __FILE__, __LINE__,
+                             "invalid character in condition");
+            }
+            else if (light_isdigit(s[0])) {
+                /* take all digits */
+                int i = 1;
+                while (light_isdigit(s[i])) ++i;
+                t->offset += i;
+                buffer_copy_string_len(token, s, i);
+                return TK_INTEGER;
+            }
+            else {
+                /* the key might consist of [-.0-9a-z] */
+                int i = 0;
+                while (light_isalnum(s[i])
+                       || s[i] == '.'
+                       || s[i] == '_'  /* for env.* */
+                       || s[i] == '-') ++i;
+
+                if (i && s[i]) {
+                    t->offset += i;
+                    buffer_copy_string_len(token, s, i);
+                    if (0 == strcmp(token->ptr, "include"))
+                        return TK_INCLUDE;
+                    else if (0 == strcmp(token->ptr, "include_shell"))
+                        return TK_INCLUDE_SHELL;
+                    else if (0 == strcmp(token->ptr, "global"))
+                        return TK_GLOBAL;
+                    else if (0 == strcmp(token->ptr, "else"))
+                        return TK_ELSE;
+                    else
+                        return TK_LKEY;
+                }
+                else if (0 == i
+                         && ((uint8_t *)s)[0] == 0xc2
+                         && ((uint8_t *)s)[1] == 0xa0) {
+                    /* treat U+00A0    (c2 a0) "NO-BREAK SPACE" as whitespace */
+                    /* http://www.fileformat.info/info/unicode/char/a0/index.htm */
+                    t->offset+=2;
+                }
+                else
+                    return config_tokenizer_err(t, __FILE__, __LINE__,
+                             "invalid character in variable name");
+            }
+            break;
+        }
+    }
+    return 0;
 }
 
-static int config_parse(server *srv, config_t *context, const char *source, const char *input, size_t isize) {
-	void *pParser;
-	buffer *token, *lasttoken;
-	int token_id = 0;
-	int ret;
+static int config_parse(server *srv, config_t *context, const char *source, const char *input, int isize) {
 	tokenizer_t t;
+	buffer * const lasttoken = buffer_init();
+	int ret;
 
 	t.source = source;
 	t.input = input;
 	t.size = isize;
 	t.offset = 0;
 	t.line = 1;
-	t.line_pos = 1;
+	t.line_pos = 0;
 
 	t.in_key = 1;
-	t.in_brace = 0;
+	t.parens = 0;
 	t.in_cond = 0;
 	t.simulate_eol = 0;
+	t.errh = srv->errh;
 
-	pParser = configparserAlloc( malloc );
+	void * const pParser = configparserAlloc( malloc );
 	force_assert(pParser);
-	lasttoken = buffer_init();
-	token = buffer_init();
-	while((1 == (ret = config_tokenizer(srv, &t, &token_id, token))) && context->ok) {
-		buffer_copy_buffer(lasttoken, token);
-		configparser(pParser, token_id, token, context);
-
-		token = buffer_init();
-	}
-	buffer_free(token);
+	do {
+		ret = config_tokenizer(&t, lasttoken);
+		if (__builtin_expect( (ret <= 0), 0))
+			break;
+		buffer * const token = buffer_init();
+		buffer_copy_buffer(token, lasttoken);
+		configparser(pParser, ret, token, context);
+		/*token = NULL;*/
+	} while (context->ok);
 
 	if (ret != -1 && context->ok) {
 		/* add an EOL at EOF, better than say sorry */
-		buffer_copy_string((token = buffer_init()), "(EOL)");
+		buffer * const token = buffer_init();
+		buffer_copy_string(token, "(EOL)");
 		configparser(pParser, TK_EOL, token, context);
+		/*token = NULL;*/
 		if (context->ok) {
 			configparser(pParser, 0, NULL, context);
 		}
@@ -2147,12 +2179,12 @@ static int config_parse(server *srv, config_t *context, const char *source, cons
 	configparserFree(pParser, free);
 
 	if (ret == -1) {
-		log_error(srv->errh, __FILE__, __LINE__,
+		log_error(t.errh, __FILE__, __LINE__,
 		          "configfile parser failed at: %s", lasttoken->ptr);
 	} else if (context->ok == 0) {
-		log_error(srv->errh, __FILE__, __LINE__, "source: %s line: %d pos: %d "
+		log_error(t.errh, __FILE__, __LINE__, "source: %s line: %d pos: %d "
 		          "parser failed somehow near here: %s",
-		          t.source, t.line, t.line_pos, lasttoken->ptr);
+		          t.source, t.line, t.offset - t.line_pos, lasttoken->ptr);
 		ret = -1;
 	}
 	buffer_free(lasttoken);
@@ -2183,7 +2215,7 @@ static int config_parse_stdin(server *srv, config_t *context) {
     } while (n > 0 || (n == -1 && errno == EINTR));
     int rc = -1;
     if (0 == n)
-        rc = dlen ? config_parse(srv, context, "-", b->ptr, dlen) : 0;
+        rc = dlen ? config_parse(srv, context, "-", b->ptr, (int)dlen) : 0;
     else
         log_perror(srv->errh, __FILE__, __LINE__, "config read from stdin");
 
@@ -2204,12 +2236,116 @@ static int config_parse_file_stream(server *srv, config_t *context, const char *
 
     int rc = 0;
     if (dlen) {
-        rc = config_parse(srv, context, fn, data, (size_t)dlen);
+        rc = config_parse(srv, context, fn, data, (int)dlen);
         ck_memzero(data, (size_t)dlen);
     }
     free(data);
     return rc;
 }
+
+#ifdef _WIN32
+/*(minimal glob implementation for lighttpd configfile.c)*/
+#include <windows.h>
+#include <stringapiset.h>
+#include <stdio.h>      /* FILENAME_MAX */
+typedef struct {
+    size_t gl_pathc;
+    char **gl_pathv;
+} glob_t;
+#define GLOB_NOSPACE  1
+#define GLOB_ABORTED  2
+#define GLOB_NOMATCH  3
+static void globfree (glob_t * const gl)
+{
+    for (size_t i = 0; i < gl->gl_pathc; ++i)
+        free(gl->gl_pathv[i]);
+    free(gl->gl_pathv);
+    gl->gl_pathc = 0;
+    gl->gl_pathv = NULL;
+}
+static int glob_C_cmp(const void *arg1, const void *arg2)
+{
+   return strcmp(*(char **)arg1, *(char **)arg2);
+}
+static int glob(const char *pattern, int flags,
+                int (*errfunc) (const char *epath, int eerrno),
+                glob_t * const gl)
+{
+    UNUSED(flags);   /*(not implemented; ignore GLOB_BRACE)*/
+    UNUSED(errfunc); /*(not implemented)*/
+    gl->gl_pathc = 0;
+    gl->gl_pathv = NULL;
+    size_t sz = 0;
+
+    WCHAR wbuf[4096];
+    int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, pattern, -1,
+                                   wbuf, (sizeof(wbuf)/sizeof(*wbuf)));
+    if (0 == wlen) return GLOB_NOSPACE;
+    WIN32_FIND_DATAW ffd;
+    HANDLE hFind = FindFirstFileExW(wbuf, FindExInfoBasic, &ffd,
+                                    FindExSearchNameMatch, NULL,
+                                    FIND_FIRST_EX_LARGE_FETCH);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        DWORD rc = GetLastError();
+        return (rc == ERROR_FILE_NOT_FOUND || rc == ERROR_NO_MORE_FILES)
+          ? GLOB_NOMATCH
+          : GLOB_ABORTED;
+    }
+    const char * const slash = strrchr(pattern, '/');
+    const char * const bslash = strrchr(pattern, '\\');
+    const size_t pathlen = (slash || bslash)
+      ? (size_t)(((slash > bslash) ? slash : bslash) - pattern + 1)
+      : 0;
+
+    char fnUTF8[FILENAME_MAX*4+1];
+    do {
+        if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            continue; /*(dir check is specific to lighttpd configfile.c use)*/
+
+        if (gl->gl_pathc == sz) {
+            if (0 == sz) sz = 4;
+            sz <<= 1;
+            char **gl_pathv = realloc(gl->gl_pathv, sz * sizeof(char *));
+            if (NULL == gl_pathv) {
+                globfree(gl);
+                return GLOB_NOSPACE;
+            }
+            gl->gl_pathv = gl_pathv;
+        }
+
+        /* construct result with path, if present */
+        /* WC_ERR_INVALID_CHARS not used in string conversion since
+         * expecting valid unicode from reading directory */
+        const size_t len = (size_t)
+          WideCharToMultiByte(CP_UTF8, 0, ffd.cFileName, -1,
+                              fnUTF8, sizeof(fnUTF8), NULL, NULL);
+        if (0 == len) continue; /*(unexpected; skip)*/
+        char * const fn = malloc(pathlen + len); /*(includes '\0')*/
+        if (NULL == fn) {
+            globfree(gl);
+            return GLOB_NOSPACE;
+        }
+        if (pathlen) memcpy(fn, pattern, pathlen);
+        memcpy(fn+pathlen, fnUTF8, len);
+
+        gl->gl_pathv[gl->gl_pathc++] = fn;
+    } while (FindNextFileW(hFind, &ffd));
+
+    DWORD err = GetLastError();
+    FindClose(hFind);
+
+    if (err != ERROR_NO_MORE_FILES) {
+        globfree(gl);
+        return GLOB_ABORTED; /*(actual error in GetLastError())*/
+    }
+    else if (0 == gl->gl_pathc) /*(found only directories)*/
+        return GLOB_NOMATCH;
+
+    qsort(gl->gl_pathv, gl->gl_pathc, sizeof(char *), glob_C_cmp);
+
+    return 0;
+}
+#endif
 
 int config_parse_file(server *srv, config_t *context, const char *fn) {
 	buffer * const filename = buffer_init();
@@ -2222,9 +2358,11 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
       #endif
 	glob_t gl;
 
-	if ((fn[0] == '/' || fn[0] == '\\') ||
+	if (buffer_is_blank(context->basedir) ||
+	    (fn[0] == '/' || fn[0] == '\\') ||
 	    (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\')) ||
-	    (fn[0] == '.' && fn[1] == '.' && (fn[2] == '/' || fn[2] == '\\'))) {
+	    (fn[0] == '.' && fn[1] == '.' && (fn[2] == '/' || fn[2] == '\\')) ||
+	    (light_isalpha(fn[0]) && fn[1] == ':' && (fn[2] == '/' || fn[2] == '\\'))) {
 		buffer_copy_string_len(filename, fn, fnlen);
 	} else {
 		buffer_copy_path_len2(filename, BUF_PTR_LEN(context->basedir),
@@ -2299,6 +2437,9 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		char *shell = getenv("SHELL");
 		char *args[4];
 		pid_t pid;
+		if (shell && (0 == strcmp(shell, "/usr/bin/false")
+		              || 0 == strcmp(shell, "/bin/false")))
+			shell = NULL;
 		*(const char **)&args[0] = shell ? shell : "/bin/sh";
 		*(const char **)&args[1] = "-c";
 		*(const char **)&args[2] = cmd;
@@ -2386,7 +2527,7 @@ int config_remoteip_normalize(buffer * const b, buffer * const tb) {
     if (NULL != slash) {
         char *nptr;
         nm_bits = strtoul(slash + 1, &nptr, 10);
-        if (*nptr || 0 == nm_bits || nm_bits > (NULL != colon ? 128 : 32)) {
+        if (*nptr || 0 == nm_bits || nm_bits > (NULL != colon ? 128u : 32u)) {
             /*(also rejects (slash+1 == nptr) which results in nm_bits = 0)*/
             return -1;
         }
@@ -2400,7 +2541,7 @@ int config_remoteip_normalize(buffer * const b, buffer * const tb) {
 
     uint32_t len = buffer_clen(b); /*(save len before adding CIDR mask)*/
     if (nm_bits) {
-        buffer_append_string_len(b, CONST_STR_LEN("/"));
+        buffer_append_char(b, '/');
         buffer_append_int(b, (int)nm_bits);
     }
 
@@ -2424,12 +2565,14 @@ int config_remoteip_normalize(buffer * const b, buffer * const tb) {
 static void context_init(server *srv, config_t *context) {
 	context->srv = srv;
 	context->ok = 1;
-	vector_config_weak_init(&context->configs_stack);
+	context->configs_stack.data = NULL;
+	context->configs_stack.used = 0;
+	context->configs_stack.size = 0;
 	context->basedir = buffer_init();
 }
 
 static void context_free(config_t *context) {
-	vector_config_weak_clear(&context->configs_stack);
+	free(context->configs_stack.data);
 	buffer_free(context->basedir);
 }
 
@@ -2451,11 +2594,11 @@ int config_read(server *srv, const char *fn) {
 	context_init(srv, &context);
 	context.all_configs = srv->config_context;
 
-#ifdef __WIN32
-	pos = strrchr(fn, '\\');
-#else
 	pos = strrchr(fn, '/');
-#endif
+  #ifdef _WIN32
+	char * const spos = strrchr(fn, '\\');
+	if (spos > pos) pos = spos;
+  #endif
 	if (pos) {
 		buffer_copy_string_len(context.basedir, fn, pos - fn + 1);
 	}
@@ -2538,6 +2681,9 @@ int config_set_defaults(server *srv) {
 
 	if (!srv->srvconf.upload_tempdirs->used) {
 		const char *tmpdir = getenv("TMPDIR");
+	  #ifdef _WIN32
+		if (NULL == tmpdir) tmpdir = getenv("TEMP");
+	  #endif
 		if (NULL == tmpdir) tmpdir = "/var/tmp";
 		array_insert_value(srv->srvconf.upload_tempdirs, tmpdir, strlen(tmpdir));
 	}
@@ -2598,7 +2744,7 @@ int config_set_defaults(server *srv) {
 
 			if (is_lower && buffer_is_equal(tb, s->document_root)) {
 				/* lower-casing and upper-casing didn't result in
-				 * an other filename, no need to stat(),
+				 * another filename, no need to stat(),
 				 * just assume it is case-sensitive. */
 
 				s->force_lowercase_filenames = 0;
@@ -2606,10 +2752,10 @@ int config_set_defaults(server *srv) {
 
 				/* upper case exists too, doesn't the FS handle this ? */
 
-				/* upper and lower have the same inode -> case-insensitve FS */
+				/* upper and lower have the same inode -> case-insensitive FS */
 
 				if (st1.st_ino == st2.st_ino) {
-					/* upper and lower have the same inode -> case-insensitve FS */
+					/* upper and lower have the same inode -> case-insensitive FS */
 
 					s->force_lowercase_filenames = 1;
 				}

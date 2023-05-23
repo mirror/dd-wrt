@@ -14,7 +14,6 @@ typedef gw_handler_ctx   handler_ctx;
 #include "buffer.h"
 #include "http_cgi.h"
 #include "log.h"
-#include "status_counter.h"
 
 enum { LI_PROTOCOL_SCGI, LI_PROTOCOL_UWSGI };
 
@@ -94,8 +93,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0:{/* scgi.server */
-                gw_plugin_config *gw = calloc(1, sizeof(gw_plugin_config));
-                force_assert(gw);
+                gw_plugin_config *gw = ck_calloc(1, sizeof(gw_plugin_config));
                 if (!gw_set_defaults_backend(srv, p, cpv->v.a, gw, 1,
                                              cpk[cpv->k_id].k)) {
                     gw_plugin_config_free(gw);
@@ -209,11 +207,11 @@ static handler_t scgi_create_env(handler_ctx *hctx) {
 		scgi_env_add(b, CONST_STR_LEN("SCGI"), CONST_STR_LEN("1"));
 		buffer_clear(tb);
 		buffer_append_int(tb, buffer_clen(b)-10);
-		buffer_append_string_len(tb, CONST_STR_LEN(":"));
+		buffer_append_char(tb, ':');
 		len = buffer_clen(tb);
 		offset = 10 - len;
 		memcpy(b->ptr+offset, tb->ptr, len);
-		buffer_append_string_len(b, CONST_STR_LEN(","));
+		buffer_append_char(b, ',');
 	} else { /* LI_PROTOCOL_UWSGI */
 		/* http://uwsgi-docs.readthedocs.io/en/latest/Protocol.html */
 		size_t len = buffer_clen(b)-10;
@@ -245,7 +243,7 @@ static handler_t scgi_create_env(handler_ctx *hctx) {
 			hctx->wb_reqlen = -hctx->wb_reqlen;
 	}
 
-	status_counter_inc(CONST_STR_LEN("scgi.requests"));
+	plugin_stats_inc("scgi.requests");
 	return HANDLER_GO_ON;
 }
 
@@ -283,7 +281,8 @@ static handler_t scgi_check_extension_2(request_st * const r, void *p_d) {
 }
 
 
-
+__attribute_cold__
+__declspec_dllexport__
 int mod_scgi_plugin_init(plugin *p);
 int mod_scgi_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

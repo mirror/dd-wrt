@@ -19,19 +19,17 @@
 
 #include "sys-socket.h"
 #include "sys-time.h"
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
-#endif
+#include "sys-wait.h"
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 #ifdef HAVE_PWD_H
 # include <pwd.h>
@@ -71,8 +69,7 @@ typedef struct {
 } handler_ctx;
 
 static handler_ctx * handler_ctx_init(plugin_data *p, log_error_st *errh) {
-	handler_ctx *hctx = calloc(1, sizeof(*hctx));
-	force_assert(hctx);
+	handler_ctx *hctx = ck_calloc(1, sizeof(*hctx));
 	hctx->errh = errh;
 	hctx->timefmt = &p->timefmt;
 	hctx->stat_fn = &p->stat_fn;
@@ -91,14 +88,9 @@ static void handler_ctx_free(handler_ctx *hctx) {
 static volatile unix_time64_t include_file_last_mtime = 0;
 
 INIT_FUNC(mod_ssi_init) {
-	plugin_data *p;
-
-	p = calloc(1, sizeof(*p));
-	force_assert(p);
-
+	plugin_data * const p = ck_calloc(1, sizeof(*p));
 	p->ssi_vars = array_init(8);
 	p->ssi_cgi_env = array_init(32);
-
 	return p;
 }
 
@@ -577,7 +569,12 @@ static int build_ssi_cgi_vars(request_st * const r, handler_ctx * const p) {
 static void mod_ssi_timefmt (buffer * const b, buffer *timefmtb, unix_time64_t t, int localtm) {
     struct tm tm;
     const char * const timefmt = buffer_is_blank(timefmtb)
-      ? "%a, %d %b %Y %T %Z"
+      ?
+     #ifdef __MINGW32__
+        "%a, %d %b %Y %H:%M:%S %Z"
+     #else
+        "%a, %d %b %Y %T %Z"
+     #endif
       : timefmtb->ptr;
     buffer_append_strftime(b, timefmt, localtm
                                        ? localtime64_r(&t, &tm)
@@ -1120,14 +1117,14 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 
 			buffer_append_str2(tb, BUF_PTR_LEN(&ds->key), CONST_STR_LEN("="));
 			buffer_append_string_encoded(tb, BUF_PTR_LEN(&ds->value), ENCODING_MINIMAL_XML);
-			buffer_append_string_len(tb, CONST_STR_LEN("\n"));
+			buffer_append_char(tb, '\n');
 		}
 		for (i = 0; i < p->ssi_cgi_env->used; i++) {
 			data_string *ds = (data_string *)p->ssi_cgi_env->sorted[i];
 
 			buffer_append_str2(tb, BUF_PTR_LEN(&ds->key), CONST_STR_LEN("="));
 			buffer_append_string_encoded(tb, BUF_PTR_LEN(&ds->value), ENCODING_MINIMAL_XML);
-			buffer_append_string_len(tb, CONST_STR_LEN("\n"));
+			buffer_append_char(tb, '\n');
 		}
 		chunkqueue_append_mem(cq, BUF_PTR_LEN(tb));
 		break;
@@ -1410,7 +1407,7 @@ static void mod_ssi_parse_ssi_stmt(request_st * const r, handler_ctx * const p, 
       #if 0
 	/* dup s and then modify s */
 	/*(l[0] is no longer used; was previously used in only one place for error reporting)*/
-	l[0] = malloc((size_t)(len+1));
+	l[0] = ck_malloc((size_t)(len+1));
 	memcpy(l[0], s, (size_t)len);
 	(l[0])[len] = '\0';
       #endif
@@ -1535,7 +1532,9 @@ static void mod_ssi_read_fd(request_st * const r, handler_ctx * const p, struct 
 		 * (reduce occurrence of copying to reallocate larger chunk) */
 		if (cq->last && cq->last->type == MEM_CHUNK
 		    && buffer_string_space(cq->last->mem) < 1023)
-			http_chunk_transfer_cqlen(r, cq, chunkqueue_length(cq));
+			if (0 != http_chunk_transfer_cqlen(r, cq, chunkqueue_length(cq)))
+				chunkqueue_remove_empty_chunks(&r->write_queue);
+				/*(likely unrecoverable error if r->resp_send_chunked)*/
 	}
 
 	if (0 != rd) {
@@ -1551,7 +1550,9 @@ static void mod_ssi_read_fd(request_st * const r, handler_ctx * const p, struct 
 	}
 
 	chunk_buffer_release(b);
-	http_chunk_transfer_cqlen(r, cq, chunkqueue_length(cq));
+	if (0 != http_chunk_transfer_cqlen(r, cq, chunkqueue_length(cq)))
+		chunkqueue_remove_empty_chunks(&r->write_queue);
+		/*(likely error unrecoverable if r->resp_send_chunked)*/
 }
 
 
@@ -1670,6 +1671,8 @@ static handler_t mod_ssi_handle_request_reset(request_st * const r, void *p_d) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_ssi_plugin_init(plugin *p);
 int mod_ssi_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

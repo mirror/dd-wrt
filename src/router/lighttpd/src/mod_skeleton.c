@@ -38,17 +38,15 @@ typedef struct {
 #if 0 /* (needed if module keeps state for request) */
 
 typedef struct {
-	size_t foo;
+    size_t foo;
 } handler_ctx;
 
-static handler_ctx * handler_ctx_init() {
-	handler_ctx * hctx = calloc(1, sizeof(*hctx));
-	force_assert(hctx);
-	return hctx;
+static handler_ctx * handler_ctx_init(void) {
+    return ck_calloc(1, sizeof(handler_ctx));
 }
 
 static void handler_ctx_free(handler_ctx *hctx) {
-	free(hctx);
+    free(hctx);
 }
 
 #endif
@@ -56,7 +54,7 @@ static void handler_ctx_free(handler_ctx *hctx) {
 
 /* init the plugin data */
 INIT_FUNC(mod_skeleton_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 /* handle plugin config and check values */
@@ -132,7 +130,10 @@ URIHANDLER_FUNC(mod_skeleton_uri_handler) {
     return HANDLER_FINISHED;
 }
 
+
 /* this function is called at dlopen() time and inits the callbacks */
+__attribute_cold__
+__declspec_dllexport__
 int mod_skeleton_plugin_init(plugin *p);
 int mod_skeleton_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

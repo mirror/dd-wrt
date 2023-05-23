@@ -8,7 +8,7 @@ BEGIN {
 
 use strict;
 use IO::Socket;
-use Test::More tests => 176;
+use Test::More tests => 164;
 use LightyTest;
 
 my $tf = LightyTest->new();
@@ -23,7 +23,7 @@ GET / HTTP/1.0
 EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-ok($tf->handle_http($t) == 0, 'Valid HTTP/1.0 Request') or die();
+ok($tf->handle_http($t) == 0, 'Valid HTTP/1.0 Request') or ($tf->stop_proc, die());
 
 $t->{REQUEST}  = ( <<EOF
 OPTIONS * HTTP/1.0
@@ -439,7 +439,7 @@ ok($tf->handle_http($t) == 0, 'GET, Range start out of range');
 
 
 $t->{REQUEST}  = ( <<EOF
-GET /range.pdf HTTP/1.1
+GET /range.disabled HTTP/1.1
 Host: 123.example.org
 Range: bytes=0-
 Connection: close
@@ -971,6 +971,7 @@ ok($tf->handle_http($t) == 0, 'lowercase access');
 my $docroot = $tf->{'TESTDIR'}."/tmp/lighttpd/servers/www.example.org/pages";
 
 sub init_testbed {
+    return 0 if $tf->{'win32native'}; # win32native lighttpd.exe
     return 0 unless eval { symlink("",""); 1 };
     my $f = "$docroot/index.html";
     my $l = "$docroot/index.xhtml";
@@ -1105,7 +1106,7 @@ $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
 ok($tf->handle_http($t) == 0, 'Basic-Auth: Valid Auth-token - plain');
 
 SKIP: {
-	skip "no crypt-des under openbsd", 2 if $^O eq 'openbsd';
+	skip "no crypt-des under openbsd or MS Visual Studio", 2 if $^O eq 'openbsd' || $tf->{'win32native'};
 $t->{REQUEST}  = ( <<EOF
 GET /server-config HTTP/1.0
 Host: auth-htpasswd.example.org
@@ -1399,6 +1400,24 @@ EOF
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, '+Content-Length' => '' } ];
 ok($tf->handle_http($t) == 0, 'cgi-env: HTTP_HOST');
 
+$t->{REQUEST}  = ( <<EOF
+GET /cgi.pl?env=ABSENT HTTP/1.1
+Host: www.example.org
+Connection: close
+EOF
+ );
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '[ABSENT not found]' } ];
+ok($tf->handle_http($t) == 0, 'cgi-env: ABSENT');
+
+$t->{REQUEST}  = ( <<EOF
+GET /cgi.pl?env=BLANK_VALUE HTTP/1.1
+Host: www.example.org
+Connection: close
+EOF
+ );
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '' } ];
+ok($tf->handle_http($t) == 0, 'cgi-env: BLANK_VALUE');
+
 # broken header crash
 $t->{REQUEST}  = ( <<EOF
 GET /cgi.pl?crlfcrash HTTP/1.0
@@ -1425,7 +1444,7 @@ Accept-Encoding: deflate
 Host: deflate.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1288', '+Content-Encoding' => '' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1294', '+Content-Encoding' => '' } ];
 ok($tf->handle_http($t) == 0, 'deflate - Content-Length and Content-Encoding is set');
 
 $t->{REQUEST}  = ( <<EOF
@@ -1434,7 +1453,7 @@ Accept-Encoding: deflate
 Host: deflate-cache.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1288', '+Content-Encoding' => '' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1294', '+Content-Encoding' => '' } ];
 ok($tf->handle_http($t) == 0, 'deflate - Content-Length and Content-Encoding is set');
 
 $t->{REQUEST}  = ( <<EOF
@@ -1492,7 +1511,7 @@ Accept-Encoding: bzip2, gzip, deflate
 Host: deflate-cache.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Encoding' => 'gzip', 'Content-Type' => "text/plain; charset=utf-8" } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Encoding' => 'gzip', 'Content-Type' => "text/plain" } ];
 ok($tf->handle_http($t) == 0, 'bzip2 requested but disabled');
 
 
@@ -1572,196 +1591,6 @@ ok($tf_proxy->handle_http($t) == 0, 'rewrited urls work with encoded path');
 ok($tf_proxy->stop_proc == 0, "Stopping lighttpd proxy");
 
 } while (0);
-
-
-## mod_secdownload
-
-use Digest::MD5 qw(md5_hex);
-use Digest::SHA qw(hmac_sha1 hmac_sha256);
-use MIME::Base64 qw(encode_base64url);
-
-my $secret = "verysecret";
-my ($f, $thex, $m);
-
-$t->{REQUEST}  = ( <<EOF
-GET /index.html HTTP/1.0
-Host: www.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-
-ok($tf->handle_http($t) == 0, 'skipping secdownload - direct access');
-
-## MD5
-$f = "/index.html";
-$thex = sprintf("%08x", time);
-$m = md5_hex($secret.$f.$thex);
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload (md5)');
-
-$thex = sprintf("%08x", time - 1800);
-$m = md5_hex($secret.$f.$thex);
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 410 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - gone (timeout) (md5)');
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec$f HTTP/1.0
-Host: vvv.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - direct access (md5)');
-
-$f = "/noexists";
-$thex = sprintf("%08x", time);
-$m = md5_hex($secret.$f.$thex);
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - timeout (md5)');
-
-
-if (!$tf->has_crypto()) {
-
-    for (1..4) { ok(1, "secdownload (hmac-sha1) (skipped) - (missing SSL support)"); }
-    for (1..5) { ok(1, "secdownload (hmac-sha256) (skipped) - (missing SSL support)"); }
-
-}
-else {
-
-## HMAC-SHA1
-$f = "/index.html";
-$thex = sprintf("%08x", time);
-$m = encode_base64url(hmac_sha1("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha1.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload (hmac-sha1)');
-
-$thex = sprintf("%08x", time - 1800);
-$m = encode_base64url(hmac_sha1("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha1.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 410 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - gone (timeout) (hmac-sha1)');
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec$f HTTP/1.0
-Host: vvv-sha1.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - direct access (hmac-sha1)');
-
-
-$f = "/noexists";
-$thex = sprintf("%08x", time);
-$m = encode_base64url(hmac_sha1("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha1.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - timeout (hmac-sha1)');
-
-## HMAC-SHA256
-$f = "/index.html";
-$thex = sprintf("%08x", time);
-$m = encode_base64url(hmac_sha256("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha256.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload (hmac-sha256)');
-
-## HMAC-SHA256
-$f = "/index.html?qs=1";
-$thex = sprintf("%08x", time);
-$m = encode_base64url(hmac_sha256("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha256.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload (hmac-sha256) with hash-querystr');
-
-$thex = sprintf("%08x", time - 1800);
-$m = encode_base64url(hmac_sha256("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha256.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 410 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - gone (timeout) (hmac-sha256)');
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec$f HTTP/1.0
-Host: vvv-sha256.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - direct access (hmac-sha256)');
-
-
-$f = "/noexists";
-$thex = sprintf("%08x", time);
-$m = encode_base64url(hmac_sha256("/$thex$f", $secret));
-
-$t->{REQUEST}  = ( <<EOF
-GET /sec/$m/$thex$f HTTP/1.0
-Host: vvv-sha256.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 404 } ];
-
-ok($tf->handle_http($t) == 0, 'secdownload - timeout (hmac-sha256)');
-
-} # SKIP if lighttpd built without crypto algorithms (e.g. without openssl)
 
 
 ## mod_setenv

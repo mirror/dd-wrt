@@ -15,7 +15,6 @@ typedef gw_handler_ctx   handler_ctx;
 #include "http_chunk.h"
 #include "log.h"
 #include "request.h"
-#include "status_counter.h"
 
 #include "compat/fastcgi.h"
 
@@ -98,8 +97,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0:{/* fastcgi.server */
-                gw_plugin_config *gw = calloc(1, sizeof(gw_plugin_config));
-                force_assert(gw);
+                gw_plugin_config *gw = ck_calloc(1, sizeof(gw_plugin_config));
                 if (!gw_set_defaults_backend(srv, p, cpv->v.a, gw, 0,
                                              cpk[cpv->k_id].k)) {
                     gw_plugin_config_free(gw);
@@ -296,7 +294,7 @@ static handler_t fcgi_create_env(handler_ctx *hctx) {
 	}
 	fcgi_stdin_append(hctx);
 
-	status_counter_inc(CONST_STR_LEN("fastcgi.requests"));
+	plugin_stats_inc("fastcgi.requests");
 	return HANDLER_GO_ON;
 }
 
@@ -516,6 +514,8 @@ static handler_t fcgi_check_extension_2(request_st * const r, void *p_d) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_fastcgi_plugin_init(plugin *p);
 int mod_fastcgi_plugin_init(plugin *p) {
 	p->version      = LIGHTTPD_VERSION_ID;

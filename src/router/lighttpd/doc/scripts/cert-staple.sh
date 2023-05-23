@@ -1,10 +1,16 @@
 #!/bin/sh
+#
+# cert-staple.sh - retrieve from CA and manage OCSP stapling info for leaf cert
+#
+# Copyright(c) 2022 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+# License: BSD 3-clause (same as lighttpd)
 
 CERT_PEM="$1"   # input (cert.pem)
 CHAIN_PEM="$2"  # input (chain.pem)
 OCSP_DER="$3"   # output symlink (staple.der)
 
 OCSP_TMP=""     # temporary file
+next_delta=90000  # 25 hours
 
 if [ -z "$CERT_PEM" ] || [ -z "$CHAIN_PEM" ] || [ -z "$OCSP_DER" ] \
    || [ ! -f "$CERT_PEM" ] || [ ! -f "$CHAIN_PEM" ]; then
@@ -16,6 +22,17 @@ errexit() {
     [ -n "$OCSP_TMP" ] && rm -f "$OCSP_TMP"
     exit 1
 }
+
+# short-circuit if Next Update is > $next_delta in the future
+next_ts=$(readlink "$OCSP_DER" 2>/dev/null)
+if [ -n "$next_ts" ]; then
+    next_ts="${next_ts##*.}"
+    ts=$(date +%s)
+    ts=$(( $ts + $next_delta ))
+    if [ -n "$next_ts" ] && [ "$next_ts" -gt "$ts" ]; then
+        exit 0
+    fi
+fi
 
 # get URI of OCSP responder from certificate
 OCSP_URI=$(openssl x509 -in "$CERT_PEM" -ocsp_uri -noout)
@@ -46,7 +63,14 @@ ocsp_status="$(printf %s "$OCSP_RESP" | head -1)"
 next_update="$(printf %s "$OCSP_RESP" | grep 'Next Update:')"
 next_date="$(printf %s "$next_update" | sed 's/.*Next Update: //')"
 [ -n "$next_date" ] || errexit
-ocsp_expire=$(date -d "$next_date" +%s)
+sysname=$(uname -s)
+if [ "$sysname" = "FreeBSD" ] || \
+   [ "$sysname" = "OpenBSD" ] || \
+   [ "$sysname" = "DragonFly" ]; then
+    ocsp_expire=$(date -j -f "%b %e %T %Y %Z" "$next_date" "+%s")
+else
+    ocsp_expire=$(date -d "$next_date" +%s)
+fi
 
 # validate OCSP response
 ocsp_verify=$(openssl ocsp -issuer "$CHAIN_PEM" -verify_other "$CHAIN_PEM" -cert "$CERT_PEM" -respin "$OCSP_TMP" -no_nonce -out /dev/null 2>&1)

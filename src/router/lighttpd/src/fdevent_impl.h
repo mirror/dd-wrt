@@ -16,9 +16,17 @@ struct epoll_event;     /* declaration */
 struct pollfd;          /* declaration */
 #endif
 
-#ifndef FDEVENT_USE_POLL
+#ifdef _WIN32
+# define FDEVENT_USE_POLL
+struct pollfd;          /* declaration */
+#endif
+
+#if !defined(FDEVENT_USE_POLL) || defined(_WIN32)
 #if defined HAVE_SELECT
-# ifdef __WIN32
+# ifdef _WIN32
+#  ifdef _MSC_VER
+#   pragma comment(lib, "ws2_32.lib")
+#  endif
 #  include <winsock2.h>
 # endif
 # define FDEVENT_USE_SELECT
@@ -36,16 +44,13 @@ struct pollfd;          /* declaration */
 #if defined HAVE_PORT_H && defined HAVE_PORT_CREATE && defined(__sun)
 # define FDEVENT_USE_SOLARIS_PORT
 # include <port.h>
+/* Illumos epoll not supported by lighttpd; POLLRDHUP != EPOLLRDHUP on Illumos*/
+# undef FDEVENT_USE_LINUX_EPOLL
 #endif
 
 #if defined HAVE_SYS_EVENT_H && defined HAVE_KQUEUE
 # define FDEVENT_USE_FREEBSD_KQUEUE
 struct kevent;          /* declaration */
-#endif
-
-#if defined HAVE_LIBEV
-# define FDEVENT_USE_LIBEV
-struct ev_loop;         /* declaration */
 #endif
 
 #include "base_decls.h"
@@ -58,8 +63,7 @@ typedef enum {
     FDEVENT_HANDLER_LINUX_SYSEPOLL,
     FDEVENT_HANDLER_SOLARIS_DEVPOLL,
     FDEVENT_HANDLER_SOLARIS_PORT,
-    FDEVENT_HANDLER_FREEBSD_KQUEUE,
-    FDEVENT_HANDLER_LIBEV
+    FDEVENT_HANDLER_FREEBSD_KQUEUE
 } fdevent_handler_t;
 
 /**
@@ -87,6 +91,9 @@ struct fdevents {
     log_error_st *errh;
     int *cur_fds;
     uint32_t maxfds;
+  #ifdef _WIN32
+    int count;
+  #endif
   #ifdef FDEVENT_USE_LINUX_EPOLL
     int epoll_fd;
     struct epoll_event *epoll_events;
@@ -103,9 +110,6 @@ struct fdevents {
     int kq_fd;
     struct kevent *kq_results;
   #endif
-  #ifdef FDEVENT_USE_LIBEV
-    struct ev_loop *libev_loop;
-  #endif
   #ifdef FDEVENT_USE_POLL
     struct pollfd *pollfds;
 
@@ -115,6 +119,9 @@ struct fdevents {
     buffer_int unused;
   #endif
   #ifdef FDEVENT_USE_SELECT
+   #ifndef _WIN32
+    int select_max_fd;
+   #endif
     fd_set select_read;
     fd_set select_write;
     fd_set select_error;
@@ -122,8 +129,6 @@ struct fdevents {
     fd_set select_set_read;
     fd_set select_set_write;
     fd_set select_set_error;
-
-    int select_max_fd;
   #endif
 
     int (*reset)(struct fdevents *ev);

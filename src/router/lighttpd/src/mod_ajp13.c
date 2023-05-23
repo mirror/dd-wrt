@@ -29,7 +29,6 @@ typedef gw_handler_ctx   handler_ctx;
 #include "http_header.h"
 #include "http_kv.h"
 #include "log.h"
-#include "status_counter.h"
 
 #define AJP13_MAX_PACKET_SIZE 8192
 
@@ -114,8 +113,7 @@ SETDEFAULTS_FUNC(mod_ajp13_set_defaults)
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0:{/* ajp13.server */
-                gw = calloc(1, sizeof(gw_plugin_config));
-                force_assert(gw);
+                gw = ck_calloc(1, sizeof(gw_plugin_config));
                 if (!gw_set_defaults_backend(srv, p, cpv->v.a, gw, 0,
                                              cpk[cpv->k_id].k)) {
                     gw_plugin_config_free(gw);
@@ -585,14 +583,14 @@ ajp13_create_env (handler_ctx * const hctx)
         if (0 == method_byte) break;
         x[5] = method_byte;
         /* protocol */
-        const char * const proto = get_http_version_name(r->http_version);
-        n = ajp13_enc_string(x, n, proto, strlen(proto));
+        const buffer * const proto = http_version_buf(r->http_version);
+        n = ajp13_enc_string(x, n, BUF_PTR_LEN(proto));
         if (0 == n) break;
         /* req_uri */
         n = ajp13_enc_string(x, n, BUF_PTR_LEN(&r->uri.path));
         if (0 == n) break;
         /* remote_addr */
-        n = ajp13_enc_string(x, n, BUF_PTR_LEN(&r->con->dst_addr_buf));
+        n = ajp13_enc_string(x, n, BUF_PTR_LEN(r->dst_addr_buf));
         if (0 == n) break;
         /* remote_host *//*(skip DNS lookup)*/
         n = ajp13_enc_string(x, n, NULL, 0);
@@ -644,7 +642,7 @@ ajp13_create_env (handler_ctx * const hctx)
         ajp13_stdin_append_n(hctx, AJP13_MAX_PACKET_SIZE-4);
         hctx->request_id = 0; /* overloaded value; see ajp13_stdin_append_n() */
 
-        status_counter_inc(CONST_STR_LEN("ajp13.requests"));
+        plugin_stats_inc("ajp13.requests");
         return HANDLER_GO_ON;
     } while (0);
 
@@ -694,7 +692,7 @@ ajp13_expand_headers (buffer * const b, handler_ctx * const hctx, uint32_t plen)
         ptr += 2;
         if (plen < len+1) break;
         plen -= len+1; /* include -1 for ending '\0' */
-        buffer_append_string_len(b, " ", 1);
+        buffer_append_char(b, ' ');
         if (len) buffer_append_string_len(b, (char *)ptr, len);
         ptr += len+1;
 
@@ -813,6 +811,12 @@ ajp13_recv_parse_loop (request_st * const r, handler_ctx * const hctx)
         switch(ptr[4]) {
         case AJP13_SEND_HEADERS:
             if (0 == r->resp_body_started) {
+                if (plen < 3) {
+                    log_error(errh, __FILE__, __LINE__,
+                      "AJP13: headers packet received with invalid length");
+                    return HANDLER_FINISHED;
+                }
+
                 buffer *hdrs = hctx->response;
                 if (NULL == hdrs) {
                     hdrs = r->tmp_buf;
@@ -986,6 +990,8 @@ ajp13_check_extension (request_st * const r, void *p_d)
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_ajp13_plugin_init (plugin *p);
 int mod_ajp13_plugin_init (plugin *p)
 {

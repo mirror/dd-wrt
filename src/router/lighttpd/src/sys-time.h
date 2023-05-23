@@ -4,10 +4,11 @@
  * Copyright(c) 2015 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
  * License: BSD 3-clause (same as lighttpd)
  */
-#ifndef INCLUDED_SYS_TIME_H
-#define INCLUDED_SYS_TIME_H
+#ifndef LI_SYS_TIME_H
+#define LI_SYS_TIME_H
 #include "first.h"
 
+#include <sys/types.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>/* gettimeofday() */
 #endif
@@ -22,10 +23,18 @@
  * could turn these into subroutines which take a local mutex to protect the
  * calls to localtime() or gmtime()) */
 #ifndef HAVE_LOCALTIME_R
+#ifdef _WIN32
+#define localtime_r(timep,result) (localtime_s((result),(timep)),     (result))
+#else
 #define localtime_r(timep,result) ((*(result) = *(localtime(timep))), (result))
 #endif
+#endif
 #ifndef HAVE_GMTIME_R
+#ifdef _WIN32
+#define gmtime_r(timep,result)    (gmtime_s((result),(timep)),        (result))
+#else
 #define gmtime_r(timep,result)    ((*(result) = *(gmtime(timep))),    (result))
+#endif
 #endif
 
 #ifndef HAVE_TIMEGM

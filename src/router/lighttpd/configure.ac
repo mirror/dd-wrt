@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ([2.60])
-AC_INIT([lighttpd],[1.4.64],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
+AC_INIT([lighttpd],[1.4.70],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -90,6 +90,14 @@ LT_INIT([dlopen disable-static shared])
 dnl for solaris
 CPPFLAGS="${CPPFLAGS} -D_REENTRANT"
 
+case "$host_os" in
+  *mingw*)
+    WS2_32_LIB="-lws2_32"
+    AC_SUBST([WS2_32_LIB])
+    ;;
+  *);;
+esac
+
 dnl Checks for header files.
 
 dnl checks for sys/wait.h => HAVE_SYS_WAIT_H
@@ -127,6 +135,9 @@ AC_CHECK_MEMBER([struct tm.tm_gmtoff],
   [],
   [#include <time.h>]
 )
+case "$host_os" in
+  *mingw*) AC_DEFINE([HAVE_SOCKLEN_T], [1]) ;;
+  *)
 AC_CHECK_TYPES([socklen_t],
   [], dnl defines HAVE_SOCKLEN_T
   [],
@@ -135,6 +146,8 @@ AC_CHECK_TYPES([socklen_t],
     #include <sys/socket.h>
   ]
 )
+;;
+esac
 
 dnl solaris needs -lsocket -lnsl
 dnl Haiku needs -lnetwork
@@ -184,36 +197,7 @@ AC_ARG_WITH([libev],
   [WITH_LIBEV=no]
 )
 AC_MSG_RESULT([$WITH_LIBEV])
-
-LIBEV_CFLAGS=
-LIBEV_LIBS=
-
-if test "$WITH_LIBEV" != no; then
-  PKG_CHECK_MODULES([LIBEV], [libev], [], [
-    dnl no pkg-config for libev, searching manually:
-
-    if test "$WITH_LIBEV" != yes; then
-      LIBEV_CFLAGS="-I$WITH_LIBEV/include"
-      LIBEV_LIBS="-L$WITH_LIBEV/lib -lev"
-    else
-      AC_CHECK_HEADERS([ev.h],
-        [AC_CHECK_LIB([ev], [ev_time],
-          [
-            LIBEV_CFLAGS=
-            LIBEV_LIBS="-lev"
-          ],
-          [AC_MSG_ERROR([libev not found])]
-        )],
-        [AC_MSG_ERROR([libev header not found])]
-      )
-    fi
-  ])
-
-  AC_DEFINE([HAVE_LIBEV], [1], [libev support])
-fi
-
-AC_SUBST([LIBEV_CFLAGS])
-AC_SUBST([LIBEV_LIBS])
+dnl ignore WITH_LIBEV
 
 dnl Checks for mysql
 AC_MSG_NOTICE([----------------------------------------])
@@ -919,7 +903,7 @@ AC_MSG_RESULT([$WITH_PCRE2])
 if test "$WITH_PCRE2" != no && test "$WITH_PCRE" = "no"; then
   if test "$WITH_PCRE2" != yes; then
     PCRE_LIB="-L$WITH_PCRE2/lib -lpcre2-8"
-    CPPFLAGS="$CPPFLAGS -I$WITH_PCRE/include"
+    CPPFLAGS="$CPPFLAGS -I$WITH_PCRE2/include"
   else
     PKG_CHECK_MODULES([PCRE2],[libpcre2-8],[
       PCRE_LIB="$PCRE2_LIBS"
@@ -1083,6 +1067,36 @@ if test "$WITH_BROTLI" != no; then
   AC_DEFINE([HAVE_BROTLI], [1], [libbrotlienc])
   AC_SUBST([BROTLI_CFLAGS])
   AC_SUBST([BROTLI_LIBS])
+fi
+
+dnl libdeflate
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for libdeflate support])
+AC_ARG_WITH([libdeflate],
+  [AS_HELP_STRING([--with-libdeflate],
+    [Enable libdeflate support for mod_deflate]
+  )],
+  [WITH_LIBDEFLATE=$withval],
+  [WITH_LIBDEFLATE=no]
+)
+AC_MSG_RESULT([$WITH_LIBDEFLATE])
+
+if test "$WITH_LIBDEFLATE" != no; then
+  if test "$WITH_LIBDEFLATE" != yes; then
+    DEFLATE_LIBS="-L$WITH_LIBDEFLATE -ldeflate"
+    CPPFLAGS="$CPPFLAGS -I$WITH_LIBDEFLATE"
+  else
+    AC_CHECK_HEADERS([libdeflate.h], [],
+      [AC_MSG_ERROR([libdeflate header not found, install them or build without --with-libdeflate])]
+    )
+    AC_CHECK_LIB([deflate], [libdeflate_alloc_compressor],
+      [DEFLATE_LIBS=-ldeflate],
+      [AC_MSG_ERROR([libdeflate library not found, install it or build without --with-libdeflate])]
+    )
+  fi
+
+  AC_DEFINE([HAVE_LIBDEFLATE], [1], [libdeflate])
+  AC_SUBST([DEFLATE_LIBS])
 fi
 
 dnl Check for fam/gamin
@@ -1329,7 +1343,11 @@ AC_MSG_RESULT([$WITH_LUA])
 if test "$WITH_LUA" != no; then
   found_lua=0
   if test "$WITH_LUA" != yes; then
-    PKG_CHECK_MODULES([LUA], [$WITH_LUA >= 5.1],
+    lua_min_ver=5.1
+    if test "$WITH_LUA" = "luajit"; then
+      lua_min_ver=0
+    fi
+    PKG_CHECK_MODULES([LUA], [$WITH_LUA >= $lua_min_ver],
       [found_lua=1],
       [AC_MSG_NOTICE([Couldn\'t find requested lua pkg-config module $WITH_LUA])]
     )
@@ -1412,8 +1430,12 @@ esac
 AC_MSG_NOTICE([----------------------------------------])
 
 case "$host_os" in
-*mingw* ) LIBS="$LIBS -lwsock32" ;;
-* ) ;;
+  *mingw*)
+    # (-lws2_32 needed to detect inet_pton() and select() on _WIN32)
+    save_LIBS=$LIBS
+    LIBS="$LIBS $WS2_32_LIB"
+    ;;
+  *);;
 esac
 
 AC_CHECK_FUNCS([\
@@ -1439,6 +1461,9 @@ AC_CHECK_FUNCS([\
   mkostemp \
   pipe2 \
   poll \
+  posix_spawn \
+  posix_spawn_file_actions_addclosefrom_np \
+  posix_spawn_file_actions_addfchdir_np \
   pread \
   pwrite \
   sendfile \
@@ -1461,6 +1486,13 @@ if test "$ac_cv_func_poll" = no; then
   AC_CHECK_HEADERS([sys/select.h])
   AC_CHECK_FUNCS([select])
 fi
+
+case "$host_os" in
+  *mingw*)
+    LIBS=$save_LIBS
+    ;;
+  *);;
+esac
 
 case "$host_os" in
 *sunos*|*solaris* )
@@ -1497,7 +1529,8 @@ AC_ARG_ENABLE([lfs],
   [
     case "${enableval}" in
     yes) ENABLE_LFS=yes ;;
-    no) ENABLE_LFS=no ;;
+    no) ENABLE_LFS=yes
+        AC_MSG_NOTICE([large file support forced; --disable-lfs ignored]) ;;
     *) AC_MSG_ERROR([bad value ${enableval} for --enable-lfs]) ;;
     esac
   ],
@@ -1505,7 +1538,7 @@ AC_ARG_ENABLE([lfs],
 )
 AC_MSG_RESULT([$ENABLE_LFS])
 if test "$ENABLE_LFS" = yes; then
-  CPPFLAGS="${CPPFLAGS} -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES"
+  CPPFLAGS="${CPPFLAGS} -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES -D_DEFAULT_SOURCE"
   AC_SYS_LARGEFILE
 fi
 
@@ -1523,7 +1556,7 @@ if test "$ac_cv_func_sendfile" = yes; then
         #include <sys/types.h>
         #include <sys/socket.h>
         #include <sys/uio.h>
-        int main() {
+        int main(void) {
           int o = 0;
           if (-1 == sendfile(-1, 0, &o, 0) && errno == ENOSYS) return -1;
           return 0;
@@ -1567,6 +1600,10 @@ if test "$ipv6" = true; then
       [ac_cv_ipv6_support=no]
     )
   ])
+  case "$host_os" in
+    *mingw*) ac_cv_ipv6_support=yes ;;
+    *) ;;
+  esac
 
   if test "$ac_cv_ipv6_support" = yes; then
     AC_DEFINE([HAVE_IPV6], [1], [Whether to enable IPv6 support])
@@ -1676,7 +1713,6 @@ do_build="\
   mod_rewrite \
   mod_rrdtool \
   mod_scgi \
-  mod_secdownload \
   mod_setenv \
   mod_simple_vhost \
   mod_sockproxy \
@@ -1684,7 +1720,6 @@ do_build="\
   mod_staticfile \
   mod_status \
   mod_userdir \
-  mod_usertrack \
   mod_vhostdb \
   mod_webdav \
   mod_wstunnel \
@@ -1726,6 +1761,9 @@ lighty_track_feature "compress-bzip2" "" \
 
 lighty_track_feature "compress-brotli" "" \
   'test "$WITH_BROTLI" != no'
+
+lighty_track_feature "compress-zstd" "" \
+  'test "$WITH_ZSTD" != no'
 
 lighty_track_feature "kerberos" "mod_authn_gssapi" \
   'test "$WITH_KRB5" != no'

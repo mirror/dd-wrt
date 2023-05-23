@@ -12,9 +12,14 @@ static const char hex_chars_uc[] = "0123456789ABCDEF";
 
 __attribute_noinline__
 buffer* buffer_init(void) {
+  #if 0 /* buffer_init() and chunk_init() can be hot,
+	 * so avoid the additional hop of indirection */
+	return ck_calloc(1, sizeof(buffer));
+  #else
 	buffer * const b = calloc(1, sizeof(*b));
 	force_assert(b);
 	return b;
+  #endif
 }
 
 void buffer_free(buffer *b) {
@@ -228,8 +233,14 @@ void buffer_append_iovec(buffer * const restrict b, const struct const_iovec * c
 
 void buffer_append_path_len(buffer * restrict b, const char * restrict a, size_t alen) {
     char * restrict s = buffer_string_prepare_append(b, alen+1);
+  #ifdef _WIN32
+    const int aslash = (alen && (a[0] == '/' || a[0] == '\\'));
+    if (b->used > 1 && (s[-1] == '/' || s[-1] == '\\'))
+  #else
     const int aslash = (alen && a[0] == '/');
-    if (b->used > 1 && s[-1] == '/') {
+    if (b->used > 1 && s[-1] == '/')
+  #endif
+    {
         if (aslash) {
             ++a;
             --alen;
@@ -397,13 +408,7 @@ int buffer_eq_icase_ssn(const char * const a, const char * const b, const size_t
     for (size_t i = 0; i < len; ++i) {
         unsigned int ca = ((unsigned char *)a)[i];
         unsigned int cb = ((unsigned char *)b)[i];
-        if (ca != cb) {
-            ca |= 0x20;
-            cb |= 0x20;
-            if (ca != cb) return 0;
-            if (!light_islower(ca)) return 0;
-            if (!light_islower(cb)) return 0;
-        }
+        if (ca != cb && ((ca ^ cb) != 0x20 || !light_isalpha(ca))) return 0;
     }
     return 1;
 }
@@ -466,7 +471,7 @@ void buffer_substr_replace (buffer * const restrict b, const size_t offset,
     const size_t rlen = buffer_clen(replace);
 
     if (rlen > len) {
-        buffer_extend(b, blen-len+rlen);
+        buffer_extend(b, rlen-len);
         memmove(b->ptr+offset+rlen, b->ptr+offset+len, blen-offset-len);
     }
 
@@ -658,93 +663,15 @@ void buffer_append_string_encoded(buffer * const restrict b, const char * const 
 	}
 }
 
-void buffer_append_string_encoded_json(buffer * const restrict b, const char * const restrict s, const size_t len) {
-	const unsigned char * const restrict ds = (unsigned char *)s;
-	size_t dlen = 0;
-
-	/* calculate space needed for string including encodings */
-	for (size_t i = 0; i < len; ++i) {
-		int c = ds[i];
-		if (c == '"' || c == '\\' || c < 0x20 || c == 0x7f) {
-			switch (c) {
-			  case '\b':
-			  case '\t':
-			  case '\n':
-			  case '\f':
-			  case '\r':
-			  case '"':
-			  case '\\':
-				dlen += 2;
-				break;
-			  default:
-				dlen += 6; /* \uCCCC */
-				break;
-			}
-		}
-		else {
-			++dlen;
-		}
-	}
-
-	unsigned char * const d = (unsigned char *)buffer_extend(b, dlen);
-
-	if (__builtin_expect( (dlen == len), 1)) {/*(short-circuit; nothing to encode)*/
-		memcpy(d, ds, len);
-		return;
-	}
-
-	dlen = 0;
-	for (size_t i = 0; i < len; ++i) {
-		int c = ds[i];
-		if (c == '"' || c == '\\' || c < 0x20 || c == 0x7f) {
-			d[dlen++] = '\\';
-			switch (c) {
-			  case '\b':
-				d[dlen++] = 'b';
-				break;
-			  case '\t':
-				d[dlen++] = 't';
-				break;
-			  case '\n':
-				d[dlen++] = 'n';
-				break;
-			  case '\f':
-				d[dlen++] = 'f';
-				break;
-			  case '\r':
-				d[dlen++] = 'r';
-				break;
-			  case '"':
-				d[dlen++] = '"';
-				break;
-			  case '\\':
-				d[dlen++] = '\\';
-				break;
-			  default:
-				d[dlen  ] = 'u';
-				d[dlen+1] = '0';
-				d[dlen+2] = '0';
-				d[dlen+3] = hex_chars_lc[(c >> 4) & 0x0F];
-				d[dlen+4] = hex_chars_lc[c & 0x0F];
-				dlen += 5;
-				break;
-			}
-		}
-		else {
-			d[dlen++] = c;
-		}
-	}
-}
-
-
 void buffer_append_string_c_escaped(buffer * const restrict b, const char * const restrict s, size_t s_len) {
 	unsigned char *ds, *d;
 	size_t d_len, ndx;
 
 	/* count to-be-encoded-characters */
 	for (ds = (unsigned char *)s, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) {
-		if ((*ds < 0x20) /* control character */
-				|| (*ds >= 0x7f)) { /* DEL + non-ASCII characters */
+		if (__builtin_expect( (*ds >= ' ' && *ds <= '~'), 1))
+			d_len++;
+		else { /* CTLs or non-ASCII characters */
 			switch (*ds) {
 			case '\t':
 			case '\r':
@@ -755,8 +682,6 @@ void buffer_append_string_c_escaped(buffer * const restrict b, const char * cons
 				d_len += 4; /* \xCC */
 				break;
 			}
-		} else {
-			d_len++;
 		}
 	}
 
@@ -768,8 +693,9 @@ void buffer_append_string_c_escaped(buffer * const restrict b, const char * cons
 	}
 
 	for (ds = (unsigned char *)s, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) {
-		if ((*ds < 0x20) /* control character */
-				|| (*ds >= 0x7f)) { /* DEL + non-ASCII characters */
+		if (__builtin_expect( (*ds >= ' ' && *ds <= '~'), 1))
+			d[d_len++] = *ds;
+		else { /* CTLs or non-ASCII characters */
 			d[d_len++] = '\\';
 			switch (*ds) {
 			case '\t':
@@ -783,14 +709,113 @@ void buffer_append_string_c_escaped(buffer * const restrict b, const char * cons
 				break;
 			default:
 				d[d_len++] = 'x';
-				d[d_len++] = hex_chars_lc[((*ds) >> 4) & 0x0F];
+				d[d_len++] = hex_chars_lc[(*ds) >> 4];
 				d[d_len++] = hex_chars_lc[(*ds) & 0x0F];
 				break;
 			}
-		} else {
-			d[d_len++] = *ds;
 		}
 	}
+}
+
+
+void
+buffer_append_bs_escaped (buffer * const restrict b,
+                          const char * restrict s, const size_t len)
+{
+    /* replaces non-printable chars with escaped string
+     * default: \xHH where HH is the hex representation of the byte
+     * exceptions: " => \", \ => \\, whitespace chars => \n \t etc. */
+    /* Intended for use escaping string to be surrounded by double-quotes */
+    /* Performs single pass over string and is optimized for ASCII;
+     * non-ASCII escaping might be slightly sped up by walking input twice,
+     * first to calculate escaped length and extend the destination b, and
+     * second to do the escaping. (This non-ASCII optim is not done here) */
+    buffer_string_prepare_append(b, len);
+    for (const char * const end = s+len; s < end; ++s) {
+        unsigned int c;
+        const char * const ptr = s;
+        do {
+            c = *(const unsigned char *)s;
+        } while (c >= ' ' && c <= '~' && c != '"' && c != '\\' && ++s < end);
+        if (s - ptr) buffer_append_string_len(b, ptr, s - ptr);
+
+        if (s == end)
+            return;
+
+        /* ('\a', '\v' shortcuts are technically not json-escaping) */
+        /* ('\0' is also omitted due to the possibility of string corruption if
+         *  the receiver supports decoding octal escapes (\000) and the escaped
+         *  string contains \0 followed by two digits not part of escaping)*/
+
+        char *d;
+        switch (c) {
+          case '\a':case '\b':case '\t':case '\n':case '\v':case '\f':case '\r':
+            c = "0000000abtnvfr"[c];
+            __attribute_fallthrough__
+          case '"': case '\\':
+            d = buffer_extend(b, 2);
+            d[0] = '\\';
+            d[1] = c;
+            break;
+          default:
+            /* non printable char => \xHH */
+            d = buffer_extend(b, 4);
+            d[0] = '\\';
+            d[1] = 'x';
+            d[2] = hex_chars_uc[c >> 4];
+            d[3] = hex_chars_uc[c & 0xF];
+            break;
+        }
+    }
+}
+
+
+void
+buffer_append_bs_escaped_json (buffer * const restrict b,
+                               const char * restrict s, const size_t len)
+{
+    /* replaces non-printable chars with escaped string
+     * json: \u00HH where HH is the hex representation of the byte
+     * exceptions: " => \", \ => \\, whitespace chars => \n \t etc. */
+    /* Intended for use escaping string to be surrounded by double-quotes */
+    buffer_string_prepare_append(b, len);
+    for (const char * const end = s+len; s < end; ++s) {
+        unsigned int c;
+        const char * const ptr = s;
+        do {
+            c = *(const unsigned char *)s;
+        } while (c >= ' ' && c != '"' && c != '\\' && ++s < end);
+        if (s - ptr) buffer_append_string_len(b, ptr, s - ptr);
+
+        if (s == end)
+            return;
+
+        /* ('\a', '\v' shortcuts are technically not json-escaping) */
+        /* ('\0' is also omitted due to the possibility of string corruption if
+         *  the receiver supports decoding octal escapes (\000) and the escaped
+         *  string contains \0 followed by two digits not part of escaping)*/
+
+        char *d;
+        switch (c) {
+          case '\a':case '\b':case '\t':case '\n':case '\v':case '\f':case '\r':
+            c = "0000000abtnvfr"[c];
+            __attribute_fallthrough__
+          case '"': case '\\':
+            d = buffer_extend(b, 2);
+            d[0] = '\\';
+            d[1] = c;
+            break;
+          default:
+            d = buffer_extend(b, 6);
+            d[0] = '\\';
+            d[1] = 'u';
+            d[2] = '0';
+            d[3] = '0';
+            d[4] = hex_chars_uc[c >> 4];
+            d[5] = hex_chars_uc[c & 0xF];
+            break;
+        }
+    }
 }
 
 
@@ -881,7 +906,7 @@ void buffer_path_simplify(buffer *b)
         return;
     }
 
-  #if defined(__WIN32) || defined(__CYGWIN__)
+  #if defined(_WIN32) || defined(__CYGWIN__)
     /* cygwin is treating \ and / the same, so we have to that too */
     for (char *p = b->ptr; *p; p++) {
         if (*p == '\\') *p = '/';

@@ -48,7 +48,7 @@ static handler_t mod_authn_sasl_basic(request_st *r, void *p_d, const http_auth_
 INIT_FUNC(mod_authn_sasl_init) {
     static http_auth_backend_t http_auth_backend_sasl =
       { "sasl", mod_authn_sasl_basic, NULL, NULL };
-    plugin_data *p = calloc(1, sizeof(*p));
+    plugin_data *p = ck_calloc(1, sizeof(*p));
 
     /* register http_auth_backend_sasl */
     http_auth_backend_sasl.p_d = p;
@@ -157,8 +157,7 @@ static plugin_config * mod_authn_sasl_parse_opts(server *srv, const array * cons
       array_get_element_klen(opts, CONST_STR_LEN("sasldb_path"));
     if (NULL != ds && !buffer_is_blank(&ds->value)) sasldb_path = &ds->value;
 
-    plugin_config *pconf = malloc(sizeof(plugin_config));
-    force_assert(pconf);
+    plugin_config *pconf = ck_malloc(sizeof(plugin_config));
     pconf->service = service;
     pconf->fqdn = fqdn;
     pconf->pwcheck_method = pwcheck_method;
@@ -259,8 +258,8 @@ static handler_t mod_authn_sasl_query(request_st * const r, void *p_d, const buf
     plugin_data *p = (plugin_data *)p_d;
     sasl_conn_t *sc;
     sasl_callback_t const cb[] = {
-      { SASL_CB_GETOPT,   (int(*)())mod_authn_sasl_cb_getopt, (void *) p },
-      { SASL_CB_LOG,      (int(*)())mod_authn_sasl_cb_log, (void *) r },
+      { SASL_CB_GETOPT,   (int(*)(void))(uintptr_t)mod_authn_sasl_cb_getopt, (void *) p },
+      { SASL_CB_LOG,      (int(*)(void))(uintptr_t)mod_authn_sasl_cb_log, (void *) r },
       { SASL_CB_LIST_END, NULL, NULL }
     };
     int rc;
@@ -293,6 +292,9 @@ static handler_t mod_authn_sasl_basic(request_st * const r, void *p_d, const htt
       : HANDLER_ERROR;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_authn_sasl_plugin_init(plugin *p);
 int mod_authn_sasl_plugin_init(plugin *p) {
     p->version     = LIGHTTPD_VERSION_ID;
