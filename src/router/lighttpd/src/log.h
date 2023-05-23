@@ -5,7 +5,9 @@
 #include "base_decls.h"
 #include "buffer.h"
 
+__declspec_dllimport__
 extern unix_time64_t log_epoch_secs;
+__declspec_dllimport__
 extern unix_time64_t log_monotonic_secs;
 
 #if defined(HAVE_CLOCK_GETTIME) && HAS_TIME_BITS64
@@ -25,6 +27,14 @@ void log_error(log_error_st *errh, const char *filename, unsigned int line, cons
 __attribute_cold__
 __attribute_format__((__printf__, 4, 5))
 void log_perror(log_error_st *errh, const char *filename, unsigned int line, const char *fmt, ...);
+
+#ifdef _WIN32
+__attribute_cold__
+__attribute_format__((__printf__, 4, 5))
+void log_serror(log_error_st *errh, const char *filename, unsigned int line, const char *fmt, ...);
+#else
+#define log_serror log_perror
+#endif
 
 __attribute_cold__
 __attribute_format__((__printf__, 6, 7))

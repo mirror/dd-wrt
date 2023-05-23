@@ -186,7 +186,7 @@ static int mod_wstunnel_frame_recv(handler_ctx *);
 #define _MOD_WEBSOCKET_SPEC_RFC_6455_
 
 INIT_FUNC(mod_wstunnel_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 static void mod_wstunnel_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -277,8 +277,7 @@ SETDEFAULTS_FUNC(mod_wstunnel_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* wstunnel.server */
-                gw = calloc(1, sizeof(gw_plugin_config));
-                force_assert(gw);
+                gw = ck_calloc(1, sizeof(gw_plugin_config));
                 if (!gw_set_defaults_backend(srv, (gw_plugin_data *)p, cpv->v.a,
                                              gw, 0, cpk[cpv->k_id].k)) {
                     gw_plugin_config_free(gw);
@@ -349,14 +348,16 @@ static handler_t wstunnel_create_env(gw_handler_ctx *gwhctx) {
     handler_ctx *hctx = (handler_ctx *)gwhctx;
     request_st * const r = hctx->gw.r;
     handler_t rc;
-    if (0 == r->reqbody_length) {
+    if (0 == r->reqbody_length || r->http_version > HTTP_VERSION_1_1) {
         http_response_upgrade_read_body_unknown(r);
         chunkqueue_append_chunkqueue(&r->reqbody_queue, &r->read_queue);
     }
     rc = mod_wstunnel_handshake_create_response(hctx);
     if (rc != HANDLER_GO_ON) return rc;
 
-    r->http_status = 101; /* Switching Protocols */
+    r->http_status = (r->http_version > HTTP_VERSION_1_1)
+      ? 200  /* OK (response status for CONNECT) */
+      : 101; /* Switching Protocols */
     r->resp_body_started = 1;
 
     hctx->ping_ts = log_monotonic_secs;
@@ -483,7 +484,10 @@ static handler_t wstunnel_handler_setup (request_st * const r, plugin_data * con
     hctx->errh = r->conf.errh;/*(for mod_wstunnel-specific DEBUG_* macros)*/
     hctx->conf = p->conf; /*(copies struct)*/
     hybivers = wstunnel_check_request(r, hctx);
-    if (hybivers < 0) return HANDLER_FINISHED;
+    if (hybivers < 0) {
+        r->handler_module = NULL;
+        return HANDLER_FINISHED;
+    }
     hctx->hybivers = hybivers;
     if (0 == hybivers) {
         DEBUG_LOG_INFO("WebSocket Version = %s", "hybi-00");
@@ -492,7 +496,7 @@ static handler_t wstunnel_handler_setup (request_st * const r, plugin_data * con
         DEBUG_LOG_INFO("WebSocket Version = %d", hybivers);
     }
 
-    hctx->gw.opts.backend     = BACKEND_PROXY; /*(act proxy-like; not used)*/
+    hctx->gw.opts.backend     = BACKEND_PROXY; /*(act proxy-like)*/
     hctx->gw.opts.pdata       = hctx;
     hctx->gw.opts.parse       = wstunnel_recv_parse;
     hctx->gw.stdin_append     = wstunnel_stdin_append;
@@ -553,11 +557,15 @@ static handler_t wstunnel_handler_setup (request_st * const r, plugin_data * con
 
 static handler_t mod_wstunnel_check_extension(request_st * const r, void *p_d) {
     plugin_data *p = p_d;
-    const buffer *vb;
     handler_t rc;
 
     if (NULL != r->handler_module)
         return HANDLER_GO_ON;
+  if (r->http_version > HTTP_VERSION_1_1) {
+    if (!r->h2_connect_ext)
+        return HANDLER_GO_ON;
+  }
+  else {
     if (r->http_method != HTTP_METHOD_GET)
         return HANDLER_GO_ON;
     if (r->http_version != HTTP_VERSION_1_1)
@@ -567,6 +575,7 @@ static handler_t mod_wstunnel_check_extension(request_st * const r, void *p_d) {
      * Connection: upgrade, keep-alive, ...
      * Upgrade: WebSocket, ...
      */
+    const buffer *vb;
     vb = http_header_request_get(r, HTTP_HEADER_UPGRADE, CONST_STR_LEN("Upgrade"));
     if (NULL == vb
         || !http_header_str_contains_token(BUF_PTR_LEN(vb), CONST_STR_LEN("websocket")))
@@ -575,6 +584,7 @@ static handler_t mod_wstunnel_check_extension(request_st * const r, void *p_d) {
     if (NULL == vb
         || !http_header_str_contains_token(BUF_PTR_LEN(vb), CONST_STR_LEN("upgrade")))
         return HANDLER_GO_ON;
+  }
 
     mod_wstunnel_patch_config(r, p);
     if (NULL == p->conf.gw.exts) return HANDLER_GO_ON;
@@ -624,6 +634,9 @@ TRIGGER_FUNC(mod_wstunnel_handle_trigger) {
     return HANDLER_GO_ON;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_wstunnel_plugin_init(plugin *p);
 int mod_wstunnel_plugin_init(plugin *p) {
     p->version           = LIGHTTPD_VERSION_ID;
@@ -701,8 +714,11 @@ static int create_MD5_sum(request_st * const r) {
     (s)[1]=((u)>>16);    \
     (s)[2]=((u)>>8);     \
     (s)[3]=((u))
-    ws_htole32((unsigned char *)(buf+0), buf[0]);
-    ws_htole32((unsigned char *)(buf+1), buf[1]);
+    uint32_t u;
+    u = buf[0];
+    ws_htole32((unsigned char *)(buf+0), u);
+    u = buf[1];
+    ws_htole32((unsigned char *)(buf+1), u);
   #endif
     /*(overwrite buf[] with result)*/
     MD5_once((unsigned char *)buf, buf, sizeof(buf));
@@ -774,6 +790,7 @@ static int create_response_ietf_00(handler_ctx *hctx) {
 
 static int create_response_rfc_6455(handler_ctx *hctx) {
     request_st * const r = hctx->gw.r;
+  if (r->http_version == HTTP_VERSION_1_1) {
     SHA_CTX sha;
     unsigned char sha_digest[SHA_DIGEST_LENGTH];
 
@@ -804,6 +821,7 @@ static int create_response_rfc_6455(handler_ctx *hctx) {
       http_header_response_set_ptr(r, HTTP_HEADER_OTHER,
                                    CONST_STR_LEN("Sec-WebSocket-Accept"));
     buffer_append_base64_encode(value, sha_digest, SHA_DIGEST_LENGTH, BASE64_STANDARD);
+  }
 
     if (hctx->frame.type == MOD_WEBSOCKET_FRAME_TYPE_BIN)
         http_header_response_set(r, HTTP_HEADER_OTHER,
@@ -834,7 +852,7 @@ handler_t mod_wstunnel_handshake_create_response(handler_ctx *hctx) {
   #endif /* _MOD_WEBSOCKET_SPEC_RFC_6455_ */
 
   #ifdef _MOD_WEBSOCKET_SPEC_IETF_00_
-    if (hctx->hybivers == 0) {
+    if (hctx->hybivers == 0 && r->http_version == HTTP_VERSION_1_1) {
       #ifdef _MOD_WEBSOCKET_SPEC_IETF_00_
         /* 8 bytes should have been sent with request
          * for draft-ietf-hybi-thewebsocketprotocol-00 */
@@ -892,8 +910,7 @@ static int send_ietf_00(handler_ctx *hctx, mod_wstunnel_frame_type_t type, const
         http_chunk_append_mem(r, &head, 1);
         len = 4*(siz/3)+4+1;
         /* avoid accumulating too much data in memory; send to tmpfile */
-        mem = malloc(len);
-        force_assert(mem);
+        mem = ck_malloc(len);
         len=li_to_base64(mem,len,(unsigned char *)payload,siz,BASE64_STANDARD);
         http_chunk_append_mem(r, mem, len);
         free(mem);

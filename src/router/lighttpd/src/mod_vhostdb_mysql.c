@@ -114,9 +114,10 @@ static int mod_vhostdb_dbconf_setup (server *srv, const array *opts, void **vdat
             return -1;
         }
 
-        fdevent_setfd_cloexec(dbconn->net.fd);
+        my_socket sfd = mysql_get_socket(dbconn);
+        (void)fdevent_socket_set_cloexec(sfd);
 
-        dbconf = (vhostdb_config *)calloc(1, sizeof(*dbconf));
+        dbconf = (vhostdb_config *)ck_calloc(1, sizeof(*dbconf));
         dbconf->dbconn = dbconn;
         dbconf->sqlquery = sqlquery;
         *vdata = dbconf;
@@ -191,7 +192,7 @@ static int mod_vhostdb_mysql_query(request_st * const r, void *p_d, buffer *docr
 INIT_FUNC(mod_vhostdb_init) {
     static http_vhostdb_backend_t http_vhostdb_backend_mysql =
       { "mysql", mod_vhostdb_mysql_query, NULL };
-    plugin_data *p = calloc(1, sizeof(*p));
+    plugin_data *p = ck_calloc(1, sizeof(*p));
 
     /* register http_vhostdb_backend_mysql */
     http_vhostdb_backend_mysql.p_d = p;
@@ -290,6 +291,8 @@ SETDEFAULTS_FUNC(mod_vhostdb_set_defaults) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_vhostdb_mysql_plugin_init (plugin *p);
 int mod_vhostdb_mysql_plugin_init (plugin *p)
 {

@@ -13,9 +13,7 @@ __attribute_returns_nonnull__
 static fdnode *
 fdnode_init (void)
 {
-    fdnode * const restrict fdn = calloc(1, sizeof(fdnode));
-    force_assert(NULL != fdn);
-    return fdn;
+    return ck_calloc(1, sizeof(fdnode));
 }
 
 static void
@@ -27,33 +25,50 @@ fdnode_free (fdnode *fdn)
 fdnode *
 fdevent_register (fdevents *ev, int fd, fdevent_handler handler, void *ctx)
 {
+  #ifdef _WIN32
+    fdnode *fdn  = fdnode_init();
+    ev->fdarray[(fdn->fda_ndx = ev->count++)] = fdn;
+  #else
     fdnode *fdn  = ev->fdarray[fd] = fdnode_init();
+  #endif
     fdn->handler = handler;
     fdn->fd      = fd;
     fdn->ctx     = ctx;
     fdn->events  = 0;
     fdn->fde_ndx = -1;
-  #ifdef FDEVENT_USE_LIBEV
-    fdn->handler_ctx = NULL;
-  #endif
     return fdn;
 }
 
+#ifdef _WIN32
+#define fdevent_fdarray_slot(ev,fdn) &(ev)->fdarray[(fdn)->fda_ndx]
+#else
+#define fdevent_fdarray_slot(ev,fdn) &(ev)->fdarray[(fdn)->fd]
+#endif
+
 void
-fdevent_unregister (fdevents *ev, int fd)
+fdevent_unregister (fdevents *ev, fdnode *fdn)
 {
-    fdnode *fdn = ev->fdarray[fd];
-    if ((uintptr_t)fdn & 0x3) return; /*(should not happen)*/
-    ev->fdarray[fd] = NULL;
+    fdnode **fdn_slot = fdevent_fdarray_slot(ev, fdn);
+    if ((uintptr_t)*fdn_slot & 0x3) return; /*(should not happen)*/
+  #ifdef _WIN32
+    if (--ev->count != fdn->fda_ndx) {
+        /* compact fdarray; move element in last slot */
+        fdnode **fdn_last = &ev->fdarray[ev->count];
+        *fdn_slot = *fdn_last;
+        ((fdnode *)((uintptr_t)*fdn_slot & ~0x3))->fda_ndx = fdn->fda_ndx;
+        fdn_slot = fdn_last;
+    }
+  #endif
+    *fdn_slot = NULL;
     fdnode_free(fdn);
 }
 
 void
-fdevent_sched_close (fdevents *ev, int fd, int issock)
+fdevent_sched_close (fdevents *ev, fdnode *fdn)
 {
-    fdnode *fdn = ev->fdarray[fd];
-    if ((uintptr_t)fdn & 0x3) return;
-    ev->fdarray[fd] = (fdnode *)((uintptr_t)fdn | (issock ? 0x1 : 0x2));
+    fdnode **fdn_slot = fdevent_fdarray_slot(ev, fdn);
+    if ((uintptr_t)*fdn_slot & 0x3) return;
+    *fdn_slot = (fdnode *)((uintptr_t)fdn | 0x3);
     fdn->handler = (fdevent_handler)NULL;
     fdn->ctx = ev->pendclose;
     ev->pendclose = fdn;

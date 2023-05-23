@@ -1,24 +1,20 @@
 #include "first.h"
 
 #include "fdevent.h"
-#include "buffer.h"
-#include "log.h"
 
 #include <sys/types.h>
 #include "sys-socket.h"
+#include "sys-unistd.h" /* <unistd.h> */
 
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 
-#ifdef _WIN32
-#include <sys/stat.h>   /* _S_IREAD _S_IWRITE */
-#include <io.h>
-#include <share.h>      /* _SH_DENYRW */
-#include <winsock2.h>
-#endif
+#include "ck.h"
+#define force_assert(x) ck_assert(x)
+
+#ifndef _WIN32
 
 #ifdef SOCK_CLOEXEC
 static int use_sock_cloexec;
@@ -134,6 +130,48 @@ int fdevent_socket_nb_cloexec(int domain, int type, int protocol) {
 	return fd;
 }
 
+#if 0 /* not used */
+
+int fdevent_socketpair_cloexec (int domain, int typ, int protocol, int sv[2])
+{
+    sv[0] = sv[1] = -1;
+  #if defined(SOCK_CLOEXEC)
+    return socketpair(domain, typ | SOCK_CLOEXEC, protocol, sv);
+  #else
+    if (0 == socketpair(domain, typ, protocol, sv)) {
+        if (0 == fdevent_socket_set_cloexec(sv[0])
+         && 0 == fdevent_socket_set_cloexec(sv[1]))
+            return 0;
+
+        close(sv[0]);
+        close(sv[1]);
+        sv[0] = sv[1] = -1;
+    }
+    return -1;
+  #endif
+}
+
+int fdevent_socketpair_nb_cloexec (int domain, int typ, int protocol, int sv[2])
+{
+    sv[0] = sv[1] = -1;
+  #if defined(SOCK_CLOEXEC) && defined(SOCK_NONBLOCK)
+    return socketpair(domain, typ | SOCK_NONBLOCK | SOCK_CLOEXEC, protocol, sv);
+  #else
+    if (0 == socketpair(domain, typ, protocol, sv)) {
+        if (0 == fdevent_socket_set_nb_cloexec(sv[0])
+         && 0 == fdevent_socket_set_nb_cloexec(sv[1]))
+            return 0;
+
+        close(sv[0]);
+        close(sv[1]);
+        sv[0] = sv[1] = -1;
+    }
+    return -1;
+  #endif
+}
+
+#endif /* not used */
+
 int fdevent_dup_cloexec (int fd) {
   #ifdef F_DUPFD_CLOEXEC
     return fcntl(fd, F_DUPFD_CLOEXEC, 3);
@@ -186,9 +224,7 @@ int fdevent_open_cloexec(const char *pathname, int symlinks, int flags, mode_t m
 
 
 int fdevent_open_devnull(void) {
-  #if defined(_WIN32)
-    return fdevent_open_cloexec("nul", 0, O_RDWR, 0);
-  #elif defined(__sun) /* /dev/null is a symlink on Illumos */
+  #if defined(__sun) /* /dev/null is a symlink on Illumos */
     return fdevent_open_cloexec("/dev/null", 1, O_RDWR, 0);
   #else
     return fdevent_open_cloexec("/dev/null", 0, O_RDWR, 0);
@@ -212,14 +248,7 @@ int fdevent_open_dirname(char *path, int symlinks) {
 }
 
 
-#ifdef _WIN32
-#include <stdio.h>
-#endif
-
 int fdevent_pipe_cloexec (int * const fds, const unsigned int bufsz_hint) {
- #ifdef _WIN32
-    return _pipe(fds, bufsz_hint, _O_BINARY | _O_NOINHERIT);
- #else
   #ifdef HAVE_PIPE2
     if (0 != pipe2(fds, O_CLOEXEC))
   #endif
@@ -239,22 +268,16 @@ int fdevent_pipe_cloexec (int * const fds, const unsigned int bufsz_hint) {
     UNUSED(bufsz_hint);
   #endif
     return 0;
- #endif
+}
+
+
+int fdevent_socket_close(int fd) {
+    return close(fd);
 }
 
 
 int fdevent_mkostemp(char *path, int flags) {
- #ifdef _WIN32
-    /* future: if _sopen_s() returns EEXIST, might reset template (path) with
-     * trailing "XXXXXX", and then loop to try again */
-    int fd;      /*(flags might have _O_APPEND)*/
-    return (0 == _mktemp_s(path, strlen(path)+1))
-        && (0 == _sopen_s(&fd, path, _O_CREAT  | _O_EXCL   | _O_TEMPORARY
-                                   | flags     | _O_BINARY | _O_NOINHERIT,
-                          _SH_DENYRW, _S_IREAD | _S_IWRITE))
-      ? fd
-      : -1;
- #elif defined(HAVE_MKOSTEMP)
+ #if defined(HAVE_MKOSTEMP)
     return mkostemp(path, O_CLOEXEC | flags);
  #else
   #ifdef __COVERITY__
@@ -278,6 +301,20 @@ int fdevent_mkostemp(char *path, int flags) {
  #endif
 }
 
+
+/* accept4() added in Linux x86 in kernel 2.6.28, but not in arm until 2.6.36
+ * https://lwn.net/Articles/789961/ */
+#if defined(__linux__) \
+ && (defined(__arm__) || defined(__thumb__) || defined(__arm64__))
+#ifdef __has_include
+#if __has_include(<sys/syscall.h>)
+#include <sys/syscall.h>
+#endif
+#endif
+#ifndef SYS_accept4
+#define accept4(a,b,c,d) ((errno = ENOTSUP), -1)
+#endif
+#endif
 
 int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen) {
 	int fd;
@@ -394,7 +431,10 @@ int fdevent_set_stdin_stdout_stderr(int fdin, int fdout, int fderr) {
 
 
 #include <stdio.h>      /* perror() rename() */
-#include <signal.h>     /* signal() */
+#include <signal.h>     /* signal() kill() */
+#ifdef HAVE_POSIX_SPAWN
+#include <spawn.h>      /* posix_spawn*() */
+#endif
 
 
 int fdevent_rename(const char *oldpath, const char *newpath) {
@@ -402,8 +442,174 @@ int fdevent_rename(const char *oldpath, const char *newpath) {
 }
 
 
+#if !defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP) \
+ && defined(POSIX_SPAWN_CLOEXEC_DEFAULT) /* Mac OS */
+__attribute_noinline__
+static int fdevent_cloexec_default_prep (posix_spawn_file_actions_t *file_actions, int fd, int stdfd) {
+    /* (other file actions already prepped in caller,
+     *  so ok to dup2() and overwrite 3+stdfd) */
+    int rc;
+    if (fd < 0) fd = stdfd;
+    rc = posix_spawn_file_actions_adddup2(file_actions, fd, 3+stdfd);
+    if (0 != rc) return rc;
+    rc = posix_spawn_file_actions_adddup2(file_actions, 3+stdfd, stdfd);
+    if (0 != rc) return rc;
+    rc = posix_spawn_file_actions_addclose(file_actions, 3+stdfd);
+    return rc;
+}
+#endif
+
+
 pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin, int fdout, int fderr, int dfd) {
- #ifdef HAVE_FORK
+ #ifdef HAVE_POSIX_SPAWN
+
+    /* Caller must ensure that all fd* args are >= 3, i.e. > STDERR_FILENO (2),
+     * unless fd* arg is -1, in which case we preserve existing target fd, or
+     * unless fd does not have FD_CLOEXEC set *and* is not being replaced,
+     * e.g. if fd 1 is open to /dev/null and fdout is -1 and fderr is 1 so
+     * that fd 1 (STDOUT_FILENO) to /dev/null is dup2() to fd 2 (STDERR_FILENO).
+     * Caller must handle so that if any dup() is required to make fd* >= 3,
+     * then the caller has access to the new fds.  The reason fd* args >= 3
+     * is required is that we set FD_CLOEXEC on all fds (thread-safety) and
+     * a dup2() in child is used for dup2() side effect of removing FD_CLOEXEC.
+     * (posix_spawn() provides posix_spawn_file_actions_adddup2() whereas
+     *  it does not provide a means to use fcntl() to remove FD_CLOEXEC) */
+
+    sigset_t sigs;
+    posix_spawn_file_actions_t file_actions;
+    posix_spawnattr_t attr;
+    int rc;
+    pid_t pid = -1;
+    if (0 != (rc = posix_spawn_file_actions_init(&file_actions)))
+        return pid;
+    if (0 != (rc = posix_spawnattr_init(&attr))) {
+        posix_spawn_file_actions_destroy(&file_actions);
+        return pid;
+    }
+    if (   0 == (rc = (fdin  >= 0)
+                    ? posix_spawn_file_actions_adddup2(
+                        &file_actions, fdin,  STDIN_FILENO)
+                    : 0)
+        && 0 == (rc = (fdout >= 0)
+                    ? posix_spawn_file_actions_adddup2(
+                        &file_actions, fdout, STDOUT_FILENO)
+                    : 0)
+        && 0 == (rc = (fderr >= 0)
+                    ? posix_spawn_file_actions_adddup2(
+                        &file_actions, fderr, STDERR_FILENO)
+                    : 0)
+       #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR_NP
+        && 0 == (rc = (-1 != dfd)
+                    ? posix_spawn_file_actions_addfchdir_np(
+                        &file_actions, dfd)
+                    : 0)
+       #endif
+       #ifdef HAVE_POSIX_SPAWNATTR_SETCWD_NP /* (QNX Neutrino 7.1 or later) */
+        && 0 == (rc = posix_spawnattr_setcwd_np(&attr, dfd))
+        && 0 == (rc = posix_spawnattr_setxflags(&spawnattr,
+                                                  POSIX_SPAWN_SETCWD
+                                                | POSIX_SPAWN_SETSIGDEF
+                                                | POSIX_SPAWN_SETSIGMASK))
+       #else
+        && 0 == (rc = posix_spawnattr_setflags(
+                        &attr, POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK))
+       #endif
+        && 0 == (rc = sigemptyset(&sigs))
+        && 0 == (rc = posix_spawnattr_setsigmask(&attr, &sigs))
+      #ifdef __linux__
+        /* linux appears to walk all signals and to query and preserve some
+         * sigaction flags even if setting to SIG_DFL, though if specified
+         * in posix_spawnattr_setsigdefault(), resets to SIG_DFL without query.
+         * Therefore, resetting all signals results in about 1/2 the syscalls.
+         * (FreeBSD appears more efficient.  Unverified on other platforms.) */
+        && 0 == (rc = sigfillset(&sigs))
+      #else
+        /*(force reset signals to SIG_DFL if server.c set to SIG_IGN)*/
+       #ifdef SIGTTOU
+        && 0 == (rc = sigaddset(&sigs, SIGTTOU))
+       #endif
+       #ifdef SIGTTIN
+        && 0 == (rc = sigaddset(&sigs, SIGTTIN))
+       #endif
+       #ifdef SIGTSTP
+        && 0 == (rc = sigaddset(&sigs, SIGTSTP))
+       #endif
+        && 0 == (rc = sigaddset(&sigs, SIGPIPE))
+        && 0 == (rc = sigaddset(&sigs, SIGUSR1))
+      #endif
+        && 0 == (rc = posix_spawnattr_setsigdefault(&attr, &sigs))) {
+
+          #if defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP) \
+           || defined(POSIX_SPAWN_CLOEXEC_DEFAULT) /* Mac OS */
+            /* optional: potentially improve performance when many fds open
+             * (might create new file descriptor table containing only 0,1,2
+             *  instead of close() on all other fds with O_CLOEXEC flag set)
+             * optional: disable manually and externally via gdb or other
+             *   debugger by setting trace_children to non-zero value */
+            static volatile sig_atomic_t trace_children;
+            if (!trace_children) {
+              #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+                posix_spawn_file_actions_addclosefrom_np(&file_actions, 3);
+              #elif defined(POSIX_SPAWN_CLOEXEC_DEFAULT) /* Mac OS */
+                /* Apple: this workaround should not be necessary.
+                 * Please implement posix_spawn_file_actions_addclosefrom_np()*/
+                if (fdin  < 3) /* <= STDERR_FILENO */
+                    rc |= fdevent_cloexec_default_prep(&file_actions,
+                                                       fdin,  STDIN_FILENO);
+                if (fdout < 3) /* <= STDERR_FILENO */
+                    rc |= fdevent_cloexec_default_prep(&file_actions,
+                                                       fdout, STDOUT_FILENO);
+                if (fderr < 3) /* <= STDERR_FILENO */
+                    rc |= fdevent_cloexec_default_prep(&file_actions,
+                                                       fderr, STDERR_FILENO);
+                /* (not expecting any failures above and these are on fds that
+                 *  are inherited, so not cleaning up excess fds from previous
+                 *  adddup2 if any error occurs in this block) */
+                if (0 == rc)
+                    posix_spawnattr_setflags(&attr, POSIX_SPAWN_CLOEXEC_DEFAULT
+                                                  | POSIX_SPAWN_SETSIGDEF
+                                                  | POSIX_SPAWN_SETSIGMASK);
+                rc = 0;
+              #endif
+            }
+          #endif
+
+          #if !defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR_NP) \
+           && !defined(HAVE_POSIX_SPAWNATTR_SETCWD_NP)
+            /* not thread-safe, but ok since lighttpd not (currently) threaded
+             * (alternatively, check HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR_NP
+             *  along with HAVE_POSIX_SPAWN at top of block and use HAVE_FORK
+             *  below if HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR_NP not avail)*/
+            if (-1 != dfd) {
+                int ndfd = dfd;
+                dfd = fdevent_open_dirname(".", 1); /* reuse dfd for cwd fd */
+                if (-1 == dfd || 0 != fchdir(ndfd))
+                    rc = -1; /*(or could set to errno for posix consistency)*/
+            }
+            if (0 == rc)
+          #endif
+
+                 rc = posix_spawn(&pid, name, &file_actions, &attr,
+                                  argv, envp ? envp : environ);
+
+            if (0 != rc)
+                pid = -1;
+
+          #if !defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR_NP) \
+           && !defined(HAVE_POSIX_SPAWNATTR_SETCWD_NP)
+            if (-1 != dfd) {
+                if (0 != fchdir(dfd)) { /* ignore error; best effort */
+                    /*rc = errno;*/
+                }
+                close(dfd);
+            }
+          #endif
+    }
+    posix_spawn_file_actions_destroy(&file_actions);
+    posix_spawnattr_destroy(&attr);
+    return pid;
+
+ #elif defined(HAVE_FORK)
 
     pid_t pid = fork();
     if (0 != pid) return pid; /* parent (pid > 0) or fork() error (-1 == pid) */
@@ -433,6 +639,7 @@ pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin
     signal(SIGTSTP, SIG_DFL);
   #endif
     signal(SIGPIPE, SIG_DFL);
+    signal(SIGUSR1, SIG_DFL);
 
     execve(name, argv, envp ? envp : environ);
 
@@ -459,18 +666,21 @@ pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin
 }
 
 
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
-#endif
+int fdevent_kill (pid_t pid, int sig) {
+    return kill(pid, sig);
+}
 
-int fdevent_waitpid(pid_t pid, int * const status, int nb) {
+
+#include "sys-wait.h"
+
+pid_t fdevent_waitpid(pid_t pid, int * const status, int nb) {
     const int flags = nb ? WNOHANG : 0;
     pid_t rv;
     do { rv = waitpid(pid, status, flags); } while (-1 == rv && errno == EINTR);
     return rv;
 }
 
-int fdevent_waitpid_intr(pid_t pid, int * const status) {
+pid_t fdevent_waitpid_intr(pid_t pid, int * const status) {
     return waitpid(pid, status, 0);
 }
 
@@ -501,14 +711,7 @@ ssize_t fdevent_socket_read_discard (int fd, char *buf, size_t sz, int family, i
 #ifdef HAVE_SYS_FILIO_H
 #include <sys/filio.h>  /* FIONREAD (for illumos (OpenIndiana)) */
 #endif
-#ifdef _WIN32
-#include <winsock2.h>
-#endif
 int fdevent_ioctl_fionread (int fd, int fdfmt, int *toread) {
-  #ifdef _WIN32
-    if (fdfmt != S_IFSOCK) { errno = ENOTSOCK; return -1; }
-    return ioctlsocket(fd, FIONREAD, toread);
-  #else
    #ifdef __CYGWIN__
     /*(cygwin supports FIONREAD on pipes, not sockets)*/
     if (fdfmt != S_IFIFO) { errno = EOPNOTSUPP; return -1; }
@@ -516,7 +719,6 @@ int fdevent_ioctl_fionread (int fd, int fdfmt, int *toread) {
     UNUSED(fdfmt);
    #endif
     return ioctl(fd, FIONREAD, toread);
-  #endif
 }
 
 
@@ -528,12 +730,23 @@ int fdevent_connect_status(int fd) {
     return (0 == getsockopt(fd,SOL_SOCKET,SO_ERROR,&opt,&len)) ? opt : errno;
 }
 
+#endif /* !_WIN32 */
 
+
+#ifndef _WIN32
 #include <netinet/tcp.h>
-#if (defined(__APPLE__) && defined(__MACH__)) \
-  || defined(__FreeBSD__) || defined(__NetBSD__) \
+#endif
+#if  defined(__FreeBSD__) || defined(__NetBSD__) \
   || defined(__OpenBSD__) || defined(__DragonFly__)
 #include <netinet/tcp_fsm.h>
+#endif
+#if defined(__APPLE__) && defined(__MACH__)
+#include <TargetConditionals.h> /* TARGET_OS_IPHONE, TARGET_OS_MAC */
+#if TARGET_OS_IPHONE            /* iOS, tvOS, or watchOS device */
+/*#define TCPS_CLOSE_WAIT 5*/   /* ??? which header contains this, if any ??? */
+#elif TARGET_OS_MAC             /* MacOS */
+#include <netinet/tcp_fsm.h>
+#endif
 #endif
 
 /* fd must be TCP socket (AF_INET, AF_INET6), end-of-stream recv() 0 bytes */
@@ -544,7 +757,7 @@ int fdevent_is_tcp_half_closed(int fd) {
     return (0 == getsockopt(fd, IPPROTO_TCP, TCP_CONNECTION_INFO, &tcpi, &tlen)
             && tcpi.tcpi_state == TCPS_CLOSE_WAIT);
   #elif defined(TCP_INFO) && defined(TCPS_CLOSE_WAIT)
-    /* FreeBSD, NetBSD (not present in OpenBSD or DragonFlyBSD) */
+    /* FreeBSD, NetBSD, OpenBSD (not present in DragonFlyBSD) */
     struct tcp_info tcpi;
     socklen_t tlen = sizeof(tcpi);
     return (0 == getsockopt(fd, IPPROTO_TCP, TCP_INFO, &tcpi, &tlen)
@@ -576,8 +789,9 @@ int fdevent_set_so_reuseaddr (const int fd, const int opt)
 }
 
 
-#include <sys/stat.h>
+#include "sys-stat.h"
 #include "ck.h"
+#include "log.h"
 __attribute_cold__ /*(convenience routine for use at config at startup)*/
 char *
 fdevent_load_file (const char * const fn, off_t *lim, log_error_st *errh, void *(malloc_fn)(size_t), void(free_fn)(void *))
@@ -586,31 +800,76 @@ fdevent_load_file (const char * const fn, off_t *lim, log_error_st *errh, void *
     off_t sz = 0;
     char *buf = NULL;
     do {
+      #if 0
+        /* /dev/fd/ and /proc/self/fd/ might be special-cased, but then would
+         * be close()d at end of func before returning.  Then again, that might
+         * be desirable since otherwise those fds do not have FD_CLOEXEC set. */
+        fd = 0 == memcmp(fn, "/dev/fd/", sizeof("/dev/fd/")-1)
+           ? atoi(fn + sizeof("/dev/fd/")-1)
+           : 0 == memcmp(fn, "/proc/self/fd/", sizeof("/proc/self/fd/")-1)
+           ? atoi(fn + sizeof("/proc/self/fd/")-1)
+           : fdevent_open_cloexec(fn, 1, O_RDONLY, 0); /*(1: follows symlinks)*/
+      #else
         fd = fdevent_open_cloexec(fn, 1, O_RDONLY, 0); /*(1: follows symlinks)*/
+      #endif
         if (fd < 0) break;
 
         struct stat st;
         if (0 != fstat(fd, &st)) break;
-        if ((sizeof(off_t) > sizeof(size_t) && st.st_size >= (off_t)~(size_t)0u)
-            || (*lim != 0 && st.st_size >= *lim)) {
-            errno = EOVERFLOW;
-            break;
-        }
-
-        sz = st.st_size;
-        buf = malloc_fn((size_t)sz+1);/*+1 trailing '\0' for str funcs on data*/
-        if (NULL == buf) break;
-
-        if (sz) {
-            ssize_t rd = 0;
-            off_t off = 0;
-            do {
-                rd = read(fd, buf+off, (size_t)(sz-off));
-            } while (rd > 0 ? (off += rd) != sz : rd < 0 && errno == EINTR);
-            if (off != sz) { /*(file truncated?)*/
-                if (rd >= 0) errno = EIO;
+        if (S_ISREG(st.st_mode)) {
+            sz = st.st_size;
+            if ((sizeof(off_t) > sizeof(size_t) && sz >= (off_t)~(size_t)0u)
+                || (*lim != 0 && sz >= *lim)) {
+                errno = EOVERFLOW;
                 break;
             }
+            buf = malloc_fn((size_t)sz+1); /* +1 trailing '\0' for str funcs */
+            if (NULL == buf) break;
+
+            if (sz) {
+                ssize_t rd = 0;
+                off_t off = 0;
+                do {
+                    rd = read(fd, buf+off, (size_t)(sz-off));
+                } while (rd > 0 ? (off += rd) != sz : rd < 0 && errno == EINTR);
+                if (off != sz) { /*(file truncated?)*/
+                    if (rd >= 0) errno = EIO;
+                    break;
+                }
+            }
+        }
+        else {
+            /* attempt to read from non-regular file
+             * e.g. FIFO/pipe from shell HERE doc (turns into e.g. "/dev/fd/63")
+             * Note: read() might block! */
+          #ifndef _WIN32
+          #ifdef O_NONBLOCK
+            /*(else read() might err EAGAIN Resource temporarily unavailable)*/
+            if (fcntl(fd, F_SETFL, (O_RDONLY|FDEVENT_O_FLAGS) & ~O_NONBLOCK)) {}
+            /*(ignore fcntl() error; not expected and detected later if err)*/
+          #endif
+          #endif
+            ssize_t rd;
+            off_t bsz = 0;
+            if (*lim == 0)
+                *lim = 32*1024*1024; /* set arbitrary limit, if not specified */
+            do {
+                if (bsz <= sz+2) {
+                    if (bsz >= *lim) { rd = -1; errno = EOVERFLOW; break; }
+                    bsz = bsz ? (bsz << 1) : 65536;
+                    if (bsz > *lim) bsz = *lim;
+                    char *nbuf = malloc_fn((size_t)bsz);
+                    if (NULL == nbuf) { rd = -1; break; }
+                    if (buf) {
+                        memcpy(nbuf, buf, sz);
+                        ck_memzero(buf, (size_t)sz);
+                        free_fn(buf);
+                    }
+                    buf = nbuf;
+                }
+                rd = read(fd, buf+sz, (size_t)(bsz-sz-1));
+            } while (rd > 0 ? (sz += rd) : rd < 0 && errno == EINTR);
+            if (rd != 0) break;
         }
 
         buf[sz] = '\0';

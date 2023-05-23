@@ -37,7 +37,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_userdir_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 FREE_FUNC(mod_userdir_free) {
@@ -260,9 +260,7 @@ static handler_t mod_userdir_docroot_construct(request_st * const r, plugin_data
      * and some special handling for trailing '.', ' ' and '/' on windows
      * we assume that no docroot/physical handler changed this
      * (docroot should only set the docroot/server name, physical should only
-     *  change the physical.path;
-     *  the exception mod_secdownload doesn't work with userdir anyway)
-     */
+     *  change the physical.path) */
     buffer_append_slash(&r->physical.path);
     /* if no second '/' is found, we assume that it was stripped from the
      * uri.path for the special handling on windows.  we do not care about the
@@ -332,6 +330,8 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_userdir_plugin_init(plugin *p);
 int mod_userdir_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

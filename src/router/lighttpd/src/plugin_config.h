@@ -15,6 +15,8 @@ typedef enum {
 	CONFIG_COND_MATCH,   /** =~ */
 	CONFIG_COND_NE,      /** != */
 	CONFIG_COND_NOMATCH, /** !~ */
+	CONFIG_COND_PREFIX,  /** =^ */ /*(use ELSE for not-prefix)*/
+	CONFIG_COND_SUFFIX,  /** =$ */ /*(use ELSE for not-suffix)*/
 	CONFIG_COND_ELSE     /** (always true if reached) */
 } config_cond_t;
 
@@ -101,7 +103,8 @@ typedef enum { T_CONFIG_UNSET,
 
 typedef enum { T_CONFIG_SCOPE_UNSET,
 		T_CONFIG_SCOPE_SERVER,
-		T_CONFIG_SCOPE_CONNECTION
+		T_CONFIG_SCOPE_CONNECTION,
+		T_CONFIG_SCOPE_SOCKET
 } config_scope_type_t;
 
 typedef struct config_plugin_value {
@@ -187,5 +190,37 @@ int config_feature_bool (const server *srv, const char *feature, int default_val
 __attribute_cold__
 __attribute_pure__
 int32_t config_feature_int (const server *srv, const char *feature, int32_t default_value);
+
+
+/**
+ * plugin statistics
+ * convention: key is <module-prefix>.<name>, value is counter
+ *
+ * example:
+ *   fastcgi.backends        = 10
+ *   fastcgi.active-backends = 6
+ *   fastcgi.backend.<key>.load = 24
+ *   fastcgi.backend.<key>....
+ *
+ *   fastcgi.backend.<key>.disconnects = ...
+ */
+__declspec_dllimport__
+extern array plugin_stats;
+
+#define plugin_stats_get_ptr(s, len) \
+        array_get_int_ptr(&plugin_stats, (s), (len))
+
+#define plugin_stats_incr(s, len) \
+        (++(*array_get_int_ptr(&plugin_stats, (s), (len))))
+
+#define plugin_stats_inc(s) \
+        plugin_stats_incr((s), sizeof(s)-1)
+
+#define plugin_stats_decr(s, len) \
+        (--(*array_get_int_ptr(&plugin_stats, (s), (len))))
+
+#define plugin_stats_set(s, len, val) \
+        (*array_get_int_ptr(&plugin_stats, (s), (len)) = (val))
+
 
 #endif

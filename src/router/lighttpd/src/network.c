@@ -14,12 +14,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "sys-time.h"
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef _WIN32
+/* (Note: assume overwrite == 1 in this setenv() replacement) */
+/*#define setenv(name,value,overwrite)  SetEnvironmentVariable((name),(value))*/
+/*#define unsetenv(name)                SetEnvironmentVariable((name),NULL)*/
+#define setenv(name,value,overwrite)  _putenv_s((name), strdup(value))
+#define unsetenv(name)                _putenv_s((name), "")
+#endif
 
 void
 network_accept_tcp_nagle_disable (const int fd)
@@ -74,6 +82,13 @@ static handler_t network_server_handle_fdevent(void *context, int revents) {
 
         if (nagle_disable)
             network_accept_tcp_nagle_disable(fd);
+      #ifdef HAVE_SYS_UN_H /*(see sock_addr.h)*/
+        else if (addrlen <= 2) /*(AF_UNIX if !nagle_disable)*/
+            memcpy(addr.un.sun_path, srv_socket->addr.un.sun_path,
+                   srv_socket->srv_token_colon < sizeof(addr.un.sun_path)
+                   ? (size_t)srv_socket->srv_token_colon+1 /*(+1 for '\0')*/
+                   : sizeof(addr.un.sun_path));/*(escaped len might be longer)*/
+      #endif
 
         connection *con = connection_accepted(srv, srv_socket, &addr, fd);
         if (__builtin_expect( (!con), 0)) return HANDLER_GO_ON;
@@ -81,6 +96,19 @@ static handler_t network_server_handle_fdevent(void *context, int revents) {
     } while (--loops);
 
     if (loops) {
+      #ifdef _WIN32
+        switch (WSAGetLastError()) {
+          case WSAEWOULDBLOCK:
+          case WSAECONNRESET:
+          case WSAENOBUFS:
+          case WSAEINTR:
+          case WSAECONNABORTED:
+          case WSAEMFILE:
+            break;
+          default:
+            log_serror(srv->errh, __FILE__, __LINE__, "accept()");
+        }
+      #else
         switch (errno) {
           case EAGAIN:
          #if EWOULDBLOCK != EAGAIN
@@ -93,14 +121,109 @@ static handler_t network_server_handle_fdevent(void *context, int revents) {
           default:
             log_perror(srv->errh, __FILE__, __LINE__, "accept()");
         }
+      #endif
     }
 
     return HANDLER_GO_ON;
 }
 
-static void network_host_normalize_addr_str(buffer *host, sock_addr *addr) {
+#ifdef HAVE_SYS_UN_H
+
+/* abstract socket (Linux, QNX?, Windows 10?) */
+
+__attribute_cold__
+static void
+network_abstract_socket_enc (buffer * const restrict abstract,
+                             unsigned char * const restrict sun_path,
+                             const uint32_t len)
+{
+    /*(strings needing encoding are expected to be short;
+     * code not written for performance)*/
+    buffer_clear(abstract);
+    uint32_t n = 0;
+    for (uint32_t i = 0; i < len; ++i)
+        n += (sun_path[i]-20 < 107) ? 1 : 4;
+    char *s = buffer_extend(abstract, n);
+    for (uint32_t i = 0; i < len; ++i) {
+        /* (sun_path[i] >= 20 && sun_path[i] < 127 && sun_path[i] != '\\') */
+        if (sun_path[i]-20 < 107 && sun_path[i] != '\\')
+            *s++ = ((char *)sun_path)[i];
+        else {
+            s[0] = '\\';
+            s[1] = 'x';
+            s[2] = "0123456789abcdef"[sun_path[i] >>  4];
+            s[3] = "0123456789abcdef"[sun_path[i] & 0xF];
+            s += 4;
+        }
+    }
+}
+
+__attribute_cold__
+static uint32_t
+network_abstract_socket_dec (const buffer * const restrict abstract,
+                             char * const restrict sun_path,
+                             const uint32_t plen)
+{
+    /*(strings expected to begin with "\\x00")*/
+    /*(strings needing decoding are expected to be short;
+     * code not written for performance)*/
+    const char *s = abstract->ptr;
+    uint32_t n = 0;
+    for (int hi, lo; *s && n < plen; ++n) {
+        if (s[0] != '\\')
+            sun_path[n] = *s++;
+        else if (s[1] == 'x'
+                 && (hi = hex2int(s[2])) != 0xFF
+                 && (lo = hex2int(s[3])) != 0xFF) {
+            sun_path[n] = (char)((hi << 4) | lo);
+            s += 4;
+        }
+        else
+            break;
+    }
+    return *s == '\0' ? n : 0;
+}
+
+__attribute_cold__
+static int
+network_abstract_socket_parse (const buffer *abstract,
+                               sock_addr *addr, socklen_t *addr_len,
+                               log_error_st *errh)
+{
+    /* abstract socket (Linux, QNX?, Windows 10?) */
+    /*assert(*addr_len >= sizeof(struct sockaddr_un));*/
+    memset(addr, 0, sizeof(struct sockaddr_un));
+    addr->un.sun_family = AF_UNIX;
+    uint32_t len =
+      (uint32_t)(*addr_len - offsetof(struct sockaddr_un, sun_path));
+    if (len > sizeof(addr->un.sun_path))
+        len = sizeof(addr->un.sun_path);
+    len = network_abstract_socket_dec(abstract, addr->un.sun_path, len);
+    if (len) {
+        *addr_len = offsetof(struct sockaddr_un, sun_path) + len;
+        return 0;
+    }
+    else {
+        log_error(errh, __FILE__, __LINE__,
+          "abstract unix socket filename invalid encoding or too long: %s",
+          abstract->ptr);
+        return -1;
+    }
+}
+
+#endif /* HAVE_SYS_UN_H */
+
+static void network_host_normalize_addr_str(buffer *host, sock_addr *addr, socklen_t addr_len) {
     buffer_clear(host);
     sock_addr_stringify_append_buffer(host, addr);
+  #ifdef HAVE_SYS_UN_H
+    if (AF_UNIX == sock_addr_get_family(addr) && 0 == buffer_clen(host))
+        network_abstract_socket_enc(host, (unsigned char *)addr->un.sun_path,
+                                    (uint32_t)(addr_len
+                                    - offsetof(struct sockaddr_un, sun_path)));
+  #else
+    UNUSED(addr_len);
+  #endif
 }
 
 static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr_len, buffer *host, int use_ipv6) {
@@ -115,14 +238,16 @@ static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr
         return -1;
     }
     h = host->ptr;
-    if (h[0] == '/') {
+    if (h[0] == '/' || h[0] == '\\') {
       #ifdef HAVE_SYS_UN_H
+        if (h[0] == '\\' && h[1] == 'x' && h[2] == '0' && h[3] == '0')
+            return network_abstract_socket_parse(host,addr,addr_len,srv->errh);
         return (1 ==
                 sock_addr_from_str_hints(addr,addr_len,h,AF_UNIX,0,srv->errh))
           ? 0
           : -1;
       #else
-        log_error(srv, __FILE__, __LINE__,
+        log_error(srv->errh, __FILE__, __LINE__,
           "ERROR: Unix Domain sockets are not supported.");
         return -1;
       #endif
@@ -163,13 +288,11 @@ static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr
 }
 
 static void network_srv_sockets_append(server *srv, server_socket *srv_socket) {
-	if (srv->srv_sockets.used == srv->srv_sockets.size) {
-		srv->srv_sockets.size += 4;
-		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket*));
-		force_assert(NULL != srv->srv_sockets.ptr);
-	}
-
-	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
+    server_socket_array * const srv_sockets = &srv->srv_sockets;
+    if (!(srv_sockets->used & (4-1)))
+        ck_realloc_u32((void **)&srv_sockets->ptr, srv_sockets->used,
+                       4, sizeof(*srv_sockets->ptr));
+    srv_sockets->ptr[srv_sockets->used++] = srv_socket;
 }
 
 typedef struct {
@@ -241,13 +364,28 @@ static uint8_t network_srv_token_colon (const buffer * const b) {
     return colon ? (uint8_t)(colon - p) : (uint8_t)buffer_clen(b);
 }
 
-static int network_server_init(server *srv, network_socket_config *s, buffer *host_token, size_t sidx, int stdin_fd) {
+static void network_srv_socket_init_token (server_socket * const srv_socket, const buffer * const token) {
+    buffer * const srv_token = srv_socket->srv_token = buffer_init();
+    buffer_copy_buffer(srv_token, token);
+  #ifdef HAVE_SYS_UN_H
+    /*(srv_socket->addr must have been initialized by caller)*/
+    if (AF_UNIX == sock_addr_get_family(&srv_socket->addr))
+        srv_socket->srv_token_colon = buffer_clen(srv_token);
+    else
+  #endif
+        srv_socket->srv_token_colon = network_srv_token_colon(srv_token);
+}
+
+static int network_server_init(server *srv, const network_socket_config *s, buffer *host_token, size_t sidx, int stdin_fd) {
 	server_socket *srv_socket;
 	const char *host;
 	socklen_t addr_len = sizeof(sock_addr);
 	sock_addr addr;
 	int family = 0;
+	int use_ipv6 = s->use_ipv6;
+      #ifdef HAVE_IPV6
 	int set_v6only = 0;
+      #endif
 
 	if (buffer_is_blank(host_token)) {
 		log_error(srv->errh, __FILE__, __LINE__,
@@ -260,26 +398,30 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	 *  binary addresses are matched further below) */
 	for (uint32_t i = 0; i < srv->srv_sockets.used; ++i) {
 		if (buffer_is_equal(srv->srv_sockets.ptr[i]->srv_token, host_token)) {
+			if ((unsigned short)~0u == srv->srv_sockets.ptr[i]->sidx) {
+				srv->srv_sockets.ptr[i]->sidx = sidx;
+				srv->srv_sockets.ptr[i]->is_ssl = s->ssl_enabled;
+			}
 			return 0;
 		}
 	}
 
 	host = host_token->ptr;
-	if ((s->use_ipv6 && (*host == '\0' || *host == ':')) || (host[0] == '[' && host[1] == ']')) {
+	if ((use_ipv6 && (*host == '\0' || *host == ':')) || (host[0] == '[' && host[1] == ']')) {
 		log_error(srv->errh, __FILE__, __LINE__,
 		  "warning: please use server.use-ipv6 only for hostnames, "
 		  "not without server.bind / empty address; your config will "
 		  "break if the kernel default for IPV6_V6ONLY changes");
 	}
-	if (*host == '[') s->use_ipv6 = 1;
+	if (*host == '[') use_ipv6 = 1;
 
 	memset(&addr, 0, sizeof(addr));
 	if (-1 != stdin_fd) {
 		if (-1 == getsockname(stdin_fd, (struct sockaddr *)&addr, &addr_len)) {
-			log_perror(srv->errh, __FILE__, __LINE__, "getsockname()");
+			log_serror(srv->errh, __FILE__, __LINE__, "getsockname()");
 			return -1;
 		}
-	} else if (0 != network_host_parse_addr(srv, &addr, &addr_len, host_token, s->use_ipv6)) {
+	} else if (0 != network_host_parse_addr(srv, &addr, &addr_len, host_token, use_ipv6)) {
 		return -1;
 	}
 
@@ -300,7 +442,7 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	}
       #endif
 
-	network_host_normalize_addr_str(host_token, &addr);
+	network_host_normalize_addr_str(host_token, &addr, addr_len);
 	host = host_token->ptr;
 
 	if (srv->srvconf.preflight_check) {
@@ -310,21 +452,21 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	/* check if we already know this socket (after potential DNS resolution), and if yes, don't init it */
 	for (uint32_t i = 0; i < srv->srv_sockets.used; ++i) {
 		if (0 == memcmp(&srv->srv_sockets.ptr[i]->addr, &addr, sizeof(addr))) {
+			if ((unsigned short)~0u == srv->srv_sockets.ptr[i]->sidx) {
+				srv->srv_sockets.ptr[i]->sidx = sidx;
+				srv->srv_sockets.ptr[i]->is_ssl = s->ssl_enabled;
+			}
 			return 0;
 		}
 	}
 
-	srv_socket = calloc(1, sizeof(*srv_socket));
-	force_assert(NULL != srv_socket);
+	srv_socket = ck_calloc(1, sizeof(*srv_socket));
 	memcpy(&srv_socket->addr, &addr, addr_len);
 	srv_socket->fd = -1;
 	srv_socket->sidx = sidx;
 	srv_socket->is_ssl = s->ssl_enabled;
 	srv_socket->srv = srv;
-	buffer_copy_buffer((srv_socket->srv_token = buffer_init()), host_token);
-	srv_socket->srv_token_colon =
-	  network_srv_token_colon(srv_socket->srv_token);
-
+	network_srv_socket_init_token(srv_socket, host_token);
 	network_srv_sockets_append(srv, srv_socket);
 
 	if (srv->sockets_disabled) { /* lighttpd -1 (one-shot mode) */
@@ -344,8 +486,8 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 
 	if (-1 != stdin_fd) {
 		srv_socket->fd = stdin_fd;
-		if (-1 == fdevent_fcntl_set_nb_cloexec(stdin_fd)) {
-			log_perror(srv->errh, __FILE__, __LINE__, "fcntl");
+		if (-1 == fdevent_socket_set_nb_cloexec(stdin_fd)) {
+			log_serror(srv->errh, __FILE__, __LINE__, "fcntl()");
 			return -1;
 		}
 	} else
@@ -354,7 +496,7 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 		/* check if the socket exists and try to connect to it. */
 		force_assert(host); /*(static analysis hint)*/
 		if (-1 == (srv_socket->fd = fdevent_socket_cloexec(AF_UNIX, SOCK_STREAM, 0))) {
-			log_perror(srv->errh, __FILE__, __LINE__, "socket");
+			log_serror(srv->errh, __FILE__, __LINE__, "socket()");
 			return -1;
 		}
 		if (0 == connect(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)) {
@@ -364,27 +506,41 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 		}
 
 		/* connect failed */
+	  #ifdef _WIN32
+		switch(WSAGetLastError()) {
+		case WSAECONNRESET:
+		case WSAECONNREFUSED:
+			/* socket might or might not exist; unlink anyway */
+			if (*host == '/') unlink(host);
+			break;
+		default:
+			log_serror(srv->errh, __FILE__, __LINE__,
+			  "testing socket failed: connect() %s", host);
+			return -1;
+		}
+	  #else
 		switch(errno) {
 		case ECONNREFUSED:
-			unlink(host);
+			if (*host == '/') unlink(host);
 			break;
 		case ENOENT:
 			break;
 		default:
-			log_perror(srv->errh, __FILE__, __LINE__,
-			  "testing socket failed: %s", host);
+			log_serror(srv->errh, __FILE__, __LINE__,
+			  "testing socket failed: connect() %s", host);
 			return -1;
 		}
+	  #endif
 
-		if (-1 == fdevent_fcntl_set_nb(srv_socket->fd)) {
-			log_perror(srv->errh, __FILE__, __LINE__, "fcntl");
+		if (-1 == fdevent_socket_set_nb(srv_socket->fd)) {
+			log_serror(srv->errh, __FILE__, __LINE__, "fcntl()");
 			return -1;
 		}
 	} else
 #endif
 	{
 		if (-1 == (srv_socket->fd = fdevent_socket_nb_cloexec(family, SOCK_STREAM, IPPROTO_TCP))) {
-			log_perror(srv->errh, __FILE__, __LINE__, "socket");
+			log_serror(srv->errh, __FILE__, __LINE__, "socket()");
 			return -1;
 		}
 
@@ -392,35 +548,38 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 		if (set_v6only) {
 				int val = (set_v6only > 0);
 				if (-1 == setsockopt(srv_socket->fd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val))) {
-					log_perror(srv->errh, __FILE__, __LINE__, "setsockopt(IPV6_V6ONLY)");
+					log_serror(srv->errh, __FILE__, __LINE__, "setsockopt(IPV6_V6ONLY)");
 					return -1;
 				}
 		}
 #endif
 	}
 
-	/* */
+  #ifdef _WIN32
+	++srv->cur_fds;
+  #else
 	srv->cur_fds = srv_socket->fd;
+  #endif
 
 	if (fdevent_set_so_reuseaddr(srv_socket->fd, 1) < 0) {
-		log_perror(srv->errh, __FILE__, __LINE__, "setsockopt(SO_REUSEADDR)");
+		log_serror(srv->errh, __FILE__, __LINE__, "setsockopt(SO_REUSEADDR)");
 		return -1;
 	}
 
 	if (family != AF_UNIX) {
 		if (fdevent_set_tcp_nodelay(srv_socket->fd, 1) < 0) {
-			log_perror(srv->errh, __FILE__, __LINE__, "setsockopt(TCP_NODELAY)");
+			log_serror(srv->errh, __FILE__, __LINE__, "setsockopt(TCP_NODELAY)");
 			return -1;
 		}
 	}
 
 	if (-1 != stdin_fd) { } else
 	if (0 != bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)) {
-		log_perror(srv->errh, __FILE__, __LINE__,
-		  "can't bind to socket: %s", host);
+		log_serror(srv->errh, __FILE__, __LINE__, "bind() %s", host);
 		return -1;
 	}
 
+  #ifdef HAVE_SYS_UN_H
 	if (-1 != stdin_fd) { } else
 	if (AF_UNIX == family && s->socket_perms) {
 		mode_t m = 0;
@@ -428,16 +587,17 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 			m <<= 3;
 			m |= (*str - '0');
 		}
-		if (0 != m && -1 == chmod(host, m)) {
+		if (0 != m && *host == '/' && -1 == chmod(host, m)) {
 			log_perror(srv->errh, __FILE__, __LINE__,
 			  "chmod(\"%s\", %s)", host, s->socket_perms->ptr);
 			return -1;
 		}
 	}
+  #endif
 
 	if (-1 != stdin_fd) { } else
 	if (-1 == listen(srv_socket->fd, s->listen_backlog)) {
-		log_perror(srv->errh, __FILE__, __LINE__, "listen");
+		log_serror(srv->errh, __FILE__, __LINE__, "listen()");
 		return -1;
 	}
 
@@ -447,7 +607,7 @@ static int network_server_init(server *srv, network_socket_config *s, buffer *ho
 	else if (s->defer_accept) {
 		int v = s->defer_accept;
 		if (-1 == setsockopt(srv_socket->fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &v, sizeof(v))) {
-			log_perror(srv->errh, __FILE__, __LINE__, "can't set TCP_DEFER_ACCEPT");
+			log_serror(srv->errh, __FILE__, __LINE__, "setsockopt(TCP_DEFER_ACCEPT)");
 		}
 	}
 #endif
@@ -479,7 +639,7 @@ int network_close(server *srv) {
 		server_socket *srv_socket = srv->srv_sockets.ptr[i];
 		if (srv_socket->fd != -1) {
 			network_unregister_sock(srv, srv_socket);
-			close(srv_socket->fd);
+			fdio_close_socket(srv_socket->fd);
 		}
 
 		buffer_free(srv_socket->srv_token);
@@ -490,12 +650,11 @@ int network_close(server *srv) {
 	free(srv->srv_sockets.ptr);
 	srv->srv_sockets.ptr = NULL;
 	srv->srv_sockets.used = 0;
-	srv->srv_sockets.size = 0;
 
 	for (uint32_t i = 0; i < srv->srv_sockets_inherited.used; ++i) {
 		server_socket *srv_socket = srv->srv_sockets_inherited.ptr[i];
 		if (srv_socket->fd != -1 && srv_socket->sidx != (unsigned short)~0u) {
-			close(srv_socket->fd);
+			fdio_close_socket(srv_socket->fd);
 		}
 
 		buffer_free(srv_socket->srv_token);
@@ -506,7 +665,6 @@ int network_close(server *srv) {
 	free(srv->srv_sockets_inherited.ptr);
 	srv->srv_sockets_inherited.ptr = NULL;
 	srv->srv_sockets_inherited.used = 0;
-	srv->srv_sockets_inherited.size = 0;
 
 	return 0;
 }
@@ -519,7 +677,7 @@ void network_socket_activation_to_env (server * const srv) {
         server_socket *srv_socket = srv->srv_sockets.ptr[n];
         if (srv_socket->fd < fd) continue;
         if (srv_socket->fd == fd) {
-            fdevent_clrfd_cloexec(fd);
+            (void)fdevent_socket_clr_cloexec(fd);
             ++fd;
             continue;
         }
@@ -529,7 +687,7 @@ void network_socket_activation_to_env (server * const srv) {
                 break;
         }
         if (i < srv->srv_sockets.used) {
-            fdevent_clrfd_cloexec(fd);
+            (void)fdevent_socket_clr_cloexec(fd);
             ++fd;
             --n; /* loop to reprocess this entry */
             continue;
@@ -552,7 +710,7 @@ void network_socket_activation_to_env (server * const srv) {
     setenv("LISTEN_PID", tb->ptr, 1);
 }
 
-static int network_socket_activation_nfds(server *srv, network_socket_config *s, int nfds) {
+static int network_socket_activation_nfds(server *srv, const network_socket_config *s, int nfds) {
     buffer *host = buffer_init();
     socklen_t addr_len;
     sock_addr addr;
@@ -561,11 +719,11 @@ static int network_socket_activation_nfds(server *srv, network_socket_config *s,
     for (int fd = 3; fd < nfds; ++fd) {
         addr_len = sizeof(sock_addr);
         if (-1 == (rc = getsockname(fd, (struct sockaddr *)&addr, &addr_len))) {
-            log_perror(srv->errh, __FILE__, __LINE__,
+            log_serror(srv->errh, __FILE__, __LINE__,
               "socket activation getsockname()");
             break;
         }
-        network_host_normalize_addr_str(host, &addr);
+        network_host_normalize_addr_str(host, &addr, addr_len);
         rc = network_server_init(srv, s, host, 0, fd);
         if (0 != rc) break;
         srv->srv_sockets.ptr[srv->srv_sockets.used-1]->sidx = (unsigned short)~0u;
@@ -576,7 +734,7 @@ static int network_socket_activation_nfds(server *srv, network_socket_config *s,
     return rc;
 }
 
-static int network_socket_activation_from_env(server *srv, network_socket_config *s) {
+static int network_socket_activation_from_env(server *srv, const network_socket_config *s) {
     char *listen_pid = getenv("LISTEN_PID");
     char *listen_fds = getenv("LISTEN_FDS");
     pid_t lpid = listen_pid ? (pid_t)strtoul(listen_pid,NULL,10) : 0;
@@ -602,46 +760,32 @@ int network_init(server *srv, int stdin_fd) {
     static const config_plugin_keys_t cpk[] = {
       { CONST_STR_LEN("ssl.engine"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.listen-backlog"),
         T_CONFIG_INT,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.socket-perms"),
         T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.bsd-accept-filter"),
         T_CONFIG_STRING,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.defer-accept"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.use-ipv6"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.set-v6only"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
+        T_CONFIG_SCOPE_SOCKET }
      ,{ CONST_STR_LEN("server.v4mapped"),
         T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-    #if 0 /* TODO: more integration needed ... */
-     ,{ CONST_STR_LEN("mbedtls.engine"),
-        T_CONFIG_BOOL,
-        T_CONFIG_SCOPE_CONNECTION }
-    #endif
+        T_CONFIG_SCOPE_SOCKET }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
     };
-
-  #ifdef __WIN32
-    WSADATA wsaData;
-    WORD wVersionRequested = MAKEWORD(2, 2);
-    if (0 != WSAStartup(wVersionRequested, &wsaData)) {
-        /* Tell the user that we could not find a usable WinSock DLL */
-        return -1;
-    }
-  #endif
 
     if (0 != network_write_init(srv)) return -1;
 
@@ -665,6 +809,9 @@ int network_init(server *srv, int stdin_fd) {
             network_merge_config(&p->defaults, cpv);
     }
 
+    if (config_feature_bool(srv, "server.graceful-restart-bg", 0))
+        srv->srvconf.systemd_socket_activation = 1;
+
     int rc = 0;
     do {
 
@@ -686,7 +833,7 @@ int network_init(server *srv, int stdin_fd) {
             /*assert(buffer_eq_slen(b, CONST_STR_LEN("/dev/stdin")));*/
             rc = (0 == srv->srv_sockets.used)
               ? network_server_init(srv, &p->defaults, b, 0, stdin_fd)
-              : close(stdin_fd);/*(graceful restart listening to "/dev/stdin")*/
+              : fdio_close_socket(stdin_fd);/*(graceful restart; "/dev/stdin")*/
             buffer_free(b);
             if (0 != rc) break;
         }
@@ -720,7 +867,7 @@ int network_init(server *srv, int stdin_fd) {
                 rc = network_host_parse_addr(srv, &addr, &addr_len,
                                              host_token, p->conf.use_ipv6);
                 if (0 != rc) break;
-                network_host_normalize_addr_str(host_token, &addr);
+                network_host_normalize_addr_str(host_token, &addr, addr_len);
             }
         }
         if (0 != rc) break;
@@ -739,8 +886,8 @@ int network_init(server *srv, int stdin_fd) {
             if (srv->srvconf.bindhost)
                 buffer_copy_buffer(b, srv->srvconf.bindhost);
             /*(skip adding port if unix socket path)*/
-            if (!b->ptr || b->ptr[0] != '/') {
-                buffer_append_string_len(b, CONST_STR_LEN(":"));
+            if (!b->ptr || (b->ptr[0] != '/' && b->ptr[0] != '\\')) {
+                buffer_append_char(b, ':');
                 buffer_append_int(b, srv->srvconf.port);
             }
           #ifdef __COVERITY__
@@ -760,16 +907,21 @@ int network_init(server *srv, int stdin_fd) {
                         != srv->srv_sockets_inherited.ptr[i]->sidx)
                         continue;
                     srv->srv_sockets_inherited.ptr[i]->sidx = 0;
-                srv_socket = calloc(1, sizeof(server_socket));
-                force_assert(NULL != srv_socket);
+                srv_socket = ck_calloc(1, sizeof(server_socket));
                 memcpy(srv_socket, srv->srv_sockets_inherited.ptr[i],
                        sizeof(server_socket));
-                const buffer * const srv_token = srv_socket->srv_token;
-                buffer_copy_buffer((srv_socket->srv_token = buffer_init()),
-                                   srv_token);
-                srv_socket->srv_token_colon =
-                  network_srv_token_colon(srv_socket->srv_token);
+                srv_socket->is_ssl = p->defaults.ssl_enabled;
+                /*(note: re-inits srv_socket->srv_token to new buffer ptr)*/
+                network_srv_socket_init_token(srv_socket,srv_socket->srv_token);
                 network_srv_sockets_append(srv, srv_socket);
+            }
+        }
+
+        /* reset sidx of any graceful sockets not explicitly listed in config */
+        for (uint32_t i = 0; i < srv->srv_sockets.used; ++i) {
+            if ((unsigned short)~0u == srv->srv_sockets.ptr[i]->sidx) {
+                srv->srv_sockets.ptr[i]->sidx = 0;
+                srv->srv_sockets.ptr[i]->is_ssl = p->defaults.ssl_enabled;
             }
         }
 
@@ -782,9 +934,9 @@ int network_init(server *srv, int stdin_fd) {
 void network_unregister_sock(server *srv, server_socket *srv_socket) {
 	fdnode *fdn = srv_socket->fdn;
 	if (NULL == fdn) return;
-	fdevent_fdnode_event_del(srv->ev, fdn);
-	fdevent_unregister(srv->ev, fdn->fd);
 	srv_socket->fdn = NULL;
+	fdevent_fdnode_event_del(srv->ev, fdn);
+	fdevent_unregister(srv->ev, fdn);
 }
 
 int network_register_fdevents(server *srv) {

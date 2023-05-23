@@ -33,9 +33,15 @@ cp "${srcdir}/docroot/"*.html \
    "${srcdir}/docroot/"*.fcgi \
    "${srcdir}/docroot/"*.txt \
    "${tmpdir}/servers/www.example.org/pages/"
-cp "${srcdir}/lighttpd.user" "${tmpdir}/"
-cp "${srcdir}/lighttpd.htpasswd" "${tmpdir}/"
-cp "${srcdir}/var-include-sub.conf" "${tmpdir}/../"
+
+# copy configs to alternate build root, if alternate build root is used
+# (tests will fail to run from an alternate build root on platforms
+#  on which cp -n is not supported, such as NetBSD and OpenBSD)
+cp -n "${srcdir}/"*.conf \
+      "${srcdir}/lighttpd.user" \
+      "${srcdir}/lighttpd.htpasswd" \
+      "${srcdir}/var-include-sub.conf" \
+      "${top_builddir}/tests/" 2>/dev/null || true
 
 # create some content
 touch "${tmpdir}/servers/www.example.org/pages/image.jpg" \
@@ -48,7 +54,7 @@ touch "${tmpdir}/servers/www.example.org/pages/image.jpg" \
 echo "12345" > "${tmpdir}/servers/123.example.org/pages/12345.txt"
 echo "12345" > "${tmpdir}/servers/123.example.org/pages/12345.html"
 echo "12345" > "${tmpdir}/servers/123.example.org/pages/dummyfile.bla"
-echo "12345" > "${tmpdir}/servers/123.example.org/pages/range.pdf"
+echo "12345" > "${tmpdir}/servers/123.example.org/pages/range.disabled"
 cat - <<HERE > "${tmpdir}/servers/123.example.org/pages/100.txt"
 123456789
 123456789

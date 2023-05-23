@@ -38,7 +38,7 @@ typedef struct {
 } plugin_data;
 
 INIT_FUNC(mod_evhost_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 static void mod_evhost_free_path_pieces(const buffer *path_pieces) {
@@ -125,9 +125,7 @@ static buffer * mod_evhost_parse_pattern(const char *ptr) {
 		++used;
 	}
 
-	buffer * const path_pieces =
-	  malloc(sizeof(bptr) + ((used+1) * sizeof(buffer)));
-	force_assert(path_pieces);
+	buffer * const path_pieces = ck_malloc((used+1) * sizeof(buffer));
 	return memcpy(path_pieces, bptr, (used+1) * sizeof(buffer));
 }
 
@@ -256,7 +254,8 @@ static void mod_evhost_parse_host(buffer *key, array *host, buffer *authority) {
 			if(*ptr == '.') {
 				if (ptr != colon - 1) {
 					/* is something between the dots */
-					buffer_copy_string_len(key, CONST_STR_LEN("%"));
+					buffer_clear(key);
+					buffer_append_char(key, '%');
 					buffer_append_int(key, i++);
 					array_set_key_value(host, BUF_PTR_LEN(key), ptr+1, colon-ptr-1);
 				}
@@ -266,7 +265,8 @@ static void mod_evhost_parse_host(buffer *key, array *host, buffer *authority) {
 
 		/* if the . is not the first character of the hostname */
 		if (colon != ptr) {
-			buffer_copy_string_len(key, CONST_STR_LEN("%"));
+			buffer_clear(key);
+			buffer_append_char(key, '%');
 			buffer_append_int(key, i /* ++ */);
 			array_set_key_value(host, BUF_PTR_LEN(key), ptr, colon-ptr);
 		}
@@ -284,7 +284,7 @@ static void mod_evhost_build_doc_root_path(buffer *b, array *parsed_host, buffer
 
 			if (*(ptr+1) == '%') {
 				/* %% */
-				buffer_append_string_len(b, CONST_STR_LEN("%"));
+				buffer_append_char(b, '%');
 			} else if (*(ptr+1) == '_' ) {
 				/* %_ == full hostname */
 				char *colon = strchr(authority->ptr, ':');
@@ -303,7 +303,7 @@ static void mod_evhost_build_doc_root_path(buffer *b, array *parsed_host, buffer
 						buffer_append_string_buffer(b, &ds->value);
 					} else {
 						if ((size_t)(ptr[4]-'0') <= buffer_clen(&ds->value)) {
-							buffer_append_string_len(b, ds->value.ptr+(ptr[4]-'0')-1, 1);
+							buffer_append_char(b, ds->value.ptr[(ptr[4]-'0')-1]);
 						}
 					}
 				} else {
@@ -345,6 +345,9 @@ static handler_t mod_evhost_uri_handler(request_st * const r, void *p_d) {
 	return HANDLER_GO_ON;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_evhost_plugin_init(plugin *p);
 int mod_evhost_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;

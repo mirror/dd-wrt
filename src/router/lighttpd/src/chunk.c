@@ -13,13 +13,52 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "sys-mmap.h"
+#include "sys-setjmp.h"
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 #include <errno.h>
 #include <string.h>
+
+
+#ifdef HAVE_MMAP
+
+#define MMAP_CHUNK_SIZE (512*1024)
+
+__attribute_cold__
+/*__attribute_noinline__*/
+static off_t
+mmap_pagemask (void)
+{
+  #ifndef _WIN32
+    long pagesize = sysconf(_SC_PAGESIZE);
+  #else
+    long pagesize = -1; /*(not implemented (yet))*/
+  #endif
+    if (-1 == pagesize) pagesize = 4096;
+    force_assert(pagesize < MMAP_CHUNK_SIZE);
+    return ~((off_t)pagesize - 1); /* pagesize always power-of-2 */
+}
+
+#if 0
+static off_t
+mmap_align_offset (off_t start)
+{
+    static off_t pagemask = 0;
+    if (0 == pagemask)
+        pagemask = mmap_pagemask();
+    return (start & pagemask);
+}
+#endif
+
+#define mmap_align_offset(offset) ((offset) & chunk_pagemask)
+static off_t chunk_pagemask = 0;
+static int chunk_mmap_flags = MAP_SHARED;
+
+#endif /* HAVE_MMAP */
+
 
 /* default 1 MB */
 #define DEFAULT_TEMPFILE_SIZE (1 * 1024 * 1024)
@@ -43,17 +82,23 @@ void chunkqueue_set_tempdirs_default_reset (void)
     chunk_buf_sz = 8192;
     chunkqueue_default_tempdirs = NULL;
     chunkqueue_default_tempfile_size = DEFAULT_TEMPFILE_SIZE;
+
+  #ifdef HAVE_MMAP /*(extend this func to initialize statics at startup)*/
+    if (0 == chunk_pagemask)
+        chunk_pagemask = mmap_pagemask();
+    chunk_mmap_flags = MAP_SHARED;
+  #endif
 }
 
 chunkqueue *chunkqueue_init(chunkqueue *cq) {
 	/* (if caller passes non-NULL cq, it must be 0-init) */
-	if (NULL == cq) {
-		cq = calloc(1, sizeof(*cq));
-		force_assert(NULL != cq);
-	}
+	if (NULL == cq)
+		cq = ck_calloc(1, sizeof(*cq));
 
+      #if 0 /*(zeroed by calloc())*/
 	cq->first = NULL;
 	cq->last = NULL;
+      #endif
 
 	cq->tempdirs              = chunkqueue_default_tempdirs;
 	cq->upload_temp_file_size = chunkqueue_default_tempfile_size;
@@ -63,24 +108,23 @@ chunkqueue *chunkqueue_init(chunkqueue *cq) {
 
 __attribute_returns_nonnull__
 static chunk *chunk_init(void) {
-	chunk * const restrict c = calloc(1, sizeof(*c));
-	force_assert(NULL != c);
+	chunk * const restrict c = ck_calloc(1, sizeof(*c));
 
       #if 0 /*(zeroed by calloc())*/
 	c->type = MEM_CHUNK;
 	c->next = NULL;
 	c->offset = 0;
 	c->file.length = 0;
-	c->file.mmap.length = c->file.mmap.offset = 0;
 	c->file.is_temp = 0;
+	c->file.view = NULL;
       #endif
 	c->file.fd = -1;
-	c->file.mmap.start = MAP_FAILED;
 
 	c->mem = buffer_init();
 	return c;
 }
 
+__attribute_noinline__
 __attribute_returns_nonnull__
 static chunk *chunk_init_sz(size_t sz) {
 	chunk * const restrict c = chunk_init();
@@ -88,9 +132,73 @@ static chunk *chunk_init_sz(size_t sz) {
 	return c;
 }
 
+#ifdef HAVE_MMAP
+
+__attribute_malloc__
+__attribute_returns_nonnull__
+static void * chunk_file_view_init (void) {
+    chunk_file_view * const restrict cfv = ck_calloc(1, sizeof(*cfv));
+    cfv->mptr = MAP_FAILED;
+  #if 0 /*(zeroed by calloc())*/
+    cfv->mlen = 0;
+    cfv->foff = 0;
+  #endif
+    cfv->refcnt = 1;
+    return cfv;
+}
+
+__attribute_nonnull__()
+static chunk_file_view * chunk_file_view_release (chunk_file_view *cfv) {
+    if (0 == --cfv->refcnt) {
+        if (MAP_FAILED != cfv->mptr)
+            munmap(cfv->mptr, (size_t)cfv->mlen);
+        free(cfv);
+    }
+    return NULL;
+}
+
+__attribute_cold__
+__attribute_noinline__
+__attribute_nonnull__()
+static chunk_file_view * chunk_file_view_failed (chunk_file_view *cfv) {
+    return chunk_file_view_release(cfv);
+}
+
+#endif /* HAVE_MMAP */
+
+ssize_t
+chunk_file_pread (int fd, void *buf, size_t count, off_t offset)
+{
+    /*(expects open file for FILE_CHUNK)*/
+  #ifndef HAVE_PREAD
+    /*(On systems without pread() or equivalent, lseek() is repeated if this
+     * func is called in a loop, but this func is generally used on small files,
+     * or reading a small bit at a time.  Even in the case of mod_deflate, files
+     * are not expected to be excessively large.) */
+    if (-1 == lseek(fd, offset, SEEK_SET))
+        return -1;
+  #endif
+
+    ssize_t rd;
+    do {
+      #ifdef HAVE_PREAD
+        rd =pread(fd, buf, count, offset);
+      #else
+        rd = read(fd, buf, count);
+      #endif
+    } while (-1 == rd && errno == EINTR);
+    return rd;
+}
+
 static void chunk_reset_file_chunk(chunk *c) {
 	if (c->file.is_temp) {
 		c->file.is_temp = 0;
+	  #ifdef _WIN32 /*(not expecting c->file.refchg w/ .is_temp)*/
+		if (!c->file.refchg && c->file.fd != -1) {
+			fdio_close_file(c->file.fd);
+			c->file.fd = -1;
+		}
+	  #endif
 		if (!buffer_is_blank(c->mem))
 			unlink(c->mem->ptr);
 	}
@@ -102,11 +210,10 @@ static void chunk_reset_file_chunk(chunk *c) {
 	else if (c->file.fd != -1) {
 		close(c->file.fd);
 	}
-	if (MAP_FAILED != c->file.mmap.start) {
-		munmap(c->file.mmap.start, c->file.mmap.length);
-		c->file.mmap.start = MAP_FAILED;
-		c->file.mmap.length = c->file.mmap.offset = 0;
-	}
+  #ifdef HAVE_MMAP
+	if (c->file.view)
+		c->file.view = chunk_file_view_release(c->file.view);
+  #endif
 	c->file.fd = -1;
 	c->file.length = 0;
 	c->type = MEM_CHUNK;
@@ -156,6 +263,7 @@ static void chunk_push_oversized(chunk * const c, const size_t sz) {
     }
 }
 
+__attribute_noinline__
 __attribute_returns_nonnull__
 static buffer * chunk_buffer_acquire_sz(const size_t sz) {
     chunk *c;
@@ -237,6 +345,7 @@ size_t chunk_buffer_prepare_append(buffer * const b, size_t sz) {
     return buffer_string_space(b);
 }
 
+__attribute_noinline__
 __attribute_returns_nonnull__
 static chunk * chunk_acquire(size_t sz) {
     if (sz <= (chunk_buf_sz|1)) {
@@ -529,7 +638,7 @@ char * chunkqueue_get_memory(chunkqueue * const restrict cq, size_t * const rest
 void chunkqueue_use_memory(chunkqueue * const restrict cq, chunk *ckpt, size_t len) {
     buffer *b = cq->last->mem;
 
-    if (len > 0) {
+    if (__builtin_expect( (len > 0), 1)) {
         buffer_commit(b, len);
         cq->bytes_in += len;
         if (cq->last == ckpt || NULL == ckpt || MEM_CHUNK != ckpt->type
@@ -584,6 +693,10 @@ static void chunkqueue_dup_file_chunk_fd (chunk * const restrict d, const chunk 
         }
         else
             d->file.fd = fdevent_dup_cloexec(c->file.fd);
+      #ifdef HAVE_MMAP
+        if ((d->file.view = c->file.view))
+            ++d->file.view->refcnt;
+      #endif
     }
 }
 
@@ -594,7 +707,10 @@ static void chunkqueue_steal_partial_file_chunk(chunkqueue * const restrict dest
 }
 
 void chunkqueue_steal(chunkqueue * const restrict dest, chunkqueue * const restrict src, off_t len) {
-	for (off_t clen; len > 0; len -= clen) {
+	/*(0-length first chunk (unexpected) is removed from src even if len == 0;
+         * progress is made when caller loops on this func)*/
+	off_t clen;
+	do {
 		chunk * const c = src->first;
 		if (__builtin_expect( (NULL == c), 0)) break;
 
@@ -629,7 +745,7 @@ void chunkqueue_steal(chunkqueue * const restrict dest, chunkqueue * const restr
 		}
 
 		src->bytes_out += clen;
-	}
+	} while ((len -= clen));
 }
 
 static int chunkqueue_get_append_mkstemp(buffer * const b, const char *path, const uint32_t len) {
@@ -899,6 +1015,8 @@ static ssize_t chunkqueue_append_cqmem_to_tempfile(chunkqueue * const restrict d
             chunkqueue_mark_written(dest, dlen);
         }
     }
+    else if (chunkqueue_append_tempfile_err(dest, errh, c))
+        wr = 0; /*(to trigger continue/retry in caller rather than error)*/
 
     return wr;
 }
@@ -1054,7 +1172,10 @@ ssize_t chunkqueue_append_splice_sock_tempfile(chunkqueue * const restrict cq, c
 #endif /* HAVE_SPLICE */
 
 int chunkqueue_steal_with_tempfiles(chunkqueue * const restrict dest, chunkqueue * const restrict src, off_t len, log_error_st * const restrict errh) {
-	for (off_t clen; len > 0; len -= clen) {
+	/*(0-length first chunk (unexpected) is removed from src even if len == 0;
+         * progress is made when caller loops on this func)*/
+	off_t clen;
+	do {
 		chunk * const c = src->first;
 		if (__builtin_expect( (NULL == c), 0)) break;
 
@@ -1063,66 +1184,37 @@ int chunkqueue_steal_with_tempfiles(chunkqueue * const restrict dest, chunkqueue
 		if (c->type == MEM_CHUNK) {
 			clen = chunkqueue_append_cqmem_to_tempfile(dest, src, len, errh);
 			if (__builtin_expect( (clen < 0), 0)) return -1;
-			chunkqueue_mark_written(src, clen); /*(updates src->bytes_out)*/
+			chunkqueue_mark_written(src, clen);
 		}
 		else { /* (c->type == FILE_CHUNK) */
 			clen = chunk_remaining_length(c);
 			if (len < clen) clen = len;
-			chunkqueue_steal(dest, src, clen);/*(same as below for FILE_CHUNK)*/
+			chunkqueue_steal(dest, src, clen);
 		}
 
 	  #else
 
 		clen = chunk_remaining_length(c);
-		if (__builtin_expect( (0 == clen), 0)) {
-			/* drop empty chunk */
-			src->first = c->next;
-			if (c == src->last) src->last = NULL;
-			chunk_release(c);
-			continue;
-		}
+		if (len < clen) clen = len;
 
 		switch (c->type) {
 		case FILE_CHUNK:
-			if (len >= clen) {
-				/* move complete chunk */
-				src->first = c->next;
-				if (c == src->last) src->last = NULL;
-				chunkqueue_append_chunk(dest, c);
-				dest->bytes_in += clen;
-			} else {
-				/* copy partial chunk */
-				/* tempfile flag is in "last" chunk after the split */
-				chunkqueue_steal_partial_file_chunk(dest, c, len);
-				c->offset += len;
-				clen = len;
-			}
+			chunkqueue_steal(dest, src, clen);
 			break;
 
 		case MEM_CHUNK:
 			/* store bytes from memory chunk in tempfile */
-			if (0 != chunkqueue_append_mem_to_tempfile(dest, c->mem->ptr + c->offset,
-			                                           (len >= clen) ? clen : len, errh)) {
+			if (clen
+			    && 0 != chunkqueue_append_mem_to_tempfile(dest,
+			                                              c->mem->ptr+c->offset,
+			                                              clen, errh))
 				return -1;
-			}
-
-			if (len >= clen) {
-				/* finished chunk */
-				src->first = c->next;
-				if (c == src->last) src->last = NULL;
-				chunk_release(c);
-			} else {
-				/* partial chunk */
-				c->offset += len;
-				clen = len;
-			}
+			chunkqueue_mark_written(src, clen);
 			break;
 		}
 
-		src->bytes_out += clen;
-
 	  #endif
-	}
+	} while ((len -= clen));
 
 	return 0;
 }
@@ -1263,10 +1355,8 @@ static int chunk_open_file_chunk(chunk * const restrict c, log_error_st * const 
 		return -1;
 	}
 
-	const off_t offset = c->offset;
-	const off_t len = c->file.length - c->offset;
-	force_assert(offset >= 0 && len >= 0);
-	if (offset > st.st_size - len) {
+	/*(ok if file grew, e.g. a log file)*/
+	if (c->file.length > st.st_size) {
 		log_error(errh, __FILE__, __LINE__, "file shrunk: %s", c->mem->ptr);
 		return -1;
 	}
@@ -1280,15 +1370,16 @@ int chunkqueue_open_file_chunk(chunkqueue * const restrict cq, log_error_st * co
 
 
 static ssize_t
-chunkqueue_write_data (const int fd, const void *buf, size_t count)
+chunkqueue_write_data (const int fd, const void *buf, size_t len)
 {
-    ssize_t wr;
-    do { wr = write(fd, buf, count); } while (-1 == wr && errno == EINTR);
+    ssize_t wr = 0;
+    if (len)
+        do { wr = write(fd, buf, len); } while (-1 == wr && errno == EINTR);
     return wr;
 }
 
 
-#if defined(HAVE_MMAP) || defined(_WIN32) /*(see local sys-mmap.h)*/
+#ifdef HAVE_MMAP
 __attribute_cold__
 #endif
 __attribute_noinline__
@@ -1297,74 +1388,13 @@ chunkqueue_write_chunk_file_intermed (const int fd, chunk * const restrict c, lo
 {
     char buf[16384];
     char *data = buf;
-    const off_t count = c->file.length - c->offset;
-    uint32_t dlen = count < (off_t)sizeof(buf) ? (uint32_t)count : sizeof(buf);
+    const off_t len = c->file.length - c->offset;
+    uint32_t dlen = len < (off_t)sizeof(buf) ? (uint32_t)len : sizeof(buf);
     chunkqueue cq = {c,c,0,0,0,0,0}; /*(fake cq for chunkqueue_peek_data())*/
     if (0 != chunkqueue_peek_data(&cq, &data, &dlen, errh) && 0 == dlen)
         return -1;
     return chunkqueue_write_data(fd, data, dlen);
 }
-
-
-#if defined(HAVE_MMAP) || defined(_WIN32) /*(see local sys-mmap.h)*/
-
-/*(improved from network_write_mmap.c)*/
-static off_t
-mmap_align_offset (off_t start)
-{
-    static off_t pagemask = 0;
-    if (0 == pagemask) {
-      #ifndef _WIN32
-        long pagesize = sysconf(_SC_PAGESIZE);
-      #else
-        long pagesize = -1; /*(not implemented (yet))*/
-      #endif
-        if (-1 == pagesize) pagesize = 4096;
-        pagemask = ~((off_t)pagesize - 1); /* pagesize always power-of-2 */
-    }
-    return (start & pagemask);
-}
-
-
-__attribute_noinline__
-static char *
-chunkqueue_mmap_chunk_len (chunk * const c, off_t len)
-{
-    /* (re)mmap the buffer to file length if range is not covered completely */
-    /*(caller is responsible for handling SIGBUS if chunkqueue might contain
-     * untrusted file, i.e. any file other than lighttpd-created tempfile)*/
-    /*(tempfiles are expected for input, MAP_PRIVATE used for portability)*/
-    /*(mmaps and writes complete chunk instead of only small parts; files
-     * are expected to be temp files with reasonable chunk sizes)*/
-    if (MAP_FAILED == c->file.mmap.start
-        || c->offset < c->file.mmap.offset
-        || c->offset+len > (off_t)(c->file.mmap.offset + c->file.mmap.length)) {
-
-        if (MAP_FAILED != c->file.mmap.start) {
-            munmap(c->file.mmap.start, c->file.mmap.length);
-            /*c->file.mmap.start = MAP_FAILED;*//*(assigned below)*/
-        }
-
-        c->file.mmap.offset = mmap_align_offset(c->offset);
-        c->file.mmap.length = c->file.length - c->file.mmap.offset;
-        c->file.mmap.start  =
-          mmap(NULL, c->file.mmap.length, PROT_READ, MAP_PRIVATE,
-               c->file.fd, c->file.mmap.offset);
-        if (MAP_FAILED == c->file.mmap.start) return NULL;
-
-      #if 0 /*(review callers before changing; some expect open file)*/
-        /* close() fd as soon as fully mmap() rather than when done w/ chunk
-         * (possibly worthwhile to keep active fd count lower) */
-        if (c->file.is_temp && !c->file.refchg) {
-            close(c->file.fd);
-            c->file.fd = -1;
-        }
-      #endif
-    }
-    return c->file.mmap.start + c->offset - c->file.mmap.offset;
-}
-
-#endif
 
 
 #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILE \
@@ -1382,8 +1412,8 @@ chunkqueue_write_chunk_file (const int fd, chunk * const restrict c, log_error_s
     if (0 != chunk_open_file_chunk(c, errh))
         return -1;
 
-    const off_t count = c->file.length - c->offset;
-    if (0 == count) return 0; /*(sanity check)*/
+    const off_t len = c->file.length - c->offset;
+    if (0 == len) return 0; /*(sanity check)*/
 
   #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILE \
    && (!defined _LARGEFILE_SOURCE || defined HAVE_SENDFILE64) \
@@ -1391,15 +1421,19 @@ chunkqueue_write_chunk_file (const int fd, chunk * const restrict c, log_error_s
     /* Linux kernel >= 2.6.33 supports sendfile() between most fd types */
     off_t offset = c->offset;
     const ssize_t wr =
-      sendfile(fd, c->file.fd, &offset, count<INT32_MAX ? count : INT32_MAX);
+      sendfile(fd, c->file.fd, &offset, len < INT32_MAX ? len : INT32_MAX);
     if (__builtin_expect( (wr >= 0), 1) || (errno != EINVAL && errno != ENOSYS))
         return wr;
-  #endif
-
-  #if defined(HAVE_MMAP) || defined(_WIN32) /*(see local sys-mmap.h)*/
-    const char * const data = chunkqueue_mmap_chunk_len(c, count);
-    if (NULL != data)
-        return chunkqueue_write_data(fd, data, count);
+    /*(could fallback to mmap, but if sendfile fails on linux, mmap may, too)*/
+  #elif defined(HAVE_MMAP)
+    /*(chunkqueue_write_chunk() caller must protect against SIGBUS, if needed)*/
+    const chunk_file_view * const restrict cfv =
+      chunkqueue_chunk_file_view(c, len, errh);
+    if (NULL != cfv) {
+        const off_t mmap_avail = chunk_file_view_dlen(cfv, c->offset);
+        return chunkqueue_write_data(fd, chunk_file_view_dptr(cfv, c->offset),
+                                     len <= mmap_avail ? len : mmap_avail);
+    }
   #endif
 
     return chunkqueue_write_chunk_file_intermed(fd, c, errh);
@@ -1410,10 +1444,8 @@ static ssize_t
 chunkqueue_write_chunk_mem (const int fd, const chunk * const restrict c)
 {
     const void * const buf = c->mem->ptr + c->offset;
-    const size_t count = buffer_clen(c->mem) - (size_t)c->offset;
-    ssize_t wr;
-    do { wr = write(fd, buf, count); } while (-1 == wr && errno == EINTR);
-    return wr;
+    const size_t len = buffer_clen(c->mem) - (size_t)c->offset;
+    return chunkqueue_write_data(fd, buf, len);
 }
 
 
@@ -1437,14 +1469,14 @@ chunkqueue_write_chunk (const int fd, chunkqueue * const restrict cq, log_error_
 ssize_t
 chunkqueue_write_chunk_to_pipe (const int fd, chunkqueue * const restrict cq, log_error_st * const restrict errh)
 {
-    /*(note: expects non-empty cq->first)*/
   #ifdef HAVE_SPLICE /* splice() temp files to pipe on Linux */
     chunk * const c = cq->first;
     if (c->type == FILE_CHUNK) {
+        const size_t len = (size_t)(c->file.length - c->offset);
         loff_t abs_offset = c->offset;
+        if (__builtin_expect( (0 == len), 0)) return 0;
         return (0 == chunk_open_file_chunk(c, errh))
-          ? splice(c->file.fd, &abs_offset, fd, NULL,
-                   (size_t)(c->file.length - c->offset), SPLICE_F_NONBLOCK)
+          ? splice(c->file.fd, &abs_offset, fd, NULL, len, SPLICE_F_NONBLOCK)
           : -1;
     }
   #endif
@@ -1472,10 +1504,6 @@ chunkqueue_small_resp_optim (chunkqueue * const restrict cq)
     if (filec != cq->last || filec->type != FILE_CHUNK || filec->file.fd < 0)
         return;
 
-  #ifndef HAVE_PREAD
-    if (-1 == lseek(filec->file.fd, filec->offset, SEEK_SET)) return;
-  #endif
-
     /* Note: there should be no size change in chunkqueue,
      * so cq->bytes_in and cq->bytes_out should not be modified */
 
@@ -1493,12 +1521,9 @@ chunkqueue_small_resp_optim (chunkqueue * const restrict cq)
     off_t offset = 0;
     char * const ptr = buffer_extend(c->mem, len);
     do {
-      #ifdef HAVE_PREAD
-        rd =pread(filec->file.fd, ptr+offset, (size_t)len,filec->offset+offset);
-      #else
-        rd = read(filec->file.fd, ptr+offset, (size_t)len);
-      #endif
-    } while (rd > 0 ? (offset += rd, len -= rd) : errno == EINTR);
+        rd = chunk_file_pread(filec->file.fd, ptr+offset, (size_t)len,
+                              filec->offset+offset);
+    } while (rd > 0 && (offset += rd, len -= rd));
     /*(contents of chunkqueue kept valid even if error reading from file)*/
     if (__builtin_expect( (0 == len), 1))
         chunk_release(filec);
@@ -1513,6 +1538,20 @@ chunkqueue_small_resp_optim (chunkqueue * const restrict cq)
         }
     }
 }
+
+
+#if 0
+#ifdef HAVE_MMAP
+__attribute_noinline__
+static off_t
+chunk_setjmp_memcpy_cb (void *dst, const void *src, off_t len)
+{
+    /*(on 32-bit systems, caller should assert len <= SIZE_MAX)*/
+    memcpy(dst, src, (size_t)len);
+    return len;
+}
+#endif
+#endif
 
 
 int
@@ -1532,6 +1571,8 @@ chunkqueue_peek_data (chunkqueue * const cq,
                 uint32_t have = buffer_clen(c->mem) - (uint32_t)c->offset;
                 if (have > space)
                     have = space;
+                if (__builtin_expect( (0 == have), 0))
+                    break;
                 if (*dlen)
                     memcpy(data_in + *dlen, c->mem->ptr + c->offset, have);
                 else
@@ -1542,64 +1583,53 @@ chunkqueue_peek_data (chunkqueue * const cq,
 
           case FILE_CHUNK:
             if (c->file.fd >= 0 || 0 == chunk_open_file_chunk(c, errh)) {
-                off_t offset = c->offset;
                 off_t len = c->file.length - c->offset;
                 if (len > (off_t)space)
                     len = (off_t)space;
-                if (0 == len)
+                if (__builtin_expect( (0 == len), 0))
                     break;
 
             #if 0 /* XXX: might improve performance on some system workloads */
-              #if defined(_LP64) || defined(__LP64__) || defined(_WIN64)
-              #if defined(HAVE_MMAP) || defined(_WIN32) /*see local sys-mmap.h*/
+              #ifdef HAVE_MMAP
                 /* mmap file to access data
-                 * (Only consider temp files here since not catching SIGBUS)
-                 * (For now, also limit to 64-bit to avoid address space issues)
-                 * If temp file is used, data should be large enough that mmap
-                 * is worthwhile.  fd need not be kept open for the mmap once
+                 * fd need not be kept open for the mmap once
                  * the mmap has been created, but is currently kept open for
                  * other pre-existing logic which checks fd and opens file,
                  * such as the condition for entering this code block above. */
+                /* Note: current use is with somewhat large buffers, e.g. 128k.
+                 * If larger buffers are used, then upper limit, e.g. 512k,
+                 * should be set for 32-bit to avoid address space issues) */
                 /* Note: under heavy load (or microbenchmark), system-reported
                  * memory use for RSS can be very, very large, due to presence
                  * of lots and lots of temp file read-only memory maps.
-                 * pmap -X and exclude lighttpd temporary files to get a better
+                 * pmap -X and exclude lighttpd mmap files to get a better
                  * view of memory use */
-                char *mdata;
-                if (c->file.is_temp
-                    && (mdata = chunkqueue_mmap_chunk_len(c, len))) {
-                    if (*dlen) {
-                        if (*data != data_in) {
-                            memcpy(data_in, *data, *dlen);
-                            *data = data_in;
+                const chunk_file_view * const restrict cfv = (!c->file.is_temp)
+                  ? chunkqueue_chunk_file_view(c, len, errh)
+                  : NULL;
+                if (cfv && chunk_file_view_dlen(cfv, c->offset) >= len) {
+                    /*(check (above) that mapped chunk length >= requested len)*/
+                    char * const mdata = chunk_file_view_dptr(cfv, c->offset);
+                    if (!c->file.is_temp) {/*(might be changed to policy flag)*/
+                        if (sys_setjmp_eval3(chunk_setjmp_memcpy_cb,
+                                             data_in+*dlen, mdata, len) < 0) {
+                            log_error(errh, __FILE__, __LINE__,
+                              "SIGBUS in mmap: %s %d", c->mem->ptr, c->file.fd);
+                            return -1;
                         }
+                    }
+                    else if (*dlen)
                         memcpy(data_in+*dlen, mdata, (size_t)len);
-                    }
-                    else {
+                    else
                         *data = mdata;
-                    }
                     *dlen += (uint32_t)len;
                     break;
                 }
               #endif
-              #endif
             #endif
 
-              #ifndef HAVE_PREAD
-                if (-1 == lseek(c->file.fd, offset, SEEK_SET)) {
-                    log_perror(errh, __FILE__, __LINE__, "lseek(\"%s\")",
-                               c->mem->ptr);
-                    return -1;
-                }
-              #endif
-                ssize_t rd;
-                do {
-                  #ifdef HAVE_PREAD
-                    rd =pread(c->file.fd, data_in + *dlen, (size_t)len, offset);
-                  #else
-                    rd = read(c->file.fd, data_in + *dlen, (size_t)len);
-                  #endif
-                } while (-1 == rd && errno == EINTR);
+                ssize_t rd = chunk_file_pread(c->file.fd, data_in+*dlen,
+                                              (size_t)len, c->offset);
                 if (rd <= 0) { /* -1 error; 0 EOF (unexpected) */
                     log_perror(errh, __FILE__, __LINE__, "read(\"%s\")",
                                c->mem->ptr);
@@ -1673,3 +1703,89 @@ chunkqueue_read_squash (chunkqueue * const restrict cq, log_error_st * const res
     chunkqueue_append_chunk(cq, c);
     return c->mem;
 }
+
+
+#ifdef HAVE_MMAP
+
+const chunk_file_view *
+chunkqueue_chunk_file_viewadj (chunk * const c, off_t n, log_error_st * restrict errh)
+{
+    /*assert(c->type == FILE_CHUNK);*/
+    if (c->file.fd < 0 && 0 != chunk_open_file_chunk(c, errh))
+        return NULL;
+
+    chunk_file_view * restrict cfv = c->file.view;
+
+    if (NULL == cfv) {
+        /* XXX: might add global config check to enable/disable mmap use here */
+        cfv = c->file.view = chunk_file_view_init();
+    }
+    else if (MAP_FAILED != cfv->mptr)
+        munmap(cfv->mptr, (size_t)cfv->mlen);
+        /*cfv->mptr= MAP_FAILED;*//*(assigned below)*/
+
+    cfv->foff = mmap_align_offset(c->offset);
+
+    if (0 != n) {
+        cfv->mlen = c->offset - cfv->foff + n;
+      #if !(defined(_LP64) || defined(__LP64__) || defined(_WIN64))
+        /*(consider 512k blocks if this func is used more generically)*/
+        const off_t mmap_chunk_size = 8 * 1024 * 1024;
+        if (cfv->mlen > mmap_chunk_size)
+            cfv->mlen = mmap_chunk_size;
+      #endif
+    }
+    else
+        cfv->mlen = MMAP_CHUNK_SIZE;
+    /* XXX: 64-bit might consider larger min block size, or even entire file */
+    if (cfv->mlen < MMAP_CHUNK_SIZE)
+        cfv->mlen = MMAP_CHUNK_SIZE;
+    if (cfv->mlen > c->file.length - cfv->foff)
+        cfv->mlen = c->file.length - cfv->foff;
+
+    cfv->mptr = mmap(NULL, (size_t)cfv->mlen, PROT_READ,
+                     c->file.is_temp ? MAP_PRIVATE : chunk_mmap_flags,
+                     c->file.fd, cfv->foff);
+
+    if (__builtin_expect( (MAP_FAILED == cfv->mptr), 0)) {
+        if (__builtin_expect( (errno == EINVAL), 0)) {
+            chunk_mmap_flags &= ~MAP_SHARED;
+            chunk_mmap_flags |= MAP_PRIVATE;
+            cfv->mptr = mmap(NULL, (size_t)cfv->mlen, PROT_READ,
+                             MAP_PRIVATE, c->file.fd, cfv->foff);
+        }
+        if (__builtin_expect( (MAP_FAILED == cfv->mptr), 0)) {
+            c->file.view = chunk_file_view_failed(cfv);
+            return NULL;
+        }
+    }
+
+  #if 0 /*(review callers before changing; some expect open file)*/
+    /* close() fd as soon as fully mmap() rather than when done w/ chunk
+     * (possibly worthwhile to keep active fd count lower)
+     * (probably only reasonable if entire file is mapped) */
+    if (c->file.is_temp && !c->file.refchg) {
+        close(c->file.fd);
+        c->file.fd = -1;
+    }
+  #endif
+
+ #if 0
+    /* disable madvise unless we find common cases where there is a benefit
+     * (??? madvise for full mmap length or only for original requested n ???)
+     * (??? might additional flags param to func to indicate madvise pref ???)
+     * (??? might experiment with Linux mmap flags MAP_POPULATE|MAP_PRIVATE)
+     * (??? might experiment with madvise MADV_POPULATE_READ (since Linux 5.14))
+     * note: caller might be in better position to know if starting an mmap
+     * which will be flushed in entirety, and perform madvise at that point,
+     * perhaps with MADV_SEQUENTIAL */
+  #ifdef HAVE_MADVISE
+    if (cfv->mlen > 65536) /*(skip syscall if size <= 64KB)*/
+        (void)madvise(cfv->mptr, (size_t)cfv->mlen, MADV_WILLNEED);
+  #endif
+ #endif
+
+    return cfv;
+}
+
+#endif /* HAVE_MMAP */

@@ -51,8 +51,7 @@ vhostdb_cache_entry_init (const buffer * const server_name, const buffer * const
     const uint32_t slen = buffer_clen(server_name);
     const uint32_t dlen = buffer_clen(docroot);
     vhostdb_cache_entry * const ve =
-      malloc(sizeof(vhostdb_cache_entry) + slen + dlen);
-    force_assert(ve);
+      ck_malloc(sizeof(vhostdb_cache_entry) + slen + dlen);
     ve->ctime = log_monotonic_secs;
     ve->slen = slen;
     ve->dlen = dlen;
@@ -83,14 +82,14 @@ vhostdb_cache_free (vhostdb_cache *vc)
 static vhostdb_cache *
 vhostdb_cache_init (const array *opts)
 {
-    vhostdb_cache *vc = malloc(sizeof(vhostdb_cache));
-    force_assert(vc);
+    vhostdb_cache *vc = ck_malloc(sizeof(vhostdb_cache));
     vc->sptree = NULL;
     vc->max_age = 600; /* 10 mins */
     for (uint32_t i = 0, used = opts->used; i < used; ++i) {
         data_unset *du = opts->data[i];
         if (buffer_is_equal_string(&du->key, CONST_STR_LEN("max-age")))
-            vc->max_age = (time_t)config_plugin_value_to_int32(du, vc->max_age);
+            vc->max_age = (time_t)
+              config_plugin_value_to_int32(du, 600); /* 10 min if invalid num */
     }
     return vc;
 }
@@ -127,7 +126,7 @@ mod_vhostdb_cache_insert (request_st * const r, plugin_data * const p, vhostdb_c
 }
 
 INIT_FUNC(mod_vhostdb_init) {
-    return calloc(1, sizeof(plugin_data));
+    return ck_calloc(1, sizeof(plugin_data));
 }
 
 FREE_FUNC(mod_vhostdb_free) {
@@ -381,6 +380,8 @@ TRIGGER_FUNC(mod_vhostdb_periodic)
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_vhostdb_plugin_init(plugin *p);
 int mod_vhostdb_plugin_init(plugin *p) {
     p->version          = LIGHTTPD_VERSION_ID;

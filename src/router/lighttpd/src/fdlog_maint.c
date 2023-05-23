@@ -7,7 +7,10 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include "sys-unistd.h" /* <unistd.h> */
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "fdevent.h"
 #include "ck.h"
@@ -29,7 +32,6 @@
 struct fdlog_files_t {
     fdlog_st **ptr;
     uint32_t used;
-    uint32_t size;
 };
 
 static struct fdlog_files_t fdlog_files;
@@ -48,7 +50,6 @@ typedef struct fdlog_pipe {
 struct fdlog_pipes_t {
     fdlog_pipe *ptr;
     uint32_t used;
-    uint32_t size;
 };
 
 static struct fdlog_pipes_t fdlog_pipes;
@@ -136,7 +137,6 @@ fdlog_pipes_close (fdlog_st * const retain)
     free(fdlog_pipes.ptr);
     fdlog_pipes.ptr = NULL;
     fdlog_pipes.used = 0;
-    fdlog_pipes.size = 0;
 }
 
 
@@ -158,6 +158,9 @@ fdlog_pipe_serrh (const int fd)
         if (fdlog->fd != fd) continue;
 
         fdlog->fd = STDERR_FILENO;
+      #ifdef _WIN32
+        SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(STDERR_FILENO));
+      #endif
         break;
     }
 }
@@ -166,12 +169,9 @@ fdlog_pipe_serrh (const int fd)
 static fdlog_st *
 fdlog_pipe_init (const char * const fn, const int fds[2], const pid_t pid)
 {
-    if (fdlog_pipes.used == fdlog_pipes.size) {
-        fdlog_pipes.size += 4;
-        fdlog_pipes.ptr =
-          realloc(fdlog_pipes.ptr, fdlog_pipes.size * sizeof(fdlog_pipe));
-        force_assert(fdlog_pipes.ptr);
-    }
+    if (!(fdlog_pipes.used & (4-1)))
+        ck_realloc_u32((void **)&fdlog_pipes.ptr, fdlog_pipes.used,
+                       4, sizeof(*fdlog_pipes.ptr));
     fdlog_pipe * const fdp = fdlog_pipes.ptr + fdlog_pipes.used++;
     fdp->fd = fds[0];
     fdp->pid = pid;
@@ -212,12 +212,9 @@ fdlog_pipe_open (const char * const fn)
 static fdlog_st *
 fdlog_file_init (const char * const fn, const int fd)
 {
-    if (fdlog_files.used == fdlog_files.size) {
-        fdlog_files.size += 4;
-        fdlog_files.ptr =
-          realloc(fdlog_files.ptr, fdlog_files.size * sizeof(fdlog_st *));
-        force_assert(fdlog_files.ptr);
-    }
+    if (!(fdlog_files.used & (4-1)))
+        ck_realloc_u32((void **)&fdlog_files.ptr, fdlog_files.used,
+                       4, sizeof(*fdlog_files.ptr));
     return (fdlog_files.ptr[fdlog_files.used++] = fdlog_init(fn,fd,FDLOG_FILE));
 }
 
@@ -288,6 +285,10 @@ fdlog_files_cycle (fdlog_st * const errh)
                     log_perror(errh, __FILE__, __LINE__,
                       "dup2() %s to %d", fdlog->fn, fdlog->fd);
                 close(fd);
+              #ifdef _WIN32
+                SetStdHandle(STD_ERROR_HANDLE,
+                             (HANDLE)_get_osfhandle(STDERR_FILENO));
+              #endif
             }
         }
         else {
@@ -311,7 +312,6 @@ fdlog_files_close (fdlog_st * const retain)
     free(fdlog_files.ptr);
     fdlog_files.ptr = NULL;
     fdlog_files.used = 0;
-    fdlog_files.size = 0;
 }
 
 

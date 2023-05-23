@@ -65,6 +65,7 @@ http_cgi_local_redir (request_st * const r)
         }
 
         buffer_copy_buffer(&r->target, vb);
+        buffer_clear(&r->pathinfo);
 
         if (r->reqbody_length) {
             if (r->reqbody_length != r->reqbody_queue.bytes_in)
@@ -81,7 +82,7 @@ http_cgi_local_redir (request_st * const r)
 
         /*(caller must reset request as follows)*/
         /*http_response_reset(r);*/ /*(sets r->http_status = 0)*/
-        /*plugins_call_handle_request_reset(r);*/
+        /*r->con->srv->plugins_request_reset(r);*/
 
         return HANDLER_COMEBACK;
     }
@@ -223,9 +224,8 @@ http_cgi_headers (request_st * const r, http_cgi_opts * const opts, http_cgi_hea
     const buffer * const m = http_method_buf(r->http_method);
     rc |= cb(vdata, CONST_STR_LEN("REQUEST_METHOD"), BUF_PTR_LEN(m));
 
-    s = get_http_version_name(r->http_version);
-    force_assert(s);
-    rc |= cb(vdata, CONST_STR_LEN("SERVER_PROTOCOL"), s, strlen(s));
+    const buffer * const v = http_version_buf(r->http_version);
+    rc |= cb(vdata, CONST_STR_LEN("SERVER_PROTOCOL"), BUF_PTR_LEN(v));
 
     if (r->conf.server_tag) {
         s = r->conf.server_tag->ptr;
@@ -305,10 +305,10 @@ http_cgi_headers (request_st * const r, http_cgi_opts * const opts, http_cgi_hea
     rc |= cb(vdata, CONST_STR_LEN("SERVER_NAME"), s, n);
 
     rc |= cb(vdata, CONST_STR_LEN("REMOTE_ADDR"),
-                    BUF_PTR_LEN(&con->dst_addr_buf));
+                    BUF_PTR_LEN(r->dst_addr_buf));
 
     rc |= cb(vdata, CONST_STR_LEN("REMOTE_PORT"), buf,
-             li_utostrn(buf,sizeof(buf),sock_addr_get_port(&con->dst_addr)));
+             li_utostrn(buf, sizeof(buf), sock_addr_get_port(r->dst_addr)));
 
     for (n = 0; n < r->rqst_headers.used; n++) {
         data_string *ds = (data_string *)r->rqst_headers.data[n];

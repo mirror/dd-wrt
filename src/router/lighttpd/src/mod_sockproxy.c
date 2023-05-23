@@ -18,7 +18,6 @@ typedef gw_handler_ctx   handler_ctx;
 #include "array.h"
 #include "buffer.h"
 #include "log.h"
-#include "status_counter.h"
 
 /**
  *
@@ -90,8 +89,7 @@ SETDEFAULTS_FUNC(mod_sockproxy_set_defaults) {
         for (; -1 != cpv->k_id; ++cpv) {
             switch (cpv->k_id) {
               case 0: /* sockproxy.server */
-                gw = calloc(1, sizeof(gw_plugin_config));
-                force_assert(gw);
+                gw = ck_calloc(1, sizeof(gw_plugin_config));
                 if (!gw_set_defaults_backend(srv, p, cpv->v.a, gw, 0,
                                              cpk[cpv->k_id].k)) {
                     gw_plugin_config_free(gw);
@@ -136,7 +134,7 @@ static handler_t sockproxy_create_env_connect(handler_ctx *hctx) {
 	gw_set_transparent(hctx);
 	http_response_upgrade_read_body_unknown(r);
 
-	status_counter_inc(CONST_STR_LEN("sockproxy.requests"));
+	plugin_stats_inc("sockproxy.requests");
 	return HANDLER_GO_ON;
 }
 
@@ -163,12 +161,15 @@ static handler_t mod_sockproxy_connection_accept(connection *con, void *p_d) {
 		hctx->create_env = sockproxy_create_env_connect;
 		hctx->response = chunk_buffer_acquire();
 		r->http_status = -1; /*(skip HTTP processing)*/
+		r->http_version = HTTP_VERSION_UNSET;
 	}
 
 	return HANDLER_GO_ON;
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_sockproxy_plugin_init(plugin *p);
 int mod_sockproxy_plugin_init(plugin *p) {
 	p->version      = LIGHTTPD_VERSION_ID;

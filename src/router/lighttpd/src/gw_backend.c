@@ -9,13 +9,12 @@
 #include "gw_backend.h"
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include "sys-socket.h"
+#include "sys-stat.h"
+#include "sys-unistd.h" /* <unistd.h> */
+#include "sys-wait.h"
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
-#endif
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
 #endif
 
 #include <errno.h>
@@ -25,7 +24,10 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
-#include <unistd.h>
+
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
 
 #include "base.h"
 #include "algo_md.h"
@@ -39,8 +41,6 @@
 
 
 
-
-#include "status_counter.h"
 
 __attribute_noinline__
 static int * gw_status_get_counter(gw_host *host, gw_proc *proc, const char *tag, size_t tlen) {
@@ -70,7 +70,7 @@ static int * gw_status_get_counter(gw_host *host, gw_proc *proc, const char *tag
     llen += tlen;
     label[llen] = '\0';
 
-    return status_counter_get_counter(label, llen);
+    return plugin_stats_get_ptr(label, llen);
 }
 
 static void gw_proc_tag_inc(gw_host *host, gw_proc *proc, const char *tag, size_t len) {
@@ -117,7 +117,7 @@ static void gw_status_init_host(gw_host *host) {
       gw_status_get_counter(host, NULL, CONST_STR_LEN(".load"));
     *host->stats_load = 0;
     host->stats_global_active =
-      status_counter_get_counter(CONST_STR_LEN("gw.active-requests"));
+      plugin_stats_get_ptr("gw.active-requests",sizeof("gw.active-requests")-1);
 }
 
 
@@ -160,8 +160,7 @@ __attribute_cold__
 __attribute_noinline__
 __attribute_returns_nonnull__
 static gw_proc *gw_proc_init(gw_host *host) {
-    gw_proc *proc = calloc(1, sizeof(*proc));
-    force_assert(proc);
+    gw_proc *proc = ck_calloc(1, sizeof(*proc));
 
     /*proc->unixsocket = buffer_init();*//*(init on demand)*/
     proc->connection_name = buffer_init();
@@ -177,6 +176,8 @@ static gw_proc *gw_proc_init(gw_host *host) {
     return proc;
 }
 
+__attribute_cold__
+__attribute_noinline__
 static void gw_proc_free(gw_proc *proc) {
     if (!proc) return;
 
@@ -192,9 +193,7 @@ static void gw_proc_free(gw_proc *proc) {
 __attribute_malloc__
 __attribute_returns_nonnull__
 static gw_host *gw_host_init(void) {
-    gw_host *f = calloc(1, sizeof(*f));
-    force_assert(f);
-    return f;
+    return ck_calloc(1, sizeof(gw_host));
 }
 
 static void gw_host_free(gw_host *h) {
@@ -215,9 +214,7 @@ static void gw_host_free(gw_host *h) {
 __attribute_malloc__
 __attribute_returns_nonnull__
 static gw_exts *gw_extensions_init(void) {
-    gw_exts *f = calloc(1, sizeof(*f));
-    force_assert(f);
-    return f;
+    return ck_calloc(1, sizeof(gw_exts));
 }
 
 static void gw_extensions_free(gw_exts *f) {
@@ -243,11 +240,9 @@ static int gw_extension_insert(gw_exts *ext, const buffer *key, gw_host *fh) {
     }
 
     if (NULL == fe) {
-        if (ext->used == ext->size) {
-            ext->size += 8;
-            ext->exts = realloc(ext->exts, ext->size * sizeof(gw_extension));
-            force_assert(ext->exts);
-            memset(ext->exts + ext->used, 0, 8 * sizeof(gw_extension));
+        if (!(ext->used & (8-1))) {
+            ck_realloc_u32((void **)&ext->exts,ext->used,8,sizeof(*ext->exts));
+            memset((void *)(ext->exts + ext->used), 0, 8 * sizeof(*ext->exts));
         }
         fe = ext->exts + ext->used++;
         fe->last_used_ndx = -1;
@@ -256,12 +251,8 @@ static int gw_extension_insert(gw_exts *ext, const buffer *key, gw_host *fh) {
         memcpy(b, key, sizeof(buffer)); /*(copy; not later free'd)*/
     }
 
-    if (fe->size == fe->used) {
-        fe->size += 4;
-        fe->hosts = realloc(fe->hosts, fe->size * sizeof(*(fe->hosts)));
-        force_assert(fe->hosts);
-    }
-
+    if (!(fe->used & (4-1)))
+        ck_realloc_u32((void **)&fe->hosts, fe->used, 4, sizeof(*fe->hosts));
     fe->hosts[fe->used++] = fh;
     return 0;
 }
@@ -281,8 +272,13 @@ __attribute_cold__
 static void gw_proc_connect_error(request_st * const r, gw_host *host, gw_proc *proc, pid_t pid, int errnum, int debug) {
     const unix_time64_t cur_ts = log_monotonic_secs;
     log_error_st * const errh = r->conf.errh;
-    errno = errnum; /*(for log_perror())*/
-    log_perror(errh, __FILE__, __LINE__,
+  #ifdef _WIN32
+    WSASetLastError(errnum); /*(for log_perror()/log_serror())*/
+    if (errnum == WSAEWOULDBLOCK) errnum = EAGAIN;
+  #else
+    errno = errnum; /*(for log_perror()/log_serror())*/
+  #endif
+    log_serror(errh, __FILE__, __LINE__,
       "establishing connection failed: socket: %s", proc->connection_name->ptr);
 
     if (!proc->is_local) {
@@ -387,7 +383,8 @@ static void gw_proc_waitpid_log(const gw_host * const host, const gw_proc * cons
 }
 
 static int gw_proc_waitpid(gw_host *host, gw_proc *proc, log_error_st *errh) {
-    int rc, status;
+    pid_t rc;
+    int status;
 
     if (!proc->is_local) return 0;
     if (proc->pid <= 0) return 0;
@@ -461,8 +458,7 @@ static int gw_proc_sockaddr_init(gw_host * const host, gw_proc * const proc, log
         proc->saddr = NULL;
     }
     if (NULL == proc->saddr) {
-        proc->saddr = (struct sockaddr *)malloc(addrlen);
-        force_assert(proc->saddr);
+        proc->saddr = (struct sockaddr *)ck_malloc(addrlen);
     }
     proc->saddrlen = addrlen;
     memcpy(proc->saddr, &addr, addrlen);
@@ -474,8 +470,7 @@ static int env_add(char_array *env, const char *key, size_t key_len, const char 
 
     if (!key || !val) return -1;
 
-    dst = malloc(key_len + val_len + 3);
-    force_assert(dst);
+    dst = ck_malloc(key_len + val_len + 2);
     memcpy(dst, key, key_len);
     dst[key_len] = '=';
     memcpy(dst + key_len + 1, val, val_len + 1); /* add the \0 from the value */
@@ -491,15 +486,8 @@ static int env_add(char_array *env, const char *key, size_t key_len, const char 
         }
     }
 
-    if (env->size <= env->used + 1) {
-        env->size += 16;
-        env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
-        force_assert(env->ptr);
-    }
-
-  #ifdef __COVERITY__
-    force_assert(env->ptr); /*(non-NULL if env->used != 0; guaranteed above)*/
-  #endif
+    if (!(env->used & (16-1)))
+        ck_realloc_u32((void **)&env->ptr, env->used, 16, sizeof(*env->ptr));
     env->ptr[env->used++] = dst;
 
     return 0;
@@ -518,21 +506,29 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
 
     gw_fd = fdevent_socket_cloexec(proc->saddr->sa_family, SOCK_STREAM, 0);
     if (-1 == gw_fd) {
-        log_perror(errh, __FILE__, __LINE__, "socket()");
+        log_serror(errh, __FILE__, __LINE__, "socket()");
         return -1;
     }
 
     do {
         status = connect(gw_fd, proc->saddr, proc->saddrlen);
-    } while (-1 == status && errno == EINTR);
+    }
+  #ifdef _WIN32
+    while (-1 == status && WSAGetLastError() == WSAEINTR);
+  #else
+    while (-1 == status && errno == EINTR);
+  #endif
+
+    /* _WIN32 WSAGetLastError() WSAECONNRESET or WSAECONNREFUSED might
+     * or might not indicate presence of socket, so try to unlink unixsocket */
 
     if (-1 == status && errno != ENOENT && proc->unixsocket) {
-        log_perror(errh, __FILE__, __LINE__,
-          "connect %s", proc->unixsocket->ptr);
+        log_serror(errh, __FILE__, __LINE__,
+          "connect() %s", proc->unixsocket->ptr);
         unlink(proc->unixsocket->ptr);
     }
 
-    close(gw_fd);
+    fdio_close_socket(gw_fd);
 
     if (-1 == status) {
         /* server is not up, spawn it  */
@@ -540,36 +536,43 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
         uint32_t i;
 
         /* reopen socket */
+
+      #ifdef _WIN32
+        /* Note: not using WSA_FLAG_OVERLAPPED
+         * because we are assigning to hStdInput of child process */
+        gw_fd = WSASocketA(proc->saddr->sa_family, SOCK_STREAM, 0, NULL, 0,
+                           WSA_FLAG_NO_HANDLE_INHERIT);
+      #else
         gw_fd = fdevent_socket_cloexec(proc->saddr->sa_family, SOCK_STREAM, 0);
+      #endif
         if (-1 == gw_fd) {
-            log_perror(errh, __FILE__, __LINE__, "socket()");
+            log_serror(errh, __FILE__, __LINE__, "socket()");
             return -1;
         }
 
         if (fdevent_set_so_reuseaddr(gw_fd, 1) < 0) {
-            log_perror(errh, __FILE__, __LINE__, "socketsockopt()");
-            close(gw_fd);
+            log_serror(errh, __FILE__, __LINE__, "socketsockopt()");
+            fdio_close_socket(gw_fd);
             return -1;
         }
 
         /* create socket */
         if (-1 == bind(gw_fd, proc->saddr, proc->saddrlen)) {
-            log_perror(errh, __FILE__, __LINE__,
-              "bind failed for: %s", proc->connection_name->ptr);
-            close(gw_fd);
+            log_serror(errh, __FILE__, __LINE__,
+              "bind() %s", proc->connection_name->ptr);
+            fdio_close_socket(gw_fd);
             return -1;
         }
 
         if (-1 == listen(gw_fd, host->listen_backlog)) {
-            log_perror(errh, __FILE__, __LINE__, "listen()");
-            close(gw_fd);
+            log_serror(errh, __FILE__, __LINE__, "listen()");
+            fdio_close_socket(gw_fd);
             return -1;
         }
 
         {
             /* create environment */
             env.ptr = NULL;
-            env.size = 0;
             env.used = 0;
 
             /* build clean environment */
@@ -616,9 +619,17 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
                               CONST_STR_LEN("1"));
             }
 
+            if (!(env.used & (16-1)))
+                ck_realloc_u32((void **)&env.ptr,env.used,1,sizeof(*env.ptr));
             env.ptr[env.used] = NULL;
         }
 
+      #ifdef _WIN32
+        int dfd = -2; /*(flag to chdir to script dir on _WIN32)*/
+        proc->pid =
+          fdevent_createprocess(host->args.ptr,
+                                env.ptr, (intptr_t)gw_fd, -1, -1, dfd);
+      #else
         int dfd = fdevent_open_dirname(host->args.ptr[0], 1);/*permit symlinks*/
         if (-1 == dfd) {
             log_perror(errh, __FILE__, __LINE__,
@@ -630,15 +641,17 @@ static int gw_spawn_connection(gw_host * const host, gw_proc * const proc, log_e
           ? fdevent_fork_execve(host->args.ptr[0], host->args.ptr,
                                 env.ptr, gw_fd, -1, -1, dfd)
           : -1;
+      #endif
+        if (-1 == proc->pid)
+            log_perror(errh, __FILE__, __LINE__,
+              "gw-backend failed to start: %s", host->bin_path->ptr);
 
         for (i = 0; i < env.used; ++i) free(env.ptr[i]);
         free(env.ptr);
-        if (-1 != dfd) close(dfd);
-        close(gw_fd);
+        if (dfd >= 0) close(dfd);
+        fdio_close_socket(gw_fd);
 
         if (-1 == proc->pid) {
-            log_error(errh, __FILE__, __LINE__,
-              "gw-backend failed to start: %s", host->bin_path->ptr);
             proc->pid = 0;
             proc->disabled_until = log_monotonic_secs;
             return -1;
@@ -742,11 +755,12 @@ static void gw_proc_kill(gw_host *host, gw_proc *proc) {
         host->unused_procs->prev = proc;
     host->unused_procs = proc;
 
-    kill(proc->pid, host->kill_signal);
+    fdevent_kill(proc->pid, host->kill_signal);
 
     gw_proc_set_state(host, proc, PROC_STATE_KILLED);
 }
 
+#ifdef HAVE_SYS_UN_H
 __attribute_pure__
 static gw_host * unixsocket_is_dup(gw_plugin_data *p, const buffer *unixsocket) {
     if (NULL == p->cvlist) return NULL;
@@ -781,8 +795,9 @@ static gw_host * unixsocket_is_dup(gw_plugin_data *p, const buffer *unixsocket) 
 
     return NULL;
 }
+#endif
 
-static int parse_binpath(char_array *env, const buffer *b) {
+static void parse_binpath(char_array *env, const buffer *b) {
     char *start = b->ptr;
     char c;
     /* search for spaces */
@@ -792,11 +807,8 @@ static int parse_binpath(char_array *env, const buffer *b) {
         case '\t':
             /* a WS, stop here and copy the argument */
 
-            if (env->size == env->used) {
-                env->size += 16;
-                env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
-                force_assert(env->ptr);
-            }
+            if (!(env->used & (4-1)))
+                ck_realloc_u32((void**)&env->ptr,env->used,4,sizeof(*env->ptr));
 
             c = b->ptr[i];
             b->ptr[i] = '\0';
@@ -810,23 +822,23 @@ static int parse_binpath(char_array *env, const buffer *b) {
         }
     }
 
-    if (env->size == env->used) { /*need one extra for terminating NULL*/
-        env->size += 16;
-        env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
-    }
-
-    /* the rest */
+    if (!(env->used & (4-1)) || !((env->used+1) & (4-1)))
+        ck_realloc_u32((void **)&env->ptr, env->used, 2, sizeof(*env->ptr));
     env->ptr[env->used++] = strdup(start);
+    env->ptr[env->used] = NULL;
 
-    if (env->size == env->used) { /*need one extra for terminating NULL*/
-        env->size += 16;
-        env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
+  #ifdef _WIN32
+    /* lighttpd cygwin test environment does not include ".exe" extension */
+    if (NULL == getenv("CYGROOT")) return; /* set in tests/Lighttpd.pm */
+    struct stat st;
+    char *arg0 = env->ptr[0];
+    size_t len = strlen(arg0);
+    if ((len < 4 || 0 != memcmp(arg0+len-4, ".exe", 4))
+        && 0 != stat(arg0, &st) && errno == ENOENT) {
+        ck_realloc_u32((void **)&env->ptr[0], len, 5, 1);
+        memcpy(env->ptr[0]+len, ".exe", 5);
     }
-
-    /* terminate */
-    env->ptr[env->used++] = NULL;
-
-    return 0;
+  #endif
 }
 
 enum {
@@ -926,7 +938,7 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
        }
       case GW_BALANCE_STICKY:
        { /* source sticky balancing */
-        const buffer * const dst_addr_buf = &r->con->dst_addr_buf;
+        const buffer * const dst_addr_buf = r->dst_addr_buf;
         const uint32_t base_hash =
           gw_hash(BUF_PTR_LEN(dst_addr_buf), DJBHASH_INIT);
         uint32_t last_max = UINT32_MAX;
@@ -1003,9 +1015,18 @@ static gw_host * gw_host_get(request_st * const r, gw_extension *extension, int 
 
 static int gw_establish_connection(request_st * const r, gw_host *host, gw_proc *proc, pid_t pid, int gw_fd, int debug) {
     if (-1 == connect(gw_fd, proc->saddr, proc->saddrlen)) {
+      #ifdef _WIN32
+        /* MS returns WSAEWOULDBLOCK instead of WSAEINPROGRESS for connect()
+         * if socket is configured nonblocking */
+        int errnum = WSAGetLastError();
+        if (errnum == WSAEINPROGRESS || errnum == WSAEALREADY
+            || errnum == WSAEWOULDBLOCK || errnum == WSAEINTR)
+      #else
         int errnum = errno;
         if (errnum == EINPROGRESS || errnum == EALREADY || errnum == EINTR
-            || (errnum == EAGAIN && host->unixsocket)) {
+            || (errnum == EAGAIN && host->unixsocket))
+      #endif
+        {
             if (debug > 2) {
                 log_error(r->conf.errh, __FILE__, __LINE__,
                   "connect delayed; will continue later: %s",
@@ -1041,7 +1062,7 @@ static void gw_restart_dead_proc(gw_host * const host, log_error_st * const errh
                 int sig = (proc->disabled_until <= 8)
                   ? host->kill_signal
                   : proc->disabled_until <= 16 ? SIGTERM : SIGKILL;
-                kill(proc->pid, sig);
+                fdevent_kill(proc->pid, sig);
             }
             break;
         case PROC_STATE_DIED_WAIT_FOR_PID:
@@ -1116,8 +1137,7 @@ static handler_t gw_process_fdevent(gw_handler_ctx *hctx, request_st *r, int rev
 
 __attribute_returns_nonnull__
 static gw_handler_ctx * handler_ctx_init(size_t sz) {
-    gw_handler_ctx *hctx = calloc(1, 0 == sz ? sizeof(*hctx) : sz);
-    force_assert(hctx);
+    gw_handler_ctx *hctx = ck_calloc(1, 0 == sz ? sizeof(*hctx) : sz);
 
     /*hctx->response = chunk_buffer_acquire();*//*(allocated when needed)*/
 
@@ -1180,7 +1200,7 @@ static void handler_ctx_clear(gw_handler_ctx *hctx) {
 
 
 void * gw_init(void) {
-    return calloc(1, sizeof(gw_plugin_data));
+    return ck_calloc(1, sizeof(gw_plugin_data));
 }
 
 
@@ -1195,9 +1215,8 @@ void gw_plugin_config_free(gw_plugin_config *s) {
 
                 for (proc = host->first; proc; proc = proc->next) {
                     if (proc->pid > 0) {
-                        kill(proc->pid, host->kill_signal);
+                        fdevent_kill(proc->pid, host->kill_signal);
                     }
-
                     if (proc->is_local && proc->unixsocket) {
                         unlink(proc->unixsocket->ptr);
                     }
@@ -1205,7 +1224,7 @@ void gw_plugin_config_free(gw_plugin_config *s) {
 
                 for (proc = host->unused_procs; proc; proc = proc->next) {
                     if (proc->pid > 0) {
-                        kill(proc->pid, host->kill_signal);
+                        fdevent_kill(proc->pid, host->kill_signal);
                     }
                     if (proc->is_local && proc->unixsocket) {
                         unlink(proc->unixsocket->ptr);
@@ -1472,6 +1491,22 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                     break;
                   case 15:/* bin-copy-environment */
                     host->bin_env_copy = cpv->v.a;
+                   #if defined(__CYGWIN__) || defined(_WIN32)
+                    if (host->bin_env_copy->used) {
+                        uint32_t k;
+                        for (k = 0; k < cpv->v.a->used; ++k) {
+                            /* search for SYSTEMROOT */
+                            data_string *ds = (data_string *)cpv->v.a->data[k];
+                            if (0 == strcmp(ds->value.ptr, "SYSTEMROOT"))
+                                break;
+                        }
+                        if (k == cpv->v.a->used) {
+                            array *e;
+                            *(const array **)&e = cpv->v.a;
+                            array_insert_value(e, CONST_STR_LEN("SYSTEMROOT"));
+                        }
+                    }
+                   #endif
                     break;
                   case 16:/* broken-scriptfilename */
                     host->break_scriptfilename_for_php = (0 != cpv->v.u);
@@ -1555,6 +1590,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
             }
 
             if (host->unixsocket) {
+              #ifdef HAVE_SYS_UN_H
                 /* unix domain socket */
                 struct sockaddr_un un;
 
@@ -1582,6 +1618,12 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                 }
 
                 host->family = AF_UNIX;
+              #else
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "unixsocket not supported on this platform: %s = (%s => (%s ( ...",
+                  cpkkey, da_ext->key.ptr, da_host->key.ptr);
+                goto error;
+              #endif
             } else {
                 /* tcp/ip */
 
@@ -1622,6 +1664,9 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                       "and is executable by lighttpd)", host->bin_path->ptr);
                 }
 
+              #ifdef _WIN32
+                UNUSED(sh_exec); /*(no "exec " in cmd.exe; skip)*/
+              #else
                 if (sh_exec) {
                     /*(preserve prior behavior for SCGI exec of command)*/
                     /*(admin should really prefer to put
@@ -1630,24 +1675,20 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                         free(host->args.ptr[m]);
                     free(host->args.ptr);
 
-                    host->args.ptr = calloc(4, sizeof(char *));
-                    force_assert(host->args.ptr);
+                    host->args.ptr = ck_calloc(4, sizeof(char *));
                     host->args.used = 3;
-                    host->args.size = 4;
-                    host->args.ptr[0] = malloc(sizeof("/bin/sh"));
-                    force_assert(host->args.ptr[0]);
+                    host->args.ptr[0] = ck_malloc(sizeof("/bin/sh"));
                     memcpy(host->args.ptr[0], "/bin/sh", sizeof("/bin/sh"));
-                    host->args.ptr[1] = malloc(sizeof("-c"));
-                    force_assert(host->args.ptr[1]);
+                    host->args.ptr[1] = ck_malloc(sizeof("-c"));
                     memcpy(host->args.ptr[1], "-c", sizeof("-c"));
-                    host->args.ptr[2] =
-                      malloc(sizeof("exec ")-1+buffer_clen(host->bin_path)+1);
-                    force_assert(host->args.ptr[2]);
+                    host->args.ptr[2] = ck_malloc(sizeof("exec ")-1
+                                              + buffer_clen(host->bin_path)+1);
                     memcpy(host->args.ptr[2], "exec ", sizeof("exec ")-1);
                     memcpy(host->args.ptr[2]+sizeof("exec ")-1,
                            host->bin_path->ptr, buffer_clen(host->bin_path)+1);
                     host->args.ptr[3] = NULL;
                 }
+              #endif
 
                 if (host->min_procs > host->max_procs)
                     host->min_procs = host->max_procs;
@@ -1841,8 +1882,8 @@ static void gw_host_hctx_deq(gw_handler_ctx * const hctx) {
 static void gw_backend_close(gw_handler_ctx * const hctx, request_st * const r) {
     if (hctx->fd >= 0) {
         fdevent_fdnode_event_del(hctx->ev, hctx->fdn);
-        /*fdevent_unregister(ev, hctx->fd);*//*(handled below)*/
-        fdevent_sched_close(hctx->ev, hctx->fd, 1);
+        /*fdevent_unregister(ev, hctx->fdn);*//*(handled below)*/
+        fdevent_sched_close(hctx->ev, hctx->fdn);
         hctx->fdn = NULL;
         hctx->fd = -1;
         gw_host_hctx_deq(hctx);
@@ -1913,6 +1954,36 @@ static void gw_conditional_tcp_fin(gw_handler_ctx * const hctx, request_st * con
     fdevent_fdnode_event_clr(hctx->ev, hctx->fdn, FDEVENT_OUT);
 }
 
+static handler_t gw_write_refill_wb(gw_handler_ctx * const hctx, request_st * const r) {
+    if (chunkqueue_is_empty(&r->reqbody_queue))
+        return HANDLER_GO_ON;
+    if (hctx->stdin_append) {
+        if (chunkqueue_length(&hctx->wb) < 65536 - 16384)
+            return hctx->stdin_append(hctx);
+    }
+    else {
+        const chunk * const c = r->reqbody_queue.last;
+        const off_t qlen = chunkqueue_length(&r->reqbody_queue);
+        if (c->type == FILE_CHUNK) {
+            /*(move all but last chunk if reqbody_queue using tempfiles, unless
+             * hctx->wb is empty and only one chunk, then move last chunk)*/
+            if (c != r->reqbody_queue.first)
+                chunkqueue_steal(&hctx->wb, &r->reqbody_queue,
+                                 qlen - (c->file.length-c->offset));
+            else if (chunkqueue_is_empty(&hctx->wb))
+                chunkqueue_append_chunkqueue(&hctx->wb, &r->reqbody_queue);
+        }
+        else if (qlen + chunkqueue_length(&hctx->wb) > 65536) {
+            if (0 != chunkqueue_steal_with_tempfiles(&hctx->wb,
+                       &r->reqbody_queue, qlen, r->conf.errh))
+                return HANDLER_ERROR;
+        }
+        else
+            chunkqueue_append_chunkqueue(&hctx->wb, &r->reqbody_queue);
+    }
+    return HANDLER_GO_ON;
+}
+
 static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * const r) {
     switch(hctx->state) {
     case GW_STATE_INIT:
@@ -1972,6 +2043,8 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
         __attribute_fallthrough__
     case GW_STATE_CONNECT_DELAYED:
         if (hctx->state == GW_STATE_CONNECT_DELAYED) { /*(not GW_STATE_INIT)*/
+            if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_OUT))
+                return HANDLER_WAIT_FOR_EVENT;
             int socket_error = fdevent_connect_status(hctx->fd);
             if (socket_error != 0) {
                 gw_proc_connect_error(r, hctx->host, hctx->proc, hctx->pid,
@@ -2024,10 +2097,20 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             off_t bytes_out = hctx->wb.bytes_out;
             if (r->con->srv->network_backend_write(hctx->fd, &hctx->wb,
                                                    MAX_WRITE_LIMIT, errh) < 0) {
-                switch(errno) {
+              #ifdef _WIN32
+                switch(WSAGetLastError())
+              #else
+                switch(errno)
+              #endif
+                {
+                #ifdef _WIN32
+                case WSAENOTCONN:
+                case WSAECONNRESET:
+                #else
                 case EPIPE:
                 case ENOTCONN:
                 case ECONNRESET:
+                #endif
                     /* the connection got dropped after accept()
                      * we don't care about that --
                      * if you accept() it, you have to handle it.
@@ -2046,12 +2129,8 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             }
             else if (hctx->wb.bytes_out > bytes_out) {
                 hctx->write_ts = hctx->proc->last_used = log_monotonic_secs;
-                if (hctx->stdin_append
-                    && chunkqueue_length(&hctx->wb) < 65536 - 16384
-                    && !chunkqueue_is_empty(&r->reqbody_queue)) {
-                    handler_t rc = hctx->stdin_append(hctx);
-                    if (HANDLER_GO_ON != rc) return rc;
-                }
+                handler_t rc = gw_write_refill_wb(hctx, r);
+                if (HANDLER_GO_ON != rc) return rc;
             }
         }
 
@@ -2067,7 +2146,8 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
                       & FDEVENT_STREAM_REQUEST_POLLIN)) {
                     r->conf.stream_request_body |=
                         FDEVENT_STREAM_REQUEST_POLLIN;
-                    r->con->is_readable = 1; /* trigger optimistic client read */
+                    if (r->http_version <= HTTP_VERSION_1_1)
+                        r->con->is_readable = 1;/*trigger optimistic client rd*/
                 }
             }
             if (0 == wblen) {
@@ -2201,24 +2281,33 @@ handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
          * buffered to disk if too large and backend can not keep up */
         /*(64k - 4k to attempt to avoid temporary files
          * in conjunction with FDEVENT_STREAM_REQUEST_BUFMIN)*/
-        if (chunkqueue_length(&hctx->wb) > 65536 - 4096) {
-            if (r->conf.stream_request_body & FDEVENT_STREAM_REQUEST_BUFMIN) {
-                r->conf.stream_request_body &= ~FDEVENT_STREAM_REQUEST_POLLIN;
-            }
-            if (0 != hctx->wb.bytes_in) return HANDLER_WAIT_FOR_EVENT;
+        if (chunkqueue_length(&hctx->wb) > 65536 - 4096
+            && (r->conf.stream_request_body & FDEVENT_STREAM_REQUEST_BUFMIN)) {
+            r->conf.stream_request_body &= ~FDEVENT_STREAM_REQUEST_POLLIN;
+            return HANDLER_WAIT_FOR_EVENT;
         }
         else {
             handler_t rc = r->con->reqbody_read(r);
 
-            /* XXX: create configurable flag */
-            /* CGI environment requires that Content-Length be set.
-             * Send 411 Length Required if Content-Length missing.
-             * (occurs here if client sends Transfer-Encoding: chunked
-             *  and module is flagged to stream request body to backend) */
-            if (-1 == r->reqbody_length && hctx->opts.backend != BACKEND_PROXY){
+            if (hctx->opts.backend == BACKEND_PROXY) {
+                if (hctx->state == GW_STATE_INIT /* ??? < GW_STATE_WRITE ??? */
+                    && rc == HANDLER_WAIT_FOR_EVENT
+                    /* streaming flags might not be set yet
+                     * if hctx->create_env() not called yet */
+                    && ((r->conf.stream_request_body & FDEVENT_STREAM_REQUEST)
+                        || r->h2_connect_ext))
+                    rc = HANDLER_GO_ON;
+                    /* connect() to backend proxy w/o waiting for any request body*/
+            }
+            else if (-1 == r->reqbody_length) {
+                /* XXX: create configurable flag */
+                /* CGI environment requires that Content-Length be set.
+                 * Send 411 Length Required if Content-Length missing.
+                 * (occurs here if client sends Transfer-Encoding: chunked
+                 *  and module is flagged to stream request body to backend) */
                 return (r->conf.stream_request_body & FDEVENT_STREAM_REQUEST)
                   ? http_response_reqbody_read_error(r, 411)
-                  : HANDLER_WAIT_FOR_EVENT;
+                  : (rc == HANDLER_GO_ON) ? HANDLER_WAIT_FOR_EVENT : rc;
             }
 
             if (hctx->wb_reqlen < -1 && r->reqbody_length >= 0) {
@@ -2228,18 +2317,13 @@ handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
                     handler_t rca = hctx->stdin_append(hctx);
                     if (HANDLER_GO_ON != rca) return rca;
                 }
-            }
-
-            if ((0 != hctx->wb.bytes_in || -1 == hctx->wb_reqlen)
-                && !chunkqueue_is_empty(&r->reqbody_queue)) {
-                if (hctx->stdin_append) {
-                    if (chunkqueue_length(&hctx->wb) < 65536 - 16384) {
-                        handler_t rca = hctx->stdin_append(hctx);
-                        if (HANDLER_GO_ON != rca) return rca;
-                    }
-                }
                 else
                     chunkqueue_append_chunkqueue(&hctx->wb, &r->reqbody_queue);
+            }
+
+            if (0 != hctx->wb.bytes_in || -1 == hctx->wb_reqlen) {
+                handler_t rca = gw_write_refill_wb(hctx, r);
+                if (HANDLER_GO_ON != rca) return rca;
                 if (fdevent_fdnode_interest(hctx->fdn) & FDEVENT_OUT) {
                     return (rc == HANDLER_GO_ON) ? HANDLER_WAIT_FOR_EVENT : rc;
                 }
@@ -2400,7 +2484,8 @@ static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st 
               "socket: %s for %s?%.*s, closing connection",
               (long long)hctx->wb.bytes_out, proc->connection_name->ptr,
               r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
-        } else if (!light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)) {
+        } else if (!light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)
+                   && !r->h2_connect_ext) {
             log_error(r->conf.errh, __FILE__, __LINE__,
               "response already sent out, but backend returned error on "
               "socket: %s for %s?%.*s, terminating connection",

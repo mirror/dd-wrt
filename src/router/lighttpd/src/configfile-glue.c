@@ -7,11 +7,17 @@
 #include "http_header.h"
 #include "sock_addr.h"
 
+#undef __declspec_dllimport__
+#define __declspec_dllimport__  __declspec_dllexport__
+
 #include "configfile.h"
 #include "plugin.h"
 
 #include <string.h>
 #include <stdlib.h>     /* strtol */
+
+__declspec_dllexport__
+array plugin_stats; /* global */
 
 /**
  * like all glue code this file contains functions which
@@ -235,7 +241,7 @@ int config_plugin_values_init_block(server * const srv, const array * const ca, 
                     char *e;
                     long l = strtol(v, &e, 10);
                     if (e != v && !*e && l >= 0) {
-                        cpv->v.shrt = (unsigned int)l;
+                        cpv->v.u = (unsigned int)l;
                         break;
                     }
                 }
@@ -305,8 +311,9 @@ int config_plugin_values_init(server * const srv, void *p_d, const config_plugin
     /* traverse config contexts twice: once to count, once to store matches */
 
     for (uint32_t u = 0; u < srv->config_context->used; ++u) {
-        const array *ca =
-          ((data_config const *)srv->config_context->data[u])->value;
+        const data_config * const dc =
+          (const data_config *)srv->config_context->data[u];
+        const array * const ca = dc->value;
 
         matches[n] = 0;
         for (int i = 0; cpk[i].ktype != T_CONFIG_UNSET; ++i) {
@@ -318,12 +325,19 @@ int config_plugin_values_init(server * const srv, void *p_d, const config_plugin
 
             array_set_key_value(touched,cpk[i].k,cpk[i].klen,CONST_STR_LEN(""));
 
-            if (cpk[i].scope == T_CONFIG_SCOPE_SERVER && 0 != u) {
+            if (cpk[i].scope == T_CONFIG_SCOPE_CONNECTION || 0 == u) continue;
+
+            if (cpk[i].scope == T_CONFIG_SCOPE_SERVER)
                 /* server scope options should be set only in server scope */
                 log_error(srv->errh, __FILE__, __LINE__,
                   "DEPRECATED: do not set server options in conditionals, "
                   "variable: %s", cpk[i].k);
-            }
+            if (cpk[i].scope == T_CONFIG_SCOPE_SOCKET
+                && (dc->comp!=COMP_SERVER_SOCKET || dc->cond!=CONFIG_COND_EQ))
+                /* socket options should be set in socket or global scope */
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "WARNING: %s must be in global scope or $SERVER[\"socket\"] "
+                  "with '==', or else is ignored", cpk[i].k);
         }
         if (matches[n]) contexts[n++] = (unsigned short)u;
     }
@@ -334,8 +348,7 @@ int config_plugin_values_init(server * const srv, void *p_d, const config_plugin
     /*(+1 to include global scope, whether or not any directives exist)*/
     /*(+n for extra element to end each list)*/
     p->cvlist = (config_plugin_value_t *)
-      calloc(1+n+n+elts, sizeof(config_plugin_value_t));
-    force_assert(p->cvlist);
+      ck_calloc(1+n+n+elts, sizeof(config_plugin_value_t));
 
     elts = 1+n;
     /* shift past first element if no directives in global scope */
@@ -475,7 +488,7 @@ static cond_result_t config_check_cond_nocache(request_st * const r, const data_
 static cond_result_t config_check_cond_nocache_eval(request_st * const r, const data_config * const dc, const int debug_cond, cond_cache_t * const cache) {
 	/* pass the rules */
 
-	static struct const_char_buffer {
+	static const struct const_char_buffer {
 	  const char *ptr;
 	  uint32_t used;
 	  uint32_t size;
@@ -487,7 +500,7 @@ static cond_result_t config_check_cond_nocache_eval(request_st * const r, const 
 		l = &r->uri.authority;
 		break;
 	case COMP_HTTP_REMOTE_IP:
-		l = &r->con->dst_addr_buf;
+		l = r->dst_addr_buf;
 		break;
 	case COMP_HTTP_SCHEME:
 		l = &r->uri.scheme;
@@ -503,7 +516,6 @@ static cond_result_t config_check_cond_nocache_eval(request_st * const r, const 
 		break;
 	case COMP_HTTP_REQUEST_HEADER:
 		l = http_header_request_get(r, dc->ext, BUF_PTR_LEN(&dc->comp_tag));
-		if (NULL == l) l = (buffer *)&empty_string;
 		break;
 	case COMP_HTTP_REQUEST_METHOD:
 		l = http_method_buf(r->http_method);
@@ -512,7 +524,7 @@ static cond_result_t config_check_cond_nocache_eval(request_st * const r, const 
 		return (cache->local_result = COND_RESULT_FALSE);
 	}
 
-	if (__builtin_expect( (buffer_is_blank(l)), 0))
+	if (__builtin_expect( (buffer_is_empty(l)), 0))
 		l = (buffer *)&empty_string;
 
 	if (debug_cond)
@@ -548,8 +560,8 @@ static cond_result_t config_check_cond_nocache_eval(request_st * const r, const 
 			  (((uintptr_t)dc->string.ptr + dc->string.used + 1 + 7) & ~7);
 			int bits = ((unsigned char *)dc->string.ptr)[dc->string.used];
 			match ^= (bits)
-			  ? sock_addr_is_addr_eq_bits(addr, &r->con->dst_addr, bits)
-			  : sock_addr_is_addr_eq(addr, &r->con->dst_addr);
+			  ? sock_addr_is_addr_eq_bits(addr, r->dst_addr, bits)
+			  : sock_addr_is_addr_eq(addr, r->dst_addr);
 			break;
 		}
 		match ^= (buffer_is_equal(l, &dc->string));
@@ -558,6 +570,18 @@ static cond_result_t config_check_cond_nocache_eval(request_st * const r, const 
 	case CONFIG_COND_MATCH:
 		match = (dc->cond == CONFIG_COND_MATCH);
 		match ^= (config_pcre_match(r, dc, l) > 0);
+		break;
+	case CONFIG_COND_PREFIX:
+	case CONFIG_COND_SUFFIX:
+		{
+			uint_fast32_t llen = buffer_clen(l);
+			uint_fast32_t dlen = buffer_clen(&dc->string);
+			uint_fast32_t off  = (dc->cond == CONFIG_COND_PREFIX)
+			                   ? 0
+			                   : llen - dlen; /*(underflow caught below)*/
+			match = !(dlen <= llen
+			          && 0 == memcmp(l->ptr+off, dc->string.ptr, dlen));
+		}
 		break;
 	default:
 		match = 1; /* return (cache->local_result = COND_RESULT_FALSE); below */
@@ -692,8 +716,7 @@ static int config_pcre_match(request_st * const r, const data_config * const dc,
       r->cond_match[capture_offset] = r->cond_match_data + capture_offset;
     if (__builtin_expect( (NULL == cond_match->matches), 0)) {
         /*(allocate on demand)*/
-        cond_match->matches = malloc(dc->ovec_nelts * sizeof(int));
-        force_assert(cond_match->matches);
+        cond_match->matches = ck_malloc(dc->ovec_nelts * sizeof(int));
     }
     cond_match->comp_value = b; /*holds pointer to b (!) for pattern subst*/
     cond_match->captures =

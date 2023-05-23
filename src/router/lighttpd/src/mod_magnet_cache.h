@@ -12,12 +12,12 @@ typedef struct {
 	buffer etag;
 
 	lua_State *L;
+	int req_env_init;
 } script;
 
 typedef struct {
 	script **ptr;
 	uint32_t used;
-	uint32_t size;
 } script_cache;
 
 #if 0

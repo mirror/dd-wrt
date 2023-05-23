@@ -13,22 +13,31 @@
 #include "http_date.h"
 #include "http_etag.h"
 #include "http_header.h"
-#include "response.h"
+#include "plugin_config.h" /* config_feature_bool */
 #include "sock_addr.h"
 #include "stat_cache.h"
+
+#undef __declspec_dllimport__
+#define __declspec_dllimport__  __declspec_dllexport__
+
+#include "response.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
 #include "sys-socket.h"
-#include <unistd.h>
+#include "sys-unistd.h" /* <unistd.h> */
 
 /**
  * max size of the HTTP response header from backends
  * (differs from server.max-request-field-size for max request field size)
  */
 #define MAX_HTTP_RESPONSE_FIELD_SIZE 65535
+
+/* http_dispatch instance here to be defined in shared object (see base.h)*/
+__declspec_dllexport__
+struct http_dispatch http_dispatch[4];
 
 
 __attribute_cold__
@@ -91,7 +100,7 @@ int http_response_buffer_append_authority(request_st * const r, buffer * const o
 			}
 			if (0 == listen_port) listen_port = r->con->srv->srvconf.port;
 			if (default_port != listen_port) {
-				buffer_append_string_len(o, CONST_STR_LEN(":"));
+				buffer_append_char(o, ':');
 				buffer_append_int(o, listen_port);
 			}
 		}
@@ -124,13 +133,52 @@ int http_response_redirect_to_directory(request_st * const r, int status) {
 	buffer_copy_buffer(vb, o);
 	buffer_append_string_encoded(vb, BUF_PTR_LEN(&r->uri.path),
 	                             ENCODING_REL_URI);
-	buffer_append_string_len(vb, CONST_STR_LEN("/"));
+	buffer_append_char(vb, '/');
 	if (!buffer_is_blank(&r->uri.query))
 		buffer_append_str2(vb, CONST_STR_LEN("?"),
 		                       BUF_PTR_LEN(&r->uri.query));
 
 	return 0;
 }
+
+
+__attribute_cold__
+void
+http_response_delay (connection * const con)
+{
+    if (config_feature_bool(con->srv, "auth.delay-invalid-creds", 1)){
+        /*(delay sending response)*/
+        con->is_writable = 0;
+        con->traffic_limit_reached = 1;
+    }
+}
+
+
+int
+http_response_omit_header (request_st * const r, const data_string * const ds)
+{
+    const size_t klen = buffer_clen(&ds->key);
+    if (klen == sizeof("X-Sendfile")-1
+        && buffer_eq_icase_ssn(ds->key.ptr, CONST_STR_LEN("X-Sendfile")))
+        return 1;
+    if (klen >= sizeof("X-LIGHTTPD-")-1
+        && buffer_eq_icase_ssn(ds->key.ptr, CONST_STR_LEN("X-LIGHTTPD-"))) {
+        if (klen == sizeof("X-LIGHTTPD-KBytes-per-second")-1
+            && buffer_eq_icase_ssn(ds->key.ptr+sizeof("X-LIGHTTPD-")-1,
+                                   CONST_STR_LEN("KBytes-per-second"))) {
+            /* "X-LIGHTTPD-KBytes-per-second" */
+            off_t limit = strtol(ds->value.ptr, NULL, 10) << 10; /*(*=1024)*/
+            if (limit > 0
+                && (limit < r->conf.bytes_per_second
+                    || 0 == r->conf.bytes_per_second)) {
+                r->conf.bytes_per_second = limit;
+            }
+        }
+        return 1;
+    }
+    return 0;
+}
+
 
 #define MTIME_CACHE_MAX 16
 struct mtime_cache_type {
@@ -211,7 +259,7 @@ int http_response_handle_cachable(request_st * const r, const buffer *lmod, cons
 		/*(weak etag comparison must not be used for ranged requests)*/
 		int range_request = (0 != light_btst(r->rqst_htags, HTTP_HEADER_RANGE));
 		if (http_etag_matches(etag, vb->ptr, !range_request)) {
-			if (http_method_get_or_head(r->http_method)) {
+			if (http_method_get_head_query(r->http_method)) {
 				r->http_status = 304;
 				return HANDLER_FINISHED;
 			} else {
@@ -220,7 +268,7 @@ int http_response_handle_cachable(request_st * const r, const buffer *lmod, cons
 				return HANDLER_FINISHED;
 			}
 		}
-	} else if (http_method_get_or_head(r->http_method)
+	} else if (http_method_get_head_query(r->http_method)
 		   && (vb = http_header_request_get(r, HTTP_HEADER_IF_MODIFIED_SINCE,
 		                                    CONST_STR_LEN("If-Modified-Since")))
 		   && (lmod
@@ -239,6 +287,8 @@ int http_response_handle_cachable(request_st * const r, const buffer *lmod, cons
 
 
 void http_response_body_clear (request_st * const r, int preserve_length) {
+    r->resp_body_finished = 0;
+    r->resp_body_started = 0;
     r->resp_send_chunked = 0;
     r->resp_body_scratchpad = -1;
     if (light_btst(r->resp_htags, HTTP_HEADER_TRANSFER_ENCODING)) {
@@ -287,8 +337,6 @@ static void http_response_header_clear (request_st * const r) {
 void http_response_reset (request_st * const r) {
     r->http_status = 0;
     r->con->is_writable = 1;
-    r->resp_body_finished = 0;
-    r->resp_body_started = 0;
     r->handler_module = NULL;
     if (r->physical.path.ptr) { /*(skip for mod_fastcgi authorizer)*/
         buffer_clear(&r->physical.doc_root);
@@ -951,15 +999,26 @@ static int http_response_process_headers(request_st * const restrict r, http_res
             /*(flag only for mod_proxy and mod_cgi (for now))*/
             if (opts->backend != BACKEND_PROXY && opts->backend != BACKEND_CGI)
                 continue;
-            if (r->http_version >= HTTP_VERSION_2) continue;
+            if (r->http_version >= HTTP_VERSION_2 && !r->h2_connect_ext)
+                continue;
             break;
           case HTTP_HEADER_CONNECTION:
             if (opts->backend == BACKEND_PROXY) continue;
+            if (r->http_version >= HTTP_VERSION_2) continue;
             /*(simplistic attempt to honor backend request to close)*/
             if (http_header_str_contains_token(value, end - value,
                                                CONST_STR_LEN("close")))
                 r->keep_alive = 0;
-            if (r->http_version >= HTTP_VERSION_2) continue;
+            break;
+          case HTTP_HEADER_CONTENT_TYPE:
+            if (end - value >= 22   /*(prefix match probably good enough)*/
+                && 0 == memcmp(value, "application/javascript", 22)) {
+                /* value = "text/javascript"; *//*(loses ";charset=...")*/
+                /* *(const char **)&end = value+sizeof("text/javascript")-1; */
+                /*(convert "application/javascript" to "text/javascript")*/
+                value += 7; /*(step over "applica", leaving "tion")*/
+                memcpy(s+(value-s)+1, "ext", 3);
+            }
             break;
           case HTTP_HEADER_CONTENT_LENGTH:
             if (*value == '+') ++value;
@@ -995,8 +1054,7 @@ static int http_response_process_headers(request_st * const restrict r, http_res
             }
             /*(assumes "Transfer-Encoding: chunked"; does not verify)*/
             r->resp_decode_chunked = 1;
-            r->gw_dechunk = calloc(1, sizeof(response_dechunk));
-            force_assert(r->gw_dechunk);
+            r->gw_dechunk = ck_calloc(1, sizeof(response_dechunk));
             continue;
           case HTTP_HEADER_HTTP2_SETTINGS:
             /* RFC7540 3.2.1
@@ -1028,29 +1086,11 @@ static int http_response_process_headers(request_st * const restrict r, http_res
 }
 
 
-static http_response_send_1xx_cb http_response_send_1xx_h1;
-static http_response_send_1xx_cb http_response_send_1xx_h2;
-
-void
-http_response_send_1xx_cb_set (http_response_send_1xx_cb fn, int vers)
-{
-    if (vers >= HTTP_VERSION_2)
-        http_response_send_1xx_h2 = fn;
-    else if (vers == HTTP_VERSION_1_1)
-        http_response_send_1xx_h1 = fn;
-}
-
-
 int
 http_response_send_1xx (request_st * const r)
 {
-    http_response_send_1xx_cb http_response_send_1xx_fn = NULL;
-    if (r->http_version >= HTTP_VERSION_2)
-        http_response_send_1xx_fn = http_response_send_1xx_h2;
-    else if (r->http_version == HTTP_VERSION_1_1)
-        http_response_send_1xx_fn = http_response_send_1xx_h1;
-
-    if (http_response_send_1xx_fn && !http_response_send_1xx_fn(r, r->con))
+    if (    http_dispatch[r->http_version].send_1xx
+        && !http_dispatch[r->http_version].send_1xx(r, r->con))
         return 0; /* error occurred */
 
     http_response_header_clear(r);
@@ -1313,8 +1353,30 @@ handler_t http_response_read(request_st * const r, http_response_opts * const op
             avail = chunk_buffer_prepare_append(b, avail);
         }
 
+      #ifdef _WIN32
+        n = recv(fd, b->ptr+buffer_clen(b), avail, 0);
+        if (n == SOCKET_ERROR) {
+            switch (WSAGetLastError()) {
+              case WSAEWOULDBLOCK:
+              case WSAEINTR:
+                if (buffer_is_blank(b))
+                    chunk_buffer_yield(b); /*(improve large buf reuse)*/
+                return HANDLER_GO_ON;
+              case WSAECONNRESET:
+                if (opts->backend == BACKEND_CGI) {
+                    /* treat as EOF if WSAECONNRESET on local socket from CGI */
+                    n = 0;
+                    break;
+                }
+                __attribute_fallthrough__
+              default:
+                log_serror(r->conf.errh, __FILE__, __LINE__,
+                  "recv() %d %d", r->con->fd, fd);
+                return HANDLER_ERROR;
+            }
+        }
+      #else
         n = read(fd, b->ptr+buffer_clen(b), avail);
-
         if (n < 0) {
             switch (errno) {
               case EAGAIN:
@@ -1333,6 +1395,7 @@ handler_t http_response_read(request_st * const r, http_response_opts * const op
                 return HANDLER_ERROR;
             }
         }
+      #endif
 
         buffer_commit(b, (size_t)n);
       #ifdef __COVERITY__

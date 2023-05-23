@@ -4,6 +4,12 @@
  * Copyright(c) 2016 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
  * License: BSD 3-clause (same as lighttpd)
  */
+
+#ifdef _WIN32
+/* _WIN32 rand_s() requires _CRT_RAND_S defined prior to #include <stdlib.h> */
+#define _CRT_RAND_S
+#endif
+
 #include "first.h"
 
 #include "rand.h"
@@ -13,11 +19,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "sys-time.h"
+#include "sys-unistd.h" /* <unistd.h> */
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "sys-crypto-md.h" /* USE_LIB_CRYPTO and additional crypto lib config */
 #ifdef USE_NETTLE_CRYPTO
@@ -82,10 +88,20 @@
 #include <sys/ioctl.h>
 #endif
 #if defined(__APPLE__) && defined(__MACH__)
-#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 101000 /* OS X 10.10+ */
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 101200 /* OS X 10.12+ */
 #undef HAVE_ARC4RANDOM_BUF
 #define HAVE_CCRANDOMGENERATEBYTES
+#include <CommonCrypto/CommonCryptoError.h>
 #include <CommonCrypto/CommonRandom.h>
+#endif
+#endif
+
+#ifdef __has_include
+#if __has_include(<sys/auxv.h>)
+#include <sys/auxv.h> /* getauxval(AT_RANDOM) is a glibc extension */
+#ifdef AT_RANDOM
+#define HAVE_GETAUXVAL
+#endif
 #endif
 #endif
 
@@ -97,7 +113,7 @@
  * Update: li_rand_init() is now deferred until first use so that installations
  * that do not use modules which use these routines do need to potentially block
  * at startup.  Current use by core lighttpd modules is in mod_auth HTTP Digest
- * auth and in mod_usertrack.  Deferring collection of random data until first
+ * auth.  Deferring collection of random data until first
  * use may allow sufficient entropy to be collected by kernel before first use,
  * helping reduce or avoid situations in low-entropy-generating embedded devices
  * which might otherwise block lighttpd for minutes at device startup.
@@ -123,6 +139,22 @@ static int li_getentropy (void *buf, size_t buflen)
 {
   #ifdef HAVE_GETENTROPY
     return getentropy(buf, buflen);
+  #elif defined(_WIN32)
+    for (unsigned int rnum; buflen; buflen -= 4) {
+        if (0 != rand_s(&rnum) || 0 == rnum) {
+            errno = EIO;
+            return -1;
+        }
+        if (buflen > 4) {
+            memcpy(buf, &rnum, 4);
+            buf = (char *)buf + 4;
+        }
+        else {
+            memcpy(buf, &rnum, buflen);
+            break;
+        }
+    }
+    return 0;
   #else
     /*(see NOTES section in 'man getrandom' on Linux)*/
    #if defined(HAVE_GETRANDOM) || defined(SYS_getrandom)
@@ -261,10 +293,24 @@ static void li_rand_init (void)
         u = (unsigned int)(time(NULL) ^ getpid());
       #else
         /* NOTE: not cryptographically random !!! */
+       #ifdef HAVE_GETAUXVAL
+        char *auxv_random = (char *)(uintptr_t)getauxval(AT_RANDOM);
+        if (auxv_random) {
+            memcpy(&u, auxv_random, 4);
+            memcpy(xsubi, auxv_random+4, 6);
+        }
+        else
+            memset(xsubi, (u = 0), sizeof(xsubi));
+        srand((unsigned int)(time(NULL) ^ getpid()) ^ u);
+        for (u = 0; u < sizeof(unsigned short); ++u)
+            /* coverity[dont_call : FALSE] */
+            xsubi[u] ^= (unsigned short)(rand() & 0xFFFF);
+       #else
         srand((unsigned int)(time(NULL) ^ getpid()));
         for (u = 0; u < sizeof(unsigned short); ++u)
             /* coverity[dont_call : FALSE] */
             xsubi[u] = (unsigned short)(rand() & 0xFFFF);
+       #endif
         u = ((unsigned int)xsubi[0] << 16) | xsubi[1];
       #endif
     }
@@ -386,9 +432,9 @@ int li_rand_pseudo (void)
         return i;
   #endif
   #ifdef HAVE_CCRANDOMGENERATEBYTES
-    int i;
-    if (CCRandomGenerateBytes(&i, sizeof(i)) == kCCSuccess)
-        return i;
+    int j;
+    if (CCRandomGenerateBytes(&j, sizeof(j)) == kCCSuccess)
+        return j;
   #endif
   #ifdef HAVE_ARC4RANDOM_BUF
     return (int)arc4random();

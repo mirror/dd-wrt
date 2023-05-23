@@ -3,6 +3,7 @@
 %name configparser
 
 %include {
+#define NDEBUG
 #include "first.h"
 #include "base.h"
 #include "configfile.h"
@@ -17,9 +18,29 @@
 #include <stdio.h>
 #include <string.h>
 
+/*(missing declarations in generated configparser.c)*/
+static void configparserInit(void *yypRawParser);
+static void configparserFinalize(void *p);
+/*(missing declarations in generated configparser.c; defined but not used)*/
+static inline int configparserFallback(int iToken)
+  __attribute_unused__;
+#ifndef NDEBUG
+static inline void configparserTrace(FILE *TraceFILE, char *zTracePrompt)
+  __attribute_unused__;
+#endif
+
 __attribute_pure__
 static data_config * configparser_get_data_config(const array *a, const char *k, const size_t klen) {
   return (data_config *)array_get_data_unset(a, k, klen);
+}
+
+__attribute_noinline__
+static void configparser_push_data_config_list(data_config_list *v, data_config *dc) {
+    if (v->size == v->used) {
+        ck_realloc_u32((void **)&v->data, v->size, 4, sizeof(*v->data));
+        v->size += 4;
+    }
+    v->data[v->used++] = dc;
 }
 
 static void configparser_push(config_t *ctx, data_config *dc, int isnew) {
@@ -28,19 +49,21 @@ static void configparser_push(config_t *ctx, data_config *dc, int isnew) {
     force_assert(dc->context_ndx > ctx->current->context_ndx);
     array_insert_unique(ctx->all_configs, (data_unset *)dc);
     dc->parent = ctx->current;
-    vector_config_weak_push(&dc->parent->children, dc);
+    configparser_push_data_config_list(&dc->parent->children, dc);
   }
   if (ctx->configs_stack.used > 0 && ctx->current->context_ndx == 0) {
     fprintf(stderr, "Cannot use conditionals inside a global { ... } block\n");
     exit(-1);
   }
-  vector_config_weak_push(&ctx->configs_stack, ctx->current);
+  configparser_push_data_config_list(&ctx->configs_stack, ctx->current);
   ctx->current = dc;
 }
 
 static data_config *configparser_pop(config_t *ctx) {
   data_config *old = ctx->current;
-  ctx->current = vector_config_weak_pop(&ctx->configs_stack);
+  force_assert(ctx->configs_stack.used);
+  ctx->current = ctx->configs_stack.data[--ctx->configs_stack.used];
+  force_assert(old && ctx->current);
   return old;
 }
 
@@ -176,15 +199,59 @@ configparser_comp_key_id(const buffer * const obj_tag, const buffer * const comp
   return COMP_UNSET;
 }
 
-static void
-configparser_parse_condition(config_t * const ctx, const buffer * const obj_tag, const buffer * const comp_tag, const config_cond_t cond, buffer * const rvalue)
+static config_cond_t
+configparser_simplify_regex(buffer * const b)
 {
+    /* translate simple regex anchored with ^ and/or $ to simpler match types
+     * (note: skips if regex contains any '\\', even if some could be removed,
+     *  though we special-case "\.ext"; skips if other '.' found in str)
+     * (currently assumes CONFIG_COND_MATCH input, not CONFIG_COND_NOMATCH) */
+    uint32_t len = buffer_clen(b);
+    config_cond_t cond = CONFIG_COND_MATCH;
+    int off = 0;
+    if (len && b->ptr[len-1] == '$') {
+        cond = CONFIG_COND_SUFFIX;
+        if (b->ptr[0] == '\\' && b->ptr[1] == '.')
+            off = 2;
+        else if (b->ptr[0] == '^') {
+            off = 1;
+            cond = CONFIG_COND_EQ;
+        }
+        --len;
+    }
+    else if (b->ptr[0] == '^') {
+        off = 1;
+        cond = CONFIG_COND_PREFIX;
+    }
+    else
+        return CONFIG_COND_MATCH;
+
+    static const char regex_chars[] = "\\^$.|?*+()[]{}";
+    if (strcspn(b->ptr+off, regex_chars) != len - off)
+        return CONFIG_COND_MATCH;
+    if (off) { /*(remove only first char if (off == 2) to keep '.' in "\.")*/
+        memmove(b->ptr, b->ptr+1, len-1);
+        --len;
+    }
+    buffer_truncate(b, len);
+    return cond;
+}
+
+static void
+configparser_parse_condition(config_t * const ctx, const buffer * const obj_tag, const buffer * const comp_tag, config_cond_t cond, buffer * const rvalue)
+{
+    const comp_key_t comp = configparser_comp_key_id(obj_tag, comp_tag);
+    if (cond == CONFIG_COND_MATCH && comp != COMP_SERVER_SOCKET)
+        cond = configparser_simplify_regex(rvalue);
+
     const char *op = NULL;
     switch(cond) {
     case CONFIG_COND_NE:      op = "!="; break;
     case CONFIG_COND_EQ:      op = "=="; break;
     case CONFIG_COND_NOMATCH: op = "!~"; break;
     case CONFIG_COND_MATCH:   op = "=~"; break;
+    case CONFIG_COND_PREFIX:  op = "=^"; break;
+    case CONFIG_COND_SUFFIX:  op = "=$"; break;
     default:
       force_assert(0);
       return; /* unreachable */
@@ -216,7 +283,7 @@ configparser_parse_condition(config_t * const ctx, const buffer * const obj_tag,
     else {
       dc = data_config_init();
       dc->cond = cond;
-      dc->comp = configparser_comp_key_id(obj_tag, comp_tag);
+      dc->comp = comp;
 
       buffer_copy_buffer(&dc->key, tb);
       buffer_copy_buffer(&dc->comp_tag, comp_tag);
@@ -235,7 +302,10 @@ configparser_parse_condition(config_t * const ctx, const buffer * const obj_tag,
         buffer_copy_string_len(&dc->comp_tag, CONST_STR_LEN("User-Agent"));
       }
       else if (COMP_HTTP_REMOTE_IP == dc->comp
-               && (dc->cond == CONFIG_COND_EQ || dc->cond == CONFIG_COND_NE)) {
+               && (dc->cond == CONFIG_COND_EQ     ||
+                   dc->cond == CONFIG_COND_NE     ||
+                   dc->cond == CONFIG_COND_PREFIX ||
+                   dc->cond == CONFIG_COND_SUFFIX)) {
         if (!config_remoteip_normalize(rvalue, tb)) {
           fprintf(stderr, "invalid IP addr: %s\n", rvalue->ptr);
           ctx->ok = 0;
@@ -244,7 +314,8 @@ configparser_parse_condition(config_t * const ctx, const buffer * const obj_tag,
       else if (COMP_SERVER_SOCKET == dc->comp) {
         /*(redundant with parsing in network.c; not actually required here)*/
         if (rvalue->ptr[0] != ':' /*(network.c special-cases ":" and "[]")*/
-            && !(rvalue->ptr[0] == '[' && rvalue->ptr[1] == ']')) {
+            && !(rvalue->ptr[0] == '[' && rvalue->ptr[1] == ']')
+            && !(rvalue->ptr[0] == '/' || rvalue->ptr[0] == '\\')) { /*(UDS)*/
           if (http_request_host_normalize(rvalue, 0)) {
             fprintf(stderr, "invalid IP addr: %s\n", rvalue->ptr);
             ctx->ok = 0;
@@ -252,7 +323,10 @@ configparser_parse_condition(config_t * const ctx, const buffer * const obj_tag,
         }
       }
       else if (COMP_HTTP_HOST == dc->comp) {
-        if (dc->cond == CONFIG_COND_EQ || dc->cond == CONFIG_COND_NE) {
+        if (dc->cond == CONFIG_COND_EQ     ||
+            dc->cond == CONFIG_COND_NE     ||
+            dc->cond == CONFIG_COND_PREFIX ||
+            dc->cond == CONFIG_COND_SUFFIX) {
           if (http_request_host_normalize(rvalue, 0)) {
             fprintf(stderr, "invalid IP addr: %s\n", rvalue->ptr);
             ctx->ok = 0;
@@ -322,7 +396,7 @@ metaline ::= EOL.
 %destructor stringop               { buffer_free($$); }
 
 %token_type                        {buffer *}
-%token_destructor                  { buffer_free($$); }
+%token_destructor                  { buffer_free($$); UNUSED(ctx); }
 
 varline ::= key(A) ASSIGN expression(B). {
   if (ctx->ok) {
@@ -559,9 +633,7 @@ globalstart ::= GLOBAL. {
 }
 
 global ::= globalstart LCURLY metalines RCURLY. {
-  force_assert(ctx->current);
   configparser_pop(ctx);
-  force_assert(ctx->current);
 }
 
 condlines(A) ::= condlines(B) eols ELSE condline(C). {
@@ -623,6 +695,14 @@ condlines(A) ::= condlines(B) eols ELSE cond_else(C). {
       C->key.ptr[pos] = '!'; /* opposite cond */
       /*buffer_copy_string_len(C->op, CONST_STR_LEN("!~"));*/
       break;
+    case CONFIG_COND_PREFIX:
+      C->key.ptr[pos] = '!'; /* opposite cond */
+      /*buffer_copy_string_len(C->op, CONST_STR_LEN("!^"));*/
+      break;
+    case CONFIG_COND_SUFFIX:
+      C->key.ptr[pos] = '!'; /* opposite cond */
+      /*buffer_copy_string_len(C->op, CONST_STR_LEN("!$"));*/
+      break;
     default: /* should not happen; CONFIG_COND_ELSE checked further above */
       force_assert(0);
     }
@@ -653,28 +733,14 @@ condlines(A) ::= condline(B). {
 condline(A) ::= context LCURLY metalines RCURLY. {
   A = NULL;
   if (ctx->ok) {
-    data_config *cur;
-
-    cur = ctx->current;
-    configparser_pop(ctx);
-
-    force_assert(cur && ctx->current);
-
-    A = cur;
+    A = configparser_pop(ctx);
   }
 }
 
 cond_else(A) ::= context_else LCURLY metalines RCURLY. {
   A = NULL;
   if (ctx->ok) {
-    data_config *cur;
-
-    cur = ctx->current;
-    configparser_pop(ctx);
-
-    force_assert(cur && ctx->current);
-
-    A = cur;
+    A = configparser_pop(ctx);
   }
 }
 
@@ -693,7 +759,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
   B = NULL;
   buffer_free(C);
   C = NULL;
-  D->fn->free(D);
+  if (D) D->fn->free(D);
   D = NULL;
 }
 
@@ -714,6 +780,12 @@ cond(A) ::= NE. {
 }
 cond(A) ::= NOMATCH. {
   A = CONFIG_COND_NOMATCH;
+}
+cond(A) ::= PREFIX. {
+  A = CONFIG_COND_PREFIX;
+}
+cond(A) ::= SUFFIX. {
+  A = CONFIG_COND_SUFFIX;
 }
 
 stringop(A) ::= expression(B). {

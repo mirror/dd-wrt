@@ -29,8 +29,8 @@ typedef struct keyvlenvalue {
 /* Note: must be kept in sync h2.c:lshpack_idx_http_header[] */
 /* http_headers_off lists first offset at which string of specific len occur */
 static const int8_t http_headers_off[] = {
-  -1, -1,  0,  1,  4,  9, 11, 17, 21, 25, 27, -1, 30, 31,
-  37, 40, 45, 49, -1, 52, -1, -1, 53, 54, -1, 55, -1, 57
+  -1, -1,  0,  1,  4,  9, 11, 17, 21, 26, 28, -1, 31, 32,
+  38, 41, 46, 50, -1, 53, -1, -1, 54, 55, -1, 56, -1, 58
 };
 static const keyvlenvalue http_headers[] = {
   { HTTP_HEADER_TE,                          CONST_LEN_STR("te") }
@@ -55,6 +55,7 @@ static const keyvlenvalue http_headers[] = {
  ,{ HTTP_HEADER_EXPIRES,                     CONST_LEN_STR("expires") }
  ,{ HTTP_HEADER_ALT_SVC,                     CONST_LEN_STR("alt-svc") }
  ,{ HTTP_HEADER_LOCATION,                    CONST_LEN_STR("location") }
+ ,{ HTTP_HEADER_PRIORITY,                    CONST_LEN_STR("priority") }
  ,{ HTTP_HEADER_IF_MATCH,                    CONST_LEN_STR("if-match") }
  ,{ HTTP_HEADER_IF_RANGE,                    CONST_LEN_STR("if-range") }
  ,{ HTTP_HEADER_ALT_USED,                    CONST_LEN_STR("alt-used") }
@@ -114,7 +115,7 @@ enum http_header_e http_header_hkey_get(const char * const s, const size_t slen)
 
 enum http_header_e http_header_hkey_get_lc(const char * const s, const size_t slen) {
     /* XXX: might not provide much real performance over http_header_hkey_get()
-     *      (since the first-char comparision optimization was added)
+     *      (since the first-char comparison optimization was added)
      *      (and since well-known h2 headers are already mapped to hkey) */
     if (__builtin_expect( (slen < sizeof(http_headers_off)), 1)) {
         const int i = http_headers_off[slen];
@@ -353,7 +354,6 @@ void http_header_env_set(request_st * const r, const char *k, uint32_t klen, con
 void http_header_env_append(request_st * const r, const char *k, uint32_t klen, const char *v, uint32_t vlen) {
     /*if (0 == vlen) return;*//* skip check; permit env var w/ blank value */
     buffer * const vb = array_get_buf_ptr(&r->env, k, klen);
-    if (0 == vlen) return;
     http_header_token_append(vb, v, vlen);
 }
 

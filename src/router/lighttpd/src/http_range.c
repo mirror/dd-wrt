@@ -27,6 +27,14 @@
  * interoperability. */
 
 
+/* default: ignore Range with HTTP/1.0 requests */
+static int http_range_allow_http10;
+void http_range_config_allow_http10 (int flag)
+{
+    http_range_allow_http10 = flag;
+}
+
+
 __attribute_noinline__
 static int
 http_range_coalesce (off_t * const restrict ranges, int n)
@@ -73,7 +81,7 @@ static const char *
 http_range_parse_next (const char * restrict s, const off_t len,
                        off_t * const restrict ranges)
 {
-    /*(caller must check retured ranges[1] != -1, or else range was invalid)*/
+    /*(caller must check returned ranges[1] != -1, or else range was invalid)*/
 
     /*assert(len > 0);*//*(caller must ensure len > 0)*/
     char *e;
@@ -238,9 +246,9 @@ http_range_multi (request_st * const r,
         /* generate boundary-header including Content-Type and Content-Range */
         buffer_truncate(tb, prefix_len);
         buffer_append_int(tb, ranges[i]);
-        buffer_append_string_len(tb, CONST_STR_LEN("-"));
+        buffer_append_char(tb, '-');
         buffer_append_int(tb, ranges[i+1]);
-        buffer_append_string_len(tb, CONST_STR_LEN("/"));
+        buffer_append_char(tb, '/');
         buffer_append_int(tb, complete_length);
         buffer_append_string_len(tb, CONST_STR_LEN("\r\n\r\n"));
         if (c) /* single MEM_CHUNK in original cq; not using mem_min */
@@ -347,6 +355,7 @@ http_range_rfc7233 (request_st * const r)
         return http_status;
     /* no "Range" in HTTP/1.0 */
     if (r->http_version < HTTP_VERSION_1_1)
+      if (!http_range_allow_http10)
         return http_status;
     /* do not attempt to handle range if Transfer-Encoding already applied.
      * skip Range processing if Content-Encoding has already been applied,
@@ -437,7 +446,7 @@ http_range_rfc7233 (request_st * const r)
             return http_status;
 
       #if 0 /*(questionable utility; not deemed worthwhile)*/
-        /* (In a modular server, the following RFC recommentation might be
+        /* (In a modular server, the following RFC recommendation might be
          *  expensive and invasive to implement perfectly, so only making an
          *  effort here to comply with known headers added within this routine
          *  and within the purview of Range requests)

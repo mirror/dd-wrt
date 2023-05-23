@@ -5,16 +5,19 @@
 
 #include "first.h"
 
+#undef __declspec_dllimport__
+#define __declspec_dllimport__  __declspec_dllexport__
+
 #include "log.h"
 
 #include <sys/types.h>
 #include "sys-time.h"
+#include "sys-unistd.h" /* <unistd.h> */
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>      /* vsnprintf() */
 #include <stdlib.h>     /* malloc() free() */
-#include <unistd.h>
 
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
@@ -25,15 +28,25 @@
 
 static fdlog_st log_stderrh = { FDLOG_FD, STDERR_FILENO, { NULL, 0, 0 }, NULL };
 static fdlog_st *log_errh = &log_stderrh;
-static unix_time64_t log_tlast = 0;
+static unix_time64_t tlast;
+static uint32_t thp;
+static uint32_t tlen;
+static char tstr[24]; /* 20 "%F %T" incl '\0' +2 ": " */
 
 /* log_con_jqueue instance here to be defined in shared object (see base.h) */
+__declspec_dllexport__
 connection *log_con_jqueue;
 
+__declspec_dllexport__
 unix_time64_t log_epoch_secs = 0;
+__declspec_dllexport__
 unix_time64_t log_monotonic_secs = 0;
 
 #if !defined(HAVE_CLOCK_GETTIME) || !HAS_TIME_BITS64
+
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 
 int log_clock_gettime (const int clockid, unix_timespec64_t * const ts) {
   #ifdef HAVE_CLOCK_GETTIME
@@ -49,6 +62,17 @@ int log_clock_gettime (const int clockid, unix_timespec64_t * const ts) {
     }
     return rc;
    #endif
+  #elif defined(_MSC_VER)
+    /* https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeasfiletime */
+    /* https://docs.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-filetime */
+    /* Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC). */
+    UNUSED(clockid);
+    union { FILETIME ft; ULARGE_INTEGER u; } n; /*(alignment)*/
+    GetSystemTimeAsFileTime(&n.ft);
+    n.u.QuadPart -= 116444736000000000uLL; /* FILETIME Jan 1 1970 00:00:00 */
+    ts->tv_sec  = (unix_time64_t)(n.u.QuadPart / 10000000uL);
+    ts->tv_nsec = (unix_time64_t)(n.u.QuadPart % 10000000uL * 100uL);
+    return 0;
   #else
     /* Mac OSX before 10.12 Sierra does not provide clock_gettime()
      * e.g. defined(__APPLE__) && defined(__MACH__)
@@ -95,42 +119,50 @@ ssize_t write_all(int fd, const void * const buf, size_t count) {
 }
 
 
+static void
+log_buffer_tstr (const unix_time64_t t)
+{
+    /* cache the generated timestamp */
+    struct tm tm;
+    tlast = t;
+   #ifdef __MINGW32__
+    tlen = (uint32_t) strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S",
+                               localtime64_r(&tlast, &tm));
+   #else
+    tlen = (uint32_t) strftime(tstr, sizeof(tstr), "%F %T",
+                               localtime64_r(&tlast, &tm));
+   #endif
+}
+
+
 __attribute_nonnull__()
 static void
 log_buffer_timestamp (buffer * const restrict b)
 {
-    if (-2 == log_tlast) { /* -2 is value to flag high-precision timestamp */
+    if (thp) { /* high-precision timestamp */
         unix_timespec64_t ts = { 0, 0 };
         log_clock_gettime_realtime(&ts);
       #if 0
         buffer_append_int(b, TIME64_CAST(ts.tv_sec));
-      #else /*(closer to syslog time format RFC 3339)*/
-        struct tm tm;
-        buffer_append_strftime(b, "%F %T",
-                               localtime64_r(&ts.tv_sec, &tm));
-      #endif
         buffer_append_string_len(b, CONST_STR_LEN(".000000000: "));
+      #else /*(closer to syslog time format RFC 3339)*/
+        if (__builtin_expect( (tlast != ts.tv_sec), 0))
+            log_buffer_tstr(ts.tv_sec);
+        buffer_append_str2(b, tstr, tlen, CONST_STR_LEN(".000000000: "));
+      #endif
         char n[LI_ITOSTRING_LENGTH];
         const size_t nlen =
           li_utostrn(n, sizeof(n), (unsigned long)ts.tv_nsec);
         memcpy(b->ptr+buffer_clen(b)-nlen-2, n, nlen);
     }
     else {
-        /* cache the generated timestamp */
-        static uint32_t tlen;
-        static char tstr[24]; /* 20 "%F %T" incl '\0' +2 ": " */
-        if (__builtin_expect( (log_tlast != log_epoch_secs), 0)) {
-            struct tm tm;
-            log_tlast = log_epoch_secs;
-            tlen = (uint32_t)
-                     strftime(tstr, sizeof(tstr), "%F %T",
-                              localtime64_r(&log_tlast, &tm));
+        if (__builtin_expect( (tlast != log_epoch_secs), 0)) {
+            log_buffer_tstr(log_epoch_secs);
             tstr[  tlen] = ':';
             tstr[++tlen] = ' ';
             /*tstr[++tlen] = '\0';*//*(not necessary for our use)*/
                    ++tlen;
         }
-
         buffer_copy_string_len(b, tstr, tlen);
     }
 }
@@ -179,13 +211,15 @@ log_buffer_vsprintf (buffer * const restrict b,
     size_t blen = buffer_clen(b);
     size_t bsp  = buffer_string_space(b)+1;
     char *s = b->ptr + blen;
-    size_t n;
+    unsigned int n;
 
     va_list aptry;
     va_copy(aptry, ap);
-    n = (size_t)vsnprintf(s, bsp, fmt, aptry);
+    n = (unsigned int)vsnprintf(s, bsp, fmt, aptry);
     va_end(aptry);
 
+    if ((int)n <= 0)
+        return;
     if (n < bsp)
         buffer_truncate(b, blen+n); /*buffer_commit(b, n);*/
     else {
@@ -193,15 +227,16 @@ log_buffer_vsprintf (buffer * const restrict b,
         vsnprintf(s, n+1, fmt, ap);
     }
 
-    size_t i;
+    unsigned int i;
     for (i = 0; i < n && ' ' <= s[i] && s[i] <= '~'; ++i) ;/*(ASCII isprint())*/
     if (i == n) return; /* common case; nothing to encode */
 
     /* need to encode log line
      * copy original line fragment, append encoded line to buffer, free copy */
-    char * const src = (char *)malloc(n);
-    memcpy(src, s, n); /*(note: not '\0'-terminated)*/
-    buffer_truncate(b, blen);
+    n -= i;
+    char * const src = (char *)ck_malloc(n);
+    memcpy(src, s+i, n); /*(note: not '\0'-terminated)*/
+    buffer_truncate(b, blen+i);
     buffer_append_string_c_escaped(b, src, n);
     free(src);
 }
@@ -229,13 +264,36 @@ static void
 log_error_write (const log_error_st * const errh, buffer * const restrict b)
 {
     if (errh->mode != FDLOG_SYSLOG) { /* FDLOG_FD FDLOG_FILE FDLOG_PIPE */
-        buffer_append_string_len(b, CONST_STR_LEN("\n"));
+        buffer_append_char(b, '\n');
         write_all(errh->fd, BUF_PTR_LEN(b));
     }
     else {
+      #ifdef HAVE_SYSLOG_H
         syslog(LOG_ERR, "%s", b->ptr);
+      #endif
     }
 }
+
+
+#ifdef _WIN32
+#include <winsock2.h>   /* WSAGetLastError() */
+
+__attribute_noinline__
+static void
+log_error_append_winerror (buffer * const b, DWORD dwMessageId)
+{
+    if (0 == dwMessageId) return; /* The operation completed successfully. */
+    TCHAR lpMsgBuf[1024];
+    lpMsgBuf[0] = '\0';
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                  NULL, dwMessageId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  (LPTSTR)lpMsgBuf, sizeof(lpMsgBuf)/sizeof(TCHAR), NULL);
+    size_t len = strlen(lpMsgBuf);
+    if (len && lpMsgBuf[len-1] == '\n') --len;
+    if (len && lpMsgBuf[len-1] == '\r') --len;
+    buffer_append_str2(b, CONST_STR_LEN(": "), lpMsgBuf, len);
+}
+#endif
 
 
 __attribute_noinline__
@@ -264,8 +322,19 @@ log_error_va_list_impl (const log_error_st *errh,
     if (NULL == b) return; /*(errno not modified if errh->fd == -1)*/
 
     log_buffer_vsprintf(b, fmt, ap);
+  #ifdef _WIN32
+    switch (perr) {
+      case 0: default: break;
+      case 1: log_error_append_winerror(b, GetLastError());
+              if (errnum) log_error_append_strerror(b, errnum);
+              break;
+      case 2: log_error_append_winerror(b, WSAGetLastError());
+              break;
+    }
+  #else
     if (perr)
         log_error_append_strerror(b, errnum);
+  #endif
 
     log_error_write(errh, b);
 
@@ -296,6 +365,20 @@ log_perror (log_error_st * const errh,
     log_error_va_list_impl(errh, filename, line, fmt, ap, 1);
     va_end(ap);
 }
+
+
+#ifdef _WIN32
+void
+log_serror (log_error_st * const errh,
+            const char * const filename, const unsigned int line,
+            const char * const fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    log_error_va_list_impl(errh, filename, line, fmt, ap, 2);
+    va_end(ap);
+}
+#endif
 
 
 void
@@ -341,11 +424,12 @@ log_error_multiline (log_error_st *errh,
 log_error_st *
 log_set_global_errh (log_error_st * const errh, const int ts_high_precision)
 {
-    /* reset log_tlast
+    /* reset tlast
      * -1 for cached timestamp to not match log_epoch_secs
      *    (e.g. if realtime clock init at 0)
-     * -2 for high precision timestamp */
-    log_tlast = ts_high_precision ? -2 : -1;
+     */
+    tlast = -1;
+    thp = ts_high_precision;
 
     buffer_free_ptr(&log_stderrh.b);
     return (log_errh = errh ? errh : &log_stderrh);

@@ -12,14 +12,25 @@
 #include "request.h"
 #include "sock_addr.h"
 
+#ifdef _WIN32 /* quick kludges; revisit */
+typedef int gid_t;
+/*typedef int uid_t;*/
+#ifndef __uid_t_defined
+#define __uid_t_defined 1
+typedef unsigned __uid_t;
+typedef __uid_t uid_t;
+#endif /* __uid_t_defined */
+#endif
+
 struct fdevents;        /* declaration */
 struct server_socket;   /* declaration */
+struct http_dispatch;   /* declaration */
 
 
 struct connection {
 
 	request_st request;
-	h2con *h2;
+	hxcon *hx;
 
 	int fd;                      /* the FD for this connection */
 	fdnode *fdn;                 /* fdevent (fdnode *) object */
@@ -36,13 +47,12 @@ struct connection {
 	chunkqueue *write_queue;      /* a large queue for low-level write ( HTTP response ) [ file, mem ] */
 	chunkqueue *read_queue;       /* a small queue for low-level read ( HTTP request ) [ mem ] */
 
-	off_t bytes_written;          /* used by mod_accesslog, mod_rrd */
-	off_t bytes_written_cur_second; /* used by mod_accesslog, mod_rrd */
-	off_t bytes_read;             /* used by mod_accesslog, mod_rrd */
+	off_t bytes_written_cur_second; /* used by rate-limiting and mod_status */
 
 	int (* network_write)(struct connection *con, chunkqueue *cq, off_t max_bytes);
 	int (* network_read)(struct connection *con, chunkqueue *cq, off_t max_bytes);
 	handler_t (* reqbody_read)(struct request_st *r);
+	const struct http_dispatch *fn;
 
 	server *srv;
 	void *plugin_slots;
@@ -68,6 +78,7 @@ struct connection {
 
 /* log_con_jqueue is in log.c to be defined in shared object */
 #define joblist_append(con) connection_jq_append(con)
+__declspec_dllimport__
 extern connection *log_con_jqueue;
 static inline void connection_jq_append(connection * const restrict con);
 static inline void connection_jq_append(connection * const restrict con)
@@ -138,8 +149,6 @@ typedef struct server_socket {
 
 typedef struct {
 	server_socket **ptr;
-
-	uint32_t size;
 	uint32_t used;
 } server_socket_array;
 
@@ -154,12 +163,6 @@ struct server {
 
 	/* buffers */
 	buffer *tmp_buf;
-
-	/* counters */
-	int con_opened;
-	int con_read;
-	int con_written;
-	int con_closed;
 
 	int max_fds;    /* max possible fds */
 	int max_fds_lowat;/* low  watermark */
@@ -178,12 +181,14 @@ struct server {
 
 	/* members used at start-up or rarely used */
 
+	handler_t (* plugins_request_reset)(request_st *r);/*(for cgi.local-redir)*/
+
 	server_config srvconf;
 	void *config_data_base;
 
 	server_socket_array srv_sockets;
 	server_socket_array srv_sockets_inherited;
-	struct { void *ptr; uint32_t used; uint32_t size; } plugins;
+	struct { void *ptr; uint32_t used; } plugins;
 
 	unix_time64_t startup_ts;
 	unix_time64_t graceful_expire_ts;
@@ -193,6 +198,7 @@ struct server {
 	pid_t pid;
 	int stdin_fd;
 
+	const buffer *default_server_tag;
 	char **argv;
   #ifdef HAVE_PCRE2_H
 	void *match_data; /*(shared and reused)*/

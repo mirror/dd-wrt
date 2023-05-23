@@ -2,7 +2,8 @@
 
 # env
 if ($ENV{"QUERY_STRING"} =~ /^env=(\w+)/) {
-    print "Status: 200\r\n\r\n$ENV{$1}";
+    my $v = defined($ENV{$1}) ? $ENV{$1} : "[$1 not found]";
+    print "Status: 200\r\n\r\n$v";
     exit 0;
 }
 
@@ -27,12 +28,17 @@ if ($ENV{"QUERY_STRING"} eq "send404") {
 
 # X-Sendfile
 if ($ENV{"QUERY_STRING"} eq "xsendfile") {
+    # add path prefix if cygwin tests running for win32native executable
+    # (strip volume so path starts with '/'; works only on same volume)
+    my $prefix = $ENV{CYGROOT} || "";
+    $prefix =~ s/^[a-z]://i;
+
     # urlencode path for CGI header
     # (including urlencode ',' if in path, for X-Sendfile2 w/ FastCGI (not CGI))
     # (This implementation is not minimal encoding;
     #  encode everything that is not alphanumeric, '.' '_', '-', '/')
     require Cwd;
-    my $path = Cwd::getcwd() . "/index.txt";
+    my $path = $prefix . Cwd::getcwd() . "/index.txt";
     $path =~ s#([^\w./-])#"%".unpack("H2",$1)#eg;
 
     print "Status: 200\r\n";

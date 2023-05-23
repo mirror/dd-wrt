@@ -179,11 +179,13 @@ typedef enum {
 
 void buffer_append_string_encoded(buffer * restrict b, const char * restrict s, size_t s_len, buffer_encoding_t encoding);
 
-void buffer_append_string_encoded_json(buffer * restrict b, const char * restrict s, size_t len);
-
 /* escape non-printable characters; simple escapes for \t, \r, \n; fallback to \xCC */
 __attribute_nonnull__()
 void buffer_append_string_c_escaped(buffer * restrict b, const char * restrict s, size_t s_len);
+
+/* escape non-printable chars, '"', '\\', and chars which high bit set */
+void buffer_append_bs_escaped (buffer * restrict b, const char * restrict s, size_t len);
+void buffer_append_bs_escaped_json (buffer * restrict b, const char * restrict s, size_t len);
 
 __attribute_nonnull__()
 void buffer_urldecode_path(buffer *b);
@@ -315,13 +317,19 @@ static inline void buffer_blank(buffer *b) {
     b->ptr ? buffer_truncate(b, 0) : (void)buffer_extend(b, 0);
 }
 
+__attribute_nonnull__()
+static inline void buffer_append_char (buffer *b, char c);
+static inline void buffer_append_char (buffer *b, char c) {
+    *(buffer_extend(b, 1)) = c;
+}
+
 /* append '/' to non-empty strings not ending in '/' */
 __attribute_nonnull__()
 static inline void buffer_append_slash(buffer *b);
 static inline void buffer_append_slash(buffer *b) {
     const uint32_t len = buffer_clen(b);
     if (len > 0 && '/' != b->ptr[len-1])
-        buffer_append_string_len(b, CONST_STR_LEN("/"));
+        buffer_append_char(b, '/');
 }
 
 static inline void buffer_clear(buffer *b) {

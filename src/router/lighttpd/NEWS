@@ -3,6 +3,503 @@
 NEWS
 ====
 
+- 1.4.70 - 2023-05-10
+  * [autotools] chmod u+w configparser.c for lemon
+  * [build] skip build separate modules for built-ins
+  * [core] cache format secs for high prec errlog
+  * [mod_maxminddb] check remote IP each request (fixes #3191)
+  * [multiple] store ptrs to remote addr in request_st (#3192)
+  * [mod_extforward] manage remote addr per request (fixes #3192)
+  * [core] use C23 memset_explicit() were available
+  * [mod_accesslog] %{mask}a to mask/anonymize IP
+  * [core] cast to fix compiler error in prior commit
+  * [scons] fix static build to include builtin_mods
+  * [core] h2_recv_headers() tweak to reduce code size
+  * [core] h2_get_stream_req() code reuse
+  * [core] h2: remove obsolete comment
+  * [core] h2 mark :status matching lsxpack enum value
+  * [core] h2 match w/ lsxpack pseudo-header key only
+  * [core] limit server.max-request-field-size <=65535
+  * [core] permit shell HERE docs to specify config
+  * [core] add members to http_header_parse_ctx
+  * [mod_extforward] typo in comment
+  * [mod_openssl] SSL_CTX_set_options() takes uint64_t
+  * [core] reorder enum handler_t
+  * [core] connection_handle_request_start_state()
+  * [core] check chunk file open early in mmap viewadj (fixes #3197)
+  * [core] h2 http_request_parse_header() tweak
+  * [mod_extforward] recognize unix domain sockets (fixes #3198)
+  * [mod_magnet] support ./configure --with-lua=luajit (#3199)
+  * [core] remove instance of devel debug code
+  * [core] quiet coverity warning
+  * [core] connection_check_upgrade() h2_upgrade_h2c()
+  * [core] CON_STATE_REQUEST_END transient state
+  * [core] expose request_set_state() for internal use
+  * [core] h2_send_goaway_graceful()
+  * [core] h2_check_timeout()
+  * [core] h2_process_streams()
+  * [core] h2_recv_reqbody()
+  * [core] HTTP_VERSION_3 enum value
+  * [core] r->x union w/ structs for r->x.{h1}
+  * [core] r->x union w/ structs for r->x.{h1,h2}
+  * [core] http_dispatch[] tables for HTTP proto vers
+  * [core] hxcon "base class" for h2con
+  * [mod_h2] HTTP/2 module: mod_h2
+  * [multiple] optimistic client read only if HTTP/1.x
+  * [core] _WIN32 port compatibility headers
+  * [core] _WIN32 impl of setenv(), unsetenv()
+  * [multiple] _WIN32 protect code w/ HAVE_SYSLOG_H
+  * [multiple] _WIN32 protect code w/ HAVE_FORK
+  * [core] _WIN32 protect code w/ HAVE_IPV6
+  * [multiple] _WIN32 protect code w/ HAVE_SYS_UN_H
+  * [multiple] _WIN32 stat() compat sys-stat.h
+  * [core] _WIN32 uid, gid compat
+  * [core] _WIN32 signal-related compat
+  * [multiple] _WIN32 misc compat
+  * [core] _WIN32 minimal glob() impl for configfile.c
+  * [core] _WIN32 use gmtime_s(), localtime_s()
+  * [mod_dirlisting] _WIN32 Find*File()
+  * [multiple] _WIN32 Find*File() sys-dirent.h
+  * [core] _WIN32 sys-unistd.h to wrap <unistd.h>
+  * [core] _WIN32 sys-wait.h to wrap <sys/wait.h>
+  * [core] _WIN32 implementation of socketpair()
+  * [core] _WIN32 fdevent_createprocess()
+  * [core] _WIN32 socket-compat, filesystem-compat
+  * [core] _WIN32 check WSAGetLastError() w/ sockets
+  * [mod_cgi] _WIN32 use socketpair instead of pipe
+  * [core] _WIN32 clock ticks and time
+  * [core] _WIN32 alternative fdarray for Windows
+  * [core] _WIN32 basic (very limited) getopt() impl
+  * [tests] _WIN32 fcgi-responder.c, scgi-responder.c
+  * [core] _WIN32 rename __WIN32 to _WIN32
+  * [core] _WIN32 casts to quiet some VS warnings
+  * [tests] _WIN32 use TMPDIR (or TEMP) for test files
+  * [build] _WIN32 mingw build
+  * [multiple] __MINGW32__ missing strftime() "%F %T"
+  * [tests] _WIN32 adjustments in LightyTest.pm
+  * [core] _WIN32 reset std streams at startup
+  * [core] _WIN32 log_perror() with GetLastError()
+  * [core] _WIN32 log_serror() for WSAGetLastError()
+  * [core] _WIN32 use log_serror() for WSAGetLastError
+  * [core] _WIN32 use rand_s() to init pseudo RNG
+  * [core] _WIN32 fdevent_kill()
+  * [multiple] _WIN32 use fdevent_kill()
+  * [core] _WIN32 stat(), '/' and '\\' adjustments
+  * [tests] _WIN32 cygwin test support
+  * [mod_deflate] _WIN32 disable deflate.cache-dir
+  * [mod_dirlisting] _WIN32 close files before unlink
+  * [tests] _WIN32 close files before unlink
+  * [core] _WIN32 close chunk temp files before unlink
+  * [core] _WIN32 prefer WSAPoll()
+  * [core] _WIN32 lighttpd winsvc
+  * [core] _WIN32 custom fs funcs on UTF-8 paths
+  * [core] _WIN32 scream UTF-8 at MS (does not matter)
+  * [cmake] _WIN32 build more mods with BUILD_STATIC
+  * [cmake] _WIN32 remove older build config
+  * [core] _WIN32 use WSASend for writev-equiv on sock
+  * [meson] static build option under cygwin
+  * [build] _WIN32 __declspec(dllexport) *_plugin_init
+  * [build] _WIN32 shared dll build (autotools, cmake)
+  * [tests] _WIN32 skip time-sensitive tests during CI
+  * [core] use posix_spawn() where available
+  * [mod_cgi] comment about caching target dirname
+  * [meson] update comment with build flags
+  * [meson] check FORCE_{WOLFSSL,MBEDTLS}_CRYPTO
+  * [mod_auth] warn if auth.require path never matches
+  * [core] h1.[ch] collect some HTTP/1.x specific code
+  * [core] noinline connection shutdown, reset
+  * [TLS] $SERVER["socket"] inherit global ssl.engine
+  * [mod_proxy] match "map-host-response" "-" w/ Host
+  * [core] noinline stat_cache_sptree_find()
+  * [core] rename http_kv funcs, reorder http_versions
+  * [mod_cgi] move fd count to cgi_create_env()
+  * [mod_cgi] reduce code size
+  * [mod_cgi] do not issue trace if CGI closes input
+  * [mod_cgi] cgi_create_err() cold err handling func
+  * [core] always decr fd count upon socket close()
+  * [mod_mbedtls] check MBEDTLS_DEBUG_C for debug func
+  * [core] return pid_t from fdevent_waitpid()
+  * [core] _WIN32 compile fix
+  * [meson] build fix for builtin_mods
+  * [core] move some shared funcs to call from modules
+  * [build] move some files to call from modules
+  * [mod_cgi] doubly-linked list of CGI pids
+  * [mod_cgi] reuse fd already opened to /dev/null
+  * [mod_cgi] reset upload_temp_file_size in CGI close
+  * [tests] copy confs for running tests in alt dir
+  * [scons] avoid dup mod_h2 module in static build
+  * [autoconf] include fs_win32.h in hdrs for dpkg
+  * [build] ifdef _WIN32 before include fs_win32.h
+  * [mod_openssl] SSL_OP_ENABLE_KTLS_TX_ZEROCOPY_SENDFILE
+  * [mod_dirlisting] _WIN32 fix fstat() after close()
+  * [core] quiet coverity warning
+  * [mod_openssl] FreeBSD: check "kern.ipc.tls.enable"
+  * [core] fix HTTP/2 use of http_response_loop()
+  * [mod_openssl] check kernel support for KTLS
+  * [core] posix_spawnattr_setcwd_np() on QNX
+  * [core] posix_spawn_file_actions_addclosefrom_np()
+  * [core] Mac OS POSIX_SPAWN_CLOEXEC_DEFAULT
+  * [core] modify use of posix_spawnattr_setsigdefault
+  * [mod_dirlisting] _WIN32 compile fix
+  * [core] fdevent_load_file() check if limit exceeded
+  * [tests] tests/prepare.sh comment w/ alt build root
+  * [core] treat mod_h2 as built-in module (for now)
+
+- 1.4.69 - 2023-02-10
+  * [meson] remove t/test_mod_evasive.c
+  * [doc] remove references to removed modules
+  * [cmake] add doc/CMakeLists.txt to dist tar ball (#3181)
+  * [meson] add meson.build to install man pages (fixes #3181)
+  * [meson] fix typo in sbindir
+  * [core] update ls-hpack
+  * [cmake] remove -I/usr/include/mysql for mysql.h (#3181)
+  * [cmake] add -DWITH_LUA_VERSION= to specify lua ver (#3181)
+  * [cmake] use mysql_config cflags and ldflags (#3181)
+  * [cmake] do not link with fam if inotify or kqueue
+  * [TLS] fix spurious warning trace (fixes #3182)
+  * [multiple] codespell: correct spelling in comments
+  * [multiple] spelling: github action check-spelling
+  * [lemon] upgrade LEMON parser to SQLite maint ver
+  * [build] modify arguments to updated LEMON parser
+  * [core] build configparser.y w/ -Werror workarounds
+  * [lemon] fix -Wpendantic warnings for bad casts
+  * [core] avoid accept4() on ARM unless detected
+  * [cmake] use CMAKE_CURRENT_SOURCE_DIR
+  * [cmake] SERVER_SRC variable
+  * [multiple] quiet some coverity false positives
+  * [cmake] use LIGHTTPD_MODULES_DIR as relative path (fixes #3185)
+  * [core] add missed h2 state transition (fixes #3186)
+  * [core] remove cygwin O_NOFOLLOW workaround
+  * [multiple] clang -Wstrict-prototypes for C2x
+  * [core] reset SIGUSR1 to SIG_DFL before execve()
+  * [mod_webdav] modify OPTIONS response if no db cfg
+  * [mod_webdav] MOD_WEBDAV_BUILD_MINIMAL preproc opt
+  * [core] pass fdn to fdevent_sched_close,_unregister
+  * [core] disable sendfile() on TARGET_OS_IPHONE
+  * [core] iOS does not provide netinet/tcp_fsm.h
+  * [core] move headers to help isolate fdevent layer
+  * [core] avoid select() FD_ISSET repeat on active fds
+  * [core] gw_backend more precise backend env alloc
+  * [core] fdevent_poll_poll avoid potential race
+  * [tests] quickly exit tests/request.t if GET / fail
+  * [tests] adjust outdated opt in tests/lighttpd.conf
+  * [autotools] add mod_evhost to static build list
+  * [autotools] skip modules build if LIGHTTPD_STATIC
+  * [mod_cgi] cygwin supports CGI file I/O redirection
+  * [mod_dirlisting] use fdevent_rename() wrapper
+  * [core] path-info in debug trace may be unset
+  * [core] reset path-info for cgi.local-redir
+  * [autotools] fix typo in -I used --with-pcre2=/path (fixes #3190)
+  * [mod_webdav] send 409 Conflict if PUT miss parent
+  * [core] fix HTTP/2 HEADERS frame parsing bug
+  * [core] remove extra HTTP/2 HEADERS frame len check
+
+- 1.4.68 - 2023-01-03
+  * [cmake] compile lemon with native cc for x-compile
+  * [cmake] install man pages with CMake
+  * [cmake] let CMake handle the version number
+  * [cmake] set LIGHTTPD_VERSION_ID per version
+  * [meson] set LIGHTTPD_VERSION_ID per version
+  * [meson] add missing meson_version
+  * [meson] use feature options
+  * [meson] turn pcre into a combo option
+  * [meson] simplify header checking
+  * [meson] add wrapdb instructions
+  * [lighttpd-angel] waitpid after HUP before restart
+  * [core] use inotify_init() if missing IN_* defines
+  * [core] keep sockets w/ server.graceful-restart-bg
+  * [TLS] ssl.openssl.ssl-conf-cmd "DHParameters"
+  * [mod_wolfssl] check for cert must_staple
+  * [mod_mbedtls] config renegotiation;not recommended
+  * [mod_alias] fix typo in config error message
+  * [mod_proxy,mod_cgi] fix dummy Sec-WebSocket-Key
+  * [mod_wolfssl] cast to fix compile error
+  * [TLS] try DER format if reading PEM format fails
+  * [mod_openssl] libressl 3.6.0 ASN1_TIME_cmp_time_t
+  * [mod_deflate] skip cache for Cache-Control: private,no-store
+  * [mod_webdav] minor cleanups and adjustments
+  * [core] http_response_body_clear clears body flags
+  * [core] ignore server.max-worker = 1
+  * [doc/scripts/cert-staple.sh] *BSD date portability
+  * [doc/scripts/cert-staple.sh] short-circuit checks
+  * [doc/scripts/cert-staple.sh] add copyright header
+  * [meson] fix wrong array
+  * [meson] replace most has_function calls with loop
+  * [meson] use non string true/false
+  * [meson] use files()
+  * [meson] remove use of non-existent win32 xgetopt.c
+  * [meson] update comment for opts w/ type 'feature'
+  * [core] fix crash for invalid lighttpd.conf (fixes #3175)
+  * [build] do not check for pthread.h
+  * [cmake] use find_package() to include the PkgConfig module
+  * [cmake] use GNUInstallDirs to set defaults for several directories
+  * [cmake] use FindOpenSSL cmake module to search for OpenSSL
+  * [cmake] remove wolfssl code that would already be handled by CMake
+  * [cmake] improve searching for PostgreSQL
+  * [cmake] remove needless arguments from xconfig macro
+  * [cmake] prefer libpcre.pc over pcre-config
+  * [cmake] use CMake's provided FindZLIB
+  * [cmake] use CMake's provided FindBZip2
+  * [cmake] remove path hints where CMake searches by default
+  * [cmake] remove use of non-existent win32 xgetopt.c
+  * [mod_openssl] mod_openssl_write_err() shared code
+  * [mod_openssl] use SSL_sendfile() if KTLS available
+  * [mod_gnutls] use gnutls_record_send_file() if KTLS
+  * [TLS] handle '+' on ssl-conf-cmd "Options"
+  * [TLS] upgrade default cipher list to stronger set
+  * [TLS] simplify TLS config; remove deprecated opts
+  * [multiple] remove deprecated modules
+  * [mod_magnet] remove lighty.r.req_attr["response.*"]
+  * [core] remove libev fdevent option (ignore)
+  * [core] _WIN32 impl of plugins_load()
+  * [core] check for built-in plugins before dlopen
+  * [core] build core modules into lighttpd executable
+  * [core] reduce M_TOP_PAD to default on small system
+  * [multiple] mark mod_*_plugin_init() funcs cold
+  * [core] check ifndef NDEBUG before setting NDEBUG
+  * [core] server_main_setup_signals() separate func
+  * [core] server_main_setup_workers() separate func
+  * [core] server_main_setup() variable scoping
+  * [core] ck_calloc() ck_malloc() ck_realloc_u32()
+  * [multiple] employ ck_realloc_u32() shared code
+  * [core] mark gw_proc_free() cold
+  * [core] use data_config_list for config
+  * [build] omit unused vector.[ch] from build
+  * [mod_wstunnel] store value in tmp before byteswap
+  * [core] log_buffer_vsprintf tweaks
+  * [multiple] employ ck_calloc, ck_malloc shared code
+  * [core] create non-inlined vector_resize()
+  * [lighttpd-angel] remove unused includes
+  * [core] chunk.c tweaks
+  * [core] config_check_cond_nocache_eval() tweak
+  * [mod_openssl] CLOSE_NOTIFY handling with KTLS
+  * [mod_wolfssl] match mod_openssl CLOSE_NOTIFY
+  * [core] ignore config dir-listing.* if not enabled
+  * [doc] default lighttpd.conf: omit server.use-ipv6
+  * [lighttpd-angel] simplify
+  * [tests] disable auth.delay-invalid-creds for tests
+  * [mod_deflate] "deflate" should include zlib header
+  * [tests] fix "deflate" tests for added zlib header
+  * [tests] disable Nagle on client, remove sleeps
+  * [core] save ptr to avoid static analyzer realloc warn
+  * [core] wrap server_main_setup_workers w/ HAVE_FORK
+  * [core] temporarily disable O_NOFOLLOW on Cygwin
+
+- 1.4.67 - 2022-09-17
+  * Update comment about TCP_INFO on OpenBSD
+  * [mod_ajp13] fix crash with bad response headers (fixes #3170)
+  * [core] handle RDHUP when collecting chunked body
+  * [core] tweak streaming request body to backends
+  * [core] handle ENOSPC with pwritev() (#3171)
+  * [core] manually calculate off_t max (fixes #3171)
+  * [autoconf] force large file support (#3171)
+  * [multiple] quiet coverity warnings using casts
+  * [meson] add license keyword to project declaration
+
+- 1.4.66 - 2022-08-07
+  * [core] h2: optim: send window update in 16k units
+  * [mod_magnet] reset for http-response-send-file
+  * [multiple] fix json encoding
+  * [core] buffer_append_bs_escaped_json()
+  * [autoconf] update ax_prog_cc_for_build.m4
+  * [doc] add libdeflate to INSTALL
+  * [mod_webdav] cold func if xml reqbody w/o db conf
+  * [mod_webdav] check reqbody Content-Type is XML
+  * [doc] more consistent use of vars in examples
+  * [core] do not load indexfile, dirlisting if unused
+  * [mod_dirlisting] send ETag, Cache-Control w/ cache
+  * [mod_openssl] compile compat w/ openssl < 1.1.0
+  * [mod_webdav] webdav_reqbody_type_xml() fixes
+  * [core] clarify server.username = "root" error msg
+  * [mod_wolfssl] compat with older wolfssl versions
+  * [core] fix li_base64_dec() on whitespace
+  * [core] perf tweak buffer_eq_icase_ssn()
+  * [mod_deflate] fix use of libdeflate for files>128k (fixes #3161)
+  * [core] fix buffer_substr_replace() extend (fixes #3160)
+  * [mod_webdav] build with Android NDK
+  * [core] check r->http_status before handling Range
+  * [core] preprocessor option to force crypto lib
+  * [core] fix SIGUSR1 graceful restart w/ TLS (fixes #3164)
+  * [mod_authn_gssapi] warn if no confidentiality flag (fixes #3163)
+  * [mod_wstunnel] fix crash with bad hybivers (fixes #3165)
+  * [core] perf: adjust max h2 stream send increment
+  * [core] fix HTTP/2 downloads >= 4GiB (fixes #3166)
+
+- 1.4.65 - 2022-06-07
+  * [build] meson: fix typo in variable name
+  * [build] autoconf: report if building with zstd
+  * [build] meson -Dlua_version=... to specify lua ver
+  * [core] avoid CCRandomGenerateBytes on MacOS <10.12 (fixes #3140)
+  * [core] use diff var name w/ CCRandomGenerateBytes (fixes #3141)
+  * [core] parse conf cmds with SHELL or /bin/sh
+  * [core] fix HMAC with openssl 3.0
+  * [mod_webdav] no COPYFILE_CLONE_FORCE on OSX <10.12 (fixes #3142)
+  * [mod_deflate] fix to return 304 with If-None-Match (fixes #3143)
+  * [core] Illumos epoll incompatible w/ lighttpd impl
+  * [core] feature flag to allow Range w/ HTTP/1.0
+  * [mod_mbedtls] set usekeysize for mbedtls 3.2.0+
+  * [mod_deflate] collect mmap code
+  * [mod_deflate] prototype using libdeflate w/ mmap
+  * [mod_deflate] --with-libdeflate to use libdeflate
+  * [mod_deflate] mark input bytes const
+  * [core] sys-setjmp.[ch]
+  * [mod_magnet] check lighty.result.content b4 setjmp
+  * [core] include guard consistency in sys-time.h
+  * [core] network_write_file_chunk_remap separate fn
+  * [multiple] use new sys_setjmp_eval3() interface
+  * [multiple] pedantic chunk.c checks for 0-len chunk
+  * [multiple] shared code for struct chunk and mmap
+  * [mod_deflate] use pread if available
+  * [mod_deflate] improve loop compressing file chunk
+  * [core] prep server_tag at startup for h2 resp hdr
+  * [mod_magnet] defer req_env init unless needed
+  * [mod_magnet] reset after error attaching content
+  * [mod_magnet] lua_tointegerx() avoids raising error
+  * [mod_mbedtls] use newer mbedtls 3.2.0+ interfaces
+  * [mod_magnet] adjust hot path for more inlining
+  * [mod_magnet] collect chk for magnet lua_State init
+  * [mod_magnet] use type returned from lua_getfield()
+  * [core] chunk_file_pread() to wrap pread()
+  * [core] disable keep-alive if forcing HTTP/1.0 resp
+  * [mod_magnet] use lua_getextraspace() to store r
+  * [core] fall back to getauxval(AT_RANDOM), if avail
+  * [mod_magnet] keep message handler on stack
+  * [doc] update external links
+  * [mod_magnet] pass lighty table index, defer pops
+  * [mod_magnet] clear and reuse script-env table
+  * [mod_magnet] clear stack when reloading script
+  * [mod_magnet] use lua_isnoneornil() in interfaces
+  * [mod_magnet] fix lighty.c.cookie_tokens()
+  * [mod_magnet] fix lighty.c.urldec_query()
+  * [mod_magnet] remove duplicated NULL checks
+  * [mod_magnet] adjust magnet_lighty_result_get()
+  * [mod_magnet] magnet_tmpbuf_acquire(),release()
+  * [mod_magnet] lighty.c.quotedenc(),dec() funcs
+  * [mod_magnet] fix header,content legacy table clear
+  * [mod_cgi] cgi.local-redir request_reset thru fnptr
+  * [core] isolate plugins_*() funcs to main server
+  * [mod_wolfssl] wolfssl v5.0.0 defines DH_set0_pqg()
+  * [mod_auth] save letter-case diff in require config
+  * [mod_magnet] magnet_push_quoted_string shared code
+  * [mod_magnet] lighty.c.header_tokens convenience fn
+  * [core] fill in un.sun_path after accept() (fixes #3147)
+  * [mod_extforward] adjust trust check for HTTP/2
+  * [mod_proxy] adjust handling of legacy X-* headers
+  * [core] permit env w/ blank value (fix regression)
+  * [TLS] consistent debug.log-ssl-noise config type
+  * [mod_magnet] allow removal of req_env elt via nil
+  * [core] compiler workarounds for very old gcc,glibc
+  * [mod_mbedtls] use newer mbedtls 3.2.0+ interfaces
+  * [mod_ssi] check http_chunk_transfer_cqlen for err
+  * [core] chunkqueue_steal() handle unexpected 0 len
+  * [core] discard DATA from REFUSED_STREAM at h2 init
+  * [multiple] WebSockets over HTTP/2 (fixes #3151)
+  * [multiple] immed connect to backend for streaming
+  * [core] ensure socket ready before checking connect
+  * [core] reduce trace on Upgrade backend connection
+  * [core] adjust when TCP_CORK used on TLS connection
+  * [mod_cgi] disable input optim if might Upgrade
+  * [mod_cgi] immed start CGI if Upgrade
+  * [mod_wolfssl] wolfssl v5.0.0 adds ASN1_TIME_diff()
+  * [mod_openssl] libressl v3.5.0 adds ASN1_TIME_diff
+  * [TLS] warn if leaf cert read is inactive/expired
+  * [core] stricter conformance w/ upcoming HTTP/2 rev
+  * [build] -D_DEFAULT_SOURCE consistency in builds
+  * [mod_extforward] support addtl IPv6 syntax w/ "[]"
+  * [core] build fix for cygwin and lmingw
+  * [core] short-circuit earlier parsing h2 trailers
+  * [core] reformat h2.h for cleaner enum additions
+  * [core] consolidate trace for log-state-handling
+  * [core] request_config bitmasks for smaller struct
+  * [core] prefix (=^), suffix (=$) config conditions (fixes #3153)
+  * [core] tighten config parsing loop
+  * [core] convert simple config cond regex to pre/sfx
+  * [tests] able to run tests when built w/o pcre
+  * [core] allow redirect,rewrite ext subst w/o pcre
+  * [mod_sockproxy] reset http vers, avoid rare crash (fixes #3152)
+  * [core] HTTP/2 PRIORITY_UPDATE frame (experimental)
+  * [core] send HTTP/2 SETTINGS_NO_RFC7540_PRIORITIES
+  * [core] stricter check of HTTP/2 GOAWAY frame size
+  * [mod_mbedtls] use newer mbedtls 3.2.0+ interfaces
+  * [mod_webdav] opt for partial PUT via copy/rename
+  * [core] quiet compiler warning
+  * [multiple] recognize HTTP QUERY method
+  * [multiple] limit scope of socket config options
+  * [core] fix config typo reading large int from str
+  * [core] h2 prio sort urgency, incr, then stream id
+  * [core] send Priority resp hdr w/ .css, .js re-prio
+  * [multiple] reset http vers, avoid rare crash (fixes #3152)
+  * [core] delay response to http auth invalid creds
+  * [core] connection_state_machine_h2 only if con->h2
+  * [core] default server.max-keep-alive-requests 1000
+  * [mod_magnet] set script env in func first upvalue
+  * [mod_magnet] rewrite lighty.r as table of userdata
+  * [mod_status] con->h2 instead of r->http_version
+  * [mod_setenv] cleanup user-provided hdr sloppiness
+  * [core] remove func decls duplicated in plugin.h
+  * [mod_status] fix counting of HTTP/2 bytes written
+  * [mod_magnet] no local server port on unix domain
+  * [mod_extforward] unix domain socket pedantic chks
+  * [core] sketch support for abstract sockets
+  * [mod_magnet] magnet_plugin_stats_table() fn
+  * [mod_magnet] magnet_script_setup_global_state() fn
+  * [mod_magnet] lighty.server.* table w/ new function
+  * [mod_accesslog] do not double-count hdr len in %I
+  * [mod_magnet] reduce magnet_env_get_id() scanning
+  * [mod_magnet] tighten magnet_env_get_buffer_by_id()
+  * [mod_status] reusable code for r->state strings
+  * [core] reusable code for r->state strings
+  * [mod_magnet] expose r->state to lua scripts
+  * [mod_magnet] tighten magnet_env_set()
+  * [mod_magnet] lighty.r.req_item[] accessors
+  * [mod_magnet] expose r->keep_alive to lua scripts
+  * [mod_magnet] lighty.c.hrtime high-resolution time
+  * [mod_magnet] lighty.r.resp_body.get
+  * [mod_magnet] deprecate r.req_attr["response.*]
+  * [mod_magnet] separate funcs for uri_path_raw
+  * [mod_magnet] lighty.c.stat high precision time
+  * [mod_magnet] format multiline err traceback
+  * [mod_magnet] adjust p->conf.stage checks
+  * [mod_magnet] further isolate legacy API result tbl
+  * [core] buffer_append_char() convenience func
+  * [mod_accesslog] accesslog.escaping = "json"
+  * [multiple] use buffer_append_char()
+  * [mod_accesslog] remove begin/end tags from %{}t
+  * [core] fix configparser_simplify_regex() comment
+  * [multiple] simplify bytes_in/bytes_out accounting
+  * [mod_accesslog] reorder fields in switch()
+  * [core] remove unused srv->con_* counters
+  * [mod_magnet] read-only access to r->server_name
+  * [core] buffer_append_bs_escaped()
+  * [core] buffer_append_string_c_escaped ASCII optim
+  * [mod_magnet] backspace-escape encode/decode
+  * [mod_status] display HTTP/2 control stream w/ reqs
+  * [multiple] use preferred syntax for Content-Type
+  * [doc] regenerate doc/config/conf.d/mime.conf
+  * [multiple] rename status_counter -> plugin_stats
+  * [core] feature-flag server.metrics-high-precision
+  * [mod_magnet] quiet coverity false positive
+  * [mod_wolfssl] compile fix for OpenWRT
+  * [mod_webdav] If-None-Match: * on non-existent
+  * [mod_magnet] r.req_body .collect .get .set .add
+  * [mod_cgi] fix detection of failing error handler (fixes #3157)
+  * [core] "url-invalid-utf8-reject" normalization opt
+  * [mod_magnet] skip req body collect warn if modsec3
+  * [build] update descriptions to remove old lua ver
+  * [core] use current dir if context->basedir blank
+  * [multiple] application/javascript text/javascript
+  * [core] reset internal flags after graceful restart
+  * [TLS] inherit ssl.engine from global scope
+  * [core] avoid server.use-ipv6 warning after SIGUSR1
+  * [mod_webdav] alt handling PROPFIND on collection
+  * [mod_mbedtls] fix crt chain construction logic
+  * [core] h2 SETTINGS_INITIAL_WINDOW_SIZE 64k (fixes #3089)
+  * [core] increase session window size to 256k
+  * [core] h2: avoid sending small WINDOW_UPDATE frames
+  * [core] h2: avoid sending tiny DATA frames
+  * [core] update cached tables with Priority header
+  * [tests] test stubs for http_header.c and http_kv.c
+
 - 1.4.64 - 2022-01-19
   * [core] fix trace issued for loading mod_auth (fixes #3121)
   * [meson] need -lrt with glibc < 2.17 (fixes #3120)

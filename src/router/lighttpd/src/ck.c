@@ -25,8 +25,10 @@
 
 #include "ck.h"
 
-#include <stdlib.h>     /* abort() getenv() getenv_s() */
+#include <stdlib.h>     /* abort() getenv() getenv_s()
+                         * calloc() malloc() realloc() */
 #include <string.h>     /* memcpy() memset() memset_s() explicit_bzero()
+                         * memset_explicit()
                          * strerror() strerror_r() strerror_s() strlen() */
 
 #ifdef __STDC_LIB_EXT1__
@@ -39,6 +41,12 @@
 #endif
 
 #ifndef HAVE_MEMSET_S
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__-0 >= 202311L /* C23 */
+#ifndef HAVE_MEMSET_EXPLICIT
+#define HAVE_MEMSET_EXPLICIT 1
+#endif
+#endif
 
 #ifdef _WIN32
 #define VC_EXTRALEAN
@@ -59,6 +67,7 @@ typedef int sig_atomic_t;
 
 
 #if !defined(HAVE_MEMSET_S)        \
+ && !defined(HAVE_MEMSET_EXPLICIT) \
  && !defined(HAVE_EXPLICIT_BZERO)  \
  && !defined(HAVE_EXPLICIT_MEMSET) \
  && !defined(HAVE_SECUREZEROMEMORY)
@@ -140,6 +149,8 @@ ck_memclear_s (void * const s, const rsize_t smax, rsize_t n)
 
    #if defined(HAVE_EXPLICIT_BZERO)
     explicit_bzero(s, n);
+   #elif defined(HAVE_MEMSET_EXPLICIT)
+    memset_explicit(s, 0, n);
    #elif defined(HAVE_EXPLICIT_MEMSET)
     explicit_memset(s, 0, n);
    #elif defined(HAVE_SECUREZEROMEMORY)
@@ -256,7 +267,7 @@ ck_strerror_s (char * const s, const rsize_t maxsize, const errno_t errnum)
 
     /*(not enough space to store entire error string)*/
     if (maxsize > 3)
-        memcpy(s+maxsize-4, "...", 3);
+        memcpy(s+maxsize-4, "...", 4);
     return ERANGE;
 
   #endif
@@ -307,6 +318,39 @@ ck_memeq_const_time_fixed_len (const void *a, const void *b, const size_t len)
         diff |= (av[i] ^ bv[i]);
     }
     return (0 == diff);
+}
+
+
+void *
+ck_malloc (size_t nbytes)
+{
+    void *ptr = malloc(nbytes);
+    ck_assert(NULL != ptr);
+    return ptr;
+}
+
+
+void *
+ck_calloc (size_t nmemb, size_t elt_sz)
+{
+    void *ptr = calloc(nmemb, elt_sz);
+    ck_assert(NULL != ptr);
+    return ptr;
+}
+
+
+void *
+ck_realloc_u32 (void **list, size_t n, size_t x, size_t elt_sz)
+{
+  #ifdef HAVE_REALLOCARRAY /*(not currently detected by build)*/
+    ck_assert(x <= UINT32_MAX && n <= UINT32_MAX - x);
+    void *ptr = reallocarray(*list, n + x, elt_sz);
+  #else
+    ck_assert(x <= UINT32_MAX && n <= UINT32_MAX - x && n+x <= SIZE_MAX/elt_sz);
+    void *ptr = realloc(*list, (n + x) * elt_sz);
+  #endif
+    ck_assert(NULL != ptr);
+    return (*list = ptr);
 }
 
 

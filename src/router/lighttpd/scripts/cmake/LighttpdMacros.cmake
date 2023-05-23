@@ -13,7 +13,7 @@ macro(ADD_AND_INSTALL_LIBRARY LIBNAME SRCFILES)
 		set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} ${LIBNAME})
 		## Windows likes to link it this way back to app!
 		if(WIN32)
-			set_target_properties(${LIBNAME} PROPERTIES LINK_FLAGS lighttpd.lib)
+			target_link_libraries(${LIBNAME} lighttpd)
 		endif()
 
 		if(APPLE)
@@ -26,7 +26,7 @@ macro(LEMON_PARSER SRCFILE)
 	get_filename_component(SRCBASE ${SRCFILE} NAME_WE)
 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SRCBASE}.c ${CMAKE_CURRENT_BINARY_DIR}/${SRCBASE}.h
 		COMMAND ${CMAKE_CURRENT_BINARY_DIR}/lemon
-		ARGS -q ${CMAKE_CURRENT_SOURCE_DIR}/${SRCFILE} ${CMAKE_CURRENT_SOURCE_DIR}/lempar.c
+		ARGS -q -d${CMAKE_CURRENT_BINARY_DIR} -T${CMAKE_CURRENT_SOURCE_DIR}/lempar.c ${CMAKE_CURRENT_SOURCE_DIR}/${SRCFILE}
 		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/lemon ${CMAKE_CURRENT_SOURCE_DIR}/${SRCFILE} ${CMAKE_CURRENT_SOURCE_DIR}/lempar.c
 		COMMENT "Generating ${SRCBASE}.c from ${SRCFILE}"
 	)

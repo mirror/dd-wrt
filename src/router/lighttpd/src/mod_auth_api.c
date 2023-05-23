@@ -67,9 +67,7 @@ void http_auth_dumbdata_reset (void)
 
 http_auth_require_t * http_auth_require_init (void)
 {
-    http_auth_require_t *require = calloc(1, sizeof(http_auth_require_t));
-    force_assert(NULL != require);
-    return require;
+    return ck_calloc(1, sizeof(http_auth_require_t));
 }
 
 void http_auth_require_free (http_auth_require_t * const require)
@@ -87,9 +85,8 @@ __attribute_pure__
 static int http_auth_array_contains (const array * const a, const char * const k, const size_t klen)
 {
     for (size_t i = 0, used = a->used; i < used; ++i) {
-        if (buffer_is_equal_string(&a->data[i]->key, k, klen)) {
+        if (buffer_eq_slen(&((data_string *)a->data[i])->value, k, klen))
             return 1;
-        }
     }
     return 0;
 }

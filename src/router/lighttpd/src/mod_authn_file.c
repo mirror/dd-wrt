@@ -19,11 +19,13 @@
 #include <unistd.h>
 #endif
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "mod_auth_api.h"
 #include "sys-crypto-md.h" /* USE_LIB_CRYPTO */
+#include "sys-unistd.h" /* <unistd.h> */
 
 #include "base64.h"
 #include "ck.h"
@@ -62,7 +64,7 @@ INIT_FUNC(mod_authn_file_init) {
       { "htpasswd", mod_authn_file_htpasswd_basic, NULL, NULL };
     static http_auth_backend_t http_auth_backend_plain =
       { "plain", mod_authn_file_plain_basic, mod_authn_file_plain_digest, NULL };
-    plugin_data *p = calloc(1, sizeof(*p));
+    plugin_data *p = ck_calloc(1, sizeof(*p));
 
     /* register http_auth_backend_htdigest */
     http_auth_backend_htdigest.p_d = p;
@@ -737,6 +739,8 @@ static handler_t mod_authn_file_htpasswd_basic(request_st * const r, void *p_d, 
 }
 
 
+__attribute_cold__
+__declspec_dllexport__
 int mod_authn_file_plugin_init(plugin *p);
 int mod_authn_file_plugin_init(plugin *p) {
     p->version     = LIGHTTPD_VERSION_ID;

@@ -99,15 +99,18 @@
 #include "first.h"
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include "sys-mmap.h"
+#ifdef HAVE_MMAP
+#include "sys-setjmp.h"
+#endif
+#include "sys-stat.h"
 #include "sys-time.h"
+#include "sys-unistd.h" /* <unistd.h> getpid() read() unlink() write() */
 
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>     /* getpid() read() unlink() write() */
 
 #include "base.h"
 #include "ck.h"
@@ -150,21 +153,8 @@
 # include <zstd.h>
 #endif
 
-#if defined HAVE_SYS_MMAN_H && defined HAVE_MMAP && defined ENABLE_MMAP
-#define USE_MMAP
-
-#include "sys-mmap.h"
-#include <setjmp.h>
-#include <signal.h>
-
-static volatile int sigbus_jmp_valid;
-static sigjmp_buf sigbus_jmp;
-
-static void sigbus_handler(int sig) {
-	UNUSED(sig);
-	if (sigbus_jmp_valid) siglongjmp(sigbus_jmp, 1);
-	ck_bt_abort(__FILE__, __LINE__, "SIGBUS");
-}
+#ifndef HAVE_LIBZ
+#undef HAVE_LIBDEFLATE
 #endif
 
 /* request: accept-encoding */
@@ -249,13 +239,10 @@ typedef struct {
 	chunkqueue in_queue;
 } handler_ctx;
 
-static handler_ctx *handler_ctx_init() {
-	handler_ctx *hctx;
-
-	hctx = calloc(1, sizeof(*hctx));
+static handler_ctx *handler_ctx_init(void) {
+	handler_ctx * const hctx = ck_calloc(1, sizeof(*hctx));
 	chunkqueue_init(&hctx->in_queue);
 	hctx->cache_fd = -1;
-
 	return hctx;
 }
 
@@ -276,7 +263,7 @@ static void handler_ctx_free(handler_ctx *hctx) {
 }
 
 INIT_FUNC(mod_deflate_init) {
-    plugin_data * const p = calloc(1, sizeof(plugin_data));
+    plugin_data * const p = ck_calloc(1, sizeof(plugin_data));
   #ifdef USE_ZSTD
     buffer_string_prepare_copy(&p->tmp_buf, ZSTD_CStreamOutSize());
   #else
@@ -306,10 +293,6 @@ FREE_FUNC(mod_deflate_free) {
     }
 }
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#define mkdir(x,y) mkdir(x)
-#endif
-
 static int mkdir_for_file (char *fn) {
     for (char *p = fn; (p = strchr(p + 1, '/')) != NULL; ) {
         if (p[1] == '\0') return 0; /* ignore trailing slash */
@@ -321,11 +304,13 @@ static int mkdir_for_file (char *fn) {
     return 0;
 }
 
+#ifndef _WIN32 /* disable on _WIN32 */
 static int mkdir_recursive (char *dir) {
     return 0 == mkdir_for_file(dir) && (0 == mkdir(dir,0700) || errno == EEXIST)
       ? 0
       : -1;
 }
+#endif
 
 static buffer * mod_deflate_cache_file_name(request_st * const r, const buffer *cache_dir, const buffer * const etag) {
     /* XXX: future: for shorter paths into the cache, we could checksum path,
@@ -333,6 +318,9 @@ static buffer * mod_deflate_cache_file_name(request_st * const r, const buffer *
      *      Alternatively, could use &r->uri.path, minus any
      *      (matching) &r->pathinfo suffix, with result url-encoded
      *      Alternative, we could shard etag which is already our "checksum" */
+  #ifdef __COVERITY__ /* coverity misses etaglen already checked >= 2 earlier */
+    force_assert(buffer_clen(etag) >= 2);
+  #endif
     buffer * const tb = r->tmp_buf;
     buffer_copy_path_len2(tb, BUF_PTR_LEN(cache_dir),
                               BUF_PTR_LEN(&r->physical.path));
@@ -346,8 +334,7 @@ static void mod_deflate_cache_file_open (handler_ctx * const hctx, const buffer 
      * file at same time if requested at same time, but this is unlikely
      * and resolves itself by atomic rename into place when done */
     const uint32_t fnlen = buffer_clen(fn);
-    hctx->cache_fn = malloc(fnlen+1+LI_ITOSTRING_LENGTH+1);
-    force_assert(hctx->cache_fn);
+    hctx->cache_fn = ck_malloc(fnlen+1+LI_ITOSTRING_LENGTH+1);
     memcpy(hctx->cache_fn, fn->ptr, fnlen);
     hctx->cache_fn[fnlen] = '.';
     const size_t ilen =
@@ -399,7 +386,9 @@ static void mod_deflate_merge_config_cpv(plugin_config * const pconf, const conf
         pconf->max_loadavg = cpv->v.d;
         break;
       case 8: /* deflate.cache-dir */
+       #ifndef _WIN32 /* disable on _WIN32 */
         pconf->cache_dir = cpv->v.b;
+       #endif
         break;
     #if 0 /*(cpv->k_id remapped in mod_deflate_set_defaults())*/
       case 9: /* compress.filetype */
@@ -443,8 +432,7 @@ static void mod_deflate_patch_config(request_st * const r, plugin_data * const p
 }
 
 static encparms * mod_deflate_parse_params(const array * const a, log_error_st * const errh) {
-    encparms * params = calloc(1, sizeof(encparms));
-    force_assert(params);
+    encparms * const params = ck_calloc(1, sizeof(encparms));
 
     /* set defaults */
   #ifdef USE_ZLIB
@@ -623,8 +611,7 @@ static encparms * mod_deflate_parse_params(const array * const a, log_error_st *
 
 static uint16_t * mod_deflate_encodings_to_flags(const array *encodings) {
     if (encodings->used) {
-        uint16_t * const x = calloc(encodings->used+1, sizeof(short));
-        force_assert(x);
+        uint16_t * const x = ck_calloc(encodings->used+1, sizeof(short));
         int i = 0;
         for (uint32_t j = 0; j < encodings->used; ++j) {
           #if defined(USE_ZLIB) || defined(USE_BZ2LIB) || defined(USE_BROTLI) \
@@ -661,8 +648,7 @@ static uint16_t * mod_deflate_encodings_to_flags(const array *encodings) {
     }
     else {
         /* default encodings */
-        uint16_t * const x = calloc(4+1, sizeof(short));
-        force_assert(x);
+        uint16_t * const x = ck_calloc(4+1, sizeof(short));
         int i = 0;
       #ifdef USE_ZSTD
         x[i++] = HTTP_ACCEPT_ENCODING_ZSTD;
@@ -761,6 +747,9 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                     size_t len = buffer_clen(mimetype);
                     if (len > 2 && mimetype->ptr[len-1] == '*')
                         buffer_truncate(mimetype, len-1);
+                    if (buffer_eq_slen(mimetype,
+                                       CONST_STR_LEN("application/javascript")))
+                        buffer_copy_string_len(mimetype, "text/javascript", 15);
                 }
                 if (0 == cpv->v.a->used) cpv->v.a = NULL;
                 break;
@@ -813,6 +802,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                 cpv->k_id = 8; /* deflate.cache-dir */
                 __attribute_fallthrough__
               case 8: /* deflate.cache-dir */
+               #ifndef _WIN32 /* disable on _WIN32 */
                 if (!buffer_is_blank(cpv->v.b)) {
                     buffer *b;
                     *(const buffer **)&b = cpv->v.b;
@@ -827,6 +817,7 @@ SETDEFAULTS_FUNC(mod_deflate_set_defaults) {
                     }
                 }
                 else
+               #endif
                     cpv->v.b = NULL;
                 break;
              #if 0    /*(handled further above)*/
@@ -911,7 +902,7 @@ static int stream_deflate_init(handler_ctx *hctx) {
 				 Z_DEFLATED,
 				 (hctx->compression_type == HTTP_ACCEPT_ENCODING_GZIP)
 				  ? (wbits | 16) /*(0x10 flags gzip header, trailer)*/
-				  : -wbits,      /*(negate to suppress zlib header)*/
+				  :  wbits,
 				 params ? params->gzip.memLevel : 8,/*default memLevel*/
 				 params ? params->gzip.strategy : Z_DEFAULT_STRATEGY)) {
 		return -1;
@@ -920,11 +911,12 @@ static int stream_deflate_init(handler_ctx *hctx) {
 	return 0;
 }
 
-static int stream_deflate_compress(handler_ctx * const hctx, unsigned char * const start, off_t st_size) {
+static int stream_deflate_compress(handler_ctx * const hctx, const unsigned char * const start, off_t st_size) {
 	z_stream * const z = &(hctx->u.z);
 	size_t len;
 
-	z->next_in = start;
+	/*(unknown whether or not linked zlib was built with ZLIB_CONST defined)*/
+	*((const unsigned char **)&z->next_in) = start;
 	z->avail_in = st_size;
 	hctx->bytes_in += st_size;
 
@@ -1035,7 +1027,7 @@ static int stream_bzip2_init(handler_ctx *hctx) {
 	return 0;
 }
 
-static int stream_bzip2_compress(handler_ctx * const hctx, unsigned char * const start, off_t st_size) {
+static int stream_bzip2_compress(handler_ctx * const hctx, const unsigned char * const start, off_t st_size) {
 	bz_stream * const bz = &(hctx->u.bz);
 	size_t len;
 
@@ -1158,7 +1150,7 @@ static int stream_br_init(handler_ctx *hctx) {
     return 0;
 }
 
-static int stream_br_compress(handler_ctx * const hctx, unsigned char * const start, off_t st_size) {
+static int stream_br_compress(handler_ctx * const hctx, const unsigned char * const start, off_t st_size) {
     const uint8_t *in = (uint8_t *)start;
     BrotliEncoderState * const br = hctx->u.br;
     hctx->bytes_in += st_size;
@@ -1246,7 +1238,7 @@ static int stream_zstd_init(handler_ctx *hctx) {
     return 0;
 }
 
-static int stream_zstd_compress(handler_ctx * const hctx, unsigned char * const start, off_t st_size) {
+static int stream_zstd_compress(handler_ctx * const hctx, const unsigned char * const start, off_t st_size) {
     ZSTD_CStream * const cctx = hctx->u.cctx;
     ZSTD_inBuffer zib = { start, (size_t)st_size, 0 };
     ZSTD_outBuffer zob = { hctx->output->ptr,
@@ -1331,7 +1323,7 @@ static int mod_deflate_stream_init(handler_ctx *hctx) {
 	}
 }
 
-static int mod_deflate_compress(handler_ctx * const hctx, unsigned char * const start, off_t st_size) {
+static int mod_deflate_compress(handler_ctx * const hctx, const unsigned char * const start, off_t st_size) {
 	if (0 == st_size) return 0;
 	switch(hctx->compression_type) {
 #ifdef USE_ZLIB
@@ -1433,155 +1425,266 @@ static int deflate_compress_cleanup(request_st * const r, handler_ctx * const hc
 }
 
 
-static int mod_deflate_file_chunk(request_st * const r, handler_ctx * const hctx, chunk * const c, off_t st_size) {
-	off_t abs_offset;
-	off_t toSend = -1;
-	char *start;
-#ifdef USE_MMAP
-	/* use large chunks since server blocks while compressing, anyway
-	 * (mod_deflate is not recommended for large files) */
-	const off_t mmap_chunk_size = 16 * 1024 * 1024; /* must be power-of-2 */
-	off_t we_want_to_send = st_size;
-	volatile int mapped = 0;/* quiet warning: might be clobbered by 'longjmp' */
-#else
-	start = NULL;
+#ifdef HAVE_LIBDEFLATE
+#include <libdeflate.h>
+
+__attribute_cold__
+__attribute_noinline__
+static int mod_deflate_using_libdeflate_err (handler_ctx * const hctx, buffer * const fn, const int fd)
+{
+    if (-1 == fd) {
+    }
+    else if (fd == hctx->cache_fd) {
+        if (0 != ftruncate(fd, 0))
+            log_perror(hctx->r->conf.errh, __FILE__, __LINE__, "ftruncate");
+        if (0 != lseek(fd, 0, SEEK_SET))
+            log_perror(hctx->r->conf.errh, __FILE__, __LINE__, "lseek");
+    }
+    else {
+        if (0 != unlink(fn->ptr))
+            log_perror(hctx->r->conf.errh, __FILE__, __LINE__, "unlink");
+        close(fd);
+    }
+    buffer_clear(fn); /*(&p->tmp_buf)*/
+    return 0;
+}
+
+
+static int mod_deflate_using_libdeflate_sm (handler_ctx * const hctx, const plugin_data * const p)
+{
+    const encparms * const params = p->conf.params;
+    const int clevel = (NULL != params)
+      ? params->gzip.clevel
+      : p->conf.compression_level;
+    struct libdeflate_compressor * const compressor =
+      libdeflate_alloc_compressor(clevel > 0 ? clevel : 6);
+      /* Z_DEFAULT_COMPRESSION -1 not supported */
+    if (NULL == compressor)
+        return 0;
+
+    char * const in = hctx->r->write_queue.first->mem->ptr;
+    const size_t in_nbytes = (size_t)hctx->bytes_in;
+    buffer * const addrb = hctx->output; /*(&p->tmp_buf)*/
+    size_t sz = buffer_string_space(addrb)+1;
+    sz = (hctx->compression_type == HTTP_ACCEPT_ENCODING_GZIP)
+      ? libdeflate_gzip_compress(compressor, in, in_nbytes, addrb->ptr, sz)
+      : libdeflate_zlib_compress(compressor, in, in_nbytes, addrb->ptr, sz);
+    libdeflate_free_compressor(compressor);
+
+    if (0 == sz) {
+        buffer_clear(addrb);
+        return 0;
+    }
+
+    chunkqueue_reset(&hctx->r->write_queue);
+    hctx->bytes_out = (off_t)sz;
+    if (0 != stream_http_chunk_append_mem(hctx, addrb->ptr, sz))
+        return mod_deflate_using_libdeflate_err(hctx, addrb, hctx->cache_fd);
+
+    buffer * const vb =
+      http_header_response_set_ptr(hctx->r, HTTP_HEADER_CONTENT_LENGTH,
+                                   CONST_STR_LEN("Content-Length"));
+    buffer_append_int(vb, hctx->bytes_out);
+    return 1;
+}
+
+
+#ifdef HAVE_MMAP
+#if defined(_LP64) || defined(__LP64__) || defined(_WIN64)
+
+struct mod_deflate_setjmp_params {
+    struct libdeflate_compressor *compressor;
+    void *out;
+    size_t outsz;
+};
+
+static off_t mod_deflate_using_libdeflate_setjmp_cb (void *dst, const void *src, off_t len)
+{
+    const struct mod_deflate_setjmp_params * const params = dst;
+    const handler_ctx * const hctx = src;
+    const chunk * const c = hctx->r->write_queue.first;
+    const char *in = chunk_file_view_dptr(c->file.view, c->offset);
+    return (off_t)((hctx->compression_type == HTTP_ACCEPT_ENCODING_GZIP)
+      ? libdeflate_gzip_compress(params->compressor, in, (size_t)len,
+                                 params->out, params->outsz)
+      : libdeflate_zlib_compress(params->compressor, in, (size_t)len,
+                                 params->out, params->outsz));
+}
+
+
+static int mod_deflate_using_libdeflate (handler_ctx * const hctx, const plugin_data * const p)
+{
+    buffer * const fn = hctx->output; /*(&p->tmp_buf)*/
+    int fd = hctx->cache_fd;
+    if (-1 == fd) {
+        chunkqueue * const cq = &hctx->r->write_queue;
+        if (cq->tempdirs && cq->tempdir_idx < cq->tempdirs->used) {
+            data_string *ds =(data_string *)cq->tempdirs->data[cq->tempdir_idx];
+            buffer_copy_string_len(fn, BUF_PTR_LEN(&ds->value));
+        }
+        else
+            buffer_copy_string_len(fn, CONST_STR_LEN("/var/tmp"));
+        buffer_append_path_len(fn, CONST_STR_LEN("lighttpd-XXXXXX"));
+        fd = fdevent_mkostemp(fn->ptr, 0);
+        if (-1 == fd) return 0;
+    }
+
+    const size_t sz =
+      libdeflate_zlib_compress_bound(NULL, (size_t)hctx->bytes_in);
+    /*(XXX: consider trying posix_fallocate() first,
+     * with fallback to ftrunctate() if EOPNOTSUPP)*/
+    if (0 != ftruncate(fd, (off_t)sz)) {
+        log_perror(hctx->r->conf.errh, __FILE__, __LINE__, "ftruncate");
+        return mod_deflate_using_libdeflate_err(hctx, fn, fd);
+    }
+
+    /*void *addr = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);*/
+    void * const addr = mmap(NULL, sz, PROT_WRITE, MAP_SHARED, fd, 0);
+    if (MAP_FAILED == addr) {
+        log_perror(hctx->r->conf.errh, __FILE__, __LINE__, "mmap");
+        return mod_deflate_using_libdeflate_err(hctx, fn, fd);
+    }
+
+    const encparms * const params = p->conf.params;
+    const int clevel = (NULL != params)
+      ? params->gzip.clevel
+      : p->conf.compression_level;
+    struct libdeflate_compressor * const compressor =
+      libdeflate_alloc_compressor(clevel > 0 ? clevel : 6);
+      /* Z_DEFAULT_COMPRESSION -1 not supported */
+    if (NULL != compressor) {
+        struct mod_deflate_setjmp_params outparams = { compressor, addr, sz };
+        hctx->bytes_out =
+          sys_setjmp_eval3(mod_deflate_using_libdeflate_setjmp_cb,
+                           &outparams, hctx, hctx->bytes_in);
+        libdeflate_free_compressor(compressor);
+    }
+
+    /*(XXX: we theoretically could assign mmap to FILE_CHUNK in output
+     * r->write_queue, for potential use by TLS modules, or if not using
+     * sendfile in network_write.c, but we do not (easily) know if either
+     * are configured or in use for this request.  Might consider heuristic:
+     * (*srv->srvconf.network_backend->ptr == 'w') (writev or write), or
+     * to check con->is_ssl_sock.)  These files would be safe to pass to
+     * TLS modules to read from mmap without catching SIGBUS since these files
+     * are created by lighttpd, either in deflate cache or as temporary file */
+    if (0 != munmap(addr, sz))
+        log_perror(hctx->r->conf.errh, __FILE__, __LINE__, "munmap");
+
+    if (0 == hctx->bytes_out) {
+        const chunk * const c = hctx->r->write_queue.first;
+        log_error(hctx->r->conf.errh, __FILE__, __LINE__,
+          "SIGBUS in mmap: %s %d", c->mem->ptr, c->file.fd);
+    }
+    else if (0 != ftruncate(fd, hctx->bytes_out))
+        hctx->bytes_out = 0;
+
+    if (0 == hctx->bytes_out)
+        return mod_deflate_using_libdeflate_err(hctx, fn, fd);
+
+    if (fd != hctx->cache_fd) {
+        chunkqueue * const cq = &hctx->r->write_queue;
+        chunkqueue_reset(cq);
+        http_chunk_append_file_fd_range(hctx->r, fn, fd, 0, hctx->bytes_out);
+        cq->last->file.is_temp = 1;
+    }
+
+    buffer * const vb =
+      http_header_response_set_ptr(hctx->r, HTTP_HEADER_CONTENT_LENGTH,
+                                   CONST_STR_LEN("Content-Length"));
+    buffer_append_int(vb, hctx->bytes_out);
+    return 1;
+}
+
+#endif /* defined(_LP64) || defined(__LP64__) || defined(_WIN64) */
+#endif /* HAVE_MMAP */
+
+#endif /* HAVE_LIBDEFLATE */
+
+
+static off_t mod_deflate_file_chunk_no_mmap(request_st * const r, handler_ctx * const hctx, const chunk * const c, off_t n)
+{
+    const off_t insz = n;
+    const size_t psz = (n < 2*1024*1024) ? (size_t)n : 2*1024*1024;
+    char * const p = malloc(psz);
+    if (NULL == p) {
+        log_perror(r->conf.errh, __FILE__, __LINE__, "malloc");
+        return -1;
+    }
+
+    ssize_t rd = 0;
+    for (n = 0; n < insz; n += rd) {
+        rd = chunk_file_pread(c->file.fd, p, (size_t)psz, c->offset+n);
+        if (__builtin_expect( (rd > 0), 1)) {
+            if (0 == mod_deflate_compress(hctx, (unsigned char *)p, rd))
+                continue;
+            /*(else error trace printed upon return)*/
+        }
+        else if (-1 == rd)
+            log_perror(r->conf.errh, __FILE__, __LINE__,
+              "reading %s failed", c->mem->ptr);
+        else /*(0 == rd)*/
+            log_error(r->conf.errh, __FILE__, __LINE__,
+              "file truncated %s", c->mem->ptr);
+        n = -1;
+        break;
+    }
+
+    free(p);
+    return n;
+}
+
+
+#ifdef ENABLE_MMAP
+
+static off_t mod_deflate_file_chunk_setjmp_cb (void *dst, const void *src, off_t len)
+{
+    return mod_deflate_compress(dst, (const unsigned char *)src, len);
+}
+
+
+static off_t mod_deflate_file_chunk_mmap(request_st * const r, handler_ctx * const hctx, chunk * const c, off_t n)
+{
+    /* n is length of entire file since server blocks while compressing
+     * (mod_deflate is not recommended for large files;
+     *  mod_deflate default upper limit is 128MB; deflate.max-compress-size) */
+
+    const chunk_file_view * const restrict cfv = (!c->file.is_temp)
+      ? chunkqueue_chunk_file_view(c, n, r->conf.errh)
+      : NULL;
+    if (NULL == cfv)
+        return mod_deflate_file_chunk_no_mmap(r, hctx, c, n);
+
+    const char * const p = chunk_file_view_dptr(cfv, c->offset);
+    off_t len = chunk_file_view_dlen(cfv, c->offset);
+    if (len > n) len = n;
+    off_t rc = sys_setjmp_eval3(mod_deflate_file_chunk_setjmp_cb, hctx, p, len);
+    if (__builtin_expect( (rc < 0), 0)) {
+        if (errno == EFAULT)
+            log_error(r->conf.errh, __FILE__, __LINE__,
+              "SIGBUS in mmap: %s %d", c->mem->ptr, c->file.fd);
+        else
+            log_error(r->conf.errh, __FILE__, __LINE__, "compress failed.");
+        len = -1; /*return -1;*/
+    }
+    return len;
+}
+
 #endif
 
-	if (-1 == c->file.fd) {  /* open the file if not already open */
-		if (-1 == (c->file.fd = fdevent_open_cloexec(c->mem->ptr, r->conf.follow_symlink, O_RDONLY, 0))) {
-			log_perror(r->conf.errh, __FILE__, __LINE__, "open failed %s", c->mem->ptr);
-			return -1;
-		}
-	}
 
-	abs_offset = c->offset;
-
-#ifdef USE_MMAP
-	/* mmap the buffer
-	 * - first mmap
-	 * - new mmap as the we are at the end of the last one */
-	if (c->file.mmap.start == MAP_FAILED ||
-	    abs_offset == (off_t)(c->file.mmap.offset + c->file.mmap.length)) {
-
-		/* Optimizations for the future:
-		 *
-		 * (comment is outdated since server blocks compressing file and then munmap()s file)
-		 *
-		 * adaptive mem-mapping
-		 *   the problem:
-		 *     we mmap() the whole file. If someone has a lot of large files and 32bit
-		 *     machine the virtual address area will be exhausted and we will have a failing
-		 *     mmap() call.
-		 *   solution:
-		 *     only mmap 16M in one chunk and move the window as soon as we have finished
-		 *     the first 8M
-		 *
-		 * read-ahead buffering
-		 *   the problem:
-		 *     sending out several large files in parallel trashes the read-ahead of the
-		 *     kernel leading to long wait-for-seek times.
-		 *   solutions: (increasing complexity)
-		 *     1. use madvise
-		 *     2. use a internal read-ahead buffer in the chunk-structure
-		 *     3. use non-blocking IO for file-transfers
-		 *   */
-
-		/* all mmap()ed areas are mmap_chunk_size except the last which might be smaller */
-		off_t to_mmap;
-
-		/* this is a remap, move the mmap-offset */
-		if (c->file.mmap.start != MAP_FAILED) {
-			munmap(c->file.mmap.start, c->file.mmap.length);
-			c->file.mmap.offset += mmap_chunk_size;
-		} else {
-			/* in case the range-offset is after the first mmap()ed area we skip the area */
-			c->file.mmap.offset = c->offset & ~(mmap_chunk_size-1);
-		}
-
-		to_mmap = c->file.length - c->file.mmap.offset;
-		if (to_mmap > mmap_chunk_size) to_mmap = mmap_chunk_size;
-		/* we have more to send than we can mmap() at once */
-		if (we_want_to_send > to_mmap) we_want_to_send = to_mmap;
-
-		if (MAP_FAILED == (c->file.mmap.start = mmap(0, (size_t)to_mmap, PROT_READ, MAP_SHARED, c->file.fd, c->file.mmap.offset))
-		    && (errno != EINVAL || MAP_FAILED == (c->file.mmap.start = mmap(0, (size_t)to_mmap, PROT_READ, MAP_PRIVATE, c->file.fd, c->file.mmap.offset)))) {
-			log_perror(r->conf.errh, __FILE__, __LINE__,
-			  "mmap failed %s %d", c->mem->ptr, c->file.fd);
-
-			return -1;
-		}
-
-		c->file.mmap.length = to_mmap;
-#ifdef HAVE_MADVISE
-		/* don't advise files <= 64Kb */
-		if (c->file.mmap.length > 65536 &&
-		    0 != madvise(c->file.mmap.start, c->file.mmap.length, MADV_WILLNEED)) {
-			log_perror(r->conf.errh, __FILE__, __LINE__,
-			  "madvise failed %s %d", c->mem->ptr, c->file.fd);
-		}
-#endif
-
-		/* chunk_reset() or chunk_free() will cleanup for us */
-	}
-
-	/* to_send = abs_mmap_end - abs_offset */
-	toSend = (c->file.mmap.offset + c->file.mmap.length) - abs_offset;
-	if (toSend > we_want_to_send) toSend = we_want_to_send;
-
-	if (toSend < 0) {
-		log_error(r->conf.errh, __FILE__, __LINE__,
-		  "toSend is negative: %lld %lld %lld %lld",
-		  (long long)toSend,
-		  (long long)c->file.mmap.length,
-		  (long long)abs_offset,
-		  (long long)c->file.mmap.offset);
-		force_assert(toSend < 0);
-	}
-
-	start = c->file.mmap.start;
-	mapped = 1;
-#endif
-
-	if (MAP_FAILED == c->file.mmap.start) {
-		toSend = st_size;
-		if (toSend > 2*1024*1024) toSend = 2*1024*1024;
-		if (NULL == (start = malloc((size_t)toSend)) || -1 == lseek(c->file.fd, abs_offset, SEEK_SET) || toSend != read(c->file.fd, start, (size_t)toSend)) {
-			log_perror(r->conf.errh, __FILE__, __LINE__, "reading %s failed", c->mem->ptr);
-
-			free(start);
-			return -1;
-		}
-		abs_offset = 0;
-	}
-
-#ifdef USE_MMAP
-	if (mapped) {
-		signal(SIGBUS, sigbus_handler);
-		sigbus_jmp_valid = 1;
-		if (0 != sigsetjmp(sigbus_jmp, 1)) {
-			sigbus_jmp_valid = 0;
-
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "SIGBUS in mmap: %s %d", c->mem->ptr, c->file.fd);
-			return -1;
-		}
-	}
-#endif
-
-	if (mod_deflate_compress(hctx,
-				(unsigned char *)start + (abs_offset - c->file.mmap.offset), toSend) < 0) {
-		log_error(r->conf.errh, __FILE__, __LINE__, "compress failed.");
-		toSend = -1;
-	}
-
-#ifdef USE_MMAP
-	if (mapped)
-		sigbus_jmp_valid = 0;
-	else
-#endif
-		free(start);
-
-	return toSend;
+static off_t mod_deflate_file_chunk(request_st * const r, handler_ctx * const hctx, chunk * const c, off_t n) {
+    if (-1 == c->file.fd) {  /* open the file if not already open */
+        if (-1 == (c->file.fd = fdevent_open_cloexec(c->mem->ptr, r->conf.follow_symlink, O_RDONLY, 0))) {
+            log_perror(r->conf.errh, __FILE__, __LINE__, "open failed %s", c->mem->ptr);
+            return -1;
+        }
+    }
+  #ifdef ENABLE_MMAP
+    return mod_deflate_file_chunk_mmap(r, hctx, c, n);
+  #else
+    return mod_deflate_file_chunk_no_mmap(r, hctx, c, n);
+  #endif
 }
 
 
@@ -1623,7 +1726,8 @@ static handler_t deflate_compress_response(request_st * const r, handler_ctx * c
 			len = c->file.length - c->offset;
 			if (len > max) len = max;
 			if ((len = mod_deflate_file_chunk(r, hctx, c, len)) < 0) {
-				log_error(r->conf.errh, __FILE__, __LINE__, "compress file chunk failed.");
+				log_error(r->conf.errh, __FILE__, __LINE__,
+				  "compress file chunk failed %s", c->mem->ptr);
 				return HANDLER_ERROR;
 			}
 			break;
@@ -1849,18 +1953,18 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	vb = http_header_response_get(r, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"));
 	etaglen = vb ? buffer_clen(vb) : 0;
 	if (etaglen && light_btst(r->rqst_htags, HTTP_HEADER_IF_NONE_MATCH)) {
-		const buffer *if_none_match = http_header_response_get(r, HTTP_HEADER_IF_NONE_MATCH, CONST_STR_LEN("If-None-Match"));
+		const buffer *if_none_match = http_header_request_get(r, HTTP_HEADER_IF_NONE_MATCH, CONST_STR_LEN("If-None-Match"));
 		if (   r->http_status < 300 /*(want 2xx only)*/
 		    && NULL != if_none_match
 		    && 0 == strncmp(if_none_match->ptr, vb->ptr, etaglen-1)
 		    && if_none_match->ptr[etaglen-1] == '-'
 		    && 0 == strncmp(if_none_match->ptr+etaglen, label, strlen(label))) {
 
-			if (http_method_get_or_head(r->http_method)) {
+			if (http_method_get_head_query(r->http_method)) {
 				/* modify ETag response header in-place to remove '"' and append '-label"' */
 				vb->ptr[etaglen-1] = '-'; /*(overwrite end '"')*/
 				buffer_append_string(vb, label);
-				buffer_append_string_len(vb, CONST_STR_LEN("\""));
+				buffer_append_char(vb, '"');
 				r->http_status = 304;
 			} else {
 				r->http_status = 412;
@@ -1889,7 +1993,7 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 		/* modify ETag response header in-place to remove '"' and append '-label"' */
 		vb->ptr[etaglen-1] = '-'; /*(overwrite end '"')*/
 		buffer_append_string(vb, label);
-		buffer_append_string_len(vb, CONST_STR_LEN("\""));
+		buffer_append_char(vb, '"');
 	}
 
 	/* set Content-Encoding to show selected compression type */
@@ -1902,6 +2006,7 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	if (HTTP_METHOD_HEAD == r->http_method) {
 		/* ensure that uncompressed Content-Length is not sent in HEAD response */
 		http_response_body_clear(r, 0);
+		r->resp_body_finished = 1;
 		return HANDLER_GO_ON;
 	}
 
@@ -1915,6 +2020,7 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	 * must not be chunkqueue temporary file
 	 * must be whole file, not partial content
 	 * must not be HTTP status 206 Partial Content
+	 * must not have Cache-Control 'private' or 'no-store'
 	 * Note: small files (< 32k (see http_chunk.c)) will have been read into
 	 *       memory (if streaming HTTP/1.1 chunked response) and will end up
 	 *       getting stream-compressed rather than cached on disk as compressed
@@ -1929,7 +2035,14 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	    && r->write_queue.first->type == FILE_CHUNK
 	    && r->write_queue.first->offset == 0
 	    && !r->write_queue.first->file.is_temp
-	    && r->http_status != 206) {
+	    && r->http_status != 206
+	    && (!(vbro = http_header_response_get(r, HTTP_HEADER_CACHE_CONTROL,
+	                                          CONST_STR_LEN("Cache-Control")))
+	        || (!http_header_str_contains_token(BUF_PTR_LEN(vbro),
+	                                            CONST_STR_LEN("private"))
+	            && !http_header_str_contains_token(BUF_PTR_LEN(vbro),
+	                                               CONST_STR_LEN("no-store"))))
+	   ) {
 		tb = mod_deflate_cache_file_name(r, p->conf.cache_dir, vb);
 		/*(checked earlier and skipped if Transfer-Encoding had been set)*/
 		stat_cache_entry *sce = stat_cache_get_entry_open(tb, 1);
@@ -1966,6 +2079,56 @@ REQUEST_FUNC(mod_deflate_handle_response_start) {
 	hctx->output = &p->tmp_buf;
 	/* open cache file if caching compressed file */
 	if (tb) mod_deflate_cache_file_open(hctx, tb);
+
+  #ifdef HAVE_LIBDEFLATE
+	chunk * const c = r->write_queue.first; /*(invalid after compression)*/
+  #ifdef HAVE_MMAP
+  #if defined(_LP64) || defined(__LP64__) || defined(_WIN64)
+	/* optimization to compress single file in one-shot to writeable mmap */
+	/*(future: might extend to other compression types)*/
+	/*(chunkqueue_chunk_file_view() current min size for mmap is 128k)*/
+	if (len > 131072 /* XXX: TBD what should min size be for optimization?*/
+	    && (hctx->compression_type == HTTP_ACCEPT_ENCODING_GZIP
+	        || hctx->compression_type == HTTP_ACCEPT_ENCODING_DEFLATE)
+	    && c == r->write_queue.last
+	    && c->type == FILE_CHUNK
+	    && chunkqueue_chunk_file_view(c, len, r->conf.errh)
+	    && chunk_file_view_dlen(c->file.view, c->offset) >= len) { /*(cfv)*/
+		rc = HANDLER_GO_ON;
+		hctx->bytes_in = len;
+		if (mod_deflate_using_libdeflate(hctx, p)) {
+			if (NULL == tb || 0 == mod_deflate_cache_file_finish(r, hctx, tb))
+				mod_deflate_note_ratio(r, hctx->bytes_out, hctx->bytes_in);
+			else
+				rc = HANDLER_ERROR;
+			handler_ctx_free(hctx);
+			return rc;
+		}
+		hctx->bytes_in = hctx->bytes_out = 0;
+	}
+	else
+  #endif
+  #endif
+	if (len <= 65536 /*(p->tmp_buf is at least 64k)*/
+	    && (hctx->compression_type == HTTP_ACCEPT_ENCODING_GZIP
+	        || hctx->compression_type == HTTP_ACCEPT_ENCODING_DEFLATE)
+	    && c == r->write_queue.last
+	    && c->type == MEM_CHUNK) {
+		/*(skip if FILE_CHUNK; not worth mmap/munmap overhead on small file)*/
+		rc = HANDLER_GO_ON;
+		hctx->bytes_in = len;
+		if (mod_deflate_using_libdeflate_sm(hctx, p)) {
+			if (NULL == tb || 0 == mod_deflate_cache_file_finish(r, hctx, tb))
+				mod_deflate_note_ratio(r, hctx->bytes_out, hctx->bytes_in);
+			else
+				rc = HANDLER_ERROR;
+			handler_ctx_free(hctx);
+			return rc;
+		}
+		hctx->bytes_in = hctx->bytes_out = 0;
+	}
+  #endif /* HAVE_LIBDEFLATE */
+
 	if (0 != mod_deflate_stream_init(hctx)) {
 		/*(should not happen unless ENOMEM)*/
 		handler_ctx_free(hctx);
@@ -2024,6 +2187,9 @@ static handler_t mod_deflate_cleanup(request_st * const r, void *p_d) {
 	return HANDLER_GO_ON;
 }
 
+
+__attribute_cold__
+__declspec_dllexport__
 int mod_deflate_plugin_init(plugin *p);
 int mod_deflate_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
