@@ -135,7 +135,7 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 		show_layer_ext(F, "idwginput" + index, false);
 		show_layer_ext(F, "idl2support" + index, true);
 		show_layer_ext(F, "idshowmcast" + index, false);
-		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idlocalip" + index, true);
 		show_layer_ext(F, "idlocalip6" + index, false);
 		show_layer_ext(F, "idvxlansettings" + index, false);
 		show_layer_ext(F, "idvxlanbridged" + index, false);
@@ -151,7 +151,7 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 		show_layer_ext(F, "idwginput" + index, false);
 		show_layer_ext(F, "idl2support" + index, true);
 		show_layer_ext(F, "idshowmcast" + index, false);
-		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idlocalip" + index, true);
 		show_layer_ext(F, "idlocalip6" + index, false);
 		show_layer_ext(F, "idvxlansettings" + index, false);
 		show_layer_ext(F, "idvxlanbridged" + index, false);
@@ -168,6 +168,7 @@ function changeproto(F, index, value, brvalue, vxlanbrvalue) {
 		show_layer_ext(F, "idwginput" + index, true);
 		show_layer_ext(F, "idshowmcast" + index, false);
 		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idlocalip6" + index, false);
 		show_layer_ext(F, "idbridged" + index, false);
 		show_layer_ext(F, "idvxlanbridged" + index, false);
 		show_layer_ext(F, "idvxlansettings" + index, false);
