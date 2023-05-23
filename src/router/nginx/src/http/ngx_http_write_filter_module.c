@@ -227,7 +227,8 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     if (size == 0
         && !(c->buffered & NGX_LOWLEVEL_BUFFERED)
-        && !(last && c->need_last_buf))
+        && !(last && c->need_last_buf)
+        && !(flush && c->need_flush_buf))
     {
         if (last || flush || sync) {
             for (cl = r->out; cl; /* void */) {
@@ -238,6 +239,10 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
             r->out = NULL;
             c->buffered &= ~NGX_HTTP_WRITE_BUFFERED;
+
+            if (last) {
+                r->response_sent = 1;
+            }
 
             return NGX_OK;
         }
@@ -344,6 +349,10 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     }
 
     c->buffered &= ~NGX_HTTP_WRITE_BUFFERED;
+
+    if (last) {
+        r->response_sent = 1;
+    }
 
     if ((c->buffered & NGX_LOWLEVEL_BUFFERED) && r->postponed == NULL) {
         return NGX_AGAIN;
