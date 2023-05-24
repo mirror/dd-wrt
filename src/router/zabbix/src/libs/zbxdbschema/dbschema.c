@@ -20,7 +20,7 @@
 #include "zbxdbschema.h"
 #include "zbxcommon.h"
 
-const ZBX_TABLE	tables[] = {
+ZBX_TABLE	tables[] = {
 
 #if defined(HAVE_ORACLE)
 #	define ZBX_TYPE_SHORTTEXT_LEN	2048
@@ -2593,24 +2593,24 @@ const ZBX_TABLE	tables[] = {
 };
 
 const zbx_db_table_changelog_t	changelog_tables[] = {
-	{"httpstepitem", 16},
 	{"hosts", 1},
-	{"item_tag", 4},
-	{"trigger_tag", 6},
-	{"drules", 9},
-	{"httpstep_field", 15},
-	{"connector", 17},
-	{"items", 3},
-	{"triggers", 5},
-	{"host_tag", 2},
 	{"httptestitem", 13},
+	{"item_tag", 4},
 	{"httpstep", 14},
-	{"functions", 7},
-	{"httptest_field", 12},
-	{"httptest", 11},
-	{"item_preproc", 8},
 	{"dchecks", 10},
+	{"functions", 7},
+	{"drules", 9},
+	{"connector", 17},
+	{"httptest_field", 12},
+	{"host_tag", 2},
+	{"items", 3},
+	{"httptest", 11},
+	{"triggers", 5},
+	{"trigger_tag", 6},
+	{"httpstep_field", 15},
 	{"connector_tag", 18},
+	{"httpstepitem", 16},
+	{"item_preproc", 8},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
