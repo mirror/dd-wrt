@@ -3158,15 +3158,25 @@ btrfs_reflink_with_progress (GInputStream           *in,
                              gpointer                progress_callback_data,
                              GError                **error)
 {
-  goffset source_size;
+  goffset total_size;
   int fd_in, fd_out;
   int ret, errsv;
 
   fd_in = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (in));
   fd_out = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (out));
 
+  total_size = -1;
+  /* avoid performance impact of querying total size when it's not needed */
   if (progress_callback)
-    source_size = g_file_info_get_size (info);
+    {
+      struct stat sbuf;
+
+      if (fstat (fd_in, &sbuf) == 0)
+        total_size = sbuf.st_size;
+    }
+
+  if (total_size == -1)
+    total_size = 0;
 
   /* Btrfs clone ioctl properties:
    *  - Works at the inode level
@@ -3201,7 +3211,7 @@ btrfs_reflink_with_progress (GInputStream           *in,
 
   /* Make sure we send full copied size */
   if (progress_callback)
-    progress_callback (source_size, source_size, progress_callback_data);
+    progress_callback (total_size, total_size, progress_callback_data);
 
   return TRUE;
 }
@@ -7773,7 +7783,7 @@ g_file_load_contents (GFile         *file,
                                              NULL);
       if (info)
         {
-          *etag_out = g_strdup (g_file_info_get_etag (info));
+          *etag_out = g_file_info_has_attribute (info, G_FILE_ATTRIBUTE_ETAG_VALUE) ? g_strdup (g_file_info_get_etag (info)) : NULL;
           g_object_unref (info);
         }
     }
@@ -7847,7 +7857,7 @@ load_contents_fstat_callback (GObject      *obj,
                                                 stat_res, NULL);
   if (info)
     {
-      data->etag = g_strdup (g_file_info_get_etag (info));
+      data->etag = g_file_info_has_attribute (info, G_FILE_ATTRIBUTE_ETAG_VALUE) ? g_strdup (g_file_info_get_etag (info)) : NULL;
       g_object_unref (info);
     }
 

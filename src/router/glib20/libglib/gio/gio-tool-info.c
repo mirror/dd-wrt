@@ -157,7 +157,8 @@ show_info (GFile *file, GFileInfo *info)
   GUnixMountEntry *entry;
 #endif
 
-  name = g_file_info_get_display_name (info);
+  name = g_file_info_has_attribute (info, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME) ?
+         g_file_info_get_display_name (info) : NULL;
   if (name)
     {
       /* Translators: This is a noun and represents and attribute of a file */
@@ -166,7 +167,8 @@ show_info (GFile *file, GFileInfo *info)
       g_free (flatten);
     }
 
-  name = g_file_info_get_edit_name (info);
+  name = g_file_info_has_attribute (info, G_FILE_ATTRIBUTE_STANDARD_EDIT_NAME) ?
+         g_file_info_get_edit_name (info) : NULL;
   if (name)
     {
       /* Translators: This is a noun and represents and attribute of a file */
@@ -196,7 +198,8 @@ show_info (GFile *file, GFileInfo *info)
       g_print (" %"G_GUINT64_FORMAT"\n", (guint64)size);
     }
 
-  if (g_file_info_get_is_hidden (info))
+  if (g_file_info_has_attribute (info, G_FILE_ATTRIBUTE_STANDARD_IS_HIDDEN) &&
+      g_file_info_get_is_hidden (info))
     g_print (_("hidden\n"));
 
   uri = g_file_get_uri (file);

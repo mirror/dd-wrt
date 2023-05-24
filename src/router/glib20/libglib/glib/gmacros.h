@@ -172,22 +172,23 @@
  */
 #define g_macro__has_attribute(x) g_macro__has_attribute_##x
 
-#define g_macro__has_attribute___pure__ G_GNUC_CHECK_VERSION (2, 96)
-#define g_macro__has_attribute___malloc__ G_GNUC_CHECK_VERSION (2, 96)
-#define g_macro__has_attribute___noinline__ G_GNUC_CHECK_VERSION (2, 96)
-#define g_macro__has_attribute___sentinel__ G_GNUC_CHECK_VERSION (4, 0)
 #define g_macro__has_attribute___alloc_size__ G_GNUC_CHECK_VERSION (4, 3)
+#define g_macro__has_attribute___always_inline__ G_GNUC_CHECK_VERSION (2, 0)
+#define g_macro__has_attribute___const__ G_GNUC_CHECK_VERSION (2, 4)
+#define g_macro__has_attribute___deprecated__ G_GNUC_CHECK_VERSION (3, 1)
 #define g_macro__has_attribute___format__ G_GNUC_CHECK_VERSION (2, 4)
 #define g_macro__has_attribute___format_arg__ G_GNUC_CHECK_VERSION (2, 4)
-#define g_macro__has_attribute___noreturn__ (G_GNUC_CHECK_VERSION (2, 8) || (0x5110 <= __SUNPRO_C))
-#define g_macro__has_attribute___const__ G_GNUC_CHECK_VERSION (2, 4)
-#define g_macro__has_attribute___unused__ G_GNUC_CHECK_VERSION (2, 4)
+#define g_macro__has_attribute___malloc__ G_GNUC_CHECK_VERSION (2, 96)
 #define g_macro__has_attribute___no_instrument_function__ G_GNUC_CHECK_VERSION (2, 4)
+#define g_macro__has_attribute___noinline__ G_GNUC_CHECK_VERSION (2, 96)
+#define g_macro__has_attribute___noreturn__ (G_GNUC_CHECK_VERSION (2, 8) || (0x5110 <= __SUNPRO_C))
+#define g_macro__has_attribute___pure__ G_GNUC_CHECK_VERSION (2, 96)
+#define g_macro__has_attribute___sentinel__ G_GNUC_CHECK_VERSION (4, 0)
+#define g_macro__has_attribute___unused__ G_GNUC_CHECK_VERSION (2, 4)
+#define g_macro__has_attribute_cleanup G_GNUC_CHECK_VERSION (3, 3)
 #define g_macro__has_attribute_fallthrough G_GNUC_CHECK_VERSION (6, 0)
-#define g_macro__has_attribute___deprecated__ G_GNUC_CHECK_VERSION (3, 1)
 #define g_macro__has_attribute_may_alias G_GNUC_CHECK_VERSION (3, 3)
 #define g_macro__has_attribute_warn_unused_result G_GNUC_CHECK_VERSION (3, 4)
-#define g_macro__has_attribute_cleanup G_GNUC_CHECK_VERSION (3, 3)
 
 #endif
 
@@ -862,18 +863,18 @@
 #ifndef __GI_SCANNER__ /* The static assert macro really confuses the introspection parser */
 #define G_PASTE_ARGS(identifier1,identifier2) identifier1 ## identifier2
 #define G_PASTE(identifier1,identifier2)      G_PASTE_ARGS (identifier1, identifier2)
-#if (G_C_STD_CHECK_VERSION (11) || \
+#if G_CXX_STD_CHECK_VERSION (11)
+#define G_STATIC_ASSERT(expr) static_assert (expr, "Expression evaluates to false")
+#elif (G_C_STD_CHECK_VERSION (11) || \
      g_macro__has_feature(c_static_assert) || g_macro__has_extension(c_static_assert))
 #define G_STATIC_ASSERT(expr) _Static_assert (expr, "Expression evaluates to false")
-#elif G_CXX_STD_CHECK_VERSION (11)
-#define G_STATIC_ASSERT(expr) static_assert (expr, "Expression evaluates to false")
 #else
 #ifdef __COUNTER__
 #define G_STATIC_ASSERT(expr) typedef char G_PASTE (_GStaticAssertCompileTimeAssertion_, __COUNTER__)[(expr) ? 1 : -1] G_GNUC_UNUSED
 #else
 #define G_STATIC_ASSERT(expr) typedef char G_PASTE (_GStaticAssertCompileTimeAssertion_, __LINE__)[(expr) ? 1 : -1] G_GNUC_UNUSED
 #endif
-#endif /* G_C_STD_CHECK_VERSION (11) */
+#endif /* G_CXX_STD_CHECK_VERSION (11) */
 #define G_STATIC_ASSERT_EXPR(expr) ((void) sizeof (char[(expr) ? 1 : -1]))
 #endif /* !__GI_SCANNER__ */
 
@@ -917,9 +918,6 @@
 #  else
 #    define NULL ((void*) 0)
 #  endif /* G_CXX_STD_CHECK_VERSION (11) */
-#elif G_CXX_STD_CHECK_VERSION (11)
-#  undef NULL
-#  define NULL (nullptr)
 #endif
 
 #ifndef	FALSE
@@ -1157,7 +1155,7 @@
 # endif
 #elif defined (_MSC_VER)
   /* Use MSVC specific syntax.  */
-# if G_CXX_STD_CHECK_VERSION (11) && _MSC_VER >= 1927
+# if G_CXX_STD_CHECK_VERSION (20) && _MSC_VER >= 1927
 #  define G_ALWAYS_INLINE [[msvc::forceinline]]
 # else
 #  define G_ALWAYS_INLINE __forceinline
@@ -1202,7 +1200,7 @@
 #   if defined (__GNUC__)
 #      define G_NO_INLINE [[gnu::noinline]]
 #   elif defined (_MSC_VER)
-#      if _MSC_VER >= 1927
+#      if G_CXX_STD_CHECK_VERSION (20) && _MSC_VER >= 1927
 #        define G_NO_INLINE [[msvc::noinline]]
 #      else
 #        define G_NO_INLINE __declspec (noinline)
@@ -1214,7 +1212,7 @@
 #elif defined (_MSC_VER) && (1200 <= _MSC_VER)
   /* Use MSVC specific syntax.  */
     /* Use ISO C++11 syntax when the compiler supports it. */
-# if G_CXX_STD_CHECK_VERSION (11) && _MSC_VER >= 1927
+# if G_CXX_STD_CHECK_VERSION (20) && _MSC_VER >= 1927
 #   define G_NO_INLINE [[msvc::noinline]]
 # else
 #   define G_NO_INLINE __declspec (noinline)
