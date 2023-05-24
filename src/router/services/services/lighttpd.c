@@ -61,7 +61,6 @@ void start_lighttpd(void)
 			"server.modules               = (\n"
 			"\"mod_rewrite\",\n"
 			"\"mod_setenv\",\n"
-			"\"mod_secdownload\",\n"
 			"\"mod_access\",\n"
 			"\"mod_alias\",\n"
 			"\"mod_expire\",\n"
