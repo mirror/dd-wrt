@@ -1369,7 +1369,10 @@ g_strerror (gint errnum)
         {
           msg = g_locale_to_utf8 (msg, -1, NULL, NULL, &error);
           if (error)
-            g_print ("%s\n", error->message);
+            {
+              g_print ("%s\n", error->message);
+              g_error_free (error);
+            }
         }
       else if (msg == (const gchar *)buf)
         msg = g_strdup (buf);
@@ -2765,7 +2768,7 @@ g_strjoin (const gchar *separator,
  *
  * Searches the string @haystack for the first occurrence
  * of the string @needle, limiting the length of the search
- * to @haystack_len.
+ * to @haystack_len or a nul terminator byte (whichever is reached first).
  *
  * Returns: a pointer to the found occurrence, or
  *    %NULL if not found.

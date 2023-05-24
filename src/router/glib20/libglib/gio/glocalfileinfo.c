@@ -92,6 +92,10 @@
 #endif
 #endif
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 #include "glocalfileinfo.h"
 #include "gioerror.h"
 #include "gthemedicon.h"
@@ -1391,11 +1395,11 @@ get_content_type (const char          *basename,
 	    sniff_length = 4096;
 
 #ifdef O_NOATIME	  
-          fd = g_open (path, O_RDONLY | O_NOATIME, 0);
+          fd = g_open (path, O_RDONLY | O_NOATIME | O_CLOEXEC, 0);
           errsv = errno;
           if (fd < 0 && errsv == EPERM)
 #endif
-	    fd = g_open (path, O_RDONLY, 0);
+	    fd = g_open (path, O_RDONLY | O_CLOEXEC, 0);
 
 	  if (fd != -1)
 	    {
@@ -2024,43 +2028,46 @@ _g_local_file_info_get (const char             *basename,
 	    symlink_broken = TRUE;
 	}
     }
+  else
+    g_file_info_set_is_symlink (info, FALSE);
 
   if (stat_ok)
     set_info_from_stat (info, &statbuf, attribute_matcher);
-
-#ifdef G_OS_UNIX
-  if (stat_ok && _g_local_file_is_lost_found_dir (path, _g_stat_dev (&statbuf)))
-    g_file_info_set_is_hidden (info, TRUE);
-#endif
 
 #ifndef G_OS_WIN32
   if (_g_file_attribute_matcher_matches_id (attribute_matcher,
 					    G_FILE_ATTRIBUTE_ID_STANDARD_IS_HIDDEN))
     {
-      if (basename != NULL &&
-          (basename[0] == '.' ||
-           file_is_hidden (path, basename)))
-        g_file_info_set_is_hidden (info, TRUE);
+      g_file_info_set_is_hidden (info,
+                                 (basename != NULL &&
+                                  (basename[0] == '.' ||
+                                   file_is_hidden (path, basename) ||
+                                   (stat_ok &&
+                                    _g_local_file_is_lost_found_dir (path, _g_stat_dev (&statbuf))))));
     }
 
-  if (basename != NULL && basename[strlen (basename) -1] == '~' &&
-      (stat_ok && S_ISREG (_g_stat_mode (&statbuf))))
-    _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_STANDARD_IS_BACKUP, TRUE);
+  _g_file_info_set_attribute_boolean_by_id (info,
+                                            G_FILE_ATTRIBUTE_ID_STANDARD_IS_BACKUP,
+                                            basename != NULL && basename[strlen (basename) - 1] == '~' &&
+                                                (stat_ok && S_ISREG (_g_stat_mode (&statbuf))));
 #else
-  if (statbuf.attributes & FILE_ATTRIBUTE_HIDDEN)
-    g_file_info_set_is_hidden (info, TRUE);
+  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_STANDARD_IS_BACKUP, FALSE);
 
-  if (statbuf.attributes & FILE_ATTRIBUTE_ARCHIVE)
-    _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_ARCHIVE, TRUE);
+  g_file_info_set_is_hidden (info, (statbuf.attributes & FILE_ATTRIBUTE_HIDDEN));
 
-  if (statbuf.attributes & FILE_ATTRIBUTE_SYSTEM)
-    _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_SYSTEM, TRUE);
+  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_ARCHIVE,
+                                            (statbuf.attributes & FILE_ATTRIBUTE_ARCHIVE));
 
-  if (statbuf.reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)
-    _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_MOUNTPOINT, TRUE);
+  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_SYSTEM,
+                                            (statbuf.attributes & FILE_ATTRIBUTE_SYSTEM));
+
+  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_MOUNTPOINT,
+                                            (statbuf.reparse_tag == IO_REPARSE_TAG_MOUNT_POINT));
 
   if (statbuf.reparse_tag != 0)
     _g_file_info_set_attribute_uint32_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_REPARSE_POINT_TAG, statbuf.reparse_tag);
+
+  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_STANDARD_IS_BACKUP, FALSE);
 #endif
 
   symlink_target = NULL;
@@ -2176,9 +2183,9 @@ _g_local_file_info_get (const char             *basename,
     }
 
   if (stat_ok && parent_info && parent_info->device != 0 &&
-      _g_file_attribute_matcher_matches_id (attribute_matcher, G_FILE_ATTRIBUTE_ID_UNIX_IS_MOUNTPOINT) &&
-      (_g_stat_dev (&statbuf) != parent_info->device || _g_stat_ino (&statbuf) == parent_info->inode))
-    _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_UNIX_IS_MOUNTPOINT, TRUE);
+      _g_file_attribute_matcher_matches_id (attribute_matcher, G_FILE_ATTRIBUTE_ID_UNIX_IS_MOUNTPOINT))
+    _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_UNIX_IS_MOUNTPOINT,
+                                              (_g_stat_dev (&statbuf) != parent_info->device || _g_stat_ino (&statbuf) == parent_info->inode));
   
   if (stat_ok)
     get_access_rights (attribute_matcher, info, path, &statbuf, parent_info);

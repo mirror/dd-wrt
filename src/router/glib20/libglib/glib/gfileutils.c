@@ -329,7 +329,7 @@ g_mkdir_with_parents (const gchar *pathname,
  *    }
  *
  *  // DO THIS INSTEAD
- *  fd = g_open (filename, O_WRONLY | O_NOFOLLOW);
+ *  fd = g_open (filename, O_WRONLY | O_NOFOLLOW | O_CLOEXEC);
  *  if (fd == -1)
  *    {
  *      // check error
@@ -908,7 +908,7 @@ get_contents_posix (const gchar  *filename,
   gint fd;
 
   /* O_BINARY useful on Cygwin */
-  fd = open (filename, O_RDONLY|O_BINARY);
+  fd = open (filename, O_RDONLY | O_BINARY | O_CLOEXEC);
 
   if (fd < 0)
     {
@@ -1083,7 +1083,7 @@ rename_file (const char  *old_name,
   if (do_fsync)
     {
       gchar *dir = g_path_get_dirname (new_name);
-      int dir_fd = g_open (dir, O_RDONLY, 0);
+      int dir_fd = g_open (dir, O_RDONLY | O_CLOEXEC, 0);
 
       if (dir_fd >= 0)
         {
@@ -1351,7 +1351,7 @@ g_file_set_contents_full (const gchar            *filename,
       tmp_filename = g_strdup_printf ("%s.XXXXXX", filename);
 
       errno = 0;
-      fd = g_mkstemp_full (tmp_filename, O_RDWR | O_BINARY, mode);
+      fd = g_mkstemp_full (tmp_filename, O_RDWR | O_BINARY | O_CLOEXEC, mode);
 
       if (fd == -1)
         {
@@ -1704,7 +1704,7 @@ g_mkstemp_full (gchar *tmpl,
 gint
 g_mkstemp (gchar *tmpl)
 {
-  return g_mkstemp_full (tmpl, O_RDWR | O_BINARY, 0600);
+  return g_mkstemp_full (tmpl, O_RDWR | O_BINARY | O_CLOEXEC, 0600);
 }
 
 static gint
@@ -1826,7 +1826,7 @@ g_file_open_tmp (const gchar  *tmpl,
 
   result = g_get_tmp_name (tmpl, &fulltemplate,
                            wrap_g_open,
-                           O_CREAT | O_EXCL | O_RDWR | O_BINARY,
+                           O_CREAT | O_EXCL | O_RDWR | O_BINARY | O_CLOEXEC,
                            0600,
                            error);
   if (result != -1)

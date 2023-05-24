@@ -124,11 +124,15 @@ glib_tests = {
     'extra_programs' : ['test-spawn-echo'],
   },
   'spawn-test' : {
-    'can_fail': host_system == 'windows' and cc.get_id() == 'gcc',
     'extra_programs' : host_machine.system() == 'windows' ? ['spawn-test-win32-gui'] : [],
   },
   'strfuncs' : {},
   'string' : {},
+  'string-macro' : {
+    'source' : 'string.c',
+    'c_args' : cc.get_id() == 'gcc' ? ['-Werror=sign-conversion'] : [],
+    'install' : false,
+  },
   'strvbuilder' : {},
   'testing' : {
     'args': [ '--verbose' ],
@@ -277,6 +281,7 @@ endif
 
 test_extra_programs = {
   'assert-msg-test' : {},
+  'markup-example' : {'install' : false},
   'spawn-path-search-helper' : {},
   'spawn-test-helper' : {},
   'testing-helper' : {},
@@ -284,7 +289,7 @@ test_extra_programs = {
   'test-spawn-echo' : {},
 }
 
-if have_dlopen_dlsym
+if have_dlopen_dlsym and have_rtld_next
   test_extra_programs += {
     'messages-low-memory' : {
       'dependencies' : libdl_dep,

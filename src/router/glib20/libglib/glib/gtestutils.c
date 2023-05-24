@@ -89,10 +89,14 @@
  * The API is designed to handle creation and registration of test suites
  * and test cases implicitly. A simple call like
  * |[<!-- language="C" --> 
+ *   g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
+ *
  *   g_test_add_func ("/misc/assertions", test_assertions);
  * ]|
  * creates a test suite called "misc" with a single test case named
  * "assertions", which consists of running the test_assertions function.
+ *
+ * g_test_init() should be called before calling any other test functions.
  *
  * In addition to the traditional g_assert_true(), the test framework provides
  * an extended set of assertions for comparisons: g_assert_cmpfloat(),
@@ -1683,6 +1687,8 @@ test_rm_isolate_dirs (void)
  * Initialize the GLib testing framework, e.g. by seeding the
  * test random number generator, the name for g_get_prgname()
  * and parsing test related command line args.
+ *
+ * This should be called before calling any other `g_test_*()` functions.
  *
  * So far, the following arguments are understood:
  *
@@ -3858,8 +3864,9 @@ wait_for_child (GPid pid,
  * Since: 2.16
  *
  * Deprecated: This function is implemented only on Unix platforms,
- * and is not always reliable due to problems inherent in
- * fork-without-exec. Use g_test_trap_subprocess() instead.
+ * is not always reliable due to problems inherent in fork-without-exec
+ * and doesn't set close-on-exec flag on its file descriptors.
+ * Use g_test_trap_subprocess() instead.
  */
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 gboolean

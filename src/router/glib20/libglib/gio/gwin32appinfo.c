@@ -3100,6 +3100,9 @@ link_handlers_to_unregistered_apps (void)
           if (handler_verb->app != NULL)
             continue;
 
+          if (handler_verb->executable_folded == NULL)
+            continue;
+
           handler_exe_basename = g_utf8_find_basename (handler_verb->executable_folded, -1);
           g_hash_table_iter_init (&app_iter, apps_by_id);
 
@@ -3118,6 +3121,9 @@ link_handlers_to_unregistered_apps (void)
                   GWin32PrivateStat app_verb_exec_info;
                   const gchar *app_exe_basename;
                   app_verb = _verb_idx (app->verbs, ai);
+
+                  if (app_verb->executable_folded == NULL)
+                    continue;
 
                   app_exe_basename = g_utf8_find_basename (app_verb->executable_folded, -1);
 
@@ -3356,6 +3362,7 @@ static gboolean
 uwp_package_cb (gpointer         user_data,
                 const gunichar2 *full_package_name,
                 const gunichar2 *package_name,
+                const gunichar2 *display_name,
                 const gunichar2 *app_user_model_id,
                 gboolean         show_in_applist,
                 GPtrArray       *supported_extgroups,
@@ -3383,6 +3390,13 @@ uwp_package_cb (gpointer         user_data,
                         TRUE,
                         FALSE,
                         TRUE);
+
+  if (!app->pretty_name && !app->pretty_name_u8 && display_name)
+    {
+      char *display_name_u8 = g_utf16_to_utf8 (display_name, -1, NULL, NULL, NULL);
+      app->pretty_name = g_wcsdup (display_name, -1);
+      app->pretty_name_u8 = g_steal_pointer (&display_name_u8);
+    }
 
   extensions_considered = 0;
 
@@ -4343,7 +4357,7 @@ expand_macro_single (char macro, file_or_uri *obj)
           const char *prefix = "file:///";
           const size_t prefix_len = strlen (prefix);
 
-          if (g_str_has_prefix (obj->uri, prefix) == 0 && obj->uri[prefix_len] != 0)
+          if (g_str_has_prefix (obj->uri, prefix) && obj->uri[prefix_len] != 0)
             {
               GFile *file = g_file_new_for_uri (obj->uri);
               result = g_file_get_path (file);
