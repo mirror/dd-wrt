@@ -1232,7 +1232,7 @@ static void	proxy_db_init(void)
 	zbx_db_check_character_set();
 	zbx_check_db();
 
-	if (SUCCEED != (version_check = DBcheck_version()))
+	if (SUCCEED != (version_check = DBcheck_version(ZBX_HA_MODE_STANDALONE)))
 	{
 #ifdef HAVE_SQLITE3
 		if (NOTSUPPORTED == version_check)
@@ -1254,6 +1254,13 @@ static void	proxy_db_init(void)
 		exit(EXIT_FAILURE);
 #endif
 	}
+
+#ifdef HAVE_ORACLE
+	zbx_db_connect(ZBX_DB_CONNECT_NORMAL);
+	zbx_db_table_prepare("items", NULL);
+	zbx_db_table_prepare("item_preproc", NULL);
+	zbx_db_close();
+#endif
 }
 
 int	MAIN_ZABBIX_ENTRY(int flags)
