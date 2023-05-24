@@ -1,6 +1,6 @@
 /* asn.h
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -269,7 +269,7 @@ typedef struct ASNGetData {
             /* Maximum length of buffer. */
             word32* length;
         } buffer;
-        /* Refernce to ASN.1 item's data. */
+        /* Reference to ASN.1 item's data. */
         struct {
             /* Pointer reference into input buffer. */
             const byte* data;
@@ -675,8 +675,8 @@ enum DN_Tags {
     ASN_POSTAL_CODE   = 0x11,   /* postalCode */
     ASN_USER_ID       = 0x12,   /* UserID */
 #ifdef WOLFSSL_CERT_NAME_ALL
-    ASN_NAME          = 0x2a,   /* name */
-    ASN_GIVEN_NAME    = 0x29,   /* GN */
+    ASN_NAME          = 0x29,   /* name */
+    ASN_GIVEN_NAME    = 0x2a,   /* GN */
     ASN_INITIALS      = 0x2b,   /* initials */
     ASN_DNQUALIFIER   = 0x2e,   /* dnQualifier */
 #endif /* WOLFSSL_CERT_NAME_ALL */
@@ -774,7 +774,7 @@ extern const WOLFSSL_ObjectInfo wolfssl_object_info[];
 #define NID_id_pkix_OCSP_basic 74
 #define NID_any_policy 75
 #define NID_anyExtendedKeyUsage 76
-#define NID_givenName 99  /* 2.5.4.42 */
+#define NID_givenName 100  /* 2.5.4.42 */
 #define NID_initials 101  /* 2.5.4.43 */
 #define NID_title 106
 #define NID_description 107
@@ -881,7 +881,7 @@ enum Misc_ASN {
 #else
     RSA_INTS            =   2,     /* RSA ints in private key */
 #endif
-    DSA_PARAM_INTS      =   3,     /* DSA paramater ints */
+    DSA_PARAM_INTS      =   3,     /* DSA parameter ints */
     RSA_PUB_INTS        =   2,     /* RSA ints in public key */
     DSA_PUB_INTS        =   4,     /* DSA ints in public key */
     DSA_INTS            =   5,     /* DSA ints in private key */
@@ -1095,9 +1095,6 @@ enum Key_Sum {
     DILITHIUM_LEVEL2k = 213,    /* 1.3.6.1.4.1.2.267.7.4.4 */
     DILITHIUM_LEVEL3k = 216,    /* 1.3.6.1.4.1.2.267.7.6.5 */
     DILITHIUM_LEVEL5k = 220,    /* 1.3.6.1.4.1.2.267.7.8.7 */
-    DILITHIUM_AES_LEVEL2k = 217,/* 1.3.6.1.4.1.2.267.11.4.4 */
-    DILITHIUM_AES_LEVEL3k = 221,/* 1.3.6.1.4.1.2.267.11.6.5 + 1 (See GetOID() in asn.c) */
-    DILITHIUM_AES_LEVEL5k = 224,/* 1.3.6.1.4.1.2.267.11.8.7 */
     SPHINCS_FAST_LEVEL1k   = 281, /* 1 3 9999 6 7 4 */
     SPHINCS_FAST_LEVEL3k   = 283, /* 1 3 9999 6 8 3 + 2 (See GetOID() in asn.c) */
     SPHINCS_FAST_LEVEL5k   = 282, /* 1 3 9999 6 9 3 */
@@ -1214,7 +1211,7 @@ enum ExtKeyUsage_Sum { /* From RFC 5280 */
     EKU_TIMESTAMP_OID   = 78,  /* 1.3.6.1.5.5.7.3.8, id-kp-timeStamping    */
     EKU_OCSP_SIGN_OID   = 79,  /* 1.3.6.1.5.5.7.3.9, id-kp-OCSPSigning     */
 
-    /* From RFC 6187: X.509v3 Certificates for Secure Shell Authenticaiton */
+    /* From RFC 6187: X.509v3 Certificates for Secure Shell Authentication */
     EKU_SSH_CLIENT_AUTH_OID    = ID_KP(21), /* id-kp-secureShellClient */
     EKU_SSH_MSCL_OID           = 264,
         /* 1.3.6.1.4.1.311.20.2.2, MS Smart Card Logon */
@@ -2085,7 +2082,6 @@ WOLFSSL_LOCAL int ExtractDate(const unsigned char* date, unsigned char format,
                                                  wolfssl_tm* certTime, int* idx);
 WOLFSSL_LOCAL int DateGreaterThan(const struct tm* a, const struct tm* b);
 WOLFSSL_LOCAL int wc_ValidateDate(const byte* date, byte format, int dateType);
-WOLFSSL_LOCAL int wc_OBJ_sn2nid(const char *sn);
 
 /* ASN.1 helper functions */
 #ifdef WOLFSSL_CERT_GEN
@@ -2196,9 +2192,6 @@ WOLFSSL_LOCAL int wc_EncodeNameCanonical(EncodedName* name, const char* nameStr,
 WOLFSSL_LOCAL int StoreDSAParams(byte*, word32*, const mp_int*, const mp_int*,
     const mp_int*);
 #endif
-#if defined HAVE_ECC && (defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL))
-WOLFSSL_API int EccEnumToNID(int n);
-#endif
 
 WOLFSSL_LOCAL void InitSignatureCtx(SignatureCtx* sigCtx, void* heap, int devId);
 WOLFSSL_LOCAL void FreeSignatureCtx(SignatureCtx* sigCtx);
@@ -2243,9 +2236,6 @@ enum cert_enums {
     DILITHIUM_LEVEL2_KEY     = 18,
     DILITHIUM_LEVEL3_KEY     = 19,
     DILITHIUM_LEVEL5_KEY     = 20,
-    DILITHIUM_AES_LEVEL2_KEY = 21,
-    DILITHIUM_AES_LEVEL3_KEY = 22,
-    DILITHIUM_AES_LEVEL5_KEY = 23,
     SPHINCS_FAST_LEVEL1_KEY  = 24,
     SPHINCS_FAST_LEVEL3_KEY  = 25,
     SPHINCS_FAST_LEVEL5_KEY  = 26,

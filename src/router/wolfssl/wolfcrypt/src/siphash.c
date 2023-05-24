@@ -1,6 +1,6 @@
 /* siphash.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -268,6 +268,7 @@ int wc_SipHashUpdate(SipHash* sipHash, const unsigned char* in, word32 inSz)
             if (sipHash->cacheCnt == SIPHASH_BLOCK_SIZE) {
                 /* Compress the block from the cache. */
                 SipHashCompress(sipHash, sipHash->cache);
+                sipHash->inCnt += SIPHASH_BLOCK_SIZE;
                 sipHash->cacheCnt = 0;
             }
         }
@@ -329,7 +330,7 @@ int wc_SipHashFinal(SipHash* sipHash, unsigned char* out, unsigned char outSz)
     }
 
     if (ret == 0) {
-        /* Put int remaining cached message bytes. */
+        /* Put in remaining cached message bytes. */
         XMEMSET(sipHash->cache + sipHash->cacheCnt, 0, 7 - sipHash->cacheCnt);
         sipHash->cache[7] = (byte)(sipHash->inCnt + sipHash->cacheCnt);
 
@@ -742,6 +743,12 @@ int wc_SipHash(const unsigned char* key, const unsigned char* in, word32 inSz,
 
         "cmp    %w[outSz], #8\n\t"
         "b.eq   L_siphash_8_end\n\t"
+
+    : [in] "+r" (in), [inSz] "+r" (inSz)
+    : [key] "r" (key), [out] "r" (out) , [outSz] "r" (outSz)
+    : "memory", "x8", "x9", "x10", "x11", "x12", "x13");
+
+    __asm__ __volatile__ (
 
         "mov    w13, #0xee\n\t"
         "eor    x10, x10, x13\n\t"

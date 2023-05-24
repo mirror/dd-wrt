@@ -1,6 +1,6 @@
 /* crl.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -234,7 +234,7 @@ void FreeCRL(WOLFSSL_CRL* crl, int dynamic)
     {
         int _pthread_ret = pthread_cond_destroy(&crl->cond);
         if (_pthread_ret != 0)
-            WOLFSSL_MSG("pthread_cond_destroy failed in FreeCRL()");
+            WOLFSSL_MSG("pthread_cond_destroy failed in FreeCRL");
     }
 #endif
     wc_FreeMutex(&crl->crlLock);
@@ -1348,7 +1348,6 @@ static int StartMonitorCRL(WOLFSSL_CRL* crl)
                 break;
             }
         }
-
         if (crl->setup < 0)
             ret = crl->setup;  /* store setup error */
 
@@ -1447,7 +1446,7 @@ int LoadCRL(WOLFSSL_CRL* crl, const char* path, int type, int monitor)
         pathLen = (word32)XSTRLEN(path);
         pathBuf = (char*)XMALLOC(pathLen+1, crl->heap,DYNAMIC_TYPE_CRL_MONITOR);
         if (pathBuf) {
-            XSTRNCPY(pathBuf, path, pathLen+1);
+            XMEMCPY(pathBuf, path, pathLen+1);
 
             if (type == WOLFSSL_FILETYPE_PEM) {
                 /* free old path before setting a new one */

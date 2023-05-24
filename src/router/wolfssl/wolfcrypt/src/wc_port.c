@@ -1,6 +1,6 @@
 /* port.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -64,6 +64,9 @@
 #if defined(WOLFSSL_RENESAS_SCE)
     #include <wolfssl/wolfcrypt/port/Renesas/renesas-sce-crypt.h>
 #endif
+#if defined(WOLFSSL_RENESAS_RX64_HASH)
+    #include <wolfssl/wolfcrypt/port/Renesas/renesas-rx64-hw-crypt.h>
+#endif
 #if defined(WOLFSSL_STSAFEA100)
     #include <wolfssl/wolfcrypt/port/st/stsafe.h>
 #endif
@@ -80,7 +83,7 @@
 
 #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
     defined(WOLFSSL_IMX6UL_CAAM) || defined(WOLFSSL_IMX6_CAAM_BLOB) || \
-    defined(WOLFSSL_SECO_CAAM)
+    defined(WOLFSSL_SECO_CAAM) || defined(WOLFSSL_IMXRT1170_CAAM)
     #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 #endif
 #if defined(WOLFSSL_DEVCRYPTO)
@@ -174,6 +177,16 @@ int wolfCrypt_Init(void)
             ret = -1;/* FATAL ERROR */
             return ret;
         }
+    #endif
+
+    #if defined(WOLFSSL_RENESAS_RX64_HASH)
+    ret = rx64_hw_Open();
+    if( ret != 0 ) {
+        WOLFSSL_MSG("Renesas RX64 HW Open failed");
+        /* not return 1 since WOLFSSL_SUCCESS=1*/
+        ret = -1;/* FATAL ERROR */
+        return ret;
+    }
     #endif
 
     #if defined(WOLFSSL_RENESAS_SCEPROTECT)
@@ -347,7 +360,7 @@ int wolfCrypt_Init(void)
 
 #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
     defined(WOLFSSL_IMX6UL_CAAM) || defined(WOLFSSL_IMX6_CAAM_BLOB) || \
-    defined(WOLFSSL_SECO_CAAM)
+    defined(WOLFSSL_SECO_CAAM) || defined(WOLFSSL_IMXRT1170_CAAM)
         if ((ret = wc_caamInit()) != 0) {
             return ret;
         }
@@ -423,6 +436,10 @@ int wolfCrypt_Cleanup(void)
         tsip_Close();
     #endif
 
+    #if defined(WOLFSSL_RENESAS_RX64_HASH)
+        rx64_hw_Close();
+    #endif
+
     #ifdef WOLFSSL_RENESAS_SCEPROTECT
         wc_sce_Close();
     #endif
@@ -433,7 +450,7 @@ int wolfCrypt_Cleanup(void)
 
     #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
         defined(WOLFSSL_IMX6_CAAM_BLOB)  || \
-        defined(WOLFSSL_SECO_CAAM)
+        defined(WOLFSSL_SECO_CAAM) || defined(WOLFSSL_IMXRT1170_CAAM)
         wc_caamFree();
     #endif
     #if defined(WOLFSSL_CRYPTOCELL)
@@ -1098,9 +1115,13 @@ void wolfSSL_RefDec(wolfSSL_Ref* ref, int* isZero, int* err)
     int ret = wc_LockMutex(&ref->mutex);
     if (ret != 0) {
         WOLFSSL_MSG("Failed to lock mutex for reference decrement!");
+        /* Can't say count is zero. */
+        *isZero = 0;
     }
     else {
-        ref->count--;
+        if (ref->count > 0) {
+            ref->count--;
+        }
         *isZero = (ref->count == 0);
         wc_UnLockMutex(&ref->mutex);
     }
@@ -1556,6 +1577,48 @@ int wolfSSL_CryptHwMutexUnLock(void)
 
 #elif defined(WOLFSSL_PTHREADS)
 
+    #ifdef WOLFSSL_USE_RWLOCK
+        int wc_InitRwLock(wolfSSL_RwLock* m)
+        {
+            if (pthread_rwlock_init(m, 0) == 0)
+                return 0;
+            else
+                return BAD_MUTEX_E;
+        }
+
+        int wc_FreeRwLock(wolfSSL_RwLock* m)
+        {
+            if (pthread_rwlock_destroy(m) == 0)
+                return 0;
+            else
+                return BAD_MUTEX_E;
+        }
+
+        int wc_LockRwLock_Wr(wolfSSL_RwLock* m)
+        {
+            if (pthread_rwlock_wrlock(m) == 0)
+                return 0;
+            else
+                return BAD_MUTEX_E;
+        }
+
+        int wc_LockRwLock_Rd(wolfSSL_RwLock* m)
+        {
+            if (pthread_rwlock_rdlock(m) == 0)
+                return 0;
+            else
+                return BAD_MUTEX_E;
+        }
+
+        int wc_UnLockRwLock(wolfSSL_RwLock* m)
+        {
+            if (pthread_rwlock_unlock(m) == 0)
+                return 0;
+            else
+                return BAD_MUTEX_E;
+        }
+    #endif
+
     int wc_InitMutex(wolfSSL_Mutex* m)
     {
         if (pthread_mutex_init(m, 0) == 0)
@@ -1590,7 +1653,6 @@ int wolfSSL_CryptHwMutexUnLock(void)
         else
             return BAD_MUTEX_E;
     }
-
 #elif defined(WOLFSSL_LINUXKM)
 
     /* Linux kernel mutex routines are voids, alas. */
@@ -2542,6 +2604,32 @@ int wolfSSL_CryptHwMutexUnLock(void)
     #warning No mutex handling defined
 
 #endif
+#if !defined(WOLFSSL_USE_RWLOCK) || defined(SINGLE_THREADED)
+    int wc_InitRwLock(wolfSSL_RwLock* m)
+    {
+        return wc_InitMutex(m);
+    }
+
+    int wc_FreeRwLock(wolfSSL_RwLock* m)
+    {
+        return wc_FreeMutex(m);
+    }
+
+    int wc_LockRwLock_Wr(wolfSSL_RwLock* m)
+    {
+        return wc_LockMutex(m);
+    }
+
+    int wc_LockRwLock_Rd(wolfSSL_RwLock* m)
+    {
+        return wc_LockMutex(m);
+    }
+
+    int wc_UnLockRwLock(wolfSSL_RwLock* m)
+    {
+        return wc_UnLockMutex(m);
+    }
+#endif
 
 #ifndef NO_ASN_TIME
 #if defined(_WIN32_WCE)
@@ -2714,6 +2802,34 @@ time_t fsl_time(time_t* t)
 {
     *t = RTC_GetSecondsTimerCount(RTC);
     return *t;
+}
+#endif
+
+#if defined(FREESCALE_SNVS_RTC)
+time_t fsl_time(time_t* t)
+{
+    struct tm tm_time;
+    time_t ret;
+
+    snvs_hp_rtc_datetime_t rtcDate;
+    snvs_hp_rtc_config_t snvsRtcConfig;
+
+    SNVS_HP_RTC_GetDefaultConfig(&snvsRtcConfig);
+    SNVS_HP_RTC_Init(SNVS, &snvsRtcConfig);
+
+    SNVS_HP_RTC_GetDatetime(SNVS, &rtcDate);
+
+    tm_time.tm_year  = rtcDate.year;
+    tm_time.tm_mon   = rtcDate.month;
+    tm_time.tm_mday  = rtcDate.day;
+    tm_time.tm_hour  = rtcDate.hour;
+    tm_time.tm_min   = rtcDate.minute;
+    tm_time.tm_sec   = rtcDate.second;
+
+    ret = mktime(&tm_time);
+    if (t != NULL)
+        *t = ret;
+    return ret;
 }
 #endif
 
@@ -2912,7 +3028,7 @@ time_t stm32_hal_time(time_t *t1)
     RTC_TimeTypeDef time;
     RTC_DateTypeDef date;
 
-    XMEMSET(tm_time, 0, sizeof(struct tm));
+    XMEMSET(&tm_time, 0, sizeof(struct tm));
 
     /* order of GetTime followed by GetDate required here due to STM32 HW
      * requirement */

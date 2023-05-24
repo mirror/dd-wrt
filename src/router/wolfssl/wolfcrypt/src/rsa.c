@@ -1,6 +1,6 @@
 /* rsa.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -66,7 +66,7 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
 Possible RSA enable options:
  * NO_RSA:                Overall control of RSA                    default: on
  *                                                                 (not defined)
- * WC_RSA_BLINDING:       Uses Blinding w/ Private Ops              default: off
+ * WC_RSA_BLINDING:       Uses Blinding w/ Private Ops              default: on
                           Note: slower by ~20%
  * WOLFSSL_KEY_GEN:       Allows Private Key Generation             default: off
  * RSA_LOW_MEM:           NON CRT Private Operations, less memory   default: off
@@ -360,6 +360,10 @@ int wc_InitRsaKey_Id(RsaKey* key, unsigned char* id, int len, void* heap,
                      int devId)
 {
     int ret = 0;
+#ifdef WOLFSSL_SE050
+    /* SE050 TLS users store a word32 at id, need to cast back */
+    word32* keyPtr = NULL;
+#endif
 
     if (key == NULL)
         ret = BAD_FUNC_ARG;
@@ -371,6 +375,13 @@ int wc_InitRsaKey_Id(RsaKey* key, unsigned char* id, int len, void* heap,
     if (ret == 0 && id != NULL && len != 0) {
         XMEMCPY(key->id, id, len);
         key->idLen = len;
+    #ifdef WOLFSSL_SE050
+        /* Set SE050 ID from word32, populate RsaKey with public from SE050 */
+        if (len == (int)sizeof(word32)) {
+            keyPtr = (word32*)key->id;
+            ret = wc_RsaUseKeyId(key, *keyPtr, 0);
+        }
+    #endif
     }
 
     return ret;
@@ -1569,11 +1580,14 @@ int wc_RsaPad_ex(const byte* input, word32 inputLen, byte* pkcsBlock,
 
     #ifdef WC_RSA_NO_PADDING
         case WC_RSA_NO_PAD:
+        {
+            int bytes = (bits + WOLFSSL_BIT_SIZE - 1) / WOLFSSL_BIT_SIZE;
+
             WOLFSSL_MSG("wolfSSL Using NO padding");
 
             /* In the case of no padding being used check that input is exactly
              * the RSA key length */
-            if (bits <= 0 || inputLen != ((word32)bits/WOLFSSL_BIT_SIZE)) {
+            if ((bits <= 0) || (inputLen != (word32)bytes)) {
                 WOLFSSL_MSG("Bad input size");
                 ret = RSA_PAD_E;
             }
@@ -1582,6 +1596,7 @@ int wc_RsaPad_ex(const byte* input, word32 inputLen, byte* pkcsBlock,
                 ret = 0;
             }
             break;
+        }
     #endif
 
         default:
@@ -1611,7 +1626,7 @@ int wc_RsaPad_ex(const byte* input, word32 inputLen, byte* pkcsBlock,
 
 
 /* UnPadding */
-#ifndef WC_NO_RSA_OAEP
+#if !defined(WC_NO_RSA_OAEP) && !defined(NO_HASH_WRAPPER)
 /* UnPad plaintext, set start to *output, return length of plaintext,
  * < 0 on error */
 static int RsaUnPad_OAEP(byte *pkcsBlock, unsigned int pkcsBlockLen,
@@ -1724,7 +1739,7 @@ static int RsaUnPad_OAEP(byte *pkcsBlock, unsigned int pkcsBlockLen,
     *output = (byte*)(pkcsBlock + idx);
     return pkcsBlockLen - idx;
 }
-#endif /* WC_NO_RSA_OAEP */
+#endif /* !WC_NO_RSA_OAEP */
 
 #ifdef WC_RSA_PSS
 /* 0x00 .. 0x00 0x01 | Salt | Gen Hash | 0xbc
@@ -4044,6 +4059,10 @@ int wc_RsaPSS_CheckPadding_ex2(const byte* in, word32 inSz, byte* sig,
             ret = MEMORY_E;
         }
     }
+#else
+    if (ret == 0 && sizeof(sigCheckBuf) < (RSA_PSS_PAD_SZ + inSz + saltLen)) {
+        ret = BUFFER_E;
+    }
 #endif
 
     /* Exp Hash = HASH(8 * 0x00 | Message Hash | Salt) */
@@ -4510,16 +4529,6 @@ static int _CheckProbablePrime(mp_int* p, mp_int* q, mp_int* e, int nlen,
 
     *isPrime = MP_NO;
 
-    if (q != NULL) {
-        int valid = 0;
-        /* 5.4 - check that |p-q| <= (2^(1/2))(2^((nlen/2)-1)) */
-        ret = wc_CompareDiffPQ(p, q, nlen, &valid);
-        if ((ret != MP_OKAY) || (!valid)) goto notOkay;
-        prime = q;
-    }
-    else
-        prime = p;
-
 #ifdef WOLFSSL_SMALL_STACK
     if (((tmp1 = (mp_int *)XMALLOC(sizeof(*tmp1), NULL, DYNAMIC_TYPE_WOLF_BIGINT)) == NULL) ||
         ((tmp2 = (mp_int *)XMALLOC(sizeof(*tmp2), NULL, DYNAMIC_TYPE_WOLF_BIGINT)) == NULL)) {
@@ -4530,6 +4539,16 @@ static int _CheckProbablePrime(mp_int* p, mp_int* q, mp_int* e, int nlen,
 
     ret = mp_init_multi(tmp1, tmp2, NULL, NULL, NULL, NULL);
     if (ret != MP_OKAY) goto notOkay;
+
+    if (q != NULL) {
+        int valid = 0;
+        /* 5.4 - check that |p-q| <= (2^(1/2))(2^((nlen/2)-1)) */
+        ret = wc_CompareDiffPQ(p, q, nlen, &valid);
+        if ((ret != MP_OKAY) || (!valid)) goto notOkay;
+        prime = q;
+    }
+    else
+        prime = p;
 
     /* 4.4,5.5 - Check that prime >= (2^(1/2))(2^((nlen/2)-1))
      *           This is a comparison against lowerBound */
@@ -4755,6 +4774,13 @@ int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
       err = MEMORY_E;
       goto out;
     }
+#endif
+#ifdef WOLFSSL_CHECK_MEM_ZERO
+    XMEMSET(p, 0, sizeof(*p));
+    XMEMSET(q, 0, sizeof(*q));
+    XMEMSET(tmp1, 0, sizeof(*tmp1));
+    XMEMSET(tmp2, 0, sizeof(*tmp2));
+    XMEMSET(tmp3, 0, sizeof(*tmp3));
 #endif
 
 #ifdef WOLF_CRYPTO_CB

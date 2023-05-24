@@ -1,6 +1,6 @@
 /* sha512.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -45,6 +45,10 @@
 
 #ifdef WOLF_CRYPTO_CB
     #include <wolfssl/wolfcrypt/cryptocb.h>
+#endif
+
+#ifdef WOLFSSL_IMXRT1170_CAAM
+    #include <wolfssl/wolfcrypt/port/caam/wolfcaam_fsl_nxp.h>
 #endif
 
 /* deprecated USE_SLOW_SHA2 (replaced with USE_SLOW_SHA512) */
@@ -296,8 +300,9 @@ static int InitSha512(wc_Sha512* sha512)
     return 0;
 }
 
-#if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST)
-#if !defined(WOLFSSL_NOSHA512_224)
+#if !defined(WOLFSSL_NOSHA512_224) && \
+   (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
+
 /**
  * Initialize given wc_Sha512 structure with value specific to sha512/224.
  * Note that sha512/224 has different initial hash value from sha512.
@@ -342,11 +347,10 @@ static int InitSha512_224(wc_Sha512* sha512)
 #endif
     return 0;
 }
-#endif /* !WOLFSSL_NOSHA512_224 */
-#endif /* !HAVE_FIPS && !HAVE_SELFTEST */
+#endif /* !WOLFSSL_NOSHA512_224 && !FIPS ... */
 
-#if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST)
-#if !defined(WOLFSSL_NOSHA512_256)
+#if !defined(WOLFSSL_NOSHA512_256) && \
+   (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
 /**
  * Initialize given wc_Sha512 structure with value specific to sha512/256.
  * Note that sha512/256 has different initial hash value from sha512.
@@ -391,8 +395,7 @@ static int InitSha512_256(wc_Sha512* sha512)
 #endif
     return 0;
 }
-#endif /* !WOLFSSL_NOSHA512_256 */
-#endif /* !HAVE_FIPS && !HAVE_SELFTEST */
+#endif /* !WOLFSSL_NOSHA512_256 && !FIPS... */
 
 #endif /* WOLFSSL_SHA512 */
 
@@ -607,7 +610,9 @@ static int InitSha512_Family(wc_Sha512* sha512, void* heap, int devId,
 #else
     (void)devId;
 #endif /* WOLFSSL_ASYNC_CRYPT */
-
+#ifdef WOLFSSL_IMXRT1170_CAAM
+     ret = wc_CAAM_HashInit(&sha512->hndl, &sha512->ctx, WC_HASH_TYPE_SHA512);
+#endif
     return ret;
 }
 
@@ -616,23 +621,21 @@ int wc_InitSha512_ex(wc_Sha512* sha512, void* heap, int devId)
     return InitSha512_Family(sha512, heap, devId, InitSha512);
 }
 
-#if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST)
-#if !defined(WOLFSSL_NOSHA512_224)
+#if !defined(WOLFSSL_NOSHA512_224) && \
+   (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
 int wc_InitSha512_224_ex(wc_Sha512* sha512, void* heap, int devId)
 {
     return InitSha512_Family(sha512, heap, devId, InitSha512_224);
 }
-#endif /* !WOLFSSL_NOSHA512_224 */
-#endif /* !HAVE_FIPS && !HAVE_SELFTEST */
+#endif /* !WOLFSSL_NOSHA512_224 ... */
 
-#if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST)
-#if !defined(WOLFSSL_NOSHA512_256)
+#if !defined(WOLFSSL_NOSHA512_256) && \
+   (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
 int wc_InitSha512_256_ex(wc_Sha512* sha512, void* heap, int devId)
 {
     return InitSha512_Family(sha512, heap, devId, InitSha512_256);
 }
-#endif /* !WOLFSSL_NOSHA512_256 */
-#endif /* !HAVE_FIPS && !HAVE_SELFTEST */
+#endif /* !WOLFSSL_NOSHA512_256 ... */
 
 #endif /* WOLFSSL_SHA512 */
 
@@ -1176,7 +1179,7 @@ void wc_Sha512Free(wc_Sha512* sha512)
     wolfAsync_DevCtxFree(&sha512->asyncDev, WOLFSSL_ASYNC_MARKER_SHA512);
 #endif /* WOLFSSL_ASYNC_CRYPT */
 }
-#if defined(OPENSSL_EXTRA)
+#if defined(OPENSSL_EXTRA) && !defined(WOLFSSL_KCAPI_HASH)
 /* Apply SHA512 transformation to the data                */
 /* @param sha  a pointer to wc_Sha512 structure           */
 /* @param data data to be applied SHA512 transformation   */
@@ -1197,8 +1200,8 @@ int wc_Sha512Transform(wc_Sha512* sha, const unsigned char* data)
     }
 
 #ifdef WOLFSSL_SMALL_STACK
-    buffer = (word64 *)XMALLOC(sizeof(word64) * 16, sha->heap,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+    buffer = (word64*)XMALLOC(WC_SHA512_BLOCK_SIZE, sha->heap,
+        DYNAMIC_TYPE_TMP_BUFFER);
     if (buffer == NULL)
         return MEMORY_E;
 #endif
@@ -1217,7 +1220,7 @@ int wc_Sha512Transform(wc_Sha512* sha, const unsigned char* data)
         ByteReverseWords64((word64*)data, (word64*)data,
                                                 WC_SHA512_BLOCK_SIZE);
     }
-#endif /* !LITTLE_ENDIAN_ORDER */
+#endif /* LITTLE_ENDIAN_ORDER */
 
     XMEMCPY(buffer, sha->buffer, WC_SHA512_BLOCK_SIZE);
     XMEMCPY(sha->buffer, data, WC_SHA512_BLOCK_SIZE);
@@ -1306,7 +1309,7 @@ static int InitSha384(wc_Sha384* sha384)
     sha384->ctx.isfirstblock = 1;
     if(sha384->ctx.mode == ESP32_SHA_HW) {
         /* release hw */
-        esp_sha_hw_unlock(&(sha512->ctx));
+        esp_sha_hw_unlock(&(sha384->ctx));
     }
     /* always set mode as INIT
     *  whether using HW or SW is determined at first call of update()
@@ -1439,7 +1442,9 @@ int wc_InitSha384_ex(wc_Sha384* sha384, void* heap, int devId)
 #else
     (void)devId;
 #endif /* WOLFSSL_ASYNC_CRYPT */
-
+#ifdef WOLFSSL_IMXRT1170_CAAM
+     ret = wc_CAAM_HashInit(&sha384->hndl, &sha384->ctx, WC_HASH_TYPE_SHA384);
+#endif
     return ret;
 }
 
@@ -1613,9 +1618,10 @@ int wc_Sha512GetFlags(wc_Sha512* sha512, word32* flags)
 }
 #endif /* WOLFSSL_HASH_FLAGS */
 
-#if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST)
+#if !defined(WOLFSSL_NOSHA512_224) && \
+   (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
 
-#if !defined(WOLFSSL_NOSHA512_224)
+
 int wc_InitSha512_224(wc_Sha512* sha)
 {
     return wc_InitSha512_224_ex(sha, NULL, INVALID_DEVID);
@@ -1678,9 +1684,12 @@ int wc_Sha512_224Transform(wc_Sha512* sha, const unsigned char* data)
 }
 #endif /* OPENSSL_EXTRA */
 
-#endif /* !WOLFSSL_NOSHA512_224 */
 
-#if !defined(WOLFSSL_NOSHA512_256)
+#endif /* !WOLFSSL_NOSHA512_224 && !FIPS ... */
+
+#if !defined(WOLFSSL_NOSHA512_256) && \
+   (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
+
 int wc_InitSha512_256(wc_Sha512* sha)
 {
     return wc_InitSha512_256_ex(sha, NULL, INVALID_DEVID);
@@ -1740,8 +1749,8 @@ int wc_Sha512_256Transform(wc_Sha512* sha, const unsigned char* data)
 }
 #endif /* OPENSSL_EXTRA */
 
-#endif /* !WOLFSSL_NOSHA512_224 */
-#endif /* !HAVE_FIPS && !HAVE_SELFTEST */
+
+#endif /* !WOLFSSL_NOSHA512_256 && !FIPS ... */
 
 #endif /* WOLFSSL_SHA512 */
 

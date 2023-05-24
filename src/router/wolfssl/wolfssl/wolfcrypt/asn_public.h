@@ -1,6 +1,6 @@
 /* asn_public.h
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -148,16 +148,13 @@ enum CertType {
     DILITHIUM_LEVEL2_TYPE,
     DILITHIUM_LEVEL3_TYPE,
     DILITHIUM_LEVEL5_TYPE,
-    DILITHIUM_AES_LEVEL2_TYPE,
-    DILITHIUM_AES_LEVEL3_TYPE,
-    DILITHIUM_AES_LEVEL5_TYPE,
     SPHINCS_FAST_LEVEL1_TYPE,
     SPHINCS_FAST_LEVEL3_TYPE,
     SPHINCS_FAST_LEVEL5_TYPE,
     SPHINCS_SMALL_LEVEL1_TYPE,
     SPHINCS_SMALL_LEVEL3_TYPE,
     SPHINCS_SMALL_LEVEL5_TYPE,
-
+    ECC_PARAM_TYPE,
 };
 
 
@@ -199,9 +196,6 @@ enum Ctc_SigType {
     CTC_DILITHIUM_LEVEL2     = 213,
     CTC_DILITHIUM_LEVEL3     = 216,
     CTC_DILITHIUM_LEVEL5     = 220,
-    CTC_DILITHIUM_AES_LEVEL2 = 217,
-    CTC_DILITHIUM_AES_LEVEL3 = 221,
-    CTC_DILITHIUM_AES_LEVEL5 = 224,
 
     CTC_SPHINCS_FAST_LEVEL1  = 281,
     CTC_SPHINCS_FAST_LEVEL3  = 283,
@@ -509,7 +503,7 @@ typedef struct Cert {
     void*   decodedCert;      /* internal DecodedCert allocated from heap */
     byte*   der;              /* Pointer to buffer of current DecodedCert cache */
     void*   heap;             /* heap hint */
-    byte    basicConstSet:1;  /* Indicator for when Basic Constaint is set */
+    byte    basicConstSet:1;  /* Indicator for when Basic Constraint is set */
     byte    pathLenSet:1;     /* Indicator for when path length is set */
 #ifdef WOLFSSL_ALT_NAMES
     byte    altNamesCrit:1;   /* Indicator of criticality of SAN extension */

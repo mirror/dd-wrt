@@ -1,6 +1,6 @@
 /* sp_int.h
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -449,7 +449,7 @@ typedef struct sp_ecc_ctx {
     /* Maximum value of partial in mul/sqr. */
     #define SP_MUL_SQR_MAX_PARTIAL  \
                                  (SP_MUL_SQR_DIGITS * ((1 << SP_WORD_SIZE) - 1))
-    /* Maximim value in an sp_int_word. */
+    /* Maximum value in an sp_int_word. */
     #define SP_INT_WORD_MAX         ((1 << (SP_WORD_SIZE * 2)) - 1)
 
     #if SP_MUL_SQR_MAX_PARTIAL > SP_INT_WORD_MAX
@@ -639,6 +639,10 @@ typedef struct sp_ecc_ctx {
  * @return 0 indicating not negative always.
  */
 #define sp_isneg(a)      (0)
+/* Sets the multi-precision number negative.
+ *
+ * Negative support not compiled in, so does nothing. */
+#define sp_setneg(a) do{}while(0)
 #else
 /* Returns whether multi-precision number is negative.
  *
@@ -650,6 +654,8 @@ typedef struct sp_ecc_ctx {
  * @return 0 when not negative.
  */
 #define sp_isneg(a)      ((a)->sign == MP_NEG)
+/* Sets the multi-precision number negative. */
+#define sp_setneg(a)     ((a)->sign = MP_NEG)
 #endif
 
 /* Updates the used count to exclude leading zeros.
@@ -726,9 +732,9 @@ typedef struct sp_ecc_ctx {
  * completion.
  */
 #define FP_WOULDBLOCK   (-4)
-/* Unused error. Defined for backward compatability. */
+/* Unused error. Defined for backward compatibility. */
 #define MP_NOT_INF      (-5)
-/* Unused error. Defined for backward compatability. */
+/* Unused error. Defined for backward compatibility. */
 #define MP_RANGE        MP_NOT_INF
 
 #ifdef USE_FAST_MATH
@@ -768,12 +774,12 @@ typedef struct sp_ecc_ctx {
  */
 typedef struct sp_int {
     /** Number of words that contain data.  */
-    int used;
+    unsigned int used;
     /** Maximum number of words in data.  */
-    int size;
+    unsigned int size;
 #ifdef WOLFSSL_SP_INT_NEGATIVE
     /** Indicates whether number is 0/positive or negative.  */
-    int sign;
+    unsigned int sign;
 #endif
 #ifdef HAVE_WOLF_BIGINT
     /** Unsigned binary (big endian) representation of number. */
@@ -784,10 +790,10 @@ typedef struct sp_int {
 } sp_int;
 
 typedef struct sp_int_minimal {
-    int used;
-    int size;
+    unsigned int used;
+    unsigned int size;
 #ifdef WOLFSSL_SP_INT_NEGATIVE
-    int sign;
+    unsigned int sign;
 #endif
 #ifdef HAVE_WOLF_BIGINT
     struct WC_BIGINT raw;
@@ -985,6 +991,7 @@ WOLFSSL_LOCAL void sp_memzero_check(sp_int* sp);
 #define mp_isword                           sp_isword
 #define mp_abs                              sp_abs
 #define mp_isneg                            sp_isneg
+#define mp_setneg                           sp_setneg
 #define mp_clamp                            sp_clamp
 
 /* One to one mappings. */

@@ -1,6 +1,6 @@
 /* random.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -170,6 +170,7 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
 #elif defined(WOLFSSL_ZEPHYR)
 #elif defined(WOLFSSL_TELIT_M2MB)
 #elif defined(WOLFSSL_SCE) && !defined(WOLFSSL_SCE_NO_TRNG)
+#elif defined(WOLFSSL_IMXRT1170_CAAM)
 #elif defined(WOLFSSL_GETRANDOM)
     #include <errno.h>
     #include <sys/random.h>
@@ -488,8 +489,6 @@ static int Hash_DRBG_Reseed(DRBG_internal* drbg, const byte* seed, word32 seedSz
     }
     if (ret == DRBG_SUCCESS) {
         drbg->reseedCtr = 1;
-        drbg->lastBlock = 0;
-        drbg->matchCount = 0;
     }
 
 #ifdef WOLFSSL_SMALL_STACK
@@ -540,7 +539,6 @@ static int Hash_gen(DRBG_internal* drbg, byte* out, word32 outSz, const byte* V)
 #endif
     int i;
     int len;
-    word32 checkBlock;
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     wc_Sha256* sha = &drbg->sha256;
 #else
@@ -589,23 +587,6 @@ static int Hash_gen(DRBG_internal* drbg, byte* out, word32 outSz, const byte* V)
 #endif
 
         if (ret == 0) {
-            XMEMCPY(&checkBlock, digest, sizeof(word32));
-            if (drbg->reseedCtr > 1 && checkBlock == drbg->lastBlock) {
-                if (drbg->matchCount == 1) {
-                    return DRBG_CONT_FAILURE;
-                }
-                else {
-                    if (i == (len-1)) {
-                        len++;
-                    }
-                    drbg->matchCount = 1;
-                }
-            }
-            else {
-                drbg->matchCount = 0;
-                drbg->lastBlock = checkBlock;
-            }
-
             if (out != NULL && outSz != 0) {
                 if (outSz >= OUTPUT_BLOCK_LEN) {
                     XMEMCPY(out, digest, OUTPUT_BLOCK_LEN);
@@ -761,8 +742,6 @@ static int Hash_DRBG_Instantiate(DRBG_internal* drbg, const byte* seed, word32 s
                                     sizeof(drbg->V), NULL, 0) == DRBG_SUCCESS) {
 
         drbg->reseedCtr = 1;
-        drbg->lastBlock = 0;
-        drbg->matchCount = 0;
         ret = DRBG_SUCCESS;
     }
 
@@ -3321,7 +3300,8 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     }
 
 #elif (defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
-       defined(WOLFSSL_SECO_CAAM) || defined(WOLFSSL_QNX_CAAM))
+       defined(WOLFSSL_SECO_CAAM) || defined(WOLFSSL_QNX_CAAM) || \
+       defined(WOLFSSL_IMXRT1170_CAAM))
 
     #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 
@@ -3358,7 +3338,9 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
             if (ret != RAN_BLOCK_E && ret != 0) {
                 return ret;
             }
+#ifndef WOLFSSL_IMXRT1170_CAAM
             usleep(100);
+#endif
         }
 
         if (i == times && ret != 0) {
@@ -3397,6 +3379,9 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
         /* Espressif ESP32 */
         #include <esp_system.h>
+        #if defined(CONFIG_IDF_TARGET_ESP32S3)
+            #include <esp_random.h>
+        #endif
 
         int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         {
