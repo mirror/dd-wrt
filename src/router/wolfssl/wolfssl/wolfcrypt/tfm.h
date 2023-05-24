@@ -1,6 +1,6 @@
 /* tfm.h
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -444,6 +444,7 @@ MP_API void fp_free(fp_int* a);
 #define fp_isodd(a)  \
     (((a)->used > 0  && (((a)->dp[0] & 1) == 1)) ? FP_YES : FP_NO)
 #define fp_isneg(a)  (((a)->sign != FP_ZPOS) ? FP_YES : FP_NO)
+#define fp_setneg(a) ((a)->sign = FP_NEG)
 #define fp_isword(a, w) \
     (((((a)->used == 1) && ((a)->dp[0] == (w))) || \
                                (((w) == 0) && ((a)->used == 0))) ? FP_YES : FP_NO)
@@ -737,6 +738,7 @@ int  fp_sqr_comba64(fp_int *a, fp_int *b);
 #define mp_isone(a)     fp_isone(a)
 #define mp_iseven(a)    fp_iseven(a)
 #define mp_isneg(a)     fp_isneg(a)
+#define mp_setneg(a)    fp_setneg(a)
 #define mp_isword(a, w) fp_isword(a, w)
 
 #define MP_RADIX_BIN  2
@@ -810,7 +812,7 @@ MP_API int mp_radix_size (mp_int * a, int radix, int *size);
     #define mp_dump(desc, a, verbose)
 #endif
 
-#if !defined(NO_DSA) || defined(HAVE_ECC)
+#if defined(OPENSSL_EXTRA) || !defined(NO_DSA) || defined(HAVE_ECC)
     MP_API int mp_read_radix(mp_int* a, const char* str, int radix);
 #endif
 

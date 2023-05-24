@@ -1,6 +1,6 @@
 /* sha256.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -83,6 +83,11 @@ on the specific device platform.
 #ifdef WOLF_CRYPTO_CB
     #include <wolfssl/wolfcrypt/cryptocb.h>
 #endif
+
+#ifdef WOLFSSL_IMXRT1170_CAAM
+    #include <wolfssl/wolfcrypt/port/caam/wolfcaam_fsl_nxp.h>
+#endif
+
 
 /* determine if we are using Espressif SHA hardware acceleration */
 #undef WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW
@@ -210,8 +215,8 @@ on the specific device platform.
     !defined(WOLFSSL_PSOC6_CRYPTO) && !defined(WOLFSSL_IMXRT_DCP) && !defined(WOLFSSL_SILABS_SE_ACCEL) && \
     !defined(WOLFSSL_KCAPI_HASH) && !defined(WOLFSSL_SE050_HASH) && \
     (!defined(WOLFSSL_RENESAS_SCEPROTECT) || defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)) && \
-    (!defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH))
-
+    (!defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH)) && \
+    !defined(WOLFSSL_RENESAS_RX64_HASH)
 
 
 static int InitSha256(wc_Sha256* sha256)
@@ -813,6 +818,10 @@ static int InitSha256(wc_Sha256* sha256)
 #elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
     /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
 
+#elif defined(WOLFSSL_RENESAS_RX64_HASH)
+
+    /* implemented in wolfcrypt/src/port/Renesas/renesas_rx64_hw_sha.c */
+
 #else
     #define NEED_SOFT_SHA256
 
@@ -840,6 +849,9 @@ static int InitSha256(wc_Sha256* sha256)
     #else
         (void)devId;
     #endif /* WOLFSSL_ASYNC_CRYPT */
+    #ifdef WOLFSSL_IMXRT1170_CAAM
+         ret = wc_CAAM_HashInit(&sha256->hndl, &sha256->ctx, WC_HASH_TYPE_SHA256);
+    #endif
 
         return ret;
     }
@@ -1399,9 +1411,7 @@ static int InitSha256(wc_Sha256* sha256)
         return InitSha256(sha256);  /* reset state */
     }
 
-#endif /* !WOLFSSL_KCAPI_HASH */
-
-    #if defined(OPENSSL_EXTRA)
+#if defined(OPENSSL_EXTRA)
 /* Apply SHA256 transformation to the data                */
 /* @param sha  a pointer to wc_Sha256 structure           */
 /* @param data data to be applied SHA256 transformation   */
@@ -1414,7 +1424,10 @@ static int InitSha256(wc_Sha256* sha256)
         return (Transform_Sha256(sha, data));
     }
     #endif
-#endif /* XTRANSFORM */
+#endif /* OPENSSL_EXTRA */
+
+#endif /* !WOLFSSL_KCAPI_HASH */
+
 
 #ifdef WOLFSSL_SHA224
 
@@ -1515,6 +1528,10 @@ static int InitSha256(wc_Sha256* sha256)
 #elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
     /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
 
+#elif defined(WOLFSSL_RENESAS_RX64_HASH)
+
+/* implemented in wolfcrypt/src/port/Renesas/renesas_rx64_hw_sha.c */
+
 #else
 
     #define NEED_SOFT_SHA224
@@ -1584,7 +1601,9 @@ static int InitSha256(wc_Sha256* sha256)
     #else
         (void)devId;
     #endif /* WOLFSSL_ASYNC_CRYPT */
-
+#ifdef WOLFSSL_IMXRT1170_CAAM
+     ret = wc_CAAM_HashInit(&sha224->hndl, &sha224->ctx, WC_HASH_TYPE_SHA224);
+#endif
         return ret;
     }
 
@@ -1674,6 +1693,12 @@ static int InitSha256(wc_Sha256* sha256)
     #if defined(WOLFSSL_KCAPI_HASH)
         KcapiHashFree(&sha224->kcapi);
     #endif
+    #if defined(WOLFSSL_RENESAS_RX64_HASH)
+    if (sha224->msg != NULL) {
+        XFREE(sha224->msg, sha224->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        sha224->msg = NULL;
+    }
+    #endif
     }
 #endif /* WOLFSSL_SHA224 */
 #endif /* !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH) */
@@ -1729,6 +1754,7 @@ void wc_Sha256Free(wc_Sha256* sha256)
     !defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH)) || \
     (defined(WOLFSSL_RENESAS_SCEPROTECT) && \
     !defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)) || \
+    defined(WOLFSSL_RENESAS_RX64_HASH) || \
     defined(WOLFSSL_HASH_KEEP)
 
     if (sha256->msg != NULL) {
@@ -1794,6 +1820,7 @@ int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
 
 
 #ifndef WOLFSSL_TI_HASH
+#if !defined(WOLFSSL_RENESAS_RX64_HASH)
 #ifdef WOLFSSL_SHA224
 
 #if defined(WOLFSSL_KCAPI_HASH) && !defined(WOLFSSL_NO_KCAPI_SHA224)
@@ -1892,6 +1919,7 @@ int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
 #endif
 
 #endif /* WOLFSSL_SHA224 */
+#endif /* WOLFSSL_RENESAS_RX64_HASH */
 
 #ifdef WOLFSSL_AFALG_HASH
     /* implemented in wolfcrypt/src/port/af_alg/afalg_hash.c */
@@ -1918,6 +1946,8 @@ int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
 
 #elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
     /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
+#elif defined(WOLFSSL_RENESAS_RX64_HASH)
+    /* implemented in wolfcrypt/src/port/Renesas/renesas_rx64_hw_sha.c */
 
 #else
 

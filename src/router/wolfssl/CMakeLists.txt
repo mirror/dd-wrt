@@ -28,16 +28,16 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
      You must delete them, or cmake will refuse to work.")
 endif()
 
-project(wolfssl VERSION 5.5.4 LANGUAGES C ASM)
+project(wolfssl VERSION 5.6.0 LANGUAGES C ASM)
 
 # shared library versioning
 # increment if interfaces have been added, removed or changed
-set(LIBTOOL_CURRENT 38)
+set(LIBTOOL_CURRENT 39)
 # increment if source code has changed  set to zero if current is incremented
 set(LIBTOOL_REVISION 0)
 # increment if interfaces have been added set to zero if interfaces have been
 # removed or changed
-set(LIBTOOL_AGE 3)
+set(LIBTOOL_AGE 4)
 
 math(EXPR LIBTOOL_SO_VERSION "${LIBTOOL_CURRENT} - ${LIBTOOL_AGE}")
 set(LIBTOOL_FULL_VERSION ${LIBTOOL_SO_VERSION}.${LIBTOOL_AGE}.${LIBTOOL_REVISION})
@@ -931,7 +931,7 @@ endif()
 # DH
 add_option("WOLFSSL_DH"
     "Enable DH (default: enabled)"
-    "yes" "yes;no")
+    "yes" "yes;no;const")
 
 if(WOLFSSL_OPENSSH)
     override_cache(WOLFSSL_DH "yes")
@@ -944,6 +944,11 @@ else()
       list(APPEND WOLFSSL_DEFINITIONS "-DNO_DH")
       override_cache(WOLFSSL_DH "no")
     endif()
+endif()
+
+if("${WOLFSSL_DH}" STREQUAL "const")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_DH_CONST")
+    set(WOLFSSL_DH_CONST "yes")
 endif()
 
 # TODO: - Anonymous
@@ -1798,6 +1803,14 @@ if (WOLFSSL_TLSX)
 endif()
 
 
+add_option("WOLFSSL_CAAM"
+    "Enable use of CAAM with NXP (default: disabled)"
+    "no" "yes;no")
+if (WOLFSSL_CAAM)
+   list(APPEND WOLFSSL_DEFINITIONS  "-DWOLFSSL_CAAM")
+endif()
+
+
 # Generates the BUILD_* flags. These control what source files are included in
 # the library. A series of AM_CONDITIONALs handle this in configure.ac.
 generate_build_flags()
@@ -1812,7 +1825,7 @@ if(WOLFSSL_USER_SETTINGS)
         -DWOLFSSL_USER_SETTINGS_ASM")
 
     # Create user_settings_asm.h for use in assembly files (e.g. .S files).
-    execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/user_settings_asm.sh
+    execute_process(COMMAND $ENV{SHELL} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/user_settings_asm.sh
                             "${CMAKE_C_FLAGS} ${CMAKE_CXX_FLAGS}"
                     RESULT_VARIABLE USER_SETTINGS_ASM_RET)
     if (NOT USER_SETTINGS_ASM_RET EQUAL 0)
@@ -1949,10 +1962,12 @@ elseif(APPLE)
             ${SECURITY_FRAMEWORK})
     endif()
 else()
-    # DH requires math (m) library
-    target_link_libraries(wolfssl
-        PUBLIC
-            m)
+    if(WOLFSSL_DH AND NOT WOLFSSL_DH_CONST)
+        # DH requires math (m) library
+        target_link_libraries(wolfssl
+            PUBLIC
+                m)
+    endif()
 endif()
 
 ####################################################
@@ -2201,7 +2216,7 @@ if(NOT BUILD_FIPS OR BUILD_FIPS_V1)
     "wolfssl/wolfcrypt/fips.h")
 endif()
 
-if(NOT BUILD_QNXCAAM)
+if(NOT BUILD_QNXCAAM OR BUILD_CAAM)
   list(APPEND HEADER_EXCLUDE
     "wolfssl/wolfcrypt/port/caam"
     )

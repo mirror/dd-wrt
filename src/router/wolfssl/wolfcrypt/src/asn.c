@@ -1,6 +1,6 @@
 /* asn.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1023,21 +1023,29 @@ static int GetOID(const byte* input, word32* inOutIdx, word32* oid,
 static int GetASN_Integer(const byte* input, word32 idx, int length,
                           int positive)
 {
+#if !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS) || \
+    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION > 2))
+    /* Check contents consist of one or more octets. */
+    if (length == 0) {
+        WOLFSSL_MSG("Zero length INTEGER not allowed");
+        return ASN_PARSE_E;
+    }
+#endif
     if (input[idx] == 0) {
         /* Check leading zero byte required. */
         if ((length > 1) && ((input[idx + 1] & 0x80) == 0)) {
-        #ifdef WOLFSSL_DEBUG_ASN_TEMPLATE
             WOLFSSL_MSG("Zero not required on INTEGER");
-        #endif
+        #ifndef WOLFSSL_ASN_INT_LEAD_0_ANY
             return ASN_PARSE_E;
+        #endif
         }
     }
     /* Check whether a leading zero byte was required. */
     else if (positive && (input[idx] & 0x80)) {
-    #ifdef WOLFSSL_DEBUG_ASN_TEMPLATE
         WOLFSSL_MSG("INTEGER is negative");
-    #endif
+    #ifndef WOLFSSL_ASN_INT_LEAD_0_ANY
         return ASN_EXPECT_0_E;
+    #endif /* WOLFSSL_ASN_INT_LEAD_0_ANY */
     }
 
     return 0;
@@ -1053,6 +1061,16 @@ static int GetASN_Integer(const byte* input, word32 idx, int length,
  */
 static int GetASN_BitString(const byte* input, word32 idx, int length)
 {
+#if !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS) || \
+    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION > 2))
+    /* Check contents consist of one or more octets. */
+    if (length == 0) {
+    #ifdef WOLFSSL_DEBUG_ASN_TEMPLATE
+        WOLFSSL_MSG("Zero length BIT STRING not allowed");
+    #endif
+        return ASN_PARSE_E;
+    }
+#endif
     /* Ensure unused bits value is valid range. */
     if (input[idx] > 7) {
     #ifdef WOLFSSL_DEBUG_ASN_TEMPLATE
@@ -2098,7 +2116,7 @@ int GetLength_ex(const byte* input, word32* inOutIdx, int* len, word32 maxIdx,
     /* Ensure zero return length on error. */
     *len = 0;
 
-    /* Check there is at least on byte available containing length information.
+    /* Check there is at least one byte available containing length information.
      */
     if ((idx + 1) > maxIdx) {
         WOLFSSL_MSG("GetLength - bad index on input");
@@ -2116,7 +2134,7 @@ int GetLength_ex(const byte* input, word32* inOutIdx, int* len, word32 maxIdx,
         int minLen;
 
         /* Calculate minimum length to be encoded with bytes. */
-        if (b == 0x80) {
+        if (b == ASN_INDEF_LENGTH) {
             /* Indefinite length encoding - no length bytes. */
             minLen = 0;
         }
@@ -2156,7 +2174,7 @@ int GetLength_ex(const byte* input, word32* inOutIdx, int* len, word32 maxIdx,
         length = b;
     }
 
-    /* When request, check the buffer has at least length bytes left. */
+    /* When requested, check the buffer has at least length bytes left. */
     if (check && ((idx + length) > maxIdx)) {
         WOLFSSL_MSG("GetLength - value exceeds buffer length");
         return BUFFER_E;
@@ -4010,18 +4028,6 @@ static word32 SetBitString16Bit(word16 val, byte* output)
     /* Dilithium Level 5: 1.3.6.1.4.1.2.267.7.8.7 */
     static const byte sigDilithium_Level5Oid[] =
         {43, 6, 1, 4, 1, 2, 130, 11, 7, 8, 7};
-
-    /* Dilithium AES Level 2: 1.3.6.1.4.1.2.267.11.4.4 */
-    static const byte sigDilithiumAes_Level2Oid[] =
-        {43, 6, 1, 4, 1, 2, 130, 11, 11, 4, 4};
-
-    /* Dilithium AES Level 3: 1.3.6.1.4.1.2.267.11.6.5 */
-    static const byte sigDilithiumAes_Level3Oid[] =
-        {43, 6, 1, 4, 1, 2, 130, 11, 11, 6, 5};
-
-    /* Dilithium AES Level 5: 1.3.6.1.4.1.2.267.11.8.7 */
-    static const byte sigDilithiumAes_Level5Oid[] =
-        {43, 6, 1, 4, 1, 2, 130, 11, 11, 8, 7};
 #endif /* HAVE_DILITHIUM */
 #ifdef HAVE_SPHINCS
     /* Sphincs Fast Level 1: 1 3 9999 6 7 4 */
@@ -4098,18 +4104,6 @@ static word32 SetBitString16Bit(word16 val, byte* output)
     /* Dilithium Level 5: 1.3.6.1.4.1.2.267.7.8.7 */
     static const byte keyDilithium_Level5Oid[] =
         {43, 6, 1, 4, 1, 2, 130, 11, 7, 8, 7};
-
-    /* Dilithium AES Level 2: 1.3.6.1.4.1.2.267.11.4.4 */
-    static const byte keyDilithiumAes_Level2Oid[] =
-        {43, 6, 1, 4, 1, 2, 130, 11, 11, 4, 4};
-
-    /* Dilithium AES Level 3: 1.3.6.1.4.1.2.267.11.6.5 */
-    static const byte keyDilithiumAes_Level3Oid[] =
-        {43, 6, 1, 4, 1, 2, 130, 11, 11, 6, 5};
-
-    /* Dilithium AES Level 5: 1.3.6.1.4.1.2.267.11.8.7 */
-    static const byte keyDilithiumAes_Level5Oid[] =
-        {43, 6, 1, 4, 1, 2, 130, 11, 11, 8, 7};
 #endif /* HAVE_DILITHIUM */
 #ifdef HAVE_SPHINCS
     /* Sphincs Fast Level 1: 1 3 9999 6 7 4 */
@@ -4357,7 +4351,9 @@ static const byte dnsSRVOid[] = {43, 6, 1, 5, 5, 7, 8, 7};
     defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL) || \
     defined(WOLFSSL_ASN_TEMPLATE)
 /* Pilot attribute types (0.9.2342.19200300.100.1.*) */
-static const byte uidOid[] = {9, 146, 38, 137, 147, 242, 44, 100, 1, 1}; /* user id */
+#define PLT_ATTR_TYPE_OID_BASE(num) {9, 146, 38, 137, 147, 242, 44, 100, 1, num}
+static const byte uidOid[] = PLT_ATTR_TYPE_OID_BASE(1); /* user id */
+static const byte fvrtDrk[] = PLT_ATTR_TYPE_OID_BASE(5);/* favourite drink*/
 #endif
 
 #if defined(WOLFSSL_CERT_GEN) || \
@@ -4657,18 +4653,6 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                     oid = sigDilithium_Level5Oid;
                     *oidSz = sizeof(sigDilithium_Level5Oid);
                     break;
-                case CTC_DILITHIUM_AES_LEVEL2:
-                    oid = sigDilithiumAes_Level2Oid;
-                    *oidSz = sizeof(sigDilithiumAes_Level2Oid);
-                    break;
-                case CTC_DILITHIUM_AES_LEVEL3:
-                    oid = sigDilithiumAes_Level3Oid;
-                    *oidSz = sizeof(sigDilithiumAes_Level3Oid);
-                    break;
-                case CTC_DILITHIUM_AES_LEVEL5:
-                    oid = sigDilithiumAes_Level5Oid;
-                    *oidSz = sizeof(sigDilithiumAes_Level5Oid);
-                    break;
                 #endif /* HAVE_DILITHIUM */
                 #ifdef HAVE_SPHINCS
                 case CTC_SPHINCS_FAST_LEVEL1:
@@ -4781,18 +4765,6 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                 case DILITHIUM_LEVEL5k:
                     oid = keyDilithium_Level5Oid;
                     *oidSz = sizeof(keyDilithium_Level5Oid);
-                    break;
-                case DILITHIUM_AES_LEVEL2k:
-                    oid = keyDilithiumAes_Level2Oid;
-                    *oidSz = sizeof(keyDilithiumAes_Level2Oid);
-                    break;
-                case DILITHIUM_AES_LEVEL3k:
-                    oid = keyDilithiumAes_Level3Oid;
-                    *oidSz = sizeof(keyDilithiumAes_Level3Oid);
-                    break;
-                case DILITHIUM_AES_LEVEL5k:
-                    oid = keyDilithiumAes_Level5Oid;
-                    *oidSz = sizeof(keyDilithiumAes_Level5Oid);
                     break;
                 #endif /* HAVE_DILITHIUM */
                 #ifdef HAVE_SPHINCS
@@ -5703,32 +5675,15 @@ static int GetOID(const byte* input, word32* inOutIdx, word32* oid,
 
 #if defined(HAVE_PQC) && defined(HAVE_LIBOQS)
     /* Since we are summing it up, there could be collisions...and indeed there
-     * are:
+     * are: SPHINCS_FAST_LEVEL1 and SPHINCS_FAST_LEVEL3.
      *
-     * DILITHIUM_LEVEL5
-     *     1.3.6.1.4.1.2.267.7.6.7
-     *     {43, 6, 1, 4, 1, 2, 130, 11, 7, 8, 7}
-     *     -> 220
-     * DILITHIUM_AES_LEVEL3
-     *     1.3.6.1.4.1.2.267.11.4.5
-     *     {43, 6, 1, 4, 1, 2, 130, 11, 11, 6, 5}
-     *     -> 220
-     *
-     * As a small hack, we're going to look for the special case of
-     * DILITHIUM_AES_LEVEL3k and if we find it, instead of *oid being set to 220
-     * we will set it to 221. Note that DILITHIUM_AES_LEVEL3k is defined as 221.
-     *
-     * Same thing for SPHINCS_FAST_LEVEL1 and SPHINCS_FAST_LEVEL3. We will look
-     * for the special case of SPHINCS_FAST_LEVEL3 and set *oid to 283 instead
-     * of 281; 282 is taken.
+     * We will look for the special case of SPHINCS_FAST_LEVEL3 and set *oid to
+     * 283 instead of 281; 282 is taken.
      *
      * These hacks will hopefully disappear when new standardized OIDs appear.
      */
-    if (memcmp(&input[idx], sigDilithiumAes_Level3Oid,
-                sizeof(sigDilithiumAes_Level3Oid)) == 0) {
-        found_collision = DILITHIUM_AES_LEVEL3k;
-    } else if (memcmp(&input[idx], sigSphincsFast_Level3Oid,
-                sizeof(sigSphincsFast_Level3Oid)) == 0) {
+    if (memcmp(&input[idx], sigSphincsFast_Level3Oid,
+               sizeof(sigSphincsFast_Level3Oid)) == 0) {
         found_collision = SPHINCS_FAST_LEVEL3k;
     }
 #endif /* HAVE_PQC */
@@ -5824,7 +5779,7 @@ int GetObjectId(const byte* input, word32* inOutIdx, word32* oid,
 #ifndef WOLFSSL_ASN_TEMPLATE
     int ret, length;
 
-    WOLFSSL_ENTER("GetObjectId()");
+    WOLFSSL_ENTER("GetObjectId");
 
     ret = GetASNObjectId(input, inOutIdx, &length, maxIdx);
     if (ret != 0)
@@ -5835,7 +5790,7 @@ int GetObjectId(const byte* input, word32* inOutIdx, word32* oid,
     ASNGetData dataASN[objectIdASN_Length];
     int ret;
 
-    WOLFSSL_ENTER("GetObjectId()");
+    WOLFSSL_ENTER("GetObjectId");
 
     /* Clear dynamic data and set OID type expected. */
     XMEMSET(dataASN, 0, sizeof(dataASN));
@@ -6886,7 +6841,7 @@ int wc_CreatePKCS8Key(byte* out, word32* outSz, byte* key, word32 keySz,
         return LENGTH_ONLY_E;
     }
 
-    WOLFSSL_ENTER("wc_CreatePKCS8Key()");
+    WOLFSSL_ENTER("wc_CreatePKCS8Key");
 
     if (key == NULL || out == NULL || outSz == NULL) {
         return BAD_FUNC_ARG;
@@ -6959,7 +6914,7 @@ int wc_CreatePKCS8Key(byte* out, word32* outSz, byte* key, word32 keySz,
     word32 keyIdx = 0;
     word32 tmpAlgId = 0;
 
-    WOLFSSL_ENTER("wc_CreatePKCS8Key()");
+    WOLFSSL_ENTER("wc_CreatePKCS8Key");
 
     /* Check validity of parameters. */
     if (out == NULL && outSz != NULL) {
@@ -7362,10 +7317,7 @@ int wc_CheckPrivateKey(const byte* privKey, word32 privKeySz,
     #if defined(HAVE_DILITHIUM)
     if ((ks == DILITHIUM_LEVEL2k) ||
         (ks == DILITHIUM_LEVEL3k) ||
-        (ks == DILITHIUM_LEVEL5k) ||
-        (ks == DILITHIUM_AES_LEVEL2k) ||
-        (ks == DILITHIUM_AES_LEVEL3k) ||
-        (ks == DILITHIUM_AES_LEVEL5k)) {
+        (ks == DILITHIUM_LEVEL5k)) {
     #ifdef WOLFSSL_SMALL_STACK
         dilithium_key* key_pair = NULL;
     #else
@@ -7388,22 +7340,13 @@ int wc_CheckPrivateKey(const byte* privKey, word32 privKeySz,
         }
 
         if (ks == DILITHIUM_LEVEL2k) {
-            ret = wc_dilithium_set_level_and_sym(key_pair, 2, SHAKE_VARIANT);
+            ret = wc_dilithium_set_level(key_pair, 2);
         }
         else if (ks == DILITHIUM_LEVEL3k) {
-            ret = wc_dilithium_set_level_and_sym(key_pair, 3, SHAKE_VARIANT);
+            ret = wc_dilithium_set_level(key_pair, 3);
         }
         else if (ks == DILITHIUM_LEVEL5k) {
-            ret = wc_dilithium_set_level_and_sym(key_pair, 5, SHAKE_VARIANT);
-        }
-        else if (ks == DILITHIUM_AES_LEVEL2k) {
-            ret = wc_dilithium_set_level_and_sym(key_pair, 2, AES_VARIANT);
-        }
-        else if (ks == DILITHIUM_AES_LEVEL3k) {
-            ret = wc_dilithium_set_level_and_sym(key_pair, 3, AES_VARIANT);
-        }
-        else if (ks == DILITHIUM_AES_LEVEL5k) {
-            ret = wc_dilithium_set_level_and_sym(key_pair, 5, AES_VARIANT);
+            ret = wc_dilithium_set_level(key_pair, 5);
         }
 
         if (ret  < 0) {
@@ -7849,7 +7792,7 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
 
         if (wc_dilithium_init(dilithium) != 0) {
             tmpIdx = 0;
-            if (wc_dilithium_set_level_and_sym(dilithium, 2, SHAKE_VARIANT)
+            if (wc_dilithium_set_level(dilithium, 2)
                 == 0) {
                 if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
                     keySz) == 0) {
@@ -7859,7 +7802,7 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
                     WOLFSSL_MSG("Not Dilithium Level 2 DER key");
                 }
             }
-            else if (wc_dilithium_set_level_and_sym(dilithium, 3, SHAKE_VARIANT)
+            else if (wc_dilithium_set_level(dilithium, 3)
                 == 0) {
                 if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
                     keySz) == 0) {
@@ -7869,7 +7812,7 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
                     WOLFSSL_MSG("Not Dilithium Level 3 DER key");
                 }
             }
-            else if (wc_dilithium_set_level_and_sym(dilithium, 5, SHAKE_VARIANT)
+            else if (wc_dilithium_set_level(dilithium, 5)
                 == 0) {
                 if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
                     keySz) == 0) {
@@ -7877,36 +7820,6 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
                 }
                 else {
                     WOLFSSL_MSG("Not Dilithium Level 5 DER key");
-                }
-            }
-            else if (wc_dilithium_set_level_and_sym(dilithium, 2, AES_VARIANT)
-                == 0) {
-                if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
-                    keySz) == 0) {
-                    *algoID = DILITHIUM_AES_LEVEL2k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Dilithium AES Level 2 DER key");
-                }
-            }
-            else if (wc_dilithium_set_level_and_sym(dilithium, 3, AES_VARIANT)
-                == 0) {
-                if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
-                    keySz) == 0) {
-                    *algoID = DILITHIUM_AES_LEVEL3k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Dilithium AES Level 3 DER key");
-                }
-            }
-            else if (wc_dilithium_set_level_and_sym(dilithium, 5, AES_VARIANT)
-                == 0) {
-                if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
-                    keySz) == 0) {
-                    *algoID = DILITHIUM_AES_LEVEL5k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Dilithium AES Level 5 DER key");
                 }
             }
             else {
@@ -8625,18 +8538,18 @@ exit_dc:
     /* pbes2ParamsASN longer than pkcs8DecASN_Length/pbes1ParamsASN_Length. */
     DECL_ASNGETDATA(dataASN, pbes2ParamsASN_Length);
     int    ret = 0;
-    int    id;
+    int    id = 0;
     int    version;
     word32 idx = 0;
     word32 pIdx = 0;
     word32 iterations;
     word32 keySz = 0;
-    word32 saltSz;
+    word32 saltSz = 0;
     word32 shaOid = 0;
     byte*  salt = NULL;
     byte*  key = NULL;
     byte   cbcIv[MAX_IV_SIZE];
-    byte*  params;
+    byte*  params = NULL;
 
     WOLFSSL_ENTER("DecryptContent");
 
@@ -8872,7 +8785,7 @@ int EncryptContent(byte* input, word32 inputSz, byte* out, word32* outSz,
 
     (void)heap;
 
-    WOLFSSL_ENTER("EncryptContent()");
+    WOLFSSL_ENTER("EncryptContent");
 
     if (CheckAlgo(vPKCS, vAlgo, &id, &version, &blockSz) < 0)
         return ASN_INPUT_E;  /* Algo ID error */
@@ -9034,12 +8947,12 @@ int EncryptContent(byte* input, word32 inputSz, byte* out, word32* outSz,
     int id;
     int blockSz = 0;
     byte* pkcs8;
-    word32 pkcs8Sz;
+    word32 pkcs8Sz = 0;
     byte cbcIv[MAX_IV_SIZE];
 
     (void)heap;
 
-    WOLFSSL_ENTER("EncryptContent()");
+    WOLFSSL_ENTER("EncryptContent");
 
     /* Must have a output size to return or check. */
     if (outSz == NULL) {
@@ -9467,7 +9380,6 @@ int wc_RsaPublicKeyDecode_ex(const byte* input, word32* inOutIdx, word32 inSz,
 int wc_RsaPublicKeyDecode(const byte* input, word32* inOutIdx, RsaKey* key,
                        word32 inSz)
 {
-#ifndef WOLFSSL_ASN_TEMPLATE
     int ret;
     const byte *n = NULL, *e = NULL;
     word32 nSz = 0, eSz = 0;
@@ -9481,44 +9393,6 @@ int wc_RsaPublicKeyDecode(const byte* input, word32* inOutIdx, RsaKey* key,
     }
 
     return ret;
-#else
-    DECL_ASNGETDATA(dataASN, rsaPublicKeyASN_Length);
-    int ret = 0;
-
-    /* Check validity of parameters. */
-    if ((input == NULL) || (inOutIdx == NULL) || (key == NULL)) {
-        ret = BAD_FUNC_ARG;
-    }
-
-    CALLOC_ASNGETDATA(dataASN, rsaPublicKeyASN_Length, ret, NULL);
-
-    if (ret == 0) {
-        /* Set mp_ints to fill with modulus and exponent data. */
-        GetASN_MP(&dataASN[RSAPUBLICKEYASN_IDX_PUBKEY_RSA_N], &key->n);
-        GetASN_MP(&dataASN[RSAPUBLICKEYASN_IDX_PUBKEY_RSA_E], &key->e);
-        /* Try decoding PKCS #1 public key by ignoring rest of ASN.1. */
-        ret = GetASN_Items(&rsaPublicKeyASN[RSAPUBLICKEYASN_IDX_PUBKEY_RSA_SEQ],
-               &dataASN[RSAPUBLICKEYASN_IDX_PUBKEY_RSA_SEQ],
-               (int)(rsaPublicKeyASN_Length - RSAPUBLICKEYASN_IDX_PUBKEY_RSA_SEQ),
-               0, input, inOutIdx, inSz);
-        if (ret != 0) {
-            mp_free(&key->n);
-            mp_free(&key->e);
-
-            /* Didn't work - try whole SubjectKeyInfo instead. */
-            /* Set the OID to expect. */
-            GetASN_ExpBuffer(&dataASN[RSAPUBLICKEYASN_IDX_ALGOID_OID],
-                    keyRsaOid, sizeof(keyRsaOid));
-            /* Decode SubjectKeyInfo. */
-            ret = GetASN_Items(rsaPublicKeyASN, dataASN,
-                               rsaPublicKeyASN_Length, 1, input, inOutIdx,
-                               inSz);
-        }
-    }
-
-    FREE_ASNGETDATA(dataASN, NULL);
-    return ret;
-#endif
 }
 
 /* import RSA public key elements (n, e) into RsaKey structure (key) */
@@ -9880,6 +9754,9 @@ int wc_DhKeyDecode(const byte* input, word32* inOutIdx, DhKey* key, word32 inSz)
                         (dataASN[DHKEYPKCS8ASN_IDX_VER].length != 0)) {
                     ret = ASN_PARSE_E;
                 }
+            }
+            if ((ret == 0) && mp_iszero(&key->pub)) {
+                ret = mp_exptmod(&key->g, &key->priv, &key->p, &key->pub);
             }
         }
 #endif
@@ -10600,7 +10477,9 @@ int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx, DsaKey* key,
             XMEMSET(dataASN, 0, sizeof(*dataASN) * dsaKeyASN_Length);
             GetASN_Int8Bit(&dataASN[DSAKEYASN_IDX_VER], &version);
             for (i = 0; i < DSA_INTS; i++) {
-                GetASN_MP(&dataASN[(int)DSAKEYASN_IDX_P + i], GetDsaInt(key, i));
+                mp_int* n = GetDsaInt(key, i);
+                mp_clear(n);
+                GetASN_MP(&dataASN[(int)DSAKEYASN_IDX_P + i], n);
             }
 
             /* Try simple OCTET_STRING form. */
@@ -11812,18 +11691,6 @@ static int GetCertKey(DecodedCert* cert, const byte* source, word32* inOutIdx,
             cert->pkCurveOID = DILITHIUM_LEVEL5k;
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
-        case DILITHIUM_AES_LEVEL2k:
-            cert->pkCurveOID = DILITHIUM_AES_LEVEL2k;
-            ret = StoreKey(cert, source, &srcIdx, maxIdx);
-            break;
-        case DILITHIUM_AES_LEVEL3k:
-            cert->pkCurveOID = DILITHIUM_AES_LEVEL3k;
-            ret = StoreKey(cert, source, &srcIdx, maxIdx);
-            break;
-        case DILITHIUM_AES_LEVEL5k:
-            cert->pkCurveOID = DILITHIUM_AES_LEVEL5k;
-            ret = StoreKey(cert, source, &srcIdx, maxIdx);
-            break;
     #endif /* HAVE_DILITHIUM */
     #ifdef HAVE_SPHINCS
         case SPHINCS_FAST_LEVEL1k:
@@ -11871,156 +11738,6 @@ static int GetCertKey(DecodedCert* cert, const byte* source, word32* inOutIdx,
     /* Return error code. */
     return ret;
 }
-
-#if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
-#if defined(HAVE_ECC)
-/* Converts ECC curve enum values in ecc_curve_id to the associated OpenSSL NID
- * value.
- *
- * @param [in] n  ECC curve id.
- * @return  ECC curve NID (OpenSSL compatable value).
- */
-WOLFSSL_API int EccEnumToNID(int n)
-{
-    WOLFSSL_ENTER("EccEnumToNID()");
-
-    switch(n) {
-        case ECC_SECP192R1:
-            return NID_X9_62_prime192v1;
-        case ECC_PRIME192V2:
-            return NID_X9_62_prime192v2;
-        case ECC_PRIME192V3:
-            return NID_X9_62_prime192v3;
-        case ECC_PRIME239V1:
-            return NID_X9_62_prime239v1;
-        case ECC_PRIME239V2:
-            return NID_X9_62_prime239v2;
-        case ECC_PRIME239V3:
-            return NID_X9_62_prime239v3;
-        case ECC_SECP256R1:
-            return NID_X9_62_prime256v1;
-        case ECC_SECP112R1:
-            return NID_secp112r1;
-        case ECC_SECP112R2:
-            return NID_secp112r2;
-        case ECC_SECP128R1:
-            return NID_secp128r1;
-        case ECC_SECP128R2:
-            return NID_secp128r2;
-        case ECC_SECP160R1:
-            return NID_secp160r1;
-        case ECC_SECP160R2:
-            return NID_secp160r2;
-        case ECC_SECP224R1:
-            return NID_secp224r1;
-        case ECC_SECP384R1:
-            return NID_secp384r1;
-        case ECC_SECP521R1:
-            return NID_secp521r1;
-        case ECC_SECP160K1:
-            return NID_secp160k1;
-        case ECC_SECP192K1:
-            return NID_secp192k1;
-        case ECC_SECP224K1:
-            return NID_secp224k1;
-        case ECC_SECP256K1:
-            return NID_secp256k1;
-        case ECC_BRAINPOOLP160R1:
-            return NID_brainpoolP160r1;
-        case ECC_BRAINPOOLP192R1:
-            return NID_brainpoolP192r1;
-        case ECC_BRAINPOOLP224R1:
-            return NID_brainpoolP224r1;
-        case ECC_BRAINPOOLP256R1:
-            return NID_brainpoolP256r1;
-        case ECC_BRAINPOOLP320R1:
-            return NID_brainpoolP320r1;
-        case ECC_BRAINPOOLP384R1:
-            return NID_brainpoolP384r1;
-        case ECC_BRAINPOOLP512R1:
-            return NID_brainpoolP512r1;
-        default:
-            WOLFSSL_MSG("NID not found");
-            return -1;
-    }
-}
-#endif /* HAVE_ECC */
-#endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
-
-#if (defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)) \
-    && !defined(WOLFCRYPT_ONLY)
-/* Convert shortname to NID.
- *
- * For OpenSSL compatability.
- *
- * @param [in] sn  Short name of OID.
- * @return  NID corresponding to shortname on success.
- * @return  NID_undef when not recognized.
- */
-int wc_OBJ_sn2nid(const char *sn)
-{
-    const struct {
-        const char *sn;
-        int  nid;
-    } sn2nid[] = {
-        {WOLFSSL_COMMON_NAME, NID_commonName},
-        {WOLFSSL_COUNTRY_NAME, NID_countryName},
-        {WOLFSSL_LOCALITY_NAME, NID_localityName},
-        {WOLFSSL_STATE_NAME, NID_stateOrProvinceName},
-        {WOLFSSL_ORG_NAME, NID_organizationName},
-        {WOLFSSL_ORGUNIT_NAME, NID_organizationalUnitName},
-    #ifdef WOLFSSL_CERT_NAME_ALL
-        {WOLFSSL_NAME, NID_name},
-        {WOLFSSL_INITIALS, NID_initials},
-        {WOLFSSL_GIVEN_NAME, NID_givenName},
-        {WOLFSSL_DNQUALIFIER, NID_dnQualifier},
-    #endif
-        {WOLFSSL_EMAIL_ADDR, NID_emailAddress},
-        {"SHA1", NID_sha1},
-        {NULL, -1}};
-    int i;
-#ifdef HAVE_ECC
-    char curveName[ECC_MAXNAME + 1];
-    int eccEnum;
-#endif
-    WOLFSSL_ENTER("OBJ_sn2nid");
-    for(i=0; sn2nid[i].sn != NULL; i++) {
-        if (XSTRCMP(sn, sn2nid[i].sn) == 0) {
-            return sn2nid[i].nid;
-        }
-    }
-#ifdef HAVE_ECC
-
-    if (XSTRLEN(sn) > ECC_MAXNAME)
-        return NID_undef;
-
-    /* Nginx uses this OpenSSL string. */
-    if (XSTRCMP(sn, "prime256v1") == 0)
-        sn = "SECP256R1";
-    /* OpenSSL allows lowercase curve names */
-    for (i = 0; i < (int)(sizeof(curveName) - 1) && *sn; i++) {
-        curveName[i] = (char)XTOUPPER((unsigned char) *sn++);
-    }
-    curveName[i] = '\0';
-    /* find based on name and return NID */
-    for (i = 0;
-#ifndef WOLFSSL_ECC_CURVE_STATIC
-         ecc_sets[i].size != 0 && ecc_sets[i].name != NULL;
-#else
-         ecc_sets[i].size != 0;
-#endif
-         i++) {
-        if (XSTRCMP(curveName, ecc_sets[i].name) == 0) {
-            eccEnum = ecc_sets[i].id;
-            /* Convert enum value in ecc_curve_id to OpenSSL NID */
-            return EccEnumToNID(eccEnum);
-        }
-    }
-#endif /* HAVE_ECC */
-
-    return NID_undef;
-}
-#endif
 
 /* Calculate hash of the id using the SHA-1 or SHA-256.
  *
@@ -12691,6 +12408,15 @@ static int GetRDN(DecodedCert* cert, char* full, word32* idx, int* nid,
         *nid = NID_domainComponent;
     #endif
     }
+    else if (oidSz == sizeof(fvrtDrk) && XMEMCMP(oid, fvrtDrk, oidSz) == 0) {
+        /* Set the favourite drink, type string, length and NID. */
+        id = ASN_FAVOURITE_DRINK;
+        typeStr = WOLFSSL_FAVOURITE_DRINK;
+        typeStrLen = sizeof(WOLFSSL_FAVOURITE_DRINK) - 1;
+    #ifdef WOLFSSL_X509_NAME_AVAILABLE
+        *nid = NID_favouriteDrink;
+    #endif
+    }
     /* Other OIDs that start with the same values. */
     else if (oidSz == sizeof(dcOid) && XMEMCMP(oid, dcOid, oidSz-1) == 0) {
         WOLFSSL_MSG("Unknown pilot attribute type");
@@ -13314,7 +13040,8 @@ static int GetCertName(DecodedCert* cert, char* full, byte* hash, int nameType,
                         cert->subjectEmail = (char*)&input[srcIdx];
                         cert->subjectEmailLen = strLen;
                     }
-                #if defined(WOLFSSL_HAVE_ISSUER_NAMES)
+                #if defined(WOLFSSL_HAVE_ISSUER_NAMES) && \
+                    (defined(WOLFSSL_CERT_GEN) || defined(WOLFSSL_CERT_EXT))
                     else if (nameType == ISSUER) {
                         cert->issuerEmail = (char*)&input[srcIdx];
                         cert->issuerEmailLen = strLen;
@@ -13876,7 +13603,7 @@ int GetAsnTimeString(void* currTime, byte* buf, word32 len)
         /* -1 below excludes null terminator */
         *data_ptr = (byte)ASN_UTC_TIME_SIZE - 1; data_ptr++; data_len++;
         XMEMCPY(data_ptr, (byte *)uf_time, ASN_UTC_TIME_SIZE - 1);
-        *data_ptr += ASN_UTC_TIME_SIZE - 1;
+        data_ptr += ASN_UTC_TIME_SIZE - 1;
     }
     else if (data_len == ASN_GENERALIZED_TIME_SIZE-1) {
         /* increment data_len for ASN length byte after adding the data_ptr */
@@ -13884,7 +13611,7 @@ int GetAsnTimeString(void* currTime, byte* buf, word32 len)
         /* -1 below excludes null terminator */
         *data_ptr = (byte)ASN_GENERALIZED_TIME_SIZE - 1; data_ptr++; data_len++;
         XMEMCPY(data_ptr, (byte*)uf_time, ASN_GENERALIZED_TIME_SIZE - 1);
-        *data_ptr += ASN_GENERALIZED_TIME_SIZE - 1;
+        data_ptr += ASN_GENERALIZED_TIME_SIZE - 1;
     }
     else {
         WOLFSSL_MSG("Invalid time size returned");
@@ -13907,9 +13634,9 @@ int GetFormattedTime(void* currTime, byte* buf, word32 len)
 #if defined(NEED_TMP_TIME)
     struct tm tmpTimeStorage;
     tmpTime = &tmpTimeStorage;
-#else
-    (void)tmpTime;
 #endif
+    /* Needed in case XGMTIME does not use the tmpTime argument. */
+    (void)tmpTime;
 
     WOLFSSL_ENTER("GetFormattedTime");
 
@@ -13948,11 +13675,13 @@ int GetFormattedTime(void* currTime, byte* buf, word32 len)
                 return BUFFER_E;
             }
             ret = XSPRINTF((char*)buf,
-        #else
-            ret = XSNPRINTF((char*)buf, len,
-        #endif
                         "%02d%02d%02d%02d%02d%02dZ", year, mon, day,
                         hour, mini, sec);
+        #else
+            ret = XSNPRINTF((char*)buf, len,
+                        "%02d%02d%02d%02d%02d%02dZ", year, mon, day,
+                        hour, mini, sec);
+        #endif
     }
     else {
         /* GeneralizedTime */
@@ -13968,11 +13697,13 @@ int GetFormattedTime(void* currTime, byte* buf, word32 len)
                 return BUFFER_E;
             }
             ret = XSPRINTF((char*)buf,
-        #else
-            ret = XSNPRINTF((char*)buf, len,
-        #endif
                         "%4d%02d%02d%02d%02d%02dZ", year, mon, day,
                         hour, mini, sec);
+        #else
+            ret = XSNPRINTF((char*)buf, len,
+                        "%4d%02d%02d%02d%02d%02dZ", year, mon, day,
+                        hour, mini, sec);
+        #endif
     }
 
     return ret;
@@ -14041,7 +13772,7 @@ int wc_ValidateDate(const byte* date, byte format, int dateType)
     (void)tmpTime;
 
     ltime = wc_Time(0);
-    if (ltime < 0){
+    if (sizeof(ltime) == sizeof(word32) && (int)ltime < 0){
         /* A negative response here could be due to a 32-bit time_t
          * where the year is 2038 or later. */
         WOLFSSL_MSG("wc_Time failed to return a valid value");
@@ -14827,9 +14558,6 @@ static WC_INLINE int IsSigAlgoECC(int algoOID)
               || (algoOID == DILITHIUM_LEVEL2k)
               || (algoOID == DILITHIUM_LEVEL3k)
               || (algoOID == DILITHIUM_LEVEL5k)
-              || (algoOID == DILITHIUM_AES_LEVEL2k)
-              || (algoOID == DILITHIUM_AES_LEVEL3k)
-              || (algoOID == DILITHIUM_AES_LEVEL5k)
         #endif
         #ifdef HAVE_SPHINCS
               || (algoOID == SPHINCS_FAST_LEVEL1k)
@@ -15007,6 +14735,7 @@ word32 wc_EncodeSignature(byte* out, const byte* digest, word32 digSz,
     DECL_ASNSETDATA(dataASN, digestInfoASN_Length);
     int ret = 0;
     int sz;
+    unsigned char dgst[WC_MAX_DIGEST_SIZE];
 
     CALLOC_ASNSETDATA(dataASN, digestInfoASN_Length, ret, NULL);
 
@@ -15014,6 +14743,10 @@ word32 wc_EncodeSignature(byte* out, const byte* digest, word32 digSz,
         /* Set hash OID and type. */
         SetASN_OID(&dataASN[DIGESTINFOASN_IDX_DIGALGO_OID], hashOID, oidHashType);
         /* Set digest. */
+        if (digest == out) {
+            XMEMCPY(dgst, digest, digSz);
+            digest = dgst;
+        }
         SetASN_Buffer(&dataASN[DIGESTINFOASN_IDX_DIGEST], digest, digSz);
 
         /* Calculate size of encoding. */
@@ -15150,9 +14883,6 @@ void FreeSignatureCtx(SignatureCtx* sigCtx)
             case DILITHIUM_LEVEL2k:
             case DILITHIUM_LEVEL3k:
             case DILITHIUM_LEVEL5k:
-            case DILITHIUM_AES_LEVEL2k:
-            case DILITHIUM_AES_LEVEL3k:
-            case DILITHIUM_AES_LEVEL5k:
                 wc_dilithium_free(sigCtx->key.dilithium);
                 XFREE(sigCtx->key.dilithium, sigCtx->heap,
                       DYNAMIC_TYPE_DILITHIUM);
@@ -15184,7 +14914,7 @@ void FreeSignatureCtx(SignatureCtx* sigCtx)
     sigCtx->state = SIG_STATE_BEGIN;
 }
 
-#ifndef NO_ASN_CRYPT
+#if !defined(NO_ASN_CRYPT) && !defined(NO_HASH_WRAPPER)
 static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
                             byte* digest, int* typeH, int* digestSz, int verify)
 {
@@ -15321,9 +15051,6 @@ static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
         case CTC_DILITHIUM_LEVEL2:
         case CTC_DILITHIUM_LEVEL3:
         case CTC_DILITHIUM_LEVEL5:
-        case CTC_DILITHIUM_AES_LEVEL2:
-        case CTC_DILITHIUM_AES_LEVEL3:
-        case CTC_DILITHIUM_AES_LEVEL5:
             /* Hashes done in signing operation. */
             break;
     #endif
@@ -15354,7 +15081,7 @@ static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
 
     return ret;
 }
-#endif /* !NO_ASN_CRYPT */
+#endif /* !NO_ASN_CRYPT && !NO_HASH_WRAPPER */
 
 /* Return codes: 0=Success, Negative (see error-crypt.h), ASN_SIG_CONFIRM_E */
 static int ConfirmSignature(SignatureCtx* sigCtx,
@@ -15547,8 +15274,9 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                             ERROR_OUT(MEMORY_E, exit_cs);
                         }
                     #endif
-                        mp_init(r);
-                        mp_init(s);
+                        if ((ret = mp_init_multi(r, s, NULL, NULL, NULL, NULL)) != MP_OKAY) {
+                            goto exit_cs;
+                        }
 
                         idx = 0;
                         if (DecodeECC_DSA_Sig(sig + idx, sigSz - idx, r, s)
@@ -15768,8 +15496,8 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                     if ((ret = wc_dilithium_init(sigCtx->key.dilithium)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_dilithium_set_level_and_sym(
-                                   sigCtx->key.dilithium, 2, SHAKE_VARIANT))
+                    if ((ret = wc_dilithium_set_level(
+                                   sigCtx->key.dilithium, 2))
                         < 0) {
                         goto exit_cs;
                     }
@@ -15793,8 +15521,8 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                     if ((ret = wc_dilithium_init(sigCtx->key.dilithium)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_dilithium_set_level_and_sym(
-                                   sigCtx->key.dilithium, 3, SHAKE_VARIANT))
+                    if ((ret = wc_dilithium_set_level(
+                                   sigCtx->key.dilithium, 3))
                         < 0) {
                         goto exit_cs;
                     }
@@ -15818,83 +15546,8 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                     if ((ret = wc_dilithium_init(sigCtx->key.dilithium)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_dilithium_set_level_and_sym(
-                                   sigCtx->key.dilithium, 5, SHAKE_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_dilithium_import_public(key, keySz,
-                        sigCtx->key.dilithium)) < 0) {
-                        WOLFSSL_MSG("ASN Key import error Dilithium Level 5");
-                        goto exit_cs;
-                    }
-                    break;
-                }
-                case DILITHIUM_AES_LEVEL2k:
-                {
-                    sigCtx->verify = 0;
-                    sigCtx->key.dilithium =
-                        (dilithium_key*)XMALLOC(sizeof(dilithium_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_DILITHIUM);
-                    if (sigCtx->key.dilithium == NULL) {
-                        ERROR_OUT(MEMORY_E, exit_cs);
-                    }
-                    if ((ret = wc_dilithium_init(sigCtx->key.dilithium)) < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_dilithium_set_level_and_sym(
-                                   sigCtx->key.dilithium, 2, AES_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_dilithium_import_public(key, keySz,
-                        sigCtx->key.dilithium)) < 0) {
-                        WOLFSSL_MSG("ASN Key import error Dilithium Level 2");
-                        goto exit_cs;
-                    }
-                    break;
-                }
-                case DILITHIUM_AES_LEVEL3k:
-                {
-                    sigCtx->verify = 0;
-                    sigCtx->key.dilithium =
-                        (dilithium_key*)XMALLOC(sizeof(dilithium_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_DILITHIUM);
-                    if (sigCtx->key.dilithium == NULL) {
-                        ERROR_OUT(MEMORY_E, exit_cs);
-                    }
-                    if ((ret = wc_dilithium_init(sigCtx->key.dilithium)) < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_dilithium_set_level_and_sym(
-                                   sigCtx->key.dilithium, 3, AES_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_dilithium_import_public(key, keySz,
-                        sigCtx->key.dilithium)) < 0) {
-                        WOLFSSL_MSG("ASN Key import error Dilithium Level 5");
-                        goto exit_cs;
-                    }
-                    break;
-                }
-                case DILITHIUM_AES_LEVEL5k:
-                {
-                    sigCtx->verify = 0;
-                    sigCtx->key.dilithium =
-                        (dilithium_key*)XMALLOC(sizeof(dilithium_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_DILITHIUM);
-                    if (sigCtx->key.dilithium == NULL) {
-                        ERROR_OUT(MEMORY_E, exit_cs);
-                    }
-                    if ((ret = wc_dilithium_init(sigCtx->key.dilithium)) < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_dilithium_set_level_and_sym(
-                                   sigCtx->key.dilithium, 5, AES_VARIANT))
+                    if ((ret = wc_dilithium_set_level(
+                                   sigCtx->key.dilithium, 5))
                         < 0) {
                         goto exit_cs;
                     }
@@ -16129,7 +15782,7 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                     break;
                 }
             #endif /* !NO_DSA && !HAVE_SELFTEST */
-            #if defined(HAVE_ECC)
+            #if defined(HAVE_ECC) && defined(HAVE_ECC_VERIFY)
                 case ECDSAk:
                 {
                 #if defined(HAVE_PK_CALLBACKS)
@@ -16187,9 +15840,6 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                 case DILITHIUM_LEVEL2k:
                 case DILITHIUM_LEVEL3k:
                 case DILITHIUM_LEVEL5k:
-                case DILITHIUM_AES_LEVEL2k:
-                case DILITHIUM_AES_LEVEL3k:
-                case DILITHIUM_AES_LEVEL5k:
                 {
                     ret = wc_dilithium_verify_msg(sig, sigSz, buf, bufSz,
                                                &sigCtx->verify,
@@ -16416,39 +16066,6 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                     }
                     else {
                         WOLFSSL_MSG("DILITHIUM_LEVEL5 Verify didn't match");
-                        ret = ASN_SIG_CONFIRM_E;
-                    }
-                    break;
-                }
-                case DILITHIUM_AES_LEVEL2k:
-                {
-                    if (sigCtx->verify == 1) {
-                        ret = 0;
-                    }
-                    else {
-                        WOLFSSL_MSG("DILITHIUM_AES_LEVEL2 Verify didn't match");
-                        ret = ASN_SIG_CONFIRM_E;
-                    }
-                    break;
-                }
-                case DILITHIUM_AES_LEVEL3k:
-                {
-                    if (sigCtx->verify == 1) {
-                        ret = 0;
-                    }
-                    else {
-                        WOLFSSL_MSG("DILITHIUM_AES_LEVEL3 Verify didn't match");
-                        ret = ASN_SIG_CONFIRM_E;
-                    }
-                    break;
-                }
-                case DILITHIUM_AES_LEVEL5k:
-                {
-                    if (sigCtx->verify == 1) {
-                        ret = 0;
-                    }
-                    else {
-                        WOLFSSL_MSG("DILITHIUM_AES_LEVEL5 Verify didn't match");
                         ret = ASN_SIG_CONFIRM_E;
                     }
                     break;
@@ -16895,7 +16512,6 @@ static int DecodeSEP(ASNGetData* dataASN, DecodedCert* cert)
 }
 #endif /* WOLFSSL_SEP */
 
-#ifdef WOLFSSL_FPKI
 static int DecodeOtherHelper(ASNGetData* dataASN, DecodedCert* cert, int oid)
 {
     DNS_entry* entry = NULL;
@@ -16904,10 +16520,12 @@ static int DecodeOtherHelper(ASNGetData* dataASN, DecodedCert* cert, int oid)
     const char* buf = NULL;
 
     switch (oid) {
+#ifdef WOLFSSL_FPKI
         case FASCN_OID:
             bufLen = dataASN[OTHERNAMEASN_IDX_FASCN].data.ref.length;
             buf    = (const char*)dataASN[OTHERNAMEASN_IDX_FASCN].data.ref.data;
             break;
+#endif /* WOLFSSL_FPKI */
         case UPN_OID:
             bufLen = dataASN[OTHERNAMEASN_IDX_UPN].data.ref.length;
             buf    = (const char*)dataASN[OTHERNAMEASN_IDX_UPN].data.ref.data;
@@ -16921,13 +16539,14 @@ static int DecodeOtherHelper(ASNGetData* dataASN, DecodedCert* cert, int oid)
     if (ret == 0) {
         ret = SetDNSEntry(cert, buf, bufLen, ASN_OTHER_TYPE, &entry);
         if (ret == 0) {
+        #ifdef WOLFSSL_FPKI
             entry->oidSum = oid;
+        #endif
             AddDNSEntryToList(&cert->altNames, entry);
         }
     }
     return ret;
 }
-#endif /* WOLFSSL_FPKI */
 
 /* Decode data with OtherName format from after implicit SEQUENCE.
  *
@@ -16971,15 +16590,14 @@ static int DecodeOtherName(DecodedCert* cert, const byte* input,
         #endif /* WOLFSSL_SEP */
         #ifdef WOLFSSL_FPKI
             case FASCN_OID:
+        #endif /* WOLFSSL_FPKI */
             case UPN_OID:
                 ret = DecodeOtherHelper(dataASN, cert,
                         dataASN[OTHERNAMEASN_IDX_TYPEID].data.oid.sum);
                 break;
-        #endif /* WOLFSSL_FPKI */
             default:
-                WOLFSSL_MSG("\tunsupported OID");
-                WOLFSSL_ERROR_VERBOSE(ASN_PARSE_E);
-                ret = ASN_PARSE_E;
+                WOLFSSL_MSG("\tunsupported OID skipping");
+                break;
         }
     }
 
@@ -17048,7 +16666,11 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
 
     #if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_FPKI)
         /* Verify RFC 5280 Sec 4.2.1.6 rule:
-            "The name MUST NOT be a relative URI" */
+            "The name MUST NOT be a relative URI"
+            As per RFC 3986 Sec 4.3, an absolute URI is only required to contain
+            a scheme and hier-part.  So the only strict requirement is a ':'
+            being present after the scheme.  If a '/' is present as part of the
+            hier-part, it must come after the ':' (see RFC 3986 Sec 3). */
         {
             int i;
 
@@ -17064,10 +16686,15 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
                 }
             }
 
-            /* test if no ':' char was found and test that the next two
-             * chars are "//" to match the pattern "://" */
-            if (i >= len - 2 || (input[idx + i + 1] != '/' ||
-                                 input[idx + i + 2] != '/')) {
+            /* test hier-part is empty */
+            if (i == 0 || i == len) {
+                WOLFSSL_MSG("\tEmpty or malformed URI");
+                WOLFSSL_ERROR_VERBOSE(ASN_ALT_NAME_E);
+                return ASN_ALT_NAME_E;
+            }
+
+            /* test if scheme is missing  */
+            if (input[idx + i] != ':') {
                 WOLFSSL_MSG("\tAlt Name must be absolute URI");
                 WOLFSSL_ERROR_VERBOSE(ASN_ALT_NAME_E);
                 return ASN_ALT_NAME_E;
@@ -17504,7 +17131,11 @@ static int DecodeAltNames(const byte* input, int sz, DecodedCert* cert)
 
         #if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_FPKI)
             /* Verify RFC 5280 Sec 4.2.1.6 rule:
-                "The name MUST NOT be a relative URI" */
+                "The name MUST NOT be a relative URI"
+                As per RFC 3986 Sec 4.3, an absolute URI is only required to contain
+                a scheme and hier-part.  So the only strict requirement is a ':'
+                being present after the scheme.  If a '/' is present as part of the
+                hier-part, it must come after the ':' (see RFC 3986 Sec 3). */
 
             {
                 int i;
@@ -17521,10 +17152,15 @@ static int DecodeAltNames(const byte* input, int sz, DecodedCert* cert)
                     }
                 }
 
-                /* test if no ':' char was found and test that the next two
-                 * chars are "//" to match the pattern "://" */
-                if (i >= strLen - 2 || (input[idx + i + 1] != '/' ||
-                                        input[idx + i + 2] != '/')) {
+                /* test hier-part is empty */
+                if (i == 0 || i == strLen) {
+                    WOLFSSL_MSG("\tEmpty or malformed URI");
+                    WOLFSSL_ERROR_VERBOSE(ASN_ALT_NAME_E);
+                    return ASN_ALT_NAME_E;
+                }
+
+                /* test if scheme is missing */
+                if (input[idx + i] != ':') {
                     WOLFSSL_MSG("\tAlt Name must be absolute URI");
                     WOLFSSL_ERROR_VERBOSE(ASN_ALT_NAME_E);
                     return ASN_ALT_NAME_E;
@@ -18245,8 +17881,9 @@ static int DecodeAuthInfo(const byte* input, int sz, DecodedCert* cert)
                 GetASN_GetConstRef(&dataASN[ACCESSDESCASN_IDX_LOC],
                         &cert->extAuthInfo, &sz32);
                 cert->extAuthInfoSz = sz32;
+            #if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
                 count++;
-            #if !defined(OPENSSL_ALL) || !defined(WOLFSSL_QT)
+            #else
                 break;
             #endif
             }
@@ -21647,8 +21284,11 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm)
         cert->badDate = 0;
         cert->criticalExt = 0;
         if ((ret = DecodeToKey(cert, verify)) < 0) {
-            if (ret == ASN_BEFORE_DATE_E || ret == ASN_AFTER_DATE_E)
+            if (ret == ASN_BEFORE_DATE_E || ret == ASN_AFTER_DATE_E) {
                 cert->badDate = ret;
+                if (verify == VERIFY_SKIP_DATE)
+                    ret = 0;
+            }
             else
                 return ret;
         }
@@ -21891,6 +21531,8 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm)
             ret = DecodeCert(cert, verify, &cert->criticalExt);
             if (ret == ASN_BEFORE_DATE_E || ret == ASN_AFTER_DATE_E) {
                 cert->badDate = ret;
+                if (verify == VERIFY_SKIP_DATE)
+                    ret = 0;
             }
             else if (ret < 0) {
                 WOLFSSL_ERROR_VERBOSE(ret);
@@ -22227,6 +21869,8 @@ Signer* MakeSigner(void* heap)
  */
 void FreeSigner(Signer* signer, void* heap)
 {
+    (void)signer;
+    (void)heap;
     XFREE(signer->name, heap, DYNAMIC_TYPE_SUBJECT_CN);
     XFREE((void*)signer->publicKey, heap, DYNAMIC_TYPE_PUBLIC_KEY);
 #ifndef IGNORE_NAME_CONSTRAINTS
@@ -22239,8 +21883,6 @@ void FreeSigner(Signer* signer, void* heap)
     FreeDer(&signer->derCert);
 #endif
     XFREE(signer, heap, DYNAMIC_TYPE_SIGNER);
-    (void)signer;
-    (void)heap;
 }
 
 
@@ -22530,6 +22172,10 @@ wcchar END_ENC_PRIV_KEY     = "-----END ENCRYPTED PRIVATE KEY-----";
 #ifdef HAVE_ECC
     wcchar BEGIN_EC_PRIV    = "-----BEGIN EC PRIVATE KEY-----";
     wcchar END_EC_PRIV      = "-----END EC PRIVATE KEY-----";
+#ifdef OPENSSL_EXTRA
+    wcchar BEGIN_EC_PARAM   = "-----BEGIN EC PARAMETERS-----";
+    wcchar END_EC_PARAM     = "-----END EC PARAMETERS-----";
+#endif
 #endif
 #if defined(HAVE_ECC) || defined(HAVE_ED25519) || defined(HAVE_ED448) || \
                                                                 !defined(NO_DSA)
@@ -22561,13 +22207,6 @@ wcchar END_PUB_KEY          = "-----END PUBLIC KEY-----";
     wcchar END_DILITHIUM_LEVEL3_PRIV   = "-----END DILITHIUM_LEVEL3 PRIVATE KEY-----";
     wcchar BEGIN_DILITHIUM_LEVEL5_PRIV = "-----BEGIN DILITHIUM_LEVEL5 PRIVATE KEY-----";
     wcchar END_DILITHIUM_LEVEL5_PRIV   = "-----END DILITHIUM_LEVEL5 PRIVATE KEY-----";
-
-    wcchar BEGIN_DILITHIUM_AES_LEVEL2_PRIV = "-----BEGIN DILITHIUM_AES_LEVEL2 PRIVATE KEY-----";
-    wcchar END_DILITHIUM_AES_LEVEL2_PRIV   = "-----END DILITHIUM_AES_LEVEL2 PRIVATE KEY-----";
-    wcchar BEGIN_DILITHIUM_AES_LEVEL3_PRIV = "-----BEGIN DILITHIUM_AES_LEVEL3 PRIVATE KEY-----";
-    wcchar END_DILITHIUM_AES_LEVEL3_PRIV   = "-----END DILITHIUM_AES_LEVEL3 PRIVATE KEY-----";
-    wcchar BEGIN_DILITHIUM_AES_LEVEL5_PRIV = "-----BEGIN DILITHIUM_AES_LEVEL5 PRIVATE KEY-----";
-    wcchar END_DILITHIUM_AES_LEVEL5_PRIV   = "-----END DILITHIUM_AES_LEVEL5 PRIVATE KEY-----";
 #endif /* HAVE_DILITHIUM */
 #if defined(HAVE_SPHINCS)
     wcchar BEGIN_SPHINCS_FAST_LEVEL1_PRIV = "-----BEGIN SPHINCS_FAST_LEVEL1 PRIVATE KEY-----";
@@ -22589,6 +22228,7 @@ wcchar END_PUB_KEY          = "-----END PUBLIC KEY-----";
 const int pem_struct_min_sz = XSTR_SIZEOF("-----BEGIN X509 CRL-----"
                                              "-----END X509 CRL-----");
 
+#ifdef WOLFSSL_PEM_TO_DER
 static WC_INLINE const char* SkipEndOfLineChars(const char* line,
                                                 const char* endOfLine)
 {
@@ -22599,6 +22239,7 @@ static WC_INLINE const char* SkipEndOfLineChars(const char* line,
     }
     return line;
 }
+#endif
 
 int wc_PemGetHeaderFooter(int type, const char** header, const char** footer)
 {
@@ -22659,6 +22300,13 @@ int wc_PemGetHeaderFooter(int type, const char** header, const char** footer)
             if (footer) *footer = END_EC_PRIV;
             ret = 0;
             break;
+    #ifdef OPENSSL_EXTRA
+        case ECC_PARAM_TYPE:
+            if (header) *header = BEGIN_EC_PARAM;
+            if (footer) *footer = END_EC_PARAM;
+            ret = 0;
+            break;
+    #endif
     #endif
         case RSA_TYPE:
         case PRIVATEKEY_TYPE:
@@ -22706,21 +22354,6 @@ int wc_PemGetHeaderFooter(int type, const char** header, const char** footer)
         case DILITHIUM_LEVEL5_TYPE:
             if (header) *header = BEGIN_DILITHIUM_LEVEL5_PRIV;
             if (footer) *footer = END_DILITHIUM_LEVEL5_PRIV;
-            ret = 0;
-            break;
-        case DILITHIUM_AES_LEVEL2_TYPE:
-            if (header) *header = BEGIN_DILITHIUM_AES_LEVEL2_PRIV;
-            if (footer) *footer = END_DILITHIUM_AES_LEVEL2_PRIV;
-            ret = 0;
-            break;
-        case DILITHIUM_AES_LEVEL3_TYPE:
-            if (header) *header = BEGIN_DILITHIUM_AES_LEVEL3_PRIV;
-            if (footer) *footer = END_DILITHIUM_AES_LEVEL3_PRIV;
-            ret = 0;
-            break;
-        case DILITHIUM_AES_LEVEL5_TYPE:
-            if (header) *header = BEGIN_DILITHIUM_AES_LEVEL5_PRIV;
-            if (footer) *footer = END_DILITHIUM_AES_LEVEL5_PRIV;
             ret = 0;
             break;
 #endif /* HAVE_DILITHIUM */
@@ -23239,6 +22872,17 @@ int PemToDer(const unsigned char* buff, long longSz, int type,
                 break;
             }
         }
+#if defined(HAVE_ECC) && defined(OPENSSL_EXTRA)
+        else if (type == ECC_PARAM_TYPE) {
+            if (header == BEGIN_EC_PARAM) {
+                header = BEGIN_EC_PARAM;
+                footer = END_EC_PARAM;
+            }
+            else {
+                break;
+            }
+        }
+#endif
 #ifdef HAVE_CRL
         else if ((type == CRL_TYPE) && (header != BEGIN_X509_CRL)) {
             header =  BEGIN_X509_CRL;
@@ -23599,7 +23243,7 @@ int wc_KeyPemToDer(const unsigned char* pem, int pemSz,
 
     WOLFSSL_ENTER("wc_KeyPemToDer");
 
-    if (pem == NULL || buff == NULL || buffSz <= 0) {
+    if (pem == NULL || (buff != NULL && buffSz <= 0)) {
         WOLFSSL_MSG("Bad pem der args");
         return BAD_FUNC_ARG;
     }
@@ -23628,15 +23272,17 @@ int wc_KeyPemToDer(const unsigned char* pem, int pemSz,
     if (ret < 0 || der == NULL) {
         WOLFSSL_MSG("Bad Pem To Der");
     }
+    else if (buff == NULL) {
+        WOLFSSL_MSG("Return needed der buff length");
+        ret = der->length;
+    }
+    else if (der->length <= (word32)buffSz) {
+        XMEMCPY(buff, der->buffer, der->length);
+        ret = der->length;
+    }
     else {
-        if (der->length <= (word32)buffSz) {
-            XMEMCPY(buff, der->buffer, der->length);
-            ret = der->length;
-        }
-        else {
-            WOLFSSL_MSG("Bad der length");
-            ret = BAD_FUNC_ARG;
-        }
+        WOLFSSL_MSG("Bad der length");
+        ret = BAD_FUNC_ARG;
     }
 
     FreeDer(&der);
@@ -23689,7 +23335,8 @@ int wc_CertPemToDer(const unsigned char* pem, int pemSz,
 
 #ifdef WOLFSSL_PEM_TO_DER
 #if defined(WOLFSSL_CERT_EXT) || defined(WOLFSSL_PUB_PEM_TO_DER)
-/* Return bytes written to buff or < 0 for error */
+/* Return bytes written to buff, needed buff size if buff is NULL, or less than
+   zero for error */
 int wc_PubKeyPemToDer(const unsigned char* pem, int pemSz,
                            unsigned char* buff, int buffSz)
 {
@@ -23698,7 +23345,7 @@ int wc_PubKeyPemToDer(const unsigned char* pem, int pemSz,
 
     WOLFSSL_ENTER("wc_PubKeyPemToDer");
 
-    if (pem == NULL || buff == NULL || buffSz <= 0) {
+    if (pem == NULL || (buff != NULL && buffSz <= 0)) {
         WOLFSSL_MSG("Bad pem der args");
         return BAD_FUNC_ARG;
     }
@@ -23707,15 +23354,17 @@ int wc_PubKeyPemToDer(const unsigned char* pem, int pemSz,
     if (ret < 0 || der == NULL) {
         WOLFSSL_MSG("Bad Pem To Der");
     }
+    else if (buff == NULL) {
+        WOLFSSL_MSG("Return needed der buff length");
+        ret = der->length;
+    }
+    else if (der->length <= (word32)buffSz) {
+        XMEMCPY(buff, der->buffer, der->length);
+        ret = der->length;
+    }
     else {
-        if (der->length <= (word32)buffSz) {
-            XMEMCPY(buff, der->buffer, der->length);
-            ret = der->length;
-        }
-        else {
-            WOLFSSL_MSG("Bad der length");
-            ret = BAD_FUNC_ARG;
-        }
+        WOLFSSL_MSG("Bad der length");
+        ret = BAD_FUNC_ARG;
     }
 
     FreeDer(&der);
@@ -24778,7 +24427,19 @@ static int SetEccPublicKey(byte* output, ecc_key* key, int outLen,
     if (ret == 0) {
         /* Calculate the size of the encoded public point. */
         PRIVATE_KEY_UNLOCK();
+    #if defined(HAVE_COMP_KEY) && defined(HAVE_FIPS) && \
+            defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION == 2)
+        /* in earlier versions of FIPS the get length functionality is not
+         * available with compressed keys */
+        pubSz = key->dp ? key->dp->size : MAX_ECC_BYTES;
+        if (comp)
+            pubSz = 1 + pubSz;
+        else
+            pubSz = 1 + 2 * pubSz;
+        ret = LENGTH_ONLY_E;
+    #else
         ret = wc_ecc_export_x963_ex(key, NULL, &pubSz, comp);
+    #endif
         PRIVATE_KEY_LOCK();
         /* LENGTH_ONLY_E on success. */
         if (ret == LENGTH_ONLY_E) {
@@ -26194,6 +25855,10 @@ static int EncodeName(EncodedName* name, const char* nameStr,
             thisLen += (int)sizeof(uidOid);
             firstSz  = (int)sizeof(uidOid);
             break;
+        case ASN_FAVOURITE_DRINK:
+            thisLen += (int)sizeof(fvrtDrk);
+            firstSz  = (int)sizeof(fvrtDrk);
+            break;
     #ifdef WOLFSSL_CUSTOM_OID
         case ASN_CUSTOM_NAME:
             thisLen += cname->custom.oidSz;
@@ -26246,6 +25911,12 @@ static int EncodeName(EncodedName* name, const char* nameStr,
         case ASN_USER_ID:
             XMEMCPY(name->encoded + idx, uidOid, sizeof(uidOid));
             idx += (int)sizeof(uidOid);
+            /* str type */
+            name->encoded[idx++] = nameTag;
+            break;
+        case ASN_FAVOURITE_DRINK:
+            XMEMCPY(name->encoded + idx, fvrtDrk, sizeof(fvrtDrk));
+            idx += (int)sizeof(fvrtDrk);
             /* str type */
             name->encoded[idx++] = nameTag;
             break;
@@ -26318,6 +25989,10 @@ static int EncodeName(EncodedName* name, const char* nameStr,
                 /* Domain component OID different to standard types. */
                 oid = uidOid;
                 oidSz = sizeof(uidOid);
+                break;
+            case ASN_FAVOURITE_DRINK:
+                oid = fvrtDrk;
+                oidSz = sizeof(fvrtDrk);
                 break;
         #ifdef WOLFSSL_CUSTOM_OID
             case ASN_CUSTOM_NAME:
@@ -26466,6 +26141,9 @@ static int SetNameRdnItems(ASNSetData* dataASN, ASNItem* namesASN,
         j = -1;
         /* Put DomainComponents before OrgUnitName. */
         while (FindMultiAttrib(name, type, &j)) {
+            if (GetCertNameId(i) != ASN_DOMAIN_COMPONENT) {
+                continue;
+            }
             if (dataASN != NULL && namesASN != NULL) {
                 if (idx > maxIdx - (int)rdnASN_Length) {
                     WOLFSSL_MSG("Wanted to write more ASN than allocated");
@@ -26503,6 +26181,12 @@ static int SetNameRdnItems(ASNSetData* dataASN, ASNItem* namesASN,
                         sizeof(uidOid), GetNameType(name, i),
                         (const byte*)GetOneCertName(name, i), nameLen[i]);
                 }
+                else if (type == ASN_FAVOURITE_DRINK) {
+                    /* Copy favourite drink data into dynamic vars. */
+                    SetRdnItems(namesASN + idx, dataASN + idx, fvrtDrk,
+                        sizeof(fvrtDrk), GetNameType(name, i),
+                        (const byte*)GetOneCertName(name, i), nameLen[i]);
+                }
                 else if (type == ASN_CUSTOM_NAME) {
                 #ifdef WOLFSSL_CUSTOM_OID
                     SetRdnItems(namesASN + idx, dataASN + idx, name->custom.oid,
@@ -26524,6 +26208,9 @@ static int SetNameRdnItems(ASNSetData* dataASN, ASNItem* namesASN,
         j = -1;
         /* Write all other attributes of this type. */
         while (FindMultiAttrib(name, type, &j)) {
+            if (GetCertNameId(i) == ASN_DOMAIN_COMPONENT) {
+                continue;
+            }
             if (dataASN != NULL && namesASN != NULL) {
                 if (idx > maxIdx - (int)rdnASN_Length) {
                     WOLFSSL_MSG("Wanted to write more ASN than allocated");
@@ -26999,7 +26686,7 @@ static int EncodeExtensions(Cert* cert, byte* output, word32 maxSz,
                     CERTEXTSASN_IDX_BC_PATHLEN);
         }
     #ifdef WOLFSSL_ALT_NAMES
-        if (!forRequest && cert->altNamesSz > 0) {
+        if (cert->altNamesSz > 0) {
             /* Set Subject Alternative Name OID and data. */
             SetASN_Buffer(&dataASN[CERTEXTSASN_IDX_SAN_OID],
                     sanOID, sizeof(sanOID));
@@ -27347,6 +27034,7 @@ static int SetValidity(byte* output, int daysValid)
 #else
 static int SetValidity(byte* before, byte* after, int daysValid)
 {
+#ifndef NO_ASN_TIME
     int ret = 0;
     time_t now;
     time_t then;
@@ -27399,6 +27087,12 @@ static int SetValidity(byte* before, byte* after, int daysValid)
     }
 
     return ret;
+#else
+    (void)before;
+    (void)after;
+    (void)daysValid;
+    return NOT_COMPILED_IN;
+#endif
 }
 #endif /* WOLFSSL_ASN_TEMPLATE */
 
@@ -27509,10 +27203,7 @@ static int EncodeCert(Cert* cert, DerCert* der, RsaKey* rsaKey, ecc_key* eccKey,
 #if defined(HAVE_DILITHIUM)
     if ((cert->keyType == DILITHIUM_LEVEL2_KEY) ||
         (cert->keyType == DILITHIUM_LEVEL3_KEY) ||
-        (cert->keyType == DILITHIUM_LEVEL5_KEY) ||
-        (cert->keyType == DILITHIUM_AES_LEVEL2_KEY) ||
-        (cert->keyType == DILITHIUM_AES_LEVEL3_KEY) ||
-        (cert->keyType == DILITHIUM_AES_LEVEL5_KEY)) {
+        (cert->keyType == DILITHIUM_LEVEL5_KEY)) {
         if (dilithiumKey == NULL)
             return PUBLIC_KEY_E;
 
@@ -27999,7 +27690,7 @@ static int MakeSignature(CertSignCtx* certSignCtx, const byte* buf, int sz,
         }
     #endif /* !NO_RSA */
 
-    #ifdef HAVE_ECC
+    #if defined(HAVE_ECC) && defined(HAVE_ECC_SIGN)
         if (!rsaKey && eccKey) {
             word32 outSz = sigSz;
 
@@ -28008,7 +27699,7 @@ static int MakeSignature(CertSignCtx* certSignCtx, const byte* buf, int sz,
             if (ret == 0)
                 ret = outSz;
         }
-    #endif /* HAVE_ECC */
+    #endif /* HAVE_ECC && HAVE_ECC_SIGN */
 
     #if defined(HAVE_ED25519) && defined(HAVE_ED25519_SIGN)
         if (!rsaKey && !eccKey && ed25519Key) {
@@ -28269,24 +27960,12 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
         cert->keyType = FALCON_LEVEL5_KEY;
 #endif /* HAVE_FALCON */
 #ifdef HAVE_DILITHIUM
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-             && (dilithiumKey->sym == SHAKE_VARIANT))
+    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2))
         cert->keyType = DILITHIUM_LEVEL2_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-             && (dilithiumKey->sym == SHAKE_VARIANT))
+    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3))
         cert->keyType = DILITHIUM_LEVEL3_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-             && (dilithiumKey->sym == SHAKE_VARIANT))
+    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5))
         cert->keyType = DILITHIUM_LEVEL5_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-             && (dilithiumKey->sym == AES_VARIANT))
-        cert->keyType = DILITHIUM_AES_LEVEL2_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-             && (dilithiumKey->sym == AES_VARIANT))
-        cert->keyType = DILITHIUM_AES_LEVEL3_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-             && (dilithiumKey->sym == AES_VARIANT))
-        cert->keyType = DILITHIUM_AES_LEVEL5_KEY;
 #endif /* HAVE_DILITHIUM */
 #ifdef HAVE_SPHINCS
     else if ((sphincsKey != NULL) && (sphincsKey->level == 1)
@@ -28378,29 +28057,14 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
         }
 #endif /* HAVE_FALCON */
 #ifdef HAVE_DILITHIUM
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-                 && (dilithiumKey->sym == SHAKE_VARIANT)) {
+        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)) {
             cert->keyType = DILITHIUM_LEVEL2_KEY;
         }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-                 && (dilithiumKey->sym == SHAKE_VARIANT)) {
+        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)) {
             cert->keyType = DILITHIUM_LEVEL3_KEY;
         }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-                 && (dilithiumKey->sym == SHAKE_VARIANT)) {
+        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)) {
             cert->keyType = DILITHIUM_LEVEL5_KEY;
-        }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-                 && (dilithiumKey->sym == AES_VARIANT)) {
-            cert->keyType = DILITHIUM_AES_LEVEL2_KEY;
-        }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-                 && (dilithiumKey->sym == AES_VARIANT)) {
-            cert->keyType = DILITHIUM_AES_LEVEL3_KEY;
-        }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-                 && (dilithiumKey->sym == AES_VARIANT)) {
-            cert->keyType = DILITHIUM_AES_LEVEL5_KEY;
         }
 #endif /* HAVE_DILITHIUM */
 #ifdef HAVE_SPHINCS
@@ -28691,12 +28355,6 @@ int wc_MakeCert_ex(Cert* cert, byte* derBuffer, word32 derSz, int keyType,
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL5_TYPE)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
         sphincsKey = (sphincs_key*)key;
@@ -28998,10 +28656,7 @@ static int EncodeCertReq(Cert* cert, DerCert* der, RsaKey* rsaKey,
 #if defined(HAVE_DILITHIUM)
     if ((cert->keyType == DILITHIUM_LEVEL2_KEY) ||
         (cert->keyType == DILITHIUM_LEVEL3_KEY) ||
-        (cert->keyType == DILITHIUM_LEVEL5_KEY) ||
-        (cert->keyType == DILITHIUM_AES_LEVEL2_KEY) ||
-        (cert->keyType == DILITHIUM_AES_LEVEL3_KEY) ||
-        (cert->keyType == DILITHIUM_AES_LEVEL5_KEY)) {
+        (cert->keyType == DILITHIUM_LEVEL5_KEY)) {
         if (dilithiumKey == NULL)
             return PUBLIC_KEY_E;
         der->publicKeySz = wc_Dilithium_PublicKeyToDer(dilithiumKey,
@@ -29334,24 +28989,12 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
         cert->keyType = FALCON_LEVEL5_KEY;
 #endif /* HAVE_FALCON */
 #ifdef HAVE_DILITHIUM
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-             && (dilithiumKey->sym == SHAKE_VARIANT))
+    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2))
         cert->keyType = DILITHIUM_LEVEL2_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-             && (dilithiumKey->sym == SHAKE_VARIANT))
+    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3))
         cert->keyType = DILITHIUM_LEVEL3_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-             && (dilithiumKey->sym == SHAKE_VARIANT))
+    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5))
         cert->keyType = DILITHIUM_LEVEL5_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-             && (dilithiumKey->sym == AES_VARIANT))
-        cert->keyType = DILITHIUM_AES_LEVEL2_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-             && (dilithiumKey->sym == AES_VARIANT))
-        cert->keyType = DILITHIUM_AES_LEVEL3_KEY;
-    else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-             && (dilithiumKey->sym == AES_VARIANT))
-        cert->keyType = DILITHIUM_AES_LEVEL5_KEY;
 #endif /* HAVE_DILITHIUM */
 #ifdef HAVE_SPHINCS
     else if ((sphincsKey != NULL) && (sphincsKey->level == 1)
@@ -29407,7 +29050,7 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
     int sz = 0;
     int ret = 0;
 #if defined(WOLFSSL_CERT_EXT) || defined(OPENSSL_EXTRA)
-    word32 sbjRawSz;
+    word32 sbjRawSz = 0;
 #endif
 
     /* Unused without OQS */
@@ -29444,29 +29087,14 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
         }
 #endif /* HAVE_FALCON */
 #ifdef HAVE_DILITHIUM
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-                 && (dilithiumKey->sym == SHAKE_VARIANT)) {
+        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)) {
             cert->keyType = DILITHIUM_LEVEL2_KEY;
         }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-                 && (dilithiumKey->sym == SHAKE_VARIANT)) {
+        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)) {
             cert->keyType = DILITHIUM_LEVEL3_KEY;
         }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-                 && (dilithiumKey->sym == SHAKE_VARIANT)) {
+        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)) {
             cert->keyType = DILITHIUM_LEVEL5_KEY;
-        }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 2)
-                 && (dilithiumKey->sym == AES_VARIANT)) {
-            cert->keyType = DILITHIUM_AES_LEVEL2_KEY;
-        }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 3)
-                 && (dilithiumKey->sym == AES_VARIANT)) {
-            cert->keyType = DILITHIUM_AES_LEVEL3_KEY;
-        }
-        else if ((dilithiumKey != NULL) && (dilithiumKey->level == 5)
-                 && (dilithiumKey->sym == AES_VARIANT)) {
-            cert->keyType = DILITHIUM_AES_LEVEL5_KEY;
         }
 #endif /* HAVE_DILITHIUM */
 #ifdef HAVE_SPHINCS
@@ -29665,12 +29293,6 @@ int wc_MakeCertReq_ex(Cert* cert, byte* derBuffer, word32 derSz, int keyType,
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
         dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
         sphincsKey = (sphincs_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
@@ -29707,15 +29329,10 @@ static int SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
 {
     int sigSz = 0;
     void* heap = NULL;
-    CertSignCtx* certSignCtx;
-#ifndef WOLFSSL_ASYNC_CRYPT
     CertSignCtx  certSignCtx_lcl;
+    CertSignCtx* certSignCtx = &certSignCtx_lcl;
 
-    certSignCtx = &certSignCtx_lcl;
-    XMEMSET(certSignCtx, 0, sizeof(CertSignCtx));
-#else
-    certSignCtx = NULL;
-#endif
+    XMEMSET(certSignCtx, 0, sizeof(*certSignCtx));
 
     if (requestSz < 0)
         return requestSz;
@@ -29741,12 +29358,6 @@ static int SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
         return NOT_COMPILED_IN;
     #endif /* HAVE_ECC */
     }
-
-#ifdef WOLFSSL_ASYNC_CRYPT
-    if (certSignCtx == NULL) {
-        return BAD_FUNC_ARG;
-    }
-#endif
 
     if (certSignCtx->sig == NULL) {
         certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, heap,
@@ -29808,12 +29419,6 @@ int wc_SignCert_ex(int requestSz, int sType, byte* buf, word32 buffSz,
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL5_TYPE)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
         sphincsKey = (sphincs_key*)key;
@@ -29985,12 +29590,6 @@ int wc_SetSubjectKeyIdFromPublicKey_ex(Cert *cert, int keyType, void* key)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
         dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
         sphincsKey = (sphincs_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
@@ -30043,12 +29642,6 @@ int wc_SetAuthKeyIdFromPublicKey_ex(Cert *cert, int keyType, void* key)
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == DILITHIUM_AES_LEVEL5_TYPE)
         dilithiumKey = (dilithium_key*)key;
     else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
         sphincsKey = (sphincs_key*)key;
@@ -31410,18 +31003,20 @@ int DecodeECC_DSA_Sig(const byte* sig, word32 sigLen, mp_int* r, mp_int* s)
     GetASN_MP(&dataASN[DSASIGASN_IDX_S], s);
 
     /* Decode the DSA signature. */
-    ret = GetASN_Items(dsaSigASN, dataASN, dsaSigASN_Length, 1, sig, &idx,
+    ret = GetASN_Items(dsaSigASN, dataASN, dsaSigASN_Length, 0, sig, &idx,
                        sigLen);
 #ifndef NO_STRICT_ECDSA_LEN
     /* sanity check that the index has been advanced all the way to the end of
      * the buffer */
     if ((ret == 0) && (idx != sigLen)) {
-        mp_clear(r);
-        mp_clear(s);
         ret = ASN_ECC_KEY_E;
     }
-
 #endif
+    if (ret != 0) {
+        mp_clear(r);
+        mp_clear(s);
+    }
+
     return ret;
 #endif /* WOLFSSL_ASN_TEMPLATE */
 }
@@ -31586,11 +31181,13 @@ static int EccSpecifiedECDomainDecode(const byte* input, word32 inSz,
     if ((ret == 0) && (version < 1 || version > 3)) {
         ret = ASN_PARSE_E;
     }
+#ifndef WOLFSSL_NO_ASN_STRICT
     /* Only version 2 and above can have a seed. */
     if ((ret == 0) && (dataASN[ECCSPECIFIEDASN_IDX_PARAM_SEED].tag != 0) &&
             (version < 2)) {
         ret = ASN_PARSE_E;
     }
+#endif
     /* Only version 2 and above can have a hash algorithm. */
     if ((ret == 0) && (dataASN[ECCSPECIFIEDASN_IDX_HASH_SEQ].tag != 0) &&
             (version < 2)) {
@@ -33717,6 +33314,9 @@ static int DecodeSingleResponse(byte* source, word32* ioIndex, word32 size,
             return ASN_PARSE_E;
     }
 
+    if (idx >= size)
+        return BUFFER_E;
+
 #if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
     single->status->thisDateAsn = source + idx;
     localIdx = 0;
@@ -33724,6 +33324,10 @@ static int DecodeSingleResponse(byte* source, word32* ioIndex, word32 size,
                     (byte*)&single->status->thisDateParsed.type,
                     &single->status->thisDateParsed.length, size) < 0)
         return ASN_PARSE_E;
+
+    if (idx + localIdx >= size)
+        return BUFFER_E;
+
     XMEMCPY(single->status->thisDateParsed.data,
             single->status->thisDateAsn + localIdx - single->status->thisDateParsed.length,
             single->status->thisDateParsed.length);
@@ -33756,6 +33360,10 @@ static int DecodeSingleResponse(byte* source, word32* ioIndex, word32 size,
                         (byte*)&single->status->nextDateParsed.type,
                         &single->status->nextDateParsed.length, size) < 0)
             return ASN_PARSE_E;
+
+        if (idx + localIdx >= size)
+            return BUFFER_E;
+
         XMEMCPY(single->status->nextDateParsed.data,
                 single->status->nextDateAsn + localIdx - single->status->nextDateParsed.length,
                 single->status->nextDateParsed.length);
@@ -34204,7 +33812,7 @@ static int DecodeResponseData(byte* source, word32* ioIndex,
     int ret = 0;
     byte version;
     word32 dateSz, idx = *ioIndex;
-    OcspEntry* single;
+    OcspEntry* single = NULL;
 
     WOLFSSL_ENTER("DecodeResponseData");
 
@@ -35517,9 +35125,7 @@ static int GetRevoked(RevokedCert* rcert, const byte* buff, word32* idx,
                       DecodedCRL* dcrl, int maxIdx)
 {
 #ifndef WOLFSSL_ASN_TEMPLATE
-#ifndef NO_ASN_TIME
     int ret;
-#endif
     int len;
     word32 end;
     RevokedCert* rc;
@@ -36057,7 +35663,7 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf,
 
                         if (ret == 0) {
                             dcrl->crlNumber = 0;
-                            for (i = 0; i < (*m).used; ++i) {
+                            for (i = 0; i < (int)(*m).used; ++i) {
                                 if (i > (CHAR_BIT *
                                          (int)sizeof(word32) / DIGIT_BIT)) {
                                     break;
@@ -36075,7 +35681,7 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf,
                         if (ret != 0)
                             return ret;
                     }
-                    else {
+                    else if (length == 1) {
                         dcrl->crlNumber = buf[idx];
                     }
                 }
@@ -36387,13 +35993,14 @@ end:
         dcrl->issuer   = (byte*)GetNameFromDer((byte*)GetASNItem_Addr(
                             dataASN[CRLASN_IDX_TBS_ISSUER], buff),
                             (int)dcrl->issuerSz);
+    #endif
         /* Calculate the Hash id from the issuer name. */
         ret = CalcHashId(GetASNItem_Addr(dataASN[CRLASN_IDX_TBS_ISSUER], buff),
-                dcrl->issuerSz, dcrl->issuerHash);
+                GetASNItem_Length(dataASN[CRLASN_IDX_TBS_ISSUER], buff),
+                dcrl->issuerHash);
         if (ret < 0) {
             ret = ASN_PARSE_E;
         }
-    #endif
     }
 
     if ((ret == 0) && (dataASN[CRLASN_IDX_TBS_REVOKEDCERTS].tag != 0)) {

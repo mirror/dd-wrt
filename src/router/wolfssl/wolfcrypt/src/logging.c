@@ -1,6 +1,6 @@
 /* logging.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1215,7 +1215,7 @@ unsigned long wc_PeekErrorNodeLineData(const char **file, int *line,
 
     if (ERRQ_LOCK() != 0) {
         WOLFSSL_MSG("Lock debug mutex failed");
-        return BAD_MUTEX_E;
+        return (unsigned long)(0 - BAD_MUTEX_E);
     }
 
     idx = getErrorNodeCurrentIdx();
@@ -1248,7 +1248,7 @@ unsigned long wc_GetErrorNodeErr(void)
 
     if (ERRQ_LOCK() != 0) {
         WOLFSSL_MSG("Lock debug mutex failed");
-        return BAD_MUTEX_E;
+        return (unsigned long)(0 - BAD_MUTEX_E);
     }
 
     ret = pullErrorNode(NULL, NULL, NULL);

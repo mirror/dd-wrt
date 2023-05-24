@@ -1,6 +1,6 @@
 /* error-ssl.h
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -195,7 +195,7 @@ enum wolfSSL_ErrorCodes {
     /* end negotiation parameter errors only 10 for now */
     /* add strings to wolfSSL_ERR_reason_error_string in internal.c !!!!! */
 
-    /* no error stings go down here, add above negotiation errors !!!! */
+    /* no error strings go down here, add above negotiation errors !!!! */
 };
 
 

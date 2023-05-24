@@ -1,6 +1,6 @@
 /* settings.h
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -244,6 +244,9 @@
 /* Uncomment next line if using RENESAS RA6M4 */
 /* #define WOLFSSL_RENESAS_RA6M4 */
 
+/* Uncomment next line if using RENESAS RX64 hardware acceleration */
+/* #define WOLFSSL_RENESAS_RX64_HASH */
+
 /* Uncomment next line if using Solaris OS*/
 /* #define WOLFSSL_SOLARIS */
 
@@ -367,6 +370,11 @@
         #define WOLFSSL_RENESAS_TSIP_TLS_AES_CRYPT
     #endif
 #endif /* WOLFSSL_RENESAS_TSIP */
+
+#if !defined(WOLFSSL_NO_HASH_RAW) && defined(WOLFSSL_RENESAS_RX64_HASH)
+    /* RAW hash function APIs are not implemented with RX64 hardware acceleration */
+    #define WOLFSSL_NO_HASH_RAW
+#endif
 
 #if defined(WOLFSSL_RENESAS_SCEPROTECT)
     #define SCE_TLS_MASTERSECRET_SIZE         80  /* 20 words */
@@ -806,12 +814,11 @@ extern void uITRON4_free(void *p) ;
         #define XMALLOC(s, h, type)  pvPortMalloc((s))
         #define XFREE(p, h, type)    vPortFree((p))
         /* FreeRTOS pvPortRealloc() implementation can be found here:
-            https://github.com/wolfSSL/wolfssl-freertos/pull/3/files */
-        #if !defined(USE_FAST_MATH) || defined(HAVE_ED25519) || \
-            defined(HAVE_ED448)
+         * https://github.com/wolfSSL/wolfssl-freertos/pull/3/files */
+        #if defined(USE_INTEGER_HEAP_MATH) || defined(OPENSSL_EXTRA)
             #if defined(WOLFSSL_ESPIDF)
-                /*In IDF, realloc(p, n) is equivalent to
-                heap_caps_realloc(p, s, MALLOC_CAP_8BIT) */
+                /* In IDF, realloc(p, n) is equivalent to
+                 * heap_caps_realloc(p, s, MALLOC_CAP_8BIT) */
                 #define XREALLOC(p, n, h, t) realloc((p), (n))
             #else
                 #define XREALLOC(p, n, h, t) pvPortRealloc((p), (n))
@@ -1804,6 +1811,12 @@ extern void uITRON4_free(void *p) ;
 #endif
 #endif
 
+#ifdef WOLFSSL_IMXRT1170_CAAM
+    #define WOLFSSL_CAAM
+    #define WOLFSSL_CAAM_HASH
+    #define WOLFSSL_CAAM_CIPHER
+#endif
+
 /* If DCP is used without SINGLE_THREADED, enforce WOLFSSL_CRYPT_HW_MUTEX */
 #if defined(WOLFSSL_IMXRT_DCP) && !defined(SINGLE_THREADED)
     #undef WOLFSSL_CRYPT_HW_MUTEX
@@ -1923,6 +1936,11 @@ extern void uITRON4_free(void *p) ;
     #define XGEN_ALIGN
 #endif
 
+#if defined(__mips) || defined(__mips64) || \
+    defined(WOLFSSL_SP_MIPS64) || defined(WOLFSSL_SP_MIPS)
+    #undef WOLFSSL_SP_INT_DIGIT_ALIGN
+    #define WOLFSSL_SP_INT_DIGIT_ALIGN
+#endif
 
 #ifdef __INTEL_COMPILER
     #pragma warning(disable:2259) /* explicit casts to smaller sizes, disable */
@@ -1976,7 +1994,6 @@ extern void uITRON4_free(void *p) ;
 
 
 
-
 /* user can specify what curves they want with ECC_USER_CURVES otherwise
  * all curves are on by default for now */
 #ifndef ECC_USER_CURVES
@@ -2011,7 +2028,8 @@ extern void uITRON4_free(void *p) ;
 
 /* ECC Configs */
 #ifdef HAVE_ECC
-    /* By default enable Sign, Verify, DHE, Key Import and Key Export unless explicitly disabled */
+    /* By default enable Sign, Verify, DHE, Key Import and Key Export unless
+     * explicitly disabled */
     #if !defined(NO_ECC_SIGN) && \
             (!defined(ECC_TIMING_RESISTANT) || \
             (defined(ECC_TIMING_RESISTANT) && !defined(WC_NO_RNG)))
@@ -2039,6 +2057,14 @@ extern void uITRON4_free(void *p) ;
         #define HAVE_ECC_KEY_EXPORT
     #endif
 #endif /* HAVE_ECC */
+
+#if defined(OPENSSL_EXTRA) && defined(HAVE_ECC) && \
+    !defined(WOLFSSL_ATECC508A) && !defined(WOLFSSL_ATECC608A) && \
+    !defined(WOLFSSL_CRYPTOCELL) && !defined(WOLFSSL_SE050) && \
+    !defined(WOLF_CRYPTO_CB_ONLY_ECC) && !defined(WOLFSSL_STM32_PKA)
+    #undef  USE_ECC_B_PARAM
+    #define USE_ECC_B_PARAM
+#endif
 
 /* Curve25519 Configs */
 #ifdef HAVE_CURVE25519
@@ -2606,9 +2632,12 @@ extern void uITRON4_free(void *p) ;
     #define WOLFSSL_NO_XOR_OPS
 #endif
 
-#if defined(NO_ASN) && defined(WOLFCRYPT_ONLY)
+#if defined(NO_ASN) && defined(WOLFCRYPT_ONLY) && !defined(WOLFSSL_WOLFSSH)
     #undef  WOLFSSL_NO_INT_ENCODE
     #define WOLFSSL_NO_INT_ENCODE
+#endif
+
+#if defined(NO_ASN) && defined(WOLFCRYPT_ONLY)
     #undef  WOLFSSL_NO_INT_DECODE
     #define WOLFSSL_NO_INT_DECODE
 #endif
@@ -2676,7 +2705,7 @@ extern void uITRON4_free(void *p) ;
     #define NO_SESSION_CACHE
 #endif
 
-/* Use static ECC structs for Position Independant Code (PIC) */
+/* Use static ECC structs for Position Independent Code (PIC) */
 #if defined(__IAR_SYSTEMS_ICC__) && defined(__ROPI__)
     #define WOLFSSL_ECC_CURVE_STATIC
     #define WOLFSSL_NAMES_STATIC
@@ -2793,8 +2822,10 @@ extern void uITRON4_free(void *p) ;
 
 #ifdef HAVE_PQM4
 #define HAVE_PQC
-#define HAVE_KYBER
+#define WOLFSSL_HAVE_KYBER
 #define WOLFSSL_KYBER512
+#define WOLFSSL_NO_KYBER768
+#define WOLFSSL_NO_KYBER1024
 #endif
 
 #if defined(HAVE_PQC) && !defined(HAVE_LIBOQS) && !defined(HAVE_PQM4) && \
@@ -2879,11 +2910,19 @@ extern void uITRON4_free(void *p) ;
     #define WOLFSSL_NO_SHAKE256
 #endif
 
+/* Encrypted Client Hello - requires HPKE */
+#if defined(HAVE_ECH) && !defined(HAVE_HPKE)
+    #define HAVE_HPKE
+#endif
 
+/* Provide way to forcefully disable use of XREALLOC */
+#ifdef WOLFSSL_NO_REALLOC
+    #undef XREALLOC
+#endif
 
 
 /* ---------------------------------------------------------------------------
- * Depricated Algorithm Handling
+ * Deprecated Algorithm Handling
  *   Unless allowed via a build macro, disable support
  * ---------------------------------------------------------------------------*/
 
@@ -2921,6 +2960,10 @@ extern void uITRON4_free(void *p) ;
         #undef WOLFSSL_SYS_CA_CERTS
     #endif
 #endif /* WOLFSSL_SYS_CA_CERTS */
+
+#if defined(SESSION_CACHE_DYNAMIC_MEM) && defined(PERSIST_SESSION_CACHE)
+#error "Dynamic session cache currently does not support persistent session cache."
+#endif
 
 #ifdef __cplusplus
     }   /* extern "C" */

@@ -1,6 +1,6 @@
 /* kdf.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2023 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -54,7 +54,7 @@
 #include <wolfssl/wolfcrypt/kdf.h>
 
 
-#ifdef WOLFSSL_HAVE_PRF
+#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC)
 
 #ifdef WOLFSSL_SHA512
     #define P_HASH_MAX_SIZE WC_SHA512_DIGEST_SIZE
@@ -149,8 +149,8 @@ int wc_PRF(byte* result, word32 resLen, const byte* secret,
         return MEMORY_E;
     }
 #endif
-
 #ifdef WOLFSSL_CHECK_MEM_ZERO
+    XMEMSET(previous, 0xff, P_HASH_MAX_SIZE);
     wc_MemZero_Add("wc_PRF previous", previous, P_HASH_MAX_SIZE);
     wc_MemZero_Add("wc_PRF current", current, P_HASH_MAX_SIZE);
     wc_MemZero_Add("wc_PRF hmac", hmac, sizeof(Hmac));
@@ -335,7 +335,7 @@ int wc_PRF_TLS(byte* digest, word32 digLen, const byte* secret, word32 secLen,
 
     return ret;
 }
-#endif /* WOLFSSL_HAVE_PRF */
+#endif /* WOLFSSL_HAVE_PRF && !NO_HMAC */
 
 
 #if defined(HAVE_HKDF) && !defined(NO_HMAC)
@@ -486,7 +486,7 @@ int wc_PRF_TLS(byte* digest, word32 digLen, const byte* secret, word32 secLen,
         ForceZero(data, idx);
 
     #ifdef WOLFSSL_CHECK_MEM_ZERO
-        wc_MemZero_Check(data, MAX_TLS13_HKDF_LABEL_SZ);
+        wc_MemZero_Check(data, idx);
     #endif
     #ifdef WOLFSSL_SMALL_STACK
         XFREE(data, NULL, DYNAMIC_TYPE_TMP_BUFFER);
