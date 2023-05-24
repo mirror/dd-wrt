@@ -47,7 +47,9 @@ ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_WEBSERVER),y)
 ifneq ($(CONFIG_E2FSPROGS),y)
+ifneq ($(CONFIG_USBIP),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
 endif
 endif
 endif
