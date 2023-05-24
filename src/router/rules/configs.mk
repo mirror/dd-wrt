@@ -261,6 +261,11 @@ obj-$(CONFIG_RSTP) += rstp
 obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
 obj-$(CONFIG_USB) += p910nd usb disktype
+ifeq ($(CONFIG_USB),y)
+ifneq ($(CONFIG_3G_ONLY),y)
+obj-$(CONFIG_USB) += disktype
+endif
+endif
 obj-$(CONFIG_USB_ADVANCED) += hdparm
 ifeq ($(CONFIG_X86),y)
 obj-$(CONFIG_USB_ADVANCED) += sdparm
