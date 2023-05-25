@@ -184,7 +184,7 @@ void start_setup_vlans(void)
 	memset(&snoop[0], 0, sizeof(snoop));
 	int vlan_number;
 	int i;
-	int vlan_enable=0;
+	int vlan_enable = 0;
 	char **buildports = malloc(sizeof(char **) * (blen + 2));
 	for (i = 0; i < blen + 2; i++) {
 		buildports[i] = malloc(32);
@@ -247,11 +247,11 @@ void start_setup_vlans(void)
 					if (i == 0) {
 						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "enable_eee", "1");
 					} else if (i == wancpuportidx) {
-//						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wancpuport"), "set", "igmp_snooping", "1");
+//                                              eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wancpuport"), "set", "igmp_snooping", "1");
 					} else if (i == lancpuportidx) {
-//						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_lancpuport"), "set", "igmp_snooping", "1");
+//                                              eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_lancpuport"), "set", "igmp_snooping", "1");
 					} else if (i == cpuportidx) {
-//						eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_cpuport"), "set", "igmp_snoopin", "1");
+//                                              eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_cpuport"), "set", "igmp_snoopin", "1");
 					} else {
 						eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "enable_eee", "1");
 					}
@@ -281,6 +281,9 @@ void start_setup_vlans(void)
 					break;
 				case 21000:	// disabled
 					mask |= 8;
+					break;
+				case 24000:	// no flow control
+					mask |= 32;
 					break;
 				}
 			} else {
@@ -387,6 +390,9 @@ void start_setup_vlans(void)
 						sprintf(linkstr, "%s speed 100", linkstr);
 
 					sprintf(linkstr, "%s autoneg off", linkstr);
+					if (!(mask & 32)) {
+						sprintf(linkstr, "%s rflow txflow", linkstr);
+					}
 				} else {
 					sprintf(linkstr, "%s speed 1000", linkstr);
 					sprintf(linkstr, "%s autoneg on", linkstr);
@@ -432,11 +438,11 @@ void start_setup_vlans(void)
 		char *ports = buildports[vlan_number];
 		char vl[32];
 		sprintf(vl, "%d", vlanlist[vlan_number]);
-		if (!strstr(ports,"t"))
+		if (!strstr(ports, "t"))
 			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "port_based", "1");
 		else
 			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "port_based", "0");
-		
+
 		if (strlen(ports) && ports[0] != 'W') {
 			eval("swconfig", "dev", "switch0", "vlan", vl, "set", "ports", ports);
 		} else if (!strlen(ports)) {
