@@ -253,7 +253,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int len = blen;
 #if defined(HAVE_SWCONFIG) && !defined(HAVE_ALPINE)
 	if (has_igmpsnooping())
-		len+=2;
+		len+=3;
 #endif
 #if !defined(HAVE_ALPINE)
 	len += 6;
