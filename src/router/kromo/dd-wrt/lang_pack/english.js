@@ -2581,7 +2581,7 @@ vlan.fullspeed="Full Speed";
 vlan.fullduplex="Full Duplex";
 vlan.gigabit="Gigabit";
 vlan.eee="802.3az EEE";
-vlan.flow="Flow control"
+vlan.flow="Flow control";
 
 // ** WEP.asp **//
 var wep=new Object();

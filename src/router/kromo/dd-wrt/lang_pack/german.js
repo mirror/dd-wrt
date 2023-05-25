@@ -2268,7 +2268,7 @@ vlan.negociate="Automatisches Aushandeln";
 vlan.aggregation="Schnittstellenbündelung<br />auf Port 3 & 4";
 vlan.trunk="Trunk";
 vlan.linkstatus="Verbindungsstatus";
-vlan.flow="Flußsteuerung"
+vlan.flow="Flußsteuerung";
 
 // ** WEP.asp **//
 
