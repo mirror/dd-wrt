@@ -737,6 +737,14 @@ static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
 	if (link->aneg) {
 		t |= AR8216_PORT_STATUS_LINK_AUTO;
 	} else {
+		t &= ~AR8327_PORT_STATUS_TXFLOW_AUTO;
+		t &= ~AR8327_PORT_STATUS_RXFLOW_AUTO;
+		t &= ~AR8216_PORT_STATUS_TXFLOW;
+		t &= ~AR8216_PORT_STATUS_RXFLOW;
+		if (link->rx_flow)
+		    t |= AR8216_PORT_STATUS_RXFLOW;
+		if (link->tx_flow)
+		    t |= AR8216_PORT_STATUS_TXFLOW;
 		switch (link->speed) {
 		case SWITCH_PORT_SPEED_10:
 			t |= AR8216_PORT_SPEED_10M <<
