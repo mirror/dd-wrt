@@ -391,7 +391,7 @@ void start_setup_vlans(void)
 
 					sprintf(linkstr, "%s autoneg off", linkstr);
 					if (!(mask & 32)) {
-						sprintf(linkstr, "%s rflow txflow", linkstr);
+						sprintf(linkstr, "%s rxflow txflow", linkstr);
 					}
 				} else {
 					sprintf(linkstr, "%s speed 1000", linkstr);
