@@ -721,7 +721,6 @@ static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
 			     struct switch_port_link *link)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
-	struct ar8327_data *data = priv->chip_data;
 	u32 t;
 	if (port == AR8216_PORT_CPU || port == 6) {
 		return -EINVAL;
