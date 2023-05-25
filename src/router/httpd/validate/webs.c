@@ -5953,7 +5953,7 @@ void port_vlan_table_save(webs_t wp)
 	int max = blen + 7;
 #ifdef HAVE_SWCONFIG
 	if (has_igmpsnooping())
-		max += 2;
+		max += 3; 
 #endif
 
 	vlans = malloc(sizeof(int) * max);
