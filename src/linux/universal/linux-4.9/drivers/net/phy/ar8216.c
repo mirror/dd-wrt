@@ -663,11 +663,13 @@ static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
 		 AR8216_PORT_STATUS_SPEED_S;
 	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
 	t &= ~AR8216_PORT_STATUS_DUPLEX;
+	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
 
 	if (link->duplex)
 		t |= AR8216_PORT_STATUS_DUPLEX;
 	if (link->aneg) {
 		t |= AR8216_PORT_STATUS_LINK_AUTO;
+		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
 	} else {
 		t &= ~AR8216_PORT_STATUS_TXFLOW;
 		t &= ~AR8216_PORT_STATUS_RXFLOW;
