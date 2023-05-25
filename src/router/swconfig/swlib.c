@@ -55,6 +55,8 @@ static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
 	[SWITCH_LINK_FLAG_LINK] = {.type = NLA_FLAG },
 	[SWITCH_LINK_FLAG_DUPLEX] = {.type = NLA_FLAG },
 	[SWITCH_LINK_FLAG_ANEG] = {.type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_RX_FLOW] = {.type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_TX_FLOW] = {.type = NLA_FLAG },
 	[SWITCH_LINK_SPEED] = {.type = NLA_U32 },
 	[SWITCH_LINK_FLAG_EEE_100BASET] = {.type = NLA_FLAG },
 	[SWITCH_LINK_FLAG_EEE_1000BASET] = {.type = NLA_FLAG },
@@ -338,6 +340,10 @@ static int send_attr_link(struct nl_msg *msg, struct switch_val *val)
 		NLA_PUT_FLAG(msg, SWITCH_LINK_FLAG_DUPLEX);
 	if (link->aneg)
 		NLA_PUT_FLAG(msg, SWITCH_LINK_FLAG_ANEG);
+	if (link->rx_flow)
+		NLA_PUT_FLAG(msg, SWITCH_LINK_FLAG_RX_FLOW);
+	if (link->tx_flow)
+		NLA_PUT_FLAG(msg, SWITCH_LINK_FLAG_TX_FLOW);
 	NLA_PUT_U32(msg, SWITCH_LINK_SPEED, link->speed);
 
 	nla_nest_end(msg, n);
@@ -411,6 +417,8 @@ enum {
 	CMD_DUPLEX,
 	CMD_ANEG,
 	CMD_SPEED,
+	CMD_RXFLOW,
+	CMD_TXFLOW,
 };
 
 int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int port_vlan, const char *str)
@@ -477,6 +485,10 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 					cmd = CMD_ANEG;
 				else if (!strcmp(ptr, "speed"))
 					cmd = CMD_SPEED;
+				else if (!strcmp(ptr, "rxflow"))
+					cmd = CMD_RXFLOW;
+				else if (!strcmp(ptr, "txflow"))
+					cmd = CMD_TXFLOW;
 				else
 					fprintf(stderr, "Unsupported option %s\n", ptr);
 				break;
@@ -500,6 +512,14 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 				break;
 			case CMD_SPEED:
 				link->speed = atoi(ptr);
+				cmd = CMD_NONE;
+				break;
+			case CMD_RXFLOW:
+				link->rx_flow = atoi(ptr);
+				cmd = CMD_NONE;
+				break;
+			case CMD_TXFLOW:
+				link->tx_flow = atoi(ptr);
 				cmd = CMD_NONE;
 				break;
 			}
