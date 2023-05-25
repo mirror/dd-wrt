@@ -282,7 +282,7 @@ void start_setup_vlans(void)
 				case 21000:	// disabled
 					mask |= 8;
 					break;
-				case 24000:	// no flow control
+				case 24000:	// flow control
 					mask |= 32;
 					break;
 				}
@@ -390,7 +390,7 @@ void start_setup_vlans(void)
 						sprintf(linkstr, "%s speed 100", linkstr);
 
 					sprintf(linkstr, "%s autoneg off", linkstr);
-					if (!(mask & 32)) {
+					if (mask & 32) {
 						sprintf(linkstr, "%s rxflow txflow", linkstr);
 					}
 				} else {
