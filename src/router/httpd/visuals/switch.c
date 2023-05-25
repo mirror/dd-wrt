@@ -292,6 +292,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		case 23000:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.eee)</script>");
 			break;
+		case 24000:
+			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.flow)</script>");
+			break;
 		default:
 			if (!i)
 				sprintf(deflist, "%d", i);
@@ -353,6 +356,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "networking.snooping"));
 				if (flag == 23000)
 					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.eee"));
+				if (flag == 24000)
+					snprintf(aria, sizeof(aria), "%s %d %s", live_translate(wp, "share.port"), j, live_translate(wp, "vlan.flow"));
 			}
 			websWrite(wp, " height=\"20\"><div class=\"center\"><input type=\"checkbox\" value=\"on\" aria-label=\"%s\" name=%s ", aria, buff);
 
@@ -367,7 +372,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			if (flag < 17000) {
 				snprintf(buff, sizeof(buff), "\"SelVLAN(this.form,'port%d')\"", j);
 				websWrite(wp, "onclick=%s", buff);
-			} else if (flag == 17000 || flag == 18000 || flag == 21000 || flag == 22000 || flag == 23000) {
+			} else if (flag == 17000 || flag == 18000 || flag == 21000 || flag == 22000 || flag == 23000 || flag == 24000) {
 				snprintf(buff, sizeof(buff), "\"SelSpeed(this.form,'port%d')\"", j);
 				websWrite(wp, "onclick=%s", buff);
 			}
