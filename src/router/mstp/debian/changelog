@@ -1,5 +1,0 @@
-mstpd (0.0.8) unstable; urgency=medium
-
-  * Build Debian package.
-
- -- Vitalii Demianets <vitalii@orsoc.se>  Tue, 10 Jan 2017 20:31:10 -0500
