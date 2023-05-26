@@ -1,4 +1,4 @@
-inadyn-configure:
+inadyn-configure: wolfssl openssl
 	cd inadynv2/libconfuse && ./autogen.sh
 	cd inadynv2/libconfuse && ./configure --prefix=/usr \
 					--disable-examples \
