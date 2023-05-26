@@ -1690,6 +1690,8 @@ ar8xxx_sw_get_disable(struct switch_dev *dev,
 	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 	if (!(t & AR8216_PORT_STATUS_LINK_AUTO))
 		val->value.i = 1;
+	else	if (!(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
+		val->value.i = 1;
 	else
 		val->value.i = 0;
 	return 0;
