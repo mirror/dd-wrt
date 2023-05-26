@@ -236,7 +236,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 
 	if (priv->phy->phy_node[id] && mdiobus_get_phy(priv->mii_bus, id)) {
 		u32 val = PMCR_BACKPRES | PMCR_BACKOFF | PMCR_RX_EN |
-			PMCR_TX_EN |  PMCR_MAC_MODE | PMCR_IPG;
+			PMCR_TX_EN |  PMCR_MAC_MODE | PMCR_IPG | PMCR_RX_FC | PMCR_TX_FC;
 
 		mtk_switch_w32(gsw, val, GSW_REG_PORT_PMCR(id));
 		fe_connect_phy_node(priv, priv->phy->phy_node[id]);

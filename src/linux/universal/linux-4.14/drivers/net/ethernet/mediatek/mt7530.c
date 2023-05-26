@@ -708,8 +708,10 @@ mt7530_get_port_link(struct switch_dev *dev,  int port,
 
 	pmsr = mt7530_r32(priv, GSW_REG_PORT_STATUS(port));
 
-	link->link = pmsr & 1;
-	link->duplex = (pmsr >> 1) & 1;
+	link->link = pmsr & PMCR_LINK;
+	link->duplex = pmsr & PMCR_DUPLEX;
+	link->rx_flow = pmsr & PMCR_RX_FC; 
+	link->tx_flow = pmsr & PMCR_TX_FC; 
 	speed = (pmsr >> 2) & 3;
 
 	switch (speed) {
@@ -739,6 +741,8 @@ static int mt7530_set_port_link(struct switch_dev *dev, int port,
 	t = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));
 	if (!link->aneg) {
 		t &= ~PMCR_DUPLEX;
+		t &= ~PMCR_RX_FC;
+		t &= ~PMCR_TX_FC;
 		t &= ~PMCR_SPEED(3);
 		t |= PMCR_LINK | PMCR_FORCE;
 		switch(link->speed) {
@@ -756,11 +760,17 @@ static int mt7530_set_port_link(struct switch_dev *dev, int port,
 		}
 		if (link->duplex)
 			t |= PMCR_DUPLEX;
+		if (link->rx_flow)
+		    t |= PMCR_RX_FC;
+		if (link->tx_flow)
+		    t |= PMCR_TX_FC;
 		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), t);
 	} else {
 		t &= ~PMCR_DUPLEX;
 		t &= ~PMCR_SPEED(3);
 		t &= PMCR_LINK | PMCR_FORCE;
+		t |= PMCR_RX_FC;
+		t |= PMCR_TX_FC;
 		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), t);
 	}
 	
