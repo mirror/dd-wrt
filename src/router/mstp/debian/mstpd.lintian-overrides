@@ -1,2 +1,0 @@
-mstpd: read-in-maintainer-script
-mstpd: script-not-executable lib/mstpctl-utils/mstpctl-utils-functions.sh
