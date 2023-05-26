@@ -338,6 +338,60 @@ mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 	iowrite32(val, priv->base + reg);
 }
 
+static int mt7530_mii_busy_wait(struct mt7530_priv *priv)
+{
+	unsigned long t_start = jiffies;
+
+	while (1) {
+		if (!(mt7530_r32(priv, MT7620A_GSW_REG_PIAC) & GSW_MDIO_ACCESS))
+			return 0;
+		if (time_after(jiffies, t_start + GSW_REG_PHY_TIMEOUT))
+			break;
+	}
+
+	pr_err("MT7530 MDIO timeout\n");
+	return -1;
+}
+
+
+static u32 mt7530_mii_read(struct mt7530_priv *priv, int phy_addr, int phy_reg)
+{
+	u32 d;
+
+	if (mt7530_mii_busy_wait(priv))
+		return 0xffff;
+
+	mt7530_w32(priv, MT7620A_GSW_REG_PIAC, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_READ |
+		(phy_reg << GSW_MDIO_REG_SHIFT) |
+		(phy_addr << GSW_MDIO_ADDR_SHIFT));
+
+	if (mt7530_mii_busy_wait(priv))
+		return 0xffff;
+
+	d = mt7530_r32(priv, MT7620A_GSW_REG_PIAC) & 0xffff;
+
+	return d;
+}
+
+static u32 mt7530_mii_write(struct mt7530_priv *priv, u32 phy_addr,
+			     u32 phy_register, u32 write_data)
+{
+	if (mt7530_mii_busy_wait(priv))
+		return -1;
+
+	write_data &= 0xffff;
+
+	mt7530_w32(priv, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_WRITE |
+		(phy_register << GSW_MDIO_REG_SHIFT) |
+		(phy_addr << GSW_MDIO_ADDR_SHIFT) | write_data,
+		MT7620A_GSW_REG_PIAC);
+
+	if (mt7530_mii_busy_wait(priv))
+		return -1;
+
+	return 0;
+}
+
 static void
 mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
 {
@@ -710,7 +764,7 @@ static int mt7530_set_port_link(struct switch_dev *dev, int port,
 		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), t);
 	}
 	
-	returm 0;
+	return 0;
 }
 
 static u64 get_mib_counter(struct mt7530_priv *priv, int i, int port)
@@ -853,36 +907,39 @@ static int mt7621_get_port_stats(struct switch_dev *dev, int port,
 	return 0;
 }
 static int
-ar7530_sw_set_disable(struct switch_dev *dev,
+mt7530_sw_set_disable(struct switch_dev *dev,
 		  const struct switch_attr *attr,
 		  struct switch_val *val)
 {
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	int port = val->port_vlan;
 	u32 t;
 
 	if (port >= dev->ports)
 		return -EINVAL;
 
-	t = _mt7620_mii_read(gsw, port, 0);
+	t = mt7530_mii_read(priv, port, 0);
 	if (!!(val->value.i))
 		t |= BIT(11);
 	else
 		t &= ~BIT(11);
-	_mt7620_mii_write(gsw, port, 0, t);
+	mt7530_mii_write(priv, port, 0, t);
 	
 	return 0;
 }
+
 static int
-ar8327_sw_get_disable(struct switch_dev *dev,
+mt7530_sw_get_disable(struct switch_dev *dev,
 		  const struct switch_attr *attr,
 		  struct switch_val *val)
 {
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	int port = val->port_vlan;
 	u32 t;
 
 	if (port >= dev->ports)
 		return -EINVAL;
-	t = _mt7620_mii_read(gsw, port, 0);
+	t = mt7530_mii_read(priv, port, 0);
 	if (t & BIT(11)) 
 	    val->value.i = 0;
 	else

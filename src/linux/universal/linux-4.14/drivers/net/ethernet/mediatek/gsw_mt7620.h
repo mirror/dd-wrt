@@ -14,6 +14,7 @@
 
 #ifndef _RALINK_GSW_MT7620_H__
 #define _RALINK_GSW_MT7620_H__
+#include "mtk_eth_soc.h"
 
 #define GSW_REG_PHY_TIMEOUT	(5 * HZ)
 
