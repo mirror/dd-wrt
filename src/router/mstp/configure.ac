@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([mstpd], [0.0.8], [https://github.com/mstpd/mstpd])
+AC_INIT([mstpd], [0.1.0], [https://github.com/mstpd/mstpd])
 
 # bridge-stp must be installed in /sbin/, and the associated scripts and
 # executables should be installed outside of /usr/ by default.  If `./configure`
@@ -41,12 +41,18 @@ AC_PROG_CC
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 LT_INIT
 
+PKG_PROG_PKG_CONFIG
+
 # Optional building of examples
 AC_ARG_ENABLE([devel],
-	[AC_HELP_STRING([--enable-devel], [build devel mode])],
-	[enable_devel=yes], [])
+	[AC_HELP_STRING([--enable-devel], [build devel mode])])
 
-AM_CONDITIONAL([ENABLE_DEVEL], [test "$enable_devel" = yes])
+AM_CONDITIONAL([ENABLE_DEVEL], [test "x$enable_devel" = "xyes"])
+
+AC_ARG_ENABLE([install-ifupdown-scripts],
+	[AC_HELP_STRING([--enable-install-ifupdown-scripts], [enable installation of ifupdown scripts])])
+
+AM_CONDITIONAL([ENABLE_INSTALL_IFUPDOWN_SCRIPTS], [test "x$enable_install_ifupdown_scripts" = "xyes"])
 
 AC_ARG_WITH([bashcompletiondir],
      [AS_HELP_STRING([--with-bashcompletiondir=DIR], [Directory for bash completion files.
@@ -56,6 +62,14 @@ AS_IF([test "x$with_bashcompletiondir" = "xdefault"],
      [AC_SUBST([bashcompletiondir], [${sysconfdir}/bash_completion.d])])
 AS_IF([test "x$with_bashcompletiondir" != "xdefault"],
       [AC_SUBST([bashcompletiondir], [$with_bashcompletiondir])])
+
+AC_ARG_WITH([systemdunitdir],
+     [AS_HELP_STRING([--with-systemunitdir=DIR], [Directory for systemd unit files.])],,
+     [with_systemdunitdir=default])
+AS_IF([test "x$with_systemdunitdir" = "xdefault"],
+     [AC_SUBST([systemdunitdir], [$($PKG_CONFIG --variable=systemdsystemunitdir systemd 2> /dev/null)])])
+AS_IF([test "x$with_systemdunitdir" != "xdefault"],
+      [AC_SUBST([systemdunitdir], [$with_systemdunitdir])])
 
 # Define PACKAGE_BUILD
 PACKAGE_BUILD=`git log --pretty=format:'%h' -n 1`

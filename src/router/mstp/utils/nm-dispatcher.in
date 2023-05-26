@@ -1,0 +1,19 @@
+#!/bin/sh
+# This is a NetworkManager dispatcher script for the mstpd daemon
+# to apply any configuration to bridges based on the values in
+# /etc/sysconfig/network-scripts/bridge-stp
+
+export LC_ALL=C
+
+interface=$1
+action=$2
+
+config_cmd='@configbridgefile@'
+
+if [ "$action" = "up" ] && [ -n "$interface" ]; then
+  if [ -x "$config_cmd" ] || type "$config_cmd" 2>/dev/null >/dev/null ; then
+    "$config_cmd" "$interface"
+  fi
+fi
+
+exit 0

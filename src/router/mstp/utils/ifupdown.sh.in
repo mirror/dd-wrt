@@ -25,9 +25,9 @@ mstpctl='@mstpctlfile@'
 if [ ! -x "$mstpctl" ]; then
   exit 0
 fi
-brctl="$(command -v brctl)"
-if [ -z "$brctl" ] || [ ! -x "$brctl" ]; then
-  echo "'brctl' binary does not exist or is not executable" >&2
+brcmd="$(command -v bridge)"
+if [ -z "$brcmd" ] || [ ! -x "$brcmd" ]; then
+  echo "'bridge' binary does not exist or is not executable" >&2
   exit 2
 fi
 ip="$(command -v ip)"
@@ -53,7 +53,7 @@ esac
 
 # Previous work (create the interface)
 if [ "$MODE" = 'start' ] && [ ! -d "/sys/class/net/$IFACE" ]; then
-  "$brctl" addbr "$IFACE" || exit 2
+  "$ip" link add "$IFACE" type bridge || exit 2
 # Previous work (stop the interface)
 elif [ "$MODE" = 'stop' ]; then
   "$ip" link set dev "$IFACE" down || exit 2
@@ -76,10 +76,10 @@ mstpctl_parse_ports $INTERFACES | while read -r i; do
       if [ -f "/proc/sys/net/ipv6/conf/$port/disable_ipv6" ]; then
         echo 1 > "/proc/sys/net/ipv6/conf/$port/disable_ipv6"
       fi
-      "$brctl" addif "$IFACE" "$port" && "$ip" link set dev "$port" up
+      "$ip" link set dev "$port" master "$IFACE" && "$ip" link set dev "$port" up
     # We detach each port of the bridge
     elif [ "$MODE" = 'stop' ] && [ -d "/sys/class/net/$IFACE/brif/$port" ]; then
-      "$ip" link set dev "$port" down && "$brctl" delif "$IFACE" "$port" && \
+      "$ip" link set dev "$port" down && "$ip" link set "$port" nomaster && \
         if [ -x /etc/network/if-post-down.d/vlan ]; then
           IFACE="$port" /etc/network/if-post-down.d/vlan
         fi
@@ -94,25 +94,42 @@ done
 if [ "$MODE" = 'start' ]; then
 
   # This triggers the kernel to run `/sbin/bridge-stp start $IFACE`
-  "$brctl" stp "$IFACE" on
+  "$ip" link set "$IFACE" type bridge stp_state 1
 
   # `mstpctl addbridge $IFACE` must be called before this script continues.
   # If mstpd is already running then /sbin/bridge-stp will call
-  # `mstpctl addbridge $IFACE` before `brctl stp $IFACE on` returns.
+  # `mstpctl addbridge $IFACE` before
+  # `ip link set <bridge> type bridge stp_state 1` returns.
   # If mstpd is not already running then /sbin/bridge-stp will start it and call
   # `mstpctl addbridge $IFACE` as a delayed background process, in which case it
-  # may not run before `brctl stp $IFACE on` returns.
+  # may not run before `ip link set <bridge> type bridge stp_state 1` returns.
   # It should not hurt to call `mstpctl addbridge $IFACE` twice, so call it
   # again to ensure that it has been called before continuing.
   # See the code and comments in /sbin/bridge-stp for more details.
   "$mstpctl" addbridge "$IFACE"
 
+  # If MAXAGE should be increased, then FDELAY must be increased before it.
+  # On the other hand, to reduce FDELAY, we must first reduce MAXAGE.
+  # To accommodate both orderings, we check the current value of FDELAY
+  # and act so that curfddly >= age is maintained.
+  age=0
   if [ "$IF_MSTPCTL_MAXAGE" ]; then
-    "$mstpctl" setmaxage "$IFACE" "$IF_MSTPCTL_MAXAGE"
+    age="$IF_MSTPCTL_MAXAGE"
   fi
 
-  if [ "$IF_MSTPCTL_FDELAY" ]; then
-    "$mstpctl" setfdelay "$IFACE" "$IF_MSTPCTL_FDELAY"
+  curfwddly="$( "$mstpctl" showbridge "$IFACE" bridge-forward-delay )"
+  curfwddly=$((curfwddly+curfwddly))
+
+  if [ "$curfwddly" -gt "$age" ]; then
+    [ "$age" -gt 0 ] && "$mstpctl" setmaxage "$IFACE" "$age"
+    if [ "$IF_MSTPCTL_FDELAY" ]; then
+      "$mstpctl" setfdelay "$IFACE" "$IF_MSTPCTL_FDELAY"
+    fi
+  else
+    if [ "$IF_MSTPCTL_FDELAY" ]; then
+      "$mstpctl" setfdelay "$IFACE" "$IF_MSTPCTL_FDELAY"
+    fi
+    [ "$age" -gt 0 ] && "$mstpctl" setmaxage "$IFACE" "$age"
   fi
 
   if [ "$IF_MSTPCTL_MAXHOPS" ]; then
@@ -307,7 +324,7 @@ if [ "$MODE" = 'start' ]; then
       # 'disabled', except if all ports are 'disabled' and we have yet to see
       # any port transition to any other valid state.
       converged=true
-      for i in $("$brctl" showstp "$IFACE" | sed -n 's/^.*port id.*state[ \t]*\(.*\)$/\1/p'); do
+      for i in $("$brcmd" link show | grep "master $IFACE" | sed -n 's/^.*state[ ]*\([^ ]*\).*$/\1/p'); do
         if [ "$i" = 'listening' ] || [ "$i" = 'learning' ]; then
           transitioned=true
           converged=''
@@ -327,6 +344,10 @@ if [ "$MODE" = 'start' ]; then
 # Finally we destroy the interface
 elif [ "$MODE" = 'stop' ]; then
 
-  "$brctl" delbr "$IFACE"
+  brstp='@bridgestpfile@'
+  if [ -x "$brstp" ]; then
+    "$brstp" "$IFACE" stop
+  fi
+  "$ip" link del "$IFACE"
 
 fi

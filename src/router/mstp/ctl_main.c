@@ -1238,6 +1238,59 @@ static int cmd_showport(int argc, char *const *argv)
     return r;
 }
 
+static int cmd_showportparams(int argc, char *const *argv)
+{
+    int r = 0;
+
+    int br_index = get_index(argv[1], "bridge");
+    if(0 > br_index)
+        return br_index;
+
+    int i, count = argc - 3;
+    param_id_t param_id[count];
+
+    for(i = 0; i < count; ++i)
+    {
+        int err = 1;
+        for(int j = 0; j < COUNT_OF(cist_port_params); ++j)
+        {
+            if(0 == strcmp(argv[argc - count + i], cist_port_params[j].str))
+            {
+                param_id[i] = cist_port_params[j].id;
+                err = 0;
+                break;
+            }
+        }
+        if (err)
+        {
+            fprintf(stderr, "Can't find index for %s param. "
+                            "Not a valid CSTP param.\n", argv[argc - count + i]);
+            return -1;
+        }
+    }
+
+    do_arraystart_fmt();
+
+    for(i = 0; i < count; ++i)
+    {
+        const char *intf_name;
+
+        intf_name = argv[2];
+
+        if(i)
+            do_arraynext_fmt();
+
+        int err = do_showport(br_index, argv[1], intf_name, param_id[i]);
+        if(err)
+            r = err;
+    }
+
+    do_arrayend_fmt();
+
+    return r;
+}
+
+
 static int cmd_showportdetail(int argc, char *const *argv)
 {
     detail = 1;
@@ -2200,7 +2253,9 @@ static const struct command commands[] =
      "<bridge>", "Show FID-to-MSTID allocation table"},
     /* Show global port */
     {1, 32, "showport", cmd_showport,
-     "<bridge> [<port> ... [param]]", "Show port state for the CIST"},
+     "<bridge> [<port>...[port] [param]]", "Show port state for the CIST"},
+    {3, 32, "showportparams", cmd_showportparams,
+    "<bridge> <port> <param>...[param]", "Show port state for the CIST"},
     {1, 32, "showportdetail", cmd_showportdetail,
      "<bridge> [<port> ... [param]]", "Show port detailed state for the CIST"},
     /* Show tree bridge */

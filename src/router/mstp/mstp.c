@@ -1615,7 +1615,7 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name)
         memset(br->MstConfigId.s.configuration_name, 0,
                sizeof(br->MstConfigId.s.configuration_name));
         strncpy((char *)br->MstConfigId.s.configuration_name, (char *)name,
-                sizeof(br->MstConfigId.s.configuration_name));
+                sizeof(br->MstConfigId.s.configuration_name) - 1);
         br_state_machines_begin(br);
     }
 }

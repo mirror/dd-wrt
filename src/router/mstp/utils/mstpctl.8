@@ -21,7 +21,13 @@ mstpctl \- mstpd configuration
 .BR "mstpctl [command]"
 .SH DESCRIPTION
 .B mstpctl
-is used to configure Multiple Spanning Tree daemon (mstpd). MSTPCTL is used for configuring STP parameters on bridges which have user-space STP enabled. Currently, STP is disabled by default on the bridge. To enable user-space STP, configure "brctl stp <bridge> on" while ensuring that /sbin/bridge-stp kernel helper script will return success (0) for this operation.
+is used to configure Multiple Spanning Tree daemon (mstpd). MSTPCTL is
+used for configuring STP parameters on bridges which have user-space
+STP enabled. Currently, STP is disabled by default on the bridge. To
+enable user-space STP, configure "brctl stp <bridge> on" or
+"ip link set <bridge> type bridge stp_state 1" while ensuring that
+/sbin/bridge-stp kernel helper script will return success (0) for
+this operation.
 
 .SH SPANNING TREE PROTOCOL CONFIGURATION
 
@@ -105,6 +111,7 @@ will show detailed information about the <port> of the <bridge>'s MST instance w
 
 .SH SEE ALSO
 .BR brctl(8)
+.BR ip(8)
 
 .SH AUTHOR
 The source code for mstpctl was written by Vitalii Demianets

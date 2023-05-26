@@ -60,7 +60,7 @@ int get_hwaddr(char *ifname, __u8 *hwaddr)
 {
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
     if(0 > ioctl(netsock, SIOCGIFHWADDR, &ifr))
     {
         ERROR("%s: get hw address failed: %m", ifname);
@@ -74,7 +74,7 @@ int get_flags(char *ifname)
 {
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
     if(0 > ioctl(netsock, SIOCGIFFLAGS, &ifr))
     {
         ERROR("%s: get interface flags failed: %m", ifname);
@@ -94,7 +94,7 @@ int if_shutdown(char *ifname)
         return -1;
     }
     ifr.ifr_flags &= ~IFF_UP;
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
     if(0 > ioctl(netsock, SIOCSIFFLAGS, &ifr))
     {
         ERROR("%s: set if_down flag failed: %m", ifname);
@@ -107,7 +107,7 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
 {
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
     struct ethtool_cmd ecmd;
 
     ecmd.cmd = ETHTOOL_GSET;
