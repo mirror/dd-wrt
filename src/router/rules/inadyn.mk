@@ -64,7 +64,7 @@ inadyn-configure:
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-inadyn:
+inadyn: wolfssl openssl
 	$(MAKE) -C inadynv2/libconfuse
 ifeq ($(CONFIG_WOLFSSL),y)
 	$(MAKE) -C inadynv2/build_wolfssl
