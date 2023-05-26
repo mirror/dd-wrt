@@ -429,7 +429,7 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 			    struct ieee80211_supported_band *band)
 {
 	struct ieee80211_hw *hw;
-	const u8 ant_rx_no[ANTENNA_RX_MAX] = { 4, 1, 2, 3};
+	const u8 ant_rx_no[ANTENNA_RX_MAX] = { 3, 1, 2, 3};
 	int i;
 
 	hw = priv->hw;
@@ -457,7 +457,7 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 
 	for (i = 0; i < ant_rx_no[priv->antenna_rx]; i++)
 		band->ht_cap.mcs.rx_mask[i] = 0xff;
-//	band->ht_cap.mcs.rx_mask[4] = 0x01;
+	band->ht_cap.mcs.rx_mask[4] = 0x01;
 
 	band->ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
 
@@ -526,7 +526,7 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 			rxantennas = 3;
 		} else {
 			rxhighest = cpu_to_le16(1300);
-			rxantennas = 4;
+			rxantennas = 3;
 		}
 	} else {
 		if (priv->antenna_rx == ANTENNA_RX_1) {
@@ -540,7 +540,7 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 			rxantennas = 3;
 		} else {
 			rxhighest = cpu_to_le16(2600);
-			rxantennas = 4;
+			rxantennas = 3;
 		}
 	}
 	

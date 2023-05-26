@@ -36,8 +36,7 @@ country 00:
 # Harmonized CEPT countries: https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country AD:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -61,8 +60,7 @@ country AF:
 # http://pucanguilla.org/Downloads/January2005-Anguilla%20Table%20of%20Allocations.pdf
 country AI:
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), wmmrule=ETSI
-	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5170 - 5350 @ 160), (20), wmmrule=ETSI
 	(5490 - 5710 @ 160), (27), wmmrule=ETSI
 
 # AL as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
@@ -72,8 +70,7 @@ country AI:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country AL:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -112,8 +109,7 @@ country AS:
 # AT: acceptance https://www.ris.bka.gv.at/Dokumente/BgblAuth/BGBLA_2014_II_63/BGBLA_2014_II_63.pdfsig
 country AT:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -153,8 +149,7 @@ country AZ:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country BA:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -182,8 +177,7 @@ country BD: DFS-JP
 # BE: https://www.ibpt.be/public/files/en/22165/B01-28_3.1_EN.pdf
 country BE:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -224,8 +218,7 @@ country BG:
 	(2400 - 2483.5 @ 40), (100 mW)
 	# 5 GHz Radio Local Area Networks (RLANs), ref:
 	# II.H01 of the List, BDS EN 301 893
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	# II.H01 of the List, I.54 from the List, BDS EN 301 893
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
@@ -328,8 +321,7 @@ country CF:
 # CH: https://www.ofcomnet.ch/#/fatTable
 country CH:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -403,8 +395,7 @@ country CX:
 # CY: http://www.mcw.gov.cy/mcw/dec/dec.nsf/all/292484CFC7013DD4C2256EBA0023D447/$file/Sxedio%20Radiosyxnothtwn%20ths%20Dhmokratias-3-8-2018-E2.2(English%20Unified%20Unofficial).pdf?openelement
 country CY:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -420,8 +411,7 @@ country CY:
 # CZ: https://www.ctu.cz/sites/default/files/obsah/ctu/vseobecne-opravneni-c.vo-r/10/12.2017-10/obrazky/vo-r10-122017-10.pdf
 country CZ:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -461,8 +451,7 @@ country CZ:
 # https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/MobilfunkDectWlanCBFunk/vfg552021WLAN6GHz.pdf
 country DE:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -481,8 +470,7 @@ country DE:
 # 60GHz: https://erhvervsstyrelsen.dk/sites/default/files/radiograenseflader-63.pdf
 country DK:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -527,8 +515,7 @@ country EC:
 # EE: https://www.itu.int/ITU-D/study_groups/SGP_1998-2002/JGRES09/pdf/estonia.pdf
 country EE:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -549,8 +536,7 @@ country EG:
 # ES: https://avancedigital.mineco.gob.es/espectro/Paginas/cnaf.aspx
 country ES:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -572,8 +558,7 @@ country ET:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country FI:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -595,8 +580,7 @@ country FM:
 # FR: https://www.anfr.fr/fileadmin/mediatheque/documents/tnrbf/TNRBF_2021-12-14.pdf
 country FR:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -615,8 +599,7 @@ country FR:
 # GB: https://www.ofcom.org.uk/__data/assets/pdf_file/0013/126121/Statement_Implementing-Ofcoms-decision-on-the-57-71GHz-band.pdf
 country GB:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5730 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5850 @ 80), (200 mW), NO-OUTDOOR
@@ -671,8 +654,7 @@ country GP:
 # GR: https://www.eett.gr/opencms/export/sites/default/EETT_EN/Electronic_Communications/Radio_Communications/TelecommunicationEquipment/Radio_equipment_interface_requirement_107.pdf
 country GR:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -719,8 +701,7 @@ country HR:
 # HR: http://tablice.hakom.hr:8080/vis?lang=en
 # 6E: https://www.hakom.hr/UserDocsImages/op%C4%87e%20dozvole%20prosinac%202009.g/Opca_dozvola_236.pdf
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), wmmrule=ETSI
-	(5250 - 5350 @ 80), (200 mW), wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -746,8 +727,7 @@ country HT:
 # HU: http://nmhh.hu/dokumentum/319/kis_hatotavolsagu_eszkozok_srdk.pdf
 country HU:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -769,8 +749,7 @@ country ID: DFS-JP
 # IE: https://www.comreg.ie/publication-download/permitted-short-range-devices-ireland
 country IE:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -801,8 +780,7 @@ country IR: DFS-JP
 # IS: https://www.pfs.is/library/Skrar/Tidnir-og-taekni/MHZ_21022019.pdf
 country IS:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -816,8 +794,7 @@ country IS:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country IT:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -942,8 +919,7 @@ country LC:
 # LI: https://www.ofcomnet.ch/#/fatTable
 country LI:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -974,8 +950,7 @@ country LS:
 # LT: https://www.e-tar.lt/portal/lt/legalAct/6e718fd037a011e69101aaab2992cbcd/dGRioCBBHb
 country LT:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -990,8 +965,7 @@ country LT:
 # LU: https://assets.ilr.lu/frequences/Documents/ILRLU-1723895916-183.pdf#search=en%20300%20440
 country LU:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1006,8 +980,7 @@ country LU:
 # LV: http://likumi.lv/doc.php?id=198903
 country LV:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1026,8 +999,7 @@ country MA:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country MC:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1041,8 +1013,7 @@ country MC:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country MD:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1056,16 +1027,14 @@ country MD:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country ME:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
 
 country MF:
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), wmmrule=ETSI
-	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5170 - 5350 @ 160), (20), wmmrule=ETSI
 	(5490 - 5710 @ 160), (27), wmmrule=ETSI
 
 country MH:
@@ -1082,8 +1051,7 @@ country MH:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country MK:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1113,8 +1081,7 @@ country MP:
 
 country MQ:
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), wmmrule=ETSI
-	(5250 - 5330 @ 80), (20), wmmrule=ETSI
+	(5170 - 5350 @ 160), (20), wmmrule=ETSI
 	(5490 - 5710 @ 160), (27), wmmrule=ETSI
 
 # Source:
@@ -1133,8 +1100,7 @@ country MR:
 # MT: https://www.mca.org.mt/sites/default/files/NFP_edition%206-1.pdf
 country MT:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1200,8 +1166,7 @@ country NI:
 # NL law: https://wetten.overheid.nl/BWBR0036378/2021-12-15
 country NL:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1220,8 +1185,7 @@ country NL:
 # In addition to EU NO can use 5725–5795 MHz and 5815–5850 bands with limit of 4 W EIRP (with DFS and TPC)
 country NO:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1299,8 +1263,7 @@ country PK: DFS-JP
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country PL:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1328,8 +1291,7 @@ country PR:
 # PT: https://www.anacom.pt/render.jsp?categoryId=336334
 country PT:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1372,8 +1334,7 @@ country RE:
 # RO: http://www.ancom.org.ro/en/uploads/links_files/ordin_262_2006.pdf
 country RO:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1389,8 +1350,7 @@ country RO:
 # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
 country RS:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1425,8 +1385,7 @@ country SA:
 # SE: https://pts.se/globalassets/startpage/dokument/legala-dokument/foreskrifter/radio/beslutade_ptsfs-2018-3-undantagsforeskrifter.pdf
 country SE:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1461,8 +1420,7 @@ country SG:
 # SI: https://www.akos-rs.si/bwa
 country SI:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1479,8 +1437,7 @@ country SI:
 # SK: https://www.teleoff.gov.sk/data/files/49125_vpr-01_2018-rusi-vpr-10_2014a21_2012-nespecifik-srd_021018.pdf
 country SK:
 	(2400 - 2483.5 @ 40), (100 mW)
-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (200 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (500 mW), wmmrule=ETSI
 	# short range devices (ETSI EN 300 440-1)
 	(5725 - 5875 @ 80), (25 mW)
@@ -1597,8 +1554,7 @@ country TZ:
 # permitted nor denied outdoors in others.
 country UA:
 	(2400 - 2483.5 @ 40), (100 mW), NO-OUTDOOR
-	(5150 - 5250 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, wmmrule=ETSI
+	(5150 - 5350 @ 160), (100 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5470 - 5725 @ 160), (100 mW), NO-OUTDOOR, wmmrule=ETSI
 	(5725 - 5850 @ 80), (100 mW), NO-OUTDOOR
 	# 60 GHz band channels 1-4, ref: Etsi En 302 567
@@ -1626,8 +1582,7 @@ country US:
 	(920-928 @ 8), (30)
 	(2400 - 2472 @ 40), (30)
 	# 5.15 ~ 5.25 GHz: 30 dBm for master mode, 23 dBm for clients
-	(5150 - 5250 @ 80), (23)
-	(5250 - 5350 @ 80), (24)
+	(5150 - 5350 @ 160), (24)
 	# This range ends at 5725 MHz, but channel 144 extends to 5730 MHz.
 	# Since 5725 ~ 5730 MHz belongs to the next range which has looser
 	# requirements, we can extend the range by 5 MHz to make the kernel
@@ -1734,19 +1689,19 @@ country ZW:
 #Germany BFWA
 country ZD:
 	(2400 - 2483.500 @ 40), (20)
-	(5170 - 5350 @ 160), (20)
+	(5150 - 5350 @ 160), (20)
 	(5470 - 5885 @ 160), (30)
 
 #United Kingdom BFWA
 country ZG:
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 160), (20)
+	(5150 - 5250 @ 160), (20)
 	(5490 - 5710 @ 160), (27)
 	(5725 - 5855 @ 80), (33)
 
 #Norway BFWA
 country ZN:
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5330 @ 160), (20)
+	(5150 - 5350 @ 160), (20)
 	(5490 - 5710 @ 160), (27)
 	(5725 - 5855 @ 80), (36.02)
