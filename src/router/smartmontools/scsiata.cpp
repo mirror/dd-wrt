@@ -4,9 +4,10 @@
  * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2006-15 Douglas Gilbert <dgilbert@interlog.com>
- * Copyright (C) 2009-21 Christian Franke
+ * Copyright (C) 2009-23 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
+ *
  * The code in this file is based on the SCSI to ATA Translation (SAT)
  * draft found at http://www.t10.org . The original draft used for this
  * code is sat-r08.pdf which is not too far away from becoming a
@@ -110,9 +111,14 @@ public:
     sat_auto,
     scsi_always
   };
+  enum sat_variant {
+    sat_standard,
+    sat_asm1352r, // ASM1352R port 0 or 1
+  };
 
   sat_device(smart_interface * intf, scsi_device * scsidev,
-    const char * req_type, sat_scsi_mode mode = sat_always, int passthrulen = 0);
+    const char * req_type, sat_scsi_mode mode = sat_always, int passthrulen = 0,
+    sat_variant variant = sat_standard, int port = 0);
 
   virtual ~sat_device();
 
@@ -125,17 +131,20 @@ public:
 private:
   int m_passthrulen;
   sat_scsi_mode m_mode;
+  sat_variant m_variant;
+  int m_port;
 };
 
 
 sat_device::sat_device(smart_interface * intf, scsi_device * scsidev,
   const char * req_type, sat_scsi_mode mode /* = sat_always */,
-  int passthrulen /* = 0 */)
+  int passthrulen /* = 0 */, sat_variant variant /* = sat_standard */, int port /* = 0 */)
 : smart_device(intf, scsidev->get_dev_name(),
     (mode == sat_always ? "sat" : mode == sat_auto ? "sat,auto" : "scsi"), req_type),
   tunnelled_device<ata_device, scsi_device>(scsidev),
   m_passthrulen(passthrulen),
-  m_mode(mode)
+  m_mode(mode),
+  m_variant(variant), m_port(port)
 {
   if (mode != sat_always)
     hide_ata(); // Start as SCSI, switch to ATA in autodetect_open()
@@ -145,7 +154,9 @@ sat_device::sat_device(smart_interface * intf, scsi_device * scsidev,
     set_info().dev_type += strprintf("+%s", scsidev->get_dev_type());
 
   set_info().info_name = strprintf("%s [%s]", scsidev->get_info_name(),
-    (mode == sat_always ? "SAT" : mode == sat_auto ? "SCSI/SAT" : "SCSI"));
+    (variant == sat_standard ?
+     (mode == sat_always ? "SAT" : mode == sat_auto ? "SCSI/SAT" : "SCSI") :
+     (port == 0 ? "ASM1352R_0" : "ASM1352R_1")                              ));
 }
 
 sat_device::~sat_device()
@@ -256,11 +267,11 @@ bool sat_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out)
     )
       return false;
 
-    struct scsi_cmnd_io io_hdr;
+    struct scsi_cmnd_io io_hdr = {};
     struct scsi_sense_disect sinfo;
     struct sg_scsi_sense_hdr ssh;
-    unsigned char cdb[SAT_ATA_PASSTHROUGH_16LEN];
-    unsigned char sense[32];
+    unsigned char cdb[SAT_ATA_PASSTHROUGH_16LEN] = {};
+    unsigned char sense[32] = {};
     const unsigned char * ardp;
     int ard_len, have_sense;
     int extend = 0;
@@ -271,9 +282,6 @@ bool sat_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out)
     int t_length = 0;   /* 0 -> no data transferred */
     int passthru_size = DEF_SAT_ATA_PASSTHRU_SIZE;
     bool sense_descriptor = true;
-
-    memset(cdb, 0, sizeof(cdb));
-    memset(sense, 0, sizeof(sense));
 
     // Set data direction
     // TODO: This works only for commands where sector_count holds count!
@@ -293,6 +301,10 @@ bool sat_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out)
         return set_err(EINVAL, "sat_device::ata_pass_through: invalid direction=%d",
             (int)in.direction);
     }
+
+    // The ASM1352R uses reserved values for 'protocol' field to select drive
+    if (m_variant == sat_asm1352r)
+      protocol = (m_port == 0 ? 0xd : 0xe);
 
     // Check condition if any output register needed
     if (in.out_needed.is_set())
@@ -346,7 +358,6 @@ bool sat_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out)
         cdb[14] = lo.command;
     }
 
-    memset(&io_hdr, 0, sizeof(io_hdr));
     if (0 == t_length) {
         io_hdr.dxfer_dir = DXFER_NONE;
         io_hdr.dxfer_len = 0;
@@ -500,10 +511,8 @@ bool sat_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & out)
 bool sat_device::scsi_pass_through(scsi_cmnd_io * iop)
 {
   scsi_device * scsidev = get_tunnel_dev();
-  if (!scsidev->scsi_pass_through(iop)) {
-    set_err(scsidev->get_err());
-    return false;
-  }
+  if (!scsidev->scsi_pass_through(iop))
+    return set_err(scsidev->get_err());
   return true;
 }
 
@@ -600,7 +609,7 @@ static int sg_scsi_normalize_sense(const unsigned char * sensep, int sb_len,
 
 namespace sat {
 
-/// Cypress USB Brigde support.
+/// Cypress USB Bridge support.
 
 class usbcypress_device
 : public tunnelled_device<
@@ -639,9 +648,9 @@ usbcypress_device::~usbcypress_device()
 #define USBCYPRESS_PASSTHROUGH_LEN 16
 int usbcypress_device::ata_command_interface(smart_command_set command, int select, char *data)
 {
-    struct scsi_cmnd_io io_hdr;
-    unsigned char cdb[USBCYPRESS_PASSTHROUGH_LEN];
-    unsigned char sense[32];
+    struct scsi_cmnd_io io_hdr = {};
+    unsigned char cdb[USBCYPRESS_PASSTHROUGH_LEN] = {};
+    unsigned char sense[32] = {};
     int copydata = 0;
     int outlen = 0;
     int ck_cond = 0;    /* set to 1 to read register(s) back */
@@ -655,9 +664,6 @@ int usbcypress_device::ata_command_interface(smart_command_set command, int sele
     int lba_mid = 0;
     int lba_high = 0;
     int passthru_size = USBCYPRESS_PASSTHROUGH_LEN;
-
-    memset(cdb, 0, sizeof(cdb));
-    memset(sense, 0, sizeof(sense));
 
     ata_command = ATA_SMART_CMD;
     switch (command) {
@@ -766,7 +772,6 @@ int usbcypress_device::ata_command_interface(smart_command_set command, int sele
     cdb[10] = lba_high;
     cdb[12] = ata_command;
 
-    memset(&io_hdr, 0, sizeof(io_hdr));
     if (0 == t_length) {
         io_hdr.dxfer_dir = DXFER_NONE;
         io_hdr.dxfer_len = 0;
@@ -861,7 +866,7 @@ int usbcypress_device::ata_command_interface(smart_command_set command, int sele
             syserror("Error SMART Status command failed");
             pout("This may be due to a race in usbcypress\n");
             pout("Retry without other disc access\n");
-            pout("Please get assistance from " PACKAGE_HOMEPAGE "\n");
+            pout("Please get assistance from " PACKAGE_URL "\n");
             pout("Values from ATA Return Descriptor are:\n");
             dStrHex((const uint8_t *)ardp, ard_len, 1);
             return -1;
@@ -961,8 +966,7 @@ bool usbjmicron_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & ou
   if (m_port < 0)
     return set_err(EIO, "Unknown JMicron port");
 
-  scsi_cmnd_io io_hdr;
-  memset(&io_hdr, 0, sizeof(io_hdr));
+  scsi_cmnd_io io_hdr = {};
 
   bool rwbit = true;
   unsigned char smart_status = 0xff;
@@ -1082,8 +1086,7 @@ bool usbjmicron_device::get_registers(unsigned short addr,
   cdb[12] = 0x06;
   cdb[13] = 0x7b;
 
-  scsi_cmnd_io io_hdr;
-  memset(&io_hdr, 0, sizeof(io_hdr));
+  scsi_cmnd_io io_hdr = {};
   io_hdr.dxfer_dir = DXFER_FROM_DEVICE;
   io_hdr.dxfer_len = size;
   io_hdr.dxferp = buf;
@@ -1142,8 +1145,7 @@ bool usbprolific_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & o
   )
     return false;
 
-  scsi_cmnd_io io_hdr;
-  memset(&io_hdr, 0, sizeof(io_hdr));
+  scsi_cmnd_io io_hdr = {};
   unsigned char cmd_rw = 0x10;  // Read
 
   switch (in.direction) {
@@ -1280,12 +1282,11 @@ bool usbsunplus_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & ou
   )
     return false;
 
-  scsi_cmnd_io io_hdr;
+  scsi_cmnd_io io_hdr = {};
   unsigned char cdb[12];
 
   if (in.in_regs.is_48bit_cmd()) {
     // Set "previous" registers
-    memset(&io_hdr, 0, sizeof(io_hdr));
     io_hdr.dxfer_dir = DXFER_NONE;
 
     cdb[ 0] = 0xf8;
@@ -1405,21 +1406,19 @@ ata_device * smart_interface::get_sat_device(const char * type, scsi_device * sc
 
   // Take temporary ownership of 'scsidev' to delete it on error
   scsi_device_auto_ptr scsidev_holder(scsidev);
-  ata_device * satdev = 0;
+  ata_device * satdev = nullptr;
 
-  if (!strncmp(type, "sat", 3)) {
+  if (str_starts_with(type, "sat")) {
     const char * t = type + 3;
     sat_device::sat_scsi_mode mode = sat_device::sat_always;
-    if (!strncmp(t, ",auto", 5)) {
+    if (str_starts_with(t, ",auto")) {
       t += 5;
       mode = sat_device::sat_auto;
     }
     int ptlen = 0, n = -1;
     if (*t && !(sscanf(t, ",%d%n", &ptlen, &n) == 1 && n == (int)strlen(t)
-                && (ptlen == 0 || ptlen == 12 || ptlen == 16))) {
-      set_err(EINVAL, "Option '-d sat[,auto][,N]' requires N to be 0, 12 or 16");
-      return 0;
-    }
+                && (ptlen == 0 || ptlen == 12 || ptlen == 16)))
+      return set_err_np(EINVAL, "Option '-d sat[,auto][,N]' requires N to be 0, 12 or 16");
     satdev = new sat_device(this, scsidev, type, mode, ptlen);
   }
 
@@ -1427,35 +1426,31 @@ ata_device * smart_interface::get_sat_device(const char * type, scsi_device * sc
     satdev = new sat_device(this, scsidev, type, sat_device::scsi_always);
   }
 
-  else if (!strncmp(type, "usbcypress", 10)) {
+  else if (str_starts_with(type, "usbcypress")) {
     unsigned signature = 0x24; int n1 = -1, n2 = -1;
-    if (!(((sscanf(type, "usbcypress%n,0x%x%n", &n1, &signature, &n2) == 1 && n2 == (int)strlen(type)) || n1 == (int)strlen(type))
-          && signature <= 0xff)) {
-      set_err(EINVAL, "Option '-d usbcypress,<n>' requires <n> to be "
-                      "an hexadecimal number between 0x0 and 0xff");
-      return 0;
-    }
+    if (!(((sscanf(type, "usbcypress%n,0x%x%n", &n1, &signature, &n2) == 1 && n2 == (int)strlen(type))
+           || n1 == (int)strlen(type)) && signature <= 0xff))
+      return set_err_np(EINVAL, "Option '-d usbcypress,<n>' requires <n> to be "
+                                "an hexadecimal number between 0x0 and 0xff"    );
     satdev = new usbcypress_device(this, scsidev, type, signature);
   }
 
-  else if (!strncmp(type, "usbjmicron", 10)) {
+  else if (str_starts_with(type, "usbjmicron")) {
     const char * t = type + 10;
     bool prolific = false;
-    if (!strncmp(t, ",p", 2)) {
+    if (str_starts_with(t, ",p")) {
       t += 2;
       prolific = true;
     }
     bool ata_48bit_support = false;
-    if (!strncmp(t, ",x", 2)) {
+    if (str_starts_with(t, ",x")) {
       t += 2;
       ata_48bit_support = true;
     }
     int port = -1, n = -1;
     if (*t && !(  (sscanf(t, ",%d%n", &port, &n) == 1
-                && n == (int)strlen(t) && 0 <= port && port <= 1))) {
-      set_err(EINVAL, "Option '-d usbjmicron[,p][,x],<n>' requires <n> to be 0 or 1");
-      return 0;
-    }
+                && n == (int)strlen(t) && 0 <= port && port <= 1)))
+      return set_err_np(EINVAL, "Option '-d usbjmicron[,p][,x],<n>' requires <n> to be 0 or 1");
     satdev = new usbjmicron_device(this, scsidev, type, prolific, ata_48bit_support, port);
   }
 
@@ -1467,9 +1462,15 @@ ata_device * smart_interface::get_sat_device(const char * type, scsi_device * sc
     satdev = new usbsunplus_device(this, scsidev, type);
   }
 
+  else if (str_starts_with(type, "usbasm1352r")) {
+    unsigned port = ~0; int n = -1;
+    if (!(sscanf(type, "usbasm1352r,%u%n", &port, &n) == 1 && n == (int)strlen(type) && port <= 1))
+      return set_err_np(EINVAL, "Option '-d usbasm1352r,<n>' requires <n> to be 0 or 1");
+    satdev = new sat_device(this, scsidev, type, sat_device::sat_always, 0, sat_device::sat_asm1352r, port);
+  }
+
   else {
-    set_err(EINVAL, "Unknown USB device type '%s'", type);
-    return 0;
+    return set_err_np(EINVAL, "Unknown USB device type '%s'", type);
   }
 
   // 'scsidev' is now owned by 'satdev'

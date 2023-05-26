@@ -4,7 +4,7 @@
  * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-11 Bruce Allen
- * Copyright (C) 2008-21 Christian Franke
+ * Copyright (C) 2008-22 Christian Franke
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -89,6 +89,11 @@ static void js_initialize(int argc, char **argv, bool verbose)
   if (ver[2] > 0)
     jref["version"][2] = ver[2];
 
+#ifdef SMARTMONTOOLS_RELEASE_DATE
+  jref["pre_release"] = false;
+#else
+  jref["pre_release"] = true;
+#endif
 #ifdef SMARTMONTOOLS_SVN_REV
   jref["svn_revision"] = SMARTMONTOOLS_SVN_REV;
 #endif
@@ -178,7 +183,7 @@ static void Usage()
 "        sasphy[,reset], sataphy[,reset], scttemp[sts,hist],\n"
 "        scttempint,N[,p], scterc[,N,M][,p|reset], devstat[,N], defects[,N],\n"
 "        ssd, gplog,N[,RANGE], smartlog,N[,RANGE], nvmelog,N,SIZE\n"
-"        tapedevstat\n\n"
+"        tapedevstat, zdevstat, envrep, farm\n\n"
 "  -v N,OPTION , --vendorattribute=N,OPTION                            (ATA)\n"
 "        Set display OPTION for vendor Attribute N (see man page)\n\n"
 "  -F TYPE, --firmwarebug=TYPE                                         (ATA)\n"
@@ -246,7 +251,7 @@ static std::string getvalidarglist(int opt)
            "scttemp[sts,hist], scttempint,N[,p], "
            "scterc[,N,M][,p|reset], devstat[,N], defects[,N], "
            "ssd, gplog,N[,RANGE], smartlog,N[,RANGE], "
-           "nvmelog,N,SIZE, tapedevstat";
+           "nvmelog,N,SIZE, tapedevstat, zdevstat, envrep, farm";
   case 'P':
     return "use, ignore, show, showall";
   case 't':
@@ -520,7 +525,7 @@ static int parse_options(int argc, char** argv, const char * & type,
         else
           badarg = true;
       } else if (!strcmp(optarg,"selftest")) {
-        ataopts.smart_selftest_log = scsiopts.smart_selftest_log = true;
+        ataopts.smart_selftest_log = scsiopts.smart_selftest_log = nvmeopts.smart_selftest_log = true;
       } else if (!strcmp(optarg, "selective")) {
         ataopts.smart_selective_selftest_log = true;
       } else if (!strcmp(optarg,"directory")) {
@@ -529,6 +534,8 @@ static int parse_options(int argc, char** argv, const char * & type,
         ataopts.smart_logdir = true; // SMART
       } else if (!strcmp(optarg,"directory,g")) {
         ataopts.gp_logdir = true; // GPL
+      } else if (!strcmp(optarg, "genstats")) {
+        scsiopts.general_stats_and_perf = true;
       } else if (!strcmp(optarg,"sasphy")) {
         scsiopts.sasphy = true;
       } else if (!strcmp(optarg,"sasphy,reset")) {
@@ -546,16 +553,20 @@ static int parse_options(int argc, char** argv, const char * & type,
         ataopts.sct_erc_get = 1;
       } else if (!strcmp(optarg,"scttemp")) {
         ataopts.sct_temp_sts = ataopts.sct_temp_hist = true;
+      } else if (!strcmp(optarg,"envrep")) {
         scsiopts.smart_env_rep = true;
       } else if (!strcmp(optarg,"scttempsts")) {
         ataopts.sct_temp_sts = true;
       } else if (!strcmp(optarg,"scttemphist")) {
         ataopts.sct_temp_hist = true;
+      } else if (!strcmp(optarg,"farm")) {
+        ataopts.farm_log = scsiopts.farm_log = true; // Seagate Field Access Reliability Metrics (FARM) log
       } else if (!strcmp(optarg,"tapealert")) {
         scsiopts.tape_alert = true;
       } else if (!strcmp(optarg,"tapedevstat")) {
         scsiopts.tape_device_stats = true;
-
+      } else if (!strcmp(optarg,"zdevstat")) {
+        scsiopts.zoned_device_stats = true;
       } else if (!strncmp(optarg, "scttempint,", sizeof("scstempint,")-1)) {
         unsigned interval = 0; int n1 = -1, n2 = -1, len = strlen(optarg);
         if (!(   sscanf(optarg,"scttempint,%u%n,p%n", &interval, &n1, &n2) == 1
@@ -585,6 +596,7 @@ static int parse_options(int argc, char** argv, const char * & type,
         int n1 = -1, n2 = -1, len = strlen(optarg);
         unsigned val = ~0;
         sscanf(optarg, "defects%n,%u%n", &n1, &val, &n2);
+        scsiopts.scsi_pending_defects = true;
         if (n1 == len)
           ataopts.pending_defects_log = 31; // Entries of first page
         else if (n2 == len && val <= 0xffff * 32 - 1)
@@ -711,10 +723,11 @@ static int parse_options(int argc, char** argv, const char * & type,
       ataopts.smart_vendor_attrib  = scsiopts.smart_vendor_attrib = nvmeopts.smart_vendor_attrib = true;
       ataopts.smart_error_log      = scsiopts.smart_error_log     = true;
       nvmeopts.error_log_entries   = 16;
-      ataopts.smart_selftest_log   = scsiopts.smart_selftest_log  = true;
+      ataopts.smart_selftest_log   = scsiopts.smart_selftest_log  = nvmeopts.smart_selftest_log  = true;
       ataopts.smart_selective_selftest_log = true;
       /* scsiopts.smart_background_log = true; */
       scsiopts.smart_ss_media_log = true;
+      ataopts.farm_log_suggest = scsiopts.farm_log_suggest = true;  // Suggests FARM log, if supported (does not pull log!)
       break;
     case 'x':
       ataopts.drive_info           = scsiopts.drive_info          = nvmeopts.drive_info          = true;
@@ -726,7 +739,7 @@ static int parse_options(int argc, char** argv, const char * & type,
       nvmeopts.error_log_entries   = 16;
       ataopts.smart_ext_selftest_log = 25;
       ataopts.retry_selftest_log   = true;
-      scsiopts.smart_error_log     = scsiopts.smart_selftest_log    = true;
+      scsiopts.smart_error_log     = scsiopts.smart_selftest_log  = nvmeopts.smart_selftest_log  = true;
       ataopts.smart_selective_selftest_log = true;
       ataopts.smart_logdir = ataopts.gp_logdir = true;
       ataopts.sct_temp_sts = ataopts.sct_temp_hist = true;
@@ -744,8 +757,12 @@ static int parse_options(int argc, char** argv, const char * & type,
       scsiopts.smart_background_log = true;
       scsiopts.smart_ss_media_log = true;
       scsiopts.sasphy = true;
+      ataopts.farm_log = scsiopts.farm_log = true;  // Helper for FARM debug messages
       scsiopts.smart_env_rep = true;
+      scsiopts.scsi_pending_defects = true;
       scsiopts.tape_device_stats = true;
+      scsiopts.zoned_device_stats = true;
+      scsiopts.general_stats_and_perf = true;
       if (!output_format_set)
         ataopts.output_format |= ata_print_options::FMT_BRIEF;
       break;
@@ -791,10 +808,12 @@ static int parse_options(int argc, char** argv, const char * & type,
         testcnt++;
         ataopts.smart_selftest_type = SHORT_SELF_TEST;
         scsiopts.smart_short_selftest = true;
+        nvmeopts.smart_selftest_type = 0x1; // TODO: enum
       } else if (!strcmp(optarg,"long")) {
         testcnt++;
         ataopts.smart_selftest_type = EXTEND_SELF_TEST;
         scsiopts.smart_extend_selftest = true;
+        nvmeopts.smart_selftest_type = 0x2;
       } else if (!strcmp(optarg,"conveyance")) {
         testcnt++;
         ataopts.smart_selftest_type = CONVEYANCE_SELF_TEST;
@@ -868,8 +887,9 @@ static int parse_options(int argc, char** argv, const char * & type,
       break;
     case 'X':
       testcnt++;
-      scsiopts.smart_selftest_abort = true;
       ataopts.smart_selftest_type = ABORT_SELF_TEST;
+      scsiopts.smart_selftest_abort = true;
+      nvmeopts.smart_selftest_type = 0xf;
       break;
     case 'n':
       // skip disk check if in low-power mode

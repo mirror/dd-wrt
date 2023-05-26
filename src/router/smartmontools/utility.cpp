@@ -4,7 +4,7 @@
  * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-12 Bruce Allen
- * Copyright (C) 2008-22 Christian Franke
+ * Copyright (C) 2008-23 Christian Franke
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -86,14 +86,18 @@ const char * packet_types[] = {
 std::string format_version_info(const char * prog_name, bool full /*= false*/)
 {
   std::string info = strprintf(
-    "%s " PACKAGE_VERSION " "
+    "%s "
+#ifndef SMARTMONTOOLS_RELEASE_DATE
+      "pre-"
+#endif
+      PACKAGE_VERSION " "
 #ifdef SMARTMONTOOLS_SVN_REV
       SMARTMONTOOLS_SVN_DATE " r" SMARTMONTOOLS_SVN_REV
 #else
       "(build date " __DATE__ ")" // checkout without expansion of Id keywords
 #endif
       " [%s] " BUILD_INFO "\n"
-    "Copyright (C) 2002-22, Bruce Allen, Christian Franke, www.smartmontools.org\n",
+    "Copyright (C) 2002-23, Bruce Allen, Christian Franke, www.smartmontools.org\n",
     prog_name, smi()->get_os_version_str().c_str()
   );
   if (!full)
@@ -107,8 +111,12 @@ std::string format_version_info(const char * prog_name, bool full /*= false*/)
     "version 2, or (at your option) any later version.\n"
     "See https://www.gnu.org for further details.\n"
     "\n"
+#ifndef SMARTMONTOOLS_RELEASE_DATE
+    "smartmontools pre-release " PACKAGE_VERSION "\n"
+#else
     "smartmontools release " PACKAGE_VERSION
       " dated " SMARTMONTOOLS_RELEASE_DATE " at " SMARTMONTOOLS_RELEASE_TIME "\n"
+#endif
 #ifdef SMARTMONTOOLS_SVN_REV
     "smartmontools SVN rev " SMARTMONTOOLS_SVN_REV
       " dated " SMARTMONTOOLS_SVN_DATE " at " SMARTMONTOOLS_SVN_TIME "\n"
@@ -119,31 +127,26 @@ std::string format_version_info(const char * prog_name, bool full /*= false*/)
     "smartmontools build with: "
 
 #define N2S_(s) #s
-#define N2S(s) "(" N2S_(s) ")"
-#if   __cplusplus >  201703
-                               "C++2x" N2S(__cplusplus)
+#define N2S(s) N2S_(s)
+#if   __cplusplus == 202002
+                               "C++20"
 #elif __cplusplus == 201703
                                "C++17"
-#elif __cplusplus >  201402
-                               "C++14" N2S(__cplusplus)
 #elif __cplusplus == 201402
                                "C++14"
-#elif __cplusplus >  201103
-                               "C++11" N2S(__cplusplus)
 #elif __cplusplus == 201103
                                "C++11"
-#elif __cplusplus >  199711
-                               "C++98" N2S(__cplusplus)
-#elif __cplusplus == 199711
-                               "C++98"
 #else
-                               "C++"   N2S(__cplusplus)
+                               "C++(" N2S(__cplusplus) ")"
 #endif
 #undef N2S
 #undef N2S_
 
 #if defined(__GNUC__) && defined(__VERSION__) // works also with CLang
                                      ", GCC " __VERSION__
+#endif
+#ifdef __MINGW64_VERSION_STR
+                                     ", MinGW-w64 " __MINGW64_VERSION_STR
 #endif
                                                           "\n"
     "smartmontools configure arguments:"
@@ -386,7 +389,7 @@ void syserror(const char *message){
     const char *errormessage=strerror(errno);
     
     // Check that caller has handed a sensible string, and provide
-    // appropriate output. See perrror(3) man page to understand better.
+    // appropriate output. See perror(3) man page to understand better.
     if (message && *message)
       pout("%s: %s\n",message, errormessage);
     else

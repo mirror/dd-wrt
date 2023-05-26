@@ -618,7 +618,7 @@ int smartcommandhandler(ata_device * device, smart_command_set command, int sele
         else {
           // We haven't gotten output that makes sense; print out some debugging info
           pout("SMART Status command failed\n");
-          pout("Please get assistance from %s\n", PACKAGE_HOMEPAGE);
+          pout("Please get assistance from %s\n", PACKAGE_URL);
           pout("Register values returned from SMART Status command are:\n");
           print_regs(" ", out.out_regs);
           device->set_err(ENOSYS, "Invalid ATA output register values");
@@ -1067,10 +1067,10 @@ bool ataReadExtSelfTestLog(ata_device * device, ata_smart_extselftestlog * log,
   check_multi_sector_sum(log, nsectors, "SMART Extended Self-test Log Structure");
 
   if (isbigendian()) {
-    SWAPV(log->log_desc_index);
     for (unsigned i = 0; i < nsectors; i++) {
+      SWAPV(log[i].log_desc_index);
       for (unsigned j = 0; j < 19; j++)
-        SWAPV(log->log_descs[i].timestamp);
+        SWAPV(log[i].log_descs[j].timestamp);
     }
   }
   return true;

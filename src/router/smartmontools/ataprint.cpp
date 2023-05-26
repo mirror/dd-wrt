@@ -4,7 +4,7 @@
  * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-11 Bruce Allen
- * Copyright (C) 2008-21 Christian Franke
+ * Copyright (C) 2008-22 Christian Franke
  * Copyright (C) 1999-2000 Michael Cornwell <cornwell@acm.org>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -29,6 +29,9 @@
 #include "sg_unaligned.h"
 #include "utility.h"
 #include "knowndrives.h"
+
+#include "farmcmds.h"
+#include "farmprint.h"
 
 const char * ataprint_cpp_cvsid = "$Id$"
                                   ATAPRINT_H_CVSID;
@@ -743,7 +746,7 @@ static void print_drive_info(const ata_identify_device * drive,
     jglb["trim"]["zeroed"] = trim_zeroed;
   }
 
-  // Print Zoned Device Capabilites if reported
+  // Print Zoned Device Capabilities if reported
   // (added in ACS-4, obsoleted in ACS-5)
   unsigned short zoned_caps = word069 & 0x3;
   if (zoned_caps) {
@@ -2194,9 +2197,9 @@ static int PrintSmartErrorlog(const ata_smart_errorlog *data,
   print_on();
   // If log pointer out of range, return
   if (data->error_log_pointer>5){
-    pout("Invalid Error Log index = 0x%02x (T13/1321D rev 1c "
-         "Section 8.41.6.8.2.2 gives valid range from 1 to 5)\n\n",
-         (int)data->error_log_pointer);
+    pout("Invalid Error Log index = 0x%02x (valid range is from 1 to 5)\n",
+         data->error_log_pointer);
+    pout("ATA Error Count: %d (possibly also invalid)\n\n", data->ata_error_count);
     return 0;
   }
 
@@ -2359,6 +2362,7 @@ static int PrintSmartExtErrorLog(ata_device * device,
     // to 0.
     if (!(erridx == 0 && 1 <= log->reserved1 && log->reserved1 <= nentries)) {
       pout("Invalid Error Log index = 0x%04x (reserved = 0x%02x)\n", erridx, log->reserved1);
+      pout("Device Error Count: %d (possibly also invalid)\n\n", log->device_error_count);
       return 0;
     }
     pout("Invalid Error Log index = 0x%04x, trying reserved byte (0x%02x) instead\n", erridx, log->reserved1);
@@ -3237,7 +3241,7 @@ static void print_apm_level(const char * msg, int level)
   }
 }
 
-static void print_ata_security_status(const char * msg, unsigned short state)
+static void print_ata_security_status(const char * msg, unsigned short state, unsigned short master_password_id)
 {
   // Table 6 of T13/2015-D (ACS-2) Revision 7, June 22, 2011
   if (!(state & 0x0001)) {
@@ -3277,7 +3281,13 @@ static void print_ata_security_status(const char * msg, unsigned short state)
     }
   }
 
-  jout("%s%s%s%s%s\n", msg, s1, s2, s3, s4);
+  // Print Master Password ID if set to non-default value
+  // (0x0000, 0xffff: unsupported, 0xfffe: default)
+  char s5[32] = "";
+  if (0x0000 < master_password_id && master_password_id < 0xfffe)
+    snprintf(s5, sizeof(s5), ", Master PW ID: 0x%04x", master_password_id);
+
+  jout("%s%s%s%s%s%s\n", msg, s1, s2, s3, s4, s5);
 
   json::ref jref = jglb["ata_security"];
   jref["state"] = state;
@@ -3291,6 +3301,7 @@ static void print_ata_security_status(const char * msg, unsigned short state)
     if (locked)
       jref["pw_attempts_exceeded"] = !!(state & 0x0010);
   }
+  jref["master_password_id"] = master_password_id;
 }
 
 static void print_standby_timer(const char * msg, int timer, const ata_identify_device & drive)
@@ -3432,6 +3443,7 @@ int ataPrintMain (ata_device * device, const ata_print_options & options)
        || options.devstat_ssd_page
        || !options.devstat_pages.empty()
        || options.pending_defects_log
+       || options.farm_log
   );
 
   unsigned i;
@@ -3459,6 +3471,7 @@ int ataPrintMain (ata_device * device, const ata_print_options & options)
   if (!(   options.drive_info || options.show_presets
         || need_smart_support || need_smart_logdir
         || need_gp_logdir     || need_sct_support
+        || options.farm_log
         || options.sataphy
         || options.identify_word_level >= 0
         || options.get_set_used                      )) {
@@ -3480,6 +3493,8 @@ int ataPrintMain (ata_device * device, const ata_print_options & options)
   if (retid < 0) {
     pout("Read Device Identity failed: %s\n\n",
          (device->get_errno() ? device->get_errmsg() : "Unknown error"));
+    pout("If this is a USB connected device, look at the various "
+         "--device=TYPE variants\n");
     failuretest(MANDATORY_CMD, returnval|=FAILID);
   }
   else if (!nonempty(&drive, sizeof(drive))) {
@@ -3651,7 +3666,7 @@ int ataPrintMain (ata_device * device, const ata_print_options & options)
 
   // Print ATA Security status
   if (options.get_security)
-    print_ata_security_status("ATA Security is:  ", word128);
+    print_ata_security_status("ATA Security is:  ", word128, drive.words088_255[92-88]);
 
   // Print write cache reordering status
   if (options.sct_wcache_reorder_get) {
@@ -4478,7 +4493,41 @@ int ataPrintMain (ata_device * device, const ata_print_options & options)
         PrintSataPhyEventCounters(log_11, options.sataphy_reset);
     }
   }
-
+  // Print ATA FARM log for Seagate ATA drive
+  if (options.farm_log || options.farm_log_suggest) {
+    bool farm_supported = true;
+    // Check if drive is a Seagate drive
+    if (ataIsSeagate(drive, dbentry)) {
+      unsigned nsectors = GetNumLogSectors(gplogdir, 0xA6, true);
+      // Check if the Seagate drive is one that supports FARM
+      if (!nsectors) {
+        if (options.farm_log) {
+          jout("\nFARM log (GP Log 0xA6) not supported\n\n");
+        }
+        farm_supported = false;
+      } else {
+        // If -x/-xall or -a/-all is run without explicit -l farm, suggests FARM log
+        if (options.farm_log_suggest && !options.farm_log) {
+          jout("Seagate FARM log supported [try: -l farm]\n\n");
+          // Otherwise, actually pull the FARM log
+        } else {
+          ataFarmLog farmLog;
+          if (!ataReadFarmLog(device, farmLog, nsectors)) {
+            jout("\nRead FARM log (GP Log 0xA6) failed\n\n");
+            farm_supported = false;
+          } else {
+            ataPrintFarmLog(farmLog);
+          }
+        }
+      }
+    } else {
+      if (options.farm_log) {
+        jout("FARM log (GP Log 0xA6) not supported for non-Seagate drives\n\n");
+      }
+      farm_supported = false;
+    }
+    jglb["seagate_farm_log"]["supported"] = farm_supported;
+  }
   // Set to standby (spindown) mode and set standby timer if not done above
   // (Above commands may spinup drive)
   if (options.set_standby_now) {

@@ -95,7 +95,7 @@ void printwarning(int msgNo, const char* extra) {
       static const char* message[]={
         "The SMART RETURN STATUS return value (smartmontools -H option/Directive)\n can not be retrieved with this version of ATAng, please do not rely on this value\nYou should update to at least 5.2\n",
 
-        "Error SMART Status command failed\nPlease get assistance from \n" PACKAGE_HOMEPAGE "\nRegister values returned from SMART Status command are:\n",
+        "Error SMART Status command failed\nPlease get assistance from \n" PACKAGE_URL "\nRegister values returned from SMART Status command are:\n",
 
         "You must specify a DISK # for 3ware drives with -d 3ware,<n> where <n> begins with 1 for first disk drive\n",
 
@@ -889,7 +889,7 @@ bool freebsd_megaraid_device::scsi_pass_through(scsi_cmnd_io *iop)
         char buff[256];
         const int sz = (int)sizeof(buff);
 
-        np = scsi_get_opcode_name(ucp[0]);
+        np = scsi_get_opcode_name(ucp);
         j = snprintf(buff, sz, " [%s: ", np ? np : "<unknown opcode>");
         for (k = 0; k < (int)iop->cmnd_len; ++k)
             j += snprintf(&buff[j], (sz > j ? (sz - j) : 0), "%02x ", ucp[k]);
@@ -1253,7 +1253,7 @@ bool freebsd_scsi_device::scsi_pass_through(scsi_cmnd_io * iop)
     const unsigned char * ucp = iop->cmnd;
     const char * np;
 
-    np = scsi_get_opcode_name(ucp[0]);
+    np = scsi_get_opcode_name(ucp);
     pout(" [%s: ", np ? np : "<unknown opcode>");
     for (k = 0; k < iop->cmnd_len; ++k)
       pout("%02x ", ucp[k]);
@@ -2037,7 +2037,7 @@ bool freebsd_smart_interface::get_nvme_devlist(smart_device_list & devlist,
   char ctrlpath[64];
 
   for (int ctrlr = 0;; ctrlr++) {
-    sprintf(ctrlpath, "%s%d", NVME_CTRLR_PREFIX, ctrlr);
+    snprintf(ctrlpath, sizeof(ctrlpath), "%s%d", NVME_CTRLR_PREFIX, ctrlr);
     int fd = ::open(ctrlpath, O_RDWR);
     if (fd < 0)
        break;
@@ -2059,9 +2059,9 @@ bool freebsd_smart_interface::get_dev_megaraid(smart_device_list & devlist)
 
   // trying to add devices on first 32 buses, same as StorCLI does
   for(unsigned i = 0; i <=32; i++) {
-      sprintf(ctrlpath, "%s%u", MFI_CTRLR_PREFIX, i);
+      snprintf(ctrlpath, sizeof(ctrlpath), "%s%u", MFI_CTRLR_PREFIX, i);
       megaraid_pd_add_list(ctrlpath, devlist);
-      sprintf(ctrlpath, "%s%u", MRSAS_CTRLR_PREFIX, i);
+      snprintf(ctrlpath, sizeof(ctrlpath), "%s%u", MRSAS_CTRLR_PREFIX, i);
       megaraid_pd_add_list(ctrlpath, devlist);
   }
   return true;
