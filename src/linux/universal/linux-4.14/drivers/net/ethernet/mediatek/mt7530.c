@@ -354,7 +354,7 @@ mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
 
 		udelay(10);
 	}
-	if (i == 20)
+	if (i == 2000)
 		printk("mt7530: vtcr timeout\n");
 }
 
