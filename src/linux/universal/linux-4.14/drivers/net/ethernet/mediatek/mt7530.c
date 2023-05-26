@@ -724,6 +724,45 @@ static int mt7530_set_port_link(struct switch_dev *dev, int port,
 	return 0;
 }
 
+
+static int
+mt7530_sw_set_eee(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u32 t;
+	int port = val->port_vlan;
+	if (port >= dev->ports)
+		return -EINVAL;
+	t = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));
+	if (!!val->value.i) {
+	    t |= PMCR_EEE1G;
+	    t |= PMCR_EEE100;
+	}else{
+	    t &= ~PMCR_EEE1G;
+	    t &= ~PMCR_EEE100;	
+	}
+	return 0;
+}
+
+static int
+mt7530_sw_get_eee(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u32 t;
+	int port = val->port_vlan;
+	if (port >= dev->ports)
+		return -EINVAL;
+	t = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));
+
+	val->value.i = t & PMCR_EEE1G || t & PMCR_EEE100;
+
+	return 0;
+}
+
 static u64 get_mib_counter(struct mt7530_priv *priv, int i, int port)
 {
 	unsigned int port_base;
@@ -946,6 +985,14 @@ static const struct switch_attr mt7621_port[] = {
 		.get = mt7530_sw_get_disable,
 		.max = 1,
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_eee",
+		.description = "Enable EEE PHY sleep mode",
+		.set = mt7530_sw_set_eee,
+		.get = mt7530_sw_get_eee,
+		.max = 1,
+	},
 };
 
 static const struct switch_attr mt7621_vlan[] = {
@@ -973,6 +1020,14 @@ static const struct switch_attr mt7530_port[] = {
 		.description = "Disable Port",
 		.set = mt7530_sw_set_disable,
 		.get = mt7530_sw_get_disable,
+		.max = 1,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_eee",
+		.description = "Enable EEE PHY sleep mode",
+		.set = mt7530_sw_set_eee,
+		.get = mt7530_sw_get_eee,
 		.max = 1,
 	},
 };
