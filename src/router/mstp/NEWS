@@ -1,6 +1,50 @@
 mstpd: Multiple Spanning Tree Protocol Daemon
 =============================================
 
+Version: 0.1.0
+---------------------------------------------
+- libnetlink changes to start supporting Linux per-VLAN STP
+  - libnetlink: Set NLA_F_NESTED in rta_nest
+  - libnetlink: introduce rta_nest and u8, u16, u64 helpers for nesting within rtattr
+    - Jonas Gorski <jonas.gorski@bisdn.de>
+  - make libnetlink.h standalone
+    - Signed-off-by: Pavel Šimerda <code@simerda.eu>
+- utils/ifquery: drop python2 support
+  - Jan Klare <jan.klare@bisdn.de>
+- Replace brctl with ip and bridge commands
+  - Scott Shambarger <devel@shambarger.net>
+- rpm.spec: Fix mock build, requires and quoting
+  - Scott Shambarger <devel@shambarger.net>
+- build: add option to enable installation of ifupdown scripts
+  - Alexandru Ardelean <ardeleanalex@gmail.com>
+
+Version: 0.0.9
+---------------------------------------------
+- Add the "bpdu-filter-port" and "num-rx-bpdu-filtered" attributes to
+  the JSON formatted "show" output.
+  - Mark Gillott <mgillott@vyatta.att-mail.com>
+- Check BPDU Guard before BPDU Filter
+  - Mark Gillott <mgillott@vyatta.att-mail.com>
+- treewide: allow room for null-char in strncpy()
+  - Alexandru Ardelean <ardeleanalex@gmail.com>
+- Handle increasing/decreasing fdelay and maxage in sync in ifcfg files.
+  - link https://github.com/mstpd/mstpd/issues/86
+  - Eemil Lagerspetz <eemil.lagerspetz@non.se.com>
+- move deb packaging changes to own branch
+  - Alexandru Ardelean <ardeleanalex@gmail.com>
+- rpm.spec and ifquery: Use versioned python shebang and fix flake8 warnings
+  - Paul Donohue <git@PaulSD.com>
+- Add systemd unit file
+  - Vincent Bernat <vincent@bernat.ch>
+- Fix destination copy for system unit build artifact from the build folder
+  - Zander Erasmus <veedo.a@gmail.com>
+- ci,github-actions: add first integration
+  - Alexandru Ardelean <ardeleanalex@gmail.com>
+- build: move -Werror flag under --enable-devel opt
+  - Alexandru Ardelean <ardeleanalex@gmail.com>
+- Don't compress man pages
+  - David Seifert <soap@gentoo.org>
+
 Version: 0.0.8
 ---------------------------------------------
 - "BPDU Port Filter" option ("setportbpdufilter") - Disable STP processing on

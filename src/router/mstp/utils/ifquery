@@ -1,32 +1,39 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Crudely emulate ifquery on systems that don't have it.
 
 import sys
 import glob
 
+
 def parse_config(interfaces_file, interface):
     f = open(interfaces_file)
     intf = ''
+    found = False
     for line in f:
         str = line.strip().split(' ')
         len_str = len(str)
-        if 2 > len_str :
+        if 2 > len_str:
             continue
-        if str[0].startswith('#') :
+        if str[0].startswith('#'):
             continue
         # Check if the source <file> keyword is present and extract the file
-        if str[0] == 'source' :
+        if str[0] == 'source':
             for sfile in glob.glob(str[1]):
                 parse_config(sfile, interface)
-        if str[0] == 'iface' :
+        if str[0] == 'iface':
             intf = str[1]
             continue
         # Check if this is the relevant interface.
-        if intf != interface :
+        if intf != interface:
             continue
+        found = True
         # Print configuration.
-        print(str[0]+": "+" ".join(str[1:]))
+        print((str[0]+": "+" ".join(str[1:])))
     f.close()
+    if not found:
+        print("%s: unknown interface %s" % (sys.argv[0], interface))
+        sys.exit(1)
     return
+
 
 parse_config('/etc/network/interfaces', sys.argv[1])

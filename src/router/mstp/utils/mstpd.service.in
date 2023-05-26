@@ -1,0 +1,15 @@
+[Unit]
+Description=MSTP daemon
+Before=network-pre.target
+
+[Service]
+Type=forking
+ExecStart=@bridgestpfile@ restart
+PIDFile=@mstpdpidfile@
+ExecReload=@bridgestpfile@ restart_config
+Restart=always
+PrivateTmp=yes
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

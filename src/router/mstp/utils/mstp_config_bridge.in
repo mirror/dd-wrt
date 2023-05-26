@@ -32,16 +32,16 @@ umask 022
 PATH='/sbin:/usr/sbin:/bin:/usr/bin'
 export PATH
 
-# The mstp ifupdown.sh script will not work properly unless mstpctl, brctl, and
-# ip exist and are executable.
+# The mstp ifupdown.sh script will not work properly unless mstpctl, bridge,
+# and ip exist and are executable.
 mstpctl='@mstpctlfile@'
 if [ ! -x "$mstpctl" ]; then
   echo "'mstpctl' binary does not exist or is not executable" >&2
   exit 2
 fi
-brctl="$(command -v brctl)"
-if [ -z "$brctl" ] || [ ! -x "$brctl" ]; then
-  echo "'brctl' binary does not exist or is not executable" >&2
+brcmd="$(command -v bridge)"
+if [ -z "$brcmd" ] || [ ! -x "$brcmd" ]; then
+  echo "'bridge' binary does not exist or is not executable" >&2
   exit 2
 fi
 ip="$(command -v ip)"
@@ -82,7 +82,7 @@ eval "$(
 IFS= ; echo "$Out" | \
 while read -r Line; do
     OptName="${Line%%: *}"  # Strip everything after the first ': '
-    OptName="IF_$(echo "$OptName" | tr '[:lower:]' '[:upper:]')"  # Uppercase
+    OptName="IF_$(echo "$OptName" | tr '[:lower:]-' '[:upper:]_')"  # Uppercase
     OptVal="${Line#*: }"  # Strip everything before the first ': '
     echo "export $OptName=\"$OptVal\""
 done
