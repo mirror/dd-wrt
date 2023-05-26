@@ -4,7 +4,7 @@
 ::
 :: Home page of code is: http://www.smartmontools.org
 ::
-:: Copyright (C) 2012-17 Christian Franke
+:: Copyright (C) 2012-22 Christian Franke
 ::
 :: SPDX-License-Identifier: GPL-2.0-or-later
 ::
@@ -19,6 +19,12 @@ set err=
 :: Change to script directory (not necessary if run from smartd service)
 cd /d %~dp0
 if errorlevel 1 goto ERROR
+
+:: Detect accidental use of '-M exec /path/to/smartd_warning.cmd'
+if not "!SMARTD_SUBJECT!" == "" (
+  echo smartd_warning.cmd: SMARTD_SUBJECT is already set - possible recursion
+  goto ERROR
+)
 
 :: Parse options
 set dryrun=
@@ -93,11 +99,13 @@ if     "!TMP!" == "" set SMARTD_FULLMSGFILE=smartd_warning-!RANDOM!.txt
     if not "!SMARTD_PREVCNT!" == "0" echo The original message about this issue was sent at !SMARTD_TFIRST!
     if "!SMARTD_NEXTDAYS!" == "" (
       echo No additional messages about this problem will be sent.
+    ) else ( if "!SMARTD_NEXTDAYS!" == "0" (
+      echo Another message will be sent upon next check if the problem persists.
     ) else ( if "!SMARTD_NEXTDAYS!" == "1" (
       echo Another message will be sent in 24 hours if the problem persists.
     ) else (
       echo Another message will be sent in !SMARTD_NEXTDAYS! days if the problem persists.
-    ))
+    )))
   )
 ) > "!SMARTD_FULLMSGFILE!"
 if errorlevel 1 goto ERROR

@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2016-21 Christian Franke
+ * Copyright (C) 2016-23 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -228,8 +228,9 @@ unsigned nvme_read_error_log(nvme_device * device, nvme_error_log_page * error_l
   unsigned n = nvme_read_log_page(device, 0xffffffff, 0x01, error_log,
                                   num_entries * sizeof(*error_log), lpo_sup);
 
+  unsigned read_entries = n / sizeof(*error_log);
   if (isbigendian()) {
-    for (unsigned i = 0; i < n; i++) {
+    for (unsigned i = 0; i < read_entries; i++) {
       swapx(&error_log[i].error_count);
       swapx(&error_log[i].sqid);
       swapx(&error_log[i].cmdid);
@@ -240,7 +241,7 @@ unsigned nvme_read_error_log(nvme_device * device, nvme_error_log_page * error_l
     }
   }
 
-  return n / sizeof(*error_log);
+  return read_entries;
 }
 
 // Read NVMe SMART/Health Information log.
@@ -257,4 +258,29 @@ bool nvme_read_smart_log(nvme_device * device, nvme_smart_log & smart_log)
   }
 
   return true;
+}
+
+// Read NVMe Self-test Log.
+bool nvme_read_self_test_log(nvme_device * device, uint32_t nsid,
+  smartmontools::nvme_self_test_log & self_test_log)
+{
+  if (!nvme_read_log_page_1(device, nsid, 0x06, &self_test_log, sizeof(self_test_log)))
+    return false;
+
+  if (isbigendian()) {
+    for (int i = 0; i < 20; i++)
+      swapx(&self_test_log.results[i].nsid);
+  }
+
+  return true;
+}
+
+// Start Self-test
+bool nvme_self_test(nvme_device * device, uint8_t stc, uint32_t nsid)
+{
+  nvme_cmd_in in;
+  in.opcode = nvme_admin_dev_self_test;
+  in.nsid = nsid;
+  in.cdw10 = stc;
+  return nvme_pass_through(device, in);
 }

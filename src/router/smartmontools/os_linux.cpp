@@ -73,6 +73,7 @@
 #include "utility.h"
 #include "cciss.h"
 #include "megaraid.h"
+#include "sssraid.h"
 #include "aacraid.h"
 #include "nvmecmds.h"
 
@@ -183,24 +184,24 @@ bool linux_smart_device::close()
 
 // examples for smartctl
 static const char  smartctl_examples[] =
-		  "=================================================== SMARTCTL EXAMPLES =====\n\n"
-		  "  smartctl --all /dev/sda                    (Prints all SMART information)\n\n"
-		  "  smartctl --smart=on --offlineauto=on --saveauto=on /dev/sda\n"
-		  "                                              (Enables SMART on first disk)\n\n"
-		  "  smartctl --test=long /dev/sda          (Executes extended disk self-test)\n\n"
-		  "  smartctl --attributes --log=selftest --quietmode=errorsonly /dev/sda\n"
-		  "                                      (Prints Self-Test & Attribute errors)\n"
-		  "  smartctl --all --device=3ware,2 /dev/sda\n"
-		  "  smartctl --all --device=3ware,2 /dev/twe0\n"
-		  "  smartctl --all --device=3ware,2 /dev/twa0\n"
-		  "  smartctl --all --device=3ware,2 /dev/twl0\n"
-		  "          (Prints all SMART info for 3rd ATA disk on 3ware RAID controller)\n"
-		  "  smartctl --all --device=hpt,1/1/3 /dev/sda\n"
-		  "          (Prints all SMART info for the SATA disk attached to the 3rd PMPort\n"
-		  "           of the 1st channel on the 1st HighPoint RAID controller)\n"
-		  "  smartctl --all --device=areca,3/1 /dev/sg2\n"
-		  "          (Prints all SMART info for 3rd ATA disk of the 1st enclosure\n"
-		  "           on Areca RAID controller)\n"
+                  "=================================================== SMARTCTL EXAMPLES =====\n\n"
+                  "  smartctl --all /dev/sda                    (Prints all SMART information)\n\n"
+                  "  smartctl --smart=on --offlineauto=on --saveauto=on /dev/sda\n"
+                  "                                              (Enables SMART on first disk)\n\n"
+                  "  smartctl --test=long /dev/sda          (Executes extended disk self-test)\n\n"
+                  "  smartctl --attributes --log=selftest --quietmode=errorsonly /dev/sda\n"
+                  "                                      (Prints Self-Test & Attribute errors)\n"
+                  "  smartctl --all --device=3ware,2 /dev/sda\n"
+                  "  smartctl --all --device=3ware,2 /dev/twe0\n"
+                  "  smartctl --all --device=3ware,2 /dev/twa0\n"
+                  "  smartctl --all --device=3ware,2 /dev/twl0\n"
+                  "          (Prints all SMART info for 3rd ATA disk on 3ware RAID controller)\n"
+                  "  smartctl --all --device=hpt,1/1/3 /dev/sda\n"
+                  "          (Prints all SMART info for the SATA disk attached to the 3rd PMPort\n"
+                  "           of the 1st channel on the 1st HighPoint RAID controller)\n"
+                  "  smartctl --all --device=areca,3/1 /dev/sg2\n"
+                  "          (Prints all SMART info for 3rd ATA disk of the 1st enclosure\n"
+                  "           on Areca RAID controller)\n"
   ;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -412,7 +413,7 @@ int linux_ata_device::ata_command_interface(smart_command_set command, int selec
 
     // We haven't gotten output that makes sense; print out some debugging info
     syserror("Error SMART Status command failed");
-    pout("Please get assistance from " PACKAGE_HOMEPAGE "\n");
+    pout("Please get assistance from " PACKAGE_URL "\n");
     pout("Register values returned from SMART Status command are:\n");
     pout("ST =0x%02x\n",(int)buff[0]);
     pout("ERR=0x%02x\n",(int)buff[1]);
@@ -477,10 +478,13 @@ int linux_ata_device::ata_command_interface(smart_command_set command, int selec
  * mapping disk devices (e.g. /dev/sda) to the corresponding sg device
  * (e.g. /dev/sg2). In the linux kernel 2.6 series most of the facilities of
  * the sg driver have become available via the SG_IO ioctl which is available
- * on all SCSI devices (on SCSI tape devices from lk 2.6.6).
- * So the strategy below is to find out if the SG_IO ioctl is available and
- * if so use it; failing that use the older SCSI_IOCTL_SEND_COMMAND ioctl.
- * Should work in 2.0, 2.2, 2.4 and 2.6 series linux kernels. */
+ * on all SCSI devices (on SCSI tape devices from lk 2.6.6). Now in lk 5.17
+ * the SCSI_IOCTL_SEND_COMMAND ioctl is still present but deprecated sending
+ * a warning to the log the first time (after power up) it is used. The SG_IO
+ * Version 3 interface is the most widely used (circa lk 5.17 in 2022) and is
+ * available on the primary block device name (e.g. /dev/sdc) for all SCSI
+ * disks (and tapes) including all USB attached storage and all ATA/SATA
+ * storage. */
 
 #define MAX_DXFER_LEN 1024      /* can be increased if necessary */
 #define SEND_IOCTL_RESP_SENSE_LEN 16    /* ioctl limitation */
@@ -493,33 +497,24 @@ int linux_ata_device::ata_command_interface(smart_command_set command, int selec
 #define LSCSI_DID_BUS_BUSY  0x2
 #define LSCSI_DID_NO_CONNECT  0x1
 
-#ifndef SCSI_IOCTL_SEND_COMMAND
-#define SCSI_IOCTL_SEND_COMMAND 1
-#endif
 
-#define SG_IO_USE_DETECT 0
-#define SG_IO_UNSUPP 1
-#define SG_IO_USE_V3 3
-#define SG_IO_USE_V4 4
+enum lk_sg_io_ifc_t {
+    SG_IO_USE_DETECT = 0,
+    SG_IO_UNSUPP = 1,
+    SG_IO_USE_V3 = 3,
+    SG_IO_USE_V4 = 4,
+};
 
-static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
-                         int sgio_ver);
-static int sisc_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report);
+static enum lk_sg_io_ifc_t sg_io_interface = SG_IO_USE_DETECT;
 
-static int sg_io_state = SG_IO_USE_DETECT;
 
 /* Preferred implementation for issuing SCSI commands in linux. This
  * function uses the SG_IO ioctl. Return 0 if command issued successfully
  * (various status values should still be checked). If the SCSI command
  * cannot be issued then a negative errno value is returned. */
 static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
-                         int sg_io_ver)
+                         enum lk_sg_io_ifc_t sg_io_ifc)
 {
-#ifndef SG_IO
-    ARGUSED(dev_fd); ARGUSED(iop); ARGUSED(report);
-    return -ENOTTY;
-#else
-
     /* we are filling structures for both versions, but using only one requested */
     struct sg_io_hdr io_hdr_v3;
     struct sg_io_v4  io_hdr_v4;
@@ -527,19 +522,20 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
 #ifdef SCSI_CDB_CHECK
     bool ok = is_scsi_cdb(iop->cmnd, iop->cmnd_len);
     if (! ok) {
-	int n = iop->cmnd_len;
-	const unsigned char * ucp = iop->cmnd;
+        int n = iop->cmnd_len;
+        const unsigned char * ucp = iop->cmnd;
 
-	pout(">>>>>>>> %s: cdb seems invalid, opcode=0x%x, len=%d, cdb:\n",
-	     __func__, ((n > 0) ? ucp[0] : 0), n);
+        pout(">>>>>>>> %s: cdb seems invalid, opcode=0x%x, len=%d, cdb:\n",
+             __func__, ((n > 0) ? ucp[0] : 0), n);
         if (n > 0) {
-	    if (n > 16)
-	        pout("  <<truncating to first 16 bytes>>\n");
-	    dStrHex((const uint8_t *)ucp, ((n > 16) ? 16 : n), 1);
-	}
+            if (n > 16)
+                pout("  <<truncating to first 16 bytes>>\n");
+            dStrHex((const uint8_t *)ucp, ((n > 16) ? 16 : n), 1);
+        }
      }
 #endif
 
+#if 0
     if (report > 0) {
         int k, j;
         const unsigned char * ucp = iop->cmnd;
@@ -547,8 +543,8 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
         char buff[256];
         const int sz = (int)sizeof(buff);
 
-        pout(">>>> do_scsi_cmnd_io: sg_io_ver=%d\n", sg_io_ver);
-        np = scsi_get_opcode_name(ucp[0]);
+        pout(">>>> %s: sg_io_ifc=%d\n", __func__, (int)sg_io_ifc);
+        np = scsi_get_opcode_name(ucp);
         j = snprintf(buff, sz, " [%s: ", np ? np : "<unknown opcode>");
         for (k = 0; k < (int)iop->cmnd_len; ++k)
             j += snprintf(&buff[j], (sz > j ? (sz - j) : 0), "%02x ", ucp[k]);
@@ -564,7 +560,10 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
         else
             snprintf(&buff[j], (sz > j ? (sz - j) : 0), "]\n");
         pout("%s", buff);
+        pout("%s\n", buff);
     }
+#endif
+
     memset(&io_hdr_v3, 0, sizeof(struct sg_io_hdr));
     memset(&io_hdr_v4, 0, sizeof(struct sg_io_v4));
 
@@ -611,7 +610,7 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
 
     void * io_hdr = NULL;
 
-    switch (sg_io_ver) {
+    switch (sg_io_ifc) {
       case SG_IO_USE_V3:
           io_hdr = &io_hdr_v3;
           break;
@@ -627,14 +626,14 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
     if (ioctl(dev_fd, SG_IO, io_hdr) < 0) {
         if (report)
             pout("  SG_IO ioctl failed, errno=%d [%s], SG_IO_V%d\n", errno,
-                 strerror(errno), sg_io_ver);
+                 strerror(errno), (int)sg_io_ifc);
         return -errno;
     }
 
     unsigned int sg_driver_status = 0,  sg_transport_status = 0, sg_info = 0,
         sg_duration = 0;
 
-    if (sg_io_ver == SG_IO_USE_V3) {
+    if (sg_io_ifc == SG_IO_USE_V3) {
         iop->resid =            io_hdr_v3.resid;
         iop->scsi_status =      io_hdr_v3.status;
         sg_driver_status =      io_hdr_v3.driver_status;
@@ -644,7 +643,7 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
         sg_duration =           io_hdr_v3.duration;
     }
 
-    if (sg_io_ver == SG_IO_USE_V4) {
+    if (sg_io_ifc == SG_IO_USE_V4) {
        switch (iop->dxfer_dir) {
            case DXFER_NONE:
                iop->resid = 0;
@@ -663,7 +662,9 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
        iop->resp_sense_len =    io_hdr_v4.response_len;
        sg_duration =            io_hdr_v4.duration;
     }
+    if (sg_duration) { }	// silence warning
 
+#if 0
     if (report > 0) {
         pout("  scsi_status=0x%x, sg_transport_status=0x%x, sg_driver_status=0x%x\n"
              "  sg_info=0x%x  sg_duration=%d milliseconds  resid=%d\n", iop->scsi_status,
@@ -674,8 +675,8 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
             if (DXFER_FROM_DEVICE == iop->dxfer_dir) {
                 int trunc, len;
 
-		len = iop->dxfer_len - iop->resid;
-		trunc = (len > 256) ? 1 : 0;
+                len = iop->dxfer_len - iop->resid;
+                trunc = (len > 256) ? 1 : 0;
                 if (len > 0) {
                     pout("  Incoming data, len=%d%s:\n", len,
                          (trunc ? " [only first 256 bytes shown]" : ""));
@@ -685,6 +686,7 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
             }
         }
     }
+#endif
 
     if (sg_info & SG_INFO_CHECK) { /* error or warning */
         int masked_driver_status = (LSCSI_DRIVER_MASK & sg_driver_status);
@@ -732,128 +734,6 @@ static int sg_io_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report,
         }
     }
     return 0;
-#endif
-}
-
-struct linux_ioctl_send_command
-{
-    int inbufsize;
-    int outbufsize;
-    uint8_t buff[MAX_DXFER_LEN + 16];
-};
-
-/* The Linux SCSI_IOCTL_SEND_COMMAND ioctl is primitive and it doesn't
- * support: CDB length (guesses it from opcode), resid and timeout.
- * Patches in Linux 2.4.21 and 2.5.70 to extend SEND DIAGNOSTIC timeout
- * to 2 hours in order to allow long foreground extended self tests. */
-static int sisc_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop, int report)
-{
-    struct linux_ioctl_send_command wrk;
-    int status, buff_offset;
-    size_t len;
-
-    memcpy(wrk.buff, iop->cmnd, iop->cmnd_len);
-    buff_offset = iop->cmnd_len;
-    if (report > 0) {
-        int k, j;
-        const unsigned char * ucp = iop->cmnd;
-        const char * np;
-        char buff[256];
-        const int sz = (int)sizeof(buff);
-
-        np = scsi_get_opcode_name(ucp[0]);
-        j = snprintf(buff, sz, " [%s: ", np ? np : "<unknown opcode>");
-        for (k = 0; k < (int)iop->cmnd_len; ++k)
-            j += snprintf(&buff[j], (sz > j ? (sz - j) : 0), "%02x ", ucp[k]);
-        if ((report > 1) && (DXFER_TO_DEVICE == iop->dxfer_dir)) {
-            int trunc = (iop->dxfer_len > 256) ? 1 : 0;
-
-            snprintf(&buff[j], (sz > j ? (sz - j) : 0), "]\n  Outgoing "
-                     "data, len=%d%s:\n", (int)iop->dxfer_len,
-                     (trunc ? " [only first 256 bytes shown]" : ""));
-            dStrHex(iop->dxferp, (trunc ? 256 : iop->dxfer_len) , 1);
-        }
-        else
-            snprintf(&buff[j], (sz > j ? (sz - j) : 0), "]\n");
-        pout("%s", buff);
-    }
-    switch (iop->dxfer_dir) {
-        case DXFER_NONE:
-            wrk.inbufsize = 0;
-            wrk.outbufsize = 0;
-            break;
-        case DXFER_FROM_DEVICE:
-            wrk.inbufsize = 0;
-            if (iop->dxfer_len > MAX_DXFER_LEN)
-                return -EINVAL;
-            wrk.outbufsize = iop->dxfer_len;
-            break;
-        case DXFER_TO_DEVICE:
-            if (iop->dxfer_len > MAX_DXFER_LEN)
-                return -EINVAL;
-            memcpy(wrk.buff + buff_offset, iop->dxferp, iop->dxfer_len);
-            wrk.inbufsize = iop->dxfer_len;
-            wrk.outbufsize = 0;
-            break;
-        default:
-            pout("do_scsi_cmnd_io: bad dxfer_dir\n");
-            return -EINVAL;
-    }
-    iop->resp_sense_len = 0;
-    iop->scsi_status = 0;
-    iop->resid = 0;
-    status = ioctl(dev_fd, SCSI_IOCTL_SEND_COMMAND, &wrk);
-    if (-1 == status) {
-        if (report)
-            pout("  SCSI_IOCTL_SEND_COMMAND ioctl failed, errno=%d [%s]\n",
-                 errno, strerror(errno));
-        return -errno;
-    }
-    if (0 == status) {
-        if (report > 0)
-            pout("  status=0\n");
-        if (DXFER_FROM_DEVICE == iop->dxfer_dir) {
-            memcpy(iop->dxferp, wrk.buff, iop->dxfer_len);
-            if (report > 1) {
-                int trunc = (iop->dxfer_len > 256) ? 1 : 0;
-
-                pout("  Incoming data, len=%d%s:\n", (int)iop->dxfer_len,
-                     (trunc ? " [only first 256 bytes shown]" : ""));
-                dStrHex(iop->dxferp, (trunc ? 256 : iop->dxfer_len) , 1);
-            }
-        }
-        return 0;
-    }
-    iop->scsi_status = status & 0x7e; /* bits 0 and 7 used to be for vendors */
-    if (LSCSI_DRIVER_SENSE == ((status >> 24) & 0xf))
-        iop->scsi_status = SCSI_STATUS_CHECK_CONDITION;
-    len = (SEND_IOCTL_RESP_SENSE_LEN < iop->max_sense_len) ?
-                SEND_IOCTL_RESP_SENSE_LEN : iop->max_sense_len;
-    if ((SCSI_STATUS_CHECK_CONDITION == iop->scsi_status) &&
-        iop->sensep && (len > 0)) {
-        memcpy(iop->sensep, wrk.buff, len);
-        iop->resp_sense_len = len;
-        if (report > 1) {
-            pout("  >>> Sense buffer, len=%d:\n", (int)len);
-            dStrHex(wrk.buff, len , 1);
-        }
-    }
-    if (report) {
-        if (SCSI_STATUS_CHECK_CONDITION == iop->scsi_status) {
-            pout("  status=%x: sense_key=%x asc=%x ascq=%x\n", status & 0xff,
-                 wrk.buff[2] & 0xf, wrk.buff[12], wrk.buff[13]);
-        }
-        else
-            pout("  status=0x%x\n", status);
-    }
-    if (iop->scsi_status > 0)
-        return 0;
-    else {
-        if (report > 0)
-            pout("  ioctl status=0x%x but scsi status=0, fail with EIO\n",
-                 status);
-        return -EIO;      /* give up, assume no device there */
-    }
 }
 
 /* SCSI command transmission interface function, linux version.
@@ -868,39 +748,42 @@ static int do_normal_scsi_cmnd_io(int dev_fd, struct scsi_cmnd_io * iop,
 {
     int res;
 
-    /* implementation relies on static sg_io_state variable. If not
+    /* implementation relies on static sg_io_interface variable. If not
      * previously set tries the SG_IO ioctl. If that succeeds assume
      * that SG_IO ioctl functional. If it fails with an errno value
-     * other than ENODEV (no device) or permission then assume
-     * SCSI_IOCTL_SEND_COMMAND is the only option. */
-    switch (sg_io_state) {
+     * other than ENODEV (no device) or a permissions problem then
+     * assume the SG_IO_USE_V3 interface. */
+    switch (sg_io_interface) {
     case SG_IO_USE_DETECT:
         /* ignore report argument */
         /* Try SG_IO V3 first */
         if (0 == (res = sg_io_cmnd_io(dev_fd, iop, report, SG_IO_USE_V3))) {
-            sg_io_state = SG_IO_USE_V3;
+            sg_io_interface = SG_IO_USE_V3;
             return 0;
         } else if ((-ENODEV == res) || (-EACCES == res) || (-EPERM == res))
             return res;         /* wait until we see a device */
         /* See if we can use SG_IO V4 * */
         if (0 == (res = sg_io_cmnd_io(dev_fd, iop, report, SG_IO_USE_V4))) {
-            sg_io_state = SG_IO_USE_V4;
+            sg_io_interface = SG_IO_USE_V4;
             return 0;
         } else if ((-ENODEV == res) || (-EACCES == res) || (-EPERM == res))
             return res;         /* wait until we see a device */
-        /* fallback to the SCSI_IOCTL_SEND_COMMAND */
-        sg_io_state = SG_IO_UNSUPP;
+        sg_io_interface = SG_IO_UNSUPP;
         /* FALLTHRU */
     case SG_IO_UNSUPP:
-        /* deprecated SCSI_IOCTL_SEND_COMMAND ioctl */
-        return sisc_cmnd_io(dev_fd, iop, report);
+        /* previously called SCSI_IOCTL_SEND_COMMAND ioctl which has now
+         * been removed. The SG_IO_USE_V3 is most widely used now in Linux
+         * (circa 2022), try it again. */
+        sg_io_interface = SG_IO_USE_V3;
+        /* FALLTHRU */
     case SG_IO_USE_V3:
     case SG_IO_USE_V4:
         /* use SG_IO V3 or V4 ioctl, depending on availabiliy */
-        return sg_io_cmnd_io(dev_fd, iop, report, sg_io_state);
+        return sg_io_cmnd_io(dev_fd, iop, report, sg_io_interface);
     default:
-        pout(">>>> do_scsi_cmnd_io: bad sg_io_state=%d\n", sg_io_state);
-        sg_io_state = SG_IO_USE_DETECT;
+        pout(">>>> do_scsi_cmnd_io: bad sg_io_interface=%d\n",
+             (int)sg_io_interface);
+        sg_io_interface = SG_IO_USE_DETECT;
         return -EIO;    /* report error and reset state */
     }
 }
@@ -994,7 +877,7 @@ bool linux_aacraid_device::open()
   char dev_name[128];
   snprintf(dev_name, sizeof(dev_name), "/dev/aac%d", aHost);
 
-  //Initial open of dev name to check if it exsists
+  //Initial open of dev name to check if it exists
   int afd = ::open(dev_name,O_RDWR);
 
   if(afd < 0 && errno == ENOENT) {
@@ -1046,7 +929,7 @@ bool linux_aacraid_device::scsi_pass_through(scsi_cmnd_io *iop)
     char buff[256];
     const int sz = (int)sizeof(buff);
 
-    np = scsi_get_opcode_name(ucp[0]);
+    np = scsi_get_opcode_name(ucp);
     j  = snprintf(buff, sz, " [%s: ", np ? np : "<unknown opcode>");
     for (k = 0; k < (int)iop->cmnd_len; ++k)
       j += snprintf(&buff[j], (sz > j ? (sz - j) : 0), "%02x ", ucp[k]);
@@ -1144,7 +1027,7 @@ bool linux_aacraid_device::scsi_pass_through(scsi_cmnd_io *iop)
 
   if (rc != 0)
     return set_err(errno, "aacraid send_raw_srb: %d.%d = %s",
-		   aLun, aId, strerror(errno));
+                   aLun, aId, strerror(errno));
 
 /* see kernel aacraid.h and MSDN SCSI_REQUEST_BLOCK documentation */
 #define SRB_STATUS_SUCCESS            0x1
@@ -1175,7 +1058,7 @@ bool linux_aacraid_device::scsi_pass_through(scsi_cmnd_io *iop)
 
     default:
       return set_err(EIO, "aacraid result: %d.%d = 0x%x",
-		     aLun, aId, pReply->srb_status);
+                     aLun, aId, pReply->srb_status);
   }
 }
 
@@ -1351,7 +1234,7 @@ bool linux_megaraid_device::scsi_pass_through(scsi_cmnd_io *iop)
         char buff[256];
         const int sz = (int)sizeof(buff);
 
-        np = scsi_get_opcode_name(ucp[0]);
+        np = scsi_get_opcode_name(ucp);
         j = snprintf(buff, sz, " [%s: ", np ? np : "<unknown opcode>");
         for (k = 0; k < (int)iop->cmnd_len; ++k)
             j += snprintf(&buff[j], (sz > j ? (sz - j) : 0), "%02x ", ucp[k]);
@@ -1399,8 +1282,8 @@ bool linux_megaraid_device::megasas_cmd(int cdbLen, void *cdb,
   int dataLen, void *data,
   int /*senseLen*/, void * /*sense*/, int /*report*/, int dxfer_dir)
 {
-  struct megasas_pthru_frame	*pthru;
-  struct megasas_iocpacket	uio;
+  struct megasas_pthru_frame    *pthru;
+  struct megasas_iocpacket      uio;
 
   memset(&uio, 0, sizeof(uio));
   pthru = &uio.frame.pthru;
@@ -1496,6 +1379,146 @@ bool linux_megaraid_device::megadev_cmd(int cdbLen, void *cdb,
                    m_hba, m_disknum, errno,
                    uio.pthru.scsistatus);
   }
+  return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/// 3SNIC RAID support
+
+class linux_sssraid_device
+: public /* implements */ scsi_device,
+  public /* extends */ linux_smart_device
+{
+public:
+  linux_sssraid_device(smart_interface *intf, const char *name,
+    unsigned int eid, unsigned int sid);
+
+  virtual bool scsi_pass_through(scsi_cmnd_io *iop) override;
+
+private:
+  unsigned int m_eid;
+  unsigned int m_sid;
+
+  bool scsi_cmd(scsi_cmnd_io *iop);
+};
+
+linux_sssraid_device::linux_sssraid_device(smart_interface *intf,
+  const char *dev_name, unsigned int eid, unsigned int sid)
+ : smart_device(intf, dev_name, "sssraid", "sssraid"),
+   linux_smart_device(O_RDWR | O_NONBLOCK),
+   m_eid(eid), m_sid(sid)
+{
+  set_info().info_name = strprintf("%s [sssraid_disk_%02d_%02d]", dev_name, eid, sid);
+  set_info().dev_type = strprintf("sssraid,%d,%d", eid, sid);
+}
+
+bool linux_sssraid_device::scsi_pass_through(scsi_cmnd_io *iop)
+{
+  int report = scsi_debugmode;
+  if (report > 0) {
+    int k, j;
+    const unsigned char * ucp = iop->cmnd;
+    const char * np;
+    char buff[256];
+    const int sz = (int)sizeof(buff);
+
+    np = scsi_get_opcode_name(ucp);
+    j = snprintf(buff, sz, " [%s: ", np ? np : "<unknown opcode>");
+    for (k = 0; k < (int)iop->cmnd_len; ++k)
+      j += snprintf(&buff[j], (sz > j ? (sz - j) : 0), "%02x ", ucp[k]);
+    if ((report > 1) && (DXFER_TO_DEVICE == iop->dxfer_dir) && (iop->dxferp)) {
+      int trunc = (iop->dxfer_len > 256) ? 1 : 0;
+
+      snprintf(&buff[j], (sz > j ? (sz - j) : 0), "]\n  Outgoing "
+              "data, len=%d%s:\n", (int)iop->dxfer_len,
+              (trunc ? " [only first 256 bytes shown]" : ""));
+      dStrHex(iop->dxferp, (trunc ? 256 : iop->dxfer_len) , 1);
+    }
+    else
+      snprintf(&buff[j], (sz > j ? (sz - j) : 0), "]\n");
+    pout("%s", buff);
+  }
+
+  bool r = scsi_cmd(iop);
+  return r;
+}
+
+/* Issue passthrough scsi commands to sssraid controllers */
+bool linux_sssraid_device::scsi_cmd(scsi_cmnd_io *iop)
+{
+  struct sg_io_v4 io_hdr_v4{};
+  struct cmd_scsi_passthrough scsi_param{};
+  unsigned char sense_buff[96] = { 0 };
+  struct bsg_ioctl_cmd bsg_param{};
+  scsi_param.sense_buffer = sense_buff;
+  scsi_param.sense_buffer_len = 96;
+  scsi_param.cdb_len = iop->cmnd_len;
+  memcpy(scsi_param.cdb, iop->cmnd, iop->cmnd_len);
+  scsi_param.loc.enc_id = m_eid;
+  scsi_param.loc.slot_id = m_sid;
+
+  io_hdr_v4.guard = 'Q';
+  io_hdr_v4.protocol = BSG_PROTOCOL_SCSI;
+  io_hdr_v4.subprotocol = BSG_SUB_PROTOCOL_SCSI_TRANSPORT;
+  io_hdr_v4.response = (uintptr_t)sense_buff;
+  io_hdr_v4.max_response_len = ADM_SCSI_CDB_SENSE_MAX_LEN;
+  io_hdr_v4.request_len = sizeof(struct bsg_ioctl_cmd);
+  io_hdr_v4.request = (uintptr_t)(&bsg_param);
+  io_hdr_v4.timeout =  BSG_APPEND_TIMEOUT_MS + DEFAULT_CONMMAND_TIMEOUT_MS;
+
+  switch (iop->dxfer_dir) {
+    case DXFER_NONE:
+      bsg_param.ioctl_pthru.opcode = ADM_RAID_SET;
+      break;
+    case DXFER_FROM_DEVICE:
+      io_hdr_v4.din_xferp = (uintptr_t)iop->dxferp;
+      io_hdr_v4.din_xfer_len = iop->dxfer_len;
+      bsg_param.ioctl_pthru.opcode = ADM_RAID_READ;
+      break;
+    case DXFER_TO_DEVICE:
+      io_hdr_v4.dout_xferp = (uintptr_t)iop->dxferp;
+      io_hdr_v4.dout_xfer_len = iop->dxfer_len;
+      bsg_param.ioctl_pthru.opcode = ADM_RAID_WRITE;
+      break;
+    default:
+      pout("scsi_cmd: bad dxfer_dir\n");
+      return set_err(EINVAL, "scsi_cmd: bad dxfer_dir\n");
+  }
+
+  bsg_param.msgcode = ADM_BSG_MSGCODE_SCSI_PTHRU;
+  bsg_param.ioctl_pthru.timeout_ms = DEFAULT_CONMMAND_TIMEOUT_MS;
+  bsg_param.ioctl_pthru.info_1.subopcode = ADM_CMD_SCSI_PASSTHROUGH;
+  bsg_param.ioctl_pthru.addr = (uintptr_t)iop->dxferp;
+  bsg_param.ioctl_pthru.data_len = iop->dxfer_len;
+
+  bsg_param.ioctl_pthru.info_0.cdb_len = scsi_param.cdb_len;
+  bsg_param.ioctl_pthru.sense_addr = (uintptr_t)scsi_param.sense_buffer;
+  bsg_param.ioctl_pthru.info_0.res_sense_len = scsi_param.sense_buffer_len;
+  io_hdr_v4.response = (uintptr_t)scsi_param.sense_buffer;
+  io_hdr_v4.response_len = scsi_param.sense_buffer_len;
+  bsg_param.ioctl_pthru.info_3.eid = scsi_param.loc.enc_id;
+  bsg_param.ioctl_pthru.info_3.sid = scsi_param.loc.slot_id;
+  bsg_param.ioctl_pthru.info_4.did = scsi_param.loc.did;
+  bsg_param.ioctl_pthru.info_4.did_flag = scsi_param.loc.flag;
+
+  memcpy(&bsg_param.ioctl_pthru.cdw16, scsi_param.cdb, scsi_param.cdb_len);
+
+  int r = ioctl(get_fd(), SG_IO, &io_hdr_v4);
+  if (r != 0) {
+    return set_err((errno ? errno : EIO), "scsi_cmd ioctl failed: %d %d,%d",
+                   errno, scsi_param.loc.enc_id, scsi_param.loc.slot_id);
+  }
+
+  iop->scsi_status = io_hdr_v4.device_status;
+
+  int len =  ( iop->max_sense_len < io_hdr_v4.max_response_len ) ?
+               iop->max_sense_len : io_hdr_v4.max_response_len;
+
+  if (iop->sensep && len > 0) {
+    memcpy(iop->sensep, reinterpret_cast<void *>(io_hdr_v4.response), len);
+    iop->resp_sense_len = len;
+  }
+
   return true;
 }
 
@@ -1664,10 +1687,10 @@ static int setup_3ware_nodes(const char *nodename, const char *driver_name)
         break;
       } else {
 #ifdef HAVE_LIBSELINUX
-	if (selinux_enabled && node_context) {
-	  freecon(node_context);
-	  node_context = NULL;
-	}
+        if (selinux_enabled && node_context) {
+          freecon(node_context);
+          node_context = NULL;
+        }
 #endif
         continue;
       }
@@ -1742,6 +1765,10 @@ bool linux_escalade_device::open()
 
 // TODO: Function no longer useful
 //void printwarning(smart_command_set command);
+
+#ifndef SCSI_IOCTL_SEND_COMMAND
+#define SCSI_IOCTL_SEND_COMMAND 1
+#endif
 
 // PURPOSE
 //   This is an interface routine meant to isolate the OS dependent
@@ -2029,10 +2056,10 @@ static int find_areca_in_proc()
      }
 
      if (strcmp(linebuf, proc_format_string)) {
-     	// wrong format!
-	// Fix this by comparing only tokens not white space!!
-	pout("Unexpected format %s in /proc/scsi/sg/device_hdr\n", proc_format_string);
-	return 3;
+        // wrong format!
+        // Fix this by comparing only tokens not white space!!
+        pout("Unexpected format %s in /proc/scsi/sg/device_hdr\n", proc_format_string);
+        return 3;
      }
 
     // Format is understood, now search for correct device
@@ -2043,9 +2070,9 @@ static int find_areca_in_proc()
     // search all lines of /proc/scsi/sg/devices
     while (9 == fscanf(fp, "%d %d %d %d %d %d %d %d %d", &host, &chan, &id, &lun, &type, &opens, &qdepth, &busy, &online)) {
         dev++;
-	if (id == 16 && type == 3) {
-	   // devices with id=16 and type=3 might be Areca controllers
-	   pout("Device /dev/sg%d appears to be an Areca controller.\n", dev);
+        if (id == 16 && type == 3) {
+           // devices with id=16 and type=3 might be Areca controllers
+           pout("Device /dev/sg%d appears to be an Areca controller.\n", dev);
         }
     }
     fclose(fp);
@@ -2082,7 +2109,7 @@ smart_device * linux_areca_ata_device::autodetect_open()
   smart_device_auto_ptr newdev(new linux_areca_scsi_device(smi(), get_dev_name(), get_disknum(), get_encnum()));
   close();
   delete this;
-  newdev->open();	// TODO: Can possibly pass open fd
+  newdev->open();       // TODO: Can possibly pass open fd
 
   return newdev.release();
 }
@@ -2490,7 +2517,7 @@ int linux_highpoint_device::ata_command_interface(smart_command_set command, int
       return 1;
 
     syserror("Error SMART Status command failed");
-    pout("Please get assistance from " PACKAGE_HOMEPAGE "\n");
+    pout("Please get assistance from " PACKAGE_URL "\n");
     pout("Register values returned from SMART Status command are:\n");
     pout("CMD=0x%02x\n",(int)buff[0]);
     pout("FR =0x%02x\n",(int)buff[1]);
@@ -2537,7 +2564,7 @@ void printwarning(smart_command_set command){
   const char* message=
     "can not be passed through the 3ware 3w-xxxx driver.  This can be fixed by\n"
     "applying a simple 3w-xxxx driver patch that can be found here:\n"
-    PACKAGE_HOMEPAGE "\n"
+    PACKAGE_URL "\n"
     "Alternatively, upgrade your 3w-xxxx driver to version 1.02.00.037 or greater.\n\n";
 
   if (command==AUTO_OFFLINE && !printed[0]) {
@@ -2833,6 +2860,9 @@ private:
   int megasas_dcmd_cmd(int bus_no, uint32_t opcode, void *buf,
     size_t bufsize, uint8_t *mbox, size_t mboxlen, uint8_t *statusp);
   int megasas_pd_add_list(int bus_no, smart_device_list & devlist);
+  bool get_dev_sssraid(smart_device_list & devlist);
+  int sssraid_pd_add_list(int bus_no, smart_device_list & devlist);
+  int sssraid_pdlist_cmd(int bus_no, uint16_t start_idx, void *buf, size_t bufsize, uint8_t *statusp);
 };
 
 std::string linux_smart_interface::get_os_version_str()
@@ -2932,7 +2962,7 @@ void linux_smart_interface::get_dev_list(smart_device_list & devlist,
         continue;
       if ((*p_dev_sdxy_seen)[dev_n]) {
         if (debug)
-	  pout("%s: duplicate, ignored\n", name);
+          pout("%s: duplicate, ignored\n", name);
         continue;
       }
       (*p_dev_sdxy_seen)[dev_n] = true;
@@ -3013,6 +3043,42 @@ bool linux_smart_interface::get_dev_megasas(smart_device_list & devlist)
   return true;
 }
 
+// getting devices from 3SNIC Raid, if available
+bool linux_smart_interface::get_dev_sssraid(smart_device_list & devlist)
+{
+  /* Scanning of disks on sssraid device */
+  char line[128];
+  FILE * fp = NULL;
+
+  // getting bus numbers with 3snic sas devices
+  // we are using sysfs to get list of all scsi hosts
+  DIR * dp = opendir ("/sys/class/scsi_host/");
+  if (dp != NULL)
+  {
+    struct dirent *ep;
+    while ((ep = readdir (dp)) != NULL) {
+      unsigned int host_no = 0;
+      if (!sscanf(ep->d_name, "host%u", &host_no))
+        continue;
+      /* proc_name should be sssraid */
+      char sysfsdir[256];
+      snprintf(sysfsdir, sizeof(sysfsdir) - 1,
+        "/sys/class/scsi_host/host%u/proc_name", host_no);
+      if((fp = fopen(sysfsdir, "r")) == NULL)
+        continue;
+      if(fgets(line, sizeof(line), fp) != NULL && !strncmp(line,"sssraid",7)) {
+        sssraid_pd_add_list(host_no, devlist);
+      }
+      fclose(fp);
+    }
+    (void) closedir (dp);
+  } else { /* sysfs not mounted ? */
+    for(unsigned i = 0; i <=16; i++) // trying to add devices on first 16 buses
+      sssraid_pd_add_list(i, devlist);
+  }
+  return true;
+}
+
 bool linux_smart_interface::scan_smart_devices(smart_device_list & devlist,
   const smart_devtype_list & types, const char * pattern /*= 0*/)
 {
@@ -3069,6 +3135,8 @@ bool linux_smart_interface::scan_smart_devices(smart_device_list & devlist,
 
     // get device list from the megaraid device
     get_dev_megasas(devlist);
+    // get device list from the sssraid device
+    get_dev_sssraid(devlist);
   }
 
   if (type_nvme) {
@@ -3097,8 +3165,7 @@ nvme_device * linux_smart_interface::get_nvme_device(const char * name, const ch
 
 smart_device * linux_smart_interface::missing_option(const char * opt)
 {
-  set_err(EINVAL, "requires option '%s'", opt);
-  return 0;
+  return set_err_np(EINVAL, "requires option '%s'", opt);
 }
 
 int
@@ -3192,6 +3259,99 @@ linux_smart_interface::megasas_pd_add_list(int bus_no, smart_device_list & devli
     devlist.push_back(dev);
   }
   free(list);
+  return (0);
+}
+
+int
+linux_smart_interface::sssraid_pdlist_cmd(int bus_no, uint16_t start_idx_param, void *buf, size_t bufsize, uint8_t *statusp)
+{
+  struct sg_io_v4 io_hdr_v4{};
+  unsigned char sense_buff[ADM_SCSI_CDB_SENSE_MAX_LEN] = { 0 };
+  struct bsg_ioctl_cmd bsg_param{};
+  u8 cmd_param[24] = { 0 };
+
+  io_hdr_v4.guard = 'Q';
+  io_hdr_v4.protocol = BSG_PROTOCOL_SCSI;
+  io_hdr_v4.subprotocol = BSG_SUB_PROTOCOL_SCSI_TRANSPORT;
+  io_hdr_v4.response = (uintptr_t)sense_buff;
+  io_hdr_v4.max_response_len = ADM_SCSI_CDB_SENSE_MAX_LEN;
+  io_hdr_v4.request_len = sizeof(struct bsg_ioctl_cmd);
+  io_hdr_v4.request = (uintptr_t)(&bsg_param);
+  io_hdr_v4.timeout = BSG_APPEND_TIMEOUT_MS + DEFAULT_CONMMAND_TIMEOUT_MS;
+
+  if (bufsize >0)  {
+    io_hdr_v4.din_xferp = (uintptr_t)buf;
+    io_hdr_v4.din_xfer_len = bufsize;
+  }
+
+  bsg_param.msgcode = 0;
+  bsg_param.ioctl_r64.opcode = ADM_RAID_READ;
+  bsg_param.ioctl_r64.timeout_ms = DEFAULT_CONMMAND_TIMEOUT_MS;
+  bsg_param.ioctl_r64.info_0.subopcode = ADM_CMD_SHOW_PDLIST;
+  bsg_param.ioctl_r64.addr = (uintptr_t)buf;
+  bsg_param.ioctl_r64.info_1.data_len = bufsize;
+  bsg_param.ioctl_r64.data_len = bufsize;
+  bsg_param.ioctl_r64.info_1.param_len = sizeof(struct cmd_pdlist_idx);
+
+  struct cmd_pdlist_idx *p_cmd_param = (struct cmd_pdlist_idx *)(&cmd_param);
+  p_cmd_param->start_idx = start_idx_param;
+  p_cmd_param->count = CMD_PDLIST_ONCE_NUM;
+  memcpy((u32*)&bsg_param.ioctl_r64.cdw10, cmd_param, sizeof(struct cmd_pdlist_idx));
+
+  int fd;
+  char line[128];
+  snprintf(line, sizeof(line) - 1, "/dev/bsg/sssraid%d", bus_no);
+  if ((fd = ::open(line, O_RDONLY)) < 0) {
+    pout("open %s error %d\n", line, fd);
+    return (errno);
+  }
+
+  int r = ioctl(fd, SG_IO, &io_hdr_v4);
+  ::close(fd);
+  if (r < 0) {
+    return (r);
+  }
+
+  if (statusp != NULL) {
+    *statusp = (io_hdr_v4.transport_status << 0x8) | io_hdr_v4.device_status;
+    pout("statusp = 0x%x\n", *statusp);
+    if (*statusp) {
+      pout("controller returns an error - 0x%x", *statusp);
+      return (-1);
+    }
+  }
+  return (0);
+}
+
+int
+linux_smart_interface::sssraid_pd_add_list(int bus_no, smart_device_list & devlist)
+{
+  unsigned disk_num = 0;
+  struct cmd_pdlist_entry pdlist[CMD_PDS_MAX_NUM]{};
+  while (disk_num < CMD_PDS_MAX_NUM) {
+    struct cmd_show_pdlist list{};
+    if (sssraid_pdlist_cmd(bus_no, disk_num, &list, sizeof(struct cmd_show_pdlist), NULL) < 0)
+    {
+      return (-1);
+    }
+    if (list.num == 0)
+      break;
+    memcpy(&pdlist[disk_num], list.disks, list.num * sizeof(struct cmd_pdlist_entry));
+    disk_num += list.num;
+    if (list.num < CMD_PDLIST_ONCE_NUM)
+      break;
+  }
+
+  // adding all SCSI devices
+  for (unsigned i = 0; i < disk_num; i++) {
+    if(!(pdlist[i].interface == ADM_DEVICE_TYPE_SATA || pdlist[i].interface == ADM_DEVICE_TYPE_SAS
+        || pdlist[i].interface == ADM_DEVICE_TYPE_NVME))
+      continue; /* non disk device found */
+    char line[128];
+    snprintf(line, sizeof(line) - 1, "/dev/bsg/sssraid%d", bus_no);
+    smart_device * dev = new linux_sssraid_device(this, line, (unsigned int)pdlist[i].enc_id, (unsigned int)pdlist[i].slot_id);
+    devlist.push_back(dev);
+  }
   return (0);
 }
 
@@ -3308,7 +3468,7 @@ smart_device * linux_smart_interface::autodetect_smart_device(const char * name)
     if (get_usb_id(test_name, vendor_id, product_id, version)) {
       const char * usbtype = get_usb_dev_type_by_id(vendor_id, product_id, version);
       if (!usbtype)
-        return 0;
+        return nullptr;
 
       // Kernels before 2.6.29 do not support the sense data length
       // required for SAT ATA PASS-THROUGH(16)
@@ -3361,26 +3521,28 @@ smart_device * linux_smart_interface::autodetect_smart_device(const char * name)
     return missing_option("-d cciss,N");
 
   // we failed to recognize any of the forms
-  return 0;
+  return nullptr;
 }
 
 smart_device * linux_smart_interface::get_custom_smart_device(const char * name, const char * type)
 {
   // Marvell ?
+  // TODO: Remove after smartmontools 7.4
   if (!strcmp(type, "marvell"))
+    return set_err_np(EINVAL,
+      "The device type 'marvell' is deprecated and will be removed in a\n"
+      "future version of smartmontools.  If you still need this device type, please\n"
+      "use '-d marvell,force' and inform " PACKAGE_BUGREPORT                          );
+  if (!strcmp(type, "marvell,force"))
     return new linux_marvell_device(this, name, type);
 
   // 3Ware ?
   int disknum = -1, n1 = -1, n2 = -1;
   if (sscanf(type, "3ware,%n%d%n", &n1, &disknum, &n2) == 1 || n1 == 6) {
-    if (n2 != (int)strlen(type)) {
-      set_err(EINVAL, "Option -d 3ware,N requires N to be a non-negative integer");
-      return 0;
-    }
-    if (!(0 <= disknum && disknum <= 127)) {
-      set_err(EINVAL, "Option -d 3ware,N (N=%d) must have 0 <= N <= 127", disknum);
-      return 0;
-    }
+    if (n2 != (int)strlen(type))
+      return set_err_np(EINVAL, "Option -d 3ware,N requires N to be a non-negative integer");
+    if (!(0 <= disknum && disknum <= 127))
+      return set_err_np(EINVAL, "Option -d 3ware,N (N=%d) must have 0 <= N <= 127", disknum);
 
     if (!strncmp(name, "/dev/twl", 8))
       return new linux_escalade_device(this, name, linux_escalade_device::AMCC_3WARE_9700_CHAR, disknum);
@@ -3396,14 +3558,10 @@ smart_device * linux_smart_interface::get_custom_smart_device(const char * name,
   disknum = n1 = n2 = -1;
   int encnum = 1;
   if (sscanf(type, "areca,%n%d/%d%n", &n1, &disknum, &encnum, &n2) >= 1 || n1 == 6) {
-    if (!(1 <= disknum && disknum <= 128)) {
-      set_err(EINVAL, "Option -d areca,N/E (N=%d) must have 1 <= N <= 128", disknum);
-      return 0;
-    }
-    if (!(1 <= encnum && encnum <= 8)) {
-      set_err(EINVAL, "Option -d areca,N/E (E=%d) must have 1 <= E <= 8", encnum);
-      return 0;
-    }
+    if (!(1 <= disknum && disknum <= 128))
+      return set_err_np(EINVAL, "Option -d areca,N/E (N=%d) must have 1 <= N <= 128", disknum);
+    if (!(1 <= encnum && encnum <= 8))
+      return set_err_np(EINVAL, "Option -d areca,N/E (E=%d) must have 1 <= E <= 8", encnum);
     return new linux_areca_ata_device(this, name, disknum, encnum);
   }
 
@@ -3412,22 +3570,14 @@ smart_device * linux_smart_interface::get_custom_smart_device(const char * name,
   n1 = n2 = -1; int n3 = -1;
   if (sscanf(type, "hpt,%n%d/%d%n/%d%n", &n1, &controller, &channel, &n2, &disknum, &n3) >= 2 || n1 == 4) {
     int len = strlen(type);
-    if (!(n2 == len || n3 == len)) {
-      set_err(EINVAL, "Option '-d hpt,L/M/N' supports 2-3 items");
-      return 0;
-    }
-    if (!(1 <= controller && controller <= 8)) {
-      set_err(EINVAL, "Option '-d hpt,L/M/N' invalid controller id L supplied");
-      return 0;
-    }
-    if (!(1 <= channel && channel <= 128)) {
-      set_err(EINVAL, "Option '-d hpt,L/M/N' invalid channel number M supplied");
-      return 0;
-    }
-    if (!(1 <= disknum && disknum <= 15)) {
-      set_err(EINVAL, "Option '-d hpt,L/M/N' invalid pmport number N supplied");
-      return 0;
-    }
+    if (!(n2 == len || n3 == len))
+      return set_err_np(EINVAL, "Option '-d hpt,L/M/N' supports 2-3 items");
+    if (!(1 <= controller && controller <= 8))
+      return set_err_np(EINVAL, "Option '-d hpt,L/M/N' invalid controller id L supplied");
+    if (!(1 <= channel && channel <= 128))
+      return set_err_np(EINVAL, "Option '-d hpt,L/M/N' invalid channel number M supplied");
+    if (!(1 <= disknum && disknum <= 15))
+      return set_err_np(EINVAL, "Option '-d hpt,L/M/N' invalid pmport number N supplied");
     return new linux_highpoint_device(this, name, controller, channel, disknum);
   }
 
@@ -3435,14 +3585,10 @@ smart_device * linux_smart_interface::get_custom_smart_device(const char * name,
   // CCISS ?
   disknum = n1 = n2 = -1;
   if (sscanf(type, "cciss,%n%d%n", &n1, &disknum, &n2) == 1 || n1 == 6) {
-    if (n2 != (int)strlen(type)) {
-      set_err(EINVAL, "Option -d cciss,N requires N to be a non-negative integer");
-      return 0;
-    }
-    if (!(0 <= disknum && disknum <= 127)) {
-      set_err(EINVAL, "Option -d cciss,N (N=%d) must have 0 <= N <= 127", disknum);
-      return 0;
-    }
+    if (n2 != (int)strlen(type))
+      return set_err_np(EINVAL, "Option -d cciss,N requires N to be a non-negative integer");
+    if (!(0 <= disknum && disknum <= 127))
+      return set_err_np(EINVAL, "Option -d cciss,N (N=%d) must have 0 <= N <= 127", disknum);
     return get_sat_device("sat,auto", new linux_cciss_device(this, name, disknum));
   }
 #endif // HAVE_LINUX_CCISS_IOCTL_H
@@ -3450,6 +3596,12 @@ smart_device * linux_smart_interface::get_custom_smart_device(const char * name,
   // MegaRAID ?
   if (sscanf(type, "megaraid,%d", &disknum) == 1) {
     return new linux_megaraid_device(this, name, disknum);
+  }
+
+  // SSSRAID
+  unsigned eid = -1, sid = -1;
+  if (sscanf(type, "sssraid,%u,%u", &eid, &sid) == 2) {
+    return get_sat_device("sat,auto", new linux_sssraid_device(this, name, eid, sid));
   }
 
   //aacraid?
@@ -3461,14 +3613,14 @@ smart_device * linux_smart_interface::get_custom_smart_device(const char * name,
 
   }
 
-  return 0;
+  return nullptr;
 }
 
 std::string linux_smart_interface::get_valid_custom_dev_types_str()
 {
-  return "marvell, areca,N/E, 3ware,N, hpt,L/M/N, megaraid,N, aacraid,H,L,ID"
+  return "areca,N/E, 3ware,N, hpt,L/M/N, megaraid,N, aacraid,H,L,ID, sssraid,E,S"
 #ifdef HAVE_LINUX_CCISS_IOCTL_H
-                                              ", cciss,N"
+                                                                                ", cciss,N"
 #endif
     ;
 }

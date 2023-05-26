@@ -7,7 +7,7 @@
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
  *
  * Additional SCSI work:
- * Copyright (C) 2003-18 Douglas Gilbert <dgilbert@interlog.com>
+ * Copyright (C) 2003-2023 Douglas Gilbert <dgilbert@interlog.com>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -37,6 +37,8 @@ struct scsi_print_options
   bool smart_extend_selftest = false, smart_extend_cap_selftest = false;
   bool smart_selftest_abort = false;
   bool smart_selftest_force = false; // Ignore already running test
+  bool scsi_pending_defects = false;
+  bool general_stats_and_perf = false;
 
   bool smart_env_rep = false;
 
@@ -44,6 +46,8 @@ struct scsi_print_options
 
   bool tape_device_stats = false;
   bool tape_alert = false;
+
+  bool zoned_device_stats = false;
   
   bool get_wce = false, get_rcd = false;
   short int set_wce = 0, set_rcd = 0;  // disable(-1), enable(1) cache
@@ -55,7 +59,10 @@ struct scsi_print_options
   bool set_standby_now = false; // set drive to standby
   bool set_active = false;      // set drive to active
 
-  int health_opt_count = 0;	// TapeAlert log page only read if this value > 1
+  int health_opt_count = 0;     // TapeAlert log page only read if this value > 1
+
+  bool farm_log = false;          // Seagate Field Access Reliability Metrics log (FARM) for SCSI
+  bool farm_log_suggest = false;  // If -x/-xall or -a/-all is run, suggests FARM log if supported
 };
 
 int scsiPrintMain(scsi_device * device, const scsi_print_options & options);

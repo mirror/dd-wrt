@@ -32,18 +32,44 @@ static void jassert_failed(int line, const char * expr)
 
 #define jassert(expr) (!(expr) ? jassert_failed(__LINE__, #expr) : (void)0)
 
+/* Convert to json "snake" format. It will contains only lower case ASCII
+ * alphanumeric characters with all other characters replaced with the
+ * underscore character. Further, all leading and trailing underscores are
+ * removed and repeated underscores with the name are reduced to a single
+ * underscore.
+ * For example "$Output power  (mW)" becomes "output_power_mw". */
 std::string json::str2key(const char * str)
 {
-  std::string key = str;
-  for (char & c : key) {
-    if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || c == '_')
-      continue;
-    if ('A' <= c && c <= 'Z')
-      c += 'a' - 'A';
-    else
-      c = '_';
+  bool prev_underscore = false;
+  size_t i_sz = strlen(str);
+  int o_ind = 0;
+  /* resultant string's size will be <= input string */
+  std::string res(i_sz, ' ');
+  const char * cp = str;
+  static const int lower_alpha_off = 'a' - 'A';
+  
+  for ( ; *cp ; ++cp) {
+    char c = *cp;
+
+    if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z')) {
+      res[o_ind++] = c;
+      prev_underscore = false;
+    } else if ('A' <= c && c <= 'Z') {
+      res[o_ind++] = c + lower_alpha_off;
+      prev_underscore = false;
+    } else {
+      if ((o_ind > 0) && ! prev_underscore) {
+        res[o_ind++] = '_';
+        prev_underscore = true;
+      }
+    }
   }
-  return key;
+  if (o_ind == 0)       /* leave single '_' in degenerate case */
+    res[o_ind++] = '_';
+  else if (res[o_ind - 1] == '_')
+    --o_ind;            /* may be trailing underscore, remove */
+  res.erase(o_ind);
+  return res;
 }
 
 json::ref::ref(json & js)
@@ -395,8 +421,40 @@ void json::set_initlist_value(const node_path & path, const initlist_value & val
   }
 }
 
+// Return -1 if all UTF-8 sequences are valid, else return index of first invalid char
+static int check_utf8(const char * s)
+{
+  int state = 0, i;
+  for (i = 0; s[i]; i++) {
+    unsigned char c = s[i];
+    // 0xb... (C++14) not used to preserve C++11 compatibility
+    if ((c & 0xc0) == 0x80) {                    // 0xb10xxxxx
+      if (--state < 0)
+        return i;
+    }
+    else {
+      if (state != 0)
+        return i;
+      if (!(c & 0x80))                           // 0xb0xxxxxxx
+        ;
+      else if ((c & 0xe0) == 0xc0 && (c & 0x1f)) // 0xb110xxxxx
+        state = 1;
+      else if ((c & 0xf0) == 0xe0 && (c & 0x0f)) // 0xb1110xxxx
+        state = 2;
+      else if ((c & 0xf8) == 0xf0 && (c & 0x07)) // 0xb11110xxx
+        state = 3;
+      else
+        return i;
+    }
+  }
+  if (state != 0)
+    return i;
+  return -1;
+}
+
 static void print_quoted_string(FILE * f, const char * s)
 {
+  int utf8_rc = -2;
   putc('"', f);
   for (int i = 0; s[i]; i++) {
     char c = s[i];
@@ -405,9 +463,15 @@ static void print_quoted_string(FILE * f, const char * s)
     else if (c == '\t') {
       putc('\\', f); c = 't';
     }
-    else if ((unsigned char)c < ' ')
-      c = '?'; // Not ' '-'~', '\t' or UTF-8
-    putc(c, f);
+    // Print as UTF-8 unless the string contains any invalid sequences
+    // "\uXXXX" is not used because it is not valid for YAML
+    if (   (' ' <= c && c <= '~')
+        || ((c & 0x80) && (utf8_rc >= -1 ? utf8_rc : (utf8_rc = check_utf8(s + i))) == -1))
+      putc(c, f);
+    else
+      // Print informal hex string for unexpected chars:
+      // Control chars (except TAB), DEL(0x7f), bit 7 set and no valid UTF-8
+      fprintf(f, "\\\\x%02x", (unsigned char)c);
   }
   putc('"', f);
 }

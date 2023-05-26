@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2008-21 Christian Franke
+ * Copyright (C) 2008-22 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -575,6 +575,13 @@ protected:
 
 struct scsi_cmnd_io;
 
+enum scsi_cmd_support
+{
+  SC_SUPPORT_UNKNOWN = 0,
+  SC_NO_SUPPORT,
+  SC_SUPPORT,
+};
+
 /// SCSI device access
 class scsi_device
 : virtual public /*extends*/ smart_device
@@ -596,6 +603,18 @@ public:
   bool use_rcap16() const
     { return rcap16_first; }
 
+  void set_spc4_or_higher() { spc4_or_above = true; }
+
+  bool is_spc4_or_higher() const { return spc4_or_above; }
+
+  bool query_cmd_support();
+
+  bool checked_cmd_support() const { return rsoc_queried; }
+
+  enum scsi_cmd_support cmd_support_level(uint8_t opcode, bool sa_valid,
+                                          uint16_t sa,
+                                          bool for_lsense_spc = false) const;
+
 protected:
   /// Hide/unhide SCSI interface.
   void hide_scsi(bool hide = true)
@@ -604,11 +623,28 @@ protected:
   /// Default constructor, registers device as SCSI.
   scsi_device()
     : smart_device(never_called),
-      rcap16_first(false)
+      rcap16_first(false),
+      spc4_or_above(false),
+      rsoc_queried(false),
+      rsoc_sup(SC_SUPPORT_UNKNOWN),
+      logsense_sup(SC_SUPPORT_UNKNOWN),
+      logsense_spc_sup(SC_SUPPORT_UNKNOWN),
+      rcap16_sup(SC_SUPPORT_UNKNOWN),
+      rdefect10_sup(SC_SUPPORT_UNKNOWN),
+      rdefect12_sup(SC_SUPPORT_UNKNOWN)
     { hide_scsi(false); }
 
 private:
   bool rcap16_first;
+  bool spc4_or_above;
+
+  bool rsoc_queried;
+  scsi_cmd_support rsoc_sup;
+  scsi_cmd_support logsense_sup;
+  scsi_cmd_support logsense_spc_sup;
+  scsi_cmd_support rcap16_sup;
+  scsi_cmd_support rdefect10_sup;
+  scsi_cmd_support rdefect12_sup;
 };
 
 
@@ -924,6 +960,14 @@ public:
   /// Printf()-like formatting is supported.
   /// Returns false always to allow use as a return expression.
   bool set_err(int no, const char * msg, ...)
+    __attribute_format_printf(3, 4);
+
+  /// Set last error number and message.
+  /// Printf()-like formatting is supported.
+  /// Returns nullptr always to allow use as a return expression
+  /// of any pointer type.
+  // (Not using 'std::nullptr_t' because it requires <cstddef>)
+  decltype(nullptr) set_err_np(int no, const char * msg, ...)
     __attribute_format_printf(3, 4);
 
   /// Set last error info struct.

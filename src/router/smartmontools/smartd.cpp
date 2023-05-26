@@ -131,6 +131,8 @@ static void set_signal_if_not_ignored(int sig, signal_handler_type handler)
 
 using namespace smartmontools;
 
+static const int scsiLogRespLen = 252;
+
 // smartd exit codes
 #define EXIT_BADCMD    1   // command line did not parse
 #define EXIT_BADCONF   2   // syntax error in config file
@@ -236,6 +238,7 @@ static void PrintOut(int priority, const char *fmt, ...)
 // systemd notify support
 
 static bool notify_enabled = false;
+static bool notify_ready = false;
 
 static inline void notify_init()
 {
@@ -253,6 +256,20 @@ static inline bool notify_post_init()
     return false;
   }
   return true;
+}
+
+static inline void notify_extend_timeout()
+{
+  if (!notify_enabled)
+    return;
+  if (notify_ready)
+    return;
+  const char * notify = "EXTEND_TIMEOUT_USEC=20000000"; // typical drive spinup time is 20s tops
+  if (debugmode) {
+    pout("sd_notify(0, \"%s\")\n", notify);
+    return;
+  }
+  sd_notify(0, notify);
 }
 
 static void notify_msg(const char * msg, bool ready = false)
@@ -285,9 +302,8 @@ static void notify_wait(time_t wakeuptime, int numdev)
   char msg[64];
   snprintf(msg, sizeof(msg), "Next check of %d device%s will start at %s",
            numdev, (numdev != 1 ? "s" : ""), ts);
-  static bool ready = true; // first call notifies READY=1
-  notify_msg(msg, ready);
-  ready = false;
+  notify_msg(msg, !notify_ready); // first call notifies READY=1
+  notify_ready = true;
 }
 
 static void notify_exit(int status)
@@ -322,12 +338,18 @@ static inline bool notify_post_init()
 }
 
 static inline void notify_init() { }
+static inline void notify_extend_timeout() { }
 static inline void notify_msg(const char *) { }
 static inline void notify_check(int) { }
 static inline void notify_wait(time_t, int) { }
 static inline void notify_exit(int) { }
 
 #endif // HAVE_LIBSYSTEMD
+
+// Email frequencies
+enum class emailfreqs : unsigned char {
+  unknown, once, always, daily, diminishing
+};
 
 // Attribute monitoring flags.
 // See monitor_attr_flags below.
@@ -401,7 +423,7 @@ struct dev_config
   // Configuration of email warning messages
   std::string emailcmdline;               // script to execute, empty if no messages
   std::string emailaddress;               // email address, or empty
-  unsigned char emailfreq{};              // Emails once (1) daily (2) diminishing (3)
+  emailfreqs emailfreq{};                 // Send emails once, daily, diminishing
   bool emailtest{};                       // Send test email?
 
   // ATA ONLY
@@ -1013,6 +1035,11 @@ static void MailWarning(const dev_config & cfg, dev_state & state, int which, co
 // a warning email, or execute executable
 static void MailWarning(const dev_config & cfg, dev_state & state, int which, const char *fmt, ...)
 {
+  // See if user wants us to send mail
+  if (cfg.emailaddress.empty() && cfg.emailcmdline.empty())
+    return;
+
+  // Which type of mail are we sending?
   static const char * const whichfail[] = {
     "EmailTest",                  // 0
     "Health",                     // 1
@@ -1028,56 +1055,51 @@ static void MailWarning(const dev_config & cfg, dev_state & state, int which, co
     "OfflineUncorrectableSector", // 11
     "Temperature"                 // 12
   };
+  STATIC_ASSERT(sizeof(whichfail) == SMARTD_NMAIL * sizeof(whichfail[0]));
   
-  // See if user wants us to send mail
-  if (cfg.emailaddress.empty() && cfg.emailcmdline.empty())
-    return;
-
-  std::string address = cfg.emailaddress;
-  const char * executable = cfg.emailcmdline.c_str();
-
-  // which type of mail are we sending?
-  mailinfo * mail=(state.maillog)+which;
-
-  // checks for sanity
-  if (cfg.emailfreq<1 || cfg.emailfreq>3) {
-    PrintOut(LOG_CRIT,"internal error in MailWarning(): cfg.mailwarn->emailfreq=%d\n",cfg.emailfreq);
+  if (!(0 <= which && which < SMARTD_NMAIL)) {
+    PrintOut(LOG_CRIT, "Internal error in MailWarning(): which=%d\n", which);
     return;
   }
-  if (which<0 || which>=SMARTD_NMAIL || sizeof(whichfail)!=SMARTD_NMAIL*sizeof(char *)) {
-    PrintOut(LOG_CRIT,"Contact " PACKAGE_BUGREPORT "; internal error in MailWarning(): which=%d, size=%d\n",
-             which, (int)sizeof(whichfail));
-    return;
-  }
+  mailinfo * mail = state.maillog + which;
 
-  // Return if a single warning mail has been sent.
-  if ((cfg.emailfreq==1) && mail->logged)
-    return;
-
-  // Return if this is an email test and one has already been sent.
-  if (which == 0 && mail->logged)
-    return;
-  
-  // To decide if to send mail, we need to know what time it is.
-  time_t epoch = time(nullptr);
-
-  // Return if less than one day has gone by
-  const int day = 24*3600;
-  if (cfg.emailfreq==2 && mail->logged && epoch<(mail->lastsent+day))
-    return;
-
-  // Return if less than 2^(logged-1) days have gone by
-  if (cfg.emailfreq==3 && mail->logged) {
-    int days = 0x01 << (mail->logged - 1);
-    days*=day;
-    if  (epoch<(mail->lastsent+days))
+  // Calc current and next interval for warning reminder emails
+  int days, nextdays;
+  if (which == 0)
+    days = nextdays = -1; // EmailTest
+  else switch (cfg.emailfreq) {
+    case emailfreqs::once:
+      days = nextdays = -1; break;
+    case emailfreqs::always:
+      days = nextdays = 0; break;
+    case emailfreqs::daily:
+      days = nextdays = 1; break;
+    case emailfreqs::diminishing:
+      // 0, 1, 2, 3, 4, 5, 6, 7, ... => 1, 2, 4, 8, 16, 32, 32, 32, ...
+      nextdays = 1 << ((unsigned)mail->logged <= 5 ? mail->logged : 5);
+      // 0, 1, 2, 3, 4, 5, 6, 7, ... => 0, 1, 2, 4,  8, 16, 32, 32, ... (0 not used below)
+      days = ((unsigned)mail->logged <= 5 ? nextdays >> 1 : nextdays);
+      break;
+    default:
+      PrintOut(LOG_CRIT, "Internal error in MailWarning(): cfg.emailfreq=%d\n", (int)cfg.emailfreq);
       return;
   }
 
-  // record the time of this mail message, and the first mail message
-  if (!mail->logged)
-    mail->firstsent=epoch;
-  mail->lastsent=epoch;
+  time_t now = time(nullptr);
+  if (mail->logged) {
+    // Return if no warning reminder email needs to be sent (now)
+    if (days < 0)
+      return; // '-M once' or EmailTest
+    if (days > 0 && now < mail->lastsent + days * 24 * 3600)
+      return; // '-M daily/diminishing' and too early
+  }
+  else {
+    // Record the time of this first email message
+    mail->firstsent = now;
+  }
+
+  // Record the time of this email message
+  mail->lastsent = now;
 
   // print warning string into message
   // Note: Message length may reach ~300 characters as device names may be
@@ -1091,11 +1113,13 @@ static void MailWarning(const dev_config & cfg, dev_state & state, int which, co
   va_end(ap);
 
   // replace commas by spaces to separate recipients
+  std::string address = cfg.emailaddress;
   std::replace(address.begin(), address.end(), ',', ' ');
 
   // Export information in environment variables that will be useful
   // for user scripts
-  static env_buffer env[12];
+  const char * executable = cfg.emailcmdline.c_str();
+  static env_buffer env[13];
   env[0].set("SMARTD_MAILER", executable);
   env[1].set("SMARTD_MESSAGE", message);
   char dates[DATEANDEPOCHLEN];
@@ -1116,11 +1140,11 @@ static void MailWarning(const dev_config & cfg, dev_state & state, int which, co
 
   env[10].set("SMARTD_DEVICEINFO", cfg.dev_idinfo.c_str());
   dates[0] = 0;
-  if (which) switch (cfg.emailfreq) {
-    case 2: dates[0] = '1'; dates[1] = 0; break;
-    case 3: snprintf(dates, sizeof(dates), "%d", (0x01)<<mail->logged);
-  }
+  if (nextdays >= 0)
+    snprintf(dates, sizeof(dates), "%d", nextdays);
   env[11].set("SMARTD_NEXTDAYS", dates);
+  // Avoid false positive recursion detection by smartd_warning.{sh,cmd}
+  env[12].set("SMARTD_SUBJECT", "");
 
   // now construct a command to send this as EMAIL
   if (!*executable)
@@ -1433,7 +1457,7 @@ static int daemon_init()
   }
 
   // close any open file descriptors
-  for (int i = getdtablesize(); --i >= 0; )
+  for (int i = sysconf(_SC_OPEN_MAX); --i >= 0; )
     close(i);
   
   // redirect any IO attempts to /dev/null and change to root directory
@@ -1866,12 +1890,12 @@ static bool check_pending_id(const dev_config & cfg, const dev_state & state,
 static void finish_device_scan(dev_config & cfg, dev_state & state)
 {
   // Set cfg.emailfreq if user hasn't set it
-  if ((!cfg.emailaddress.empty() || !cfg.emailcmdline.empty()) && !cfg.emailfreq) {
+  if ((!cfg.emailaddress.empty() || !cfg.emailcmdline.empty()) && cfg.emailfreq == emailfreqs::unknown) {
     // Avoid that emails are suppressed forever due to state persistence
     if (cfg.state_file.empty())
-      cfg.emailfreq = 1; // '-M once'
+      cfg.emailfreq = emailfreqs::once;
     else
-      cfg.emailfreq = 2; // '-M daily'
+      cfg.emailfreq = emailfreqs::daily;
   }
 
   // Start self-test regex check now if time was not read from state file
@@ -2403,8 +2427,15 @@ static int SCSIDeviceScan(dev_config & cfg, dev_state & state, scsi_device * scs
 
   int pdt = inqBuf[0] & 0x1f;
 
-  if (! ((0 == pdt) || (4 == pdt) || (5 == pdt) || (7 == pdt) ||
-         (0xe == pdt))) {
+  switch (pdt) {
+  case SCSI_PT_DIRECT_ACCESS:
+  case SCSI_PT_WO:
+  case SCSI_PT_CDROM:
+  case SCSI_PT_OPTICAL:
+  case SCSI_PT_RBC:             /* Reduced Block commands */
+  case SCSI_PT_HOST_MANAGED:    /* Zoned disk */
+    break;
+  default:
     PrintOut(LOG_INFO, "Device: %s, not a disk like device [PDT=0x%x], "
              "skip\n", device, pdt);
     return 2;
@@ -2417,8 +2448,8 @@ static int SCSIDeviceScan(dev_config & cfg, dev_state & state, scsi_device * scs
   supported_vpd_pages_p = new supported_vpd_pages(scsidev);
 
   lu_id[0] = '\0';
-  if ((version >= 0x3) && (version < 0x8)) {
-    /* SPC to SPC-5 */
+  if (version >= 0x3) {
+    /* SPC to SPC-5, assume SPC-6 is version==8 or higher */
     if (0 == scsiInquiryVpd(scsidev, SCSI_VPD_DEVICE_IDENTIFICATION,
                             vpdBuf, sizeof(vpdBuf))) {
       len = vpdBuf[3];
@@ -3703,7 +3734,9 @@ static int SCSICheckDevice(const dev_config & cfg, dev_state & state, scsi_devic
     }
   }
   if (asc > 0) {
-    const char * cp = scsiGetIEString(asc, ascq);
+    char b[128];
+    const char * cp = scsiGetIEString(asc, ascq, b, sizeof(b));
+
     if (cp) {
       PrintOut(LOG_CRIT, "Device: %s, SMART Failure: %s\n", name, cp);
       MailWarning(cfg, state, 1,"Device: %s, SMART Failure: %s", name, cp);
@@ -3733,22 +3766,26 @@ static int SCSICheckDevice(const dev_config & cfg, dev_state & state, scsi_devic
     uint8_t tBuf[252];
     if (state.ReadECounterPageSupported && (0 == scsiLogSense(scsidev,
       READ_ERROR_COUNTER_LPAGE, 0, tBuf, sizeof(tBuf), 0))) {
-      scsiDecodeErrCounterPage(tBuf, &state.scsi_error_counters[0].errCounter);
+      scsiDecodeErrCounterPage(tBuf, &state.scsi_error_counters[0].errCounter,
+                               scsiLogRespLen);
       state.scsi_error_counters[0].found=1;
     }
     if (state.WriteECounterPageSupported && (0 == scsiLogSense(scsidev,
       WRITE_ERROR_COUNTER_LPAGE, 0, tBuf, sizeof(tBuf), 0))) {
-      scsiDecodeErrCounterPage(tBuf, &state.scsi_error_counters[1].errCounter);
+      scsiDecodeErrCounterPage(tBuf, &state.scsi_error_counters[1].errCounter,
+                               scsiLogRespLen);
       state.scsi_error_counters[1].found=1;
     }
     if (state.VerifyECounterPageSupported && (0 == scsiLogSense(scsidev,
       VERIFY_ERROR_COUNTER_LPAGE, 0, tBuf, sizeof(tBuf), 0))) {
-      scsiDecodeErrCounterPage(tBuf, &state.scsi_error_counters[2].errCounter);
+      scsiDecodeErrCounterPage(tBuf, &state.scsi_error_counters[2].errCounter,
+                               scsiLogRespLen);
       state.scsi_error_counters[2].found=1;
     }
     if (state.NonMediumErrorPageSupported && (0 == scsiLogSense(scsidev,
       NON_MEDIUM_ERROR_LPAGE, 0, tBuf, sizeof(tBuf), 0))) {
-      scsiDecodeNonMediumErrPage(tBuf, &state.scsi_nonmedium_error.nme);
+      scsiDecodeNonMediumErrPage(tBuf, &state.scsi_nonmedium_error.nme,
+                                 scsiLogRespLen);
       state.scsi_nonmedium_error.found=1;
     }
     // store temperature if not done by CheckTemperature() above
@@ -3932,6 +3969,9 @@ static void CheckDevicesOnce(const dev_config_vector & configs, dev_state_vector
       SCSICheckDevice(cfg, state, dev->to_scsi(), allow_selftests);
     else if (dev->is_nvme())
       NVMeCheckDevice(cfg, state, dev->to_nvme());
+
+    // Prevent systemd unit startup timeout when checking many devices on startup
+    notify_extend_timeout();
   }
 
   do_disable_standby_check(configs, states);
@@ -4099,7 +4139,7 @@ static void printoutvaliddirectiveargs(int priority, char d)
     PrintOut(priority, "error, selftest");
     break;
   case 'M':
-    PrintOut(priority, "\"once\", \"daily\", \"diminishing\", \"test\", \"exec\"");
+    PrintOut(priority, "\"once\", \"always\", \"daily\", \"diminishing\", \"test\", \"exec\"");
     break;
   case 'v':
     PrintOut(priority, "\n%s\n", create_vendor_attribute_arg_list().c_str());
@@ -4486,13 +4526,15 @@ static int ParseToken(char * token, dev_config & cfg, smart_devtype_list & scan_
     if (!(arg = strtok(nullptr, delim)))
       missingarg = 1;
     else if (!strcmp(arg, "once"))
-      cfg.emailfreq = 1;
+      cfg.emailfreq = emailfreqs::once;
+    else if (!strcmp(arg, "always"))
+      cfg.emailfreq = emailfreqs::always;
     else if (!strcmp(arg, "daily"))
-      cfg.emailfreq = 2;
+      cfg.emailfreq = emailfreqs::daily;
     else if (!strcmp(arg, "diminishing"))
-      cfg.emailfreq = 3;
+      cfg.emailfreq = emailfreqs::diminishing;
     else if (!strcmp(arg, "test"))
-      cfg.emailtest = 1;
+      cfg.emailtest = true;
     else if (!strcmp(arg, "exec")) {
       // Get the next argument (the command line)
 #ifdef _WIN32
@@ -4780,7 +4822,8 @@ static int ParseConfigLine(dev_config_vector & conf_entries, dev_config & defaul
   }
   
   // additional sanity check. Has user set -M options without -m?
-  if (cfg.emailaddress.empty() && (!cfg.emailcmdline.empty() || cfg.emailfreq || cfg.emailtest)){
+  if (   cfg.emailaddress.empty()
+      && (!cfg.emailcmdline.empty() || cfg.emailfreq != emailfreqs::unknown || cfg.emailtest)) {
     PrintOut(LOG_CRIT,"Drive: %s, -M Directive(s) on line %d of file %s need -m ADDRESS Directive\n",
              cfg.name.c_str(), cfg.lineno, configfile);
     return -2;
@@ -5568,6 +5611,9 @@ static bool register_devices(const dev_config_vector & conf_entries, smart_devic
         scanning = true;
       }
     }
+
+    // Prevent systemd unit startup timeout when registering many devices
+    notify_extend_timeout();
 
     // Register device
     // If scanning, pass dev_idinfo of previous devices for duplicate check
