@@ -196,6 +196,7 @@ struct mt7530_priv {
 	void __iomem		*base;
 	struct mii_bus		*bus;
 	struct switch_dev	swdev;
+	u32	state[MT7530_NUM_PORTS];
 
 	bool			global_vlan_enable;
 	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
@@ -336,60 +337,6 @@ mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 
 	pr_debug("MT7530 MDIO Write[%04x]=%08x\n", reg, val);
 	iowrite32(val, priv->base + reg);
-}
-
-static int mt7530_mii_busy_wait(struct mt7530_priv *priv)
-{
-	unsigned long t_start = jiffies;
-
-	while (1) {
-		if (!(mt7530_r32(priv, MT7620A_GSW_REG_PIAC) & GSW_MDIO_ACCESS))
-			return 0;
-		if (time_after(jiffies, t_start + GSW_REG_PHY_TIMEOUT))
-			break;
-	}
-
-	pr_err("MT7530 MDIO timeout\n");
-	return -1;
-}
-
-
-static u32 mt7530_mii_read(struct mt7530_priv *priv, int phy_addr, int phy_reg)
-{
-	u32 d;
-
-	if (mt7530_mii_busy_wait(priv))
-		return 0xffff;
-
-	mt7530_w32(priv, MT7620A_GSW_REG_PIAC, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_READ |
-		(phy_reg << GSW_MDIO_REG_SHIFT) |
-		(phy_addr << GSW_MDIO_ADDR_SHIFT));
-
-	if (mt7530_mii_busy_wait(priv))
-		return 0xffff;
-
-	d = mt7530_r32(priv, MT7620A_GSW_REG_PIAC) & 0xffff;
-
-	return d;
-}
-
-static u32 mt7530_mii_write(struct mt7530_priv *priv, u32 phy_addr,
-			     u32 phy_register, u32 write_data)
-{
-	if (mt7530_mii_busy_wait(priv))
-		return -1;
-
-	write_data &= 0xffff;
-
-	mt7530_w32(priv, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_WRITE |
-		(phy_register << GSW_MDIO_REG_SHIFT) |
-		(phy_addr << GSW_MDIO_ADDR_SHIFT) | write_data,
-		MT7620A_GSW_REG_PIAC);
-
-	if (mt7530_mii_busy_wait(priv))
-		return -1;
-
-	return 0;
 }
 
 static void
@@ -927,13 +874,16 @@ mt7530_sw_set_disable(struct switch_dev *dev,
 
 	if (port >= dev->ports)
 		return -EINVAL;
+	priv->state[port] = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));
 
-	t = mt7530_mii_read(priv, port, 0);
-	if (!!(val->value.i))
-		t |= BIT(11);
-	else
-		t &= ~BIT(11);
-	mt7530_mii_write(priv, port, 0, t);
+	if (!!(val->value.i)) {
+		priv->state[port] = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));;
+		t|= PMCR_FORCE;
+		t&= ~PMCR_LINK;
+		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), t);
+	} else {
+		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), priv->state[port]);
+	}
 	
 	return 0;
 }
@@ -949,11 +899,14 @@ mt7530_sw_get_disable(struct switch_dev *dev,
 
 	if (port >= dev->ports)
 		return -EINVAL;
-	t = mt7530_mii_read(priv, port, 0);
-	if (t & BIT(11)) 
+	t = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));
+
+	if (t & PMCR_FORCE && t & PMCR_LINK) 
 	    val->value.i = 0;
-	else
+	else if (t & PMCR_FORCE) 
 	    val->value.i = 1;
+	else
+	    val->value.i = 0;
 	    
 	return 0;
 }
