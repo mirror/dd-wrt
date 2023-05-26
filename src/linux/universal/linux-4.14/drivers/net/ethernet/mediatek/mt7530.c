@@ -33,6 +33,7 @@
 #include <linux/of_device.h>
 
 #include "mt7530.h"
+#include "gsw_mt7620.h"
 
 #define MT7530_CPU_PORT		6
 #define MT7530_NUM_PORTS	8
@@ -650,7 +651,8 @@ mt7530_get_port_link(struct switch_dev *dev,  int port,
 	if (port < 0 || port >= MT7530_NUM_PORTS)
 		return -EINVAL;
 
-	pmsr = mt7530_r32(priv, 0x3008 + (0x100 * port));
+
+	pmsr = mt7530_r32(priv, GSW_REG_PORT_STATUS(port));
 
 	link->link = pmsr & 1;
 	link->duplex = (pmsr >> 1) & 1;
@@ -673,6 +675,42 @@ mt7530_get_port_link(struct switch_dev *dev,  int port,
 	}
 
 	return 0;
+}
+static int mt7530_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u32 t;
+
+	t = mt7530_r32(priv, GSW_REG_PORT_PMCR(port));
+	if (!link->aneg) {
+		t &= ~PMCR_DUPLEX;
+		t &= ~PMCR_SPEED(3);
+		t |= PMCR_LINK | PMCR_FORCE;
+		switch(link->speed) {
+		case SWITCH_PORT_SPEED_10:
+		    t |= PMCR_SPEED(0);
+		break;
+		case SWITCH_PORT_SPEED_100:
+		    t |= PMCR_SPEED(1);
+		break;
+		case SWITCH_PORT_SPEED_1000:
+		    t |= PMCR_SPEED(2);
+		break;
+		default:
+		    return -EINVAL;
+		}
+		if (link->duplex)
+			t |= PMCR_DUPLEX;
+		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), t);
+	} else {
+		t &= ~PMCR_DUPLEX;
+		t &= ~PMCR_SPEED(3);
+		t &= PMCR_LINK | PMCR_FORCE;
+		mt7530_w32(priv, GSW_REG_PORT_PMCR(port), t);
+	}
+	
+	returm 0;
 }
 
 static u64 get_mib_counter(struct mt7530_priv *priv, int i, int port)
@@ -814,6 +852,45 @@ static int mt7621_get_port_stats(struct switch_dev *dev, int port,
 
 	return 0;
 }
+static int
+ar7530_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	t = _mt7620_mii_read(gsw, port, 0);
+	if (!!(val->value.i))
+		t |= BIT(11);
+	else
+		t &= ~BIT(11);
+	_mt7620_mii_write(gsw, port, 0, t);
+	
+	return 0;
+}
+static int
+ar8327_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	t = _mt7620_mii_read(gsw, port, 0);
+	if (t & BIT(11)) 
+	    val->value.i = 0;
+	else
+	    val->value.i = 1;
+	    
+	return 0;
+}
+
 
 static const struct switch_attr mt7530_global[] = {
 	{
@@ -841,6 +918,14 @@ static const struct switch_attr mt7621_port[] = {
 		.get = mt7621_sw_get_port_mib,
 		.set = NULL,
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = mt7530_sw_set_disable,
+		.get = mt7530_sw_get_disable,
+		.max = 1,
+	},
 };
 
 static const struct switch_attr mt7621_vlan[] = {
@@ -861,6 +946,14 @@ static const struct switch_attr mt7530_port[] = {
 		.description = "Get MIB counters for port",
 		.get = mt7530_sw_get_port_mib,
 		.set = NULL,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = mt7530_sw_set_disable,
+		.get = mt7530_sw_get_disable,
+		.max = 1,
 	},
 };
 
@@ -893,6 +986,7 @@ static const struct switch_dev_ops mt7621_ops = {
 	.get_port_pvid = mt7530_get_port_pvid,
 	.set_port_pvid = mt7530_set_port_pvid,
 	.get_port_link = mt7530_get_port_link,
+	.set_port_link = mt7530_set_port_link,
 	.get_port_stats = mt7621_get_port_stats,
 	.apply_config = mt7530_apply_config,
 	.reset_switch = mt7530_reset_switch,
@@ -916,6 +1010,7 @@ static const struct switch_dev_ops mt7530_ops = {
 	.get_port_pvid = mt7530_get_port_pvid,
 	.set_port_pvid = mt7530_set_port_pvid,
 	.get_port_link = mt7530_get_port_link,
+	.set_port_link = mt7530_set_port_link,
 	.get_port_stats = mt7530_get_port_stats,
 	.apply_config = mt7530_apply_config,
 	.reset_switch = mt7530_reset_switch,
