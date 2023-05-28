@@ -255,3 +255,13 @@ SYS(sys_sendfile64, 5)
 SYS(sys_ni_syscall, 0)				/* res. for futex */
 SYS(sys_ni_syscall, 0)				/* res. for sched_setaffinity */
 SYS(sys_ni_syscall, 0)				/* 4240 res. for sched_getaffinity */
+SYS(sys_ni_syscall, 0)
+SYS(sys_ni_syscall, 0)
+SYS(sys_ni_syscall, 0)
+SYS(sys_ni_syscall, 0)
+SYS(sys_ni_syscall, 0)
+SYS(sys_ni_syscall, 0)
+SYS(sys_ni_syscall, 0)
+SYS(sys_epoll_create, 1)
+SYS(sys_epoll_ctl, 4)
+SYS(sys_epoll_wait, 3)
