@@ -135,6 +135,8 @@ extern rwlock_t tasklist_lock;
 extern spinlock_t runqueue_lock;
 extern spinlock_t mmlist_lock;
 
+typedef struct task_struct task_t;
+
 extern void sched_init(void);
 extern void init_idle(void);
 extern void show_state(void);

@@ -19,6 +19,9 @@
 #include <asm/page.h>
 #include <asm/processor.h>
 
+typedef struct __wait_queue wait_queue_t;
+typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned int, int);
+
 /*
  * Debug control.  Slow but useful.
  */
@@ -32,13 +35,13 @@ struct __wait_queue {
 	unsigned int flags;
 #define WQ_FLAG_EXCLUSIVE	0x01
 	struct task_struct * task;
+	wait_queue_func_t func;
 	struct list_head task_list;
 #if WAITQUEUE_DEBUG
 	long __magic;
 	long __waker;
 #endif
 };
-typedef struct __wait_queue wait_queue_t;
 
 /*
  * 'dual' spinlock architecture. Can be switched between spinlock_t and
@@ -138,6 +141,7 @@ typedef struct __wait_queue_head wait_queue_head_t;
 
 #define __WAITQUEUE_INITIALIZER(name, tsk) {				\
 	task:		tsk,						\
+	func:		NULL,						\
 	task_list:	{ NULL, NULL },					\
 			 __WAITQUEUE_DEBUG_INIT(name)}
 
@@ -174,10 +178,18 @@ static inline void init_waitqueue_entry(wait_queue_t *q, struct task_struct *p)
 #endif
 	q->flags = 0;
 	q->task = p;
+	q->func = NULL;
 #if WAITQUEUE_DEBUG
 	q->__magic = (long)&q->__magic;
 #endif
 }
+static inline void init_waitqueue_func_entry(wait_queue_t *q,
+					wait_queue_func_t func)
+{
+	q->flags = 0;
+	q->task = NULL;
+	q->func = func;
+}                      
 
 static inline int waitqueue_active(wait_queue_head_t *q)
 {
@@ -189,6 +201,22 @@ static inline int waitqueue_active(wait_queue_head_t *q)
 
 	return !list_empty(&q->task_list);
 }
+#define add_wait_queue_cond(q, wait, cond) \
+	({                                                      \
+		unsigned long flags;                            \
+		int _raced = 0;                                 \
+		wq_write_lock_irqsave(&(q)->lock, flags);       \
+		(wait)->flags = 0;                              \
+		__add_wait_queue((q), (wait));                  \
+		rmb();                                          \
+		if (!(cond)) {                                  \
+			_raced = 1;                             \
+			__remove_wait_queue((q), (wait));       \
+		}                                               \
+		wq_write_unlock_irqrestore(&(q)->lock, flags);  \
+		_raced;                                         \
+	})
+
 
 static inline void __add_wait_queue(wait_queue_head_t *head, wait_queue_t *new)
 {
