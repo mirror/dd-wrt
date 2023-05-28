@@ -123,7 +123,16 @@ obj-$(CONFIG_EOU) += eou
 obj-$(CONFIG_OPENSER) += openser
 #obj-$(CONFIG_MILKFISH) += milkfish
 obj-$(CONFIG_MC) += libffi zlib glib20 unrar ncurses mc util-linux
+ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_BCMMODERN),y)
+obj-$(CONFIG_NOCAT) += nocat
+else
 obj-$(CONFIG_NOCAT) += libmicrohttpd nodogsplash
+endif
+else
+obj-$(CONFIG_NOCAT) += libmicrohttpd nodogsplash
+endif
+
 obj-$(CONFIG_POWERTOP) += pciutils ncurses powertop
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_ZABBIX) += pcre zabbix
