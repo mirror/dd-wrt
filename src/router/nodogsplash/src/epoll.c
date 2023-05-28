@@ -1,7 +1,7 @@
 
 #include <sys/syscall.h>
 #include <sys/epoll.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 
 #ifndef __NR_epoll_create
 #define __NR_epoll_create		(__NR_Linux + 248)
