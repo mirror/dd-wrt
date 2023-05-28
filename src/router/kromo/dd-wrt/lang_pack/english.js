@@ -1092,24 +1092,6 @@ hotspot.nodog_maxclients="Max Number of Clients";
 hotspot.nodog_downloadlimit="Download Limit";
 hotspot.nodog_uploadlimit="Upload Limit";
 
-hotspot.nocat_legend="NoCatSplash";
-hotspot.nocat_srv="Enable Portal";
-hotspot.nocat_gateway="Gateway Name";
-hotspot.nocat_gatewayaddr="Gateway IP";
-hotspot.nocat_home="Homepage";
-hotspot.nocat_extifname="External Interface";
-hotspot.nocat_ifname="Internal Interface";
-hotspot.nocat_redirect="Homepage Redirection";
-hotspot.nocat_allowweb="Allowed Web Hosts";
-hotspot.nocat_docroot="Document Root";
-hotspot.nocat_splash="Splash URL";
-hotspot.nocat_port="Exclude Ports";
-hotspot.nocat_timeout="Login Timeout";
-hotspot.nocat_verbose="Verbosity";
-hotspot.nocat_route="Route Only";
-hotspot.nocat_MAClist="MAC Whitelist";
-
-
 hotspot.smtp_legend="SMTP Redirect";
 hotspot.smtp_srv="Enable Redirect";
 hotspot.smtp_ip="Destination IP";
