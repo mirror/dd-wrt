@@ -23,7 +23,6 @@ void makemainfiltermenu(struct MENU *menu);
 int loadfilterlist(struct ffnode **fltfile);
 void save_filterlist(struct ffnode *fltlist);
 void pickafilter(struct ffnode *files, struct ffnode **fltfile, int *aborted);
-char *pickfilterbyname(struct ffnode *fltlist, char *filename);
 void selectfilter(struct filterfileent *ffe, int *aborted);
 void destroyfilterlist(struct ffnode *fltlist);
 void get_filter_description(char *description, int *aborted, char *pre_edit);

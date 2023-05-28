@@ -406,7 +406,7 @@ static void printdetails(struct ifcounts *ifcounts, WINDOW * win)
 
 	/* Bad packet count */
 
-	mvwprintw(win, 19, 65, "%8lu", ifcounts->bad.pc_packets);
+	mvwprintw(win, 19, 65, "%8llu", ifcounts->bad.pc_packets);
 }
 
 static void detstats_process_key(int ch)

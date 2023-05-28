@@ -64,7 +64,6 @@ struct filterent {
 struct filterlist {
 	struct filterent *head;
 	struct filterent *tail;
-	unsigned int lastpos;
 };
 
 #endif	/* IPTRAF_NG_FLTDEFS_H */

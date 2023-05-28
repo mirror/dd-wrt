@@ -6,11 +6,12 @@ CONTACT INFORMATION
 Individual Contact
 ~~~~~~~~~~~~~~~~~~
     IPTraf was written and primarily maintained by Gerard Paul Java
-(riker@seul.org). Fork to IPTraf-ng was made by Nikola Pajkovsky(npajkovs@redhat.com).
-Current maintainer is Philip Cameron(pcameron@redhat.com)
+(riker@seul.org). Fork to IPTraf-ng was made by Nikola Pajkovsky
+(npajkovs@redhat.com). The next maintainer was Philip Cameron
+(pcameron@redhat.com). The current maintainer is Vitezslav Samel
+(vitezslav@samel.cz).
 
 ===============
 Web information
 ~~~~~~~~~~~~~~~
-IPTraf-ng sites are https://github.com/iptraf-ng/iptraf-ng/
-
+Main IPTraf-ng site is https://github.com/iptraf-ng/iptraf-ng/.

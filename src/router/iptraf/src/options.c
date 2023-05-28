@@ -179,10 +179,10 @@ void loadoptions(void)
 static void updatetimes(WINDOW *win)
 {
 	wattrset(win, HIGHATTR);
-	mvwprintw(win, 10, 25, "%3u mins", options.timeout);
-	mvwprintw(win, 11, 25, "%3u mins", options.logspan / 60);
-	mvwprintw(win, 12, 25, "%3u secs", options.updrate);
-	mvwprintw(win, 13, 25, "%3u mins", options.closedint);
+	mvwprintw(win, 10, 25, "%3ld mins", options.timeout);
+	mvwprintw(win, 11, 25, "%3ld mins", options.logspan / 60);
+	mvwprintw(win, 12, 25, "%3ld secs", options.updrate);
+	mvwprintw(win, 13, 25, "%3ld mins", options.closedint);
 }
 
 static void showoptions(WINDOW *win)
