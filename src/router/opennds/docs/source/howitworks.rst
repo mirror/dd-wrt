@@ -1,0 +1,183 @@
+How openNDS (NDS) works
+#######################
+
+openNDS is a Captive Portal Engine. Any Captive Portal, including NDS, will have two main components:
+
+ * Something that does the capturing, and
+ * Something to provide a Portal for client users to log in.
+
+openNDS MUST run on a device configured as an IPv4 router.
+
+A wireless router will typically be running OpenWrt or some other Linux distribution.
+
+A router, by definition, will have two or more interfaces, at least one to connect to the wide area network (WAN) or Internet feed, and at least one connecting to the local area network (LAN).
+
+Each LAN interface must also act as the Default IP Gateway for its LAN, ideally with the interface serving IP addresses to client devices using DHCP.
+
+Multiple LAN interfaces can be combined into a single bridge interface. For example, ethernet, 2.4Ghz and 5Ghz networks are typically combined into a single bridge interface. Logical interface names will be assigned such as eth0, wlan0, wlan1 etc. with the combined bridge interface named as br-lan.
+
+NDS will manage one or more of them of them. This will typically be br-lan, the bridge to both the wireless and wired LAN, but could be, for example, wlan0 if you wanted NDS to work just on the wireless interface.
+
+Summary of Operation
+********************
+
+By default, NDS blocks everything, but intercepts port 80 requests.
+
+An initial port 80 request will be generated on a client device, usually automatically by the client device's built in Captive Portal Detection (CPD), or possibly by the user manually browsing to an http web page.
+
+This request will of course **be routed by the client device to the Default Gateway** of the local network. The Default Gateway will, as we have seen, be the router interface that NDS is managing.
+
+The Thing That Does the Capturing (NDS)
+=======================================
+
+ As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
+
+The Thing That Provides the Portal (FAS, PreAuth, Themespec)
+============================================================
+
+ The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of openNDS.
+
+ This is commonly known as the Splash Page, or more correctly, the entry point to the portal splash page sequence.
+
+ openNDS has its own web server built in and this can be used to serve the Portal "Splash" pages to the client browser, or a separate web server can be used.
+
+ openNDS comes with numerous standard Splash Page Sequence options pre-installed.
+
+ One provides a trivial Click to Continue splash page and another provides a Client User form requiring Name and Email address to be entered.
+
+ All of these can be customised or a complete specialised Portal can be written by the installer (See FAS, PreAuth, Themespec).
+
+ FAS, or Forward Authentication Service may use the web server embedded in openNDS, a separate web server installed on the NDS router, a web server residing on the local network or an Internet hosted web server.
+
+ The user of the client device will always be expected to complete some actions on the splash page.
+
+ Once the user on the client device has successfully completed the splash page actions, that page then links directly back to NDS.
+
+ For security, NDS expects to receive valid verification of the client. If the verification is valid, openNDS then "authenticates" the client device, allowing access to the Internet. openNDS uses various methods of encryption to ensure verification cannot be bypassed.
+
+ Post authentication processing extensions may be added to openNDS (See BinAuth). Once openNDS has authenticated a client, it calls a BinAuth script if enabled.
+
+ Typically, BinAuth is used to provide a local log of authenticated clients. In addition the BinAuth script can override client authentication if required.
+
+.. note::
+
+ FAS and Binauth can be enabled together. This can give great flexibility, with FAS providing remote verification and Binauth providing local post authentication processing closely linked to openNDS.
+
+
+Captive Portal Detection (CPD)
+******************************
+
+All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special “splash” web page to the connecting client device.
+
+The port 80 html request made by the client CPD can be one of many vendor specific URLs.
+
+    Typical CPD URLs used are, for example:
+
+    * `http://captive.apple.com/hotspot-detect.html`
+    * `http://connectivitycheck.gstatic.com/generate_204`
+    * `http://connectivitycheck.platform.hicloud.com/generate_204`
+    * `http://www.samsung.com/`
+    * `http://detectportal.firefox.com/success.txt`
+    *  Plus many more
+
+It is important to remember that CPD is designed primarily for mobile devices to automatically detect the presence of a portal and to trigger the login page, without having to resort to breaking SSL/TLS security by requiring the portal to redirect port 443 for example.
+
+Just about all current CPD implementations work very well but some compromises are necessary depending on the application.
+
+The vast majority of devices attaching to a typical Captive Portal are mobile devices. CPD works well giving the initial login page.
+
+For a typical guest wifi, eg a coffee shop, bar, club, hotel etc., a device connects, the Internet is accessed for a while, then the user takes the device out of range.
+
+When taken out of range, a typical mobile device begins periodically polling the wireless spectrum for SSIDs that it knows about to try to obtain a connection again, subject to timeouts to preserve battery life.
+
+Most Captive Portals have a session duration limit (NDS included).
+
+If a previously logged in device returns to within the coverage of the portal, the previously used SSID is recognised and CPD is triggered and tests for an Internet connection in the normal way. Within the session duration limit of the portal, the Internet connection will be established, if the session has expired, the splash page will be displayed again.
+
+Early mobile device implementations of CPD used to poll their detection URL at regular intervals, typically around 30 to 300 seconds. This would trigger the Portal splash page quite quickly if the device stayed in range and the session limit had been reached. 
+
+However it was very quickly realised that this polling kept the WiFi on the device enabled continuously having a very negative effect on battery life, so this polling whilst connected was either increased to a very long interval or removed all together (depending on vendor) to preserve battery charge. As most mobile devices come and go into and out of range, this is not an issue.
+
+A common issue raised is:
+
+*My devices show the splash page when they first connect, but when the authorization expires, they just announce there is no internet connection. I have to make them "forget" the wireless network to see the splash page again. Is this how is it supposed to work?*
+
+The workaround is as described in the issue, or even just manually disconnecting or turning WiFi off and on will simulate a "going out of range", initialising an immediate trigger of the CPD. One or any combination of these workarounds should work, again depending on the particular vendor's implementation of CPD.
+
+In contrast, most laptop/desktop operating systems, and browser versions for these still implement CPD polling whilst online as battery considerations are not so important.
+
+For example, Gnome desktop has its own built in CPD browser with a default interval of 300 seconds. Firefox also defaults to something like 300 seconds. Windows 10 is similar.
+
+This IS how it is supposed to work, but does involve some compromises.
+
+The best solution is to set the session timeout to a value greater than the expected length of time a client device is likely to be present. Experience shows a limit of 24 hours covers most situations eg bars, clubs, coffee shops, motels etc. If for example an hotel has guests regularly staying for a few days, then increase the session timeout as required.
+
+Staff at the venue could have their devices added to the Trusted List if appropriate, but experience shows, it is better not to do this as they very soon learn what to do and can help guests who encounter the issue. (Anything that reduces support calls is good!)
+
+Captive Portal Identification (CPI) (RFC 8910)
+**********************************************
+
+Captive Portal Identification is an alternative method of triggering the Portal "Splash" page without having to capture the attempted port 80 access that CPD does.
+
+Instead of waiting for the client to test for Internet access using its vendor specified detection URL, openNDS sends the end point URL of its own Portal using DHCP option 114 (default-url).
+
+Any clients supporting this method will open their CPD browser pointing at the specified URL instead of waiting for a redirection.
+
+This is a new and somewhat experimental standard but at the time of writing (September 2022) an increasing number of new clients are beginning to support it as their implementations of the standard mature.
+
+This method is enabled in openNDS by default, but can be disabled (see "Dhcp option 114 Enable - RFC8910" in the Configuration Options section).
+
+Captive Portal Identification With Portal API (RFC 8910 / RFC 8908)
+*******************************************************************
+
+The RFC8908 Captive Portal API extends Captive Portal Identification by adding an API by which a client device can access the Portal.
+This is supported in openNDS from version 9.5.0 onwards.
+
+At the time of writing (September 2022), very few client devices support this API.
+
+Network Zone Detection (Where is the Client Connected?)
+*******************************************************
+
+Client devices can be connected to one of a number of local WiFi SSIDs, connected directly or indirectly by ethernet, or connected via a wireless mesh network. Each connection type available is considered as a Network Zone.
+
+NDS detects which zone each client is connected to. This information can be used to dynamically customise the login for each zone.
+
+For example a coffee shop might have two SSIDs configured:
+
+ * Staff (Secure SSID ie with access code)
+ * Customers (open SSID with login form)
+
+In this example SSID "Staff" is configured on interface wlan0, and considered as Zone "Private".
+
+However, SSID "Customers" is configured on virtual interface wlan0-1, and considered as Zone "Public".
+
+NDS detects which zone is being used by a client and a relevant login page can be served.
+
+Packet filtering
+****************
+
+openNDS considers four kinds of packets coming into the router over the managed interface. Each packet is one of these kinds:
+
+ 1. **Blocked**, if the MAC mechanism is block, and the source MAC address of the packet matches one listed in the BlockedMACList; or if the MAC mechanism is allow, and source MAC address of the packet does not match one listed in the AllowedMACList or the TrustedMACList. These packets are dropped.
+ 2. **Trusted**, if the source MAC address of the packet matches one listed in the TrustedMACList. By default, these packets are accepted and routed to all destination addresses and ports. If desired, this behavior can be customized by FirewallRuleSet trusted-users and FirewallRuleSet trusted-users-to-router lists in the opennds.conf configuration file, or by the EmptyRuleSetPolicy trusted-users EmptyRuleSetPolicy trusted-users-to-router directives.
+ 3. **Authenticated**, if the packet's IP and MAC source addresses have gone through the openNDS authentication process and has not yet expired. These packets are accepted and routed to a limited set of addresses and ports (see FirewallRuleSet authenticated-users and FirewallRuleSet users-to-router in the opennds.conf configuration file).
+ 4. **Preauthenticated**. Any other packet. These packets are accepted and routed to a limited set of addresses and ports (see FirewallRuleSet      preauthenticated-users and FirewallRuleSet users-to-router in the opennds.conf configuration file). Any other packet is dropped, except that a packet for destination port 80 at any address is redirected to port 2050 on the router, where openNDS's built in libhttpd-based web server is listening. This begins the 'authentication' process. The server will serve a splash page back to the source IP address of the packet. The user clicking the appropriate link on the splash page will complete the process, causing future packets from this IP/MAC address to be marked as Authenticated until the inactive or forced timeout is reached, and its packets revert to being Preauthenticated.
+
+
+openNDS implements these actions by inserting rules in the router's iptables mangle PREROUTING chain to mark packets, and by inserting rules in the nat PREROUTING, filter INPUT and filter FORWARD chains which match on those marks.
+
+Because it inserts its rules at the beginning of existing chains, openNDS should be insensitive to most typical existing firewall configurations.
+
+Data volume and Rate Quotas
+***************************
+
+openNDS (NDS) has built in *Data Volume* and *Data Rate* quota support.
+
+Data volume and data rate quotas can be set globally in the config file.
+
+The global values can be overridden on a client by client basis as required.
+
+Traffic Shaping
+***************
+
+openNDS (NDS) supports Traffic Shaping (Bandwidth Limiting) using the SQM - Smart Queue Management (sqm-scripts) package, available for OpenWrt and generic Linux.

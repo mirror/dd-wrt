@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="shortcut icon" href="/images/splash.jpg" type="image/x-icon">
+<link rel="stylesheet" type="text/css" href="/splash.css">
+
+<title>$gatewayname</title>
+
+<!--
+Content:
+	This is the legacy splash page (splash.html) that used the deprecated NDS template system.
+	The template system was replaced by ThemeSpec scripts.
+	Only gatewayname, tok, redir and authaction template variables are supported
+	#
+	# The client is NOT required to accept a terms of service statement and does not receive any indication of a privacy policy.
+	#
+	# Use of this ThemeSpec may make you personally liable for misuse of the Internet connection and may not comply with your country or state regulations.
+	# Use at your own risk at public venues.
+
+	You may either embed css in this file or use a separate .css file, as demonstrated here.
+
+	It should be noted when designing a custom splash page
+	that for security reasons many CPD implementations:
+		Immediately close the browser when the client has authenticated.
+		Prohibit the use of href links.
+		Prohibit downloading of external files
+			(including .css and .js).
+		Prohibit the execution of javascript.
+-->
+
+</head>
+
+<body>
+<div class="offset">
+<med-blue>$gatewayname</med-blue>
+<div class="insert">
+<img style="height:60px; width:60px; float:left;" src="/images/splash.jpg" alt="Splash Page: For access to the Internet.">
+<big-red>Welcome!</big-red>
+<hr>
+<br>
+<italic-black>For access to the Internet, please tap or click Continue.</italic-black>
+<br>
+<br>
+<hr>
+
+<form method="get" action="$authaction">
+<input type="hidden" name="tok" value="$tok">
+<input type="hidden" name="redir" value="$redir">
+<input type="submit" value="Continue">
+</form>
+	
+<hr>
+<copy-right>Copyright &copy; The openNDS Contributors 2004-2022.</copy-right>
+
+</div>
+</div>
+</body>
+</html>
