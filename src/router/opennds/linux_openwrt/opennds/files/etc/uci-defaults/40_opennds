@@ -1,0 +1,9 @@
+#!/bin/sh
+
+uci -q batch <<-EOF
+	delete firewall.opennds
+	set firewall.opennds=include
+	set firewall.opennds.type=script
+	set firewall.opennds.path=/usr/lib/opennds/restart.sh
+	commit firewall
+EOF

@@ -1,0 +1,11 @@
+[Unit]
+Description=openNDS Captive Portal
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/opennds $OPTIONS
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

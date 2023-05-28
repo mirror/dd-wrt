@@ -1,0 +1,33 @@
+These two scripts, ndsctltest.sh and ndsstatus.sh are for stress testing ndsctl.
+They were created for testing on OpenWrt.
+They may or may not work on other operating systems but seems fine on Raspberry Pi OS and Opensuse
+
+Copy this folder to a suitable location on your router.
+Check both files are executable.
+
+If you are not using OpenWrt:
+	If your router defaults to busybox ash shell, all is well.
+	If your router defaults to bash shell (eg Debian and variants), then you should probably edit the shebang in each file:
+		From	#!/bin/sh
+		To	#!/bin/bash
+
+In an SSH terminal screen, cd into the folder and run ./ndsctltest.sh
+
+In second and third (or more) terminal screens start the test again.
+
+Monitor the outputs on each terminal screen.
+
+Each terminal screen will fork one instance of "ndsctl status" per second.
+
+In an additional terminal screen you can run the top or htop utility to monitor the number of queueing instances of ndsctl.
+Depending on the speed of the cpu in your router you may not see any queued instances.
+
+Increase the number of terminal screens running ndsctltest.sh
+
+At some point you will begin to see queued instances.
+If you increase the mumber of test terminal screens further, the number of queued instances will at some point begin to rise exponentially.
+
+The router may run out of memory or crash at this point.
+
+By varying the number of test terminals (forking at 1 instance per second) you will be able to determine the maximum rate per second your router can handle.
+This is very likely to be far greater than that required in real world use, but is a good test of the stability and capability of your router.

@@ -1,0 +1,883 @@
+
+# The options available here are an adaptation of the settings used in the legacy opennds.conf.
+
+config opennds
+	# enabled
+	# Set to 0 to disable opennds
+	option enabled 1
+	###########################################################################################
+
+	# debuglevel
+	# Set Debug Level (0-3)
+	# Default: 1
+	# 0 : Silent (only initial startup, LOG_ERR, LOG_EMERG and LOG_CRIT messages will be seen, otherwise there will be no logging.)
+	# 1 : LOG_ERR, LOG_EMERG, LOG_CRIT, LOG_WARNING and LOG_NOTICE. (Level 1 is the default level.)
+	# 2 : debuglevel 1  + LOG_INFO
+	# 3 : debuglevel 2 + LOG_DEBUG
+	#option debuglevel '2'
+	###########################################################################################
+
+	# fwhook_enabled
+	# Firewall Restart hook
+	# Default: 1 (enabled)
+	# It is required for OpenWrt Firewall 4 NFT (OpenWrt 22.03.0 and later)
+	#
+	# Warning: Disabling this option may soft brick your router
+	# This option should always be enabled.
+	#
+	#option fwhook_enabled '1'
+	###########################################################################################
+
+	# ndsctlsocket
+	# The socket name to use for ndsctl socket access, relative to the tmpfs mountpoint.
+	# Any directory/folder specified must exist.
+	# Default: ndsctl.sock (Do not add a leading "/")
+	# Full default socket path would be /tmp/ndsctl.sock in OpenWrt
+	# In the following example, the socket path would be /tmp/sockets/ndsctl.sock
+	#option ndsctlsocket 'sockets/ndsctl.sock'
+	###########################################################################################
+
+	# log_mountpoint
+	# Local Log Mountpoint
+	# Default: router's volatile tmpfs storage eg on OpenWrt '/tmp'
+	#
+	# Local logging can be directed to any storage accessible to the router eg USB drive, SSD etc
+	#
+	# **WARNING** - you cannot use the router's built in flash storage as this would cause
+	# excessive wear and eventual flash failure
+	#
+	# Example:
+	#option log_mountpoint '/logs'
+	###########################################################################################
+
+	# Login Option
+	# Default: 1
+	# Integer value sent to PreAuth script as login mode
+	#
+	# opennds comes preconfigured for three basic modes of operation
+	#
+	# 0. If FAS is not enabled, then this functions as mode 1
+	#
+	# 1.Default Dynamic Click to Continue
+	# The pre-installed dynamic login page is enabled by setting option login_option_enabled = '1'.
+	# It generates a Click to Continue page followed by a info/advertising page.
+	# User clicks on “Continue” are recorded in the log file /[tmpfs_dir]/ndslog/ndslog.log
+	#
+	# 2. Username/Emailaddress Dynamic Login
+	# The pre-installed dynamic login page is enabled by setting option login_option_enabled = '2'.
+	# It generates a login page asking for username and email address followed by an info/advertising page.
+	# User logins are recorded in the log file /[tmpfs_dir]/ndslog/ndslog.log
+	#
+	# 3. Use Theme defined in ThemeSpec path (option themespec_path)
+	#
+	#option login_option_enabled '1'
+	###########################################################################################
+
+	# Allow Preemptive Authentication
+	# Default: 0 - Disabled
+	# Enable by setting to 1
+	# This allows the ndsctl utility to preemptively authorise **connected** clients
+	# that have not entered the preauthenticated state.
+	# This is useful for example with IoT devices that do not have CPD (captive portal detection)
+	# or for a FAS to manage inter-captive-portal roaming by making use of a centralised database of client validations.
+	#
+	#option allow_preemptive_authentication '1'
+	###########################################################################################
+
+	# ThemeSpec Path
+	# Default: None
+	# Required when when login_option_enabled is set to '3'
+	#
+	# Note: /usr/lib/opennds/theme_click-to-continue.sh is used for login_option_enabled '1'
+	# and:  /usr/lib/opennds/theme_user_email_login.sh is used for login_option_enabled '2'
+	#
+	# Sets the ThemeSpec file path to be used when login_option_enabled '3'
+	#
+	# The ThemeSpec script makes use of lists of custom parameters, custom variables, custom image urls and custom files.
+	# and is used to generate the dynamic splash page sequence
+	#
+	# The ThemeSpec file will normally reside in /usr/lib/opennds/ but can be anywhere accessible to openNDS.
+	# The file must be flagged as executable and have the correct shebang for the default shell.
+	#
+	#option themespec_path '/usr/lib/opennds/<filename>'
+	###########################################################################################
+
+	# Define Custom Parameters
+	# Custom parameters are sent as fixed values to FAS
+	# Default None
+	#
+	# Custom Parameters listed in the form of param_name=param_value
+	# param_name and param_value must be urlencoded if containing white space or single quotes
+	# eg replace spaces with %20 - replace single quotes with %27
+	#
+	# Parameters should be configured one per line to prevent possible parsing errors.
+	# eg:
+	#list fas_custom_parameters_list '<param_name1=param_value1>'
+	#list fas_custom_parameters_list '<param_name2=param_value2>'
+	# etc.
+	#
+	# The following Working Example applies to the installed ThemeSpec Files:
+	# theme_click-to-continue-custom-placeholders
+	# and
+	# theme_user-email-login-custom-placeholders
+	#
+	#list fas_custom_parameters_list 'logo_message=openNDS:%20Perfect%20on%20OpenWrt!'
+	#list fas_custom_parameters_list 'banner1_message=BlueWave%20-%20Wireless%20Network%20Specialists'
+	#list fas_custom_parameters_list 'banner2_message=HMS%20Pickle'
+	#list fas_custom_parameters_list 'banner3_message=SeaWolf%20Cruiser%20Racer'
+	###########################################################################################
+
+	# Define Custom Variables
+	# Custom Variables are used by FAS to dynamically collect information from clients
+	# Default None
+	#
+	# Custom Variables are listed in the form of var_name=var_type
+	# var_name and var_type must be urlencoded if containing white space or single quotes
+	# eg replace spaces with %20 - replace single quotes with %27
+	#
+	# Variables should be configured one per line to prevent possible parsing errors.
+	# eg:
+	#list fas_custom_variables_list '<var_name1=var_type1>'
+	#list fas_custom_variables_list '<var_name2=var_type2>'
+	# etc.
+	#
+	# FAS Generic Variables - a custom FAS or ThemeSpec must be written to make use of FAS Generic Variables
+	#-------------------------------------------------------------------------------------------------------
+	# eg:
+	#list fas_custom_variables_list 'membership_number=number'
+	#list fas_custom_variables_list 'access_code=password'
+	#
+	# ThemeSpec Dynamically generated Form Fields
+	#--------------------------------------------
+	# ThemeSpec scripts can dynamically generate Form Field html and inject into the dynamic splash page sequence.
+	# This is achieved using a SINGLE line containing the keyword "input",
+	# in the form: fieldname:field-description:fieldtype
+	#
+	# Numerous fields can be defined in this single "input=" line, separated by a semicolon (;).
+	#
+	# The following Working Example applies to the installed ThemeSpec Files:
+	# theme_click-to-continue-custom-placeholders
+	# and
+	# theme_user-email-login-custom-placeholders
+	#
+	# this example inserts Phone Number and Home Post Code fields:
+	#
+	#list fas_custom_variables_list 'input=phone:Phone%20Number:text;postcode:Home%20Post%20Code:text'
+	#
+	###########################################################################################
+
+	# Define Custom Images
+	# Custom Images are served by a local FAS where required in dynamic portal pages
+	# Default None
+	#
+	# Custom images will be copied from the URL to the openNDS router
+	#
+	# Custom Images are listed in the form of image_name_type=image_url
+	# image_name and image_url must be urlencoded if containing white space or single quotes
+	# The image url must begin with http:// https:// or file://
+	# Custom images will be copied from the URL to the openNDS router
+	#
+	# Images should be configured one per line to prevent possible parsing errors.
+	#
+	#list fas_custom_images_list '<image_name1_[type]=image_url1>'
+	#list fas_custom_images_list '<image_name2_[type]=image_url2>'
+	# etc.
+	#
+	# "type" can be any recognised image file extension eg jpg, png, ico, etc.
+	#
+	# The following Working Example applies to the installed ThemeSpec Files:
+	# theme_click-to-continue-custom-placeholders
+	# and
+	# theme_user-email-login-custom-placeholders
+	#
+	#list fas_custom_images_list 'logo_png=https://openwrt.org/_media/logo.png'
+	#list fas_custom_images_list 'banner1_jpg=https://raw.githubusercontent.com/openNDS/openNDS/v9.5.0/resources/bannerbw.jpg'
+	#list fas_custom_images_list 'banner2_jpg=https://raw.githubusercontent.com/openNDS/openNDS/v9.5.0/resources/bannerpickle.jpg'
+	#list fas_custom_images_list 'banner3_jpg=https://raw.githubusercontent.com/openNDS/openNDS/v9.5.0/resources/bannerseawolf.jpg'
+	#
+	###########################################################################################
+
+	# Define Custom Files
+	# Custom Files are served by a local FAS where required in dynamic portal pages
+	# Default None
+	#
+	# Custom files will be copied from the URL to the openNDS router
+	#
+	# Images should be configured one per line to prevent possible parsing errors.
+	#
+	# Custom files are listed in the form of file_name_type=file_url
+	# file_name and file_url must be urlencoded if containing white space or single quotes
+	# The file url must begin with http:// https:// or file://
+	# Custom files will be copied from the URL to the openNDS router
+	#
+	#list fas_custom_files_list '<file_name1_[type]=file_url1>'
+	#list fas_custom_files_list '<file_name2_[type]=file_url2>'
+	# "type" can be any recognised file extension that can be used to display web content eg txt, htm etc.
+	#
+	# The following Working Example applies to the installed ThemeSpec Files:
+	# theme_click-to-continue-custom-placeholders
+	# and
+	# theme_user-email-login-custom-placeholders
+	#
+	#list fas_custom_files_list 'advert1_htm=https://raw.githubusercontent.com/openNDS/openNDS/v9.5.0/resources/bannerpickle.htm'
+	#
+	###########################################################################################
+
+	# Set refresh interval for downloaded remote files (in minutes)
+	# Seting to 0 (zero) means refresh is disabled
+	# Default 0
+	#
+	#option remotes_refresh_interval '720'
+	#
+	###########################################################################################
+
+	# Use outdated libmicrohttpd (MHD)
+	# Default 0
+	#
+	# Warning, this may be unstable or fail entirely - it would be better to upgrade MHD.
+	# Use at your own risk
+	#
+	# Older versions of MHD convert & and + characters to spaces when present in form data
+	# This can make a PreAuth or BinAuth impossible to use for a client if form data contains either of these characters
+	# eg. in username or password
+	#
+	# MHD versions earlier than 0.9.71 are detected.
+	#
+	# If this option is set to 0 (default), NDS will terminate if MHD is earlier than 0.9.71
+	# If this option is set to 1, NDS will attempt to start and log an error.
+	#
+	#option use_outdated_mhd '0'
+	###########################################################################################
+
+	# Maximum Page Size to be served by MHD
+	# Default 10240 bytes
+	# Minimum value 1024 bytes
+	# Maximum - limited only by free RAM in the router
+	#
+	# This sets the maximum number of bytes that will be served per page by the MHD web server
+	# Setting this option is useful:
+	#	1. To reduce memory requirements on a resource constrained router
+	#	2. To allow large pages to be served where memory usage is not a concern
+	#
+	#option max_page_size '4096'
+	###########################################################################################
+
+	# Maximum number of Local Log Entries
+	# Default 100
+	# Minimum value 0
+	# Maximum value - limited only by free storage space on the logging mountpoint
+	#
+	# If set to '0' there is no limit
+	#
+	# This is the maximum number of local log entries allowed before log rotation begins
+	# Both ThemeSpec and Binauth log locally if they are enabled
+	#
+	# **WARNING** - local logging is by default written to the tmpfs volatile storage
+	# If this option were to be set too high the router could run out of tmpfs storage and/or free RAM
+	#
+	# Non-volatile storage, such as a USB storage device may be defined using the log_mountpoint option
+	#
+	# Example:
+	#option max_log_entries '1000'
+	###########################################################################################
+
+	# MHD Unescape callback - This is an advanced option
+	# Default 0
+	#
+	# MHD has a built in unescape function that urldecodes incoming queries from browsers
+	#
+	# This option allows an external unescape script to be enabled and replace the built in decoder
+	#
+	# The script must be named unescape.sh, be present in /usr/lib/opennds/ and be executable.
+	#
+	# A very simple standard unescape.sh script is installed by default
+	# Set to 1 to enable this option, 0 to disable
+	# default is disabled
+	#
+	#option unescape_callback_enabled '0'
+	###########################################################################################
+
+	# WebRoot
+	# Default: /etc/opennds/htdocs
+	#
+	# The local path where the system css file, and default splash page image resides.
+	# ie. Serve the file splash.css from this directory
+	#option webroot '/etc/opennds/htdocs'
+	###########################################################################################
+
+	# GateWayInterface
+	# Default br-lan
+	# Use this option to set the device opennds will bind to.
+	# The value may be an interface section in /etc/config/network or a device name such as br-lan.
+	# The selected interface must be allocated an IPv4 address.
+	# In OpenWrt this is normally br-lan, in generic Linux it might be something else.
+	#
+	#option gatewayinterface 'br-lan'
+	###########################################################################################
+
+	# GatewayPort
+	# Default: 2050
+	#
+	# openNDS's own http server uses gateway address as its IP address.
+	# The port it listens to at that IP can be set here; default is 2050.
+	# This option rarely needs to be changed
+	# Warning: Port 80 is forbidden.
+	#
+	#option gatewayport '2050'
+	###########################################################################################
+
+	# GatewayName
+	# Default: openNDS
+	#
+	# gatewayname is used as an identifier for the instance of openNDS
+	#
+	# It is displayed on the default splash page sequence.
+	#
+	# It is particularly useful in the case of a single remote FAS server that serves multiple
+	# openNDS sites, allowing the FAS to customise its response for each site.
+	#
+	# Note: The single quote (or apostrophe) character ('), cannot be used in the gatewayname.
+	# If it is required, use the htmlentity &#39; instead.
+	#
+	# For example:
+	# option gatewayname 'Bill's WiFi' is invalid.
+	# Instead use:
+	# option gatewayname 'Bill&#39;s WiFi'
+	#
+	#option gatewayname 'OpenWrt openNDS'
+	###########################################################################################
+
+	# Serial Number Suffix Enable
+	# Appends a serial number suffix to the gatewayname string.
+	#
+	# openNDS constructs a serial number based on the router mac address and adds it to the gatewayname
+	#
+	# Default 1 (enabled)
+	#
+	# To disable, set to 0
+	#
+	# Example:
+	#
+	#option enable_serial_number_suffix '0'
+	###########################################################################################
+
+	# GatewayFQDN
+	# Default: status.client
+	# This is the simulated FQDN used by a client to access the Client Status Page
+	# If not set, the Status page can be accessed at: http://gatewayaddress:gatewayport/
+	#
+	# Warning - if set, services on port 80 of the gateway will no longer be accessible (eg Luci AdminUI)
+	#
+	# By default, the Error511/Status page will be found at http://status.client/ by a redirection
+	# of port 80 to http://gatewayaddress:gatewayport/
+	#
+	# Disable GatewayFQDN by setting the option to 'disable'
+	# ie:
+	#option gatewayfqdn 'disable'
+	#
+	# Alternate Useful Example:
+	#option gatewayfqdn 'login.page'
+	###########################################################################################
+
+	# StatusPath
+	# Default: /usr/lib/opennds/client_params.sh
+	# This is the script used to generate the GatewayFQDN client status and Error511 pages
+	#
+	#option statuspath '/mycustomscripts/custom_client_params.sh'
+	###########################################################################################
+
+
+	# MaxClients
+	# Default 250
+	# The maximum number of clients allowed to connect
+	# This should be less than or equal to the number of allowed DHCP leases
+	# For example:
+	#option maxclients '500'
+	###########################################################################################
+
+	# Client timeouts in minutes
+	#
+	# preauthidletimeout is the time in minutes after which a client is disconnected if not authenticated
+	# ie the client has not attempted to authenticate for this period
+	# Default 30 minutes
+	#option preauthidletimeout '15'
+
+	# authidletimeout is the time in minutes after which an idle client is disconnected
+	# ie the client has not used the network access for this period
+	# Default 120 minutes
+	#option authidletimeout '180'
+
+	# Session Timeout is the interval after which clients are forced out (a value of 0 means never)
+	# Clients will be deauthenticated at the end of this period
+	# Default 1440 minutes (24 hours)
+	# Example: Set to 20 hours (1200 minutes)
+	#option sessiontimeout '1200'
+	###########################################################################################
+
+	# checkinterval
+	# The interval in seconds at which opennds checks client timeout and quota status
+	# Default 15 seconds
+	# Example: Set to 30 seconds
+	#option checkinterval '30'
+	###########################################################################################
+
+	# Rate Quotas
+	# Note: upload means to the Internet, download means from the Internet
+	# Defaults 0
+	# Integer values only
+	#
+	# If the client average data rate exceeds the value set here, the client will be rate limited
+	# Values are in kb/s
+	# If set to 0, there is no upper limit
+	#
+	# Quotas and rates can also be set by FAS via Authmon Daemon, ThemeSpec scripts, BinAuth, and ndsctl auth.
+	# Values set by these methods, will override values set in this config file.
+	#
+	# Rates:
+	#option uploadrate '0'
+	#option downloadrate '0'
+	#
+	###########################################################################################
+
+	# Bucket Ratio
+	# Default 10
+	#
+	# Upload and Download bucket ratios can be defined.
+	# Allows control of upload rate limit threshold overrun per client.
+	# Used in conjunction with MaxDownloadBucketSize and MaxUploadBucketSize
+	# Facilitates calculation of a dynamic "bucket size" or "queue length" (in packets)
+	# to be used for buffering upload and download traffic to achieve rate restrictions
+	# defined in this config file or by FAS for individual clients.
+	# If a bucket becomes full, packets will overflow and be dropped to maintain the rate limit.
+	#
+	# To minimise the number of dropped packets the bucket ratio can be increased whilst
+	# still maintaining the configured rate restriction.
+	#
+	# ***CAUTION*** Large values may consume large amounts of memory per client.
+	#
+	# If the client's average rate does not exceed its configured value within the
+	# ratecheck window interval (See RateCheckWindow option), no memory is consumed.
+	#
+	# If the rate is set to 0, the Bucket Ratio setting has no meaning
+	# and no memory is consumed.
+	#
+	# option upload_bucket_ratio '1'
+	# option download_bucket_ratio '5'
+	###########################################################################################
+
+	# MaxDownloadBucketSize
+	# Allows control over download rate limiting packet loss at the expense of increased latency
+	# ***CAUTION*** Large values may consume large amounts of memory per client.
+	# Default 250
+	# Allowed Range 5 to 10000
+	#option max_download_bucket_size '100'
+	###########################################################################################
+
+	# MaxUploadBucketSize
+	# Allows control over upload rate limiting packet loss at the expense of increased latency
+	# ***CAUTION*** Large values may consume large amounts of memory per client.
+	# Default 250
+	# Allowed Range 5 to 10000
+	#
+	#option max_upload_bucket_size '100'
+	###########################################################################################
+
+	# DownLoadUnrestrictedBursting
+	# Default 0
+	# Enables / disables unrestricted bursting
+	# Setting to 0 disables
+	# Setting to 1 enables
+	#
+	# If enabled, a client is allowed unrestricted bursting until its average download
+	#	rate exceeds the set download rate threshold.
+	#	Unrestricted bursting minimises memory consumption
+	#	at the expense of potential short term bandwidth hogging
+	#
+	# If disabled, a client is not allowed unrestricted bursting.
+	#
+	# option download_unrestricted_bursting '1'
+	###########################################################################################
+
+	# UpLoadUnrestrictedBursting
+	# Default 0
+	# Enables / disables unrestricted bursting
+	# Setting to 0 disables
+	# Setting to 1 enables
+	#
+	# If enabled, a client is allowed unrestricted bursting until its average upload
+	#	rate exceeds the set upload rate threshold.
+	#	Unrestricted bursting minimises memory consumption
+	#	at the expense of potential short term bandwidth hogging
+	#
+	# If disabled, a client is not allowed unrestricted bursting.
+	#
+	# option upload_unrestricted_bursting '1'
+	###########################################################################################
+
+	# RateCheckWindow
+	# Default 2
+	#
+	# The client data rate is calculated using a moving average.
+	#
+	# The moving average window size (or bursting interval) is equal to ratecheckwindow times checkinterval (seconds)
+	#
+	# All rate limits can be globally disabled by setting this option to 0 (zero)
+	#
+	# Example: Disable all rate quotas for all clients, overriding settings made in FAS via Authmon Daemon,
+	#	ThemeSpec scripts, BinAuth, and ndsctl auth:
+	#option ratecheckwindow '0'
+	#
+	# Example: Set to 3 checkinterval periods:
+	#option ratecheckwindow '3'
+	###########################################################################################
+
+	# Volume Quotas:
+	# If the client data quota exceeds the value set here, the client will be forced out
+	# Defaults 0
+	# Integer values only
+	#
+	# Values are in kB
+	# If set to 0, there is no limit
+	#
+	#option uploadquota '0'
+	#option downloadquota '0'
+	###########################################################################################
+
+	# Enable BinAuth Support. BinAuth enables POST AUTHENTICATION PROCESSING
+	# and is useful in particular when a FAS is configured remotely
+	# Default disabled
+	#
+	# If set, a BinAuth program or script is triggered by several possible methods
+	# and is called with several arguments on both authentication and deauthentication:
+	#
+	#
+	# Possible methods
+	#
+	# Authentication:
+	# "auth_client": Request for authentication received from the captive portal splash page.
+	# "client_auth": Acknowledgement that Client was authenticated via this script.
+	# "ndsctl_auth": Client was authenticated by ndsctl auth command.
+	#
+	# Deauthentication:
+	# "client_deauth": Client deauthenticated by the client via captive portal splash page.
+	# "idle_deauth": Client was deauthenticated because of inactivity.
+	# "timeout_deauth": Client was deauthenticated because the session timed out.
+	# "ndsctl_deauth": Client was deauthenticated by ndsctl deauth command.
+	# "uprate_deauth": Client was deauthenticated because its average upload rate exceeded the allowed value
+	# "downrate_deauth": Client was deauthenticated because its average download rate exceeded the allowed value
+	# "upquota_deauth": Client was deauthenticated because its upload quota exceeded the allowed value
+	# "downquota_deauth": Client was deauthenticated because its download quota exceeded the allowed value
+	# "shutdown_deauth": Client was deauthenticated by openNDS terminating.
+	#
+	# A fully functional BinAuth script is pre-installed and provides local logging
+	# of client activity. This is enabled by uncommenting the following line:
+	#option binauth '/usr/lib/opennds/binauth_log.sh'
+	###########################################################################################
+
+	# Set Fasport
+	# This is the Forwarding Authentication Service (FAS) port number
+	# Redirection is changed to the IP port of a FAS (provided by the system administrator)
+	# Note: if FAS is running locally (ie fasremoteip is NOT set), port 80 cannot be used.
+	#
+	# Typical Remote Shared Hosting Example:
+	#option fasport '80'
+	#
+	# Typical Locally Hosted example (ie fasremoteip not set):
+	#option fasport '2080'
+	###########################################################################################
+
+	# Option: fasremotefqdn
+	# Default: Not set
+	# If set, this is the remote fully qualified domain name (FQDN) of the FAS.
+	# The protocol must NOT be prepended to the FQDN (ie http:// or https://)
+	# To prevent CPD or browser security errors NDS prepends the required http:// or https://
+	# before redirection, depending upon the fas_secure_enabled option.
+	#
+	# If set, DNS MUST resolve fasremotefqdn to be the same ip address as fasremoteip.
+	#
+	# Typical Remote Shared Hosting Example (replace this with your own FAS FQDN):
+	#option fasremotefqdn 'onboard-wifi.net'
+	#
+	# Note: For a CDN (Content Delivery Network) hosted server,
+	#	you must also add fasremotefqdn to the Walled Garden list of FQDNs
+	#
+	###########################################################################################
+
+	# Option: fasremoteip
+	# Default: GatewayAddress (the IP of NDS)
+	# If set, this is the remote ip address of the FAS.
+	#
+	# Typical Remote Shared Hosting Example (replace this with your own remote FAS IP):
+	#option fasremoteip '46.32.240.41'
+	###########################################################################################
+
+	# Option: faspath
+	# Default: /
+	# This is the path from the FAS Web Root to the FAS login page
+	# (not the file system root).
+	#
+	# In the following examples, replace with your own values for faspath
+	#
+	# Typical Remote Shared Hosting Example (if fasremotefqdn is not specified):
+	#option faspath '/remote_host_fqdn/fas/fas-hid.php'
+	#
+	# Typical Remote Shared Hosting Example (ie BOTH fasremoteip AND fasremotefqdn set):
+	#option faspath '/fas/fas-hid.php'
+	#
+	# Typical Locally Hosted Example (ie fasremoteip not set):
+	#option faspath '/fas/fas-hid.php'
+	###########################################################################################
+
+	# Option: faskey
+	# Default: 1234567890
+	# A key phrase for NDS to encrypt the query string sent to FAS
+	# Can be any text string with no white space
+	# Hint and Example: Choose a secret string and use sha256sum utility to generate a hash.
+	# eg. Use the command - echo "secret key" | sha256sum
+	# Option faskey must be pre-shared with FAS.
+	#
+	#option faskey '328411b33fe55127421fa394995711658526ed47d0affad3fe56a0b3930c8689'
+	###########################################################################################
+
+	# Option: fas_secure_enabled
+	# Default: 1
+
+	# ****If set to "0"****
+	# The FAS is enforced by NDS to use http protocol.
+	# The client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
+	# Note: This level is insecure and can be easily bypassed
+
+	# ****If set to "1"****
+	# The FAS is enforced by NDS to use http protocol.
+	# The client token will be hashed and sent to the FAS along with other relevent information in a base 64 encoded string
+	#
+	# FAS must return the sha256sum of the concatenation of hid (the hashed original token), and faskey to be used by NDS for client authentication.
+	# This is returned to FAS for authentication
+	#
+
+	# ****If set to "2"****
+	# The FAS is enforced by NDS to use http protocol.
+	#
+	# The parameters clientip, clientmac, gatewayname, hid(the hashed original token), gatewayaddress, authdir, originurl and clientif
+	# are encrypted using faskey and passed to FAS in the query string.
+	#
+	# The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
+	#
+	# The cipher used is "AES-256-CBC".
+	#
+	# The "php-cli" package and the "php-openssl" module must both be installed for fas_secure level 2 and 3.
+	#
+	# openNDS does not depend on this package and module, but will exit gracefully
+	# if this package and module are not installed when this level is set.
+	#
+	# The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string.
+	# An example FAS level 2 php script (fas-aes.php) is included in the /etc/opennds directory and also supplied in the source code.
+
+	# ****If set to "3"****
+	# The FAS is enforced by NDS to use https protocol.
+	#
+	# Level 3 is the same as level 2 except the use of https protocol is enforced for FAS.
+	#
+	# In addition, the "authmon" daemon is loaded.
+	# This allows the external FAS, after client verification, to effectively traverse inbound firewalls and address translation
+	# to achieve NDS authentication without generating browser security warnings or errors.
+	# An example FAS level 3 php script (fas-aes-https.php) is included in the /etc/opennds directory and also supplied in the source code.
+	#
+	# Note: Option faskey must be pre shared with the FAs script in use (including any ThemeSpec local file) if fas secure is set to levels 1, 2 and 3.
+	#option fas_secure_enabled '1'
+	###########################################################################################
+
+	# NAT Traversal Poll Interval
+	# Sets the polling interval for NAT Traversal in seconds
+	#
+	# Default 10 seconds
+	# Allowed values between 1 and 60 seconds inclusive
+	# Defaults to 10 seconds if set outside this range
+	#
+	# Effective only when option fas_secure_enabled is set to 3
+	#
+	# Example:
+	#option nat_traversal_poll_interval '5'
+	###########################################################################################
+
+	# PreAuth
+	# Default Not set, or automatically set by "option login_option_enabled"
+	# PreAuth support allows FAS to call a local program or script with html served by the built in NDS web server
+	# If the option is set, it points to a program/script that is called by the NDS FAS handler
+	# All other FAS settings will be overidden.
+	#
+	#option preauth '/path/to/myscript/myscript.sh'
+	###########################################################################################
+
+	# Block Access For Authenticated Users (block):
+	# Default: None
+	#
+	# If Block Access is specified, an allow or passthrough must be specified afterwards
+	#	as any entries set here will override the access default
+	#
+	# Examples:
+	#
+	# You might want to block entire IP subnets. e.g.:
+	#list authenticated_users 'block to 123.2.3.0/24'
+	#list authenticated_users 'block to 123.2.0.0/16'
+	#list authenticated_users 'block to 123.0.0.0/8'
+	#
+	# or block access to a single IP address. e.g.:
+	#
+	#list authenticated_users 'block to 123.2.3.4'
+	#
+	# Do not forget to add an allow or passthrough if the default only is assumed (see Grant Access)
+	#
+	###########################################################################################
+
+	# Grant Access For Authenticated Users (allow and passthrough):
+	#
+	# Access can be allowed by openNDS directly, overriding firewall rules that might be set elsewhere
+	# or Access can be allowed by openNDS but the final decision can be passed on to other firewall rules that might be set.
+	#
+	# Default: list authenticated_users 'passthrough all'
+	#
+	# Any entries set here, or above in Block Access, will override the default
+	#
+	# Example: Grant access overriding firewall rules that might be set elsewhere.
+	#list authenticated_users 'allow all'
+	#
+	# Example: 
+	# Grant access to https web sites, subject to firewall rules that might be set elsewhere.
+	#list authenticated_users 'passthrough tcp port 443'
+	#
+	# Grant access to http web sites, overriding firewall rules that might be set elsewhere.
+	#list authenticated_users 'allow tcp port 80'
+	#
+	# Grant access to udp services at address 123.1.1.1, on port 5000, overriding firewall rules that might be set elsewhere.
+	#list authenticated_users 'allow udp port 5000 to 123.1.1.1'
+	#
+	###########################################################################################
+
+	# For preauthenticated users:
+	#
+	#	*****IMPORTANT*****
+	#
+	# To enable RFC8910 Captive Portal Identification
+	#	AND to help prevent DNS tunnelling, DNS Hijacking and generally improve security,
+	#
+	# 	****DO NOT ALLOW ACCESS TO EXTERNAL DNS SERVICES****
+	#
+	###########################################################################################
+
+	# Walled Garden
+	# Allow preauthenticated users to access external services
+	# This is commonly referred to as a Walled Garden.
+	#
+	# A Walled Garden can be configured either:
+	# 1. Manually for known ip addresses
+	# or
+	# 2. Autonomously from a list of FQDNs and ports
+
+	#####
+	# Manual Walled Garden configuration requires research to determine the ip addresses of the Walled Garden site(s)
+	# This can be problematic as sites can use many dynamic ip addresses.
+	# However, manual configuration does not require any additional dependencies (ie additional installed packages).
+	#
+	# Note that standard unencrypted HTTP port (TCP port 80) is used for captive portal detection (CPD) and 
+	# access to external websites should use HTTPS (TCP port 443) for security.
+	# It is still possible to allow TCP port 80 by using Autonomous Walled Garden approach.
+	#
+	# Manual configuration example:
+	#
+	#list preauthenticated_users 'allow udp port 8020 to 112.122.123.124'
+	#
+
+	#####
+	# Autonomous Walled Garden configuration using a list of FQDNs and Ports.
+	#
+	# This has the advantage of discovering all ip addresses used by the Walled Garden sites.
+	# But it does require the ipset and dnsmasq-full packages to be installed
+	# by running the following commands:
+	#
+	# opkg update
+	# opkg install ipset
+	# opkg remove dnsmasq
+	# opkg install dnsmasq-full
+	#
+	# Configuration is then a simple matter of adding two lists as follows:
+	# 
+	# list walledgarden_fqdn_list 'fqdn1 fqdn2 fqdn3 .... fqdnN'
+	# list walledgarden_port_list 'port1 port2 port3 .... portN'
+	#
+	# Note: If walledgarden_port_list is NOT specified, then Walled Garden access is granted
+	# for all protocols (tcp, udp, icmp) on ALL ports for each fqdn specified in walledgarden_fqdn_list.
+	#
+	# Note: If walledgarden_port_list IS specified, then:
+	#  1. Specified port numbers apply to ALL FQDN's specified in walledgarden_fqdn_list.
+	#  2. Only tcp protocol Walled Garden access is granted.
+
+	# Autonomous configuration examples:
+	#
+	# 1. To add Facebook to the Walled Garden, the list entries would be:
+	# 	list walledgarden_fqdn_list 'facebook.com fbcdn.net'
+	# 	list walledgarden_port_list '443'
+	#
+	# 2. To add Paypal to the Walled Garden, the list entries would be:
+	# 	list walledgarden_fqdn_list 'paypal.com paypalobjects.com'
+	# 	list walledgarden_port_list '443'
+
+	###########################################################################################
+
+	# User access to the router
+	#
+	# users_to_router_passthrough
+	# Default 0 (disabled)
+	#
+	# Warning: Enabling this option may soft brick your router
+	# If enabled you must allow access to essential services via rules configured in the system firewall
+
+	#option users_to_router_passthrough '0'
+
+	# Essential Services - Allow ports for DNS and DHCP (disabling these will soft brick your router):
+	list users_to_router 'allow tcp port 53'
+	list users_to_router 'allow udp port 53'
+	list users_to_router 'allow udp port 67'
+
+	# Optional Services - Allow ports for SSH/HTTPS:
+	list users_to_router 'allow tcp port 22'
+	list users_to_router 'allow tcp port 443'
+	###########################################################################################
+
+	# MAC addresses that do not need to authenticate
+	#list trustedmac '00:00:C0:01:D0:1D'
+	###########################################################################################
+
+	# dhcp_default_url_enable
+	#
+	# Sends "default_url" (dhcp option 114) with all replies to dhcp requests
+	# Required for RFC8910 Captive Portal Identification
+	#
+	# Default 1 (enabled)
+	# Warning: Disabling will prevent RFC8910/8908 clients from logging in to the portal
+	#
+	#option dhcp_default_url_enable '1'
+	###########################################################################################
+
+	# openNDS uses specific HEXADECIMAL values to mark packets used by iptables/nftables as a bitwise mask.
+	# This mask can conflict with the requirements of other packages.
+	#
+	# However the defaults are fully compatible with the defaults used in mwan3 and sqm
+	#
+	# Any values set here are interpreted as in hex format.
+	#
+	# Option: fw_mark_authenticated
+	# Default: 30000 (0011|0000|0000|0000|0000 binary)
+	#
+	# Option: fw_mark_trusted
+	# Default: 20000 (0010|0000|0000|0000|0000 binary)
+	#
+	# Option: fw_mark_blocked
+	# Default: 10000 (0001|0000|0000|0000|0000 binary)
+	#
+	#option fw_mark_authenticated '30000'
+	#option fw_mark_trusted '20000'
+	#option fw_mark_blocked '10000'
+	###########################################################################################
+
+
