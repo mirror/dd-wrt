@@ -86,7 +86,7 @@ static int do_ncp_rpc_call(struct ncp_server *server, int size,
 	struct socket *sock;
 	int result;
 	char *start = server->packet;
-	poll_table wait_table;
+	struct poll_wqueues wait_table;
 	int init_timeout, max_timeout;
 	int timeout;
 	int retrans;
@@ -140,7 +140,7 @@ static int do_ncp_rpc_call(struct ncp_server *server, int size,
 		   instructions adding the wait_table waitqueues in the
 		   waitqueue-head before going to calculate the mask-retval. */
 		__set_current_state(TASK_INTERRUPTIBLE);
-		if (!(sock->ops->poll(file, sock, &wait_table) & POLLIN)) {
+		if (!(sock->ops->poll(file, sock, &wait_table.pt) & POLLIN)) {
 			int timed_out;
 			if (timeout > max_timeout) {
 				/* JEJB/JSP 2/7/94
@@ -261,7 +261,7 @@ static int do_ncp_rpc_call(struct ncp_server *server, int size,
 }
 
 static int do_tcp_rcv(struct ncp_server *server, void *buffer, size_t len) {
-	poll_table wait_table;
+	struct poll_wqueues wait_table;
 	struct file *file;
 	struct socket *sock;
 	int init_timeout;
@@ -285,7 +285,7 @@ static int do_tcp_rcv(struct ncp_server *server, void *buffer, size_t len) {
 		   instructions adding the wait_table waitqueues in the
 		   waitqueue-head before going to calculate the mask-retval. */
 		__set_current_state(TASK_INTERRUPTIBLE);
-		if (!(sock->ops->poll(file, sock, &wait_table) & POLLIN)) {
+		if (!(sock->ops->poll(file, sock, &wait_table.pt) & POLLIN)) {
 			init_timeout = schedule_timeout(init_timeout);
 			poll_freewait(&wait_table);
 			current->state = TASK_RUNNING;

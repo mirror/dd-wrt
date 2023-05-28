@@ -714,16 +714,24 @@ same_process:
 static inline void __wake_up_common (wait_queue_head_t *q, unsigned int mode,
 			 	     int nr_exclusive, const int sync)
 {
-	struct list_head *tmp;
+	struct list_head *tmp, *next;
 	struct task_struct *p;
 
 	CHECK_MAGIC_WQHEAD(q);
 	WQ_CHECK_LIST_HEAD(&q->task_list);
 	
-	list_for_each(tmp,&q->task_list) {
+	list_for_each_safe(tmp, next, &q->task_list) {
 		unsigned int state;
+		wait_queue_func_t func;
                 wait_queue_t *curr = list_entry(tmp, wait_queue_t, task_list);
-
+		func = curr->func;
+		if (func) {
+			unsigned flags = curr->flags;
+			if (func(curr, mode, sync) &&
+			    (flags & WQ_FLAG_EXCLUSIVE) && !--nr_exclusive)
+				break;
+			continue;
+		}
 		CHECK_MAGIC(curr->__magic);
 		p = curr->task;
 		state = p->state;
