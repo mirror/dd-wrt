@@ -259,23 +259,6 @@ void pickafilter(struct ffnode *ffiles, struct ffnode **fltfile, int *aborted)
 	doupdate();
 }
 
-char *pickfilterbyname(struct ffnode *ffiles, char *filtername)
-{
-	struct ffnode *ftmp = ffiles;
-	static char filterfile[160];
-
-	while (ftmp != NULL) {
-		if (strcmp(ftmp->ffe.desc, filtername) == 0) {
-			strncpy(filterfile, ftmp->ffe.filename, 40);
-			return filterfile;
-		}
-
-		ftmp = ftmp->next_entry;
-	}
-
-	return NULL;
-}
-
 void selectfilter(struct filterfileent *ffe, int *aborted)
 {
 	struct ffnode *fltfile;

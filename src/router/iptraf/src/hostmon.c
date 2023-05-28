@@ -290,7 +290,7 @@ static struct ethtabent *addethentry(struct ethtab *table,
 
 	table->entcount++;
 
-	mvwprintw(table->borderwin, LINES - 3, 1, " %u entries ",
+	mvwprintw(table->borderwin, LINES - 3, 1, " %lu entries ",
 		  table->entcount);
 
 	return ptemp;

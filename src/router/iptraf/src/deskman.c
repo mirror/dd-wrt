@@ -97,7 +97,7 @@ void about(void)
 	mvwprintw(win, 6, 2, "Copyright (c) Gerard Paul Java 1997-2004");
 	mvwprintw(win, 8, 2, "This program is open-source software released");
 	mvwprintw(win, 9, 2, "under the terms of the GNU General Public");
-	mvwprintw(win, 10, 2, "Public License Version 2 or any later version.");
+	mvwprintw(win, 10, 2, "License Version 2 or any later version.");
 	mvwprintw(win, 11, 2, "See the included LICENSE file for details.");
 	mvwprintw(win, 13, 2,
 		  "IPv6 support by Markus Ullmann <mail@markus-ullmann.de>");

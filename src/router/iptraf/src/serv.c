@@ -1126,8 +1126,8 @@ static void saveportlist(struct porttab *table)
 		return;
 	}
 	while (ptmp != NULL) {
-		bw = write(fd, &(ptmp->port_min), sizeof(unsigned int));
-		bw = write(fd, &(ptmp->port_max), sizeof(unsigned int));
+		bw = write(fd, &ptmp->port_min, sizeof(ptmp->port_min));
+		bw = write(fd, &ptmp->port_max, sizeof(ptmp->port_max));
 
 		if (bw < 0) {
 			tui_error(ANYKEY_MSG,
@@ -1203,8 +1203,8 @@ void loadaddports(struct porttab **table)
 	do {
 		ptemp = xmalloc(sizeof(struct porttab));
 
-		br = read(fd, &(ptemp->port_min), sizeof(unsigned int));
-		br = read(fd, &(ptemp->port_max), sizeof(unsigned int));
+		br = read(fd, &ptemp->port_min, sizeof(ptemp->port_min));
+		br = read(fd, &ptemp->port_max, sizeof(ptemp->port_max));
 
 		if (br < 0) {
 			tui_error(ANYKEY_MSG, "Error reading port list");
