@@ -57,9 +57,9 @@
 
 #include <stdbool.h> // bool
 #include <stdio.h> // FILE, fopen(), fscanf(), snprintf(), asprintf()
-#include <stdlib.h> // srand48()
+#include <stdlib.h> // srand48(), strtoul()
 #include <unistd.h> // usleep()
-#include <string.h> // strcmp(), strdup()
+#include <string.h> // strcmp(), strdup(), strncpy()
 #include <ctype.h> // isdigit(), isspace()
 #include <time.h> // time_t, time()
 #include <errno.h> // errno
@@ -71,20 +71,37 @@
 static time_t wsd_instance;
 static char wsd_sequence[UUIDLEN], wsd_endpoint[UUIDLEN];
 
+static void uuid_endpoint(char uuid[UUIDLEN]);
+
+static int uuid_parse(char uuid[UUIDLEN], unsigned short UUID[8])
+{
+	size_t pos[] = {0,4,9,14,19,24,28,32};
+	for(size_t i = 0; i < 8; ++i) {
+		char str[5];
+		strncpy(str, uuid+pos[i], 4);
+		str[4] = '\0';
+		unsigned long s = strtoul(str, NULL, 16);
+		UUID[i] = s;
+	}
+	return 0;
+}
+
 static void set_seed(void)
 {
-	FILE *fp = fopen("/etc/machine-id", "r");
+	char uuid[UUIDLEN];
+	unsigned short UUID[8];
 	unsigned long seed;
 
+	uuid_endpoint(uuid);
+	uuid_parse(uuid, UUID);
+
 	time((time_t *)&seed);
-
-	if (fp) {
-		unsigned long s;
-
-		while (fscanf(fp, "%8lx", &s) > 0)
-			seed ^= s;
-		fclose(fp);
+	
+	for(size_t i = 0; i < 4; ++i) {
+		unsigned long s = UUID[2*i+1] | UUID[2*i+0] << 16;
+		seed ^= s;
 	}
+
 	srand48(seed);
 }
 
@@ -113,10 +130,19 @@ static void uuid_endpoint(char uuid[UUIDLEN])
 
 	if (!fp) {
 		fp = fopen("/proc/sys/kernel/random/boot_id", "r");
+	} else {
+		fseek(fp, 0, SEEK_END);
+		long size = ftell(fp);
+		if (33 != size) {
+			fclose(fp);
+			fp = fopen("/proc/sys/kernel/random/boot_id", "r");
+		} else {
+			rewind(fp);
+		}
 	}
 
 	if (!fp) {
-		DEBUG(0, W, "Can't open required '/etc/machine-id' or '/proc/sys/kernel/random/boot_id'");
+		DEBUG(0, W, "Can't open or file empty, required '/etc/machine-id' or '/proc/sys/kernel/random/boot_id'");
 		return;
 	}
 
