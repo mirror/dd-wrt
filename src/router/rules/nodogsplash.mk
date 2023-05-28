@@ -2,7 +2,7 @@
 nodogsplash-configure:
 	@true
 
-nodogsplash:
+nodogsplash: libmicrohttpd
 	install -D nodogsplash/config/nodog.webhotspot httpd/ej_temp/nodog.webhotspot
 	$(MAKE) -C nodogsplash \
 	    CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) -I$(TOP)/libmicrohttpd/src/include" \
