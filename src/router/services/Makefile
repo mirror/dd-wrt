@@ -1807,8 +1807,8 @@ OBJS += wol.o
 endif
 
 ifeq ($(CONFIG_NOCAT),y)
-CFLAGS_EXTRA += -DHAVE_NOCAT
-OBJS += nocat.o
+CFLAGS_EXTRA += -DHAVE_NODOG
+OBJS += nodogsplash.o
 endif
 
 ifeq ($(CONFIG_SER),y)
