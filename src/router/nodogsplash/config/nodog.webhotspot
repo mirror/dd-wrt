@@ -54,7 +54,7 @@
 			<input class="num" type="text" size="6" name="ND_dl" value="<% nvg("ND_dl"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("hotspot.nodog_uplimit"); %></div>
+			<div class="label"><% tran("hotspot.nodog_uploadlimit"); %></div>
 			<input class="num" type="text" size="6" name="ND_ul" value="<% nvg("ND_ul"); %>" />
 		</div>
 	</div>
