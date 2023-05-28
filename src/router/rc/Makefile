@@ -984,7 +984,7 @@ CFLAGS += -DHAVE_WOL
 endif
 
 ifeq ($(CONFIG_NOCAT),y)
-CFLAGS += -DHAVE_NOCAT
+CFLAGS += -DHAVE_NODOG
 endif
 
 ifeq ($(CONFIG_LLTD),y)
