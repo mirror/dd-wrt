@@ -128,7 +128,7 @@ struct mon mons[] = {
 	{ "radvd", M_WAN, "radvd_enable", "1", NULL, NULL, &check_radvd },
 #endif
 #ifdef HAVE_NODOG
-	{ "splashd", M_WAN, "ND_enable", "1", NULL, NULL, NULL },
+	{ "nodogsplash", M_WAN, "ND_enable", "1", NULL, NULL, NULL },
 #endif
 #ifdef HAVE_CHILLI
 	{ "chilli", M_WAN, "chilli_enable", "1", NULL, NULL, NULL },
