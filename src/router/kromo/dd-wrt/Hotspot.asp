@@ -87,6 +87,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.chilli_macauth, 'idmacauth', <% nvem("chilli_macauth", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.http_redirect_enable, 'idhttpredirect', <% nvem("http_redirect_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.NC_enable, 'idnocat', <% nvem("NC_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.ND_enable, 'idnodat', <% nvem("ND_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.shat_enable, 'idzeroip', <% nvem("shat_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.smtp_redirect_enable, 'smtpredirect', <% nvem("smtp_redirect_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_enable, 'idhotspotsys', <% nvem("hotss_enable", "1", "1", "0"); %> == 1);
