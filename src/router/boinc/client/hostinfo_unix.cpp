@@ -181,6 +181,16 @@ extern "C" {
 #define LINUX_LIKE_SYSTEM 1
 #endif
 
+#if WASM
+    #include <emscripten.h>
+#endif
+
+#if WASM
+    EM_JS(FILE*, popen, (const char* command, const char* mode), {
+        //TODO: add javascript code
+    });
+#endif
+
 // Returns the offset between LOCAL STANDARD TIME and UTC.
 // LOCAL_STANDARD_TIME = UTC_TIME + get_timezone().
 //
@@ -475,7 +485,7 @@ static void parse_meminfo_linux(HOST_INFO& host) {
 // See http://people.nl.linux.org/~hch/cpuinfo/ for some examples.
 //
 static void parse_cpuinfo_linux(HOST_INFO& host) {
-    char buf[1024], features[P_FEATURES_SIZE], model_buf[1024];
+    char buf[P_FEATURES_SIZE], features[P_FEATURES_SIZE], model_buf[1024];
     bool vendor_found=false, model_found=false;
     bool cache_found=false, features_found=false;
     bool model_hack=false, vendor_hack=false;
@@ -517,7 +527,7 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
 
     host.m_cache=-1;
     safe_strcpy(features, "");
-    while (fgets(buf, 1024, f)) {
+    while (fgets(buf, sizeof(buf), f)) {
         strip_whitespace(buf);
         if (
                 /* there might be conflicts if we dont #ifdef */
@@ -693,15 +703,15 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
     if (family>=0 || model>=0 || stepping>0) {
         safe_strcat(model_buf, " [");
         if (family>=0) {
-            sprintf(buf, "Family %d ", family);
+            snprintf(buf, sizeof(buf), "Family %d ", family);
             safe_strcat(model_buf, buf);
         }
         if (model>=0) {
-            sprintf(buf, "Model %d ", model);
+            snprintf(buf, sizeof(buf), "Model %d ", model);
             safe_strcat(model_buf, buf);
         }
         if (stepping>=0) {
-            sprintf(buf, "Stepping %d", stepping);
+            snprintf(buf, sizeof(buf), "Stepping %d", stepping);
             safe_strcat(model_buf, buf);
         }
         safe_strcat(model_buf, "]");
@@ -710,23 +720,23 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
     if (model_info_found) {
         safe_strcat(model_buf, " [");
         if (strlen(implementer)>0) {
-            sprintf(buf, "Impl %s ", implementer);
+            snprintf(buf, sizeof(buf), "Impl %s ", implementer);
             safe_strcat(model_buf, buf);
         }
         if (strlen(architecture)>0) {
-            sprintf(buf, "Arch %s ", architecture);
+            snprintf(buf, sizeof(buf), "Arch %s ", architecture);
             safe_strcat(model_buf, buf);
         }
         if (strlen(variant)>0) {
-            sprintf(buf, "Variant %s ", variant);
+            snprintf(buf, sizeof(buf), "Variant %s ", variant);
             safe_strcat(model_buf, buf);
         }
         if (strlen(cpu_part)>0) {
-            sprintf(buf, "Part %s ", cpu_part);
+            snprintf(buf, sizeof(buf), "Part %s ", cpu_part);
             safe_strcat(model_buf, buf);
         }
         if (strlen(revision)>0) {
-            sprintf(buf, "Rev %s", revision);
+            snprintf(buf, sizeof(buf), "Rev %s", revision);
             safe_strcat(model_buf, buf);
         }
         safe_strcat(model_buf, "]");
@@ -752,7 +762,7 @@ void use_cpuid(HOST_INFO& host) {
     u_int cpu_id;
     char vendor[13];
     int hasMMX, hasSSE, hasSSE2, hasSSE3, has3DNow, has3DNowExt, hasAVX;
-    char capabilities[256];
+    char capabilities[P_FEATURES_SIZE];
 
     hasMMX = hasSSE = hasSSE2 = hasSSE3 = has3DNow = has3DNowExt = hasAVX = 0;
     do_cpuid(0x0, p);
@@ -1065,7 +1075,7 @@ static void get_cpu_info_haiku(HOST_INFO& host) {
 
     int32 found = 0;
     int32 i;
-    char buf[12];
+    char buf[256];
 
     for (i = 0; i < 32; i++) {
         if ((cpuInfo.eax_1.features & (1UL << i)) && kFeatures[i] != NULL) {
@@ -1238,6 +1248,9 @@ int HOST_INFO::get_cpu_info() {
     strlcpy( p_model, cpuInfo.name.fromID, sizeof(p_model));
 #elif defined(__HAIKU__)
     get_cpu_info_haiku(*this);
+#elif WASM
+    strlcpy( p_vendor, "WASM", sizeof(p_vendor));
+    strlcpy( p_model, "WASM", sizeof(p_model));
 #elif HAVE_SYS_SYSCTL_H
     int mib[2];
     size_t len;
@@ -1734,7 +1747,7 @@ vector<string> get_tty_list() {
                 if (tty_patterns[i].should_ignore(devname)) continue;
             }
 
-            sprintf(fullname, "%s/%s", tty_patterns[i].dir, devname);
+            snprintf(fullname, sizeof(fullname), "%s/%s", tty_patterns[i].dir, devname);
 
             // check for ignored paths
             //
@@ -2138,29 +2151,29 @@ union headeru {
 };
 
 // Get the architecture of this computer's CPU: x86_64 or arm64.
-// Read the executable file's mach-o headers to determine the 
+// Read the executable file's mach-o headers to determine the
 // architecture(s) of its code.
 // Returns 1 if application can run natively on this computer,
 // else returns 0.
 //
-// ToDo: determine whether x86_64 graphics apps emulated on arm64 Macs 
-// properly run under Rosetta 2. Note: years ago, PowerPC apps emulated 
+// ToDo: determine whether x86_64 graphics apps emulated on arm64 Macs
+// properly run under Rosetta 2. Note: years ago, PowerPC apps emulated
 // by Rosetta on i386 Macs crashed when running graphics.
 //
 bool can_run_on_this_CPU(char* exec_path) {
     FILE *f;
     int retval = false;
-    
+
     headeru myHeader;
     fat_arch fatHeader;
-    
+
     static bool x86_64_CPU = false;
     static bool arm64_cpu = false;
     static bool need_CPU_architecture = true;
     uint32_t n, i, len;
     uint32_t theMagic;
     integer_t file_architecture;
-    
+
     if (need_CPU_architecture) {
         // Determine the architecture of the CPU we are running on
         // ToDo: adjust this code accordingly.
@@ -2168,21 +2181,21 @@ bool can_run_on_this_CPU(char* exec_path) {
         size_t size = sizeof (cputype);
         int res = sysctlbyname ("hw.cputype", &cputype, &size, NULL, 0);
         if (res) return false;  // Should never happen
-        // Since we require MacOS >= 10.7, the CPU must be x86_64 or arm64 
+        // Since we require MacOS >= 10.7, the CPU must be x86_64 or arm64
         x86_64_CPU = ((cputype &0xff) == CPU_TYPE_X86);
         arm64_cpu = ((cputype &0xff) == CPU_TYPE_ARM);
 
         need_CPU_architecture = false;
     }
-    
+
     f = boinc_fopen(exec_path, "rb");
     if (!f) {
         return retval;          // Should never happen
     }
-    
+
     myHeader.fat.magic = 0;
     myHeader.fat.nfat_arch = 0;
-    
+
     fread(&myHeader, 1, sizeof(fat_header), f);
     theMagic = myHeader.mach.magic;
     switch (theMagic) {

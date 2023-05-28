@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2019 University of California
+// Copyright (C) 2022 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -207,6 +207,7 @@ void FILE_TRANSFER::print() {
     printf("   sticky: %s\n", sticky?"yes":"no");
     printf("   xfer active: %s\n", xfer_active?"yes":"no");
     printf("   time_so_far: %f\n", time_so_far);
+    if (xfer_active) printf("   estimated_xfer_time_remaining: %f\n", estimated_xfer_time_remaining);
     printf("   bytes_xferred: %f\n", bytes_xferred);
     printf("   xfer_speed: %f\n", xfer_speed);
 }
@@ -218,15 +219,15 @@ void MESSAGE::print() {
 }
 
 void GR_PROXY_INFO::print() {
-    printf("HTTP server name: %s\n",this->http_server_name.c_str()); 
-    printf("HTTP server port: %d\n",this->http_server_port); 
-    printf("HTTP user name: %s\n",this->http_user_name.c_str()); 
-    //printf("HTTP user password: %s\n",this->http_user_passwd.c_str()); 
-    printf("SOCKS server name: %s\n",this->socks_server_name.c_str()); 
-    printf("SOCKS server port: %d\n",this->socks_server_port); 
-    printf("SOCKS5 user name: %s\n",this->socks5_user_name.c_str()); 
-    //printf("SOCKS5 user password: %s\n",this->socks5_user_passwd.c_str()); 
-    printf("no proxy hosts: %s\n",this->noproxy_hosts.c_str()); 
+    printf("HTTP server name: %s\n",this->http_server_name.c_str());
+    printf("HTTP server port: %d\n",this->http_server_port);
+    printf("HTTP user name: %s\n",this->http_user_name.c_str());
+    //printf("HTTP user password: %s\n",this->http_user_passwd.c_str());
+    printf("SOCKS server name: %s\n",this->socks_server_name.c_str());
+    printf("SOCKS server port: %d\n",this->socks_server_port);
+    printf("SOCKS5 user name: %s\n",this->socks5_user_name.c_str());
+    //printf("SOCKS5 user password: %s\n",this->socks5_user_passwd.c_str());
+    printf("no proxy hosts: %s\n",this->noproxy_hosts.c_str());
 }
 
 void HOST_INFO::print() {

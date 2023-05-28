@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// Copyright (C) 2023 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -279,11 +279,11 @@ public:
 
     int                         GetWorkCount();
 
-    int                         WorkSuspend(char* url, char* name);
-    int                         WorkResume(char* url, char* name);
+    int                         WorkSuspend(const char* url, const char* name);
+    int                         WorkResume(const char* url, const char* name);
     int                         WorkShowGraphics(RESULT* result);
     int                         WorkShowVMConsole(RESULT* result);
-    int                         WorkAbort(char* url, char* name);
+    int                         WorkAbort(const char* url, const char* name);
     CC_STATE*                   GetState() { return &state; };
 
 
@@ -429,6 +429,7 @@ extern void remove_eols(wxString& strMessage);
 extern void https_to_http(wxString& strMessage);
 extern void color_cycle(int i, int n, wxColour& color);
 extern wxString FormatTime(double secs);
+extern wxTimeSpan convert_to_timespan(double secs);
 extern bool autoattach_in_progress();
 
 
