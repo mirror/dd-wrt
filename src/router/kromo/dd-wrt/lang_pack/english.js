@@ -1072,7 +1072,7 @@ hotspot.http_ip="Destination IP";
 hotspot.http_port="Destination Port";
 hotspot.http_net="Source Network";
 
-hotspot.nodog_legend="NoCatSplash";
+hotspot.nodog_legend="NoDogSplash";
 hotspot.nodog_srv="Enable Portal";
 hotspot.nodog_gateway="Gateway Name";
 hotspot.nodog_gatewayaddr="Gateway IP";
@@ -1145,7 +1145,7 @@ hstatus_hots.page16="<dd>Allow any DNS server. Normally unauthenticated clients 
 hstatus_hots.page17="<dd>IP addresses or network segments the client can access without first authenticating (comma separated list of domain names) e.g. <i>www.chillispot.info,10.11.12.0/24</i></dd>";
 hstatus_hots.page18="<dd>If this option is given CoovaChilli will try to authenticate all users based solely on their respective devices MAC address(es).</dd>";
 hstatus_hots.page19="<dd>You can specify here additional options.<br /><br /><div class=\"note\"><h4>Note:</h4><div>For more informations about the different options : <a href=\"https:\/\/coova.github.io\">coova.github.io</a>.</div></div></dd>";
-hstatus_hots.page20="<dd>Enabling the use of NoCatSplash allows you to redirect a client to a specific Web page when connecting via wireless or wired.</dd>";
+hstatus_hots.page20="<dd>Enabling the use of NoDogSplash allows you to redirect a client to a specific Web page when connecting via wireless or wired.</dd>";
 hstatus_hots.page21="<dd>The name of the gateway. Whatever you want to call it. \"Joe's Pizza Shop and free DSL Cafe\" for example. Use the variable $GatewayName in your splash.html page to display this.</dd>";
 hstatus_hots.page22="<dd>Configures the Redirection URL after splash login</dd>";
 hstatus_hots.page23="<dd>Enables the redirection to a specific Homepage after splash login, see above</dd>";
