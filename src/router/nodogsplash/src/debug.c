@@ -35,7 +35,6 @@
 #include "conf.h"
 #include "debug.h"
 
-
 static int do_log(int level, int debuglevel) {
 	switch (level) {
 		case LOG_EMERG:

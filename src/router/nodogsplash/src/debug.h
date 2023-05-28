@@ -34,9 +34,13 @@
 /** @brief Used to output messages.
  *The messages will include the finlname and line number, and will be sent to syslog if so configured in the config file
  */
+#ifdef NEED_PRINTF
 #define debug(...) _debug(__BASE_FILE__, __LINE__, __VA_ARGS__)
 
 /** @internal */
 void _debug(const char filename[], int line, int level, const char *format, ...);
+#else
+#define debug(...) do { } while(0)
+#endif
 
 #endif /* _DEBUG_H_ */
