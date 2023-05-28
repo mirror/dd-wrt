@@ -67,7 +67,9 @@ int mk_nodog_conf(void)
 	fprintf(fp, "\tFirewallRule allow tcp port 443\n");
 	fprintf(fp, "}\n");
 	fprintf(fp, "GatewayName\t%s\n", nvram_safe_get("ND_GatewayName"));
-	fprintf(fp, "GatewayAddress\t%s\n", nvram_default_get("ND_GatewayAddr", nvram_safe_get("lan_ipaddr")));
+	nvram_default_get("ND_GatewayAddr", "0.0.0.0");
+	if (!nvram_match("ND_GatewayAddr","0.0.0.0"))
+		fprintf(fp, "GatewayAddress\t%s\n", nvram_safe_get("ND_GatewayAddr"));
 	fprintf(fp, "WebRoot\t%s\n", nvram_safe_get("ND_DocumentRoot"));
 	fprintf(fp, "StatusPage\t%s\n", nvram_default_get("ND_StatusPage", "status.html"));
 	fprintf(fp, "SplashPage\t%s\n", nvram_default_get("ND_SplashPage", "splash.html"));
