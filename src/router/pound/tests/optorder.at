@@ -1,0 +1,61 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Header directives ordering])
+AT_KEYWORDS([order])
+
+PT_CHECK([ListenHTTP
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+X-Forwarded-For: 192.0.2.2
+end
+
+200
+x-orig-header-X-Forwarded-For: 127.0.0.1
+end
+])
+
+PT_CHECK([ListenHTTP
+	HeaderOption forwarded
+	HeaderAdd "X-Forwarded-For: 192.0.2.2"
+	HeaderRemove "X-Forwarded-Port"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+end
+
+200
+x-orig-header-X-Forwarded-For: 192.0.2.2
+-x-orig-header-X-Forwarded-Port:
+end
+])
+
+AT_CLEANUP
+

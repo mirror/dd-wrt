@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,16 +27,15 @@ cat crt.pem key.pem > example.pem
 PT_CHECK(
 [Service
 	Backend
-                Address 127.0.0.1
-                Port 8081
-        End
+		Address 127.0.0.1
+		Port 8081
+	End
 End
 
 ListenHTTPS
 	Address 127.0.0.1
 	Port 8080
 	Cert "example.pem"
-	ClientCert 1 1
 End
 ],
 [GET /echo/foo/bar
@@ -50,4 +49,3 @@ end
 ])
 
 AT_CLEANUP
-

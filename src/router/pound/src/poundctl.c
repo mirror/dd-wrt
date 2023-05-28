@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2022 Sergey Poznyakoff
+ * Copyright (C) 2018-2023 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +18,49 @@
  */
 #include "pound.h"
 #include "json.h"
-
-char *progname;
-
-void
-logmsg (int prio, const char *fmt, ...)
-{
-  va_list ap;
-
-  fprintf (stderr, "%s: ", progname);
-  va_start (ap, fmt);
-  vfprintf (stderr, fmt, ap);
-  va_end (ap);
-  fputc ('\n', stderr);
-}
+#include <assert.h>
 
 char *conf_name = POUND_CONF;
 char *socket_name;
 int json_option;
 int indent_option;
+int verbose_option;
+char *tmpl_path;
+char *tmpl_file = "poundctl.tmpl";
+char *tmpl_name = "default";
+
+struct keyword
+{
+  char const *name;
+  size_t len;
+  int flag;
+};
+
+#define S(a) a, sizeof (a) - 1
+static struct keyword inline_keyword[] = {
+  { S("control"), 1 },
+  { NULL }
+};
+static struct keyword block_keyword[] = {
+  { S("socket"), 1 },
+  { S("end"), 0 },
+  { NULL }
+};
+
+static struct keyword *keywords[] = {
+  inline_keyword,
+  block_keyword
+};
+
+static int
+find_keyword (int kwtab, char const *arg, size_t len)
+{
+  struct keyword *kw;
+  for (kw = keywords[kwtab]; kw->name; kw++)
+    if (strncasecmp (kw->name, arg, len) == 0)
+      return kw->flag;
+  return -1;
+}
 
 /*
  * A temporary solution to obtain socket name from the pound.cfg file.
@@ -48,14 +72,15 @@ get_socket_name (void)
   FILE *fp;
   char  buf[MAXBUF], *name = NULL;
   int line = 0;
-  static char kw_str[] = "control";
-  static size_t kw_len = sizeof (kw_str) - 1;
+  int kwtab = 0;
 
+  if (verbose_option)
+    errormsg (0, 0, "scanning file %s", conf_name);
   fp = fopen (conf_name, "r");
   if (!fp)
     {
-      if (errno != ENOENT)
-	logmsg (LOG_ERR, "can't open %s: %s", conf_name, strerror (errno));
+      if (errno != ENOENT || verbose_option)
+	errormsg (0, errno, "can't open %s", strerror (errno));
       return NULL;
     }
   while (fgets (buf, sizeof (buf), fp))
@@ -69,7 +94,7 @@ get_socket_name (void)
 	continue;
       if (buf[len-1] != '\n')
 	{
-	  logmsg (LOG_ERR, "%s:%d: line too long", conf_name, line);
+	  errormsg (0, 0, "%s:%d: line too long", conf_name, line);
 	  break;
 	}
       while (len > 0 && isspace (buf[len-1]))
@@ -79,13 +104,18 @@ get_socket_name (void)
       for (p = buf; *p && isspace (*p); p++)
 	;
 
-      if (*p == '#')
+      if (*p == 0 || *p == '#')
 	continue;
 
-      if (strncasecmp (p, kw_str, kw_len) == 0 &&
-	  (p[kw_len] == ' ' || p[kw_len] == '\t'))
+      len = strcspn (p, " \t");
+      switch (find_keyword (kwtab, p, len))
 	{
-	  for (p += kw_len; *p && isspace (*p); p++)
+	case 0:
+	  kwtab = 0;
+	  break;
+
+	case 1:
+	  for (p += len; *p && isspace (*p); p++)
 	    ;
 	  if (*p == '"')
 	    {
@@ -96,8 +126,8 @@ get_socket_name (void)
 		{
 		  if (*p == 0)
 		    {
-		      logmsg (LOG_ERR, "%s:%d:%ld missing closing double-quote",
-			     conf_name, line, p - buf + 1);
+		      errormsg (0, 0, "%s:%d:%ld missing closing double-quote",
+				conf_name, line, p - buf + 1);
 		      name = NULL;
 		      goto end;
 		    }
@@ -110,34 +140,41 @@ get_socket_name (void)
 			}
 		      else
 			{
-			  logmsg (LOG_ERR, "%s:%d:%ld unrecognized escape character",
-				 conf_name, line, p - buf + 1);
+			  errormsg (0, 0, "%s:%d:%ld unrecognized escape character",
+				    conf_name, line, p - buf + 1);
 			}
 		    }
 		  *q++ = *p++;
 		}
 	      *q = 0;
-	      break;
+	    }
+	  else if (*p == 0 && kwtab == 0)
+	    {
+	      kwtab = 1;
+	      continue;
 	    }
 	  else
 	    {
-	      logmsg (LOG_ERR, "%s:%d:%ld: expected quoted string",
-		     conf_name, line, p - buf + 1);
-	      break;
+	      errormsg (0, 0, "%s:%d:%ld: expected quoted string",
+			conf_name, line, p - buf + 1);
 	    }
+	  goto end;
+
+	default:
+	  continue;
 	}
     }
  end:
   if (ferror (fp))
     {
-      logmsg (LOG_ERR, "%s: %s", conf_name, strerror (errno));
+      errormsg (0, 0, "%s: %s", conf_name, strerror (errno));
     }
   fclose (fp);
 
   if (name)
     socket_name = xstrdup (name);
 
-  return name;
+  return socket_name;
 }
 
 BIO *
@@ -147,29 +184,29 @@ open_socket (void)
   int fd;
   BIO *bio;
 
+  if (verbose_option)
+    errormsg (0, 0, "connecting to %s", socket_name);
+
   if (strlen (socket_name) > sizeof (ctrl.sun_path))
     {
-      logmsg (LOG_CRIT, "socket name too long");
-      exit (1);
+      errormsg (1, 0, "socket name too long");
     }
 
   ctrl.sun_family = AF_UNIX;
   strncpy (ctrl.sun_path, socket_name, sizeof (ctrl.sun_path));
   if ((fd = socket (PF_UNIX, SOCK_STREAM, 0)) < 0)
     {
-      logmsg (LOG_CRIT, "socket: %s", strerror (errno));
-      exit (1);
+      errormsg (1, errno, "socket");
     }
   if (connect (fd, (struct sockaddr *) &ctrl, sizeof (ctrl)) < 0)
     {
-      logmsg (LOG_CRIT, "connect: %s", strerror (errno));
+      errormsg (1, errno, "connect");
       exit (1);
     }
 
   if ((bio = BIO_new_fd (fd, BIO_CLOSE)) == NULL)
     {
-      logmsg (LOG_CRIT, "BIO_new_fd failed");
-      exit (1);
+      errormsg (1, 0, "BIO_new_fd failed");
     }
 
   return bio;
@@ -194,13 +231,11 @@ oi_getn (char const **uri, int *objid, int idx)
   n = strtol (*uri, &p, 10);
   if (errno || n < 0 || n > INT_MAX)
     {
-      logmsg (LOG_ERR, "bad uri: out of range near %s", *uri);
-      exit (1);
+      errormsg (1, 0, "bad uri: out of range near %s", *uri);
     }
   if (!((idx < OI_BACKEND) ? (*p == 0 || *p == '/') : (*p == 0)))
     {
-      logmsg (LOG_ERR, "bad uri: garbage near %s", p);
-      exit (1);
+      errormsg (1, 0, "bad uri: garbage near %s", p);
     }
   objid[idx] = n;
   *uri = p;
@@ -213,8 +248,7 @@ check_uri (char const *uri, int *objid)
 
   if (*uri != '/')
     {
-      logmsg (LOG_ERR, "bad uri: should start with a /");
-      exit (1);
+      errormsg (1, 0, "bad uri: should start with a /");
     }
   ++uri;
 
@@ -231,8 +265,7 @@ check_uri (char const *uri, int *objid)
     return;
   if (*uri != '/')
     {
-      logmsg (LOG_ERR, "bad uri near %s", uri);
-      exit (1);
+      errormsg (1, 0, "bad uri near %s", uri);
     }
 
   ++uri;
@@ -257,9 +290,9 @@ xgets (BIO *bio, char *buf, int len)
   if ((n = BIO_gets (bio, buf, len)) < 0)
     {
       if (n == -1)
-	logmsg (LOG_ERR, "error reading response");
+	errormsg (0, 0, "error reading response");
       else if (n == -2)
-	logmsg (LOG_ERR, "BIO_gets not implemented; please, report");
+	errormsg (0, 0, "BIO_gets not implemented; please, report");
       exit (1);
     }
   if (n > 0 && buf[n-1] == '\n')
@@ -302,8 +335,7 @@ read_response_line (BIO *bio, char **ret_status, int *ret_version)
   if (code <= 0 || end - p != 3)
     {
   err:
-      logmsg (LOG_ERR, "unexpected response: %s", buf);
-      exit (1);
+      errormsg (1, 0, "unexpected response: %s", buf);
     }
 
   p = end + strspn (end, " \n");
@@ -340,8 +372,7 @@ read_response (BIO *bio)
 
   if ((code = read_response_line (bio, &status, &ver)) != 200)
     {
-      logmsg (LOG_ERR, "%s", status);
-      exit (1);
+      errormsg (1, 0, "%s", status);
     }
 
   for (;;)
@@ -357,8 +388,7 @@ read_response (BIO *bio)
 	  content_length = strtol (HDRVAL (content_length, buf), &p, 10);
 	  if (errno || *p)
 	    {
-	      logmsg (LOG_ERR, "bad header line: %s", buf);
-	      exit (1);
+	      errormsg (1, 0, "bad header line: %s", buf);
 	    }
 	}
       else if (HDREQ (content_type, buf))
@@ -367,8 +397,7 @@ read_response (BIO *bio)
 	  p += strspn (p, " \t");
 	  if (strcmp (p, "application/json"))
 	    {
-	      logmsg (LOG_ERR, "unexpected content type: %s", p);
-	      exit (1);
+	      errormsg (1, 0, "unexpected content type: %s", p);
 	    }
 	}
       else if (HDREQ (connection, buf))
@@ -386,23 +415,21 @@ read_response (BIO *bio)
       n = BIO_read (bio, content_buf, content_length);
       if (n < 0)
 	{
-	  logmsg (LOG_CRIT, "read error");
-	  exit (1);
+	  errormsg (1, 0, "read error");
 	}
     }
   else if (conn_close || ver == 0)
     {
       struct stringbuf sb;
 
-      stringbuf_init (&sb);
+      xstringbuf_init (&sb);
       while ((n = BIO_read (bio, buf, sizeof (buf))) > 0)
 	stringbuf_add (&sb, buf, n);
       content_buf = stringbuf_finish (&sb);
     }
   else
     {
-      logmsg (LOG_CRIT, "protocol error");
-      exit (1);
+      errormsg (1, 0, "protocol error");
     }
 
   //  printf ("resp: %s\n", content_buf);
@@ -410,10 +437,10 @@ read_response (BIO *bio)
   if (n != JSON_E_NOERR)
     {
       int len;
-      logmsg (LOG_ERR, "error parsing JSON: %s", json_strerror (n));
+      errormsg (0, 0, "error parsing JSON: %s", json_strerror (n));
       len = p - content_buf;
-      logmsg (LOG_ERR, "JSON string: %*.*s HERE--> %s",
-	      len, len, content_buf, p);
+      errormsg (0, 0, "JSON string: %*.*s HERE--> %s",
+		len, len, content_buf, p);
       exit (1);
     }
 
@@ -438,273 +465,6 @@ print_json (struct json_value *val, FILE *fp)
   json_value_format (val, &format, 0);
 }
 
-void
-json_error (struct json_value *val, char const *fmt, ...)
-{
-  va_list ap;
-
-  fprintf (stderr, "%s: ", progname);
-  va_start (ap, fmt);
-  vfprintf (stderr, fmt, ap);
-  va_end (ap);
-  fprintf (stderr, " in: ");
-  print_json (val, stderr);
-  fputc ('\n', stderr);
-}
-
-static char *
-json_object_get_string (struct json_value *obj, char const *name)
-{
-  struct json_value *val;
-  if (json_object_get (obj, name, &val) == 0)
-    {
-      if (val->type == json_string)
-	return val->v.s;
-      else
-	{
-	  json_error (obj, "bad type of %s: expected string", name);
-	  exit (1);
-	}
-    }
-  else
-    {
-      json_error (obj, "no %s attribute", name);
-      exit (1);
-    }
-}
-
-static int
-json_object_get_bool (struct json_value *obj, char const *name)
-{
-  struct json_value *val;
-  if (json_object_get (obj, name, &val) == 0)
-    {
-      if (val->type == json_bool)
-	return val->v.b;
-      else
-	{
-	  json_error (obj, "bad type of %s: expected boolean", name);
-	  exit (1);
-	}
-    }
-  else
-    {
-      json_error (obj, "no %s attribute", name);
-      exit (1);
-    }
-}
-
-static long
-json_object_get_integer (struct json_value *obj, char const *name)
-{
-  struct json_value *val;
-  if (json_object_get (obj, name, &val) == 0)
-    {
-      if (val->type == json_integer || val->type == json_number)
-	return val->v.n;
-      else
-	{
-	  json_error (obj, "bad type of %s: expected integer", name);
-	  exit (1);
-	}
-    }
-  else
-    {
-      json_error (obj, "no %s attribute", name);
-      exit (1);
-    }
-}
-
-void
-print_backend (struct json_value *obj, int n)
-{
-  char *type = json_object_get_string (obj, "type");
-  printf ("    %3d. %s", n, type);
-  if (strcmp (type, "backend") == 0)
-    printf (" %s %s %ld %s",
-	    json_object_get_string (obj, "protocol"),
-	    json_object_get_string (obj, "address"),
-	    json_object_get_integer (obj, "priority"),
-	    json_object_get_bool (obj, "alive") ? "alive" : "dead");
-  else if (strcmp (type, "redirect") == 0)
-    printf (" %3ld %s%s",
-	    json_object_get_integer (obj, "code"),
-	    json_object_get_string (obj, "url"),
-	    json_object_get_bool (obj, "redir_req") ?
-	    " (redirect request)" : "");
-  printf (" %s\n",
-	  json_object_get_bool (obj, "enabled") ? "active" : "disabled");
-}
-
-void
-print_sessions (struct json_value *obj)
-{
-  struct json_value *a;
-
-  if (json_object_get (obj, "sessions", &a) == 0)
-    {
-      if (a->type == json_null)
-	/* ok */;
-      else if (a->type == json_array)
-	{
-	  size_t i, n = json_array_length (a);
-	  for (i = 0; i < n; i++)
-	    {
-	      struct json_value *sess;
-	      json_array_get (a, i, &sess);
-	      printf ("    %3ld. Session %s %2ld %s\n", i,
-		      json_object_get_string (sess, "key"),
-		      json_object_get_integer (sess, "backend"),
-		      json_object_get_string (sess, "expire"));
-	    }
-	}
-      else
-	{
-	  json_error (obj, "bad type of %s: expected array", "sessions");
-	  exit (1);
-	}
-    }
-}
-
-void
-print_service (struct json_value *obj, int n)
-{
-  struct json_value *a;
-  printf ("  %3d. Service \"%s\" %s (%ld)\n",
-	  n,
-	  json_object_get_string (obj, "name"),
-	  json_object_get_bool (obj, "enabled") ? "active" : "disabled",
-	  json_object_get_integer (obj, "tot_pri"));
-  if (json_object_get (obj, "backends", &a) == 0)
-    {
-      if (a->type == json_null)
-	/* ok */;
-      else if (a->type == json_array)
-	{
-	  size_t i, n = json_array_length (a);
-	  for (i = 0; i < n; i++)
-	    {
-	      struct json_value *be;
-	      json_array_get (a, i, &be);
-	      print_backend (be, i);
-	    }
-	}
-      else
-	{
-	  json_error (obj, "bad type of %s: expected array", "backends");
-	  exit (1);
-	}
-    }
-
-  if (json_object_get (obj, "emergency", &a) == 0 && a->type == json_object)
-    {
-      printf ("    emergency backend %s %s %ld %s\n",
-	      json_object_get_string (a, "protocol"),
-	      json_object_get_string (a, "address"),
-	      json_object_get_integer (a, "priority"),
-	      json_object_get_bool (a, "alive") ? "alive" : "dead");
-    }
-
-  printf ("      Session type: %s\n",
-	  json_object_get_string (obj, "session_type"));
-  print_sessions (obj);
-}
-
-void
-print_services (struct json_value *obj, char *heading)
-{
-  struct json_value *a;
-
-  if (json_object_get (obj, "services", &a) == 0)
-    {
-      if (a->type == json_null)
-	/* ok */;
-      else if (a->type == json_array && json_array_length (a) > 0)
-	{
-	  size_t i, n = json_array_length (a);
-	  if (heading)
-	    printf ("%s\n", heading);
-	  for (i = 0; i < n; i++)
-	    {
-	      struct json_value *svc;
-	      json_array_get (a, i, &svc);
-	      print_service (svc, i);
-	    }
-	}
-      else
-	{
-	  json_error (obj, "bad type of %s: expected array", "services");
-	  exit (1);
-	}
-    }
-}
-
-void
-print_listener (struct json_value *obj, int n)
-{
-  printf ("%3d. Listener %s %s %s\n",
-	  n,
-	  json_object_get_string (obj, "protocol"),
-	  json_object_get_string (obj, "address"),
-	  json_object_get_bool (obj, "active") ? "active" : "disabled");
-  print_services (obj, NULL);
-}
-
-void
-print_listener_array (struct json_value *val)
-{
-  struct json_value *a;
-
-  if (json_object_get (val, "listeners", &a) == 0)
-    {
-      if (a->type == json_null)
-	printf ("no listeners defined\n");
-      else if (a->type == json_array)
-	{
-	  size_t n = json_array_length (a);
-	  if (n == 0)
-	    printf ("no listeners defined\n");
-	  else
-	    {
-	      size_t i;
-	      for (i = 0; i < n; i++)
-		{
-		  struct json_value *lst;
-		  json_array_get (a, i, &lst);
-		  print_listener (lst, i);
-		}
-	    }
-	}
-      else
-	{
-	  json_error (val, "bad type of %s: expected array", "listeners");
-	  exit (1);
-	}
-    }
-  else
-    {
-      json_error (val, "no \"listeners\" attribute");
-      exit (1);
-    }
-}
-
-void
-print_list_response (struct json_value *val, char const *arg)
-{
-  ++arg;
-
-  if (*arg == 0 || *arg == '-')
-    {
-      print_listener_array (val);
-      print_services (val, "Global services");
-    }
-  else
-    {
-      long n = strtol (arg, NULL, 10);
-      print_listener (val, n);
-    }
-}
-
 int
 command_list (BIO *bio, int argc, char **argv)
 {
@@ -715,8 +475,7 @@ command_list (BIO *bio, int argc, char **argv)
     uri = argv[0];
   else if (argc > 1)
     {
-      logmsg (LOG_CRIT, "too many arguments");
-      exit (1);
+      errormsg (1, 0, "too many arguments");
     }
   BIO_printf (bio, "GET /listener%s HTTP/1.1\r\n"
 		   "Host: localhost\r\n\r\n",
@@ -725,7 +484,16 @@ command_list (BIO *bio, int argc, char **argv)
   if (json_option)
     print_json (val, stdout);
   else
-    print_list_response (val, uri);
+    {
+      TEMPLATE tmpl;
+
+      tmpl = template_lookup (tmpl_name);
+      if (!tmpl)
+	{
+	  errormsg (1, 0, "template %s not defined", tmpl_name);
+	}
+      template_run (tmpl, val, stdout);
+    }
   json_value_free (val);
   return 0;
 }
@@ -738,13 +506,11 @@ command_on_off (BIO *bio, int argc, char **argv, char const *verb)
 
   if (argc == 0)
     {
-      logmsg (LOG_CRIT, "required argument missing");
-      return 1;
+      errormsg (1, 0, "required argument missing");
     }
   else if (argc > 1)
     {
-      logmsg (LOG_CRIT, "too many arguments");
-      return 1;
+      errormsg (1, 0, "too many arguments");
     }
   uri = argv[0];
   BIO_printf (bio, "%s /listener%s HTTP/1.1\r\n"
@@ -760,8 +526,7 @@ command_on_off (BIO *bio, int argc, char **argv, char const *verb)
     }
   if (val->v.b == 0)
     {
-      logmsg (LOG_CRIT, "command failed");
-      return 1;
+      errormsg (1, 0, "command failed");
     }
   json_value_free (val);
   return 0;
@@ -788,24 +553,24 @@ command_delete_session (BIO *bio, int argc, char **argv)
 
   if (argc < 2)
     {
-      logmsg (LOG_CRIT, "required argument missing");
+      errormsg (0, 0, "required argument missing");
       return 1;
     }
   else if (argc > 2)
     {
-      logmsg (LOG_CRIT, "too many arguments");
+      errormsg (0, 0, "too many arguments");
       return 1;
     }
   uri = argv[0];
   check_uri (uri, objid);
   if (objid[OI_LAST] < OI_SERVICE)
     {
-      logmsg (LOG_CRIT, "bad uri: service not specified");
+      errormsg (0, 0, "bad uri: service not specified");
       return 1;
     }
   if (objid[OI_LAST] > OI_SERVICE)
     {
-      logmsg (LOG_CRIT, "bad uri: spurious backend specification");
+      errormsg (0, 0, "bad uri: spurious backend specification");
       return 1;
     }
 
@@ -816,7 +581,17 @@ command_delete_session (BIO *bio, int argc, char **argv)
   val = read_response (bio);
   if (json_option)
     print_json (val, stdout);
-  print_service (val, objid[OI_SERVICE]);
+  else
+    {
+      TEMPLATE tmpl;
+
+      tmpl = template_lookup (tmpl_name);
+      if (!tmpl)
+	{
+	  errormsg (1, 0, "template %s not defined", tmpl_name);
+	}
+      template_run (tmpl, val, stdout);
+    }
   json_value_free (val);
   return 0;
 }
@@ -830,19 +605,19 @@ command_add_session (BIO *bio, int argc, char **argv)
 
   if (argc < 2)
     {
-      logmsg (LOG_CRIT, "required argument missing");
+      errormsg (0, 0, "required argument missing");
       return 1;
     }
   else if (argc > 2)
     {
-      logmsg (LOG_CRIT, "too many arguments");
+      errormsg (0, 0, "too many arguments");
       return 1;
     }
   uri = argv[0];
   check_uri (uri, objid);
   if (objid[OI_LAST] != OI_BACKEND)
     {
-      logmsg (LOG_CRIT, "bad uri: backend not specified");
+      errormsg (0, 0, "bad uri: backend not specified");
       return 1;
     }
 
@@ -853,7 +628,17 @@ command_add_session (BIO *bio, int argc, char **argv)
   val = read_response (bio);
   if (json_option)
     print_json (val, stdout);
-  print_service (val, objid[OI_SERVICE]);
+  else
+    {
+      TEMPLATE tmpl;
+
+      tmpl = template_lookup (tmpl_name);
+      if (!tmpl)
+	{
+	  errormsg (1, 0, "template %s not defined", tmpl_name);
+	}
+      template_run (tmpl, val, stdout);
+    }
   json_value_free (val);
   return 0;
 }
@@ -910,10 +695,14 @@ static char *usage_text[] = {
   "   del               same as delete",
   "",
   "OPTIONS:",
-  "   -c FILE           location of pound configuration file",
+  "   -f FILE           location of pound configuration file",
   "   -i N              indentation level for JSON output",
   "   -j                JSON output format",
   "   -s SOCKET         sets control socket pathname",
+  "   -t FILE           read templates from this file",
+  "   -T NAME           name of the default template",
+  "   -v                verbose output",
+  "   -V                print program version, compilation settings, and exit",
   "   -h                show this help output and exit",
   NULL
 };
@@ -927,8 +716,214 @@ usage (int code)
   fprintf (fp, "usage: %s [OPTIONS] COMMAND [/L/S/B] [ARG]\n", progname);
   for (i = 0; usage_text[i]; i++)
     fprintf (fp, "%s\n", usage_text[i]);
+  printf ("\n");
+  printf ("Report bugs and suggestions to <%s>\n", PACKAGE_BUGREPORT);
+#ifdef PACKAGE_URL
+  printf ("%s home page: <%s>\n", PACKAGE_NAME, PACKAGE_URL);
+#endif
   exit (code);
 }
+
+void
+xnomem (void)
+{
+  errormsg (1, 0, "out of memory");
+}
+
+static FILE *
+find_template_file (char const *name, char **ret_name)
+{
+  FILE *fp = NULL;
+  char *file_name;
+  struct stringbuf sb;
+
+  xstringbuf_init (&sb);
+  if (name[0] == '/' || strncmp (name, "./", 2) == 0 ||
+      strncmp (name, "../", 3) == 0)
+    {
+      file_name = (char*) name;
+      fp = fopen (file_name, "r");
+      if (!fp)
+	errormsg (1, errno, "can't open template file %s", file_name);
+    }
+  else
+    {
+      char *p;
+
+      if (verbose_option)
+	errormsg (0, 0, "info: looking for %s in %s", name, tmpl_path);
+
+      p = tmpl_path;
+      while (*p)
+	{
+	  size_t len = strcspn (p, ":");
+	  int fd;
+
+	  if (len > 0)
+	    {
+	      stringbuf_reset (&sb);
+	      if (*p == '~')
+		{
+		  char *home = getenv ("HOME");
+		  if (!home)
+		    {
+		      struct passwd *pw = getpwuid (getuid ());
+		      assert (pw != NULL);
+		      home = pw->pw_dir;
+		    }
+		  assert (home != NULL);
+		  stringbuf_add_string (&sb, home);
+		  if (*++p != '/')
+		    stringbuf_add_char (&sb, '/');
+		  len--;
+		}
+	      stringbuf_add (&sb, p, len);
+
+	      file_name = stringbuf_finish (&sb);
+
+	      fd = open (file_name, O_RDONLY);
+	      if (fd == -1)
+		{
+		  if (errno != ENOENT)
+		    errormsg (0, errno, "opening %s", file_name);
+		}
+	      else
+		{
+		  struct stat st;
+		  if (fstat (fd, &st))
+		    {
+		      errormsg (0, errno, "stat %s", file_name);
+		    }
+		  else if (S_ISDIR (st.st_mode))
+		    {
+		      int dirfd = fd;
+		      fd = openat (dirfd, name, O_RDONLY);
+		      if (fd == -1)
+			{
+			  if (errno != ENOENT)
+			    errormsg (0, errno, "opening %s/%s", file_name, name);
+			}
+		      else
+			{
+			  fp = fdopen (fd, "r");
+			  if (fp)
+			    {
+			      sb.len--; /* a hack to remove terminating \0 */
+			      stringbuf_add_char (&sb, '/');
+			      stringbuf_add_string (&sb, name);
+			      file_name = stringbuf_finish (&sb);
+			      break;
+			    }
+			  errormsg (0, errno, "fdopen");
+			}
+		      close (dirfd);
+		    }
+		  else if (S_ISREG (st.st_mode))
+		    {
+		      fp = fdopen (fd, "r");
+		      if (fp)
+			break;
+		      errormsg (0, errno, "fdopen");
+		    }
+		  close (fd);
+		}
+	    }
+
+	  p += len;
+	  if (*p == ':')
+	    p++;
+	}
+
+      if (!fp)
+	{
+	  errormsg (0, 0, "%s file not found in %s", name, tmpl_path);
+	  return NULL;
+	}
+    }
+
+  *ret_name = xstrdup (file_name);
+
+  stringbuf_free (&sb);
+  return fp;
+}
+
+static size_t
+line_start (char *text, size_t n)
+{
+  while (n > 0 && text[n-1] != '\n')
+    n--;
+  return n;
+}
+
+static size_t
+line_no (char *text, size_t n)
+{
+  size_t i;
+
+  for (i = 1;;i++)
+    {
+      n = line_start (text, n);
+      if (n == 0)
+	break;
+      n--;
+    }
+  return i;
+}
+
+void
+read_template (void)
+{
+  char *file_name;
+  FILE *fp = find_template_file (tmpl_file, &file_name);
+
+  if (fp)
+    {
+      char *buf;
+      size_t size;
+      ssize_t n;
+      struct stat st;
+      TEMPLATE tmpl;
+      int rc;
+
+      if (verbose_option)
+	errormsg (0, 0, "info: reading template file %s", file_name);
+
+      if (fstat (fileno (fp), &st))
+	errormsg (1, errno, "can't stat %s", file_name);
+
+      size = st.st_size;
+      buf = xmalloc (size + 1);
+      buf[size] = 0;
+      n = fread (buf, size, 1, fp);
+      if (n == -1)
+	errormsg (1, errno, "error reading from %s", file_name);
+      else if (n == 0)
+	errormsg (1, 0, "short read from %s", file_name);
+
+      rc = template_parse (buf, &tmpl, &size);
+      if (rc != TMPL_ERR_OK)
+	{
+	  size_t ls = line_start (buf, size);
+	  size_t ln = line_no (buf, size);
+
+	  errormsg (1, 0, "%s:%zu:%zu: %s", file_name, ln, size - ls,
+		    template_strerror (rc));
+	}
+
+      free (buf);
+      /*
+       * Ignore anything except definitions.
+       * FIXME: Any warnings?
+       */
+      template_free (tmpl);
+    }
+}
+
+static struct string_value poundctl_settings[] = {
+  { "Configuration file",  STRING_CONSTANT, { .s_const = POUND_CONF } },
+  { "Template search path",STRING_CONSTANT, { .s_const = POUND_TMPL_PATH } },
+  { NULL }
+};
 
 int
 main (int argc, char **argv)
@@ -937,16 +932,14 @@ main (int argc, char **argv)
   BIO *bio;
   COMMAND command;
 
-  if ((progname = strrchr (argv[0], '/')) == NULL)
-    progname = argv[0];
-  else
-    progname++;
+  set_progname (argv[0]);
+  json_memabrt = xnomem;
 
-  while ((c = getopt (argc, argv, "c:i:jhs:")) != EOF)
+  while ((c = getopt (argc, argv, "f:i:jhs:T:t:vV")) != EOF)
     {
       switch (c)
 	{
-	case 'c':
+	case 'f':
 	  conf_name = optarg;
 	  break;
 
@@ -965,16 +958,36 @@ main (int argc, char **argv)
 	  json_option = 1;
 	  break;
 
+	case 'T':
+	  tmpl_name = optarg;
+	  break;
+
+	case 't':
+	  tmpl_file = optarg;
+	  break;
+
+	case 'V':
+	  print_version (poundctl_settings);
+	  exit (0);
+
+	case 'v':
+	  verbose_option++;
+	  break;
+
 	default:
 	  exit (1);
 	}
     }
 
+  if ((tmpl_path = getenv ("POUND_TMPL_PATH")) == NULL)
+    tmpl_path = POUND_TMPL_PATH;
+
   if (!socket_name && get_socket_name () == NULL)
     {
-      logmsg (LOG_CRIT, "can't determine control socket name; use the -s option");
-      exit (1);
+      errormsg (1, 0, "can't determine control socket name; use the -s option");
     }
+  if (verbose_option)
+    errormsg (0, 0, "info: using socket %s", socket_name);
 
   argc -= optind;
   argv += optind;
@@ -989,6 +1002,7 @@ main (int argc, char **argv)
       argv++;
     }
 
+  read_template ();
   bio = open_socket ();
 
   return command (bio, argc, argv);

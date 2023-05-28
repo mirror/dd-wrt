@@ -1,5 +1,5 @@
 # This file is part of pound testsuite
-# Copyright (C) 2018-2022 Sergey Poznyakoff
+# Copyright (C) 2018-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,17 +16,19 @@
 use strict;
 use warnings;
 use Socket qw(:DEFAULT :crlf);
-use IO::Select;
 use threads;
 use threads::shared;
 use Getopt::Long;
 use HTTP::Tiny;
 use POSIX qw(:sys_wait_h);
+use Cwd qw(abs_path);
 
 my $config = 'pound.cfi:pound.cfg';
+my @preproc_files;
 my $log_level = 2;
 my $log_file = 'pound.log';
 my $pid_file = 'pound.pid';
+my $include_dir;
 my $transcript_file;
 my $verbose;
 my $dry_run;
@@ -89,7 +91,7 @@ $SIG{CHLD} = sub {
     } elsif (WIFSIGNALED($?)) {
 	print STDERR "pound terminated on signal " . WTERMSIG($?) . "\n";
     } else {
-	print STDERR "pound terminated with unrecogized status " . $? . "\n";
+	print STDERR "pound terminated with unrecognized status " . $? . "\n";
     }
     exit(EX_ERROR);
 };
@@ -106,27 +108,41 @@ sub usage_error {
 }
 
 GetOptions('config|f=s' => \$config,
+	   'preproc=s@' => \@preproc_files,
 	   'verbose|v+' => \$verbose,
 	   'log-level|l=n' => \$log_level,
 	   'transcript|x=s' => \$transcript_file,
 	   'statistics|s' => \$statistics,
-	   'startup-timeout|t=n' => \$startup_timeout)
+	   'startup-timeout|t=n' => \$startup_timeout,
+	   'include-dir=s' => \$include_dir)
     or exit(EX_USAGE);
 
 my $script_file = shift @ARGV or usage_error "required parameter missing";
 usage_error "too many arguments\n" if @ARGV;
 
+foreach my $file (@preproc_files) {
+    if ($file =~ m{(?<src>.+):(?<dst>.+)}) {
+	preproc($+{src}, $+{dst});
+    } else {
+	preproc($file, "$file.cfg");
+    }
+}
+
 if ($config =~ m{(?<src>.+):(?<dst>.+)}) {
-    preproc($+{src}, $+{dst});
+    preproc($+{src}, $+{dst}, 1);
     $config = $+{dst};
 } else {
     my $ofile = 'pound.cfg';
-    preproc($config, $ofile);
+    preproc($config, $ofile, 1);
     $config = $ofile;
 }
 
+if ($include_dir) {
+    $config = abs_path($config)
+}
+
 # Start HTTP listeners
-threads->create(sub { $backends->read_and_process } )->detach();
+$backends->read_and_process;
 
 # Start pound
 runner();
@@ -136,8 +152,6 @@ my $ps = PoundScript->new($script_file, $transcript_file);
 $ps->parse;
 
 # Terminate
-
-$_->join for threads->list();
 
 if ($statistics) {
     print "Total tests: ".$ps->tests. "\n";
@@ -151,7 +165,7 @@ exit ($ps->failures ? EX_FAILURE : EX_SUCCESS);
 ## -----------------------------
 
 sub preproc {
-    my ($infile, $outfile) = @_;
+    my ($infile, $outfile, $init) = @_;
     if ($verbose) {
 	print "Preprocessing $infile into $outfile\n";
     }
@@ -169,13 +183,15 @@ sub preproc {
     };
     my @state;
     unshift @state, ST_INIT;
-    print $out <<EOT;
+    if ($init) {
+	print $out <<EOT;
 # Initial settings by $0
 Daemon 0
 LogFacility -
 LogLevel $log_level
 EOT
 ;
+    }
     my $be;
     while (<$in>) {
 	chomp;
@@ -246,7 +262,8 @@ sub runner {
     }
     open(STDOUT, '>', $log_file);
     open(STDERR, ">&STDOUT");
-    exec 'pound', '-p', $pid_file, '-f', $config, '-W', 'no-dns';
+    exec 'pound', '-p', $pid_file, '-f', $config, '-v', '-W', 'no-dns', '-W',
+	  $include_dir ? "include-dir=$include_dir" : 'no-include-dir';
 }
 
 package PoundScript;
@@ -343,16 +360,16 @@ sub send {
 	    $self->send_and_expect($lst, $host, $s) or goto end;
 	}
 
-	if (my $i = $self->{stats}{index}{value}) {
+	if (defined(my $i = $self->{stats}{index}{value})) {
 	    $s = $s->elemstat($i);
 	}
 
 	# Assume success
 	my $ok = 1;
 
-	# Iterate over criterions applying them to the received statistics
+	# Iterate over criteria applying them to the received statistics
 	# and correcting $ok accordingly.
-	foreach my $k (qw(min max avg stddev)) {
+	foreach my $k (qw(sum min max avg stddev)) {
 	    if (exists($self->{stats}{$k})) {
 		unless ($self->check_expect($s->${ \$k }, $self->{stats}{$k})) {
 		    $ok = 0;
@@ -418,7 +435,7 @@ sub assert {
 		} else {
 		    (my $v = $self->{EXP}{HEADERS}{$h}) =~ s{^\\}{};
 		    if ($v ne $response->{headers}{$h}) {
-			print STDERR "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: expected header $h value mismatch\n";
+			print STDERR "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: expected header $h value mismatch (expected \"$v\" got \"$response->{headers}{$h}\")\n";
 			return 0;
 		    }
 		}
@@ -487,7 +504,14 @@ sub parse_req {
 			    $self->{stats}{$k}{min} = $v - $+{dev} * $v / 100;
 			    $self->{stats}{$k}{max} = $v + $+{dev} * $v / 100;
 			} else {
-			    $self->{stats}{$k}{min} = $self->{stats}{$k}{max} = $v;
+			    my $d;
+			    if ($v =~ /\.(\d+)/) {
+				$d = (1/(10**length($1)))/2;
+			    } else {
+				$d = 0;
+			    }
+			    $self->{stats}{$k}{min} = $v - $d;
+			    $self->{stats}{$k}{max} = $v + $d;
 			}
 		    } else {
 			$self->{stats}{$k}{min} = $+{min};
@@ -634,17 +658,20 @@ sub parse_expect {
 
 sub replvar {
     my ($self, $var) = @_;
-    if ($var =~ m{LISTENER(\d+)?}) {
-	return $listeners->get($1//0)->address;
-    } elsif ($var =~ m{BACKEND(\d+)?}) {
-	return $backends->get($1//0)->address;
+    if ($var =~ m{(LISTENER|BACKEND)(\d+)?(?::(PORT|IP))?}) {
+	my $var = ($1 eq 'LISTENER') ? $listeners : $backends;
+	my $meth = 'address';
+	if (defined($3)) {
+	    $meth = ($3 eq 'PORT') ? 'port' : 'host';
+	}
+	return $var->get($2//0)->${ \$meth };
     }
     return '${' . $var . '}';
 }
 
 sub expandvars {
     my ($self, $v) = @_;
-    $v =~ s{ \$ \{ ([A-Za-z][A-Za-z0-9]*) \} }
+    $v =~ s{ \$ \{ ([A-Za-z][A-Za-z0-9:]*) \} }
 	   { $self->replvar($1) }xeg;
     return $v;
 }
@@ -755,21 +782,10 @@ sub ratio {
     return map { $_ / $self->avg } $self->samples
 }
 
-sub elemratio {
-    my ($self, $n) = @_;
-    my $v = $self->sample($n);
-    return map { $v / $_ } $self->samples;
-}
-
 sub elemstat {
     my ($self, $n) = @_;
     my $s = Stats->new();
-    my $i = 0;
-    my $j = 0;
-    foreach my $v ($self->elemratio($n)) {
-	next if ($i++ == $n);
-	$s->incr($j++, $v);
-    }
+    $s->incr(0, $self->sample($n) / $self->sum);
     return $s;
 }
 
@@ -794,6 +810,7 @@ sub _compute {
 	    }
 	}
 
+	$self->{sum} = $sum;
 	$self->{min} = $min;
 	$self->{max} = $max;
 	$self->{avg} = $sum / $nsamples;
@@ -804,6 +821,7 @@ sub _compute {
     return $self->{$what}
 }
 
+sub sum { shift->_compute('sum') }
 sub min { shift->_compute('min') }
 sub max { shift->_compute('max') }
 sub avg { shift->_compute('avg') }
@@ -936,16 +954,6 @@ sub find_socket {
     croak "Listener not found";
 }
 
-sub selector {
-    my $self = shift;
-    my $sel = IO::Select->new();
-    foreach my $lst (@{$self->{listeners}}) {
-	$lst->listen;
-	$sel->add($lst->socket_handle);
-    }
-    return $sel;
-}
-
 sub wait {
     my $self = shift;
     my @lst = @{$self->{listeners}};
@@ -967,13 +975,21 @@ sub wait {
 
 sub read_and_process {
     my $self = shift;
-    my $sel = $self->selector;
-    while (1) {
-	foreach my $conn ($sel->can_read) {
-	    my $fh;
-	    my $remote = accept($fh, $conn);
-	    threads->create(\&process_http_request, $fh, $self->find_socket($conn))->detach();
-	}
+
+    foreach my $lst (@{$self->{listeners}}) {
+	$lst->listen;
+    }
+
+    foreach my $lst (@{$self->{listeners}}) {
+	threads->create(sub {
+	    my $lst = shift;
+	    $lst->listen;
+	    while (1) {
+		my $fh;
+		accept($fh, $lst->socket_handle);
+		process_http_request($fh, $lst)
+	    }
+	}, $lst)->detach;
     }
 }
 
@@ -1019,7 +1035,11 @@ sub process_http_request {
 	if (my $ep = $endpoints{$dir}) {
 	    &{$ep}($http, $2);
 	} else {
-	    $http->reply(404, "Not found");
+	    $http->reply(404, "Not found",
+			 headers => {
+			     'x-orig-uri' => $http->uri,
+			     map { ('x-orig-header-' . $_) => $http->header->{$_} } keys %{$http->header}
+			 });
 	}
     } else {
 	$http->reply(500, "Malformed URI");
@@ -1064,14 +1084,15 @@ sub getline {
     my $http = shift;
     local $/ = $CRLF;
     my $fh = $http->{fh};
-    chomp(my $ret = <$fh>);
+    my $ret = <$fh>;
+    chomp($ret) if $ret;
     return $ret
 }
 
 sub ParseRequest {
     my $http = shift;
 
-    my $input = $http->getline();
+    my $input = $http->getline() or threads->exit();
     #    print "GOT $input\n";
     my @res = split " ", $input;
     if (@res != 3) {
@@ -1193,7 +1214,7 @@ switches or arguments,
 Read source configuration file from I<SRC>, write processed configuration
 to I<DST> and use it as configuration file when running B<pound>.  If
 I<DST> is omitted, F<pound.cfg> is assumed.  If this option is not given,
-I<SRC> defaulst to F<pound.cfi>.
+I<SRC> defaults to F<pound.cfi>.
 
 =item B<-l>, B<--log-level=> I<N>
 
@@ -1237,33 +1258,51 @@ that must be absent in the response. E.g. the header line
 
     -X-Forwarded-Proto: https
 
-means that heade B<X-Forwarded-Proto: https> must be absent in the response.
-The test will fail if it is present.
+means that the response may not contain B<X-Forwarded-Proto: https> header.
+The test will fail if such header is present.
 
 Headers may be followed by a newline and response body (content).  If
 present, it will be matched literally against the actual response.
 The response is terminated with the word B<end> on a line alone.
 
-The values of both request and expeced headers may contain the following
+The values of both request and expected headers may contain the following
 I<variables>, which are expanded when reading the file:
 
 =over 4
 
 =item B<${LISTENERI<n>}>
 
-Expands to the address of the I<n>th listener (I<IP>:I<PORT>).
+Expands to the full address of the I<n>th listener (I<IP>:I<PORT>).
 
-=item B<${LISTENER}>
+=item B<${LISTENERI<n>:IP}>
 
-Same as B<${LISTENER0}>.
+Expands to the IP address of the I<n>th listener.
+
+= B<${LISTENERI<n>:PORT}>
+
+Expands to the port number of the I<n>th listener.
+
+=item B<${LISTENER}>, B<${LISTENER:IP}>, B<${LISTENER:PORT}>
+
+Same as B<${LISTENER0}>, B<${LISTENER0:IP}>, and B<${LISTENER0:PORT}>,
+correspondingly.
 
 =item B<${BACKENDI<n>}>
 
 Expands to the address of the I<n>th backend (I<IP>:I<PORT>).
 
-=item B<${BACKEND}>
+=item B<${BACKENDI<n>:IP}>
 
-Same as B<${BACKEND0}>.
+Expands to the IP address of the I<n>th backend.
+
+=item B<${BACKENDI<n>:PORT}>
+
+Expands to the port number of the I<n>th backend.
+
+=item B<${BACKEND}>, B<${BACKEND:IP}>, B<${BACKEND:PORT}>
+
+Same as B<${BACKEND0}>, B<${BACKEND0:IP}>, and B<${BACKEND0:PORT}>,
+correspondingly.
 
 =back
 

@@ -1,0 +1,330 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([Template])
+AT_KEYWORDS([template tmpl])
+
+# TMPL_TEST(TEMPLATE, JSON, EXCODE, STDOUT, STDERR)
+m4_pushdef([TMPL_TEST],
+[AT_DATA([input.tmpl],
+[$1])
+AT_CHECK([tmplrun input.tmpl '[$2]'],
+m4_shift2($@))])
+
+TMPL_TEST([test input
+],
+[null],
+[0],
+[test input
+])
+
+TMPL_TEST([test {{ . }} input
+],
+["dot"],
+[0],
+[test dot input
+])
+
+TMPL_TEST([test {{ .x }} input {{ .y }}
+],
+[{"x":"text","y":0}],
+[0],
+[test text input 0
+])
+
+TMPL_TEST([test {{ .x.y.z }} input
+],
+[{"x":{"y":{"z":"text","n":10}, "iota": true }, "y":0}],
+[0],
+[test text input
+])
+
+TMPL_TEST([test
+{{ .x.y }}
+input
+],
+[{"x":{"y": "value"}}],
+[0],
+[test
+value
+input
+])
+
+TMPL_TEST([test
+{{- .x.y }}
+input
+],
+[{"x":{"y": "value"}}],
+[0],
+[testvalue
+input
+])
+
+TMPL_TEST([test
+{{ .x.y -}}
+input
+],
+[{"x":{"y": "value"}}],
+[0],
+[test
+valueinput
+])
+
+TMPL_TEST([test
+{{- .x.y -}}
+input
+],
+[{"x":{"y": "value"}}],
+[0],
+[testvalueinput
+])
+
+AT_CHECK([
+AT_DATA([input.tmpl],
+[Heading line.
+{{if gt .x 10}}
+X is over 10
+{{else if gt .x 5 }}
+X is over 5
+{{else if gt .x 3 }}
+X is over 3
+{{else}}
+X is too small.
+{{end}}
+EOF
+])
+
+tmplrun input.tmpl '{"x":12}' '{"x":10}' '{"x":5}' '{"x":3}'
+],
+[0],
+[Heading line.
+
+X is over 10
+
+EOF
+Heading line.
+
+X is over 5
+
+EOF
+Heading line.
+
+X is over 3
+
+EOF
+Heading line.
+
+X is too small.
+
+EOF
+])
+
+AT_CHECK([
+AT_DATA([input.tmpl],
+[Heading line.
+{{- if gt .x 10}}
+X is over 10
+{{- else if gt .x 5 }}
+X is over 5
+{{- else if gt .x 3 }}
+X is over 3
+{{- else}}
+X is too small.
+{{- end}}
+EOF
+])
+
+tmplrun input.tmpl '{"x":12}' '{"x":10}' '{"x":5}' '{"x":3}'
+],
+[0],
+[Heading line.
+X is over 10
+EOF
+Heading line.
+X is over 5
+EOF
+Heading line.
+X is over 3
+EOF
+Heading line.
+X is too small.
+EOF
+])
+
+AT_CHECK([
+AT_DATA([input.tmpl],
+[Heading line.
+{{with .x}}Y={{.y}}{{end}}
+EOF
+])
+tmplrun input.tmpl 'false' '{"x":{"y":12}}'
+],
+[0],
+[Heading line.
+
+EOF
+Heading line.
+Y=12
+EOF
+])
+
+AT_CHECK([
+AT_DATA([input.tmpl],
+[Heading line.
+{{with .x}}Y={{.y}}{{else}}Nothing{{end}}
+EOF
+])
+tmplrun input.tmpl 'false' '{"x":{"y":12}}'
+],
+[0],
+[Heading line.
+Nothing
+EOF
+Heading line.
+Y=12
+EOF
+])
+
+TMPL_TEST([{{range .x -}}
+{{.}}
+{{end -}}
+],
+[{"x":[1,2,3,4,5]}],
+[0],
+[1
+2
+3
+4
+5
+])
+
+TMPL_TEST([{{range . -}}
+{{.}}
+{{end -}}
+],
+[{"x":"enim", "y":"olim", "a":"quousque", "var":"autem"}],
+[0],
+[quousque
+autem
+enim
+olim
+])
+
+TMPL_TEST([{{range $counter,$value = . -}}
+{{$counter}} = {{$value}}
+{{end -}}
+],
+[["a","b","c","d"]],
+[0],
+[0 = a
+1 = b
+2 = c
+3 = d
+])
+
+TMPL_TEST([{{range _,$value = . -}}
+{{$value}}
+{{end -}}
+],
+[["a","b","c","d"]],
+[0],
+[a
+b
+c
+d
+])
+
+TMPL_TEST([{{range $counter,_ = . -}}
+{{$counter}}
+{{end -}}
+],
+[["a","b","c","d"]],
+[0],
+[0
+1
+2
+3
+])
+
+TMPL_TEST([{{range $counter,$value = . -}}
+{{$counter}} = {{$value}}
+{{end -}}
+],
+[{"x":"enim", "y":"olim", "a":"quousque", "var":"autem"}],
+[0],
+[a = quousque
+var = autem
+x = enim
+y = olim
+])
+
+TMPL_TEST([{{range _,$value = . -}}
+{{$value}}
+{{end -}}
+],
+[{"x":"enim", "y":"olim", "a":"quousque", "var":"autem"}],
+[0],
+[quousque
+autem
+enim
+olim
+])
+
+TMPL_TEST([{{range $counter,_ = . -}}
+{{$counter}}
+{{end -}}
+],
+[{"x":"enim", "y":"olim", "a":"quousque", "var":"autem"}],
+[0],
+[a
+var
+x
+y
+])
+
+TMPL_TEST([{{define "test1"}}Test1: {{.}}{{end -}}
+{{define "test2"}}Test2: {{template "test1" .}}{{end -}}
+{{template "test2" .x}}
+],
+[{"x":"quia absurdum"}],
+[0],
+[Test2: Test1: quia absurdum
+])
+
+TMPL_TEST([X values:
+{{range _,$v = .x -}}
+{{block "name" $v -}}
+v = {{.}}
+{{end -}}
+{{end}}
+Y value:
+{{block "name" .y}}
+],
+[{"x":["a","c","e"],"y":"Y"}],
+[0],
+[X values:
+v = a
+v = c
+v = e
+
+Y value:
+v = Y
+
+])
+
+m4_popdef([TMPL_TEST])
+
+AT_CLEANUP

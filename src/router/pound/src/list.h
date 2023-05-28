@@ -1,4 +1,5 @@
 /* List definitions for Pound.
+ * Copyright (C) 2022-2023 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,6 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef _POUND_LIST_H
+# define _POUND_LIST_H
 
 /*
  * Singly-linked list macros.
@@ -91,6 +95,17 @@
 #define SLIST_COPY(dst, src)			\
   *dst = *src
 
+#define SLIST_CONCAT(a, b, field)				\
+  do								\
+    {								\
+      if ((a)->sl_last)						\
+	(a)->sl_last->field = (b)->sl_first;			\
+      else							\
+	(a)->sl_first = (b)->sl_first;				\
+      (a)->sl_last = (b)->sl_last;				\
+    }								\
+  while (0)
+
 #define SLIST_FIRST(head) ((head)->sl_first)
 #define SLIST_LAST(head) ((head)->sl_last)
 #define SLIST_EMPTY(head) (SLIST_FIRST (head) == NULL)
@@ -126,7 +141,7 @@
 #define DLIST_INSERT_HEAD(head, elt, field)			\
   do								\
     {								\
-      (elt)->field.dl_prev = NULL;  				\
+      (elt)->field.dl_prev = NULL;				\
       if (((elt)->field.dl_next = (head)->dl_first) == NULL)	\
 	(head)->dl_last = (elt);				\
       else							\
@@ -138,7 +153,7 @@
 #define DLIST_INSERT_TAIL(head, elt, field)			\
   do								\
     {								\
-      (elt)->field.dl_next = NULL;  				\
+      (elt)->field.dl_next = NULL;				\
       if (((elt)->field.dl_prev = (head)->dl_last) == NULL)	\
 	(head)->dl_first = (elt);				\
       else							\
@@ -146,6 +161,8 @@
       (head)->dl_last = (elt);					\
     }								\
   while (0)
+
+#define DLIST_PUSH DLIST_INSERT_TAIL
 
 #define DLIST_INSERT_AFTER(head, anchor, elt, field)			\
   do									\
@@ -157,7 +174,7 @@
 	  if (((elt)->field.dl_next = (anchor)->field.dl_next) == NULL)	\
 	    (head)->dl_last = (elt);					\
 	  else								\
-	    (elt)->field.dl_next->link.dl_prev = (elt);			\
+	    (elt)->field.dl_next->field.dl_prev = (elt);		\
 	  (anchor)->field.dl_next = (elt);				\
 	  (elt)->field.dl_prev = (anchor);				\
 	}								\
@@ -174,7 +191,7 @@
 	  if (((elt)->field.dl_prev = (anchor)->field.dl_prev) == NULL)	\
 	    (head)->dl_first = (elt);					\
 	  else								\
-	    (elt)->field.dl_prev->link.dl_next = (elt);			\
+	    (elt)->field.dl_prev->field.dl_next = (elt);		\
 	  (anchor)->field.dl_prev = (elt);				\
 	  (elt)->field.dl_next = (anchor);				\
 	}								\
@@ -228,3 +245,5 @@
        (var);								\
        (var) = (tmp),							\
 	 ((tmp) = (var) ? DLIST_NEXT (var, field) : NULL))
+
+#endif

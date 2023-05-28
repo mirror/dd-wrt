@@ -1,4 +1,4 @@
-Pound -- history of user-visible changes. 2022-12-19
+Pound -- history of user-visible changes. 2023-05-28
 See the end of file for copying conditions.
 
 Pound is a continuation of the software originally developed by
@@ -7,13 +7,442 @@ on 2022-09-19.  See the README.md file for details.
 
 Please send pound bug reports to <gray@gnu.org>
 
-Version 4.1.91 (git)
+Version 4.8, 2023-05-28
+
+* Support for libpcre2-posix
+
+* Fix coredump on -c -v
+
+* poundctl: ignore empty lines in pound.cfg
+
+
+Version 4.7, 2023-04-17
+
+* Default include directory
+
+Configuration directives that take filenames as their argument, search
+for files in the include directory (unless the filename is absolute).
+Initial value of the include directory is set to the system configuration
+directory, as configured at compile time.   It can be changed:
+
+1. from the command line, using the -Winclude-dir=DIR or -Wno-include-dir
+   options.  The latter form resets it to the current working
+   directory.
+
+2. in the global scope of the configuration file, using the IncludeDir
+   configuration statement.
+
+* The "Include" directive
+
+The "Include" directive can appear not only at the topmost level, but
+also in any sections (ListenHTTP, Service, ACL, etc.). In short -
+anyplace where a statement is allowed.
+
+* Reading patterns from file
+
+All request matching directives (Header, Host, URL, etc.) take an
+additional option "-file".  When this option is specified, the
+argument to the directive is treated as the name of a file to read
+patterns from.  If the filename is relative, it is looked up in the
+include directory (see above).  Patterns are read from the file line
+by line, empty lines and comments are ignored.  For example:
+
+   Service
+      Host -file "pound/webhosts"
+      ...
+   End
+
+* Early pthread_cancel probe
+
+Pound calls pthread_cancel(3p) during its shutdown sequence.  In GNU
+libc, a call to this function involves loading the libgcc_s.so.1
+shared library.  In previous versions, this would fail if pound
+was running in chrooted environment (RootJail), unless that library
+had previously been copied to the chroot directory.  The following
+diagnostics would be printed
+
+   libgcc_s.so.1 must be installed for pthread_cancel to work
+
+and the program would abort.  That means that normal pound shutdown
+sequence was not performed properly.  Starting with this version, pound
+will create and cancel a dummy thread right before doing chroot.  This
+ensures that libgcc_s.so.1 is loaded early, so that pthread_cancel is
+run successfully even when chrooted later.
+
+This early probe is enabled if pound is linked with GNU libc.  The
+--enable-pthread-cancel-probe configure option is available to
+forcefully enable or disable it, if the need be.
+
+* PID file and control socket are properly removed when in RootJail mode.
+
+This doesn't cover the case where the privileges of the user the
+program runs at (as set by the "User" and "Group" configuration
+statements) forbid to remove the file.
+
+* Control socket ownership and mode
+
+The "Control" configuration directive has two forms: inline and
+section.  The inline form is the same as in previous versions.
+The block "Control" statement allows you to manage the file mode
+and ownership of the socket file.  Its syntax is:
+
+  Control
+    Socket "FILE"
+    Mode OCTAL
+    ChangeOwner BOOL
+  End
+
+The Socket statement sets the name of the UNIX socket file.  This is
+the only mandatory statement in the Control block.  The Mode statement
+sets mode of the socket file (default is 600).  Finally, if ChangeOwner
+is true, the ownership of the socket file will be changed
+to the user defined by the User and/or Group statements in global
+scope.
+
+Version 4.6, 2023-03-07
+
+* Load-balancing strategies
+
+A load balancing strategy defines algorithm used to distribute
+incoming requests between multiple regular backends.  This version
+of pound implements two such strategies:
+
+** Weighted Random Balancing
+
+This is the default strategy and the one implemented by prior versions
+of pound.  Each backend is assigned a numeric priority between 0 and 9
+(inclusive).  The backend to use for each request is determined at
+random taking into account backend priorities, so that backends with
+numerically greater priorities have proportionally greater chances of
+being selected than the ones with lesser priorities.
+
+** Interleaved Weighted Round Robin Balancing
+
+Requests are assigned to each backend in turn.  Backend priorities, or
+weights, are used to control the share of requests handled by each
+backend.  The greater the weight, the more requests will be sent to
+this backend.
+
+* New statement: Balancer
+
+The Balancer statement can appear in global and in Service scope.  It
+defines the load balancer to use.  Possible arguments are: random, to
+use weighted random balancing (default), and iwrr to use interleaved
+weighted round robin balancing.
+
+* Backreferences
+
+Up to eight most recent matches are saved.  They can be referenced
+as $N(M), where N is number of the parenthesized subexpression, and
+M is number of the match.  Matches are numbered in reverse chronological
+order with the most recent one being at index 0.  The (0) can be
+omitted ($1 is the same as $1(0)).
+
+For example, given the following statements:
+
+  Host -re "www\\.(.+)"
+  Header -re -icase "^Content-Type: *(.*)"
+  Path "^/static(/.*)?"
+
+"$1" refers to the subgroup of Path, "$1(1)" - to that of Header, and
+"$1(2)" - to that of Host.
+
+Curly braces may be used to delimit reference from the text that
+follows it.  This is useful if the reference is immediately followed
+by a decimal digit or opening parenthesis, as in: "${1}(text)".
+
+* Request matching directives
+
+In addition to "URL" and "Header", the following matching directives
+are provided
+
+  Path [options] "value"
+    Match path.
+
+  Query [options] "value"
+    Match query.
+
+  QueryParam "name" [options] "value"
+    Match query parameter.
+
+* Request modification directives
+
+Request modification directives apply changes to the incoming request
+before passing it on to the service or backend.  They can be used both
+in ListenHTTP (ListenHTTPS) and Service sections.  The following
+directives are provided:
+
+  DeleteHeader "header: pattern"
+      Remove matching headers from the incoming requests.
+
+  SetHeader "header: to add"
+      Add the defined header to the request passed.  If the header
+      already exists, change its value.
+
+  SetURL "value"
+      Sets the URL part of the request.
+
+  SetPath "value"
+      Sets the path part.
+
+  SetQuery "value"
+      Sets the query part.
+
+  SetQueryParam "name" "value"
+      Sets the query parameter "name" to "value".
+
+  Rewrite ... [ Else ... ] End
+      Conditionally apply request modification depending on whether request
+      matches certain conditions, e.g.:
+
+		Rewrite
+			Path "\\.(jpg|gif)$"
+			SetPath "/images$0"
+		Else
+			Match AND
+				Host "example.org"
+				Path "\\.[^.]+$"
+			End
+			SetPath "/static$0"
+		Else
+			Path "\\.[^.]+$"
+			SetPath "/assets$0"
+		End
+
+* Request accessors
+
+These are special constructs that, when used in string values, are
+replaced with the corresponding parts of the incoming request.  The
+supported accessors are:
+
+ %[url]
+   The URL of the request.
+
+ %[path]
+   The path part of the request.
+
+ %[query]
+   The query part of the request.
+
+ %[param NAME]
+   The value of the query parameter NAME.
+
+ %[header NAME]
+   The value of the request header NAME.
+
+Request accessor can be used in all strings where the use of
+backreferences is allowed: i.e. arguments to Redirect, ACME,
+Error directives, and to all request modification directives described
+above.
+
+* Listener labels
+
+Listeners can be assigned symbolic labels.  The syntax is:
+
+  ListenHTTP "name"
+or
+  ListenHTTPS "name"
+
+The "name" must be unique among all listeners defined in the
+configuration.
+
+This symbolic name can be used to identify listener in poundctl
+requests (see below).
+
+* Service labels
+
+Service labels must be unique among all services within the
+listener (or in the configuration file, for global ones).
+
+* Use of listener and service labels in poundctl
+
+Listeners and services can be identified both by their numbers and
+labels.  For example:
+
+  poundctl list /main/static/1
+
+* Use of multiple redirects in single service
+
+Use of multiple redirect backends in single service, as well as mixing
+them with regular backends is deprecated and causes a warning message.
+
+
+Version 4.5, 2023-02-12
+
+* RPC over HTTP support withdrawn
+
+It has been officially discontinued by Microsoft on 2017-10-31.  It's
+no use trying to support it five years after.
+
+* Support for 303 and 308 redirection codes
+
+* Improved default error responses
+
+* New special backend: Error
+
+The Error statement defines a special backend that returns the
+HTTP error page.  It takes one to two arguments:
+
+  Error STATUS [FILE]
+
+The STATUS argument supplies HTTP status code.  Optional FILE argument is
+the name of a disk file with the error page content (HTML).  If not
+supplied, the text is determined as usual: first the Err<STATUS> statement
+for the enclosing listener is consulted.  If it is not present, the
+default error page is used.
+
+* New special backend: Metrics
+
+This backend type implements openmetrics telemetry endpoint.  The
+minimal configuration is:
+
+  Service
+      URL "/metrics"
+      Metrics
+  End
+
+Enabling backend statistics (see below) is strongly suggested when
+using the Metrics backend.
+
+* Backend statistics
+
+Backend usage statistics is enabled by the BackendStats configuration
+directive:
+
+  BackendStats true
+
+When enabled, the "stats" object will be added to the JSON output for
+each backend.  This object holds the following fields:
+
+  request_count          Number of requests processed by this backend.
+  request_time_avg       Average request processing time.
+  request_time_stddev    Standard deviation of the above.
+
+The Metrics backend, if declared, will then include the following
+metric families in its output
+
+  pound_backend_requests
+  pound_backend_request_time_avg_nanoseconds
+  pound_backend_request_stddev_nanoseconds
+
+These three families are labeled by the corresponding backend index,
+e.g. (output split in two lines for readability):
+
+  pound_backend_request_time_avg_nanoseconds
+      {listener="1",service="1",backend="1"} 17232220
+
+* Core statistics
+
+The default output returned by pound control thread now includes
+additional core statistics: pound version, PID, worker subsystem
+configuration and state.  The default poundctl template has been
+changed to reflect it.
+
+* New options: -F and -e
+
+The -F option forces the foreground mode: the program won't detach
+itself from the controlling terminal and will remain in foreground even
+if configuration settings require otherwise.
+
+The -e option directs error diagnostics to stderr (stdout for
+LOG_DEBUG and LOG_INFO facilities).  It implies foreground mode.
+
+* Changes in verbose mode (-v)
+
+Error messages emitted to stderr (stdout) are duplicated in the
+syslog, if the configuration settings require so.
+
+* Arithmetic operations in poundctl templates
+
+The four new functions are provided to implement basic arithmetic
+operations in templates: add, sub, mul, and div.
+
+* Fixed the LogFacility configuration statement
+
+
+Version 4.4, 2023-01-19
+
+* New directive: HeaderOption
+
+The HeaderOption directive controls what kind of "canned" headers
+pound adds to the HTTP request before passing it on to the backend.
+By default, it adds "forwarded" headers (X-Forwarded-For,
+X-Forwarded-Proto, and X-Forwarded-Port) and, if serving a HTTPS
+session, X-SSL-* headers.
+
+The arguments to the HeaderOption directive enable or disable these
+canned headers.  The default corresponds to
+
+  HeaderOption forwarded ssl
+
+To disable any kind of headers, precede its name with a "no-":
+
+  HeaderOption no-forwarded
+
+The special keywords "none" and "all", can be used to disable or
+enable all canned headers.
+
+The HeaderOption directive can appear in the global scope or within
+a ListenerHTTP (or ListenerHTTPS) section.
+
+* Header modification and service matching
+
+Header modification directives are applied after service matching
+directives (such as Header or HeadRequire).  This is a disruptive
+change: in previous pound version header removal was done prior to
+service selection.
+
+* Header modification order
+
+Header modification directives are applied in the following order:
+HeaderOptions, HeaderRemove, HeaderAdd.  In other words, built-in headers
+are added first.  Then, header removal directives are applied.
+Finally, headers requested by the user are added.  Added headers
+overwrite headers with the same name that may already be present in the
+request.  Thus, you can use HeaderRemove and HeaderAdd to trim down
+headers added by HeaderOptions.
+
+* Back-references in Redirect and ACME statements
+
+Arguments to Redirect and ACME statements can contain references to
+parenthesized subexpressions in the most recently matched URL, Header,
+or Host statements.  Syntactically, $N refers to URL subexpression and
+%N refers to subexpression of Header (or Host).  $0 and %0 are
+expanded to the entire URL or header (host).  For example, to redirect
+all requests to https:
+
+	Service
+		Host -re ".+"
+		URL ".*"
+		Redirect "https://%0$0"
+	End
+
+Version 4.3, 2023-01-13
+
+* Template support in poundctl
+
+The output of poundctl is controlled by a template.  Templates
+are read from a template file, which is looked up in template
+search path (normally ~/.poundctl.tmpl:/usr/share/pound/poundctl.tmpl).
+The poundctl.tmpl file shipped with the distribution defines templates
+for the traditional (plain-text) and XML output.
+
+The option "-t FILE" instructs poundctl to use FILE instead of the
+default template file.  The option "-T NAME" supplies the name of
+the template to be used.
+
+* Fix parsing of Subject in X509 certificates
+
+
+Version 4.2, 2022-12-31
 
 * Rewrite periodic tasks
 
 The timer thread is rewritten completely in order to do periodic
 operations (such as backend probing and session expiration)
-precisely when needed and lower the incurred CPU usage.
+precisely when needed, instead of waking up in fixed intervals and
+checking what should be done.  Among others, this helps reduce the CPU
+load.
 
 Whenever a backend is marked as dead, a periodic job is scheduled
 for "alive_to" seconds from the current time, which will probe the
@@ -26,17 +455,17 @@ consisting of a hash table (to quickly look-up a session) and
 a doubly-linked list (to provide for session expiration).  Sessions
 within the latter are sorted by their expiration time.  A periodic
 job is scheduled to the expiration time of the first session in the
-list, i.e. the least recently used one.  When the job has removed the
-expired session, it reschedules itself to the expiration time of the
+list, i.e. the least recently used one.  After removing the expired
+session, the job reschedules itself to the expiration time of the
 next session (which becomes first in the list), if any.
 
 * The "haport" feature has been removed.
 
-* Rewrite control interface
+* Control interface rewritten
 
 The new control interface uses REST API.
 
-* Rewrite poundctl
+* Poundctl rewritten
 
 Version 4.1, 2022-12-10
 
@@ -184,7 +613,7 @@ Version 4.0, 2022-12-02
 =========================================================================
 Copyright information:
 
-Copyright (C) 2018-2022 Sergey Poznyakoff
+Copyright (C) 2018-2023 Sergey Poznyakoff
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the

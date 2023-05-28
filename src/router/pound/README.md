@@ -7,9 +7,9 @@ servers that do not offer it natively. __Pound__ is distributed under the
 GNU General Public License, Version 3, or (at your option) any later
 version.
 
-The original version of __pound__ was written by Robert Segall
-<roseg@apsis.ch>, at [Apsis GmbH](http://www.apsis.ch).  In 2018,
-Sergey Poznyakoff added support for OpenSSL 1.x to the then current
+The original version of __pound__ was written by Robert Segall at
+[Apsis GmbH](https://web.archive.org/web/20221202094441/https://apsis.ch/).
+In 2018, Sergey Poznyakoff added support for OpenSSL 1.x to the then current
 version of the program (2.8).  This version of __pound__, hosted on
 *github* was further modified by Rick O'Sullivan and Frank Schmirler,
 who added WebSocket support.
@@ -28,11 +28,10 @@ from his fork.
 
 1. a *reverse-proxy*: it passes requests from client browsers to one or
    more backend servers.
-2. a *load balancer*: it distributes the requests from client
-   browsers among several backend servers, while keeping session
-   information.
+2. a *load balancer*: it distributes requests from client browsers among
+   several backend servers, while keeping session information.
 3. an *SSL wrapper*: it decrypts HTTPS requests from client browsers and
-   passes them as plain HTTP to the back-end servers.
+   passes them as plain HTTP to the backend servers.
 4. an *HTTP/HTTPS sanitizer*: it verifies requests for correctness and
    accepts only well-formed ones.
 5. a *fail-over server*: should a backend server fail, *pound* will take
@@ -76,7 +75,7 @@ As of current release, __pound__ still supports OpenSSL 1.0, but
 this support will soon be discontinued.
 
 If you compile it on a Debian-based system, you need to install the
-`libssl-dev` package prior to building __pound__:
+`libssl-dev` package prior to building __pound__.
 
 ## Compilation
 
@@ -96,7 +95,7 @@ This will prepare the necessary infrastructure files (`Makefile.in`'s
 etc.)
 
 If you are building __pound__ from a tarball, the above step is not
-needed, since all the necessary files are included in the tarball.
+needed, since all the necessary files are already included in it.
 
 To prepare __pound__ for compilation, run `./configure`.  Its command
 line options will decide where on the filesystem the binary will be
@@ -121,63 +120,69 @@ configuration options:
 
 * `--enable-pcreposix` or `--disable-pcreposix`
 
-Enable or disable the use of the `pcreposix` library.  This is a
-library that makes it possible to use both POSIX extended and
-Perl-compatible regular expressions in the __pound__ configuration
-file.
+  Enable or disable the use of the `libpcreposix2` or `libpcreposix`
+  library.  This is a library that makes it possible to use both POSIX
+  extended and Perl-compatible regular expressions in __pound__ configuration
+  file.
 
-By default, its presence is determined automatically.
+  By default, its presence is determined automatically; `libpcreposix2`
+  is preferred over `libpcreposix`.  To force compiling with the older
+  `libpcreposix`, use `--enable-pcreposix=pcre1`.
 
-* `--enable-super` or `--disable-super`
+* `--enable-pthread-cancel-probe` or `--disable-pthread-cancel-probe`
 
-Enable (the default) or disable compilation of the supervisor process
-code.  This feature is used when __pound__ runs in daemon mode.  If it
-is enabled, an extra supervisor process is launched that controls
-execution of the __pound__ daemon process.  If the daemon process
-terminates abnormally, the supervisor immediately restarts it and
-reflects the fact in the log file.
+  __Pound__ calls the `pthread_cancel` function as part of its shutdown
+  sequence.  In GNU libc, this function tries to load shared library
+  `libgcc_s.so.1`.  It will fail to do so, if the program is running in
+  chroot (the `RootJail` statement is given), unless the library has
+  previously been copied to the chroot directory.  To avoid this, __pound__
+  will do a temptative call to `pthread_cancel` early, before chrooting,
+  so that the necessary library will be loaded and remain available after
+  `chroot`.  To determine whether to do this _pthread_cancel probe_ hack,
+  `configure` checks if the program is going to be linked with GNU libc.
 
-This can also be disabled or enabled on runtime, by the configuration
-settings.
+  These two options allow you to forcefully enable or disable this probe.
+  For instance, you may wish to enable it, if another _libc_ implementation
+  exhibits a similar behavior.
 
 * `--with-maxbuf=`*n*
 
-Sets the value of `MAXBUF` parameter - the size of a generic buffer
-used internally by __pound__ for various needs.  The default is 4096.
-You will probably not want to change it.
+  Sets the value of `MAXBUF` parameter - the size of a generic buffer
+  used internally by __pound__ for various needs.  The default is 4096.
+  You will probably not want to change it.
 
 * `--with-owner=`*user*
 
-Name of the system user who will own the __pound__ executable file.  When
-not supplied, the first name from the following list that exists in
-the `/etc/passwd` file will be used: `proxy`, `www`, `daemon`, `bin`,
-`sys`, `root`.
+  Name of the system user who will own the __pound__ executable file.  When
+  not supplied, the first name from the following list that exists in
+  the `/etc/passwd` file will be used: `proxy`, `www`, `daemon`, `bin`,
+  `sys`, `root`.
 
 * `--with-group=`*group*
 
-Name of the system group who will own the __pound__ executable.  When
-not supplied, the first name from the following list that exists in
-the `/etc/passwd` file will be used: `proxy`, `www`, `daemon`, `bin`,
-`sys`, `root`.
+  Name of the system group who will own the __pound__ executable.  When
+  not supplied, the first name from the following list that exists in
+  the `/etc/passwd` file will be used: `proxy`, `www`, `daemon`, `bin`,
+  `sys`, `root`.
 
 * `--with-dh=`*n*
 
-Default DH parameter length.  Allowed values for *n* are 2048 (the
-default) and 1024.
+  Default DH parameter length.  Allowed values for *n* are 2048 (the
+  default) and 1024.
 
-This option has no effect when compiling with OpenSSL 1.1 or later.
+  This option has no effect when compiling with OpenSSL 1.1 or later.
 
 * `--with-ssl=`*directory*
 
-Directory under which OpenSSL is installed.  You will seldom need this
-option.  Most of the time `configure` is able to detect that location
-automatically.
+  Directory under which OpenSSL is installed.  You will seldom need this
+  option.  Most of the time `configure` is able to detect that location
+  automatically.
 
 * `--with-t_rsa=`*n*
 
-Sets default time interval for regeneration of RSA ephemeral keys.
+  Sets default time interval for regeneration of RSA ephemeral keys.
 
-This option has no effect when compiling with OpenSSL 1.1 or later.
+  This option has no effect when compiling with OpenSSL 1.1 or later.
 
 When configuration is finished, run
 
@@ -193,16 +198,17 @@ it involves generating DH parameters.
 
 Testing a reverse proxy in general, and __pound__ in particular, is not
 a trivial task.  Testsuite in __pound__ was implemented quite recently
-and is still somewhat experimental.  Notwithstanding this, it has
+and is still somewhat experimental.  Notwithstanding that, it has
 already helped to discover several important bugs that lurked in the
 code.
 
 To test __pound__ you will need [Perl](https://www.perl.org) version
-5.26.3 or later and the [IO::FDPass](https://metacpan.org/pod/IO::FDPass)
-module.  To install the later on a debian-based system, run
+5.26.3 or later, and the [IO::FDPass](https://metacpan.org/pod/IO::FDPass)
+module.  To install the latter on a reasonably recent debian-based system,
+run
 
 ```sh
- apt install libio-fdpass-perl
+ apt-get install libio-fdpass-perl
 ```
 
 On other systems you may need to install it directly from *cpan* by
@@ -223,7 +229,7 @@ something like that:
 
 ```
 ## -------------------------- ##
-## pound 4.0 test suite.      ##
+## pound 4.5 test suite.      ##
 ## -------------------------- ##
   1: Configuration file syntax                       ok
   2: Basic request processing                        ok
@@ -245,15 +251,15 @@ All 11 tests were successful.
 ```
 
 If a test results in something other than `ok`, it leaves the detailed
-diagnostics in files in the `tests/*N*/testsuite.dir` directory, where
-*N* is the ordinal number of the test.  Pack them all into a single
+diagnostics in files in the `tests/NN/testsuite.dir` directory, where
+*NN* is the ordinal number of the test.  Pack them all into a single
 tarball and send it over to <gray@gnu.org> for investigation.  See
-also the [Bug Reporting](#user-content-bug-reporting) section below.
+also the section [Bug Reporting](#user-content-bug-reporting) below.
 
-## Installing
+## Installation
 
-If both building and testing succeeded, install __pound__.  To do
-so, run the following command as root:
+If both building and testing succeeded, it's time to install __pound__.
+To do so, run the following command as root:
 
 ```sh
  make install
@@ -263,8 +269,8 @@ so, run the following command as root:
 
 __Pound__ looks for its configuration file in a location defined at
 [compile time](#user-content-compilation), normally `/etc/pound.cfg`,
-or `/usr/local/etc/pound.cfg`.  It's syntax is discussed in detail
-in the [manual](https://www.gnu.org.ua/software/pound/pound.html).
+or `/usr/local/etc/pound.cfg`.  The configuration file syntax is discussed
+in detail in the [manual](https://www.gnu.org.ua/software/pound/pound.html).
 Here we will describe some example configurations.
 
 Any __pound__ configuration must contain at least two parts:
@@ -282,7 +288,7 @@ such as source IP address, URL, request header or the like.
 ### Simplest configuration
 
 The following configuration instructs __pound__ to listen for incoming
-HTTP requests on 192.0.2.1:80 and to pass it to single backend on
+HTTP requests on 192.0.2.1:80 and pass them to single backend on
 10.10.0.1:8080.
 
 
@@ -340,8 +346,6 @@ ListenHTTPS
 	CAlist /etc/ssl/acme/lets-encrypt-root.pem"
 	# Disable obsolete protocols (SSLv2, SSLv3 and TLSv1).
 	Disable TLSv1
-	# Inform backend that it's HTTPS
-	AddHeader "X-Forwarded-Proto: https"
 	Service
 		Backend
 			Address 10.10.0.1
@@ -354,16 +358,20 @@ End
 ### Virtual Hosts
 
 To implement virtual hosts, one needs to instruct __pound__ to
-route requests to different services depending on the value of
-their `Host:` headers.  In previous versions of __pound__ it
-was achieved using the `HeadRequire` directive.  Since version
-4.1 __pound__ provides the `Host` directive for this purpose.
+route requests to different services depending on the values of
+their `Host:` headers.  To do so, use the `Host` statement in the
+`Service` section.
+
+The argument to `Host` specifies the host name.  When an incoming request
+arrives, it is compared with this value.  The `Service` section will be
+used only if the value of the `Host:` header from the request matched the
+argument to the `Host` statement.  By default, exact case-insensitive
+comparison is used.
 
 Let's assume that you have internal server 192.168.0.10 that is supposed to
 serve the needs of virtual host *www.server0.com* and 192.168.0.11
 that serves *www.server1.com*.  You want __pound__ to listen on address
-192.0.2.1 and separate the requests to each host.  The configuration file
-would look like this:
+192.0.2.1.  The configuration file would look like this:
 
 ```
 ListenHTTP
@@ -391,7 +399,12 @@ End
 The same can be done using `ListenHTTPS`.
 
 If you want to use the same service for both the hostname and the
-hostname prefixed with `www.`, use the `Match` statement, as in:
+hostname prefixed with `www.`, you can either use the `Match` statement,
+or a regular expression.
+
+A `Match` statement groups several conditions using boolean shortcut
+evaluation.  In the following example, boolean __or__ is used to group
+two `Host` statements:
 
 ```
 	Service
@@ -406,6 +419,29 @@ hostname prefixed with `www.`, use the `Match` statement, as in:
 	End
 ```
 
+When this service is considered, the value of the `Host:` header from the
+incoming request is matched against each host listed in the `Match OR`
+statement.  If any value compares equal, the match succeeds and the service
+is selected for processing the request.
+
+By default, the `Host` directive uses exact case-insensitive string match.
+This can be altered by supplying one or more options to it.  In the example
+below, we use regular expression matching to achieve the same result as in
+the configuration above:
+
+```
+	Service
+		Host -re "^(www\\.)?server0\\.com$"
+		Backend
+			Address 192.168.0.10
+			Port    80
+		End
+	End
+```
+
+Notice double-slashes: a slash is an escape character and must be escaped
+if intended to be used literally.
+
 ### Sessions
 
 __Pound__ is able to keep track of sessions between a client browser
@@ -415,7 +451,7 @@ to allow keeping track of sessions, and none of them works
 perfectly.  What's worse, sessions are critical in order to allow
 web-based applications to function correctly - it is vital that once a
 session is established all subsequent requests from the same browser
-be directed to the same back-end server.
+be directed to the same backend server.
 
 Six possible ways of detecting a session have been implemented in
 __pound__ (hopefully the most useful ones): by client address, by Basic
@@ -429,7 +465,7 @@ session tracking is declared with the `Type` statement.
 * `Type IP`:  Session tracking by address
 
   In this scheme __pound__ directs all requests from the same client
-  IP address to the same back-end server. Put the lines
+  IP address to the same backend server. Put the lines
 
   ```
   Session
@@ -460,7 +496,7 @@ session tracking is declared with the `Type` statement.
   This type is a special case of the `Type Header`, described below.
 
   WARNING: given the constraints of the HTTP protocol it may very well be
-  that the authenticated request will go to a different back-end server than
+  that the authenticated request will go to a different backend server than
   the one originally requesting it. Make sure all your servers support
   the same authentication scheme!
 
@@ -552,7 +588,7 @@ achieves the same result without changing the contents in any way.
 ### Logging
 
 If __pound__ operates in daemon mode (the default), all diagnostics
-goes to syslog, facility `daemon`.  __Pound__ switches to syslog right
+goes to the syslog facility `daemon`.  __Pound__ switches to syslog right
 before it disconnects from the controlling terminal.  Until then, it
 sends its messages to the standard error.
 
@@ -605,25 +641,71 @@ Currently it is used in __pound__ testsuite.
 ## Request Modification
 
 Normally, __pound__ passes all incoming requests to backends
-verbatim, with the following exceptions:
+verbatim.  Several request modification directives are provided, that
+allow you to add or remove headers from the request.  The following
+two groups of headers are added by default.  Each of them can be turned
+off using the `HeaderOption` directive.
 
-1. `X-Forwarded-For:` header is added to each request. The value of
-this header is the actual IP address of the client machine that sent
-the request.
+1. The _forwarded_ headers:
 
-2. If a client connects via HTTPS, the following HTTP headers are
-added to the request:
+* `X-Forwarded-For:` header passes the actual IP address of the client
+machine that sent the request.
 
-* `X-SSL-Subject`: information about the certificate owner
-* `X-SSL-Issuer`: information about the certificate issuer (CA)
-* `X-SSL-notBefore`: start of validity date for the certificate
-* `X-SSL-notAfter`: end od validity date for the certificate
-* `X-SSL-serial`: certificate serial number (in decimal)
-* `X-SSL-cipher`: the cipher currently in use
-* `X-SSL-certificate`: the full client certificate (multi-line)
+* `X-Forwarded-Proto:` header contains the original protocol (`http` or
+`https`).
 
-3. Any additions and removals requested by the `HeaderAdd` and
-`HeaderRemove` configuration statements in the listener section.
+* `X-Forwarded-Port:` header contains the port on the server that the
+client connected to.
+
+2. Second group contains _ssl_ headers that are added only if the client
+connected using HTTPS.  The `X-SSL-Cipher` header is always present if
+this header group is enabled.  The rest of headers below is added only if
+the client certificate was supplied:
+
+* `X-SSL-Cipher`: SSL version followed by a slash and active cipher algorithm.
+* `X-SSL-Certificate`: the full client certificate (multi-line).
+* `X-SSL-Issuer`: information about the certificate issuer (CA).
+* `X-SSL-Subject`: information about the certificate owner.
+* `X-SSL-notAfter`: end od validity date for the certificate.
+* `X-SSL-notBefore`: start of validity date for the certificate.
+* `X-SSL-serial`: certificate serial number (in decimal).
+
+The `HeaderOption` directive can be used (either globally or in listener
+block) to disable any or both of these groups, e.g.:
+```
+HeaderOption no-ssl forwarded
+```
+
+Any number of headers can be added or removed using the `HeaderAdd` and
+`HeaderRemove` directives in the listener section.  The order in which these
+directives are applied is:
+
+1. Headers controlled by the `HeaderOption` directive are added.
+2. Headers requested by `HeaderRemove` directives are removed.
+3. Headers from `HeaderAdd` directives are added.
+
+## ACME
+
+__Pound__ offers built-in support for ACME (a.k.a. _LetsEncrypt_) [HTTP-01](https://letsencrypt.org/docs/challenge-types/#http-01-challenge) challenge type.
+Thus, it can be used with any certificate controller to obtain SSL certificates
+on the fly.
+
+Assuming your certificate controller is configured to store challenges in
+directory `/var/lib/pound/acme`, all you need to do is add the `ACME`
+statement to the `ListenHTTP` block, for example:
+
+```
+ListenHTTP
+	ACME "/var/lib/pound/acme"
+	.
+	.
+	.
+End
+```
+
+Now, each request whose URL ends in `/.well-known/acme-challenge/NAME`
+will be served by directly by __pound__: it will send the content of
+the file `/var/lib/pound/acme/NAME` as a reply.
 
 ## Using `RootJail`
 
@@ -635,27 +717,38 @@ straightforward:
 RootJail "/var/pound"
 ```
 
-Several points to note:
+__Pound__ tries to open all files and devices it needs before
+chrooting.  There might be cases, however, when it is not enough
+and you would need to copy certain system files to the chroot
+directory.
+
+### Notes for users of __pound__ versions prior to 4.7
 
 When using `RootJail`, __pound__ does not remove its PID file
 before shutting down.
 
-__Pound__ tries to open all files and devices it needs before
-chrooting.  There might be cases, however, when it is not enough
-and you would need to copy certain system files to the chroot
-directory.  In particular, if you get the following message when
-stopping __pound__:
+If __pound__ displays the following message and aborts when being stopped:
 
 ```
 libgcc_s.so.1 must be installed for pthread_cancel to work
 ```
 
-then you need to copy that library to the RootJail directory, e.g.:
+then you need to copy that library to the `RootJail` directory, e.g.:
 
 ```sh
 mkdir /var/pound/lib64
 cp /usr/lib64/libgcc_s.so.1 /var/pound/lib64
 ```
+
+or make sure it is loaded at program startup by defining the
+`LD_PRELOAD` variable:
+
+```sh
+export LD_PRELOAD=/usr/lib64/libgcc_s.so
+```
+
+This problem was fixed in version 4.7 (see the description of the
+`--enable-pthread-cancel-probe` configure option above).
 
 ## Bug-reporting
 

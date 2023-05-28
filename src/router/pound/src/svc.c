@@ -1,8 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- *
- * This file is part of Pound.
+ * Copyright (C) 2022-2023 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +15,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Contact information:
- * Apsis GmbH
- * P.O.Box
- * 8707 Uetikon am See
- * Switzerland
- * EMail: roseg@apsis.ch
  */
 
 #include "pound.h"
@@ -265,41 +257,6 @@ service_session_remove_by_backend (SERVICE *svc, BACKEND *be)
 }
 
 /*
- * Log an error to the syslog or to stderr
- */
-void
-vlogmsg (const int priority, const char *fmt, va_list ap)
-{
-  if (log_facility == -1 || print_log)
-    {
-      FILE *fp = (priority == LOG_INFO || priority == LOG_DEBUG)
-		     ? stdout : stderr;
-      if (progname)
-	fprintf (fp, "%s: ", progname);
-      vfprintf (fp, fmt, ap);
-      fputc ('\n', fp);
-    }
-  else
-    {
-      struct stringbuf sb;
-      stringbuf_init (&sb);
-      stringbuf_vprintf (&sb, fmt, ap);
-      syslog (priority, "%s", stringbuf_value (&sb));
-      stringbuf_free (&sb);
-    }
-  return;
-}
-
-void
-logmsg (const int priority, const char *fmt, ...)
-{
-  va_list ap;
-  va_start (ap, fmt);
-  vlogmsg (priority, fmt, ap);
-  va_end (ap);
-}
-
-/*
  * Translate inet/inet6 address/port into a string
  */
 char *
@@ -371,268 +328,55 @@ str_be (char *buf, size_t size, BACKEND *be)
   switch (be->be_type)
     {
     case BE_BACKEND:
-      addr2str (buf, size, &be->addr, 0);
+      addr2str (buf, size, &be->v.reg.addr, 0);
       break;
 
     case BE_REDIRECT:
-      snprintf (buf, size, "redirect:%s", be->url);
+      snprintf (buf, size, "redirect:%s", be->v.redirect.url);
       break;
 
     case BE_ACME:
-      snprintf (buf, size, "acme:%s", be->url);
+      snprintf (buf, size, "acme");
       break;
 
     case BE_CONTROL:
       strncpy (buf, "control", size);
+      break;
+
+    case BE_ERROR:
+      if (be->v.error.text)
+	snprintf (buf, size, "error:%d:text",
+		  pound_to_http_status (be->v.error.status));
+      else
+	snprintf (buf, size, "error:%d",
+		  pound_to_http_status (be->v.error.status));
+      break;
+
+    case BE_METRICS:
+      strncpy (buf, "metrics", size);
+      break;
+
+    default:
+      abort ();
     }
   return buf;
 }
 
-/*
- * Parse a URL, possibly decoding hexadecimal-encoded characters
- */
-int
-cpURL (char *res, char *src, int len)
-{
-  int state;
-  char *kp_res;
-
-  for (kp_res = res, state = 0; len > 0; len--)
-    switch (state)
-      {
-      case 1:
-	if (*src >= '0' && *src <= '9')
-	  {
-	    *res = *src++ - '0';
-	    state = 2;
-	  }
-	else if (*src >= 'A' && *src <= 'F')
-	  {
-	    *res = *src++ - 'A' + 10;
-	    state = 2;
-	  }
-	else if (*src >= 'a' && *src <= 'f')
-	  {
-	    *res = *src++ - 'a' + 10;
-	    state = 2;
-	  }
-	else
-	  {
-	    *res++ = '%';
-	    *res++ = *src++;
-	    state = 0;
-	  }
-	break;
-
-      case 2:
-	if (*src >= '0' && *src <= '9')
-	  {
-	    *res = *res * 16 + *src++ - '0';
-	    res++;
-	    state = 0;
-	  }
-	else if (*src >= 'A' && *src <= 'F')
-	  {
-	    *res = *res * 16 + *src++ - 'A' + 10;
-	    res++;
-	    state = 0;
-	  }
-	else if (*src >= 'a' && *src <= 'f')
-	  {
-	    *res = *res * 16 + *src++ - 'a' + 10;
-	    res++;
-	    state = 0;
-	  }
-	else
-	  {
-	    *res++ = '%';
-	    *res++ = *(src - 1);
-	    *res++ = *src++;
-	    state = 0;
-	  }
-	break;
-
-      default:
-	if (*src != '%')
-	  *res++ = *src++;
-	else
-	  {
-	    src++;
-	    state = 1;
-	  }
-	break;
-      }
-  if (state > 0)
-    *res++ = '%';
-  if (state > 1)
-    *res++ = *(src - 1);
-  *res = '\0';
-  return res - kp_res;
-}
-
-/*
- * Parse a header
- * return a code and possibly content in the arg
- */
-int
-check_header (const char *header, char *const content)
-{
-  regmatch_t matches[4];
-  static struct
-  {
-    char header[32];
-    int len;
-    int val;
-  } hd_types[] =
-  {
-    {"Transfer-encoding", 17, HEADER_TRANSFER_ENCODING},
-    {"Content-length", 14, HEADER_CONTENT_LENGTH},
-    {"Connection", 10, HEADER_CONNECTION},
-    {"Location", 8, HEADER_LOCATION},
-    {"Content-location", 16, HEADER_CONTLOCATION},
-    {"Host", 4, HEADER_HOST},
-    {"Referer", 7, HEADER_REFERER},
-    {"User-agent", 10, HEADER_USER_AGENT},
-    {"Destination", 11, HEADER_DESTINATION},
-    {"Expect", 6, HEADER_EXPECT},
-    {"Upgrade", 7, HEADER_UPGRADE},
-    {"", 0, HEADER_OTHER},
-  };
-  int i;
-
-  if (!regexec (&HEADER, header, 4, matches, 0))
-    {
-      for (i = 0; hd_types[i].len > 0; i++)
-	if ((matches[1].rm_eo - matches[1].rm_so) == hd_types[i].len
-	    && strncasecmp (header + matches[1].rm_so, hd_types[i].header,
-			    hd_types[i].len) == 0)
-	  {
-	    /* we know that the original header was read into a buffer of size MAXBUF, so no overflow */
-	    strncpy (content, header + matches[2].rm_so,
-		     matches[2].rm_eo - matches[2].rm_so);
-	    content[matches[2].rm_eo - matches[2].rm_so] = '\0';
-	    return hd_types[i].val;
-	  }
-      return HEADER_OTHER;
-    }
-  else
-    return HEADER_ILLEGAL;
-}
-
-static void
-submatch_init (struct submatch *sm)
-{
-  sm->matchn = 0;
-  sm->matchmax = 0;
-  sm->matchv = NULL;
-}
-
-static int
-submatch_realloc (struct submatch *sm, regex_t const *re)
-{
-  size_t n = re->re_nsub + 1;
-  if (n > sm->matchmax)
-    {
-      regmatch_t *p = realloc (sm->matchv, n * sizeof (p[0]));
-      if (!p)
-	return -1;
-      sm->matchmax = n;
-      sm->matchv = p;
-    }
-  sm->matchn = n;
-  return 0;
-}
-
-void
-submatch_free (struct submatch *sm)
-{
-  free (sm->matchv);
-  submatch_init (sm);
-}
-
-static void
-submatch_reset (struct submatch *sm)
-{
-  sm->matchn = 0;
-}
-
-static int
-match_headers (char **const headers, regex_t const *re)
-{
-  int i, found;
-
-  for (i = found = 0; i < MAXHEADERS-1 && !found; i++)
-    {
-      if (headers[i])
-	found = regexec (re, headers[i], 0, NULL, 0) == 0;
-    }
-  return found;
-}
-
-static int
-match_cond (const SERVICE_COND *cond, struct sockaddr *srcaddr,
-	    const char *request, char **const headers,
-	    struct submatch *sm)
-{
-  int res = 1;
-  SERVICE_COND *subcond;
-
-  switch (cond->type)
-    {
-    case COND_ACL:
-      res = acl_match (cond->acl, srcaddr) == 0;
-      break;
-
-    case COND_URL:
-      if (submatch_realloc (sm, &cond->re))
-	{
-	  logmsg (LOG_ERR, "memory allocation failed");
-	  return 0;
-	}
-      res = regexec (&cond->re, request, sm->matchn, sm->matchv, 0) == 0;
-      break;
-
-    case COND_HDR:
-      res = match_headers (headers, &cond->re);
-      break;
-
-    case COND_BOOL:
-      submatch_reset (sm);
-      if (cond->bool.op == BOOL_NOT)
-	{
-	  subcond = SLIST_FIRST (&cond->bool.head);
-	  res = ! match_cond (subcond, srcaddr, request, headers, sm);
-	}
-      else
-	{
-	  SLIST_FOREACH (subcond, &cond->bool.head, next)
-	    {
-	      res = match_cond (subcond, srcaddr, request, headers, sm);
-	      if ((cond->bool.op == BOOL_AND) ? (res == 0) : (res == 1))
-		break;
-	    }
-	}
-      break;
-    }
-
-  return res;
-}
-
 static int
 match_service (const SERVICE *svc, struct sockaddr *srcaddr,
-	       const char *request, char **const headers,
-	       struct submatch *sm)
+	       struct http_request *req,
+	       struct submatch_queue *smq)
 {
-  return match_cond (&svc->cond, srcaddr, request, headers, sm);
+  return match_cond (&svc->cond, srcaddr, req, smq);
 }
 
 /*
  * Find the right service for a request
  */
 SERVICE *
-get_service (const LISTENER * lstn, struct sockaddr *srcaddr,
-	     const char *request, char **const headers,
-	     struct submatch *sm)
+get_service (const LISTENER *lstn, struct sockaddr *srcaddr,
+	     struct http_request *req,
+	     struct submatch_queue *smq)
 {
   SERVICE *svc;
 
@@ -640,7 +384,7 @@ get_service (const LISTENER * lstn, struct sockaddr *srcaddr,
     {
       if (svc->disabled)
 	continue;
-      if (match_service (svc, srcaddr, request, headers, sm))
+      if (match_service (svc, srcaddr, req, smq))
 	return svc;
     }
 
@@ -649,7 +393,7 @@ get_service (const LISTENER * lstn, struct sockaddr *srcaddr,
     {
       if (svc->disabled)
 	continue;
-      if (match_service (svc, srcaddr, request, headers, sm))
+      if (match_service (svc, srcaddr, req, smq))
 	return svc;
     }
 
@@ -658,72 +402,114 @@ get_service (const LISTENER * lstn, struct sockaddr *srcaddr,
 }
 
 /*
- * extract the session key for a given request
+ * Calculate a uniformly distributed random number less than max.
+ * avoiding "modulo bias".
+ *
+ * The code is based on arc4random_uniform from OpenBSD, see
+ * http://cvsweb.openbsd.org/cgi-bin/cvsweb/~checkout~/src/lib/libc/crypt/arc4r\
+andom_uniform.c
+ *
+ * Uniformity is achieved by generating new random numbers until the one
+ * returned is outside the range [0, 2**32 % max).  This
+ * guarantees the selected random number will be inside
+ * [2**32 % max, 2**32) which maps back to [0, max)
+ * after reduction modulo max.
  */
-static int
-get_REQUEST (char *res, const SERVICE * svc, const char *request)
+static long
+random_in_range (unsigned long max)
 {
-  int n, s;
-  regmatch_t matches[4];
+  long r;
+  unsigned long min;
 
-  if (regexec (&svc->sess_start, request, 4, matches, 0))
-    {
-      res[0] = '\0';
-      return 0;
-    }
-  s = matches[0].rm_eo;
-  if (regexec (&svc->sess_pat, request + s, 4, matches, 0))
-    {
-      res[0] = '\0';
-      return 0;
-    }
-  if ((n = matches[1].rm_eo - matches[1].rm_so) > KEY_SIZE)
-    n = KEY_SIZE;
-  strncpy (res, request + s + matches[1].rm_so, n);
-  res[n] = '\0';
-  return 1;
-}
-
-static int
-get_HEADERS (char *res, const SERVICE * svc, char **const headers)
-{
-  int i, n, s;
-  regmatch_t matches[4];
-
-  /* this will match SESS_COOKIE, SESS_HEADER and SESS_BASIC */
-  res[0] = '\0';
-  for (i = 0; i < (MAXHEADERS - 1); i++)
-    {
-      if (headers[i] == NULL)
-	continue;
-      if (regexec (&svc->sess_start, headers[i], 4, matches, 0))
-	continue;
-      s = matches[0].rm_eo;
-      if (regexec (&svc->sess_pat, headers[i] + s, 4, matches, 0))
-	continue;
-      if ((n = matches[1].rm_eo - matches[1].rm_so) > KEY_SIZE)
-	n = KEY_SIZE;
-      strncpy (res, headers[i] + s + matches[1].rm_so, n);
-      res[n] = '\0';
-    }
-  return res[0] != '\0';
+  if (max < 2)
+    return 0;
+  min = - max % max;
+  do
+    r = random ();
+  while (r < min);
+  return r % max;
 }
 
 /*
  * Pick a random back-end from a candidate list
  */
 static BACKEND *
-rand_backend (BACKEND_HEAD *head, int pri)
+rand_backend (SERVICE *svc)
 {
   BACKEND *be;
-  SLIST_FOREACH (be, head, next)
+  int pri = random_in_range (svc->tot_pri);
+  SLIST_FOREACH (be, &svc->backends, next)
     {
-      if (!be->alive || be->disabled)
+      if (!backend_is_alive (be) || be->disabled)
 	continue;
       if ((pri -= be->priority) < 0)
 	break;
     }
   return be;
+}
+
+static BACKEND *
+iwrr_select (SERVICE *svc)
+{
+  BACKEND *be = NULL;
+
+  do
+    {
+      if (!svc->iwrr_cur->disabled && backend_is_alive (svc->iwrr_cur))
+	{
+	  if (svc->iwrr_round <= svc->iwrr_cur->priority)
+	    be = svc->iwrr_cur;
+	}
+      if ((svc->iwrr_cur = SLIST_NEXT (svc->iwrr_cur, next)) == NULL)
+	{
+	  svc->iwrr_cur = SLIST_FIRST (&svc->backends);
+	  svc->iwrr_round = (svc->iwrr_round + 1) % (svc->max_pri + 1);
+	}
+    }
+  while (be == NULL);
+  return be;
+}
+
+static BACKEND *
+service_lb_select_backend (SERVICE *svc)
+{
+  BACKEND *be;
+
+  if (svc->max_pri == 0)
+    return NULL;
+  if (SLIST_NEXT (SLIST_FIRST (&svc->backends), next) == NULL)
+    {
+      be = SLIST_FIRST (&svc->backends);
+      if (!be->disabled && backend_is_alive (be))
+	return be;
+      return NULL;
+    }
+
+  switch (svc->balancer)
+    {
+    case BALANCER_RANDOM:
+      be = rand_backend (svc);
+      break;
+
+    case BALANCER_IWRR:
+      be = iwrr_select (svc);
+    }
+  return be;
+}
+
+void
+service_lb_init (SERVICE *svc)
+{
+  switch (svc->balancer)
+    {
+    case BALANCER_RANDOM:
+      break;
+
+    case BALANCER_IWRR:
+      svc->iwrr_round = 0;
+      svc->iwrr_cur = SLIST_FIRST (&svc->backends);
+      break;
+    }
 }
 
 /*
@@ -750,7 +536,7 @@ hash_backend (BACKEND_HEAD *head, int abs_pri, char *key)
   if (!tb)
     /* should NEVER happen */
     return NULL;
-  for (res = tb; !res->alive || res->disabled;)
+  for (res = tb; !backend_is_alive (res) || res->disabled;)
     {
       res = SLIST_NEXT (res, next);
       if (res == NULL)
@@ -763,18 +549,166 @@ hash_backend (BACKEND_HEAD *head, int abs_pri, char *key)
 }
 
 /*
+ * Find backend by session key.  If no session with the given key is found,
+ * create one and associate it with a randomly selected backend.
+ */
+BACKEND *
+find_backend_by_key (SERVICE *svc, char const *key, int no_be)
+{
+  BACKEND *res;
+  char keybuf[KEY_SIZE + 1];
+
+  if (key == NULL)
+    return NULL;
+
+  strncpy (keybuf, key, sizeof (keybuf) - 1);
+  keybuf[sizeof (keybuf) - 1] = 0;
+
+  if (svc->sess_ttl == 0)
+    res = no_be ? svc->emergency
+		: hash_backend (&svc->backends, svc->abs_pri, keybuf);
+  else if ((res = service_session_find (svc, keybuf)) == NULL)
+    {
+      if (no_be)
+	res = svc->emergency;
+      else
+	{
+	  /* no session yet - create one */
+	  res = service_lb_select_backend (svc);
+	  service_session_add (svc, keybuf, res);
+	}
+    }
+
+  return res;
+}
+
+/*
+ * Find session key using the header name and key extractor function.
+ *
+ * The function looks up the header HNAME in the header list HEADERS.
+ * If found, the key extractor function KEYFUN is invoked with the
+ * header value, ID, and RET_KEY as its arguments.  The function shall
+ * extract the key from the value and place it in the RET_KEY buffer,
+ * assuming it is KEY_SIZE+1 bytes long and truncating the value as
+ * necessary.  On success, KEYFUN shall return 0.
+ *
+ * If KEYFUN is NULL, the obtained header value (at most first KEY_SIZE
+ * octets of it) is copied to RET_KEY verbatim.
+ */
+int
+find_key_by_header (HTTP_HEADER_LIST *headers, char const *hname,
+		    int (*keyfun) (char const *, char const *, char *),
+		    char const *id,
+		    char *ret_key)
+{
+  struct http_header *hdr;
+  char const *val;
+
+  if ((hdr = http_header_list_locate_name (headers,
+					   hname,
+					   strlen (hname))) != NULL
+      && (val = http_header_get_value (hdr)) != NULL)
+    {
+      if (keyfun)
+	return keyfun (val, id, ret_key);
+      else
+	{
+	  strncpy (ret_key, val, KEY_SIZE);
+	  ret_key[KEY_SIZE] = 0;
+	  return 0;
+	}
+    }
+  return 1;
+}
+
+/*
+ * Look up for the backend in sessions using the header name, key
+ * extraction function and session ID.  See the two functions above
+ * for details.
+ */
+BACKEND *
+find_backend_by_header (SERVICE *svc, int no_be,
+			struct http_request *req, char const *hname,
+			int (*keyfun) (char const *, char const *, char *),
+			char const *id)
+{
+  char key[KEY_SIZE + 1];
+
+  if (find_key_by_header (&req->headers, hname, keyfun, id, key) == 0)
+    {
+      return find_backend_by_key (svc, key, no_be);
+    }
+
+  return NULL;
+}
+
+/*
+ * Key extractor function for Authorized header (basic authentication).
+ */
+static int
+key_authbasic (char const *hval, char const *sid, char *ret_key)
+{
+  if (strncasecmp (hval, "Basic", 5) == 0 && isspace (hval[5]))
+    {
+      for (hval += 6; *hval && isspace (*hval); hval++)
+	;
+      strncpy (ret_key, hval, KEY_SIZE);
+      ret_key[KEY_SIZE] = 0;
+      return 0;
+    }
+  return 1;
+}
+
+/*
+ * Key extractor function for Cookie header.  Extracts the value of
+ * the parameter SID.
+ */
+static int
+key_cookie (char const *hval, char const *sid, char *ret_key)
+{
+  size_t slen = strlen (sid);
+  while (*hval)
+    {
+      size_t n;
+
+      hval += strspn (hval, " \t");
+      if (*hval == 0)
+	break;
+
+      n = strcspn (hval, ";");
+
+      if (n > slen && hval[slen] == '=' && strncasecmp (hval, sid, slen) == 0)
+	{
+	  hval += slen + 1;
+	  n -= slen + 1;
+	  if (n > KEY_SIZE)
+	    n = KEY_SIZE;
+	  memcpy (ret_key, hval, n);
+	  ret_key[n] = 0;
+	  return 0;
+	}
+
+      hval += n;
+      if (hval[0] == 0)
+	break;
+      hval++;
+    }
+  return 1;
+}
+
+/*
  * Find the right back-end for a request
  */
 BACKEND *
-get_backend (SERVICE * const svc, const struct addrinfo * from_host,
-	     const char *request, char **const headers)
+get_backend (POUND_HTTP *phttp)
 {
-  BACKEND *res;
-  char key[KEY_SIZE + 1];
-  int ret_val, no_be;
+  SERVICE *svc = phttp->svc;
+  BACKEND *res = NULL;
+  char keybuf[KEY_SIZE + 1];
+  char const *key;
+  int no_be;
 
-  if ((ret_val = pthread_mutex_lock (&svc->mut)) != 0)
-    logmsg (LOG_WARNING, "get_backend() lock: %s", strerror (ret_val));
+  pthread_mutex_lock (&svc->mut);
 
   no_be = (svc->tot_pri <= 0);
 
@@ -782,104 +716,91 @@ get_backend (SERVICE * const svc, const struct addrinfo * from_host,
     {
     case SESS_NONE:
       /* choose one back-end randomly */
-      res = no_be ? svc->emergency : rand_backend (&svc->backends,
-						   random () % svc->tot_pri);
+      res = no_be ? svc->emergency : service_lb_select_backend (svc);
+      break;
+
+    case SESS_COOKIE:
+      res = find_backend_by_header (svc, no_be, &phttp->request,
+				    "Cookie", key_cookie, svc->sess_id);
       break;
 
     case SESS_IP:
-      addr2str (key, sizeof (key), from_host, 1);
-      if (svc->sess_ttl < 0)
-	res = no_be ? svc->emergency
-		     : hash_backend (&svc->backends, svc->abs_pri, key);
-      else if ((res = service_session_find (svc, key)) == NULL)
-	{
-	  if (no_be)
-	    res = svc->emergency;
-	  else
-	    {
-	      /* no session yet - create one */
-	      res = rand_backend (&svc->backends, random () % svc->tot_pri);
-	      service_session_add (svc, key, res);
-	    }
-	}
+      addr2str (keybuf, sizeof (keybuf), &phttp->from_host, 1);
+      res = find_backend_by_key (svc, keybuf, no_be);
       break;
 
     case SESS_URL:
+      if (http_request_get_query_param_value (&phttp->request, svc->sess_id, &key) == RETRIEVE_OK)
+	res = find_backend_by_key (svc, key, no_be);
+      break;
+
     case SESS_PARM:
-      if (get_REQUEST (key, svc, request))
+      if (http_request_get_path (&phttp->request, &key) == 0)
 	{
-	  if (svc->sess_ttl < 0)
-	    res = no_be ? svc->emergency
-			: hash_backend (&svc->backends, svc->abs_pri, key);
-	  else if ((res = service_session_find (svc, key)) == NULL)
-	    {
-	      if (no_be)
-		res = svc->emergency;
-	      else
-		{
-		  /* no session yet - create one */
-		  res = rand_backend (&svc->backends, random () % svc->tot_pri);
-		  service_session_add (svc, key, res);
-		}
-	    }
-	}
-      else
-	{
-	  res = no_be ? svc->emergency
-		      : rand_backend (&svc->backends, random () % svc->tot_pri);
+	  char *p = strrchr (key, ';');
+	  if (p)
+	    res = find_backend_by_key (svc, p + 1, no_be);
 	}
       break;
-    default:
-      /* this works for SESS_BASIC, SESS_HEADER and SESS_COOKIE */
-      if (get_HEADERS (key, svc, headers))
-	{
-	  if (svc->sess_ttl < 0)
-	    res = no_be ? svc->emergency
-			: hash_backend (&svc->backends, svc->abs_pri, key);
-	  else if ((res = service_session_find (svc, key)) == NULL)
-	    {
-	      if (no_be)
-		res = svc->emergency;
-	      else
-		{
-		  /* no session yet - create one */
-		  res = rand_backend (&svc->backends, random () % svc->tot_pri);
-		  service_session_add (svc, key, res);
-		}
-	    }
-	}
-      else
-	{
-	  res = no_be ? svc->emergency
-		      : rand_backend (&svc->backends, random () % svc->tot_pri);
-	}
+
+    case SESS_HEADER:
+      res = find_backend_by_header (svc, no_be, &phttp->request,
+				    svc->sess_id, NULL, NULL);
       break;
+
+    case SESS_BASIC:
+      res = find_backend_by_header (svc, no_be, &phttp->request,
+				    "Authorization", key_authbasic, NULL);
     }
-  if ((ret_val = pthread_mutex_unlock (&svc->mut)) != 0)
-    logmsg (LOG_WARNING, "get_backend() unlock: %s", strerror (ret_val));
+
+  if (!res)
+    {
+      res = no_be ? svc->emergency : service_lb_select_backend (svc);
+    }
+
+  pthread_mutex_unlock (&svc->mut);
 
   return res;
 }
 
 /*
- * (for cookies/header only) possibly create session based on response headers
+ * Create session based on response headers.
  */
 void
-upd_session (SERVICE *const svc, char **const headers, BACKEND * const be)
+upd_session (SERVICE *svc, HTTP_HEADER_LIST *headers, BACKEND *be)
 {
+  char *hname;
   char key[KEY_SIZE + 1];
-  int ret_val;
+  int (*keyfun) (char const *, char const *, char *);
 
-  if (svc->sess_type != SESS_HEADER && svc->sess_type != SESS_COOKIE)
-    return;
-  if ((ret_val = pthread_mutex_lock (&svc->mut)) != 0)
-    logmsg (LOG_WARNING, "upd_session() lock: %s", strerror (ret_val));
-  if (get_HEADERS (key, svc, headers))
-    if (service_session_find (svc, key) == NULL)
-      service_session_add (svc, key, be);
-  if ((ret_val = pthread_mutex_unlock (&svc->mut)) != 0)
-    logmsg (LOG_WARNING, "upd_session() unlock: %s", strerror (ret_val));
-  return;
+  switch (svc->sess_type)
+    {
+    case SESS_HEADER:
+      hname = svc->sess_id;
+      keyfun = NULL;
+      break;
+
+    case SESS_COOKIE:
+      hname = "Cookie";
+      keyfun = key_cookie;
+      break;
+
+    case SESS_BASIC:
+      hname = "Authorization";
+      keyfun = key_authbasic;
+      break;
+
+    default:
+      return;
+    }
+
+  pthread_mutex_lock (&svc->mut);
+  if (find_key_by_header (headers, hname, keyfun, svc->sess_id, key) == 0)
+    {
+      if (service_session_find (svc, key) == NULL)
+	service_session_add (svc, key, be);
+    }
+  pthread_mutex_unlock (&svc->mut);
 }
 
 static void touch_be (void *data);
@@ -897,9 +818,14 @@ kill_be (SERVICE *svc, BACKEND *be, const int disable_mode)
   int ret_val;
   char buf[MAXBUF];
 
+  /* This function operates on regular backends only. */
+  if (be->be_type != BE_BACKEND)
+    return;
+
   if ((ret_val = pthread_mutex_lock (&svc->mut)) != 0)
     logmsg (LOG_WARNING, "kill_be() lock: %s", strerror (ret_val));
   svc->tot_pri = 0;
+  svc->max_pri = 0;
   SLIST_FOREACH (b, &svc->backends, next)
     {
       if (b == be)
@@ -915,7 +841,7 @@ kill_be (SERVICE *svc, BACKEND *be, const int disable_mode)
 	      break;
 
 	    case BE_KILL:
-	      b->alive = 0;
+	      b->v.reg.alive = 0;
 	      str_be (buf, sizeof (buf), b);
 	      logmsg (LOG_NOTICE, "(%"PRItid") Backend %s dead (killed)",
 		      POUND_TID (), buf);
@@ -936,8 +862,12 @@ kill_be (SERVICE *svc, BACKEND *be, const int disable_mode)
 	      break;
 	    }
 	}
-      if (b->alive && !b->disabled)
-	svc->tot_pri += b->priority;
+      if (backend_is_alive (b) && !b->disabled)
+	{
+	  svc->tot_pri += b->priority;
+	  if (svc->max_pri < be->priority)
+	    svc->max_pri = be->priority;
+	}
     }
   if ((ret_val = pthread_mutex_unlock (&svc->mut)) != 0)
     logmsg (LOG_WARNING, "kill_be() unlock: %s", strerror (ret_val));
@@ -988,33 +918,43 @@ get_host (char *const name, struct addrinfo *res, int ai_family)
  * (2) if the redirect was done to the back-end rather than the listener
  */
 int
-need_rewrite (const int rewr_loc, char *const location, char *const path,
-	      const char *v_host, const LISTENER * lstn, const BACKEND * be)
+need_rewrite (const char *location, const char *v_host,
+	      const LISTENER *lstn, const BACKEND *be, const char **ppath)
 {
   struct addrinfo addr;
   struct sockaddr_in in_addr, be_addr;
   struct sockaddr_in6 in6_addr, be6_addr;
   regmatch_t matches[4];
-  char *proto, *host, *port, *cp, buf[MAXBUF];
+  char const *proto;
+  char const *path;
+  char *host, *vhost, *port, *cp;
+  size_t len;
 
-  /* check if rewriting is required at all */
-  if (rewr_loc == 0)
+  if (lstn->rewr_loc == 0)
     return 0;
 
   /* applies only to INET/INET6 back-ends */
-  if (be->addr.ai_family != AF_INET && be->addr.ai_family != AF_INET6)
+  if (be->v.reg.addr.ai_family != AF_INET && be->v.reg.addr.ai_family != AF_INET6)
     return 0;
 
   /* split the location into its fields */
   if (regexec (&LOCATION, location, 4, matches, 0))
     return 0;
   proto = location + matches[1].rm_so;
-  host = location + matches[2].rm_so;
+
   if (location[matches[3].rm_so] == '/')
     matches[3].rm_so++;
-  /* path is guaranteed to be large enough */
-  strcpy (path, location + matches[3].rm_so);
-  location[matches[1].rm_eo] = location[matches[2].rm_eo] = '\0';
+  path = location + matches[3].rm_so;
+
+  len = matches[2].rm_eo - matches[2].rm_so;
+  if ((host = malloc (len + 1)) == NULL)
+    {
+      lognomem ();
+      return 0;
+    }
+  memcpy (host, location + matches[2].rm_so, len);
+  host[len] = 0;
+
   if ((port = strchr (host, ':')) != NULL)
     *port++ = '\0';
 
@@ -1022,24 +962,25 @@ need_rewrite (const int rewr_loc, char *const location, char *const path,
    * Check if the location has the same address as the listener or the back-end
    */
   memset (&addr, 0, sizeof (addr));
-  if (get_host (host, &addr, be->addr.ai_family))
+  if (get_host (host, &addr, be->v.reg.addr.ai_family))
     return 0;
 
   /*
    * compare the back-end
    */
-  if (addr.ai_family != be->addr.ai_family)
+  if (addr.ai_family != be->v.reg.addr.ai_family)
     {
       free (addr.ai_addr);
+      free (host);
       return 0;
     }
   if (addr.ai_family == AF_INET)
     {
       memcpy (&in_addr, addr.ai_addr, sizeof (in_addr));
-      memcpy (&be_addr, be->addr.ai_addr, sizeof (be_addr));
+      memcpy (&be_addr, be->v.reg.addr.ai_addr, sizeof (be_addr));
       if (port)
 	in_addr.sin_port = (in_port_t) htons (atoi (port));
-      else if (!strcasecmp (proto, "https"))
+      else if (!strncasecmp (proto, "https", matches[1].rm_eo - matches[1].rm_so))
 	in_addr.sin_port = (in_port_t) htons (443);
       else
 	in_addr.sin_port = (in_port_t) htons (80);
@@ -1052,16 +993,18 @@ need_rewrite (const int rewr_loc, char *const location, char *const path,
 		     sizeof (in_addr.sin_port)) == 0)
 	{
 	  free (addr.ai_addr);
+	  free (host);
+	  *ppath = path;
 	  return 1;
 	}
     }
   else				/* AF_INET6 */
     {
       memcpy (&in6_addr, addr.ai_addr, sizeof (in6_addr));
-      memcpy (&be6_addr, be->addr.ai_addr, sizeof (be6_addr));
+      memcpy (&be6_addr, be->v.reg.addr.ai_addr, sizeof (be6_addr));
       if (port)
 	in6_addr.sin6_port = (in_port_t) htons (atoi (port));
-      else if (!strcasecmp (proto, "https"))
+      else if (!strncasecmp (proto, "https", matches[1].rm_eo - matches[1].rm_so))
 	in6_addr.sin6_port = (in_port_t) htons (443);
       else
 	in6_addr.sin6_port = (in_port_t) htons (80);
@@ -1074,6 +1017,8 @@ need_rewrite (const int rewr_loc, char *const location, char *const path,
 		     sizeof (in6_addr.sin6_port)) == 0)
 	{
 	  free (addr.ai_addr);
+	  free (host);
+	  *ppath = path;
 	  return 1;
 	}
     }
@@ -1081,14 +1026,22 @@ need_rewrite (const int rewr_loc, char *const location, char *const path,
   /*
    * compare the listener
    */
-  if (rewr_loc != 1 || addr.ai_family != lstn->addr.ai_family)
+  if (lstn->rewr_loc != 1 || addr.ai_family != lstn->addr.ai_family)
     {
       free (addr.ai_addr);
+      free (host);
       return 0;
     }
-  memset (buf, '\0', sizeof (buf));
-  strncpy (buf, v_host, sizeof (buf) - 1);
-  if ((cp = strchr (buf, ':')) != NULL)
+
+  if ((vhost = strdup (v_host)) == NULL)
+    {
+      lognomem ();
+      free (addr.ai_addr);
+      free (host);
+      return 0;
+    }
+
+  if ((cp = strchr (vhost, ':')) != NULL)
     *cp = '\0';
   if (addr.ai_family == AF_INET)
     {
@@ -1099,14 +1052,17 @@ need_rewrite (const int rewr_loc, char *const location, char *const path,
        */
       if ((memcmp (&be_addr.sin_addr.s_addr, &in_addr.sin_addr.s_addr,
 		   sizeof (in_addr.sin_addr.s_addr)) == 0
-	   || strcasecmp (host, buf) == 0)
-	  &&
-	  (memcmp (&be_addr.sin_port, &in_addr.sin_port,
-		   sizeof (in_addr.sin_port)) != 0
-	   || strcasecmp (proto,
-			  !SLIST_EMPTY (&lstn->ctx_head) ? "https" : "http")))
+	   || strcasecmp (host, vhost) == 0)
+	  && (memcmp (&be_addr.sin_port, &in_addr.sin_port,
+		      sizeof (in_addr.sin_port)) != 0
+	      || strncasecmp (proto,
+			      !SLIST_EMPTY (&lstn->ctx_head) ? "https" : "http",
+			      matches[1].rm_eo - matches[1].rm_so)))
 	{
 	  free (addr.ai_addr);
+	  free (host);
+	  free (vhost);
+	  *ppath = path;
 	  return 1;
 	}
     }
@@ -1119,19 +1075,24 @@ need_rewrite (const int rewr_loc, char *const location, char *const path,
        */
       if ((memcmp (&be6_addr.sin6_addr.s6_addr, &in6_addr.sin6_addr.s6_addr,
 		   sizeof (in6_addr.sin6_addr.s6_addr)) == 0
-	   || strcasecmp (host, buf) == 0)
-	  &&
-	  (memcmp (&be6_addr.sin6_port, &in6_addr.sin6_port,
-		   sizeof (in6_addr.sin6_port)) != 0
-	   || strcasecmp (proto,
-			  !SLIST_EMPTY (&lstn->ctx_head) ? "https" : "http")))
+	   || strcasecmp (host, vhost) == 0)
+	  && (memcmp (&be6_addr.sin6_port, &in6_addr.sin6_port,
+		      sizeof (in6_addr.sin6_port)) != 0
+	      || strncasecmp (proto,
+			      !SLIST_EMPTY (&lstn->ctx_head) ? "https" : "http",
+			      matches[1].rm_eo - matches[1].rm_so)))
 	{
 	  free (addr.ai_addr);
+	  free (host);
+	  free (vhost);
+	  *ppath = path;
 	  return 1;
 	}
     }
 
   free (addr.ai_addr);
+  free (host);
+  free (vhost);
   return 0;
 }
 
@@ -1242,7 +1203,7 @@ backend_probe (BACKEND *be)
   int family;
   int rc;
 
-  switch (be->addr.ai_family)
+  switch (be->v.reg.addr.ai_family)
     {
     case AF_INET:
       family = PF_INET;
@@ -1264,7 +1225,7 @@ backend_probe (BACKEND *be)
   if ((sock = socket (family, SOCK_STREAM, 0)) < 0)
     return BACKEND_ERR;
 
-  rc = connect_nb (sock, &be->addr, be->conn_to);
+  rc = connect_nb (sock, &be->v.reg.addr, be->v.reg.conn_to);
   shutdown (sock, 2);
   close (sock);
 
@@ -1282,17 +1243,23 @@ touch_be (void *data)
   BACKEND *be = data;
   char buf[MAXBUF];
 
-  if (!be->alive)
+  /* This function operates on regular backends only. */
+  if (be->be_type != BE_BACKEND)
+    return;
+
+  if (!be->v.reg.alive)
     {
       if (backend_probe (be) == BACKEND_OK)
 	{
-	  be->alive = 1;
+	  be->v.reg.alive = 1;
 	  str_be (buf, sizeof (buf), be);
 	  logmsg (LOG_NOTICE, "Backend %s resurrect", buf);
 	  if (!be->disabled)
 	    {
 	      pthread_mutex_lock (&be->service->mut);
 	      be->service->tot_pri += be->priority;
+	      if (be->service->max_pri < be->priority)
+		be->service->max_pri = be->priority;
 	      pthread_mutex_unlock (&be->service->mut);
 	    }
 	}
@@ -1449,10 +1416,8 @@ POUND_SSL_CTX_init (SSL_CTX *ctx)
   /* This generates a EC_KEY structure with no key, but a group defined */
   EC_KEY *ecdh;
   if ((ecdh = EC_KEY_new_by_curve_name (EC_nid)) == NULL)
-    {
-      logmsg (LOG_ERR, "Unable to generate temp ECDH key");
-      exit (1);
-    }
+    abend ("Unable to generate temp ECDH key");
+
   SSL_CTX_set_tmp_ecdh (ctx, ecdh);
   SSL_CTX_set_options (ctx, SSL_OP_SINGLE_ECDH_USE);
   EC_KEY_free (ecdh);
@@ -1604,11 +1569,8 @@ thr_timer (void *arg)
       if (rc == 0)
 	continue;
       if (rc != ETIMEDOUT)
-	{
-	  logmsg (LOG_CRIT, "unexpected error from pthread_cond_timedwait: %s",
-		  strerror (errno));
-	  exit (1);
-	}
+	abend ("unexpected error from pthread_cond_timedwait: %s",
+	       strerror (errno));
 
       if (job != DLIST_FIRST (&job_head))
 	/* Job was removed or its time changed */
@@ -1640,57 +1602,6 @@ get_param (char const *url, char const *param, size_t *ret_len)
   return p;
 }
 
-/*
- * return listener by its number
- */
-static LISTENER *
-get_nth_listener (int n)
-{
-  LISTENER *lstn;
-
-  SLIST_FOREACH (lstn, &listeners, next)
-    {
-      if (n == 0)
-	break;
-      n--;
-    }
-  return lstn;
-}
-
-/*
- * return service by its number
- */
-static SERVICE *
-get_nth_service (LISTENER *lstn, int n)
-{
-  SERVICE *svc;
-  SERVICE_HEAD *head = lstn ? &lstn->services : &services;
-  SLIST_FOREACH (svc, head, next)
-    {
-      if (n == 0)
-	break;
-      n--;
-    }
-  return svc;
-}
-
-/*
- * select a back-end by number
- */
-static BACKEND *
-get_nth_backend (SERVICE *svc, int n)
-{
-  BACKEND *be;
-
-  SLIST_FOREACH (be, &svc->backends, next)
-    {
-      if (n == 0)
-	break;
-      n--;
-    }
-  return be;
-}
-
 static int
 session_backend_index (SESSION *sess)
 {
@@ -1723,27 +1634,49 @@ static struct json_value *
 service_session_serialize (SERVICE *svc)
 {
   struct json_value *obj;
+  int err = 0;
 
   if (svc->sess_type == SESS_NONE)
     obj = json_new_null ();
   else
     {
       obj = json_new_array ();
-      if (svc->sessions)
+      if (obj && svc->sessions)
 	{
 	  SESSION *sess;
 
 	  DLIST_FOREACH (sess, &svc->sessions->head, link)
 	    {
 	      struct json_value *s = json_new_object ();
-	      json_array_append (obj, s);
-	      json_object_set (s, "key", json_new_string (sess->key));
-	      json_object_set (s, "backend", json_new_integer (session_backend_index (sess)));
-	      json_object_set (s, "expire", timespec_serialize (&sess->expire));
+
+	      if (!s)
+		{
+		  err = 1;
+		  break;
+		}
+	      else if (json_array_append (obj, s))
+		{
+		  json_value_free (s);
+		  err = 1;
+		  break;
+		}
+	      else if (json_object_set (s, "key", json_new_string (sess->key))
+		       || json_object_set (s, "backend",
+					   json_new_integer (session_backend_index (sess)))
+		       || json_object_set (s, "expire", timespec_serialize (&sess->expire)))
+		{
+		  err = 1;
+		  break;
+		}
 	    }
 	}
     }
 
+  if (err)
+    {
+      json_value_free (obj);
+      obj = NULL;
+    }
   return obj;
 }
 
@@ -1763,6 +1696,12 @@ backend_type_str (BACKEND_TYPE t)
 
     case BE_CONTROL:
       return "control";
+
+    case BE_ERROR:
+      return "error";
+
+    case BE_METRICS:
+      return "metrics";
     }
 
   return "UNKNOWN";
@@ -1777,10 +1716,60 @@ addrinfo_serialize (struct addrinfo *addr)
   return json_new_string (buf);
 }
 
+static double
+nabs (double a)
+{
+  return (a < 0) ? -a : a;
+}
+
+double
+nsqrt (double a, double prec)
+{
+  double x0, x1;
+
+  if (a < 0)
+    return 0;
+  if (a < prec)
+    return 0;
+  x1 = a / 2;
+  do
+    {
+      x0 = x1;
+      x1 = (x0 + a / x0) / 2;
+    }
+  while (nabs (x1 - x0) > prec);
+
+  return x1;
+}
+
+static struct json_value *
+backend_stats_serialize (BACKEND *be)
+{
+  struct json_value *obj;
+
+  if ((obj = json_new_object ()) != NULL)
+    {
+      int err = 0;
+
+      pthread_mutex_lock (&be->mut);
+      err |= json_object_set (obj, "request_count", json_new_number (be->numreq));
+      if (be->numreq > 0)
+	{
+	  err |= json_object_set (obj, "request_time_avg",
+				  json_new_number (be->avgtime))
+	    || json_object_set (obj, "request_time_stddev",
+				json_new_number (nsqrt (be->avgsqtime - be->avgtime * be->avgtime, 0.5)));
+	}
+      pthread_mutex_unlock (&be->mut);
+    }
+  return obj;
+}
+
 static struct json_value *
 backend_serialize (BACKEND *be)
 {
   struct json_value *obj;
+  int err = 0;
 
   if (!be)
     obj = json_new_null ();
@@ -1788,35 +1777,55 @@ backend_serialize (BACKEND *be)
     {
       obj = json_new_object ();
 
-      json_object_set (obj, "type", json_new_string (backend_type_str (be->be_type)));
-      json_object_set (obj, "priority", json_new_integer (be->priority));
-      json_object_set (obj, "alive", json_new_bool (be->alive));
-      json_object_set (obj, "enabled", json_new_bool (!be->disabled));
-      json_object_set (obj, "io_to", json_new_integer (be->to));
-      json_object_set (obj, "conn_to", json_new_integer (be->conn_to));
-      json_object_set (obj, "ws_to", json_new_integer (be->ws_to));
-      json_object_set (obj, "protocol", json_new_string (be->ctx ? "https" : "http"));
-
-      switch (be->be_type)
+      if (obj)
 	{
-	case BE_BACKEND:
-	  json_object_set (obj, "address", addrinfo_serialize (&be->addr));
-	  break;
+	  if (json_object_set (obj, "type",
+			       json_new_string (backend_type_str (be->be_type)))
+	      || json_object_set (obj, "priority",
+				  json_new_integer (be->priority))
+	      || json_object_set (obj, "alive", json_new_bool (backend_is_alive (be)))
+	      || json_object_set (obj, "enabled", json_new_bool (!be->disabled)))
+	    {
+	      err = 1;
+	    }
+	  else
+	    switch (be->be_type)
+	      {
+	      case BE_BACKEND:
+		err = json_object_set (obj, "address", addrinfo_serialize (&be->v.reg.addr))
+		  || json_object_set (obj, "io_to", json_new_integer (be->v.reg.to))
+		  || json_object_set (obj, "conn_to", json_new_integer (be->v.reg.conn_to))
+		  || json_object_set (obj, "ws_to", json_new_integer (be->v.reg.ws_to))
+		  || json_object_set (obj, "protocol", json_new_string (backend_is_https (be) ? "https" : "http"));
+		break;
 
-	case BE_REDIRECT:
-	  json_object_set (obj, "url", json_new_string (be->url));
-	  json_object_set (obj, "code", json_new_integer (be->redir_code));
-	  json_object_set (obj, "redir_req", json_new_bool (be->redir_req));
-	  break;
+	      case BE_REDIRECT:
+		err = json_object_set (obj, "url", json_new_string (be->v.redirect.url))
+		  || json_object_set (obj, "code", json_new_integer (be->v.redirect.status))
+		  || json_object_set (obj, "has_uri", json_new_bool (be->v.redirect.has_uri));
+		break;
 
-	case BE_ACME:
-	  json_object_set (obj, "path", json_new_string (be->url));
-	  break;
+	      case BE_ACME:
+	      case BE_CONTROL:
+	      case BE_METRICS:
+		/* FIXME */
+		break;
 
-	case BE_CONTROL:
-	  /* FIXME */
-	  break;
+	      case BE_ERROR:
+		err = json_object_set (obj, "status",
+				       json_new_integer (pound_to_http_status (be->v.error.status)))
+		  || json_object_set (obj, "text",
+				      be->v.error.text ? json_new_string (be->v.error.text) : json_new_null ());
+		break;
+	      }
+	  if (enable_backend_stats)
+	    err |= json_object_set (obj, "stats", backend_stats_serialize (be));
 	}
+    }
+  if (err)
+    {
+      json_value_free (obj);
+      obj = NULL;
     }
   return obj;
 }
@@ -1835,7 +1844,12 @@ backends_serialize (BACKEND_HEAD *head)
       obj = json_new_array ();
       SLIST_FOREACH (be, head, next)
 	{
-	  json_array_append (obj, backend_serialize (be));
+	  if (json_array_append (obj, backend_serialize (be)))
+	    {
+	      json_value_free (obj);
+	      obj = NULL;
+	      break;
+	    }
 	}
     }
   return obj;
@@ -1847,17 +1861,28 @@ service_serialize (SERVICE *svc)
   struct json_value *obj = json_new_object ();
   char const *typename;
 
-  pthread_mutex_lock (&svc->mut);
-  json_object_set (obj, "name", json_new_string (svc->name));
-  json_object_set (obj, "enabled", json_new_bool (!svc->disabled));
-  json_object_set (obj, "tot_pri", json_new_integer (svc->tot_pri));
-  json_object_set (obj, "ads_pri", json_new_integer (svc->abs_pri));
-  typename = sess_type_to_str (svc->sess_type);
-  json_object_set (obj, "session_type", json_new_string (typename ? typename : "UNKNOWN"));
-  json_object_set (obj, "sessions", service_session_serialize (svc));
-  json_object_set (obj, "backends", backends_serialize (&svc->backends));
-  json_object_set (obj, "emergency", backend_serialize (svc->emergency));
-  pthread_mutex_unlock (&svc->mut);
+  if (obj)
+    {
+      pthread_mutex_lock (&svc->mut);
+
+      typename = sess_type_to_str (svc->sess_type);
+      if (json_object_set (obj, "name",
+			   svc->name ? json_new_string (svc->name) : json_new_null ())
+	  || json_object_set (obj, "enabled", json_new_bool (!svc->disabled))
+	  || json_object_set (obj, "tot_pri", json_new_integer (svc->tot_pri))
+	  || json_object_set (obj, "abs_pri", json_new_integer (svc->abs_pri))
+	  || json_object_set (obj, "max_pri", json_new_integer (svc->max_pri))
+	  || json_object_set (obj, "session_type", json_new_string (typename ? typename : "UNKNOWN"))
+	  || json_object_set (obj, "sessions", service_session_serialize (svc))
+	  || json_object_set (obj, "backends", backends_serialize (&svc->backends))
+	  || json_object_set (obj, "emergency", backend_serialize (svc->emergency)))
+	{
+	  json_value_free (obj);
+	  obj = NULL;
+	}
+      pthread_mutex_unlock (&svc->mut);
+    }
+
   return obj;
 }
 
@@ -1868,46 +1893,122 @@ listener_serialize (LISTENER *lstn)
   int is_https;
   SERVICE *svc;
 
-  json_object_set (obj, "address", addrinfo_serialize (&lstn->addr));
+  if (obj)
+    {
+      int err = 0;
 
-  is_https = !SLIST_EMPTY (&lstn->ctx_head);
-  json_object_set (obj, "protocol", json_new_string (is_https ? "https" : "http"));
-  if (is_https)
-    json_object_set (obj, "https11", json_new_bool (!lstn->noHTTPS11));
-  json_object_set (obj, "active", json_new_bool (!lstn->disabled));
+      err |= json_object_set (obj, "name",
+			      lstn->name ? json_new_string (lstn->name) : json_new_null ());
+      err |= json_object_set (obj, "address", addrinfo_serialize (&lstn->addr));
 
-  p = json_new_array ();
-  json_object_set (obj, "services", p);
-  SLIST_FOREACH (svc, &lstn->services, next)
-    json_array_append (p, service_serialize (svc));
+      is_https = !SLIST_EMPTY (&lstn->ctx_head);
+      err |= json_object_set (obj, "protocol",
+			      json_new_string (is_https ? "https" : "http"));
+      if (is_https)
+	err |= json_object_set (obj, "nohttps11", json_new_integer (lstn->noHTTPS11));
+      err |= json_object_set (obj, "enabled", json_new_bool (!lstn->disabled));
+
+      if ((p = json_new_array ()) == NULL)
+	err = 1;
+      else
+	{
+	  if (json_object_set (obj, "services", p))
+	    {
+	      json_value_free (p);
+	      err = 1;
+	    }
+	  SLIST_FOREACH (svc, &lstn->services, next)
+	    {
+	      if ((err = json_array_append (p, service_serialize (svc))) != 0)
+		break;
+	    }
+	}
+
+      if (err)
+	{
+	  json_value_free (obj);
+	  obj = NULL;
+	}
+    }
 
   return obj;
 }
 
 static struct json_value *
+pound_core_serialize (void)
+{
+  struct json_value *obj;
+
+  if ((obj = json_new_object ()) != NULL)
+    {
+      int err = 0;
+      struct timespec ts;
+
+      clock_gettime (CLOCK_REALTIME, &ts);
+      err = json_object_set (obj, "version", json_new_string (PACKAGE_VERSION))
+	|| json_object_set (obj, "pid", json_new_integer (getpid ()))
+	|| json_object_set (obj, "timestamp", timespec_serialize (&ts))
+	|| json_object_set (obj, "queue_len", json_new_integer (get_thr_qlen ()))
+	|| json_object_set (obj, "workers", workers_serialize ());
+      if (err)
+	{
+	  json_value_free (obj);
+	  obj = NULL;
+	}
+    }
+  return obj;
+}
+
+struct json_value *
 pound_serialize (void)
 {
   struct json_value *obj, *p;
   LISTENER *lstn;
   SERVICE *svc;
-  struct timespec ts;
 
-  obj = json_new_object ();
+  obj = pound_core_serialize ();
 
-  clock_gettime (CLOCK_REALTIME, &ts);
-  json_object_set (obj, "timestamp", timespec_serialize (&ts));
+  if (obj)
+    {
+      int err = 0;
 
-  json_object_set (obj, "queue_len", json_new_integer (get_thr_qlen ()));
+      if ((p = json_new_array ()) == NULL)
+	err = 1;
+      else if (json_object_set (obj, "listeners", p))
+	{
+	  json_value_free (p);
+	  err = 1;
+	}
+      else
+	{
+	  SLIST_FOREACH (lstn, &listeners, next)
+	    if ((err = json_array_append (p, listener_serialize (lstn))) != 0)
+	      break;
+	}
 
-  p = json_new_array ();
-  json_object_set (obj, "listeners", p);
-  SLIST_FOREACH (lstn, &listeners, next)
-    json_array_append (p, listener_serialize (lstn));
+      if (err == 0)
+	{
+	  if ((p = json_new_array ()) == NULL)
+	    err = 1;
+	  else if (json_object_set (obj, "services", p))
+	    {
+	      json_value_free (p);
+	      err = 1;
+	    }
+	  else
+	    {
+	      SLIST_FOREACH (svc, &services, next)
+		if ((err = json_array_append (p, service_serialize (svc))) != 0)
+		  break;
+	    }
+	}
 
-  p = json_new_array ();
-  json_object_set (obj, "services", p);
-  SLIST_FOREACH (svc, &services, next)
-    json_array_append (p, service_serialize (svc));
+      if (err)
+	{
+	  json_value_free (obj);
+	  obj = NULL;
+	}
+    }
 
   return obj;
 }
@@ -1944,22 +2045,42 @@ send_json_reply (BIO *c, struct json_value *val, char const *url)
       format.indent = n;
     }
 
-  stringbuf_init (&sb);
+  stringbuf_init_log (&sb);
   format.data = &sb;
   json_value_format (val, &format, 0);
-  str = stringbuf_finish (&sb);
+  if ((str = stringbuf_finish (&sb)) == NULL)
+    {
+      stringbuf_free (&sb);
+      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    }
 
   BIO_printf (c,
 	      "HTTP/1.1 %d %s\r\n"
 	      "Content-Type: application/json\r\n"
-	      "Content-Length: %"PRILONG"\r\n"
+	      "Content-Length: %"PRICLEN"\r\n"
 	      "Connection: close\r\n\r\n"
 	      "%s",
-	      200, "OK", (LONG) strlen (str), str);
-  free (str);
+	      200, "OK", (CONTENT_LENGTH) strlen (str), str);
   BIO_flush (c);
+  stringbuf_free (&sb);
 
   return HTTP_STATUS_OK;
+}
+
+static int
+control_list_core (BIO *c, char const *url)
+{
+  struct json_value *val;
+  int rc;
+
+  if ((val = pound_core_serialize ()) == NULL)
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  else
+    {
+      rc = send_json_reply (c, val, url);
+      json_value_free (val);
+    }
+  return rc;
 }
 
 static int
@@ -1968,32 +2089,149 @@ control_list_all (BIO *c, char const *url)
   struct json_value *val;
   int rc;
 
-  val = pound_serialize ();
-  rc = send_json_reply (c, val, url);
-  json_value_free (val);
+  if ((val = pound_serialize ()) == NULL)
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  else
+    {
+      rc = send_json_reply (c, val, url);
+      json_value_free (val);
+    }
   return rc;
 }
 
-static int
-ctl_getnum (char const **url)
+/*
+ * Type of object identifier.
+ */
+enum
+  {
+    IDTYPE_ERR = -1,
+    IDTYPE_NUM,         /* Numeric identifier (index). */
+    IDTYPE_STR          /* String identifier (name). */
+  };
+
+/*
+ * Object identifier.
+ */
+typedef struct
 {
+  int type;              /* Identifier type. */
+  union
+  {
+    int n;               /* Index value (IDTYPE_NUM). */
+    struct               /* String value (IDTYPE_STR). */
+    {
+      int len;           /* Name length. */
+      char const *name;  /* Pointer to the name. */
+    } s;
+  };
+} IDENT;
+
+/*
+ * Get single identifier from the URL (must point to a /, on entry).
+ * On success, advance URL to the point past the end of the identifier
+ * (normally next / or end of URL).
+ * On error, return ident with its type set to IDTYPE_ERR.
+ */
+static IDENT
+ctl_getident (char const **url)
+{
+  IDENT retval = { IDTYPE_ERR };
   long n;
   char *end;
 
   if (**url == '/')
-    ++*url;
-  else
-    return -1;
-  errno = 0;
-  n = strtol (*url, &end, 10);
-  if (errno || n > INT_MAX)
-    return -1;
-  if (*end != 0 && *end != '/' && *end != '?')
-    return -1;
-  *url = end;
-  return n;
+    {
+      ++*url;
+      errno = 0;
+      n = strtol (*url, &end, 10);
+      if (*end != 0 && *end != '/' && *end != '?')
+	{
+	  end = (char*) *url + strcspn (*url, "/?");
+	  retval.s.name = *url;
+	  retval.s.len = end - *url;
+	  retval.type = IDTYPE_STR;
+	  *url = end;
+	}
+      else if (errno == 0 && n <= INT_MAX)
+	{
+	  retval.type = IDTYPE_NUM;
+	  retval.n = n;
+	  *url = end;
+	}
+    }
+  return retval;
 }
 
+/*
+ * Locate listener identified by ID.
+ */
+static LISTENER *
+locate_listener (IDENT id)
+{
+  LISTENER *lstn = NULL;
+
+  if (id.type != IDTYPE_ERR)
+    {
+      long n = 0;
+      SLIST_FOREACH (lstn, &listeners, next)
+	{
+	  if ((id.type == IDTYPE_NUM && n == id.n) ||
+	      (lstn->name && strlen (lstn->name) == id.s.len &&
+	       memcmp (lstn->name, id.s.name, id.s.len) == 0))
+	    break;
+	  n++;
+	}
+    }
+  return lstn;
+}
+
+/*
+ * Locate service identified by ID.  If LSTN is null, look it up in the
+ * global service list.
+ */
+static SERVICE *
+locate_service (LISTENER *lstn, IDENT id)
+{
+  SERVICE *svc = 0;
+
+  if (id.type != IDTYPE_ERR)
+    {
+      int n = 0;
+      SERVICE_HEAD *head = lstn ? &lstn->services : &services;
+
+      SLIST_FOREACH (svc, head, next)
+	{
+	  if ((id.type == IDTYPE_NUM && n == id.n) ||
+	      (svc->name && strlen (svc->name) == id.s.len &&
+	       memcmp (svc->name, id.s.name, id.s.len) == 0))
+	    break;
+	  n++;
+	}
+    }
+  return svc;
+}
+
+/*
+ * Locate backend identified by ID.  Only IDTYPE_NUM is supported.
+ */
+static BACKEND *
+locate_backend (SERVICE *svc, IDENT id)
+{
+  BACKEND *be = NULL;
+
+  if (id.type == IDTYPE_NUM)
+    {
+      long n = 0;
+      SLIST_FOREACH (be, &svc->backends, next)
+	{
+	  if (n == id.n)
+	    break;
+	  n++;
+	}
+    }
+  return be;
+}
+
 enum object_type
   {
     OBJ_LISTENER,
@@ -2017,12 +2255,9 @@ typedef int (*OBJHANDLER) (BIO *, OBJECT *, char const *, void *);
 static int
 ctl_backend (OBJHANDLER func, void *data, BIO *c, char const *url, SERVICE *svc)
 {
-  int n;
   OBJECT obj = { .type = OBJ_BACKEND };
 
-  if ((n = ctl_getnum (&url)) < 0)
-    return HTTP_STATUS_NOT_FOUND;
-  if ((obj.be = get_nth_backend (svc, n)) == NULL)
+  if ((obj.be = locate_backend (svc, ctl_getident (&url))) == NULL)
     return HTTP_STATUS_NOT_FOUND;
   return func (c, &obj, url, data);
 }
@@ -2030,13 +2265,9 @@ ctl_backend (OBJHANDLER func, void *data, BIO *c, char const *url, SERVICE *svc)
 static int
 ctl_service (OBJHANDLER func, void *data, BIO *c, char const *url, LISTENER *lstn)
 {
-  int n;
   OBJECT obj = { .type = OBJ_SERVICE };
 
-  if ((n = ctl_getnum (&url)) < 0)
-    return HTTP_STATUS_NOT_FOUND;
-
-  if ((obj.svc = get_nth_service (lstn, n)) == NULL)
+  if ((obj.svc = locate_service (lstn, ctl_getident (&url))) == NULL)
     return HTTP_STATUS_NOT_FOUND;
 
   if (*url && *url != '?')
@@ -2047,7 +2278,6 @@ ctl_service (OBJHANDLER func, void *data, BIO *c, char const *url, LISTENER *lst
 static int
 ctl_listener (OBJHANDLER func, void *data, BIO *c, char const *url)
 {
-  int n;
   OBJECT obj = { .type = OBJ_LISTENER };
   size_t len = strcspn (url, "?");
 
@@ -2061,14 +2291,8 @@ ctl_listener (OBJHANDLER func, void *data, BIO *c, char const *url)
       obj.lstn = NULL;
       url += 2;
     }
-  else
-    {
-      if ((n = ctl_getnum (&url)) < 0)
-	return HTTP_STATUS_NOT_FOUND;
-
-      if ((obj.lstn = get_nth_listener (n)) == NULL)
-	return HTTP_STATUS_NOT_FOUND;
-    }
+  else if ((obj.lstn = locate_listener (ctl_getident (&url))) == NULL)
+    return HTTP_STATUS_NOT_FOUND;
 
   if (*url && *url != '?')
     return ctl_service (func, data, c, url, obj.lstn);
@@ -2103,8 +2327,13 @@ list_handler (BIO *c, OBJECT *obj, char const *url, void *data)
       break;
     }
 
-  rc = send_json_reply (c, val, url);
-  json_value_free (val);
+  if (!val)
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  else
+    {
+      rc = send_json_reply (c, val, url);
+      json_value_free (val);
+    }
   return rc;
 }
 
@@ -2177,9 +2406,13 @@ disable_handler (BIO *c, OBJECT *obj, char const *url, void *data)
       break;
     }
 
-  val = json_new_bool (1);
-  rc = send_json_reply (c, val, url);
-  json_value_free (val);
+  if ((val = json_new_bool (1)) == NULL)
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  else
+    {
+      rc = send_json_reply (c, val, url);
+      json_value_free (val);
+    }
   return rc;
 }
 
@@ -2250,9 +2483,13 @@ session_remove_handler (BIO *c, OBJECT *obj, char const *url, void *data)
   service_session_remove_by_key (svc, keybuf);
   pthread_mutex_unlock (&svc->mut);
 
-  val = service_serialize (svc);
-  rc = send_json_reply (c, val, url);
-  json_value_free (val);
+  if ((val = service_serialize (svc)) != NULL)
+    {
+      rc = send_json_reply (c, val, url);
+      json_value_free (val);
+    }
+  else
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
   return rc;
 }
 
@@ -2289,9 +2526,13 @@ session_add_handler (BIO *c, OBJECT *obj, char const *url, void *data)
   service_session_add (svc, keybuf, be);
   pthread_mutex_unlock (&svc->mut);
 
-  val = service_serialize (svc);
-  rc = send_json_reply (c, val, url);
-  json_value_free (val);
+  if ((val = service_serialize (svc)) != NULL)
+    {
+      rc = send_json_reply (c, val, url);
+      json_value_free (val);
+    }
+  else
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
   return rc;
 }
 
@@ -2322,6 +2563,7 @@ struct endpoint
 static struct endpoint control_endpoint[] = {
 #define S(s) s, sizeof(s)-1
   { S(""), METH_GET, control_list_all },
+  { S("/core"), METH_GET, control_list_core },
   { S("/listener"), METH_GET, control_list_listener },
   { S("/listener"), METH_DELETE, control_disable_listener },
   { S("/listener"), METH_PUT, control_enable_listener },
@@ -2369,15 +2611,16 @@ find_endpoint (int method, const char *uri, int *errcode)
 }
 
 int
-control_reply (BIO *c, int method, const char *url, BACKEND *be)
+control_response (POUND_HTTP *arg)
 {
   struct endpoint *ep;
   int code;
 
-  ep = find_endpoint (method, url, &code);
-  if (ep == NULL)
-    return code;
-  return ep->endfn (c, url + ep->uri_len);
+  ep = find_endpoint (arg->request.method, arg->request.url, &code);
+  if (ep != NULL)
+    code = ep->endfn (arg->cl, arg->request.url + ep->uri_len);
+  arg->response_code = 0;
+  return code;
 }
 
 #ifndef SSL3_ST_SR_CLNT_HELLO_A

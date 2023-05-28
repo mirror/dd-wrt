@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,13 +27,44 @@ PT_CHECK([ListenHTTP
 End
 ],
 [GET /echo/
-
+X-Foo-One: one
+X-Foo-Two: twp
+X-Fooer: Quxer
+X-Bar: bar
 end
 
 200
 -x-orig-header-foo-one: one
 -x-orig-header-foo-two: two
 -x-orig-header-x-bar: bar
+x-orig-header-X-Fooer: Quxer
 end
 ])
+
+PT_CHECK([ListenHTTP
+	HeadRemove "X-Foo-.*:.*"
+	HeadRemove "X-Bar: bar"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/
+X-Foo-One: one
+X-Foo-Two: twp
+X-Fooer: Quxer
+X-Bar: baz
+end
+
+200
+-x-orig-header-foo-one: one
+-x-orig-header-foo-two: two
+x-orig-header-x-bar: baz
+x-orig-header-X-Fooer: Quxer
+end
+])
+
 AT_CLEANUP

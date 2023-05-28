@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,10 +18,11 @@ AT_KEYWORDS([prio])
 PT_CHECK(
 [ListenHTTP
 	Service
+		Balancer iwrr
 		Backend
 			Address
 			Port
-			Priority 1
+			Priority 0
 		End
 		Backend
 			Address
@@ -31,7 +32,18 @@ PT_CHECK(
 	End
 End
 ],
-[stats samples=1000 index=1 avg=8%25
+[#
+# Let N be the number of backends and Wi weight (priority) of the i-th
+# backend.  Then, assuming 0-based weights, number of samples necessary
+# to finish a round-robin cycle is N+Sum(W).  Number of requests served
+# by backend j during the cycle is
+#
+#                    Wj + 1
+#                  ----------
+#                  N + Sum(W)
+#
+# In this test, N=2, Sum(W)=8, so that:
+stats samples=10 index=1 avg=0.9
 
 GET /echo/foo
 end
@@ -43,9 +55,16 @@ end
 PT_CHECK(
 [ListenHTTP
 	Service
+		Balancer iwrr
 		Backend
 			Address
 			Port
+			Priority 5
+		End
+		Backend
+			Address
+			Port
+			Priority 7
 		End
 		Backend
 			Address
@@ -55,8 +74,36 @@ PT_CHECK(
 	End
 End
 ],
-[# Default priority is 5, 8/5=1.6
-stats samples=1000 index=1 avg=1.6%25
+[# N=2, Sum(W)=23, number of requests for backend 1 is 8/23:
+stats samples=23 index=1 avg=0.348
+
+GET /echo/foo
+end
+
+200
+end
+])
+
+PT_CHECK(
+[ListenHTTP
+	Service
+		Balancer iwrr
+		Backend
+			Address
+			Port
+		End
+		Backend
+			Address
+			Port
+			Priority 9
+		End
+	End
+End
+],
+[# Default priority is 5
+# N=2, Sum(W)=16
+#
+stats samples=16 index=1 avg=0.625
 
 GET /echo/foo
 end
