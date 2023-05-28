@@ -122,7 +122,7 @@ unsigned get_hz(void) FAST_FUNC;
  */
 
 struct mpls_label {
-	__be32 entry;
+	__u32 entry;
 };
 
 #define MPLS_LS_LABEL_MASK      0xFFFFF000
