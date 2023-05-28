@@ -251,7 +251,7 @@ function display_team_members($team, $offset, $sort_by) {
     $x[] = tra('Country');
     $a[] = "";
     row_heading_array($x, $a);
-    
+
     $cache_args = "teamid=".$team->id."&mosort=".$nosort."&order=".$sort_clause."&limit=".$offset."_".$n;
     $users = unserialize(get_cached_data(TEAM_PAGE_TTL, $cache_args));
     if (!$users) {
@@ -524,7 +524,7 @@ function team_edit_form($team, $label, $url) {
 function team_decay_credit($team) {
     $avg = $team->expavg_credit;
     $avg_time = $team->expavg_time;
-    $now = time(0);
+    $now = time();
     update_average($now, 0, 0, $avg, $avg_time);
     $team->update("expavg_credit=$avg, expavg_time=$now");
 

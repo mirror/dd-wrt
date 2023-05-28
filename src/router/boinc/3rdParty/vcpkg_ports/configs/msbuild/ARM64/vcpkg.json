@@ -1,6 +1,5 @@
 {
     "name": "boinc-msbuild-arm64",
-    "version-string": "7.20.5",
     "dependencies":
     [
       {
@@ -12,6 +11,7 @@
       "rappture",
       {
         "name": "wxwidgets",
+        "features": ["webview"],
         "default-features": false
       },
       "gtest",

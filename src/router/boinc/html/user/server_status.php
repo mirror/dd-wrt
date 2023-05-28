@@ -172,15 +172,20 @@ function show_status_html($x) {
         tra("Application"),
         tra("Unsent"),
         tra("In progress"),
-        tra("Runtime of last 100 tasks in hours: average, min, max"),
+        tra("Runtime of recent tasks in hours: average, min, max"),
         tra("Users in last 24 hours")
     );
     foreach ($j->apps as $app) {
-        $avg = round($app->info->avg, 2);
-        $min = round($app->info->min, 2);
-        $max = round($app->info->max, 2);
-        $x = $max?"$avg ($min - $max)":"---";
-        $u = $app->info->users;
+        if ($app->info) {
+            $avg = round($app->info->avg, 2);
+            $min = round($app->info->min, 2);
+            $max = round($app->info->max, 2);
+            $x = $max?"$avg ($min - $max)":"---";
+            $u = $app->info->users;
+        } else {
+            $x = '---';
+            $u = '---';
+        }
         echo "<tr>
             <td>$app->user_friendly_name</td>
             <td>$app->unsent</td>
@@ -191,7 +196,7 @@ function show_status_html($x) {
         ";
     }
     end_table();
-    
+
     // show server software version.
     // If it's a release (minor# is even) link to github branch
     //

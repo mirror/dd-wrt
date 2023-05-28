@@ -160,7 +160,7 @@ int VBOX_BASE::run(bool do_restore_snapshot) {
 
         if (is_vm_machine_configuration_available()) {
             retval = register_vm();
-          
+
             if (retval){
 
                 vboxlog_msg("Could not register");
@@ -172,7 +172,7 @@ int VBOX_BASE::run(bool do_restore_snapshot) {
                 // was already initialized for the current slot directory but aborted
                 // while the task was suspended and unloaded from memory.
                 retval = deregister_stale_vm();
-              
+
                 if (retval){
 
                     vboxlog_msg("Could not deregister stale VM");
@@ -1040,7 +1040,7 @@ int VBOX_BASE::launch_vboxvm() {
     // Execute command
     if (!CreateProcess(
 
-                NULL, 
+                NULL,
                 cmdline,
                 NULL,
                 NULL,
@@ -1186,13 +1186,25 @@ int VBOX_BASE::vbm_popen(string& command, string& output, const char* item, bool
             // Error Code: VBOX_E_INVALID_OBJECT_STATE (0x80bb0007)
             //
             if (VBOX_E_INVALID_OBJECT_STATE == (unsigned int)retval) {
-                if (retry_notes.find("Another VirtualBox management") == string::npos) {
-                    retry_notes += "Another VirtualBox management application has locked the session for\n";
-                    retry_notes += "this VM. BOINC cannot properly monitor this VM\n";
-                    retry_notes += "and so this job will be aborted.\n\n";
-                }
-                if (retry_count) {
-                    sleep_interval *= 2;
+                if ((output.find("Cannot attach medium") != string::npos) &&
+                    (output.find("the media type") != string::npos) &&
+                    (output.find("MultiAttach") != string::npos) &&
+                    (output.find("can only be attached to machines that were created with VirtualBox 4.0 or later") != string::npos)) {
+                        // VirtualBox occasionally writes the 'MultiAttach' attribute to
+                        // the disk entry in VirtualBox.xml although this is not allowed there.
+                        // As a result all VMs trying to connect that disk fail.
+                        // Report the error back immediately without a retry.
+                        //
+                        break;
+                } else {
+                    if (retry_notes.find("Another VirtualBox management") == string::npos) {
+                        retry_notes += "Another VirtualBox management application has locked the session for\n";
+                        retry_notes += "this VM. BOINC cannot properly monitor this VM\n";
+                        retry_notes += "and so this job will be aborted.\n\n";
+                    }
+                    if (retry_count) {
+                        sleep_interval *= 2;
+                    }
                 }
             }
 
@@ -1218,8 +1230,8 @@ int VBOX_BASE::vbm_popen(string& command, string& output, const char* item, bool
 
             // Retry?
 
-            if (!retry_failures && 
-                    (VBOX_E_INVALID_OBJECT_STATE != (unsigned int)retval) && 
+            if (!retry_failures &&
+                    (VBOX_E_INVALID_OBJECT_STATE != (unsigned int)retval) &&
                     (CO_E_SERVER_EXEC_FAILURE != (unsigned int)retval)
                ) {
                 break;
@@ -1310,7 +1322,7 @@ int VBOX_BASE::vbm_popen_raw(
     // Execute command
     if (!CreateProcess(
 
-                NULL, 
+                NULL,
 
                 (LPTSTR)command.c_str(),
                 NULL,
@@ -1482,4 +1494,3 @@ VBOX_VM::VBOX_VM() {
 
 VBOX_VM::~VBOX_VM() {
 }
-

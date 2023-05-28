@@ -74,6 +74,7 @@ compile
 config.guess
 config.sub
 configure
+configure~
 depcomp
 install-sh
 ltmain.sh
@@ -125,6 +126,7 @@ locale/*/*.flag
 ## dependency builds and CI cache directories
 3rdParty/Windows/
 3rdParty/linux/
+3rdParty/linux-arm64/
 3rdParty/mac/
 3rdParty/buildCache/
 3rdParty/android/
@@ -215,6 +217,7 @@ tools/dir_hier_move
 tools/dir_hier_path
 tools/remote_submit_test
 tools/sign_executable
+tools/stage_file_native
 vda/ssim
 vda/vda
 vda/vdad
@@ -227,3 +230,19 @@ vda/vdad
 build/
 build-*/
 
+# WASM
+*.wasm
+a.out.js
+boinc_client.js
+boinccmd.js
+switcher.js
+boinc.html
+boinc_client.html
+boinccmd.html
+switcher.html
+
+# snap
+parts/
+prime/
+stage/
+*.snap

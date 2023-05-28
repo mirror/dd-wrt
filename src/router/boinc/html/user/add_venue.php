@@ -58,7 +58,7 @@ if ($action) {
     } else {
         $prefs = prefs_parse_project($user->project_prefs);
         $prefs->$venue = $prefs;
- 
+
         $new_prefs = new stdClass();
         $project_error = prefs_project_parse_form($new_prefs);
         $error = prefs_resource_parse_form($new_prefs);
@@ -87,6 +87,7 @@ if ($action) {
 
     if ($subset == "global") {
         $prefs = default_prefs_global();
+        set_niu_prefs($prefs);
     } else {
         $prefs = default_prefs_project();
     }

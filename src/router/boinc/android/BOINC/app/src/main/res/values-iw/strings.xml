@@ -268,7 +268,6 @@
   <string name="menu_help">עזרה</string>
   <string name="menu_report_issue">דיווח על תקלה</string>
   <!--about dialog-->
-  <string name="about_button">חזור</string>
   <string name="about_title">על אודות</string>
   <string name="about_name">BOINC</string>
   <string name="about_version">גרסה %1$s</string>

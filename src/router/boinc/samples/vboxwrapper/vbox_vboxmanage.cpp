@@ -16,10 +16,10 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _WIN32
-#include <algorithm>
 #include "boinc_win.h"
 #include "win_util.h"
 #else
+#include <algorithm>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -224,7 +224,7 @@ namespace vboxmanage {
         // Tweak the VM's Memory Size
         //
         vboxlog_msg("Setting Memory Size for VM. (%dMB)", (int)memory_size_mb);
-        sprintf(buf, "%d", (int)memory_size_mb);
+        snprintf(buf, sizeof(buf), "%d", (int)memory_size_mb);
 
         command  = "modifyvm \"" + vm_name + "\" ";
         command += "--memory " + string(buf) + " ";
@@ -259,7 +259,7 @@ namespace vboxmanage {
         // Tweak the VM's Graphics Controller Options
         //
         vboxlog_msg("Setting Graphics Controller Options for VM.");
-        sprintf(buf, "%d", (int)vram_size_mb);
+        snprintf(buf, sizeof(buf), "%d", (int)vram_size_mb);
 
         command  = "modifyvm \"" + vm_name + "\" ";
         command += "--vram " + string(buf) + " ";
@@ -274,11 +274,11 @@ namespace vboxmanage {
         command  = "modifyvm \"" + vm_name + "\" ";
         if (boot_iso) {
             command += "--boot1 dvd ";
-            command += "--boot2 disk ";        
+            command += "--boot2 disk ";
         } else {
             command += "--boot1 disk ";
             command += "--boot2 dvd ";
-        } 
+        }
         command += "--boot3 none ";
         command += "--boot4 none ";
 
@@ -543,53 +543,145 @@ namespace vboxmanage {
                 // See: https://www.virtualbox.org/manual/ch05.html#hdimagewrites
                 //      https://www.virtualbox.org/manual/ch05.html#diffimages
                 // the vdi file downloaded to the projects dir becomes the parent (read only)
-                // "--setuid" must not be used
                 // each task gets it's own differencing image (writable)
                 // differencing images are written to the VM's snapshot folder
                 //
                 string medium_file = aid.project_dir;
                 medium_file += "/" + multiattach_vdi_file;
 
-#ifdef _WIN32
-                replace(medium_file.begin(), medium_file.end(), '\\', '/');
-#endif
-
                 vboxlog_msg("Adding virtual disk drive to VM. (%s)", multiattach_vdi_file.c_str());
-                command = "list hdds";
 
-                retval = vbm_popen(command, output, "check if parent hdd is registered", false, false);
-                if (retval) return retval;
+                int retry_count = 0;
+                bool log_error = false;
+                bool vbox_bug_mitigation = false;
 
-#ifdef _WIN32
-                replace(output.begin(), output.end(), '\\', '/');
-#endif
+                do {
+                    string set_new_uuid = "";
+                    string type_line = "";
+                    size_t type_start;
+                    size_t type_end;
 
-                if (output.find(medium_file) == string::npos) {
-                    // parent hdd is not registered
-                    // vdi files can't be registered and set to multiattach mode within 1 step.
-                    // They must first be attached to a VM in normal mode, then detached from the VM
+                    command = "showhdinfo \"" + medium_file + "\" ";
+
+                    retval = vbm_popen(command, output, "check if parent hdd is registered", false);
+                    if (retval) {
+                        // showhdinfo implicitly registers unregistered hdds.
+                        // Hence, this has to be handled first.
+                        //
+                        if ((output.rfind("VBoxManage: error:", 0) != string::npos) &&
+                            (output.find("Cannot register the hard disk") != string::npos) &&
+                            (output.find("because a hard disk") != string::npos) &&
+                            (output.find("with UUID") != string::npos) &&
+                            (output.find("already exists") != string::npos)) {
+                                // May happen if the project admin didn't set a new UUID.
+                                set_new_uuid = "--setuuid \"\" ";
+
+                                vboxlog_msg("Disk UUID conflicts with an already existing disk.\nWill set a new UUID for '%s'.\nThe project admin should be informed to do this server side running:\nvboxmanage clonemedium <inputfile> <outputfile>\n",
+                                    multiattach_vdi_file.c_str()
+                                );
+                        } else {
+                            // other errors
+                            vboxlog_msg("Error in check if parent hdd is registered.\nCommand:\n%s\nOutput:\n%s",
+                                command.c_str(),
+                                output.c_str()
+                                );
+                            return retval;
+                        }
+                    }
+
+                    // Output from showhdinfo should look a little like this:
+                    //   UUID:           c119bcaf-636c-41f6-86c9-384739a31339
+                    //   Parent UUID:    base
+                    //   State:          created
+                    //   Type:           multiattach
+                    //   Location:       C:\Users\romw\VirtualBox VMs\test2\test2.vdi
+                    //   Storage format: VDI
+                    //   Format variant: dynamic default
+                    //   Capacity:       2048 MBytes
+                    //   Size on disk:   2 MBytes
+                    //   Encryption:     disabled
+                    //   Property:       AllocationBlockSize=1048576
+                    //   Child UUIDs:    dcb0daa5-3bf9-47cb-bfff-c65e74484615
                     //
-                    command  = command_fix_part;
-                    command += "--medium \"" + medium_file + "\" ";
 
-                    retval = vbm_popen(command, output, "register parent hdd", false, false);
-                    if (retval) return retval;
+                    type_line = output;
+                    type_start = type_line.find("\nType: ") + 1;
+                    type_end   = type_line.find("\n", type_start) - type_start;
+                    type_line  = type_line.substr(type_start, type_end);
 
-                    command  = command_fix_part;
-                    command += "--medium none ";
+                    if (type_line.find("multiattach") == string::npos) {
+                        // Parent hdd is not (yet) of type multiattach.
+                        // Vdi files can't be registered and set to multiattach mode within 1 step.
+                        // They must first be attached to a VM in normal mode, then detached from the VM
 
-                    retval = vbm_popen(command, output, "detach parent vdi", false, false);
-                    if (retval) return retval;
-                    // the vdi file is now registered and ready to be attached in multiattach mode
-                    //
+                        command  = command_fix_part;
+                        command += set_new_uuid + "--medium \"" + medium_file + "\" ";
+
+                        retval = vbm_popen(command, output, "register parent vdi");
+                        if (retval) return retval;
+
+                        command  = command_fix_part;
+                        command += "--medium none ";
+
+                        retval = vbm_popen(command, output, "detach parent vdi");
+                        if (retval) return retval;
+                        // the vdi file is now registered and ready to be attached in multiattach mode
+                        //
+                    }
+
+                    do {
+                        command  = command_fix_part;
+                        command += "--mtype multiattach ";
+                        command += "--medium \"" + medium_file + "\" ";
+
+                        retval = vbm_popen(command, output, "storage attach (fixed disk - multiattach mode)", log_error);
+                        if (retval) {
+                            // VirtualBox occasionally writes the 'MultiAttach' attribute to
+                            // the disk entry in VirtualBox.xml although this is not allowed there.
+                            // As a result all VMs trying to connect that disk fail.
+                            // The error needs to be cleaned here to allow vboxwrapper to
+                            // succeed even with uncorrected VirtualBox versions.
+                            //
+                            // After cleanup attaching the disk should be tried again.
+
+                            if ((retry_count < 1) &&
+                                (output.find("Cannot attach medium") != string::npos) &&
+                                (output.find("the media type") != string::npos) &&
+                                (output.find("MultiAttach") != string::npos) &&
+                                (output.find("can only be attached to machines that were created with VirtualBox 4.0 or later") != string::npos)) {
+                                    // try to deregister the medium from the global media store
+                                    command = "closemedium \"" + medium_file + "\" ";
+
+                                    retval = vbm_popen(command, output, "deregister parent vdi");
+                                    if (retval) return retval;
+
+                                    retry_count++;
+                                    log_error = true;
+                                    boinc_sleep(1.0);
+                                    break;
+                            }
+
+                            if (retry_count >= 1) {
+                                // in case of other errors or if retry also failed
+                                vboxlog_msg("Error in storage attach (fixed disk - multiattach mode).\nCommand:\n%s\nOutput:\n%s",
+                                    command.c_str(),
+                                    output.c_str()
+                                    );
+                                return retval;
+                            }
+
+                            retry_count++;
+                            log_error = true;
+                            boinc_sleep(1.0);
+
+                        } else {
+                            vbox_bug_mitigation = true;
+                            break;
+                        }
+                    }
+                    while (true);
                 }
-
-                command  = command_fix_part;
-                command += "--mtype multiattach ";
-                command += "--medium \"" + medium_file + "\" ";
-
-                retval = vbm_popen(command, output, "storage attach (fixed disk - multiattach mode)");
-                if (retval) return retval;
+                while (!vbox_bug_mitigation);
             }
 
 
@@ -674,7 +766,7 @@ namespace vboxmanage {
 
                 // Add new firewall rule
                 //
-                sprintf(buf, ",tcp,%s,%d,,%d",
+                snprintf(buf, sizeof(buf), ",tcp,%s,%d,,%d",
                         pf.is_remote?"":"127.0.0.1",
                         pf.host_port, pf.guest_port
                        );
@@ -696,7 +788,7 @@ namespace vboxmanage {
                 retval = boinc_get_port(false, rd_host_port);
                 if (retval) return retval;
 
-                sprintf(buf, "%d", rd_host_port);
+                snprintf(buf, sizeof(buf), "%d", rd_host_port);
                 command  = "modifyvm \"" + vm_name + "\" ";
                 command += "--vrde on ";
                 command += "--vrdeextpack default ";
@@ -1197,7 +1289,7 @@ namespace vboxmanage {
 				suspended = false;
 				crashed = false;
 				if (log_state) {
-					vboxlog_msg("VM is no longer is a running state. It is in '%s'.", 
+					vboxlog_msg("VM is no longer is a running state. It is in '%s'.",
 					             vmstate.c_str());
 				}
 			}
@@ -1300,7 +1392,11 @@ namespace vboxmanage {
                 vboxlog_msg("VM did not stop when requested.");
 
                 // Attempt to terminate the VM
-                retval = kill_program(vm_pid);
+#ifdef _WIN32
+                retval = kill_process(vm_pid_handle);
+#else
+                retval = kill_process(vm_pid);
+#endif
                 if (retval) {
                     vboxlog_msg("VM was NOT successfully terminated.");
                 } else {
@@ -1343,7 +1439,11 @@ namespace vboxmanage {
                 vboxlog_msg("VM did not power off when requested.");
 
                 // Attempt to terminate the VM
-                retval = kill_program(vm_pid);
+#ifdef _WIN32
+                retval = kill_process(vm_pid_handle);
+#else
+                retval = kill_process(vm_pid);
+#endif
                 if (retval) {
                     vboxlog_msg("VM was NOT successfully terminated.");
                 } else {
@@ -1439,7 +1539,7 @@ namespace vboxmanage {
         pause();
 
         // Create new snapshot
-        sprintf(buf, "%d", (int)elapsed_time);
+        snprintf(buf, sizeof(buf), "%d", (int)elapsed_time);
         command = "snapshot \"" + vm_name + "\" ";
         command += "take boinc_";
         command += buf;
@@ -1491,7 +1591,7 @@ namespace vboxmanage {
         //
         // Traverse the list from newest to oldest.  Otherwise we end up with an error:
         //   VBoxManage.exe: error: Snapshot operation failed
-        //   VBoxManage.exe: error: Hard disk 'C:\ProgramData\BOINC\slots\23\vm_image.vdi' has 
+        //   VBoxManage.exe: error: Hard disk 'C:\ProgramData\BOINC\slots\23\vm_image.vdi' has
         //     more than one child hard disk (2)
         //
 
@@ -1664,7 +1764,7 @@ namespace vboxmanage {
         command = "showhdinfo \"" + virtual_machine_root_dir + "/" + image_filename + "\" ";
         if (vbm_popen(command, output, "hdd registration", false, false) == 0) {
 
-            if ((output.find("VBOX_E_FILE_ERROR") == string::npos) && 
+            if ((output.find("VBOX_E_FILE_ERROR") == string::npos) &&
 
                     (output.find("VBOX_E_OBJECT_NOT_FOUND") == string::npos) &&
                     (output.find("does not match the value") == string::npos)
@@ -1677,7 +1777,7 @@ namespace vboxmanage {
         if (enable_isocontextualization && enable_cache_disk) {
             command = "showhdinfo \"" + virtual_machine_root_dir + "/" + cache_disk_filename + "\" ";
             if (vbm_popen(command, output, "hdd registration", false, false) == 0) {
-                if ((output.find("VBOX_E_FILE_ERROR") == string::npos) && 
+                if ((output.find("VBOX_E_FILE_ERROR") == string::npos) &&
                         (output.find("VBOX_E_OBJECT_NOT_FOUND") == string::npos) &&
                         (output.find("does not match the value") == string::npos)
                    ) {
@@ -1714,9 +1814,9 @@ namespace vboxmanage {
 
         // change the current directory to the boinc data directory if it exists
         lReturnValue = RegOpenKeyEx(
-                HKEY_LOCAL_MACHINE, 
-                _T("SOFTWARE\\Oracle\\VirtualBox"),  
-                0, 
+                HKEY_LOCAL_MACHINE,
+                _T("SOFTWARE\\Oracle\\VirtualBox"),
+                0,
                 KEY_READ,
                 &hkSetupHive
                 );
@@ -1736,7 +1836,7 @@ namespace vboxmanage {
                 (*lpszRegistryValue) = NULL;
 
                 // Now get the data
-                lReturnValue = RegQueryValueEx( 
+                lReturnValue = RegQueryValueEx(
                         hkSetupHive,
                         _T("InstallDir"),
                         NULL,
@@ -2022,7 +2122,7 @@ namespace vboxmanage {
     }
 
     // Enable the network adapter if a network connection is required.
-    // NOTE: Network access should never be allowed if the code running in a 
+    // NOTE: Network access should never be allowed if the code running in a
     //   shared directory or the VM image itself is NOT signed.  Doing so
     //   opens up the network behind the company firewall to attack.
     //
@@ -2067,7 +2167,7 @@ namespace vboxmanage {
         // the arg to controlvm is percentage
         //
         vboxlog_msg("Setting CPU throttle for VM. (%d%%)", percentage);
-        sprintf(buf, "%d", percentage);
+        snprintf(buf, sizeof(buf), "%d", percentage);
         command  = "controlvm \"" + vm_name + "\" ";
         command += "cpuexecutioncap ";
         command += buf;
@@ -2104,7 +2204,7 @@ namespace vboxmanage {
                 retval = vbm_popen(command, output, "network throttle (set default value)");
                 if (retval) return retval;
             } else {
-                sprintf(buf, "%d", kilobytes);
+                snprintf(buf, sizeof(buf), "%d", kilobytes);
                 command  = "bandwidthctl \"" + vm_name + "\" ";
                 command += "set \"" + vm_name + "_net\" ";
                 command += "--limit ";
@@ -2117,7 +2217,7 @@ namespace vboxmanage {
 
         } else {
 
-            sprintf(buf, "%d", kilobytes);
+            snprintf(buf, sizeof(buf), "%d", kilobytes);
             command  = "modifyvm \"" + vm_name + "\" ";
             command += "--nicspeed1 ";
             command += buf;

@@ -154,7 +154,7 @@ double gpu_peak_flops() {
 }
 
 double cpu_peak_flops() {
-    return gstate.ncpus * gstate.host_info.p_fpops;
+    return gstate.n_usable_cpus * gstate.host_info.p_fpops;
 }
 
 void print_project_results(FILE* f) {
@@ -252,21 +252,24 @@ void make_job(
 void CLIENT_STATE::handle_completed_results(PROJECT* p) {
     char buf[256];
     vector<RESULT*>::iterator result_iter;
+    int n;
 
     result_iter = results.begin();
     while (result_iter != results.end()) {
         RESULT* rp = *result_iter;
         if (rp->project == p && rp->ready_to_report) {
             if (gstate.now > rp->report_deadline) {
-                sprintf(buf, "result %s reported; "
+                n = snprintf(buf, sizeof(buf), "result %s reported; "
                     "<font color=#cc0000>MISSED DEADLINE by %f</font><br>\n",
                     rp->name, gstate.now - rp->report_deadline
                 );
+                (void)n;
             } else {
-                sprintf(buf, "result %s reported; "
+                n = snprintf(buf, sizeof(buf), "result %s reported; "
                     "<font color=#00cc00>MADE DEADLINE</font><br>\n",
                     rp->name
                 );
+                (void)n;
             }
             PROJECT* spp = rp->project;
             if (gstate.now > rp->report_deadline) {
@@ -298,8 +301,8 @@ void CLIENT_STATE::get_workload(vector<IP_RESULT>& ip_results) {
         IP_RESULT ipr(rp->name, rp->report_deadline-now, x);
         ip_results.push_back(ipr);
     }
-    //init_ip_results(work_buf_min(), ncpus, ip_results);
-    init_ip_results(0, ncpus, ip_results);
+    //init_ip_results(work_buf_min(), n_usable_ncpus, ip_results);
+    init_ip_results(0, n_usable_cpus, ip_results);
 }
 
 void get_apps_needing_work(PROJECT* p, vector<APP*>& apps) {
@@ -344,17 +347,19 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
     char buf[256], buf2[256];
     vector<IP_RESULT> ip_results;
     vector<RESULT*> new_results;
+    int n;
 
     bool avail;
     if (p->last_rpc_time) {
-        double delta = now - p->last_rpc_time;
-        avail = p->available.sample(delta);
+        double dt = now - p->last_rpc_time;
+        avail = p->available.sample(dt);
     } else {
         avail = p->available.sample(0);
     }
     p->last_rpc_time = now;
     if (!avail) {
-        sprintf(buf, "RPC to %s skipped - project down<br>", p->project_name);
+        n = snprintf(buf, sizeof(buf), "RPC to %s skipped - project down<br>", p->project_name);
+        (void)n;
         html_msg += buf;
         msg_printf(p, MSG_INFO, "RPC skipped: project down");
         gstate.scheduler_op->project_rpc_backoff(p, "project down");
@@ -389,7 +394,8 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
     }
 
     work_fetch.request_string(buf2, sizeof(buf2));
-    sprintf(buf, "RPC to %s: %s<br>", p->project_name, buf2);
+    n = snprintf(buf, sizeof(buf), "RPC to %s: %s<br>", p->project_name, buf2);
+    (void)n;
     html_msg += buf;
 
     msg_printf(p, MSG_INFO, "RPC: %s", buf2);
@@ -402,17 +408,17 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
 
     bool sent_something = false;
     while (!existing_jobs_only) {
-        vector<APP*> apps;
-        get_apps_needing_work(p, apps);
-        if (apps.empty()) break;
+        vector<APP*> wapps;
+        get_apps_needing_work(p, wapps);
+        if (wapps.empty()) break;
         RESULT* rp = new RESULT;
         WORKUNIT* wup = new WORKUNIT;
-        make_job(p, wup, rp, apps);
+        make_job(p, wup, rp, wapps);
 
         double et = wup->rsc_fpops_est / rp->avp->flops;
         if (server_uses_workload) {
             IP_RESULT c(rp->name, rp->report_deadline-now, et);
-            if (check_candidate(c, ncpus, ip_results)) {
+            if (check_candidate(c, n_usable_cpus, ip_results)) {
                 ip_results.push_back(c);
             } else {
                 msg_printf(p, MSG_INFO, "job for %s misses deadline sim\n", rp->app->name);
@@ -443,7 +449,7 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
         results.push_back(rp);
         new_results.push_back(rp);
 #if 0
-        sprintf(buf, "got job %s: CPU time %.2f, deadline %s<br>",
+        snprintf(buf, sizeof(buf), "got job %s: CPU time %.2f, deadline %s<br>",
             rp->name, rp->final_cpu_time, time_to_string(rp->report_deadline)
         );
         html_msg += buf;
@@ -453,7 +459,7 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
 
     njobs += (int)new_results.size();
     msg_printf(0, MSG_INFO, "Got %lu tasks", new_results.size());
-    sprintf(buf, "got %lu tasks<br>", new_results.size());
+    snprintf(buf, sizeof(buf), "got %zu tasks<br>", new_results.size());
     html_msg += buf;
 
     SCHEDULER_REPLY sr;
@@ -508,7 +514,7 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
             break;
         }
 #endif
-    
+
         p = find_project_with_overdue_results(false);
         if (p) {
             msg_printf(p, MSG_INFO, "doing RPC to report results");
@@ -561,6 +567,7 @@ bool ACTIVE_TASK_SET::poll() {
         diff = 0;
     }
     PROJECT* p;
+    int n;
 
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
@@ -600,8 +607,8 @@ bool ACTIVE_TASK_SET::poll() {
     // if CPU is overcommitted, compute cpu_scale
     //
     double cpu_scale = 1;
-    if (cpu_usage > gstate.ncpus) {
-        cpu_scale = (gstate.ncpus - cpu_usage_gpu) / (cpu_usage - cpu_usage_gpu);
+    if (cpu_usage > gstate.n_usable_cpus) {
+        cpu_scale = (gstate.n_usable_cpus - cpu_usage_gpu) / (cpu_usage - cpu_usage_gpu);
     }
 
     double used = 0;
@@ -629,7 +636,8 @@ bool ACTIVE_TASK_SET::poll() {
             rp->ready_to_report = true;
             gstate.request_schedule_cpus("job finished");
             gstate.request_work_fetch("job finished");
-            sprintf(buf, "result %s finished<br>", rp->name);
+            n = snprintf(buf, sizeof(buf), "result %s finished<br>", rp->name);
+            (void)n;
             html_msg += buf;
             action = true;
         }
@@ -810,7 +818,7 @@ void show_project_colors() {
         PROJECT* p = gstate.projects[i];
         fprintf(html_out,
             "<tr><td bgcolor=%s><font color=ffffff>%s</font></td><td>%.0f</td></tr>\n",
-            colors[p->index%NCOLORS], p->project_name, p->resource_share
+            colors[p->proj_index%NCOLORS], p->project_name, p->resource_share
         );
     }
     fprintf(html_out, "</table>\n");
@@ -859,13 +867,13 @@ void show_resource(int rsc_type) {
             );
         }
         if (rsc_type) {
-            sprintf(buf, "<td>%d</td>", rp->coproc_indices[0]);
+            snprintf(buf, sizeof(buf), "<td>%d</td>", rp->coproc_indices[0]);
         } else {
             safe_strcpy(buf, "");
         }
         fprintf(html_out, "<tr valign=top><td>%.2f</td><td bgcolor=%s><font color=#ffffff>%s%s</font></td><td>%.0f</td>%s</tr>\n",
             ninst,
-            colors[p->index%NCOLORS],
+            colors[p->proj_index%NCOLORS],
             rp->edf_scheduled?"*":"",
             rp->name,
             rp->sim_flops_left/1e9,
@@ -887,7 +895,7 @@ void show_resource(int rsc_type) {
         job_count(p, rsc_type, in_progress, done);
         if (in_progress || done) {
             fprintf(html_out, "<td bgcolor=%s><font color=#ffffff>%s</font></td><td>%d</td><td>%d</td><td>%.3f</td></tr>\n",
-                colors[p->index%NCOLORS], p->project_name, in_progress, done,
+                colors[p->proj_index%NCOLORS], p->project_name, in_progress, done,
                 p->pwf.rec
             );
             found = true;
@@ -900,7 +908,7 @@ void show_resource(int rsc_type) {
 void html_start() {
     char buf[256];
 
-    sprintf(buf, "%s%s", outfile_prefix, TIMELINE_FNAME);
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, TIMELINE_FNAME);
     html_out = fopen(buf, "w");
     if (!html_out) {
         fprintf(stderr, "can't open %s for writing\n", buf);
@@ -1033,7 +1041,7 @@ void write_recs() {
 void make_graph(const char* title, const char* fname, int field) {
     char gp_fname[256], cmd[256], png_fname[256];
 
-    sprintf(gp_fname, "%s%s.gp", outfile_prefix, fname);
+    snprintf(gp_fname, sizeof(gp_fname), "%s%s.gp", outfile_prefix, fname);
     FILE* f = fopen(gp_fname, "w");
     fprintf(f,
         "set terminal png small size 1024, 768\n"
@@ -1050,15 +1058,15 @@ void make_graph(const char* title, const char* fname, int field) {
         );
     }
     fclose(f);
-    sprintf(png_fname, "%s%s.png", outfile_prefix, fname);
-    sprintf(cmd, "gnuplot < %s > %s", gp_fname, png_fname);
+    snprintf(png_fname, sizeof(png_fname), "%s%s.png", outfile_prefix, fname);
+    snprintf(cmd, sizeof(cmd), "gnuplot < %s > %s", gp_fname, png_fname);
     fprintf(index_file, "<br><a href=%s.png>Graph of %s</a>\n", fname, title);
     system(cmd);
 }
 
 static void write_inputs() {
     char buf[256];
-    sprintf(buf, "%s/%s", outfile_prefix, INPUTS_FNAME);
+    snprintf(buf, sizeof(buf), "%s/%s", outfile_prefix, INPUTS_FNAME);
     FILE* f = fopen(buf, "w");
     fprintf(f,
         "Existing jobs only: %s\n"
@@ -1413,12 +1421,12 @@ void do_client_simulation() {
     int retval;
     FILE* f;
 
-    sprintf(buf, "%s%s", infile_prefix, CONFIG_FILE);
+    snprintf(buf, sizeof(buf), "%s%s", infile_prefix, CONFIG_FILE);
     cc_config.defaults();
     read_config_file(true, buf);
 
     log_flags.init();
-    sprintf(buf, "%s%s", outfile_prefix, "log_flags.xml");
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, "log_flags.xml");
     f = fopen(buf, "r");
     if (f) {
         MIOFILE mf;
@@ -1430,7 +1438,7 @@ void do_client_simulation() {
     }
 
     gstate.add_platform("client simulator");
-    sprintf(buf, "%s%s", infile_prefix, STATE_FILE_NAME);
+    snprintf(buf, sizeof(buf), "%s%s", infile_prefix, STATE_FILE_NAME);
     if (!boinc_file_exists(buf)) {
         fprintf(stderr, "No client state file\n");
         exit(1);
@@ -1457,8 +1465,8 @@ void do_client_simulation() {
     cc_config.show();
     log_flags.show();
 
-    sprintf(buf, "%s%s", infile_prefix, GLOBAL_PREFS_FILE_NAME);
-    sprintf(buf2, "%s%s", infile_prefix, GLOBAL_PREFS_OVERRIDE_FILE);
+    snprintf(buf, sizeof(buf), "%s%s", infile_prefix, GLOBAL_PREFS_FILE_NAME);
+    snprintf(buf2, sizeof(buf2), "%s%s", infile_prefix, GLOBAL_PREFS_OVERRIDE_FILE);
     gstate.read_global_prefs(buf, buf2);
     fprintf(index_file,
         "<h3>Output files</h3>\n"
@@ -1489,13 +1497,13 @@ void do_client_simulation() {
 
     int j=0;
     for (unsigned int i=0; i<gstate.projects.size(); i++) {
-        gstate.projects[i]->index = j++;
+        gstate.projects[i]->proj_index = j++;
     }
 
     clear_backoff();
 
     gstate.log_show_projects();
-    gstate.set_ncpus();
+    gstate.set_n_usable_cpus();
     work_fetch.init();
 
     //set_initial_rec();
@@ -1507,11 +1515,11 @@ void do_client_simulation() {
 
     sim_results.compute_figures_of_merit();
 
-    sprintf(buf, "%s%s", outfile_prefix, RESULTS_DAT_FNAME);
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, RESULTS_DAT_FNAME);
     f = fopen(buf, "w");
     sim_results.print(f);
     fclose(f);
-    sprintf(buf, "%s%s", outfile_prefix, RESULTS_TXT_FNAME);
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, RESULTS_TXT_FNAME);
     f = fopen(buf, "w");
     sim_results.print(f, true);
     fclose(f);
@@ -1588,10 +1596,10 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    sprintf(buf, "%s%s", outfile_prefix, "index.html");
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, "index.html");
     index_file = fopen(buf, "w");
 
-    sprintf(log_filename, "%s%s", outfile_prefix, LOG_FNAME);
+    snprintf(log_filename, sizeof(log_filename), "%s%s", outfile_prefix, LOG_FNAME);
     logfile = fopen(log_filename, "w");
     if (!logfile) {
         fprintf(stderr, "Can't open %s\n", buf);
@@ -1599,10 +1607,10 @@ int main(int argc, char** argv) {
     }
     setbuf(logfile, 0);
 
-    sprintf(buf, "%s%s", outfile_prefix, REC_FNAME);
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, REC_FNAME);
     rec_file = fopen(buf, "w");
 
-    sprintf(buf, "%s%s", outfile_prefix, SUMMARY_FNAME);
+    snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, SUMMARY_FNAME);
     summary_file = fopen(buf, "w");
 
     srand(1);       // make it deterministic

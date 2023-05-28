@@ -91,7 +91,7 @@ function show_host($host, $user, $ipprivate) {
             if ($host->last_ip_addr != $host->external_ip_addr) {
                 row2(tra("External IP address"), $host->external_ip_addr);
             }
-        } else { 
+        } else {
             row2(tra("IP address"), "<a href=show_host_detail.php?hostid=$host->id&ipprivate=1>".tra("Show IP address")."</a>");
         }
         row2(tra("Domain name"), $host->domain_name);
@@ -625,7 +625,7 @@ function host_update_credit($hostid) {
 function host_decay_credit($host) {
     $avg = $host->expavg_credit;
     $avg_time = $host->expavg_time;
-    $now = time(0);
+    $now = time();
     update_average($now, 0, 0, $avg, $avg_time);
     $host->update("expavg_credit=$avg, expavg_time=$now");
 }
@@ -775,7 +775,7 @@ function show_user_hosts($userid, $private, $show_all, $sort, $rev) {
     default:
         // default value -- sort by RPC time
         $sort = "rpc_time";
-        $sort_clause = "rpc_time"; 
+        $sort_clause = "rpc_time";
         $desc = true;
     }
 

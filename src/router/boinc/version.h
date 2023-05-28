@@ -7,21 +7,19 @@
 #define BOINC_MAJOR_VERSION 7
 
 /* Minor part of BOINC version number */
-#define BOINC_MINOR_VERSION 20
+#define BOINC_MINOR_VERSION 22
 
 /* Release part of BOINC version number */
-#define BOINC_RELEASE 5
+#define BOINC_RELEASE 2
 
-// wrapper version number
-// when you change this, change .exe file names in VS project files
-#define WRAPPER_RELEASE 26017
+/* Release part of wrapper version number */
+#define WRAPPER_RELEASE 26018
 
-// vboxwrapper version number
-// when you change this, change .exe file names in VS project files
+/* Release part of vboxwrapper version number */
 #define VBOXWRAPPER_RELEASE 26206
 
 /* String representation of BOINC version number */
-#define BOINC_VERSION_STRING "7.20.5"
+#define BOINC_VERSION_STRING "7.22.2"
 
 /* Package is a pre-release (Alpha/Beta) package */
 //#define BOINC_PRERELEASE 1
@@ -37,13 +35,13 @@
 #define PACKAGE_NAME "BOINC"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "BOINC 7.20.5"
+#define PACKAGE_STRING "BOINC 7.22.2"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "boinc"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "7.20.5"
+#define PACKAGE_VERSION "7.22.2"
 
 #endif /* #if (defined(_WIN32) || defined(__APPLE__)) */
 
