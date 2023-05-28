@@ -1,6 +1,9 @@
 python-configure: libffi-configure libffi libffi-install zlib
 #	cd python && cp Modules/Setup Modules/Setup
 	cd python && echo "# bogus" > Modules/Setup.local 
+	cd python && libtoolize -ci --force 
+	cd python && aclocal
+	cd python && autoreconf -fi
 	cd python && ./configure  --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
 		--enable-static \
