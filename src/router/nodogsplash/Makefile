@@ -1,6 +1,6 @@
 
 CC?=gcc
-CFLAGS?=-O0 -g -Wall
+CFLAGS?=-O2 -g -Wall
 CFLAGS+=-Isrc
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS+=-pthread
@@ -9,7 +9,7 @@ LDLIBS=-lmicrohttpd
 STRIP=yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
-	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http_microhttpd.o src/http_microhttpd_utils.o \
+	src/debug.o src/fw_iptables.o src/path.o src/main.o src/http_microhttpd.o src/http_microhttpd_utils.o \
 	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o src/template.o
 
 .PHONY: all clean install checkastyle fixstyle deb
@@ -40,7 +40,8 @@ install:
 	mkdir -p $(DESTDIR)/etc/nodogsplash/htdocs/images
 	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
 	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
-	cp resources/infoskel.html $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/status.html $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
 
 checkastyle:

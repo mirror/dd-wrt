@@ -34,20 +34,21 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <sys/stat.h>
+#include <arpa/inet.h>
+#include <netinet/ether.h>
 
 #include "common.h"
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
 #include "auth.h"
-#include "firewall.h"
-
 #include "util.h"
 
 
 /** @internal
  * Holds the current configuration of the gateway */
-static s_config config;
+static s_config config = {{0}};
 
 /**
  * Mutex for the configuration file, used by the auth_servers related
@@ -63,43 +64,35 @@ static int missing_parms;
  The different configuration options */
 typedef enum {
 	oBadOption,
+	oSessionTimeout,
+	oSessionTimeoutBlock,
+	oSessionLimitBlock,
 	oDaemon,
 	oDebugLevel,
 	oMaxClients,
 	oGatewayName,
+	oGatewayDomainName,
 	oGatewayInterface,
 	oGatewayIPRange,
+	oGatewayIP,
+	/* TODO: deprecate oGatewayAddress option */
 	oGatewayAddress,
 	oGatewayPort,
-	oRemoteAuthenticatorAction,
-	oEnablePreAuth,
-	oBinVoucher,
-	oForceVoucher,
-	oPasswordAuthentication,
-	oUsernameAuthentication,
-	oPasswordAttempts,
-	oUsername,
-	oPassword,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
-	oImagesDir,
-	oPagesDir,
+	oStatusPage,
 	oRedirectURL,
-	oClientIdleTimeout,
-	oClientForceTimeout,
+	oPreauthIdleTimeout,
+	oAuthIdleTimeout,
 	oCheckInterval,
 	oSetMSS,
 	oMSSValue,
 	oTrafficControl,
 	oDownloadLimit,
 	oUploadLimit,
-	oDownloadIMQ,
-	oUploadIMQ,
+	oUploadIFB,
 	oNdsctlSocket,
-	oDecongestHttpdThreads,
-	oHttpdThreadThreshold,
-	oHttpdThreadDelayMS,
 	oSyslogFacility,
 	oFirewallRule,
 	oFirewallRuleSet,
@@ -110,7 +103,9 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked
+	oFWMarkBlocked,
+	oBinAuth,
+	oPreAuth
 } OpCodes;
 
 /** @internal
@@ -120,43 +115,35 @@ static const struct {
 	OpCodes opcode;
 	int required;
 } keywords[] = {
+	{ "sessiontimeout", oSessionTimeout },
+	{ "sessiontimeoutblock", oSessionTimeoutBlock },
+	{ "sessionlimitblock", oSessionLimitBlock },
 	{ "daemon", oDaemon },
 	{ "debuglevel", oDebugLevel },
 	{ "maxclients", oMaxClients },
 	{ "gatewayname", oGatewayName },
+	{ "gatewaydomainname", oGatewayDomainName },
 	{ "gatewayinterface", oGatewayInterface },
 	{ "gatewayiprange", oGatewayIPRange },
+	{ "gatewayip", oGatewayIP },
+	/* TODO: remove/deprecate gatewayaddress keyword */
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
-	{ "remoteauthenticatoraction", oRemoteAuthenticatorAction },
-	{ "enablepreauth", oEnablePreAuth },
-	{ "binvoucher", oBinVoucher },
-	{ "forcevoucher", oForceVoucher },
-	{ "passwordauthentication", oPasswordAuthentication },
-	{ "usernameauthentication", oUsernameAuthentication },
-	{ "passwordattempts", oPasswordAttempts },
-	{ "username", oUsername },
-	{ "password", oPassword },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
-	{ "imagesdir", oImagesDir },
-	{ "pagesdir", oPagesDir },
+	{ "statuspage", oStatusPage },
 	{ "redirectURL", oRedirectURL },
-	{ "clientidletimeout", oClientIdleTimeout },
-	{ "clientforcetimeout", oClientForceTimeout },
+	{ "preauthidletimeout", oPreauthIdleTimeout },
+	{ "authidletimeout", oAuthIdleTimeout },
 	{ "checkinterval", oCheckInterval },
 	{ "setmss", oSetMSS },
 	{ "mssvalue", oMSSValue },
 	{ "trafficcontrol",	oTrafficControl },
 	{ "downloadlimit", oDownloadLimit },
 	{ "uploadlimit", oUploadLimit },
-	{ "downloadimq", oDownloadIMQ },
-	{ "uploadimq", oUploadIMQ },
+	{ "ifb", oUploadIFB },
 	{ "syslogfacility", oSyslogFacility },
 	{ "ndsctlsocket", oNdsctlSocket },
-	{ "decongesthttpdthreads", oDecongestHttpdThreads },
-	{ "httpdthreadthreshold", oHttpdThreadThreshold },
-	{ "httpdthreaddelayms", oHttpdThreadDelayMS },
 	{ "firewallruleset", oFirewallRuleSet },
 	{ "firewallrule", oFirewallRule },
 	{ "emptyrulesetpolicy", oEmptyRuleSetPolicy },
@@ -164,15 +151,17 @@ static const struct {
 	{ "blockedmaclist", oBlockedMACList },
 	{ "allowedmaclist", oAllowedMACList },
 	{ "MACmechanism", oMACmechanism },
-	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
-	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
-	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "fw_mark_authenticated", oFWMarkAuthenticated },
+	{ "fw_mark_trusted", oFWMarkTrusted },
+	{ "fw_mark_blocked", oFWMarkBlocked },
+	{ "binauth", oBinAuth },
+	{ "preauth", oPreAuth },
 	{ NULL, oBadOption },
 };
 
 static void config_notnull(const void *parm, const char *parmname);
-static int parse_boolean_value(char *);
-static int _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover);
+static int parse_boolean(const char *);
+static void _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover);
 static void parse_firewall_ruleset(const char *, FILE *, const char *, int *);
 
 static OpCodes config_parse_opcode(const char *cp, const char *filename, int linenum);
@@ -199,56 +188,51 @@ config_init(void)
 	t_firewall_ruleset *rs;
 
 	debug(LOG_DEBUG, "Setting default config parameters");
-	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
+	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile)-1);
+	config.session_timeout = DEFAULT_SESSION_TIMEOUT;
+	config.session_timeout_block = DEFAULT_SESSION_TIMEOUT_BLOCK;
+	config.session_limit_block = DEFAULT_SESSION_LIMIT_BLOCK;
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
 	config.gw_interface = NULL;
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
+	config.gw_domain = NULL;
+	config.gw_ip = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
-	config.remote_auth_action = NULL;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
-	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);
-	config.imagesdir = safe_strdup(DEFAULT_IMAGESDIR);
-	config.pagesdir = safe_strdup(DEFAULT_PAGESDIR);
+	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
+	config.preauthdir = safe_strdup(DEFAULT_PREAUTHDIR);
 	config.redirectURL = NULL;
-	config.clienttimeout = DEFAULT_CLIENTTIMEOUT;
-	config.clientforceout = DEFAULT_CLIENTFORCEOUT;
+	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
+	config.auth_idle_timeout = DEFAULT_AUTH_IDLE_TIMEOUT,
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.daemon = -1;
-	config.passwordauth = DEFAULT_PASSWORD_AUTH;
-	config.usernameauth = DEFAULT_USERNAME_AUTH;
-	config.passwordattempts = DEFAULT_PASSWORD_ATTEMPTS;
-	config.username = NULL;
-	config.password = NULL;
-	config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
 	config.set_mss = DEFAULT_SET_MSS;
 	config.mss_value = DEFAULT_MSS_VALUE;
 	config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
 	config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
 	config.download_limit = DEFAULT_DOWNLOAD_LIMIT;
-	config.upload_imq =  DEFAULT_UPLOAD_IMQ;
-	config.download_imq = DEFAULT_DOWNLOAD_IMQ;
+	config.upload_ifb =  DEFAULT_UPLOAD_IFB;
 	config.syslog_facility = DEFAULT_SYSLOG_FACILITY;
 	config.log_syslog = DEFAULT_LOG_SYSLOG;
 	config.ndsctl_sock = safe_strdup(DEFAULT_NDSCTL_SOCK);
 	config.internal_sock = safe_strdup(DEFAULT_INTERNAL_SOCK);
-	config.decongest_httpd_threads = DEFAULT_DECONGEST_HTTPD_THREADS;
-	config.httpd_thread_threshold = DEFAULT_HTTPD_THREAD_THRESHOLD;
-	config.httpd_thread_delay_ms = DEFAULT_HTTPD_THREAD_DELAY_MS;
 	config.rulesets = NULL;
 	config.trustedmaclist = NULL;
 	config.blockedmaclist = NULL;
 	config.allowedmaclist = NULL;
 	config.macmechanism = DEFAULT_MACMECHANISM;
-	config.FW_MARK_AUTHENTICATED = DEFAULT_FW_MARK_AUTHENTICATED;
-	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
-	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
+	config.fw_mark_authenticated = DEFAULT_FW_MARK_AUTHENTICATED;
+	config.fw_mark_trusted = DEFAULT_FW_MARK_TRUSTED;
+	config.fw_mark_blocked = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
+	config.binauth = NULL;
+	config.preauth = NULL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -269,7 +253,9 @@ config_init(void)
 void
 config_init_override(void)
 {
-	if (config.daemon == -1) config.daemon = DEFAULT_DAEMON;
+	if (config.daemon == -1) {
+		config.daemon = DEFAULT_DAEMON;
+	}
 }
 
 /** @internal
@@ -280,9 +266,11 @@ config_parse_opcode(const char *cp, const char *filename, int linenum)
 {
 	int i;
 
-	for (i = 0; keywords[i].name; i++)
-		if (strcasecmp(cp, keywords[i].name) == 0)
+	for (i = 0; keywords[i].name; i++) {
+		if (strcasecmp(cp, keywords[i].name) == 0) {
 			return keywords[i].opcode;
+		}
+	}
 
 	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s", filename, linenum, cp);
 	return oBadOption;
@@ -316,7 +304,7 @@ Advance to the next word
 t_firewall_ruleset *
 add_ruleset(const char rulesetname[])
 {
-	t_firewall_ruleset * ruleset;
+	t_firewall_ruleset *ruleset;
 
 	ruleset = get_ruleset(rulesetname);
 
@@ -337,7 +325,6 @@ add_ruleset(const char rulesetname[])
 	return ruleset;
 }
 
-
 /** @internal
 Parses an empty ruleset policy directive
 */
@@ -353,14 +340,13 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	while ((*ptr != '\0') && (!isblank(*ptr))) ptr++;
 	*ptr = '\0';
 
-
 	/* get the ruleset struct with this name; error if it doesn't exist */
 	debug(LOG_DEBUG, "Parsing EmptyRuleSetPolicy for %s", rulesetname);
 	ruleset = get_ruleset(rulesetname);
 	if (ruleset == NULL) {
 		debug(LOG_ERR, "Unrecognized FirewallRuleSet name: %s at line %d in %s", rulesetname, lineno, filename);
 		debug(LOG_ERR, "Exiting...");
-		exit(-1);
+		exit(1);
 	}
 
 	/* find next whitespace delimited word; this is policy name */
@@ -385,7 +371,7 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	} else {
 		debug(LOG_ERR, "Unknown EmptyRuleSetPolicy directive: %s at line %d in %s", policy, lineno, filename);
 		debug(LOG_ERR, "Exiting...");
-		exit(-1);
+		exit(1);
 	}
 
 	debug(LOG_DEBUG, "Set EmptyRuleSetPolicy for %s to %s", rulesetname, policy);
@@ -400,8 +386,8 @@ static void
 parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, int *linenum)
 {
 	char line[MAX_BUF], *p1, *p2;
-	int  opcode;
 	t_firewall_ruleset *ruleset;
+	int opcode;
 
 	/* find whitespace delimited word in ruleset string; this is its name */
 	p1 = strchr(rulesetname,' ');
@@ -414,7 +400,7 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 	if (ruleset == NULL) {
 		debug(LOG_ERR, "Unrecognized FirewallRuleSet name: %s", rulesetname);
 		debug(LOG_ERR, "Exiting...");
-		exit(-1);
+		exit(1);
 	}
 
 	/* Parsing the rules in the set */
@@ -437,7 +423,7 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 		if (p2[0] == '\0') {
 			debug(LOG_ERR, "FirewallRule incomplete on line %d in %s", *linenum, filename);
 			debug(LOG_ERR, "Exiting...");
-			exit(-1);
+			exit(1);
 		}
 		/* terminate first word, point past it */
 		*p2 = '\0';
@@ -460,7 +446,7 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 		default:
 			debug(LOG_ERR, "Bad option %s parsing FirewallRuleSet on line %d in %s", p1, *linenum, filename);
 			debug(LOG_ERR, "Exiting...");
-			exit(-1);
+			exit(1);
 			break;
 		}
 	}
@@ -470,7 +456,7 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 /** @internal
 Helper for parse_firewall_ruleset.  Parses a single rule in a ruleset
 */
-static int
+static void
 _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 {
 	int i;
@@ -508,7 +494,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 	} else {
 		debug(LOG_ERR, "Invalid rule type %s, expecting "
 			  "\"block\",\"drop\",\"allow\",\"log\" or \"ulog\"", token);
-		return -1;
+		exit(1);
 	}
 
 	/* Parse the remainder */
@@ -527,7 +513,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		if (protocol == NULL ||
 				!(strncmp(protocol, "tcp", 3) == 0 || strncmp(protocol, "udp", 3) == 0)) {
 			debug(LOG_ERR, "Port without tcp or udp protocol");
-			return -3; /*< Fail */
+			exit(1);
 		}
 		TO_NEXT_WORD(leftover, finished);
 		/* Get port now */
@@ -538,7 +524,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 				all_nums = 0; /*< No longer only digits or : */
 		if (!all_nums) {
 			debug(LOG_ERR, "Invalid port %s", port);
-			return -3; /*< Fail */
+			exit(1);
 		}
 	}
 
@@ -559,7 +545,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		if (strcmp(other_kw, "to") || finished) {
 			debug(LOG_ERR, "Invalid or unexpected keyword %s, "
 				  "expecting \"to\"", other_kw);
-			return -4; /*< Fail */
+			exit(1);
 		}
 
 		/* Get IP address/mask now */
@@ -572,7 +558,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 				all_nums = 0; /*< No longer only digits or . or / */
 		if (!all_nums) {
 			debug(LOG_ERR, "Invalid mask %s", mask);
-			return -5; /*< Fail */
+			exit(1);
 		}
 	}
 
@@ -603,8 +589,6 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 			tmp2 = tmp2->next;
 		tmp2->next = tmp;
 	}
-
-	return 1;
 }
 
 int
@@ -617,16 +601,16 @@ char *
 get_empty_ruleset_policy(const char *rulesetname)
 {
 	t_firewall_ruleset *rs;
+
 	rs = get_ruleset(rulesetname);
-	if (rs == NULL) return NULL;
-	return rs->emptyrulesetpolicy;
+	return rs ? rs->emptyrulesetpolicy : NULL;
 }
 
 
 t_firewall_ruleset *
 get_ruleset(const char ruleset[])
 {
-	t_firewall_ruleset	*tmp;
+	t_firewall_ruleset *tmp;
 
 	for (tmp = config.rulesets; tmp != NULL
 			&& strcmp(tmp->name, ruleset) != 0; tmp = tmp->next);
@@ -637,11 +621,10 @@ get_ruleset(const char ruleset[])
 t_firewall_rule *
 get_ruleset_list(const char *ruleset)
 {
-	t_firewall_ruleset	*tmp = get_ruleset(ruleset);
+	t_firewall_ruleset *tmp;
 
-	if (tmp == NULL) return NULL;
-
-	return (tmp->rules);
+	tmp = get_ruleset(ruleset);
+	return tmp ? tmp->rules : NULL;
 }
 
 /** @internal
@@ -682,6 +665,7 @@ config_read(const char *filename)
 	FILE *fd;
 	char line[MAX_BUF], *s, *p1, *p2;
 	int linenum = 0, opcode, value;
+	struct stat sb;
 
 	debug(LOG_INFO, "Reading configuration file '%s'", filename);
 
@@ -709,7 +693,7 @@ config_read(const char *filename)
 		if (p1[0] == '\0') {
 			debug(LOG_ERR, "Option %s requires argument on line %d in %s", s, linenum, filename);
 			debug(LOG_ERR, "Exiting...");
-			exit(-1);
+			exit(1);
 		}
 
 		/* terminate option, point past it */
@@ -723,27 +707,55 @@ config_read(const char *filename)
 		opcode = config_parse_opcode(s, filename, linenum);
 
 		switch(opcode) {
-		case oDaemon:
-			if (config.daemon == -1 && ((value = parse_boolean_value(p1)) != -1)) {
-				config.daemon = value;
-			}
-			break;
-		case oDebugLevel:
-			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d", p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
+		case oSessionTimeout:
+			if (sscanf(p1, "%d", &config.session_timeout) < 1 || config.session_timeout < 0) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
-		case oMaxClients:
-			if (sscanf(p1, "%d", &config.maxclients) < 1) {
+		case oSessionTimeoutBlock:
+			if (sscanf(p1, "%u", &config.session_timeout_block) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
+		case oSessionLimitBlock:
+			if (sscanf(p1, "%u", &config.session_limit_block) < 0) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oDaemon:
+			if (config.daemon == -1 && ((value = parse_boolean(p1)) != -1)) {
+				config.daemon = value;
+			}
+			break;
+		case oDebugLevel:
+			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < DEBUGLEVEL_MIN) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid levels are %d...%d.",
+					p1, s, linenum, filename, DEBUGLEVEL_MIN, DEBUGLEVEL_MAX);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			} else if (config.debuglevel > DEBUGLEVEL_MAX) {
+				config.debuglevel = DEBUGLEVEL_MAX;
+				debug(LOG_WARNING, "Invalid debug level. Set to maximum.");
+			}
+			break;
+		case oMaxClients:
+			if (sscanf(p1, "%d", &config.maxclients) < 1 || config.maxclients < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			break;
 		case oGatewayName:
 			config.gw_name = safe_strdup(p1);
+			break;
+		case oGatewayDomainName:
+			config.gw_domain = safe_strdup(p1);
 			break;
 		case oGatewayInterface:
 			config.gw_interface = safe_strdup(p1);
@@ -751,31 +763,33 @@ config_read(const char *filename)
 		case oGatewayIPRange:
 			config.gw_iprange = safe_strdup(p1);
 			break;
+		/* TODO: deprecate oGatewayAddress option */
 		case oGatewayAddress:
-			config.gw_address = safe_strdup(p1);
+		case oGatewayIP:
+			config.gw_ip = safe_strdup(p1);
 			break;
 		case oGatewayPort:
 			if (sscanf(p1, "%u", &config.gw_port) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
-		case oRemoteAuthenticatorAction:
-			config.remote_auth_action = safe_strdup(p1);
+		case oBinAuth:
+			config.binauth = safe_strdup(p1);
+			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
+				debug(LOG_ERR, "binauth program does not exist or is not executeable: %s", p1);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
 			break;
-		case oEnablePreAuth:
-			value = parse_boolean_value(p1);
-			if (value != - 1)
-				config.enable_preauth = value;
-			break;
-		case oBinVoucher:
-			config.bin_voucher = safe_strdup(p1);
-			break;
-		case oForceVoucher:
-			value = parse_boolean_value(p1);
-			if (value != - 1)
-				config.force_voucher = value;
+		case oPreAuth:
+			config.preauth = safe_strdup(p1);
+			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
+				debug(LOG_ERR, "preauth program does not exist or is not executeable: %s", p1);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
 			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
@@ -793,12 +807,14 @@ config_read(const char *filename)
 			parse_allowed_mac_list(p1);
 			break;
 		case oMACmechanism:
-			if (!strcasecmp("allow",p1)) config.macmechanism = MAC_ALLOW;
-			else if (!strcasecmp("block",p1)) config.macmechanism = MAC_BLOCK;
-			else {
+			if (!strcasecmp("allow", p1)) {
+				config.macmechanism = MAC_ALLOW;
+			} else if (!strcasecmp("block", p1)) {
+				config.macmechanism = MAC_BLOCK;
+			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oWebRoot:
@@ -809,188 +825,124 @@ config_read(const char *filename)
 		case oSplashPage:
 			config.splashpage = safe_strdup(p1);
 			break;
-		case oImagesDir:
-			config.imagesdir = safe_strdup(p1);
-			break;
-		case oPagesDir:
-			config.pagesdir = safe_strdup(p1);
+		case oStatusPage:
+			config.statuspage = safe_strdup(p1);
 			break;
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
+			break;
+		case oAuthIdleTimeout:
+			if (sscanf(p1, "%d", &config.auth_idle_timeout) < 1 || config.auth_idle_timeout < 0) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			break;
+		case oPreauthIdleTimeout:
+			if (sscanf(p1, "%d", &config.preauth_idle_timeout) < 1 || config.preauth_idle_timeout < 0) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
 			break;
 		case oNdsctlSocket:
 			free(config.ndsctl_sock);
 			config.ndsctl_sock = safe_strdup(p1);
 			break;
-		case oDecongestHttpdThreads:
-			if ((value = parse_boolean_value(p1)) != -1) {
-				config.decongest_httpd_threads = value;
-			} else {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oHttpdThreadThreshold:
-			if (sscanf(p1, "%d", &config.httpd_thread_threshold) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oHttpdThreadDelayMS:
-			if (sscanf(p1, "%d", &config.httpd_thread_delay_ms) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oClientIdleTimeout:
-			if (sscanf(p1, "%d", &config.clienttimeout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oClientForceTimeout:
-			if (sscanf(p1, "%d", &config.clientforceout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oPasswordAuthentication:
-			if ((value = parse_boolean_value(p1)) != -1) {
-				config.passwordauth = value;
-			} else {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oUsernameAuthentication:
-			if ((value = parse_boolean_value(p1)) != -1) {
-				config.usernameauth = value;
-			} else {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oPasswordAttempts:
-			if (sscanf(p1, "%d", &config.passwordattempts) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oUsername:
-			set_username(p1);
-			break;
-		case oPassword:
-			set_password(p1);
-			break;
 		case oSetMSS:
-			if ((value = parse_boolean_value(p1)) != -1) {
+			if ((value = parse_boolean(p1)) != -1) {
 				config.set_mss = value;
 			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oMSSValue:
 			if (sscanf(p1, "%d", &config.mss_value) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oTrafficControl:
-			if ((value = parse_boolean_value(p1)) != -1) {
+			if ((value = parse_boolean(p1)) != -1) {
 				config.traffic_control = value;
 			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oDownloadLimit:
-			if (sscanf(p1, "%d", &config.download_limit) < 1) {
+			if (sscanf(p1, "%d", &config.download_limit) < 1 || config.download_limit < 0) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oUploadLimit:
-			if (sscanf(p1, "%d", &config.upload_limit) < 1) {
+			if (sscanf(p1, "%d", &config.upload_limit) < 1 || config.upload_limit < 0) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
-		case oDownloadIMQ:
-			if (sscanf(p1, "%d", &config.download_imq) < 1) {
+		case oUploadIFB:
+			if(sscanf(p1, "%d", &config.upload_ifb) < 1 || config.upload_ifb < 0) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oUploadIMQ:
-			if (sscanf(p1, "%d", &config.upload_imq) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oFWMarkAuthenticated:
-			if (sscanf(p1, "%x", &config.FW_MARK_AUTHENTICATED) < 1 ||
-					config.FW_MARK_AUTHENTICATED == 0 ||
-					config.FW_MARK_AUTHENTICATED == config.FW_MARK_BLOCKED ||
-					config.FW_MARK_AUTHENTICATED == config.FW_MARK_TRUSTED) {
+			if (sscanf(p1, "%x", &config.fw_mark_authenticated) < 1 ||
+					config.fw_mark_authenticated == 0 ||
+					config.fw_mark_authenticated == config.fw_mark_blocked ||
+					config.fw_mark_authenticated == config.fw_mark_trusted) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oFWMarkBlocked:
-			if (sscanf(p1, "%x", &config.FW_MARK_BLOCKED) < 1 ||
-					config.FW_MARK_BLOCKED == 0 ||
-					config.FW_MARK_BLOCKED == config.FW_MARK_AUTHENTICATED ||
-					config.FW_MARK_BLOCKED == config.FW_MARK_TRUSTED) {
+			if (sscanf(p1, "%x", &config.fw_mark_blocked) < 1 ||
+					config.fw_mark_blocked == 0 ||
+					config.fw_mark_blocked == config.fw_mark_authenticated ||
+					config.fw_mark_blocked == config.fw_mark_trusted) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oFWMarkTrusted:
-			if (sscanf(p1, "%x", &config.FW_MARK_TRUSTED) < 1 ||
-					config.FW_MARK_TRUSTED == 0 ||
-					config.FW_MARK_TRUSTED == config.FW_MARK_AUTHENTICATED ||
-					config.FW_MARK_TRUSTED == config.FW_MARK_BLOCKED) {
+			if (sscanf(p1, "%x", &config.fw_mark_trusted) < 1 ||
+					config.fw_mark_trusted == 0 ||
+					config.fw_mark_trusted == config.fw_mark_authenticated ||
+					config.fw_mark_trusted == config.fw_mark_blocked) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oCheckInterval:
 			if (sscanf(p1, "%i", &config.checkinterval) < 1 || config.checkinterval < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oSyslogFacility:
 			if (sscanf(p1, "%d", &config.syslog_facility) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
-				exit(-1);
+				exit(1);
 			}
 			break;
 		case oBadOption:
 			debug(LOG_ERR, "Bad option %s on line %d in %s", s, linenum, filename);
 			debug(LOG_ERR, "Exiting...");
-			exit(-1);
+			exit(1);
 			break;
 		}
 	}
@@ -1004,18 +956,16 @@ config_read(const char *filename)
 Parses a boolean value from the config file
 */
 static int
-parse_boolean_value(char *line)
+parse_boolean(const char *line)
 {
 	if (strcasecmp(line, "no") == 0 ||
 			strcasecmp(line, "false") == 0 ||
-			strcmp(line, "0") == 0
-	   ) {
+			strcmp(line, "0") == 0) {
 		return 0;
 	}
 	if (strcasecmp(line, "yes") == 0 ||
 			strcasecmp(line, "true") == 0 ||
-			strcmp(line, "1") == 0
-	   ) {
+			strcmp(line, "1") == 0) {
 		return 1;
 	}
 
@@ -1025,43 +975,34 @@ parse_boolean_value(char *line)
 /* Parse a string to see if it is valid decimal dotted quad IP V4 format */
 int check_ip_format(const char *possibleip)
 {
-	unsigned int a1,a2,a3,a4;
-
-	return (sscanf(possibleip,"%u.%u.%u.%u",&a1,&a2,&a3,&a4) == 4
-			&& a1 < 256 && a2 < 256 && a3 < 256 && a4 < 256);
+	unsigned char buf[sizeof(struct in6_addr)];
+	return inet_pton(AF_INET, possibleip, buf) > 0;
 }
-
 
 /* Parse a string to see if it is valid MAC address format */
 int check_mac_format(const char possiblemac[])
 {
-	char hex2[3];
-	return
-		sscanf(possiblemac,
-			   "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
-			   hex2,hex2,hex2,hex2,hex2,hex2) == 6;
+	return ether_aton(possiblemac) != NULL;
 }
 
 int add_to_trusted_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC *p = NULL;
 
 	/* check for valid format */
 	if (!check_mac_format(possiblemac)) {
-		debug(LOG_NOTICE, "[%s] not a valid MAC address to trust", possiblemac);
-		return -1;
+		debug(LOG_WARNING, "[%s] is not a valid MAC address", possiblemac);
+		debug(LOG_WARNING, "[%s]  - please remove from trustedmac list in config file", possiblemac);
+		return 1;
 	}
-
-	mac = safe_malloc(18);
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.trustedmaclist; p != NULL; p = p->next) {
-		if (!strcasecmp(p->mac,mac)) {
+		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
-			free(mac);
 			return 1;
 		}
 	}
@@ -1072,7 +1013,6 @@ int add_to_trusted_mac_list(const char possiblemac[])
 	p->next = config.trustedmaclist;
 	config.trustedmaclist = p;
 	debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
-	free(mac);
 	return 0;
 }
 
@@ -1082,7 +1022,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
  */
 int remove_from_trusted_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
@@ -1092,33 +1032,28 @@ int remove_from_trusted_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* If empty list, nothing to do */
 	if (config.trustedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty trusted list", mac);
-		free(mac);
 		return -1;
 	}
 
 	/* Find MAC on the list, remove it */
 	for (p = &(config.trustedmaclist); *p != NULL; p = &((*p)->next)) {
-		if (!strcasecmp((*p)->mac,mac)) {
+		if (!strcasecmp((*p)->mac, mac)) {
 			/* found it */
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from trusted list", mac);
 			free(del);
-			free(mac);
 			return 0;
 		}
 	}
 
 	/* MAC was not on list */
 	debug(LOG_INFO, "MAC address [%s] not on  trusted list", mac);
-	free(mac);
 	return -1;
 }
 
@@ -1137,19 +1072,75 @@ void parse_trusted_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if (strlen(possiblemac)>0) add_to_trusted_mac_list(possiblemac);
+		if (strlen(possiblemac) > 0) {
+			if (add_to_trusted_mac_list(possiblemac) < 0) {
+				exit(1);
+			}
+		}
 	}
 
 	free(ptrcopyptr);
 }
 
+int is_blocked_mac(const char *mac)
+{
+	s_config *config;
+	t_MAC *block_mac;
+
+	config = config_get_config();
+
+	if (MAC_ALLOW != config->macmechanism) {
+		for (block_mac = config->blockedmaclist; block_mac != NULL; block_mac = block_mac->next) {
+			if (!strcmp(block_mac->mac, mac)) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+int is_allowed_mac(const char *mac)
+{
+	s_config *config;
+	t_MAC *allow_mac;
+
+	config = config_get_config();
+
+	if (MAC_BLOCK != config->macmechanism) {
+		for (allow_mac = config->allowedmaclist; allow_mac != NULL; allow_mac = allow_mac->next) {
+			if (!strcmp(allow_mac->mac, mac)) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+int is_trusted_mac(const char *mac)
+{
+	s_config *config;
+	t_MAC *trust_mac;
+
+	config = config_get_config();
+
+	// Is a client even recognized here?
+	for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
+		if (!strcmp(trust_mac->mac, mac)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
 
 /* Add given MAC address to the config's blocked mac list.
  * Return 0 on success, nonzero on failure
  */
 int add_to_blocked_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC *p = NULL;
 
 	/* check for valid format */
@@ -1164,15 +1155,12 @@ int add_to_blocked_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.blockedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac,mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on blocked list", mac);
-			free(mac);
 			return 1;
 		}
 	}
@@ -1183,7 +1171,6 @@ int add_to_blocked_mac_list(const char possiblemac[])
 	p->next = config.blockedmaclist;
 	config.blockedmaclist = p;
 	debug(LOG_INFO, "Added MAC address [%s] to blocked list", mac);
-	free(mac);
 	return 0;
 }
 
@@ -1193,7 +1180,7 @@ int add_to_blocked_mac_list(const char possiblemac[])
  */
 int remove_from_blocked_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
@@ -1209,33 +1196,28 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* If empty list, nothing to do */
 	if (config.blockedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty blocked list", mac);
-		free(mac);
 		return -1;
 	}
 
 	/* Find MAC on the list, remove it */
-	for (p = &(config.blockedmaclist); *p != NULL; p = &((*p)->next)) {
+	for (p = &config.blockedmaclist; *p != NULL; p = &((*p)->next)) {
 		if (!strcasecmp((*p)->mac,mac)) {
 			/* found it */
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from blocked list", mac);
 			free(del);
-			free(mac);
 			return 0;
 		}
 	}
 
 	/* MAC was not on list */
 	debug(LOG_INFO, "MAC address [%s] not on  blocked list", mac);
-	free(mac);
 	return -1;
 }
 
@@ -1254,7 +1236,11 @@ void parse_blocked_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if (strlen(possiblemac)>0) add_to_blocked_mac_list(possiblemac);
+		if (strlen(possiblemac) > 0) {
+			if (add_to_blocked_mac_list(possiblemac) < 0) {
+				exit(1);
+			}
+		}
 	}
 
 	free(ptrcopyptr);
@@ -1265,7 +1251,7 @@ void parse_blocked_mac_list(const char ptr[])
  */
 int add_to_allowed_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC *p = NULL;
 
 	/* check for valid format */
@@ -1280,15 +1266,12 @@ int add_to_allowed_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.allowedmaclist; p != NULL; p = p->next) {
-		if (!strcasecmp(p->mac,mac)) {
+		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on allowed list", mac);
-			free(mac);
 			return 1;
 		}
 	}
@@ -1299,7 +1282,6 @@ int add_to_allowed_mac_list(const char possiblemac[])
 	p->next = config.allowedmaclist;
 	config.allowedmaclist = p;
 	debug(LOG_INFO, "Added MAC address [%s] to allowed list", mac);
-	free(mac);
 	return 0;
 }
 
@@ -1309,7 +1291,7 @@ int add_to_allowed_mac_list(const char possiblemac[])
  */
 int remove_from_allowed_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
@@ -1325,33 +1307,28 @@ int remove_from_allowed_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* If empty list, nothing to do */
 	if (config.allowedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty allowed list", mac);
-		free(mac);
 		return -1;
 	}
 
 	/* Find MAC on the list, remove it */
 	for (p = &(config.allowedmaclist); *p != NULL; p = &((*p)->next)) {
-		if (!strcasecmp((*p)->mac,mac)) {
+		if (!strcasecmp((*p)->mac, mac)) {
 			/* found it */
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from allowed list", mac);
 			free(del);
-			free(mac);
 			return 0;
 		}
 	}
 
 	/* MAC was not on list */
 	debug(LOG_INFO, "MAC address [%s] not on  allowed list", mac);
-	free(mac);
 	return -1;
 }
 
@@ -1371,50 +1348,38 @@ void parse_allowed_mac_list(const char ptr[])
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
 		if (strlen(possiblemac) > 0) {
-			add_to_allowed_mac_list(possiblemac);
+			if (add_to_allowed_mac_list(possiblemac) < 0) {
+				exit(1);
+			}
 		}
 	}
 
 	free(ptrcopyptr);
 }
 
-
-
 /** Set the debug log level.  See syslog.h
  *  Return 0 on success.
  */
-int set_log_level(int level)
+int set_debuglevel(const char opt[])
 {
-	config.debuglevel = level;
-	return 0;
-}
+	char *end;
 
-/** Set the gateway password.
- *  Return 0 on success.
- */
-int set_password(const char s[])
-{
-	char *old = config.password;
-	if (s) {
-		config.password = safe_strdup(s);
-		if (old) free(old);
-		return 0;
+	if (opt == NULL || strlen(opt) == 0) {
+		return 1;
 	}
-	return 1;
-}
 
-/** Set the gateway username.
- *  Return 0 on success.
- */
-int set_username(const char s[])
-{
-	char *old = config.username;
-	if (s) {
-		config.username = safe_strdup(s);
-		if (old) free(old);
-		return 0;
+	// parse number
+	int level = strtol(opt, &end, 10);
+	if (end != (opt + strlen(opt))) {
+		return 1;
 	}
-	return 1;
+
+	if (level >= DEBUGLEVEL_MIN && level <= DEBUGLEVEL_MAX) {
+		config.debuglevel = level;
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 /** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */
@@ -1425,7 +1390,19 @@ config_validate(void)
 
 	if (missing_parms) {
 		debug(LOG_ERR, "Configuration is not complete, exiting...");
-		exit(-1);
+		exit(1);
+	}
+
+	if (config.preauth_idle_timeout > 0 && config.checkinterval >= (60 * config.preauth_idle_timeout) / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of preauth_idle_timeout (%ds)",
+			config.checkinterval, 60 * config.preauth_idle_timeout);
+		exit(1);
+	}
+
+	if (config.auth_idle_timeout > 0 && config.checkinterval >= (60 * config.auth_idle_timeout) / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of auth_idle_timeout (%ds)",
+			config.checkinterval, 60 * config.auth_idle_timeout);
+		exit(1);
 	}
 }
 

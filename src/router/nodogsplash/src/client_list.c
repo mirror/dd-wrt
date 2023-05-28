@@ -40,15 +40,14 @@
 #include "debug.h"
 #include "conf.h"
 #include "client_list.h"
-#include "firewall.h"
+#include "http_microhttpd.h"
+#include "fw_iptables.h"
 #include "util.h"
+
 
 /** Client counter */
 static int client_count = 0;
-static t_client **client_arr;
-
-/** Time last client added */
-static unsigned long int last_client_time = 0;
+static int client_id = 1;
 
 /** Global mutex to protect access to the client list */
 pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -56,7 +55,7 @@ pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 /** @internal
  * Holds a pointer to the first element of the list
  */
-t_client *firstclient = NULL;
+static t_client *firstclient = NULL;
 
 /** Return current length of the client list
  */
@@ -80,17 +79,8 @@ client_get_first_client(void)
 void
 client_list_init(void)
 {
-	s_config *config;
-	int i;
-
 	firstclient = NULL;
 	client_count = 0;
-
-	config = config_get_config();
-	client_arr = safe_malloc(config->maxclients * sizeof(t_client *));
-
-	for (i = 0; i < config->maxclients; i++)
-		client_arr[i] = NULL;
 }
 
 /** @internal
@@ -104,16 +94,14 @@ client_list_init(void)
  * @param token Token
  * @return Pointer to the client we just created
  */
-t_client *
-_client_list_append(const char ip[], const char mac[], const char token[])
+static t_client *
+_client_list_append(const char mac[], const char ip[])
 {
 	t_client *client, *prevclient;
-	int maxclients, i;
 	s_config *config;
 
 	config = config_get_config();
-	maxclients = config->maxclients;
-	if (client_count >= maxclients) {
+	if (client_count >= config->maxclients) {
 		debug(LOG_NOTICE, "Already list %d clients, cannot add %s %s", client_count, ip, mac);
 		return NULL;
 	}
@@ -129,27 +117,26 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client = safe_malloc(sizeof(t_client));
 	memset(client, 0, sizeof(t_client));
 
-	client->ip = safe_strdup(ip);
 	client->mac = safe_strdup(mac);
-	client->token = token ? safe_strdup(token) : NULL;
-	client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
-	client->counters.incoming = client->counters.incoming_history = 0;
-	client->counters.outgoing = client->counters.outgoing_history = 0;
-	last_client_time = time(NULL);
-	client->counters.last_updated = last_client_time;
-	client->added_time = last_client_time;
+	client->ip = safe_strdup(ip);
 
-	for (i = 0; i < maxclients; i++) {
-		if (client_arr[i])
-			continue;
-		break;
+	// Reset volatile fields
+	client_reset(client);
+
+	// Blocked or Trusted client do not trigger the splash page.
+	// They must access the splash or status page manually.
+	if (is_blocked_mac(mac)) {
+		client->fw_connection_state = FW_MARK_BLOCKED;
+	} else if(is_allowed_mac(mac) || is_trusted_mac(mac)) {
+		client->fw_connection_state = FW_MARK_TRUSTED;
+	} else {
+		client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
 	}
 
-	client_arr[i] = client;
-	client->idx = i;
+	client->id = client_id;
 
 	debug(LOG_NOTICE, "Adding %s %s token %s to client list",
-		  client->ip, client->mac, client->token ? client->token : "none");
+		client->ip, client->mac, client->token ? client->token : "none");
 
 	if (prevclient == NULL) {
 		firstclient = client;
@@ -157,25 +144,29 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 		prevclient->next = client;
 	}
 
+	client_id++;
 	client_count++;
 
 	return client;
 }
 
 /** @internal
- *  Allocate and return an authentication token.
- *  Caller must free.
- *  We just generate a random string of 8 hex digits,
- *  independent of ip and mac.
+ *  Reset volatile fields
  */
-char *
-_client_list_make_auth_token(const char ip[], const char mac[])
+void client_reset(t_client *client)
 {
-	char *token = NULL;
+	// Reset traffic counters
+	client->counters.incoming = 0;
+	client->counters.outgoing = 0;
+	client->counters.last_updated = time(NULL);
 
-	safe_asprintf(&token,"%04hx%04hx", rand16(), rand16());
+	// Reset seesion time
+	client->session_start = 0;
+	client->session_end = 0;
 
-	return token;
+	// Reset token
+	free(client->token);
+	safe_asprintf(&client->token, "%04hx%04hx", rand16(), rand16());
 }
 
 /**
@@ -185,10 +176,15 @@ _client_list_make_auth_token(const char ip[], const char mac[])
  *  Return NULL if no new client entry can be created.
  */
 t_client *
-client_list_add_client(const char ip[])
+client_list_add_client(const char mac[], const char ip[])
 {
 	t_client *client;
-	char *mac, *token;
+
+	if (!check_mac_format(mac)) {
+		/* Inappropriate format in IP address */
+		debug(LOG_NOTICE, "Illegal MAC format [%s]", mac);
+		return NULL;
+	}
 
 	if (!check_ip_format(ip)) {
 		/* Inappropriate format in IP address */
@@ -196,49 +192,82 @@ client_list_add_client(const char ip[])
 		return NULL;
 	}
 
-	if (!(mac = arp_get(ip))) {
-		/* We could not get their MAC address */
-		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
-		return NULL;
-	}
-
-	if ((client = client_list_find(ip, mac)) == NULL) {
-		token = _client_list_make_auth_token(ip,mac);  /* get a new token */
-		client = _client_list_append(ip, mac, token);
-		free(token);
+	client = client_list_find(mac, ip);
+	if (!client) {
+		client = _client_list_append(mac, ip);
 	} else {
 		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}
-	free(mac);
+
 	return client;
 }
 
-/** Finds a client by its IP and MAC, returns NULL if the client could not
- * be found
+/** Finds a client by its token, IP or MAC.
+ * A found client is guaranted to be unique.
  * @param ip IP we are looking for in the linked list
  * @param mac MAC we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
-client_list_find(const char ip[], const char mac[])
+client_list_find_by_any(const char mac[], const char ip[], const char token[])
+{
+	t_client *client = NULL;
+
+	if (!client && token) {
+		client = client_list_find_by_token(token);
+	}
+
+	if (!client && ip) {
+		client = client_list_find_by_ip(ip);
+	}
+
+	if (!client && mac) {
+		client = client_list_find_by_mac(mac);
+	}
+
+	return client;
+}
+
+t_client *
+client_list_find(const char mac[], const char ip[])
 {
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->ip, ip) && !strcmp(ptr->mac, mac))
+	while (ptr) {
+		if (!strcmp(ptr->mac, mac) && !strcmp(ptr->ip, ip)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
 	return NULL;
 }
 
+/**
+ * Finds a client by its IP address. Returns NULL if
+ * the client could not be found.
+ * @return Pointer to the client, or NULL if not found
+ */
+t_client *
+client_list_find_by_id(const unsigned id)
+{
+	t_client *ptr;
+
+	ptr = firstclient;
+	while (ptr) {
+		if (ptr->id == id) {
+			return ptr;
+		}
+		ptr = ptr->next;
+	}
+
+	return NULL;
+}
 
 /**
- * Finds a  client by its IP, returns NULL if the client could not
- * be found
- * @param ip IP we are looking for in the linked list
+ * Finds a client by its IP address. Returns NULL if
+ * the client could not be found.
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
@@ -247,9 +276,10 @@ client_list_find_by_ip(const char ip[])
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->ip, ip))
+	while (ptr) {
+		if (!strcmp(ptr->ip, ip)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
@@ -257,9 +287,8 @@ client_list_find_by_ip(const char ip[])
 }
 
 /**
- * Finds a client by its MAC, returns NULL if the client could not
- * be found
- * @param mac MAC we are looking for in the linked list
+ * Finds a client by its MAC address. Returns NULL if
+ * the client could not be found.
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
@@ -268,17 +297,19 @@ client_list_find_by_mac(const char mac[])
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->mac, mac))
+	while (ptr) {
+		if (!strcmp(ptr->mac, mac)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
 	return NULL;
 }
 
-/** Finds a client by its token
- * @param token Token we are looking for in the linked list
+/**
+ * Finds a client by token. Returns NULL if
+ * the client could not be found.
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
@@ -287,9 +318,10 @@ client_list_find_by_token(const char token[])
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->token, token))
+	while (ptr) {
+		if (!strcmp(ptr->token, token)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
@@ -302,20 +334,17 @@ client_list_find_by_token(const char token[])
  * proper order.
  * @param client Points to the client to be freed
  */
-void
-_client_list_free_node(t_client * client)
+static void
+_client_list_free_node(t_client *client)
 {
-	if (client->mac != NULL)
+	if (client->mac)
 		free(client->mac);
 
-	if (client->ip != NULL)
+	if (client->ip)
 		free(client->ip);
 
-	if (client->token != NULL)
+	if (client->token)
 		free(client->token);
-
-	if (client_arr[client->idx] == client)
-		client_arr[client->idx] = NULL;
 
 	free(client);
 }
@@ -328,7 +357,7 @@ _client_list_free_node(t_client * client)
  * @param client Points to the client to be deleted
  */
 void
-client_list_delete(t_client * client)
+client_list_delete(t_client *client)
 {
 	t_client *ptr;
 
