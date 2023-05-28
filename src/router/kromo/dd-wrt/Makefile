@@ -1035,6 +1035,8 @@ ifneq ($(CONFIG_ATH9K),y)
 endif
 
 ifneq ($(CONFIG_NOCAT),y)
+	rm -f $(INSTALLDIR)/www/images/splash.jpg
+	rm -f $(INSTALLDIR)/www/splash.css
 	rm -f $(INSTALLDIR)/www/splash.html
 	rm -f $(INSTALLDIR)/www/status.html
 endif
