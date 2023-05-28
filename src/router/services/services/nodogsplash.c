@@ -86,10 +86,6 @@ int mk_nodog_conf(void)
 		fprintf(fp, "AllowedMACList\t%s\n", nvram_safe_get("ND_MACWhiteList"));
 
 	fclose(fp);
-	/*
-	 * end BPsmythe 
-	 */
-	fprintf(stderr, "Wrote: %s\n", NODOG_CONF);
 	return 0;
 }
 
@@ -100,12 +96,8 @@ void start_splashd(void)
 		return;
 
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
-	stop_firewall();
-	stop_wland();
-	start_firewall();
-	start_wland();
 	mk_nodog_conf();
-	eval("nodogsplash");
+	eval("nodogsplash", "-c", NODOG_CONF);
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
 }
@@ -113,12 +105,7 @@ void start_splashd(void)
 void stop_splashd(void)
 {
 
-	if (stop_process("nodogsplash", "nodogsplash daemon")) {
-		stop_firewall();	// evil
-		stop_wland();
-		start_firewall();
-		start_wland();
-	}
+	stop_process("nodogsplash", "nodogsplash daemon");
 	return;
 }
 
