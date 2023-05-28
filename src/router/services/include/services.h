@@ -201,7 +201,7 @@ extern void start_wan_redial(void);
 extern void wan_done(char *ifname);
 extern void stop_wan(void);
 extern void start_hotplug_net(void);
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 extern void start_splashd(void);
 extern void stop_splashd(void);
 #endif
@@ -219,7 +219,7 @@ char *enable_dtag_vlan(int status);
 void start_config_vlan(void);
 void start_setup_vlans(void);
 void start_set_routes(void);
-int mk_nocat_conf(void);
+int mk_nodog_conf(void);
 
 void start_wifidog(void);
 void stop_wifidog(void);
