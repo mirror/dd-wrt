@@ -1,0 +1,45 @@
+.Dd June 21, 2013
+.Dt LIBMICROHTTPD 3
+.Os
+.Sh NAME
+.Nm libmicrohttpd
+.Nd library for embedding HTTP servers
+.Sh LIBRARY
+.Lb libmicrohttpd
+.Sh SYNOPSIS
+.In microhttpd.h
+.Sh DESCRIPTION
+GNU libmicrohttpd (short MHD) allows applications to easily integrate the functionality of a simple HTTP server.  MHD is a GNU package.
+.sp
+The details of the API are described in comments in the header file, a detailed reference documentation in Texinfo, a tutorial, and in brief on the MHD webpage.
+.Sh LEGAL NOTICE
+libmicrohttpd is released under both the LGPL Version 2.1 or higher and the GNU GPL with eCos extension.  For details on both licenses please read the respective appendix in the Texinfo manual.
+.Sh FILES
+.Bl -tag -width /etc/ttys -compact
+.It Pa microhttpd.h
+libmicrohttpd include file
+.It Pa libmicrohttpd.so
+libmicrohttpd library
+.El
+.Sh SEE ALSO
+.Xr curl 1 ,
+.Xr libcurl 3 ,
+info libmicrohttpd
+.Sh AUTHORS
+GNU
+.Nm
+was originally designed by
+.An -nosplit
+.An Christian Grothoff Aq Mt christian@grothoff.org
+and
+.An Chris GauthierDickey Aq Mt chrisg@cs.du.edu Ns .
+The original implementation was done by
+.An Daniel Pittman Aq Mt depittman@gmail.com
+and Christian Grothoff.
+SSL/TLS support was added by Sagie Amir using code from GnuTLS.  See the AUTHORS file in the distribution for a more detailed list of contributors.
+.Sh AVAILABILITY
+You can obtain the latest version from
+.Lk https://www.gnu.org/software/libmicrohttpd/ Ns .
+.Sh BUGS
+Report bugs by using
+.Lk https://gnunet.org/bugs/ "Mantis" Ns .

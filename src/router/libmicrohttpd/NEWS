@@ -1,0 +1,255 @@
+Sun 26 Dec 2021 20:30:00 MSK
+Released GNU libmicrohttpd 0.9.75 -EG
+
+    This is a correction release.
+    The main improvement is the implementation of workaround for some
+    OSes (like OpenBSD 7) where "monotonic" clock may jump back. Now
+    MHD is able to automatically detect such situation and recover if
+    the jump is small. This workaround is needed with increased
+    accuracy of connection timeout introduced in previous version, as
+    with lower accuracy (v0.9.73 and before) these jumpbacks were
+    unnoticeable.
+    Other changes: fixed some compiler, Makefile, and configure
+    warnings on specific platforms; one test further improved.
+
+    -- Evgeny Grin (Karlson2k)
+
+
+Sun 19 Dec 2021 18:30:00 MSK
+Released GNU libmicrohttpd 0.9.74
+
+    This release brings a lot of fixes and improvements, and
+    important new features.
+    The most significant addition is the new experimental
+    implementation of WebSockets contributed by David Gausmann. This
+    implementation is not fully tested yet so currently it is disabled
+    by default.
+    Other changes include a lot of improvements and clarifications
+    in doxy comments in microhttpd.h header file, improved compliance
+    with the RFC HTTP specifications, the new implementation of reply
+    header forming, the new implementation of request chunked encoding
+    parsing, new automatic error replies, internal optimisations, and
+    many important fixes, including fixes for long-standing bugs.
+
+    More detailed list of notable changes:
+
+    API changes:
+    + Added new function MHD_get_reason_phrase_len_for().
+    + Added MHD_CONNECTION_INFO_HTTP_STATUS type of information
+      queried by MHD_get_connection_info().
+    + Added new response flag MHD_RF_SEND_KEEP_ALIVE_HEADER to force
+      sending of "keep-alive" header even if not required by RFC.
+    + Added new response creation function
+      MHD_create_response_from_buffer_with_free_callback_cls() with
+      custom cleanup callback.
+    + Added new response flag MHD_RF_HTTP_1_0_COMPATIBLE_STRICT with
+      the same functionality as existing MHD_RF_HTTP_VERSION_1_0_ONLY
+      flag. The old flag will be deprecated.
+    + Added new response flag MHD_RF_HTTP_1_0_SERVER with the same
+      functionality as existing MHD_RF_HTTP_VERSION_1_0_RESPONSE flag.
+      The old flag will be deprecated.
+
+    New features:
+    + Added experimental WebSockets extension with separate header.
+      Disabled by default as it is not fully tested yet.
+    + Added '--enable-sanitizers[=address,undefined,leak,user-poison]'
+      configure parameter (instead of '--enable-sanitizer'),
+      implemented custom memory poisoning for memory pools.
+
+    Improvements and enhancements:
+    * Doxy function descriptions was corrected, clarified, extended,
+      and improved. Now it should be much easier to learn MHD just by
+      reading the headers.
+    * Completely rewritten reply header forming. New implementation is
+      more robust, simpler maintainable and expandable, and better
+      follows RFC HTTP specifications.
+    * Performance improvements: now HTTP version and request method are
+      decoded one time only (previously MHD used string comparison many
+      times during processing the data).
+    * Rewritten request chunked payload decoding. The new
+      implementation better conforms to the HTTP RFC, detects format
+      problems earlier, replies to the clients with description of
+      detected problems, handles untypical (but syntactically correct)
+      values properly.
+    * Added special replies for wrong/unsupported HTTP versions in
+      requests, broken HTTP chunked encoding in requests,
+    * As required by HTTP RFC, added automatic error replies if client
+      used broken chunked encoding, too large chunk size, too large
+      payload size, or broken Content-Length header.
+    * Optimized connection's memory pool handling.
+    * Changed timeout precision from one second to one millisecond.
+    * Added some checks for incorrect user data, reporting problems in
+      MHD log.
+    * Improved performance of hash calculations functions by using
+      compiler built-ins (if available).
+    * Implemented SHA-1 calculations (required for WebSockets).
+    * Added universal MSVC project that works with any (sufficiently
+      new) version of MSVC.
+    * Developed simple HTTP client to test MHD under very special
+      conditions.
+    * Implemented 45 new tests.
+    * Improved existing tests to test more aspects of MHD.
+    * Added check for correct results of system and libcurl functions.
+    * Response headers are checked during forming of responses.
+    * HTTPS tests were improved.
+    * Added rebuild on W32 of all required files if files are missing.
+    * Many internal optimisations and improvements.
+
+    Functionality changes:
+    * Keep-alive header is omitted by default for HTTP/1.1 connections.
+      Use of header can be enforced by response flag.
+    * Chunked encoding is used for HTTP/1.1 non-keep-alive connections
+      for responses with unknown size. Previously MHD used "indication
+      of the end of the response by closing connection" in such cases,
+      however it is not correct for HTTP/1.1 connections as per HTTP
+      RFC.
+    * As required by HTTP RFC, use HTTP/1.1 version instead of HTTP/1.0
+      in reply headers when client is HTTP/1.0 . HTTP/1.0 version can
+      be enforced by response flag.
+    * User response headers are used in replies in the same order as
+      was added by application.
+    * Allowed tab characters in response header values.
+    * All custom "Connection:" response headers are automatically
+      combined into single "Connection:" header.
+    * "keep-alive" token silently dropped from custom "Connection:"
+      response header. "Keep-alive" cannot be enforced and used
+      automatically if possible.
+    * Allow tab character in custom response header value.
+    * Disallow space character in custom response header value.
+    * Do not allow responses with 1xx codes for HTTP/1.0 requests.
+    * Detected and reported incorrect "Upgrade" responses.
+    * W32 targets are changed to Vista+ by default. XP is supported
+      still.
+
+    Fixes:
+    # Fixed short busy-waiting (up to one second) when connection is
+      going to be expired and closed.
+    # Fixed handling of errors during start of new connection, fixed
+      inability to accept new connections in thread-per-connection mode
+      due to the missing decrement of number of daemon's connections if
+      start of new thread is failed.
+    # Fixed incorrect parsing of LFLF, LFCR, CRCR, and bare CR as
+      single linefeed in request header and request chunked payload.
+      Now only CRLF or bare LF are recognized as linefeed.
+    # Fixed response chunked encoding handling. Now it works properly
+      with non-keep-alive connection, with fixed size replies (if
+      chunked was enforced by header), and in other situations.
+    # Other fixes for chunked replies.
+    # Fixed handling of custom connection timeout in thread-per-
+      connection mode.
+    # Fixed wrongly used MHD_REQUEST_TERMINATED_COMPLETED_OK code for
+      application notification when MHD_REQUEST_TERMINATED_WITH_ERROR
+      code must be used.
+    # Fixed code MHD_REQUEST_TERMINATED_READ_ERROR not reported (code
+      MHD_REQUEST_TERMINATED_WITH_ERROR was incorrectly used instead).
+    # Fixed handling of request chunked encoding with untypical
+      formatting.
+    # Fixed processing of last part of hex-encoded values under
+      certain conditions.
+    # Fixed value returned for MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE.
+    # Fixed returned value for MHD_FEATURE_AUTOSUPPRESS_SIGPIPE on W32,
+      now it is MHD_YES as W32 does not need SIGPIPE suppression.
+    # Fixed portability of bitwise NOT for enums values.
+    # Fixed SHA-256 and MD5 calculations with unaligned data.
+    # Fixed incorrect caseless matching for HTTP version.
+    # Fixed incorrect caseless matching for request method.
+    # Fixed compatibility with old GnuTLS versions.
+    # Fixed compiler warnings on 32-bits platforms.
+    # Fixed blocking sockets setting in tests and examples for W32.
+    # Fixed examples to really use libmagic if present.
+    # HTTPS tests were fixed.
+    # Fixed libcurl test with case-insensitive match for HTTP methods,
+      method names must use case-sensitive match.
+    # Fixed tests compatibility with old libcurl versions.
+    # Fixed build on W32 with llvm-dlltool (this tool is too 
+      oversimplified)
+
+    -- Evgeny Grin (Karlson2k)
+
+
+Sun 25 Apr 2021 14:00:00 MSK
+Released GNU libmicrohttpd 0.9.73
+
+    This release brings new features, improvements, and a few fixes.
+    The most important addition is the new function for vector-backed
+    responses, based on the patch contributed by NASA engineers.
+    Other changes include compatibility with autoconf 2.70+, improved
+    testsuite compatibility with CI systems, fixed and improved MSVC
+    builds, and implementation of ALPN support.
+
+    More detailed list of notable changes:
+
+    API changes:
+    + Added new function MHD_create_response_from_iovec(), based on the
+      patch provided by Lawrence Sebald and Damon N. Earp from NASA.
+    + Added MHD_OPTION_SIGPIPE_HANDLED_BY_APP daemon option.
+    + Added new function MHD_run_wait().
+    + Added MHD_OPTION_TLS_NO_ALPN to disable usage of ALPN even if
+      it is supported by TLS library.
+
+    New features:
+    + Added '--enable-heavy-tests' configure parameter (disabled by
+      default).
+    + Implemented support for ALPN.
+
+    Improvements and enhancements:
+    * Return timeout of zero also for connections awaiting cleanup.
+    * Compatibility with autoconf >=2.70, used new autoconf features.
+    * Warn user when custom logger option is not the first option.
+    * Added information to the header about minimal MHD version when
+      particular symbols were introduced.
+    * Updated test certificates to be compatible with modern browsers.
+    * Added on-fly detection of UNIX domain sockets and pipes, MHD does
+      not try to use TCP/IP-specific socket options on them.
+    * Report more detailed error description in the MHD log for send
+      and receive errors.
+    * Enabled bind port autodetection for MSVC builds.
+
+    Fixes:
+    # Fix PostProcessor to always properly stop iteration when
+      application callback tells it to do so.
+    # Fixed MD5 digest authorization broken when compiled without
+      variable length arrays support (notably with MSVC).
+    # Fixed detection of type of send errors on W32.
+
+    -- Evgeny Grin (Karlson2k)
+
+
+Mon 28 Dec 2020 21:36:00 MSK
+Released GNU libmicrohttpd 0.9.72
+
+    This release is mostly a bugfix release, with greatly improved
+    compatibility with various OSes/kernels, including FreeBSD, Windows,
+    OpenBSD, NetBSD, Darwin (macOS), Solaris. Performance is improved,
+    especially with HTTPS connections and stay-alive HTTP connections.
+
+    Notable changes since version 0.9.71:
+
+    API changes:
+    + New function MHD_create_response_from_pipe()
+
+    Improvements and enhancements:
+    * Fully rewritten code for buffering/pushing from kernel network buffers
+      for compatibility with various OSes. Reduced number of additional
+      sys-calls, network is better utilized, responses are delivered faster.
+    * Restored optimal sendfile() usage on FreeBSD.
+    * MHD now takes care about SIGPIPE handling by blocking it in internal
+      threads and avoiding functions (like sendfile()) that could generate
+      SIGPIPE when blocking of this signal is not possible.
+
+    Fixes:
+    # Fixed crash in PostProcessor.
+    # Fixed several resources leaks in corner cases.
+    # Improved thread sync, thread safety and fixed one use-after-free under
+      special conditions during stopping of daemon.
+    # Updated HTTP status codes, header names and methods from the
+      registries.
+    # Fixed functioning without listen socket and with internal threads.
+    # Fixed streaming of chunked responses for both HTTP and HTTPS.
+    # Various compatibility fixes.
+
+    -- Evgeny Grin (Karlson2k)
+
+
+Tue Jan  9 20:52:48 MST 2007
+	Project posted.
