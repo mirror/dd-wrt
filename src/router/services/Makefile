@@ -1806,19 +1806,9 @@ CFLAGS_EXTRA += -DHAVE_WOL
 OBJS += wol.o
 endif
 
-
 ifeq ($(CONFIG_NOCAT),y)
-ifeq ($(ARCHITECTURE),broadcom)
-ifneq ($(CONFIG_BCMMODERN),y)
-OBJS += nocat.o
-else
 CFLAGS_EXTRA += -DHAVE_NODOG
 OBJS += nodogsplash.o
-endif
-else
-CFLAGS_EXTRA += -DHAVE_NODOG
-OBJS += nodogsplash.o
-endif
 endif
 
 ifeq ($(CONFIG_SER),y)
