@@ -71,7 +71,7 @@ int mk_nodog_conf(void)
 	fprintf(fp, "WebRoot\t%s\n", nvram_safe_get("ND_DocumentRoot"));
 	fprintf(fp, "StatusPage\t%s\n", nvram_default_get("ND_StatusPage", "status.html"));
 	fprintf(fp, "SplashPage\t%s\n", nvram_default_get("ND_SplashPage", "splash.html"));
-	if (*nvram_safe_get("ND_HomePage") && nvram_match(ND_ForcedRedirect, "1"))
+	if (*nvram_safe_get("ND_HomePage") && nvram_match("ND_ForcedRedirect", "1"))
 		fprintf(fp, "RedirectURL\t%s\n", nvram_safe_get("ND_HomePage"));
 
 	fprintf(fp, "GatewayPort\t%s\n", nvram_default_get("ND_GatewayPort", "2050"));

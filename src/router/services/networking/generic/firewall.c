@@ -3727,6 +3727,10 @@ void start_firewall(void)
 #ifdef HAVE_SFE
 	start_sfe();
 #endif
+#ifdef HAVE_DOG
+	start_splashd();
+#endif
+	
 	cprintf("ready");
 	cprintf("done\n");
 #ifdef HAVE_SYSCTL_EDIT
