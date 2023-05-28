@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 2000, 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2002-2022 Wayne Davison
+ * Copyright (C) 2002-2023 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 extern int module_id;
 extern int local_server;
 extern int sanitize_paths;
+extern int trust_sender_args;
+extern int trust_sender_filter;
 extern unsigned int module_dirlen;
 extern filter_rule_list filter_list;
 extern filter_rule_list daemon_filter_list;
@@ -64,6 +66,7 @@ int preserve_atimes = 0;
 int preserve_crtimes = 0;
 int omit_dir_times = 0;
 int omit_link_times = 0;
+int trust_sender = 0;
 int update_only = 0;
 int open_noatime = 0;
 int cvs_exclude = 0;
@@ -197,6 +200,7 @@ int remote_option_cnt = 0;
 const char **remote_options = NULL;
 const char *checksum_choice = NULL;
 const char *compress_choice = NULL;
+static const char *empty_argv[1];
 
 int quiet = 0;
 int output_motd = 1;
@@ -293,7 +297,7 @@ static struct output_struct debug_words[COUNT_DEBUG+1] = {
 	DEBUG_WORD(DELTASUM, W_SND|W_REC, "Debug delta-transfer checksumming (levels 1-4)"),
 	DEBUG_WORD(DUP, W_REC, "Debug weeding of duplicate names"),
 	DEBUG_WORD(EXIT, W_CLI|W_SRV, "Debug exit events (levels 1-3)"),
-	DEBUG_WORD(FILTER, W_SND|W_REC, "Debug filter actions (levels 1-2)"),
+	DEBUG_WORD(FILTER, W_SND|W_REC, "Debug filter actions (levels 1-3)"),
 	DEBUG_WORD(FLIST, W_SND|W_REC, "Debug file-list operations (levels 1-4)"),
 	DEBUG_WORD(FUZZY, W_REC, "Debug fuzzy scoring (levels 1-2)"),
 	DEBUG_WORD(GENR, W_REC, "Debug generator functions"),
@@ -785,9 +789,12 @@ static struct poptOption long_options[] = {
   {"no-from0",         0,  POPT_ARG_VAL,    &eol_nulls, 0, 0, 0},
   {"old-args",         0,  POPT_ARG_NONE,   0, OPT_OLD_ARGS, 0, 0},
   {"no-old-args",      0,  POPT_ARG_VAL,    &old_style_args, 0, 0, 0},
-  {"protect-args",    's', POPT_ARG_VAL,    &protect_args, 1, 0, 0},
+  {"secluded-args",   's', POPT_ARG_VAL,    &protect_args, 1, 0, 0},
+  {"no-secluded-args", 0,  POPT_ARG_VAL,    &protect_args, 0, 0, 0},
+  {"protect-args",     0,  POPT_ARG_VAL,    &protect_args, 1, 0, 0},
   {"no-protect-args",  0,  POPT_ARG_VAL,    &protect_args, 0, 0, 0},
   {"no-s",             0,  POPT_ARG_VAL,    &protect_args, 0, 0, 0},
+  {"trust-sender",     0,  POPT_ARG_VAL,    &trust_sender, 1, 0, 0},
   {"numeric-ids",      0,  POPT_ARG_VAL,    &numeric_ids, 1, 0, 0 },
   {"no-numeric-ids",   0,  POPT_ARG_VAL,    &numeric_ids, 0, 0, 0 },
   {"usermap",          0,  POPT_ARG_STRING, 0, OPT_USERMAP, 0, 0 },
@@ -946,7 +953,7 @@ static void set_refuse_options(void)
 		if (!am_daemon
 		 || op->shortName == 'e' /* Required for compatibility flags */
 		 || op->shortName == '0' /* --from0 just modifies --files-from, so refuse that instead (or not) */
-		 || op->shortName == 's' /* --protect-args is always OK */
+		 || op->shortName == 's' /* --secluded-args is always OK */
 		 || op->shortName == 'n' /* --dry-run is always OK */
 		 || strcmp("iconv", longName) == 0
 		 || strcmp("no-iconv", longName) == 0
@@ -1341,7 +1348,7 @@ char *alt_dest_opt(int type)
  **/
 int parse_arguments(int *argc_p, const char ***argv_p)
 {
-	static poptContext pc;
+	poptContext pc;
 	const char *arg, **argv = *argv_p;
 	int argc = *argc_p;
 	int opt, want_dest_type;
@@ -1361,10 +1368,6 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 
 	/* TODO: Call poptReadDefaultConfig; handle errors. */
 
-	/* The context leaks in case of an error, but if there's a
-	 * problem we always exit anyhow. */
-	if (pc)
-		poptFreeContext(pc);
 	pc = poptGetContext(RSYNC_NAME, argc, argv, long_options, 0);
 	if (!am_server) {
 		poptReadDefaultConfig(pc, 0);
@@ -1407,7 +1410,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				strlcpy(err_buf,
 					"Attempt to hack rsync thwarted!\n",
 					sizeof err_buf);
-				return 0;
+				goto cleanup;
 			}
 #ifdef ICONV_OPTION
 			iconv_opt = NULL;
@@ -1453,7 +1456,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			if (tmpdir && strlen(tmpdir) >= MAXPATHLEN - 10) {
 				snprintf(err_buf, sizeof err_buf,
 					 "the --temp-dir path is WAY too long.\n");
-				return 0;
+				goto cleanup;
 			}
 
 			if (!daemon_opt) {
@@ -1463,8 +1466,16 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				exit_cleanup(RERR_SYNTAX);
 			}
 
-			*argv_p = argv = poptGetArgs(pc);
-			*argc_p = argc = count_args(argv);
+			argv = poptGetArgs(pc);
+			argc = count_args(argv);
+			if (!argc) {
+				*argv_p = empty_argv;
+				*argc_p = 0;
+			} else if (poptDupArgv(argc, argv, argc_p, argv_p) != 0)
+				out_of_memory("parse_arguments");
+			argv = *argv_p;
+			poptFreeContext(pc);
+
 			am_starting_up = 0;
 			daemon_opt = 0;
 			am_daemon = 1;
@@ -1519,7 +1530,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		case 'a':
 			if (refused_archive_part) {
 				create_refuse_error(refused_archive_part);
-				return 0;
+				goto cleanup;
 			}
 			if (!recurse) /* preserve recurse == 2 */
 				recurse = 1;
@@ -1589,7 +1600,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		case 'P':
 			if (refused_partial || refused_progress) {
 				create_refuse_error(refused_partial ? refused_partial : refused_progress);
-				return 0;
+				goto cleanup;
 			}
 			do_progress = 1;
 			keep_partial = 1;
@@ -1624,7 +1635,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			if (*arg != '-') {
 				snprintf(err_buf, sizeof err_buf,
 					"Remote option must start with a dash: %s\n", arg);
-				return 0;
+				goto cleanup;
 			}
 			if (remote_option_cnt+2 >= remote_option_alloc) {
 				remote_option_alloc += 16;
@@ -1666,27 +1677,27 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			ssize_t size;
 			arg = poptGetOptArg(pc);
 			if ((size = parse_size_arg(arg, 'b', "block-size", 0, max_blength, False)) < 0)
-				return 0;
+				goto cleanup;
 			block_size = (int32)size;
 			break;
 		}
 
 		case OPT_MAX_SIZE:
 			if ((max_size = parse_size_arg(max_size_arg, 'b', "max-size", 0, -1, False)) < 0)
-				return 0;
+				goto cleanup;
 			max_size_arg = strdup(do_big_num(max_size, 0, NULL));
 			break;
 
 		case OPT_MIN_SIZE:
 			if ((min_size = parse_size_arg(min_size_arg, 'b', "min-size", 0, -1, False)) < 0)
-				return 0;
+				goto cleanup;
 			min_size_arg = strdup(do_big_num(min_size, 0, NULL));
 			break;
 
 		case OPT_BWLIMIT: {
 			ssize_t size = parse_size_arg(bwlimit_arg, 'K', "bwlimit", 512, -1, True);
 			if (size < 0)
-				return 0;
+				goto cleanup;
 			bwlimit_arg = strdup(do_big_num(size, 0, NULL));
 			bwlimit = (size + 512) / 1024;
 			break;
@@ -1715,7 +1726,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				snprintf(err_buf, sizeof err_buf,
 					"ERROR: the %s option conflicts with the %s option\n",
 					alt_dest_opt(want_dest_type), alt_dest_opt(0));
-				return 0;
+				goto cleanup;
 			}
 			alt_dest_type = want_dest_type;
 
@@ -1723,7 +1734,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				snprintf(err_buf, sizeof err_buf,
 					"ERROR: at most %d %s args may be specified\n",
 					MAX_BASIS_DIRS, alt_dest_opt(0));
-				return 0;
+				goto cleanup;
 			}
 			/* We defer sanitizing this arg until we know what
 			 * our destination directory is going to be. */
@@ -1736,7 +1747,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				snprintf(err_buf, sizeof err_buf,
 					"Invalid argument passed to --chmod (%s)\n",
 					arg);
-				return 0;
+				goto cleanup;
 			}
 			break;
 
@@ -1755,11 +1766,11 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				if (usermap_via_chown) {
 					snprintf(err_buf, sizeof err_buf,
 						"--usermap conflicts with prior --chown.\n");
-					return 0;
+					goto cleanup;
 				}
 				snprintf(err_buf, sizeof err_buf,
 					"You can only specify --usermap once.\n");
-				return 0;
+				goto cleanup;
 			}
 			usermap = (char *)poptGetOptArg(pc);
 			usermap_via_chown = False;
@@ -1771,11 +1782,11 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				if (groupmap_via_chown) {
 					snprintf(err_buf, sizeof err_buf,
 						"--groupmap conflicts with prior --chown.\n");
-					return 0;
+					goto cleanup;
 				}
 				snprintf(err_buf, sizeof err_buf,
 					"You can only specify --groupmap once.\n");
-				return 0;
+				goto cleanup;
 			}
 			groupmap = (char *)poptGetOptArg(pc);
 			groupmap_via_chown = False;
@@ -1794,11 +1805,11 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 					if (!usermap_via_chown) {
 						snprintf(err_buf, sizeof err_buf,
 							"--chown conflicts with prior --usermap.\n");
-						return 0;
+						goto cleanup;
 					}
 					snprintf(err_buf, sizeof err_buf,
 						"You can only specify a user-affecting --chown once.\n");
-					return 0;
+					goto cleanup;
 				}
 				if (asprintf(&usermap, "*:%.*s", len, chown) < 0)
 					out_of_memory("parse_arguments");
@@ -1810,11 +1821,11 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 					if (!groupmap_via_chown) {
 						snprintf(err_buf, sizeof err_buf,
 							"--chown conflicts with prior --groupmap.\n");
-						return 0;
+						goto cleanup;
 					}
 					snprintf(err_buf, sizeof err_buf,
 						"You can only specify a group-affecting --chown once.\n");
-					return 0;
+					goto cleanup;
 				}
 				if (asprintf(&groupmap, "*:%s", arg) < 0)
 					out_of_memory("parse_arguments");
@@ -1842,7 +1853,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			snprintf(err_buf,sizeof(err_buf),
 				 "ACLs are not supported on this %s\n",
 				 am_server ? "server" : "client");
-			return 0;
+			goto cleanup;
 #endif
 
 		case 'X':
@@ -1853,7 +1864,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			snprintf(err_buf,sizeof(err_buf),
 				 "extended attributes are not supported on this %s\n",
 				 am_server ? "server" : "client");
-			return 0;
+			goto cleanup;
 #endif
 
 		case OPT_STOP_AFTER: {
@@ -1862,7 +1873,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			stop_at_utime = time(NULL);
 			if ((val = atol(arg) * 60) <= 0 || LONG_MAX - val < stop_at_utime || (long)(time_t)val != val) {
 				snprintf(err_buf, sizeof err_buf, "invalid --stop-after value: %s\n", arg);
-				return 0;
+				goto cleanup;
 			}
 			stop_at_utime += val;
 			break;
@@ -1873,11 +1884,11 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			arg = poptGetOptArg(pc);
 			if ((stop_at_utime = parse_time(arg)) == (time_t)-1) {
 				snprintf(err_buf, sizeof err_buf, "invalid --stop-at format: %s\n", arg);
-				return 0;
+				goto cleanup;
 			}
 			if (stop_at_utime <= time(NULL)) {
 				snprintf(err_buf, sizeof err_buf, "--stop-at time is not in the future: %s\n", arg);
-				return 0;
+				goto cleanup;
 			}
 			break;
 #endif
@@ -1895,7 +1906,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			else {
 				snprintf(err_buf, sizeof err_buf,
 					"--stderr mode \"%s\" is not one of errors, all, or client\n", arg);
-				return 0;
+				goto cleanup;
 			}
 			saw_stderr_opt = 1;
 			break;
@@ -1906,13 +1917,13 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			 * turned this option off. */
 			if (opt >= OPT_REFUSED_BASE) {
 				create_refuse_error(opt);
-				return 0;
+				goto cleanup;
 			}
 			snprintf(err_buf, sizeof err_buf, "%s%s: %s\n",
 				 am_server ? "on remote machine: " : "",
 				 poptBadOption(pc, POPT_BADOPTION_NOALIAS),
 				 poptStrerror(opt));
-			return 0;
+			goto cleanup;
 		}
 	}
 
@@ -1920,7 +1931,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		saw_stderr_opt = 1;
 
 	if (version_opt_cnt) {
-		print_rsync_version(FINFO);
+		print_rsync_version(version_opt_cnt > 1 && !am_server ? FNONE : FINFO);
 		exit_cleanup(0);
 	}
 
@@ -1932,7 +1943,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (max_alloc_arg) {
 		ssize_t size = parse_size_arg(max_alloc_arg, 'B', "max-alloc", 1024*1024, -1, True);
 		if (size < 0)
-			return 0;
+			goto cleanup;
 		max_alloc = size;
 	}
 
@@ -1945,8 +1956,8 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	} else if (old_style_args) {
 		if (protect_args > 0) {
 			snprintf(err_buf, sizeof err_buf,
-				 "--protect-args conflicts with --old-args.\n");
-			return 0;
+				 "--secluded-args conflicts with --old-args.\n");
+			goto cleanup;
 		}
 		protect_args = 0;
 	}
@@ -1957,7 +1968,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		else if ((arg = getenv("RSYNC_PROTECT_ARGS")) != NULL && *arg)
 			protect_args = atoi(arg) ? 1 : 0;
 		else {
-#ifdef RSYNC_USE_PROTECTED_ARGS
+#ifdef RSYNC_USE_SECLUDED_ARGS
 			protect_args = 1;
 #else
 			protect_args = 0;
@@ -1991,7 +2002,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			do_compression = CPRES_AUTO;
 		if (do_compression && refused_compress) {
 			create_refuse_error(refused_compress);
-			return 0;
+			goto cleanup;
 		}
 	}
 
@@ -2016,7 +2027,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		default:
 			snprintf(err_buf, sizeof err_buf,
 				"Invalid --outbuf setting -- specify N, L, or B.\n");
-			return 0;
+			goto cleanup;
 		}
 		setvbuf(stdout, (char *)NULL, mode, 0);
 	}
@@ -2044,7 +2055,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	}
 	if (refused_no_iconv && !iconv_opt) {
 		create_refuse_error(refused_no_iconv);
-		return 0;
+		goto cleanup;
 	}
 #endif
 
@@ -2055,18 +2066,30 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (orig_protect_args == 2 && am_server)
 		protect_args = orig_protect_args;
 
-	if (protect_args == 1 && am_server)
+	if (protect_args == 1 && am_server) {
+		poptFreeContext(pc);
 		return 1;
+	}
 
-	*argv_p = argv = poptGetArgs(pc);
-	*argc_p = argc = count_args(argv);
+	/* Because popt 1.19 has started to free the returned args data, we now
+	 * make a copy of the array and then do an immediate cleanup. */
+	argv = poptGetArgs(pc);
+	argc = count_args(argv);
+	if (!argc) {
+		*argv_p = empty_argv;
+		*argc_p = 0;
+	} else if (poptDupArgv(argc, argv, argc_p, argv_p) != 0)
+		out_of_memory("parse_arguments");
+	argv = *argv_p;
+	poptFreeContext(pc);
+	pc = NULL;
 
 #ifndef SUPPORT_LINKS
 	if (preserve_links && !am_sender) {
 		snprintf(err_buf, sizeof err_buf,
 			 "symlinks are not supported on this %s\n",
 			 am_server ? "server" : "client");
-		return 0;
+		goto cleanup;
 	}
 #endif
 
@@ -2075,7 +2098,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		snprintf(err_buf, sizeof err_buf,
 			 "hard links are not supported on this %s\n",
 			 am_server ? "server" : "client");
-		return 0;
+		goto cleanup;
 	}
 #endif
 
@@ -2083,20 +2106,20 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (am_root < 0 && preserve_xattrs > 1) {
 		snprintf(err_buf, sizeof err_buf,
 			 "--fake-super conflicts with -XX\n");
-		return 0;
+		goto cleanup;
 	}
 #else
 	if (am_root < 0) {
 		snprintf(err_buf, sizeof err_buf,
 			 "--fake-super requires an rsync with extended attributes enabled\n");
-		return 0;
+		goto cleanup;
 	}
 #endif
 
 	if (write_batch && read_batch) {
 		snprintf(err_buf, sizeof err_buf,
 			"--write-batch and --read-batch can not be used together\n");
-		return 0;
+		goto cleanup;
 	}
 	if (write_batch > 0 || read_batch) {
 		if (am_server) {
@@ -2115,25 +2138,25 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (read_batch && files_from) {
 		snprintf(err_buf, sizeof err_buf,
 			"--read-batch cannot be used with --files-from\n");
-		return 0;
+		goto cleanup;
 	}
 	if (read_batch && remove_source_files) {
 		snprintf(err_buf, sizeof err_buf,
 			"--read-batch cannot be used with --remove-%s-files\n",
 			remove_source_files == 1 ? "source" : "sent");
-		return 0;
+		goto cleanup;
 	}
 	if (batch_name && strlen(batch_name) > MAX_BATCH_NAME_LEN) {
 		snprintf(err_buf, sizeof err_buf,
 			"the batch-file name must be %d characters or less.\n",
 			MAX_BATCH_NAME_LEN);
-		return 0;
+		goto cleanup;
 	}
 
 	if (tmpdir && strlen(tmpdir) >= MAXPATHLEN - 10) {
 		snprintf(err_buf, sizeof err_buf,
 			 "the --temp-dir path is WAY too long.\n");
-		return 0;
+		goto cleanup;
 	}
 
 	if (max_delete < 0 && max_delete != INT_MIN) {
@@ -2167,7 +2190,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (delete_before + !!delete_during + delete_after > 1) {
 		snprintf(err_buf, sizeof err_buf,
 			"You may not combine multiple --delete-WHEN options.\n");
-		return 0;
+		goto cleanup;
 	}
 	if (delete_before || delete_during || delete_after)
 		delete_mode = 1;
@@ -2178,7 +2201,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				delete_during = 1;
 			else {
 				create_refuse_error(refused_delete_before);
-				return 0;
+				goto cleanup;
 			}
 		} else if (refused_delete_during)
 			delete_before = 1;
@@ -2187,14 +2210,14 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (!xfer_dirs && delete_mode) {
 		snprintf(err_buf, sizeof err_buf,
 			"--delete does not work without --recursive (-r) or --dirs (-d).\n");
-		return 0;
+		goto cleanup;
 	}
 
 	if (missing_args == 3) /* simplify if both options were specified */
 		missing_args = 2;
 	if (refused_delete && (delete_mode || missing_args == 2)) {
 		create_refuse_error(refused_delete);
-		return 0;
+		goto cleanup;
 	}
 
 	if (remove_source_files) {
@@ -2203,7 +2226,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		 * options. */
 		if (refused_delete && am_sender) {
 			create_refuse_error(refused_delete);
-			return 0;
+			goto cleanup;
 		}
 		need_messages_from_generator = 1;
 	}
@@ -2257,7 +2280,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		snprintf(err_buf, sizeof err_buf,
 			"--suffix cannot contain slashes: %s\n",
 			backup_suffix);
-		return 0;
+		goto cleanup;
 	}
 	if (backup_dir) {
 		size_t len;
@@ -2270,7 +2293,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		if (len > sizeof backup_dir_buf - 128) {
 			snprintf(err_buf, sizeof err_buf,
 				"the --backup-dir path is WAY too long.\n");
-			return 0;
+			goto cleanup;
 		}
 		backup_dir_len = (int)len;
 		if (!backup_dir_len) {
@@ -2289,7 +2312,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			"--suffix cannot be empty %s\n", backup_dir_len < 0
 			? "when --backup-dir is the same as the dest dir"
 			: "without a --backup-dir");
-		return 0;
+		goto cleanup;
 	} else if (make_backups && delete_mode && !delete_excluded && !am_server) {
 		snprintf(backup_dir_buf, sizeof backup_dir_buf,
 			"P *%s", backup_suffix);
@@ -2317,7 +2340,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (do_progress && !am_server) {
 		if (!log_before_transfer && INFO_EQ(NAME, 0))
 			parse_output_words(info_words, info_levels, "name", DEFAULT_PRIORITY);
-		parse_output_words(info_words, info_levels, "flist2,progress", DEFAULT_PRIORITY);
+		parse_output_words(info_words, info_levels, "FLIST2,PROGRESS", DEFAULT_PRIORITY);
 	}
 
 	if (dry_run)
@@ -2358,11 +2381,11 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		if (whole_file > 0) {
 			snprintf(err_buf, sizeof err_buf,
 				 "--append cannot be used with --whole-file\n");
-			return 0;
+			goto cleanup;
 		}
 		if (refused_inplace) {
 			create_refuse_error(refused_inplace);
-			return 0;
+			goto cleanup;
 		}
 		inplace = 1;
 	}
@@ -2370,7 +2393,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 	if (write_devices) {
 		if (refused_inplace) {
 			create_refuse_error(refused_inplace);
-			return 0;
+			goto cleanup;
 		}
 		inplace = 1;
 	}
@@ -2385,13 +2408,13 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				 "--%s cannot be used with --%s\n",
 				 append_mode ? "append" : "inplace",
 				 delay_updates ? "delay-updates" : "partial-dir");
-			return 0;
+			goto cleanup;
 		}
 		/* --inplace implies --partial for refusal purposes, but we
 		 * clear the keep_partial flag for internal logic purposes. */
 		if (refused_partial) {
 			create_refuse_error(refused_partial);
-			return 0;
+			goto cleanup;
 		}
 		keep_partial = 0;
 #else
@@ -2399,7 +2422,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			 "--%s is not supported on this %s\n",
 			 append_mode ? "append" : "inplace",
 			 am_server ? "server" : "client");
-		return 0;
+		goto cleanup;
 #endif
 	} else {
 		if (keep_partial && !partial_dir && !am_server) {
@@ -2413,7 +2436,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				partial_dir = NULL;
 			if (!partial_dir && refused_partial) {
 				create_refuse_error(refused_partial);
-				return 0;
+				goto cleanup;
 			}
 			keep_partial = 1;
 		}
@@ -2434,14 +2457,14 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			if (am_server) {
 				snprintf(err_buf, sizeof err_buf,
 					"The --files-from sent to the server cannot specify a host.\n");
-				return 0;
+				goto cleanup;
 			}
 			files_from = p;
 			filesfrom_host = h;
 			if (strcmp(files_from, "-") == 0) {
 				snprintf(err_buf, sizeof err_buf,
 					"Invalid --files-from remote filename\n");
-				return 0;
+				goto cleanup;
 			}
 		} else {
 			if (sanitize_paths)
@@ -2460,10 +2483,15 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 				snprintf(err_buf, sizeof err_buf,
 					"failed to open files-from file %s: %s\n",
 					files_from, strerror(errno));
-				return 0;
+				goto cleanup;
 			}
 		}
 	}
+
+	if (trust_sender || am_server || read_batch)
+		trust_sender_args = trust_sender_filter = 1;
+	else if (old_style_args || filesfrom_host != NULL)
+		trust_sender_args = 1;
 
 	am_starting_up = 0;
 
@@ -2472,6 +2500,9 @@ int parse_arguments(int *argc_p, const char ***argv_p)
   options_rejected:
 	snprintf(err_buf, sizeof err_buf,
 		"Your options have been rejected by the server.\n");
+  cleanup:
+	if (pc)
+		poptFreeContext(pc);
 	return 0;
 }
 
@@ -2487,17 +2518,24 @@ static char SPLIT_ARG_WHEN_OLD[1];
  **/
 char *safe_arg(const char *opt, const char *arg)
 {
-#define SHELL_CHARS "!#$&;|<>(){}\"' \t\\"
+#define SHELL_CHARS "!#$&;|<>(){}\"'` \t\\"
 #define WILD_CHARS  "*?[]" /* We don't allow remote brace expansion */
 	BOOL is_filename_arg = !opt;
 	char *escapes = is_filename_arg ? SHELL_CHARS : WILD_CHARS SHELL_CHARS;
 	BOOL escape_leading_dash = is_filename_arg && *arg == '-';
+	BOOL escape_leading_tilde = 0;
 	int len1 = opt && *opt ? strlen(opt) + 1 : 0;
 	int len2 = strlen(arg);
 	int extras = escape_leading_dash ? 2 : 0;
 	char *ret;
 	if (!protect_args && old_style_args < 2 && (!old_style_args || (!is_filename_arg && opt != SPLIT_ARG_WHEN_OLD))) {
 		const char *f;
+		if (*arg == '~' && is_filename_arg && !am_sender && !trust_sender_args
+		 && ((relative_paths && !strstr(arg, "/./"))
+		  || !strchr(arg, '/'))) {
+			extras++;
+			escape_leading_tilde = 1;
+		}
 		for (f = arg; *f; f++) {
 			if (strchr(escapes, *f))
 				extras++;
@@ -2520,8 +2558,13 @@ char *safe_arg(const char *opt, const char *arg)
 	else {
 		const char *f = arg;
 		char *t = ret + len1;
+		if (escape_leading_tilde)
+			*t++ = '\\';
 		while (*f) {
-			if (strchr(escapes, *f))
+                        if (*f == '\\') {
+				if (!is_filename_arg || !strchr(WILD_CHARS, f[1]))
+					*t++ = '\\';
+			} else if (strchr(escapes, *f))
 				*t++ = '\\';
 			*t++ = *f++;
 		}

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1996-2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
- * Copyright (C) 2003-2022 Wayne Davison
+ * Copyright (C) 2003-2023 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,6 @@ extern int inplace;
 extern int inplace_partial;
 extern int allowed_lull;
 extern int delay_updates;
-extern int xfersum_type;
 extern BOOL want_progress_now;
 extern mode_t orig_umask;
 extern struct stats stats;
@@ -67,6 +66,9 @@ extern char sender_file_sum[MAX_DIGEST_LEN];
 extern struct file_list *cur_flist, *first_flist, *dir_flist;
 extern filter_rule_list daemon_filter_list;
 extern OFF_T preallocated_len;
+
+extern struct name_num_item *xfer_sum_nni;
+extern int xfer_sum_len;
 
 static struct bitbag *delayed_bits = NULL;
 static int phase = 0, redoing = 0;
@@ -240,7 +242,6 @@ static int receive_data(int f_in, char *fname_r, int fd_r, OFF_T size_r,
 	static char file_sum1[MAX_DIGEST_LEN];
 	struct map_struct *mapbuf;
 	struct sum_struct sum;
-	int sum_len;
 	int32 len;
 	OFF_T total_size = F_LENGTH(file);
 	OFF_T offset = 0;
@@ -280,7 +281,7 @@ static int receive_data(int f_in, char *fname_r, int fd_r, OFF_T size_r,
 	} else
 		mapbuf = NULL;
 
-	sum_init(xfersum_type, checksum_seed);
+	sum_init(xfer_sum_nni, checksum_seed);
 
 	if (append_mode > 0) {
 		OFF_T j;
@@ -371,7 +372,7 @@ static int receive_data(int f_in, char *fname_r, int fd_r, OFF_T size_r,
 
 	if (fd != -1 && offset > 0) {
 		if (sparse_files > 0) {
-			if (sparse_end(fd, offset) != 0)
+			if (sparse_end(fd, offset, updating_basis_or_equiv) != 0)
 				goto report_write_error;
 		} else if (flush_write_file(fd) < 0) {
 		    report_write_error:
@@ -393,7 +394,7 @@ static int receive_data(int f_in, char *fname_r, int fd_r, OFF_T size_r,
 	if (INFO_GTE(PROGRESS, 1))
 		end_progress(total_size);
 
-	sum_len = sum_end(file_sum1);
+	sum_end(file_sum1);
 
 	if (do_fsync && fd != -1 && fsync(fd) != 0) {
 		rsyserr(FERROR, errno, "fsync failed on %s", full_fname(fname));
@@ -403,10 +404,10 @@ static int receive_data(int f_in, char *fname_r, int fd_r, OFF_T size_r,
 	if (mapbuf)
 		unmap_file(mapbuf);
 
-	read_buf(f_in, sender_file_sum, sum_len);
+	read_buf(f_in, sender_file_sum, xfer_sum_len);
 	if (DEBUG_GTE(DELTASUM, 2))
 		rprintf(FINFO,"got file_sum\n");
-	if (fd != -1 && memcmp(file_sum1, sender_file_sum, sum_len) != 0)
+	if (fd != -1 && memcmp(file_sum1, sender_file_sum, xfer_sum_len) != 0)
 		return 0;
 	return 1;
 }
@@ -439,9 +440,8 @@ static void handle_delayed_updates(char *local_name)
 					"rename failed for %s (from %s)",
 					full_fname(fname), partialptr);
 			} else {
-				if (remove_source_files
-				 || (preserve_hard_links && F_IS_HLINKED(file)))
-					send_msg_int(MSG_SUCCESS, ndx);
+				if (remove_source_files || (preserve_hard_links && F_IS_HLINKED(file)))
+					send_msg_success(fname, ndx);
 				handle_partial_dir(partialptr, PDIR_DELETE);
 			}
 		}
@@ -593,10 +593,13 @@ int recv_files(int f_in, int f_out, char *local_name)
 		if (DEBUG_GTE(RECV, 1))
 			rprintf(FINFO, "recv_files(%s)\n", fname);
 
-		if (daemon_filter_list.head && (*fname != '.' || fname[1] != '\0')
-		 && check_filter(&daemon_filter_list, FLOG, fname, 0) < 0) {
-			rprintf(FERROR, "attempt to hack rsync failed.\n");
-			exit_cleanup(RERR_PROTOCOL);
+		if (daemon_filter_list.head && (*fname != '.' || fname[1] != '\0')) {
+			int filt_flags = S_ISDIR(file->mode) ? NAME_IS_DIR : NAME_IS_FILE;
+			if (check_filter(&daemon_filter_list, FLOG, fname, filt_flags) < 0) {
+				rprintf(FERROR, "ERROR: rejecting file transfer request for daemon excluded file: %s\n",
+					fname);
+				exit_cleanup(RERR_PROTOCOL);
+			}
 		}
 
 #ifdef SUPPORT_XATTRS
@@ -695,7 +698,7 @@ int recv_files(int f_in, int f_out, char *local_name)
 			if (!am_server)
 				discard_receive_data(f_in, file);
 			if (inc_recurse)
-				send_msg_int(MSG_SUCCESS, ndx);
+				send_msg_success(fname, ndx);
 			continue;
 		}
 
@@ -923,9 +926,8 @@ int recv_files(int f_in, int f_out, char *local_name)
 		case 2:
 			break;
 		case 1:
-			if (remove_source_files || inc_recurse
-			 || (preserve_hard_links && F_IS_HLINKED(file)))
-				send_msg_int(MSG_SUCCESS, ndx);
+			if (remove_source_files || inc_recurse || (preserve_hard_links && F_IS_HLINKED(file)))
+				send_msg_success(fname, ndx);
 			break;
 		case 0: {
 			enum logcode msgtype = redoing ? FERROR_XFER : FWARNING;

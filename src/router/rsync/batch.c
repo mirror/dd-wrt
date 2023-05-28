@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999 Weiss
  * Copyright (C) 2004 Chris Shoemaker
- * Copyright (C) 2004-2020 Wayne Davison
+ * Copyright (C) 2004-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -194,7 +194,7 @@ static int write_opt(const char *opt, const char *arg)
 {
 	int len = strlen(opt);
 	int err = write(batch_sh_fd, " ", 1) != 1;
-	err = write(batch_sh_fd, opt, len) != len ? 1 : 0; 
+	err = write(batch_sh_fd, opt, len) != len ? 1 : 0;
 	if (arg) {
 		err |= write(batch_sh_fd, "=", 1) != 1;
 		err |= write_arg(arg);

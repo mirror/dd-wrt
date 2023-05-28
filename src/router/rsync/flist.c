@@ -4,7 +4,7 @@
  * Copyright (C) 1996 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2002-2022 Wayne Davison
+ * Copyright (C) 2002-2023 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ extern int am_sender;
 extern int am_generator;
 extern int inc_recurse;
 extern int always_checksum;
-extern int checksum_type;
 extern int module_id;
 extern int ignore_errors;
 extern int numeric_ids;
@@ -73,18 +72,20 @@ extern int need_unsorted_flist;
 extern int sender_symlink_iconv;
 extern int output_needs_newline;
 extern int sender_keeps_checksum;
+extern int trust_sender_filter;
 extern int unsort_ndx;
 extern uid_t our_uid;
 extern struct stats stats;
 extern char *filesfrom_host;
 extern char *usermap, *groupmap;
 
+extern struct name_num_item *file_sum_nni;
+
 extern char curr_dir[MAXPATHLEN];
 
 extern struct chmod_mode_struct *chmod_modes;
 
-extern filter_rule_list filter_list;
-extern filter_rule_list daemon_filter_list;
+extern filter_rule_list filter_list, implied_filter_list, daemon_filter_list;
 
 #ifdef ICONV_OPTION
 extern int filesfrom_convert;
@@ -145,7 +146,8 @@ void init_flist(void)
 		rprintf(FINFO, "FILE_STRUCT_LEN=%d, EXTRA_LEN=%d\n",
 			(int)FILE_STRUCT_LEN, (int)EXTRA_LEN);
 	}
-	flist_csum_len = csum_len_for_type(checksum_type, 1);
+	/* Note that this isn't identical to file_sum_len in the case of CSUM_MD4_ARCHAIC: */
+	flist_csum_len = csum_len_for_type(file_sum_nni->num, 1);
 
 	show_filelist_progress = INFO_GTE(FLIST, 1) && xfer_dirs && !am_server && !inc_recurse;
 }
@@ -754,7 +756,7 @@ static struct file_struct *recv_file_entry(int f, struct file_list *flist, int x
 	if (*thisname
 	 && (clean_fname(thisname, CFN_REFUSE_DOT_DOT_DIRS) < 0 || (!relative_paths && *thisname == '/'))) {
 		rprintf(FERROR, "ABORTING due to unsafe pathname from sender: %s\n", thisname);
-		exit_cleanup(RERR_PROTOCOL);
+		exit_cleanup(RERR_UNSUPPORTED);
 	}
 
 	if (sanitize_paths)
@@ -834,7 +836,7 @@ static struct file_struct *recv_file_entry(int f, struct file_list *flist, int x
 			}
 #endif
 		} else
-			modtime = read_int(f);
+			modtime = read_uint(f);
 	}
 	if (xflags & XMIT_MOD_NSEC)
 #ifndef CAN_SET_NSEC
@@ -984,6 +986,19 @@ static struct file_struct *recv_file_entry(int f, struct file_list *flist, int x
 	if (file_length < 0) {
 		rprintf(FERROR, "Offset underflow: file-length is negative\n");
 		exit_cleanup(RERR_UNSUPPORTED);
+	}
+
+	if (*thisname == '/' ? thisname[1] != '.' || thisname[2] != '\0' : *thisname != '.' || thisname[1] != '\0') {
+		int filt_flags = S_ISDIR(mode) ? NAME_IS_DIR : NAME_IS_FILE;
+		if (!trust_sender_filter /* a per-dir filter rule means we must trust the sender's filtering */
+		 && filter_list.head && check_server_filter(&filter_list, FINFO, thisname, filt_flags) < 0) {
+			rprintf(FERROR, "ERROR: rejecting excluded file-list name: %s\n", thisname);
+			exit_cleanup(RERR_UNSUPPORTED);
+		}
+		if (implied_filter_list.head && check_filter(&implied_filter_list, FINFO, thisname, filt_flags) <= 0) {
+			rprintf(FERROR, "ERROR: rejecting unrequested file-list name: %s\n", thisname);
+			exit_cleanup(RERR_UNSUPPORTED);
+		}
 	}
 
 	if (inc_recurse && S_ISDIR(mode)) {
@@ -2352,7 +2367,7 @@ struct file_list *send_file_list(int f, int argc, char *argv[])
 		}
 
 		dirlen = dir ? strlen(dir) : 0;
-		if (dirlen != lastdir_len || memcmp(lastdir, dir, dirlen) != 0) {
+		if (dirlen != lastdir_len || (dirlen && memcmp(lastdir, dir, dirlen) != 0)) {
 			if (!change_pathname(NULL, dir, -dirlen))
 				goto bad_path;
 			lastdir = pathname;
@@ -2627,7 +2642,7 @@ struct file_list *recv_file_list(int f, int dir_ndx)
 					rprintf(FERROR,
 						"ABORTING due to invalid path from sender: %s/%s\n",
 						cur_dir, file->basename);
-					exit_cleanup(RERR_PROTOCOL);
+					exit_cleanup(RERR_UNSUPPORTED);
 				}
 				good_dirname = cur_dir;
 			}

@@ -31,7 +31,6 @@ extern int do_fsync;
 extern int protect_args;
 extern int modify_window;
 extern int relative_paths;
-extern int preserve_mtimes;
 extern int preserve_xattrs;
 extern int omit_link_times;
 extern int preallocate_files;
@@ -1488,11 +1487,18 @@ const char *find_filename_suffix(const char *fn, int fn_len, int *len_ptr)
 
 #define UNIT (1 << 16)
 
-uint32 fuzzy_distance(const char *s1, unsigned len1, const char *s2, unsigned len2)
+uint32 fuzzy_distance(const char *s1, unsigned len1, const char *s2, unsigned len2, uint32 upperlimit)
 {
 	uint32 a[MAXPATHLEN], diag, above, left, diag_inc, above_inc, left_inc;
 	int32 cost;
 	unsigned i1, i2;
+
+	/* Check to see if the Levenshtein distance must be greater than the
+	 * upper limit defined by the previously found lowest distance using
+	 * the heuristic that the Levenshtein distance is greater than the
+	 * difference in length of the two strings */
+	if ((len1 > len2 ? len1 - len2 : len2 - len1) * UNIT > upperlimit)
+		return 0xFFFFU * UNIT + 1;
 
 	if (!len1 || !len2) {
 		if (!len1) {

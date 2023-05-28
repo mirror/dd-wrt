@@ -4,7 +4,7 @@
  * Copyright (C) 1996 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2004-2020 Wayne Davison
+ * Copyright (C) 2004-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -446,7 +446,7 @@ int hard_link_check(struct file_struct *file, int ndx, char *fname,
 		return -1;
 
 	if (remove_source_files == 1 && do_xfers)
-		send_msg_int(MSG_SUCCESS, ndx);
+		send_msg_success(fname, ndx);
 
 	return 1;
 }
@@ -519,7 +519,7 @@ void finish_hard_link(struct file_struct *file, const char *fname, int fin_ndx,
 		if (val < 0)
 			continue;
 		if (remove_source_files == 1 && do_xfers)
-			send_msg_int(MSG_SUCCESS, ndx);
+			send_msg_success(fname, ndx);
 	}
 
 	if (inc_recurse) {

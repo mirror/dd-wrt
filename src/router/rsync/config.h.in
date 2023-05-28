@@ -15,12 +15,7 @@
 /* Undefine if you do not want locale features. By default this is defined. */
 #undef CONFIG_LOCALE
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
-/* Define to 1 if using `alloca.c'. */
+/* Define to 1 if using 'alloca.c'. */
 #undef C_ALLOCA
 
 /* Define to 1 if using external zlib */
@@ -48,11 +43,10 @@
 /* true if you have AIX ACLs */
 #undef HAVE_AIX_ACLS
 
-/* Define to 1 if you have `alloca', as a function or macro. */
+/* Define to 1 if you have 'alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
+/* Define to 1 if <alloca.h> works. */
 #undef HAVE_ALLOCA_H
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
@@ -72,6 +66,9 @@
 
 /* Define to 1 if readdir() is broken */
 #undef HAVE_BROKEN_READDIR
+
+/* Define to 1 if you have the <bsd/string.h> header file. */
+#undef HAVE_BSD_STRING_H
 
 /* Define to 1 if vsprintf has a C99-compatible return value */
 #undef HAVE_C99_VSNPRINTF
@@ -299,9 +296,6 @@
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Define to 1 if you have the `mkfifo' function. */
 #undef HAVE_MKFIFO
 
@@ -445,6 +439,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -712,8 +709,8 @@
 /* default -e command */
 #undef RSYNC_RSH
 
-/* Define to 1 if --protected-args should be the default */
-#undef RSYNC_USE_PROTECTED_ARGS
+/* Define to 1 if --secluded-args should be the default */
+#undef RSYNC_USE_SECLUDED_ARGS
 
 /* Define to 1 if sockets need to be shutdown */
 #undef SHUTDOWN_ALL_SOCKETS
@@ -768,7 +765,9 @@
 	STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Define to 1 to add support for ACLs */
@@ -787,9 +786,6 @@
 /* Undefine if you do not want zstd compression. By default this is defined.
    */
 #undef SUPPORT_ZSTD
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#undef TIME_WITH_SYS_TIME
 
 /* Define to 1 if you want rsync to make use of iconv_open() */
 #undef USE_ICONV_OPEN
@@ -821,11 +817,6 @@
 # ifndef WORDS_BIGENDIAN
 #  undef WORDS_BIGENDIAN
 # endif
-#endif
-
-/* Enable large inode numbers on Mac OS X 10.5.  */
-#ifndef _DARWIN_USE_64_BIT_INODE
-# define _DARWIN_USE_64_BIT_INODE 1
 #endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
