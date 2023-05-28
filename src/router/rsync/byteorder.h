@@ -2,7 +2,7 @@
  * Simple byteorder handling.
  *
  * Copyright (C) 1992-1995 Andrew Tridgell
- * Copyright (C) 2007-2020 Wayne Davison
+ * Copyright (C) 2007-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,4 +129,3 @@ SIVAL(char *buf, int pos, uint32 val)
 {
 	SIVALu((uchar*)buf, pos, val);
 }
-

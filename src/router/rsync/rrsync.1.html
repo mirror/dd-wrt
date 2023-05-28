@@ -34,16 +34,22 @@ dd p:first-of-type {
 <h2 id="NAME">NAME<a href="#NAME" class="tgt"></a></h2>
 <p>rrsync -&#8288; a script to setup restricted rsync users via ssh logins</p>
 <h2 id="SYNOPSIS">SYNOPSIS<a href="#SYNOPSIS" class="tgt"></a></h2>
-<pre><code>rrsync [-ro|-rw] [-munge] [-no-del] [-no-lock] DIR
+<pre><code>rrsync [-ro|-rw] [-munge] [-no-del] [-no-lock] [-no-overwrite]  DIR
 </code></pre>
 <p>The single non-option argument specifies the restricted <u>DIR</u> to use. It can be
 relative to the user's home directory or an absolute path.</p>
-<p>The online version of this man page (that includes cross-linking of topics)
+<p>The online version of this manpage (that includes cross-linking of topics)
 is available at <a href="https://download.samba.org/pub/rsync/rrsync.1">https://download.samba.org/pub/rsync/rrsync.1</a>.</p>
 <h2 id="DESCRIPTION">DESCRIPTION<a href="#DESCRIPTION" class="tgt"></a></h2>
 <p>A user's ssh login can be restricted to only allow the running of an rsync
-transfer in one of two easy ways: forcing the running of the rrsync script
-or forcing the running of an rsync daemon-over-ssh command.</p>
+transfer in one of two easy ways:</p>
+<ul>
+<li>forcing the running of the rrsync script</li>
+<li>forcing the running of an rsync daemon-over-ssh command.</li>
+</ul>
+<p>Both of these setups use a feature of ssh that allows a command to be forced to
+run instead of an interactive shell.  However, if the user's home shell is bash,
+please see <a href="#BASH_SECURITY_ISSUE">BASH SECURITY ISSUE</a> for a potential issue.</p>
 <p>To use the rrsync script, edit the user's <code>~/.ssh/authorized_keys</code> file and add
 a prefix like one of the following (followed by a space) in front of each
 ssh-key line that should be restricted:</p>
@@ -68,11 +74,12 @@ command=&quot;rsync --server --daemon --config=/PATH/TO/rsyncd.conf .&quot;
 <p>Then, ensure that the rsyncd.conf file is created with one or more module names
 with the appropriate path and option restrictions.  If rsync's
 <a href="rsync.1#dopt--config"><code>--config</code></a> option is omitted, it defaults to <code>~/rsyncd.conf</code>.
-See the <code>rsyncd.conf</code> man page for details of how to configure an rsync daemon.</p>
+See the <a href="rsyncd.conf.5"><strong>rsyncd.conf</strong>(5)</a> manpage for details of how to
+configure an rsync daemon.</p>
 <p>When using rrsync, there can be just one restricted dir per authorized key.  A
 daemon setup, on the other hand, allows multiple module names inside the config
 file, each one with its own path setting.</p>
-<p>The remainder of this man page is dedicated to using the rrsync script.</p>
+<p>The remainder of this manpage is dedicated to using the rrsync script.</p>
 <h2 id="OPTIONS">OPTIONS<a href="#OPTIONS" class="tgt"></a></h2>
 <dl>
 
@@ -97,6 +104,11 @@ file, each one with its own path setting.</p>
 <p>Avoid the single-run (per-user) lock check.  Useful with <a href="#opt-munge"><code>-munge</code></a>.</p>
 </dd>
 
+<dt id="opt-no-overwrite"><code>-no-overwrite</code><a href="#opt-no-overwrite" class="tgt"></a></dt><dd>
+<p>Enforce <code>--ignore-existing</code> on the server. Prevents overwriting existing
+files when the server is the receiver.</p>
+</dd>
+
 <span id="opt-h"></span><dt id="opt-help"><code>-help</code>, <code>-h</code><a href="#opt-help" class="tgt"></a></dt><dd>
 <p>Output this help message and exit.</p>
 </dd>
@@ -117,6 +129,21 @@ included to help it to interact with BackupPC and accept some convenient user
 overrides.</p>
 <p>The script (or a copy of it) can be manually edited if you want it to customize
 the option handling.</p>
+<h2 id="BASH_SECURITY_ISSUE">BASH SECURITY ISSUE<a href="#BASH_SECURITY_ISSUE" class="tgt"></a></h2>
+<p>If your users have bash set as their home shell, bash may try to be overly
+helpful and ensure that the user's login bashrc files are run prior to
+executing the forced command.  This can be a problem if the user can somehow
+update their home bashrc files, perhaps via the restricted copy, a shared home
+directory, or something similar.</p>
+<p>One simple way to avoid the issue is to switch the user to a simpler shell,
+such as dash.  When choosing the new home shell, make sure that you're not
+choosing bash in disguise, as it is unclear if it avoids the security issue.</p>
+<p>Another potential fix is to ensure that the user's home directory is not a
+shared mount and that they have no means of copying files outside of their
+restricted directories.  This may require you to force the enabling of symlink
+munging on the server side.</p>
+<p>A future version of openssh may have a change to the handling of forced
+commands that allows it to avoid using the user's home shell.</p>
 <h2 id="EXAMPLES">EXAMPLES<a href="#EXAMPLES" class="tgt"></a></h2>
 <p>The <code>~/.ssh/authorized_keys</code> file might have lines in it like this:</p>
 <blockquote>
@@ -127,9 +154,9 @@ command=&quot;rrsync -ro results&quot; ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAmk...
 <h2 id="FILES">FILES<a href="#FILES" class="tgt"></a></h2>
 <p>~/.ssh/authorized_keys</p>
 <h2 id="SEE_ALSO">SEE ALSO<a href="#SEE_ALSO" class="tgt"></a></h2>
-<p><a href="rsync.1"><strong>rsync</strong>(1)</a></p>
+<p><a href="rsync.1"><strong>rsync</strong>(1)</a>, <a href="rsyncd.conf.5"><strong>rsyncd.conf</strong>(5)</a></p>
 <h2 id="VERSION">VERSION<a href="#VERSION" class="tgt"></a></h2>
-<p>This man page is current for version 3.2.4pre4 of rsync.</p>
+<p>This manpage is current for version 3.3.0pre1 of rsync.</p>
 <h2 id="CREDITS">CREDITS<a href="#CREDITS" class="tgt"></a></h2>
 <p>rsync is distributed under the GNU General Public License.  See the file
 <a href="COPYING">COPYING</a> for details.</p>
@@ -138,5 +165,5 @@ project is <a href="https://github.com/WayneD/rsync">https://github.com/WayneD/r
 <h2 id="AUTHOR">AUTHOR<a href="#AUTHOR" class="tgt"></a></h2>
 <p>The original rrsync perl script was written by Joe Smith.  Many people have
 later contributed to it.  The python version was created by Wayne Davison.</p>
-<div style="float: right"><p><i>11 Apr 2022</i></p></div>
+<div style="float: right"><p><i>29 Apr 2023</i></p></div>
 </body></html>

@@ -3,7 +3,7 @@
  * Version 2.2.x
  * Portable SMB ACL interface
  * Copyright (C) Jeremy Allison 2000
- * Copyright (C) 2007-2020 Wayne Davison
+ * Copyright (C) 2007-2022 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -232,7 +232,7 @@ struct new_acl_entry{
 
 #define SMB_ACL_ENTRY_T		struct new_acl_entry*
 #define SMB_ACL_T		struct acl_entry_link*
- 
+
 #define SMB_ACL_TAG_T		unsigned short
 #define SMB_ACL_TYPE_T		int
 

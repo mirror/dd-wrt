@@ -105,6 +105,8 @@ def main():
         if not re.match(r'^del', ans, flags=re.I):
             die("Aborted")
         cmd_chk(['git', 'tag', '-d', v_ver])
+        if os.path.isdir('patches/.git'):
+            cmd_chk(f"cd patches && git tag -d '{v_ver}'")
 
     version = re.sub(r'[-.]*pre[-.]*', 'pre', version)
     if 'pre' in version and not curversion.endswith('dev'):
@@ -193,7 +195,9 @@ About to:
         with open(fn, 'r', encoding='utf-8') as fh:
             old_txt = txt = fh.read()
         if fn == 'version.h':
-            txt = f'#define RSYNC_VERSION "{version}"\n'
+            x_re = re.compile(r'^(#define RSYNC_VERSION).*', re.M)
+            msg = f"Unable to update RSYNC_VERSION in {fn}"
+            txt = replace_or_die(x_re, r'\1 "%s"' % version, txt, msg)
         elif '.spec' in fn:
             for var, val in specvars.items():
                 x_re = re.compile(r'^%s .*' % re.escape(var), re.M)
@@ -230,7 +234,7 @@ About to:
     cmd_chk(['packaging/year-tweak'])
 
     print(dash_line)
-    cmd_run("git diff")
+    cmd_run("git diff".split())
 
     srctar_name = f"{rsync_ver}.tar.gz"
     pattar_name = f"rsync-patches-{version}.tar.gz"
@@ -245,20 +249,20 @@ About to:
 
 About to:
     - git commit all changes
-    - generate the manpages
+    - run a full build, ensuring that the manpages & configure.sh are up-to-date
     - merge the {args.master_branch} branch into the patch/{args.master_branch}/* branches
     - update the files in the "patches" dir and OPTIONALLY (if you type 'y') to
       run patch-update with the --make option (which opens a shell on error)
 """)
     ans = input("<Press Enter OR 'y' to continue> ")
 
-    s = cmd_run(['git', 'commit', '-a', '-m', f'Preparing for release of {version}'])
+    s = cmd_run(['git', 'commit', '-a', '-m', f'Preparing for release of {version} [buildall]'])
     if s.returncode:
         die('Aborting')
 
-    cmd_chk('make gen')
+    cmd_chk('touch configure.ac && packaging/smart-make && make gen')
 
-    print(f'Creating any missing patch branches.')
+    print('Creating any missing patch branches.')
     s = cmd_run(f'packaging/branch-from-patch --branch={args.master_branch} --add-missing')
     if s.returncode:
         die('Aborting')

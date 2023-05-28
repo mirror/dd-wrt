@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2022 Wayne Davison
+ * Copyright (C) 2003-2023 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -783,7 +783,7 @@ static int generate_and_send_sums(int fd, OFF_T len, int f_out, int f_copy)
 	for (i = 0; i < sum.count; i++) {
 		int32 n1 = (int32)MIN(len, (OFF_T)sum.blength);
 		char *map = map_ptr(mapbuf, offset, n1);
-		char sum2[SUM_LENGTH];
+		char sum2[MAX_DIGEST_LEN];
 		uint32 sum1;
 
 		len -= n1;
@@ -875,9 +875,12 @@ static struct file_struct *find_fuzzy(struct file_struct *file, struct file_list
 			len = strlen(name);
 			suf = find_filename_suffix(name, len, &suf_len);
 
-			dist = fuzzy_distance(name, len, fname, fname_len);
-			/* Add some extra weight to how well the suffixes match. */
-			dist += fuzzy_distance(suf, suf_len, fname_suf, fname_suf_len) * 10;
+			dist = fuzzy_distance(name, len, fname, fname_len, lowest_dist);
+			/* Add some extra weight to how well the suffixes match unless we've already disqualified
+			 * this file based on a heuristic. */
+			if (dist < 0xFFFF0000U) {
+				dist += fuzzy_distance(suf, suf_len, fname_suf, fname_suf_len, 0xFFFF0000U) * 10;
+			}
 			if (DEBUG_GTE(FUZZY, 2)) {
 				rprintf(FINFO, "fuzzy distance for %s = %d.%05d\n",
 					f_name(fp, NULL), (int)(dist>>16), (int)(dist&0xFFFF));
@@ -1819,7 +1822,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 			goto cleanup;
 	  return_with_success:
 		if (!dry_run)
-			send_msg_int(MSG_SUCCESS, ndx);
+			send_msg_success(fname, ndx);
 		goto cleanup;
 	}
 

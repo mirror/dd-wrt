@@ -4,7 +4,6 @@ AC_INIT([rsync],[ ],[https://rsync.samba.org/bug-tracking.html])
 
 AC_C_BIGENDIAN
 AC_HEADER_DIRENT
-AC_HEADER_TIME
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(sys/fcntl.h sys/select.h fcntl.h sys/time.h sys/unistd.h \
     unistd.h utime.h compat.h sys/param.h ctype.h sys/wait.h sys/stat.h \
@@ -13,16 +12,17 @@ AC_CHECK_HEADERS(sys/fcntl.h sys/select.h fcntl.h sys/time.h sys/unistd.h \
     netdb.h malloc.h float.h limits.h iconv.h libcharset.h langinfo.h mcheck.h \
     sys/acl.h acl/libacl.h attr/xattr.h sys/xattr.h sys/extattr.h dl.h \
     popt.h popt/popt.h linux/falloc.h netinet/in_systm.h netgroup.h \
-    zlib.h xxhash.h openssl/md4.h openssl/md5.h zstd.h lz4.h sys/file.h)
+    zlib.h xxhash.h openssl/md4.h openssl/md5.h zstd.h lz4.h sys/file.h \
+    bsd/string.h)
 AC_CHECK_HEADERS([netinet/ip.h], [], [], [[#include <netinet/in.h>]])
 AC_HEADER_MAJOR_FIXED
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([byteorder.h])
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_PREREQ([2.69])
 
-PACKAGE_VERSION=`sed 's/.*"\(.*\)".*/\1/' <$srcdir/version.h`
+PACKAGE_VERSION=`sed -n 's/.*RSYNC_VERSION.*"\(.*\)".*/\1/p' <$srcdir/version.h`
 
 AC_MSG_NOTICE([Configuring rsync $PACKAGE_VERSION])
 
@@ -60,7 +60,6 @@ AC_PROG_AWK
 AC_PROG_EGREP
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
-AC_PROG_CC_STDC
 AC_SUBST(SHELL)
 AC_PATH_PROG([PERL], [perl])
 AC_PATH_PROG([PYTHON3], [python3])
@@ -135,6 +134,16 @@ if test x"$GCC" = x"yes"; then
 	CFLAGS="$CFLAGS -Wall -W"
 fi
 
+AC_ARG_WITH(openssl-conf,
+	AS_HELP_STRING([--with-openssl-conf=PATH],[set default OPENSSL_CONF path for rsync]))
+case "$with_openssl_conf" in
+    *[^-/a-zA-Z0-9.,=@+_]*) AC_MSG_ERROR([Invalid path given to --with-openssl-conf]) ;;
+    /*) CFLAGS="$CFLAGS -DSET_OPENSSL_CONF=$with_openssl_conf" ;;
+    no|'') ;;
+    yes) AC_MSG_ERROR([No path given to --with-openssl-conf]) ;;
+    *) AC_MSG_ERROR([Non absolute path given to --with-openssl-conf]) ;;
+esac
+
 AC_ARG_WITH(rrsync,
         AS_HELP_STRING([--with-rrsync],[also install the rrsync script and its manpage]))
 if test x"$with_rrsync" != x"yes"; then
@@ -152,10 +161,10 @@ AC_ARG_WITH(included-popt,
 AC_ARG_WITH(included-zlib,
         AS_HELP_STRING([--with-included-zlib],[use bundled zlib library, not from system]))
 
-AC_ARG_WITH(protected-args,
-        AS_HELP_STRING([--with-protected-args],[make --protected-args option the default]))
-if test x"$with_protected_args" = x"yes"; then
-	AC_DEFINE_UNQUOTED(RSYNC_USE_PROTECTED_ARGS, 1, [Define to 1 if --protected-args should be the default])
+AC_ARG_WITH(secluded-args,
+        AS_HELP_STRING([--with-secluded-args],[make --secluded-args option the default]))
+if test x"$with_secluded_args" = x"yes"; then
+	AC_DEFINE_UNQUOTED(RSYNC_USE_SECLUDED_ARGS, 1, [Define to 1 if --secluded-args should be the default])
 fi
 
 AC_ARG_WITH(rsync-path,
@@ -379,7 +388,7 @@ AS_HELP_STRING([--disable-ipv6],[disable to omit ipv6 support]),
 	;;
   esac ],
 
-  AC_TRY_RUN([ /* AF_INET6 availability check */
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 availability check */
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -390,11 +399,11 @@ main()
    else
      exit(0);
 }
-],
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(INET6, 1, [true if you have IPv6]),
-  AC_MSG_RESULT(no),
-  AC_MSG_RESULT(no)
+]])],
+  [AC_MSG_RESULT(yes)
+  AC_DEFINE(INET6, 1, true if you have IPv6)],
+  [AC_MSG_RESULT(no)],
+  [AC_MSG_RESULT(no)]
 ))
 
 dnl Do you want to disable use of locale functions
@@ -423,10 +432,10 @@ AH_TEMPLATE([USE_OPENSSL],
 if test x"$enable_openssl" != x"no"; then
     if test x"$ac_cv_header_openssl_md4_h" = x"yes" && test x"$ac_cv_header_openssl_md5_h" = x"yes"; then
       AC_MSG_RESULT(yes)
-      AC_SEARCH_LIBS(MD5_Init, crypto,
+      AC_SEARCH_LIBS(EVP_MD_CTX_copy, crypto,
           [AC_DEFINE(USE_OPENSSL)
 	   enable_openssl=yes],
-          [err_msg="$err_msg$nl- Failed to find MD5_Init function in openssl crypto lib.";
+          [err_msg="$err_msg$nl- Failed to find EVP_MD_CTX_copy function in openssl crypto lib.";
 	   no_lib="$no_lib openssl"])
     else
         AC_MSG_RESULT(no)
@@ -517,7 +526,7 @@ fi
 
 AC_MSG_CHECKING([whether to enable zstd compression])
 AC_ARG_ENABLE([zstd],
-        AC_HELP_STRING([--disable-zstd], [disable to omit zstd compression]))
+        AS_HELP_STRING([--disable-zstd], [disable to omit zstd compression]))
 AH_TEMPLATE([SUPPORT_ZSTD],
 [Undefine if you do not want zstd compression.  By default this is defined.])
 if test x"$enable_zstd" != x"no"; then
@@ -538,7 +547,7 @@ fi
 
 AC_MSG_CHECKING([whether to enable LZ4 compression])
 AC_ARG_ENABLE([lz4],
-        AC_HELP_STRING([--disable-lz4], [disable to omit LZ4 compression]))
+        AS_HELP_STRING([--disable-lz4], [disable to omit LZ4 compression]))
 AH_TEMPLATE([SUPPORT_LZ4],
 [Undefine if you do not want LZ4 compression.  By default this is defined.])
 if test x"$enable_lz4" != x"no"; then
@@ -624,7 +633,11 @@ fi
 
 AC_TYPE_UID_T
 AC_CHECK_TYPES([mode_t,off_t,size_t,pid_t,id_t])
-AC_TYPE_GETGROUPS
+if test "$cross_compiling" = no; then
+    AC_TYPE_GETGROUPS
+else
+    AC_DEFINE([GETGROUPS_T],[gid_t],[Define to the type of elements in the array set by `getgroups'. Usually this is either `int' or `gid_t'.])
+fi
 AC_CHECK_MEMBERS([struct stat.st_rdev,
 		  struct stat.st_mtimensec,
 		  struct stat.st_mtimespec.tv_nsec,
@@ -1066,21 +1079,6 @@ elif test x"$ac_cv_header_popt_h" != x"yes"; then
     with_included_popt=yes
 fi
 
-if test x"$GCC" = x"yes"; then
-    if test x"$with_included_popt" != x"yes"; then
-	# Turn pedantic warnings into errors to ensure an array-init overflow is an error.
-	CFLAGS="$CFLAGS -pedantic-errors"
-    else
-	# Our internal popt code cannot be compiled with pedantic warnings as errors, so try to
-	# turn off pedantic warnings (which will not lose the error for array-init overflow).
-	# Older gcc versions don't understand -Wno-pedantic, so check if --help=warnings lists
-	# -Wpedantic and use that as a flag.
-	case `$CC --help=warnings 2>/dev/null | grep Wpedantic` in
-	    *-Wpedantic*) CFLAGS="$CFLAGS -pedantic-errors -Wno-pedantic" ;;
-	esac
-    fi
-fi
-
 AC_MSG_CHECKING([whether to use included libpopt])
 if test x"$with_included_popt" = x"yes"; then
     AC_MSG_RESULT($srcdir/popt)
@@ -1117,7 +1115,7 @@ else
 fi
 
 AC_CACHE_CHECK([for unsigned char],rsync_cv_SIGNED_CHAR_OK,[
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char *s = ""]])],[rsync_cv_SIGNED_CHAR_OK=yes],[rsync_cv_SIGNED_CHAR_OK=no])])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char *s = (signed char *)""]])],[rsync_cv_SIGNED_CHAR_OK=yes],[rsync_cv_SIGNED_CHAR_OK=no])])
 if test x"$rsync_cv_SIGNED_CHAR_OK" = x"yes"; then
     AC_DEFINE(SIGNED_CHAR_OK, 1, [Define to 1 if "signed char" is a valid type])
 fi

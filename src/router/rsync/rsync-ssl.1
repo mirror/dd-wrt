@@ -1,4 +1,4 @@
-.TH "rsync-ssl" "1" "15 Apr 2022" "rsync-ssl from rsync 3.2.4" "User Commands"
+.TH "rsync-ssl" "1" "29 Apr 2023" "rsync-ssl from rsync 3.3.0pre1" "User Commands"
 .\" prefix=/usr
 .P
 .SH "NAME"
@@ -12,7 +12,9 @@ rsync-ssl [--type=SSL_TYPE] RSYNC_ARGS
 .fi
 .P
 The online version of this manpage (that includes cross-linking of topics)
-is available at https://download.samba.org/pub/rsync/rsync-ssl.1.
+is available at
+.UR https://download.samba.org/pub/rsync/rsync-ssl.1
+.UE .
 .P
 .SH "DESCRIPTION"
 .P
@@ -98,6 +100,11 @@ rsync-ssl -aiv rsync://example.com:9874/mod/ dest
 .fi
 .RE
 .P
+.SH "THE SERVER SIDE"
+.P
+For help setting up an SSL/TLS supporting rsync, see the instructions in
+rsyncd.conf.
+.P
 .SH "SEE ALSO"
 .P
 \fBrsync\fP(1), \fBrsyncd.conf\fP(5)
@@ -117,18 +124,23 @@ exported RSYNC_SSL_TYPE environment variable to make its use the default.
 .P
 .SH "BUGS"
 .P
-Please report bugs! See the web site at https://rsync.samba.org/.
+Please report bugs! See the web site at
+.UR https://rsync.samba.org/
+.UE .
 .P
 .SH "VERSION"
 .P
-This manpage is current for version 3.2.4 of rsync.
+This manpage is current for version 3.3.0pre1 of rsync.
 .P
 .SH "CREDITS"
 .P
 Rsync is distributed under the GNU General Public License.  See the file
 COPYING for details.
 .P
-A web site is available at https://rsync.samba.org/.  The site includes an
+A web site is available at
+.UR https://rsync.samba.org/
+.UE .
+The site includes an
 FAQ-O-Matic which may cover questions unanswered by this manual page.
 .P
 .SH "AUTHOR"
@@ -136,4 +148,5 @@ FAQ-O-Matic which may cover questions unanswered by this manual page.
 This manpage was written by Wayne Davison.
 .P
 Mailing lists for support and development are available at
-https://lists.samba.org/.
+.UR https://lists.samba.org/
+.UE .

@@ -87,23 +87,7 @@ reread its config file.</p>
 reread the <code>rsyncd.conf</code> file. The file is re-read on each client connection.</p>
 <h2 id="GLOBAL_PARAMETERS">GLOBAL PARAMETERS<a href="#GLOBAL_PARAMETERS" class="tgt"></a></h2>
 <p>The first parameters in the file (before a [module] header) are the global
-parameters.  Rsync also allows for the use of a &quot;[global]&quot; module name to
-indicate the start of one or more global-parameter sections (the name must be
-lower case).</p>
-<p>You may also include any module parameters in the global part of the config
-file in which case the supplied value will override the default for that
-parameter.</p>
-<p>You may use references to environment variables in the values of parameters.
-String parameters will have %VAR% references expanded as late as possible (when
-the string is first used in the program), allowing for the use of variables
-that rsync sets at connection time, such as RSYNC_USER_NAME.  Non-string
-parameters (such as true/false settings) are expanded when read from the config
-file.  If a variable does not exist in the environment, or if a sequence of
-characters is not a valid reference (such as an un-paired percent sign), the
-raw characters are passed through unchanged.  This helps with backward
-compatibility and safety (e.g. expanding a non-existent %VAR% to an empty
-string in a path could result in a very unsafe path).  The safest way to insert
-a literal % into a value is to use %%.</p>
+parameters:</p>
 <dl>
 
 <dt id="motd_file"><code>motd file</code><a href="#motd_file" class="tgt"></a></dt><dd>
@@ -147,6 +131,20 @@ can also be specified via the <code>--sockopts</code> command-line option.</p>
 connections.  It defaults to 5.</p>
 </dd>
 </dl>
+<p>You may also include any <a href="#MODULE_PARAMETERS">MODULE PARAMETERS</a> in the global part of the
+config file, in which case the supplied value will override the default for
+that parameter.</p>
+<p>You may use references to environment variables in the values of parameters.
+String parameters will have %VAR% references expanded as late as possible (when
+the string is first used in the program), allowing for the use of variables
+that rsync sets at connection time, such as RSYNC_USER_NAME.  Non-string
+parameters (such as true/false settings) are expanded when read from the config
+file.  If a variable does not exist in the environment, or if a sequence of
+characters is not a valid reference (such as an un-paired percent sign), the
+raw characters are passed through unchanged.  This helps with backward
+compatibility and safety (e.g. expanding a non-existent %VAR% to an empty
+string in a path could result in a very unsafe path).  The safest way to insert
+a literal % into a value is to use %%.</p>
 <h2 id="MODULE_PARAMETERS">MODULE PARAMETERS<a href="#MODULE_PARAMETERS" class="tgt"></a></h2>
 <p>After the global parameters you should define a number of modules, each module
 exports a directory tree as a symbolic name. Modules are exported by specifying
@@ -154,10 +152,15 @@ a module name in square brackets [module] followed by the parameters for that
 module.  The module name cannot contain a slash or a closing square bracket.
 If the name contains whitespace, each internal sequence of whitespace will be
 changed into a single space, while leading or trailing whitespace will be
-discarded.  Also, the name cannot be &quot;global&quot; as that exact name indicates that
-global parameters follow (see above).</p>
-<p>As with GLOBAL PARAMETERS, you may use references to environment variables in
-the values of parameters.  See the GLOBAL PARAMETERS section for more details.</p>
+discarded.</p>
+<p>There is also a special module name of &quot;[global]&quot; that does not define a module
+but instead switches back to the global settings context where default
+parameters can be specified.  Because each defined module gets its full set of
+parameters as a combination of the default values that are set at that position
+in the config file plus its own parameter list, the use of a &quot;[global]&quot; section
+can help to maintain shared config values for multiple modules.</p>
+<p>As with <a href="#GLOBAL_PARAMETERS">GLOBAL PARAMETERS</a>, you may use references to environment variables
+in the values of parameters.  See that section for details.</p>
 <dl>
 
 <dt id="comment"><code>comment</code><a href="#comment" class="tgt"></a></dt><dd>
@@ -170,6 +173,16 @@ no comment.</p>
 <p>This parameter specifies the directory in the daemon's filesystem to make
 available in this module.  You must specify this parameter for each module
 in <code>rsyncd.conf</code>.</p>
+<p>If the value contains a &quot;/./&quot; element then the path will be divided at that
+point into a chroot dir and an inner-chroot subdir.  If <a href="#use_chroot"><code>use chroot</code></a>
+is set to false, though, the extraneous dot dir is just cleaned out of the
+path.  An example of this idiom is:</p>
+<blockquote>
+<pre><code>path = /var/rsync/./module1
+</code></pre>
+</blockquote>
+<p>This will (when chrooting) chroot to &quot;/var/rsync&quot; and set the inside-chroot
+path to &quot;/module1&quot;.</p>
 <p>You may base the path's value off of an environment variable by surrounding
 the variable name with percent signs.  You can even reference a variable
 that is set by rsync when the user connects.  For example, this would use
@@ -193,27 +206,41 @@ the disadvantages of requiring super-user privileges, of not being able to
 follow symbolic links that are either absolute or outside of the new root
 path, and of complicating the preservation of users and groups by name (see
 below).</p>
-<p>As an additional safety feature, you can specify a dot-dir in the module's
-&quot;<a href="#path">path</a>&quot; to indicate the point where the chroot should occur.  This allows
-rsync to run in a chroot with a non-&quot;/&quot; path for the top of the transfer
-hierarchy.  Doing this guards against unintended library loading (since
-those absolute paths will not be inside the transfer hierarchy unless you
-have used an unwise pathname), and lets you setup libraries for the chroot
-that are outside of the transfer.  For example, specifying
-&quot;/var/rsync/./module1&quot; will chroot to the &quot;/var/rsync&quot; directory and set
-the inside-chroot path to &quot;/module1&quot;.  If you had omitted the dot-dir, the
-chroot would have used the whole path, and the inside-chroot path would
-have been &quot;/&quot;.</p>
-<p>When both &quot;use chroot&quot; and &quot;<a href="#daemon_chroot">daemon chroot</a>&quot; are false, OR the inside-chroot
-path of &quot;use chroot&quot; is not &quot;/&quot;, rsync will: (1) munge symlinks by default
-for security reasons (see &quot;<a href="#munge_symlinks">munge symlinks</a>&quot; for a way to turn this off, but
-only if you trust your users), (2) substitute leading slashes in absolute
-paths with the module's path (so that options such as <code>--backup-dir</code>,
-<code>--compare-dest</code>, etc. interpret an absolute path as rooted in the module's
-&quot;<a href="#path">path</a>&quot; dir), and (3) trim &quot;..&quot; path elements from args if rsync believes
-they would escape the module hierarchy.  The default for &quot;use chroot&quot; is
-true, and is the safer choice (especially if the module is not read-only).</p>
-<p>When this parameter is enabled <u>and</u> the &quot;<a href="#name_converter">name converter</a>&quot; parameter is
+<p>If <code>use chroot</code> is not set, it defaults to trying to enable a chroot but
+allows the daemon to continue (after logging a warning) if it fails. The
+one exception to this is when a module's <a href="#path"><code>path</code></a> has a &quot;/./&quot; chroot
+divider in it&nbsp;-&#8288;-&#8288; this causes an unset value to be treated as true for that
+module.</p>
+<p>Prior to rsync 3.2.7, the default value was &quot;true&quot;.  The new &quot;unset&quot;
+default makes it easier to setup an rsync daemon as a non-root user or to
+run a daemon on a system where chroot fails.  Explicitly setting the value
+to &quot;true&quot; in rsyncd.conf will always require the chroot to succeed.</p>
+<p>It is also possible to specify a dot-dir in the module's &quot;<a href="#path">path</a>&quot; to
+indicate that you want to chdir to the earlier part of the path and then
+serve files from inside the latter part of the path (with sanitizing and
+default symlink munging).  This can be useful if you need some library dirs
+inside the chroot (typically for uid &amp; gid lookups) but don't want to put
+the lib dir into the top of the served path (even though they can be hidden
+with an <a href="#exclude"><code>exclude</code></a> directive).  However, a better choice for a modern
+rsync setup is to use a <a href="#name_converter"><code>name converter</code></a>&quot; and try to avoid inner lib
+dirs altogether.  See also the <a href="#daemon_chroot"><code>daemon chroot</code></a> parameter, which causes
+rsync to chroot into its own chroot area before doing any path-related
+chrooting.</p>
+<p>If the daemon is serving the &quot;/&quot; dir (either directly or due to being
+chrooted to the module's path), rsync does not do any path sanitizing or
+(default) munging.</p>
+<p>When it has to limit access to a particular subdir (either due to chroot
+being disabled or having an inside-chroot path set), rsync will munge
+symlinks (by default) and sanitize paths.  Those that dislike munged
+symlinks (and really, really trust their users to not break out of the
+subdir) can disable the symlink munging via the &quot;<a href="#munge_symlinks">munge symlinks</a>&quot;
+parameter.</p>
+<p>When rsync is sanitizing paths, it trims &quot;..&quot; path elements from args that
+it believes would escape the module hierarchy. It also substitutes leading
+slashes in absolute paths with the module's path (so that options such as
+<code>--backup-dir</code> &amp; <code>--compare-dest</code> interpret an absolute path as rooted in
+the module's &quot;<a href="#path">path</a>&quot; dir).</p>
+<p>When a chroot is in effect <u>and</u> the &quot;<a href="#name_converter">name converter</a>&quot; parameter is
 <u>not</u> set, the &quot;<a href="#numeric_ids">numeric ids</a>&quot; parameter will default to being enabled
 (disabling name lookups).  This means that if you manually setup
 name-lookup libraries in your chroot (instead of using a name converter)
@@ -526,7 +553,7 @@ exclude everything in the subtree; the easiest way to do this is with a
 triple-star pattern like &quot;<code>/secret/***</code>&quot;.</p>
 <p>The &quot;filter&quot; parameter takes a space-separated list of daemon filter rules,
 though it is smart enough to know not to split a token at an internal space
-in a rule (e.g. &quot;<code>- /foo - /bar</code>&quot; is parsed as two rules).  You may specify
+in a rule (e.g. &quot;<code>- /foo  - /bar</code>&quot; is parsed as two rules).  You may specify
 one or more merge-file rules using the normal syntax.  Only one &quot;filter&quot;
 parameter can apply to a given module in the config file, so put all the
 rules you want in a single parameter.  Note that per-directory merge-file
@@ -538,8 +565,8 @@ requests that they be used.</p>
 
 <dt id="exclude"><code>exclude</code><a href="#exclude" class="tgt"></a></dt><dd>
 <p>This parameter takes a space-separated list of daemon exclude patterns.  As
-with the client <code>--exclude</code> option, patterns can be qualified with &quot;<code>-</code>&quot; or
-&quot;<code>+</code>&quot; to explicitly indicate exclude/include.  Only one &quot;exclude&quot; parameter
+with the client <code>--exclude</code> option, patterns can be qualified with &quot;<code>- </code>&quot; or
+&quot;<code>+ </code>&quot; to explicitly indicate exclude/include.  Only one &quot;exclude&quot; parameter
 can apply to a given module.  See the &quot;filter&quot; parameter for a description
 of how excluded files affect the daemon.</p>
 </dd>
@@ -784,7 +811,7 @@ made more human-readable.  The 3 supported levels are the same as for the
 <code>--human-readable</code> command-line option, though the default is for
 human-readability to be off.  Each added apostrophe increases the level
 (e.g. &quot;<code>%''l %'b %f</code>&quot;).</p>
-<p>The default log format is &quot;<code>%o %h [%a] %m (%u) %f %l</code>&quot;, and a &quot;<code>%t [%p]</code>&quot;
+<p>The default log format is &quot;<code>%o %h [%a] %m (%u) %f %l</code>&quot;, and a &quot;<code>%t [%p] </code>&quot;
 is always prefixed when using the &quot;<a href="#log_file">log file</a>&quot; parameter.  (A perl script
 that will summarize this default log format is included in the rsync source
 code distribution in the &quot;support&quot; subdirectory: rsyncstats.)</p>
@@ -806,7 +833,7 @@ See the <code>--checksum-choice</code> option for a way to choose the algorithm.
 <li>%h the remote host name (only available for a daemon)</li>
 <li>%i an itemized list of what is being updated</li>
 <li>%l the length of the file in bytes</li>
-<li>%L the string &quot;<code>-&gt; SYMLINK</code>&quot;, &quot;<code>=&gt; HARDLINK</code>&quot;, or &quot;&quot; (where <code>SYMLINK</code>
+<li>%L the string &quot;<code> -&gt; SYMLINK</code>&quot;, &quot;<code> =&gt; HARDLINK</code>&quot;, or &quot;&quot; (where <code>SYMLINK</code>
 or <code>HARDLINK</code> is a filename)</li>
 <li>%m the module name</li>
 <li>%M the last-modified time of the file</li>
@@ -864,7 +891,7 @@ example:</p>
 </code></pre>
 </blockquote>
 <p>Don't worry that the &quot;<code>*</code>&quot; will refuse certain vital options such as
-<code>--dry-run</code>, <code>--server</code>, <code>--no-iconv</code>, <code>--protect-args</code>, etc. These
+<code>--dry-run</code>, <code>--server</code>, <code>--no-iconv</code>, <code>--seclude-args</code>, etc. These
 important options are not matched by wild-card, so they must be overridden
 by their exact name.  For instance, if you're forcing iconv transfers you
 could use something like this:</p>
@@ -916,7 +943,7 @@ compatibility reasons, this options should not be confused with
 <code>--log-file-format</code>.</li>
 <li><code>--sender</code>: Use &quot;<a href="#write_only">write only</a>&quot; parameter instead of refusing this.</li>
 <li><code>--dry-run</code>, <code>-n</code>: Who would want to disable this?</li>
-<li><code>--protect-args</code>, <code>-s</code>: This actually makes transfers safer.</li>
+<li><code>--seclude-args</code>, <code>-s</code>: Is the oldest arg-protection method.</li>
 <li><code>--from0</code>, <code>-0</code>: Makes it easier to accept/refuse <code>--files-from</code> without
 affecting this helpful modifier.</li>
 <li><code>--iconv</code>: This is auto-disabled based on &quot;<a href="#charset">charset</a>&quot; parameter.</li>
@@ -1067,15 +1094,15 @@ authentication is provided. Use ssh as the transport if you want encryption.</p>
 SSL proxy.</p>
 <h2 id="SSL_TLS_Daemon_Setup">SSL/TLS Daemon Setup<a href="#SSL_TLS_Daemon_Setup" class="tgt"></a></h2>
 <p>When setting up an rsync daemon for access via SSL/TLS, you will need to
-configure a proxy (such as haproxy or nginx) as the front-end that handles the
-encryption.</p>
+configure a TCP proxy (such as haproxy or nginx) as the front-end that handles
+the encryption.</p>
 <ul>
 <li>You should limit the access to the backend-rsyncd port to only allow the
 proxy to connect.  If it is on the same host as the proxy, then configuring
 it to only listen on localhost is a good idea.</li>
-<li>You should consider turning on the <code>proxy protocol</code> parameter if your proxy
-supports sending that information.  The examples below assume that this is
-enabled.</li>
+<li>You should consider turning on the <code>proxy protocol</code> rsync-daemon parameter if
+your proxy supports sending that information.  The examples below assume that
+this is enabled.</li>
 </ul>
 <p>An example haproxy setup is as follows:</p>
 <blockquote>
@@ -1100,14 +1127,14 @@ backend be_rsync
        ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem;
 
        proxy_pass localhost:873;
-       proxy_protocol on; # Requires &quot;proxy protocol = true&quot;
+       proxy_protocol on; # Requires rsyncd.conf &quot;proxy protocol = true&quot;
        proxy_timeout 1m;
        proxy_connect_timeout 5s;
    }
 }
 </code></pre>
 </blockquote>
-<h2 id="EXAMPLES">EXAMPLES<a href="#EXAMPLES" class="tgt"></a></h2>
+<h2 id="DAEMON_CONFIG_EXAMPLES">DAEMON CONFIG EXAMPLES<a href="#DAEMON_CONFIG_EXAMPLES" class="tgt"></a></h2>
 <p>A simple rsyncd.conf file that allow anonymous rsync to a ftp area at
 <code>/home/ftp</code> would be:</p>
 <blockquote>
@@ -1162,7 +1189,7 @@ susan:herpass
 <p>Please report bugs! The rsync bug tracking system is online at
 <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h2 id="VERSION">VERSION<a href="#VERSION" class="tgt"></a></h2>
-<p>This manpage is current for version 3.2.4 of rsync.</p>
+<p>This manpage is current for version 3.3.0pre1 of rsync.</p>
 <h2 id="CREDITS">CREDITS<a href="#CREDITS" class="tgt"></a></h2>
 <p>Rsync is distributed under the GNU General Public License.  See the file
 <a href="COPYING">COPYING</a> for details.</p>
@@ -1172,9 +1199,10 @@ project is <a href="https://github.com/WayneD/rsync">https://github.com/WayneD/r
 <p>Thanks to Warren Stanley for his original idea and patch for the rsync daemon.
 Thanks to Karsten Thygesen for his many suggestions and documentation!</p>
 <h2 id="AUTHOR">AUTHOR<a href="#AUTHOR" class="tgt"></a></h2>
-<p>Rsync was written by Andrew Tridgell and Paul Mackerras.  Many people have
-later contributed to it.</p>
+<p>Rsync was originally written by Andrew Tridgell and Paul Mackerras.  Many
+people have later contributed to it. It is currently maintained by Wayne
+Davison.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>15 Apr 2022</i></p></div>
+<div style="float: right"><p><i>29 Apr 2023</i></p></div>
 </body></html>
