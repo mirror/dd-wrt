@@ -1,8 +1,8 @@
 rpcbind-configure: libtirpc
 	cd rpcbind && ./autogen.sh
 	cd rpcbind && ./configure --libdir=/usr/lib --host=$(ARCH)-linux \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc" \
-		LDFLAGS="-L$(TOP)/libtirpc/src/.libs" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc" \
+		LDFLAGS="$(LDLTO) -L$(TOP)/libtirpc/src/.libs" \
 		TIRPC_CFLAGS="-I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc" \
 		TIRPC_LIBS="-L$(TOP)/libtirpc/src/.libs -ltirpc" \
 		--prefix=/usr --with-systemdsystemunitdir=no
