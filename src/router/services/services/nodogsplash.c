@@ -95,7 +95,7 @@ void start_splashd(void)
 	if (!nvram_matchi("ND_enable", 1))
 		return;
 
-	insmod("ipt_mark ipt_mac xt_mark xt_mac");
+	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
 	eval("nodogsplash", "-c", NODOG_CONF);
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
