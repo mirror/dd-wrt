@@ -314,7 +314,7 @@ static int
 smb_receive_poll(struct smb_sb_info *server)
 {
 	struct file *file = server->sock_file;
-	poll_table wait_table;
+	struct poll_wqueues wait_table;
 	int result = 0;
 	int timeout = server->mnt->timeo * HZ;
 	int mask;
@@ -323,7 +323,7 @@ smb_receive_poll(struct smb_sb_info *server)
 		poll_initwait(&wait_table);
                 set_current_state(TASK_INTERRUPTIBLE);
 
-		mask = file->f_op->poll(file, &wait_table);
+		mask = file->f_op->poll(file, &wait_table.pt);
 		if (mask & POLLIN) {
 			poll_freewait(&wait_table);
 			current->state = TASK_RUNNING;

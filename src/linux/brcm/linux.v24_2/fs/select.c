@@ -19,6 +19,7 @@
 #include <linux/poll.h>
 #include <linux/personality.h> /* for STICKY_TIMEOUTS */
 #include <linux/file.h>
+#include <linux/fs.h>
 
 #include <asm/uaccess.h>
 
@@ -52,10 +53,18 @@ struct poll_table_page {
  * as all select/poll functions have to call it to add an entry to the
  * poll table.
  */
+void __pollwait(struct file *filp, wait_queue_head_t *wait_address, poll_table *p);
 
-void poll_freewait(poll_table* pt)
+void poll_initwait(struct poll_wqueues *pwq)
 {
-	struct poll_table_page * p = pt->table;
+	init_poll_funcptr(&pwq->pt, __pollwait);
+	pwq->error = 0;
+	pwq->table = NULL;
+}
+
+void poll_freewait(struct poll_wqueues *pwq)
+{
+	struct poll_table_page * p = pwq->table;
 	while (p) {
 		struct poll_table_entry * entry;
 		struct poll_table_page *old;
@@ -72,8 +81,9 @@ void poll_freewait(poll_table* pt)
 	}
 }
 
-void __pollwait(struct file * filp, wait_queue_head_t * wait_address, poll_table *p)
+void __pollwait(struct file *filp, wait_queue_head_t *wait_address, poll_table *_p)
 {
+	struct poll_wqueues *p = container_of(_p, struct poll_wqueues, pt);
 	struct poll_table_page *table = p->table;
 
 	if (!table || POLL_TABLE_FULL(table)) {
@@ -102,6 +112,7 @@ void __pollwait(struct file * filp, wait_queue_head_t * wait_address, poll_table
 		add_wait_queue(wait_address,&entry->wait);
 	}
 }
+
 
 #define __IN(fds, n)		(fds->in + n)
 #define __OUT(fds, n)		(fds->out + n)
@@ -163,7 +174,8 @@ get_max:
 
 int do_select(int n, fd_set_bits *fds, long *timeout)
 {
-	poll_table table, *wait;
+	struct poll_wqueues table;
+	poll_table *wait;
 	int retval, i, off;
 	long __timeout = *timeout;
 
@@ -176,7 +188,7 @@ int do_select(int n, fd_set_bits *fds, long *timeout)
 	n = retval;
 
 	poll_initwait(&table);
-	wait = &table;
+	wait = &table.pt;
 	if (!__timeout)
 		wait = NULL;
 	retval = 0;
@@ -383,10 +395,10 @@ static void do_pollfd(unsigned int num, struct pollfd * fdpage,
 }
 
 static int do_poll(unsigned int nfds, unsigned int nchunks, unsigned int nleft, 
-	struct pollfd *fds[], poll_table *wait, long timeout)
+	struct pollfd *fds[], struct poll_wqueues *wait, long timeout)
 {
 	int count;
-	poll_table* pt = wait;
+	poll_table* pt = &wait->pt;
 
 	for (;;) {
 		unsigned int i;
@@ -413,7 +425,7 @@ asmlinkage long sys_poll(struct pollfd * ufds, unsigned int nfds, long timeout)
 {
 	int i, j, fdcount, err;
 	struct pollfd **fds;
-	poll_table table, *wait;
+	struct poll_wqueues table, *wait;
 	int nchunks, nleft;
 
 	/* Do a sanity check on nfds ... */

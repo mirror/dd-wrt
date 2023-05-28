@@ -12,6 +12,7 @@
 #include <linux/module.h>
 #include <linux/smp_lock.h>
 #include <linux/iobuf.h>
+#include <linux/eventpoll.h>
 
 /* sysctl tunables... */
 struct files_stat_struct files_stat = {0, 0, NR_FILE};
@@ -42,6 +43,7 @@ struct file * get_empty_filp(void)
 		files_stat.nr_free_files--;
 	new_one:
 		memset(f, 0, sizeof(*f));
+		eventpoll_init_file(f);
 		atomic_set(&f->f_count,1);
 		f->f_version = ++event;
 		f->f_uid = current->fsuid;
@@ -86,6 +88,7 @@ struct file * get_empty_filp(void)
 int init_private_file(struct file *filp, struct dentry *dentry, int mode)
 {
 	memset(filp, 0, sizeof(*filp));
+	eventpoll_init_file(filp);
 	filp->f_mode   = mode;
 	atomic_set(&filp->f_count, 1);
 	filp->f_dentry = dentry;
@@ -107,6 +110,11 @@ void fastcall fput(struct file * file)
 	struct inode * inode = dentry->d_inode;
 
 	if (atomic_dec_and_test(&file->f_count)) {
+		/*
+	 	 * The function eventpoll_release() should be the 
+	 	 * first called in the file cleanup chain.
+	 	 */
+		eventpoll_release(file);
 		locks_remove_flock(file);
 
 		if (file->f_iobuf)
