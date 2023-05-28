@@ -200,7 +200,7 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("wol");
 #endif
 
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	start_service_f("splashd");
 #endif
 
@@ -378,7 +378,7 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_PPTPD
 	stop_service_f("pptpd");
 #endif
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	stop_service_f("splashd");
 #endif
 #ifdef HAVE_VNCREPEATER
@@ -511,7 +511,7 @@ static void handle_index(void)
 	restart_f("cron");
 #endif
 //      start_service_f("anchorfreednat");
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 #ifdef HAVE_SMBD
@@ -579,7 +579,7 @@ static void handle_hotspot(void)
 #ifdef HAVE_WIFIDOG
 	restart_f("wifidog");
 #endif
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 #ifdef HAVE_SPUTNIK_APD
@@ -758,7 +758,7 @@ static void handle_services(void)
 	stop_service("antaira_agent");
 	start_service_f("antaira_agent");
 #endif
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 #ifdef HAVE_ZABBIX
@@ -887,7 +887,7 @@ static void handle_management(void)
 	stop_service("wland");
 	start_service_f("wland");
 	restart_fdelay("httpd", 2);
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 #ifdef HAVE_WOL
@@ -994,7 +994,7 @@ static void handle_filters(void)
 #ifndef HAVE_MICRO
 	start_service_f("cron");
 #endif
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 #ifdef HAVE_MULTICAST
@@ -1023,7 +1023,7 @@ static void handle_routing(void)
 #ifdef HAVE_OLSRD
 	restart_f("olsrd");
 #endif
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 //      start_service_f("anchorfreednat");
@@ -1062,7 +1062,7 @@ static void handle_forward(void)
 #endif
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 
@@ -1072,7 +1072,7 @@ static void handle_qos(void)
 {
 
 	restart_f("wland");
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 #ifdef HAVE_OPENVPN
@@ -1097,7 +1097,7 @@ static void handle_forwardupnp(void)
 	stop_service("wland");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
-#ifdef HAVE_NOCAT
+#ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
 
