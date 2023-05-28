@@ -1088,6 +1088,9 @@ hotspot.nodog_timeout="Login Timeout";
 hotspot.nodog_verbose="Verbosity";
 hotspot.nodog_route="Route Only";
 hotspot.nodog_MAClist="MAC Whitelist";
+hotspot.nodog_maxclients="Max Number of Clients";
+hotspot.nodog_downloadlimit="Download Limit";
+hotspot.nodog_uploadlimit="Upload Limit";
 
 
 hotspot.smtp_legend="SMTP Redirect";
