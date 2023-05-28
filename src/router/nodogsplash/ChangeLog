@@ -1,3 +1,116 @@
+nodogsplash (5.0.0)
+
+Version 5.0.0 has been forked from 3.3.2 in order to remove the
+FAS in a clean way. All patches from 4.5.1 has been backported.
+
+  * Remove the FAS (forward authentication service)
+  * ndsctl status: show Session Timeout
+  * debian: use native format
+  * common.h: increase QUERYMAXLEN to 4k
+  * ndsctl_auth(): ensure client->id does not change between search and modify
+  * fw_iptables: fix a deadlock in case when popen() fails
+  * ndsctl status: use format_duration for Preauth/Auth Idle Timeout
+  * libmicrohttpd: sanitize the path before parsing it
+
+ -- Alexander Couzens <lynxis@fe80.eu> Wed, 8 Jul 2020 12:34:56 +0000
+
+nodogsplash (3.3.2)
+
+  * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is set AND fasport=80  [bluewavenet]
+  * Validate fasremoteip to ensure that if it is set, then it is a valid dotted format IPv4 address  [bluewavenet]
+  * Numerous Documentation updates  [bluewavenet]
+  * Fix to Known Issue on OpenWrt >18.x.x with v3.3.1. This was caused by misconfigured Makefile for libmicrohttpd; this has been fixed there [bluewavenet]
+
+ --Rob White <dot@blue-wave.net> Tue, 23 Apr 2019 11:49:00 +0000
+
+nodogsplash (3.3.1)
+
+  * Include preinstalled PreAuth Login script in package [bluewavenet]
+  * Documentation updates PreAuth [bluewavenet]
+  * Generate Error 403 Forbidden, if Gateway Port is accessed directly when FAS is enabled and client is not authenticated [bluewavenet]
+  * Improve splash.css, tidy up splash/status.html, tidy up Preauth demo script [bluewavenet]
+  * Remove some redundant code [mwarning]
+  * ndsctl_thread - ignore interupts when returning from epoll [lynxis]
+  * auth.c - use correct types to prevent cast and comparement of uint and int [lynxis]
+  * openwrt/init.d - prevent start of the daemon if configuration generation fails [lynxis]
+  * Known Issue - on OpenWrt >18.x.x, an issue with libmicrohttpd results in the gnutls suite being installed causing potential out of memory errors on devices <= 64M RAM
+
+ -- Rob White <dot@blue-wave.net> Fri, 7 Apr 2019 19:43:00 +0000
+
+nodogsplash (3.3.0)
+
+  * Add PreAuth functionality - support for Dynamic Splash Pages, served by NDS directly [bluewavenet]
+  * Documentation updates including new sections for Splash Page and PreAuth [bluewavenet]
+  * Fix memory handling bug, issue #341 [mwarning] [stevo01]
+  * Improvements towards usable IPv6 support [wanxewoj] [mwarning]
+
+ -- Rob White <dot@blue-wave.net> Fri, 15 Mar 2019 15:48:00 +0000
+
+nodogsplash (3.2.1)
+
+  * reset upload/download counter when a client has been authenticated a second time [mwarning]
+  * print sesssion duration as 0 in "ndsctl json" and "ndsctl clients" output when a session has not been started [mwarning]
+  * rework html templater to speed up splash page generation [mwarning]
+  * FAS documentation updates [bluewavenet]
+  * Add CSS file and update splash and status html [bluewavenet]
+
+ -- Moritz Warning <moritzwarning@web.de>  Wed, 26 Sep 2018 15:04:05 +0000
+
+nodogsplash (3.2.0)
+
+  * Add Redirect to Status page support for FAS [bluewavenet]
+  * Add iptables version check [mwarning]
+  * Add ndsctl status output for FAS and Binauth status. [bluewavenet]
+  * Initialize fas_remoteip with gw_address and simplify code [mwarning]
+  * Fix Readthedocs updates and update Docs URL [bluewavenet]
+  * Update documentation and Debian man page [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net> Sun, 2 Sep 2018 16:09:00 +0000
+
+nodogsplash (3.1.0)
+
+  * Integrated support for separate Forward Authentication Service (FAS), adding the following configuration options [bluewavenet, mwarning]:
+      fasport, faspath, fasremoteip, fas_secure_enabled
+  * Modify binauth feature internally for compatibility with FAS, allowing Binauth to be used for post FAS processing [bluewavenet, mwarning]
+  * Implement ndsctl json filtering to return client information from IP, MAC or Token. [mwarning]
+  * Various minor code fixes and improvements
+
+ -- Rob White <dot@blue-wave.net> Sun, 26 Aug 2018 10:05:00 +0000
+
+nodogsplash (3.0.0)
+
+  * Removed settings without implementation due to the change of the http library:
+      DecongestHttpdThreads, HttpdThreadthreshold, HttpdThreaddelayms
+      AuthenticateImmediately, RemoteAuthenticatorAction, EnablePreAuth,
+      BinVoucher, ForceVoucher, PasswordAuthentication, UsernameAuthentication,
+      PasswordAttempts, Username, Password
+  * Add binauth feature as a replacement for the old binvoucher feature
+    * call a script with username/password to decide the authentication
+  * Replace ClientForceTimeout setting with SessionTimeout
+  * Replace ClientTimeout settings with PreauthIdleTimeout and AuthIdleTimeout
+  * Replace infoskel.html with a templated StatusPage (default is status.html)
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 31 July 2018 19:19:00 +0000
+
+nodogsplash (2.1.1)
+
+  * Update nodogsplash.conf for non-OpenWrt builds
+  * Minor cosmetic changes
+  
+ -- Rob White <dot@blue-wave.net> Sat, 12 May 2018 10:03:00 +0000
+
+nodogsplash (2.1.0) 
+
+  * Allow firewall rule chaining, PR #231 [bluewavenet]
+  * OpenWrt: Add hook to allow firewall to restart nodogsplash after configuring additional rules, PR https://github.com/openwrt-routing/packages/pull/369 [bluewavenet]
+  * OpenWrt: Add support for mwan3(v2) and sqm-scripts, PR https://github.com/openwrt-routing/packages/pull/359 [bluewavenet]
+  * Update documentation [bluewavenet]
+  * Enable TCP Fast Open, PR #237 [blogcin]
+  * Avoid continuous thread creation for control interface, PR #238 [blogcin]
+  * Fix possible memory corruption for long config file path, PR #240 [blogcin]
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 08 May 2018 19:19:00 +0000
+
 nodogsplash (2.0.1)
 
   * Added Forwarding Authentication Service (FAS). [bluewavenet]

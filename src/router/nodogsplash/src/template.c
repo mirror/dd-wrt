@@ -5,52 +5,30 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "debug.h"
 #include "safe.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-#endif
 
-const char *variable_names[19] = {
-	"authaction",
-	"authtarget",
-	"clientip",
-	"clientmac",
-	"content",
-	"denyaction",
-	"error_msg",
-	"gatewaymac",
-	"gatewayname",
-	"imagesdir",
-	"maxclients",
-	"nclients",
-	"pagesdir",
-	"redir",
-	"title",
-	"tok",
-	"token",
-	"uptime",
-	"version"
-};
-
-static int get_variable_index(const char *name)
+static const char *get_variable_value(const struct template *vars, const char *name)
 {
-	int j;
+	int i;
 
-	for(j=0; j < ARRAY_SIZE(variable_names); j++) {
-		if (strcmp(name, variable_names[j]) == 0) {
-			return j;
+	i = 0;
+	while (vars[i].name) {
+		if (strcmp(vars[i].name, name) == 0) {
+			return vars[i].value;
 		}
+		i += 1;
 	}
 
-	return -1;
+	return NULL;
 }
 
 /* This is compatible with the old nodogsplash templater.
  * Variable names starts with an '$'.
  * Variable ending is detected if when first non-alphanumeric char is shown - except underline ('_').
  */
-int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char *src, size_t src_len)
+int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src, size_t src_len)
 {
 	int src_i = 0; /* track input buffer position */
 	int dst_i = 0;
@@ -58,10 +36,10 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 	int valuelen;
 	char varname[32]; /* contains the varname */
 	const char *varnameptr; /* intermediate pointer */
-	int varidx; /* the position of the variable in variable_names */
+	const char *value; /* value of a variable */
 
 	memset(dst, 0x0, dst_len);
-	while((src_i < src_len) && (dst_i < dst_len)) {
+	while ((src_i < src_len) && (dst_i < dst_len)) {
 		if (src[src_i] != '$') {
 			dst[dst_i] = src[src_i];
 			dst_i++;
@@ -74,16 +52,16 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 
 		/* read the whole variable name */
 		varnameptr = src + src_i;
-		for(varlen=0; (varlen < (src_len-src_i)) &&
+		for (varlen = 0; (varlen < (src_len - src_i)) &&
 				(isalnum(varnameptr[varlen]) || varnameptr[varlen] == '_')
 				; varlen++)
 			;
 
 		/* variable too long, can't be a valid variable */
-		if (varlen > sizeof(varname)-1) {
+		if (varlen > (sizeof(varname) - 1)) {
 			/* we already parsed the varname and can skip these chars
 			 * but we need to copy these first to the output buffer */
-			strncpy(dst + dst_i, varnameptr, varlen > dst_len-dst_i ? dst_len-dst_i : varlen);
+			memcpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
 			src_i += varlen;
 			dst_i += varlen;
 			continue;
@@ -91,58 +69,23 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 
 		memset(varname, 0x0, sizeof(varname));
 		strncpy(varname, varnameptr, varlen);
-		varidx = get_variable_index(varname);
+		value = get_variable_value(vars, varname);
 
 		/* check if varname was found in valid variable names */
-		if (varidx == -1) {
+		if (value == NULL) {
 			/* we already parsed the varname and can skip these chars */
-			strncpy(dst + dst_i, varnameptr, varlen > dst_len-dst_i ? dst_len-dst_i : varlen);
+			memcpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
 			src_i += varlen;
 			dst_i += varlen;
 			continue;
 		}
 
-		/* check if variable name is empty */
-		if (templor->variables[varidx] == NULL ||
-				strlen(templor->variables[varidx]) == 0) {
-			src_i += varlen;
-			continue;
-		}
-
 		/* it's a valid varname and contains a variable replace it */
-		valuelen = strlen(templor->variables[varidx]);
-		strncpy(dst + dst_i, templor->variables[varidx], valuelen > dst_len-dst_i ? dst_len-dst_i : valuelen);
+		valuelen = strlen(value);
+		memcpy(dst + dst_i, value, (valuelen > (dst_len - dst_i)) ? (dst_len - dst_i) : valuelen);
 		dst_i += valuelen;
 		src_i += varlen;
 	}
-	return 0;
-}
-
-int tmpl_set_variable(struct templater *templor, const char *name, const char *value)
-{
-	int idx;
-
-	if (!templor)
-		return -1;
-
-	if (!value)
-		return -1;
-
-	idx = get_variable_index(name);
-	if (idx < 0)
-		return -1;
-
-	if (templor->variables[idx])
-		free((void *)templor->variables[idx]);
-
-	templor->variables[idx] = value;
 
 	return 0;
-}
-
-void tmpl_init_templor(struct templater *templor)
-{
-	if (!templor)
-		return;
-	memset(templor, 0x0, sizeof(*templor));
 }
