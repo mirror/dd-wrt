@@ -2923,6 +2923,38 @@ struct nvram_param srouter_defaults[] = {
 	{ "wds_watchdog_timeout", "10" },
 	{ "dhcpfwd_enable", "0" },
 	{ "dhcpfwd_ip", "0.0.0.0" },
+#ifdef HAVE_NODOG
+	{ "ND_enable", "0" },
+#ifdef HAVE_BRANDING
+	{ "ND_GatewayName", "GATEWAY" },
+#else
+	{ "ND_GatewayName", "DD-WRT" },
+#endif
+#ifdef HAVE_BRANDING
+	{ "ND_HomePage", "" },
+#else
+	{ "ND_HomePage", "http://www.dd-wrt.com" },
+#endif
+	{ "ND_ExcludePorts", "" },
+	{ "ND_IncludePorts", "" },
+	{ "ND_LoginTimeout", "120" },
+#ifdef HAVE_BRANDING
+	{ "ND_AllowedWebHosts", "google.com" },
+#else
+	{ "ND_AllowedWebHosts", "" },
+#endif
+#ifdef HAVE_RAMSKOV
+	{ "ND_DocumentRoot", "/tmp" },
+#else
+	{ "ND_DocumentRoot", "/www" },
+#endif
+	{ "ND_MACWhiteList", "" },
+	{ "ND_MaxClients", "250" },
+	{ "ND_GatewayPort", "5280" },
+	{ "ND_IdleTimeout", "0" },
+	{ "ND_dl", "0" },
+	{ "ND_up", "0" },
+#else
 	{ "NC_enable", "0" },
 #ifdef HAVE_BRANDING
 	{ "NC_GatewayName", "GATEWAY" },
@@ -2961,6 +2993,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "NC_MaxMissedARP", "5" },
 	{ "NC_RenewTimeout", "0" },
 
+#endif
 	{ "wl_wme", "on" },	/* WME mode (off|on) */
 	{ "wl1_wme", "on" },	/* WME mode (off|on) */
 	/*
