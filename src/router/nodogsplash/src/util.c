@@ -377,7 +377,7 @@ int is_addr(const char* addr) {
 void
 ndsctl_status(FILE *fp)
 {
-	char timebuf[32];
+	char timebuf[64];
 	char durationbuf[64];
 	s_config *config;
 	t_client *client;
