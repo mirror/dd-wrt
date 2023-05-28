@@ -1,6 +1,6 @@
 .\" Pound - the reverse-proxy load-balancer
 .\" Copyright (C) 2002-2010 Apsis GmbH
-.\" Copyright (C) 2018-2022 Sergey Poznyakoff
+.\" Copyright (C) 2018-2023 Sergey Poznyakoff
 .\"
 .\" Pound is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -14,16 +14,18 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
-.TH POUNDCTL 8 "December 19, 2022" "poundctl" "System Manager's Manual"
+.TH POUNDCTL 8 "March 3, 2023" "poundctl" "System Manager's Manual"
 .SH NAME
 poundctl \- control the pound daemon
 .SH SYNOPSIS
 .B poundctl
-[\fB\-c \fIFILE\fR]
+[\fB\-Vvh\fR]
+[\fB\-f \fIFILE\fR]
 [\fB\-i \fIN\fR]
 [\fB\-j\fR]
 [\fB\-s \fISOCKET\fR]
-[\fB\-h\fR]
+[\fB\-T \fITEMPLATE-FILE\fR]
+[\fB\-t \fITEMPLATE-NAME\fR]
 \fICOMMAND\fR
 [\fB/\fIL\fB/\fIS\fB/\fIB\fR]
 [\fIARG\fR]
@@ -47,7 +49,7 @@ file, look up for this statement and use the pathname defined by it as
 the control socket file.  This can be altered in two ways.  First, if
 using the configuration file in a non-standard location, the pathname
 of this file can be given to the program using the
-.B \-c
+.B \-f
 command line option.  Secondly, the socket name can be supplied in the
 command line explicitly, using the
 .B \-s
@@ -60,8 +62,22 @@ All commands take the \fB/\fIL\fB/\fIS\fB/\fIB\fR argument, which
 specifies the
 .B pound
 object to apply the command to.  Here, \fIL\fR, \fIS\fR, and \fIB\fR
-stand for the numbers of \fIlistener\fR, \fIservice\fR and
-\fIbackend\fR, correspondingly.  Depending on the command, either
+stand for the identifiers of \fIlistener\fR, \fIservice\fR and
+\fIbackend\fR, correspondingly.  For listeners and services, both
+numeric identifiers or symbolic names are allowed.  Numeric
+identifiers refer to the ordinal number of the listener in the
+configuration file, or service within the enclosing listener
+(or in the configuration file, if \fIL\fR is \fB\-\fR, see below).
+Symbolic names refer to the names assigned with the corresponding
+.BR ListenHTTP ,
+.BR ListenHTTPS ,
+or
+.B Service
+statement in the configuration file.  The identifier \fIB\fR is
+always numeric and refers to the ordinal number of the backend in
+the service.
+.PP
+Depending on the command, either
 \fIB\fR or both /\fIS\fR/\fIB\fR/ may be omitted.  For example,
 the following command will disable backend 2 in service 1 of listener 0:
 .PP
@@ -108,9 +124,51 @@ specified.
 .TP
 \fBadd\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR \fIKEY\fR
 Add session with given key.
+.SH TEMPLATES
+Information received from
+.B pound
+is formatted as a JSON object.  To produce human-readable output,
+.B poundctl
+uses a
+.IR template ,
+i.e. a text written in a domain-specific language expressly designed
+for that purpose.  The template language complies, in general, with
+the specification in <https://pkg.go.dev/text/template>.  Refer to
+.BR poundctl.tmpl (5),
+for a detailed description.
+.PP
+Templates are looked up in template file
+.BR poundctl.tmpl .
+This file is searched in template search path which is, by default,
+the file \fB.poundctl.tmpl\fR in the user home directory and the
+file \fBpoundctl.tmpl\fR (without the leading dot) in the \fIprogram
+data directory\fR, normally \fB/usr/share/pound\fR.  The default
+search path can be changed by setting the
+environment variable
+.BR POUND_TMPL_PATH ,
+which see.  To examine the default value of the search path, use the
+.B \-V
+command line option.
+.PP
+The template file to use can be requested
+from the command line using the
+.B \-t
+option.  In this case, template search path in not searched and the
+supplied file is used verbatim.
+.PP
+Unless instructed otherwise,
+.B poundctl
+uses the template "default".  You can request another template name
+using the
+.B \-T
+command line option.
+.PP
+The default
+.B poundctl.tmpl
+file defines two templates: \fBdefault\fR and \fBxml\fR.
 .SH OPTIONS
 .TP
-\fB\-c \fIFILE\fR
+\fB\-f \fIFILE\fR
 Location of \fBpound\fR configuration file.
 .TP
 \fB\-i \fIN\fR
@@ -124,8 +182,34 @@ Shows a short help output and exit.
 .TP
 \fB\-s \fISOCKET\fR
 Sets control socket pathname.
+.TP
+\fB\-T \fITEMPLATE-FILE\fR
+Sets the name of the template file to use.
+.TP
+\fB\-t \fITEMPLATE-NAME\fR
+Defines the name of the template to use instead of the "default".
+.TP
+.B \-V
+Print program version, compilation settings, and exit.
+.TP
+.B \-v
+Increases output verbosity level.
+.SH ENVIRONMENT
+.TP
+.B POUND_TMPL_PATH
+Overrides the template search path.  The value is a column-delimited
+list of directories or file name.  To locate the template file, the
+path is scanned left-to right.  If an element is a regular file name
+(or a hard or symbolic link to a regular file),
+.B poundctl
+tries to open that file.  If an element is a directory name,
+the program tries to open the file
+.B poundctl.tmpl
+in that directory.  If opening succeeds, scanning stops and templates
+are read from that file.
 .SH SEE ALSO
-.BR pound (8).
+.BR pound (8),
+.BR poundctl.tmpl (5).
 .SH AUTHOR
 Written by Robert Segall, Apsis GmbH, and Sergey Poznyakoff.
 .SH "REPORTING BUGS"
@@ -134,7 +218,7 @@ at https://github.com/graygnuorg/pound/issues.
 .SH COPYRIGHT
 Copyright \(co 2002-2010 Apsis GmbH.
 .br
-Copyright \(co 2018-2022 Sergey Poznyakoff
+Copyright \(co 2018-2023 Sergey Poznyakoff
 .sp
 .na
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>

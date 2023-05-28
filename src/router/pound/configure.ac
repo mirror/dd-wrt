@@ -1,6 +1,6 @@
 # Pound - the reverse-proxy load-balancer                -*- autoconf -*-
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2022 Sergey Poznyakoff
+# Copyright (C) 2018-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with pound.  If not, see <http://www.gnu.org/licenses/>.
-AC_PREREQ([2.69])
-AC_INIT([pound],[4.1.91],[gray@gnu.org],
+AC_PREREQ([2.71])
+AC_INIT([pound],[4.8],[gray@gnu.org],
 	[pound],[https://github.com/graygnuorg/pound])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/pound.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([1.15 gnu tar-ustar])
+AM_INIT_AUTOMAKE([1.16.5 gnu tar-ustar])
+AC_CANONICAL_HOST
 
 # Checks for programs.
 AC_PROG_CC
@@ -92,23 +93,6 @@ AC_ARG_WITH([group],
  [AS_HELP_STRING([--with-group=name],[The group that will own the files installed by Pound])],
  [I_GRP="${with_group}"])
 
-AC_ARG_ENABLE([super],
- [AS_HELP_STRING([--enable-super],[enable or disable running with supervisor process (default: enabled)])],
- [if test ${enableval} = "yes"; then
-    SUPERVISOR=1
-  else
-    SUPERVISOR=0
-  fi],
- [SUPERVISOR=1])
-
-AC_DEFINE_UNQUOTED([SUPERVISOR],[$SUPERVISOR],
- [Compile supervisor code])
-
-AC_ARG_ENABLE([pcreposix],
- [AS_HELP_STRING([--enable-pcreposix],[enable or disable using the pcreposix library (default: enabled if available)])],
- [status_pcreposix=${enableval}],
- [status_pcreposix=yes])
-
 AC_ARG_ENABLE([tcmalloc],
  [AS_HELP_STRING([--enable-tcmalloc],[enable or disable using the tcmalloc library (default: enabled if available)])],
  [status_tcmalloc=${enableval}],
@@ -137,6 +121,23 @@ AC_CHECK_LIB([nsl], [gethostbyaddr])
 AC_CHECK_LIB([socket], [socket])
 AC_CHECK_LIB([resolv], [hstrerror])
 
+AC_ARG_ENABLE([pthread-cancel-probe],
+ [AS_HELP_STRING([--enable-pthread-cancel-probe],
+		 [enable early probe of the pthread_cancel function])],
+  [case ${enableval} in
+   yes) early_pthread_cancel_probe=1;;
+   no)  early_pthread_cancel_probe=0;;
+   *)   early_pthread_cancel_probe=0;;
+   esac],
+  [case $host_os in
+   *-gnu|*-gnulibc1|*-gnueabi|*-gnueabihf)
+	  early_pthread_cancel_probe=1;;
+   *)     early_pthread_cancel_probe=0;;
+   esac])
+
+AC_DEFINE_UNQUOTED([EARLY_PTHREAD_CANCEL_PROBE],[$early_pthread_cancel_probe],
+ [Define to try pthread_cancel before chroot, to force loading necessary libraries])
+
 AC_CHECK_LIB([crypto],[BIO_new],[],
 	     [AC_MSG_FAILURE([Missing OpenSSL (-lcrypto) - aborted],[1])])
 AC_CHECK_LIB([ssl],[SSL_CTX_new],[],
@@ -152,18 +153,9 @@ AM_CONDITIONAL([SET_DH_AUTO],[test "$SET_DH_AUTO" = 1])
 AC_DEFINE_UNQUOTED([SET_DH_AUTO],[$SET_DH_AUTO],
   [Define to 1 of *set_dh_auto macros are available])
 
-if test "$status_pcreposix" != no; then
-  AC_CHECK_LIB([pcre],[pcre_compile])
-  AC_CHECK_LIB([pcreposix],[regcomp])
-  if test $ac_cv_lib_pcreposix_regcomp = yes; then
-    status_pcreposix=yes
-    AC_DEFINE([HAVE_LIBPCREPOSIX],[1],[Define if compiling with libpcreposix])
-  else
-    status_pcreposix=no
-  fi
-fi
+PND_PCREPOSIX
 
-AC_CHECK_HEADERS([getopt.h pthread.h openssl/ssl.h openssl/engine.h pcreposix.h pcre/pcreposix.h])
+AC_CHECK_HEADERS([getopt.h pthread.h openssl/ssl.h openssl/engine.h])
 
 AC_TYPE_UID_T
 AC_TYPE_PID_T
@@ -215,10 +207,9 @@ Pound configuration parameters:
 Buffer size ................................... $bufsize
 Owner user .................................... $owner_user
 Owner group ................................... $owner_group
-Supervisor process ............................ $status_supervisor
 PCRE POSIX library ............................ $status_pcreposix
 Memory allocator .............................. $memory_allocator
-
+Early pthread_cancel probe .................... $status_pthread_cancel_probe
 *******************************************************************
 
 EOF
@@ -226,13 +217,17 @@ EOF
 [bufsize=$MAXBUF
 owner_user=$I_OWNER
 owner_group=$I_GRP
-if test $SUPERVISOR = 1; then
-  status_supervisor=yes
+if test $status_pcreposix != no; then
+  status_pcreposix=pcre$status_pcreposix
 else
-  status_supervisor=no
+  status_pcreposix=$status_pcreposix
 fi
-status_pcreposix=$status_pcreposix
 memory_allocator=$memory_allocator
+if test "$early_pthread_cancel_probe" = 1; then
+  status_pthread_cancel_probe=yes
+else
+  status_pthread_cancel_probe=no
+fi
 ])
 
 AC_CONFIG_TESTDIR(tests)

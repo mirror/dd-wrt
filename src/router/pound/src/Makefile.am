@@ -1,6 +1,6 @@
 # Pound - the reverse-proxy load-balancer                -*- automake -*-
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2022 Sergey Poznyakoff
+# Copyright (C) 2018-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,21 +17,26 @@
 
 AM_CFLAGS = @PTHREAD_CFLAGS@
 
-AM_CPPFLAGS = @SSL_CPPFLAGS@ \
+AM_CPPFLAGS = @SSL_CPPFLAGS@ @PCREPOSIX_CFLAGS@ \
  -DSYSCONFDIR=\"$(sysconfdir)\"\
- -DLOCALSTATEDIR=\"$(localstatedir)\"
+ -DLOCALSTATEDIR=\"$(localstatedir)\"\
+ -DPKGDATADIR=\"$(pkgdatadir)\"
 AM_LDFLAGS  = @SSL_LDFLAGS@
-LDADD = ./libpound.a @PTHREAD_LIBS@
+LDADD = libpound.a @PCREPOSIX_LIBS@ @PTHREAD_LIBS@
 
 sbin_PROGRAMS=pound
 pound_SOURCES=\
  config.c\
  http.c\
+ metrics.c\
  pound.c\
  svc.c
 
 noinst_LIBRARIES = libpound.a
-libpound_a_SOURCES = json.c json.h mem.c
+libpound_a_SOURCES = json.c json.h mem.c progname.c tmpl.c
+
+pkgdata_DATA = poundctl.tmpl
+EXTRA_DIST = poundctl.tmpl
 
 install-exec-hook:
 	-@if test "$${EUID:-65535}" -eq 0; then \
@@ -47,8 +52,9 @@ noinst_HEADERS=pound.h extern.h list.h
 
 if SET_DH_AUTO
 DHSRC =
+nodist_pound_SOURCES =
 else
-noinst_HEADERS += dh.h
+nodist_pound_SOURCES = dh.h
 DHSRC = dh512.h dh@DH_LEN@.h
 
 dh512.h:

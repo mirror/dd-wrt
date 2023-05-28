@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ end
 
 PT_CHECK([ListenHTTP
 	Service
-		Redirect "http://example.org/"
+		Redirect 302 "http://example.org/"
 	End
 End
 ],
@@ -55,6 +55,48 @@ end
 
 302
 location: http://example.org
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Redirect 303 "http://example.org"
+	End
+End
+],
+[GET /foo/bar
+end
+
+303
+location: http://example.org/foo/bar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Redirect 307 "http://example.org"
+	End
+End
+],
+[GET /foo/bar
+end
+
+307
+location: http://example.org/foo/bar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Redirect 308 "http://example.org"
+	End
+End
+],
+[GET /foo/bar
+end
+
+308
+location: http://example.org/foo/bar
 end
 ])
 
@@ -71,6 +113,81 @@ end
 302
 location: http://example.org/bar/foo
 end
+])
+
+PT_CHECK([[ListenHTTP
+	Service
+		Host -re "www\\.(.+)"
+		URL "^/([^/]+)/(.*)"
+		Redirect "http://$1(1)/$2/$1"
+	End
+End
+]],
+[GET /foo/bar
+Host: www.example.org
+end
+
+302
+location: http://example.org:${LISTENER:PORT}/bar/foo
+end
+])
+
+PT_CHECK([[ListenHTTP
+	Service
+		Host -re "www\\.(.+)"
+		Path "^/([^/]+)/(.*)"
+		Header -re -icase "X-Name:[[:space:]]+(.+)"
+		Header -re -icase "X-Version:[[:space:]]+(string|number)=(.+)"
+		Redirect "http://$1(3)/$2(2)/$1(2)-$1(1)$2"
+	End
+End
+]],
+[GET /foo/bar
+Host: www.example.org
+X-Name: Ping
+X-Version: number=903
+end
+
+302
+location: http://example.org:${LISTENER:PORT}/bar/foo-Ping903
+end
+])
+
+PT_CHECK([[ListenHTTP
+	Service
+		Host -re "www\\.(.+)"
+		URL "^/([^/]+)/(.*)"
+		Redirect "http://%1/$2/$1"
+	End
+End
+]],
+[GET /foo/bar
+Host: www.example.org
+end
+
+302
+location: http://example.org:${LISTENER:PORT}/bar/foo
+end
+])
+
+PT_CHECK([[ListenHTTP
+	Service
+		Redirect "http://%1$1"
+	End
+End
+]],
+[GET /foo/bar
+Host: www.example.org
+end
+
+500
+end
+])
+
+AT_CHECK([grep 'Redirect expression' pound.log],
+[0],
+[pound: Redirect expression "http://%1$1" refers to non-existing group %1
+pound: Redirect expression "http://%1$1" refers to non-existing group $1
 ])
 
 AT_CLEANUP

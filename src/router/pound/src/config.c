@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2022 Sergey Poznyakoff
+ * Copyright (C) 2018-2023 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include <openssl/x509v3.h>
 #include <assert.h>
 
-char *progname;
 
 /*
  * Scanner
@@ -44,9 +43,9 @@ typedef unsigned TOKENMASK;
 
 #define T_BIT(t) ((TOKENMASK)1<<((t)-T__BASE))
 #define T_MASK_ISSET(m,t) ((m) & T_BIT(t))
-#define T_ANY 0 /* any token, inlcuding newline */
+#define T_ANY 0 /* any token, including newline */
 /* Unquoted character sequence */
-#define T_UNQ (T_BIT (T_IDENT) | T_BIT (T_NUMBER) | T_BIT(T_LITERAL))
+#define T_UNQ (T_BIT (T_IDENT) | T_BIT (T_NUMBER) | T_BIT (T_LITERAL))
 
 /* Locations in the source file */
 struct locus_point
@@ -208,6 +207,8 @@ kw_to_str (struct kwtab *kwt, int t)
   return kwt->name;
 }
 
+#define MAX_PUTBACK 3
+
 /* Input stream */
 struct input
 {
@@ -220,7 +221,8 @@ struct input
   struct locus_point locus;       /* Current location */
   int prev_col;                   /* Last column in the previous line. */
   struct token token;             /* Current token. */
-  int ready;                      /* Token already parsed and put back */
+  struct token putback[MAX_PUTBACK]; /* Putback space */
+  int putback_index;              /* Index of the next free slot in putback */
 
   /* Input buffer: */
   struct stringbuf buf;
@@ -272,7 +274,7 @@ vconf_error_at_locus_range (struct locus_range const *loc, char const *fmt, va_l
 {
   struct stringbuf sb;
 
-  stringbuf_init (&sb);
+  xstringbuf_init (&sb);
   if (loc)
     {
       stringbuf_format_locus_range (&sb, loc);
@@ -297,7 +299,7 @@ vconf_error_at_locus_point (struct locus_point const *loc, char const *fmt, va_l
 {
   struct stringbuf sb;
 
-  stringbuf_init (&sb);
+  xstringbuf_init (&sb);
   if (loc)
     {
       stringbuf_format_locus_point (&sb, loc);
@@ -353,6 +355,31 @@ struct name_list
 static struct name_list *name_list;
 
 static char const *
+pathname_alloc (char const *dir, char const *name)
+{
+  struct name_list *np;
+  size_t dirlen = 0;
+
+  /* Ignore the directory if the filename is absolute. */
+  if (name[0] == '/')
+    dir = NULL;
+
+  if (dir)
+    dirlen = strlen (dir) + 1;
+
+  np = xmalloc (sizeof (*np) + dirlen + strlen (name));
+  if (dir)
+    {
+      strcpy (np->name, dir);
+      np->name[dirlen-1] = '/';
+    }
+  strcpy (np->name + dirlen, name);
+  np->next = name_list;
+  name_list = np;
+  return np->name;
+}
+
+static char const *
 name_alloc (char const *name)
 {
   struct name_list *np;
@@ -372,6 +399,45 @@ name_list_free (void)
       free (name_list);
       name_list = next;
     }
+}
+
+static int include_fd = AT_FDCWD;
+static char const *include_dir = SYSCONFDIR;
+
+static void
+close_include_dir (void)
+{
+  if (include_fd != AT_FDCWD)
+    {
+      close (include_fd);
+      include_dir = NULL;
+    }
+}
+
+static int
+open_include_dir (char const *dir)
+{
+  int fd;
+
+  if (dir == NULL)
+    fd = AT_FDCWD;
+  else if ((fd = open (dir, O_RDONLY | O_NONBLOCK | O_DIRECTORY)) == -1)
+    return -1;
+
+  close_include_dir ();
+  include_dir = dir ? name_alloc (dir) : NULL;
+  include_fd = fd;
+  return fd;
+}
+
+static FILE *
+fopen_include (const char *filename)
+{
+  int fd;
+
+  if ((fd = openat (include_fd, filename, O_RDONLY)) == -1)
+    return NULL;
+  return fdopen (fd, "r");
 }
 
 /*
@@ -398,7 +464,7 @@ input_open (char const *filename, struct stat *st)
 
   input = xmalloc (sizeof (*input));
   memset (input, 0, sizeof (*input));
-  if ((input->file = fopen (filename, "r")) == 0)
+  if ((input->file = fopen_include (filename)) == 0)
     {
       logmsg (LOG_ERR, "can't open %s: %s", filename, strerror (errno));
       free (input);
@@ -406,7 +472,7 @@ input_open (char const *filename, struct stat *st)
     }
   input->ino = st->st_ino;
   input->devno = st->st_dev;
-  input->locus.filename = name_alloc (filename);
+  input->locus.filename = pathname_alloc (include_dir, filename);
   input->locus.line = 1;
   input->locus.col = 0;
   return input;
@@ -453,14 +519,21 @@ input_gettkn (struct input *input, struct token **tok)
 {
   int c;
 
-  if (input->ready)
+  stringbuf_reset (&input->buf);
+
+  if (input->putback_index > 0)
     {
-      input->ready = 0;
+      input->token = input->putback[--input->putback_index];
+      if (input->token.str != NULL)
+	{
+	  stringbuf_add_string (&input->buf, input->token.str);
+	  free (input->token.str);
+	  input->token.str = stringbuf_finish (&input->buf);
+	}
       *tok = &input->token;
       return input->token.type;
     }
 
-  stringbuf_reset (&input->buf);
   for (;;)
     {
       c = input_getc (input);
@@ -524,9 +597,8 @@ input_gettkn (struct input *input, struct token **tok)
 		}
 	      stringbuf_add_char (&input->buf, c);
 	    }
-	  stringbuf_add_char (&input->buf, 0);
 	  input->token.type = T_STRING;
-	  input->token.str = input->buf.base;
+	  input->token.str = stringbuf_finish (&input->buf);
 	  break;
 	}
 
@@ -540,9 +612,8 @@ input_gettkn (struct input *input, struct token **tok)
 	  if (c == EOF || isspace (c))
 	    {
 	      input_ungetc (input, c);
-	      stringbuf_add_char (&input->buf, 0);
 	      input->token.type = T_IDENT;
-	      input->token.str = input->buf.base;
+	      input->token.str = stringbuf_finish (&input->buf);
 	      break;
 	    }
 	  /* It is a literal */
@@ -562,8 +633,7 @@ input_gettkn (struct input *input, struct token **tok)
       while ((c = input_getc (input)) != EOF && !isspace (c));
 
       input_ungetc (input, c);
-      stringbuf_add_char (&input->buf, 0);
-      input->token.str = input->buf.base;
+      input->token.str = stringbuf_finish (&input->buf);
       break;
     }
  end:
@@ -573,20 +643,31 @@ input_gettkn (struct input *input, struct token **tok)
 }
 
 static void
-input_putback (struct input *input)
+input_putback (struct input *input, struct token *tok)
 {
-  assert (input->ready == 0);
-  input->ready = 1;
+  assert (input->putback_index < MAX_PUTBACK);
+  input->putback[input->putback_index] = *tok;
+  if (tok->type >= T__BASE && tok->type < T__END)
+    input->putback[input->putback_index].str = xstrdup (tok->str);
+  else
+    input->putback[input->putback_index].str = NULL;
+  input->putback_index++;
 }
 
 
 struct input *cur_input;
 
+static inline struct token *
+cur_token (void)
+{
+  return &cur_input->token;
+}
+
 static struct locus_range *
 last_token_locus_range (void)
 {
   if (cur_input)
-    return &cur_input->token.locus;
+    return &cur_token()->locus;
   else
     return NULL;
 }
@@ -606,9 +687,13 @@ push_input (const char *filename)
   struct stat st;
   struct input *input;
 
-  if (stat (filename, &st))
+  if (fstatat (include_fd, filename, &st, 0))
     {
-      conf_error ("can't stat %s: %s", filename, strerror (errno));
+      if (include_fd == AT_FDCWD)
+	conf_error ("can't stat %s: %s", filename, strerror (errno));
+      else
+	conf_error ("can't stat %s/%s: %s", include_dir, filename,
+		    strerror (errno));
       return -1;
     }
 
@@ -695,9 +780,9 @@ gettkn_expect (int type)
 }
 
 static void
-putback_tkn (void)
+putback_tkn (struct token *tok)
 {
-  input_putback (cur_input);
+  input_putback (cur_input, tok ? tok : cur_token ());
 }
 
 enum
@@ -726,6 +811,13 @@ parser_find (PARSER_TABLE *tab, char const *name)
       return tab;
   return NULL;
 }
+
+static int parse_include (void *call_data, void *section_data);
+
+static PARSER_TABLE global_parsetab[] = {
+  { "Include", parse_include },
+  { NULL }
+};
 
 static int
 parse_statement (PARSER_TABLE *ptab, void *call_data, void *section_data,
@@ -762,6 +854,10 @@ parse_statement (PARSER_TABLE *ptab, void *call_data, void *section_data,
       if (tok->type == T_IDENT)
 	{
 	  PARSER_TABLE *ent = parser_find (ptab, tok->str);
+
+	  if (!single_statement && ent == NULL)
+	    ent = parser_find (global_parsetab, tok->str);
+
 	  if (ent)
 	    {
 	      void *data = ent->data ? ent->data : call_data;
@@ -822,7 +918,23 @@ typedef struct
   unsigned ws_to;
   unsigned be_connto;
   unsigned ignore_case;
+  int header_options;
+  BALANCER balancer;
 } POUND_DEFAULTS;
+
+static int
+parse_includedir (void *call_data, void *section_data)
+{
+  struct token *tok = gettkn_expect (T_STRING);
+  if (!tok)
+    return PARSER_FAIL;
+  if (open_include_dir (tok->str) == -1)
+    {
+      conf_error ("can't open directory %s: %s", tok->str, strerror (errno));
+      return PARSER_FAIL;
+    }
+  return PARSER_OK;
+}
 
 static int
 parse_include (void *call_data, void *section_data)
@@ -982,9 +1094,27 @@ assign_int_range (int *dst, int min, int max)
 }
 
 static int
-assign_LONG (void *call_data, void *section_data)
+assign_mode (void *call_data, void *section_data)
 {
-  LONG n;
+  long n;
+  char *end;
+  struct token *tok = gettkn_expect (T_NUMBER);
+
+  errno = 0;
+  n = strtoul (tok->str, &end, 8);
+  if (errno || *end || n > 0777)
+    {
+      conf_error_at_locus_range (&tok->locus, "%s", "invalid file mode");
+      return PARSER_FAIL;
+    }
+  *(mode_t*)call_data = n;
+  return PARSER_OK;
+}
+
+static int
+assign_CONTENT_LENGTH (void *call_data, void *section_data)
+{
+  CONTENT_LENGTH n;
   char *p;
   struct token *tok = gettkn_expect (T_NUMBER);
 
@@ -992,13 +1122,13 @@ assign_LONG (void *call_data, void *section_data)
     return PARSER_FAIL;
 
   errno = 0;
-  n = STRTOL (tok->str, &p, 10);
+  n = STRTOCLEN (tok->str, &p, 10);
   if (errno || *p)
     {
       conf_error ("%s", "bad long number");
       return PARSER_FAIL;
     }
-  *(LONG *)call_data = n;
+  *(CONTENT_LENGTH *)call_data = n;
   return 0;
 }
 
@@ -1417,9 +1547,21 @@ parse_acl (ACL *acl)
 	return PARSER_FAIL;
       if (tok->type == '\n')
 	continue;
-      if (tok->type == T_IDENT && strcasecmp (tok->str, "end") == 0)
-	break;
-      putback_tkn ();
+      if (tok->type == T_IDENT)
+	{
+	  if (strcasecmp (tok->str, "end") == 0)
+	    break;
+	  if (strcasecmp (tok->str, "include") == 0)
+	    {
+	      if ((rc = parse_include (NULL, NULL)) == PARSER_FAIL)
+		return rc;
+	      continue;
+	    }
+	  conf_error ("expected CIDR, \"Include\", or \"End\", but found %s",
+		      token_type_str (tok->type));
+	  return PARSER_FAIL;
+	}
+      putback_tkn (tok);
       if ((rc = parse_cidr (acl)) != PARSER_OK)
 	return rc;
     }
@@ -1469,7 +1611,7 @@ parse_acl_ref (ACL **ret_acl)
 
   if (tok->type == '\n')
     {
-      putback_tkn ();
+      putback_tkn (tok);
       acl = new_acl (NULL);
       *ret_acl = acl;
       return parse_acl (acl);
@@ -1553,32 +1695,34 @@ backend_parse_https (void *call_data, void *section_data)
   BACKEND *be = call_data;
   struct stringbuf sb;
 
-  if ((be->ctx = SSL_CTX_new (SSLv23_client_method ())) == NULL)
+  if ((be->v.reg.ctx = SSL_CTX_new (SSLv23_client_method ())) == NULL)
     {
       conf_openssl_error ("SSL_CTX_new");
       return PARSER_FAIL;
     }
 
-  SSL_CTX_set_app_data (be->ctx, be);
-  SSL_CTX_set_verify (be->ctx, SSL_VERIFY_NONE, NULL);
-  SSL_CTX_set_mode (be->ctx, SSL_MODE_AUTO_RETRY);
+  SSL_CTX_set_app_data (be->v.reg.ctx, be);
+  SSL_CTX_set_verify (be->v.reg.ctx, SSL_VERIFY_NONE, NULL);
+  SSL_CTX_set_mode (be->v.reg.ctx, SSL_MODE_AUTO_RETRY);
 #ifdef SSL_MODE_SEND_FALLBACK_SCSV
-  SSL_CTX_set_mode (be->ctx, SSL_MODE_SEND_FALLBACK_SCSV);
+  SSL_CTX_set_mode (be->v.reg.ctx, SSL_MODE_SEND_FALLBACK_SCSV);
 #endif
-  SSL_CTX_set_options (be->ctx, SSL_OP_ALL);
+  SSL_CTX_set_options (be->v.reg.ctx, SSL_OP_ALL);
 #ifdef  SSL_OP_NO_COMPRESSION
-  SSL_CTX_set_options (be->ctx, SSL_OP_NO_COMPRESSION);
+  SSL_CTX_set_options (be->v.reg.ctx, SSL_OP_NO_COMPRESSION);
 #endif
-  SSL_CTX_clear_options (be->ctx,
+  SSL_CTX_clear_options (be->v.reg.ctx,
 			 SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION);
-  SSL_CTX_clear_options (be->ctx, SSL_OP_LEGACY_SERVER_CONNECT);
+  SSL_CTX_clear_options (be->v.reg.ctx, SSL_OP_LEGACY_SERVER_CONNECT);
 
-  stringbuf_init (&sb);
+  xstringbuf_init (&sb);
   stringbuf_printf (&sb, "%d-Pound-%ld", getpid (), random ());
-  SSL_CTX_set_session_id_context (be->ctx, (unsigned char *) sb.base, sb.len);
+  SSL_CTX_set_session_id_context (be->v.reg.ctx,
+				  (unsigned char *) stringbuf_value (&sb),
+				  stringbuf_len (&sb));
   stringbuf_free (&sb);
 
-  POUND_SSL_CTX_init (be->ctx);
+  POUND_SSL_CTX_init (be->v.reg.ctx);
 
   return PARSER_OK;
 }
@@ -1589,7 +1733,7 @@ backend_parse_cert (void *call_data, void *section_data)
   BACKEND *be = call_data;
   struct token *tok;
 
-  if (be->ctx == NULL)
+  if (be->v.reg.ctx == NULL)
     {
       conf_error ("%s", "HTTPS must be used before this statement");
       return PARSER_FAIL;
@@ -1598,19 +1742,19 @@ backend_parse_cert (void *call_data, void *section_data)
   if ((tok = gettkn_expect (T_STRING)) == NULL)
     return PARSER_FAIL;
 
-  if (SSL_CTX_use_certificate_chain_file (be->ctx, tok->str) != 1)
+  if (SSL_CTX_use_certificate_chain_file (be->v.reg.ctx, tok->str) != 1)
     {
       conf_openssl_error ("SSL_CTX_use_certificate_chain_file");
       return PARSER_FAIL;
     }
 
-  if (SSL_CTX_use_PrivateKey_file (be->ctx, tok->str, SSL_FILETYPE_PEM) != 1)
+  if (SSL_CTX_use_PrivateKey_file (be->v.reg.ctx, tok->str, SSL_FILETYPE_PEM) != 1)
     {
       conf_openssl_error ("SSL_CTX_use_PrivateKey_file");
       return PARSER_FAIL;
     }
 
-  if (SSL_CTX_check_private_key (be->ctx) != 1)
+  if (SSL_CTX_check_private_key (be->v.reg.ctx) != 1)
     {
       conf_openssl_error ("SSL_CTX_check_private_key failed");
       return PARSER_FAIL;
@@ -1625,7 +1769,7 @@ backend_assign_ciphers (void *call_data, void *section_data)
   BACKEND *be = call_data;
   struct token *tok;
 
-  if (be->ctx == NULL)
+  if (be->v.reg.ctx == NULL)
     {
       conf_error ("%s", "HTTPS must be used before this statement");
       return PARSER_FAIL;
@@ -1634,7 +1778,7 @@ backend_assign_ciphers (void *call_data, void *section_data)
   if ((tok = gettkn_expect (T_STRING)) == NULL)
     return PARSER_FAIL;
 
-  SSL_CTX_set_cipher_list (be->ctx, tok->str);
+  SSL_CTX_set_cipher_list (be->v.reg.ctx, tok->str);
   return PARSER_OK;
 }
 
@@ -1703,76 +1847,32 @@ disable_proto (void *call_data, void *section_data)
 }
 
 static PARSER_TABLE backend_parsetab[] = {
-  {
-    .name = "End",
-    .parser = parse_end
-  },
-  {
-    .name = "Address",
-    .parser = assign_address,
-    .off = offsetof (BACKEND, addr)
-  },
-  {
-    .name = "Port",
-    .parser = assign_port,
-    .off = offsetof (BACKEND, addr)
-  },
-  {
-    .name = "Priority",
-    .parser = backend_assign_priority,
-    .off = offsetof (BACKEND, priority)
-  },
-  {
-    .name = "TimeOut",
-    .parser = assign_timeout,
-    .off = offsetof (BACKEND, to)
-  },
-  {
-    .name = "WSTimeOut",
-    .parser = assign_timeout,
-    .off = offsetof (BACKEND, ws_to)
-  },
-  {
-    .name = "ConnTO",
-    .parser = assign_timeout,
-    .off = offsetof (BACKEND, conn_to)
-  },
-  {
-    .name = "HTTPS",
-    .parser = backend_parse_https
-  },
-  {
-    .name = "Cert",
-    .parser = backend_parse_cert
-  },
-  {
-    .name = "Ciphers",
-    .parser = backend_assign_ciphers
-  },
-  {
-    .name = "Disable",
-    .parser = disable_proto,
-    .off = offsetof (BACKEND, ctx)
-  },
-  {
-    .name = "Disabled",
-    .parser = assign_bool,
-    .off = offsetof (BACKEND, disabled)
-  },
+  { "End",       parse_end },
+  { "Address",   assign_address, NULL, offsetof (BACKEND, v.reg.addr) },
+  { "Port",      assign_port,    NULL, offsetof (BACKEND, v.reg.addr) },
+  { "Priority",  backend_assign_priority, NULL, offsetof (BACKEND, priority) },
+  { "TimeOut",   assign_timeout, NULL, offsetof (BACKEND, v.reg.to) },
+  { "WSTimeOut", assign_timeout, NULL, offsetof (BACKEND, v.reg.ws_to) },
+  { "ConnTO",    assign_timeout, NULL, offsetof (BACKEND, v.reg.conn_to) },
+  { "HTTPS",     backend_parse_https },
+  { "Cert",      backend_parse_cert },
+  { "Ciphers",   backend_assign_ciphers },
+  { "Disable",   disable_proto,  NULL, offsetof (BACKEND, v.reg.ctx) },
+  { "Disabled",  assign_bool,    NULL, offsetof (BACKEND, disabled) },
   { NULL }
 };
 
 static PARSER_TABLE emergency_parsetab[] = {
   { "End", parse_end },
-  { "Address", assign_address, NULL, offsetof (BACKEND, addr) },
-  { "Port", assign_port, NULL, offsetof (BACKEND, addr) },
-  { "TimeOut", assign_timeout, NULL, offsetof (BACKEND, to) },
-  { "WSTimeOut", assign_timeout, NULL, offsetof (BACKEND, ws_to) },
-  { "ConnTO", assign_timeout, NULL, offsetof (BACKEND, conn_to) },
+  { "Address", assign_address, NULL, offsetof (BACKEND, v.reg.addr) },
+  { "Port", assign_port, NULL, offsetof (BACKEND, v.reg.addr) },
+  { "TimeOut", assign_timeout, NULL, offsetof (BACKEND, v.reg.to) },
+  { "WSTimeOut", assign_timeout, NULL, offsetof (BACKEND, v.reg.ws_to) },
+  { "ConnTO", assign_timeout, NULL, offsetof (BACKEND, v.reg.conn_to) },
   { "HTTPS", backend_parse_https },
   { "Cert", backend_parse_cert },
   { "Ciphers", backend_assign_ciphers },
-  { "Disable", disable_proto, NULL, offsetof (BACKEND, ctx) },
+  { "Disable", disable_proto, NULL, offsetof (BACKEND, v.reg.ctx) },
   { NULL }
 };
 
@@ -1804,20 +1904,19 @@ parse_backend_internal (PARSER_TABLE *table, POUND_DEFAULTS *dfl)
 
   XZALLOC (be);
   be->be_type = BE_BACKEND;
-  be->addr.ai_socktype = SOCK_STREAM;
-  be->to = dfl->be_to;
-  be->conn_to = dfl->be_connto;
-  be->ws_to = dfl->ws_to;
-  be->alive = 1;
-  memset (&be->addr, 0, sizeof (be->addr));
+  be->v.reg.addr.ai_socktype = SOCK_STREAM;
+  be->v.reg.to = dfl->be_to;
+  be->v.reg.conn_to = dfl->be_connto;
+  be->v.reg.ws_to = dfl->ws_to;
+  be->v.reg.alive = 1;
+  memset (&be->v.reg.addr, 0, sizeof (be->v.reg.addr));
   be->priority = 5;
-  be->url = NULL;
   pthread_mutex_init (&be->mut, NULL);
 
   if (parser_loop (table, be, dfl, &range))
     return NULL;
 
-  if (check_addrinfo (&be->addr, &range, "Backend") != PARSER_OK)
+  if (check_addrinfo (&be->v.reg.addr, &range, "Backend") != PARSER_OK)
     return NULL;
 
   return be;
@@ -1857,49 +1956,21 @@ parse_emergency (void *call_data, void *section_data)
 
   return PARSER_OK;
 }
+
+static int
+parse_metrics (void *call_data, void *section_data)
+{
+  BACKEND_HEAD *head = call_data;
+  BACKEND *be;
+
+  XZALLOC (be);
+  be->be_type = BE_METRICS;
+  be->priority = 1;
+  pthread_mutex_init (&be->mut, NULL);
+  SLIST_PUSH (head, be, next);
+  return PARSER_OK;
+}
 
-static int
-parse_regex (regex_t *re, int flags)
-{
-  int rc;
-
-  struct token *tok = gettkn_expect (T_STRING);
-  if (!tok)
-    return PARSER_FAIL;
-
-  rc = regcomp (re, tok->str, flags);
-  if (rc)
-    {
-      conf_regcomp_error (rc, re, NULL);
-      return PARSER_FAIL;
-    }
-
-  return PARSER_OK;
-}
-
-static int
-assign_matcher (void *call_data, void *section_data)
-{
-  MATCHER_HEAD *head = call_data;
-  MATCHER *m;
-  int rc;
-
-  struct token *tok = gettkn_expect (T_STRING);
-  if (!tok)
-    return PARSER_FAIL;
-
-  XZALLOC (m);
-  rc = regcomp (&m->pat, tok->str, REG_ICASE | REG_NEWLINE | REG_EXTENDED);
-  if (rc)
-    {
-      conf_regcomp_error (rc, &m->pat, NULL);
-      return PARSER_FAIL;
-    }
-  SLIST_PUSH (head, m, next);
-
-  return PARSER_OK;
-}
-
 static SERVICE_COND *
 service_cond_append (SERVICE_COND *cond, int type)
 {
@@ -1913,6 +1984,258 @@ service_cond_append (SERVICE_COND *cond, int type)
   return sc;
 }
 
+static void
+stringbuf_escape_regex (struct stringbuf *sb, char const *p)
+{
+  while (*p)
+    {
+      size_t len = strcspn (p, "\\[]{}().*+?");
+      if (len > 0)
+	stringbuf_add (sb, p, len);
+      p += len;
+      if (*p)
+	{
+	  stringbuf_add_char (sb, '\\');
+	  stringbuf_add_char (sb, *p);
+	  p++;
+	}
+    }
+}
+
+enum match_mode
+  {
+    MATCH_EXACT,
+    MATCH_RE,
+    MATCH_BEG,
+    MATCH_END,
+    MATCH__MAX
+  };
+
+static int
+parse_match_mode (int *mode, int *re_flags, int *from_file)
+{
+  struct token *tok;
+
+  enum
+  {
+    MATCH_ICASE = MATCH__MAX,
+    MATCH_CASE,
+    MATCH_FILE
+  };
+
+  static struct kwtab optab[] = {
+    { "-re",    MATCH_RE },
+    { "-exact", MATCH_EXACT },
+    { "-beg",   MATCH_BEG },
+    { "-end",   MATCH_END },
+    { "-icase", MATCH_ICASE },
+    { "-case",  MATCH_CASE },
+    { "-file",  MATCH_FILE },
+    { NULL }
+  };
+
+  if (from_file)
+    *from_file = 0;
+
+  for (;;)
+    {
+      int n;
+
+      if ((tok = gettkn_expect_mask (T_BIT (T_STRING) | T_BIT (T_LITERAL))) == NULL)
+	return PARSER_FAIL;
+
+      if (tok->type == T_STRING)
+	break;
+
+      if (kw_to_tok (optab, tok->str, 0, &n))
+	{
+	  conf_error ("unexpected token: %s", tok->str);
+	  return PARSER_FAIL;
+	}
+
+      switch (n)
+	{
+	case MATCH_CASE:
+	  *re_flags &= ~REG_ICASE;
+	  break;
+
+	case MATCH_ICASE:
+	  *re_flags |= REG_ICASE;
+	  break;
+
+	case MATCH_FILE:
+	  if (from_file)
+	    *from_file = 1;
+	  else
+	    {
+	      conf_error ("unexpected token: %s", tok->str);
+	      return PARSER_FAIL;
+	    }
+	  break;
+
+	default:
+	  *mode = n;
+	}
+    }
+  putback_tkn (tok);
+  return PARSER_OK;
+}
+
+static char *
+build_regex (struct stringbuf *sb, int mode, char const *expr, char const *pfx)
+{
+  switch (mode)
+    {
+    case MATCH_EXACT:
+      if (pfx)
+	stringbuf_add_string (sb, pfx);
+      stringbuf_escape_regex (sb, expr);
+      break;
+
+    case MATCH_RE:
+      if (pfx)
+	stringbuf_add_string (sb, pfx);
+      stringbuf_add_string (sb, expr);
+      break;
+
+    case MATCH_BEG:
+      stringbuf_add_char (sb, '^');
+      if (pfx)
+	stringbuf_add_string (sb, pfx);
+      stringbuf_escape_regex (sb, expr);
+      stringbuf_add_string (sb, ".*");
+      break;
+
+    case MATCH_END:
+      stringbuf_add_string (sb, ".*");
+      if (pfx)
+	stringbuf_add_string (sb, pfx);
+      stringbuf_escape_regex (sb, expr);
+      stringbuf_add_char (sb, '$');
+      break;
+
+    default:
+      abort ();
+    }
+  return stringbuf_finish (sb);
+}
+
+static int
+parse_regex_compat (regex_t *regex, int flags)
+{
+  struct token *tok;
+  int mode = MATCH_RE;
+  char *p;
+  int rc;
+  struct stringbuf sb;
+
+  if (parse_match_mode (&mode, &flags, NULL))
+    return PARSER_FAIL;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  xstringbuf_init (&sb);
+  p = build_regex (&sb, mode, tok->str, NULL);
+  rc = regcomp (regex, p, flags);
+  stringbuf_free (&sb);
+  if (rc)
+    {
+      conf_regcomp_error (rc, regex, NULL);
+      return PARSER_FAIL;
+    }
+
+  return PARSER_OK;
+}
+
+static int
+parse_cond_matcher (SERVICE_COND *top_cond, enum service_cond_type type,
+		    int mode, int flags, char *param_name)
+{
+  struct token *tok;
+  int rc;
+  struct stringbuf sb;
+  SERVICE_COND *cond;
+  static char const host_pfx[] = "Host:[[:space:]]*";
+  int from_file;
+  char *expr;
+
+  if (parse_match_mode (&mode, &flags, &from_file))
+    return PARSER_FAIL;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  xstringbuf_init (&sb);
+  if (from_file)
+    {
+      FILE *fp;
+      char *p;
+      char buf[MAXBUF];
+
+      if ((fp = fopen_include (tok->str)) == NULL)
+	{
+	  conf_error ("can't open file %s: %s", tok->str, strerror (errno));
+	  return PARSER_FAIL;
+	}
+
+      cond = service_cond_append (top_cond, COND_BOOL);
+      cond->bool.op = BOOL_OR;
+
+      while ((p = fgets (buf, sizeof buf, fp)) != NULL)
+	{
+	  int rc;
+	  size_t len;
+	  SERVICE_COND *hc;
+
+	  p += strspn (p, " \t");
+	  for (len = strlen (p);
+	       len > 0 && (p[len-1] == ' ' || p[len-1] == '\t'|| p[len-1] == '\n'); len--)
+	    ;
+	  if (len == 0 || *p == '#')
+	    continue;
+	  p[len] = 0;
+
+	  stringbuf_reset (&sb);
+	  expr = build_regex (&sb, mode, p, type == COND_HOST ? host_pfx : NULL);
+	  hc = service_cond_append (cond, type);
+	  rc = regcomp (&hc->re, expr, flags);
+	  if (rc)
+	    {
+	      conf_regcomp_error (rc, &hc->re, NULL);
+	      return PARSER_FAIL;
+	    }
+	  if (type == COND_QUERY_PARAM)
+	    {
+	      regex_t re = hc->re;
+	      hc->qp.re = re;
+	      hc->qp.name = xstrdup (param_name);
+	    }
+	}
+      fclose (fp);
+    }
+  else
+    {
+      cond = service_cond_append (top_cond, type);
+      expr = build_regex (&sb, mode, tok->str, type == COND_HOST ? host_pfx : NULL);
+      rc = regcomp (&cond->re, expr, flags);
+      if (rc)
+	{
+	  conf_regcomp_error (rc, &cond->re, NULL);
+	  return PARSER_FAIL;
+	}
+      if (type == COND_QUERY_PARAM)
+	{
+	  regex_t re = cond->re;
+	  cond->qp.re = re;
+	  cond->qp.name = xstrdup (param_name);
+	}
+    }
+  stringbuf_free (&sb);
+
+  return PARSER_OK;
+}
+
 static int
 parse_cond_acl (void *call_data, void *section_data)
 {
@@ -1924,16 +2247,50 @@ static int
 parse_cond_url_matcher (void *call_data, void *section_data)
 {
   POUND_DEFAULTS *dfl = section_data;
-  SERVICE_COND *cond = service_cond_append (call_data, COND_URL);
-  int flags = REG_NEWLINE | REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0);
-  return parse_regex (&cond->re, flags);
+  return parse_cond_matcher (call_data, COND_URL, MATCH_RE,
+			     REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0),
+			     NULL);
+}
+
+static int
+parse_cond_path_matcher (void *call_data, void *section_data)
+{
+  POUND_DEFAULTS *dfl = section_data;
+  return parse_cond_matcher (call_data, COND_PATH, MATCH_RE,
+			     REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0),
+			     NULL);
+}
+
+static int
+parse_cond_query_matcher (void *call_data, void *section_data)
+{
+  POUND_DEFAULTS *dfl = section_data;
+  return parse_cond_matcher (call_data, COND_QUERY, MATCH_RE,
+			     REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0),
+			     NULL);
+}
+
+static int
+parse_cond_query_param_matcher (void *call_data, void *section_data)
+{
+  SERVICE_COND *top_cond = call_data;
+  POUND_DEFAULTS *dfl = section_data;
+  int flags = REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0);
+  struct token *tok;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  return parse_cond_matcher (top_cond, COND_QUERY_PARAM, MATCH_RE, flags,
+			     tok->str);
 }
 
 static int
 parse_cond_hdr_matcher (void *call_data, void *section_data)
 {
-  SERVICE_COND *cond = service_cond_append (call_data, COND_HDR);
-  return parse_regex (&cond->re, REG_NEWLINE | REG_EXTENDED | REG_ICASE);
+  return parse_cond_matcher (call_data, COND_HDR, MATCH_RE,
+			     REG_NEWLINE | REG_EXTENDED | REG_ICASE,
+			     NULL);
 }
 
 static int
@@ -1941,54 +2298,20 @@ parse_cond_head_deny_matcher (void *call_data, void *section_data)
 {
   SERVICE_COND *cond = service_cond_append (call_data, COND_BOOL);
   cond->bool.op = BOOL_NOT;
-  cond = service_cond_append (cond, COND_HDR);
-  return parse_regex (&cond->re, REG_NEWLINE | REG_EXTENDED | REG_ICASE);
+  return parse_cond_matcher (cond, COND_HDR, MATCH_RE,
+			     REG_NEWLINE | REG_EXTENDED | REG_ICASE,
+			     NULL);
 }
 
 static int
 parse_cond_host (void *call_data, void *section_data)
 {
-  struct token *tok;
-  struct stringbuf sb;
-  char *p;
-  int rc;
-  SERVICE_COND *cond = service_cond_append (call_data, COND_HDR);
-
-  if ((tok = gettkn_expect (T_STRING)) == NULL)
-    return PARSER_FAIL;
-
-  stringbuf_init (&sb);
-  stringbuf_add_string (&sb, "Host:[[:space:]]*");
-  p = tok->str;
-  while (*p)
-    {
-      size_t len = strcspn (p, "\\[]{}().*+?");
-      if (len > 0)
-	stringbuf_add (&sb, p, len);
-      p += len;
-      if (*p)
-	{
-	  stringbuf_add_char (&sb, '\\');
-	  stringbuf_add_char (&sb, *p);
-	  p++;
-	}
-    }
-
-  p = stringbuf_finish (&sb);
-
-  rc = regcomp (&cond->re, p, REG_EXTENDED | REG_ICASE);
-  stringbuf_free (&sb);
-  if (rc)
-    {
-      conf_regcomp_error (rc, &cond->re, NULL);
-      return PARSER_FAIL;
-    }
-
-  return PARSER_OK;
+  return parse_cond_matcher (call_data, COND_HOST, MATCH_RE,
+			     REG_EXTENDED | REG_ICASE, NULL);
 }
 
 static int
-assign_redirect (void *call_data, void *section_data)
+parse_redirect_backend (void *call_data, void *section_data)
 {
   BACKEND_HEAD *head = call_data;
   struct token *tok;
@@ -2002,10 +2325,17 @@ assign_redirect (void *call_data, void *section_data)
   if (tok->type == T_NUMBER)
     {
       int n = atoi (tok->str);
-      if (n == 301 || n == 302 || n == 307)
-	code = n;
-      else
+      switch (n)
 	{
+	case 301:
+	case 302:
+	case 303:
+	case 307:
+	case 308:
+	  code = n;
+	  break;
+
+	default:
 	  conf_error ("%s", "invalid status code");
 	  return PARSER_FAIL;
 	}
@@ -2022,25 +2352,75 @@ assign_redirect (void *call_data, void *section_data)
 
   XZALLOC (be);
   be->be_type = BE_REDIRECT;
-  be->redir_code = code;
   be->priority = 1;
-  be->alive = 1;
   pthread_mutex_init (&be->mut, NULL);
-  be->url = xstrdup (tok->str);
 
-  if (regexec (&LOCATION, be->url, 4, matches, 0))
+  be->v.redirect.status = code;
+  be->v.redirect.url = xstrdup (tok->str);
+
+  if (regexec (&LOCATION, be->v.redirect.url, 4, matches, 0))
     {
       conf_error ("%s", "Redirect bad URL");
       return PARSER_FAIL;
     }
 
-  if ((be->redir_req = matches[3].rm_eo - matches[3].rm_so) == 1)
+  if ((be->v.redirect.has_uri = matches[3].rm_eo - matches[3].rm_so) == 1)
     /* the path is a single '/', so remove it */
-    be->url[matches[3].rm_so] = '\0';
+    be->v.redirect.url[matches[3].rm_so] = '\0';
 
   SLIST_PUSH (head, be, next);
 
   return PARSER_OK;
+}
+
+static int
+parse_error_backend (void *call_data, void *section_data)
+{
+  BACKEND_HEAD *head = call_data;
+  struct token *tok;
+  int n, status;
+  char *text = NULL;
+  BACKEND *be;
+  int rc;
+
+  if ((tok = gettkn_expect (T_NUMBER)) == NULL)
+    return PARSER_FAIL;
+
+  n = atoi (tok->str);
+  if ((status = http_status_to_pound (n)) == -1)
+    {
+      conf_error ("%s", "unsupported status code");
+      return PARSER_FAIL;
+    }
+
+  if ((tok = gettkn_any ()) == NULL)
+    return PARSER_FAIL;
+
+  if (tok->type == T_STRING)
+    {
+      putback_tkn (tok);
+      if ((rc = assign_string_from_file (&text, section_data)) == PARSER_FAIL)
+	return rc;
+    }
+  else if (tok->type == '\n')
+    rc = PARSER_OK_NONL;
+  else
+    {
+      conf_error ("%s", "string or newline expected");
+      return PARSER_FAIL;
+    }
+
+  XZALLOC (be);
+  be->be_type = BE_ERROR;
+  be->priority = 1;
+  pthread_mutex_init (&be->mut, NULL);
+
+  be->v.error.status = status;
+  be->v.error.text = text;
+
+  SLIST_PUSH (head, be, next);
+
+  return rc;
 }
 
 struct service_session
@@ -2071,7 +2451,7 @@ sess_type_to_str (int type)
 static int
 session_type_parser (void *call_data, void *section_data)
 {
-  struct service_session *sp = call_data;
+  SERVICE *svc = call_data;
   struct token *tok;
   int n;
 
@@ -2083,7 +2463,7 @@ session_type_parser (void *call_data, void *section_data)
       conf_error ("%s", "Unknown Session type");
       return PARSER_FAIL;
     }
-  sp->type = n;
+  svc->sess_type = n;
 
   return PARSER_OK;
 }
@@ -2091,108 +2471,47 @@ session_type_parser (void *call_data, void *section_data)
 static PARSER_TABLE session_parsetab[] = {
   { "End", parse_end },
   { "Type", session_type_parser },
-  { "TTL", assign_timeout, NULL, offsetof (struct service_session, ttl) },
-  { "ID", assign_string, NULL, offsetof (struct service_session, id) },
+  { "TTL", assign_timeout, NULL, offsetof (SERVICE, sess_ttl) },
+  { "ID", assign_string, NULL, offsetof (SERVICE, sess_id) },
   { NULL }
 };
-
-static int
-xregcomp (regex_t *rx, char const *expr, int flags)
-{
-  int rc;
-
-  rc = regcomp (rx, expr, flags);
-  if (rc)
-    {
-      conf_regcomp_error (rc, rx, expr);
-      return PARSER_FAIL;
-    }
-  return PARSER_OK;
-}
 
 static int
 parse_session (void *call_data, void *section_data)
 {
   SERVICE *svc = call_data;
-  struct service_session sess;
-  struct stringbuf sb;
   struct locus_range range;
 
-  memset (&sess, 0, sizeof (sess));
-  if (parser_loop (session_parsetab, &sess, section_data, &range))
+  if (parser_loop (session_parsetab, svc, section_data, &range))
     return PARSER_FAIL;
 
-  if (sess.type == SESS_NONE)
+  if (svc->sess_type == SESS_NONE)
     {
       conf_error_at_locus_range (&range, "Session type not defined");
       return PARSER_FAIL;
     }
 
-  if (sess.ttl == 0)
+  if (svc->sess_ttl == 0)
     {
       conf_error_at_locus_range (&range, "Session TTL not defined");
       return PARSER_FAIL;
     }
 
-  if ((sess.type == SESS_COOKIE || sess.type == SESS_URL
-       || sess.type == SESS_HEADER) && sess.id == NULL)
-    {
-      conf_error ("%s", "Session ID not defined");
-      return PARSER_FAIL;
-    }
-
-  stringbuf_init (&sb);
-  switch (sess.type)
+  switch (svc->sess_type)
     {
     case SESS_COOKIE:
-      stringbuf_printf (&sb, "Cookie[^:]*:.*[ \t]%s=", sess.id);
-      if (xregcomp (&svc->sess_start, sb.base, REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-
-      if (xregcomp (&svc->sess_pat, "([^;]*)", REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      break;
-
     case SESS_URL:
-      stringbuf_printf (&sb, "[?&]%s=", sess.id);
-      if (xregcomp (&svc->sess_start, sb.base, REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      if (xregcomp (&svc->sess_pat, "([^&;#]*)", REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      break;
-
-    case SESS_PARM:
-      if (xregcomp (&svc->sess_start, ";", REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      if (xregcomp (&svc->sess_pat, "([^?]*)", REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      break;
-
-    case SESS_BASIC:
-      if (xregcomp (&svc->sess_start, "Authorization:[ \t]*Basic[ \t]*",
-		    REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      if (xregcomp (&svc->sess_pat, "([^ \t]*)",
-		    REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      break;
-
     case SESS_HEADER:
-      stringbuf_printf (&sb, "%s:[ \t]*", sess.id);
-      if (xregcomp (&svc->sess_start, sb.base,
-		    REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
-      if (xregcomp (&svc->sess_pat, "([^ \t]*)",
-		    REG_ICASE | REG_NEWLINE | REG_EXTENDED) != PARSER_OK)
-	return PARSER_FAIL;
+      if (svc->sess_id == NULL)
+	{
+	  conf_error ("%s", "Session ID not defined");
+	  return PARSER_FAIL;
+	}
+      break;
+
+    default:
       break;
     }
-
-  svc->sess_ttl = sess.ttl;
-  svc->sess_type = sess.type;
-
-  free (sess.id);
-  stringbuf_free (&sb);
 
   return PARSER_OK;
 }
@@ -2205,18 +2524,6 @@ assign_dfl_ignore_case (void *call_data, void *section_data)
 }
 
 static int parse_cond (int op, SERVICE_COND *cond, void *section_data);
-
-static int
-parse_and_cond (void *call_data, void *section_data)
-{
-  return parse_cond (BOOL_AND, call_data, section_data);
-}
-
-static int
-parse_or_cond (void *call_data, void *section_data)
-{
-  return parse_cond (BOOL_OR, call_data, section_data);
-}
 
 static int
 parse_match (void *call_data, void *section_data)
@@ -2239,24 +2546,29 @@ parse_match (void *call_data, void *section_data)
 	}
     }
   else
-    putback_tkn ();
+    putback_tkn (tok);
 
   return parse_cond (op, call_data, section_data);
 }
 
 static int parse_not_cond (void *call_data, void *section_data);
 
+#define MATCH_CONDITIONS(data, off)				\
+  { "ACL", parse_cond_acl, data, off },				\
+  { "URL", parse_cond_url_matcher, data, off },			\
+  { "Path", parse_cond_path_matcher, data, off },		\
+  { "Query", parse_cond_query_matcher, data, off },		\
+  { "QueryParam", parse_cond_query_param_matcher, data, off },	\
+  { "Header", parse_cond_hdr_matcher, data, off },		\
+  { "Host", parse_cond_host, data, off },			\
+  { "Match", parse_match, data, off },				\
+  { "NOT", parse_not_cond, data, off },				\
+    /* compatibility keywords */				\
+  { "HeadRequire", parse_cond_hdr_matcher, data, off },         \
+  { "HeadDeny", parse_cond_head_deny_matcher, data, off }
+
 static PARSER_TABLE negate_parsetab[] = {
-  { "ACL", parse_cond_acl },
-  { "URL", parse_cond_url_matcher },
-  { "Header", parse_cond_hdr_matcher },
-  { "HeadRequire", parse_cond_hdr_matcher },    /* compatibility keyword */
-  { "HeadDeny", parse_cond_head_deny_matcher }, /* compatibility keyword */
-  { "Host", parse_cond_host },
-  { "Match", parse_match },
-  { "AND", parse_and_cond, },
-  { "OR", parse_or_cond, },
-  { "NOT", parse_not_cond, },
+  MATCH_CONDITIONS (NULL, 0),
   { NULL }
 };
 
@@ -2270,16 +2582,7 @@ parse_not_cond (void *call_data, void *section_data)
 
 static PARSER_TABLE logcon_parsetab[] = {
   { "End", parse_end },
-  { "ACL", parse_cond_acl },
-  { "URL", parse_cond_url_matcher },
-  { "Header", parse_cond_hdr_matcher },
-  { "HeadRequire", parse_cond_hdr_matcher },    /* compatibility keyword */
-  { "HeadDeny", parse_cond_head_deny_matcher }, /* compatibility keyword */
-  { "Host", parse_cond_host },
-  { "Match", parse_match },
-  { "AND", parse_and_cond, },
-  { "OR", parse_or_cond, },
-  { "NOT", parse_not_cond, },
+  MATCH_CONDITIONS (NULL, 0),
   { NULL }
 };
 
@@ -2292,35 +2595,276 @@ parse_cond (int op, SERVICE_COND *cond, void *section_data)
   subcond->bool.op = op;
   return parser_loop (logcon_parsetab, subcond, section_data, &range);
 }
+
+static int parse_else (void *call_data, void *section_data);
+static int parse_rewrite (void *call_data, void *section_data);
+static int parse_set_header (void *call_data, void *section_data);
+static int parse_delete_header (void *call_data, void *section_data);
+static int parse_set_url (void *call_data, void *section_data);
+static int parse_set_path (void *call_data, void *section_data);
+static int parse_set_query (void *call_data, void *section_data);
+static int parse_set_query_param (void *call_data, void *section_data);
+static int parse_sub_rewrite (void *call_data, void *section_data);
+
+#define REWRITE_OPS(data, off)						\
+  { "SetHeader", parse_set_header, data, off },				\
+  { "DeleteHeader", parse_delete_header, data, off },			\
+  { "SetURL", parse_set_url, data, off },				\
+  { "SetPath", parse_set_path, data, off },				\
+  { "SetQuery", parse_set_query, data, off },				\
+  { "SetQueryParam", parse_set_query_param, data, off }
+
+static PARSER_TABLE rewrite_rule_parsetab[] = {
+  { "End", parse_end },
+  { "Rewrite", parse_sub_rewrite, NULL, offsetof (REWRITE_RULE, ophead) },
+  { "Else", parse_else, NULL, offsetof (REWRITE_RULE, iffalse) },
+  MATCH_CONDITIONS (NULL, offsetof (REWRITE_RULE, cond)),
+  REWRITE_OPS (NULL, offsetof (REWRITE_RULE, ophead)),
+  { NULL }
+};
+
+static int
+parse_end_else (void *call_data, void *section_data)
+{
+  struct token nl = { '\n' };
+  putback_tkn (NULL);
+  putback_tkn (&nl);
+  return PARSER_END;
+}
+
+static PARSER_TABLE else_rule_parsetab[] = {
+  { "End", parse_end_else },
+  { "Rewrite", parse_sub_rewrite, NULL, offsetof (REWRITE_RULE, ophead) },
+  { "Else", parse_else, NULL, offsetof (REWRITE_RULE, iffalse) },
+  MATCH_CONDITIONS (NULL, offsetof (REWRITE_RULE, cond)),
+  REWRITE_OPS (NULL, offsetof (REWRITE_RULE, ophead)),
+  { NULL }
+};
+
+static REWRITE_OP *
+rewrite_op_alloc (REWRITE_OP_HEAD *head, enum rewrite_type type)
+{
+  REWRITE_OP *op;
+
+  XZALLOC (op);
+  op->type = type;
+  SLIST_PUSH (head, op, next);
+
+  return op;
+}
+
+static int
+parse_rewrite_op (REWRITE_OP_HEAD *head, enum rewrite_type type)
+{
+  REWRITE_OP *op = rewrite_op_alloc (head, type);
+  struct token *tok;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+
+  op->v.str = xstrdup (tok->str);
+  return PARSER_OK;
+}
+
+static int
+parse_delete_header (void *call_data, void *section_data)
+{
+  REWRITE_OP *op = rewrite_op_alloc (call_data, REWRITE_HDR_DEL);
+  POUND_DEFAULTS *dfl = section_data;
+
+  XZALLOC (op->v.hdrdel);
+  return parse_regex_compat (&op->v.hdrdel->pat,
+			     REG_EXTENDED | (dfl->ignore_case ? REG_ICASE : 0));
+}
+
+static int
+parse_set_header (void *call_data, void *section_data)
+{
+  return parse_rewrite_op (call_data, REWRITE_HDR_SET);
+}
+
+static int
+parse_set_url (void *call_data, void *section_data)
+{
+  return parse_rewrite_op (call_data, REWRITE_URL_SET);
+}
+
+static int
+parse_set_path (void *call_data, void *section_data)
+{
+  return parse_rewrite_op (call_data, REWRITE_PATH_SET);
+}
+
+static int
+parse_set_query (void *call_data, void *section_data)
+{
+  return parse_rewrite_op (call_data, REWRITE_QUERY_SET);
+}
+
+static int
+parse_set_query_param (void *call_data, void *section_data)
+{
+  REWRITE_OP *op = rewrite_op_alloc (call_data, REWRITE_QUERY_PARAM_SET);
+  struct token *tok;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+  op->v.qp.name = xstrdup (tok->str);
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return PARSER_FAIL;
+  op->v.qp.value = xstrdup (tok->str);
+
+  return PARSER_OK;
+
+}
+
+static REWRITE_RULE *
+rewrite_rule_alloc (REWRITE_RULE_HEAD *head)
+{
+  REWRITE_RULE *rule;
+
+  XZALLOC (rule);
+  service_cond_init (&rule->cond, COND_BOOL);
+  SLIST_INIT (&rule->ophead);
+
+  if (head)
+    SLIST_PUSH (head, rule, next);
+
+  return rule;
+}
+
+static int
+parse_else (void *call_data, void *section_data)
+{
+  REWRITE_RULE *rule = rewrite_rule_alloc (NULL);
+  *(REWRITE_RULE**)call_data = rule;
+  return parser_loop (else_rule_parsetab, rule, section_data, NULL);
+}
+
+static int
+parse_sub_rewrite (void *call_data, void *section_data)
+{
+  REWRITE_OP *op = rewrite_op_alloc (call_data, REWRITE_REWRITE_RULE);
+  op->v.rule = rewrite_rule_alloc (NULL);
+  return parser_loop (rewrite_rule_parsetab, op->v.rule, section_data, NULL);
+}
+
+static int
+parse_rewrite (void *call_data, void *section_data)
+{
+  REWRITE_RULE *rule = rewrite_rule_alloc (call_data);
+  return parser_loop (rewrite_rule_parsetab, rule, section_data, NULL);
+}
+
+static REWRITE_RULE *
+rewrite_rule_last_uncond (REWRITE_RULE_HEAD *head)
+{
+  if (!SLIST_EMPTY (head))
+    {
+      REWRITE_RULE *rw = SLIST_LAST (head);
+      if (rw->cond.type == COND_BOOL && SLIST_EMPTY (&rw->cond.bool.head))
+	return rw;
+    }
+
+  return rewrite_rule_alloc (head);
+}
+
+#define __cat2__(a,b) a ## b
+#define SETFN_NAME(part)			\
+  __cat2__(parse_,part)
+#define SETFN_SVC_NAME(part)			\
+  __cat2__(parse_svc_,part)
+#define SETFN_SVC_DECL(part)					     \
+  static int							     \
+  SETFN_SVC_NAME(part) (void *call_data, void *section_data)	     \
+  {								     \
+    REWRITE_RULE *rule = rewrite_rule_last_uncond (call_data);	     \
+    return SETFN_NAME(part) (&rule->ophead, section_data);	     \
+  }
+
+SETFN_SVC_DECL (set_url)
+SETFN_SVC_DECL (set_path)
+SETFN_SVC_DECL (set_query)
+SETFN_SVC_DECL (set_query_param)
+SETFN_SVC_DECL (set_header)
+SETFN_SVC_DECL (delete_header)
+
+/*
+ * Support for backward-compatible HeaderRemove and HeadRemove directives.
+ */
+static int
+parse_header_remove (void *call_data, void *section_data)
+{
+  REWRITE_RULE *rule = rewrite_rule_last_uncond (call_data);
+  REWRITE_OP *op = rewrite_op_alloc (&rule->ophead, REWRITE_HDR_DEL);
+  XZALLOC (op->v.hdrdel);
+  return parse_regex_compat (&op->v.hdrdel->pat,
+			     REG_EXTENDED | REG_ICASE | REG_NEWLINE);
+}
+
+static int
+parse_balancer (void *call_data, void *section_data)
+{
+  BALANCER *t = call_data;
+  struct token *tok;
+
+  if ((tok = gettkn_expect_mask (T_UNQ)) == NULL)
+    return PARSER_FAIL;
+  if (strcasecmp (tok->str, "random") == 0)
+    *t = BALANCER_RANDOM;
+  else if (strcasecmp (tok->str, "iwrr") == 0)
+    *t = BALANCER_IWRR;
+  else
+    {
+      conf_error ("unsupported balancing strategy: %s", tok->str);
+      return PARSER_FAIL;
+    }
+  return PARSER_OK;
+}
 
 static PARSER_TABLE service_parsetab[] = {
   { "End", parse_end },
-  { "ACL", parse_cond_acl, NULL, offsetof (SERVICE, cond) },
-  { "URL", parse_cond_url_matcher, NULL, offsetof (SERVICE, cond) },
-  { "Header", parse_cond_hdr_matcher, NULL, offsetof (SERVICE, cond) },
-  /* compatibility keyword: */
-  { "HeadRequire", parse_cond_hdr_matcher, NULL, offsetof (SERVICE, cond) },
-  /* compatibility keyword: */
-  { "HeadDeny", parse_cond_head_deny_matcher, NULL, offsetof (SERVICE, cond) },
-  { "Host", parse_cond_host, NULL, offsetof (SERVICE, cond) },
-  { "Match", parse_match, NULL, offsetof (SERVICE, cond) },
-  { "AND", parse_and_cond, NULL, offsetof (SERVICE, cond) },
-  { "OR", parse_or_cond, NULL, offsetof (SERVICE, cond) },
-  { "NOT", parse_not_cond, NULL, offsetof (SERVICE, cond) },
+
+  MATCH_CONDITIONS (NULL, offsetof (SERVICE, cond)),
+
+  { "Rewrite", parse_rewrite, NULL, offsetof (SERVICE, rewrite) },
+  { "SetHeader", SETFN_SVC_NAME (set_header), NULL, offsetof (SERVICE, rewrite) },
+  { "DeleteHeader", SETFN_SVC_NAME (delete_header), NULL, offsetof (SERVICE, rewrite) },
+  { "SetURL", SETFN_SVC_NAME (set_url), NULL, offsetof (SERVICE, rewrite) },
+  { "SetPath", SETFN_SVC_NAME (set_path), NULL, offsetof (SERVICE, rewrite) },
+  { "SetQuery", SETFN_SVC_NAME (set_query), NULL, offsetof (SERVICE, rewrite) },
+  { "SetQueryParam", SETFN_SVC_NAME (set_query_param), NULL, offsetof (SERVICE, rewrite) },
+
   { "IgnoreCase", assign_dfl_ignore_case },
   { "Disabled", assign_bool, NULL, offsetof (SERVICE, disabled) },
-  { "Redirect", assign_redirect, NULL, offsetof (SERVICE, backends) },
+  { "Redirect", parse_redirect_backend, NULL, offsetof (SERVICE, backends) },
+  { "Error", parse_error_backend, NULL, offsetof (SERVICE, backends) },
   { "Backend", parse_backend, NULL, offsetof (SERVICE, backends) },
   { "Emergency", parse_emergency, NULL, offsetof (SERVICE, emergency) },
+  { "Metrics", parse_metrics, NULL, offsetof (SERVICE, backends) },
   { "Session", parse_session },
+  { "Balancer", parse_balancer, NULL, offsetof (SERVICE, balancer) },
   { NULL }
 };
+
+static int
+find_service_ident (SERVICE_HEAD *svc_head, char const *name)
+{
+  SERVICE *svc;
+  SLIST_FOREACH (svc, svc_head, next)
+    {
+      if (svc->name && strcmp (svc->name, name) == 0)
+	return 1;
+    }
+  return 0;
+}
 
 static int
 parse_service (void *call_data, void *section_data)
 {
   SERVICE_HEAD *head = call_data;
-  POUND_DEFAULTS dfl = *(POUND_DEFAULTS*) section_data;
+  POUND_DEFAULTS *dfl = (POUND_DEFAULTS*) section_data;
   struct token *tok;
   SERVICE *svc;
   struct locus_range range;
@@ -2331,6 +2875,7 @@ parse_service (void *call_data, void *section_data)
 
   svc->sess_type = SESS_NONE;
   pthread_mutex_init (&svc->mut, NULL);
+  svc->balancer = dfl->balancer;
 
   tok = gettkn_any ();
 
@@ -2339,14 +2884,15 @@ parse_service (void *call_data, void *section_data)
 
   if (tok->type == T_STRING)
     {
-      if (strlen (tok->str) > sizeof (svc->name) - 1)
+      if (find_service_ident (head, tok->str))
 	{
-	  conf_error ("%s", "service name too long: truncated");
+	  conf_error ("%s", "service name is not unique");
+	  return PARSER_FAIL;
 	}
-      strncpy (svc->name, tok->str, sizeof (svc->name) - 1);
+      svc->name = xstrdup (tok->str);
     }
   else
-    putback_tkn ();
+    putback_tkn (tok);
 
   if ((svc->sessions = session_table_new ()) == NULL)
     {
@@ -2354,7 +2900,7 @@ parse_service (void *call_data, void *section_data)
       return -1;
     }
 
-  if (parser_loop (service_parsetab, svc, &dfl, &range))
+  if (parser_loop (service_parsetab, svc, dfl, &range))
     return PARSER_FAIL;
   else
     {
@@ -2366,14 +2912,54 @@ parse_service (void *call_data, void *section_data)
 	}
       else
 	{
+	  int be_class = 0;
+#         define BE_MASK(n) (1<<(n))
+#         define  BX_(x)  ((x) - (((x)>>1)&0x77777777)			\
+			   - (((x)>>2)&0x33333333)			\
+			   - (((x)>>3)&0x11111111))
+#         define BITCOUNT(x)     (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 255)
+	  int n = 0;
+
 	  SLIST_FOREACH (be, &svc->backends, next)
 	    {
+	      n++;
+	      be_class |= BE_MASK (be->be_type);
 	      be->service = svc;
 	      if (!be->disabled)
-		svc->tot_pri += be->priority;
+		{
+		  svc->tot_pri += be->priority;
+		  if (svc->max_pri < be->priority)
+		    svc->max_pri = be->priority;
+		}
 	      svc->abs_pri += be->priority;
 	    }
+
+	  if (n > 1)
+	    {
+	      if (be_class & ~(BE_MASK (BE_BACKEND) | BE_MASK (BE_REDIRECT)))
+		{
+		  conf_error_at_locus_range (&range,
+			  "%s",
+			  BITCOUNT (be_class) == 1
+			    ? "multiple backends of this type are not allowed"
+			    : "service mixes backends of different types");
+		  return PARSER_FAIL;
+		}
+
+	       if (be_class & BE_MASK (BE_REDIRECT))
+		{
+		  conf_error_at_locus_range (&range,
+			  "warning: %s",
+			  (be_class & BE_MASK (BE_BACKEND))
+			     ? "service mixes regular and redirect backends"
+			     : "service uses multiple redirect backends");
+		  conf_error_at_locus_range (&range,
+			  "see section \"DEPRECATED FEATURES\" in pound(8)");
+		}
+	    }
 	}
+
+      service_lb_init (svc);
 
       SLIST_PUSH (head, svc, next);
     }
@@ -2389,11 +2975,9 @@ parse_acme (void *call_data, void *section_data)
   SERVICE_COND *cond;
   struct token *tok;
   struct stat st;
-  size_t len;
   int rc;
   static char re_acme[] = "^/\\.well-known/acme-challenge/(.+)";
-  static char suf_acme[] = "/$1";
-  static size_t suf_acme_size = sizeof (suf_acme) - 1;
+  int fd;
 
   if ((tok = gettkn_expect (T_STRING)) == NULL)
     return PARSER_FAIL;
@@ -2406,6 +2990,11 @@ parse_acme (void *call_data, void *section_data)
   if (!S_ISDIR (st.st_mode))
     {
       conf_error ("%s is not a directory: %s", tok->str, strerror (errno));
+      return PARSER_FAIL;
+    }
+  if ((fd = open (tok->str, O_RDONLY | O_NONBLOCK | O_DIRECTORY)) == -1)
+    {
+      conf_error ("can't open directory %s: %s", tok->str, strerror (errno));
       return PARSER_FAIL;
     }
 
@@ -2428,21 +3017,15 @@ parse_acme (void *call_data, void *section_data)
 
   svc->tot_pri = 1;
   svc->abs_pri = 1;
+  svc->max_pri = 1;
 
   /* Create ACME backend */
   XZALLOC (be);
   be->be_type = BE_ACME;
   be->priority = 1;
-  be->alive = 1;
   pthread_mutex_init (&be->mut, NULL);
 
-  len = strlen (tok->str);
-  if (tok->str[len-1] == '/')
-    len--;
-
-  be->url = xmalloc (len + suf_acme_size + 1);
-  memcpy (be->url, tok->str, len);
-  strcpy (be->url + len, suf_acme);
+  be->v.acme.wd = fd;
 
   /* Register backend in service */
   SLIST_PUSH (&svc->backends, be, next);
@@ -2457,7 +3040,7 @@ parse_acme (void *call_data, void *section_data)
 static int
 listener_parse_xhttp (void *call_data, void *section_data)
 {
-  return assign_int_range (call_data, 0, 4);
+  return assign_int_range (call_data, 0, 3);
 }
 
 static int
@@ -2587,7 +3170,7 @@ listener_parse_socket_from (void *call_data, void *section_data)
     struct stringbuf sb;
     char tmp[MAX_ADDR_BUFSIZE];
 
-    stringbuf_init (&sb);
+    xstringbuf_init (&sb);
     stringbuf_format_locus_range (&sb, &tok->locus);
     stringbuf_add_string (&sb, ": obtained address ");
     stringbuf_add_string (&sb, addr2str (tmp, sizeof (tmp), &lst->addr, 0));
@@ -2607,33 +3190,66 @@ parse_rewritelocation (void *call_data, void *section_data)
 }
 
 static int
-append_string_line (void *call_data, void *section_data)
-{
-  char **dst = call_data;
-  char *s = *dst;
-  size_t len = s ? strlen (s) : 0;
-  struct token *tok;
-
-  if ((tok = gettkn_expect (T_STRING)) == NULL)
-    return PARSER_FAIL;
-
-  s = xrealloc (s, len + strlen (tok->str) + 3);
-  if (len == 0)
-    strcpy (s, tok->str);
-  else
-    {
-      strcpy (s + len, "\r\n");
-      strcpy (s + len + 2, tok->str);
-    }
-  *dst = s;
-
-  return PARSER_OK;
-}
-
-static int
 parse_log_level (void *call_data, void *section_data)
 {
   return assign_int_range (call_data, 0, 5);
+}
+
+static int
+parse_header_options (void *call_data, void *section_data)
+{
+  int *opt = call_data;
+  int n;
+  struct token *tok;
+  static struct kwtab options[] = {
+    { "forwarded", HDROPT_FORWARDED_HEADERS },
+    { "ssl",       HDROPT_SSL_HEADERS },
+    { "all",       HDROPT_FORWARDED_HEADERS|HDROPT_SSL_HEADERS },
+    { NULL }
+  };
+
+  for (;;)
+    {
+      char *name;
+      int neg;
+
+      if ((tok = gettkn_any ()) == NULL)
+	return PARSER_FAIL;
+      if (tok->type == '\n')
+	break;
+      if (!(tok->type == T_IDENT || tok->type == T_LITERAL))
+	{
+	  conf_error ("unexpected %s", token_type_str (tok->type));
+	  return PARSER_FAIL;
+	}
+
+      name = tok->str;
+      if (strcasecmp (name, "none") == 0)
+	*opt = 0;
+      else
+	{
+	  if (strncasecmp (name, "no-", 3) == 0)
+	    {
+	      neg = 1;
+	      name += 3;
+	    }
+	  else
+	    neg = 0;
+
+	  if (kw_to_tok (options, name, 1, &n))
+	    {
+	      conf_error ("%s", "unknown option");
+	      return PARSER_FAIL;
+	    }
+
+	  if (neg)
+	    *opt &= ~n;
+	  else
+	    *opt |= n;
+	}
+    }
+
+  return PARSER_OK_NONL;
 }
 
 static PARSER_TABLE http_parsetab[] = {
@@ -2651,14 +3267,26 @@ static PARSER_TABLE http_parsetab[] = {
   { "Err500", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_INTERNAL_SERVER_ERROR]) },
   { "Err501", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_NOT_IMPLEMENTED]) },
   { "Err503", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_SERVICE_UNAVAILABLE]) },
-  { "MaxRequest", assign_LONG, NULL, offsetof (LISTENER, max_req) },
-  { "HeaderRemove", assign_matcher, NULL, offsetof (LISTENER, head_off) },
-  { "HeadRemove", assign_matcher, NULL, offsetof (LISTENER, head_off) },
+  { "MaxRequest", assign_CONTENT_LENGTH, NULL, offsetof (LISTENER, max_req) },
+
+  { "Rewrite", parse_rewrite, NULL, offsetof (LISTENER, rewrite) },
+  { "SetHeader", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
+  { "DeleteHeader", SETFN_SVC_NAME (delete_header), NULL, offsetof (LISTENER, rewrite) },
+  { "SetURL", SETFN_SVC_NAME (set_url), NULL, offsetof (LISTENER, rewrite) },
+  { "SetPath", SETFN_SVC_NAME (set_path), NULL, offsetof (LISTENER, rewrite) },
+  { "SetQuery", SETFN_SVC_NAME (set_query), NULL, offsetof (LISTENER, rewrite) },
+  { "SetQueryParam", SETFN_SVC_NAME (set_query_param), NULL, offsetof (LISTENER, rewrite) },
+
+  { "HeaderOption", parse_header_options, NULL, offsetof (LISTENER, header_options) },
+
+  /* Backward compatibility */
+  { "HeaderAdd", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
+  { "AddHeader", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
+  { "HeaderRemove", parse_header_remove, NULL, offsetof (LISTENER, rewrite) },
+  { "HeadRemove", parse_header_remove, NULL, offsetof (LISTENER, rewrite) },
   { "RewriteLocation", parse_rewritelocation, NULL, offsetof (LISTENER, rewr_loc) },
   { "RewriteDestination", assign_bool, NULL, offsetof (LISTENER, rewr_dest) },
   { "LogLevel", parse_log_level, NULL, offsetof (LISTENER, log_level) },
-  { "HeaderAdd", append_string_line, NULL, offsetof (LISTENER, add_head) },
-  { "AddHeader", append_string_line, NULL, offsetof (LISTENER, add_head) },
   { "Service", parse_service, NULL, offsetof (LISTENER, services) },
   { "ACME", parse_acme, NULL, offsetof (LISTENER, services) },
   { NULL }
@@ -2671,15 +3299,29 @@ listener_alloc (POUND_DEFAULTS *dfl)
 
   XZALLOC (lst);
 
+  lst->mode = 0600;
   lst->sock = -1;
   lst->to = dfl->clnt_to;
   lst->rewr_loc = 1;
   lst->log_level = dfl->log_level;
   lst->verb = 0;
-  SLIST_INIT (&lst->head_off);
+  lst->header_options = dfl->header_options;
+  SLIST_INIT (&lst->rewrite);
   SLIST_INIT (&lst->services);
   SLIST_INIT (&lst->ctx_head);
   return lst;
+}
+
+static int
+find_listener_ident (LISTENER_HEAD *list_head, char const *name)
+{
+  LISTENER *lstn;
+  SLIST_FOREACH (lstn, list_head, next)
+    {
+      if (lstn->name && strcmp (lstn->name, name) == 0)
+	return 1;
+    }
+  return 0;
 }
 
 static int
@@ -2689,9 +3331,24 @@ parse_listen_http (void *call_data, void *section_data)
   LISTENER_HEAD *list_head = call_data;
   POUND_DEFAULTS *dfl = section_data;
   struct locus_range range;
+  struct token *tok;
 
   if ((lst = listener_alloc (dfl)) == NULL)
     return PARSER_FAIL;
+
+  if ((tok = gettkn_any ()) == NULL)
+    return PARSER_FAIL;
+  else if (tok->type == T_STRING)
+    {
+      if (find_listener_ident (list_head, tok->str))
+	{
+	  conf_error ("%s", "listener name is not unique");
+	  return PARSER_FAIL;
+	}
+      lst->name = xstrdup (tok->str);
+    }
+  else
+    putback_tkn (tok);
 
   if (parser_loop (http_parsetab, lst, section_data, &range))
     return PARSER_FAIL;
@@ -2703,90 +3360,37 @@ parse_listen_http (void *call_data, void *section_data)
   return PARSER_OK;
 }
 
-static int
-is_class (int c, char *cls)
-{
-  int k;
-
-  if (*cls == 0)
-    return 0;
-  if (c == *cls)
-    return 1;
-  cls++;
-  while ((k = *cls++) != 0)
-    {
-      if (k == '-' && cls[0] != 0)
-	{
-	  if (cls[-2] <= c && c <= cls[0])
-	    return 1;
-	  cls++;
-	}
-      else if (c == k)
-	return 1;
-    }
-  return 0;
-}
-
-static char *
-extract_cn (char const *str, size_t *plen)
-{
-  while (*str)
-    {
-      if ((str[0] == 'c' || str[0] == 'C') && (str[1] == 'n' || str[1] == 'N') && str[2] == '=')
-	{
-	  size_t i;
-	  str += 3;
-	  for (i = 0; str[i] && is_class (str[i], "-*.A-Za-z0-9"); i++)
-	    ;
-	  if (str[i] == 0)
-	    {
-	      *plen = i;
-	      return (char*) str;
-	    }
-	  str += i;
-	}
-      str++;
-    }
-  return NULL;
-}
-
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 # define general_name_string(n) \
-	(unsigned char*) \
 	xstrndup ((char*)ASN1_STRING_get0_data (n->d.dNSName),	\
 		 ASN1_STRING_length (n->d.dNSName) + 1)
 #else
 # define general_name_string(n) \
-	(unsigned char*) \
 	xstrndup ((char*)ASN1_STRING_data(n->d.dNSName),	\
 		 ASN1_STRING_length (n->d.dNSName) + 1)
 #endif
 
-unsigned char **
-get_subjectaltnames (X509 * x509, unsigned int *count)
+static void
+get_subjectaltnames (X509 *x509, POUND_CTX *pc, size_t san_max)
 {
-  unsigned int local_count;
-  unsigned char **result;
   STACK_OF (GENERAL_NAME) * san_stack =
     (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (x509, NID_subject_alt_name,
 						  NULL, NULL);
-  unsigned char *temp[sk_GENERAL_NAME_num (san_stack)];
-  GENERAL_NAME *name;
-  int i;
+  char **result;
 
-  local_count = 0;
-  result = NULL;
-  name = NULL;
-  *count = 0;
   if (san_stack == NULL)
-    return NULL;
+    return;
   while (sk_GENERAL_NAME_num (san_stack) > 0)
     {
-      name = sk_GENERAL_NAME_pop (san_stack);
+      GENERAL_NAME *name = sk_GENERAL_NAME_pop (san_stack);
       switch (name->type)
 	{
 	case GEN_DNS:
-	  temp[local_count++] = general_name_string (name);
+	  if (pc->subjectAltNameCount == san_max)
+	    pc->subjectAltNames = x2nrealloc (pc->subjectAltNames,
+					      &san_max,
+					      sizeof (pc->subjectAltNames[0]));
+	  pc->subjectAltNames[pc->subjectAltNameCount++] = general_name_string (name);
 	  break;
 
 	default:
@@ -2796,14 +3400,11 @@ get_subjectaltnames (X509 * x509, unsigned int *count)
       GENERAL_NAME_free (name);
     }
 
-  result = xcalloc (local_count, sizeof (unsigned char *));
-  for (i = 0; i < local_count; i++)
-    result[i] = temp[i];
-  *count = local_count;
-
   sk_GENERAL_NAME_pop_free (san_stack, GENERAL_NAME_free);
-
-  return result;
+  if (pc->subjectAltNameCount
+      && (result = realloc (pc->subjectAltNames,
+			    pc->subjectAltNameCount * sizeof (pc->subjectAltNames[0]))) != NULL)
+    pc->subjectAltNames = result;
 }
 
 static int
@@ -2851,10 +3452,10 @@ https_parse_cert (void *call_data, void *section_data)
   {
     /* we have support for SNI */
     FILE *fcert;
-    char server_name[MAXBUF];
     X509 *x509;
-    char *cnp;
-    size_t cnl;
+    X509_NAME *xname = NULL;
+    int i;
+    size_t san_max;
 
     if ((fcert = fopen (tok->str, "r")) == NULL)
       {
@@ -2871,22 +3472,42 @@ https_parse_cert (void *call_data, void *section_data)
 	return PARSER_FAIL;
       }
 
-    memset (server_name, '\0', MAXBUF);
-    X509_NAME_oneline (X509_get_subject_name (x509), server_name,
-		       sizeof (server_name) - 1);
     pc->subjectAltNameCount = 0;
     pc->subjectAltNames = NULL;
-    pc->subjectAltNames = get_subjectaltnames (x509, &pc->subjectAltNameCount);
+    san_max = 0;
+
+    /* Extract server name */
+    xname = X509_get_subject_name (x509);
+    for (i = -1;
+	 (i = X509_NAME_get_index_by_NID (xname, NID_commonName, i)) != -1;)
+      {
+	X509_NAME_ENTRY *entry = X509_NAME_get_entry (xname, i);
+	ASN1_STRING *value;
+	char *str = NULL;
+	value = X509_NAME_ENTRY_get_data (entry);
+	if (ASN1_STRING_to_UTF8 ((unsigned char **)&str, value) >= 0)
+	  {
+	    if (pc->server_name == NULL)
+	      pc->server_name = str;
+	    else
+	      {
+		if (pc->subjectAltNameCount == san_max)
+		  pc->subjectAltNames = x2nrealloc (pc->subjectAltNames,
+						    &san_max,
+						    sizeof (pc->subjectAltNames[0]));
+		pc->subjectAltNames[pc->subjectAltNameCount++] = str;
+	      }
+	  }
+      }
+
+    get_subjectaltnames (x509, pc, san_max);
     X509_free (x509);
 
-    if ((cnp = extract_cn (server_name, &cnl)) == NULL)
+    if (pc->server_name == NULL)
       {
-	conf_error ("no CN in certificate subject name (%s)\n", server_name);
+	conf_error ("%s", "no CN in certificate subject name\n");
 	return PARSER_FAIL;
       }
-    pc->server_name = xmalloc (cnl + 1);
-    memcpy (pc->server_name, cnp, cnl);
-    pc->server_name[cnl] = 0;
   }
 #else
   if (res->ctx)
@@ -3204,14 +3825,27 @@ static PARSER_TABLE https_parsetab[] = {
   { "Err500", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_INTERNAL_SERVER_ERROR]) },
   { "Err501", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_NOT_IMPLEMENTED]) },
   { "Err503", assign_string_from_file, NULL, offsetof (LISTENER, http_err[HTTP_STATUS_SERVICE_UNAVAILABLE]) },
-  { "MaxRequest", assign_LONG, NULL, offsetof (LISTENER, max_req) },
-  { "HeaderRemove", assign_matcher, NULL, offsetof (LISTENER, head_off) },
-  { "HeadRemove", assign_matcher, NULL, offsetof (LISTENER, head_off) },
+  { "MaxRequest", assign_CONTENT_LENGTH, NULL, offsetof (LISTENER, max_req) },
+
+  { "Rewrite", parse_rewrite, NULL, offsetof (LISTENER, rewrite) },
+  { "SetHeader", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
+  { "DeleteHeader", SETFN_SVC_NAME (delete_header), NULL, offsetof (LISTENER, rewrite) },
+  { "SetURL", SETFN_SVC_NAME (set_url), NULL, offsetof (LISTENER, rewrite) },
+  { "SetPath", SETFN_SVC_NAME (set_path), NULL, offsetof (LISTENER, rewrite) },
+  { "SetQuery", SETFN_SVC_NAME (set_query), NULL, offsetof (LISTENER, rewrite) },
+  { "SetQueryParam", SETFN_SVC_NAME (set_query_param), NULL, offsetof (LISTENER, rewrite) },
+
+  { "HeaderOption", parse_header_options, NULL, offsetof (LISTENER, header_options) },
+
+  /* Backward compatibility */
+  { "HeaderAdd", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
+  { "AddHeader", SETFN_SVC_NAME (set_header), NULL, offsetof (LISTENER, rewrite) },
+  { "HeaderRemove", parse_header_remove, NULL, offsetof (LISTENER, rewrite) },
+  { "HeadRemove", parse_header_remove, NULL, offsetof (LISTENER, rewrite) },
+
   { "RewriteLocation", parse_rewritelocation, NULL, offsetof (LISTENER, rewr_loc) },
   { "RewriteDestination", assign_bool, NULL, offsetof (LISTENER, rewr_dest) },
   { "LogLevel", parse_log_level, NULL, offsetof (LISTENER, log_level) },
-  { "HeaderAdd", append_string_line, NULL, offsetof (LISTENER, add_head) },
-  { "AddHeader", append_string_line, NULL, offsetof (LISTENER, add_head) },
   { "Service", parse_service, NULL, offsetof (LISTENER, services) },
   { "Cert", https_parse_cert },
   { "ClientCert", https_parse_client_cert },
@@ -3235,9 +3869,24 @@ parse_listen_https (void *call_data, void *section_data)
   struct locus_range range;
   POUND_CTX *pc;
   struct stringbuf sb;
+  struct token *tok;
 
   if ((lst = listener_alloc (dfl)) == NULL)
     return PARSER_FAIL;
+
+  if ((tok = gettkn_any ()) == NULL)
+    return PARSER_FAIL;
+  else if (tok->type == T_STRING)
+    {
+      if (find_listener_ident (list_head, tok->str))
+	{
+	  conf_error ("%s", "listener name is not unique");
+	  return PARSER_FAIL;
+	}
+      lst->name = xstrdup (tok->str);
+    }
+  else
+    putback_tkn (tok);
 
   lst->ssl_op_enable = SSL_OP_ALL;
 #ifdef  SSL_OP_NO_COMPRESSION
@@ -3272,7 +3921,7 @@ parse_listen_https (void *call_data, void *section_data)
     }
 #endif
 
-  stringbuf_init (&sb);
+  xstringbuf_init (&sb);
   SLIST_FOREACH (pc, &lst->ctx_head, next)
     {
       SSL_CTX_set_app_data (pc->ctx, lst);
@@ -3307,21 +3956,16 @@ parse_threads_compat (void *call_data, void *section_data)
 }
 
 static int
-parse_control_global (void *call_data, void *section_data)
+parse_control_socket (void *call_data, void *section_data)
 {
+  struct addrinfo *addr = call_data;
   struct token *tok;
-  LISTENER *lst;
-  SERVICE *svc;
-  BACKEND *be;
   struct sockaddr_un *sun;
   size_t len;
 
   /* Get socket address */
   if ((tok = gettkn_expect (T_STRING)) == NULL)
     return PARSER_FAIL;
-
-  /* Create listener for that address */
-  lst = listener_alloc (section_data);
 
   len = strlen (tok->str);
   if (len > UNIX_PATH_MAX)
@@ -3335,13 +3979,65 @@ parse_control_global (void *call_data, void *section_data)
   sun = xmalloc (len);
   sun->sun_family = AF_UNIX;
   strcpy (sun->sun_path, tok->str);
-  pound_atexit (unlink_file, sun->sun_path);
+  unlink_at_exit (sun->sun_path);
 
-  lst->addr.ai_socktype = SOCK_STREAM;
-  lst->addr.ai_family = AF_UNIX;
-  lst->addr.ai_protocol = 0;
-  lst->addr.ai_addr = (struct sockaddr *) sun;
-  lst->addr.ai_addrlen = len;
+  addr->ai_socktype = SOCK_STREAM;
+  addr->ai_family = AF_UNIX;
+  addr->ai_protocol = 0;
+  addr->ai_addr = (struct sockaddr *) sun;
+  addr->ai_addrlen = len;
+
+  return PARSER_OK;
+}
+
+static PARSER_TABLE control_parsetab[] = {
+  { "End",         parse_end },
+  { "Socket",      parse_control_socket, NULL, offsetof (LISTENER, addr) },
+  { "ChangeOwner", assign_bool, NULL, offsetof (LISTENER, chowner) },
+  { "Mode",        assign_mode, NULL, offsetof (LISTENER, mode) },
+  { NULL }
+};
+
+static int
+parse_control (void *call_data, void *section_data)
+{
+  struct token *tok;
+  LISTENER *lst;
+  SERVICE *svc;
+  BACKEND *be;
+  int rc;
+  struct locus_range range;
+
+  if ((tok = gettkn_any ()) == NULL)
+    return PARSER_FAIL;
+  lst = listener_alloc (section_data);
+  switch (tok->type)
+    {
+    case '\n':
+      rc = parser_loop (control_parsetab, lst, section_data, &range);
+      if (rc == PARSER_OK)
+	{
+	  if (lst->addr.ai_addrlen == 0)
+	    {
+	      conf_error_at_locus_range (&range, "%s",
+					 "Socket statement is missing");
+	      rc = PARSER_FAIL;
+	    }
+	}
+      break;
+
+    case T_STRING:
+      putback_tkn (tok);
+      rc = parse_control_socket (&lst->addr, section_data);
+      break;
+
+    default:
+      conf_error ("expected string or newline, but found %s", token_type_str (tok->type));
+      rc = PARSER_FAIL;
+    }
+
+  if (rc != PARSER_OK)
+    return PARSER_FAIL;
 
   lst->verb = 1; /* Need PUT and DELETE methods */
   /* Register listener in the global listener list */
@@ -3354,6 +4050,7 @@ parse_control_global (void *call_data, void *section_data)
   pthread_mutex_init (&svc->mut, NULL);
   svc->tot_pri = 1;
   svc->abs_pri = 1;
+  svc->max_pri = 1;
   /* Register service in the listener */
   SLIST_PUSH (&lst->services, svc, next);
 
@@ -3361,7 +4058,6 @@ parse_control_global (void *call_data, void *section_data)
   XZALLOC (be);
   be->be_type = BE_CONTROL;
   be->priority = 1;
-  be->alive = 1;
   pthread_mutex_init (&be->mut, NULL);
   /* Register backend in service */
   SLIST_PUSH (&svc->backends, be, next);
@@ -3370,7 +4066,7 @@ parse_control_global (void *call_data, void *section_data)
 }
 
 static PARSER_TABLE top_level_parsetab[] = {
-  { "Include", parse_include },
+  { "IncludeDir", parse_includedir },
   { "User", assign_string, &user },
   { "Group", assign_string, &group },
   { "RootJail", assign_string, &root_jail },
@@ -3389,9 +4085,11 @@ static PARSER_TABLE top_level_parsetab[] = {
   { "WSTimeOut", assign_timeout, NULL, offsetof (POUND_DEFAULTS, ws_to) },
   { "ConnTO", assign_timeout, NULL, offsetof (POUND_DEFAULTS, be_connto) },
   { "IgnoreCase", assign_bool, NULL, offsetof (POUND_DEFAULTS, ignore_case) },
+  { "Balancer", parse_balancer, NULL, offsetof (POUND_DEFAULTS, balancer) },
+  { "HeaderOption", parse_header_options, NULL, offsetof (POUND_DEFAULTS, header_options) },
   { "ECDHCurve", parse_ECDHCurve },
   { "SSLEngine", parse_SSLEngine },
-  { "Control", parse_control_global },
+  { "Control", parse_control },
   { "Anonymise", int_set_one, &anonymise },
   { "Anonymize", int_set_one, &anonymise },
   { "Service", parse_service, &services },
@@ -3399,6 +4097,7 @@ static PARSER_TABLE top_level_parsetab[] = {
   { "ListenHTTPS", parse_listen_https, &listeners },
   { "ACL", parse_named_acl, NULL },
   { "PidFile", assign_string, &pid_name },
+  { "BackendStats", assign_bool, &enable_backend_stats },
   { NULL }
 };
 
@@ -3413,32 +4112,34 @@ parse_config_file (char const *file)
     .be_to = 15,
     .ws_to = 600,
     .be_connto = 15,
-    .ignore_case = 0
+    .ignore_case = 0,
+    .header_options = HDROPT_FORWARDED_HEADERS | HDROPT_SSL_HEADERS,
+    .balancer = BALANCER_RANDOM
   };
 
   if (push_input (file) == 0)
     {
+      open_include_dir (include_dir);
       res = parser_loop (top_level_parsetab, &pound_defaults, &pound_defaults, NULL);
+      close_include_dir ();
       if (res == 0)
 	{
 	  if (cur_input)
 	    exit (1);
 	  if (worker_min_count > worker_max_count)
-	    {
-	      logmsg (LOG_ERR, "WorkerMinCount is greater than WorkerMaxCount");
-	      exit (1);
-	    }
+	    abend ("WorkerMinCount is greater than WorkerMaxCount");
 	  log_facility = pound_defaults.facility;
 	}
     }
   return res;
 }
 
-enum {
-	F_OFF,
-	F_ON,
-	F_DFL
-};
+enum
+  {
+    F_OFF,
+    F_ON,
+    F_DFL
+  };
 
 struct pound_feature
 {
@@ -3448,11 +4149,30 @@ struct pound_feature
   void (*setfn) (int, char const *);
 };
 
+static void
+set_include_dir (int enabled, char const *val)
+{
+  if (enabled)
+    {
+      if (val && (*val == 0 || strcmp (val, ".") == 0))
+	val = NULL;
+      include_dir = val;
+    }
+  else
+    include_dir = NULL;
+}
+
 static struct pound_feature feature[] = {
   [FEATURE_DNS] = {
     .name = "dns",
     .descr = "resolve host names found in configuration file (default)",
     .enabled = F_ON
+  },
+  [FEATURE_INCLUDE_DIR] = {
+    .name = "include-dir",
+    .descr = "include file directory",
+    .enabled = F_DFL,
+    .setfn = set_include_dir
   },
   { NULL }
 };
@@ -3504,85 +4224,10 @@ feature_set (char const *name)
   return -1;
 }
 
-enum string_value_type
-  {
-    STRING_CONSTANT,
-    STRING_INT,
-    STRING_VARIABLE,
-    STRING_FUNCTION,
-    STRING_PRINTER
-  };
-
-struct string_value
-{
-  char const *kw;
-  enum string_value_type type;
-  union
-  {
-    char *s_const;
-    char **s_var;
-    int s_int;
-    char const *(*s_func) (void);
-    void (*s_print) (FILE *);
-  } data;
-};
-
-#define VALUE_COLUMN 28
-
-static void
-print_string_values (struct string_value *values, FILE *fp)
-{
-  struct string_value *p;
-  char const *val;
-
-  for (p = values; p->kw; p++)
-    {
-      int n = fprintf (fp, "%s:", p->kw);
-      if (n < VALUE_COLUMN)
-	fprintf (fp, "%*s", VALUE_COLUMN-n, "");
-
-      switch (p->type)
-	{
-	case STRING_CONSTANT:
-	  val = p->data.s_const;
-	  break;
-
-	case STRING_INT:
-	  fprintf (fp, "%d\n", p->data.s_int);
-	  continue;
-
-	case STRING_VARIABLE:
-	  val = *p->data.s_var;
-	  break;
-
-	case STRING_FUNCTION:
-	  val = p->data.s_func ();
-	  break;
-
-	case STRING_PRINTER:
-	  p->data.s_print (fp);
-	  fputc ('\n', fp);
-	  continue;
-	}
-
-      fprintf (fp, "%s\n", val);
-    }
-}
-
-static char const *
-supervisor_status (void)
-{
-#if SUPERVISOR
-  return "enabled";
-#else
-  return "disabled";
-#endif
-}
-
 struct string_value pound_settings[] = {
   { "Configuration file",  STRING_CONSTANT, { .s_const = POUND_CONF } },
+  { "Include directory",   STRING_CONSTANT, { .s_const = SYSCONFDIR } },
   { "PID file",   STRING_CONSTANT,  { .s_const = POUND_PID } },
-  { "Supervisor", STRING_FUNCTION, { .s_func = supervisor_status } },
   { "Buffer size",STRING_INT, { .s_int = MAXBUF } },
 #if ! SET_DH_AUTO
   { "DH bits",         STRING_INT, { .s_int = DH_LEN } },
@@ -3591,37 +4236,23 @@ struct string_value pound_settings[] = {
   { NULL }
 };
 
-static int copyright_year = 2022;
-void
-print_version (void)
-{
-  printf ("%s (%s) %s\n", progname, PACKAGE_NAME, PACKAGE_VERSION);
-  printf ("Copyright (C) 2002-2010 Apsis GmbH\n");
-  printf ("Copyright (C) 2018-%d Sergey Poznyakoff\n", copyright_year);
-  printf ("\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
-This is free software: you are free to change and redistribute it.\n\
-There is NO WARRANTY, to the extent permitted by law.\n\
-");
-  printf ("\nBuilt-in defaults:\n\n");
-  print_string_values (pound_settings, stdout);
-}
-
 void
 print_help (void)
 {
   int i;
 
-  printf ("usage: %s [-Vchv] [-W [no-]FEATURE] [-f FILE] [-p FILE]\n", progname);
+  printf ("usage: %s [-FVcehv] [-W [no-]FEATURE] [-f FILE] [-p FILE]\n", progname);
   printf ("HTTP/HTTPS reverse-proxy and load-balancer\n");
   printf ("\nOptions are:\n\n");
   printf ("   -c               check configuration file syntax and exit\n");
+  printf ("   -e               print errors on stderr (implies -F)\n");
+  printf ("   -F               remain in foreground after startup\n");
   printf ("   -f FILE          read configuration from FILE\n");
   printf ("                    (default: %s)\n", POUND_CONF);
   printf ("   -p FILE          write PID to FILE\n");
   printf ("                    (default: %s)\n", POUND_PID);
   printf ("   -V               print program version, compilation settings, and exit\n");
-  printf ("   -v               verbose mode\n");
+  printf ("   -v               print log messages to stdout/stderr during startup\n");
   printf ("   -W [no-]FEATURE  enable or disable optional feature\n");
   printf ("\n");
   printf ("FEATUREs are:\n");
@@ -3641,16 +4272,24 @@ config_parse (int argc, char **argv)
   int check_only = 0;
   char *conf_name = POUND_CONF;
   char *pid_file_option = NULL;
+  int foreground_option = 0;
+  int stderr_option = 0;
 
-  if ((progname = strrchr (argv[0], '/')) != NULL)
-    progname++;
-  else
-    progname = argv[0];
-  while ((c = getopt (argc, argv, "cf:hp:VvW:")) > 0)
+  set_progname (argv[0]);
+
+  while ((c = getopt (argc, argv, "ceFf:hp:VvW:")) > 0)
     switch (c)
       {
       case 'c':
 	check_only = 1;
+	break;
+
+      case 'e':
+	stderr_option = foreground_option = 1;
+	break;
+
+      case 'F':
+	foreground_option = 1;
 	break;
 
       case 'f':
@@ -3666,7 +4305,7 @@ config_parse (int argc, char **argv)
 	break;
 
       case 'V':
-	print_version ();
+	print_version (pound_settings);
 	exit (0);
 
       case 'v':
@@ -3702,11 +4341,22 @@ config_parse (int argc, char **argv)
     }
 
   if (SLIST_EMPTY (&listeners))
-    {
-      logmsg (LOG_ERR, "no listeners defined");
-      exit (1);
-    }
+    abend ("no listeners defined");
 
   if (pid_file_option)
     pid_name = pid_file_option;
+
+  if (foreground_option)
+    daemonize = 0;
+
+  if (daemonize == 0)
+    {
+      if (stderr_option)
+	log_facility = -1;
+    }
+  else
+    {
+      if (log_facility == -1)
+	log_facility = LOG_DAEMON;
+    }
 }

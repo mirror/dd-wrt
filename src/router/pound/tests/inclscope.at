@@ -1,0 +1,93 @@
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Includes in various scopes])
+AT_KEYWORDS([include inclscope])
+
+AT_DATA([backend],
+[Backend
+	Address
+	Port
+End
+Backend
+	Address
+	Port
+End
+])
+
+AT_DATA([host.cfg],
+[Host "example.com"
+Host "www.example.com"
+])
+
+AT_DATA([session.cfg],
+[Type URL
+ID "id"
+TTL 300
+])
+
+AT_DATA([svc.cfg],
+[Service
+	Match or
+		Include "host.cfg"
+	End
+        Include "backend.cfg"
+	Session
+		Include "session.cfg"
+	End
+End
+])
+
+AT_DATA([pound.cfi],
+[ListenHTTP
+Include "svc.cfg"
+End
+])
+
+AT_CHECK([
+AT_DATA([input],
+[GET /echo/foo
+Host: example.com
+end
+
+200
+end
+
+GET /echo/foo
+Host: www.example.com
+end
+
+200
+end
+])
+
+perl $HARNESS --preproc backend --transcript xscript.log input
+])
+
+AT_CHECK([
+AT_DATA([input],
+[stats samples=100 min=0 max=100
+
+GET /echo/foo?id=123
+Host: www.example.com
+end
+
+200
+end
+])
+
+perl $HARNESS --preproc backend --transcript xscript.log input
+])
+
+AT_CLEANUP

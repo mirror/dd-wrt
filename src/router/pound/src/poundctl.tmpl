@@ -1,0 +1,162 @@
+{{- /* Default template for poundctl */ -}}
+{{- /* Copyright (C) 2023 Sergey Poznyakoff
+     *
+     * Pound is free software; you can redistribute it and/or modify
+     * it under the terms of the GNU General Public License as published by
+     * the Free Software Foundation; either version 3 of the License, or
+     * (at your option) any later version.
+     *
+     * Pound is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     * GNU General Public License for more details.
+     *
+     * You should have received a copy of the GNU General Public License
+     * along with pound.  If not, see <http://www.gnu.org/licenses/>.
+     */ -}}
+
+{{define "default.core" -}}
+Server time: {{ .timestamp }}
+Pound version: {{ .version }}
+PID: {{ .pid }}
+{{with .workers -}}
+Workers:
+  Min:     {{ .min }}
+  Max:     {{ .max }}
+  Current: {{ .count }}
+  Active:  {{ .active }}
+Idle timeout: {{ .timeout }}
+{{end}}{{ /* with */ -}}
+{{end}}{{ /* define */ }}
+
+{{define "milliseconds" -}}
+{{ div . 1000000 | printf "%.2f" }}
+{{- end}}
+
+{{define "default" -}}
+
+{{- /* The code below deduces the type of object passed to it by
+       presence of certain attributes:
+
+	 "listeners"  -  entire listing as requested by poundctl list
+	 "services"   -  single listener as requested by poundctl list /L
+			 Notice that this attribute is present in the full
+			 listing as well, so presence of "listeners" should
+			 be checked first.
+	 "backends"   -  single service as requested by poundctl list /L/S
+
+       otherwise, a backend listing (poundctl list /L/S/B) is assumed. */ -}}
+
+{{if exists . "listeners" -}}
+{{- /* Iterate over all listeners */ -}}
+{{block "default.core" .}}
+Listeners:
+
+{{range $lno,$lstn = .listeners -}}
+{{printf "%3d" $lno}}. {{block "default.print_listener" $lstn -}}
+ Listener {{if .name}}"{{.name}}" {{end}}{{.protocol}}://{{.address}} {{if .enabled}}enabled{{else}}disabled{{end}}
+ {{- /* For each listener, show all its services */ -}}
+ {{block "default.print_services" .services}}
+ {{- range $sno,$svc = .}}
+   {{printf "%3d" $sno}}. {{block "default.print_service" $svc -}}
+   Service {{if .name}}"{{.name}}" {{end}}{{if .enabled}}active{{else}}disabled{{end}} ({{.tot_pri}})
+  {{- /* List each backend in service */ -}}
+  {{- range $bno,$backend = .backends}}
+      {{printf "%3d" $bno}}. {{block "default.print_backend" $backend -}}
+       {{.type}} {{if eq .type "backend" -}}
+{{.protocol}} {{.address}} {{.priority}} {{if .alive}}alive{{else}}dead{{end}}
+     {{- else if eq .type "redirect" -}}
+{{.code}} {{.url}}{{if .redir_req}} (redirect request){{end}}
+     {{- end}} {{if .enabled}}active{{else}}disabled{{end}}
+     {{- if exists . "stats"}} - {{with .stats -}}
+       {{.request_count}} requests{{if gt .request_count 0}}, {{template "milliseconds" .request_time_avg}} ms avg, {{template "milliseconds" .request_time_stddev}} stddev{{end}}
+       {{- end}}
+     {{- end}}
+   {{- end}}{{ /* block default.print_backend */ }}
+  {{- end}}{{ /* iterating over backends */ }}
+  {{- /* Show session type supported by the service */ }}
+     Session type: {{.session_type}}
+       {{- if len .sessions}}
+	 {{- /* List all sessions */ }}
+	 {{- range $i, $sess = .sessions}}
+       {{$i}}. Session {{$sess.key}} {{$sess.backend}} {{$sess.expire}}
+	 {{- end}}{{ /* ranging over sessions */ -}}
+       {{end}}{{ /* if len */ }}
+ {{- end}}{{ /* block default.print_service */ }}
+ {{- end}}{{ /* iterating over services */ }}
+ {{- end}}{{ /* block default.print_services */ }}
+ {{- end}}{{ /* block default.print_listener */ }}
+{{end}}{{ /* iterating over listeners */ }}
+{{- if len .services}}
+Global services:
+{{block "default.print_services" .services}}
+{{end -}}{{ /* if len .services */ }}
+{{else if exists . "services" -}}
+{{block "default.print_listener" .}}
+{{else if exists . "backends" -}}
+{{block "default.print_service" .}}
+{{else -}}
+{{block "default.print_backend" .}}
+{{end -}}
+{{end -}}{{ /* define */ }}
+
+
+{{define "xml" -}}
+<pound>
+{{- if exists . "listeners" }}
+  {{ /* This is a full listing. */ -}}
+  <core>
+    <timestamp>{{ .timestamp }}</timestamp>
+    <server>
+      <version>{{ .version }}</version>
+      <pid>{{ .pid }}</pid>
+    <server>
+    <workers>
+      {{with .workers -}}
+      <min>{{ .min }}</min>
+      <max>{{ .max }}</max>
+      <current>{{ .count }}</current>
+      <active>{{ .active }}</active>
+      <timeout>{{ .timeout }}</timeout>
+      {{- end -}}
+    </workers>
+    <queue size="{{ .queue_len }}" />
+  </core>
+  {{- /* Iterate over all listeners */ -}}
+  {{- range $lno,$lstn = .listeners }}
+    {{block "xml.print_listener" $lstn -}}
+    <listener name="{{ .name }}" index="{{ $lno }}" protocol="{{ .protocol }}" address="{{ .address }}" status="{{if .enabled}}active{{else}}DISABLED{{end}}>
+    {{- block "xml.print_services" .services}}
+    {{- range $sno,$svc = . }}
+      {{block "xml.print_service" $svc -}}
+      <service {{if typeof $sno | ne "null"}}index="{{ $sno }}" {{end}}name="{{ .name }}" status="{{if .enabled}}active{{else}}DISABLED{{end}}" session_type="{{.session_type}}">
+      {{- range $bno,$be = .backends }}
+	{{block "xml.print_backend" $be -}}
+	<backend index="{{ $bno }}" type="{{ .type }}"
+	{{- if eq .type "backend"}} address="{{ .address }}"
+	{{- else if eq .type "redirect"}} url="{{ .url }}" code="{{ .code }}"
+	{{- end}} priority="{{ .priority }}" alive="{{if .alive}}yes{{else}}no{{end}}" status="{{if .enabled}}active{{else}}disabled{{end}}" />
+	{{- end}}
+      {{- end}}
+	{{- range $i, $sess = .sessions}}
+	<session index="{{$i}}" key="{{$sess.key}}" backend="{{$sess.backend}}" expire="{{$sess.expire}}" />
+	{{- end}}
+      </service>
+    {{- end}}{{ /* block xml.print_service */ -}}
+    {{end -}}
+    {{end}}
+    </listener>{{end}}
+  {{- end -}}
+  {{block "xml.print_services" .services }}
+{{else if exists . "services" -}}
+  {{- /* Single listener. */ -}}
+  {{block "xml.print_listener" .}}
+{{else if exists . "backends" -}}
+  {{- /* Single service. */ -}}
+  {{block "xml.print_service" .}}
+{{else -}}
+  {{- /* Backend listing. */ -}}
+  {{block "xml.print_backend" .}}
+{{end -}}
+</pound>
+{{end}}

@@ -1,0 +1,604 @@
+.\" Pound - the reverse-proxy load-balancer
+.\" Copyright (C) 2023 Sergey Poznyakoff
+.\"
+.\" Pound is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" Pound is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
+.TH POUNDCTL.TMPL 5 "February 7, 2023" "pound" "File Formats Manual"
+.SH NAME
+poundctl.tmpl \- templates for poundctl.
+.SH DESCRIPTION
+The syntax of \fBpoundctl\fR templates is modelled after and mostly
+conforming to the specifications of the golang template module
+(https://pkg.go.dev/text/template).
+.PP
+Templates are executed by applying them to a JSON object.  Annotations
+in a template refer to attributes of the object to control execution
+and derive values to be displayed.  Execution of the template walks
+the structure and sets the cursor, represented by a period (called
+\fIdot\fR), to the value at the current location in the object as
+execution proceeds.
+.PP
+The input text for a template is as ASCII text is arbitrary format.
+.I Actions
+-- data evaluations or control structures -- are delimited by
+.B {{
+and
+.BR }} ;
+all text outside actions is copied to the output verbatim.
+.PP
+To aid in formatting template source code, if
+.B {{
+is followed immediately by a minus sign
+and white space, all trailing white space is trimmed from the
+immediately preceding text.  Similarly, if
+.B }}
+is preceded by white space and a minus sign, all leading white space
+is trimmed from the immediately following text.  Notice that the
+presence of the whitespace in these trim markers is mandatory:
+"{{- 3}}" trims the immediately preceding text and outputs "3", while
+"{{-3}}" parses as an action containing the number -3.
+.SS Actions
+Here is the list of actions.
+.I Arguments
+and
+.I pipelines
+are evaluations of data, defined in detail in the corresponding sections
+that follow.
+.TP
+.B {{ }}
+Empty action is discarded.  It may be useful to trim the preceding or
+following whitespace, as in
+.B "{{- -}}" .
+.TP
+.B {{/* a comment */}}
+Comments are discarded.  They may span multiple lines of text.
+Comments do not nest and must start immediately after the opening
+delimiter (with optional dash and whitespace in between).  A comment
+may be followed by any action described below.
+.IP
+Comments may be used to control trailing and leading whitespace as
+well:
+.IP
+.EX
+.BR "{{- a comment trimming the surrounding whitespace -}}"
+.EE
+.TP
+.BI {{ pipeline }}
+.I Pipeline
+is evaluated, and the default textual representation of its
+value is copied to the output.
+.TP
+.BI "{{if " pipeline }} " T1 " {{end}}
+If the value of the \fIpipeline\fR is empty, no output is generated;
+otherwise, \fIT1\fR is executed.  The empty values are \fBnull\fR,
+\fBfalse\fR, numeric \fB0\fR, \fBnull\fR, empty string (\fB""\fR),
+array (\fB[]\fR), or object (\fB{}\fR).	 Dot is unaffected.
+.TP
+.BI "{{if " pipeline }} " T1 " {{else}} " T0 " {{end}}
+If the value of the pipeline is empty, \fIT0\fR is executed;
+otherwise, \fIT1\fR is executed. Dot is unaffected.
+.TP
+.BI "{{if " pipeline }} " T1 " "{{else if " pipeline }} " T2 " {{else}} " T0 " {{end}}
+A shortcut to simplify writing the if-else chains.  Equivalent to
+(newlines added for readability):
+.IP
+.EX
+{{if pipeline }}
+  T1
+{{else -}}
+ {{if pipeline }}
+   T2
+ {{else}}
+   T0
+ {{end}}
+{{end}}
+.EE
+.TP
+.BI "{{range " pipeline }} " T1 " {{end}}
+The value of
+.I pipeline
+must be an object or array.  If it is of length zero, nothing is
+output.  Otherwise, dot is set to the successive elements of the array
+or object and
+.I T1
+is executed.  For objects, the elements will be	visited in sorted key
+order.
+.TP
+.BI "{{range " pipeline }} " T1 " {{else}} " T0 " {{end}}
+Same as above, except that if the value of the
+.I pipeline
+is of length zero,
+.I T0
+is executed with dot unaffected.
+.IP
+Within the
+.B {{range}}
+action, the following two keywords may appear:
+.TP
+.B {{break}}
+The innermost
+.BI "{{range " pipeline }}
+loop is ended early, stopping the current iteration and bypassing all
+remaining iterations.
+.TP
+.B {{continue}}
+The current iteration of the innermost
+.BI "{{range " pipeline }}
+loop is stopped, and the loop starts the next iteration.
+.TP
+.BI "{{define \(dq" name "\(dq}} " text " {{end}}"
+The \fItext\fR is collected and stored for the further use as template
+with the given \fIname\fR.  It can be invoked using the
+\fB{{template}}\fR action (see below).
+.TP
+.BI "{{template \(dq" name "\(dq}}"
+The template with the specified \fIname\fR (see the \fB{{define}}
+above) is executed with dot set to \fBnull\fR.
+.TP
+.BI "{{template \(dq" name "\(dq " value }}
+The template with the specified \fIname\fR (see the \fB{{define}}
+above) is executed with dot set to \fIvalue\fR.
+.TP
+.BI "{{block \(dq" name "\(dq " pipeline }} " T1 " {{end}}
+A block is shorthand for defining a template
+.IP
+.EX
+{{define "name"}} T1 {{end}}
+.EE
+.IP
+and then executing it in place
+.IP
+.EX
+{{template "name" pipeline}}
+.EE
+.TP
+.BI "{{with " pipeline }} " T1 " {{end}}
+If the value of the \fIpipeline\fR is empty, no output is generated;
+otherwise, dot is set to the value of the \fIpipeline\fR and \fIT1\fR is
+executed.
+.TP
+.BI "{{with " pipeline }} " T1 " {{else}} " T0 " {{end}}
+Same as above, but if the value of the \fIpipeline\fR is empty,
+\fIT0\fR is executed with dot unchanged.
+.SS Arguments
+An \fIargument\fR is a simple value, i.e. any of the following:
+.TP
+Numeric value (integer or floating point)
+.TP
+Boolean value: \fBtrue\fR or \fBfalse\fR.
+.TP
+Quoted string.
+.TP
+A dot (\fB.\fR)
+This represents the cursor value.
+.TP
+Attribute: \fB.\fIAttr\fR
+This is the value of the attribute \fIAttr\fR in the current value
+(dot).
+.IP
+Attribute references can be nested, as in
+\fB.\fIAttr\fB.\fIXattr\fB.\fIYattr\fR.
+.TP
+A variable reference: \fB$\fIvar\fR.
+Here, \fIvar\fR is the name of the variable defined in the \fBrange\fR
+action.  See the subsection \fBVariables\fR, below.
+.TP
+Function call in parentheses, for grouping.
+.SS Pipelines
+A \fIpipeline\fR is a series of one or more \fIcommands\fR delimited
+by pipe sign (\fB|\fR).  Each \fIcommand\fR is either an argument or
+a \fIfunction call\fR, in form:
+.PP
+.EX
+func arg1 arg2...
+.EE
+.PP
+where \fIfunc\fR is the name of one of the built-in functions
+discussed below.
+.PP
+Pipelines are executed from left to right, with the result of the
+previous command implicitly added to the list of argument of each
+subsequent command.  For example, the pipeline
+.PP
+.EX
+\&.attr | eq $x
+.EE
+.PP
+is equivalent to
+.PP
+.EX
+eq $x .attr
+.EE
+.PP
+i.e. it calls the built-in function \fBeq\fR with two arguments: the
+value of the variable \fBx\fR and attribute \fBattr\fR of the cursor
+value.
+.PP
+The following built-in functions are defined:
+.TP
+.BI and " A1 A2"
+Evaluates to \fItrue\fR if pipelines \fIA1\fR and \fIA2\fR both
+evaluate to \fItrue\fR.  Notice, that there is no boolean shortcut
+evaluation: both pipelines are evaluated prior to calling \fBand\fR.
+.TP
+.BI or " A1 A2"
+Evaluates to \fItrue\fR if at least one of the pipelines \fIA1\fR and
+\fIA2\fR evaluates to \fItrue\fR.  Notice, that there is no boolean shortcut
+evaluation: both pipelines are evaluated prior to calling \fBand\fR.
+.TP
+\fBindex \fIA1 A2...\fR
+Returns the result of indexing its first argument by the following
+arguments.  Thus, if \fB.\fR is an array, then:
+.IP
+.EX
+index . 5
+.EE
+.IP
+evaluates to its fifth element (\fB.[5]\fR).
+.TP
+.BI len " A1"
+Returns the integer length of its argument.
+.TP
+.BI not " A1"
+Returns \fItrue\fR if its argument evaluates to \fIfalse\fR.
+.TP
+.BI eq " A1 A2"
+Returns \fItrue\fR if both its arguments are equal.  This applies only
+if both \fIA1\fR and \fIA2\fR are numeric or if they both are strings.
+.TP
+.BI ne " A1 A2"
+Returns \fItrue\fR if its arguments (both must be numeric or strings)
+are not strings.
+.TP
+.BI lt " A1 A2"
+Returns \fItrue\fR if \fIA1\fR is numerically less than \fIA2\fR.
+.TP
+.BI le " A1 A2"
+Returns \fItrue\fR if \fIA1\fR is numerically less than or equal to \fIA2\fR.
+.TP
+.BI gt " A1 A2"
+Returns \fItrue\fR if \fIA1\fR is numerically greater than \fIA2\fR.
+.TP
+.BI ge " A1 A2"
+Returns \fItrue\fR if \fIA1\fR is numerically greater than or equal to \fIA2\fR.
+.TP
+.BI even " A1"
+Returns \fItrue\fR if \fBA1\fR, which must evaluate to an integer
+value, is divisible by 2.
+.TP
+\fBprintf \fIFMT\fR \fIA1\fR...
+Implements the
+.BR printf (3)
+function.  \fIFMT\fR must evaluate to a string.  Rest of arguments is
+interpreted according to the conversion specifications in \fIFMT\fR.  The
+result is a formatted string.
+.IP
+In addition to the standard conversion specifications described in
+.BR printf (3),
+the "%v" specifier is implemented: it formats its argument in the best
+way, depending on its actual type.
+.TP
+.BI typeof " A1"
+Evaluates to the type of its argument, one of:
+.BR null ,
+.BR bool ,
+.BR number ,
+.BR integer ,
+.BR string ,
+.BR array ,
+.BR object .
+.TP
+.BI exists " A1 A2"
+\fBA1\fR must evaluate to an object and \fBA2\fR to string.  The
+function evaluates to \fBtrue\fR if the attribute \fIA2\fR is present
+in \fIA1\fR.
+.TP
+\fBadd \fIA1 A2\fR...
+Returns the sum of its arguments.
+.TP
+\fBsub \fIA1 A2\fR
+Returns the difference \fIA1\fR \- \fIA2\fR.
+.TP
+\fBmul \fIA1 A2\fR
+Multiplies \fIA1\fR by \fIA2\fR.
+.TP
+\fBdiv \fIA1 A2\fR
+Divides \fIA1\fR by \fIA2\fR.
+.SS Variables
+Variables (referred to as \fB$\fIname\fR) can be defined in
+\fBrange\fR and \fBwith\fR actions.  For \fBrange\fR, the syntax is:
+.PP
+.EX
+.BI "{{range " $index ", " $element " = " pipeline }} " T1 " {{end}}
+.EE
+.PP
+where \fIindex\fR and \fIelement\fR are arbitrary variable names.
+When executing this action, during each iteration \fI$index\fR and
+\fI$element\fR are set to the index (attribute name) and value of
+each successive element.  Dot remains unaffected.
+.PP
+For \fBwith\fR, the syntax is:
+.PP
+.EX
+.BI "{{with " $var " = " pipeline }} " T1 " {{end}}
+.EE
+.PP
+\fIPipeline\fR is evaluated, its result is assigned to \fI$var\fR and
+the \fIT1\fR block is executed with dot unchanged.
+.PP
+A variable's scope extends to the \fBend\fR action of the control
+structure (\fBwith\fR or \fBrange\fR) in which it is declared.  This
+includes any nested statements that may appear in between.
+.SH INPUT OBJECT
+Depending on the request issued by \fBpoundctl\fR, the invoked template
+can receive as its argument (\fIdot\fR) an object of the following
+types: full listing, listener, service, or backend.
+.PP
+Since there is no explicit indication of the object type being passed,
+templates normally use heuristics based on the presence or absence of
+certain attribute to deduce the object type in question.  The
+recommended approach is described in the following pseudo-code
+fragment:
+.PP
+.EX
+{{if exists . "listeners" }}
+  {{/* This is a full listing, as requested by \fBpoundctl list\fR. */}}
+  ...
+{{else if exists . "services"}}
+  {{/* Single listener, as requested by \fBpoundctl list /\fIL\fR.
+       Notice that this attribute is present in the full listing as
+       well, so presence of "listeners" should be checked first. */}}
+  ...
+{{else if exists . "backends"}}
+  {{/* Single service, as requested by \fBpoundctl list /\fIL\fB/\fIS\fR. */}}
+  ...
+{{else}}
+  {{/* Backend listing (\fBpoundctl list /\fIL\fB/\fIS\fB/\fIB\fR) */}}
+  ...
+{{end}}
+.EE
+.PP
+Structures of each object are discussed in subsections that follow.
+.SS Full listing
+A full listing contains the following attributes:
+.TP
+.B listeners
+An array of \fIlistener\fR objects.  See below for a description.
+.TP
+.B services
+An array of \fIservices\fR objects, representing services defined in
+the global scope of the \fBpound\fR configuration file.
+.TP
+.B pid
+PID of the running
+.B pound
+daemon.
+.TP
+.B version
+.B Pound
+version number (string).
+.TP
+.B workers
+Workers statistics.  This is a JSON object with the following
+attributes:
+.RS
+.TP
+.B active
+Number of active threads.
+.TP
+.B count
+Number of threads currently running.
+.TP
+.B max
+Maximum number of threads.
+.TP
+.B min
+Minimum number of threads.
+.TP
+.B timeout
+Thread idle timeout.
+.RE
+.TP
+.B queue_len
+Number of incoming HTTP requests in the queue (integer).
+.TP
+.B timestamp
+Current time on the server, formatted as ISO 8601 date-time with
+microsecond precision, e.g.: "2023-01-05T22:43:18.071559".
+.SS Listener
+A \fIlistener\fR object represents a single HTTP or HTTPS listener in
+\fBpound\fR configuration.  It has the following attributes:
+.TP
+.B address
+.BR String .
+Address of this listener.  A string formatted as "\fIIP\fB:\fIPORT\fR"
+for IPv4 and IPv6 addresses or containing socket file name, for UNIX
+sockets.
+.TP
+.B protocol
+.BR String .
+Protocol used: either \fBhttp\fR or \fBhttps\fR.
+.TP
+.B services
+Array of \fIservice\fR objects representing services defined in this
+listener.  See below for a definition of \fIservice\fR object.
+.TP
+.B enabled
+.BR Boolean .
+Whether this listener is enabled or not.
+.TP
+.B nohttps11
+.BR Integer .
+Value of the \fBNoHTTPS11\fR configuration statement for this
+listener.  One of: 0, 1, 2.
+.SS Service
+A \fIservice\fR object describes a single service.
+.TP
+.B name
+.BR String .
+Symbolic name of this service.
+.TP
+.B enabled
+.BR Boolean .
+Whether this service is enabled or not.
+.TP
+.B tot_pri
+.BR Integer .
+Sum of priority values of active backends in this service.
+.TP
+.B abs_pri
+.BR Integer .
+Sum of priority values of all defined backends in this service.
+.TP
+.B session_type
+.BR String .
+Name of the session handling algorithm for this service.  One of:
+.BR IP ,
+.BR BASIC ,
+.BR URL ,
+.BR PARM ,
+.BR COOKIE ,
+.BR HEADER .
+.TP
+.B sessions
+List of active sessions in this service.  Each session is represented
+as object with the following attributes:
+.RS
+.TP
+.B key
+.BR String .
+Session key.
+.TP
+.B backend
+.BR Integer .
+Number of the backend assigned to handle requests with this session.
+.TP
+.B expire
+.BR Timestamp .
+Expiration time of this session, with microsecond precision.
+.RE
+.TP
+.B backends
+List of \fIbackend\fRs defined for this service.
+.TP
+.B emergency
+Emergency \fIbackend\fR object, or \fBnull\fR if no such backend is
+defined.
+.SS Backend
+The following attributes are always present in each \fIbackend\fR object:
+.TP
+.B alive
+.BR Boolean .
+Whether or not this backend is alive.
+.TP
+.B conn_to
+.BR Integer .
+Connection timeout for this backend (seconds).
+.TP
+.B enabled
+.BR Boolean .
+Whether or not this backend is enabled.
+.TP
+.B io_to
+.BR Integer .
+I/O timeout for this backend (seconds).
+.TP
+.B priority
+\fBInteger\fR in range 0-9.
+Priority value assigned to this backend.
+.TP
+.B protocol
+.BR String .
+Protocol used by this backend: either \fBhttp\fR or \fBhttps\fR.
+.TP
+.B type
+.BR String .
+Backend type.  One of:
+.BR acme ,
+.BR backend ,
+.BR control ,
+.BR redirect .
+.TP
+.B ws_to
+.BR Integer
+Websocket timeout (seconds).
+.PP
+Depending on the backend type, the following attributes may be
+present:
+.TP
+.B acme
+.RS
+.TP
+.B path
+.BR String .
+Directory where ACME challenges are stored.
+.RE
+.TP
+.B backend
+.RS
+.TP
+.B address
+.BR String .
+Backend address.
+.RE
+.TP
+.B redirect
+.RS
+.TP
+.B url
+.BR String .
+URL to redirect to.
+.TP
+.B code
+.BR Integer .
+HTTP code for redirection responses.  One of: 301, 302, 307.
+.TP
+.B redir_req
+.BR Boolean .
+Whether to append the original request path to the resulting location.
+.RE
+.PP
+If backend statistics is enabled (see \fBBackendStats\fR in
+.BR pound (8)),
+the \fBstats\fR object will be present, with the following attributes:
+.TP
+.B request_count
+Total number of requests processed by this backend.
+.TP
+.B request_time_avg
+Average time per request, in nanoseconds.
+.TP
+.B request_time_stddev
+Standard deviation of the above.
+.SH SEE ALSO
+.BR pound (8),
+.BR poundctl (8).
+.SH "REPORTING BUGS"
+Report bugs to <gray@gnu.org>.  You may also use github issue tracker
+at https://github.com/graygnuorg/pound/issues.
+.SH COPYRIGHT
+Copyright \(co 2023 Sergey Poznyakoff
+.sp
+.na
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+.sp
+.ad
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.\" Local variables:
+.\" eval: (add-hook 'write-file-hooks 'time-stamp)
+.\" time-stamp-start: ".TH [A-Z_][A-Z0-9_.\\-]* [0-9] \""
+.\" time-stamp-format: "%:B %:d, %:y"
+.\" time-stamp-end: "\""
+.\" time-stamp-line-limit: 20
+.\" end:

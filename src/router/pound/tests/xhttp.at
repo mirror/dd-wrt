@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,107 +33,72 @@ m4_pushdef([WEBDAV_HTTP],[[LOCK], [UNLOCK], [PROPFIND], [PROPPATCH],
  [CHECKOUT], [MERGE], [REPORT]])
 m4_pushdef([WEBDAV_EXT],[[SUBSCRIBE], [UNSUBSCRIBE], [NOTIFY], [BPROPFIND],
  [BPROPPATCH], [POLL], [BMOVE], [BCOPY], [BDELETE], [CONNECT]])
-m4_pushdef([MS_RPC],[RPC_IN_DATA, RPC_OUT_DATA])
 
 PT_CHECK([# Default xHTTP setting (0)
 ListenHTTP
 	Service
-                Backend
-                        Address
-                        Port
-                End
+		Backend
+			Address
+			Port
+		End
 	End
 End],
 [HTTP_EXPECT(200, BASIC_HTTP)
 HTTP_EXPECT(501, EXT_HTTP)
 HTTP_EXPECT(501, WEBDAV_HTTP)
 HTTP_EXPECT(501, WEBDAV_EXT)
-HTTP_EXPECT(501, MS_RPC)
 ])
 
 PT_CHECK([# Allow extended HTTP requests (PUT, PATCH, DELETE)
 ListenHTTP
 	xHTTP 1
 	Service
-                Backend
-                        Address
-                        Port
-                End
+		Backend
+			Address
+			Port
+		End
 	End
 End],
 [HTTP_EXPECT(200, BASIC_HTTP)
 HTTP_EXPECT(200, EXT_HTTP)
 HTTP_EXPECT(501, WEBDAV_HTTP)
 HTTP_EXPECT(501, WEBDAV_EXT)
-HTTP_EXPECT(501, MS_RPC)
 ])
 
 PT_CHECK([# Additionally allow standard WebDAV requests
 ListenHTTP
 	xHTTP 2
 	Service
-                Backend
-                        Address
-                        Port
-                End
+		Backend
+			Address
+			Port
+		End
 	End
 End],
 [HTTP_EXPECT(200, BASIC_HTTP)
 HTTP_EXPECT(200, EXT_HTTP)
 HTTP_EXPECT(200, WEBDAV_HTTP)
 HTTP_EXPECT(501, WEBDAV_EXT)
-HTTP_EXPECT(501, MS_RPC)
 ])
 
-PT_CHECK([# Additionally allow MS WebDAV extensions 
+PT_CHECK([# Additionally allow MS WebDAV extensions
 ListenHTTP
 	xHTTP 3
 	Service
-                Backend
-                        Address
-                        Port
-                End
+		Backend
+			Address
+			Port
+		End
 	End
 End],
 [HTTP_EXPECT(200, BASIC_HTTP)
 HTTP_EXPECT(200, EXT_HTTP)
 HTTP_EXPECT(200, WEBDAV_HTTP)
 HTTP_EXPECT(200, WEBDAV_EXT)
-HTTP_EXPECT(501, MS_RPC)
-])
-
-PT_CHECK([# Additionally allow MS RPC verbs
-ListenHTTP
-	xHTTP 4
-	Service
-                Backend
-                        Address
-                        Port
-                End
-	End
-End],
-[HTTP_EXPECT(200, BASIC_HTTP)
-HTTP_EXPECT(200, EXT_HTTP)
-HTTP_EXPECT(200, WEBDAV_HTTP)
-HTTP_EXPECT(200, WEBDAV_EXT)
-
-# For normal processing of RPC_IN_DATA non-empty content is necessary.
-RPC_IN_DATA /echo/foo
-
-text
-end
-200
-end
-
-RPC_OUT_DATA /echo/foo
-end
-200
-end
 ])
 
 AT_CLEANUP
 
-m4_popdef([MS_RPC])
 m4_popdef([WEBDAV_EXT])
 m4_popdef([WEBDAV_HTTP])
 m4_popdef([EXT_HTTP])

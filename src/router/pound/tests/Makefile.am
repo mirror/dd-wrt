@@ -1,6 +1,6 @@
 ## Makefile for the pound testsuite
 ## Process this file with automake to produce Makefile.in.
-## Copyright (C) 2022 Sergey Poznyakoff
+## Copyright (C) 2022-2023 Sergey Poznyakoff
 ##
 ## Pound is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ $(TESTSUITE): package.m4 $(TESTSUITE_AT)
 	$(AM_V_GEN)$(AUTOTEST) -I $(srcdir) testsuite.at -o $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
-atconfig: $(top_builddir)/config.status 
+atconfig: $(top_builddir)/config.status
 	cd $(top_builddir) && ./config.status tests/$@
 
 clean-local:
@@ -63,30 +63,51 @@ TESTSUITE_AT = \
  testsuite.at \
  acme.at\
  addheader.at\
+ backref.at\
  balancing.at\
+ bemix.at\
  checkurl.at\
+ chgvis.at\
  config.at\
  echo.at\
  errfile.at\
+ error.at\
+ experr.at\
+ fromfile.at\
  headdeny.at\
  headrem.at\
  headrequire.at\
  host.at\
  https.at\
+ include.at\
+ incldir.at\
+ inclnest.at\
+ inclscope.at\
+ lstset.at\
  maxrequest.at\
  not.at\
+ optfwd.at\
+ optorder.at\
+ optssl.at\
  or.at\
  prio.at\
+ reqacc.at\
  redirect.at\
  rewriteloc.at\
+ rwchain.at\
  sessauth.at\
  sesscookie.at\
  sesshdr.at\
  sessip.at\
  sessparm.at\
  sessurl.at\
+ set.at\
+ template.at\
  url.at\
  virthost.at\
  xhttp.at
 
-noinst_PROGRAMS = 
+noinst_PROGRAMS = tmplrun
+tmplrun_SOURCES = tmplrun.c
+AM_CPPFLAGS = -I$(top_srcdir)/src
+tmplrun_LDADD = ../src/libpound.a

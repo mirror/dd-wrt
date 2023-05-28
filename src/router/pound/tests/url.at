@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,21 +16,56 @@
 AT_SETUP([URL])
 AT_KEYWORDS([url])
 PT_CHECK([ListenHTTP
-	Service
+	Service "0"
 		URL "\\.(jpg|gif)"
 		Backend
 			Address
 			Port
 		End
 	End
-	Service
+	Service "1"
 		URL "\\.txt"
 		Backend
 			Address
 			Port
 		End
 	End
-	Service
+	Service "2"
+		URL -icase "\\.txt"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "3"
+		URL -exact "/echo/two"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "4"
+		URL -exact -icase "/echo/TWO"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "5"
+		URL -beg "/echo/some"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "6"
+		URL -end "er"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "7"
 		Backend
 			Address
 			Port
@@ -65,5 +100,34 @@ end
 200
 x-backend-number: 2
 end
+
+GET /echo/two
+end
+
+200
+x-backend-number: 3
+end
+
+GET /echo/TWO
+end
+
+200
+x-backend-number: 4
+end
+
+GET /echo/something
+end
+
+200
+x-backend-number: 5
+end
+
+GET /echo/other
+end
+
+200
+x-backend-number: 6
+end
 ])
+
 AT_CLEANUP

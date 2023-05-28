@@ -1,0 +1,248 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Basic set directives])
+AT_KEYWORDS([listener lstset rewrite])
+PT_CHECK([ListenHTTP
+	SetURL "/echo/other"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /one
+end
+
+200
+x-orig-uri: /echo/other
+end
+])
+
+PT_CHECK([ListenHTTP
+	SetPath "/echo/other"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /one
+end
+
+200
+x-orig-uri: /echo/other
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		SetQuery "foo=10&quux=b%20ar"
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/one
+end
+
+200
+x-orig-uri: /echo/one?foo=10&quux=b%20ar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Rewrite
+		SetQueryParam "foo" "10"
+		SetQueryParam "quux" "b%20ar"
+	End
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/one
+end
+
+200
+x-orig-uri: /echo/one?foo=10&quux=b%20ar
+end
+])
+
+PT_CHECK([ListenHTTP
+	SetHeader "X-Foo: bar baz"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/one
+end
+
+200
+x-orig-header-x-foo: bar baz
+end
+])
+
+PT_CHECK([ListenHTTP
+	DeleteHeader -beg "X-Accept"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+X-Accept: *
+X-Accept-Ex: foo
+end
+
+200
+-x-orig-header-X-Accept:
+-x-orig-header-X-Accept-Ex:
+end
+])
+
+PT_CHECK([ListenHTTP
+	DeleteHeader -beg "X-Accept:"
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+X-Accept: *
+X-Accept-Ex: foo
+end
+
+200
+-x-orig-header-X-Accept:
+x-orig-header-X-Accept-Ex: foo
+end
+])
+
+PT_CHECK([ListenHTTP
+	DeleteHeader ["X-Accept:[[:space:]]*bar"]
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+X-Accept: *
+X-Accept-Ex: foo
+end
+
+200
+x-orig-header-X-Accept: *
+x-orig-header-X-Accept-Ex: foo
+end
+])
+
+PT_CHECK([ListenHTTP
+	DeleteHeader ["X-Accept:[[:space:]]*bar"]
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+X-Accept: bar
+X-Accept-Ex: foo
+end
+
+200
+-x-orig-header-X-Accept:
+x-orig-header-X-Accept-Ex: foo
+end
+])
+
+PT_CHECK([ListenHTTP
+	Rewrite
+		SetPath "/echo/other"
+		SetQueryParam "foo" "bar"
+		SetQueryParam "qux" "x%2Fuq"
+		SetHeader "x-foo: bar baz"
+		DeleteHeader -beg -icase "x-bar:"
+	End
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /one
+X-Bar: qux
+end
+
+200
+x-orig-uri: /echo/other?foo=bar&qux=x%2Fuq
+x-orig-header-x-foo: bar baz
+-x-orig-header-X-Bar:
+end
+])
+
+PT_CHECK([ListenHTTP
+	SetPath ["/echo/other"]
+	SetQueryParam "foo" "bar"
+	SetQueryParam "qux" "x%2Fuq"
+	SetHeader "x-foo: bar baz"
+	DeleteHeader -beg -icase "x-bar:"
+
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /one
+X-Bar: qux
+end
+
+200
+x-orig-uri: /echo/other?foo=bar&qux=x%2Fuq
+x-orig-header-x-foo: bar baz
+-x-orig-header-X-Bar:
+end
+])
+
+AT_CLEANUP

@@ -1,0 +1,126 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([HeaderOption forwarded])
+AT_KEYWORDS([headeroption hdropt optfwd])
+
+PT_CHECK([ListenHTTP
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+end
+
+200
+x-orig-header-X-Forwarded-For: 127.0.0.1
+x-orig-header-X-Forwarded-Proto: http
+x-orig-header-X-Forwarded-Port: ${LISTENER:PORT}
+end
+])
+
+PT_CHECK([HeaderOption none
+ListenHTTP
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+end
+
+200
+-x-orig-header-X-Forwarded-For:
+-x-orig-header-X-Forwarded-Proto:
+-x-orig-header-X-Forwarded-Port:
+end
+])
+
+PT_CHECK([ListenHTTP
+	HeaderOption none
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+end
+
+200
+-x-orig-header-X-Forwarded-For:
+-x-orig-header-X-Forwarded-Proto:
+-x-orig-header-X-Forwarded-Port:
+end
+])
+
+PT_CHECK([ListenHTTP
+	HeaderOption no-forwarded
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+end
+
+200
+-x-orig-header-X-Forwarded-For:
+-x-orig-header-X-Forwarded-Proto:
+-x-orig-header-X-Forwarded-Port:
+end
+])
+
+PT_CHECK([HeaderOption none
+ListenHTTP
+	HeaderOption forwarded
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/X
+Host: example.com
+end
+
+200
+x-orig-header-X-Forwarded-For: 127.0.0.1
+x-orig-header-X-Forwarded-Proto: http
+x-orig-header-X-Forwarded-Port: ${LISTENER:PORT}
+end
+])
+
+
+AT_CLEANUP

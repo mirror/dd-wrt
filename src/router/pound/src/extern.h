@@ -2,7 +2,7 @@
  * Global variables needed by everybody
  */
 
-extern char *progname;          /* program name */
+extern char const *progname;          /* program name */
 
 extern char *user,		/* user to run as */
   *group,			/* group to run as */
@@ -21,15 +21,13 @@ extern unsigned alive_to;	/* check interval for resurrection */
 extern int daemonize;		/* run as daemon */
 extern int enable_supervisor;   /* run supervisor process */
 extern int log_facility;	/* log facility to use */
-extern int print_log;		/* print log messages to stdout/stderr */
+extern int print_log;           /* print log messages to stdout/stderr during startupb
+				 */
+extern int enable_backend_stats;
 
 extern regex_t HEADER,		/* Allowed header */
   CONN_UPGRD,			/* upgrade in connection header */
-  CHUNK_HEAD,			/* chunk header line */
-  RESP_SKIP,			/* responses for which we skip response */
-  RESP_IGN,			/* responses for which we ignore content */
-  LOCATION,			/* the host we are redirected to */
-  AUTHORIZATION;		/* the Authorisation header */
+  LOCATION;			/* the host we are redirected to */
 
 #ifndef  SOL_TCP
 /* for systems without the definition */
@@ -41,7 +39,8 @@ extern SERVICE_HEAD services;	/* global services (if any) */
 
 enum
   {
-    FEATURE_DNS
+    FEATURE_DNS,
+    FEATURE_INCLUDE_DIR
   };
 
 int feature_is_set (int f);

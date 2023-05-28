@@ -1,5 +1,5 @@
 # This file is part of pound.
-# Copyright (C) 2018-2022 Sergey Poznyakoff
+# Copyright (C) 2018-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,6 +65,7 @@ sub expand_inline {
     $_ = join(' ', @_);
     s{\*([^*]+)\*}{$1}g;
     s{__(.+?)__}{$1}g;
+    s{\b{wb}_(.+?)_\b{wb}}{$1}g;
     s{\`([^`]+)\`}{$1}g;
     s{\[([^]]+)\]\((https?://[^)]+)\)}{external_ref($1, $2)}gex;
     s{\[(.*?)\]\(#user-content-.*?\)}{$1}g;

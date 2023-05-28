@@ -1,0 +1,80 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Chained rewrites])
+AT_KEYWORDS([rewrite chgvis accessor])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
+			URL -beg "/echo/foo"
+			SetHeader "X-Branch: 1"
+		Else
+			URL -beg "/echo/bar"
+			SetHeader "X-Branch: 2"
+		Else
+			Match And
+				URL -beg "/echo/baz"
+				Header -re ["X-Pass:[[:space:]]+ok"]
+			End
+			SetHeader "X-Branch: 3"
+		Else
+			SetHeader "X-Branch: 4"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo/bar
+end
+
+200
+x-orig-header-x-branch: 1
+end
+
+GET /echo/bar/foo
+end
+
+200
+x-orig-header-x-branch: 2
+end
+
+GET /echo/baz
+X-Pass: ok
+end
+
+200
+x-orig-header-x-branch: 3
+end
+
+GET /echo/baz
+X-Pass: no
+end
+
+200
+x-orig-header-x-branch: 4
+end
+
+GET /echo/baz
+end
+
+200
+x-orig-header-x-branch: 4
+end
+])
+AT_CLEANUP

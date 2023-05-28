@@ -2,3 +2,7 @@
 
 PATH=@abs_builddir@:@abs_top_builddir@/src:$srcdir:$PATH
 HARNESS="@abs_srcdir@/poundharness.pl"
+# FIXME: This forces HTTP::Tiny to use IO::Socket::INET, which is
+# working without internet connection.
+PERL_HTTP_TINY_IPV4_ONLY=1
+export PERL_HTTP_TINY_IPV4_ONLY

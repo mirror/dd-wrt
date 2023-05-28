@@ -1,0 +1,76 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2023 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([HeaderOption ssl])
+AT_KEYWORDS([headeroption hdropt optssl])
+
+AT_CHECK([openssl req -new -newkey rsa:2048 -days 1 -nodes -x509 \
+ -subj "/CN=www.example.com" -keyout key.pem -out crt.pem || exit 77
+cat crt.pem key.pem > example.pem
+],
+[0],
+[ignore],
+[ignore])
+
+PT_CHECK(
+[HeaderOption no-ssl
+ListenHTTPS
+	Address 127.0.0.1
+	Port 8080
+	Cert "example.pem"
+	Service
+		Backend
+			Address 127.0.0.1
+			Port 8081
+		End
+	End
+End	
+],
+[GET /echo/foo/bar
+Host: www.example.com
+end
+
+200
+x-orig-uri: /echo/foo/bar
+-x-orig-header-x-ssl-cipher:
+end
+])
+
+PT_CHECK(
+[ListenHTTPS
+	Address 127.0.0.1
+	Port 8080
+	Cert "example.pem"
+	HeaderOption no-ssl
+	Service
+		Backend
+			Address 127.0.0.1
+			Port 8081
+		End
+	End
+End	
+],
+[GET /echo/foo/bar
+Host: www.example.com
+end
+
+200
+x-orig-uri: /echo/foo/bar
+-x-orig-header-x-ssl-cipher:
+end
+])
+
+AT_CLEANUP

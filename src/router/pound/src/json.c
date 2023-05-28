@@ -1,5 +1,5 @@
 /* This file is part of pound
- * Copyright (C) 2020-2022 Sergey Poznyakoff
+ * Copyright (C) 2020-2023 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "json.h"
 
 #define json_2nrealloc mem2nrealloc
+void (*json_memabrt) (void) = NULL;
 
 char const *
 json_strerror (int ec)
@@ -81,6 +82,8 @@ json_value_create (int type)
   struct json_value *obj = calloc (1, sizeof (*obj));
   if (obj)
     obj->type = type;
+  else if (json_memabrt)
+    json_memabrt ();
   return obj;
 }
 
@@ -121,21 +124,13 @@ static struct json_value_meth
   json_copy_fun copy_fun;
 } json_value_meth[] =
 {
-  [json_null] =
-  {
-  json_format_null, NULL, json_copy_generic},[json_bool] =
-  {
-  json_format_bool, NULL, json_copy_generic},[json_number] =
-  {
-  json_format_number, NULL, json_copy_generic},[json_integer] =
-  {
-  json_format_integer, NULL, json_copy_generic},[json_string] =
-  {
-  json_format_string, json_free_string, json_copy_string},[json_array] =
-  {
-  json_format_array, json_free_array, json_copy_array},[json_object] =
-  {
-  json_format_object, json_free_object, json_copy_object}
+  [json_null] = { json_format_null, NULL, json_copy_generic },
+  [json_bool] = { json_format_bool, NULL, json_copy_generic },
+  [json_number] = { json_format_number, NULL, json_copy_generic },
+  [json_integer] = { json_format_integer, NULL, json_copy_generic },
+  [json_string] = { json_format_string, json_free_string, json_copy_string },
+  [json_array] = { json_format_array, json_free_array, json_copy_array },
+  [json_object] = { json_format_object, json_free_object, json_copy_object }
 };
 
 static inline int
@@ -241,7 +236,8 @@ struct json_value *
 json_new_bool (int b)
 {
   struct json_value *j = json_value_create (json_bool);
-  j->v.b = b;
+  if (j)
+    j->v.b = b;
   return j;
 }
 
@@ -297,11 +293,14 @@ struct json_value *
 json_new_string (char const *str)
 {
   struct json_value *j = json_value_create (json_string);
-  j->v.s = strdup (str);
-  if (!j->v.s)
+  if (j)
     {
-      free (j);
-      j = NULL;
+      j->v.s = strdup (str);
+      if (!j->v.s)
+	{
+	  free (j);
+	  j = NULL;
+	}
     }
   return j;
 }
@@ -327,8 +326,7 @@ json_copy_string (struct json_value *val, struct json_value **ret_val)
   return 0;
 }
 
-enum
-{ ESCAPE, UNESCAPE };
+enum { ESCAPE, UNESCAPE };
 
 static int
 escape (char c, char *o, int un)
@@ -377,17 +375,22 @@ struct json_value *
 json_new_array (void)
 {
   struct json_value *j = json_value_create (json_array);
-  j->v.a = malloc (sizeof (*j->v.a));
-  if (j->v.a)
+  if (j)
     {
-      j->v.a->oc = 0;
-      j->v.a->on = 0;
-      j->v.a->ov = NULL;
-    }
-  else
-    {
-      free (j);
-      j = NULL;
+      j->v.a = malloc (sizeof (*j->v.a));
+      if (j->v.a)
+	{
+	  j->v.a->oc = 0;
+	  j->v.a->on = 0;
+	  j->v.a->ov = NULL;
+	}
+      else if (json_memabrt)
+	json_memabrt ();
+      else
+	{
+	  free (j);
+	  j = NULL;
+	}
     }
   return j;
 }
@@ -415,6 +418,8 @@ json_copy_array (struct json_value *val, struct json_value **ret_val)
   if (!(newval->v.a->ov = calloc (val->v.a->oc, sizeof (val->v.a->ov[0]))))
     {
       free (newval);
+      if (json_memabrt)
+	json_memabrt ();
       return -1;
     }
   newval->v.a->oc = newval->v.a->on = val->v.a->oc;
@@ -431,7 +436,7 @@ json_copy_array (struct json_value *val, struct json_value **ret_val)
   return 0;
 }
 
-int
+static int
 json_array_expand (struct json_value *jv)
 {
   size_t i;
@@ -440,7 +445,11 @@ json_array_expand (struct json_value *jv)
 					  &jv->v.a->on,
 					  sizeof (jv->v.a->ov[0]));
   if (!p)
-    return -1;
+    {
+      if (json_memabrt)
+	json_memabrt ();
+      return -1;
+    }
   jv->v.a->ov = p;
   for (i = jv->v.a->on; i < n; i++)
     jv->v.a->ov[i] = NULL;
@@ -450,7 +459,7 @@ json_array_expand (struct json_value *jv)
 int
 json_array_insert (struct json_value *jv, size_t idx, struct json_value *v)
 {
-  if (jv->type != json_array)
+  if (jv == NULL || jv->type != json_array || v == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -472,7 +481,7 @@ json_array_insert (struct json_value *jv, size_t idx, struct json_value *v)
 int
 json_array_append (struct json_value *jv, struct json_value *v)
 {
-  if (jv->type != json_array)
+  if (jv == NULL || jv->type != json_array || v == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -483,7 +492,7 @@ json_array_append (struct json_value *jv, struct json_value *v)
 int
 json_array_set (struct json_value *jv, size_t idx, struct json_value *v)
 {
-  if (jv->type != json_array)
+  if (jv == NULL || jv->type != json_array || v == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -500,7 +509,7 @@ json_array_set (struct json_value *jv, size_t idx, struct json_value *v)
 int
 json_array_get (struct json_value *jv, size_t idx, struct json_value **retval)
 {
-  if (jv->type != json_array)
+  if (jv == NULL || jv->type != json_array || retval == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -544,8 +553,10 @@ struct json_value *
 json_new_object (void)
 {
   struct json_value *jv = json_value_create (json_object);
-  if (!(jv->v.o = calloc (1, sizeof (*jv->v.o))))
+  if (jv && !(jv->v.o = calloc (1, sizeof (*jv->v.o))))
     {
+      if (json_memabrt)
+	json_memabrt ();
       free (jv);
       return NULL;
     }
@@ -588,6 +599,7 @@ json_copy_object (struct json_value *val, struct json_value **ret_val)
 	  return -1;
 	}
     }
+  *ret_val = newval;
   return 0;
 }
 
@@ -654,11 +666,17 @@ json_object_lookup_or_install (struct json_object *obj, char const *name,
 
   m = malloc (sizeof (*m));
   if (!m)
-    return -1;
+    {
+      if (json_memabrt)
+	json_memabrt ();
+      return -1;
+    }
   m->next = NULL;
   m->k = strdup (name);
   if (!m->k)
     {
+      if (json_memabrt)
+	json_memabrt ();
       free (m);
       return -1;
     }
@@ -690,7 +708,7 @@ json_object_set (struct json_value *obj, char const *name,
   struct json_pair *p;
   int res;
 
-  if (obj->type != json_object)
+  if (obj == NULL || obj->type != json_object || val == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -712,7 +730,7 @@ json_object_get (struct json_value *obj, char const *name,
   struct json_pair *p;
   int res;
 
-  if (obj->type != json_object)
+  if (obj == NULL || obj->type != json_object || name == NULL || retval == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -766,7 +784,7 @@ json_object_filter (struct json_value *obj,
   struct json_object *op;
   struct json_pair *p, *prev;
 
-  if (obj->type != json_object)
+  if (obj == NULL || obj->type != json_object || pred == NULL)
     {
       errno = EINVAL;
       return -1;
@@ -819,6 +837,14 @@ static int
 j_context_push (struct j_context **ctx, int type)
 {
   struct j_context *cur = malloc (sizeof (*cur));
+
+  if (!cur)
+    {
+      if (json_memabrt)
+	json_memabrt ();
+      return JSON_E_NOMEM;
+    }
+
   switch (type)
     {
     case json_array:
@@ -947,7 +973,11 @@ j_get_text (char const *input, char **retval, char const **endp)
 
   str = malloc (len);
   if (!str)
-    return JSON_E_NOMEM;
+    {
+      if (json_memabrt)
+	json_memabrt ();
+      return JSON_E_NOMEM;
+    }
 
   p = input;
   q = str;

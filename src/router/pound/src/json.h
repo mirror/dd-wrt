@@ -1,5 +1,5 @@
 /* This file is part of pound
- * Copyright (C) 2020-2022 Sergey Poznyakoff
+ * Copyright (C) 2020-2023 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with pound.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef POUND_JSON_H
+# define POUND_JSON_H
+
 #include <stdlib.h>
 #include "list.h"
 
@@ -121,3 +124,7 @@ enum
 
 int json_parse_string (char const *input, struct json_value **retval,
 		       char **endp);
+
+extern void (*json_memabrt) (void);
+
+#endif

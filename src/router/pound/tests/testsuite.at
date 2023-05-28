@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ m4_define([PT_CONF],
 [cat > pound.cfg <<_CONF
 $1
 _CONF
-AT_CHECK([pound -c -Wno-dns -f pound.cfg],m4_shift($@))])
+AT_CHECK([pound -c -Wno-dns -Wno-include-dir -f pound.cfg],m4_shift($@))])
 
 m4_define([PT_PREREQ_PERL],[perl -v >/dev/null 2>&1 || exit 77])
 
@@ -31,10 +31,10 @@ PT_PREREQ_PERL
 AT_DATA([pound.cfi],
 [m4_if([$1],[],[ListenHTTP
 	Service
-                Backend
-                        Address
-                        Port
-                End
+		Backend
+			Address
+			Port
+		End
 	End
 End],[$1])
 ])
@@ -53,19 +53,44 @@ m4_include([xhttp.at])
 m4_include([checkurl.at])
 m4_include([errfile.at])
 m4_include([maxrequest.at])
-m4_include([headrem.at])
-m4_include([addheader.at])
 m4_include([rewriteloc.at])
-m4_include([headrequire.at])
-m4_include([headdeny.at])
+
+AT_BANNER([Listener request modification])
+m4_include([lstset.at])
+
+AT_BANNER([Service selection])
+m4_include([header.at])
 m4_include([host.at])
 m4_include([url.at])
 m4_include([or.at])
 m4_include([not.at])
-m4_include([balancing.at])
-m4_include([prio.at])
+m4_include([fromfile.at])
+
+AT_BANNER([Includes])
+m4_include([include.at])
+m4_include([incldir.at])
+m4_include([inclnest.at])
+m4_include([inclscope.at])
+
+AT_BANNER([Special backends])
 m4_include([redirect.at])
 m4_include([acme.at])
+m4_include([error.at])
+m4_include([bemix.at])
+
+AT_BANNER([HeaderOption])
+m4_include([optfwd.at])
+m4_include([optssl.at])
+m4_include([optorder.at])
+
+AT_BANNER([Request Rewriting])
+m4_include([set.at])
+m4_include([reqacc.at])
+m4_include([experr.at])
+m4_include([backref.at])
+m4_include([chgvis.at])
+m4_include([rwchain.at])
+
 AT_BANNER([Sessions])
 m4_include([sessip.at])
 m4_include([sessauth.at])
@@ -73,6 +98,20 @@ m4_include([sesshdr.at])
 m4_include([sessparm.at])
 m4_include([sessurl.at])
 m4_include([sesscookie.at])
+
+AT_BANNER([Compatibility Directives])
+m4_include([addheader.at])
+m4_include([headrequire.at])
+m4_include([headrem.at])
+m4_include([headdeny.at])
+
+AT_BANNER([Request routing])
+m4_include([balancing.at])
+m4_include([prio.at])
+
 AT_BANNER([HTTPS])
 m4_include([https.at])
 m4_include([virthost.at])
+
+AT_BANNER([Templates])
+m4_include([template.at])

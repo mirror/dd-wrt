@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@ AT_KEYWORDS([or])
 PT_CHECK([ListenHTTP
 	Service
 		Match OR
-			HeadRequire ["Host:[[:space:]]*example\\.org"]
-			HeadRequire ["Host:[[:space:]]*example\\.net"]
+			Header ["Host:[[:space:]]*example\\.org"]
+			Header ["Host:[[:space:]]*example\\.net"]
 		End
 		Backend
 			Address
@@ -27,7 +27,7 @@ PT_CHECK([ListenHTTP
 		End
 	End
 	Service
-		HeadRequire ["Host:[[:space:]]*example\\.com"]
+		Header ["Host:[[:space:]]*example\\.com"]
 		Backend
 			Address
 			Port
@@ -63,11 +63,11 @@ end
 PT_CHECK([ListenHTTP
 	Service
 		Match OR
-			HeadRequire ["Host:[[:space:]]*example\\.org"]
-			HeadRequire ["Host:[[:space:]]*example\\.net"]
+			Header ["Host:[[:space:]]*example\\.org"]
+			Header ["Host:[[:space:]]*example\\.net"]
 			Match AND
-				HeadRequire ["X-Cond-1:[[:space:]]*true"]
-				HeadRequire ["X-Cond-2:[[:space:]]*true"]
+				Header ["X-Cond-1:[[:space:]]*true"]
+				Header ["X-Cond-2:[[:space:]]*true"]
 			End
 		End
 		Backend
@@ -76,7 +76,7 @@ PT_CHECK([ListenHTTP
 		End
 	End
 	Service
-		HeadRequire ["Host:[[:space:]]*example\\.com"]
+		Header ["Host:[[:space:]]*example\\.com"]
 		Backend
 			Address
 			Port

@@ -1,6 +1,6 @@
 # Pound - the reverse-proxy load-balancer                -*- automake -*-
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2022 Sergey Poznyakoff
+# Copyright (C) 2018-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@ SUBDIRS = src tests doc
 
 EXTRA_DIST = ChangeLog.apsis
 
+ACLOCAL_AMFLAGS = -I am
+
 if FROM_GIT
 README: README.md
 	perl md2txt.pl -o README -l 4 README.md
@@ -25,13 +27,12 @@ README: README.md
 .PHONY: ChangeLog
 ChangeLog:
 	@echo "Creating ChangeLog";                                       \
-	 (git log --pretty='format:%ad  %cn  <%ae>%n%n%w(72,8,8)%s%n%n%b' \
-                  --date=short;                                           \
-          echo "";                                                        \
-          echo "Local Variables:";                                        \
-          echo "mode: change-log";                                        \
-          echo "version-control: never";                                  \
-          echo "buffer-read-only: t";                                     \
-          echo "End:") > ChangeLog
+	 (git log --pretty='format:%H#%ad  %cn  <%ae>%n%n%w(72,8,8)%s%n%n%b' \
+		  --date=short | sed -r -f ChangeLog.sed;                 \
+	  echo "";                                                        \
+	  echo "Local Variables:";                                        \
+	  echo "mode: change-log";                                        \
+	  echo "version-control: never";                                  \
+	  echo "buffer-read-only: t";                                     \
+	  echo "End:") > ChangeLog
 endif
-

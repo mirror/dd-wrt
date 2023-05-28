@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022 Sergey Poznyakoff
+# Copyright (C) 2022-2023 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ cat crt.pem key.pem > example.pem
 
 PT_CHECK(
 [Service
-	HeadRequire ["Host:[[:space:]]*www\\.example\\.org"]
+	Header ["Host:[[:space:]]*www\\.example\\.org"]
         Backend
 		Address 192.168.0.10
 		Port    80
@@ -46,7 +46,7 @@ PT_CHECK(
 End
 
 Service
-        HeadRequire ["Host:[[:space:]]*www\\.example\\.com"]
+        Header ["Host:[[:space:]]*www\\.example\\.com"]
         Backend
 		Address 192.168.0.11
 		Port    80
