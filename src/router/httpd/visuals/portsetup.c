@@ -283,7 +283,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "&nbps;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(hotspot.nocat_MAClist)</script></div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(hotspot.nodog_MAClist)</script></div>\n");
 		ipv = nvram_nget("%s_r1x_wl", var);
 		websWrite(wp, "<input name=\"%s_r1x_wl\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
 		websWrite(wp, "</div>\n");
