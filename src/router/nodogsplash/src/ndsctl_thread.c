@@ -197,10 +197,12 @@ thread_ndsctl(void *arg)
 				}
 
 			} else {
+#ifdef NEED_PRINTF
 				if (ndsctl_handler(events[i].data.fd)) {
 					free(events);
 					pthread_exit(NULL);
 				}
+#endif
 				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &ev);
 				current_fd_count -= 1;
 

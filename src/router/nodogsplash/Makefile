@@ -14,7 +14,8 @@ NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 
 .PHONY: all clean install checkastyle fixstyle deb
 
-all: nodogsplash ndsctl
+all: nodogsplash 
+#ndsctl
 
 %.o : %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -22,8 +23,8 @@ all: nodogsplash ndsctl
 nodogsplash: $(NDS_OBJS) $(LIBHTTPD_OBJS)
 	$(CC) $(LDFLAGS) -o nodogsplash $+ $(LDLIBS)
 
-ndsctl: src/ndsctl.o
-	$(CC) $(LDFLAGS) -o ndsctl $+ $(LDLIBS)
+#ndsctl: src/ndsctl.o
+#	$(CC) $(LDFLAGS) -o ndsctl $+ $(LDLIBS)
 
 clean:
 	rm -f nodogsplash ndsctl src/*.o
@@ -32,10 +33,10 @@ clean:
 install:
 #ifeq(yes,$(STRIP))
 	strip nodogsplash
-	strip ndsctl
+#	strip ndsctl
 #endif
 	mkdir -p $(DESTDIR)/usr/bin/
-	cp ndsctl $(DESTDIR)/usr/bin/
+#	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/etc/nodogsplash/htdocs/images
 #ä	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
