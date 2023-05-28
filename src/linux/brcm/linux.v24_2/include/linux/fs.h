@@ -587,6 +587,8 @@ struct file {
 	/* preallocated helper kiobuf to speedup O_DIRECT */
 	struct kiobuf		*f_iobuf;
 	long			f_iobuf_lock;
+	struct list_head	f_ep_links;
+	spinlock_t		f_ep_lock;
 };
 extern spinlock_t files_lock;
 #define file_list_lock() spin_lock(&files_lock);
