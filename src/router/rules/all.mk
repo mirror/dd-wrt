@@ -354,6 +354,8 @@ include rules/libcares.mk
 include rules/antaira-agent.mk
 include rules/boinc.mk
 include rules/musl.mk
+include rules/microhttpd.mk
+include rules/nodogsplash.mk
 
 #
 # Generic rules
