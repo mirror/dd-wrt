@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <bcmnvram.h>
+#include <utils.h>
 
 #define SERVICE_MODULE "/lib/services.so"
 static int *stops_running = NULL;

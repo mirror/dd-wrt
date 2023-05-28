@@ -1162,7 +1162,9 @@ endif
 	install hotplug $(INSTALLDIR)/sbin
 	install servicemanager $(INSTALLDIR)/sbin
 ifneq ($(CONFIG_MICRO),y)
-	install watchdog $(INSTALLDIR)/sbin
+ifneq ($(CONFIG_DIST),"micro")
+	-install watchdog $(INSTALLDIR)/sbin
+endif
 endif
 ifeq ($(CONFIG_ADM5120),y)
 	install watchdog $(INSTALLDIR)/sbin
@@ -1329,8 +1331,16 @@ hotplug: hotplug.o
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lshutils -lnvram
 
 watchdog: watchdog.o
+ifneq ($(CONFIG_MICRO),y)
+ifneq ($(CONFIG_DIST),"micro")
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
+else
+	@true
+endif
+else
+	@true
+endif
 
 radio_timer: radio_timer.o
 	@echo "[LD] $@"
