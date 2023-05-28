@@ -793,15 +793,15 @@ hotspot.http_srv="HTTP Redirect";
 hotspot.http_ip="HTTP Destination IP";
 hotspot.http_port="HTTP Odredišna Vrata";
 hotspot.http_net="HTTP Izvorna Mreža";
-hotspot.nocat_legend="NoCatSplash";
-hotspot.nocat_srv="NoCatSplash";
-hotspot.nocat_gateway="Ime Poveznika";
-hotspot.nocat_gatewayaddr="IP Adresa Poveznika";
-hotspot.nocat_home="Home Page";
-hotspot.nocat_extifname="Vanjsko Sučelje";
-hotspot.nocat_ifname="Unutrašnje Sučelje";
-hotspot.nocat_splash="Splash URL";
-hotspot.nocat_port="Isključi Vrata";
+hotspot.nodog_legend="NoCatSplash";
+hotspot.nodog_srv="NoCatSplash";
+hotspot.nodog_gateway="Ime Poveznika";
+hotspot.nodog_gatewayaddr="IP Adresa Poveznika";
+hotspot.nodog_home="Home Page";
+hotspot.nodog_extifname="Vanjsko Sučelje";
+hotspot.nodog_ifname="Unutrašnje Sučelje";
+hotspot.nodog_splash="Splash URL";
+hotspot.nodog_port="Isključi Vrata";
 
 // ** Hotspotsystem **//
 
