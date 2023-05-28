@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -z "$(nvram get ND_enable)" ]; then
+    nvram set ND_enable=0
+    nvram need_commit=1
+fi
+

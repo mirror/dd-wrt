@@ -1,0 +1,61 @@
+
+<fieldset>
+	<legend><% tran("hotspot.nodog_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("hotspot.nodog_srv"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="ND_enable" <% nvc("ND_enable","1"); %> onclick="show_layer_ext(this, 'idnodog', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="ND_enable" <% nvc("ND_enable","0"); %> onclick="show_layer_ext(this, 'idnodog', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idnodog">
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_gatewayaddr"); %></div>
+			<input type="hidden" name="ND_GatewayAddr" value="0.0.0.0" />
+			<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","0"); %>" />.<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","1"); %>" />.<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","2"); %>" />.<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","3"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_gateway"); %></div>
+			<input maxlength="39" name="ND_GatewayName" size="39" value="<% nvg("ND_GatewayName"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_ifname"); %></div>
+			<% show_ifselect("ND_ifname"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_home"); %></div>
+			<input maxlength="100" name="ND_HomePage" size="39" value="<% nvg("ND_HomePage"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_redirect"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="ND_ForcedRedirect" <% nvc("ND_ForcedRedirect","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="ND_ForcedRedirect" <% nvc("ND_ForcedRedirect","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_docroot"); %></div>
+			<input maxlength="100" name="ND_DocumentRoot" size="39" value="<% nvg("ND_DocumentRoot"); %>" /> /splash.html
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_port"); %></div>
+			<input maxlength="100" name="ND_ExcludePorts" size="39" value="<% nvg("ND_ExcludePorts"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_MAClist"); %></div>
+			<input name="ND_MACWhiteList" size="39" value="<% nvg("ND_MACWhiteList"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_timeout"); %></div>
+			<input class="num" type="text" size="6" name="ND_LoginTimeout" value="<% nvg("ND_LoginTimeout"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_maxclients"); %></div>
+			<input class="num" type="text" size="6" name="ND_MaxClients" value="<% nvg("ND_MaxClients"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_downloadlimit"); %></div>
+			<input class="num" type="text" size="6" name="ND_dl" value="<% nvg("ND_dl"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_uplimit"); %></div>
+			<input class="num" type="text" size="6" name="ND_ul" value="<% nvg("ND_ul"); %>" />
+		</div>
+	</div>
+</fieldset><br/>
