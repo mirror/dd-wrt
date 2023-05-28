@@ -55,6 +55,8 @@
 #endif
 
 #ifndef MHD_PANIC
+
+#ifdef NEED_PRINTF
 #  include <stdio.h>
 #  include <stdlib.h>
 /* Simple implementation of MHD_PANIC, to be used outside lib */
@@ -62,6 +64,10 @@
                                        "Abnormal termination at %d line in file %s: %s\n", \
                                        (int) __LINE__, __FILE__, msg); abort (); \
 } while (0)
+#else
+
+#endif
+#  defined MHD_PANIC(msg) do { abort(); }
 #endif /* ! MHD_PANIC */
 
 #if defined(MHD_PTHREAD_MUTEX_)
