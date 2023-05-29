@@ -2740,7 +2740,9 @@ int internal_getRouterBrand()
 	if (boardnum == 45 && nvram_match("boardtype", "0x054D")
 	    && nvram_match("boardrev", "0x1101")) {
 		char *hwrev = nvram_safe_get("hardware_version");
-		if (!strncmp(hwrev, "RTN12C1", 7))
+		if (!strncmp(hwrev, "RTN12D1", 7))
+			setRouter("Asus RT-N12D1");
+		else if (!strncmp(hwrev, "RTN12C1", 7))
 			setRouter("Asus RT-N12C1");
 		else
 			setRouter("Asus RT-N12B");
