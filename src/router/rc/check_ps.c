@@ -72,6 +72,13 @@ static int check_plex(void)
 	return !search_process("Plex Media Server", 1);
 }
 
+static int check_nodog(void)
+{
+	if (nvram_match("ND_enable", "0"))	// todo: add upstream 
+		return 0;
+	return !search_process("nodogsplash", 1);
+}
+
 static int check_ddns(void)
 {
 	char wan_if_buffer[33];
@@ -128,7 +135,7 @@ struct mon mons[] = {
 	{ "radvd", M_WAN, "radvd_enable", "1", NULL, NULL, &check_radvd },
 #endif
 #ifdef HAVE_NODOG
-	{ "nodogsplash", M_WAN, "ND_enable", "1", NULL, NULL, NULL },
+	{ "splashd", M_WAN, "ND_enable", "1", NULL, NULL, &check_nodog },
 #endif
 #ifdef HAVE_CHILLI
 	{ "chilli", M_WAN, "chilli_enable", "1", NULL, NULL, NULL },
