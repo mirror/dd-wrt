@@ -70,9 +70,9 @@
 				reg = <0x50000 0xed0000>;
 			};
 
-			partition@ed00000 {
+			partition@f200000 {
 				label = "nvram";
-				reg = <0xed0000 0x10000>;
+				reg = <0xf20000 0x10000>;
 			};
 			partition@0000000 {
 				label = "fullflash";
