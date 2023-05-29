@@ -40,7 +40,7 @@ install:
 	cp nodogsplash $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/etc/nodogsplash/www/images
 #	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
-	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/www/
 	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/www
 	cp resources/status.html $(DESTDIR)/etc/nodogsplash/www/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/www/images/
