@@ -38,12 +38,12 @@ install:
 	mkdir -p $(DESTDIR)/usr/bin/
 #	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/
-	mkdir -p $(DESTDIR)/etc/nodogsplash/htdocs/images
-#ä	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
-#	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
-#	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/htdocs/
-#	cp resources/status.html $(DESTDIR)/etc/nodogsplash/htdocs/
-#	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
+	mkdir -p $(DESTDIR)/etc/nodogsplash/www/images
+#	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
+	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/www
+	cp resources/status.html $(DESTDIR)/etc/nodogsplash/www/
+	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/www/images/
 
 checkastyle:
 	@command -v astyle >/dev/null 2>&1 || \
