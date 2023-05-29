@@ -51,10 +51,13 @@ int mk_nodog_conf(void)
 	fprintf(fp, "\tFirewallRule allow all\n");
 	fprintf(fp, "}\n");
 	fprintf(fp, "FirewallRuleSet preauthenticated-users {\n");
+	fprintf(fp, "\tFirewallRule allow udp port 53\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 53\n");
 	char var[64];
 	char *next;
 	char *list = nvram_safe_get("ND_ExcludePorts");
 	foreach(var, list, next) {
+		fprintf(fp, "\tFirewallRule allow tcp port %s\n", var);
 		fprintf(fp, "\tFirewallRule allow udp port %s\n", var);
 	}
 	fprintf(fp, "}\n");
