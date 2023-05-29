@@ -2954,7 +2954,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "ND_ForcedRedirect", "0" },
 	{ "ND_IdleTimeout", "0" },
 	{ "ND_dl", "0" },
-	{ "ND_up", "0" },
+	{ "ND_ul", "0" },
 #else
 	{ "NC_enable", "0" },
 #ifdef HAVE_BRANDING
