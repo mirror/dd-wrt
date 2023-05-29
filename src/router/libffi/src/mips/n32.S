@@ -50,6 +50,7 @@
 #if !defined(__mips_isa_rev) || (__mips_isa_rev<6)
 	.set mips4
 #endif
+	.set hardfloat
 	.text
 	.align	2
 	.globl	ffi_call_N32
