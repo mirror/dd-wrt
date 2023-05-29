@@ -1034,12 +1034,12 @@ ifneq ($(CONFIG_ATH9K),y)
 	rm -f $(INSTALLDIR)/www/Channel_Survey.asp
 endif
 
-ifneq ($(CONFIG_NOCAT),y)
+#ifneq ($(CONFIG_NOCAT),y)
 	rm -f $(INSTALLDIR)/www/images/splash.jpg
 	rm -f $(INSTALLDIR)/www/splash.css
 	rm -f $(INSTALLDIR)/www/splash.html
 	rm -f $(INSTALLDIR)/www/status.html
-endif
+#endif
 ifneq ($(CONFIG_MSSID),y)
 	cp Status_Wireless.asp.v23 $(INSTALLDIR)/www/Status_Wireless.asp
 	cp Status_Wireless.live.asp.v23 $(INSTALLDIR)/www/Status_Wireless.live.asp
