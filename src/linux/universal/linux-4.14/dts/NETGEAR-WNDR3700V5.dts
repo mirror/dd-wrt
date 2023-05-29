@@ -67,12 +67,12 @@
 			partition@50000 {
 				compatible = "denx,uimage";
 				label = "linux";
-				reg = <0x50000 0xee0000>;
+				reg = <0x50000 0xed0000>;
 			};
 
-			partition@ff00000 {
+			partition@ed00000 {
 				label = "nvram";
-				reg = <0xff0000 0x10000>;
+				reg = <0xed0000 0x10000>;
 			};
 			partition@0000000 {
 				label = "fullflash";
