@@ -33,11 +33,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #ifdef HAVE_GCRYPT_H
 #include <gcrypt.h>
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -294,14 +294,14 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #ifdef HAVE_GCRYPT_H
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testDigestAuth ();

@@ -101,7 +101,7 @@ extern "C"
 #include <sys/types.h>
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 #include <ws2tcpip.h>
-#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
+#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
@@ -166,7 +166,7 @@ enum MHD_Bool
 #ifndef _MHD_EXTERN
 #if defined(_WIN32) && defined(MHD_W32LIB)
 #define _MHD_EXTERN extern
-#elif defined (_WIN32) && defined(MHD_W32DLL)
+#elif defined(_WIN32) && defined(MHD_W32DLL)
 /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
 #define _MHD_EXTERN __declspec(dllimport)
 #else
@@ -212,7 +212,7 @@ typedef SOCKET MHD_socket;
 #define _MHD_DEPR_MACRO(msg) __pragma(message (__FILE__ "(" _MHD_STRMACRO ( \
   __LINE__) "): warning: " msg))
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO (msg)
-#elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
+#elif defined(__clang__) || defined(__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
 #define _MHD_GCC_PRAG(x) _Pragma(#x)
 #if (defined(__clang__) && (__clang_major__ + 0 >= 5 ||     \
@@ -254,13 +254,13 @@ typedef SOCKET MHD_socket;
 #elif defined(_MSC_FULL_VER) && _MSC_VER + 0 >= 1310
 /* VS .NET 2003 deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
-#elif (__GNUC__ + 0 >= 5) || (defined (__clang__) && \
+#elif (__GNUC__ + 0 >= 5) || (defined(__clang__) && \
   (__clang_major__ + 0 > 2 || (__clang_major__ + 0 == 2 && __clang_minor__ >= \
                                9)))                                             /* FIXME: earlier versions not tested */
 /* GCC >= 5.0 or clang >= 2.9 */
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated (msg)))
-#elif defined (__clang__) || __GNUC__ + 0 > 3 || (__GNUC__ + 0 == 3 && \
-                                                  __GNUC_MINOR__ + 0 >= 1)
+#elif defined(__clang__) || __GNUC__ + 0 > 3 || (__GNUC__ + 0 == 3 && \
+                                                 __GNUC_MINOR__ + 0 >= 1)
 /* 3.1 <= GCC < 5.0 or clang < 2.9 */
 /* old GCC-style deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))

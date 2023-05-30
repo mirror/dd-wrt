@@ -36,6 +36,18 @@
 #include <unistd.h>
 #endif
 
+#ifndef CURL_VERSION_BITS
+#define CURL_VERSION_BITS(x,y,z) ((x) << 16 | (y) << 8 | (z))
+#endif /* ! CURL_VERSION_BITS */
+#ifndef CURL_AT_LEAST_VERSION
+#define CURL_AT_LEAST_VERSION(x,y,z) \
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS (x, y, z))
+#endif /* ! CURL_AT_LEAST_VERSION */
+
+#if CURL_AT_LEAST_VERSION (7,56,0)
+#define HAS_CURL_MIME 1
+#endif /* CURL_AT_LEAST_VERSION(7,56,0) */
+
 
 #include "socat.c"
 
@@ -165,17 +177,88 @@ ahc_echo (void *cls,
 }
 
 
-static struct curl_httppost *
-make_form ()
+struct mhd_test_postdata
 {
-  struct curl_httppost *post = NULL;
+#if defined(HAS_CURL_MIME)
+  curl_mime *mime;
+#else  /* ! HAS_CURL_MIME */
+  struct curl_httppost *post;
+#endif /* ! HAS_CURL_MIME */
+};
+
+/* Return non-zero if succeed */
+static int
+add_test_form (CURL *handle, struct mhd_test_postdata *postdata)
+{
+#if defined(HAS_CURL_MIME)
+  postdata->mime = curl_mime_init (handle);
+  if (NULL == postdata->mime)
+    return 0;
+  else
+  {
+    curl_mimepart *part;
+    part = curl_mime_addpart (postdata->mime);
+    if (NULL != part)
+    {
+      if ( (CURLE_OK == curl_mime_data (part, "daniel",
+                                        CURL_ZERO_TERMINATED)) &&
+           (CURLE_OK == curl_mime_name (part, "name")) )
+      {
+        part = curl_mime_addpart (postdata->mime);
+        if (NULL != part)
+        {
+          if ( (CURLE_OK == curl_mime_data (part, "curl",
+                                            CURL_ZERO_TERMINATED)) &&
+               (CURLE_OK == curl_mime_name (part, "project")) )
+          {
+            if (CURLE_OK == curl_easy_setopt (handle,
+                                              CURLOPT_MIMEPOST, postdata->mime))
+            {
+              return ! 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  curl_mime_free (postdata->mime);
+  postdata->mime = NULL;
+  return 0;
+#else  /* ! HAS_CURL_MIME */
+  postdata->post = NULL;
   struct curl_httppost *last = NULL;
 
-  curl_formadd (&post, &last, CURLFORM_COPYNAME, "name",
-                CURLFORM_COPYCONTENTS, "daniel", CURLFORM_END);
-  curl_formadd (&post, &last, CURLFORM_COPYNAME, "project",
-                CURLFORM_COPYCONTENTS, "curl", CURLFORM_END);
-  return post;
+  if (0 == curl_formadd (&postdata->post, &last,
+                         CURLFORM_COPYNAME, "name",
+                         CURLFORM_COPYCONTENTS, "daniel", CURLFORM_END))
+  {
+    if (0 == curl_formadd (&postdata->post, &last,
+                           CURLFORM_COPYNAME, "project",
+                           CURLFORM_COPYCONTENTS, "curl", CURLFORM_END))
+    {
+      if (CURLE_OK == curl_easy_setopt (handle,
+                                        CURLOPT_HTTPPOST, postdata->post))
+      {
+        return ! 0;
+      }
+    }
+  }
+  curl_formfree (postdata->post);
+  return 0;
+#endif /* ! HAS_CURL_MIME */
+}
+
+
+static void
+free_test_form (struct mhd_test_postdata *postdata)
+{
+#if defined(HAS_CURL_MIME)
+  if (NULL != postdata->mime)
+    curl_mime_free (postdata->mime);
+#else  /* ! HAS_CURL_MIME */
+  if (NULL != postdata->post)
+    curl_formfree (postdata->post);
+#endif /* ! HAS_CURL_MIME */
 }
 
 
@@ -187,7 +270,7 @@ testInternalPost ()
   char buf[2048];
   struct CBC cbc;
   int i;
-  struct curl_httppost *pd;
+  struct mhd_test_postdata form;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -207,8 +290,6 @@ testInternalPost ()
     curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
     curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-    pd = make_form ();
-    curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
     curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
     curl_easy_setopt (c, CURLOPT_TIMEOUT_MS, CURL_TIMEOUT);
     if (oneone)
@@ -220,9 +301,10 @@ testInternalPost ()
      *   setting NOSIGNAL results in really weird
      *   crashes on my system! */
     curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+    add_test_form (c, &form);
     curl_easy_perform (c);
     curl_easy_cleanup (c);
-    curl_formfree (pd);
+    free_test_form (&form);
   }
   fprintf (stderr, "\n");
   zzuf_socat_stop ();
@@ -239,7 +321,7 @@ testMultithreadedPost ()
   char buf[2048];
   struct CBC cbc;
   int i;
-  struct curl_httppost *pd;
+  struct mhd_test_postdata form;
 
   cbc.buf = buf;
   cbc.size = 2048;
@@ -259,8 +341,6 @@ testMultithreadedPost ()
     curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11081/hello_world");
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
     curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-    pd = make_form ();
-    curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
     curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
     curl_easy_setopt (c, CURLOPT_TIMEOUT_MS, CURL_TIMEOUT);
     if (oneone)
@@ -272,9 +352,10 @@ testMultithreadedPost ()
      *   setting NOSIGNAL results in really weird
      *   crashes on my system! */
     curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+    add_test_form (c, &form);
     curl_easy_perform (c);
     curl_easy_cleanup (c);
-    curl_formfree (pd);
+    free_test_form (&form);
   }
   fprintf (stderr, "\n");
   zzuf_socat_stop ();
@@ -299,7 +380,7 @@ testExternalPost ()
   int running;
   time_t start;
   struct timeval tv;
-  struct curl_httppost *pd;
+  struct mhd_test_postdata form;
   int i;
 
   multi = NULL;
@@ -327,8 +408,6 @@ testExternalPost ()
     curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:1082/hello_world");
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
     curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-    pd = make_form ();
-    curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
     curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
     curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
     if (oneone)
@@ -340,12 +419,13 @@ testExternalPost ()
      *   setting NOSIGNAL results in really weird
      *   crashes on my system! */
     curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+    add_test_form (c, &form);
 
     mret = curl_multi_add_handle (multi, c);
     if (mret != CURLM_OK)
     {
       curl_multi_cleanup (multi);
-      curl_formfree (pd);
+      free_test_form (&form);
       curl_easy_cleanup (c);
       zzuf_socat_stop ();
       MHD_stop_daemon (d);
@@ -367,7 +447,7 @@ testExternalPost ()
         curl_easy_cleanup (c);
         zzuf_socat_stop ();
         MHD_stop_daemon (d);
-        curl_formfree (pd);
+        free_test_form (&form);
         return 2048;
       }
       if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
@@ -375,7 +455,7 @@ testExternalPost ()
         curl_multi_remove_handle (multi, c);
         curl_multi_cleanup (multi);
         curl_easy_cleanup (c);
-        curl_formfree (pd);
+        free_test_form (&form);
         zzuf_socat_stop ();
         MHD_stop_daemon (d);
         return 4096;
@@ -398,7 +478,7 @@ testExternalPost ()
       curl_multi_remove_handle (multi, c);
       curl_easy_cleanup (c);
     }
-    curl_formfree (pd);
+    free_test_form (&form);
   }
   fprintf (stderr, "\n");
   zzuf_socat_stop ();

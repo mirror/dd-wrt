@@ -12,14 +12,14 @@ lib_LTLIBRARIES = \
 noinst_DATA =
 MOSTLYCLEANFILES =
 
-AM_V_LIB = $(am__v_LIB_$(V))
-am__v_LIB_ = $(am__v_LIB_$(AM_DEFAULT_VERBOSITY))
+AM_V_LIB = $(am__v_LIB_@AM_V@)
+am__v_LIB_ = $(am__v_LIB_@AM_DEFAULT_V@)
 am__v_LIB_0 = @echo "  LIB     " $@;
 am__v_LIB_1 = 
 
 if W32_SHARED_LIB_EXP
-AM_V_DLLTOOL = $(am__v_DLLTOOL_$(V))
-am__v_DLLTOOL_ = $(am__v_DLLTOOL_$(AM_DEFAULT_VERBOSITY))
+AM_V_DLLTOOL = $(am__v_DLLTOOL_@AM_V@)
+am__v_DLLTOOL_ = $(am__v_DLLTOOL_@AM_DEFAULT_V@)
 am__v_DLLTOOL_0 = @echo "  DLLTOOL " $@;
 am__v_DLLTOOL_1 = 
 
@@ -147,7 +147,7 @@ if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
 
-if !MHD_HAVE_TSEARCH
+if !MHD_USE_SYS_TSEARCH
 libmicrohttpd_la_SOURCES += \
   tsearch.c tsearch.h
 endif
@@ -167,8 +167,7 @@ endif
 
 if ENABLE_BAUTH
 libmicrohttpd_la_SOURCES += \
-  basicauth.c \
-  base64.c base64.h
+  basicauth.c
 endif
 
 if ENABLE_HTTPS
@@ -245,6 +244,19 @@ check_PROGRAMS += \
   test_shutdown_poll_ignore
 endif
 endif
+endif
+
+if HEAVY_TESTS
+if TESTS_STRESS_OS
+check_PROGRAMS += \
+  test_client_put_hard_close_stress_os \
+  test_client_put_steps_hard_close_stress_os \
+  test_client_put_chunked_steps_hard_close_stress_os
+endif
+endif
+if ENABLE_BAUTH
+check_PROGRAMS += \
+  test_str_base64
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -420,6 +432,9 @@ test_sha1_SOURCES = \
   test_sha1.c test_helpers.h \
   sha1.c sha1.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
+test_str_base64_SOURCES = \
+  test_str_base64.c mhd_str.h mhd_str.c mhd_assert.h
+
 test_options_SOURCES = \
   test_options.c
 test_options_LDADD = \
@@ -440,6 +455,11 @@ test_client_put_hard_close_SOURCES = \
 test_client_put_hard_close_LDADD = \
   libmicrohttpd.la
 
+test_client_put_hard_close_stress_os_SOURCES = \
+  $(test_client_put_hard_close_SOURCES)
+test_client_put_hard_close_stress_os_LDADD = \
+  $(test_client_put_hard_close_LDADD)
+
 test_client_put_steps_shutdown_SOURCES = \
   test_client_put_stop.c
 test_client_put_steps_shutdown_LDADD = \
@@ -454,6 +474,11 @@ test_client_put_steps_hard_close_SOURCES = \
   test_client_put_stop.c
 test_client_put_steps_hard_close_LDADD = \
   libmicrohttpd.la
+
+test_client_put_steps_hard_close_stress_os_SOURCES = \
+  $(test_client_put_steps_hard_close_SOURCES)
+test_client_put_steps_hard_close_stress_os_LDADD = \
+  $(test_client_put_steps_hard_close_LDADD)
 
 test_client_put_chunked_shutdown_SOURCES = \
   test_client_put_stop.c
@@ -484,3 +509,9 @@ test_client_put_chunked_steps_hard_close_SOURCES = \
   test_client_put_stop.c
 test_client_put_chunked_steps_hard_close_LDADD = \
   libmicrohttpd.la
+
+test_client_put_chunked_steps_hard_close_stress_os_SOURCES = \
+  $(test_client_put_chunked_steps_hard_close_SOURCES)
+test_client_put_chunked_steps_hard_close_stress_os_LDADD = \
+  $(test_client_put_chunked_steps_hard_close_LDADD)
+  

@@ -34,11 +34,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #ifdef HAVE_GCRYPT_H
 #include <gcrypt.h>
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -307,14 +307,14 @@ main (int argc, char *const *argv)
   /* curl added SHA256 support in 7.57 = 7.0x39 */
   if (d->version_num < 0x073900)
     return 77; /* skip test, curl is too old */
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #ifdef HAVE_GCRYPT_H
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testDigestAuth ();

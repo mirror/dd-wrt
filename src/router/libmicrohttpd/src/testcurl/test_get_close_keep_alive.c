@@ -161,7 +161,7 @@ _libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 #define HDR_CONN_CLOSE_VALUE      "close"
 #define HDR_CONN_CLOSE            MHD_HTTP_HEADER_CONNECTION ": " \
                                   HDR_CONN_CLOSE_VALUE
-#define HDR_CONN_KEEP_ALIVE_VALUE "keep-alive"
+#define HDR_CONN_KEEP_ALIVE_VALUE "Keep-Alive"
 #define HDR_CONN_KEEP_ALIVE       MHD_HTTP_HEADER_CONNECTION ": " \
                                   HDR_CONN_KEEP_ALIVE_VALUE
 
@@ -254,10 +254,10 @@ lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                          strlen (MHD_HTTP_VERSION_1_0))))
     check_res->found_http10 = 1;
   else if ((data_size == strlen (HDR_CONN_CLOSE) + 2) &&
-           (0 == strncasecmp (buffer, HDR_CONN_CLOSE "\r\n", data_size)))
+           (0 == memcmp (buffer, HDR_CONN_CLOSE "\r\n", data_size)))
     check_res->found_conn_close = 1;
   else if ((data_size == strlen (HDR_CONN_KEEP_ALIVE) + 2) &&
-           (0 == strncasecmp (buffer, HDR_CONN_KEEP_ALIVE "\r\n", data_size)))
+           (0 == memcmp (buffer, HDR_CONN_KEEP_ALIVE "\r\n", data_size)))
     check_res->found_conn_keep_alive = 1;
 
   return data_size;

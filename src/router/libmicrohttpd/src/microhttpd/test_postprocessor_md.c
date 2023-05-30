@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2020 Christian Grothoff
+     Copyright (C) 2020-2023 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -339,6 +340,7 @@ main (int argc, char *argv[])
 
   if (1)
   {
+    unsigned i;
     const char *chunks[] = {
       "t=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2Cxxxxx%2C%2Cx%2Cxxxxxxxxxxxxxxxxxxxx%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxx%2Cxxxxxxxxxxxxxxxx%2Cxxxxx%2Cxxxxxxx%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2Cxx%2C%2Cx%2Cxx%2C%2Cxxxx%2Cxxx%2C%2Cx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2C%2C%2C%2Cxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2C%2C%2C%2Cxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxx%2Cxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxx%2Cxxxxxxxxx%2Cxxxxxxx%2Cxxxxxxxxxxxxxxxxxxx%2C%2Cxxxxxxx%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cx%2Cx%2Cxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxx%2Cxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxx%2Cxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxx%2Cxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2C%2C%2C%2Cxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2C%2C%2C%2Cxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2Cxxxxxxxxxxxx%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxx%2Cx%2Cxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2C%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2Cxxxx%2Cxxxxxxxxx",
       /* one chunk: second line is dropped */
@@ -358,7 +360,7 @@ main (int argc, char *argv[])
     postprocessor->buffer_size = 131076;
     postprocessor->state = PP_Init;
     postprocessor->skip_rn = RN_Inactive;
-    for (unsigned i = 0; i < ARRAY_LENGTH (chunks); ++i)
+    for (i = 0; i < ARRAY_LENGTH (chunks); ++i)
     {
       const char *chunk = chunks[i];
       if (MHD_YES != MHD_post_process (postprocessor, chunk, strlen (chunk) ))
@@ -371,6 +373,7 @@ main (int argc, char *argv[])
   }
   if (1)
   {
+    unsigned i;
     const char *chunks[] = {
       "XXXXXXXXXXXX=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&XXXXXX=&XXXXXXXXXXXXXX=XXXX+&XXXXXXXXXXXXXXX=XXXXXXXXX&XXXXXXXXXXXXX=XXXX%XX%XXXXXX&XXXXXXXXXXX=XXXXXXXXX&XXXXXXXXXXXXX=XXXXXXXXXX&XXXXXXXXXXXXXXX=XX&XXXXXXXXXXXXXXX=XXXXXXXXX&XXXXXXXXXXXXX=XXXXXX&XXXXXXXXXXX=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
       "&XXXXXXXX=XXXX",
@@ -388,7 +391,7 @@ main (int argc, char *argv[])
     postprocessor->buffer_size = 131076;
     postprocessor->state = PP_Init;
     postprocessor->skip_rn = RN_Inactive;
-    for (unsigned i = 0; i < ARRAY_LENGTH (chunks); ++i)
+    for (i = 0; i < ARRAY_LENGTH (chunks); ++i)
     {
       const char *chunk = chunks[i];
       if (MHD_YES != MHD_post_process (postprocessor, chunk, strlen (chunk) ))

@@ -23,7 +23,7 @@
 /* Test Certificates */
 
 /* Certificate Authority cert */
-const char ca_cert_pem[] =
+const char *const ca_cert_pem =
   "-----BEGIN CERTIFICATE-----\n\
 MIIGITCCBAmgAwIBAgIBADANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
 DzANBgNVBAgMBk1vc2NvdzEPMA0GA1UEBwwGTW9zY293MRswGQYDVQQKDBJ0ZXN0\n\
@@ -62,117 +62,122 @@ Gy5ZldbTMTjgn7fChNopz15ChPBnwFIjhm+S0CyiLRQAowfknRVq2IBkj7/5kOWg\n\
 
 
 /* test server key */
-const char srv_signed_key_pem[] =
+const char *const srv_signed_key_pem =
   "-----BEGIN PRIVATE KEY-----\n\
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCrm8uH8V0P2Xbl\n\
-HCMq6PTIphDcMmXEDiciCAAbfS7rVUyEJBgRpKSb+IXpj6jX1+e0+uncBxO9fesZ\n\
-Vyg4ksOA7jITGlzOjBvX6RzxkE9I96R3RCgzUHyYB8ayVSj1s/WmhorVPhKQjCmd\n\
-6mi978n//bZKqTpq3OMpDrNC6AWTiHHP5KV9pp3Hsz1iAGK74sSVP3vhYD8IZ5yg\n\
-CR99TDDHZfIvOmbqS60kx/UclUf2R4mSv/ZZHaHW7PeUhtUxzwOYqWVj0zLv/Lni\n\
-CGO9uXGOgZHFfL8PhQwt6pNT5DaVmqx/uGwpsLiER4P74ngwroSjMwavYNlykuLF\n\
-1N8GZZC7AgMBAAECggEAc0F/wR3qUurLX7U2KWuse9aNHFb84mBfCAw3hj7ddFEl\n\
-wto7EB50MA0KY4OI8u6fQH4E8zINoAciDzLqYJSxmbZhC1N5YX/Yc3qtZdB2b5tj\n\
-anbsSQqVo8YVPVDU4bCsG9vhArdd4JdCnD0DfA3ArZ3JAPwHsB4Ks1icLSOIGz0/\n\
-JvOZEryJBdwM6SKbzLMqVOGmYDiY6s7UpJ0rg3cOPqhdg5xv8XZATqXISU0mLBcq\n\
-RiS7lHZERASYON2rpznhBiCtikOcr/duQhvZ1uDSGfDzDJil+1hdS3RouS9WZCIe\n\
-p3CtvZhPLmv6kFg9YE+AovDwOOwNr0no3H9oJA2FgQKBgQDSWrE/MRMRpFJFBxxC\n\
-YckC2v8Y+7sVSMbFNq/0j2eRTql+8AeZBbAoGU4QHUcylCBkv33zDYRY52xNo32E\n\
-8mmH2O/pIcYy0LafrVZHdulf+fxybncObidxmmjR9C8aLzwRuIMtABz4simaQcBD\n\
-RhZJ1YCqVkfMr/PlbLzvC8V+FwKBgQDQ2MF/Yz/p7QEDHpfKdtx7+yK6i8IM+V8l\n\
-d2OuscNkQQywCVqE2vyRZJbjU9y+Om7alNKFPhhBzavdOxNWXGXmlBIlvo3v6M++\n\
-fTixza77LxHvbghH0ykplSwGh30vpHtvoxsRS5nRFxmsVK9jNYYT/Aes+J6MXlq7\n\
-PYAiZVQs/QKBgFKYY8JhPZCOyfLqsNDr3matoL6pkTLxSYMETyCi8lKe5XS/QOx3\n\
-zExia0FujZcxjGqiugymgRH7hI4TpOR/3qoFp2YN6enoA908zYTwDwCtgs9Xyo2y\n\
-+O/lZkUSMTCB3X9DyNXxlm6cXjOAn8KKkZPaLlQz3qtjZ0vtX14pbBlvAoGBAKw0\n\
-vsCifvYNZhNDa5gXkFBu0MEPMm/uQ+Up37kRfPKyrJqO6+O2iiH81moWIWN93SBB\n\
-LKGPhQLlazxdVOGWCLQrDhevW2wiBQKmUFRULF+T/W72xL8sv7k49ndfyvq43ss7\n\
-q7sEIo4FRTcTERd179uUqmOXEWze9GOGH5y8/r6lAoGAG2YyqRWF+yxKlgR71b1Q\n\
-Zxv53WgXOUwemGRbXxE4g3gHpW5k9zWh4QTkbd0lDD+SQ0DBwZl/x/FWj43jUS+i\n\
-a5UojDUx8nYgjiAO7kppMlX3ZaJD1DkwEz+4HW9oPmOFt8smvuTVt0mm6tpmQdRA\n\
-yLwgQzGDGVJB6ETVJS7cwWs=\n\
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCff7amw9zNSE+h\n\
+rOMhBrzbbsJluUP3gmd8nOKY5MUimoPkxmAXfp2L0il+MPZT/ZEmo11q0k6J2jfG\n\
+UBQ+oZW9ahNZ9gCDjbYlBblo/mqTai+LdeLO3qk53d0zrZKXvCO6sA3uKpG2WR+g\n\
++sNKxfYpIHCpanqBU6O+degIV/+WKy3nQ2Fwp7K5HUNj1u0pg0QQ18yf68LTnKFU\n\
+HFjZmmaaopWki5wKSBieHivzQy6w+04HSTogHHRK/y/UcoJNSG7xnHmoPPo1vLT8\n\
+CMRIYnSSgU3wJ43XBJ80WxrC2dcoZjV2XZz+XdQwCD4ZrC1ihykcAmiQA+sauNm7\n\
+dztOMkGzAgMBAAECggEAIbKDzlvXDG/YkxnJqrKXt+yAmak4mNQuNP+YSCEdHSBz\n\
++SOILa6MbnvqVETX5grOXdFp7SWdfjZiTj2g6VKOJkSA7iKxHRoVf2DkOTB3J8np\n\
+XZd8YaRdMGKVV1O2guQ20Dxd1RGdU18k9YfFNsj4Jtw5sTFTzHr1P0n9ybV9xCXp\n\
+znSxVfRg8U6TcMHoRDJR9EMKQMO4W3OQEmreEPoGt2/+kMuiHjclxLtbwDxKXTLP\n\
+pD0gdg3ibvlufk/ccKl/yAglDmd0dfW22oS7NgvRKUve7tzDxY1Q6O5v8BCnLFSW\n\
+D+z4hS1PzooYRXRkM0xYudvPkryPyu+1kEpw3fNsoQKBgQDRfXJo82XQvlX8WPdZ\n\
+Ts3PfBKKMVu3Wf8J3SYpuvYT816qR3ot6e4Ivv5ZCQkdDwzzBKe2jAv6JddMJIhx\n\
+pkGHc0KKOodd9HoBewOd8Td++hapJAGaGblhL5beIidLKjXDjLqtgoHRGlv5Cojo\n\
+zHa7Viel1eOPPcBumhp83oJ+mQKBgQDC6PmdETZdrW3QPm7ZXxRzF1vvpC55wmPg\n\
+pRfTRM059jzRzAk0QiBgVp3yk2a6Ob3mB2MLfQVDgzGf37h2oO07s5nspSFZTFnM\n\
+KgSjFy0xVOAVDLe+0VpbmLp1YUTYvdCNowaoTE7++5rpePUDu3BjAifx07/yaSB+\n\
+W+YPOfOuKwKBgQCGK6g5G5qcJSuBIaHZ6yTZvIdLRu2M8vDral5k3793a6m3uWvB\n\
+OFAh/eF9ONJDcD5E7zhTLEMHhXDs7YEN+QODMwjs6yuDu27gv97DK5j1lEsrLUpx\n\
+XgRjAE3KG2m7NF+WzO1K74khWZaKXHrvTvTEaxudlO3X8h7rN3u7ee9uEQKBgQC2\n\
+wI1zeTUZhsiFTlTPWfgppchdHPs6zUqq0wFQ5Zzr8Pa72+zxY+NJkU2NqinTCNsG\n\
+ePykQ/gQgk2gUrt595AYv2De40IuoYk9BlTMuql0LNniwsbykwd/BOgnsSlFdEy8\n\
+0RQn70zOhgmNSg2qDzDklJvxghLi7zE5aV9//V1/ewKBgFRHHZN1a8q/v8AAOeoB\n\
+ROuXfgDDpxNNUKbzLL5MO5odgZGi61PBZlxffrSOqyZoJkzawXycNtoBP47tcVzT\n\
+QPq5ZOB3kjHTcN7dRLmPWjji9h4O3eHCX67XaPVMSWiMuNtOZIg2an06+jxGFhLE\n\
+qdJNJ1DkyUc9dN2cliX4R+rG\n\
 -----END PRIVATE KEY-----";
 
 /* test server CA signed certificates */
-const char srv_signed_cert_pem[] =
+const char *const srv_signed_cert_pem =
   "-----BEGIN CERTIFICATE-----\n\
-MIIFaTCCA1GgAwIBAgIBATANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
+MIIFSzCCAzOgAwIBAgIBBDANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
 DzANBgNVBAgMBk1vc2NvdzEPMA0GA1UEBwwGTW9zY293MRswGQYDVQQKDBJ0ZXN0\n\
 LWxpYm1pY3JvaHR0cGQxITAfBgkqhkiG9w0BCQEWEm5vYm9keUBleGFtcGxlLm9y\n\
-ZzEQMA4GA1UEAwwHdGVzdC1DQTAgFw0yMTA0MDcxNzM2MjFaGA8yMTIxMDMxMzE3\n\
-MzYyMVowgYcxCzAJBgNVBAYTAlJVMQ8wDQYDVQQIDAZNb3Njb3cxDzANBgNVBAcM\n\
-Bk1vc2NvdzEbMBkGA1UECgwSdGVzdC1saWJtaWNyb2h0dHBkMRQwEgYDVQQDDAt0\n\
-ZXN0LXNlcnZlcjEjMCEGA1UdEQwaRE5TOmxvY2FsaG9zdCxJUDoxMjcuMC4wLjEw\n\
-ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCrm8uH8V0P2XblHCMq6PTI\n\
-phDcMmXEDiciCAAbfS7rVUyEJBgRpKSb+IXpj6jX1+e0+uncBxO9fesZVyg4ksOA\n\
-7jITGlzOjBvX6RzxkE9I96R3RCgzUHyYB8ayVSj1s/WmhorVPhKQjCmd6mi978n/\n\
-/bZKqTpq3OMpDrNC6AWTiHHP5KV9pp3Hsz1iAGK74sSVP3vhYD8IZ5ygCR99TDDH\n\
-ZfIvOmbqS60kx/UclUf2R4mSv/ZZHaHW7PeUhtUxzwOYqWVj0zLv/LniCGO9uXGO\n\
-gZHFfL8PhQwt6pNT5DaVmqx/uGwpsLiER4P74ngwroSjMwavYNlykuLF1N8GZZC7\n\
-AgMBAAGjgeEwgd4wCwYDVR0PBAQDAgWgMAwGA1UdEwEB/wQCMAAwFgYDVR0lAQH/\n\
-BAwwCgYIKwYBBQUHAwEwLAYDVR0RBCUwI4IJbG9jYWxob3N0hwR/AAABhxAAAAAA\n\
-AAAAAAAAAAAAAAABMB0GA1UdDgQWBBRifkHd2xWI51NhnH8sL66K8EedpjAoBglg\n\
-hkgBhvhCAQ0EGxYZVGVzdCBsaWJtaWNyb2h0dHBkIHNlcnZlcjARBglghkgBhvhC\n\
-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\n\
+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\n\
+/w0gW9EVWzFhsFeGEssi\n\
 -----END CERTIFICATE-----";
 
-/* test server self signed certificates */
-const char srv_self_signed_cert_pem[] = "-----BEGIN CERTIFICATE-----\n"
-                                        "MIIC+jCCAeSgAwIBAgIES0KCvTALBgkqhkiG9w0BAQUwFzEVMBMGA1UEAxMMdGVz\n"
-                                        "dF9jYV9jZXJ0MB4XDTEwMDEwNTAwMDcyNVoXDTQ1MDMxMjAwMDcyNVowFzEVMBMG\n"
-                                        "A1UEAxMMdGVzdF9jYV9jZXJ0MIIBHzALBgkqhkiG9w0BAQEDggEOADCCAQkCggEA\n"
-                                        "tDEagv3p9OUhUL55jMucxjNK9N5cuozhcnrwDfBSU6oVrqm5kPqO1I7Cggzw68Y5\n"
-                                        "jhTcBi4FXmYOZppm1R3MhSJ5JSi/67Q7X4J5rnJLXYGN27qjMpnoGQ/2xmsNG/is\n"
-                                        "i+h/2vbtPU+WP9SEJnTfPLLpZ7KqCAk7FUUzKsuLx3/SOKtdkrWxPKwYTgnDEN6D\n"
-                                        "JL7tEzCnG5DFc4mQ7YW9PaRdC3rS1T8PvQ3jB2BUnohM0cFvKRuiU35tU7h7CPbL\n"
-                                        "4L66VglXoiwqmgcrwI2U968bD0+wRQ5c5bzNoshJOzN6CTMh1IhbklSh/Z6FA/e8\n"
-                                        "hj0yVo2tdllXuJGVs3PIEwIDAQABo1UwUzAMBgNVHRMBAf8EAjAAMBMGA1UdJQQM\n"
-                                        "MAoGCCsGAQUFBwMBMA8GA1UdDwEB/wQFAwMHIAAwHQYDVR0OBBYEFDfU7pAv9LYn\n"
-                                        "n7jb4WHl4+Vgi2FnMAsGCSqGSIb3DQEBBQOCAQEAkaembPQMmv6OOjbIod8zTatr\n"
-                                        "x5Bwkwp3TOE1NRyy2OytzFIYRUkNrZYlcmrxcbNNycIK41CNVXbriFCF8gcmIq9y\n"
-                                        "vaKZn8Gcy+vGggv+1BP9IAPBGKRwSi0wmq9JoGE8hx+qqTpRSdfbM/cps/09hicO\n"
-                                        "0EIR7kWEbvnpMBcMKYOtYE9Gce7rdSMWVAsKc174xn8vW6TxCUvmWFv5DPg5HG1v\n"
-                                        "y1SUX73qafRo+W6FN4UC/DHfwRhF8RSKEnVbmgDVCs6GHdKBjU2qRgYyj6nWZqK1\n"
-                                        "XFUTWgia+Fl3D9vlsXaFcSZKA0Bq1eojl0B0AfeYAxTFwPWXscKvt/bXZfH8bg==\n"
-                                        "-----END CERTIFICATE-----\n";
+/* test server self signed certificate */
+const char *const srv_self_signed_cert_pem = \
+  "-----BEGIN CERTIFICATE-----\n"
+  "MIIDJzCCAg+gAwIBAgIUF8NRJ6Ftm2SKfsc3nLVHzP5uEKgwDQYJKoZIhvcNAQEL\n"
+  "BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MCAXDTIzMDUyMjEwNTU1N1oYDzIxMjMw\n"
+  "NDI4MTA1NTU3WjAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEB\n"
+  "AQUAA4IBDwAwggEKAoIBAQC5ANrDtfgml4thE44x1Nkfvqon92gO6qMYvXrXIizn\n"
+  "RB/MQrTCOoHoA4DmgqeolKJPLUxvPVYxq0zKEDF7Mpokob0v2+cUFIAvXrEC5HE+\n"
+  "hGvqzzRPxdnhzOp+YZui9oOOecW8ymmNm0KHVdiRbcrR6N+Ilz+9nFzw7YHx5TNI\n"
+  "8fcjQIC2dztRCFKgLTz4pj/iNt1rZGBSRJxJA/Z4q2Aou6CS2mmWW/p/EAlT21fd\n"
+  "ocoRpRWGcsZ4O3HXQaueRBT/0+r7+nI54Qy0VXqfFM+hbyR9T5lAh5habLLkjrxF\n"
+  "hsKwwCtmuOmJBvDAp8AQ6shNp4x3EhMjDguXIFnj3UrVAgMBAAGjbzBtMB0GA1Ud\n"
+  "DgQWBBRD3bzHmG12khNeN+AM8Ma44cOwjjAfBgNVHSMEGDAWgBRD3bzHmG12khNe\n"
+  "N+AM8Ma44cOwjjAPBgNVHRMBAf8EBTADAQH/MBoGA1UdEQQTMBGCCWxvY2FsaG9z\n"
+  "dIcEfwAAATANBgkqhkiG9w0BAQsFAAOCAQEAERJptlEe4mBf5BAoihBTVt1sQ1Xa\n"
+  "vqLCU2hJ+tXC9TwNTCADComV0BV0sxfytHwUGa5QDjgkKwUy5rW1a0ROE0ReHQ/A\n"
+  "aSMrYvth+1cipC8JVPoIAG4Lm5dMxVICzW4VUol2OzXbct7z7ihfsyjudYnaNSh/\n"
+  "evEIWHq4Yl4uW2DUZM/YeX67pFrvhR8x4odkToCEquKg8iWRLUApjLHYlQIGLodH\n"
+  "X1TWrAPbhc2IWhnZHU/+xHBE3RVvoel4IZ5UQp5BkUMYyc/tB/nuy6KdtdexBkid\n"
+  "TlKIT/BORX2ZKIilTw175sMStJMPz7D1AdRbw/UremcEIl5HJqFubMvSwg==\n"
+  "-----END CERTIFICATE-----\n";
 
-/* test server key */
-const char srv_key_pem[] = "-----BEGIN RSA PRIVATE KEY-----\n"
-                           "MIIEpAIBAAKCAQEAtDEagv3p9OUhUL55jMucxjNK9N5cuozhcnrwDfBSU6oVrqm5\n"
-                           "kPqO1I7Cggzw68Y5jhTcBi4FXmYOZppm1R3MhSJ5JSi/67Q7X4J5rnJLXYGN27qj\n"
-                           "MpnoGQ/2xmsNG/isi+h/2vbtPU+WP9SEJnTfPLLpZ7KqCAk7FUUzKsuLx3/SOKtd\n"
-                           "krWxPKwYTgnDEN6DJL7tEzCnG5DFc4mQ7YW9PaRdC3rS1T8PvQ3jB2BUnohM0cFv\n"
-                           "KRuiU35tU7h7CPbL4L66VglXoiwqmgcrwI2U968bD0+wRQ5c5bzNoshJOzN6CTMh\n"
-                           "1IhbklSh/Z6FA/e8hj0yVo2tdllXuJGVs3PIEwIDAQABAoIBAAEtcg+LFLGtoxjq\n"
-                           "b+tFttBJfbRcfdG6ocYqBGmUXF+MgFs573DHX3sHNOQxlaNHtSgIclF1eYgNZFFt\n"
-                           "VLIoBFTzfEQXoFosPUDoEuqVMeXLttmD7P2jwL780XJLZ4Xj6GY07npq1iGBcEZf\n"
-                           "yCcdoyGkr9jgc5Auyis8DStGg/jfUBC4NBvF0GnuuNPAdYRPKUpKw9EatI+FdMjy\n"
-                           "BuroD90fhdkK8EwMEVb9P17bdIc1MCIZFpUE9YHjVdK/oxCUhQ8KRfdbI4JU5Zh3\n"
-                           "UtO6Jm2wFuP3VmeVpPvE/C2rxI70pyl6HMSiFGNc0rhJYCQ+yhohWj7nZ67H4vLx\n"
-                           "plv5LxkCgYEAz7ewou8oFafDAMNoxaqKudvUg+lxXewdLDKaYBF5ACi9uAPCJ+v7\n"
-                           "M5c/fvPFn/XHzo7xaXbtTAH3Z5xzBs+80OsvL+e1Ut4xR+ELRkybknh/s2wQeABk\n"
-                           "Kb0vA59ukQGj12LV5phZMaVoXe6KJ7hZnN62d3K6m1wGE/k58i4pPLUCgYEA3hN8\n"
-                           "G95zW7g0jVdSr+KUeVmephph9yh8Yb+3I3ojwOIv6d45TopGx8pFZlnBAMZf1ZQx\n"
-                           "DIhzJNnaqZy/4w7RNaOGWnPA/5f+MIoHBiLGEEmfHC3lt087Yp9OuwDUHwpETYdV\n"
-                           "o+KBCvVh60Et3bZUgF/1k/3YXxn8J5dsmJsjNqcCgYBLflyRa1BrRnTGMz9CEDCp\n"
-                           "Si9b3h1Y4Hbd2GppHhCXMTd6yMrpDYhYANGQB3M9Juv+s88j4JhwNoq/uonH4Pqk\n"
-                           "B8Y3qAQr4RuSH0WkwDUOsALhqBX4N1QwI1USAQEDbNAqeP5698X7GD3tXcQSmZrg\n"
-                           "O8WfdjBCRNjkq4EW9xX/vQKBgQDONtmwJ0iHiu2BseyeVo/4fzfKlgUSNQ4K1rOA\n"
-                           "xhIdMeu8Bxa/z7caHsGC4SVPSuYCtbE2Kh6BwapChcPJXCD45fgEViiJLuJiwEj1\n"
-                           "caTpyvNsf1IoffJvCe9ZxtMyX549P8ZOgC3Dt0hN5CBrGLwu2Ox5l+YrqT10pi+5\n"
-                           "JZX1UQKBgQCrcXrdkkDAc/a4+PxNRpJRLcU4fhv8/lr+UWItE8eUe7bd25bTQfQm\n"
-                           "VpNKc/kAJ66PjIED6fy3ADhd2y4naT2a24uAgQ/M494J68qLnGh6K4JU/09uxR2v\n"
-                           "1i2q/4FNLdFFk1XP4iNnTHRLZ+NYr2p5Y9RcvQfTjOauz8Ahav0lyg==\n"
-                           "-----END RSA PRIVATE KEY-----\n";
+/* test server self signed certificate key */
+const char *const srv_key_pem = \
+  "-----BEGIN PRIVATE KEY-----\n"
+  "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5ANrDtfgml4th\n"
+  "E44x1Nkfvqon92gO6qMYvXrXIiznRB/MQrTCOoHoA4DmgqeolKJPLUxvPVYxq0zK\n"
+  "EDF7Mpokob0v2+cUFIAvXrEC5HE+hGvqzzRPxdnhzOp+YZui9oOOecW8ymmNm0KH\n"
+  "VdiRbcrR6N+Ilz+9nFzw7YHx5TNI8fcjQIC2dztRCFKgLTz4pj/iNt1rZGBSRJxJ\n"
+  "A/Z4q2Aou6CS2mmWW/p/EAlT21fdocoRpRWGcsZ4O3HXQaueRBT/0+r7+nI54Qy0\n"
+  "VXqfFM+hbyR9T5lAh5habLLkjrxFhsKwwCtmuOmJBvDAp8AQ6shNp4x3EhMjDguX\n"
+  "IFnj3UrVAgMBAAECggEABJibrBK4bFuwd+7F8MFSduzu35j7FKp0odfh641Vo0CN\n"
+  "2lkVPOFk5SWNIsI/4GV3lihQcU+19VGa/JwkC+T+b7GK+IY/OpWlzPIjy1LEk3fe\n"
+  "Zyd9q7ZadYx4jj+Q38loYaDvLi5d1UmfAKtmes/I+FJk7J5L/u3EYKyYjAYUh5fc\n"
+  "ekk15daoPbAxktw5oszaNKXqCOFOyF5ma0k4rMbUtvCZsKFeXvn8HAAacEwVQkkG\n"
+  "qw4OmQ5QNVae8Vq8aSdmsc5DMQcv1SsX+7gliB94j7ezaYzoWpS3xenlM8jKIjqK\n"
+  "eYQuuKZBtNGoIe6c8IIUG4itJ5h7ccKU0Mk9i4k1MQKBgQDn7xYg5kdmFSVDyyuK\n"
+  "DxI1qrJJzELyiFMuWJZyHaRNz5kC6k730q7UgVrj3tU4RVIFRXZG4WeEX/fpA+4A\n"
+  "8A84PHICX36AxxWvtyy3pxtfymxSTLVtM4hPIfRdkmEH9BsTF5MnaOBreAvNt5Ny\n"
+  "Z8HHUr/2qAfB5Rza46xmhp97+QKBgQDMMyPfZjrhDPalAaPHjujdnYQ1DXrXlAlB\n"
+  "29WjEYwDQ4TJb/v/AmHY0ZIRIy5kZ5p8zHz0JyrfaGaAJ8jk2PNmJsk8myqzyKeY\n"
+  "Zk0EOuBNnL3UAswib2nIAe+7mTJAMwVtSjHGGEOdygMjGaDxAX7cTRekcOOhyQk8\n"
+  "HwReXp3kvQKBgQCEhFmLYKdozyokiwAMeMH5wdbuTXPu6S9Fqr4C46bOApA1VzTZ\n"
+  "ahoUNvh8fAQti4Xqlx6WLxGbU83s6B7jkEXR5s9pRbCc2aMta6Z0JFmCqMCtYUDD\n"
+  "7Q6zz/20PP+NsM6LYQvmF4kqPkPYPUxUsK3KOiCOSMFt6n9LHYySY9bZ2QKBgExc\n"
+  "o4GbfVFDw8iZAGJUMwkNKq+cRt/vYDbcutusaCugSDv8QMRwY57tYC5AdczeYYth\n"
+  "/ShgrUu2gv5R4nKSHxOIVaDwddudoe7/8rUuP0tG3kY2dZg7CdfdwYTqGTyg19qy\n"
+  "8EIgOMj9DodFwkXeRU6lFb5M6RNLVsTA5KVVxL4RAoGBAMFZur7l2yDI8iE6NknL\n"
+  "iMCy0A0jeRQB//pH/Liub5v8Jb/BjY+qmtZpIdvmrtkKzIeLOwPSmHdLIcKoXw18\n"
+  "iteAD6kLML5zZ9AmUJnNZZzyZbsvgvurKCy37Az+h7V8V+vVgUjDbpq0cKf85fUK\n"
+  "a9gIEXT253igdJ/fxHKv+kbH\n"
+  "-----END PRIVATE KEY-----\n";
+
 
 #endif

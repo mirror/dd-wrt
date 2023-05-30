@@ -45,7 +45,7 @@
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #endif /* HAVE_STDDEF_H */
-#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
+#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #  include <stdint.h>
 #  define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
@@ -712,10 +712,10 @@ const char *MHD_W32_strerror_winsock_ (int err);
 #    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
                                          (errno = EOPNOTSUPP) : (errno = \
                                                                    (err)) )
-#  elif defined (EFAULT)
+#  elif defined(EFAULT)
 #    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
                                          (errno = EFAULT) : (errno = (err)) )
-#  elif defined (EINVAL)
+#  elif defined(EINVAL)
 #    define MHD_socket_set_error_(err) ( (MHD_SCKT_MISSING_ERR_CODE_ == (err)) ? \
                                          (errno = EINVAL) : (errno = (err)) )
 #  else  /* !EOPNOTSUPP && !EFAULT && !EINVAL */

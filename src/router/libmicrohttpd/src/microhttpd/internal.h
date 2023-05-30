@@ -726,7 +726,7 @@ enum MHD_TLS_CONN_STATE
 /**
  * Should all state transitions be printed to stderr?
  */
-#define DEBUG_STATES MHD_NO
+#define DEBUG_STATES _MHD_MACRO_NO
 
 
 #ifdef HAVE_MESSAGES
@@ -2395,6 +2395,15 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
   MHD_check_response_header_token_ci ((r),(k),MHD_STATICSTR_LEN_ (k), \
                                       (tkn),MHD_STATICSTR_LEN_ (tkn))
 
+/**
+ * Trace up to and return master daemon. If the supplied daemon
+ * is a master, then return the daemon itself.
+ *
+ * @param daemon handle to a daemon
+ * @return master daemon handle
+ */
+struct MHD_Daemon *
+MHD_get_master (struct MHD_Daemon *daemon);
 
 /**
  * Internal version of #MHD_suspend_connection().
@@ -2407,5 +2416,20 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
  */
 void
 internal_suspend_connection_ (struct MHD_Connection *connection);
+
+
+#ifdef UPGRADE_SUPPORT
+/**
+ * Mark upgraded connection as closed by application.
+ *
+ * The @a connection pointer must not be used after call of this function
+ * as it may be freed in other thread immediately.
+ * @param connection the upgraded connection to mark as closed by application
+ */
+void
+MHD_upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection);
+
+#endif /* UPGRADE_SUPPORT */
+
 
 #endif

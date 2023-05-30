@@ -45,17 +45,17 @@
 #include "mhd_compat.h"
 #include "mhd_send.h"
 
-#if HAVE_SEARCH_H
+#ifdef MHD_USE_SYS_TSEARCH
 #include <search.h>
-#else
+#else  /* ! MHD_USE_SYS_TSEARCH */
 #include "tsearch.h"
-#endif
+#endif /* ! MHD_USE_SYS_TSEARCH */
 
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #endif /* HTTPS_SUPPORT */
 
 #if defined(_WIN32) && ! defined(__CYGWIN__)
@@ -257,7 +257,7 @@ MHD_free (void *ptr)
  * @param daemon handle to a daemon
  * @return master daemon handle
  */
-static struct MHD_Daemon *
+struct MHD_Daemon *
 MHD_get_master (struct MHD_Daemon *daemon)
 {
   while (NULL != daemon->master)
@@ -1208,6 +1208,7 @@ call_handlers (struct MHD_Connection *con,
   bool states_info_processed = false;
   /* Fast track flag */
   bool on_fasttrack = (con->state == MHD_CONNECTION_INIT);
+  ret = MHD_YES;
 
 #ifdef HTTPS_SUPPORT
   if (con->tls_read_ready)
@@ -1947,7 +1948,6 @@ thread_main_handle_connection (void *data)
   while ( (! daemon->shutdown) &&
           (MHD_CONNECTION_CLOSED != con->state) )
   {
-    uint64_t timeout = con->connection_timeout_ms;
 #ifdef UPGRADE_SUPPORT
     struct MHD_UpgradeResponseHandle *const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
@@ -2041,7 +2041,7 @@ thread_main_handle_connection (void *data)
       tvp = &tv;
     }
     if ( (NULL == tvp) &&
-         (timeout > 0) )
+         (con->connection_timeout_ms > 0) )
     {
       const uint64_t mseconds_left = connection_get_wait (con);
 #if (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC
@@ -2691,8 +2691,11 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     free (connection->addr);
     free (connection);
     MHD_PANIC (_ ("TLS connection on non-TLS daemon.\n"));
+#if 0
+    /* Unreachable code */
     eno = EINVAL;
     return NULL;
+#endif
 #endif /* ! HTTPS_SUPPORT */
   }
 
@@ -2998,7 +3001,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
 
-  if ( (0 == (daemon->options & MHD_USE_EPOLL)) &&
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (! non_blck) )
   {
 #ifdef HAVE_MESSAGES
@@ -3268,6 +3271,44 @@ MHD_resume_connection (struct MHD_Connection *connection)
   }
 }
 
+
+#ifdef UPGRADE_SUPPORT
+/**
+ * Mark upgraded connection as closed by application.
+ *
+ * The @a connection pointer must not be used after call of this function
+ * as it may be freed in other thread immediately.
+ * @param connection the upgraded connection to mark as closed by application
+ */
+void
+MHD_upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection)
+{
+  /* Cache 'daemon' here to avoid data races */
+  struct MHD_Daemon *const daemon = connection->daemon;
+#if defined(MHD_USE_THREADS)
+  mhd_assert (NULL == daemon->worker_pool);
+#endif /* MHD_USE_THREADS */
+  mhd_assert (NULL != connection->urh);
+  mhd_assert (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME));
+
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  connection->urh->was_closed = true;
+  connection->resuming = true;
+  daemon->resuming = true;
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
+       (! MHD_itc_activate_ (daemon->itc, "r")) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to signal resume via " \
+                 "inter-thread communication channel.\n"));
+#endif
+  }
+}
+
+
+#endif /* UPGRADE_SUPPORT */
 
 /**
  * Run through the suspended connections and move any that are no
@@ -3972,6 +4013,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 }
 
 
+#if defined(HAVE_POLL) || defined(EPOLL_SUPPORT)
 /**
  * Obtain timeout value for polling function for this daemon.
  * @remark To be called only from the thread that processes
@@ -3991,15 +4033,17 @@ get_timeout_millisec_ (struct MHD_Daemon *daemon,
     return 0;
 
   if (MHD_NO == MHD_get_timeout (daemon, &ulltimeout))
-    return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
+    return (INT_MAX <= max_timeout) ? INT_MAX : (int) max_timeout;
 
   if ( (0 > max_timeout) ||
        ((uint32_t) max_timeout > ulltimeout) )
-    return (INT_MAX < ulltimeout) ? INT_MAX : (int) ulltimeout;
+    return (INT_MAX <= ulltimeout) ? INT_MAX : (int) ulltimeout;
 
-  return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
+  return (INT_MAX <= max_timeout) ? INT_MAX : (int) max_timeout;
 }
 
+
+#endif /* HAVE_POLL || EPOLL_SUPPORT */
 
 /**
  * Internal version of #MHD_run_from_select().
@@ -4248,6 +4292,9 @@ MHD_select (struct MHD_Daemon *daemon,
                               &maxsock,
                               FD_SETSIZE)) )
   {
+    bool retry_succeed;
+
+    retry_succeed = false;
 #if defined(MHD_WINSOCK_SOCKETS)
     /* fdset limit reached, new connections
        cannot be handled. Remove listen socket FD
@@ -4257,24 +4304,23 @@ MHD_select (struct MHD_Daemon *daemon,
     {
       FD_CLR (ls,
               &rs);
-      if (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
-                                &rs,
-                                &maxsock,
-                                FD_SETSIZE))
-      {
+      if (MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
+                              &rs,
+                              &maxsock,
+                              FD_SETSIZE))
+        retry_succeed = true;
+    }
 #endif /* MHD_WINSOCK_SOCKETS */
+
+    if (! retry_succeed)
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Could not add control inter-thread communication channel FD to fdset.\n"));
+      MHD_DLOG (daemon,
+                _ ("Could not add control inter-thread communication " \
+                   "channel FD to fdset.\n"));
 #endif
-    err_state = MHD_YES;
-#if defined(MHD_WINSOCK_SOCKETS)
-  }
-}
-
-
-#endif /* MHD_WINSOCK_SOCKETS */
+      err_state = MHD_YES;
+    }
   }
   /* Stop listening if we are at the configured connection limit */
   /* If we're at the connection limit, no point in really
@@ -5635,7 +5681,6 @@ parse_options_va (struct MHD_Daemon *daemon,
   unsigned int i;
   unsigned int uv;
 #ifdef HTTPS_SUPPORT
-  enum MHD_Result ret;
   const char *pstr;
 #if GNUTLS_VERSION_MAJOR >= 3
   gnutls_certificate_retrieve_function2 *pgcrf;
@@ -5885,17 +5930,18 @@ parse_options_va (struct MHD_Daemon *daemon,
                      const char *);
       if (0 != (daemon->options & MHD_USE_TLS))
       {
+        int init_res;
         gnutls_priority_deinit (daemon->priority_cache);
-        ret = gnutls_priority_init (&daemon->priority_cache,
-                                    pstr,
-                                    NULL);
-        if (GNUTLS_E_SUCCESS != ret)
+        init_res = gnutls_priority_init (&daemon->priority_cache,
+                                         pstr,
+                                         NULL);
+        if (GNUTLS_E_SUCCESS != init_res)
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     _ ("Setting priorities to `%s' failed: %s\n"),
                     pstr,
-                    gnutls_strerror (ret));
+                    gnutls_strerror (init_res));
 #endif
           daemon->priority_cache = NULL;
           return MHD_NO;
@@ -6590,8 +6636,9 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif
 
-  if ( (NULL != daemon->notify_completed) &&
-       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+       && ((NULL != daemon->notify_completed)
+           || (NULL != daemon->notify_connection)) )
     *pflags |= MHD_USE_ITC; /* requires ITC */
 
 #ifndef NDEBUG
@@ -6956,7 +7003,7 @@ MHD_start_daemon_va (unsigned int flags,
     listen_fd = daemon->listen_fd;
   }
 
-#ifdef HAVE_GETSOCKNAME
+#ifdef MHD_USE_GETSOCKNAME
   if ( (0 == daemon->port) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
   {   /* Get port number. */
@@ -7034,7 +7081,7 @@ MHD_start_daemon_va (unsigned int flags,
       }
     }
   }
-#endif /* HAVE_GETSOCKNAME */
+#endif /* MHD_USE_GETSOCKNAME */
 
   if (MHD_INVALID_SOCKET != listen_fd)
   {
@@ -7235,6 +7282,10 @@ MHD_start_daemon_va (unsigned int flags,
         d->master = daemon;
         d->worker_pool_size = 0;
         d->worker_pool = NULL;
+#if defined(DAUTH_SUPPORT) && defined(MHD_USE_THREADS)
+        /* Avoid accidental re-use of the mutex copies */
+        memset (&d->nnc_lock, -1, sizeof(d->nnc_lock));
+#endif /* DAUTH_SUPPORT && MHD_USE_THREADS */
         if (! MHD_mutex_init_ (&d->new_connections_mutex))
         {
   #ifdef HAVE_MESSAGES
@@ -7759,7 +7810,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     mhd_assert (NULL == daemon->cleanup_head);
     mhd_assert (NULL == daemon->suspended_connections_head);
     mhd_assert (NULL == daemon->new_connections_head);
-#if defined(UPGRADE_SUPPORT) && defined (HTTPS_SUPPORT)
+#if defined(UPGRADE_SUPPORT) && defined(HTTPS_SUPPORT)
     mhd_assert (NULL == daemon->urh_head);
 #endif /* UPGRADE_SUPPORT && HTTPS_SUPPORT */
 
@@ -7924,14 +7975,29 @@ MHD_get_version (void)
     int res = MHD_snprintf_ (ver,
                              sizeof(ver),
                              "%x.%x.%x",
-                             (((int) MHD_VERSION >> 24) & 0xFF),
-                             (((int) MHD_VERSION >> 16) & 0xFF),
-                             (((int) MHD_VERSION >> 8) & 0xFF));
+                             (int) (((uint32_t) MHD_VERSION >> 24) & 0xFF),
+                             (int) (((uint32_t) MHD_VERSION >> 16) & 0xFF),
+                             (int) (((uint32_t) MHD_VERSION >> 8) & 0xFF));
     if ((0 >= res) || (sizeof(ver) <= res))
-      return "0.0.0"; /* Can't return real version*/
+      return "0.0.0"; /* Can't return real version */
   }
   return ver;
 #endif /* !PACKAGE_VERSION */
+}
+
+
+/**
+ * Obtain the version of this library as a binary value.
+ *
+ * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
+ *         compiled MHD binary)
+ * @note Available since #MHD_VERSION 0x00097602
+ * @ingroup specialized
+ */
+_MHD_EXTERN uint32_t
+MHD_get_version_bin (void)
+{
+  return (uint32_t) MHD_VERSION;
 }
 
 
@@ -8100,7 +8166,7 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 }
 
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #if defined(HTTPS_SUPPORT) && GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -8156,7 +8222,7 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 
 #endif /* defined(MHD_W32_MUTEX_) */
 #endif /* HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600 */
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 
 /**
  * Initialize do setup work.
@@ -8179,7 +8245,7 @@ MHD_init (void)
     MHD_PANIC (_ ("Winsock version 2.2 is not available.\n"));
 #endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HTTPS_SUPPORT
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #if GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
@@ -8196,7 +8262,7 @@ MHD_init (void)
     MHD_PANIC (_ (
                  "libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer.\n"));
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   gnutls_global_init ();
 #endif /* HTTPS_SUPPORT */
   MHD_monotonic_sec_counter_init ();

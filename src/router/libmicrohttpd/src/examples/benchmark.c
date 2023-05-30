@@ -175,6 +175,6 @@ main (int argc, char *const *argv)
   MHD_destroy_response (response);
   for (i = 0; i < SMALL; i++)
     if (0 != small_deltas[i])
-      fprintf (stdout, "D: %d %u\n", i, small_deltas[i]);
+      fprintf (stdout, "D: %u %u\n", i, small_deltas[i]);
   return 0;
 }

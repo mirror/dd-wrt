@@ -55,9 +55,9 @@
 #include "mhd_limits.h"
 
 #ifdef MHD_VECT_SEND
-#if (! defined (HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
-  defined (MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
-  defined (MHD_SEND_SPIPE_SUPPRESS_NEEDED)
+#if (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
+  defined(MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
+  defined(MHD_SEND_SPIPE_SUPPRESS_NEEDED)
 #define _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED 1
 #endif /* (!HAVE_SENDMSG || !MSG_NOSIGNAL) &&
           MHD_SEND_SPIPE_SUPPRESS_POSSIBLE && MHD_SEND_SPIPE_SUPPRESS_NEEDED */
@@ -818,8 +818,9 @@ MHD_send_data_ (struct MHD_Connection *connection,
      * sent amount smaller than provided amount, as TLS
      * connections may break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
-#endif /* HTTPS_SUPPORT  */
-    (void) 0; /* Mute compiler warning for non-TLS builds. */
+#else  /* ! HTTPS_SUPPORT  */
+    ret = MHD_ERR_NOTCONN_;
+#endif /* ! HTTPS_SUPPORT  */
   }
   else
   {
@@ -1065,7 +1066,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   msg.msg_iovlen = 2;
 
   ret = sendmsg (s, &msg, MSG_NOSIGNAL_OR_ZERO);
-#elif defined (HAVE_WRITEV)
+#elif defined(HAVE_WRITEV)
   ret = writev (s, vector, 2);
 #endif /* HAVE_WRITEV */
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */

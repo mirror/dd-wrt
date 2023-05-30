@@ -1,6 +1,134 @@
+Sun 28 May 2023 18:00:00 MSK
+    Releasing GNU libmicrohttpd 0.9.77 -EG
+
+May 2023
+    Improved portability of boostrap (and autogen.sh)
+    Muted more compiler warnings in configure.
+    Tests: updated to support new libcurl APIs and fixed deprecation
+    warnings with new versions (the old versions are supported still).
+    Tests: minor and cosmetic fixes and improvements.
+    Tests: compiler warnings fixes.
+    configure: bump gettext version.
+    Tests: fixed build with C89 compilers.
+    Tests: fixed tests on Darwin 22.x (Ventura).
+    Tests: redesigned one tests group to avoid stress-testing of the OS.
+    Digest auth: fixed thread sync to avoid "stale hash" results.
+    configure: improved portability for exotic platforms.
+    examples: removed non-portable functions, added some checking,
+    fixed compiler warnings, fixed erroneously commented out code.
+    configure: fixed detection of __FUNCTION__ magic macro.
+    Unified function name magic macros usage in code.
+    HTTPS tests: removed enforcement of the cipher and TLS version. Relay
+    on automatic selection by TLS library.
+    HTTPS tests: changed certificate hash algorithm from SHA-1 to SHA-256
+    as SHA-1 is already blocked by some libs/OSes.
+    W32 VS projects: supported ARM and ARM64.
+    Fixed compiler warning on x32.
+    Basic Auth switched to internal Base64 implementation for better
+    checking of input data validity.
+    Removed public domain Base64 implementation.
+    Some minor fixes for W32 VS compilation. -EG
+
+April 2023
+    Fixed processing of folded headers.
+    Updated internal libtool and autoconf patches to be compatible with
+    the latest compiler versions.
+    Created internal helper script for better preparation of 'make dist'.
+    Updated po/POTFILES.in
+    autoinit_funcs.h: general minor improvements, updated the technic
+    for VC compilers, added support for ARM and ARM64 with VC compilers. -EG
+
+March 2023
+    configure: added check for enablement of eventFD on the system.
+    Built-in tsearch replacement: updated to the latest fixed version.
+    configure: added custom check for system tsearch with detection of
+    known bugs. Added known bad tsearch implementation for cross-compiling.
+    Fixed Makefiles to work with 'make' without nested variables support.
+    configure: fixed compiler warnings in checks.
+    configure: added more cache variables, cosmetics.
+    configure: fixed checking for required system libraries, added required
+    system libraries to .pc file.
+    configure: improved compatibility with POSIX, added check for more
+    system libraries names as required by POSIX.
+    libmicrohttpd.h: fixed typo in doxy.
+    Fixed every inefficient data pumping for upgraded TLS connections.
+    Fixed initialisation of old GnuTLS versions.
+    Fixed HTTPS tests for LTO.
+    Disabled some broken HTTPS tests. -EG
+
+February 2023
+    Added assert for connection suspend API violation and clarified
+    related documentation. -CG
+
+December 2022
+    configure: improved detection of some functions when cross-compiling. -EG
+
+November 2022
+    Added new tests for folded headers.
+    Fixed checking of libcurl-provided values of response headers as
+    null-terminated strings.
+    Tests: added "Host:" requested header in upgrade tests as required by
+    HTTP/1.1.
+    Added new function MHD_get_version_bin().
+    Fixed missing includes in iovec test. -EG
+
+October 2022
+    Fixed delayed call of connection notification callback in
+    thread-per-connection mode.
+    Added handling of "DEBUG" preprocessor macro as an alias of "_DEBUG".
+    Fuzzing tests: fixed CPPFLAGS. -EG
+
+September 2022
+    configure: minor improvements.
+    Fixed harmless unwanted extra data processing resulting in triggering of
+    the assert.
+    Fixed compiler warnings for compact code version. -EG
+
+June 2022
+    Fixed compiler warnings in main code and examples.
+    Fixed data races when closing upgraded connection.
+    Removed duplication of "Connection: upgrade" header. Patch by Alexander
+    Irion.
+    Implemented Base64 decoding with thorough checks for the input data
+    validity.
+    Added new test for Base64 decoding. -EG
+
+May 2022
+    Fixed compiler warnings.
+    Fixed MHD functionality with blocking sockets. Patch by Kolja Nowak.
+    Fixed possible use of uninitialised variable.
+    Added new test for Basic Auth. -EG
+
+April 2022
+    Fixed compiler warnings.
+    Updated TLS certificates for tests and examples. New certificates
+    were generated with SAN fields to match actual requirements.
+    Fixed printf() format specifications in examples.
+    Changed: any negative number returned by response data generation 
+    callback function is treated as an error.
+    Fixed setting custom connection timeout value for thread-per-connection
+    mode. -EG
+
+March 2022
+    Fixed Address Sanitizer unpoison of memory when memory pool is destroyed.
+    Blocked MHD_SIZE_UNKNOWN value for buffer-based responses.
+    Improved autoconf macros. -EG
+
+January 2022
+    Tuned automake options.
+    Fixed compiler warning in examples.
+    Fixed use of initialised variable in tests.
+    Digest Auth: changed "md5" / "sha-256" to "MD5" / "SHA-256" to better
+    match RFC (while clients should use caseless matching).
+    Minor autoconf macros fixes. -EG
+
+December 2021
+    configure: fixed unwanted output on Fedora.
+    configure: clarified licence message. -EG
+
 Sun Feb 26 05:49:30 PM CET 2023
     Fix potential DoS vector in MHD_PostProcessor discovered
-    by Gynvael Coldwind and Dejan Alvadzijevic. -CG
+    by Gynvael Coldwind and Dejan Alvadzijevic (CVE-2023-27371). -CG
     Releasing GNU libmicrohttpd 0.9.76 hotfix. -CG
 
 Sun 26 Dec 2021 20:30:00 MSK

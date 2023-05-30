@@ -1,13 +1,22 @@
 # This Makefile.am is in the public domain
 SUBDIRS  = .
 
+AM_CPPFLAGS = \
+  -I$(top_srcdir)/src/include \
+  -DMHD_CPU_COUNT=$(CPU_COUNT) \
+  $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
+
 if USE_COVERAGE
-  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+  AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
 
-
-AM_CPPFLAGS = -I$(top_srcdir)/src/include \
-  $(LIBCURL_CPPFLAGS)
+LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
 
 EXTRA_DIST = README socat.c
 
@@ -45,80 +54,41 @@ TESTS = $(check_PROGRAMS)
 
 test_get_SOURCES = \
   test_get.c
-test_get_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_get_chunked_SOURCES = \
   test_get_chunked.c
-test_get_chunked_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_post_SOURCES = \
   test_post.c
-test_post_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_post_form_SOURCES = \
   test_post_form.c
-test_post_form_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_put_SOURCES = \
   test_put.c
-test_put_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_put_chunked_SOURCES = \
   test_put_chunked.c
-test_put_chunked_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_put_large_SOURCES = \
   test_put_large.c
-test_put_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 
 
 test_get11_SOURCES = \
   test_get.c
-test_get11_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_post11_SOURCES = \
   test_post.c
-test_post11_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_post_form11_SOURCES = \
   test_post_form.c
-test_post_form11_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_put11_SOURCES = \
   test_put.c
-test_put11_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_put_large11_SOURCES = \
   test_put_large.c
-test_put_large11_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@
 
 test_long_header_SOURCES = \
   test_long_header.c
-test_long_header_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  @LIBCURL@

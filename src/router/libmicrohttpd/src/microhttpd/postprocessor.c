@@ -485,7 +485,7 @@ process_value (struct MHD_PostProcessor *pp,
  * @param post_data_len number of bytes in @a post_data
  * @return #MHD_YES on success, #MHD_NO if there was an error processing the data
  */
-static int
+static enum MHD_Result
 post_process_urlencoded (struct MHD_PostProcessor *pp,
                          const char *post_data,
                          size_t post_data_len)
@@ -1154,7 +1154,7 @@ free_unmarked (struct MHD_PostProcessor *pp)
  * @param post_data_len number of bytes in @a post_data
  * @return #MHD_NO on error,
  */
-static int
+static enum MHD_Result
 post_process_multipart (struct MHD_PostProcessor *pp,
                         const char *post_data,
                         size_t post_data_len)

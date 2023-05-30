@@ -135,7 +135,7 @@ start_socket_listen (int domain)
 #if defined(MHD_POSIX_SOCKETS) && defined(SOCK_CLOEXEC)
   fd = socket (domain, SOCK_STREAM | SOCK_CLOEXEC, 0);
   cloexec_set = 1;
-#elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
+#elif defined(MHD_WINSOCK_SOCKETS) && defined(WSA_FLAG_NO_HANDLE_INHERIT)
   fd = WSASocketW (domain, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT);
   cloexec_set = 1;
 #else  /* !SOCK_CLOEXEC */

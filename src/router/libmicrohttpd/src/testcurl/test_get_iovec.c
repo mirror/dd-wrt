@@ -32,7 +32,7 @@
  * daemon using MHD_create_response_from_iovec instead of working from an fd.
  */
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
@@ -41,6 +41,9 @@
 #include <time.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
 #include "mhd_sockets.h"
 #include "mhd_has_in_name.h"
 

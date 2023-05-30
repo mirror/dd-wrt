@@ -31,16 +31,22 @@ if HAVE_POSIX_THREADS
 endif
 
 THREAD_ONLY_TESTS = \
-  test_tls_options \
   test_tls_authentication \
   $(HTTPS_PARALLEL_TESTS) \
   $(TEST_HTTPS_SNI) \
-  test_https_session_info \
   test_https_multi_daemon \
   test_https_get \
   test_empty_response \
   test_https_get_iovec \
   $(EMPTY_ITEM)
+
+# The next tests are badly broken and fixed in next MHD version only
+if USE_BROKEN_TLS_TESTS
+THREAD_ONLY_TESTS += \
+  test_tls_options \
+  test_https_session_info \
+  $(EMPTY_ITEM)
+endif
 
 if !HAVE_GNUTLS_MTHREAD_BROKEN
 THREAD_ONLY_TESTS += \
@@ -58,8 +64,8 @@ endif
 
 EXTRA_DIST = \
   test-ca.crt test-ca.key \
-  host1.crt host1.key \
-  host2.crt host2.key
+  mhdhost1.crt mhdhost1.key \
+  mhdhost2.crt mhdhost2.key
 
 TESTS = \
   $(check_PROGRAMS)

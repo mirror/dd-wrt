@@ -966,7 +966,7 @@ file_reader (void *cls,
     pos_uli.QuadPart = (uint64_t) offset64;   /* Simple transformation 64bit -> 2x32bit. */
     f_ol.Offset = pos_uli.LowPart;
     f_ol.OffsetHigh = pos_uli.HighPart;
-    if (! ReadFile (fh, (void*) buf, toRead, &resRead, &f_ol))
+    if (! ReadFile (fh, (void *) buf, toRead, &resRead, &f_ol))
       return MHD_CONTENT_READER_END_WITH_ERROR;   /* Read error. */
     if (0 == resRead)
       return MHD_CONTENT_READER_END_OF_STREAM;
@@ -1248,6 +1248,10 @@ MHD_create_response_from_data (size_t size,
 
   if ((NULL == data) && (size > 0))
     return NULL;
+#if SIZEOF_SIZE_T >= SIZEOF_UINT64_T
+  if (MHD_SIZE_UNKNOWN == size)
+    return NULL;
+#endif /* SIZEOF_SIZE_T >= SIZEOF_UINT64_T */
   if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response))))
     return NULL;
   response->fd = -1;
@@ -1585,11 +1589,12 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     }
 #endif /* HTTPS_SUPPORT */
     mhd_assert (MHD_CONNECTION_UPGRADE == connection->state);
-    urh->was_closed = true;
-    /* As soon as connection will be marked with BOTH
+    /* The next function will mark the connection as closed by application
+     * by setting 'urh->was_closed'.
+     * As soon as connection will be marked with BOTH
      * 'urh->was_closed' AND 'urh->clean_ready', it will
      * be moved to cleanup list by MHD_resume_connection(). */
-    MHD_resume_connection (connection);
+    MHD_upgraded_connection_mark_app_closed_ (connection);
     return MHD_YES;
   case MHD_UPGRADE_ACTION_CORK_ON:
     /* Unportable API. TODO: replace with portable action. */
@@ -1735,13 +1740,26 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       free (urh);
       return MHD_NO;
     }
+    pool = connection->pool;
+    if (0 != connection->write_buffer_size)
+    {
+      mhd_assert (NULL != connection->write_buffer);
+      /* All data should be sent already */
+      mhd_assert (connection->write_buffer_send_offset == \
+                  connection->write_buffer_append_offset);
+      (void) MHD_pool_reallocate (pool, connection->write_buffer,
+                                  connection->write_buffer_size, 0);
+      connection->write_buffer_append_offset = 0;
+      connection->write_buffer_send_offset = 0;
+      connection->write_buffer_size = 0;
+    }
+    connection->write_buffer = NULL;
     urh->app.socket = sv[0];
     urh->app.urh = urh;
     urh->app.celi = MHD_EPOLL_STATE_UNREADY;
     urh->mhd.socket = sv[1];
     urh->mhd.urh = urh;
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
-    pool = connection->pool;
     avail = MHD_pool_get_free (pool);
     if (avail < RESERVE_EBUF_SIZE)
     {

@@ -11,24 +11,37 @@
 #
 # LICENSE
 #
-#   Copyright (c) 2017 Karlson2k (Evgeny Grin) <k2k@narod.ru>
+#   Copyright (c) 2017-2023 Karlson2k (Evgeny Grin) <k2k@narod.ru>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 3
+#serial 4
 
 AC_DEFUN([MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
   AC_PREREQ([2.64])dnl
   AC_REQUIRE([AC_CANONICAL_HOST])dnl
   AC_REQUIRE([AC_PROG_CC])dnl
   AC_REQUIRE([AX_PTHREAD])dnl
-  AC_CHECK_HEADERS([sys/time.h],[AC_CHECK_FUNCS([gettimeofday])],[], [AC_INCLUDES_DEFAULT])
-  dnl AC_CHECK_HEADERS([time.h],[AC_CHECK_FUNCS([nanosleep])],[], [AC_INCLUDES_DEFAULT])
+  AC_CHECK_HEADERS([sys/time.h time.h])dnl
+  MHD_CHECK_FUNC([[gettimeofday]],
+    [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif /* HAVE_TIME_H */
+    ]],
+    [[
+  struct timeval tv;
+  if (0 != gettimeofday (&tv, (void*) 0))
+    return 1;
+    ]]
+  )
   MHD_CHECK_FUNC([[usleep]], [[#include <unistd.h>]], [[usleep(100000);]])
-  dnl AC_CHECK_HEADERS([unistd.h],[AC_CHECK_FUNCS([usleep])],[], [AC_INCLUDES_DEFAULT])
   MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 = {0, 0}; nanosleep(&ts1, &ts2);]])
   AC_CHECK_HEADERS([string.h sys/types.h sys/socket.h netinet/in.h time.h sys/select.h netinet/tcp.h],[],[], [AC_INCLUDES_DEFAULT])
   AC_CACHE_CHECK([[whether shutdown of listen socket triggers select()]],
@@ -123,7 +136,7 @@ AC_DEFUN([_MHD_RUN_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
 
 #include <pthread.h>
 
-   #ifndef SHUT_RD
+#ifndef SHUT_RD
 #  define SHUT_RD 0
 #endif
 #ifndef SHUT_WR

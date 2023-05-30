@@ -29,13 +29,10 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include <curl/curl.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
-
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
 
 struct MHD_Daemon *d;
 
@@ -203,12 +200,12 @@ main (int argc, char *const *argv)
   const char *ssl_version;
   (void) argc;   /* Unused. Silent compiler warning. */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (! testsuite_curl_global_init ())
     return 99;
 

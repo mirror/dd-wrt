@@ -21,119 +21,105 @@
 
 typedef struct node
 {
-  const void   *key;
-  struct node  *llink;
-  struct node  *rlink;
+  const void *key;
+  struct node  *llink, *rlink;
 } node_t;
 
 
-/*	$NetBSD: tsearch.c,v 1.5 2005/11/29 03:12:00 christos Exp $	*/
+/*  $NetBSD: tsearch.c,v 1.7 2012/06/25 22:32:45 abs Exp $  */
 /* find or insert datum into search tree */
 void *
-tsearch (const void *vkey,  /* key to be located */
-         void **vrootp,     /* address of tree root */
+tsearch (const void *vkey, void **vrootp,
          int (*compar)(const void *, const void *))
 {
   node_t *q;
   node_t **rootp = (node_t **) vrootp;
 
-  if (NULL == rootp)
+  if (rootp == NULL)
     return NULL;
 
-  while (*rootp != NULL)
-  {   /* Knuth's T1: */
+  while (*rootp != NULL)        /* Knuth's T1: */
+  {
     int r;
 
     if ((r = (*compar)(vkey, (*rootp)->key)) == 0) /* T2: */
       return *rootp;                               /* we found it! */
 
     rootp = (r < 0) ?
-            &(*rootp)->llink : /* T3: follow left branch */
-            &(*rootp)->rlink; /* T4: follow right branch */
+            &(*rootp)->llink :      /* T3: follow left branch */
+            &(*rootp)->rlink;       /* T4: follow right branch */
   }
 
   q = malloc (sizeof(node_t)); /* T5: key not found */
-  if (q)
-  {                            /* make new node */
+  if (q != NULL)               /* make new node */
+  {
     *rootp = q;                /* link new node to old */
-    q->key = vkey;             /* initialize new node */
+    q->key = vkey; /* initialize new node */
     q->llink = q->rlink = NULL;
   }
   return q;
 }
 
 
-/*	$NetBSD: tfind.c,v 1.5 2005/03/23 08:16:53 kleink Exp $	*/
-/* find a node, or return NULL */
+/*  $NetBSD: tfind.c,v 1.7 2012/06/25 22:32:45 abs Exp $    */
+/* find a node by key "vkey" in tree "vrootp", or return 0 */
 void *
-tfind (const void *vkey,         /* key to be found */
-       void *const *vrootp,      /* address of the tree root */
+tfind (const void *vkey, void * const *vrootp,
        int (*compar)(const void *, const void *))
 {
-  node_t *const *rootp = (node_t *const*) vrootp;
+  node_t * const *rootp = (node_t * const *) vrootp;
 
-  if (NULL == rootp)
+  if (rootp == NULL)
     return NULL;
 
-  while (*rootp != NULL)
-  {     /* T1: */
+  while (*rootp != NULL)            /* T1: */
+  {
     int r;
 
     if ((r = (*compar)(vkey, (*rootp)->key)) == 0) /* T2: */
       return *rootp;                               /* key found */
     rootp = (r < 0) ?
-            &(*rootp)->llink : /* T3: follow left branch */
-            &(*rootp)->rlink; /* T4: follow right branch */
+            &(*rootp)->llink :                     /* T3: follow left branch */
+            &(*rootp)->rlink;                      /* T4: follow right branch */
   }
   return NULL;
 }
 
 
-/*	$NetBSD: tdelete.c,v 1.2 1999/09/16 11:45:37 lukem Exp $	*/
-/*
- * delete node with given key
- *
- * vkey:   key to be deleted
- * vrootp: address of the root of the tree
- * compar: function to carry out node comparisons
- */
+/*  $NetBSD: tdelete.c,v 1.8 2016/01/20 20:47:41 christos Exp $ */
+/* find a node with key "vkey" in tree "vrootp" */
 void *
-tdelete (const void *__restrict vkey,
-         void **__restrict vrootp,
+tdelete (const void *vkey, void **vrootp,
          int (*compar)(const void *, const void *))
 {
   node_t **rootp = (node_t **) vrootp;
-  node_t *p;
-  node_t *q;
-  node_t *r;
+  node_t *p, *q, *r;
   int cmp;
 
-  if ((rootp == NULL) || ((p = *rootp) == NULL))
+  if ((rootp == NULL) || ((p = *rootp) == NULL) )
     return NULL;
 
   while ((cmp = (*compar)(vkey, (*rootp)->key)) != 0)
   {
     p = *rootp;
     rootp = (cmp < 0) ?
-            &(*rootp)->llink : /* follow llink branch */
-            &(*rootp)->rlink; /* follow rlink branch */
+            &(*rootp)->llink :       /* follow llink branch */
+            &(*rootp)->rlink;        /* follow rlink branch */
     if (*rootp == NULL)
       return NULL;                   /* key not found */
   }
   r = (*rootp)->rlink;               /* D1: */
   if ((q = (*rootp)->llink) == NULL) /* Left NULL? */
-  {
     q = r;
-  }
-  else if (r != NULL)
-  {       /* Right link is NULL? */
-    if (r->llink == NULL)
-    {     /* D2: Find successor */
+  else if (r != NULL)                /* Right link is NULL? */
+  {
+    if (r->llink == NULL)            /* D2: Find successor */
+    {
       r->llink = q;
       q = r;
     }
-    else
-    {         /* D3: Find NULL link */
+    else                    /* D3: Find NULL link */
+    {
       for (q = r->llink; q->llink != NULL; q = r->llink)
         r = q;
       r->llink = q->rlink;
@@ -141,8 +127,8 @@ tdelete (const void *__restrict vkey,
       q->rlink = (*rootp)->rlink;
     }
   }
-  free (*rootp);    /* D4: Free node */
-  *rootp = q;       /* link parent to new node */
+  free (*rootp);            /* D4: Free node */
+  *rootp = q;               /* link parent to new node */
   return p;
 }
 

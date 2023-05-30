@@ -526,7 +526,7 @@ MHD_socket_create_listen_ (int pf)
     nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
 #endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
   }
-#elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
+#elif defined(MHD_WINSOCK_SOCKETS) && defined(WSA_FLAG_NO_HANDLE_INHERIT)
   fd = WSASocketW (pf,
                    SOCK_STREAM,
                    0,

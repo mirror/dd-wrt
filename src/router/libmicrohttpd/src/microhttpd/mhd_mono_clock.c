@@ -345,7 +345,7 @@ MHD_monotonic_sec_counter_init (void)
     else
       gettime_start = 0;
   }
-#elif defined (HAVE_GETTIMEOFDAY)
+#elif defined(HAVE_GETTIMEOFDAY)
   if (1)
   {
     struct timeval tv;
@@ -488,7 +488,7 @@ MHD_monotonic_msec_counter (void)
   if (TIME_UTC == timespec_get (&ts, TIME_UTC))
     return (uint64_t) (((uint64_t) (ts.tv_sec - gettime_start)) * 1000
                        + (ts.tv_nsec / 1000000));
-#elif defined (HAVE_GETTIMEOFDAY)
+#elif defined(HAVE_GETTIMEOFDAY)
   if (1)
   {
     struct timeval tv;

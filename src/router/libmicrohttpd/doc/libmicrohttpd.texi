@@ -3037,6 +3037,11 @@ The only safe time to suspend a connection is from the
 response object must not be shared among multiple
 connections).
 
+When suspending from the @code{MHD_AccessHandlerCallback}
+you MUST afterwards return @code{MHD_YES} from the access handler
+callback (as MHD_NO would imply to both close and suspend
+the connection, which is not allowed).
+
 Finally, it is an API violation to call @code{MHD_stop_daemon} while
 having suspended connections (this will at least create memory and
 socket leaks or lead to undefined behavior).  You must explicitly

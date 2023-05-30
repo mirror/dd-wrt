@@ -163,7 +163,8 @@ MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
  * @param n name to set
  * @return non-zero on success, zero otherwise
  */
-#define MHD_set_cur_thread_name_(n) MHD_set_thread_name_ (-1,(n))
+#define MHD_set_cur_thread_name_(n) \
+  MHD_set_thread_name_ ((MHD_thread_ID_) -1,(n))
 #endif /* _MSC_FULL_VER */
 #endif /* MHD_USE_W32_THREADS */
 

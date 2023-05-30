@@ -92,7 +92,7 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset,
         return MHD_NO;
       }
       *dest = tmp_dest;
-      memcpy ((*dest) + ((*dest_size) - have), tmp, have);
+      memcpy (((char *) (*dest)) + ((*dest_size) - have), tmp, have);
     }
     while (0 == strm->avail_out);
   }

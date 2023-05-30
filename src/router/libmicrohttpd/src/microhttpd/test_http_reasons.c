@@ -33,7 +33,7 @@ static const char *const r_unknown = "unknown";
 
 /* Return zero when no error is detected */
 static int
-expect_result (int code, const char *expected)
+expect_result (unsigned int code, const char *expected)
 {
   const char *const reason = MHD_get_reason_phrase_for (code);
   const size_t len = MHD_get_reason_phrase_len_for (code);
@@ -41,7 +41,7 @@ expect_result (int code, const char *expected)
   if (! MHD_str_equal_caseless_ (reason, expected))
   {
     fprintf (stderr,
-             "Incorrect reason returned for code %d:\n  Returned: \"%s\"  \tExpected: \"%s\"\n",
+             "Incorrect reason returned for code %u:\n  Returned: \"%s\"  \tExpected: \"%s\"\n",
              code, reason, expected);
     return 1;
   }
@@ -52,7 +52,7 @@ expect_result (int code, const char *expected)
   if (exp_len != len)
   {
     fprintf (stderr,
-             "Incorrect reason length returned for code %d:\n  Returned: \"%u\"  \tExpected: \"%u\"\n",
+             "Incorrect reason length returned for code %u:\n  Returned: \"%u\"  \tExpected: \"%u\"\n",
              code, (unsigned) len, (unsigned) exp_len);
     return 1;
   }
@@ -61,7 +61,7 @@ expect_result (int code, const char *expected)
 
 
 static int
-expect_absent (int code)
+expect_absent (unsigned int code)
 {
   return expect_result (code, r_unknown);
 }

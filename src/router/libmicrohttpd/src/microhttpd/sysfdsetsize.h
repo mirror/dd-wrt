@@ -30,7 +30,7 @@
  * Get system default value of FD_SETSIZE
  * @return system default value of FD_SETSIZE
  */
-int
+unsigned int
 get_system_fdsetsize_value (void);
 
 #endif /* !SYSFDSETSIZE_H */

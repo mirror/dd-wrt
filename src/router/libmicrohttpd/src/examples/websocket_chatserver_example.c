@@ -2243,9 +2243,6 @@ access_handler (void *cls,
        * See also: https://tools.ietf.org/html/rfc6455#section-4.2.2
        */
       MHD_add_response_header (response,
-                               MHD_HTTP_HEADER_CONNECTION,
-                               "Upgrade");
-      MHD_add_response_header (response,
                                MHD_HTTP_HEADER_UPGRADE,
                                "websocket");
       MHD_add_response_header (response,

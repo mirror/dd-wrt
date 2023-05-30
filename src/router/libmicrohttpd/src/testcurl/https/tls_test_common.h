@@ -48,13 +48,25 @@
 #define MHD_E_FAILED_TO_CONNECT \
   "Error: server connection could not be established\n"
 
+extern const char *const ca_cert_pem;
+
+/* test server key */
+extern const char *const srv_signed_key_pem;
+
+/* test server CA signed certificates */
+extern const char *const srv_signed_cert_pem;
+
+/* test server self signed certificate */
+extern const char *const srv_self_signed_cert_pem;
+
+/* test server self signed certificate key */
+extern const char *const srv_key_pem;
+
 /* TODO rm if unused */
 struct https_test_data
 {
   void *cls;
   int port;
-  const char *cipher_suite;
-  int proto_version;
 };
 
 struct CBC
@@ -72,7 +84,7 @@ struct CipherDef
 
 
 int
-curl_check_version (const char *req_version, ...);
+curl_check_version (const char *req_version);
 
 int
 curl_tls_is_gnutls (void);
@@ -94,7 +106,6 @@ setup_ca_cert (void);
  */
 int
 test_daemon_get (void *cls,
-                 const char *cipher_suite, int proto_version,
                  int port, int ver_peer);
 
 void
@@ -129,12 +140,10 @@ gen_test_file_url (char *url,
                    int port);
 
 int
-send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
-               int proto_version);
+send_curl_req (char *url, struct CBC *cbc);
 
 int
-test_https_transfer (void *cls, int port, const char *cipher_suite, int
-                     proto_version);
+test_https_transfer (void *cls, int port);
 
 int
 setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list
@@ -154,10 +163,9 @@ teardown_session (gnutls_session_t session,
 
 int
 test_wrap (const char *test_name, int
-           (*test_function)(void *cls, int port, const char *cipher_suite,
-                            int proto_version), void *cls,
+           (*test_function)(void *cls, int port), void *cls,
            int port,
-           int daemon_flags, const char *cipher_suite, int proto_version, ...);
+           int daemon_flags, ...);
 
 int testsuite_curl_global_init (void);
 
