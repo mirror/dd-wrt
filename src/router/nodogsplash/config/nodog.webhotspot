@@ -13,6 +13,10 @@
 			<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","0"); %>" />.<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","1"); %>" />.<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","2"); %>" />.<input size="3" maxlength="3" class="num" name="ND_GatewayAddr_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("ND_GatewayAddr","3"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_gatewayiprange"); %></div>
+			<input maxlength="39" name="ND_GatewayIPRange" size="39" value="<% nvg("ND_GatewayIPRange"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspot.nodog_gateway"); %></div>
 			<input maxlength="39" name="ND_GatewayName" size="39" value="<% nvg("ND_GatewayName"); %>" />
 		</div>
