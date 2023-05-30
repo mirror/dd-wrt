@@ -71,7 +71,7 @@ int mk_nodog_conf(void)
 	fprintf(fp, "}\n");
 	fprintf(fp, "GatewayName\t%s\n", nvram_safe_get("ND_GatewayName"));
 	nvram_default_get("ND_GatewayAddr", "0.0.0.0");
-	if (!nvram_match("ND_GatewayAddr","0.0.0.0"))
+	if (!nvram_match("ND_GatewayAddr", "0.0.0.0"))
 		fprintf(fp, "GatewayAddress\t%s\n", nvram_safe_get("ND_GatewayAddr"));
 	fprintf(fp, "WebRoot\t%s\n", nvram_safe_get("ND_DocumentRoot"));
 	fprintf(fp, "StatusPage\t%s\n", nvram_default_get("ND_StatusPage", "status.html"));
@@ -102,6 +102,13 @@ void start_splashd(void)
 
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
+	addHost("connectivitycheck.gstatic.com", "108.177.122.94");
+	addHost("www.google.com", "64.233.177.104");
+	addHost("captive.apple.com", "17.253.7.203");
+	addHost("dns.msftncsi.com", "131.107.255.255");
+	addHost("www.msftncsi.com", "23.63.249.202");
+	addHost("www.msftconnecttest.com", "13.107.4.52");
+	addHost("detectportal.firefox.com", "34.107.221.82");
 	eval("nodogsplash", "-c", NODOG_CONF);
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
