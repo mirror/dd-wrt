@@ -29,18 +29,15 @@
 #include <curl/curl.h>
 #include <limits.h>
 #include <sys/stat.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
-
-extern const char srv_signed_cert_pem[];
-extern const char srv_signed_key_pem[];
 
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-test_secure_get (void *cls, char *cipher_suite, int proto_version)
+test_secure_get (void *cls)
 {
   int ret;
   struct MHD_Daemon *d;
@@ -76,7 +73,7 @@ test_secure_get (void *cls, char *cipher_suite, int proto_version)
     port = (int) dinfo->port;
   }
 
-  ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 0);
+  ret = test_daemon_get (NULL, port, 0);
 
   MHD_stop_daemon (d);
   return ret;
@@ -87,17 +84,16 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  char *aes256_sha = "AES256-SHA";
   FILE *crt;
   (void) argc;
   (void) argv;       /* Unused. Silent compiler warning. */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (! testsuite_curl_global_init ())
     return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
@@ -114,13 +110,9 @@ main (int argc, char *const *argv)
     return 99;
   }
   fclose (crt);
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
 
   errorCount +=
-    test_secure_get (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL);
 
   print_test_result (errorCount, argv[0]);
 

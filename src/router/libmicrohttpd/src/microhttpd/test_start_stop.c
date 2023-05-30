@@ -134,7 +134,7 @@ main (int argc,
   errorCount += testMultithreadedPoolGet (0);
 #endif
   errorCount += testExternalGet ();
-#if defined (MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_POLL))
   {
     errorCount += testInternalGet (MHD_USE_POLL);

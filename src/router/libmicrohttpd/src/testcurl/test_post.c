@@ -112,10 +112,10 @@ post_iterator (void *cls,
   (void) kind; (void) filename; (void) content_type; /* Unused. Silent compiler warning. */
   (void) transfer_encoding; (void) off;            /* Unused. Silent compiler warning. */
 
-  if ((0 == strcasecmp (key, "name")) &&
+  if ((0 == strcmp (key, "name")) &&
       (size == strlen ("daniel")) && (0 == strncmp (value, "daniel", size)))
     (*eok) |= 1;
-  if ((0 == strcasecmp (key, "project")) &&
+  if ((0 == strcmp (key, "project")) &&
       (size == strlen ("curl")) && (0 == strncmp (value, "curl", size)))
     (*eok) |= 2;
   return MHD_YES;

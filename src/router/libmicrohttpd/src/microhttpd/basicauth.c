@@ -25,7 +25,7 @@
 #include "platform.h"
 #include "mhd_limits.h"
 #include "internal.h"
-#include "base64.h"
+#include "mhd_str.h"
 #include "mhd_compat.h"
 
 /**
@@ -45,66 +45,95 @@
  */
 char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
-                                      char**password)
+                                      char **password)
 {
   const char *header;
+  size_t enc_size;
+  size_t value_size;
+  size_t dec_size;
   char *decode;
-  const char *separator;
-  char *user;
+  char *separator;
 
-  if ( (MHD_NO == MHD_lookup_connection_value_n (connection,
-                                                 MHD_HEADER_KIND,
-                                                 MHD_HTTP_HEADER_AUTHORIZATION,
-                                                 MHD_STATICSTR_LEN_ (
-                                                   MHD_HTTP_HEADER_AUTHORIZATION),
-                                                 &header,
-                                                 NULL)) ||
-       (0 != strncmp (header,
-                      _BASIC_BASE,
-                      MHD_STATICSTR_LEN_ (_BASIC_BASE))) )
+  if (NULL != password)
+    *password = NULL;
+
+  if (MHD_NO ==
+      MHD_lookup_connection_value_n (connection,
+                                     MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_AUTHORIZATION,
+                                     MHD_STATICSTR_LEN_ ( \
+                                       MHD_HTTP_HEADER_AUTHORIZATION),
+                                     &header,
+                                     &value_size))
     return NULL;
+
+  if (0 != strncmp (header,
+                    _BASIC_BASE,
+                    MHD_STATICSTR_LEN_ (_BASIC_BASE)))
+    return NULL;
+
   header += MHD_STATICSTR_LEN_ (_BASIC_BASE);
-  if (NULL == (decode = BASE64Decode (header)))
+  enc_size = value_size - MHD_STATICSTR_LEN_ (_BASIC_BASE);
+  if (0 != (enc_size % 4))
   {
 #ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Bad length of basic authentication value.\n"));
+#endif
+    return NULL;
+  }
+  dec_size = MHD_base64_max_dec_size_ (enc_size);
+  decode = (char *) malloc (dec_size + 1);
+  if (NULL == decode)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Failed to allocate memory.\n"));
+#endif
+    return NULL;
+  }
+  dec_size = MHD_base64_to_bin_n (header, enc_size, decode, dec_size);
+  if (0 != dec_size)
+  {
+    decode[dec_size] = 0; /* Zero-terminate */
+    /* Find user:password pattern */
+    separator = memchr (decode, ':', dec_size);
+    if (NULL != separator)
+    {
+      *separator = 0; /* Zero-terminate 'username' */
+      if (NULL == password)
+        return decode;  /* Success exit point */
+      else
+      {
+        *password = strdup (separator + 1);
+        if (NULL != *password)
+          return decode; /* Success exit point */
+#ifdef HAVE_MESSAGES
+        else
+        {
+          MHD_DLOG (connection->daemon,
+                    _ ("Failed to allocate memory for password.\n"));
+        }
+#endif /* HAVE_MESSAGES */
+      }
+    }
+#ifdef HAVE_MESSAGES
+    else
+    {
+      MHD_DLOG (connection->daemon,
+                _ ("Basic authentication doesn't contain ':' separator.\n"));
+    }
+#endif /* HAVE_MESSAGES */
+  }
+#ifdef HAVE_MESSAGES
+  else
+  {
     MHD_DLOG (connection->daemon,
               _ ("Error decoding basic authentication.\n"));
-#endif
-    return NULL;
   }
-  /* Find user:password pattern */
-  if (NULL == (separator = strchr (decode,
-                                   ':')))
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Basic authentication doesn't contain ':' separator.\n"));
-#endif
-    free (decode);
-    return NULL;
-  }
-  if (NULL == (user = strdup (decode)))
-  {
-    free (decode);
-    return NULL;
-  }
-  user[separator - decode] = '\0'; /* cut off at ':' */
-  if (NULL != password)
-  {
-    *password = strdup (separator + 1);
-    if (NULL == *password)
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-                _ ("Failed to allocate memory for password.\n"));
-#endif
-      free (decode);
-      free (user);
-      return NULL;
-    }
-  }
+#endif /* HAVE_MESSAGES */
   free (decode);
-  return user;
+  return NULL;  /* Failure exit point */
 }
 
 

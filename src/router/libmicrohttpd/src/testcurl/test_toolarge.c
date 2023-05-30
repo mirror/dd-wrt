@@ -272,12 +272,17 @@ lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
     check_res->num_n1_headers++;
   else if ((5 <= data_size) && ('0' == buffer[0]))
   {
-    const char *const col_ptr = strstr (buffer, ": ");
+    const char *const col_ptr = memchr (buffer, ':', data_size);
     if (0 != check_res->large_header_value_size)
       mhdErrorExitDesc ("Expected only one large header, " \
                         "but found two large headers in the reply");
-    check_res->large_header_valid = 0;
-    if (NULL != col_ptr)
+    if (NULL == col_ptr)
+      check_res->large_header_valid = 0;
+    else if ((size_t) (col_ptr - buffer) >= data_size - 2)
+      check_res->large_header_valid = 0;
+    else if (*(col_ptr + 1) != ' ')
+      check_res->large_header_valid = 0;
+    else
     {
       const char *const name = buffer;
       const size_t name_len = col_ptr - buffer;
@@ -778,7 +783,7 @@ doCurlQueryInThread (struct MHD_Daemon *d,
     {
       if (CURLE_OPERATION_TIMEDOUT == errornum)
         mhdErrorExitDesc ("Request was aborted due to timeout");
-      fprintf (stderr, "libcurl returned expected error: %s\n",
+      fprintf (stderr, "libcurl returned unexpected error: %s\n",
                curl_easy_strerror (errornum));
       mhdErrorExitDesc ("Request failed due to unexpected error");
     }

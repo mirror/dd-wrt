@@ -87,7 +87,7 @@
 #elif defined(__PDP_ENDIAN) && __BYTE_ORDER == __PDP_ENDIAN
 #define _MHD_BYTE_ORDER _MHD_PDP_ENDIAN
 #endif /* __BYTE_ORDER == __PDP_ENDIAN */
-#elif defined (BYTE_ORDER)
+#elif defined(BYTE_ORDER)
 #if defined(BIG_ENDIAN) && BYTE_ORDER == BIG_ENDIAN
 #define _MHD_BYTE_ORDER _MHD_BIG_ENDIAN
 #elif defined(LITTLE_ENDIAN) && BYTE_ORDER == LITTLE_ENDIAN
@@ -95,7 +95,7 @@
 #elif defined(PDP_ENDIAN) && BYTE_ORDER == PDP_ENDIAN
 #define _MHD_BYTE_ORDER _MHD_PDP_ENDIAN
 #endif /* __BYTE_ORDER == _PDP_ENDIAN */
-#elif defined (_BYTE_ORDER)
+#elif defined(_BYTE_ORDER)
 #if defined(_BIG_ENDIAN) && _BYTE_ORDER == _BIG_ENDIAN
 #define _MHD_BYTE_ORDER _MHD_BIG_ENDIAN
 #elif defined(_LITTLE_ENDIAN) && _BYTE_ORDER == _LITTLE_ENDIAN
@@ -122,7 +122,7 @@
   defined(_M_X64) || defined(_M_AMD64) || defined(i386) || defined(__i386) || \
   defined(__i386__) || defined(__i486__) || defined(__i586__) || \
   defined(__i686__) || \
-  defined(_M_IX86) || defined(_X86_) || defined (__THW_INTEL__)
+  defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__)
 /* x86 family is little endian */
 #define _MHD_BYTE_ORDER _MHD_LITTLE_ENDIAN
 #elif defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \

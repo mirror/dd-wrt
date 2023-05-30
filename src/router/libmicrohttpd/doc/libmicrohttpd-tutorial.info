@@ -1,4 +1,4 @@
-This is libmicrohttpd-tutorial.info, produced by makeinfo version 6.7
+This is libmicrohttpd-tutorial.info, produced by makeinfo version 6.8
 from libmicrohttpd-tutorial.texi.
 
 This tutorial documents GNU libmicrohttpd version 0.9.48, last updated 2
@@ -142,7 +142,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
                           const char *url,
                           const char *method, const char *version,
                           const char *upload_data,
-                          size_t *upload_data_size, void **req_cls)
+                          size_t *upload_data_size, void **con_cls)
 {
   const char *page  = "<html><body>Hello, browser!</body></html>";
 
@@ -353,7 +353,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, 
 		      const char *method, const char *version, 
 		      const char *upload_data, 
-                      size_t *upload_data_size, void **req_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
   ...  
   return MHD_NO;
@@ -483,7 +483,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 		      const char *url, 
                       const char *method, const char *version, 
 		      const char *upload_data, 
-              	      size_t *upload_data_size, void **req_cls)
+              	      size_t *upload_data_size, void **con_cls)
 {
   unsigned char *buffer = NULL;
   struct MHD_Response *response;
@@ -718,11 +718,11 @@ three phases:
      should suspend the connection).
 
    But how can we tell whether the callback has been called before for
-the particular request?  Initially, the pointer this parameter
+the particular connection?  Initially, the pointer this parameter
 references is set by _MHD_ in the callback.  But it will also be
-"remembered" on the next call (for the same request).  Thus, we can use
-the 'req_cls' location to keep track of the request state.  For now, we
-will simply generate no response until the parameter is
+"remembered" on the next call (for the same connection).  Thus, we can
+use the 'con_cls' location to keep track of the connection state.  For
+now, we will simply generate no response until the parameter is
 non-null--implying the callback was called before at least once.  We do
 not need to share information between different calls of the callback,
 so we can set the parameter to any address that is assured to be not
@@ -736,10 +736,10 @@ static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method, const char *version,
                       const char *upload_data, size_t *upload_data_size,
-                      void **req_cls)
+                      void **con_cls)
 {
   if (0 != strcmp(method, "GET")) return MHD_NO;
-  if (NULL == *req_cls) {*req_cls = connection; return MHD_YES;}
+  if (NULL == *con_cls) {*con_cls = connection; return MHD_YES;}
 
   ...
   /* else respond accordingly */
@@ -770,7 +770,7 @@ static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **req_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
   char *user;
   char *pass;
@@ -780,9 +780,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;
-  if (NULL == *req_cls)
+  if (NULL == *con_cls)
     {
-      *req_cls = connection;
+      *con_cls = connection;
       return MHD_YES;
     }
   pass = NULL;
@@ -972,10 +972,10 @@ the greetings string.  This cleanup function must take into account that
 it will also be called for finished requests other than _POST_ requests.
 
 void request_completed (void *cls, struct MHD_Connection *connection, 
-     		        void **req_cls,
+     		        void **con_cls,
                         enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *req_cls;
+  struct connection_info_struct *con_info = *con_cls;
 
   if (NULL == con_info) return;
   if (con_info->connectiontype == POST)
@@ -985,7 +985,7 @@ void request_completed (void *cls, struct MHD_Connection *connection,
     }
   
   free (con_info);
-  *req_cls = NULL;   
+  *con_cls = NULL;   
 }
 
    _GNU libmicrohttpd_ is informed that it shall call the above function
@@ -1014,9 +1014,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 		      const char *url, 
                       const char *method, const char *version, 
 		      const char *upload_data, 
-                      size_t *upload_data_size, void **req_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
-  if(NULL == *req_cls) 
+  if(NULL == *con_cls) 
     {
       struct connection_info_struct *con_info;
 
@@ -1044,7 +1044,7 @@ now.  In addition, the type of the request is stored for convenience.
    The address of our structure will both serve as the indicator for
 successive iterations and to remember the particular details about the
 connection.
-      *req_cls = (void*) con_info; 
+      *con_cls = (void*) con_info; 
       return MHD_YES;
     }
 
@@ -1060,7 +1060,7 @@ keeps incoming, setting '*upload_data_size' to zero in order to indicate
 that we have processed--or at least have considered--all of it.
   if (0 == strcmp (method, "POST")) 
     {
-      struct connection_info_struct *con_info = *req_cls;
+      struct connection_info_struct *con_info = *con_cls;
 
       if (*upload_data_size != 0) 
         {
@@ -1175,9 +1175,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 		      const char *url, 
                       const char *method, const char *version, 
 		      const char *upload_data, 
-                      size_t *upload_data_size, void **req_cls)
+                      size_t *upload_data_size, void **con_cls)
 {
-  if (NULL == *req_cls) 
+  if (NULL == *con_cls) 
     {
       struct connection_info_struct *con_info;
 
@@ -1198,7 +1198,7 @@ connection.
         } 
       else con_info->connectiontype = GET;
 
-      *req_cls = (void*) con_info;
+      *con_cls = (void*) con_info;
  
       return MHD_YES;
     }
@@ -1251,7 +1251,7 @@ the execution falls through to return an error page if the connection
 constituted no expected request method.
   if (0 == strcmp (method, "POST")) 
     {
-      struct connection_info_struct *con_info = *req_cls;
+      struct connection_info_struct *con_info = *con_cls;
        
       if (0 != *upload_data_size) 
         { 
@@ -1342,10 +1342,10 @@ has finished, this iterator function will not be called again.
 Likewise, we unregister the client on destroying the postprocessor when
 the request is completed.
 void request_completed (void *cls, struct MHD_Connection *connection, 
-     		        void **req_cls,
+     		        void **con_cls,
                         enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *req_cls;
+  struct connection_info_struct *con_info = *con_cls;
 
   if (NULL == con_info) return;
 
@@ -1361,7 +1361,7 @@ void request_completed (void *cls, struct MHD_Connection *connection,
     }
 
   free (con_info);
-  *req_cls = NULL;      
+  *con_cls = NULL;      
 }
 
    This is essentially the whole example 'largepost.c'.
@@ -2063,7 +2063,7 @@ connection, could look like this:
 static void
 upgrade_handler (void *cls,
                  struct MHD_Connection *connection,
-                 void *req_cls,
+                 void *con_cls,
                  const char *extra_in,
                  size_t extra_in_size,
                  MHD_socket fd,
@@ -2374,7 +2374,7 @@ websocket:
 static void
 upgrade_handler (void *cls,
                  struct MHD_Connection *connection,
-                 void *req_cls,
+                 void *con_cls,
                  const char *extra_in,
                  size_t extra_in_size,
                  MHD_socket fd,
@@ -3293,7 +3293,7 @@ C.1 hellobrowser.c
      answer_to_connection (void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
-                           size_t *upload_data_size, void **req_cls)
+                           size_t *upload_data_size, void **con_cls)
      {
        const char *page = "<html><body>Hello, browser!</body></html>";
        struct MHD_Response *response;
@@ -3304,7 +3304,7 @@ C.1 hellobrowser.c
        (void) version;           /* Unused. Silent compiler warning. */
        (void) upload_data;       /* Unused. Silent compiler warning. */
        (void) upload_data_size;  /* Unused. Silent compiler warning. */
-       (void) req_cls;           /* Unused. Silent compiler warning. */
+       (void) con_cls;           /* Unused. Silent compiler warning. */
      
        response =
          MHD_create_response_from_buffer (strlen (page), (void *) page,
@@ -3370,13 +3370,13 @@ C.2 logging.c
      answer_to_connection (void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
-                           size_t *upload_data_size, void **req_cls)
+                           size_t *upload_data_size, void **con_cls)
      {
        (void) cls;               /* Unused. Silent compiler warning. */
        (void) version;           /* Unused. Silent compiler warning. */
        (void) upload_data;       /* Unused. Silent compiler warning. */
        (void) upload_data_size;  /* Unused. Silent compiler warning. */
-       (void) req_cls;           /* Unused. Silent compiler warning. */
+       (void) con_cls;           /* Unused. Silent compiler warning. */
        printf ("New %s request for %s using version %s\n", method, url, version);
      
        MHD_get_connection_values (connection, MHD_HEADER_KIND, print_out_key,
@@ -3433,7 +3433,7 @@ C.3 responseheaders.c
      answer_to_connection (void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
-                           size_t *upload_data_size, void **req_cls)
+                           size_t *upload_data_size, void **con_cls)
      {
        struct MHD_Response *response;
        int fd;
@@ -3444,7 +3444,7 @@ C.3 responseheaders.c
        (void) version;           /* Unused. Silent compiler warning. */
        (void) upload_data;       /* Unused. Silent compiler warning. */
        (void) upload_data_size;  /* Unused. Silent compiler warning. */
-       (void) req_cls;           /* Unused. Silent compiler warning. */
+       (void) con_cls;           /* Unused. Silent compiler warning. */
      
        if (0 != strcmp (method, "GET"))
          return MHD_NO;
@@ -3530,7 +3530,7 @@ C.4 basicauthentication.c
      answer_to_connection (void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
-                           size_t *upload_data_size, void **req_cls)
+                           size_t *upload_data_size, void **con_cls)
      {
        char *user;
        char *pass;
@@ -3545,9 +3545,9 @@ C.4 basicauthentication.c
      
        if (0 != strcmp (method, "GET"))
          return MHD_NO;
-       if (NULL == *req_cls)
+       if (NULL == *con_cls)
        {
-         *req_cls = connection;
+         *con_cls = connection;
          return MHD_YES;
        }
        pass = NULL;
@@ -3712,9 +3712,9 @@ C.5 simplepost.c
      
      static void
      request_completed (void *cls, struct MHD_Connection *connection,
-                        void **req_cls, enum MHD_RequestTerminationCode toe)
+                        void **con_cls, enum MHD_RequestTerminationCode toe)
      {
-       struct connection_info_struct *con_info = *req_cls;
+       struct connection_info_struct *con_info = *con_cls;
        (void) cls;         /* Unused. Silent compiler warning. */
        (void) connection;  /* Unused. Silent compiler warning. */
        (void) toe;         /* Unused. Silent compiler warning. */
@@ -3730,7 +3730,7 @@ C.5 simplepost.c
        }
      
        free (con_info);
-       *req_cls = NULL;
+       *con_cls = NULL;
      }
      
      
@@ -3738,13 +3738,13 @@ C.5 simplepost.c
      answer_to_connection (void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
-                           size_t *upload_data_size, void **req_cls)
+                           size_t *upload_data_size, void **con_cls)
      {
        (void) cls;               /* Unused. Silent compiler warning. */
        (void) url;               /* Unused. Silent compiler warning. */
        (void) version;           /* Unused. Silent compiler warning. */
      
-       if (NULL == *req_cls)
+       if (NULL == *con_cls)
        {
          struct connection_info_struct *con_info;
      
@@ -3770,7 +3770,7 @@ C.5 simplepost.c
          else
            con_info->connectiontype = GET;
      
-         *req_cls = (void *) con_info;
+         *con_cls = (void *) con_info;
      
          return MHD_YES;
        }
@@ -3782,7 +3782,7 @@ C.5 simplepost.c
      
        if (0 == strcmp (method, "POST"))
        {
-         struct connection_info_struct *con_info = *req_cls;
+         struct connection_info_struct *con_info = *con_cls;
      
          if (*upload_data_size != 0)
          {
@@ -3840,12 +3840,6 @@ C.6 largepost.c
      #include <stdlib.h>
      #include <string.h>
      #include <microhttpd.h>
-     
-     #ifdef _MSC_VER
-     #ifndef strcasecmp
-     #define strcasecmp(a,b) _stricmp ((a),(b))
-     #endif /* !strcasecmp */
-     #endif /* _MSC_VER */
      
      #if defined(_MSC_VER) && _MSC_VER + 0 <= 1800
      /* Substitution is OK while return value is not used */
@@ -4009,10 +4003,10 @@ C.6 largepost.c
      static void
      request_completed (void *cls,
                         struct MHD_Connection *connection,
-                        void **req_cls,
+                        void **con_cls,
                         enum MHD_RequestTerminationCode toe)
      {
-       struct connection_info_struct *con_info = *req_cls;
+       struct connection_info_struct *con_info = *con_cls;
        (void) cls;         /* Unused. Silent compiler warning. */
        (void) connection;  /* Unused. Silent compiler warning. */
        (void) toe;         /* Unused. Silent compiler warning. */
@@ -4033,7 +4027,7 @@ C.6 largepost.c
        }
      
        free (con_info);
-       *req_cls = NULL;
+       *con_cls = NULL;
      }
      
      
@@ -4045,13 +4039,13 @@ C.6 largepost.c
                            const char *version,
                            const char *upload_data,
                            size_t *upload_data_size,
-                           void **req_cls)
+                           void **con_cls)
      {
        (void) cls;               /* Unused. Silent compiler warning. */
        (void) url;               /* Unused. Silent compiler warning. */
        (void) version;           /* Unused. Silent compiler warning. */
      
-       if (NULL == *req_cls)
+       if (NULL == *con_cls)
        {
          /* First call, setup data structures */
          struct connection_info_struct *con_info;
@@ -4067,7 +4061,7 @@ C.6 largepost.c
          con_info->answercode = 0;   /* none yet */
          con_info->fp = NULL;
      
-         if (0 == strcasecmp (method, MHD_HTTP_METHOD_POST))
+         if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
          {
            con_info->postprocessor =
              MHD_create_post_processor (connection,
@@ -4090,12 +4084,12 @@ C.6 largepost.c
            con_info->connectiontype = GET;
          }
      
-         *req_cls = (void *) con_info;
+         *con_cls = (void *) con_info;
      
          return MHD_YES;
        }
      
-       if (0 == strcasecmp (method, MHD_HTTP_METHOD_GET))
+       if (0 == strcmp (method, MHD_HTTP_METHOD_GET))
        {
          /* We just return the standard form for uploads on all GET requests */
          char buffer[1024];
@@ -4109,9 +4103,9 @@ C.6 largepost.c
                            MHD_HTTP_OK);
        }
      
-       if (0 == strcasecmp (method, MHD_HTTP_METHOD_POST))
+       if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
        {
-         struct connection_info_struct *con_info = *req_cls;
+         struct connection_info_struct *con_info = *con_cls;
      
          if (0 != *upload_data_size)
          {
@@ -4189,59 +4183,12 @@ C.7 sessions.c
      /* Feel free to use this example code in any way
         you see fit (Public Domain) */
      
-     /* needed for asprintf */
-     #ifndef _GNU_SOURCE
-     #define _GNU_SOURCE 1
-     #endif
-     
      #include <stdlib.h>
      #include <string.h>
      #include <stdio.h>
      #include <errno.h>
      #include <time.h>
      #include <microhttpd.h>
-     
-     #if defined _WIN32 && ! defined(__MINGW64_VERSION_MAJOR)
-     static int
-     asprintf (char **resultp, const char *format, ...)
-     {
-       va_list argptr;
-       char *result = NULL;
-       int len = 0;
-     
-       if (format == NULL)
-         return -1;
-     
-       va_start (argptr, format);
-     
-       len = _vscprintf ((char *) format, argptr);
-       if (len >= 0)
-       {
-         len += 1;
-         result = (char *) malloc (sizeof (char *) * len);
-         if (result != NULL)
-         {
-           int len2 = _vscprintf ((char *) format, argptr);
-           if ((len2 != len - 1) || (len2 <= 0))
-           {
-             free (result);
-             result = NULL;
-             len = -1;
-           }
-           else
-           {
-             len = len2;
-             if (resultp)
-               *resultp = result;
-           }
-         }
-       }
-       va_end (argptr);
-       return len;
-     }
-     
-     
-     #endif
      
      /**
       * Invalid method page.
@@ -4529,29 +4476,49 @@ C.7 sessions.c
                    struct MHD_Connection *connection)
      {
        enum MHD_Result ret;
-       const char *form = cls;
        char *reply;
        struct MHD_Response *response;
+       int len;
      
-       if (-1 == asprintf (&reply,
-                           form,
-                           session->value_1))
+       (void) cls; /* Unused parameter */
+     
+       /* Emulate 'asprintf' */
+       len = snprintf (NULL, 0, MAIN_PAGE, session->value_1);
+       if (0 > len)
+         return MHD_NO; /* Internal error */
+     
+       reply = (char *) malloc (len + 1);
+       if (NULL == reply)
+         return MHD_NO; /* Out-of-memory error */
+     
+       if (len != snprintf (reply,
+                            ((size_t) len) + 1,
+                            MAIN_PAGE,
+                            session->value_1))
        {
-         /* oops */
-         return MHD_NO;
+         free (reply);
+         return MHD_NO; /* printf error */
        }
-       /* return static form */
+     
        response = MHD_create_response_from_buffer (strlen (reply),
                                                    (void *) reply,
                                                    MHD_RESPMEM_MUST_FREE);
-       add_session_cookie (session, response);
-       MHD_add_response_header (response,
-                                MHD_HTTP_HEADER_CONTENT_ENCODING,
-                                mime);
-       ret = MHD_queue_response (connection,
-                                 MHD_HTTP_OK,
-                                 response);
-       MHD_destroy_response (response);
+       if (NULL != response)
+       {
+         add_session_cookie (session, response);
+         MHD_add_response_header (response,
+                                  MHD_HTTP_HEADER_CONTENT_ENCODING,
+                                  mime);
+         ret = MHD_queue_response (connection,
+                                   MHD_HTTP_OK,
+                                   response);
+         MHD_destroy_response (response);
+       }
+       else
+       {
+         free (reply);
+         ret = MHD_NO;
+       }
        return ret;
      }
      
@@ -4571,30 +4538,50 @@ C.7 sessions.c
                       struct MHD_Connection *connection)
      {
        enum MHD_Result ret;
-       const char *form = cls;
        char *reply;
        struct MHD_Response *response;
+       int len;
      
-       if (-1 == asprintf (&reply,
-                           form,
-                           session->value_1,
-                           session->value_2))
+       (void) cls; /* Unused parameter */
+     
+       /* Emulate 'asprintf' */
+       len = snprintf (NULL, 0, SECOND_PAGE, session->value_1, session->value_2);
+       if (0 > len)
+         return MHD_NO; /* Internal error */
+     
+       reply = (char *) malloc (len + 1);
+       if (NULL == reply)
+         return MHD_NO; /* Out-of-memory error */
+     
+       if (len == snprintf (reply,
+                            ((size_t) len) + 1,
+                            SECOND_PAGE,
+                            session->value_1,
+                            session->value_2))
        {
-         /* oops */
-         return MHD_NO;
+         free (reply);
+         return MHD_NO; /* printf error */
        }
-       /* return static form */
+     
        response = MHD_create_response_from_buffer (strlen (reply),
                                                    (void *) reply,
                                                    MHD_RESPMEM_MUST_FREE);
-       add_session_cookie (session, response);
-       MHD_add_response_header (response,
-                                MHD_HTTP_HEADER_CONTENT_ENCODING,
-                                mime);
-       ret = MHD_queue_response (connection,
-                                 MHD_HTTP_OK,
-                                 response);
-       MHD_destroy_response (response);
+       if (NULL != response)
+       {
+         add_session_cookie (session, response);
+         MHD_add_response_header (response,
+                                  MHD_HTTP_HEADER_CONTENT_ENCODING,
+                                  mime);
+         ret = MHD_queue_response (connection,
+                                   MHD_HTTP_OK,
+                                   response);
+         MHD_destroy_response (response);
+       }
+       else
+       {
+         free (reply);
+         ret = MHD_NO;
+       }
        return ret;
      }
      
@@ -4636,9 +4623,9 @@ C.7 sessions.c
      /**
       * List of all pages served by this HTTP server.
       */
-     static struct Page pages[] = {
-       { "/", "text/html",  &fill_v1_form, MAIN_PAGE },
-       { "/2", "text/html", &fill_v1_v2_form, SECOND_PAGE },
+     static const struct Page pages[] = {
+       { "/", "text/html",  &fill_v1_form, NULL },
+       { "/2", "text/html", &fill_v1_v2_form, NULL },
        { "/S", "text/html", &serve_simple_form, SUBMIT_PAGE },
        { "/F", "text/html", &serve_simple_form, LAST_PAGE },
        { NULL, NULL, &not_found_page, NULL }   /* 404 */
@@ -4736,7 +4723,7 @@ C.7 sessions.c
       * @param upload_data_size set initially to the size of the
       *        upload_data provided; the method must update this
       *        value to the number of bytes NOT processed;
-      * @param req_cls pointer that the callback can set to some
+      * @param ptr pointer that the callback can set to some
       *        address and that will be preserved by MHD for future
       *        calls for this request; since the access handler may
       *        be called many times (i.e., for a PUT/POST operation
@@ -4745,7 +4732,7 @@ C.7 sessions.c
       *        If necessary, this state can be cleaned up in the
       *        global "MHD_RequestCompleted" callback (which
       *        can be set with the MHD_OPTION_NOTIFY_COMPLETED).
-      *        Initially, <tt>*req_cls</tt> will be NULL.
+      *        Initially, <tt>*con_cls</tt> will be NULL.
       * @return MHS_YES if the connection was handled successfully,
       *         MHS_NO if the socket must be closed due to a serious
       *         error while handling the request
@@ -4758,7 +4745,7 @@ C.7 sessions.c
                       const char *version,
                       const char *upload_data,
                       size_t *upload_data_size,
-                      void **req_cls)
+                      void **ptr)
      {
        struct MHD_Response *response;
        struct Request *request;
@@ -4768,7 +4755,7 @@ C.7 sessions.c
        (void) cls;               /* Unused. Silent compiler warning. */
        (void) version;           /* Unused. Silent compiler warning. */
      
-       request = *req_cls;
+       request = *ptr;
        if (NULL == request)
        {
          request = calloc (1, sizeof (struct Request));
@@ -4777,7 +4764,7 @@ C.7 sessions.c
            fprintf (stderr, "calloc error: %s\n", strerror (errno));
            return MHD_NO;
          }
-         *req_cls = request;
+         *ptr = request;
          if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
          {
            request->pp = MHD_create_post_processor (connection, 1024,
@@ -4856,16 +4843,16 @@ C.7 sessions.c
       *
       * @param cls not used
       * @param connection connection that completed
-      * @param req_cls session handle
+      * @param con_cls session handle
       * @param toe status code
       */
      static void
      request_completed_callback (void *cls,
                                  struct MHD_Connection *connection,
-                                 void **req_cls,
+                                 void **con_cls,
                                  enum MHD_RequestTerminationCode toe)
      {
-       struct Request *request = *req_cls;
+       struct Request *request = *con_cls;
        (void) cls;         /* Unused. Silent compiler warning. */
        (void) connection;  /* Unused. Silent compiler warning. */
        (void) toe;         /* Unused. Silent compiler warning. */
@@ -5211,7 +5198,7 @@ C.8 tlsauthentication.c
      answer_to_connection (void *cls, struct MHD_Connection *connection,
                            const char *url, const char *method,
                            const char *version, const char *upload_data,
-                           size_t *upload_data_size, void **req_cls)
+                           size_t *upload_data_size, void **con_cls)
      {
        (void) cls;               /* Unused. Silent compiler warning. */
        (void) url;               /* Unused. Silent compiler warning. */
@@ -5221,9 +5208,9 @@ C.8 tlsauthentication.c
      
        if (0 != strcmp (method, "GET"))
          return MHD_NO;
-       if (NULL == *req_cls)
+       if (NULL == *con_cls)
        {
-         *req_cls = connection;
+         *con_cls = connection;
          return MHD_YES;
        }
      
@@ -5314,7 +5301,7 @@ C.9 websocket.c
        "<script>\n" \
        "\n" \
        "let url = 'ws' + (window.location.protocol === 'https:' ? 's' : '')" \
-         "  + ':/" "/' +\n" \
+         "  + '://' +\n" \
        "          window.location.host + '/chat';\n" \
        "let socket = null;\n" \
        "\n" \
@@ -5324,7 +5311,7 @@ C.9 websocket.c
        "    document.write('The websocket connection has been " \
          "established.<br>');\n" \
        "\n" \
-       "    /" "/ Send some text\n" \
+       "    // Send some text\n" \
        "    socket.send('Hello from JavaScript!');\n" \
        "  }\n" \
        "\n" \
@@ -5366,7 +5353,7 @@ C.9 websocket.c
      static void
      upgrade_handler (void *cls,
                       struct MHD_Connection *connection,
-                      void *req_cls,
+                      void *con_cls,
                       const char *extra_in,
                       size_t extra_in_size,
                       MHD_socket fd,
@@ -5593,7 +5580,7 @@ C.9 websocket.c
                      const char *version,
                      const char *upload_data,
                      size_t *upload_data_size,
-                     void **req_cls)
+                     void **ptr)
      {
        static int aptr;
        struct MHD_Response *response;
@@ -5605,13 +5592,13 @@ C.9 websocket.c
      
        if (0 != strcmp (method, "GET"))
          return MHD_NO;              /* unexpected method */
-       if (&aptr != *req_cls)
+       if (&aptr != *ptr)
        {
          /* do never respond on first call */
-         *req_cls = &aptr;
+         *ptr = &aptr;
          return MHD_YES;
        }
-       *req_cls = NULL;                  /* reset when done */
+       *ptr = NULL;                  /* reset when done */
      
        if (0 == strcmp (url, "/"))
        {
@@ -5746,23 +5733,23 @@ Node: Hello browser example3239
 Node: Exploring requests14495
 Node: Response headers19919
 Node: Supporting basic authentication27852
-Node: Processing POST data37077
-Node: Improved processing of POST data45823
-Node: Session management56641
-Node: Adding a layer of security60155
-Node: Websockets74922
-Node: Bibliography102506
-Node: License text103783
-Node: Example programs128939
-Node: hellobrowser.c129268
-Node: logging.c131476
-Node: responseheaders.c133636
-Node: basicauthentication.c136818
-Node: simplepost.c140021
-Node: largepost.c146834
-Node: sessions.c158206
-Node: tlsauthentication.c183699
-Node: websocket.c191789
+Node: Processing POST data37086
+Node: Improved processing of POST data45832
+Node: Session management56650
+Node: Adding a layer of security60164
+Node: Websockets74931
+Node: Bibliography102515
+Node: License text103792
+Node: Example programs128948
+Node: hellobrowser.c129277
+Node: logging.c131485
+Node: responseheaders.c133645
+Node: basicauthentication.c136827
+Node: simplepost.c140030
+Node: largepost.c146843
+Node: sessions.c158047
+Node: tlsauthentication.c183513
+Node: websocket.c191603
 
 End Tag Table
 

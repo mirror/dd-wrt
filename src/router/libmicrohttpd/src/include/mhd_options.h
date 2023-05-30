@@ -166,4 +166,19 @@
 #endif /* ! (MHD_ASAN_ACTIVE && HAVE_SANITIZER_ASAN_INTERFACE_H &&
            (FUNC_ATTR_PTRCOMPARE_WOKRS || FUNC_ATTR_NOSANITIZE_WORKS))   */
 
+
+/**
+ * Automatic string with the name of the current function
+ */
+#if defined(HAVE___FUNC__)
+#define MHD_FUNC_       __func__
+#elif defined(HAVE___FUNCTION__)
+#define MHD_FUNC_       __FUNCTION__
+#elif defined(HAVE___PRETTY_FUNCTION__)
+#define MHD_FUNC_       __PRETTY_FUNCTION__
+#else
+#define MHD_FUNC_       "**name unavailable**"
+#endif
+
+
 #endif /* MHD_OPTIONS_H */

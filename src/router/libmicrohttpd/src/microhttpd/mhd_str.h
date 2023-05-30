@@ -38,7 +38,7 @@
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
 
-#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
+#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
@@ -341,7 +341,7 @@ MHD_str_to_uvalue_n_ (const char *str,
                       void *out_val,
                       size_t val_size,
                       uint64_t max_val,
-                      int base);
+                      unsigned int base);
 
 #define MHD_str_to_uint64_(s,ov) MHD_str_to_uvalue_n_ ((s),SIZE_MAX,(ov), \
                                                        sizeof(uint64_t), \
@@ -449,5 +449,42 @@ MHD_uint8_to_str_pad (uint8_t val,
                       char *buf,
                       size_t buf_size);
 
+
+#ifdef BAUTH_SUPPORT
+
+/**
+ * Returns the maximum possible size of the Base64 decoded data.
+ * The real recoded size could be up to two bytes smaller.
+ * @param enc_size the size of encoded data, in characters
+ * @return the maximum possible size of the decoded data, in bytes, if
+ *         @a enc_size is valid (properly padded),
+ *         undefined value smaller then @a enc_size if @a enc_size is not valid
+ */
+#define MHD_base64_max_dec_size_(enc_size) (((enc_size) / 4) * 3)
+
+/**
+ * Convert Base64 encoded string to binary data.
+ * @param base64 the input string with Base64 encoded data, could be NOT zero
+ *               terminated
+ * @param base64_len the number of characters to decode in @a base64 string,
+ *                   valid number must be a multiple of four
+ * @param[out] bin the pointer to the output buffer, the buffer may be altered
+ *                 even if decoding failed
+ * @param bin_size the size of the @a bin buffer in bytes, if the size is
+ *                 at least @a base64_len / 4 * 3 then result will always
+ *                 fit, regardless of the amount of the padding characters
+ * @return 0 if @base64_len is zero, or input string has wrong data (not
+ *         valid Base64 sequence), or @a bin_size is too small;
+ *         non-zero number of bytes written to the @a bin, the number must be
+ *         (base64_len / 4 * 3 - 2), (base64_len / 4 * 3 - 1) or
+ *         (base64_len / 4 * 3), depending on the number of padding characters.
+ */
+size_t
+MHD_base64_to_bin_n (const char *base64,
+                     size_t base64_len,
+                     void *bin,
+                     size_t bin_size);
+
+#endif /* BAUTH_SUPPORT */
 
 #endif /* MHD_STR_H */

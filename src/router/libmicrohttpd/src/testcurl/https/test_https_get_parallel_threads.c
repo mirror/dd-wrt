@@ -33,9 +33,9 @@
 #include <limits.h>
 #include <curl/curl.h>
 #include <pthread.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 4
@@ -45,10 +45,7 @@
 #define MHD_CPU_COUNT 4
 #endif
 
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
-
-int curl_check_version (const char *req_version, ...);
+int curl_check_version (const char *req_version);
 
 /**
  * used when spawning multiple threads executing curl server requests
@@ -63,8 +60,7 @@ https_transfer_thread_adapter (void *args)
 
   /* time spread incoming requests */
   usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
-  ret = test_https_transfer (cargs->cls, cargs->port,
-                             cargs->cipher_suite, cargs->proto_version);
+  ret = test_https_transfer (cargs->cls, cargs->port);
   if (ret == 0)
     return NULL;
   return &nonnull;
@@ -79,12 +75,11 @@ https_transfer_thread_adapter (void *args)
  * TODO : make client_count a parameter - number of curl client threads to spawn
  */
 static int
-test_single_client (void *cls, int port, const char *cipher_suite,
-                    int curl_proto_version)
+test_single_client (void *cls, int port)
 {
   void *client_thread_ret;
   struct https_test_data client_args =
-  { NULL, port, cipher_suite, curl_proto_version };
+  { NULL, port};
   (void) cls;    /* Unused. Silent compiler warning. */
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
@@ -102,15 +97,14 @@ test_single_client (void *cls, int port, const char *cipher_suite,
  * TODO : make client_count a parameter - number of curl client threads to spawn
  */
 static int
-test_parallel_clients (void *cls, int port, const char *cipher_suite,
-                       int curl_proto_version)
+test_parallel_clients (void *cls, int port)
 {
   int i;
   int client_count = (MHD_CPU_COUNT - 1);
   void *client_thread_ret;
   pthread_t client_arr[client_count];
   struct https_test_data client_args =
-  { NULL, port, cipher_suite, curl_proto_version };
+  { NULL, port };
   (void) cls;    /* Unused. Silent compiler warning. */
 
   for (i = 0; i < client_count; ++i)
@@ -143,7 +137,6 @@ main (int argc, char *const *argv)
   const char *ssl_version;
   int port;
   unsigned int iseed;
-  char *aes256_sha = "AES256-SHA";
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -154,11 +147,11 @@ main (int argc, char *const *argv)
   /* initialize random seed used by curl clients */
   iseed = (unsigned int) time (NULL);
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   srand (iseed);
   if (! testsuite_curl_global_init ())
     return 99;
@@ -176,17 +169,12 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
   errorCount +=
     test_wrap ("multi threaded daemon, single client", &test_single_client,
                NULL, port,
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION
                | MHD_USE_INTERNAL_POLLING_THREAD,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
@@ -195,7 +183,7 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION
                | MHD_USE_INTERNAL_POLLING_THREAD,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 

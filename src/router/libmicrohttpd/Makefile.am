@@ -12,10 +12,12 @@ endif
 
 
 W32COMMON = w32/common/gen_dll_res.ps1 w32/common/microhttpd_dll_res_vc.rc.in w32/common/microhttpd_dll_res_vc.rc \
-  w32/common/MHD_config.h w32/common/vs_dirs.props w32/common/common-build-settings.vcxproj \
-  w32/common/libmicrohttpd-build-settings.vcxproj w32/common/libmicrohttpd-files.vcxproj w32/common/libmicrohttpd-filters.vcxproj \
-  w32/common/hellobrowser-files.vcxproj w32/common/hellobrowser-filters.vcxproj \
-  w32/common/apps-build-settings.vcxproj
+  w32/common/MHD_config.h w32/common/vs_dirs.props \
+  w32/common/common-build-settings.props w32/common/libmicrohttpd-build-settings.props \
+  w32/common/apps-build-settings.props \
+  w32/common/project-configs.props w32/common/project-configs-xp.props \
+  w32/common/libmicrohttpd-files.vcxproj w32/common/libmicrohttpd-filters.vcxproj \
+  w32/common/hellobrowser-files.vcxproj w32/common/hellobrowser-filters.vcxproj
 W32VS2013 = w32/VS2013/libmicrohttpd.vcxproj w32/VS2013/libmicrohttpd.vcxproj.filters \
   w32/VS2013/hellobrowser.vcxproj w32/VS2013/hellobrowser.vcxproj.filters \
   w32/VS2013/simplepost.vcxproj w32/VS2013/largepost.vcxproj \
@@ -48,3 +50,34 @@ EXTRA_DIST = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmicrohttpd.pc
+
+dist-hook:
+	@if test -w '$(distdir)/m4/c_backported.m4'; then \
+	  echo "Use empty m4/c_backported.m4 for dist target"; \
+	  touch -r '$(distdir)/m4/c_backported.m4' '$(distdir)/m4/c_backported.m4-tmst' && \
+	    echo 'dnl Not used for distribution' > '$(distdir)/m4/c_backported.m4' && \
+	    touch -r '$(distdir)/m4/c_backported.m4-tmst' '$(distdir)/m4/c_backported.m4' && \
+	    rm -f '$(distdir)/m4/c_backported.m4-tmst'; \
+	else \
+	  true; \
+	fi
+
+dist-custm: distdir
+	@test -n "$(ARC_CMD)" || \
+	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
+	@test -n "$(ARC_EXT)" || \
+	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	-rm -f '$(distdir).$(ARC_EXT)'
+	tardir=$(distdir) && $(am__tar) | $(ARC_CMD) >$(distdir).$(ARC_EXT)
+	$(am__post_remove_distdir)
+
+dist-custm2: distdir
+	@test -n "$(ARC_CMD)" || \
+	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
+	@test -n "$(ARC_EXT)" || \
+	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	-rm -f '$(distdir).$(ARC_EXT)'
+	tardir=$(distdir) && $(am__tar) >$(distdir).tar && $(ARC_CMD) $(distdir).tar
+	rm -f $(distdir).tar
+	$(am__post_remove_distdir)
+

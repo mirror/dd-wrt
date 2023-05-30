@@ -40,9 +40,6 @@
     <ClInclude Include="$(MhdW32Common)MHD_config.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MhdSrc)microhttpd\base64.h">
-      <Filter>Internal Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\connection.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
@@ -111,9 +108,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MhdSrc)microhttpd\base64.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\basicauth.c">
       <Filter>Source Files</Filter>
     </ClCompile>

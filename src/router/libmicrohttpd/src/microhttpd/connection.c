@@ -833,6 +833,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_Response *resp = connection->response;
 
+  mhd_assert (! connection->suspended);
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (connection->pid) );
@@ -1075,8 +1076,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
                        (size_t) MHD_MIN ((uint64_t) response->data_buffer_size,
                                          response->total_size
                                          - connection->response_write_position));
-  if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
-       (MHD_CONTENT_READER_END_WITH_ERROR == ret) )
+  if (0 > ret)
   {
     /* either error or http 1.0 transfer, close socket! */
     /* TODO: do not update total size, check whether response
@@ -2433,7 +2433,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 #if DEBUG_STATES
     MHD_DLOG (connection->daemon,
               _ ("In function %s handling connection at state: %s\n"),
-              __FUNCTION__,
+              MHD_FUNC_,
               MHD_state_to_string (connection->state));
 #endif
     switch (connection->state)
@@ -3469,58 +3469,32 @@ process_broken_line (struct MHD_Connection *connection,
                      char *line,
                      enum MHD_ValueKind kind)
 {
-  char *last;
-  char *tmp;
-  size_t last_len;
-  size_t tmp_len;
+  char *const last_value = connection->colon;
+  const size_t last_value_len = strlen (last_value);
+  mhd_assert (NULL != connection->last);
+  mhd_assert (NULL != connection->colon);
 
-  last = connection->last;
   if ( (' ' == line[0]) ||
        ('\t' == line[0]) )
   {
-    /* value was continued on the next line, see
-       http://www.jmarshall.com/easy/http/ */
-    last_len = strlen (last);
-    /* skip whitespace at start of 2nd line */
-    tmp = line;
-    while ( (' ' == tmp[0]) ||
-            ('\t' == tmp[0]) )
-      tmp++;
-    tmp_len = strlen (tmp);
-    /* FIXME: we might be able to do this better (faster!), as most
-       likely 'last' and 'line' should already be adjacent in
-       memory; however, doing this right gets tricky if we have a
-       value continued over multiple lines (in which case we need to
-       record how often we have done this so we can check for
-       adjacency); also, in the case where these are not adjacent
-       (not sure how it can happen!), we would want to allocate from
-       the end of the pool, so as to not destroy the read-buffer's
-       ability to grow nicely. */
-    last = MHD_pool_reallocate (connection->pool,
-                                last,
-                                last_len + 1,
-                                last_len + tmp_len + 1);
-    if (NULL == last)
-    {
-      transmit_error_response_static (connection,
-                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                      REQUEST_TOO_BIG);
-      return MHD_NO;
-    }
-    memcpy (&last[last_len],
-            tmp,
-            tmp_len + 1);
-    connection->last = last;
-    return MHD_YES;             /* possibly more than 2 lines... */
+    /* This line is a continuation of the previous line */
+    /* NOTE: this is a simplified implementation only for v0.9.77 */
+    size_t num_to_replace = ((size_t) (line - last_value)) - last_value_len;
+
+    /* Only CRLF or LF should be between lines */
+    mhd_assert ((2 == num_to_replace) || (1 == num_to_replace));
+    /* Replace CRLF with spaces */
+    last_value[last_value_len] = ' ';
+    if (0 != --num_to_replace)
+      last_value[last_value_len + 1] = ' ';
+    return MHD_NO;             /* possibly more than 2 lines... */
   }
-  mhd_assert ( (NULL != last) &&
-               (NULL != connection->colon) );
   if (MHD_NO ==
       connection_add_header (connection,
-                             last,
-                             strlen (last),
-                             connection->colon,
-                             strlen (connection->colon),
+                             connection->last,
+                             strlen (connection->last),
+                             last_value,
+                             last_value_len,
                              kind))
   {
     /* Error has been queued by connection_add_header() */
@@ -3793,7 +3767,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
 #if DEBUG_STATES
   MHD_DLOG (connection->daemon,
             _ ("In function %s handling connection at state: %s\n"),
-            __FUNCTION__,
+            MHD_FUNC_,
             MHD_state_to_string (connection->state));
 #endif
   switch (connection->state)
@@ -3870,7 +3844,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if DEBUG_STATES
   MHD_DLOG (connection->daemon,
             _ ("In function %s handling connection at state: %s\n"),
-            __FUNCTION__,
+            MHD_FUNC_,
             MHD_state_to_string (connection->state));
 #endif
   switch (connection->state)
@@ -4435,7 +4409,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #if DEBUG_STATES
     MHD_DLOG (daemon,
               _ ("In function %s handling connection at state: %s\n"),
-              __FUNCTION__,
+              MHD_FUNC_,
               MHD_state_to_string (connection->state));
 #endif
     switch (connection->state)
@@ -4722,10 +4696,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
 #endif /* UPGRADE_SUPPORT */
 
-      if (connection->rp_props.chunked)
-        connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+      if (connection->rp_props.send_reply_body)
+      {
+        if (connection->rp_props.chunked)
+          connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+        else
+          connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+      }
       else
-        connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+        connection->state = MHD_CONNECTION_FOOTERS_SENT;
       continue;
     case MHD_CONNECTION_NORMAL_BODY_READY:
       /* nothing to do here */

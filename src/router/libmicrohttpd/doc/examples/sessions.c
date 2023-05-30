@@ -1,57 +1,12 @@
 /* Feel free to use this example code in any way
    you see fit (Public Domain) */
 
-/* needed for asprintf */
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
 #include <microhttpd.h>
-
-#if defined _WIN32 && ! defined(__MINGW64_VERSION_MAJOR)
-static int
-asprintf (char **resultp, const char *format, ...)
-{
-  va_list argptr;
-  char *result = NULL;
-  int len = 0;
-
-  if (format == NULL)
-    return -1;
-
-  va_start (argptr, format);
-
-  len = _vscprintf ((char *) format, argptr);
-  if (len >= 0)
-  {
-    len += 1;
-    result = (char *) malloc (sizeof (char *) * len);
-    if (result != NULL)
-    {
-      int len2 = _vscprintf ((char *) format, argptr);
-      if ((len2 != len - 1) || (len2 <= 0))
-      {
-        free (result);
-        result = NULL;
-        len = -1;
-      }
-      else
-      {
-        len = len2;
-        if (resultp)
-          *resultp = result;
-      }
-    }
-  }
-  va_end (argptr);
-  return len;
-}
-
-
-#endif
 
 /**
  * Invalid method page.
@@ -339,29 +294,49 @@ fill_v1_form (const void *cls,
               struct MHD_Connection *connection)
 {
   enum MHD_Result ret;
-  const char *form = cls;
   char *reply;
   struct MHD_Response *response;
+  int len;
 
-  if (-1 == asprintf (&reply,
-                      form,
-                      session->value_1))
+  (void) cls; /* Unused parameter */
+
+  /* Emulate 'asprintf' */
+  len = snprintf (NULL, 0, MAIN_PAGE, session->value_1);
+  if (0 > len)
+    return MHD_NO; /* Internal error */
+
+  reply = (char *) malloc (len + 1);
+  if (NULL == reply)
+    return MHD_NO; /* Out-of-memory error */
+
+  if (len != snprintf (reply,
+                       ((size_t) len) + 1,
+                       MAIN_PAGE,
+                       session->value_1))
   {
-    /* oops */
-    return MHD_NO;
+    free (reply);
+    return MHD_NO; /* printf error */
   }
-  /* return static form */
+
   response = MHD_create_response_from_buffer (strlen (reply),
                                               (void *) reply,
                                               MHD_RESPMEM_MUST_FREE);
-  add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_OK,
-                            response);
-  MHD_destroy_response (response);
+  if (NULL != response)
+  {
+    add_session_cookie (session, response);
+    MHD_add_response_header (response,
+                             MHD_HTTP_HEADER_CONTENT_ENCODING,
+                             mime);
+    ret = MHD_queue_response (connection,
+                              MHD_HTTP_OK,
+                              response);
+    MHD_destroy_response (response);
+  }
+  else
+  {
+    free (reply);
+    ret = MHD_NO;
+  }
   return ret;
 }
 
@@ -381,30 +356,50 @@ fill_v1_v2_form (const void *cls,
                  struct MHD_Connection *connection)
 {
   enum MHD_Result ret;
-  const char *form = cls;
   char *reply;
   struct MHD_Response *response;
+  int len;
 
-  if (-1 == asprintf (&reply,
-                      form,
-                      session->value_1,
-                      session->value_2))
+  (void) cls; /* Unused parameter */
+
+  /* Emulate 'asprintf' */
+  len = snprintf (NULL, 0, SECOND_PAGE, session->value_1, session->value_2);
+  if (0 > len)
+    return MHD_NO; /* Internal error */
+
+  reply = (char *) malloc (len + 1);
+  if (NULL == reply)
+    return MHD_NO; /* Out-of-memory error */
+
+  if (len == snprintf (reply,
+                       ((size_t) len) + 1,
+                       SECOND_PAGE,
+                       session->value_1,
+                       session->value_2))
   {
-    /* oops */
-    return MHD_NO;
+    free (reply);
+    return MHD_NO; /* printf error */
   }
-  /* return static form */
+
   response = MHD_create_response_from_buffer (strlen (reply),
                                               (void *) reply,
                                               MHD_RESPMEM_MUST_FREE);
-  add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_OK,
-                            response);
-  MHD_destroy_response (response);
+  if (NULL != response)
+  {
+    add_session_cookie (session, response);
+    MHD_add_response_header (response,
+                             MHD_HTTP_HEADER_CONTENT_ENCODING,
+                             mime);
+    ret = MHD_queue_response (connection,
+                              MHD_HTTP_OK,
+                              response);
+    MHD_destroy_response (response);
+  }
+  else
+  {
+    free (reply);
+    ret = MHD_NO;
+  }
   return ret;
 }
 
@@ -446,9 +441,9 @@ not_found_page (const void *cls,
 /**
  * List of all pages served by this HTTP server.
  */
-static struct Page pages[] = {
-  { "/", "text/html",  &fill_v1_form, MAIN_PAGE },
-  { "/2", "text/html", &fill_v1_v2_form, SECOND_PAGE },
+static const struct Page pages[] = {
+  { "/", "text/html",  &fill_v1_form, NULL },
+  { "/2", "text/html", &fill_v1_v2_form, NULL },
   { "/S", "text/html", &serve_simple_form, SUBMIT_PAGE },
   { "/F", "text/html", &serve_simple_form, LAST_PAGE },
   { NULL, NULL, &not_found_page, NULL }   /* 404 */

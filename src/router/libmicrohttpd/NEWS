@@ -1,3 +1,78 @@
+Sun 28 May 2023 18:00:00 MSK
+Released GNU libmicrohttpd 0.9.77. -CG
+
+    This is mostly a bugfix release.
+    This version created by taking patches from the current development
+    branch and back-porting them on top of version 0.9.76.
+    The most notable changes are: some improvements for Digest and Basic
+    authorizations, fixed efficiency for TLS upgraded connections, fixed
+    processing of folded headers in requests, fixed functionality with 
+    blocking sockets, improved and fixed internal test-suite.
+
+    The more detailed list of the important changes:
+
+    API changes:
+    + Added new function MHD_get_version_bin().
+
+    Improvements and enhancements:
+    * Digest Auth: changed algorithm identifiers in server generated
+      headers from "md5" / "sha-256" to "MD5" / "SHA-256" to better match
+      RFC (while clients should use caseless matching).
+    * Improved Base64 decoding by new implementation with robust input
+      data validation checks.
+    * Improved configure for cross-compiling, for better compatibility
+      with POSIX and for better compatibility with the latest compiler
+      versions.
+    * New internal tests: for Base64 decoding, Basic Auth and folded
+      headers.
+    * Supported new libcurl API in tests to mute deprecation warnings.
+    * Supported ARM and ARM64 for VC compilers.
+
+    Functionality changes:
+    * any negative number returned by response data generation callback
+      function is treated as an error. Previously negative values except
+      predefined error codes could produce undefined behaviour.
+    * Added handling of "DEBUG" preprocessor macro as an alias of "_DEBUG".
+
+    Fixes:
+    # Fixed functionality with blocking sockets.
+    # Fixed very inefficient data pumping for upgraded TLS connections.
+    # Fixed processing of folded headers in the requests.
+    # Fixed data races when closing upgraded connection.
+    # Removed duplication of "Connection: upgrade" header.
+    # Digest auth: fixed thread sync to avoid "stale hash" results.
+    # Fixed harmless unwanted extra data processing resulting in triggering
+      of the assert.
+    # Fixed tests for LTO.
+    # Removed removed non-portable functions in examples.
+    # Fixed delayed call of connection notification callback in
+      thread-per-connection mode.
+    # Fixed Address Sanitizer unpoison of memory when memory pool is
+      destroyed. This fixed periodic ASAN error when used for a long time
+      with the sanitizer.
+    # Fixed compiler warnings in library code, examples, tests and configure
+      checks.
+    # New TLS certificates for test-suite: all with SAN fields and SHA-256
+      hash.
+    # Tests: fixed tests on Darwin 22.x (Ventura).
+    # Tests: redesigned one tests group to avoid stress-testing of the OS.
+
+    -- Evgeny Grin (Karlson2k)
+
+Sun 26 Feb 2023 17:49:30 CET
+Released GNU libmicrohttpd 0.9.76 hotfix. -CG
+
+    This is a hotfix release.
+    This only change since previous release is fixed potential DoS vector
+    in MHD_PostProcessor discovered by Gynvael Coldwind and Dejan
+    Alvadzijevic (CVE-2023-27371).
+    While the researchers have not been able to exploit this attack vector
+    when libmicrohttpd is compiled with the standard GNU C library, it is
+    recommended that you update MHD as soon as possible if your
+    applications are using (optional) MHD_PostProcessor functionality.
+
+    -- Evgeny Grin (Karlson2k)
+
 Sun 26 Dec 2021 20:30:00 MSK
 Released GNU libmicrohttpd 0.9.75 -EG
 

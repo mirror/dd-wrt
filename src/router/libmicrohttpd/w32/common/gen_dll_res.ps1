@@ -19,7 +19,8 @@ foreach($line in Get-Content "${BasePath}..\..\configure.ac")
 }
 if ("$MHD_ver" -eq "" -or "$MHD_ver_major" -eq ""  -or "$MHD_ver_minor" -eq "" -or "$MHD_ver_patchlev" -eq "")
 {
-    Throw "Can't find MHD version in ${BasePath}..\..\configure.ac"
+    Write-Error -Message ("error MHDVSVER01 : Can't find MHD version")
+    Throw ($MyInvocation.MyCommand.Name + " : error MHDVSVER01 : Can't find MHD version")
 }
 
 Write-Output "Detected MHD version: $MHD_ver"

@@ -46,10 +46,10 @@
 #endif /* !_MHD_ALIGNOF */
 
 #ifdef _MHD_ALIGNOF
-#if (defined (__GNUC__) && __GNUC__ < 4 && __GNUC_MINOR__ < 9 && \
+#if (defined(__GNUC__) && __GNUC__ < 4 && __GNUC_MINOR__ < 9 && \
   ! defined(__clang__)) || \
-  (defined (__clang__) && __clang_major__ < 8) || \
-  (defined (__clang__) && __clang_major__ < 11 && \
+  (defined(__clang__) && __clang_major__ < 8) || \
+  (defined(__clang__) && __clang_major__ < 11 && \
   defined(__apple_build_version__))
 /* GCC before 4.9 and clang before 8.0 have incorrect implementation of 'alignof()'
    which returns preferred alignment instead of minimal required alignment */

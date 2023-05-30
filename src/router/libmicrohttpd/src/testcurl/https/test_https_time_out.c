@@ -30,9 +30,9 @@
 #include "platform.h"
 #include "microhttpd.h"
 #include "tls_test_common.h"
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif /* HAVE_SIGNAL_H */
@@ -52,9 +52,6 @@
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
 #endif
-
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
 
 static const int TIME_OUT = 2;
 
@@ -210,12 +207,12 @@ main (int argc, char *const *argv)
 #endif
 #endif /* MHD_SEND_SPIPE_SUPPRESS_NEEDED */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (GNUTLS_E_SUCCESS != gnutls_global_init ())
   {
     fprintf (stderr, "Cannot initialize GnuTLS.\n");

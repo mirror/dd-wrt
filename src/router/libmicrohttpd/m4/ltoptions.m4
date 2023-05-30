@@ -1,7 +1,7 @@
 # Helper functions for option handling.                    -*- Autoconf -*-
 #
-#   Copyright (C) 2004-2005, 2007-2009, 2011-2015 Free Software
-#   Foundation, Inc.
+#   Copyright (C) 2004-2005, 2007-2009, 2011-2019, 2021-2022 Free
+#   Software Foundation, Inc.
 #   Written by Gary V. Vaughan, 2004
 #
 # This file is free software; the Free Software Foundation gives
@@ -128,7 +128,7 @@ LT_OPTION_DEFINE([LT_INIT], [win32-dll],
 [enable_win32_dll=yes
 
 case $host in
-*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-cegcc*)
+*-*-cygwin* | *-*-msys* | *-*-mingw* | *-*-pw32* | *-*-cegcc*)
   AC_CHECK_TOOL(AS, as, false)
   AC_CHECK_TOOL(DLLTOOL, dlltool, false)
   AC_CHECK_TOOL(OBJDUMP, objdump, false)

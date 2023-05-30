@@ -128,7 +128,7 @@ struct DigestAlgorithm
   void *ctx;
 
   /**
-   * Name of the algorithm, "md5" or "sha-256"
+   * Name of the algorithm, "MD5" or "SHA-256"
    */
   const char *alg;
 
@@ -198,8 +198,8 @@ cvthex (const unsigned char *bin,
  * calculate H(A1) from given hash as per RFC2617 spec
  * and store the * result in 'sessionkey'.
  *
- * @param alg The hash algorithm used, can be "md5" or "md5-sess"
- *            or "sha-256" or "sha-256-sess"
+ * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
+ *            or "SHA-256" or "SHA-256-sess"
  *    Note that the rest of the code does not support the the "-sess" variants!
  * @param[in,out] da digest implementation, must match @a alg; the
  *          da->sessionkey will be initialized to the digest in HEX
@@ -218,9 +218,9 @@ digest_calc_ha1_from_digest (const char *alg,
 {
   const unsigned int digest_size = da->digest_size;
   if ( (MHD_str_equal_caseless_ (alg,
-                                 "md5-sess")) ||
+                                 "MD5-sess")) ||
        (MHD_str_equal_caseless_ (alg,
-                                 "sha-256-sess")) )
+                                 "SHA-256-sess")) )
   {
     uint8_t dig[VLA_ARRAY_LEN_DIGEST (digest_size)];
 
@@ -260,8 +260,8 @@ digest_calc_ha1_from_digest (const char *alg,
  * calculate H(A1) from username, realm and password as per RFC2617 spec
  * and store the result in 'sessionkey'.
  *
- * @param alg The hash algorithm used, can be "md5" or "md5-sess"
- *             or "sha-256" or "sha-256-sess"
+ * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
+ *             or "SHA-256" or "SHA-256-sess"
  * @param username A `char *' pointer to the username value
  * @param realm A `char *' pointer to the realm value
  * @param password A `char *' pointer to the password value
@@ -529,7 +529,7 @@ check_nonce_nc (struct MHD_Connection *connection,
                 const char *nonce,
                 uint64_t nc)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *const daemon = MHD_get_master (connection->daemon);
   struct MHD_NonceNc *nn;
   uint32_t off;
   uint32_t mod;
@@ -1197,7 +1197,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     case MHD_DIGEST_ALG_MD5:                        \
       da.digest_size = MD5_DIGEST_SIZE;             \
       da.ctx = &ctx.md5;                            \
-      da.alg = "md5";                               \
+      da.alg = "MD5";                               \
       da.sessionkey = skey.md5;                     \
       da.init = &MHD_MD5Init;                           \
       da.update = &MHD_MD5Update;                       \
@@ -1208,7 +1208,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     case MHD_DIGEST_ALG_SHA256:                           \
       da.digest_size = SHA256_DIGEST_SIZE;                \
       da.ctx = &ctx.sha256;                               \
-      da.alg = "sha-256";                                 \
+      da.alg = "SHA-256";                                 \
       da.sessionkey = skey.sha256;                        \
       da.init = &MHD_SHA256_init;                             \
       da.update = &MHD_SHA256_update;                         \
@@ -1355,7 +1355,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                int signal_stale,
                                enum MHD_DigestAuthAlgorithm algo)
 {
-  int ret;
+  enum MHD_Result ret;
   int hlen;
   SETUP_DA (algo, da);
 

@@ -1,8 +1,8 @@
 This is libmicrohttpd.info, produced by makeinfo version 6.8 from
 libmicrohttpd.texi.
 
-This manual is for GNU libmicrohttpd (version 0.9.76, 27 February 2023),
-a library for embedding an HTTP(S) server into C applications.
+This manual is for GNU libmicrohttpd (version 0.9.77, 13 May 2023), a
+library for embedding an HTTP(S) server into C applications.
 
    Copyright © 2007–2019 Christian Grothoff
 
@@ -23,8 +23,8 @@ File: libmicrohttpd.info,  Node: Top,  Next: microhttpd-intro,  Up: (dir)
 The GNU libmicrohttpd Library
 *****************************
 
-This manual is for GNU libmicrohttpd (version 0.9.76, 27 February 2023),
-a library for embedding an HTTP(S) server into C applications.
+This manual is for GNU libmicrohttpd (version 0.9.77, 13 May 2023), a
+library for embedding an HTTP(S) server into C applications.
 
    Copyright © 2007–2019 Christian Grothoff
 
@@ -2724,6 +2724,11 @@ perform flow control.
      ‘MHD_AccessHandlerCallback’ or from the respective
      ‘MHD_ContentReaderCallback’ (but in this case the response object
      must not be shared among multiple connections).
+
+     When suspending from the ‘MHD_AccessHandlerCallback’ you MUST
+     afterwards return ‘MHD_YES’ from the access handler callback (as
+     MHD_NO would imply to both close and suspend the connection, which
+     is not allowed).
 
      Finally, it is an API violation to call ‘MHD_stop_daemon’ while
      having suspended connections (this will at least create memory and
@@ -5885,7 +5890,7 @@ Function and Data Index
 * MHD_Result <16>:                       microhttpd-response upgrade.
                                                               (line  91)
 * MHD_Result <17>:                       microhttpd-flow.     (line  20)
-* MHD_Result <18>:                       microhttpd-flow.     (line  51)
+* MHD_Result <18>:                       microhttpd-flow.     (line  56)
 * MHD_Result <19>:                       microhttpd-dauth digest.
                                                               (line 126)
 * MHD_Result <20>:                       microhttpd-dauth digest.
@@ -5985,50 +5990,50 @@ Type Index
 
 
 Tag Table:
-Node: Top818
-Node: microhttpd-intro3174
-Ref: fig:performance8091
-Ref: tbl:supported9064
-Node: microhttpd-const17387
-Node: microhttpd-struct75432
-Node: microhttpd-cb76370
-Node: microhttpd-init89675
-Node: microhttpd-inspect95557
-Node: microhttpd-requests98338
-Node: microhttpd-responses102418
-Node: microhttpd-response enqueue103617
-Ref: microhttpd-response enqueue-Footnote-1105946
-Node: microhttpd-response create106181
-Node: microhttpd-response headers114232
-Node: microhttpd-response options116730
-Node: microhttpd-response inspect117613
-Node: microhttpd-response upgrade118834
-Node: microhttpd-flow124212
-Node: microhttpd-dauth127530
-Node: microhttpd-dauth basic129081
-Node: microhttpd-dauth digest130487
-Node: microhttpd-post140707
-Node: microhttpd-post api143706
-Node: microhttpd-info146374
-Node: microhttpd-info daemon146796
-Node: microhttpd-info conn150256
-Node: microhttpd-option conn155522
-Node: microhttpd-util156602
-Node: microhttpd-util feature156885
-Node: microhttpd-util unescape160471
-Node: microhttpd-websocket161119
-Node: microhttpd-websocket handshake161838
-Node: microhttpd-websocket stream167013
-Node: microhttpd-websocket decode172053
-Node: microhttpd-websocket encode176551
-Node: microhttpd-websocket memory185997
-Node: GNU-LGPL187822
-Node: eCos License216018
-Node: GNU-GPL217409
-Node: GNU-FDL236716
-Node: Concept Index261985
-Node: Function and Data Index275171
-Node: Type Index285218
+Node: Top813
+Node: microhttpd-intro3164
+Ref: fig:performance8081
+Ref: tbl:supported9054
+Node: microhttpd-const17377
+Node: microhttpd-struct75422
+Node: microhttpd-cb76360
+Node: microhttpd-init89665
+Node: microhttpd-inspect95547
+Node: microhttpd-requests98328
+Node: microhttpd-responses102408
+Node: microhttpd-response enqueue103607
+Ref: microhttpd-response enqueue-Footnote-1105936
+Node: microhttpd-response create106171
+Node: microhttpd-response headers114222
+Node: microhttpd-response options116720
+Node: microhttpd-response inspect117603
+Node: microhttpd-response upgrade118824
+Node: microhttpd-flow124202
+Node: microhttpd-dauth127760
+Node: microhttpd-dauth basic129311
+Node: microhttpd-dauth digest130717
+Node: microhttpd-post140937
+Node: microhttpd-post api143936
+Node: microhttpd-info146604
+Node: microhttpd-info daemon147026
+Node: microhttpd-info conn150486
+Node: microhttpd-option conn155752
+Node: microhttpd-util156832
+Node: microhttpd-util feature157115
+Node: microhttpd-util unescape160701
+Node: microhttpd-websocket161349
+Node: microhttpd-websocket handshake162068
+Node: microhttpd-websocket stream167243
+Node: microhttpd-websocket decode172283
+Node: microhttpd-websocket encode176781
+Node: microhttpd-websocket memory186227
+Node: GNU-LGPL188052
+Node: eCos License216248
+Node: GNU-GPL217639
+Node: GNU-FDL236946
+Node: Concept Index262215
+Node: Function and Data Index275401
+Node: Type Index285448
 
 End Tag Table
 

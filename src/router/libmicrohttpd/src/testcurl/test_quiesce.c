@@ -377,7 +377,7 @@ testExternalGet ()
   time_t start;
   struct timeval tv;
   int i;
-  MHD_socket fd;
+  MHD_socket fd = MHD_INVALID_SOCKET;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -551,6 +551,11 @@ testExternalGet ()
     curl_multi_cleanup (multi);
   }
   MHD_stop_daemon (d);
+  if (MHD_INVALID_SOCKET == fd)
+  {
+    fprintf (stderr, "The daemon was not quiesced.\n");
+    return 2;
+  }
   MHD_socket_close_chk_ (fd);
   if (cbc.pos != strlen ("/hello_world"))
     return 8192;

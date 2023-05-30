@@ -1154,7 +1154,7 @@ MHD_str_to_uvalue_n_ (const char *str,
                       void *out_val,
                       size_t val_size,
                       uint64_t max_val,
-                      int base)
+                      unsigned int base)
 {
   size_t i;
   uint64_t res;
@@ -1354,3 +1354,116 @@ MHD_uint8_to_str_pad (uint8_t val,
   buf[pos++] = '0' + val;
   return pos;
 }
+
+
+#ifdef BAUTH_SUPPORT
+
+size_t
+MHD_base64_to_bin_n (const char *base64,
+                     size_t base64_len,
+                     void *bin,
+                     size_t bin_size)
+{
+#ifndef MHD_FAVOR_SMALL_CODE
+#define map_type int
+#else  /* MHD_FAVOR_SMALL_CODE */
+#define map_type int8_t
+#endif /* MHD_FAVOR_SMALL_CODE */
+  static const map_type map[] = {
+    /* -1 = invalid char, -2 = padding
+     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  A,  B,  C,  D,  E,  F */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 00..0F */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 10..1F */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,  /* 20..2F */
+    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -2, -1, -1,  /* 30..3F */
+    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,  /* 40..4F */
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,  /* 50..5F */
+    -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,  /* 60..6F */
+    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1   /* 70..7F */
+#ifndef MHD_FAVOR_SMALL_CODE
+    ,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 80..8F */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 90..9F */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* A0..AF */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* B0..BF */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* C0..CF */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* D0..DF */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* E0..EF */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* F0..FF */
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+  };
+  const uint8_t *const in = (const uint8_t *) base64;
+  uint8_t *const out = (uint8_t *) bin;
+  size_t i;
+  size_t j;
+  if (0 == base64_len)
+    return 0;  /* Nothing to decode */
+  if (0 != base64_len % 4)
+    return 0;  /* Wrong input length */
+  if (base64_len / 4 * 3 - 2 > bin_size)
+    return 0;
+
+  j = 0;
+  for (i = 0; i < (base64_len - 4); i += 4)
+  {
+#ifdef MHD_FAVOR_SMALL_CODE
+    if (0 != (0x80 & (in[i] | in[i + 1] | in[i + 2] | in[i + 3])))
+      return 0;
+#endif /* MHD_FAVOR_SMALL_CODE */
+    if (1)
+    {
+      const map_type v1 = map[in[i + 0]];
+      const map_type v2 = map[in[i + 1]];
+      const map_type v3 = map[in[i + 2]];
+      const map_type v4 = map[in[i + 3]];
+      if ((0 > v1) || (0 > v2) || (0 > v3) || (0 > v4))
+        return 0;
+      out[j + 0] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
+      out[j + 1] = (uint8_t) ((((uint8_t) v2) << 4) | (((uint8_t) v3) >> 2));
+      out[j + 2] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
+    }
+    j += 3;
+  }
+#ifdef MHD_FAVOR_SMALL_CODE
+  if (0 != (0x80 & (in[i] | in[i + 1] | in[i + 2] | in[i + 3])))
+    return 0;
+#endif /* MHD_FAVOR_SMALL_CODE */
+  if (1)
+  { /* The last four chars block */
+    const map_type v1 = map[in[i + 0]];
+    const map_type v2 = map[in[i + 1]];
+    const map_type v3 = map[in[i + 2]];
+    const map_type v4 = map[in[i + 3]];
+    if ((0 > v1) || (0 > v2))
+      return 0; /* Invalid char or padding at first two positions */
+    mhd_assert (j < bin_size);
+    out[j++] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
+    if (0 > v3)
+    { /* Third char is either padding or invalid */
+      if ((-2 != v3) || (-2 != v4))
+        return 0;  /* Both two last chars must be padding */
+      if (0 != (uint8_t) (((uint8_t) v2) << 4))
+        return 0;  /* Wrong last char */
+      return j;
+    }
+    if (j >= bin_size)
+      return 0; /* Not enough space */
+    out[j++] = (uint8_t) ((((uint8_t) v2) << 4) | (((uint8_t) v3) >> 2));
+    if (0 > v4)
+    { /* Fourth char is either padding or invalid */
+      if (-2 != v4)
+        return 0;  /* The char must be padding */
+      if (0 != (uint8_t) (((uint8_t) v3) << 6))
+        return 0;  /* Wrong last char */
+      return j;
+    }
+    if (j >= bin_size)
+      return 0; /* Not enough space */
+    out[j++] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
+  }
+  return j;
+#undef map_type
+}
+
+
+#endif /* BAUTH_SUPPORT */

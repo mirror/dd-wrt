@@ -275,10 +275,10 @@ test1_str (void)
     uint8_t digest[SHA1_DIGEST_SIZE];
 
     MHD_SHA1_init (&ctx);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str,
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
                      data_units1[i].str_l.len);
     MHD_SHA1_finish (&ctx, digest);
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units1[i].digest);
   }
   return num_failed;
@@ -300,7 +300,7 @@ test1_bin (void)
     MHD_SHA1_update (&ctx, data_units2[i].bin_l.bin,
                      data_units2[i].bin_l.len);
     MHD_SHA1_finish (&ctx, digest);
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units2[i].digest);
   }
   return num_failed;
@@ -321,11 +321,11 @@ test2_str (void)
     size_t part_s = data_units1[i].str_l.len / 4;
 
     MHD_SHA1_init (&ctx);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str, part_s);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str + part_s,
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str, part_s);
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str + part_s,
                      data_units1[i].str_l.len - part_s);
     MHD_SHA1_finish (&ctx, digest);
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units1[i].digest);
   }
   return num_failed;
@@ -349,7 +349,7 @@ test2_bin (void)
     MHD_SHA1_update (&ctx, data_units2[i].bin_l.bin + part_s,
                      data_units2[i].bin_l.len - part_s);
     MHD_SHA1_finish (&ctx, digest);
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units2[i].digest);
   }
   return num_failed;
@@ -389,7 +389,7 @@ test_unaligned (void)
     MHD_SHA1_init (&ctx);
     MHD_SHA1_update (&ctx, unaligned_buf, tdata->bin_l.len);
     MHD_SHA1_finish (&ctx, unaligned_digest);
-    num_failed += check_result (__FUNCTION__, MAX_OFFSET - offset,
+    num_failed += check_result (MHD_FUNC_, MAX_OFFSET - offset,
                                 unaligned_digest, tdata->digest);
   }
   free (digest_buf);

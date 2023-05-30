@@ -156,7 +156,7 @@ if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
 
-if !MHD_HAVE_TSEARCH
+if !MHD_USE_SYS_TSEARCH
 libmicrohttpd2_la_SOURCES += \
   tsearch.c tsearch.h
 endif

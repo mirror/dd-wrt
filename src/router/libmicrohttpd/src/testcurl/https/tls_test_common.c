@@ -62,8 +62,6 @@ setup_ca_cert ()
  */
 int
 test_daemon_get (void *cls,
-                 const char *cipher_suite,
-                 int proto_version,
                  int port,
                  int ver_peer)
 {
@@ -112,14 +110,7 @@ test_daemon_get (void *cls,
   }
 
   /* TLS options */
-  if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSLVERSION,
-                                          proto_version))) ||
-      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
-                                          cipher_suite))) ||
-
-      /* perform peer authentication */
-      /* TODO merge into send_curl_req */
-      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER,
+  if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER,
                                           ver_peer))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))))
   {
@@ -260,16 +251,12 @@ http_dummy_ahc (void *cls,
  * send a test http request to the daemon
  * @param url
  * @param cbc - may be null
- * @param cipher_suite
- * @param proto_version
  * @return
  */
 /* TODO have test wrap consider a NULL cbc */
 int
 send_curl_req (char *url,
-               struct CBC *cbc,
-               const char *cipher_suite,
-               int proto_version)
+               struct CBC *cbc)
 {
   CURL *c;
   CURLcode errornum;
@@ -307,13 +294,9 @@ send_curl_req (char *url,
   }
 
   /* TLS options */
-  if ((CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSLVERSION,
-                                           proto_version))) ||
-      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
-                                           cipher_suite))) ||
-      /* currently skip any peer authentication */
-      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L))) ||
-      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))))
+  if (/* currently skip any peer authentication */
+    (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L))) ||
+    (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))))
   {
     fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
              curl_easy_strerror (e));
@@ -409,9 +392,7 @@ gen_test_file_url (char *url,
  */
 int
 test_https_transfer (void *cls,
-                     int port,
-                     const char *cipher_suite,
-                     int proto_version)
+                     int port)
 {
   int len;
   int ret = 0;
@@ -437,7 +418,7 @@ test_https_transfer (void *cls,
   }
 
   if (CURLE_OK !=
-      send_curl_req (url, &cbc, cipher_suite, proto_version))
+      send_curl_req (url, &cbc))
   {
     ret = -1;
     goto cleanup;
@@ -540,17 +521,16 @@ teardown_session (gnutls_session_t session,
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) */
 int
 test_wrap (const char *test_name, int
-           (*test_function)(void *cls, int port, const char *cipher_suite,
-                            int proto_version), void *cls,
+           (*test_function)(void *cls, int port), void *cls,
            int port,
-           int daemon_flags, const char *cipher_suite, int proto_version, ...)
+           int daemon_flags, ...)
 {
   int ret;
   va_list arg_list;
   struct MHD_Daemon *d;
   (void) cls;    /* Unused. Silent compiler warning. */
 
-  va_start (arg_list, proto_version);
+  va_start (arg_list, daemon_flags);
   port = setup_testcase (&d, port, daemon_flags, arg_list);
   if (0 == port)
   {
@@ -561,7 +541,7 @@ test_wrap (const char *test_name, int
 #if 0
   fprintf (stdout, "running test: %s ", test_name);
 #endif
-  ret = test_function (NULL, port, cipher_suite, proto_version);
+  ret = test_function (NULL, port);
 #if 0
   if (ret == 0)
   {

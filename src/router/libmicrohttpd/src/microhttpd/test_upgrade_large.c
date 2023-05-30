@@ -700,7 +700,7 @@ notify_connection_cb (void *cls,
                       void **socket_context,
                       enum MHD_ConnectionNotificationCode toe)
 {
-  static int started;
+  static int started = MHD_NO;
 
   (void) cls;
   (void) connection;  /* Unused. Silent compiler warning. */
@@ -907,7 +907,7 @@ run_usock_client (void *cls)
   struct wr_socket *sock = cls;
 
   send_all (sock,
-            "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
+            "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: Upgrade\r\n\r\n");
   recv_hdr (sock);
   recv_all (sock,
             LARGE_STRING);

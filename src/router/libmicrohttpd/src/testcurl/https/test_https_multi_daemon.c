@@ -29,22 +29,17 @@
 #include <curl/curl.h>
 #include <limits.h>
 #include <sys/stat.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
-
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
 
 /*
  * assert initiating two separate daemons and having one shut down
  * doesn't affect the other
  */
 static int
-test_concurent_daemon_pair (void *cls,
-                            const char *cipher_suite,
-                            int proto_version)
+test_concurent_daemon_pair (void *cls)
 {
   int ret;
   struct MHD_Daemon *d1;
@@ -113,14 +108,13 @@ test_concurent_daemon_pair (void *cls,
   }
 
   ret =
-    test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+    test_daemon_get (NULL, port1, 0);
   ret +=
-    test_daemon_get (NULL, cipher_suite, proto_version,
-                     port2, 0);
+    test_daemon_get (NULL, port2, 0);
 
   MHD_stop_daemon (d2);
   ret +=
-    test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+    test_daemon_get (NULL, port1, 0);
   MHD_stop_daemon (d1);
   return ret;
 }
@@ -131,15 +125,14 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   FILE *cert;
-  const char *aes256_sha = "AES256-SHA";
   (void) argc; (void) argv;       /* Unused. Silent compiler warning. */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (! testsuite_curl_global_init ())
     return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
@@ -155,13 +148,8 @@ main (int argc, char *const *argv)
     return 99;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
   errorCount +=
-    test_concurent_daemon_pair (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
+    test_concurent_daemon_pair (NULL);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 

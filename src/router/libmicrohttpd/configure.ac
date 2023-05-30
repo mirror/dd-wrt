@@ -1,6 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
-# (C) 2014-2021 Evgeny Grin (Karlson2k)
+# (C) 2014-2022 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -23,18 +23,18 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.76],[libmicrohttpd@gnu.org])
+AC_INIT([GNU Libmicrohttpd],[0.9.77],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
+AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-LIB_VERSION_CURRENT=72
+LIB_VERSION_CURRENT=73
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=60
-AC_SUBST(LIB_VERSION_CURRENT)
-AC_SUBST(LIB_VERSION_REVISION)
-AC_SUBST(LIB_VERSION_AGE)
+LIB_VERSION_AGE=61
+AC_SUBST([LIB_VERSION_CURRENT])
+AC_SUBST([LIB_VERSION_REVISION])
+AC_SUBST([LIB_VERSION_AGE])
 
 AC_MSG_CHECKING([[whether z/OS special settings are required]])
 AS_IF([test `uname -s` = "OS/390"],
@@ -85,7 +85,8 @@ AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
   [AC_MSG_ERROR([Compiling libmicrohttpd requires standard POSIX headers files])], [AC_INCLUDES_DEFAULT])
 
 # Check for basic optional headers
-AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h], [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h \
+                  sys/uio.h], [], [], [AC_INCLUDES_DEFAULT])
 
 # Check for clock-specific optional headers
 AC_CHECK_HEADERS([sys/time.h time.h], [], [], [AC_INCLUDES_DEFAULT])
@@ -96,8 +97,8 @@ AC_CHECK_HEADERS([endian.h machine/endian.h sys/endian.h sys/byteorder.h \
                   sys/ioctl.h], [], [], [AC_INCLUDES_DEFAULT])
 
 # Check for network and sockets optional headers
-AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in.h arpa/inet.h \
-                  netinet/ip.h netinet/tcp.h net/if.h \
+AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in_systm.h netinet/in.h \
+                  arpa/inet.h netinet/ip.h netinet/tcp.h net/if.h \
                   netdb.h sockLib.h inetLib.h], [], [],
   [AC_INCLUDES_DEFAULT
    [
@@ -110,6 +111,9 @@ AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in.h arpa/inet.h \
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
@@ -127,14 +131,124 @@ AC_CHECK_HEADERS([sys/msg.h sys/mman.h signal.h], [], [], [AC_INCLUDES_DEFAULT])
 
 AC_CHECK_HEADER([[search.h]],
   [
-   gl_FUNC_TSEARCH
-   AS_IF([[test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]],
-     [AC_DEFINE([[HAVE_SEARCH_H]], [[1]],
-       [Define to 1 if you have the <search.h> header file and your system have properly functioning tsearch(), tfind() and tdelete() functions])])
-  ],
-  [], [AC_INCLUDES_DEFAULT])
+    MHD_CHECK_LINK_RUN([[for proper tsearch(), tfind() and tdelete()]],[[mhd_cv_sys_tsearch_usable]],
+	  [
+	    AS_CASE([$host_os],
+	      [openbsd*],
+	      [[ # Some OpenBSD versions have wrong return value for tdelete()
+	        mhd_cv_sys_tsearch_usable='assuming no'
+	      ]],
+	      [netbsd*],
+	      [[ # NetBSD had leaked root node for years
+	        mhd_cv_sys_tsearch_usable='assuming no'
+	      ]],
+	      [[mhd_cv_sys_tsearch_usable='assuming yes']]
+	    )
+	  ],
+	  [
+	    AC_LANG_SOURCE(
+	      [[
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 
-AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
+#include <stdio.h>
+#include <search.h>
+
+static int cmp_func(const void *p1, const void *p2)
+{
+  return (*((const int *)p1)) - (*((const int *)p2));
+}
+
+int main(void)
+{
+  int ret = 0;
+  void *root_ptr = NULL;
+  int element1 = 1;
+  int **element_ptr_ptr1;
+  int **element_ptr_ptr2;
+
+  element_ptr_ptr1 =
+    (int **) tsearch ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr1)
+  {
+    fprintf (stderr, "NULL pointer has been returned when tsearch() called for the first time.\n");
+    return ++ret;
+  }
+  if (*element_ptr_ptr1 != &element1)
+  {
+    fprintf (stderr, "Wrong pointer has been returned when tsearch() called for the first time.\n");
+    return ++ret;
+  }
+  if (NULL == root_ptr)
+  {
+    fprintf (stderr, "Root pointer has not been set by tsearch().\n");
+    return ++ret;
+  }
+
+  element_ptr_ptr2 =
+    (int **) tsearch ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr2)
+  {
+    fprintf (stderr, "NULL pointer has been returned when tsearch() called for the second time.\n");
+    return ++ret;
+  }
+  if (*element_ptr_ptr2 != &element1)
+  {
+    fprintf (stderr, "Wrong pointer has been returned when tsearch() called for the second time.\n");
+    ++ret;
+  }
+  if (element_ptr_ptr2 != element_ptr_ptr1)
+  {
+    fprintf (stderr, "Wrong element has been returned when tsearch() called for the second time.\n");
+    ++ret;
+  }
+
+  element_ptr_ptr2 =
+    (int **) tfind ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr2)
+  {
+    fprintf (stderr, "NULL pointer has been returned by tfind().\n");
+    ++ret;
+  }
+  if (*element_ptr_ptr2 != &element1)
+  {
+    fprintf (stderr, "Wrong pointer has been returned when by tfind().\n");
+    ++ret;
+  }
+  if (element_ptr_ptr2 != element_ptr_ptr1)
+  {
+    fprintf (stderr, "Wrong element has been returned when tsearch() called for the second time.\n");
+    ++ret;
+  }
+
+  element_ptr_ptr1 =
+    (int **) tdelete ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr1)
+  {
+    fprintf (stderr, "NULL pointer has been returned by tdelete().\n");
+    ++ret;
+  }
+  if (NULL != root_ptr)
+  {
+    fprintf (stderr, "Root pointer has not been set to NULL by tdelete().\n");
+    ++ret;
+  }
+
+  return ret;
+}
+	      ]]
+	    )
+	  ],
+	  [AC_DEFINE([[MHD_USE_SYS_TSEARCH]], [[1]], [Define to 1 if you have properly working tsearch(), tfind() and tdelete() functions.])]
+	)
+  ],
+  [], [AC_INCLUDES_DEFAULT]
+)
+AM_CONDITIONAL([MHD_USE_SYS_TSEARCH], [[test "x$mhd_cv_sys_tsearch_usable" = "xyes" || test "x$mhd_cv_sys_tsearch_usable" = "xassuming yes"]])
 
 # Optional headers used for tests
 AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
@@ -148,6 +262,9 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
@@ -171,7 +288,7 @@ m4_ifdef([AM_GNU_GETTEXT], [
 ])
 m4_ifdef([AM_GNU_GETTEXT_VERSION], [
 #do not indent here
-AM_GNU_GETTEXT_VERSION([0.20.2])
+AM_GNU_GETTEXT_VERSION([0.21])
 ])
 AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
 
@@ -219,14 +336,14 @@ MHD_REQ_PRIVATE=''
 MHD_LIBDEPS_PKGCFG=''
 
 AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
-AH_TEMPLATE([[HAVE_REAL_BOOL]], [Define to 1 if you have the real boolean type.])
+AH_TEMPLATE([[HAVE_BUILTIN_TYPE_BOOL]], [Define to 1 if you have the real boolean type.])
 AH_TEMPLATE([[bool]], [Define to type name which will be used as boolean type.])
 AC_CHECK_HEADER([stdbool.h],
   [
    AC_CHECK_TYPE([bool],
      [
       AC_DEFINE([[HAVE_STDBOOL_H]], [[1]])
-      AC_DEFINE([[HAVE_REAL_BOOL]], [[1]])
+      AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])
      ],
      [
       AC_MSG_WARN([[Header <stdbool.h> is present, but "bool" type cannot be detected. Check compiler flags.]])
@@ -238,11 +355,11 @@ AC_CHECK_HEADER([stdbool.h],
   ],
   [
    AC_CHECK_TYPE([bool],
-     [AC_DEFINE([[HAVE_REAL_BOOL]], [[1]])],
+     [AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])],
      [
       AC_CHECK_TYPE([_Bool],
         [
-         AC_DEFINE([[HAVE_REAL_BOOL]], [[1]])
+         AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])
          AC_DEFINE([[bool]], [[_Bool]])
         ],
         [
@@ -320,7 +437,8 @@ AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
    CFLAGS="$CFLAGS -Werror=attributes"
    AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[__attribute__((non_existing_attrb_dummy)) int SimpleFunc(void) {return 3;}]], [[int r = SimpleFunc(); if (r) return r;]])],
+       [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
+       [[int r = SimpleFunc(); if (r) return r;]])],
      [
        AC_MSG_RESULT([[no]])
        errattr_CFLAGS=""
@@ -456,8 +574,7 @@ AS_CASE(["$host_os"],
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])
-     AC_SEARCH_LIBS(gethostbyname, nsl)
-     AC_SEARCH_LIBS(socket, socket)],
+     AC_SEARCH_LIBS([gethostbyname], [nsl])],
   [*arm-linux*],
   [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      mhd_host_os='ARM Linux'
@@ -478,7 +595,6 @@ AS_CASE(["$host_os"],
      AC_DEFINE([WINDOWS],[1],[This is a Windows system])
      mhd_host_os='Windows/MinGW'
      AC_MSG_RESULT([[$mhd_host_os]])
-     LIBS="$LIBS -lws2_32"
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [mslibcheck=`lib 2>&1`
@@ -1054,13 +1170,92 @@ AM_CONDITIONAL([W32_SHARED_LIB_EXP], [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL([USE_MS_LIB_TOOL], [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 AM_CONDITIONAL([USE_EXPORT_FILE], [test "x$use_expfile" = "xyes"])
 
+MHD_FIND_LIB([socket],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+  ]],
+  [(void)socket(0, 0, 0);],
+  [socket ws2_32 xnet],
+  [
+    AS_VAR_IF([[mhd_cv_find_lib_socket]],[["none required"]], [],
+      [
+       MHD_LIBDEPS_PKGCFG="${mhd_cv_find_lib_socket} $MHD_LIBDEPS_PKGCFG"
+      ]
+    )
+  ],
+  [AC_MSG_ERROR([[cannot find header or library required for function socket()]])]
+)
+
 MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])
 
-# SENDMSG. Should we check for SCM_RIGHTS instead?
-# https://lists.x.org/archives/xorg-devel/2013-November/038687.html
-AC_SEARCH_LIBS([sendmsg], [socket], [AC_DEFINE([HAVE_SENDMSG],[1],[Define if your platform supports sendmsg])])
-AC_CHECK_FUNCS([writev])
+MHD_CHECK_FUNC([writev],
+  [[#include <sys/uio.h>]],
+  [[
+    struct iovec iov[2];
+    char some_str[4] = "OK\n";
+    iov[0].iov_base = (void *) some_str;
+    iov[0].iov_len = 3;
+    i][f (0 > writev(1, iov, 1))
+      return 2;
+  ]]
+)
+MHD_FIND_LIB([sendmsg],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+  ]],
+  [[
+    struct msghdr msg;
+    struct iovec iov;
+    unsigned int i;
+    char some_str[5] = "test";
+
+    iov.iov_base = (void*)some_str;
+    iov.iov_len = 4;
+
+    for (i = 0; i < (unsigned int) sizeof(msg); i++)
+    {
+      *(((unsigned char *)&msg) + i) = 0;
+    }
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
+    i][f (0 > sendmsg(1, &msg, 0))
+      return -1;
+  ]],
+  [socket],
+  [
+    AC_DEFINE([HAVE_SENDMSG],[1],[Define to '1' if your have sendmsg() function])
+    AS_VAR_IF([[mhd_cv_find_lib_sendmsg]],[["none required"]], [],
+      [
+        MHD_LIBDEPS_PKGCFG="${mhd_cv_find_lib_sendmsg} $MHD_LIBDEPS_PKGCFG"
+      ]
+    )
+  ],[],
+  [MHD_LIBDEPS]
+)
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler
@@ -1084,19 +1279,31 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __FUNCTION__ ; if (NULL == funcname) return 1;]])],
         [[mhd_cv_macro___function___avail="yes"]],[[mhd_cv_macro___function___avail="no"]])
     ])
-    AC_DEFINE([HAVE___FUNCTION__], [1], [Define to 1 if your compiler supports __FUNCTION__ magic-macro.])
+    AS_VAR_IF([mhd_cv_macro___function___avail], ["yes"],
+      [AC_DEFINE([HAVE___FUNCTION__], [1], [Define to 1 if your compiler supports __FUNCTION__ magic-macro.])],
+      [
+        AC_CACHE_CHECK([[whether __PRETTY_FUNCTION__ magic-macro is available]],
+          [[mhd_cv_macro___pretty_function___avail]], [dnl
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __PRETTY_FUNCTION__ ; if (NULL == funcname) return 1;]])],
+            [[mhd_cv_macro___pretty_function___avail="yes"]],[[mhd_cv_macro___pretty_function___avail="no"]])
+        ])
+        AS_VAR_IF([mhd_cv_macro___pretty_function___avail], ["yes"],
+          [AC_DEFINE([HAVE___PRETTY_FUNCTION__], [1], [Define to 1 if your compiler supports __PRETTY_FUNCTION__ magic-macro.])],
+        )
+      ]
+    )
   ]
 )
 AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
   [[mhd_cv_func___builtin_bswap32_avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b; (void) a;]])],
     [[mhd_cv_func___builtin_bswap32_avail="yes"]],[[mhd_cv_func___builtin_bswap32_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap32_avail" = "xyes"]],
   [AC_DEFINE([[MHD_HAVE___BUILTIN_BSWAP32]], [[1]], [Define to 1 if you have __builtin_bswap32() builtin function])])
 AC_CACHE_CHECK([[whether __builtin_bswap64() is available]],
   [[mhd_cv_func___builtin_bswap64_avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint64_t a = 1; uint32_t b = __builtin_bswap64(a); a = b;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint64_t a = 1; uint64_t b = __builtin_bswap64(a); a = b; (void) a;]])],
     [[mhd_cv_func___builtin_bswap64_avail="yes"]], [[mhd_cv_func___builtin_bswap64_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap64_avail" = "xyes"]],
@@ -1137,6 +1344,7 @@ AS_VAR_IF([enable_heavy_tests], ["yes"],
   ]
 )
 AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
+AM_CONDITIONAL([TESTS_STRESS_OS],[false])
 
 AC_ARG_ENABLE([[poll]],
   [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable poll support (yes, no, auto) [auto]])],
@@ -1145,24 +1353,50 @@ AC_ARG_ENABLE([[poll]],
   )
 
 AS_IF([test "$enable_poll" != "no"],
-       [AS_IF([test "$os_is_native_w32" != "yes"],
-             AC_CHECK_HEADERS([poll.h],
-                [AC_CHECK_FUNCS([poll], [have_poll='yes'], [have_poll='no'])],
-		[],
-		[AC_INCLUDES_DEFAULT]),
-             [AC_MSG_CHECKING([for WSAPoll()])
-              AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  [
+    AS_IF([test "$os_is_native_w32" != "yes"],
+      [
+        AC_CHECK_HEADERS([poll.h],
+          [
+            MHD_CHECK_FUNC([poll],
+              [[
+#include <poll.h>
+              ]],
+              [[
+  struct pollfd fds[2];
+
+  fds[0].fd = 0;
+  fds[0].events = POLLIN;
+  if (0 > poll(fds, 1, 0))
+    return 2;
+              ]],
+              [have_poll='yes'], [have_poll='no']
+            )
+          ], [], [AC_INCLUDES_DEFAULT]
+        )
+      ],
+      [
+        MHD_CHECK_FUNC([WSAPoll],
+          [[
 #include <winsock2.h>
-              ]],[[
-WSAPOLLFD fda[2];
-WSAPoll(fda, 2, 0);]])],
-              [have_poll='yes'
-              AC_DEFINE([HAVE_POLL],[1])
-              ],[have_poll='no'])
-              AC_MSG_RESULT([$have_poll])])
-       AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
-             [AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])])
-       enable_poll="$have_poll"])
+          ]],
+          [[
+  WSAPOLLFD fda[2];
+  WSAPoll(fda, 2, 0);
+          ]],
+          [
+            have_poll='yes'
+            AC_DEFINE([HAVE_POLL],[1])
+          ],
+          [have_poll='no']
+        )
+      ]
+    )
+    AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
+      [AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])])
+    enable_poll="$have_poll"
+  ]
+)
 
 AC_ARG_ENABLE([[epoll]],
   [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])],
@@ -1191,18 +1425,18 @@ AS_IF([test "$enable_epoll" != "no"],
 AM_CONDITIONAL([MHD_HAVE_EPOLL], [[test "x$enable_epoll" = xyes]])
 
 AS_IF([test "x$enable_epoll" = "xyes"],
-  AC_CACHE_CHECK([for epoll_create1()],
-                 [mhd_cv_have_epoll_create1], [
-    AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([[
+  [
+    MHD_CHECK_FUNC([epoll_create1],
+      [[
 #include <sys/epoll.h>
-        ]], [[
-int fd;
-fd = epoll_create1(EPOLL_CLOEXEC);]])],
-      [mhd_cv_have_epoll_create1=yes],
-      [mhd_cv_have_epoll_create1=no])])
-  AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
-    AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])]))
+      ]],
+      [[
+  i][f (0 > epoll_create1(EPOLL_CLOEXEC))
+    return 3;
+      ]]
+    )
+  ]
+)
 
 AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
@@ -1217,7 +1451,7 @@ AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
 #include <stdlib.h>
 #endif
 
-${decl_noret} void myexitfunc(int code)
+${decl_noret} static void myexitfunc(int code)
 {
 #ifdef HAVE_STDLIB_H
   exit (code);
@@ -1333,29 +1567,11 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
 #endif
    ])
 
-MHD_CHECK_FUNC([getsockname],
-  [[
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif
-  ]],
+MHD_CHECK_LINK_RUN([[f][or working getsockname()]],[[mhd_cv_getsockname_usable]],
+  [[mhd_cv_getsockname_usable='assuming yes']],
   [
-    struct sockaddr_storage ss;
-    (void)getsockname(socket(0,0,0),(struct sockaddr *)&ss,(void*)0);
-  ],
-  [
-    AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhd_cv_getsockname_usable]],
-      [
-         AC_RUN_IFELSE(
-           [
-            AC_LANG_SOURCE(
-             [[
+    AC_LANG_SOURCE(
+      [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1436,18 +1652,10 @@ int main(void)
 #endif
   return ret;
 }
-             ]]
-            )
-           ],
-           [[mhd_cv_getsockname_usable='yes']],
-           [[mhd_cv_getsockname_usable='no']],
-           [[mhd_cv_getsockname_usable='assuming yes']]
-         )
-        ]
-      )
-    AS_VAR_IF([[mhd_cv_getsockname_usable]], [["no"]], [:],
-        [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])])
-  ]
+      ]]
+    )
+  ],
+  [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])]
 )
 
 AC_CACHE_CHECK([for usable PAGESIZE macro], [mhd_cv_macro_pagesize_usable],
@@ -1605,32 +1813,52 @@ AS_CASE([[$enable_itc]],
   [[no]], [AC_MSG_ERROR([[inter-thread communication cannot be disabled]])],
     [AC_MSG_ERROR([[unrecognized type "$enable_itc" of inter-thread communication specified by "--enable-itc=$enable_itc"]])]
 )
-# AS_UNSET([[use_itc]])
+AS_UNSET([[use_itc]])
 
-AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
-  AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
-    AC_CHECK_HEADERS([sys/eventfd.h], [], [], [AC_INCLUDES_DEFAULT])
-    AS_VAR_IF([[ac_cv_header_sys_eventfd_h]], [["yes"]], [
-      AC_CACHE_CHECK([whether eventfd(2) is usable], [[mhd_cv_eventfd_usable]], [
-        AC_LINK_IFELSE([
-          AC_LANG_PROGRAM([[
+AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]],
+  [
+    MHD_CHECK_LINK_RUN([[f][or working eventfd(2)]],[[mhd_cv_eventfd_usable]],[[mhd_cv_eventfd_usable='assuming no']],
+      [
+        AC_LANG_SOURCE([[
 #include <sys/eventfd.h>
-          ]], [[
-          int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-          if (ef) return ef - 1;
-          ]])
-        ], [[mhd_cv_eventfd_usable='yes']], [[mhd_cv_eventfd_usable='no']])
-      ])
-    ])
-  ])
-  AS_VAR_IF([[mhd_cv_eventfd_usable]], [["yes"]], [
-    use_itc='eventfd'
-    enable_itc="$use_itc"
-    AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
-  ], [
-    AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
-  ])
-])
+#include <unistd.h>
+
+int main(void)
+{
+  unsigned char buf[8];
+  int ret;
+  int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  if (0 > efd)
+    return 2;
+  ret = 0;
+  buf[3] = 1;
+  if (8 != write(efd, buf, 8))
+    ret = 3;
+  else
+  {
+    if (8 != read(efd, buf, 8))
+      ret = 4;
+  }
+  close(efd);
+  return ret;
+}
+          ]]
+        )
+      ],
+      [
+        use_itc='eventfd'
+        enable_itc="$use_itc"
+        AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
+      ],
+      [
+        AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
+      ]
+    )
+    AS_VAR_IF([mhd_cv_eventfd_usable],["assuming no"],
+      [AC_MSG_WARN([if you have 'eventfd' support enabled on your target system consider overriding test result by "mhd_cv_eventfd_usable=yes" configure parameter])]
+    )
+  ]
+)
 
 AS_IF([[test "x$enable_itc" = "xpipe" || test "x$enable_itc" = "xauto"]], [
   AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
@@ -1644,18 +1872,25 @@ AC_INCLUDES_DEFAULT
         ], [[
           int arr[2];
           int res;
-          res = pipe(arr)
+          res = pipe(arr);
+          if (res != 0) return 33;
+          close (arr[0]);
+          close (arr[1]);
         ]])
       ], [[mhd_cv_pipe_usable='yes']], [[mhd_cv_pipe_usable='no']])
     ])
-  ])
-  AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
-    use_itc='pipe'
-    enable_itc="$use_itc"
-    AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
-    AC_CACHE_CHECK([[whether pipe2(2) is usable]], [[mhd_cv_pipe2_usable]], [
-      AC_LINK_IFELSE([
-        AC_LANG_PROGRAM([
+    AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
+      use_itc='pipe'
+      enable_itc="$use_itc"
+      AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
+      MHD_CHECK_LINK_RUN([[whether pipe2(2) is usable]],[[mhd_cv_pipe2_usable]],
+        [
+          # Cross-compiling
+          AS_CASE([${host_os}], [kfreebsd*-gnu], [[mhd_cv_pipe2_usable='assuming no']],
+            [[mhd_cv_pipe2_usable='assuming yes']])
+        ],
+        [
+          AC_LANG_PROGRAM([
 AC_INCLUDES_DEFAULT
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -1663,17 +1898,21 @@ AC_INCLUDES_DEFAULT
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-        ], [[
-          int arr[2];
-          int res;
-          res = pipe2(arr, O_CLOEXEC | O_NONBLOCK)
-        ]])
-      ], [[mhd_cv_pipe2_usable='yes']], [[mhd_cv_pipe2_usable='no']])
+            ], [[
+              int arr[2];
+              int res;
+              res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
+              if (res != 0) return 33;
+              close (arr[0]);
+              close (arr[1]);
+            ]]
+          )
+        ],
+        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])]
+      )
+    ], [
+      AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
     ])
-    AS_VAR_IF([[mhd_cv_pipe2_usable]], [["yes"]],
-      [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])])
-  ], [
-    AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
   ])
 ])
 
@@ -1717,7 +1956,68 @@ AC_INCLUDES_DEFAULT
 AS_IF([[test -z "$use_itc"]], [AC_MSG_ERROR([[cannot find usable type of inter-thread communication]])])
 
 
-AC_CHECK_FUNCS_ONCE([accept4 gmtime_r memmem snprintf])
+MHD_CHECK_FUNC([accept4],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <sys/socket.h>
+  ]],
+  [[
+  struct sockaddr sk_addr;
+  socklen_t addr_size;
+  i][f (0 > accept4(0, &sk_addr, &addr_size, 0))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([gmtime_r],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <time.h>
+  ]],
+  [[
+  time_t timer = (time_t) 0;
+  struct tm res;
+
+  i][f (&res != gmtime_r(&timer, &res))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([memmem],
+  [[
+#if defined(HAVE_STDDEF_H)
+#  include <stddef.h>
+#elif defined(HAVE_STDLIB_H)
+#  include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+#include <string.h>
+  ]],
+  [[
+  const char *haystack = "abc";
+  size_t hslen = 3;
+  const char *needle = "b";
+  size_t needlelen = 1;
+
+  i][f ((haystack + 1) != memmem(haystack, hslen, needle, needlelen))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([snprintf],
+  [[
+#include <stdio.h>
+  ]],
+  [[
+  char buf[2];
+
+  i][f (1 != snprintf(buf, 2, "a"))
+    return 3;
+  /* Do not use the next check to avoid compiler warning */
+  /* i][f (4 != snprintf(buf, 2, "abcd"))
+    return 4; */
+  ]]
+)
 AC_CHECK_DECL([gmtime_s],
   [
     AC_MSG_CHECKING([[whether gmtime_s is in C11 form]])
@@ -1782,50 +2082,40 @@ AC_CHECK_DECL([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBL
   ]]
 )
 
-
-AC_CHECK_DECL([[clock_gettime]],
+MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
+  [[
+    struct timespec tp;
+    i][f (0 > clock_gettime(CLOCK_REALTIME, &tp))
+      return 3;
+  ]],
+  [rt],
   [
-   SAVE_LIBS="$LIBS"
-   AC_SEARCH_LIBS([clock_gettime], [rt],
-     [
-      AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Have clock_gettime])
-      AS_VAR_IF([[ac_cv_search_clock_gettime]],[["none required"]], [],
-        [
-         MHD_LIBDEPS="$ac_cv_search_clock_gettime $MHD_LIBDEPS"
-         MHD_LIBDEPS_PKGCFG="$ac_cv_search_clock_gettime $MHD_LIBDEPS_PKGCFG"
-        ])
-     ], [], [$MHD_LIBDEPS])
-   LIBS="$SAVE_LIBS"
-  ], [], [[
-#include <time.h>
-  ]])
+    AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define to '1' if you have clock_gettime() function])
+    AS_VAR_IF([[mhd_cv_find_lib_clock_gettime]],[["none required"]], [],
+      [
+        MHD_LIBDEPS_PKGCFG="${mhd_cv_find_lib_clock_gettime} $MHD_LIBDEPS_PKGCFG"
+      ]
+    )
+  ],[],
+  [MHD_LIBDEPS]
+)
 
-AC_MSG_CHECKING([[for clock_get_time]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [[
+MHD_CHECK_FUNC([clock_get_time],
+  [[
 #include <mach/clock.h>
 #include <mach/mach.h>
-    ]],
-    [[
-      clock_serv_t cs;
-      mach_timespec_t mt;
-      host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cs);
-      clock_get_time(cs, &mt);
-      mach_port_deallocate(mach_task_self(), cs);
-    ]])
-  ],
-  [
-    AC_DEFINE([HAVE_CLOCK_GET_TIME], [1], [Define to 1 if you have `clock_get_time', `host_get_clock_service' and `mach_port_deallocate' functions.])
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ])
+  ]],
+  [[
+    clock_serv_t cs;
+    mach_timespec_t mt;
+    host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cs);
+    clock_get_time(cs, &mt);
+    mach_port_deallocate(mach_task_self(), cs);
+  ]]
+)
 
-AC_MSG_CHECKING([[for gethrtime]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [[
+MHD_CHECK_FUNC([gethrtime],
+  [[
 #ifdef HAVE_SYS_TIME_H
 /* Solaris define gethrtime() in sys/time.h */
 #include <sys/time.h>
@@ -1834,100 +2124,83 @@ AC_LINK_IFELSE(
 /* HP-UX define gethrtime() in time.h */
 #include <time.h>
 #endif /* HAVE_TIME_H */
-    ]], [[hrtime_t hrt = gethrtime(); ]])
-  ],
-  [
-    AC_DEFINE([HAVE_GETHRTIME], [1], [Define to 1 if you have `gethrtime' function.])
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ])
+  ]],
+  [[
+    hrtime_t hrt = gethrtime();
+    i][f (0 == hrt)
+      return 3;
+  ]]
+)
 
 AS_VAR_IF([ac_cv_header_time_h], ["yes"],
   [
-    AC_CACHE_CHECK([[for C11 timespec_get()]], [mhd_cv_func_timespec_get],
-      [
-        AC_LINK_IFELSE(
-          [
-            AC_LANG_PROGRAM(
-              [[
+    MHD_CHECK_FUNC([timespec_get],
+      [[
 #include <time.h>
 
 #ifndef TIME_UTC
 #error TIME_UTC must be defined to use timespec_get()
 choke me now
 #endif
-              ]],
-              [[
+      ]],
+      [[
   struct timespec ts;
-  if (TIME_UTC != timespec_get (&ts, TIME_UTC))
-    return 1;
-              ]]
-            )
-          ], [[mhd_cv_func_timespec_get="yes"]], [[mhd_cv_func_timespec_get="no"]]
-        )
-      ]
-    )
-    AS_VAR_IF([mhd_cv_func_timespec_get], ["yes"],
-      [AC_DEFINE([HAVE_TIMESPEC_GET], [1], [Define to 1 if you have C11 `mhd_cv_func_timespec_get' function and TIME_UTC macro.])]
+  i][f (TIME_UTC != timespec_get (&ts, TIME_UTC))
+    return 3;
+      ]]
     )
   ]
 )
 
-AS_VAR_SET_IF([ac_cv_func_gettimeofday], [mhd_cv_func_gettimeofday="${ac_cv_func_gettimeofday}"])
-AC_CACHE_CHECK([[for gettimeofday(2)]], [mhd_cv_func_gettimeofday], [
-  AC_LINK_IFELSE(
-    [
-      AC_LANG_PROGRAM(
-        [[
+MHD_CHECK_FUNC([[gettimeofday]],
+  [[
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif /* HAVE_TIME_H */
-        ]],
-        [[
+  ]],
+  [[
   struct timeval tv;
-  if (0 != gettimeofday (&tv, (void*) 0))
+  i][f (0 != gettimeofday (&tv, (void*) 0))
     return 1;
-        ]]
-      )
-    ], [[mhd_cv_func_gettimeofday="yes"]], [[mhd_cv_func_gettimeofday="no"]]
-  )
-])
-AS_VAR_IF([mhd_cv_func_gettimeofday], ["yes"],
-  [AC_DEFINE([HAVE_GETTIMEOFDAY], [1], [Define to 1 if you have `gettimeofday' function.])]
+  ]]
 )
 
 # IPv6
-AC_MSG_CHECKING(for IPv6)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_CACHE_CHECK([for IPv6],[mhd_cv_have_inet6],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_WINSOCK2_H
+#ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #endif
-#if HAVE_WS2TCPIP_H
+#ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
 #endif
-]], [[
-int af=AF_INET6;
-int pf=PF_INET6;
-struct sockaddr_in6 sa;
-printf("%d %d %p\n", af, pf, &sa);
-]])],[
-have_inet6=yes;
-AC_DEFINE([HAVE_INET6], [1], [Provides IPv6 headers])
-],[
-have_inet6=no
-])
-AC_MSG_RESULT($have_inet6)
+          ]], [[
+  int af=AF_INET6;
+  int pf=PF_INET6;
+  struct sockaddr_in6 sa;
+  printf("%d %d %p\n", af, pf, (void*) &sa);
+          ]]
+        )
+      ],
+      [AS_VAR_SET([mhd_cv_have_inet6],["yes"])],
+      [AS_VAR_SET([mhd_cv_have_inet6],["no"])]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_have_inet6],["yes"],
+  [AC_DEFINE([HAVE_INET6], [1], [Define to '1' if you have IPv6 headers])]
+)
 
 MHD_CHECK_FUNC([[sysconf]], [[#include <unistd.h>]], [[long a = sysconf(0); if (a) return 1;]])
 
@@ -1938,10 +2211,48 @@ MHD_CHECK_FUNC([[sysctl]], [[
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#ifdef HAVE_STDDEF_H
+#if defined(HAVE_STDDEF_H)
 #include <stddef.h>
+#elif defined(HAVE_STDLIB_H)
+#include <stdlib.h>
 #endif
-  ]], [[int mib[2] = {CTL_KERN, KERN_MAXPROC}; if (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;]]
+  ]], [[
+      int mib[2] = {0, 0}; /* Avoid any platform-specific values */
+      i][f (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;
+  ]],
+  [
+    AC_CHECK_DECLS([CTL_NET,PF_INET,IPPROTO_ICMP,ICMPCTL_ICMPLIM],[],[],
+      [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif /* HAVE_NETINET_IP_H */
+#ifdef HAVE_NETINET_IP_ICMP_H
+#include <netinet/ip_icmp.h>
+#endif /* HAVE_NETINET_IP_ICMP_H */
+#ifdef HAVE_NETINET_ICMP_VAR_H
+#include <netinet/icmp_var.h>
+#endif /* HAVE_NETINET_ICMP_VAR_H */
+      ]]
+    )
+  ]
 )
 
 MHD_CHECK_FUNC([[sysctlbyname]], [[
@@ -1951,8 +2262,10 @@ MHD_CHECK_FUNC([[sysctlbyname]], [[
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#ifdef HAVE_STDDEF_H
+#if defined(HAVE_STDDEF_H)
 #include <stddef.h>
+#elif defined(HAVE_STDLIB_H)
+#include <stdlib.h>
 #endif
   ]], [[sysctlbyname("test", NULL, NULL, NULL, 0);]]
 )
@@ -2001,41 +2314,69 @@ AS_IF([test "$enable_curl" != "no"],
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 mhd_have_libmagic="no"
-SAVE_LIBS="$LIBS"
-LIBS="$LIBS -lmagic"
-AC_MSG_CHECKING([[for suitable libmagic]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [AC_INCLUDES_DEFAULT
-     [
+MHD_CHECK_FUNC([magic_open],
+  [[
 #include <magic.h>
-    ]],
-    [[
-      char var_data[256];
-      const char *var_mime;
-      magic_t var_magic = magic_open (MAGIC_MIME_TYPE);
-      (void)magic_load (var_magic, NULL);
-      var_data[0] = 0;
-      var_mime = magic_buffer (var_magic, var_data, 1);
-      magic_close (var_magic);
-    ]]
-   )
-  ],
-  [
-    AC_DEFINE([MHD_HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])
-    mhd_have_libmagic="yes"
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ]
+  ]],
+  [[
+    char var_data[256];
+    const char *var_mime;
+    magic_t var_magic = magic_open (MAGIC_MIME_TYPE);
+    (void)magic_load (var_magic, "filename");
+    var_data[0] = 0;
+    var_mime = magic_buffer (var_magic, var_data, 1);
+    i][f (! var_mime)
+      return 1;
+    magic_close (var_magic);
+  ]],
+  [AC_DEFINE([MHD_HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])],
+  [],
+  [-lmagic]
 )
-LIBS="$SAVE_LIBS"
-AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
+AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_func_magic_open" = "xyes"]])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
-AC_CHECK_FUNCS([lseek64 pread64 pread])
+MHD_CHECK_FUNC([lseek64],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <unistd.h>
+  ]],
+  [[
+  i][f (((off64_t) -1) == lseek64(0, (off64_t) 0, SEEK_SET))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([pread64],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <unistd.h>
+  ]],
+  [[
+  char buf[5];
+  i][f (0 > pread64(0, (void *) buf, 1, (off64_t) 0))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([pread],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <unistd.h>
+  ]],
+  [[
+  char buf[5];
+  i][f (0 > pread(0, (void *) buf, 1, 0))
+    return 3;
+  ]]
+)
+
 
 # check for various sendfile functions
 AC_ARG_ENABLE([sendfile],
@@ -2079,7 +2420,16 @@ ssize_t sendfile(int, int, off_t*, size_t);
         AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
         found_sendfile="yes, Linux-style"
         AC_MSG_RESULT([[yes]])
-        AC_CHECK_FUNCS([sendfile64])
+        MHD_CHECK_FUNC([sendfile64],
+          [[
+#include <sys/sendfile.h>
+          ]],
+          [[
+  off64_t f_offset = (off64_t) 0;
+  if (0 > sendfile64 (0, 1, &f_offset, 1))
+    return 3;
+          ]]
+        )
       ],
       [AC_MSG_RESULT([[no]])
       ]
@@ -2206,7 +2556,18 @@ ssize_t sendfile(int out_fd, int in_fd,
        MHD_LIBDEPS="-lsendfile $MHD_LIBDEPS"
        MHD_LIBDEPS_PKGCFG="-lsendfile $MHD_LIBDEPS_PKGCFG"
        AC_MSG_RESULT([[yes]])
-       AC_CHECK_FUNCS([sendfile64])
+       MHD_CHECK_FUNC([sendfile64],
+         [[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/sendfile.h>
+         ]],
+         [[
+  off64_t f_offset = (off64_t) 0;
+  if (0 > sendfile64 (0, 1, &f_offset, 1))
+    return 3;
+         ]]
+       )
      ],
      [AC_MSG_RESULT([[no]])
      ]
@@ -2293,18 +2654,23 @@ AC_ARG_WITH([[gnutls]],
         LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
         CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
         have_gnutls_pkgcfg=no
-          AC_CHECK_HEADERS([gnutls/gnutls.h],
-            [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-              [
-                GNUTLS_CPPFLAGS="-I$with_gnutls/include"
-                GNUTLS_LDFLAGS="-L$with_gnutls/lib"
-                GNUTLS_LIBS="-lgnutls"
-                have_gnutls=yes
-              ])], [], [AC_INCLUDES_DEFAULT])
-        AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
-        CPPFLAGS="$SAVE_CPPFLAGS"
-        CFLAGS="$SAVE_CFLAGS"
-        LDFLAGS="$SAVE_LDFLAGS"
+        MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+          [
+           if(!gnutls_check_version("2.0.0"))
+             return 3;
+          ],
+          [
+            GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+            GNUTLS_LDFLAGS="-L$with_gnutls/lib"
+            GNUTLS_LIBS="-lgnutls"
+            have_gnutls=yes
+          ],
+          [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])],
+          [-lgnutls]
+        )
+        CPPFLAGS="${SAVE_CPPFLAGS}"
+        CFLAGS="${SAVE_CFLAGS}"
+        LDFLAGS="${SAVE_LDFLAGS}"
         LIBS="$SAVE_LIBS"
       ])
    ],
@@ -2482,7 +2848,7 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
             gnutls_free(data.data);
           ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
      AC_MSG_RESULT([[$have_gnutls_sni]])
-     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisaion]], [mhd_cv_gcrypt_required],
+     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisation]], [mhd_cv_gcrypt_required],
        [
         AC_COMPILE_IFELSE(
           [
@@ -2492,7 +2858,7 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
              ],
              [
 #if !defined(GNUTLS_VERSION_NUMBER) || GNUTLS_VERSION_NUMBER+0 <= 0x020c14
-#error Old versions of GnuTLS require libgcript initialisaion
+#error Old versions of GnuTLS require libgcript initialisation
 choke me now
 #endif
              ]
@@ -2636,7 +3002,7 @@ AS_VAR_IF([have_gnutls], ["yes"],
           [
             AS_IF([command -v rpm >/dev/null],
               [
-                AS_IF([test r`rpm -E '%{rhel} 2>/dev/null'` = "r6"],
+                AS_IF([test "r`rpm -E '%{rhel}' 2>/dev/null`" = "r6"],
                   [mhd_cv_gnutls_mthread_broken="found"],
                 )
               ]
@@ -2659,36 +3025,33 @@ AM_CONDITIONAL([HAVE_GNUTLS_MTHREAD_BROKEN], [[test "x${mhd_cv_gnutls_mthread_br
 AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xno" || test "x${mhd_cv_gnutls_cli}" = "xyes"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
-AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
+AC_MSG_CHECKING([[whether to support HTTP Basic authentication]])
 AC_ARG_ENABLE([bauth],
-		AS_HELP_STRING([--disable-bauth],
-			[disable HTTP basic Auth support]),
+		[AS_HELP_STRING([--disable-bauth],[disable HTTP Basic Authentication support])],
 		[enable_bauth=${enableval}],
 		[enable_bauth=yes])
 AS_IF([[test "x$enable_bauth" != "xno"]],
   [ enable_bauth=yes
-    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with basic Auth support.]) ])
+    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Basic Auth support.]) ])
 AM_CONDITIONAL([ENABLE_BAUTH], [test "x$enable_bauth" != "xno"])
 AC_MSG_RESULT([[$enable_bauth]])
 
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING([[whether to support HTTP digest authentication]])
+AC_MSG_CHECKING([[whether to support HTTP Digest authentication]])
 AC_ARG_ENABLE([dauth],
-		AS_HELP_STRING([--disable-dauth],
-			[disable HTTP basic and digest Auth support]),
+		[AS_HELP_STRING([--disable-dauth], [disable HTTP Digest Authentication support])],
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
 AS_IF([[test "x$enable_dauth" != "xno"]],
   [ enable_dauth=yes
-    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with digest Auth support.]) ])
+    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
 
 # optional: HTTP "Upgrade" support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
 AC_ARG_ENABLE([[httpupgrade]],
-    AS_HELP_STRING([[--disable-httpupgrade]],
-      [disable HTTP "Upgrade" support]),
+    [AS_HELP_STRING([[--disable-httpupgrade]], [disable HTTP "Upgrade" support])],
     [AS_VAR_IF([[enable_httpupgrade]],[["no"]],[],[[enable_httpupgrade='yes']])],
     [[enable_httpupgrade='yes']])
 AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
@@ -2712,7 +3075,7 @@ AS_VAR_IF([[mhd_cv_have_func_calloc]], [["yes"]],
   [AC_DEFINE([[HAVE_CALLOC]], [[1]], [Define to 1 if you have the usable `calloc' function.])])
 
 # Some systems have IPv6 disabled in kernel at run-time
-AS_IF([[test "x${have_inet6}" = "xyes" && test "x${cross_compiling}" = "xno"]],
+AS_IF([[test "x${mhd_cv_have_inet6}" = "xyes" && test "x${cross_compiling}" = "xno"]],
  [
    AC_CACHE_CHECK([whether IPv6 could be used for testing],[mhd_cv_ipv6_for_testing],
      [
@@ -2831,6 +3194,12 @@ AC_LINK_IFELSE(
      [
       AC_LANG_PROGRAM(
         [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <sys/wait.h>
         ]], [[
      pid_t p = fork ();
@@ -2949,7 +3318,7 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
     enable_san_undef="no"
     enable_san_leak="no"
     enable_san_upoison="no"
-    for san in `AS_ECHO([${enable_sanitizers}]) | tr ',' ' '`
+    f][or san in `AS_ECHO([${enable_sanitizers}]) | tr ',' ' '`
     do
       AS_CASE([$san],
         [address], [enable_san_address="yes"],
@@ -3163,22 +3532,22 @@ int ptr_process(void *ptr1, void *ptr2)
             test_undf_prog='
 #include <stdio.h>
 
-void func_out_b(char *arr)
+static void func_out_b(char *arr)
 {
   arr[0] = 0;
   arr[16] = 2;
 }
 
-unsigned int int_deref(void *ptr)
+static unsigned int int_deref(void *ptr)
 {
-  return (*((int*)ptr)) + 2;
+  return (*((unsigned int*)ptr)) + 2;
 }
 
-int func1(void)
+static int func1(void)
 {
   char chr[16];
   func_out_b (chr);
-  return int_deref(chr + 1) + int_deref(chr + 2);
+  return (int) (int_deref(chr + 1) + int_deref(chr + 2));
 }
 
 int main(void)
@@ -3369,6 +3738,8 @@ AC_SUBST([AM_UBSAN_OPTIONS])
 AC_SUBST([AM_LSAN_OPTIONS])
 AC_SUBST([AM_TESTS_ENVIRONMENT])
 
+AM_CONDITIONAL([USE_BROKEN_TLS_TESTS],[false])
+
 MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
 
 AC_SUBST([CPU_COUNT])
@@ -3456,7 +3827,6 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Use debug asserts: ${enable_asserts}
   Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
-  Gettext:           ${have_po}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   HTTP "Upgrade":    ${enable_httpupgrade}
@@ -3468,7 +3838,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
 
 AS_IF([test "x$enable_https" = "xyes"],
  [AC_MSG_NOTICE([HTTPS subsystem configuration:
-  License         :  LGPLv2.1+ only
+  License         :  LGPL version 2.1 or any later version
  ])],
  [AC_MSG_NOTICE([
   License         :  LGPLv2.1+ or eCos

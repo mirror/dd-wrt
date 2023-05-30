@@ -36,12 +36,9 @@ if HEAVY_TESTS
 THREAD_ONLY_TESTS += \
   test_add_conn_cleanup \
   test_add_conn_cleanup_nolisten \
-  $(EMPTY_ITEM)
-endif
-
-THREAD_ONLY_TESTS += \
   test_timeout \
   $(EMPTY_ITEM)
+endif
 
 if HAVE_POSIX_THREADS
 if HEAVY_TESTS
@@ -135,11 +132,26 @@ check_PROGRAMS = \
   test_get_chunked_close_empty_forced \
   test_put_chunked \
   test_callback \
+  test_get_header_fold \
+  test_put_header_fold \
+  test_put_large_header_fold \
+  test_put_header_fold_last \
+  test_put_header_fold_large \
+  test_get_header_double_fold \
+  test_put_header_double_fold \
+  test_put_large_header_double_fold \
+  test_put_header_double_fold_last \
+  test_put_header_double_fold_large \
   $(EMPTY_ITEM)
 
 if HEAVY_TESTS
 check_PROGRAMS += \
   perf_get
+endif
+
+if ENABLE_BAUTH
+check_PROGRAMS += \
+  test_basicauth
 endif
 
 if HAVE_POSTPROCESSOR
@@ -218,6 +230,9 @@ perf_get_concurrent11_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 perf_get_concurrent11_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
+
+test_basicauth_SOURCES = \
+  test_basicauth.c
 
 test_digestauth_SOURCES = \
   test_digestauth.c
@@ -463,4 +478,24 @@ test_tricky_url_SOURCES = \
 
 test_tricky_header2_SOURCES = \
   test_tricky.c ../microhttpd/test_helpers.h
-  
+
+test_put_header_fold_SOURCES = \
+  test_put_header_fold.c ../microhttpd/test_helpers.h
+
+test_put_large_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_get_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_fold_last_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_fold_large_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_double_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_large_header_double_fold_SOURCES = $(test_put_large_header_fold_SOURCES)
+
+test_get_header_double_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_double_fold_last_SOURCES = $(test_put_header_fold_last_SOURCES)
+
+test_put_header_double_fold_large_SOURCES = $(test_put_header_fold_large_SOURCES)

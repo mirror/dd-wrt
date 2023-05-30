@@ -37,13 +37,10 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
-
-extern const char srv_signed_cert_pem[];
-extern const char srv_signed_key_pem[];
 
 
 static int global_port;
@@ -143,9 +140,7 @@ iovec_ahc (void *cls,
 
 static int
 test_iovec_transfer (void *cls,
-                     int port,
-                     const char *cipher_suite,
-                     int proto_version)
+                     int port)
 {
   int len;
   int ret = 0;
@@ -171,7 +166,7 @@ test_iovec_transfer (void *cls,
   }
 
   if (CURLE_OK !=
-      send_curl_req (url, &cbc, cipher_suite, proto_version))
+      send_curl_req (url, &cbc))
   {
     ret = -1;
     goto cleanup;
@@ -192,9 +187,7 @@ cleanup:
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-test_secure_get (FILE *test_fd,
-                 const char *cipher_suite,
-                 int proto_version)
+test_secure_get (FILE *test_fd)
 {
   int ret;
   struct MHD_Daemon *d;
@@ -231,9 +224,7 @@ test_secure_get (FILE *test_fd,
   }
 
   ret = test_iovec_transfer (test_fd,
-                             port,
-                             cipher_suite,
-                             proto_version);
+                             port);
 
   MHD_stop_daemon (d);
   return ret;
@@ -390,15 +381,14 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  const char *aes256_sha_tlsv1   = "AES256-SHA";
   (void) argc; (void) argv;   /* Unused. Silent compiler warning. */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   if (! testsuite_curl_global_init ())
     return 99;
   if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
@@ -408,12 +398,8 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha_tlsv1 = "rsa_aes_256_sha";
-  }
   errorCount +=
-    test_secure_get (NULL, aes256_sha_tlsv1, CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL);
   errorCount += testEmptyGet (0);
   curl_global_cleanup ();
 

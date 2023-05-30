@@ -150,7 +150,7 @@ MD5Transform (uint32_t state[4],
   const uint32_t *in;
 
 #if (_MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN) || \
-  ! defined (_MHD_GET_32BIT_LE_UNALIGNED)
+  ! defined(_MHD_GET_32BIT_LE_UNALIGNED)
   if (0 != (((uintptr_t) block) % _MHD_UINT32_ALIGN))
   {
     /* Copy data to the aligned buffer */
