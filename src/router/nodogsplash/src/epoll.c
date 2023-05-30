@@ -3,7 +3,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#ifndef __NR_epoll_create
+#ifndef __NR_epoll_ctl
 #define __NR_epoll_create		(__NR_Linux + 248)
 #define __NR_epoll_ctl			(__NR_Linux + 249)
 #define __NR_epoll_wait			(__NR_Linux + 250)
