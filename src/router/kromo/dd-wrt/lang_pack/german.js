@@ -998,6 +998,7 @@ hotspot.nodog_legend="NoDogSplash";
 hotspot.nodog_srv="NoDogSplash";
 hotspot.nodog_gateway="Gateway-Name";
 hotspot.nodog_gatewayaddr="Gateway IP Adresse";
+hotspot.nodog_gatewayiprange="Gateway IP Bereich";
 hotspot.nodog_home="Homepage";
 hotspot.nodog_extifname="Externe Schnittstelle";
 hotspot.nodog_ifname="Interne Schnittstelle";
