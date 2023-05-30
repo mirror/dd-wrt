@@ -3728,6 +3728,7 @@ void start_firewall(void)
 	start_sfe();
 #endif
 #ifdef HAVE_NODOG
+	stop_splashd();
 	start_splashd();
 #endif
 	
