@@ -1076,6 +1076,7 @@ hotspot.nodog_legend="NoDogSplash";
 hotspot.nodog_srv="Enable Portal";
 hotspot.nodog_gateway="Gateway Name";
 hotspot.nodog_gatewayaddr="Gateway IP";
+hotspot.nodog_gatewayiprange="Gateway IP Range";
 hotspot.nodog_home="Homepage";
 hotspot.nodog_extifname="External Interface";
 hotspot.nodog_ifname="Internal Interface";
