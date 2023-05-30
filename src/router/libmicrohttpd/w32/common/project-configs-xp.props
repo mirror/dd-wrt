@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-dll-xp|Win32">
+      <Configuration>Debug-dll-xp</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-dll-xp|x64">
+      <Configuration>Debug-dll-xp</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-static-xp|Win32">
+      <Configuration>Debug-static-xp</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-static-xp|x64">
+      <Configuration>Debug-static-xp</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-dll-xp|Win32">
+      <Configuration>Release-dll-xp</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-dll-xp|x64">
+      <Configuration>Release-dll-xp</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-static-xp|Win32">
+      <Configuration>Release-static-xp</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-static-xp|x64">
+      <Configuration>Release-static-xp</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <!-- Next configurations are uselss, but VS requires the full set to function properly -->
+    <ProjectConfiguration Include="Debug-dll-xp|ARM">
+      <Configuration>Debug-dll-xp</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-dll-xp|ARM64">
+      <Configuration>Debug-dll-xp</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-static-xp|ARM">
+      <Configuration>Debug-static-xp</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-static-xp|ARM64">
+      <Configuration>Debug-static-xp</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-dll-xp|ARM">
+      <Configuration>Release-dll-xp</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-dll-xp|ARM64">
+      <Configuration>Release-dll-xp</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-static-xp|ARM">
+      <Configuration>Release-static-xp</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-static-xp|ARM64">
+      <Configuration>Release-static-xp</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+</Project>
