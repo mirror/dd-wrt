@@ -274,14 +274,14 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	 */
 	while (len > 0) {
 		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
-			return;
+			return -1;
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
 					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
-						return;
+						return -1;
 					len -= strlen(buf);
 				}
 				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
@@ -309,7 +309,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 			break;
 	}
 	stream->upgrade_ret = sys_upgrade(NULL, stream, &len, type);
-	fprintf(stderr, "core upgrade done() %d\n", len);
+	fprintf(stderr, "core upgrade done() %zu\n", len);
 	/*
 	 * Restore factory original settings if told to. This will also cause a
 	 * restore defaults on reboot of a Sveasoft firmware. 
