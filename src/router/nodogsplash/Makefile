@@ -21,7 +21,7 @@ all: nodogsplash
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 nodogsplash: $(NDS_OBJS) $(LIBHTTPD_OBJS)
-	$(CC) $(LDFLAGS) -o nodogsplash $+ $(LDLIBS)
+	$(CC) $(LDFLAGS) -lpthread -o nodogsplash $+ $(LDLIBS)
 
 #ndsctl: src/ndsctl.o
 #	$(CC) $(LDFLAGS) -o ndsctl $+ $(LDLIBS)
