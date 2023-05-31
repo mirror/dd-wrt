@@ -2950,9 +2950,11 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{ "ND_MACWhiteList", "" },
 	{ "ND_MaxClients", "250" },
-	{ "ND_GatewayPort", "5280" },
+	{ "ND_GatewayPort", "2050" },
 	{ "ND_ForcedRedirect", "0" },
 	{ "ND_IdleTimeout", "0" },
+	{ "ND_GatewayIPRange_mask","0"},
+	{ "ND_GatewayIPRange","0.0.0.0"},
 	{ "ND_dl", "0" },
 	{ "ND_ul", "0" },
 #else
