@@ -11,4 +11,5 @@
 "ND_ExcludePorts" "Exclude Ports" "NULL" "TRUE" "0"
 "ND_dl" "Maximum Download bw" "NULL" "TRUE" "0"
 "ND_ul" "Maximum Upload bw" "NULL" "TRUE" "0"
-"ND_GatewayIPRange" "IP Range" "NULL" "TRUE" "0"
+"ND_GatewayIPRange" "IP Range" "MERGEIPADDRS" "FALSE" "0"
+"ND_GatewayIPRange_mask" "IP Range Mask" "NULL" "FALSE" "0"
