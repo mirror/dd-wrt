@@ -73,8 +73,12 @@ int mk_nodog_conf(void)
 	nvram_default_get("ND_GatewayAddr", "0.0.0.0");
 	if (!nvram_match("ND_GatewayAddr", "0.0.0.0"))
 		fprintf(fp, "GatewayAddress\t%s\n", nvram_safe_get("ND_GatewayAddr"));
-	if (!nvram_match("ND_GatewayIPRange", "0.0.0.0") && !nvram_match("ND_GatewayIPRange", ""))
-		fprintf(fp, "GatewayIPRange\t%s\n", nvram_safe_get("ND_GatewayIPRange"));
+	if (!nvram_match("ND_GatewayIPRange", "0.0.0.0") && !nvram_match("ND_GatewayIPRange", "") && !nvram_match("ND_GatewayIPRange_mask", ""))
+	{
+		char range[64];
+		snprintf(range,sizeof(range), "%s/%s", nvram_safe_get("ND_GatewayIPRange"),nvram_safe_get("ND_GatewayIPRange_mask"));
+		fprintf(fp, "GatewayIPRange\t%s\n", range);
+	}
 	fprintf(fp, "WebRoot\t%s\n", nvram_safe_get("ND_DocumentRoot"));
 	fprintf(fp, "StatusPage\t%s\n", nvram_default_get("ND_StatusPage", "status.html"));
 	fprintf(fp, "SplashPage\t%s\n", nvram_default_get("ND_SplashPage", "splash.html"));
