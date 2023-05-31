@@ -21,6 +21,10 @@
 			<input maxlength="39" name="ND_GatewayIPRange" size="39" value="<% nvg("ND_GatewayIPRange"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspot.nodog_gatewayport"); %></div>
+			<input maxlength="6" name="ND_GatewayPort" size="6" value="<% nvg("ND_GatewayPort"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspot.nodog_gateway"); %></div>
 			<input maxlength="39" name="ND_GatewayName" size="39" value="<% nvg("ND_GatewayName"); %>" />
 		</div>
