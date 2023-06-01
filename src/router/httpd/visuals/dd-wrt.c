@@ -205,7 +205,7 @@ void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", type, name, get_single_ip(ipv, 1));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", type, name, get_single_ip(ipv, 2));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" /> / ", type, name, get_single_ip(ipv, 3));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s\" value=\"%d\" />\n", nmtype, nmname, getmask(nvram_default_get(nmname, "0.0.0.0")));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,32,%s)\" name=\"%s\" value=\"%d\" />\n", nmtype, nmname, getmask(nvram_default_get(nmname, "0.0.0.0")));
 
 }
 
