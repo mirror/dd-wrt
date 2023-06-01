@@ -82,9 +82,9 @@ void start_sysinit(void)
 	} else {
 		sprintf(drive, "/dev/mmcblk0p3");
 	}
-	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, NULL)) {
+	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, "compress=zstd")) {
 		eval("mkfs.btrfs", drive, "-f");
-		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, NULL);
+		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, "compress=zstd");
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
 	nvram_seti("enable_jffs2", 1);
