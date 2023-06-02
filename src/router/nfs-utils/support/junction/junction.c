@@ -63,7 +63,7 @@ junction_open_path(const char *pathname, int *fd)
 	if (pathname == NULL || fd == NULL)
 		return FEDFS_ERR_INVAL;
 
-	tmp = open(pathname, O_DIRECTORY);
+	tmp = open(pathname, O_PATH|O_DIRECTORY);
 	if (tmp == -1) {
 		switch (errno) {
 		case EPERM:
@@ -93,7 +93,7 @@ junction_is_directory(int fd, const char *path)
 {
 	struct stat stb;
 
-	if (fstat(fd, &stb) == -1) {
+	if (fstatat(fd, "", &stb, AT_NO_AUTOMOUNT|AT_EMPTY_PATH) == -1) {
 		xlog(D_GENERAL, "%s: failed to stat %s: %m",
 				__func__, path);
 		return FEDFS_ERR_ACCESS;
@@ -121,7 +121,7 @@ junction_is_sticky_bit_set(int fd, const char *path)
 {
 	struct stat stb;
 
-	if (fstat(fd, &stb) == -1) {
+	if (fstatat(fd, "", &stb, AT_NO_AUTOMOUNT|AT_EMPTY_PATH) == -1) {
 		xlog(D_GENERAL, "%s: failed to stat %s: %m",
 				__func__, path);
 		return FEDFS_ERR_ACCESS;
@@ -155,7 +155,7 @@ junction_set_sticky_bit(int fd, const char *path)
 {
 	struct stat stb;
 
-	if (fstat(fd, &stb) == -1) {
+	if (fstatat(fd, "", &stb, AT_NO_AUTOMOUNT|AT_EMPTY_PATH) == -1) {
 		xlog(D_GENERAL, "%s: failed to stat %s: %m",
 			__func__, path);
 		return FEDFS_ERR_ACCESS;
@@ -393,7 +393,7 @@ junction_get_mode(const char *pathname, mode_t *mode)
 	if (retval != FEDFS_OK)
 		return retval;
 
-	if (fstat(fd, &stb) == -1) {
+	if (fstatat(fd, "", &stb, AT_NO_AUTOMOUNT|AT_EMPTY_PATH) == -1) {
 		xlog(D_GENERAL, "%s: failed to stat %s: %m",
 			__func__, pathname);
 		(void)close(fd);

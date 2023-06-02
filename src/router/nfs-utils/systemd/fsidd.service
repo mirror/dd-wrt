@@ -1,0 +1,10 @@
+[Unit]
+Description=NFS FSID Daemon
+After=local-fs.target
+Before=nfs-mountd.service nfs-server.service
+
+[Service]
+ExecStart=/usr/sbin/fsidd
+
+[Install]
+RequiredBy=nfs-mountd.service nfs-server.service

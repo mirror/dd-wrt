@@ -187,10 +187,7 @@ static void bl_add_disk(char *filepath)
 	}
 
 	if (disk && diskpath) {
-		if (serial) {
-			free(serial->data);
-			free(serial);
-		}
+		bl_free_scsi_string(serial);
 		return;
 	}
 
@@ -228,10 +225,7 @@ static void bl_add_disk(char *filepath)
 			disk->size = size;
 			disk->valid_path = path;
 		}
-		if (serial) {
-			free(serial->data);
-			free(serial);
-		}
+		bl_free_scsi_string(serial);
 	}
 	return;
 
@@ -241,10 +235,7 @@ static void bl_add_disk(char *filepath)
 			free(path->full_path);
 		free(path);
 	}
-	if (serial) {
-		free(serial->data);
-		free(serial);
-	}
+	bl_free_scsi_string(serial);
 	return;
 }
 
@@ -462,7 +453,7 @@ static void sig_die(int signal)
 		unlink(PID_FILE);
 	}
 	BL_LOG_ERR("exit on signal(%d)\n", signal);
-	exit(1);
+	exit(0);
 }
 static void usage(void)
 {
@@ -507,28 +498,44 @@ int main(int argc, char **argv)
 	if (fg) {
 		openlog("blkmapd", LOG_PERROR, 0);
 	} else {
-		if (daemon(0, 0) != 0) {
-			fprintf(stderr, "Daemonize failed\n");
+		pid_t pid = fork();
+		if (pid < 0) {
+			BL_LOG_ERR("fork error\n");
 			exit(1);
+		} else if (pid != 0) {
+			pidfd = open(PID_FILE, O_WRONLY | O_CREAT, 0644);
+			if (pidfd < 0) {
+				BL_LOG_ERR("Create pid file %s failed\n", PID_FILE);
+				exit(1);
+			}
+
+			if (lockf(pidfd, F_TLOCK, 0) < 0) {
+				BL_LOG_ERR("Already running; Exiting!");
+				close(pidfd);
+				exit(1);
+			}
+			if (ftruncate(pidfd, 0) < 0)
+				BL_LOG_ERR("ftruncate on %s failed: m\n", PID_FILE);
+			sprintf(pidbuf, "%d\n", pid);
+			if (write(pidfd, pidbuf, strlen(pidbuf)) != (ssize_t)strlen(pidbuf))
+				BL_LOG_ERR("write on %s failed: m\n", PID_FILE);
+			exit(0);
+		}
+
+		(void)setsid();
+		if (chdir("/")) {
+			BL_LOG_ERR("chdir error\n");
+		}
+		int fd = open("/dev/null", O_RDWR, 0);
+		if (fd >= 0) {
+		    (void)dup2(fd, STDIN_FILENO);
+		    (void)dup2(fd, STDOUT_FILENO);
+		    (void)dup2(fd, STDERR_FILENO);
+
+		    (void)close(fd);
 		}
 
 		openlog("blkmapd", LOG_PID, 0);
-		pidfd = open(PID_FILE, O_WRONLY | O_CREAT, 0644);
-		if (pidfd < 0) {
-			BL_LOG_ERR("Create pid file %s failed\n", PID_FILE);
-			exit(1);
-		}
-
-		if (lockf(pidfd, F_TLOCK, 0) < 0) {
-			BL_LOG_ERR("Already running; Exiting!");
-			close(pidfd);
-			exit(1);
-		}
-		if (ftruncate(pidfd, 0) < 0)
-			BL_LOG_WARNING("ftruncate on %s failed: m\n", PID_FILE);
-		sprintf(pidbuf, "%d\n", getpid());
-		if (write(pidfd, pidbuf, strlen(pidbuf)) != (ssize_t)strlen(pidbuf))
-			BL_LOG_WARNING("write on %s failed: m\n", PID_FILE);
 	}
 
 	signal(SIGINT, sig_die);

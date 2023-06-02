@@ -8,6 +8,7 @@
 struct flav_info {
 	char    *flavour;
 	int     fnum;
+	int	need_krb5;
 };
 
 extern struct flav_info flav_map[];

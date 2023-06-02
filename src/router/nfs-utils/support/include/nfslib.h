@@ -62,6 +62,18 @@ struct sec_entry {
 	int flags;
 };
 
+#define XPRTSECMODE_COUNT 3
+
+struct xprtsec_info {
+	const char		*name;
+	int			number;
+};
+
+struct xprtsec_entry {
+	const struct xprtsec_info *info;
+	int			flags;
+};
+
 /*
  * Data related to a single exports entry as returned by getexportent.
  * FIXME: export options should probably be parsed at a later time to
@@ -83,8 +95,10 @@ struct exportent {
 	char *          e_fslocdata;
 	char *		e_uuid;
 	struct sec_entry e_secinfo[SECFLAVOR_COUNT+1];
+	struct xprtsec_entry e_xprtsec[XPRTSECMODE_COUNT + 1];
 	unsigned int	e_ttl;
 	char *		e_realpath;
+	int		e_reexport;
 };
 
 struct rmtabent {
@@ -99,6 +113,7 @@ struct rmtabent {
 void			setexportent(char *fname, char *type);
 struct exportent *	getexportent(int,int);
 void 			secinfo_show(FILE *fp, struct exportent *ep);
+void			xprtsecinfo_show(FILE *fp, struct exportent *ep);
 void			putexportent(struct exportent *xep);
 void			endexportent(void);
 struct exportent *	mkexportent(char *hname, char *path, char *opts);

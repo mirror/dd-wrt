@@ -26,7 +26,7 @@ void v4clients_init(void)
 {
 	struct stat sb;
 
-	if (!stat("/proc/fs/nfsd/clients", &sb) == 0 ||
+	if (stat("/proc/fs/nfsd/clients", &sb) != 0 ||
 	    !S_ISDIR(sb.st_mode))
 		return;
 	if (clients_fd >= 0)

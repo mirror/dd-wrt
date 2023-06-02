@@ -8,8 +8,9 @@
 Description=Kernel Module supporting RPCSEC_GSS
 DefaultDependencies=no
 Before=gssproxy.service rpc-svcgssd.service rpc-gssd.service
-Wants=gssproxy.service rpc-svcgssd.service rpc-gssd.service
+Wants=gssproxy.service rpc-gssd.service
 ConditionPathExists=/etc/krb5.keytab
+ConditionVirtualization=!container
 
 [Service]
 Type=oneshot

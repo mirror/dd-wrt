@@ -16,7 +16,9 @@ exportd_SOURCES = exportd.c
 exportd_LDADD = ../../support/export/libexport.a \
 			../../support/nfs/libnfs.la \
 			../../support/misc/libmisc.a \
-			$(OPTLIBS) $(LIBBLKID) $(LIBPTHREAD) -luuid
+			../../support/reexport/libreexport.a \
+			$(OPTLIBS) $(LIBBLKID) $(LIBPTHREAD) \
+			-luuid
 
 exportd_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) \
 		-I$(top_srcdir)/support/export

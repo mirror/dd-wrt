@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-AC_INIT([linux nfs-utils],[2.6.2],[linux-nfs@vger.kernel.org],[nfs-utils])
+AC_INIT([linux nfs-utils],[2.6.3],[linux-nfs@vger.kernel.org],[nfs-utils])
 AC_CANONICAL_BUILD([])
 AC_CANONICAL_HOST([])
 AC_CONFIG_MACRO_DIR(aclocal)
@@ -70,18 +70,6 @@ AC_ARG_WITH(systemd,
 	)
 	AM_CONDITIONAL(INSTALL_SYSTEMD, [test "$use_systemd" = 1])
 	AC_SUBST(unitdir)
-
-modprobedir=/usr/lib/modprobe.d
-AC_ARG_WITH(modprobedir,
-	[AS_HELP_STRING([--with-modprobedir@<:@=modprobe-dir-path@:>@],[install modprobe config files @<:@Default: /usr/lib/modprobe.d@:>@])],
-	if test "$withval" != "no" ; then
-		modprobedir=$withval
-	else
-		modprobedir=
-	fi
-	)
-	AM_CONDITIONAL(INSTALL_MODPROBEDIR, [test -n "$modprobedir"])
-	AC_SUBST(modprobedir)
 
 AC_ARG_ENABLE(nfsv4,
 	[AS_HELP_STRING([--disable-nfsv4],[disable support for NFSv4 @<:@default=no@:>@])],
@@ -248,6 +236,16 @@ AC_ARG_ENABLE(nfsdcld,
 	[AS_HELP_STRING([--disable-nfsdcld],[disable NFSv4 clientid tracking daemon @<:@default=no@:>@])],
 	enable_nfsdcld=$enableval,
 	enable_nfsdcld="yes")
+
+AC_ARG_ENABLE(nfsrahead,
+	[AS_HELP_STRING([--disable-nfsrahead],[disable nfsrahead command @<:@default=no@:>@])],
+	enable_nfsrahead=$enableval,
+	enable_nfsrahead="yes")
+	AM_CONDITIONAL(CONFIG_NFSRAHEAD, [test "$enable_nfsrahead" = "yes" ])
+	if test "$enable_nfsrahead" = yes; then
+		dnl Check for -lmount
+		PKG_CHECK_MODULES([LIBMOUNT], [mount])
+	fi
 
 AC_ARG_ENABLE(nfsdcltrack,
 	[AS_HELP_STRING([--disable-nfsdcltrack],[disable NFSv4 clientid tracking programs @<:@default=no@:>@])],
@@ -678,12 +676,12 @@ AC_SUBST([AM_CFLAGS], ["$my_am_cflags $flg1 $flg2 $flg3 $flg4 $flg5"])
 # Make sure that $ACLOCAL_FLAGS are used during a rebuild
 AC_SUBST([ACLOCAL_AMFLAGS], ["-I $ac_macro_dir \$(ACLOCAL_FLAGS)"])
 
-# make _sysconfdir available for substituion in config files
+# make _sysconfdir available for substitution in config files
 # 2 "evals" needed late to expand variable names.
 AC_SUBST([_sysconfdir])
 AC_CONFIG_COMMANDS_PRE([eval eval _sysconfdir=$sysconfdir])
 
-# make _statedir available for substituion in config files
+# make _statedir available for substitution in config files
 # 2 "evals" needed late to expand variable names.
 AC_SUBST([_statedir])
 AC_CONFIG_COMMANDS_PRE([eval eval _statedir=$statedir])
@@ -695,7 +693,7 @@ else
 fi
 AC_SUBST(rpc_pipefsmount)
 
-# make _rpc_pipefsmount available for substituion in config files
+# make _rpc_pipefsmount available for substitution in config files
 # 2 "evals" needed late to expand variable names.
 AC_SUBST([_rpc_pipefsmount])
 AC_CONFIG_COMMANDS_PRE([eval eval _rpc_pipefsmount=$rpc_pipefsmount])
@@ -719,6 +717,7 @@ AC_CONFIG_FILES([
 	support/nsm/Makefile
 	support/nfsidmap/Makefile
 	support/nfsidmap/libnfsidmap.pc
+	support/reexport/Makefile
 	tools/Makefile
 	tools/locktest/Makefile
 	tools/nlmtest/Makefile

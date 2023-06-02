@@ -184,46 +184,46 @@ nfsd_path_lstat(const char *pathname, struct stat *statbuf)
 	return nfsd_run_stat(nfsd_wq, nfsd_lstatfunc, pathname, statbuf);
 }
 
-struct nfsd_statfs64_data {
+struct nfsd_statfs_data {
 	const char *pathname;
-	struct statfs64 *statbuf;
+	struct statfs *statbuf;
 	int ret;
 	int err;
 };
 
 static void
-nfsd_statfs64func(void *data)
+nfsd_statfsfunc(void *data)
 {
-	struct nfsd_statfs64_data *d = data;
+	struct nfsd_statfs_data *d = data;
 
-	d->ret = statfs64(d->pathname, d->statbuf);
+	d->ret = statfs(d->pathname, d->statbuf);
 	if (d->ret < 0)
 		d->err = errno;
 }
 
 static int
-nfsd_run_statfs64(struct xthread_workqueue *wq,
+nfsd_run_statfs(struct xthread_workqueue *wq,
 		  const char *pathname,
-		  struct statfs64 *statbuf)
+		  struct statfs *statbuf)
 {
-	struct nfsd_statfs64_data data = {
+	struct nfsd_statfs_data data = {
 		pathname,
 		statbuf,
 		0,
 		0
 	};
-	xthread_work_run_sync(wq, nfsd_statfs64func, &data);
+	xthread_work_run_sync(wq, nfsd_statfsfunc, &data);
 	if (data.ret < 0)
 		errno = data.err;
 	return data.ret;
 }
 
 int
-nfsd_path_statfs64(const char *pathname, struct statfs64 *statbuf)
+nfsd_path_statfs(const char *pathname, struct statfs *statbuf)
 {
 	if (!nfsd_wq)
-		return statfs64(pathname, statbuf);
-	return nfsd_run_statfs64(nfsd_wq, pathname, statbuf);
+		return statfs(pathname, statbuf);
+	return nfsd_run_statfs(nfsd_wq, pathname, statbuf);
 }
 
 struct nfsd_realpath_data {

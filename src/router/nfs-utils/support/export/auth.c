@@ -82,7 +82,7 @@ check_useipaddr(void)
 }
 
 unsigned int
-auth_reload()
+auth_reload(void)
 {
 	struct stat		stb;
 	static ino_t		last_inode;

@@ -25,7 +25,7 @@ Unpack the sources and run these commands:
     # ./configure
     # make
 
-To install binaries and documenation, run this command:
+To install binaries and documentation, run this command:
 
     # make install
 
@@ -40,7 +40,7 @@ Updating to the latest head after you've already got it.
 
 	git pull
 
-Building requires that autotools be installed.  To invoke them
+Building requires that autotools be installed. To invoke them
 simply
 
 	sh autogen.sh
@@ -70,7 +70,7 @@ scripts can be written to work correctly.
 3.1.  SERVER STARTUP
 
 
-   A/  mount -t nfsd /proc/fs/nfsd
+   A/  mount -t nfsd nfsd /proc/fs/nfsd
       This filesystem needs to be mount before most daemons,
       particularly exportfs, mountd, svcgssd, idmapd.
       It could be mounted once, or the script that starts each daemon
@@ -95,27 +95,27 @@ scripts can be written to work correctly.
 
    D/ rpc.statd --no-notify
        It is best if statd is started before nfsd though this isn't
-       critical.  Certainly it should be at most a few seconds after
+       critical. Certainly, it should be at most a few seconds after
        nfsd.
        When nfsd starts it will start lockd. If lockd then receives a
-       lock request it will communicate with statd.  If statd is not
+       lock request, it will communicate with statd. If statd is not
        running lockd will retry, but it won't wait forever for a
        reply.
        Note that if statd is started before nfsd, the --no-notify
-       option must be used.  If notify requests are sent out before
+       option must be used. If notify requests are sent out before
        nfsd start, clients may try to reclaim locks and, on finding
        that lockd isn't running, they will give up and never reclaim
        the lock.
        rpc.statd is only needed for NFSv2 and NFSv3 support.
 
    E/ rpc.nfsd
-       Starting nfsd will automatically start lockd.  The nfs server
+       Starting nfsd will automatically start lockd. The nfs server
        will now be fully active and respond to any requests from
        clients.
        
    F/ sm-notify
        This will notify any client which might have locks from before
-       a reboot to try to reclaim their locks.  This should start
+       a reboot to try to reclaim their locks. This should start
        immediately after rpc.nfsd is started so that clients have a
        chance to reclaim locks within the 90 second grace period.
        sm-notify is only needed for NFSv2 and NFSv3 support.

@@ -38,6 +38,7 @@
 #include "exportfs.h"
 #include "xlog.h"
 #include "conffile.h"
+#include "reexport.h"
 
 static void	export_all(int verbose);
 static void	exportfs(char *arg, char *options, int verbose);
@@ -69,14 +70,14 @@ static int _lockfd = -1;
  * need these additional lockfile() routines.
  */
 static void
-grab_lockfile()
+grab_lockfile(void)
 {
 	_lockfd = open(lockfile, O_CREAT|O_RDWR, 0666);
 	if (_lockfd != -1)
 		lockf(_lockfd, F_LOCK, 0);
 }
 static void
-release_lockfile()
+release_lockfile(void)
 {
 	if (_lockfd != -1) {
 		lockf(_lockfd, F_ULOCK, 0);
@@ -513,7 +514,7 @@ validate_export(nfs_export *exp)
 	 */
 	struct stat stb;
 	char *path = exportent_realpath(&exp->m_export);
-	struct statfs64 stf;
+	struct statfs stf;
 	int fs_has_fsid = 0;
 
 	if (stat(path, &stb) < 0) {
@@ -528,7 +529,7 @@ validate_export(nfs_export *exp)
 	if (!can_test())
 		return;
 
-	if (!statfs64(path, &stf) &&
+	if (!statfs(path, &stf) &&
 	    (stf.f_fsid.__val[0] || stf.f_fsid.__val[1]))
 		fs_has_fsid = 1;
 
@@ -719,6 +720,16 @@ dump(int verbose, int export_format)
 				c = dumpopt(c, "fsid=%d", ep->e_fsid);
 			if (ep->e_uuid)
 				c = dumpopt(c, "fsid=%s", ep->e_uuid);
+			if (ep->e_reexport) {
+				switch (ep->e_reexport) {
+					case REEXP_AUTO_FSIDNUM:
+						c = dumpopt(c, "reexport=%s", "auto-fsidnum");
+						break;
+					case REEXP_PREDEFINED_FSIDNUM:
+						c = dumpopt(c, "reexport=%s", "predefined-fsidnum");
+						break;
+				}
+			}
 			if (ep->e_mountpoint)
 				c = dumpopt(c, "mountpoint%s%s",
 					    ep->e_mountpoint[0]?"=":"",
@@ -743,6 +754,7 @@ dump(int verbose, int export_format)
 #endif
 			}
 			secinfo_show(stdout, ep);
+			xprtsecinfo_show(stdout, ep);
 			printf("%c\n", (c != '(')? ')' : ' ');
 		}
 	}

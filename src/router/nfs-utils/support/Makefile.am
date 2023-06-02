@@ -10,7 +10,7 @@ if CONFIG_JUNCTION
 OPTDIRS += junction
 endif
 
-SUBDIRS = export include misc nfs nsm $(OPTDIRS)
+SUBDIRS = export include misc nfs nsm reexport $(OPTDIRS)
 
 MAINTAINERCLEANFILES = Makefile.in
 

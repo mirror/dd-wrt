@@ -25,6 +25,7 @@
 #include "exportfs.h"
 #include "nfsd_path.h"
 #include "xlog.h"
+#include "reexport.h"
 
 exp_hash_table exportlist[MCL_MAXTYPES] = {{NULL, {{NULL,NULL}, }}, }; 
 static int export_hash(char *);
@@ -115,6 +116,7 @@ export_read(char *fname, int ignore_hosts)
 	nfs_export		*exp;
 
 	int volumes = 0;
+	int reexport_found = 0;
 
 	setexportent(fname, "r");
 	while ((eep = getexportent(0,1)) != NULL) {
@@ -126,7 +128,25 @@ export_read(char *fname, int ignore_hosts)
 		}
 		else
 			warn_duplicated_exports(exp, eep);
+
+		if (eep->e_reexport)
+			reexport_found = 1;
 	}
+
+	if (reexport_found) {
+		for (int i = 0; i < MCL_MAXTYPES; i++) {
+			for (exp = exportlist[i].p_head; exp; exp = exp->m_next) {
+				if (exp->m_export.e_reexport)
+					continue;
+
+				if (exp->m_export.e_flags & NFSEXP_FSID) {
+					xlog(L_ERROR, "When a reexport= option is present no manully assigned numerical fsid= options are allowed");
+					return -1;
+				}
+			}
+		}
+	}
+
 	endexportent();
 
 	return volumes;
