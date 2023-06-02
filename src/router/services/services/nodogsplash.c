@@ -52,13 +52,6 @@ int mk_nodog_conf(void)
 	fprintf(fp, "\tFirewallRule allow all\n");
 	fprintf(fp, "}\n");
 	fprintf(fp, "FirewallRuleSet preauthenticated-users {\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 108.177.122.94\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 17.253.7.203\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 64.233.177.104\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 13.107.4.52\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 131.107.255.255\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 23.63.249.202\n");
-	fprintf(fp, "\tFirewallRule allow tcp port 80 to 34.107.221.82\n");
 	fprintf(fp, "\tFirewallRule allow udp port 53\n");
 	fprintf(fp, "\tFirewallRule allow tcp port 53\n");
 	char var[64];
@@ -116,13 +109,6 @@ void start_splashd(void)
 
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
-	addHost("connectivitycheck.gstatic.com", "108.177.122.94", 0);
-	addHost("www.google.com", "64.233.177.104", 0);
-	addHost("captive.apple.com", "17.253.7.203", 0);
-	addHost("dns.msftncsi.com", "131.107.255.255", 0);
-	addHost("www.msftncsi.com", "23.63.249.202", 0);
-	addHost("www.msftconnecttest.com", "13.107.4.52", 0);
-	addHost("detectportal.firefox.com", "34.107.221.82", 0);
 	eval("nodogsplash", "-c", NODOG_CONF);
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
