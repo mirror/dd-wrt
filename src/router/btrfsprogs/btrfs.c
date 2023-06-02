@@ -261,7 +261,7 @@ static const struct cmd_group btrfs_cmd_group = {
 	},
 };
 
-int main(int argc, char **argv)
+int btrfs_main(int argc, char **argv)
 {
 	const struct cmd_struct *cmd;
 	const char *bname;
