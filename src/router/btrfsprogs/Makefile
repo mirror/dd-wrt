@@ -405,7 +405,7 @@ libbtrfs.so.0.1: $(libbtrfs_objects)
 
 libbtrfs.a: $(libbtrfs_objects)
 	@echo "    [AR]     $@"
-	$(Q)$(AR) cr $@ $^
+	$(Q)$(AR) cr $(LTOPLUGIN) $@ $^
 
 libbtrfs.so.0 libbtrfs.so: libbtrfs.so.0.1
 	@echo "    [LN]     $@"
@@ -422,7 +422,7 @@ libbtrfsutil.so.$(libbtrfsutil_version): $(libbtrfsutil_objects)
 
 libbtrfsutil.a: $(libbtrfsutil_objects)
 	@echo "    [AR]     $@"
-	$(Q)$(AR) cr $@ $^
+	$(Q)$(AR) cr $(LTOPLUGIN) $@ $^
 
 libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so: libbtrfsutil.so.$(libbtrfsutil_version)
 	@echo "    [LN]     $@"
