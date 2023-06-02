@@ -1,4 +1,4 @@
-nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent
+nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent sqlite
 	cd nfs-utils && ./autogen.sh
 	cd nfs-utils && ./configure \
 		--enable-fast-install \
@@ -26,7 +26,7 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
 
-nfs-utils: libtirpc lvm2 keyutils krb5
+nfs-utils: libtirpc lvm2 keyutils krb5 sqlite
 	install -D nfs-utils/config/nfs.webnas httpd/ej_temp/04nfs.webnas
 	make -C nfs-utils
 
