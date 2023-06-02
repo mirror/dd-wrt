@@ -2953,6 +2953,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "ND_GatewayPort", "2050" },
 	{ "ND_ForcedRedirect", "0" },
 	{ "ND_IdleTimeout", "0" },
+	{ "ND_PreAuthIdleTimeout", "30" },
+	{ "ND_CheckInterval", "600" },
 	{ "ND_GatewayIPRange_mask","0"},
 	{ "ND_GatewayIPRange","0.0.0.0"},
 	{ "ND_dl", "0" },
