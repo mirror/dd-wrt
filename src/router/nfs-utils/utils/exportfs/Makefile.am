@@ -10,6 +10,9 @@ exportfs_SOURCES = exportfs.c
 exportfs_LDADD = ../../support/export/libexport.a \
 	       	 ../../support/nfs/libnfs.la \
 		 ../../support/misc/libmisc.a \
+		 ../../support/reexport/libreexport.a \
 		 $(LIBWRAP) $(LIBNSL) $(LIBPTHREAD)
+
+exportfs_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) -I$(top_srcdir)/support/reexport
 
 MAINTAINERCLEANFILES = Makefile.in

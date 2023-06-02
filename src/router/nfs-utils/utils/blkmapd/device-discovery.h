@@ -151,6 +151,8 @@ uint64_t process_deviceinfo(const char *dev_addr_buf,
 
 extern ssize_t atomicio(ssize_t(*f) (int, void *, size_t),
 			int fd, void *_s, size_t n);
+extern struct bl_serial *bl_create_scsi_string(int len, const char *bytes);
+extern void bl_free_scsi_string(struct bl_serial *str);
 extern struct bl_serial *bldev_read_serial(int fd, const char *filename);
 extern enum bl_path_state_e bldev_read_ap_state(int fd);
 extern int bl_discover_devices(void);

@@ -66,6 +66,8 @@ set_pseudofs_security(struct exportent *pseudo)
 
 		if (!flav->fnum)
 			continue;
+		if (flav->need_krb5 && access("/etc/krb5.keytab", F_OK) != 0)
+			continue;
 
 		i = secinfo_addflavor(flav, pseudo);
 		new = &pseudo->e_secinfo[i];
@@ -198,7 +200,7 @@ static int v4root_add_parents(nfs_export *exp)
  * looking for components of the v4 mount.
  */
 void
-v4root_set()
+v4root_set(void)
 {
 	nfs_export	*exp;
 	int	i;

@@ -135,7 +135,7 @@ xtab_write(char *xtab, char *xtabtmp, char *lockfn, int is_export)
 }
 
 int
-xtab_export_write()
+xtab_export_write(void)
 {
 	return xtab_write(etab.statefn, etab.tmpfn, etab.lockfn, 1);
 }

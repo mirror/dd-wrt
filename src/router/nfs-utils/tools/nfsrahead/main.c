@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 		if ((ret = get_device_info(argv[optind], &device)) == 0)
 			break;
 
-	if (ret != 0) {
+	if (ret != 0 || device.fstype == NULL) {
 		xlog(D_GENERAL, "unable to find device %s\n", argv[optind]);
 		goto out;
 	}

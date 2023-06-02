@@ -125,7 +125,55 @@ In that case you may include multiple sec= options, and following options
 will be enforced only for access using flavors listed in the immediately
 preceding sec= option.  The only options that are permitted to vary in
 this way are ro, rw, no_root_squash, root_squash, and all_squash.
+.SS Transport layer security
+The Linux NFS server allows the use of RPC-with-TLS (RFC 9289) to
+protect RPC traffic between itself and its clients.
+Alternately, administrators can secure NFS traffic using a VPN,
+or an ssh tunnel or similar mechanism, in a way that is transparent
+to the server.
 .PP
+To enable the use of RPC-with-TLS, the server's administrator must
+install and configure
+.BR tlshd
+to handle transport layer security handshake requests from the local
+kernel.
+Clients can then choose to use RPC-with-TLS or they may continue
+operating without it.
+.PP
+Administrators may require the use of RPC-with-TLS to protect access
+to individual exports.
+This is particularly useful when using non-cryptographic security
+flavors such as
+.IR sec=sys .
+The
+.I xprtsec=
+option, followed by an unordered colon-delimited list of security policies,
+can restrict access to the export to only clients that have negotiated
+transport-layer security.
+Currently supported transport layer security policies include:
+.TP
+.IR none
+The server permits clients to access the export
+without the use of transport layer security.
+.TP
+.IR tls
+The server permits clients that have negotiated an RPC-with-TLS session
+without peer authentication (confidentiality only) to access the export.
+Clients are not required to offer an x.509 certificate
+when establishing a transport layer security session.
+.TP
+.IR mtls
+The server permits clients that have negotiated an RPC-with-TLS session
+with peer authentication to access the export.
+The server requires clients to offer an x.509 certificate
+when establishing a transport layer security session.
+.PP
+If RPC-with-TLS is configured and enabled and the
+.I xprtsec=
+option is not specified, the default setting for an export is
+.IR xprtsec=none:tls:mtls .
+With this setting, the server permits clients to use any transport
+layer security mechanism or none at all to access the export.
 .SS General Options
 .BR exportfs
 understands the following export options:
@@ -420,6 +468,37 @@ will only work if all clients use a consistent security policy.  Note
 that early kernels did not support this export option, and instead
 enabled security labels by default.
 
+.TP
+.IR reexport= auto-fsidnum|predefined-fsidnum
+This option helps when a NFS share is re-exported. Since the NFS server
+needs a unique identifier for each exported filesystem and a NFS share
+cannot provide such, usually a manual fsid is needed.
+As soon
+.IR crossmnt
+is used manually assigning fsid won't work anymore. This is where this
+option becomes handy. It will automatically assign a numerical fsid
+to exported NFS shares. The fsid and path relations are stored in a SQLite
+database. If
+.IR auto-fsidnum
+is selected, the fsid is also autmatically allocated.
+.IR predefined-fsidnum
+assumes pre-allocated fsid numbers and will just look them up.
+This option depends also on the kernel, you will need at least kernel version
+5.19.
+Since
+.IR reexport=
+can automatically allocate and assign numerical fsids, it is no longer possible
+to have numerical fsids in other exports as soon this option is used in at least
+one export entry.
+
+The association between fsid numbers and paths is stored in a SQLite database.
+Don't edit or remove the database unless you know exactly what you're doing.
+.IR predefined-fsidnum
+is useful when you have used
+.IR auto-fsidnum
+before and don't want further entries stored.
+
+
 .SS User ID Mapping
 .PP
 .B nfsd
@@ -581,7 +660,8 @@ a character class wildcard match.
 .BR netgroup (5),
 .BR mountd (8),
 .BR nfsd (8),
-.BR showmount (8).
+.BR showmount (8),
+.BR tlshd (8).
 .\".SH DIAGNOSTICS
 .\"An error parsing the file is reported using syslogd(8) as level NOTICE from
 .\"a DAEMON whenever

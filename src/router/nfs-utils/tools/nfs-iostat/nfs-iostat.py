@@ -43,7 +43,7 @@ NfsEventCounters = [
     'vfspermission',
     'vfsupdatepage',
     'vfsreadpage',
-    'vfsreadpages',
+    'vfsreadpages', # or vfsreadahead in statvers=1.2 or above
     'vfswritepage',
     'vfswritepages',
     'vfsreaddir',
@@ -86,14 +86,14 @@ class DeviceData:
             self.__nfs_data['export'] = words[1]
             self.__nfs_data['mountpoint'] = words[4]
             self.__nfs_data['fstype'] = words[7]
-            if words[7] == 'nfs':
-                self.__nfs_data['statvers'] = words[8]
+            if words[7] == 'nfs' or words[7] == 'nfs4':
+                self.__nfs_data['statvers'] = float(words[8].split('=',1)[1])
         elif 'nfs' in words or 'nfs4' in words:
             self.__nfs_data['export'] = words[0]
             self.__nfs_data['mountpoint'] = words[3]
             self.__nfs_data['fstype'] = words[6]
             if words[6] == 'nfs':
-                self.__nfs_data['statvers'] = words[7]
+                self.__nfs_data['statvers'] = float(words[7].split('=',1)[1])
         elif words[0] == 'age:':
             self.__nfs_data['age'] = int(words[1])
         elif words[0] == 'opts:':
@@ -294,8 +294,11 @@ class DeviceData:
         print()
         print('%d nfs_readpage() calls read %d pages' % \
             (vfsreadpage, vfsreadpage))
-        print('%d nfs_readpages() calls read %d pages' % \
-            (vfsreadpages, pages_read - vfsreadpage))
+        multipageread = "readpages"
+        if self.__nfs_data['statvers'] >= 1.2:
+            multipageread = "readahead"
+        print('%d nfs_%s() calls read %d pages' % \
+            (vfsreadpages, multipageread, pages_read - vfsreadpage))
         if vfsreadpages != 0:
             print('(%.1f pages per call)' % \
                 (float(pages_read - vfsreadpage) / vfsreadpages))

@@ -867,7 +867,7 @@ nfsdreopen_one(struct idmap_client *ic)
 }
 
 static void
-nfsdreopen()
+nfsdreopen(void)
 {
 	nfsdreopen_one(&nfsd_ic[IC_NAMEID]);
 	nfsdreopen_one(&nfsd_ic[IC_IDNAME]);

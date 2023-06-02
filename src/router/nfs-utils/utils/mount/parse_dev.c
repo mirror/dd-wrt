@@ -170,7 +170,8 @@ static int nfs_parse_square_bracket(const char *dev,
 	if (pathname) {
 		*pathname = strndup(cbrace, path_len);
 		if (*pathname == NULL) {
-			free(*hostname);
+			if (hostname)
+				free(*hostname);
 			return nfs_pdn_nomem_err();
 		}
 	}

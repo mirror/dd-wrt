@@ -179,7 +179,7 @@ static const unsigned long probe_mnt3_only[] = {
 
 static const unsigned int *nfs_default_proto(void);
 #ifdef MOUNT_CONFIG
-static const unsigned int *nfs_default_proto()
+static const unsigned int *nfs_default_proto(void)
 {
 	extern unsigned long config_default_proto;
 	/*

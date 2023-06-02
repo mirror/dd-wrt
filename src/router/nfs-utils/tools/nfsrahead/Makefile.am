@@ -1,6 +1,6 @@
 libexec_PROGRAMS = nfsrahead
 nfsrahead_SOURCES = main.c
-nfsrahead_LDFLAGS= -lmount
+nfsrahead_LDFLAGS= $(LIBMOUNT_LIBS)
 nfsrahead_LDADD = ../../support/nfs/libnfsconf.la
 
 man5_MANS = nfsrahead.man

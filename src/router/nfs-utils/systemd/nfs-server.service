@@ -15,7 +15,7 @@ After=nfsdcld.service
 Before=rpc-statd-notify.service
 
 # GSS services dependencies and ordering
-Wants=auth-rpcgss-module.service
+Wants=auth-rpcgss-module.service rpc-svcgssd.service
 After=rpc-gssd.service gssproxy.service rpc-svcgssd.service
 
 [Service]

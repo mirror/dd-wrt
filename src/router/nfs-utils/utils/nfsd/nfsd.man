@@ -35,8 +35,16 @@ Note that
 .B lockd
 (which performs file locking services for NFS) may still accept
 request on all known network addresses.  This may change in future
-releases of the Linux Kernel. This option can be used multiple time 
+releases of the Linux Kernel. This option can be used multiple times
 to listen to more than one interface.
+.TP
+.B \-S " or " \-\-scope scope
+NFSv4.1 and later require the server to report a "scope" which is used
+by the clients to detect if two connections are to the same server.
+By default Linux NFSD uses the host name as the scope.
+.sp
+It is particularly important for high-availablity configurations to ensure
+that all potential server nodes report the same server scope.
 .TP
 .B \-p " or " \-\-port  port
 specify a different port to listen on for NFS requests. By default,
@@ -134,6 +142,9 @@ will listen on.  Use of the
 .B --host
 option replaces all host names listed here.
 .TP
+.B scope
+Set the server scope.
+.TP
 .B grace-time
 The grace time, for both NFSv4 and NLM, in seconds.
 .TP
@@ -159,7 +170,9 @@ Enable or disable TCP support.
 .B vers3
 .TP
 .B vers4
-Enable or disable a major NFS version.  3 and 4 are normally enabled
+Enable or disable 
+.B all 
+NFSv4 versions.  All versions are normally enabled
 by default.
 .TP
 .B vers4.1

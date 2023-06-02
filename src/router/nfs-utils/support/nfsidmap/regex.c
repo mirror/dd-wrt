@@ -542,7 +542,7 @@ struct trans_func regex_trans = {
 	.gss_princ_to_grouplist	= regex_gss_princ_to_grouplist,
 };
 
-struct trans_func *libnfsidmap_plugin_init()
+struct trans_func *libnfsidmap_plugin_init(void)
 {
 	return (&regex_trans);
 }

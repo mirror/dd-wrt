@@ -31,18 +31,19 @@
 #include "xlog.h"
 #include "xio.h"
 #include "pseudoflavors.h"
+#include "reexport.h"
 
 #define EXPORT_DEFAULT_FLAGS	\
   (NFSEXP_READONLY|NFSEXP_ROOTSQUASH|NFSEXP_GATHERED_WRITES|NFSEXP_NOSUBTREECHECK)
 
 struct flav_info flav_map[] = {
-	{ "krb5",	RPC_AUTH_GSS_KRB5	},
-	{ "krb5i",	RPC_AUTH_GSS_KRB5I	},
-	{ "krb5p",	RPC_AUTH_GSS_KRB5P	},
-	{ "unix",	AUTH_UNIX		},
-	{ "sys",	AUTH_SYS		},
-	{ "null",	AUTH_NULL		},
-	{ "none",	AUTH_NONE		},
+	{ "krb5",	RPC_AUTH_GSS_KRB5,	1},
+	{ "krb5i",	RPC_AUTH_GSS_KRB5I,	1},
+	{ "krb5p",	RPC_AUTH_GSS_KRB5P,	1},
+	{ "unix",	AUTH_UNIX,		0},
+	{ "sys",	AUTH_SYS,		0},
+	{ "null",	AUTH_NULL,		0},
+	{ "none",	AUTH_NONE,		0},
 };
 
 const int flav_map_size = sizeof(flav_map)/sizeof(flav_map[0]);
@@ -99,10 +100,12 @@ static void init_exportent (struct exportent *ee, int fromkernel)
 	ee->e_fslocmethod = FSLOC_NONE;
 	ee->e_fslocdata = NULL;
 	ee->e_secinfo[0].flav = NULL;
+	ee->e_xprtsec[0].info = NULL;
 	ee->e_nsquids = 0;
 	ee->e_nsqgids = 0;
 	ee->e_uuid = NULL;
 	ee->e_ttl = default_ttl;
+	ee->e_reexport = REEXP_NONE;
 }
 
 struct exportent *
@@ -122,7 +125,7 @@ getexportent(int fromkernel, int fromexports)
 	if (first || (ok = getexport(exp, sizeof(exp))) == 0) {
 		has_default_opts = 0;
 		has_default_subtree_opts = 0;
-	
+
 		init_exportent(&def_ee, fromkernel);
 
 		ok = getpath(def_ee.e_path, sizeof(def_ee.e_path));
@@ -146,7 +149,7 @@ getexportent(int fromkernel, int fromexports)
 	if (exp[0] == '-' && !fromkernel) {
 		if (parseopts(exp + 1, &def_ee, 0, &has_default_subtree_opts) < 0)
 			return NULL;
-		
+
 		has_default_opts = 1;
 
 		ok = getexport(exp, sizeof(exp));
@@ -239,13 +242,23 @@ void secinfo_show(FILE *fp, struct exportent *ep)
 	if (ep->e_secinfo[0].flav == NULL)
 		secinfo_addflavor(find_flavor("sys"), ep);
 	for (p1=ep->e_secinfo; p1->flav; p1=p2) {
-
 		fprintf(fp, ",sec=%s", p1->flav->flavour);
 		for (p2=p1+1; (p2->flav != NULL) && (p1->flags == p2->flags);
 								p2++) {
 			fprintf(fp, ":%s", p2->flav->flavour);
 		}
 		secinfo_flags_show(fp, p1->flags, ef->secinfo_flags);
+	}
+}
+
+void xprtsecinfo_show(FILE *fp, struct exportent *ep)
+{
+	struct xprtsec_entry *p1, *p2;
+
+	for (p1 = ep->e_xprtsec; p1->info; p1 = p2) {
+		fprintf(fp, ",xprtsec=%s", p1->info->name);
+		for (p2 = p1 + 1; p2->info && (p1->flags == p2->flags); p2++)
+			fprintf(fp, ":%s", p2->info->name);
 	}
 }
 
@@ -302,6 +315,23 @@ putexportent(struct exportent *ep)
 	}
 	if (ep->e_uuid)
 		fprintf(fp, "fsid=%s,", ep->e_uuid);
+
+	if (ep->e_reexport) {
+		fprintf(fp, "reexport=");
+		switch (ep->e_reexport) {
+			case REEXP_AUTO_FSIDNUM:
+				fprintf(fp, "auto-fsidnum");
+				break;
+			case REEXP_PREDEFINED_FSIDNUM:
+				fprintf(fp, "predefined-fsidnum");
+				break;
+			default:
+				xlog(L_ERROR, "unknown reexport method %i", ep->e_reexport);
+				fprintf(fp, "none");
+		}
+		fprintf(fp, ",");
+	}
+
 	if (ep->e_mountpoint)
 		fprintf(fp, "mountpoint%s%s,",
 			ep->e_mountpoint[0]?"=":"", ep->e_mountpoint);
@@ -345,6 +375,7 @@ putexportent(struct exportent *ep)
 	}
 	fprintf(fp, "anonuid=%d,anongid=%d", ep->e_anonuid, ep->e_anongid);
 	secinfo_show(fp, ep);
+	xprtsecinfo_show(fp, ep);
 	fprintf(fp, ")\n");
 }
 
@@ -483,6 +514,75 @@ static unsigned int parse_flavors(char *str, struct exportent *ep)
 	return out;
 }
 
+static const struct xprtsec_info xprtsec_name2info[] = {
+	{ "none",	NFSEXP_XPRTSEC_NONE },
+	{ "tls",	NFSEXP_XPRTSEC_TLS },
+	{ "mtls",	NFSEXP_XPRTSEC_MTLS },
+	{ NULL,		0 }
+};
+
+static const struct xprtsec_info *find_xprtsec_info(const char *name)
+{
+	const struct xprtsec_info *info;
+
+	for (info = xprtsec_name2info; info->name; info++)
+		if (strcmp(info->name, name) == 0)
+			return info;
+	return NULL;
+}
+
+/*
+ * Append the given xprtsec mode to the exportent's e_xprtsec array,
+ * or do nothing if it's already there. Returns the index of flavor in
+ * the resulting array in any case.
+ */
+static int xprtsec_addmode(const struct xprtsec_info *info, struct exportent *ep)
+{
+	struct xprtsec_entry *p;
+
+	for (p = ep->e_xprtsec; p->info; p++)
+		if (p->info == info || p->info->number == info->number)
+			return p - ep->e_xprtsec;
+
+	if (p - ep->e_xprtsec >= XPRTSECMODE_COUNT) {
+		xlog(L_ERROR, "more than %d xprtsec modes on an export\n",
+			XPRTSECMODE_COUNT);
+		return -1;
+	}
+	p->info = info;
+	p->flags = ep->e_flags;
+	(p + 1)->info = NULL;
+	return p - ep->e_xprtsec;
+}
+
+/*
+ * @str is a colon seperated list of transport layer security modes.
+ * Their order is recorded in @ep, and a bitmap corresponding to the
+ * list is returned.
+ *
+ * A zero return indicates an error.
+ */
+static unsigned int parse_xprtsec(char *str, struct exportent *ep)
+{
+	unsigned int out = 0;
+	char *name;
+
+	while ((name = strsep(&str, ":"))) {
+		const struct xprtsec_info *info = find_xprtsec_info(name);
+		int bit;
+
+		if (!info) {
+			xlog(L_ERROR, "unknown xprtsec mode %s\n", name);
+			return 0;
+		}
+		bit = xprtsec_addmode(info, ep);
+		if (bit < 0)
+			return 0;
+		out |= 1 << bit;
+	}
+	return out;
+}
+
 /* Sets the bits in @mask for the appropriate security flavor flags. */
 static void setflags(int mask, unsigned int active, struct exportent *ep)
 {
@@ -538,6 +638,7 @@ parseopts(char *cp, struct exportent *ep, int warn, int *had_subtree_opt_ptr)
 	char 	*flname = efname?efname:"command line";
 	int	flline = efp?efp->x_line:0;
 	unsigned int active = 0;
+	int saw_reexport = 0;
 
 	squids = ep->e_squids; nsquids = ep->e_nsquids;
 	sqgids = ep->e_sqgids; nsqgids = ep->e_nsqgids;
@@ -621,7 +722,7 @@ parseopts(char *cp, struct exportent *ep, int warn, int *had_subtree_opt_ptr)
 			ep->e_anonuid = strtol(opt+8, &oe, 10);
 			if (opt[8]=='\0' || *oe != '\0') {
 				xlog(L_ERROR, "%s: %d: bad anonuid \"%s\"\n",
-				     flname, flline, opt);	
+				     flname, flline, opt);
 bad_option:
 				free(opt);
 				return -1;
@@ -631,7 +732,7 @@ bad_option:
 			ep->e_anongid = strtol(opt+8, &oe, 10);
 			if (opt[8]=='\0' || *oe != '\0') {
 				xlog(L_ERROR, "%s: %d: bad anongid \"%s\"\n",
-				     flname, flline, opt);	
+				     flname, flline, opt);
 				goto bad_option;
 			}
 		} else if (strncmp(opt, "squash_uids=", 12) == 0) {
@@ -644,18 +745,25 @@ bad_option:
 			}
 		} else if (strncmp(opt, "fsid=", 5) == 0) {
 			char *oe;
+
+			if (saw_reexport) {
+				xlog(L_ERROR, "%s:%d: 'fsid=' has to be before 'reexport=' %s\n",
+				     flname, flline, opt);
+				goto bad_option;
+			}
+
 			if (strcmp(opt+5, "root") == 0) {
 				ep->e_fsid = 0;
 				setflags(NFSEXP_FSID, active, ep);
 			} else {
 				ep->e_fsid = strtoul(opt+5, &oe, 0);
-				if (opt[5]!='\0' && *oe == '\0') 
+				if (opt[5]!='\0' && *oe == '\0')
 					setflags(NFSEXP_FSID, active, ep);
 				else if (valid_uuid(opt+5))
 					ep->e_uuid = strdup(opt+5);
 				else {
 					xlog(L_ERROR, "%s: %d: bad fsid \"%s\"\n",
-					     flname, flline, opt);	
+					     flname, flline, opt);
 					goto bad_option;
 				}
 			}
@@ -688,6 +796,44 @@ bad_option:
 			active = parse_flavors(opt+4, ep);
 			if (!active)
 				goto bad_option;
+		} else if (strncmp(opt, "xprtsec=", 8) == 0) {
+			if (!parse_xprtsec(opt + 8, ep))
+				goto bad_option;
+		} else if (strncmp(opt, "reexport=", 9) == 0) {
+			char *strategy = strchr(opt, '=');
+
+			if (!strategy) {
+				xlog(L_ERROR, "%s:%d: bad option %s\n",
+				     flname, flline, opt);
+				goto bad_option;
+			}
+			strategy++;
+
+			if (saw_reexport) {
+				xlog(L_ERROR, "%s:%d: only one 'reexport=' is allowed%s\n",
+				     flname, flline, opt);
+				goto bad_option;
+			}
+
+			if (strcmp(strategy, "auto-fsidnum") == 0) {
+				ep->e_reexport = REEXP_AUTO_FSIDNUM;
+			} else if (strcmp(strategy, "predefined-fsidnum") == 0) {
+				ep->e_reexport = REEXP_PREDEFINED_FSIDNUM;
+			} else if (strcmp(strategy, "none") == 0) {
+				ep->e_reexport = REEXP_NONE;
+			} else {
+				xlog(L_ERROR, "%s:%d: bad option %s\n",
+				     flname, flline, strategy);
+				goto bad_option;
+			}
+
+			if (reexpdb_apply_reexport_settings(ep, flname, flline) != 0)
+				goto bad_option;
+
+			if (ep->e_fsid)
+				setflags(NFSEXP_FSID, active, ep);
+
+			saw_reexport = 1;
 		} else {
 			xlog(L_ERROR, "%s:%d: unknown keyword \"%s\"\n",
 					flname, flline, opt);
@@ -709,7 +855,7 @@ out:
 	if (warn && !had_subtree_opt)
 		xlog(L_WARNING, "%s [%d]: Neither 'subtree_check' or 'no_subtree_check' specified for export \"%s:%s\".\n"
 				"  Assuming default behaviour ('no_subtree_check').\n"
-		     		"  NOTE: this default has changed since nfs-utils version 1.0.x\n",
+				"  NOTE: this default has changed since nfs-utils version 1.0.x\n",
 
 				flname, flline,
 				ep->e_hostname, ep->e_path);

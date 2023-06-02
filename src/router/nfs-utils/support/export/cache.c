@@ -33,6 +33,7 @@
 #include "export.h"
 #include "pseudoflavors.h"
 #include "xcommon.h"
+#include "reexport.h"
 
 #ifdef HAVE_JUNCTION_SUPPORT
 #include "fsloc.h"
@@ -235,6 +236,16 @@ static void auth_unix_gid(int f)
 		xlog(L_ERROR, "auth_unix_gid: error writing reply");
 }
 
+static int match_crossmnt_fsidnum(uint32_t parsed_fsidnum, char *path)
+{
+	uint32_t fsidnum;
+
+	if (reexpdb_fsidnum_by_path(path, &fsidnum, 0) == 0)
+		return 0;
+
+	return fsidnum == parsed_fsidnum;
+}
+
 #ifdef USE_BLKID
 static const char *get_uuid_blkdev(char *path)
 {
@@ -346,27 +357,27 @@ static int uuid_by_path(char *path, int type, size_t uuidlen, char *uuid)
 
 	/* Possible sources of uuid are
 	 * - blkid uuid
-	 * - statfs64 uuid
+	 * - statfs uuid
 	 *
-	 * On some filesystems (e.g. vfat) the statfs64 uuid is simply an
+	 * On some filesystems (e.g. vfat) the statfs uuid is simply an
 	 * encoding of the device that the filesystem is mounted from, so
 	 * it we be very bad to use that (as device numbers change).  blkid
 	 * must be preferred.
-	 * On other filesystems (e.g. btrfs) the statfs64 uuid contains
+	 * On other filesystems (e.g. btrfs) the statfs uuid contains
 	 * important info that the blkid uuid cannot contain:  This happens
 	 * when multiple subvolumes are exported (they have the same
-	 * blkid uuid but different statfs64 uuids).
+	 * blkid uuid but different statfs uuids).
 	 * We rely on get_uuid_blkdev *knowing* which is which and not returning
-	 * a uuid for filesystems where the statfs64 uuid is better.
+	 * a uuid for filesystems where the statfs uuid is better.
 	 *
 	 */
-	struct statfs64 st;
+	struct statfs st;
 	char fsid_val[17];
 	const char *blkid_val = NULL;
 	const char *val;
 	int rc;
 
-	rc = nfsd_path_statfs64(path, &st);
+	rc = nfsd_path_statfs(path, &st);
 
 	if (type == 0 && rc == 0) {
 		const unsigned long *bad;
@@ -410,11 +421,15 @@ static char *next_mnt(void **v, char *p)
 		*v = f;
 	} else
 		f = *v;
-	while ((me = getmntent(f)) != NULL && l > 1) {
+	while ((me = getmntent(f)) != NULL && l >= 1) {
 		char *mnt_dir = nfsd_path_strip_root(me->mnt_dir);
 
 		if (!mnt_dir)
 			continue;
+
+		/* Everything below "/" is a proper sub-mount */
+		if (strcmp(p, "/") == 0)
+			return mnt_dir;
 
 		if (strncmp(mnt_dir, p, l) == 0 && mnt_dir[l] == '/')
 			return mnt_dir;
@@ -684,8 +699,13 @@ static int match_fsid(struct parsed_fsid *parsed, nfs_export *exp, char *path)
 		goto match;
 	case FSID_NUM:
 		if (((exp->m_export.e_flags & NFSEXP_FSID) == 0 ||
-		     exp->m_export.e_fsid != parsed->fsidnum))
+		     exp->m_export.e_fsid != parsed->fsidnum)) {
+			if ((exp->m_export.e_flags & NFSEXP_CROSSMOUNT) && exp->m_export.e_reexport != REEXP_NONE &&
+			    match_crossmnt_fsidnum(parsed->fsidnum, path))
+				goto match;
+
 			goto nomatch;
+		}
 		goto match;
 	case FSID_UUID4_INUM:
 	case FSID_UUID16_INUM:
@@ -758,6 +778,7 @@ static void nfsd_fh(int f)
 	int dev_missing = 0;
 	char buf[RPC_CHAN_BUF_SIZE], *bp;
 	int blen;
+	int did_uncover = 0;
 
 	blen = cache_read(f, buf, sizeof(buf));
 	if (blen <= 0 || buf[blen-1] != '\n') return;
@@ -794,6 +815,11 @@ static void nfsd_fh(int f)
 		nfs_export *next_exp;
 		for (exp = exportlist[i].p_head; exp; exp = next_exp) {
 			char *path;
+
+			if (!did_uncover && parsed.fsidnum && parsed.fsidtype == FSID_NUM && exp->m_export.e_reexport != REEXP_NONE) {
+				reexpdb_uncover_subvolume(parsed.fsidnum);
+				did_uncover = 1;
+			}
 
 			if (exp->m_export.e_flags & NFSEXP_CROSSMOUNT) {
 				static nfs_export *prev = NULL;
@@ -932,7 +958,8 @@ static void write_fsloc(char **bp, int *blen, struct exportent *ep)
 	release_replicas(servers);
 }
 #endif
-static void write_secinfo(char **bp, int *blen, struct exportent *ep, int flag_mask)
+
+static void write_secinfo(char **bp, int *blen, struct exportent *ep, int flag_mask, int extra_flag)
 {
 	struct sec_entry *p;
 
@@ -947,9 +974,31 @@ static void write_secinfo(char **bp, int *blen, struct exportent *ep, int flag_m
 	qword_addint(bp, blen, p - ep->e_secinfo);
 	for (p = ep->e_secinfo; p->flav; p++) {
 		qword_addint(bp, blen, p->flav->fnum);
-		qword_addint(bp, blen, p->flags & flag_mask);
+		qword_addint(bp, blen, (p->flags | extra_flag) & flag_mask);
 	}
+}
 
+static void write_xprtsec(char **bp, int *blen, struct exportent *ep)
+{
+	struct xprtsec_entry *p;
+
+	for (p = ep->e_xprtsec; p->info; p++);
+	if (p == ep->e_xprtsec)
+		return;
+
+	qword_add(bp, blen, "xprtsec");
+	qword_addint(bp, blen, p - ep->e_xprtsec);
+	for (p = ep->e_xprtsec; p->info; p++)
+		qword_addint(bp, blen, p->info->number);
+}
+
+static int can_reexport_via_fsidnum(struct exportent *exp, struct statfs *st)
+{
+	if (st->f_type != 0x6969 /* NFS_SUPER_MAGIC */)
+		return 0;
+
+	return exp->e_reexport == REEXP_PREDEFINED_FSIDNUM ||
+	       exp->e_reexport == REEXP_AUTO_FSIDNUM;
 }
 
 static int dump_to_cache(int f, char *buf, int blen, char *domain,
@@ -968,17 +1017,48 @@ static int dump_to_cache(int f, char *buf, int blen, char *domain,
 	if (exp) {
 		int different_fs = strcmp(path, exp->e_path) != 0;
 		int flag_mask = different_fs ? ~NFSEXP_FSID : ~0;
+		int rc, do_fsidnum = 0;
+		uint32_t fsidnum = exp->e_fsid;
+
+		if (different_fs) {
+			struct statfs st;
+
+			rc = nfsd_path_statfs(path, &st);
+			if (rc) {
+				xlog(L_WARNING, "unable to statfs %s", path);
+				errno = EINVAL;
+				return -1;
+			}
+
+			if (can_reexport_via_fsidnum(exp, &st)) {
+				do_fsidnum = 1;
+				flag_mask = ~0;
+			}
+		}
 
 		qword_adduint(&bp, &blen, now + exp->e_ttl);
-		qword_addint(&bp, &blen, exp->e_flags & flag_mask);
+
+		if (do_fsidnum) {
+			uint32_t search_fsidnum = 0;
+			if (exp->e_reexport != REEXP_NONE && reexpdb_fsidnum_by_path(path, &search_fsidnum,
+			    exp->e_reexport == REEXP_AUTO_FSIDNUM) == 0) {
+				errno = EINVAL;
+				return -1;
+			}
+			fsidnum = search_fsidnum;
+			qword_addint(&bp, &blen, exp->e_flags | NFSEXP_FSID);
+		} else {
+			qword_addint(&bp, &blen, exp->e_flags & flag_mask);
+		}
+
 		qword_addint(&bp, &blen, exp->e_anonuid);
 		qword_addint(&bp, &blen, exp->e_anongid);
-		qword_addint(&bp, &blen, exp->e_fsid);
+		qword_addint(&bp, &blen, fsidnum);
 
 #ifdef HAVE_JUNCTION_SUPPORT
 		write_fsloc(&bp, &blen, exp);
 #endif
-		write_secinfo(&bp, &blen, exp, flag_mask);
+		write_secinfo(&bp, &blen, exp, flag_mask, do_fsidnum ? NFSEXP_FSID : 0);
 		if (exp->e_uuid == NULL || different_fs) {
 			char u[16];
 			if ((exp->e_flags & flag_mask & NFSEXP_FSID) == 0 &&
@@ -992,6 +1072,7 @@ static int dump_to_cache(int f, char *buf, int blen, char *domain,
 			qword_add(&bp, &blen, "uuid");
 			qword_addhex(&bp, &blen, u, 16);
 		}
+		write_xprtsec(&bp, &blen, exp);
 		xlog(D_AUTH, "granted access to %s for %s",
 		     path, *domain == '$' ? domain+1 : domain);
 	} else {

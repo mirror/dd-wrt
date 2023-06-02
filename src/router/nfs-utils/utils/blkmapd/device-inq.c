@@ -53,7 +53,7 @@
 #define DEF_ALLOC_LEN	255
 #define MX_ALLOC_LEN	(0xc000 + 0x80)
 
-static struct bl_serial *bl_create_scsi_string(int len, const char *bytes)
+struct bl_serial *bl_create_scsi_string(int len, const char *bytes)
 {
 	struct bl_serial *s;
 
@@ -66,7 +66,7 @@ static struct bl_serial *bl_create_scsi_string(int len, const char *bytes)
 	return s;
 }
 
-static void bl_free_scsi_string(struct bl_serial *str)
+void bl_free_scsi_string(struct bl_serial *str)
 {
 	if (str)
 		free(str);

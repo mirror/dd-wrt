@@ -29,8 +29,9 @@ endif
 
 mount_nfs_LDADD = ../../support/nfs/libnfs.la \
 		  ../../support/export/libexport.a \
+		  ../../support/reexport/libreexport.a \
 		  ../../support/misc/libmisc.a \
-		  $(LIBTIRPC)
+		   $(LIBTIRPC) $(LIBPTHREAD)
 
 mount_nfs_SOURCES = $(mount_common)
 

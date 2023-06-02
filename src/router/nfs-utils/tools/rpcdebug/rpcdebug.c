@@ -257,7 +257,7 @@ get_flags(char *module)
 		perror(filename);
 		exit(1);
 	}
-	if ((len = read(sysfd, buffer, sizeof(buffer))) < 0) {
+	if ((len = read(sysfd, buffer, sizeof(buffer))) <= 0) {
 		perror("read");
 		exit(1);
 	}

@@ -46,11 +46,13 @@ int export_errno = 0;
 
 static void	xlog_toggle(int sig);
 static struct xlog_debugfac	debugnames[] = {
+	{ "0",		0, },
 	{ "general",	D_GENERAL, },
 	{ "call",	D_CALL, },
 	{ "auth",	D_AUTH, },
 	{ "parse",	D_PARSE, },
 	{ "all",	D_ALL, },
+	{ "1",		D_ALL, },
 	{ NULL,		0, },
 };
 
@@ -119,13 +121,14 @@ xlog_sconfig(char *kind, int on)
 {
 	struct xlog_debugfac	*tbl = debugnames;
 
-	while (tbl->df_name != NULL && strcasecmp(tbl->df_name, kind)) 
+	while (tbl->df_name != NULL && strcasecmp(tbl->df_name, kind))
 		tbl++;
 	if (!tbl->df_name) {
 		xlog (L_WARNING, "Invalid debug facility: %s\n", kind);
 		return;
 	}
-	xlog_config(tbl->df_fac, on);
+	if (tbl->df_fac)
+		xlog_config(tbl->df_fac, on);
 }
 
 void

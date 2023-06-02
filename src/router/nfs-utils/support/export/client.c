@@ -699,6 +699,9 @@ check_netgroup(const nfs_client *clp, const struct addrinfo *ai)
 
 	/* check whether the IP itself is in the netgroup */
 	ip = calloc(INET6_ADDRSTRLEN, 1);
+	if (ip == NULL)
+		goto out;
+
 	if (inet_ntop(ai->ai_family, &(((struct sockaddr_in *)ai->ai_addr)->sin_addr), ip, INET6_ADDRSTRLEN) == ip) {
 		if (innetgr(netgroup, ip, NULL, NULL)) {
 			free(hname);

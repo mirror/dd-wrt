@@ -23,6 +23,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sched.h>
 
 #include "conffile.h"
 #include "nfslib.h"
@@ -39,6 +40,7 @@ static void	usage(const char *);
 static struct option longopts[] =
 {
 	{ "host", 1, 0, 'H' },
+	{ "scope", 1, 0, 'S'},
 	{ "help", 0, 0, 'h' },
 	{ "no-nfs-version", 1, 0, 'N' },
 	{ "nfs-version", 1, 0, 'V' },
@@ -69,6 +71,7 @@ main(int argc, char **argv)
 	int	count = NFSD_NPROC, c, i, error = 0, portnum, fd, found_one;
 	char *p, *progname, *port, *rdma_port = NULL;
 	char **haddr = NULL;
+	char *scope = NULL;
 	int hcounter = 0;
 	struct conf_list *hosts;
 	int	socket_up = 0;
@@ -168,8 +171,9 @@ main(int argc, char **argv)
 			hcounter++;
 		}
 	}
+	scope = conf_get_str("nfsd", "scope");
 
-	while ((c = getopt_long(argc, argv, "dH:hN:V:p:P:stTuUrG:L:", longopts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "dH:S:hN:V:p:P:stTuUrG:L:", longopts, NULL)) != EOF) {
 		switch(c) {
 		case 'd':
 			xlog_config(D_ALL, 1);
@@ -189,6 +193,9 @@ main(int argc, char **argv)
 			}
 			haddr[hcounter] = optarg;
 			hcounter++;
+			break;
+		case 'S':
+			scope = optarg;
 			break;
 		case 'P':	/* XXX for nfs-server compatibility */
 		case 'p':
@@ -367,6 +374,14 @@ main(int argc, char **argv)
 	if (lease  > 0)
 		nfssvc_set_time("lease", lease);
 
+	if (scope) {
+		if (unshare(CLONE_NEWUTS) < 0 ||
+		    sethostname(scope, strlen(scope)) < 0) {
+			xlog(L_ERROR, "Unable to set server scope: %m");
+			error = -1;
+			goto out;
+		}
+	}
 	i = 0;
 	do {
 		error = nfssvc_set_sockets(protobits, haddr[i], port);
