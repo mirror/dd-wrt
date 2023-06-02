@@ -39,6 +39,7 @@
 #include "serverid.h"
 #include "lib/util/tevent_ntstatus.h"
 #include "lib/global_contexts.h"
+#include "source3/include/util_tdb.h"
 
 struct smbXsrv_session_table {
 	struct {
@@ -74,10 +75,8 @@ NTSTATUS smbXsrv_session_global_init(struct messaging_context *msg_ctx)
 	}
 
 	backend = db_open(NULL, global_path,
-			  0, /* hash_size */
-			  TDB_DEFAULT |
-			  TDB_CLEAR_IF_FIRST |
-			  TDB_INCOMPATIBLE_HASH,
+			  SMBD_VOLATILE_TDB_HASH_SIZE,
+			  SMBD_VOLATILE_TDB_FLAGS,
 			  O_RDWR | O_CREAT, 0600,
 			  DBWRAP_LOCK_ORDER_1,
 			  DBWRAP_FLAG_NONE);
@@ -185,7 +184,7 @@ static struct db_record *smbXsrv_session_global_fetch_locked(
 
 	if (rec == NULL) {
 		DBG_DEBUG("Failed to lock global id 0x%08x, key '%s'\n", id,
-			  hex_encode_talloc(talloc_tos(), key.dptr, key.dsize));
+			  tdb_data_dbg(key));
 	}
 
 	return rec;
@@ -206,7 +205,7 @@ static struct db_record *smbXsrv_session_local_fetch_locked(
 
 	if (rec == NULL) {
 		DBG_DEBUG("Failed to lock local id 0x%08x, key '%s'\n", id,
-			  hex_encode_talloc(talloc_tos(), key.dptr, key.dsize));
+			  tdb_data_dbg(key));
 	}
 
 	return rec;
@@ -709,7 +708,8 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 					bool *is_free,
 					bool *was_free,
 					TALLOC_CTX *mem_ctx,
-					struct smbXsrv_session_global0 **_g);
+					struct smbXsrv_session_global0 **_g,
+					uint32_t *pseqnum);
 
 static NTSTATUS smbXsrv_session_global_allocate(struct db_context *db,
 					TALLOC_CTX *mem_ctx,
@@ -761,7 +761,7 @@ static NTSTATUS smbXsrv_session_global_allocate(struct db_context *db,
 		smbXsrv_session_global_verify_record(global->db_rec,
 						     &is_free,
 						     &was_free,
-						     NULL, NULL);
+						     NULL, NULL, NULL);
 
 		if (!is_free) {
 			TALLOC_FREE(global->db_rec);
@@ -801,7 +801,8 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 					bool *is_free,
 					bool *was_free,
 					TALLOC_CTX *mem_ctx,
-					struct smbXsrv_session_global0 **_g)
+					struct smbXsrv_session_global0 **_g,
+					uint32_t *pseqnum)
 {
 	TDB_DATA key;
 	TDB_DATA val;
@@ -819,6 +820,9 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 	}
 	if (_g) {
 		*_g = NULL;
+	}
+	if (pseqnum) {
+		*pseqnum = 0;
 	}
 
 	key = dbwrap_record_get_key(db_rec);
@@ -841,7 +845,7 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 		NTSTATUS status = ndr_map_error2ntstatus(ndr_err);
 		DEBUG(1,("smbXsrv_session_global_verify_record: "
 			 "key '%s' ndr_pull_struct_blob - %s\n",
-			 hex_encode_talloc(frame, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 nt_errstr(status)));
 		TALLOC_FREE(frame);
 		*is_free = true;
@@ -859,7 +863,7 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 	if (global_blob.version != SMBXSRV_VERSION_0) {
 		DEBUG(0,("smbXsrv_session_global_verify_record: "
 			 "key '%s' use unsupported version %u\n",
-			 hex_encode_talloc(frame, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 global_blob.version));
 		NDR_PRINT_DEBUG(smbXsrv_session_globalB, &global_blob);
 		TALLOC_FREE(frame);
@@ -894,7 +898,7 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 		struct server_id_buf idbuf;
 		DEBUG(2,("smbXsrv_session_global_verify_record: "
 			 "key '%s' server_id %s does not exist.\n",
-			 hex_encode_talloc(frame, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 server_id_str_buf(global->channels[0].server_id,
 					   &idbuf)));
 		if (DEBUGLVL(2)) {
@@ -908,6 +912,9 @@ static void smbXsrv_session_global_verify_record(struct db_record *db_rec,
 
 	if (_g) {
 		*_g = talloc_move(mem_ctx, &global);
+	}
+	if (pseqnum) {
+		*pseqnum = global_blob.seqnum;
 	}
 	TALLOC_FREE(frame);
 }
@@ -947,7 +954,7 @@ static NTSTATUS smbXsrv_session_global_store(struct smbXsrv_session_global0 *glo
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 		status = ndr_map_error2ntstatus(ndr_err);
 		DEBUG(1,("smbXsrv_session_global_store: key '%s' ndr_push - %s\n",
-			 hex_encode_talloc(global->db_rec, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 nt_errstr(status)));
 		TALLOC_FREE(global->db_rec);
 		return status;
@@ -957,7 +964,7 @@ static NTSTATUS smbXsrv_session_global_store(struct smbXsrv_session_global0 *glo
 	status = dbwrap_record_store(global->db_rec, val, TDB_REPLACE);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(1,("smbXsrv_session_global_store: key '%s' store - %s\n",
-			 hex_encode_talloc(global->db_rec, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 nt_errstr(status)));
 		TALLOC_FREE(global->db_rec);
 		return status;
@@ -965,7 +972,7 @@ static NTSTATUS smbXsrv_session_global_store(struct smbXsrv_session_global0 *glo
 
 	if (DEBUGLVL(10)) {
 		DEBUG(10,("smbXsrv_session_global_store: key '%s' stored\n",
-			 hex_encode_talloc(global->db_rec, key.dptr, key.dsize)));
+			  tdb_data_dbg(key)));
 		NDR_PRINT_DEBUG(smbXsrv_session_globalB, &global_blob);
 	}
 
@@ -981,7 +988,24 @@ struct smb2srv_session_close_previous_state {
 	uint64_t previous_session_id;
 	uint64_t current_session_id;
 	struct db_record *db_rec;
+	uint64_t watch_instance;
+	uint32_t last_seqnum;
 };
+
+static void smb2srv_session_close_previous_cleanup(struct tevent_req *req,
+						   enum tevent_req_state req_state)
+{
+	struct smb2srv_session_close_previous_state *state =
+		tevent_req_data(req,
+		struct smb2srv_session_close_previous_state);
+
+	if (state->db_rec != NULL) {
+		dbwrap_watched_watch_remove_instance(state->db_rec,
+						     state->watch_instance);
+		state->watch_instance = 0;
+		TALLOC_FREE(state->db_rec);
+	}
+}
 
 static void smb2srv_session_close_previous_check(struct tevent_req *req);
 static void smb2srv_session_close_previous_modified(struct tevent_req *subreq);
@@ -1009,6 +1033,8 @@ struct tevent_req *smb2srv_session_close_previous_send(TALLOC_CTX *mem_ctx,
 	state->connection = conn;
 	state->previous_session_id = previous_session_id;
 	state->current_session_id = current_session_id;
+
+	tevent_req_set_cleanup_fn(req, smb2srv_session_close_previous_cleanup);
 
 	if (global_zeros != 0) {
 		tevent_req_done(req);
@@ -1068,21 +1094,21 @@ static void smb2srv_session_close_previous_check(struct tevent_req *req)
 	struct tevent_req *subreq = NULL;
 	NTSTATUS status;
 	bool is_free = false;
+	uint32_t seqnum = 0;
 
 	smbXsrv_session_global_verify_record(state->db_rec,
 					     &is_free,
 					     NULL,
 					     state,
-					     &global);
+					     &global,
+					     &seqnum);
 
 	if (is_free) {
-		TALLOC_FREE(state->db_rec);
 		tevent_req_done(req);
 		return;
 	}
 
 	if (global->auth_session_info == NULL) {
-		TALLOC_FREE(state->db_rec);
 		tevent_req_done(req);
 		return;
 	}
@@ -1090,15 +1116,35 @@ static void smb2srv_session_close_previous_check(struct tevent_req *req)
 	previous_token = global->auth_session_info->security_token;
 
 	if (!security_token_is_sid(previous_token, state->current_sid)) {
-		TALLOC_FREE(state->db_rec);
 		tevent_req_done(req);
 		return;
 	}
 
+	/*
+	 * If the record changed, but we are not happy with the change yet,
+	 * we better remove ourself from the waiter list
+	 * (most likely the first position)
+	 * and re-add us at the end of the list.
+	 *
+	 * This gives other waiters a change
+	 * to make progress.
+	 *
+	 * Otherwise we'll keep our waiter instance alive,
+	 * keep waiting (most likely at first position).
+	 * It means the order of watchers stays fair.
+	 */
+	if (state->last_seqnum != seqnum) {
+		state->last_seqnum = seqnum;
+		dbwrap_watched_watch_remove_instance(state->db_rec,
+						     state->watch_instance);
+		state->watch_instance =
+			dbwrap_watched_watch_add_instance(state->db_rec);
+	}
+
 	subreq = dbwrap_watched_watch_send(state, state->ev, state->db_rec,
+					   state->watch_instance,
 					   (struct server_id){0});
 	if (tevent_req_nomem(subreq, req)) {
-		TALLOC_FREE(state->db_rec);
 		return;
 	}
 	tevent_req_set_callback(subreq,
@@ -1117,7 +1163,6 @@ static void smb2srv_session_close_previous_check(struct tevent_req *req)
 	ndr_err = ndr_push_struct_blob(&blob, state, &close_blob,
 			(ndr_push_flags_fn_t)ndr_push_smbXsrv_session_closeB);
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		TALLOC_FREE(state->db_rec);
 		status = ndr_map_error2ntstatus(ndr_err);
 		DEBUG(1,("smb2srv_session_close_previous_check: "
 			 "old_session[%llu] new_session[%llu] ndr_push - %s\n",
@@ -1131,12 +1176,12 @@ static void smb2srv_session_close_previous_check(struct tevent_req *req)
 	status = messaging_send(conn->client->msg_ctx,
 				global->channels[0].server_id,
 				MSG_SMBXSRV_SESSION_CLOSE, &blob);
-	TALLOC_FREE(state->db_rec);
+	TALLOC_FREE(global);
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
 
-	TALLOC_FREE(global);
+	TALLOC_FREE(state->db_rec);
 	return;
 }
 
@@ -1150,12 +1195,15 @@ static void smb2srv_session_close_previous_modified(struct tevent_req *subreq)
 		struct smb2srv_session_close_previous_state);
 	uint32_t global_id;
 	NTSTATUS status;
+	uint64_t instance = 0;
 
-	status = dbwrap_watched_watch_recv(subreq, NULL, NULL);
+	status = dbwrap_watched_watch_recv(subreq, &instance, NULL, NULL);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
+
+	state->watch_instance = instance;
 
 	global_id = state->previous_session_id & UINT32_MAX;
 
@@ -1849,8 +1897,7 @@ NTSTATUS smbXsrv_session_logoff(struct smbXsrv_session *session)
 			DEBUG(0, ("smbXsrv_session_logoff(0x%08x): "
 				  "failed to delete global key '%s': %s\n",
 				  session->global->session_global_id,
-				  hex_encode_talloc(global_rec, key.dptr,
-						    key.dsize),
+				  tdb_data_dbg(key),
 				  nt_errstr(status)));
 			error = status;
 		}
@@ -1876,8 +1923,7 @@ NTSTATUS smbXsrv_session_logoff(struct smbXsrv_session *session)
 			DEBUG(0, ("smbXsrv_session_logoff(0x%08x): "
 				  "failed to delete local key '%s': %s\n",
 				  session->global->session_global_id,
-				  hex_encode_talloc(local_rec, key.dptr,
-						    key.dsize),
+				  tdb_data_dbg(key),
 				  nt_errstr(status)));
 			error = status;
 		}
@@ -2315,7 +2361,8 @@ NTSTATUS smb2srv_session_lookup_global(struct smbXsrv_client *client,
 					     &is_free,
 					     NULL,
 					     session,
-					     &session->global);
+					     &session->global,
+					     NULL);
 	if (is_free) {
 		TALLOC_FREE(frame);
 		return NT_STATUS_USER_SESSION_DELETED;
@@ -2421,7 +2468,7 @@ static int smbXsrv_session_global_traverse_fn(struct db_record *rec, void *data)
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 		DEBUG(1,("Invalid record in smbXsrv_session_global.tdb:"
 			 "key '%s' ndr_pull_struct_blob - %s\n",
-			 hex_encode_talloc(frame, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 ndr_errstr(ndr_err)));
 		goto done;
 	}
@@ -2429,7 +2476,7 @@ static int smbXsrv_session_global_traverse_fn(struct db_record *rec, void *data)
 	if (global_blob.version != SMBXSRV_VERSION_0) {
 		DEBUG(1,("Invalid record in smbXsrv_session_global.tdb:"
 			 "key '%s' unsupported version - %d\n",
-			 hex_encode_talloc(frame, key.dptr, key.dsize),
+			 tdb_data_dbg(key),
 			 (int)global_blob.version));
 		goto done;
 	}
@@ -2437,7 +2484,7 @@ static int smbXsrv_session_global_traverse_fn(struct db_record *rec, void *data)
 	if (global_blob.info.info0 == NULL) {
 		DEBUG(1,("Invalid record in smbXsrv_tcon_global.tdb:"
 			 "key '%s' info0 NULL pointer\n",
-			 hex_encode_talloc(frame, key.dptr, key.dsize)));
+			 tdb_data_dbg(key)));
 		goto done;
 	}
 

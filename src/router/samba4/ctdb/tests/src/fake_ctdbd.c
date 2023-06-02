@@ -272,6 +272,10 @@ static bool nodemap_parse(struct node_map *node_map)
 		node_map->num_nodes += 1;
 	}
 
+	if (node_map->num_nodes == 0) {
+		goto fail;
+	}
+
 	DEBUG(DEBUG_INFO, ("Parsing nodemap done\n"));
 	return true;
 
@@ -521,6 +525,10 @@ static bool interfaces_parse(struct interface_map *iface_map)
 		iface_map->num += 1;
 	}
 
+	if (iface_map->num == 0) {
+		goto fail;
+	}
+
 	DEBUG(DEBUG_INFO, ("Parsing interfaces done\n"));
 	return true;
 
@@ -588,6 +596,10 @@ static bool vnnmap_parse(struct vnn_map *vnn_map)
 		vnn_map->size += 1;
 	}
 
+	if (vnn_map->size == 0) {
+		goto fail;
+	}
+
 	DEBUG(DEBUG_INFO, ("Parsing vnnmap done\n"));
 	return true;
 
@@ -606,8 +618,7 @@ static bool reclock_parse(struct ctdbd_context *ctdb)
 	}
 
 	if (line[0] == '\n') {
-		/* Recovery lock remains unset */
-		goto ok;
+		goto fail;
 	}
 
 	/* Get rid of pesky newline */
@@ -619,7 +630,7 @@ static bool reclock_parse(struct ctdbd_context *ctdb)
 	if (ctdb->reclock == NULL) {
 		goto fail;
 	}
-ok:
+
 	/* Swallow possible blank line following section.  Picky
 	 * compiler settings don't allow the return value to be
 	 * ignored, so make the compiler happy.
@@ -743,6 +754,10 @@ static bool dbmap_parse(struct database_map *db_map)
 		db->seq_num = seq_num;
 
 		DLIST_ADD_END(db_map->db, db);
+	}
+
+	if (db_map->db == NULL) {
+		goto fail;
 	}
 
 	DEBUG(DEBUG_INFO, ("Parsing dbmap done\n"));
@@ -1046,7 +1061,7 @@ static bool public_ips_parse(struct ctdbd_context *ctdb,
 
 	ctdb->known_ips = ipalloc_read_known_ips(ctdb, numnodes, false);
 
-	status = (ctdb->known_ips != NULL);
+	status = (ctdb->known_ips != NULL && ctdb->known_ips->num != 0);
 
 	if (status) {
 		D_INFO("Parsing public IPs done\n");
@@ -1139,11 +1154,53 @@ static bool control_failures_parse(struct ctdbd_context *ctdb)
 		DLIST_ADD(ctdb->control_failures, failure);
 	}
 
+	if (ctdb->control_failures == NULL) {
+		goto fail;
+	}
+
 	D_INFO("Parsing fake control failures done\n");
 	return true;
 
 fail:
 	D_INFO("Parsing fake control failures failed\n");
+	return false;
+}
+
+static bool runstate_parse(struct ctdbd_context *ctdb)
+{
+	char line[1024];
+	char *t;
+
+	if (fgets(line, sizeof(line), stdin) == NULL) {
+		goto fail;
+	}
+
+	if (line[0] == '\n') {
+		goto fail;
+	}
+
+	/* Get rid of pesky newline */
+	if ((t = strchr(line, '\n')) != NULL) {
+		*t = '\0';
+	}
+
+	ctdb->runstate = ctdb_runstate_from_string(line);
+	if (ctdb->runstate == CTDB_RUNSTATE_UNKNOWN) {
+		goto fail;
+	}
+
+	/* Swallow possible blank line following section.  Picky
+	 * compiler settings don't allow the return value to be
+	 * ignored, so make the compiler happy.
+	 */
+	if (fgets(line, sizeof(line), stdin) == NULL) {
+		;
+	}
+	D_INFO("Parsing runstate done\n");
+	return true;
+
+fail:
+	D_ERR("Parsing runstate failed\n");
 	return false;
 }
 
@@ -1246,6 +1303,8 @@ static struct ctdbd_context *ctdbd_setup(TALLOC_CTX *mem_ctx,
 		goto fail;
 	}
 
+	ctdb->runstate = CTDB_RUNSTATE_RUNNING;
+
 	while (fgets(line, sizeof(line), stdin) != NULL) {
 		char *t;
 
@@ -1268,6 +1327,8 @@ static struct ctdbd_context *ctdbd_setup(TALLOC_CTX *mem_ctx,
 			status = reclock_parse(ctdb);
 		} else if (strcmp(line, "CONTROLFAILS") == 0) {
 			status = control_failures_parse(ctdb);
+		} else if (strcmp(line, "RUNSTATE") == 0) {
+			status = runstate_parse(ctdb);
 		} else {
 			fprintf(stderr, "Unknown line %s\n", line);
 			status = false;
@@ -1288,7 +1349,6 @@ static struct ctdbd_context *ctdbd_setup(TALLOC_CTX *mem_ctx,
 	ctdb->recovery_end_time = tevent_timeval_current();
 
 	ctdb->log_level = DEBUG_ERR;
-	ctdb->runstate = CTDB_RUNSTATE_RUNNING;
 
 	ctdb_tunable_set_defaults(&ctdb->tun_list);
 
@@ -1998,9 +2058,75 @@ done:
 	client_send_control(req, header, &reply);
 }
 
+static void srvid_handler_done(struct tevent_req *subreq);
+
 static void srvid_handler(uint64_t srvid, TDB_DATA data, void *private_data)
 {
-	printf("Received a message for SRVID 0x%"PRIx64"\n", srvid);
+	struct client_state *state = talloc_get_type_abort(
+		private_data, struct client_state);
+	struct ctdbd_context *ctdb = state->ctdb;
+	struct tevent_req *subreq;
+	struct ctdb_req_header request_header;
+	struct ctdb_req_message_data message;
+	uint8_t *buf;
+	size_t datalen, buflen;
+	int ret;
+
+	request_header = (struct ctdb_req_header) {
+		.ctdb_magic = CTDB_MAGIC,
+		.ctdb_version = CTDB_PROTOCOL,
+		.generation = ctdb->vnn_map->generation,
+		.operation = CTDB_REQ_MESSAGE,
+		.destnode = state->pnn,
+		.srcnode = ctdb->node_map->recmaster,
+		.reqid = 0,
+	};
+
+	message = (struct ctdb_req_message_data) {
+		.srvid = srvid,
+		.data = data,
+	};
+
+	datalen = ctdb_req_message_data_len(&request_header, &message);
+	ret = ctdb_allocate_pkt(state, datalen, &buf, &buflen);
+	if (ret != 0) {
+		return;
+	}
+
+	ret = ctdb_req_message_data_push(&request_header,
+					 &message,
+					 buf,
+					 &buflen);
+	if (ret != 0) {
+		talloc_free(buf);
+		return;
+	}
+
+	subreq = comm_write_send(state, state->ev, state->comm, buf, buflen);
+	if (subreq == NULL) {
+		talloc_free(buf);
+		return;
+	}
+	tevent_req_set_callback(subreq, srvid_handler_done, state);
+
+	talloc_steal(subreq, buf);
+}
+
+static void srvid_handler_done(struct tevent_req *subreq)
+{
+	struct client_state *state = tevent_req_callback_data(
+		subreq, struct client_state);
+	int ret;
+	bool ok;
+
+	ok = comm_write_recv(subreq, &ret);
+	TALLOC_FREE(subreq);
+	if (!ok) {
+		DEBUG(DEBUG_ERR,
+		      ("Failed to dispatch message to client pid=%u, ret=%d\n",
+		       state->pid,
+		       ret));
+	}
 }
 
 static void control_register_srvid(TALLOC_CTX *mem_ctx,
@@ -2102,23 +2228,6 @@ static void control_get_pid(TALLOC_CTX *mem_ctx,
 
 	reply.rdata.opcode = request->opcode;
 	reply.status = getpid();
-	reply.errmsg = NULL;
-
-	client_send_control(req, header, &reply);
-}
-
-static void control_get_recmaster(TALLOC_CTX *mem_ctx,
-				  struct tevent_req *req,
-				  struct ctdb_req_header *header,
-				  struct ctdb_req_control *request)
-{
-	struct client_state *state = tevent_req_data(
-		req, struct client_state);
-	struct ctdbd_context *ctdb = state->ctdb;
-	struct ctdb_reply_control reply;
-
-	reply.rdata.opcode = request->opcode;
-	reply.status = ctdb->node_map->recmaster;
 	reply.errmsg = NULL;
 
 	client_send_control(req, header, &reply);
@@ -4111,10 +4220,6 @@ static void client_process_control(struct tevent_req *req,
 		control_get_pid(mem_ctx, req, &header, &request);
 		break;
 
-	case CTDB_CONTROL_GET_RECMASTER:
-		control_get_recmaster(mem_ctx, req, &header, &request);
-		break;
-
 	case CTDB_CONTROL_GET_PNN:
 		control_get_pnn(mem_ctx, req, &header, &request);
 		break;
@@ -4296,9 +4401,14 @@ static int client_recv(struct tevent_req *req, int *perr)
 struct server_state {
 	struct tevent_context *ev;
 	struct ctdbd_context *ctdb;
+	struct tevent_timer *leader_broadcast_te;
 	int fd;
 };
 
+static void server_leader_broadcast(struct tevent_context *ev,
+				    struct tevent_timer *te,
+				    struct timeval current_time,
+				    void *private_data);
 static void server_new_client(struct tevent_req *subreq);
 static void server_client_done(struct tevent_req *subreq);
 
@@ -4319,6 +4429,15 @@ static struct tevent_req *server_send(TALLOC_CTX *mem_ctx,
 	state->ctdb = ctdb;
 	state->fd = fd;
 
+	state->leader_broadcast_te = tevent_add_timer(state->ev,
+						      state,
+						      timeval_current_ofs(0, 0),
+						      server_leader_broadcast,
+						      state);
+	if (state->leader_broadcast_te == NULL) {
+		DBG_WARNING("Failed to set up leader broadcast\n");
+	}
+
 	subreq = accept_send(state, ev, fd);
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
@@ -4326,6 +4445,41 @@ static struct tevent_req *server_send(TALLOC_CTX *mem_ctx,
 	tevent_req_set_callback(subreq, server_new_client, req);
 
 	return req;
+}
+
+static void server_leader_broadcast(struct tevent_context *ev,
+				    struct tevent_timer *te,
+				    struct timeval current_time,
+				    void *private_data)
+{
+	struct server_state *state = talloc_get_type_abort(
+		private_data, struct server_state);
+	struct ctdbd_context *ctdb = state->ctdb;
+	uint32_t leader = ctdb->node_map->recmaster;
+	TDB_DATA data;
+	int ret;
+
+	if (leader == CTDB_UNKNOWN_PNN) {
+		goto done;
+	}
+
+	data.dptr = (uint8_t *)&leader;
+	data.dsize = sizeof(leader);
+
+	ret = srvid_dispatch(ctdb->srv, CTDB_SRVID_LEADER, 0, data);
+	if (ret != 0) {
+		DBG_WARNING("Failed to send leader broadcast, ret=%d\n", ret);
+	}
+
+done:
+	state->leader_broadcast_te = tevent_add_timer(state->ev,
+						      state,
+						      timeval_current_ofs(1, 0),
+						      server_leader_broadcast,
+						      state);
+	if (state->leader_broadcast_te == NULL) {
+		DBG_WARNING("Failed to set up leader broadcast\n");
+	}
 }
 
 static void server_new_client(struct tevent_req *subreq)

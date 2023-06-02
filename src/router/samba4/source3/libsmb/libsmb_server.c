@@ -61,14 +61,33 @@ SMBC_check_server(SMBCCTX * context,
 					1,
 					data_blob_const(data, sizeof(data)));
 		if (!NT_STATUS_IS_OK(status)) {
+			bool ok = false;
+			/*
+			 * Some SMB2 servers (not Samba or Windows)
+			 * check the session status on SMB2_ECHO and return
+			 * NT_STATUS_USER_SESSION_DELETED
+			 * if the session was not set. That's OK, they still
+			 * replied.
+			 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=13218
+			 */
+			if (smbXcli_conn_protocol(server->cli->conn) >=
+					PROTOCOL_SMB2_02) {
+				if (NT_STATUS_EQUAL(status,
+					    NT_STATUS_USER_SESSION_DELETED)) {
+					ok = true;
+				}
+			}
 			/*
 			 * Some NetApp servers return
 			 * NT_STATUS_INVALID_PARAMETER.That's OK, they still
 			 * replied.
 			 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=13007
 			 */
-			if (!NT_STATUS_EQUAL(status,
+			if (NT_STATUS_EQUAL(status,
 					NT_STATUS_INVALID_PARAMETER)) {
+				ok = true;
+			}
+			if (!ok) {
 				return 1;
 			}
 		}
@@ -289,20 +308,23 @@ static struct cli_credentials *SMBC_auth_credentials(TALLOC_CTX *mem_ctx,
 		/* Use the config option */
 		break;
 	case SMBC_ENCRYPTLEVEL_NONE:
-		cli_credentials_set_smb_encryption(creds,
-						   SMB_ENCRYPTION_OFF,
-						   CRED_SPECIFIED);
+		(void)cli_credentials_set_smb_encryption(
+				creds,
+				SMB_ENCRYPTION_OFF,
+				CRED_SPECIFIED);
 		break;
 	case SMBC_ENCRYPTLEVEL_REQUEST:
-		cli_credentials_set_smb_encryption(creds,
-						   SMB_ENCRYPTION_DESIRED,
-						   CRED_SPECIFIED);
+		(void)cli_credentials_set_smb_encryption(
+				creds,
+				SMB_ENCRYPTION_DESIRED,
+				CRED_SPECIFIED);
 		break;
 	case SMBC_ENCRYPTLEVEL_REQUIRE:
 	default:
-		cli_credentials_set_smb_encryption(creds,
-						   SMB_ENCRYPTION_REQUIRED,
-						   CRED_SPECIFIED);
+		(void)cli_credentials_set_smb_encryption(
+				creds,
+				SMB_ENCRYPTION_REQUIRED,
+				CRED_SPECIFIED);
 		break;
 	}
 
@@ -572,7 +594,7 @@ SMBC_server_internal(TALLOC_CTX *ctx,
 		    !NT_STATUS_IS_OK(cli_session_setup_anon(c))) {
 
                         cli_shutdown(c);
-                        errno = EPERM;
+			errno = map_errno_from_nt_status(status);
                         return NULL;
                 }
 	}
@@ -854,9 +876,9 @@ SMBC_attr_server(TALLOC_CTX *ctx,
                         &ipc_srv->pol);
 
                 if (!NT_STATUS_IS_OK(nt_status)) {
-                        errno = SMBC_errno(context, ipc_srv->cli);
                         cli_shutdown(ipc_srv->cli);
                         free(ipc_srv);
+			errno = cli_status_to_errno(nt_status);
                         return NULL;
                 }
 

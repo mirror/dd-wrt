@@ -493,8 +493,8 @@ static int partition_copy_all_callback_action(
 			 * them here too
 			 */
 			for (el_idx=0; el_idx < req_msg->num_elements; el_idx++) {
-				if (req_msg->elements[el_idx].flags & LDB_FLAG_MOD_DELETE
-				    || ((req_msg->elements[el_idx].flags & LDB_FLAG_MOD_REPLACE) &&
+				if (LDB_FLAG_MOD_TYPE(req_msg->elements[el_idx].flags) == LDB_FLAG_MOD_DELETE
+				    || ((LDB_FLAG_MOD_TYPE(req_msg->elements[el_idx].flags) == LDB_FLAG_MOD_REPLACE) &&
 					req_msg->elements[el_idx].num_values == 0)) {
 					if (ldb_msg_find_element(modify_msg,
 								 req_msg->elements[el_idx].name) != NULL) {
@@ -1224,7 +1224,7 @@ int partition_del_trans(struct ldb_module *module)
 	bool trace = module && ldb_module_flags(ldb) & LDB_FLG_ENABLE_TRACING;
 
 	if (data == NULL) {
-		DEBUG(0,("partion delete transaction with no private data\n"));
+		DEBUG(0,("partition delete transaction with no private data\n"));
 		return ldb_operr(ldb);
 	}
 

@@ -112,16 +112,29 @@ static int vfs_error_inject_openat(struct vfs_handle_struct *handle,
 				   const struct files_struct *dirfsp,
 				   const struct smb_filename *smb_fname,
 				   files_struct *fsp,
-				   int flags,
-				   mode_t mode)
+				   const struct vfs_open_how *how)
 {
 	int error = inject_unix_error("openat", handle);
+	int dirfsp_flags = (O_NOFOLLOW|O_DIRECTORY);
+	bool return_error;
 
-	if (!fsp->fsp_flags.is_pathref && error != 0) {
+#ifdef O_PATH
+	dirfsp_flags |= O_PATH;
+#else
+#ifdef O_SEARCH
+	dirfsp_flags |= O_SEARCH;
+#endif
+#endif
+
+	return_error = (error != 0);
+	return_error &= !fsp->fsp_flags.is_pathref;
+	return_error &= ((how->flags & dirfsp_flags) != dirfsp_flags);
+
+	if (return_error) {
 		errno = error;
 		return -1;
 	}
-	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
+	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, how);
 }
 
 static int vfs_error_inject_unlinkat(struct vfs_handle_struct *handle,

@@ -25,11 +25,13 @@
 
 /* The following definitions come from winbindd/winbindd.c  */
 struct imessaging_context *winbind_imessaging_context(void);
+void winbindd_terminate(bool is_parent);
 bool winbindd_setup_sig_term_handler(bool parent);
 bool winbindd_setup_stdin_handler(bool parent, bool foreground);
 bool winbindd_setup_sig_hup_handler(const char *lfile);
 bool winbindd_use_idmap_cache(void);
 bool winbindd_use_cache(void);
+void winbindd_set_use_cache(bool use_cache);
 char *get_winbind_priv_pipe_dir(void);
 void winbindd_flush_caches(void);
 bool winbindd_reload_services_file(const char *lfile);
@@ -117,15 +119,15 @@ NTSTATUS wb_cache_trusted_domains(struct winbindd_domain *domain,
 				  struct netr_DomainTrustList *trusts);
 
 NTSTATUS wcache_cached_creds_exist(struct winbindd_domain *domain, const struct dom_sid *sid);
-NTSTATUS wcache_get_creds(struct winbindd_domain *domain, 
-			  TALLOC_CTX *mem_ctx, 
+NTSTATUS wcache_get_creds(struct winbindd_domain *domain,
+			  TALLOC_CTX *mem_ctx,
 			  const struct dom_sid *sid,
 			  const uint8_t **cached_nt_pass,
 			  const uint8_t **cached_salt);
-NTSTATUS wcache_save_creds(struct winbindd_domain *domain, 
+NTSTATUS wcache_save_creds(struct winbindd_domain *domain,
 			   const struct dom_sid *sid,
 			   const uint8_t nt_pass[NT_HASH_LEN]);
-void wcache_invalidate_samlogon(struct winbindd_domain *domain, 
+void wcache_invalidate_samlogon(struct winbindd_domain *domain,
 				const struct dom_sid *user_sid);
 bool wcache_invalidate_cache(void);
 bool wcache_invalidate_cache_noinit(void);
@@ -144,7 +146,7 @@ void cache_name2sid_trusted(struct winbindd_domain *domain,
 			const char *name,
 			enum lsa_SidType type,
 			const struct dom_sid *sid);
-void cache_name2sid(struct winbindd_domain *domain, 
+void cache_name2sid(struct winbindd_domain *domain,
 		    const char *domain_name, const char *name,
 		    enum lsa_SidType type, const struct dom_sid *sid);
 NTSTATUS wcache_query_user_fullname(struct winbindd_domain *domain,
@@ -228,7 +230,6 @@ void ccache_remove_all_after_fork(void);
 void ccache_regain_all_now(void);
 NTSTATUS add_ccache_to_list(const char *princ_name,
 			    const char *ccname,
-			    const char *service,
 			    const char *username,
 			    const char *password,
 			    const char *realm,
@@ -236,7 +237,9 @@ NTSTATUS add_ccache_to_list(const char *princ_name,
 			    time_t create_time,
 			    time_t ticket_end,
 			    time_t renew_until,
-			    bool postponed_request);
+			    bool postponed_request,
+			    const char *canon_principal,
+			    const char *canon_realm);
 NTSTATUS remove_ccache(const char *username);
 struct WINBINDD_MEMORY_CREDS *find_memory_creds_by_name(const char *username);
 NTSTATUS winbindd_add_memory_creds(const char *username,
@@ -255,8 +258,8 @@ NTSTATUS winbindd_get_creds(struct winbindd_domain *domain,
 			    const uint8_t **cached_nt_pass,
 			    const uint8_t **cred_salt);
 NTSTATUS winbindd_store_creds(struct winbindd_domain *domain,
-			      const char *user, 
-			      const char *pass, 
+			      const char *user,
+			      const char *pass,
 			      struct netr_SamInfo3 *info3);
 NTSTATUS winbindd_update_creds_by_info3(struct winbindd_domain *domain,
 				        const char *user,
@@ -288,7 +291,6 @@ int wb_domain_request_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 			   struct winbindd_response **presponse, int *err);
 
 void setup_child(struct winbindd_domain *domain, struct winbindd_child *child,
-		 const struct winbindd_child_dispatch_table *table,
 		 const char *logprefix,
 		 const char *logname);
 void winbind_child_died(pid_t pid);
@@ -394,8 +396,6 @@ struct dcerpc_binding_handle *locator_child_handle(void);
 /* The following definitions come from winbindd/winbindd_misc.c  */
 
 bool winbindd_list_trusted_domains(struct winbindd_cli_state *state);
-enum winbindd_result winbindd_dual_list_trusted_domains(struct winbindd_domain *domain,
-							struct winbindd_cli_state *state);
 bool winbindd_dc_info(struct winbindd_cli_state *state);
 bool winbindd_ping(struct winbindd_cli_state *state);
 bool winbindd_info(struct winbindd_cli_state *state);
@@ -429,19 +429,26 @@ NTSTATUS append_auth_data(TALLOC_CTX *mem_ctx,
 			  union netr_Validation *validation,
 			  const char *name_domain,
 			  const char *name_user);
+NTSTATUS extra_data_to_sid_array(const char *group_sid,
+				TALLOC_CTX *mem_ctx,
+				struct wbint_SidArray **_sid_array);
 uid_t get_uid_from_request(struct winbindd_request *request);
 struct winbindd_domain *find_auth_domain(uint8_t flags,
 					 const char *domain_name);
-enum winbindd_result winbindd_dual_pam_auth(struct winbindd_domain *domain,
-					    struct winbindd_cli_state *state) ;
-enum winbindd_result winbindd_dual_pam_auth_crap(struct winbindd_domain *domain,
-						 struct winbindd_cli_state *state) ;
-enum winbindd_result winbindd_dual_pam_chauthtok(struct winbindd_domain *contact_domain,
-						 struct winbindd_cli_state *state);
-enum winbindd_result winbindd_dual_pam_logoff(struct winbindd_domain *domain,
-					      struct winbindd_cli_state *state) ;
-enum winbindd_result winbindd_dual_pam_chng_pswd_auth_crap(struct winbindd_domain *domainSt, struct winbindd_cli_state *state);
+struct pipes_struct;
+struct wbint_PamAuth;
+NTSTATUS _wbint_PamAuth(struct pipes_struct *p,
+			struct wbint_PamAuth *r);
+NTSTATUS _wbint_PamAuthCrap(struct pipes_struct *p,
+			    struct wbint_PamAuthCrap *r);
+NTSTATUS _wbint_PamAuthChangePassword(struct pipes_struct *p,
+				struct wbint_PamAuthChangePassword *r);
+NTSTATUS _wbint_PamLogOff(struct pipes_struct *p,
+			  struct wbint_PamLogOff *r);
+NTSTATUS _wbint_PamAuthCrapChangePassword(struct pipes_struct *p,
+					  struct wbint_PamAuthCrapChangePassword *r);
 NTSTATUS winbindd_pam_auth_pac_verify(struct winbindd_cli_state *state,
+				      TALLOC_CTX *mem_ctx,
 				      bool *p_is_trusted,
 				      uint16_t *p_validation_level,
 				      union netr_Validation **p_validation);
@@ -456,7 +463,7 @@ NTSTATUS winbind_dual_SamLogon(struct winbindd_domain *domain,
 			       const uint64_t logon_id,
 			       const char *client_name,
 			       const int pid,
-			       const uint8_t chal[8],
+			       DATA_BLOB chal,
 			       DATA_BLOB lm_response,
 			       DATA_BLOB nt_response,
 			       const struct tsocket_address *remote,
@@ -483,8 +490,6 @@ void winbindd_ping_offline_domains(struct tevent_context *ev,
 				   struct tevent_timer *te,
 				   struct timeval now,
 				   void *private_data);
-enum winbindd_result winbindd_dual_init_connection(struct winbindd_domain *domain,
-						   struct winbindd_cli_state *state);
 bool init_domain_list(void);
 struct winbindd_domain *find_domain_from_name_noinit(const char *domain_name);
 struct winbindd_domain *find_trust_from_name_noinit(const char *domain_name);
@@ -551,9 +556,6 @@ bool parse_xidlist(TALLOC_CTX *mem_ctx, const char *xidstr,
 /* The following definitions come from winbindd/winbindd_wins.c  */
 
 void winbindd_wins_byname(struct winbindd_cli_state *state);
-
-enum winbindd_result winbindd_dual_ping(struct winbindd_domain *domain,
-					struct winbindd_cli_state *state);
 
 struct dcerpc_binding_handle *wbint_binding_handle(TALLOC_CTX *mem_ctx,
 						struct winbindd_domain *domain,
@@ -647,7 +649,7 @@ NTSTATUS winbindd_getpwuid_recv(struct tevent_req *req,
 struct tevent_req *wb_lookupuseraliases_send(TALLOC_CTX *mem_ctx,
 					     struct tevent_context *ev,
 					     struct winbindd_domain *domain,
-					     int num_sids,
+					     uint32_t num_sids,
 					     const struct dom_sid *sids);
 NTSTATUS wb_lookupuseraliases_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 				   uint32_t *num_aliases, uint32_t **aliases);
@@ -661,7 +663,7 @@ struct tevent_req *wb_lookupusergroups_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    const struct dom_sid *sid);
 NTSTATUS wb_lookupusergroups_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
-				  int *num_sids, struct dom_sid **sids);
+				  uint32_t *num_sids, struct dom_sid **sids);
 
 struct tevent_req *winbindd_getuserdomgroups_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
@@ -674,7 +676,7 @@ struct tevent_req *wb_gettoken_send(TALLOC_CTX *mem_ctx,
 				    const struct dom_sid *sid,
 				    bool expand_local_aliases);
 NTSTATUS wb_gettoken_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
-			  int *num_sids, struct dom_sid **sids);
+			  uint32_t *num_sids, struct dom_sid **sids);
 struct tevent_req *winbindd_getgroups_send(TALLOC_CTX *mem_ctx,
 					   struct tevent_context *ev,
 					   struct winbindd_cli_state *cli,
@@ -756,7 +758,7 @@ struct tevent_req *wb_query_group_list_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    struct winbindd_domain *domain);
 NTSTATUS wb_query_group_list_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
-				  int *num_users,
+				  uint32_t *num_users,
 				  struct wbint_Principal **groups);
 
 struct tevent_req *wb_next_pwent_send(TALLOC_CTX *mem_ctx,
@@ -985,6 +987,7 @@ bool reconnect_need_retry(NTSTATUS status, struct winbindd_domain *domain);
 
 /* The following definitions come from winbindd/winbindd_gpupdate.c  */
 void gpupdate_init(void);
+void gpupdate_user_init(const char *user);
 
 /* The following comes from winbindd/winbindd_dual_srv.c */
 bool reset_cm_connection_on_error(struct winbindd_domain *domain,

@@ -3631,6 +3631,7 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 	int ret;
 	NTSTATUS status = NT_STATUS_OK;
 	struct ldb_context *sam_ctx;
+	DATA_BLOB session_key = data_blob_null;
 
 	DCESRV_PULL_HANDLE(h, r->in.user_handle, SAMR_HANDLE_USER);
 
@@ -3645,6 +3646,13 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 	msg->dn = talloc_reference(mem_ctx, a_state->account_dn);
 	if (!msg->dn) {
 		return NT_STATUS_NO_MEMORY;
+	}
+
+	ret = ldb_transaction_start(sam_ctx);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to start a transaction: %s\n",
+			ldb_errstring(sam_ctx));
+		return NT_STATUS_LOCK_NOT_GRANTED;
 	}
 
 	switch (r->in.level) {
@@ -3706,20 +3714,21 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 
 	case 18:
 		status = samr_set_password_buffers(dce_call,
-						   a_state->sam_ctx,
+						   sam_ctx,
 						   a_state->account_dn,
 						   a_state->domain_state->domain_dn,
 						   mem_ctx,
 						   r->in.info->info18.lm_pwd_active ? r->in.info->info18.lm_pwd.hash : NULL,
 						   r->in.info->info18.nt_pwd_active ? r->in.info->info18.nt_pwd.hash : NULL);
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 
 		if (r->in.info->info18.password_expired > 0) {
 			struct ldb_message_element *set_el;
 			if (samdb_msg_add_uint64(sam_ctx, mem_ctx, msg, "pwdLastSet", 0) != LDB_SUCCESS) {
-				return NT_STATUS_NO_MEMORY;
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
 			}
 			set_el = ldb_msg_find_element(msg, "pwdLastSet");
 			set_el->flags = LDB_FLAG_MOD_REPLACE;
@@ -3731,8 +3740,10 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 		break;
 
 	case 21:
-		if (r->in.info->info21.fields_present == 0)
-			return NT_STATUS_INVALID_PARAMETER;
+		if (r->in.info->info21.fields_present == 0) {
+			status = NT_STATUS_INVALID_PARAMETER;
+			goto done;
+		}
 
 #define IFSET(bit) if (bit & r->in.info->info21.fields_present)
 		IFSET(SAMR_FIELD_LAST_LOGON)
@@ -3777,8 +3788,10 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 			SET_UINT  (msg, info21.code_page,      "codePage");
 
 		/* password change fields */
-		IFSET(SAMR_FIELD_LAST_PWD_CHANGE)
-			return NT_STATUS_ACCESS_DENIED;
+		IFSET(SAMR_FIELD_LAST_PWD_CHANGE) {
+			status = NT_STATUS_ACCESS_DENIED;
+			goto done;
+		}
 
 		IFSET((SAMR_FIELD_LM_PASSWORD_PRESENT
 					| SAMR_FIELD_NT_PASSWORD_PRESENT)) {
@@ -3787,7 +3800,8 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 			if (r->in.info->info21.lm_password_set) {
 				if ((r->in.info->info21.lm_owf_password.length != 16)
 				 || (r->in.info->info21.lm_owf_password.size != 16)) {
-					return NT_STATUS_INVALID_PARAMETER;
+					status = NT_STATUS_INVALID_PARAMETER;
+					goto done;
 				}
 
 				lm_pwd_hash = (uint8_t *) r->in.info->info21.lm_owf_password.array;
@@ -3795,20 +3809,21 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 			if (r->in.info->info21.nt_password_set) {
 				if ((r->in.info->info21.nt_owf_password.length != 16)
 				 || (r->in.info->info21.nt_owf_password.size != 16)) {
-					return NT_STATUS_INVALID_PARAMETER;
+					status = NT_STATUS_INVALID_PARAMETER;
+					goto done;
 				}
 
 				nt_pwd_hash = (uint8_t *) r->in.info->info21.nt_owf_password.array;
 			}
 			status = samr_set_password_buffers(dce_call,
-							   a_state->sam_ctx,
+							   sam_ctx,
 							   a_state->account_dn,
 							   a_state->domain_state->domain_dn,
 							   mem_ctx,
 							   lm_pwd_hash,
 							   nt_pwd_hash);
 			if (!NT_STATUS_IS_OK(status)) {
-				return status;
+				goto done;
 			}
 		}
 
@@ -3821,7 +3836,8 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 				t = "-1";
 			}
 			if (ldb_msg_add_string(msg, "pwdLastSet", t) != LDB_SUCCESS) {
-				return NT_STATUS_NO_MEMORY;
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
 			}
 			set_el = ldb_msg_find_element(msg, "pwdLastSet");
 			set_el->flags = LDB_FLAG_MOD_REPLACE;
@@ -3830,8 +3846,10 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 		break;
 
 	case 23:
-		if (r->in.info->info23.info.fields_present == 0)
-			return NT_STATUS_INVALID_PARAMETER;
+		if (r->in.info->info23.info.fields_present == 0) {
+			status = NT_STATUS_INVALID_PARAMETER;
+			goto done;
+		}
 
 #define IFSET(bit) if (bit & r->in.info->info23.info.fields_present)
 		IFSET(SAMR_FIELD_LAST_LOGON)
@@ -3877,26 +3895,28 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 			SET_UINT  (msg, info23.info.code_page,      "codePage");
 
 		/* password change fields */
-		IFSET(SAMR_FIELD_LAST_PWD_CHANGE)
-			return NT_STATUS_ACCESS_DENIED;
+		IFSET(SAMR_FIELD_LAST_PWD_CHANGE) {
+			status = NT_STATUS_ACCESS_DENIED;
+			goto done;
+		}
 
 		IFSET(SAMR_FIELD_NT_PASSWORD_PRESENT) {
 			status = samr_set_password(dce_call,
-						   a_state->sam_ctx,
+						   sam_ctx,
 						   a_state->account_dn,
 						   a_state->domain_state->domain_dn,
 						   mem_ctx,
 						   &r->in.info->info23.password);
 		} else IFSET(SAMR_FIELD_LM_PASSWORD_PRESENT) {
 			status = samr_set_password(dce_call,
-						   a_state->sam_ctx,
+						   sam_ctx,
 						   a_state->account_dn,
 						   a_state->domain_state->domain_dn,
 						   mem_ctx,
 						   &r->in.info->info23.password);
 		}
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 
 		IFSET(SAMR_FIELD_EXPIRED_FLAG) {
@@ -3907,7 +3927,8 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 				t = "-1";
 			}
 			if (ldb_msg_add_string(msg, "pwdLastSet", t) != LDB_SUCCESS) {
-				return NT_STATUS_NO_MEMORY;
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
 			}
 			set_el = ldb_msg_find_element(msg, "pwdLastSet");
 			set_el->flags = LDB_FLAG_MOD_REPLACE;
@@ -3918,19 +3939,20 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 		/* the set password levels are handled separately */
 	case 24:
 		status = samr_set_password(dce_call,
-					   a_state->sam_ctx,
+					   sam_ctx,
 					   a_state->account_dn,
 					   a_state->domain_state->domain_dn,
 					   mem_ctx,
 					   &r->in.info->info24.password);
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 
 		if (r->in.info->info24.password_expired > 0) {
 			struct ldb_message_element *set_el;
 			if (samdb_msg_add_uint64(sam_ctx, mem_ctx, msg, "pwdLastSet", 0) != LDB_SUCCESS) {
-				return NT_STATUS_NO_MEMORY;
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
 			}
 			set_el = ldb_msg_find_element(msg, "pwdLastSet");
 			set_el->flags = LDB_FLAG_MOD_REPLACE;
@@ -3938,8 +3960,10 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 		break;
 
 	case 25:
-		if (r->in.info->info25.info.fields_present == 0)
-			return NT_STATUS_INVALID_PARAMETER;
+		if (r->in.info->info25.info.fields_present == 0) {
+			status = NT_STATUS_INVALID_PARAMETER;
+			goto done;
+		}
 
 #define IFSET(bit) if (bit & r->in.info->info25.info.fields_present)
 		IFSET(SAMR_FIELD_LAST_LOGON)
@@ -3984,26 +4008,28 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 			SET_UINT  (msg, info25.info.code_page,      "codePage");
 
 		/* password change fields */
-		IFSET(SAMR_FIELD_LAST_PWD_CHANGE)
-			return NT_STATUS_ACCESS_DENIED;
+		IFSET(SAMR_FIELD_LAST_PWD_CHANGE) {
+			status = NT_STATUS_ACCESS_DENIED;
+			goto done;
+		}
 
 		IFSET(SAMR_FIELD_NT_PASSWORD_PRESENT) {
 			status = samr_set_password_ex(dce_call,
-						      a_state->sam_ctx,
+						      sam_ctx,
 						      a_state->account_dn,
 						      a_state->domain_state->domain_dn,
 						      mem_ctx,
 						      &r->in.info->info25.password);
 		} else IFSET(SAMR_FIELD_LM_PASSWORD_PRESENT) {
 			status = samr_set_password_ex(dce_call,
-						      a_state->sam_ctx,
+						      sam_ctx,
 						      a_state->account_dn,
 						      a_state->domain_state->domain_dn,
 						      mem_ctx,
 						      &r->in.info->info25.password);
 		}
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 
 		IFSET(SAMR_FIELD_EXPIRED_FLAG) {
@@ -4014,7 +4040,8 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 				t = "-1";
 			}
 			if (ldb_msg_add_string(msg, "pwdLastSet", t) != LDB_SUCCESS) {
-				return NT_STATUS_NO_MEMORY;
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
 			}
 			set_el = ldb_msg_find_element(msg, "pwdLastSet");
 			set_el->flags = LDB_FLAG_MOD_REPLACE;
@@ -4025,13 +4052,13 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 		/* the set password levels are handled separately */
 	case 26:
 		status = samr_set_password_ex(dce_call,
-					      a_state->sam_ctx,
+					      sam_ctx,
 					      a_state->account_dn,
 					      a_state->domain_state->domain_dn,
 					      mem_ctx,
 					      &r->in.info->info26.password);
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 
 		if (r->in.info->info26.password_expired > 0) {
@@ -4042,35 +4069,259 @@ static NTSTATUS dcesrv_samr_SetUserInfo(struct dcesrv_call_state *dce_call, TALL
 				t = "-1";
 			}
 			if (ldb_msg_add_string(msg, "pwdLastSet", t) != LDB_SUCCESS) {
-				return NT_STATUS_NO_MEMORY;
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
 			}
 			set_el = ldb_msg_find_element(msg, "pwdLastSet");
 			set_el->flags = LDB_FLAG_MOD_REPLACE;
 		}
 		break;
 
+	case 31:
+		status = dcesrv_transport_session_key(dce_call, &session_key);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_NOTICE("samr: failed to get session key: %s\n",
+				   nt_errstr(status));
+			goto done;
+		}
+
+		status = samr_set_password_aes(dce_call,
+					       mem_ctx,
+					       &session_key,
+					       sam_ctx,
+					       a_state->account_dn,
+					       a_state->domain_state->domain_dn,
+					       &r->in.info->info31.password,
+					       DSDB_PASSWORD_RESET);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto done;
+		}
+
+		if (r->in.info->info31.password_expired > 0) {
+			const char *t = "0";
+			struct ldb_message_element *set_el = NULL;
+
+			if (r->in.info->info31.password_expired ==
+			    PASS_DONT_CHANGE_AT_NEXT_LOGON) {
+				t = "-1";
+			}
+
+			ret = ldb_msg_add_string(msg, "pwdLastSet", t);
+			if (ret != LDB_SUCCESS) {
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
+			}
+			set_el = ldb_msg_find_element(msg, "pwdLastSet");
+			set_el->flags = LDB_FLAG_MOD_REPLACE;
+		}
+
+		break;
+	case 32:
+		status = dcesrv_transport_session_key(dce_call, &session_key);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_NOTICE("samr: failed to get session key: %s\n",
+				   nt_errstr(status));
+			goto done;
+		}
+
+		if (r->in.info->info32.info.fields_present == 0) {
+			status = NT_STATUS_INVALID_PARAMETER;
+			goto done;
+		}
+
+#define IFSET(bit) if (bit & r->in.info->info32.info.fields_present)
+		IFSET(SAMR_FIELD_LAST_LOGON)
+		{
+			SET_UINT64(msg, info32.info.last_logon, "lastLogon");
+		}
+		IFSET(SAMR_FIELD_LAST_LOGOFF)
+		{
+			SET_UINT64(msg, info32.info.last_logoff, "lastLogoff");
+		}
+		IFSET(SAMR_FIELD_ACCT_EXPIRY)
+		{
+			SET_UINT64(msg,
+				   info32.info.acct_expiry,
+				   "accountExpires");
+		}
+		IFSET(SAMR_FIELD_ACCOUNT_NAME)
+		{
+			SET_STRING(msg,
+				   info32.info.account_name,
+				   "samAccountName");
+		}
+		IFSET(SAMR_FIELD_FULL_NAME)
+		{
+			SET_STRING(msg, info32.info.full_name, "displayName");
+		}
+		IFSET(SAMR_FIELD_HOME_DIRECTORY)
+		{
+			SET_STRING(msg,
+				   info32.info.home_directory,
+				   "homeDirectory");
+		}
+		IFSET(SAMR_FIELD_HOME_DRIVE)
+		{
+			SET_STRING(msg, info32.info.home_drive, "homeDrive");
+		}
+		IFSET(SAMR_FIELD_LOGON_SCRIPT)
+		{
+			SET_STRING(msg, info32.info.logon_script, "scriptPath");
+		}
+		IFSET(SAMR_FIELD_PROFILE_PATH)
+		{
+			SET_STRING(msg,
+				   info32.info.profile_path,
+				   "profilePath");
+		}
+		IFSET(SAMR_FIELD_DESCRIPTION)
+		{
+			SET_STRING(msg, info32.info.description, "description");
+		}
+		IFSET(SAMR_FIELD_WORKSTATIONS)
+		{
+			SET_STRING(msg,
+				   info32.info.workstations,
+				   "userWorkstations");
+		}
+		IFSET(SAMR_FIELD_COMMENT)
+		{
+			SET_STRING(msg, info32.info.comment, "comment");
+		}
+		IFSET(SAMR_FIELD_PARAMETERS)
+		{
+			SET_PARAMETERS(msg,
+				       info32.info.parameters,
+				       "userParameters");
+		}
+		IFSET(SAMR_FIELD_PRIMARY_GID)
+		{
+			SET_UINT(msg,
+				 info32.info.primary_gid,
+				 "primaryGroupID");
+		}
+		IFSET(SAMR_FIELD_ACCT_FLAGS)
+		{
+			SET_AFLAGS(msg,
+				   info32.info.acct_flags,
+				   "userAccountControl");
+		}
+		IFSET(SAMR_FIELD_LOGON_HOURS)
+		{
+			SET_LHOURS(msg, info32.info.logon_hours, "logonHours");
+		}
+		IFSET(SAMR_FIELD_BAD_PWD_COUNT)
+		{
+			SET_UINT(msg,
+				 info32.info.bad_password_count,
+				 "badPwdCount");
+		}
+		IFSET(SAMR_FIELD_NUM_LOGONS)
+		{
+			SET_UINT(msg, info32.info.logon_count, "logonCount");
+		}
+		IFSET(SAMR_FIELD_COUNTRY_CODE)
+		{
+			SET_UINT(msg, info32.info.country_code, "countryCode");
+		}
+		IFSET(SAMR_FIELD_CODE_PAGE)
+		{
+			SET_UINT(msg, info32.info.code_page, "codePage");
+		}
+
+		/* password change fields */
+		IFSET(SAMR_FIELD_LAST_PWD_CHANGE)
+		{
+			status = NT_STATUS_ACCESS_DENIED;
+			goto done;
+		}
+
+		IFSET(SAMR_FIELD_NT_PASSWORD_PRESENT)
+		{
+			status = samr_set_password_aes(
+				dce_call,
+				mem_ctx,
+				&session_key,
+				a_state->sam_ctx,
+				a_state->account_dn,
+				a_state->domain_state->domain_dn,
+				&r->in.info->info32.password,
+				DSDB_PASSWORD_RESET);
+		}
+		else IFSET(SAMR_FIELD_LM_PASSWORD_PRESENT)
+		{
+			status = samr_set_password_aes(
+				dce_call,
+				mem_ctx,
+				&session_key,
+				a_state->sam_ctx,
+				a_state->account_dn,
+				a_state->domain_state->domain_dn,
+				&r->in.info->info32.password,
+				DSDB_PASSWORD_RESET);
+		}
+		if (!NT_STATUS_IS_OK(status)) {
+			goto done;
+		}
+
+		IFSET(SAMR_FIELD_EXPIRED_FLAG)
+		{
+			const char *t = "0";
+			struct ldb_message_element *set_el;
+			if (r->in.info->info32.info.password_expired ==
+			    PASS_DONT_CHANGE_AT_NEXT_LOGON) {
+				t = "-1";
+			}
+			if (ldb_msg_add_string(msg, "pwdLastSet", t) !=
+			    LDB_SUCCESS) {
+				status = NT_STATUS_NO_MEMORY;
+				goto done;
+			}
+			set_el = ldb_msg_find_element(msg, "pwdLastSet");
+			set_el->flags = LDB_FLAG_MOD_REPLACE;
+		}
+#undef IFSET
+
+		break;
 	default:
 		/* many info classes are not valid for SetUserInfo */
-		return NT_STATUS_INVALID_INFO_CLASS;
+		status = NT_STATUS_INVALID_INFO_CLASS;
+		goto done;
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {
-		return status;
+		goto done;
 	}
 
 	/* modify the samdb record */
 	if (msg->num_elements > 0) {
-		ret = ldb_modify(a_state->sam_ctx, msg);
+		ret = ldb_modify(sam_ctx, msg);
 		if (ret != LDB_SUCCESS) {
 			DEBUG(1,("Failed to modify record %s: %s\n",
 				 ldb_dn_get_linearized(a_state->account_dn),
-				 ldb_errstring(a_state->sam_ctx)));
+				 ldb_errstring(sam_ctx)));
 
-			return dsdb_ldb_err_to_ntstatus(ret);
+			status = dsdb_ldb_err_to_ntstatus(ret);
+			goto done;
 		}
 	}
 
-	return NT_STATUS_OK;
+	ret = ldb_transaction_commit(sam_ctx);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to commit transaction modifying account record "
+			"%s: %s\n",
+			ldb_dn_get_linearized(msg->dn),
+			ldb_errstring(sam_ctx));
+		return NT_STATUS_INTERNAL_DB_CORRUPTION;
+	}
+
+	status = NT_STATUS_OK;
+done:
+	if (!NT_STATUS_IS_OK(status)) {
+		ldb_transaction_cancel(sam_ctx);
+	}
+
+	return status;
 }
 
 
@@ -4953,7 +5204,7 @@ static NTSTATUS dcesrv_samr_Connect5(struct dcesrv_call_state *dce_call, TALLOC_
 	status = dcesrv_samr_Connect(dce_call, mem_ctx, &c);
 
 	r->out.info_out->info1.client_version = SAMR_CONNECT_AFTER_W2K;
-	r->out.info_out->info1.unknown2 = 0;
+	r->out.info_out->info1.supported_features = 0;
 	*r->out.level_out = r->in.level_in;
 
 	return status;
@@ -5075,6 +5326,40 @@ static NTSTATUS dcesrv_samr_ValidatePassword(struct dcesrv_call_state *dce_call,
 	return NT_STATUS_OK;
 }
 
+static void dcesrv_samr_Opnum68NotUsedOnWire(struct dcesrv_call_state *dce_call,
+					     TALLOC_CTX *mem_ctx,
+					     struct samr_Opnum68NotUsedOnWire *r)
+{
+	DCESRV_FAULT_VOID(DCERPC_FAULT_OP_RNG_ERROR);
+}
+
+static void dcesrv_samr_Opnum69NotUsedOnWire(struct dcesrv_call_state *dce_call,
+					     TALLOC_CTX *mem_ctx,
+					     struct samr_Opnum69NotUsedOnWire *r)
+{
+	DCESRV_FAULT_VOID(DCERPC_FAULT_OP_RNG_ERROR);
+}
+
+static void dcesrv_samr_Opnum70NotUsedOnWire(struct dcesrv_call_state *dce_call,
+					     TALLOC_CTX *mem_ctx,
+					     struct samr_Opnum70NotUsedOnWire *r)
+{
+	DCESRV_FAULT_VOID(DCERPC_FAULT_OP_RNG_ERROR);
+}
+
+static void dcesrv_samr_Opnum71NotUsedOnWire(struct dcesrv_call_state *dce_call,
+					     TALLOC_CTX *mem_ctx,
+					     struct samr_Opnum71NotUsedOnWire *r)
+{
+	DCESRV_FAULT_VOID(DCERPC_FAULT_OP_RNG_ERROR);
+}
+
+static void dcesrv_samr_Opnum72NotUsedOnWire(struct dcesrv_call_state *dce_call,
+					     TALLOC_CTX *mem_ctx,
+					     struct samr_Opnum72NotUsedOnWire *r)
+{
+	DCESRV_FAULT_VOID(DCERPC_FAULT_OP_RNG_ERROR);
+}
 
 /* include the generated boilerplate */
 #include "librpc/gen_ndr/ndr_samr_s.c"

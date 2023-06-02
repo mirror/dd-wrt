@@ -127,7 +127,7 @@ static void krb5_ticket_refresh_handler(struct tevent_context *event_ctx,
 #ifdef HAVE_KRB5
 
 	/* Kinit again if we have the user password and we can't renew the old
-	 * tgt anymore 
+	 * tgt anymore
 	 * NB
 	 * This happens when machine are put to sleep for a very long time. */
 
@@ -160,10 +160,10 @@ rekinit:
 				 * it, ignore error here */
 				ads_kdestroy(entry->ccname);
 
-				/* Don't break the ticket refresh chain: retry 
-				 * refreshing ticket sometime later when KDC is 
+				/* Don't break the ticket refresh chain: retry
+				 * refreshing ticket sometime later when KDC is
 				 * unreachable -- BoYang. More error code handling
-				 * here? 
+				 * here?
 				 * */
 
 				if ((ret == KRB5_KDC_UNREACH)
@@ -196,9 +196,9 @@ rekinit:
 #endif
 			goto done;
 		} else {
-				/* can this happen? 
+				/* can this happen?
 				 * No cached credentials
-				 * destroy ticket and refresh chain 
+				 * destroy ticket and refresh chain
 				 * */
 				ads_kdestroy(entry->ccname);
 				TALLOC_FREE(entry->event);
@@ -209,7 +209,7 @@ rekinit:
 	set_effective_uid(entry->uid);
 
 	ret = smb_krb5_renew_ticket(entry->ccname,
-				    entry->principal_name,
+				    entry->canon_principal,
 				    entry->service,
 				    &new_start);
 #if defined(DEBUG_KRB5_TKT_RENEWAL)
@@ -229,18 +229,18 @@ rekinit:
 
 		/* evil rises here, we refresh ticket failed,
 		 * but the ticket might be expired. Therefore,
-		 * When we refresh ticket failed, destory the 
+		 * When we refresh ticket failed, destory the
 		 * ticket */
 
 		ads_kdestroy(entry->ccname);
 
 		/* avoid breaking the renewal chain: retry in
 		 * lp_winbind_cache_time() seconds when the KDC was not
-		 * available right now. 
-		 * the return code can be KRB5_REALM_CANT_RESOLVE. 
+		 * available right now.
+		 * the return code can be KRB5_REALM_CANT_RESOLVE.
 		 * More error code handling here? */
 
-		if ((ret == KRB5_KDC_UNREACH) 
+		if ((ret == KRB5_KDC_UNREACH)
 		    || (ret == KRB5_REALM_CANT_RESOLVE)) {
 #if defined(DEBUG_KRB5_TKT_RENEWAL)
 			new_start = time(NULL) + 30;
@@ -257,7 +257,7 @@ rekinit:
 
 		/* This is evil, if the ticket was already expired.
 		 * renew ticket function returns KRB5KRB_AP_ERR_TKT_EXPIRED.
-		 * But there is still a chance that we can rekinit it. 
+		 * But there is still a chance that we can rekinit it.
 		 *
 		 * This happens when user login in online mode, and then network
 		 * down or something cause winbind goes offline for a very long time,
@@ -274,7 +274,7 @@ rekinit:
 	}
 
 done:
-	/* in cases that ticket will be unrenewable soon, we don't try to renew ticket 
+	/* in cases that ticket will be unrenewable soon, we don't try to renew ticket
 	 * but try to regain ticket if it is possible */
 	if (entry->renew_until && expire_time
 	     && (entry->renew_until <= expire_time)) {
@@ -356,7 +356,7 @@ static void krb5_ticket_gain_handler(struct tevent_context *event_ctx,
 		DEBUG(3,("krb5_ticket_gain_handler: "
 			"could not kinit: %s\n",
 			error_message(ret)));
-		/* evil. If we cannot do it, destroy any the __maybe__ 
+		/* evil. If we cannot do it, destroy any the __maybe__
 		 * __existing__ ticket */
 		ads_kdestroy(entry->ccname);
 		goto retry_later;
@@ -369,9 +369,9 @@ static void krb5_ticket_gain_handler(struct tevent_context *event_ctx,
 	goto got_ticket;
 
   retry_later:
- 
+
 #if defined(DEBUG_KRB5_TKT_RENEWAL)
- 	t = timeval_set(time(NULL) + 30, 0);
+	t = timeval_set(time(NULL) + 30, 0);
 #else
 	t = timeval_current_ofs(MAX(30, lp_winbind_cache_time()), 0);
 #endif
@@ -493,7 +493,6 @@ bool ccache_entry_identical(const char *username,
 
 NTSTATUS add_ccache_to_list(const char *princ_name,
 			    const char *ccname,
-			    const char *service,
 			    const char *username,
 			    const char *pass,
 			    const char *realm,
@@ -501,7 +500,9 @@ NTSTATUS add_ccache_to_list(const char *princ_name,
 			    time_t create_time,
 			    time_t ticket_end,
 			    time_t renew_until,
-			    bool postponed_request)
+			    bool postponed_request,
+			    const char *canon_principal,
+			    const char *canon_realm)
 {
 	struct WINBINDD_CCACHE_ENTRY *entry = NULL;
 	struct timeval t;
@@ -611,9 +612,15 @@ NTSTATUS add_ccache_to_list(const char *princ_name,
 			goto no_mem;
 		}
 	}
-	if (service) {
-		entry->service = talloc_strdup(entry, service);
-		if (!entry->service) {
+	if (canon_principal != NULL) {
+		entry->canon_principal = talloc_strdup(entry, canon_principal);
+		if (entry->canon_principal == NULL) {
+			goto no_mem;
+		}
+	}
+	if (canon_realm != NULL) {
+		entry->canon_realm = talloc_strdup(entry, canon_realm);
+		if (entry->canon_realm == NULL) {
 			goto no_mem;
 		}
 	}
@@ -625,6 +632,15 @@ NTSTATUS add_ccache_to_list(const char *princ_name,
 
 	entry->realm = talloc_strdup(entry, realm);
 	if (!entry->realm) {
+		goto no_mem;
+	}
+
+	entry->service = talloc_asprintf(entry,
+					 "%s/%s@%s",
+					 KRB5_TGS_NAME,
+					 canon_realm,
+					 canon_realm);
+	if (entry->service == NULL) {
 		goto no_mem;
 	}
 
@@ -667,9 +683,8 @@ NTSTATUS add_ccache_to_list(const char *princ_name,
 
 	DLIST_ADD(ccache_list, entry);
 
-	DEBUG(10,("add_ccache_to_list: "
-		"added ccache [%s] for user [%s] to the list\n",
-		ccname, username));
+	DBG_DEBUG("Added ccache [%s] for user [%s] and service [%s]\n",
+		  entry->ccname, entry->username, entry->service);
 
 	if (entry->event) {
 		/*

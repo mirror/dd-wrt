@@ -1,19 +1,19 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Utility functions for Samba
    Copyright (C) Andrew Tridgell 1992-1999
    Copyright (C) Jelmer Vernooij 2005
-    
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -67,7 +67,7 @@ extern const char *panic_action;
 _PUBLIC_ void dump_core_setup(const char *progname, const char *logfile);
 
 /**
-  register a fault handler. 
+  register a fault handler.
   Should only be called once in the execution of smbd.
 */
 _PUBLIC_ bool register_fault_handler(const char *name, void (*fault_handler)(int sig));
@@ -98,6 +98,8 @@ _PUBLIC_ uint32_t generate_random(void);
  * @see generate_unique_u64
 **/
 _PUBLIC_ uint64_t generate_random_u64(void);
+
+_PUBLIC_ uint64_t generate_random_u64_range(uint64_t lower, uint64_t upper);
 
 /**
  * @brief Generate random nonces usable for re-use detection.
@@ -234,8 +236,8 @@ _PUBLIC_ _PURE_ size_t count_chars(const char *s, char c);
 **/
 _PUBLIC_ size_t strhex_to_str(char *p, size_t p_len, const char *strhex, size_t strhex_len);
 
-/** 
- * Parse a hex string and return a data blob. 
+/**
+ * Parse a hex string and return a data blob.
  */
 _PUBLIC_ DATA_BLOB strhex_to_data_blob(TALLOC_CTX *mem_ctx, const char *strhex) ;
 
@@ -262,7 +264,7 @@ _PUBLIC_ char *hex_encode_talloc(TALLOC_CTX *mem_ctx, const unsigned char *buff_
 _PUBLIC_ char *rfc1738_unescape(char *buf);
 
 /**
- * rfc1738_escape_part 
+ * rfc1738_escape_part
  * Returns a static buffer that contains the RFC
  * 1738 compliant, escaped version of the given url segment. (escapes
  * unsafe, reserved and % chars) It would mangle the :// in http://,
@@ -284,7 +286,7 @@ _PUBLIC_ size_t ascii_len_n(const char *src, size_t n);
 
 /**
  Set a boolean variable from the text value stored in the passed string.
- Returns true in success, false if the passed string does not correctly 
+ Returns true in success, false if the passed string does not correctly
  represent a boolean.
 **/
 _PUBLIC_ bool set_boolean(const char *boolean_string, bool *boolean);
@@ -299,7 +301,7 @@ _PUBLIC_ bool set_boolean(const char *boolean_string, bool *boolean);
 _PUBLIC_ bool conv_str_bool(const char * str, bool * val);
 
 /**
- * Convert a size specification like 16K into an integral number of bytes. 
+ * Convert a size specification like 16K into an integral number of bytes.
  **/
 _PUBLIC_ bool conv_str_size_error(const char * str, uint64_t * val);
 
@@ -321,9 +323,9 @@ _PUBLIC_ bool conv_str_u64(const char * str, uint64_t * val);
  *
  * @param[in]  n   The length of the memory to comapre.
  *
- * @return 0 when the memory regions are equal, 0 if not.
+ * @return true when the memory regions are equal, false if not.
  */
-_PUBLIC_ int memcmp_const_time(const void *s1, const void *s2, size_t n);
+_PUBLIC_ bool mem_equal_const_time(const void *s1, const void *s2, size_t n);
 
 /**
 Do a case-insensitive, whitespace-ignoring string compare.
@@ -368,7 +370,7 @@ const char **str_list_make_v3_const(TALLOC_CTX *mem_ctx,
 
 
 /**
- * Read one line (data until next newline or eof) and allocate it 
+ * Read one line (data until next newline or eof) and allocate it
  */
 _PUBLIC_ char *afdgets(int fd, TALLOC_CTX *mem_ctx, size_t hint);
 
@@ -389,7 +391,7 @@ _PUBLIC_ char *file_load(const char *fname, size_t *size, size_t maxsize, TALLOC
 
 /**
 load a file into memory and return an array of pointers to lines in the file
-must be freed with talloc_free(). 
+must be freed with talloc_free().
 **/
 _PUBLIC_ char **file_lines_load(const char *fname, int *numlines, size_t maxsize, TALLOC_CTX *mem_ctx);
 
@@ -403,7 +405,7 @@ _PUBLIC_ char **fd_lines_load(int fd, int *numlines, size_t maxsize, TALLOC_CTX 
 _PUBLIC_ bool file_save_mode(const char *fname, const void *packet,
 			     size_t length, mode_t mode);
 /**
-  save a lump of data into a file. Mostly used for debugging 
+  save a lump of data into a file. Mostly used for debugging
 */
 _PUBLIC_ bool file_save(const char *fname, const void *packet, size_t length);
 _PUBLIC_ int vfdprintf(int fd, const char *format, va_list ap) PRINTF_ATTRIBUTE(2,0);
@@ -439,9 +441,15 @@ _PUBLIC_ int create_unlink_tmp(const char *dir);
 _PUBLIC_ bool file_exist(const char *fname);
 
 /**
- Check a files mod time.
-**/
-_PUBLIC_ time_t file_modtime(const char *fname);
+ * @brief Return a files modification time.
+ *
+ * @param fname  The name of the file.
+ *
+ * @param mt     A pointer to store the modification time.
+ *
+ * @return 0 on success, errno otherwise.
+ */
+_PUBLIC_ int file_modtime(const char *fname, struct timespec *mt);
 
 /**
  Check if a directory exists.
@@ -459,7 +467,7 @@ _PUBLIC_ bool file_check_permissions(const char *fname,
 /**
  * Try to create the specified directory if it didn't exist.
  *
- * @retval true if the directory already existed and has the right permissions 
+ * @retval true if the directory already existed and has the right permissions
  * or was successfully created.
  */
 _PUBLIC_ bool directory_create_or_exist(const char *dname, mode_t dir_perms);
@@ -538,14 +546,14 @@ _PUBLIC_ void *smb_memdup(const void *p, size_t size);
 /**
  * Write a password to the log file.
  *
- * @note Only actually does something if DEBUG_PASSWORD was defined during 
+ * @note Only actually does something if DEBUG_PASSWORD was defined during
  * compile-time.
  */
 _PUBLIC_ void dump_data_pw(const char *msg, const uint8_t * data, size_t len);
 
 /**
  * see if a range of memory is all zero. A NULL pointer is considered
- * to be all zero 
+ * to be all zero
  */
 _PUBLIC_ bool all_zero(const uint8_t *ptr, size_t size);
 
@@ -567,7 +575,7 @@ void *calloc_array(size_t size, size_t nmemb);
  * Retrieve amount of free disk space.
  * this does all of the system specific guff to get the free disk space.
  * It is derived from code in the GNU fileutils package, but has been
- * considerably mangled for use here 
+ * considerably mangled for use here
  *
  * results are returned in *dfree and *dsize, in 512 byte units
 */
@@ -586,9 +594,6 @@ int ms_fnmatch_protocol(const char *pattern, const char *string, int protocol,
 
 /** a generic fnmatch function - uses for non-CIFS pattern matching */
 int gen_fnmatch(const char *pattern, const char *string);
-
-#include "idtree.h"
-#include "idtree_random.h"
 
 #include "become_daemon.h"
 

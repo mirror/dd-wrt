@@ -28,7 +28,6 @@
 #
 
 import time
-import uuid
 import samba.tests
 
 from samba.ndr import ndr_unpack
@@ -43,17 +42,43 @@ from ldb import (
 
 import drs_base
 import ldb
-from samba.dcerpc.drsuapi import *
+from samba.dcerpc.drsuapi import (
+    drsuapi,
+    DRSUAPI_ATTID_accountExpires,
+    DRSUAPI_ATTID_cn,
+    DRSUAPI_ATTID_codePage,
+    DRSUAPI_ATTID_countryCode,
+    DRSUAPI_ATTID_dBCSPwd,
+    DRSUAPI_ATTID_description,
+    DRSUAPI_ATTID_instanceType,
+    DRSUAPI_ATTID_isDeleted,
+    DRSUAPI_ATTID_isRecycled,
+    DRSUAPI_ATTID_lastKnownParent,
+    DRSUAPI_ATTID_lmPwdHistory,
+    DRSUAPI_ATTID_logonHours,
+    DRSUAPI_ATTID_name,
+    DRSUAPI_ATTID_ntPwdHistory,
+    DRSUAPI_ATTID_ntSecurityDescriptor,
+    DRSUAPI_ATTID_objectCategory,
+    DRSUAPI_ATTID_objectClass,
+    DRSUAPI_ATTID_objectSid,
+    DRSUAPI_ATTID_ou,
+    DRSUAPI_ATTID_primaryGroupID,
+    DRSUAPI_ATTID_pwdLastSet,
+    DRSUAPI_ATTID_sAMAccountName,
+    DRSUAPI_ATTID_sAMAccountType,
+    DRSUAPI_ATTID_unicodePwd,
+    DRSUAPI_ATTID_userAccountControl,
+    DRSUAPI_ATTID_userPrincipalName,
+    DRSUAPI_ATTID_whenCreated,
+    DRSUAPI_DRS_SYNC_FORCED,
+    DRSUAPI_EXOP_REPL_OBJ,
+    DsGetNCChangesRequest8,
+    DsReplicaHighWaterMark,
+    DsReplicaObjectIdentifier)
 
 
 class DrsMoveObjectTestCase(drs_base.DrsBaseTestCase):
-
-    def _ds_bind(self, server_name):
-        binding_str = "ncacn_ip_tcp:%s[print,seal]" % server_name
-
-        drs = drsuapi(binding_str, self.get_loadparm(), self.get_credentials())
-        (drs_handle, supported_extensions) = drs_DsBind(drs)
-        return (drs, drs_handle)
 
     def setUp(self):
         super(DrsMoveObjectTestCase, self).setUp()
@@ -89,8 +114,8 @@ class DrsMoveObjectTestCase(drs_base.DrsBaseTestCase):
         self.dc1_guid = self.ldb_dc1.get_invocation_id()
         self.dc2_guid = self.ldb_dc2.get_invocation_id()
 
-        self.drs_dc1 = self._ds_bind(self.dnsname_dc1)
-        self.drs_dc2 = self._ds_bind(self.dnsname_dc2)
+        self.drs_dc1 = self._ds_bind(self.dnsname_dc1, ip=self.url_dc1)
+        self.drs_dc2 = self._ds_bind(self.dnsname_dc2, ip=self.url_dc2)
 
     def tearDown(self):
         try:

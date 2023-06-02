@@ -242,7 +242,8 @@ bool nt_printing_init(struct messaging_context *msg_ctx)
 
 static NTSTATUS driver_unix_convert(connection_struct *conn,
 				    const char *old_name,
-				    struct smb_filename **smb_fname)
+				    struct files_struct **pdirfsp,
+				    struct smb_filename **psmb_fname)
 {
 	NTSTATUS status;
 	TALLOC_CTX *ctx = talloc_tos();
@@ -258,9 +259,15 @@ static NTSTATUS driver_unix_convert(connection_struct *conn,
 	}
 	trim_string(name,"/","/");
 
-	status = unix_convert(ctx, conn, name, 0, smb_fname, 0);
+	status = filename_convert_dirfsp(ctx,
+					 conn,
+					 name,
+					 0, /* ucf_flags */
+					 0, /* twrp */
+					 pdirfsp,
+					 psmb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
-		return NT_STATUS_NO_MEMORY;
+		return status;
 	}
 
 	return NT_STATUS_OK;
@@ -806,6 +813,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 
 	struct smb_filename *smb_fname = NULL;
 	files_struct    *fsp = NULL;
+	struct files_struct *dirfsp = NULL;
 	SMB_STRUCT_STAT st;
 
 	NTSTATUS status;
@@ -816,7 +824,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 	old_create_time = (time_t)0;
 
 	/* Get file version info (if available) for previous file (if it exists) */
-	status = driver_unix_convert(conn, old_file, &smb_fname);
+	status = driver_unix_convert(conn, old_file, &dirfsp, &smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto error_exit;
 	}
@@ -830,6 +838,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
+		dirfsp,					/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -874,11 +883,10 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 			    (long)old_create_time));
 	}
 
-	close_file(NULL, fsp, NORMAL_CLOSE);
-	fsp = NULL;
+	close_file_free(NULL, &fsp, NORMAL_CLOSE);
 
 	/* Get file version info (if available) for new file */
-	status = driver_unix_convert(conn, new_file, &smb_fname);
+	status = driver_unix_convert(conn, new_file, &dirfsp, &smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto error_exit;
 	}
@@ -893,6 +901,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
+		dirfsp,					/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -935,8 +944,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 			    (long)new_create_time));
 	}
 
-	close_file(NULL, fsp, NORMAL_CLOSE);
-	fsp = NULL;
+	close_file_free(NULL, &fsp, NORMAL_CLOSE);
 
 	if (use_version && (new_major != old_major || new_minor != old_minor)) {
 		/* Compare versions and choose the larger version number */
@@ -969,7 +977,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 
  error_exit:
 	if(fsp)
-		close_file(NULL, fsp, NORMAL_CLOSE);
+		close_file_free(NULL, &fsp, NORMAL_CLOSE);
 	ret = -1;
  done:
 	TALLOC_FREE(smb_fname);
@@ -992,6 +1000,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	NTSTATUS          nt_status;
 	struct smb_filename *smb_fname = NULL;
 	files_struct      *fsp = NULL;
+	struct files_struct *dirfsp = NULL;
 	struct conn_struct_tos *c = NULL;
 	connection_struct *conn = NULL;
 	char *printdollar = NULL;
@@ -1085,7 +1094,10 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	 * We switch to the directory where the driver files are located,
 	 * so only work on the file names
 	 */
-	nt_status = driver_unix_convert(conn, driverpath_in, &smb_fname);
+	nt_status = driver_unix_convert(conn,
+					driverpath_in,
+					&dirfsp,
+					&smb_fname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		*perr = ntstatus_to_werror(nt_status);
 		goto error_exit;
@@ -1100,8 +1112,9 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 
 	nt_status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
-		DBG_NOTICE("Can't open file [%s], errno =%d\n",
-			   smb_fname_str_dbg(smb_fname), errno);
+		DBG_NOTICE("Can't open file [%s]: %s\n",
+			   smb_fname_str_dbg(smb_fname),
+			   nt_errstr(nt_status));
 		*perr = WERR_ACCESS_DENIED;
 		goto error_exit;
 	}
@@ -1109,6 +1122,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
+		dirfsp,					/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -1177,7 +1191,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	unbecome_user_without_service();
  error_free_conn:
 	if (fsp != NULL) {
-		close_file(NULL, fsp, NORMAL_CLOSE);
+		close_file_free(NULL, &fsp, NORMAL_CLOSE);
 	}
 	if (!W_ERROR_IS_OK(*perr)) {
 		cversion = -1;
@@ -1437,8 +1451,12 @@ static WERROR move_driver_file_to_download_area(TALLOC_CTX *mem_ctx,
 	}
 
 	if (version != -1 && (version = file_version_is_newer(conn, old_name, new_name)) > 0) {
+		struct files_struct *dirfsp = NULL;
 
-		status = driver_unix_convert(conn, old_name, &smb_fname_old);
+		status = driver_unix_convert(conn,
+					     old_name,
+					     &dirfsp,
+					     &smb_fname_old);
 		if (!NT_STATUS_IS_OK(status)) {
 			ret = WERR_NOT_ENOUGH_MEMORY;
 			goto out;
@@ -1458,9 +1476,7 @@ static WERROR move_driver_file_to_download_area(TALLOC_CTX *mem_ctx,
 			  smb_fname_new->base_name));
 
 		status = copy_file(mem_ctx, conn, smb_fname_old, smb_fname_new,
-				   OPENX_FILE_EXISTS_TRUNCATE |
-				   OPENX_FILE_CREATE_IF_NOT_EXIST,
-				   0, false);
+				   FILE_OVERWRITE_IF);
 
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG(0,("move_driver_file_to_download_area: Unable "
@@ -1489,6 +1505,7 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 	struct spoolss_AddDriverInfo3 *driver;
 	struct spoolss_AddDriverInfo3 converted_driver;
 	const char *short_architecture;
+	struct files_struct *dirfsp = NULL;
 	struct smb_filename *smb_dname = NULL;
 	char *new_dir = NULL;
 	struct conn_struct_tos *c = NULL;
@@ -1569,7 +1586,7 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 		err = WERR_NOT_ENOUGH_MEMORY;
 		goto err_exit;
 	}
-	nt_status = driver_unix_convert(conn, new_dir, &smb_dname);
+	nt_status = driver_unix_convert(conn, new_dir, &dirfsp, &smb_dname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		err = WERR_NOT_ENOUGH_MEMORY;
 		goto err_exit;
@@ -1577,7 +1594,7 @@ WERROR move_driver_to_download_area(const struct auth_session_info *session_info
 
 	DEBUG(5,("Creating first directory: %s\n", smb_dname->base_name));
 
-	nt_status = create_directory(conn, NULL, smb_dname);
+	nt_status = create_directory(conn, NULL, dirfsp, smb_dname);
 	if (!NT_STATUS_IS_OK(nt_status)
 	 && !NT_STATUS_EQUAL(nt_status, NT_STATUS_OBJECT_NAME_COLLISION)) {
 		DEBUG(0, ("failed to create driver destination directory: %s\n",
@@ -2042,7 +2059,7 @@ static NTSTATUS driver_unlink_internals(connection_struct *conn,
 		goto err_out;
 	}
 
-	status = unlink_internals(conn, NULL, 0, smb_fname);
+	status = unlink_internals(conn, NULL, 0, NULL, smb_fname);
 err_out:
 	talloc_free(tmp_ctx);
 	return status;

@@ -17,13 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import builtins
 import samba.getopt as options
 import ldb
 import pwd
 import os
 import io
-import re
-import difflib
 import fcntl
 import signal
 import errno
@@ -33,11 +32,11 @@ import binascii
 from subprocess import Popen, PIPE, STDOUT, check_call, CalledProcessError
 from getpass import getpass
 from samba.auth import system_session
-from samba.samdb import SamDB, SamDBError, SamDBNotFoundError
+from samba.samdb import SamDB, SamDBError
 from samba.dcerpc import misc
 from samba.dcerpc import security
 from samba.dcerpc import drsblobs
-from samba.ndr import ndr_unpack, ndr_pack, ndr_print
+from samba.ndr import ndr_unpack
 from samba import (
     credentials,
     dsdb,
@@ -155,8 +154,7 @@ def get_crypt_value(alg, utf8pw, rounds=0):
 
 try:
     import hashlib
-    h = hashlib.sha1()
-    h = None
+    hashlib.sha1()
     virtual_attributes["virtualSSHA"] = {
     }
 except ImportError as e:
@@ -169,8 +167,7 @@ except ImportError as e:
 for (alg, attr) in [("5", "virtualCryptSHA256"), ("6", "virtualCryptSHA512")]:
     try:
         import crypt
-        v = get_crypt_value(alg, "")
-        v = None
+        get_crypt_value(alg, "")
         virtual_attributes[attr] = {
         }
     except ImportError as e:
@@ -1291,6 +1288,29 @@ class GetPasswordCommand(Command):
                 return binascii.a2b_hex(p.data)
             return None
 
+        def get_kerberos_ctr():
+            primary_krb5 = get_package("Primary:Kerberos-Newer-Keys")
+            if primary_krb5 is None:
+                primary_krb5 = get_package("Primary:Kerberos")
+            if primary_krb5 is None:
+                return (0, None)
+            krb5_blob = ndr_unpack(drsblobs.package_PrimaryKerberosBlob,
+                                   primary_krb5)
+            return (krb5_blob.version, krb5_blob.ctr)
+
+        aes256_key = None
+        kerberos_salt = None
+
+        (krb5_v, krb5_ctr) = get_kerberos_ctr()
+        if krb5_v in [3, 4]:
+            kerberos_salt = krb5_ctr.salt.string
+
+            if krb5_ctr.keys:
+                def is_aes256(k):
+                    return k.keytype == 18
+                aes256_key = next(builtins.filter(is_aes256, krb5_ctr.keys),
+                                  None)
+
         if decrypt:
             #
             # Samba adds 'Primary:SambaGPG' at the end.
@@ -1301,22 +1321,34 @@ class GetPasswordCommand(Command):
             #
             # In order to get more protection we verify
             # the nthash of the decrypted utf16 password
-            # against the stored nthash in unicodePwd.
+            # against the stored nthash in unicodePwd if
+            # available, otherwise against the first 16
+            # bytes of the AES256 key.
             #
             sgv = get_package("Primary:SambaGPG", min_idx=-1)
-            if sgv is not None and unicodePwd is not None:
+            if sgv is not None:
                 try:
                     cv = gpg_decrypt(sgv)
                     #
                     # We only use the password if it matches
                     # the current nthash stored in the unicodePwd
-                    # attribute
+                    # attribute, or the current AES256 key.
                     #
                     tmp = credentials.Credentials()
                     tmp.set_anonymous()
                     tmp.set_utf16_password(cv)
-                    nthash = tmp.get_nt_hash()
-                    if nthash == unicodePwd:
+
+                    decrypted = None
+                    current_hash = None
+
+                    if unicodePwd is not None:
+                        decrypted = tmp.get_nt_hash()
+                        current_hash = unicodePwd
+                    elif aes256_key is not None and kerberos_salt is not None:
+                        decrypted = tmp.get_aes256_key(kerberos_salt)
+                        current_hash = aes256_key.value
+
+                    if current_hash is not None and current_hash == decrypted:
                         calculated["Primary:CLEARTEXT"] = cv
 
                 except Exception as e:
@@ -1476,11 +1508,19 @@ class GetPasswordCommand(Command):
             up = ndr_unpack(drsblobs.package_PrimaryUserPasswordBlob, blob)
             SCHEME = "{CRYPT}"
 
-            # Check that the NT hash has not been changed without updating
-            # the user password hashes. This indicates that password has been
-            # changed without updating the supplemental credentials.
-            if unicodePwd != bytearray(up.current_nt_hash.hash):
-                return None
+            # Check that the NT hash or AES256 key have not been changed
+            # without updating the user password hashes. This indicates that
+            # password has been changed without updating the supplemental
+            # credentials.
+            if unicodePwd is not None:
+                current_hash = unicodePwd
+            elif aes256_key is not None:
+                current_hash = aes256_key.value[:16]
+            else:
+                return None, None
+
+            if current_hash != bytearray(up.current_nt_hash.hash):
+                return None, None
 
             scheme_prefix = "$%d$" % algorithm
             prefix = scheme_prefix
@@ -1502,16 +1542,6 @@ class GetPasswordCommand(Command):
             # No match on the number of rounds, return the value of the
             # first matching scheme
             return (None, scheme_match)
-
-        def get_kerberos_ctr():
-            primary_krb5 = get_package("Primary:Kerberos-Newer-Keys")
-            if primary_krb5 is None:
-                primary_krb5 = get_package("Primary:Kerberos")
-            if primary_krb5 is None:
-                return (0, None)
-            krb5_blob = ndr_unpack(drsblobs.package_PrimaryKerberosBlob,
-                                   primary_krb5)
-            return (krb5_blob.version, krb5_blob.ctr)
 
         # Extract the rounds value from the options of a virtualCrypt attribute
         # i.e. options = "rounds=20;other=ignored;" will return 20
@@ -1587,10 +1617,9 @@ class GetPasswordCommand(Command):
                 if v is None:
                     continue
             elif a == "virtualKerberosSalt":
-                (krb5_v, krb5_ctr) = get_kerberos_ctr()
-                if krb5_v not in [3, 4]:
+                v = kerberos_salt
+                if v is None:
                     continue
-                v = krb5_ctr.salt.string
             elif a.startswith("virtualWDigest"):
                 primary_wdigest = get_package("Primary:WDigest")
                 if primary_wdigest is None:
@@ -3264,7 +3293,6 @@ class cmd_user_rename(Command):
                 for s in msg['uPNSuffixes']:
                     upn_suffixes.append(str(s).lower())
 
-        upn_suffix = upn.split('@')[-1].lower()
         upn_split = upn.split('@')
         if (len(upn_split) < 2):
             return False

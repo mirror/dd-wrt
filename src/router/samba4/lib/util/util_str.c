@@ -21,7 +21,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
+#include "lib/util/samba_util.h"
 #include "system/locale.h"
 #include "smb_strtox.h"
 #undef strncasecmp
@@ -303,16 +304,4 @@ _PUBLIC_ bool set_boolean(const char *boolean_string, bool *boolean)
 		return true;
 	}
 	return false;
-}
-
-_PUBLIC_ int memcmp_const_time(const void *s1, const void *s2, size_t n)
-{
-	const uint8_t *p1 = s1, *p2 = s2;
-	size_t i, sum = 0;
-
-	for (i = 0; i < n; i++) {
-		sum |= (p1[i] ^ p2[i]);
-	}
-
-	return sum != 0;
 }

@@ -552,6 +552,7 @@ dos_attr_query(SMBCCTX *context,
 {
 	struct stat sb = {0};
         struct DOS_ATTR_DESC *ret = NULL;
+	NTSTATUS status;
 
         ret = talloc(ctx, struct DOS_ATTR_DESC);
         if (!ret) {
@@ -560,10 +561,11 @@ dos_attr_query(SMBCCTX *context,
         }
 
         /* Obtain the DOS attributes */
-        if (!SMBC_getatr(context, srv, filename, &sb)) {
-                errno = SMBC_errno(context, srv->cli);
+	status = SMBC_getatr(context, srv, filename, &sb);
+	if (!NT_STATUS_IS_OK(status)) {
                 DEBUG(5, ("dos_attr_query Failed to query old attributes\n"));
 		TALLOC_FREE(ret);
+                errno = cli_status_to_errno(status);
                 return NULL;
         }
 
@@ -762,7 +764,7 @@ cacl_get(SMBCCTX *context,
         }
 
         /* Copy name so we can strip off exclusions (if any are specified) */
-        strncpy(name_sandbox, attr_name, sizeof(name_sandbox) - 1);
+        fstrcpy(name_sandbox, attr_name);
 
         /* Ensure name is null terminated */
         name_sandbox[sizeof(name_sandbox) - 1] = '\0';
@@ -1151,13 +1153,15 @@ cacl_get(SMBCCTX *context,
 		off_t size = 0;
 		uint16_t mode = 0;
 		SMB_INO_T ino = 0;
+		NTSTATUS status;
 
                 /* Point to the portion after "system.dos_attr." */
                 name += 16;     /* if (all) this will be invalid but unused */
 
                 /* Obtain the DOS attributes */
-                if (!SMBC_getatr(context, srv, filename, &sb)) {
-                        errno = SMBC_errno(context, srv->cli);
+		status = SMBC_getatr(context, srv, filename, &sb);
+		if (!NT_STATUS_IS_OK(status)) {
+                        errno = cli_status_to_errno(status);
                         return -1;
                 }
 
@@ -2077,7 +2081,7 @@ SMBC_getxattr_ctx(SMBCCTX *context,
 		return -1;
         }
 
-        if (!user || user[0] == (char)0) {
+        if (!user || user[0] == '\0') {
 		user = talloc_strdup(frame, smbc_getUser(context));
 		if (!user) {
 			errno = ENOMEM;
@@ -2176,7 +2180,11 @@ SMBC_getxattr_ctx(SMBCCTX *context,
                         errno = SMBC_errno(context, srv->cli);
                 }
 		TALLOC_FREE(frame);
-                return ret;
+		/*
+		 * static function cacl_get returns a value greater than zero
+		 * on success. Map this to zero meaning success.
+		 */
+                return ret < 0 ? -1 : 0;
         }
 
         /* Unsupported attribute name */
@@ -2337,7 +2345,7 @@ SMBC_listxattr_ctx(SMBCCTX *context,
          * attribute names which actually exist for a file.  Hmmm...
          */
         size_t retsize;
-        const char supported_old[] =
+        static const char supported_old[] =
                 "system.*\0"
                 "system.*+\0"
                 "system.nt_sec_desc.revision\0"
@@ -2356,7 +2364,7 @@ SMBC_listxattr_ctx(SMBCCTX *context,
                 "system.dos_attr.a_time\0"
                 "system.dos_attr.m_time\0"
                 ;
-        const char supported_new[] =
+        static const char supported_new[] =
                 "system.*\0"
                 "system.*+\0"
                 "system.nt_sec_desc.revision\0"

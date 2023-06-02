@@ -56,6 +56,78 @@ def dns_connect(server, lp, creds):
     return dns_conn
 
 
+class DnsConnWrapper:
+    """A wrapper around a dnsserver.dnsserver connection that makes it
+    harder not to report friendly messages.
+
+    If, rather than
+
+        dns_conn = dns_connect(server, lp, creds)
+
+    you use
+
+        dns_conn = DnsConnWrapper(server, lp, creds)
+
+    then various common errors (for example, mispelled zones) on
+    common operations will raise CommandErrors that turn into
+    relatively nice messages (when compared to tracebacks).
+
+    In addition, if you provide a messages keyword argument, it will
+    override the defaults. Note that providing None will turn off the
+    default, letting the original exception shine through.
+
+        messages = {
+            werror.WERR_DNS_ERROR_ZONE_DOES_NOT_EXIST: (
+                f'Zone {zone} does not exist and so could not be deleted.'),
+            werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST: None
+        }
+        res = dns_conn.DnssrvOperation2( # ...
+                                        messages=messages)
+
+    This example changes the message for ZONE_DOES_NOT_EXIST and
+    avoids catching NAME_DOES_NOT_EXIST.
+
+    Only WERRORErrors are intercepted.
+    """
+
+    default_messages = {
+        werror.WERR_DNS_ERROR_DS_UNAVAILABLE: "Could not contact RPC server",
+        werror.WERR_DNS_ERROR_ZONE_ALREADY_EXISTS: 'Zone already exists',
+        werror.WERR_DNS_ERROR_RECORD_DOES_NOT_EXIST: 'The record does not exist',
+        werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:  'The zone does not exist',
+        werror.WERR_ACCESS_DENIED: 'Insufficient permissions',
+    }
+
+    def __init__(self, server, lp, creds):
+        self.dns_conn = dns_connect(server, lp, creds)
+
+    def __getattr__(self, name):
+        attr = getattr(self.dns_conn, name)
+        if name not in {
+                "DnssrvComplexOperation2",
+                "DnssrvEnumRecords2",
+                "DnssrvOperation2",
+                "DnssrvQuery2",
+                "DnssrvUpdateRecord2"}:
+            return attr
+
+        def f(*args, messages={}):
+            try:
+                return attr(*args)
+            except WERRORError as e:
+                werr, errstr = e.args
+                if werr in messages:
+                    if werr is None:
+                        # None overrides a default message, leaving the bare exception
+                        raise
+                    raise CommandError(f"{messages[werr]} [{errstr}]", e)
+                if werr in self.default_messages:
+                    raise CommandError(f"{self.default_messages[werr]} [{errstr}]", e)
+                raise
+
+        return f
+
+
 def bool_string(flag):
     if flag == 0:
         ret = 'FALSE'
@@ -418,7 +490,7 @@ class cmd_serverinfo(Command):
             versionopts=None):
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         client_version = dns_client_version(cli_ver)
 
@@ -495,7 +567,7 @@ class cmd_zoneoptions(Command):
             **kwargs):
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         client_version = dns_client_version(cli_ver)
         nap_type = dnsserver.DNSSRV_TYPEID_NAME_AND_PARAM
@@ -734,7 +806,7 @@ class cmd_zoneinfo(Command):
             versionopts=None):
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         client_version = dns_client_version(cli_ver)
 
@@ -805,7 +877,7 @@ class cmd_zonelist(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         client_version = dns_client_version(cli_ver)
 
@@ -846,7 +918,7 @@ class cmd_zonecreate(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         zone = zone.lower()
 
@@ -878,23 +950,23 @@ class cmd_zonecreate(Command):
             zone_create_info.fLoadExisting = 1
             zone_create_info.dwDpFlags = dnsserver.DNS_DP_DOMAIN_DEFAULT
 
-        res = dns_conn.DnssrvOperation2(client_version, 0, server, None,
-                                        0, 'ZoneCreate', typeid,
-                                        zone_create_info)
+        dns_conn.DnssrvOperation2(client_version, 0, server, None,
+                                  0, 'ZoneCreate', typeid,
+                                  zone_create_info)
 
         typeid = dnsserver.DNSSRV_TYPEID_NAME_AND_PARAM
         name_and_param = dnsserver.DNS_RPC_NAME_AND_PARAM()
         name_and_param.pszNodeName = 'AllowUpdate'
         name_and_param.dwParam = dnsp.DNS_ZONE_UPDATE_SECURE
 
-        try:
-            res = dns_conn.DnssrvOperation2(client_version, 0, server, zone,
-                                            0, 'ResetDwordProperty', typeid,
-                                            name_and_param)
-        except WERRORError as e:
-            if e.args[0] == werror.WERR_DNS_ERROR_ZONE_ALREADY_EXISTS:
-                self.outf.write('Zone already exists.')
-            raise e
+        messages = {
+            werror.WERR_DNS_ERROR_ZONE_ALREADY_EXISTS: (
+                f'Zone "{zone}" already exists.')
+        }
+
+        dns_conn.DnssrvOperation2(client_version, 0, server, zone,
+                                  0, 'ResetDwordProperty', typeid,
+                                  name_and_param, messages=messages)
 
         self.outf.write('Zone %s created successfully\n' % zone)
 
@@ -917,18 +989,18 @@ class cmd_zonedelete(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         zone = zone.lower()
-        try:
-            res = dns_conn.DnssrvOperation2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
-                                            0, server, zone, 0, 'DeleteZoneFromDs',
-                                            dnsserver.DNSSRV_TYPEID_NULL,
-                                            None)
-        except WERRORError as e:
-            if e.args[0] == werror.WERR_DNS_ERROR_ZONE_DOES_NOT_EXIST:
-                raise CommandError('Zone does not exist and so could not be deleted.')
-            raise e
+
+        messages = {
+            werror.WERR_DNS_ERROR_ZONE_DOES_NOT_EXIST: (
+                f'Zone {zone} does not exist and so could not be deleted.'),
+        }
+        res = dns_conn.DnssrvOperation2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
+                                        0, server, zone, 0, 'DeleteZoneFromDs',
+                                        dnsserver.DNSSRV_TYPEID_NULL,
+                                        None, messages=messages)
 
         self.outf.write('Zone %s deleted successfully\n' % zone)
 
@@ -1000,16 +1072,16 @@ class cmd_query(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
-        try:
-            buflen, res = dns_conn.DnssrvEnumRecords2(
-                dnsserver.DNS_CLIENT_VERSION_LONGHORN, 0, server, zone, name,
-                None, record_type, select_flags, None, None)
-        except WERRORError as e:
-            if e.args[0] == werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:
-                raise CommandError('Record or zone does not exist.')
-            raise e
+        messages = {
+            werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST: (
+                'Record or zone does not exist.')
+        }
+        buflen, res = dns_conn.DnssrvEnumRecords2(
+            dnsserver.DNS_CLIENT_VERSION_LONGHORN, 0, server, zone, name,
+            None, record_type, select_flags, None, None,
+            messages=messages)
 
         print_dnsrecords(self.outf, res)
 
@@ -1035,7 +1107,7 @@ class cmd_roothints(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         buflen, res = dns_conn.DnssrvEnumRecords2(
             dnsserver.DNS_CLIENT_VERSION_LONGHORN, 0, server, '..RootHints',
@@ -1078,20 +1150,22 @@ class cmd_add_record(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         add_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         add_rec_buf.rec = rec
 
-        try:
-            dns_conn.DnssrvUpdateRecord2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
-                                         0, server, zone, name, add_rec_buf, None)
-        except WERRORError as e:
-            if e.args[0] == werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:
-                raise CommandError('Zone does not exist; record could not be added. zone[%s] name[%s]' % (zone, name))
-            if e.args[0] == werror.WERR_DNS_ERROR_RECORD_ALREADY_EXISTS:
-                raise CommandError('Record already exist; record could not be added. zone[%s] name[%s]' % (zone, name))
-            raise e
+        messages = {
+            werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST: (
+                'Zone does not exist; record could not be added. '
+                f'zone[{zone}] name[{name}'),
+            werror.WERR_DNS_ERROR_RECORD_ALREADY_EXISTS: (
+                'Record already exists; record could not be added. '
+                f'zone[{zone}] name[{name}]')
+        }
+        dns_conn.DnssrvUpdateRecord2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
+                                     0, server, zone, name, add_rec_buf, None,
+                                     messages=messages)
 
         self.outf.write('Record added successfully\n')
 
@@ -1141,11 +1215,11 @@ class cmd_update_record(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         try:
-            rec_match = dns_record_match(dns_conn, server, zone, name, record_type,
-                                         olddata)
+            rec_match = dns_record_match(dns_conn.dns_conn, server, zone,
+                                         name, record_type, olddata)
         except DNSParseError as e:
             raise CommandError(*e.args) from None
 
@@ -1164,18 +1238,19 @@ class cmd_update_record(Command):
         del_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         del_rec_buf.rec = rec_match
 
-        try:
-            dns_conn.DnssrvUpdateRecord2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
-                                         0,
-                                         server,
-                                         zone,
-                                         name,
-                                         add_rec_buf,
-                                         del_rec_buf)
-        except WERRORError as e:
-            if e.args[0] == werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:
-                raise CommandError('Zone does not exist; record could not be updated.')
-            raise e
+        messages = {
+            werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST: (
+                f'Zone {zone} does not exist; record could not be updated.'),
+        }
+
+        dns_conn.DnssrvUpdateRecord2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
+                                     0,
+                                     server,
+                                     zone,
+                                     name,
+                                     add_rec_buf,
+                                     del_rec_buf,
+                                     messages=messages)
 
         self.outf.write('Record updated successfully\n')
 
@@ -1214,25 +1289,27 @@ class cmd_delete_record(Command):
 
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp)
-        dns_conn = dns_connect(server, self.lp, self.creds)
+        dns_conn = DnsConnWrapper(server, self.lp, self.creds)
 
         del_rec_buf = dnsserver.DNS_RPC_RECORD_BUF()
         del_rec_buf.rec = rec
 
-        try:
-            dns_conn.DnssrvUpdateRecord2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
-                                         0,
-                                         server,
-                                         zone,
-                                         name,
-                                         None,
-                                         del_rec_buf)
-        except WERRORError as e:
-            if e.args[0] == werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:
-                raise CommandError('Zone does not exist; record could not be deleted. zone[%s] name[%s]' % (zone, name))
-            if e.args[0] == werror.WERR_DNS_ERROR_RECORD_DOES_NOT_EXIST:
-                raise CommandError('Record does not exist; record could not be deleted. zone[%s] name[%s]' % (zone, name))
-            raise e
+        messages = {
+            werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST: (
+                'Zone does not exist; record could not be deleted. '
+                f'zone[{zone}] name[{name}'),
+            werror.WERR_DNS_ERROR_RECORD_ALREADY_EXISTS: (
+                'Record already exists; record could not be deleted. '
+                f'zone[{zone}] name[{name}]')
+        }
+        dns_conn.DnssrvUpdateRecord2(dnsserver.DNS_CLIENT_VERSION_LONGHORN,
+                                     0,
+                                     server,
+                                     zone,
+                                     name,
+                                     None,
+                                     del_rec_buf,
+                                     messages=messages)
 
         self.outf.write('Record deleted successfully\n')
 

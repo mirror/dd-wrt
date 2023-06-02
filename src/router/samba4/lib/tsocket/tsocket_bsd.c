@@ -24,11 +24,14 @@
 #include "replace.h"
 #include "system/filesys.h"
 #include "system/network.h"
+#include "system/select.h"
 #include "tsocket.h"
 #include "tsocket_internal.h"
+#include "lib/util/select.h"
 #include "lib/util/iov_buf.h"
 #include "lib/util/blocking.h"
 #include "lib/util/util_net.h"
+#include "lib/util/samba_util.h"
 
 static int tsocket_bsd_error_from_errno(int ret,
 					int sys_errno,
@@ -170,11 +173,107 @@ static ssize_t tsocket_bsd_netlink_pending(int fd)
 }
 #endif
 
+static int tsocket_bsd_poll_error(int fd)
+{
+	struct pollfd pfd = {
+		.fd = fd,
+#ifdef POLLRDHUP
+		.events = POLLRDHUP, /* POLLERR and POLLHUP are not needed */
+#endif
+	};
+	int ret;
+
+	errno = 0;
+	ret = sys_poll_intr(&pfd, 1, 0);
+	if (ret == 0) {
+		return 0;
+	}
+	if (ret != 1) {
+		return POLLNVAL;
+	}
+
+	if (pfd.revents & POLLERR) {
+		return POLLERR;
+	}
+	if (pfd.revents & POLLHUP) {
+		return POLLHUP;
+	}
+#ifdef POLLRDHUP
+	if (pfd.revents & POLLRDHUP) {
+		return POLLRDHUP;
+	}
+#endif
+
+	/* should never be reached! */
+	return POLLNVAL;
+}
+
+static int tsocket_bsd_sock_error(int fd)
+{
+	int ret, error = 0;
+	socklen_t len = sizeof(error);
+
+	/*
+	 * if no data is available check if the socket is in error state. For
+	 * dgram sockets it's the way to return ICMP error messages of
+	 * connected sockets to the caller.
+	 */
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
+	if (ret == -1) {
+		return ret;
+	}
+	if (error != 0) {
+		errno = error;
+		return -1;
+	}
+	return 0;
+}
+
+static int tsocket_bsd_error(int fd)
+{
+	int ret;
+	int poll_error = 0;
+
+	poll_error = tsocket_bsd_poll_error(fd);
+	if (poll_error == 0) {
+		return 0;
+	}
+
+#ifdef POLLRDHUP
+	if (poll_error == POLLRDHUP) {
+		errno = ECONNRESET;
+		return -1;
+	}
+#endif
+
+	if (poll_error == POLLHUP) {
+		errno = EPIPE;
+		return -1;
+	}
+
+	/*
+	 * POLLERR and POLLNVAL fallback to
+	 * getsockopt(fd, SOL_SOCKET, SO_ERROR)
+	 * and force EPIPE as fallback.
+	 */
+
+	errno = 0;
+	ret = tsocket_bsd_sock_error(fd);
+	if (ret == 0) {
+		errno = EPIPE;
+	}
+
+	if (errno == 0) {
+		errno = EPIPE;
+	}
+
+	return -1;
+}
+
 static ssize_t tsocket_bsd_pending(int fd)
 {
-	int ret, error;
+	int ret;
 	int value = 0;
-	socklen_t len;
 
 	ret = ioctl(fd, FIONREAD, &value);
 	if (ret == -1) {
@@ -191,23 +290,7 @@ static ssize_t tsocket_bsd_pending(int fd)
 		return value;
 	}
 
-	error = 0;
-	len = sizeof(error);
-
-	/*
-	 * if no data is available check if the socket is in error state. For
-	 * dgram sockets it's the way to return ICMP error messages of
-	 * connected sockets to the caller.
-	 */
-	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
-	if (ret == -1) {
-		return ret;
-	}
-	if (error != 0) {
-		errno = error;
-		return -1;
-	}
-	return 0;
+	return tsocket_bsd_error(fd);
 }
 
 static const struct tsocket_address_ops tsocket_address_bsd_ops;
@@ -411,6 +494,10 @@ int _tsocket_address_inet_from_strings(TALLOC_CTX *mem_ctx,
 	if (ret != 0) {
 		switch (ret) {
 		case EAI_FAIL:
+		case EAI_NONAME:
+#ifdef EAI_ADDRFAMILY
+		case EAI_ADDRFAMILY:
+#endif
 			errno = EINVAL;
 			break;
 		}
@@ -434,6 +521,105 @@ done:
 	if (result) {
 		freeaddrinfo(result);
 	}
+	return ret;
+}
+
+int _tsocket_address_inet_from_hostport_strings(TALLOC_CTX *mem_ctx,
+						const char *fam,
+						const char *host_port_addr,
+						uint16_t default_port,
+						struct tsocket_address **_addr,
+						const char *location)
+{
+	char *pl_sq = NULL;
+	char *pr_sq = NULL;
+	char *pl_period = NULL;
+	char *port_sep = NULL;
+	char *cport = NULL;
+	char *buf = NULL;
+	uint64_t port = 0;
+	int ret;
+	char *s_addr = NULL;
+	uint16_t s_port = default_port;
+	bool conv_ret;
+	bool is_ipv6_by_squares = false;
+
+	if (host_port_addr == NULL) {
+		/* got straight to next function if host_port_addr is NULL */
+		goto get_addr;
+	}
+	buf = talloc_strdup(mem_ctx, host_port_addr);
+	if (buf == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+	pl_period = strchr_m(buf, '.');
+	port_sep = strrchr_m(buf, ':');
+	pl_sq = strchr_m(buf, '[');
+	pr_sq = strrchr_m(buf, ']');
+	/* See if its IPv4 or IPv6 */
+	/* Only parse IPv6 with squares with/without port, and IPv4 with port */
+	/* Everything else, let tsocket_address_inet_from string() */
+	/* find parsing errors */
+#ifdef HAVE_IPV6
+	is_ipv6_by_squares = (pl_sq != NULL && pr_sq != NULL && pr_sq > pl_sq);
+#endif
+	if (is_ipv6_by_squares) {
+		/* IPv6 possibly with port - squares detected */
+		port_sep = pr_sq + 1;
+		if (*port_sep == '\0') {
+			s_addr = pl_sq + 1;
+			*pr_sq = 0;
+			s_port = default_port;
+			goto get_addr;
+		}
+		if (*port_sep != ':') {
+			errno = EINVAL;
+			return -1;
+		}
+		cport = port_sep + 1;
+		conv_ret = conv_str_u64(cport, &port);
+		if (!conv_ret) {
+			errno = EINVAL;
+			return -1;
+		}
+		if (port > 65535) {
+			errno = EINVAL;
+			return -1;
+		}
+		s_port = (uint16_t)port;
+		*port_sep = 0;
+		*pr_sq = 0;
+		s_addr = pl_sq + 1;
+		*pl_sq = 0;
+		goto get_addr;
+	} else if (pl_period != NULL && port_sep != NULL) {
+		/* IPv4 with port - more than one period in string */
+		cport = port_sep + 1;
+		conv_ret = conv_str_u64(cport, &port);
+		if (!conv_ret) {
+			errno = EINVAL;
+			return -1;
+		}
+		if (port > 65535) {
+			errno = EINVAL;
+			return -1;
+		}
+		s_port = (uint16_t)port;
+		*port_sep = 0;
+		s_addr = buf;
+		goto get_addr;
+	} else {
+		/* Everything else, let tsocket_address_inet_from string() */
+		/* find parsing errors */
+		s_addr = buf;
+		s_port = default_port;
+		goto get_addr;
+	}
+get_addr:
+	ret = _tsocket_address_inet_from_strings(
+	    mem_ctx, fam, s_addr, s_port, _addr, location);
+
 	return ret;
 }
 
@@ -1558,6 +1744,7 @@ int _tdgram_unix_socket(const struct tsocket_address *local,
 
 struct tstream_bsd {
 	int fd;
+	int error;
 
 	void *event_ptr;
 	struct tevent_fd *fde;
@@ -1567,6 +1754,9 @@ struct tstream_bsd {
 	void (*readable_handler)(void *private_data);
 	void *writeable_private;
 	void (*writeable_handler)(void *private_data);
+
+	struct tevent_context *error_ctx;
+	struct tevent_timer *error_timer;
 };
 
 bool tstream_bsd_optimize_readv(struct tstream_context *stream,
@@ -1588,6 +1778,28 @@ bool tstream_bsd_optimize_readv(struct tstream_context *stream,
 	return old;
 }
 
+static void tstream_bsd_error_timer(struct tevent_context *ev,
+				    struct tevent_timer *te,
+				    struct timeval current_time,
+				    void *private_data)
+{
+	struct tstream_bsd *bsds =
+		talloc_get_type(private_data,
+		struct tstream_bsd);
+
+	TALLOC_FREE(bsds->error_timer);
+
+	/*
+	 * Turn on TEVENT_FD_READABLE() again
+	 * if we have a writeable_handler that
+	 * wants to monitor the connection
+	 * for errors.
+	 */
+	if (bsds->writeable_handler != NULL) {
+		TEVENT_FD_READABLE(bsds->fde);
+	}
+}
+
 static void tstream_bsd_fde_handler(struct tevent_context *ev,
 				    struct tevent_fd *fde,
 				    uint16_t flags,
@@ -1602,11 +1814,74 @@ static void tstream_bsd_fde_handler(struct tevent_context *ev,
 	}
 	if (flags & TEVENT_FD_READ) {
 		if (!bsds->readable_handler) {
-			if (bsds->writeable_handler) {
+			struct timeval recheck_time;
+
+			/*
+			 * In order to avoid cpu-spinning
+			 * we no longer want to get TEVENT_FD_READ
+			 */
+			TEVENT_FD_NOT_READABLE(bsds->fde);
+
+			if (!bsds->writeable_handler) {
+				return;
+			}
+
+			/*
+			 * If we have a writeable handler we
+			 * want that to report connection errors
+			 * early.
+			 *
+			 * So we check if the socket is in an
+			 * error state.
+			 */
+			if (bsds->error == 0) {
+				int ret = tsocket_bsd_error(bsds->fd);
+
+				if (ret == -1) {
+					bsds->error = errno;
+				}
+			}
+
+			if (bsds->error != 0) {
+				/*
+				 * Let the writeable handler report the error
+				 */
 				bsds->writeable_handler(bsds->writeable_private);
 				return;
 			}
-			TEVENT_FD_NOT_READABLE(bsds->fde);
+
+			/*
+			 * Here we called TEVENT_FD_NOT_READABLE() without
+			 * calling into the writeable handler.
+			 *
+			 * So we may have to wait for the kernels tcp stack
+			 * to report TEVENT_FD_WRITE in order to let
+			 * make progress and turn on TEVENT_FD_READABLE()
+			 * again.
+			 *
+			 * As a fallback we use a timer that turns on
+			 * TEVENT_FD_READABLE() again after a timeout of
+			 * 1 second.
+			 */
+
+			if (bsds->error_timer != NULL) {
+				return;
+			}
+
+			recheck_time = timeval_current_ofs(1, 0);
+			bsds->error_timer = tevent_add_timer(bsds->error_ctx,
+							     bsds,
+							     recheck_time,
+							     tstream_bsd_error_timer,
+							     bsds);
+			if (bsds->error_timer == NULL) {
+				bsds->error = ENOMEM;
+				/*
+				 * Let the writeable handler report the error
+				 */
+				bsds->writeable_handler(bsds->writeable_private);
+				return;
+			}
 			return;
 		}
 		bsds->readable_handler(bsds->readable_private);
@@ -1661,6 +1936,8 @@ static int tstream_bsd_set_readable_handler(struct tstream_bsd *bsds,
 		TEVENT_FD_READABLE(bsds->fde);
 	}
 
+	TALLOC_FREE(bsds->error_timer);
+
 	bsds->readable_handler = handler;
 	bsds->readable_private = private_data;
 
@@ -1683,7 +1960,8 @@ static int tstream_bsd_set_writeable_handler(struct tstream_bsd *bsds,
 		bsds->writeable_handler = NULL;
 		bsds->writeable_private = NULL;
 		TEVENT_FD_NOT_WRITEABLE(bsds->fde);
-
+		TALLOC_FREE(bsds->error_timer);
+		bsds->error_ctx = NULL;
 		return 0;
 	}
 
@@ -1695,6 +1973,8 @@ static int tstream_bsd_set_writeable_handler(struct tstream_bsd *bsds,
 		}
 		bsds->event_ptr = NULL;
 		TALLOC_FREE(bsds->fde);
+		TALLOC_FREE(bsds->error_timer);
+		bsds->error_ctx = NULL;
 	}
 
 	if (tevent_fd_get_flags(bsds->fde) == 0) {
@@ -1720,6 +2000,7 @@ static int tstream_bsd_set_writeable_handler(struct tstream_bsd *bsds,
 
 	bsds->writeable_handler = handler;
 	bsds->writeable_private = private_data;
+	bsds->error_ctx = ev;
 
 	return 0;
 }
@@ -1735,7 +2016,19 @@ static ssize_t tstream_bsd_pending_bytes(struct tstream_context *stream)
 		return -1;
 	}
 
+	if (bsds->error != 0) {
+		errno = bsds->error;
+		return -1;
+	}
+
 	ret = tsocket_bsd_pending(bsds->fd);
+	if (ret == -1) {
+		/*
+		 * remember the error and don't
+		 * allow further requests
+		 */
+		bsds->error = errno;
+	}
 
 	return ret;
 }
@@ -1843,9 +2136,15 @@ static void tstream_bsd_readv_handler(void *private_data)
 	int _count;
 	bool ok, retry;
 
+	if (bsds->error != 0) {
+		tevent_req_error(req, bsds->error);
+		return;
+	}
+
 	ret = readv(bsds->fd, state->vector, state->count);
 	if (ret == 0) {
 		/* propagate end of file */
+		bsds->error = EPIPE;
 		tevent_req_error(req, EPIPE);
 		return;
 	}
@@ -1853,6 +2152,13 @@ static void tstream_bsd_readv_handler(void *private_data)
 	if (retry) {
 		/* retry later */
 		return;
+	}
+	if (err != 0) {
+		/*
+		 * remember the error and don't
+		 * allow further requests
+		 */
+		bsds->error = err;
 	}
 	if (tevent_req_error(req, err)) {
 		return;
@@ -1986,16 +2292,36 @@ static void tstream_bsd_writev_handler(void *private_data)
 	int _count;
 	bool ok, retry;
 
+	if (bsds->error != 0) {
+		tevent_req_error(req, bsds->error);
+		return;
+	}
+
 	ret = writev(bsds->fd, state->vector, state->count);
 	if (ret == 0) {
 		/* propagate end of file */
+		bsds->error = EPIPE;
 		tevent_req_error(req, EPIPE);
 		return;
 	}
 	err = tsocket_bsd_error_from_errno(ret, errno, &retry);
 	if (retry) {
-		/* retry later */
+		/*
+		 * retry later...
+		 *
+		 * make sure we also wait readable again
+		 * in order to notice errors early
+		 */
+		TEVENT_FD_READABLE(bsds->fde);
+		TALLOC_FREE(bsds->error_timer);
 		return;
+	}
+	if (err != 0) {
+		/*
+		 * remember the error and don't
+		 * allow further requests
+		 */
+		bsds->error = err;
 	}
 	if (tevent_req_error(req, err)) {
 		return;
@@ -2013,7 +2339,13 @@ static void tstream_bsd_writev_handler(void *private_data)
 	}
 
 	if (state->count > 0) {
-		/* we have more to read */
+		/*
+		 * we have more to write
+		 *
+		 * make sure we also wait readable again
+		 * in order to notice errors early
+		 */
+		TEVENT_FD_READABLE(bsds->fde);
 		return;
 	}
 
@@ -2061,6 +2393,8 @@ static struct tevent_req *tstream_bsd_disconnect_send(TALLOC_CTX *mem_ctx,
 		goto post;
 	}
 
+	TALLOC_FREE(bsds->error_timer);
+	bsds->error_ctx = NULL;
 	TALLOC_FREE(bsds->fde);
 	ret = close(bsds->fd);
 	bsds->fd = -1;
@@ -2103,6 +2437,8 @@ static const struct tstream_context_ops tstream_bsd_ops = {
 
 static int tstream_bsd_destructor(struct tstream_bsd *bsds)
 {
+	TALLOC_FREE(bsds->error_timer);
+	bsds->error_ctx = NULL;
 	TALLOC_FREE(bsds->fde);
 	if (bsds->fd != -1) {
 		close(bsds->fd);

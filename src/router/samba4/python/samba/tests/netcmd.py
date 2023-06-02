@@ -31,8 +31,9 @@ class NetCmdTestCase(samba.tests.TestCaseInTempDir):
 
     def run_netcmd(self, cmd_klass, args, retcode=0):
         cmd = cmd_klass(outf=StringIO(), errf=StringIO())
+        cmd.command_name = "apricots"
         try:
-            retval = cmd._run(cmd_klass.__name__, *args)
+            retval = cmd._run(*args)
         except Exception as e:
             cmd.show_command_error(e)
             retval = 1
@@ -93,6 +94,14 @@ class TestParmTests(NetCmdTestCase):
                         ["--configfile=%s" % self.smbconf.name,
                          "--section-name=tmp"],
                         retcode=None)
+
+    def test_section_globals(self):
+        # We can have '[global]' and '[globals]'
+        for name in ['global', 'globals']:
+            self.run_netcmd(cmd_testparm,
+                            [f"--configfile={self.smbconf.name}",
+                             f"--section-name={name}"],
+                            retcode=None)
 
     def test_no_such_section(self):
         out, err = self.run_netcmd(cmd_testparm,

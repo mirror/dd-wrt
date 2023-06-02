@@ -30,9 +30,8 @@
 #include "libds/common/roles.h"
 
 /* logged when starting the various Samba daemons */
-#define COPYRIGHT_STARTUP_MESSAGE	"Copyright Andrew Tridgell and the Samba Team 1992-2021"
+#define COPYRIGHT_STARTUP_MESSAGE	"Copyright Andrew Tridgell and the Samba Team 1992-2023"
 
-#define SAFETY_MARGIN 1024
 #define LARGE_WRITEX_HDR_SIZE 65
 #define LARGE_WRITEX_BUFFER_SIZE (128*1024)
 
@@ -49,14 +48,6 @@
 #define Required (3)
 
 #define SIZEOFWORD 2
-
-/* string manipulation flags - see clistr.c and srvstr.c */
-#define STR_TERMINATE 1
-#define STR_UPPER 2
-#define STR_ASCII 4
-#define STR_UNICODE 8
-#define STR_NOALIGN 16
-#define STR_TERMINATE_ASCII 128
 
 /* how long to wait for secondary SMB packets (milli-seconds) */
 #define SMB_SECONDARY_WAIT (60*1000)
@@ -407,9 +398,6 @@ Offset  Data			length.
 #define NTCREATEX_FLAG_DENY_DOS			0x0001
 #define NTCREATEX_FLAG_DENY_FCB			0x0002
 
-/* Private flag for printer support */
-#define NTCREATEX_FLAG_DELETE_ON_CLOSE		0x0008
-
 /* Private flag for streams support */
 #define NTCREATEX_FLAG_STREAM_BASEOPEN		0x0010
 
@@ -456,18 +444,6 @@ Offset  Data			length.
 #define NOTIFY_ACTION_ADDED_STREAM 6
 #define NOTIFY_ACTION_REMOVED_STREAM 7
 #define NOTIFY_ACTION_MODIFIED_STREAM 8
-
-/*
- * Timestamp format used in "previous versions":
- * This is the windows-level format of the @GMT- token.
- * It is a fixed format not to be confused with the
- * format for the POSIX-Level token of the shadow_copy2
- * VFS module that can be configured via the "shadow:format"
- * configuration option but defaults to the same format.
- * See the shadow_copy2 module.
- */
-#define GMT_NAME_LEN 24 /* length of a @GMT- name */
-#define GMT_FORMAT "@GMT-%Y.%m.%d-%H.%M.%S"
 
 /* where to find the base of the SMB packet proper */
 #define smb_base(buf) (((const char *)(buf))+4)

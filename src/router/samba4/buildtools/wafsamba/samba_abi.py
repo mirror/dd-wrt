@@ -142,7 +142,7 @@ def abi_check(self):
     abi_gen = os.path.join(topsrc, 'buildtools/scripts/abi_gen.sh')
 
     abi_file = "%s/%s-%s.sigs" % (self.abi_directory, self.version_libname,
-                                  self.vnum)
+                                  self.abi_vnum)
 
     tsk = self.create_task('abi_check', self.link_task.outputs[0])
     tsk.ABI_FILE = abi_file
@@ -157,6 +157,46 @@ def abi_process_file(fname, version, symmap):
         if not symname in symmap:
             symmap[symname] = version
 
+def version_script_map_process_file(fname, version, abi_match):
+    '''process one standard version_script file, adding the symbols to the
+    abi_match'''
+    in_section = False
+    in_global = False
+    in_local = False
+    for _line in Utils.readf(fname).splitlines():
+        line = _line.strip()
+        if line == "":
+            continue
+        if line.startswith("#"):
+            continue
+        if line.endswith(" {"):
+            in_section = True
+            continue
+        if line == "};":
+            assert in_section
+            in_section = False
+            in_global = False
+            in_local = False
+            continue
+        if not in_section:
+            continue
+        if line == "global:":
+            in_global = True
+            in_local = False
+            continue
+        if line == "local:":
+            in_global = False
+            in_local = True
+            continue
+
+        symname = line.split(";")[0]
+        assert symname != ""
+        if in_local:
+            if symname == "*":
+                continue
+            symname = "!%s" % symname
+        if not symname in abi_match:
+            abi_match.append(symname)
 
 def abi_write_vscript(f, libname, current_version, versions, symmap, abi_match):
     """Write a vscript file for a library in --version-script format.
@@ -214,21 +254,51 @@ def abi_build_vscript(task):
 
     symmap = {}
     versions = []
+    abi_match = list(task.env.ABI_MATCH)
     for f in task.inputs:
         fname = f.abspath(task.env)
         basename = os.path.basename(fname)
-        version = basename[len(task.env.LIBNAME)+1:-len(".sigs")]
-        versions.append(version)
-        abi_process_file(fname, version, symmap)
+        if basename.endswith(".sigs"):
+            version = basename[len(task.env.LIBNAME)+1:-len(".sigs")]
+            versions.append(version)
+            abi_process_file(fname, version, symmap)
+            continue
+        if basename == "version-script.map":
+            version_script_map_process_file(fname, task.env.VERSION, abi_match)
+            continue
+        raise Errors.WafError('Unsupported input "%s"' % fname)
+    if task.env.PRIVATE_LIBRARY:
+        # For private libraries we need to inject
+        # each public symbol explicitly into the
+        # abi match array and remove all explicit
+        # versioning so that each exported symbol
+        # is tagged with the private library tag.
+        for s in symmap:
+            abi_match.append(s)
+        symmap = {}
+        versions = []
     f = open(tgt, mode='w')
     try:
         abi_write_vscript(f, task.env.LIBNAME, task.env.VERSION, versions,
-            symmap, task.env.ABI_MATCH)
+            symmap, abi_match)
     finally:
         f.close()
 
+def VSCRIPT_MAP_PRIVATE(bld, libname, orig_vscript, version, private_vscript):
+    version = version.replace("-", "_").replace("+","_").upper()
+    t = bld.SAMBA_GENERATOR(private_vscript,
+                            rule=abi_build_vscript,
+                            source=orig_vscript,
+                            group='vscripts',
+                            target=private_vscript)
+    t.env.ABI_MATCH = []
+    t.env.VERSION = version
+    t.env.LIBNAME = libname
+    t.env.PRIVATE_LIBRARY = True
+    t.vars = ['LIBNAME', 'VERSION', 'ABI_MATCH', 'PRIVATE_LIBRARY']
+Build.BuildContext.VSCRIPT_MAP_PRIVATE = VSCRIPT_MAP_PRIVATE
 
-def ABI_VSCRIPT(bld, libname, abi_directory, version, vscript, abi_match=None):
+def ABI_VSCRIPT(bld, libname, abi_directory, version, vscript, abi_match=None, private_library=False):
     '''generate a vscript file for our public libraries'''
     if abi_directory:
         source = bld.path.ant_glob('%s/%s-[0-9]*.sigs' % (abi_directory, libname), flat=True)
@@ -237,6 +307,9 @@ def ABI_VSCRIPT(bld, libname, abi_directory, version, vscript, abi_match=None):
         source = sorted(source.split(), key=abi_file_key)
     else:
         source = ''
+
+    if private_library is None:
+        private_library = False
 
     libname = os.path.basename(libname)
     version = os.path.basename(version)
@@ -255,5 +328,6 @@ def ABI_VSCRIPT(bld, libname, abi_directory, version, vscript, abi_match=None):
     t.env.ABI_MATCH = abi_match
     t.env.VERSION = version
     t.env.LIBNAME = libname
-    t.vars = ['LIBNAME', 'VERSION', 'ABI_MATCH']
+    t.env.PRIVATE_LIBRARY = private_library
+    t.vars = ['LIBNAME', 'VERSION', 'ABI_MATCH', 'PRIVATE_LIBRARY']
 Build.BuildContext.ABI_VSCRIPT = ABI_VSCRIPT

@@ -2,12 +2,12 @@
 .\"     Title: vfs_fileid
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "VFS_FILEID" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "VFS_FILEID" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-vfs_fileid \- Generates file_id structs with unique device id values for cluster setups
+vfs_fileid \- Generates file_id structs with unique device id values for cluster setups\&. It also adds ways to deliberately break lock coherency for specific inodes
 .SH "SYNOPSIS"
 .HP \w'\ 'u
 vfs objects = fileid
@@ -55,19 +55,18 @@ fileid:algorithm = ALGORITHM
 .RS 4
 Available algorithms are
 fsname,
+fsid,
+next_module\&. The default value is
+fsname\&. As well as the following legacy algorithms:
 fsname_nodirs,
-fsid
+fsname_norootdir,
+fsname_norootdir_ext
 and
-hostname\&. The default value is
-fsname\&.
+hostname\&.
 .sp
 The
 fsname
 algorithm generates device id by hashing the kernel device name\&.
-.sp
-The
-fsname_nodirs
-algorithm generates device id by hashing the kernel device name for files and by hashing the hostname for directories\&. This can be used to deliberately break lock coherency for directories in a cluster\&.
 .sp
 The
 fsid
@@ -78,16 +77,41 @@ statfs()
 syscall\&.
 .sp
 The
+next_module
+algorithm lets the next vfs module in the module chain generate the id\&. This is mainly used in combination with the various \*(Aqnolock\*(Aq features the fileid module provides\&.
+.sp
+The legacy
 hostname
-algorithm generates device id by hashing the hostname\&. This can be used to deliberately break lock coherency in a cluster\&.
+algorithm generates unique devid by hashing the hostname and low level device id\&. It also implies
+fileid:nolock_all_inodes=yes\&. This can be used to deliberately break lock coherency in a cluster and with
+fileid:nolock_max_slots
+also between local processes within a node\&. NOTE: Do not use this without knowing what you are doing! It breaks SMB semantics and it can lead to data corruption! This implies
+fileid:nolock_all_inodes=yes\&.
 .sp
-The
+The legacy
+fsname_nodirs
+algorithm is an alias for using the
+fsname
+algorithm together with
+fileid:nolock_all_dirs=yes\&. NOTE: Do not use this without knowing what you are doing! It breaks SMB semantics! See
+fileid:nolock_paths
+for a more fine grained approach\&.
+.sp
+The legacy
 fsname_norootdir
-algorithm generates device ids by hashing the kernel device name, except for the root directory of shares where it will use the hostname algorithm\&. This can be used to deliberately break lock coherency in a cluster for the root directory of a share\&.
+algorithm is an alias for using the
+fsname
+algorithm together with
+fileid:nolock_paths= \(lq\&.\(rq\&. It means this can be used to deliberately break lock coherency in a cluster for the root directory of a share\&.
 .sp
-The
+The legacy
 fsname_norootdir_ext
-algorithm generates device ids by hashing the kernel device name, except for the root directory of shares where it will use the hostname algorithm\&. Additionally it generates an extid based on the process pid\&. This can be used to deliberately break lock coherency between all smbd processes in the whole cluster for the root directory of a share\&.
+algorithm is an alias for using the
+fsname
+algorithm together with
+fileid:nolock_paths= \(lq\&.\(rq
+and
+fileid:nolock_max_slots = 18446744073709551615\&. It means this can be used to deliberately break lock coherency completely for the root directory of a share\&. Even local processes are no longer lock coherent\&.
 .RE
 .PP
 fileid:mapping = ALGORITHM
@@ -117,9 +141,37 @@ fileid:mntdir allow = LIST
 List of file system mount points to be allowed for file_id generation\&. If this option is set, file system mount points not listed here are ignored\&.
 .RE
 .PP
-fileid:nolockinode
+fileid:nolock_max_slots = NUMBER(1\-18446744073709551615)
 .RS 4
-This option triggers use of the fileid hostname algorithm for the configured inode which can be used to deliberately break lock coherency for the corresponding file or directory in a cluster\&.
+This option alters the behavior of the
+nolock
+algorithm in a ways that it also breaks the lock coherency between individual processes on the same host\&. The default is to have just 1 concurrent slot available per host\&. By incressing the number of slots you can specify how many concurrent processes can work on a given inode without contention, the number should typically be larger than the a number of logical cpus, maybe 2 times of num_cpus\&.
+.RE
+.PP
+fileid:nolock_all_dirs = BOOL
+.RS 4
+This option triggers the use of the fileid nolock behavior for all directory inodes, which can be used to deliberately break the lock coherency for all directories\&. NOTE: Do not use this without knowing what you are doing! It breaks SMB semantics! See
+fileid:nolock_paths
+for a more fine grained approach\&.
+.RE
+.PP
+fileid:nolock_all_inodes = BOOL
+.RS 4
+This option triggers the use of the fileid nolock algorithm for all directoriy inode, which can be used to deliberately break the lock coherency for all directories\&. NOTE: Do not use this without knowing what you are doing! It breaks SMB semantics and it can lead to data corruption! See
+fileid:nolock_paths
+for a more fine grained approach\&.
+.RE
+.PP
+fileid:nolock_paths = LIST
+.RS 4
+This option specifies a path list referring to files and/or directories, which should use fileid nolock algorithm in order to deliberately break the lock coherency for them\&. The specified paths can be relative to the share root directory or absolute\&. The names are case sensitive unix pathnames! Note all paths are only evaluated at tree connect time, when the share is being connected, from there on only the related device and inode numbers from the stat() syscall are compared\&. Non existing paths will generate a log level 0 message\&. NOTE: This option should be used with care as it breaks SMB semantics! But it may help in situation where a specific (commonly read\-only) inode is highly contended\&.
+.RE
+.PP
+fileid:nolockinode = NUMBER
+.RS 4
+This legacy option triggers use of the fileid nolock behavior for the configured inode, while ignoring and device id\&. This can be used to deliberately break lock coherency for the corresponding file or directory in a cluster\&. Using the
+fileid:nolock_paths
+option is much more flexible and simpler to use\&.
 .RE
 .SH "EXAMPLES"
 .PP
@@ -140,9 +192,27 @@ algorithm:
 .if n \{\
 .RE
 .\}
+.PP
+Usage of the
+fileid
+module in order avoid load on heavily contended (most likely read\-only) inodes\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        \fI[global]\fR
+	\m[blue]\fBvfs objects = fileid\fR\m[]
+	\m[blue]\fBfileid:algorithm = next_module\fR\m[]
+	\m[blue]\fBfileid:nolock_paths = \&. ContendedFolder1 /path/to/contended\&.exe\fR\m[]
+	\m[blue]\fBfileid:nolock_max_slots = 256\fR\m[]
+.fi
+.if n \{\
+.RE
+.\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -2,12 +2,12 @@
 .\"     Title: vfs_full_audit
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "VFS_FULL_AUDIT" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "VFS_FULL_AUDIT" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -61,12 +61,6 @@ brl_unlock_windows
 chdir
 .RE
 .RS 4
-chflags
-.RE
-.RS 4
-chmod
-.RE
-.RS 4
 close
 .RE
 .RS 4
@@ -103,10 +97,16 @@ durable_reconnect
 fallocate
 .RE
 .RS 4
+fchflags
+.RE
+.RS 4
 fchmod
 .RE
 .RS 4
 fchown
+.RE
+.RS 4
+fcntl
 .RE
 .RS 4
 fdopendir
@@ -118,7 +118,7 @@ fget_compression
 fget_dos_attributes
 .RE
 .RS 4
-fget_nt_acl_at
+fget_nt_acl
 .RE
 .RS 4
 fgetxattr
@@ -127,7 +127,16 @@ fgetxattr
 file_id_create
 .RE
 .RS 4
+filesystem_sharemode
+.RE
+.RS 4
 flistxattr
+.RE
+.RS 4
+fntimes
+.RE
+.RS 4
+freaddir_attr
 .RE
 .RS 4
 fremovexattr
@@ -154,7 +163,10 @@ fs_file_id
 fstat
 .RE
 .RS 4
-fsync
+fstatat
+.RE
+.RS 4
+fstreaminfo
 .RE
 .RS 4
 fsync_recv
@@ -172,9 +184,6 @@ get_alloc_size
 get_dfs_referrals
 .RE
 .RS 4
-get_dos_attributes
-.RE
-.RS 4
 get_dos_attributes_recv
 .RE
 .RS 4
@@ -184,22 +193,19 @@ get_dos_attributes_send
 getlock
 .RE
 .RS 4
-get_nt_acl
-.RE
-.RS 4
 get_quota
 .RE
 .RS 4
 get_real_filename
 .RE
 .RS 4
+get_real_filename_at
+.RE
+.RS 4
 get_shadow_copy_data
 .RE
 .RS 4
 getwd
-.RE
-.RS 4
-getxattr
 .RE
 .RS 4
 getxattrat_recv
@@ -211,9 +217,6 @@ getxattrat_send
 is_offline
 .RE
 .RS 4
-kernel_flock
-.RE
-.RS 4
 lchown
 .RE
 .RS 4
@@ -221,9 +224,6 @@ linkat
 .RE
 .RS 4
 linux_setlease
-.RE
-.RS 4
-listxattr
 .RE
 .RS 4
 lock
@@ -259,6 +259,12 @@ offload_write_send
 open
 .RE
 .RS 4
+openat
+.RE
+.RS 4
+parent_pathname
+.RE
+.RS 4
 pread
 .RE
 .RS 4
@@ -280,10 +286,10 @@ pwrite_send
 read
 .RE
 .RS 4
-readdir
+read_dfs_pathat
 .RE
 .RS 4
-readdir_attr
+readdir
 .RE
 .RS 4
 readlinkat
@@ -313,16 +319,10 @@ sendfile
 set_compression
 .RE
 .RS 4
-set_dos_attributes
-.RE
-.RS 4
 set_offline
 .RE
 .RS 4
 set_quota
-.RE
-.RS 4
-setxattr
 .RE
 .RS 4
 snap_check_path
@@ -340,9 +340,6 @@ stat
 statvfs
 .RE
 .RS 4
-streaminfo
-.RE
-.RS 4
 strict_lock_check
 .RE
 .RS 4
@@ -352,13 +349,10 @@ symlinkat
 sys_acl_blob_get_fd
 .RE
 .RS 4
-sys_acl_blob_get_file
+sys_acl_delete_def_fd
 .RE
 .RS 4
 sys_acl_get_fd
-.RE
-.RS 4
-sys_acl_get_file
 .RE
 .RS 4
 sys_acl_set_fd
@@ -379,6 +373,8 @@ write
 In addition to these operations,
 vfs_full_audit
 recognizes the special operation names "all" and "none ", which refer to all the VFS operations and none of the VFS operations respectively\&.
+.PP
+If an unknown operation name is used (for example an operation name is miss\-spelled), the module will fail to load and clients will be refused connections to a share using this module\&.
 .PP
 vfs_full_audit
 records operations in fixed format consisting of fields separated by \*(Aq|\*(Aq characters\&. The format is:
@@ -511,7 +507,7 @@ Log file and directory open operations on the [records] share using the LOCAL7 f
 .\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -334,12 +334,7 @@ def current_unix_time():
 
 
 def string_to_byte_array(string):
-    blob = [0] * len(string)
-
-    for i in range(len(string)):
-        blob[i] = string[i] if isinstance(string[i], int) else ord(string[i])
-
-    return blob
+    return [c if isinstance(c, int) else ord(c) for c in string]
 
 
 def arcfour_encrypt(key, data):
@@ -369,7 +364,6 @@ interface_ips = _glue.interface_ips
 fault_setup = _glue.fault_setup
 set_debug_level = _glue.set_debug_level
 get_debug_level = _glue.get_debug_level
-unix2nttime = _glue.unix2nttime
 float2nttime = _glue.float2nttime
 nttime2float = _glue.nttime2float
 nttime2string = _glue.nttime2string

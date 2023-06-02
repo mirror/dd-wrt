@@ -197,15 +197,20 @@ static int skel_openat(struct vfs_handle_struct *handle,
 		       const struct files_struct *dirfsp,
 		       const struct smb_filename *smb_fname,
 		       struct files_struct *fsp,
-		       int flags,
-		       mode_t mode)
+		       const struct vfs_open_how *how)
 {
+	if (how->resolve != 0) {
+		errno = ENOSYS;
+		return -1;
+	}
+
 	errno = ENOSYS;
 	return -1;
 }
 
 static NTSTATUS skel_create_file(struct vfs_handle_struct *handle,
 				 struct smb_request *req,
+				 struct files_struct *dirfsp,
 				 struct smb_filename *smb_fname,
 				 uint32_t access_mask,
 				 uint32_t share_access,
@@ -345,6 +350,17 @@ static int skel_lstat(vfs_handle_struct *handle,
 	return -1;
 }
 
+static int skel_fstatat(
+	struct vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname,
+	SMB_STRUCT_STAT *sbuf,
+	int flags)
+{
+	errno = ENOSYS;
+	return -1;
+}
+
 static uint64_t skel_get_alloc_size(struct vfs_handle_struct *handle,
 				    struct files_struct *fsp,
 				    const SMB_STRUCT_STAT *sbuf)
@@ -428,9 +444,10 @@ static bool skel_lock(vfs_handle_struct *handle, files_struct *fsp, int op,
 	return false;
 }
 
-static int skel_kernel_flock(struct vfs_handle_struct *handle,
-			     struct files_struct *fsp,
-			     uint32_t share_mode, uint32_t access_mask)
+static int skel_filesystem_sharemode(struct vfs_handle_struct *handle,
+				     struct files_struct *fsp,
+				     uint32_t share_mode,
+				     uint32_t access_mask)
 {
 	errno = ENOSYS;
 	return -1;
@@ -559,6 +576,8 @@ static struct tevent_req *skel_offload_read_send(
 static NTSTATUS skel_offload_read_recv(struct tevent_req *req,
 				       struct vfs_handle_struct *handle,
 				       TALLOC_CTX *mem_ctx,
+				       uint32_t *flags,
+				       uint64_t *xferlen,
 				       DATA_BLOB *_token_blob)
 {
 	NTSTATUS status;
@@ -637,17 +656,19 @@ static NTSTATUS skel_fstreaminfo(struct vfs_handle_struct *handle,
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
-static int skel_get_real_filename(struct vfs_handle_struct *handle,
-				  const struct smb_filename *path,
-				  const char *name,
-				  TALLOC_CTX *mem_ctx, char **found_name)
+static NTSTATUS skel_get_real_filename_at(struct vfs_handle_struct *handle,
+					  struct files_struct *dirfsp,
+					  const char *name,
+					  TALLOC_CTX *mem_ctx,
+					  char **found_name)
 {
-	errno = ENOSYS;
-	return -1;
+	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
-static const char *skel_connectpath(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname)
+static const char *skel_connectpath(
+	struct vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname)
 {
 	errno = ENOSYS;
 	return NULL;
@@ -998,6 +1019,7 @@ static struct vfs_fn_pointers skel_opaque_fns = {
 	.stat_fn = skel_stat,
 	.fstat_fn = skel_fstat,
 	.lstat_fn = skel_lstat,
+	.fstatat_fn = skel_fstatat,
 	.get_alloc_size_fn = skel_get_alloc_size,
 	.unlinkat_fn = skel_unlinkat,
 	.fchmod_fn = skel_fchmod,
@@ -1009,7 +1031,7 @@ static struct vfs_fn_pointers skel_opaque_fns = {
 	.ftruncate_fn = skel_ftruncate,
 	.fallocate_fn = skel_fallocate,
 	.lock_fn = skel_lock,
-	.kernel_flock_fn = skel_kernel_flock,
+	.filesystem_sharemode_fn = skel_filesystem_sharemode,
 	.fcntl_fn = skel_fcntl,
 	.linux_setlease_fn = skel_linux_setlease,
 	.getlock_fn = skel_getlock,
@@ -1029,7 +1051,7 @@ static struct vfs_fn_pointers skel_opaque_fns = {
 	.set_compression_fn = skel_set_compression,
 
 	.fstreaminfo_fn = skel_fstreaminfo,
-	.get_real_filename_fn = skel_get_real_filename,
+	.get_real_filename_at_fn = skel_get_real_filename_at,
 	.connectpath_fn = skel_connectpath,
 	.brl_lock_windows_fn = skel_brl_lock_windows,
 	.brl_unlock_windows_fn = skel_brl_unlock_windows,

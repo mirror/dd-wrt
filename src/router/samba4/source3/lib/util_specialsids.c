@@ -16,8 +16,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
+#include "libcli/security/dom_sid.h"
 #include "../libcli/security/security.h"
+#include "util_specialsids.h"
 
 bool sid_check_is_asserted_identity(const struct dom_sid *sid)
 {

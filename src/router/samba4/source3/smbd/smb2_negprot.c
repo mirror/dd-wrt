@@ -26,11 +26,13 @@
 #include "../lib/tsocket/tsocket.h"
 #include "../librpc/ndr/libndr.h"
 #include "../libcli/smb/smb_signing.h"
+#include "auth.h"
+#include "auth/gensec/gensec.h"
+#include "lib/util/string_wrappers.h"
+#include "source3/lib/substitute.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_SMB2
-
-extern fstring remote_proto;
 
 /*
  * this is the entry point if SMB2 is selected via
@@ -158,6 +160,7 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 	struct smb2_negotiate_context *in_cipher = NULL;
 	struct smb2_negotiate_context *in_sign_algo = NULL;
 	struct smb2_negotiate_contexts out_c = { .num_contexts = 0, };
+	struct smb2_negotiate_context *in_posix = NULL;
 	const struct smb311_capabilities default_smb3_capabilities =
 		smb311_capabilities_parse("server",
 			lp_server_smb3_signing_algorithms(),
@@ -175,7 +178,6 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 	uint32_t max_read = lp_smb2_max_read();
 	uint32_t max_write = lp_smb2_max_write();
 	NTTIME now = timeval_to_nttime(&req->request_time);
-	bool signing_required = true;
 	bool ok;
 
 	status = smbd_smb2_request_verify_sizes(req, 0x24);
@@ -270,6 +272,43 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		if (!NT_STATUS_IS_OK(status)) {
 			return smbd_smb2_request_error(req, status);
 		}
+
+		if (lp_smb3_unix_extensions()) {
+			in_posix = smb2_negotiate_context_find(&in_c,
+					SMB2_POSIX_EXTENSIONS_AVAILABLE);
+
+			if (in_posix != NULL) {
+				const uint8_t *inbuf = in_posix->data.data;
+				size_t inbuflen = in_posix->data.length;
+				bool posix_found = false;
+				/*
+				 * For now the server only supports one variant.
+				 * Check it's the right one.
+				 */
+				if ((inbuflen % 16) != 0) {
+					return smbd_smb2_request_error(req,
+						NT_STATUS_INVALID_PARAMETER);
+				}
+				SMB_ASSERT(strlen(SMB2_CREATE_TAG_POSIX) == 16);
+				for (ofs=0; ofs<inbuflen; ofs+=16) {
+					if (memcmp(inbuf+ofs,
+							SMB2_CREATE_TAG_POSIX,
+							16) == 0) {
+						posix_found = true;
+						break;
+					}
+				}
+				if (posix_found) {
+					DBG_DEBUG("Client requested SMB2 unix "
+						"extensions\n");
+				} else {
+					DBG_DEBUG("Client requested unknown "
+						"SMB2 unix extensions:\n");
+					dump_data(10, inbuf, inbuflen);
+					in_posix = NULL;
+				}
+			}
+		}
 	}
 
 	if ((dialect != SMB2_DIALECT_REVISION_2FF) &&
@@ -294,11 +333,16 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 		break;
 	}
 
-	fstr_sprintf(remote_proto, "SMB%X_%02X",
-		     (dialect >> 8) & 0xFF, dialect & 0xFF);
+	{
+		fstring proto;
+		fstr_sprintf(proto,
+			     "SMB%X_%02X",
+			     (dialect >> 8) & 0xFF, dialect & 0xFF);
+		set_remote_proto(proto);
+		DEBUG(3,("Selected protocol %s\n", proto));
+	}
 
 	reload_services(req->sconn, conn_snum_used, true);
-	DEBUG(3,("Selected protocol %s\n", remote_proto));
 
 	in_preauth = smb2_negotiate_context_find(&in_c,
 					SMB2_PREAUTH_INTEGRITY_CAPABILITIES);
@@ -322,12 +366,12 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 
 	security_mode = SMB2_NEGOTIATE_SIGNING_ENABLED;
 	/*
-	 * We use xconn->smb1.signing_state as that's already present
-	 * and used lpcfg_server_signing_allowed() to get the correct
+	 * We use xconn->smb2.signing_mandatory set up via
+	 * srv_init_signing() -> smb2_srv_init_signing().
+	 * This calls lpcfg_server_signing_allowed() to get the correct
 	 * defaults, e.g. signing_required for an ad_dc.
 	 */
-	signing_required = smb_signing_is_mandatory(xconn->smb1.signing_state);
-	if (signing_required) {
+	if (xconn->smb2.signing_mandatory) {
 		security_mode |= SMB2_NEGOTIATE_SIGNING_REQUIRED;
 	}
 
@@ -647,6 +691,21 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 	security_buffer = data_blob_const(NULL, 0);
 #endif
 
+	if (in_posix != NULL) {
+		/* Client correctly negotiated SMB2 unix extensions. */
+		const uint8_t *buf = (const uint8_t *)SMB2_CREATE_TAG_POSIX;
+		status = smb2_negotiate_context_add(
+				req,
+				&out_c,
+				SMB2_POSIX_EXTENSIONS_AVAILABLE,
+				buf,
+				16);
+		if (!NT_STATUS_IS_OK(status)) {
+			return smbd_smb2_request_error(req, status);
+		}
+		xconn->smb2.server.posix_extensions_negotiated = true;
+	}
+
 	if (out_c.num_contexts != 0) {
 		status = smb2_negotiate_context_push(req,
 						&out_negotiate_context_blob,
@@ -867,4 +926,265 @@ static void smbd_smb2_request_process_negprot_mc_done(struct tevent_req *subreq)
 	 */
 	smb_panic(__location__);
 	return;
+}
+
+/****************************************************************************
+ Generate the spnego negprot reply blob. Return the number of bytes used.
+****************************************************************************/
+
+DATA_BLOB negprot_spnego(TALLOC_CTX *ctx, struct smbXsrv_connection *xconn)
+{
+	DATA_BLOB blob = data_blob_null;
+	DATA_BLOB blob_out = data_blob_null;
+	nstring dos_name;
+	fstring unix_name;
+	NTSTATUS status;
+#ifdef DEVELOPER
+	size_t slen;
+#endif
+	struct gensec_security *gensec_security;
+
+	/* See if we can get an SPNEGO blob */
+	status = auth_generic_prepare(talloc_tos(),
+				      xconn->remote_address,
+				      xconn->local_address,
+				      "SMB",
+				      &gensec_security);
+
+	/*
+	 * Despite including it above, there is no need to set a
+	 * remote address or similar as we are just interested in the
+	 * SPNEGO blob, we never keep this context.
+	 */
+
+	if (NT_STATUS_IS_OK(status)) {
+		status = gensec_start_mech_by_oid(gensec_security, GENSEC_OID_SPNEGO);
+		if (NT_STATUS_IS_OK(status)) {
+			status = gensec_update(gensec_security, ctx,
+					       data_blob_null, &blob);
+			/* If we get the list of OIDs, the 'OK' answer
+			 * is NT_STATUS_MORE_PROCESSING_REQUIRED */
+			if (!NT_STATUS_EQUAL(status, NT_STATUS_MORE_PROCESSING_REQUIRED)) {
+				DEBUG(0, ("Failed to start SPNEGO handler for negprot OID list!\n"));
+				blob = data_blob_null;
+			}
+		}
+		TALLOC_FREE(gensec_security);
+	}
+
+#if defined(WITH_SMB1SERVER)
+	xconn->smb1.negprot.spnego = true;
+#endif
+
+	/* strangely enough, NT does not sent the single OID NTLMSSP when
+	   not a ADS member, it sends no OIDs at all
+
+	   OLD COMMENT : "we can't do this until we teach our sesssion setup parser to know
+		   about raw NTLMSSP (clients send no ASN.1 wrapping if we do this)"
+
+	   Our sessionsetup code now handles raw NTLMSSP connects, so we can go
+	   back to doing what W2K3 does here. This is needed to make PocketPC 2003
+	   CIFS connections work with SPNEGO. See bugzilla bugs #1828 and #3133
+	   for details. JRA.
+
+	*/
+
+	if (blob.length == 0 || blob.data == NULL) {
+		return data_blob_null;
+	}
+
+	blob_out = data_blob_talloc(ctx, NULL, 16 + blob.length);
+	if (blob_out.data == NULL) {
+		data_blob_free(&blob);
+		return data_blob_null;
+	}
+
+	memset(blob_out.data, '\0', 16);
+
+	checked_strlcpy(unix_name, lp_netbios_name(), sizeof(unix_name));
+	(void)strlower_m(unix_name);
+	push_ascii_nstring(dos_name, unix_name);
+	strlcpy((char *)blob_out.data, dos_name, 17);
+
+#ifdef DEVELOPER
+	/* Fix valgrind 'uninitialized bytes' issue. */
+	slen = strlen(dos_name);
+	if (slen < 16) {
+		memset(blob_out.data+slen, '\0', 16 - slen);
+	}
+#endif
+
+	memcpy(&blob_out.data[16], blob.data, blob.length);
+
+	data_blob_free(&blob);
+
+	return blob_out;
+}
+
+/*
+ * MS-CIFS, 2.2.4.52.2 SMB_COM_NEGOTIATE Response:
+ * If the server does not support any of the listed dialects, it MUST return a
+ * DialectIndex of 0XFFFF
+ */
+#define NO_PROTOCOL_CHOSEN	0xffff
+
+#define PROT_SMB_2_002				0x1000
+#define PROT_SMB_2_FF				0x2000
+
+/* List of supported SMB1 protocols, most desired first.
+ * This is for enabling multi-protocol negotiation in SMB2 when SMB1
+ * is disabled.
+ */
+static const struct {
+	const char *proto_name;
+	const char *short_name;
+	NTSTATUS (*proto_reply_fn)(struct smb_request *req, uint16_t choice);
+	int protocol_level;
+} supported_protocols[] = {
+	{"SMB 2.???",               "SMB2_FF",  reply_smb20ff,  PROTOCOL_SMB2_10},
+	{"SMB 2.002",               "SMB2_02",  reply_smb2002,  PROTOCOL_SMB2_02},
+	{NULL,NULL,NULL,0},
+};
+
+/****************************************************************************
+ Reply to a negprot.
+ conn POINTER CAN BE NULL HERE !
+****************************************************************************/
+
+NTSTATUS smb2_multi_protocol_reply_negprot(struct smb_request *req)
+{
+	size_t choice = 0;
+	bool choice_set = false;
+	int protocol;
+	const char *p;
+	int num_cliprotos;
+	char **cliprotos;
+	size_t i;
+	size_t converted_size;
+	struct smbXsrv_connection *xconn = req->xconn;
+	struct smbd_server_connection *sconn = req->sconn;
+	int max_proto;
+	int min_proto;
+	NTSTATUS status;
+
+	START_PROFILE(SMBnegprot);
+
+	if (req->buflen == 0) {
+		DEBUG(0, ("negprot got no protocols\n"));
+		reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		END_PROFILE(SMBnegprot);
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	if (req->buf[req->buflen-1] != '\0') {
+		DEBUG(0, ("negprot protocols not 0-terminated\n"));
+		reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		END_PROFILE(SMBnegprot);
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	p = (const char *)req->buf + 1;
+
+	num_cliprotos = 0;
+	cliprotos = NULL;
+
+	while (smbreq_bufrem(req, p) > 0) {
+
+		char **tmp;
+
+		tmp = talloc_realloc(talloc_tos(), cliprotos, char *,
+					   num_cliprotos+1);
+		if (tmp == NULL) {
+			DEBUG(0, ("talloc failed\n"));
+			TALLOC_FREE(cliprotos);
+			reply_nterror(req, NT_STATUS_NO_MEMORY);
+			END_PROFILE(SMBnegprot);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		cliprotos = tmp;
+
+		if (!pull_ascii_talloc(cliprotos, &cliprotos[num_cliprotos], p,
+				       &converted_size)) {
+			DEBUG(0, ("pull_ascii_talloc failed\n"));
+			TALLOC_FREE(cliprotos);
+			reply_nterror(req, NT_STATUS_NO_MEMORY);
+			END_PROFILE(SMBnegprot);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		DEBUG(3, ("Requested protocol [%s]\n",
+			  cliprotos[num_cliprotos]));
+
+		num_cliprotos += 1;
+		p += strlen(p) + 2;
+	}
+
+	/* possibly reload - change of architecture */
+	reload_services(sconn, conn_snum_used, true);
+
+	/*
+	 * Anything higher than PROTOCOL_SMB2_10 still
+	 * needs to go via "SMB 2.???", which is marked
+	 * as PROTOCOL_SMB2_10.
+	 *
+	 * The real negotiation happens via reply_smb20ff()
+	 * using SMB2 Negotiation.
+	 */
+	max_proto = lp_server_max_protocol();
+	if (max_proto > PROTOCOL_SMB2_10) {
+		max_proto = PROTOCOL_SMB2_10;
+	}
+	min_proto = lp_server_min_protocol();
+	if (min_proto > PROTOCOL_SMB2_10) {
+		min_proto = PROTOCOL_SMB2_10;
+	}
+
+	/* Check for protocols, most desirable first */
+	for (protocol = 0; supported_protocols[protocol].proto_name; protocol++) {
+		i = 0;
+		if ((supported_protocols[protocol].protocol_level <= max_proto) &&
+		    (supported_protocols[protocol].protocol_level >= min_proto))
+			while (i < num_cliprotos) {
+				if (strequal(cliprotos[i],supported_protocols[protocol].proto_name)) {
+					choice = i;
+					choice_set = true;
+				}
+				i++;
+			}
+		if (choice_set) {
+			break;
+		}
+	}
+
+	if (!choice_set) {
+		bool ok;
+
+		DBG_NOTICE("No protocol supported !\n");
+		reply_smb1_outbuf(req, 1, 0);
+		SSVAL(req->outbuf, smb_vwv0, NO_PROTOCOL_CHOSEN);
+
+		ok = smb1_srv_send(xconn, (char *)req->outbuf,
+				  false, 0, false, NULL);
+		if (!ok) {
+			DBG_NOTICE("smb1_srv_send failed\n");
+		}
+		exit_server_cleanly("no protocol supported\n");
+	}
+
+	set_remote_proto(supported_protocols[protocol].short_name);
+	reload_services(sconn, conn_snum_used, true);
+	status = supported_protocols[protocol].proto_reply_fn(req, choice);
+	if (!NT_STATUS_IS_OK(status)) {
+		exit_server_cleanly("negprot function failed\n");
+	}
+
+	DEBUG(3,("Selected protocol %s\n",supported_protocols[protocol].proto_name));
+
+	DBG_INFO("negprot index=%zu\n", choice);
+
+	TALLOC_FREE(cliprotos);
+
+	END_PROFILE(SMBnegprot);
+	return NT_STATUS_OK;
 }

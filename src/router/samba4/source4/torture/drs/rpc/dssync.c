@@ -527,7 +527,9 @@ static bool test_analyse_objects(struct torture_context *tctx,
 				el = &new_msg->elements[idx];
 				a = dsdb_attribute_by_lDAPDisplayName(ldap_schema,
 				                                      el->name);
-				if (!(el->flags & (LDB_FLAG_MOD_ADD|LDB_FLAG_MOD_REPLACE))) {
+				if (LDB_FLAG_MOD_TYPE(el->flags) != LDB_FLAG_MOD_ADD &&
+				    LDB_FLAG_MOD_TYPE(el->flags) != LDB_FLAG_MOD_REPLACE)
+				{
 					/* DRS only value */
 					is_warning = false;
 				} else if (a->linkID & 1) {
@@ -652,7 +654,7 @@ static bool test_analyse_objects(struct torture_context *tctx,
 					ndr_err = ndr_pull_struct_blob(&plain_data, ptr,
 								       ptr, pull_fn);
 					if (NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-						ndr_print_debug(print_fn, name, ptr);
+						(void)ndr_print_debug(1, print_fn, name, ptr, __location__, __func__);
 					} else {
 						DEBUG(0, ("Failed to decode %s\n", name));
 					}

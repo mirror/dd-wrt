@@ -21,6 +21,7 @@
 #ifndef SUBSTITUTE_H
 #define SUBSTITUTE_H
 
+void set_remote_proto(const char *proto);
 bool set_local_machine_name(const char *local_name, bool perm);
 const char *get_local_machine_name(void);
 bool set_remote_machine_name(const char *remote_name, bool perm);
@@ -31,6 +32,7 @@ void set_current_user_info(const char *smb_name,
 			   const char *unix_name,
 			   const char *domain);
 const char *get_current_username(void);
+const char *get_current_user_info_domain(void);
 void standard_sub_basic(const char *smb_name,
 			const char *domain_name,
 			char *str,

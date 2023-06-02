@@ -2,14 +2,15 @@
 
 outfile="$(dirname $0)/winbindd.stp"
 
-child_funcs="winbindd_dual_ping
-winbindd_dual_list_trusted_domains
-winbindd_dual_init_connection
-winbindd_dual_pam_auth
-winbindd_dual_pam_auth_crap
-winbindd_dual_pam_logoff
-winbindd_dual_pam_chng_pswd_auth_crap
-winbindd_dual_pam_chauthtok
+child_funcs="winbindd_dual_init_connection
+_wbint_InitConnection
+_wbint_Ping
+_wbint_PamAuth
+_wbint_PamAuthCrap
+_wbint_PamLogOff
+_wbint_PamAuthChangePassword
+_wbint_PamAuthCrapChangePassword
+_wbint_ListTrustedDomains
 _wbint_LookupSid
 _wbint_LookupSids
 _wbint_LookupName
@@ -288,20 +289,20 @@ probe end {
 	}
 }'
 
-cat <<EOF > $outfile
+cat <<EOF >$outfile
 $header
 EOF
 
-printf "$child_funcs\n" | while read func ; do
-	printf "$domchild_req_template\n" | sed -e s/XXX/$func/g >> $outfile
+printf "$child_funcs\n" | while read func; do
+	printf "$domchild_req_template\n" | sed -e s/XXX/$func/g >>$outfile
 done
 
-printf "$backend_funcs\n" | while read func ; do
-	printf "$backend_req_template\n" | sed -e "s|XXX|$func|g" >> $outfile
+printf "$backend_funcs\n" | while read func; do
+	printf "$backend_req_template\n" | sed -e "s|XXX|$func|g" >>$outfile
 done
 
-printf "$async_funcs\n" | while read func ; do
-	printf "$async_req_template\n" | sed -e s/XXX/$func/g >> $outfile
+printf "$async_funcs\n" | while read func; do
+	printf "$async_req_template\n" | sed -e s/XXX/$func/g >>$outfile
 done
 
 cat <<EOF >>$outfile

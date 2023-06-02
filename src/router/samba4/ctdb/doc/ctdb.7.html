@@ -29,42 +29,66 @@
   </p><p>
     CTDB provides an "all active" cluster, where services are load
     balanced across all nodes.
-  </p></div><div class="refsect1"><a name="idm28"></a><h2>Recovery Lock</h2><p>
-      CTDB uses a <span class="emphasis"><em>recovery lock</em></span> to avoid a
+  </p></div><div class="refsect1"><a name="idm28"></a><h2>Cluster leader</h2><p>
+      CTDB uses a <span class="emphasis"><em>cluster leader and follower</em></span>
+      model of cluster management.  All nodes in a cluster elect one
+      node to be the leader.  The leader node coordinates privileged
+      operations such as database recovery and IP address failover.
+    </p><p>
+      CTDB previously referred to the leader as the <span class="emphasis"><em>recovery
+      master</em></span> or <span class="emphasis"><em>recmaster</em></span>.  References
+      to these terms may still be found in documentation and code.
+    </p></div><div class="refsect1"><a name="idm35"></a><h2>Cluster Lock</h2><p>
+      CTDB uses a cluster lock to assert its privileged role in the
+      cluster.  This node takes the cluster lock when it becomes
+      leader and holds the lock until it is no longer leader.  The
+      <span class="emphasis"><em>cluster lock</em></span> helps CTDB to avoid a
       <span class="emphasis"><em>split brain</em></span>, where a cluster becomes
       partitioned and each partition attempts to operate
       independently.  Issues that can result from a split brain
       include file data corruption, because file locking metadata may
       not be tracked correctly.
     </p><p>
-      CTDB uses a <span class="emphasis"><em>cluster leader and follower</em></span>
-      model of cluster management.  All nodes in a cluster elect one
-      node to be the leader.  The leader node coordinates privileged
-      operations such as database recovery and IP address failover.
-      CTDB refers to the leader node as the <span class="emphasis"><em>recovery
-      master</em></span>.  This node takes and holds the recovery lock
-      to assert its privileged role in the cluster.
+      CTDB previously referred to the cluster lock as the
+      <span class="emphasis"><em>recovery lock</em></span>.  The abbreviation
+      <span class="emphasis"><em>reclock</em></span> is still used - just "clock" would
+      be confusing.
     </p><p>
-      By default, the recovery lock is implemented using a file
-      (specified by <em class="parameter"><code>recovery lock</code></em> in the
+      <span class="emphasis"><em>CTDB is unable configure a default cluster
+      lock</em></span>, because this would depend on factors such as
+      cluster filesystem mountpoints.  However, <span class="emphasis"><em>running CTDB
+      without a cluster lock is not recommended</em></span> as there
+      will be no split brain protection.
+    </p><p>
+      When a cluster lock is configured it is used as the election
+      mechanism.  Nodes race to take the cluster lock and the winner
+      is the cluster leader.  This avoids problems when a node wins an
+      election but is unable to take the lock - this can occur if a
+      cluster becomes partitioned (for example, due to a communication
+      failure) and a different leader is elected by the nodes in each
+      partition, or if the cluster filesystem has a high failover
+      latency.
+    </p><p>
+      By default, the cluster lock is implemented using a file
+      (specified by <em class="parameter"><code>cluster lock</code></em> in the
       <code class="literal">[cluster]</code> section of
       <span class="citerefentry"><span class="refentrytitle">ctdb.conf</span>(5)</span>) residing in shared
       storage (usually) on a cluster filesystem.  To support a
-      recovery lock the cluster filesystem must support lock
+      cluster lock the cluster filesystem must support lock
       coherence.  See
       <span class="citerefentry"><span class="refentrytitle">ping_pong</span>(1)</span> for more details.
     </p><p>
-      The recovery lock can also be implemented using an arbitrary
+      The cluster lock can also be implemented using an arbitrary
       cluster mutex helper (or call-out).  This is indicated by using
       an exclamation point ('!') as the first character of the
-      <em class="parameter"><code>recovery lock</code></em> parameter.  For example, a
-      value of <span class="command"><strong>!/usr/local/bin/myhelper recovery</strong></span>
+      <em class="parameter"><code>cluster lock</code></em> parameter.  For example, a
+      value of <span class="command"><strong>!/usr/local/bin/myhelper cluster</strong></span>
       would run the given helper with the specified arguments.  The
       helper will continue to run as long as it holds its mutex.  See
       <code class="filename">ctdb/doc/cluster_mutex_helper.txt</code> in the
       source tree, and related code, for clues about writing helpers.
     </p><p>
-      When a file is specified for the <em class="parameter"><code>recovery
+      When a file is specified for the <em class="parameter"><code>cluster
       lock</code></em> parameter (i.e. no leading '!') the file lock
       is implemented by a default helper
       (<span class="command"><strong>/usr/local/libexec/ctdb/ctdb_mutex_fcntl_helper</strong></span>).
@@ -81,22 +105,9 @@
       from when the lock was taken.  The default value for
       RECHECK-INTERVAL is 5.
     </p><p>
-      If a cluster becomes partitioned (for example, due to a
-      communication failure) and a different recovery master is
-      elected by the nodes in each partition, then only one of these
-      recovery masters will be able to take the recovery lock.  The
-      recovery master in the "losing" partition will not be able to
-      take the recovery lock and will be excluded from the cluster.
-      The nodes in the "losing" partition will elect each node in turn
-      as their recovery master so eventually all the nodes in that
-      partition will be excluded.
-    </p><p>
-      CTDB does sanity checks to ensure that the recovery lock is held
+      CTDB does sanity checks to ensure that the cluster lock is held
       as expected.
-    </p><p>
-      CTDB can run without a recovery lock but this is not recommended
-      as there will be no protection from split brains.
-    </p></div><div class="refsect1"><a name="idm61"></a><h2>Private vs Public addresses</h2><p>
+    </p></div><div class="refsect1"><a name="idm70"></a><h2>Private vs Public addresses</h2><p>
       Each node in a CTDB cluster has multiple IP addresses assigned
       to it:
 
@@ -107,7 +118,7 @@
 	    One or more public IP addresses that are used to provide
 	    NAS or other services.
 	  </p></li></ul></div><p>
-    </p><div class="refsect2"><a name="idm69"></a><h3>Private address</h3><p>
+    </p><div class="refsect2"><a name="idm78"></a><h3>Private address</h3><p>
         Each node is configured with a unique, permanently assigned
         private address.  This address is configured by the operating
         system.  This address uniquely identifies a physical node in
@@ -143,7 +154,7 @@
 192.168.1.2
 192.168.1.3
 192.168.1.4
-      </pre></div><div class="refsect2"><a name="idm80"></a><h3>Public addresses</h3><p>
+      </pre></div><div class="refsect2"><a name="idm89"></a><h3>Public addresses</h3><p>
 	Public addresses are used to provide services to clients.
 	Public addresses are not configured at the operating system
 	level and are not permanently associated with a particular
@@ -216,7 +227,7 @@ Node 3:/usr/local/etc/ctdb/public_addresses
       </p><p>
         The <span class="command"><strong>ctdb ip</strong></span> command can be used to view the
         current assignment of public addresses to physical nodes.
-      </p></div></div><div class="refsect1"><a name="idm98"></a><h2>Node status</h2><p>
+      </p></div></div><div class="refsect1"><a name="idm107"></a><h2>Node status</h2><p>
       The current status of each node in the cluster can be viewed by the 
       <span class="command"><strong>ctdb status</strong></span> command.
     </p><p>
@@ -261,12 +272,12 @@ Node 3:/usr/local/etc/ctdb/public_addresses
 	    like a healthy (OK) node.  Some interfaces to serve public
 	    addresses are down, but at least one interface is up.  See
 	    also <span class="command"><strong>ctdb ifaces</strong></span>.
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm138"></a><h2>CAPABILITIES</h2><p>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm147"></a><h2>CAPABILITIES</h2><p>
       Cluster nodes can have several different capabilities enabled.
       These are listed below.
-    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">RECMASTER</span></dt><dd><p>
-	    Indicates that a node can become the CTDB cluster recovery
-	    master.  The current recovery master is decided via an
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">LEADER</span></dt><dd><p>
+	    Indicates that a node can become the CTDB cluster leader.
+	    The current leader is decided via an
 	    election held by all active nodes with this capability.
 	  </p><p>
 	    Default is YES.
@@ -277,10 +288,10 @@ Node 3:/usr/local/etc/ctdb/public_addresses
 	  </p><p>
 	    Default is YES.
 	  </p></dd></dl></div><p>
-      The RECMASTER and LMASTER capabilities can be disabled when CTDB
+      The LEADER and LMASTER capabilities can be disabled when CTDB
       is used to create a cluster spanning across WAN links. In this
       case CTDB acts as a WAN accelerator.
-    </p></div><div class="refsect1"><a name="idm153"></a><h2>LVS</h2><p>
+    </p></div><div class="refsect1"><a name="idm162"></a><h2>LVS</h2><p>
       LVS is a mode where CTDB presents one single IP address for the
       entire cluster. This is an alternative to using public IP
       addresses and round-robin DNS to loadbalance clients across the
@@ -354,7 +365,7 @@ Node 3:/usr/local/etc/ctdb/public_addresses
       reachable from a node <span class="emphasis"><em>before</em></span> you enable
       LVS.  Also ensure that outgoing traffic to these hosts is routed
       out through the configured public interface.
-    </p><div class="refsect2"><a name="idm177"></a><h3>Configuration</h3><p>
+    </p><div class="refsect2"><a name="idm186"></a><h3>Configuration</h3><p>
 	To activate LVS on a CTDB node you must specify the
 	<code class="varname">CTDB_LVS_PUBLIC_IFACE</code>,
 	<code class="varname">CTDB_LVS_PUBLIC_IP</code> and
@@ -388,7 +399,7 @@ CTDB_LVS_NODES=/usr/local/etc/ctdb/lvs_nodes
 192.168.1.2
 192.168.1.3
 192.168.1.4 follower-only
-      </pre></div></div><div class="refsect1"><a name="idm193"></a><h2>TRACKING AND RESETTING TCP CONNECTIONS</h2><p>
+      </pre></div></div><div class="refsect1"><a name="idm202"></a><h2>TRACKING AND RESETTING TCP CONNECTIONS</h2><p>
       CTDB tracks TCP connections from clients to public IP addresses,
       on known ports.  When an IP address moves from one node to
       another, all existing TCP connections to that IP address are
@@ -401,7 +412,7 @@ CTDB_LVS_NODES=/usr/local/etc/ctdb/lvs_nodes
       a release and take of a public IP address on the same node.
       Such connections can get out of sync with sequence and ACK
       numbers, potentially causing a disruptive ACK storm.
-    </p></div><div class="refsect1"><a name="idm197"></a><h2>NAT GATEWAY</h2><p>
+    </p></div><div class="refsect1"><a name="idm206"></a><h2>NAT GATEWAY</h2><p>
       NAT gateway (NATGW) is an optional feature that is used to
       configure fallback routing for nodes.  This allows cluster nodes
       to connect to external services (e.g. DNS, AD, NIS and LDAP)
@@ -418,7 +429,7 @@ CTDB_LVS_NODES=/usr/local/etc/ctdb/lvs_nodes
       extra static IP address to a public interface on every node.
       This is simpler but it uses an extra IP address per node, while
       NAT gateway generally uses only one extra IP address.
-    </p><div class="refsect2"><a name="idm202"></a><h3>Operation</h3><p>
+    </p><div class="refsect2"><a name="idm211"></a><h3>Operation</h3><p>
 	One extra NATGW public address is assigned on the public
 	network to each NATGW group.  Each NATGW group is a set of
 	nodes in the cluster that shares the same NATGW address to
@@ -439,7 +450,7 @@ CTDB_LVS_NODES=/usr/local/etc/ctdb/lvs_nodes
 	public IP address and routes outgoing connections from
 	follower nodes via this IP address.  It also establishes a
 	fallback default route.
-      </p></div><div class="refsect2"><a name="idm207"></a><h3>Configuration</h3><p>
+      </p></div><div class="refsect2"><a name="idm216"></a><h3>Configuration</h3><p>
 	NATGW is usually configured similar to the following example configuration:
       </p><pre class="screen">
 CTDB_NATGW_NODES=/usr/local/etc/ctdb/natgw_nodes
@@ -458,7 +469,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
 	See the <em class="citetitle">NAT GATEWAY</em> section in
 	<span class="citerefentry"><span class="refentrytitle">ctdb-script.options</span>(5)</span> for more details of
 	NATGW configuration.
-      </p></div><div class="refsect2"><a name="idm218"></a><h3>Implementation details</h3><p>
+      </p></div><div class="refsect2"><a name="idm227"></a><h3>Implementation details</h3><p>
 	When the NATGW functionality is used, one of the nodes is
 	selected to act as a NAT gateway for all the other nodes in
 	the group when they need to communicate with the external
@@ -493,7 +504,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
 	eventscript.  Please see the eventscript file and the
 	<em class="citetitle">NAT GATEWAY</em> section in
 	<span class="citerefentry"><span class="refentrytitle">ctdb-script.options</span>(5)</span> for more details.
-      </p></div></div><div class="refsect1"><a name="idm235"></a><h2>POLICY ROUTING</h2><p>
+      </p></div></div><div class="refsect1"><a name="idm244"></a><h2>POLICY ROUTING</h2><p>
       Policy routing is an optional CTDB feature to support complex
       network topologies.  Public addresses may be spread across
       several different networks (or VLANs) and it may not be possible
@@ -503,7 +514,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
       This allows routing to be specified for packets sourced from
       each public address.  The routes are added and removed as CTDB
       moves public addresses between nodes.
-    </p><div class="refsect2"><a name="idm239"></a><h3>Configuration variables</h3><p>
+    </p><div class="refsect2"><a name="idm248"></a><h3>Configuration variables</h3><p>
 	There are 4 configuration variables related to policy routing:
 	<code class="varname">CTDB_PER_IP_ROUTING_CONF</code>,
 	<code class="varname">CTDB_PER_IP_ROUTING_RULE_PREF</code>,
@@ -511,7 +522,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
 	<code class="varname">CTDB_PER_IP_ROUTING_TABLE_ID_HIGH</code>.  See the
 	<em class="citetitle">POLICY ROUTING</em> section in
 	<span class="citerefentry"><span class="refentrytitle">ctdb-script.options</span>(5)</span> for more details.
-      </p></div><div class="refsect2"><a name="idm250"></a><h3>Configuration</h3><p>
+      </p></div><div class="refsect2"><a name="idm259"></a><h3>Configuration</h3><p>
 	The format of each line of
 	<code class="varname">CTDB_PER_IP_ROUTING_CONF</code> is:
       </p><pre class="screen">
@@ -528,7 +539,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
       </p><p>
 	For example, consider the configuration line:
       </p><pre class="screen">
-  192.168.1.99	192.168.1.1/24
+  192.168.1.99	192.168.1.0/24
       </pre><p>
 	If the corresponding public_addresses line is:
       </p><pre class="screen">
@@ -541,7 +552,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
   ip rule add from 192.168.1.99 pref 100 table ctdb.192.168.1.99
   ip route add 192.168.1.0/24 dev eth2 table ctdb.192.168.1.99
       </pre><p>  
-	This causes traffic from 192.168.1.1 to 192.168.1.0/24 go via
+	This causes traffic from 192.168.1.99 to 192.168.1.0/24 go via
 	eth2.
       </p><p>
 	The <span class="command"><strong>ip rule</strong></span> command will show (something
@@ -573,7 +584,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
       </p><pre class="screen">
   192.168.1.0/24 dev eth2 scope link 
   default via 192.168.1.1 dev eth2 
-      </pre></div><div class="refsect2"><a name="idm278"></a><h3>Sample configuration</h3><p>
+      </pre></div><div class="refsect2"><a name="idm287"></a><h3>Sample configuration</h3><p>
 	Here is a more complete example configuration.
       </p><pre class="screen">
 /usr/local/etc/ctdb/public_addresses:
@@ -593,7 +604,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
 	The routes local packets as expected, the default route is as
 	previously discussed, but packets to 192.168.200.0/24 are
 	routed via the alternate gateway 192.168.1.254.
-      </p></div></div><div class="refsect1"><a name="idm283"></a><h2>NOTIFICATIONS</h2><p>
+      </p></div></div><div class="refsect1"><a name="idm292"></a><h2>NOTIFICATIONS</h2><p>
       When certain state changes occur in CTDB, it can be configured
       to perform arbitrary actions via notifications.  For example,
       sending SNMP traps or emails when a node becomes unhealthy or
@@ -606,9 +617,9 @@ CTDB_NATGW_DEFAULT_GATEWAY=10.0.0.1
     </p><p>
       CTDB currently generates notifications after CTDB changes to
       these states:
-    </p><table border="0" summary="Simple list" class="simplelist"><tr><td>init</td></tr><tr><td>setup</td></tr><tr><td>startup</td></tr><tr><td>healthy</td></tr><tr><td>unhealthy</td></tr></table></div><div class="refsect1"><a name="idm295"></a><h2>LOG LEVELS</h2><p>
+    </p><table border="0" summary="Simple list" class="simplelist"><tr><td>init</td></tr><tr><td>setup</td></tr><tr><td>startup</td></tr><tr><td>healthy</td></tr><tr><td>unhealthy</td></tr></table></div><div class="refsect1"><a name="idm304"></a><h2>LOG LEVELS</h2><p>
       Valid log levels, in increasing order of verbosity, are:
-    </p><table border="0" summary="Simple list" class="simplelist"><tr><td>ERROR</td></tr><tr><td>WARNING</td></tr><tr><td>NOTICE</td></tr><tr><td>INFO</td></tr><tr><td>DEBUG</td></tr></table></div><div class="refsect1"><a name="idm304"></a><h2>REMOTE CLUSTER NODES</h2><p>
+    </p><table border="0" summary="Simple list" class="simplelist"><tr><td>ERROR</td></tr><tr><td>WARNING</td></tr><tr><td>NOTICE</td></tr><tr><td>INFO</td></tr><tr><td>DEBUG</td></tr></table></div><div class="refsect1"><a name="idm313"></a><h2>REMOTE CLUSTER NODES</h2><p>
 It is possible to have a CTDB cluster that spans across a WAN link. 
 For example where you have a CTDB cluster in your datacentre but you also
 want to have one additional CTDB node located at a remote branch site.
@@ -634,17 +645,15 @@ correct CIFS semantics to clients.
         </p><pre class="screen">
 [legacy]
   lmaster capability = false
-  recmaster capability = false
+  leader capability = false
 	</pre><p>
     </p><p>
 	Verify with the command "ctdb getcapabilities" that that node no longer
-	has the recmaster or the lmaster capabilities.
-    </p></div><div class="refsect1"><a name="idm312"></a><h2>SEE ALSO</h2><p>
+	has the leader or the lmaster capabilities.
+    </p></div><div class="refsect1"><a name="idm321"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdb</span>(1)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,
-
-      <span class="citerefentry"><span class="refentrytitle">ctdbd_wrapper</span>(1)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">ctdb_diagnostics</span>(1)</span>,
 

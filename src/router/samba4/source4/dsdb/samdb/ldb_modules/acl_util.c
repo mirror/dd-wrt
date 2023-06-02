@@ -95,13 +95,14 @@ int dsdb_module_check_access_on_dn(struct ldb_module *module,
 						guid);
 }
 
-int acl_check_access_on_attribute(struct ldb_module *module,
-				  TALLOC_CTX *mem_ctx,
-				  struct security_descriptor *sd,
-				  struct dom_sid *rp_sid,
-				  uint32_t access_mask,
-				  const struct dsdb_attribute *attr,
-				  const struct dsdb_class *objectclass)
+int acl_check_access_on_attribute_implicit_owner(struct ldb_module *module,
+						 TALLOC_CTX *mem_ctx,
+						 const struct security_descriptor *sd,
+						 const struct dom_sid *rp_sid,
+						 uint32_t access_mask,
+						 const struct dsdb_attribute *attr,
+						 const struct dsdb_class *objectclass,
+						 enum implicit_owner_rights implicit_owner_rights)
 {
 	int ret;
 	NTSTATUS status;
@@ -138,11 +139,12 @@ int acl_check_access_on_attribute(struct ldb_module *module,
 		goto fail;
 	}
 
-	status = sec_access_check_ds(sd, token,
-				     access_mask,
-				     &access_granted,
-				     root,
-				     rp_sid);
+	status = sec_access_check_ds_implicit_owner(sd, token,
+						    access_mask,
+						    &access_granted,
+						    root,
+						    rp_sid,
+						    implicit_owner_rights);
 	if (!NT_STATUS_IS_OK(status)) {
 		ret = LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS;
 	}
@@ -154,6 +156,24 @@ int acl_check_access_on_attribute(struct ldb_module *module,
 fail:
 	talloc_free(tmp_ctx);
 	return ldb_operr(ldb_module_get_ctx(module));
+}
+
+int acl_check_access_on_attribute(struct ldb_module *module,
+				  TALLOC_CTX *mem_ctx,
+				  struct security_descriptor *sd,
+				  struct dom_sid *rp_sid,
+				  uint32_t access_mask,
+				  const struct dsdb_attribute *attr,
+				  const struct dsdb_class *objectclass)
+{
+	return acl_check_access_on_attribute_implicit_owner(module,
+							    mem_ctx,
+							    sd,
+							    rp_sid,
+							    access_mask,
+							    attr,
+							    objectclass,
+							    IMPLICIT_OWNER_READ_CONTROL_RIGHTS);
 }
 
 int acl_check_access_on_objectclass(struct ldb_module *module,
@@ -298,7 +318,7 @@ uint32_t dsdb_request_sd_flags(struct ldb_request *req, bool *explicit)
 
 	sd_control = ldb_request_get_control(req, LDB_CONTROL_SD_FLAGS_OID);
 	if (sd_control != NULL && sd_control->data != NULL) {
-		struct ldb_sd_flags_control *sdctr = (struct ldb_sd_flags_control *)sd_control->data;
+		struct ldb_sd_flags_control *sdctr = talloc_get_type_abort(sd_control->data, struct ldb_sd_flags_control);
 
 		sd_flags = sdctr->secinfo_flags;
 
@@ -327,6 +347,7 @@ uint32_t dsdb_request_sd_flags(struct ldb_request *req, bool *explicit)
 int dsdb_module_schedule_sd_propagation(struct ldb_module *module,
 					struct ldb_dn *nc_root,
 					struct GUID guid,
+					struct GUID parent_guid,
 					bool include_self)
 {
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
@@ -341,6 +362,7 @@ int dsdb_module_schedule_sd_propagation(struct ldb_module *module,
 	op->nc_root = nc_root;
 	op->guid = guid;
 	op->include_self = include_self;
+	op->parent_guid = parent_guid;
 
 	ret = dsdb_module_extended(module, op, NULL,
 				   DSDB_EXTENDED_SEC_DESC_PROPAGATION_OID,

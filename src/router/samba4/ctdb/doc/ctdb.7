@@ -2,12 +2,12 @@
 .\"     Title: ctdb
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB" "7" "01/31/2022" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB" "7" "05/31/2023" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -77,37 +77,53 @@ In addition to the CTDB manual pages there is much more information available at
 A CTDB cluster is a collection of nodes with 2 or more network interfaces\&. All nodes provide network (usually file/NAS) services to clients\&. Data served by file services is stored on shared storage (usually a cluster filesystem) that is accessible by all nodes\&.
 .PP
 CTDB provides an "all active" cluster, where services are load balanced across all nodes\&.
-.SH "RECOVERY LOCK"
-.PP
-CTDB uses a
-\fIrecovery lock\fR
-to avoid a
-\fIsplit brain\fR, where a cluster becomes partitioned and each partition attempts to operate independently\&. Issues that can result from a split brain include file data corruption, because file locking metadata may not be tracked correctly\&.
+.SH "CLUSTER LEADER"
 .PP
 CTDB uses a
 \fIcluster leader and follower\fR
-model of cluster management\&. All nodes in a cluster elect one node to be the leader\&. The leader node coordinates privileged operations such as database recovery and IP address failover\&. CTDB refers to the leader node as the
-\fIrecovery master\fR\&. This node takes and holds the recovery lock to assert its privileged role in the cluster\&.
+model of cluster management\&. All nodes in a cluster elect one node to be the leader\&. The leader node coordinates privileged operations such as database recovery and IP address failover\&.
 .PP
-By default, the recovery lock is implemented using a file (specified by
-\fIrecovery lock\fR
+CTDB previously referred to the leader as the
+\fIrecovery master\fR
+or
+\fIrecmaster\fR\&. References to these terms may still be found in documentation and code\&.
+.SH "CLUSTER LOCK"
+.PP
+CTDB uses a cluster lock to assert its privileged role in the cluster\&. This node takes the cluster lock when it becomes leader and holds the lock until it is no longer leader\&. The
+\fIcluster lock\fR
+helps CTDB to avoid a
+\fIsplit brain\fR, where a cluster becomes partitioned and each partition attempts to operate independently\&. Issues that can result from a split brain include file data corruption, because file locking metadata may not be tracked correctly\&.
+.PP
+CTDB previously referred to the cluster lock as the
+\fIrecovery lock\fR\&. The abbreviation
+\fIreclock\fR
+is still used \- just "clock" would be confusing\&.
+.PP
+\fICTDB is unable configure a default cluster lock\fR, because this would depend on factors such as cluster filesystem mountpoints\&. However,
+\fIrunning CTDB without a cluster lock is not recommended\fR
+as there will be no split brain protection\&.
+.PP
+When a cluster lock is configured it is used as the election mechanism\&. Nodes race to take the cluster lock and the winner is the cluster leader\&. This avoids problems when a node wins an election but is unable to take the lock \- this can occur if a cluster becomes partitioned (for example, due to a communication failure) and a different leader is elected by the nodes in each partition, or if the cluster filesystem has a high failover latency\&.
+.PP
+By default, the cluster lock is implemented using a file (specified by
+\fIcluster lock\fR
 in the
 [cluster]
 section of
-\fBctdb.conf\fR(5)) residing in shared storage (usually) on a cluster filesystem\&. To support a recovery lock the cluster filesystem must support lock coherence\&. See
+\fBctdb.conf\fR(5)) residing in shared storage (usually) on a cluster filesystem\&. To support a cluster lock the cluster filesystem must support lock coherence\&. See
 \fBping_pong\fR(1)
 for more details\&.
 .PP
-The recovery lock can also be implemented using an arbitrary cluster mutex helper (or call\-out)\&. This is indicated by using an exclamation point (\*(Aq!\*(Aq) as the first character of the
-\fIrecovery lock\fR
+The cluster lock can also be implemented using an arbitrary cluster mutex helper (or call\-out)\&. This is indicated by using an exclamation point (\*(Aq!\*(Aq) as the first character of the
+\fIcluster lock\fR
 parameter\&. For example, a value of
-\fB!/usr/local/bin/myhelper recovery\fR
+\fB!/usr/local/bin/myhelper cluster\fR
 would run the given helper with the specified arguments\&. The helper will continue to run as long as it holds its mutex\&. See
 ctdb/doc/cluster_mutex_helper\&.txt
 in the source tree, and related code, for clues about writing helpers\&.
 .PP
 When a file is specified for the
-\fIrecovery lock\fR
+\fIcluster lock\fR
 parameter (i\&.e\&. no leading \*(Aq!\*(Aq) the file lock is implemented by a default helper (\fB/usr/local/libexec/ctdb/ctdb_mutex_fcntl_helper\fR)\&. This helper has arguments as follows:
 
 .sp
@@ -126,11 +142,7 @@ parameter (i\&.e\&. no leading \*(Aq!\*(Aq) the file lock is implemented by a de
 \fBctdb_mutex_fcntl_helper\fR
 will take a lock on FILE and then check every RECHECK\-INTERVAL seconds to ensure that FILE still exists and that its inode number is unchanged from when the lock was taken\&. The default value for RECHECK\-INTERVAL is 5\&.
 .PP
-If a cluster becomes partitioned (for example, due to a communication failure) and a different recovery master is elected by the nodes in each partition, then only one of these recovery masters will be able to take the recovery lock\&. The recovery master in the "losing" partition will not be able to take the recovery lock and will be excluded from the cluster\&. The nodes in the "losing" partition will elect each node in turn as their recovery master so eventually all the nodes in that partition will be excluded\&.
-.PP
-CTDB does sanity checks to ensure that the recovery lock is held as expected\&.
-.PP
-CTDB can run without a recovery lock but this is not recommended as there will be no protection from split brains\&.
+CTDB does sanity checks to ensure that the cluster lock is held as expected\&.
 .SH "PRIVATE VS PUBLIC ADDRESSES"
 .PP
 Each node in a CTDB cluster has multiple IP addresses assigned to it:
@@ -312,9 +324,9 @@ A node that is partially online participates in a cluster like a healthy (OK) no
 .PP
 Cluster nodes can have several different capabilities enabled\&. These are listed below\&.
 .PP
-RECMASTER
+LEADER
 .RS 4
-Indicates that a node can become the CTDB cluster recovery master\&. The current recovery master is decided via an election held by all active nodes with this capability\&.
+Indicates that a node can become the CTDB cluster leader\&. The current leader is decided via an election held by all active nodes with this capability\&.
 .sp
 Default is YES\&.
 .RE
@@ -326,7 +338,7 @@ Indicates that a node can be the location master (LMASTER) for database records\
 Default is YES\&.
 .RE
 .PP
-The RECMASTER and LMASTER capabilities can be disabled when CTDB is used to create a cluster spanning across WAN links\&. In this case CTDB acts as a WAN accelerator\&.
+The LEADER and LMASTER capabilities can be disabled when CTDB is used to create a cluster spanning across WAN links\&. In this case CTDB acts as a WAN accelerator\&.
 .SH "LVS"
 .PP
 LVS is a mode where CTDB presents one single IP address for the entire cluster\&. This is an alternative to using public IP addresses and round\-robin DNS to loadbalance clients across the cluster\&.
@@ -573,7 +585,7 @@ For example, consider the configuration line:
 .RS 4
 .\}
 .nf
-  192\&.168\&.1\&.99	192\&.168\&.1\&.1/24
+  192\&.168\&.1\&.99	192\&.168\&.1\&.0/24
       
 .fi
 .if n \{\
@@ -608,7 +620,7 @@ is 100, and CTDB adds the address to eth2 then the following routing information
 .RE
 .\}
 .PP
-This causes traffic from 192\&.168\&.1\&.1 to 192\&.168\&.1\&.0/24 go via eth2\&.
+This causes traffic from 192\&.168\&.1\&.99 to 192\&.168\&.1\&.0/24 go via eth2\&.
 .PP
 The
 \fBip rule\fR
@@ -768,19 +780,18 @@ To activate a node as being a remote cluster node you need to set the following 
 .nf
 [legacy]
   lmaster capability = false
-  recmaster capability = false
+  leader capability = false
 	
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-Verify with the command "ctdb getcapabilities" that that node no longer has the recmaster or the lmaster capabilities\&.
+Verify with the command "ctdb getcapabilities" that that node no longer has the leader or the lmaster capabilities\&.
 .SH "SEE ALSO"
 .PP
 \fBctdb\fR(1),
 \fBctdbd\fR(1),
-\fBctdbd_wrapper\fR(1),
 \fBctdb_diagnostics\fR(1),
 \fBltdbtool\fR(1),
 \fBonnode\fR(1),

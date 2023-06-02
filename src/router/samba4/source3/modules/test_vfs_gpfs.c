@@ -43,12 +43,14 @@ static void test_share_deny_mapping(void **state)
 			 0); /* GPFS limitation, cannot deny only delete. */
 }
 
+#ifdef HAVE_KERNEL_OPLOCKS_LINUX
 static void test_gpfs_lease_mapping(void **state)
 {
 	assert_int_equal(lease_type_to_gpfs(F_RDLCK), GPFS_LEASE_READ);
 	assert_int_equal(lease_type_to_gpfs(F_WRLCK), GPFS_LEASE_WRITE);
 	assert_int_equal(lease_type_to_gpfs(F_UNLCK), GPFS_LEASE_NONE);
 }
+#endif /* #ifdef HAVE_KERNEL_OPLOCKS_LINUX */
 
 static void test_gpfs_winattrs_to_dosmode(void **state)
 {
@@ -82,67 +84,15 @@ static void test_dosmode_to_gpfs_winattrs(void **state)
 			 GPFS_WINATTR_SYSTEM);
 }
 
-static void test_gpfs_get_file_id(void **state)
-{
-	struct gpfs_iattr64 iattr;
-	uint64_t fileid1, fileid2;
-	NTSTATUS status;
-
-	/*
-	 * Ensure that the generated fileid only depends on the
-	 * ia_inode, ia_gen and ia_modsnapid fields in struct
-	 * gpfs_iattr64 and any changes to these fields result in a
-	 * different file id.
-	 */
-
-	memset(&iattr, 1, sizeof(iattr));
-	iattr.ia_inode = 0x11;
-	iattr.ia_gen = 0x22;
-	iattr.ia_modsnapid = 0x33;
-	status = vfs_gpfs_get_file_id(&iattr, &fileid1);
-	assert_true(NT_STATUS_IS_OK(status));
-
-	memset(&iattr, 2, sizeof(iattr));
-	iattr.ia_inode = 0x11;
-	iattr.ia_gen = 0x22;
-	iattr.ia_modsnapid = 0x33;
-	status = vfs_gpfs_get_file_id(&iattr, &fileid2);
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_int_equal(fileid1, fileid2);
-
-	iattr.ia_inode = 0x44;
-	iattr.ia_gen = 0x22;
-	iattr.ia_modsnapid = 0x33;
-	status = vfs_gpfs_get_file_id(&iattr, &fileid2);
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_int_not_equal(fileid1, fileid2);
-
-	iattr.ia_inode = 0x11;
-	iattr.ia_gen = 0x44;
-	iattr.ia_modsnapid = 0x33;
-	status = vfs_gpfs_get_file_id(&iattr, &fileid2);
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_int_not_equal(fileid1, fileid2);
-
-	iattr.ia_inode = 0x11;
-	iattr.ia_gen = 0x22;
-	iattr.ia_modsnapid = 0x44;
-	status = vfs_gpfs_get_file_id(&iattr, &fileid2);
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_true(NT_STATUS_IS_OK(status));
-	assert_int_not_equal(fileid1, fileid2);
-}
-
 int main(int argc, char **argv)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_share_deny_mapping),
+#ifdef HAVE_KERNEL_OPLOCKS_LINUX
 		cmocka_unit_test(test_gpfs_lease_mapping),
+#endif /* #ifdef HAVE_KERNEL_OPLOCKS_LINUX */
 		cmocka_unit_test(test_gpfs_winattrs_to_dosmode),
 		cmocka_unit_test(test_dosmode_to_gpfs_winattrs),
-		cmocka_unit_test(test_gpfs_get_file_id),
 	};
 
 	cmocka_set_message_output(CM_OUTPUT_SUBUNIT);

@@ -2146,7 +2146,7 @@ class TestDNSAging(DNSTest):
         # D is scavengeable
         atime = self.dns_update_record(A, A).dwTimeStamp
         btime = self.ldap_update_record(B, B, dwTimeStamp=now-20).dwTimeStamp
-        btime = self.ldap_update_record(C, C, dwTimeStamp=now-40).dwTimeStamp
+        ctime = self.ldap_update_record(C, C, dwTimeStamp=now-40).dwTimeStamp
         dtime = self.ldap_update_record(D, D, dwTimeStamp=now-60).dwTimeStamp
         self.assert_soon_after(atime, now)
         self.assert_timestamps_equal(btime, now-20)
@@ -2158,7 +2158,7 @@ class TestDNSAging(DNSTest):
         # D should be gone (tombstoned)
         r = self.get_unique_txt_record(D, D)
         self.assertIsNone(r)
-        r = dns_query(self, D, qtype=dns.DNS_QTYPE_TXT)
+        r = self.dns_query(D, qtype=dns.DNS_QTYPE_TXT)
         self.assertEqual(r.ancount, 0)
         recs = self.ldap_get_records(D)
         self.assertEqual(len(recs), 1)
@@ -2552,12 +2552,6 @@ class TestDNSAging(DNSTest):
     def test_dns_delete_simple_112_113_days_no_aging(self):
         self._test_dns_delete_simple(112, 113, False)
 
-    def test_dns_delete_simple_112_113_days_aging(self):
-        self._test_dns_delete_simple(112, 113, True)
-
-    def test_dns_delete_simple_112_113_days_no_aging(self):
-        self._test_dns_delete_simple(112, 113, False)
-
     def test_dns_delete_simple_0_113_days_aging(self):
         # 1e9 hours ago evaluates to 0, i.e static
         self._test_dns_delete_simple(1e9, 113, True)
@@ -2594,12 +2588,6 @@ class TestDNSAging(DNSTest):
 
     def test_dns_delete_simple_12_13_days_no_aging_touch(self):
         self._test_dns_delete_simple(12, 13, False, True)
-
-    def test_dns_delete_simple_112_113_days_aging_touch(self):
-        self._test_dns_delete_simple(112, 113, True, True)
-
-    def test_dns_delete_simple_112_113_days_no_aging_touch(self):
-        self._test_dns_delete_simple(112, 113, False, True)
 
     def test_dns_delete_simple_112_113_days_aging_touch(self):
         self._test_dns_delete_simple(112, 113, True, True)

@@ -1,0 +1,19 @@
+[Unit]
+Description=CTDB
+Documentation=man:ctdbd(1) man:ctdb(7)
+After=network-online.target time-sync.target
+ConditionFileNotEmpty=@CTDB_ETCDIR@/nodes
+
+[Service]
+Type=forking
+LimitCORE=infinity
+LimitNOFILE=1048576
+TasksMax=4096
+PIDFile=@CTDB_RUNDIR@/ctdbd.pid
+ExecStart=@SBINDIR@/ctdbd
+ExecStop=@BINDIR@/ctdb shutdown
+KillMode=control-group
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

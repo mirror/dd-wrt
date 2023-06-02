@@ -25,55 +25,12 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
 
-static const struct winbindd_child_dispatch_table domain_dispatch_table[] = {
-	{
-		.name		= "PING",
-		.struct_cmd	= WINBINDD_PING,
-		.struct_fn	= winbindd_dual_ping,
-	},{
-		.name		= "LIST_TRUSTDOM",
-		.struct_cmd	= WINBINDD_LIST_TRUSTDOM,
-		.struct_fn	= winbindd_dual_list_trusted_domains,
-	},{
-		.name		= "INIT_CONNECTION",
-		.struct_cmd	= WINBINDD_INIT_CONNECTION,
-		.struct_fn	= winbindd_dual_init_connection,
-	},{
-		.name		= "PAM_AUTH",
-		.struct_cmd	= WINBINDD_PAM_AUTH,
-		.struct_fn	= winbindd_dual_pam_auth,
-	},{
-		.name		= "AUTH_CRAP",
-		.struct_cmd	= WINBINDD_PAM_AUTH_CRAP,
-		.struct_fn	= winbindd_dual_pam_auth_crap,
-	},{
-		.name		= "PAM_LOGOFF",
-		.struct_cmd	= WINBINDD_PAM_LOGOFF,
-		.struct_fn	= winbindd_dual_pam_logoff,
-	},{
-		.name		= "CHNG_PSWD_AUTH_CRAP",
-		.struct_cmd	= WINBINDD_PAM_CHNG_PSWD_AUTH_CRAP,
-		.struct_fn	= winbindd_dual_pam_chng_pswd_auth_crap,
-	},{
-		.name		= "PAM_CHAUTHTOK",
-		.struct_cmd	= WINBINDD_PAM_CHAUTHTOK,
-		.struct_fn	= winbindd_dual_pam_chauthtok,
-	},{
-		.name		= "NDRCMD",
-		.struct_cmd	= WINBINDD_DUAL_NDRCMD,
-		.struct_fn	= winbindd_dual_ndrcmd,
-	},{
-		.name		= NULL,
-	}
-};
-
 void setup_domain_child(struct winbindd_domain *domain)
 {
 	int i;
 
         for (i=0; i<lp_winbind_max_domain_connections(); i++) {
                 setup_child(domain, &domain->children[i],
-			    domain_dispatch_table,
                             "log.wb", domain->name);
 		domain->children[i].domain = domain;
 	}

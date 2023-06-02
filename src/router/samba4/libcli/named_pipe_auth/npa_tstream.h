@@ -20,16 +20,20 @@
 #ifndef NPA_TSTREAM_H
 #define NPA_TSTREAM_H
 
+#include <replace.h>
+#include "librpc/rpc/rpc_common.h"
+
 struct tevent_req;
 struct tevent_context;
 struct auth_session_info_transport;
 struct tsocket_address;
-struct named_pipe_auth_req_info4;
+struct named_pipe_auth_req_info7;
 
 struct tevent_req *tstream_npa_connect_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    const char *directory,
 					    const char *npipe,
+					    enum dcerpc_transport_t transport,
 					    const struct tsocket_address *remote_client_addr,
 					    const char *remote_client_name_in,
 					    const struct tsocket_address *local_server_addr,
@@ -110,7 +114,8 @@ int _tstream_npa_accept_existing_recv(
 	int *perrno,
 	TALLOC_CTX *mem_ctx,
 	struct tstream_context **stream,
-	struct named_pipe_auth_req_info4 **info4,
+	struct named_pipe_auth_req_info7 **info7,
+	enum dcerpc_transport_t *transport,
 	struct tsocket_address **remote_client_addr,
 	char **_remote_client_name,
 	struct tsocket_address **local_server_addr,
@@ -120,6 +125,7 @@ int _tstream_npa_accept_existing_recv(
 #define tstream_npa_accept_existing_recv(req, perrno, \
 					 mem_ctx, stream, \
 					 info4, \
+					 transport, \
 					 remote_client_addr, \
 					 remote_client_name,  \
 					 local_server_addr, \
@@ -128,21 +134,12 @@ int _tstream_npa_accept_existing_recv(
 	_tstream_npa_accept_existing_recv(req, perrno, \
 					  mem_ctx, stream, \
 					  info4, \
+					  transport, \
 					  remote_client_addr, \
 					  remote_client_name,  \
 					  local_server_addr, \
 					  local_server_name, \
 					  session_info, \
 					  __location__)
-
-int _tstream_npa_socketpair(uint16_t file_type,
-			    TALLOC_CTX *mem_ctx1,
-			    struct tstream_context **pstream1,
-			    TALLOC_CTX *mem_ctx2,
-			    struct tstream_context **pstream2,
-			    const char *location);
-#define tstream_npa_socketpair(ft, mem1, stream1, mem2, stream2) \
-	_tstream_npa_socketpair(ft, mem1, stream1, mem2, stream2, \
-				__location__)
 
 #endif /* NPA_TSTREAM_H */

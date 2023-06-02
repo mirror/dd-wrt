@@ -153,41 +153,15 @@ static void smbd_smb2_request_close_done(struct tevent_req *subreq)
 
 static void setup_close_full_information(connection_struct *conn,
 				struct smb_filename *smb_fname,
-				bool posix_open,
 				struct timespec *out_creation_ts,
 				struct timespec *out_last_access_ts,
 				struct timespec *out_last_write_ts,
 				struct timespec *out_change_ts,
 				uint16_t *out_flags,
 				uint64_t *out_allocation_size,
-				uint64_t *out_end_of_file,
-				uint32_t *out_file_attributes)
+				uint64_t *out_end_of_file)
 {
-	NTSTATUS status;
-	int ret;
-
-	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
-	if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND) &&
-	    (smb_fname->flags & SMB_FILENAME_POSIX_PATH) &&
-	    S_ISLNK(smb_fname->st.st_ex_mode))
-	{
-		status = NT_STATUS_OK;
-	}
-	if (!NT_STATUS_IS_OK(status)) {
-		return;
-	}
-
-	if (posix_open) {
-		ret = SMB_VFS_LSTAT(conn, smb_fname);
-	} else {
-		ret = SMB_VFS_STAT(conn, smb_fname);
-	}
-	if (ret != 0) {
-		return;
-	}
-
 	*out_flags = SMB2_CLOSE_FLAGS_FULL_INFORMATION;
-	*out_file_attributes = fdos_mode(smb_fname->fsp);
 	*out_last_write_ts = smb_fname->st.st_ex_mtime;
 	*out_last_access_ts = smb_fname->st.st_ex_atime;
 	*out_creation_ts = get_create_timespec(conn, NULL, smb_fname);
@@ -199,7 +173,7 @@ static void setup_close_full_information(connection_struct *conn,
 		dos_filetime_timespec(out_last_access_ts);
 		dos_filetime_timespec(out_change_ts);
 	}
-	if (!(*out_file_attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+	if (!S_ISDIR(smb_fname->st.st_ex_mode)) {
 		*out_end_of_file = get_file_size_stat(&smb_fname->st);
 	}
 
@@ -207,7 +181,7 @@ static void setup_close_full_information(connection_struct *conn,
 }
 
 static NTSTATUS smbd_smb2_close(struct smbd_smb2_request *req,
-				struct files_struct *fsp,
+				struct files_struct **_fsp,
 				uint16_t in_flags,
 				uint16_t *out_flags,
 				struct timespec *out_creation_ts,
@@ -221,12 +195,8 @@ static NTSTATUS smbd_smb2_close(struct smbd_smb2_request *req,
 	NTSTATUS status;
 	struct smb_request *smbreq;
 	connection_struct *conn = req->tcon->compat;
+	struct files_struct *fsp = *_fsp;
 	struct smb_filename *smb_fname = NULL;
-	uint64_t allocation_size = 0;
-	uint64_t file_size = 0;
-	uint32_t dos_attrs = 0;
-	uint16_t flags = 0;
-	bool posix_open = false;
 
 	*out_creation_ts = (struct timespec){0, SAMBA_UTIME_OMIT};
 	*out_last_access_ts = (struct timespec){0, SAMBA_UTIME_OMIT};
@@ -246,35 +216,12 @@ static NTSTATUS smbd_smb2_close(struct smbd_smb2_request *req,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	posix_open = (fsp->posix_flags & FSP_POSIX_FLAGS_OPEN);
-	smb_fname = cp_smb_filename(talloc_tos(), fsp->fsp_name);
-	if (smb_fname == NULL) {
-		return NT_STATUS_NO_MEMORY;
+	if (in_flags & SMB2_CLOSE_FLAGS_FULL_INFORMATION) {
+		*out_file_attributes = fdos_mode(fsp);
+		fsp->fsp_flags.fstat_before_close = true;
 	}
 
-	if ((in_flags & SMB2_CLOSE_FLAGS_FULL_INFORMATION) &&
-	    (fsp->fsp_flags.initial_delete_on_close ||
-	     fsp->fsp_flags.delete_on_close))
-	{
-		/*
-		 * We might be deleting the file. Ensure we
-		 * return valid data from before the file got
-		 * removed.
-		 */
-		setup_close_full_information(conn,
-				smb_fname,
-				posix_open,
-				out_creation_ts,
-				out_last_access_ts,
-				out_last_write_ts,
-				out_change_ts,
-				&flags,
-				&allocation_size,
-				&file_size,
-				&dos_attrs);
-	}
-
-	status = close_file(smbreq, fsp, NORMAL_CLOSE);
+	status = close_file_smb(smbreq, fsp, NORMAL_CLOSE);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(5,("smbd_smb2_close: close_file[%s]: %s\n",
 			 smb_fname_str_dbg(smb_fname), nt_errstr(status)));
@@ -283,23 +230,18 @@ static NTSTATUS smbd_smb2_close(struct smbd_smb2_request *req,
 
 	if (in_flags & SMB2_CLOSE_FLAGS_FULL_INFORMATION) {
 		setup_close_full_information(conn,
-				smb_fname,
-				posix_open,
+				fsp->fsp_name,
 				out_creation_ts,
 				out_last_access_ts,
 				out_last_write_ts,
 				out_change_ts,
-				&flags,
-				&allocation_size,
-				&file_size,
-				&dos_attrs);
+				out_flags,
+				out_allocation_size,
+				out_end_of_file);
 	}
 
-	*out_flags = flags;
-	*out_allocation_size = allocation_size;
-	*out_end_of_file = file_size;
-	*out_file_attributes = dos_attrs;
-
+	file_free(smbreq, fsp);
+	*_fsp = fsp = NULL;
 	return NT_STATUS_OK;
 }
 
@@ -328,8 +270,17 @@ static struct tevent_req *smbd_smb2_close_send(TALLOC_CTX *mem_ctx,
 {
 	struct tevent_req *req;
 	struct smbd_smb2_close_state *state;
+	const char *fsp_name_str = NULL;
+	const char *fsp_fnum_str = NULL;
 	unsigned i;
 	NTSTATUS status;
+
+	if (CHECK_DEBUGLVL(DBGLVL_INFO)) {
+		fsp_name_str = fsp_str_dbg(in_fsp);
+		fsp_fnum_str = fsp_fnum_dbg(in_fsp);
+	}
+
+	DBG_DEBUG("%s - %s\n", fsp_name_str, fsp_fnum_str);
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct smbd_smb2_close_state);
@@ -391,7 +342,7 @@ static struct tevent_req *smbd_smb2_close_send(TALLOC_CTX *mem_ctx,
 	}
 
 	status = smbd_smb2_close(smb2req,
-				 state->in_fsp,
+				 &state->in_fsp,
 				 state->in_flags,
 				 &state->out_flags,
 				 &state->out_creation_ts,
@@ -402,6 +353,9 @@ static struct tevent_req *smbd_smb2_close_send(TALLOC_CTX *mem_ctx,
 				 &state->out_end_of_file,
 				 &state->out_file_attributes);
 	if (tevent_req_nterror(req, status)) {
+		DBG_INFO("%s - %s: close file failed: %s\n",
+			 fsp_name_str, fsp_fnum_str,
+			 nt_errstr(status));
 		return tevent_req_post(req, ev);
 	}
 
@@ -421,7 +375,7 @@ static void smbd_smb2_close_wait_done(struct tevent_req *subreq)
 	TALLOC_FREE(subreq);
 
 	status = smbd_smb2_close(state->smb2req,
-				 state->in_fsp,
+				 &state->in_fsp,
 				 state->in_flags,
 				 &state->out_flags,
 				 &state->out_creation_ts,

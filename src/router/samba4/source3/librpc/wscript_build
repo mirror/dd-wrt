@@ -9,8 +9,12 @@ bld.SAMBA3_SUBSYSTEM('NDR_LIBNETAPI',
 
 bld.SAMBA3_SUBSYSTEM('NDR_LIBNET_JOIN',
 	source='gen_ndr/ndr_libnet_join.c',
-	public_deps='ndr krb5samba NDR_ODJ'
+	public_deps='ndr krb5samba NDR_ODJ NDR_ADS'
 	)
+
+bld.SAMBA3_SUBSYSTEM("NDR_RPC_HOST",
+                     source='gen_ndr/ndr_rpc_host.c',
+                     public_deps='ndr')
 
 bld.SAMBA3_SUBSYSTEM('NDR_OPEN_FILES',
 	source='gen_ndr/ndr_open_files.c',
@@ -35,5 +39,10 @@ bld.SAMBA3_SUBSYSTEM('NDR_SECRETS',
 bld.SAMBA3_SUBSYSTEM('NDR_PERFCOUNT',
 	source='gen_ndr/ndr_perfcount.c',
 	public_deps='ndr'
+	)
+
+bld.SAMBA3_SUBSYSTEM('NDR_ADS',
+	source='gen_ndr/ndr_ads.c ndr/ndr_ads.c',
+	public_deps='ndr NDR_NBT'
 	)
 

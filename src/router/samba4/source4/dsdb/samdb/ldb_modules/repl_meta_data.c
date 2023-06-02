@@ -3525,7 +3525,7 @@ static int replmd_modify(struct ldb_module *module, struct ldb_request *req)
 			return ldb_module_operr(module);
 		}
 
-		if (req->op.mod.message->elements[0].flags != LDB_FLAG_MOD_REPLACE) {
+		if (LDB_FLAG_MOD_TYPE(req->op.mod.message->elements[0].flags) != LDB_FLAG_MOD_REPLACE) {
 			return ldb_module_operr(module);
 		}
 
@@ -3558,11 +3558,11 @@ static int replmd_modify(struct ldb_module *module, struct ldb_request *req)
 			return ldb_module_operr(module);
 		}
 
-		if (req->op.mod.message->elements[0].flags != LDB_FLAG_MOD_DELETE) {
+		if (LDB_FLAG_MOD_TYPE(req->op.mod.message->elements[0].flags) != LDB_FLAG_MOD_DELETE) {
 			return ldb_module_operr(module);
 		}
 
-		if (req->op.mod.message->elements[1].flags != LDB_FLAG_MOD_ADD) {
+		if (LDB_FLAG_MOD_TYPE(req->op.mod.message->elements[1].flags) != LDB_FLAG_MOD_ADD) {
 			return ldb_module_operr(module);
 		}
 
@@ -3645,7 +3645,7 @@ static int replmd_modify(struct ldb_module *module, struct ldb_request *req)
 			return ldb_module_operr(module);
 		}
 
-		if (msg->elements[0].flags != LDB_FLAG_MOD_ADD) {
+		if (LDB_FLAG_MOD_TYPE(msg->elements[0].flags) != LDB_FLAG_MOD_ADD) {
 			talloc_free(ac);
 			return ldb_module_operr(module);
 		}
@@ -3781,7 +3781,7 @@ static int replmd_rename(struct ldb_module *module, struct ldb_request *req)
 	struct ldb_request *down_req;
 
 	/* do not manipulate our control entries */
-	if (ldb_dn_is_special(req->op.mod.message->dn)) {
+	if (ldb_dn_is_special(req->op.rename.olddn)) {
 		return ldb_next_request(module, req);
 	}
 
@@ -3888,22 +3888,12 @@ static int replmd_rename_callback(struct ldb_request *req, struct ldb_reply *are
 				       ldb_operr(ldb));
 	}
 
-	if (ldb_msg_add_empty(msg, rdn_name, LDB_FLAG_MOD_REPLACE, NULL) != 0) {
+	if (ldb_msg_append_value(msg, rdn_name, rdn_val, LDB_FLAG_MOD_REPLACE) != 0) {
 		talloc_free(ares);
 		return ldb_module_done(ac->req, NULL, NULL,
 				       ldb_oom(ldb));
 	}
-	if (ldb_msg_add_value(msg, rdn_name, rdn_val, NULL) != 0) {
-		talloc_free(ares);
-		return ldb_module_done(ac->req, NULL, NULL,
-				       ldb_oom(ldb));
-	}
-	if (ldb_msg_add_empty(msg, "name", LDB_FLAG_MOD_REPLACE, NULL) != 0) {
-		talloc_free(ares);
-		return ldb_module_done(ac->req, NULL, NULL,
-				       ldb_oom(ldb));
-	}
-	if (ldb_msg_add_value(msg, "name", rdn_val, NULL) != 0) {
+	if (ldb_msg_append_value(msg, "name", rdn_val, LDB_FLAG_MOD_REPLACE) != 0) {
 		talloc_free(ares);
 		return ldb_module_done(ac->req, NULL, NULL,
 				       ldb_oom(ldb));
@@ -5161,16 +5151,10 @@ static int replmd_name_modify(struct replmd_replicated_request *ar,
 		goto failed;
 	}
 
-	if (ldb_msg_add_empty(msg, rdn_name, LDB_FLAG_MOD_REPLACE, NULL) != 0) {
+	if (ldb_msg_append_value(msg, rdn_name, rdn_val, LDB_FLAG_MOD_REPLACE) != 0) {
 		goto failed;
 	}
-	if (ldb_msg_add_value(msg, rdn_name, rdn_val, NULL) != 0) {
-		goto failed;
-	}
-	if (ldb_msg_add_empty(msg, "name", LDB_FLAG_MOD_REPLACE, NULL) != 0) {
-		goto failed;
-	}
-	if (ldb_msg_add_value(msg, "name", rdn_val, NULL) != 0) {
+	if (ldb_msg_append_value(msg, "name", rdn_val, LDB_FLAG_MOD_REPLACE) != 0) {
 		goto failed;
 	}
 
@@ -5724,6 +5708,9 @@ static int replmd_replicated_apply_add(struct replmd_replicated_request *ar)
 		ret = dsdb_module_schedule_sd_propagation(ar->module,
 							  ar->objs->partition_dn,
 							  ar->objs->objects[ar->index_current].object_guid,
+							  ar->objs->objects[ar->index_current].parent_guid ?
+							  *ar->objs->objects[ar->index_current].parent_guid :
+							  GUID_zero(),
 							  true);
 		if (ret != LDB_SUCCESS) {
 			return replmd_replicated_request_error(ar, ret);
@@ -6430,6 +6417,9 @@ static int replmd_replicated_apply_merge(struct replmd_replicated_request *ar)
 		ret = dsdb_module_schedule_sd_propagation(ar->module,
 							  ar->objs->partition_dn,
 							  ar->objs->objects[ar->index_current].object_guid,
+							  ar->objs->objects[ar->index_current].parent_guid ?
+							  *ar->objs->objects[ar->index_current].parent_guid :
+							  GUID_zero(),
 							  true);
 		if (ret != LDB_SUCCESS) {
 			return ldb_operr(ldb);
@@ -6450,6 +6440,9 @@ static int replmd_replicated_apply_merge(struct replmd_replicated_request *ar)
 		ret = dsdb_module_schedule_sd_propagation(ar->module,
 							  ar->objs->partition_dn,
 							  ar->objs->objects[ar->index_current].object_guid,
+							  ar->objs->objects[ar->index_current].parent_guid ?
+							  *ar->objs->objects[ar->index_current].parent_guid :
+							  GUID_zero(),
 							  false);
 		if (ret != LDB_SUCCESS) {
 			return ldb_operr(ldb);
@@ -7540,6 +7533,16 @@ static int replmd_allow_missing_target(struct ldb_module *module,
 						  source_dn,
 						  target_dn);
 	if (is_in_same_nc) {
+		/*
+		 * We allow the join.py code to point out that all
+		 * replication is completed, so failing now would just
+		 * trigger errors, rather than trigger a GET_TGT
+		 */
+		int *finished_full_join_ptr =
+			talloc_get_type(ldb_get_opaque(ldb,
+						       DSDB_FULL_JOIN_REPLICATION_COMPLETED_OPAQUE_NAME),
+					int);
+		bool finished_full_join = finished_full_join_ptr && *finished_full_join_ptr;
 
 		/*
 		 * if the target is already be up-to-date there's no point in
@@ -7547,7 +7550,8 @@ static int replmd_allow_missing_target(struct ldb_module *module,
 		 * on a one-way link was deleted. We ignore the link rather
 		 * than failing the replication cycle completely
 		 */
-		if (dsdb_repl_flags & DSDB_REPL_FLAG_TARGETS_UPTODATE) {
+		if (finished_full_join
+		    || dsdb_repl_flags & DSDB_REPL_FLAG_TARGETS_UPTODATE) {
 			*ignore_link = true;
 			DBG_WARNING("%s is %s "
 				    "but up to date. Ignoring link from %s\n",
@@ -8143,8 +8147,8 @@ static int replmd_process_linked_attribute(struct ldb_module *module,
 					   const struct dsdb_attribute *attr,
 					   struct la_entry *la_entry,
 					   struct ldb_request *parent,
-					   struct ldb_message_element *old_el,
 					   TALLOC_CTX *element_ctx,
+					   struct ldb_message_element *old_el,
 					   struct parsed_dn *pdn_list,
 					   replmd_link_changed *change)
 {

@@ -112,6 +112,28 @@ static struct tevent_req *mds_es_connect_send(
 static int mds_es_connect_recv(struct tevent_req *req);
 static void mds_es_connected(struct tevent_req *subreq);
 static bool mds_es_next_search_trigger(struct mds_es_ctx *mds_es_ctx);
+static void mds_es_search_set_pending(struct sl_es_search *s);
+static void mds_es_search_unset_pending(struct sl_es_search *s);
+
+static int mds_es_ctx_destructor(struct mds_es_ctx *mds_es_ctx)
+{
+	struct sl_es_search *s = mds_es_ctx->searches;
+
+	/*
+	 * The per tree-connect state mds_es_ctx (a child of mds_ctx) is about
+	 * to go away and has already freed all waiting searches. If there's a
+	 * search remaining that's when the search is already active. Reset the
+	 * mds_es_ctx pointer, so we can detect this when the search completes.
+	 */
+
+	if (s == NULL) {
+		return 0;
+	}
+
+	s->mds_es_ctx = NULL;
+
+	return 0;
+}
 
 static bool mds_es_connect(struct mds_ctx *mds_ctx)
 {
@@ -130,6 +152,7 @@ static bool mds_es_connect(struct mds_ctx *mds_ctx)
 	};
 
 	mds_ctx->backend_private = mds_es_ctx;
+	talloc_set_destructor(mds_es_ctx, mds_es_ctx_destructor);
 
 	subreq = mds_es_connect_send(
 			mds_es_ctx,
@@ -347,6 +370,9 @@ static void mds_es_reconnect_on_error(struct sl_es_search *s)
 
 static int search_destructor(struct sl_es_search *s)
 {
+	if (s->mds_es_ctx == NULL) {
+		return 0;
+	}
 	DLIST_REMOVE(s->mds_es_ctx->searches, s);
 	return 0;
 }
@@ -426,6 +452,7 @@ static bool mds_es_next_search_trigger(struct mds_es_ctx *mds_es_ctx)
 		return false;
 	}
 	tevent_req_set_callback(subreq, mds_es_search_done, s);
+	mds_es_search_set_pending(s);
 	return true;
 }
 
@@ -440,6 +467,16 @@ static void mds_es_search_done(struct tevent_req *subreq)
 
 	DBG_DEBUG("Search done for search [%p]\n", s);
 
+	mds_es_search_unset_pending(s);
+
+	if (mds_es_ctx == NULL) {
+		/*
+		 * Search connection closed by the user while s was pending.
+		 */
+		TALLOC_FREE(s);
+		return;
+	}
+
 	DLIST_REMOVE(mds_es_ctx->searches, s);
 
 	ret = mds_es_search_recv(subreq);
@@ -451,9 +488,8 @@ static void mds_es_search_done(struct tevent_req *subreq)
 
 	if (slq == NULL) {
 		/*
-		 * Closed by the user. This is the only place where we free "s"
-		 * explicitly because the talloc parent slq is already gone.
-		 * Everywhere else we rely on the destructor of slq to free s"."
+		 * Closed by the user. Explicitly free "s" here because the
+		 * talloc parent slq is already gone.
 		 */
 		TALLOC_FREE(s);
 		goto trigger;
@@ -528,7 +564,7 @@ static void mds_es_search_unset_pending(struct sl_es_search *s)
 	}
 
 	s->pending = false;
-	talloc_set_destructor(s, NULL);
+	talloc_set_destructor(s, search_destructor);
 }
 
 static struct tevent_req *mds_es_search_send(TALLOC_CTX *mem_ctx,
@@ -628,7 +664,6 @@ static struct tevent_req *mds_es_search_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
-	mds_es_search_set_pending(s);
 	tevent_req_set_callback(subreq, mds_es_search_http_send_done, req);
 	return req;
 }
@@ -650,9 +685,8 @@ static void mds_es_search_http_send_done(struct tevent_req *subreq)
 		return;
 	}
 
-	if (state->s->mds_es_ctx->mds_ctx == NULL) {
-		mds_es_search_unset_pending(state->s);
-		tevent_req_error(req, ECANCELED);
+	if (state->s->mds_es_ctx == NULL || state->s->slq == NULL) {
+		tevent_req_done(req);
 		return;
 	}
 
@@ -679,14 +713,12 @@ static void mds_es_search_http_read_done(struct tevent_req *subreq)
 	json_t *match = NULL;
 	size_t i;
 	json_error_t error;
-	int hits;
+	size_t hits;
 	NTSTATUS status;
 	int ret;
 	bool ok;
 
 	DBG_DEBUG("Got response for search [%p]\n", s);
-
-	mds_es_search_unset_pending(s);
 
 	status = http_read_response_recv(subreq, state, &state->http_response);
 	TALLOC_FREE(subreq);
@@ -696,12 +728,8 @@ static void mds_es_search_http_read_done(struct tevent_req *subreq)
 		return;
 	}
 
-	if (slq == NULL) {
+	if (slq == NULL || s->mds_es_ctx == NULL) {
 		tevent_req_done(req);
-		return;
-	}
-	if (s->mds_es_ctx->mds_ctx == NULL) {
-		tevent_req_error(req, ECANCELED);
 		return;
 	}
 
@@ -770,7 +798,7 @@ static void mds_es_search_http_read_done(struct tevent_req *subreq)
 		DBG_ERR("Hu?! No results?\n");
 		goto fail;
 	}
-	DBG_DEBUG("Hits: %d\n", hits);
+	DBG_DEBUG("Hits: %zu\n", hits);
 
 	for (i = 0; i < hits; i++) {
 		const char *path = NULL;

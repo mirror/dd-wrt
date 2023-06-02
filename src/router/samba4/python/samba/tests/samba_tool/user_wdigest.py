@@ -18,29 +18,12 @@
 #
 
 import os
-import time
-import base64
-import ldb
 import samba
 from samba.tests.samba_tool.base import SambaToolCmdTest
-from samba import (
-        credentials,
-        nttime2unix,
-        dsdb
-        )
-from samba.ndr import ndr_unpack
-from samba.dcerpc import drsblobs
 from hashlib import md5
-import random
-import string
 
 
 USER_NAME = "WdigestTestUser"
-# Create a random 32 character password, containing only letters and
-# digits to avoid issues when used on the command line.
-USER_PASS = ''.join(random.choice(string.ascii_uppercase +
-                                  string.ascii_lowercase +
-                                  string.digits) for _ in range(32))
 
 # Calculate the MD5 password digest from the supplied user, realm and password
 #
@@ -77,19 +60,23 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
             expression="ncName=%s" % self.samdb.get_default_basedn(),
             attrs=["nETBIOSName"])
         self.netbios_domain = str(res[0]["nETBIOSName"][0])
-        self.runsubcmd("user",
-                       "create",
-                       USER_NAME,
-                       USER_PASS,
-                       "-H",
-                       "ldap://%s" % os.environ["DC_SERVER"],
-                       "-U%s%%%s" % (
-                            os.environ["DC_USERNAME"],
-                            os.environ["DC_PASSWORD"]))
+        self.password = self.random_password()
+        result, out, err = self.runsubcmd("user",
+                                          "create",
+                                          USER_NAME,
+                                          self.password)
+        self.assertCmdSuccess(result,
+                              out,
+                              err,
+                              "Ensure user is created")
 
     def tearDown(self):
         super(UserCmdWdigestTestCase, self).tearDown()
-        self.runsubcmd("user", "delete", USER_NAME)
+        result, out, err = self.runsubcmd("user", "delete", USER_NAME)
+        self.assertCmdSuccess(result,
+                              out,
+                              err,
+                              "Ensure user is deleted")
 
     def _testWDigest(self, attribute, expected, missing=False):
 
@@ -133,7 +120,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest01"
         expected = calc_digest(USER_NAME,
                                self.netbios_domain,
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash02 MD5(LOWER(sAMAccountName),
@@ -144,7 +131,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest02"
         expected = calc_digest(USER_NAME.lower(),
                                self.netbios_domain.lower(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash03 MD5(UPPER(sAMAccountName),
@@ -155,7 +142,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest03"
         expected = calc_digest(USER_NAME.upper(),
                                self.netbios_domain.upper(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash04 MD5(sAMAccountName,
@@ -166,7 +153,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest04"
         expected = calc_digest(USER_NAME,
                                self.netbios_domain.upper(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash05 MD5(sAMAccountName,
@@ -177,7 +164,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest05"
         expected = calc_digest(USER_NAME,
                                self.netbios_domain.lower(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash06 MD5(UPPER(sAMAccountName),
@@ -188,7 +175,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest06"
         expected = calc_digest(USER_NAME.upper(),
                                self.netbios_domain.lower(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash07 MD5(LOWER(sAMAccountName),
@@ -199,7 +186,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest07"
         expected = calc_digest(USER_NAME.lower(),
                                self.netbios_domain.upper(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash08 MD5(sAMAccountName,
@@ -214,7 +201,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest08"
         expected = calc_digest(USER_NAME,
                                self.dns_domain,
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash09 MD5(LOWER(sAMAccountName),
@@ -225,7 +212,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest09"
         expected = calc_digest(USER_NAME.lower(),
                                self.dns_domain.lower(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash10 MD5(UPPER(sAMAccountName),
@@ -236,7 +223,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest10"
         expected = calc_digest(USER_NAME.upper(),
                                self.dns_domain.upper(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash11 MD5(sAMAccountName,
@@ -247,7 +234,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest11"
         expected = calc_digest(USER_NAME,
                                self.dns_domain.upper(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash12 MD5(sAMAccountName,
@@ -258,7 +245,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest12"
         expected = calc_digest(USER_NAME,
                                self.dns_domain.lower(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash13 MD5(UPPER(sAMAccountName),
@@ -269,7 +256,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest13"
         expected = calc_digest(USER_NAME.upper(),
                                self.dns_domain.lower(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash14 MD5(LOWER(sAMAccountName),
@@ -281,7 +268,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest14"
         expected = calc_digest(USER_NAME.lower(),
                                self.dns_domain.upper(),
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash15 MD5(userPrincipalName,
@@ -292,7 +279,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s@%s" % (USER_NAME, self.dns_domain)
         expected = calc_digest(name,
                                "",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash16 MD5(LOWER(userPrincipalName),
@@ -303,7 +290,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s@%s" % (USER_NAME.lower(), self.dns_domain.lower())
         expected = calc_digest(name,
                                "",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash17 MD5(UPPER(userPrincipalName),
@@ -314,7 +301,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s@%s" % (USER_NAME.upper(), self.dns_domain.upper())
         expected = calc_digest(name,
                                "",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash18 MD5(NETBIOSDomainName\sAMAccountName,
@@ -325,7 +312,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s\\%s" % (self.netbios_domain, USER_NAME)
         expected = calc_digest(name,
                                "",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash19 MD5(LOWER(NETBIOSDomainName\sAMAccountName),
@@ -336,7 +323,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s\\%s" % (self.netbios_domain, USER_NAME)
         expected = calc_digest(name.lower(),
                                "",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash20 MD5(UPPER(NETBIOSDomainName\sAMAccountName),
@@ -347,7 +334,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s\\%s" % (self.netbios_domain, USER_NAME)
         expected = calc_digest(name.upper(),
                                "",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash21 MD5(sAMAccountName,
@@ -358,7 +345,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest21"
         expected = calc_digest(USER_NAME,
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash22 MD5(LOWER(sAMAccountName),
@@ -369,7 +356,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest22"
         expected = calc_digest(USER_NAME.lower(),
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash23 MD5(UPPER(sAMAccountName),
@@ -380,7 +367,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         attribute = "virtualWDigest23"
         expected = calc_digest(USER_NAME.upper(),
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash24  MD5(userPrincipalName),
@@ -392,7 +379,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s@%s" % (USER_NAME, self.dns_domain)
         expected = calc_digest(name,
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash25 MD5(LOWER(userPrincipalName),
@@ -404,7 +391,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s@%s" % (USER_NAME, self.dns_domain.lower())
         expected = calc_digest(name.lower(),
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash26 MD5(UPPER(userPrincipalName),
@@ -416,7 +403,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s@%s" % (USER_NAME, self.dns_domain.lower())
         expected = calc_digest(name.upper(),
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
     # Hash27 MD5(NETBIOSDomainName\sAMAccountName,
     #            "Digest",
@@ -428,7 +415,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s\\%s" % (self.netbios_domain, USER_NAME)
         expected = calc_digest(name,
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash28 MD5(LOWER(NETBIOSDomainName\sAMAccountName),
@@ -440,7 +427,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s\\%s" % (self.netbios_domain.lower(), USER_NAME.lower())
         expected = calc_digest(name,
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     # Hash29 MD5(UPPER(NETBIOSDomainName\sAMAccountName),
@@ -452,7 +439,7 @@ class UserCmdWdigestTestCase(SambaToolCmdTest):
         name = "%s\\%s" % (self.netbios_domain.upper(), USER_NAME.upper())
         expected = calc_digest(name,
                                "Digest",
-                               USER_PASS)
+                               self.password)
         self._testWDigest(attribute, expected)
 
     def test_Wdigest30(self):

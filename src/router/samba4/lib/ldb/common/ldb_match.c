@@ -34,14 +34,15 @@
 
 #include "ldb_private.h"
 #include "dlinklist.h"
+#include "ldb_handlers.h"
 
 /*
   check if the scope matches in a search result
 */
-static int ldb_match_scope(struct ldb_context *ldb,
-			   struct ldb_dn *base,
-			   struct ldb_dn *dn,
-			   enum ldb_scope scope)
+int ldb_match_scope(struct ldb_context *ldb,
+		    struct ldb_dn *base,
+		    struct ldb_dn *dn,
+		    enum ldb_scope scope)
 {
 	int ret = 0;
 
@@ -259,20 +260,42 @@ static int ldb_wildcard_compare(struct ldb_context *ldb,
 		return LDB_SUCCESS;
 	}
 
-	if (a->syntax->canonicalise_fn(ldb, ldb, &value, &val) != 0) {
-		return LDB_ERR_INVALID_ATTRIBUTE_SYNTAX;
+	/* No need to just copy this value for a binary match */
+	if (a->syntax->canonicalise_fn != ldb_handler_copy) {
+		if (a->syntax->canonicalise_fn(ldb, ldb, &value, &val) != 0) {
+			return LDB_ERR_INVALID_ATTRIBUTE_SYNTAX;
+		}
+
+		/*
+		 * Only set save_p if we allocate (call
+		 * a->syntax->canonicalise_fn()), as we
+		 * talloc_free(save_p) below to clean up
+		 */
+		save_p = val.data;
+	} else {
+		val = value;
 	}
 
-	save_p = val.data;
 	cnk.data = NULL;
 
 	if ( ! tree->u.substring.start_with_wildcard ) {
+		uint8_t *cnk_to_free = NULL;
 
 		chunk = tree->u.substring.chunks[c];
-		if (a->syntax->canonicalise_fn(ldb, ldb, chunk, &cnk) != 0) goto mismatch;
+		/* No need to just copy this value for a binary match */
+		if (a->syntax->canonicalise_fn != ldb_handler_copy) {
+			if (a->syntax->canonicalise_fn(ldb, ldb, chunk, &cnk) != 0) {
+				goto mismatch;
+			}
+
+			cnk_to_free = cnk.data;
+		} else {
+			cnk = *chunk;
+		}
 
 		/* This deals with wildcard prefix searches on binary attributes (eg objectGUID) */
 		if (cnk.length > val.length) {
+			TALLOC_FREE(cnk_to_free);
 			goto mismatch;
 		}
 		/*
@@ -280,32 +303,47 @@ static int ldb_wildcard_compare(struct ldb_context *ldb,
 		 * we can cope with this.
 		 */
 		if (cnk.length == 0) {
+			TALLOC_FREE(cnk_to_free);
 			goto mismatch;
 		}
 
-		if (memcmp((char *)val.data, (char *)cnk.data, cnk.length) != 0) goto mismatch;
+		if (memcmp((char *)val.data, (char *)cnk.data, cnk.length) != 0) {
+			TALLOC_FREE(cnk_to_free);
+			goto mismatch;
+		}
+
 		val.length -= cnk.length;
 		val.data += cnk.length;
 		c++;
-		talloc_free(cnk.data);
+		TALLOC_FREE(cnk_to_free);
 		cnk.data = NULL;
 	}
 
 	while (tree->u.substring.chunks[c]) {
 		uint8_t *p;
+		uint8_t *cnk_to_free = NULL;
 
 		chunk = tree->u.substring.chunks[c];
-		if(a->syntax->canonicalise_fn(ldb, ldb, chunk, &cnk) != 0) {
-			goto mismatch;
+		/* No need to just copy this value for a binary match */
+		if (a->syntax->canonicalise_fn != ldb_handler_copy) {
+			if (a->syntax->canonicalise_fn(ldb, ldb, chunk, &cnk) != 0) {
+				goto mismatch;
+			}
+
+			cnk_to_free = cnk.data;
+		} else {
+			cnk = *chunk;
 		}
 		/*
 		 * Empty strings are returned as length 0. Ensure
 		 * we can cope with this.
 		 */
 		if (cnk.length == 0) {
+			TALLOC_FREE(cnk_to_free);
 			goto mismatch;
 		}
 		if (cnk.length > val.length) {
+			TALLOC_FREE(cnk_to_free);
 			goto mismatch;
 		}
 
@@ -320,6 +358,8 @@ static int ldb_wildcard_compare(struct ldb_context *ldb,
 			cmp = memcmp(p,
 				     cnk.data,
 				     cnk.length);
+			TALLOC_FREE(cnk_to_free);
+
 			if (cmp != 0) {
 				goto mismatch;
 			}
@@ -331,15 +371,16 @@ static int ldb_wildcard_compare(struct ldb_context *ldb,
 			p = memmem((const void *)val.data, val.length,
 				   (const void *)cnk.data, cnk.length);
 			if (p == NULL) {
+				TALLOC_FREE(cnk_to_free);
 				goto mismatch;
 			}
 			/* move val to the end of the match */
 			p += cnk.length;
 			val.length -= (p - val.data);
 			val.data = p;
+			TALLOC_FREE(cnk_to_free);
 		}
 		c++;
-		TALLOC_FREE(cnk.data);
 	}
 
 	talloc_free(save_p);
@@ -349,7 +390,6 @@ static int ldb_wildcard_compare(struct ldb_context *ldb,
 mismatch:
 	*matched = false;
 	talloc_free(save_p);
-	talloc_free(cnk.data);
 	return LDB_SUCCESS;
 }
 
@@ -531,6 +571,26 @@ static int ldb_match_extended(struct ldb_context *ldb,
 			      &tree->u.extended.value, matched);
 }
 
+static bool ldb_must_suppress_match(const struct ldb_message *msg,
+				    const struct ldb_parse_tree *tree)
+{
+	const char *attr = NULL;
+	struct ldb_message_element *el = NULL;
+
+	attr = ldb_parse_tree_get_attr(tree);
+	if (attr == NULL) {
+		return false;
+	}
+
+	/* find the message element */
+	el = ldb_msg_find_element(msg, attr);
+	if (el == NULL) {
+		return false;
+	}
+
+	return ldb_msg_element_is_inaccessible(el);
+}
+
 /*
   Check if a particular message will match the given filter
 
@@ -553,6 +613,17 @@ int ldb_match_message(struct ldb_context *ldb,
 	if (scope != LDB_SCOPE_BASE && ldb_dn_is_special(msg->dn)) {
 		/* don't match special records except on base searches */
 		return LDB_SUCCESS;
+	}
+
+	/*
+	 * Suppress matches on confidential attributes (handled
+	 * manually in extended matches as these can do custom things
+	 * like read other parts of the DB or other attributes).
+	 */
+	if (tree->operation != LDB_OP_EXTENDED) {
+		if (ldb_must_suppress_match(msg, tree)) {
+			return LDB_SUCCESS;
+		}
 	}
 
 	switch (tree->operation) {
@@ -741,3 +812,15 @@ int ldb_register_extended_match_rule(struct ldb_context *ldb,
 	return LDB_SUCCESS;
 }
 
+int ldb_register_redact_callback(struct ldb_context *ldb,
+				 ldb_redact_fn redact_fn,
+				 struct ldb_module *module)
+{
+	if (ldb->redact.callback != NULL) {
+		return LDB_ERR_ENTRY_ALREADY_EXISTS;
+	}
+
+	ldb->redact.callback = redact_fn;
+	ldb->redact.module = module;
+	return LDB_SUCCESS;
+}

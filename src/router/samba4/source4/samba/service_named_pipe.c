@@ -88,6 +88,7 @@ static void named_pipe_accept_done(struct tevent_req *subreq)
 	struct named_pipe_socket *pipe_sock =
 				talloc_get_type(conn->private_data,
 						struct named_pipe_socket);
+	enum dcerpc_transport_t transport;
 	struct tsocket_address *remote_client_addr;
 	char *remote_client_name;
 	struct tsocket_address *local_server_addr;
@@ -107,6 +108,7 @@ static void named_pipe_accept_done(struct tevent_req *subreq)
 	ret = tstream_npa_accept_existing_recv(subreq, &error, tmp_ctx,
 					       &conn->tstream,
 					       NULL,
+					       &transport,
 					       &remote_client_addr,
 					       &remote_client_name,
 					       &local_server_addr,
@@ -135,6 +137,30 @@ static void named_pipe_accept_done(struct tevent_req *subreq)
 							      conn->lp_ctx,
 							      &reason);
 	if (!conn->session_info) {
+		goto out;
+	}
+
+	if (transport == NCACN_NP) {
+		if (security_token_is_system(conn->session_info->security_token)) {
+			reason = talloc_asprintf(
+				conn,
+				"System token not allowed on transport %d\n",
+				transport);
+			goto out;
+		}
+	} else if (transport == NCALRPC) {
+		/*
+		 * TODO:
+		 * we should somehow remember the given transport on
+		 * the connection, but that's a task for another day
+		 * as it's not trivial to do...
+		 */
+	} else {
+		reason = talloc_asprintf(
+			conn,
+			"Only allow NCACN_NP or NCALRPC transport on named pipes, "
+			"got %d\n",
+			(int)transport);
 		goto out;
 	}
 

@@ -1433,6 +1433,46 @@ bool dsdb_do_list_object(struct ldb_module *module,
 	return result;
 }
 
+bool dsdb_attribute_authz_on_ldap_add(struct ldb_module *module,
+				      TALLOC_CTX *mem_ctx,
+				      struct ldb_request *parent)
+{
+	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
+	bool result = false;
+	const struct ldb_val *hr_val = dsdb_module_find_dsheuristics(module,
+								     tmp_ctx,
+								     parent);
+	if (hr_val != NULL && hr_val->length >= DS_HR_ATTR_AUTHZ_ON_LDAP_ADD) {
+		uint8_t val = hr_val->data[DS_HR_ATTR_AUTHZ_ON_LDAP_ADD - 1];
+		if (val != '0' && val != '2') {
+			result = true;
+		}
+	}
+
+	talloc_free(tmp_ctx);
+	return result;
+}
+
+bool dsdb_block_owner_implicit_rights(struct ldb_module *module,
+				      TALLOC_CTX *mem_ctx,
+				      struct ldb_request *parent)
+{
+	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
+	bool result = false;
+	const struct ldb_val *hr_val = dsdb_module_find_dsheuristics(module,
+								     tmp_ctx,
+								     parent);
+	if (hr_val != NULL && hr_val->length >= DS_HR_BLOCK_OWNER_IMPLICIT_RIGHTS) {
+		uint8_t val = hr_val->data[DS_HR_BLOCK_OWNER_IMPLICIT_RIGHTS - 1];
+		if (val != '0' && val != '2') {
+			result = true;
+		}
+	}
+
+	talloc_free(tmp_ctx);
+	return result;
+}
+
 /*
   show the chain of requests, useful for debugging async requests
  */
@@ -1546,21 +1586,132 @@ int dsdb_get_expected_new_values(TALLOC_CTX *mem_ctx,
 
 	v = _el->values;
 
-	for (i = 0; i < val_count; i++) {
+	for (i = 0; i < msg->num_elements; i++) {
 		if (ldb_attr_cmp(msg->elements[i].name, attr_name) == 0) {
+			const struct ldb_message_element *tmp_el = &msg->elements[i];
 			if ((operation == LDB_MODIFY) &&
-			    (LDB_FLAG_MOD_TYPE(msg->elements[i].flags)
+			    (LDB_FLAG_MOD_TYPE(tmp_el->flags)
 						== LDB_FLAG_MOD_DELETE)) {
 				continue;
 			}
+			if (tmp_el->values == NULL || tmp_el->num_values == 0) {
+				continue;
+			}
 			memcpy(v,
-			       msg->elements[i].values,
-			       msg->elements[i].num_values);
-			v += msg->elements[i].num_values;
+			       tmp_el->values,
+			       tmp_el->num_values * sizeof(*v));
+			v += tmp_el->num_values;
 		}
 	}
 
 	*el = _el;
+	return LDB_SUCCESS;
+}
+
+
+/*
+ * Get the value of a single-valued attribute from an ADDed message. 'val' will only live as
+ * long as 'msg' and 'original_val' do, and must not be freed.
+ */
+int dsdb_msg_add_get_single_value(const struct ldb_message *msg,
+                                  const char *attr_name,
+                                  const struct ldb_val **val)
+{
+	const struct ldb_message_element *el = NULL;
+
+	/*
+	 * The ldb_msg_normalize() call in ldb_request() ensures that
+	 * there is at most one message element for each
+	 * attribute. Thus, we don't need a loop to deal with an
+	 * LDB_ADD.
+	 */
+	el = ldb_msg_find_element(msg, attr_name);
+	if (el == NULL) {
+		*val = NULL;
+		return LDB_SUCCESS;
+	}
+	if (el->num_values != 1) {
+		return LDB_ERR_CONSTRAINT_VIOLATION;
+	}
+
+	*val = &el->values[0];
+	return LDB_SUCCESS;
+}
+
+/*
+ * Get the value of a single-valued attribute after processing a
+ * message. 'operation' is either LDB_ADD or LDB_MODIFY. 'val' will only live as
+ * long as 'msg' and 'original_val' do, and must not be freed.
+ */
+int dsdb_msg_get_single_value(const struct ldb_message *msg,
+			      const char *attr_name,
+			      const struct ldb_val *original_val,
+			      const struct ldb_val **val,
+			      enum ldb_request_type operation)
+{
+	unsigned idx;
+
+	*val = NULL;
+
+	if (operation == LDB_ADD) {
+		if (original_val != NULL) {
+			/* This is an error on the caller's part. */
+			return LDB_ERR_CONSTRAINT_VIOLATION;
+		}
+		return dsdb_msg_add_get_single_value(msg, attr_name, val);
+	}
+
+	SMB_ASSERT(operation == LDB_MODIFY);
+
+	*val = original_val;
+
+	for (idx = 0; idx < msg->num_elements; ++idx) {
+		const struct ldb_message_element *el = &msg->elements[idx];
+
+		if (ldb_attr_cmp(el->name, attr_name) != 0) {
+			continue;
+		}
+
+		switch (el->flags & LDB_FLAG_MOD_MASK) {
+		case LDB_FLAG_MOD_ADD:
+			if (el->num_values != 1) {
+				return LDB_ERR_CONSTRAINT_VIOLATION;
+			}
+			if (*val != NULL) {
+				return LDB_ERR_CONSTRAINT_VIOLATION;
+			}
+
+			*val = &el->values[0];
+
+			break;
+
+		case LDB_FLAG_MOD_REPLACE:
+			if (el->num_values > 1) {
+				return LDB_ERR_CONSTRAINT_VIOLATION;
+			}
+
+			*val = el->num_values ? &el->values[0] : NULL;
+
+			break;
+
+		case LDB_FLAG_MOD_DELETE:
+			if (el->num_values > 1) {
+				return LDB_ERR_CONSTRAINT_VIOLATION;
+			}
+
+			/*
+			 * If a value was specified for the delete, we don't
+			 * bother checking it matches the value we currently
+			 * have. Any mismatch will be caught later (e.g. in
+			 * ldb_kv_modify_internal).
+			 */
+
+			*val = NULL;
+
+			break;
+		}
+	}
+
 	return LDB_SUCCESS;
 }
 
@@ -1605,6 +1756,44 @@ const struct dsdb_class *dsdb_get_structural_oc_from_msg(const struct dsdb_schem
 	}
 
 	return dsdb_get_last_structural_class(schema, oc_el);
+}
+
+/*
+  Get the parent class of an objectclass, or NULL if none exists.
+ */
+const struct dsdb_class *dsdb_get_parent_class(const struct dsdb_schema *schema,
+					       const struct dsdb_class *objectclass)
+{
+	if (ldb_attr_cmp(objectclass->lDAPDisplayName, "top") == 0) {
+		return NULL;
+	}
+
+	if (objectclass->subClassOf == NULL) {
+		return NULL;
+	}
+
+	return dsdb_class_by_lDAPDisplayName(schema, objectclass->subClassOf);
+}
+
+/*
+  Return true if 'struct_objectclass' is a subclass of 'other_objectclass'. The
+  two objectclasses must originate from the same schema, to allow for
+  pointer-based identity comparison.
+ */
+bool dsdb_is_subclass_of(const struct dsdb_schema *schema,
+			 const struct dsdb_class *struct_objectclass,
+			 const struct dsdb_class *other_objectclass)
+{
+	while (struct_objectclass != NULL) {
+		/* Pointer comparison can be used due to the same schema str. */
+		if (struct_objectclass == other_objectclass) {
+			return true;
+		}
+
+		struct_objectclass = dsdb_get_parent_class(schema, struct_objectclass);
+	}
+
+	return false;
 }
 
 /* Fix the DN so that the relative attribute names are in upper case so that the DN:

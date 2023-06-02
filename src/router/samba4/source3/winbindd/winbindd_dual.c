@@ -33,6 +33,7 @@
 #include "nsswitch/wb_reqtrans.h"
 #include "secrets.h"
 #include "../lib/util/select.h"
+#include "winbindd_traceid.h"
 #include "../libcli/security/security.h"
 #include "system/select.h"
 #include "messages.h"
@@ -43,6 +44,11 @@
 #include "passdb.h"
 #include "lib/util/string_wrappers.h"
 #include "lib/global_contexts.h"
+#include "idmap.h"
+#include "libcli/auth/netlogon_creds_cli.h"
+#include "../lib/util/pidfile.h"
+#include "librpc/gen_ndr/ndr_winbind_c.h"
+#include "lib/util/util_process.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -218,6 +224,8 @@ struct tevent_req *wb_child_request_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(state->request, req)) {
 		return tevent_req_post(req, ev);
 	}
+
+	state->request->traceid = debug_traceid_get();
 
 	if (request->extra_data.data != NULL) {
 		state->request->extra_data.data = talloc_memdup(
@@ -461,6 +469,7 @@ struct wb_domain_request_state {
 	struct winbindd_request *init_req;
 	struct winbindd_response *response;
 	struct tevent_req *pending_subreq;
+	struct wbint_InitConnection r;
 };
 
 static void wb_domain_request_cleanup(struct tevent_req *req,
@@ -569,13 +578,15 @@ static void wb_domain_request_trigger(struct tevent_req *req,
 
 	if (IS_DC || domain->primary || domain->internal) {
 		/* The primary domain has to find the DC name itself */
-		state->init_req->cmd = WINBINDD_INIT_CONNECTION;
-		fstrcpy(state->init_req->domain_name, domain->name);
-		state->init_req->data.init_conn.is_primary = domain->primary;
-		fstrcpy(state->init_req->data.init_conn.dcname, "");
+		state->r.in.dcname = talloc_strdup(state, "");
+		if (tevent_req_nomem(state->r.in.dcname, req)) {
+			return;
+		}
 
-		subreq = wb_child_request_send(state, state->ev, state->child,
-					       state->init_req);
+		subreq = dcerpc_wbint_InitConnection_r_send(state,
+						state->ev,
+						state->child->binding_handle,
+						&state->r);
 		if (tevent_req_nomem(subreq, req)) {
 			return;
 		}
@@ -627,16 +638,18 @@ static void wb_domain_request_gotdc(struct tevent_req *subreq)
 	while (dcname != NULL && *dcname == '\\') {
 		dcname++;
 	}
-	state->init_req->cmd = WINBINDD_INIT_CONNECTION;
-	fstrcpy(state->init_req->domain_name, state->domain->name);
-	state->init_req->data.init_conn.is_primary = False;
-	fstrcpy(state->init_req->data.init_conn.dcname,
-		dcname);
+
+	state->r.in.dcname = talloc_strdup(state, dcname);
+	if (tevent_req_nomem(state->r.in.dcname, req)) {
+		return;
+	}
 
 	TALLOC_FREE(dcinfo);
 
-	subreq = wb_child_request_send(state, state->ev, state->child,
-				       state->init_req);
+	subreq = dcerpc_wbint_InitConnection_r_send(state,
+						state->ev,
+						state->child->binding_handle,
+						&state->r);
 	if (tevent_req_nomem(subreq, req)) {
 		return;
 	}
@@ -650,51 +663,49 @@ static void wb_domain_request_initialized(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct wb_domain_request_state *state = tevent_req_data(
 		req, struct wb_domain_request_state);
-	struct winbindd_response *response;
-	int ret, err;
+	NTSTATUS status;
 
 	state->pending_subreq = NULL;
 
-	ret = wb_child_request_recv(subreq, talloc_tos(), &response, &err);
+	status = dcerpc_wbint_InitConnection_r_recv(subreq, state);
 	TALLOC_FREE(subreq);
-	if (ret == -1) {
-		tevent_req_error(req, err);
+	if (NT_STATUS_IS_ERR(status)) {
+		tevent_req_error(req, map_errno_from_nt_status(status));
 		return;
 	}
 
-	if (!string_to_sid(&state->domain->sid,
-			   response->data.domain_info.sid)) {
-		DEBUG(1,("init_child_recv: Could not convert sid %s "
-			"from string\n", response->data.domain_info.sid));
-		tevent_req_error(req, EINVAL);
+	status = state->r.out.result;
+	if (NT_STATUS_IS_ERR(status)) {
+		tevent_req_error(req, map_errno_from_nt_status(status));
 		return;
 	}
+
+	state->domain->sid = *state->r.out.sid;
 
 	talloc_free(state->domain->name);
-	state->domain->name = talloc_strdup(state->domain,
-					    response->data.domain_info.name);
+	state->domain->name = talloc_strdup(state->domain, *state->r.out.name);
 	if (state->domain->name == NULL) {
 		tevent_req_error(req, ENOMEM);
 		return;
 	}
 
-	if (response->data.domain_info.alt_name[0] != '\0') {
+	if (*state->r.out.alt_name != NULL &&
+	    strlen(*state->r.out.alt_name) > 0) {
 		talloc_free(state->domain->alt_name);
 
 		state->domain->alt_name = talloc_strdup(state->domain,
-				response->data.domain_info.alt_name);
+							*state->r.out.alt_name);
 		if (state->domain->alt_name == NULL) {
 			tevent_req_error(req, ENOMEM);
 			return;
 		}
 	}
 
-	state->domain->native_mode = response->data.domain_info.native_mode;
+	state->domain->native_mode =
+			(*state->r.out.flags & WB_DOMINFO_DOMAIN_NATIVE);
 	state->domain->active_directory =
-		response->data.domain_info.active_directory;
+			(*state->r.out.flags & WB_DOMINFO_DOMAIN_AD);
 	state->domain->initialized = true;
-
-	TALLOC_FREE(response);
 
 	subreq = wb_child_request_send(state, state->ev, state->child,
 				       state->request);
@@ -751,7 +762,6 @@ static void child_process_request(struct winbindd_child *child,
 				  struct winbindd_cli_state *state)
 {
 	struct winbindd_domain *domain = child->domain;
-	const struct winbindd_child_dispatch_table *table = child->table;
 
 	/* Free response data - we may be interrupted and receive another
 	   command before being able to send this data off. */
@@ -763,23 +773,10 @@ static void child_process_request(struct winbindd_child *child,
 	state->mem_ctx = talloc_tos();
 
 	/* Process command */
-
-	for (; table->name; table++) {
-		if (state->request->cmd == table->struct_cmd) {
-			DEBUG(10,("child_process_request: request fn %s\n",
-				  table->name));
-			state->response->result = table->struct_fn(domain, state);
-			return;
-		}
-	}
-
-	DEBUG(1, ("child_process_request: unknown request fn number %d\n",
-		  (int)state->request->cmd));
-	state->response->result = WINBINDD_ERROR;
+	state->response->result = winbindd_dual_ndrcmd(domain, state);
 }
 
 void setup_child(struct winbindd_domain *domain, struct winbindd_child *child,
-		 const struct winbindd_child_dispatch_table *table,
 		 const char *logprefix,
 		 const char *logname)
 {
@@ -820,13 +817,11 @@ void setup_child(struct winbindd_domain *domain, struct winbindd_child *child,
 	child->pid = 0;
 	child->sock = -1;
 	child->domain = domain;
-	child->table = table;
 	child->queue = tevent_queue_create(NULL, "winbind_child");
 	SMB_ASSERT(child->queue != NULL);
-	if (domain == NULL) {
-		child->binding_handle = wbint_binding_handle(NULL, NULL, child);
-		SMB_ASSERT(child->binding_handle != NULL);
-	}
+
+	child->binding_handle = wbint_binding_handle(NULL, NULL, child);
+	SMB_ASSERT(child->binding_handle != NULL);
 }
 
 struct winbind_child_died_state {
@@ -1535,7 +1530,7 @@ NTSTATUS winbindd_reinit_after_fork(const struct winbindd_child *myself,
 	status = reinit_after_fork(
 		global_messaging_context(),
 		global_event_context(),
-		true, NULL);
+		true);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0,("reinit_after_fork() failed\n"));
 		return status;
@@ -1622,6 +1617,7 @@ static void child_handler(struct tevent_context *ev, struct tevent_fd *fde,
 	struct child_handler_state *state =
 		(struct child_handler_state *)private_data;
 	NTSTATUS status;
+	uint64_t parent_traceid;
 
 	/* fetch a request from the main daemon */
 	status = child_read_request(state->cli.sock, state->cli.request);
@@ -1630,6 +1626,10 @@ static void child_handler(struct tevent_context *ev, struct tevent_fd *fde,
 		/* we lost contact with our parent */
 		_exit(0);
 	}
+
+	/* read traceid from request */
+	parent_traceid = state->cli.request->traceid;
+	debug_traceid_set(parent_traceid);
 
 	DEBUG(4,("child daemon request %d\n",
 		 (int)state->cli.request->cmd));
@@ -1744,6 +1744,11 @@ static bool fork_domain_child(struct winbindd_child *child)
 
 	status = winbindd_reinit_after_fork(child, child->logfilename);
 
+	/* setup callbacks again, one of them is removed in reinit_after_fork */
+	if (lp_winbind_debug_traceid()) {
+		winbind_debug_traceid_setup(global_event_context());
+	}
+
 	nwritten = sys_write(state.cli.sock, &status, sizeof(status));
 	if (nwritten != sizeof(status)) {
 		DEBUG(1, ("fork_domain_child: Could not write status: "
@@ -1758,9 +1763,9 @@ static bool fork_domain_child(struct winbindd_child *child)
 	}
 
 	if (child_domain != NULL) {
-		setproctitle("domain child [%s]", child_domain->name);
+		process_set_title("wb[%s]", "domain child [%s]", child_domain->name);
 	} else if (is_idmap_child(child)) {
-		setproctitle("idmap child");
+		process_set_title("wb-idmap", "idmap child");
 	}
 
 	/* Handle online/offline messages. */
@@ -1804,13 +1809,6 @@ static bool fork_domain_child(struct winbindd_child *child)
 				set_domain_online_request(primary_domain);
 			}
 		}
-	}
-
-	/*
-	 * We are in idmap child, bring primary domain online.
-	 */
-	if (is_idmap_child(child)) {
-		set_domain_online_request(primary_domain);
 	}
 
 	/* We might be in the idmap child...*/
@@ -1899,4 +1897,168 @@ void winbind_msg_ip_dropped_parent(struct messaging_context *msg_ctx,
 			       server_id, data);
 
 	forall_children(winbind_msg_relay_fn, &state);
+}
+
+void winbindd_terminate(bool is_parent)
+{
+	if (is_parent) {
+		/* When parent goes away we should
+		 * remove the socket file. Not so
+		 * when children terminate.
+		 */
+		char *path = NULL;
+
+		if (asprintf(&path, "%s/%s",
+			lp_winbindd_socket_directory(), WINBINDD_SOCKET_NAME) > 0) {
+			unlink(path);
+			SAFE_FREE(path);
+		}
+	}
+
+	idmap_close();
+
+	netlogon_creds_cli_close_global_db();
+
+#if 0
+	if (interactive) {
+		TALLOC_CTX *mem_ctx = talloc_init("end_description");
+		char *description = talloc_describe_all(mem_ctx);
+
+		DEBUG(3, ("tallocs left:\n%s\n", description));
+		talloc_destroy(mem_ctx);
+	}
+#endif
+
+	if (is_parent) {
+		pidfile_unlink(lp_pid_directory(), "winbindd");
+	}
+
+	exit(0);
+}
+
+static void winbindd_sig_term_handler(struct tevent_context *ev,
+				      struct tevent_signal *se,
+				      int signum,
+				      int count,
+				      void *siginfo,
+				      void *private_data)
+{
+	bool *p = talloc_get_type_abort(private_data, bool);
+	bool is_parent = *p;
+
+	TALLOC_FREE(p);
+
+	DEBUG(0,("Got sig[%d] terminate (is_parent=%d)\n",
+		 signum, is_parent));
+	winbindd_terminate(is_parent);
+}
+
+bool winbindd_setup_sig_term_handler(bool parent)
+{
+	struct tevent_signal *se;
+	bool *is_parent;
+
+	is_parent = talloc(global_event_context(), bool);
+	if (!is_parent) {
+		return false;
+	}
+
+	*is_parent = parent;
+
+	se = tevent_add_signal(global_event_context(),
+			       is_parent,
+			       SIGTERM, 0,
+			       winbindd_sig_term_handler,
+			       is_parent);
+	if (!se) {
+		DEBUG(0,("failed to setup SIGTERM handler"));
+		talloc_free(is_parent);
+		return false;
+	}
+
+	se = tevent_add_signal(global_event_context(),
+			       is_parent,
+			       SIGINT, 0,
+			       winbindd_sig_term_handler,
+			       is_parent);
+	if (!se) {
+		DEBUG(0,("failed to setup SIGINT handler"));
+		talloc_free(is_parent);
+		return false;
+	}
+
+	se = tevent_add_signal(global_event_context(),
+			       is_parent,
+			       SIGQUIT, 0,
+			       winbindd_sig_term_handler,
+			       is_parent);
+	if (!se) {
+		DEBUG(0,("failed to setup SIGINT handler"));
+		talloc_free(is_parent);
+		return false;
+	}
+
+	return true;
+}
+
+static void flush_caches_noinit(void)
+{
+	/*
+	 * We need to invalidate cached user list entries on a SIGHUP
+         * otherwise cached access denied errors due to restrict anonymous
+         * hang around until the sequence number changes.
+	 * NB
+	 * Skip uninitialized domains when flush cache.
+	 * If domain is not initialized, it means it is never
+	 * used or never become online. look, wcache_invalidate_cache()
+	 * -> get_cache() -> init_dc_connection(). It causes a lot of traffic
+	 * for unused domains and large traffic for primay domain's DC if there
+	 * are many domains..
+	 */
+
+	if (!wcache_invalidate_cache_noinit()) {
+		DEBUG(0, ("invalidating the cache failed; revalidate the cache\n"));
+		if (!winbindd_cache_validate_and_initialize()) {
+			exit(1);
+		}
+	}
+}
+
+static void winbindd_sig_hup_handler(struct tevent_context *ev,
+				     struct tevent_signal *se,
+				     int signum,
+				     int count,
+				     void *siginfo,
+				     void *private_data)
+{
+	const char *file = (const char *)private_data;
+
+	DEBUG(1,("Reloading services after SIGHUP\n"));
+	flush_caches_noinit();
+	winbindd_reload_services_file(file);
+}
+
+bool winbindd_setup_sig_hup_handler(const char *lfile)
+{
+	struct tevent_signal *se;
+	char *file = NULL;
+
+	if (lfile) {
+		file = talloc_strdup(global_event_context(),
+				     lfile);
+		if (!file) {
+			return false;
+		}
+	}
+
+	se = tevent_add_signal(global_event_context(),
+			       global_event_context(),
+			       SIGHUP, 0,
+			       winbindd_sig_hup_handler,
+			       file);
+	if (!se) {
+		return false;
+	}
+
+	return true;
 }

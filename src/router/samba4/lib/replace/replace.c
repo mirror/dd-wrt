@@ -33,6 +33,10 @@
 #include "system/locale.h"
 #include "system/wait.h"
 
+#ifdef HAVE_SYS_SYSCALL_H
+#include <sys/syscall.h>
+#endif
+
 #ifdef _WIN32
 #define mkdir(d,m) _mkdir(d)
 #endif
@@ -1058,9 +1062,6 @@ const char *rep_getprogname(void)
 #endif /* HAVE_GETPROGNAME */
 
 #ifndef HAVE_COPY_FILE_RANGE
-# ifdef HAVE_SYSCALL_COPY_FILE_RANGE
-# include <sys/syscall.h>
-# endif
 ssize_t rep_copy_file_range(int fd_in,
 			    loff_t *off_in,
 			    int fd_out,
@@ -1081,3 +1082,64 @@ ssize_t rep_copy_file_range(int fd_in,
 	return -1;
 }
 #endif /* HAVE_COPY_FILE_RANGE */
+
+#ifndef HAVE_OPENAT2
+
+/* fallback known wellknown __NR_openat2 values */
+#ifndef __NR_openat2
+# if defined(LINUX) && defined(HAVE_SYS_SYSCALL_H)
+#  if defined(__i386__)
+#   define __NR_openat2 437
+#  elif defined(__x86_64__) && defined(__LP64__)
+#   define __NR_openat2 437 /* 437 0x1B5 */
+#  elif defined(__x86_64__) && defined(__ILP32__)
+#   define __NR_openat2 1073742261 /* 1073742261 0x400001B5 */
+#  elif defined(__aarch64__)
+#   define __NR_openat2 437
+#  elif defined(__arm__)
+#   define __NR_openat2 437
+#  elif defined(__sparc__)
+#   define __NR_openat2 437
+#  endif
+# endif /* defined(LINUX) && defined(HAVE_SYS_SYSCALL_H) */
+#endif /* !__NR_openat2 */
+
+#ifdef DISABLE_OPATH
+/*
+ * systems without O_PATH also don't have openat2,
+ * so make sure we at a realistic combination.
+ */
+#undef __NR_openat2
+#endif /* DISABLE_OPATH */
+
+long rep_openat2(int dirfd, const char *pathname,
+		 struct open_how *how, size_t size)
+{
+#ifdef __NR_openat2
+#if _FILE_OFFSET_BITS == 64 && SIZE_MAX == 0xffffffffUL && defined(O_LARGEFILE)
+	struct open_how __how;
+
+#if defined(O_PATH) && ! defined(DISABLE_OPATH)
+	if ((how->flags & O_PATH) == 0)
+#endif
+	{
+		if (sizeof(__how) == size) {
+			__how = *how;
+
+			__how.flags |= O_LARGEFILE;
+			how = &__how;
+		}
+	}
+#endif
+
+	return syscall(__NR_openat2,
+		       dirfd,
+		       pathname,
+		       how,
+		       size);
+#else
+	errno = ENOSYS;
+	return -1;
+#endif
+}
+#endif /* !HAVE_OPENAT2 */

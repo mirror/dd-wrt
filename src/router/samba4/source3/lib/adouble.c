@@ -1208,12 +1208,6 @@ static bool ad_convert_xattr(vfs_handle_struct *handle,
 
 		DBG_DEBUG("stream_name: %s\n", smb_fname_str_dbg(stream_name));
 
-		rc = vfs_stat(handle->conn, stream_name);
-		if (rc == -1 && errno != ENOENT) {
-			ok = false;
-			goto fail;
-		}
-
 		status = openat_pathref_fsp(handle->conn->cwd_fsp, stream_name);
 		if (!NT_STATUS_IS_OK(status) &&
 		    !NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND))
@@ -1225,9 +1219,10 @@ static bool ad_convert_xattr(vfs_handle_struct *handle,
 		status = SMB_VFS_CREATE_FILE(
 			handle->conn,			/* conn */
 			NULL,				/* req */
+			NULL,				/* dirfsp */
 			stream_name,			/* fname */
 			FILE_GENERIC_WRITE,		/* access_mask */
-			FILE_SHARE_READ | FILE_SHARE_WRITE, /* share_access */
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, /* share_access */
 			FILE_OPEN_IF,			/* create_disposition */
 			0,				/* create_options */
 			0,				/* file_attributes */
@@ -1254,13 +1249,13 @@ static bool ad_convert_xattr(vfs_handle_struct *handle,
 		if (nwritten == -1) {
 			DBG_ERR("SMB_VFS_PWRITE failed\n");
 			saved_errno = errno;
-			close_file(NULL, fsp, ERROR_CLOSE);
+			close_file_free(NULL, &fsp, ERROR_CLOSE);
 			errno = saved_errno;
 			ok = false;
 			goto fail;
 		}
 
-		status = close_file(NULL, fsp, NORMAL_CLOSE);
+		status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		if (!NT_STATUS_IS_OK(status)) {
 			ok = false;
 			goto fail;
@@ -1307,7 +1302,6 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 	NTSTATUS status;
 	int saved_errno = 0;
 	int cmp;
-	int rc;
 
 	cmp = memcmp(ad->ad_filler, AD_FILLER_TAG_OSX, ADEDLEN_FILLER);
 	if (cmp != 0) {
@@ -1352,11 +1346,6 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 
 	DBG_DEBUG("stream_name: %s\n", smb_fname_str_dbg(stream_name));
 
-	rc = vfs_stat(handle->conn, stream_name);
-	if (rc == -1 && errno != ENOENT) {
-		return false;
-	}
-
 	status = openat_pathref_fsp(handle->conn->cwd_fsp, stream_name);
 	if (!NT_STATUS_IS_OK(status) &&
 	    !NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND))
@@ -1367,6 +1356,7 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,			/* conn */
 		NULL,				/* req */
+		NULL,				/* dirfsp */
 		stream_name,			/* fname */
 		FILE_GENERIC_WRITE,		/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE, /* share_access */
@@ -1395,12 +1385,12 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 	if (nwritten == -1) {
 		DBG_ERR("SMB_VFS_PWRITE failed\n");
 		saved_errno = errno;
-		close_file(NULL, fsp, ERROR_CLOSE);
+		close_file_free(NULL, &fsp, ERROR_CLOSE);
 		errno = saved_errno;
 		return false;
 	}
 
-	status = close_file(NULL, fsp, NORMAL_CLOSE);
+	status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 	if (!NT_STATUS_IS_OK(status)) {
 		return false;
 	}
@@ -1607,21 +1597,16 @@ static bool ad_unconvert_open_ad(TALLOC_CTX *mem_ctx,
 	NTSTATUS status;
 	int ret;
 
-	ret = vfs_stat(handle->conn, adpath);
-	if (ret == -1 && errno != ENOENT) {
+	status = openat_pathref_fsp(handle->conn->cwd_fsp, adpath);
+	if (!NT_STATUS_IS_OK(status) &&
+	    !NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
 		return false;
-	}
-
-	if (VALID_STAT(adpath->st)) {
-		status = openat_pathref_fsp(handle->conn->cwd_fsp, adpath);
-		if (!NT_STATUS_IS_OK(status)) {
-			return false;
-		}
 	}
 
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,
 		NULL,				/* req */
+		NULL,				/* dirfsp */
 		adpath,
 		FILE_READ_DATA|FILE_WRITE_DATA,
 		FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
@@ -1652,7 +1637,7 @@ static bool ad_unconvert_open_ad(TALLOC_CTX *mem_ctx,
 		if (ret != 0) {
 			DBG_ERR("SMB_VFS_FCHOWN [%s] failed: %s\n",
 				fsp_str_dbg(fsp), nt_errstr(status));
-			close_file(NULL, fsp, NORMAL_CLOSE);
+			close_file_free(NULL, &fsp, NORMAL_CLOSE);
 			return false;
 		}
 	}
@@ -1670,10 +1655,6 @@ static bool ad_unconvert_get_streams(struct vfs_handle_struct *handle,
 	files_struct *fsp = NULL;
 	NTSTATUS status;
 
-	if (!VALID_STAT(smb_fname->st)) {
-		return false;
-	}
-
 	status = openat_pathref_fsp(handle->conn->cwd_fsp, smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		return false;
@@ -1682,6 +1663,7 @@ static bool ad_unconvert_get_streams(struct vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,				/* conn */
 		NULL,					/* req */
+		NULL,					/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_READ_ATTRIBUTES,			/* access_mask */
 		(FILE_SHARE_READ | FILE_SHARE_WRITE |	/* share_access */
@@ -1710,14 +1692,14 @@ static bool ad_unconvert_get_streams(struct vfs_handle_struct *handle,
 				num_streams,
 				streams);
 	if (!NT_STATUS_IS_OK(status)) {
-		close_file(NULL, fsp, NORMAL_CLOSE);
+		close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		DBG_ERR("streaminfo on [%s] failed: %s\n",
 			smb_fname_str_dbg(smb_fname),
 			nt_errstr(status));
 		return false;
 	}
 
-	status = close_file(NULL, fsp, NORMAL_CLOSE);
+	status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("close_file [%s] failed: %s\n",
 			smb_fname_str_dbg(smb_fname),
@@ -1749,7 +1731,6 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 	size_t needed_size;
 	ssize_t nread;
 	NTSTATUS status;
-	int ret;
 	bool ok;
 
 	sname = synthetic_smb_fname(ad,
@@ -1769,13 +1750,6 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 
 	DBG_DEBUG("Collecting stream [%s]\n", smb_fname_str_dbg(sname));
 
-	ret = SMB_VFS_STAT(handle->conn, sname);
-	if (ret != 0) {
-		DBG_ERR("SMB_VFS_STAT [%s] failed\n", smb_fname_str_dbg(sname));
-		ok = false;
-		goto out;
-	}
-
 	status = openat_pathref_fsp(handle->conn->cwd_fsp, sname);
 	if (!NT_STATUS_IS_OK(status)) {
 		ok = false;
@@ -1785,6 +1759,7 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,
 		NULL,				/* req */
+		NULL,				/* dirfsp */
 		sname,
 		FILE_READ_DATA|DELETE_ACCESS,
 		FILE_SHARE_READ,
@@ -1975,7 +1950,7 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 out:
 	TALLOC_FREE(sname);
 	if (fsp != NULL) {
-		status = close_file(NULL, fsp, NORMAL_CLOSE);
+		status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		if (!NT_STATUS_IS_OK(status)) {
 			DBG_ERR("close_file [%s] failed: %s\n",
 				smb_fname_str_dbg(smb_fname),
@@ -2117,9 +2092,9 @@ bool ad_unconvert(TALLOC_CTX *mem_ctx,
 
 out:
 	if (fsp != NULL) {
-		status = close_file(NULL, fsp, NORMAL_CLOSE);
+		status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		if (!NT_STATUS_IS_OK(status)) {
-			DBG_ERR("close_file [%s] failed: %s\n",
+			DBG_ERR("close_file_free() [%s] failed: %s\n",
 				smb_fname_str_dbg(smb_fname),
 				nt_errstr(status));
 			ok = false;
@@ -2143,9 +2118,7 @@ static ssize_t ad_read_meta(vfs_handle_struct *handle,
 
 	DEBUG(10, ("reading meta xattr for %s\n", smb_fname->base_name));
 
-	if (fsp->base_fsp != NULL) {
-		fsp = fsp->base_fsp;
-	}
+	fsp = metadata_fsp(fsp);
 
 	ealen = SMB_VFS_FGETXATTR(fsp,
 				  AFPINFO_EA_NETATALK,
@@ -2226,7 +2199,7 @@ static NTSTATUS adouble_open_rsrc_fsp(const struct files_struct *dirfsp,
 	struct smb_filename *adp_smb_fname = NULL;
 	struct files_struct *ad_fsp = NULL;
 	NTSTATUS status;
-	int flags = in_flags;
+	struct vfs_open_how how = { .flags = in_flags, .mode = mode, };
 
 	rc = adouble_path(talloc_tos(),
 			  smb_base_fname,
@@ -2243,25 +2216,24 @@ static NTSTATUS adouble_open_rsrc_fsp(const struct files_struct *dirfsp,
 	}
 
 #ifdef O_PATH
-	flags &= ~(O_PATH);
+	how.flags &= ~(O_PATH);
 #endif
-	if (flags & (O_CREAT | O_TRUNC | O_WRONLY)) {
+	if (how.flags & (O_CREAT | O_TRUNC | O_WRONLY)) {
 		/* We always need read/write access for the metadata header too */
-		flags &= ~(O_WRONLY);
-		flags |= O_RDWR;
+		how.flags &= ~(O_WRONLY);
+		how.flags |= O_RDWR;
 	}
 
 	status = fd_openat(dirfsp,
 			   adp_smb_fname,
 			   ad_fsp,
-			   flags,
-			   mode);
+			   &how);
 	if (!NT_STATUS_IS_OK(status)) {
 		file_free(NULL, ad_fsp);
 		return status;
 	}
 
-	if (flags & (O_CREAT | O_TRUNC)) {
+	if (how.flags & (O_CREAT | O_TRUNC)) {
 		ad = ad_init(talloc_tos(), ADOUBLE_RSRC);
 		if (ad == NULL) {
 			file_free(NULL, ad_fsp);
@@ -2290,7 +2262,7 @@ NTSTATUS adouble_open_from_base_fsp(const struct files_struct *dirfsp,
 	*_ad_fsp = NULL;
 
 	SMB_ASSERT(base_fsp != NULL);
-	SMB_ASSERT(base_fsp->base_fsp == NULL);
+	SMB_ASSERT(!fsp_is_alternate_stream(base_fsp));
 
 	switch (type) {
 	case ADOUBLE_META:
@@ -2590,7 +2562,7 @@ static struct adouble *ad_get_internal(TALLOC_CTX *ctx,
 	int mode;
 
 	if (fsp != NULL) {
-		if (fsp->base_fsp != NULL) {
+		if (fsp_is_alternate_stream(fsp)) {
 			smb_fname = fsp->base_fsp->fsp_name;
 		} else {
 			smb_fname = fsp->fsp_name;
@@ -2759,17 +2731,14 @@ int adouble_path(TALLOC_CTX *ctx,
 {
 	char *parent;
 	const char *base;
-	struct smb_filename *smb_fname = cp_smb_filename(ctx,
-						smb_fname_in);
+	struct smb_filename *smb_fname = NULL;
 
+	smb_fname = cp_smb_filename_nostream(ctx, smb_fname_in);
 	if (smb_fname == NULL) {
 		return -1;
 	}
 
-	/* We need streamname to be NULL */
-	TALLOC_FREE(smb_fname->stream_name);
-
-	/* And we're replacing base_name. */
+	/* We're replacing base_name. */
 	TALLOC_FREE(smb_fname->base_name);
 
 	SET_STAT_INVALID(smb_fname->st);

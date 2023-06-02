@@ -81,6 +81,7 @@ from samba.dsdb import (
     DS_DOMAIN_FUNCTION_2008_R2,
     DS_DOMAIN_FUNCTION_2012,
     DS_DOMAIN_FUNCTION_2012_R2,
+    DS_DOMAIN_FUNCTION_2016,
     DS_NTDSDSA_OPT_DISABLE_OUTBOUND_REPL,
     DS_NTDSDSA_OPT_DISABLE_INBOUND_REPL,
     UF_WORKSTATION_TRUST_ACCOUNT,
@@ -110,9 +111,13 @@ from samba.trust_utils import CreateTrustedDomainRelax
 from samba import dsdb
 
 string_version_to_constant = {
+    "2000": DS_DOMAIN_FUNCTION_2000,
+    "2003": DS_DOMAIN_FUNCTION_2003,
+    "2008": DS_DOMAIN_FUNCTION_2008,
     "2008_R2": DS_DOMAIN_FUNCTION_2008_R2,
     "2012": DS_DOMAIN_FUNCTION_2012,
     "2012_R2": DS_DOMAIN_FUNCTION_2012_R2,
+    "2016": DS_DOMAIN_FUNCTION_2016,
 }
 
 common_provision_join_options = [
@@ -120,7 +125,7 @@ common_provision_join_options = [
            help="choose machine password (otherwise random)"),
     Option("--plaintext-secrets", action="store_true",
            help="Store secret/sensitive values as plain text on disk" +
-           "(default is to encrypt secret/ensitive values)"),
+           "(default is to encrypt secret/sensitive values)"),
     Option("--backend-store", type="choice", metavar="BACKENDSTORE",
            choices=["tdb", "mdb"],
            help="Specify the database backend to be used "
@@ -152,6 +157,32 @@ common_ntvfs_options = [
     Option("--use-ntvfs", help="Use NTVFS for the fileserver (default = no)",
            action="store_true")
 ]
+
+
+def level_to_string(level):
+    """turn the level enum number into a printable string."""
+    if level < DS_DOMAIN_FUNCTION_2000:
+        return "invalid"
+    strings = {
+        DS_DOMAIN_FUNCTION_2000: "2000",
+        DS_DOMAIN_FUNCTION_2003_MIXED: \
+            "2003 with mixed domains/interim (NT4 DC support)",
+        DS_DOMAIN_FUNCTION_2003: "2003",
+        DS_DOMAIN_FUNCTION_2008: "2008",
+        DS_DOMAIN_FUNCTION_2008_R2: "2008 R2",
+        DS_DOMAIN_FUNCTION_2012: "2012",
+        DS_DOMAIN_FUNCTION_2012_R2: "2012 R2",
+        DS_DOMAIN_FUNCTION_2016: "2016",
+    }
+    return strings.get(level, "higher than 2016")
+
+
+def string_to_level(string):
+    """Interpret a string indicating a functional level."""
+    try:
+        return string_version_to_constant[string]
+    except KeyError as e:
+        raise CommandError(f"'{string}' is not a valid domain level")
 
 
 def get_testparm_var(testparm, smbconf, varname):
@@ -361,7 +392,7 @@ class cmd_domain_provision(Command):
             if suggested_forwarder is None:
                 suggested_forwarder = "none"
 
-        if len(self.raw_argv) == 1:
+        if not self.raw_argv:
             interactive = True
 
         if interactive:
@@ -636,7 +667,10 @@ class cmd_domain_join(Command):
                     "Don't choose this unless you know what you're doing")
     ]
 
-    takes_options = []
+    takes_options = [
+        Option("--no-dns-updates", action="store_true",
+               help="Disable DNS updates")
+    ]
     takes_options.extend(common_join_options)
     takes_options.extend(common_provision_join_options)
 
@@ -652,7 +686,7 @@ class cmd_domain_join(Command):
             versionopts=None, server=None, site=None, targetdir=None,
             domain_critical_only=False, machinepass=None,
             use_ntvfs=False, experimental_s4_member=False, dns_backend=None,
-            quiet=False, verbose=False,
+            quiet=False, verbose=False, no_dns_updates=False,
             plaintext_secrets=False,
             backend_store=None, backend_store_size=None):
         lp = sambaopts.get_loadparm()
@@ -688,12 +722,11 @@ class cmd_domain_join(Command):
                     os.rename(f.name, smb_conf)
                 s3_lp = s3param.get_context()
                 s3_lp.load(smb_conf)
-                if machinepass is None:
-                    machinepass = samba.generate_random_machine_password(14, 40)
                 s3_net = s3_Net(creds, s3_lp, server=server)
                 (sid, domain_name) = s3_net.join_member(netbios_name,
                                                         machinepass=machinepass,
-                                                        debug=verbose)
+                                                        debug=verbose,
+                                                        noDnsUpdates=no_dns_updates)
 
             self.errf.write("Joined domain %s (%s)\n" % (domain_name, sid))
         elif role == "DC" and is_ad_dc_built():
@@ -716,6 +749,36 @@ class cmd_domain_join(Command):
                       backend_store_size=backend_store_size)
         else:
             raise CommandError("Invalid role '%s' (possible values: MEMBER, DC, RODC)" % role)
+
+
+class cmd_domain_leave(Command):
+    """Cause a domain member to leave the joined domain."""
+
+    synopsis = "%prog [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("--keep-account", action="store_true",
+               help="Disable the machine account instead of deleting it.")
+    ]
+
+    takes_args = []
+
+    def run(self, sambaopts=None, credopts=None, versionopts=None,
+            keep_account=False):
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp)
+
+        s3_lp = s3param.get_context()
+        smb_conf = lp.configfile if lp.configfile else default_path()
+        s3_lp.load(smb_conf)
+        s3_net = s3_Net(creds, s3_lp)
+        s3_net.leave(keep_account)
 
 
 class cmd_domain_demote(Command):
@@ -1102,74 +1165,23 @@ class cmd_domain_level(Command):
 
             self.message("")
 
-            if level_forest == DS_DOMAIN_FUNCTION_2000:
-                outstr = "2000"
-            elif level_forest == DS_DOMAIN_FUNCTION_2003_MIXED:
-                outstr = "2003 with mixed domains/interim (NT4 DC support)"
-            elif level_forest == DS_DOMAIN_FUNCTION_2003:
-                outstr = "2003"
-            elif level_forest == DS_DOMAIN_FUNCTION_2008:
-                outstr = "2008"
-            elif level_forest == DS_DOMAIN_FUNCTION_2008_R2:
-                outstr = "2008 R2"
-            elif level_forest == DS_DOMAIN_FUNCTION_2012:
-                outstr = "2012"
-            elif level_forest == DS_DOMAIN_FUNCTION_2012_R2:
-                outstr = "2012 R2"
-            else:
-                outstr = "higher than 2012 R2"
+            outstr = level_to_string(level_forest)
             self.message("Forest function level: (Windows) " + outstr)
 
-            if level_domain == DS_DOMAIN_FUNCTION_2000 and level_domain_mixed != 0:
+            if level_domain == DS_DOMAIN_FUNCTION_2000 and level_domain_mixed:
                 outstr = "2000 mixed (NT4 DC support)"
-            elif level_domain == DS_DOMAIN_FUNCTION_2000 and level_domain_mixed == 0:
-                outstr = "2000"
-            elif level_domain == DS_DOMAIN_FUNCTION_2003_MIXED:
-                outstr = "2003 with mixed domains/interim (NT4 DC support)"
-            elif level_domain == DS_DOMAIN_FUNCTION_2003:
-                outstr = "2003"
-            elif level_domain == DS_DOMAIN_FUNCTION_2008:
-                outstr = "2008"
-            elif level_domain == DS_DOMAIN_FUNCTION_2008_R2:
-                outstr = "2008 R2"
-            elif level_domain == DS_DOMAIN_FUNCTION_2012:
-                outstr = "2012"
-            elif level_domain == DS_DOMAIN_FUNCTION_2012_R2:
-                outstr = "2012 R2"
             else:
-                outstr = "higher than 2012 R2"
+                outstr = level_to_string(level_domain)
             self.message("Domain function level: (Windows) " + outstr)
 
-            if min_level_dc == DS_DOMAIN_FUNCTION_2000:
-                outstr = "2000"
-            elif min_level_dc == DS_DOMAIN_FUNCTION_2003:
-                outstr = "2003"
-            elif min_level_dc == DS_DOMAIN_FUNCTION_2008:
-                outstr = "2008"
-            elif min_level_dc == DS_DOMAIN_FUNCTION_2008_R2:
-                outstr = "2008 R2"
-            elif min_level_dc == DS_DOMAIN_FUNCTION_2012:
-                outstr = "2012"
-            elif min_level_dc == DS_DOMAIN_FUNCTION_2012_R2:
-                outstr = "2012 R2"
-            else:
-                outstr = "higher than 2012 R2"
+            outstr = level_to_string(min_level_dc)
             self.message("Lowest function level of a DC: (Windows) " + outstr)
 
         elif subcommand == "raise":
             msgs = []
 
             if domain_level is not None:
-                if domain_level == "2003":
-                    new_level_domain = DS_DOMAIN_FUNCTION_2003
-                elif domain_level == "2008":
-                    new_level_domain = DS_DOMAIN_FUNCTION_2008
-                elif domain_level == "2008_R2":
-                    new_level_domain = DS_DOMAIN_FUNCTION_2008_R2
-                elif domain_level == "2012":
-                    new_level_domain = DS_DOMAIN_FUNCTION_2012
-                elif domain_level == "2012_R2":
-                    new_level_domain = DS_DOMAIN_FUNCTION_2012_R2
+                new_level_domain = string_to_level(domain_level)
 
                 if new_level_domain <= level_domain and level_domain_mixed == 0:
                     raise CommandError("Domain function level can't be smaller than or equal to the actual one!")
@@ -1221,16 +1233,7 @@ class cmd_domain_level(Command):
                 msgs.append("Domain function level changed!")
 
             if forest_level is not None:
-                if forest_level == "2003":
-                    new_level_forest = DS_DOMAIN_FUNCTION_2003
-                elif forest_level == "2008":
-                    new_level_forest = DS_DOMAIN_FUNCTION_2008
-                elif forest_level == "2008_R2":
-                    new_level_forest = DS_DOMAIN_FUNCTION_2008_R2
-                elif forest_level == "2012":
-                    new_level_forest = DS_DOMAIN_FUNCTION_2012
-                elif forest_level == "2012_R2":
-                    new_level_forest = DS_DOMAIN_FUNCTION_2012_R2
+                new_level_forest = string_to_level(forest_level)
 
                 if new_level_forest <= level_forest:
                     raise CommandError("Forest function level can't be smaller than or equal to the actual one!")
@@ -1349,7 +1352,7 @@ class cmd_domain_passwordsettings_set(Command):
         Option("--max-pwd-age",
                help="The maximum password age (<integer in days> | default).  Default is 43.", type=str),
         Option("--account-lockout-duration",
-               help="The the length of time an account is locked out after exeeding the limit on bad password attempts (<integer in mins> | default).  Default is 30 mins.", type=str),
+               help="The length of time an account is locked out after exceeding the limit on bad password attempts (<integer in mins> | default).  Default is 30 mins.", type=str),
         Option("--account-lockout-threshold",
                help="The number of bad password attempts allowed before locking out the account (<integer> | default).  Default is 0 (never lock out).", type=str),
         Option("--reset-account-lockout-after",
@@ -1465,7 +1468,8 @@ class cmd_domain_passwordsettings_set(Command):
                 account_lockout_duration = int(account_lockout_duration)
 
             if account_lockout_duration < 0 or account_lockout_duration > 99999:
-                raise CommandError("Maximum password age must be in the range of 0 to 99999!")
+                raise CommandError("Account lockout duration "
+                                   "must be in the range of 0 to 99999!")
 
             # minutes -> ticks
             if account_lockout_duration == 0:
@@ -2001,6 +2005,7 @@ class DomainTrustCommand(Command):
             security.KERB_ENCTYPE_RC4_HMAC_MD5: "RC4_HMAC_MD5",
             security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96: "AES128_CTS_HMAC_SHA1_96",
             security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96: "AES256_CTS_HMAC_SHA1_96",
+            security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK: "AES256_CTS_HMAC_SHA1_96-SK",
             security.KERB_ENCTYPE_FAST_SUPPORTED: "FAST_SUPPORTED",
             security.KERB_ENCTYPE_COMPOUND_IDENTITY_SUPPORTED: "COMPOUND_IDENTITY_SUPPORTED",
             security.KERB_ENCTYPE_CLAIMS_SUPPORTED: "CLAIMS_SUPPORTED",
@@ -2222,6 +2227,125 @@ class cmd_domain_trust_show(DomainTrustCommand):
 
         return
 
+class cmd_domain_trust_modify(DomainTrustCommand):
+    """Show trusted domain details."""
+
+    synopsis = "%prog NAME [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "localdcopts": LocalDCCredentialsOptions,
+    }
+
+    takes_options = [
+        Option("--use-aes-keys", action="store_true",
+               help="The trust uses AES kerberos keys.",
+               dest='use_aes_keys',
+               default=None),
+        Option("--no-aes-keys", action="store_true",
+               help="The trust does not have any support for AES kerberos keys.",
+               dest='disable_aes_keys',
+               default=None),
+        Option("--raw-kerb-enctypes", action="store",
+               help="The raw kerberos enctype bits",
+               dest='kerb_enctypes',
+               default=None),
+    ]
+
+    takes_args = ["domain"]
+
+    def run(self, domain, sambaopts=None, versionopts=None, localdcopts=None,
+            disable_aes_keys=None, use_aes_keys=None, kerb_enctypes=None):
+
+        num_modifications = 0
+
+        enctype_args = 0
+        if kerb_enctypes is not None:
+            enctype_args += 1
+        if use_aes_keys is not None:
+            enctype_args += 1
+        if disable_aes_keys is not None:
+            enctype_args += 1
+        if enctype_args > 1:
+            raise CommandError("--no-aes-keys, --use-aes-keys and --raw-kerb-enctypes are mutually exclusive")
+        if enctype_args == 1:
+            num_modifications += 1
+
+        if num_modifications == 0:
+            raise CommandError("modification arguments are required, try --help")
+
+        local_server = self.setup_local_server(sambaopts, localdcopts)
+        try:
+            local_lsa = self.new_local_lsa_connection()
+        except RuntimeError as error:
+            raise self.LocalRuntimeError(self, error, "failed to connect to lsa server")
+
+        try:
+            local_policy_access = lsa.LSA_POLICY_VIEW_LOCAL_INFORMATION
+            local_policy_access |= lsa.LSA_POLICY_TRUST_ADMIN
+            (local_policy, local_lsa_info) = self.get_lsa_info(local_lsa, local_policy_access)
+        except RuntimeError as error:
+            raise self.LocalRuntimeError(self, error, "failed to query LSA_POLICY_INFO_DNS")
+
+        self.outf.write("LocalDomain Netbios[%s] DNS[%s] SID[%s]\n" % (
+                        local_lsa_info.name.string,
+                        local_lsa_info.dns_domain.string,
+                        local_lsa_info.sid))
+
+        if enctype_args == 1:
+            lsaString = lsa.String()
+            lsaString.string = domain
+
+            try:
+                local_tdo_enctypes = \
+                    local_lsa.QueryTrustedDomainInfoByName(local_policy,
+                                                           lsaString,
+                                                           lsa.LSA_TRUSTED_DOMAIN_SUPPORTED_ENCRYPTION_TYPES)
+            except NTSTATUSError as error:
+                if self.check_runtime_error(error, ntstatus.NT_STATUS_INVALID_PARAMETER):
+                    error = None
+                if self.check_runtime_error(error, ntstatus.NT_STATUS_INVALID_INFO_CLASS):
+                    error = None
+
+                if error is not None:
+                    raise self.LocalRuntimeError(self, error,
+                                                 "QueryTrustedDomainInfoByName(SUPPORTED_ENCRYPTION_TYPES) failed")
+
+                local_tdo_enctypes = lsa.TrustDomainInfoSupportedEncTypes()
+                local_tdo_enctypes.enc_types = 0
+
+            self.outf.write("Old kerb_EncTypes:  %s\n" % self.kerb_EncTypes_string(local_tdo_enctypes.enc_types))
+
+            enc_types = lsa.TrustDomainInfoSupportedEncTypes()
+            if kerb_enctypes is not None:
+                enc_types.enc_types = int(kerb_enctypes, base=0)
+            elif use_aes_keys is not None:
+                enc_types.enc_types = security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96
+                enc_types.enc_types |= security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96
+            elif disable_aes_keys is not None:
+                # CVE-2022-37966: Trust objects are no longer assumed to support
+                # RC4, so we must indicate support explicitly.
+                enc_types.enc_types = security.KERB_ENCTYPE_RC4_HMAC_MD5
+            else:
+                raise CommandError("Internal error should be checked above")
+
+            if enc_types.enc_types != local_tdo_enctypes.enc_types:
+                try:
+                    local_tdo_enctypes = \
+                        local_lsa.SetTrustedDomainInfoByName(local_policy,
+                                                             lsaString,
+                                                             lsa.LSA_TRUSTED_DOMAIN_SUPPORTED_ENCRYPTION_TYPES,
+                                                             enc_types)
+                    self.outf.write("New kerb_EncTypes:  %s\n" % self.kerb_EncTypes_string(enc_types.enc_types))
+                except NTSTATUSError as error:
+                    if error is not None:
+                        raise self.LocalRuntimeError(self, error,
+                                                     "SetTrustedDomainInfoByName(SUPPORTED_ENCRYPTION_TYPES) failed")
+            else:
+                self.outf.write("No kerb_EncTypes update needed\n")
+
+        return
 
 class cmd_domain_trust_create(DomainTrustCommand):
     """Create a domain or forest trust."""
@@ -2271,7 +2395,7 @@ class cmd_domain_trust_create(DomainTrustCommand):
                dest='treat_as_external',
                default=False),
         Option("--no-aes-keys", action="store_false",
-               help="The trust uses aes kerberos keys.",
+               help="The trust does not use AES kerberos keys.",
                dest='use_aes_keys',
                default=True),
         Option("--skip-validation", action="store_false",
@@ -2303,11 +2427,14 @@ class cmd_domain_trust_create(DomainTrustCommand):
             if treat_as_external:
                 raise CommandError("--treat-as-external requires --type=forest")
 
-        enc_types = None
+        enc_types = lsa.TrustDomainInfoSupportedEncTypes()
         if use_aes_keys:
-            enc_types = lsa.TrustDomainInfoSupportedEncTypes()
             enc_types.enc_types = security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96
             enc_types.enc_types |= security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96
+        else:
+            # CVE-2022-37966: Trust objects are no longer assumed to support
+            # RC4, so we must indicate support explicitly.
+            enc_types.enc_types = security.KERB_ENCTYPE_RC4_HMAC_MD5
 
         local_policy_access = lsa.LSA_POLICY_VIEW_LOCAL_INFORMATION
         local_policy_access |= lsa.LSA_POLICY_TRUST_ADMIN
@@ -2845,7 +2972,6 @@ class cmd_domain_trust_delete(DomainTrustCommand):
                 if not self.check_runtime_error(error, ntstatus.NT_STATUS_OBJECT_NAME_NOT_FOUND):
                     raise self.RemoteRuntimeError(self, error, "QueryTrustedDomainInfoByName(%s)" % (
                                                   lsaString.string))
-                pass
 
             if remote_tdo_info is not None:
                 if local_lsa_info.sid != remote_tdo_info.sid or \
@@ -2888,14 +3014,6 @@ class cmd_domain_trust_delete(DomainTrustCommand):
                 self.outf.write("RemoteTDO deleted.\n")
             except RuntimeError as error:
                 self.outf.write("%s\n" % self.RemoteRuntimeError(self, error, "DeleteObject() failed"))
-
-        if local_tdo_handle is not None:
-            try:
-                local_lsa.DeleteObject(local_tdo_handle)
-                local_tdo_handle = None
-                self.outf.write("LocalTDO deleted.\n")
-            except RuntimeError as error:
-                self.outf.write("%s\n" % self.LocalRuntimeError(self, error, "DeleteObject() failed"))
 
         return
 
@@ -3910,6 +4028,7 @@ class cmd_domain_trust(SuperCommand):
     subcommands["list"] = cmd_domain_trust_list()
     subcommands["show"] = cmd_domain_trust_show()
     subcommands["create"] = cmd_domain_trust_create()
+    subcommands["modify"] = cmd_domain_trust_modify()
     subcommands["delete"] = cmd_domain_trust_delete()
     subcommands["validate"] = cmd_domain_trust_validate()
     subcommands["namespaces"] = cmd_domain_trust_namespaces()
@@ -4265,7 +4384,7 @@ class cmd_domain_functional_prep(Command):
         lp = sambaopts.get_loadparm()
         creds = credopts.get_credentials(lp)
         H = kwargs.get("H")
-        target_level = string_version_to_constant[kwargs.get("function_level")]
+        target_level = string_to_level(kwargs.get("function_level"))
         forest_prep = kwargs.get("forest_prep")
         domain_prep = kwargs.get("domain_prep")
 
@@ -4346,6 +4465,7 @@ class cmd_domain(SuperCommand):
         subcommands["exportkeytab"] = cmd_domain_export_keytab()
     subcommands["info"] = cmd_domain_info()
     subcommands["join"] = cmd_domain_join()
+    subcommands["leave"] = cmd_domain_leave()
     if is_ad_dc_built():
         subcommands["demote"] = cmd_domain_demote()
         subcommands["provision"] = cmd_domain_provision()

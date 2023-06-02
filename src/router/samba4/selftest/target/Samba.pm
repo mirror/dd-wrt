@@ -15,14 +15,15 @@ use IO::Poll qw(POLLIN);
 
 sub new($$$$$) {
 	my ($classname, $bindir, $srcdir, $server_maxtime,
-	    $opt_socket_wrapper_pcap, $opt_socket_wrapper_keep_pcap) = @_;
+	    $opt_socket_wrapper_pcap, $opt_socket_wrapper_keep_pcap,
+	    $default_ldb_backend) = @_;
 
 	my $self = {
 	    opt_socket_wrapper_pcap => $opt_socket_wrapper_pcap,
 	    opt_socket_wrapper_keep_pcap => $opt_socket_wrapper_keep_pcap,
 	};
 	$self->{samba3} = new Samba3($self, $bindir, $srcdir, $server_maxtime);
-	$self->{samba4} = new Samba4($self, $bindir, $srcdir, $server_maxtime);
+	$self->{samba4} = new Samba4($self, $bindir, $srcdir, $server_maxtime, $default_ldb_backend);
 	bless $self;
 	return $self;
 }
@@ -167,7 +168,7 @@ sub nss_wrapper_winbind_so_path($) {
         my ($object) = @_;
 	my $ret = $ENV{NSS_WRAPPER_WINBIND_SO_PATH};
         if (not defined($ret)) {
-	    $ret = bindir_path($object, "shared/libnss_wrapper_winbind.so.2");
+	    $ret = bindir_path($object, "plugins/libnss_wrapper_winbind.so.2");
 	    $ret = abs_path($ret);
 	}
 	return $ret;
@@ -331,6 +332,7 @@ sub mk_krb5_conf($$)
  # system clock differences
  kdc_timesync = 0
 
+ fcache_strict_checking = false
 ";
 
 	if (defined($ENV{MITKRB5})) {
@@ -360,7 +362,14 @@ sub mk_krb5_conf($$)
 	}
 
         if (defined($ctx->{tlsdir})) {
-	       print KRB5CONF "
+		if (defined($ENV{MITKRB5})) {
+			print KRB5CONF "
+ pkinit_anchors = FILE:$ctx->{tlsdir}/ca.pem
+ pkinit_kdc_hostname = $ctx->{hostname}.$ctx->{dnsname}
+
+";
+		} else {
+			print KRB5CONF "
 
 [appdefaults]
 	pkinit_anchors = FILE:$ctx->{tlsdir}/ca.pem
@@ -371,6 +380,7 @@ sub mk_krb5_conf($$)
 	pkinit_anchors = FILE:$ctx->{tlsdir}/ca.pem
 
 ";
+		}
         }
 
 	print KRB5CONF "
@@ -457,15 +467,37 @@ sub mk_mitkdc_conf($$)
 [kdcdefaults]
 	kdc_ports = 88
 	kdc_tcp_ports = 88
+	restrict_anonymous_to_tgt = true
 
 [realms]
 	$ctx->{realm} = {
+		master_key_type = aes256-cts
+		default_principal_flags = +preauth
+		pkinit_identity = FILE:$ctx->{tlsdir}/kdc.pem,$ctx->{tlsdir}/key.pem
+		pkinit_anchors = FILE:$ctx->{tlsdir}/ca.pem
+		pkinit_eku_checking = scLogin
+		pkinit_indicator = pkinit
+		pkinit_allow_upn = true
 	}
 
 	$ctx->{dnsname} = {
+		master_key_type = aes256-cts
+		default_principal_flags = +preauth
+		pkinit_identity = FILE:$ctx->{tlsdir}/kdc.pem,$ctx->{tlsdir}/key.pem
+		pkinit_anchors = FILE:$ctx->{tlsdir}/ca.pem
+		pkinit_eku_checking = scLogin
+		pkinit_indicator = pkinit
+		pkinit_allow_upn = true
 	}
 
 	$ctx->{domain} = {
+		master_key_type = aes256-cts
+		default_principal_flags = +preauth
+		pkinit_identity = FILE:$ctx->{tlsdir}/kdc.pem,$ctx->{tlsdir}/key.pem
+		pkinit_anchors = FILE:$ctx->{tlsdir}/ca.pem
+		pkinit_eku_checking = scLogin
+		pkinit_indicator = pkinit
+		pkinit_allow_upn = true
 	}
 
 [dbmodules]
@@ -611,6 +643,8 @@ sub get_interface($)
 		offlineadmem      => 58,
 		s2kmember         => 59,
 		admemidmapnss     => 60,
+		localadmember2    => 61,
+		admemautorid      => 62,
 
 		rootdnsforwarder  => 64,
 
@@ -937,10 +971,6 @@ my @exported_envvars = (
 	# resolv_wrapper
 	"RESOLV_WRAPPER_CONF",
 	"RESOLV_WRAPPER_HOSTS",
-
-	# crypto libraries
-	"GNUTLS_FORCE_FIPS_MODE",
-	"OPENSSL_FORCE_FIPS_MODE",
 );
 
 sub exported_envvars_str

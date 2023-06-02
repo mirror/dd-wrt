@@ -2,12 +2,12 @@
 .\"     Title: ctdb.conf
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB\&.CONF" "5" "01/31/2022" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB\&.CONF" "5" "05/31/2023" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -104,17 +104,41 @@ Options in this section affect the CTDB cluster setup\&. They are valid within t
 section of file, indicated by
 [cluster]\&.
 .PP
-recovery lock = \fILOCK\fR
+cluster lock = \fILOCK\fR
 .RS 4
 LOCK specifies the cluster\-wide mutex used to detect and prevent a partitioned cluster (or "split brain")\&.
 .sp
-For information about the recovery lock please see the
-RECOVERY LOCK
+For information about the cluster lock please see the
+CLUSTER LOCK
 section in
 \fBctdb\fR(7)\&.
 .sp
-Default: NONE\&. However, uses of a recovery lock is
+Default: NONE\&. However, uses of a cluster lock is
 \fIstrongly recommended\fR\&.
+.RE
+.PP
+leader capability = true|false
+.RS 4
+Indicates whether a node can become the leader for the cluster\&. If this is set to
+false
+then the node will not be able to become the leader for the cluster\&. This feature is primarily used for making a cluster span across a WAN link and use CTDB as a WAN\-accelerator\&.
+.sp
+Please see the
+REMOTE CLUSTER NODES
+section in
+\fBctdb\fR(7)
+for more information\&.
+.sp
+Default:
+true
+.RE
+.PP
+leader timeout = \fISECONDS\fR
+.RS 4
+Number of SECONDS without a leader broadcast before a node triggers an election\&.
+.sp
+Default:
+5
 .RE
 .PP
 node address = \fIIPADDR\fR
@@ -278,22 +302,6 @@ realtime scheduling = true|false
 .RS 4
 Usually CTDB runs with real\-time priority\&. This helps it to perform effectively on a busy system, such as when there are thousands of Samba clients\&. If you are running CTDB on a platform that does not support real\-time priority, you can set this to
 false\&.
-.sp
-Default:
-true
-.RE
-.PP
-recmaster capability = true|false
-.RS 4
-Indicates whether a node can become the recovery master for the cluster\&. If this is set to
-false
-then the node will not be able to become the recovery master for the cluster\&. This feature is primarily used for making a cluster span across a WAN link and use CTDB as a WAN\-accelerator\&.
-.sp
-Please see the
-REMOTE CLUSTER NODES
-section in
-\fBctdb\fR(7)
-for more information\&.
 .sp
 Default:
 true

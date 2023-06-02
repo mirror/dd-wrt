@@ -184,6 +184,7 @@ TicketFlags     ::= KerberosFlags
 -- the following are new since 1510
         -- transited-policy-checked(12),
         -- ok-as-delegate(13)
+        -- enc-pa-rep(15)
 
 AS-REQ          ::= [APPLICATION 10] KDC-REQ
 
@@ -567,6 +568,12 @@ PA-FX-FAST-REPLY ::= CHOICE {
         ...
 }
 
+ChangePasswdDataMS ::= SEQUENCE {
+        newpasswd       [0] OCTET STRING,
+        targname        [1] PrincipalName OPTIONAL,
+        targrealm       [2] Realm OPTIONAL
+}
+
 -- MS-KILE End
 --
 --
@@ -611,7 +618,8 @@ TicketFlagsValues     ::= BIT STRING { -- KerberosFlags
         hw-authent(11),
 -- the following are new since 1510
         transited-policy-checked(12),
-        ok-as-delegate(13)
+        ok-as-delegate(13),
+        enc-pa-rep(15)
 }
 TicketFlagsSequence ::= SEQUENCE {
         dummy [0] TicketFlagsValues
@@ -736,7 +744,8 @@ PADataTypeValues ::= INTEGER {
 	kRB5-PADATA-PKU2U-NAME(148),		-- zhu-pku2u
 	kRB5-PADATA-REQ-ENC-PA-REP(149),	--
 	kRB5-PADATA-SUPPORTED-ETYPES(165),	-- MS-KILE
-	kRB5-PADATA-PAC-OPTIONS(167)		-- MS-KILE
+	kRB5-PADATA-PAC-OPTIONS(167),		-- MS-KILE
+	kRB5-PADATA-GSS(655)			-- gss-preauth
 }
 PADataTypeSequence ::= SEQUENCE {
         dummy [0] PADataTypeValues

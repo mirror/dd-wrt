@@ -153,6 +153,7 @@ NTSTATUS torture_smb2_init(TALLOC_CTX *ctx)
 	torture_suite_add_suite(suite, torture_smb2_lock_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_read_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_aio_delay_init(suite));
+	torture_suite_add_suite(suite, torture_smb2_bench_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_create_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_twrp_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_fileid_init(suite));
@@ -173,6 +174,7 @@ NTSTATUS torture_smb2_init(TALLOC_CTX *ctx)
 	torture_suite_add_suite(suite, torture_smb2_lease_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_compound_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_compound_find_init(suite));
+	torture_suite_add_suite(suite, torture_smb2_compound_async_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_oplocks_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_kernel_oplocks_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_streams_init(suite));
@@ -181,13 +183,15 @@ NTSTATUS torture_smb2_init(TALLOC_CTX *ctx)
 				      test_ioctl_set_sparse);
 	torture_suite_add_simple_test(suite, "zero-data-ioctl",
 				      test_ioctl_zero_data);
+	torture_suite_add_simple_test(suite, "ioctl-on-stream",
+				      test_ioctl_alternate_data_stream);
 	torture_suite_add_suite(suite, torture_smb2_rename_init(suite));
-	torture_suite_add_1smb2_test(suite, "bench-oplock", test_smb2_bench_oplock);
 	torture_suite_add_suite(suite, torture_smb2_sharemode_init(suite));
 	torture_suite_add_1smb2_test(suite, "hold-oplock", test_smb2_hold_oplock);
 	torture_suite_add_suite(suite, torture_smb2_session_init(suite));
 	torture_suite_add_suite(suite, torture_smb2_replay_init(suite));
 	torture_suite_add_simple_test(suite, "dosmode", torture_smb2_dosmode);
+	torture_suite_add_simple_test(suite, "async_dosmode", torture_smb2_async_dosmode);
 	torture_suite_add_simple_test(suite, "maxfid", torture_smb2_maxfid);
 	torture_suite_add_simple_test(suite, "hold-sharemode",
 				      torture_smb2_hold_sharemode);
@@ -202,18 +206,20 @@ NTSTATUS torture_smb2_init(TALLOC_CTX *ctx)
 	torture_suite_add_suite(suite, torture_smb2_timestamp_resolution_init(suite));
 	torture_suite_add_1smb2_test(suite, "openattr", torture_smb2_openattrtest);
 	torture_suite_add_1smb2_test(suite, "winattr", torture_smb2_winattrtest);
+	torture_suite_add_1smb2_test(suite, "winattr2", torture_smb2_winattr2);
 	torture_suite_add_1smb2_test(suite, "sdread", torture_smb2_sdreadtest);
 	torture_suite_add_suite(suite, torture_smb2_readwrite_init(suite));
-	torture_suite_add_1smb2_test(suite, "maximum_allowed", torture_smb2_maximum_allowed);
-	torture_suite_add_1smb2_test(suite, "mangle", torture_smb2_mangle);
+	torture_suite_add_suite(suite, torture_smb2_max_allowed(suite));
 	torture_suite_add_1smb2_test(suite, "tcon", run_tcon_test);
 	torture_suite_add_1smb2_test(suite, "mkdir", torture_smb2_mkdir);
+	torture_suite_add_suite(suite, torture_smb2_name_mangling_init(suite));
 
 	torture_suite_add_suite(suite, torture_smb2_charset(suite));
 	torture_suite_add_1smb2_test(suite, "secleak", torture_smb2_sec_leak);
 	torture_suite_add_1smb2_test(suite, "session-id", run_sessidtest);
 	torture_suite_add_suite(suite, torture_smb2_deny_init(suite));
-	torture_suite_add_suite(suite, torture_smb2_fileid_unique_init(suite));
+	torture_suite_add_suite(suite, torture_smb2_ea(suite));
+	torture_suite_add_suite(suite, torture_smb2_create_no_streams_init(suite));
 
 	suite->description = talloc_strdup(suite, "SMB2-specific tests");
 

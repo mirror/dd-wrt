@@ -60,6 +60,7 @@ struct drsuapi_getncchanges_state {
 	struct GUID ncRoot_guid;
 	bool is_schema_nc;
 	bool is_get_anc;
+	bool broken_samba_4_5_get_anc_emulation;
 	bool is_get_tgt;
 	uint64_t min_usn;
 	uint64_t max_usn;
@@ -1019,6 +1020,17 @@ struct drsuapi_changed_objects {
 	uint64_t usn;
 };
 
+
+/*
+  sort the objects we send by tree order (Samba 4.5 emulation)
+ */
+static int site_res_cmp_anc_order(struct drsuapi_changed_objects *m1,
+				  struct drsuapi_changed_objects *m2,
+				  struct drsuapi_getncchanges_state *getnc_state)
+{
+	return ldb_dn_compare(m2->dn, m1->dn);
+}
+
 /*
   sort the objects we send first by uSNChanged
  */
@@ -1079,12 +1091,24 @@ static WERROR getncchanges_rid_alloc(struct drsuapi_bind_state *b_state,
 		return WERR_DS_DRA_INTERNAL_ERROR;
 	}
 
-	req_dn = drs_ObjectIdentifier_to_dn(mem_ctx, ldb, req10->naming_context);
-	if (!ldb_dn_validate(req_dn) ||
-	    ldb_dn_compare(req_dn, *rid_manager_dn) != 0) {
+	ret = drs_ObjectIdentifier_to_dn_and_nc_root(mem_ctx,
+						     ldb,
+						     req10->naming_context,
+						     &req_dn,
+						     NULL);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("RID Alloc request for invalid DN %s: %s\n",
+			drs_ObjectIdentifier_to_debug_string(mem_ctx, req10->naming_context),
+			ldb_strerror(ret));
+		ctr6->extended_ret = DRSUAPI_EXOP_ERR_MISMATCH;
+		return WERR_OK;
+	}
+
+	if (ldb_dn_compare(req_dn, *rid_manager_dn) != 0) {
 		/* that isn't the RID Manager DN */
-		DEBUG(0,(__location__ ": RID Alloc request for wrong DN %s\n",
-			 drs_ObjectIdentifier_to_string(mem_ctx, req10->naming_context)));
+		DBG_ERR("RID Alloc request for wrong DN %s\n",
+			drs_ObjectIdentifier_to_debug_string(mem_ctx,
+							     req10->naming_context));
 		ctr6->extended_ret = DRSUAPI_EXOP_ERR_MISMATCH;
 		return WERR_OK;
 	}
@@ -1164,9 +1188,11 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 {
 	struct drsuapi_DsReplicaObjectIdentifier *ncRoot = req10->naming_context;
 	struct ldb_dn *obj_dn = NULL;
+	struct ldb_message *ntds_msg = NULL;
 	struct ldb_dn *ntds_dn = NULL, *server_dn = NULL;
 	struct ldb_dn *rodc_dn, *krbtgt_link_dn;
 	int ret;
+	const char *ntds_attrs[] = { NULL };
 	const char *rodc_attrs[] = { "msDS-KrbTgtLink",
 				     "msDS-NeverRevealGroup",
 				     "msDS-RevealOnDemandGroup",
@@ -1175,9 +1201,10 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 	const char *obj_attrs[] = { "tokenGroups", "objectSid", "UserAccountControl", "msDS-KrbTgtLinkBL", NULL };
 	struct ldb_result *rodc_res = NULL, *obj_res = NULL;
 	WERROR werr;
+	struct GUID_txt_buf guid_buf;
 
 	DEBUG(3,(__location__ ": DRSUAPI_EXOP_REPL_SECRET extended op on %s\n",
-		 drs_ObjectIdentifier_to_string(mem_ctx, ncRoot)));
+		 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot)));
 
 	/*
 	 * we need to work out if we will allow this DC to
@@ -1199,12 +1226,16 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 	 *
 	 * If we are the RODC, we will check that this matches the SID.
 	 */
-	ret = dsdb_find_dn_by_guid(b_state->sam_ctx_system, mem_ctx,
-				   &req10->destination_dsa_guid, 0,
-				   &ntds_dn);
+	ret = samdb_get_ntds_obj_by_guid(mem_ctx,
+					 b_state->sam_ctx_system,
+					 &req10->destination_dsa_guid,
+					 ntds_attrs,
+					 &ntds_msg);
 	if (ret != LDB_SUCCESS) {
-		goto failed;
+		goto dest_dsa_error;
 	}
+
+	ntds_dn = ntds_msg->dn;
 
 	server_dn = ldb_dn_get_parent(mem_ctx, ntds_dn);
 	if (server_dn == NULL) {
@@ -1215,7 +1246,7 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 				 "serverReference", machine_dn);
 
 	if (ret != LDB_SUCCESS) {
-		goto failed;
+		goto dest_dsa_error;
 	}
 
 	/*
@@ -1238,7 +1269,17 @@ static WERROR getncchanges_repl_secret(struct drsuapi_bind_state *b_state,
 	 * Which basically means that if you have GET_ALL_CHANGES rights (~== RWDC)
 	 * then you can do EXOP_REPL_SECRETS
 	 */
-	obj_dn = drs_ObjectIdentifier_to_dn(mem_ctx, b_state->sam_ctx_system, ncRoot);
+	ret = drs_ObjectIdentifier_to_dn_and_nc_root(mem_ctx,
+							b_state->sam_ctx_system,
+							ncRoot,
+							&obj_dn,
+							NULL);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("RevealSecretRequest for for invalid DN %s\n",
+			 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot));
+		goto failed;
+	}
+
 	if (!ldb_dn_validate(obj_dn)) goto failed;
 
 	if (has_get_all_changes) {
@@ -1306,6 +1347,15 @@ failed:
 		 ldb_dn_get_linearized(obj_dn), dom_sid_string(mem_ctx, user_sid)));
 	ctr6->extended_ret = DRSUAPI_EXOP_ERR_NONE;
 	return WERR_DS_DRA_BAD_DN;
+
+dest_dsa_error:
+	DBG_WARNING("Failed secret replication for %s by RODC %s as dest_dsa_guid %s is invalid\n",
+		    ldb_dn_get_linearized(obj_dn),
+		    dom_sid_string(mem_ctx, user_sid),
+		    GUID_buf_string(&req10->destination_dsa_guid,
+				    &guid_buf));
+	ctr6->extended_ret = DRSUAPI_EXOP_ERR_NONE;
+	return WERR_DS_DRA_DB_ERROR;
 }
 
 /*
@@ -1320,7 +1370,7 @@ static WERROR getncchanges_repl_obj(struct drsuapi_bind_state *b_state,
 	struct drsuapi_DsReplicaObjectIdentifier *ncRoot = req10->naming_context;
 
 	DEBUG(3,(__location__ ": DRSUAPI_EXOP_REPL_OBJ extended op on %s\n",
-		 drs_ObjectIdentifier_to_string(mem_ctx, ncRoot)));
+		 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot)));
 
 	ctr6->extended_ret = DRSUAPI_EXOP_ERR_SUCCESS;
 	return WERR_OK;
@@ -1350,11 +1400,13 @@ static WERROR getncchanges_change_master(struct drsuapi_bind_state *b_state,
 	    - verify that we are the current master
 	 */
 
-	req_dn = drs_ObjectIdentifier_to_dn(mem_ctx, ldb, req10->naming_context);
-	if (!ldb_dn_validate(req_dn)) {
+	ret = drs_ObjectIdentifier_to_dn_and_nc_root(mem_ctx, ldb, req10->naming_context,
+						     &req_dn, NULL);
+	if (ret != LDB_SUCCESS) {
 		/* that is not a valid dn */
-		DEBUG(0,(__location__ ": FSMO role transfer request for invalid DN %s\n",
-			 drs_ObjectIdentifier_to_string(mem_ctx, req10->naming_context)));
+		DBG_ERR("FSMO role transfer request for invalid DN %s: %s\n",
+			drs_ObjectIdentifier_to_debug_string(mem_ctx, req10->naming_context),
+			ldb_strerror(ret));
 		ctr6->extended_ret = DRSUAPI_EXOP_ERR_MISMATCH;
 		return WERR_OK;
 	}
@@ -1377,8 +1429,16 @@ static WERROR getncchanges_change_master(struct drsuapi_bind_state *b_state,
 	/* change the current master */
 	msg = ldb_msg_new(ldb);
 	W_ERROR_HAVE_NO_MEMORY(msg);
-	msg->dn = drs_ObjectIdentifier_to_dn(msg, ldb, req10->naming_context);
-	W_ERROR_HAVE_NO_MEMORY(msg->dn);
+	ret = drs_ObjectIdentifier_to_dn_and_nc_root(msg, ldb, req10->naming_context,
+						     &msg->dn, NULL);
+	if (ret != LDB_SUCCESS) {
+		/* that is not a valid dn */
+		DBG_ERR("FSMO role transfer request for invalid DN %s: %s\n",
+			drs_ObjectIdentifier_to_debug_string(mem_ctx, req10->naming_context),
+			ldb_strerror(ret));
+		ctr6->extended_ret = DRSUAPI_EXOP_ERR_MISMATCH;
+		return WERR_OK;
+	}
 
 	/* TODO: make sure ntds_dn is a valid nTDSDSA object */
 	ret = dsdb_find_dn_by_guid(ldb, msg, &req10->destination_dsa_guid, 0, &ntds_dn);
@@ -2281,8 +2341,13 @@ static WERROR getncchanges_get_obj_to_send(const struct ldb_message *msg,
 	 * If required, also add any ancestors that the client may need to know
 	 * about before it can resolve this object. These get prepended to the
 	 * ret_obj_list so the client adds them first.
+	 *
+	 * We allow this to be disabled to permit testing of a
+	 * client-side fallback for the broken behaviour in Samba 4.5
+	 * and earlier.
 	 */
-	if (getnc_state->is_get_anc) {
+	if (getnc_state->is_get_anc
+	    && !getnc_state->broken_samba_4_5_get_anc_emulation) {
 		werr = getncchanges_add_ancestors(obj, msg->dn, mem_ctx,
 						  sam_ctx, getnc_state,
 						  schema, session_key,
@@ -2719,9 +2784,45 @@ WERROR dcesrv_drsuapi_DsGetNCChanges(struct dcesrv_call_state *dce_call, TALLOC_
 		return WERR_DS_DRA_SOURCE_DISABLED;
 	}
 
-        /* Perform access checks. */
-	/* TODO: we need to support a sync on a specific non-root
-	 * DN. We'll need to find the real partition root here */
+	/*
+	 * Help our tests pass by pre-checking the
+	 * destination_dsa_guid before the NC permissions.  Info on
+	 * valid DSA GUIDs is not sensitive so this isn't a leak
+	 */
+	switch (req10->extended_op) {
+	case DRSUAPI_EXOP_FSMO_REQ_ROLE:
+	case DRSUAPI_EXOP_FSMO_RID_ALLOC:
+	case DRSUAPI_EXOP_FSMO_RID_REQ_ROLE:
+	case DRSUAPI_EXOP_FSMO_REQ_PDC:
+	case DRSUAPI_EXOP_FSMO_ABANDON_ROLE:
+	{
+		const char *attrs[] = { NULL };
+
+		ret = samdb_get_ntds_obj_by_guid(mem_ctx,
+						 sam_ctx,
+						 &req10->destination_dsa_guid,
+						 attrs,
+						 NULL);
+		if (ret == LDB_ERR_NO_SUCH_OBJECT) {
+			/*
+			 * Error out with an EXOP error but success at
+			 * the top level return value
+			 */
+			r->out.ctr->ctr6.extended_ret = DRSUAPI_EXOP_ERR_UNKNOWN_CALLER;
+			return WERR_OK;
+		} else if (ret != LDB_SUCCESS) {
+			return WERR_DS_DRA_INTERNAL_ERROR;
+		}
+
+		break;
+	}
+	case DRSUAPI_EXOP_REPL_SECRET:
+	case DRSUAPI_EXOP_REPL_OBJ:
+	case DRSUAPI_EXOP_NONE:
+		break;
+	}
+
+	/* Perform access checks. */
 	ncRoot = req10->naming_context;
 	if (ncRoot == NULL) {
 		DEBUG(0,(__location__ ": Request for DsGetNCChanges with no NC\n"));
@@ -2739,12 +2840,30 @@ WERROR dcesrv_drsuapi_DsGetNCChanges(struct dcesrv_call_state *dce_call, TALLOC_
 
 	user_sid = &session_info->security_token->sids[PRIMARY_USER_SID_INDEX];
 
-	/* all clients must have GUID_DRS_GET_CHANGES */
+	/*
+	 * all clients must have GUID_DRS_GET_CHANGES.  This finds the
+	 * actual NC root of the given value and checks that, allowing
+	 * REPL_OBJ to work safely
+	 */
 	werr = drs_security_access_check_nc_root(sam_ctx,
 						 mem_ctx,
 						 session_info->security_token,
 						 req10->naming_context,
 						 GUID_DRS_GET_CHANGES);
+
+	if (W_ERROR_EQUAL(werr, WERR_DS_DRA_BAD_NC)) {
+		/*
+		 * These extended operations need a different error if
+		 * the supplied DN can't be found
+		 */
+		switch (req10->extended_op) {
+		case DRSUAPI_EXOP_REPL_OBJ:
+		case DRSUAPI_EXOP_REPL_SECRET:
+			return WERR_DS_DRA_BAD_DN;
+		default:
+			return werr;
+		}
+	}
 	if (!W_ERROR_IS_OK(werr)) {
 		return werr;
 	}
@@ -2847,7 +2966,21 @@ allowed:
 
 	/* see if a previous replication has been abandoned */
 	if (getnc_state) {
-		struct ldb_dn *new_dn = drs_ObjectIdentifier_to_dn(getnc_state, sam_ctx, ncRoot);
+		struct ldb_dn *new_dn;
+		ret = drs_ObjectIdentifier_to_dn_and_nc_root(getnc_state,
+							     sam_ctx,
+							     ncRoot,
+							     &new_dn,
+							     NULL);
+		if (ret != LDB_SUCCESS) {
+			/*
+			 * This can't fail as we have done this above
+			 * implicitly but not got the DN out
+			 */
+			DBG_ERR("Bad DN '%s'\n",
+				drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot));
+			return WERR_DS_DRA_INVALID_PARAMETER;
+		}
 		if (ldb_dn_compare(new_dn, getnc_state->ncRoot_dn) != 0) {
 			DEBUG(0,(__location__ ": DsGetNCChanges 2nd replication on different DN %s %s (last_dn %s)\n",
 				 ldb_dn_get_linearized(new_dn),
@@ -2882,9 +3015,13 @@ allowed:
 		uint32_t nc_instanceType;
 		struct ldb_dn *ncRoot_dn;
 
-		ncRoot_dn = drs_ObjectIdentifier_to_dn(mem_ctx, sam_ctx, ncRoot);
-		if (ncRoot_dn == NULL) {
-			return WERR_NOT_ENOUGH_MEMORY;
+		ret = drs_ObjectIdentifier_to_dn_and_nc_root(mem_ctx,
+							     sam_ctx,
+							     ncRoot,
+							     &ncRoot_dn,
+							     NULL);
+		if (ret != LDB_SUCCESS) {
+			return WERR_DS_DRA_BAD_DN;
 		}
 
 		ret = dsdb_search_dn(sam_ctx, mem_ctx, &res,
@@ -2998,7 +3135,7 @@ allowed:
 	if (!ldb_dn_validate(getnc_state->ncRoot_dn) ||
 	    ldb_dn_is_null(getnc_state->ncRoot_dn)) {
 		DEBUG(0,(__location__ ": Bad DN '%s'\n",
-			 drs_ObjectIdentifier_to_string(mem_ctx, ncRoot)));
+			 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot)));
 		return WERR_DS_DRA_INVALID_PARAMETER;
 	}
 
@@ -3097,9 +3234,35 @@ allowed:
 			}
 		}
 
+		if (req10->extended_op == DRSUAPI_EXOP_NONE) {
+			getnc_state->is_get_anc =
+				((req10->replica_flags & DRSUAPI_DRS_GET_ANC) != 0);
+			if (getnc_state->is_get_anc
+				&& lpcfg_parm_bool(dce_call->conn->dce_ctx->lp_ctx,
+						    NULL,
+						    "drs",
+						    "broken_samba_4.5_get_anc_emulation",
+						   false)) {
+				getnc_state->broken_samba_4_5_get_anc_emulation = true;
+			}
+			if (lpcfg_parm_bool(dce_call->conn->dce_ctx->lp_ctx,
+					     NULL,
+					     "drs",
+					     "get_tgt_support",
+					     true)) {
+				getnc_state->is_get_tgt =
+					((req10->more_flags & DRSUAPI_DRS_GET_TGT) != 0);
+			}
+		}
+
 		/* RID_ALLOC returns 3 objects in a fixed order */
 		if (req10->extended_op == DRSUAPI_EXOP_FSMO_RID_ALLOC) {
 			/* Do nothing */
+		} else if (getnc_state->broken_samba_4_5_get_anc_emulation) {
+			LDB_TYPESAFE_QSORT(changes,
+					   getnc_state->num_records,
+					   getnc_state,
+					   site_res_cmp_anc_order);
 		} else {
 			LDB_TYPESAFE_QSORT(changes,
 					   getnc_state->num_records,
@@ -3122,13 +3285,6 @@ allowed:
 
 		talloc_free(search_res);
 		talloc_free(changes);
-
-		if (req10->extended_op == DRSUAPI_EXOP_NONE) {
-			getnc_state->is_get_anc =
-				((req10->replica_flags & DRSUAPI_DRS_GET_ANC) != 0);
-			getnc_state->is_get_tgt =
-				((req10->more_flags & DRSUAPI_DRS_GET_TGT) != 0);
-		}
 
 		/*
 		 * when using GET_ANC or GET_TGT, cache the objects that have
@@ -3418,7 +3574,8 @@ allowed:
 					  &ureq);
 		if (!W_ERROR_IS_OK(werr)) {
 			DEBUG(0,(__location__ ": Failed UpdateRefs on %s for %s in DsGetNCChanges - %s\n",
-				 drs_ObjectIdentifier_to_string(mem_ctx, ncRoot), ureq.dest_dsa_dns_name,
+				 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot),
+				 ureq.dest_dsa_dns_name,
 				 win_errstr(werr)));
 		}
 	}
@@ -3548,7 +3705,8 @@ allowed:
 	DEBUG(r->out.ctr->ctr6.more_data?4:2,
 	      ("DsGetNCChanges with uSNChanged >= %llu flags 0x%08x on %s gave %u objects (done %u/%u) %u links (done %u/%u (as %s))\n",
 	       (unsigned long long)(req10->highwatermark.highest_usn+1),
-	       req10->replica_flags, drs_ObjectIdentifier_to_string(mem_ctx, ncRoot),
+	       req10->replica_flags,
+	       drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot),
 	       r->out.ctr->ctr6.object_count,
 	       i, r->out.ctr->ctr6.more_data?getnc_state->num_records:i,
 	       r->out.ctr->ctr6.linked_attributes_count,

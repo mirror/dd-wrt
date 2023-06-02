@@ -1,0 +1,71 @@
+@c $Id$
+
+@node Applications, Things in search for a better place, Setting up a realm, Top
+
+@chapter Applications
+
+@menu
+* AFS::
+@end menu
+
+@node AFS, , Applications, Applications
+@section AFS
+
+@cindex AFS
+AFS is a distributed filesystem that uses Kerberos for authentication.
+
+@cindex OpenAFS
+@cindex Arla
+For more information about AFS see OpenAFS
+@url{http://www.openafs.org/} and Arla
+@url{http://www.stacken.kth.se/projekt/arla/}.
+
+@subsection kafs and afslog
+@cindex afslog
+
+@manpage{afslog,1} will obtains AFS tokens for a number of cells. What cells to get
+tokens for can either be specified as an explicit list, as file paths to
+get tokens for, or be left unspecified, in which case will use whatever
+magic @manpage{kafs,3} decides upon.
+
+If not told what cell to get credentials for, @manpage{kafs,3} will
+search for the files ThisCell and TheseCells in the locations
+specified in @manpage{kafs,3} and try to get tokens for these cells
+and the cells specified in $HOME/.TheseCells.
+
+More usefully it will look at and ~/.TheseCells in your home directory
+and for each line which is a cell get afs token for these cells.
+
+The TheseCells file defines the the cells to which applications on the
+local client machine should try to aquire tokens for. It must reside in
+the directories searched by @manpage{kafs,3} on every AFS client machine.
+
+The file is in ASCII format and contains one character string, the cell
+name, per line. Cell names are case sensitive, but most cell names
+are lower case.
+
+See manpage for @manpage{kafs,3} for search locations of ThisCell and TheseCells.
+
+@subsection How to get a KeyFile
+
+@file{ktutil -k AFSKEYFILE:KeyFile get afs@@MY.REALM}
+
+or you can extract it with kadmin
+
+@example
+kadmin> ext -k AFSKEYFILE:/usr/afs/etc/KeyFile afs@@My.CELL.NAME
+@end example
+
+You have to make sure you have a @code{des-cbc-md5} encryption type since that
+is the enctype that will be converted.
+
+@subsection How to convert a srvtab to a KeyFile
+
+You need a @file{/usr/vice/etc/ThisCell} containing the cellname of your
+AFS-cell.
+
+@file{ktutil copy krb4:/root/afs-srvtab AFSKEYFILE:/usr/afs/etc/KeyFile}.
+
+If keyfile already exists, this will add the new key in afs-srvtab to
+KeyFile.
+

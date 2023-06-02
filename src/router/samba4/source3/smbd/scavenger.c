@@ -22,6 +22,7 @@
 #include "messages.h"
 #include "serverid.h"
 #include "smbd/globals.h"
+#include "smbd/smbXsrv_open.h"
 #include "smbd/scavenger.h"
 #include "locking/share_mode_lock.h"
 #include "locking/leases_db.h"
@@ -245,7 +246,7 @@ static bool smbd_scavenger_start(struct smbd_scavenger_state *state)
 		close(fds[0]);
 
 		status = smbd_reinit_after_fork(state->msg, state->ev,
-						true, "smbd-scavenger");
+						true);
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG(2, ("reinit_after_fork failed: %s\n",
 				  nt_errstr(status)));
@@ -253,6 +254,7 @@ static bool smbd_scavenger_start(struct smbd_scavenger_state *state)
 			return false;
 		}
 
+		process_set_title("smbd-scavenger", "scavenger");
 		reopen_logs();
 
 		state->am_scavenger = true;

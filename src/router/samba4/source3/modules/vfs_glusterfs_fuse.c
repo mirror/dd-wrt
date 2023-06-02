@@ -23,40 +23,49 @@
 
 #define GLUSTER_NAME_MAX 255
 
-static int vfs_gluster_fuse_get_real_filename(struct vfs_handle_struct *handle,
-					      const struct smb_filename *path,
-					      const char *name,
-					      TALLOC_CTX *mem_ctx,
-					      char **_found_name)
+static NTSTATUS vfs_gluster_fuse_get_real_filename_at(
+	struct vfs_handle_struct *handle,
+	struct files_struct *dirfsp,
+	const char *name,
+	TALLOC_CTX *mem_ctx,
+	char **_found_name)
 {
-	int ret;
+	int ret, dirfd;
 	char key_buf[GLUSTER_NAME_MAX + 64];
 	char val_buf[GLUSTER_NAME_MAX + 1];
 	char *found_name = NULL;
 
 	if (strlen(name) >= GLUSTER_NAME_MAX) {
-		errno = ENAMETOOLONG;
-		return -1;
+		return NT_STATUS_OBJECT_NAME_INVALID;
 	}
 
 	snprintf(key_buf, GLUSTER_NAME_MAX + 64,
 		 "glusterfs.get_real_filename:%s", name);
 
-	ret = getxattr(path->base_name, key_buf, val_buf, GLUSTER_NAME_MAX + 1);
+	dirfd = openat(fsp_get_pathref_fd(dirfsp), ".", O_RDONLY);
+	if (dirfd == -1) {
+		NTSTATUS status = map_nt_error_from_unix(errno);
+		DBG_DEBUG("Could not open '.' in %s: %s\n",
+			  fsp_str_dbg(dirfsp),
+			  strerror(errno));
+		return status;
+	}
+
+	ret = fgetxattr(dirfd, key_buf, val_buf, GLUSTER_NAME_MAX + 1);
+	close(dirfd);
 	if (ret == -1) {
 		if (errno == ENOATTR) {
 			errno = ENOENT;
 		}
-		return -1;
+		return map_nt_error_from_unix(errno);
 	}
 
 	found_name = talloc_strdup(mem_ctx, val_buf);
 	if (found_name == NULL) {
-		errno = ENOMEM;
-		return -1;
+		return NT_STATUS_NO_MEMORY;
 	}
 	*_found_name = found_name;
-	return 0;
+	return NT_STATUS_OK;
 }
 
 struct device_mapping_entry {
@@ -252,7 +261,7 @@ static int vfs_glusterfs_fuse_connect(struct vfs_handle_struct *handle,
 struct vfs_fn_pointers glusterfs_fuse_fns = {
 
 	.connect_fn = vfs_glusterfs_fuse_connect,
-	.get_real_filename_fn = vfs_gluster_fuse_get_real_filename,
+	.get_real_filename_at_fn = vfs_gluster_fuse_get_real_filename_at,
 	.file_id_create_fn = vfs_glusterfs_fuse_file_id_create,
 };
 

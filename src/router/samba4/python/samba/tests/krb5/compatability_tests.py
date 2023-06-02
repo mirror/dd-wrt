@@ -89,16 +89,16 @@ class SimpleKerberosTests(KDCBaseTest):
         # RFC 6806 11. Negotiation of FAST and Detecting Modified Requests
         self.assertTrue(ENC_PA_REP_FLAG & flags)
 
-    def test_heimdal_EncASRepPart_FAST_support(self):
+    def test_heimdal_and_windows_EncASRepPart_FAST_support(self):
         creds = self.get_user_creds()
         (enc, _) = self.as_req(creds)
         self.assertEqual(HIEMDAL_ENC_AS_REP_PART_TYPE_TAG, enc[0])
         as_rep = self.der_decode(enc, asn1Spec=krb5_asn1.EncASRepPart())
         flags = as_rep['flags']
         flags = int(as_rep['flags'], base=2)
-        # Heimdal does not set enc-pa-rep, flag bit 15
+        # Heimdal and Windows does set enc-pa-rep, flag bit 15
         # RFC 6806 11. Negotiation of FAST and Detecting Modified Requests
-        self.assertFalse(ENC_PA_REP_FLAG & flags)
+        self.assertTrue(ENC_PA_REP_FLAG & flags)
 
     def test_mit_arcfour_salt(self):
         creds = self.get_user_creds()
@@ -120,7 +120,12 @@ class SimpleKerberosTests(KDCBaseTest):
             self.fail(
                 "(Heimdal) Salt populated for ARCFOUR_HMAC_MD5 encryption")
 
-    def test_heimdal_ticket_signature(self):
+    # This tests also passes again Samba AD built with MIT Kerberos 1.20 which
+    # is not released yet.
+    #
+    # FIXME: Should be moved to to a new kdc_tgt_tests.py once MIT KRB5 1.20
+    # is released.
+    def test_ticket_signature(self):
         # Ensure that a DC correctly issues tickets signed with its krbtgt key.
         user_creds = self.get_client_creds()
         target_creds = self.get_service_creds()
@@ -132,15 +137,16 @@ class SimpleKerberosTests(KDCBaseTest):
         tgt = self.get_tgt(user_creds)
 
         # Ensure the PAC contains the expected checksums.
-        self.verify_ticket(tgt, key)
+        self.verify_ticket(tgt, key, service_ticket=False)
 
         # Get a service ticket from the DC.
         service_ticket = self.get_service_ticket(tgt, target_creds)
 
         # Ensure the PAC contains the expected checksums.
-        self.verify_ticket(service_ticket, key, expect_ticket_checksum=True)
+        self.verify_ticket(service_ticket, key, service_ticket=True,
+                           expect_ticket_checksum=True)
 
-    def test_mit_ticket_signature(self):
+    def test_mit_pre_1_20_ticket_signature(self):
         # Ensure that a DC does not issue tickets signed with its krbtgt key.
         user_creds = self.get_client_creds()
         target_creds = self.get_service_creds()
@@ -152,13 +158,36 @@ class SimpleKerberosTests(KDCBaseTest):
         tgt = self.get_tgt(user_creds)
 
         # Ensure the PAC contains the expected checksums.
-        self.verify_ticket(tgt, key)
+        self.verify_ticket(tgt, key, service_ticket=False)
 
         # Get a service ticket from the DC.
         service_ticket = self.get_service_ticket(tgt, target_creds)
 
         # Ensure the PAC does not contain the expected checksums.
-        self.verify_ticket(service_ticket, key, expect_ticket_checksum=False)
+        self.verify_ticket(service_ticket, key, service_ticket=True,
+                           expect_ticket_checksum=False)
+
+    def test_full_signature(self):
+        # Ensure that a DC correctly issues tickets signed with its krbtgt key.
+        user_creds = self.get_client_creds()
+        target_creds = self.get_service_creds()
+
+        krbtgt_creds = self.get_krbtgt_creds()
+        key = self.TicketDecryptionKey_from_creds(krbtgt_creds)
+
+        # Get a TGT from the DC.
+        tgt = self.get_tgt(user_creds)
+
+        # Ensure the PAC contains the expected checksums.
+        self.verify_ticket(tgt, key, service_ticket=False)
+
+        # Get a service ticket from the DC.
+        service_ticket = self.get_service_ticket(tgt, target_creds)
+
+        # Ensure the PAC contains the expected checksums.
+        self.verify_ticket(service_ticket, key, service_ticket=True,
+                           expect_ticket_checksum=True,
+                           expect_full_checksum=True)
 
     def as_pre_auth_req(self, creds, etypes):
         user = creds.get_username()

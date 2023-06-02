@@ -8,16 +8,27 @@
 # Copyright (C) 2021 Jeremy Allison
 
 if [ $# -lt 5 ]; then
-    echo Usage: test_chdir_user.sh \
-	 --configfile=SERVERCONFFILE SMBCLIENT SMBCONTROL SERVER SHARE
-exit 1
+	echo Usage: test_chdir_user.sh \
+		--configfile=SERVERCONFFILE SMBCLIENT SMBCONTROL SERVER SHARE PREFIX TESTENV
+	exit 1
 fi
 
-CONF=$1; shift 1
-SMBCLIENT=$1; shift 1
-SMBCONTROL=$1; shift 1
-SERVER=$1; shift 1
-SHARE=$1; shift 1
+CONF=$1
+shift 1
+SMBCLIENT=$1
+shift 1
+SMBCONTROL=$1
+shift 1
+SERVER=$1
+shift 1
+SHARE=$1
+shift 1
+PREFIX=${1}
+shift 1
+TESTENV=${1}
+shift 1
+
+PREFIX_ABS="$(readlink -f "${PREFIX}")"
 
 # Do not let deprecated option warnings muck this up
 SAMBA_DEPRECATED_SUPPRESS=1
@@ -25,10 +36,8 @@ export SAMBA_DEPRECATED_SUPPRESS
 
 conf_dir=$(dirname ${SERVERCONFFILE})
 
-log_file=${conf_dir}/../smbd_test.log
-
 error_inject_conf=${conf_dir}/error_inject.conf
-> ${error_inject_conf}
+rm -f ${error_inject_conf}
 
 incdir=$(dirname $0)/../../../testprogs/blackbox
 . $incdir/subunit.sh
@@ -40,15 +49,22 @@ cd $SELFTEST_TMPDIR || exit 1
 rm -f smbclient-stdin smbclient-stdout smbclient-stderr
 mkfifo smbclient-stdin smbclient-stdout smbclient-stderr
 
-CLI_FORCE_INTERACTIVE=1; export CLI_FORCE_INTERACTIVE
+CLI_FORCE_INTERACTIVE=1
+export CLI_FORCE_INTERACTIVE
 
 ${SMBCLIENT} //${SERVER}/${SHARE} ${CONF} -U${USER}%${PASSWORD} \
-	     < smbclient-stdin > smbclient-stdout 2>smbclient-stderr &
+	<smbclient-stdin >smbclient-stdout 2>smbclient-stderr &
 CLIENT_PID=$!
+
+log_file="${PREFIX_ABS}/${TESTENV}/smbd_test.log"
+# Add support for "SMBD_DONT_LOG_STDOUT=1"
+if [ -r "${PREFIX_ABS}/${TESTENV}/logs/log.smbd" ]; then
+	log_file="${PREFIX_ABS}/${TESTENV}/logs/log.smbd"
+fi
 
 # Count the number of chdir_current_service: vfs_ChDir.*failed: Permission denied
 # errors that are already in the log (should be zero).
-num_errs=`grep "chdir_current_service: vfs_ChDir.*failed: Permission denied" ${log_file} | wc -l`
+num_errs=$(grep "chdir_current_service: vfs_ChDir.*failed: Permission denied" ${log_file} | wc -l)
 
 sleep 1
 
@@ -73,8 +89,10 @@ echo "tcon ${SHARE}" >&100
 head -n 4 <&101
 
 # Ensure any chdir will give EACCESS.
-echo "error_inject:chdir = EACCES" > ${error_inject_conf}
-${SMBCONTROL} ${CONF} 0 reload-config
+echo "error_inject:chdir = EACCES" >${error_inject_conf}
+testit "reload config 1" \
+	"${SMBCONTROL}" "${CONF}" smbd reload-config ||
+	failed=$((failed + 1))
 
 sleep 1
 
@@ -88,15 +106,17 @@ kill ${CLIENT_PID}
 rm -f smbclient-stdin smbclient-stdout smbclient-stderr
 
 # Remove the chdir inject.
-> ${error_inject_conf}
-${SMBCONTROL} ${CONF} 0 reload-config
+rm -f ${error_inject_conf}
+testit "reload config 2" \
+	"${SMBCONTROL}" "${CONF}" smbd reload-config ||
+	failed=$((failed + 1))
 
 # Now look for chdir_current_service: vfs_ChDir.*failed: Permission denied
 # in the smb log. There should be one more than before.
 
-num_errs1=`grep "chdir_current_service: vfs_ChDir.*failed: Permission denied" ${log_file} | wc -l`
+num_errs1=$(grep "chdir_current_service: vfs_ChDir.*failed: Permission denied" ${log_file} | wc -l)
 
 testit "Verify we got at least one chdir error" \
-       test $num_errs1 -gt $num_errs || failed=$(expr $failed + 1)
+	test $num_errs1 -gt $num_errs || failed=$(expr $failed + 1)
 
 testok $0 $failed

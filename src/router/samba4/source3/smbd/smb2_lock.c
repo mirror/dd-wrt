@@ -381,6 +381,7 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 
 	for (i=0; i<in_lock_count; i++) {
 		bool invalid = false;
+		bool posix_handle =(fsp->posix_flags & FSP_POSIX_FLAGS_OPEN);
 
 		switch (in_locks[i].flags) {
 		case SMB2_LOCK_FLAG_SHARED:
@@ -426,7 +427,25 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 		locks[i].offset = in_locks[i].offset;
 		locks[i].count  = in_locks[i].length;
 
+		if (posix_handle) {
+			locks[i].lock_flav = POSIX_LOCK;
+		} else {
+			locks[i].lock_flav = WINDOWS_LOCK;
+		}
+
 		if (in_locks[i].flags & SMB2_LOCK_FLAG_EXCLUSIVE) {
+			if (posix_handle && fsp->fsp_flags.can_write == false) {
+				/*
+				 * Can't get a write lock on a posix
+				 * read-only handle.
+				 */
+				DBG_INFO("POSIX write lock requested "
+					"on read-only handle for file %s\n",
+					fsp_str_dbg(fsp));
+				tevent_req_nterror(req,
+					NT_STATUS_INVALID_HANDLE);
+				return tevent_req_post(req, ev);
+			}
 			locks[i].brltype = WRITE_LOCK;
 		} else if (in_locks[i].flags & SMB2_LOCK_FLAG_SHARED) {
 			locks[i].brltype = READ_LOCK;
@@ -441,6 +460,7 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 		} else {
 			locks[i].brltype = UNLOCK_LOCK;
 		}
+		locks[i].lock_flav = WINDOWS_LOCK;
 
 		DBG_DEBUG("index %"PRIu16" offset=%"PRIu64", count=%"PRIu64", "
 			  "smblctx = %"PRIu64" type %d\n",
@@ -456,7 +476,7 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 
 	if (isunlock) {
 		status = smbd_do_unlocking(
-			state->smb1req, fsp, in_lock_count, locks, WINDOWS_LOCK);
+			state->smb1req, fsp, in_lock_count, locks);
 
 		if (tevent_req_nterror(req, status)) {
 			return tevent_req_post(req, ev);
@@ -569,7 +589,6 @@ static void smbd_smb2_lock_try(struct tevent_req *req)
 
 	status = smbd_do_locks_try(
 		state->fsp,
-		WINDOWS_LOCK,
 		state->lock_count,
 		state->locks,
 		&blocker_idx,

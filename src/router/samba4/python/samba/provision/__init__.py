@@ -1924,11 +1924,14 @@ def provision_fill(samdb, secrets_ldb, logger, names, paths,
         invocationid = str(uuid.uuid4())
 
     if krbtgtpass is None:
+        # Note that the machinepass value is ignored
+        # as the backend (password_hash.c) will generate its
+        # own random values for the krbtgt keys
         krbtgtpass = samba.generate_random_machine_password(128, 255)
     if machinepass is None:
         machinepass = samba.generate_random_machine_password(120, 120)
     if dnspass is None:
-        dnspass = samba.generate_random_password(128, 255)
+        dnspass = samba.generate_random_password(120, 120)
 
     samdb.transaction_start()
     try:

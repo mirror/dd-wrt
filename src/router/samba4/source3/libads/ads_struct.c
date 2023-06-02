@@ -24,7 +24,11 @@
 /* return a ldap dn path from a string, given separators and field name
    caller must free
 */
-char *ads_build_path(const char *realm, const char *sep, const char *field, int reverse)
+ADS_STATUS ads_build_path(const char *realm,
+			  const char *sep,
+			  const char *field,
+			  int reverse,
+			  char **_path)
 {
 	char *p, *r;
 	int numbits = 0;
@@ -32,10 +36,11 @@ char *ads_build_path(const char *realm, const char *sep, const char *field, int 
 	int len;
 	char *saveptr;
 
-	r = SMB_STRDUP(realm);
+	*_path = NULL;
 
-	if (!r || !*r) {
-		return r;
+	r = SMB_STRDUP(realm);
+	if (r == NULL) {
+		return ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
 	}
 
 	for (p=r; *p; p++) {
@@ -49,21 +54,21 @@ char *ads_build_path(const char *realm, const char *sep, const char *field, int 
 	ret = (char *)SMB_MALLOC(len);
 	if (!ret) {
 		free(r);
-		return NULL;
+		return ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
 	}
 
 	if (strlcpy(ret,field, len) >= len) {
 		/* Truncate ! */
 		free(r);
 		free(ret);
-		return NULL;
+		return ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
 	}
 	p=strtok_r(r, sep, &saveptr);
 	if (p) {
 		if (strlcat(ret, p, len) >= len) {
 			free(r);
 			free(ret);
-			return NULL;
+			return ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
 		}
 
 		while ((p=strtok_r(NULL, sep, &saveptr)) != NULL) {
@@ -76,7 +81,7 @@ char *ads_build_path(const char *realm, const char *sep, const char *field, int 
 			free(ret);
 			if (retval == -1) {
 				free(r);
-				return NULL;
+				return ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
 			}
 			ret = SMB_STRDUP(s);
 			free(s);
@@ -84,16 +89,34 @@ char *ads_build_path(const char *realm, const char *sep, const char *field, int 
 	}
 
 	free(r);
-	return ret;
+
+	*_path = ret;
+
+	return ADS_ERROR_NT(NT_STATUS_OK);
 }
 
 /* return a dn of the form "dc=AA,dc=BB,dc=CC" from a 
    realm of the form AA.BB.CC 
    caller must free
 */
-char *ads_build_dn(const char *realm)
+ADS_STATUS ads_build_dn(const char *realm, TALLOC_CTX *mem_ctx, char **_dn)
 {
-	return ads_build_path(realm, ".", "dc=", 0);
+	ADS_STATUS status;
+	char *dn = NULL;
+
+	status = ads_build_path(realm, ".", "dc=", 0, &dn);
+	if (!ADS_ERR_OK(status)) {
+		SAFE_FREE(dn);
+		return status;
+	}
+
+	*_dn = talloc_strdup(mem_ctx, dn);
+	SAFE_FREE(dn);
+	if (*_dn == NULL) {
+		return ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
+	}
+
+	return ADS_ERROR_NT(NT_STATUS_OK);
 }
 
 /* return a DNS name in the for aa.bb.cc from the DN  
@@ -121,35 +144,56 @@ char *ads_build_domain(const char *dn)
 	return dnsdomain;	
 }
 
-
-
-#ifndef LDAP_PORT
-#define LDAP_PORT 389
+static int ads_destructor(ADS_STRUCT *ads)
+{
+#ifdef HAVE_LDAP
+	ads_disconnect(ads);
 #endif
+	return 0;
+}
 
 /*
   initialise a ADS_STRUCT, ready for some ads_ ops
 */
-ADS_STRUCT *ads_init(const char *realm, 
+ADS_STRUCT *ads_init(TALLOC_CTX *mem_ctx,
+		     const char *realm,
 		     const char *workgroup,
 		     const char *ldap_server,
 		     enum ads_sasl_state_e sasl_state)
 {
-	ADS_STRUCT *ads;
+	ADS_STRUCT *ads = NULL;
 	int wrap_flags;
 
-	ads = SMB_XMALLOC_P(ADS_STRUCT);
-	ZERO_STRUCTP(ads);
+	ads = talloc_zero(mem_ctx, ADS_STRUCT);
+	if (ads == NULL) {
+		return NULL;
+	}
+	talloc_set_destructor(ads, ads_destructor);
+
 #ifdef HAVE_LDAP
 	ads_zero_ldap(ads);
 #endif
 
-	ads->server.realm = realm? SMB_STRDUP(realm) : NULL;
-	ads->server.workgroup = workgroup ? SMB_STRDUP(workgroup) : NULL;
-	ads->server.ldap_server = ldap_server? SMB_STRDUP(ldap_server) : NULL;
+	ads->server.realm = talloc_strdup(ads, realm);
+	if (realm != NULL && ads->server.realm == NULL) {
+		DBG_WARNING("Out of memory\n");
+		TALLOC_FREE(ads);
+		return NULL;
+	}
 
-	/* the caller will own the memory by default */
-	ads->is_mine = 1;
+	ads->server.workgroup = talloc_strdup(ads, workgroup);
+	if (workgroup != NULL && ads->server.workgroup == NULL) {
+		DBG_WARNING("Out of memory\n");
+		TALLOC_FREE(ads);
+		return NULL;
+	}
+
+	ads->server.ldap_server = talloc_strdup(ads, ldap_server);
+	if (ldap_server != NULL && ads->server.ldap_server == NULL) {
+		DBG_WARNING("Out of memory\n");
+		TALLOC_FREE(ads);
+		return NULL;
+	}
 
 	wrap_flags = lp_client_ldap_sasl_wrapping();
 	if (wrap_flags == -1) {
@@ -192,44 +236,4 @@ bool ads_set_sasl_wrap_flags(ADS_STRUCT *ads, unsigned flags)
 	ads->auth.flags = flags | other_flags;
 
 	return true;
-}
-
-/*
-  free the memory used by the ADS structure initialized with 'ads_init(...)'
-*/
-void ads_destroy(ADS_STRUCT **ads)
-{
-	if (ads && *ads) {
-		bool is_mine;
-
-		is_mine = (*ads)->is_mine;
-#ifdef HAVE_LDAP
-		ads_disconnect(*ads);
-#endif
-		SAFE_FREE((*ads)->server.realm);
-		SAFE_FREE((*ads)->server.workgroup);
-		SAFE_FREE((*ads)->server.ldap_server);
-
-		SAFE_FREE((*ads)->auth.realm);
-		SAFE_FREE((*ads)->auth.password);
-		SAFE_FREE((*ads)->auth.user_name);
-		SAFE_FREE((*ads)->auth.kdc_server);
-		SAFE_FREE((*ads)->auth.ccache_name);
-
-		SAFE_FREE((*ads)->config.realm);
-		SAFE_FREE((*ads)->config.bind_path);
-		SAFE_FREE((*ads)->config.ldap_server_name);
-		SAFE_FREE((*ads)->config.server_site_name);
-		SAFE_FREE((*ads)->config.client_site_name);
-		SAFE_FREE((*ads)->config.schema_path);
-		SAFE_FREE((*ads)->config.config_path);
-
-		ZERO_STRUCTP(*ads);
-#ifdef HAVE_LDAP
-		ads_zero_ldap(*ads);
-#endif
-
-		if ( is_mine )
-			SAFE_FREE(*ads);
-	}
 }

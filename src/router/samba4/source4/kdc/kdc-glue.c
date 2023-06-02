@@ -31,10 +31,13 @@
 #include "auth/kerberos/pac_utils.h"
 #include "kdc/kdc-glue.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
+
 int kdc_check_pac(krb5_context context,
 		  DATA_BLOB srv_sig,
 		  struct PAC_SIGNATURE_DATA *kdc_sig,
-		  struct hdb_entry_ex *ent)
+		  hdb_entry *ent)
 {
 	krb5_enctype etype;
 	int ret;
@@ -52,11 +55,7 @@ int kdc_check_pac(krb5_context context,
 		}
 	}
 
-#if HDB_ENCTYPE2KEY_TAKES_KEYSET
-	ret = hdb_enctype2key(context, &ent->entry, NULL, etype, &key);
-#else
-	ret = hdb_enctype2key(context, &ent->entry, etype, &key);
-#endif
+	ret = hdb_enctype2key(context, ent, NULL, etype, &key);
 
 	if (ret != 0) {
 		return ret;

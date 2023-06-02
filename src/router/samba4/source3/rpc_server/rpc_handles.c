@@ -35,52 +35,6 @@
 
 static size_t num_handles = 0;
 
-/* TODO
- * the following prototypes are declared here to avoid
- * code being moved about too much for a patch to be
- * disrupted / less obvious.
- *
- * these functions, and associated functions that they
- * call, should be moved behind a .so module-loading
- * system _anyway_.  so that's the next step...
- */
-
-int make_base_pipes_struct(TALLOC_CTX *mem_ctx,
-			   struct messaging_context *msg_ctx,
-			   const char *pipe_name,
-			   enum dcerpc_transport_t transport,
-			   const struct tsocket_address *remote_address,
-			   const struct tsocket_address *local_address,
-			   struct pipes_struct **_p)
-{
-	struct pipes_struct *p;
-
-	p = talloc_zero(mem_ctx, struct pipes_struct);
-	if (!p) {
-		return ENOMEM;
-	}
-
-	p->msg_ctx = msg_ctx;
-	p->transport = transport;
-
-	p->remote_address = tsocket_address_copy(remote_address, p);
-	if (p->remote_address == NULL) {
-		talloc_free(p);
-		return ENOMEM;
-	}
-
-	if (local_address) {
-		p->local_address = tsocket_address_copy(local_address, p);
-		if (p->local_address == NULL) {
-			talloc_free(p);
-			return ENOMEM;
-		}
-	}
-
-	*_p = p;
-	return 0;
-}
-
 bool check_open_pipes(void)
 {
 	if (num_handles > 0) {
@@ -158,6 +112,15 @@ static struct dcesrv_handle *find_policy_by_hnd_internal(
 
 	if (data_p) {
 		*data_p = NULL;
+	}
+
+	/*
+	 * Do not pass an empty policy_handle to dcesrv_handle_lookup() or
+	 * it will create a new empty handle
+	 */
+	if (ndr_policy_handle_empty(hnd)) {
+		p->fault_state = DCERPC_FAULT_CONTEXT_MISMATCH;
+		return NULL;
 	}
 
 	/*
@@ -241,13 +204,27 @@ bool pipe_access_check(struct pipes_struct *p)
 
 	if (lp_restrict_anonymous() > 0) {
 
+		struct dcesrv_call_state *dce_call = p->dce_call;
+		struct dcesrv_auth *auth_state = dce_call->auth_state;
+		enum dcerpc_AuthType auth_type = DCERPC_AUTH_TYPE_NONE;
+		struct auth_session_info *session_info = NULL;
+		enum security_user_level user_level;
+
+		if (!auth_state->auth_finished) {
+			return false;
+		}
+
+		dcesrv_call_auth_info(dce_call, &auth_type, NULL);
+
 		/* schannel, so we must be ok */
-		if (p->pipe_bound &&
-		    (p->auth.auth_type == DCERPC_AUTH_TYPE_SCHANNEL)) {
+		if (auth_type == DCERPC_AUTH_TYPE_SCHANNEL) {
 			return True;
 		}
 
-		if (security_session_user_level(p->session_info, NULL) < SECURITY_USER) {
+		session_info = dcesrv_call_session_info(dce_call);
+		user_level = security_session_user_level(session_info, NULL);
+
+		if (user_level < SECURITY_USER) {
 			return False;
 		}
 	}

@@ -213,8 +213,7 @@ static struct tevent_req *fsctl_dup_extents_send(TALLOC_CTX *mem_ctx,
 
 	status = fsctl_dup_extents_check_lengths(src_fsp, dst_fsp,
 						 &state->dup_extents);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
 	}
 
@@ -226,14 +225,12 @@ static struct tevent_req *fsctl_dup_extents_send(TALLOC_CTX *mem_ctx,
 
 	status = fsctl_dup_extents_check_overlap(src_fsp, dst_fsp,
 						 &state->dup_extents);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
 	}
 
 	status = fsctl_dup_extents_check_sparse(src_fsp, dst_fsp);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
 	}
 
@@ -254,11 +251,17 @@ static void fsctl_dup_extents_offload_read_done(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct fsctl_dup_extents_state *state = tevent_req_data(
 		req, struct fsctl_dup_extents_state);
+	uint32_t flags;
+	uint64_t xferlen;
 	DATA_BLOB token;
 	NTSTATUS status;
 
+	/*
+	 * Note that both flags and xferlen are not used with copy-chunk.
+	 */
+
 	status = SMB_VFS_OFFLOAD_READ_RECV(subreq, state->dst_fsp->conn,
-					   state, &token);
+					   state, &flags, &xferlen, &token);
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
@@ -457,6 +460,7 @@ static NTSTATUS fsctl_zero_data(TALLOC_CTX *mem_ctx,
 				zdata_info.file_off,
 				len,
 				WRITE_LOCK,
+				lp_posix_cifsu_locktype(fsp),
 				&lck);
 
 	if (!SMB_VFS_STRICT_LOCK_CHECK(fsp->conn, fsp, &lck)) {

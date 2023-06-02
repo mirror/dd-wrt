@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    uid/user handling
    Copyright (C) Andrew Tridgell         1992-1998
@@ -72,7 +72,7 @@ static bool lookup_unix_group_name(const char *name, struct dom_sid *sid)
  If an explicit domain name was given in the form domain\user, it
  has to try that. If no explicit domain name was given, we have
  to do guesswork.
-*****************************************************************/  
+*****************************************************************/
 
 bool lookup_name(TALLOC_CTX *mem_ctx,
 		 const char *full_name, int flags,
@@ -100,8 +100,18 @@ bool lookup_name(TALLOC_CTX *mem_ctx,
 					PTR_DIFF(p, full_name));
 		name = talloc_strdup(tmp_ctx, p+1);
 	} else {
-		domain = talloc_strdup(tmp_ctx, "");
-		name = talloc_strdup(tmp_ctx, full_name);
+		char *q = strchr_m(full_name, '@');
+
+		/* Set the domain for UPNs */
+		if (q != NULL) {
+			name = talloc_strndup(tmp_ctx,
+					      full_name,
+					      PTR_DIFF(q, full_name));
+			domain = talloc_strdup(tmp_ctx, q + 1);
+		} else {
+			domain = talloc_strdup(tmp_ctx, "");
+			name = talloc_strdup(tmp_ctx, full_name);
+		}
 	}
 
 	if ((domain == NULL) || (name == NULL)) {
@@ -300,7 +310,7 @@ bool lookup_name(TALLOC_CTX *mem_ctx,
 		goto ok;
 	}
 
-	/* 6. Builtin aliases */	
+	/* 6. Builtin aliases */
 
 	if ((flags & LOOKUP_NAME_BUILTIN) &&
 	    lookup_builtin_name(name, &rid))
@@ -454,24 +464,24 @@ bool lookup_name_smbconf(TALLOC_CTX *mem_ctx,
 		 const char **ret_domain, const char **ret_name,
 		 struct dom_sid *ret_sid, enum lsa_SidType *ret_type)
 {
-	char *qualified_name;
-	const char *p;
+	char *qualified_name = NULL;
+	const char *p = strchr_m(full_name, *lp_winbind_separator());
+	bool is_qualified = p != NULL || strchr_m(full_name, '@') != NULL;
 
-	if ((p = strchr_m(full_name, *lp_winbind_separator())) != NULL) {
+	/* For DOMAIN\user or user@REALM directly call lookup_name(). */
+	if (is_qualified) {
 
 		/* The name is already qualified with a domain. */
 
-		if (*lp_winbind_separator() != '\\') {
-			char *tmp;
-
+		if (p != NULL && *lp_winbind_separator() != '\\') {
 			/* lookup_name() needs '\\' as a separator */
 
-			tmp = talloc_strdup(mem_ctx, full_name);
-			if (!tmp) {
+			qualified_name = talloc_strdup(mem_ctx, full_name);
+			if (qualified_name == NULL) {
 				return false;
 			}
-			tmp[p - full_name] = '\\';
-			full_name = tmp;
+			qualified_name[p - full_name] = '\\';
+			full_name = qualified_name;
 		}
 
 		return lookup_name(mem_ctx, full_name, flags,
@@ -882,7 +892,7 @@ NTSTATUS lookup_sids(TALLOC_CTX *mem_ctx, int num_sids,
 	}
 
 	/* First build up the data structures:
-	 * 
+	 *
 	 * dom_infos is a list of domains referenced in the list of
 	 * SIDs. Later we will walk the list of domains and look up the RIDs
 	 * in bulk.
@@ -1070,7 +1080,7 @@ NTSTATUS lookup_sids(TALLOC_CTX *mem_ctx, int num_sids,
 
 /*****************************************************************
  *THE CANONICAL* convert SID to name function.
-*****************************************************************/  
+*****************************************************************/
 
 bool lookup_sid(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 		const char **ret_domain, const char **ret_name,
@@ -1104,7 +1114,7 @@ bool lookup_sid(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 		goto done;
 	}
 
-	if ((ret_name != NULL) && 
+	if ((ret_name != NULL) &&
 	    !(*ret_name = talloc_strdup(mem_ctx, name->name))) {
 		goto done;
 	}
@@ -1130,7 +1140,7 @@ bool lookup_sid(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 
 /*****************************************************************
  *THE LEGACY* convert SID to id function.
-*****************************************************************/  
+*****************************************************************/
 
 static bool legacy_sid_to_unixid(const struct dom_sid *psid, struct unixid *id)
 {
@@ -1465,7 +1475,7 @@ fail:
 
 /*****************************************************************
  *THE CANONICAL* convert SID to uid function.
-*****************************************************************/  
+*****************************************************************/
 
 bool sid_to_uid(const struct dom_sid *psid, uid_t *puid)
 {
@@ -1527,7 +1537,7 @@ bool sid_to_uid(const struct dom_sid *psid, uid_t *puid)
 /*****************************************************************
  *THE CANONICAL* convert SID to gid function.
  Group mapping is used for gids that maps to Wellknown SIDs
-*****************************************************************/  
+*****************************************************************/
 
 bool sid_to_gid(const struct dom_sid *psid, gid_t *pgid)
 {

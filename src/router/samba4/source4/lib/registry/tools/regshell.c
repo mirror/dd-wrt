@@ -47,7 +47,7 @@ static WERROR get_full_path(struct regshell_context *ctx, const char *path, char
 		new_path = talloc_strdup(ctx, "");
 	} else {
  		new_path = talloc_strdup(ctx, ctx->path);
-	}		
+	}
 
 	dir = strtok(discard_const_p(char, path), "\\");
 	if (dir == NULL) {
@@ -64,7 +64,7 @@ static WERROR get_full_path(struct regshell_context *ctx, const char *path, char
 				talloc_free(tmp);
 			}
 			continue;
-		} 
+		}
 		if (strcmp(dir, ".") == 0) {
 			continue;
 		}
@@ -77,7 +77,7 @@ static WERROR get_full_path(struct regshell_context *ctx, const char *path, char
 			new_path = talloc_asprintf(ctx, "%s\\%s", new_path, dir);
 		}
 		talloc_free(tmp);
-		
+
 	} while ((dir = strtok(NULL, "\\")));
 
 	*ret_path = new_path;
@@ -143,8 +143,7 @@ static WERROR cmd_info(struct regshell_context *ctx, int argc, const char **argv
 		printf("Error getting security descriptor: %s\n", win_errstr(error));
 		return WERR_OK;
 	}
-	ndr_print_debug((ndr_print_fn_t)ndr_print_security_descriptor,
-			"Security", sec_desc);
+	NDR_PRINT_DEBUG(security_descriptor, sec_desc);
 	talloc_free(sec_desc);
 
 	return WERR_OK;

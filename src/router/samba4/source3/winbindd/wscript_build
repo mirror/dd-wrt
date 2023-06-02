@@ -190,7 +190,6 @@ bld.SAMBA3_SUBSYSTEM('winbindd-lib',
                     winbindd_dual.c
                     winbindd_dual_ndr.c
                     winbindd_dual_srv.c
-                    winbindd_async.c
                     winbindd_creds.c
                     winbindd_cred_cache.c
                     winbindd_ccache_access.c
@@ -198,6 +197,7 @@ bld.SAMBA3_SUBSYSTEM('winbindd-lib',
                     winbindd_idmap.c
                     winbindd_locator.c
                     winbindd_ndr.c
+                    winbindd_traceid.c
                     wb_lookupsid.c
                     wb_lookupsids.c
                     wb_lookupname.c
@@ -270,8 +270,7 @@ bld.SAMBA3_SUBSYSTEM('winbindd-lib',
                     SLCACHE
                     RPC_NDR_DSSETUP
                     RPC_NDR_WINBIND
-                    RPC_SAMR
-                    RPC_LSARPC
+                    TOKEN_UTIL
                     RPC_SERVER
                     WB_REQTRANS
                     TDB_VALIDATE

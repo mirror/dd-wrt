@@ -119,6 +119,16 @@ void *secrets_fetch(const char *key, size_t *size)
 	if (result == NULL) {
 		return NULL;
 	}
+	/*
+	 * secrets_fetch() is a generic code and may be used for sensitive data,
+	 * so clear the local dbuf.dptr memory via BURN_PTR_SIZE().
+	 * The future plan is to convert secrets_fetch() to talloc.
+	 * That would improve performance via:
+	 * - avoid smb_memdup() above, instead directly return dbuf.dptr
+	 * - BURN_PTR_SIZE() will be done not here but in the caller and only
+	 *   if the caller asks for sensitive data.
+	 */
+	BURN_PTR_SIZE(dbuf.dptr, dbuf.dsize);
 	TALLOC_FREE(dbuf.dptr);
 
 	if (size) {
@@ -263,12 +273,16 @@ bool secrets_fetch_trusted_domain_password(const char *domain, char** pwd,
 	ndr_err = ndr_pull_struct_blob(&blob, talloc_tos(), &pass,
 			(ndr_pull_flags_fn_t)ndr_pull_TRUSTED_DOM_PASS);
 
-	SAFE_FREE(blob.data);
+	/* This blob is NOT talloc based! */
+	BURN_FREE(blob.data, blob.length);
 
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
 		return false;
 	}
 
+	if (pass.pass != NULL) {
+		talloc_keep_secret(discard_const_p(char, pass.pass));
+	}
 
 	/* the trust's password */
 	if (pwd) {
@@ -329,7 +343,8 @@ bool secrets_store_trusted_domain_password(const char* domain, const char* pwd,
 
 	ret = secrets_store(trustdom_keystr(domain), blob.data, blob.length);
 
-	data_blob_free(&blob);
+	/* This blob is talloc based. */
+	data_blob_clear_free(&blob);
 
 	return ret;
 }
@@ -379,63 +394,14 @@ bool fetch_ldap_pw(char **dn, char** pw)
 	*pw=(char *)secrets_fetch(key, &size);
 	SAFE_FREE(key);
 
-	if ((size != 0) && ((*pw)[size-1] != '\0')) {
-		DBG_ERR("Non 0-terminated password for dn %s\n", *dn);
-		SAFE_FREE(*pw);
+	if (*pw == NULL || size == 0 || (*pw)[size-1] != '\0') {
+		DBG_ERR("No valid password for %s\n", *dn);
+		BURN_FREE_STR(*pw);
 		SAFE_FREE(*dn);
 		return false;
 	}
 
-	if (!size) {
-		/* Upgrade 2.2 style entry */
-		char *p;
-	        char* old_style_key = SMB_STRDUP(*dn);
-		char *data;
-		fstring old_style_pw;
-
-		if (!old_style_key) {
-			DEBUG(0, ("fetch_ldap_pw: strdup failed!\n"));
-			SAFE_FREE(*pw);
-			SAFE_FREE(*dn);
-			return False;
-		}
-
-		for (p=old_style_key; *p; p++)
-			if (*p == ',') *p = '/';
-
-		data=(char *)secrets_fetch(old_style_key, &size);
-		if ((data == NULL) || (size < sizeof(old_style_pw))) {
-			DEBUG(0,("fetch_ldap_pw: neither ldap secret retrieved!\n"));
-			SAFE_FREE(old_style_key);
-			SAFE_FREE(*pw);
-			SAFE_FREE(*dn);
-			SAFE_FREE(data);
-			return False;
-		}
-
-		size = MIN(size, sizeof(fstring)-1);
-		strncpy(old_style_pw, data, size);
-		old_style_pw[size] = 0;
-
-		SAFE_FREE(data);
-
-		if (!secrets_store_ldap_pw(*dn, old_style_pw)) {
-			DEBUG(0,("fetch_ldap_pw: ldap secret could not be upgraded!\n"));
-			SAFE_FREE(old_style_key);
-			SAFE_FREE(*pw);
-			SAFE_FREE(*dn);
-			return False;
-		}
-		if (!secrets_delete_entry(old_style_key)) {
-			DEBUG(0,("fetch_ldap_pw: old ldap secret could not be deleted!\n"));
-		}
-
-		SAFE_FREE(old_style_key);
-
-		*pw = smb_xstrdup(old_style_pw);
-	}
-
-	return True;
+	return true;
 }
 
 /*******************************************************************************
@@ -474,14 +440,14 @@ bool secrets_fetch_afs_key(const char *cell, struct afs_key *result)
 		return False;
 
 	if (size != sizeof(struct afs_keyfile)) {
-		SAFE_FREE(keyfile);
+		BURN_FREE(keyfile, sizeof(*keyfile));
 		return False;
 	}
 
 	i = ntohl(keyfile->nkeys);
 
 	if (i > SECRETS_AFS_MAXKEYS) {
-		SAFE_FREE(keyfile);
+		BURN_FREE(keyfile, sizeof(*keyfile));
 		return False;
 	}
 
@@ -489,7 +455,7 @@ bool secrets_fetch_afs_key(const char *cell, struct afs_key *result)
 
 	result->kvno = ntohl(result->kvno);
 
-	SAFE_FREE(keyfile);
+	BURN_FREE(keyfile, sizeof(*keyfile));
 
 	return True;
 }
@@ -513,17 +479,24 @@ void secrets_fetch_ipc_userpass(char **username, char **domain, char **password)
 
 	if (*username && **username) {
 
-		if (!*domain || !**domain)
+		if (!*domain || !**domain) {
+			SAFE_FREE(*domain);
 			*domain = smb_xstrdup(lp_workgroup());
+		}
 
-		if (!*password || !**password)
+		if (!*password || !**password) {
+			BURN_FREE_STR(*password);
 			*password = smb_xstrdup("");
+		}
 
 		DEBUG(3, ("IPC$ connections done by user %s\\%s\n",
 			  *domain, *username));
 
 	} else {
 		DEBUG(3, ("IPC$ connections done anonymously\n"));
+		SAFE_FREE(*username);
+		SAFE_FREE(*domain);
+		BURN_FREE_STR(*password);
 		*username = smb_xstrdup("");
 		*domain = smb_xstrdup("");
 		*password = smb_xstrdup("");

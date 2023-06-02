@@ -747,13 +747,6 @@ int ctdb_sys_send_tcp(const ctdb_sock_addr *dest,
 	return 0;
 }
 
-/*
- * Packet capture
- *
- * If AF_PACKET is available then use a raw socket otherwise use pcap.
- * wscript has checked to make sure that pcap is available if needed.
- */
-
 static int tcp4_extract(const uint8_t *ip_pkt,
 			size_t pktlen,
 			struct sockaddr_in *src,
@@ -864,8 +857,14 @@ static int tcp6_extract(const uint8_t *ip_pkt,
 	return 0;
 }
 
+/*
+ * Packet capture
+ *
+ * If AF_PACKET is available then use a raw socket otherwise use pcap.
+ * wscript has checked to make sure that pcap is available if needed.
+ */
 
-#ifdef HAVE_AF_PACKET
+#if defined(HAVE_AF_PACKET) && !defined(ENABLE_PCAP)
 
 /*
  * This function is used to open a raw socket to capture from
@@ -881,7 +880,7 @@ int ctdb_sys_open_capture_socket(const char *iface, void **private_data)
 		return -1;
 	}
 
-	DBG_DEBUG("Created RAW SOCKET FD:%d for tcp tickle\n", s);
+	DBG_DEBUG("Opened raw socket for TCP tickle capture (fd=%d)\n", s);
 
 	ret = set_blocking(s, false);
 	if (ret != 0) {
@@ -964,22 +963,58 @@ int ctdb_sys_read_tcp_packet(int s, void *private_data,
 	return ENOMSG;
 }
 
-#else /* HAVE_AF_PACKET */
+#else /* defined(HAVE_AF_PACKET) && !defined(ENABLE_PCAP) */
 
 #include <pcap.h>
 
+/*
+ * Assume this exists if pcap.h exists - it has been around for a
+ * while
+ */
+#include <pcap/sll.h>
+
 int ctdb_sys_open_capture_socket(const char *iface, void **private_data)
 {
+	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *pt;
+	int pcap_packet_type;
+	const char *t = NULL;
+	int fd;
 
-	pt=pcap_open_live(iface, 100, 0, 0, NULL);
+	pt = pcap_open_live(iface, 100, 0, 0, errbuf);
 	if (pt == NULL) {
-		DBG_ERR("Failed to open capture device %s\n", iface);
+		DBG_ERR("Failed to open pcap capture device %s (%s)\n",
+			iface,
+			errbuf);
 		return -1;
 	}
 	*((pcap_t **)private_data) = pt;
 
-	return pcap_fileno(pt);
+	pcap_packet_type = pcap_datalink(pt);
+	switch (pcap_packet_type) {
+	case DLT_EN10MB:
+		t = "DLT_EN10MB";
+		break;
+	case DLT_LINUX_SLL:
+		t = "DLT_LINUX_SLL";
+		break;
+#ifdef DLT_LINUX_SLL2
+	case DLT_LINUX_SLL2:
+		t = "DLT_LINUX_SLL2";
+		break;
+#endif /* DLT_LINUX_SLL2 */
+	default:
+		DBG_ERR("Unknown pcap packet type %d\n", pcap_packet_type);
+		pcap_close(pt);
+		return -1;
+	}
+
+	fd = pcap_get_selectable_fd(pt);
+	DBG_DEBUG("Opened pcap capture for TCP tickle (type=%s, fd=%d)\n",
+		  t,
+		  fd);
+
+	return fd;
 }
 
 int ctdb_sys_close_capture_socket(void *private_data)
@@ -999,10 +1034,12 @@ int ctdb_sys_read_tcp_packet(int s,
 			     uint16_t *window)
 {
 	int ret;
-	struct ether_header *eth;
 	struct pcap_pkthdr pkthdr;
 	const u_char *buffer;
 	pcap_t *pt = (pcap_t *)private_data;
+	int pcap_packet_type;
+	uint16_t ether_type;
+	size_t ll_hdr_len;
 
 	buffer=pcap_next(pt, &pkthdr);
 	if (buffer==NULL) {
@@ -1012,36 +1049,86 @@ int ctdb_sys_read_tcp_packet(int s,
 	ZERO_STRUCTP(src);
 	ZERO_STRUCTP(dst);
 
-	/* Ethernet */
-	eth = (struct ether_header *)buffer;
+	pcap_packet_type = pcap_datalink(pt);
+	switch (pcap_packet_type) {
+	case DLT_EN10MB: {
+		const struct ether_header *eth =
+			(const struct ether_header *)buffer;
+		ether_type = ntohs(eth->ether_type);
+		ll_hdr_len = sizeof(struct ether_header);
+		break;
+	}
+	case DLT_LINUX_SLL: {
+		const struct sll_header *sll =
+			(const struct sll_header *)buffer;
+		uint16_t arphrd_type = ntohs(sll->sll_hatype);
+		switch (arphrd_type) {
+		case ARPHRD_ETHER:
+		case ARPHRD_INFINIBAND:
+			break;
+		default:
+			DBG_DEBUG("SLL: Unknown arphrd_type %"PRIu16"\n",
+				  arphrd_type);
+			return EPROTONOSUPPORT;
+		}
+		ether_type = ntohs(sll->sll_protocol);
+		ll_hdr_len = SLL_HDR_LEN;
+		break;
+	}
+#ifdef DLT_LINUX_SLL2
+	case DLT_LINUX_SLL2: {
+		const struct sll2_header *sll2 =
+			(const struct sll2_header *)buffer;
+		uint16_t arphrd_type = ntohs(sll2->sll2_hatype);
+		switch (arphrd_type) {
+		case ARPHRD_ETHER:
+		case ARPHRD_INFINIBAND:
+			break;
+		default:
+			DBG_DEBUG("SLL2: Unknown arphrd_type %"PRIu16"\n",
+				  arphrd_type);
+			return EPROTONOSUPPORT;
+		}
+		ether_type = ntohs(sll2->sll2_protocol);
+		ll_hdr_len = SLL2_HDR_LEN;
+		break;
+	}
+#endif /* DLT_LINUX_SLL2 */
+	default:
+		DBG_DEBUG("Unknown pcap packet type %d\n", pcap_packet_type);
+		return EPROTONOSUPPORT;
+	}
 
-	/* we want either IPv4 or IPv6 */
-	if (eth->ether_type == htons(ETHERTYPE_IP)) {
-		ret = tcp4_extract(buffer + sizeof(struct ether_header),
-				   (size_t)(pkthdr.caplen -
-					    sizeof(struct ether_header)),
+	switch (ether_type) {
+	case ETHERTYPE_IP:
+		ret = tcp4_extract(buffer + ll_hdr_len,
+				   (size_t)pkthdr.caplen - ll_hdr_len,
 				   &src->ip,
 				   &dst->ip,
 				   ack_seq,
 				   seq,
 				   rst,
 				   window);
-		return ret;
-
-	} else if (eth->ether_type == htons(ETHERTYPE_IP6)) {
-		ret = tcp6_extract(buffer + sizeof(struct ether_header),
-				   (size_t)(pkthdr.caplen -
-					    sizeof(struct ether_header)),
+		break;
+	case ETHERTYPE_IP6:
+		ret = tcp6_extract(buffer + ll_hdr_len,
+				   (size_t)pkthdr.caplen - ll_hdr_len,
 				   &src->ip6,
 				   &dst->ip6,
 				   ack_seq,
 				   seq,
 				   rst,
 				   window);
-		return ret;
+		break;
+	case ETHERTYPE_ARP:
+		/* Silently ignore ARP packets */
+		return EPROTO;
+	default:
+		DBG_DEBUG("Unknown ether type %"PRIu16"\n", ether_type);
+		return EPROTO;
 	}
 
-	return ENOMSG;
+	return ret;
 }
 
-#endif /* HAVE_AF_PACKET */
+#endif /* defined(HAVE_AF_PACKET) && !defined(ENABLE_PCAP) */

@@ -53,6 +53,7 @@ bool smbXcli_conn_dfs_supported(struct smbXcli_conn *conn);
 enum protocol_types smbXcli_conn_protocol(struct smbXcli_conn *conn);
 bool smbXcli_conn_use_unicode(struct smbXcli_conn *conn);
 bool smbXcli_conn_signing_mandatory(struct smbXcli_conn *conn);
+bool smbXcli_conn_have_posix(struct smbXcli_conn *conn);
 bool smbXcli_conn_support_passthrough(struct smbXcli_conn *conn);
 
 void smbXcli_conn_set_sockopt(struct smbXcli_conn *conn, const char *options);
@@ -457,14 +458,19 @@ NTSTATUS smb2cli_req_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 NTSTATUS smb2cli_req_get_sent_iov(struct tevent_req *req,
 				  struct iovec *sent_iov);
 
+struct smb2_negotiate_contexts;
 struct tevent_req *smbXcli_negprot_send(TALLOC_CTX *mem_ctx,
 					struct tevent_context *ev,
 					struct smbXcli_conn *conn,
 					uint32_t timeout_msec,
 					enum protocol_types min_protocol,
 					enum protocol_types max_protocol,
-					uint16_t max_credits);
-NTSTATUS smbXcli_negprot_recv(struct tevent_req *req);
+					uint16_t max_credits,
+					struct smb2_negotiate_contexts *in_ctx);
+NTSTATUS smbXcli_negprot_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct smb2_negotiate_contexts **out_ctx);
 NTSTATUS smbXcli_negprot(struct smbXcli_conn *conn,
 			 uint32_t timeout_msec,
 			 enum protocol_types min_protocol,
@@ -641,6 +647,8 @@ NTSTATUS smb2cli_tdis(struct smbXcli_conn *conn,
 		      struct smbXcli_session *session,
 		      struct smbXcli_tcon *tcon);
 
+struct symlink_reparse_struct;
+
 struct tevent_req *smb2cli_create_send(
 	TALLOC_CTX *mem_ctx,
 	struct tevent_context *ev,
@@ -662,7 +670,8 @@ NTSTATUS smb2cli_create_recv(struct tevent_req *req,
 			     uint64_t *fid_volatile,
 			     struct smb_create_returns *cr,
 			     TALLOC_CTX *mem_ctx,
-			     struct smb2_create_blobs *blobs);
+			     struct smb2_create_blobs *blobs,
+			     struct symlink_reparse_struct **psymlink);
 NTSTATUS smb2cli_create(struct smbXcli_conn *conn,
 			uint32_t timeout_msec,
 			struct smbXcli_session *session,
@@ -680,7 +689,8 @@ NTSTATUS smb2cli_create(struct smbXcli_conn *conn,
 			uint64_t *fid_volatile,
 			struct smb_create_returns *cr,
 			TALLOC_CTX *mem_ctx,
-			struct smb2_create_blobs *ret_blobs);
+			struct smb2_create_blobs *ret_blobs,
+			struct symlink_reparse_struct **psymlink);
 
 struct tevent_req *smb2cli_close_send(TALLOC_CTX *mem_ctx,
 				      struct tevent_context *ev,

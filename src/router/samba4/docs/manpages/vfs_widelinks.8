@@ -2,12 +2,12 @@
 .\"     Title: vfs_widelinks
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "VFS_WIDELINKS" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "VFS_WIDELINKS" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -40,7 +40,7 @@ suite\&.
 .PP
 The
 vfs_widelinks
-VFS module hides the existence of symbolic links in the filesystem inside a share\&. It is used in Samba verson 4\&.13 and above to implement the
+VFS module hides the existence of symbolic links in the filesystem inside a share\&. It is used in Samba version 4\&.13 and above to implement the
 smb\&.conf"wide links = yes" functionality that used to be inside the core smbd code\&. The module should not be loaded explicitly by smb\&.conf as part of the "vfs objects =" parameter, but is loaded implicitly when "wide links = yes" is enabled\&. This is to prevent existing smb\&.conf files from having to be modified to keep the existing insecure "wide links" functionality on a share\&.
 .PP
 Please note that "wide links = yes" functionality is a deliberately insecure option, and should never be used in Samba installations\&. On Linux, bind mounts can be used instead to implement anything "wide links = yes" can enable\&. This module has been created to provide backwards compatibility with existing users of "wide links = yes" installations, but this use cannot be recommended and is not endorsed by the Samba developers\&.
@@ -53,7 +53,7 @@ This module is stackable\&.
 No examples listed\&. This module is implicitly loaded by smbd as needed\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

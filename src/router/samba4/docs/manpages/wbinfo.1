@@ -2,12 +2,12 @@
 .\"     Title: wbinfo
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "WBINFO" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
+.TH "WBINFO" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -93,6 +93,11 @@ List all domains (trusted and own domain)\&.
 Change the trust account password\&. May be used in conjunction with
 \fBdomain\fR
 in order to change interdomain trust account passwords\&.
+.RE
+.PP
+\-\-change\-secret\-at \fIdomain\-controller\fR
+.RS 4
+Change the trust account password at a specific domain controller\&. Fails if the specificied domain controller cannot be contacted\&.
 .RE
 .PP
 \-\-ccache\-save \fIusername%password\fR
@@ -472,7 +477,7 @@ wbinfo
 will always return failure\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBwinbindd\fR(8)

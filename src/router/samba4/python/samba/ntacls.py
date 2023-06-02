@@ -19,7 +19,6 @@
 
 
 import os
-import tarfile
 import tempfile
 import shutil
 
@@ -34,6 +33,8 @@ from samba.samba3 import libsmb_samba_internal as libsmb
 from samba.logger import get_samba_logger
 from samba import NTSTATUSError
 from samba.auth_util import system_session_unix
+from samba import safe_tarfile as tarfile
+
 
 # don't include volumes
 SMB_FILE_ATTRIBUTE_FLAGS = libsmb.FILE_ATTRIBUTE_SYSTEM | \
@@ -301,7 +302,8 @@ def dsacl2fsacl(dssddl, sid, as_sddl=True):
     aces = ref.dacl.aces
     for i in range(0, len(aces)):
         ace = aces[i]
-        if not ace.type & security.SEC_ACE_TYPE_ACCESS_ALLOWED_OBJECT and str(ace.trustee) != security.SID_BUILTIN_PREW2K:
+        if ace.type in (security.SEC_ACE_TYPE_ACCESS_ALLOWED_OBJECT,
+                        security.SEC_ACE_TYPE_ACCESS_ALLOWED) and str(ace.trustee) != security.SID_BUILTIN_PREW2K:
            #    if fdescr.type & security.SEC_DESC_DACL_AUTO_INHERITED:
             ace.flags = ace.flags | security.SEC_ACE_FLAG_OBJECT_INHERIT | security.SEC_ACE_FLAG_CONTAINER_INHERIT
             if str(ace.trustee) == security.SID_CREATOR_OWNER:

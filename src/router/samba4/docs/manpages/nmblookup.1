@@ -2,12 +2,12 @@
 .\"     Title: nmblookup
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "NMBLOOKUP" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
+.TH "NMBLOOKUP" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -126,7 +126,7 @@ Levels above 1 will generate considerable amounts of log data, and should only b
 Note that specifying this parameter here will override the
 \m[blue]\fBlog level\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -139,7 +139,7 @@ This will redirect debug output to STDOUT\&. By default all clients are logging 
 .RS 4
 The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
 \m[blue]\fBclient smb encrypt\fR\m[]\&. See
-smb\&.conf
+${prefix}/etc/smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
 .PP
@@ -234,20 +234,20 @@ parameter\&. This is the least reliable of the name resolution methods as it dep
 .sp
 .RE
 If this parameter is not set then the name resolve order defined in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file parameter (\m[blue]\fBname resolve order\fR\m[]) will be used\&.
 .sp
 The default order is lmhosts, host, wins, bcast\&. Without this parameter or any entry in the
 \m[blue]\fBname resolve order\fR\m[]
 parameter of the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file, the name resolution methods will be attempted in this order\&.
 .RE
 .PP
 \-O|\-\-socket\-options=SOCKETOPTIONS
 .RS 4
 TCP socket options to set on the client socket\&. See the socket options parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 manual page for the list of valid options\&.
 .RE
 .PP
@@ -258,7 +258,7 @@ The value of the parameter (a string) is the highest protocol level that will be
 Note that specifying this parameter here will override the
 \m[blue]\fBclient max protocol\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -267,9 +267,9 @@ file\&.
 This option allows you to override the NetBIOS name that Samba uses for itself\&. This is identical to setting the
 \m[blue]\fBnetbios name\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&. However, a command line setting will take precedence over settings in
-smb\&.conf\&.
+${prefix}/etc/smb\&.conf\&.
 .RE
 .PP
 \-\-netbios\-scope=SCOPE
@@ -288,7 +288,7 @@ Set the SMB domain of the username\&. This overrides the default domain which is
 Note that specifying this parameter here will override the
 \m[blue]\fBworkgroup\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -299,7 +299,7 @@ Set the realm for the domain\&.
 Note that specifying this parameter here will override the
 \m[blue]\fBrealm\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -330,7 +330,7 @@ nmblookup \-U samba\&.org \-R \*(AqIRIX#1B\*(Aq
 would query the WINS server samba\&.org for the domain master browser (1B name type) for the IRIX workgroup\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBnmbd\fR(8),

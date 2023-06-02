@@ -23,7 +23,8 @@ from samba.tests.samba_tool.base import SambaToolCmdTest
 from samba import (
         credentials,
         nttime2unix,
-        dsdb
+        dsdb,
+        werror,
         )
 from samba.ndr import ndr_unpack
 from samba.dcerpc import drsblobs
@@ -60,6 +61,11 @@ class UserCmdTestCase(SambaToolCmdTest):
         self.users.append(self._randomUnixUser({"name": "unixuser2"}))
         self.users.append(self._randomUnixUser({"name": "unixuser3"}))
         self.users.append(self._randomUnixUser({"name": "unixuser4"}))
+
+        # Make sure users don't exist
+        for user in self.users:
+            if self._find_user(user["name"]):
+                self.runsubcmd("user", "delete", user["name"])
 
         # setup the 12 users and ensure they are correct
         for user in self.users:
@@ -126,6 +132,44 @@ class UserCmdTestCase(SambaToolCmdTest):
 
             self.assertEqual("%s" % found.get("cn"), "%(name)s" % user)
             self.assertEqual("%s" % found.get("name"), "%(name)s" % user)
+
+    def test_newuser_weak_password(self):
+        # Ensure that when we try to create a user over LDAP (thus no
+        # transactions) and the password is too weak, we do not get a
+        # half-created account.
+
+        def cleanup_user(username):
+            try:
+                self.samdb.deleteuser(username)
+            except Exception as err:
+                estr = err.args[0]
+                if 'Unable to find user' not in estr:
+                    raise
+
+        server = os.environ['DC_SERVER']
+        dc_username = os.environ['DC_USERNAME']
+        dc_password = os.environ['DC_PASSWORD']
+
+        username = self.randomName()
+        password = 'a'
+
+        self.addCleanup(cleanup_user, username)
+
+        # Try to add the user and ensure it fails.
+        result, out, err = self.runsubcmd('user', 'add',
+                                          username, password,
+                                          '-H', f'ldap://{server}',
+                                          f'-U{dc_username}%{dc_password}')
+        self.assertCmdFail(result)
+        self.assertIn('Failed to add user', err)
+        self.assertIn('LDAP_CONSTRAINT_VIOLATION', err)
+        self.assertIn(f'{werror.WERR_PASSWORD_RESTRICTION:08X}', err)
+
+        # Now search for the user, and make sure we don't find anything.
+        res = self.samdb.search(self.samdb.domain_dn(),
+                                expression=f'(sAMAccountName={username})',
+                                scope=ldb.SCOPE_SUBTREE)
+        self.assertEqual(0, len(res), 'expected not to find the user')
 
     def _verify_supplementalCredentials(self, ldif,
                                         min_packages=3,
@@ -211,6 +255,8 @@ class UserCmdTestCase(SambaToolCmdTest):
         self.assertEqual(nidx, sc.sub.num_packages, "Unknown packages found")
 
     def test_setpassword(self):
+        expect_nt_hash = bool(int(os.environ.get("EXPECT_NT_HASH", "1")))
+
         for user in self.users:
             newpasswd = self.random_password(16)
             (result, out, err) = self.runsubcmd("user", "setpassword",
@@ -258,7 +304,6 @@ class UserCmdTestCase(SambaToolCmdTest):
             creds = credentials.Credentials()
             creds.set_anonymous()
             creds.set_password(newpasswd)
-            nthash = creds.get_nt_hash()
             unicodePwd = base64.b64encode(creds.get_nt_hash()).decode('utf8')
             virtualClearTextUTF8 = base64.b64encode(get_bytes(newpasswd)).decode('utf8')
             virtualClearTextUTF16 = base64.b64encode(get_string(newpasswd).encode('utf-16-le')).decode('utf8')
@@ -279,8 +324,11 @@ class UserCmdTestCase(SambaToolCmdTest):
                              "syncpasswords --no-wait: 'sAMAccountName': %s out[%s]" % (user["name"], out))
             self.assertMatch(out, "# unicodePwd::: REDACTED SECRET ATTRIBUTE",
                              "getpassword '# unicodePwd::: REDACTED SECRET ATTRIBUTE': out[%s]" % out)
-            self.assertMatch(out, "unicodePwd:: %s" % unicodePwd,
-                             "getpassword unicodePwd: out[%s]" % out)
+            if expect_nt_hash:
+                self.assertMatch(out, "unicodePwd:: %s" % unicodePwd,
+                                 "getpassword unicodePwd: out[%s]" % out)
+            else:
+                self.assertNotIn("unicodePwd:: %s" % unicodePwd, out)
             self.assertMatch(out, "# supplementalCredentials::: REDACTED SECRET ATTRIBUTE",
                              "getpassword '# supplementalCredentials::: REDACTED SECRET ATTRIBUTE': out[%s]" % out)
             self.assertMatch(out, "supplementalCredentials:: ",
@@ -302,8 +350,11 @@ class UserCmdTestCase(SambaToolCmdTest):
             self.assertMatch(out, "Got password OK", "getpassword without url")
             self.assertMatch(out, "sAMAccountName: %s" % (user["name"]),
                              "getpassword: 'sAMAccountName': %s out[%s]" % (user["name"], out))
-            self.assertMatch(out, "unicodePwd:: %s" % unicodePwd,
-                             "getpassword unicodePwd: out[%s]" % out)
+            if expect_nt_hash:
+                self.assertMatch(out, "unicodePwd:: %s" % unicodePwd,
+                                 "getpassword unicodePwd: out[%s]" % out)
+            else:
+                self.assertNotIn("unicodePwd:: %s" % unicodePwd, out)
             self.assertMatch(out, "supplementalCredentials:: ",
                              "getpassword supplementalCredentials: out[%s]" % out)
             self._verify_supplementalCredentials(out.replace("\nGot password OK\n", ""))
@@ -657,7 +708,9 @@ sAMAccountName: %s
             self.assertGreater(pwd_expires_time, pwd_last_set_time)
 
     def test_move(self):
-        full_ou_dn = str(self.samdb.normalize_dn_in_domain("OU=movetest"))
+        full_ou_dn = str(self.samdb.normalize_dn_in_domain("OU=movetest_usr"))
+        self.addCleanup(self.samdb.delete, full_ou_dn, ["tree_delete:1"])
+
         (result, out, err) = self.runsubcmd("ou", "add", full_ou_dn)
         self.assertCmdSuccess(result, out, err)
         self.assertEqual(err, "", "There shouldn't be any error message")
@@ -683,10 +736,6 @@ sAMAccountName: %s
             self.assertCmdSuccess(result, out, err, "Error running move")
             self.assertIn('Moved user "%s" into "%s"' %
                           (user["name"], new_dn), out)
-
-        (result, out, err) = self.runsubcmd("ou", "delete", full_ou_dn)
-        self.assertCmdSuccess(result, out, err,
-                              "Failed to delete ou '%s'" % full_ou_dn)
 
     def test_rename_surname_initials_givenname(self):
         """rename the existing surname and given name and add missing
@@ -953,6 +1002,10 @@ sAMAccountName: %s
                         "gecos": gecos,
                         "loginShell": u[6],
                         })
+
+        # Remove user if it already exists
+        if self._find_user(u[0]):
+            self.runsubcmd("user", "delete", u[0])
         # check if --rfc2307-from-nss sets the same values as we got from pwd.getpwuid()
         (result, out, err) = self.runsubcmd("user", "create", user["name"], user["password"],
                                             "--surname=%s" % user["surname"],
@@ -977,6 +1030,10 @@ sAMAccountName: %s
         #
         # get a user with all random posix attributes
         user = self._randomPosixUser({"name": u[0]})
+
+        # Remove user if it already exists
+        if self._find_user(u[0]):
+            self.runsubcmd("user", "delete", u[0])
         # create a user with posix attributes from nss but override all of them with the
         # random ones just obtained
         (result, out, err) = self.runsubcmd("user", "create", user["name"], user["password"],

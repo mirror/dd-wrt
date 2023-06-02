@@ -27,6 +27,7 @@
 #include <profile.h>
 #include <kdb.h>
 
+#include "kdc/samba_kdc.h"
 #include "kdc/mit_samba.h"
 #include "kdb_samba.h"
 
@@ -133,7 +134,7 @@ static void kdb_samba_db_free_principal_e_data(krb5_context context,
 
 	skdc_entry = talloc_get_type_abort(e_data,
 					   struct samba_kdc_entry);
-	talloc_set_destructor(skdc_entry, NULL);
+	skdc_entry->kdc_entry = NULL;
 	TALLOC_FREE(skdc_entry);
 }
 
@@ -166,10 +167,16 @@ kdb_vftabl kdb_function_table = {
 	.decrypt_key_data          = kdb_samba_dbekd_decrypt_key_data,
 	.encrypt_key_data          = kdb_samba_dbekd_encrypt_key_data,
 
-	.sign_authdata             = kdb_samba_db_sign_auth_data,
 	.check_policy_as           = kdb_samba_db_check_policy_as,
 	.audit_as_req              = kdb_samba_db_audit_as_req,
 	.check_allowed_to_delegate = kdb_samba_db_check_allowed_to_delegate,
 
 	.free_principal_e_data     = kdb_samba_db_free_principal_e_data,
+
+#if KRB5_KDB_DAL_MAJOR_VERSION >= 9
+	.allowed_to_delegate_from  = kdb_samba_db_allowed_to_delegate_from,
+	.issue_pac                 = kdb_samba_db_issue_pac,
+#else
+	.sign_authdata             = kdb_samba_db_sign_auth_data,
+#endif
 };

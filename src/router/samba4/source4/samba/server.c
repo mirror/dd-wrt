@@ -40,7 +40,6 @@
 #include "librpc/gen_ndr/ndr_irpc.h"
 #include "cluster/cluster.h"
 #include "dynconfig/dynconfig.h"
-#include "lib/util/samba_modules.h"
 #include "nsswitch/winbind_client.h"
 #include "libds/common/roles.h"
 #include "lib/util/tfork.h"
@@ -510,10 +509,6 @@ static int binary_smbd_main(TALLOC_CTX *mem_ctx,
 	int opt;
 	int ret;
 	poptContext pc;
-#define _MODULE_PROTO(init) extern NTSTATUS init(TALLOC_CTX *);
-	STATIC_service_MODULES_PROTO;
-	init_module_fn static_init[] = { STATIC_service_MODULES };
-	init_module_fn *shared_init;
 	uint16_t stdin_event_flags;
 	NTSTATUS status;
 	const char *model = "prefork";
@@ -627,7 +622,7 @@ static int binary_smbd_main(TALLOC_CTX *mem_ctx,
 		binary_name,
 		SAMBA_VERSION_STRING));
 	DEBUGADD(0,("Copyright Andrew Tridgell and the Samba Team"
-		" 1992-2021\n"));
+		" 1992-2023\n"));
 
 	if (sizeof(uint16_t) < 2 ||
 			sizeof(uint32_t) < 4 ||
@@ -705,12 +700,7 @@ static int binary_smbd_main(TALLOC_CTX *mem_ctx,
 
 	process_model_init(lp_ctx);
 
-	shared_init = load_samba_modules(mem_ctx, "service");
-
-	run_init_functions(mem_ctx, static_init);
-	run_init_functions(mem_ctx, shared_init);
-
-	TALLOC_FREE(shared_init);
+	samba_service_init();
 
 	/* the event context is the top level structure in smbd. Everything else
 	   should hang off that */
@@ -861,8 +851,7 @@ static int binary_smbd_main(TALLOC_CTX *mem_ctx,
 		DEBUG(0, ("At this time the 'samba' binary should only be used "
 			"for either:\n"));
 		DEBUGADD(0, ("'server role = active directory domain "
-			"controller' or to access the ntvfs file server "
-			"with 'server services = +smb' or the rpc proxy "
+			"controller' or the rpc proxy "
 			"with 'dcerpc endpoint servers = remote'\n"));
 		DEBUGADD(0, ("You should start smbd/nmbd/winbindd instead for "
 			"domain member and standalone file server tasks\n"));

@@ -24,6 +24,7 @@
 #include "samba/service_stream.h"
 #include "lib/tsocket/tsocket.h"
 #include "ntvfs/ntvfs.h"
+#include "lib/util/idtree_random.h"
 
 /****************************************************************************
 init the tcon structures
@@ -163,7 +164,8 @@ static struct smbsrv_tcon *smbsrv_tcon_new(struct smbsrv_connection *smb_conn,
 		goto failed;
 	}
 
-	i = idr_get_new_random(tcons_ctx->idtree_tid, tcon, tcons_ctx->idtree_limit);
+	i = idr_get_new_random(
+		tcons_ctx->idtree_tid, tcon, 1, tcons_ctx->idtree_limit);
 	if (i == -1) {
 		DEBUG(1,("ERROR! Out of connection structures\n"));
 		goto failed;

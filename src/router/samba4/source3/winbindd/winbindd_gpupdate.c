@@ -44,6 +44,8 @@ struct gpupdate_state {
 	struct loadparm_context *lp_ctx;
 };
 
+static void gpupdate_cmd_done(struct tevent_req *subreq);
+
 static void gpupdate_callback(struct tevent_context *ev,
 			      struct tevent_timer *tim,
 			      struct timeval current_time,
@@ -56,7 +58,10 @@ static void gpupdate_callback(struct tevent_context *ev,
 		talloc_get_type_abort(private_data, struct gpupdate_state);
 	const char *const *gpupdate_cmd =
 		lpcfg_gpo_update_command(data->lp_ctx);
-	const char *smbconf = lp_default_path();
+	const char *smbconf = lpcfg_configfile(data->lp_ctx);
+	if (smbconf == NULL) {
+		smbconf = lp_default_path();
+	}
 
 	/* Execute gpupdate */
 	req = samba_runcmd_send(data->ctx, ev, timeval_zero(), 2, 0,
@@ -70,6 +75,8 @@ static void gpupdate_callback(struct tevent_context *ev,
 		DEBUG(0, ("Failed to execute the gpupdate command\n"));
 		return;
 	}
+
+	tevent_req_set_callback(req, gpupdate_cmd_done, NULL);
 
 	/* Schedule the next event */
 	schedule = tevent_timeval_current_ofs(gpupdate_interval(), 0);
@@ -115,3 +122,63 @@ void gpupdate_init(void)
 	}
 }
 
+void gpupdate_user_init(const char *user)
+{
+	struct tevent_req *req = NULL;
+	TALLOC_CTX *ctx = talloc_new(global_event_context());
+	struct loadparm_context *lp_ctx =
+		loadparm_init_s3(NULL, loadparm_s3_helpers());
+	const char *const *gpupdate_cmd = lpcfg_gpo_update_command(lp_ctx);
+	const char *smbconf = lpcfg_configfile(lp_ctx);
+	if (smbconf == NULL) {
+		smbconf = lp_default_path();
+	}
+
+	if (ctx == NULL) {
+		DBG_ERR("talloc_new failed\n");
+		return;
+	}
+
+	/*
+	 * Check if gpupdate is enabled for winbind, if not
+	 * return without applying user policy.
+	 */
+	if (!lpcfg_apply_group_policies(lp_ctx)) {
+		return;
+	}
+
+	/*
+	 * Execute gpupdate for the user immediately.
+	 * TODO: This should be scheduled to reapply every 90 to 120 minutes.
+	 * Logoff will need to handle cancelling these events though, and
+	 * multiple timers cannot be run for the same user, even if there are
+	 * multiple active sessions.
+	 */
+	req = samba_runcmd_send(ctx, global_event_context(),
+				timeval_zero(), 2, 0,
+				gpupdate_cmd,
+				"-s",
+				smbconf,
+				"--target=User",
+				"-U",
+				user,
+				NULL);
+	if (req == NULL) {
+		DBG_ERR("Failed to execute the gpupdate command\n");
+		return;
+	}
+
+	tevent_req_set_callback(req, gpupdate_cmd_done, NULL);
+}
+
+static void gpupdate_cmd_done(struct tevent_req *subreq)
+{
+	int sys_errno;
+	int ret;
+
+	ret = samba_runcmd_recv(subreq, &sys_errno);
+	TALLOC_FREE(subreq);
+	if (ret != 0) {
+		DBG_ERR("gpupdate failed with exit status %d\n", sys_errno);
+	}
+}

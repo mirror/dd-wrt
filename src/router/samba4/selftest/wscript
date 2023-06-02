@@ -202,6 +202,7 @@ def cmd_testonly(opt):
         os.environ['NMBD_VALGRIND'] = EXPAND_VARIABLES(opt, server_wrapper)
         os.environ['WINBINDD_VALGRIND'] = EXPAND_VARIABLES(opt, server_wrapper)
         os.environ['SMBD_VALGRIND'] = EXPAND_VARIABLES(opt, server_wrapper)
+        os.environ['SAMBA_DCERPCD_VALGRIND'] = EXPAND_VARIABLES(opt, server_wrapper)
 
     # this is needed for systems without rpath, or with rpath disabled
     ADD_LD_LIBRARY_PATH('bin/shared')
@@ -252,16 +253,32 @@ def cmd_testonly(opt):
     if os.environ.get('USE_NAMESPACES') is None:
         env.OPTIONS += " --socket_wrapper_so_path=" + CONFIG_GET(opt, 'LIBSOCKET_WRAPPER_SO_PATH')
 
-    if Utils.unversioned_sys_platform() in ('netbsd', 'openbsd', 'sunos'):
+    if not CONFIG_SET(opt, 'HAVE_RESOLV_CONF_SUPPORT'):
         env.OPTIONS += " --use-dns-faking"
 
+    if CONFIG_GET(opt, 'USING_SYSTEM_KRB5'):
+        env.OPTIONS += " --mitkrb5"
+
     if CONFIG_GET(opt, 'USING_SYSTEM_KRB5') and CONFIG_GET(opt, 'MIT_KDC_PATH'):
-        env.OPTIONS += " --mitkrb5 --exclude=${srcdir}/selftest/skip_mit_kdc"
+        env.OPTIONS += " --exclude=${srcdir}/selftest/skip_mit_kdc"
+        if CONFIG_GET(opt, 'HAVE_MIT_KRB5_PRE_1_20'):
+            env.OPTIONS += " --exclude=${srcdir}/selftest/skip_mit_kdc_pre_1_20"
+
         env.FILTER_XFAIL += " --expected-failures=${srcdir}/selftest/"\
                             "knownfail_mit_kdc"
+
+        if CONFIG_GET(opt, 'HAVE_MIT_KRB5_PRE_1_20'):
+            env.FILTER_XFAIL += ' --expected-failures=${srcdir}/selftest/knownfail_mit_kdc_pre_1_20'
+
+        if CONFIG_GET(opt, 'HAVE_MIT_KRB5_1_20'):
+            env.FILTER_XFAIL += ' --expected-failures=${srcdir}/selftest/knownfail_mit_kdc_1_20'
     else:
         env.FILTER_XFAIL += " --expected-failures=${srcdir}/selftest/"\
                             "knownfail_heimdal_kdc"
+
+    if CONFIG_GET(opt, 'SIZEOF_VOID_P') == 4:
+        env.FILTER_XFAIL += " --expected-failures=${srcdir}/selftest/knownfail-32bit"
+        env.OPTIONS += " --default-ldb-backend=tdb --exclude=${srcdir}/selftest/skip-32bit"
 
     if not CONFIG_GET(opt, 'HAVE_GSS_KRB5_CRED_NO_CI_FLAGS_X'):
         # older MIT krb5 libraries (< 1.14) don't have
@@ -271,6 +288,7 @@ def cmd_testonly(opt):
     if os.environ.get('DISABLE_OPATH'):
         env.OPTIONS += " --exclude=${srcdir}/selftest/skip.opath-required"
 
+    libasan = None
     if env.ADDRESS_SANITIZER:
         # We try to find the correct libasan automatically
         libasan = Utils.cmd_output(
@@ -280,6 +298,14 @@ def cmd_testonly(opt):
 
         # Have the selftest.pl LD_PRELOAD libasan in the right spot
         env.OPTIONS += " --asan_so_path=" + libasan
+
+        if CONFIG_SET(opt, 'HAVE_CRYPT_R'):
+            # We try to find the correct libcrypt automatically
+            libcrypt = Utils.cmd_output(
+                'ldd bin/modules/ldb/password_hash.so | awk \'/libcrypt.so/ { print $3 }\'',
+                silent=True).strip()
+            libcrypt = libcrypt.decode('utf8')
+            env.OPTIONS += " --crypt_so_path=" + libcrypt
 
     subunit_cache = None
     # We use the full path rather than relative path to avoid problems on some platforms (ie. solaris 8).
@@ -292,20 +318,28 @@ def cmd_testonly(opt):
     if os.environ.get('USE_NAMESPACES') is not None:
         env.CORE_COMMAND = 'unshare --net --user --map-root-user ' + env.CORE_COMMAND
 
-    if env.ADDRESS_SANITIZER:
+    if env.ADDRESS_SANITIZER and libasan:
         # For now we cannot run with leak and odr detection
-        no_leak_check = "ASAN_OPTIONS=detect_leaks=0:detect_odr_violation=0 "
+        asan_options = "ASAN_OPTIONS=detect_leaks=0"
+        asan_options += ":detect_odr_violation=0"
+        # uncomment if you need asan logs
+        # asan_options += ":verbosity=111"
+        asan_options += ":suppressions=${srcdir}/selftest/sanitizer/asan.supp"
+        asan_options += " "
+
         # And we need to disable RTLD_DEEPBIND in ldb and socket wrapper
-        no_leak_check += "LDB_MODULES_DISABLE_DEEPBIND=1 "
+        no_leak_check = "LDB_MODULES_DISABLE_DEEPBIND=1 "
         no_leak_check += "SOCKET_WRAPPER_DISABLE_DEEP_BIND=1"
-        env.CORE_COMMAND = no_leak_check + " " + env.CORE_COMMAND
+        no_leak_check += " "
+        env.CORE_COMMAND = asan_options + no_leak_check + env.CORE_COMMAND
 
         # We need to have the subunit filter and formatter preload
         # libasan otherwise the tests fail at startup.
         #
         # Also, we do not care about leaks in python
 
-        asan_envs = no_leak_check + " LD_PRELOAD=" + libasan + ' '
+        asan_envs = (asan_options + no_leak_check + "LD_PRELOAD=" + libasan
+                     + ' ')
         env.FILTER_OPTIONS = asan_envs + env.FILTER_OPTIONS
         env.SUBUNIT_FORMATTER = asan_envs + env.SUBUNIT_FORMATTER
 

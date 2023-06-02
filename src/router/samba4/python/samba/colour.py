@@ -88,3 +88,56 @@ def xterm_256_colour(n, bg=False, bold=False):
     target = '48' if bg else '38'
 
     return "\033[%s%s;5;%dm" % (weight, target, int(n))
+
+
+def is_colour_wanted(*streams, hint='auto'):
+    """The hint is presumably a --color argument.
+
+    The streams to be considered can be file objects or file names,
+    with '-' being a special filename indicating stdout.
+
+    We follow the behaviour of GNU `ls` in what we accept.
+    * `git` is stricter, accepting only {always,never,auto}.
+    * `grep` is looser, accepting mixed case variants.
+    * historically we have used {yes,no,auto}.
+    * {always,never,auto} appears the commonest convention.
+    * if the caller tries to opt out of choosing and sets hint to None
+      or '', we assume 'auto'.
+    """
+    if hint in ('no', 'never', 'none'):
+        return False
+
+    if hint in ('yes', 'always', 'force'):
+        return True
+
+    if hint not in ('auto', 'tty', 'if-tty', None, ''):
+        raise ValueError("unexpected colour hint: {hint}; "
+                         "try always|never|auto")
+
+    from os import environ
+    if environ.get('NO_COLOR'):
+        # Note: per spec, we treat the empty string as if unset.
+        return False
+
+    for stream in streams:
+        if isinstance(stream, str):
+            # This function can be passed filenames instead of file
+            # objects, in which case we treat '-' as stdout, and test
+            # that. Any other string is not regarded as a tty.
+            if stream != '-':
+                return False
+            import sys
+            stream = sys.stdout
+
+        if not stream.isatty():
+            return False
+    return True
+
+
+def colour_if_wanted(*streams, hint='auto'):
+    wanted = is_colour_wanted(*streams, hint=hint)
+    if wanted:
+        switch_colour_on()
+    else:
+        switch_colour_off()
+    return wanted

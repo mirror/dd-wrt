@@ -2,12 +2,12 @@
 .\"     Title: ctdb.sysconfig
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB\&.SYSCONFIG" "5" "01/31/2022" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB\&.SYSCONFIG" "5" "05/31/2023" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,17 +48,6 @@ If using CTDB\*(Aqs event scripts are unable to determine an appropriate default
 file\&.
 .sp
 Default: NONE\&. Guessed, based on features of distribution\&.
-.RE
-.PP
-CTDB_STARTUP_TIMEOUT=\fINUM\fR
-.RS 4
-NUM is the number of seconds to wait for
-\fBctdbd\fR(1)
-complete early initialisation up to a point where it is unlikely to abort\&. If
-\fBctdbd\fR
-doesn\*(Aqt complete the "setup" event before this timeout then it is killed\&.
-.sp
-Defaults: 10
 .RE
 .SH "RESOURCE LIMITS"
 .SS "Maximum number of open files"

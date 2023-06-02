@@ -193,8 +193,7 @@ static NTSTATUS smb2_write_complete_internal(struct tevent_req *req,
 	files_struct *fsp = state->fsp;
 
 	if (nwritten == -1) {
-		if (err == EOVERFLOW &&
-		    is_ntfs_stream_smb_fname(fsp->fsp_name)) {
+		if (err == EOVERFLOW && fsp_is_alternate_stream(fsp)) {
 			status = NT_STATUS_FILE_SYSTEM_LIMITATION;
 		} else {
 			status = map_nt_error_from_unix(err);
@@ -361,6 +360,7 @@ static struct tevent_req *smbd_smb2_write_send(TALLOC_CTX *mem_ctx,
 				in_offset,
 				in_data.length,
 				WRITE_LOCK,
+				lp_posix_cifsu_locktype(fsp),
 				&lock);
 
 	if (!SMB_VFS_STRICT_LOCK_CHECK(conn, fsp, &lock)) {

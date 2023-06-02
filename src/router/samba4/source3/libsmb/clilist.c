@@ -394,6 +394,10 @@ static struct tevent_req *cli_list_old_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(state->mask, req)) {
 		return tevent_req_post(req, ev);
 	}
+	state->mask = smb1_dfs_share_path(state, cli, state->mask);
+	if (tevent_req_nomem(state->mask, req)) {
+		return tevent_req_post(req, ev);
+	}
 	usable_space = cli_state_available_size(cli, 100);
 	state->num_asked = usable_space / DIR_STRUCT_SIZE;
 
@@ -405,8 +409,11 @@ static struct tevent_req *cli_list_old_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), mask,
-				   strlen(mask)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   state->mask,
+				   strlen(state->mask)+1,
+				   NULL);
 
 	bytes = smb_bytes_push_bytes(bytes, 5, (const uint8_t *)&zero, 2);
 	if (tevent_req_nomem(bytes, req)) {
@@ -659,6 +666,10 @@ static struct tevent_req *cli_list_trans_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(state->mask, req)) {
 		return tevent_req_post(req, ev);
 	}
+	state->mask = smb1_dfs_share_path(state, cli, state->mask);
+	if (tevent_req_nomem(state->mask, req)) {
+		return tevent_req_post(req, ev);
+	}
 	state->attribute = attribute;
 	state->info_level = info_level;
 	state->loop_count = 0;
@@ -689,7 +700,7 @@ static struct tevent_req *cli_list_trans_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(state->mask, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(state->mask)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -890,7 +901,7 @@ static void cli_list_trans_done(struct tevent_req *subreq)
 	}
 	param_len = talloc_get_size(state->param);
 
-	if (clistr_is_previous_version_path(state->mask, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(state->mask)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -985,7 +996,8 @@ struct tevent_req *cli_list_send(TALLOC_CTX *mem_ctx,
 				 struct cli_state *cli,
 				 const char *mask,
 				 uint32_t attribute,
-				 uint16_t info_level)
+				 uint16_t info_level,
+				 bool posix)
 {
 	struct tevent_req *req = NULL;
 	struct cli_list_state *state;
@@ -998,7 +1010,8 @@ struct tevent_req *cli_list_send(TALLOC_CTX *mem_ctx,
 	state->ev = ev;
 
 	if (proto >= PROTOCOL_SMB2_02) {
-		state->subreq = cli_smb2_list_send(state, ev, cli, mask);
+		state->subreq = cli_smb2_list_send(state, ev, cli, mask,
+						   info_level, posix);
 		state->recv_fn = cli_smb2_list_recv;
 	} else if (proto >= PROTOCOL_LANMAN2) {
 		state->subreq = cli_list_trans_send(
@@ -1188,6 +1201,7 @@ NTSTATUS cli_list(struct cli_state *cli,
 	struct tevent_req *req;
 	NTSTATUS status = NT_STATUS_NO_MEMORY;
 	uint16_t info_level;
+	enum protocol_types proto = smbXcli_conn_protocol(cli->conn);
 
 	frame = talloc_stackframe();
 
@@ -1203,10 +1217,14 @@ NTSTATUS cli_list(struct cli_state *cli,
 		goto fail;
 	}
 
-	info_level = (smb1cli_conn_capabilities(cli->conn) & CAP_NT_SMBS)
-		? SMB_FIND_FILE_BOTH_DIRECTORY_INFO : SMB_FIND_INFO_STANDARD;
+	if (proto >= PROTOCOL_SMB2_02) {
+		info_level = SMB2_FIND_ID_BOTH_DIRECTORY_INFO;
+	} else {
+		info_level = (smb1cli_conn_capabilities(cli->conn) & CAP_NT_SMBS)
+			? SMB_FIND_FILE_BOTH_DIRECTORY_INFO : SMB_FIND_INFO_STANDARD;
+	}
 
-	req = cli_list_send(frame, ev, cli, mask, attribute, info_level);
+	req = cli_list_send(frame, ev, cli, mask, attribute, info_level, false);
 	if (req == NULL) {
 		goto fail;
 	}

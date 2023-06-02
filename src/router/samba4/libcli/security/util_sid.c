@@ -158,6 +158,17 @@ const struct dom_sid global_sid_Unix_NFS_Other =		/* Unix other, MS NFS and Appl
 { 1, 2, {0,0,0,0,0,5}, {88,4,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 #endif
 
+/* Information passing via security token */
+const struct dom_sid global_sid_Samba_SMB3 =
+{1, 1, {0,0,0,0,0,22}, {1397571891, }};
+
+const struct dom_sid global_sid_Samba_NPA_Flags = {1,
+						   1,
+						   {0, 0, 0, 0, 0, 22},
+						   {
+							   2041152804,
+						   }};
+
 /* Unused, left here for documentary purposes */
 #if 0
 #define SECURITY_NULL_SID_AUTHORITY    0
@@ -335,7 +346,7 @@ int sid_compare_domain(const struct dom_sid *sid1, const struct dom_sid *sid2)
 }
 
 /********************************************************************
- Add SID to an array SIDs
+ Add SID to an array of SIDs
 ********************************************************************/
 
 NTSTATUS add_sid_to_array(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
@@ -362,7 +373,7 @@ NTSTATUS add_sid_to_array(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 
 
 /********************************************************************
- Add SID to an array SIDs ensuring that it is not already there
+ Add SID to an array of SIDs ensuring that it is not already there
 ********************************************************************/
 
 NTSTATUS add_sid_to_array_unique(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
@@ -434,7 +445,7 @@ bool add_rid_to_array_unique(TALLOC_CTX *mem_ctx,
 
 bool is_null_sid(const struct dom_sid *sid)
 {
-	const struct dom_sid null_sid = {0};
+	static const struct dom_sid null_sid = {0};
 	return dom_sid_equal(sid, &null_sid);
 }
 

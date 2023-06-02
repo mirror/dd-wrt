@@ -123,11 +123,12 @@ local_daemons_setup_usage ()
 $0 <directory> setup [ <options>... ]
 
 Options:
+  -C            Comment out given config item (default: item uncommented)
   -F            Disable failover (default: failover enabled)
   -N <file>     Nodes file (default: automatically generated)
   -n <num>      Number of nodes (default: 3)
   -P <file>     Public addresses file (default: automatically generated)
-  -R            Use a command for the recovery lock (default: use a file)
+  -R            Use a command for the cluster lock (default: use a file)
   -r <time>     Like -R and set recheck interval to <time> (default: use a file)
   -S <library>  Socket wrapper shared library to preload (default: none)
   -6            Generate IPv6 IPs for nodes, public addresses (default: IPv4)
@@ -138,26 +139,30 @@ EOF
 
 local_daemons_setup ()
 {
+	_commented_config=""
 	_disable_failover=false
 	_nodes_file=""
 	_num_nodes=3
 	_public_addresses_file=""
-	_recovery_lock_use_command=false
-	_recovery_lock_recheck_interval=""
+	_cluster_lock_use_command=false
+	_cluster_lock_recheck_interval=""
 	_socket_wrapper=""
 	_use_ipv6=false
 
 	set -e
 
-	while getopts "FN:n:P:Rr:S:6h?" _opt ; do
+	while getopts "C:FN:n:P:Rr:S:6h?" _opt ; do
 		case "$_opt" in
+		C) _t="${_commented_config}${_commented_config:+|}"
+		   _commented_config="${_t}${OPTARG}"
+		   ;;
 		F) _disable_failover=true ;;
 		N) _nodes_file="$OPTARG" ;;
 		n) _num_nodes="$OPTARG" ;;
 		P) _public_addresses_file="$OPTARG" ;;
-		R) _recovery_lock_use_command=true ;;
-		r) _recovery_lock_use_command=true
-		   _recovery_lock_recheck_interval="$OPTARG"
+		R) _cluster_lock_use_command=true ;;
+		r) _cluster_lock_use_command=true
+		   _cluster_lock_recheck_interval="$OPTARG"
 		   ;;
 		S) _socket_wrapper="$OPTARG" ;;
 		6) _use_ipv6=true ;;
@@ -191,16 +196,16 @@ local_daemons_setup ()
 				       $_use_ipv6 >"$_public_addresses_all"
 	fi
 
-	_recovery_lock_dir="${directory}/shared/.ctdb"
-	mkdir -p "$_recovery_lock_dir"
-	_recovery_lock="${_recovery_lock_dir}/rec.lock"
-	if $_recovery_lock_use_command ; then
+	_cluster_lock_dir="${directory}/shared/.ctdb"
+	mkdir -p "$_cluster_lock_dir"
+	_cluster_lock="${_cluster_lock_dir}/cluster.lock"
+	if $_cluster_lock_use_command ; then
 		_helper="${CTDB_SCRIPTS_HELPER_BINDIR}/ctdb_mutex_fcntl_helper"
-		_t="! ${_helper} ${_recovery_lock}"
-		if [ -n "$_recovery_lock_recheck_interval" ] ; then
-			_t="${_t} ${_recovery_lock_recheck_interval}"
+		_t="! ${_helper} ${_cluster_lock}"
+		if [ -n "$_cluster_lock_recheck_interval" ] ; then
+			_t="${_t} ${_cluster_lock_recheck_interval}"
 		fi
-		_recovery_lock="$_t"
+		_cluster_lock="$_t"
 	fi
 
 	if [ -n "$_socket_wrapper" ] ; then
@@ -241,7 +246,7 @@ local_daemons_setup ()
 	log level = INFO
 
 [cluster]
-	recovery lock = ${_recovery_lock}
+	cluster lock = ${_cluster_lock}
 	node address = ${_node_ip}
 
 [database]
@@ -255,6 +260,15 @@ local_daemons_setup ()
 [event]
 	debug script = debug-hung-script.sh
 EOF
+
+		(
+			IFS='|'
+			for _c in $_commented_config ; do
+				# Quote all backslashes due to double-quotes
+				sed -i -e "s|^\\t\\(${_c}\\) = |\\t# \\1 = |" \
+				    "${CTDB_BASE}/ctdb.conf"
+			done
+		)
 	done
 }
 
@@ -427,14 +441,7 @@ local_daemons_print_log ()
 
 	# shellcheck disable=SC2016
 	# $CTDB_BASE must only be expanded under onnode, not in top-level shell
-	onnode -q "$_nodes" 'echo ${CTDB_BASE}/log.ctdb' |
-	while IFS='' read -r _l ; do
-		_dir=$(dirname "$_l")
-		_node=$(basename "$_dir")
-		# Add fake hostname after date and time, which are the
-		# first 2 words on each line
-		sed -e "s|^\\([^ ][^ ]* [^ ][^ ]*\\)|\\1 ${_node}|" "$_l"
-	done |
+	onnode -q "$_nodes" 'cat ${CTDB_BASE}/log.ctdb' |
 	sort
 
 }

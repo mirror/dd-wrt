@@ -2,12 +2,12 @@
 .\"     Title: ntlm_auth
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "NTLM_AUTH" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
+.TH "NTLM_AUTH" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -364,7 +364,7 @@ Levels above 1 will generate considerable amounts of log data, and should only b
 Note that specifying this parameter here will override the
 \m[blue]\fBlog level\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -377,7 +377,7 @@ This will redirect debug output to STDOUT\&. By default all clients are logging 
 .RS 4
 The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
 \m[blue]\fBclient smb encrypt\fR\m[]\&. See
-smb\&.conf
+${prefix}/etc/smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
 .PP
@@ -450,7 +450,7 @@ If you\*(Aqre experiencing problems with authenticating Internet Explorer runnin
 the Microsoft Knowledge Base article #239869 and follow instructions described there\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

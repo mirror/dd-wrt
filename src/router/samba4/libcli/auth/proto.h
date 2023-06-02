@@ -6,12 +6,12 @@
 
 #include "lib/crypto/gnutls_helpers.h"
 
-/* this file contains prototypes for functions that are private 
- * to this subsystem or library. These functions should not be 
+/* this file contains prototypes for functions that are private
+ * to this subsystem or library. These functions should not be
  * used outside this particular subsystem! */
 
 
-/* The following definitions come from /home/jeremy/src/samba/git/master/source3/../source4/../libcli/auth/credentials.c  */
+/* The following definitions come from libcli/auth/credentials.c  */
 
 bool netlogon_creds_is_random_challenge(const struct netr_Credential *challenge);
 void netlogon_creds_random_challenge(struct netr_Credential *challenge);
@@ -38,16 +38,16 @@ NTSTATUS netlogon_creds_aes_decrypt(struct netlogon_creds_CredentialState *creds
 The above functions are common to the client and server interface
 next comes the client specific functions
 ******************************************************************/
-struct netlogon_creds_CredentialState *netlogon_creds_client_init(TALLOC_CTX *mem_ctx, 
+struct netlogon_creds_CredentialState *netlogon_creds_client_init(TALLOC_CTX *mem_ctx,
 								  const char *client_account,
-								  const char *client_computer_name, 
+								  const char *client_computer_name,
 								  uint16_t secure_channel_type,
 								  const struct netr_Credential *client_challenge,
 								  const struct netr_Credential *server_challenge,
 								  const struct samr_Password *machine_password,
 								  struct netr_Credential *initial_credential,
 								  uint32_t negotiate_flags);
-struct netlogon_creds_CredentialState *netlogon_creds_client_init_session_key(TALLOC_CTX *mem_ctx, 
+struct netlogon_creds_CredentialState *netlogon_creds_client_init_session_key(TALLOC_CTX *mem_ctx,
 									      const uint8_t session_key[16]);
 NTSTATUS
 netlogon_creds_client_authenticator(struct netlogon_creds_CredentialState *creds,
@@ -62,9 +62,9 @@ struct netlogon_creds_CredentialState *netlogon_creds_copy(
 The above functions are common to the client and server interface
 next comes the server specific functions
 ******************************************************************/
-struct netlogon_creds_CredentialState *netlogon_creds_server_init(TALLOC_CTX *mem_ctx, 
+struct netlogon_creds_CredentialState *netlogon_creds_server_init(TALLOC_CTX *mem_ctx,
 								  const char *client_account,
-								  const char *client_computer_name, 
+								  const char *client_computer_name,
 								  uint16_t secure_channel_type,
 								  const struct netr_Credential *client_challenge,
 								  const struct netr_Credential *server_challenge,
@@ -91,18 +91,18 @@ union netr_LogonLevel *netlogon_creds_shallow_copy_logon(TALLOC_CTX *mem_ctx,
 					enum netr_LogonInfoClass level,
 					const union netr_LogonLevel *in);
 
-/* The following definitions come from /home/jeremy/src/samba/git/master/source3/../source4/../libcli/auth/session.c  */
+/* The following definitions come from libcli/auth/session.c  */
 
 int sess_crypt_blob(DATA_BLOB *out, const DATA_BLOB *in, const DATA_BLOB *session_key,
 		    enum samba_gnutls_direction encrypt);
 DATA_BLOB sess_encrypt_string(const char *str, const DATA_BLOB *session_key);
-char *sess_decrypt_string(TALLOC_CTX *mem_ctx, 
+char *sess_decrypt_string(TALLOC_CTX *mem_ctx,
 			  DATA_BLOB *blob, const DATA_BLOB *session_key);
 DATA_BLOB sess_encrypt_blob(TALLOC_CTX *mem_ctx, DATA_BLOB *blob_in, const DATA_BLOB *session_key);
-NTSTATUS sess_decrypt_blob(TALLOC_CTX *mem_ctx, const DATA_BLOB *blob, const DATA_BLOB *session_key, 
+NTSTATUS sess_decrypt_blob(TALLOC_CTX *mem_ctx, const DATA_BLOB *blob, const DATA_BLOB *session_key,
 			   DATA_BLOB *ret);
 
-/* The following definitions come from /home/jeremy/src/samba/git/master/source3/../source4/../libcli/auth/smbencrypt.c  */
+/* The following definitions come from libcli/auth/smbencrypt.c  */
 
 int SMBencrypt_hash(const uint8_t lm_hash[16], const uint8_t *c8, uint8_t p24[24]);
 bool SMBencrypt(const char *passwd, const uint8_t *c8, uint8_t p24[24]);
@@ -124,7 +124,7 @@ bool E_md4hash(const char *passwd, uint8_t p16[16]);
 bool E_deshash(const char *passwd, uint8_t p16[16]);
 
 /**
- * Creates the MD4 and DES (LM) Hash of the users password.  
+ * Creates the MD4 and DES (LM) Hash of the users password.
  * MD4 is of the NT Unicode, DES is of the DOS UPPERCASE password.
  * @param passwd password in 'unix' charset.
  * @param nt_p16 return password hashed with md4, caller allocated 16 byte buffer
@@ -148,22 +148,22 @@ void SMBsesskeygen_ntv1(const uint8_t kr[16], uint8_t sess_key[16]);
 NTSTATUS SMBsesskeygen_lm_sess_key(const uint8_t lm_hash[16],
 				   const uint8_t lm_resp[24], /* only uses 8 */
 				   uint8_t sess_key[16]);
-DATA_BLOB NTLMv2_generate_names_blob(TALLOC_CTX *mem_ctx, 
-				     const char *hostname, 
+DATA_BLOB NTLMv2_generate_names_blob(TALLOC_CTX *mem_ctx,
+				     const char *hostname,
 				     const char *domain);
-bool SMBNTLMv2encrypt_hash(TALLOC_CTX *mem_ctx, 
+bool SMBNTLMv2encrypt_hash(TALLOC_CTX *mem_ctx,
 			   const char *user, const char *domain, const uint8_t nt_hash[16],
-			   const DATA_BLOB *server_chal, 
+			   const DATA_BLOB *server_chal,
 			   const NTTIME *server_timestamp,
 			   const DATA_BLOB *names_blob,
-			   DATA_BLOB *lm_response, DATA_BLOB *nt_response, 
+			   DATA_BLOB *lm_response, DATA_BLOB *nt_response,
 			   DATA_BLOB *lm_session_key, DATA_BLOB *user_session_key) ;
-bool SMBNTLMv2encrypt(TALLOC_CTX *mem_ctx, 
-		      const char *user, const char *domain, 
-		      const char *password, 
-		      const DATA_BLOB *server_chal, 
+bool SMBNTLMv2encrypt(TALLOC_CTX *mem_ctx,
+		      const char *user, const char *domain,
+		      const char *password,
+		      const DATA_BLOB *server_chal,
 		      const DATA_BLOB *names_blob,
-		      DATA_BLOB *lm_response, DATA_BLOB *nt_response, 
+		      DATA_BLOB *lm_response, DATA_BLOB *nt_response,
 		      DATA_BLOB *lm_session_key, DATA_BLOB *user_session_key) ;
 NTSTATUS NTLMv2_RESPONSE_verify_netlogon_creds(const char *account_name,
 			const char *account_domain,
@@ -188,6 +188,58 @@ bool decode_pw_buffer(TALLOC_CTX *ctx,
 		      size_t *new_pw_len,
 		      charset_t string_charset);
 
+/**
+ * @brief Encode an password buffer before we encrypt it.
+ *
+ * @param buffer[514]   The buffer to encode into.
+ *
+ * @param password      The password we want to encode into the buffer.
+ *
+ * @param string_flags  String flags for encoding (e.g. STR_UNICODE).
+ *
+ * @return true on success, false otherwise.
+ */
+bool encode_pwd_buffer514_from_str(uint8_t buffer[514],
+				   const char *password,
+				   uint32_t string_flags);
+
+/**
+ * @brief Extract AES password blob from buffer.
+ *
+ * This extracts the password from the in_buffer as a data blob. It should
+ * then contain an UTF-16 encoded password.
+ *
+ * @param mem_ctx       The memory context to allowcate the password on.
+ *
+ * @param in_buffer[514] The input buffer to extract the password from.
+ *
+ * @param new_password  A pointer to the store the extracted password blob.
+ *
+ * @return true on success, false otherwise.
+ */
+bool extract_pwd_blob_from_buffer514(TALLOC_CTX *mem_ctx,
+				     const uint8_t in_buffer[514],
+				     DATA_BLOB *new_password);
+
+/**
+ * @brief Decode AES password buffer to password in the given charset.
+ *
+ * @param mem_ctx       The memory context to allocate the deocded passwrod on.
+ *
+ * @param in_buffer[514] The in buffer with the decrypted password data.
+ *
+ * @param string_charset The charset to decode to.
+ *
+ * @param decoded_password A pointer to store the blob for the decoded password.
+ *                         It ensures that the password is NULL terminated.
+ *
+ * @return true on success, false otherwise.
+ */
+bool decode_pwd_string_from_buffer514(TALLOC_CTX *mem_ctx,
+				      const uint8_t in_buffer[514],
+				      charset_t string_charset,
+				      DATA_BLOB *decoded_password);
+
 /***********************************************************
  Encode an arc4 password change buffer.
 ************************************************************/
@@ -211,7 +263,7 @@ bool set_pw_in_buffer(uint8_t buffer[516], const DATA_BLOB *password);
  decode a password buffer
  *new_pw_size is the length in bytes of the extracted unicode password
 ************************************************************/
-bool extract_pw_from_buffer(TALLOC_CTX *mem_ctx, 
+bool extract_pw_from_buffer(TALLOC_CTX *mem_ctx,
 			    uint8_t in_buffer[516], DATA_BLOB *new_pass);
 struct wkssvc_PasswordBuffer;
 WERROR encode_wkssvc_join_password_buffer(TALLOC_CTX *mem_ctx,
@@ -223,7 +275,7 @@ WERROR decode_wkssvc_join_password_buffer(TALLOC_CTX *mem_ctx,
 					  DATA_BLOB *session_key,
 					  char **pwd);
 
-/* The following definitions come from /home/jeremy/src/samba/git/master/source3/../source4/../libcli/auth/smbdes.c  */
+/* The following definitions come from libcli/auth/smbdes.c  */
 
 int des_crypt56_gnutls(uint8_t out[8], const uint8_t in[8], const uint8_t key[7],
 		       enum samba_gnutls_direction encrypt);

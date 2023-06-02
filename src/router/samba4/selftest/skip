@@ -82,9 +82,6 @@
 ^samba4.smb2.zero-data-ioctl            # For manual testing, needs additional parameters.
 ^samba4.raw.ping.pong		# Needs second server to test
 ^samba4.rpc.samr.accessmask
-^samba4.rpc.samr.passwords.*ncacn_np\(ad_dc_ntvfs\) # currently fails, possibly config issue
-^samba4.rpc.samr.passwords.*ncacn_np\(ad_dc_slowtests\) # currently fails, possibly config issue
-^samba4.rpc.samr.passwords.*s4member       # currently fails, possibly config issue
 ^samba4.raw.scan.eamax
 ^samba4.smb2.samba3misc
 ^samba4.smb2.notify
@@ -147,8 +144,9 @@ bench # don't run benchmarks in our selftest
 # ktutil might not be installed or from mit...
 # we should build a samba4ktutil and use that instead
 ^samba4.blackbox.ktpass # this test isn't portable ...
-^samba4.rpc.unixinfo # This contains a server-side getpwuid call which hangs the server when nss_winbindd is in use
 ^samba.tests.dcerpc.unix  # This contains a server-side getpwuid call which hangs the server when nss_winbindd is in use
 ^samba4.smb2.mangle.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
 ^samba4.smb2.tcon.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
 ^samba4.smb2.mkdir.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
+^samba.tests.reparsepoints.*
+^samba.tests.smb2symlink.*

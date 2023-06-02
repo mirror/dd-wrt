@@ -48,18 +48,26 @@ struct samba_kdc_db_context {
 	unsigned int my_krbtgt_number;
 	struct ldb_dn *krbtgt_dn;
 	struct samba_kdc_policy policy;
+	struct ldb_dn *fx_cookie_dn;
+	struct ldb_context *secrets_db;
 };
 
 struct samba_kdc_entry {
 	struct samba_kdc_db_context *kdc_db_ctx;
+	const struct sdb_entry *db_entry; /* this is only temporary valid */
+	const void *kdc_entry; /* this is a reference to hdb_entry/krb5_db_entry */
 	struct ldb_message *msg;
 	struct ldb_dn *realm_dn;
+	struct auth_user_info_dc *user_info_dc;
 	bool is_krbtgt;
 	bool is_rodc;
 	bool is_trust;
-	void *entry_ex;
+	uint32_t supported_enctypes;
+	NTSTATUS reject_status;
 };
 
 extern struct hdb_method hdb_samba4_interface;
+
+#define CHANGEPW_LIFETIME 60*2 /* 2 minutes */
 
 #endif /* _SAMBA_KDC_H_ */

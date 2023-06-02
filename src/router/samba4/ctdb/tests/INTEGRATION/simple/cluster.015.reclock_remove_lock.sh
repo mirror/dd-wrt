@@ -8,7 +8,10 @@ set -e
 
 ctdb_test_skip_on_cluster
 
-ctdb_test_init -r 5
+ctdb_test_init -n
+
+echo "Starting CTDB with cluster lock recheck interval set to 5s..."
+ctdb_nodes_start_custom -r 5
 
 generation_has_changed ()
 {
@@ -51,40 +54,27 @@ echo "Recovery lock setting is \"${reclock_setting}\""
 echo "Recovery lock file is \"${reclock}\""
 echo
 
-echo "Get current recovery master"
-ctdb_onnode "$test_node" recmaster
-recmaster="$out"
-echo "Recovery master is node ${recmaster}"
-echo
+leader_get "$test_node"
 
-echo "Get initial generation"
-ctdb_onnode "$test_node" status
-# shellcheck disable=SC2154
-# $outfile set by ctdb_onnode() above
-generation_init=$(sed -n -e 's/^Generation:\([0-9]*\)/\1/p' "$outfile")
-echo "Initial generation is ${generation_init}"
-echo
+generation_get
 
 echo "Remove recovery lock"
 rm "$reclock"
 echo
 
 # This will mean an election has taken place and a recovery has occured
-echo "Wait until generation changes"
-wait_until 30 generation_has_changed "$test_node" "$generation_init"
-echo
-echo "Generation changed to ${generation_new}"
-echo
+wait_until_generation_has_changed "$test_node"
 
-echo "Get current recovery master"
-ctdb_onnode "$test_node" recmaster
-recmaster_new="$out"
+# shellcheck disable=SC2154
+# $leader set by leader_get() above
+leader_old="$leader"
 
-if [ "$recmaster" != "$recmaster_new" ] ; then
-	ctdb_test_fail \
-		"BAD: Recovery master has changed to node ${recmaster_new}"
+leader_get "$test_node"
+
+if [ "$leader" != "$leader_old" ] ; then
+	echo "OK: Leader has changed to node ${leader_new}"
 fi
-echo "GOOD: Recovery master is still node ${recmaster_new}"
+echo "GOOD: Leader is still node ${leader}"
 echo
 
 cluster_is_healthy

@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    SMB debug stuff
    Copyright (C) Andrew Tridgell 1992-1998
@@ -23,6 +23,7 @@
 #ifndef _SAMBA_DEBUG_H
 #define _SAMBA_DEBUG_H
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdarg.h>
@@ -138,7 +139,7 @@ bool dbgsetclass(int level, int cls);
  *
  *   Example: DEBUGC( DBGC_TDB, 2, ("Some text and a value %d.\n", value) );
  *
- *  DEBUGADD(), DEBUGADDC()
+ * DEBUGADD(), DEBUGADDC()
  *    Same as DEBUG() and DEBUGC() except the text is appended to the previous
  *    DEBUG(), DEBUGC(), DEBUGADD(), DEBUGADDC() with out another interviening
  *    header.
@@ -146,7 +147,7 @@ bool dbgsetclass(int level, int cls);
  *    Example: DEBUGADD( 2, ("Some text and a value %d.\n", value) );
  *             DEBUGADDC( DBGC_TDB, 2, ("Some text and a value %d.\n", value) );
  *
- * Note: If the debug class has not be redeined (see above) then the optimizer
+ * Note: If the debug class has not be redefined (see above) then the optimizer
  * will remove the extra conditional test.
  */
 
@@ -225,6 +226,25 @@ void debuglevel_set_class(size_t idx, int level);
   (void)( ((level) <= MAX_DEBUG_LEVEL) && \
        unlikely(debuglevel_get_class(DBGC_CLASS) >= (level))             \
        && (dbghdrclass( level, DBGC_CLASS, __location__, __FUNCTION__ )) \
+       && (dbgtext body) )
+
+/**
+ * @brief DEBUGLF is same as DEBUG with explicit location and function arguments
+ *
+ * To be used when passing location and function of a caller appearig earlier in
+ * the call stack instead of some helper function.
+ *
+ * @code
+ *     DEBUGLF( 2, ("Some text.\n"), "foo.c:1", "foo" );
+ *     DEBUGLF( 5, ("Some text.\n"), location, function );
+ * @endcode
+ *
+ * @return void.
+ */
+#define DEBUGLF( level, body, location, function ) \
+  (void)( ((level) <= MAX_DEBUG_LEVEL) && \
+       unlikely(debuglevel_get_class(DBGC_CLASS) >= (level))     \
+       && (dbghdrclass( level, DBGC_CLASS, location, function )) \
        && (dbgtext body) )
 
 #define DEBUGC( dbgc_class, level, body ) \
@@ -310,11 +330,11 @@ void debuglevel_set_class(size_t idx, int level);
 
 /* The following definitions come from lib/debug.c  */
 
-/** Possible destinations for the debug log (in order of precedence -
- * once set to DEBUG_FILE, it is not possible to reset to DEBUG_STDOUT
- * for example.  This makes it easy to override for debug to stderr on
- * the command line, as the smb.conf cannot reset it back to
- * file-based logging */
+/**
+ * Possible destinations for the debug log.
+ *
+ * Set via setup_logging(); higher values have precedence.
+ */
 enum debug_logtype {
 	DEBUG_DEFAULT_STDERR = 0,
 	DEBUG_DEFAULT_STDOUT = 1,
@@ -329,9 +349,11 @@ struct debug_settings {
 	bool timestamp_logs;
 	bool debug_prefix_timestamp;
 	bool debug_hires_timestamp;
+	bool debug_syslog_format;
 	bool debug_pid;
 	bool debug_uid;
 	bool debug_class;
+	bool debug_no_stderr_redirect;
 };
 
 void setup_logging(const char *prog_name, enum debug_logtype new_logtype);
@@ -344,6 +366,7 @@ void debug_set_logfile(const char *name);
 void debug_set_settings(struct debug_settings *settings,
 			const char *logging_param,
 			int syslog_level, bool syslog_only);
+void debug_set_hostname(const char *name);
 bool reopen_logs_internal( void );
 void force_check_log_size( void );
 bool need_to_check_log_size( void );
@@ -354,6 +377,9 @@ bool debug_get_output_is_stderr(void);
 bool debug_get_output_is_stdout(void);
 void debug_schedule_reopen_logs(void);
 char *debug_list_class_names_and_levels(void);
+bool debug_developer_enabled(void);
+void debug_developer_enable(void);
+void debug_developer_disable(void);
 
 typedef void (*debug_callback_fn)(void *private_ptr, int level, const char *msg);
 
@@ -364,5 +390,11 @@ void debug_set_callback(void *private_ptr, debug_callback_fn fn);
 
 char *debug_get_ringbuf(void);
 size_t debug_get_ringbuf_size(void);
+
+/* Explicitly set new traceid. The old id is returned. */
+uint64_t debug_traceid_set(uint64_t id);
+
+/* Get the current traceid. */
+uint64_t debug_traceid_get(void);
 
 #endif /* _SAMBA_DEBUG_H */

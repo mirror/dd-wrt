@@ -179,14 +179,6 @@ static bool posix_lock_in_range(off_t *offset_out, off_t *count_out,
 	return True;
 }
 
-bool smb_vfs_call_lock(struct vfs_handle_struct *handle,
-		       struct files_struct *fsp, int op, off_t offset,
-		       off_t count, int type)
-{
-	VFS_FIND(lock);
-	return handle->fns->lock_fn(handle, fsp, op, offset, count, type);
-}
-
 /****************************************************************************
  Actual function that does POSIX locks. Copes with 64 -> 32 bit cruft and
  broken NFS implementations.
@@ -241,15 +233,6 @@ static bool posix_fcntl_lock(files_struct *fsp, int op, off_t offset, off_t coun
 
 	DEBUG(8,("posix_fcntl_lock: Lock call %s\n", ret ? "successful" : "failed"));
 	return ret;
-}
-
-bool smb_vfs_call_getlock(struct vfs_handle_struct *handle,
-			  struct files_struct *fsp, off_t *poffset,
-			  off_t *pcount, int *ptype, pid_t *ppid)
-{
-	VFS_FIND(getlock);
-	return handle->fns->getlock_fn(handle, fsp, poffset, pcount, ptype, 
-				       ppid);
 }
 
 /****************************************************************************
@@ -561,6 +544,7 @@ static void fd_close_posix_fn(
 	TDB_DATA data,
 	void *private_data)
 {
+	int *saved_errno = (int *)private_data;
 	size_t num_fds, i;
 
 	SMB_ASSERT((data.dsize % sizeof(int)) == 0);
@@ -568,8 +552,12 @@ static void fd_close_posix_fn(
 
 	for (i=0; i<num_fds; i++) {
 		int fd;
+		int ret;
 		memcpy(&fd, data.dptr, sizeof(int));
-		close(fd);
+		ret = close(fd);
+		if (ret == -1) {
+			*saved_errno = errno;
+		}
 		data.dptr += sizeof(int);
 	}
 	dbwrap_record_delete(rec);
@@ -583,6 +571,8 @@ static void fd_close_posix_fn(
 
 int fd_close_posix(const struct files_struct *fsp)
 {
+	int saved_errno = 0;
+	int ret;
 	NTSTATUS status;
 
 	if (!lp_locking(fsp->conn->params) ||
@@ -614,7 +604,7 @@ int fd_close_posix(const struct files_struct *fsp)
 		posix_pending_close_db,
 		fd_array_key_fsp(fsp),
 		fd_close_posix_fn,
-		NULL);
+		&saved_errno);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("dbwrap_do_locked failed: %s\n",
 			    nt_errstr(status));
@@ -627,7 +617,14 @@ int fd_close_posix(const struct files_struct *fsp)
 	 * Finally close the fd associated with this fsp.
 	 */
 
-	return close(fsp_get_pathref_fd(fsp));
+	ret = close(fsp_get_pathref_fd(fsp));
+
+	if (ret == 0 && saved_errno != 0) {
+		errno = saved_errno;
+		ret = -1;
+	}
+
+	return ret;
 }
 
 /****************************************************************************

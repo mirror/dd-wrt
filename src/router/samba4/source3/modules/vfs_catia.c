@@ -286,7 +286,7 @@ static struct catia_cache *catia_validate_and_apply_cc(
 
 		if ((cc->fname != fsp->fsp_name->base_name)
 		    ||
-		    ((fsp->base_fsp != NULL) &&
+		    (fsp_is_alternate_stream(fsp) &&
 		     (cc->base_fname != fsp->base_fsp->fsp_name->base_name)))
 		{
 			CATIA_DEBUG_CC(10, cc, fsp);
@@ -312,7 +312,7 @@ static struct catia_cache *catia_validate_and_apply_cc(
 
 	if ((cc->orig_fname != fsp->fsp_name->base_name)
 	    ||
-	    ((fsp->base_fsp != NULL) &&
+	    (fsp_is_alternate_stream(fsp) &&
 	     (cc->orig_base_fname != fsp->base_fsp->fsp_name->base_name)))
 	{
 		/*
@@ -331,7 +331,7 @@ static struct catia_cache *catia_validate_and_apply_cc(
 	 * names from the cache and mark the cc as busy.
 	 */
 	fsp->fsp_name->base_name = cc->fname;
-	if (fsp->base_fsp != NULL) {
+	if (fsp_is_alternate_stream(fsp)) {
 		fsp->base_fsp->fsp_name->base_name = cc->base_fname;
 	}
 
@@ -407,7 +407,7 @@ static int catia_fetch_fsp_pre_next(TALLOC_CTX *mem_ctx,
 	}
 	talloc_steal(mem_ctx, cc->fname);
 
-	if (fsp->base_fsp != NULL) {
+	if (fsp_is_alternate_stream(fsp)) {
 		status = catia_string_replace_allocate(
 			handle->conn,
 			fsp->base_fsp->fsp_name->base_name,
@@ -424,7 +424,7 @@ static int catia_fetch_fsp_pre_next(TALLOC_CTX *mem_ctx,
 	cc->orig_fname = fsp->fsp_name->base_name;
 	fsp->fsp_name->base_name = cc->fname;
 
-	if (fsp->base_fsp != NULL) {
+	if (fsp_is_alternate_stream(fsp)) {
 		cc->orig_base_fname = fsp->base_fsp->fsp_name->base_name;
 		fsp->base_fsp->fsp_name->base_name = cc->base_fname;
 	}
@@ -472,7 +472,7 @@ static void catia_fetch_fsp_post_next(struct catia_cache **_cc,
 	*_cc = NULL;
 
 	fsp->fsp_name->base_name = cc->orig_fname;
-	if (fsp->base_fsp != NULL) {
+	if (fsp_is_alternate_stream(fsp)) {
 		fsp->base_fsp->fsp_name->base_name = cc->orig_base_fname;
 	}
 
@@ -489,8 +489,7 @@ static int catia_openat(vfs_handle_struct *handle,
 			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname_in,
 			files_struct *fsp,
-			int flags,
-			mode_t mode)
+			const struct vfs_open_how *how)
 {
 	struct smb_filename *smb_fname = NULL;
 	struct catia_cache *cc = NULL;
@@ -525,9 +524,7 @@ static int catia_openat(vfs_handle_struct *handle,
 				  dirfsp,
 				  smb_fname,
 				  fsp,
-				  flags,
-				  mode);
-
+				  how);
 	if (ret == -1) {
 		saved_errno = errno;
 	}
@@ -1611,10 +1608,10 @@ static bool catia_lock(vfs_handle_struct *handle,
 	return ok;
 }
 
-static int catia_kernel_flock(struct vfs_handle_struct *handle,
-			      struct files_struct *fsp,
-			      uint32_t share_access,
-			      uint32_t access_mask)
+static int catia_filesystem_sharemode(struct vfs_handle_struct *handle,
+				      struct files_struct *fsp,
+				      uint32_t share_access,
+				      uint32_t access_mask)
 {
 	struct catia_cache *cc = NULL;
 	int ret;
@@ -1624,7 +1621,10 @@ static int catia_kernel_flock(struct vfs_handle_struct *handle,
 		return -1;
 	}
 
-	ret = SMB_VFS_NEXT_KERNEL_FLOCK(handle, fsp, share_access, access_mask);
+	ret = SMB_VFS_NEXT_FILESYSTEM_SHAREMODE(handle,
+						fsp,
+						share_access,
+						access_mask);
 
 	CATIA_FETCH_FSP_POST_NEXT(&cc, fsp);
 
@@ -1892,7 +1892,7 @@ static struct vfs_fn_pointers vfs_catia_fns = {
 	.ftruncate_fn = catia_ftruncate,
 	.fallocate_fn = catia_fallocate,
 	.lock_fn = catia_lock,
-	.kernel_flock_fn = catia_kernel_flock,
+	.filesystem_sharemode_fn = catia_filesystem_sharemode,
 	.linux_setlease_fn = catia_linux_setlease,
 	.getlock_fn = catia_getlock,
 	.realpath_fn = catia_realpath,

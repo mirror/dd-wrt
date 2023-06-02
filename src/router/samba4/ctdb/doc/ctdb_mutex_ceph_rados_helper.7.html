@@ -1,5 +1,5 @@
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Ceph RADOS Mutex</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry"><a name="ctdb_mutex_ceph_rados_helper.7"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ctdb_mutex_ceph_rados_helper &#8212; Ceph RADOS cluster mutex helper</p></div><div class="refsect1"><a name="idm10"></a><h2>DESCRIPTION</h2><p>
-      ctdb_mutex_ceph_rados_helper can be used as a recovery lock provider
+      ctdb_mutex_ceph_rados_helper can be used as a cluster lock provider
       for CTDB.  When configured, split brain avoidance during CTDB recovery
       will be handled using locks against an object located in a Ceph RADOS
       pool.
@@ -7,7 +7,7 @@
       <code class="literal">[cluster]</code> section of
       <span class="citerefentry"><span class="refentrytitle">ctdb.conf</span>(5)</span>:
     </p><pre class="screen">
-recovery lock = !ctdb_mutex_ceph_rados_helper [Cluster] [User] [Pool] [Object]
+cluster lock = !ctdb_mutex_ceph_rados_helper [Cluster] [User] [Pool] [Object]
 
 Cluster: Ceph cluster name (e.g. ceph)
 User: Ceph cluster user name (e.g. client.admin)
@@ -20,7 +20,7 @@ Object: Ceph RADOS object name
       <em class="parameter"><code>Pool</code></em> must already exist.
     </p><p>
       For informational purposes, ctdb_mutex_ceph_rados_helper will also
-      register the recovery lock holder in Ceph Manager's service map.
+      register the cluster lock holder in Ceph Manager's service map.
     </p></div><div class="refsect1"><a name="idm23"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>,
 

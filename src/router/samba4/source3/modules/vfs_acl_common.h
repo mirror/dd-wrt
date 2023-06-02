@@ -3,7 +3,7 @@
  *
  * Copyright (C) Volker Lendecke, 2008
  * Copyright (C) Jeremy Allison, 2009
- * Copyright (C) Ralph Böhme, 2016
+ * Copyright (C) Ralph BÃ¶hme, 2016
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 struct acl_common_config {
 	bool ignore_system_acls;
 	enum default_acl_style default_acl_style;
+	char *security_acl_xattr_name;
 };
 
 struct acl_common_fsp_ext {

@@ -23,11 +23,14 @@
 #include "printing.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
+#include "smbd/smbXsrv_open.h"
 #include "../libcli/smb/smb_common.h"
 #include "../librpc/gen_ndr/ndr_security.h"
 #include "../librpc/gen_ndr/ndr_smb2_lease_struct.h"
 #include "../lib/util/tevent_ntstatus.h"
 #include "messages.h"
+#include "lib/util_ea.h"
+#include "source3/passdb/lookup_sid.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_SMB2
@@ -422,10 +425,13 @@ static NTSTATUS smbd_smb2_create_durable_lease_check(struct smb_request *smb1req
 	const char *requested_filename, const struct files_struct *fsp,
 	const struct smb2_lease *lease_ptr)
 {
+	struct files_struct *dirfsp = NULL;
 	char *filename = NULL;
 	struct smb_filename *smb_fname = NULL;
 	uint32_t ucf_flags;
+	NTTIME twrp = fsp->fsp_name->twrp;
 	NTSTATUS status;
+	bool is_dfs = (smb1req->flags2 & FLAGS2_DFS_PATHNAMES);
 
 	if (lease_ptr == NULL) {
 		if (fsp->oplock_type != LEASE_OPLOCK) {
@@ -455,16 +461,20 @@ static NTSTATUS smbd_smb2_create_durable_lease_check(struct smb_request *smb1req
 	}
 
 	/* This also converts '\' to '/' */
-	status = check_path_syntax(filename);
+	status = check_path_syntax_smb2(filename, is_dfs);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(filename);
 		return status;
 	}
 
 	ucf_flags = filename_create_ucf_flags(smb1req, FILE_OPEN);
-	status = filename_convert(talloc_tos(), fsp->conn,
-				  filename, ucf_flags,
-				  0, &smb_fname);
+	status = filename_convert_dirfsp(talloc_tos(),
+					 fsp->conn,
+					 filename,
+					 ucf_flags,
+					 twrp,
+					 &dirfsp,
+					 &smb_fname);
 	TALLOC_FREE(filename);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10, ("filename_convert returned %s\n",
@@ -533,6 +543,7 @@ struct smbd_smb2_create_state {
 	struct smb2_create_blob *alsi;
 	struct smb2_create_blob *twrp;
 	struct smb2_create_blob *qfid;
+	struct smb2_create_blob *posx;
 	struct smb2_create_blob *svhdx;
 
 	uint8_t out_oplock_level;
@@ -564,14 +575,8 @@ static NTSTATUS smbd_smb2_create_fetch_create_ctx(
 {
 	struct smbd_smb2_create_state *state = tevent_req_data(
 		req, struct smbd_smb2_create_state);
-
-	/*
-	 * For now, remove the posix create context from the wire. We
-	 * are using it inside smbd and will properly use it once
-	 * smb3.11 unix extensions will be done. So in the future we
-	 * will remove it only if unix extensions are not negotiated.
-	 */
-	smb2_create_blob_remove(in_context_blobs, SMB2_CREATE_TAG_POSIX);
+	struct smbd_smb2_request *smb2req = state->smb2req;
+	struct smbXsrv_connection *xconn = smb2req->xconn;
 
 	state->dhnq = smb2_create_blob_find(in_context_blobs,
 					    SMB2_CREATE_TAG_DHNQ);
@@ -581,7 +586,7 @@ static NTSTATUS smbd_smb2_create_fetch_create_ctx(
 					    SMB2_CREATE_TAG_DH2Q);
 	state->dh2c = smb2_create_blob_find(in_context_blobs,
 					    SMB2_CREATE_TAG_DH2C);
-	if (state->smb2req->xconn->smb2.server.capabilities & SMB2_CAP_LEASING) {
+	if (xconn->smb2.server.capabilities & SMB2_CAP_LEASING) {
 		state->rqls = smb2_create_blob_find(in_context_blobs,
 						    SMB2_CREATE_TAG_RQLS);
 	}
@@ -671,12 +676,21 @@ static NTSTATUS smbd_smb2_create_fetch_create_ctx(
 					    SMB2_CREATE_TAG_TWRP);
 	state->qfid = smb2_create_blob_find(in_context_blobs,
 					    SMB2_CREATE_TAG_QFID);
-	if (state->smb2req->xconn->protocol >= PROTOCOL_SMB3_02) {
+	if (xconn->protocol >= PROTOCOL_SMB3_02) {
 		/*
 		 * This was introduced with SMB3_02
 		 */
 		state->svhdx = smb2_create_blob_find(
 			in_context_blobs, SVHDX_OPEN_DEVICE_CONTEXT);
+	}
+	if (xconn->smb2.server.posix_extensions_negotiated) {
+		/*
+		 * Negprot only allowed this for proto>=3.11
+		 */
+		SMB_ASSERT(xconn->protocol >= PROTOCOL_SMB3_11);
+
+		state->posx = smb2_create_blob_find(
+			in_context_blobs, SMB2_CREATE_TAG_POSIX);
 	}
 
 	return NT_STATUS_OK;
@@ -703,8 +717,10 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 	struct smbd_smb2_create_state *state = NULL;
 	NTSTATUS status;
 	struct smb_request *smb1req = NULL;
+	struct files_struct *dirfsp = NULL;
 	struct smb_filename *smb_fname = NULL;
 	uint32_t ucf_flags;
+	bool is_dfs = false;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct smbd_smb2_create_state);
@@ -760,6 +776,17 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 	in_file_attributes &= ~FILE_FLAG_POSIX_SEMANTICS;
 
+	is_dfs = (smb1req->flags2 & FLAGS2_DFS_PATHNAMES);
+	if (is_dfs) {
+		/*
+		 * With a DFS flag set, remove any leading '\\'
+		 * characters from in_name before further processing.
+		 */
+		while (in_name[0] == '\\') {
+			in_name++;
+		}
+	}
+
 	state->fname = talloc_strdup(state, in_name);
 	if (tevent_req_nomem(state->fname, req)) {
 		return tevent_req_post(req, state->ev);
@@ -790,8 +817,7 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 		}
 
 		status = open_np_file(smb1req, pipe_name, &state->result);
-		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
+		if (tevent_req_nterror(req, status)) {
 			return tevent_req_post(req, state->ev);
 		}
 		state->info = FILE_WAS_OPENED;
@@ -808,16 +834,14 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 		}
 
 		status = file_new(smb1req, smb1req->conn, &state->result);
-		if(!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
+		if (tevent_req_nterror(req, status)) {
 			return tevent_req_post(req, state->ev);
 		}
 
 		status = print_spool_open(state->result, in_name,
 					  smb1req->vuid);
-		if (!NT_STATUS_IS_OK(status)) {
+		if (tevent_req_nterror(req, status)) {
 			file_free(smb1req, state->result);
-			tevent_req_nterror(req, status);
 			return tevent_req_post(req, state->ev);
 		}
 		state->info = FILE_WAS_CREATED;
@@ -828,8 +852,7 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 	/* Check for trailing slash specific directory handling. */
 	status = windows_name_trailing_check(state->fname, in_create_options);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, state->ev);
 	}
 
@@ -871,10 +894,9 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 					       state->create_guid,
 					       now,
 					       &state->op);
-		if (!NT_STATUS_IS_OK(status)) {
+		if (tevent_req_nterror(req, status)) {
 			DBG_NOTICE("smb2srv_open_recreate failed: %s\n",
 				   nt_errstr(status));
-			tevent_req_nterror(req, status);
 			return tevent_req_post(req, state->ev);
 		}
 
@@ -913,9 +935,9 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 		status = smbd_smb2_create_durable_lease_check(
 			smb1req, state->fname, state->result, state->lease_ptr);
-		if (!NT_STATUS_IS_OK(status)) {
-			close_file(smb1req, state->result, SHUTDOWN_CLOSE);
-			tevent_req_nterror(req, status);
+		if (tevent_req_nterror(req, status)) {
+			close_file_free(
+				smb1req, &state->result, SHUTDOWN_CLOSE);
 			return tevent_req_post(req, state->ev);
 		}
 
@@ -949,30 +971,24 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 		state->lease_ptr = NULL;
 	}
 
-	/*
-	 * For a DFS path the function parse_dfs_path()
-	 * will do the path processing.
-	 */
-
-	if (!(smb1req->flags2 & FLAGS2_DFS_PATHNAMES)) {
-		/* convert '\\' into '/' */
-		status = check_path_syntax(state->fname);
-		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
-			return tevent_req_post(req, state->ev);
-		}
+	/* convert '\\' into '/' */
+	status = check_path_syntax_smb2(state->fname, is_dfs);
+	if (tevent_req_nterror(req, status)) {
+		return tevent_req_post(req, state->ev);
 	}
 
 	ucf_flags = filename_create_ucf_flags(
 		smb1req, state->in_create_disposition);
-	status = filename_convert(req,
-				  smb1req->conn,
-				  state->fname,
-				  ucf_flags,
-				  state->twrp_time,
-				  &smb_fname);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+
+	status = filename_convert_dirfsp(
+		req,
+		smb1req->conn,
+		state->fname,
+		ucf_flags,
+		state->twrp_time,
+		&dirfsp,
+		&smb_fname);
+	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, state->ev);
 	}
 
@@ -1012,6 +1028,7 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 	status = SMB_VFS_CREATE_FILE(smb1req->conn,
 				     smb1req,
+				     dirfsp,
 				     smb_fname,
 				     in_desired_access,
 				     in_share_access,
@@ -1250,10 +1267,9 @@ static void smbd_smb2_create_before_exec(struct tevent_req *req)
 		} else if (NT_STATUS_EQUAL(status, NT_STATUS_FILE_NOT_AVAILABLE)) {
 			tevent_req_nterror(req, status);
 			return;
-		} else if (!NT_STATUS_IS_OK(status)) {
+		} else if (tevent_req_nterror(req, status)) {
 			DBG_WARNING("smb2srv_open_lookup_replay_cache "
 				    "failed: %s\n", nt_errstr(status));
-			tevent_req_nterror(req, status);
 			return;
 		} else if (!state->replay_operation) {
 			/*
@@ -1370,12 +1386,22 @@ static void smbd_smb2_create_before_exec(struct tevent_req *req)
 			}
 		}
 	}
+
+	if (state->posx != NULL) {
+		if (state->posx->data.length != 4) {
+			DBG_DEBUG("Got %zu bytes POSX cctx, expected 4\n",
+				  state->posx->data.length);
+			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+			return;
+		}
+	}
 }
 
 static void smbd_smb2_create_after_exec(struct tevent_req *req)
 {
 	struct smbd_smb2_create_state *state = tevent_req_data(
 		req, struct smbd_smb2_create_state);
+	connection_struct *conn = state->result->conn;
 	NTSTATUS status;
 
 	/*
@@ -1398,7 +1424,7 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 			DATA_BLOB blob = data_blob_const(p, sizeof(p));
 
 			status = smbd_calculate_access_mask_fsp(
-					state->result->conn->cwd_fsp,
+					conn->cwd_fsp,
 					state->result,
 					false,
 					SEC_FLAG_MAXIMUM_ALLOWED,
@@ -1413,9 +1439,7 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 				SMB2_CREATE_TAG_MXAC,
 				blob);
 			if (!NT_STATUS_IS_OK(status)) {
-				tevent_req_nterror(req, status);
-				tevent_req_post(req, state->ev);
-				return;
+				goto fail;
 			}
 		}
 	}
@@ -1450,9 +1474,7 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 			   "returned %s\n",
 			   nt_errstr(status)));
 		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
-			tevent_req_post(req, state->ev);
-			return;
+			goto fail;
 		}
 
 		/*
@@ -1471,9 +1493,7 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 					      SMB2_CREATE_TAG_DHNQ,
 					      blob);
 		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
-			tevent_req_post(req, state->ev);
-			return;
+			goto fail;
 		}
 	}
 
@@ -1501,17 +1521,16 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 					      SMB2_CREATE_TAG_DH2Q,
 					      blob);
 		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
-			tevent_req_post(req, state->ev);
-			return;
+			goto fail;
 		}
 	}
 
 	if (state->qfid != NULL) {
 		uint8_t p[32];
-		uint64_t file_id = SMB_VFS_FS_FILE_ID(
-			state->result->conn,
-			&state->result->fsp_name->st);
+		SMB_STRUCT_STAT *base_sp = state->result->base_fsp ?
+			&state->result->base_fsp->fsp_name->st :
+			&state->result->fsp_name->st;
+		uint64_t file_id = SMB_VFS_FS_FILE_ID(conn, base_sp);
 		DATA_BLOB blob = data_blob_const(p, sizeof(p));
 
 		ZERO_STRUCT(p);
@@ -1521,16 +1540,14 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 		   == inode, the second 8 bytes are the "volume id",
 		   == dev. This will be updated in the SMB2 doc. */
 		SBVAL(p, 0, file_id);
-		SIVAL(p, 8, state->result->fsp_name->st.st_ex_dev);/* FileIndexHigh */
+		SIVAL(p, 8, base_sp->st_ex_dev);/* FileIndexHigh */
 
 		status = smb2_create_blob_add(state->out_context_blobs,
 					      state->out_context_blobs,
 					      SMB2_CREATE_TAG_QFID,
 					      blob);
 		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
-			tevent_req_post(req, state->ev);
-			return;
+			goto fail;
 		}
 	}
 
@@ -1547,10 +1564,8 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 		}
 
 		if (!smb2_lease_push(&lease, buf, lease_len)) {
-			tevent_req_nterror(
-				req, NT_STATUS_INTERNAL_ERROR);
-			tevent_req_post(req, state->ev);
-			return;
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto fail;
 		}
 
 		status = smb2_create_blob_add(
@@ -1558,13 +1573,60 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 			SMB2_CREATE_TAG_RQLS,
 			data_blob_const(buf, lease_len));
 		if (!NT_STATUS_IS_OK(status)) {
-			tevent_req_nterror(req, status);
-			tevent_req_post(req, state->ev);
-			return;
+			goto fail;
+		}
+	}
+
+	if (state->posx != NULL) {
+		struct dom_sid owner = { .sid_rev_num = 0, };
+		struct dom_sid group = { .sid_rev_num = 0, };
+		struct stat_ex *psbuf = &state->result->fsp_name->st;
+		ssize_t cc_len;
+
+		uid_to_sid(&owner, psbuf->st_ex_uid);
+		gid_to_sid(&group, psbuf->st_ex_gid);
+
+		cc_len = smb2_posix_cc_info(
+			conn, 0, psbuf, &owner, &group, NULL, 0);
+
+		if (cc_len == -1) {
+			status = NT_STATUS_INSUFFICIENT_RESOURCES;
+			goto fail;
+		}
+
+		{
+			/*
+			 * cc_len is 68 + 2 SIDs, allocate on the stack
+			 */
+			uint8_t buf[cc_len];
+			DATA_BLOB blob = { .data = buf, .length = cc_len, };
+
+			smb2_posix_cc_info(
+				conn,
+				0,
+				psbuf,
+				&owner,
+				&group,
+				buf,
+				sizeof(buf));
+
+			status = smb2_create_blob_add(
+				state->out_context_blobs,
+				state->out_context_blobs,
+				SMB2_CREATE_TAG_POSIX,
+				blob);
+			if (!NT_STATUS_IS_OK(status)) {
+				goto fail;
+			}
 		}
 	}
 
 	return;
+
+fail:
+	close_file_free(state->smb1req, &state->result, ERROR_CLOSE);
+	tevent_req_nterror(req, status);
+	tevent_req_post(req, state->ev);
 }
 
 static void smbd_smb2_create_finish(struct tevent_req *req)

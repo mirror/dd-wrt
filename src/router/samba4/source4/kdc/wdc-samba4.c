@@ -28,6 +28,89 @@
 #include "sdb.h"
 #include "sdb_hdb.h"
 #include "librpc/gen_ndr/auth.h"
+#include <krb5_locl.h>
+
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
+
+static int samba_wdc_pac_options(astgs_request_t r, PAC_OPTIONS_FLAGS *flags)
+{
+	const KDC_REQ *req = kdc_request_get_req(r);
+	const PA_DATA *padata_pac_options = NULL;
+
+	ZERO_STRUCTP(flags);
+
+	if (req->padata != NULL) {
+		int idx = 0;
+
+		padata_pac_options = krb5_find_padata(req->padata->val,
+						      req->padata->len,
+						      KRB5_PADATA_PAC_OPTIONS,
+						      &idx);
+	}
+
+	if (padata_pac_options != NULL) {
+		PA_PAC_OPTIONS pa_pac_options = {};
+		int ret;
+
+		ret = decode_PA_PAC_OPTIONS(padata_pac_options->padata_value.data,
+					    padata_pac_options->padata_value.length,
+					    &pa_pac_options, NULL);
+		if (ret) {
+			return ret;
+		}
+		*flags = pa_pac_options.flags;
+	}
+
+	return 0;
+}
+
+static bool samba_wdc_is_s4u2self_req(astgs_request_t r)
+{
+	krb5_kdc_configuration *config = kdc_request_get_config((kdc_request_t)r);
+	const KDC_REQ *req = kdc_request_get_req(r);
+	const PA_DATA *pa_for_user = NULL;
+
+	if (req->msg_type != krb_tgs_req) {
+		return false;
+	}
+
+	if (config->enable_fast && req->padata != NULL) {
+		const PA_DATA *pa_fx_fast = NULL;
+		int idx = 0;
+
+		pa_fx_fast = krb5_find_padata(req->padata->val,
+					      req->padata->len,
+					      KRB5_PADATA_FX_FAST,
+					      &idx);
+		if (pa_fx_fast != NULL) {
+			/*
+			 * We're in the outer request
+			 * with KRB5_PADATA_FX_FAST
+			 * if fast is enabled we'll
+			 * process the s4u2self
+			 * request only in the
+			 * inner request.
+			 */
+			return false;
+		}
+	}
+
+	if (req->padata != NULL) {
+		int idx = 0;
+
+		pa_for_user = krb5_find_padata(req->padata->val,
+					       req->padata->len,
+					       KRB5_PADATA_FOR_USER,
+					       &idx);
+	}
+
+	if (pa_for_user != NULL) {
+		return true;
+	}
+
+	return false;
+}
 
 /*
  * Given the right private pointer from hdb_samba4,
@@ -35,12 +118,15 @@
  *
  * For PKINIT we also get pk_reply_key and can add PAC_CREDENTIAL_INFO.
  */
-static krb5_error_code samba_wdc_get_pac(void *priv, krb5_context context,
-					 struct hdb_entry_ex *client,
+static krb5_error_code samba_wdc_get_pac(void *priv,
+					 astgs_request_t r,
+					 hdb_entry *client,
+					 hdb_entry *server,
 					 const krb5_keyblock *pk_reply_key,
-					 const krb5_boolean *pac_request,
+					 uint64_t pac_attributes,
 					 krb5_pac *pac)
 {
+	krb5_context context = kdc_request_get_context((kdc_request_t)r);
 	TALLOC_CTX *mem_ctx;
 	DATA_BLOB *logon_blob = NULL;
 	DATA_BLOB *cred_ndr = NULL;
@@ -50,13 +136,26 @@ static krb5_error_code samba_wdc_get_pac(void *priv, krb5_context context,
 	DATA_BLOB *upn_blob = NULL;
 	DATA_BLOB *pac_attrs_blob = NULL;
 	DATA_BLOB *requester_sid_blob = NULL;
+	DATA_BLOB *claims_blob = NULL;
 	krb5_error_code ret;
 	NTSTATUS nt_status;
 	struct samba_kdc_entry *skdc_entry =
-		talloc_get_type_abort(client->ctx,
+		talloc_get_type_abort(client->context,
 		struct samba_kdc_entry);
+	bool is_krbtgt;
+	bool is_s4u2self = samba_wdc_is_s4u2self_req(r);
+	enum samba_asserted_identity asserted_identity =
+		(is_s4u2self) ?
+			SAMBA_ASSERTED_IDENTITY_SERVICE :
+			SAMBA_ASSERTED_IDENTITY_AUTHENTICATION_AUTHORITY;
+	PAC_OPTIONS_FLAGS pac_options = {};
 
-	mem_ctx = talloc_named(client->ctx, 0, "samba_get_pac context");
+	ret = samba_wdc_pac_options(r, &pac_options);
+	if (ret != 0) {
+		return ret;
+	}
+
+	mem_ctx = talloc_named(client->context, 0, "samba_get_pac context");
 	if (!mem_ctx) {
 		return ENOMEM;
 	}
@@ -65,14 +164,18 @@ static krb5_error_code samba_wdc_get_pac(void *priv, krb5_context context,
 		cred_ndr_ptr = &cred_ndr;
 	}
 
+	is_krbtgt = krb5_principal_is_krbtgt(context, server->principal);
+
 	nt_status = samba_kdc_get_pac_blobs(mem_ctx, skdc_entry,
+					    asserted_identity,
 					    &logon_blob,
 					    cred_ndr_ptr,
 					    &upn_blob,
-					    &pac_attrs_blob,
-					    pac_request,
-					    &requester_sid_blob,
-					    NULL);
+					    is_krbtgt ? &pac_attrs_blob : NULL,
+					    pac_attributes,
+					    is_krbtgt ? &requester_sid_blob : NULL,
+					    pac_options.claims ?
+					    &claims_blob : NULL);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		talloc_free(mem_ctx);
 		return EINVAL;
@@ -91,76 +194,75 @@ static krb5_error_code samba_wdc_get_pac(void *priv, krb5_context context,
 		cred_blob = &_cred_blob;
 	}
 
+	ret = krb5_pac_init(context, pac);
+	if (ret != 0) {
+		talloc_free(mem_ctx);
+		return ret;
+	}
+
 	ret = samba_make_krb5_pac(context, logon_blob, cred_blob,
 				  upn_blob, pac_attrs_blob,
-				  requester_sid_blob, NULL, pac);
+				  requester_sid_blob, NULL,
+				  NULL, NULL, NULL,
+				  *pac);
 
 	talloc_free(mem_ctx);
 	return ret;
 }
 
-static krb5_error_code samba_wdc_get_pac_compat(void *priv, krb5_context context,
-						struct hdb_entry_ex *client,
-						const krb5_boolean *pac_request,
-						krb5_pac *pac)
-{
-	return samba_wdc_get_pac(priv, context, client, NULL, pac_request, pac);
-}
-
-static krb5_error_code samba_wdc_reget_pac2(krb5_context context,
+static krb5_error_code samba_wdc_reget_pac2(astgs_request_t r,
 					    const krb5_principal delegated_proxy_principal,
-					    struct hdb_entry_ex *client,
-					    struct hdb_entry_ex *server,
-					    struct hdb_entry_ex *krbtgt,
+					    hdb_entry *client,
+					    hdb_entry *server,
+					    hdb_entry *krbtgt,
 					    krb5_pac *pac,
-					    krb5_cksumtype ctype)
+					    krb5_cksumtype ctype,
+					    const hdb_entry *device,
+					    krb5_const_pac *device_pac)
 {
+	krb5_context context = kdc_request_get_context((kdc_request_t)r);
+	struct samba_kdc_entry *client_skdc_entry = NULL;
 	struct samba_kdc_entry *server_skdc_entry =
-		talloc_get_type_abort(server->ctx,
-		struct samba_kdc_entry);
+		talloc_get_type_abort(server->context, struct samba_kdc_entry);
 	struct samba_kdc_entry *krbtgt_skdc_entry =
-		talloc_get_type_abort(krbtgt->ctx,
-		struct samba_kdc_entry);
-	TALLOC_CTX *mem_ctx = talloc_named(server_skdc_entry,
-					   0,
-					   "samba_kdc_reget_pac2 context");
+		talloc_get_type_abort(krbtgt->context, struct samba_kdc_entry);
+	TALLOC_CTX *mem_ctx = NULL;
 	krb5_pac new_pac = NULL;
-	DATA_BLOB *pac_blob = NULL;
-	DATA_BLOB *upn_blob = NULL;
-	DATA_BLOB *requester_sid_blob = NULL;
-	DATA_BLOB *deleg_blob = NULL;
 	krb5_error_code ret;
-	NTSTATUS nt_status;
-	bool is_in_db, is_untrusted;
-	size_t num_types = 0;
-	uint32_t *types = NULL;
-	uint32_t forced_next_type = 0;
-	size_t i = 0;
-	ssize_t logon_info_idx = -1;
-	ssize_t delegation_idx = -1;
-	ssize_t logon_name_idx = -1;
-	ssize_t upn_dns_info_idx = -1;
-	ssize_t srv_checksum_idx = -1;
-	ssize_t kdc_checksum_idx = -1;
-	ssize_t tkt_checksum_idx = -1;
-	ssize_t attrs_info_idx = -1;
-	ssize_t requester_sid_idx = -1;
+	bool is_s4u2self = samba_wdc_is_s4u2self_req(r);
+	bool is_in_db = false;
+	bool is_untrusted = false;
+	uint32_t flags = 0;
+	PAC_OPTIONS_FLAGS pac_options = {};
 
-	if (!mem_ctx) {
+	ret = samba_wdc_pac_options(r, &pac_options);
+	if (ret != 0) {
+		return ret;
+	}
+
+	mem_ctx = talloc_named(NULL, 0, "samba_kdc_reget_pac2 context");
+	if (mem_ctx == NULL) {
 		return ENOMEM;
 	}
 
 	if (client != NULL) {
-		struct samba_kdc_entry *client_skdc_entry = NULL;
+		client_skdc_entry = talloc_get_type_abort(client->context,
+							  struct samba_kdc_entry);
+	}
 
-		client_skdc_entry = talloc_get_type_abort(client->ctx,
+	if (device != NULL) {
+		struct samba_kdc_entry *device_skdc_entry = NULL;
+
+		device_skdc_entry = talloc_get_type_abort(device->context,
 							  struct samba_kdc_entry);
 
 		/*
-		 * Check the objectSID of the client and pac data are the same.
+		 * Check the objectSID of the device and pac data are the same.
 		 * Does a parse and SID check, but no crypto.
 		 */
-		ret = samba_kdc_validate_pac_blob(context, client_skdc_entry, *pac);
+		ret = samba_kdc_validate_pac_blob(context,
+						  device_skdc_entry,
+						  *device_pac);
 		if (ret != 0) {
 			talloc_free(mem_ctx);
 			return ret;
@@ -178,8 +280,11 @@ static krb5_error_code samba_wdc_reget_pac2(krb5_context context,
 	 */
 	ret = samba_krbtgt_is_in_db(krbtgt_skdc_entry, &is_in_db, &is_untrusted);
 	if (ret != 0) {
-		talloc_free(mem_ctx);
-		return ret;
+		goto out;
+	}
+
+	if (is_s4u2self) {
+		flags |= SAMBA_KDC_FLAG_PROTOCOL_TRANSITION;
 	}
 
 	if (delegated_proxy_principal != NULL) {
@@ -194,8 +299,8 @@ static krb5_error_code samba_wdc_reget_pac2(krb5_context context,
 			 * server we got the ticket from. We must not proceed as
 			 * otherwise the ticket signature is unchecked.
 			 */
-			talloc_free(mem_ctx);
-			return HDB_ERR_NOT_FOUND_HERE;
+			ret = HDB_ERR_NOT_FOUND_HERE;
+			goto out;
 		}
 
 		/* Fetch the correct key depending on the checksum type. */
@@ -206,16 +311,15 @@ static krb5_error_code samba_wdc_reget_pac2(krb5_context context,
 							ctype,
 							&etype);
 			if (ret != 0) {
-				talloc_free(mem_ctx);
-				return ret;
+				goto out;
 			}
 		}
-		ret = hdb_enctype2key(context, &krbtgt->entry, etype, &key);
+		ret = hdb_enctype2key(context, krbtgt, NULL, etype, &key);
 		if (ret != 0) {
-			return ret;
+			goto out;
 		}
 
-		/* Check the KDC and ticket signatures. */
+		/* Check the KDC, whole-PAC and ticket signatures. */
 		ret = krb5_pac_verify(context,
 				      *pac,
 				      0,
@@ -224,434 +328,78 @@ static krb5_error_code samba_wdc_reget_pac2(krb5_context context,
 				      &key->key);
 		if (ret != 0) {
 			DEBUG(1, ("PAC KDC signature failed to verify\n"));
-			talloc_free(mem_ctx);
-			return ret;
+			goto out;
 		}
 
-		deleg_blob = talloc_zero(mem_ctx, DATA_BLOB);
-		if (!deleg_blob) {
-			talloc_free(mem_ctx);
-			return ENOMEM;
-		}
-
-		nt_status = samba_kdc_update_delegation_info_blob(mem_ctx,
-					context, *pac,
-					server->entry.principal,
-					delegated_proxy_principal,
-					deleg_blob);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			DEBUG(0, ("Building PAC failed: %s\n",
-				  nt_errstr(nt_status)));
-			talloc_free(mem_ctx);
-			return EINVAL;
-		}
+		flags |= SAMBA_KDC_FLAG_CONSTRAINED_DELEGATION;
 	}
 
 	if (is_untrusted) {
-		struct samba_kdc_entry *client_skdc_entry = NULL;
-		struct auth_user_info_dc *user_info_dc = NULL;
-		WERROR werr;
-
-		if (client == NULL) {
-			return KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN;
-		}
-
-		client_skdc_entry = talloc_get_type_abort(client->ctx,
-							  struct samba_kdc_entry);
-
-		nt_status = samba_kdc_get_pac_blobs(mem_ctx, client_skdc_entry,
-						    &pac_blob, NULL, &upn_blob,
-						    NULL, NULL, &requester_sid_blob,
-						    &user_info_dc);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			talloc_free(mem_ctx);
-			return KRB5KDC_ERR_TGT_REVOKED;
-		}
-
-		/*
-		 * Now check if the SID list in the user_info_dc
-		 * intersects correctly with the RODC allow/deny
-		 * lists
-		 */
-
-		werr = samba_rodc_confirm_user_is_allowed(user_info_dc->num_sids,
-							  user_info_dc->sids,
-							  krbtgt_skdc_entry,
-							  client_skdc_entry);
-		if (!W_ERROR_IS_OK(werr)) {
-			talloc_free(mem_ctx);
-			if (W_ERROR_EQUAL(werr, WERR_DOMAIN_CONTROLLER_NOT_FOUND)) {
-				return KRB5KDC_ERR_POLICY;
-			} else {
-				return KRB5KDC_ERR_TGT_REVOKED;
-			}
-		}
+		flags |= SAMBA_KDC_FLAG_KRBTGT_IS_UNTRUSTED;
 	}
 
-	if (!is_untrusted) {
-		pac_blob = talloc_zero(mem_ctx, DATA_BLOB);
-		if (!pac_blob) {
-			talloc_free(mem_ctx);
-			return ENOMEM;
-		}
-
-		nt_status = samba_kdc_update_pac_blob(mem_ctx, context,
-						      krbtgt_skdc_entry->kdc_db_ctx->samdb,
-						      *pac, pac_blob,
-						      NULL, NULL);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			DEBUG(0, ("Building PAC failed: %s\n",
-				  nt_errstr(nt_status)));
-			talloc_free(mem_ctx);
-			return EINVAL;
-		}
+	if (is_in_db) {
+		flags |= SAMBA_KDC_FLAG_KRBTGT_IN_DB;
 	}
 
-	/* Check the types of the given PAC */
-	ret = krb5_pac_get_types(context, *pac, &num_types, &types);
-	if (ret != 0) {
-		talloc_free(mem_ctx);
-		return ret;
-	}
-
-	for (i = 0; i < num_types; i++) {
-		switch (types[i]) {
-		case PAC_TYPE_LOGON_INFO:
-			if (logon_info_idx != -1) {
-				DEBUG(1, ("logon info type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  logon_info_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			logon_info_idx = i;
-			break;
-		case PAC_TYPE_CONSTRAINED_DELEGATION:
-			if (delegation_idx != -1) {
-				DEBUG(1, ("constrained delegation type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  delegation_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			delegation_idx = i;
-			break;
-		case PAC_TYPE_LOGON_NAME:
-			if (logon_name_idx != -1) {
-				DEBUG(1, ("logon name type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  logon_name_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			logon_name_idx = i;
-			break;
-		case PAC_TYPE_UPN_DNS_INFO:
-			if (upn_dns_info_idx != -1) {
-				DEBUG(1, ("upn dns info type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  upn_dns_info_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			upn_dns_info_idx = i;
-			break;
-		case PAC_TYPE_SRV_CHECKSUM:
-			if (srv_checksum_idx != -1) {
-				DEBUG(1, ("server checksum type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  srv_checksum_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			srv_checksum_idx = i;
-			break;
-		case PAC_TYPE_KDC_CHECKSUM:
-			if (kdc_checksum_idx != -1) {
-				DEBUG(1, ("kdc checksum type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  kdc_checksum_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			kdc_checksum_idx = i;
-			break;
-		case PAC_TYPE_TICKET_CHECKSUM:
-			if (tkt_checksum_idx != -1) {
-				DEBUG(1, ("ticket checksum type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  tkt_checksum_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			tkt_checksum_idx = i;
-			break;
-		case PAC_TYPE_ATTRIBUTES_INFO:
-			if (attrs_info_idx != -1) {
-				DEBUG(1, ("attributes info type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  attrs_info_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			attrs_info_idx = i;
-			break;
-		case PAC_TYPE_REQUESTER_SID:
-			if (requester_sid_idx != -1) {
-				DEBUG(1, ("requester sid type[%"PRIu32"] twice [%zd] and [%zu]: \n",
-					  types[i],
-					  requester_sid_idx,
-					  i));
-				SAFE_FREE(types);
-				talloc_free(mem_ctx);
-				return EINVAL;
-			}
-			requester_sid_idx = i;
-			break;
-		default:
-			continue;
-		}
-	}
-
-	if (logon_info_idx == -1) {
-		DEBUG(1, ("PAC_TYPE_LOGON_INFO missing\n"));
-		SAFE_FREE(types);
-		talloc_free(mem_ctx);
-		return EINVAL;
-	}
-	if (logon_name_idx == -1) {
-		DEBUG(1, ("PAC_TYPE_LOGON_NAME missing\n"));
-		SAFE_FREE(types);
-		talloc_free(mem_ctx);
-		return EINVAL;
-	}
-	if (srv_checksum_idx == -1) {
-		DEBUG(1, ("PAC_TYPE_SRV_CHECKSUM missing\n"));
-		SAFE_FREE(types);
-		talloc_free(mem_ctx);
-		return EINVAL;
-	}
-	if (kdc_checksum_idx == -1) {
-		DEBUG(1, ("PAC_TYPE_KDC_CHECKSUM missing\n"));
-		SAFE_FREE(types);
-		talloc_free(mem_ctx);
-		return EINVAL;
-	}
-
-	/*
-	 * The server account may be set not to want the PAC.
-	 *
-	 * While this is wasteful if the above cacluations were done
-	 * and now thrown away, this is cleaner as we do any ticket
-	 * signature checking etc always.
-	 *
-	 * UF_NO_AUTH_DATA_REQUIRED is the rare case and most of the
-	 * time (eg not accepting a ticket from the RODC) we do not
-	 * need to re-generate anything anyway.
-	 */
-	if (!samba_princ_needs_pac(server_skdc_entry)) {
-		ret = 0;
-		new_pac = NULL;
-		goto out;
-	}
-
-	if (!server_skdc_entry->is_krbtgt) {
-		/*
-		 * The client may have requested no PAC when obtaining the
-		 * TGT.
-		 */
-		bool requested_pac;
-		ret = samba_client_requested_pac(context, pac, mem_ctx,
-						 &requested_pac);
-		if (ret != 0 || !requested_pac) {
-			new_pac = NULL;
-			goto out;
-		}
-	}
-
-	/* Otherwise build an updated PAC */
 	ret = krb5_pac_init(context, &new_pac);
 	if (ret != 0) {
 		new_pac = NULL;
 		goto out;
 	}
 
-	for (i = 0;;) {
-		const uint8_t zero_byte = 0;
-		krb5_data type_data;
-		DATA_BLOB type_blob = data_blob_null;
-		uint32_t type;
-
-		if (forced_next_type != 0) {
-			/*
-			 * We need to inject possible missing types
-			 */
-			type = forced_next_type;
-			forced_next_type = 0;
-		} else if (i < num_types) {
-			type = types[i];
-			i++;
-		} else {
-			break;
+	ret = samba_kdc_update_pac(mem_ctx,
+				   context,
+				   krbtgt_skdc_entry->kdc_db_ctx->samdb,
+				   flags,
+				   client_skdc_entry,
+				   server->principal,
+				   server_skdc_entry,
+				   krbtgt_skdc_entry,
+				   delegated_proxy_principal,
+				   *pac,
+				   new_pac);
+	if (ret != 0) {
+		krb5_pac_free(context, new_pac);
+		if (ret == ENODATA) {
+			krb5_pac_free(context, *pac);
+			*pac = NULL;
+			ret = 0;
 		}
-
-		switch (type) {
-		case PAC_TYPE_LOGON_INFO:
-			type_blob = *pac_blob;
-
-			if (delegation_idx == -1 && deleg_blob != NULL) {
-				/* inject CONSTRAINED_DELEGATION behind */
-				forced_next_type = PAC_TYPE_CONSTRAINED_DELEGATION;
-			}
-			break;
-		case PAC_TYPE_CONSTRAINED_DELEGATION:
-			if (deleg_blob != NULL) {
-				type_blob = *deleg_blob;
-			}
-			break;
-		case PAC_TYPE_CREDENTIAL_INFO:
-			/*
-			 * Note that we copy the credential blob,
-			 * as it's only usable with the PKINIT based
-			 * AS-REP reply key, it's only available on the
-			 * host which did the AS-REQ/AS-REP exchange.
-			 *
-			 * This matches Windows 2008R2...
-			 */
-			break;
-		case PAC_TYPE_LOGON_NAME:
-			/*
-			 * this is generated in the main KDC code
-			 * we just add a place holder here.
-			 */
-			type_blob = data_blob_const(&zero_byte, 1);
-
-			if (upn_dns_info_idx == -1 && upn_blob != NULL) {
-				/* inject UPN_DNS_INFO behind */
-				forced_next_type = PAC_TYPE_UPN_DNS_INFO;
-			}
-			break;
-		case PAC_TYPE_UPN_DNS_INFO:
-			/*
-			 * Replace in the RODC case, otherwise
-			 * upn_blob is NULL and we just copy.
-			 */
-			if (upn_blob != NULL) {
-				type_blob = *upn_blob;
-			}
-			break;
-		case PAC_TYPE_SRV_CHECKSUM:
-			/*
-			 * this are generated in the main KDC code
-			 * we just add a place holder here.
-			 */
-			type_blob = data_blob_const(&zero_byte, 1);
-
-			if (requester_sid_idx == -1 && requester_sid_blob != NULL) {
-				/* inject REQUESTER_SID behind */
-				forced_next_type = PAC_TYPE_REQUESTER_SID;
-			}
-			break;
-		case PAC_TYPE_KDC_CHECKSUM:
-			/*
-			 * this are generated in the main KDC code
-			 * we just add a place holders here.
-			 */
-			type_blob = data_blob_const(&zero_byte, 1);
-			break;
-		case PAC_TYPE_ATTRIBUTES_INFO:
-			/* just copy... */
-			break;
-		case PAC_TYPE_REQUESTER_SID:
-			/*
-			 * Replace in the RODC case, otherwise
-			 * requester_sid_blob is NULL and we just copy.
-			 */
-			if (requester_sid_blob != NULL) {
-				type_blob = *requester_sid_blob;
-			}
-			break;
-		default:
-			/* just copy... */
-			break;
-		}
-
-		if (type_blob.length != 0) {
-			ret = smb_krb5_copy_data_contents(&type_data,
-							  type_blob.data,
-							  type_blob.length);
-			if (ret != 0) {
-				SAFE_FREE(types);
-				krb5_pac_free(context, new_pac);
-				talloc_free(mem_ctx);
-				return ret;
-			}
-		} else {
-			ret = krb5_pac_get_buffer(context, *pac,
-						  type, &type_data);
-			if (ret != 0) {
-				SAFE_FREE(types);
-				krb5_pac_free(context, new_pac);
-				talloc_free(mem_ctx);
-				return ret;
-			}
-		}
-
-		ret = krb5_pac_add_buffer(context, new_pac,
-					  type, &type_data);
-		smb_krb5_free_data_contents(context, &type_data);
-		if (ret != 0) {
-			SAFE_FREE(types);
-			krb5_pac_free(context, new_pac);
-			talloc_free(mem_ctx);
-			return ret;
-		}
+		goto out;
 	}
 
-out:
-
-	SAFE_FREE(types);
-
-	/* We now replace the pac */
+	/* Replace the pac */
 	krb5_pac_free(context, *pac);
 	*pac = new_pac;
 
+out:
 	talloc_free(mem_ctx);
 	return ret;
 }
 
 /* Resign (and reform, including possibly new groups) a PAC */
 
-static krb5_error_code samba_wdc_reget_pac(void *priv, krb5_context context,
+static krb5_error_code samba_wdc_reget_pac(void *priv, astgs_request_t r,
 					   const krb5_principal client_principal,
 					   const krb5_principal delegated_proxy_principal,
-					   struct hdb_entry_ex *client,
-					   struct hdb_entry_ex *server,
-					   struct hdb_entry_ex *krbtgt,
+					   hdb_entry *client,
+					   hdb_entry *server,
+					   hdb_entry *krbtgt,
 					   krb5_pac *pac)
 {
+	krb5_context context = kdc_request_get_context((kdc_request_t)r);
+	krb5_kdc_configuration *config = kdc_request_get_config((kdc_request_t)r);
 	struct samba_kdc_entry *krbtgt_skdc_entry =
-		talloc_get_type_abort(krbtgt->ctx,
+		talloc_get_type_abort(krbtgt->context,
 				      struct samba_kdc_entry);
 	krb5_error_code ret;
 	krb5_cksumtype ctype = CKSUMTYPE_NONE;
-	struct hdb_entry_ex signing_krbtgt_hdb;
+	hdb_entry signing_krbtgt_hdb;
+	const hdb_entry *explicit_armor_client =
+		kdc_request_get_explicit_armor_client(r);
+	krb5_const_pac explicit_armor_pac =
+		kdc_request_get_explicit_armor_pac(r);
 
 	if (delegated_proxy_principal) {
 		uint16_t rodc_id;
@@ -702,8 +450,8 @@ static krb5_error_code samba_wdc_reget_pac(void *priv, krb5_context context,
 			 * different KDC than the one that issued the header
 			 * ticket.
 			 */
-			if (rodc_id != krbtgt->entry.kvno >> 16) {
-				struct sdb_entry_ex signing_krbtgt_sdb;
+			if (rodc_id != krbtgt->kvno >> 16) {
+				struct sdb_entry signing_krbtgt_sdb;
 
 				/*
 				 * If we didn't sign the ticket, then return an
@@ -721,7 +469,7 @@ static krb5_error_code samba_wdc_reget_pac(void *priv, krb5_context context,
 				 */
 				ret = samba_kdc_fetch(context,
 						      krbtgt_skdc_entry->kdc_db_ctx,
-						      krbtgt->entry.principal,
+						      krbtgt->principal,
 						      SDB_F_GET_KRBTGT | SDB_F_CANON,
 						      0,
 						      &signing_krbtgt_sdb);
@@ -729,10 +477,10 @@ static krb5_error_code samba_wdc_reget_pac(void *priv, krb5_context context,
 					return ret;
 				}
 
-				ret = sdb_entry_ex_to_hdb_entry_ex(context,
-								   &signing_krbtgt_sdb,
-								   &signing_krbtgt_hdb);
-				sdb_free_entry(&signing_krbtgt_sdb);
+				ret = sdb_entry_to_hdb_entry(context,
+							     &signing_krbtgt_sdb,
+							     &signing_krbtgt_hdb);
+				sdb_entry_free(&signing_krbtgt_sdb);
 				if (ret != 0) {
 					return ret;
 				}
@@ -744,18 +492,46 @@ static krb5_error_code samba_wdc_reget_pac(void *priv, krb5_context context,
 				krbtgt = &signing_krbtgt_hdb;
 			}
 		}
+	} else if (!krbtgt_skdc_entry->is_trust) {
+		/*
+		 * We expect to have received a TGT, so check that we haven't
+		 * been given a kpasswd ticket instead. We don't need to do this
+		 * check for an incoming trust, as they use a different secret
+		 * and can't be confused with a normal TGT.
+		 */
+		krb5_ticket *tgt = kdc_request_get_ticket(r);
+
+		struct timeval now = krb5_kdc_get_time();
+
+		/*
+		 * Check if the ticket is in the last two minutes of its
+		 * life.
+		 */
+		KerberosTime lifetime = rk_time_sub(tgt->ticket.endtime, now.tv_sec);
+		if (lifetime <= CHANGEPW_LIFETIME) {
+			/*
+			 * This ticket has at most two minutes left to live. It
+			 * may be a kpasswd ticket rather than a TGT, so don't
+			 * accept it.
+			 */
+			kdc_audit_addreason((kdc_request_t)r,
+					    "Ticket is not a ticket-granting ticket");
+			return KRB5KRB_AP_ERR_TKT_EXPIRED;
+		}
 	}
 
-	ret = samba_wdc_reget_pac2(context,
+	ret = samba_wdc_reget_pac2(r,
 				   delegated_proxy_principal,
 				   client,
 				   server,
 				   krbtgt,
 				   pac,
-				   ctype);
+				   ctype,
+				   explicit_armor_client,
+				   &explicit_armor_pac);
 
 	if (krbtgt == &signing_krbtgt_hdb) {
-		hdb_free_entry(context, &signing_krbtgt_hdb);
+		hdb_free_entry(context, config->db[0], &signing_krbtgt_hdb);
 	}
 
 	return ret;
@@ -793,77 +569,41 @@ static char *get_netbios_name(TALLOC_CTX *mem_ctx, HostAddresses *addrs)
 	return nb_name;
 }
 
-static krb5_data fill_krb5_data(void *data, size_t length)
-{
-	krb5_data kdata;
-
-	kdata.data = data;
-	kdata.length = length;
-
-	return kdata;
-}
-
 /* this function allocates 'data' using malloc.
  * The caller is responsible for freeing it */
-static void samba_kdc_build_edata_reply(NTSTATUS nt_status, DATA_BLOB *e_data)
+static void samba_kdc_build_edata_reply(NTSTATUS nt_status, krb5_data *e_data)
 {
-	krb5_error_code ret = 0;
-	PA_DATA pa;
-	unsigned char *buf;
-	size_t len;
-
-	if (!e_data)
-		return;
-
-	e_data->data   = NULL;
-	e_data->length = 0;
-
-	pa.padata_type		= KRB5_PADATA_PW_SALT;
-	pa.padata_value.length	= 12;
-	pa.padata_value.data	= malloc(pa.padata_value.length);
-	if (!pa.padata_value.data) {
+	e_data->data = malloc(12);
+	if (e_data->data == NULL) {
 		e_data->length = 0;
 		e_data->data = NULL;
 		return;
 	}
+	e_data->length = 12;
 
-	SIVAL(pa.padata_value.data, 0, NT_STATUS_V(nt_status));
-	SIVAL(pa.padata_value.data, 4, 0);
-	SIVAL(pa.padata_value.data, 8, 1);
-
-	ASN1_MALLOC_ENCODE(PA_DATA, buf, len, &pa, &len, ret);
-	free(pa.padata_value.data);
-	if (ret) {
-		return;
-	}
-
-	e_data->data   = buf;
-	e_data->length = len;
+	SIVAL(e_data->data, 0, NT_STATUS_V(nt_status));
+	SIVAL(e_data->data, 4, 0);
+	SIVAL(e_data->data, 8, 1);
 
 	return;
 }
 
-
 static krb5_error_code samba_wdc_check_client_access(void *priv,
-						     krb5_context context,
-						     krb5_kdc_configuration *config,
-						     hdb_entry_ex *client_ex, const char *client_name,
-						     hdb_entry_ex *server_ex, const char *server_name,
-						     KDC_REQ *req,
-						     krb5_data *e_data)
+						     astgs_request_t r)
 {
 	struct samba_kdc_entry *kdc_entry;
 	bool password_change;
 	char *workstation;
 	NTSTATUS nt_status;
 
-	kdc_entry = talloc_get_type(client_ex->ctx, struct samba_kdc_entry);
-	password_change = (server_ex && server_ex->entry.flags.change_pw);
-	workstation = get_netbios_name((TALLOC_CTX *)client_ex->ctx,
-					req->req_body.addresses);
+
+	kdc_entry = talloc_get_type(kdc_request_get_client(r)->context, struct samba_kdc_entry);
+	password_change = (kdc_request_get_server(r) && kdc_request_get_server(r)->flags.change_pw);
+	workstation = get_netbios_name((TALLOC_CTX *)kdc_request_get_client(r)->context,
+				       kdc_request_get_req(r)->req_body.addresses);
 
 	nt_status = samba_kdc_check_client_access(kdc_entry,
-						  client_name,
+						  kdc_request_get_cname((kdc_request_t)r),
 						  workstation,
 						  password_change);
 
@@ -872,21 +612,82 @@ static krb5_error_code samba_wdc_check_client_access(void *priv,
 			return ENOMEM;
 		}
 
-		if (e_data) {
-			DATA_BLOB data;
+		if (kdc_request_get_rep(r)->padata) {
+			int ret;
+			krb5_data kd;
 
-			samba_kdc_build_edata_reply(nt_status, &data);
-			*e_data = fill_krb5_data(data.data, data.length);
+			samba_kdc_build_edata_reply(nt_status, &kd);
+			ret = krb5_padata_add(kdc_request_get_context((kdc_request_t)r), kdc_request_get_rep(r)->padata,
+					      KRB5_PADATA_PW_SALT,
+					      kd.data, kd.length);
+			if (ret != 0) {
+				/*
+				 * So we do not leak the allocated
+				 * memory on kd in the error case
+				 */
+				krb5_data_free(&kd);
+			}
 		}
 
 		return samba_kdc_map_policy_err(nt_status);
 	}
 
 	/* Now do the standard Heimdal check */
-	return kdc_check_flags(context, config,
-			       client_ex, client_name,
-			       server_ex, server_name,
-			       req->msg_type == krb_as_req);
+	return KRB5_PLUGIN_NO_HANDLE;
+}
+
+/* this function allocates 'data' using malloc.
+ * The caller is responsible for freeing it */
+static krb5_error_code samba_kdc_build_supported_etypes(uint32_t supported_etypes,
+							krb5_data *e_data)
+{
+	e_data->data = malloc(4);
+	if (e_data->data == NULL) {
+		return ENOMEM;
+	}
+	e_data->length = 4;
+
+	PUSH_LE_U32(e_data->data, 0, supported_etypes);
+
+	return 0;
+}
+
+static krb5_error_code samba_wdc_finalize_reply(void *priv,
+						astgs_request_t r)
+{
+	struct samba_kdc_entry *server_kdc_entry;
+	uint32_t supported_enctypes;
+
+	server_kdc_entry = talloc_get_type(kdc_request_get_server(r)->context, struct samba_kdc_entry);
+
+	/*
+	 * If the canonicalize flag is set, add PA-SUPPORTED-ENCTYPES padata
+	 * type to indicate what encryption types the server supports.
+	 */
+	supported_enctypes = server_kdc_entry->supported_enctypes;
+	if (kdc_request_get_req(r)->req_body.kdc_options.canonicalize && supported_enctypes != 0) {
+		krb5_error_code ret;
+
+		PA_DATA md;
+
+		ret = samba_kdc_build_supported_etypes(supported_enctypes, &md.padata_value);
+		if (ret != 0) {
+			return ret;
+		}
+
+		md.padata_type = KRB5_PADATA_SUPPORTED_ETYPES;
+
+		ret = kdc_request_add_encrypted_padata(r, &md);
+		if (ret != 0) {
+			/*
+			 * So we do not leak the allocated
+			 * memory on kd in the error case
+			 */
+			krb5_data_free(&md.padata_value);
+		}
+	}
+
+	return 0;
 }
 
 static krb5_error_code samba_wdc_plugin_init(krb5_context context, void **ptr)
@@ -900,14 +701,21 @@ static void samba_wdc_plugin_fini(void *ptr)
 	return;
 }
 
-struct krb5plugin_windc_ftable windc_plugin_table = {
-	.minor_version = KRB5_WINDC_PLUGIN_MINOR,
+static krb5_error_code samba_wdc_referral_policy(void *priv,
+						 astgs_request_t r)
+{
+	return kdc_request_get_error_code((kdc_request_t)r);
+}
+
+struct krb5plugin_kdc_ftable kdc_plugin_table = {
+	.minor_version = KRB5_PLUGIN_KDC_VERSION_10,
 	.init = samba_wdc_plugin_init,
 	.fini = samba_wdc_plugin_fini,
-	.pac_generate = samba_wdc_get_pac_compat,
 	.pac_verify = samba_wdc_reget_pac,
 	.client_access = samba_wdc_check_client_access,
-	.pac_pk_generate = samba_wdc_get_pac,
+	.finalize_reply = samba_wdc_finalize_reply,
+	.pac_generate = samba_wdc_get_pac,
+	.referral_policy = samba_wdc_referral_policy,
 };
 
 

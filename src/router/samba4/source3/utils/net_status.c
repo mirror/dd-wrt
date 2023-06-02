@@ -93,8 +93,7 @@ static int net_status_sessions(struct net_context *c, int argc, const char **arg
 	return 0;
 }
 
-static int show_share(const struct connections_key *key,
-		      const struct connections_data *crec,
+static int show_share(const struct connections_data *crec,
 		      void *state)
 {
 	struct server_id_buf tmp;
@@ -109,7 +108,7 @@ static int show_share(const struct connections_key *key,
 	d_printf("%-10.10s   %s   %-12s  %s",
 	       crec->servicename, server_id_str_buf(crec->pid, &tmp),
 	       crec->machine,
-	       time_to_asc(crec->start));
+	       time_to_asc(nt_time_to_unix(crec->start)));
 
 	return 0;
 }
@@ -138,8 +137,7 @@ static int collect_pids(const char *key, struct sessionid *session,
 	return 0;
 }
 
-static int show_share_parseable(const struct connections_key *key,
-				const struct connections_data *crec,
+static int show_share_parseable(const struct connections_data *crec,
 				void *state)
 {
 	struct sessionids *ids = (struct sessionids *)state;
@@ -168,7 +166,7 @@ static int show_share_parseable(const struct connections_key *key,
 		 guest ? "" : gidtoname(ids->entries[i].gid),
 		 crec->machine,
 		 guest ? "" : ids->entries[i].hostname,
-		 time_to_asc(crec->start));
+		 time_to_asc(nt_time_to_unix(crec->start)));
 
 	return 0;
 }

@@ -25,6 +25,7 @@
 #include "ads.h"
 #include "nss_info.h"
 #include "../libcli/security/dom_sid.h"
+#include "libsmb/samlogon_cache.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_IDMAP
@@ -60,13 +61,16 @@ static uint32_t hash_domain_sid(const struct dom_sid *sid)
 }
 
 /*********************************************************************
- Hash a Relative ID to a 20 bit number
+ Hash a Relative ID to a 19 bit number
  ********************************************************************/
 
 static uint32_t hash_rid(uint32_t rid)
 {
-	/* 20 bits for the rid which allows us to support
-	   the first 100K users/groups in a domain */
+	/*
+	 * 19 bits for the rid which allows us to support
+	 * the first 50K users/groups in a domain
+	 *
+	 */
 
 	return (rid & 0x0007FFFF);
 }
@@ -79,8 +83,13 @@ static uint32_t combine_hashes(uint32_t h_domain,
 {
 	uint32_t return_id = 0;
 
-	/* shift the hash_domain 19 bits to the left and OR with the
-	   hash_rid */
+	/*
+	 * shift the hash_domain 19 bits to the left and OR with the
+	 * hash_rid
+	 *
+	 * This will generate a 31 bit number out of
+	 * 12 bit domain and 19 bit rid.
+	 */
 
 	return_id = ((h_domain<<19) | h_rid);
 
@@ -121,14 +130,6 @@ static NTSTATUS idmap_hash_initialize(struct idmap_domain *dom)
 			"But the hash module can only be used for the default "
 			"idmap configuration.\n", dom->name);
 		return NT_STATUS_INVALID_PARAMETER;
-	}
-
-	/* If the domain SID hash table has been initialized, assume
-	   that we completed this function previously */
-
-	if (dom->private_data != NULL) {
-		nt_status = NT_STATUS_OK;
-		goto done;
 	}
 
 	if (!wcache_tdc_fetch_list(&dom_list, &num_domains)) {
@@ -183,135 +184,224 @@ done:
 /*********************************************************************
  ********************************************************************/
 
+static NTSTATUS idmap_hash_id_to_sid(struct sid_hash_table *hashed_domains,
+				     struct idmap_domain *dom,
+				     struct id_map *id)
+{
+	uint32_t h_domain = 0, h_rid = 0;
+
+	id->status = ID_UNMAPPED;
+
+	separate_hashes(id->xid.id, &h_domain, &h_rid);
+
+	/*
+	 * If the domain hash doesn't find a SID in the table,
+	 * skip it
+	 */
+	if (hashed_domains[h_domain].sid == NULL) {
+		/* keep ID_UNMAPPED */
+		return NT_STATUS_OK;
+	}
+
+	id->xid.type = ID_TYPE_BOTH;
+	sid_compose(id->sid, hashed_domains[h_domain].sid, h_rid);
+	id->status = ID_MAPPED;
+
+	return NT_STATUS_OK;
+}
+
 static NTSTATUS unixids_to_sids(struct idmap_domain *dom,
 				struct id_map **ids)
 {
 	struct sid_hash_table *hashed_domains = talloc_get_type_abort(
 		dom->private_data, struct sid_hash_table);
-	NTSTATUS nt_status = NT_STATUS_UNSUCCESSFUL;
-	int i;
+	size_t i;
+	size_t num_tomap = 0;
+	size_t num_mapped = 0;
 
-	if (!ids) {
-		nt_status = NT_STATUS_INVALID_PARAMETER;
-		BAIL_ON_NTSTATUS_ERROR(nt_status);
-	}
-
-	/* initialize the status to avoid suprise */
+	/* initialize the status to avoid surprise */
 	for (i = 0; ids[i]; i++) {
 		ids[i]->status = ID_UNKNOWN;
+		num_tomap++;
 	}
-
-	nt_status = idmap_hash_initialize(dom);
-	BAIL_ON_NTSTATUS_ERROR(nt_status);
 
 	for (i=0; ids[i]; i++) {
-		uint32_t h_domain, h_rid;
+		NTSTATUS ret;
 
-		ids[i]->status = ID_UNMAPPED;
-
-		separate_hashes(ids[i]->xid.id, &h_domain, &h_rid);
-
-		/* Make sure the caller allocated memor for us */
-
-		if (!ids[i]->sid) {
-			nt_status = NT_STATUS_INVALID_PARAMETER;
-			BAIL_ON_NTSTATUS_ERROR(nt_status);
+		ret = idmap_hash_id_to_sid(hashed_domains, dom, ids[i]);
+		if (!NT_STATUS_IS_OK(ret)) {
+			/* some fatal error occurred, log it */
+			DBG_NOTICE("Unexpected error resolving an ID "
+				   "(%d): %s\n", ids[i]->xid.id,
+				   nt_errstr(ret));
+			return ret;
 		}
 
-		/* If the domain hash doesn't find a SID in the table,
-		   skip it */
-
-		if (!hashed_domains[h_domain].sid)
-			continue;
-
-		sid_compose(ids[i]->sid, hashed_domains[h_domain].sid, h_rid);
-		ids[i]->status = ID_MAPPED;
+		if (ids[i]->status == ID_MAPPED) {
+			num_mapped++;
+		}
 	}
 
-done:
-	return nt_status;
+	if (num_tomap == num_mapped) {
+		return NT_STATUS_OK;
+	} else if (num_mapped == 0) {
+		return NT_STATUS_NONE_MAPPED;
+	}
+
+	return STATUS_SOME_UNMAPPED;
 }
 
 /*********************************************************************
  ********************************************************************/
 
+static NTSTATUS idmap_hash_sid_to_id(struct sid_hash_table *hashed_domains,
+				     struct idmap_domain *dom,
+				     struct id_map *id)
+{
+	struct dom_sid sid;
+	uint32_t rid;
+	uint32_t h_domain, h_rid;
+
+	id->status = ID_UNMAPPED;
+
+	sid_copy(&sid, id->sid);
+	sid_split_rid(&sid, &rid);
+
+	h_domain = hash_domain_sid(&sid);
+	h_rid = hash_rid(rid);
+
+	/* Check that both hashes are non-zero*/
+	if (h_domain == 0) {
+		/* keep ID_UNMAPPED */
+		return NT_STATUS_OK;
+	}
+	if (h_rid == 0) {
+		/* keep ID_UNMAPPED */
+		return NT_STATUS_OK;
+	}
+
+	/*
+	 * If the domain hash already exists find a SID in the table,
+	 * just return the mapping.
+	 */
+	if (hashed_domains[h_domain].sid != NULL) {
+		goto return_mapping;
+	}
+
+	/*
+	 * Check of last resort: A domain is valid if a user from that
+	 * domain has recently logged in. The samlogon_cache these
+	 * days also stores the domain sid.
+	 */
+	if (netsamlogon_cache_have(&sid)) {
+		/*
+		 * The domain is valid, so we'll
+		 * remember it in order to
+		 * allow reverse mappings to work.
+		 */
+		goto remember_domain;
+	}
+
+	if (id->xid.type == ID_TYPE_NOT_SPECIFIED) {
+		/*
+		 * idmap_hash used to bounce back the requested type,
+		 * which was ID_TYPE_UID, ID_TYPE_GID or
+		 * ID_TYPE_NOT_SPECIFIED before as the winbindd parent
+		 * always used a lookupsids.  When the lookupsids
+		 * failed because of an unknown domain, the idmap child
+		 * weren't requested at all and the caller sees
+		 * ID_TYPE_NOT_SPECIFIED.
+		 *
+		 * Now that the winbindd parent will pass ID_TYPE_BOTH
+		 * in order to indicate that the domain exists.
+		 * We should ask the parent to fallback to lookupsids
+		 * if the domain is not known yet.
+		 */
+		id->status = ID_REQUIRE_TYPE;
+		return NT_STATUS_OK;
+	}
+
+	/*
+	 * Now we're sure the domain exist, remember
+	 * the domain in order to return reverse mappings
+	 * in future.
+	 */
+remember_domain:
+	hashed_domains[h_domain].sid = dom_sid_dup(hashed_domains, &sid);
+	if (hashed_domains[h_domain].sid == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	/*
+	 * idmap_hash used to bounce back the requested type,
+	 * which was ID_TYPE_UID, ID_TYPE_GID or
+	 * ID_TYPE_NOT_SPECIFIED before as the winbindd parent
+	 * always used a lookupsids.
+	 *
+	 * This module should have supported ID_TYPE_BOTH since
+	 * samba-4.1.0, similar to idmap_rid and idmap_autorid.
+	 *
+	 * Now that the winbindd parent will pass ID_TYPE_BOTH
+	 * in order to indicate that the domain exists, it's
+	 * better to always return ID_TYPE_BOTH instead of a
+	 * random mix of ID_TYPE_UID, ID_TYPE_GID or
+	 * ID_TYPE_BOTH.
+	 */
+return_mapping:
+	id->xid.type = ID_TYPE_BOTH;
+	id->xid.id = combine_hashes(h_domain, h_rid);
+	id->status = ID_MAPPED;
+
+	return NT_STATUS_OK;
+}
+
 static NTSTATUS sids_to_unixids(struct idmap_domain *dom,
 				struct id_map **ids)
 {
-	NTSTATUS nt_status = NT_STATUS_UNSUCCESSFUL;
-	int i;
+	struct sid_hash_table *hashed_domains = talloc_get_type_abort(
+		dom->private_data, struct sid_hash_table);
+	size_t i;
+	size_t num_tomap = 0;
+	size_t num_mapped = 0;
+	size_t num_required = 0;
 
-	if (!ids) {
-		nt_status = NT_STATUS_INVALID_PARAMETER;
-		BAIL_ON_NTSTATUS_ERROR(nt_status);
-	}
-
-	/* initialize the status to avoid suprise */
+	/* initialize the status to avoid surprise */
 	for (i = 0; ids[i]; i++) {
 		ids[i]->status = ID_UNKNOWN;
+		num_tomap++;
 	}
-
-	nt_status = idmap_hash_initialize(dom);
-	BAIL_ON_NTSTATUS_ERROR(nt_status);
 
 	for (i=0; ids[i]; i++) {
-		struct dom_sid sid;
-		uint32_t rid;
-		uint32_t h_domain, h_rid;
+		NTSTATUS ret;
 
-		ids[i]->status = ID_UNMAPPED;
-
-		if (ids[i]->xid.type == ID_TYPE_NOT_SPECIFIED) {
-			/*
-			 * idmap_hash used to bounce back the requested type,
-			 * which was ID_TYPE_UID, ID_TYPE_GID or
-			 * ID_TYPE_NOT_SPECIFIED before as the winbindd parent
-			 * always used a lookupsids.  When the lookupsids
-			 * failed because of an unknown domain, the idmap child
-			 * weren't requested at all and the caller sees
-			 * ID_TYPE_NOT_SPECIFIED.
-			 *
-			 * Now that the winbindd parent will pass ID_TYPE_BOTH
-			 * in order to indicate that the domain exists.
-			 * We should ask the parent to fallback to lookupsids
-			 * if the domain is not known yet.
-			 */
-			ids[i]->status = ID_REQUIRE_TYPE;
-			continue;
+		ret = idmap_hash_sid_to_id(hashed_domains, dom, ids[i]);
+		if (!NT_STATUS_IS_OK(ret)) {
+			struct dom_sid_buf buf;
+			/* some fatal error occurred, log it */
+			DBG_NOTICE("Unexpected error resolving a SID "
+				   "(%s): %s\n",
+				   dom_sid_str_buf(ids[i]->sid, &buf),
+				   nt_errstr(ret));
+			return ret;
 		}
 
-		sid_copy(&sid, ids[i]->sid);
-		sid_split_rid(&sid, &rid);
-
-		h_domain = hash_domain_sid(&sid);
-		h_rid = hash_rid(rid);
-
-		/* Check that both hashes are non-zero*/
-
-		if (h_domain && h_rid) {
-			/*
-			 * idmap_hash used to bounce back the requested type,
-			 * which was ID_TYPE_UID, ID_TYPE_GID or
-			 * ID_TYPE_NOT_SPECIFIED before as the winbindd parent
-			 * always used a lookupsids.
-			 *
-			 * This module should have supported ID_TYPE_BOTH since
-			 * samba-4.1.0, similar to idmap_rid and idmap_autorid.
-			 *
-			 * Now that the winbindd parent will pass ID_TYPE_BOTH
-			 * in order to indicate that the domain exists, it's
-			 * better to always return ID_TYPE_BOTH instead of a
-			 * random mix of ID_TYPE_UID, ID_TYPE_GID or
-			 * ID_TYPE_BOTH.
-			 */
-			ids[i]->xid.type = ID_TYPE_BOTH;
-			ids[i]->xid.id = combine_hashes(h_domain, h_rid);
-			ids[i]->status = ID_MAPPED;
+		if (ids[i]->status == ID_MAPPED) {
+			num_mapped++;
+		}
+		if (ids[i]->status == ID_REQUIRE_TYPE) {
+			num_required++;
 		}
 	}
 
-done:
-	return nt_status;
+	if (num_tomap == num_mapped) {
+		return NT_STATUS_OK;
+	} else if (num_required > 0) {
+		return STATUS_SOME_UNMAPPED;
+	} else if (num_mapped == 0) {
+		return NT_STATUS_NONE_MAPPED;
+	}
+
+	return STATUS_SOME_UNMAPPED;
 }
 
 /*********************************************************************

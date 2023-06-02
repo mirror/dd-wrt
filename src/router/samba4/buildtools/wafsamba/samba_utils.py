@@ -465,8 +465,7 @@ def RECURSE(ctx, directory):
                     'CleanContext',
                     'InstallContext',
                     'UninstallContext',
-                    'ListContext',
-                    'ClangDbContext']:
+                    'ListContext']:
         return ctx.recurse(relpath)
     if 'waflib.extras.compat15' in sys.modules:
         return ctx.recurse(relpath)
@@ -658,7 +657,7 @@ def get_tgt_list(bld):
     tgt_list = []
     for tgt in targets:
         type = targets[tgt]
-        if not type in ['SUBSYSTEM', 'MODULE', 'BINARY', 'LIBRARY', 'ASN1', 'PYTHON']:
+        if not type in ['SUBSYSTEM', 'BUILTIN', 'MODULE', 'BINARY', 'LIBRARY', 'PLUGIN', 'ASN1', 'PYTHON']:
             continue
         t = bld.get_tgen_by_name(tgt)
         if t is None:

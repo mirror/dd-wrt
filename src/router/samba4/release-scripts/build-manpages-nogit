@@ -16,8 +16,9 @@
 # this program; if not, see <http://www.gnu.org/licenses/>.
 #
 
-_exit() {
-	echo $@
+_exit()
+{
+	echo "$@"
 	popd
 	exit 1
 }

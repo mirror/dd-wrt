@@ -323,16 +323,6 @@ ctdb_get_1_interface ()
     echo ${_t%% *}
 }
 
-# Print all public addresses as: interface IP maskbits
-# Each line is suitable for passing to takeip/releaseip
-ctdb_get_all_public_addresses ()
-{
-    _f="${CTDB_BASE}/public_addresses"
-    while IFS="/$IFS" read _ip _maskbits _ifaces ; do
-	echo "$_ifaces $_ip $_maskbits"
-    done <"$_f"
-}
-
 # Print public addresses on this node as: interface IP maskbits
 # Each line is suitable for passing to takeip/releaseip
 ctdb_get_my_public_addresses ()
@@ -415,6 +405,12 @@ nfs_load_config ()
 	    break
 	fi
     done
+}
+
+setup_nfs_callout()
+{
+	export CTDB_NFS_CALLOUT="${CTDB_HELPER_BINDIR}/nfs-fake-callout"
+	export NFS_FAKE_CALLOUT_MAGIC="$1"
 }
 
 program_stack_trace ()

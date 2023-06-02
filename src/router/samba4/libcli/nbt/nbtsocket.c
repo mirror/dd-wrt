@@ -27,6 +27,7 @@
 #include "lib/socket/socket.h"
 #include "librpc/gen_ndr/ndr_nbt.h"
 #include "param/param.h"
+#include "lib/util/idtree_random.h"
 
 #define NBT_MAX_REPLIES 1000
 
@@ -407,7 +408,8 @@ struct nbt_name_request *nbt_name_request_send(TALLOC_CTX *mem_ctx,
 
 	/* we select a random transaction id unless the user supplied one */
 	if (request->name_trn_id == 0) {
-		id = idr_get_new_random(req->nbtsock->idr, req, UINT16_MAX);
+		id = idr_get_new_random(
+			req->nbtsock->idr, req, 1, UINT16_MAX);
 	} else {
 		if (idr_find(req->nbtsock->idr, request->name_trn_id)) goto failed;
 		id = idr_get_new_above(req->nbtsock->idr, req, request->name_trn_id,

@@ -17,15 +17,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import functools
-import os
 import sys
+import os
+
+sys.path.insert(0, "bin/python")
+os.environ["PYTHONUNBUFFERED"] = "1"
+
+import functools
 import collections
 
 import ldb
 
-from samba.dcerpc import security
-from samba.tests.krb5.raw_testcase import Krb5EncryptionKey
+from samba.dcerpc import krb5pac, security
+from samba.tests.krb5.raw_testcase import Krb5EncryptionKey, ZeroedChecksumKey
 from samba.tests.krb5.kdc_base_test import KDCBaseTest
 from samba.tests.krb5.rfc4120_constants import (
     AD_FX_FAST_ARMOR,
@@ -33,42 +37,36 @@ from samba.tests.krb5.rfc4120_constants import (
     AES256_CTS_HMAC_SHA1_96,
     ARCFOUR_HMAC_MD5,
     FX_FAST_ARMOR_AP_REQUEST,
+    KDC_ERR_BAD_INTEGRITY,
     KDC_ERR_ETYPE_NOSUPP,
     KDC_ERR_GENERIC,
     KDC_ERR_S_PRINCIPAL_UNKNOWN,
+    KDC_ERR_MODIFIED,
     KDC_ERR_NOT_US,
+    KDC_ERR_POLICY,
     KDC_ERR_PREAUTH_FAILED,
     KDC_ERR_PREAUTH_REQUIRED,
+    KDC_ERR_SKEW,
     KDC_ERR_UNKNOWN_CRITICAL_FAST_OPTIONS,
     KRB_AS_REP,
     KRB_TGS_REP,
+    KU_TGS_REQ_AUTH_DAT_SESSION,
+    KU_TGS_REQ_AUTH_DAT_SUBKEY,
     NT_PRINCIPAL,
     NT_SRV_HST,
     NT_SRV_INST,
     PADATA_FX_COOKIE,
     PADATA_FX_FAST,
+    PADATA_REQ_ENC_PA_REP,
 )
 import samba.tests.krb5.rfc4120_pyasn1 as krb5_asn1
 import samba.tests.krb5.kcrypto as kcrypto
-
-sys.path.insert(0, "bin/python")
-os.environ["PYTHONUNBUFFERED"] = "1"
 
 global_asn1_print = False
 global_hexdump = False
 
 
 class FAST_Tests(KDCBaseTest):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.user_tgt = None
-        cls.user_service_ticket = None
-
-        cls.mach_tgt = None
-        cls.mach_service_ticket = None
-
     def setUp(self):
         super().setUp()
         self.do_asn1_print = global_asn1_print
@@ -89,6 +87,101 @@ class FAST_Tests(KDCBaseTest):
             }
         ])
 
+    def test_simple_as_req_self(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': False,
+                'as_req_self': True
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': False,
+                'gen_padata_fn': self.generate_enc_timestamp_padata,
+                'as_req_self': True
+            }
+        ], client_account=self.AccountType.COMPUTER)
+
+    def test_simple_as_req_self_no_auth_data(self):
+        self._run_test_sequence(
+            [
+                {
+                    'rep_type': KRB_AS_REP,
+                    'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                    'use_fast': False,
+                    'as_req_self': True
+                },
+                {
+                    'rep_type': KRB_AS_REP,
+                    'expected_error_mode': 0,
+                    'use_fast': False,
+                    'gen_padata_fn': self.generate_enc_timestamp_padata,
+                    'as_req_self': True,
+                    'expect_pac': True
+                }
+            ],
+            client_account=self.AccountType.COMPUTER,
+            client_opts={'no_auth_data_required': True})
+
+    def test_simple_as_req_self_pac_request_false(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': False,
+                'as_req_self': True
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': False,
+                'gen_padata_fn': self.generate_enc_timestamp_padata,
+                'as_req_self': True,
+                'pac_request': False,
+                'expect_pac': False
+            }
+        ], client_account=self.AccountType.COMPUTER)
+
+    def test_simple_as_req_self_pac_request_none(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': False,
+                'as_req_self': True
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': False,
+                'gen_padata_fn': self.generate_enc_timestamp_padata,
+                'as_req_self': True,
+                'pac_request': None,
+                'expect_pac': True
+            }
+        ], client_account=self.AccountType.COMPUTER)
+
+    def test_simple_as_req_self_pac_request_true(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': False,
+                'as_req_self': True
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': False,
+                'gen_padata_fn': self.generate_enc_timestamp_padata,
+                'as_req_self': True,
+                'pac_request': True,
+                'expect_pac': True
+            }
+        ], client_account=self.AccountType.COMPUTER)
+
     def test_simple_tgs(self):
         self._run_test_sequence([
             {
@@ -96,6 +189,35 @@ class FAST_Tests(KDCBaseTest):
                 'expected_error_mode': 0,
                 'use_fast': False,
                 'gen_tgt_fn': self.get_user_tgt
+            }
+        ])
+
+    def test_simple_enc_pa_rep(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': False
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': False,
+                'gen_padata_fn': self.generate_enc_pa_rep_timestamp_padata,
+                'expected_flags': 'enc-pa-rep'
+            }
+        ])
+
+    # Currently we only send PADATA-REQ-ENC-PA-REP for AS-REQ requests.
+    def test_simple_tgs_enc_pa_rep(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_TGS_REP,
+                'expected_error_mode': 0,
+                'use_fast': False,
+                'gen_tgt_fn': self.get_user_tgt,
+                'gen_padata_fn': self.generate_enc_pa_rep_padata,
+                'expected_flags': 'enc-pa-rep'
             }
         ])
 
@@ -134,12 +256,14 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_S_PRINCIPAL_UNKNOWN),
                 'use_fast': True,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
                 'sname': None,
-                'expected_sname': expected_sname
+                'expected_sname': expected_sname,
+                'strict_edata_checking': False
             }
         ])
 
@@ -154,7 +278,8 @@ class FAST_Tests(KDCBaseTest):
                 'gen_tgt_fn': self.get_user_tgt,
                 'fast_armor': None,
                 'sname': None,
-                'expected_sname': expected_sname
+                'expected_sname': expected_sname,
+                'strict_edata_checking': False
             }
         ])
 
@@ -164,14 +289,16 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_S_PRINCIPAL_UNKNOWN),
                 'use_fast': True,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
                 'inner_req': {
                     'sname': None  # should be ignored
                 },
-                'expected_sname': expected_sname
+                'expected_sname': expected_sname,
+                'strict_edata_checking': False
             }
         ])
 
@@ -181,14 +308,16 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_S_PRINCIPAL_UNKNOWN),
                 'use_fast': True,
                 'gen_tgt_fn': self.get_user_tgt,
                 'fast_armor': None,
                 'inner_req': {
                     'sname': None  # should be ignored
                 },
-                'expected_sname': expected_sname
+                'expected_sname': expected_sname,
+                'strict_edata_checking': False
             }
         ])
 
@@ -206,7 +335,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_NOT_US,
+                'expected_error_mode': (KDC_ERR_NOT_US,
+                                        KDC_ERR_POLICY),
                 'use_fast': False,
                 'gen_tgt_fn': self.get_user_service_ticket,
                 'expect_edata': False
@@ -217,7 +347,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_NOT_US,
+                'expected_error_mode': (KDC_ERR_NOT_US,
+                                        KDC_ERR_POLICY),
                 'use_fast': False,
                 'gen_tgt_fn': self.get_mach_service_ticket,
                 'expect_edata': False
@@ -346,7 +477,8 @@ class FAST_Tests(KDCBaseTest):
                 'use_fast': True,
                 'gen_tgt_fn': self.get_mach_tgt,
                 'fast_armor': None,
-                'etypes': ()
+                'etypes': (),
+                'strict_edata_checking': False
             }
         ])
 
@@ -368,7 +500,8 @@ class FAST_Tests(KDCBaseTest):
                 'use_fast': True,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
-                'etypes': ()
+                'etypes': (),
+                'strict_edata_checking': False
             }
         ])
 
@@ -378,7 +511,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_PREAUTH_FAILED),
                 'use_fast': True,
                 'gen_fast_fn': self.generate_empty_fast,
                 'fast_armor': None,
@@ -387,12 +521,21 @@ class FAST_Tests(KDCBaseTest):
             }
         ])
 
+    # Expected to fail against Windows - Windows does not produce an error.
     def test_fast_unknown_critical_option(self):
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': True,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt
+            },
+            {
+                'rep_type': KRB_AS_REP,
                 'expected_error_mode': KDC_ERR_UNKNOWN_CRITICAL_FAST_OPTIONS,
                 'use_fast': True,
+                'gen_padata_fn': self.generate_enc_challenge_padata,
                 'fast_options': '001',  # unsupported critical option
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_tgt
@@ -403,7 +546,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_PREAUTH_FAILED),
                 'use_fast': True,
                 'fast_armor': None,  # no armor,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
@@ -451,6 +595,27 @@ class FAST_Tests(KDCBaseTest):
                 'gen_armor_tgt_fn': self.get_mach_tgt
             }
         ])
+
+    def test_fast_encrypted_challenge_as_req_self(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': True,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'as_req_self': True
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_padata_fn': self.generate_enc_challenge_padata,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'as_req_self': True
+            }
+        ], client_account=self.AccountType.COMPUTER)
 
     def test_fast_encrypted_challenge_wrong_key(self):
         self._run_test_sequence([
@@ -500,17 +665,19 @@ class FAST_Tests(KDCBaseTest):
             },
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_PREAUTH_FAILED,
+                'expected_error_mode': (KDC_ERR_PREAUTH_FAILED,
+                                        KDC_ERR_PREAUTH_REQUIRED),
                 'use_fast': False,
                 'gen_padata_fn': self.generate_enc_challenge_padata_wrong_key
             }
         ])
 
+    # Expected to fail against Windows - Windows does not produce an error.
     def test_fast_encrypted_challenge_clock_skew(self):
         # The KDC is supposed to confirm that the timestamp is within its
         # current clock skew, and return KRB_APP_ERR_SKEW if it is not (RFC6113
-        # 5.4.6).  However, Windows accepts a skewed timestamp in the encrypted
-        # challenge.
+        # 5.4.6). However, this test fails against Windows, which accepts a
+        # skewed timestamp in the encrypted challenge.
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
@@ -521,7 +688,7 @@ class FAST_Tests(KDCBaseTest):
             },
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': 0,
+                'expected_error_mode': KDC_ERR_SKEW,
                 'use_fast': True,
                 'gen_padata_fn': functools.partial(
                     self.generate_enc_challenge_padata,
@@ -533,21 +700,15 @@ class FAST_Tests(KDCBaseTest):
 
     def test_fast_invalid_tgt(self):
         # The armor ticket 'sname' field is required to identify the target
-        # realm TGS (RFC6113 5.4.1.1). However, Windows will still accept a
-        # service ticket identifying a different server principal.
+        # realm TGS (RFC6113 5.4.1.1). However, this test fails against
+        # Windows, which will still accept a service ticket identifying a
+        # different server principal.
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'expected_error_mode': (KDC_ERR_POLICY,
+                                        KDC_ERR_S_PRINCIPAL_UNKNOWN),
                 'use_fast': True,
-                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
-                'gen_armor_tgt_fn': self.get_user_service_ticket
-            },
-            {
-                'rep_type': KRB_AS_REP,
-                'expected_error_mode': 0,
-                'use_fast': True,
-                'gen_padata_fn': self.generate_enc_challenge_padata,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_user_service_ticket
                                     # ticket not identifying TGS of current
@@ -555,24 +716,35 @@ class FAST_Tests(KDCBaseTest):
             }
         ])
 
+    # Similarly, this test fails against Windows, which accepts a service
+    # ticket identifying a different server principal.
     def test_fast_invalid_tgt_mach(self):
         self._run_test_sequence([
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'expected_error_mode': (KDC_ERR_POLICY,
+                                        KDC_ERR_S_PRINCIPAL_UNKNOWN),
                 'use_fast': True,
-                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
-                'gen_armor_tgt_fn': self.get_mach_service_ticket
-            },
-            {
-                'rep_type': KRB_AS_REP,
-                'expected_error_mode': 0,
-                'use_fast': True,
-                'gen_padata_fn': self.generate_enc_challenge_padata,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_service_ticket
                                     # ticket not identifying TGS of current
                                     # realm
+            }
+        ])
+
+    def test_fast_invalid_checksum_tgt(self):
+        # The armor ticket 'sname' field is required to identify the target
+        # realm TGS (RFC6113 5.4.1.1). However, this test fails against
+        # Windows, which will still accept a service ticket identifying a
+        # different server principal even if the ticket checksum is invalid.
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': (KDC_ERR_POLICY,
+                                        KDC_ERR_S_PRINCIPAL_UNKNOWN),
+                'use_fast': True,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_service_ticket_invalid_checksum
             }
         ])
 
@@ -589,7 +761,8 @@ class FAST_Tests(KDCBaseTest):
             },
             {
                 'rep_type': KRB_AS_REP,
-                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'expected_error_mode': (KDC_ERR_PREAUTH_REQUIRED,
+                                        KDC_ERR_POLICY),
                 'use_fast': True,
                 'gen_padata_fn': self.generate_enc_timestamp_padata,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
@@ -636,6 +809,92 @@ class FAST_Tests(KDCBaseTest):
                 'gen_tgt_fn': self.get_user_tgt,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST
+            }
+        ])
+
+    def test_fast_session_key(self):
+        # Ensure that specified APOptions are ignored.
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': True,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'fast_ap_options': str(krb5_asn1.APOptions('use-session-key'))
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_padata_fn': self.generate_enc_challenge_padata,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'fast_ap_options': str(krb5_asn1.APOptions('use-session-key'))
+            }
+        ])
+
+    def test_fast_tgs_armor_session_key(self):
+        # Ensure that specified APOptions are ignored.
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_TGS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_tgt_fn': self.get_user_tgt,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'fast_ap_options': str(krb5_asn1.APOptions('use-session-key'))
+            }
+        ])
+
+    def test_fast_enc_pa_rep(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': KDC_ERR_PREAUTH_REQUIRED,
+                'use_fast': True,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'expected_flags': 'enc-pa-rep'
+            },
+            {
+                'rep_type': KRB_AS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_padata_fn': self.generate_enc_pa_rep_challenge_padata,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'expected_flags': 'enc-pa-rep'
+            }
+        ])
+
+    # Currently we only send PADATA-REQ-ENC-PA-REP for AS-REQ requests.
+    def test_fast_tgs_enc_pa_rep(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_TGS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_tgt_fn': self.get_user_tgt,
+                'fast_armor': None,
+                'gen_padata_fn': self.generate_enc_pa_rep_padata,
+                'expected_flags': 'enc-pa-rep'
+            }
+        ])
+
+    # Currently we only send PADATA-REQ-ENC-PA-REP for AS-REQ requests.
+    def test_fast_tgs_armor_enc_pa_rep(self):
+        self._run_test_sequence([
+            {
+                'rep_type': KRB_TGS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_tgt_fn': self.get_user_tgt,
+                'gen_armor_tgt_fn': self.get_mach_tgt,
+                'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
+                'gen_padata_fn': self.generate_enc_pa_rep_padata,
+                'expected_flags': 'enc-pa-rep'
             }
         ])
 
@@ -862,8 +1121,8 @@ class FAST_Tests(KDCBaseTest):
             # Add the 'FAST used' auth data and it now fails.
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
-                # should be KRB_APP_ERR_MODIFIED
+                'expected_error_mode': (KDC_ERR_MODIFIED,
+                                        KDC_ERR_GENERIC),
                 'use_fast': False,
                 'gen_authdata_fn': self.generate_fast_used_auth_data,
                 'gen_tgt_fn': self.get_user_tgt,
@@ -889,7 +1148,8 @@ class FAST_Tests(KDCBaseTest):
             # Add the 'FAST armor' auth data and it now fails.
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_BAD_INTEGRITY),
                 'use_fast': True,
                 'gen_authdata_fn': self.generate_fast_armor_auth_data,
                 'gen_tgt_fn': self.get_user_tgt,
@@ -941,12 +1201,39 @@ class FAST_Tests(KDCBaseTest):
             # fails.
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_BAD_INTEGRITY),
                 'use_fast': True,
                 'gen_tgt_fn': self.gen_tgt_fast_armor_auth_data,
                 'fast_armor': None,
                 'expected_sname': expected_sname,
                 'expect_edata': False
+            }
+        ])
+
+    def test_fast_ad_fx_fast_armor_enc_auth_data(self):
+        # If the authenticator or TGT authentication data contains the
+        # AD-fx-fast-armor authdata type, the KDC must reject the request
+        # (RFC6113 5.4.2). However, the KDC should not reject a request that
+        # contains this authdata type in enc-authorization-data.
+        self._run_test_sequence([
+            # This request works.
+            {
+                'rep_type': KRB_TGS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_tgt_fn': self.get_user_tgt,
+                'fast_armor': None
+            },
+            # Add AD-fx-fast-armor authdata element to
+            # enc-authorization-data. This request also works.
+            {
+                'rep_type': KRB_TGS_REP,
+                'expected_error_mode': 0,
+                'use_fast': True,
+                'gen_enc_authdata_fn': self.generate_fast_armor_auth_data,
+                'gen_tgt_fn': self.get_user_tgt,
+                'fast_armor': None
             }
         ])
 
@@ -976,7 +1263,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_NOT_US,
+                'expected_error_mode': (KDC_ERR_NOT_US,
+                                        KDC_ERR_POLICY),
                 'use_fast': True,
                 'gen_tgt_fn': self.get_user_service_ticket,  # fails
                 'fast_armor': None
@@ -987,7 +1275,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_NOT_US,  # fails
+                'expected_error_mode': (KDC_ERR_NOT_US,  # fails
+                                        KDC_ERR_POLICY),
                 'use_fast': True,
                 'gen_tgt_fn': self.get_mach_service_ticket,
                 'fast_armor': None
@@ -1013,7 +1302,8 @@ class FAST_Tests(KDCBaseTest):
         self._run_test_sequence([
             {
                 'rep_type': KRB_TGS_REP,
-                'expected_error_mode': KDC_ERR_GENERIC,
+                'expected_error_mode': (KDC_ERR_GENERIC,
+                                        KDC_ERR_PREAUTH_FAILED),
                 'use_fast': True,
                 'gen_tgt_fn': self.get_user_tgt,
                 'fast_armor': None,
@@ -1031,7 +1321,8 @@ class FAST_Tests(KDCBaseTest):
                 'use_fast': True,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
-                'fast_options': '01',  # hide client names
+                'fast_options': str(krb5_asn1.FastOptions(
+                    'hide-client-names')),
                 'expected_anon': True
             },
             {
@@ -1041,7 +1332,8 @@ class FAST_Tests(KDCBaseTest):
                 'gen_padata_fn': self.generate_enc_challenge_padata,
                 'fast_armor': FX_FAST_ARMOR_AP_REQUEST,
                 'gen_armor_tgt_fn': self.get_mach_tgt,
-                'fast_options': '01',  # hide client names
+                'fast_options': str(krb5_asn1.FastOptions(
+                    'hide-client-names')),
                 'expected_anon': True
             }
         ])
@@ -1054,7 +1346,8 @@ class FAST_Tests(KDCBaseTest):
                 'use_fast': True,
                 'gen_tgt_fn': self.get_user_tgt,
                 'fast_armor': None,
-                'fast_options': '01',  # hide client names
+                'fast_options': str(krb5_asn1.FastOptions(
+                    'hide-client-names')),
                 'expected_anon': True
             }
         ])
@@ -1156,16 +1449,18 @@ class FAST_Tests(KDCBaseTest):
 
         return fast_padata
 
-    def _run_test_sequence(self, test_sequence):
+    def _run_test_sequence(self, test_sequence,
+                           client_account=KDCBaseTest.AccountType.USER,
+                           client_opts=None,
+                           armor_opts=None):
         if self.strict_checking:
             self.check_kdc_fast_support()
 
         kdc_options_default = str(krb5_asn1.KDCOptions('forwardable,'
-                                                       'renewable,'
-                                                       'canonicalize,'
-                                                       'renewable-ok'))
+                                                       'canonicalize'))
 
-        client_creds = self.get_client_creds()
+        client_creds = self.get_cached_creds(account_type=client_account,
+                                             opts=client_opts)
         target_creds = self.get_service_creds()
         krbtgt_creds = self.get_krbtgt_creds()
 
@@ -1190,6 +1485,10 @@ class FAST_Tests(KDCBaseTest):
         target_decryption_key = self.TicketDecryptionKey_from_creds(
             target_creds)
         target_etypes = target_creds.tgs_supported_enctypes
+
+        client_decryption_key = self.TicketDecryptionKey_from_creds(
+            client_creds)
+        client_etypes = client_creds.tgs_supported_enctypes
 
         fast_cookie = None
         preauth_etype_info2 = None
@@ -1220,7 +1519,7 @@ class FAST_Tests(KDCBaseTest):
 
                 gen_armor_tgt_fn = kdc_dict.pop('gen_armor_tgt_fn', None)
                 if gen_armor_tgt_fn is not None:
-                    armor_tgt = gen_armor_tgt_fn()
+                    armor_tgt = gen_armor_tgt_fn(armor_opts)
                 else:
                     armor_tgt = None
 
@@ -1234,7 +1533,7 @@ class FAST_Tests(KDCBaseTest):
 
             if rep_type == KRB_TGS_REP:
                 gen_tgt_fn = kdc_dict.pop('gen_tgt_fn')
-                tgt = gen_tgt_fn()
+                tgt = gen_tgt_fn(opts=client_opts)
             else:
                 self.assertNotIn('gen_tgt_fn', kdc_dict)
                 tgt = None
@@ -1252,10 +1551,16 @@ class FAST_Tests(KDCBaseTest):
             cname = client_cname if rep_type == KRB_AS_REP else None
             crealm = client_realm
 
+            as_req_self = kdc_dict.pop('as_req_self', False)
+            if as_req_self:
+                self.assertEqual(KRB_AS_REP, rep_type)
+
             if 'sname' in kdc_dict:
                 sname = kdc_dict.pop('sname')
             else:
-                if rep_type == KRB_AS_REP:
+                if as_req_self:
+                    sname = client_cname
+                elif rep_type == KRB_AS_REP:
                     sname = krbtgt_sname
                 else:  # KRB_TGS_REP
                     sname = target_sname
@@ -1331,6 +1636,9 @@ class FAST_Tests(KDCBaseTest):
                                       padata):
                 return list(padata), req_body
 
+            pac_request = kdc_dict.pop('pac_request', None)
+            expect_pac = kdc_dict.pop('expect_pac', True)
+
             pac_options = kdc_dict.pop('pac_options', '1')  # claims support
 
             kdc_options = kdc_dict.pop('kdc_options', kdc_options_default)
@@ -1362,6 +1670,21 @@ class FAST_Tests(KDCBaseTest):
             else:
                 auth_data = None
 
+            gen_enc_authdata_fn = kdc_dict.pop('gen_enc_authdata_fn', None)
+            if gen_enc_authdata_fn is not None:
+                enc_auth_data = [gen_enc_authdata_fn()]
+
+                enc_auth_data_key = authenticator_subkey
+                enc_auth_data_usage = KU_TGS_REQ_AUTH_DAT_SUBKEY
+                if enc_auth_data_key is None:
+                    enc_auth_data_key = tgt.session_key
+                    enc_auth_data_usage = KU_TGS_REQ_AUTH_DAT_SESSION
+            else:
+                enc_auth_data = None
+
+                enc_auth_data_key = None
+                enc_auth_data_usage = None
+
             if not use_fast:
                 self.assertNotIn('inner_req', kdc_dict)
                 self.assertNotIn('outer_req', kdc_dict)
@@ -1375,17 +1698,28 @@ class FAST_Tests(KDCBaseTest):
             if unexpected_flags is not None:
                 unexpected_flags = krb5_asn1.TicketFlags(unexpected_flags)
 
+            fast_ap_options = kdc_dict.pop('fast_ap_options', None)
+
+            strict_edata_checking = kdc_dict.pop('strict_edata_checking', True)
+
             if rep_type == KRB_AS_REP:
+                if as_req_self:
+                    expected_supported_etypes = client_etypes
+                    decryption_key = client_decryption_key
+                else:
+                    expected_supported_etypes = krbtgt_etypes
+                    decryption_key = krbtgt_decryption_key
+
                 kdc_exchange_dict = self.as_exchange_dict(
                     expected_crealm=expected_crealm,
                     expected_cname=expected_cname,
                     expected_anon=expected_anon,
                     expected_srealm=expected_srealm,
                     expected_sname=expected_sname,
-                    expected_supported_etypes=krbtgt_etypes,
+                    expected_supported_etypes=expected_supported_etypes,
                     expected_flags=expected_flags,
                     unexpected_flags=unexpected_flags,
-                    ticket_decryption_key=krbtgt_decryption_key,
+                    ticket_decryption_key=decryption_key,
                     generate_fast_fn=generate_fast_fn,
                     generate_fast_armor_fn=generate_fast_armor_fn,
                     generate_fast_padata_fn=generate_fast_padata_fn,
@@ -1407,8 +1741,11 @@ class FAST_Tests(KDCBaseTest):
                     kdc_options=kdc_options,
                     inner_req=inner_req,
                     outer_req=outer_req,
-                    pac_request=True,
+                    expect_pac=expect_pac,
+                    pac_request=pac_request,
                     pac_options=pac_options,
+                    fast_ap_options=fast_ap_options,
+                    strict_edata_checking=strict_edata_checking,
                     expect_edata=expect_edata)
             else:  # KRB_TGS_REP
                 kdc_exchange_dict = self.tgs_exchange_dict(
@@ -1441,22 +1778,37 @@ class FAST_Tests(KDCBaseTest):
                     kdc_options=kdc_options,
                     inner_req=inner_req,
                     outer_req=outer_req,
-                    pac_request=None,
+                    expect_pac=expect_pac,
+                    pac_request=pac_request,
                     pac_options=pac_options,
+                    fast_ap_options=fast_ap_options,
+                    strict_edata_checking=strict_edata_checking,
                     expect_edata=expect_edata)
 
             repeat = kdc_dict.pop('repeat', 1)
             for _ in range(repeat):
-                rep = self._generic_kdc_exchange(kdc_exchange_dict,
-                                                 cname=cname,
-                                                 realm=crealm,
-                                                 sname=sname,
-                                                 etypes=etypes)
+                rep = self._generic_kdc_exchange(
+                    kdc_exchange_dict,
+                    cname=cname,
+                    realm=crealm,
+                    sname=sname,
+                    etypes=etypes,
+                    EncAuthorizationData=enc_auth_data,
+                    EncAuthorizationData_key=enc_auth_data_key,
+                    EncAuthorizationData_usage=enc_auth_data_usage)
                 if len(expected_error_mode) == 0:
                     self.check_reply(rep, rep_type)
 
                     fast_cookie = None
                     preauth_etype_info2 = None
+
+                    # Check whether the ticket contains a PAC.
+                    ticket = kdc_exchange_dict['rep_ticket_creds']
+                    pac = self.get_ticket_pac(ticket, expect_pac=expect_pac)
+                    if expect_pac:
+                        self.assertIsNotNone(pac)
+                    else:
+                        self.assertIsNone(pac)
                 else:
                     self.check_error_rep(rep, expected_error_mode)
 
@@ -1475,6 +1827,38 @@ class FAST_Tests(KDCBaseTest):
             # Ensure we used all the parameters given to us.
             self.assertEqual({}, kdc_dict)
 
+    def generate_enc_pa_rep_padata(self,
+                                   kdc_exchange_dict,
+                                   callback_dict,
+                                   req_body):
+        padata = self.PA_DATA_create(PADATA_REQ_ENC_PA_REP, b'')
+
+        return [padata], req_body
+
+    def generate_enc_pa_rep_challenge_padata(self,
+                                             kdc_exchange_dict,
+                                             callback_dict,
+                                             req_body):
+        padata, req_body = self.generate_enc_challenge_padata(kdc_exchange_dict,
+                                                              callback_dict,
+                                                              req_body)
+
+        padata.append(self.PA_DATA_create(PADATA_REQ_ENC_PA_REP, b''))
+
+        return padata, req_body
+
+    def generate_enc_pa_rep_timestamp_padata(self,
+                                             kdc_exchange_dict,
+                                             callback_dict,
+                                             req_body):
+        padata, req_body = self.generate_enc_timestamp_padata(kdc_exchange_dict,
+                                                              callback_dict,
+                                                              req_body)
+
+        padata.append(self.PA_DATA_create(PADATA_REQ_ENC_PA_REP, b''))
+
+        return padata, req_body
+
     def generate_fast_armor_auth_data(self):
         auth_data = self.AuthorizationData_create(AD_FX_FAST_ARMOR, b'')
 
@@ -1485,8 +1869,8 @@ class FAST_Tests(KDCBaseTest):
 
         return auth_data
 
-    def gen_tgt_fast_armor_auth_data(self):
-        user_tgt = self.get_user_tgt()
+    def gen_tgt_fast_armor_auth_data(self, opts):
+        user_tgt = self.get_user_tgt(opts)
 
         auth_data = self.generate_fast_armor_auth_data()
 
@@ -1530,37 +1914,57 @@ class FAST_Tests(KDCBaseTest):
         self.assertTrue(
             security.KERB_ENCTYPE_CLAIMS_SUPPORTED & krbtgt_etypes)
 
-    def get_mach_tgt(self):
-        if self.mach_tgt is None:
-            mach_creds = self.get_mach_creds()
-            type(self).mach_tgt = self.get_tgt(mach_creds)
+    def get_mach_tgt(self, opts):
+        if opts is None:
+            opts = {}
+        mach_creds = self.get_cached_creds(
+            account_type=self.AccountType.COMPUTER,
+            opts={
+                **opts,
+                'fast_support': True,
+                'supported_enctypes': (
+                    security.KERB_ENCTYPE_RC4_HMAC_MD5 |
+                    security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK
+                ),
+            })
+        return self.get_tgt(mach_creds)
 
-        return self.mach_tgt
+    def get_user_tgt(self, opts):
+        user_creds = self.get_cached_creds(
+            account_type=self.AccountType.USER,
+            opts=opts)
+        return self.get_tgt(user_creds)
 
-    def get_user_tgt(self):
-        if self.user_tgt is None:
-            user_creds = self.get_client_creds()
-            type(self).user_tgt = self.get_tgt(user_creds)
+    def get_user_service_ticket(self, opts):
+        user_tgt = self.get_user_tgt(opts)
+        service_creds = self.get_service_creds()
+        return self.get_service_ticket(user_tgt, service_creds)
 
-        return self.user_tgt
+    def get_mach_service_ticket(self, opts):
+        mach_tgt = self.get_mach_tgt(opts)
+        service_creds = self.get_service_creds()
+        return self.get_service_ticket(mach_tgt, service_creds)
 
-    def get_user_service_ticket(self):
-        if self.user_service_ticket is None:
-            user_tgt = self.get_user_tgt()
-            service_creds = self.get_service_creds()
-            type(self).user_service_ticket = (
-                self.get_service_ticket(user_tgt, service_creds))
+    def get_service_ticket_invalid_checksum(self, opts):
+        ticket = self.get_user_service_ticket(opts)
 
-        return self.user_service_ticket
+        krbtgt_creds = self.get_krbtgt_creds()
+        krbtgt_key = self.TicketDecryptionKey_from_creds(krbtgt_creds)
 
-    def get_mach_service_ticket(self):
-        if self.mach_service_ticket is None:
-            mach_tgt = self.get_mach_tgt()
-            service_creds = self.get_service_creds()
-            type(self).mach_service_ticket = (
-                self.get_service_ticket(mach_tgt, service_creds))
+        zeroed_key = ZeroedChecksumKey(krbtgt_key.key,
+                                       krbtgt_key.kvno)
 
-        return self.mach_service_ticket
+        server_key = ticket.decryption_key
+        checksum_keys = {
+            krb5pac.PAC_TYPE_SRV_CHECKSUM: server_key,
+            krb5pac.PAC_TYPE_KDC_CHECKSUM: krbtgt_key,
+            krb5pac.PAC_TYPE_TICKET_CHECKSUM: zeroed_key,
+        }
+
+        return self.modified_ticket(
+            ticket,
+            checksum_keys=checksum_keys,
+            include_checksums={krb5pac.PAC_TYPE_TICKET_CHECKSUM: True})
 
 
 if __name__ == "__main__":

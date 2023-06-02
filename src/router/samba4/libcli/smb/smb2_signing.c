@@ -718,7 +718,7 @@ NTSTATUS smb2_signing_check_pdu(struct smb2_signing_key *signing_key,
 		return status;
 	}
 
-	if (memcmp_const_time(res, sig, 16) != 0) {
+	if (!mem_equal_const_time(res, sig, 16)) {
 		DEBUG(0,("Bad SMB2 (sign_algo_id=%u) signature for message\n",
 			 (unsigned)sign_algo_id));
 		dump_data(0, sig, 16);
@@ -986,9 +986,11 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 		}
 
 		for (i = 1; i < count; i++) {
-			memcpy(ptext + len,
-			       vector[i].iov_base,
-			       vector[i].iov_len);
+			if (vector[i].iov_base != NULL) {
+				memcpy(ptext + len,
+				       vector[i].iov_base,
+				       vector[i].iov_len);
+			}
 
 			len += vector[i].iov_len;
 			if (len > ptext_size) {
@@ -1018,9 +1020,11 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 
 		len = 0;
 		for (i = 1; i < count; i++) {
-			memcpy(vector[i].iov_base,
-			       ctext + len,
-			       vector[i].iov_len);
+			if (vector[i].iov_base != NULL) {
+				memcpy(vector[i].iov_base,
+				       ctext + len,
+				       vector[i].iov_len);
+			}
 
 			len += vector[i].iov_len;
 		}
@@ -1247,9 +1251,31 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 						ctext_size,
 						ptext,
 						&ptext_size);
-		if (rc < 0 || ptext_size != m_total) {
+		if (rc < 0) {
 			TALLOC_FREE(ptext);
 			TALLOC_FREE(ctext);
+			status = gnutls_error_to_ntstatus(rc, NT_STATUS_INTERNAL_ERROR);
+			goto out;
+		}
+#ifdef HAVE_GNUTLS_AEAD_CIPHER_DECRYPT_PTEXT_LEN_BUG
+		/*
+		 * Note that gnutls before 3.5.2 had a bug and returned
+		 * *ptext_len = ctext_len, instead of
+		 * *ptext_len = ctext_len - tag_size
+		 */
+		if (ptext_size != ctext_size) {
+			TALLOC_FREE(ptext);
+			TALLOC_FREE(ctext);
+			rc = GNUTLS_E_SHORT_MEMORY_BUFFER;
+			status = gnutls_error_to_ntstatus(rc, NT_STATUS_INTERNAL_ERROR);
+			goto out;
+		}
+		ptext_size -= tag_size;
+#endif /* HAVE_GNUTLS_AEAD_CIPHER_DECRYPT_PTEXT_LEN_BUG */
+		if (ptext_size != m_total) {
+			TALLOC_FREE(ptext);
+			TALLOC_FREE(ctext);
+			rc = GNUTLS_E_SHORT_MEMORY_BUFFER;
 			status = gnutls_error_to_ntstatus(rc, NT_STATUS_INTERNAL_ERROR);
 			goto out;
 		}

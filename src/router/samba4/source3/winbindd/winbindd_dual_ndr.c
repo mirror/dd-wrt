@@ -35,6 +35,7 @@
 #include "rpc_server/rpc_config.h"
 #include "rpc_server/rpc_server.h"
 #include "rpc_dce.h"
+#include "lib/tsocket/tsocket.h"
 
 struct wbint_bh_state {
 	struct winbindd_domain *domain;
@@ -328,27 +329,17 @@ static NTSTATUS make_internal_ncacn_conn(TALLOC_CTX *mem_ctx,
 				struct dcerpc_ncacn_conn **_out)
 {
 	struct dcerpc_ncacn_conn *ncacn_conn = NULL;
-	NTSTATUS status;
 
 	ncacn_conn = talloc_zero(mem_ctx, struct dcerpc_ncacn_conn);
 	if (ncacn_conn == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	ncacn_conn->p = talloc_zero(ncacn_conn, struct pipes_struct);
-	if (ncacn_conn->p == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto fail;
-	}
-	ncacn_conn->p->mem_ctx = mem_ctx;
+	ncacn_conn->p.mem_ctx = mem_ctx;
 
 	*_out = ncacn_conn;
 
 	return NT_STATUS_OK;
-
-fail:
-	talloc_free(ncacn_conn);
-	return status;
 }
 
 static NTSTATUS find_ncalrpc_default_endpoint(struct dcesrv_context *dce_ctx,
@@ -369,6 +360,16 @@ static NTSTATUS find_ncalrpc_default_endpoint(struct dcesrv_context *dce_ctx,
 	 * with and without endpoint
 	 */
 	status = dcerpc_parse_binding(tmp_ctx, "ncalrpc:", &binding);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto out;
+	}
+
+	status = dcesrv_find_endpoint(dce_ctx, binding, ep);
+	if (NT_STATUS_IS_OK(status)) {
+		goto out;
+	}
+
+	status = dcerpc_parse_binding(tmp_ctx, "ncalrpc:[WINBIND]", &binding);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}
@@ -422,7 +423,6 @@ static NTSTATUS make_internal_dcesrv_connection(TALLOC_CTX *mem_ctx,
 		status = NT_STATUS_NO_MEMORY;
 		goto fail;
 	}
-	conn->default_auth_state->session_info = ncacn_conn->session_info;
 	conn->default_auth_state->auth_finished = true;
 
 	context = talloc_zero(conn, struct dcesrv_connection_context);
@@ -448,6 +448,55 @@ static NTSTATUS make_internal_dcesrv_connection(TALLOC_CTX *mem_ctx,
 fail:
 	talloc_free(conn);
 	return status;
+}
+
+static NTSTATUS set_remote_addresses(struct dcesrv_connection *conn,
+				     int sock)
+{
+	struct sockaddr_storage st = { 0 };
+	struct sockaddr *sar = (struct sockaddr *)&st;
+	struct tsocket_address *remote = NULL;
+	struct tsocket_address *local = NULL;
+	socklen_t sa_len = sizeof(st);
+	NTSTATUS status;
+	int ret;
+
+	ZERO_STRUCT(st);
+	ret = getpeername(sock, sar, &sa_len);
+	if (ret != 0) {
+		status = map_nt_error_from_unix(ret);
+		DBG_ERR("getpeername failed: %s", nt_errstr(status));
+		return status;
+	}
+
+	ret = tsocket_address_bsd_from_sockaddr(conn, sar, sa_len, &remote);
+	if (ret != 0) {
+		status = map_nt_error_from_unix(ret);
+		DBG_ERR("tsocket_address_bsd_from_sockaddr failed: %s",
+			nt_errstr(status));
+		return status;
+	}
+
+	ZERO_STRUCT(st);
+	ret = getsockname(sock, sar, &sa_len);
+	if (ret != 0) {
+		status = map_nt_error_from_unix(ret);
+		DBG_ERR("getsockname failed: %s", nt_errstr(status));
+		return status;
+	}
+
+	ret = tsocket_address_bsd_from_sockaddr(conn, sar, sa_len, &local);
+	if (ret != 0) {
+		status = map_nt_error_from_unix(ret);
+		DBG_ERR("tsocket_address_bsd_from_sockaddr failed: %s",
+			nt_errstr(status));
+		return status;
+	}
+
+	conn->local_address = talloc_move(conn, &local);
+	conn->remote_address = talloc_move(conn, &remote);
+
+	return NT_STATUS_OK;
 }
 
 /* initialise a wbint binding handle */
@@ -507,6 +556,11 @@ enum winbindd_result winbindd_dual_ndrcmd(struct winbindd_domain *domain,
 						 &ndr_table_winbind,
 						 ncacn_conn,
 						 &dcesrv_conn);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto out;
+	}
+
+	status = set_remote_addresses(dcesrv_conn, state->sock);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto out;
 	}

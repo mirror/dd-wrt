@@ -18,21 +18,17 @@
 */
 
 /* key and data in the connections database - used in smbstatus and smbd */
-struct connections_key {
-	struct server_id pid;
-	int cnum;
-	fstring name;
-};
 
 struct connections_data {
 	struct server_id pid;
 	int cnum;
+	uint32_t sess_id;
 	uid_t uid;
 	gid_t gid;
 	fstring servicename;
 	fstring addr;
 	fstring machine;
-	time_t start;
+	NTTIME start;
 	uint8_t encryption_flags;
 	uint16_t cipher;
 	uint16_t dialect;
@@ -42,7 +38,6 @@ struct connections_data {
 
 /* The following definitions come from lib/conn_tdb.c  */
 
-int connections_forall_read(int (*fn)(const struct connections_key *key,
-				      const struct connections_data *data,
+int connections_forall_read(int (*fn)(const struct connections_data *data,
 				      void *private_data),
 			    void *private_data);

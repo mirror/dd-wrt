@@ -19,6 +19,7 @@
 import shlex
 import socket
 from samba.dcerpc import dnsserver, dnsp
+from samba import WERRORError, werror
 
 # Note: these are not quite the same as similar looking classes in
 # provision/sambadns.py -- those ones are based on
@@ -296,7 +297,7 @@ def flag_from_string(rec_type):
     rtype = rec_type.upper()
     try:
         return getattr(dnsp, 'DNS_TYPE_' + rtype)
-    except AttributeError:
+    except AttributeError as e:
         raise DNSParseError('Unknown type of DNS record %s' % rec_type) from e
 
 

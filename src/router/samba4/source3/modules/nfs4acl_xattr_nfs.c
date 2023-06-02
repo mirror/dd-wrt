@@ -351,7 +351,7 @@ static bool create_special_id(TALLOC_CTX *mem_ctx,
 	char *s = talloc_strdup(mem_ctx, id);
 
 	if (s == NULL) {
-		DBG_ERR("talloc_memdup failed\n");
+		DBG_ERR("talloc_strdup failed\n");
 		return false;
 	}
 	nace->who.utf8string_val = s;
@@ -874,6 +874,7 @@ NTSTATUS nfs4acl_nfs_blob_to_smb4(struct vfs_handle_struct *handle,
 }
 
 #else /* !HAVE_RPC_XDR_H */
+#include "nfs4_acls.h"
 #include "nfs4acl_xattr_nfs.h"
 NTSTATUS nfs4acl_nfs_blob_to_smb4(struct vfs_handle_struct *handle,
 				  TALLOC_CTX *mem_ctx,

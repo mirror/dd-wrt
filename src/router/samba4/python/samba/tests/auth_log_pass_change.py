@@ -26,7 +26,6 @@ import samba.tests.auth_log_base
 from samba.tests import delete_force
 from samba.net import Net
 import samba
-from subprocess import call
 from ldb import LdbError
 from samba.tests.password_test import PasswordCommon
 from samba.dcerpc.windows_event_ids import (
@@ -73,6 +72,18 @@ class AuthLogPassChangeTests(samba.tests.auth_log_base.AuthLogTestBase):
 
         # discard any auth log messages for the password setup
         self.discardMessages()
+        gnutls_pbkdf2_support = samba.tests.env_get_var_value(
+            'GNUTLS_PBKDF2_SUPPORT',
+            allow_missing=True)
+        if gnutls_pbkdf2_support is None:
+            gnutls_pbkdf2_support = '0'
+        self.gnutls_pbkdf2_support = bool(int(gnutls_pbkdf2_support))
+
+    def _authDescription(self):
+        if self.gnutls_pbkdf2_support:
+            return "samr_ChangePasswordUser4"
+        else:
+            return "samr_ChangePasswordUser3"
 
     def tearDown(self):
         super(AuthLogPassChangeTests, self).tearDown()
@@ -84,7 +95,7 @@ class AuthLogPassChangeTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["serviceDescription"] ==
                         "SAMR Password Change") and
                     (msg["Authentication"]["authDescription"] ==
-                        "samr_ChangePasswordUser3") and
+                        self._authDescription()) and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_SUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -110,7 +121,7 @@ class AuthLogPassChangeTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["serviceDescription"] ==
                         "SAMR Password Change") and
                     (msg["Authentication"]["authDescription"] ==
-                        "samr_ChangePasswordUser3") and
+                        self._authDescription()) and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -142,7 +153,7 @@ class AuthLogPassChangeTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["serviceDescription"] ==
                         "SAMR Password Change") and
                     (msg["Authentication"]["authDescription"] ==
-                        "samr_ChangePasswordUser3") and
+                        self._authDescription()) and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -175,7 +186,7 @@ class AuthLogPassChangeTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["serviceDescription"] ==
                         "SAMR Password Change") and
                     (msg["Authentication"]["authDescription"] ==
-                        "samr_ChangePasswordUser3") and
+                        self._authDescription()) and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -197,35 +208,6 @@ class AuthLogPassChangeTests(samba.tests.auth_log_base.AuthLogTestBase):
         self.assertEqual(True, exception_thrown,
                           "Expected exception not thrown")
 
-        self.assertTrue(self.waitForMessages(isLastExpectedMessage),
-                        "Did not receive the expected message")
-
-    # net rap password changes are broken, but they trigger enough of the
-    # server side behaviour to exercise the code paths of interest.
-    # if we used the real password it would be too long and does not hash
-    # correctly, so we just check it triggers the wrong password path.
-    def test_rap_change_password(self):
-        def isLastExpectedMessage(msg):
-            return ((msg["type"] == "Authentication") and
-                    (msg["Authentication"]["serviceDescription"] ==
-                        "SAMR Password Change") and
-                    (msg["Authentication"]["status"] ==
-                        "NT_STATUS_WRONG_PASSWORD") and
-                    (msg["Authentication"]["authDescription"] ==
-                        "OemChangePasswordUser2") and
-                    (msg["Authentication"]["eventId"] ==
-                        EVT_ID_UNSUCCESSFUL_LOGON) and
-                    (msg["Authentication"]["logonType"] ==
-                        EVT_LOGON_NETWORK))
-
-        username = os.environ["USERNAME"]
-        server = os.environ["SERVER"]
-        password = os.environ["PASSWORD"]
-        server_param = "--server=%s" % server
-        creds = "-U%s%%%s" % (username, password)
-        call(["bin/net", "rap", server_param,
-              "password", USER_NAME, "notMyPassword", "notGoingToBeMyPassword",
-              server, creds, "--option=client ipc max protocol=nt1"])
         self.assertTrue(self.waitForMessages(isLastExpectedMessage),
                         "Did not receive the expected message")
 

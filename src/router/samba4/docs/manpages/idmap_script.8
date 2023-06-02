@@ -2,12 +2,12 @@
 .\"     Title: idmap_script
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "IDMAP_SCRIPT" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "IDMAP_SCRIPT" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -47,7 +47,9 @@ This option can be used to configure an external program for performing id mappi
 .RE
 .SH "IDMAP SCRIPT"
 .PP
-The tdb2 idmap backend supports an external program for performing id mappings through the smb\&.conf option
+The tdb2 idmap backend supports an external program for performing id mappings through the
+${prefix}/etc/smb\&.conf
+option
 \fIidmap config * : script\fR
 or its deprecated legacy form
 \fIidmap : script\fR\&.

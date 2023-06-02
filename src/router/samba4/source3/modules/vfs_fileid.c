@@ -35,18 +35,28 @@ struct fileid_mount_entry {
 	uint64_t devid;
 };
 
+struct fileid_nolock_inode {
+	dev_t dev;
+	ino_t ino;
+};
+
 struct fileid_handle_data {
-	uint64_t (*device_mapping_fn)(struct fileid_handle_data *data,
-				      const SMB_STRUCT_STAT *sbuf);
-	uint64_t (*extid_mapping_fn)(struct fileid_handle_data *data,
-				      const SMB_STRUCT_STAT *sbuf);
+	struct vfs_handle_struct *handle;
+	struct file_id (*mapping_fn)(struct fileid_handle_data *data,
+				     const SMB_STRUCT_STAT *sbuf);
 	char **fstype_deny_list;
 	char **fstype_allow_list;
 	char **mntdir_deny_list;
 	char **mntdir_allow_list;
 	unsigned num_mount_entries;
 	struct fileid_mount_entry *mount_entries;
-	ino_t nolockinode;
+	struct {
+		bool force_all_inodes;
+		bool force_all_dirs;
+		uint64_t extid;
+		size_t num_inodes;
+		struct fileid_nolock_inode *inodes;
+	} nolock;
 };
 
 /* check if a mount entry is allowed based on fstype and mount directory */
@@ -212,6 +222,16 @@ static uint64_t fileid_device_mapping_fsname(struct fileid_handle_data *data,
 	return m->devid;
 }
 
+static struct file_id fileid_mapping_fsname(struct fileid_handle_data *data,
+					    const SMB_STRUCT_STAT *sbuf)
+{
+	struct file_id id = { .inode = sbuf->st_ex_ino, };
+
+	id.devid = fileid_device_mapping_fsname(data, sbuf);
+
+	return id;
+}
+
 /* a device mapping using a hostname */
 static uint64_t fileid_device_mapping_hostname(struct fileid_handle_data *data,
 					       const SMB_STRUCT_STAT *sbuf)
@@ -243,16 +263,107 @@ static uint64_t fileid_device_mapping_hostname(struct fileid_handle_data *data,
 	return id;
 }
 
-/* a device mapping using a fsname for files and hostname for dirs */
-static uint64_t fileid_device_mapping_fsname_nodirs(
-	struct fileid_handle_data *data,
-	const SMB_STRUCT_STAT *sbuf)
+static struct file_id fileid_mapping_hostname(struct fileid_handle_data *data,
+					      const SMB_STRUCT_STAT *sbuf)
 {
-	if (S_ISDIR(sbuf->st_ex_mode)) {
-		return fileid_device_mapping_hostname(data, sbuf);
+	struct file_id id = { .inode = sbuf->st_ex_ino, };
+
+	id.devid = fileid_device_mapping_hostname(data, sbuf);
+
+	return id;
+}
+
+static bool fileid_is_nolock_inode(struct fileid_handle_data *data,
+				   const SMB_STRUCT_STAT *sbuf)
+{
+	size_t i;
+
+	if (data->nolock.force_all_inodes) {
+		return true;
 	}
 
-	return fileid_device_mapping_fsname(data, sbuf);
+	if (S_ISDIR(sbuf->st_ex_mode) && data->nolock.force_all_dirs) {
+		return true;
+	}
+
+	/*
+	 * We could make this a binary search over an sorted array,
+	 * but for now we keep things simple.
+	 */
+
+	for (i=0; i < data->nolock.num_inodes; i++) {
+		if (data->nolock.inodes[i].ino != sbuf->st_ex_ino) {
+			continue;
+		}
+
+		if (data->nolock.inodes[i].dev == 0) {
+			/*
+			 * legacy "fileid:nolockinode"
+			 * handling ignoring dev
+			 */
+			return true;
+		}
+
+		if (data->nolock.inodes[i].dev != sbuf->st_ex_dev) {
+			continue;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+static int fileid_add_nolock_inode(struct fileid_handle_data *data,
+				   const SMB_STRUCT_STAT *sbuf)
+{
+	bool exists = fileid_is_nolock_inode(data, sbuf);
+	struct fileid_nolock_inode *inodes = NULL;
+
+	if (exists) {
+		return 0;
+	}
+
+	inodes = talloc_realloc(data, data->nolock.inodes,
+				struct fileid_nolock_inode,
+				data->nolock.num_inodes + 1);
+	if (inodes == NULL) {
+		return -1;
+	}
+
+	inodes[data->nolock.num_inodes] = (struct fileid_nolock_inode) {
+		.dev = sbuf->st_ex_dev,
+		.ino = sbuf->st_ex_ino,
+	};
+	data->nolock.inodes = inodes;
+	data->nolock.num_inodes += 1;
+
+	return 0;
+}
+
+static uint64_t fileid_mapping_nolock_extid(uint64_t max_slots)
+{
+	char buf[8+4+HOST_NAME_MAX+1] = { 0, };
+	uint64_t slot = 0;
+	uint64_t id;
+	int rc;
+
+	if (max_slots > 1) {
+		slot = getpid() % max_slots;
+	}
+
+	PUSH_LE_U64(buf, 0, slot);
+	PUSH_LE_U32(buf, 8, get_my_vnn());
+
+	rc = gethostname(&buf[12], HOST_NAME_MAX+1);
+	if (rc != 0) {
+		DBG_ERR("gethostname failed\n");
+		return UINT64_MAX;
+	}
+
+	id = fileid_uint64_hash((uint8_t *)buf, ARRAY_SIZE(buf));
+
+	return id;
 }
 
 /* device mapping functions using a fsid */
@@ -282,44 +393,68 @@ static uint64_t fileid_device_mapping_fsid(struct fileid_handle_data *data,
 	return m->devid;
 }
 
-static uint64_t fileid_extid_mapping_zero(struct fileid_handle_data *data,
+static struct file_id fileid_mapping_fsid(struct fileid_handle_data *data,
 					  const SMB_STRUCT_STAT *sbuf)
 {
-	return 0;
+	struct file_id id = { .inode = sbuf->st_ex_ino, };
+
+	id.devid = fileid_device_mapping_fsid(data, sbuf);
+
+	return id;
 }
 
-static uint64_t fileid_extid_mapping_pid(struct fileid_handle_data *data,
-					 const SMB_STRUCT_STAT *sbuf)
+static struct file_id fileid_mapping_next_module(struct fileid_handle_data *data,
+						 const SMB_STRUCT_STAT *sbuf)
 {
-	return getpid();
+	return SMB_VFS_NEXT_FILE_ID_CREATE(data->handle, sbuf);
 }
 
 static int get_connectpath_ino(struct vfs_handle_struct *handle,
-			       ino_t *ino)
+			       const char *path,
+			       SMB_STRUCT_STAT *psbuf)
 {
+	TALLOC_CTX *frame = talloc_stackframe();
 	struct smb_filename *fname = NULL;
+	const char *fullpath = NULL;
 	int ret;
 
-	fname = synthetic_smb_fname(talloc_tos(),
-				    handle->conn->connectpath,
+	if (path[0] == '/') {
+		fullpath = path;
+	} else {
+		fullpath = talloc_asprintf(frame,
+					   "%s/%s",
+					   handle->conn->connectpath,
+					   path);
+		if (fullpath == NULL) {
+			DBG_ERR("talloc_asprintf() failed\n");
+			TALLOC_FREE(frame);
+			return -1;
+		}
+	}
+
+	fname = synthetic_smb_fname(frame,
+				    fullpath,
 				    NULL,
 				    NULL,
 				    0,
 				    0);
 	if (fname == NULL) {
-		DBG_ERR("synthetic_smb_fname failed\n");
+		DBG_ERR("synthetic_smb_fname(%s) failed - %s\n",
+			fullpath, strerror(errno));
+		TALLOC_FREE(frame);
 		return -1;
 	}
 
 	ret = SMB_VFS_NEXT_STAT(handle, fname);
 	if (ret != 0) {
 		DBG_ERR("stat failed for %s with %s\n",
-			handle->conn->connectpath, strerror(errno));
-		TALLOC_FREE(fname);
+			fullpath, strerror(errno));
+		TALLOC_FREE(frame);
 		return -1;
 	}
-	*ino = fname->st.st_ex_ino;
-	TALLOC_FREE(fname);
+	*psbuf = fname->st;
+
+	TALLOC_FREE(frame);
 
 	return 0;
 }
@@ -333,6 +468,11 @@ static int fileid_connect(struct vfs_handle_struct *handle,
 	const char **fstype_allow_list = NULL;
 	const char **mntdir_deny_list = NULL;
 	const char **mntdir_allow_list = NULL;
+	ino_t nolockinode;
+	uint64_t max_slots = 0;
+	bool rootdir_nolock = false;
+	const char **nolock_paths = NULL;
+	size_t i;
 	int saved_errno;
 	int ret = SMB_VFS_NEXT_CONNECT(handle, service, user);
 
@@ -340,7 +480,7 @@ static int fileid_connect(struct vfs_handle_struct *handle,
 		return ret;
 	}
 
-	data = talloc_zero(handle->conn, struct fileid_handle_data);
+	data = talloc_zero(handle, struct fileid_handle_data);
 	if (!data) {
 		saved_errno = errno;
 		SMB_VFS_NEXT_DISCONNECT(handle);
@@ -348,8 +488,7 @@ static int fileid_connect(struct vfs_handle_struct *handle,
 		errno = saved_errno;
 		return -1;
 	}
-
-	data->nolockinode = 0;
+	data->handle = handle;
 
 	/*
 	 * "fileid:mapping" is only here as fallback for old setups
@@ -362,39 +501,24 @@ static int fileid_connect(struct vfs_handle_struct *handle,
 					 "fileid", "algorithm",
 					 algorithm);
 	if (strcmp("fsname", algorithm) == 0) {
-		data->device_mapping_fn	= fileid_device_mapping_fsname;
-		data->extid_mapping_fn = fileid_extid_mapping_zero;
+		data->mapping_fn = fileid_mapping_fsname;
 	} else if (strcmp("fsname_nodirs", algorithm) == 0) {
-		data->device_mapping_fn = fileid_device_mapping_fsname_nodirs;
-		data->extid_mapping_fn = fileid_extid_mapping_zero;
+		data->mapping_fn = fileid_mapping_fsname;
+		data->nolock.force_all_dirs = true;
 	} else if (strcmp("fsid", algorithm) == 0) {
-		data->device_mapping_fn	= fileid_device_mapping_fsid;
-		data->extid_mapping_fn = fileid_extid_mapping_zero;
+		data->mapping_fn = fileid_mapping_fsid;
 	} else if (strcmp("hostname", algorithm) == 0) {
-		data->device_mapping_fn = fileid_device_mapping_hostname;
-		data->extid_mapping_fn = fileid_extid_mapping_zero;
+		data->mapping_fn = fileid_mapping_hostname;
+		data->nolock.force_all_inodes = true;
 	} else if (strcmp("fsname_norootdir", algorithm) == 0) {
-		data->device_mapping_fn	= fileid_device_mapping_fsname;
-		data->extid_mapping_fn = fileid_extid_mapping_zero;
-
-		ret = get_connectpath_ino(handle, &data->nolockinode);
-		if (ret != 0) {
-			saved_errno = errno;
-			SMB_VFS_NEXT_DISCONNECT(handle);
-			errno = saved_errno;
-			return -1;
-		}
+		data->mapping_fn = fileid_mapping_fsname;
+		rootdir_nolock = true;
 	} else if (strcmp("fsname_norootdir_ext", algorithm) == 0) {
-		data->device_mapping_fn	= fileid_device_mapping_fsname;
-		data->extid_mapping_fn = fileid_extid_mapping_pid;
-
-		ret = get_connectpath_ino(handle, &data->nolockinode);
-		if (ret != 0) {
-			saved_errno = errno;
-			SMB_VFS_NEXT_DISCONNECT(handle);
-			errno = saved_errno;
-			return -1;
-		}
+		data->mapping_fn = fileid_mapping_fsname;
+		rootdir_nolock = true;
+		max_slots = UINT64_MAX;
+	} else if (strcmp("next_module", algorithm) == 0) {
+		data->mapping_fn	= fileid_mapping_next_module;
 	} else {
 		SMB_VFS_NEXT_DISCONNECT(handle);
 		DEBUG(0,("fileid_connect(): unknown algorithm[%s]\n", algorithm));
@@ -453,15 +577,87 @@ static int fileid_connect(struct vfs_handle_struct *handle,
 		}
 	}
 
-	data->nolockinode = lp_parm_ulong(SNUM(handle->conn), "fileid",
-					  "nolockinode", data->nolockinode);
+	data->nolock.force_all_inodes = lp_parm_bool(SNUM(handle->conn),
+						     "fileid", "nolock_all_inodes",
+						     data->nolock.force_all_inodes);
+	data->nolock.force_all_dirs = lp_parm_bool(SNUM(handle->conn),
+						   "fileid", "nolock_all_dirs",
+						   data->nolock.force_all_dirs);
+
+	max_slots = lp_parm_ulonglong(SNUM(handle->conn),
+				      "fileid", "nolock_max_slots",
+				      max_slots);
+	max_slots = MAX(max_slots, 1);
+
+	data->nolock.extid = fileid_mapping_nolock_extid(max_slots);
+
+	nolockinode = lp_parm_ulong(SNUM(handle->conn), "fileid", "nolockinode", 0);
+	if (nolockinode != 0) {
+		SMB_STRUCT_STAT tmpsbuf = { .st_ex_ino = nolockinode, };
+
+		ret = fileid_add_nolock_inode(data, &tmpsbuf);
+		if (ret != 0) {
+			saved_errno = errno;
+			SMB_VFS_NEXT_DISCONNECT(handle);
+			errno = saved_errno;
+			return -1;
+		}
+	}
+
+	if (rootdir_nolock) {
+		SMB_STRUCT_STAT rootdirsbuf;
+
+		ret = get_connectpath_ino(handle, ".", &rootdirsbuf);
+		if (ret != 0) {
+			saved_errno = errno;
+			SMB_VFS_NEXT_DISCONNECT(handle);
+			errno = saved_errno;
+			return -1;
+		}
+
+		ret = fileid_add_nolock_inode(data, &rootdirsbuf);
+		if (ret != 0) {
+			saved_errno = errno;
+			SMB_VFS_NEXT_DISCONNECT(handle);
+			errno = saved_errno;
+			return -1;
+		}
+	}
+
+	nolock_paths = lp_parm_string_list(SNUM(handle->conn), "fileid", "nolock_paths", NULL);
+	for (i = 0; nolock_paths != NULL && nolock_paths[i] != NULL; i++) {
+		SMB_STRUCT_STAT tmpsbuf;
+
+		ret = get_connectpath_ino(handle, nolock_paths[i], &tmpsbuf);
+		if (ret == -1 && errno == ENOENT) {
+			DBG_ERR("ignoring non existing nolock_paths[%zu]='%s'\n",
+				i, nolock_paths[i]);
+			continue;
+		}
+		if (ret != 0) {
+			saved_errno = errno;
+			SMB_VFS_NEXT_DISCONNECT(handle);
+			errno = saved_errno;
+			return -1;
+		}
+
+		ret = fileid_add_nolock_inode(data, &tmpsbuf);
+		if (ret != 0) {
+			saved_errno = errno;
+			SMB_VFS_NEXT_DISCONNECT(handle);
+			errno = saved_errno;
+			return -1;
+		}
+		DBG_DEBUG("Adding nolock_paths[%zu]='%s'\n",
+			  i, nolock_paths[i]);
+	}
 
 	SMB_VFS_HANDLE_SET_DATA(handle, data, NULL,
 				struct fileid_handle_data,
 				return -1);
 
-	DBG_DEBUG("connect to service[%s] with algorithm[%s] nolockinode %lli\n",
-		  service, algorithm, (long long) data->nolockinode);
+	DBG_DEBUG("connect to service[%s] with algorithm[%s] nolock.inodes %zu\n",
+		  service, algorithm, data->nolock.num_inodes);
 
 	return 0;
 }
@@ -481,25 +677,16 @@ static struct file_id fileid_file_id_create(struct vfs_handle_struct *handle,
 					    const SMB_STRUCT_STAT *sbuf)
 {
 	struct fileid_handle_data *data;
-	struct file_id id;
-	uint64_t devid;
-
-	ZERO_STRUCT(id);
+	struct file_id id = { .inode = 0, };
 
 	SMB_VFS_HANDLE_GET_DATA(handle, data,
 				struct fileid_handle_data,
 				return id);
 
-	if ((data->nolockinode != 0) &&
-	    (sbuf->st_ex_ino == data->nolockinode)) {
-		devid = fileid_device_mapping_hostname(data, sbuf);
-		id.extid = data->extid_mapping_fn(data, sbuf);
-	} else {
-		devid = data->device_mapping_fn(data, sbuf);
+	id = data->mapping_fn(data, sbuf);
+	if (id.extid == 0 && fileid_is_nolock_inode(data, sbuf)) {
+		id.extid = data->nolock.extid;
 	}
-
-	id.inode	= sbuf->st_ex_ino;
-	id.devid        = devid;
 
 	DBG_DEBUG("Returning dev [%jx] inode [%jx] extid [%jx]\n",
 		  (uintmax_t)id.devid, (uintmax_t)id.inode, (uintmax_t)id.extid);

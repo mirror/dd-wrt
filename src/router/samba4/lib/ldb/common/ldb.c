@@ -312,10 +312,7 @@ void ldb_asprintf_errstring(struct ldb_context *ldb, const char *format, ...)
 
 void ldb_reset_err_string(struct ldb_context *ldb)
 {
-	if (ldb->err_string) {
-		talloc_free(ldb->err_string);
-		ldb->err_string = NULL;
-	}
+	TALLOC_FREE(ldb->err_string);
 }
 
 
@@ -1470,6 +1467,10 @@ int ldb_build_search_req_ex(struct ldb_request **ret_req,
 	req->operation = LDB_SEARCH;
 	if (base == NULL) {
 		req->op.search.base = ldb_dn_new(req, ldb, NULL);
+		if (req->op.search.base == NULL) {
+			ldb_oom(ldb);
+			return LDB_ERR_OPERATIONS_ERROR;
+		}
 	} else {
 		req->op.search.base = base;
 	}

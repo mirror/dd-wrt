@@ -283,7 +283,7 @@ static struct ldb_parse_tree *build_equality_operation(
 	value = &el->u.equality.value;
 	length = (add_asterix) ? size + 2 : size + 1;
 	value->data = talloc_zero_array(el, uint8_t, length);
-	if (el == NULL) {
+	if (value->data == NULL) {
 		DBG_ERR("Unable to allocate value->data\n");
 		TALLOC_FREE(el);
 		return NULL;
@@ -292,8 +292,10 @@ static struct ldb_parse_tree *build_equality_operation(
 	value->length = length;
 	if (add_asterix) {
 		value->data[0] = '*';
-		memcpy(&value->data[1], name, size);
-	} else {
+		if (name != NULL) {
+			memcpy(&value->data[1], name, size);
+		}
+	} else if (name != NULL) {
 		memcpy(value->data, name, size);
 	}
 	return el;
@@ -1122,15 +1124,9 @@ WERROR dns_common_replace(struct ldb_context *samdb,
 	}
 
 	if (was_tombstoned || become_tombstoned) {
-		ret = ldb_msg_add_empty(msg, "dNSTombstoned",
-					LDB_FLAG_MOD_REPLACE, NULL);
-		if (ret != LDB_SUCCESS) {
-			werr = DNS_ERR(SERVER_FAILURE);
-			goto exit;
-		}
-
-		ret = ldb_msg_add_fmt(msg, "dNSTombstoned", "%s",
-				      become_tombstoned ? "TRUE" : "FALSE");
+		ret = ldb_msg_append_fmt(msg, LDB_FLAG_MOD_REPLACE,
+					 "dNSTombstoned", "%s",
+					 become_tombstoned ? "TRUE" : "FALSE");
 		if (ret != LDB_SUCCESS) {
 			werr = DNS_ERR(SERVER_FAILURE);
 			goto exit;

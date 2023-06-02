@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    main select loop and event handling
    Copyright (C) Andrew Tridgell 2003
@@ -130,14 +130,12 @@ static void tevent_backend_init(void)
 	tevent_poll_mt_init();
 #if defined(HAVE_EPOLL)
 	tevent_epoll_init();
-#elif defined(HAVE_SOLARIS_PORTS)
-	tevent_port_init();
 #endif
 
 	tevent_standard_init();
 }
 
-_PRIVATE_ const struct tevent_ops *tevent_find_ops_byname(const char *name)
+const struct tevent_ops *tevent_find_ops_byname(const char *name)
 {
 	struct tevent_ops_list *e;
 
@@ -199,6 +197,7 @@ static void tevent_common_wakeup_fini(struct tevent_context *ev);
 static pthread_mutex_t tevent_contexts_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct tevent_context *tevent_contexts = NULL;
 static pthread_once_t tevent_atfork_initialized = PTHREAD_ONCE_INIT;
+static pid_t tevent_cached_global_pid = 0;
 
 static void tevent_atfork_prepare(void)
 {
@@ -263,6 +262,8 @@ static void tevent_atfork_child(void)
 	struct tevent_context *ev;
 	int ret;
 
+	tevent_cached_global_pid = getpid();
+
 	for (ev = DLIST_TAIL(tevent_contexts); ev != NULL;
 	     ev = DLIST_PREV(ev)) {
 		struct tevent_threaded_context *tctx;
@@ -302,9 +303,41 @@ static void tevent_prep_atfork(void)
 	if (ret != 0) {
 		abort();
 	}
+
+	tevent_cached_global_pid = getpid();
 }
 
 #endif
+
+static int tevent_init_globals(void)
+{
+#ifdef HAVE_PTHREAD
+	int ret;
+
+	ret = pthread_once(&tevent_atfork_initialized, tevent_prep_atfork);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
+
+	return 0;
+}
+
+_PUBLIC_ pid_t tevent_cached_getpid(void)
+{
+#ifdef HAVE_PTHREAD
+	tevent_init_globals();
+#ifdef TEVENT_VERIFY_CACHED_GETPID
+	if (tevent_cached_global_pid != getpid()) {
+		tevent_abort(NULL, "tevent_cached_global_pid invalid");
+	}
+#endif
+	if (tevent_cached_global_pid != 0) {
+		return tevent_cached_global_pid;
+	}
+#endif
+	return getpid();
+}
 
 int tevent_common_context_destructor(struct tevent_context *ev)
 {
@@ -434,12 +467,12 @@ static int tevent_common_context_constructor(struct tevent_context *ev)
 {
 	int ret;
 
-#ifdef HAVE_PTHREAD
-
-	ret = pthread_once(&tevent_atfork_initialized, tevent_prep_atfork);
+	ret = tevent_init_globals();
 	if (ret != 0) {
 		return ret;
 	}
+
+#ifdef HAVE_PTHREAD
 
 	ret = pthread_mutex_init(&ev->scheduled_mutex, NULL);
 	if (ret != 0) {
@@ -728,7 +761,7 @@ void tevent_loop_set_nesting_hook(struct tevent_context *ev,
 				  tevent_nesting_hook hook,
 				  void *private_data)
 {
-	if (ev->nesting.hook_fn && 
+	if (ev->nesting.hook_fn &&
 	    (ev->nesting.hook_fn != hook ||
 	     ev->nesting.hook_private != private_data)) {
 		/* the way the nesting hook code is currently written
@@ -754,7 +787,7 @@ static void tevent_abort_nesting(struct tevent_context *ev, const char *location
 }
 
 /*
-  do a single event loop using the events defined in ev 
+  do a single event loop using the events defined in ev
 */
 int _tevent_loop_once(struct tevent_context *ev, const char *location)
 {
@@ -789,6 +822,9 @@ int _tevent_loop_once(struct tevent_context *ev, const char *location)
 	tevent_trace_point_callback(ev, TEVENT_TRACE_BEFORE_LOOP_ONCE);
 	ret = ev->ops->loop_once(ev, location);
 	tevent_trace_point_callback(ev, TEVENT_TRACE_AFTER_LOOP_ONCE);
+
+	/* New event (and request) will always start with call depth 0. */
+	tevent_thread_call_depth_set(0);
 
 	if (ev->nesting.level > 0) {
 		if (ev->nesting.hook_fn) {
@@ -936,7 +972,7 @@ int _tevent_loop_wait(struct tevent_context *ev, const char *location)
 /*
   re-initialise a tevent context. This leaves you with the same
   event context, but all events are wiped and the structure is
-  re-initialised. This is most useful after a fork()  
+  re-initialised. This is most useful after a fork()
 
   zero is returned on success, non-zero on failure
 */

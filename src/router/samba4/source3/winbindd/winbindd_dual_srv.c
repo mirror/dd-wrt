@@ -25,6 +25,7 @@
 #include "winbindd/winbindd_proto.h"
 #include "rpc_client/cli_pipe.h"
 #include "ntdomain.h"
+#include "librpc/rpc/dcesrv_core.h"
 #include "librpc/gen_ndr/ndr_winbind.h"
 #include "librpc/gen_ndr/ndr_winbind_scompat.h"
 #include "../librpc/gen_ndr/ndr_netlogon_c.h"
@@ -39,9 +40,68 @@
 #include "libsmb/dsgetdcname.h"
 #include "lib/global_contexts.h"
 
-void _wbint_Ping(struct pipes_struct *p, struct wbint_Ping *r)
+NTSTATUS _wbint_Ping(struct pipes_struct *p, struct wbint_Ping *r)
 {
 	*r->out.out_data = r->in.in_data;
+	return NT_STATUS_OK;
+}
+
+NTSTATUS _wbint_InitConnection(struct pipes_struct *p,
+			       struct wbint_InitConnection *r)
+{
+	struct winbindd_domain *domain = wb_child_domain();
+
+	if (r->in.dcname != NULL && strlen(r->in.dcname) > 0) {
+		TALLOC_FREE(domain->dcname);
+		domain->dcname = talloc_strdup(domain, r->in.dcname);
+		if (domain->dcname == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+	}
+
+	init_dc_connection(domain, false);
+
+	if (!domain->initialized) {
+		/*
+		 * If we return error here we can't do any cached
+		 * authentication, but we may be in disconnected mode and can't
+		 * initialize correctly. Do what the previous code did and just
+		 * return without initialization, once we go online we'll
+		 * re-initialize.
+		 */
+		DBG_INFO("%s returning without initialization online = %d\n",
+			 domain->name, (int)domain->online);
+	}
+
+	*r->out.name = talloc_strdup(p->mem_ctx, domain->name);
+	if (*r->out.name == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	if (domain->alt_name != NULL) {
+		*r->out.alt_name = talloc_strdup(p->mem_ctx, domain->alt_name);
+		if (*r->out.alt_name == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+	}
+
+	r->out.sid = dom_sid_dup(p->mem_ctx, &domain->sid);
+	if (r->out.sid == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	*r->out.flags = 0;
+	if (domain->native_mode) {
+		*r->out.flags |= WB_DOMINFO_DOMAIN_NATIVE;
+	}
+	if (domain->active_directory) {
+		*r->out.flags |= WB_DOMINFO_DOMAIN_AD;
+	}
+	if (domain->primary) {
+		*r->out.flags |= WB_DOMINFO_DOMAIN_PRIMARY;
+	}
+
+	return NT_STATUS_OK;
 }
 
 bool reset_cm_connection_on_error(struct winbindd_domain *domain,
@@ -781,6 +841,22 @@ NTSTATUS _wbint_ChangeMachineAccount(struct pipes_struct *p,
 		return NT_STATUS_REQUEST_NOT_ACCEPTED;
 	}
 
+	if (r->in.dcname != NULL && r->in.dcname[0] != '\0') {
+		invalidate_cm_connection(domain);
+		TALLOC_FREE(domain->dcname);
+
+		domain->dcname = talloc_strdup(domain, r->in.dcname);
+		if (domain->dcname == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto done;
+		}
+		domain->force_dc = true;
+
+		DBG_NOTICE("attempt connection to change trust account "
+			   "password for %s at %s\n",
+			   domain->name, domain->dcname);
+	}
+
 	status = cm_connect_netlogon_secure(domain,
 					    &netlogon_pipe,
 					    &netlogon_creds_ctx);
@@ -803,9 +879,13 @@ NTSTATUS _wbint_ChangeMachineAccount(struct pipes_struct *p,
 		NT_STATUS_IS_OK(status) ? "changed" : "unchanged"));
 
  done:
-	DEBUG(NT_STATUS_IS_OK(status) ? 5 : 2,
-	      ("Changing the trust account password for domain %s returned %s\n",
-	       domain->name, nt_errstr(status)));
+	DEBUG(NT_STATUS_IS_OK(status) ? 5 :
+	      domain->force_dc ? 0 : 2,
+	      ("Changing the trust account password for domain %s at %s "
+	       "(forced: %s) returned %s\n",
+	       domain->name, domain->dcname, domain->force_dc ? "yes" : "no",
+	       nt_errstr(status)));
+	domain->force_dc = false;
 
 	return status;
 }
@@ -930,12 +1010,17 @@ reconnect:
 NTSTATUS _winbind_SamLogon(struct pipes_struct *p,
 			struct winbind_SamLogon *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
+	const struct tsocket_address *local_address =
+		dcesrv_connection_get_local_address(dcesrv_conn);
+	const struct tsocket_address *remote_address =
+		dcesrv_connection_get_remote_address(dcesrv_conn);
 	struct winbindd_domain *domain;
 	NTSTATUS status;
 	struct netr_IdentityInfo *identity_info = NULL;
-	const uint8_t chal_zero[8] = {0, };
-	const uint8_t *challenge = chal_zero;
 	DATA_BLOB lm_response, nt_response;
+	DATA_BLOB challenge = data_blob_null;
 	uint32_t flags = 0;
 	uint16_t validation_level;
 	union netr_Validation *validation = NULL;
@@ -973,7 +1058,7 @@ NTSTATUS _winbind_SamLogon(struct pipes_struct *p,
 		interactive = true;
 		identity_info = &r->in.logon.password->identity_info;
 
-		challenge = chal_zero;
+		challenge = data_blob_null;
 		lm_response = data_blob_talloc(p->mem_ctx,
 					r->in.logon.password->lmpassword.hash,
 					sizeof(r->in.logon.password->lmpassword.hash));
@@ -991,7 +1076,9 @@ NTSTATUS _winbind_SamLogon(struct pipes_struct *p,
 		interactive = false;
 		identity_info = &r->in.logon.network->identity_info;
 
-		challenge = r->in.logon.network->challenge;
+		challenge = data_blob_talloc(p->mem_ctx,
+					r->in.logon.network->challenge,
+					8);
 		lm_response = data_blob_talloc(p->mem_ctx,
 					r->in.logon.network->lm.data,
 					r->in.logon.network->lm.length);
@@ -1026,8 +1113,8 @@ NTSTATUS _winbind_SamLogon(struct pipes_struct *p,
 				       0,
 				       challenge,
 				       lm_response, nt_response,
-				       p->remote_address,
-				       p->local_address,
+				       remote_address,
+				       local_address,
 				       &r->out.authoritative,
 				       true, /* skip_sam */
 				       &flags,
@@ -1228,9 +1315,9 @@ static WERROR _winbind_LogonControl_TC_VERIFY(struct pipes_struct *p,
 	struct samr_Password *cur_nt_hash = NULL;
 	uint32_t trust_attributes = 0;
 	struct samr_Password new_owf_password = {};
-	int cmp_new = -1;
+	bool cmp_new = false;
 	struct samr_Password old_owf_password = {};
-	int cmp_old = -1;
+	bool cmp_old = false;
 	const struct lsa_TrustDomainInfoInfoEx *local_tdo = NULL;
 	bool fetch_fti = false;
 	struct lsa_ForestTrustInformation *new_fti = NULL;
@@ -1469,13 +1556,13 @@ reconnect:
 		}
 	}
 
-	cmp_new = memcmp(new_owf_password.hash,
-			 cur_nt_hash->hash,
-			 sizeof(cur_nt_hash->hash));
-	cmp_old = memcmp(old_owf_password.hash,
-			 cur_nt_hash->hash,
-			 sizeof(cur_nt_hash->hash));
-	if (cmp_new != 0 && cmp_old != 0) {
+	cmp_new = mem_equal_const_time(new_owf_password.hash,
+				       cur_nt_hash->hash,
+				       sizeof(cur_nt_hash->hash));
+	cmp_old = mem_equal_const_time(old_owf_password.hash,
+				       cur_nt_hash->hash,
+				       sizeof(cur_nt_hash->hash));
+	if (!cmp_new && !cmp_old) {
 		DEBUG(1,("%s:Error: credentials for domain[%s/%s] doesn't match "
 			 "any password known to dcname[%s]\n",
 			 __func__, domain->name, domain->alt_name,
@@ -1484,7 +1571,7 @@ reconnect:
 		goto verify_return;
 	}
 
-	if (cmp_new != 0) {
+	if (!cmp_new) {
 		DEBUG(2,("%s:Warning: credentials for domain[%s/%s] only match "
 			 "against the old password known to dcname[%s]\n",
 			 __func__, domain->name, domain->alt_name,
@@ -1918,6 +2005,87 @@ reconnect:
 	}
 
 	return status;
+}
+
+NTSTATUS _wbint_ListTrustedDomains(struct pipes_struct *p,
+				   struct wbint_ListTrustedDomains *r)
+{
+	struct winbindd_domain *domain = wb_child_domain();
+	uint32_t i, n;
+	NTSTATUS result;
+	struct netr_DomainTrustList trusts;
+	struct netr_DomainTrustList *out = NULL;
+	pid_t client_pid;
+
+	if (domain == NULL) {
+		return NT_STATUS_REQUEST_NOT_ACCEPTED;
+	}
+
+	/* Cut client_pid to 32bit */
+	client_pid = r->in.client_pid;
+	if ((uint64_t)client_pid != r->in.client_pid) {
+		DBG_DEBUG("pid out of range\n");
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	DBG_NOTICE("[%s %"PRIu32"]: list trusted domains\n",
+		   r->in.client_name, client_pid);
+
+	result = wb_cache_trusted_domains(domain, p->mem_ctx, &trusts);
+	if (!NT_STATUS_IS_OK(result)) {
+		DBG_NOTICE("wb_cache_trusted_domains returned %s\n",
+			   nt_errstr(result));
+		return result;
+	}
+
+	out = talloc_zero(p->mem_ctx, struct netr_DomainTrustList);
+	if (out == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	r->out.domains = out;
+
+	for (i=0; i<trusts.count; i++) {
+		if (trusts.array[i].sid == NULL) {
+			continue;
+		}
+		if (dom_sid_equal(trusts.array[i].sid, &global_sid_NULL)) {
+			continue;
+		}
+
+		n = out->count;
+		out->array = talloc_realloc(out, out->array,
+					    struct netr_DomainTrust,
+					    n + 1);
+		if (out->array == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+		out->count = n + 1;
+
+		out->array[n].netbios_name = talloc_steal(
+				out->array, trusts.array[i].netbios_name);
+		if (out->array[n].netbios_name == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		out->array[n].dns_name = talloc_steal(
+				out->array, trusts.array[i].dns_name);
+		if (out->array[n].dns_name == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		out->array[n].sid = dom_sid_dup(out->array,
+				trusts.array[i].sid);
+		if (out->array[n].sid == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		out->array[n].trust_flags = trusts.array[i].trust_flags;
+		out->array[n].trust_type = trusts.array[i].trust_type;
+		out->array[n].trust_attributes = trusts.array[i].trust_attributes;
+	}
+
+	return NT_STATUS_OK;
 }
 
 #include "librpc/gen_ndr/ndr_winbind_scompat.c"

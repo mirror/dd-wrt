@@ -175,21 +175,58 @@
     <variablelist>
 
       <varlistentry>
-	<term>recovery lock = <parameter>LOCK</parameter></term>
+	<term>cluster lock = <parameter>LOCK</parameter></term>
 	<listitem>
 	  <para>
 	    LOCK specifies the cluster-wide mutex used to detect and
 	    prevent a partitioned cluster (or "split brain").
 	  </para>
 	  <para>
-	    For information about the recovery lock please see the
-	    <citetitle>RECOVERY LOCK</citetitle> section in
+	    For information about the cluster lock please see the
+	    <citetitle>CLUSTER LOCK</citetitle> section in
 	    <citerefentry><refentrytitle>ctdb</refentrytitle>
 	    <manvolnum>7</manvolnum></citerefentry>.
 	  </para>
 	  <para>
-	    Default: NONE.  However, uses of a recovery lock is
+	    Default: NONE.  However, uses of a cluster lock is
 	    <emphasis>strongly recommended</emphasis>.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>leader capability = true|false</term>
+	<listitem>
+	  <para>
+	    Indicates whether a node can become the leader
+	    for the cluster. If this is set to
+	    <literal>false</literal> then the node will not be able to
+	    become the leader for the cluster. This feature
+	    is primarily used for making a cluster span across a WAN
+	    link and use CTDB as a WAN-accelerator.
+	  </para>
+	  <para>
+	    Please see the <citetitle>REMOTE CLUSTER NODES</citetitle>
+	    section in
+	    <citerefentry><refentrytitle>ctdb</refentrytitle>
+	    <manvolnum>7</manvolnum></citerefentry> for more
+	    information.
+	  </para>
+	  <para>
+	    Default: <literal>true</literal>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>leader timeout = <parameter>SECONDS</parameter></term>
+	<listitem>
+	  <para>
+	    Number of SECONDS without a leader broadcast before a node
+	    triggers an election.
+	  </para>
+	  <para>
+	    Default: <literal>5</literal>
 	  </para>
 	</listitem>
       </varlistentry>
@@ -490,30 +527,6 @@
 	    there are thousands of Samba clients. If you are running
 	    CTDB on a platform that does not support real-time
 	    priority, you can set this to <literal>false</literal>.
-	  </para>
-	  <para>
-	    Default: <literal>true</literal>
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-	<term>recmaster capability = true|false</term>
-	<listitem>
-	  <para>
-	    Indicates whether a node can become the recovery master
-	    for the cluster. If this is set to
-	    <literal>false</literal> then the node will not be able to
-	    become the recovery master for the cluster. This feature
-	    is primarily used for making a cluster span across a WAN
-	    link and use CTDB as a WAN-accelerator.
-	  </para>
-	  <para>
-	    Please see the <citetitle>REMOTE CLUSTER NODES</citetitle>
-	    section in
-	    <citerefentry><refentrytitle>ctdb</refentrytitle>
-	    <manvolnum>7</manvolnum></citerefentry> for more
-	    information.
 	  </para>
 	  <para>
 	    Default: <literal>true</literal>

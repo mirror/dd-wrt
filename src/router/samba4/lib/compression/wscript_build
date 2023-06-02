@@ -1,6 +1,25 @@
 #!/usr/bin/env python
 
 bld.SAMBA_SUBSYSTEM('LZXPRESS',
-        deps='replace',
-	source='lzxpress.c'
-	)
+                    deps='replace talloc stable_sort samba-debug',
+                    source='lzxpress.c lzxpress_huffman.c'
+                    )
+
+bld.SAMBA_BINARY('test_lzx_huffman',
+                 source='tests/test_lzx_huffman.c',
+                 deps=('cmocka replace LZXPRESS'
+                       ' samba-util'),
+                 local_include=False,
+                 for_selftest=True)
+
+bld.SAMBA_BINARY('test_lzxpress_plain',
+                 source='tests/test_lzxpress_plain.c',
+                 deps=('cmocka replace LZXPRESS'
+                       ' samba-util'),
+                 local_include=False,
+                 for_selftest=True)
+
+bld.SAMBA_PYTHON('pycompression',
+                 'pycompression.c',
+                 deps='LZXPRESS',
+                 realname='samba/compression.so')

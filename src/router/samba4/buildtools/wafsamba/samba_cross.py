@@ -77,7 +77,7 @@ def cross_answer(ca_file, msg):
                 f.close()
                 return (0, ans.strip("'"))
             else:
-                m = re.match('\(\s*(-?\d+)\s*,\s*\"(.*)\"\s*\)', ans)
+                m = re.match(r'\(\s*(-?\d+)\s*,\s*\"(.*)\"\s*\)', ans)
                 if m:
                     f.close()
                     return (int(m.group(1)), m.group(2))
@@ -134,7 +134,7 @@ class cross_Popen(Utils.subprocess.Popen):
                 cross_answers_incomplete = True
                 add_answer(ca_file, msg, ans)
             (retcode, retstring) = ans
-            args = ['/bin/sh', '-c', "echo -n '%s'; exit %d" % (retstring, retcode)]
+            args = ['/bin/sh', '-c', "printf %%s '%s'; exit %d" % (retstring, retcode)]
         real_Popen.__init__(*(obj, args), **kw)
 
 

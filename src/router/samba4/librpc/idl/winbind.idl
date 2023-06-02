@@ -1,5 +1,5 @@
 #include "idl_types.h"
-import "lsa.idl", "netlogon.idl", "misc.idl", "security.idl", "idmap.idl";
+import "lsa.idl", "netlogon.idl", "samr.idl", "misc.idl", "security.idl", "idmap.idl";
 
 [
     uuid("bf09192c-ed60-4928-9dff-d0d7bcb03ed8"),
@@ -13,7 +13,7 @@ interface winbind
 {
   /* Private methods */
 
-    void wbint_Ping(
+    NTSTATUS wbint_Ping(
 	[in] uint32 in_data,
 	[out] uint32 *out_data
 	);
@@ -162,11 +162,108 @@ interface winbind
 	);
 
     NTSTATUS wbint_ChangeMachineAccount(
+		[in,unique,string,charset(UTF8)] char *dcname
 	);
 
     NTSTATUS wbint_PingDc(
 	[out,string,charset(UTF8)] char **dcname
 	);
+
+    NTSTATUS wbint_ListTrustedDomains(
+        [in,string,charset(UTF8)] char *client_name,
+        [in] hyper client_pid,
+        [out,ref] netr_DomainTrustList *domains
+        );
+
+    typedef [public] struct {
+        uint16 level;
+        [switch_is(level)] netr_Validation *validation;
+        [string,charset(UTF8)] char *krb5ccname;
+    } wbint_Validation;
+
+    typedef [public] struct {
+        [string,charset(UTF8)] char *username;
+        [string,charset(UTF8),flag(NDR_SECRET)] char *password;
+        [string,charset(UTF8)] char *krb5_cc_type;
+        hyper uid;
+    } wbint_AuthUserInfo;
+
+    NTSTATUS wbint_PamAuth(
+        [in,string,charset(UTF8)] char *client_name,
+        [in] hyper client_pid,
+        [in] uint32 flags,
+        [in] wbint_AuthUserInfo *info,
+        [in] wbint_SidArray *require_membership_of_sid,
+        [out,ref] wbint_Validation *validation
+        );
+
+    typedef [public] struct {
+        uint16 level;
+        [switch_is(level)] netr_Validation *validation;
+    } wbint_PamAuthCrapValidation;
+
+    NTSTATUS wbint_PamAuthCrap(
+        [in,string,charset(UTF8)] char *client_name,
+        [in] hyper client_pid,
+        [in] uint32 flags,
+        [in, string,charset(UTF8)] char *user,
+        [in, string,charset(UTF8)] char *domain,
+        [in, string,charset(UTF8)] char *workstation,
+        [in,flag(NDR_SECRET)] DATA_BLOB lm_resp,
+        [in,flag(NDR_SECRET)] DATA_BLOB nt_resp,
+        [in,flag(NDR_SECRET)] DATA_BLOB chal,
+        [in] uint32 logon_parameters,
+        [in] wbint_SidArray *require_membership_of_sid,
+        [out,ref] uint8 *authoritative,
+        [out,ref] wbint_PamAuthCrapValidation *validation
+        );
+
+    NTSTATUS wbint_PamLogOff(
+        [in,string,charset(UTF8)] char *client_name,
+        [in] hyper client_pid,
+        [in] uint32 flags,
+        [in,string,charset(UTF8)] char *user,
+        [in,string,charset(UTF8)] char *krb5ccname,
+        [in] hyper uid
+        );
+
+    NTSTATUS wbint_PamAuthCrapChangePassword(
+        [in,string,charset(UTF8)] char *client_name,
+        [in] hyper client_pid,
+        [in,string,charset(UTF8)] char *user,
+        [in,string,charset(UTF8)] char *domain,
+        [in,flag(NDR_SECRET)] DATA_BLOB new_nt_pswd,
+        [in,flag(NDR_SECRET)] DATA_BLOB old_nt_hash_enc,
+        [in,flag(NDR_SECRET)] DATA_BLOB new_lm_pswd,
+        [in,flag(NDR_SECRET)] DATA_BLOB old_lm_hash_enc
+        );
+
+    NTSTATUS wbint_PamAuthChangePassword(
+        [in,string,charset(UTF8)] char *client_name,
+        [in] hyper client_pid,
+        [in] uint32 flags,
+        [in,string,charset(UTF8)] char *user,
+        [in,string,charset(UTF8),flag(NDR_SECRET)] char *old_password,
+        [in,string,charset(UTF8),flag(NDR_SECRET)] char *new_password,
+        [out,ref] samr_DomInfo1 **dominfo,
+        [out,ref] samPwdChangeReason *reject_reason
+        );
+
+    typedef [enum16bit] enum {
+        WB_DOMINFO_DOMAIN_UNKNOWN = 0x0000,
+        WB_DOMINFO_DOMAIN_NATIVE  = 0x0001,
+        WB_DOMINFO_DOMAIN_AD      = 0x0002,
+        WB_DOMINFO_DOMAIN_PRIMARY = 0x0004,
+        WB_DOMINFO_DOMAIN_OFFLINE = 0x0008
+    } DomainInfoFlags;
+
+    NTSTATUS wbint_InitConnection(
+        [in,string,charset(UTF8)] char *dcname,
+        [out,string,charset(UTF8)] char **name,
+        [out,string,charset(UTF8)] char **alt_name,
+        [out,ref] dom_sid *sid,
+        [out,ref] DomainInfoFlags *flags
+        );
 
   /* Public methods available via IRPC */
 

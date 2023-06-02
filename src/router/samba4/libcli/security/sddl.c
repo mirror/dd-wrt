@@ -92,6 +92,7 @@ static const struct {
 
 	{ .code = "CO", .sid = SID_CREATOR_OWNER },
 	{ .code = "CG", .sid = SID_CREATOR_GROUP },
+	{ .code = "OW", .sid = SID_OWNER_RIGHTS },
 
 	{ .code = "NU", .sid = SID_NT_NETWORK },
 	{ .code = "IU", .sid = SID_NT_INTERACTIVE },
@@ -104,7 +105,7 @@ static const struct {
 	{ .code = "SY", .sid = SID_NT_SYSTEM },
 	{ .code = "LS", .sid = SID_NT_LOCAL_SERVICE },
 	{ .code = "NS", .sid = SID_NT_NETWORK_SERVICE },
-	{ .code = "IS", .sid = SID_NT_IUSR },
+	{ .code = "WR", .sid = SID_SECURITY_RESTRICTED_CODE },
 
 	{ .code = "BA", .sid = SID_BUILTIN_ADMINISTRATORS },
 	{ .code = "BU", .sid = SID_BUILTIN_USERS },
@@ -115,17 +116,41 @@ static const struct {
 	{ .code = "PO", .sid = SID_BUILTIN_PRINT_OPERATORS },
 	{ .code = "BO", .sid = SID_BUILTIN_BACKUP_OPERATORS },
 	{ .code = "RE", .sid = SID_BUILTIN_REPLICATOR },
-	{ .code = "BR", .sid = SID_BUILTIN_RAS_SERVERS },
 	{ .code = "RU", .sid = SID_BUILTIN_PREW2K },
 	{ .code = "RD", .sid = SID_BUILTIN_REMOTE_DESKTOP_USERS },
 	{ .code = "NO", .sid = SID_BUILTIN_NETWORK_CONF_OPERATORS },
-	{ .code = "IF", .sid = SID_BUILTIN_INCOMING_FOREST_TRUST },
+
+	{ .code = "MU", .sid = SID_BUILTIN_PERFMON_USERS },
+	{ .code = "LU", .sid = SID_BUILTIN_PERFLOG_USERS },
+	{ .code = "IS", .sid = SID_BUILTIN_IUSERS },
+	{ .code = "CY", .sid = SID_BUILTIN_CRYPTO_OPERATORS },
+	{ .code = "ER", .sid = SID_BUILTIN_EVENT_LOG_READERS },
+	{ .code = "CD", .sid = SID_BUILTIN_CERT_SERV_DCOM_ACCESS },
+	{ .code = "RA", .sid = SID_BUILTIN_RDS_REMOTE_ACCESS_SERVERS },
+	{ .code = "ES", .sid = SID_BUILTIN_RDS_ENDPOINT_SERVERS },
+	{ .code = "MS", .sid = SID_BUILTIN_RDS_MANAGEMENT_SERVERS },
+	{ .code = "HA", .sid = SID_BUILTIN_HYPER_V_ADMINS },
+	{ .code = "AA", .sid = SID_BUILTIN_ACCESS_CONTROL_ASSISTANCE_OPS },
+	{ .code = "RM", .sid = SID_BUILTIN_REMOTE_MANAGEMENT_USERS },
+
+	{ .code = "UD", .sid = SID_USER_MODE_DRIVERS },
+
+	{ .code = "AC", .sid = SID_SECURITY_BUILTIN_PACKAGE_ANY_PACKAGE },
+
+	{ .code = "LW", .sid = SID_SECURITY_MANDATORY_LOW },
+	{ .code = "ME", .sid = SID_SECURITY_MANDATORY_MEDIUM },
+	{ .code = "MP", .sid = SID_SECURITY_MANDATORY_MEDIUM_PLUS },
+	{ .code = "HI", .sid = SID_SECURITY_MANDATORY_HIGH },
+	{ .code = "SI", .sid = SID_SECURITY_MANDATORY_SYSTEM },
+
+	{ .code = "AS", .sid = SID_AUTHENTICATION_AUTHORITY_ASSERTED_IDENTITY },
+	{ .code = "SS", .sid = SID_SERVICE_ASSERTED_IDENTITY },
+
+	{ .code = "RO", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_READONLY_DCS },
 
 	{ .code = "LA", .sid = NULL, .rid = DOMAIN_RID_ADMINISTRATOR },
 	{ .code = "LG", .sid = NULL, .rid = DOMAIN_RID_GUEST },
-	{ .code = "LK", .sid = NULL, .rid = DOMAIN_RID_KRBTGT },
 
-	{ .code = "ER", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_READONLY_DCS },
 	{ .code = "DA", .sid = NULL, .rid = DOMAIN_RID_ADMINS },
 	{ .code = "DU", .sid = NULL, .rid = DOMAIN_RID_USERS },
 	{ .code = "DG", .sid = NULL, .rid = DOMAIN_RID_GUESTS },
@@ -135,7 +160,13 @@ static const struct {
 	{ .code = "SA", .sid = NULL, .rid = DOMAIN_RID_SCHEMA_ADMINS },
 	{ .code = "EA", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_ADMINS },
 	{ .code = "PA", .sid = NULL, .rid = DOMAIN_RID_POLICY_ADMINS },
-	{ .code = "RO", .sid = NULL, .rid = DOMAIN_RID_READONLY_DCS },
+
+	{ .code = "CN", .sid = NULL, .rid = DOMAIN_RID_CLONEABLE_CONTROLLERS },
+
+	{ .code = "AP", .sid = NULL, .rid = DOMAIN_RID_PROTECTED_USERS },
+	{ .code = "KA", .sid = NULL, .rid = DOMAIN_RID_KEY_ADMINS },
+	{ .code = "EK", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_KEY_ADMINS },
+
 	{ .code = "RS", .sid = NULL, .rid = DOMAIN_RID_RAS_SERVERS }
 };
 
@@ -552,8 +583,8 @@ static char *sddl_encode_sid(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 /*
   encode an ACE in SDDL format
 */
-static char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
-			     const struct dom_sid *domain_sid)
+char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
+		      const struct dom_sid *domain_sid)
 {
 	char *sddl = NULL;
 	TALLOC_CTX *tmp_ctx;

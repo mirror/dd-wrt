@@ -31,6 +31,7 @@
 #include "libcli/smb/smbXcli_base.h"
 #include "libcli/security/security.h"
 #include "clifuse.h"
+#include "lib/util/idtree.h"
 
 struct mount_state {
 	struct tevent_context *ev;
@@ -178,7 +179,7 @@ static void cli_ll_create_done(struct tevent_req *req)
 	uint16_t fnum;
 	NTSTATUS status;
 
-	status = cli_smb2_create_fnum_recv(req, &fnum, NULL, NULL, NULL);
+	status = cli_smb2_create_fnum_recv(req, &fnum, NULL, NULL, NULL, NULL);
 	TALLOC_FREE(req);
 	if (!NT_STATUS_IS_OK(status)) {
 		fuse_reply_err(state->freq, map_errno_from_nt_status(status));
@@ -267,8 +268,14 @@ static void cli_get_unixattr_opened(struct tevent_req *subreq)
 	struct cli_state *cli = state->cli;
 	NTSTATUS status;
 
-	status = smb2cli_create_recv(subreq, &state->fid_persistent,
-				     &state->fid_volatile, NULL, NULL, NULL);
+	status = smb2cli_create_recv(
+		subreq,
+		&state->fid_persistent,
+		&state->fid_volatile,
+		NULL,
+		NULL,
+		NULL,
+		NULL);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		DBG_DEBUG("smb2cli_create_recv returned %s\n",
@@ -869,7 +876,7 @@ static void cli_ll_open_done(struct tevent_req *req)
 	uint16_t fnum;
 	NTSTATUS status;
 
-	status = cli_smb2_create_fnum_recv(req, &fnum, NULL, NULL, NULL);
+	status = cli_smb2_create_fnum_recv(req, &fnum, NULL, NULL, NULL, NULL);
 	TALLOC_FREE(req);
 	if (!NT_STATUS_IS_OK(status)) {
 		fuse_reply_err(state->freq, map_errno_from_nt_status(status));
@@ -1174,10 +1181,14 @@ static void cli_ll_opendir_done(struct tevent_req *req)
 		req, struct ll_opendir_state);
 	NTSTATUS status;
 
-	status = smb2cli_create_recv(req,
-				     &state->dir_state->fid_persistent,
-				     &state->dir_state->fid_volatile,
-				     NULL, NULL, NULL);
+	status = smb2cli_create_recv(
+		req,
+		&state->dir_state->fid_persistent,
+		&state->dir_state->fid_volatile,
+		NULL,
+		NULL,
+		NULL,
+		NULL);
 	TALLOC_FREE(req);
 
 	DEBUG(10, ("%s: smbcli_create_recv returned %s\n", __func__,

@@ -59,6 +59,8 @@ extern struct winbindd_methods sam_passdb_methods;
 
 static void wcache_flush_cache(void);
 
+static bool opt_nocache = False;
+
 /*
  * JRA. KEEP THIS LIST UP TO DATE IF YOU ADD CACHE ENTRIES.
  * Here are the list of entry types that are *not* stored
@@ -71,6 +73,35 @@ static const char *non_centry_keys[] = {
 	WINBINDD_CACHE_VERSION_KEYSTR,
 	NULL
 };
+
+bool winbindd_use_idmap_cache(void)
+{
+	return !opt_nocache;
+}
+
+bool winbindd_use_cache(void)
+{
+	return !opt_nocache;
+}
+
+void winbindd_set_use_cache(bool use_cache)
+{
+	opt_nocache = !use_cache;
+}
+
+void winbindd_flush_caches(void)
+{
+	/* We need to invalidate cached user list entries on a SIGHUP
+           otherwise cached access denied errors due to restrict anonymous
+           hang around until the sequence number changes. */
+
+	if (!wcache_invalidate_cache()) {
+		DEBUG(0, ("invalidating the cache failed; revalidate the cache\n"));
+		if (!winbindd_cache_validate_and_initialize()) {
+			exit(1);
+		}
+	}
+}
 
 /************************************************************************
  Is this key a non-centry type ?
@@ -3438,7 +3469,8 @@ bool set_global_winbindd_state_offline(void)
 	}
 
 	if (!lp_winbind_offline_logon()) {
-		DBG_ERR("Rejecting to set winbind offline\n");
+		DBG_DEBUG("Rejecting request to set winbind offline, "
+			"offline logons are disabled in smb.conf\n");
 		return false;
 	}
 
@@ -3466,7 +3498,8 @@ void set_global_winbindd_state_online(void)
 	DEBUG(10,("set_global_winbindd_state_online: online requested.\n"));
 
 	if (!lp_winbind_offline_logon()) {
-		DEBUG(10,("set_global_winbindd_state_online: rejecting.\n"));
+		DBG_DEBUG("Rejecting request to set winbind online, "
+			"offline logons are disabled in smb.conf.\n");
 		return;
 	}
 
@@ -4642,16 +4675,22 @@ static bool wcache_ndr_key(TALLOC_CTX *mem_ctx, const char *domain_name,
 static bool wcache_opnum_cacheable(uint32_t opnum)
 {
 	switch (opnum) {
-	case NDR_WBINT_PING:
-	case NDR_WBINT_QUERYSEQUENCENUMBER:
-	case NDR_WBINT_ALLOCATEUID:
-	case NDR_WBINT_ALLOCATEGID:
-	case NDR_WBINT_CHECKMACHINEACCOUNT:
-	case NDR_WBINT_CHANGEMACHINEACCOUNT:
-	case NDR_WBINT_PINGDC:
-		return false;
+	case NDR_WBINT_LOOKUPSID:
+	case NDR_WBINT_LOOKUPSIDS:
+	case NDR_WBINT_LOOKUPNAME:
+	case NDR_WBINT_SIDS2UNIXIDS:
+	case NDR_WBINT_UNIXIDS2SIDS:
+	case NDR_WBINT_GETNSSINFO:
+	case NDR_WBINT_LOOKUPUSERALIASES:
+	case NDR_WBINT_LOOKUPUSERGROUPS:
+	case NDR_WBINT_LOOKUPGROUPMEMBERS:
+	case NDR_WBINT_QUERYGROUPLIST:
+	case NDR_WBINT_QUERYUSERRIDLIST:
+	case NDR_WBINT_DSGETDCNAME:
+	case NDR_WBINT_LOOKUPRIDS:
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool wcache_fetch_ndr(TALLOC_CTX *mem_ctx, struct winbindd_domain *domain,

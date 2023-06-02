@@ -53,18 +53,6 @@ bool strnequal(const char *s1,const char *s2,size_t n)
 }
 
 /**
- Convert a string to "normal" form.
-**/
-
-bool strnorm(char *s, int case_default)
-{
-	if (case_default == CASE_UPPER)
-		return strupper_m(s);
-	else
-		return strlower_m(s);
-}
-
-/**
  Skip past a string in a buffer. Buffer may not be
  null terminated. end_ptr points to the first byte after
  then end of the buffer.
@@ -192,24 +180,6 @@ bool in_list(const char *s, const char *list, bool casesensitive)
 	TALLOC_FREE(frame);
 	return ret;
 }
-
-/**
- Write an octal as a string.
-**/
-
-char *octal_string(int i)
-{
-	char *result;
-	if (i == -1) {
-		result = talloc_strdup(talloc_tos(), "-1");
-	}
-	else {
-		result = talloc_asprintf(talloc_tos(), "0%o", i);
-	}
-	SMB_ASSERT(result != NULL);
-	return result;
-}
-
 
 /**
  Truncate a string at a specified length.
@@ -521,32 +491,6 @@ uint64_t conv_str_size(const char * str)
 	}
 
 	return lval;
-}
-
-/*
- * asprintf into a string and strupper_m it after that.
- */
-
-int asprintf_strupper_m(char **strp, const char *fmt, ...)
-{
-	va_list ap;
-	char *result;
-	int ret;
-
-	va_start(ap, fmt);
-	ret = vasprintf(&result, fmt, ap);
-	va_end(ap);
-
-	if (ret == -1)
-		return -1;
-
-	if (!strupper_m(result)) {
-		SAFE_FREE(result);
-		return -1;
-	}
-
-	*strp = result;
-	return ret;
 }
 
 char *talloc_asprintf_strupper_m(TALLOC_CTX *t, const char *fmt, ...)

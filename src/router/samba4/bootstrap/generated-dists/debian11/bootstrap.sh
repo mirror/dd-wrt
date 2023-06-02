@@ -35,6 +35,7 @@ apt-get -y install \
     heimdal-multidev \
     hostname \
     htop \
+    jq \
     krb5-config \
     krb5-kdc \
     krb5-user \
@@ -91,9 +92,9 @@ apt-get -y install \
     python3-gpg \
     python3-iso8601 \
     python3-markdown \
-    python3-matplotlib \
     python3-pexpect \
     python3-pyasn1 \
+    python3-requests \
     python3-setproctitle \
     rng-tools \
     rsync \
@@ -105,6 +106,7 @@ apt-get -y install \
     wget \
     xfslibs-dev \
     xsltproc \
+    xz-utils \
     zlib1g-dev
 
 apt-get -y autoremove

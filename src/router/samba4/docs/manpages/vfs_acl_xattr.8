@@ -2,12 +2,12 @@
 .\"     Title: vfs_acl_xattr
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "VFS_ACL_XATTR" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "VFS_ACL_XATTR" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -38,15 +38,17 @@ This VFS module is part of the
 \fBsamba\fR(7)
 suite\&.
 .PP
+This module is made for systems which do not support standardized NFS4 ACLs but only a deprecated POSIX ACL draft implementation\&. This is usually the case on Linux systems\&. Systems that do support just use NFSv4 ACLs directly instead of this module\&. Such support is usually provided by the filesystem VFS module specific to the underlying filesystem that supports NFS4 ACLs
+.PP
 The
 vfs_acl_xattr
-VFS module stores NTFS Access Control Lists (ACLs) in Extended Attributes (EAs)\&. This enables the full mapping of Windows ACLs on Samba servers\&.
+VFS module stores NTFS Access Control Lists (ACLs) in Extended Attributes (EAs)\&. This enables the full mapping of Windows ACLs on Samba servers even if the ACL implementation is not capable of doing so\&.
 .PP
-The ACLs are stored in the Extended Attribute
+The NT ACLs are stored in the
 \fIsecurity\&.NTACL\fR
-of a file or directory\&. This Attribute is
+extended attribute of files and directories in a form containing the Windows SID representing the users and groups in the ACL\&. This is different from the uid and gids stored in local filesystem ACLs and the mapping from users and groups to Windows SIDs must be consistent in order to maintain the meaning of the stored NT ACL That extended attribute is
 \fInot\fR
-listed by
+listed by the Linux command
 getfattr \-d filename\&. To show the current value, the name of the EA must be specified (e\&.g\&.
 getfattr \-n security\&.NTACL filename)\&.
 .PP
@@ -91,10 +93,15 @@ force unknown acl user = true
 This module is stackable\&.
 .SH "OPTIONS"
 .PP
+acl_xattr:security_acl_name = NAME
+.RS 4
+This option allows to redefine the default location for the NTACL extended attribute (xattr)\&. If not set, NTACL xattrs are written to security\&.NTACL which is a protected location, which means the content of the security\&.NTACL attribute is not accessible from normal users outside of Samba\&. When this option is set to use a user\-defined value, e\&.g\&. user\&.NTACL then any user can potentially access and overwrite this information\&. The module prevents access to this xattr over SMB, but the xattr may still be accessed by other means (eg local access, SSH, NFS)\&. This option must only be used when this consequence is clearly understood and when specific precautions are taken to avoid compromising the ACL content\&.
+.RE
+.PP
 acl_xattr:ignore system acls = [yes|no]
 .RS 4
 When set to
-\fIyes\fR, a best effort mapping from/to the POSIX ACL layer will
+\fIyes\fR, a best effort mapping from/to the POSIX draft ACL layer will
 \fInot\fR
 be done by this module\&. The default is
 \fIno\fR, which means that Samba keeps setting and evaluating both the system ACLs and the NT ACLs\&. This is better if you need your system ACLs be set for local or NFS file access, too\&. If you only access the data via Samba you might set this to yes to achieve better NT ACL compatibility\&.

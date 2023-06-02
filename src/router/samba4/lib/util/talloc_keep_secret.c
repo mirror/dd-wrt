@@ -15,18 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "includes.h"
+#include "replace.h"
+#include <talloc.h>
+#include "lib/util/fault.h"
 #include "talloc_keep_secret.h"
 
 static int talloc_keep_secret_destructor(void *ptr)
 {
+	int ret;
 	size_t size = talloc_get_size(ptr);
 
 	if (unlikely(size == 0)) {
 		return 0;
 	}
 
-	memset_s(ptr, size, 0, size);
+	ret = memset_s(ptr, size, 0, size);
+	if (unlikely(ret != 0)) {
+		char *msg = NULL;
+		int ret2;
+		ret2 = asprintf(&msg,
+				"talloc_keep_secret_destructor: memset_s() failed: %s",
+				strerror(ret));
+		if (ret2 != -1) {
+			smb_panic(msg);
+		} else {
+			smb_panic("talloc_keep_secret_destructor: memset_s() failed");
+		}
+	}
 
 	return 0;
 }

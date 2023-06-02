@@ -18,7 +18,6 @@
 import datetime
 import os
 import sys
-import tarfile
 import logging
 import shutil
 import tempfile
@@ -56,6 +55,7 @@ from samba import sites
 from samba.dsdb import _dsdb_load_udv_v2
 from samba.ndr import ndr_pack
 from samba.credentials import SMB_SIGNING_REQUIRED
+from samba import safe_tarfile as tarfile
 
 
 # work out a SID (based on a free RID) to use when the domain gets restored.
@@ -983,9 +983,15 @@ class cmd_domain_backup_offline(samba.netcmd.Command):
                     return
                 raise e
             raise copy_err
+
+        except FileNotFoundError as e:
+            # tdbbackup tool was not found.
+            raise CommandError(e.strerror, e)
+
         if not os.path.exists(backup_path):
             s = "tdbbackup said backup succeeded but {0} not found"
             raise CommandError(s.format(backup_path))
+
 
     def offline_mdb_copy(self, path):
         mdb_copy(path, path + self.backup_ext)
@@ -1109,6 +1115,7 @@ class cmd_domain_backup_offline(samba.netcmd.Command):
 
         # Recursively get all file paths in the backup directories
         all_files = []
+        all_stats = set()
         for backup_dir in backup_dirs:
             for (working_dir, _, filenames) in os.walk(backup_dir):
                 if working_dir.startswith(paths.sysvol):
@@ -1126,7 +1133,13 @@ class cmd_domain_backup_offline(samba.netcmd.Command):
                     # Ignore files that have already been added. This prevents
                     # duplicates if one backup dir is a subdirectory of another,
                     # or if backup dirs contain hardlinks.
-                    if any(os.path.samefile(full_path, file) for file in all_files):
+                    try:
+                        s = os.stat(full_path, follow_symlinks=False)
+                    except FileNotFoundError:
+                        logger.warning(f"{full_path} does not exist!")
+                        continue
+
+                    if (s.st_ino, s.st_dev) in all_stats:
                         continue
 
                     # Assume existing backup files are from a previous backup.
@@ -1140,6 +1153,7 @@ class cmd_domain_backup_offline(samba.netcmd.Command):
                         continue
 
                     all_files.append(full_path)
+                    all_stats.add((s.st_ino, s.st_dev))
 
         # We would prefer to open with FLG_RDONLY but then we can't
         # start a transaction which is the strong isolation we want

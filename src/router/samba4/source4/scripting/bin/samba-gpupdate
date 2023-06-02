@@ -29,27 +29,35 @@ sys.path.insert(0, "bin/python")
 
 import optparse
 from samba import getopt as options
-from samba.gpclass import apply_gp, unapply_gp, GPOStorage, rsop
-from samba.gp_sec_ext import gp_krb_ext, gp_access_ext
-from samba.gp_ext_loader import get_gp_client_side_extensions
-from samba.gp_scripts_ext import gp_scripts_ext
-from samba.gp_sudoers_ext import gp_sudoers_ext
-from samba.vgp_sudoers_ext import vgp_sudoers_ext
-from samba.gp_smb_conf_ext import gp_smb_conf_ext
-from samba.gp_msgs_ext import gp_msgs_ext
-from samba.vgp_symlink_ext import vgp_symlink_ext
-from samba.vgp_files_ext import vgp_files_ext
-from samba.vgp_openssh_ext import vgp_openssh_ext
-from samba.vgp_motd_ext import vgp_motd_ext
-from samba.vgp_issue_ext import vgp_issue_ext
-from samba.vgp_startup_scripts_ext import vgp_startup_scripts_ext
-from samba.vgp_access_ext import vgp_access_ext
-from samba.gp_gnome_settings_ext import gp_gnome_settings_ext
-import logging
+from samba.gp.gpclass import apply_gp, unapply_gp, GPOStorage, rsop
+from samba.gp.gp_sec_ext import gp_krb_ext, gp_access_ext
+from samba.gp.gp_ext_loader import get_gp_client_side_extensions
+from samba.gp.gp_scripts_ext import gp_scripts_ext, gp_user_scripts_ext
+from samba.gp.gp_sudoers_ext import gp_sudoers_ext
+from samba.gp.vgp_sudoers_ext import vgp_sudoers_ext
+from samba.gp.gp_smb_conf_ext import gp_smb_conf_ext
+from samba.gp.gp_msgs_ext import gp_msgs_ext
+from samba.gp.vgp_symlink_ext import vgp_symlink_ext
+from samba.gp.vgp_files_ext import vgp_files_ext
+from samba.gp.vgp_openssh_ext import vgp_openssh_ext
+from samba.gp.vgp_motd_ext import vgp_motd_ext
+from samba.gp.vgp_issue_ext import vgp_issue_ext
+from samba.gp.vgp_startup_scripts_ext import vgp_startup_scripts_ext
+from samba.gp.vgp_access_ext import vgp_access_ext
+from samba.gp.gp_gnome_settings_ext import gp_gnome_settings_ext
+from samba.gp.gp_cert_auto_enroll_ext import gp_cert_auto_enroll_ext
+from samba.gp.gp_firefox_ext import gp_firefox_ext
+from samba.gp.gp_chromium_ext import gp_chromium_ext, gp_chrome_ext
+from samba.gp.gp_firewalld_ext import gp_firewalld_ext
+from samba.gp.gp_centrify_sudoers_ext import gp_centrify_sudoers_ext
+from samba.gp.gp_centrify_crontab_ext import gp_centrify_crontab_ext, \
+                                             gp_user_centrify_crontab_ext
+from samba.credentials import Credentials
+from samba.gp.util.logging import logger_init
 
 if __name__ == "__main__":
     parser = optparse.OptionParser('samba-gpupdate [options]')
-    sambaopts = options.SambaOptions(parser)
+    sambaopts = options.Samba3Options(parser)
 
     # Get the command line options
     parser.add_option_group(sambaopts)
@@ -72,26 +80,23 @@ if __name__ == "__main__":
     lp = sambaopts.get_loadparm()
 
     creds = credopts.get_credentials(lp, fallback_machine=True)
+    # Apply policy to the command line specified user
+    if opts.target == 'Computer':
+        username = creds.get_username()
+    elif opts.target == 'User':
+        username = '%s\\%s' % (creds.get_domain(), creds.get_username())
+    # Always supply the machine creds for fetching the gpo list
+    creds = Credentials()
+    creds.guess(lp)
+    creds.set_machine_account(lp)
 
     # Set up logging
-    logger = logging.getLogger('samba-gpupdate')
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel(logging.CRITICAL)
-    log_level = lp.log_level()
-    if log_level == 1:
-        logger.setLevel(logging.ERROR)
-    elif log_level == 2:
-        logger.setLevel(logging.WARNING)
-    elif log_level == 3:
-        logger.setLevel(logging.INFO)
-    elif log_level >= 4:
-        logger.setLevel(logging.DEBUG)
+    logger_init('samba-gpupdate', lp.log_level())
 
     cache_dir = lp.get('cache directory')
     store = GPOStorage(os.path.join(cache_dir, 'gpo.tdb'))
 
-    machine_exts, user_exts = get_gp_client_side_extensions(logger,
-                                                            lp.configfile)
+    machine_exts, user_exts = get_gp_client_side_extensions(lp.configfile)
     gp_extensions = []
     if opts.target == 'Computer':
         gp_extensions.append(gp_access_ext)
@@ -99,6 +104,8 @@ if __name__ == "__main__":
         gp_extensions.append(gp_scripts_ext)
         gp_extensions.append(gp_sudoers_ext)
         gp_extensions.append(vgp_sudoers_ext)
+        gp_extensions.append(gp_centrify_sudoers_ext)
+        gp_extensions.append(gp_centrify_crontab_ext)
         gp_extensions.append(gp_smb_conf_ext)
         gp_extensions.append(gp_msgs_ext)
         gp_extensions.append(vgp_symlink_ext)
@@ -109,14 +116,23 @@ if __name__ == "__main__":
         gp_extensions.append(vgp_startup_scripts_ext)
         gp_extensions.append(vgp_access_ext)
         gp_extensions.append(gp_gnome_settings_ext)
+        gp_extensions.append(gp_cert_auto_enroll_ext)
+        gp_extensions.append(gp_firefox_ext)
+        gp_extensions.append(gp_chromium_ext)
+        gp_extensions.append(gp_chrome_ext)
+        gp_extensions.append(gp_firewalld_ext)
         gp_extensions.extend(machine_exts)
     elif opts.target == 'User':
+        gp_extensions.append(gp_user_scripts_ext)
+        gp_extensions.append(gp_user_centrify_crontab_ext)
         gp_extensions.extend(user_exts)
 
     if opts.rsop:
-        rsop(lp, creds, logger, store, gp_extensions, opts.target)
+        rsop(lp, creds, store, gp_extensions, username, opts.target)
     elif not opts.unapply:
-        apply_gp(lp, creds, logger, store, gp_extensions, opts.force)
+        apply_gp(lp, creds, store, gp_extensions, username,
+                 opts.target, opts.force)
     else:
-        unapply_gp(lp, creds, logger, store, gp_extensions)
+        unapply_gp(lp, creds, store, gp_extensions, username,
+                   opts.target)
 

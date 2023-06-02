@@ -16,6 +16,11 @@ cpp_quote("#define ENC_RSA_MD5 KERB_ENCTYPE_DES_CBC_MD5")
 cpp_quote("#define ENC_RC4_HMAC_MD5 KERB_ENCTYPE_RC4_HMAC_MD5")
 cpp_quote("#define ENC_HMAC_SHA1_96_AES128 KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96")
 cpp_quote("#define ENC_HMAC_SHA1_96_AES256 KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96")
+cpp_quote("#define ENC_HMAC_SHA1_96_AES256_SK KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK")
+cpp_quote("#define ENC_FAST_SUPPORTED KERB_ENCTYPE_FAST_SUPPORTED")
+cpp_quote("#define ENC_COMPOUND_IDENTITY_SUPPORTED KERB_ENCTYPE_COMPOUND_IDENTITY_SUPPORTED")
+cpp_quote("#define ENC_CLAIMS_SUPPORTED KERB_ENCTYPE_CLAIMS_SUPPORTED")
+cpp_quote("#define NETLOGON_SERVER_PIPE_STATE_MAGIC 0x4f555358")
 
 [
   uuid("12345678-1234-abcd-ef00-01234567cffb"),
@@ -341,6 +346,11 @@ interface netlogon
 	typedef [public, flag(NDR_PAHEX)] struct {
 		uint8 data[8];
 	} netr_Credential;
+
+	typedef [public] struct {
+		netr_Credential client_challenge;
+		netr_Credential server_challenge;
+	} netlogon_server_pipe_state;
 
 	typedef [public] struct {
 		netr_Credential cred;
@@ -1123,7 +1133,7 @@ interface netlogon
 	/*****************/
 	/* Function 0x14 */
 
-	/* one unkown bit still: DS_IP_VERSION_AGNOSTIC - gd*/
+	/* one unknown bit still: DS_IP_VERSION_AGNOSTIC - gd*/
 
 	const int DSGETDC_VALID_FLAGS = (DS_FORCE_REDISCOVERY |
 					 DS_DIRECTORY_SERVICE_REQUIRED |
@@ -1143,6 +1153,13 @@ interface netlogon
 					 DS_TRY_NEXTCLOSEST_SITE |
 					 DS_DIRECTORY_SERVICE_6_REQUIRED |
 					 DS_WEB_SERVICE_REQUIRED |
+					 /*
+					  * For now we skip these until
+					  * we have test for them:
+					  * DS_DIRECTORY_SERVICE_8_REQUIRED |
+					  * DS_DIRECTORY_SERVICE_9_REQUIRED |
+					  * DS_DIRECTORY_SERVICE_10_REQUIRED |
+					  */
 					 DS_RETURN_FLAT_NAME |
 					 DS_RETURN_DNS_NAME);
 
@@ -1163,8 +1180,11 @@ interface netlogon
 		DS_IS_FLAT_NAME			= 0x00010000,
 		DS_IS_DNS_NAME			= 0x00020000,
 		DS_TRY_NEXTCLOSEST_SITE		= 0x00040000,
-		DS_DIRECTORY_SERVICE_6_REQUIRED = 0x00080000,
+		DS_DIRECTORY_SERVICE_6_REQUIRED = 0x00080000, /* 2008 */
 		DS_WEB_SERVICE_REQUIRED		= 0x00100000,
+		DS_DIRECTORY_SERVICE_8_REQUIRED = 0x00200000, /* 2012 */
+		DS_DIRECTORY_SERVICE_9_REQUIRED = 0x00400000, /* 2012R2 */
+		DS_DIRECTORY_SERVICE_10_REQUIRED= 0x00800000, /* 2016 */
 		DS_RETURN_DNS_NAME		= 0x40000000,
 		DS_RETURN_FLAT_NAME		= 0x80000000
 	} netr_DsRGetDCName_flags;
@@ -1185,10 +1205,12 @@ interface netlogon
 		DS_SERVER_WRITABLE		 = 0x00000100,
 		DS_SERVER_GOOD_TIMESERV		 = 0x00000200,
 		DS_SERVER_NDNC			 = 0x00000400,
-		DS_SERVER_SELECT_SECRET_DOMAIN_6 = 0x00000800,
-		DS_SERVER_FULL_SECRET_DOMAIN_6	 = 0x00001000,
+		DS_SERVER_SELECT_SECRET_DOMAIN_6 = 0x00000800, /* 2008 / RODC */
+		DS_SERVER_FULL_SECRET_DOMAIN_6	 = 0x00001000, /* 2008 / RWDC */
 		DS_SERVER_WEBSERV		 = 0x00002000,
-		DS_SERVER_DS_8			 = 0x00004000,
+		DS_SERVER_DS_8			 = 0x00004000, /* 2012 */
+		DS_SERVER_DS_9			 = 0x00008000, /* 2012R2 */
+		DS_SERVER_DS_10			 = 0x00010000, /* 2016 */
 		DS_DNS_CONTROLLER		 = 0x20000000,
 		DS_DNS_DOMAIN			 = 0x40000000,
 		DS_DNS_FOREST_ROOT		 = 0x80000000
@@ -1577,7 +1599,7 @@ interface netlogon
 	/****************/
 	/* Function 0x24 */
 
-	typedef struct {
+	typedef [public] struct {
 		[string,charset(UTF16)] uint16			*netbios_name;
 		[string,charset(UTF16)] uint16			*dns_name;
 		netr_TrustFlags		trust_flags;
@@ -1588,7 +1610,7 @@ interface netlogon
 		GUID			guid;
 	} netr_DomainTrust;
 
-        typedef struct {
+        typedef [public] struct {
                 uint32 count;
                 [size_is(count)] netr_DomainTrust *array;
         } netr_DomainTrustList;

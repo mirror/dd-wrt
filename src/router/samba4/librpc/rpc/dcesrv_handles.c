@@ -104,37 +104,48 @@ struct dcesrv_handle *dcesrv_handle_lookup(struct dcesrv_call_state *call,
 		return dcesrv_handle_create(call, handle_type);
 	}
 
+	if (handle_type != DCESRV_HANDLE_ANY &&
+	    p->handle_type != handle_type) {
+		DBG_WARNING("client gave us the wrong handle type "
+			    "(%"PRIu32" should be %"PRIu8")\n",
+			    p->handle_type,
+			    handle_type);
+		return NULL;
+	}
+
 	for (h=context->conn->assoc_group->handles; h; h=h->next) {
 		if (h->wire_handle.handle_type == p->handle_type &&
 		    GUID_equal(&p->uuid, &h->wire_handle.uuid)) {
-			if (handle_type != DCESRV_HANDLE_ANY &&
-			    p->handle_type != handle_type) {
-				DEBUG(0,("client gave us the wrong handle type (%d should be %d)\n",
-					 p->handle_type, handle_type));
-				return NULL;
-			}
-			if (!dom_sid_equal(&h->sid, sid)) {
-				struct dom_sid_buf buf1, buf2;
-				DBG_ERR("Attempt to use invalid sid %s - %s\n",
-					dom_sid_str_buf(&h->sid, &buf1),
-					dom_sid_str_buf(sid, &buf2));
-				return NULL;
-			}
-			if (call->auth_state->auth_level < h->min_auth_level) {
-				DEBUG(0,(__location__ ": Attempt to use invalid auth_level %u < %u\n",
-					 call->auth_state->auth_level,
-					 h->min_auth_level));
-				return NULL;
-			}
-			if (h->iface != context->iface) {
-				DEBUG(0,(__location__ ": Attempt to use invalid iface\n"));
-				return NULL;
-			}
-			return h;
+			break;
 		}
 	}
 
-	return NULL;
+	if (h == NULL) {
+		/* not found */
+		return NULL;
+	}
+
+	if (!dom_sid_equal(&h->sid, sid)) {
+		struct dom_sid_buf buf1, buf2;
+		DBG_ERR("Attempt to use invalid sid %s - %s\n",
+			dom_sid_str_buf(&h->sid, &buf1),
+			dom_sid_str_buf(sid, &buf2));
+		return NULL;
+	}
+
+	if (call->auth_state->auth_level < h->min_auth_level) {
+		DBG_ERR("Attempt to use invalid auth_level %u < %u\n",
+			call->auth_state->auth_level,
+			h->min_auth_level);
+		return NULL;
+	}
+
+	if (h->iface != context->iface) {
+		DBG_ERR("Attempt to use invalid iface\n");
+		return NULL;
+	}
+
+	return h;
 }
 
 struct dcesrv_iface_state {

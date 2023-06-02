@@ -22,8 +22,9 @@
 */
 
 #include "includes.h"
-#include "winbind_client.h"
 #include "libwbclient/wbclient.h"
+#include "winbind_struct_protocol.h"
+#include "libwbclient/wbclient_internal.h"
 #include "../libcli/auth/libcli_auth.h"
 #include "lib/cmdline/cmdline.h"
 #include "lib/afs/afs_settoken.h"
@@ -697,6 +698,7 @@ static bool wbinfo_domain_info(const char *domain)
 /* Get a foreign DC's name */
 static bool wbinfo_getdcname(const char *domain_name)
 {
+	wbcErr wbc_status = WBC_ERR_UNKNOWN_FAILURE;
 	struct winbindd_request request;
 	struct winbindd_response response;
 
@@ -707,8 +709,9 @@ static bool wbinfo_getdcname(const char *domain_name)
 
 	/* Send request */
 
-	if (winbindd_request_response(NULL, WINBINDD_GETDCNAME, &request,
-				      &response) != NSS_STATUS_SUCCESS) {
+	wbc_status = wbcRequestResponse(NULL, WINBINDD_GETDCNAME,
+					&request, &response);
+	if (!WBC_ERROR_IS_OK(wbc_status)) {
 		d_fprintf(stderr, "Could not get dc name for %s\n",domain_name);
 		return false;
 	}
@@ -834,6 +837,43 @@ static bool wbinfo_change_secret(const char *domain)
 
 	if (wbc_status == WBC_ERR_AUTH_ERROR) {
 		d_fprintf(stderr, "wbcChangeTrustCredentials(%s): error code was %s (0x%x)\n",
+			  domain_name, error->nt_string, error->nt_status);
+		wbcFreeMemory(error);
+	}
+	if (!WBC_ERROR_IS_OK(wbc_status)) {
+		d_fprintf(stderr, "failed to call wbcChangeTrustCredentials: "
+			  "%s\n", wbcErrorString(wbc_status));
+		return false;
+	}
+
+	return true;
+}
+
+/* Change trust account password chose Domain Controller */
+
+static bool wbinfo_change_secret_at(const char *domain,
+				    const char *domain_controller)
+{
+	wbcErr wbc_status = WBC_ERR_UNKNOWN_FAILURE;
+	struct wbcAuthErrorInfo *error = NULL;
+	const char *domain_name;
+
+	if (domain) {
+		domain_name = domain;
+	} else {
+		domain_name = get_winbind_domain();
+	}
+
+	wbc_status = wbcChangeTrustCredentialsAt(
+		domain_name, domain_controller,  &error);
+
+	d_printf("changing the trust secret for domain %s via RPC calls %s\n",
+		domain_name,
+		WBC_ERROR_IS_OK(wbc_status) ? "succeeded" : "failed");
+
+	if (wbc_status == WBC_ERR_AUTH_ERROR) {
+		d_fprintf(stderr, "wbcChangeTrustCredentials(%s): "
+			  "error code was %s (0x%x)\n",
 			  domain_name, error->nt_string, error->nt_status);
 		wbcFreeMemory(error);
 	}
@@ -2054,9 +2094,9 @@ static bool wbinfo_ccache_save(char *username)
 
 static bool wbinfo_klog(char *username)
 {
+	wbcErr wbc_status = WBC_ERR_UNKNOWN_FAILURE;
 	struct winbindd_request request;
 	struct winbindd_response response;
-	NSS_STATUS result;
 	char *p;
 
 	/* Send off request */
@@ -2081,13 +2121,13 @@ static bool wbinfo_klog(char *username)
 
 	request.flags |= WBFLAG_PAM_AFS_TOKEN;
 
-	result = winbindd_request_response(NULL, WINBINDD_PAM_AUTH, &request,
-					   &response);
+	wbc_status = wbcRequestResponse(NULL, WINBINDD_PAM_AUTH,
+					&request, &response);
 
 	/* Display response */
 
 	d_printf("plaintext password authentication %s\n",
-		 (result == NSS_STATUS_SUCCESS) ? "succeeded" : "failed");
+		 WBC_ERROR_IS_OK(wbc_status) ? "succeeded" : "failed");
 
 	if (response.data.auth.nt_status)
 		d_fprintf(stderr,
@@ -2096,7 +2136,7 @@ static bool wbinfo_klog(char *username)
 			 response.data.auth.nt_status,
 			 response.data.auth.error_string);
 
-	if (result != NSS_STATUS_SUCCESS)
+	if (!WBC_ERROR_IS_OK(wbc_status))
 		return false;
 
 	if (response.extra_data.data == NULL) {
@@ -2105,10 +2145,12 @@ static bool wbinfo_klog(char *username)
 	}
 
 	if (!afs_settoken_str((char *)response.extra_data.data)) {
+		winbindd_free_response(&response);
 		d_fprintf(stderr, "Could not set token\n");
 		return false;
 	}
 
+	winbindd_free_response(&response);
 	d_printf("Successfully created AFS token\n");
 	return true;
 }
@@ -2286,7 +2328,8 @@ enum {
 	OPT_LOGOFF_USER,
 	OPT_LOGOFF_UID,
 	OPT_LANMAN,
-	OPT_KRB5CCNAME
+	OPT_KRB5CCNAME,
+	OPT_CHANGE_SECRET_AT
 };
 
 int main(int argc, const char **argv, char **envp)
@@ -2502,6 +2545,13 @@ int main(int argc, const char **argv, char **envp)
 			.val        = 'c',
 			.descrip    = "Change shared secret",
 		},
+		{
+			.longName   = "change-secret-at",
+			.shortName  = 0,
+			.argInfo    = POPT_ARG_STRING,
+			.arg        = &string_arg,
+			.val        = OPT_CHANGE_SECRET_AT,
+			.descrip    = "Change shared secret at Domain Controler" },
 		{
 			.longName   = "ping-dc",
 			.shortName  = 'P',
@@ -3025,6 +3075,12 @@ int main(int argc, const char **argv, char **envp)
 			break;
 		case 'c':
 			if (!wbinfo_change_secret(opt_domain_name)) {
+				d_fprintf(stderr, "Could not change secret\n");
+				goto done;
+			}
+			break;
+		case OPT_CHANGE_SECRET_AT:
+			if (!wbinfo_change_secret_at(opt_domain_name, string_arg)) {
 				d_fprintf(stderr, "Could not change secret\n");
 				goto done;
 			}

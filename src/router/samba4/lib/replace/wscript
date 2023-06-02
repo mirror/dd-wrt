@@ -31,6 +31,9 @@ def configure(conf):
 
     conf.env.standalone_replace = conf.IN_LAUNCH_DIR()
 
+    if sys.platform.rfind('linux') > -1:
+        conf.DEFINE('LINUX', '1')
+
     conf.DEFINE('BOOL_DEFINED', 1)
     conf.DEFINE('HAVE_LIBREPLACE', 1)
     conf.DEFINE('LIBREPLACE_NETWORK_CHECKS', 1)
@@ -41,7 +44,6 @@ def configure(conf):
     conf.CHECK_HEADERS('locale.h ndir.h pwd.h')
     conf.CHECK_HEADERS('shadow.h sys/acl.h')
     conf.CHECK_HEADERS('sys/attributes.h attr/attributes.h sys/capability.h sys/dir.h sys/epoll.h')
-    conf.CHECK_HEADERS('port.h')
     conf.CHECK_HEADERS('sys/fcntl.h sys/filio.h sys/filsys.h sys/fs/s5param.h')
     conf.CHECK_HEADERS('sys/id.h sys/ioctl.h sys/ipc.h sys/mman.h sys/mode.h sys/ndir.h sys/priv.h')
     conf.CHECK_HEADERS('sys/resource.h sys/security.h sys/shm.h sys/statfs.h sys/statvfs.h sys/termio.h')
@@ -63,6 +65,7 @@ def configure(conf):
     conf.CHECK_HEADERS('errno.h')
     conf.CHECK_HEADERS('getopt.h iconv.h')
     conf.CHECK_HEADERS('memory.h nss.h sasl/sasl.h')
+    conf.CHECK_HEADERS('linux/openat2.h')
 
     conf.CHECK_FUNCS_IN('inotify_init', 'inotify', checklibc=True,
                         headers='sys/inotify.h')
@@ -128,6 +131,9 @@ def configure(conf):
     if conf.CHECK_CFLAGS('-Wno-strict-overflow'):
         conf.define('HAVE_WNO_STRICT_OVERFLOW', '1')
 
+    if conf.CHECK_CFLAGS('-Wuse-after-free=1'):
+        conf.define('HAVE_WUSE_AFTER_FREE_1', '1')
+
     # Check for process set name support
     conf.CHECK_CODE('''
                     #include <sys/prctl.h>
@@ -153,8 +159,8 @@ def configure(conf):
                     msg='Checking for O_DIRECT flag to open(2)')
 
     conf.CHECK_TYPES('"long long" intptr_t uintptr_t ptrdiff_t comparison_fn_t')
-    conf.CHECK_TYPE('_Bool', define='HAVE__Bool')
-    conf.CHECK_TYPE('bool', define='HAVE_BOOL')
+    if not conf.CHECK_TYPE('bool', define='HAVE_BOOL', headers='stdbool.h'):
+            raise Errors.WafError('Samba requires a genuine boolean type')
 
     conf.CHECK_TYPE('int8_t', 'char')
     conf.CHECK_TYPE('uint8_t', 'unsigned char')
@@ -299,12 +305,35 @@ def configure(conf):
                     msg='Checking for __sync_fetch_and_add compiler builtin')
 
     conf.CHECK_CODE('''
+                    int i;
+                    (void)__sync_add_and_fetch(&i, 1);
+                    ''',
+                    'HAVE___SYNC_ADD_AND_FETCH',
+                    msg='Checking for __sync_add_and_fetch compiler builtin')
+
+    conf.CHECK_CODE('''
                     int32_t i;
                     atomic_add_32(&i, 1);
                     ''',
                     'HAVE_ATOMIC_ADD_32',
                     headers='stdint.h sys/atomic.h',
                     msg='Checking for atomic_add_32 compiler builtin')
+
+    conf.CHECK_CODE('''
+                    uint32_t i,j;
+                    j = __atomic_add_fetch(&i,1,__ATOMIC_SEQ_CST)
+                    ''',
+                    'HAVE___ATOMIC_ADD_FETCH',
+                    headers='stdint.h',
+                    msg='Checking for __atomic_add_fetch compiler builtin')
+
+    conf.CHECK_CODE('''
+                    uint32_t i,j;
+                    __atomic_load(&i,&j,__ATOMIC_SEQ_CST)
+                    ''',
+                    'HAVE___ATOMIC_ADD_LOAD',
+                    headers='stdint.h',
+                    msg='Checking for __atomic_load compiler builtin')
 
     # Check for thread fence. */
     tf = conf.CHECK_CODE('atomic_thread_fence(memory_order_seq_cst);',
@@ -437,21 +466,19 @@ def configure(conf):
                         execute = True,
                         define = 'HAVE_BSD_STRTOLL',
                         )
-    conf.CHECK_FUNCS('if_nametoindex strerror_r')
+    conf.CHECK_FUNCS('if_nameindex if_nametoindex strerror_r')
     conf.CHECK_FUNCS('syslog')
     conf.CHECK_FUNCS('gai_strerror get_current_dir_name')
     conf.CHECK_FUNCS('timegm getifaddrs freeifaddrs mmap setgroups syscall setsid')
     conf.CHECK_FUNCS('getgrent_r getgrgid_r getgrnam_r getgrouplist getpagesize')
     conf.CHECK_FUNCS('getpwent_r getpwnam_r getpwuid_r epoll_create')
-    conf.CHECK_FUNCS('port_create')
     conf.CHECK_FUNCS('getprogname')
     if not conf.CHECK_FUNCS('copy_file_range'):
         conf.CHECK_CODE('''
-#include <sys/syscall.h>
-#include <unistd.h>
 syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
                         ''',
                         'HAVE_SYSCALL_COPY_FILE_RANGE',
+                        headers='sys/syscall.h unistd.h',
                         msg='Checking whether we have copy_file_range system call')
 
     conf.SET_TARGET_TYPE('attr', 'EMPTY')
@@ -635,7 +662,8 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
              conf.CONFIG_SET('HAVE_PTHREAD_MUTEX_CONSISTENT_NP'))):
             conf.DEFINE('HAVE_ROBUST_MUTEXES', 1)
 
-    # __thread is available since 2002 in gcc.
+    # __thread is available in Solaris Studio, IBM XL,
+    # gcc, Clang and Intel C Compiler
     conf.CHECK_CODE('''
         __thread int tls;
 
@@ -646,6 +674,9 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
         'HAVE___THREAD',
         addmain=False,
         msg='Checking for __thread local storage')
+
+    if conf.CONFIG_SET('HAVE_PTHREAD') and not conf.CONFIG_SET('HAVE___THREAD'):
+        conf.fatal('Missing required TLS support in pthread library')
 
     conf.CHECK_FUNCS_IN('crypt', 'crypt', checklibc=True)
     conf.CHECK_FUNCS_IN('crypt_r', 'crypt', checklibc=True)
@@ -665,9 +696,6 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
 
     if conf.CONFIG_SET('HAVE_EPOLL_CREATE') and conf.CONFIG_SET('HAVE_SYS_EPOLL_H'):
         conf.DEFINE('HAVE_EPOLL', 1)
-
-    if conf.CONFIG_SET('HAVE_PORT_CREATE') and conf.CONFIG_SET('HAVE_PORT_H'):
-        conf.DEFINE('HAVE_SOLARIS_PORTS', 1)
 
     if conf.CHECK_FUNCS('eventfd', headers='sys/eventfd.h'):
         conf.DEFINE('HAVE_EVENTFD', 1)
@@ -870,7 +898,6 @@ def build(bld):
     )
 
     REPLACE_SOURCE = REPLACE_HOSTCC_SOURCE
-    REPLACE_SOURCE += ' cwrap.c'
 
     if not bld.CONFIG_SET('HAVE_DLOPEN'):        REPLACE_SOURCE += ' dlfcn.c'
     if not bld.CONFIG_SET('HAVE_POLL'):          REPLACE_SOURCE += ' poll.c'
@@ -892,12 +919,13 @@ def build(bld):
     bld.SAMBA_LIBRARY('replace',
                       source=REPLACE_SOURCE,
                       group='base_libraries',
-                      # FIXME: Ideally symbols should be hidden here so they 
-                      # don't appear in the global namespace when Samba 
-                      # libraries are loaded, but this doesn't appear to work 
+                      # FIXME: Ideally symbols should be hidden here so they
+                      # don't appear in the global namespace when Samba
+                      # libraries are loaded, but this doesn't appear to work
                       # at the moment:
                       # hide_symbols=bld.BUILTIN_LIBRARY('replace'),
                       private_library=True,
+                      provide_builtin_linking=True,
                       deps='dl attr' + extra_libs)
 
     replace_test_cflags = ''

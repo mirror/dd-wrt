@@ -3,7 +3,7 @@
 from waflib import Options, Logs
 
 # Remember to also update wbclient.h
-VERSION="0.15"
+VERSION="0.16"
 
 # It may be useful at some point to allow Samba to build against a
 # system libwbclient, such as the one provided by Likewise.  To to
@@ -27,6 +27,19 @@ def build(bld):
 #
 #    Logs.info("\tSelected embedded libwbclient build")
 
+    wbclient_internal_deps = 'replace'
+    if bld.CONFIG_SET('HAVE_PTHREAD'):
+        wbclient_internal_deps += ' pthread'
+
+    bld.SAMBA_SUBSYSTEM('wbclient-internal',
+        source='../wb_common.c',
+        deps=wbclient_internal_deps,
+        cflags='-DWINBINDD_SOCKET_DIR=\"%s\"' % bld.env.WINBINDD_SOCKET_DIR,
+        hide_symbols=True,
+        provide_builtin_linking=True,
+        builtin_cflags='-DWINBINDD_SOCKET_DIR=\"%s\"' % bld.env.WINBINDD_SOCKET_DIR,
+        )
+
     abi_match = 'wbc*'
     bld.SAMBA_LIBRARY('wbclient',
                       source='''
@@ -37,7 +50,10 @@ def build(bld):
                              wbc_pwd.c
                              wbc_sid.c
                              wbc_util.c''',
-                      deps='winbind-client smb_strtox',
+                      hide_symbols=True,
+                      deps='wbclient-internal smb_strtox',
+                      require_builtin_deps=True,
+                      provide_builtin_linking=True,
                       pc_files='wbclient.pc',
                       public_headers='wbclient.h',
                       abi_directory='ABI',

@@ -180,6 +180,7 @@ static sbcErr smbconf_reg_set_value(struct registry_key *key,
 	char *subkeyname;
 	const char *canon_valname;
 	const char *canon_valstr;
+	TALLOC_CTX *tmp_ctx = talloc_stackframe();
 
 	if (!lp_parameter_is_valid(valname)) {
 		DEBUG(5, ("Invalid parameter '%s' given.\n", valname));
@@ -229,7 +230,7 @@ static sbcErr smbconf_reg_set_value(struct registry_key *key,
 	ZERO_STRUCT(val);
 
 	val.type = REG_SZ;
-	if (!push_reg_sz(talloc_tos(), &val.data, canon_valstr)) {
+	if (!push_reg_sz(tmp_ctx, &val.data, canon_valstr)) {
 		err = SBC_ERR_NOMEM;
 		goto done;
 	}
@@ -245,6 +246,7 @@ static sbcErr smbconf_reg_set_value(struct registry_key *key,
 
 	err = SBC_ERR_OK;
 done:
+	talloc_free(tmp_ctx);
 	return err;
 }
 
@@ -859,15 +861,16 @@ static sbcErr smbconf_reg_create_share(struct smbconf_ctx *ctx,
 {
 	sbcErr err;
 	struct registry_key *key = NULL;
+	TALLOC_CTX *tmp_ctx = talloc_stackframe();
 
 	if (servicename == NULL) {
 		return SBC_ERR_OK;
 	}
 
-	err = smbconf_reg_create_service_key(talloc_tos(), ctx,
+	err = smbconf_reg_create_service_key(tmp_ctx, ctx,
 					     servicename, &key);
 
-	talloc_free(key);
+	talloc_free(tmp_ctx);
 	return err;
 }
 
@@ -1231,5 +1234,13 @@ struct smbconf_ops smbconf_ops_reg = {
 sbcErr smbconf_init_reg(TALLOC_CTX *mem_ctx, struct smbconf_ctx **conf_ctx,
 			const char *path)
 {
-	return smbconf_init_internal(mem_ctx, conf_ctx, path, &smbconf_ops_reg);
+	/*
+	 * this tmp_ctx stackframe is required to initialize the registry backend.
+	 * Without it, the calls panics due to the use of talloc_tos in the
+	 * source3/registry code.
+	 */
+	TALLOC_CTX *tmp_ctx = talloc_stackframe();
+	sbcErr err = smbconf_init_internal(mem_ctx, conf_ctx, path, &smbconf_ops_reg);
+	talloc_free(tmp_ctx);
+	return err;
 }

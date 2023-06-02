@@ -248,7 +248,7 @@ def cleanup_obsolete_dns_files(paths):
 if __name__ == '__main__':
 
     # Setup command line parser
-    parser = optparse.OptionParser("upgradedns [options]")
+    parser = optparse.OptionParser("samba_upgradedns [options]")
     sambaopts = options.SambaOptions(parser)
     credopts = options.CredentialsOptions(parser)
 
@@ -527,7 +527,7 @@ if __name__ == '__main__':
     elif opts.dns_backend == "SAMBA_INTERNAL":
         # Make sure to remove everything from the bind-dns directory to avoid
         # possible security issues with the named group having write access
-        # to all AD partions
+        # to all AD partitions
         cleanup_remove_file(os.path.join(paths.binddns_dir, "dns.keytab"))
         cleanup_remove_file(os.path.join(paths.binddns_dir, "named.conf"))
         cleanup_remove_file(os.path.join(paths.binddns_dir, "named.conf.update"))

@@ -197,9 +197,11 @@ int ldb_module_connect_backend(struct ldb_context *ldb,
 	int ret;
 	char *backend;
 	struct backends_list_entry *be;
+	char *colon = NULL;
 
-	if (strchr(url, ':') != NULL) {
-		backend = talloc_strndup(ldb, url, strchr(url, ':')-url);
+	colon = strchr(url, ':');
+	if (colon != NULL) {
+		backend = talloc_strndup(ldb, url, colon-url);
 	} else {
 		/* Default to tdb */
 		backend = talloc_strdup(ldb, "tdb");
@@ -1191,13 +1193,8 @@ char *ldb_module_call_chain(struct ldb_request *req, TALLOC_CTX *mem_ctx)
 	}
 
 	while (req && req->handle) {
-		char *s = talloc_asprintf_append_buffer(ret, "req[%u] %p  : %s\n",
-							i++, req, ldb_req_location(req));
-		if (s == NULL) {
-			talloc_free(ret);
-			return NULL;
-		}
-		ret = s;
+		talloc_asprintf_addbuf(&ret, "req[%u] %p  : %s\n",
+				       i++, req, ldb_req_location(req));
 		req = req->handle->parent;
 	}
 	return ret;

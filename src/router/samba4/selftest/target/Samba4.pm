@@ -19,7 +19,7 @@ use target::Samba3;
 use Archive::Tar;
 
 sub new($$$$$) {
-	my ($classname, $SambaCtx, $bindir, $srcdir, $server_maxtime) = @_;
+	my ($classname, $SambaCtx, $bindir, $srcdir, $server_maxtime, $default_ldb_backend) = @_;
 
 	my $self = {
 		vars => {},
@@ -27,7 +27,8 @@ sub new($$$$$) {
 		bindir => $bindir,
 		srcdir => $srcdir,
 		server_maxtime => $server_maxtime,
-		target3 => new Samba3($SambaCtx, $bindir, $srcdir, $server_maxtime)
+		target3 => new Samba3($SambaCtx, $bindir, $srcdir, $server_maxtime),
+		default_ldb_backend => $default_ldb_backend,
 	};
 	bless $self;
 	return $self;
@@ -778,6 +779,7 @@ sub provision_raw_step1($$)
 	panic action = $RealBin/gdb_backtrace \%d
 	smbd:suicide mode = yes
 	smbd:FSCTL_SMBTORTURE = yes
+	smbd:validate_oplock_types = yes
 	wins support = yes
 	server role = $ctx->{server_role}
 	server services = +echo $services
@@ -1335,15 +1337,6 @@ winbindd:use external pipes = true
 server signing = enabled
 raw NTLMv2 auth = yes
 
-rpc_server:default = external
-rpc_server:svcctl = embedded
-rpc_server:srvsvc = embedded
-rpc_server:eventlog = embedded
-rpc_server:ntsvcs = embedded
-rpc_server:winreg = embedded
-rpc_server:spoolss = embedded
-rpc_daemon:spoolssd = embedded
-rpc_server:tcpip = no
 # override the new SMB2 only default
 client min protocol = CORE
 server min protocol = LANMAN1
@@ -1498,6 +1491,8 @@ sub provision_promoted_dc($$$)
 
         ntlm auth = ntlmv2-only
 
+	kdc force enable rc4 weak session keys = yes
+
 [sysvol]
 	path = $ctx->{statedir}/sysvol
 	read only = yes
@@ -1592,7 +1587,7 @@ sub provision_vampire_dc($$$)
 	$cmd .= "$samba_tool domain join $ret->{CONFIGURATION} $dcvars->{REALM} DC --realm=$dcvars->{REALM}";
 	$cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD} --domain-critical-only";
 	$cmd .= " --machinepass=machine$ret->{PASSWORD}";
-	$cmd .= " --backend-store=mdb";
+	$cmd .= " --backend-store=$self->{default_ldb_backend}";
 
 	unless (system($cmd) == 0) {
 		warn("Join failed\n$cmd");
@@ -1617,7 +1612,6 @@ sub provision_ad_dc_ntvfs($$$)
         my $extra_conf_options = "netbios aliases = localDC1-a
         server services = +winbind -winbindd
 	ldap server require strong auth = allow_sasl_over_tls
-	allow nt4 crypto = yes
 	raw NTLMv2 auth = yes
 	lsa over netlogon = yes
         rpc server port = 1027
@@ -1625,10 +1619,53 @@ sub provision_ad_dc_ntvfs($$$)
 	dsdb event notification = true
 	dsdb password event notification = true
 	dsdb group change notification = true
-	server schannel = auto
 	# override the new SMB2 only default
 	client min protocol = CORE
 	server min protocol = LANMAN1
+
+	CVE_2020_1472:warn_about_unused_debug_level = 3
+	CVE_2022_38023:warn_about_unused_debug_level = 3
+	allow nt4 crypto:torturetest\$ = yes
+	server reject md5 schannel:schannel2\$ = no
+	server reject md5 schannel:schannel3\$ = no
+	server reject md5 schannel:schannel8\$ = no
+	server reject md5 schannel:schannel9\$ = no
+	server reject md5 schannel:torturetest\$ = no
+	server reject md5 schannel:tests4u2proxywk\$ = no
+	server reject md5 schannel:tests4u2selfbdc\$ = no
+	server reject md5 schannel:tests4u2selfwk\$ = no
+	server reject md5 schannel:torturepacbdc\$ = no
+	server reject md5 schannel:torturepacwksta\$ = no
+	server require schannel:schannel0\$ = no
+	server require schannel:schannel1\$ = no
+	server require schannel:schannel2\$ = no
+	server require schannel:schannel3\$ = no
+	server require schannel:schannel4\$ = no
+	server require schannel:schannel5\$ = no
+	server require schannel:schannel6\$ = no
+	server require schannel:schannel7\$ = no
+	server require schannel:schannel8\$ = no
+	server require schannel:schannel9\$ = no
+	server require schannel:schannel10\$ = no
+	server require schannel:schannel11\$ = no
+	server require schannel:torturetest\$ = no
+	server schannel require seal:schannel0\$ = no
+	server schannel require seal:schannel1\$ = no
+	server schannel require seal:schannel2\$ = no
+	server schannel require seal:schannel3\$ = no
+	server schannel require seal:schannel4\$ = no
+	server schannel require seal:schannel5\$ = no
+	server schannel require seal:schannel6\$ = no
+	server schannel require seal:schannel7\$ = no
+	server schannel require seal:schannel8\$ = no
+	server schannel require seal:schannel9\$ = no
+	server schannel require seal:schannel10\$ = no
+	server schannel require seal:schannel11\$ = no
+	server schannel require seal:torturetest\$ = no
+
+	# needed for 'samba.tests.auth_log' tests
+	server require schannel:LOCALDC\$ = no
+	server schannel require seal:LOCALDC\$ = no
 	";
 	push (@{$extra_provision_options}, "--use-ntvfs");
 	my $ret = $self->provision($prefix,
@@ -1664,8 +1701,16 @@ sub provision_fl2000dc($$)
 
 	print "PROVISIONING DC WITH FOREST LEVEL 2000...\n";
 	my $extra_conf_options = "
+	kdc enable fast = no
 	spnego:simulate_w2k=yes
 	ntlmssp_server:force_old_spnego=yes
+
+	CVE_2022_38023:warn_about_unused_debug_level = 3
+	server reject md5 schannel:tests4u2proxywk\$ = no
+	server reject md5 schannel:tests4u2selfbdc\$ = no
+	server reject md5 schannel:tests4u2selfwk\$ = no
+	server reject md5 schannel:torturepacbdc\$ = no
+	server reject md5 schannel:torturepacwksta\$ = no
 ";
 	my $extra_provision_options = ["--base-schema=2008_R2"];
 	# This environment uses plain text secrets
@@ -1703,13 +1748,26 @@ sub provision_fl2003dc($$$)
 {
 	my ($self, $prefix, $dcvars) = @_;
 	my $ip_addr1 = Samba::get_ipv4_addr("fakednsforwarder1");
-	my $ip_addr2 = Samba::get_ipv4_addr("fakednsforwarder2");
+	my $ip_addr2 = Samba::get_ipv6_addr("fakednsforwarder2");
 
 	print "PROVISIONING DC WITH FOREST LEVEL 2003...\n";
-	my $extra_conf_options = "allow dns updates = nonsecure and secure
+	my $extra_conf_options = "
+	allow dns updates = nonsecure and secure
+
+	kdc enable fast = no
 	dcesrv:header signing = no
 	dcesrv:max auth states = 0
-	dns forwarder = $ip_addr1 $ip_addr2";
+
+	dns forwarder = $ip_addr1 [$ip_addr2]:54
+
+	CVE_2022_38023:warn_about_unused_debug_level = 3
+	server reject md5 schannel:tests4u2proxywk\$ = no
+	server reject md5 schannel:tests4u2selfbdc\$ = no
+	server reject md5 schannel:tests4u2selfwk\$ = no
+	server reject md5 schannel:torturepacbdc\$ = no
+	server reject md5 schannel:torturepacwksta\$ = no
+";
+
 	my $extra_provision_options = ["--base-schema=2008_R2"];
 	my $ret = $self->provision($prefix,
 				   "domain controller",
@@ -1764,6 +1822,13 @@ sub provision_fl2008r2dc($$$)
 	ldap server require strong auth = no
         # delay by 10 seconds, 10^7 usecs
 	ldap_server:delay_expire_disconnect = 10000
+
+	CVE_2022_38023:warn_about_unused_debug_level = 3
+	server reject md5 schannel:tests4u2proxywk\$ = no
+	server reject md5 schannel:tests4u2selfbdc\$ = no
+	server reject md5 schannel:tests4u2selfwk\$ = no
+	server reject md5 schannel:torturepacbdc\$ = no
+	server reject md5 schannel:torturepacwksta\$ = no
 ";
 	my $extra_provision_options = ["--base-schema=2008_R2"];
 	my $ret = $self->provision($prefix,
@@ -1975,8 +2040,48 @@ sub provision_ad_dc($$$$$$$)
 	lpq cache time = 0
 	print notify backchannel = yes
 
-	server schannel = auto
-        auth event notification = true
+	CVE_2020_1472:warn_about_unused_debug_level = 3
+	CVE_2022_38023:warn_about_unused_debug_level = 3
+	CVE_2022_38023:error_debug_level = 2
+	server reject md5 schannel:schannel2\$ = no
+	server reject md5 schannel:schannel3\$ = no
+	server reject md5 schannel:schannel8\$ = no
+	server reject md5 schannel:schannel9\$ = no
+	server reject md5 schannel:torturetest\$ = no
+	server reject md5 schannel:tests4u2proxywk\$ = no
+	server reject md5 schannel:tests4u2selfbdc\$ = no
+	server reject md5 schannel:tests4u2selfwk\$ = no
+	server reject md5 schannel:torturepacbdc\$ = no
+	server reject md5 schannel:torturepacwksta\$ = no
+	server reject md5 schannel:samlogontest\$ = no
+	server require schannel:schannel0\$ = no
+	server require schannel:schannel1\$ = no
+	server require schannel:schannel2\$ = no
+	server require schannel:schannel3\$ = no
+	server require schannel:schannel4\$ = no
+	server require schannel:schannel5\$ = no
+	server require schannel:schannel6\$ = no
+	server require schannel:schannel7\$ = no
+	server require schannel:schannel8\$ = no
+	server require schannel:schannel9\$ = no
+	server require schannel:schannel10\$ = no
+	server require schannel:schannel11\$ = no
+	server require schannel:torturetest\$ = no
+	server schannel require seal:schannel0\$ = no
+	server schannel require seal:schannel1\$ = no
+	server schannel require seal:schannel2\$ = no
+	server schannel require seal:schannel3\$ = no
+	server schannel require seal:schannel4\$ = no
+	server schannel require seal:schannel5\$ = no
+	server schannel require seal:schannel6\$ = no
+	server schannel require seal:schannel7\$ = no
+	server schannel require seal:schannel8\$ = no
+	server schannel require seal:schannel9\$ = no
+	server schannel require seal:schannel10\$ = no
+	server schannel require seal:schannel11\$ = no
+	server schannel require seal:torturetest\$ = no
+
+	auth event notification = true
 	dsdb event notification = true
 	dsdb password event notification = true
 	dsdb group change notification = true
@@ -2025,7 +2130,7 @@ sub provision_ad_dc($$$$$$$)
 	copy = print1
 ";
 
-	push (@{$extra_provision_options}, "--backend-store=mdb");
+	push (@{$extra_provision_options}, "--backend-store=$self->{default_ldb_backend}");
 	print "PROVISIONING AD DC...\n";
 	my $ret = $self->provision($prefix,
 				   "domain controller",
@@ -2060,10 +2165,22 @@ sub provision_chgdcpass($$)
 	# This environment disallows the use of this password
 	# (and also removes the default AD complexity checks)
 	my $unacceptable_password = "Paßßword-widk3Dsle32jxdBdskldsk55klASKQ";
+
+	# This environment also sets some settings that are unusual,
+	# to test specific behaviours.  In particular, this
+	# environment fails to correctly support DRSUAPI_DRS_GET_ANC
+	# like Samba before 4.5 and DRSUAPI_DRS_GET_TGT before 4.8
+	#
+	# Additionally, disabling DRSUAPI_DRS_GET_TGT causes all links
+	# to be sent last (in the final chunk), which is like Samba
+	# before 4.8.
+
 	my $extra_smb_conf = "
 	check password script = $self->{srcdir}/selftest/checkpassword_arg1.sh ${unacceptable_password}
 	allow dcerpc auth level connect:lsarpc = yes
 	dcesrv:max auth states = 8
+        drs:broken_samba_4.5_get_anc_emulation = true
+        drs:get_tgt_support = false
 ";
 	my $extra_provision_options = ["--dns-backend=BIND9_DLZ"];
 	my $ret = $self->provision($prefix,
@@ -2653,6 +2770,10 @@ sub setup_ad_dc_smb1
 [global]
 	client min protocol = CORE
 	server min protocol = LANMAN1
+
+	# needed for 'samba.tests.auth_log' tests
+	server require schannel:ADDCSMB1\$ = no
+	server schannel require seal:ADDCSMB1\$ = no
 ";
 	return _setup_ad_dc($self, $path, $conf_opts, "addcsmb1", "addom2.samba.example.com");
 }
@@ -2714,7 +2835,7 @@ sub setup_ad_dc_no_ntlm
 					 "ADNONTLMDOMAIN",
 					 "adnontlmdom.samba.example.com",
 					 undef,
-					 "ntlm auth = disabled",
+					 "ntlm auth = disabled\nnt hash store = never",
 					 undef);
 	unless ($env) {
 		return undef;
@@ -2862,7 +2983,7 @@ sub setup_schema_dc
 	my ($self, $path) = @_;
 
 	# provision the PDC using an older base schema
-	my $provision_args = ["--base-schema=2008_R2", "--backend-store=mdb"];
+	my $provision_args = ["--base-schema=2008_R2", "--backend-store=$self->{default_ldb_backend}"];
 
 	my $env = $self->provision_ad_dc($path,
 					 "liveupgrade1dc",
@@ -2908,7 +3029,7 @@ sub setup_schema_pair_dc
 	my $join_cmd = $cmd_vars;
 	$join_cmd .= "$samba_tool domain join $env->{CONFIGURATION} $dcvars->{REALM} DC --realm=$dcvars->{REALM}";
 	$join_cmd .= " -U$dcvars->{DC_USERNAME}\%$dcvars->{DC_PASSWORD} ";
-	$join_cmd .= " --backend-store=mdb";
+	$join_cmd .= " --backend-store=$self->{default_ldb_backend}";
 
 	my $upgrade_cmd = $cmd_vars;
 	$upgrade_cmd .= "$samba_tool domain schemaupgrade $dcvars->{CONFIGURATION}";
@@ -3364,7 +3485,7 @@ sub setup_labdc
 	my $backupdir = File::Temp->newdir();
 	my $server_args = $self->get_backup_server_args($dcvars);
 	my $backup_args = "rename $env->{DOMAIN} $env->{REALM} $server_args";
-	$backup_args .= " --no-secrets --backend-store=mdb";
+	$backup_args .= " --no-secrets --backend-store=$self->{default_ldb_backend}";
 	my $backup_file = $self->create_backup($env, $dcvars, $backupdir,
 					       $backup_args);
 	unless($backup_file) {

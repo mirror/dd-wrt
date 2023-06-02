@@ -11,12 +11,13 @@ bld.SAMBA_LIBRARY('time-basic',
 
 bld.SAMBA_SUBSYSTEM('tini',
                     source='tini.c',
-                    deps='',
+                    provide_builtin_linking=True,
                     local_include=False)
 
 bld.SAMBA_SUBSYSTEM('tiniparser',
                     source='tiniparser.c',
                     deps='tini',
+                    provide_builtin_linking=True,
                     local_include=False)
 
 bld.SAMBA_SUBSYSTEM('strv',
@@ -52,7 +53,7 @@ bld.SAMBA_LIBRARY('samba-debug',
                   deps='replace time-basic close-low-fd talloc socket-blocking' + samba_debug_add_deps,
                   public_deps='systemd systemd-journal lttng-ust',
                   local_include=False,
-                  includes=samba_debug_add_inc,
+                  includes='lib/util/debug-classes ' + samba_debug_add_inc,
                   private_library=True)
 
 bld.SAMBA_LIBRARY('socket-blocking',
@@ -83,6 +84,7 @@ bld.SAMBA_SUBSYSTEM('smb-panic',
                     replace
                     samba-debug
                     LIBUNWIND
+                    execinfo
                     ''',
                     local_include=False)
 
@@ -116,12 +118,14 @@ bld.SAMBA_SUBSYSTEM('samba-util-core',
                     tini
                     smb_strtox
                     smb-panic
+                    gnutls
                     ''',
                     public_deps='systemd systemd-daemon sys_rw',
                     local_include=False)
 
 bld.SAMBA_SUBSYSTEM('smb_strtox',
                     source='smb_strtox.c',
+                    provide_builtin_linking=True,
                     local_include=False)
 
 
@@ -139,7 +143,14 @@ bld.SAMBA_LIBRARY('msghdr',
 
 bld.SAMBA_LIBRARY('genrand',
                   source='genrand.c',
-                  deps='replace gnutls',
+                  deps='replace gnutls smb-panic',
+                  local_include=False,
+                  private_library=True)
+
+bld.SAMBA_LIBRARY('stable_sort',
+                  source='stable_sort.c',
+                  deps='replace',
+                  public_deps='talloc',
                   local_include=False,
                   private_library=True)
 
@@ -161,6 +172,16 @@ else:
                      local_include=False,
                      install=False)
 
+    # TODO: Rewrite ms_fnmatch_core() for a better API.
+    ms_fnmatch_cflags=''
+    if bld.CONFIG_SET('HAVE_WNO_ERROR_ARRAY_BOUNDS'):
+        ms_fnmatch_cflags='-Wno-error=array-bounds'
+    bld.SAMBA_SUBSYSTEM('SAMBA_UTIL_MS_FNMATCH',
+                        source='ms_fnmatch.c',
+                        deps='talloc',
+                        cflags=ms_fnmatch_cflags,
+                        local_include=False)
+
     bld.SAMBA_LIBRARY('samba-util',
                   source='''
                          base64.c
@@ -170,7 +191,6 @@ else:
                          getpass.c
                          idtree_random.c
                          memcache.c
-                         ms_fnmatch.c
                          params.c
                          rbtree.c
                          rfc1738.c
@@ -190,7 +210,15 @@ else:
                          util_str_common.c
                          util_strlist_v3.c
                          ''',
-                  deps='samba-util-core DYNCONFIG close-low-fd tiniparser genrand util_str_hex',
+                  deps='''
+                       samba-util-core
+                       DYNCONFIG
+                       close-low-fd
+                       tiniparser
+                       genrand
+                       util_str_hex
+                       SAMBA_UTIL_MS_FNMATCH
+                       ''',
                   public_deps='talloc tevent execinfo pthread LIBCRYPTO charset util_setid',
                   public_headers='''
                                  attr.h
@@ -360,5 +388,28 @@ else:
     bld.SAMBA_BINARY('test_sys_rw',
                      source='tests/test_sys_rw.c',
                      deps='cmocka replace samba-util',
+                     local_include=False,
+                     for_selftest=True)
+
+    bld.SAMBA_BINARY('test_s4_logging',
+                     source='tests/test_logging.c',
+                     deps=' '.join(['CMDLINE_S4',
+                                    'samba-util',
+                                    'popt']),
+                     local_include=False,
+                     for_selftest=True)
+
+    bld.SAMBA_BINARY('test_s3_logging',
+                     source='tests/test_logging.c',
+                     deps=' '.join(['CMDLINE_S3',
+                                    'samba-util',
+                                    'popt']),
+                     cflags="-D USING_CMDLINE_S3",
+                     local_include=False,
+                     for_selftest=True)
+
+    bld.SAMBA_BINARY('test_stable_sort',
+                     source='tests/test_stable_sort.c',
+                     deps='cmocka replace talloc stable_sort',
                      local_include=False,
                      for_selftest=True)

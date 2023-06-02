@@ -112,7 +112,7 @@ static bool test_ioctl_req_resume_key(struct torture_context *torture,
 	torture_assert_ndr_success(torture, ndr_ret,
 				   "ndr_pull_req_resume_key_rsp");
 
-	ndr_print_debug((ndr_print_fn_t)ndr_print_req_resume_key_rsp, "yo", &res_key);
+	NDR_PRINT_DEBUG(req_resume_key_rsp, &res_key);
 
 	talloc_free(tmp_ctx);
 	return true;
@@ -156,7 +156,7 @@ static bool test_ioctl_req_two_resume_keys(struct torture_context *torture,
 	torture_assert_ndr_success(torture, ndr_ret,
 				   "ndr_pull_req_resume_key_rsp");
 
-	ndr_print_debug((ndr_print_fn_t)ndr_print_req_resume_key_rsp, "yo", &res_key);
+	NDR_PRINT_DEBUG(req_resume_key_rsp, &res_key);
 
 	ZERO_STRUCT(ioctl);
 	ioctl.smb2.level = RAW_IOCTL_SMB2;
@@ -173,7 +173,7 @@ static bool test_ioctl_req_two_resume_keys(struct torture_context *torture,
 	torture_assert_ndr_success(torture, ndr_ret,
 				   "ndr_pull_req_resume_key_rsp");
 
-	ndr_print_debug((ndr_print_fn_t)ndr_print_req_resume_key_rsp, "yo", &res_key);
+	NDR_PRINT_DEBUG(req_resume_key_rsp, &res_key);
 
 	talloc_free(tmp_ctx);
 	return true;
@@ -3156,8 +3156,7 @@ static bool test_ioctl_network_interface_info(struct torture_context *torture,
 	torture_assert_ndr_success(torture, ndr_ret,
 				   "ndr_pull_fsctl_net_iface_info");
 
-	ndr_print_debug((ndr_print_fn_t)ndr_print_fsctl_net_iface_info,
-			"Network Interface Info", &net_iface);
+	NDR_PRINT_DEBUG(fsctl_net_iface_info, &net_iface);
 
 	talloc_free(tmp_ctx);
 	return true;
@@ -3837,6 +3836,80 @@ static bool test_ioctl_sparse_qar_malformed(struct torture_context *torture,
 				      NT_STATUS_INVALID_PARAMETER, "qar empty");
 
 	return true;
+}
+
+bool test_ioctl_alternate_data_stream(struct torture_context *tctx)
+{
+	bool ret = false;
+	const char *fname = DNAME "\\test_stream_ioctl_dir";
+	const char *sname = DNAME "\\test_stream_ioctl_dir:stream";
+	NTSTATUS status;
+	struct smb2_create create = {};
+	struct smb2_tree *tree = NULL;
+	struct smb2_handle h1 = {{0}};
+	union smb_ioctl ioctl;
+
+	if (!torture_smb2_connection(tctx, &tree)) {
+		torture_comment(tctx, "Initializing smb2 connection failed.\n");
+		return false;
+	}
+
+	smb2_deltree(tree, DNAME);
+
+	status = torture_smb2_testdir(tree, DNAME, &h1);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"torture_smb2_testdir failed\n");
+
+	status = smb2_util_close(tree, h1);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_util_close failed\n");
+	create = (struct smb2_create) {
+		.in.desired_access = SEC_FILE_ALL,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+		.in.file_attributes = FILE_ATTRIBUTE_HIDDEN,
+		.in.create_disposition = NTCREATEX_DISP_CREATE,
+		.in.impersonation_level = SMB2_IMPERSONATION_IMPERSONATION,
+		.in.fname = fname,
+	};
+
+	status = smb2_create(tree, tctx, &create);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_create failed\n");
+
+	h1 = create.out.file.handle;
+	status = smb2_util_close(tree, h1);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_util_close failed\n");
+
+	create = (struct smb2_create) {
+		.in.desired_access = SEC_FILE_ALL,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+		.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+		.in.create_disposition = NTCREATEX_DISP_CREATE,
+		.in.impersonation_level = SMB2_IMPERSONATION_IMPERSONATION,
+		.in.fname = sname,
+	};
+	status = smb2_create(tree, tctx, &create);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_create failed\n");
+	h1 = create.out.file.handle;
+
+	ZERO_STRUCT(ioctl);
+	ioctl.smb2.level = RAW_IOCTL_SMB2;
+	ioctl.smb2.in.file.handle = h1;
+	ioctl.smb2.in.function = FSCTL_CREATE_OR_GET_OBJECT_ID,
+	ioctl.smb2.in.max_output_response = 64;
+	ioctl.smb2.in.flags = SMB2_IOCTL_FLAG_IS_FSCTL;
+	status = smb2_ioctl(tree, tctx, &ioctl.smb2);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_ioctl failed\n");
+	ret = true;
+
+done:
+
+	smb2_util_close(tree, h1);
+	smb2_deltree(tree, DNAME);
+	return ret;
 }
 
 /*

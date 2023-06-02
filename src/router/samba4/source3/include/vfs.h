@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    VFS structures and parameters
    Copyright (C) Jeremy Allison                         1999-2005
@@ -360,9 +360,27 @@
  * Version 45 - Remove SYS_ACL_BLOB_GET_FILE
  * Version 45 - Add SMB_VFS_FCHFLAGS
  * Version 45 - Remove SMB_VFS_GETXATTR
+ * Change to Version 46 - will ship with 4.16
+ * Version 46 - Rename SMB_VFS_KERNEL_FLOCK to SMB_VFS_FILESYSTEM_SHAREMODE
+ * Version 46 - Add flags and xferlen args to SMB_VFS_OFFLOAD_READ_RECV
+ * Change to Version 47 - will ship with 4.17
+ * Version 47 - Add SMB_VFS_FSTATAT
+ * Version 47 - Change SMB_VFS_GET_REAL_FILENAME to return NTSTATUS
+ * Version 47 - remove st_ex_itime from struct stat_ex
+ * Version 47 - remove (unused) struct lock_struct last_lock_failure
+		from files_struct.
+ * Version 47 - Add SMB_VFS_GET_REAL_FILENAME_AT
+ * Version 47 - Replace SMB_VFS_GET_REAL_FILENAME with SMB_VFS_GET_REAL_FILENAME_AT
+ * Version 47 - Re-add dirfsp to CREATE_FILE
+ * Version 47 - Add fsp flag fstat_before_close
+ * Version 47 - Change SMB_VFS_OPENAT() to match the Linux openat2 prototype, add vfs_open_how
+ * Version 47 - Add VFS_OPEN_HOW_RESOLVE_NO_SYMLINKS for SMB_VFS_OPENAT()
+ * Change to Version 48 - will ship with 4.18
+ * Version 48 - Add cached_dos_attributes to struct stat_ex
+ * Version 48 - Add dirfsp to connectpath_fn()
  */
 
-#define SMB_VFS_INTERFACE_VERSION 45
+#define SMB_VFS_INTERFACE_VERSION 48
 
 /*
     All intercepted VFS operations must be declared as static functions inside module source
@@ -433,6 +451,7 @@ typedef struct files_struct {
 		bool closing : 1;
 		bool lock_failure_seen : 1;
 		bool encryption_required : 1;
+		bool fstat_before_close : 1;
 	} fsp_flags;
 
 	struct tevent_timer *update_write_time_event;
@@ -450,7 +469,6 @@ typedef struct files_struct {
 	struct fsp_lease *lease;
 	int sent_oplock_break;
 	struct tevent_timer *oplock_timeout;
-	struct lock_struct last_lock_failure;
 	int current_lock_count; /* Count the number of outstanding locks and pending locks. */
 
 	uint64_t posix_flags;
@@ -521,7 +539,7 @@ typedef struct files_struct {
  * file descriptor that can be used with all VFS calls.
  *
  * The flag "is_fsa" is a property of the FSA layer in Samba. The term FSA
- * layer refers to the parts of smbs that implement Windows NTFS semantics
+ * layer refers to the parts of smbd that implement Windows NTFS semantics
  * on-top of a POSIX filesystem. If "is_fsa" is true, the fsp was
  * processed by the SMB_VFS_CREATE_FILE() VFS call, otherwise the fsp was
  * created by openat_pathref_fsp() which only connected the low-level
@@ -571,7 +589,7 @@ typedef struct files_struct {
  * reference to a filesystem object by opening it with the O_RDONLY flag
  * requires that the caller have read permission on the object, even when
  * the subsequent operation (e.g., fchdir(2), fstat(2)) does not require
- * read permis‐ sion on the object. [1]
+ * read permission on the object. [1]
  *
  * If for example Samba receives an SMB request to open a file requesting
  * SEC_FILE_READ_ATTRIBUTE access rights because the client wants to read
@@ -624,7 +642,7 @@ typedef struct files_struct {
  *
  * A fallback is needed that allows opening a file-handle with the same
  * higher level semantics even if the system doesn't support O_PATH. This
- * is implemented by qimpersonating the root user for the open()
+ * is implemented by impersonating the root user for the open()
  * syscall. To avoid bypassing restrictive permissions on intermediate
  * directories components of a path, the root user is only impersonated
  * after changing directory to the parent directory of the client
@@ -632,7 +650,7 @@ typedef struct files_struct {
  *
  * In order to avoid privilege escalation security issues with these root
  * opened file-handles we must carefully control their usage throughout
- * the codebase. Therefor we
+ * the codebase. Therefore we
  *
  * - tag the pathref fsp's with the flag "is_pathref" and
  *
@@ -702,6 +720,7 @@ typedef struct connection_struct {
 	bool ipc;
 	bool read_only; /* Attributes for the current user of the share. */
 	bool have_proc_fds;
+	uint64_t open_how_resolve; /* supported vfs_open_how.resolve features */
 	uint32_t share_access;
 	/* Does this filesystem honor
 	   sub second timestamps on files
@@ -747,8 +766,8 @@ typedef struct connection_struct {
 
 	name_compare_entry *hide_list; /* Per-share list of files to return as hidden. */
 	name_compare_entry *veto_list; /* Per-share list of files to veto (never show). */
-	name_compare_entry *veto_oplock_list; /* Per-share list of files to refuse oplocks on. */       
-	name_compare_entry *aio_write_behind_list; /* Per-share list of files to use aio write behind on. */       
+	name_compare_entry *veto_oplock_list; /* Per-share list of files to refuse oplocks on. */
+	name_compare_entry *aio_write_behind_list; /* Per-share list of files to use aio write behind on. */
 	struct trans_state *pending_trans;
 
 	struct rpc_pipe_client *spoolss_pipe;
@@ -872,10 +891,6 @@ struct smb_filename {
 
 #define SMB_FILENAME_POSIX_PATH		FSP_POSIX_FLAGS_PATHNAMES
 
-#define VFS_FIND(__fn__) while (handle->fns->__fn__##_fn==NULL) { \
-				handle = handle->next; \
-			 }
-
 enum vfs_translate_direction {
 	vfs_translate_to_unix = 0,
 	vfs_translate_to_windows
@@ -889,6 +904,14 @@ enum vfs_fallocate_flags {
 struct vfs_aio_state {
 	int error;
 	uint64_t duration;
+};
+
+#define VFS_OPEN_HOW_RESOLVE_NO_SYMLINKS 1
+
+struct vfs_open_how {
+	int flags;
+	mode_t mode;
+	uint64_t resolve;
 };
 
 /*
@@ -961,10 +984,10 @@ struct vfs_fn_pointers {
 			 const struct files_struct *dirfsp,
 			 const struct smb_filename *smb_fname,
 			 struct files_struct *fsp,
-			 int flags,
-			 mode_t mode);
+			 const struct vfs_open_how *how);
 	NTSTATUS (*create_file_fn)(struct vfs_handle_struct *handle,
 				   struct smb_request *req,
+				   struct files_struct *dirfsp,
 				   struct smb_filename *smb_fname,
 				   uint32_t access_mask,
 				   uint32_t share_access,
@@ -1014,6 +1037,12 @@ struct vfs_fn_pointers {
 	int (*stat_fn)(struct vfs_handle_struct *handle, struct smb_filename *smb_fname);
 	int (*fstat_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp, SMB_STRUCT_STAT *sbuf);
 	int (*lstat_fn)(struct vfs_handle_struct *handle, struct smb_filename *smb_filename);
+	int (*fstatat_fn)(
+		struct vfs_handle_struct *handle,
+		const struct files_struct *dirfsp,
+		const struct smb_filename *smb_fname,
+		SMB_STRUCT_STAT *sbuf,
+		int flags);
 	uint64_t (*get_alloc_size_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp, const SMB_STRUCT_STAT *sbuf);
 	int (*unlinkat_fn)(struct vfs_handle_struct *handle,
 			struct files_struct *srcdir_fsp,
@@ -1039,8 +1068,10 @@ struct vfs_fn_pointers {
 			    off_t offset,
 			    off_t len);
 	bool (*lock_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp, int op, off_t offset, off_t count, int type);
-	int (*kernel_flock_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp,
-			       uint32_t share_access, uint32_t access_mask);
+	int (*filesystem_sharemode_fn)(struct vfs_handle_struct *handle,
+				       struct files_struct *fsp,
+				       uint32_t share_access, uint32_t
+				       access_mask);
 	int (*fcntl_fn)(struct vfs_handle_struct *handle,
 			struct files_struct *fsp, int cmd, va_list cmd_arg);
 	int (*linux_setlease_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp, int leasetype);
@@ -1086,6 +1117,8 @@ struct vfs_fn_pointers {
 	NTSTATUS (*offload_read_recv_fn)(struct tevent_req *req,
 					 struct vfs_handle_struct *handle,
 					 TALLOC_CTX *mem_ctx,
+					 uint32_t *flags,
+					 uint64_t *xferlen,
 					 DATA_BLOB *token_blob);
 	struct tevent_req *(*offload_write_send_fn)(struct vfs_handle_struct *handle,
 						    TALLOC_CTX *mem_ctx,
@@ -1129,13 +1162,14 @@ struct vfs_fn_pointers {
 				   unsigned int *num_streams,
 				   struct stream_struct **streams);
 
-	int (*get_real_filename_fn)(struct vfs_handle_struct *handle,
-				    const struct smb_filename *path,
-				    const char *name,
-				    TALLOC_CTX *mem_ctx,
-				    char **found_name);
+	NTSTATUS (*get_real_filename_at_fn)(struct vfs_handle_struct *handle,
+					    struct files_struct *dirfsp,
+					    const char *name,
+					    TALLOC_CTX *mem_ctx,
+					    char **found_name);
 
 	const char *(*connectpath_fn)(struct vfs_handle_struct *handle,
+				      const struct files_struct *dirfsp,
 				      const struct smb_filename *smb_fname);
 
 	NTSTATUS (*brl_lock_windows_fn)(struct vfs_handle_struct *handle,
@@ -1171,7 +1205,7 @@ struct vfs_fn_pointers {
 			     uint32_t in_len,
 			     uint8_t **_out_data,
 			     uint32_t max_out_len,
-			     uint32_t *out_len); 
+			     uint32_t *out_len);
 
 	NTSTATUS (*fget_dos_attributes_fn)(struct vfs_handle_struct *handle,
 					   struct files_struct *fsp,
@@ -1289,7 +1323,7 @@ typedef struct vfs_handle_struct {
 } vfs_handle_struct;
 
 
-typedef struct vfs_statvfs_struct {
+struct vfs_statvfs_struct {
 	/* For undefined recommended transfer size return -1 in that field */
 	uint32_t OptimalTransferSize;  /* bsize on some os, iosize on other os */
 	uint32_t BlockSize;
@@ -1316,7 +1350,7 @@ typedef struct vfs_statvfs_struct {
 	/* NB flags can come from FILE_SYSTEM_DEVICE_INFO call   */
 
 	int FsCapabilities;
-} vfs_statvfs_struct;
+};
 
 /* Add a new FSP extension of the given type. Returns a pointer to the
  * extenstion data.
@@ -1370,6 +1404,18 @@ typedef struct vfs_statvfs_struct {
 #define DEFAULT_VFS_MODULE_NAME "/[Default VFS]/"
 
 #include "vfs_macros.h"
+
+struct smb_vfs_deny_state {
+	struct smb_vfs_deny_state *parent;
+	const char *location;
+};
+
+void smb_vfs_assert_allowed(void);
+
+void _smb_vfs_deny_push(struct smb_vfs_deny_state *state, const char *location);
+#define smb_vfs_deny_push(__state) _smb_vfs_deny_push(__state, __location__);
+void _smb_vfs_deny_pop(struct smb_vfs_deny_state *state, const char *location);
+#define smb_vfs_deny_pop(__state) _smb_vfs_deny_pop(__state, __location__);
 
 int smb_vfs_call_connect(struct vfs_handle_struct *handle,
 			 const char *service, const char *user);
@@ -1436,10 +1482,10 @@ int smb_vfs_call_openat(struct vfs_handle_struct *handle,
 			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			struct files_struct *fsp,
-			int flags,
-			mode_t mode);
+			const struct vfs_open_how *how);
 NTSTATUS smb_vfs_call_create_file(struct vfs_handle_struct *handle,
 				  struct smb_request *req,
+				  struct files_struct *dirfsp,
 				  struct smb_filename *smb_fname,
 				  uint32_t access_mask,
 				  uint32_t share_access,
@@ -1508,6 +1554,12 @@ int smb_vfs_call_fstat(struct vfs_handle_struct *handle,
 		       struct files_struct *fsp, SMB_STRUCT_STAT *sbuf);
 int smb_vfs_call_lstat(struct vfs_handle_struct *handle,
 		       struct smb_filename *smb_filename);
+int smb_vfs_call_fstatat(
+	struct vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname,
+	SMB_STRUCT_STAT *sbuf,
+	int flags);
 uint64_t smb_vfs_call_get_alloc_size(struct vfs_handle_struct *handle,
 				     struct files_struct *fsp,
 				     const SMB_STRUCT_STAT *sbuf);
@@ -1543,9 +1595,10 @@ int smb_vfs_call_fallocate(struct vfs_handle_struct *handle,
 bool smb_vfs_call_lock(struct vfs_handle_struct *handle,
 		       struct files_struct *fsp, int op, off_t offset,
 		       off_t count, int type);
-int smb_vfs_call_kernel_flock(struct vfs_handle_struct *handle,
-			      struct files_struct *fsp, uint32_t share_access,
-			      uint32_t access_mask);
+int smb_vfs_call_filesystem_sharemode(struct vfs_handle_struct *handle,
+				      struct files_struct *fsp,
+				      uint32_t share_access,
+				      uint32_t access_mask);
 int smb_vfs_call_fcntl(struct vfs_handle_struct *handle,
 		       struct files_struct *fsp, int cmd, ...);
 int smb_vfs_call_linux_setlease(struct vfs_handle_struct *handle,
@@ -1591,13 +1644,14 @@ NTSTATUS smb_vfs_call_fstreaminfo(struct vfs_handle_struct *handle,
 				  TALLOC_CTX *mem_ctx,
 				  unsigned int *num_streams,
 				  struct stream_struct **streams);
-int smb_vfs_call_get_real_filename(struct vfs_handle_struct *handle,
-				   const struct smb_filename *path,
-				   const char *name,
-				   TALLOC_CTX *mem_ctx,
-				   char **found_name);
+NTSTATUS smb_vfs_call_get_real_filename_at(struct vfs_handle_struct *handle,
+					   struct files_struct *dirfsp,
+					   const char *name,
+					   TALLOC_CTX *mem_ctx,
+					   char **found_name);
 const char *smb_vfs_call_connectpath(struct vfs_handle_struct *handle,
-				     const struct smb_filename *smb_fname);
+				 const struct files_struct *dirfsp,
+				 const struct smb_filename *smb_fname);
 NTSTATUS smb_vfs_call_brl_lock_windows(struct vfs_handle_struct *handle,
 				       struct byte_range_lock *br_lck,
 				       struct lock_struct *plock);
@@ -1655,6 +1709,8 @@ struct tevent_req *smb_vfs_call_offload_read_send(
 NTSTATUS smb_vfs_call_offload_read_recv(struct tevent_req *req,
 					struct vfs_handle_struct *handle,
 					TALLOC_CTX *mem_ctx,
+					uint32_t *flags,
+					uint64_t *xferlen,
 					DATA_BLOB *token_blob);
 struct tevent_req *smb_vfs_call_offload_write_send(struct vfs_handle_struct *handle,
 						   TALLOC_CTX *mem_ctx,
@@ -1719,7 +1775,7 @@ SMB_ACL_T smb_vfs_call_sys_acl_get_fd(struct vfs_handle_struct *handle,
 				      SMB_ACL_TYPE_T type,
 				      TALLOC_CTX *mem_ctx);
 int smb_vfs_call_sys_acl_blob_get_fd(struct vfs_handle_struct *handle,
-				     struct files_struct *fsp, 	
+				     struct files_struct *fsp,
 				     TALLOC_CTX *mem_ctx,
 				     char **blob_description,
 				     DATA_BLOB *blob);
@@ -1871,10 +1927,10 @@ int vfs_not_implemented_openat(vfs_handle_struct *handle,
 			       const struct files_struct *dirfsp,
 			       const struct smb_filename *smb_fname,
 			       struct files_struct *fsp,
-			       int flags,
-			       mode_t mode);
+			       const struct vfs_open_how *how);
 NTSTATUS vfs_not_implemented_create_file(struct vfs_handle_struct *handle,
 				struct smb_request *req,
+				struct files_struct *dirfsp,
 				struct smb_filename *smb_fname,
 				uint32_t access_mask,
 				uint32_t share_access,
@@ -1933,6 +1989,12 @@ int vfs_not_implemented_fstat(vfs_handle_struct *handle, files_struct *fsp,
 			SMB_STRUCT_STAT *sbuf);
 int vfs_not_implemented_lstat(vfs_handle_struct *handle,
 			      struct smb_filename *smb_fname);
+int vfs_not_implemented_fstatat(
+	struct vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname,
+	SMB_STRUCT_STAT *sbuf,
+	int flags);
 uint64_t vfs_not_implemented_get_alloc_size(struct vfs_handle_struct *handle,
 					    struct files_struct *fsp,
 					    const SMB_STRUCT_STAT *sbuf);
@@ -1964,9 +2026,10 @@ int vfs_not_implemented_fallocate(vfs_handle_struct *handle, files_struct *fsp,
 				  uint32_t mode, off_t offset, off_t len);
 bool vfs_not_implemented_lock(vfs_handle_struct *handle, files_struct *fsp, int op,
 			      off_t offset, off_t count, int type);
-int vfs_not_implemented_kernel_flock(struct vfs_handle_struct *handle,
-				     struct files_struct *fsp,
-				     uint32_t share_access, uint32_t access_mask);
+int vfs_not_implemented_filesystem_sharemode(struct vfs_handle_struct *handle,
+					     struct files_struct *fsp,
+					     uint32_t share_access,
+					     uint32_t access_mask);
 int vfs_not_implemented_fcntl(struct vfs_handle_struct *handle,
 			      struct files_struct *fsp, int cmd, va_list cmd_arg);
 int vfs_not_implemented_linux_setlease(struct vfs_handle_struct *handle,
@@ -2019,6 +2082,8 @@ struct tevent_req *vfs_not_implemented_offload_read_send(
 NTSTATUS vfs_not_implemented_offload_read_recv(struct tevent_req *req,
 				       struct vfs_handle_struct *handle,
 				       TALLOC_CTX *mem_ctx,
+				       uint32_t *flags,
+				       uint64_t *xferlen,
 				       DATA_BLOB *_token_blob);
 struct tevent_req *vfs_not_implemented_offload_write_send(
 			struct vfs_handle_struct *handle,
@@ -2046,13 +2111,22 @@ NTSTATUS vfs_not_implemented_fstreaminfo(struct vfs_handle_struct *handle,
 					 TALLOC_CTX *mem_ctx,
 					 unsigned int *num_streams,
 					 struct stream_struct **streams);
-int vfs_not_implemented_get_real_filename(struct vfs_handle_struct *handle,
-					  const struct smb_filename *path,
-					  const char *name,
-					  TALLOC_CTX *mem_ctx,
-					  char **found_name);
-const char *vfs_not_implemented_connectpath(struct vfs_handle_struct *handle,
-					    const struct smb_filename *smb_fname);
+NTSTATUS vfs_not_implemented_get_real_filename(
+	struct vfs_handle_struct *handle,
+	const struct smb_filename *path,
+	const char *name,
+	TALLOC_CTX *mem_ctx,
+	char **found_name);
+NTSTATUS vfs_not_implemented_get_real_filename_at(
+	struct vfs_handle_struct *handle,
+	struct files_struct *dirfsp,
+	const char *name,
+	TALLOC_CTX *mem_ctx,
+	char **found_name);
+const char *vfs_not_implemented_connectpath(
+	struct vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname);
 NTSTATUS vfs_not_implemented_brl_lock_windows(struct vfs_handle_struct *handle,
 					      struct byte_range_lock *br_lck,
 					      struct lock_struct *plock);

@@ -27,6 +27,7 @@
 #include "../librpc/gen_ndr/netlogon.h"
 #include "../libcli/security/security.h"
 #include "lib/util/string_wrappers.h"
+#include "source3/lib/util_specialsids.h"
 
 
 /*****************************************************************
@@ -46,18 +47,13 @@ char *sid_to_fstring(fstring sidstr_out, const struct dom_sid *sid)
 
 bool sid_linearize(uint8_t *outbuf, size_t len, const struct dom_sid *sid)
 {
-	int8_t i;
+	struct ndr_push ndr = {
+		.data = outbuf, .alloc_size = len, .fixed_buf_size = true,
+	};
+	enum ndr_err_code ndr_err;
 
-	if (len < ndr_size_dom_sid(sid, 0))
-		return False;
-
-	SCVAL(outbuf,0,sid->sid_rev_num);
-	SCVAL(outbuf,1,sid->num_auths);
-	memcpy(&outbuf[2], sid->id_auth, 6);
-	for(i = 0; i < sid->num_auths; i++)
-		SIVAL(outbuf, 8 + (i*4), sid->sub_auths[i]);
-
-	return True;
+	ndr_err = ndr_push_dom_sid(&ndr, NDR_SCALARS|NDR_BUFFERS, sid);
+	return NDR_ERR_CODE_IS_SUCCESS(ndr_err);
 }
 
 /*****************************************************************
@@ -176,4 +172,38 @@ NTSTATUS sid_array_from_info3(TALLOC_CTX *mem_ctx,
 	*num_user_sids = num_sids;
 
 	return NT_STATUS_OK;
+}
+
+bool security_token_find_npa_flags(const struct security_token *token,
+				   uint32_t *_flags)
+{
+	const struct dom_sid *npa_flags_sid = NULL;
+	size_t num_npa_sids;
+
+	num_npa_sids =
+		security_token_count_flag_sids(token,
+					       &global_sid_Samba_NPA_Flags,
+					       1,
+					       &npa_flags_sid);
+	if (num_npa_sids != 1) {
+		return false;
+	}
+
+	sid_peek_rid(npa_flags_sid, _flags);
+	return true;
+}
+
+void security_token_del_npa_flags(struct security_token *token)
+{
+	const struct dom_sid *npa_flags_sid = NULL;
+	size_t num_npa_sids;
+
+	num_npa_sids =
+		security_token_count_flag_sids(token,
+					       &global_sid_Samba_NPA_Flags,
+					       1,
+					       &npa_flags_sid);
+	SMB_ASSERT(num_npa_sids == 1);
+
+	del_sid_from_array(npa_flags_sid, &token->sids, &token->num_sids);
 }

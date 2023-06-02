@@ -170,7 +170,7 @@ dump OK
     def test_ndrdump_input_cmdline_short_struct_name_dump(self):
         expected = '''pull returned Buffer Size Error
 6 bytes consumed
-[0000] 61 62 63 64 65 66 67                               abcdefg ''' \
+[0000] 61 62 63 64 65 66 67                                abcdefg''' \
         '''
 '''
         try:
@@ -186,10 +186,10 @@ dump OK
     def test_ndrdump_input_cmdline_short_struct_name_print_fail(self):
         expected = '''pull returned Buffer Size Error
 6 bytes consumed
-[0000] 61 62 63 64 65 66 67                               abcdefg ''' \
+[0000] 61 62 63 64 65 66 67                                abcdefg''' \
         '''
 WARNING! 1 unread bytes
-[0000] 67                                                 g ''' \
+[0000] 67                                                  g''' \
     '''
 WARNING: pull of GUID was incomplete, therefore the parse below may SEGFAULT
     GUID                     : 64636261-6665-0000-0000-000000000000
@@ -211,7 +211,7 @@ WARNING! 53 unread bytes
 [0000] 00 FF 00 00 FF 00 00 00   00 09 00 00 00 08 00 33   ........ .......3
 [0010] 33 32 37 36 32 36 39 33   32 37 36 38 34 01 00 00   32762693 27684...
 [0020] 80 32 0D FF 00 00 FF 00   00 00 00 08 00 00 00 1C   .2...... ........
-[0030] F1 29 08 00 00                                     .)... ''' \
+[0030] F1 29 08 00 00                                      .)...''' \
         b'''
     clusapi_QueryAllValues: struct clusapi_QueryAllValues
         out: struct clusapi_QueryAllValues
@@ -396,7 +396,7 @@ dump OK
     def test_ndrdump_fuzzed_spoolss_EnumForms(self):
         expected_head = b'''pull returned Success
 WARNING! 2 unread bytes
-[0000] 00 00                                              .. ''' b'''
+[0000] 00 00                                               ..''' b'''
     spoolss_EnumForms: struct spoolss_EnumForms
         out: struct spoolss_EnumForms
             count                    : *
@@ -480,6 +480,10 @@ pull returned Success
 WARNING! orig bytes:29 validated pushed bytes:16
 WARNING! orig and validated differ at byte 0x04 (4)
 WARNING! orig byte[0x04] = 0xC6 validated byte[0x04] = 0x00
+-[0000] 40 F3 38 41 C6 92 87 04   00 00 00 00 00 00 00 06   @.8A.... ........
++[0000] 40 F3 38 41 00 00 00 00   00 00 00 00 00 00 00 00   @.8A.... ........
+-[0010] F5 FF 00 3C 3C 25 FF 70   16 1F A0 12 84            ...<<%.p .....
++[0010]                                                     EMPTY   BLOCK
 dump OK
 '''
         try:
@@ -495,10 +499,9 @@ dump OK
     def test_ndrdump_fuzzed_NULL_struct_ntlmssp_CHALLENGE_MESSAGE(self):
         expected =  open(self.data_path("fuzzed_ntlmssp-CHALLENGE_MESSAGE.txt")).read().encode('utf8')
         try:
-            actual = self.check_exit_code(
+            actual = self.check_output(
                 "ndrdump --debug-stdout ntlmssp CHALLENGE_MESSAGE struct --validate --input " +\
-                "'AAAACwIAAAAAJwIAAAAAAAcAAAAAAAAAAIAbhG8uyk9dAL0mQE73MAAAAAAAAAAA' --base64-input",
-                1)
+                "'AAAACwIAAAAAJwIAAAAAAAcAAAAAAAAAAIAbhG8uyk9dAL0mQE73MAAAAAAAAAAA' --base64-input")
         except BlackboxProcessError as e:
             self.fail(e)
 

@@ -785,6 +785,7 @@ extern struct cmd_set fss_commands[];
 extern struct cmd_set witness_commands[];
 extern struct cmd_set clusapi_commands[];
 extern struct cmd_set spotlight_commands[];
+extern struct cmd_set unixinfo_commands[];
 
 static struct cmd_set *rpcclient_command_list[] = {
 	rpcclient_commands,
@@ -808,6 +809,7 @@ static struct cmd_set *rpcclient_command_list[] = {
 	witness_commands,
 	clusapi_commands,
 	spotlight_commands,
+	unixinfo_commands,
 	NULL
 };
 
@@ -895,23 +897,10 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 				binding, "target_hostname");
 
 		if (remote_host != NULL) {
-			int af = AF_UNSPEC;
-
-			if (remote_name == NULL) {
-				remote_name = dcerpc_binding_get_string_option(
-						binding, "host");
-			}
-
-			if (is_ipaddress_v4(remote_host)) {
-				af = AF_INET;
-			} else if (is_ipaddress_v6(remote_host)) {
-				af = AF_INET6;
-			}
-			if (af != AF_UNSPEC) {
-				int ok = inet_pton(af, remote_host, &remote_ss);
-				if (ok) {
-					remote_sockaddr = &remote_ss;
-				}
+			bool ok = interpret_string_addr(
+				&remote_ss, remote_host, 0);
+			if (ok) {
+				remote_sockaddr = &remote_ss;
 			}
 		}
 	}
@@ -1249,7 +1238,7 @@ out_free:
 	/* Get server as remaining unparsed argument.  Print usage if more
 	   than one unparsed argument is present. */
 
-	server = poptGetArg(pc);
+	server = talloc_strdup(frame, poptGetArg(pc));
 
 	if (!server || poptGetArg(pc)) {
 		poptPrintHelp(pc, stderr, 0);

@@ -30,12 +30,10 @@
 import drs_base
 import samba.tests
 import ldb
-from ldb import SCOPE_BASE
 
 from samba import WERRORError
 from samba.join import DCJoinContext
 from samba.dcerpc import drsuapi, misc, drsblobs, security
-from samba.drs_utils import drs_DsBind, drs_Replicate
 from samba.ndr import ndr_unpack, ndr_pack
 from samba.samdb import dsdb_Dn
 from samba.credentials import Credentials
@@ -157,6 +155,52 @@ class DrsRodcTestCase(drs_base.DrsBaseTestCase):
                                   max_objects=133,
                                   replica_flags=0)
         (level, ctr) = self.drs.DsGetNCChanges(self.drs_handle, 10, req10)
+
+        # Check that the user has been added to msDSRevealedUsers
+        self._assert_in_revealed_users(user_dn, expected_user_attributes)
+
+    def test_admin_repl_secrets_DummyDN_GUID(self):
+        """
+        When a secret attribute is set to be replicated to an RODC with the
+        admin credentials, it should always replicate regardless of whether
+        or not it's in the Allowed RODC Password Replication Group.
+        """
+        rand = random.randint(1, 10000000)
+        expected_user_attributes = [drsuapi.DRSUAPI_ATTID_lmPwdHistory,
+                                    drsuapi.DRSUAPI_ATTID_supplementalCredentials,
+                                    drsuapi.DRSUAPI_ATTID_ntPwdHistory,
+                                    drsuapi.DRSUAPI_ATTID_unicodePwd,
+                                    drsuapi.DRSUAPI_ATTID_dBCSPwd]
+
+        user_name = "test_rodcA_%s" % rand
+        user_dn = "CN=%s,%s" % (user_name, self.ou)
+        self.ldb_dc1.add({
+            "dn": user_dn,
+            "objectclass": "user",
+            "sAMAccountName": user_name
+        })
+
+        res = self.ldb_dc1.search(base=user_dn, scope=ldb.SCOPE_BASE,
+                                  attrs=["objectGUID"])
+
+        user_guid = misc.GUID(res[0]["objectGUID"][0])
+
+        # Store some secret on this user
+        self.ldb_dc1.setpassword("(sAMAccountName=%s)" % user_name, 'penguin12#', False, user_name)
+
+        req10 = self._getnc_req10(dest_dsa=str(self.rodc_ctx.ntds_guid),
+                                  invocation_id=self.ldb_dc1.get_invocation_id(),
+                                  nc_dn_str="DummyDN",
+                                  nc_guid=user_guid,
+                                  exop=drsuapi.DRSUAPI_EXOP_REPL_SECRET,
+                                  partial_attribute_set=drs_get_rodc_partial_attribute_set(self.ldb_dc1, self.tmp_samdb),
+                                  max_objects=133,
+                                  replica_flags=0)
+        try:
+            (level, ctr) = self.drs.DsGetNCChanges(self.drs_handle, 10, req10)
+        except WERRORError as e1:
+            (enum, estr) = e1.args
+            self.fail(f"DsGetNCChanges failed with {estr}")
 
         # Check that the user has been added to msDSRevealedUsers
         self._assert_in_revealed_users(user_dn, expected_user_attributes)

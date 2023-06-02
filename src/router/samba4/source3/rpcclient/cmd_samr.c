@@ -3114,6 +3114,46 @@ static NTSTATUS cmd_samr_chgpasswd3(struct rpc_pipe_client *cli,
 	return status;
 }
 
+static NTSTATUS cmd_samr_chgpasswd4(struct rpc_pipe_client *cli,
+				    TALLOC_CTX *mem_ctx,
+				    int argc,
+				    const char **argv)
+{
+	struct dcerpc_binding_handle *b = cli->binding_handle;
+	const char *srv_name_slash = cli->srv_name_slash;
+	const char *user = NULL;
+	const char *oldpass = NULL;
+	const char *newpass = NULL;
+	NTSTATUS status;
+	NTSTATUS result = NT_STATUS_UNSUCCESSFUL;
+
+	if (argc < 4) {
+		printf("Usage: %s username oldpass newpass\n", argv[0]);
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	user = argv[1];
+	oldpass = argv[2];
+	newpass = argv[3];
+
+	/* Change user password */
+	status = dcerpc_samr_chgpasswd_user4(b,
+					     mem_ctx,
+					     srv_name_slash,
+					     user,
+					     oldpass,
+					     newpass,
+					     &result);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+	if (!NT_STATUS_IS_OK(result)) {
+		status = result;
+	}
+
+	return status;
+}
+
 static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 					 TALLOC_CTX *mem_ctx,
 					 int argc, const char **argv,
@@ -3128,9 +3168,15 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 	union samr_UserInfo info;
 	struct samr_CryptPassword pwd_buf;
 	struct samr_CryptPasswordEx pwd_buf_ex;
+	struct samr_EncryptedPasswordAES pwd_buf_aes;
 	uint8_t nt_hash[16];
 	uint8_t lm_hash[16];
 	DATA_BLOB session_key;
+	uint8_t salt_data[16];
+	DATA_BLOB salt = {
+		.data = salt_data,
+		.length = sizeof(salt_data),
+	};
 	uint8_t password_expired = 0;
 	struct dcerpc_binding_handle *b = cli->binding_handle;
 	TALLOC_CTX *frame = NULL;
@@ -3157,15 +3203,40 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 		goto done;
 	}
 
-	status = init_samr_CryptPassword(param, &session_key, &pwd_buf);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
+	generate_nonce_buffer(salt.data, salt.length);
+
+	switch(level) {
+	case 18:
+	case 21:
+		nt_lm_owf_gen(param, nt_hash, lm_hash);
+		break;
+	case 23:
+	case 24:
+		status = init_samr_CryptPassword(param, &session_key, &pwd_buf);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto done;
+		}
+		break;
+	case 25:
+	case 26:
+		status = init_samr_CryptPasswordEx(param, &session_key, &pwd_buf_ex);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto done;
+		}
+		break;
+	case 31:
+		status = init_samr_CryptPasswordAES(frame,
+						    param,
+						    &salt,
+						    &session_key,
+						    &pwd_buf_aes);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto done;
+		}
+		break;
+	default:
+		break;
 	}
-	status = init_samr_CryptPasswordEx(param, &session_key, &pwd_buf_ex);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-	nt_lm_owf_gen(param, nt_hash, lm_hash);
 
 	switch (level) {
 	case 18:
@@ -3295,8 +3366,13 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 		info.info26.password_expired	= password_expired;
 
 		break;
+	case 31:
+		info.info31.password		= pwd_buf_aes;
+		info.info31.password_expired	= password_expired;
+		break;
 	default:
-		return NT_STATUS_INVALID_INFO_CLASS;
+		status = NT_STATUS_INVALID_INFO_CLASS;
+		goto done;
 	}
 
 	/* Get sam policy handle */
@@ -3356,16 +3432,19 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 						 &types,
 						 &result);
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 		if (!NT_STATUS_IS_OK(result)) {
-			return result;
+			status = result;
+			goto done;
 		}
 		if (rids.count != 1) {
-			return NT_STATUS_INVALID_NETWORK_RESPONSE;
+			status = NT_STATUS_INVALID_NETWORK_RESPONSE;
+			goto done;
 		}
 		if (types.count != 1) {
-			return NT_STATUS_INVALID_NETWORK_RESPONSE;
+			status = NT_STATUS_INVALID_NETWORK_RESPONSE;
+			goto done;
 		}
 
 		status = dcerpc_samr_OpenUser(b, frame,
@@ -3375,10 +3454,11 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 					      &user_pol,
 					      &result);
 		if (!NT_STATUS_IS_OK(status)) {
-			return status;
+			goto done;
 		}
 		if (!NT_STATUS_IS_OK(result)) {
-			return result;
+			status = result;
+			goto done;
 		}
 	}
 
@@ -3398,7 +3478,8 @@ static NTSTATUS cmd_samr_setuserinfo_int(struct rpc_pipe_client *cli,
 						  &result);
 		break;
 	default:
-		return NT_STATUS_INVALID_PARAMETER;
+		status = NT_STATUS_INVALID_PARAMETER;
+		goto done;
 	}
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0,("status: %s\n", nt_errstr(status)));
@@ -3808,6 +3889,16 @@ struct cmd_set samr_commands[] = {
 		.name               = "chgpasswd3",
 		.returntype         = RPC_RTYPE_NTSTATUS,
 		.ntfn               = cmd_samr_chgpasswd3,
+		.wfn                = NULL,
+		.table              = &ndr_table_samr,
+		.rpc_pipe           = NULL,
+		.description        = "Change user password",
+		.usage              = "",
+	},
+	{
+		.name               = "chgpasswd4",
+		.returntype         = RPC_RTYPE_NTSTATUS,
+		.ntfn               = cmd_samr_chgpasswd4,
 		.wfn                = NULL,
 		.table              = &ndr_table_samr,
 		.rpc_pipe           = NULL,

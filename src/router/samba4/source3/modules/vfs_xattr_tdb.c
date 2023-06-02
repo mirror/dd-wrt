@@ -29,7 +29,21 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_VFS
 
-static bool xattr_tdb_init(int snum, TALLOC_CTX *mem_ctx, struct db_context **p_db);
+struct xattr_tdb_config {
+	struct db_context *db;
+	bool ignore_user_xattr;
+};
+
+static bool xattr_tdb_init(struct vfs_handle_struct *handle,
+			   struct xattr_tdb_config **_config);
+
+static bool is_user_xattr(const char *xattr_name)
+{
+	int match;
+
+	match = strncmp(xattr_name, "user.", strlen("user."));
+	return (match == 0);
+}
 
 static int xattr_tdb_get_file_id(struct vfs_handle_struct *handle,
 				const char *path, struct file_id *id)
@@ -68,6 +82,8 @@ struct xattr_tdb_getxattrat_state {
 	uint8_t *xattr_value;
 };
 
+static void xattr_tdb_getxattrat_done(struct tevent_req *subreq);
+
 static struct tevent_req *xattr_tdb_getxattrat_send(
 			TALLOC_CTX *mem_ctx,
 			struct tevent_context *ev,
@@ -77,15 +93,20 @@ static struct tevent_req *xattr_tdb_getxattrat_send(
 			const char *xattr_name,
 			size_t alloc_hint)
 {
+	struct xattr_tdb_config *config = NULL;
 	struct tevent_req *req = NULL;
+	struct tevent_req *subreq = NULL;
 	struct xattr_tdb_getxattrat_state *state = NULL;
 	struct smb_filename *cwd = NULL;
-	struct db_context *db = NULL;
 	struct file_id id;
 	int ret;
 	int error;
 	int cwd_ret;
 	DATA_BLOB xattr_blob;
+
+	if (!xattr_tdb_init(handle, &config)) {
+		return NULL;
+	}
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct xattr_tdb_getxattrat_state);
@@ -94,11 +115,20 @@ static struct tevent_req *xattr_tdb_getxattrat_send(
 	}
 	state->xattr_size = -1;
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, state, &db)) {
-					tevent_req_error(req, EIO);
-					return tevent_req_post(req, ev);
-				});
+	if (config->ignore_user_xattr && is_user_xattr(xattr_name)) {
+		subreq = SMB_VFS_NEXT_GETXATTRAT_SEND(state,
+						      ev,
+						      handle,
+						      dir_fsp,
+						      smb_fname,
+						      xattr_name,
+						      alloc_hint);
+		if (tevent_req_nomem(subreq, req)) {
+			return tevent_req_post(req, ev);
+		}
+		tevent_req_set_callback(subreq, xattr_tdb_getxattrat_done, req);
+		return req;
+	}
 
 	cwd = SMB_VFS_GETWD(dir_fsp->conn, state);
 	if (tevent_req_nomem(cwd, req)) {
@@ -122,7 +152,7 @@ static struct tevent_req *xattr_tdb_getxattrat_send(
 		return tevent_req_post(req, ev);
 	}
 
-	state->xattr_size = xattr_tdb_getattr(db,
+	state->xattr_size = xattr_tdb_getattr(config->db,
 					      state,
 					      &id,
 					      xattr_name,
@@ -166,6 +196,27 @@ static struct tevent_req *xattr_tdb_getxattrat_send(
 	return tevent_req_post(req, ev);
 }
 
+static void xattr_tdb_getxattrat_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct xattr_tdb_getxattrat_state *state = tevent_req_data(
+		req, struct xattr_tdb_getxattrat_state);
+
+	state->xattr_size = SMB_VFS_NEXT_GETXATTRAT_RECV(subreq,
+							 &state->vfs_aio_state,
+							 state,
+							 &state->xattr_value);
+	TALLOC_FREE(subreq);
+	if (state->xattr_size == -1) {
+		tevent_req_error(req, state->vfs_aio_state.error);
+		return;
+	}
+
+	tevent_req_done(req);
+}
+
+
 static ssize_t xattr_tdb_getxattrat_recv(struct tevent_req *req,
 					 struct vfs_aio_state *aio_state,
 					 TALLOC_CTX *mem_ctx,
@@ -194,27 +245,31 @@ static ssize_t xattr_tdb_fgetxattr(struct vfs_handle_struct *handle,
 				   struct files_struct *fsp,
 				   const char *name, void *value, size_t size)
 {
+	struct xattr_tdb_config *config = NULL;
 	SMB_STRUCT_STAT sbuf;
 	struct file_id id;
-	struct db_context *db;
 	ssize_t xattr_size;
 	DATA_BLOB blob;
-	TALLOC_CTX *frame = talloc_stackframe();
+	TALLOC_CTX *frame = NULL;
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
-
-	if (SMB_VFS_NEXT_FSTAT(handle, fsp, &sbuf) == -1) {
-		TALLOC_FREE(frame);
+	if (!xattr_tdb_init(handle, &config)) {
 		return -1;
 	}
 
+	if (config->ignore_user_xattr && is_user_xattr(name)) {
+		return SMB_VFS_NEXT_FGETXATTR(
+			handle, fsp, name, value, size);
+	}
+
+	if (SMB_VFS_NEXT_FSTAT(handle, fsp, &sbuf) == -1) {
+		return -1;
+	}
+
+	frame = talloc_stackframe();
+
 	id = SMB_VFS_NEXT_FILE_ID_CREATE(handle, &sbuf);
 
-	xattr_size = xattr_tdb_getattr(db, frame, &id, name, &blob);
+	xattr_size = xattr_tdb_getattr(config->db, frame, &id, name, &blob);
 	if (xattr_size < 0) {
 		errno = ENOATTR;
 		TALLOC_FREE(frame);
@@ -241,27 +296,27 @@ static int xattr_tdb_fsetxattr(struct vfs_handle_struct *handle,
 			       const char *name, const void *value,
 			       size_t size, int flags)
 {
+	struct xattr_tdb_config *config = NULL;
 	SMB_STRUCT_STAT sbuf;
 	struct file_id id;
-	struct db_context *db;
 	int ret;
-	TALLOC_CTX *frame = talloc_stackframe();
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
+	if (!xattr_tdb_init(handle, &config)) {
+		return -1;
+	}
+
+	if (config->ignore_user_xattr && is_user_xattr(name)) {
+		return SMB_VFS_NEXT_FSETXATTR(
+			handle, fsp, name, value, size, flags);
+	}
 
 	if (SMB_VFS_NEXT_FSTAT(handle, fsp, &sbuf) == -1) {
-		TALLOC_FREE(frame);
 		return -1;
 	}
 
 	id = SMB_VFS_NEXT_FILE_ID_CREATE(handle, &sbuf);
 
-	ret = xattr_tdb_setattr(db, &id, name, value, size, flags);
-	TALLOC_FREE(frame);
+	ret = xattr_tdb_setattr(config->db, &id, name, value, size, flags);
 	return ret;
 
 }
@@ -270,122 +325,174 @@ static ssize_t xattr_tdb_flistxattr(struct vfs_handle_struct *handle,
 				    struct files_struct *fsp, char *list,
 				    size_t size)
 {
+	struct xattr_tdb_config *config = NULL;
 	SMB_STRUCT_STAT sbuf;
 	struct file_id id;
-	struct db_context *db;
-	int ret;
-	TALLOC_CTX *frame = talloc_stackframe();
+	ssize_t backend_size;
+	ssize_t ret;
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
+	if (!xattr_tdb_init(handle, &config)) {
+		return -1;
+	}
 
 	if (SMB_VFS_NEXT_FSTAT(handle, fsp, &sbuf) == -1) {
-		TALLOC_FREE(frame);
 		return -1;
 	}
 
 	id = SMB_VFS_NEXT_FILE_ID_CREATE(handle, &sbuf);
 
-	ret = xattr_tdb_listattr(db, &id, list, size);
-	TALLOC_FREE(frame);
-	return ret;
+	ret = xattr_tdb_listattr(config->db, &id, list, size);
+	if (ret == -1) {
+		return -1;
+	}
+	if (ret == size) {
+		return ret;
+	}
+	if (!config->ignore_user_xattr) {
+		return ret;
+	}
+	SMB_ASSERT(ret < size);
+
+	backend_size = SMB_VFS_NEXT_FLISTXATTR(
+		handle, fsp, list + ret, size - ret);
+	if (backend_size == -1) {
+		return -1;
+	}
+
+	return ret + backend_size;
 }
 
 static int xattr_tdb_fremovexattr(struct vfs_handle_struct *handle,
 				  struct files_struct *fsp, const char *name)
 {
+	struct xattr_tdb_config *config = NULL;
 	SMB_STRUCT_STAT sbuf;
 	struct file_id id;
-	struct db_context *db;
-	int ret;
-	TALLOC_CTX *frame = talloc_stackframe();
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
+	if (!xattr_tdb_init(handle, &config)) {
+		return -1;
+	}
+
+	if (config->ignore_user_xattr && is_user_xattr(name)) {
+		return SMB_VFS_NEXT_FREMOVEXATTR(handle, fsp, name);
+	}
 
 	if (SMB_VFS_NEXT_FSTAT(handle, fsp, &sbuf) == -1) {
-		TALLOC_FREE(frame);
 		return -1;
 	}
 
 	id = SMB_VFS_NEXT_FILE_ID_CREATE(handle, &sbuf);
 
-	ret = xattr_tdb_removeattr(db, &id, name);
-	TALLOC_FREE(frame);
-	return ret;
+	return xattr_tdb_removeattr(config->db, &id, name);
+}
+
+/*
+ * Destructor for the VFS private data
+ */
+
+static void config_destructor(void **data)
+{
+	struct xattr_tdb_config **config = (struct xattr_tdb_config **)data;
+	TALLOC_FREE((*config)->db);
 }
 
 /*
  * Open the tdb file upon VFS_CONNECT
  */
 
-static bool xattr_tdb_init(int snum, TALLOC_CTX *mem_ctx, struct db_context **p_db)
+static bool xattr_tdb_init(struct vfs_handle_struct *handle,
+			   struct xattr_tdb_config **_config)
 {
-	struct db_context *db;
+	struct xattr_tdb_config *config = NULL;
 	const char *dbname;
 	char *def_dbname;
+
+	if (SMB_VFS_HANDLE_TEST_DATA(handle)) {
+		SMB_VFS_HANDLE_GET_DATA(handle, config, struct xattr_tdb_config,
+					return false);
+		if (_config != NULL) {
+			*_config = config;
+		}
+		return true;
+	}
+
+	config = talloc_zero(handle->conn, struct xattr_tdb_config);
+	if (config == NULL) {
+		errno = ENOMEM;
+		goto error;
+	}
 
 	def_dbname = state_path(talloc_tos(), "xattr.tdb");
 	if (def_dbname == NULL) {
 		errno = ENOSYS;
-		return false;
+		goto error;
 	}
 
-	dbname = lp_parm_const_string(snum, "xattr_tdb", "file", def_dbname);
+	dbname = lp_parm_const_string(SNUM(handle->conn),
+				      "xattr_tdb",
+				      "file",
+				      def_dbname);
 
 	/* now we know dbname is not NULL */
 
 	become_root();
-	db = db_open(NULL, dbname, 0, TDB_DEFAULT, O_RDWR|O_CREAT, 0600,
-		     DBWRAP_LOCK_ORDER_2, DBWRAP_FLAG_NONE);
+	config->db = db_open(handle, dbname, 0, TDB_DEFAULT, O_RDWR|O_CREAT, 0600,
+			     DBWRAP_LOCK_ORDER_2, DBWRAP_FLAG_NONE);
 	unbecome_root();
 
-	if (db == NULL) {
+	if (config->db == NULL) {
 #if defined(ENOTSUP)
 		errno = ENOTSUP;
 #else
 		errno = ENOSYS;
 #endif
 		TALLOC_FREE(def_dbname);
-		return false;
+		goto error;
 	}
-
-	*p_db = db;
 	TALLOC_FREE(def_dbname);
+
+	config->ignore_user_xattr = lp_parm_bool(
+		SNUM(handle->conn), "xattr_tdb", "ignore_user_xattr", false);
+
+	SMB_VFS_HANDLE_SET_DATA(handle, config, config_destructor,
+				struct xattr_tdb_config, return false);
+
+	if (_config != NULL) {
+		*_config = config;
+	}
 	return true;
+
+error:
+	DBG_WARNING("Failed to initialize config: %s\n", strerror(errno));
+	lp_do_parameter(SNUM(handle->conn), "ea support", "False");
+	return false;
 }
 
 static int xattr_tdb_openat(struct vfs_handle_struct *handle,
 			    const struct files_struct *dirfsp,
 			    const struct smb_filename *smb_fname,
 			    struct files_struct *fsp,
-			    int flags,
-			    mode_t mode)
+			    const struct vfs_open_how *how)
 {
-	struct db_context *db = NULL;
-	TALLOC_CTX *frame = NULL;
+	struct xattr_tdb_config *config = NULL;
 	SMB_STRUCT_STAT sbuf;
 	int fd;
 	int ret;
+
+	if (!xattr_tdb_init(handle, &config)) {
+		return -1;
+	}
 
 	fd = SMB_VFS_NEXT_OPENAT(handle,
 				 dirfsp,
 				 smb_fname,
 				 fsp,
-				 flags,
-				 mode);
-
+				 how);
 	if (fd == -1) {
 		return -1;
 	}
 
-	if ((flags & (O_CREAT|O_EXCL)) != (O_CREAT|O_EXCL)) {
+	if ((how->flags & (O_CREAT|O_EXCL)) != (O_CREAT|O_EXCL)) {
 		return fd;
 	}
 
@@ -407,17 +514,8 @@ static int xattr_tdb_openat(struct vfs_handle_struct *handle,
 
 	fsp->file_id = SMB_VFS_FILE_ID_CREATE(fsp->conn, &sbuf);
 
-	frame = talloc_stackframe();
+	xattr_tdb_remove_all_attrs(config->db, &fsp->file_id);
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
-
-	xattr_tdb_remove_all_attrs(db, &fsp->file_id);
-
-	TALLOC_FREE(frame);
 	return fd;
 }
 
@@ -426,11 +524,14 @@ static int xattr_tdb_mkdirat(vfs_handle_struct *handle,
 		const struct smb_filename *smb_fname,
 		mode_t mode)
 {
-	struct db_context *db = NULL;
-	TALLOC_CTX *frame = NULL;
+	struct xattr_tdb_config *config = NULL;
 	struct file_id fileid;
+	struct stat_ex sbuf = { .st_ex_nlink = 0, };
 	int ret;
-	struct smb_filename *full_fname = NULL;
+
+	if (!xattr_tdb_init(handle, &config)) {
+		return -1;
+	}
 
 	ret = SMB_VFS_NEXT_MKDIRAT(handle,
 				dirfsp,
@@ -440,39 +541,21 @@ static int xattr_tdb_mkdirat(vfs_handle_struct *handle,
 		return ret;
 	}
 
-	frame = talloc_stackframe();
+	ret = SMB_VFS_NEXT_FSTATAT(
+		handle, dirfsp, smb_fname, &sbuf, AT_SYMLINK_NOFOLLOW);
 
-	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
-						  dirfsp,
-						  smb_fname);
-	if (full_fname == NULL) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	/* Always use LSTAT here - we just created the directory. */
-	ret = SMB_VFS_LSTAT(handle->conn, full_fname);
 	if (ret == -1) {
 		/* Rename race. Let upper level take care of it. */
-		TALLOC_FREE(frame);
 		return -1;
 	}
-	if (!S_ISDIR(full_fname->st.st_ex_mode)) {
+	if (!S_ISDIR(sbuf.st_ex_mode)) {
 		/* Rename race. Let upper level take care of it. */
-		TALLOC_FREE(frame);
 		return -1;
 	}
 
-	fileid = SMB_VFS_FILE_ID_CREATE(handle->conn, &full_fname->st);
+	fileid = SMB_VFS_FILE_ID_CREATE(handle->conn, &sbuf);
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
-
-	xattr_tdb_remove_all_attrs(db, &fileid);
-	TALLOC_FREE(frame);
+	xattr_tdb_remove_all_attrs(config->db, &fileid);
 	return 0;
 }
 
@@ -484,19 +567,19 @@ static int xattr_tdb_unlinkat(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			int flags)
 {
+	struct xattr_tdb_config *config = NULL;
 	struct smb_filename *smb_fname_tmp = NULL;
 	struct smb_filename *full_fname = NULL;
 	struct file_id id;
-	struct db_context *db;
 	int ret = -1;
 	bool remove_record = false;
-	TALLOC_CTX *frame = talloc_stackframe();
+	TALLOC_CTX *frame = NULL;
 
-	SMB_VFS_HANDLE_GET_DATA(handle, db, struct db_context,
-				if (!xattr_tdb_init(-1, frame, &db))
-				{
-					TALLOC_FREE(frame); return -1;
-				});
+	if (!xattr_tdb_init(handle, &config)) {
+		return -1;
+	}
+
+	frame = talloc_stackframe();
 
 	smb_fname_tmp = cp_smb_filename(frame, smb_fname);
 	if (smb_fname_tmp == NULL) {
@@ -561,21 +644,11 @@ static int xattr_tdb_unlinkat(vfs_handle_struct *handle,
 
 	id = SMB_VFS_NEXT_FILE_ID_CREATE(handle, &smb_fname_tmp->st);
 
-	xattr_tdb_remove_all_attrs(db, &id);
+	xattr_tdb_remove_all_attrs(config->db, &id);
 
  out:
 	TALLOC_FREE(frame);
 	return ret;
-}
-
-/*
- * Destructor for the VFS private data
- */
-
-static void close_xattr_db(void **data)
-{
-	struct db_context **p_db = (struct db_context **)data;
-	TALLOC_FREE(*p_db);
 }
 
 static int xattr_tdb_connect(vfs_handle_struct *handle, const char *service,
@@ -583,7 +656,6 @@ static int xattr_tdb_connect(vfs_handle_struct *handle, const char *service,
 {
 	char *sname = NULL;
 	int res, snum;
-	struct db_context *db;
 
 	res = SMB_VFS_NEXT_CONNECT(handle, service, user);
 	if (res < 0) {
@@ -598,16 +670,13 @@ static int xattr_tdb_connect(vfs_handle_struct *handle, const char *service,
 		return 0;
 	}
 
-	if (!xattr_tdb_init(snum, NULL, &db)) {
+	if (!xattr_tdb_init(handle, NULL)) {
 		DEBUG(5, ("Could not init xattr tdb\n"));
 		lp_do_parameter(snum, "ea support", "False");
 		return 0;
 	}
 
 	lp_do_parameter(snum, "ea support", "True");
-
-	SMB_VFS_HANDLE_SET_DATA(handle, db, close_xattr_db,
-				struct db_context, return -1);
 
 	return 0;
 }

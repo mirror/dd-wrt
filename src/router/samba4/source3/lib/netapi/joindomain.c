@@ -397,6 +397,8 @@ WERROR NetGetJoinableOUs_l(struct libnetapi_ctx *ctx,
 			   struct NetGetJoinableOUs *r)
 {
 #ifdef HAVE_ADS
+	TALLOC_CTX *tmp_ctx = talloc_stackframe();
+	WERROR ret;
 	NTSTATUS status;
 	ADS_STATUS ads_status;
 	ADS_STRUCT *ads = NULL;
@@ -411,64 +413,86 @@ WERROR NetGetJoinableOUs_l(struct libnetapi_ctx *ctx,
 	priv = talloc_get_type_abort(ctx->private_data,
 		struct libnetapi_private_ctx);
 
-	status = dsgetdcname(ctx, priv->msg_ctx, r->in.domain,
+	status = dsgetdcname(tmp_ctx, priv->msg_ctx, r->in.domain,
 			     NULL, NULL, flags, &info);
 	if (!NT_STATUS_IS_OK(status)) {
 		libnetapi_set_error_string(ctx, "%s",
 			get_friendly_nt_error_msg(status));
-		return ntstatus_to_werror(status);
+		ret = ntstatus_to_werror(status);
+		goto out;
 	}
 
 	dc = strip_hostname(info->dc_unc);
 
-	ads = ads_init(info->domain_name,
+	ads = ads_init(tmp_ctx,
+		       info->domain_name,
 		       info->domain_name,
 		       dc,
 		       ADS_SASL_PLAIN);
 	if (!ads) {
-		return WERR_GEN_FAILURE;
+		ret = WERR_GEN_FAILURE;
+		goto out;
 	}
 
-	SAFE_FREE(ads->auth.user_name);
+	ADS_TALLOC_CONST_FREE(ads->auth.user_name);
 	if (r->in.account) {
-		ads->auth.user_name = SMB_STRDUP(r->in.account);
+		ads->auth.user_name = talloc_strdup(ads, r->in.account);
+		if (ads->auth.user_name == NULL) {
+			ret = WERR_NOT_ENOUGH_MEMORY;
+			goto out;
+		}
 	} else {
 		const char *username = NULL;
 
 		libnetapi_get_username(ctx, &username);
 		if (username != NULL) {
-			ads->auth.user_name = SMB_STRDUP(username);
+			ads->auth.user_name = talloc_strdup(ads, username);
+			if (ads->auth.user_name == NULL) {
+				ret = WERR_NOT_ENOUGH_MEMORY;
+				goto out;
+			}
 		}
 	}
 
-	SAFE_FREE(ads->auth.password);
+	ADS_TALLOC_CONST_FREE(ads->auth.password);
 	if (r->in.password) {
-		ads->auth.password = SMB_STRDUP(r->in.password);
+		ads->auth.password = talloc_strdup(ads, r->in.password);
+		if (ads->auth.password == NULL) {
+			ret = WERR_NOT_ENOUGH_MEMORY;
+			goto out;
+		}
 	} else {
 		const char *password = NULL;
 
 		libnetapi_get_password(ctx, &password);
 		if (password != NULL) {
-			ads->auth.password = SMB_STRDUP(password);
+			ads->auth.password = talloc_strdup(ads, password);
+			if (ads->auth.password == NULL) {
+				ret = WERR_NOT_ENOUGH_MEMORY;
+				goto out;
+			}
 		}
 	}
 
 	ads_status = ads_connect_user_creds(ads);
 	if (!ADS_ERR_OK(ads_status)) {
-		ads_destroy(&ads);
-		return WERR_NERR_DEFAULTJOINREQUIRED;
+		ret = WERR_NERR_DEFAULTJOINREQUIRED;
+		goto out;
 	}
 
 	ads_status = ads_get_joinable_ous(ads, ctx, &p, &s);
 	if (!ADS_ERR_OK(ads_status)) {
-		ads_destroy(&ads);
-		return WERR_NERR_DEFAULTJOINREQUIRED;
+		ret = WERR_NERR_DEFAULTJOINREQUIRED;
+		goto out;
 	}
 	*r->out.ous = discard_const_p(const char *, p);
 	*r->out.ou_count = s;
 
-	ads_destroy(&ads);
-	return WERR_OK;
+	ret = WERR_OK;
+out:
+	TALLOC_FREE(tmp_ctx);
+
+	return ret;
 #else
 	return WERR_NOT_SUPPORTED;
 #endif

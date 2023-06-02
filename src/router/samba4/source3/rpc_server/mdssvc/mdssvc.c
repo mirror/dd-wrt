@@ -464,7 +464,7 @@ static bool inode_map_add(struct sl_query *slq, uint64_t ino, const char *path)
 		 */
 
 		if (value.dsize != sizeof(void *)) {
-			DEBUG(1, ("invalide dsize\n"));
+			DEBUG(1, ("invalid dsize\n"));
 			return false;
 		}
 		memcpy(&p, value.dptr, sizeof(p));
@@ -517,7 +517,6 @@ bool mds_add_result(struct sl_query *slq, const char *path)
 {
 	struct smb_filename *smb_fname = NULL;
 	struct stat_ex sb;
-	uint32_t attr;
 	uint64_t ino64;
 	int result;
 	NTSTATUS status;
@@ -560,33 +559,21 @@ bool mds_add_result(struct sl_query *slq, const char *path)
 		return true;
 	}
 
+	sb = smb_fname->st;
+
 	status = smbd_check_access_rights_fsp(slq->mds_ctx->conn->cwd_fsp,
 					      smb_fname->fsp,
 					      false,
 					      FILE_READ_DATA);
+	unbecome_authenticated_pipe_user();
 	if (!NT_STATUS_IS_OK(status)) {
-		unbecome_authenticated_pipe_user();
 		TALLOC_FREE(smb_fname);
 		return true;
 	}
 
-	/* This is needed to fetch the itime from the DOS attribute blob */
-	status = SMB_VFS_FGET_DOS_ATTRIBUTES(slq->mds_ctx->conn,
-					     smb_fname->fsp,
-					     &attr);
-	if (!NT_STATUS_IS_OK(status)) {
-		/* Ignore the error, likely no DOS attr xattr */
-		DBG_DEBUG("SMB_VFS_FGET_DOS_ATTRIBUTES [%s]: %s\n",
-			  smb_fname_str_dbg(smb_fname),
-			  nt_errstr(status));
-	}
-
-	unbecome_authenticated_pipe_user();
-
-	smb_fname->st = smb_fname->fsp->fsp_name->st;
-	sb = smb_fname->st;
 	/* Done with smb_fname now. */
 	TALLOC_FREE(smb_fname);
+
 	ino64 = SMB_VFS_FS_FILE_ID(slq->mds_ctx->conn, &sb);
 
 	if (slq->cnids) {
@@ -932,6 +919,12 @@ static bool slrpc_open_query(struct mds_ctx *mds_ctx,
 
 	scope = dalloc_get(path_scope, "char *", 0);
 	if (scope == NULL) {
+		scope = dalloc_get(path_scope,
+				   "DALLOC_CTX", 0,
+				   "char *", 0);
+	}
+	if (scope == NULL) {
+		DBG_ERR("Failed to parse kMDScopeArray\n");
 		goto error;
 	}
 
@@ -1354,13 +1347,13 @@ static bool slrpc_fetch_attributes(struct mds_ctx *mds_ctx,
 			return true;
 		}
 
-		result = SMB_VFS_FSTAT(smb_fname->fsp, &smb_fname->st);
-		if (result != 0) {
+		status = vfs_stat_fsp(smb_fname->fsp);
+		if (!NT_STATUS_IS_OK(status)) {
 			TALLOC_FREE(smb_fname);
 			return true;
 		}
 
-		sp = &smb_fname->st;
+		sp = &smb_fname->fsp->fsp_name->st;
 	}
 
 	ok = add_filemeta(mds_ctx, reqinfo, fm_array, path, sp);
@@ -1585,13 +1578,14 @@ static int mds_ctx_destructor_cb(struct mds_ctx *mds_ctx)
  * This ends up being called for every tcon, because the client does a
  * RPC bind for every tcon, so this is acually a per tcon context.
  **/
-struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
-			     struct tevent_context *ev,
-			     struct messaging_context *msg_ctx,
-			     struct auth_session_info *session_info,
-			     int snum,
-			     const char *sharename,
-			     const char *path)
+NTSTATUS mds_init_ctx(TALLOC_CTX *mem_ctx,
+		      struct tevent_context *ev,
+		      struct messaging_context *msg_ctx,
+		      struct auth_session_info *session_info,
+		      int snum,
+		      const char *sharename,
+		      const char *path,
+		      struct mds_ctx **_mds_ctx)
 {
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
@@ -1603,21 +1597,22 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 	smb_iconv_t iconv_hnd = (smb_iconv_t)-1;
 	NTSTATUS status;
 
+	if (!lp_spotlight(snum)) {
+		return NT_STATUS_WRONG_VOLUME;
+	}
+
 	mds_ctx = talloc_zero(mem_ctx, struct mds_ctx);
 	if (mds_ctx == NULL) {
-		return NULL;
+		return NT_STATUS_NO_MEMORY;
 	}
 	talloc_set_destructor(mds_ctx, mds_ctx_destructor_cb);
 
 	mds_ctx->mdssvc_ctx = mdssvc_init(ev);
 	if (mds_ctx->mdssvc_ctx == NULL) {
-		goto error;
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	backend = lp_spotlight_backend(snum);
-	if (!lp_spotlight(snum)) {
-		backend = SPOTLIGHT_BACKEND_NOINDEX;
-	}
 	switch (backend) {
 	case SPOTLIGHT_BACKEND_NOINDEX:
 		mds_ctx->backend = &mdsscv_backend_noindex;
@@ -1637,34 +1632,39 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 	default:
 		DBG_ERR("Unknown backend %d\n", backend);
 		TALLOC_FREE(mdssvc_ctx);
+		status = NT_STATUS_INTERNAL_ERROR;
 		goto error;
 	}
 
 	iconv_hnd = smb_iconv_open_ex(mds_ctx,
-						   "UTF8-NFD",
-						   "UTF8-NFC",
-						   false);
+				      "UTF8-NFD",
+				      "UTF8-NFC",
+				      false);
 	if (iconv_hnd == (smb_iconv_t)-1) {
+		status = NT_STATUS_INTERNAL_ERROR;
 		goto error;
 	}
 	mds_ctx->ic_nfc_to_nfd = iconv_hnd;
 
 	iconv_hnd = smb_iconv_open_ex(mds_ctx,
-						   "UTF8-NFC",
-						   "UTF8-NFD",
-						   false);
+				      "UTF8-NFC",
+				      "UTF8-NFD",
+				      false);
 	if (iconv_hnd == (smb_iconv_t)-1) {
+		status = NT_STATUS_INTERNAL_ERROR;
 		goto error;
 	}
 	mds_ctx->ic_nfd_to_nfc = iconv_hnd;
 
 	mds_ctx->sharename = talloc_strdup(mds_ctx, sharename);
 	if (mds_ctx->sharename == NULL) {
+		status = NT_STATUS_NO_MEMORY;
 		goto error;
 	}
 
 	mds_ctx->spath = talloc_strdup(mds_ctx, path);
 	if (mds_ctx->spath == NULL) {
+		status = NT_STATUS_NO_MEMORY;
 		goto error;
 	}
 
@@ -1672,6 +1672,7 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 	mds_ctx->pipe_session_info = session_info;
 
 	if (session_info->security_token->num_sids < 1) {
+		status = NT_STATUS_BAD_LOGON_SESSION_STATE;
 		goto error;
 	}
 	sid_copy(&mds_ctx->sid, &session_info->security_token->sids[0]);
@@ -1680,6 +1681,7 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 	mds_ctx->ino_path_map = db_open_rbt(mds_ctx);
 	if (mds_ctx->ino_path_map == NULL) {
 		DEBUG(1,("open inode map db failed\n"));
+		status = NT_STATUS_INTERNAL_ERROR;
 		goto error;
 	}
 
@@ -1704,16 +1706,19 @@ struct mds_ctx *mds_init_ctx(TALLOC_CTX *mem_ctx,
 	if (ret != 0) {
 		DBG_ERR("vfs_ChDir [%s] failed: %s\n",
 			conn_basedir.base_name, strerror(errno));
+		status = map_nt_error_from_unix(errno);
 		goto error;
 	}
 
 	ok = mds_ctx->backend->connect(mds_ctx);
 	if (!ok) {
 		DBG_ERR("backend connect failed\n");
+		status = NT_STATUS_CONNECTION_RESET;
 		goto error;
 	}
 
-	return mds_ctx;
+	*_mds_ctx = mds_ctx;
+	return NT_STATUS_OK;
 
 error:
 	if (mds_ctx->ic_nfc_to_nfd != NULL) {
@@ -1724,7 +1729,7 @@ error:
 	}
 
 	TALLOC_FREE(mds_ctx);
-	return NULL;
+	return status;
 }
 
 /**

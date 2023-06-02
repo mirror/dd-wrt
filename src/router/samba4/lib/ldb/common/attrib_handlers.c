@@ -1,4 +1,4 @@
-/* 
+/*
    ldb database library
 
    Copyright (C) Andrew Tridgell  2005
@@ -7,7 +7,7 @@
      ** NOTE! The following LGPL license applies to the ldb
      ** library. This does NOT imply that all of Samba is released
      ** under the LGPL
-   
+
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -309,7 +309,7 @@ int ldb_comparison_binary(struct ldb_context *ldb, void *mem_ctx,
   compare two case insensitive strings, ignoring multiple whitespaces
   and leading and trailing whitespaces
   see rfc2252 section 8.1
-	
+
   try to optimize for the ascii case,
   but if we find out an utf8 codepoint revert to slower but correct function
 */
@@ -321,6 +321,7 @@ int ldb_comparison_fold(struct ldb_context *ldb, void *mem_ctx,
 	char *b1, *b2;
 	const char *u1, *u2;
 	int ret;
+
 	while (n1 && *s1 == ' ') { s1++; n1--; };
 	while (n2 && *s2 == ' ') { s2++; n2--; };
 
@@ -345,24 +346,28 @@ int ldb_comparison_fold(struct ldb_context *ldb, void *mem_ctx,
 	 * "domainUpdates"
 	 */
 	if (n1 && *s1 == ' ' && (!n2 || !*s2)) {
-		while (n1 && *s1 == ' ') { s1++; n1--; }		
+		while (n1 && *s1 == ' ') { s1++; n1--; }
 	}
 	if (n2 && *s2 == ' ' && (!n1 || !*s1)) {
-		while (n2 && *s2 == ' ') { s2++; n2--; }		
+		while (n2 && *s2 == ' ') { s2++; n2--; }
 	}
 	if (n1 == 0 && n2 != 0) {
-		return -(int)toupper(*s2);
+		return -(int)ldb_ascii_toupper(*s2);
 	}
 	if (n2 == 0 && n1 != 0) {
-		return (int)toupper(*s1);
+		return (int)ldb_ascii_toupper(*s1);
 	}
 	if (n1 == 0 && n2 == 0) {
 		return 0;
 	}
-	return (int)toupper(*s1) - (int)toupper(*s2);
+	return (int)ldb_ascii_toupper(*s1) - (int)ldb_ascii_toupper(*s2);
 
 utf8str:
-	/* no need to recheck from the start, just from the first utf8 char found */
+	/*
+	 * No need to recheck from the start, just from the first utf8 charu
+	 * found. Note that the callback of ldb_casefold() needs to be ascii
+	 * compatible.
+	 */
 	b1 = ldb_casefold(ldb, mem_ctx, s1, n1);
 	b2 = ldb_casefold(ldb, mem_ctx, s2, n2);
 
@@ -375,9 +380,9 @@ utf8str:
 		if (ret == 0) {
 			if (n1 == n2) return 0;
 			if (n1 > n2) {
-				return (int)toupper(s1[n2]);
+				return (int)ldb_ascii_toupper(s1[n2]);
 			} else {
-				return -(int)toupper(s2[n1]);
+				return -(int)ldb_ascii_toupper(s2[n1]);
 			}
 		}
 		return ret;
@@ -403,7 +408,7 @@ utf8str:
 
 	talloc_free(b1);
 	talloc_free(b2);
-	
+
 	return ret;
 }
 
@@ -455,7 +460,7 @@ static int ldb_comparison_dn(struct ldb_context *ldb, void *mem_ctx,
 	if ( ! ldb_dn_validate(dn2)) {
 		talloc_free(dn1);
 		return -1;
-	} 
+	}
 
 	ret = ldb_dn_compare(dn1, dn2);
 
@@ -523,7 +528,7 @@ static int ldb_canonicalise_generalizedtime(struct ldb_context *ldb, void *mem_c
   table of standard attribute handlers
 */
 static const struct ldb_schema_syntax ldb_standard_syntaxes[] = {
-	{ 
+	{
 		.name            = LDB_SYNTAX_INTEGER,
 		.ldif_read_fn    = ldb_handler_copy,
 		.ldif_write_fn   = ldb_handler_copy,
@@ -545,35 +550,35 @@ static const struct ldb_schema_syntax ldb_standard_syntaxes[] = {
 		.canonicalise_fn = ldb_handler_copy,
 		.comparison_fn   = ldb_comparison_binary
 	},
-	{ 
+	{
 		.name            = LDB_SYNTAX_DIRECTORY_STRING,
 		.ldif_read_fn    = ldb_handler_copy,
 		.ldif_write_fn   = ldb_handler_copy,
 		.canonicalise_fn = ldb_handler_fold,
 		.comparison_fn   = ldb_comparison_fold
 	},
-	{ 
+	{
 		.name            = LDB_SYNTAX_DN,
 		.ldif_read_fn    = ldb_handler_copy,
 		.ldif_write_fn   = ldb_handler_copy,
 		.canonicalise_fn = ldb_canonicalise_dn,
 		.comparison_fn   = ldb_comparison_dn
 	},
-	{ 
+	{
 		.name            = LDB_SYNTAX_OBJECTCLASS,
 		.ldif_read_fn    = ldb_handler_copy,
 		.ldif_write_fn   = ldb_handler_copy,
 		.canonicalise_fn = ldb_handler_fold,
 		.comparison_fn   = ldb_comparison_fold
 	},
-	{ 
+	{
 		.name            = LDB_SYNTAX_UTC_TIME,
 		.ldif_read_fn    = ldb_handler_copy,
 		.ldif_write_fn   = ldb_handler_copy,
 		.canonicalise_fn = ldb_canonicalise_utctime,
 		.comparison_fn   = ldb_comparison_utctime
 	},
-	{ 
+	{
 		.name            = LDB_SYNTAX_GENERALIZED_TIME,
 		.ldif_read_fn    = ldb_handler_copy,
 		.ldif_write_fn   = ldb_handler_copy,
@@ -607,8 +612,8 @@ const struct ldb_schema_syntax *ldb_standard_syntax_by_name(struct ldb_context *
 	return NULL;
 }
 
-int ldb_any_comparison(struct ldb_context *ldb, void *mem_ctx, 
-		       ldb_attr_handler_t canonicalise_fn, 
+int ldb_any_comparison(struct ldb_context *ldb, void *mem_ctx,
+		       ldb_attr_handler_t canonicalise_fn,
 		       const struct ldb_val *v1,
 		       const struct ldb_val *v2)
 {
@@ -619,7 +624,7 @@ int ldb_any_comparison(struct ldb_context *ldb, void *mem_ctx,
 	/* I could try and bail if tmp_ctx was NULL, but what return
 	 * value would I use?
 	 *
-	 * It seems easier to continue on the NULL context 
+	 * It seems easier to continue on the NULL context
 	 */
 	ret1 = canonicalise_fn(ldb, tmp_ctx, v1, &v1_canon);
 	ret2 = canonicalise_fn(ldb, tmp_ctx, v2, &v2_canon);

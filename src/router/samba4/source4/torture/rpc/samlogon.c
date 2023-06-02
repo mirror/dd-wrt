@@ -357,6 +357,12 @@ static bool test_lm_ntlm_broken(struct samlogon_state *samlogon_state, enum ntlm
 		if (break_which == NO_NT && !lm_good) {
 			return true;
 		}
+		/* for modern servers, the LM password is invalid */
+		if (break_which == NO_NT
+		    && !torture_setting_bool(samlogon_state->tctx, "samba3", false)) {
+			return true;
+		}
+
 		/* for 'old' passwords, we allow the server to be OK or wrong password */
 		if (samlogon_state->old_password) {
 			return true;
@@ -384,13 +390,18 @@ static bool test_lm_ntlm_broken(struct samlogon_state *samlogon_state, enum ntlm
 		return false;
 	}
 
-	if (memcmp(lm_hash, lm_key,
-		   sizeof(lm_key)) != 0) {
+	/* for modern servers, the LM password is invalid */
+	if (break_which == NO_NT
+	    && !torture_setting_bool(samlogon_state->tctx, "samba3", false)) {
+	        *error_string = strdup("LM password is OK but should have failed against a modern server");
+		return false;
+	}
+
+	if (!all_zero(lm_key, sizeof(lm_key)) != 0) {
 		torture_comment(samlogon_state->tctx, "LM Key does not match expectations!\n");
 		torture_comment(samlogon_state->tctx, "lm_key:\n");
 		dump_data(1, lm_key, 8);
-		torture_comment(samlogon_state->tctx, "expected:\n");
-		dump_data(1, lm_hash, 8);
+		torture_comment(samlogon_state->tctx, "expected (all zeros):\n");
 		pass = false;
 	}
 
@@ -398,11 +409,11 @@ static bool test_lm_ntlm_broken(struct samlogon_state *samlogon_state, enum ntlm
 	case NO_NT:
 	{
 		uint8_t lm_key_expected[16];
-		memcpy(lm_key_expected, lm_hash, 8);
+		memcpy(lm_key_expected, session_key.data, 8);
 		memset(lm_key_expected+8, '\0', 8);
 		if (memcmp(lm_key_expected, user_session_key,
 			   16) != 0) {
-			*error_string = strdup("NT Session Key does not match expectations (should be first-8 LM hash)!\n");
+			*error_string = strdup("NT Session Key does not match expectations (should be first-8 session key)!\n");
 			torture_comment(samlogon_state->tctx, "user_session_key:\n");
 			dump_data(1, user_session_key, sizeof(user_session_key));
 			torture_comment(samlogon_state->tctx, "expected:\n");
@@ -505,41 +516,60 @@ static bool test_ntlm_in_lm(struct samlogon_state *samlogon_state, char **error_
 		return false;
 	}
 
-	if (lm_good) {
-		if (memcmp(lm_hash, lm_key,
-			   sizeof(lm_key)) != 0) {
+	if (torture_setting_bool(samlogon_state->tctx, "samba4", false)) {
+		if (!all_zero(lm_key, sizeof(lm_key)) != 0) {
 			torture_comment(samlogon_state->tctx, "LM Key does not match expectations!\n");
 			torture_comment(samlogon_state->tctx, "lm_key:\n");
 			dump_data(1, lm_key, 8);
-			torture_comment(samlogon_state->tctx, "expected:\n");
-			dump_data(1, lm_hash, 8);
+			torture_comment(samlogon_state->tctx, "expected (all zeros):\n");
 			pass = false;
 		}
-#if 0
-	} else {
-		if (memcmp(session_key.data, lm_key,
-			   sizeof(lm_key)) != 0) {
-			torture_comment(samlogon_state->tctx, "LM Key does not match expectations (first 8 session key)!\n");
-			torture_comment(samlogon_state->tctx, "lm_key:\n");
-			dump_data(1, lm_key, 8);
-			torture_comment(samlogon_state->tctx, "expected:\n");
-			dump_data(1, session_key.data, 8);
-			pass = false;
-		}
-#endif
-	}
-	if (lm_good && memcmp(lm_hash, user_session_key, 8) != 0) {
-		uint8_t lm_key_expected[16];
-		memcpy(lm_key_expected, lm_hash, 8);
-		memset(lm_key_expected+8, '\0', 8);
-		if (memcmp(lm_key_expected, user_session_key,
-			   16) != 0) {
-			torture_comment(samlogon_state->tctx, "NT Session Key does not match expectations (should be first-8 LM hash)!\n");
+
+
+		if (!all_zero(user_session_key, sizeof(user_session_key)) != 0) {
+			torture_comment(samlogon_state->tctx, "NT Key does not match expectations!\n");
 			torture_comment(samlogon_state->tctx, "user_session_key:\n");
 			dump_data(1, user_session_key, sizeof(user_session_key));
-			torture_comment(samlogon_state->tctx, "expected:\n");
-			dump_data(1, lm_key_expected, sizeof(lm_key_expected));
+			torture_comment(samlogon_state->tctx, "expected (all zeros):\n");
 			pass = false;
+		}
+	} else {
+		if (lm_good) {
+			if (memcmp(lm_hash, lm_key,
+				   sizeof(lm_key)) != 0) {
+				torture_comment(samlogon_state->tctx, "LM Key does not match expectations!\n");
+				torture_comment(samlogon_state->tctx, "lm_key:\n");
+				dump_data(1, lm_key, 8);
+				torture_comment(samlogon_state->tctx, "expected:\n");
+				dump_data(1, lm_hash, 8);
+				pass = false;
+			}
+#if 0
+		} else {
+			if (memcmp(session_key.data, lm_key,
+				   sizeof(lm_key)) != 0) {
+				torture_comment(samlogon_state->tctx, "LM Key does not match expectations (first 8 session key)!\n");
+				torture_comment(samlogon_state->tctx, "lm_key:\n");
+				dump_data(1, lm_key, 8);
+				torture_comment(samlogon_state->tctx, "expected:\n");
+				dump_data(1, session_key.data, 8);
+			pass = false;
+			}
+#endif
+		}
+		if (lm_good && memcmp(lm_hash, user_session_key, 8) != 0) {
+			uint8_t lm_key_expected[16];
+			memcpy(lm_key_expected, lm_hash, 8);
+			memset(lm_key_expected+8, '\0', 8);
+			if (memcmp(lm_key_expected, user_session_key,
+				   16) != 0) {
+				torture_comment(samlogon_state->tctx, "NT Session Key does not match expectations (should be first-8 LM hash)!\n");
+				torture_comment(samlogon_state->tctx, "user_session_key:\n");
+				dump_data(1, user_session_key, sizeof(user_session_key));
+				torture_comment(samlogon_state->tctx, "expected:\n");
+				dump_data(1, lm_key_expected, sizeof(lm_key_expected));
+				pass = false;
+			}
 		}
 	}
         return pass;
@@ -611,13 +641,12 @@ static bool test_ntlm_in_both(struct samlogon_state *samlogon_state, char **erro
 		return false;
 	}
 
-	if (memcmp(lm_hash, lm_key,
-		   sizeof(lm_key)) != 0) {
+	if (!all_zero(lm_key,
+		      sizeof(lm_key)) != 0) {
 		torture_comment(samlogon_state->tctx, "LM Key does not match expectations!\n");
 		torture_comment(samlogon_state->tctx, "lm_key:\n");
 		dump_data(1, lm_key, 8);
-		torture_comment(samlogon_state->tctx, "expected:\n");
-		dump_data(1, lm_hash, 8);
+		torture_comment(samlogon_state->tctx, "expected (all zero)\n");
 		pass = false;
 	}
 	if (memcmp(session_key.data, user_session_key,
@@ -929,24 +958,12 @@ static bool test_lmv2_ntlm_broken(struct samlogon_state *samlogon_state,
 			dump_data(1, ntlm_session_key.data, ntlm_session_key.length);
 			pass = false;
 		}
-		if (lm_good) {
-			if (memcmp(lm_hash, lm_session_key,
-				   sizeof(lm_session_key)) != 0) {
-				torture_comment(samlogon_state->tctx, "LM Session Key does not match expectations!\n");
-				torture_comment(samlogon_state->tctx, "lm_session_key:\n");
-				dump_data(1, lm_session_key, 8);
-				torture_comment(samlogon_state->tctx, "expected:\n");
-				dump_data(1, lm_hash, 8);
-				pass = false;
-			}
-		} else {
-			if (!all_zero(lm_session_key,
-				      sizeof(lm_session_key))) {
-				torture_comment(samlogon_state->tctx, "LM Session Key does not match expectations (zeros)!\n");
-				torture_comment(samlogon_state->tctx, "lm_session_key:\n");
-				dump_data(1, lm_session_key, 8);
-				pass = false;
-			}
+		if (!all_zero(lm_session_key,
+			      sizeof(lm_session_key))) {
+			torture_comment(samlogon_state->tctx, "LM Session Key does not match expectations (zeros)!\n");
+			torture_comment(samlogon_state->tctx, "lm_session_key:\n");
+			dump_data(1, lm_session_key, 8);
+			pass = false;
 		}
 		break;
 	default:
@@ -1113,7 +1130,6 @@ static bool test_ntlm2(struct samlogon_state *samlogon_state, char **error_strin
 	DATA_BLOB lm_response = data_blob_talloc(samlogon_state->mem_ctx, NULL, 24);
 	DATA_BLOB nt_response = data_blob_talloc(samlogon_state->mem_ctx, NULL, 24);
 
-	bool lm_good;
 	uint8_t lm_key[8];
 	uint8_t nt_hash[16];
 	uint8_t lm_hash[16];
@@ -1136,7 +1152,7 @@ static bool test_ntlm2(struct samlogon_state *samlogon_state, char **error_strin
 	gnutls_hash_deinit(hash_hnd, session_nonce_hash);
 
 	E_md4hash(samlogon_state->password, (uint8_t *)nt_hash);
-	lm_good = E_deshash(samlogon_state->password, (uint8_t *)lm_hash);
+	E_deshash(samlogon_state->password, (uint8_t *)lm_hash);
 	SMBsesskeygen_ntv1((const uint8_t *)nt_hash,
 			   nt_key);
 
@@ -1184,23 +1200,11 @@ static bool test_ntlm2(struct samlogon_state *samlogon_state, char **error_strin
 		return false;
 	}
 
-	if (lm_good) {
-		if (memcmp(lm_hash, lm_key,
-			   sizeof(lm_key)) != 0) {
-			torture_comment(samlogon_state->tctx, "LM Key does not match expectations!\n");
-			torture_comment(samlogon_state->tctx, "lm_key:\n");
-			dump_data(1, lm_key, 8);
-			torture_comment(samlogon_state->tctx, "expected:\n");
-			dump_data(1, lm_hash, 8);
-			pass = false;
-		}
-	} else {
-		if (!all_zero(lm_key, sizeof(lm_key))) {
-			torture_comment(samlogon_state->tctx, "LM Session Key does not match expectations (zeros)!\n");
-			torture_comment(samlogon_state->tctx, "lm_key:\n");
-			dump_data(1, lm_key, 8);
-			pass = false;
-		}
+	if (!all_zero(lm_key, sizeof(lm_key))) {
+		torture_comment(samlogon_state->tctx, "LM Session Key does not match expectations (zeros)!\n");
+		torture_comment(samlogon_state->tctx, "lm_key:\n");
+		dump_data(1, lm_key, 8);
+		pass = false;
 	}
 	if (memcmp(nt_key, user_session_key, 16) != 0) {
 		torture_comment(samlogon_state->tctx, "NT Session Key does not match expectations (should be NT Key)!\n");
@@ -1269,6 +1273,12 @@ static bool test_plaintext(struct samlogon_state *samlogon_state, enum ntlm_brea
 		if (break_which == NO_NT && !lm_good) {
 			return true;
 		}
+		/* for modern servers, the LM password is invalid */
+		if (break_which == NO_NT
+		    && !torture_setting_bool(samlogon_state->tctx, "samba3", false)) {
+			return true;
+		}
+
 		return ((break_which == BREAK_NT) || (break_which == BREAK_BOTH));
 	} else if (NT_STATUS_EQUAL(NT_STATUS_NOT_FOUND, nt_status) && strchr_m(samlogon_state->account_name, '@')) {
 		return ((break_which == BREAK_NT) || (break_which == BREAK_BOTH) || (break_which == NO_NT));
@@ -1289,6 +1299,13 @@ static bool test_plaintext(struct samlogon_state *samlogon_state, enum ntlm_brea
 
 	if (break_which == NO_NT && !lm_good) {
 	        *error_string = strdup("LM password is 'long' (> 14 chars and therefore invalid) but login did not fail!");
+		return false;
+	}
+
+	/* for modern servers, the LM password is invalid */
+	if (break_which == NO_NT
+	    && !torture_setting_bool(samlogon_state->tctx, "samba3", false)) {
+	        *error_string = strdup("LM password is OK but should have failed against a modern server");
 		return false;
 	}
 
@@ -1793,11 +1810,12 @@ bool torture_rpc_samlogon(struct torture_context *torture)
 	torture_assert_ntstatus_ok_goto(torture, s.out.result, ret, failed,
 		talloc_asprintf(torture, "SetUserInfo (list of workstations) failed - %s\n", nt_errstr(s.out.result)));
 
-	status = torture_rpc_binding(torture, &b);
-	if (!NT_STATUS_IS_OK(status)) {
-		ret = false;
-		goto failed;
-	}
+
+	torture_assert_ntstatus_ok_goto(torture,
+					torture_rpc_binding(torture, &b),
+					ret,
+					failed,
+					"Obtaining binding");
 
 	/* We have to use schannel, otherwise the SamLogonEx fails
 	 * with INTERNAL_ERROR */
@@ -1816,11 +1834,11 @@ bool torture_rpc_samlogon(struct torture_context *torture)
 	torture_assert_ntstatus_ok_goto(torture, status, ret, failed,
 		talloc_asprintf(torture, "RPC pipe connect as domain member failed: %s\n", nt_errstr(status)));
 
-	creds = cli_credentials_get_netlogon_creds(machine_credentials);
-	if (creds == NULL) {
-		ret = false;
-		goto failed;
-	}
+	torture_assert_not_null_goto(torture,
+				     creds = cli_credentials_get_netlogon_creds(machine_credentials),
+				     ret,
+				     failed,
+				     "obtaining credentails");
 
 	{
 
@@ -2011,31 +2029,35 @@ bool torture_rpc_samlogon(struct torture_context *torture)
 		/* Try all the tests for different username forms */
 		for (ci = 0; ci < ARRAY_SIZE(usercreds); ci++) {
 
-			if (!test_InteractiveLogon(p, mem_ctx, torture, creds,
-						   usercreds[ci].comment,
-						   TEST_MACHINE_NAME,
-						   usercreds[ci].domain,
-						   usercreds[ci].username,
-						   usercreds[ci].password,
-						   usercreds[ci].parameter_control,
-						   usercreds[ci].expected_interactive_error)) {
-				ret = false;
-				goto failed;
-			}
+			torture_assert_goto(torture,
+					    test_InteractiveLogon(p, mem_ctx, torture, creds,
+								  usercreds[ci].comment,
+								  TEST_MACHINE_NAME,
+								  usercreds[ci].domain,
+								  usercreds[ci].username,
+								  usercreds[ci].password,
+								  usercreds[ci].parameter_control,
+								  usercreds[ci].expected_interactive_error),
+					    ret,
+					    failed,
+					    talloc_asprintf(mem_ctx, "InteractiveLogon: %s",
+							    usercreds[ci].comment));
 
 			if (usercreds[ci].network_login) {
-				if (!test_SamLogon(p, mem_ctx, torture, creds,
-						   usercreds[ci].comment,
-						   usercreds[ci].domain,
-						   usercreds[ci].username,
-						   usercreds[ci].password,
-						   usercreds[ci].parameter_control,
-						   usercreds[ci].expected_network_error,
-						   usercreds[ci].old_password,
-						   0)) {
-					ret = false;
-					goto failed;
-				}
+				torture_assert_goto(torture,
+						    test_SamLogon(p, mem_ctx, torture, creds,
+								  usercreds[ci].comment,
+								  usercreds[ci].domain,
+								  usercreds[ci].username,
+								  usercreds[ci].password,
+								  usercreds[ci].parameter_control,
+								  usercreds[ci].expected_network_error,
+								  usercreds[ci].old_password,
+								  0),
+						    ret,
+						    failed,
+						    talloc_asprintf(mem_ctx, "SamLogon: %s",
+								    usercreds[ci].comment));
 			}
 		}
 
@@ -2050,31 +2072,37 @@ bool torture_rpc_samlogon(struct torture_context *torture)
 					"Testing with flags: 0x%08x\n",
 					credential_flags[i]);
 
-			if (!test_InteractiveLogon(p, mem_ctx, torture, creds,
-						   usercreds[0].comment,
-						   TEST_MACHINE_NAME,
-						   usercreds[0].domain,
-						   usercreds[0].username,
-						   usercreds[0].password,
-						   usercreds[0].parameter_control,
-						   usercreds[0].expected_interactive_error)) {
-				ret = false;
-				goto failed;
-			}
+			torture_assert_goto(torture,
+					    test_InteractiveLogon(p, mem_ctx, torture, creds,
+								  usercreds[0].comment,
+								  TEST_MACHINE_NAME,
+								  usercreds[0].domain,
+								  usercreds[0].username,
+								  usercreds[0].password,
+								  usercreds[0].parameter_control,
+								  usercreds[0].expected_interactive_error),
+					    ret,
+					    failed,
+					    talloc_asprintf(mem_ctx,
+							    "Testing InteractiveLogon with flags: 0x%08x\n",
+							    credential_flags[i]));
 
 			if (usercreds[0].network_login) {
-				if (!test_SamLogon(p, mem_ctx, torture, creds,
-						   usercreds[0].comment,
-						   usercreds[0].domain,
-						   usercreds[0].username,
-						   usercreds[0].password,
-						   usercreds[0].parameter_control,
-						   usercreds[0].expected_network_error,
-						   usercreds[0].old_password,
-						   1)) {
-					ret = false;
-					goto failed;
-				}
+				torture_assert_goto(torture,
+						    test_SamLogon(p, mem_ctx, torture, creds,
+								  usercreds[0].comment,
+								  usercreds[0].domain,
+								  usercreds[0].username,
+								  usercreds[0].password,
+								  usercreds[0].parameter_control,
+								  usercreds[0].expected_network_error,
+								  usercreds[0].old_password,
+								  1),
+						    ret,
+						    failed,
+						    talloc_asprintf(mem_ctx,
+								    "Testing SamLogon with flags: 0x%08x\n",
+								    credential_flags[i]));
 			}
 		}
 

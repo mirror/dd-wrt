@@ -1,4 +1,4 @@
-/* 
+/*
  * Auditing VFS module for samba.  Log selected file operations to syslog
  * facility.
  *
@@ -12,12 +12,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
@@ -44,7 +44,7 @@
  * smbd_audit: nobody|192.168.234.1|create_file|ok|0x3|file|open|/tmp/file.txt
  *
  * where "nobody" is the connected username and "192.168.234.1" is the
- * client's IP address. 
+ * client's IP address.
  *
  * Options:
  *
@@ -134,12 +134,12 @@ typedef enum _vfs_op_type {
 	SMB_VFS_OP_SENDFILE,
 	SMB_VFS_OP_RECVFILE,
 	SMB_VFS_OP_RENAMEAT,
-	SMB_VFS_OP_FSYNC,
 	SMB_VFS_OP_FSYNC_SEND,
 	SMB_VFS_OP_FSYNC_RECV,
 	SMB_VFS_OP_STAT,
 	SMB_VFS_OP_FSTAT,
 	SMB_VFS_OP_LSTAT,
+	SMB_VFS_OP_FSTATAT,
 	SMB_VFS_OP_GET_ALLOC_SIZE,
 	SMB_VFS_OP_UNLINKAT,
 	SMB_VFS_OP_FCHMOD,
@@ -152,7 +152,7 @@ typedef enum _vfs_op_type {
 	SMB_VFS_OP_FTRUNCATE,
 	SMB_VFS_OP_FALLOCATE,
 	SMB_VFS_OP_LOCK,
-	SMB_VFS_OP_KERNEL_FLOCK,
+	SMB_VFS_OP_FILESYSTEM_SHAREMODE,
 	SMB_VFS_OP_FCNTL,
 	SMB_VFS_OP_LINUX_SETLEASE,
 	SMB_VFS_OP_GETLOCK,
@@ -166,6 +166,7 @@ typedef enum _vfs_op_type {
 	SMB_VFS_OP_FS_FILE_ID,
 	SMB_VFS_OP_FSTREAMINFO,
 	SMB_VFS_OP_GET_REAL_FILENAME,
+	SMB_VFS_OP_GET_REAL_FILENAME_AT,
 	SMB_VFS_OP_CONNECTPATH,
 	SMB_VFS_OP_BRL_LOCK_WINDOWS,
 	SMB_VFS_OP_BRL_UNLOCK_WINDOWS,
@@ -270,12 +271,12 @@ static struct {
 	{ SMB_VFS_OP_SENDFILE,	"sendfile" },
 	{ SMB_VFS_OP_RECVFILE,  "recvfile" },
 	{ SMB_VFS_OP_RENAMEAT,	"renameat" },
-	{ SMB_VFS_OP_FSYNC,	"fsync" },
 	{ SMB_VFS_OP_FSYNC_SEND,	"fsync_send" },
 	{ SMB_VFS_OP_FSYNC_RECV,	"fsync_recv" },
 	{ SMB_VFS_OP_STAT,	"stat" },
 	{ SMB_VFS_OP_FSTAT,	"fstat" },
 	{ SMB_VFS_OP_LSTAT,	"lstat" },
+	{ SMB_VFS_OP_FSTATAT,	"fstatat" },
 	{ SMB_VFS_OP_GET_ALLOC_SIZE,	"get_alloc_size" },
 	{ SMB_VFS_OP_UNLINKAT,	"unlinkat" },
 	{ SMB_VFS_OP_FCHMOD,	"fchmod" },
@@ -288,7 +289,7 @@ static struct {
 	{ SMB_VFS_OP_FTRUNCATE,	"ftruncate" },
 	{ SMB_VFS_OP_FALLOCATE,"fallocate" },
 	{ SMB_VFS_OP_LOCK,	"lock" },
-	{ SMB_VFS_OP_KERNEL_FLOCK,	"kernel_flock" },
+	{ SMB_VFS_OP_FILESYSTEM_SHAREMODE,	"filesystem_sharemode" },
 	{ SMB_VFS_OP_FCNTL,	"fcntl" },
 	{ SMB_VFS_OP_LINUX_SETLEASE, "linux_setlease" },
 	{ SMB_VFS_OP_GETLOCK,	"getlock" },
@@ -302,6 +303,7 @@ static struct {
 	{ SMB_VFS_OP_FS_FILE_ID,	"fs_file_id" },
 	{ SMB_VFS_OP_FSTREAMINFO,	"fstreaminfo" },
 	{ SMB_VFS_OP_GET_REAL_FILENAME, "get_real_filename" },
+	{ SMB_VFS_OP_GET_REAL_FILENAME_AT, "get_real_filename_at" },
 	{ SMB_VFS_OP_CONNECTPATH,	"connectpath" },
 	{ SMB_VFS_OP_BRL_LOCK_WINDOWS,  "brl_lock_windows" },
 	{ SMB_VFS_OP_BRL_UNLOCK_WINDOWS, "brl_unlock_windows" },
@@ -511,13 +513,13 @@ static struct bitmap *init_bitmap(TALLOC_CTX *mem_ctx, const char **ops)
 	struct bitmap *bm;
 
 	if (ops == NULL) {
+		DBG_ERR("init_bitmap, ops list is empty (logic error)\n");
 		return NULL;
 	}
 
 	bm = bitmap_talloc(mem_ctx, SMB_VFS_OP_LAST);
 	if (bm == NULL) {
-		DEBUG(0, ("Could not alloc bitmap -- "
-			  "defaulting to logging everything\n"));
+		DBG_ERR("Could not alloc bitmap\n");
 		return NULL;
 	}
 
@@ -559,8 +561,7 @@ static struct bitmap *init_bitmap(TALLOC_CTX *mem_ctx, const char **ops)
 			}
 		}
 		if (i == SMB_VFS_OP_LAST) {
-			DEBUG(0, ("Could not find opname %s, logging all\n",
-				  *ops));
+			DBG_ERR("Could not find opname %s\n", *ops);
 			TALLOC_FREE(bm);
 			return NULL;
 		}
@@ -748,9 +749,19 @@ static int smb_full_audit_connect(vfs_handle_struct *handle,
 	pd->success_ops = init_bitmap(
 		pd, lp_parm_string_list(SNUM(handle->conn), "full_audit",
 					"success", none));
+	if (pd->success_ops == NULL) {
+		DBG_ERR("Invalid success operations list. Failing connect\n");
+		SMB_VFS_NEXT_DISCONNECT(handle);
+		return -1;
+	}
 	pd->failure_ops = init_bitmap(
 		pd, lp_parm_string_list(SNUM(handle->conn), "full_audit",
 					"failure", none));
+	if (pd->failure_ops == NULL) {
+		DBG_ERR("Invalid failure operations list. Failing connect\n");
+		SMB_VFS_NEXT_DISCONNECT(handle);
+		return -1;
+	}
 
 	/* Store the private data. */
 	SMB_VFS_HANDLE_SET_DATA(handle, pd, NULL,
@@ -1089,7 +1100,7 @@ static int smb_full_audit_closedir(vfs_handle_struct *handle,
 	int result;
 
 	result = SMB_VFS_NEXT_CLOSEDIR(handle, dirp);
-	
+
 	do_log(SMB_VFS_OP_CLOSEDIR, (result >= 0), handle, "");
 
 	return result;
@@ -1099,15 +1110,14 @@ static int smb_full_audit_openat(vfs_handle_struct *handle,
 				 const struct files_struct *dirfsp,
 				 const struct smb_filename *smb_fname,
 				 struct files_struct *fsp,
-				 int flags,
-				 mode_t mode)
+				 const struct vfs_open_how *how)
 {
 	int result;
 
-	result = SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
+	result = SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, how);
 
 	do_log(SMB_VFS_OP_OPENAT, (result >= 0), handle, "%s|%s",
-	       ((flags & O_WRONLY) || (flags & O_RDWR))?"w":"r",
+	       ((how->flags & O_WRONLY) || (how->flags & O_RDWR))?"w":"r",
 	       fsp_str_do_log(fsp));
 
 	return result;
@@ -1115,6 +1125,7 @@ static int smb_full_audit_openat(vfs_handle_struct *handle,
 
 static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 				      struct smb_request *req,
+				      struct files_struct *dirfsp,
 				      struct smb_filename *smb_fname,
 				      uint32_t access_mask,
 				      uint32_t share_access,
@@ -1161,6 +1172,7 @@ static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 	result = SMB_VFS_NEXT_CREATE_FILE(
 		handle,					/* handle */
 		req,					/* req */
+		dirfsp,					/* dirfsp */
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -1189,7 +1201,7 @@ static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 static int smb_full_audit_close(vfs_handle_struct *handle, files_struct *fsp)
 {
 	int result;
-	
+
 	result = SMB_VFS_NEXT_CLOSE(handle, fsp);
 
 	do_log(SMB_VFS_OP_CLOSE, (result >= 0), handle, "%s",
@@ -1533,20 +1545,20 @@ static int smb_full_audit_stat(vfs_handle_struct *handle,
 			       struct smb_filename *smb_fname)
 {
 	int result;
-	
+
 	result = SMB_VFS_NEXT_STAT(handle, smb_fname);
 
 	do_log(SMB_VFS_OP_STAT, (result >= 0), handle, "%s",
 	       smb_fname_str_do_log(handle->conn, smb_fname));
 
-	return result;    
+	return result;
 }
 
 static int smb_full_audit_fstat(vfs_handle_struct *handle, files_struct *fsp,
 		       SMB_STRUCT_STAT *sbuf)
 {
 	int result;
-	
+
 	result = SMB_VFS_NEXT_FSTAT(handle, fsp, sbuf);
 
 	do_log(SMB_VFS_OP_FSTAT, (result >= 0), handle, "%s",
@@ -1559,15 +1571,35 @@ static int smb_full_audit_lstat(vfs_handle_struct *handle,
 				struct smb_filename *smb_fname)
 {
 	int result;
-	
+
 	result = SMB_VFS_NEXT_LSTAT(handle, smb_fname);
 
 	do_log(SMB_VFS_OP_LSTAT, (result >= 0), handle, "%s",
 	       smb_fname_str_do_log(handle->conn, smb_fname));
 
-	return result;    
+	return result;
 }
 
+static int smb_full_audit_fstatat(
+	struct vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname,
+	SMB_STRUCT_STAT *sbuf,
+	int flags)
+{
+	int result;
+
+	result = SMB_VFS_NEXT_FSTATAT(handle, dirfsp, smb_fname, sbuf, flags);
+
+	do_log(SMB_VFS_OP_FSTATAT,
+	       (result >= 0),
+	       handle,
+	       "%s/%s",
+	       fsp_str_do_log(dirfsp),
+	       smb_fname_str_do_log(handle->conn, smb_fname));
+
+	return result;
+}
 static uint64_t smb_full_audit_get_alloc_size(vfs_handle_struct *handle,
 		       files_struct *fsp, const SMB_STRUCT_STAT *sbuf)
 {
@@ -1612,7 +1644,7 @@ static int smb_full_audit_fchmod(vfs_handle_struct *handle, files_struct *fsp,
 			mode_t mode)
 {
 	int result;
-	
+
 	result = SMB_VFS_NEXT_FCHMOD(handle, fsp, mode);
 
 	do_log(SMB_VFS_OP_FCHMOD, (result >= 0), handle,
@@ -1671,7 +1703,7 @@ static struct smb_filename *smb_full_audit_getwd(vfs_handle_struct *handle,
 	struct smb_filename *result;
 
 	result = SMB_VFS_NEXT_GETWD(handle, ctx);
-	
+
 	do_log(SMB_VFS_OP_GETWD, (result != NULL), handle, "%s",
 		result == NULL? "" : result->base_name);
 
@@ -1768,19 +1800,19 @@ static bool smb_full_audit_lock(vfs_handle_struct *handle, files_struct *fsp,
 	return result;
 }
 
-static int smb_full_audit_kernel_flock(struct vfs_handle_struct *handle,
-				       struct files_struct *fsp,
-				       uint32_t share_access,
-				       uint32_t access_mask)
+static int smb_full_audit_filesystem_sharemode(struct vfs_handle_struct *handle,
+					       struct files_struct *fsp,
+					       uint32_t share_access,
+					       uint32_t access_mask)
 {
 	int result;
 
-	result = SMB_VFS_NEXT_KERNEL_FLOCK(handle,
-					   fsp,
-					   share_access,
-					   access_mask);
+	result = SMB_VFS_NEXT_FILESYSTEM_SHAREMODE(handle,
+						   fsp,
+						   share_access,
+						   access_mask);
 
-	do_log(SMB_VFS_OP_KERNEL_FLOCK, (result >= 0), handle, "%s",
+	do_log(SMB_VFS_OP_FILESYSTEM_SHAREMODE, (result >= 0), handle, "%s",
 	       fsp_str_do_log(fsp));
 
 	return result;
@@ -2058,30 +2090,37 @@ static NTSTATUS smb_full_audit_fstreaminfo(vfs_handle_struct *handle,
         return result;
 }
 
-static int smb_full_audit_get_real_filename(struct vfs_handle_struct *handle,
-					    const struct smb_filename *path,
-					    const char *name,
-					    TALLOC_CTX *mem_ctx,
-					    char **found_name)
+static NTSTATUS smb_full_audit_get_real_filename_at(
+	struct vfs_handle_struct *handle,
+	struct files_struct *dirfsp,
+	const char *name,
+	TALLOC_CTX *mem_ctx,
+	char **found_name)
 {
-	int result;
+	NTSTATUS result;
 
-	result = SMB_VFS_NEXT_GET_REAL_FILENAME(handle, path, name, mem_ctx,
-						found_name);
+	result = SMB_VFS_NEXT_GET_REAL_FILENAME_AT(
+		handle, dirfsp, name, mem_ctx, found_name);
 
-	do_log(SMB_VFS_OP_GET_REAL_FILENAME, (result == 0), handle,
+	do_log(SMB_VFS_OP_GET_REAL_FILENAME_AT,
+	       NT_STATUS_IS_OK(result),
+	       handle,
 	       "%s/%s->%s",
-	       path->base_name, name, (result == 0) ? *found_name : "");
+	       fsp_str_dbg(dirfsp),
+	       name,
+	       NT_STATUS_IS_OK(result) ? *found_name : "");
 
 	return result;
 }
 
-static const char *smb_full_audit_connectpath(vfs_handle_struct *handle,
-					const struct smb_filename *smb_fname)
+static const char *smb_full_audit_connectpath(
+	vfs_handle_struct *handle,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname)
 {
 	const char *result;
 
-	result = SMB_VFS_NEXT_CONNECTPATH(handle, smb_fname);
+	result = SMB_VFS_NEXT_CONNECTPATH(handle, dirfsp, smb_fname);
 
 	do_log(SMB_VFS_OP_CONNECTPATH,
 	       result != NULL,
@@ -2235,12 +2274,14 @@ static NTSTATUS smb_full_audit_offload_read_recv(
 	struct tevent_req *req,
 	struct vfs_handle_struct *handle,
 	TALLOC_CTX *mem_ctx,
+	uint32_t *flags,
+	uint64_t *xferlen,
 	DATA_BLOB *_token_blob)
 {
 	NTSTATUS status;
 
 	status = SMB_VFS_NEXT_OFFLOAD_READ_RECV(req, handle, mem_ctx,
-						_token_blob);
+						flags, xferlen, _token_blob);
 
 	do_log(SMB_VFS_OP_OFFLOAD_READ_RECV, NT_STATUS_IS_OK(status), handle, "");
 
@@ -2928,6 +2969,7 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.stat_fn = smb_full_audit_stat,
 	.fstat_fn = smb_full_audit_fstat,
 	.lstat_fn = smb_full_audit_lstat,
+	.fstatat_fn = smb_full_audit_fstatat,
 	.get_alloc_size_fn = smb_full_audit_get_alloc_size,
 	.unlinkat_fn = smb_full_audit_unlinkat,
 	.fchmod_fn = smb_full_audit_fchmod,
@@ -2939,7 +2981,7 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.ftruncate_fn = smb_full_audit_ftruncate,
 	.fallocate_fn = smb_full_audit_fallocate,
 	.lock_fn = smb_full_audit_lock,
-	.kernel_flock_fn = smb_full_audit_kernel_flock,
+	.filesystem_sharemode_fn = smb_full_audit_filesystem_sharemode,
 	.fcntl_fn = smb_full_audit_fcntl,
 	.linux_setlease_fn = smb_full_audit_linux_setlease,
 	.getlock_fn = smb_full_audit_getlock,
@@ -2961,7 +3003,7 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.snap_create_fn = smb_full_audit_snap_create,
 	.snap_delete_fn = smb_full_audit_snap_delete,
 	.fstreaminfo_fn = smb_full_audit_fstreaminfo,
-	.get_real_filename_fn = smb_full_audit_get_real_filename,
+	.get_real_filename_at_fn = smb_full_audit_get_real_filename_at,
 	.connectpath_fn = smb_full_audit_connectpath,
 	.brl_lock_windows_fn = smb_full_audit_brl_lock_windows,
 	.brl_unlock_windows_fn = smb_full_audit_brl_unlock_windows,
@@ -3015,6 +3057,6 @@ NTSTATUS vfs_full_audit_init(TALLOC_CTX *ctx)
 		DEBUG(10, ("vfs_full_audit: Debug class number of "
 			   "'full_audit': %d\n", vfs_full_audit_debug_level));
 	}
-	
+
 	return ret;
 }

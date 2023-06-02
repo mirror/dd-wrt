@@ -2357,14 +2357,14 @@ static struct tevent_req *cli_tree_connect_send(
 
 static void cli_tree_connect_smb2_done(struct tevent_req *subreq)
 {
-	tevent_req_simple_finish_ntstatus(
-		subreq, smb2cli_tcon_recv(subreq));
+	NTSTATUS status = smb2cli_tcon_recv(subreq);
+	tevent_req_simple_finish_ntstatus(subreq, status);
 }
 
 static void cli_tree_connect_andx_done(struct tevent_req *subreq)
 {
-	tevent_req_simple_finish_ntstatus(
-		subreq, cli_tcon_andx_recv(subreq));
+	NTSTATUS status = cli_tcon_andx_recv(subreq);
+	tevent_req_simple_finish_ntstatus(subreq, status);
 }
 
 static void cli_tree_connect_raw_done(struct tevent_req *subreq)
@@ -2776,6 +2776,7 @@ struct cli_start_connection_state {
 	struct cli_state *cli;
 	int min_protocol;
 	int max_protocol;
+	struct smb2_negotiate_contexts *negotiate_contexts;
 };
 
 static void cli_start_connection_connected(struct tevent_req *subreq);
@@ -2785,7 +2786,7 @@ static void cli_start_connection_done(struct tevent_req *subreq);
    establishes a connection to after the negprot. 
    @param output_cli A fully initialised cli structure, non-null only on success
    @param dest_host The netbios name of the remote host
-   @param dest_ss (optional) The the destination IP, NULL for name based lookup
+   @param dest_ss (optional) The destination IP, NULL for name based lookup
    @param port (optional) The destination port (0 for default)
 */
 
@@ -2793,7 +2794,8 @@ static struct tevent_req *cli_start_connection_send(
 	TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	const char *my_name, const char *dest_host,
 	const struct sockaddr_storage *dest_ss, int port,
-	enum smb_signing_setting signing_state, int flags)
+	enum smb_signing_setting signing_state, int flags,
+	struct smb2_negotiate_contexts *negotiate_contexts)
 {
 	struct tevent_req *req, *subreq;
 	struct cli_start_connection_state *state;
@@ -2827,6 +2829,46 @@ static struct tevent_req *cli_start_connection_send(
 					  state->min_protocol);
 	}
 
+	state->negotiate_contexts = talloc_zero(
+		state, struct smb2_negotiate_contexts);
+	if (tevent_req_nomem(state->negotiate_contexts, req)) {
+		return tevent_req_post(req, ev);
+	}
+
+	if (flags & CLI_FULL_CONNECTION_REQUEST_POSIX) {
+		NTSTATUS status;
+
+		status = smb2_negotiate_context_add(
+			state->negotiate_contexts,
+			state->negotiate_contexts,
+			SMB2_POSIX_EXTENSIONS_AVAILABLE,
+			(const uint8_t *)SMB2_CREATE_TAG_POSIX,
+			strlen(SMB2_CREATE_TAG_POSIX));
+		if (tevent_req_nterror(req, status)) {
+			return tevent_req_post(req, ev);
+		}
+	}
+
+	if (negotiate_contexts != NULL) {
+		uint16_t i;
+
+		for (i=0; i<negotiate_contexts->num_contexts; i++) {
+			struct smb2_negotiate_context *ctx =
+				&negotiate_contexts->contexts[i];
+			NTSTATUS status;
+
+			status = smb2_negotiate_context_add(
+				state->negotiate_contexts,
+				state->negotiate_contexts,
+				ctx->type,
+				ctx->data.data,
+				ctx->data.length);
+			if (tevent_req_nterror(req, status)) {
+				return tevent_req_post(req, ev);
+			}
+		}
+	}
+
 	subreq = cli_connect_nb_send(state, ev, dest_host, dest_ss, port,
 				     0x20, my_name, signing_state, flags);
 	if (tevent_req_nomem(subreq, req)) {
@@ -2850,11 +2892,15 @@ static void cli_start_connection_connected(struct tevent_req *subreq)
 		return;
 	}
 
-	subreq = smbXcli_negprot_send(state, state->ev, state->cli->conn,
-				      state->cli->timeout,
-				      state->min_protocol,
-				      state->max_protocol,
-				      WINDOWS_CLIENT_PURE_SMB2_NEGPROT_INITIAL_CREDIT_ASK);
+	subreq = smbXcli_negprot_send(
+		state,
+		state->ev,
+		state->cli->conn,
+		state->cli->timeout,
+		state->min_protocol,
+		state->max_protocol,
+		WINDOWS_CLIENT_PURE_SMB2_NEGPROT_INITIAL_CREDIT_ASK,
+		state->negotiate_contexts);
 	if (tevent_req_nomem(subreq, req)) {
 		return;
 	}
@@ -2869,7 +2915,7 @@ static void cli_start_connection_done(struct tevent_req *subreq)
 		req, struct cli_start_connection_state);
 	NTSTATUS status;
 
-	status = smbXcli_negprot_recv(subreq);
+	status = smbXcli_negprot_recv(subreq, NULL, NULL);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
@@ -2914,7 +2960,7 @@ NTSTATUS cli_start_connection(struct cli_state **output_cli,
 		goto fail;
 	}
 	req = cli_start_connection_send(ev, ev, my_name, dest_host, dest_ss,
-					port, signing_state, flags);
+					port, signing_state, flags, NULL);
 	if (req == NULL) {
 		goto fail;
 	}
@@ -3372,7 +3418,6 @@ static int cli_full_connection_creds_state_destructor(
 }
 
 static void cli_full_connection_creds_conn_done(struct tevent_req *subreq);
-static void cli_full_connection_creds_sess_start(struct tevent_req *req);
 static void cli_full_connection_creds_sess_done(struct tevent_req *subreq);
 static void cli_full_connection_creds_enc_start(struct tevent_req *req);
 static void cli_full_connection_creds_enc_tcon(struct tevent_req *subreq);
@@ -3389,7 +3434,8 @@ struct tevent_req *cli_full_connection_creds_send(
 	const struct sockaddr_storage *dest_ss, int port,
 	const char *service, const char *service_type,
 	struct cli_credentials *creds,
-	int flags)
+	int flags,
+	struct smb2_negotiate_contexts *negotiate_contexts)
 {
 	struct tevent_req *req, *subreq;
 	struct cli_full_connection_creds_state *state;
@@ -3428,7 +3474,8 @@ struct tevent_req *cli_full_connection_creds_send(
 
 	subreq = cli_start_connection_send(
 		state, ev, my_name, dest_host, dest_ss, port,
-		signing_state, flags);
+		signing_state, flags,
+		negotiate_contexts);
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -3451,15 +3498,6 @@ static void cli_full_connection_creds_conn_done(struct tevent_req *subreq)
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
-
-	cli_full_connection_creds_sess_start(req);
-}
-
-static void cli_full_connection_creds_sess_start(struct tevent_req *req)
-{
-	struct cli_full_connection_creds_state *state = tevent_req_data(
-		req, struct cli_full_connection_creds_state);
-	struct tevent_req *subreq = NULL;
 
 	subreq = cli_session_setup_creds_send(
 		state, state->ev, state->cli, state->creds);
@@ -3492,7 +3530,14 @@ static void cli_full_connection_creds_sess_done(struct tevent_req *subreq)
 			return;
 		}
 
-		cli_full_connection_creds_sess_start(req);
+		subreq = cli_session_setup_creds_send(
+			state, state->ev, state->cli, state->creds);
+		if (tevent_req_nomem(subreq, req)) {
+			return;
+		}
+		tevent_req_set_callback(subreq,
+					cli_full_connection_creds_sess_done,
+					req);
 		return;
 	}
 
@@ -3761,7 +3806,8 @@ NTSTATUS cli_full_connection_creds(struct cli_state **output_cli,
 	}
 	req = cli_full_connection_creds_send(
 		ev, ev, my_name, dest_host, dest_ss, port, service,
-		service_type, creds, flags);
+		service_type, creds, flags,
+		NULL);
 	if (req == NULL) {
 		goto fail;
 	}

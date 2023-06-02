@@ -21,13 +21,14 @@
 topologies.
 
 We don't test samba-tool visualize reps here because repsTo and
-repsFrom are not replicated, and there are actual remote servers to
+repsFrom are not replicated, and there are no actual remote servers to
 query.
 """
 import samba
 import os
 import tempfile
 import re
+from io import StringIO
 from samba.tests.samba_tool.base import SambaToolCmdTest
 from samba.kcc import ldif_import_export
 from samba.graph import COLOUR_SETS
@@ -56,6 +57,13 @@ MULTISITE_LDIF_DSAS = [
     ("WIN03", "Site-2"),
     ("WIN05", "Site-2"),
 ]
+
+
+class StringIOThinksItIsATTY(StringIO):
+    """A StringIO that claims to be a TTY for testing --color=auto,
+    by switching the stringIO class attribute."""
+    def isatty(self):
+        return True
 
 
 def samdb_from_ldif(ldif, tempdir, lp, dsa=None, tag=''):
@@ -118,10 +126,90 @@ class SambaToolVisualizeLdif(SambaToolCmdTest):
                                               '-H', self.dburl,
                                               '-S', *args)
             self.assertCmdSuccess(result, out, err)
-            self.assertTrue(colour_re.search(out))
+            self.assertTrue(colour_re.search(out),
+                            f"'{' '.join(args)}' should be colour")
             uncoloured = colour_re.sub('', out)
 
             self.assertStringsEqual(monochrome, uncoloured, strip=True)
+
+    def assert_colour(self, text, has_colour=True, monochrome=None):
+        colour_re = re.compile('\033' r'\[[\d;]+m')
+        found = colour_re.search(text)
+        if has_colour:
+            self.assertTrue(found, text)
+        else:
+            self.assertFalse(found, text)
+        if monochrome is not None:
+            uncoloured = colour_re.sub('', text)
+            self.assertStringsEqual(monochrome, uncoloured, strip=True)
+
+    def test_colour_auto_tty(self):
+        """Assert the behaviour of --colour=auto with and without
+        NO_COLOUR on a fake tty"""
+        result, monochrome, err = self.runsubcmd("visualize", "ntdsconn",
+                                                 '-H', self.dburl,
+                                                 '--color=no', '-S')
+        self.assertCmdSuccess(result, monochrome, err)
+        self.assert_colour(monochrome, False)
+
+        try:
+            self.stringIO = StringIOThinksItIsATTY
+            old_no_color = os.environ.pop('NO_COLOR', None)
+            # First with no NO_COLOR env var. There should be colour.
+            result, out, err = self.runsubcmd("visualize", "ntdsconn",
+                                              '-H', self.dburl,
+                                              '-S',
+                                              '--color=auto')
+            self.assertCmdSuccess(result, out, err)
+            self.assert_colour(out, True, monochrome)
+
+            for env, opt, is_colour in [
+                    # NO_COLOR='' should be as if no NO_COLOR
+                    ['', '--color=auto', True],
+                    # NO_COLOR='1': we expect no colour
+                    ['1', '--color=auto', False],
+                    # NO_COLOR='no': we still expect no colour
+                    ['no', '--color=auto', False],
+                    # NO_COLOR=' ', alias for 'auto'
+                    [' ', '--color=tty', False],
+                    # NO_COLOR=' ', alias for 'auto'
+                    [' ', '--color=if-tty', False],
+                    # NO_COLOR='', alias for 'auto'
+                    ['', '--color=tty', True],
+                    # NO_COLOR='', alias for 'no'
+                    ['', '--color=never', False],
+                    # NO_COLOR='x', alias for 'yes' (--color=yes wins)
+                    ['x', '--color=force', True],
+                    ]:
+                os.environ['NO_COLOR'] = env
+
+                try:
+                    result, out, err = self.runsubcmd("visualize", "ntdsconn",
+                                                      '-H', self.dburl,
+                                                      '-S',
+                                                      opt)
+                except SystemExit as e:
+                    # optparse makes us do this
+                    self.fail(f"optparse rejects {env}, {opt}, {is_colour}")
+
+                self.assertCmdSuccess(result, out, err)
+                self.assert_colour(out, is_colour, monochrome)
+
+                # with "-o -" output filename alias for stdout.
+                result, out, err = self.runsubcmd("visualize", "ntdsconn",
+                                                  '-H', self.dburl,
+                                                  '-S',
+                                                  opt,
+                                                  '-o', '-')
+                self.assertCmdSuccess(result, out, err)
+                self.assert_colour(out, is_colour, monochrome)
+
+        finally:
+            self.stringIO = StringIO
+            if old_no_color is None:
+                os.environ.pop('NO_COLOR', None)
+            else:
+                os.environ['NO_COLOR'] = old_no_color
 
     def test_import_ldif_xdot(self):
         """We can't test actual xdot, but using the environment we can
@@ -225,7 +313,7 @@ class SambaToolVisualizeLdif(SambaToolCmdTest):
 
         self.assertStringsEqual(color_no, expected, strip=True)
 
-        color_yes_file = os.path.join(self.tempdir, 'color-no')
+        color_yes_file = os.path.join(self.tempdir, 'color-yes')
         result, out, err = self.runsubcmd("visualize", "ntdsconn",
                                           '-H', self.dburl,
                                           '--color=yes', '-S',

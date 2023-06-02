@@ -96,6 +96,18 @@ struct ldb_module;
  */
 #define LDB_FLAG_INTERNAL_FORCE_UNIQUE_INDEX 0x100
 
+/*
+ * indicates that this element's values are shared with another element (for
+ * example, in a shallow copy of an ldb_message) and should not be freed
+ */
+#define LDB_FLAG_INTERNAL_SHARED_VALUES 0x200
+
+/*
+ * this attribute has been access checked. We know the user has the right to
+ * view it. Used internally in Samba aclread module.
+ */
+#define LDB_FLAG_INTERNAL_ACCESS_CHECKED 0x400
+
 /* an extended match rule that always fails to match */
 #define SAMBA_LDAP_MATCH_ALWAYS_FALSE "1.3.6.1.4.1.7165.4.5.1"
 
@@ -484,6 +496,9 @@ int ldb_init_module(const char *version);
  */
 bool ldb_dn_replace_components(struct ldb_dn *dn, struct ldb_dn *new_dn);
 
+/* Get the attribute (if any) associated with the top node of a parse tree. */
+const char *ldb_parse_tree_get_attr(const struct ldb_parse_tree *tree);
+
 /*
   walk a parse tree, calling the provided callback on each node
 */
@@ -506,6 +521,15 @@ struct ldb_extended_match_rule
 
 int ldb_register_extended_match_rule(struct ldb_context *ldb,
 				     const struct ldb_extended_match_rule *rule);
+
+void ldb_msg_element_mark_inaccessible(struct ldb_message_element *el);
+bool ldb_msg_element_is_inaccessible(const struct ldb_message_element *el);
+void ldb_msg_remove_inaccessible(struct ldb_message *msg);
+
+typedef int (*ldb_redact_fn)(struct ldb_module *, struct ldb_request *, struct ldb_message *);
+int ldb_register_redact_callback(struct ldb_context *ldb,
+			       ldb_redact_fn redact_fn,
+			       struct ldb_module *module);
 
 /*
  * these pack/unpack functions are exposed in the library for use by
@@ -532,6 +556,19 @@ int ldb_filter_attrs(struct ldb_context *ldb,
 		     const struct ldb_message *msg,
 		     const char *const *attrs,
 		     struct ldb_message *filtered_msg);
+
+/*
+ * filter the specified list of attributes from msg,
+ * adding requested attributes, and perhaps all for *.
+ * Unlike ldb_filter_attrs(), the DN will not be added
+ * if it is missing.
+ */
+int ldb_filter_attrs_in_place(struct ldb_message *msg,
+			      const char *const *attrs);
+
+/* Have an unpacked ldb message take talloc ownership of its elements. */
+int ldb_msg_elements_take_ownership(struct ldb_message *msg);
+
 /*
  * Unpack a ldb message from a linear buffer in ldb_val
  *

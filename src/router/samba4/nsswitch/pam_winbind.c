@@ -479,6 +479,10 @@ static int _pam_parse(const pam_handle_t *pamh,
 		ctrl |= WINBIND_MKHOMEDIR;
 	}
 
+	if (tiniparser_getboolean(d, "global:pwd_change_prompt", false)) {
+		ctrl |= WINBIND_PWD_CHANGE_PROMPT;
+	}
+
 config_from_pam:
 	/* step through arguments */
 	for (i=argc,v=argv; i-- > 0; ++v) {
@@ -522,6 +526,8 @@ config_from_pam:
 		else if (!strncasecmp(*v, "warn_pwd_expire",
 			strlen("warn_pwd_expire")))
 			ctrl |= WINBIND_WARN_PWD_EXPIRE;
+		else if (!strcasecmp(*v, "pwd_change_prompt"))
+			ctrl |= WINBIND_PWD_CHANGE_PROMPT;
 		else if (type != PAM_WINBIND_CLEANUP) {
 			__pam_log(pamh, ctrl, LOG_ERR,
 				 "pam_parse: unknown option: %s", *v);
@@ -976,7 +982,8 @@ static bool _pam_send_password_expiry_message(struct pwb_context *ctx,
 		 * successfully sent the warning message.
 		 * Give the user a chance to change pwd.
 		 */
-		if (ret == PAM_SUCCESS) {
+		if (ret == PAM_SUCCESS &&
+		    (ctx->ctrl & WINBIND_PWD_CHANGE_PROMPT)) {
 			if (change_pwd) {
 				retval = _pam_winbind_change_pwd(ctx);
 				if (retval) {
@@ -1006,7 +1013,8 @@ static bool _pam_send_password_expiry_message(struct pwb_context *ctx,
 		 * successfully sent the warning message.
 		 * Give the user a chance to change pwd.
 		 */
-		if (ret == PAM_SUCCESS) {
+		if (ret == PAM_SUCCESS &&
+		    (ctx->ctrl & WINBIND_PWD_CHANGE_PROMPT)) {
 			if (change_pwd) {
 				retval = _pam_winbind_change_pwd(ctx);
 				if (retval) {
@@ -2453,6 +2461,7 @@ static char winbind_get_separator(struct pwb_context *ctx)
 {
 	wbcErr wbc_status;
 	static struct wbcInterfaceDetails *details = NULL;
+	char result;
 
 	wbc_status = wbcCtxInterfaceDetails(ctx->wbc_ctx, &details);
 	if (!WBC_ERROR_IS_OK(wbc_status)) {
@@ -2466,7 +2475,9 @@ static char winbind_get_separator(struct pwb_context *ctx)
 		return '\0';
 	}
 
-	return details->winbind_separator;
+	result = details->winbind_separator;
+	wbcFreeMemory(details);
+	return result;
 }
 
 
@@ -2738,7 +2749,7 @@ static int openpam_convert_error_code(struct pwb_context *ctx,
 #define pam_error_code(a, b, c) (c)
 #endif
 
-PAM_EXTERN
+_PUBLIC_ PAM_EXTERN
 int pam_sm_authenticate(pam_handle_t *pamh, int flags,
 			int argc, const char **argv)
 {
@@ -2897,7 +2908,7 @@ out:
 	return retval;
 }
 
-PAM_EXTERN
+_PUBLIC_ PAM_EXTERN
 int pam_sm_setcred(pam_handle_t *pamh, int flags,
 		   int argc, const char **argv)
 {
@@ -2949,7 +2960,7 @@ int pam_sm_setcred(pam_handle_t *pamh, int flags,
  * Account management. We want to verify that the account exists
  * before returning PAM_SUCCESS
  */
-PAM_EXTERN
+_PUBLIC_ PAM_EXTERN
 int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags,
 		   int argc, const char **argv)
 {
@@ -3048,7 +3059,7 @@ int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags,
 	return pam_error_code(ctx, PAM_WINBIND_ACCT_MGMT, ret);
 }
 
-PAM_EXTERN
+_PUBLIC_ PAM_EXTERN
 int pam_sm_open_session(pam_handle_t *pamh, int flags,
 			int argc, const char **argv)
 {
@@ -3075,7 +3086,7 @@ int pam_sm_open_session(pam_handle_t *pamh, int flags,
 	return pam_error_code(ctx, PAM_WINBIND_OPEN_SESSION, ret);
 }
 
-PAM_EXTERN
+_PUBLIC_ PAM_EXTERN
 int pam_sm_close_session(pam_handle_t *pamh, int flags,
 			 int argc, const char **argv)
 {
@@ -3147,7 +3158,7 @@ static bool _pam_require_krb5_auth_after_chauthtok(struct pwb_context *ctx,
 }
 
 
-PAM_EXTERN
+_PUBLIC_ PAM_EXTERN
 int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 		     int argc, const char **argv)
 {
@@ -3218,7 +3229,15 @@ int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 	 */
 
 	if (flags & PAM_PRELIM_CHECK) {
-		time_t pwdlastset_prelim = 0;
+		time_t *pwdlastset_prelim = NULL;
+
+		pwdlastset_prelim = talloc_zero(NULL, time_t);
+		if (pwdlastset_prelim == NULL) {
+			_pam_log(ctx, LOG_CRIT,
+				 "password - out of memory");
+			ret = PAM_BUF_ERR;
+			goto out;
+		}
 
 		/* instruct user what is happening */
 
@@ -3250,7 +3269,7 @@ int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 		ret = winbind_auth_request(ctx, user, pass_old,
 					   NULL, NULL, 0,
 					   &error, NULL,
-					   &pwdlastset_prelim, NULL);
+					   pwdlastset_prelim, NULL);
 
 		if (ret != PAM_ACCT_EXPIRED &&
 		    ret != PAM_AUTHTOK_EXPIRED &&
@@ -3261,7 +3280,8 @@ int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 		}
 
 		pam_set_data(pamh, PAM_WINBIND_PWD_LAST_SET,
-			     (void *)pwdlastset_prelim, NULL);
+			     pwdlastset_prelim,
+			     _pam_winbind_cleanup_func);
 
 		ret = pam_set_item(pamh, PAM_OLDAUTHTOK,
 				   (const void *) pass_old);
@@ -3272,7 +3292,7 @@ int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 		}
 	} else if (flags & PAM_UPDATE_AUTHTOK) {
 
-		time_t pwdlastset_update = 0;
+		time_t *pwdlastset_update = NULL;
 
 		/*
 		 * obtain the proposed password
@@ -3335,8 +3355,9 @@ int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 		 * By reaching here we have approved the passwords and must now
 		 * rebuild the password database file.
 		 */
-		pam_get_data(pamh, PAM_WINBIND_PWD_LAST_SET,
-			     (const void **) &pwdlastset_update);
+		pam_get_data(pamh,
+			     PAM_WINBIND_PWD_LAST_SET,
+			     (const void **)&pwdlastset_update);
 
 		/*
 		 * if cached creds were enabled, make sure to set the
@@ -3348,7 +3369,7 @@ int pam_sm_chauthtok(pam_handle_t * pamh, int flags,
 		}
 
 		ret = winbind_chauthtok_request(ctx, user, pass_old,
-						pass_new, pwdlastset_update);
+						pass_new, *pwdlastset_update);
 		if (ret != PAM_SUCCESS) {
 			pass_old = pass_new = NULL;
 			goto out;

@@ -260,3 +260,73 @@ void tevent_trace_immediate_callback(struct tevent_context *ev,
 		ev->tracing.im.callback(im, tp, ev->tracing.im.private_data);
 	}
 }
+
+void tevent_set_trace_queue_callback(struct tevent_context *ev,
+				     tevent_trace_queue_callback_t cb,
+				     void *private_data)
+{
+	if (ev->wrapper.glue != NULL) {
+		ev = tevent_wrapper_main_ev(ev);
+		tevent_abort(ev, "tevent_set_trace_queue_callback() "
+		             "on wrapper");
+		return;
+	}
+
+	ev->tracing.qe.callback = cb;
+	ev->tracing.qe.private_data = private_data;
+}
+
+void tevent_get_trace_queue_callback(struct tevent_context *ev,
+				     tevent_trace_queue_callback_t *cb,
+				     void *p_private_data)
+{
+	*cb = ev->tracing.qe.callback;
+	*(void**)p_private_data = ev->tracing.qe.private_data;
+}
+
+void tevent_trace_queue_callback(struct tevent_context *ev,
+				 struct tevent_queue_entry *qe,
+				 enum tevent_event_trace_point tp)
+{
+	if (ev->tracing.qe.callback != NULL) {
+		ev->tracing.qe.callback(qe, tp, ev->tracing.qe.private_data);
+	}
+}
+
+static __thread size_t *tevent_thread_call_depth_ptr = NULL;
+
+void tevent_thread_call_depth_activate(size_t *ptr)
+{
+	tevent_thread_call_depth_ptr = ptr;
+	*tevent_thread_call_depth_ptr = 0;
+}
+
+void tevent_thread_call_depth_deactivate(void)
+{
+	/* Reset the previous storage */
+	if (tevent_thread_call_depth_ptr != NULL) {
+		*tevent_thread_call_depth_ptr = 0;
+	}
+	tevent_thread_call_depth_ptr = NULL;
+}
+
+void tevent_thread_call_depth_start(struct tevent_req *req)
+{
+	if (tevent_thread_call_depth_ptr != NULL) {
+		*tevent_thread_call_depth_ptr = req->internal.call_depth = 1;
+	}
+}
+
+void tevent_thread_call_depth_reset_from_req(struct tevent_req *req)
+{
+	if (tevent_thread_call_depth_ptr != NULL) {
+		*tevent_thread_call_depth_ptr = req->internal.call_depth;
+	}
+}
+
+_PRIVATE_ void tevent_thread_call_depth_set(size_t depth)
+{
+	if (tevent_thread_call_depth_ptr != NULL) {
+		*tevent_thread_call_depth_ptr = depth;
+	}
+}

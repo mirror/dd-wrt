@@ -41,6 +41,9 @@
 
 #include "source4/kdc/mit_kdc_irpc.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
+
 /* PROTOTYPES */
 static void mitkdc_server_done(struct tevent_req *subreq);
 
@@ -146,6 +149,7 @@ NTSTATUS mitkdc_task_init(struct task_server *task)
 	kadm5_ret_t ret;
 	kadm5_config_params config;
 	void *server_handle;
+	int dbglvl = 0;
 
 	task_server_set_title(task, "task[mitkdc_parent]");
 
@@ -187,6 +191,21 @@ NTSTATUS mitkdc_task_init(struct task_server *task)
 	}
 	setenv("KRB5_KDC_PROFILE", kdc_config, 0);
 	TALLOC_FREE(kdc_config);
+
+	dbglvl = debuglevel_get_class(DBGC_KERBEROS);
+	if (dbglvl >= 10) {
+		char *kdc_trace_file = talloc_asprintf(task,
+						       "%s/mit_kdc_trace.log",
+						       get_dyn_LOGFILEBASE());
+		if (kdc_trace_file == NULL) {
+			task_server_terminate(task,
+					"KDC: no memory",
+					false);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		setenv("KRB5_TRACE", kdc_trace_file, 1);
+	}
 
 	/* start it as a child process */
 	kdc_cmd = lpcfg_mit_kdc_command(task->lp_ctx);
@@ -291,8 +310,8 @@ NTSTATUS mitkdc_task_init(struct task_server *task)
 		return NT_STATUS_INTERNAL_ERROR;
 	}
 
-	kdc->keytab_name = talloc_asprintf(kdc, "KDB:");
-	if (kdc->keytab_name == NULL) {
+	kdc->kpasswd_keytab_name = talloc_asprintf(kdc, "KDB:");
+	if (kdc->kpasswd_keytab_name == NULL) {
 		task_server_terminate(task,
 				      "KDC: Out of memory",
 				      true);
@@ -357,7 +376,7 @@ NTSTATUS server_service_mitkdc_init(TALLOC_CTX *mem_ctx)
 {
 	static const struct service_details details = {
 		.inhibit_fork_on_accept = true,
-		/* 
+		/*
 		 * Need to prevent pre-forking on kdc.
 		 * The task_init function is run on the master process only
 		 * and the irpc process name is registered in it's event loop.

@@ -50,6 +50,7 @@ static const struct perm_value special_values[] = {
 static const struct perm_value standard_values[] = {
 	{ "READ",   SEC_RIGHTS_DIR_READ|SEC_DIR_TRAVERSE },
 	{ "CHANGE", SEC_RIGHTS_DIR_READ|SEC_STD_DELETE|\
+	  SEC_DIR_DELETE_CHILD|\
 	  SEC_RIGHTS_DIR_WRITE|SEC_DIR_TRAVERSE },
 	{ "FULL",   SEC_RIGHTS_DIR_ALL },
 	{ NULL, 0 },
@@ -86,6 +87,7 @@ static NTSTATUS cli_lsa_lookup_sid(struct cli_state *cli,
 				   char **domain, char **name)
 {
 	struct smbXcli_tcon *orig_tcon = NULL;
+	char *orig_share = NULL;
 	struct rpc_pipe_client *p = NULL;
 	struct policy_handle handle;
 	NTSTATUS status;
@@ -95,11 +97,7 @@ static NTSTATUS cli_lsa_lookup_sid(struct cli_state *cli,
 	char **names;
 
 	if (cli_state_has_tcon(cli)) {
-		orig_tcon = cli_state_save_tcon(cli);
-		if (orig_tcon == NULL) {
-			status = NT_STATUS_NO_MEMORY;
-			goto tcon_fail;
-		}
+		cli_state_save_tcon_share(cli, &orig_tcon, &orig_share);
 	}
 
 	status = cli_tree_connect(cli, "IPC$", "?????", NULL);
@@ -134,7 +132,7 @@ static NTSTATUS cli_lsa_lookup_sid(struct cli_state *cli,
 	TALLOC_FREE(p);
 	cli_tdis(cli);
  tcon_fail:
-	cli_state_restore_tcon(cli, orig_tcon);
+	cli_state_restore_tcon_share(cli, orig_tcon, orig_share);
 	TALLOC_FREE(frame);
 	return status;
 }
@@ -175,6 +173,7 @@ static NTSTATUS cli_lsa_lookup_name(struct cli_state *cli,
 				    struct dom_sid *sid)
 {
 	struct smbXcli_tcon *orig_tcon = NULL;
+	char *orig_share = NULL;
 	struct rpc_pipe_client *p = NULL;
 	struct policy_handle handle;
 	NTSTATUS status;
@@ -183,11 +182,7 @@ static NTSTATUS cli_lsa_lookup_name(struct cli_state *cli,
 	enum lsa_SidType *types;
 
 	if (cli_state_has_tcon(cli)) {
-		orig_tcon = cli_state_save_tcon(cli);
-		if (orig_tcon == NULL) {
-			status = NT_STATUS_NO_MEMORY;
-			goto tcon_fail;
-		}
+		cli_state_save_tcon_share(cli, &orig_tcon, &orig_share);
 	}
 
 	status = cli_tree_connect(cli, "IPC$", "?????", NULL);
@@ -221,7 +216,7 @@ static NTSTATUS cli_lsa_lookup_name(struct cli_state *cli,
 	TALLOC_FREE(p);
 	cli_tdis(cli);
  tcon_fail:
-	cli_state_restore_tcon(cli, orig_tcon);
+	cli_state_restore_tcon_share(cli, orig_tcon, orig_share);
 	TALLOC_FREE(frame);
 	return status;
 }
@@ -245,53 +240,34 @@ bool StringToSid(struct cli_state *cli, struct dom_sid *sid, const char *str)
 static void print_ace_flags(FILE *f, uint8_t flags)
 {
 	char *str = talloc_strdup(NULL, "");
+	size_t len;
 
-	if (!str) {
+	if (flags & SEC_ACE_FLAG_OBJECT_INHERIT) {
+		talloc_asprintf_addbuf(&str, "OI|");
+	}
+	if (flags & SEC_ACE_FLAG_CONTAINER_INHERIT) {
+		talloc_asprintf_addbuf(&str, "CI|");
+	}
+	if (flags & SEC_ACE_FLAG_NO_PROPAGATE_INHERIT) {
+		talloc_asprintf_addbuf(&str, "NP|");
+	}
+	if (flags & SEC_ACE_FLAG_INHERIT_ONLY) {
+		talloc_asprintf_addbuf(&str, "IO|");
+	}
+	if (flags & SEC_ACE_FLAG_INHERITED_ACE) {
+		talloc_asprintf_addbuf(&str, "I|");
+	}
+	if (str == NULL) {
 		goto out;
 	}
 
-	if (flags & SEC_ACE_FLAG_OBJECT_INHERIT) {
-		str = talloc_asprintf(str, "%s%s",
-				str, "OI|");
-		if (!str) {
-			goto out;
-		}
-	}
-	if (flags & SEC_ACE_FLAG_CONTAINER_INHERIT) {
-		str = talloc_asprintf(str, "%s%s",
-				str, "CI|");
-		if (!str) {
-			goto out;
-		}
-	}
-	if (flags & SEC_ACE_FLAG_NO_PROPAGATE_INHERIT) {
-		str = talloc_asprintf(str, "%s%s",
-				str, "NP|");
-		if (!str) {
-			goto out;
-		}
-	}
-	if (flags & SEC_ACE_FLAG_INHERIT_ONLY) {
-		str = talloc_asprintf(str, "%s%s",
-				str, "IO|");
-		if (!str) {
-			goto out;
-		}
-	}
-	if (flags & SEC_ACE_FLAG_INHERITED_ACE) {
-		str = talloc_asprintf(str, "%s%s",
-				str, "I|");
-		if (!str) {
-			goto out;
-		}
-	}
 	/* Ignore define SEC_ACE_FLAG_SUCCESSFUL_ACCESS ( 0x40 )
 	   and SEC_ACE_FLAG_FAILED_ACCESS ( 0x80 ) as they're
 	   audit ace flags. */
 
-	if (str[strlen(str)-1] == '|') {
-		str[strlen(str)-1] = '\0';
-		fprintf(f, "/%s/", str);
+	len = strlen(str);
+	if (len > 0) {
+		fprintf(f, "/%.*s/", (int)len-1, str);
 	} else {
 		fprintf(f, "/0x%x/", flags);
 	}

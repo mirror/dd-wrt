@@ -99,10 +99,16 @@ static int ctdb_async_ctx_init_internal(TALLOC_CTX *mem_ctx,
 		&ctdb_async_ctx.async_conn);
 	unbecome_root();
 
-	if (ret != 0 || ctdb_async_ctx.async_conn == NULL) {
-		DBG_ERR("ctdbd_init_connection failed\n");
-		return EIO;
+	if (ret != 0) {
+		DBG_ERR("ctdbd_init_async_connection(%s, timeout=%d) "
+			"failed: ret=%d %s\n",
+			lp_ctdbd_socket(),
+			lp_ctdb_timeout(),
+			ret, strerror(ret));
+		return ret;
 	}
+
+	SMB_ASSERT(ctdb_async_ctx.async_conn != NULL);
 
 	ctdb_async_ctx.initialized = true;
 	return 0;
@@ -376,7 +382,7 @@ static int db_ctdb_transaction_start(struct db_context *db)
 	 * Wait a day, i.e. forever...
 	 */
 	status = g_lock_lock(ctx->lock_ctx, string_term_tdb_data(h->lock_name),
-			     G_LOCK_WRITE, timeval_set(86400, 0));
+			     G_LOCK_WRITE, timeval_set(86400, 0), NULL, NULL);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("g_lock_lock failed: %s\n", nt_errstr(status)));
 		TALLOC_FREE(h);
@@ -668,11 +674,11 @@ static NTSTATUS db_ctdb_storev_transaction(
 	struct db_ctdb_transaction_handle *h = talloc_get_type_abort(
 		rec->private_data, struct db_ctdb_transaction_handle);
 	NTSTATUS status;
-	TDB_DATA data;
+	TDB_DATA data = {0};
 
-	data = dbwrap_merge_dbufs(rec, dbufs, num_dbufs);
-	if (data.dptr == NULL) {
-		return NT_STATUS_NO_MEMORY;
+	status = dbwrap_merge_dbufs(&data, rec, dbufs, num_dbufs);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
 	status = db_ctdb_transaction_store(h, rec->key, data);

@@ -90,6 +90,7 @@ void init_strict_lock_struct(files_struct *fsp,
 				br_off start,
 				br_off size,
 				enum brl_type lock_type,
+				enum brl_flavour lock_flav,
 				struct lock_struct *plock)
 {
 	SMB_ASSERT(lock_type == READ_LOCK || lock_type == WRITE_LOCK);
@@ -252,9 +253,7 @@ struct do_lock_state {
 };
 
 static void do_lock_fn(
-	const uint8_t *buf,
-	size_t buflen,
-	bool *modified_dependent,
+	struct share_mode_lock *lck,
 	void *private_data)
 {
 	struct do_lock_state *state = private_data;
@@ -333,7 +332,9 @@ NTSTATUS do_lock(files_struct *fsp,
 		  fsp_fnum_dbg(fsp),
 		  fsp_str_dbg(fsp));
 
-	status = share_mode_do_locked(fsp->file_id, do_lock_fn, &state);
+	status = share_mode_do_locked_vfs_allowed(fsp->file_id,
+						  do_lock_fn,
+						  &state);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_DEBUG("share_mode_do_locked returned %s\n",
 			  nt_errstr(status));
@@ -467,19 +468,8 @@ char *share_mode_str(TALLOC_CTX *ctx, int num,
 		 (unsigned int)e->name_hash);
 }
 
-/*******************************************************************
- Fetch a share mode where we know one MUST exist. This call reference
- counts it internally to allow for nested lock fetches.
-********************************************************************/
-
-struct share_mode_lock *get_existing_share_mode_lock(TALLOC_CTX *mem_ctx,
-						     const struct file_id id)
-{
-	return get_share_mode_lock(mem_ctx, id, NULL, NULL, NULL);
-}
-
 struct rename_share_filename_state {
-	struct share_mode_lock *lck;
+	struct share_mode_data *data;
 	struct messaging_context *msg_ctx;
 	struct server_id self;
 	uint32_t orig_name_hash;
@@ -491,7 +481,7 @@ static bool rename_lease_fn(struct share_mode_entry *e,
 			    void *private_data)
 {
 	struct rename_share_filename_state *state = private_data;
-	struct share_mode_data *d = state->lck->data;
+	struct share_mode_data *d = state->data;
 	NTSTATUS status;
 
 	status = leases_db_rename(&e->client_guid,
@@ -580,7 +570,6 @@ bool rename_share_filename(struct messaging_context *msg_ctx,
 			const struct smb_filename *smb_fname_dst)
 {
 	struct rename_share_filename_state state = {
-		.lck = lck,
 		.msg_ctx = msg_ctx,
 		.self = messaging_server_id(msg_ctx),
 		.orig_name_hash = orig_name_hash,
@@ -590,11 +579,23 @@ bool rename_share_filename(struct messaging_context *msg_ctx,
 		.msg.base_name = smb_fname_dst->base_name,
 		.msg.stream_name = smb_fname_dst->stream_name,
 	};
-	struct share_mode_data *d = lck->data;
+	struct share_mode_data *d = NULL;
+	NTSTATUS status;
 	bool ok;
 
 	DEBUG(10, ("rename_share_filename: servicepath %s newname %s\n",
 		   servicepath, smb_fname_dst->base_name));
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"servicepath %s newname %s - %s\n",
+			servicepath, smb_fname_dst->base_name,
+			nt_errstr(status));
+		return false;
+	}
+	state.data = d;
 
 	/*
 	 * rename_internal_fsp() and rename_internals() add './' to
@@ -720,12 +721,13 @@ NTSTATUS remove_lease_if_stale(struct share_mode_lock *lck,
 	struct find_lease_ref_state state = {
 		.client_guid = client_guid, .lease_key = lease_key,
 	};
-	struct share_mode_data *d = lck->data;
+	struct file_id id = share_mode_lock_file_id(lck);
 	NTSTATUS status;
 	bool ok;
 
 	ok = share_mode_forall_entries(lck, find_lease_ref_fn, &state);
 	if (!ok) {
+		DBG_ERR("share_mode_forall_entries failed\n");
 		return NT_STATUS_INTERNAL_ERROR;
 	}
 
@@ -733,7 +735,7 @@ NTSTATUS remove_lease_if_stale(struct share_mode_lock *lck,
 		return NT_STATUS_RESOURCE_IN_USE;
 	}
 
-	status = leases_db_del(client_guid, lease_key, &d->id);
+	status = leases_db_del(client_guid, lease_key, &id);
 	if (!NT_STATUS_IS_OK(status)) {
 		int level = DBGLVL_DEBUG;
 
@@ -806,8 +808,18 @@ static bool add_delete_on_close_token(struct share_mode_data *d,
 void reset_delete_on_close_lck(files_struct *fsp,
 			       struct share_mode_lock *lck)
 {
-	struct share_mode_data *d = lck->data;
+	struct share_mode_data *d = NULL;
+	NTSTATUS status;
 	uint32_t i;
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s - %s\n", fsp_str_dbg(fsp), nt_errstr(status));
+		smb_panic(__location__);
+		return;
+	}
 
 	for (i=0; i<d->num_delete_tokens; i++) {
 		struct delete_token *dt = &d->delete_tokens[i];
@@ -869,13 +881,23 @@ void set_delete_on_close_lck(files_struct *fsp,
 			const struct security_token *nt_tok,
 			const struct security_unix_token *tok)
 {
-	struct share_mode_data *d = lck->data;
+	struct share_mode_data *d = NULL;
 	struct set_delete_on_close_state state = {
 		.msg_ctx = fsp->conn->sconn->msg_ctx
 	};
 	uint32_t i;
 	bool ret;
 	enum ndr_err_code ndr_err;
+	NTSTATUS status;
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s - %s\n", fsp_str_dbg(fsp), nt_errstr(status));
+		smb_panic(__location__);
+		return;
+	}
 
 	SMB_ASSERT(nt_tok != NULL);
 	SMB_ASSERT(tok != NULL);
@@ -897,7 +919,7 @@ void set_delete_on_close_lck(files_struct *fsp,
 		}
 	}
 
-	ret = add_delete_on_close_token(lck->data, fsp->name_hash, nt_tok, tok);
+	ret = add_delete_on_close_token(d, fsp->name_hash, nt_tok, tok);
 	SMB_ASSERT(ret);
 
 	ndr_err = ndr_push_struct_blob(
@@ -906,50 +928,73 @@ void set_delete_on_close_lck(files_struct *fsp,
 		&fsp->file_id,
 		(ndr_push_flags_fn_t)ndr_push_file_id);
 	if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
-		DEBUG(10, ("ndr_push_file_id failed: %s\n",
-			   ndr_errstr(ndr_err)));
+		DBG_ERR("ndr_push_file_id failed: %s\n",
+			ndr_errstr(ndr_err));
+		smb_panic(__location__);
 	}
 
 	ret = share_mode_forall_entries(
 		lck, set_delete_on_close_fn, &state);
 	if (!ret) {
-		DBG_DEBUG("share_mode_forall_entries failed\n");
+		DBG_ERR("share_mode_forall_entries failed\n");
+		smb_panic(__location__);
 	}
 
 	TALLOC_FREE(state.blob.data);
+}
+
+struct set_delete_on_close_locked_state {
+	struct files_struct *fsp;
+	bool delete_on_close;
+	const struct security_token *nt_tok;
+	const struct security_unix_token *tok;
+};
+
+static void set_delete_on_close_locked(struct share_mode_lock *lck,
+				       void *private_data)
+{
+	struct set_delete_on_close_locked_state *state =
+		(struct set_delete_on_close_locked_state *)private_data;
+
+	if (state->delete_on_close) {
+		set_delete_on_close_lck(state->fsp,
+					lck,
+					state->nt_tok,
+					state->tok);
+	} else {
+		reset_delete_on_close_lck(state->fsp, lck);
+	}
+
+	state->fsp->fsp_flags.delete_on_close = state->delete_on_close;
 }
 
 bool set_delete_on_close(files_struct *fsp, bool delete_on_close,
 			const struct security_token *nt_tok,
 			const struct security_unix_token *tok)
 {
-	struct share_mode_lock *lck;
+	struct set_delete_on_close_locked_state state = {
+		.fsp = fsp,
+		.delete_on_close = delete_on_close,
+		.nt_tok = nt_tok,
+		.tok = tok,
+	};
+	NTSTATUS status;
 
 	DEBUG(10,("set_delete_on_close: %s delete on close flag for "
 		  "%s, file %s\n",
 		  delete_on_close ? "Adding" : "Removing", fsp_fnum_dbg(fsp),
 		  fsp_str_dbg(fsp)));
 
-	lck = get_existing_share_mode_lock(talloc_tos(), fsp->file_id);
-	if (lck == NULL) {
-		return False;
-	}
-
-	if (delete_on_close) {
-		set_delete_on_close_lck(fsp, lck, nt_tok, tok);
-	} else {
-		reset_delete_on_close_lck(fsp, lck);
-	}
-
 	if (fsp->fsp_flags.is_directory) {
 		SMB_ASSERT(!is_ntfs_stream_smb_fname(fsp->fsp_name));
-		send_stat_cache_delete_message(fsp->conn->sconn->msg_ctx,
-					       fsp->fsp_name->base_name);
 	}
 
-	TALLOC_FREE(lck);
-
-	fsp->fsp_flags.delete_on_close = delete_on_close;
+	status = share_mode_do_locked_vfs_denied(fsp->file_id,
+						 set_delete_on_close_locked,
+						 &state);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
 
 	return True;
 }
@@ -983,9 +1028,23 @@ bool get_delete_on_close_token(struct share_mode_lock *lck,
 					const struct security_token **pp_nt_tok,
 					const struct security_unix_token **pp_tok)
 {
+	struct share_mode_data *d = NULL;
 	struct delete_token *dt;
+	NTSTATUS status;
 
-	dt = find_delete_on_close_token(lck->data, name_hash);
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		struct file_id id = share_mode_lock_file_id(lck);
+		struct file_id_buf id_buf;
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s name_hash=%"PRIu32" - %s\n",
+			file_id_str_buf(id, &id_buf), name_hash,
+			nt_errstr(status));
+		return false;
+	}
+
+	dt = find_delete_on_close_token(d, name_hash);
 	if (dt == NULL) {
 		return false;
 	}
@@ -996,62 +1055,155 @@ bool get_delete_on_close_token(struct share_mode_lock *lck,
 
 bool is_delete_on_close_set(struct share_mode_lock *lck, uint32_t name_hash)
 {
-	return find_delete_on_close_token(lck->data, name_hash) != NULL;
+	struct share_mode_data *d = NULL;
+	NTSTATUS status;
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		struct file_id id = share_mode_lock_file_id(lck);
+		struct file_id_buf id_buf;
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s name_hash=%"PRIu32" - %s\n",
+			file_id_str_buf(id, &id_buf), name_hash,
+			nt_errstr(status));
+		return false;
+	}
+
+	return find_delete_on_close_token(d, name_hash) != NULL;
+}
+
+struct set_sticky_write_time_state {
+	struct file_id fileid;
+	struct timespec write_time;
+	bool ok;
+};
+
+static void set_sticky_write_time_fn(struct share_mode_lock *lck,
+				     void *private_data)
+{
+	struct set_sticky_write_time_state *state = private_data;
+	struct share_mode_data *d = NULL;
+	struct file_id_buf ftmp;
+	struct timeval_buf tbuf;
+	NTSTATUS status;
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s id=%s - %s\n",
+			timespec_string_buf(&state->write_time, true, &tbuf),
+			file_id_str_buf(state->fileid, &ftmp),
+			nt_errstr(status));
+		return;
+	}
+
+	share_mode_set_changed_write_time(lck, state->write_time);
+
+	state->ok = true;
 }
 
 bool set_sticky_write_time(struct file_id fileid, struct timespec write_time)
 {
-	struct share_mode_lock *lck;
+	struct set_sticky_write_time_state state = {
+		.fileid = fileid,
+		.write_time = write_time,
+	};
 	struct file_id_buf ftmp;
 	struct timeval_buf tbuf;
-	NTTIME nt = full_timespec_to_nt_time(&write_time);
+	NTSTATUS status;
 
-	DBG_INFO("%s id=%s\n",
-		 timespec_string_buf(&write_time, true, &tbuf),
-		 file_id_str_buf(fileid, &ftmp));
-
-	lck = get_existing_share_mode_lock(talloc_tos(), fileid);
-	if (lck == NULL) {
-		return False;
+	status = share_mode_do_locked_vfs_denied(fileid,
+						 set_sticky_write_time_fn,
+						 &state);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_do_locked_vfs_denied() failed for "
+			"%s id=%s - %s\n",
+			timespec_string_buf(&write_time, true, &tbuf),
+			file_id_str_buf(fileid, &ftmp),
+			nt_errstr(status));
+		return false;
 	}
 
-	if (lck->data->changed_write_time != nt) {
-		lck->data->modified = True;
-		lck->data->changed_write_time = nt;
+	return state.ok;
+}
+
+struct set_write_time_state {
+	struct file_id fileid;
+	struct timespec write_time;
+	bool ok;
+};
+
+static void set_write_time_fn(struct share_mode_lock *lck,
+			      void *private_data)
+{
+	struct set_write_time_state *state = private_data;
+	struct share_mode_data *d = NULL;
+	struct file_id_buf idbuf;
+	struct timeval_buf tbuf;
+	NTSTATUS status;
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s id=%s - %s\n",
+			timespec_string_buf(&state->write_time, true, &tbuf),
+			file_id_str_buf(state->fileid, &idbuf),
+			nt_errstr(status));
+		return;
 	}
 
-	TALLOC_FREE(lck);
-	return True;
+	share_mode_set_old_write_time(lck, state->write_time);
+
+	state->ok = true;
 }
 
 bool set_write_time(struct file_id fileid, struct timespec write_time)
 {
-	struct share_mode_lock *lck;
+	struct set_write_time_state state = {
+		.fileid = fileid,
+		.write_time = write_time,
+	};
 	struct file_id_buf idbuf;
 	struct timeval_buf tbuf;
-	NTTIME nt = full_timespec_to_nt_time(&write_time);
+	NTSTATUS status;
 
-	DBG_INFO("%s id=%s\n",
-		 timespec_string_buf(&write_time, true, &tbuf),
-		 file_id_str_buf(fileid, &idbuf));
-
-	lck = get_existing_share_mode_lock(talloc_tos(), fileid);
-	if (lck == NULL) {
-		return False;
+	status = share_mode_do_locked_vfs_denied(fileid,
+						 set_write_time_fn,
+						 &state);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("share_mode_do_locked_vfs_denied() failed for "
+			"%s id=%s - %s\n",
+			timespec_string_buf(&write_time, true, &tbuf),
+			file_id_str_buf(fileid, &idbuf),
+			nt_errstr(status));
+		return false;
 	}
 
-	if (lck->data->old_write_time != nt) {
-		lck->data->modified = True;
-		lck->data->old_write_time = nt;
-	}
-
-	TALLOC_FREE(lck);
-	return True;
+	return state.ok;
 }
 
 struct timespec get_share_mode_write_time(struct share_mode_lock *lck)
 {
-	struct share_mode_data *d = lck->data;
+	struct share_mode_data *d = NULL;
+	NTSTATUS status;
+
+	status = share_mode_lock_access_private_data(lck, &d);
+	if (!NT_STATUS_IS_OK(status)) {
+		struct file_id id = share_mode_lock_file_id(lck);
+		struct file_id_buf id_buf;
+		struct timespec ts_zero = {};
+		/* Any error recovery possible here ? */
+		DBG_ERR("share_mode_lock_access_private_data() failed for "
+			"%s - %s\n",
+			file_id_str_buf(id, &id_buf),
+			nt_errstr(status));
+		smb_panic(__location__);
+		return ts_zero;
+	}
 
 	if (!null_nttime(d->changed_write_time)) {
 		return nt_time_to_full_timespec(d->changed_write_time);
@@ -1061,6 +1213,7 @@ struct timespec get_share_mode_write_time(struct share_mode_lock *lck)
 
 struct file_has_open_streams_state {
 	bool found_one;
+	bool ok;
 };
 
 static bool file_has_open_streams_fn(
@@ -1083,25 +1236,35 @@ static bool file_has_open_streams_fn(
 	return true;
 }
 
+static void file_has_open_streams_locked(struct share_mode_lock *lck,
+					 void *private_data)
+{
+	struct file_has_open_streams_state *state = private_data;
+
+	state->ok = share_mode_forall_entries(lck,
+					      file_has_open_streams_fn,
+					      private_data);
+}
+
 bool file_has_open_streams(files_struct *fsp)
 {
 	struct file_has_open_streams_state state = { .found_one = false };
-	struct share_mode_lock *lock = NULL;
-	bool ok;
+	NTSTATUS status;
 
-	lock = get_existing_share_mode_lock(talloc_tos(), fsp->file_id);
-	if (lock == NULL) {
+	status = share_mode_do_locked_vfs_denied(fsp->file_id,
+						 file_has_open_streams_locked,
+						 &state);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("share_mode_do_locked_vfs_denied() failed - %s\n",
+			  nt_errstr(status));
 		return false;
 	}
 
-	ok = share_mode_forall_entries(
-		lock, file_has_open_streams_fn, &state);
-	TALLOC_FREE(lock);
-
-	if (!ok) {
+	if (!state.ok) {
 		DBG_DEBUG("share_mode_forall_entries failed\n");
 		return false;
 	}
+
 	return state.found_one;
 }
 
@@ -1182,13 +1345,13 @@ bool share_mode_forall_leases(
 		lck, share_mode_forall_leases_fn, &state);
 	TALLOC_FREE(state.leases);
 	if (!ok) {
-		DBG_DEBUG("share_mode_forall_entries failed\n");
+		DBG_ERR("share_mode_forall_entries failed\n");
 		return false;
 	}
 
 	if (!NT_STATUS_IS_OK(state.status)) {
-		DBG_DEBUG("share_mode_forall_leases_fn returned %s\n",
-			  nt_errstr(state.status));
+		DBG_ERR("share_mode_forall_leases_fn returned %s\n",
+			nt_errstr(state.status));
 		return false;
 	}
 

@@ -85,6 +85,8 @@ enum netr_SchannelType get_sec_channel_type(const char *param)
 
 static int net_changetrustpw(struct net_context *c, int argc, const char **argv)
 {
+	net_warn_member_options();
+
 	if (net_ads_check_our_domain(c) == 0)
 		return net_ads_changetrustpw(c, argc, argv);
 
@@ -111,6 +113,8 @@ static int net_primarytrust_dumpinfo(struct net_context *c, int argc,
 			 "on a DOMAIN_MEMBER for now.\n"));
 		return 1;
 	}
+
+	net_warn_member_options();
 
 	if (c->opt_stdin) {
 		set_line_buffering(stdin);
@@ -192,6 +196,8 @@ static int net_changesecretpw(struct net_context *c, int argc,
 			   "machine account password in the secrets.tdb file!\n"));
 		return 1;
 	}
+
+	net_warn_member_options();
 
 	if(c->opt_force) {
 		struct secrets_domain_info1 *info = NULL;
@@ -332,7 +338,7 @@ static int net_getauthuser(struct net_context *c, int argc, const char **argv)
 
 		SAFE_FREE(user);
 		SAFE_FREE(domain);
-		SAFE_FREE(password);
+		BURN_FREE_STR(password);
 		d_printf(_("No authorised user configured\n"));
 		return 0;
 	}
@@ -345,7 +351,7 @@ static int net_getauthuser(struct net_context *c, int argc, const char **argv)
 
 	SAFE_FREE(user);
 	SAFE_FREE(domain);
-	SAFE_FREE(password);
+	BURN_FREE_STR(password);
 
 	return 0;
 }
@@ -1317,7 +1323,7 @@ static struct functable net_func[] = {
 
 #if defined(HAVE_BIND_TEXTDOMAIN_CODESET)
 	/* Bind our gettext results to 'unix charset'
-	   
+
 	   This ensures that the translations and any embedded strings are in the
 	   same charset.  It won't be the one from the user's locale (we no
 	   longer auto-detect that), but it will be self-consistent.

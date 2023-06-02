@@ -20,6 +20,7 @@
 */
 
 #include "includes.h"
+#include "smbd/globals.h"
 #include "system/syslog.h"
 #include "system/filesys.h"
 #include "printing.h"
@@ -60,10 +61,6 @@ bool print_backend_init(struct messaging_context *msg_ctx)
 	int snum;
 	bool ok;
 	char *print_cache_path;
-
-	if (!printer_list_parent_init()) {
-		return false;
-	}
 
 	print_cache_path = cache_path(talloc_tos(), "printing");
 	if (print_cache_path == NULL) {
@@ -1595,7 +1592,7 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 			"",
 			get_current_gid(NULL),
 			get_current_username(),
-			current_user_info.domain,
+			get_current_user_info_domain(),
 			lpqcommand);
 	if (!lpqcommand) {
 		return;
@@ -1615,7 +1612,7 @@ static void print_queue_update(struct messaging_context *msg_ctx,
 			"",
 			get_current_gid(NULL),
 			get_current_username(),
-			current_user_info.domain,
+			get_current_user_info_domain(),
 			lprmcommand);
 	if (!lprmcommand) {
 		return;
@@ -2853,7 +2850,7 @@ NTSTATUS print_job_end(struct messaging_context *msg_ctx, int snum,
 				      "",
 				      get_current_gid(NULL),
 				      get_current_username(),
-				      current_user_info.domain,
+				      get_current_user_info_domain(),
 				      lpq_cmd);
 	if (lpq_cmd == NULL) {
 		status = NT_STATUS_PRINT_CANCELLED;

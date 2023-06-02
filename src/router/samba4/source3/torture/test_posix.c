@@ -198,7 +198,7 @@ bool run_posix_ls_wildcard_test(int dummy)
 
 	status = cli_list(cli_win, "*", 0, posix_ls_fn, state);
 	if (!NT_STATUS_IS_OK(status)) {
-		printf("cli_close failed %s\n", nt_errstr(status));
+		printf("cli_list failed %s\n", nt_errstr(status));
 		goto out;
 	}
 
@@ -543,10 +543,13 @@ bool run_posix_readlink_test(int dummy)
 	for (i = 0; state[i].name != NULL; i++) {
 		char *target = NULL;
 
-		status = cli_posix_readlink(cli_unix,
-					    state[i].name,
-					    talloc_tos(),
-					    &target);
+		status = cli_readlink(
+			cli_unix,
+			state[i].name,
+			talloc_tos(),
+			&target,
+			NULL,
+			NULL);
 		if (!NT_STATUS_IS_OK(status)) {
 			printf("POSIX readlink on %s failed (%s)\n",
 			       state[i].name, nt_errstr(status));

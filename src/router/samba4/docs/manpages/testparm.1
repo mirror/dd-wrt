@@ -2,12 +2,12 @@
 .\"     Title: testparm
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "TESTPARM" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
+.TH "TESTPARM" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -115,7 +115,7 @@ Levels above 1 will generate considerable amounts of log data, and should only b
 Note that specifying this parameter here will override the
 \m[blue]\fBlog level\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -128,7 +128,7 @@ This will redirect debug output to STDOUT\&. By default all clients are logging 
 .RS 4
 The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
 \m[blue]\fBclient smb encrypt\fR\m[]\&. See
-smb\&.conf
+${prefix}/etc/smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
 .PP
@@ -184,7 +184,7 @@ The program will issue a message saying whether the configuration file loaded OK
 For certain use cases, SMB protocol requires use of cryptographic algorithms which are known to be weak and already broken\&. DES and ARCFOUR (RC4) ciphers and the SHA1 and MD5 hash algorithms are considered weak but they are required for backward compatibility\&. The testparm utility shows whether the Samba tools will fall back to these weak crypto algorithms if it is not possible to use strong cryptography by default\&. In FIPS mode weak crypto cannot be enabled\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsmb.conf\fR(5),

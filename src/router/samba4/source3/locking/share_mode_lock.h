@@ -26,18 +26,20 @@ struct share_mode_lock;
 struct share_mode_entry;
 struct smb_filename;
 struct files_struct;
+struct smb2_lease_key;
 
 bool locking_init(void);
 bool locking_init_readonly(void);
 bool locking_end(void);
 
-struct share_mode_lock *get_share_mode_lock(
-	TALLOC_CTX *mem_ctx,
-	struct file_id id,
-	const char *servicepath,
-	const struct smb_filename *smb_fname,
-	const struct timespec *old_write_time);
+struct file_id share_mode_lock_file_id(const struct share_mode_lock *lck);
 
+struct share_mode_lock *get_existing_share_mode_lock(TALLOC_CTX *mem_ctx,
+						     struct file_id id);
+
+bool del_share_mode_open_id(struct share_mode_lock *lck,
+			    struct server_id open_pid,
+			    uint64_t open_file_id);
 bool del_share_mode(struct share_mode_lock *lck,
 		    struct files_struct *fsp);
 bool downgrade_share_oplock(struct share_mode_lock *lck,
@@ -52,6 +54,7 @@ bool set_share_mode(
 	uid_t uid,
 	uint64_t mid,
 	uint16_t op_type,
+	const struct smb2_lease_key *lease_key,
 	uint32_t share_access,
 	uint32_t access_mask);
 bool reset_share_mode_entry(
@@ -87,13 +90,6 @@ int share_entry_forall(
 	void *private_data);
 
 NTSTATUS share_mode_count_entries(struct file_id fid, size_t *num_share_modes);
-NTSTATUS share_mode_do_locked(
-	struct file_id id,
-	void (*fn)(const uint8_t *buf,
-		   size_t buflen,
-		   bool *modified_dependent,
-		   void *private_data),
-	void *private_data);
 int share_mode_forall(
 	int (*fn)(struct file_id fid,
 		  const struct share_mode_data *data,
@@ -107,6 +103,8 @@ bool share_mode_forall_entries(
 	void *private_data);
 
 NTTIME share_mode_changed_write_time(struct share_mode_lock *lck);
+void share_mode_set_changed_write_time(struct share_mode_lock *lck, struct timespec write_time);
+void share_mode_set_old_write_time(struct share_mode_lock *lck, struct timespec write_time);
 const char *share_mode_servicepath(struct share_mode_lock *lck);
 char *share_mode_filename(TALLOC_CTX *mem_ctx, struct share_mode_lock *lck);
 char *share_mode_data_dump(
@@ -132,5 +130,73 @@ struct tevent_req *share_mode_watch_send(
 NTSTATUS share_mode_watch_recv(
 	struct tevent_req *req, bool *blockerdead, struct server_id *blocker);
 NTSTATUS share_mode_wakeup_waiters(struct file_id id);
+
+typedef void (*share_mode_do_locked_vfs_fn_t)(
+		struct share_mode_lock *lck,
+		void *private_data);
+NTSTATUS _share_mode_do_locked_vfs_denied(
+	struct file_id id,
+	share_mode_do_locked_vfs_fn_t fn,
+	void *private_data,
+	const char *location);
+#define share_mode_do_locked_vfs_denied(__id, __fn, __private_data) \
+	_share_mode_do_locked_vfs_denied(__id, __fn, __private_data, __location__)
+NTSTATUS _share_mode_do_locked_vfs_allowed(
+	struct file_id id,
+	share_mode_do_locked_vfs_fn_t fn,
+	void *private_data,
+	const char *location);
+#define share_mode_do_locked_vfs_allowed(__id, __fn, __private_data) \
+	_share_mode_do_locked_vfs_allowed(__id, __fn, __private_data, __location__)
+
+struct share_mode_entry_prepare_state {
+	struct file_id __fid;
+	struct share_mode_lock *__lck_ptr;
+	union {
+#define __SHARE_MODE_LOCK_SPACE 32
+		uint8_t __u8_space[__SHARE_MODE_LOCK_SPACE];
+#ifdef SHARE_MODE_ENTRY_PREPARE_STATE_LCK_SPACE
+		struct share_mode_lock __lck_space;
+#endif
+	};
+};
+
+typedef void (*share_mode_entry_prepare_lock_fn_t)(
+		struct share_mode_lock *lck,
+		bool *keep_locked,
+		void *private_data);
+NTSTATUS _share_mode_entry_prepare_lock(
+	struct share_mode_entry_prepare_state *prepare_state,
+	struct file_id id,
+	const char *servicepath,
+	const struct smb_filename *smb_fname,
+	const struct timespec *old_write_time,
+	share_mode_entry_prepare_lock_fn_t fn,
+	void *private_data,
+	const char *location);
+#define share_mode_entry_prepare_lock_add(__prepare_state, __id, \
+		__servicepath, __smb_fname, __old_write_time, \
+		__fn, __private_data) \
+	_share_mode_entry_prepare_lock(__prepare_state, __id, \
+		__servicepath, __smb_fname, __old_write_time, \
+		__fn, __private_data, __location__);
+#define share_mode_entry_prepare_lock_del(__prepare_state, __id, \
+		__fn, __private_data) \
+	_share_mode_entry_prepare_lock(__prepare_state, __id, \
+		NULL, NULL, NULL, \
+		__fn, __private_data, __location__);
+
+typedef void (*share_mode_entry_prepare_unlock_fn_t)(
+		struct share_mode_lock *lck,
+		void *private_data);
+NTSTATUS _share_mode_entry_prepare_unlock(
+	struct share_mode_entry_prepare_state *prepare_state,
+	share_mode_entry_prepare_unlock_fn_t fn,
+	void *private_data,
+	const char *location);
+#define share_mode_entry_prepare_unlock(__prepare_state, \
+		__fn, __private_data) \
+	_share_mode_entry_prepare_unlock(__prepare_state, \
+		__fn, __private_data, __location__);
 
 #endif

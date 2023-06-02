@@ -129,6 +129,10 @@ def options(opt):
                    action='store_false', dest='with_json',
                    help=("Build without JSON support."))
 
+    opt.samba_add_onoff_option('smb1-server',
+                               dest='with_smb1server',
+                               help=("Build smbd with SMB1 support (default=yes)."))
+
 def configure(conf):
     version = samba_version.load_version(env=conf.env)
 
@@ -188,6 +192,8 @@ def configure(conf):
 
     conf.RECURSE('dynconfig')
     conf.RECURSE('selftest')
+
+    conf.PROCESS_SEPARATE_RULE('system_gnutls')
 
     conf.CHECK_CFG(package='zlib', minversion='1.2.3',
                    args='--cflags --libs',
@@ -297,8 +303,6 @@ def configure(conf):
     if not conf.CONFIG_GET('KRB5_VENDOR'):
         conf.PROCESS_SEPARATE_RULE('embedded_heimdal')
 
-    conf.PROCESS_SEPARATE_RULE('system_gnutls')
-
     conf.RECURSE('source4/dsdb/samdb/ldb_modules')
     conf.RECURSE('source4/ntvfs/sysdep')
     conf.RECURSE('lib/util')
@@ -344,12 +348,14 @@ def configure(conf):
 
     conf.RECURSE('source3')
     conf.RECURSE('lib/texpect')
+    conf.RECURSE('lib/tsocket')
     conf.RECURSE('python')
     if conf.env.with_ctdb:
         conf.RECURSE('ctdb')
     conf.RECURSE('lib/socket')
     conf.RECURSE('lib/mscat')
     conf.RECURSE('packaging')
+    conf.RECURSE('lib/krb5_wrap')
 
     conf.SAMBA_CHECK_UNDEFINED_SYMBOL_FLAGS()
 
@@ -358,7 +364,8 @@ def configure(conf):
     # allows us to find problems on our development hosts faster.
     # It also results in faster load time.
 
-    if conf.CHECK_LDFLAGS('-Wl,--as-needed'):
+    if (not Options.options.address_sanitizer
+        and conf.CHECK_LDFLAGS('-Wl,--as-needed')):
         conf.env.append_unique('LINKFLAGS', '-Wl,--as-needed')
 
     if not conf.CHECK_NEED_LC("-lc not needed"):
@@ -389,6 +396,16 @@ def configure(conf):
         if conf.check_cc(cflags='', ldflags='-Wl,-z,relro,-z,now', mandatory=need_relro,
                          msg="Checking compiler for full RELRO support"):
             conf.env['ENABLE_RELRO'] = True
+
+    if conf.CONFIG_GET('ENABLE_SELFTEST') and \
+       Options.options.with_smb1server == False and \
+       Options.options.without_ad_dc != True:
+        conf.fatal('--without-smb1-server cannot be specified with '
+                   '--enable-selftest/--enable-developer if '
+                   '--without-ad-dc is NOT set!')
+
+    if Options.options.with_smb1server != False:
+        conf.DEFINE('WITH_SMB1SERVER', '1')
 
     #
     # FreeBSD is broken. It doesn't include 'extern char **environ'

@@ -14,16 +14,22 @@
 	attributes (e.g. the getfattr<manvolnum>1</manvolnum> / setfattr<manvolnum>1</manvolnum>
 	utilities must work).
 	</para></listitem>
+	<listitem><para>Access to extended user attributes must be allowed by the underlying
+        filesystem (e.g. when mounted with a system-dependent option like user_xattr on Linux).
+	</para></listitem>
     </itemizedlist>
+    <para>
+    This option exposes the "user" attribute namespace from the underlying filesystem to
+    clients. In order to match Windows conventions, the namespace prefix ("user.") is
+    stripped from the attribute name on the client side. The handling of further attribute
+    namespaces (like "security", "system", or "trusted") is not affected by this option.
+    </para>
     <para>
     Note that the SMB protocol allows setting attributes whose value is 64K bytes long,
     and that on NTFS, the maximum storage space for extended attributes per file is 64K.
-    On most UNIX systems (Solaris and ZFS file system being the exception), the limits
-    are much lower - typically 4K. Worse, the same 4K space is often used to store
-    system metadata such as POSIX ACLs, or Samba's NT ACLs. Giving clients
-    access to this tight space via extended attribute support could consume all
-    of it by unsuspecting client applications, which would prevent changing
-    system metadata due to lack of space.
+    On some filesystem the limits may be lower. Filesystems with too limited EA
+    space may experience unexpected weird effects.
+
 
     The default has changed to yes in Samba release 4.9.0 and above to allow better Windows
     fileserver compatibility in a default install.

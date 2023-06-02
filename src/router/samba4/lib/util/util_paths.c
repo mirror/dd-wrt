@@ -22,10 +22,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
 #include "dynconfig/dynconfig.h"
 #include "lib/util/util_paths.h"
 #include "system/passwd.h"
+#include "system/filesys.h"
 
 /**
  * @brief Returns an absolute path to a file in the Samba modules directory.

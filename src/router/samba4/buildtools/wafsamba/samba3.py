@@ -35,14 +35,14 @@ def s3_fix_kwargs(bld, kwargs):
 
     # the extra_includes list is relative to the source3 directory
     extra_includes = [ '.', 'include', 'lib' ]
-    # local heimdal paths only included when USING_SYSTEM_KRB5 is not set
-    if not bld.CONFIG_SET("USING_SYSTEM_KRB5"):
-        extra_includes += [ '../source4/heimdal/lib/com_err',
-                            '../source4/heimdal/lib/krb5',
-                            '../source4/heimdal/lib/gssapi',
-                            '../source4/heimdal/lib/gssapi/gssapi',
-                            '../source4/heimdal_build/include',
-                            '../bin/default/source4/heimdal/lib/asn1' ]
+    # local heimdal paths must only be included when using our embedded Heimdal
+    if bld.CONFIG_SET("USING_EMBEDDED_HEIMDAL"):
+        extra_includes += [ '../third_party/heimdal/lib/com_err',
+                            '../third_party/heimdal/lib/base',
+                            '../third_party/heimdal/lib/krb5',
+                            '../third_party/heimdal/lib/gssapi/gssapi',
+                            '../third_party/heimdal_build/include',
+                            '../bin/default/third_party/heimdal/lib/asn1' ]
 
     if bld.CONFIG_SET('USING_SYSTEM_TDB'):
         (tdb_includes, tdb_ldflags, tdb_cpppath) = library_flags(bld, 'tdb')
@@ -84,6 +84,11 @@ def SAMBA3_LIBRARY(bld, name, *args, **kwargs):
     s3_fix_kwargs(bld, kwargs)
     return bld.SAMBA_LIBRARY(name, *args, **kwargs)
 Build.BuildContext.SAMBA3_LIBRARY = SAMBA3_LIBRARY
+
+def SAMBA3_PLUGIN(bld, name, *args, **kwargs):
+    s3_fix_kwargs(bld, kwargs)
+    return bld.SAMBA_PLUGIN(name, *args, **kwargs)
+Build.BuildContext.SAMBA3_PLUGIN = SAMBA3_PLUGIN
 
 def SAMBA3_MODULE(bld, name, *args, **kwargs):
     s3_fix_kwargs(bld, kwargs)

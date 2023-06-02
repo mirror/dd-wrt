@@ -52,6 +52,8 @@
 #include "rpc_server/rpc_config.h"
 #include "lib/global_contexts.h"
 #include "source3/lib/substitute.h"
+#include "winbindd_traceid.h"
+#include "lib/util/util_process.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -60,78 +62,11 @@
 
 static bool client_is_idle(struct winbindd_cli_state *state);
 static void remove_client(struct winbindd_cli_state *state);
-static void winbindd_setup_max_fds(void);
 
-static bool opt_nocache = False;
 static bool interactive = False;
-
-struct imessaging_context *winbind_imessaging_context(void)
-{
-	static struct imessaging_context *msg = NULL;
-	struct messaging_context *msg_ctx;
-	struct server_id myself;
-	struct loadparm_context *lp_ctx;
-
-	if (msg != NULL) {
-		return msg;
-	}
-
-	msg_ctx = global_messaging_context();
-	if (msg_ctx == NULL) {
-		smb_panic("global_messaging_context failed\n");
-	}
-	myself = messaging_server_id(msg_ctx);
-
-	lp_ctx = loadparm_init_s3(NULL, loadparm_s3_helpers());
-	if (lp_ctx == NULL) {
-		smb_panic("Could not load smb.conf to init winbindd's imessaging context.\n");
-	}
-
-	/*
-	 * Note we MUST use the NULL context here, not the autofree context,
-	 * to avoid side effects in forked children exiting.
-	 */
-	msg = imessaging_init(NULL, lp_ctx, myself, global_event_context());
-	talloc_unlink(NULL, lp_ctx);
-
-	if (msg == NULL) {
-		smb_panic("Could not init winbindd's messaging context.\n");
-	}
-	return msg;
-}
 
 /* Reload configuration */
 
-bool winbindd_reload_services_file(const char *lfile)
-{
-	const struct loadparm_substitution *lp_sub =
-		loadparm_s3_global_substitution();
-	bool ret;
-
-	if (lp_loaded()) {
-		char *fname = lp_next_configfile(talloc_tos(), lp_sub);
-
-		if (file_exist(fname) && !strcsequal(fname,get_dyn_CONFIGFILE())) {
-			set_dyn_CONFIGFILE(fname);
-		}
-		TALLOC_FREE(fname);
-	}
-
-	reopen_logs();
-	ret = lp_load_global(get_dyn_CONFIGFILE());
-
-	/* if this is a child, restore the logfile to the special
-	   name - <domain>, idmap, etc. */
-	if (lfile && *lfile) {
-		lp_set_logfile(lfile);
-	}
-
-	reopen_logs();
-	load_interfaces();
-	winbindd_setup_max_fds();
-
-	return(ret);
-}
 
 
 static void winbindd_status(void)
@@ -154,101 +89,6 @@ static void winbindd_status(void)
 	}
 }
 
-/* Flush client cache */
-
-void winbindd_flush_caches(void)
-{
-	/* We need to invalidate cached user list entries on a SIGHUP
-           otherwise cached access denied errors due to restrict anonymous
-           hang around until the sequence number changes. */
-
-	if (!wcache_invalidate_cache()) {
-		DEBUG(0, ("invalidating the cache failed; revalidate the cache\n"));
-		if (!winbindd_cache_validate_and_initialize()) {
-			exit(1);
-		}
-	}
-}
-
-static void flush_caches_noinit(void)
-{
-	/*
-	 * We need to invalidate cached user list entries on a SIGHUP
-         * otherwise cached access denied errors due to restrict anonymous
-         * hang around until the sequence number changes.
-	 * NB
-	 * Skip uninitialized domains when flush cache.
-	 * If domain is not initialized, it means it is never
-	 * used or never become online. look, wcache_invalidate_cache()
-	 * -> get_cache() -> init_dc_connection(). It causes a lot of traffic
-	 * for unused domains and large traffic for primay domain's DC if there
-	 * are many domains..
-	 */
-
-	if (!wcache_invalidate_cache_noinit()) {
-		DEBUG(0, ("invalidating the cache failed; revalidate the cache\n"));
-		if (!winbindd_cache_validate_and_initialize()) {
-			exit(1);
-		}
-	}
-}
-
-/* Handle the signal by unlinking socket and exiting */
-
-static void terminate(bool is_parent)
-{
-	if (is_parent) {
-		/* When parent goes away we should
-		 * remove the socket file. Not so
-		 * when children terminate.
-		 */
-		char *path = NULL;
-
-		if (asprintf(&path, "%s/%s",
-			lp_winbindd_socket_directory(), WINBINDD_SOCKET_NAME) > 0) {
-			unlink(path);
-			SAFE_FREE(path);
-		}
-	}
-
-	idmap_close();
-
-	netlogon_creds_cli_close_global_db();
-
-#if 0
-	if (interactive) {
-		TALLOC_CTX *mem_ctx = talloc_init("end_description");
-		char *description = talloc_describe_all(mem_ctx);
-
-		DEBUG(3, ("tallocs left:\n%s\n", description));
-		talloc_destroy(mem_ctx);
-	}
-#endif
-
-	if (is_parent) {
-		pidfile_unlink(lp_pid_directory(), "winbindd");
-	}
-
-	exit(0);
-}
-
-static void winbindd_sig_term_handler(struct tevent_context *ev,
-				      struct tevent_signal *se,
-				      int signum,
-				      int count,
-				      void *siginfo,
-				      void *private_data)
-{
-	bool *p = talloc_get_type_abort(private_data, bool);
-	bool is_parent = *p;
-
-	TALLOC_FREE(p);
-
-	DEBUG(0,("Got sig[%d] terminate (is_parent=%d)\n",
-		 signum, is_parent));
-	terminate(is_parent);
-}
-
 /*
   handle stdin becoming readable when we are in --foreground mode
  */
@@ -265,56 +105,8 @@ static void winbindd_stdin_handler(struct tevent_context *ev,
 		   parent has exited. Shutdown the server */
 		DEBUG(0,("EOF on stdin (is_parent=%d)\n",
 			 (int)*is_parent));
-		terminate(*is_parent);
+		winbindd_terminate(*is_parent);
 	}
-}
-
-bool winbindd_setup_sig_term_handler(bool parent)
-{
-	struct tevent_signal *se;
-	bool *is_parent;
-
-	is_parent = talloc(global_event_context(), bool);
-	if (!is_parent) {
-		return false;
-	}
-
-	*is_parent = parent;
-
-	se = tevent_add_signal(global_event_context(),
-			       is_parent,
-			       SIGTERM, 0,
-			       winbindd_sig_term_handler,
-			       is_parent);
-	if (!se) {
-		DEBUG(0,("failed to setup SIGTERM handler"));
-		talloc_free(is_parent);
-		return false;
-	}
-
-	se = tevent_add_signal(global_event_context(),
-			       is_parent,
-			       SIGINT, 0,
-			       winbindd_sig_term_handler,
-			       is_parent);
-	if (!se) {
-		DEBUG(0,("failed to setup SIGINT handler"));
-		talloc_free(is_parent);
-		return false;
-	}
-
-	se = tevent_add_signal(global_event_context(),
-			       is_parent,
-			       SIGQUIT, 0,
-			       winbindd_sig_term_handler,
-			       is_parent);
-	if (!se) {
-		DEBUG(0,("failed to setup SIGINT handler"));
-		talloc_free(is_parent);
-		return false;
-	}
-
-	return true;
 }
 
 bool winbindd_setup_stdin_handler(bool parent, bool foreground)
@@ -347,45 +139,6 @@ bool winbindd_setup_stdin_handler(bool parent, bool foreground)
 					winbindd_stdin_handler,
 					is_parent);
 		}
-	}
-
-	return true;
-}
-
-static void winbindd_sig_hup_handler(struct tevent_context *ev,
-				     struct tevent_signal *se,
-				     int signum,
-				     int count,
-				     void *siginfo,
-				     void *private_data)
-{
-	const char *file = (const char *)private_data;
-
-	DEBUG(1,("Reloading services after SIGHUP\n"));
-	flush_caches_noinit();
-	winbindd_reload_services_file(file);
-}
-
-bool winbindd_setup_sig_hup_handler(const char *lfile)
-{
-	struct tevent_signal *se;
-	char *file = NULL;
-
-	if (lfile) {
-		file = talloc_strdup(global_event_context(),
-				     lfile);
-		if (!file) {
-			return false;
-		}
-	}
-
-	se = tevent_add_signal(global_event_context(),
-			       global_event_context(),
-			       SIGHUP, 0,
-			       winbindd_sig_hup_handler,
-			       file);
-	if (!se) {
-		return false;
 	}
 
 	return true;
@@ -456,7 +209,7 @@ static void msg_shutdown(struct messaging_context *msg,
 {
 	/* only the parent waits for this message */
 	DEBUG(0,("Got shutdown message\n"));
-	terminate(true);
+	winbindd_terminate(true);
 }
 
 
@@ -505,7 +258,7 @@ static void winbind_msg_validate_cache(struct messaging_context *msg_ctx,
 	/* install default SIGCHLD handler: validation code uses fork/waitpid */
 	CatchSignal(SIGCHLD, SIG_DFL);
 
-	setproctitle("validate cache child");
+	process_set_title("wb: check cache", "validate cache child");
 
 	ret = (uint8_t)winbindd_validate_cache_nobackup();
 	DEBUG(10, ("winbindd_msg_validata_cache: got return value %d\n", ret));
@@ -670,7 +423,18 @@ static struct tevent_req *process_request_send(
 	enum winbindd_cmd cmd = cli_state->request->cmd;
 	size_t i;
 	bool ok;
+	static uint64_t request_index = 1;
 
+	/*
+	 * debug traceid values:
+	 * 0   .. inactive
+	 * 1   .. not processing a winbind request, but in other code (timers)
+	 * >=2 .. winbind request processing
+	 */
+	if (debug_traceid_get() != 0) {
+		request_index = ++request_index == 0 ? 2 : request_index;
+		debug_traceid_set(request_index);
+	}
 	req = tevent_req_create(mem_ctx, &state,
 				struct process_request_state);
 	if (req == NULL) {
@@ -730,11 +494,10 @@ static struct tevent_req *process_request_send(
 		cli_state->cmd_name = atable->cmd_name;
 		cli_state->recv_fn = atable->recv_req;
 
-		DBG_DEBUG("process_request: "
-			  "Handling async request %s(%d):%s\n",
-			  cli_state->client_name,
-			  (int)cli_state->pid,
-			  cli_state->cmd_name);
+		DBG_NOTICE("[%s (%d)] Handling async request: %s\n",
+			   cli_state->client_name,
+			   (int)cli_state->pid,
+			   cli_state->cmd_name);
 
 		subreq = atable->send_req(
 			state,
@@ -798,11 +561,11 @@ static void process_request_done(struct tevent_req *subreq)
 	status = cli_state->recv_fn(subreq, cli_state->response);
 	TALLOC_FREE(subreq);
 
-	DBG_DEBUG("[%s(%d):%s]: %s\n",
-		  cli_state->client_name,
-		  (int)cli_state->pid,
-		  cli_state->cmd_name,
-		  nt_errstr(status));
+	DBG_NOTICE("[%s(%d):%s]: %s\n",
+		   cli_state->client_name,
+		   (int)cli_state->pid,
+		   cli_state->cmd_name,
+		   nt_errstr(status));
 
 	ok = NT_STATUS_IS_OK(status);
 	cli_state->response->result = ok ? WINBINDD_OK : WINBINDD_ERROR;
@@ -905,14 +668,13 @@ static void new_connection(int listen_sock, bool privileged)
 
 	if (sock == -1) {
 		if (errno != EINTR) {
-			DEBUG(0, ("Failed to accept socket - %s\n",
-				  strerror(errno)));
+			D_ERR("Failed to accept socket: %s\n", strerror(errno));
 		}
 		return;
 	}
 	smb_set_close_on_exec(sock);
 
-	DEBUG(6,("accepted socket %d\n", sock));
+	D_INFO("Accepted client socket %d\n", sock);
 
 	/* Create new connection structure */
 
@@ -1258,40 +1020,6 @@ static void winbindd_listen_fde_handler(struct tevent_context *ev,
  * Winbindd socket accessor functions
  */
 
-char *get_winbind_priv_pipe_dir(void)
-{
-	return state_path(talloc_tos(), WINBINDD_PRIV_SOCKET_SUBDIR);
-}
-
-static void winbindd_setup_max_fds(void)
-{
-	int num_fds = MAX_OPEN_FUDGEFACTOR;
-	int actual_fds;
-
-	num_fds += lp_winbind_max_clients();
-	/* Add some more to account for 2 sockets open
-	   when the client transitions from unprivileged
-	   to privileged socket
-	*/
-	num_fds += lp_winbind_max_clients() / 10;
-
-	/* Add one socket per child process
-	   (yeah there are child processes other than the
-	   domain children but only domain children can vary
-	   with configuration
-	*/
-	num_fds += lp_winbind_max_domain_connections() *
-		   (lp_allow_trusted_domains() ? WINBIND_MAX_DOMAINS_HINT : 1);
-
-	actual_fds = set_maxfiles(num_fds);
-
-	if (actual_fds < num_fds) {
-		DEBUG(1, ("winbindd_setup_max_fds: Information only: "
-			  "requested %d open files, %d are available.\n",
-			  num_fds, actual_fds));
-	}
-}
-
 static bool winbindd_setup_listeners(void)
 {
 	struct winbindd_listen_state *pub_state = NULL;
@@ -1365,16 +1093,6 @@ failed:
 	TALLOC_FREE(pub_state);
 	TALLOC_FREE(priv_state);
 	return false;
-}
-
-bool winbindd_use_idmap_cache(void)
-{
-	return !opt_nocache;
-}
-
-bool winbindd_use_cache(void)
-{
-	return !opt_nocache;
 }
 
 static void winbindd_register_handlers(struct messaging_context *msg_ctx,
@@ -1666,7 +1384,7 @@ int main(int argc, const char **argv)
 	while ((opt = poptGetNextOpt(pc)) != -1) {
 		switch (opt) {
 		case 'n':
-			opt_nocache = true;
+			winbindd_set_use_cache(false);
 			break;
 		default:
 			d_fprintf(stderr, "\nInvalid option %s: %s\n\n",
@@ -1710,7 +1428,8 @@ int main(int argc, const char **argv)
 
 	if (log_stdout && cmdline_daemon_cfg->fork) {
 		d_fprintf(stderr, "\nERROR: "
-			  "Can't log to stdout (-S) unless daemon is in foreground +(-F) or interactive (-i)\n\n");
+			  "Can't log to stdout (-S) unless daemon is in "
+			  "foreground (-F) or interactive (-i)\n\n");
 		poptPrintUsage(pc, stderr, 0);
 		exit(1);
 	}
@@ -1791,7 +1510,7 @@ int main(int argc, const char **argv)
 		size_t sun_path_len = sizeof(un.sun_path);
 
 		if (winbindd_priv_socket_len >= sun_path_len) {
-			DBG_ERR("The winbind priviliged socket path [%s/%s] is too long "
+			DBG_ERR("The winbind privileged socket path [%s/%s] is too long "
 				"(%zu >= %zu)\n",
 				winbindd_priv_socket_dir,
 				WINBINDD_SOCKET_NAME,
@@ -1910,11 +1629,14 @@ int main(int argc, const char **argv)
 
 	status = reinit_after_fork(global_messaging_context(),
 				   global_event_context(),
-				   false, NULL);
+				   false);
 	if (!NT_STATUS_IS_OK(status)) {
 		exit_daemon("Winbindd reinit_after_fork() failed", map_errno_from_nt_status(status));
 	}
 
+	if (lp_winbind_debug_traceid()) {
+		winbind_debug_traceid_setup(global_event_context());
+	}
 	ok = initialize_password_db(true, global_event_context());
 	if (!ok) {
 		exit_daemon("Failed to initialize passdb backend! "
@@ -1945,34 +1667,6 @@ int main(int argc, const char **argv)
 	}
 
 	DBG_INFO("Registering DCE/RPC endpoint servers\n");
-
-	/* Register the endpoint server to dispatch calls locally through
-	 * the legacy api_struct */
-	ep_server = lsarpc_get_ep_server();
-	if (ep_server == NULL) {
-		DBG_ERR("Failed to get 'lsarpc' endpoint server\n");
-		exit(1);
-	}
-	status = dcerpc_register_ep_server(ep_server);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("Failed to register 'lsarpc' endpoint "
-			"server: %s\n", nt_errstr(status));
-		exit(1);
-	}
-
-	/* Register the endpoint server to dispatch calls locally through
-	 * the legacy api_struct */
-	ep_server = samr_get_ep_server();
-	if (ep_server == NULL) {
-		DBG_ERR("Failed to get 'samr' endpoint server\n");
-		exit(1);
-	}
-	status = dcerpc_register_ep_server(ep_server);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("Failed to register 'samr' endpoint "
-			"server: %s\n", nt_errstr(status));
-		exit(1);
-	}
 
 	ep_server = winbind_get_ep_server();
 	if (ep_server == NULL) {

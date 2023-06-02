@@ -42,20 +42,62 @@
 #include "auth/auth.h"
 #include "param/param.h"
 #include "dsdb/samdb/ldb_modules/util.h"
-#include "lib/util/binsearch.h"
+#include "lib/util/util_tdb.h"
+#include "lib/dbwrap/dbwrap.h"
+#include "lib/dbwrap/dbwrap_rbt.h"
 
 struct descriptor_changes {
 	struct descriptor_changes *prev, *next;
 	struct ldb_dn *nc_root;
 	struct GUID guid;
+	struct GUID parent_guid;
 	bool force_self;
 	bool force_children;
 	struct ldb_dn *stopped_dn;
+	size_t ref_count;
+	size_t sort_count;
+};
+
+struct descriptor_transaction {
+	TALLOC_CTX *mem;
+	struct {
+		/*
+		 * We used to have a list of changes, appended with each
+		 * DSDB_EXTENDED_SEC_DESC_PROPAGATION_OID operation.
+		 *
+		 * But the main problem was that a replication
+		 * cycle (mainly the initial replication) calls
+		 * DSDB_EXTENDED_SEC_DESC_PROPAGATION_OID for the
+		 * same object[GUID] more than once. With
+		 * DRSUAPI_DRS_GET_TGT we'll get the naming
+		 * context head object and other top level
+		 * containers, every often.
+		 *
+		 * It means we'll process objects more
+		 * than once and waste a lot of time
+		 * doing the same work again and again.
+		 *
+		 * We use an objectGUID based map in order to
+		 * avoid registering objects more than once.
+		 * In an domain with 22000 object it can
+		 * reduce the work from 4 hours down to ~ 3.5 minutes.
+		 */
+		struct descriptor_changes *list;
+		struct db_context *map;
+		size_t num_registrations;
+		size_t num_registered;
+		size_t num_toplevel;
+		size_t num_processed;
+	} changes;
+	struct {
+		struct db_context *map;
+		size_t num_processed;
+		size_t num_skipped;
+	} objects;
 };
 
 struct descriptor_data {
-	TALLOC_CTX *trans_mem;
-	struct descriptor_changes *changes;
+	struct descriptor_transaction transaction;
 };
 
 struct descriptor_context {
@@ -73,7 +115,7 @@ struct descriptor_context {
 
 static struct dom_sid *get_default_ag(TALLOC_CTX *mem_ctx,
 			       struct ldb_dn *dn,
-			       struct security_token *token,
+			       const struct security_token *token,
 			       struct ldb_context *ldb)
 {
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
@@ -239,19 +281,18 @@ static struct security_descriptor *descr_handle_sd_flags(TALLOC_CTX *mem_ctx,
 	return final_sd;
 }
 
-static DATA_BLOB *get_new_descriptor(struct ldb_module *module,
-				     struct ldb_dn *dn,
-				     TALLOC_CTX *mem_ctx,
-				     const struct dsdb_class *objectclass,
-				     const struct ldb_val *parent,
-				     const struct ldb_val *object,
-				     const struct ldb_val *old_sd,
-				     uint32_t sd_flags)
+static struct security_descriptor *get_new_descriptor_nonlinear(struct ldb_module *module,
+								struct ldb_dn *dn,
+								TALLOC_CTX *mem_ctx,
+								const struct dsdb_class *objectclass,
+								const struct ldb_val *parent,
+								const struct ldb_val *object,
+								const struct ldb_val *old_sd,
+								uint32_t sd_flags)
 {
 	struct security_descriptor *user_descriptor = NULL, *parent_descriptor = NULL;
 	struct security_descriptor *old_descriptor = NULL;
 	struct security_descriptor *new_sd, *final_sd;
-	DATA_BLOB *linear_sd;
 	enum ndr_err_code ndr_err;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	struct auth_session_info *session_info
@@ -421,8 +462,35 @@ static DATA_BLOB *get_new_descriptor(struct ldb_module *module,
 		TALLOC_FREE(tmp_ctx);
 	}
 
-	linear_sd = talloc(mem_ctx, DATA_BLOB);
+	return final_sd;
+}
+
+static DATA_BLOB *get_new_descriptor(struct ldb_module *module,
+				     struct ldb_dn *dn,
+				     TALLOC_CTX *mem_ctx,
+				     const struct dsdb_class *objectclass,
+				     const struct ldb_val *parent,
+				     const struct ldb_val *object,
+				     const struct ldb_val *old_sd,
+				     uint32_t sd_flags)
+{
+	struct security_descriptor *final_sd = NULL;
+	enum ndr_err_code ndr_err;
+	DATA_BLOB *linear_sd = talloc(mem_ctx, DATA_BLOB);
+
 	if (!linear_sd) {
+		return NULL;
+	}
+
+	final_sd = get_new_descriptor_nonlinear(module,
+						dn,
+						mem_ctx,
+						objectclass,
+						parent,
+						object,
+						old_sd,
+						sd_flags);
+	if (final_sd == NULL) {
 		return NULL;
 	}
 
@@ -552,6 +620,39 @@ fail:
 	return ldb_module_done(ac->req, NULL, NULL, ret);
 }
 
+static bool can_write_owner(TALLOC_CTX *mem_ctx,
+			    struct ldb_context *ldb,
+			    struct ldb_dn *dn,
+			    const struct security_token *security_token,
+			    const struct dom_sid *owner_sid)
+{
+	const struct dom_sid *default_owner = NULL;
+
+	/* If the user possesses SE_RESTORE_PRIVILEGE, the write is allowed. */
+	bool ok = security_token_has_privilege(security_token, SEC_PRIV_RESTORE);
+	if (ok) {
+		return true;
+	}
+
+	/* The user can write their own SID to a security descriptor. */
+	ok = security_token_is_sid(security_token, owner_sid);
+	if (ok) {
+		return true;
+	}
+
+        /*
+	 * The user can write the SID of the "default administrators group" that
+	 * they are a member of.
+	 */
+	default_owner = get_default_ag(mem_ctx, dn,
+				       security_token, ldb);
+	if (default_owner != NULL) {
+		ok = security_token_is_sid(security_token, owner_sid);
+	}
+
+	return ok;
+}
+
 static int descriptor_add(struct ldb_module *module, struct ldb_request *req)
 {
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
@@ -559,7 +660,7 @@ static int descriptor_add(struct ldb_module *module, struct ldb_request *req)
 	struct ldb_message *msg;
 	struct ldb_result *parent_res;
 	const struct ldb_val *parent_sd = NULL;
-	const struct ldb_val *user_sd;
+	const struct ldb_val *user_sd = NULL;
 	struct ldb_dn *dn = req->op.add.message->dn;
 	struct ldb_dn *parent_dn, *nc_root;
 	struct ldb_message_element *objectclass_element, *sd_element;
@@ -570,7 +671,10 @@ static int descriptor_add(struct ldb_module *module, struct ldb_request *req)
 	static const char * const parent_attrs[] = { "nTSecurityDescriptor", NULL };
 	uint32_t instanceType;
 	bool isNC = false;
+	enum ndr_err_code ndr_err;
+	struct dsdb_control_calculated_default_sd *control_sd = NULL;
 	uint32_t sd_flags = dsdb_request_sd_flags(req, NULL);
+	struct security_descriptor *user_descriptor = NULL;
 
 	/* do not manipulate our control entries */
 	if (ldb_dn_is_special(dn)) {
@@ -656,12 +760,72 @@ static int descriptor_add(struct ldb_module *module, struct ldb_request *req)
 	 */
 	sd_flags = SECINFO_OWNER|SECINFO_GROUP|SECINFO_SACL|SECINFO_DACL;
 
+	control_sd = talloc(req, struct dsdb_control_calculated_default_sd);
+	if (control_sd == NULL) {
+		return ldb_operr(ldb);
+	}
+	control_sd->specified_sd = false;
+	control_sd->specified_sacl = false;
+	if (user_sd != NULL) {
+		user_descriptor = talloc(req, struct security_descriptor);
+		if (user_descriptor == NULL) {
+			return ldb_operr(ldb);
+		}
+		ndr_err = ndr_pull_struct_blob(user_sd, user_descriptor,
+					       user_descriptor,
+					       (ndr_pull_flags_fn_t)ndr_pull_security_descriptor);
+
+		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+			talloc_free(user_descriptor);
+			return ldb_operr(ldb);
+		}
+		/*
+		 * calculate the permissions needed, since in acl we no longer have
+		 * access to the original user descriptor
+		 */
+		control_sd->specified_sd = true;
+		control_sd->specified_sacl = user_descriptor->sacl != NULL;
+
+		if (user_descriptor->owner_sid != NULL) {
+			/* Verify the owner of the security descriptor. */
+
+			const struct auth_session_info *session_info
+				= ldb_get_opaque(ldb, DSDB_SESSION_INFO);
+
+			bool ok = can_write_owner(req,
+						  ldb,
+						  dn,
+						  session_info->security_token,
+						  user_descriptor->owner_sid);
+			talloc_free(user_descriptor);
+			if (!ok) {
+				return dsdb_module_werror(module,
+							  LDB_ERR_CONSTRAINT_VIOLATION,
+							  WERR_INVALID_OWNER,
+							  "invalid addition of owner SID");
+			}
+		}
+	}
+
 	sd = get_new_descriptor(module, dn, req,
 				objectclass, parent_sd,
 				user_sd, NULL, sd_flags);
 	if (sd == NULL) {
 		return ldb_operr(ldb);
 	}
+
+	control_sd->default_sd = get_new_descriptor_nonlinear(module,
+							      dn,
+							      req,
+							      objectclass,
+							      parent_sd,
+							      NULL,
+							      NULL,
+							      sd_flags);
+	if (control_sd->default_sd == NULL) {
+		return ldb_operr(ldb);
+	}
+
 	msg = ldb_msg_copy_shallow(req, req->op.add.message);
 	if (msg == NULL) {
 		return ldb_oom(ldb);
@@ -682,12 +846,20 @@ static int descriptor_add(struct ldb_module *module, struct ldb_request *req)
 				req->controls,
 				req, dsdb_next_callback,
 				req);
+
 	LDB_REQ_SET_LOCATION(add_req);
 	if (ret != LDB_SUCCESS) {
 		return ldb_error(ldb, ret,
 				 "descriptor_add: Error creating new add request.");
 	}
 
+	dom_sid_parse("S-1-0-0", control_sd->default_sd->owner_sid);
+	ret = ldb_request_add_control(add_req,
+				      DSDB_CONTROL_CALCULATED_DEFAULT_SD_OID,
+				      false, (void *)control_sd);
+	if (ret != LDB_SUCCESS) {
+		return ldb_module_operr(module);
+	}
 	return ldb_next_request(module, add_req);
 }
 
@@ -699,7 +871,7 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 	struct ldb_result *current_res, *parent_res;
 	const struct ldb_val *old_sd = NULL;
 	const struct ldb_val *parent_sd = NULL;
-	const struct ldb_val *user_sd;
+	const struct ldb_val *user_sd = NULL;
 	struct ldb_dn *dn = req->op.mod.message->dn;
 	struct ldb_dn *parent_dn;
 	struct ldb_message_element *objectclass_element, *sd_element;
@@ -714,6 +886,7 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 	static const char * const current_attrs[] = { "nTSecurityDescriptor",
 						      "instanceType",
 						      "objectClass", NULL };
+	struct GUID parent_guid = { .time_low = 0 };
 	struct ldb_control *sd_propagation_control;
 	int cmp_ret = -1;
 
@@ -768,6 +941,44 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 		return ldb_next_request(module, req);
 	}
 
+	if (sd_flags & SECINFO_OWNER && user_sd != NULL) {
+		/* Verify the new owner of the security descriptor. */
+
+		struct security_descriptor *user_descriptor = NULL;
+		enum ndr_err_code ndr_err;
+		const struct auth_session_info *session_info;
+		bool ok;
+
+		user_descriptor = talloc(req, struct security_descriptor);
+
+		if (user_descriptor == NULL) {
+			return ldb_operr(ldb);
+		}
+		ndr_err = ndr_pull_struct_blob(user_sd, user_descriptor,
+					       user_descriptor,
+					       (ndr_pull_flags_fn_t)ndr_pull_security_descriptor);
+
+		if (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {
+			talloc_free(user_descriptor);
+			return ldb_operr(ldb);
+		}
+
+		session_info = ldb_get_opaque(ldb, DSDB_SESSION_INFO);
+
+		ok = can_write_owner(req,
+				     ldb,
+				     dn,
+				     session_info->security_token,
+				     user_descriptor->owner_sid);
+		talloc_free(user_descriptor);
+		if (!ok) {
+			return dsdb_module_werror(module,
+						  LDB_ERR_CONSTRAINT_VIOLATION,
+						  WERR_INVALID_OWNER,
+						  "invalid modification of owner SID");
+		}
+	}
+
 	ldb_debug(ldb, LDB_DEBUG_TRACE,"descriptor_modify: %s\n", ldb_dn_get_linearized(dn));
 
 	ret = dsdb_module_search_dn(module, req, &current_res, dn,
@@ -789,6 +1000,8 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 	 * use for calculation */
 	if (!ldb_dn_is_null(current_res->msgs[0]->dn) &&
 	    !(instanceType & INSTANCE_TYPE_IS_NC_HEAD)) {
+		NTSTATUS status;
+
 		parent_dn = ldb_dn_get_parent(req, dn);
 		if (parent_dn == NULL) {
 			return ldb_oom(ldb);
@@ -797,7 +1010,8 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 					    parent_attrs,
 					    DSDB_FLAG_NEXT_MODULE |
 					    DSDB_FLAG_AS_SYSTEM |
-					    DSDB_SEARCH_SHOW_RECYCLED,
+					    DSDB_SEARCH_SHOW_RECYCLED |
+					    DSDB_SEARCH_SHOW_EXTENDED_DN,
 					    req);
 		if (ret != LDB_SUCCESS) {
 			ldb_debug(ldb, LDB_DEBUG_ERROR, "descriptor_modify: Could not find SD for %s\n",
@@ -808,6 +1022,13 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 			return ldb_operr(ldb);
 		}
 		parent_sd = ldb_msg_find_ldb_val(parent_res->msgs[0], "nTSecurityDescriptor");
+
+		status = dsdb_get_extended_dn_guid(parent_res->msgs[0]->dn,
+						   &parent_guid,
+						   "GUID");
+		if (!NT_STATUS_IS_OK(status)) {
+			return ldb_operr(ldb);
+		}
 	}
 
 	schema = dsdb_get_schema(ldb, req);
@@ -861,14 +1082,8 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 			return ldb_module_done(req, NULL, NULL, LDB_SUCCESS);
 		}
 
-		ret = ldb_msg_add_empty(msg, "nTSecurityDescriptor",
-					LDB_FLAG_MOD_REPLACE,
-					&sd_element);
-		if (ret != LDB_SUCCESS) {
-			return ldb_oom(ldb);
-		}
-		ret = ldb_msg_add_value(msg, "nTSecurityDescriptor",
-					sd, NULL);
+		ret = ldb_msg_append_value(msg, "nTSecurityDescriptor",
+					   sd, LDB_FLAG_MOD_REPLACE);
 		if (ret != LDB_SUCCESS) {
 			return ldb_oom(ldb);
 		}
@@ -898,6 +1113,7 @@ static int descriptor_modify(struct ldb_module *module, struct ldb_request *req)
 		ret = dsdb_module_schedule_sd_propagation(module,
 							  nc_root,
 							  guid,
+							  parent_guid,
 							  false);
 		if (ret != LDB_SUCCESS) {
 			return ldb_operr(ldb);
@@ -964,11 +1180,88 @@ static int descriptor_search(struct ldb_module *module, struct ldb_request *req)
 	return ldb_next_request(ac->module, down_req);
 }
 
+static int descriptor_rename_callback(struct ldb_request *req,
+				      struct ldb_reply *ares)
+{
+	struct descriptor_context *ac = NULL;
+	struct ldb_context *ldb = NULL;
+	struct ldb_dn *newdn = req->op.rename.newdn;
+	struct GUID guid;
+	struct ldb_dn *nc_root;
+	struct GUID parent_guid = { .time_low = 0 };
+	int ret;
+
+	ac = talloc_get_type_abort(req->context, struct descriptor_context);
+	ldb = ldb_module_get_ctx(ac->module);
+
+	if (!ares) {
+		return ldb_module_done(ac->req, NULL, NULL,
+					LDB_ERR_OPERATIONS_ERROR);
+	}
+	if (ares->error != LDB_SUCCESS) {
+		return ldb_module_done(ac->req, ares->controls,
+					ares->response, ares->error);
+	}
+
+	if (ares->type != LDB_REPLY_DONE) {
+		return ldb_module_done(ac->req, NULL, NULL,
+					LDB_ERR_OPERATIONS_ERROR);
+	}
+
+	ret = dsdb_module_guid_by_dn(ac->module,
+				     newdn,
+				     &guid,
+				     req);
+	if (ret != LDB_SUCCESS) {
+		return ldb_module_done(ac->req, NULL, NULL,
+				       ret);
+	}
+	ret = dsdb_find_nc_root(ldb, req, newdn, &nc_root);
+	if (ret != LDB_SUCCESS) {
+		return ldb_module_done(ac->req, NULL, NULL,
+				       ret);
+	}
+
+	/*
+	 * After a successful rename, force SD propagation on this
+	 * record (get a new inherited SD from the potentially new
+	 * parent
+	 *
+	 * We don't know the parent guid here (it is filled in as
+	 * all-zero in the initialiser above), but we're not in a hot
+	 * code path here, as the "descriptor" module is located above
+	 * the "repl_meta_data", only originating changes are handled
+	 * here.
+	 *
+	 * If it turns out to be a problem we may search for the new
+	 * parent guid.
+	 */
+
+	ret = dsdb_module_schedule_sd_propagation(ac->module,
+						  nc_root,
+						  guid,
+						  parent_guid,
+						  true);
+	if (ret != LDB_SUCCESS) {
+		ret = ldb_operr(ldb);
+		return ldb_module_done(ac->req, NULL, NULL,
+				       ret);
+	}
+
+	return ldb_module_done(ac->req, ares->controls,
+			       ares->response, ares->error);
+}
+
+
+
+
 static int descriptor_rename(struct ldb_module *module, struct ldb_request *req)
 {
+	struct descriptor_context *ac = NULL;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	struct ldb_dn *olddn = req->op.rename.olddn;
 	struct ldb_dn *newdn = req->op.rename.newdn;
+	struct ldb_request *down_req;
 	int ret;
 
 	/* do not manipulate our control entries */
@@ -979,37 +1272,45 @@ static int descriptor_rename(struct ldb_module *module, struct ldb_request *req)
 	ldb_debug(ldb, LDB_DEBUG_TRACE,"descriptor_rename: %s\n",
 		  ldb_dn_get_linearized(olddn));
 
-	if (ldb_dn_compare(olddn, newdn) != 0) {
-		struct ldb_dn *nc_root;
-		struct GUID guid;
-
-		ret = dsdb_find_nc_root(ldb, req, newdn, &nc_root);
-		if (ret != LDB_SUCCESS) {
-			return ldb_oom(ldb);
-		}
-
-		ret = dsdb_module_guid_by_dn(module,
-					     olddn,
-					     &guid,
-					     req);
-		if (ret == LDB_SUCCESS) {
-			/*
-			 * Without disturbing any errors if the olddn
-			 * does not exit, force SD propagation on
-			 * this record (get a new inherited SD from
-			 * the potentially new parent
-			 */
-			ret = dsdb_module_schedule_sd_propagation(module,
-								  nc_root,
-								  guid,
-								  true);
-			if (ret != LDB_SUCCESS) {
-				return ldb_operr(ldb);
-			}
-		}
+	if (ldb_dn_compare(olddn, newdn) == 0) {
+		/* No special work required for a case-only rename */
+		return ldb_next_request(module, req);
 	}
 
-	return ldb_next_request(module, req);
+	ac = descriptor_init_context(module, req);
+	if (ac == NULL) {
+		return ldb_operr(ldb);
+	}
+
+	ret = ldb_build_rename_req(&down_req, ldb, ac,
+				   req->op.rename.olddn,
+				   req->op.rename.newdn,
+				   req->controls,
+				   ac, descriptor_rename_callback,
+				   req);
+	LDB_REQ_SET_LOCATION(down_req);
+	if (ret != LDB_SUCCESS) {
+		return ret;
+	}
+
+	return ldb_next_request(module, down_req);
+}
+
+static void descriptor_changes_parser(TDB_DATA key, TDB_DATA data, void *private_data)
+{
+	struct descriptor_changes **c_ptr = (struct descriptor_changes **)private_data;
+	uintptr_t ptr = 0;
+
+	SMB_ASSERT(data.dsize == sizeof(ptr));
+
+	memcpy(&ptr, data.dptr, data.dsize);
+
+	*c_ptr = talloc_get_type_abort((void *)ptr, struct descriptor_changes);
+}
+
+static void descriptor_object_parser(TDB_DATA key, TDB_DATA data, void *private_data)
+{
+	SMB_ASSERT(data.dsize == 0);
 }
 
 static int descriptor_extended_sec_desc_propagation(struct ldb_module *module,
@@ -1018,10 +1319,12 @@ static int descriptor_extended_sec_desc_propagation(struct ldb_module *module,
 	struct descriptor_data *descriptor_private =
 		talloc_get_type_abort(ldb_module_get_private(module),
 		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	struct dsdb_extended_sec_desc_propagation_op *op;
-	TALLOC_CTX *parent_mem = NULL;
-	struct descriptor_changes *c;
+	struct descriptor_changes *c = NULL;
+	TDB_DATA key;
+	NTSTATUS status;
 
 	op = talloc_get_type(req->op.extended.data,
 			     struct dsdb_extended_sec_desc_propagation_op);
@@ -1032,28 +1335,108 @@ static int descriptor_extended_sec_desc_propagation(struct ldb_module *module,
 		return LDB_ERR_PROTOCOL_ERROR;
 	}
 
-	if (descriptor_private->trans_mem == NULL) {
+	if (t->mem == NULL) {
 		return ldb_module_operr(module);
 	}
 
-	parent_mem = descriptor_private->trans_mem;
+	if (GUID_equal(&op->parent_guid, &op->guid)) {
+		/*
+		 * This is an unexpected situation,
+		 * it should never happen!
+		 */
+		DBG_ERR("ERROR: Object %s is its own parent (nc_root=%s)\n",
+			GUID_string(t->mem, &op->guid),
+			ldb_dn_get_extended_linearized(t->mem, op->nc_root, 1));
+		return ldb_module_operr(module);
+	}
 
-	c = talloc_zero(parent_mem, struct descriptor_changes);
+	/*
+	 * First we check if we already have an registration
+	 * for the given object.
+	 */
+
+	key = make_tdb_data((const void*)&op->guid, sizeof(op->guid));
+	status = dbwrap_parse_record(t->changes.map, key,
+				     descriptor_changes_parser, &c);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
+		c = NULL;
+		status = NT_STATUS_OK;
+	}
+	if (!NT_STATUS_IS_OK(status)) {
+		ldb_debug(ldb, LDB_DEBUG_FATAL,
+			  "dbwrap_parse_record() - %s\n",
+			  nt_errstr(status));
+		return ldb_module_operr(module);
+	}
+
 	if (c == NULL) {
-		return ldb_module_oom(module);
+		/*
+		 * Create a new structure if we
+		 * don't know about the object yet.
+		 */
+
+		c = talloc_zero(t->mem, struct descriptor_changes);
+		if (c == NULL) {
+			return ldb_module_oom(module);
+		}
+		c->nc_root = ldb_dn_copy(c, op->nc_root);
+		if (c->nc_root == NULL) {
+			return ldb_module_oom(module);
+		}
+		c->guid = op->guid;
 	}
-	c->nc_root = ldb_dn_copy(c, op->nc_root);
-	if (c->nc_root == NULL) {
-		return ldb_module_oom(module);
+
+	if (ldb_dn_compare(c->nc_root, op->nc_root) != 0) {
+		/*
+		 * This is an unexpected situation,
+		 * we don't expect the nc root to change
+		 * during a replication cycle.
+		 */
+		DBG_ERR("ERROR: Object %s nc_root changed %s => %s\n",
+			GUID_string(c, &c->guid),
+			ldb_dn_get_extended_linearized(c, c->nc_root, 1),
+			ldb_dn_get_extended_linearized(c, op->nc_root, 1));
+		return ldb_module_operr(module);
 	}
-	c->guid = op->guid;
+
+	c->ref_count += 1;
+
+	/*
+	 * always use the last known parent_guid.
+	 */
+	c->parent_guid = op->parent_guid;
+
+	/*
+	 * Note that we only set, but don't clear values here,
+	 * it means c->force_self and c->force_children can
+	 * both be true in the end.
+	 */
 	if (op->include_self) {
 		c->force_self = true;
 	} else {
 		c->force_children = true;
 	}
 
-	DLIST_ADD_END(descriptor_private->changes, c);
+	if (c->ref_count == 1) {
+		struct TDB_DATA val = make_tdb_data((const void*)&c, sizeof(c));
+
+		/*
+		 * Remember the change by objectGUID in order
+		 * to avoid processing it more than once.
+		 */
+
+		status = dbwrap_store(t->changes.map, key, val, TDB_INSERT);
+		if (!NT_STATUS_IS_OK(status)) {
+			ldb_debug(ldb, LDB_DEBUG_FATAL,
+				  "dbwrap_parse_record() - %s\n",
+				  nt_errstr(status));
+			return ldb_module_operr(module);
+		}
+
+		DLIST_ADD_END(t->changes.list, c);
+		t->changes.num_registered += 1;
+	}
+	t->changes.num_registrations += 1;
 
 	return ldb_module_done(req, NULL, NULL, LDB_SUCCESS);
 }
@@ -1094,13 +1477,85 @@ static int descriptor_sd_propagation_object(struct ldb_module *module,
 					    struct ldb_message *msg,
 					    bool *stop)
 {
+	struct descriptor_data *descriptor_private =
+		talloc_get_type_abort(ldb_module_get_private(module),
+		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	struct ldb_request *sub_req;
 	struct ldb_result *mod_res;
 	struct ldb_control *sd_propagation_control;
+	struct GUID guid;
 	int ret;
+	TDB_DATA key;
+	TDB_DATA empty_val = { .dsize = 0, };
+	NTSTATUS status;
+	struct descriptor_changes *c = NULL;
 
 	*stop = false;
+
+	/*
+	 * We get the GUID of the object
+	 * in order to have the cache key
+	 * for the object.
+	 */
+
+	status = dsdb_get_extended_dn_guid(msg->dn, &guid, "GUID");
+	if (!NT_STATUS_IS_OK(status)) {
+		return ldb_operr(ldb);
+	}
+	key = make_tdb_data((const void*)&guid, sizeof(guid));
+
+	/*
+	 * Check if we already processed this object.
+	 */
+	status = dbwrap_parse_record(t->objects.map, key,
+				     descriptor_object_parser, NULL);
+	if (NT_STATUS_IS_OK(status)) {
+		/*
+		 * All work is already one
+		 */
+		t->objects.num_skipped += 1;
+		*stop = true;
+		return LDB_SUCCESS;
+	}
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
+		ldb_debug(ldb, LDB_DEBUG_FATAL,
+			  "dbwrap_parse_record() - %s\n",
+			  nt_errstr(status));
+		return ldb_module_operr(module);
+	}
+
+	t->objects.num_processed += 1;
+
+	/*
+	 * Remember that we're processing this object.
+	 */
+	status = dbwrap_store(t->objects.map, key, empty_val, TDB_INSERT);
+	if (!NT_STATUS_IS_OK(status)) {
+		ldb_debug(ldb, LDB_DEBUG_FATAL,
+			  "dbwrap_parse_record() - %s\n",
+			  nt_errstr(status));
+		return ldb_module_operr(module);
+	}
+
+	/*
+	 * Check that if there's a descriptor_change in our list,
+	 * which we may be able to remove from the pending list
+	 * when we processed the object.
+	 */
+
+	status = dbwrap_parse_record(t->changes.map, key, descriptor_changes_parser, &c);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
+		c = NULL;
+		status = NT_STATUS_OK;
+	}
+	if (!NT_STATUS_IS_OK(status)) {
+		ldb_debug(ldb, LDB_DEBUG_FATAL,
+			  "dbwrap_parse_record() - %s\n",
+			  nt_errstr(status));
+		return ldb_module_operr(module);
+	}
 
 	mod_res = talloc_zero(msg, struct ldb_result);
 	if (mod_res == NULL) {
@@ -1153,7 +1608,34 @@ static int descriptor_sd_propagation_object(struct ldb_module *module,
 	}
 
 	if (sd_propagation_control->critical != 0) {
-		*stop = true;
+		if (c == NULL) {
+			/*
+			 * If we don't have a
+			 * descriptor_changes structure
+			 * we're done.
+			 */
+			*stop = true;
+		} else if (!c->force_children) {
+			/*
+			 * If we don't need to
+			 * propagate to children,
+			 * we're done.
+			 */
+			*stop = true;
+		}
+	}
+
+	if (c != NULL && !c->force_children) {
+		/*
+		 * Remove the pending change,
+		 * we already done all required work,
+		 * there's no need to do it again.
+		 *
+		 * Note DLIST_REMOVE() is a noop
+		 * if the element is not part of
+		 * the list.
+		 */
+		DLIST_REMOVE(t->changes.list, c);
 	}
 
 	talloc_free(mod_res);
@@ -1176,6 +1658,10 @@ static int descriptor_sd_propagation_msg_sort(struct ldb_message **m1,
 static int descriptor_sd_propagation_recursive(struct ldb_module *module,
 					       struct descriptor_changes *change)
 {
+	struct descriptor_data *descriptor_private =
+		talloc_get_type_abort(ldb_module_get_private(module),
+		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
 	struct ldb_result *guid_res = NULL;
 	struct ldb_result *res = NULL;
 	unsigned int i;
@@ -1184,6 +1670,8 @@ static int descriptor_sd_propagation_recursive(struct ldb_module *module,
 	struct GUID_txt_buf guid_buf;
 	int ret;
 	bool stop = false;
+
+	t->changes.num_processed += 1;
 
 	/*
 	 * First confirm this object has children, or exists
@@ -1205,7 +1693,8 @@ static int descriptor_sd_propagation_recursive(struct ldb_module *module,
 				 DSDB_FLAG_NEXT_MODULE |
 				 DSDB_FLAG_AS_SYSTEM |
 				 DSDB_SEARCH_SHOW_DELETED |
-				 DSDB_SEARCH_SHOW_RECYCLED,
+				 DSDB_SEARCH_SHOW_RECYCLED |
+				 DSDB_SEARCH_SHOW_EXTENDED_DN,
 				 NULL, /* parent_req */
 				 "(objectGUID=%s)",
 				 GUID_buf_string(&change->guid,
@@ -1300,7 +1789,8 @@ static int descriptor_sd_propagation_recursive(struct ldb_module *module,
 				 LDB_SCOPE_SUBTREE,
 				 no_attrs,
 				 DSDB_FLAG_NEXT_MODULE |
-				 DSDB_FLAG_AS_SYSTEM,
+				 DSDB_FLAG_AS_SYSTEM |
+				 DSDB_SEARCH_SHOW_EXTENDED_DN,
 				 NULL, /* parent_req */
 				 "(objectClass=*)");
 	if (ret != LDB_SUCCESS) {
@@ -1355,16 +1845,29 @@ static int descriptor_start_transaction(struct ldb_module *module)
 	struct descriptor_data *descriptor_private =
 		talloc_get_type_abort(ldb_module_get_private(module),
 		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
 
-	if (descriptor_private->trans_mem != NULL) {
+	if (t->mem != NULL) {
 		return ldb_module_operr(module);
 	}
 
-	descriptor_private->trans_mem = talloc_new(descriptor_private);
-	if (descriptor_private->trans_mem == NULL) {
+	*t = (struct descriptor_transaction) { .mem = NULL, };
+	t->mem = talloc_new(descriptor_private);
+	if (t->mem == NULL) {
 		return ldb_module_oom(module);
 	}
-	descriptor_private->changes = NULL;
+	t->changes.map = db_open_rbt(t->mem);
+	if (t->changes.map == NULL) {
+		TALLOC_FREE(t->mem);
+		*t = (struct descriptor_transaction) { .mem = NULL, };
+		return ldb_module_oom(module);
+	}
+	t->objects.map = db_open_rbt(t->mem);
+	if (t->objects.map == NULL) {
+		TALLOC_FREE(t->mem);
+		*t = (struct descriptor_transaction) { .mem = NULL, };
+		return ldb_module_oom(module);
+	}
 
 	return ldb_next_start_trans(module);
 }
@@ -1374,13 +1877,135 @@ static int descriptor_prepare_commit(struct ldb_module *module)
 	struct descriptor_data *descriptor_private =
 		talloc_get_type_abort(ldb_module_get_private(module),
 		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
+	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	struct descriptor_changes *c, *n;
 	int ret;
 
-	for (c = descriptor_private->changes; c; c = n) {
-		n = c->next;
-		DLIST_REMOVE(descriptor_private->changes, c);
+	DBG_NOTICE("changes: num_registrations=%zu\n",
+		   t->changes.num_registrations);
+	DBG_NOTICE("changes: num_registered=%zu\n",
+		   t->changes.num_registered);
 
+	/*
+	 * The security descriptor propagation
+	 * needs to apply the inheritance from
+	 * an object to itself and/or all it's
+	 * children.
+	 *
+	 * In the initial replication during
+	 * a join, we have every object in our
+	 * list.
+	 *
+	 * In order to avoid useless work it's
+	 * better to start with toplevel objects and
+	 * move down to the leaf object from there.
+	 *
+	 * So if the parent_guid is also in our list,
+	 * we better move the object behind its parent.
+	 *
+	 * It allows that the recursive processing of
+	 * the parent already does the work needed
+	 * for the child.
+	 *
+	 * If we have a list for this directory tree:
+	 *
+	 *  A
+	 *    -> B
+	 *        -> C
+	 *            -> D
+	 *                -> E
+	 *
+	 * The initial list would have the order D, E, B, A, C
+	 *
+	 * By still processing from the front, we ensure that,
+	 * when D is found to be below C, that E follows because
+	 * we keep peeling items off the front for checking and
+	 * move them behind their parent.
+	 *
+	 * So we would go:
+	 *
+	 * E B A C D
+	 *
+	 * B A C D E
+	 *
+	 * A B C D E
+	 */
+	for (c = t->changes.list; c; c = n) {
+		struct descriptor_changes *pc = NULL;
+		n = c->next;
+
+		if (c->sort_count >= t->changes.num_registered) {
+			/*
+			 * This should never happen, but it's
+			 * a sanity check in order to avoid
+			 * endless loops. Just stop sorting.
+			 */
+			break;
+		}
+
+		/*
+		 * Check if we have the parent also in the list.
+		 */
+		if (!GUID_all_zero((const void*)&c->parent_guid)) {
+			TDB_DATA pkey;
+			NTSTATUS status;
+
+			pkey = make_tdb_data((const void*)&c->parent_guid,
+					     sizeof(c->parent_guid));
+
+			status = dbwrap_parse_record(t->changes.map, pkey,
+						     descriptor_changes_parser, &pc);
+			if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
+				pc = NULL;
+				status = NT_STATUS_OK;
+			}
+			if (!NT_STATUS_IS_OK(status)) {
+				ldb_debug(ldb, LDB_DEBUG_FATAL,
+					  "dbwrap_parse_record() - %s\n",
+					  nt_errstr(status));
+				return ldb_module_operr(module);
+			}
+		}
+
+		if (pc == NULL) {
+			/*
+			 * There is no parent in the list
+			 */
+			t->changes.num_toplevel += 1;
+			continue;
+		}
+
+		/*
+		 * Move the child after the parent
+		 *
+		 * Note that we do that multiple times
+		 * in case the parent already moved itself.
+		 *
+		 * See the comment above the loop.
+		 */
+		DLIST_REMOVE(t->changes.list, c);
+		DLIST_ADD_AFTER(t->changes.list, c, pc);
+
+		/*
+		 * Remember how often we moved the object
+		 * in order to avoid endless loops.
+		 */
+		c->sort_count += 1;
+	}
+
+	DBG_NOTICE("changes: num_toplevel=%zu\n", t->changes.num_toplevel);
+
+	while (t->changes.list != NULL) {
+		c = t->changes.list;
+
+		DLIST_REMOVE(t->changes.list, c);
+
+		/*
+		 * Note that descriptor_sd_propagation_recursive()
+		 * may also remove other elements of the list,
+		 * so we can't use a next pointer
+		 */
 		ret = descriptor_sd_propagation_recursive(module, c);
 		if (ret == LDB_ERR_NO_SUCH_OBJECT) {
 			continue;
@@ -1390,6 +2015,10 @@ static int descriptor_prepare_commit(struct ldb_module *module)
 		}
 	}
 
+	DBG_NOTICE("changes: num_processed=%zu\n", t->changes.num_processed);
+	DBG_NOTICE("objects: num_processed=%zu\n", t->objects.num_processed);
+	DBG_NOTICE("objects: num_skipped=%zu\n", t->objects.num_skipped);
+
 	return ldb_next_prepare_commit(module);
 }
 
@@ -1398,9 +2027,10 @@ static int descriptor_end_transaction(struct ldb_module *module)
 	struct descriptor_data *descriptor_private =
 		talloc_get_type_abort(ldb_module_get_private(module),
 		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
 
-	TALLOC_FREE(descriptor_private->trans_mem);
-	descriptor_private->changes = NULL;
+	TALLOC_FREE(t->mem);
+	*t = (struct descriptor_transaction) { .mem = NULL, };
 
 	return ldb_next_end_trans(module);
 }
@@ -1410,9 +2040,10 @@ static int descriptor_del_transaction(struct ldb_module *module)
 	struct descriptor_data *descriptor_private =
 		talloc_get_type_abort(ldb_module_get_private(module),
 		struct descriptor_data);
+	struct descriptor_transaction *t = &descriptor_private->transaction;
 
-	TALLOC_FREE(descriptor_private->trans_mem);
-	descriptor_private->changes = NULL;
+	TALLOC_FREE(t->mem);
+	*t = (struct descriptor_transaction) { .mem = NULL, };
 
 	return ldb_next_del_trans(module);
 }

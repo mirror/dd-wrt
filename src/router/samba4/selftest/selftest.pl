@@ -55,6 +55,7 @@ my @opt_include_env = ();
 my $opt_testenv = 0;
 my $opt_list = 0;
 my $opt_mitkrb5 = 0;
+my $opt_default_ldb_backend = "mdb";
 my $opt_resetup_env = undef;
 my $opt_load_list = undef;
 my $opt_libnss_wrapper_so_path = "";
@@ -62,6 +63,7 @@ my $opt_libresolv_wrapper_so_path = "";
 my $opt_libsocket_wrapper_so_path = "";
 my $opt_libuid_wrapper_so_path = "";
 my $opt_libasan_so_path = "";
+my $opt_libcrypt_so_path = "";
 my $opt_use_dns_faking = 0;
 my @testlists = ();
 
@@ -208,7 +210,7 @@ DNS:
 
 Target Specific:
  --socket-wrapper-pcap      save traffic to pcap directories
- --socket-wrapper-keep-pcap keep all pcap files, not just those for tests that 
+ --socket-wrapper-keep-pcap keep all pcap files, not just those for tests that
                             failed
  --socket-wrapper           enable socket wrapper
 
@@ -239,6 +241,7 @@ my $result = GetOptions (
 		'testenv' => \$opt_testenv,
 		'list' => \$opt_list,
 		'mitkrb5' => \$opt_mitkrb5,
+		'default-ldb-backend=s' => \$opt_default_ldb_backend,
 		'resetup-environment' => \$opt_resetup_env,
 		'testlist=s' => \@testlists,
 		'random-order' => \$opt_random_order,
@@ -248,6 +251,7 @@ my $result = GetOptions (
 		'socket_wrapper_so_path=s' => \$opt_libsocket_wrapper_so_path,
 		'uid_wrapper_so_path=s' => \$opt_libuid_wrapper_so_path,
 		'asan_so_path=s' => \$opt_libasan_so_path,
+		'crypt_so_path=s' => \$opt_libcrypt_so_path,
 		'use-dns-faking' => \$opt_use_dns_faking
 	    );
 
@@ -346,9 +350,17 @@ my $ld_preload = $ENV{LD_PRELOAD};
 
 if ($opt_libasan_so_path) {
 	if ($ld_preload) {
-		$ld_preload = "$opt_libasan_so_path:$ld_preload";
+		if ($opt_libcrypt_so_path) {
+			$ld_preload = "$opt_libasan_so_path:$opt_libcrypt_so_path:$ld_preload";
+		} else {
+			$ld_preload = "$opt_libasan_so_path:$ld_preload";
+		}
 	} else {
-		$ld_preload = "$opt_libasan_so_path";
+		if ($opt_libcrypt_so_path) {
+			$ld_preload = "$opt_libasan_so_path:$opt_libcrypt_so_path";
+		} else {
+			$ld_preload = "$opt_libasan_so_path";
+		}
 	}
 }
 
@@ -450,7 +462,8 @@ if (defined($ENV{SMBD_MAXTIME}) and $ENV{SMBD_MAXTIME} ne "") {
 
 $target = new Samba($bindir, $srcdir, $server_maxtime,
 		    $opt_socket_wrapper_pcap,
-		    $opt_socket_wrapper_keep_pcap);
+		    $opt_socket_wrapper_keep_pcap,
+		    $opt_default_ldb_backend);
 unless ($opt_list) {
 	if ($opt_target eq "samba") {
 		$testenv_default = "ad_dc";
@@ -464,14 +477,14 @@ sub read_test_regexes($)
 	my ($name) = @_;
 	my @ret = ();
 	open(LF, "<$name") or die("unable to read $name: $!");
-	while (<LF>) { 
-		chomp; 
+	while (<LF>) {
+		chomp;
 		next if (/^#/);
 		if (/^(.*?)([ \t]+)\#([\t ]*)(.*?)$/) {
 			push (@ret, [$1, $4]);
 		} else {
 			s/^(.*?)([ \t]+)\#([\t ]*)(.*?)$//;
-			push (@ret, [$_, undef]); 
+			push (@ret, [$_, undef]);
 		}
 	}
 	close(LF);
@@ -981,7 +994,7 @@ $envvarstr
 			next;
 		}
 
-		# Generate a file with the individual tests to run, if the 
+		# Generate a file with the individual tests to run, if the
 		# test runner for this test suite supports it.
 		if ($individual_tests and $individual_tests->{$name}) {
 			if ($$_[3]) {

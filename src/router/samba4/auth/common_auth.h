@@ -49,14 +49,14 @@ struct auth_usersupplied_info
 
 	uint32_t logon_parameters;
 
-	bool mapped_state;
+	bool cracknames_called;
 	bool was_mapped;
 	uint64_t logon_id;
 	/* the values the client gives us */
 	struct {
 		const char *account_name;
 		const char *domain_name;
-	} client, mapped;
+	} client, mapped, orig_client;
 
 	enum auth_password_state password_state;
 
@@ -128,6 +128,9 @@ struct auth4_context {
 
 	/* Private data for the callbacks on this auth context */
 	void *private_data;
+
+	/* Kerberos context, set up on demand */
+	struct smb_krb5_context *smb_krb5_context;
 
 	struct tevent_req *(*check_ntlm_password_send)(TALLOC_CTX *mem_ctx,
 					struct tevent_context *ev,

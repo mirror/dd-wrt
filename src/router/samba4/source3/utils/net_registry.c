@@ -613,7 +613,12 @@ static int net_registry_increment(struct net_context *c, int argc,
 		goto done;
 	}
 
-	status = g_lock_lock(ctx, lock_key, G_LOCK_WRITE, timeval_set(600, 0));
+	status = g_lock_lock(ctx,
+			     lock_key,
+			     G_LOCK_WRITE,
+			     timeval_set(600, 0),
+			     NULL,
+			     NULL);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_fprintf(stderr, _("g_lock_lock failed: %s\n"),
 			  nt_errstr(status));
@@ -1133,6 +1138,15 @@ done:
 	talloc_free(frame);
 	ctx->failed = !W_ERROR_IS_OK(werr);
 	return werr;
+}
+
+static int registry_value_cmp(
+	const struct registry_value* v1, const struct registry_value* v2)
+{
+	if (v1->type == v2->type) {
+		return data_blob_cmp(&v1->data, &v2->data);
+	}
+	return v1->type - v2->type;
 }
 
 static WERROR precheck_create_val(struct precheck_ctx *ctx,

@@ -145,7 +145,7 @@ static bool torture_check_krb5_error(struct torture_krb5_context *test_context,
 	rc = decode_KRB_ERROR(reply->data, reply->length, &error, &used);
 	torture_assert_int_equal(test_context->tctx,
 				 rc, 0,
-				 "decode_AS_REP failed");
+				 "decode_KRB_ERROR failed");
 
 	torture_assert_int_equal(test_context->tctx,
 				 used, reply->length,
@@ -161,7 +161,8 @@ static bool torture_check_krb5_error(struct torture_krb5_context *test_context,
 		METHOD_DATA m;
 		size_t len;
 		int i;
-		bool found = false;
+		bool found_enc_ts = false;
+		bool found_etype_info2 = false;
 			torture_assert(test_context->tctx,
 				       error.e_data != NULL,
 				       "No e-data returned");
@@ -174,27 +175,24 @@ static bool torture_check_krb5_error(struct torture_krb5_context *test_context,
 						 rc, 0,
 						 "Got invalid method data");
 
-			/*
-			 * NOTE:
-			 *
-			 * Windows (eg Server 1709) only returns a
-			 * KRB5_PADATA_ETYPE_INFO2 in this situation.
-			 * This test should be fixed but care needs to
-			 * be taken not to reintroduce
-			 * https://bugzilla.samba.org/show_bug.cgi?id=11539
-			 */
 			torture_assert(test_context->tctx,
 				       m.len > 0,
 				       "No PA_DATA given");
 			for (i = 0; i < m.len; i++) {
 				if (m.val[i].padata_type == KRB5_PADATA_ENC_TIMESTAMP) {
-					found = true;
-					break;
+					found_enc_ts = true;
+				}
+				else if (m.val[i].padata_type == KRB5_PADATA_ETYPE_INFO2) {
+					found_etype_info2 = true;
 				}
 			}
 			torture_assert(test_context->tctx,
-				       found,
-				       "Encrypted timestamp not found");
+				       found_etype_info2,
+				       "PADATA_ETYPE_INFO2 not found");
+			if (expected_error != KRB5KDC_ERR_PREAUTH_FAILED)
+				torture_assert(test_context->tctx,
+					       found_enc_ts,
+					       "Encrypted timestamp not found");
 	}
 
 	free_KRB_ERROR(&error);
@@ -392,16 +390,8 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 			torture_assert(test_context->tctx,
 				       ok,
 				       "torture_check_krb5_error failed");
-		} else if (test_context->packet_count == 1) {
-			ok = torture_check_krb5_error(test_context,
-						      recv_buf,
-						      KRB5KRB_ERR_RESPONSE_TOO_BIG,
-						      false);
-			torture_assert(test_context->tctx,
-				       ok,
-				       "torture_check_krb5_error failed");
 		} else if ((decode_KRB_ERROR(recv_buf->data, recv_buf->length, &error, &used) == 0)
-			   && (test_context->packet_count == 2)) {
+			   && (test_context->packet_count == 1)) {
 			torture_assert_int_equal(test_context->tctx, used, recv_buf->length, "length mismatch");
 			torture_assert_int_equal(test_context->tctx, error.pvno, 5, "Got wrong error.pvno");
 			torture_assert_int_equal(test_context->tctx, error.error_code, KRB5KRB_ERR_RESPONSE_TOO_BIG - KRB5KDC_ERR_NONE,
@@ -415,7 +405,7 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
 			torture_assert_int_equal(test_context->tctx, test_context->as_rep.pvno, 5, "Got wrong as_rep->pvno");
 			free_AS_REP(&test_context->as_rep);
 		}
-		torture_assert(test_context->tctx, test_context->packet_count < 3, "too many packets");
+		torture_assert(test_context->tctx, test_context->packet_count < 2, "too many packets");
 		free_AS_REQ(&test_context->as_req);
 		break;
 
@@ -654,9 +644,10 @@ static bool torture_krb5_post_recv_test(struct torture_krb5_context *test_contex
  * any KDC' message.
  *
  */
-static krb5_error_code smb_krb5_send_and_recv_func_override(krb5_context context,
+static krb5_error_code test_krb5_send_to_realm_override(
+						    struct smb_krb5_context *smb_krb5_context,
 						    void *data, /* struct torture_krb5_context */
-						    krb5_krbhst_info *hi,
+						    krb5_const_realm realm,
 						    time_t timeout,
 						    const krb5_data *send_buf,
 						    krb5_data *recv_buf)
@@ -673,8 +664,11 @@ static krb5_error_code smb_krb5_send_and_recv_func_override(krb5_context context
 		return EINVAL;
 	}
 
-	k5ret = smb_krb5_send_and_recv_func_forced(context, test_context->server,
-						    hi, timeout, &modified_send_buf, recv_buf);
+	k5ret = smb_krb5_send_and_recv_func_forced_tcp(smb_krb5_context,
+						       test_context->server,
+						       timeout,
+						       &modified_send_buf,
+						       recv_buf);
 	if (k5ret != 0) {
 		return k5ret;
 	}
@@ -722,9 +716,10 @@ static bool torture_krb5_init_context(struct torture_context *tctx,
 
 	set_sockaddr_port(test_context->server->ai_addr, 88);
 
-	k5ret = krb5_set_send_to_kdc_func((*smb_krb5_context)->krb5_context,
-					  smb_krb5_send_and_recv_func_override,
-					  test_context);
+	k5ret = smb_krb5_set_send_to_kdc_func((*smb_krb5_context),
+					      test_krb5_send_to_realm_override,
+					      NULL, /* send_to_kdc */
+					      test_context);
 	torture_assert_int_equal(tctx, k5ret, 0, "krb5_set_send_to_kdc_func failed");
 	return true;
 }
@@ -745,7 +740,6 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 	const char *expected_principal_string;
 	krb5_get_init_creds_opt *krb_options = NULL;
 	const char *realm;
-	const char *krb5_service = torture_setting_string(tctx, "krb5-service", "host");
 	const char *krb5_hostname = torture_setting_string(tctx, "krb5-hostname", "");
 
 
@@ -791,7 +785,7 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 		break;
 
 	case TORTURE_KRB5_TEST_AES: {
-		krb5_enctype etype_list[] = { KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96 };
+		static krb5_enctype etype_list[] = { KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96 };
 
 		k5ret = krb5_get_init_creds_opt_alloc(smb_krb5_context->krb5_context,
 						      &krb_options);
@@ -805,7 +799,7 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 		break;
 	}
 	case TORTURE_KRB5_TEST_RC4: {
-		krb5_enctype etype_list[] = { KRB5_ENCTYPE_ARCFOUR_HMAC_MD5 };
+		static krb5_enctype etype_list[] = { KRB5_ENCTYPE_ARCFOUR_HMAC_MD5 };
 
 		k5ret = krb5_get_init_creds_opt_alloc(smb_krb5_context->krb5_context,
 						      &krb_options);
@@ -819,8 +813,8 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 		break;
 	}
 	case TORTURE_KRB5_TEST_AES_RC4: {
-		krb5_enctype etype_list[] = { KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96,
-					      KRB5_ENCTYPE_ARCFOUR_HMAC_MD5 };
+		static krb5_enctype etype_list[] = { KRB5_ENCTYPE_AES256_CTS_HMAC_SHA1_96,
+						     KRB5_ENCTYPE_ARCFOUR_HMAC_MD5 };
 
 		k5ret = krb5_get_init_creds_opt_alloc(smb_krb5_context->krb5_context,
 						      &krb_options);
@@ -906,6 +900,12 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 	{
 		char *got_principal_string;
 		char *assertion_message;
+
+		if (krb5_hostname[0] != '\0') {
+			torture_assert_int_equal(tctx, k5ret, KRB5KRB_AP_ERR_BAD_INTEGRITY, "krb5_get_init_creds_password should have failed");
+			return true;
+		}
+
 		torture_assert_int_equal(tctx, k5ret, 0, "krb5_get_init_creds_password failed");
 
 		torture_assert_int_equal(tctx,
@@ -929,24 +929,6 @@ static bool torture_krb5_as_req_creds(struct torture_context *tctx,
 							    my_creds.client,
 							    principal),
 			       assertion_message);
-
-		if (krb5_hostname[0] == '\0') {
-			break;
-		}
-
-		torture_assert_str_equal(tctx,
-					 my_creds.server->name.name_string.val[0],
-					 krb5_service,
-					 "Mismatch in name[0] between AS_REP and expected response");
-		torture_assert_str_equal(tctx,
-					 my_creds.server->name.name_string.val[1],
-					 krb5_hostname,
-					 "Mismatch in name[1] between AS_REP and expected response");
-
-		torture_assert_str_equal(tctx,
-					 my_creds.server->realm,
-					 realm,
-					 "Mismatch in server realm in AS_REP, expected krbtgt/REALM@REALM");
 
 		break;
 	}

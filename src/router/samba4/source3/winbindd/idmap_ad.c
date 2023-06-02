@@ -25,13 +25,15 @@
 #include "tldap_util.h"
 #include "passdb.h"
 #include "lib/param/param.h"
-#include "utils/net.h"
 #include "auth/gensec/gensec.h"
 #include "librpc/gen_ndr/ndr_netlogon.h"
 #include "libads/ldap_schema_oids.h"
 #include "../libds/common/flags.h"
 #include "libcli/ldap/ldap_ndr.h"
 #include "libcli/security/dom_sid.h"
+#include "source3/libads/sitename_cache.h"
+#include "source3/libads/kerberos_proto.h"
+#include "source3/librpc/gen_ndr/ads.h"
 
 struct idmap_ad_schema_names;
 
@@ -98,19 +100,12 @@ static TLDAPRC get_attrnames_by_oids(struct tldap_context *ld,
 	size_t num_msgs;
 
 	filter = talloc_strdup(mem_ctx, "(|");
-	if (filter == NULL) {
-		return TLDAP_NO_MEMORY;
-	}
 
 	for (i=0; i<num_oids; i++) {
-		filter = talloc_asprintf_append_buffer(
-			filter, "(attributeId=%s)", oids[i]);
-		if (filter == NULL) {
-			return TLDAP_NO_MEMORY;
-		}
+		talloc_asprintf_addbuf(&filter, "(attributeId=%s)", oids[i]);
 	}
+	talloc_asprintf_addbuf(&filter, ")");
 
-	filter = talloc_asprintf_append_buffer(filter, ")");
 	if (filter == NULL) {
 		return TLDAP_NO_MEMORY;
 	}
@@ -324,6 +319,7 @@ static NTSTATUS idmap_ad_get_tldap_ctx(TALLOC_CTX *mem_ctx,
 	struct loadparm_context *lp_ctx;
 	struct tldap_context *ld;
 	uint32_t gensec_features = gensec_features_from_ldap_sasl_wrapping();
+	char *sitename = NULL;
 	int fd;
 	NTSTATUS status;
 	bool ok;
@@ -350,6 +346,22 @@ static NTSTATUS idmap_ad_get_tldap_ctx(TALLOC_CTX *mem_ctx,
 	ok = resolve_name(dcinfo->dc_unc, &dcaddr, 0x20, true);
 	if (!ok) {
 		DBG_DEBUG("Could not resolve name %s\n", dcinfo->dc_unc);
+		TALLOC_FREE(dcinfo);
+		return NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
+	}
+
+	sitename = sitename_fetch(talloc_tos(), lp_realm());
+
+	/*
+	 * create_local_private_krb5_conf_for_domain() can deal with
+	 * sitename==NULL
+	 */
+
+	ok = create_local_private_krb5_conf_for_domain(
+		lp_realm(), lp_workgroup(), sitename, &dcaddr);
+	TALLOC_FREE(sitename);
+	if (!ok) {
+		DBG_DEBUG("Could not create private krb5.conf\n");
 		TALLOC_FREE(dcinfo);
 		return NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
 	}

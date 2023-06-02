@@ -16,6 +16,16 @@ nfs_exports_file="${CTDB_NFS_EXPORTS_FILE:-/var/lib/nfs/etab}"
 # test variable only.
 nfs_distro_style="${CTDB_NFS_DISTRO_STYLE:-systemd-redhat}"
 
+# As above, edit the default value below.  CTDB_SYS_ETCDIR is a
+# test variable only.
+etc_dir="${CTDB_SYS_ETCDIR:-/etc}"
+
+# A value of "AUTO" for any service means that service is usually
+# automatically started and stopped by one of the other services.
+# Such services will still be restarted by hand on failure, if
+# configured to do so.  This allows services that should not be
+# running to be set to "".
+
 case "$nfs_distro_style" in
 systemd-*)
 	# Defaults
@@ -24,11 +34,11 @@ systemd-*)
 	nfs_mountd_service="nfs-mountd"
 	nfs_status_service="rpc-statd"
 	nfs_rquotad_service="rpc-rquotad"
-	nfs_config="/etc/sysconfig/nfs"
+	nfs_config="${etc_dir}/sysconfig/nfs"
 	nfs_rquotad_config="" # Not use with systemd, restart via service
 
 	case "$nfs_distro_style" in
-	*-redhat|*-suse)
+	*-redhat | *-suse)
 		: # Defaults only
 		;;
 	*-debian)
@@ -37,17 +47,18 @@ systemd-*)
 	*)
 		echo "Internal error"
 		exit 1
+		;;
 	esac
 	;;
 
 sysvinit-*)
 	# Defaults
 	nfs_service="nfs"
-	nfs_lock_service=""
-	nfs_mountd_service=""
-	nfs_status_service=""
-	nfs_rquotad_service=""
-	nfs_config="/etc/sysconfig/nfs"
+	nfs_lock_service="AUTO"
+	nfs_mountd_service="AUTO"
+	nfs_status_service="AUTO"
+	nfs_rquotad_service="AUTO"
+	nfs_config="${etc_dir}/sysconfig/nfs"
 	nfs_rquotad_config="$nfs_config"
 
 	case "$nfs_distro_style" in
@@ -59,302 +70,334 @@ sysvinit-*)
 		;;
 	*-debian)
 		nfs_service="nfs-kernel-server"
-		nfs_config="/etc/default/nfs-kernel-server"
-		nfs_rquotad_config="/etc/default/quota"
+		nfs_config="${etc_dir}/default/nfs-kernel-server"
+		nfs_rquotad_config="${etc_dir}/default/quota"
 		;;
 	*)
 		echo "Internal error"
 		exit 1
+		;;
 	esac
 	;;
 
 *)
 	echo "Internal error"
 	exit 1
+	;;
 esac
 
 # Override for unit testing
-if [ -z "$PROCFS_PATH" ] ; then
-    PROCFS_PATH="/proc"
+if [ -z "$PROCFS_PATH" ]; then
+	PROCFS_PATH="/proc"
 fi
 
 ##################################################
 
-usage ()
+usage()
 {
-    _c=$(basename "$0")
-    cat <<EOF
+	_c=$(basename "$0")
+	cat <<EOF
 usage: $_c { shutdown | startup }
        $_c { stop | start } { nfs | nlockmgr }
        $_c { monitor-list-shares | monitor-post }
        $_c { register }
 EOF
-    exit 1
+	exit 1
 }
 
 ##################################################
 
-nfs_load_config ()
+nfs_load_config()
 {
 	_config="${1:-${nfs_config}}"
 
-	if [ -r "$_config" ] ; then
+	if [ -r "$_config" ]; then
 		. "$_config"
 	fi
 }
 
 ##################################################
-# Basic service stop and start
 
-basic_stop ()
+service_is_auto_started()
 {
-	case "$1" in
-	nfs)
-		if [ -n "$nfs_rquotad_service" ] ; then
-			service "$nfs_rquotad_service" stop
-		fi
-
-		service "$nfs_service" stop
-
-		if [ -n "$nfs_lock_service" ] ; then
-			service "$nfs_lock_service" stop
-		fi
-		;;
-	nfslock)
-		if [ -n "$nfs_lock_service" ] ; then
-			service "$nfs_lock_service" stop
-		else
-			service "$nfs_service" stop
-		fi
-		;;
-	*)
-		usage
-	esac
+	[ "$1" = "AUTO" ]
 }
 
-basic_start ()
+service_is_defined()
 {
-	case "$1" in
-	nfs)
-		if [ -n "$nfs_lock_service" ] ; then
-			service "$nfs_lock_service" start
-		fi
+	_service="$1"
 
-		service "$nfs_service" start
+	[ -n "$_service" ] && ! service_is_auto_started "$_service"
+}
 
-		if [ -n "$nfs_rquotad_service" ] ; then
-			service "$nfs_rquotad_service" start
-		fi
-		;;
-	nfslock)
-		if [ -n "$nfs_lock_service" ] ; then
-			service "$nfs_lock_service" start
-		else
-			service "$nfs_service" start
-		fi
-		;;
-	*)
-		usage
-	esac
+service_if_defined()
+{
+	_service="$1"
+	_action="$2"
+
+	if service_is_defined "$_service"; then
+		service "$_service" "$_action"
+	fi
+}
+
+##################################################
+# Overall NFS service stop and start
+
+nfs_service_stop()
+{
+	service_if_defined "$nfs_rquotad_service" stop
+
+	service "$nfs_service" stop
+
+	service_if_defined "$nfs_lock_service" stop
+}
+
+nfs_service_start()
+{
+	service_if_defined "$nfs_lock_service" start
+
+	service "$nfs_service" start
+
+	service_if_defined "$nfs_rquotad_service" start
 }
 
 ##################################################
 # service "stop" and "start" options for restarting
 
-service_stop ()
+manual_stop()
 {
 	case "$1" in
-	nfs)
-		echo 0 >"${PROCFS_PATH}/fs/nfsd/threads"
-		basic_stop "nfs" >/dev/null 2>&1 || true
-		pkill -9 nfsd
-		;;
-	nlockmgr)
-		basic_stop "nfslock" >/dev/null 2>&1 || true
-		;;
 	mountd)
-		if [ -n "$nfs_mountd_service" ] ; then
-			service "$nfs_mountd_service" stop
-			return
-		fi
-
-		# Default to stopping by hand
 		killall -q -9 rpc.mountd
 		;;
 	rquotad)
-		if [ -n "$nfs_rquotad_service" ] ; then
-			service "$nfs_rquotad_service" stop
-			return
-		fi
-
-		# Default to stopping by hand
 		killall -q -9 rpc.rquotad
 		;;
 	status)
-		if [ -n "$nfs_status_service" ] ; then
-			service "$nfs_status_service" stop
-			return
-		fi
-
-		# Default to stopping by hand
 		killall -q -9 rpc.statd
 		;;
 	*)
-		usage
+		echo "$0: Internal error - invalid call to manual_stop()"
+		exit 1
+		;;
 	esac
 }
 
-service_start ()
+service_or_manual_stop()
 {
-	case "$1" in
+	_rpc_service="$1"
+	_system_service="$2"
+
+	if service_is_defined "$_system_service"; then
+		service "$_system_service" stop
+	elif service_is_auto_started "$_system_service"; then
+		manual_stop "$_rpc_service"
+	fi
+}
+
+service_stop()
+{
+	_rpc_service="$1"
+
+	case "$_rpc_service" in
 	nfs)
-		basic_start "nfs"
+		echo 0 >"${PROCFS_PATH}/fs/nfsd/threads"
+		nfs_service_stop >/dev/null 2>&1 || true
+		pkill -9 nfsd
 		;;
 	nlockmgr)
-		basic_start "nfslock"
+		if service_is_defined "$nfs_lock_service" ; then
+			service "$nfs_lock_service" stop >/dev/null 2>&1 || true
+		else
+			service "$nfs_service" stop >/dev/null 2>&1 || true
+		fi
 		;;
 	mountd)
-		if [ -n "$nfs_mountd_service" ] ; then
-			service "$nfs_mountd_service" start
-			return
-		fi
+		service_or_manual_stop "$_rpc_service" "$nfs_mountd_service"
+		;;
+	rquotad)
+		service_or_manual_stop "$_rpc_service" "$nfs_rquotad_service"
+		;;
+	status)
+		service_or_manual_stop "$_rpc_service" "$nfs_status_service"
+		;;
+	*)
+		usage
+		;;
+	esac
+}
 
-		# Default to starting by hand
+manual_start()
+{
+	case "$1" in
+	mountd)
 		nfs_load_config
-		if [ -z "$RPCMOUNTDOPTS" ] ; then
+		if [ -z "$RPCMOUNTDOPTS" ]; then
 			RPCMOUNTDOPTS="${MOUNTD_PORT:+-p }$MOUNTD_PORT"
 		fi
 		# shellcheck disable=SC2086
 		rpc.mountd $RPCMOUNTDOPTS
 		;;
 	rquotad)
-		if [ -n "$nfs_rquotad_service" ] ; then
-			service "$nfs_rquotad_service" start
-			return
-		fi
-
-		# Default to starting by hand
 		nfs_load_config "$nfs_rquotad_config"
-		if [ -z "$RPCRQUOTADOPTS" ] ; then
+		if [ -z "$RPCRQUOTADOPTS" ]; then
 			RPCRQUOTADOPTS="${RQUOTAD_PORT:+-p }$RQUOTAD_PORT"
 		fi
 		# shellcheck disable=SC2086
 		rpc.rquotad $RPCRQUOTADOPTS
 		;;
 	status)
-		if [ -n "$nfs_status_service" ] ; then
-			service "$nfs_status_service" start
-			return
-		fi
-
-		# Default to starting by hand
 		nfs_load_config
 		# Red Hat uses STATDARG, Debian uses STATDOPTS
 		opts="${STATDARG:-${STATDOPTS:-''}}"
-		if [ -z "$opts" ] ; then
+		if [ -z "$opts" ]; then
 			# shellcheck disable=SC2086
 			set -- \
-			    ${STATD_HA_CALLOUT:+-H} $STATD_HA_CALLOUT \
-			    ${STATD_HOSTNAME:+-n} $STATD_HOSTNAME \
-			    ${STATD_PORT:+-p} $STATD_PORT \
-			    ${STATD_OUTGOING_PORT:+-o} $STATD_OUTGOING_PORT
+				${STATD_HA_CALLOUT:+-H} $STATD_HA_CALLOUT \
+				${STATD_HOSTNAME:+-n} $STATD_HOSTNAME \
+				${STATD_PORT:+-p} $STATD_PORT \
+				${STATD_OUTGOING_PORT:+-o} $STATD_OUTGOING_PORT
 			opts="$*"
 		fi
 		# shellcheck disable=SC2086
 		rpc.statd $opts
 		;;
 	*)
+		echo "$0: Internal error - invalid call to manual_start()"
+		exit 1
+		;;
+	esac
+}
+
+service_or_manual_start()
+{
+	_rpc_service="$1"
+	_system_service="$2"
+
+	if service_is_defined "$_system_service"; then
+		service "$_system_service" start
+	elif service_is_auto_started "$_system_service"; then
+		manual_start "$_rpc_service"
+	fi
+}
+
+service_start()
+{
+	_rpc_service="$1"
+
+	case "$_rpc_service" in
+	nfs)
+		nfs_service_start
+		;;
+	nlockmgr)
+		if service_is_defined "$nfs_lock_service" ; then
+			service "$nfs_lock_service" start
+		else
+			service "$nfs_service" start
+		fi
+		;;
+	mountd)
+		service_or_manual_start "$_rpc_service" "$nfs_mountd_service"
+		;;
+	rquotad)
+		service_or_manual_start "$_rpc_service" "$nfs_rquotad_service"
+		;;
+	status)
+		service_or_manual_start "$_rpc_service" "$nfs_status_service"
+		;;
+	*)
 		usage
+		;;
 	esac
 }
 
 ##################################################
 # service init startup and final shutdown
 
-nfs_shutdown ()
+nfs_shutdown()
 {
-    basic_stop "nfs"
+	nfs_service_stop
 }
 
-nfs_startup ()
+nfs_startup()
 {
-    basic_stop "nfs" || true
-    basic_start "nfs"
-    _f="${PROCFS_PATH}/sys/net/ipv4/tcp_tw_recycle"
-    if [ -f "$_f" ] ; then
-	    echo 1 >"$_f"
-    fi
+	nfs_service_stop || true
+	nfs_service_start
+	_f="${PROCFS_PATH}/sys/net/ipv4/tcp_tw_recycle"
+	if [ -f "$_f" ]; then
+		echo 1 >"$_f"
+	fi
 }
 
 ##################################################
 # monitor-post support
 
-nfs_check_thread_count ()
+nfs_check_thread_count()
 {
-    # Load NFS configuration to get desired number of threads.
-    nfs_load_config
+	# Load NFS configuration to get desired number of threads.
+	nfs_load_config
 
-    # If $RPCNFSDCOUNT/$USE_KERNEL_NFSD_NUMBER isn't set then we could
-    # guess the default from the initscript.  However, let's just
-    # assume that those using the default don't care about the number
-    # of threads and that they have switched on this feature in error.
-    _configured_threads="${RPCNFSDCOUNT:-${USE_KERNEL_NFSD_NUMBER}}"
-    if [ -z "$_configured_threads" ] && type nfsconf >/dev/null 2>&1 ; then
-	    _configured_threads=$(nfsconf --get nfsd threads) || true
-    fi
-    [ -n "$_configured_threads" ] || return 0
+	# If $RPCNFSDCOUNT/$USE_KERNEL_NFSD_NUMBER isn't set then we could
+	# guess the default from the initscript.  However, let's just
+	# assume that those using the default don't care about the number
+	# of threads and that they have switched on this feature in error.
+	_configured_threads="${RPCNFSDCOUNT:-${USE_KERNEL_NFSD_NUMBER}}"
+	if [ -z "$_configured_threads" ] && type nfsconf >/dev/null 2>&1; then
+		_configured_threads=$(nfsconf --get nfsd threads) || true
+	fi
+	[ -n "$_configured_threads" ] || return 0
 
-    _threads_file="${PROCFS_PATH}/fs/nfsd/threads"
+	_threads_file="${PROCFS_PATH}/fs/nfsd/threads"
 
-    # nfsd should be running the configured number of threads.  If
-    # there are a different number of threads then tell nfsd the
-    # correct number.
-    read _running_threads <"$_threads_file" || {
-	    echo "WARNING: Reading \"${_threads_file}\" unexpectedly failed"
-	    exit 0
-    }
+	# nfsd should be running the configured number of threads.  If
+	# there are a different number of threads then tell nfsd the
+	# correct number.
+	read -r _running_threads <"$_threads_file" || {
+		echo "WARNING: Reading \"${_threads_file}\" unexpectedly failed"
+		exit 0
+	}
 
-    # Intentionally not arithmetic comparison - avoids extra errors
-    # when above read fails in an unexpected way...
-    if [ "$_running_threads" != "$_configured_threads" ] ; then
-	echo "Attempting to correct number of nfsd threads from ${_running_threads} to ${_configured_threads}"
-	echo "$_configured_threads" >"$_threads_file"
-    fi
+	# Intentionally not arithmetic comparison - avoids extra errors
+	# when above read fails in an unexpected way...
+	if [ "$_running_threads" != "$_configured_threads" ]; then
+		echo "Attempting to correct number of nfsd threads from ${_running_threads} to ${_configured_threads}"
+		echo "$_configured_threads" >"$_threads_file"
+	fi
 }
 
 ##################################################
 # list share directories
 
-nfs_monitor_list_shares ()
+nfs_monitor_list_shares()
 {
-    _cache_file="${CTDB_NFS_CALLOUT_STATE_DIR}/list_shares_cache"
-    # -nt operator is well supported in Linux: dash, bash, ksh, ...
-    # shellcheck disable=SC2039,SC3013
-    if  [ ! -r "$nfs_exports_file" ] || [ ! -r "$_cache_file" ] || \
-	    [ "$nfs_exports_file" -nt "$_cache_file" ] ; then
-	mkdir -p "$CTDB_NFS_CALLOUT_STATE_DIR"
-	# We could just use the contents of $nfs_exports_file.
-	# However, let's regard that file as internal to NFS and use
-	# exportfs, which is the public API.
-	if ! _exports=$(exportfs -v) ; then
-	    echo "WARNING: failed to run exportfs to list NFS shares" >&2
-	    return
+	_cache_file="${CTDB_NFS_CALLOUT_STATE_DIR}/list_shares_cache"
+	# -nt operator is well supported in Linux: dash, bash, ksh, ...
+	# shellcheck disable=SC2039,SC3013
+	if [ ! -r "$nfs_exports_file" ] || [ ! -r "$_cache_file" ] ||
+		[ "$nfs_exports_file" -nt "$_cache_file" ]; then
+		mkdir -p "$CTDB_NFS_CALLOUT_STATE_DIR"
+		# We could just use the contents of $nfs_exports_file.
+		# However, let's regard that file as internal to NFS and use
+		# exportfs, which is the public API.
+		if ! _exports=$(exportfs -v); then
+			echo "WARNING: failed to run exportfs to list NFS shares" >&2
+			return
+		fi
+
+		echo "$_exports" |
+			grep '^/' |
+			sed -e 's@[[:space:]][[:space:]]*[^[:space:]()][^[:space:]()]*([^[:space:]()][^[:space:]()]*)$@@' |
+			sort -u >"$_cache_file"
 	fi
 
-	echo "$_exports" |
-	    grep '^/' |
-	    sed -e 's@[[:space:]][[:space:]]*[^[:space:]()][^[:space:]()]*([^[:space:]()][^[:space:]()]*)$@@' |
-	    sort -u >"$_cache_file"
-    fi
-
-    cat "$_cache_file"
+	cat "$_cache_file"
 }
 
 ##################################################
 
-nfs_register ()
+nfs_register()
 {
-    cat <<EOF
+	cat <<EOF
 shutdown
 startup
 stop
@@ -367,31 +410,32 @@ EOF
 ##################################################
 
 case "$1" in
-    shutdown)
+shutdown)
 	nfs_shutdown
 	;;
-    startup)
+startup)
 	nfs_startup
 	;;
-    stop)
+stop)
 	service_stop "$2"
 	;;
-    start)
+start)
 	service_start "$2"
 	;;
-    monitor-list-shares)
+monitor-list-shares)
 	nfs_monitor_list_shares
 	;;
-    monitor-post)
+monitor-post)
 	nfs_check_thread_count
 	;;
-    register)
+register)
 	nfs_register
 	;;
-    monitor-pre|releaseip|takeip|releaseip-pre|takeip-pre)
+monitor-pre | releaseip | takeip | releaseip-pre | takeip-pre)
 	# Not required/implemented
 	:
 	;;
-    *)
+*)
 	usage
+	;;
 esac

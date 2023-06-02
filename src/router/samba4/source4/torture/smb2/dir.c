@@ -116,7 +116,7 @@ static bool test_find(struct torture_context *tctx,
 	NTSTATUS status;
 	bool ret = true;
 	unsigned int count;
-	int i, j, file_count = 0;
+	int i, j = 0, file_count = 0;
 
 	status = populate_tree(tctx, mem_ctx, tree, files, NFILES, &h);
 
@@ -720,7 +720,7 @@ static NTSTATUS multiple_smb2_search(struct smb2_tree *tree,
 	ZERO_STRUCT(f);
 	f.in.file.handle        = *h;
 	f.in.pattern            = pattern;
-	f.in.max_response_size  = 0x1000;
+	f.in.max_response_size  = 1024*1024;
 	f.in.level              = level;
 
 	/* The search should start from the beginning everytime */
@@ -1300,9 +1300,10 @@ static bool test_large_files(struct torture_context *tctx,
 	struct smb2_find f;
 	struct smb2_handle h = {{0}};
 	union smb_search_data *d;
-	int i, j, file_count = 0;
+	int i, j = 0, file_count = 0;
 	char **strs = NULL;
 	unsigned count;
+	struct timespec ts1, ts2;
 
 	torture_comment(tctx,
 	    "Testing directory enumeration in a directory with >1000 files\n");
@@ -1347,6 +1348,8 @@ static bool test_large_files(struct torture_context *tctx,
 	f.in.max_response_size  = 0x100;
 	f.in.level              = SMB2_FIND_BOTH_DIRECTORY_INFO;
 
+	clock_gettime_mono(&ts1);
+
 	do {
 		status = smb2_find_level(tree, tree, &f, &count, &d);
 		if (NT_STATUS_EQUAL(status, STATUS_NO_MORE_FILES))
@@ -1386,6 +1389,8 @@ static bool test_large_files(struct torture_context *tctx,
 	torture_assert_int_equal_goto(tctx, file_count, num_files + 2, ret,
 				      done, "");
 
+	clock_gettime_mono(&ts2);
+
 	for (i = 0; i < num_files; i++) {
 		if (files[j].found)
 			continue;
@@ -1396,6 +1401,10 @@ static bool test_large_files(struct torture_context *tctx,
 		ret = false;
 		goto done;
 	}
+
+	torture_comment(tctx, "Directory enumeration completed in %.3f s.\n",
+			timespec_elapsed2(&ts1, &ts2));
+
 done:
 	smb2_util_close(tree, h);
 	smb2_deltree(tree, DNAME);
@@ -1403,6 +1412,178 @@ done:
 
 	return ret;
 }
+
+/*
+ * basic testing of search calls using many files,
+ * including renaming files
+ */
+#define NUM_FILES 1000
+static bool test_1k_files_rename(struct torture_context *tctx,
+                            struct smb2_tree *tree)
+{
+	TALLOC_CTX *mem_ctx = talloc_new(tctx);
+	const int num_files = NUM_FILES;
+	int rename_index = 0;
+	int i, j;
+	char *fname_list[NUM_FILES] = {0};
+	bool ret = true;
+	NTSTATUS status;
+	struct multiple_result result;
+	struct smb2_create create;
+	struct smb2_create dir;
+	struct smb2_handle dir_handle;
+	struct smb2_create open;
+	union smb_setfileinfo sinfo;
+	struct timespec ts1, ts2;
+	bool reopen;
+
+	reopen = torture_setting_bool(tctx, "1k_files_rename_reopendir", false);
+
+	torture_comment(tctx, "Testing with %d files\n", num_files);
+
+	smb2_deltree(tree, DNAME);
+
+	dir = (struct smb2_create) {
+		.in.desired_access = SEC_DIR_LIST,
+		.in.file_attributes   = FILE_ATTRIBUTE_DIRECTORY,
+		.in.create_disposition = NTCREATEX_DISP_OPEN_IF,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+		.in.create_options = NTCREATEX_OPTIONS_DIRECTORY,
+		.in.fname = DNAME,
+	};
+
+	status = smb2_create(tree, tree, &dir);
+	torture_assert_ntstatus_ok(tctx, status,
+				   "Could not create test directory");
+
+	dir_handle = dir.out.file.handle;
+
+	/* Create 1k files, store in array for later rename */
+
+	torture_comment(tctx, "Create files.\n");
+	create = (struct smb2_create) {
+		.in.desired_access = SEC_RIGHTS_FILE_ALL,
+		.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+		.in.create_disposition = NTCREATEX_DISP_CREATE,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+	};
+
+	for (i = num_files - 1; i >= 0; i--) {
+		fname_list[i] = talloc_asprintf(mem_ctx, DNAME "\\t%03d.txt", i);
+		torture_assert_not_null_goto(tctx, fname_list[i], ret, done,
+					     "talloc_asprintf failed");
+
+		create.in.fname = fname_list[i];
+
+		status = smb2_create(tree, mem_ctx, &create);
+		torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+						"smb2_create failed\n");
+
+		status = smb2_util_close(tree, create.out.file.handle);
+		torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+						"smb2_util_close failed\n");
+	}
+
+	open = (struct smb2_create) {
+		.in.desired_access = SEC_RIGHTS_FILE_ALL | SEC_STD_DELETE,
+		.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+		.in.create_disposition = NTCREATEX_DISP_OPEN,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+	};
+
+	clock_gettime_mono(&ts1);
+
+	for (j = 0; j < 100; j++) {
+		ZERO_STRUCT(result);
+		result.tctx = talloc_new(tctx);
+
+		torture_comment(tctx, "Iteration: %02d of 100.\n", j);
+
+		if (reopen) {
+			torture_comment(
+				tctx, "Close and reopen test directory \n");
+			smb2_util_close(tree, dir_handle);
+
+			status = smb2_create(tree, tree, &dir);
+			torture_assert_ntstatus_ok_goto(
+				tctx, status, ret, done,
+				"Could not reopen test directory");
+
+			dir_handle = dir.out.file.handle;
+		}
+
+		status = multiple_smb2_search(tree, tctx, "*",
+				SMB2_FIND_FULL_DIRECTORY_INFO,
+				RAW_SEARCH_DATA_FULL_DIRECTORY_INFO,
+				100,
+				&result, &dir_handle);
+		torture_assert_int_equal_goto(tctx, result.count, num_files,
+				ret, done, "Wrong number of files");
+
+		/* Check name validity of all files*/
+		compare_data_level = RAW_SEARCH_DATA_FULL_DIRECTORY_INFO;
+		level_sort = SMB2_FIND_FULL_DIRECTORY_INFO;
+
+		TYPESAFE_QSORT(result.list, result.count, search_compare);
+
+		for (i = 0; i < result.count; i++) {
+			const char *s = NULL;
+			char *dname_s = NULL;
+
+			s = extract_name(&result.list[i],
+					SMB2_FIND_FULL_DIRECTORY_INFO,
+					RAW_SEARCH_DATA_FULL_DIRECTORY_INFO);
+			dname_s = talloc_asprintf(mem_ctx, DNAME "\\%s", s);
+			torture_assert_not_null_goto(tctx, dname_s, ret, done,
+						     "talloc_asprintf failed");
+
+			torture_assert_str_equal_goto(tctx, dname_s, fname_list[i], ret,
+					done, "Incorrect name\n");
+			TALLOC_FREE(dname_s);
+		}
+
+		TALLOC_FREE(result.tctx);
+
+		/* Rename one file */
+		open.in.fname = fname_list[rename_index];
+
+		status = smb2_create(tree, tctx, &open);
+		torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+						"Failed open\n");
+
+		sinfo = (union smb_setfileinfo) {
+			.rename_information.level = RAW_SFILEINFO_RENAME_INFORMATION,
+			.rename_information.in.file.handle = open.out.file.handle,
+		};
+
+		TALLOC_FREE(fname_list[rename_index]);
+		fname_list[rename_index] = talloc_asprintf(
+			mem_ctx, DNAME "\\t%03d-rename.txt", rename_index);
+		sinfo.rename_information.in.new_name = fname_list[rename_index];
+
+		torture_comment(tctx, "Renaming test file to: %s\n",
+				sinfo.rename_information.in.new_name);
+
+		status = smb2_setinfo_file(tree, &sinfo);
+		torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+						"Failed setinfo/rename\n");
+
+		rename_index++;
+		smb2_util_close(tree, open.out.file.handle);
+	}
+
+	clock_gettime_mono(&ts2);
+
+	torture_comment(tctx, "\nDirectory enumeration completed in %.3f s.\n",
+	                timespec_elapsed2(&ts1, &ts2));
+
+done:
+	TALLOC_FREE(mem_ctx);
+	smb2_util_close(tree, dir_handle);
+	smb2_deltree(tree, DNAME);
+	return ret;
+}
+#undef NUM_FILES
 
 struct torture_suite *torture_smb2_dir_init(TALLOC_CTX *ctx)
 {
@@ -1417,6 +1598,8 @@ struct torture_suite *torture_smb2_dir_init(TALLOC_CTX *ctx)
 	torture_suite_add_1smb2_test(suite, "sorted", test_sorted);
 	torture_suite_add_1smb2_test(suite, "file-index", test_file_index);
 	torture_suite_add_1smb2_test(suite, "large-files", test_large_files);
+	torture_suite_add_1smb2_test(suite, "1kfiles_rename", test_1k_files_rename);
+
 	suite->description = talloc_strdup(suite, "SMB2-DIR tests");
 
 	return suite;

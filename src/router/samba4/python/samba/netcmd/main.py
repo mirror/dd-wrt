@@ -81,3 +81,17 @@ class cmd_sambatool(SuperCommand):
     subcommands["ou"] = None
     subcommands["processes"] = None
     subcommands["visualize"] = None
+
+
+def samba_tool(*args, **kwargs):
+    """A single function that runs samba-tool, returning an error code on
+    error, and None on success."""
+    try:
+        cmd, argv = cmd_sambatool()._resolve("samba-tool", *args, **kwargs)
+        ret = cmd._run(*argv)
+    except SystemExit as e:
+        ret = e.code
+    except Exception as e:
+        cmd.show_command_error(e)
+        ret = 1
+    return ret

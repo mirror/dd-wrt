@@ -39,9 +39,6 @@
 #define DBGC_CLASS virusfilter_debug_class
 extern int virusfilter_debug_class;
 
-/* Samba's global variable */
-extern userdom_struct current_user_info;
-
 #define VIRUSFILTER_VERSION "0.1.5"
 
 /* ====================================================================== */
@@ -82,6 +79,9 @@ struct virusfilter_config {
 
 	/* Exclude files */
 	name_compare_entry		*exclude_files;
+
+	/* Infected files */
+	name_compare_entry		*infected_files;
 
 	/* Scan result cache */
 	struct virusfilter_cache	*cache;
@@ -149,5 +149,6 @@ struct virusfilter_backend {
 int virusfilter_sophos_init(struct virusfilter_config *config);
 int virusfilter_fsav_init(struct virusfilter_config *config);
 int virusfilter_clamav_init(struct virusfilter_config *config);
+int virusfilter_dummy_init(struct virusfilter_config *config);
 
 #endif /* _VIRUSFILTER_COMMON_H */

@@ -2,12 +2,12 @@
 .\"     Title: idmap_hash
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "IDMAP_HASH" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "IDMAP_HASH" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,8 @@
 idmap_hash \- DO NOT USE THIS BACKEND
 .SH "DESCRIPTION"
 .PP
-DO NOT USE THIS PLUGIN The idmap_hash plugin implements a hashing algorithm used to map SIDs for domain users and groups to 31\-bit uids and gids, respectively\&. This plugin also implements the nss_info API and can be used to support a local name mapping files if enabled via the "winbind normalize names" and "winbind nss info" parameters in smb\&.conf\&. The module divides the range into subranges for each domain that is being handled by the idmap config\&. The module needs the complete UID and GID range to be able to map all SIDs\&. The lowest value for the range should be the smallest ID available in the system\&. This is normally 1000\&. The highest ID should be set to 2147483647\&. A smaller range will lead to issues because of the hashing algorithm used\&. The overall range to map all SIDs is 0 \- 2147483647\&. Any range smaller than 0 \- 2147483647 will filter some SIDs\&. As we can normally only start with 1000, we are not able to map 1000 SIDs\&. This already can lead to issues\&. The smaller the range the less SIDs can be mapped\&. We do not recommend to use this plugin\&. It will be removed in a future release of Samba\&.
+DO NOT USE THIS PLUGIN The idmap_hash plugin implements a hashing algorithm used to map SIDs for domain users and groups to 31\-bit uids and gids, respectively\&. This plugin also implements the nss_info API and can be used to support a local name mapping files if enabled via the "winbind normalize names" and "winbind nss info" parameters in
+${prefix}/etc/smb\&.conf\&. The module divides the range into subranges for each domain that is being handled by the idmap config\&. The module needs the complete UID and GID range to be able to map all SIDs\&. The lowest value for the range should be the smallest ID available in the system\&. This is normally 1000\&. The highest ID should be set to 2147483647\&. A smaller range will lead to issues because of the hashing algorithm used\&. The overall range to map all SIDs is 0 \- 2147483647\&. Any range smaller than 0 \- 2147483647 will filter some SIDs\&. As we can normally only start with 1000, we are not able to map 1000 SIDs\&. This already can lead to issues\&. The smaller the range the less SIDs can be mapped\&. We do not recommend to use this plugin\&. It will be removed in a future release of Samba\&.
 .SH "IDMAP OPTIONS"
 .PP
 name_map
