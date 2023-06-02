@@ -52,6 +52,13 @@ int mk_nodog_conf(void)
 	fprintf(fp, "\tFirewallRule allow all\n");
 	fprintf(fp, "}\n");
 	fprintf(fp, "FirewallRuleSet preauthenticated-users {\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 108.177.122.94\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 17.253.7.203\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 64.233.177.104\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 13.107.4.52\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 131.107.255.255\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 23.63.249.202\n");
+	fprintf(fp, "\tFirewallRule allow tcp port 80 to 34.107.221.82\n");
 	fprintf(fp, "\tFirewallRule allow udp port 53\n");
 	fprintf(fp, "\tFirewallRule allow tcp port 53\n");
 	char var[64];
