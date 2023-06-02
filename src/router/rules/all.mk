@@ -356,6 +356,7 @@ include rules/boinc.mk
 include rules/musl.mk
 include rules/microhttpd.mk
 include rules/nodogsplash.mk
+include rules/opennds.mk
 
 #
 # Generic rules
