@@ -87,9 +87,10 @@ int mk_nodog_conf(void)
 
 	fprintf(fp, "GatewayPort\t%s\n", nvram_default_get("ND_GatewayPort", "2050"));
 	fprintf(fp, "MaxClients\t%s\n", nvram_default_get("ND_MaxClients", "250"));
-	fprintf(fp, "PreAuthIdleTimeout\t%s\n", nvram_default_get("ND_PreAuthIdleTimeout", "10"));
+	fprintf(fp, "PreAuthIdleTimeout\t%s\n", nvram_default_get("ND_PreAuthIdleTimeout", "30"));
 	fprintf(fp, "AuthIdleTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
-	fprintf(fp, "CheckInterval\t%s\n", nvram_default_get("ND_CheckInterval", "30"));
+//	fprintf(fp, "SessionTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
+	fprintf(fp, "CheckInterval\t%s\n", nvram_default_get("ND_CheckInterval", "600"));
 	fprintf(fp, "TrafficControl yes\n");
 	fprintf(fp, "DownloadLimit\t%s\n", nvram_default_get("ND_dl", "0"));
 	fprintf(fp, "UploadLimit\t%s\n", nvram_default_get("ND_ul", "0"));
