@@ -1,0 +1,2 @@
+^samba4.user_account_control.python\(.*\).__main__.UserAccountControlTests.test_add_computer_cc_normal_bare\(.*\)
+^samba4.user_account_control.python\(.*\).__main__.UserAccountControlTests.test_add_computer_sd_cc\(.*\)

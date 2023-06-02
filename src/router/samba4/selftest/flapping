@@ -1,0 +1,35 @@
+# This file contains a list of regular expressions matching the names of
+# tests that are flapping. In other words, they sometimes succeed and
+# sometimes fail, depending on external factors.
+#
+# "make test" will not report failures or successes for tests listed here.
+#
+# DO NOT ADD TESTS HERE UNLESS THEY ARE ACTUALLY FLAPPING
+#
+# It is much better to add known failing tests to 'knownfail', so the
+# test system can warn when they actually start passing.
+^samba3.raw.mux.* #This test is flaky on the async lock time
+^samba3.smbtorture_s3.*OPLOCK4 # fails sometimes on sn-devel
+^samba4.nbt.winsreplication.owned # fails sometimes, timing related
+^samba3.rpc.spoolss.*printserver.enum_printers_old # fails on some hosts due to timing issues ?
+^samba3.rpc.spoolss.printer.*addprinterex.print_test # another intermittent failure
+^samba3.rap.printing # fails sometimes on sn-devel
+^samba3.rpc.spoolss.printer.*addprinter.print_test # fails on some hosts due to timing issues ?
+^samba3.rpc.spoolss.printer.addprinter.print_job_enum # fails on some hosts due to bug 10930
+^samba3.rpc.spoolss.printer.addprinterex.print_job_enum # fails on some hosts due to bug 10930
+^samba3.rpc.lsa.privileges.lsa.Privileges\(nt4_dc\) # fails sometimes on sn-devel
+^samba4.blackbox.gentest # is flakey due to timing
+^samba3.smb2.acls.INHERITANCE\(ad_dc\)  # Seems to flap - succeeds on sn-devel, fails on Fedora 16
+^samba3.smb2.acls.DYNAMIC\(ad_dc\)  # Seems to flap - succeeds on sn-devel, fails on Fedora 16
+^samba3.raw.acls.dynamic\(ad_dc\) # Seems to flap - succeeds on sn-devel, fails on Fedora 16
+^samba3.raw.acls.inheritance\(ad_dc\) # Seems to flap - succeeds on sn-devel, fails on Fedora 16
+^samba3.raw.samba3checkfsp.samba3checkfsp\(ad_dc_smb1\) # Seems to flap - succeeds on sn-devel, fails on Fedora 16
+^samba3.raw.samba3closeerr.samba3closeerr\(ad_dc_smb1\) # Seems to flap - succeeds on sn-devel, fails on Fedora 16
+^samba4.smb2.create.mkdir-dup\(ad_dc_ntvfs\) # This test (for bug 11486) involves a race, not always protected against in the NTVFS file server
+^samba4.winbind.struct.domain_info.ad_member # flakey on sn-devel-104 and sn-devel-144
+#
+# This test just is not reliable in finding the max search limit
+#
+^samba4.ldap.notification.python\(.*\).__main__.LDAPNotificationTest.test_max_search
+^samba3.blackbox.smbclient_s3.*.sending a message to the remote server # flakey on sn-devel-104 and sn-devel-144
+^samba3.blackbox.smbclient_s3.*.creating a good symlink and deleting it by path # flakey on sn-devel-104 and sn-devel-144

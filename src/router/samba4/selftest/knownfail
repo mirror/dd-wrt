@@ -1,0 +1,389 @@
+# This file contains a list of regular expressions matching the names of
+# tests that are expected to fail.
+#
+# "make test" will not report failures for tests listed here and will consider
+# a successful run for any of these tests an error.
+
+^samba3.blackbox.failure.failure # this is designed to fail, for testing our test infrastructure
+.*driver.add_driver_timestamps # we only can store dates, not timestamps
+ ^samba3.smbtorture_s3.crypt_server\(nt4_dc\).SMB2-SESSION-REAUTH # expected to give ACCESS_DENIED SMB2.1 doesn't have encryption
+^samba3.smbtorture_s3.crypt_server\(nt4_dc\).SMB2-SESSION-RECONNECT # expected to give CONNECTION_DISCONNECTED, we need to fix the test
+^samba3.smbtorture_s3.plain.*SMB2-DIR-FSYNC.*\(ad_dc_ntvfs\)
+^samba3.smbtorture_s3.plain.*SMB2-PATH-SLASH.*\(ad_dc_ntvfs\)
+^samba3.smbtorture_s3.plain.LOCK11.*\(ad_dc_ntvfs\)
+^samba3.smb2.session enc.reconnect # expected to give CONNECTION_DISCONNECTED, we need to fix the test
+^samba3.raw.session enc # expected to give ACCESS_DENIED as SMB1 encryption isn't used
+^samba3.smbtorture_s3.crypt_server # expected to give ACCESS_DENIED as SMB1 encryption isn't used
+^samba3.smbtorture_s3.*.LOCK12.*\(fileserver_smb1\)
+^samba3.smbtorture_s3.*.LOCK12.*\(nt4_dc_smb1\)
+^samba3.nbt.dgram.*netlogon2\(nt4_dc\)
+^samba3.*rap.sam.*.useradd # Not provided by Samba 3
+^samba3.*rap.sam.*.userdelete # Not provided by Samba 3
+^samba3.libsmbclient.opendir # This requires a workgroup called 'WORKGROUP' and for netbios browse lists to have been registered
+# see bug 8412
+^samba3.smb2.rename.*.simple_nodelete
+^samba3.smb2.rename.*.no_share_delete_no_delete_access
+^samba3.blackbox.smbclient_machine_auth.plain.*nt4_dc:local # the NT4 DC does not currently set up a self-join
+^samba3.raw.samba3hide.samba3hide\(ad_dc_smb1\) # This test fails against the ad_dc environment.
+^samba3.raw.samba3closeerr.samba3closeerr\(nt4_dc_smb1\) # This test fails against an smbd environment with NT ACLs enabled
+^samba3.raw.samba3closeerr.samba3closeerr\(fileserver_smb1\) # This test fails against an smbd environment with NT ACLs enabled
+^samba3.raw.acls nfs4acl_xattr-simple-40.INHERITFLAGS\(nt4_dc_smb1\) # This (and the follow nfs4acl_xattr tests fail because our NFSv4 backend isn't a complete mapping yet.
+^samba3.raw.acls nfs4acl_xattr-simple-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-41.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-41.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-41.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.INHERITFLAGS\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.inherit_creator_owner\(nt4_d_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.inherit_creator_group\(nt4_dc\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.INHERITFLAGS\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.inherit_creator_owner\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.inherit_creator_group\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-41.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-41.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-41.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.INHERITFLAGS\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.inherit_creator_owner\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.inherit_creator_group\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-41.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-41.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-41.nulldacl\(nt4_dc_smb1\)
+^samba3.base.delete.deltest16a
+^samba3.base.delete.deltest17a
+^samba3.unix.whoami anonymous connection.whoami\(ad_dc_smb1\) # We need to resolve if we should be including SID_NT_WORLD and SID_NT_NETWORK in this token
+# smbclient4 behaves differently from smbclient (s3) when encountering
+# logon failures when possesing a valid ticket. Test below has been
+# changed to use smbclient (in order to support SMB2) and this part of the
+# test fails due to this difference
+^samba4.blackbox.chgdcpass.Test login with kerberos ccache after 2nd password change\(chgdcpass\)
+# these show that we still have some differences between our system
+# with our internal iconv because it passes except when we bypass our
+# internal iconv modules
+^samba4.local.convert_string_handle.system.iconv.gd_ascii
+^samba4.local.convert_string_handle.system.iconv.gd_iso8859_cp850
+^samba4..*base.delete.*.deltest17\(
+^samba4..*base.delete.*.deltest17b
+^samba4..*base.delete.*.deltest17c
+^samba4..*base.delete.*.deltest17e
+^samba4..*base.delete.*.deltest17f
+^samba4..*base.delete.*.deltest20a
+^samba4..*base.delete.*.deltest20b
+^samba4.raw.session.reauth
+^samba4.raw.session.expire1
+^samba4.raw.rename.*.osxrename
+^samba4.raw.rename.*.directory rename
+^samba4.rpc.winreg.*security
+^samba4.local.registry.*.(dir|ldb).check hive security
+^samba4.local.registry.*.local.security
+^samba4.rpc.wkssvc
+^samba4.rpc.handles.*.lsarpc-shared
+^samba4.rpc.epmapper.*.Lookup_simple
+^samba4.rpc.epmapper.*.Map_simple
+^samba4.rpc.epmapper.*.Map_full
+^samba3.rpc.epmapper.*.Map_full
+^samba4.rpc.lsalookup on ncalrpc
+^samba4.rpc.lsalookup on ncacn_np
+^samba4.rpc.lsalookup with seal,padcheck
+^samba4.rpc.lsalookup with validate
+^samba4.rpc.lsalookup with bigendian
+^samba4.rpc.lsa on ncacn_np with seal # This gives NT_STATUS_LOCAL_USER_SESSION_KEY
+^samba4.rpc.lsa with seal # This gives NT_STATUS_LOCAL_USER_SESSION_KEY
+^samba4.rpc.lsa.secrets.*seal # This gives NT_STATUS_LOCAL_USER_SESSION_KEY
+^samba4.rpc.netlogon.*.LogonUasLogon
+^samba4.rpc.netlogon.*.LogonUasLogoff
+^samba4.rpc.netlogon.*.DatabaseSync
+^samba4.rpc.netlogon.*.DatabaseSync2
+^samba4.rpc.netlogon.*.NetrEnumerateTrustedDomains
+^samba4.rpc.netlogon.*.NetrEnumerateTrustedDomainsEx
+^samba4.rpc.netlogon.*.GetPassword
+^samba4.rpc.netlogon.*.DatabaseRedo
+^samba4.rpc.netlogon.*.netlogon.lsa_over_netlogon\(ad_dc\) #Broken by split of \\pipe\lsass from \\pipe\netlogon in the IDL
+^samba4.rpc.netlogon.*.netlogon.SetupCredentialsDowngrade\(ad_dc_ntvfs\) # Broken by allowing NT4 crypto on this environment
+^samba4.rpc.netlogon.*.netlogon.SetupCredentialsDowngrade\(ad_dc_ntvfs:local\) # Broken by allowing NT4 crypto on this environment
+^samba4.rpc.drsuapi.*ncacn_ip_tcp.*validate # should only work with seal
+^samba4.rpc.drsuapi.*ncacn_ip_tcp.*bigendian # should only work with seal
+^samba4.rpc.samr.passwords.validate.*ncacn_ip_tcp.*with.validate # should only work with seal
+^samba4.rpc.samr.passwords.validate.*ncacn_ip_tcp.*with.bigendian # should only work with seal
+^samba4.base.charset.*.Testing partial surrogate
+^samba4.smb2.charset.*.Testing partial surrogate # This test is currently broken
+^samba3.smb2.charset.*.Testing partial surrogate # This test is currently broken
+^samba4.*.base.maximum_allowed		# broken until we implement NTCREATEX_OPTIONS_BACKUP_INTENT
+^samba..*.smb2.maximum_allowed.maximum_allowed
+.*net.api.delshare.*				# DelShare isn't implemented yet
+^samba4.smb2.oplock.doc
+^samba4.smb2.lock.valid-request
+^samba4.raw.lock.multilock6.ad_dc_ntvfs
+^samba4.ldap.python \(ad_dc_default\).Test add_ldif\(\) with BASE64 security descriptor input using WRONG domain SID\(.*\)$
+^samba4.raw.lock.*.async # bug 6960
+^samba4.raw.open.ntcreatex_supersede
+^samba4.smb2.lock.*.multiple-unlock # bug 6959
+^samba4.raw.sfileinfo.*.end-of-file\(.*\)$ # bug 6962
+^samba4.raw.oplock.*.batch22 # bug 6963
+^samba4.raw.oplock.*.doc1
+^samba4.raw.oplock.*.exclusive5
+^samba4.raw.oplock.*.exclusive9
+^samba4.raw.oplock.*.level_ii_1
+^samba4.raw.lock.*.zerobyteread # bug 6974
+^samba4.smb2.lock.*.zerobyteread # bug 6974
+^samba4.raw.streams.*.delete
+^samba4.raw.streams.*.createdisp
+^samba4.raw.streams.*.sumtab
+^samba4.raw.streams.*.perms
+^samba4.raw.acls.INHERITFLAGS
+^samba4.raw.acls.*.create_dir
+^samba4.raw.acls.*.create_owner_dir
+^samba4.raw.acls.*.create_owner_file
+^samba4.smb2.create.*.acldir
+^samba4.smb2.create.*.impersonation
+^samba4.smb2.create.quota-fake-file\(ad_dc_ntvfs\) # not supported by the NTVFS
+^samba4.smb2.create.dosattr_tmp_dir\(ad_dc_ntvfs\)
+^samba4.smb2.acls.*.generic
+^samba4.smb2.acls.*.inheritflags
+^samba4.smb2.acls.*.owner
+^samba4.smb2.acls.*.ACCESSBASED
+^samba4.ldap.dirsync.python.ad_dc_ntvfs..__main__.ExtendedDirsyncTests.test_dirsync_deleted_items
+#^samba4.ldap.dirsync.python.ad_dc_ntvfs..__main__.ExtendedDirsyncTests.*
+^samba4.libsmbclient.opendir.(NT1|SMB3).opendir # This requires netbios browsing
+^samba4.rpc.drsuapi.*.drsuapi.DsGetDomainControllerInfo\(.*\)$
+^samba4.smb2.oplock.exclusive2\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.exclusive5\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.exclusive6\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.exclusive9\(.*\)$
+^samba4.smb2.oplock.brl3\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.levelii500\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.levelii502\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.brl1\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch22.\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch19\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch12\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch11\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch1\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch6\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch9\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch9a\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch10\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch20\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch26\(.*\)$
+^samba4.smb2.oplock.stream1 # samba 4 oplocks are a mess
+^samba4.smb2.oplock.statopen1\(ad_dc_ntvfs\)$ # fails with ACCESS_DENIED on a SYNCHRONIZE_ACCESS open
+^samba4.smb2.getinfo.complex # streams on directories does not work
+^samba4.smb2.getinfo.getinfo_access\(ad_dc_ntvfs\) # Access checks not implemented
+^samba4.smb2.getinfo.qfs_buffercheck # S4 does not do the INFO_LENGTH_MISMATCH/BUFFER_OVERFLOW thingy
+^samba4.smb2.getinfo.qfile_buffercheck # S4 does not do the INFO_LENGTH_MISMATCH/BUFFER_OVERFLOW thingy
+^samba4.smb2.getinfo.qsec_buffercheck # S4 does not do the BUFFER_TOO_SMALL thingy
+^samba4.smb2.sharemode.sharemode-access
+^samba4.smb2.sharemode.access-sharemode
+^samba4.ntvfs.cifs.krb5.base.createx_access.createx_access\(.*\)$
+^samba4.rpc.lsa.forest.trust #Not fully provided by Samba4
+^samba4.blackbox.upgradeprovision.alpha13.ldapcmp_sd\(none\) # Due to something rewriting the NT ACL on DNS objects
+^samba4.blackbox.upgradeprovision.alpha13.ldapcmp_full_sd\(none\) # Due to something rewriting the NT ACL on DNS objects
+^samba4.blackbox.upgradeprovision.release-4-0-0.ldapcmp_sd\(none\) # Due to something rewriting the NT ACL on DNS objects
+^samba4.raw.read.readx\(ad_dc_ntvfs\) # fails readx 16bit alignment requirement
+^samba3.smb2.create.gentest
+^samba3.smb2.create.blob
+^samba3.smb2.create.open
+^samba3.smb2.notify.rec
+^samba3.smb2.durable-open.delete_on_close2
+^samba3.smb2.durable-v2-open.app-instance
+^samba3.smb2.durable-open.reopen1a-lease\(ad_dc\)$
+^samba3.smb2.durable-open.stat-open\(ad_dc\)$
+^samba3.smb2.durable-v2-open.reopen1a-lease\(ad_dc\)$
+^samba4.smb2.ioctl.req_resume_key\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
+^samba4.smb2.ioctl.req_two_resume_keys\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
+^samba4.smb2.ioctl.copy_chunk_\w*\(ad_dc_ntvfs\)	# not supported by s4 ntvfs server
+^samba4.smb2.ioctl.copy-chunk streams\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
+^samba4.smb2.ioctl.bug14769\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
+^samba4.smb2.ioctl-on-stream.ioctl-on-stream\(ad_dc_ntvfs\)
+^samba3.smb2.dir.one
+^samba3.smb2.dir.modify
+^samba3.smb2.oplock.batch20
+^samba3.smb2.oplock.stream1
+^samba3.smb2.streams.rename
+^samba3.smb2.streams.rename2
+^samba3.smb2.streams streams_xattr.rename\(nt4_dc\)
+^samba3.smb2.streams streams_xattr.rename2\(nt4_dc\)
+^samba3.smb2.getinfo.complex
+^samba3.smb2.getinfo.fsinfo # quotas don't work yet
+^samba3.smb2.setinfo.setinfo
+^samba3.smb2.session.*reauth5 # some special anonymous checks?
+^samba3.smb2.compound.interim2 # wrong return code (STATUS_CANCELLED)
+^samba3.smb2.compound.aio.interim2 # wrong return code (STATUS_CANCELLED)
+^samba3.smb2.lock.*replay_broken_windows # This tests the windows behaviour
+^samba3.smb2.lease.statopen3
+^samba3.smb2.lease.unlink # we currently do not downgrade RH lease to R after unlink
+^samba4.smb2.ioctl.compress_notsup.*\(ad_dc_ntvfs\)
+^samba3.raw.session.*reauth2 # maybe fix this?
+^samba3.rpc.lsa.secrets.seal # This gives NT_STATUS_LOCAL_USER_SESSION_KEY
+^samba3.rpc.samr.passwords.badpwdcount.samr.badPwdCount\(nt4_dc\) # We fail this test currently
+^samba3.rpc.samr.passwords.lockout.*\(nt4_dc\)$ # We fail this test currently
+^samba3.rpc.spoolss.printer.addprinter.driver_info_winreg # knownfail or flapping?
+^samba3.rpc.spoolss.printer.addprinterex.driver_info_winreg # knownfail or flapping?
+^samba3.rpc.spoolss.printer.*.publish_toggle\(.*\)$ # needs spoolss AD member env
+^samba3.rpc.spoolss.printer.*.log_jobinfo\(.*\)$ # not implemented yet
+^samba3.rpc.spoolss.printserver.*.addpermachineconnection\(.*\)$ # not implemented yet
+^samba3.rpc.spoolss.printserver.*.add_processor\(.*\)$
+^samba3.rpc.spoolss.printserver.*.get_core_printer_drivers\(.*\)$
+^samba3.rpc.spoolss.printserver.*.get_printer_driver_package_path\(.*\)$
+^samba4.rpc.fsrvp	# fsrvp server only provided by smbd
+#
+# The following tests fail against ad_dc (aka s3fs) currently.
+# These need to be examined and either fixed or correctly categorised.
+# but in the interests of ensuring we do not regress, we run the tests
+# and list the current failures here.
+#
+^samba3.rpc.eventlog.eventlog.GetLogIntormation\(ad_dc\)
+^samba3.rpc.eventlog.eventlog.FlushEventLog\(ad_dc\)
+^samba3.rpc.eventlog.eventlog.ReportEventLog\(ad_dc\)
+^samba3.rpc.eventlog.eventlog.ReadEventLog\(ad_dc\)
+^samba3.rpc.eventlog.eventlog.GetNumRecords\(ad_dc\)
+^samba3.rpc.eventlog.eventlog.OpenEventLog\(ad_dc\)
+^samba3.rap.basic.netsessiongetinfo\(ad_dc_smb1\)
+# not implemented
+^samba3.rpc.svcctl.svcctl.ChangeServiceConfigW\(ad_dc\)
+^samba3.rpc.svcctl.svcctl.ChangeServiceConfigW\(nt4_dc\)
+#
+# This makes less sense when not running against an AD DC
+#
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -U against ad_member
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -G against ad_member
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -U check for sane mapping
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -G check for sane mapping
+^samba.wbinfo_simple.allocate-uid.wbinfo\(ad_dc_ntvfs:local\)
+^samba.wbinfo_simple.allocate-gid.wbinfo\(ad_dc_ntvfs:local\)
+^samba.wbinfo_simple.allocate-uid.wbinfo\(s4member:local\)
+^samba.wbinfo_simple.allocate-gid.wbinfo\(s4member:local\)
+^samba.wbinfo_simple.allocate-uid.wbinfo\(ad_dc:local\)
+^samba.wbinfo_simple.allocate-gid.wbinfo\(ad_dc:local\)
+^samba.wbinfo_simple.allocate-uid.wbinfo\(chgdcpass:local\)
+^samba.wbinfo_simple.allocate-gid.wbinfo\(chgdcpass:local\)
+^samba.wbinfo_simple.allocate-uid.wbinfo\(rodc:local\)
+^samba.wbinfo_simple.allocate-gid.wbinfo\(rodc:local\)
+#
+# These do not work against winbindd in member mode for unknown reasons
+#
+^samba4.winbind.struct.domain_info\(s4member:local\)
+^samba4.winbind.struct.getdcname\(s4member:local\)
+#
+# These fail since ad_dc_ntvfs assigns the local user's uid to SAMBADOMAIN/Administrator
+# hence we have a duplicate UID in nsswitch.
+#
+^samba3.local.nss.reentrant enumeration crosschecks\(ad_dc_ntvfs:local\)
+^samba3.local.nss.reentrant enumeration\(ad_dc_ntvfs:local\)
+^samba3.local.nss.enumeration\(ad_dc_ntvfs:local\)
+^samba3.local.nss.reentrant enumeration crosschecks\(ad_dc:local\)
+^samba3.local.nss.reentrant enumeration\(ad_dc:local\)
+^samba3.local.nss.enumeration\(ad_dc:local\)
+#
+# These do not work against winbindd in member mode for unknown reasons
+#
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -U against ad_member\(ad_member:local\)
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -U check for sane mapping\(ad_member:local\)
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -G against ad_member\(ad_member:local\)
+^samba.blackbox.wbinfo\(ad_member:local\).wbinfo -G check for sane mapping\(ad_member:local\)
+^samba4.winbind.struct.getdcname\(ad_member:local\)
+^samba4.winbind.struct.lookup_name_sid\(ad_member:local\)
+^samba4.winbind.struct.getdcname\(nt4_member:local\) # Works in other modes, just not against the classic/NT4 DC
+#
+# This will fail against the classic DC, because it requires kerberos
+#
+^samba4.winbind.pac.*\(nt4_member:local\) # No KDC on a classic DC
+#
+# This fails because our python bindings create python Lists, not a type
+# we can watch for set methods on.
+#
+^samba.tests.dcerpc.integer.samba.tests.dcerpc.integer.IntegerTests.test_.*_into_uint8_list
+#
+# Samba sort takes a primative approach to unicode sort. These tests
+# match Windows 2012R2 behaviour.
+#
+^samba4.ldap.sort.python.+UnicodeSortTests
+#
+## We assert all "ldap server require strong auth" combinations
+#
+^samba4.ldb.simple.ldap with SIMPLE-BIND.*ad_dc_ntvfs # ldap server require strong auth = allow_sasl_over_tls
+^samba4.ldb.simple.ldap with SIMPLE-BIND.*fl2003dc    # ldap server require strong auth = yes
+^samba4.ldb.simple.ldaps with SASL-BIND.*fl2003dc     # ldap server require strong auth = yes
+# These are supposed to fail as we want to verify the "tls verify peer"
+# restrictions. Note that fl2008r2dc uses a self-signed certificate
+# with does not have a crl file.
+#
+^samba4.ldb.simple.ldaps.*SERVER_NAME.*tlsverifypeer=ca_and_name_if_available\(
+^samba4.ldb.simple.ldaps.*SERVER_NAME.*tlsverifypeer=ca_and_name\(
+^samba4.ldb.simple.ldaps.*SERVER_NAME.*tlsverifypeer=as_strict_as_possible\(
+^samba4.ldb.simple.ldaps.*SERVER_IP.*tlsverifypeer=ca_and_name\(
+^samba4.ldb.simple.ldaps.*SERVER_IP.*tlsverifypeer=as_strict_as_possible\(
+^samba4.ldb.simple.ldaps.*SERVER.REALM.*tlsverifypeer=as_strict_as_possible.*fl2008r2dc
+#
+# we don't allow auth_level_connect anymore...
+#
+^samba3.blackbox.rpcclient.*ncacn_np.*with.*connect.*rpcclient # we don't allow auth_level_connect anymore
+^samba.tests.dns.__main__.TestComplexQueries.test_cname_two_chain_not_matching_qtype
+# ad_dc requires signing
+#
+^samba4.smb.signing.*disabled.*client-protection=off.*\(ad_dc\)
+# fl2000dc doesn't support AES
+^samba4.krb5.kdc.*as-req-aes.fl2000dc
+# nt4_member and ad_member don't support ntlmv1 (not even over SMB1)
+^samba3.blackbox.smbclient_auth.plain.*option=clientntlmv2auth=no.member.creds.*as.user.*_member
+^samba3.blackbox.smbclient_auth.plain.*option=clientntlmv2auth=no.*mNT1.member.creds.*as.user.*_member
+#nt-vfs server blocks read with execute access
+^samba4.smb2.read.access
+#ntvfs server blocks copychunk with execute access on read handle
+^samba4.smb2.ioctl.copy_chunk_bad_access
+^samba4.drs.getnc_exop.python.*getnc_exop.DrsReplicaPrefixMapTestCase.test_regular_prefix_map_ex_attid.*
+# We don't support NDR64 yet, so we generate the wrong FAULT code
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_no_auth_presentation_ctx_invalid4
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_auth_type2
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_transfer
+# NETLOGON is disabled in any non-DC environments
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_2nd_cancel_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_08_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_cancel_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_cmpx_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_didnot_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_maybe_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_only_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests01\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests02\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests03\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests04\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests05\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_last_cancel_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_last_only_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_mix_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_none_only_requests\(ad_member\)
+
+^samba4.rpc.echo.*on.*with.object.echo.doublepointer.*nt4_dc
+^samba4.rpc.echo.*on.*with.object.echo.surrounding.*nt4_dc
+^samba4.rpc.echo.*on.*with.object.echo.enum.*nt4_dc
+^samba4.rpc.echo.*on.*with.object.echo.testcall.*nt4_dc
+^samba4.rpc.echo.*on.*with.object.echo.testcall2.*nt4_dc
+^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_add_duplicate_different_type.*
+^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_rank_none.*
+^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_security_descriptor.*
+^samba4.blackbox.dbcheck-links.release-4-5-0-pre1.dbcheck_dangling_multi_valued_clean
+^samba4.blackbox.dbcheck-links.release-4-5-0-pre1.dangling_multi_valued_check_missing
+
+# We currently don't send referrals for LDAP modify of non-replicated attrs
+^samba4.ldap.rodc.python\(rodc\).__main__.RodcTests.test_modify_nonreplicated.*
+# NETLOGON is disabled in any non-DC environments
+^samba.tests.netlogonsvc.python\(ad_member\)
+^samba.tests.netlogonsvc.python\(simpleserver\)
+^samba.tests.netlogonsvc.python\(fileserver\)
+# NTLM authentication is (intentionally) disabled in ktest
+^samba.tests.ntlmdisabled.python\(ktest\).ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ktest\)
+^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ad_dc_no_ntlm\)
+# Disabling NTLM means you can't use samr to change the password
+^samba.tests.ntlmdisabled.python\(ktest\).ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ktest\)
+^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ad_dc_no_ntlm\)
+

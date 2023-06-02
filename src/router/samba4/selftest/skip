@@ -1,0 +1,152 @@
+# This file contains a list of regular expressions matching testsuites that
+# should be skipped during "make test".
+#
+# Possible reasons for adding a testsuite here:
+# * Testsuite functionality not implemented on the server side
+# * Testsuite crashes during run
+# * Testsuite crashes server
+# * Testsuite contains "flapping" tests (sometimes success, sometimes failure)
+# * Testsuite hangs indefinitely
+#
+# If a testsuite is partially succeeding, please list the failing bits
+# in the selftest/knownfail file rather than disabling the testsuite completely.
+# That way those tests that do succeed still get run and we will be notified
+# if a known failing test suddenly starts succeeding.
+#
+# If a testsuite is very slow, please add it to selftest/slow instead.
+# This way it will still get run in "make slowtest"
+#
+# Please add a comment for each testsuite you disable explaining why
+# it is being skipped.
+^samba3.smbtorture_s3.*.randomipc
+^samba3.smbtorture_s3.*.negnowait
+^samba3.smbtorture_s3.*.nbench
+^samba3.smbtorture_s3.*.errmapextract
+^samba3.smbtorture_s3.*.trans2scan
+^samba3.smbtorture_s3.*.nttransscan
+^samba3.smbtorture_s3.*.deny1
+^samba3.smbtorture_s3.*.deny2
+^samba3.smbtorture_s3.*.openattr
+^samba3.smbtorture_s3.*.casetable
+^samba3.smbtorture_s3.*.eatest
+^samba3.smbtorture_s3.*.mangle
+^samba3.smbtorture_s3.*.utable
+^samba3.smbtorture_s3.*.pipe_number
+^samba3.smbtorture_s3.LOCAL-DBTRANS #hangs for some reason
+^samba3.smbtorture_s3.*.DIR1 #loops on 64 bit linux with ext4
+^samba3.smbtorture_s3.plain.LOCK9.*\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.OPLOCK2\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.STREAMERROR\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.DIR1\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.DIR-CREATETIME\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.DELETE-LN\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.UID-REGRESSION-TEST\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.SHORTNAME-TEST\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.RENAME-ACCESS\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.OWNER-RIGHTS\(ad_dc_ntvfs\) # Don't test against the s4 ntvfs server anymore
+^samba3.smbtorture_s3.plain.PIDHIGH\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.NTTRANS-FSCTL\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.SMB2-NEGPROT\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.BAD-NBT-SESSION\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.SMB2-SESSION-REAUTH\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.SMB2-SESSION-RECONNECT\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.SMB1-WILD-MANGLE-UNLINK\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.smbtorture_s3.plain.SMB1-WILD-MANGLE-RENAME\(ad_dc_ntvfs\) # Fails against the s4 ntvfs server
+^samba3.*base.charset
+^samba3.*raw.context
+^samba3.*raw.ioctl
+^samba3.*raw.qfileinfo
+^samba3.*raw.qfsinfo
+^samba3.*raw.sfileinfo.base
+^samba3.smb2.hold-oplock                # Not a test, but a way to block other clients for a test
+^samba3.smb2.hold-sharemode             # Not a test, but a way to block other clients for a test
+^samba3.smb2.check-sharemode            # Not a test, but a way to test sharemodes outside of Samba
+^samba3.smb2.set-sparse-ioctl           # For manual testing, needs additional parameters.
+^samba3.smb2.zero-data-ioctl            # For manual testing, needs additional parameters.
+^samba3.smb2.durable-open-disconnect    # Not a test, but a way to create a disconnected durable
+^samba3.smb2.scan                       # No tests
+^samba3.smb2.oplock.levelii501		# No test yet
+^samba3.smb2.timestamp_resolution       # See the comment on the test
+^samba4.smb2.timestamp_resolution
+^samba3.rpc.samr.passwords.lockout\(ad_dc\) # No point running this version, it just waits 12 times longer the samba4 version of this test, covering the same code
+^samba4.base.iometer
+^samba4.base.casetable
+^samba4.base.nttrans
+^samba4.base.scan.maxfid
+^samba4.raw.eas
+^samba4.raw.hold-oplock 		# Not a test, but a way to block other clients for a test
+^samba4.smb2.hold-oplock 		# Not a test, but a way to block other clients for a test
+^samba4.smb2.hold-sharemode 		# Not a test, but a way to block other clients for a test
+^samba4.smb2.check-sharemode            # Not a test, but a way to test sharemodes outside of Samba
+^samba4.smb2.set-sparse-ioctl           # For manual testing, needs additional parameters.
+^samba4.smb2.zero-data-ioctl            # For manual testing, needs additional parameters.
+^samba4.raw.ping.pong		# Needs second server to test
+^samba4.rpc.samr.accessmask
+^samba4.raw.scan.eamax
+^samba4.smb2.samba3misc
+^samba4.smb2.notify
+^samba4.smb2.scan
+^samba4.smb2.lease
+^samba4.smb2.durable-open
+^samba4.smb2.durable-v2-open
+^samba4.smb2.dir
+^samba4.smb2.session
+^samba4.smb2.compound
+^samba4.smb2.multichannel
+^samba4.smb2.oplock.levelii501		# No test yet
+# SMB2 in s4 does not seem to support rename correctly
+^samba4.smb2.rename.*\(ad_dc_ntvfs\)$
+# some operations don't work over the CIFS NTVFS backend yet (eg. root_fid)
+^samba4.ntvfs.cifs.*.base.createx_sharemodes_dir
+^samba4.ntvfs.cifs.*.base.charset
+^samba4.ntvfs.cifs.*.base.iometer
+^samba4.ntvfs.cifs.*.base.casetable
+^samba4.ntvfs.cifs.*.base.nttrans
+^samba4.ntvfs.cifs.*.base.scan-maxfid
+^samba4.ntvfs.cifs.*.base.utable
+^samba4.ntvfs.cifs.*.base.smb
+^samba4.ntvfs.cifs.*.raw.
+^samba4.rpc.samsync
+^samba4.rpc.remact							# Not provided by Samba 4
+^samba4.rpc.oxidresolve						# Not provided by Samba 4
+^samba4.rpc.eventlog						# Not provided by Samba 4
+^samba4.rpc.initshutdown					# Not provided by Samba 4
+^samba4.rpc.spoolss						# Not provided by Samba 4
+^samba4.rpc.svcctl							# Not provided by Samba 4
+^samba4.rpc.atsvc							# Not provided by Samba 4
+^samba4.rpc.frsapi							# Not provided by Samba 4
+^samba4.rpc.ntsvcs							# Not provided by Samba 4
+^samba4.rpc.dfs								# Not provided by Samba 4
+^samba4.rpc.witness							# Not provided by Samba 4
+^samba4.rpc.clusapi							# clusapi server support not yet provided
+^samba4.rpc.iremotewinspool.*\(ad_dc_default\)$				# Not provided by Samba 4
+^samba4.*.base.samba3.*						# Samba3-specific test
+^samba4.*.raw.samba3.*						# Samba3-specific test
+^samba4.rpc..*samba3.*						# Samba3-specific test
+^samba4.raw.offline 			# Samba 4 doesn't have much offline support yet
+^samba4.rpc.countcalls # this is not useful now we have full IDL
+^samba4.rap.basic
+^samba4.rap.scan # same thing here - we have docs now
+^samba4.rap.printing # Not provided by Samba 4
+^samba4.rap.rpc
+^samba4.rap.sam # Not provided by Samba 4
+bench # don't run benchmarks in our selftest
+^samba4..*trans2.scan # uses huge number of file descriptors
+^samba4.*.base.scan.ioctl # bad idea in make test
+^samba4.*.base.scan.pipe_number # bad idea in make test
+^samba4.*.base.secleak # no point on build farm
+^samba4.*.base.delaywrite # This is randomly failing, depending on timing and filesystem features
+^samba4.*.base.winattr
+^samba4.*.base.birthtime
+^samba4.*base.defer_open
+^samba4.smb2.acls # new test which doesn't pass yet
+^samba4.smb2.sdread
+# ktutil might not be installed or from mit...
+# we should build a samba4ktutil and use that instead
+^samba4.blackbox.ktpass # this test isn't portable ...
+^samba.tests.dcerpc.unix  # This contains a server-side getpwuid call which hangs the server when nss_winbindd is in use
+^samba4.smb2.mangle.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
+^samba4.smb2.tcon.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
+^samba4.smb2.mkdir.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
+^samba.tests.reparsepoints.*
+^samba.tests.smb2symlink.*
