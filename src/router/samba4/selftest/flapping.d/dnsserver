@@ -1,2 +1,0 @@
-# This is not stable in samba due to a bug
-^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_enum_is_sorted_children

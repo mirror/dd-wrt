@@ -1,2 +1,0 @@
-^samba4.blackbox.kinit_trust.Test login with.*kerberos ccache \(smbclient4\)\(fl2008r2dc:local\)
-^samba4.blackbox.kinit_trust.Test login with.* kerberos ccache \(smbclient4\)\(fl2003dc:local\)
