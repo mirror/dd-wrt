@@ -1,3 +1,0 @@
-# the initshutdown pipe is not provided by the AD DC
-^samba3.rpc.initshutdown.initshutdown.InitEx\(ad_dc\)
-^samba3.rpc.initshutdown.initshutdown.Init\(ad_dc\)

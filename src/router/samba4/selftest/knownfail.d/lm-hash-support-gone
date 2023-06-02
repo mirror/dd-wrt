@@ -1,8 +1,0 @@
-^samba4.blackbox.smbclient .*LANMAN*
-^samba.tests.ntlm_auth.samba.tests.ntlm_auth.NTLMAuthHelpersTests.test_diagnostics_lm\(ad_dc:local\)
-^samba.tests.ntlm_auth.samba.tests.ntlm_auth.NTLMAuthHelpersTests.test_diagnostics_lm\(ad_member:local\)
-^samba.tests.ntlm_auth.samba.tests.ntlm_auth.NTLMAuthHelpersTests.test_diagnostics_lm\(chgdcpass:local\)
-^samba.tests.ntlm_auth.samba.tests.ntlm_auth.NTLMAuthHelpersTests.test_diagnostics_lm\(rodc:local\)
-# These fail as they expect no LM support (compared with the _lm test test does)
-^samba.tests.ntlm_auth.samba.tests.ntlm_auth.NTLMAuthHelpersTests.test_diagnostics\(nt4_dc:local\)
-^samba.tests.ntlm_auth.samba.tests.ntlm_auth.NTLMAuthHelpersTests.test_diagnostics\(nt4_member:local\)
