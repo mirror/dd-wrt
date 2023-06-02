@@ -20,8 +20,10 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent
 		KRBLDFLAGS="-L$(TOP)/krb5/src/lib" \
 		KRBLIBS="-lkrb5 -lk5crypto -lkrb5support -lcom_err" \
 		GSSKRB_LIBS="-lgssapi_krb5 -lgssrpc" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT)  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64  -DNEED_PRINTF -fcommon -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/lvm2/libdm  -I$(TOP)/keyutils -I$(TOP)/util-linux/libuuid/src -I$(TOP)/util-linux/libmount/src -D_GNU_SOURCE" \
-		LDFLAGS="-L$(TOP)/libtirpc/src/.libs  -L$(TOP)/libevent/.libs -L$(TOP)/lvm2/libdm/ioctl -L$(TOP)/keyutils -L$(TOP)/krb5/src/lib -L$(TOP)/util-linux/.libs/" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64  -DNEED_PRINTF -fcommon -I$(TOP)/sqlite -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/lvm2/libdm  -I$(TOP)/keyutils -I$(TOP)/util-linux/libuuid/src -I$(TOP)/util-linux/libmount/src -D_GNU_SOURCE" \
+		LDFLAGS="$(LDLTO) -L$(TOP)/libtirpc/src/.libs  -L$(TOP)/libevent/.libs -L$(TOP)/lvm2/libdm/ioctl -L$(TOP)/sqlite/.libs -L$(TOP)/keyutils -L$(TOP)/krb5/src/lib -L$(TOP)/util-linux/.libs/" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
 
 nfs-utils: libtirpc lvm2 keyutils krb5
