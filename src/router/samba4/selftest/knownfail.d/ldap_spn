@@ -1,0 +1,1 @@
+samba.tests.ldap_spn.+LdapSpnTest.test_spn_dodgy_spns

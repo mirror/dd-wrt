@@ -1,0 +1,2 @@
+# ntvfs returns NT_STATUS_NOT_SUPPORTED
+^samba3.smbtorture_s3.plain.SMB2-QUOTA1.smbtorture\(ad_dc_ntvfs\)
