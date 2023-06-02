@@ -92,7 +92,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         # lambda x: x removes anything that evaluates to False,
         # including empty strings, so we handle "" as well
         binding_list = \
-            list(filter(lambda x: x, re.compile('[\[,\]]').split(binding)))
+            list(filter(lambda x: x, re.compile(r'[\[,\]]').split(binding)))
 
         # Handle explicit smb2, smb1 or auto negotiation
         if "smb2" in binding_list:
@@ -470,7 +470,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         def isLastExpectedMessage(msg):
             return (msg["type"] == "Authorization" and
                     msg["Authorization"]["serviceDescription"] == "LDAP" and
-                    msg["Authorization"]["transportProtection"] == "SIGN" and
+                    msg["Authorization"]["transportProtection"] == "SEAL" and
                     msg["Authorization"]["authType"] == "krb5")
 
         self.samdb = SamDB(url="ldap://%s" % os.environ["SERVER"],
@@ -565,7 +565,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         self.assertEqual("NT_STATUS_OK", msg["Authentication"]["status"])
         self.assertEqual("LDAP",
                           msg["Authentication"]["serviceDescription"])
-        self.assertEqual("simple bind",
+        self.assertEqual("simple bind/TLS",
                           msg["Authentication"]["authDescription"])
         self.assertEqual(
             EVT_ID_SUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
@@ -579,7 +579,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["status"] ==
                         "NT_STATUS_WRONG_PASSWORD") and
                     (msg["Authentication"]["authDescription"] ==
-                        "simple bind") and
+                        "simple bind/TLS") and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -611,7 +611,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["status"] ==
                         "NT_STATUS_NO_SUCH_USER") and
                     (msg["Authentication"]["authDescription"] ==
-                        "simple bind") and
+                        "simple bind/TLS") and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -641,7 +641,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["status"] ==
                         "NT_STATUS_NO_SUCH_USER") and
                     (msg["Authentication"]["authDescription"] ==
-                        "simple bind") and
+                        "simple bind/TLS") and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==
@@ -786,7 +786,7 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
                     (msg["Authentication"]["status"] ==
                         "NT_STATUS_NO_SUCH_USER") and
                     (msg["Authentication"]["authDescription"] ==
-                        "ENC-TS Pre-authentication") and
+                        "AS-REQ") and
                     (msg["Authentication"]["eventId"] ==
                         EVT_ID_UNSUCCESSFUL_LOGON) and
                     (msg["Authentication"]["logonType"] ==

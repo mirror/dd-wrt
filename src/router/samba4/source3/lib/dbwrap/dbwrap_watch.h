@@ -27,20 +27,19 @@
 struct db_context *db_open_watched(TALLOC_CTX *mem_ctx,
 				   struct db_context **backend,
 				   struct messaging_context *msg);
+uint64_t dbwrap_watched_watch_add_instance(struct db_record *rec);
+void dbwrap_watched_watch_remove_instance(struct db_record *rec, uint64_t instance);
+void dbwrap_watched_watch_skip_alerting(struct db_record *rec);
+void dbwrap_watched_watch_reset_alerting(struct db_record *rec);
+void dbwrap_watched_watch_force_alerting(struct db_record *rec);
 struct tevent_req *dbwrap_watched_watch_send(TALLOC_CTX *mem_ctx,
 					     struct tevent_context *ev,
 					     struct db_record *rec,
+					     uint64_t resume_instance,
 					     struct server_id blocker);
 NTSTATUS dbwrap_watched_watch_recv(struct tevent_req *req,
+				   uint64_t *pkeep_instance,
 				   bool *blockerdead,
 				   struct server_id *blocker);
-
-/*
- * Wake up watchers without having modified the record value. One
- * usecase at the time of this commit is: We have lease break waiters
- * waiting on a locking.tdb record. They should be woken up when a
- * lease is broken, which does not modify the locking.tdb record.
- */
-void dbwrap_watched_wakeup(struct db_record *rec);
 
 #endif /* __DBWRAP_WATCH_H__ */

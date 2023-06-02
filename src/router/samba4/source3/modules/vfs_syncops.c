@@ -77,13 +77,16 @@ static void syncops_sync_directory(connection_struct *conn,
 	struct smb_Dir *dir_hnd = NULL;
 	struct files_struct *dirfsp = NULL;
 	struct smb_filename smb_dname = { .base_name = dname };
+	NTSTATUS status;
 
-	dir_hnd = OpenDir(talloc_tos(),
-			  conn,
-			  &smb_dname,
-			  "*",
-			  0);
-	if (dir_hnd == NULL) {
+	status = OpenDir(talloc_tos(),
+			 conn,
+			 &smb_dname,
+			 "*",
+			 0,
+			 &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		errno = map_errno_from_nt_status(status);
 		return;
 	}
 
@@ -289,11 +292,10 @@ static int syncops_openat(struct vfs_handle_struct *handle,
 			  const struct files_struct *dirfsp,
 			  const struct smb_filename *smb_fname,
 			  struct files_struct *fsp,
-			  int flags,
-			  mode_t mode)
+			  const struct vfs_open_how *how)
 {
-	SYNCOPS_NEXT_SMB_FNAME(OPENAT, (flags & O_CREAT ? smb_fname : NULL),
-			       (handle, dirfsp, smb_fname, fsp, flags, mode));
+	SYNCOPS_NEXT_SMB_FNAME(OPENAT, (how->flags & O_CREAT ? smb_fname : NULL),
+			       (handle, dirfsp, smb_fname, fsp, how));
 }
 
 static int syncops_unlinkat(vfs_handle_struct *handle,

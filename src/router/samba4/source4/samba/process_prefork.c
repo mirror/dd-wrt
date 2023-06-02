@@ -293,12 +293,8 @@ static void prefork_fork_master(
 	}
 
 	pid = getpid();
-	setproctitle("task[%s] pre-fork master", service_name);
-	/*
-	 * We must fit within 15 chars of text or we will truncate, so
-	 * we put the constant part last
-	 */
-	prctl_set_comment("%s[master]", service_name);
+
+	process_set_title("%s[master]", "task[%s] pre-fork master", service_name);
 
 	/*
 	 * this will free all the listening sockets and all state that
@@ -426,16 +422,62 @@ static void prefork_fork_master(
 	exit(0);
 }
 
+static void prefork_restart_fn(struct tevent_context *ev,
+			       struct tevent_timer *te,
+			       struct timeval tv,
+			       void *private_data);
+
 /*
  * Restarts a child process if it exits unexpectedly
  */
-static void prefork_restart(struct tevent_context *ev,
+static bool prefork_restart(struct tevent_context *ev,
 			    struct restart_context *rc)
+{
+	struct tevent_timer *te = NULL;
+
+	if (rc->restart_delay > 0) {
+		DBG_ERR("Restarting [%s] pre-fork %s in (%d) seconds\n",
+			rc->service_name,
+			(rc->master == NULL) ? "worker" : "master",
+			rc->restart_delay);
+	}
+
+	/*
+	 * Always use an async timer event. If
+	 * rc->restart_delay is zero this is the
+	 * same as an immediate event and will be
+	 * called immediately we go back into the
+	 * event loop.
+	 */
+	te = tevent_add_timer(ev,
+			      ev,
+			      tevent_timeval_current_ofs(rc->restart_delay, 0),
+			      prefork_restart_fn,
+			      rc);
+	if (te == NULL) {
+		DBG_ERR("tevent_add_timer fail [%s] pre-fork event %s\n",
+			rc->service_name,
+			(rc->master == NULL) ? "worker" : "master");
+		/* Caller needs to free rc. */
+		return false;
+	}
+	/* Caller must not free rc - it's in use. */
+	return true;
+}
+
+static void prefork_restart_fn(struct tevent_context *ev,
+			       struct tevent_timer *te,
+			       struct timeval tv,
+			       void *private_data)
 {
 	unsigned max_backoff = 0;
 	unsigned backoff = 0;
-	unsigned restart_delay = rc->restart_delay;
 	unsigned default_value = 0;
+	struct restart_context *rc = talloc_get_type(private_data,
+					struct restart_context);
+	unsigned restart_delay = rc->restart_delay;
+
+	TALLOC_FREE(te);
 
 	/*
 	 * If the child process is constantly exiting, then restarting it can
@@ -456,13 +498,6 @@ static void prefork_restart(struct tevent_context *ev,
 				     rc->service_name,
 				     default_value);
 
-	if (restart_delay > 0) {
-		DBG_ERR("Restarting [%s] pre-fork %s in (%d) seconds\n",
-			rc->service_name,
-			(rc->master == NULL) ? "worker" : "master",
-			restart_delay);
-		sleep(restart_delay);
-	}
 	restart_delay += backoff;
 	restart_delay = min(restart_delay, max_backoff);
 
@@ -492,6 +527,10 @@ static void prefork_restart(struct tevent_context *ev,
 				    restart_delay,
 				    &pd);
 	}
+	/* tfork allocates tfork structures with malloc */
+	tfork_destroy(&rc->t);
+	free(rc->t);
+	TALLOC_FREE(rc);
 }
 
 /*
@@ -509,6 +548,7 @@ static void prefork_child_pipe_handler(struct tevent_context *ev,
 	struct restart_context *rc = NULL;
 	int status = 0;
 	pid_t pid = 0;
+	bool rc_inuse = false;
 
 	/* free the fde which removes the event and stops it firing again */
 	TALLOC_FREE(fde);
@@ -525,13 +565,13 @@ static void prefork_child_pipe_handler(struct tevent_context *ev,
 		DBG_ERR("Parent %d, Child %d terminated, "
 			"unable to get status code from tfork\n",
 			getpid(), pid);
-		prefork_restart(ev, rc);
+		rc_inuse = prefork_restart(ev, rc);
 	} else if (WIFEXITED(status)) {
 		status = WEXITSTATUS(status);
 		DBG_ERR("Parent %d, Child %d exited with status %d\n",
 			 getpid(), pid,  status);
 		if (status != 0) {
-			prefork_restart(ev, rc);
+			rc_inuse = prefork_restart(ev, rc);
 		}
 	} else if (WIFSIGNALED(status)) {
 		status = WTERMSIG(status);
@@ -541,13 +581,15 @@ static void prefork_child_pipe_handler(struct tevent_context *ev,
 		    status == SIGILL || status == SIGSYS || status == SIGSEGV ||
 		    status == SIGKILL) {
 
-			prefork_restart(ev, rc);
+			rc_inuse = prefork_restart(ev, rc);
 		}
 	}
-	/* tfork allocates tfork structures with malloc */
-	tfork_destroy(&rc->t);
-	free(rc->t);
-	TALLOC_FREE(rc);
+	if (!rc_inuse) {
+		/* tfork allocates tfork structures with malloc */
+		tfork_destroy(&rc->t);
+		free(rc->t);
+		TALLOC_FREE(rc);
+	}
 	return;
 }
 
@@ -707,16 +749,12 @@ static void prefork_fork_worker(struct task_server *task,
 		free(w);
 
 		TALLOC_FREE(ev);
-		setproctitle("task[%s] pre-forked worker(%d)",
-			     service_name,
-			     pd->instances);
-		/*
-		 * We must fit within 15 chars of text or we will truncate, so
-		 * we put child number last
-		 */
-		prctl_set_comment("%s(%d)",
+
+		process_set_title("%s(%d)",
+				  "task[%s] pre-forked worker(%d)",
 				  service_name,
 				  pd->instances);
+
 		prefork_reload_after_fork();
 		if (service_details->post_fork != NULL) {
 			service_details->post_fork(task, pd);

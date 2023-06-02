@@ -30,8 +30,7 @@
 
 struct connections_forall_state {
 	struct db_context *session_by_pid;
-	int (*fn)(const struct connections_key *key,
-		  const struct connections_data *data,
+	int (*fn)(const struct connections_data *data,
 		  void *private_data);
 	void *private_data;
 	int count;
@@ -89,7 +88,6 @@ static int traverse_tcon_fn(struct smbXsrv_tcon_global0 *global,
 	struct connections_forall_state *state =
 		(struct connections_forall_state*)connections_forall_state;
 
-	struct connections_key key;
 	struct connections_data data;
 
 	uint32_t sess_id = global->session_global_id;
@@ -120,18 +118,17 @@ static int traverse_tcon_fn(struct smbXsrv_tcon_global0 *global,
 		memcpy((uint8_t *)&sess, val.dptr, val.dsize);
 	}
 
-	ZERO_STRUCT(key);
 	ZERO_STRUCT(data);
 
-	key.pid = data.pid = global->server_id;
-	key.cnum = data.cnum = global->tcon_global_id;
-	fstrcpy(key.name, global->share_name);
+	data.pid = global->server_id;
+	data.cnum = global->tcon_global_id;
+	data.sess_id = sess_id;
 	fstrcpy(data.servicename, global->share_name);
 	data.uid = sess.uid;
 	data.gid = sess.gid;
 	fstrcpy(data.addr, sess.addr);
 	fstrcpy(data.machine, sess.machine);
-	data.start = nt_time_to_unix(global->creation_time);
+	data.start = global->creation_time;
 	data.encryption_flags = global->encryption_flags;
 	data.cipher = sess.cipher;
 	data.dialect = sess.dialect;
@@ -140,11 +137,10 @@ static int traverse_tcon_fn(struct smbXsrv_tcon_global0 *global,
 
 	state->count++;
 
-	return state->fn(&key, &data, state->private_data);
+	return state->fn(&data, state->private_data);
 }
 
-int connections_forall_read(int (*fn)(const struct connections_key *key,
-				      const struct connections_data *data,
+int connections_forall_read(int (*fn)(const struct connections_data *data,
 				      void *private_data),
 			    void *private_data)
 {

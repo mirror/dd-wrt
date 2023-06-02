@@ -1,0 +1,62 @@
+'\" t
+.\"     Title: vfs_expand_msdfs
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 05/31/2023
+.\"    Manual: System Administration tools
+.\"    Source: Samba 4.18.3
+.\"  Language: English
+.\"
+.TH "VFS_EXPAND_MSDFS" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+vfs_expand_msdfs \- Expand msdfs links depending on client IP
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+vfs objects = expand_msdfs
+.SH "DESCRIPTION"
+.PP
+This VFS module is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+With this module, the link target is not directly a server and share, but this module expects the target to reference a file, containing a table\&. The file is referenced by means of the msdfs symlink target according to msdfs:@table\-filename@/share\&. The file table\-filename is supposed to contain a list of destinations that are looked at from top to bottom:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+192\&.168\&.234 local\&.samba\&.org
+192\&.168 remote\&.samba\&.org
+ default\&.samba\&.org
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+With this, clients from network 192\&.168\&.234/24 are redirected to host local\&.samba\&.org, clients from 192\&.168/16 are redirected to remote\&.samba\&.org and all other clients go to default\&.samba\&.org\&.
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

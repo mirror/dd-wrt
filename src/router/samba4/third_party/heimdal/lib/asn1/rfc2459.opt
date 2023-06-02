@@ -1,0 +1,12 @@
+--preserve-binary=Name
+--preserve-binary=TBSCertificate
+--preserve-binary=TBSCRLCertList
+--sequence=AttributeValues
+--sequence=CRLDistributionPoints
+--sequence=Extensions
+--sequence=GeneralNames
+--sequence=RDNSequence
+--sequence=Certificates
+--sequence=CertificatePolicies
+--sequence=PolicyQualifierInfos
+--sequence=PolicyMappings

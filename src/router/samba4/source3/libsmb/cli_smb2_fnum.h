@@ -24,6 +24,7 @@ struct smbXcli_conn;
 struct smbXcli_session;
 struct cli_state;
 struct file_info;
+struct symlink_reparse_struct;
 
 struct tevent_req *cli_smb2_create_fnum_send(
 	TALLOC_CTX *mem_ctx,
@@ -43,7 +44,8 @@ NTSTATUS cli_smb2_create_fnum_recv(
 	uint16_t *pfnum,
 	struct smb_create_returns *cr,
 	TALLOC_CTX *mem_ctx,
-	struct smb2_create_blobs *out_cblobs);
+	struct smb2_create_blobs *out_cblobs,
+	struct symlink_reparse_struct **symlink);
 NTSTATUS cli_smb2_create_fnum(
 	struct cli_state *cli,
 	const char *fname,
@@ -97,7 +99,9 @@ struct tevent_req *cli_smb2_list_send(
 	TALLOC_CTX *mem_ctx,
 	struct tevent_context *ev,
 	struct cli_state *cli,
-	const char *pathname);
+	const char *pathname,
+	unsigned int info_level,
+	bool posix);
 NTSTATUS cli_smb2_list_recv(
 	struct tevent_req *req,
 	TALLOC_CTX *mem_ctx,
@@ -109,12 +113,6 @@ NTSTATUS cli_smb2_qpathinfo_basic(struct cli_state *cli,
 NTSTATUS cli_smb2_qpathinfo_alt_name(struct cli_state *cli,
 			const char *name,
 			fstring alt_name);
-struct tevent_req *cli_smb2_chkpath_send(
-	TALLOC_CTX *mem_ctx,
-	struct tevent_context *ev,
-	struct cli_state *cli,
-	const char *name);
-NTSTATUS cli_smb2_chkpath_recv(struct tevent_req *req);
 struct tevent_req *cli_smb2_query_info_fnum_send(
 	TALLOC_CTX *mem_ctx,
 	struct tevent_context *ev,
@@ -317,21 +315,16 @@ NTSTATUS cli_smb2_notify(struct cli_state *cli, uint16_t fnum,
 			 bool recursive, TALLOC_CTX *mem_ctx,
 			 struct notify_change **pchanges,
 			 uint32_t *pnum_changes);
-struct tevent_req *cli_smb2_set_reparse_point_fnum_send(
-			TALLOC_CTX *mem_ctx,
-			struct tevent_context *ev,
-			struct cli_state *cli,
-			uint16_t fnum,
-			DATA_BLOB in_buf);
-NTSTATUS cli_smb2_set_reparse_point_fnum_recv(struct tevent_req *req);
 
-struct tevent_req *cli_smb2_get_reparse_point_fnum_send(
-			TALLOC_CTX *mem_ctx,
-			struct tevent_context *ev,
-			struct cli_state *cli,
-			uint16_t fnum);
-NTSTATUS cli_smb2_get_reparse_point_fnum_recv(struct tevent_req *req,
-			TALLOC_CTX *mem_ctx,
-			DATA_BLOB *output);
+struct tevent_req *cli_smb2_fsctl_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint32_t ctl_code,
+	const DATA_BLOB *in,
+	uint32_t max_out);
+NTSTATUS cli_smb2_fsctl_recv(
+	struct tevent_req *req, TALLOC_CTX *mem_ctx, DATA_BLOB *out);
 
 #endif /* __SMB2CLI_FNUM_H__ */

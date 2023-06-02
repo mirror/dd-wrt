@@ -428,7 +428,7 @@ def call_nsupdate(d, op="add"):
             rfile = open(opts.use_file, 'r+')
         except IOError:
             # Perhaps create it
-            rfile = open(opts.use_file, 'w+')
+            open(opts.use_file, 'w+')
             # Open it for reading again, in case someone else got to it first
             rfile = open(opts.use_file, 'r+')
         fcntl.lockf(rfile, fcntl.LOCK_EX)
@@ -589,8 +589,9 @@ def call_samba_tool(d, op="add", zone=None):
     try:
         cmd = cmd_dns()
         if opts.verbose:
-            print("Calling samba-tool dns %s -k no -P %s" % (op, args))
-        ret = cmd._run("dns", op, "-k", "no", "-P", *args)
+            print(f'Calling samba-tool dns {op} --use-kerberos off -P {args}')
+        command, args = cmd._resolve("dns", op, "--use-kerberos", "off", "-P", *args)
+        ret = command._run(*args)
         if ret == -1:
             if opts.fail_immediately:
                 sys.exit(1)
@@ -746,7 +747,7 @@ try:
     cfile = open(dns_update_cache, 'r+')
 except IOError:
     # Perhaps create it
-    cfile = open(dns_update_cache, 'w+')
+    open(dns_update_cache, 'w+')
     # Open it for reading again, in case someone else got to it first
     cfile = open(dns_update_cache, 'r+')
 fcntl.lockf(cfile, fcntl.LOCK_EX)

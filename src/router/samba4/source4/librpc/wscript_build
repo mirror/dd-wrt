@@ -132,6 +132,7 @@ bld.SAMBA_SUBSYSTEM('ndr-table',
                     NDR_SECRETS
                     NDR_LEASES_DB
                     NDR_ODJ
+                    NDR_ADS
                     ''',
         depends_on='GEN_NDR_TABLES'
         )
@@ -253,6 +254,13 @@ bld.SAMBA_PYTHON('python_krb5ccache',
         source='../../librpc/gen_ndr/py_krb5ccache.c',
         deps='NDR_KRB5CCACHE %s %s' % (pytalloc_util, pyrpc_util),
         realname='samba/dcerpc/krb5ccache.so',
+        cflags_end=gen_cflags
+        )
+
+bld.SAMBA_PYTHON('python_claims',
+        source='../../librpc/gen_ndr/py_claims.c',
+        deps='NDR_CLAIMS %s %s' % (pytalloc_util, pyrpc_util),
+        realname='samba/dcerpc/claims.so',
         cflags_end=gen_cflags
         )
 

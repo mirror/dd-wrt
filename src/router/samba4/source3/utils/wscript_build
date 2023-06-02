@@ -7,6 +7,10 @@ bld.SAMBA3_SUBSYSTEM('PASSWD_UTIL',
 bld.SAMBA3_SUBSYSTEM('CONN_TDB',
                      source='conn_tdb.c')
 
+bld.SAMBA3_SUBSYSTEM('DNS_UTIL',
+                     source='net_dns.c net_ads_join_dns.c',
+                     deps='addns')
+
 bld.SAMBA3_BINARY('profiles',
                  source='profiles.c',
                  deps='''
@@ -67,12 +71,13 @@ bld.SAMBA3_BINARY('nmblookup',
                  LIBNMB''')
 
 bld.SAMBA3_BINARY('smbcacls',
-                 source='smbcacls.c ../lib/util_sd.c',
+                 source='smbcacls.c',
                  deps='''
                  talloc
                  CMDLINE_S3
                  msrpc3
                  libcli_lsa3
+                 util_sd
                  krb5samba''')
 
 bld.SAMBA3_BINARY('smbcquotas',
@@ -94,13 +99,14 @@ bld.SAMBA3_BINARY('eventlogadm',
                  install_path='${SBINDIR}')
 
 bld.SAMBA3_BINARY('sharesec',
-                 source='sharesec.c ../lib/util_sd.c',
+                 source='sharesec.c',
                  deps='''
                  talloc
                  msrpc3
                  libcli_lsa3
                  CMDLINE_S3
                  cmdline_contexts
+                 util_sd
                  ''')
 
 bld.SAMBA3_BINARY('log2pcap',
@@ -125,6 +131,7 @@ bld.SAMBA3_BINARY('ntlm_auth',
                  libsmb
                  CMDLINE_S3
                  cmdline_contexts
+                 wbclient
                  gse gensec''')
 
 bld.SAMBA3_BINARY('dbwrap_tool',
@@ -206,7 +213,6 @@ bld.SAMBA3_BINARY('net',
                  net_util.c
                  net_rpc_sh_acct.c
                  net_rpc_audit.c
-                 net_dns.c
                  net_ads_gpo.c
                  net_conf.c
                  net_conf_util.c
@@ -232,7 +238,6 @@ bld.SAMBA3_BINARY('net',
                  ../registry/reg_format.c
                  ../registry/reg_import.c
                  net_registry_util.c
-                 ../lib/util_sd.c
                  net_help_common.c''',
                  deps='''
                  talloc
@@ -276,6 +281,8 @@ bld.SAMBA3_BINARY('net',
                  jansson
                  common_auth
                  ADOUBLE
+                 DNS_UTIL
+                 util_sd
                  ''')
 
 bld.SAMBA3_BINARY('mvxattr',
@@ -296,12 +303,17 @@ bld.SAMBA3_BINARY('destroy_netlogon_creds_cli',
                   ''',
                   install=False)
 
-smbstatus_source = 'status.c ../smbd/notify_msg.c'
+smbstatus_source = 'status.c'
 
 if bld.CONFIG_GET("WITH_PROFILE"):
     smbstatus_source += ' status_profile.c'
 else:
     smbstatus_source += ' status_profile_dummy.c'
+
+if bld.CONFIG_GET("HAVE_JANSSON"):
+    smbstatus_source += ' status_json.c'
+else:
+    smbstatus_source += ' status_json_dummy.c'
 
 bld.SAMBA3_BINARY('smbstatus',
                  source=smbstatus_source,
@@ -334,6 +346,6 @@ pytalloc_util = bld.pyembed_libname('pytalloc-util')
 pyrpc_util = bld.pyembed_libname('pyrpc_util')
 bld.SAMBA3_PYTHON('python_net_s3',
         source='py_net.c',
-        deps='LIBNET cmdline_contexts %s %s' % (pytalloc_util, pyrpc_util),
+        deps='LIBNET DNS_UTIL cmdline_contexts %s %s' % (pytalloc_util, pyrpc_util),
         realname='samba/net_s3.so'
         )

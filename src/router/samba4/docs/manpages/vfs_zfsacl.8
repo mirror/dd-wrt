@@ -2,12 +2,12 @@
 .\"     Title: vfs_zfsacl
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "VFS_ZFSACL" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "VFS_ZFSACL" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -73,7 +73,7 @@ Since Samba 4\&.0 all options are per share options\&.
 .PP
 nfs4:mode = [ simple | special ]
 .RS 4
-Controls substitution of special IDs (OWNER@ and GROUP@) on ZFS\&. The use of mode simple is recommended\&. In this mode only non inheriting ACL entries for the file owner and group are mapped to special IDs\&.
+Controls substitution of special IDs (OWNER@ and GROUP@) on NFS4 ACLs\&. The use of mode simple is recommended\&. In this mode only non inheriting ACL entries for the file owner and group are mapped to special IDs\&.
 .sp
 The following MODEs are understood by the module:
 .RS
@@ -107,7 +107,7 @@ special(deprecated)
 .PP
 nfs4:acedup = [dontcare|reject|ignore|merge]
 .RS 4
-This parameter configures how Samba handles duplicate ACEs encountered in ZFS ACLs\&. ZFS allows/creates duplicate ACE for different bits for same ID\&.
+This parameter configures how Samba handles duplicate ACEs encountered in NFS4 ACLs\&. They allow creating duplicate ACEs with different bits for same ID, which may confuse the Windows clients\&.
 .sp
 Following is the behaviour of Samba for different values :
 .RS
@@ -120,7 +120,7 @@ Following is the behaviour of Samba for different values :
 .sp -1
 .IP \(bu 2.3
 .\}
-dontcare (default)
+dontcare
 \- copy the ACEs as they come
 .RE
 .sp
@@ -156,7 +156,7 @@ ignore (deprecated)
 .sp -1
 .IP \(bu 2.3
 .\}
-merge
+merge (default)
 \- bitwise OR the 2 ace\&.flag fields and 2 ace\&.mask fields of the 2 duplicate ACEs into 1 ACE
 .RE
 .sp
@@ -310,7 +310,7 @@ A ZFS mount can be exported via Samba as follows :
 .\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

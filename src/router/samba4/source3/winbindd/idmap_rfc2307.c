@@ -80,7 +80,7 @@ static NTSTATUS idmap_rfc2307_ads_check_connection(struct idmap_domain *dom)
 	ctx = talloc_get_type(dom->private_data, struct idmap_rfc2307_context);
 	dom_name = ctx->ldap_domain ? ctx->ldap_domain : dom->name;
 
-	status = ads_idmap_cached_connection(&ctx->ads, dom_name);
+	status = ads_idmap_cached_connection(dom_name, ctx, &ctx->ads);
 	if (ADS_ERR_OK(status)) {
 		ctx->ldap = ctx->ads->ldap.ld;
 	} else {
@@ -198,7 +198,7 @@ static NTSTATUS idmap_rfc2307_init_ldap(struct idmap_rfc2307_context *ctx,
 	ret = smbldap_init(mem_ctx, global_event_context(), url,
 			   (user_dn == NULL), user_dn, secret,
 			   &ctx->smbldap_state);
-	SAFE_FREE(secret);
+	BURN_FREE_STR(secret);
 	if (!NT_STATUS_IS_OK(ret)) {
 		DEBUG(1, ("ERROR: smbldap_init (%s) failed!\n", url));
 		goto done;
@@ -749,12 +749,7 @@ out:
 
 static int idmap_rfc2307_context_destructor(struct idmap_rfc2307_context *ctx)
 {
-	if (ctx->ads != NULL) {
-		/* we own this ADS_STRUCT so make sure it goes away */
-		ctx->ads->is_mine = True;
-		ads_destroy( &ctx->ads );
-		ctx->ads = NULL;
-	}
+	TALLOC_FREE(ctx->ads);
 
 	if (ctx->smbldap_state != NULL) {
 		smbldap_free_struct(&ctx->smbldap_state);

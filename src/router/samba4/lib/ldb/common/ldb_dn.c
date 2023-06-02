@@ -298,7 +298,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 	char *parse_dn;
 	bool is_index;
 
-	if (dn == NULL || dn->invalid == true) {
+	if (dn == NULL || dn->invalid) {
 		return false;
 	}
 
@@ -324,7 +324,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 	}
 
 	/* Special DNs case */
-	if (dn->special == true) {
+	if (dn->special) {
 		return true;
 	}
 
@@ -350,7 +350,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 	d = dt = data;
 
 	while (*p) {
-		if (in_extended == true) {
+		if (in_extended) {
 
 			if (!in_ex_name && !in_ex_value) {
 
@@ -437,8 +437,8 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 			*d++ = *p++;
 			continue;
 		}
-		if (in_attr == true) {
-			if (trim == true) {
+		if (in_attr) {
+			if (trim) {
 				if (*p == ' ') {
 					p++;
 					continue;
@@ -505,7 +505,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 				goto failed;
 			}
 
-			if (is_oid == true && ( ! (isdigit(*p) || (*p == '.')))) {
+			if (is_oid && ( ! (isdigit(*p) || (*p == '.')))) {
 				/* not a digit nor a dot,
 				 * invalid attribute oid */
 				ldb_dn_mark_invalid(dn);
@@ -521,8 +521,8 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 			continue;
 		}
 
-		if (in_value == true) {
-			if (in_quote == true) {
+		if (in_value) {
+			if (in_quote) {
 				if (*p == '\"') {
 					if (p[-1] != '\\') {
 						p++;
@@ -535,7 +535,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 				continue;
 			}
 
-			if (trim == true) {
+			if (trim) {
 				if (*p == ' ') {
 					p++;
 					continue;
@@ -558,7 +558,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 			*/
 
 			case ',':
-				if (escape == true) {
+				if (escape) {
 					*d++ = *p++;
 					l++;
 					escape = false;
@@ -620,7 +620,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 				accept the base64 encoded binary index
 				values, which contain a '+' or '='
 				which should normally be escaped */
-				if (is_index == true) {
+				if (is_index) {
 					if (t != NULL) {
 						t = NULL;
 					}
@@ -635,7 +635,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 			case '>':
 			case ';':
 				/* a string with not escaped specials is invalid (tested) */
-				if (escape == false) {
+				if (!escape) {
 					ldb_dn_mark_invalid(dn);
 					goto failed;
 				}
@@ -650,7 +650,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 				break;
 
 			case '\\':
-				if (escape == false) {
+				if (!escape) {
 					escape = true;
 					p++;
 					continue;
@@ -666,7 +666,7 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 				break;
 
 			default:
-				if (escape == true) {
+				if (escape) {
 					if (isxdigit(p[0]) && isxdigit(p[1])) {
 						if (sscanf(p, "%02x", &x) != 1) {
 							/* invalid escaping sequence */
@@ -706,13 +706,13 @@ static bool ldb_dn_explode(struct ldb_dn *dn)
 		}
 	}
 
-	if (in_attr == true || in_quote == true) {
+	if (in_attr || in_quote) {
 		/* invalid dn */
 		ldb_dn_mark_invalid(dn);
 		goto failed;
 	}
 
-	if (in_value == true) {
+	if (in_value) {
 		/* save last element */
 		if (t != NULL) {
 			/* trim back */
@@ -877,21 +877,17 @@ char *ldb_dn_get_extended_linearized(TALLOC_CTX *mem_ctx, struct ldb_dn *dn, int
 					    (int)val.length,
 					    val.data);
 		} else {
-			p = talloc_asprintf_append_buffer(p, ";<%s=%.*s>",
-							  name,
-							  (int)val.length,
-							  val.data);
+			talloc_asprintf_addbuf(&p, ";<%s=%.*s>",
+					       name,
+					       (int)val.length,
+					       val.data);
 		}
 
 		talloc_free(val.data);
-
-		if (!p) {
-			return NULL;
-		}
 	}
 
 	if (dn->ext_comp_num && *linearized) {
-		p = talloc_asprintf_append_buffer(p, ";%s", linearized);
+		talloc_asprintf_addbuf(&p, ";%s", linearized);
 	}
 
 	if (!p) {
@@ -1056,7 +1052,7 @@ int ldb_dn_compare_base(struct ldb_dn *base, struct ldb_dn *dn)
 	if (( ! base->valid_case) || ( ! dn->valid_case)) {
 		if (base->linearized && dn->linearized && dn->special == base->special) {
 			/* try with a normal compare first, if we are lucky
-			 * we will avoid exploding and casfolding */
+			 * we will avoid exploding and casefolding */
 			int dif;
 			dif = strlen(dn->linearized) - strlen(base->linearized);
 			if (dif < 0) {
@@ -1144,7 +1140,7 @@ int ldb_dn_compare(struct ldb_dn *dn0, struct ldb_dn *dn1)
 	if (( ! dn0->valid_case) || ( ! dn1->valid_case)) {
 		if (dn0->linearized && dn1->linearized) {
 			/* try with a normal compare first, if we are lucky
-			 * we will avoid exploding and casfolding */
+			 * we will avoid exploding and casefolding */
 			if (strcmp(dn0->linearized, dn1->linearized) == 0) {
 				return 0;
 			}

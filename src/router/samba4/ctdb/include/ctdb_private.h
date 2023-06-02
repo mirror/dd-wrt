@@ -88,9 +88,6 @@ struct ctdb_node {
 	/* a list of controls pending to this node, so we can time them out quickly
 	   if the node becomes disconnected */
 	struct daemon_control_state *pending_controls;
-
-	/* used by the recovery daemon to track when a node should be banned */
-	struct ctdb_banning_state *ban_state; 
 };
 
 /*
@@ -299,7 +296,6 @@ struct ctdb_context {
 	struct ctdb_statistics statistics_history[MAX_STAT_HISTORY];
 	struct ctdb_vnn_map *vnn_map;
 	uint32_t num_clients;
-	uint32_t recovery_master;
 	struct ctdb_client_ip *client_ip_list;
 	bool do_checkpublicip;
 	bool do_setsched;
@@ -825,8 +821,6 @@ int32_t ctdb_control_get_capabilities(struct ctdb_context *ctdb,
 				      TDB_DATA *outdata);
 
 int32_t ctdb_control_recd_ping(struct ctdb_context *ctdb);
-int32_t ctdb_control_set_recmaster(struct ctdb_context *ctdb,
-				   uint32_t opcode, TDB_DATA indata);
 
 void ctdb_node_become_inactive(struct ctdb_context *ctdb);
 
@@ -968,6 +962,7 @@ int32_t ctdb_control_get_tunable(struct ctdb_context *ctdb, TDB_DATA indata,
 int32_t ctdb_control_set_tunable(struct ctdb_context *ctdb, TDB_DATA indata);
 int32_t ctdb_control_list_tunables(struct ctdb_context *ctdb,
 				   TDB_DATA *outdata);
+bool ctdb_tunables_load(struct ctdb_context *ctdb);
 
 /* from ctdb_tunnel.c */
 
@@ -1034,5 +1029,7 @@ int ctdb_event_script_args(struct ctdb_context *ctdb,
 
 int ctdb_event_script(struct ctdb_context *ctdb,
 		      enum ctdb_event call);
+
+void ctdb_event_reopen_logs(struct ctdb_context *ctdb);
 
 #endif

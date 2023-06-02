@@ -40,6 +40,7 @@
 #include "common/logging.h"
 #include "common/path.h"
 #include "protocol/protocol.h"
+#include "protocol/protocol_basic.h"
 #include "protocol/protocol_api.h"
 #include "protocol/protocol_util.h"
 #include "common/system_socket.h"
@@ -50,6 +51,8 @@
 
 #define SRVID_CTDB_TOOL    (CTDB_SRVID_TOOL_RANGE | 0x0001000000000000LL)
 #define SRVID_CTDB_PUSHDB  (CTDB_SRVID_TOOL_RANGE | 0x0002000000000000LL)
+
+#define NODE_FLAGS_UNKNOWN 0x00000040
 
 static struct {
 	const char *debuglevelstr;
@@ -73,7 +76,7 @@ struct ctdb_context {
 	struct tevent_context *ev;
 	struct ctdb_client_context *client;
 	struct ctdb_node_map *nodemap;
-	uint32_t pnn, cmd_pnn;
+	uint32_t pnn, cmd_pnn, leader_pnn;
 	uint64_t srvid;
 };
 
@@ -110,6 +113,7 @@ static const char *pretty_print_flags(TALLOC_CTX *mem_ctx, uint32_t flags)
 		const char *name;
 	} flag_names[] = {
 		{ NODE_FLAGS_DISCONNECTED,	    "DISCONNECTED" },
+		{ NODE_FLAGS_UNKNOWN,		    "UNKNOWN" },
 		{ NODE_FLAGS_PERMANENTLY_DISABLED,  "DISABLED" },
 		{ NODE_FLAGS_BANNED,		    "BANNED" },
 		{ NODE_FLAGS_UNHEALTHY,		    "UNHEALTHY" },
@@ -211,6 +215,16 @@ again:
 failed:
 	talloc_free(tmp_ctx);
 	return NULL;
+}
+
+static void print_pnn(uint32_t pnn)
+{
+	if (pnn == CTDB_UNKNOWN_PNN) {
+		printf("UNKNOWN\n");
+		return;
+	}
+
+	printf("%u\n", pnn);
 }
 
 static bool verify_pnn(struct ctdb_context *ctdb, int pnn)
@@ -354,6 +368,64 @@ static bool parse_nodestring(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 done:
 	*out = nodemap2;
 	return true;
+}
+
+/*
+ *  Remote nodes are initialised as UNHEALTHY in the daemon and their
+ *  true status is udpated after they are connected.  However, there
+ *  is a small window when a healthy node may be shown as unhealthy
+ *  between connecting and the status update.  Hide this for nodes
+ *  that are not DISCONNECTED nodes by reporting them as UNKNOWN until
+ *  the runstate passes FIRST_RECOVERY.  Code paths where this is used
+ *  do not make any control decisions depending upon unknown/unhealthy
+ *  state.
+ */
+static struct ctdb_node_map *get_nodemap_unknown(
+	TALLOC_CTX *mem_ctx,
+	struct ctdb_context *ctdb,
+	struct ctdb_node_map *nodemap_in)
+{
+	unsigned int i;
+	int ret;
+	enum ctdb_runstate runstate;
+	struct ctdb_node_map *nodemap;
+
+	ret = ctdb_ctrl_get_runstate(mem_ctx,
+				     ctdb->ev,
+				     ctdb->client,
+				     ctdb->cmd_pnn,
+				     TIMEOUT(),
+				     &runstate);
+	if (ret != 0 ) {
+		printf("Unable to get runstate");
+		return NULL;
+	}
+
+	nodemap = talloc_nodemap(mem_ctx, nodemap_in);
+	if (nodemap == NULL) {
+		printf("Unable to get nodemap");
+		return NULL;
+	}
+
+	nodemap->num = nodemap_in->num;
+	for (i=0; i<nodemap->num; i++) {
+		struct ctdb_node_and_flags *node_in = &nodemap_in->node[i];
+		struct ctdb_node_and_flags *node = &nodemap->node[i];
+
+		*node = *node_in;
+
+		if (node->flags & NODE_FLAGS_DELETED) {
+			continue;
+		}
+
+		if ((runstate <= CTDB_RUNSTATE_FIRST_RECOVERY) &&
+		    !(node->flags & NODE_FLAGS_DISCONNECTED) &&
+		    (node->pnn != ctdb->cmd_pnn)) {
+			node->flags = NODE_FLAGS_UNKNOWN;
+		}
+	}
+
+	return nodemap;
 }
 
 /* Compare IP address */
@@ -714,6 +786,58 @@ static int run_helper(TALLOC_CTX *mem_ctx, const char *command,
 	return 0;
 }
 
+static void leader_handler(uint64_t srvid,
+			   TDB_DATA data,
+			   void *private_data)
+{
+	struct ctdb_context *ctdb = talloc_get_type_abort(
+		private_data, struct ctdb_context);
+	uint32_t leader_pnn;
+	size_t np;
+	int ret;
+
+	ret = ctdb_uint32_pull(data.dptr, data.dsize, &leader_pnn, &np);
+	if (ret != 0) {
+		/* Ignore packet */
+		return;
+	}
+
+	ctdb->leader_pnn = leader_pnn;
+}
+
+static bool get_leader_done(void *private_data)
+{
+	struct ctdb_context *ctdb = talloc_get_type_abort(
+		private_data, struct ctdb_context);
+
+	return ctdb->leader_pnn != CTDB_UNKNOWN_PNN;
+}
+
+static int get_leader(TALLOC_CTX *mem_ctx,
+			 struct ctdb_context *ctdb,
+			 uint32_t *leader)
+{
+	int ret;
+
+	ret = ctdb_client_wait_func_timeout(ctdb->ev,
+					    get_leader_done,
+					    ctdb,
+					    TIMEOUT());
+	/*
+	 * If ETIMEDOUT then assume there is no leader and succeed so
+	 * initial value of CTDB_UNKNOWN_PNN is returned
+	 */
+	if (ret == ETIMEDOUT) {
+		ret = 0;
+	} else if (ret != 0) {
+		fprintf(stderr, "Error getting leader\n");
+		return ret;
+	}
+
+	*leader = ctdb->leader_pnn;
+	return 0;
+}
+
 /*
  * Command Functions
  */
@@ -763,11 +887,12 @@ static void print_nodemap_machine(TALLOC_CTX *mem_ctx,
 	struct ctdb_node_and_flags *node;
 	unsigned int i;
 
-	printf("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+	printf("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 	       options.sep,
 	       "Node", options.sep,
 	       "IP", options.sep,
 	       "Disconnected", options.sep,
+	       "Unknown", options.sep,
 	       "Banned", options.sep,
 	       "Disabled", options.sep,
 	       "Unhealthy", options.sep,
@@ -782,12 +907,13 @@ static void print_nodemap_machine(TALLOC_CTX *mem_ctx,
 			continue;
 		}
 
-		printf("%s%u%s%s%s%d%s%d%s%d%s%d%s%d%s%d%s%d%s%c%s\n",
+		printf("%s%u%s%s%s%d%s%d%s%d%s%d%s%d%s%d%s%d%s%d%s%c%s\n",
 		       options.sep,
 		       node->pnn, options.sep,
 		       ctdb_sock_addr_to_string(mem_ctx, &node->addr, false),
 		       options.sep,
 		       !! (node->flags & NODE_FLAGS_DISCONNECTED), options.sep,
+		       !! (node->flags & NODE_FLAGS_UNKNOWN), options.sep,
 		       !! (node->flags & NODE_FLAGS_BANNED), options.sep,
 		       !! (node->flags & NODE_FLAGS_PERMANENTLY_DISABLED),
 		       options.sep,
@@ -840,10 +966,13 @@ static void print_nodemap(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 	}
 }
 
-static void print_status(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
-			 struct ctdb_node_map *nodemap, uint32_t mypnn,
-			 struct ctdb_vnn_map *vnnmap, int recmode,
-			 uint32_t recmaster)
+static void print_status(TALLOC_CTX *mem_ctx,
+			 struct ctdb_context *ctdb,
+			 struct ctdb_node_map *nodemap,
+			 uint32_t mypnn,
+			 struct ctdb_vnn_map *vnnmap,
+			 int recmode,
+			 uint32_t leader)
 {
 	unsigned int i;
 
@@ -862,23 +991,30 @@ static void print_status(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 	printf("Recovery mode:%s (%d)\n",
 	       recmode == CTDB_RECOVERY_NORMAL ? "NORMAL" : "RECOVERY",
 	       recmode);
-	printf("Recovery master:%d\n", recmaster);
+	printf("Leader:");
+	print_pnn(leader);
 }
 
 static int control_status(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 			  int argc, const char **argv)
 {
+	struct ctdb_node_map *nodemap_in;
 	struct ctdb_node_map *nodemap;
 	struct ctdb_vnn_map *vnnmap;
 	int recmode;
-	uint32_t recmaster;
+	uint32_t leader;
 	int ret;
 
 	if (argc != 0) {
 		usage("status");
 	}
 
-	nodemap = get_nodemap(ctdb, false);
+	nodemap_in = get_nodemap(ctdb, false);
+	if (nodemap_in == NULL) {
+		return 1;
+	}
+
+	nodemap = get_nodemap_unknown(mem_ctx, ctdb, nodemap_in);
 	if (nodemap == NULL) {
 		return 1;
 	}
@@ -900,14 +1036,18 @@ static int control_status(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 		return ret;
 	}
 
-	ret = ctdb_ctrl_get_recmaster(mem_ctx, ctdb->ev, ctdb->client,
-				      ctdb->cmd_pnn, TIMEOUT(), &recmaster);
+	ret = get_leader(mem_ctx, ctdb, &leader);
 	if (ret != 0) {
 		return ret;
 	}
 
-	print_status(mem_ctx, ctdb, nodemap, ctdb->cmd_pnn, vnnmap,
-		     recmode, recmaster);
+	print_status(mem_ctx,
+		     ctdb,
+		     nodemap,
+		     ctdb->cmd_pnn,
+		     vnnmap,
+		     recmode,
+		     leader);
 	return 0;
 }
 
@@ -2219,13 +2359,13 @@ static int control_getcapabilities(TALLOC_CTX *mem_ctx,
 	if (options.machinereadable == 1) {
 		printf("%s%s%s%s%s\n",
 		       options.sep,
-		       "RECMASTER", options.sep,
+		       "LEADER", options.sep,
 		       "LMASTER", options.sep);
 		printf("%s%d%s%d%s\n", options.sep,
 		       !! (caps & CTDB_CAP_RECMASTER), options.sep,
 		       !! (caps & CTDB_CAP_LMASTER), options.sep);
 	} else {
-		printf("RECMASTER: %s\n",
+		printf("LEADER: %s\n",
 		       (caps & CTDB_CAP_RECMASTER) ? "YES" : "NO");
 		printf("LMASTER: %s\n",
 		       (caps & CTDB_CAP_LMASTER) ? "YES" : "NO");
@@ -2860,24 +3000,28 @@ static int control_shutdown(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 static int get_generation(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 			  uint32_t *generation)
 {
-	uint32_t recmaster;
+	uint32_t leader;
 	int recmode;
 	struct ctdb_vnn_map *vnnmap;
 	int ret;
 
 again:
-	ret = ctdb_ctrl_get_recmaster(mem_ctx, ctdb->ev, ctdb->client,
-				      ctdb->cmd_pnn, TIMEOUT(), &recmaster);
+	ret = get_leader(mem_ctx, ctdb, &leader);
 	if (ret != 0) {
-		fprintf(stderr, "Failed to find recovery master\n");
+		fprintf(stderr, "Failed to find leader\n");
 		return ret;
 	}
 
-	ret = ctdb_ctrl_get_recmode(mem_ctx, ctdb->ev, ctdb->client,
-				    recmaster, TIMEOUT(), &recmode);
+	ret = ctdb_ctrl_get_recmode(mem_ctx,
+				    ctdb->ev,
+				    ctdb->client,
+				    leader,
+				    TIMEOUT(),
+				    &recmode);
 	if (ret != 0) {
-		fprintf(stderr, "Failed to get recovery mode from node %u\n",
-			recmaster);
+		fprintf(stderr,
+			"Failed to get recovery mode from node %u\n",
+			leader);
 		return ret;
 	}
 
@@ -2886,11 +3030,16 @@ again:
 		goto again;
 	}
 
-	ret = ctdb_ctrl_getvnnmap(mem_ctx, ctdb->ev, ctdb->client,
-				  recmaster, TIMEOUT(), &vnnmap);
+	ret = ctdb_ctrl_getvnnmap(mem_ctx,
+				  ctdb->ev,
+				  ctdb->client,
+				  leader,
+				  TIMEOUT(),
+				  &vnnmap);
 	if (ret != 0) {
-		fprintf(stderr, "Failed to get generation from node %u\n",
-			recmaster);
+		fprintf(stderr,
+			"Failed to get generation from node %u\n",
+			leader);
 		return ret;
 	}
 
@@ -3811,7 +3960,7 @@ static int rebalancenode(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 					  CTDB_BROADCAST_CONNECTED, pnn);
 	if (ret != 0) {
 		fprintf(stderr,
-			"Failed to ask recovery master to distribute IPs\n");
+			"Failed to ask leader to distribute IPs\n");
 		return ret;
 	}
 
@@ -4524,19 +4673,21 @@ failed:
 	return ret;
 }
 
-static int control_recmaster(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
-			     int argc, const char **argv)
+static int control_leader(TALLOC_CTX *mem_ctx,
+			  struct ctdb_context *ctdb,
+			  int argc,
+			  const char **argv)
 {
-	uint32_t recmaster;
+	uint32_t leader;
 	int ret;
 
-	ret = ctdb_ctrl_get_recmaster(mem_ctx, ctdb->ev, ctdb->client,
-				      ctdb->cmd_pnn, TIMEOUT(), &recmaster);
+	ret = get_leader(mem_ctx, ctdb, &leader);
 	if (ret != 0) {
 		return ret;
 	}
 
-	printf("%u\n", recmaster);
+	print_pnn(leader);
+
 	return 0;
 }
 
@@ -4690,28 +4841,32 @@ static int control_setlmasterrole(TALLOC_CTX *mem_ctx,
 	return 0;
 }
 
-static int control_setrecmasterrole(TALLOC_CTX *mem_ctx,
-				    struct ctdb_context *ctdb,
-				    int argc, const char **argv)
+static int control_setleaderrole(TALLOC_CTX *mem_ctx,
+				 struct ctdb_context *ctdb,
+				 int argc,
+				 const char **argv)
 {
-	uint32_t recmasterrole = 0;
+	uint32_t leaderrole = 0;
 	int ret;
 
 	if (argc != 1) {
-		usage("setrecmasterrole");
+		usage("setleaderrole");
 	}
 
 	if (strcmp(argv[0], "on") == 0) {
-		recmasterrole = 1;
+		leaderrole = 1;
 	} else if (strcmp(argv[0], "off") == 0) {
-		recmasterrole = 0;
+		leaderrole = 0;
 	} else {
-		usage("setrecmasterrole");
+		usage("setleaderrole");
 	}
 
-	ret = ctdb_ctrl_set_recmasterrole(mem_ctx, ctdb->ev, ctdb->client,
-					  ctdb->cmd_pnn, TIMEOUT(),
-					  recmasterrole);
+	ret = ctdb_ctrl_set_recmasterrole(mem_ctx,
+					  ctdb->ev,
+					  ctdb->client,
+					  ctdb->cmd_pnn,
+					  TIMEOUT(),
+					  leaderrole);
 	if (ret != 0) {
 		return ret;
 	}
@@ -5517,6 +5672,7 @@ static int control_nodestatus(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 			      int argc, const char **argv)
 {
 	const char *nodestring = NULL;
+	struct ctdb_node_map *nodemap_in;
 	struct ctdb_node_map *nodemap;
 	unsigned int i;
 	int ret;
@@ -5533,7 +5689,12 @@ static int control_nodestatus(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 		}
 	}
 
-	if (! parse_nodestring(mem_ctx, ctdb, nodestring, &nodemap)) {
+	if (! parse_nodestring(mem_ctx, ctdb, nodestring, &nodemap_in)) {
+		return 1;
+	}
+
+	nodemap = get_nodemap_unknown(mem_ctx, ctdb, nodemap_in);
+	if (nodemap == NULL) {
 		return 1;
 	}
 
@@ -5951,8 +6112,8 @@ static const struct ctdb_cmd {
 		"dump database from a backup file", "<file>" },
 	{ "wipedb", control_wipedb, false, false,
 		"wipe the contents of a database.", "<dbname|dbid>"},
-	{ "recmaster", control_recmaster, false, true,
-		"show the pnn for the recovery master", NULL },
+	{ "leader", control_leader, false, true,
+		"show the pnn of the leader", NULL },
 	{ "event", control_event, true, false,
 		"event and event script commands", NULL },
 	{ "scriptstatus", control_scriptstatus, true, false,
@@ -5964,8 +6125,8 @@ static const struct ctdb_cmd {
 		"get recovery lock file", NULL },
 	{ "setlmasterrole", control_setlmasterrole, false, true,
 		"set LMASTER role", "on|off" },
-	{ "setrecmasterrole", control_setrecmasterrole, false, true,
-		"set RECMASTER role", "on|off"},
+	{ "setleaderrole", control_setleaderrole, false, true,
+		"set LEADER role", "on|off"},
 	{ "setdbreadonly", control_setdbreadonly, false, true,
 		"enable readonly records", "<dbname|dbid>" },
 	{ "setdbsticky", control_setdbsticky, false, true,
@@ -6201,6 +6362,17 @@ static int process_command(const struct ctdb_cmd *cmd, int argc,
 	if (! cmd->remote && ctdb->pnn != ctdb->cmd_pnn) {
 		fprintf(stderr, "Node cannot be specified for command %s\n",
 			cmd->name);
+		goto fail;
+	}
+
+	ctdb->leader_pnn = CTDB_UNKNOWN_PNN;
+	ret = ctdb_client_set_message_handler(ctdb->ev,
+					      ctdb->client,
+					      CTDB_SRVID_LEADER,
+					      leader_handler,
+					      ctdb);
+	if (ret != 0) {
+		fprintf(stderr, "Failed to setup leader handler\n");
 		goto fail;
 	}
 

@@ -19,8 +19,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
 #include "system/locale.h"
+#include <tevent.h>
+#include "lib/util/samba_util.h"
+#include "lib/util/debug.h"
 
 /**
  * @file
@@ -47,6 +50,20 @@ _PUBLIC_ uint64_t generate_random_u64(void)
 	return BVAL(v, 0);
 }
 
+/**
+ * @brief Generate a random number in the given range.
+ *
+ * @param lower    The lower value of the range
+
+ * @param upper    The upper value of the range
+ *
+ * @return A random number bigger than than lower and smaller than upper.
+ */
+_PUBLIC_ uint64_t generate_random_u64_range(uint64_t lower, uint64_t upper)
+{
+	return generate_random_u64() % (upper - lower) + lower;
+}
+
 _PUBLIC_ uint64_t generate_unique_u64(uint64_t veto_value)
 {
 	static struct generate_unique_u64_state {
@@ -54,7 +71,7 @@ _PUBLIC_ uint64_t generate_unique_u64(uint64_t veto_value)
 		int pid;
 	} generate_unique_u64_state;
 
-	int pid = getpid();
+	int pid = tevent_cached_getpid();
 
 	if (unlikely(pid != generate_unique_u64_state.pid)) {
 		generate_unique_u64_state = (struct generate_unique_u64_state) {
@@ -96,7 +113,6 @@ _PUBLIC_ uint64_t generate_unique_u64(uint64_t veto_value)
 _PUBLIC_ bool check_password_quality(const char *pwd)
 {
 	size_t ofs = 0;
-	size_t num_chars = 0;
 	size_t num_digits = 0;
 	size_t num_upper = 0;
 	size_t num_lower = 0;
@@ -120,7 +136,6 @@ _PUBLIC_ bool check_password_quality(const char *pwd)
 			break;
 		}
 		ofs += len;
-		num_chars += 1;
 
 		if (len == 1) {
 			const char *na = "~!@#$%^&*_-+=`|\\(){}[]:;\"'<>,.?/";
@@ -297,6 +312,9 @@ again:
  *
  * If 'unix charset' is not utf8, the password consist of random ascii
  * values!
+ *
+ * The return value is a talloc string with destructor talloc_keep_secret() set.
+ * The content will be overwritten by zeros when the mem_ctx is destroyed.
  */
 
 _PUBLIC_ char *generate_random_machine_password(TALLOC_CTX *mem_ctx, size_t min, size_t max)
@@ -334,6 +352,7 @@ _PUBLIC_ char *generate_random_machine_password(TALLOC_CTX *mem_ctx, size_t min,
 
 	frame = talloc_stackframe_pool(2048);
 	state = talloc_zero(frame, struct generate_random_machine_password_state);
+	talloc_keep_secret(state);
 
 	diff = max - min;
 
@@ -402,6 +421,7 @@ _PUBLIC_ char *generate_random_machine_password(TALLOC_CTX *mem_ctx, size_t min,
 		TALLOC_FREE(frame);
 		return NULL;
 	}
+	talloc_keep_secret(utf8_pw);
 
 	ok = convert_string_talloc(frame,
 				   CH_UTF16MUNGED, CH_UNIX,
@@ -410,6 +430,7 @@ _PUBLIC_ char *generate_random_machine_password(TALLOC_CTX *mem_ctx, size_t min,
 	if (!ok) {
 		goto ascii_fallback;
 	}
+	talloc_keep_secret(unix_pw);
 
 	if (utf8_len != unix_len) {
 		goto ascii_fallback;
@@ -427,6 +448,7 @@ _PUBLIC_ char *generate_random_machine_password(TALLOC_CTX *mem_ctx, size_t min,
 		TALLOC_FREE(frame);
 		return NULL;
 	}
+	talloc_keep_secret(new_pw);
 	talloc_set_name_const(new_pw, __func__);
 	TALLOC_FREE(frame);
 	return new_pw;
@@ -452,6 +474,7 @@ ascii_fallback:
 		TALLOC_FREE(frame);
 		return NULL;
 	}
+	talloc_keep_secret(new_pw);
 	talloc_set_name_const(new_pw, __func__);
 	TALLOC_FREE(frame);
 	return new_pw;

@@ -1,18 +1,18 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Samba utility functions
    Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2007-2008
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -42,7 +42,7 @@ static PyObject *py_lp_ctx_get_helper(struct loadparm_context *lp_ctx, const cha
 	void *parm_ptr = NULL;
 	int i;
 
-	if (service_name != NULL && strwicmp(service_name, GLOBAL_NAME) && 
+	if (service_name != NULL && strwicmp(service_name, GLOBAL_NAME) &&
 		strwicmp(service_name, GLOBAL_NAME2)) {
 		struct loadparm_service *service;
 		/* its a share parameter */
@@ -120,19 +120,19 @@ static PyObject *py_lp_ctx_get_helper(struct loadparm_context *lp_ctx, const cha
 	}
 	return NULL;
     case P_CMDLIST:
-    case P_LIST: 
+    case P_LIST:
 	{
 	    int j;
 	    const char **strlist = *(const char ***)parm_ptr;
 	    PyObject *pylist;
-		
+
 	    if(strlist == NULL) {
 		    return PyList_New(0);
 	    }
-		
+
 	    pylist = PyList_New(str_list_length(strlist));
-	    for (j = 0; strlist[j]; j++) 
-		PyList_SetItem(pylist, j, 
+	    for (j = 0; strlist[j]; j++)
+		PyList_SetItem(pylist, j,
 			       PyUnicode_FromString(strlist[j]));
 	    return pylist;
 	}
@@ -289,6 +289,37 @@ static PyObject *py_lp_dump(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+static PyObject *py_lp_dump_globals(PyObject *self, PyObject *args)
+{
+	bool show_defaults = false;
+	const char *file_name = "";
+	const char *mode = "w";
+	FILE *f;
+	struct loadparm_context *lp_ctx = PyLoadparmContext_AsLoadparmContext(self);
+
+	if (!PyArg_ParseTuple(args, "|bss", &show_defaults, &file_name, &mode))
+		return NULL;
+
+	if (file_name[0] == '\0') {
+		f = stdout;
+	} else {
+		f = fopen(file_name, mode);
+	}
+
+	if (f == NULL) {
+		PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
+	}
+
+	lpcfg_dump_globals(lp_ctx, f, show_defaults);
+
+	if (f != stdout) {
+		fclose(f);
+	}
+
+	Py_RETURN_NONE;
+}
+
 static PyObject *py_lp_dump_a_parameter(PyObject *self, PyObject *args)
 {
 	char *param_name;
@@ -433,6 +464,8 @@ static PyMethodDef py_lp_ctx_methods[] = {
 		"Get the server role." },
 	{ "dump", py_lp_dump, METH_VARARGS,
 		"S.dump(show_defaults=False, file_name='', mode='w')" },
+	{ "dump_globals", py_lp_dump_globals, METH_VARARGS,
+	        "S.dump_globals(show_defaults=False, file_name='', mode='w')" },
 	{ "dump_a_parameter", py_lp_dump_a_parameter, METH_VARARGS,
 		"S.dump_a_parameter(name, service_name, file_name='', mode='w')" },
 	{ "log_level", py_lp_log_level, METH_NOARGS,
@@ -625,7 +658,7 @@ static PyObject *py_lp_service_dump(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef py_lp_service_methods[] = {
-	{ "dump", (PyCFunction)py_lp_service_dump, METH_VARARGS, 
+	{ "dump", (PyCFunction)py_lp_service_dump, METH_VARARGS,
 		"S.dump(default_service, show_defaults=False, file_name='', mode='w')" },
 	{0}
 };

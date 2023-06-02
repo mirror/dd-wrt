@@ -27,6 +27,7 @@
 #include <profile.h>
 #include <kdb.h>
 
+#include "kdc/samba_kdc.h"
 #include "kdc/mit_samba.h"
 #include "kdb_samba.h"
 
@@ -34,7 +35,6 @@
 #define DBGC_CLASS DBGC_KERBEROS
 
 #define ADMIN_LIFETIME 60*60*3 /* 3 hours */
-#define CHANGEPW_LIFETIME 60*5 /* 5 minutes */
 
 krb5_error_code ks_get_principal(krb5_context context,
 				 krb5_const_principal principal,
@@ -68,7 +68,7 @@ static void ks_free_principal_e_data(krb5_context context, krb5_octet *e_data)
 
 	skdc_entry = talloc_get_type_abort(e_data,
 					   struct samba_kdc_entry);
-	talloc_set_destructor(skdc_entry, NULL);
+	skdc_entry->kdc_entry = NULL;
 	TALLOC_FREE(skdc_entry);
 }
 

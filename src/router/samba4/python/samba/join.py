@@ -50,6 +50,7 @@ import tempfile
 from collections import OrderedDict
 from samba.common import get_string
 from samba.netcmd import CommandError
+from samba import dsdb
 
 
 class DCJoinException(Exception):
@@ -936,7 +937,11 @@ class DCJoinContext(object):
     def join_replicate(ctx):
         """Replicate the SAM."""
 
-        print("Starting replication")
+        ctx.logger.info("Starting replication")
+
+        # A global transaction is started so that linked attributes
+        # are applied at the very end, once all partitions are
+        # replicated.  This helps get all cross-partition links.
         ctx.local_samdb.transaction_start()
         try:
             source_dsa_invocation_id = misc.GUID(ctx.samdb.get_invocation_id())
@@ -968,17 +973,53 @@ class DCJoinContext(object):
                            destination_dsa_guid, rodc=ctx.RODC,
                            replica_flags=ctx.replica_flags)
             if not ctx.subdomain:
-                # Replicate first the critical object for the basedn
-                if not ctx.domain_replica_flags & drsuapi.DRSUAPI_DRS_CRITICAL_ONLY:
-                    print("Replicating critical objects from the base DN of the domain")
-                    ctx.domain_replica_flags |= drsuapi.DRSUAPI_DRS_CRITICAL_ONLY
+                # Replicate first the critical objects for the basedn
+
+                # We do this to match Windows.  The default case is to
+                # do a critical objects replication, then a second
+                # with all objects.
+
+                print("Replicating critical objects from the base DN of the domain")
+                try:
                     repl.replicate(ctx.base_dn, source_dsa_invocation_id,
                                    destination_dsa_guid, rodc=ctx.RODC,
-                                   replica_flags=ctx.domain_replica_flags)
-                    ctx.domain_replica_flags ^= drsuapi.DRSUAPI_DRS_CRITICAL_ONLY
-                repl.replicate(ctx.base_dn, source_dsa_invocation_id,
-                               destination_dsa_guid, rodc=ctx.RODC,
-                               replica_flags=ctx.domain_replica_flags)
+                                   replica_flags=ctx.domain_replica_flags | drsuapi.DRSUAPI_DRS_CRITICAL_ONLY)
+                except WERRORError as e:
+
+                    if e.args[0] == werror.WERR_DS_DRA_MISSING_PARENT:
+                        ctx.logger.warning("First pass of replication with "
+                                           "DRSUAPI_DRS_CRITICAL_ONLY "
+                                           "not possible due to a missing parent object.  "
+                                           "This is typical of a Samba "
+                                           "4.5 or earlier server. "
+                                           "We will replicate all the objects instead.")
+                    else:
+                        raise
+
+                # Now replicate all the objects in the domain (unless
+                # we were run with --critical-only).
+                #
+                # Doing the replication of users as a second pass
+                # matches more closely the Windows behaviour, which is
+                # actually to do this on first startup.
+                #
+                # Use --critical-only if you want that (but you don't
+                # really, it is better to see any errors here).
+                if not ctx.domain_replica_flags & drsuapi.DRSUAPI_DRS_CRITICAL_ONLY:
+                    try:
+                        repl.replicate(ctx.base_dn, source_dsa_invocation_id,
+                                       destination_dsa_guid, rodc=ctx.RODC,
+                                       replica_flags=ctx.domain_replica_flags)
+                    except WERRORError as e:
+
+                        if e.args[0] == werror.WERR_DS_DRA_MISSING_PARENT and \
+                           ctx.domain_replica_flags & drsuapi.DRSUAPI_DRS_CRITICAL_ONLY:
+                            ctx.logger.warning("Replication with DRSUAPI_DRS_CRITICAL_ONLY "
+                                               "failed due to a missing parent object.  "
+                                               "This may be a Samba 4.5 or earlier server "
+                                               "and is not compatible with --critical-only")
+                        raise
+
             print("Done with always replicated NC (base, config, schema)")
 
             # At this point we should already have an entry in the ForestDNS
@@ -1016,12 +1057,27 @@ class DCJoinContext(object):
             ctx.source_dsa_invocation_id = source_dsa_invocation_id
             ctx.destination_dsa_guid = destination_dsa_guid
 
-            print("Committing SAM database")
+            ctx.logger.info("Committing SAM database - this may take some time")
         except:
             ctx.local_samdb.transaction_cancel()
             raise
         else:
+
+            # This is a special case, we have completed a full
+            # replication so if a link comes to us that points to a
+            # deleted object, and we asked for all objects already, we
+            # just have to ignore it, the chance to re-try the
+            # replication with GET_TGT has long gone.  This can happen
+            # if the object is deleted and sent to us after the link
+            # was sent, as we are processing all links in the
+            # transaction_commit().
+            if not ctx.domain_replica_flags & drsuapi.DRSUAPI_DRS_CRITICAL_ONLY:
+                ctx.local_samdb.set_opaque_integer(dsdb.DSDB_FULL_JOIN_REPLICATION_COMPLETED_OPAQUE_NAME,
+                                                   1)
             ctx.local_samdb.transaction_commit()
+            ctx.local_samdb.set_opaque_integer(dsdb.DSDB_FULL_JOIN_REPLICATION_COMPLETED_OPAQUE_NAME,
+                                               0)
+            ctx.logger.info("Committed SAM database")
 
         # A large replication may have caused our LDB connection to the
         # remote DC to timeout, so check the connection is still alive
@@ -1130,7 +1186,6 @@ class DCJoinContext(object):
         except WERRORError as e:
             if e.args[0] == werror.WERR_DNS_ERROR_NAME_DOES_NOT_EXIST:
                 name_found = False
-                pass
 
         if name_found:
             for rec in res.rec:

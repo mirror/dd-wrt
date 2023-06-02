@@ -237,6 +237,20 @@
 /* wellknown GUIDs for optional directory features */
 #define DS_GUID_FEATURE_RECYCLE_BIN		      "766ddcd8-acd0-445e-f3b9-a7f9b6744f2a"
 
+/* GUIDs for AD schema attributes and classes */
+#define DS_GUID_SCHEMA_ATTR_DEPARTMENT                "bf96794f-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_ATTR_DNS_HOST_NAME             "72e39547-7b18-11d1-adef-00c04fd8d5cd"
+#define DS_GUID_SCHEMA_ATTR_INSTANCE_TYPE             "bf96798c-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_ATTR_MS_SFU_30                 "16c5d1d3-35c2-4061-a870-a5cefda804f0"
+#define DS_GUID_SCHEMA_ATTR_NT_SECURITY_DESCRIPTOR    "bf9679e3-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_ATTR_PRIMARY_GROUP_ID          "bf967a00-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_ATTR_SERVICE_PRINCIPAL_NAME    "f3a64788-5306-11d1-a9c5-0000f80367c1"
+#define DS_GUID_SCHEMA_ATTR_USER_ACCOUNT_CONTROL      "bf967a68-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_ATTR_USER_PASSWORD             "bf967a6e-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_CLASS_COMPUTER                 "bf967a86-0de6-11d0-a285-00aa003049e2"
+#define DS_GUID_SCHEMA_CLASS_MANAGED_SERVICE_ACCOUNT  "ce206244-5827-4a86-ba1c-1c0c386c1b64"
+#define DS_GUID_SCHEMA_CLASS_USER                     "bf967aba-0de6-11d0-a285-00aa003049e2"
+
 /* dsHeuristics character indexes see MS-ADTS 7.1.1.2.4.1.2 */
 
 #define DS_HR_SUPFIRSTLASTANR                     0x00000001
@@ -258,6 +272,8 @@
 #define DS_HR_KVNOEMUW2K                          0x00000011
 
 #define DS_HR_TWENTIETH_CHAR                      0x00000014
+#define DS_HR_ATTR_AUTHZ_ON_LDAP_ADD              0x0000001C
+#define DS_HR_BLOCK_OWNER_IMPLICIT_RIGHTS         0x0000001D
 #define DS_HR_THIRTIETH_CHAR                      0x0000001E
 #define DS_HR_FOURTIETH_CHAR                      0x00000028
 #define DS_HR_FIFTIETH_CHAR                       0x00000032

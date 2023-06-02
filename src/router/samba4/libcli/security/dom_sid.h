@@ -23,6 +23,9 @@
 #ifndef _DOM_SID_H_
 #define _DOM_SID_H_
 
+#include "replace.h"
+#include <talloc.h>
+#include "lib/util/data_blob.h"
 #include "librpc/gen_ndr/security.h"
 
 /* Some well-known SIDs */
@@ -61,6 +64,11 @@ extern const struct dom_sid global_sid_Unix_NFS_Users;
 extern const struct dom_sid global_sid_Unix_NFS_Groups;
 extern const struct dom_sid global_sid_Unix_NFS_Mode;
 extern const struct dom_sid global_sid_Unix_NFS_Other;
+extern const struct dom_sid global_sid_Samba_SMB3;
+
+extern const struct dom_sid global_sid_Samba_NPA_Flags;
+#define SAMBA_NPA_FLAGS_NEED_IDLE 1
+#define SAMBA_NPA_FLAGS_WINBIND_OFF 2
 
 enum lsa_SidType;
 

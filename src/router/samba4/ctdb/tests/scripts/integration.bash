@@ -446,16 +446,16 @@ node_has_status ()
 
 	local bits
 	case "$status" in
-	unhealthy)    bits="?|?|?|1|*" ;;
-	healthy)      bits="?|?|?|0|*" ;;
+	unhealthy)    bits="?|?|?|?|1|*" ;;
+	healthy)      bits="?|?|?|?|0|*" ;;
 	disconnected) bits="1|*" ;;
 	connected)    bits="0|*" ;;
-	banned)       bits="?|1|*" ;;
-	unbanned)     bits="?|0|*" ;;
-	disabled)     bits="?|?|1|*" ;;
-	enabled)      bits="?|?|0|*" ;;
-	stopped)      bits="?|?|?|?|1|*" ;;
-	notstopped)   bits="?|?|?|?|0|*" ;;
+	banned)       bits="?|?|1|*" ;;
+	unbanned)     bits="?|?|0|*" ;;
+	disabled)     bits="?|?|?|1|*" ;;
+	enabled)      bits="?|?|?|0|*" ;;
+	stopped)      bits="?|?|?|?|?|1|*" ;;
+	notstopped)   bits="?|?|?|?|?|0|*" ;;
 	*)
 		echo "node_has_status: unknown status \"$status\""
 		return 1
@@ -469,8 +469,10 @@ node_has_status ()
 		while read -r line ; do
 			# This needs to be done in 2 steps to
 			# avoid false matches.
-			local line_bits="${line#|${pnn}|*|}"
+			local line_bits="${line#|"${pnn}"|*|}"
 			[ "$line_bits" = "$line" ] && continue
+			# shellcheck disable=SC2295
+			# This depends on $bits being a pattern
 			[ "${line_bits#${bits}}" != "$line_bits" ] && \
 				return 0
 		done
@@ -640,6 +642,94 @@ ctdb_init ()
 ctdb_base_show ()
 {
 	echo "${CTDB_BASE:-${CTDB_SCRIPTS_BASE}}"
+}
+
+#######################################
+
+# sets: leader
+_leader_get ()
+{
+	local node="$1"
+
+	ctdb_onnode "$node" leader
+	# shellcheck disable=SC2154
+	# $out set by ctdb_onnode() above
+	leader="$out"
+}
+
+leader_get ()
+{
+	local node="$1"
+
+	echo "Get leader"
+	_leader_get "$node"
+	echo "Leader is ${leader}"
+	echo
+}
+
+_leader_has_changed ()
+{
+	local node="$1"
+	local leader_old="$2"
+
+	_leader_get "$node"
+
+	[ "$leader" != "$leader_old" ]
+}
+
+# uses: leader
+wait_until_leader_has_changed ()
+{
+	local node="$1"
+
+	echo
+	echo "Wait until leader changes..."
+	wait_until 30 _leader_has_changed "$node" "$leader"
+	echo "Leader changed to ${leader}"
+}
+
+#######################################
+
+# sets: generation
+_generation_get ()
+{
+	local node="$1"
+
+	ctdb_onnode "$node" status
+	# shellcheck disable=SC2154
+	# $outfile set by ctdb_onnode() above
+	generation=$(sed -n -e 's/^Generation:\([0-9]*\)/\1/p' "$outfile")
+}
+
+generation_get ()
+{
+	local node="$1"
+
+	echo "Get generation"
+	_generation_get "$node"
+	echo "Generation is ${generation}"
+	echo
+}
+
+_generation_has_changed ()
+{
+	local node="$1"
+	local generation_old="$2"
+
+	_generation_get "$node"
+
+	[ "$generation" != "$generation_old" ]
+}
+
+# uses: generation
+wait_until_generation_has_changed ()
+{
+	local node="$1"
+
+	echo "Wait until generation changes..."
+	wait_until 30 _generation_has_changed "$node" "$generation"
+	echo "Generation changed to ${generation}"
+	echo
 }
 
 #######################################

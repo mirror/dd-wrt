@@ -1079,6 +1079,87 @@ static bool add_sockaddr_to_array(TALLOC_CTX *mem_ctx,
 	return True;
 }
 
+#ifdef HAVE_ADS
+static bool dcip_check_name_ads(const struct winbindd_domain *domain,
+				struct samba_sockaddr *sa,
+				uint32_t request_flags,
+				TALLOC_CTX *mem_ctx,
+				char **namep)
+{
+	TALLOC_CTX *tmp_ctx = talloc_stackframe();
+	char *name = NULL;
+	ADS_STRUCT *ads = NULL;
+	ADS_STATUS ads_status;
+	char addr[INET6_ADDRSTRLEN];
+
+	print_sockaddr(addr, sizeof(addr), &sa->u.ss);
+
+	ads = ads_init(tmp_ctx,
+		       domain->alt_name,
+		       domain->name,
+		       addr,
+		       ADS_SASL_PLAIN);
+	if (ads == NULL) {
+		ads_status = ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
+		goto out;
+	}
+	ads->auth.flags |= ADS_AUTH_NO_BIND;
+	ads->config.flags |= request_flags;
+	ads->server.no_fallback = true;
+
+	ads_status = ads_connect(ads);
+	if (!ADS_ERR_OK(ads_status)) {
+		goto out;
+	}
+
+	/* We got a cldap packet. */
+	name = talloc_strdup(tmp_ctx, ads->config.ldap_server_name);
+	if (name == NULL) {
+		ads_status = ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
+		goto out;
+	}
+	namecache_store(name, 0x20, 1, sa);
+
+	DBG_DEBUG("CLDAP flags = 0x%"PRIx32"\n", ads->config.flags);
+
+	if (domain->primary && (ads->config.flags & NBT_SERVER_KDC)) {
+		if (ads_closest_dc(ads)) {
+			char *sitename = sitename_fetch(tmp_ctx,
+							ads->config.realm);
+
+			/* We're going to use this KDC for this realm/domain.
+			   If we are using sites, then force the krb5 libs
+			   to use this KDC. */
+
+			create_local_private_krb5_conf_for_domain(domain->alt_name,
+							domain->name,
+							sitename,
+							&sa->u.ss);
+
+			TALLOC_FREE(sitename);
+		} else {
+			/* use an off site KDC */
+			create_local_private_krb5_conf_for_domain(domain->alt_name,
+							domain->name,
+							NULL,
+							&sa->u.ss);
+		}
+		winbindd_set_locator_kdc_envs(domain);
+
+		/* Ensure we contact this DC also. */
+		saf_store(domain->name, name);
+		saf_store(domain->alt_name, name);
+	}
+
+	*namep = talloc_move(mem_ctx, &name);
+
+out:
+	TALLOC_FREE(tmp_ctx);
+
+	return ADS_ERR_OK(ads_status) ? true : false;
+}
+#endif
+
 /*******************************************************************
  convert an ip to a name
  For an AD Domain, it checks the requirements of the request flags.
@@ -1113,66 +1194,11 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 	}
 
 	if (is_ad_domain) {
-		ADS_STRUCT *ads;
-		ADS_STATUS ads_status;
-		char addr[INET6_ADDRSTRLEN];
-
-		print_sockaddr(addr, sizeof(addr), &sa.u.ss);
-
-		ads = ads_init(domain->alt_name,
-			       domain->name,
-			       addr,
-			       ADS_SASL_PLAIN);
-		ads->auth.flags |= ADS_AUTH_NO_BIND;
-		ads->config.flags |= request_flags;
-		ads->server.no_fallback = true;
-
-		ads_status = ads_connect(ads);
-		if (ADS_ERR_OK(ads_status)) {
-			/* We got a cldap packet. */
-			*name = talloc_strdup(mem_ctx,
-					     ads->config.ldap_server_name);
-			if (*name == NULL) {
-				return false;
-			}
-			namecache_store(*name, 0x20, 1, &sa);
-
-			DEBUG(10,("dcip_check_name: flags = 0x%x\n", (unsigned int)ads->config.flags));
-
-			if (domain->primary && (ads->config.flags & NBT_SERVER_KDC)) {
-				if (ads_closest_dc(ads)) {
-					char *sitename = sitename_fetch(mem_ctx, ads->config.realm);
-
-					/* We're going to use this KDC for this realm/domain.
-					   If we are using sites, then force the krb5 libs
-					   to use this KDC. */
-
-					create_local_private_krb5_conf_for_domain(domain->alt_name,
-									domain->name,
-									sitename,
-									&sa.u.ss);
-
-					TALLOC_FREE(sitename);
-				} else {
-					/* use an off site KDC */
-					create_local_private_krb5_conf_for_domain(domain->alt_name,
-									domain->name,
-									NULL,
-									&sa.u.ss);
-				}
-				winbindd_set_locator_kdc_envs(domain);
-
-				/* Ensure we contact this DC also. */
-				saf_store(domain->name, *name);
-				saf_store(domain->alt_name, *name);
-			}
-
-			ads_destroy( &ads );
-			return True;
-		}
-
-		ads_destroy( &ads );
-		return false;
+		return dcip_check_name_ads(domain,
+					   &sa,
+					   request_flags,
+					   mem_ctx,
+					   name);
 	}
 #endif
 
@@ -1365,21 +1391,105 @@ static bool get_dcs(TALLOC_CTX *mem_ctx, struct winbindd_domain *domain,
 	return True;
 }
 
+static bool connect_preferred_dc(TALLOC_CTX *mem_ctx,
+				 struct winbindd_domain *domain,
+				 uint32_t request_flags,
+				 int *fd)
+{
+	char *saf_servername = NULL;
+	NTSTATUS status;
+	bool ok;
+
+	/*
+	 * We have to check the server affinity cache here since later we select
+	 * a DC based on response time and not preference.
+	 */
+	if (domain->force_dc) {
+		saf_servername = domain->dcname;
+	} else {
+		saf_servername = saf_fetch(mem_ctx, domain->name);
+	}
+
+	/*
+	 * Check the negative connection cache before talking to it. It going
+	 * down may have triggered the reconnection.
+	 */
+	status = check_negative_conn_cache(domain->name, saf_servername);
+	if (!NT_STATUS_IS_OK(status)) {
+		saf_servername = NULL;
+	}
+
+	if (saf_servername != NULL) {
+		DBG_DEBUG("saf_servername is '%s' for domain %s\n",
+			  saf_servername, domain->name);
+
+		/* convert an ip address to a name */
+		if (is_ipaddress(saf_servername)) {
+			ok = interpret_string_addr(&domain->dcaddr,
+						   saf_servername,
+						   AI_NUMERICHOST);
+			if (!ok) {
+				return false;
+			}
+		} else {
+			ok = resolve_name(saf_servername,
+					  &domain->dcaddr,
+					  0x20,
+					  true);
+			if (!ok) {
+				goto fail;
+			}
+		}
+
+		TALLOC_FREE(domain->dcname);
+		ok = dcip_check_name(domain,
+				     domain,
+				     &domain->dcaddr,
+				     &domain->dcname,
+				     request_flags);
+		if (!ok) {
+			goto fail;
+		}
+	}
+
+	if (domain->dcname == NULL) {
+		return false;
+	}
+
+	status = check_negative_conn_cache(domain->name, domain->dcname);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
+
+	status = smbsock_connect(&domain->dcaddr, 0,
+				 NULL, -1, NULL, -1,
+				 fd, NULL, 10);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+	return true;
+
+fail:
+	winbind_add_failed_connection_entry(domain,
+					    saf_servername,
+					    NT_STATUS_UNSUCCESSFUL);
+	return false;
+
+}
+
 /*******************************************************************
  Find and make a connection to a DC in the given domain.
 
  @param[in] mem_ctx talloc memory context to allocate from
  @param[in] domain domain to find a dc in
- @param[out] dcname NetBIOS or FQDN of DC that's connected to
- @param[out] pss DC Internet address and port
  @param[out] fd fd of the open socket connected to the newly found dc
  @return true when a DC connection is made, false otherwise
 *******************************************************************/
 
-static bool find_new_dc(TALLOC_CTX *mem_ctx,
-			struct winbindd_domain *domain,
-			char **dcname, struct sockaddr_storage *pss, int *fd,
-			uint32_t request_flags)
+static bool find_dc(TALLOC_CTX *mem_ctx,
+		    struct winbindd_domain *domain,
+		    uint32_t request_flags,
+		    int *fd)
 {
 	struct dc_name_ip *dcs = NULL;
 	int num_dcs = 0;
@@ -1394,8 +1504,18 @@ static bool find_new_dc(TALLOC_CTX *mem_ctx,
 	size_t fd_index;
 
 	NTSTATUS status;
+	bool ok;
 
 	*fd = -1;
+
+	ok = connect_preferred_dc(mem_ctx, domain, request_flags, fd);
+	if (ok) {
+		return true;
+	}
+
+	if (domain->force_dc) {
+		return false;
+	}
 
  again:
 	if (!get_dcs(mem_ctx, domain, &dcs, &num_dcs, request_flags) || (num_dcs == 0))
@@ -1425,29 +1545,36 @@ static bool find_new_dc(TALLOC_CTX *mem_ctx,
 		for (i=0; i<num_dcs; i++) {
 			char ab[INET6_ADDRSTRLEN];
 			print_sockaddr(ab, sizeof(ab), &dcs[i].ss);
-			DEBUG(10, ("find_new_dc: smbsock_any_connect failed for "
+			DBG_DEBUG("smbsock_any_connect failed for "
 				"domain %s address %s. Error was %s\n",
-				   domain->name, ab, nt_errstr(status) ));
+				   domain->name, ab, nt_errstr(status));
 			winbind_add_failed_connection_entry(domain,
 				dcs[i].name, NT_STATUS_UNSUCCESSFUL);
 		}
 		return False;
 	}
 
-	*pss = addrs[fd_index];
+	domain->dcaddr = addrs[fd_index];
 
 	if (*dcnames[fd_index] != '\0' && !is_ipaddress(dcnames[fd_index])) {
 		/* Ok, we've got a name for the DC */
-		*dcname = talloc_strdup(mem_ctx, dcnames[fd_index]);
-		if (*dcname == NULL) {
+		TALLOC_FREE(domain->dcname);
+		domain->dcname = talloc_strdup(mem_ctx, dcnames[fd_index]);
+		if (domain->dcname == NULL) {
 			return false;
 		}
 		return true;
 	}
 
 	/* Try to figure out the name */
-	if (dcip_check_name(mem_ctx, domain, pss, dcname, request_flags)) {
-		return True;
+	TALLOC_FREE(domain->dcname);
+	ok = dcip_check_name(domain,
+			     domain,
+			     &domain->dcaddr,
+			     &domain->dcname,
+			     request_flags);
+	if (ok) {
+		return true;
 	}
 
 	/* We can not continue without the DC's name */
@@ -1561,31 +1688,15 @@ NTSTATUS wb_open_internal_pipe(TALLOC_CTX *mem_ctx,
 			       struct rpc_pipe_client **ret_pipe)
 {
 	struct rpc_pipe_client *cli = NULL;
-	const struct auth_session_info *session_info;
+	const struct auth_session_info *session_info = NULL;
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
 
 
 	session_info = get_session_info_system();
 	SMB_ASSERT(session_info != NULL);
 
-	/* create a connection to the specified pipe */
-	if (lp_parm_bool(-1, "winbindd", "use external pipes", false)) {
-		status = rpc_pipe_open_interface(mem_ctx,
-						 table,
-						 session_info,
-						 NULL,
-						 NULL,
-						 global_messaging_context(),
-						 &cli);
-	} else {
-		status = rpc_pipe_open_internal(mem_ctx,
-						table,
-						session_info,
-						NULL,
-						NULL,
-						global_messaging_context(),
-						&cli);
-	}
+	status = rpc_pipe_open_local_np(
+		mem_ctx, table, NULL, NULL, NULL, NULL, session_info, &cli);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -1602,158 +1713,86 @@ static NTSTATUS cm_open_connection(struct winbindd_domain *domain,
 				   bool need_rw_dc)
 {
 	TALLOC_CTX *mem_ctx;
-	NTSTATUS result;
-	char *saf_servername;
+	NTSTATUS result = NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
 	int retries;
 	uint32_t request_flags = need_rw_dc ? DS_WRITABLE_REQUIRED : 0;
+	int fd = -1;
+	bool retry = false;
+	bool seal_pipes = true;
 
 	if ((mem_ctx = talloc_init("cm_open_connection")) == NULL) {
 		set_domain_offline(domain);
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	saf_servername = saf_fetch(mem_ctx, domain->name );
-
-	/* we have to check the server affinity cache here since
-	   later we select a DC based on response time and not preference */
-
-	/* Check the negative connection cache
-	   before talking to it. It going down may have
-	   triggered the reconnection. */
-
-	if (saf_servername && NT_STATUS_IS_OK(check_negative_conn_cache(domain->name, saf_servername))) {
-		struct sockaddr_storage ss;
-		char *dcname = NULL;
-		bool resolved = true;
-
-		DEBUG(10, ("cm_open_connection: saf_servername is '%s' for domain %s\n",
-			   saf_servername, domain->name));
-
-		/* convert an ip address to a name */
-		if (is_ipaddress(saf_servername)) {
-			if (!interpret_string_addr(&ss, saf_servername,
-						   AI_NUMERICHOST)) {
-				TALLOC_FREE(mem_ctx);
-				return NT_STATUS_UNSUCCESSFUL;
-			}
-		} else {
-			if (!resolve_name(saf_servername, &ss, 0x20, true)) {
-				resolved = false;
-			}
-		}
-
-		if (resolved && dcip_check_name(mem_ctx, domain, &ss, &dcname, request_flags)) {
-			domain->dcname = talloc_strdup(domain,
-						       dcname);
-			if (domain->dcname == NULL) {
-				TALLOC_FREE(mem_ctx);
-				return NT_STATUS_NO_MEMORY;
-			}
-
-			domain->dcaddr = ss;
-		} else {
-			winbind_add_failed_connection_entry(domain, saf_servername,
-							    NT_STATUS_UNSUCCESSFUL);
-		}
-	}
-
 	for (retries = 0; retries < 3; retries++) {
-		int fd = -1;
-		bool retry = False;
-		char *dcname = NULL;
-
-		result = NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
+		bool found_dc;
 
 		DEBUG(10, ("cm_open_connection: dcname is '%s' for domain %s\n",
 			   domain->dcname ? domain->dcname : "", domain->name));
 
-		if (domain->dcname != NULL &&
-		    NT_STATUS_IS_OK(check_negative_conn_cache(domain->name,
-							      domain->dcname)))
-		{
-			NTSTATUS status;
-
-			status = smbsock_connect(&domain->dcaddr, 0,
-						 NULL, -1, NULL, -1,
-						 &fd, NULL, 10);
-			if (!NT_STATUS_IS_OK(status)) {
-				fd = -1;
-			}
-		}
-
-		if ((fd == -1) &&
-		    !find_new_dc(mem_ctx, domain, &dcname, &domain->dcaddr, &fd, request_flags))
-		{
+		found_dc = find_dc(mem_ctx, domain, request_flags, &fd);
+		if (!found_dc) {
 			/* This is the one place where we will
 			   set the global winbindd offline state
 			   to true, if a "WINBINDD_OFFLINE" entry
 			   is found in the winbindd cache. */
 			set_global_winbindd_state_offline();
+			result = NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
 			break;
-		}
-		if (dcname != NULL) {
-			talloc_free(domain->dcname);
-
-			domain->dcname = talloc_move(domain, &dcname);
-			if (domain->dcname == NULL) {
-				result = NT_STATUS_NO_MEMORY;
-				break;
-			}
 		}
 
 		new_conn->cli = NULL;
 
 		result = cm_prepare_connection(domain, fd, domain->dcname,
 			&new_conn->cli, &retry);
-		if (!NT_STATUS_IS_OK(result)) {
-			/* Don't leak the smb connection socket */
-			if (fd != -1) {
-				close(fd);
-				fd = -1;
-			}
-		}
-
-		if (!retry)
+		if (NT_STATUS_IS_OK(result)) {
 			break;
+		}
+		close(fd);
+		fd = -1;
+		if (!retry) {
+			break;
+		}
 	}
 
-	if (NT_STATUS_IS_OK(result)) {
-		bool seal_pipes = true;
-
-		winbindd_set_locator_kdc_envs(domain);
-
-		if (domain->online == False) {
-			/* We're changing state from offline to online. */
-			set_global_winbindd_state_online();
-		}
-		set_domain_online(domain);
-
-		/*
-		 * Much as I hate global state, this seems to be the point
-		 * where we can be certain that we have a proper connection to
-		 * a DC. wbinfo --dc-info needs that information, store it in
-		 * gencache with a looong timeout. This will need revisiting
-		 * once we start to connect to multiple DCs, wbcDcInfo is
-		 * already prepared for that.
-		 */
-		store_current_dc_in_gencache(domain->name, domain->dcname,
-					     new_conn->cli);
-
-		seal_pipes = lp_winbind_sealed_pipes();
-		seal_pipes = lp_parm_bool(-1, "winbind sealed pipes",
-					  domain->name,
-					  seal_pipes);
-
-		if (seal_pipes) {
-			new_conn->auth_level = DCERPC_AUTH_LEVEL_PRIVACY;
-		} else {
-			new_conn->auth_level = DCERPC_AUTH_LEVEL_INTEGRITY;
-		}
-	} else {
+	if (!NT_STATUS_IS_OK(result)) {
 		/* Ensure we setup the retry handler. */
 		set_domain_offline(domain);
+		goto out;
 	}
 
+	winbindd_set_locator_kdc_envs(domain);
+
+	if (domain->online == False) {
+		/* We're changing state from offline to online. */
+		set_global_winbindd_state_online();
+	}
+	set_domain_online(domain);
+
+	/*
+	 * Much as I hate global state, this seems to be the point
+	 * where we can be certain that we have a proper connection to
+	 * a DC. wbinfo --dc-info needs that information, store it in
+	 * gencache with a looong timeout. This will need revisiting
+	 * once we start to connect to multiple DCs, wbcDcInfo is
+	 * already prepared for that.
+	 */
+	store_current_dc_in_gencache(domain->name, domain->dcname,
+				     new_conn->cli);
+
+	seal_pipes = lp_winbind_sealed_pipes();
+	seal_pipes = lp_parm_bool(-1, "winbind sealed pipes",
+				  domain->name,
+				  seal_pipes);
+
+	if (seal_pipes) {
+		new_conn->auth_level = DCERPC_AUTH_LEVEL_PRIVACY;
+	} else {
+		new_conn->auth_level = DCERPC_AUTH_LEVEL_INTEGRITY;
+	}
+
+out:
 	talloc_destroy(mem_ctx);
 	return result;
 }
@@ -2447,6 +2486,8 @@ NTSTATUS cm_connect_sam(struct winbindd_domain *domain, TALLOC_CTX *mem_ctx,
 	bool retry = false; /* allow one retry attempt for expired session */
 	const char *remote_name = NULL;
 	const struct sockaddr_storage *remote_sockaddr = NULL;
+	bool sealed_pipes = true;
+	bool strong_key = true;
 
 	if (sid_check_is_our_sam(&domain->sid)) {
 		if (domain->rodc == false || need_rw_dc == false) {
@@ -2626,14 +2667,24 @@ retry:
 
  anonymous:
 
+	sealed_pipes = lp_winbind_sealed_pipes();
+	sealed_pipes = lp_parm_bool(-1, "winbind sealed pipes",
+				    domain->name,
+				    sealed_pipes);
+	strong_key = lp_require_strong_key();
+	strong_key = lp_parm_bool(-1, "require strong key",
+				  domain->name,
+				  strong_key);
+
 	/* Finally fall back to anonymous. */
-	if (lp_winbind_sealed_pipes() || lp_require_strong_key()) {
+	if (sealed_pipes || strong_key) {
 		status = NT_STATUS_DOWNGRADE_DETECTED;
 		DEBUG(1, ("Unwilling to make SAMR connection to domain %s "
 			  "without connection level security, "
-			  "must set 'winbind sealed pipes = false' and "
-			  "'require strong key = false' to proceed: %s\n",
-			  domain->name, nt_errstr(status)));
+			  "must set 'winbind sealed pipes:%s = false' and "
+			  "'require strong key:%s = false' to proceed: %s\n",
+			  domain->name, domain->name, domain->name,
+			  nt_errstr(status)));
 		goto done;
 	}
 	status = cli_rpc_pipe_open_noauth(conn->cli, &ndr_table_samr,
@@ -2790,6 +2841,8 @@ NTSTATUS cm_connect_lsa(struct winbindd_domain *domain, TALLOC_CTX *mem_ctx,
 	bool retry = false; /* allow one retry attempt for expired session */
 	const char *remote_name = NULL;
 	const struct sockaddr_storage *remote_sockaddr = NULL;
+	bool sealed_pipes = true;
+	bool strong_key = true;
 
 retry:
 	result = init_dc_connection_rpc(domain, false);
@@ -2951,13 +3004,24 @@ retry:
 		goto done;
 	}
 
-	if (lp_winbind_sealed_pipes() || lp_require_strong_key()) {
+	sealed_pipes = lp_winbind_sealed_pipes();
+	sealed_pipes = lp_parm_bool(-1, "winbind sealed pipes",
+				    domain->name,
+				    sealed_pipes);
+	strong_key = lp_require_strong_key();
+	strong_key = lp_parm_bool(-1, "require strong key",
+				  domain->name,
+				  strong_key);
+
+	/* Finally fall back to anonymous. */
+	if (sealed_pipes || strong_key) {
 		result = NT_STATUS_DOWNGRADE_DETECTED;
 		DEBUG(1, ("Unwilling to make LSA connection to domain %s "
 			  "without connection level security, "
-			  "must set 'winbind sealed pipes = false' and "
-			  "'require strong key = false' to proceed: %s\n",
-			  domain->name, nt_errstr(result)));
+			  "must set 'winbind sealed pipes:%s = false' and "
+			  "'require strong key:%s = false' to proceed: %s\n",
+			  domain->name, domain->name, domain->name,
+			  nt_errstr(result)));
 		goto done;
 	}
 

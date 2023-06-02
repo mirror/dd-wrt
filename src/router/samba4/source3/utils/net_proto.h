@@ -23,7 +23,9 @@
 #ifndef _NET_PROTO_H_
 #define _NET_PROTO_H_
 
+#include "ads.h"
 #include "libads/ads_status.h"
+#include "librpc/gen_ndr/libnet_join.h"
 
 /* The following definitions come from utils/net.c  */
 
@@ -31,8 +33,14 @@ enum netr_SchannelType get_sec_channel_type(const char *param);
 
 /* The following definitions come from utils/net_ads.c  */
 struct ads_struct;
-ADS_STATUS ads_startup(struct net_context *c, bool only_own_domain, struct ads_struct **ads);
-ADS_STATUS ads_startup_nobind(struct net_context *c, bool only_own_domain, struct ads_struct **ads);
+ADS_STATUS ads_startup(struct net_context *c,
+		       bool only_own_domain,
+		       TALLOC_CTX *mem_ctx,
+		       struct ads_struct **ads);
+ADS_STATUS ads_startup_nobind(struct net_context *c,
+			      bool only_own_domain,
+			      TALLOC_CTX *mem_ctx,
+			      struct ads_struct **ads);
 int net_ads_check_our_domain(struct net_context *c);
 int net_ads_check(struct net_context *c);
 int net_ads_user(struct net_context *c, int argc, const char **argv);
@@ -45,6 +53,15 @@ int net_ads_keytab(struct net_context *c, int argc, const char **argv);
 int net_ads_kerberos(struct net_context *c, int argc, const char **argv);
 int net_ads_setspn(struct net_context *c, int argc, const char **argv);
 int net_ads(struct net_context *c, int argc, const char **argv);
+
+/* The following definitions come from utils/net_ads_join_dns.c  */
+void use_in_memory_ccache(void);
+NTSTATUS net_update_dns_ext(struct net_context *c,
+			    TALLOC_CTX *mem_ctx, ADS_STRUCT *ads,
+			    const char *hostname,
+			    struct sockaddr_storage *iplist,
+			    int num_addrs, bool remove_host);
+void net_ads_join_dns_updates(struct net_context *c, TALLOC_CTX *ctx, struct libnet_JoinCtx *r);
 
 /* The following definitions come from utils/net_ads_gpo.c  */
 
@@ -430,6 +447,8 @@ const char *net_prompt_pass(struct net_context *c, const char *user);
 int net_run_function(struct net_context *c, int argc, const char **argv,
 		      const char *whoami, struct functable *table);
 void net_display_usage_from_functable(struct functable *table);
+
+void net_warn_member_options(void);
 
 const char *net_share_type_str(int num_type);
 

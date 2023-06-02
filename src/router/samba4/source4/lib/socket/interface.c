@@ -94,11 +94,14 @@ static void add_interface(TALLOC_CTX *mem_ctx, const struct iface_struct *ifs, s
 		return;
 	}
 
-	iface = talloc(*interfaces == NULL ? mem_ctx : *interfaces, struct interface);
-	if (iface == NULL) 
+	if (*interfaces != NULL) {
+		mem_ctx = *interfaces;
+	}
+
+	iface = talloc_zero(mem_ctx, struct interface);
+	if (iface == NULL) {
 		return;
-	
-	ZERO_STRUCTPN(iface);
+	}
 
 	iface->name = talloc_strdup(iface, ifs->name);
 	if (!iface->name) {

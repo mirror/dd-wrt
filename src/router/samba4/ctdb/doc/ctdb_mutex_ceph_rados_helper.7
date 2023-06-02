@@ -2,12 +2,12 @@
 .\"     Title: Ceph RADOS Mutex
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CEPH RADOS MUTEX" "7" "01/31/2022" "ctdb" "CTDB \- clustered TDB database"
+.TH "CEPH RADOS MUTEX" "7" "05/31/2023" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 ctdb_mutex_ceph_rados_helper \- Ceph RADOS cluster mutex helper
 .SH "DESCRIPTION"
 .PP
-ctdb_mutex_ceph_rados_helper can be used as a recovery lock provider for CTDB\&. When configured, split brain avoidance during CTDB recovery will be handled using locks against an object located in a Ceph RADOS pool\&. To enable this functionality, include the following line in the
+ctdb_mutex_ceph_rados_helper can be used as a cluster lock provider for CTDB\&. When configured, split brain avoidance during CTDB recovery will be handled using locks against an object located in a Ceph RADOS pool\&. To enable this functionality, include the following line in the
 [cluster]
 section of
 \fBctdb.conf\fR(5):
@@ -40,7 +40,7 @@ section of
 .RS 4
 .\}
 .nf
-recovery lock = !ctdb_mutex_ceph_rados_helper [Cluster] [User] [Pool] [Object]
+cluster lock = !ctdb_mutex_ceph_rados_helper [Cluster] [User] [Pool] [Object]
 
 Cluster: Ceph cluster name (e\&.g\&. ceph)
 User: Ceph cluster user name (e\&.g\&. client\&.admin)
@@ -60,7 +60,7 @@ located in a librados default search path (e\&.g\&. /etc/ceph/)\&.
 \fIPool\fR
 must already exist\&.
 .PP
-For informational purposes, ctdb_mutex_ceph_rados_helper will also register the recovery lock holder in Ceph Manager\*(Aqs service map\&.
+For informational purposes, ctdb_mutex_ceph_rados_helper will also register the cluster lock holder in Ceph Manager\*(Aqs service map\&.
 .SH "SEE ALSO"
 .PP
 \fBctdb\fR(7),

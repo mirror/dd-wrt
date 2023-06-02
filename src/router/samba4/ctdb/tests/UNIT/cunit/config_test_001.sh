@@ -34,7 +34,10 @@ ok <<EOF
 [cluster]
 	# transport = tcp
 	# node address = 
+	# cluster lock = 
 	# recovery lock = 
+	# leader timeout = 5
+	# leader capability = true
 [database]
 	# volatile database directory = ${database_volatile_dbdir}
 	# persistent database directory = ${database_persistent_dbdir}
@@ -47,7 +50,6 @@ ok <<EOF
 	# disabled = false
 [legacy]
 	# realtime scheduling = true
-	# recmaster capability = true
 	# lmaster capability = true
 	# start as stopped = false
 	# start as disabled = false

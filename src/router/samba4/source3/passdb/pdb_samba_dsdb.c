@@ -1134,6 +1134,12 @@ static NTSTATUS pdb_samba_dsdb_delete_dom_group(struct pdb_methods *m,
 		talloc_free(tmp_ctx);
 		ldb_transaction_cancel(state->ldb);
 		return NT_STATUS_NO_SUCH_GROUP;
+	} else if (rc != LDB_SUCCESS) {
+		talloc_free(tmp_ctx);
+		DEBUG(10, ("dsdb_search_one failed %s\n",
+			   ldb_errstring(state->ldb)));
+		ldb_transaction_cancel(state->ldb);
+		return NT_STATUS_LDAP(rc);
 	}
 	rc = ldb_delete(state->ldb, dn);
 	if (rc == LDB_ERR_NO_SUCH_OBJECT) {
@@ -1599,6 +1605,12 @@ static NTSTATUS pdb_samba_dsdb_delete_alias(struct pdb_methods *m,
 		talloc_free(tmp_ctx);
 		ldb_transaction_cancel(state->ldb);
 		return NT_STATUS_NO_SUCH_ALIAS;
+	} else if (rc != LDB_SUCCESS) {
+		talloc_free(tmp_ctx);
+		DEBUG(10, ("dsdb_search_one failed %s\n",
+			   ldb_errstring(state->ldb)));
+		ldb_transaction_cancel(state->ldb);
+		return NT_STATUS_LDAP(rc);
 	}
 	rc = ldb_delete(state->ldb, dn);
 	if (rc == LDB_ERR_NO_SUCH_OBJECT) {
@@ -2776,18 +2788,10 @@ static bool pdb_samba_dsdb_set_trusteddom_pw(struct pdb_methods *m,
 	}
 
 	msg->num_elements = 0;
-	ret = ldb_msg_add_empty(msg, "trustAuthOutgoing",
-				LDB_FLAG_MOD_REPLACE, NULL);
+	ret = ldb_msg_append_value(msg, "trustAuthOutgoing",
+				   &new_val, LDB_FLAG_MOD_REPLACE);
 	if (ret != LDB_SUCCESS) {
-		DEBUG(0, ("ldb_msg_add_empty() failed\n"));
-		TALLOC_FREE(tmp_ctx);
-		ldb_transaction_cancel(state->ldb);
-		return false;
-	}
-	ret = ldb_msg_add_value(msg, "trustAuthOutgoing",
-				&new_val, NULL);
-	if (ret != LDB_SUCCESS) {
-		DEBUG(0, ("ldb_msg_add_value() failed\n"));
+		DEBUG(0, ("ldb_msg_append_value() failed\n"));
 		TALLOC_FREE(tmp_ctx);
 		ldb_transaction_cancel(state->ldb);
 		return false;

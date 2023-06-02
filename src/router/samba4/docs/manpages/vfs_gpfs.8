@@ -2,12 +2,12 @@
 .\"     Title: vfs_gpfs
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "VFS_GPFS" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "VFS_GPFS" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -90,6 +90,134 @@ This module is stackable\&.
 .PP
 Since Samba 4\&.0 all options are per share options\&.
 .SH "OPTIONS"
+.PP
+nfs4:mode = [ simple | special ]
+.RS 4
+Controls substitution of special IDs (OWNER@ and GROUP@) on NFS4 ACLs\&. The use of mode simple is recommended\&. In this mode only non inheriting ACL entries for the file owner and group are mapped to special IDs\&.
+.sp
+The following MODEs are understood by the module:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+simple(default)
+\- use OWNER@ and GROUP@ special IDs for non inheriting ACEs only\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+special(deprecated)
+\- use OWNER@ and GROUP@ special IDs in ACEs for all file owner and group ACEs\&.
+.RE
+.sp
+.RE
+.RE
+.PP
+nfs4:acedup = [dontcare|reject|ignore|merge]
+.RS 4
+This parameter configures how Samba handles duplicate ACEs encountered in NFS4 ACLs\&. They allow creating duplicate ACEs with different bits for same ID, which may confuse the Windows clients\&.
+.sp
+Following is the behaviour of Samba for different values :
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+dontcare
+\- copy the ACEs as they come
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+reject (deprecated)
+\- stop operation and exit with error on ACL set op
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ignore (deprecated)
+\- don\*(Aqt include the second matching ACE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+merge (default)
+\- bitwise OR the 2 ace\&.flag fields and 2 ace\&.mask fields of the 2 duplicate ACEs into 1 ACE
+.RE
+.sp
+.RE
+.RE
+.PP
+nfs4:chown = [yes|no]
+.RS 4
+This parameter allows enabling or disabling the chown supported by the underlying filesystem\&. This parameter should be enabled with care as it might leave your system insecure\&.
+.sp
+Some filesystems allow chown as a) giving b) stealing\&. It is the latter that is considered a risk\&.
+.sp
+Following is the behaviour of Samba for different values :
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+yes
+\- Enable chown if as supported by the under filesystem
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+no (default)
+\- Disable chown
+.RE
+.sp
+.RE
+.RE
 .PP
 gpfs:sharemodes = [ yes | no ]
 .RS 4
@@ -357,42 +485,6 @@ no
 .RE
 .RE
 .PP
-gpfs:refuse_dacl_protected = [ yes | no ]
-.RS 4
-As GPFS does not support the ACE4_FLAG_NO_PROPAGATE NFSv4 flag (which would be the mapping for the DESC_DACL_PROTECTED flag), the status of this flag is currently silently ignored by Samba\&. That means that if you deselect the "Allow inheritable permissions\&.\&.\&." checkbox in Windows\*(Aq ACL dialog and then apply the ACL, the flag will be back immediately\&.
-.sp
-To make sure that automatic migration with e\&.g\&. robocopy does not lead to ACLs silently (and unintentionally) changed, you can set
-gpfs:refuse_dacl_protected = yes
-to enable an explicit check for this flag and if set, it will return NT_STATUS_NOT_SUPPORTED so errors are shown up on the Windows side and the Administrator is aware of the ACLs not being settable like intended
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-no(default)
-\- ignore the DESC_DACL_PROTECTED flags\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-yes
-\- reject ACLs with DESC_DACL_PROTECTED\&.
-.RE
-.sp
-.RE
-.RE
-.PP
 gpfs:dfreequota = [ yes | no ]
 .RS 4
 Adjust reporting of the size and free space of a share according to quotas\&. If this setting is "yes", a request for size and free space will also evaluate the user quota of the user requesting the data and the group quota of the primary group of the user\&. Fileset quotas are not queried, since GPFS already provides the option \-\-dfreequota to reflect the fileset quota in the free space query\&. Please use that option to include fileset quotas in the reported disk space\&.
@@ -454,134 +546,6 @@ yes(default)
 .\}
 no
 \- Do not use gpfs_set_times\&.
-.RE
-.sp
-.RE
-.RE
-.PP
-nfs4:mode = [ simple | special ]
-.RS 4
-Controls substitution of special IDs (OWNER@ and GROUP@) on GPFS\&. The use of mode simple is recommended\&. In this mode only non inheriting ACL entries for the file owner and group are mapped to special IDs\&.
-.sp
-The following MODEs are understood by the module:
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-simple(default)
-\- use OWNER@ and GROUP@ special IDs for non inheriting ACEs only\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-special(deprecated)
-\- use OWNER@ and GROUP@ special IDs in ACEs for all file owner and group ACEs\&.
-.RE
-.sp
-.RE
-.RE
-.PP
-nfs4:acedup = [dontcare|reject|ignore|merge]
-.RS 4
-This parameter configures how Samba handles duplicate ACEs encountered in GPFS ACLs\&. GPFS allows/creates duplicate ACE for different bits for same ID\&.
-.sp
-Following is the behaviour of Samba for different values :
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-dontcare
-\- copy the ACEs as they come
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-reject (deprecated)
-\- stop operation and exit with error on ACL set op
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-ignore (deprecated)
-\- don\*(Aqt include the second matching ACE
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-merge (default)
-\- bitwise OR the 2 ace\&.flag fields and 2 ace\&.mask fields of the 2 duplicate ACEs into 1 ACE
-.RE
-.sp
-.RE
-.RE
-.PP
-nfs4:chown = [yes|no]
-.RS 4
-This parameter allows enabling or disabling the chown supported by the underlying filesystem\&. This parameter should be enabled with care as it might leave your system insecure\&.
-.sp
-Some filesystems allow chown as a) giving b) stealing\&. It is the latter that is considered a risk\&.
-.sp
-Following is the behaviour of Samba for different values :
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-yes
-\- Enable chown if as supported by the under filesystem
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-no (default)
-\- Disable chown
 .RE
 .sp
 .RE
@@ -660,7 +624,7 @@ gpfs\&.h
 in gpfs versions newer than 3\&.2\&.1 PTF8\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

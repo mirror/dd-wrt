@@ -129,7 +129,7 @@ static bool set_privileges( const struct dom_sid *sid, uint64_t mask )
 	uint8_t privbuf[8];
 	struct dom_sid_buf tmp;
 	fstring keystr;
-	TDB_DATA data;
+	TDB_DATA data = { .dptr = privbuf, .dsize = sizeof(privbuf), };
 
 	if ( !lp_enable_privileges() )
 		return False;
@@ -148,9 +148,6 @@ static bool set_privileges( const struct dom_sid *sid, uint64_t mask )
 
 	/* This writes the 64 bit bitmask out in little endian format */
 	SBVAL(privbuf,0,mask);
-
-	data.dptr  = privbuf;
-	data.dsize = sizeof(privbuf);
 
 	return NT_STATUS_IS_OK(dbwrap_store_bystring(db, keystr, data,
 						     TDB_REPLACE));
@@ -176,10 +173,9 @@ bool get_privileges_for_sids(uint64_t *privileges, struct dom_sid *slist, int sc
 		if ( !get_privileges( &slist[i], &mask ) )
 			continue;
 
-		DEBUG(5,("get_privileges_for_sids: sid = %s\nPrivilege "
-			 "set: 0x%llx\n",
+		DBG_INFO("sid = %s\nPrivilege set: 0x%"PRIx64"\n",
 			 dom_sid_str_buf(&slist[i], &buf),
-			 (unsigned long long)mask));
+			 mask);
 
 		*privileges |= mask;
 		found = True;
@@ -261,8 +257,7 @@ static int priv_traverse_fn(struct db_record *rec, void *state)
 		return 0;
 
 	if ( !string_to_sid(&sid, sid_string) ) {
-		DEBUG(0,("travsersal_fn_enum__acct: Could not convert SID [%s]\n",
-			sid_string));
+		DBG_WARNING("Could not convert SID [%s]\n", sid_string);
 		return 0;
 	}
 

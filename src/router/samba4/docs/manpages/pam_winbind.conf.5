@@ -2,12 +2,12 @@
 .\"     Title: pam_winbind.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: 5
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "PAM_WINBIND\&.CONF" "5" "01/31/2022" "Samba 4\&.15\&.5" "5"
+.TH "PAM_WINBIND\&.CONF" "5" "05/31/2023" "Samba 4\&.18\&.3" "5"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -140,6 +140,11 @@ warn_pwd_expire = days
 .RS 4
 Defines number of days before pam_winbind starts to warn about passwords that are going to expire\&. Defaults to 14 days\&.
 .RE
+.PP
+pwd_change_prompt = yes|no
+.RS 4
+Generate prompt for changing an expired password\&. Defaults to "no"\&.
+.RE
 .SH "SEE ALSO"
 .PP
 \fBpam_winbind\fR(8),
@@ -148,7 +153,7 @@ Defines number of days before pam_winbind starts to warn about passwords that ar
 \fBsmb.conf\fR(5)
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of Samba\&.
+This man page is part of version 4\&.18\&.3 of Samba\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

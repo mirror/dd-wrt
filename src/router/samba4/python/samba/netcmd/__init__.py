@@ -19,9 +19,9 @@
 import optparse
 import samba
 from samba import colour
-from samba.getopt import SambaOption
+from samba.getopt import SambaOption, OptionError
 from samba.logger import get_samba_logger
-from ldb import LdbError
+from ldb import LdbError, ERR_INVALID_CREDENTIALS
 import sys
 import traceback
 import textwrap
@@ -29,7 +29,6 @@ import textwrap
 
 class Option(SambaOption):
     SUPPRESS_HELP = optparse.SUPPRESS_HELP
-    pass
 
 # This help formatter does text wrapping and preserves newlines
 
@@ -85,18 +84,34 @@ class Command(object):
     takes_optiongroups = {}
 
     hidden = False
+    use_colour = True
+    requested_colour = None
 
     raw_argv = None
     raw_args = None
     raw_kwargs = None
 
+    def _set_files(self, outf=None, errf=None):
+        if outf is not None:
+            self.outf = outf
+        if errf is not None:
+            self.errf = errf
+
     def __init__(self, outf=sys.stdout, errf=sys.stderr):
-        self.outf = outf
-        self.errf = errf
+        self._set_files(outf, errf)
 
     def usage(self, prog=None):
         parser, _ = self._create_parser(prog)
         parser.print_usage()
+
+    def _print_error(self, msg, evalue=None, klass=None):
+        err = colour.c_DARK_RED("ERROR")
+        klass = '' if klass is None else f'({klass})'
+
+        if evalue is None:
+            print(f"{err}{klass}: {msg}", file=self.errf)
+        else:
+            print(f"{err}{klass}: {msg} - {evalue}", file=self.errf)
 
     def show_command_error(self, e):
         '''display a command error'''
@@ -111,22 +126,37 @@ class Command(object):
             message = "uncaught exception"
             force_traceback = True
 
-        if isinstance(inner_exception, LdbError):
+        if isinstance(e, OptionError):
+            print(evalue, file=self.errf)
+            self.usage()
+            force_traceback = False
+
+        elif isinstance(inner_exception, LdbError):
             (ldb_ecode, ldb_emsg) = inner_exception.args
-            self.errf.write("ERROR(ldb): %s - %s\n" % (message, ldb_emsg))
+            if ldb_ecode == ERR_INVALID_CREDENTIALS:
+                print("Invalid username or password", file=self.errf)
+                force_traceback = False
+            elif ldb_emsg == 'LDAP client internal error: NT_STATUS_NETWORK_UNREACHABLE':
+                print("Could not reach remote server", file=self.errf)
+                force_traceback = False
+            elif ldb_emsg.startswith("Unable to open tdb "):
+                self._print_error(message, ldb_emsg, 'ldb')
+                force_traceback = False
+            else:
+                self._print_error(message, ldb_emsg, 'ldb')
+
         elif isinstance(inner_exception, AssertionError):
-            self.errf.write("ERROR(assert): %s\n" % message)
+            self._print_error(message, klass='assert')
             force_traceback = True
         elif isinstance(inner_exception, RuntimeError):
-            self.errf.write("ERROR(runtime): %s - %s\n" % (message, evalue))
+            self._print_error(message, evalue, 'runtime')
         elif type(inner_exception) is Exception:
-            self.errf.write("ERROR(exception): %s - %s\n" % (message, evalue))
+            self._print_error(message, evalue, 'exception')
             force_traceback = True
         elif inner_exception is None:
-            self.errf.write("ERROR: %s\n" % (message))
+            self._print_error(message)
         else:
-            self.errf.write("ERROR(%s): %s - %s\n" % (str(etype), message, evalue))
-            force_traceback = True
+            self._print_error(message, evalue, str(etype))
 
         if force_traceback or samba.get_debug_level() >= 3:
             traceback.print_tb(etraceback, file=self.errf)
@@ -143,22 +173,36 @@ class Command(object):
             optiongroup = self.takes_optiongroups[name]
             optiongroups[name] = optiongroup(parser)
             parser.add_option_group(optiongroups[name])
+        if self.use_colour:
+            parser.add_option("--color",
+                              help="use colour if available (default: auto)",
+                              metavar="always|never|auto",
+                              default="auto")
+
         return parser, optiongroups
 
     def message(self, text):
         self.outf.write(text + "\n")
 
+    def _resolve(self, path, *argv, outf=None, errf=None):
+        """This is a leaf node, the command that will actually run."""
+        self._set_files(outf, errf)
+        self.command_name = path
+        return (self, argv)
+
     def _run(self, *argv):
-        parser, optiongroups = self._create_parser(argv[0])
+        parser, optiongroups = self._create_parser(self.command_name)
         opts, args = parser.parse_args(list(argv))
         # Filter out options from option groups
-        args = args[1:]
         kwargs = dict(opts.__dict__)
         for option_group in parser.option_groups:
             for option in option_group.option_list:
                 if option.dest is not None:
                     del kwargs[option.dest]
         kwargs.update(optiongroups)
+
+        if self.use_colour:
+            self.apply_colour_choice(kwargs.pop('color', 'auto'))
 
         # Check for a min a max number of allowed arguments, whenever possible
         # The suffix "?" means zero or one occurence
@@ -188,9 +232,9 @@ class Command(object):
             self.show_command_error(e)
             return -1
 
-    def run(self):
+    def run(self, *args, **kwargs):
         """Run the command. This should be overridden by all subclasses."""
-        raise NotImplementedError(self.run)
+        raise NotImplementedError(f"'{self.command_name}' run method not implemented")
 
     def get_logger(self, name="", verbose=False, quiet=False, **kwargs):
         """Get a logger object."""
@@ -205,22 +249,14 @@ class Command(object):
         "constants" in the colour module to be either real colours or empty
         strings.
         """
-        requested = requested.lower()
-        if requested == 'no':
-            colour.switch_colour_off()
-
-        elif requested == 'yes':
-            colour.switch_colour_on()
-
-        elif requested == 'auto':
-            if (hasattr(self.outf, 'isatty') and self.outf.isatty()):
-                colour.switch_colour_on()
-            else:
-                colour.switch_colour_off()
-
-        else:
-            raise CommandError("Unknown --color option: %s "
-                               "please choose from yes, no, auto")
+        self.requested_colour = requested
+        try:
+            colour.colour_if_wanted(self.outf,
+                                    self.errf,
+                                    hint=requested)
+        except ValueError as e:
+            raise CommandError(f"Unknown --color option: {requested} "
+                               "please choose from always|never|auto")
 
 
 class SuperCommand(Command):
@@ -230,44 +266,65 @@ class SuperCommand(Command):
 
     subcommands = {}
 
-    def _run(self, myname, subcommand=None, *args):
-        if subcommand in self.subcommands:
-            return self.subcommands[subcommand]._run(
-                "%s %s" % (myname, subcommand), *args)
-        elif subcommand not in [ '--help', 'help', None, '-h', '-V', '--version' ]:
-            print("%s: no such subcommand: %s\n" % (myname, subcommand))
-            args = []
+    def _resolve(self, path, *args, outf=None, errf=None):
+        """This is an internal node. We need to consume one of the args and
+        find the relevant child, returning an instance of that Command.
 
-        if subcommand == 'help':
-            # pass the request down
-            if len(args) > 0:
-                sub = self.subcommands.get(args[0])
-                if isinstance(sub, SuperCommand):
-                    return sub._run("%s %s" % (myname, args[0]), 'help',
-                                    *args[1:])
-                elif sub is not None:
-                    return sub._run("%s %s" % (myname, args[0]), '--help',
-                                    *args[1:])
+        If there are no children, this SuperCommand will be returned
+        and its _run() will do a --help like thing.
+        """
+        self.command_name = path
+        self._set_files(outf, errf)
 
-            subcommand = '--help'
+        # We collect up certain option arguments and pass them to the
+        # leaf, which is why we iterate over args, though we really
+        # expect to return in the first iteration.
+        deferred_args = []
 
+        for i, a in enumerate(args):
+            if a in self.subcommands:
+                sub_args = args[i + 1:] + tuple(deferred_args)
+                sub_path = f'{path} {a}'
+
+                sub = self.subcommands[a]
+                return sub._resolve(sub_path, *sub_args, outf=outf, errf=errf)
+
+            elif a in [ '--help', 'help', None, '-h', '-V', '--version' ]:
+                # we pass these to the leaf node.
+                if a == 'help':
+                    a = '--help'
+                deferred_args.append(a)
+                continue
+
+            # they are talking nonsense
+            print("%s: no such subcommand: %s\n" % (path, a), file=self.outf)
+            return (self, [])
+
+        # We didn't find a subcommand, but maybe we found e.g. --version
+        print("%s: missing subcommand\n" % (path), file=self.outf)
+        return (self, deferred_args)
+
+    def _run(self, *argv):
         epilog = "\nAvailable subcommands:\n"
-        subcmds = list(self.subcommands.keys())
-        subcmds.sort()
+
+        subcmds = sorted(self.subcommands.keys())
         max_length = max([len(c) for c in subcmds])
         for cmd_name in subcmds:
             cmd = self.subcommands[cmd_name]
-            if not cmd.hidden:
-                epilog += "  %*s  - %s\n" % (
-                    -max_length, cmd_name, cmd.short_description)
-        epilog += "For more help on a specific subcommand, please type: %s <subcommand> (-h|--help)\n" % myname
+            if cmd.hidden:
+                continue
+            epilog += "  %*s  - %s\n" % (
+                -max_length, cmd_name, cmd.short_description)
 
-        parser, optiongroups = self._create_parser(myname, epilog=epilog)
-        args_list = list(args)
-        if subcommand:
-            args_list.insert(0, subcommand)
-        opts, args = parser.parse_args(args_list)
+        epilog += ("For more help on a specific subcommand, please type: "
+                   f"{self.command_name} <subcommand> (-h|--help)\n")
 
+        parser, optiongroups = self._create_parser(self.command_name, epilog=epilog)
+        opts, args = parser.parse_args(list(argv))
+
+        # note: if argv had --help, parser.parse_args() will have
+        # already done the .print_help() and attempted to exit with
+        # return code 0, so we won't get here.
         parser.print_help()
         return -1
 

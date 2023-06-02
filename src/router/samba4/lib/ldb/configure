@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PREVPATH=`dirname $0`
+PREVPATH=$(dirname $0)
 
 if [ -f $PREVPATH/../../buildtools/bin/waf ]; then
 	WAF=../../buildtools/bin/waf
@@ -15,6 +15,13 @@ fi
 # systems like AIX which have broken threading in python
 JOBS=1
 export JOBS
+
+# Make sure we don't have any library preloaded.
+unset LD_PRELOAD
+
+# Make sure we get stable hashes
+PYTHONHASHSEED=1
+export PYTHONHASHSEED
 
 cd . || exit 1
 $PYTHON $WAF configure "$@" || exit 1

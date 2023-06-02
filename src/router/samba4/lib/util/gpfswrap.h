@@ -29,7 +29,7 @@
 int gpfswrap_init(void);
 int gpfswrap_set_share(int fd, unsigned int allow, unsigned int deny);
 int gpfswrap_set_lease(int fd, unsigned int type);
-int gpfswrap_getacl(const char *pathname, int flags, void *acl);
+int gpfswrap_fgetacl(int fd, int flags, void *acl);
 int gpfswrap_putacl(const char *pathname, int flags, void *acl);
 int gpfswrap_get_realfilename_path(const char *pathname,
 				   char *filenamep,
@@ -38,8 +38,6 @@ int gpfswrap_set_winattrs_path(const char *pathname,
 			       int flags,
 			       struct gpfs_winattr *attrs);
 int gpfswrap_set_winattrs(int fd, int flags, struct gpfs_winattr *attrs);
-int gpfswrap_get_winattrs_path(const char *pathname,
-			       struct gpfs_winattr *attrs);
 int gpfswrap_get_winattrs(int fd, struct gpfs_winattr *attrs);
 int gpfswrap_ftruncate(int fd, gpfs_off64_t length);
 int gpfswrap_lib_init(int flags);

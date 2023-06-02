@@ -47,6 +47,7 @@ struct tevent_req *cli_setpathinfo_send(TALLOC_CTX *mem_ctx,
 	struct tevent_req *req, *subreq;
 	struct cli_setpathinfo_state *state;
 	uint16_t additional_flags2 = 0;
+	char *path_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct cli_setpathinfo_state);
@@ -64,13 +65,21 @@ struct tevent_req *cli_setpathinfo_send(TALLOC_CTX *mem_ctx,
 	}
 	SSVAL(state->param, 0, level);
 
-	state->param = trans2_bytes_push_str(
-		state->param, smbXcli_conn_use_unicode(cli->conn), path, strlen(path)+1, NULL);
+	/* Check for DFS. */
+	path_cp = smb1_dfs_share_path(state, cli, path);
+	if (tevent_req_nomem(path_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
+	state->param = trans2_bytes_push_str(state->param,
+					smbXcli_conn_use_unicode(cli->conn),
+					path_cp,
+					strlen(path_cp)+1,
+					NULL);
 	if (tevent_req_nomem(state->param, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(path, NULL, NULL, NULL) &&
+	if (clistr_is_previous_version_path(path) &&
 			!INFO_LEVEL_IS_UNIX(level)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
@@ -469,49 +478,8 @@ NTSTATUS cli_posix_readlink_recv(
 		return status;
 	}
 	*target = talloc_move(mem_ctx, &state->converted);
+	tevent_req_received(req);
 	return NT_STATUS_OK;
-}
-
-NTSTATUS cli_posix_readlink(
-	struct cli_state *cli,
-	const char *fname,
-	TALLOC_CTX *mem_ctx,
-	char **target)
-{
-	TALLOC_CTX *frame = talloc_stackframe();
-	struct tevent_context *ev = NULL;
-	struct tevent_req *req = NULL;
-	NTSTATUS status = NT_STATUS_OK;
-
-	if (smbXcli_conn_has_async_calls(cli->conn)) {
-		/*
-		 * Can't use sync call while an async call is in flight
-		 */
-		status = NT_STATUS_INVALID_PARAMETER;
-		goto fail;
-	}
-
-	ev = samba_tevent_context_init(frame);
-	if (ev == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto fail;
-	}
-
-	req = cli_posix_readlink_send(frame, ev, cli, fname);
-	if (req == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto fail;
-	}
-
-	if (!tevent_req_poll_ntstatus(req, ev, &status)) {
-		goto fail;
-	}
-
-	status = cli_posix_readlink_recv(req, mem_ctx, target);
-
- fail:
-	TALLOC_FREE(frame);
-	return status;
 }
 
 /****************************************************************************
@@ -1234,6 +1202,17 @@ static struct tevent_req *cli_smb1_rename_send(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 
+	/*
+	 * Strip a MSDFS path from fname_dst if we were given one.
+	 */
+	status = cli_dfs_target_check(state,
+				cli,
+				fname_dst,
+				&fname_dst);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+
 	if (!push_ucs2_talloc(talloc_tos(), &converted_str, fname_dst,
 			      &converted_size_bytes)) {
 		status = NT_STATUS_INVALID_PARAMETER;
@@ -1311,6 +1290,8 @@ static struct tevent_req *cli_cifs_rename_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *fname_src_cp = NULL;
+	char *fname_dst_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_cifs_rename_state);
 	if (req == NULL) {
@@ -1331,14 +1312,27 @@ static struct tevent_req *cli_cifs_rename_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+
+	/*
+	 * SMBmv on a DFS share uses DFS names for src and dst.
+	 * See smbtorture3: SMB1-DFS-PATHS: test_smb1_mv().
+	 */
+
+	fname_src_cp = smb1_dfs_share_path(state, cli, fname_src);
+	if (tevent_req_nomem(fname_src_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname_src,
-				   strlen(fname_src)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_src_cp,
+				   strlen(fname_src_cp)+1,
+				   NULL);
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname_src, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname_src)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -1348,9 +1342,21 @@ static struct tevent_req *cli_cifs_rename_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
+	/*
+	 * SMBmv on a DFS share uses DFS names for src and dst.
+	 * See smbtorture3: SMB1-DFS-PATHS: test_smb1_mv().
+	 */
+
+	fname_dst_cp = smb1_dfs_share_path(state, cli, fname_dst);
+	if (tevent_req_nomem(fname_dst_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[talloc_get_size(bytes)-1] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname_dst,
-				   strlen(fname_dst)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_dst_cp,
+				   strlen(fname_dst_cp)+1,
+				   NULL);
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -1489,6 +1495,7 @@ NTSTATUS cli_rename(struct cli_state *cli,
 	}
 
 	status = cli_rename_recv(req);
+	cli->raw_status = status; /* cli_smb2_rename_recv doesn't set this */
 
  fail:
 	TALLOC_FREE(frame);
@@ -1517,6 +1524,8 @@ static struct tevent_req *cli_ntrename_internal_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *fname_src_cp = NULL;
+	char *fname_dst_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct cli_ntrename_internal_state);
@@ -1531,14 +1540,25 @@ static struct tevent_req *cli_ntrename_internal_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBntrename on a DFS share uses DFS names for src and dst.
+	 * See smbtorture3: SMB1-DFS-PATHS: test_smb1_ntrename_rename().
+	 */
+	fname_src_cp = smb1_dfs_share_path(state, cli, fname_src);
+	if (tevent_req_nomem(fname_src_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname_src,
-				   strlen(fname_src)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_src_cp,
+				   strlen(fname_src_cp)+1,
+				   NULL);
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname_src, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname_src)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -1548,9 +1568,21 @@ static struct tevent_req *cli_ntrename_internal_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
+	/*
+	 * SMBntrename on a DFS share uses DFS names for src and dst.
+	 * See smbtorture3: SMB1-DFS-PATHS: test_smb1_ntrename_rename().
+	 * and smbtorture3: SMB1-DFS-PATHS: test_smb1_ntrename_hardlink()
+	 */
+	fname_dst_cp = smb1_dfs_share_path(state, cli, fname_dst);
+	if (tevent_req_nomem(fname_dst_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[talloc_get_size(bytes)-1] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname_dst,
-				   strlen(fname_dst)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_dst_cp,
+				   strlen(fname_dst_cp)+1,
+				   NULL);
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -1681,12 +1713,25 @@ static struct tevent_req *cli_smb2_hardlink_send(
 {
 	struct tevent_req *req = NULL, *subreq = NULL;
 	struct cli_smb2_hardlink_state *state = NULL;
+	NTSTATUS status;
 
 	req = tevent_req_create(
 		mem_ctx, &state, struct cli_smb2_hardlink_state);
 	if (req == NULL) {
 		return NULL;
 	}
+
+	/*
+	 * Strip a MSDFS path from fname_dst if we were given one.
+	 */
+	status = cli_dfs_target_check(state,
+				cli,
+				fname_dst,
+				&fname_dst);
+	if (tevent_req_nterror(req, status)) {
+		return tevent_req_post(req, ev);
+	}
+
 	state->ev = ev;
 	state->cli = cli;
 	state->fname_dst = fname_dst;
@@ -1727,7 +1772,7 @@ static void cli_smb2_hardlink_opened(struct tevent_req *subreq)
 	bool ok;
 
 	status = cli_smb2_create_fnum_recv(
-		subreq, &state->fnum_src, NULL, NULL, NULL);
+		subreq, &state->fnum_src, NULL, NULL, NULL, NULL);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
@@ -1914,6 +1959,7 @@ struct tevent_req *cli_unlink_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_unlink_state);
 	if (req == NULL) {
@@ -1945,15 +1991,25 @@ struct tevent_req *cli_unlink_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBunlink on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname,
-				   strlen(fname)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_cp,
+				   strlen(fname_cp)+1,
+				   NULL);
 
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -2047,6 +2103,7 @@ struct tevent_req *cli_mkdir_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *dname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_mkdir_state);
 	if (req == NULL) {
@@ -2066,15 +2123,25 @@ struct tevent_req *cli_mkdir_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBmkdir on a DFS share must use DFS names.
+	 */
+	dname_cp = smb1_dfs_share_path(state, cli, dname);
+	if (tevent_req_nomem(dname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), dname,
-				   strlen(dname)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   dname_cp,
+				   strlen(dname_cp)+1,
+				   NULL);
 
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(dname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(dname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -2175,6 +2242,7 @@ struct tevent_req *cli_rmdir_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *dname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_rmdir_state);
 	if (req == NULL) {
@@ -2194,15 +2262,25 @@ struct tevent_req *cli_rmdir_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBrmdir on a DFS share must use DFS names.
+	 */
+	dname_cp = smb1_dfs_share_path(state, cli, dname);
+	if (tevent_req_nomem(dname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), dname,
-				   strlen(dname)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   dname_cp,
+				   strlen(dname_cp)+1,
+				   NULL);
 
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(dname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(dname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -2421,6 +2499,7 @@ static struct tevent_req *cli_ntcreate1_send(TALLOC_CTX *mem_ctx,
 	uint8_t *bytes;
 	size_t converted_len;
 	uint16_t additional_flags2 = 0;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_ntcreate1_state);
 	if (req == NULL) {
@@ -2451,11 +2530,26 @@ static struct tevent_req *cli_ntcreate1_send(TALLOC_CTX *mem_ctx,
 	SCVAL(vwv+23, 1, SecurityFlags);
 
 	bytes = talloc_array(state, uint8_t, 0);
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn),
-				   fname, strlen(fname)+1,
+	if (tevent_req_nomem(bytes, req)) {
+		return tevent_req_post(req, ev);
+	}
+	/*
+	 * SMBntcreateX on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_cp,
+				   strlen(fname_cp)+1,
 				   &converted_len);
+	if (tevent_req_nomem(bytes, req)) {
+		return tevent_req_post(req, ev);
+	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -2638,6 +2732,7 @@ static void cli_ntcreate_done_smb2(struct tevent_req *subreq)
 		&state->fnum,
 		&state->cr,
 		NULL,
+		NULL,
 		NULL);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
@@ -2751,6 +2846,7 @@ struct tevent_req *cli_nttrans_create_send(TALLOC_CTX *mem_ctx,
 	NTSTATUS status;
 	size_t converted_len;
 	uint16_t additional_flags2 = 0;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx,
 				&state, struct cli_nttrans_create_state);
@@ -2784,14 +2880,23 @@ struct tevent_req *cli_nttrans_create_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	param = trans2_bytes_push_str(param, smbXcli_conn_use_unicode(cli->conn),
-				      fname, strlen(fname),
+	/*
+	 * SMBntcreateX on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
+	param = trans2_bytes_push_str(param,
+				      smbXcli_conn_use_unicode(cli->conn),
+				      fname_cp,
+				      strlen(fname_cp),
 				      &converted_len);
 	if (tevent_req_nomem(param, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -2951,6 +3056,7 @@ struct tevent_req *cli_openx_create(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_openx_state);
 	if (req == NULL) {
@@ -3010,14 +3116,27 @@ struct tevent_req *cli_openx_create(TALLOC_CTX *mem_ctx,
 	}
 
 	bytes = talloc_array(state, uint8_t, 0);
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname,
-				   strlen(fname)+1, NULL);
+	if (tevent_req_nomem(bytes, req)) {
+		return tevent_req_post(req, ev);
+	}
+	/*
+	 * SMBopenX on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_cp,
+				   strlen(fname_cp)+1,
+				   NULL);
 
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -4213,6 +4332,7 @@ struct tevent_req *cli_getatr_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_getatr_state);
 	if (req == NULL) {
@@ -4225,15 +4345,25 @@ struct tevent_req *cli_getatr_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBgetatr on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname,
-				   strlen(fname)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_cp,
+				   strlen(fname_cp)+1,
+				   NULL);
 
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -4493,6 +4623,7 @@ struct tevent_req *cli_setatr_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_setatr_state);
 	if (req == NULL) {
@@ -4516,9 +4647,19 @@ struct tevent_req *cli_setatr_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBsetatr on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname,
-				   strlen(fname)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_cp,
+				   strlen(fname_cp)+1,
+				   NULL);
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -4535,7 +4676,7 @@ struct tevent_req *cli_setatr_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -4623,10 +4764,12 @@ NTSTATUS cli_setatr(struct cli_state *cli,
 ****************************************************************************/
 
 static void cli_chkpath_done(struct tevent_req *subreq);
-static void cli_chkpath_done2(struct tevent_req *subreq);
+static void cli_chkpath_opened(struct tevent_req *subreq);
+static void cli_chkpath_closed(struct tevent_req *subreq);
 
 struct cli_chkpath_state {
-	int dummy;
+	struct tevent_context *ev;
+	struct cli_state *cli;
 };
 
 struct tevent_req *cli_chkpath_send(TALLOC_CTX *mem_ctx,
@@ -4639,18 +4782,35 @@ struct tevent_req *cli_chkpath_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_chkpath_state);
 	if (req == NULL) {
 		return NULL;
 	}
+	state->ev = ev;
+	state->cli = cli;
 
-	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
-		subreq = cli_smb2_chkpath_send(state, ev, cli, fname);
+	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_NT1) {
+		subreq = cli_ntcreate_send(
+			state,			  /* mem_ctx */
+			state->ev,		  /* ev */
+			state->cli,		  /* cli */
+			fname,			  /* fname */
+			0,			  /* create_flags */
+			FILE_READ_ATTRIBUTES,	  /* desired_access */
+			FILE_ATTRIBUTE_DIRECTORY, /* FileAttributes */
+			FILE_SHARE_READ|
+			FILE_SHARE_WRITE|
+			FILE_SHARE_DELETE, /* share_access */
+			FILE_OPEN,	/* CreateDisposition */
+			FILE_DIRECTORY_FILE, /* CreateOptions */
+			SMB2_IMPERSONATION_IMPERSONATION,
+			0);		/* SecurityFlags */
 		if (tevent_req_nomem(subreq, req)) {
 			return tevent_req_post(req, ev);
 		}
-		tevent_req_set_callback(subreq, cli_chkpath_done2, req);
+		tevent_req_set_callback(subreq, cli_chkpath_opened, req);
 		return req;
 	}
 
@@ -4658,15 +4818,25 @@ struct tevent_req *cli_chkpath_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBcheckpath on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), fname,
-				   strlen(fname)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   fname_cp,
+				   strlen(fname_cp)+1,
+				   NULL);
 
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(fname)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -4682,21 +4852,36 @@ struct tevent_req *cli_chkpath_send(TALLOC_CTX *mem_ctx,
 
 static void cli_chkpath_done(struct tevent_req *subreq)
 {
+	NTSTATUS status = cli_smb_recv(
+		subreq, NULL, NULL, 0, NULL, NULL, NULL, NULL);
+	tevent_req_simple_finish_ntstatus(subreq, status);
+}
+
+static void cli_chkpath_opened(struct tevent_req *subreq)
+{
 	struct tevent_req *req = tevent_req_callback_data(
 		subreq, struct tevent_req);
+	struct cli_chkpath_state *state = tevent_req_data(
+		req, struct cli_chkpath_state);
 	NTSTATUS status;
+	uint16_t fnum;
 
-	status = cli_smb_recv(subreq, NULL, NULL, 0, NULL, NULL, NULL, NULL);
+	status = cli_ntcreate_recv(subreq, &fnum, NULL);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
 	}
-	tevent_req_done(req);
+
+	subreq = cli_close_send(state, state->ev, state->cli, fnum);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
+	}
+	tevent_req_set_callback(subreq, cli_chkpath_closed, req);
 }
 
-static void cli_chkpath_done2(struct tevent_req *subreq)
+static void cli_chkpath_closed(struct tevent_req *subreq)
 {
-	NTSTATUS status = cli_smb2_chkpath_recv(subreq);
+	NTSTATUS status = cli_close_recv(subreq);
 	tevent_req_simple_finish_ntstatus(subreq, status);
 }
 
@@ -4966,6 +5151,7 @@ struct tevent_req *cli_ctemp_send(TALLOC_CTX *mem_ctx,
 	uint8_t additional_flags = 0;
 	uint16_t additional_flags2 = 0;
 	uint8_t *bytes = NULL;
+	char *path_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct ctemp_state);
 	if (req == NULL) {
@@ -4979,14 +5165,24 @@ struct tevent_req *cli_ctemp_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
+	/*
+	 * SMBctemp on a DFS share must use DFS names.
+	 */
+	path_cp = smb1_dfs_share_path(state, cli, path);
+	if (tevent_req_nomem(path_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	bytes[0] = 4;
-	bytes = smb_bytes_push_str(bytes, smbXcli_conn_use_unicode(cli->conn), path,
-				   strlen(path)+1, NULL);
+	bytes = smb_bytes_push_str(bytes,
+				   smbXcli_conn_use_unicode(cli->conn),
+				   path_cp,
+				   strlen(path_cp)+1,
+				   NULL);
 	if (tevent_req_nomem(bytes, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(path, NULL, NULL, NULL)) {
+	if (clistr_is_previous_version_path(path)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
 
@@ -5202,6 +5398,7 @@ NTSTATUS cli_set_ea_path(struct cli_state *cli, const char *path,
 	uint8_t *param;
 	NTSTATUS status;
 	TALLOC_CTX *frame = NULL;
+	char *path_cp = NULL;
 
 	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
 		return cli_smb2_set_ea_path(cli,
@@ -5222,8 +5419,18 @@ NTSTATUS cli_set_ea_path(struct cli_state *cli, const char *path,
 	SSVAL(param,2,0);
 	SSVAL(param,4,0);
 
-	param = trans2_bytes_push_str(param, smbXcli_conn_use_unicode(cli->conn),
-				      path, strlen(path)+1,
+	/*
+	 * TRANSACT2_SETPATHINFO on a DFS share must use DFS names.
+	 */
+	path_cp = smb1_dfs_share_path(frame, cli, path);
+	if (path_cp == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto fail;
+	}
+	param = trans2_bytes_push_str(param,
+				      smbXcli_conn_use_unicode(cli->conn),
+				      path_cp,
+				      strlen(path_cp)+1,
 				      NULL);
 	param_len = talloc_get_size(param);
 
@@ -5546,6 +5753,7 @@ static struct tevent_req *cli_posix_open_internal_send(TALLOC_CTX *mem_ctx,
 {
 	struct tevent_req *req = NULL, *subreq = NULL;
 	struct cli_posix_open_internal_state *state = NULL;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(
 		mem_ctx, &state, struct cli_posix_open_internal_state);
@@ -5563,11 +5771,18 @@ static struct tevent_req *cli_posix_open_internal_send(TALLOC_CTX *mem_ctx,
 	}
 	SSVAL(state->param, 0, SMB_POSIX_PATH_OPEN);
 
+	/*
+	 * TRANSACT2_SETPATHINFO on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
 	state->param = trans2_bytes_push_str(
 		state->param,
 		smbXcli_conn_use_unicode(cli->conn),
-		fname,
-		strlen(fname)+1,
+		fname_cp,
+		strlen(fname_cp)+1,
 		NULL);
 
 	if (tevent_req_nomem(state->param, req)) {
@@ -6207,7 +6422,7 @@ static void cli_notify_done(struct tevent_req *subreq)
 		ssize_t ret;
 		char *name;
 
-		if (trans_oob(num_params, ofs + 12, len)) {
+		if (smb_buffer_oob(num_params, ofs + 12, len)) {
 			TALLOC_FREE(params);
 			tevent_req_nterror(
 				req, NT_STATUS_INVALID_NETWORK_RESPONSE);
@@ -6329,6 +6544,7 @@ struct tevent_req *cli_qpathinfo_send(TALLOC_CTX *mem_ctx,
 	struct tevent_req *req, *subreq;
 	struct cli_qpathinfo_state *state;
 	uint16_t additional_flags2 = 0;
+	char *fname_cp = NULL;
 
 	req = tevent_req_create(mem_ctx, &state, struct cli_qpathinfo_state);
 	if (req == NULL) {
@@ -6342,13 +6558,23 @@ struct tevent_req *cli_qpathinfo_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 	SSVAL(state->param, 0, level);
-	state->param = trans2_bytes_push_str(
-		state->param, smbXcli_conn_use_unicode(cli->conn), fname, strlen(fname)+1, NULL);
+	/*
+	 * qpathinfo on a DFS share must use DFS names.
+	 */
+	fname_cp = smb1_dfs_share_path(state, cli, fname);
+	if (tevent_req_nomem(fname_cp, req)) {
+		return tevent_req_post(req, ev);
+	}
+	state->param = trans2_bytes_push_str(state->param,
+					     smbXcli_conn_use_unicode(cli->conn),
+					     fname_cp,
+					     strlen(fname_cp)+1,
+					     NULL);
 	if (tevent_req_nomem(state->param, req)) {
 		return tevent_req_post(req, ev);
 	}
 
-	if (clistr_is_previous_version_path(fname, NULL, NULL, NULL) &&
+	if (clistr_is_previous_version_path(fname) &&
 			!INFO_LEVEL_IS_UNIX(level)) {
 		additional_flags2 = FLAGS2_REPARSE_PATH;
 	}
@@ -6851,4 +7077,125 @@ NTSTATUS cli_shadow_copy_data(TALLOC_CTX *mem_ctx, struct cli_state *cli,
  fail:
 	TALLOC_FREE(frame);
 	return status;
+}
+
+struct cli_fsctl_state {
+	DATA_BLOB out;
+};
+
+static void cli_fsctl_smb1_done(struct tevent_req *subreq);
+static void cli_fsctl_smb2_done(struct tevent_req *subreq);
+
+struct tevent_req *cli_fsctl_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint32_t ctl_code,
+	const DATA_BLOB *in,
+	uint32_t max_out)
+{
+	struct tevent_req *req = NULL, *subreq = NULL;
+	struct cli_fsctl_state *state = NULL;
+	uint16_t *setup = NULL;
+
+	req = tevent_req_create(mem_ctx, &state, struct cli_fsctl_state);
+	if (req == NULL) {
+		return NULL;
+	}
+
+	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
+		subreq = cli_smb2_fsctl_send(
+			state, ev, cli, fnum, ctl_code, in, max_out);
+		if (tevent_req_nomem(subreq, req)) {
+			return tevent_req_post(req, ev);
+		}
+		tevent_req_set_callback(subreq, cli_fsctl_smb2_done, req);
+		return req;
+	}
+
+	setup = talloc_array(state, uint16_t, 4);
+	if (tevent_req_nomem(setup, req)) {
+		return tevent_req_post(req, ev);
+	}
+	SIVAL(setup, 0, ctl_code);
+	SSVAL(setup, 4, fnum);
+	SCVAL(setup, 6, 1);	/* IsFcntl */
+	SCVAL(setup, 7, 0);	/* IsFlags */
+
+	subreq = cli_trans_send(
+		state, ev, cli,
+		0,		/* additional_flags2 */
+		SMBnttrans,	/* cmd */
+		NULL,		/* name */
+		-1, 		/* fid */
+		NT_TRANSACT_IOCTL, /* function */
+		0,		   /* flags */
+		setup, 4, 0,	   /* setup */
+		NULL, 0, 0,	    /* param */
+		in->data, in->length, max_out); /* data */
+
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, cli_fsctl_smb1_done, req);
+	return req;
+}
+
+static void cli_fsctl_smb2_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct cli_fsctl_state *state = tevent_req_data(
+		req, struct cli_fsctl_state);
+	NTSTATUS status;
+
+	status = cli_smb2_fsctl_recv(subreq, state, &state->out);
+	tevent_req_simple_finish_ntstatus(subreq, status);
+}
+
+static void cli_fsctl_smb1_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct cli_fsctl_state *state = tevent_req_data(
+		req, struct cli_fsctl_state);
+	uint8_t *out = NULL;
+	uint32_t out_len;
+	NTSTATUS status;
+
+	status = cli_trans_recv(
+		subreq,	state, NULL,
+		NULL, 0, NULL,	/* rsetup */
+		NULL, 0, NULL,	/* rparam */
+		&out, 0, &out_len);
+	TALLOC_FREE(subreq);
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+	state->out = (DATA_BLOB) {
+		.data = out, .length = out_len,
+	};
+	tevent_req_done(req);
+}
+
+NTSTATUS cli_fsctl_recv(
+	struct tevent_req *req, TALLOC_CTX *mem_ctx, DATA_BLOB *out)
+{
+	struct cli_fsctl_state *state = tevent_req_data(
+		req, struct cli_fsctl_state);
+	NTSTATUS status;
+
+	if (tevent_req_is_nterror(req, &status)) {
+		return status;
+	}
+
+	if (out != NULL) {
+		*out = (DATA_BLOB) {
+			.data = talloc_move(mem_ctx, &state->out.data),
+			.length = state->out.length,
+		};
+	}
+
+	return NT_STATUS_OK;
 }

@@ -26,8 +26,9 @@
 #include "system/kerberos.h"
 #include "auth/kerberos/kerberos.h"
 #include <hdb.h>
+#include <heimbase.h>
 #include <kdc.h>
-#include <krb5/windc_plugin.h>
+#include <krb5/kdc-plugin.h>
 #include "kdc/samba_kdc.h"
 #include "kdc/kdc-server.h"
 
@@ -45,9 +46,12 @@ kdc_code kpasswdd_process(struct kdc_server *kdc,
 NTSTATUS hdb_samba4_create_kdc(struct samba_kdc_base_context *base_ctx,
 			       krb5_context context, struct HDB **db);
 
+NTSTATUS hdb_samba4_kpasswd_create_kdc(struct samba_kdc_base_context *base_ctx,
+				       krb5_context context, struct HDB **db);
+
 /* from kdc-glue.c */
 int kdc_check_pac(krb5_context krb5_context,
 		  DATA_BLOB server_sig,
 		  struct PAC_SIGNATURE_DATA *kdc_sig,
-		  hdb_entry_ex *ent);
+		  hdb_entry *ent);
 #endif

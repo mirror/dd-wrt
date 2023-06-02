@@ -2,12 +2,12 @@
 .\"     Title: net
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "NET" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "NET" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -61,7 +61,7 @@ Port on the target server to connect to (usually 139 or 445)\&. Defaults to tryi
 Name of target server\&. You should specify either this option or a target workgroup or a target IP address\&.
 .RE
 .PP
-\-l|\-\-long
+\-\-long
 .RS 4
 When listing data, give more information on each item\&.
 .RE
@@ -268,7 +268,7 @@ Levels above 1 will generate considerable amounts of log data, and should only b
 Note that specifying this parameter here will override the
 \m[blue]\fBlog level\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -281,7 +281,7 @@ This will redirect debug output to STDOUT\&. By default all clients are logging 
 .RS 4
 The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
 \m[blue]\fBclient smb encrypt\fR\m[]\&. See
-smb\&.conf
+${prefix}/etc/smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
 .PP
@@ -376,20 +376,20 @@ parameter\&. This is the least reliable of the name resolution methods as it dep
 .sp
 .RE
 If this parameter is not set then the name resolve order defined in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file parameter (\m[blue]\fBname resolve order\fR\m[]) will be used\&.
 .sp
 The default order is lmhosts, host, wins, bcast\&. Without this parameter or any entry in the
 \m[blue]\fBname resolve order\fR\m[]
 parameter of the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file, the name resolution methods will be attempted in this order\&.
 .RE
 .PP
 \-O|\-\-socket\-options=SOCKETOPTIONS
 .RS 4
 TCP socket options to set on the client socket\&. See the socket options parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 manual page for the list of valid options\&.
 .RE
 .PP
@@ -400,7 +400,7 @@ The value of the parameter (a string) is the highest protocol level that will be
 Note that specifying this parameter here will override the
 \m[blue]\fBclient max protocol\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -409,9 +409,9 @@ file\&.
 This option allows you to override the NetBIOS name that Samba uses for itself\&. This is identical to setting the
 \m[blue]\fBnetbios name\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&. However, a command line setting will take precedence over settings in
-smb\&.conf\&.
+${prefix}/etc/smb\&.conf\&.
 .RE
 .PP
 \-\-netbios\-scope=SCOPE
@@ -430,7 +430,7 @@ Set the SMB domain of the username\&. This overrides the default domain which is
 Note that specifying this parameter here will override the
 \m[blue]\fBworkgroup\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -441,7 +441,7 @@ Set the realm for the domain\&.
 Note that specifying this parameter here will override the
 \m[blue]\fBrealm\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -451,7 +451,7 @@ Sets the SMB username or username and password\&.
 .sp
 If %PASSWORD is not specified, the user will be prompted\&. The client will first check the
 \fBUSER\fR
-environment variable (which is also permitted to also contain the password seperated by a %), then the
+environment variable (which is also permitted to also contain the password separated by a %), then the
 \fBLOGNAME\fR
 variable (which is not permitted to contain a password) and if either exists, the value is used\&. If these environmental variables are not found, the username found in a Kerberos Credentials cache may be used\&.
 .sp
@@ -531,12 +531,12 @@ DN to use for a simple bind\&.
 .PP
 \-\-use\-kerberos=desired|required|off
 .RS 4
-This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connnecting to a service\&.
+This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connecting to a service\&.
 .sp
 Note that specifying this parameter here will override the
 \m[blue]\fBclient use kerberos\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .RE
 .PP
@@ -559,7 +559,7 @@ Sets the connection protection the client tool should use\&.
 Note that specifying this parameter here will override the
 \m[blue]\fBclient protection\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 .sp
 In case you need more fine grained control you can use:
@@ -1546,7 +1546,11 @@ Something we failed to parse\&. Default action is to "edit" it in interactive an
 .PP
 Starting with version 3\&.0\&.23, a Samba server now supports the ability for non\-root users to add user defined shares to be exported using the "net usershare" commands\&.
 .PP
-To set this up, first set up your smb\&.conf by adding to the [global] section: usershare path = /usr/local/samba/lib/usershares Next create the directory /usr/local/samba/lib/usershares, change the owner to root and set the group owner to the UNIX group who should have the ability to create usershares, for example a group called "serverops"\&. Set the permissions on /usr/local/samba/lib/usershares to 01770\&. (Owner and group all access, no access for others, plus the sticky bit, which means that a file in that directory can be renamed or deleted only by the owner of the file)\&. Finally, tell smbd how many usershares you will allow by adding to the [global] section of smb\&.conf a line such as : usershare max shares = 100\&. To allow 100 usershare definitions\&. Now, members of the UNIX group "serverops" can create user defined shares on demand using the commands below\&.
+To set this up, first set up your
+${prefix}/etc/smb\&.conf
+by adding to the [global] section: usershare path = /usr/local/samba/lib/usershares Next create the directory /usr/local/samba/lib/usershares, change the owner to root and set the group owner to the UNIX group who should have the ability to create usershares, for example a group called "serverops"\&. Set the permissions on /usr/local/samba/lib/usershares to 01770\&. (Owner and group all access, no access for others, plus the sticky bit, which means that a file in that directory can be renamed or deleted only by the owner of the file)\&. Finally, tell smbd how many usershares you will allow by adding to the [global] section of
+${prefix}/etc/smb\&.conf
+a line such as : usershare max shares = 100\&. To allow 100 usershare definitions\&. Now, members of the UNIX group "serverops" can create user defined shares on demand using the commands below\&.
 .PP
 The usershare commands are:
 .RS 4
@@ -1556,24 +1560,30 @@ net usershare add sharename path [comment [acl] [guest_ok=[y|n]]] \- to add or c
 net usershare delete sharename \- to delete a user defined share\&.
 .RE
 .RS 4
-net usershare info [\-l|\-\-long] [wildcard sharename] \- to print info about a user defined share\&.
+net usershare info [\-\-long] [wildcard sharename] \- to print info about a user defined share\&.
 .RE
 .RS 4
-net usershare list [\-l|\-\-long] [wildcard sharename] \- to list user defined shares\&.
+net usershare list [\-\-long] [wildcard sharename] \- to list user defined shares\&.
 .RE
 .SS "USERSHARE ADD sharename path [comment] [acl] [guest_ok=[y|n]]"
 .PP
 Add or replace a new user defined share, with name "sharename"\&.
 .PP
-"path" specifies the absolute pathname on the system to be exported\&. Restrictions may be put on this, see the global smb\&.conf parameters: "usershare owner only", "usershare prefix allow list", and "usershare prefix deny list"\&.
+"path" specifies the absolute pathname on the system to be exported\&. Restrictions may be put on this, see the global
+${prefix}/etc/smb\&.conf
+parameters: "usershare owner only", "usershare prefix allow list", and "usershare prefix deny list"\&.
 .PP
 The optional "comment" parameter is the comment that will appear on the share when browsed to by a client\&.
 .PP
-The optional "acl" field specifies which users have read and write access to the entire share\&. Note that guest connections are not allowed unless the smb\&.conf parameter "usershare allow guests" has been set\&. The definition of a user defined share acl is: "user:permission", where user is a valid username on the system and permission can be "F", "R", or "D"\&. "F" stands for "full permissions", ie\&. read and write permissions\&. "D" stands for "deny" for a user, ie\&. prevent this user from accessing this share\&. "R" stands for "read only", ie\&. only allow read access to this share (no creation of new files or directories or writing to files)\&.
+The optional "acl" field specifies which users have read and write access to the entire share\&. Note that guest connections are not allowed unless the
+${prefix}/etc/smb\&.conf
+parameter "usershare allow guests" has been set\&. The definition of a user defined share acl is: "user:permission", where user is a valid username on the system and permission can be "F", "R", or "D"\&. "F" stands for "full permissions", ie\&. read and write permissions\&. "D" stands for "deny" for a user, ie\&. prevent this user from accessing this share\&. "R" stands for "read only", ie\&. only allow read access to this share (no creation of new files or directories or writing to files)\&.
 .PP
 The default if no "acl" is given is "Everyone:R", which means any authenticated user has read\-only access\&.
 .PP
-The optional "guest_ok" has the same effect as the parameter of the same name in smb\&.conf, in that it allows guest access to this user defined share\&. This parameter is only allowed if the global parameter "usershare allow guests" has been set to true in the smb\&.conf\&.
+The optional "guest_ok" has the same effect as the parameter of the same name in
+${prefix}/etc/smb\&.conf, in that it allows guest access to this user defined share\&. This parameter is only allowed if the global parameter "usershare allow guests" has been set to true in the
+${prefix}/etc/smb\&.conf\&.
 
 
 There is no separate command to modify an existing user defined share,
@@ -1585,24 +1595,24 @@ to restart smbd on adding, deleting or changing a user defined share\&.
 .SS "USERSHARE DELETE sharename"
 .PP
 Deletes the user defined share by name\&. The Samba smbd daemon immediately notices this change, although it will not disconnect any users currently connected to the deleted share\&.
-.SS "USERSHARE INFO [-l|--long] [wildcard sharename]"
+.SS "USERSHARE INFO [--long] [wildcard sharename]"
 .PP
 Get info on user defined shares owned by the current user matching the given pattern, or all users\&.
 .PP
-net usershare info on its own dumps out info on the user defined shares that were created by the current user, or restricts them to share names that match the given wildcard pattern (\*(Aq*\*(Aq matches one or more characters, \*(Aq?\*(Aq matches only one character)\&. If the \*(Aq\-l\*(Aq or \*(Aq\-\-long\*(Aq option is also given, it prints out info on user defined shares created by other users\&.
+net usershare info on its own dumps out info on the user defined shares that were created by the current user, or restricts them to share names that match the given wildcard pattern (\*(Aq*\*(Aq matches one or more characters, \*(Aq?\*(Aq matches only one character)\&. If the \*(Aq\-\-long\*(Aq option is also given, it prints out info on user defined shares created by other users\&.
 .PP
 The information given about a share looks like: [foobar] path=/home/jeremy comment=testme usershare_acl=Everyone:F guest_ok=n And is a list of the current settings of the user defined share that can be modified by the "net usershare add" command\&.
-.SS "USERSHARE LIST [-l|--long] wildcard sharename"
+.SS "USERSHARE LIST [--long] wildcard sharename"
 .PP
 List all the user defined shares owned by the current user matching the given pattern, or all users\&.
 .PP
-net usershare list on its own list out the names of the user defined shares that were created by the current user, or restricts the list to share names that match the given wildcard pattern (\*(Aq*\*(Aq matches one or more characters, \*(Aq?\*(Aq matches only one character)\&. If the \*(Aq\-l\*(Aq or \*(Aq\-\-long\*(Aq option is also given, it includes the names of user defined shares created by other users\&.
+net usershare list on its own list out the names of the user defined shares that were created by the current user, or restricts the list to share names that match the given wildcard pattern (\*(Aq*\*(Aq matches one or more characters, \*(Aq?\*(Aq matches only one character)\&. If the \*(Aq\-\-long\*(Aq option is also given, it includes the names of user defined shares created by other users\&.
 .SS "[RPC] CONF"
 .PP
 Starting with version 3\&.2\&.0, a Samba server can be configured by data stored in registry\&. This configuration data can be edited with the new "net conf" commands\&. There is also the possibility to configure a remote Samba server by enabling the RPC conf mode and specifying the address of the remote server\&.
 .PP
 The deployment of this configuration data can be activated in two levels from the
-\fIsmb\&.conf\fR
+\fI${prefix}/etc/smb\&.conf\fR
 file: Share definitions from registry are activated by setting
 \fIregistry shares\fR
 to
@@ -1971,7 +1981,7 @@ Starting with version 3\&.4\&.0 net can read, dump, import and export native win
 The import and export of evt files can only succeed when
 \fIeventlog list\fR
 is used in
-\fIsmb\&.conf\fR
+\fI${prefix}/etc/smb\&.conf\fR
 file\&. See the
 \fBsmb.conf\fR(5)
 manpage for details\&.
@@ -2000,7 +2010,8 @@ into the samba internal tdb representation of eventlog defined by
 \fIeventlog\fR
 needs to part of the
 \fIeventlog list\fR
-defined in smb\&.conf\&. See the
+defined in
+${prefix}/etc/smb\&.conf\&. See the
 \fBsmb.conf\fR(5)
 manpage for details\&.
 .SS "EVENTLOG EXPORT filename eventlog"
@@ -2012,7 +2023,8 @@ to a eventlog *\&.evt file defined by
 \fIeventlog\fR
 needs to part of the
 \fIeventlog list\fR
-defined in smb\&.conf\&. See the
+defined in
+${prefix}/etc/smb\&.conf\&. See the
 \fBsmb.conf\fR(5)
 manpage for details\&.
 .SS "DOM"
@@ -2467,7 +2479,7 @@ is an optional parameter that can be set to enforce using the default machine ac
 .IP \(bu 2.3
 .\}
 \fIREUSE\fR
-is an optional parameter that can be set to enforce reusing an exisiting machine account in AD\&.
+is an optional parameter that can be set to enforce reusing an existing machine account in AD\&.
 .RE
 .sp
 .RS 4

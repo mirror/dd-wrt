@@ -87,6 +87,12 @@ check if two data blobs are equal
 _PUBLIC_ int data_blob_cmp(const DATA_BLOB *d1, const DATA_BLOB *d2);
 
 /**
+check if two data blobs are equal, where the time taken should not depend on the
+contents of either blob.
+**/
+_PUBLIC_ bool data_blob_equal_const_time(const DATA_BLOB *d1, const DATA_BLOB *d2);
+
+/**
 print the data_blob as hex string
 **/
 _PUBLIC_ char *data_blob_hex_string_upper(TALLOC_CTX *mem_ctx, const DATA_BLOB *blob);
@@ -125,6 +131,13 @@ _PUBLIC_ bool data_blob_realloc(TALLOC_CTX *mem_ctx, DATA_BLOB *blob, size_t len
 **/
 _PUBLIC_ bool data_blob_append(TALLOC_CTX *mem_ctx, DATA_BLOB *blob,
 				   const void *p, size_t length);
+
+/**
+  pad the length of a data blob to a multiple of
+  'pad'. 'pad' must be a power of two.
+**/
+_PUBLIC_ bool data_blob_pad(TALLOC_CTX *mem_ctx, DATA_BLOB *blob,
+			    size_t pad);
 
 extern const DATA_BLOB data_blob_null;
 

@@ -48,7 +48,7 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 	if (lp_kernel_share_modes(SNUM(conn))) {
 		/*
 		 * We do not support durable handles
-		 * if kernel share modes (flocks) are used
+		 * if file system sharemodes are used
 		 */
 		return NT_STATUS_NOT_SUPPORTED;
 	}
@@ -75,11 +75,7 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
-	if (fsp_get_io_fd(fsp) == -1) {
-		return NT_STATUS_NOT_SUPPORTED;
-	}
-
-	if (is_ntfs_stream_smb_fname(fsp->fsp_name)) {
+	if (fsp_is_alternate_stream(fsp)) {
 		/*
 		 * We do not support durable handles
 		 * on streams for now.
@@ -536,7 +532,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	NTSTATUS status;
 	bool ok;
 	int ret;
-	int flags = 0;
+	struct vfs_open_how how = { .flags = 0, };
 	struct file_id file_id;
 	struct smb_filename *smb_fname = NULL;
 	enum ndr_err_code ndr_err;
@@ -808,14 +804,14 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	 * TODO: properly calculate open flags
 	 */
 	if (fsp->fsp_flags.can_write && fsp->fsp_flags.can_read) {
-		flags = O_RDWR;
+		how.flags = O_RDWR;
 	} else if (fsp->fsp_flags.can_write) {
-		flags = O_WRONLY;
+		how.flags = O_WRONLY;
 	} else if (fsp->fsp_flags.can_read) {
-		flags = O_RDONLY;
+		how.flags = O_RDONLY;
 	}
 
-	status = fd_openat(conn->cwd_fsp, fsp->fsp_name, fsp, flags, 0);
+	status = fd_openat(conn->cwd_fsp, fsp->fsp_name, fsp, &how);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(lck);
 		DEBUG(1, ("vfs_default_durable_reconnect: failed to open "
@@ -837,15 +833,15 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 
 	ret = SMB_VFS_FSTAT(fsp, &fsp->fsp_name->st);
 	if (ret == -1) {
+		NTSTATUS close_status;
 		status = map_nt_error_from_unix_common(errno);
 		DEBUG(1, ("Unable to fstat stream: %s => %s\n",
 			  smb_fname_str_dbg(smb_fname),
 			  nt_errstr(status)));
-		ret = SMB_VFS_CLOSE(fsp);
-		if (ret == -1) {
-			DEBUG(0, ("vfs_default_durable_reconnect: "
-				  "SMB_VFS_CLOSE failed (%s) - leaking file "
-				  "descriptor\n", strerror(errno)));
+		close_status = fd_close(fsp);
+		if (!NT_STATUS_IS_OK(close_status)) {
+			DBG_ERR("fd_close failed (%s) - leaking file "
+				"descriptor\n", nt_errstr(close_status));
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
@@ -855,11 +851,10 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	}
 
 	if (!S_ISREG(fsp->fsp_name->st.st_ex_mode)) {
-		ret = SMB_VFS_CLOSE(fsp);
-		if (ret == -1) {
-			DEBUG(0, ("vfs_default_durable_reconnect: "
-				  "SMB_VFS_CLOSE failed (%s) - leaking file "
-				  "descriptor\n", strerror(errno)));
+		NTSTATUS close_status = fd_close(fsp);
+		if (!NT_STATUS_IS_OK(close_status)) {
+			DBG_ERR("fd_close failed (%s) - leaking file "
+				"descriptor\n", nt_errstr(close_status));
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
@@ -870,11 +865,10 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 
 	file_id = vfs_file_id_from_sbuf(conn, &fsp->fsp_name->st);
 	if (!file_id_equal(&cookie.id, &file_id)) {
-		ret = SMB_VFS_CLOSE(fsp);
-		if (ret == -1) {
-			DEBUG(0, ("vfs_default_durable_reconnect: "
-				  "SMB_VFS_CLOSE failed (%s) - leaking file "
-				  "descriptor\n", strerror(errno)));
+		NTSTATUS close_status = fd_close(fsp);
+		if (!NT_STATUS_IS_OK(close_status)) {
+			DBG_ERR("fd_close failed (%s) - leaking file "
+				"descriptor\n", nt_errstr(close_status));
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
@@ -889,11 +883,10 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 						      &fsp->fsp_name->st,
 						      fsp_str_dbg(fsp));
 	if (!ok) {
-		ret = SMB_VFS_CLOSE(fsp);
-		if (ret == -1) {
-			DEBUG(0, ("vfs_default_durable_reconnect: "
-				  "SMB_VFS_CLOSE failed (%s) - leaking file "
-				  "descriptor\n", strerror(errno)));
+		NTSTATUS close_status = fd_close(fsp);
+		if (!NT_STATUS_IS_OK(close_status)) {
+			DBG_ERR("fd_close failed (%s) - leaking file "
+				"descriptor\n", nt_errstr(close_status));
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
@@ -904,13 +897,10 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 
 	status = set_file_oplock(fsp);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(1, ("vfs_default_durable_reconnect failed to set oplock "
-			  "after opening file: %s\n", nt_errstr(status)));
-		ret = SMB_VFS_CLOSE(fsp);
-		if (ret == -1) {
-			DEBUG(0, ("vfs_default_durable_reconnect: "
-				  "SMB_VFS_CLOSE failed (%s) - leaking file "
-				  "descriptor\n", strerror(errno)));
+		NTSTATUS close_status = fd_close(fsp);
+		if (!NT_STATUS_IS_OK(close_status)) {
+			DBG_ERR("fd_close failed (%s) - leaking file "
+				"descriptor\n", nt_errstr(close_status));
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;

@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "01/31/2022" "Samba 4\&.15\&.5" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "05/31/2023" "Samba 4\&.18\&.3" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -150,7 +150,7 @@ parameter means access will be permitted as the default guest user (specified el
 .\}
 .nf
 	\fI[aprinter]\fR
-	\m[blue]\fBpath = /usr/spool/public\fR\m[]
+	\m[blue]\fBpath = /var/tmp\fR\m[]
 	\m[blue]\fBread only = yes\fR\m[]
 	\m[blue]\fBprintable = yes\fR\m[]
 	\m[blue]\fBguest ok = yes\fR\m[]
@@ -294,7 +294,7 @@ Typically the path specified is that of a world\-writeable spool directory with 
 .\}
 .nf
 \fI[printers]\fR
-\m[blue]\fBpath = /usr/spool/public\fR\m[]
+\m[blue]\fBpath = /var/tmp\fR\m[]
 \m[blue]\fBguest ok = yes\fR\m[]
 \m[blue]\fBprintable = yes\fR\m[]
 .fi
@@ -308,7 +308,7 @@ All aliases given for a printer in the printcap file are legitimate printer name
 .RS 4
 .\}
 .nf
-alias|alias|alias|alias\&.\&.\&.    
+alias|alias|alias|alias\&.\&.\&.
 .fi
 .if n \{\
 .RE
@@ -1306,9 +1306,6 @@ If this integer parameter is set to a non\-zero value, Samba will read from file
 The only reasonable values for this parameter are 0 (no async I/O) and 1 (always do async I/O)\&.
 .sp
 Related command:
-\m[blue]\fBwrite cache size\fR\m[]
-.sp
-Related command:
 \m[blue]\fBaio write size\fR\m[]
 .sp
 Default:
@@ -1344,9 +1341,6 @@ The only reasonable values for this parameter are 0 (no async I/O) and 1 (always
 Compared to
 \m[blue]\fBaio read size\fR\m[]
 this parameter has a smaller effect, most writes should end up in the file system cache\&. Writes that require space allocation might benefit most from going asynchronous\&.
-.sp
-Related command:
-\m[blue]\fBwrite cache size\fR\m[]
 .sp
 Related command:
 \m[blue]\fBaio read size\fR\m[]
@@ -1402,7 +1396,7 @@ and epmapper, mgmt and rpcecho have a hard\-coded default of
 .sp
 The behavior can be overwritten per interface name (e\&.g\&. lsarpc, netlogon, samr, srvsvc, winreg, wkssvc \&.\&.\&.) by using \*(Aqallow dcerpc auth level connect:interface = yes\*(Aq as option\&.
 .sp
-This option yields precedence to the implementation specific restrictions\&. E\&.g\&. the drsuapi and backupkey protocols require DCERPC_AUTH_LEVEL_PRIVACY\&. The dnsserver protocol requires DCERPC_AUTH_LEVEL_INTEGRITY\&.
+This option is over\-ridden by the implementation specific restrictions\&. E\&.g\&. the drsuapi and backupkey protocols require DCERPC_AUTH_LEVEL_PRIVACY\&. The dnsserver protocol requires DCERPC_AUTH_LEVEL_INTEGRITY\&.
 .sp
 Default:
 \fI\fIallow dcerpc auth level connect\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -1457,7 +1451,9 @@ Default:
 allow nt4 crypto (G)
 .PP
 .RS 4
-This option controls whether the netlogon server (currently only in \*(Aqactive directory domain controller\*(Aq mode), will reject clients which does not support NETLOGON_NEG_STRONG_KEYS nor NETLOGON_NEG_SUPPORTS_AES\&.
+This option is deprecated and will be removed in future, as it is a security problem if not set to "no" (which will be the hardcoded behavior in future)\&.
+.sp
+This option controls whether the netlogon server (currently only in \*(Aqactive directory domain controller\*(Aq mode), will reject clients which do not support NETLOGON_NEG_STRONG_KEYS nor NETLOGON_NEG_SUPPORTS_AES\&.
 .sp
 This option was added with Samba 4\&.2\&.0\&. It may lock out clients which worked fine with Samba versions up to 4\&.1\&.x\&. as the effective default was "yes" there, while it is "no" now\&.
 .sp
@@ -1465,10 +1461,60 @@ If you have clients without RequireStrongKey = 1 in the registry, you may need t
 .sp
 "allow nt4 crypto = yes" allows weak crypto to be negotiated, maybe via downgrade attacks\&.
 .sp
-This option yields precedence to the \*(Aqreject md5 clients\*(Aq option\&.
+\fIAvoid using this option!\fR
+Use explicit \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = yes\fR\m[]\*(Aq instead! Which is available with the patches for
+CVE\-2022\-38023
+see
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240
+.sp
+Samba will log an error in the log files at log level 0 if legacy a client is rejected or allowed without an explicit, \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = yes\fR\m[]\*(Aq option for the client\&. The message will indicate the explicit \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = yes\fR\m[]\*(Aq line to be added, if the legacy client software requires it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2022_38023:error_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
+.sp
+This allows admins to use "yes" only for a short grace period, in order to collect the explicit \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = yes\fR\m[]\*(Aq options\&.
+.sp
+This option is over\-ridden by the effective value of \*(Aqyes\*(Aq from the \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT\fR\m[]\*(Aq and/or \*(Aq\m[blue]\fBreject md5 clients\fR\m[]\*(Aq options\&.
 .sp
 Default:
 \fI\fIallow nt4 crypto\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
+allow nt4 crypto:COMPUTERACCOUNT (G)
+.PP
+.RS 4
+If you still have legacy domain members which required \*(Aqallow nt4 crypto = yes\*(Aq, it is possible to specify an explicit exception per computer account by using \*(Aqallow nt4 crypto:COMPUTERACCOUNT = yes\*(Aq as option\&. Note that COMPUTERACCOUNT has to be the sAMAccountName value of the computer account (including the trailing \*(Aq$\*(Aq sign)\&.
+.sp
+Samba will log a complaint in the log files at log level 0 about the security problem if the option is set to "yes", but the related computer does not require it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2022_38023:warn_about_unused_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
+.sp
+Samba will log a warning in the log files at log level 5, if a setting is still needed for the specified computer account\&.
+.sp
+See
+CVE\-2022\-38023,
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240\&.
+.sp
+This option overrides the
+\m[blue]\fBallow nt4 crypto\fR\m[]
+option\&.
+.sp
+This option is over\-ridden by the effective value of \*(Aqyes\*(Aq from the \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT\fR\m[]\*(Aq and/or \*(Aq\m[blue]\fBreject md5 clients\fR\m[]\*(Aq options\&.
+.sp
+Which means \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = yes\fR\m[]\*(Aq is only useful in combination with \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	allow nt4 crypto:LEGACYCOMPUTER1$ = yes
+	server reject md5 schannel:LEGACYCOMPUTER1$ = no
+	allow nt4 crypto:NASBOX$ = yes
+	server reject md5 schannel:NASBOX$ = no
+	allow nt4 crypto:LEGACYCOMPUTER2$ = yes
+	server reject md5 schannel:LEGACYCOMPUTER2$ = no
+    
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fINo default\fR
 .RE
 
 allow trusted domains (G)
@@ -1776,7 +1822,7 @@ case sensitive (S)
 .PP
 .RS 4
 See the discussion in the section
-\m[blue]\fBname mangling\fR\m[]\&.
+name mangling\&.
 .sp
 Default:
 \fI\fIcase sensitive\fR\fR\fI = \fR\fIauto\fR\fI \fR
@@ -2093,20 +2139,24 @@ and
 \fIseal\fR
 are only available if Samba has been compiled against a modern OpenLDAP version (2\&.3\&.x or higher)\&.
 .sp
-This option is needed in the case of Domain Controllers enforcing the usage of signed LDAP connections (e\&.g\&. Windows 2000 SP3 or higher)\&. LDAP sign and seal can be controlled with the registry key "HKLM\eSystem\eCurrentControlSet\eServices\e
-NTDS\eParameters\eLDAPServerIntegrity" on the Windows server side\&.
-.sp
-Depending on the used KRB5 library (MIT and older Heimdal versions) it is possible that the message "integrity only" is not supported\&. In this case,
-\fIsign\fR
-is just an alias for
+This option is needed firstly to secure the privacy of administrative connections from
+samba\-tool, including in particular new or reset passwords for users\&. For this reason the default is
 \fIseal\fR\&.
 .sp
+Additionally,
+winbindd
+and the
+net
+tool can use LDAP to communicate with Domain Controllers, so this option also controls the level of privacy for those connections\&. All supported AD DC versions will enforce the usage of at least signed LDAP connections by default, so a value of at least
+\fIsign\fR
+is required in practice\&.
+.sp
 The default value is
-\fIsign\fR\&. That implies synchronizing the time with the KDC in the case of using
+\fIseal\fR\&. That implies synchronizing the time with the KDC in the case of using
 \fIKerberos\fR\&.
 .sp
 Default:
-\fI\fIclient ldap sasl wrapping\fR\fR\fI = \fR\fIsign\fR\fI \fR
+\fI\fIclient ldap sasl wrapping\fR\fR\fI = \fR\fIseal\fR\fI \fR
 .RE
 
 client max protocol (G)
@@ -2455,7 +2505,7 @@ denies access if the server is not able to speak netlogon schannel\&.
 Note that for active directory domains this is hardcoded to
 \m[blue]\fBclient schannel = yes\fR\m[]\&.
 .sp
-This option yields precedence to the
+This option is over\-ridden by the
 \m[blue]\fBrequire strong key\fR\m[]
 option\&.
 .sp
@@ -2646,7 +2696,7 @@ Example:
 client use kerberos (G)
 .PP
 .RS 4
-This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connnecting to a service\&.
+This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connecting to a service\&.
 .sp
 Possible option settings are:
 .RS
@@ -3094,6 +3144,8 @@ Sometimes the timestamps in the log messages are needed with a resolution of hig
 .sp
 Note that the parameter
 \m[blue]\fBdebug timestamp\fR\m[]
+or
+\m[blue]\fBdebug syslog format\fR\m[]
 must be on for this to have an effect\&.
 .sp
 Default:
@@ -3129,6 +3181,28 @@ Default:
 \fI\fIdebug prefix timestamp\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
+debug syslog format (G)
+.PP
+.RS 4
+With this option enabled, debug messages are printed in a single\-line format like that traditionally produced by syslog\&. The timestamp consists of an abbreviated month, space\-padded date, and time including seconds\&. This is followed by the hostname and the program name, with the process\-ID in square brackets\&.
+.sp
+If
+\m[blue]\fBdebug hires timestamp\fR\m[]
+is also enabled then an RFC5424 timestamp is used instead\&.
+.sp
+Default:
+\fI\fIdebug syslog format\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
+winbind debug traceid (G)
+.PP
+.RS 4
+With this boolean parameter enabled, the per request unique traceid will be displayed in the debug header for winbind processes\&.
+.sp
+Default:
+\fI\fIwinbind debug traceid\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
 debug uid (G)
 .PP
 .RS 4
@@ -3160,7 +3234,7 @@ default case (S)
 .PP
 .RS 4
 See the section on
-\m[blue]\fBname mangling\fR\m[]\&. Also note the
+name mangling\&. Also note the
 \m[blue]\fBshort preserve case\fR\m[]
 parameter\&.
 .sp
@@ -3206,7 +3280,7 @@ There is no default value for this parameter\&. If this parameter is not given, 
 .sp
 Typically the default service would be a
 \m[blue]\fBguest ok\fR\m[],
-\m[blue]\fBread\-only\fR\m[]
+\m[blue]\fBread only\fR\m[]
 service\&.
 .sp
 Also note that the apparent service name will be changed to equal that of the requested service, this is very useful as it allows you to use macros like
@@ -3549,7 +3623,7 @@ This parameter has been removed for Samba 4\&.0\&.0\&.
 disable netbios (G)
 .PP
 .RS 4
-Enabling this parameter will disable netbios support in Samba\&. Netbios is the only available form of browsing in all windows versions except for 2000 and XP\&.
+Enabling this parameter will disable netbios support in Samba\&. Netbios is the only available form of browsing in Windows versions prior to Windows 2000\&.
 .if n \{\
 .sp
 .\}
@@ -3597,13 +3671,38 @@ dns forwarder (G)
 .RS 4
 This option specifies the list of DNS servers that DNS requests will be forwarded to if they can not be handled by Samba itself\&.
 .sp
-The DNS forwarder is only used if the internal DNS server in Samba is used\&.
+The DNS forwarder is only used if the internal DNS server in Samba is used\&. Port numbers can be appended by separating them from the address by using a colon (\*(Aq:\*(Aq)\&. When specifying a port, IPv6 addresses must be enclosed in square brackets (\*(Aq[\*(Aq and \*(Aq]\*(Aq)\&. IPv6 forwarder addresses with no port specified, don\*(Aqt need the square brackets, and default to port 53\&.
 .sp
 Default:
 \fI\fIdns forwarder\fR\fR\fI = \fR\fI\fR\fI \fR
 .sp
 Example:
-\fI\fIdns forwarder\fR\fR\fI = \fR\fI192\&.168\&.0\&.1 192\&.168\&.0\&.2\fR\fI \fR
+\fI\fIdns forwarder\fR\fR\fI = \fR\fI192\&.168\&.0\&.1 192\&.168\&.0\&.2 ::1 [2001:db8::1] [2001:db8:1:2::1]:54 \fR\fI \fR
+.RE
+
+dns port (G)
+.PP
+.RS 4
+Specifies which ports the server should listen on for DNS traffic\&.
+.sp
+It makes possible to use another DNS server as a front and forward to Samba\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+Dynamic DNS updates may not be proxied by the front DNS server when forwarding to Samba\&. Dynamic DNS update proxying depends on the features of the other DNS server used as a front\&.
+.sp .5v
+.RE
+Default:
+\fI\fIdns port\fR\fR\fI = \fR\fI53\fR\fI \fR
 .RE
 
 dns proxy (G)
@@ -3951,8 +4050,21 @@ The underlying filesystem exposed by the share must support extended attributes 
 utilities must work)\&.
 .RE
 .sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Access to extended user attributes must be allowed by the underlying filesystem (e\&.g\&. when mounted with a system\-dependent option like user_xattr on Linux)\&.
 .RE
-Note that the SMB protocol allows setting attributes whose value is 64K bytes long, and that on NTFS, the maximum storage space for extended attributes per file is 64K\&. On most UNIX systems (Solaris and ZFS file system being the exception), the limits are much lower \- typically 4K\&. Worse, the same 4K space is often used to store system metadata such as POSIX ACLs, or Samba\*(Aqs NT ACLs\&. Giving clients access to this tight space via extended attribute support could consume all of it by unsuspecting client applications, which would prevent changing system metadata due to lack of space\&. The default has changed to yes in Samba release 4\&.9\&.0 and above to allow better Windows fileserver compatibility in a default install\&.
+.sp
+.RE
+This option exposes the "user" attribute namespace from the underlying filesystem to clients\&. In order to match Windows conventions, the namespace prefix ("user\&.") is stripped from the attribute name on the client side\&. The handling of further attribute namespaces (like "security", "system", or "trusted") is not affected by this option\&.
+.sp
+Note that the SMB protocol allows setting attributes whose value is 64K bytes long, and that on NTFS, the maximum storage space for extended attributes per file is 64K\&. On some filesystem the limits may be lower\&. Filesystems with too limited EA space may experience unexpected weird effects\&. The default has changed to yes in Samba release 4\&.9\&.0 and above to allow better Windows fileserver compatibility in a default install\&.
 .sp
 Default:
 \fI\fIea support\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -3968,6 +4080,36 @@ Default:
 .sp
 Example:
 \fI\fIelasticsearch:address\fR\fR\fI = \fR\fIneedle\&.haystack\&.samba\&.org\fR\fI \fR
+.RE
+
+elasticsearch:ignore unknown attribute (G)
+.PP
+.RS 4
+Ignore unknown Spotlight attributes in search queries\&. An example query using the unsupported attribute
+"kMDItemTopic"
+would be
+kMDItemTopic=="hotstuff"\&. By default any query using such a type would completely fail\&. By enabling this option, if the type match is a subexpression of a larger expression, then this subexpression is just ignored\&.
+.sp
+Default:
+\fI\fIelasticsearch:ignore unknown attribute\fR\fR\fI = \fR\fIno\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:ignore unknown attribute\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+elasticsearch:ignore unknown type (G)
+.PP
+.RS 4
+Ignore unknown Spotlight types in search queries\&. An example query using the unsupported type
+"public\&.calendar\-event"
+would be
+kMDItemContentType=="public\&.calendar\-event"\&. By default any query using such a type would completely fail\&. By enabling this option, if the type match is a subexpression of a larger expression, then this subexpression is just ignored\&.
+.sp
+Default:
+\fI\fIelasticsearch:ignore unknown type\fR\fR\fI = \fR\fIno\fR\fI \fR
+.sp
+Example:
+\fI\fIelasticsearch:ignore unknown type\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
 elasticsearch:index (S)
@@ -4854,6 +4996,12 @@ hosts allow = 150\&.203\&.15\&.0/255\&.255\&.255\&.0
 Example 3: allow a couple of hosts
 .sp
 hosts allow = lapland, arvidsjaur
+.sp
+Example 4: allow only hosts in NIS netgroup "foonet", but deny access from one particular host
+.sp
+hosts allow = @foonet
+.sp
+hosts deny = pirate
 .if n \{\
 .sp
 .\}
@@ -5089,7 +5237,7 @@ Default:
 inherit acls (S)
 .PP
 .RS 4
-This parameter can be used to ensure that if default acls exist on parent directories, they are always honored when creating a new file or subdirectory in these parent directories\&. The default behavior is to use the unix mode specified when creating the directory\&. Enabling this option sets the unix mode to 0777, thus guaranteeing that default directory acls are propagated\&. Note that using the VFS modules acl_xattr or acl_tdb which store native Windows as meta\-data will automatically turn this option on for any share for which they are loaded, as they require this option to emulate Windows ACLs correctly\&.
+This parameter is only relevant for filesystems that do not support standardized NFS4 ACLs but only a POSIX draft ACL implementation and which implements default ACLs like most filesystems on Linux\&. It can be used to ensure that if default ACLs exist on parent directories, they are always honored when creating a new file or subdirectory in these parent directories\&. The default behavior is to use the unix mode specified when creating the directory\&. Enabling this option sets the unix mode to 0777, thus guaranteeing that the default directory ACLs are propagated\&. Note that using the VFS modules acl_xattr or acl_tdb which store native Windows as meta\-data will automatically turn this option on for any share for which they are loaded, as they require this option to emulate Windows ACLs correctly\&.
 .sp
 Default:
 \fI\fIinherit acls\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -5157,7 +5305,7 @@ Common scenarios where this behavior is useful is in implementing drop\-boxes, w
 .sp
 The
 \fBunix only\fR
-option effectively breaks the tie between the Windows owner of a file and the UNIX owner\&. As a logical consequence, in this mode, setting the the Windows owner of a file does not modify the UNIX owner\&. Using this mode should typically be combined with a backing store that can emulate the full NT ACL model without affecting the POSIX permissions, such as the acl_xattr VFS module, coupled with
+option effectively breaks the tie between the Windows owner of a file and the UNIX owner\&. As a logical consequence, in this mode, setting the Windows owner of a file does not modify the UNIX owner\&. Using this mode should typically be combined with a backing store that can emulate the full NT ACL model without affecting the POSIX permissions, such as the acl_xattr VFS module, coupled with
 \m[blue]\fBacl_xattr:ignore system acls = yes\fR\m[]\&. This can be used to emulate folder quotas, when files are exposed only via SMB (without UNIX extensions)\&. The UNIX owner of a directory is locally set and inherited by all subdirectories and files, and they all consume the same quota\&.
 .sp
 Default:
@@ -5318,7 +5466,13 @@ This is a list of users that should not be allowed to login to this service\&. T
 \fIparanoid\fR
 check to absolutely ensure an improper setting does not breach your security\&.
 .sp
-A name starting with a \*(Aq@\*(Aq is interpreted UNIX group\&.
+A name starting with a \*(Aq@\*(Aq is interpreted as an NIS netgroup first (if your system supports NIS), and then as a UNIX group if the name was not found in the NIS netgroup database\&.
+.sp
+A name starting with \*(Aq+\*(Aq is interpreted only by looking in the UNIX group database via the NSS getgrnam() interface\&. A name starting with \*(Aq&\*(Aq is interpreted only by looking in the NIS netgroup database (this requires NIS to be working on your system)\&. The characters \*(Aq+\*(Aq and \*(Aq&\*(Aq may be used at the start of the name in either order so the value
+\fI+&group\fR
+means check the UNIX group database, followed by the NIS netgroup database, and the value
+\fI&+group\fR
+means check the NIS netgroup database, followed by the UNIX group database (the same as the \*(Aq@\*(Aq prefix)\&.
 .sp
 The current servicename is substituted for
 \fI%S\fR\&. This is useful in the [homes] section\&.
@@ -5346,6 +5500,195 @@ Default:
 .sp
 Example:
 \fI\fIiprint server\fR\fR\fI = \fR\fIMYCUPSSERVER\fR\fI \fR
+.RE
+
+kdc default domain supported enctypes (G)
+.PP
+.RS 4
+Set the default value of
+\fBmsDS\-SupportedEncryptionTypes\fR
+for service accounts in Active Directory that are missing this value or where
+\fBmsDS\-SupportedEncryptionTypes\fR
+is set to 0\&.
+.sp
+This allows Samba administrators to match the configuration flexibility provided by the
+\fBHKEY_LOCAL_MACHINE\eSystem\eCurrentControlSet\eservices\eKDC\eDefaultDomainSupportedEncTypes\fR
+Registry Value on Windows\&.
+.sp
+Unlike the Windows registry key (which only takes an base\-10 number), in Samba this may also be expressed in hexadecimal or as a list of Kerberos encryption type names\&.
+.sp
+Specified values are ORed together bitwise, and those currently supported consist of:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBarcfour\-hmac\-md5\fR,
+\fBrc4\-hmac\fR,
+\fB0x4\fR, or
+\fB4\fR
+.sp
+Known on Windows as Kerberos RC4 encryption
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBaes128\-cts\-hmac\-sha1\-96\fR,
+\fBaes128\-cts\fR,
+\fB0x8\fR, or
+\fB8\fR
+.sp
+Known on Windows as Kerberos AES 128 bit encryption
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBaes256\-cts\-hmac\-sha1\-96\fR,
+\fBaes256\-cts\fR,
+\fB0x10\fR, or
+\fB16\fR
+.sp
+Known on Windows as Kerberos AES 256 bit encryption
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBaes256\-cts\-hmac\-sha1\-96\-sk\fR,
+\fBaes256\-cts\-sk\fR,
+\fB0x20\fR, or
+\fB32\fR
+.sp
+Allow AES session keys\&. When this is set, it indicates to the KDC that AES session keys can be used, even when
+\fBaes256\-cts\fR
+and
+\fBaes128\-cts\fR
+are not set\&. This allows use of AES keys against hosts otherwise only configured with RC4 for ticket keys (which is the default)\&.
+.RE
+.sp
+.RE
+Default:
+\fI\fIkdc default domain supported enctypes\fR\fR\fI = \fR\fI0 # maps to what the software supports currently: arcfour\-hmac\-md5 aes256\-cts\-hmac\-sha1\-96\-sk\fR\fI \fR
+.RE
+
+kdc enable fast (G)
+.PP
+.RS 4
+With the Samba 4\&.16 the embedded Heimdal KDC brings support for RFC6113 FAST, which wasn\*(Aqt available in older Samba versions\&.
+.sp
+This option is mostly for testing and currently only applies if the embedded Heimdal KDC is used\&.
+.sp
+Default:
+\fI\fIkdc enable fast\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+kdc force enable rc4 weak session keys (G)
+.PP
+.RS 4
+\fBRFC8429\fR
+declares that
+\fBrc4\-hmac\fR
+Kerberos ciphers are weak and there are known attacks on Active Directory use of this cipher suite\&.
+.sp
+However for compatibility with Microsoft Windows this option allows the KDC to assume that regardless of the value set in a service account\*(Aqs
+\fBmsDS\-SupportedEncryptionTypes\fR
+attribute that a
+\fBrc4\-hmac\fR
+Kerberos session key (as distinct from the ticket key, as found in a service keytab) can be used if the potentially older client requests it\&.
+.sp
+Default:
+\fI\fIkdc force enable rc4 weak session keys\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
+kdc supported enctypes (G)
+.PP
+.RS 4
+On an active directory domain controller, this is the list of supported encryption types for local running kdc\&.
+.sp
+This allows Samba administrators to remove support for weak/unused encryption types, similar the configuration flexibility provided by the
+\fBNetwork security: Configure encryption types allowed for Kerberos\fR
+GPO/Local Policies/Security Options Value, which results in the
+\fBHKEY_LOCAL_MACHINE\eSOFTWARE\eMicrosoft\eWindows\eCurrentVersion\ePolicies\eSystem\eKerberos\eParameters\eSupportedEncryptionTypes\fR
+Registry Value on Windows\&.
+.sp
+Unlike the Windows registry key (which only takes an base\-10 number), in Samba this may also be expressed as hexadecimal or a list of Kerberos encryption type names\&.
+.sp
+Specified values are ORed together bitwise, and those currently supported consist of:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBarcfour\-hmac\-md5\fR,
+\fBrc4\-hmac\fR,
+\fB0x4\fR, or
+\fB4\fR
+.sp
+Known on Windows as Kerberos RC4 encryption
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBaes128\-cts\-hmac\-sha1\-96\fR,
+\fBaes128\-cts\fR,
+\fB0x8\fR, or
+\fB8\fR
+.sp
+Known on Windows as Kerberos AES 128 bit encryption
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBaes256\-cts\-hmac\-sha1\-96\fR,
+\fBaes256\-cts\fR,
+\fB0x10\fR, or
+\fB16\fR
+.sp
+Known on Windows as Kerberos AES 256 bit encryption
+.RE
+.sp
+.RE
+Default:
+\fI\fIkdc supported enctypes\fR\fR\fI = \fR\fI0 # maps to what the software supports currently: arcfour\-hmac\-md5 aes128\-cts\-hmac\-sha1\-96 aes256\-cts\-hmac\-sha1\-96\fR\fI \fR
 .RE
 
 keepalive (G)
@@ -5387,9 +5730,10 @@ When set to
 \fBstrong\fR, only AES\-based encryption types are offered\&. This can be used in hardened environments to prevent downgrade attacks\&.
 .sp
 When set to
-\fBlegacy\fR, only RC4\-HMAC\-MD5 is allowed\&. Avoiding AES this way has one a very specific use\&. Normally, the encryption type is negotiated between the peers\&. However, there is one scenario in which a Windows read\-only domain controller (RODC) advertises AES encryption, but then proxies the request to a writeable DC which may not support AES encryption, leading to failure of the handshake\&. Setting this parameter to
-\fBlegacy\fR
-would cause samba not to negotiate AES encryption\&. It is assumed of course that the weaker legacy encryption types are acceptable for the setup\&.
+\fBlegacy\fR, only RC4\-HMAC\-MD5 is allowed\&. AVOID using this option, because of
+CVE\-2022\-37966
+see
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15237\&.
 .sp
 Default:
 \fI\fIkerberos encryption types\fR\fR\fI = \fR\fIall\fR\fI \fR
@@ -5497,18 +5841,19 @@ Default:
 kernel share modes (S)
 .PP
 .RS 4
-This parameter controls whether SMB share modes are translated into UNIX flocks\&.
+This parameter controls whether SMB share modes are translated into file system specific sharemode calls\&.
 .sp
-Kernel share modes provide a minimal level of interoperability with local UNIX processes and NFS operations by preventing access with flocks corresponding to the SMB share modes\&. Generally, it is very desirable to leave this enabled\&.
+Kernel share modes provide a minimal level of interoperability with local UNIX processes and NFS operations by preventing access corresponding to the SMB share modes\&. This requires a file system specific VFS module with proper support\&.
 .sp
 Note that in order to use SMB2 durable file handles on a share, you have to turn kernel share modes off\&.
 .sp
 This parameter defaults to
+\fBno\fR\&. Setting it to
 \fByes\fR
-and is translated to a no\-op on systems that do not have the necessary kernel flock support\&.
+requires a file system module that supports file system sharemodes, otherwise attempts to access files will fail with a sharing violation\&.
 .sp
 Default:
-\fI\fIkernel share modes\fR\fR\fI = \fR\fIyes\fR\fI \fR
+\fI\fIkernel share modes\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 kpasswd port (G)
@@ -5559,6 +5904,8 @@ This parameter is overridden by
 \fBntlmv1\-permitted\fR
 or
 \fByes\fR, then only NTLMv2 logins will be permitted and no LM hash will be stored\&. All modern clients support NTLMv2, and but some older clients require special configuration to use it\&.
+.sp
+\fIThis parameter has no impact on the Samba AD DC, LM authentication is always disabled and no LM password is ever stored\&.\fR
 .sp
 Default:
 \fI\fIlanman auth\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -6049,14 +6396,7 @@ can be set to one of two values:
 .RE
 Please note that this parameter does only affect
 \fIrpc\fR
-methods\&. To enable the LDAPv3 StartTLS extended operation (RFC2830) for
-\fIads\fR, set
-\m[blue]\fBldap ssl = start tls\fR\m[]
-\fIand\fR
-\m[blue]\fBldap ssl ads = yes\fR\m[]\&. See
-smb\&.conf(5)
-for more information on
-\m[blue]\fBldap ssl ads\fR\m[]\&.
+methods\&.
 .sp
 Default:
 \fI\fIldap ssl\fR\fR\fI = \fR\fIstart tls\fR\fI \fR
@@ -6178,7 +6518,7 @@ load printers (G)
 .PP
 .RS 4
 A boolean variable that controls whether all printers in the printcap will be loaded for browsing by default\&. See the
-\m[blue]\fBprinters\fR\m[]
+printers
 section for more details\&.
 .sp
 Default:
@@ -6270,7 +6610,7 @@ lock spin time (G)
 .PP
 .RS 4
 The time in milliseconds that smbd should keep waiting to see if a failed lock request can be granted\&. This parameter has changed in default value from Samba 3\&.0\&.23 from 10 to 200\&. The associated
-\m[blue]\fBlock spin count\fR\m[]
+lock spin count
 parameter is no longer used in Samba 3\&.0\&.24\&. You should not need to change the value of this parameter\&.
 .sp
 Default:
@@ -7652,7 +7992,7 @@ mangled names (S)
 This controls whether non\-DOS names under UNIX should be mapped to DOS\-compatible names ("mangled") and made visible, or whether non\-DOS names should simply be ignored\&.
 .sp
 See the section on
-\m[blue]\fBname mangling\fR\m[]
+name mangling
 for details on how to control the mangling process\&.
 .sp
 Possible option settings are
@@ -7769,7 +8109,7 @@ mangling char (S)
 This controls what character is used as the
 \fImagic\fR
 character in
-\m[blue]\fBname mangling\fR\m[]\&. The default is a \*(Aq~\*(Aq but this may interfere with some software\&. Use this option to set it to whatever you prefer\&. This is effective only when mangling method is hash\&.
+name mangling\&. The default is a \*(Aq~\*(Aq but this may interfere with some software\&. Use this option to set it to whatever you prefer\&. This is effective only when mangling method is hash\&.
 .sp
 Default:
 \fI\fImangling char\fR\fR\fI = \fR\fI~\fR\fI \fR
@@ -7793,9 +8133,9 @@ Example:
 map acl inherit (S)
 .PP
 .RS 4
-This boolean parameter controls whether
+This boolean parameter is only relevant for systems that do not support standardized NFS4 ACLs but only a POSIX draft implementation of ACLs\&. Linux is the only common UNIX system which does still not offer standardized NFS4 ACLs actually\&. On such systems this parameter controls whether
 \fBsmbd\fR(8)
-will attempt to map the \*(Aqinherit\*(Aq and \*(Aqprotected\*(Aq access control entry flags stored in Windows ACLs into an extended attribute called user\&.SAMBA_PAI (POSIX ACL Inheritance)\&. This parameter requires supports for extended attributes on the filesystem and allows the Windows ACL editor to store inheritance information while NT ACLs are mapped best\-effort to the POSIX ACLs\&.
+will attempt to map the \*(Aqprotected\*(Aq (don\*(Aqt inherit) flags of the Windows ACLs into an extended attribute called user\&.SAMBA_PAI (POSIX draft ACL Inheritance)\&. This parameter requires support for extended attributes on the filesystem and allows the Windows ACL editor to store (non\-)inheritance information while NT ACLs are mapped best\-effort to the POSIX draft ACLs that the OS and filesystem implements\&.
 .sp
 Default:
 \fI\fImap acl inherit\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -7882,7 +8222,7 @@ The three settings are :
 \fBPermissions\fR
 \- The read only DOS attribute is mapped to the effective permissions of the connecting user, as evaluated by
 \fBsmbd\fR(8)
-by reading the unix permissions and POSIX ACL (if present)\&. If the connecting user does not have permission to modify the file, the read only attribute is reported as being set on the file\&.
+by reading the unix permissions and filesystem ACL (if present)\&. If the connecting user does not have permission to modify the file, the read only attribute is reported as being set on the file\&.
 .RE
 .sp
 .RS 4
@@ -8664,12 +9004,85 @@ Default:
 \fI\fInsupdate command\fR\fR\fI = \fR\fI/usr/bin/nsupdate \-g\fR\fI \fR
 .RE
 
+nt hash store (G)
+.PP
+.RS 4
+This parameter determines whether or not
+\fBsamba\fR(8)
+will, as an AD DC, attempt to store the NT password hash used in NTLM and NTLMv2 authentication for users in this domain\&.
+.sp
+If so configured, the Samba Active Directory Domain Controller, will, except for trust accounts (computers, domain controllers and inter\-domain trusts) the
+\fINOT store the NT hash\fR
+for new and changed accounts in the sam\&.ldb database\&.
+.sp
+This avoids the storage of an unsalted hash for these user\-created passwords\&. As a consequence the
+\fBarcfour\-hmac\-md5\fR
+Kerberos key type is also unavailable in the KDC for these users \- thankfully
+\fImodern clients will select an AES based key instead\&.\fR
+.sp
+NOTE: As the password history in Active Directory is stored as an NT hash (and thus unavailable), a workaround is used, relying instead on Kerberos password hash values\&. This stores three passwords, the current, previous and second previous password\&. This allows some checking against reuse\&.
+.sp
+However as these values are salted, changing the sAMAccountName, userAccountControl or userPrincipalName of an account will cause the salt to change\&. After the rare combination of both a rename and a password change only the current password will be recognised for password history purposes\&.
+.sp
+The available settings are:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBalways\fR
+\- Always store the NT hash (as machine accounts will also always store an NT hash, a hash will be stored for all accounts)\&.
+.sp
+This setting may be useful if
+\fIntlm auth\fR
+is set to
+\fBdisabled\fR
+for a trial period
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnever\fR
+\- Never store the NT hash for user accounts, only for machine accounts
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBauto\fR
+\- Store an NT hash if
+\fIntlm auth\fR
+is not set to
+\fBdisabled\fR\&.
+.RE
+.sp
+.RE
+Default:
+\fI\fInt hash store\fR\fR\fI = \fR\fIalways\fR\fI \fR
+.RE
+
 nt acl support (S)
 .PP
 .RS 4
 This boolean parameter controls whether
 \fBsmbd\fR(8)
-will attempt to map UNIX permissions into Windows NT access control lists\&. The UNIX permissions considered are the traditional UNIX owner and group permissions, as well as POSIX ACLs set on any files or directories\&. This parameter was formally a global parameter in releases prior to 2\&.2\&.2\&.
+will attempt to map UNIX permissions into Windows NT access control lists\&. The UNIX permissions considered are the traditional UNIX owner and group permissions, as well as filesystem ACLs set on any files or directories\&. This parameter was formally a global parameter in releases prior to 2\&.2\&.2\&.
 .sp
 Default:
 \fI\fInt acl support\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -8682,7 +9095,7 @@ This parameter determines whether or not
 \fBsmbd\fR(8)
 will attempt to authenticate users using the NTLM encrypted password response for this local passdb (SAM or account database)\&.
 .sp
-If disabled, both NTLM and LanMan authencication against the local passdb is disabled\&.
+If disabled, both NTLM and LanMan authentication against the local passdb is disabled\&.
 .sp
 Note that these settings apply only to local users, authentication will still be forwarded to and NTLM authentication accepted against any domain we are joined to, and any trusted domain, even if disabled or if NTLMv2\-only is enforced here\&. To control NTLM authentiation for domain users, this must option must be configured on each DC\&.
 .sp
@@ -8751,6 +9164,20 @@ tool)\&.
 .\}
 \fBdisabled\fR
 \- Do not accept NTLM (or LanMan) authentication of any level, nor permit NTLM password changes\&.
+.sp
+\fIWARNING:\fR
+Both Microsoft Windows and Samba
+\fIRead Only Domain Controllers\fR
+(RODCs) convert a plain\-text LDAP Simple Bind into an NTLMv2 authentication to forward to a full DC\&. Setting this option to
+\fBdisabled\fR
+will cause these forwarded authentications to fail\&.
+.sp
+Additionally, for Samba acting as an Active Directory Domain Controller, for user accounts, if
+\fInt hash store\fR
+is set to the default setting of
+\fBauto\fR, the
+\fINT hash will not be stored\fR
+in the sam\&.ldb database for new users and after a password change\&.
 .RE
 .sp
 .RE
@@ -9534,7 +9961,7 @@ prefork backoff increment (G)
 .RS 4
 This option specifies the number of seconds added to the delay before a prefork master or worker process is restarted\&. The restart is initially zero, the prefork backoff increment is added to the delay on each restart up to the value specified by "prefork maximum backoff"\&.
 .sp
-Additionally the the backoff for an individual service by using "prefork backoff increment: service name" i\&.e\&. "prefork backoff increment:ldap = 2" to set the backoff increment to 2\&.
+Additionally set the backoff for an individual service by using "prefork backoff increment: service name" i\&.e\&. "prefork backoff increment:ldap = 2" to set the backoff increment to 2\&.
 .sp
 If the backoff increment is 2 and the maximum backoff is 5\&. There will be a zero second delay for the first restart\&. A two second delay for the second restart\&. A four second delay for the third and any subsequent restarts
 .sp
@@ -10049,14 +10476,68 @@ Example:
 reject md5 clients (G)
 .PP
 .RS 4
+This option is deprecated and will be removed in a future release, as it is a security problem if not set to "yes" (which will be the hardcoded behavior in the future)\&.
+.sp
 This option controls whether the netlogon server (currently only in \*(Aqactive directory domain controller\*(Aq mode), will reject clients which does not support NETLOGON_NEG_SUPPORTS_AES\&.
 .sp
-You can set this to yes if all domain members support aes\&. This will prevent downgrade attacks\&.
+Support for NETLOGON_NEG_SUPPORTS_AES was added in Windows starting with Server 2008R2 and Windows 7, it\*(Aqs available in Samba starting with 4\&.0, however third party domain members like NetApp ONTAP still uses RC4 (HMAC\-MD5), see
+https://www\&.samba\&.org/samba/security/CVE\-2022\-38023\&.html
+for more details\&.
 .sp
-This option takes precedence to the \*(Aqallow nt4 crypto\*(Aq option\&.
+The default changed from \*(Aqno\*(Aq to \*(Aqyes\*(Aq, with the patches for
+CVE\-2022\-38023
+see
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240\&.
+.sp
+\fIAvoid using this option!\fR
+Use an explicit per machine account \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT\fR\m[]\*(Aq instead! Which is available with the patches for
+CVE\-2022\-38023
+see
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240\&.
+.sp
+Samba will log an error in the log files at log level 0 if legacy a client is rejected or allowed without an explicit, \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq option for the client\&. The message will indicate the explicit \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq line to be added, if the legacy client software requires it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2022_38023:error_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
+.sp
+This allows admins to use "no" only for a short grace period, in order to collect the explicit \*(Aq\m[blue]\fBserver reject md5 schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq options\&.
+.sp
+When set to \*(Aqyes\*(Aq this option overrides the \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT\fR\m[]\*(Aq and \*(Aq\m[blue]\fBallow nt4 crypto\fR\m[]\*(Aq options and implies \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = no\fR\m[]\*(Aq\&.
 .sp
 Default:
-\fI\fIreject md5 clients\fR\fR\fI = \fR\fIno\fR\fI \fR
+\fI\fIreject md5 clients\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+server reject md5 schannel:COMPUTERACCOUNT (G)
+.PP
+.RS 4
+If you still have legacy domain members or trusted domains, which required "reject md5 clients = no" before, it is possible to specify an explicit exception per computer account by setting \*(Aqserver reject md5 schannel:COMPUTERACCOUNT = no\*(Aq\&. Note that COMPUTERACCOUNT has to be the sAMAccountName value of the computer account (including the trailing \*(Aq$\*(Aq sign)\&.
+.sp
+Samba will log a complaint in the log files at log level 0 about the security problem if the option is set to "no", but the related computer does not require it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2022_38023:warn_about_unused_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
+.sp
+Samba will log a warning in the log files at log level 5 if a setting is still needed for the specified computer account\&.
+.sp
+See
+CVE\-2022\-38023,
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240\&.
+.sp
+This option overrides the
+\m[blue]\fBreject md5 clients\fR\m[]
+option\&.
+.sp
+When set to \*(Aqyes\*(Aq this option overrides the \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT\fR\m[]\*(Aq and \*(Aq\m[blue]\fBallow nt4 crypto\fR\m[]\*(Aq options and implies \*(Aq\m[blue]\fBallow nt4 crypto:COMPUTERACCOUNT = no\fR\m[]\*(Aq\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	server reject md5 schannel:LEGACYCOMPUTER1$ = no
+	server reject md5 schannel:NASBOX$ = no
+	server reject md5 schannel:LEGACYCOMPUTER2$ = no
+    
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fINo default\fR
 .RE
 
 reject md5 servers (G)
@@ -10068,14 +10549,16 @@ The following flags will be required NETLOGON_NEG_ARCFOUR, NETLOGON_NEG_SUPPORTS
 .sp
 You can set this to yes if all domain controllers support aes\&. This will prevent downgrade attacks\&.
 .sp
-The behavior can be controlled per netbios domain by using \*(Aqreject md5 servers:NETBIOSDOMAIN = yes\*(Aq as option\&.
+The behavior can be controlled per netbios domain by using \*(Aqreject md5 servers:NETBIOSDOMAIN = no\*(Aq as option\&.
 .sp
-This option takes precedence to the
+The default changed from \*(Aqno\*(Aq to \*(Aqyes, with the patches for CVE\-2022\-38023, see https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240
+.sp
+This option overrides the
 \m[blue]\fBrequire strong key\fR\m[]
 option\&.
 .sp
 Default:
-\fI\fIreject md5 servers\fR\fR\fI = \fR\fIno\fR\fI \fR
+\fI\fIreject md5 servers\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
 remote announce (G)
@@ -10191,11 +10674,11 @@ The behavior can be controlled per netbios domain by using \*(Aqrequire strong k
 .sp
 Note for active directory domain this option is hardcoded to \*(Aqyes\*(Aq
 .sp
-This option yields precedence to the
+This option is over\-ridden by the
 \m[blue]\fBreject md5 servers\fR\m[]
 option\&.
 .sp
-This option takes precedence to the
+This option overrides the
 \m[blue]\fBclient schannel\fR\m[]
 option\&.
 .sp
@@ -10264,7 +10747,7 @@ root directory (G)
 The server will
 chroot()
 (i\&.e\&. Change its root directory) to this directory on startup\&. This is not strictly necessary for secure operation\&. Even without it the server will deny access to files not in one of the service entries\&. It may also check for, and deny access to, soft links to other parts of the filesystem, or attempts to use "\&.\&." in file names to access other directories (depending on the setting of the
-\m[blue]\fBwide smbconfoptions\fR\m[]
+\m[blue]\fBwide links\fR\m[]
 parameter)\&.
 .sp
 Adding a
@@ -10332,328 +10815,6 @@ Default:
 \fI\fIrpc big endian\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
-rpc_daemon:DAEMON (G)
-.PP
-.RS 4
-Defines whether to use the embedded code or start a separate daemon for the defined rpc services\&. The rpc_daemon prefix must be followed by the server name, and a value\&.
-.sp
-Two possible values are currently supported:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-		disabled
-		fork
-	
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-The classic method is to run rpc services as internal daemons embedded in smbd, therefore the external daemons are
-\fIdisabled\fR
-by default\&.
-.sp
-Choosing the
-\fIfork\fR
-option will cause samba to fork a separate process for each daemon configured this way\&. Each daemon may in turn fork a number of children used to handle requests from multiple smbds and direct tcp/ip connections (if the Endpoint Mapper is enabled)\&. Communication with smbd happens over named pipes and require that said pipes are forward to the external daemon (see
-\m[blue]\fBrpc_server\fR\m[])\&.
-.sp
-Forked RPC Daemons support dynamically forking children to handle connections\&. The heuristics about how many children to keep around and how fast to allow them to fork and also how many clients each child is allowed to handle concurrently is defined by parametrical options named after the daemon\&. Five options are currently supported:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-		prefork_min_children
-		prefork_max_children
-		prefork_spawn_rate
-		prefork_max_allowed_clients
-		prefork_child_min_life
-	
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-To set one of these options use the following syntax:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	daemonname:prefork_min_children = 5
-	
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-Samba includes separate daemons for spoolss, lsarpc/lsass, netlogon, samr, FSRVP and mdssvc(Spotlight)\&. Currently five daemons are available and they are called:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-		epmd
-		lsasd
-		spoolssd
-		fssd
-		mdssd
-	
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-Example:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	rpc_daemon:spoolssd = fork
-	
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-Default:
-\fI\fIrpc_daemon:DAEMON\fR\fR\fI = \fR\fIdisabled\fR\fI \fR
-.RE
-
-rpc_server:SERVER (G)
-.PP
-.RS 4
-With this option you can define if a rpc service should be running internal/embedded in smbd or should be redirected to an external daemon like Samba4, the endpoint mapper daemon, the spoolss daemon or the new LSA service daemon\&. The rpc_server prefix must be followed by the pipe name, and a value\&.
-.sp
-This option can be set for each available rpc service in Samba\&. The following list shows all available pipe names services you can modify with this option\&.
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-epmapper \- Endpoint Mapper
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-winreg \- Remote Registry Service
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-srvsvc \- Remote Server Services
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-lsarpc \- Local Security Authority
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-samr \- Security Account Management
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-netlogon \- Netlogon Remote Protocol
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-netdfs \- Settings for Distributed File System
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-dssetup \- Active Directory Setup
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-wkssvc \- Workstation Services
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-spoolss \- Network Printing Spooler
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-svcctl \- Service Control
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-ntsvcs \- Plug and Play Services
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-eventlog \- Event Logger
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-initshutdown \- Init Shutdown Service
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-mdssvc \- Spotlight
-.RE
-.sp
-.RE
-Three possible values currently supported are:
-embedded
-external
-disabled
-.sp
-The classic method is to run every pipe as an internal function
-\fIembedded\fR
-in smbd\&. The defaults may vary depending on the service\&.
-.sp
-Choosing the
-\fIexternal\fR
-option allows one to run a separate daemon or even a completely independent (3rd party) server capable of interfacing with samba via the MS\-RPC interface over named pipes\&.
-.sp
-Currently in Samba3 we support four daemons, spoolssd, epmd, lsasd and mdssd\&. These daemons can be enabled using the
-\fIrpc_daemon\fR
-option\&. For spoolssd you have to enable the daemon and proxy the named pipe with:
-.sp
-Examples:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-			rpc_daemon:lsasd = fork
-			rpc_server:lsarpc = external
-			rpc_server:samr = external
-			rpc_server:netlogon = external
-
-			rpc_server:spoolss = external
-			rpc_server:epmapper = disabled
-
-			rpc_daemon:mdssd = fork
-			rpc_server:mdssvc = external
-		
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-There is one special option which allows you to enable rpc services to listen for ncacn_ip_tcp connections too\&. Currently this is only used for testing and doesn\*(Aqt scale!
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-			rpc_server:tcpip = yes
-		
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-Default:
-\fI\fIrpc_server:SERVER\fR\fR\fI = \fR\fIembedded\fR\fI \fR
-.RE
-
 rpc server dynamic port range (G)
 .PP
 .RS 4
@@ -10691,6 +10852,28 @@ Default:
 \fI\fIrpc server port\fR\fR\fI = \fR\fI0\fR\fI \fR
 .RE
 
+rpc start on demand helpers (G)
+.PP
+.RS 4
+This global parameter determines if
+samba\-dcerpcd
+should be started on demand to service named pipe (np) DCE\-RPC requests from
+smbd
+or
+winbindd\&. This is the normal case where no startup scripts have been modified to start
+samba\-dcerpcd
+as a daemon\&.
+.sp
+If
+samba\-dcerpcd
+is started as a daemon or via a system service manager such as systemd, this parameter MUST be set to "no", otherwise
+samba\-dcerpcd
+will fail to start\&.
+.sp
+Default:
+\fI\fIrpc start on demand helpers\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
 samba kcc command (G)
 .PP
 .RS 4
@@ -10714,10 +10897,14 @@ This option affects how clients respond to Samba and is one of the most importan
 smb\&.conf
 file\&.
 .sp
-The default is
+Unless
+\m[blue]\fBserver role\fR\m[]
+is specified, the default is
 security = user, as this is the most common setting, used for a standalone file server or a DC\&.
 .sp
-The alternatives are
+The alternatives to
+security = user
+are
 security = ads
 or
 security = domain, which support joining Samba to a Windows domain
@@ -10743,9 +10930,9 @@ If
 is not specified, this is the default security setting in Samba\&. With user\-level security a client must first "log\-on" with a valid username and password (which can be mapped using the
 \m[blue]\fBusername map\fR\m[]
 parameter)\&. Encrypted passwords (see the
-\m[blue]\fBencrypted passwords\fR\m[]
+\m[blue]\fBencrypt passwords\fR\m[]
 parameter) can also be used in this security mode\&. Parameters such as
-\m[blue]\fBuser\fR\m[]
+\m[blue]\fBforce user\fR\m[]
 and
 \m[blue]\fBguest only\fR\m[]
 if set are then applied and may change the UNIX user to use on this connection, but only after the user has been successfully authenticated\&.
@@ -10763,7 +10950,7 @@ parameter for details on doing this\&.
 This mode will only work correctly if
 \fBnet\fR(8)
 has been used to add this machine into a Windows NT Domain\&. It expects the
-\m[blue]\fBencrypted passwords\fR\m[]
+\m[blue]\fBencrypt passwords\fR\m[]
 parameter to be set to
 \fByes\fR\&. In this mode Samba will try to validate the username/password by passing it to a Windows NT Primary or Backup Domain Controller, in exactly the same way that a Windows NT Server would do\&.
 .sp
@@ -10787,7 +10974,7 @@ parameter for details on doing this\&.
 See also the
 \m[blue]\fBpassword server\fR\m[]
 parameter and the
-\m[blue]\fBencrypted passwords\fR\m[]
+\m[blue]\fBencrypt passwords\fR\m[]
 parameter\&.
 .sp
 \fISECURITY = ADS\fR
@@ -10817,6 +11004,17 @@ security mask (S)
 This parameter has been removed for Samba 4\&.0\&.0\&.
 .sp
 \fINo default\fR
+.RE
+
+server addresses (S)
+.PP
+.RS 4
+This is a per\-share parameter to limit share visibility and accessibility to specific server IP addresses\&. Multi\-homed servers can offer a different set of shares per interface\&.
+.sp
+An empty list means to offer a share on all interfaces\&.
+.sp
+Default:
+\fI\fIserver addresses\fR\fR\fI = \fR\fI\fR\fI \fR
 .RE
 
 max protocol
@@ -11054,9 +11252,9 @@ If
 is also not specified, this is the default security setting in Samba\&. In standalone operation, a client must first "log\-on" with a valid username and password (which can be mapped using the
 \m[blue]\fBusername map\fR\m[]
 parameter) stored on this machine\&. Encrypted passwords (see the
-\m[blue]\fBencrypted passwords\fR\m[]
+\m[blue]\fBencrypt passwords\fR\m[]
 parameter) are by default used in this security mode\&. Parameters such as
-\m[blue]\fBuser\fR\m[]
+\m[blue]\fBforce user\fR\m[]
 and
 \m[blue]\fBguest only\fR\m[]
 if set are then applied and may change the UNIX user to use on this connection, but only after the user has been successfully authenticated\&.
@@ -11066,7 +11264,7 @@ if set are then applied and may change the UNIX user to use on this connection, 
 This mode will only work correctly if
 \fBnet\fR(8)
 has been used to add this machine into a Windows Domain\&. It expects the
-\m[blue]\fBencrypted passwords\fR\m[]
+\m[blue]\fBencrypt passwords\fR\m[]
 parameter to be set to
 \fByes\fR\&. In this mode Samba will try to validate the username/password by passing it to a Windows or Samba Domain Controller, in exactly the same way that a Windows Server would do\&.
 .sp
@@ -11102,17 +11300,22 @@ server schannel (G)
 .RS 4
 This option is deprecated and will be removed in future, as it is a security problem if not set to "yes" (which will be the hardcoded behavior in future)\&.
 .sp
-Samba will complain in the log files at log level 0, about the security problem if the option is not set to "yes"\&.
+\fIAvoid using this option!\fR
+Use explicit \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq instead!
 .sp
-See CVE\-2020\-1472(ZeroLogon) https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=14497
+Samba will log an error in the log files at log level 0 if legacy a client is rejected or allowed without an explicit, \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq option for the client\&. The message will indicate the explicit \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq line to be added, if the legacy client software requires it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2020_1472:error_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
 .sp
-If you still have legacy domain members use the
+This allows admins to use "auto" only for a short grace period, in order to collect the explicit \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq options\&.
+.sp
+See
+CVE\-2020\-1472(ZeroLogon),
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=14497\&.
+.sp
+This option is over\-ridden by the
 \m[blue]\fBserver require schannel:COMPUTERACCOUNT\fR\m[]
 option\&.
 .sp
-This option yields precedence to the
-\m[blue]\fBserver require schannel:COMPUTERACCOUNT\fR\m[]
-option\&.
+This option is over\-ridden by the effective value of \*(Aqyes\*(Aq from the \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT\fR\m[]\*(Aq and/or \*(Aq\m[blue]\fBserver schannel require seal\fR\m[]\*(Aq options\&.
 .sp
 Default:
 \fI\fIserver schannel\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -11121,26 +11324,108 @@ Default:
 server require schannel:COMPUTERACCOUNT (G)
 .PP
 .RS 4
-If you still have legacy domain members, which required "server schannel = auto" before, it is possible to specify explicit expection per computer account by using \*(Aqserver require schannel:COMPUTERACCOUNT = no\*(Aq as option\&. Note that COMPUTERACCOUNT has to be the sAMAccountName value of the computer account (including the trailing \*(Aq$\*(Aq sign)\&.
+If you still have legacy domain members, which required "server schannel = auto" before, it is possible to specify explicit exception per computer account by using \*(Aqserver require schannel:COMPUTERACCOUNT = no\*(Aq as option\&. Note that COMPUTERACCOUNT has to be the sAMAccountName value of the computer account (including the trailing \*(Aq$\*(Aq sign)\&.
 .sp
-Samba will complain in the log files at log level 0, about the security problem if the option is not set to "no", but the related computer is actually using the netlogon secure channel (schannel) feature\&.
+Samba will complain in the log files at log level 0, about the security problem if the option is not set to "no", but the related computer is actually using the netlogon secure channel (schannel) feature\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2020_1472:warn_about_unused_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
 .sp
 Samba will warn in the log files at log level 5, if a setting is still needed for the specified computer account\&.
 .sp
-See CVE\-2020\-1472(ZeroLogon) https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=14497
+See
+CVE\-2020\-1472(ZeroLogon),
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=14497\&.
 .sp
-This option takes precedence to the
+This option overrides the
 \m[blue]\fBserver schannel\fR\m[]
 option\&.
+.sp
+This option is over\-ridden by the effective value of \*(Aqyes\*(Aq from the \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT\fR\m[]\*(Aq and/or \*(Aq\m[blue]\fBserver schannel require seal\fR\m[]\*(Aq options\&.
+.sp
+Which means \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = no\fR\m[]\*(Aq is only useful in combination with \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT = no\fR\m[]\*(Aq
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
 	server require schannel:LEGACYCOMPUTER1$ = no
+	server require schannel seal:LEGACYCOMPUTER1$ = no
 	server require schannel:NASBOX$ = no
+	server require schannel seal:NASBOX$ = no
 	server require schannel:LEGACYCOMPUTER2$ = no
+	server require schannel seal:LEGACYCOMPUTER2$ = no
     
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fINo default\fR
+.RE
+
+server schannel require seal (G)
+.PP
+.RS 4
+This option is deprecated and will be removed in future, as it is a security problem if not set to "yes" (which will be the hardcoded behavior in future)\&.
+.sp
+This option controls whether the netlogon server, will reject the usage of netlogon secure channel without privacy/enryption\&.
+.sp
+The option is modelled after the registry key available on Windows\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	HKEY_LOCAL_MACHINE\eSYSTEM\eCurrentControlSet\eServices\eNetlogon\eParameters\eRequireSeal=2
+	
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fIAvoid using this option!\fR
+Use the per computer account specific option \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT\fR\m[]\*(Aq instead! Which is available with the patches for
+CVE\-2022\-38023
+see
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240\&.
+.sp
+Samba will log an error in the log files at log level 0 if legacy a client is rejected or allowed without an explicit, \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT = no\fR\m[]\*(Aq option for the client\&. The message will indicate the explicit \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT = no\fR\m[]\*(Aq line to be added, if the legacy client software requires it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2022_38023:error_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
+.sp
+This allows admins to use "no" only for a short grace period, in order to collect the explicit \*(Aq\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT = no\fR\m[]\*(Aq options\&.
+.sp
+When set to \*(Aqyes\*(Aq this option overrides the \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT\fR\m[]\*(Aq and \*(Aq\m[blue]\fBserver schannel\fR\m[]\*(Aq options and implies \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = yes\fR\m[]\*(Aq\&.
+.sp
+This option is over\-ridden by the
+\m[blue]\fBserver schannel require seal:COMPUTERACCOUNT\fR\m[]
+option\&.
+.sp
+Default:
+\fI\fIserver schannel require seal\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+server schannel require seal:COMPUTERACCOUNT (G)
+.PP
+.RS 4
+If you still have legacy domain members, which required "server schannel require seal = no" before, it is possible to specify explicit exception per computer account by using \*(Aqserver schannel require seal:COMPUTERACCOUNT = no\*(Aq as option\&. Note that COMPUTERACCOUNT has to be the sAMAccountName value of the computer account (including the trailing \*(Aq$\*(Aq sign)\&.
+.sp
+Samba will log a complaint in the log files at log level 0 about the security problem if the option is set to "no", but the related computer does not require it\&. (The log level can be adjusted with \*(Aq\m[blue]\fBCVE_2022_38023:warn_about_unused_debug_level = 1\fR\m[]\*(Aq in order to complain only at a higher log level)\&.
+.sp
+Samba will warn in the log files at log level 5, if a setting is still needed for the specified computer account\&.
+.sp
+See
+CVE\-2022\-38023,
+https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=15240\&.
+.sp
+This option overrides the \*(Aq\m[blue]\fBserver schannel require seal\fR\m[]\*(Aq option\&.
+.sp
+When set to \*(Aqyes\*(Aq this option overrides the \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT\fR\m[]\*(Aq and \*(Aq\m[blue]\fBserver schannel\fR\m[]\*(Aq options and implies \*(Aq\m[blue]\fBserver require schannel:COMPUTERACCOUNT = yes\fR\m[]\*(Aq\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	server require schannel seal:LEGACYCOMPUTER1$ = no
+	server require schannel seal:NASBOX$ = no
+	server require schannel seal:LEGACYCOMPUTER2$ = no
+	
 .fi
 .if n \{\
 .RE
@@ -11820,6 +12105,30 @@ Example:
 \fI\fIshutdown script\fR\fR\fI = \fR\fI/usr/local/samba/sbin/shutdown %m %t %r %f\fR\fI \fR
 .RE
 
+unix extensions
+.PP
+.RS 4
+This parameter is a synonym for
+smb1 unix extensions\&.
+.RE
+
+smb1 unix extensions (G)
+.PP
+.RS 4
+This boolean parameter controls whether Samba implements the SMB1/CIFS UNIX extensions, as defined by HP\&. These extensions enable Samba to better serve UNIX SMB1/CIFS clients by supporting features such as symbolic links, hard links, etc\&.\&.\&. These extensions require a similarly enabled client, and are of no current use to Windows clients\&.
+.sp
+Note if this parameter is turned on, the
+\m[blue]\fBwide links\fR\m[]
+parameter will automatically be disabled\&.
+.sp
+See the parameter
+\m[blue]\fBallow insecure wide links\fR\m[]
+if you wish to change this coupling between the two parameters\&.
+.sp
+Default:
+\fI\fIsmb1 unix extensions\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
 smb2 disable lock sequence checking (G)
 .PP
 .RS 4
@@ -11947,6 +12256,15 @@ Please note that the default is 8MiB, but it\*(Aqs limit is based on the smb2 di
 .sp
 Default:
 \fI\fIsmb2 max write\fR\fR\fI = \fR\fI8388608\fR\fI \fR
+.RE
+
+smb3 unix extensions (G)
+.PP
+.RS 4
+Incomplete SMB 3\&.11 Unix Extensions\&. This is only available if Samba is compiled in DEVELOPER mode\&.
+.sp
+Default:
+\fI\fIsmb3 unix extensions\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 smbd async dosmode (S)
@@ -12486,52 +12804,12 @@ Samba must be configured and built with Spotlight support\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-The
-\fImdssvc\fR
-RPC service must be enabled, see below\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
 Tracker integration must be setup and the share must be indexed by Tracker\&.
 .RE
 .sp
 .RE
 For a detailed set of instructions please see
 https://wiki\&.samba\&.org/index\&.php/Spotlight\&.
-.sp
-The Spotlight RPC service can either be enabled as embedded RPC service:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\fI[Global]\fR
-\m[blue]\fBrpc_server:mdsvc = embedded\fR\m[]
-.fi
-.if n \{\
-.RE
-.\}
-.sp
-Or it can be run in a separate RPC service daemon:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\fI[Global]\fR
-\m[blue]\fBrpc_server:mdssd = fork\fR\m[]
-\m[blue]\fBrpc_server:mdsvc = external\fR\m[]
-.fi
-.if n \{\
-.RE
-.\}
 .sp
 Default:
 \fI\fIspotlight\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -13019,23 +13297,6 @@ Example:
 \fI\fIunix charset\fR\fR\fI = \fR\fIASCII\fR\fI \fR
 .RE
 
-unix extensions (G)
-.PP
-.RS 4
-This boolean parameter controls whether Samba implements the CIFS UNIX extensions, as defined by HP\&. These extensions enable Samba to better serve UNIX CIFS clients by supporting features such as symbolic links, hard links, etc\&.\&.\&. These extensions require a similarly enabled client, and are of no current use to Windows clients\&.
-.sp
-Note if this parameter is turned on, the
-\m[blue]\fBwide links\fR\m[]
-parameter will automatically be disabled\&.
-.sp
-See the parameter
-\m[blue]\fBallow insecure wide links\fR\m[]
-if you wish to change this coupling between the two parameters\&.
-.sp
-Default:
-\fI\fIunix extensions\fR\fR\fI = \fR\fIyes\fR\fI \fR
-.RE
-
 unix password sync (G)
 .PP
 .RS 4
@@ -13077,7 +13338,7 @@ Default:
 use mmap (G)
 .PP
 .RS 4
-This global parameter determines if the tdb internals of Samba can depend on mmap working correctly on the running system\&. Samba requires a coherent mmap/read\-write system memory cache\&. Currently only OpenBSD and HPUX do not have such a coherent cache, and on those platforms this paramter is overridden internally to be effeceively
+This global parameter determines if the tdb internals of Samba can depend on mmap working correctly on the running system\&. Samba requires a coherent mmap/read\-write system memory cache\&. Currently only OpenBSD and HPUX do not have such a coherent cache, and on those platforms this parameter is overridden internally to be effeceively
 \fBno\fR\&. On all systems this parameter should be left alone\&. This parameter is provided to help the Samba developers track down problems with the tdb internal code\&.
 .sp
 Default:
@@ -13152,6 +13413,10 @@ sys = @system
 .\}
 .sp
 You can have as many mappings as you like in a username map file\&.
+.sp
+If your system supports the NIS NETGROUP option then the netgroup database is checked before the
+/etc/group
+database for matching groups\&.
 .sp
 You can map Windows usernames that have spaces in them by using double quotes around the name\&. For example:
 .sp
@@ -13244,7 +13509,7 @@ username map script (G)
 .RS 4
 This script is a mutually exclusive alternative to the
 \m[blue]\fBusername map\fR\m[]
-parameter\&. This parameter specifies and external program or script that must accept a single command line option (the username transmitted in the authentication request) and return a line on standard output (the name to which the account should mapped)\&. In this way, it is possible to store username map tables in an LDAP directory services\&.
+parameter\&. This parameter specifies an external program or script that must accept a single command line option (the username transmitted in the authentication request) and return a line on standard output (the name to which the account should mapped)\&. In this way, it is possible to store username map tables in an LDAP directory services\&.
 .sp
 Default:
 \fI\fIusername map script\fR\fR\fI = \fR\fI\fR\fI \fR
@@ -13404,7 +13669,7 @@ Default:
 valid users (S)
 .PP
 .RS 4
-This is a list of users that should be allowed to login to this service\&. Names starting with an \*(Aq@\*(Aq are interpreted using the same rules as described in the
+This is a list of users that should be allowed to login to this service\&. Names starting with \*(Aq@\*(Aq, \*(Aq+\*(Aq and \*(Aq&\*(Aq are interpreted using the same rules as described in the
 \fIinvalid users\fR
 parameter\&.
 .sp
@@ -13527,6 +13792,22 @@ This allows you to override the volume label returned for a share\&. Useful for 
 .sp
 Default:
 \fI\fIvolume\fR\fR\fI = \fR\fI # the name of the share\fR\fI \fR
+.RE
+
+volume serial number (S)
+.PP
+.RS 4
+This allows to override the volume serial number (a 32bit value) reported for a share\&.
+.sp
+The special value
+\fI\-1\fR
+(default) stands for a unique number that is calculated for each share\&.
+.sp
+Default:
+\fI\fIvolume serial number\fR\fR\fI = \fR\fI\-1\fR\fI \fR
+.sp
+Example:
+\fI\fIvolume serial number\fR\fR\fI = \fR\fI0xabcdefgh\fR\fI \fR
 .RE
 
 wide links (S)
@@ -13878,7 +14159,7 @@ and
 nss_winbind\&.so
 modules for UNIX services\&.
 .sp
-Please note that setting this parameter to + can cause problems with group membership at least on glibc systems, as the character + was used as a special character for NIS in /etc/group\&.
+Please note that setting this parameter to + causes problems with group membership at least on glibc systems, as the character + is used as a special character for NIS in /etc/group\&.
 .sp
 Default:
 \fI\fIwinbind separator\fR\fR\fI = \fR\fI\e\fR\fI \fR
@@ -14250,7 +14531,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

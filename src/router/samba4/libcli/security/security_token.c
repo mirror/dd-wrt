@@ -74,20 +74,6 @@ bool security_token_is_sid(const struct security_token *token, const struct dom_
 	return false;
 }
 
-bool security_token_is_sid_string(const struct security_token *token, const char *sid_string)
-{
-	bool ret;
-	struct dom_sid sid;
-
-	ret = dom_sid_parse(sid_string, &sid);
-	if (!ret) {
-		return false;
-	}
-
-	ret = security_token_is_sid(token, &sid);
-	return ret;
-}
-
 bool security_token_is_system(const struct security_token *token)
 {
 	return security_token_is_sid(token, &global_sid_System);
@@ -109,18 +95,40 @@ bool security_token_has_sid(const struct security_token *token, const struct dom
 	return false;
 }
 
-bool security_token_has_sid_string(const struct security_token *token, const char *sid_string)
+size_t security_token_count_flag_sids(const struct security_token *token,
+				      const struct dom_sid *prefix_sid,
+				      size_t num_flags,
+				      const struct dom_sid **_flag_sid)
 {
-	bool ret;
-	struct dom_sid sid;
+	const size_t num_auths_expected = prefix_sid->num_auths + num_flags;
+	const struct dom_sid *found = NULL;
+	size_t num = 0;
+	uint32_t i;
 
-	ret = dom_sid_parse(sid_string, &sid);
-	if (!ret) {
-		return false;
+	SMB_ASSERT(num_auths_expected <= ARRAY_SIZE(prefix_sid->sub_auths));
+
+	for (i = 0; i < token->num_sids; i++) {
+		const struct dom_sid *sid = &token->sids[i];
+		int cmp;
+
+		if ((size_t)sid->num_auths != num_auths_expected) {
+			continue;
+		}
+
+		cmp = dom_sid_compare_domain(sid, prefix_sid);
+		if (cmp != 0) {
+			continue;
+		}
+
+		num += 1;
+		found = sid;
 	}
 
-	ret = security_token_has_sid(token, &sid);
-	return ret;
+	if ((num == 1) && (_flag_sid != NULL)) {
+		*_flag_sid = found;
+	}
+
+	return num;
 }
 
 bool security_token_has_builtin_guests(const struct security_token *token)

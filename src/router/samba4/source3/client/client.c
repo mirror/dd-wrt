@@ -388,8 +388,6 @@ static int do_cd(const char *new_dir)
 	char *new_cd = NULL;
 	char *targetpath = NULL;
 	struct cli_state *targetcli = NULL;
-	SMB_STRUCT_STAT sbuf;
-	uint32_t attributes;
 	int ret = 1;
 	TALLOC_CTX *ctx = talloc_stackframe();
 	struct cli_credentials *creds = samba_cmdline_get_creds();
@@ -449,46 +447,24 @@ static int do_cd(const char *new_dir)
 		return 0;
 	}
 
-	/* Use a trans2_qpathinfo to test directories for modern servers.
-	   Except Win9x doesn't support the qpathinfo_basic() call..... */
 
-	if (smbXcli_conn_protocol(targetcli->conn) > PROTOCOL_LANMAN2 && !targetcli->win95) {
+	targetpath = talloc_asprintf(
+		ctx, "%s%s", targetpath, CLI_DIRSEP_STR);
+	if (!targetpath) {
+		client_set_cur_dir(saved_dir);
+		goto out;
+	}
+	targetpath = client_clean_name(ctx, targetpath);
+	if (!targetpath) {
+		client_set_cur_dir(saved_dir);
+		goto out;
+	}
 
-		status = cli_qpathinfo_basic(targetcli, targetpath, &sbuf,
-					     &attributes);
-		if (!NT_STATUS_IS_OK(status)) {
-			d_printf("cd %s: %s\n", new_cd, nt_errstr(status));
-			client_set_cur_dir(saved_dir);
-			goto out;
-		}
-
-		if (!(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			d_printf("cd %s: not a directory\n", new_cd);
-			client_set_cur_dir(saved_dir);
-			goto out;
-		}
-	} else {
-
-		targetpath = talloc_asprintf(ctx,
-				"%s%s",
-				targetpath,
-				CLI_DIRSEP_STR );
-		if (!targetpath) {
-			client_set_cur_dir(saved_dir);
-			goto out;
-		}
-		targetpath = client_clean_name(ctx, targetpath);
-		if (!targetpath) {
-			client_set_cur_dir(saved_dir);
-			goto out;
-		}
-
-		status = cli_chkpath(targetcli, targetpath);
-		if (!NT_STATUS_IS_OK(status)) {
-			d_printf("cd %s: %s\n", new_cd, nt_errstr(status));
-			client_set_cur_dir(saved_dir);
-			goto out;
-		}
+	status = cli_chkpath(targetcli, targetpath);
+	if (!NT_STATUS_IS_OK(status)) {
+		d_printf("cd %s: %s\n", new_cd, nt_errstr(status));
+		client_set_cur_dir(saved_dir);
+		goto out;
 	}
 
 	ret = 0;
@@ -589,9 +565,9 @@ static NTSTATUS display_finfo(struct cli_state *cli_state, struct file_info *fin
 		uint16_t fnum;
 		struct cli_credentials *creds = samba_cmdline_get_creds();
 
-		/* skip if this is . or .. */
-		if ( strequal(finfo->name,"..") || strequal(finfo->name,".") )
+		if (ISDOT(finfo->name) || ISDOTDOT(finfo->name)) {
 			return NT_STATUS_OK;
+		}
 		/* create absolute filename for cli_ntcreate() FIXME */
 		afname = talloc_asprintf(ctx,
 					"%s%s%s",
@@ -1238,8 +1214,9 @@ static NTSTATUS do_mget(struct cli_state *cli_state, struct file_info *finfo,
 		return NT_STATUS_OK;
 	}
 
-	if (strequal(finfo->name,".") || strequal(finfo->name,".."))
+	if (ISDOT(finfo->name) || ISDOTDOT(finfo->name)) {
 		return NT_STATUS_OK;
+	}
 
 	if ((finfo->attr & FILE_ATTRIBUTE_DIRECTORY) && !recurse) {
 		return NT_STATUS_OK;
@@ -2101,10 +2078,9 @@ static int file_find(TALLOC_CTX *ctx,
 		return -1;
 
         while ((dname = readdirname(dir))) {
-		if (!strcmp("..", dname))
+		if (ISDOT(dname) || ISDOTDOT(dname)) {
 			continue;
-		if (!strcmp(".", dname))
-			continue;
+		}
 
 		path = talloc_asprintf(ctx, "%s/%s", directory, dname);
 		if (path == NULL) {
@@ -2378,6 +2354,9 @@ static NTSTATUS do_del(struct cli_state *cli_state, struct file_info *finfo,
 {
 	TALLOC_CTX *ctx = talloc_tos();
 	char *mask = NULL;
+	struct cli_state *targetcli = NULL;
+	char *targetname = NULL;
+	struct cli_credentials *creds = samba_cmdline_get_creds();
 	NTSTATUS status;
 
 	mask = talloc_asprintf(ctx,
@@ -2394,7 +2373,15 @@ static NTSTATUS do_del(struct cli_state *cli_state, struct file_info *finfo,
 		return NT_STATUS_OK;
 	}
 
-	status = cli_unlink(cli_state, mask, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+	status = cli_resolve_path(ctx, "",
+				  creds,
+				cli, mask, &targetcli, &targetname);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto out;
+	}
+
+	status = cli_unlink(targetcli, targetname, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+out:
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s deleting remote file %s\n",
 			 nt_errstr(status), mask);
@@ -2452,20 +2439,37 @@ static NTSTATUS delete_remote_files_list(struct cli_state *cli_state,
 {
 	NTSTATUS status = NT_STATUS_OK;
 	struct file_list *deltree_list_iter = NULL;
+	char *targetname = NULL;
+	struct cli_state *targetcli = NULL;
+	struct cli_credentials *creds = samba_cmdline_get_creds();
+	TALLOC_CTX *ctx = talloc_tos();
 
 	for (deltree_list_iter = flist;
 			deltree_list_iter != NULL;
 			deltree_list_iter = deltree_list_iter->next) {
+		status = cli_resolve_path(ctx,
+				"",
+				creds,
+				cli_state,
+				deltree_list_iter->file_path,
+				&targetcli,
+				&targetname);
+		if (!NT_STATUS_IS_OK(status)) {
+			d_printf("delete_remote_files %s: %s\n",
+				deltree_list_iter->file_path,
+				nt_errstr(status));
+			return status;
+		}
 		if (CLI_DIRSEP_CHAR == '/') {
 			/* POSIX. */
-			status = cli_posix_unlink(cli_state,
-					deltree_list_iter->file_path);
+			status = cli_posix_unlink(targetcli,
+					targetname);
 		} else if (deltree_list_iter->isdir) {
-			status = cli_rmdir(cli_state,
-					deltree_list_iter->file_path);
+			status = cli_rmdir(targetcli,
+					targetname);
 		} else {
-			status = cli_unlink(cli_state,
-					deltree_list_iter->file_path,
+			status = cli_unlink(targetcli,
+					targetname,
 					FILE_ATTRIBUTE_SYSTEM |
 					FILE_ATTRIBUTE_HIDDEN);
 		}
@@ -2574,14 +2578,27 @@ static int cmd_deltree(void)
 	     deltree_list_iter = deltree_list_iter->next) {
 
 		if (deltree_list_iter->isdir == false) {
+			char *targetname = NULL;
+			struct cli_state *targetcli = NULL;
+			struct cli_credentials *creds = samba_cmdline_get_creds();
+			status = cli_resolve_path(ctx,
+						"",
+						creds,
+						cli,
+						deltree_list_iter->file_path,
+						&targetcli,
+						&targetname);
+			if (!NT_STATUS_IS_OK(status)) {
+				goto err;
+			}
 			/* Just a regular file. */
 			if (CLI_DIRSEP_CHAR == '/') {
 				/* POSIX. */
-				status = cli_posix_unlink(cli,
-					deltree_list_iter->file_path);
+				status = cli_posix_unlink(targetcli,
+					targetname);
 			} else {
-				status = cli_unlink(cli,
-					deltree_list_iter->file_path,
+				status = cli_unlink(targetcli,
+					targetname,
 					FILE_ATTRIBUTE_SYSTEM |
 					FILE_ATTRIBUTE_HIDDEN);
 			}
@@ -3438,6 +3455,8 @@ static int cmd_readlink(void)
 	char *buf = NULL;
 	char *targetname = NULL;
 	char *linkname = NULL;
+	char *printname = NULL;
+	uint32_t flags;
 	struct cli_state *targetcli;
 	struct cli_credentials *creds = samba_cmdline_get_creds();
         NTSTATUS status;
@@ -3466,18 +3485,8 @@ static int cmd_readlink(void)
 		return 1;
 	}
 
-	if (!SERVER_HAS_UNIX_CIFS(targetcli)) {
-		d_printf("Server doesn't support UNIX CIFS calls.\n");
-		return 1;
-	}
-
-	if (CLI_DIRSEP_CHAR != '/') {
-		d_printf("Command \"posix\" must be issued before "
-			 "the \"readlink\" command can be used.\n");
-		return 1;
-	}
-
-	status = cli_posix_readlink(targetcli, name, talloc_tos(), &linkname);
+	status = cli_readlink(
+		cli, name, talloc_tos(), &linkname, &printname, &flags);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s readlink on file %s\n",
 			 nt_errstr(status), name);
@@ -5109,10 +5118,11 @@ static int cmd_tcon(void)
 		return -1;
 	}
 
-	talloc_free(sharename);
-
 	d_printf("tcon to %s successful, tid: %u\n", sharename,
 		 cli_state_get_tid(cli));
+
+	talloc_free(sharename);
+
 	return 0;
 }
 
@@ -6576,6 +6586,11 @@ int main(int argc,char *argv[])
 				print_sockaddr(dest_ss_str, sizeof(dest_ss_str), &dest_ss);
 			}
 			break;
+		case 'E':
+			setup_logging("smbclient", DEBUG_STDERR );
+			display_set_stderr();
+			break;
+
 		case 'L':
 			query_host = talloc_strdup(frame, poptGetOptArg(pc));
 			if (!query_host) {

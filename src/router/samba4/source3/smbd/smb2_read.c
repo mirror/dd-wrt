@@ -335,6 +335,7 @@ normal_read:
 				in_offset,
 				in_length,
 				READ_LOCK,
+				lp_posix_cifsu_locktype(fsp),
 				&lock);
 
 	*pstatus = NT_STATUS_OK;
@@ -364,7 +365,7 @@ static NTSTATUS schedule_smb2_sendfile_read(struct smbd_smb2_request *smb2req,
 	    smb2req->do_signing ||
 	    smb2req->do_encryption ||
 	    smbd_smb2_is_compound(smb2req) ||
-	    (fsp->base_fsp != NULL) ||
+	    fsp_is_alternate_stream(fsp) ||
 	    (!S_ISREG(fsp->fsp_name->st.st_ex_mode)) ||
 	    (state->in_offset >= fsp->fsp_name->st.st_ex_size) ||
 	    (fsp->fsp_name->st.st_ex_size < state->in_offset + state->in_length))
@@ -553,6 +554,7 @@ static struct tevent_req *smbd_smb2_read_send(TALLOC_CTX *mem_ctx,
 				in_offset,
 				in_length,
 				READ_LOCK,
+				lp_posix_cifsu_locktype(fsp),
 				&lock);
 
 	if (!SMB_VFS_STRICT_LOCK_CHECK(conn, fsp, &lock)) {

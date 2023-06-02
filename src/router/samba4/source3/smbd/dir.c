@@ -59,6 +59,7 @@ struct smb_Dir {
 	struct name_cache_entry *name_cache;
 	unsigned int name_cache_index;
 	unsigned int file_number;
+	bool case_sensitive;
 	files_struct *fsp; /* Back pointer to containing fsp, only
 			      set from OpenDir_fsp(). */
 };
@@ -80,10 +81,13 @@ struct dptr_struct {
 	struct memcache *dptr_cache;
 };
 
-static struct smb_Dir *OpenDir_fsp(TALLOC_CTX *mem_ctx, connection_struct *conn,
-			files_struct *fsp,
-			const char *mask,
-			uint32_t attr);
+static NTSTATUS OpenDir_fsp(
+	TALLOC_CTX *mem_ctx,
+	connection_struct *conn,
+	files_struct *fsp,
+	const char *mask,
+	uint32_t attr,
+	struct smb_Dir **_dir_hnd);
 
 static void DirCacheAdd(struct smb_Dir *dir_hnd, const char *name, long offset);
 
@@ -184,9 +188,12 @@ void dptr_closecnum(connection_struct *conn)
 	for(dptr = sconn->searches.dirptrs; dptr; dptr = next) {
 		next = dptr->next;
 		if (dptr->conn == conn) {
-			files_struct *fsp = dptr->dir_hnd->fsp;
-			close_file(NULL, fsp, NORMAL_CLOSE);
-			fsp = NULL;
+			/*
+			 * Need to make a copy, "dptr" will be gone
+			 * after close_file_free() returns
+			 */
+			struct files_struct *fsp = dptr->dir_hnd->fsp;
+			close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		}
 	}
 }
@@ -212,7 +219,8 @@ NTSTATUS dptr_create(connection_struct *conn,
 {
 	struct smbd_server_connection *sconn = conn->sconn;
 	struct dptr_struct *dptr = NULL;
-	struct smb_Dir *dir_hnd;
+	struct smb_Dir *dir_hnd = NULL;
+	NTSTATUS status;
 
 	DBG_INFO("dir=%s\n", fsp_str_dbg(fsp));
 
@@ -231,9 +239,9 @@ NTSTATUS dptr_create(connection_struct *conn,
 			fsp_str_dbg(fsp));
 		return NT_STATUS_ACCESS_DENIED;
 	}
-	dir_hnd = OpenDir_fsp(NULL, conn, fsp, wcard, attr);
-	if (!dir_hnd) {
-		return map_nt_error_from_unix(errno);
+	status = OpenDir_fsp(NULL, conn, fsp, wcard, attr, &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
 	dptr = talloc_zero(NULL, struct dptr_struct);
@@ -396,6 +404,11 @@ void dptr_set_priv(struct dptr_struct *dptr)
 	dptr->priv = true;
 }
 
+bool dptr_case_sensitive(struct dptr_struct *dptr)
+{
+	return dptr->dir_hnd->case_sensitive;
+}
+
 /****************************************************************************
  Return the next visible file name, skipping veto'd and invisible files.
 ****************************************************************************/
@@ -411,7 +424,7 @@ static char *dptr_ReadDirName(TALLOC_CTX *ctx,
 	char *talloced = NULL;
 	char *pathreal = NULL;
 	char *found_name = NULL;
-	int ret;
+	NTSTATUS status;
 
 	SET_STAT_INVALID(*pst);
 
@@ -472,11 +485,11 @@ static char *dptr_ReadDirName(TALLOC_CTX *ctx,
 		}
 	}
 
-	/* Stat failed. We know this is authoratiative if we are
+	/* Stat failed. We know this is authoritative if we are
 	 * providing case sensitive semantics or the underlying
 	 * filesystem is case sensitive.
 	 */
-	if (dptr->conn->case_sensitive ||
+	if (dptr->dir_hnd->case_sensitive ||
 	    !(dptr->conn->fs_capabilities & FILE_CASE_SENSITIVE_SEARCH))
 	{
 		goto clean;
@@ -486,15 +499,16 @@ static char *dptr_ReadDirName(TALLOC_CTX *ctx,
 	 * Try case-insensitive stat if the fs has the ability. This avoids
 	 * scanning the whole directory.
 	 */
-	ret = SMB_VFS_GET_REAL_FILENAME(dptr->conn,
-					dptr->smb_dname,
-					dptr->wcard,
-					ctx,
-					&found_name);
-	if (ret == 0) {
+	status = SMB_VFS_GET_REAL_FILENAME_AT(dptr->conn,
+					      dptr->dir_hnd->fsp,
+					      dptr->wcard,
+					      ctx,
+					      &found_name);
+	if (NT_STATUS_IS_OK(status)) {
 		name = found_name;
 		goto clean;
-	} else if (errno == ENOENT) {
+	}
+	if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
 		/* The case-insensitive lookup was authoritative. */
 		goto clean;
 	}
@@ -548,9 +562,11 @@ static uint32_t map_dir_offset_to_wire(struct dptr_struct *dptr, long offset)
 
 	if (offset == END_OF_DIRECTORY_OFFSET) {
 		return WIRE_END_OF_DIRECTORY_OFFSET;
-	} else if(offset == START_OF_DIRECTORY_OFFSET) {
+	}
+	if (offset == START_OF_DIRECTORY_OFFSET) {
 		return WIRE_START_OF_DIRECTORY_OFFSET;
-	} else if (offset == DOT_DOT_DIRECTORY_OFFSET) {
+	}
+	if (offset == DOT_DOT_DIRECTORY_OFFSET) {
 		return WIRE_DOT_DOT_DIRECTORY_OFFSET;
 	}
 	if (sizeof(long) == 4) {
@@ -789,8 +805,9 @@ bool smbd_dirptr_get_entry(TALLOC_CTX *ctx,
 		prev_offset = cur_offset;
 		dname = dptr_ReadDirName(ctx, dirptr, &cur_offset, &sbuf);
 
-		DEBUG(6,("smbd_dirptr_get_entry: dirptr 0x%lx now at offset %ld\n",
-			(long)dirptr, cur_offset));
+		DBG_DEBUG("dir [%s] dirptr [0x%lx] offset [%ld] => dname [%s]\n",
+			  smb_fname_str_dbg(dirptr->smb_dname), (long)dirptr,
+			  cur_offset, dname ? dname : "(finished)");
 
 		if (dname == NULL) {
 			return false;
@@ -912,7 +929,9 @@ bool smbd_dirptr_get_entry(TALLOC_CTX *ctx,
 			TALLOC_FREE(fname);
 			TALLOC_FREE(smb_fname);
 			continue;
-		} else if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
+		}
+
+		if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
 			if (!(atname->flags & SMB_FILENAME_POSIX_PATH)) {
 				check_dfs_symlink = true;
 			}
@@ -969,6 +988,13 @@ bool smbd_dirptr_get_entry(TALLOC_CTX *ctx,
 			smb_fname = tmp_smb_fname;
 			mode = FILE_ATTRIBUTE_DIRECTORY;
 			get_dosmode = false;
+
+			/* Ensure posix fileid and sids are hidden
+			 */
+			smb_fname->st.st_ex_ino = 0;
+			smb_fname->st.st_ex_dev = 0;
+			smb_fname->st.st_ex_uid = -1;
+			smb_fname->st.st_ex_gid = -1;
 		}
 
 		ok = mode_fn(ctx,
@@ -1244,7 +1270,7 @@ static bool user_can_read_fsp(struct files_struct *fsp)
 		return false;
         }
 
-	status = SMB_VFS_FGET_NT_ACL(fsp,
+	status = SMB_VFS_FGET_NT_ACL(metadata_fsp(fsp),
 			(SECINFO_OWNER |
 			 SECINFO_GROUP |
 			 SECINFO_DACL),
@@ -1356,10 +1382,15 @@ bool is_visible_fsp(struct files_struct *fsp)
 	hide_special = lp_hide_special_files(SNUM(fsp->conn));
 	hide_new_files_timeout = lp_hide_new_files_timeout(SNUM(fsp->conn));
 
-	if (fsp->base_fsp != NULL) {
-		/* Only operate on non-stream files. */
-		fsp = fsp->base_fsp;
+	if (!hide_unreadable &&
+	    !hide_unwriteable &&
+	    !hide_special &&
+	    (hide_new_files_timeout == 0))
+	{
+		return true;
 	}
+
+	fsp = metadata_fsp(fsp);
 
 	/* Get the last component of the base name. */
 	last_component = strrchr_m(fsp->fsp_name->base_name, '/');
@@ -1380,7 +1411,8 @@ bool is_visible_fsp(struct files_struct *fsp)
 		 * only thing we can check is the
 		 * hide_new_files_timeout.
 		 */
-		if (hide_new_files_timeout != 0) {
+		if ((hide_new_files_timeout != 0) &&
+		    !S_ISDIR(fsp->fsp_name->st.st_ex_mode)) {
 			double age = timespec_elapsed(
 				&fsp->fsp_name->st.st_ex_mtime);
 
@@ -1391,41 +1423,30 @@ bool is_visible_fsp(struct files_struct *fsp)
 		return true;
 	}
 
-	if (hide_unreadable ||
-	    hide_unwriteable ||
-	    hide_special ||
-	    (hide_new_files_timeout != 0))
-	{
-		/* Honour _hide unreadable_ option */
-		if (hide_unreadable &&
-		    !user_can_read_fsp(fsp))
-		{
-			DBG_DEBUG("file %s is unreadable.\n",
-				 fsp_str_dbg(fsp));
-			return false;
-		}
-		/* Honour _hide unwriteable_ option */
-		if (hide_unwriteable &&
-		    !user_can_write_fsp(fsp))
-		{
-			DBG_DEBUG("file %s is unwritable.\n",
-				 fsp_str_dbg(fsp));
-			return false;
-		}
-		/* Honour _hide_special_ option */
-		if (hide_special && file_is_special(fsp->conn, fsp->fsp_name)) {
-			DBG_DEBUG("file %s is special.\n",
-				 fsp_str_dbg(fsp));
-			return false;
-		}
+	/* Honour _hide unreadable_ option */
+	if (hide_unreadable && !user_can_read_fsp(fsp)) {
+		DBG_DEBUG("file %s is unreadable.\n", fsp_str_dbg(fsp));
+		return false;
+	}
 
-		if (hide_new_files_timeout != 0) {
-			double age = timespec_elapsed(
-				&fsp->fsp_name->st.st_ex_mtime);
+	/* Honour _hide unwriteable_ option */
+	if (hide_unwriteable && !user_can_write_fsp(fsp)) {
+		DBG_DEBUG("file %s is unwritable.\n", fsp_str_dbg(fsp));
+		return false;
+	}
 
-			if (age < (double)hide_new_files_timeout) {
-				return false;
-			}
+	/* Honour _hide_special_ option */
+	if (hide_special && file_is_special(fsp->conn, fsp->fsp_name)) {
+		DBG_DEBUG("file %s is special.\n", fsp_str_dbg(fsp));
+		return false;
+	}
+
+	if ((hide_new_files_timeout != 0) &&
+	    !S_ISDIR(fsp->fsp_name->st.st_ex_mode)) {
+		double age = timespec_elapsed(&fsp->fsp_name->st.st_ex_mtime);
+
+		if (age < (double)hide_new_files_timeout) {
+			return false;
 		}
 	}
 
@@ -1459,11 +1480,12 @@ static int smb_Dir_OpenDir_destructor(struct smb_Dir *dir_hnd)
 	return 0;
 }
 
-struct smb_Dir *OpenDir(TALLOC_CTX *mem_ctx,
-			connection_struct *conn,
-			const struct smb_filename *smb_dname,
-			const char *mask,
-			uint32_t attr)
+NTSTATUS OpenDir(TALLOC_CTX *mem_ctx,
+		 connection_struct *conn,
+		 const struct smb_filename *smb_dname,
+		 const char *mask,
+		 uint32_t attr,
+		 struct smb_Dir **_dir_hnd)
 {
 	struct files_struct *fsp = NULL;
 	struct smb_Dir *dir_hnd = NULL;
@@ -1474,46 +1496,82 @@ struct smb_Dir *OpenDir(TALLOC_CTX *mem_ctx,
 				      O_RDONLY,
 				      &fsp);
 	if (!NT_STATUS_IS_OK(status)) {
-		/* Ensure we return the actual error from status in errno. */
-		errno = map_errno_from_nt_status(status);
-		return NULL;
+		return status;
 	}
 
-	dir_hnd = OpenDir_fsp(mem_ctx, conn, fsp, mask, attr);
-	if (dir_hnd == NULL) {
-		return NULL;
+	status = OpenDir_fsp(mem_ctx, conn, fsp, mask, attr, &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
 	/*
-	 * This overwrites the destructor set by smb_Dir_OpenDir_destructor(),
-	 * but smb_Dir_OpenDir_destructor() calls the OpenDir_fsp() destructor.
+	 * This overwrites the destructor set by OpenDir_fsp() but
+	 * smb_Dir_OpenDir_destructor() calls the OpenDir_fsp()
+	 * destructor.
 	 */
 	talloc_set_destructor(dir_hnd, smb_Dir_OpenDir_destructor);
-	return dir_hnd;
+
+	*_dir_hnd = dir_hnd;
+	return NT_STATUS_OK;
+}
+
+NTSTATUS OpenDir_from_pathref(TALLOC_CTX *mem_ctx,
+			      struct files_struct *dirfsp,
+			      const char *mask,
+			      uint32_t attr,
+			      struct smb_Dir **_dir_hnd)
+{
+	struct files_struct *fsp = NULL;
+	struct smb_Dir *dir_hnd = NULL;
+	NTSTATUS status;
+
+	status = openat_internal_dir_from_pathref(dirfsp, O_RDONLY, &fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = OpenDir_fsp(mem_ctx, fsp->conn, fsp, mask, attr, &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	/*
+	 * This overwrites the destructor set by OpenDir_fsp() but
+	 * smb_Dir_OpenDir_destructor() calls the OpenDir_fsp()
+	 * destructor.
+	 */
+	talloc_set_destructor(dir_hnd, smb_Dir_OpenDir_destructor);
+
+	*_dir_hnd = dir_hnd;
+	return NT_STATUS_OK;
 }
 
 /*******************************************************************
  Open a directory from an fsp.
 ********************************************************************/
 
-static struct smb_Dir *OpenDir_fsp(TALLOC_CTX *mem_ctx, connection_struct *conn,
-			files_struct *fsp,
-			const char *mask,
-			uint32_t attr)
+static NTSTATUS OpenDir_fsp(
+	TALLOC_CTX *mem_ctx,
+	connection_struct *conn,
+	files_struct *fsp,
+	const char *mask,
+	uint32_t attr,
+	struct smb_Dir **_dir_hnd)
 {
 	struct smb_Dir *dir_hnd = talloc_zero(mem_ctx, struct smb_Dir);
+	NTSTATUS status;
 
 	if (!dir_hnd) {
-		goto fail;
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	if (!fsp->fsp_flags.is_directory) {
-		errno = EBADF;
+		status = NT_STATUS_INVALID_HANDLE;
 		goto fail;
 	}
 
 	if (fsp_get_io_fd(fsp) == -1) {
-		errno = EBADF;
+		status = NT_STATUS_INVALID_HANDLE;
 		goto fail;
 	}
 
@@ -1532,23 +1590,30 @@ static struct smb_Dir *OpenDir_fsp(TALLOC_CTX *mem_ctx, connection_struct *conn,
 
 	dir_hnd->dir_smb_fname = cp_smb_filename(dir_hnd, fsp->fsp_name);
 	if (!dir_hnd->dir_smb_fname) {
-		errno = ENOMEM;
+		status = NT_STATUS_NO_MEMORY;
 		goto fail;
 	}
 
 	dir_hnd->dir = SMB_VFS_FDOPENDIR(fsp, mask, attr);
 	if (dir_hnd->dir == NULL) {
+		status = map_nt_error_from_unix(errno);
 		goto fail;
 	}
 	dir_hnd->fsp = fsp;
+	if (fsp->posix_flags & FSP_POSIX_FLAGS_OPEN) {
+		dir_hnd->case_sensitive = true;
+	} else {
+		dir_hnd->case_sensitive = conn->case_sensitive;
+	}
 
 	talloc_set_destructor(dir_hnd, smb_Dir_destructor);
 
-	return dir_hnd;
+	*_dir_hnd = dir_hnd;
+	return NT_STATUS_OK;
 
   fail:
 	TALLOC_FREE(dir_hnd);
-	return NULL;
+	return status;
 }
 
 
@@ -1567,7 +1632,8 @@ const char *ReadDirName(struct smb_Dir *dir_hnd, long *poffset,
 
 	/* Cheat to allow . and .. to be the first entries returned. */
 	if (((*poffset == START_OF_DIRECTORY_OFFSET) ||
-	     (*poffset == DOT_DOT_DIRECTORY_OFFSET)) && (dir_hnd->file_number < 2))
+	     (*poffset == DOT_DOT_DIRECTORY_OFFSET)) &&
+	    (dir_hnd->file_number < 2))
 	{
 		if (dir_hnd->file_number == 0) {
 			n = ".";
@@ -1591,11 +1657,9 @@ const char *ReadDirName(struct smb_Dir *dir_hnd, long *poffset,
 
 	while ((n = vfs_readdirname(conn, dir_hnd->fsp, dir_hnd->dir, sbuf, &talloced))) {
 		/* Ignore . and .. - we've already returned them. */
-		if (*n == '.') {
-			if ((n[1] == '\0') || (n[1] == '.' && n[2] == '\0')) {
-				TALLOC_FREE(talloced);
-				continue;
-			}
+		if (ISDOT(n) || ISDOTDOT(n)) {
+			TALLOC_FREE(talloced);
+			continue;
 		}
 		*poffset = dir_hnd->offset = SMB_VFS_TELLDIR(conn, dir_hnd->dir);
 		*ptalloced = talloced;
@@ -1707,7 +1771,7 @@ static bool SearchDir(struct smb_Dir *dir_hnd, const char *name, long *poffset)
 	if (dir_hnd->name_cache_size && dir_hnd->name_cache) {
 		for (i = dir_hnd->name_cache_index; i >= 0; i--) {
 			struct name_cache_entry *e = &dir_hnd->name_cache[i];
-			if (e->name && (conn->case_sensitive ? (strcmp(e->name, name) == 0) : strequal(e->name, name))) {
+			if (e->name && (dir_hnd->case_sensitive ? (strcmp(e->name, name) == 0) : strequal(e->name, name))) {
 				*poffset = e->offset;
 				SeekDir(dir_hnd, e->offset);
 				return True;
@@ -1716,7 +1780,7 @@ static bool SearchDir(struct smb_Dir *dir_hnd, const char *name, long *poffset)
 		for (i = dir_hnd->name_cache_size - 1;
 				i > dir_hnd->name_cache_index; i--) {
 			struct name_cache_entry *e = &dir_hnd->name_cache[i];
-			if (e->name && (conn->case_sensitive ? (strcmp(e->name, name) == 0) : strequal(e->name, name))) {
+			if (e->name && (dir_hnd->case_sensitive ? (strcmp(e->name, name) == 0) : strequal(e->name, name))) {
 				*poffset = e->offset;
 				SeekDir(dir_hnd, e->offset);
 				return True;
@@ -1729,7 +1793,7 @@ static bool SearchDir(struct smb_Dir *dir_hnd, const char *name, long *poffset)
 	dir_hnd->file_number = 0;
 	*poffset = START_OF_DIRECTORY_OFFSET;
 	while ((entry = ReadDirName(dir_hnd, poffset, NULL, &talloced))) {
-		if (conn->case_sensitive ? (strcmp(entry, name) == 0) : strequal(entry, name)) {
+		if (dir_hnd->case_sensitive ? (strcmp(entry, name) == 0) : strequal(entry, name)) {
 			TALLOC_FREE(talloced);
 			return True;
 		}
@@ -1864,19 +1928,16 @@ NTSTATUS can_delete_directory_fsp(files_struct *fsp)
 	long dirpos = 0;
 	const char *dname = NULL;
 	char *talloced = NULL;
-	SMB_STRUCT_STAT st;
 	struct connection_struct *conn = fsp->conn;
-	struct smb_Dir *dir_hnd = OpenDir(talloc_tos(),
-					conn,
-					fsp->fsp_name,
-					NULL,
-					0);
+	struct smb_Dir *dir_hnd = NULL;
 
-	if (!dir_hnd) {
-		return map_nt_error_from_unix(errno);
+	status = OpenDir(
+		talloc_tos(), conn, fsp->fsp_name, NULL, 0, &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
-	while ((dname = ReadDirName(dir_hnd, &dirpos, &st, &talloced))) {
+	while ((dname = ReadDirName(dir_hnd, &dirpos, NULL, &talloced))) {
 		struct smb_filename *smb_dname_full = NULL;
 		struct smb_filename *direntry_fname = NULL;
 		char *fullname = NULL;
@@ -1997,11 +2058,17 @@ NTSTATUS can_delete_directory_fsp(files_struct *fsp)
 		}
 
 		if (!is_visible_fsp(direntry_fname->fsp)) {
-			TALLOC_FREE(talloced);
-			TALLOC_FREE(fullname);
-			TALLOC_FREE(smb_dname_full);
-			TALLOC_FREE(direntry_fname);
-			continue;
+			/*
+			 * Hidden file.
+			 * Allow if "delete veto files = yes"
+			 */
+			if (lp_delete_veto_files(SNUM(conn))) {
+				TALLOC_FREE(talloced);
+				TALLOC_FREE(fullname);
+				TALLOC_FREE(smb_dname_full);
+				TALLOC_FREE(direntry_fname);
+				continue;
+			}
 		}
 
 		TALLOC_FREE(talloced);

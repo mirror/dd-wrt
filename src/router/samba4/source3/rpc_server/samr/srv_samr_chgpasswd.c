@@ -54,10 +54,14 @@
 #include "passdb.h"
 #include "auth.h"
 #include "lib/util/sys_rw.h"
+#include "librpc/rpc/dcerpc_samr.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
+
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_RPC_SRV
 
 #ifndef ALLOW_CHANGE_PASSWORD
 #if (defined(HAVE_TERMIOS_H) && defined(HAVE_DUP2) && defined(HAVE_SETSID))
@@ -817,7 +821,7 @@ static NTSTATUS check_oem_password(const char *user,
 				NTSTATUS status = NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER;
 				return gnutls_error_to_ntstatus(rc, status);
 			}
-			if (memcmp(verifier, old_nt_hash_encrypted, 16)) {
+			if (!mem_equal_const_time(verifier, old_nt_hash_encrypted, 16)) {
 				DEBUG(0, ("check_oem_password: old nt "
 					  "password doesn't match.\n"));
 				return NT_STATUS_WRONG_PASSWORD;
@@ -848,7 +852,7 @@ static NTSTATUS check_oem_password(const char *user,
 				NTSTATUS status = NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER;
 				return gnutls_error_to_ntstatus(rc, status);
 			}
-			if (memcmp(verifier, old_lm_hash_encrypted, 16)) {
+			if (!mem_equal_const_time(verifier, old_lm_hash_encrypted, 16)) {
 				DEBUG(0,("check_oem_password: old lm password doesn't match.\n"));
 				return NT_STATUS_WRONG_PASSWORD;
 			}
@@ -872,7 +876,7 @@ static NTSTATUS check_oem_password(const char *user,
 			NTSTATUS status = NT_STATUS_ACCESS_DISABLED_BY_POLICY_OTHER;
 			return gnutls_error_to_ntstatus(rc, status);
 		}
-		if (memcmp(verifier, old_lm_hash_encrypted, 16)) {
+		if (!mem_equal_const_time(verifier, old_lm_hash_encrypted, 16)) {
 			DEBUG(0,("check_oem_password: old lm password doesn't match.\n"));
 			return NT_STATUS_WRONG_PASSWORD;
 		}
@@ -915,8 +919,8 @@ static bool password_in_history(uint8_t nt_pw[NT_HASH_LEN],
 			 * New format: zero salt and then plain nt hash.
 			 * Directly compare the hashes.
 			 */
-			if (memcmp(nt_pw, old_nt_pw_salted_md5_hash,
-				   SALTED_MD5_HASH_LEN) == 0)
+			if (mem_equal_const_time(nt_pw, old_nt_pw_salted_md5_hash,
+						 SALTED_MD5_HASH_LEN))
 			{
 				return true;
 			}
@@ -945,9 +949,9 @@ static bool password_in_history(uint8_t nt_pw[NT_HASH_LEN],
 			}
 			gnutls_hash_deinit(hash_hnd, new_nt_pw_salted_md5_hash);
 
-			if (memcmp(new_nt_pw_salted_md5_hash,
-				   old_nt_pw_salted_md5_hash,
-				   SALTED_MD5_HASH_LEN) == 0) {
+			if (mem_equal_const_time(new_nt_pw_salted_md5_hash,
+						 old_nt_pw_salted_md5_hash,
+						 SALTED_MD5_HASH_LEN)) {
 				return true;
 			}
 		}
@@ -986,7 +990,7 @@ static bool check_passwd_history(struct samu *sampass, const char *plaintext)
 
 	E_md4hash(plaintext, new_nt_p16);
 
-	if (!memcmp(nt_pw, new_nt_p16, NT_HASH_LEN)) {
+	if (mem_equal_const_time(nt_pw, new_nt_p16, NT_HASH_LEN)) {
 		DEBUG(10,("check_passwd_history: proposed new password for user %s is the same as the current password !\n",
 			pdb_get_username(sampass) ));
 		return True;
@@ -1068,10 +1072,10 @@ NTSTATUS check_password_complexity(const char *username,
  is correct before calling. JRA.
 ************************************************************/
 
-static NTSTATUS change_oem_password(struct samu *hnd, const char *rhost,
-				    char *old_passwd, char *new_passwd,
-				    bool as_root,
-				    enum samPwdChangeReason *samr_reject_reason)
+NTSTATUS change_oem_password(struct samu *hnd, const char *rhost,
+			     char *old_passwd, char *new_passwd,
+			     bool as_root,
+			     enum samPwdChangeReason *samr_reject_reason)
 {
 	uint32_t min_len;
 	uint32_t refuse;
@@ -1201,6 +1205,8 @@ NTSTATUS pass_oem_change(char *user, const char *rhost,
 	bool ret = false;
 	bool updated_badpw = false;
 	NTSTATUS update_login_attempts_status;
+	char *mutex_name_by_user = NULL;
+	struct named_mutex *mtx = NULL;
 
 	if (!(sampass = samu_new(NULL))) {
 		return NT_STATUS_NO_MEMORY;
@@ -1212,15 +1218,15 @@ NTSTATUS pass_oem_change(char *user, const char *rhost,
 
 	if (ret == false) {
 		DEBUG(0,("pass_oem_change: getsmbpwnam returned NULL\n"));
-		TALLOC_FREE(sampass);
-		return NT_STATUS_NO_SUCH_USER;
+		nt_status = NT_STATUS_NO_SUCH_USER;
+		goto done;
 	}
 
 	/* Quit if the account was locked out. */
 	if (pdb_get_acct_ctrl(sampass) & ACB_AUTOLOCK) {
 		DEBUG(3,("check_sam_security: Account for user %s was locked out.\n", user));
-		TALLOC_FREE(sampass);
-		return NT_STATUS_ACCOUNT_LOCKED_OUT;
+		nt_status = NT_STATUS_ACCOUNT_LOCKED_OUT;
+		goto done;
 	}
 
 	nt_status = check_oem_password(user,
@@ -1230,6 +1236,71 @@ NTSTATUS pass_oem_change(char *user, const char *rhost,
 				       old_nt_hash_encrypted,
 				       sampass,
 				       &new_passwd);
+
+	/*
+	 * We must re-load the sam acount information under a mutex
+	 * lock to ensure we don't miss any concurrent account lockout
+	 * changes.
+	 */
+
+	/* Clear out old sampass info. */
+	TALLOC_FREE(sampass);
+
+	sampass = samu_new(NULL);
+	if (sampass == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	mutex_name_by_user = talloc_asprintf(NULL,
+					     "check_sam_security_mutex_%s",
+					     user);
+	if (mutex_name_by_user == NULL) {
+		nt_status = NT_STATUS_NO_MEMORY;
+		goto done;
+	}
+
+	/* Grab the named mutex under root with 30 second timeout. */
+	become_root();
+	mtx = grab_named_mutex(NULL, mutex_name_by_user, 30);
+	if (mtx != NULL) {
+		/* Re-load the account information if we got the mutex. */
+		ret = pdb_getsampwnam(sampass, user);
+	}
+	unbecome_root();
+
+	/* Everything from here on until mtx is freed is done under the mutex.*/
+
+	if (mtx == NULL) {
+		DBG_ERR("Acquisition of mutex %s failed "
+			"for user %s\n",
+			mutex_name_by_user,
+			user);
+		nt_status = NT_STATUS_INTERNAL_ERROR;
+		goto done;
+	}
+
+	if (!ret) {
+		/*
+		 * Re-load of account failed. This could only happen if the
+		 * user was deleted in the meantime.
+		 */
+		DBG_NOTICE("reload of user '%s' in passdb failed.\n",
+			   user);
+		nt_status = NT_STATUS_NO_SUCH_USER;
+		goto done;
+	}
+
+	/*
+	 * Check if the account is now locked out - now under the mutex.
+	 * This can happen if the server is under
+	 * a password guess attack and the ACB_AUTOLOCK is set by
+	 * another process.
+	 */
+	if (pdb_get_acct_ctrl(sampass) & ACB_AUTOLOCK) {
+		DBG_NOTICE("Account for user %s was locked out.\n", user);
+		nt_status = NT_STATUS_ACCOUNT_LOCKED_OUT;
+		goto done;
+	}
 
 	/*
 	 * Notify passdb backend of login success/failure. If not
@@ -1278,8 +1349,7 @@ NTSTATUS pass_oem_change(char *user, const char *rhost,
 	}
 
 	if (!NT_STATUS_IS_OK(nt_status)) {
-		TALLOC_FREE(sampass);
-		return nt_status;
+		goto done;
 	}
 
 	/* We've already checked the old password here.... */
@@ -1288,9 +1358,62 @@ NTSTATUS pass_oem_change(char *user, const char *rhost,
 					True, reject_reason);
 	unbecome_root();
 
-	memset(new_passwd, 0, strlen(new_passwd));
+	BURN_STR(new_passwd);
 
+done:
 	TALLOC_FREE(sampass);
+	TALLOC_FREE(mutex_name_by_user);
+	TALLOC_FREE(mtx);
 
 	return nt_status;
+}
+
+NTSTATUS samr_set_password_aes(TALLOC_CTX *mem_ctx,
+			       const DATA_BLOB *cdk,
+			       struct samr_EncryptedPasswordAES *pwbuf,
+			       char **new_password_str)
+{
+	DATA_BLOB pw_data = data_blob_null;
+	DATA_BLOB new_password = data_blob_null;
+	const DATA_BLOB ciphertext =
+		data_blob_const(pwbuf->cipher, pwbuf->cipher_len);
+	DATA_BLOB iv = data_blob_const(pwbuf->salt, sizeof(pwbuf->salt));
+	NTSTATUS status;
+	bool ok;
+
+	*new_password_str = NULL;
+
+	status = samba_gnutls_aead_aes_256_cbc_hmac_sha512_decrypt(
+		mem_ctx,
+		&ciphertext,
+		cdk,
+		&samr_aes256_enc_key_salt,
+		&samr_aes256_mac_key_salt,
+		&iv,
+		pwbuf->auth_data,
+		&pw_data);
+	if (!NT_STATUS_IS_OK(status)) {
+		return NT_STATUS_WRONG_PASSWORD;
+	}
+
+	ok = decode_pwd_string_from_buffer514(mem_ctx,
+					      pw_data.data,
+					      CH_UTF16,
+					      &new_password);
+	TALLOC_FREE(pw_data.data);
+	if (!ok) {
+		DBG_NOTICE("samr: failed to decode password buffer\n");
+		return NT_STATUS_WRONG_PASSWORD;
+	}
+
+	*new_password_str = talloc_strndup(mem_ctx,
+					   (char *)new_password.data,
+					   new_password.length);
+	TALLOC_FREE(new_password.data);
+	if (*new_password_str == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	talloc_keep_secret(*new_password_str);
+
+	return NT_STATUS_OK;
 }

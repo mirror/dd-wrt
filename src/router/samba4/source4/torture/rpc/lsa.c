@@ -2961,6 +2961,8 @@ static bool check_pw_with_ServerAuthenticate3(struct dcerpc_pipe *p,
  */
 struct check_pw_with_krb5_ctx {
 	struct addrinfo *server;
+	const char *server_nb_domain;
+	const char *server_dns_domain;
 	struct {
 		unsigned io;
 		unsigned fail;
@@ -3000,9 +3002,10 @@ struct check_pw_with_krb5_ctx {
 	EncTicketPart krbtgt_referral_enc_part;
 };
 
-static krb5_error_code check_pw_with_krb5_send_and_recv_func(krb5_context context,
+static krb5_error_code check_pw_with_krb5_send_to_realm(
+					struct smb_krb5_context *smb_krb5_context,
 					void *data, /* struct check_pw_with_krb5_ctx */
-					krb5_krbhst_info *_hi,
+					krb5_const_realm realm,
 					time_t timeout,
 					const krb5_data *send_buf,
 					krb5_data *recv_buf)
@@ -3010,18 +3013,24 @@ static krb5_error_code check_pw_with_krb5_send_and_recv_func(krb5_context contex
 	struct check_pw_with_krb5_ctx *ctx =
 		talloc_get_type_abort(data, struct check_pw_with_krb5_ctx);
 	krb5_error_code k5ret;
-	krb5_krbhst_info hi = *_hi;
 	size_t used;
 	int ret;
 
-	hi.proto = KRB5_KRBHST_TCP;
+	SMB_ASSERT(smb_krb5_context == ctx->smb_krb5_context);
+
+	if (!strequal_m(realm, ctx->server_nb_domain) &&
+	    !strequal_m(realm, ctx->server_dns_domain))
+	{
+		return KRB5_KDC_UNREACH;
+	}
 
 	krb5_free_error_contents(ctx->smb_krb5_context->krb5_context,
 				 &ctx->error);
 	ctx->counts.io++;
 
-	k5ret = smb_krb5_send_and_recv_func_forced(context, ctx->server,
-						   &hi, timeout, send_buf, recv_buf);
+	k5ret = smb_krb5_send_and_recv_func_forced_tcp(ctx->smb_krb5_context,
+						       ctx->server,
+						       timeout, send_buf, recv_buf);
 	if (k5ret != 0) {
 		ctx->counts.fail++;
 		return k5ret;
@@ -3217,12 +3226,16 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 	const char *error_string = NULL;
 	const char *workstation = cli_credentials_get_workstation(credentials);
 	const char *password = cli_credentials_get_password(credentials);
+#ifndef USING_EMBEDDED_HEIMDAL
 	const struct samr_Password *nthash = NULL;
 	const struct samr_Password *old_nthash = NULL;
+#endif
 	const char *old_password = cli_credentials_get_old_password(credentials);
+#ifndef USING_EMBEDDED_HEIMDAL
 	int kvno = cli_credentials_get_kvno(credentials);
 	int expected_kvno = 0;
 	krb5uint32 t_kvno = 0;
+#endif
 	const char *host = torture_setting_string(tctx, "host", NULL);
 	krb5_error_code k5ret;
 	krb5_boolean k5ok;
@@ -3250,11 +3263,16 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 	realm = cli_credentials_get_realm(credentials);
 	trusted_realm_name = strupper_talloc(tctx, trusted_dns_name);
 
+#ifndef USING_EMBEDDED_HEIMDAL
 	nthash = cli_credentials_get_nt_hash(credentials, ctx);
 	old_nthash = cli_credentials_get_old_nt_hash(credentials, ctx);
+#endif
 
 	k5ret = smb_krb5_init_context(ctx, tctx->lp_ctx, &ctx->smb_krb5_context);
 	torture_assert_int_equal(tctx, k5ret, 0, "smb_krb5_init_context failed");
+
+	ctx->server_nb_domain = cli_credentials_get_domain(credentials);
+	ctx->server_dns_domain = cli_credentials_get_realm(credentials);
 
 	ok = interpret_string_addr_internal(&ctx->server, host, 0);
 	torture_assert(tctx, ok, "Failed to parse target server");
@@ -3262,9 +3280,10 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 
 	set_sockaddr_port(ctx->server->ai_addr, 88);
 
-	k5ret = krb5_set_send_to_kdc_func(ctx->smb_krb5_context->krb5_context,
-					  check_pw_with_krb5_send_and_recv_func,
-					  ctx);
+	k5ret = smb_krb5_set_send_to_kdc_func(ctx->smb_krb5_context,
+					      check_pw_with_krb5_send_to_realm,
+					      NULL, /* send_to_kdc */
+					      ctx);
 	torture_assert_int_equal(tctx, k5ret, 0, "krb5_set_send_to_kdc_func failed");
 
 	torture_assert_int_equal(tctx,
@@ -3333,7 +3352,14 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 	torture_assert_int_equal(tctx, KRB5_ERROR_CODE(&ctx->error), 68, assertion_message);
 	torture_assert(tctx, ctx->error.crealm != NULL, assertion_message);
 	torture_assert_str_equal(tctx, *ctx->error.crealm, trusted_realm_name, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert(tctx, ctx->error.cname != NULL, assertion_message);
+	torture_assert_int_equal(tctx, ctx->error.cname->name_type, KRB5_NT_ENTERPRISE_PRINCIPAL, assertion_message);
+	torture_assert_int_equal(tctx, ctx->error.cname->name_string.len, 1, assertion_message);
+	torture_assert_str_equal(tctx, ctx->error.cname->name_string.val[0], upn_realm_string, assertion_message);
+#else
 	torture_assert(tctx, ctx->error.cname == NULL, assertion_message);
+#endif
 	torture_assert_str_equal(tctx, ctx->error.realm, realm, assertion_message);
 
 	ZERO_STRUCT(ctx->counts);
@@ -3358,7 +3384,14 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 	torture_assert_int_equal(tctx, KRB5_ERROR_CODE(&ctx->error), 68, assertion_message);
 	torture_assert(tctx, ctx->error.crealm != NULL, assertion_message);
 	torture_assert_str_equal(tctx, *ctx->error.crealm, trusted_realm_name, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert(tctx, ctx->error.cname != NULL, assertion_message);
+	torture_assert_int_equal(tctx, ctx->error.cname->name_type, KRB5_NT_ENTERPRISE_PRINCIPAL, assertion_message);
+	torture_assert_int_equal(tctx, ctx->error.cname->name_string.len, 1, assertion_message);
+	torture_assert_str_equal(tctx, ctx->error.cname->name_string.val[0], upn_dns_string, assertion_message);
+#else
 	torture_assert(tctx, ctx->error.cname == NULL, assertion_message);
+#endif
 	torture_assert_str_equal(tctx, ctx->error.realm, realm, assertion_message);
 
 	ZERO_STRUCT(ctx->counts);
@@ -3383,7 +3416,14 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 	torture_assert_int_equal(tctx, KRB5_ERROR_CODE(&ctx->error), 68, assertion_message);
 	torture_assert(tctx, ctx->error.crealm != NULL, assertion_message);
 	torture_assert_str_equal(tctx, *ctx->error.crealm, trusted_realm_name, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert(tctx, ctx->error.cname != NULL, assertion_message);
+	torture_assert_int_equal(tctx, ctx->error.cname->name_type, KRB5_NT_ENTERPRISE_PRINCIPAL, assertion_message);
+	torture_assert_int_equal(tctx, ctx->error.cname->name_string.len, 1, assertion_message);
+	torture_assert_str_equal(tctx, ctx->error.cname->name_string.val[0], upn_netbios_string, assertion_message);
+#else
 	torture_assert(tctx, ctx->error.cname == NULL, assertion_message);
+#endif
 	torture_assert_str_equal(tctx, ctx->error.realm, realm, assertion_message);
 
 	torture_comment(tctx, "(%s:%s) password[%s] old_password[%s]\n",
@@ -3545,7 +3585,11 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_type,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, KRB5_KDC_UNREACH, assertion_message);
+#endif
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
 
@@ -3563,6 +3607,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -3632,6 +3679,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	/* Confirm if we can do a TGS for krbtgt/trusted_dns no CANON */
 	ZERO_STRUCT(ctx->counts);
@@ -3652,12 +3700,21 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 2, assertion_message);
+#endif
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
 				      ctx->krbtgt_trust_dns_creds->server,
+#ifdef USING_EMBEDDED_HEIMDAL
+				      ctx->krbtgt_trust_dns);
+#else
 				      ctx->krbtgt_trust_realm);
+#endif
 	torture_assert(tctx, k5ok, assertion_message);
 	type = smb_krb5_principal_get_type(ctx->smb_krb5_context->krb5_context,
 					   ctx->krbtgt_trust_dns_creds->server);
@@ -3677,6 +3734,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -3699,6 +3759,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	/* Confirm if we can do a TGS for krbtgt/NETBIOS with CANON */
 	ZERO_STRUCT(ctx->counts);
@@ -3718,7 +3779,11 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_type,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, KRB5_KDC_UNREACH, assertion_message);
+#endif
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
 
@@ -3736,6 +3801,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -3758,6 +3826,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	/* Confirm if we can do a TGS for krbtgt/NETBIOS no CANON */
 	ZERO_STRUCT(ctx->counts);
@@ -3778,12 +3847,21 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 2, assertion_message);
+#endif
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
 				      ctx->krbtgt_trust_netbios_creds->server,
+#ifdef USING_EMBEDDED_HEIMDAL
+				      ctx->krbtgt_trust_netbios);
+#else
 				      ctx->krbtgt_trust_realm);
+#endif
 	torture_assert(tctx, k5ok, assertion_message);
 	type = smb_krb5_principal_get_type(ctx->smb_krb5_context->krb5_context,
 					   ctx->krbtgt_trust_netbios_creds->server);
@@ -3803,6 +3881,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -3825,6 +3906,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	cifs_trust_dns_string = talloc_asprintf(ctx, "cifs/%s@%s",
 						trusted_dns_name, realm);
@@ -3853,8 +3935,13 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, KRB5_KDC_UNREACH, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.ok, 2, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
+#endif
 
 	/* Confirm if we have the referral ticket in the cache */
 	krb5_free_cred_contents(ctx->smb_krb5_context->krb5_context,
@@ -3870,6 +3957,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -3892,6 +3982,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	cifs_trust_netbios_string = talloc_asprintf(ctx, "cifs/%s@%s",
 						trusted_netbios_name, realm);
@@ -3920,8 +4011,13 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, KRB5_KDC_UNREACH, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.ok, 2, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
+#endif
 
 	/* Confirm if we have the referral ticket in the cache */
 	krb5_free_cred_contents(ctx->smb_krb5_context->krb5_context,
@@ -3937,6 +4033,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -3959,6 +4058,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	drs_trust_dns_string = talloc_asprintf(ctx,
 			"E3514235-4B06-11D1-AB04-00C04FC2DCD2/%s/%s@%s",
@@ -3988,8 +4088,13 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, KRB5_KDC_UNREACH, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.ok, 2, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
+#endif
 
 	/* Confirm if we have the referral ticket in the cache */
 	krb5_free_cred_contents(ctx->smb_krb5_context->krb5_context,
@@ -4005,6 +4110,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -4027,6 +4135,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	drs_trust_netbios_string = talloc_asprintf(ctx,
 			"E3514235-4B06-11D1-AB04-00C04FC2DCD2/%s/%s@%s",
@@ -4056,8 +4165,13 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, KRB5_KDC_UNREACH, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.ok, 2, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.ok, 1, assertion_message);
+#endif
 
 	/* Confirm if we have the referral ticket in the cache */
 	krb5_free_cred_contents(ctx->smb_krb5_context->krb5_context,
@@ -4073,6 +4187,9 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				k5ret,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, k5ret, KRB5_CC_END, assertion_message);
+#else
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
 
 	k5ok = krb5_principal_compare(ctx->smb_krb5_context->krb5_context,
@@ -4095,6 +4212,7 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				smb_get_krb5_error_message(ctx->smb_krb5_context->krb5_context,
 							   k5ret, ctx));
 	torture_assert_int_equal(tctx, k5ret, 0, assertion_message);
+#endif
 
 	four_trust_dns_string = talloc_asprintf(ctx, "four/tree/two/%s@%s",
 						trusted_dns_name, realm);
@@ -4123,8 +4241,13 @@ static bool check_pw_with_krb5(struct torture_context *tctx,
 				trusted->trust_attributes,
 				ctx->counts.io, ctx->counts.errors, ctx->counts.ok);
 	torture_assert_int_equal(tctx, k5ret, KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN, assertion_message);
+#ifdef USING_EMBEDDED_HEIMDAL
+	torture_assert_int_equal(tctx, ctx->counts.io, 2, assertion_message);
+	torture_assert_int_equal(tctx, ctx->counts.error_io, 2, assertion_message);
+#else
 	torture_assert_int_equal(tctx, ctx->counts.io, 1, assertion_message);
 	torture_assert_int_equal(tctx, ctx->counts.error_io, 1, assertion_message);
+#endif
 	torture_assert_int_equal(tctx, KRB5_ERROR_CODE(&ctx->error), 7, assertion_message);
 
 	/* Confirm if we have no referral ticket in the cache */
@@ -4285,7 +4408,7 @@ static bool check_dom_trust_pw(struct dcerpc_pipe *p,
 	torture_assert_ntstatus_ok(tctx, status, "dcerpc_pipe_connect_b");
 
 	ok = check_pw_with_ServerAuthenticate3(p1, tctx,
-					       NETLOGON_NEG_AUTH2_ADS_FLAGS,
+					       NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES,
 					       server_name,
 					       incoming_creds, &creds);
 	torture_assert_int_equal(tctx, ok, expected_result,
@@ -4382,7 +4505,7 @@ static bool check_dom_trust_pw(struct dcerpc_pipe *p,
 	torture_assert_ntstatus_ok(tctx, status, "dcerpc_pipe_connect_b");
 
 	ok = check_pw_with_ServerAuthenticate3(p2, tctx,
-					       NETLOGON_NEG_AUTH2_ADS_FLAGS,
+					       NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES,
 					       server_name,
 					       incoming_creds, &creds);
 	torture_assert(tctx, ok, "check_pw_with_ServerAuthenticate3 with changed password");

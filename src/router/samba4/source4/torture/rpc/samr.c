@@ -41,6 +41,7 @@
 #include "../libcli/auth/schannel.h"
 #include "torture/util.h"
 #include "source4/librpc/rpc/dcerpc.h"
+#include "librpc/rpc/dcerpc_samr.h"
 #include "source3/rpc_client/init_samr.h"
 #include "lib/crypto/gnutls_helpers.h"
 
@@ -774,6 +775,235 @@ static bool test_SetUserPass_23(struct dcerpc_pipe *p, struct torture_context *t
 	return ret;
 }
 
+static bool test_SetUserPass_32(struct dcerpc_pipe *p, struct torture_context *tctx,
+				struct policy_handle *handle, uint32_t fields_present,
+				char **password)
+{
+	NTSTATUS status;
+	struct samr_SetUserInfo s;
+	union samr_UserInfo u;
+	DATA_BLOB session_key;
+	uint8_t salt_data[16];
+	DATA_BLOB salt = {
+		.data = salt_data,
+		.length = sizeof(salt_data),
+	};
+	char *newpass = NULL;
+	struct dcerpc_binding_handle *b = p->binding_handle;
+	struct samr_GetUserPwInfo pwp;
+	struct samr_PwInfo info;
+	int policy_min_pw_len = 0;
+	bool ret = true;
+
+	pwp.in.user_handle = handle;
+	pwp.out.info = &info;
+
+	torture_assert_ntstatus_ok(tctx, dcerpc_samr_GetUserPwInfo_r(b, tctx, &pwp),
+		"GetUserPwInfo failed");
+	if (NT_STATUS_IS_OK(pwp.out.result)) {
+		policy_min_pw_len = pwp.out.info->min_password_length;
+	}
+	newpass = samr_rand_pass(tctx, policy_min_pw_len);
+
+	s.in.user_handle = handle;
+	s.in.info = &u;
+	s.in.level = 32;
+
+	ZERO_STRUCT(u);
+
+	u.info32.info.fields_present = fields_present;
+
+	status = dcerpc_fetch_session_key(p, &session_key);
+	if (!NT_STATUS_IS_OK(status)) {
+		torture_result(tctx,
+			       TORTURE_FAIL,
+			       "SetUserInfo level %u - no session key - %s\n",
+			       s.in.level,
+			       nt_errstr(status));
+		return false;
+	}
+
+	generate_nonce_buffer(salt.data, salt.length);
+
+	status = init_samr_CryptPasswordAES(tctx,
+					    newpass,
+					    &salt,
+					    &session_key,
+					    &u.info32.password);
+	torture_assert_ntstatus_ok(tctx,
+				   status,
+				   "init_samr_CryptPasswordAES failed");
+
+	torture_comment(tctx,
+			"Testing SetUserInfo level 32 (set password aes)\n");
+
+	status = dcerpc_samr_SetUserInfo_r(b, tctx, &s);
+	torture_assert_ntstatus_ok(tctx, status, "SetUserInfo failed");
+	torture_comment(tctx, "(%s:%s) new_password[%s] status[%s]\n",
+			__location__,
+			__FUNCTION__,
+			newpass,
+			nt_errstr(s.out.result));
+	if (!NT_STATUS_IS_OK(s.out.result)) {
+		torture_result(tctx,
+			       TORTURE_FAIL,
+			       "SetUserInfo level %u failed - %s\n",
+			       s.in.level,
+			       nt_errstr(s.out.result));
+		ret = false;
+	} else {
+		*password = newpass;
+	}
+
+	/* This should break the key nicely */
+	session_key.data[0]++;
+
+	status = init_samr_CryptPasswordAES(tctx,
+					    newpass,
+					    &salt,
+					    &session_key,
+					    &u.info32.password);
+	torture_assert_ntstatus_ok(tctx,
+				   status,
+				   "init_samr_CryptPasswordEx failed");
+
+	/* Reset the key */
+	session_key.data[0]--;
+
+	torture_comment(tctx,
+			"Testing SetUserInfo level 32 (set password aes) with "
+			"wrong session key\n");
+
+	status = dcerpc_samr_SetUserInfo_r(b, tctx, &s);
+	torture_assert_ntstatus_ok(tctx, status, "SetUserInfo failed");
+	torture_comment(tctx,
+			"(%s:%s) new_password[%s] status[%s]\n",
+			__location__,
+			__FUNCTION__,
+			newpass,
+			nt_errstr(s.out.result));
+	if (!NT_STATUS_EQUAL(s.out.result, NT_STATUS_WRONG_PASSWORD)) {
+		torture_result(tctx,
+			       TORTURE_FAIL,
+			       "SetUserInfo level %u should have failed with "
+			       "WRONG_PASSWORD- %s\n",
+			       s.in.level,
+			       nt_errstr(s.out.result));
+		ret = false;
+	}
+
+	return ret;
+}
+
+
+static bool test_SetUserPass_31(struct dcerpc_pipe *p, struct torture_context *tctx,
+			       struct policy_handle *handle, bool makeshort,
+			       char **password)
+{
+	NTSTATUS status;
+	struct samr_SetUserInfo s;
+	union samr_UserInfo u;
+	bool ret = true;
+	DATA_BLOB session_key;
+	uint8_t salt_data[16];
+	DATA_BLOB salt = {
+		.data = salt_data,
+		.length = sizeof(salt_data),
+	};
+	char *newpass;
+	struct dcerpc_binding_handle *b = p->binding_handle;
+	struct samr_GetUserPwInfo pwp;
+	struct samr_PwInfo info;
+	int policy_min_pw_len = 0;
+
+	pwp.in.user_handle = handle;
+	pwp.out.info = &info;
+
+	torture_assert_ntstatus_ok(tctx, dcerpc_samr_GetUserPwInfo_r(b, tctx, &pwp),
+		"GetUserPwInfo failed");
+	if (NT_STATUS_IS_OK(pwp.out.result)) {
+		policy_min_pw_len = pwp.out.info->min_password_length;
+	}
+	if (makeshort && policy_min_pw_len) {
+		newpass = samr_rand_pass_fixed_len(tctx, policy_min_pw_len - 1);
+	} else {
+		newpass = samr_rand_pass(tctx, policy_min_pw_len);
+	}
+
+	s.in.user_handle = handle;
+	s.in.info = &u;
+	s.in.level = 31;
+
+	ZERO_STRUCT(u);
+
+	u.info31.password_expired = 0;
+
+	status = dcerpc_fetch_session_key(p, &session_key);
+	if (!NT_STATUS_IS_OK(status)) {
+		torture_result(tctx, TORTURE_FAIL, "SetUserInfo level %u - no session key - %s\n",
+		       s.in.level, nt_errstr(status));
+		return false;
+	}
+
+	generate_nonce_buffer(salt.data, salt.length);
+
+	status = init_samr_CryptPasswordAES(tctx,
+					    newpass,
+					    &salt,
+					    &session_key,
+					    &u.info31.password);
+	torture_assert_ntstatus_ok(tctx,
+				   status,
+				   "init_samr_CryptPasswordEx failed");
+
+	torture_comment(tctx, "Testing SetUserInfo level 31 (set password aes)\n");
+
+	torture_assert_ntstatus_ok(tctx, dcerpc_samr_SetUserInfo_r(b, tctx, &s),
+		"SetUserInfo failed");
+	torture_comment(tctx, "(%s:%s) new_password[%s] status[%s]\n",
+			__location__, __FUNCTION__,
+			newpass, nt_errstr(s.out.result));
+	if (!NT_STATUS_IS_OK(s.out.result)) {
+		torture_result(tctx, TORTURE_FAIL, "SetUserInfo level %u failed - %s\n",
+		       s.in.level, nt_errstr(s.out.result));
+		ret = false;
+	} else {
+		*password = newpass;
+	}
+
+	/* This should break the key nicely */
+	session_key.data[0]++;
+
+	status = init_samr_CryptPasswordAES(tctx,
+					    newpass,
+					    &salt,
+					    &session_key,
+					    &u.info31.password);
+	torture_assert_ntstatus_ok(tctx,
+				   status,
+				   "init_samr_CryptPasswordEx failed");
+
+	/* Reset the key */
+	session_key.data[0]--;
+
+	torture_comment(tctx, "Testing SetUserInfo level 31 (set password aes) with wrong session key\n");
+
+	torture_assert_ntstatus_ok(tctx, dcerpc_samr_SetUserInfo_r(b, tctx, &s),
+		"SetUserInfo failed");
+	torture_comment(tctx, "(%s:%s) new_password[%s] status[%s]\n",
+			__location__, __FUNCTION__,
+			newpass, nt_errstr(s.out.result));
+	if (!NT_STATUS_EQUAL(s.out.result, NT_STATUS_WRONG_PASSWORD)) {
+		torture_result(tctx, TORTURE_FAIL, "SetUserInfo level %u should have failed with WRONG_PASSWORD: %s\n",
+		       s.in.level, nt_errstr(s.out.result));
+		ret = false;
+	} else {
+		*password = newpass;
+	}
+
+	return ret;
+}
+
 
 static bool test_SetUserPassEx(struct dcerpc_pipe *p, struct torture_context *tctx,
 			       struct policy_handle *handle, bool makeshort,
@@ -1169,6 +1399,11 @@ static bool test_SetUserPass_level_ex(struct dcerpc_pipe *p,
 	union samr_UserInfo u;
 	bool ret = true;
 	DATA_BLOB session_key;
+	uint8_t salt_data[16];
+	DATA_BLOB salt = {
+		.data = salt_data,
+		.length = sizeof(salt_data),
+	};
 	char *newpass;
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct samr_GetUserPwInfo pwp;
@@ -1259,6 +1494,16 @@ static bool test_SetUserPass_level_ex(struct dcerpc_pipe *p,
 		u.info26.password_expired = password_expired;
 
 		break;
+	case 31:
+		u.info31.password_expired = password_expired;
+
+		break;
+	case 28:
+		u.info25.info.fields_present = fields_present;
+		u.info25.info.password_expired = password_expired;
+		u.info25.info.comment.string = comment;
+
+		break;
 	}
 
 	status = dcerpc_fetch_session_key(p, &session_key);
@@ -1267,6 +1512,8 @@ static bool test_SetUserPass_level_ex(struct dcerpc_pipe *p,
 		       s.in.level, nt_errstr(status));
 		return false;
 	}
+
+	generate_nonce_buffer(salt.data, salt.length);
 
 	switch (level) {
 	case 18:
@@ -1335,6 +1582,22 @@ static bool test_SetUserPass_level_ex(struct dcerpc_pipe *p,
 		torture_assert_ntstatus_ok(tctx,
 					   status,
 					   "init_samr_CryptPasswordEx failed");
+		break;
+	case 31:
+		status = init_samr_CryptPasswordAES(tctx,
+						    newpass,
+						    &salt,
+						    &session_key,
+						    &u.info31.password);
+
+		break;
+	case 32:
+		status = init_samr_CryptPasswordAES(tctx,
+						    newpass,
+						    &salt,
+						    &session_key,
+						    &u.info32.password);
+
 		break;
 	}
 
@@ -2096,6 +2359,18 @@ static bool test_OemChangePasswordUser2(struct dcerpc_pipe *p,
 			__location__, __FUNCTION__,
 			oldpass, newpass, nt_errstr(r.out.result));
 
+	if (torture_setting_bool(tctx, "samba4", false)) {
+		torture_assert_ntstatus_equal(tctx,
+					      r.out.result,
+					      NT_STATUS_NOT_IMPLEMENTED,
+					      "Samba4 should refuse LM password change");
+		/*
+		 * No point continuing, once we have checked this is not
+		 * implemented
+		 */
+		return true;
+	}
+
 	if (!NT_STATUS_EQUAL(r.out.result, NT_STATUS_PASSWORD_RESTRICTION)
 	    && !NT_STATUS_EQUAL(r.out.result, NT_STATUS_WRONG_PASSWORD)) {
 		torture_result(tctx, TORTURE_FAIL, "OemChangePasswordUser2 failed, should have returned WRONG_PASSWORD (or at least 'PASSWORD_RESTRICTON') for invalid password verifier - %s\n",
@@ -2770,6 +3045,123 @@ bool test_ChangePasswordUser3(struct dcerpc_pipe *p, struct torture_context *tct
 	return ret;
 }
 
+bool test_ChangePasswordUser4(struct dcerpc_pipe *p,
+			      struct torture_context *tctx,
+			      const char *account_string,
+			      int policy_min_pw_len,
+			      char **password,
+			      const char *newpassword)
+{
+#ifdef HAVE_GNUTLS_PBKDF2
+	struct dcerpc_binding_handle *b = p->binding_handle;
+	struct samr_ChangePasswordUser4 r;
+	const char *oldpassword = *password;
+	char *srv_str = NULL;
+	struct lsa_String server;
+	struct lsa_String account;
+	uint8_t old_nt_key_data[16] = {0};
+	gnutls_datum_t old_nt_key = {
+		.data = old_nt_key_data,
+		.size = sizeof(old_nt_key),
+	};
+	uint8_t cek_data[16] = {0};
+	DATA_BLOB cek = {
+		.data = cek_data,
+		.length = sizeof(cek_data),
+	};
+	uint8_t pw_data[514] = {0};
+	DATA_BLOB plaintext = {
+		.data = pw_data,
+		.length = sizeof(pw_data),
+	};
+	DATA_BLOB ciphertext = data_blob_null;
+	struct samr_EncryptedPasswordAES pwd_buf = {.cipher_len = 0};
+	DATA_BLOB iv = {
+		.data = pwd_buf.salt,
+		.length = sizeof(pwd_buf.salt),
+	};
+	gnutls_datum_t iv_datum = {
+		.data = iv.data,
+		.size = iv.length,
+	};
+	uint64_t pbkdf2_iterations = generate_random_u64_range(5000, 1000000);
+	NTSTATUS status;
+	bool ok;
+	int rc;
+
+	torture_comment(tctx, "Testing ChangePasswordUser4\n");
+
+	if (newpassword == NULL) {
+		do {
+			if (policy_min_pw_len == 0) {
+				newpassword =
+					samr_rand_pass(tctx, policy_min_pw_len);
+			} else {
+				newpassword = samr_rand_pass_fixed_len(
+					tctx,
+					policy_min_pw_len);
+			}
+		} while (check_password_quality(newpassword) == false);
+	} else {
+		torture_comment(tctx, "Using password '%s'\n", newpassword);
+	}
+
+	torture_assert_not_null(tctx,
+				*password,
+				"Failing ChangePasswordUser4 as old password "
+				"was NULL.  Previous test failed?");
+
+	srv_str = talloc_asprintf(tctx, "\\\\%s", dcerpc_server_name(p));
+	torture_assert_not_null(tctx, srv_str, "srvstr is NULL");
+	init_lsa_String(&server, srv_str);
+
+	init_lsa_String(&account, account_string);
+
+	E_md4hash(oldpassword, old_nt_key_data);
+
+	generate_nonce_buffer(iv.data, iv.length);
+
+	rc = gnutls_pbkdf2(GNUTLS_MAC_SHA512,
+			   &old_nt_key,
+			   &iv_datum,
+			   pbkdf2_iterations,
+			   cek.data,
+			   cek.length);
+	torture_assert_int_equal(tctx, rc, 0, "gnutls_pbkdf2 failed");
+
+	ok = encode_pwd_buffer514_from_str(pw_data, newpassword, STR_UNICODE);
+	torture_assert(tctx, ok, "encode_aes_pw_buffer failed");
+
+	status = samba_gnutls_aead_aes_256_cbc_hmac_sha512_encrypt(
+		tctx,
+		&plaintext,
+		&cek,
+		&samr_aes256_enc_key_salt,
+		&samr_aes256_mac_key_salt,
+		&iv,
+		&ciphertext,
+		pwd_buf.auth_data);
+	torture_assert_ntstatus_ok(
+		tctx,
+		status,
+		"samba_gnutls_aead_aes_256_cbc_hmac_sha512_encrypt failed");
+
+	pwd_buf.cipher_len = ciphertext.length;
+	pwd_buf.cipher = ciphertext.data;
+	pwd_buf.PBKDF2Iterations = pbkdf2_iterations;
+
+	r.in.server = &server;
+	r.in.account = &account;
+	r.in.password = &pwd_buf;
+
+	status = dcerpc_samr_ChangePasswordUser4_r(b, tctx, &r);
+	torture_assert_ntstatus_ok(tctx, status, "ChangePasswordUser4 failed");
+
+	*password = talloc_strdup(tctx, newpassword);
+#endif /* HAVE_GNUTLS_PBKDF2 */
+	return true;
+}
+
 bool test_ChangePasswordRandomBytes(struct dcerpc_pipe *p, struct torture_context *tctx,
 				    const char *account_string,
 				    struct policy_handle *handle,
@@ -3378,6 +3770,7 @@ static bool test_SetPassword_level(struct dcerpc_pipe *p,
 	case 21:
 	case 23:
 	case 25:
+	case 32:
 		fields = talloc_asprintf(tctx, "(fields_present: 0x%08x)",
 					 fields_present);
 		break;
@@ -3462,7 +3855,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 	int delay = 50000;
 	bool set_levels[] = { false, true };
 	bool query_levels[] = { false, true };
-	uint32_t levels[] = { 18, 21, 26, 23, 24, 25 }; /* Second half only used when TEST_ALL_LEVELS defined */
+	uint32_t levels[] = { 18, 21, 26, 23, 24, 25, 31 }; /* Second half only used when TEST_ALL_LEVELS defined */
 	uint32_t nonzeros[] = { 1, 24 };
 	uint32_t fields_present[] = {
 		0,
@@ -3524,6 +3917,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if (!((fields_present[f] & SAMR_FIELD_NT_PASSWORD_PRESENT) ||
 			      (fields_present[f] & SAMR_FIELD_LM_PASSWORD_PRESENT))) {
 				expected_samlogon_result = NT_STATUS_WRONG_PASSWORD;
@@ -3564,6 +3958,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if ((pwdlastset_new != 0) &&
 			    !(fields_present[f] & SAMR_FIELD_EXPIRED_FLAG)) {
 				torture_comment(tctx, "not considering a non-0 "
@@ -3587,6 +3982,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if (((fields_present[f] & SAMR_FIELD_NT_PASSWORD_PRESENT) ||
 			     (fields_present[f] & SAMR_FIELD_LM_PASSWORD_PRESENT)) &&
 			     (pwdlastset_old > 0) && (pwdlastset_new > 0) &&
@@ -3628,6 +4024,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			/* SAMR_FIELD_EXPIRED_FLAG has not been set and no
 			 * password has been changed, old and new pwdlastset
 			 * need to be the same value */
@@ -3662,6 +4059,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if (((fields_present[f] & SAMR_FIELD_NT_PASSWORD_PRESENT) ||
 			     (fields_present[f] & SAMR_FIELD_LM_PASSWORD_PRESENT)) &&
 			     (pwdlastset_old > 0) && (pwdlastset_new > 0) &&
@@ -3703,7 +4101,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
-
+		case 32:
 			/* SAMR_FIELD_EXPIRED_FLAG has not been set and no
 			 * password has been changed, old and new pwdlastset
 			 * need to be the same value */
@@ -3738,6 +4136,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if (((fields_present[f] & SAMR_FIELD_NT_PASSWORD_PRESENT) ||
 			     (fields_present[f] & SAMR_FIELD_LM_PASSWORD_PRESENT)) &&
 			     (pwdlastset_old > 0) && (pwdlastset_new > 0) &&
@@ -3779,6 +4178,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if ((pwdlastset_new != 0) &&
 			    !(fields_present[f] & SAMR_FIELD_EXPIRED_FLAG)) {
 				torture_comment(tctx, "not considering a non-0 "
@@ -3815,6 +4215,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 21:
 		case 23:
 		case 25:
+		case 32:
 			if (((fields_present[f] & SAMR_FIELD_NT_PASSWORD_PRESENT) ||
 			     (fields_present[f] & SAMR_FIELD_LM_PASSWORD_PRESENT)) &&
 			     (pwdlastset_old > 0) && (pwdlastset_new > 0) &&
@@ -3832,6 +4233,7 @@ static bool test_SetPassword_pwdlastset(struct dcerpc_pipe *p,
 		case 18:
 		case 24:
 		case 26:
+		case 31:
 			f = ARRAY_SIZE(fields_present);
 			break;
 		}
@@ -5370,6 +5772,25 @@ static bool test_user_ops(struct dcerpc_pipe *p,
 			}
 		}
 
+		if (!test_SetUserPass_31(p, tctx, user_handle, false, &password)) {
+			ret = false;
+		}
+
+		for (i = 0; password_fields[i]; i++) {
+			if (!test_SetUserPass_32(p, tctx, user_handle, password_fields[i], &password)) {
+				ret = false;
+			}
+
+			/* check it was set right */
+			if (!test_ChangePasswordUser3(p, tctx, base_acct_name, 0, &password, NULL, 0, false)) {
+				ret = false;
+			}
+		}
+
+		if (!test_ChangePassword(p, tctx, base_acct_name, domain_handle, &password)) {
+			ret = false;
+		}
+
 		if (!test_SetUserPassEx(p, tctx, user_handle, false, &password)) {
 			ret = false;
 		}
@@ -5933,6 +6354,10 @@ static bool test_ChangePassword(struct dcerpc_pipe *p,
 	}
 
 	if (!test_ChangePasswordUser3(p, tctx, acct_name, 0, password, NULL, 0, true)) {
+		ret = false;
+	}
+
+	if (!test_ChangePasswordUser4(p, tctx, acct_name, 0, password, NULL)) {
 		ret = false;
 	}
 
@@ -8568,7 +8993,7 @@ static bool test_Connect(struct dcerpc_binding_handle *b,
 	torture_comment(tctx, "Testing samr_Connect5\n");
 
 	info.info1.client_version = 0;
-	info.info1.unknown2 = 0;
+	info.info1.supported_features = 0;
 
 	r5.in.system_name = "";
 	r5.in.access_mask = SEC_FLAG_MAXIMUM_ALLOWED;

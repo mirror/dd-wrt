@@ -30,7 +30,9 @@ static WERROR libnet_odj_compose_ODJ_WIN7BLOB(TALLOC_CTX *mem_ctx,
 {
 	char *samaccount;
 	uint32_t len;
-	struct ODJ_POLICY_DNS_DOMAIN_INFO i;
+	struct ODJ_POLICY_DNS_DOMAIN_INFO i = {
+		.Sid = NULL,
+	};
 
 	ZERO_STRUCTP(b);
 
@@ -173,6 +175,9 @@ static WERROR libnet_odj_compose_OP_PACKAGE_PART(TALLOC_CTX *mem_ctx,
 
 	switch (level) {
 		case 1: /* ODJ_GUID_JOIN_PROVIDER */
+			if (win7 == NULL) {
+				return WERR_INVALID_PARAMETER;
+			}
 			p->Part->win7blob = *win7;
 			break;
 		case 2: /* ODJ_GUID_JOIN_PROVIDER2 */

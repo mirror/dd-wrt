@@ -1,0 +1,85 @@
+#
+# This file tells appveyor.com how to build Heimdal on Windows.
+# Appveyor is a continuous integration (CI) service for github and other
+# users, and is free for public repositories.
+#
+
+version: '1.0.{build}'
+
+image:
+  - Visual Studio 2019
+
+install:
+  # HACK -- pacman installation in Appveyor seems broken
+  # Taken from https://github.com/johnkerl/miller/blob/master/appveyor.yml
+  # (which is gone)
+  #- ps: dir 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows' -Recurse
+  - set "PATH=C:\msys64\usr\bin;%PATH%"
+  - set "PATH=C:\%MSYS2_DIR%\%MSYSTEM%\bin;C:\%MSYS2_DIR%\usr\bin;%PATH%"
+  - bash -lc "mkdir -p /var/lib/pacman/sync/"
+  - bash -lc "pacman-key --init"
+  - bash -lc "pacman-key --populate msys2"
+  - bash -lc "curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-1~20211228-1-any.pkg.tar.zst"
+  - bash -lc "curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-1~20211228-1-any.pkg.tar.zst.sig"
+  - bash -lc "pacman --noconfirm -U --config <(echo) msys2-keyring-1~20211228-1-any.pkg.tar.zst"
+  - bash -lc "mkdir -p /var/lib/pacman/sync/"
+  - bash -lc "pacman-key --init"
+  - bash -lc "pacman-key --populate msys2"
+  - bash -lc "pacman -S --noconfirm --refresh pacman"
+  - bash -lc "pacman -S --needed --noconfirm pacman-mirrors"
+  - bash -lc "pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain autoconf automake libtool make patch mingw-w64-x86_64-libtool"
+  - bash -lc "pacman -S --needed --noconfirm bison flex"
+  - bash -lc "pacman -S --needed --noconfirm perl perl-JSON"
+
+build_script:
+  # build using Windows 10 SDK
+  - set "WINSDKVER=10.0.22000.0"
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 %WINSDKVER%
+  - set "WIXDIR=c:\Program Files (x86)\Windows Installer XML v3.5"
+  # We're not doing any codesigning in the Appveyor build yet.
+  - SET "CODESIGN_PKT=0000000000000000"
+  - set "PATH=%PATH%;C:\Perl64\bin;C:\tools\cygwin\bin;C:\Program Files (x86)\HTML Help Workshop"
+  - set "PATH=%PATH%;C:/msys64/usr/bin"
+  - set "PATH=%PATH%;C:\program files (x86)\windows installer xml v3.5\bin;C:\cygwin\bin"
+  # double check this, should it be x86 or x64?
+  - set "PATH=%PATH%;%WindowsSdkVerBinPath%\x86"
+  - set "PATH=C:\Python310-x64;%PATH%"
+  - set dbg__type=Debug
+  - title Heimdal Build %CPU% %dbg__type%
+  - echo PATH=%PATH%
+  # target Windows 10 API
+  - set APPVER=10.0
+  # Newer texinfo has no .exe's, so we have to invoke it as
+  # "perl ...\makeinfo ...".  See doc/NTMakefile.
+  - nmake /f NTMakefile APPVEYOR=1 MAKEINFO=makeinfo NO_INSTALLERS=1
+  - 7z a heimdal.zip C:\projects\heimdal
+
+test_script:
+  # Packages are not validated in the Appveyor build, FYI.
+  - nmake /f NTMakefile APPVEYOR=1 MAKEINFO=makeinfo NO_INSTALLERS=1 test
+
+artifacts:
+  - path: heimdal-out.zip
+    name: heimdal-out
+  - path: heimdal.zip
+    name: heimdal
+
+on_failure:
+  - 7z a heimdal-out.zip C:\projects\heimdal
+  - appveyor PushArtifact heimdal-out.zip
+
+# To get RDP access to an appveyor worker for debugging a build, just
+# uncomment these next two lines and the last two lines too.
+#init:
+#  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+# Uncomment this to allow the RDP session to continue after the build
+# finishes.
+#
+# There's a delete-me file on the desktop that one should delete when
+# one is done with the worker.  RDP sessions are capped at 60 minutes as
+# of this writing.
+#
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+

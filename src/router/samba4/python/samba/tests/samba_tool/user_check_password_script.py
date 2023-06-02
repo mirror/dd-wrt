@@ -17,13 +17,7 @@
 #
 
 import os
-import time
-import ldb
 from samba.tests.samba_tool.base import SambaToolCmdTest
-from samba import (
-        nttime2unix,
-        dsdb
-        )
 
 
 class UserCheckPwdTestCase(SambaToolCmdTest):
@@ -48,10 +42,6 @@ class UserCheckPwdTestCase(SambaToolCmdTest):
                                             "-H", "ldap://%s" % os.environ["DC_SERVER"],
                                             "-U%s%%%s" % (os.environ["DC_USERNAME"], os.environ["DC_PASSWORD"]))
         self.assertCmdFail(result, "Should fail adding a user with %s password." % desc)
-        (result, out, err) = self.runsubcmd("user", "delete", user["name"],
-                                            "-H", "ldap://%s" % os.environ["DC_SERVER"],
-                                            "-U%s%%%s" % (os.environ["DC_USERNAME"], os.environ["DC_PASSWORD"]))
-        self.assertCmdSuccess(result, out, err, "Should delete user with %s password." % desc)
 
         (result, out, err) = self.runsubcmd("user", "add", user["name"], good_password,
                                             "-H", "ldap://%s" % os.environ["DC_SERVER"],

@@ -18,7 +18,7 @@
 # three separated by newlines. All other lines in the output are considered
 # comments.
 
-import os
+import os, tempfile
 from selftesthelpers import bindir, srcdir, python
 from selftesthelpers import planpythontestsuite, samba4srcdir
 from selftesthelpers import plantestsuite, bbdir
@@ -47,8 +47,12 @@ with_pam = ("WITH_PAM" in config_hash)
 with_elasticsearch_backend = ("HAVE_SPOTLIGHT_BACKEND_ES" in config_hash)
 pam_wrapper_so_path = config_hash.get("LIBPAM_WRAPPER_SO_PATH")
 pam_set_items_so_path = config_hash.get("PAM_SET_ITEMS_SO_PATH")
+have_heimdal_support = "SAMBA4_USES_HEIMDAL" in config_hash
+using_system_gssapi = "USING_SYSTEM_GSSAPI" in config_hash
 
 planpythontestsuite("none", "samba.tests.source")
+planpythontestsuite("none", "samba.tests.source_chars")
+
 if have_man_pages_support:
     planpythontestsuite("none", "samba.tests.docs")
 
@@ -89,15 +93,21 @@ planpythontestsuite("none", "samba.tests.s3windb")
 planpythontestsuite("none", "samba.tests.s3idmapdb")
 planpythontestsuite("none", "samba.tests.samba3sam")
 planpythontestsuite("none", "samba.tests.dsdb_api")
+planpythontestsuite("none", "samba.tests.smbconf")
+planpythontestsuite("none", "samba.tests.logfiles")
 planpythontestsuite(
     "none", "wafsamba.tests.test_suite",
     extra_path=[os.path.join(samba4srcdir, "..", "buildtools"),
                 os.path.join(samba4srcdir, "..", "third_party", "waf")])
 planpythontestsuite("fileserver", "samba.tests.smbd_fuzztest")
 planpythontestsuite("nt4_dc_smb1", "samba.tests.dcerpc.binding")
-for env in [ 'ad_dc:local', 'ad_dc_fips:local' ]:
-    planpythontestsuite(env, "samba.tests.dcerpc.samr_change_password")
+planpythontestsuite('ad_dc:local', "samba.tests.dcerpc.samr_change_password")
+planpythontestsuite('ad_dc_fips:local',
+                    "samba.tests.dcerpc.samr_change_password",
+                    environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                             'OPENSSL_FORCE_FIPS_MODE': '1'})
 
+planpythontestsuite("none", "samba.tests.safe_tarfile")
 
 def cmdline(script, *args):
     """
@@ -206,6 +216,10 @@ plantestsuite(
     "samba4.blackbox.functionalprep", "none",
     cmdline('functionalprep.sh', '$PREFIX_ABS/provision'))
 
+plantestsuite(
+    "samba4.blackbox.test_special_group", "none",
+    cmdline('test_special_group.sh', '$PREFIX_ABS/provision'))
+
 planpythontestsuite("none", "samba.tests.upgradeprovision")
 planpythontestsuite("none", "samba.tests.xattr")
 planpythontestsuite("none", "samba.tests.ntacls")
@@ -226,7 +240,7 @@ if with_pam:
     options = [
         {
             "description": "krb5",
-            "pam_options": "krb5_auth krb5_ccache_type=FILE",
+            "pam_options": "krb5_auth krb5_ccache_type=FILE:%s/krb5cc_pam_test_%%u" % (tempfile.gettempdir()),
         },
         {
             "description": "default",
@@ -373,11 +387,17 @@ if with_pam:
                        "$DOMAIN", "alice", "Secret007",
                        pam_options])
 
+    description = "krb5"
+    pam_options = "'krb5_auth krb5_ccache_type=FILE:%s/krb5cc_pam_test_setcred_%%u'" % (tempfile.gettempdir())
+    plantestsuite("samba.tests.pam_winbind_setcred(domain+%s)" % description, "ad_dc:local",
+                  [os.path.join(srcdir(), "python/samba/tests/test_pam_winbind_setcred.sh"),
+                   valgrindify(python), pam_wrapper_so_path,
+                   "${DOMAIN}", "${DC_USERNAME}", "${DC_PASSWORD}",
+                   pam_options])
+
 
 plantestsuite("samba.unittests.krb5samba", "none",
               [os.path.join(bindir(), "default/testsuite/unittests/test_krb5samba")])
-plantestsuite("samba.unittests.sambafs_srv_pipe", "none",
-              [os.path.join(bindir(), "default/testsuite/unittests/test_sambafs_srv_pipe")])
 plantestsuite("samba.unittests.lib_util_modules", "none",
               [os.path.join(bindir(), "default/testsuite/unittests/test_lib_util_modules")])
 plantestsuite("samba.unittests.background_send",
@@ -417,6 +437,8 @@ plantestsuite("samba.unittests.memcache", "none",
               [os.path.join(bindir(), "default/lib/util/test_memcache")])
 plantestsuite("samba.unittests.sys_rw", "none",
               [os.path.join(bindir(), "default/lib/util/test_sys_rw")])
+plantestsuite("samba.unittests.stable_sort", "none",
+              [os.path.join(bindir(), "default/lib/util/test_stable_sort")])
 plantestsuite("samba.unittests.ntlm_check", "none",
               [os.path.join(bindir(), "default/libcli/auth/test_ntlm_check")])
 plantestsuite("samba.unittests.gnutls", "none",
@@ -429,10 +451,37 @@ plantestsuite("samba.unittests.test_registry_regfio", "none",
               [os.path.join(bindir(), "default/source3/test_registry_regfio")])
 plantestsuite("samba.unittests.test_oLschema2ldif", "none",
               [os.path.join(bindir(), "default/source4/utils/oLschema2ldif/test_oLschema2ldif")])
+plantestsuite("samba.unittests.auth.sam", "none",
+              [os.path.join(bindir(), "test_auth_sam")])
+if have_heimdal_support and not using_system_gssapi:
+    plantestsuite("samba.unittests.auth.heimdal_gensec_unwrap_des", "none",
+                  [valgrindify(os.path.join(bindir(), "test_heimdal_gensec_unwrap_des"))])
 if with_elasticsearch_backend:
     plantestsuite("samba.unittests.mdsparser_es", "none",
                   [os.path.join(bindir(), "default/source3/test_mdsparser_es")] + [configuration])
+    plantestsuite("samba.unittests.mdsparser_es_failures", "none",
+                  [os.path.join(bindir(), "default/source3/test_mdsparser_es"),
+                  " --option=elasticsearch:testmappingfailures=yes",
+                  " --option=elasticsearch:ignoreunknownattribute=yes",
+                  " --option=elasticsearch:ignoreunknowntype=yes"] +
+                  [configuration])
 plantestsuite("samba.unittests.credentials", "none",
               [os.path.join(bindir(), "default/auth/credentials/test_creds")])
+plantestsuite("samba.unittests.tsocket_bsd_addr", "none",
+              [os.path.join(bindir(), "default/lib/tsocket/test_tsocket_bsd_addr")])
+if ("HAVE_TCP_USER_TIMEOUT" in config_hash):
+    plantestsuite("samba.unittests.tsocket_tstream", "none",
+                  [os.path.join(bindir(), "default/lib/tsocket/test_tstream")],
+                  environ={'SOCKET_WRAPPER_DIR': ''})
 plantestsuite("samba.unittests.adouble", "none",
               [os.path.join(bindir(), "test_adouble")])
+plantestsuite("samba.unittests.gnutls_aead_aes_256_cbc_hmac_sha512", "none",
+              [os.path.join(bindir(), "test_gnutls_aead_aes_256_cbc_hmac_sha512")])
+plantestsuite("samba.unittests.encode_decode", "none",
+              [os.path.join(bindir(), "test_encode_decode")])
+
+plantestsuite("samba.unittests.compression.lzxpress_huffman", "none",
+              [os.path.join(bindir(), "default/lib/compression/test_lzx_huffman")])
+plantestsuite("samba.unittests.compression.lzxpress_plain", "none",
+              [os.path.join(bindir(),
+                            "default/lib/compression/test_lzxpress_plain")])

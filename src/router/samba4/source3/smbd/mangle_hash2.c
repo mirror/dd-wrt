@@ -101,8 +101,10 @@ static const char basechars[36] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /* the list of reserved dos names - all of these are illegal */
 static const char * const reserved_names[] =
-{ "AUX", "LOCK$", "CON", "COM1", "COM2", "COM3", "COM4",
-  "LPT1", "LPT2", "LPT3", "NUL", "PRN", NULL };
+{ "AUX", "CON",
+  "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+  "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+  "NUL", "PRN", NULL };
 
 #define DYNAMIC_MANGLE_TABLES 0
 
@@ -441,10 +443,8 @@ static bool is_8_3(const char *name, bool check_case, bool allow_wildcards, cons
 	char *dot_p;
 
 	/* as a special case, the names '.' and '..' are allowable 8.3 names */
-	if (name[0] == '.') {
-		if (!name[1] || (name[1] == '.' && !name[2])) {
-			return True;
-		}
+	if (ISDOT(name) || (ISDOTDOT(name))) {
+		return true;
 	}
 
 	/* the simplest test is on the overall length of the

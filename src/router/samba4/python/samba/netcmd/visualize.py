@@ -21,7 +21,6 @@ import os
 import sys
 from collections import defaultdict
 import subprocess
-
 import tempfile
 import samba.getopt as options
 from samba import dsdb
@@ -31,6 +30,8 @@ from samba.samdb import SamDB
 from samba.graph import dot_graph
 from samba.graph import distance_matrix, COLOUR_SETS
 from samba.graph import full_matrix
+from samba.colour import is_colour_wanted
+
 from ldb import SCOPE_BASE, SCOPE_SUBTREE, LdbError
 import time
 import re
@@ -56,8 +57,6 @@ COMMON_OPTIONS = [
            dest='format', const='distance', action='store_const'),
     Option("--utf8", help="Use utf-8 Unicode characters",
            action='store_true'),
-    Option("--color", help="use color (yes, no, auto)",
-           choices=['yes', 'no', 'auto']),
     Option("--color-scheme", help=("use this colour scheme "
                                    "(implies --color=yes)"),
            choices=list(COLOUR_SETS.keys())),
@@ -150,28 +149,27 @@ class GraphCommand(Command):
         subprocess.call([xdot, fn])
         os.remove(fn)
 
-    def calc_distance_color_scheme(self, color, color_scheme, output):
+    def calc_distance_color_scheme(self, color_scheme, output):
         """Heuristics to work out the colour scheme for distance matrices.
         Returning None means no colour, otherwise it sould be a colour
         from graph.COLOUR_SETS"""
-        if color == 'no':
+        if color_scheme is not None:
+            # --color-scheme implies --color=yes for *this* purpose.
+            return color_scheme
+
+        if output in ('-', None):
+            output = self.outf
+
+        want_colour = is_colour_wanted(output, hint=self.requested_colour)
+        if not want_colour:
             return None
 
-        if color == 'auto':
-            if isinstance(output, str) and output != '-':
-                return None
-            if not hasattr(self.outf, 'isatty'):
-                # not a real file, perhaps cStringIO in testing
-                return None
-            if not self.outf.isatty():
-                return None
-
-        if color_scheme is None:
-            if '256color' in os.environ.get('TERM', ''):
-                return 'xterm-256color-heatmap'
-            return 'ansi'
-
-        return color_scheme
+        # if we got to here, we are using colour according to the
+        # --color/NO_COLOR rules, but no colour scheme has been
+        # specified, so we choose some defaults.
+        if '256color' in os.environ.get('TERM', ''):
+            return 'xterm-256color-heatmap'
+        return 'ansi'
 
 
 def get_dnstr_site(dn):
@@ -212,7 +210,7 @@ class cmd_reps(GraphCommand):
     def run(self, H=None, output=None, shorten_names=False,
             key=True, talk_to_remote=False,
             sambaopts=None, credopts=None, versionopts=None,
-            mode='self', partition=None, color=None, color_scheme=None,
+            mode='self', partition=None, color_scheme=None,
             utf8=None, format=None, xdot=False):
         # We use the KCC libraries in readonly mode to get the
         # replication graph.
@@ -308,8 +306,7 @@ class cmd_reps(GraphCommand):
         # interpretation and presentation.
 
         if self.calc_output_format(format, output) == 'distance':
-            color_scheme = self.calc_distance_color_scheme(color,
-                                                           color_scheme,
+            color_scheme = self.calc_distance_color_scheme(color_scheme,
                                                            output)
             header_strings = {
                 'from': "RepsFrom objects for %s",
@@ -416,7 +413,7 @@ class cmd_ntdsconn(GraphCommand):
     def run(self, H=None, output=None, shorten_names=False,
             key=True, talk_to_remote=False,
             sambaopts=None, credopts=None, versionopts=None,
-            color=None, color_scheme=None,
+            color_scheme=None,
             utf8=None, format=None, importldif=None,
             xdot=False):
 
@@ -493,8 +490,7 @@ class cmd_ntdsconn(GraphCommand):
         vertices, rodc_status = zip(*sorted(vertices))
 
         if self.calc_output_format(format, output) == 'distance':
-            color_scheme = self.calc_distance_color_scheme(color,
-                                                           color_scheme,
+            color_scheme = self.calc_distance_color_scheme(color_scheme,
                                                            output)
             colours = COLOUR_SETS[color_scheme]
             c_header = colours.get('header', '')
@@ -651,7 +647,7 @@ class cmd_uptodateness(GraphCommand):
     def run(self, H=None, output=None, shorten_names=False,
             key=True, talk_to_remote=False,
             sambaopts=None, credopts=None, versionopts=None,
-            color=None, color_scheme=None,
+            color_scheme=None,
             utf8=False, format=None, importldif=None,
             xdot=False, partition=None, max_digits=3):
         if not talk_to_remote:
@@ -668,8 +664,7 @@ class cmd_uptodateness(GraphCommand):
         partition = get_partition(self.samdb, partition)
 
         short_partitions, long_partitions = get_partition_maps(self.samdb)
-        color_scheme = self.calc_distance_color_scheme(color,
-                                                       color_scheme,
+        color_scheme = self.calc_distance_color_scheme(color_scheme,
                                                        output)
 
         for part_name, part_dn in short_partitions.items():

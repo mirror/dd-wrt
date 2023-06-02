@@ -111,6 +111,7 @@ def configure(conf):
     if Options.options.developer:
         conf.ADD_CFLAGS('-DDEVELOPER -DDEBUG_PASSWORD')
         conf.env.developer = True
+        conf.DEFINE('HAVE_SMB3_UNIX_EXTENSIONS', '1')
 
     if sys.platform != 'openbsd5':
         conf.ADD_LDFLAGS("-Wl,--export-dynamic", testflags=True)
@@ -139,6 +140,7 @@ def configure(conf):
     conf.CHECK_FUNCS('lutimes utimensat futimens')
     conf.CHECK_FUNCS('mlock munlock mlockall munlockall')
     conf.CHECK_FUNCS('memalign posix_memalign hstrerror')
+    conf.CHECK_FUNCS('getdomainname')
     conf.CHECK_FUNCS_IN('dn_expand _dn_expand __dn_expand', 'resolv')
     conf.CHECK_FUNCS_IN('dn_expand', 'inet')
     conf.CHECK_DECLS('readahead', reverse=True, headers='fcntl.h')
@@ -164,21 +166,6 @@ long ret = splice(0,0,1,0,400,SPLICE_F_MOVE);
     # Check for Linux kernel oplocks
     if conf.CHECK_DECLS('F_SETLEASE', headers='linux/fcntl.h', reverse=True):
         conf.DEFINE('HAVE_KERNEL_OPLOCKS_LINUX', 1)
-
-    # Check for kernel share modes
-    conf.CHECK_CODE('''
-#include <sys/types.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/file.h>
-#ifndef LOCK_MAND
-#define LOCK_MAND        32
-#define LOCK_READ        64
-#endif
-main() {
-        exit(flock(open("/dev/null", O_RDWR), LOCK_MAND|LOCK_READ) != 0);
-}''', 'HAVE_KERNEL_SHARE_MODES', addmain=False, execute=True,
-        msg="Checking for kernel share modes")
 
     # check for fam libs
     samba_fam_libs=None
@@ -500,11 +487,11 @@ vsyslog
                 Logs.info('Using HPUX ACLs')
                 conf.DEFINE('HAVE_HPUX_ACLS',1)
                 conf.DEFINE('POSIX_ACL_NEEDS_MASK',1)
-                default_static_modules.extend(['vfs_hpuxacl'])
+                required_static_modules.extend(['vfs_hpuxacl'])
         elif (host_os.rfind('aix') > -1):
                 Logs.info('Using AIX ACLs')
                 conf.DEFINE('HAVE_AIX_ACLS',1)
-                default_static_modules.extend(['vfs_aixacl', 'vfs_aixacl2'])
+                required_static_modules.extend(['vfs_aixacl', 'vfs_aixacl2'])
         elif (host_os.rfind('darwin') > -1):
             Logs.warn('ACLs on Darwin currently not supported')
             conf.fatal("ACL support not available on Darwin/MacOS. "
@@ -537,7 +524,7 @@ return acl_get_perm_np(permset_d, perm);
             elif conf.CHECK_FUNCS_IN(['facl'], 'sec'):
                 Logs.info('Using solaris or UnixWare ACLs')
                 conf.DEFINE('HAVE_SOLARIS_UNIXWARE_ACLS',1)
-                default_static_modules.extend(['vfs_solarisacl'])
+                required_static_modules.extend(['vfs_solarisacl'])
             else:
                 conf.fatal("ACL support not found. Try installing libacl1-dev "
                            "or libacl-devel.  "
@@ -617,16 +604,19 @@ msg.msg_accrightslen = sizeof(fd);
     conf.CHECK_HEADERS('asm/types.h')
 
     conf.CHECK_CODE('dev_t dev; int i = major(dev); return 0', "HAVE_DEVICE_MAJOR_FN",
-                    headers='unistd.h sys/types.h',
+                    headers='sys/sysmacros.h unistd.h sys/types.h',
                     msg="Checking for major macro")
 
     conf.CHECK_CODE('dev_t dev; int i = minor(dev); return 0', "HAVE_DEVICE_MINOR_FN",
-                    headers='unistd.h sys/types.h',
+                    headers='sys/sysmacros.h unistd.h sys/types.h',
                     msg="Checking for minor macro")
 
     conf.CHECK_STRUCTURE_MEMBER('struct dirent', 'd_off',
                                 headers='unistd.h sys/types.h dirent.h',
                                 define='HAVE_DIRENT_D_OFF')
+
+    if (conf.CONFIG_SET('HAVE_GETDOMAINNAME')):
+        conf.DEFINE('HAVE_NETGROUP', '1')
 
     # Look for CUPS
     if Options.options.with_cups:
@@ -1336,7 +1326,7 @@ syscall(SYS_initgroups, 16, NULL, NULL, 0);
 
     if conf.CHECK_CODE('''
 #include <time.h>
-main() {
+int main() {
         struct tm *tm;
         if (sizeof(time_t) == 8) {
                 time_t max_time = 0x7fffffffffffffffll;
@@ -1367,7 +1357,7 @@ main() {
 #if defined(HAVE_SYS_SYSMACROS_H)
 #include <sys/sysmacros.h>
 #endif
-main() { dev_t dev = makedev(1,2); return 0; }
+int main() { dev_t dev = makedev(1,2); return 0; }
 ''',
         'HAVE_MAKEDEV',
         addmain=False,
@@ -1377,12 +1367,13 @@ main() { dev_t dev = makedev(1,2); return 0; }
 #include <stdio.h>
 #include <limits.h>
 #include <signal.h>
+#include <stdlib.h>
 
 void exit_on_core(int ignored) {
         exit(1);
 }
 
-main() {
+int main() {
         char *newpath;
         signal(SIGSEGV, exit_on_core);
         newpath = realpath("/tmp", NULL);
@@ -1397,6 +1388,12 @@ main() {
     conf.CHECK_CODE('''#include "../tests/ftruncate.c"''',
                     'HAVE_FTRUNCATE_EXTEND',
                     msg='Checking for ftruncate extend',
+                    addmain=False,
+                    execute=True)
+
+    conf.CHECK_CODE('''#include "../tests/readlink.c"''',
+                    'HAVE_BROKEN_READLINK',
+                    msg='Checking for readlink breakage',
                     addmain=False,
                     execute=True)
 
@@ -1533,9 +1530,9 @@ main() {
     # Check for getcwd allowing a NULL arg.
     conf.CHECK_CODE('''
 #include <unistd.h>
-main() {
+int main() {
         char *s = getcwd(NULL,0);
-        exit(s != NULL ?  0 : 1);
+        return s != NULL ?  0 : 1;
 }''', 'GETCWD_TAKES_NULL', addmain=False, execute=True,
         msg="getcwd takes a NULL argument")
 
@@ -1741,6 +1738,10 @@ main() {
         conf.CHECK_CFG(package='glusterfs-api', args='"glusterfs-api >= 7.9" --cflags --libs',
                        msg='Checking for glusterfs-api >= 7.9',
                        uselib_store="GFAPI_VER_7_9")
+        conf.CHECK_CFG(package='glusterfs-api', args='"glusterfs-api >= 7.11" --cflags --libs',
+                       msg='Checking for glusterfs-api >= 7.11',
+                       uselib_store="GFAPI_VER_7_11")
+
     else:
         conf.SET_TARGET_TYPE('gfapi', 'EMPTY')
         conf.undefine('HAVE_GLUSTERFS')
@@ -1754,6 +1755,19 @@ main() {
                                       and conf.CHECK_LIB('uring', shlib=True)):
             conf.CHECK_FUNCS_IN('io_uring_ring_dontfork', 'uring',
                                 headers='liburing.h')
+            # There are a few distributions, which
+            # don't seem to have linux/openat2.h available
+            # during the liburing build, which means liburing/compat.h
+            # defines struct open_how directly instead of including
+            # linux/openat2.h, while linux/openat2.h is
+            # available on the installed system, which cause problems
+            # when we try to include both files.
+            #
+            # check if struct open_how is defined in liburing/compat.h
+            # itself and not via inclusing linux/openat2.h
+            conf.CHECK_TYPE_IN('struct open_how', 'liburing/compat.h',
+                               cflags='-D_LINUX_OPENAT2_H',
+                               define='HAVE_STRUCT_OPEN_HOW_LIBURING_COMPAT_H')
             conf.DEFINE('HAVE_LIBURING', '1')
 
     conf.env.build_regedit = False
@@ -1873,7 +1887,6 @@ main() {
             conf.fatal("Unmet dependencies for Spotlight backends")
 
         Logs.info("Building with Spotlight support, available backends: %s" % ', '.join(backends))
-        default_static_modules.extend(['rpc_mdssvc_module'])
         conf.DEFINE('WITH_SPOTLIGHT', '1')
         conf.env.with_spotlight = True
 
@@ -2056,7 +2069,7 @@ main() {
     static_list = {}
     shared_list = {}
 
-    prefixes = ['vfs', 'pdb', 'auth', 'nss_info', 'charset', 'idmap', 'gpext', 'perfcount', 'rpc']
+    prefixes = ['vfs', 'pdb', 'auth', 'nss_info', 'charset', 'idmap', 'gpext', 'perfcount']
     conf.env['MODULE_PREFIXES'] = prefixes
     for p in prefixes:
         for m in final_static_modules:

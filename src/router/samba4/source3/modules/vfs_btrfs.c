@@ -17,6 +17,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "includes.h"
+#include "system/filesys.h"
 #include <linux/ioctl.h>
 #include <linux/fs.h>
 #include <sys/ioctl.h>
@@ -24,8 +26,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <libgen.h>
-#include "system/filesys.h"
-#include "includes.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "librpc/gen_ndr/smbXsrv.h"
@@ -86,6 +86,8 @@ static struct vfs_offload_ctx *btrfs_offload_ctx;
 struct btrfs_offload_read_state {
 	struct vfs_handle_struct *handle;
 	files_struct *fsp;
+	uint32_t flags;
+	uint64_t xferlen;
 	DATA_BLOB token;
 };
 
@@ -158,6 +160,8 @@ static void btrfs_offload_read_done(struct tevent_req *subreq)
 	status = SMB_VFS_NEXT_OFFLOAD_READ_RECV(subreq,
 						state->handle,
 						state,
+						&state->flags,
+						&state->xferlen,
 						&state->token);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
@@ -178,6 +182,8 @@ static void btrfs_offload_read_done(struct tevent_req *subreq)
 static NTSTATUS btrfs_offload_read_recv(struct tevent_req *req,
 					struct vfs_handle_struct *handle,
 					TALLOC_CTX *mem_ctx,
+					uint32_t *flags,
+					uint64_t *xferlen,
 					DATA_BLOB *token)
 {
 	struct btrfs_offload_read_state *state = tevent_req_data(
@@ -189,6 +195,8 @@ static NTSTATUS btrfs_offload_read_recv(struct tevent_req *req,
 		return status;
 	}
 
+	*flags = state->flags;
+	*xferlen = state->xferlen;
 	token->length = state->token.length;
 	token->data = talloc_move(mem_ctx, &state->token.data);
 
@@ -335,6 +343,7 @@ static struct tevent_req *btrfs_offload_write_send(struct vfs_handle_struct *han
 					src_off,
 					num,
 					READ_LOCK,
+					lp_posix_cifsu_locktype(src_fsp),
 					&src_lck);
 		if (!SMB_VFS_STRICT_LOCK_CHECK(src_fsp->conn, src_fsp, &src_lck)) {
 			tevent_req_nterror(req, NT_STATUS_FILE_LOCK_CONFLICT);
@@ -352,6 +361,7 @@ static struct tevent_req *btrfs_offload_write_send(struct vfs_handle_struct *han
 					dest_off,
 					num,
 					WRITE_LOCK,
+					lp_posix_cifsu_locktype(dest_fsp),
 					&dest_lck);
 
 		if (!SMB_VFS_STRICT_LOCK_CHECK(dest_fsp->conn, dest_fsp, &dest_lck)) {
@@ -490,7 +500,7 @@ static NTSTATUS btrfs_fget_compression(struct vfs_handle_struct *handle,
 
 	fd = open(p, O_RDONLY);
 	if (fd == -1) {
-		DBG_ERR("/proc open of %s failed: %s\n", p, strerror(errno));
+		DBG_DEBUG("/proc open of %s failed: %s\n", p, strerror(errno));
 		return map_nt_error_from_unix(errno);
 	}
 

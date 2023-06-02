@@ -123,8 +123,6 @@ bool parse_streams_blob(TALLOC_CTX *mem_ctx, const uint8_t *rdata,
 				size_t data_len,
 				unsigned int *pnum_streams,
 				struct stream_struct **pstreams);
-NTSTATUS cli_qfilename(struct cli_state *cli, uint16_t fnum,
-		       TALLOC_CTX *mem_ctx, char **name);
 struct tevent_req *cli_qfileinfo_basic_send(
 	TALLOC_CTX *mem_ctx,
 	struct tevent_context *ev,
@@ -204,5 +202,17 @@ NTSTATUS cli_shadow_copy_data_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 NTSTATUS cli_shadow_copy_data(TALLOC_CTX *mem_ctx, struct cli_state *cli,
 			      uint16_t fnum, bool get_names,
 			      char ***pnames, int *pnum_names);
+
+struct tevent_req *cli_fsctl_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint32_t ctl_code,
+	const DATA_BLOB *in,
+	uint32_t max_out);
+NTSTATUS cli_fsctl_recv(
+	struct tevent_req *req, TALLOC_CTX *mem_ctx, DATA_BLOB *out);
+
 
 #endif /* _LIBSMB_CLIRAP_H */

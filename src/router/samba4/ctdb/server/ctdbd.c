@@ -121,7 +121,6 @@ static struct ctdb_context *ctdb_init(struct tevent_context *ev)
 	gettimeofday(&ctdb->last_recovery_finished, NULL);
 
 	ctdb->recovery_mode    = CTDB_RECOVERY_NORMAL;
-	ctdb->recovery_master  = (uint32_t)-1;
 
 	ctdb->upcalls = &ctdb_upcalls;
 
@@ -283,10 +282,13 @@ int main(int argc, const char *argv[])
 		goto fail;
 	}
 
-	if (ctdb_config.recovery_lock == NULL) {
-		D_WARNING("Recovery lock not set\n");
+	if (ctdb_config.cluster_lock != NULL) {
+		ctdb->recovery_lock = ctdb_config.cluster_lock;
+	} else if (ctdb_config.recovery_lock != NULL) {
+		ctdb->recovery_lock = ctdb_config.recovery_lock;
+	} else {
+		D_WARNING("Cluster lock not set\n");
 	}
-	ctdb->recovery_lock = ctdb_config.recovery_lock;
 
 	/* tell ctdb what address to listen on */
 	if (ctdb_config.node_address) {
@@ -356,7 +358,7 @@ int main(int argc, const char *argv[])
 	if (!ctdb_config.lmaster_capability) {
 		ctdb->capabilities &= ~CTDB_CAP_LMASTER;
 	}
-	if (!ctdb_config.recmaster_capability) {
+	if (!ctdb_config.leader_capability) {
 		ctdb->capabilities &= ~CTDB_CAP_RECMASTER;
 	}
 
@@ -366,7 +368,7 @@ int main(int argc, const char *argv[])
 	 * Miscellaneous setup
 	 */
 
-	ctdb_tunables_set_defaults(ctdb);
+	ctdb_tunables_load(ctdb);
 
 	ctdb->event_script_dir = talloc_asprintf(ctdb,
 						 "%s/events/legacy",

@@ -137,8 +137,6 @@ NTSTATUS make_user_info_map(TALLOC_CTX *mem_ctx,
 				lm_interactive_pwd, nt_interactive_pwd,
 				plaintext, password_state);
 	if (NT_STATUS_IS_OK(result)) {
-		/* We have tried mapping */
-		(*user_info)->mapped_state = true;
 		/* did we actually map the user to a different name? */
 		(*user_info)->was_mapped = was_mapped;
 	}
@@ -265,6 +263,7 @@ bool make_user_info_netlogon_interactive(TALLOC_CTX *mem_ctx,
 
 		if (NT_STATUS_IS_OK(nt_status)) {
 			(*user_info)->logon_parameters = logon_parameters;
+			(*user_info)->flags |= USER_INFO_INTERACTIVE_LOGON;
 		}
 
 		ret = NT_STATUS_IS_OK(nt_status) ? true : false;

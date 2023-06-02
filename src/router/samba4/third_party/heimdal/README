@@ -1,0 +1,19 @@
+
+Heimdal is an implementation of: ASN.1/DER, PKIX, and Kerberos.
+
+For information how to install see
+<https://github.com/heimdal/heimdal/wiki/Building-and-installing>.
+
+There are briefer man pages for most of the commands.
+
+Bug reports and bugs are appreciated.  Use GitHub issues.
+<https://www.heimdal.software/heimdal/issues>.
+
+For more information see the web-page at
+<https://www.heimdal.software/heimdal/> or the mailing lists:
+
+heimdal-announce@heimdal.software	low-volume announcement
+heimdal-discuss@heimdal.software	high-volume discussion
+
+send a mail to heimdal-announce-subscribe@heimdal.software and
+heimdal-discuss-subscribe@heimdal.software respectively to subscribe.

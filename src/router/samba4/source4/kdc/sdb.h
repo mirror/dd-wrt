@@ -30,7 +30,6 @@ struct sdb_salt {
 };
 
 struct sdb_key {
-	unsigned int *mkvno;
 	krb5_keyblock key;
 	struct sdb_salt *salt;
 };
@@ -43,6 +42,11 @@ struct sdb_keys {
 struct sdb_event {
 	krb5_principal principal;
 	time_t time;
+};
+
+struct sdb_etypes {
+	unsigned len;
+	krb5_enctype *val;
 };
 
 struct SDBFlags {
@@ -64,26 +68,31 @@ struct SDBFlags {
 	unsigned int allow_kerberos4:1;
 	unsigned int allow_digest:1;
 	unsigned int locked_out:1;
-	unsigned int _unused18:1;
-	unsigned int _unused19:1;
-	unsigned int _unused20:1;
-	unsigned int _unused21:1;
-	unsigned int _unused22:1;
-	unsigned int _unused23:1;
+	unsigned int require_pwchange:1;
+	unsigned int materialize:1;
+	unsigned int virtual_keys:1;
+	unsigned int virtual:1;
+	unsigned int synthetic:1;
+	unsigned int no_auth_data_reqd:1;
 	unsigned int _unused24:1;
 	unsigned int _unused25:1;
 	unsigned int _unused26:1;
 	unsigned int _unused27:1;
 	unsigned int _unused28:1;
 	unsigned int _unused29:1;
-	unsigned int _unused30:1;
+	unsigned int force_canonicalize:1;
 	unsigned int do_not_store:1;
 };
 
 struct sdb_entry {
+	struct samba_kdc_entry *skdc_entry;
 	krb5_principal principal;
 	unsigned int kvno;
 	struct sdb_keys keys;
+	struct sdb_etypes *etypes;
+	struct sdb_keys old_keys;
+	struct sdb_keys older_keys;
+	struct sdb_etypes *session_etypes;
 	struct sdb_event created_by;
 	struct sdb_event *modified_by;
 	time_t *valid_start;
@@ -92,12 +101,6 @@ struct sdb_entry {
 	unsigned int *max_life;
 	unsigned int *max_renew;
 	struct SDBFlags flags;
-};
-
-struct sdb_entry_ex {
-	void *ctx;
-	struct sdb_entry entry;
-	void (*free_entry)(struct sdb_entry_ex *);
 };
 
 #define SDB_ERR_NOENTRY 36150275
@@ -117,8 +120,27 @@ struct sdb_entry_ex {
 #define SDB_F_FOR_AS_REQ	4096	/* fetch is for a AS REQ */
 #define SDB_F_FOR_TGS_REQ	8192	/* fetch is for a TGS REQ */
 
-void sdb_free_entry(struct sdb_entry_ex *e);
-void free_sdb_entry(struct sdb_entry *s);
+#define SDB_F_HDB_MASK		(SDB_F_DECRYPT | \
+				 SDB_F_GET_CLIENT| \
+				 SDB_F_GET_SERVER | \
+				 SDB_F_GET_KRBTGT | \
+				 SDB_F_CANON | \
+				 SDB_F_ADMIN_DATA | \
+				 SDB_F_KVNO_SPECIFIED | \
+				 SDB_F_FOR_AS_REQ | \
+				 SDB_F_FOR_TGS_REQ)
+
+/* This is not supported by HDB */
+#define SDB_F_FORCE_CANON	16384	/* force canonicalition */
+
+void sdb_key_free(struct sdb_key *key);
+void sdb_keys_free(struct sdb_keys *keys);
+void sdb_entry_free(struct sdb_entry *e);
 struct SDBFlags int2SDBFlags(unsigned n);
+krb5_error_code sdb_entry_set_etypes(struct sdb_entry *s);
+krb5_error_code sdb_entry_set_session_etypes(struct sdb_entry *s,
+					     bool add_aes256,
+					     bool add_aes128,
+					     bool add_rc4);
 
 #endif /* _KDC_SDB_H_ */

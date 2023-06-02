@@ -273,6 +273,20 @@ void torture_result(struct torture_context *test,
 	} \
 } while(0)
 
+#define torture_assertf(torture_ctx, expr, format, ...) do {		\
+	if (!(expr)) {							\
+		char *_msg = talloc_asprintf(torture_ctx,		\
+					     format,			\
+					     __VA_ARGS__);		\
+		torture_result(torture_ctx,				\
+			       TORTURE_FAIL,				\
+			       __location__": Expression `%s' failed: %s", \
+			       __STRING(expr), _msg);			\
+		talloc_free(_msg);					\
+		return false;						\
+	}								\
+} while(0)
+
 #define torture_assert_goto(torture_ctx,expr,ret,label,cmt) do { \
 	if (!(expr)) { \
 		torture_result(torture_ctx, TORTURE_FAIL, __location__": Expression `%s' failed: %s", __STRING(expr), cmt); \
@@ -671,7 +685,7 @@ static inline void torture_dump_data_str_cb(const char *buf, void *private_data)
 #define torture_assert_nttime_equal(torture_ctx,got,expected,cmt) \
 	do { NTTIME __got = got, __expected = expected; \
 	if (!nt_time_equal(&__got, &__expected)) { \
-		torture_result(torture_ctx, TORTURE_FAIL, __location__": "#got" was %s, expected %s: %s", nt_time_string(tctx, __got), nt_time_string(tctx, __expected), cmt); \
+		torture_result(torture_ctx, TORTURE_FAIL, __location__": "#got" was %s, expected %s: %s", nt_time_string(torture_ctx, __got), nt_time_string(torture_ctx, __expected), cmt); \
 		return false; \
 	}\
 	} while(0)

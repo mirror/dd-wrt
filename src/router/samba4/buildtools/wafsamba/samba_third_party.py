@@ -24,17 +24,17 @@ Build.BuildContext.CHECK_CMOCKA = CHECK_CMOCKA
 
 @conf
 def CHECK_SOCKET_WRAPPER(conf):
-    return conf.CHECK_BUNDLED_SYSTEM_PKG('socket_wrapper', minversion='1.3.3')
+    return conf.CHECK_BUNDLED_SYSTEM_PKG('socket_wrapper', minversion='1.3.4')
 Build.BuildContext.CHECK_SOCKET_WRAPPER = CHECK_SOCKET_WRAPPER
 
 @conf
 def CHECK_NSS_WRAPPER(conf):
-    return conf.CHECK_BUNDLED_SYSTEM_PKG('nss_wrapper', minversion='1.1.11')
+    return conf.CHECK_BUNDLED_SYSTEM_PKG('nss_wrapper', minversion='1.1.13')
 Build.BuildContext.CHECK_NSS_WRAPPER = CHECK_NSS_WRAPPER
 
 @conf
 def CHECK_RESOLV_WRAPPER(conf):
-    return conf.CHECK_BUNDLED_SYSTEM_PKG('resolv_wrapper', minversion='1.1.7')
+    return conf.CHECK_BUNDLED_SYSTEM_PKG('resolv_wrapper', minversion='1.1.8')
 Build.BuildContext.CHECK_RESOLV_WRAPPER = CHECK_RESOLV_WRAPPER
 
 @conf
@@ -44,5 +44,5 @@ Build.BuildContext.CHECK_UID_WRAPPER = CHECK_UID_WRAPPER
 
 @conf
 def CHECK_PAM_WRAPPER(conf):
-    return conf.CHECK_BUNDLED_SYSTEM_PKG('pam_wrapper', minversion='1.1.2')
+    return conf.CHECK_BUNDLED_SYSTEM_PKG('pam_wrapper', minversion='1.1.4')
 Build.BuildContext.CHECK_PAM_WRAPPER = CHECK_PAM_WRAPPER

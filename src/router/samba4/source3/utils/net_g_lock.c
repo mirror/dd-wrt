@@ -87,7 +87,9 @@ static int net_g_lock_do(struct net_context *c, int argc, const char **argv)
 		ctx,
 		key,
 		G_LOCK_WRITE,
-		timeval_set(timeout / 1000, timeout % 1000));
+		timeval_set(timeout / 1000, timeout % 1000),
+		NULL,
+		NULL);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_fprintf(stderr,
 			  _("g_lock_lock failed: %s\n"),
@@ -113,7 +115,7 @@ done:
 
 static void net_g_lock_dump_fn(struct server_id exclusive,
 				size_t num_shared,
-				struct server_id *shared,
+				const struct server_id *shared,
 				const uint8_t *data,
 				size_t datalen,
 				void *private_data)

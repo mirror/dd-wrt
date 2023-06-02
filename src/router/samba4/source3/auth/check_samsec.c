@@ -24,6 +24,7 @@
 #include "auth.h"
 #include "../libcli/auth/libcli_auth.h"
 #include "passdb.h"
+#include "lib/util/memcache.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
@@ -81,19 +82,20 @@ static NTSTATUS sam_password_ok(TALLOC_CTX *mem_ctx,
 			if (nt_pw) {
 				*user_sess_key = data_blob_talloc(mem_ctx, NULL, 16);
 				if (!user_sess_key->data) {
-					return NT_STATUS_NO_MEMORY;
+					status = NT_STATUS_NO_MEMORY;
+					goto done;
 				}
 				SMBsesskeygen_ntv1(nt_pw, user_sess_key->data);
 			}
 		}
-		return status;
+		break;
 
 	/* Eventually we should test plaintext passwords in their own
 	 * function, not assuming the caller has done a
 	 * mapping */
 	case AUTH_PASSWORD_PLAIN:
 	case AUTH_PASSWORD_RESPONSE:
-		return ntlm_password_check(mem_ctx, lp_lanman_auth(),
+		status = ntlm_password_check(mem_ctx, lp_lanman_auth(),
 					   lp_ntlm_auth(),
 					   user_info->logon_parameters,
 					   challenge,
@@ -104,10 +106,15 @@ static NTSTATUS sam_password_ok(TALLOC_CTX *mem_ctx,
 					   lm_hash,
 					   nt_hash,
 					   user_sess_key, lm_sess_key);
+		break;
 	default:
 		DEBUG(0,("user_info constructed for user '%s' was invalid - password_state=%u invalid.\n", username, user_info->password_state));
-		return NT_STATUS_INTERNAL_ERROR;
+		status = NT_STATUS_INTERNAL_ERROR;
 	}
+done:
+	ZERO_STRUCTP(lm_hash);
+	ZERO_STRUCTP(nt_hash);
+	return status;
 }
 
 /****************************************************************************
@@ -379,6 +386,8 @@ NTSTATUS check_sam_security(const DATA_BLOB *challenge,
 	const uint8_t *nt_pw;
 	const uint8_t *lm_pw;
 	uint32_t acct_ctrl;
+	char *mutex_name_by_user = NULL;
+	struct named_mutex *mtx = NULL;
 
 	/* the returned struct gets kept on the server_info, by means
 	   of a steal further down */
@@ -417,6 +426,79 @@ NTSTATUS check_sam_security(const DATA_BLOB *challenge,
 				    username, acct_ctrl,
 				    challenge, lm_pw, nt_pw,
 				    user_info, &user_sess_key, &lm_sess_key);
+
+	/*
+	 * We must re-load the sam acount information under a mutex
+	 * lock to ensure we don't miss any concurrent account lockout
+	 * changes.
+	 */
+
+	/* Clear out old sampass info. */
+	TALLOC_FREE(sampass);
+	acct_ctrl = 0;
+	username = NULL;
+	nt_pw = NULL;
+	lm_pw = NULL;
+
+	sampass = samu_new(mem_ctx);
+	if (sampass == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	mutex_name_by_user = talloc_asprintf(mem_ctx,
+					     "check_sam_security_mutex_%s",
+					     user_info->mapped.account_name);
+	if (mutex_name_by_user == NULL) {
+		nt_status = NT_STATUS_NO_MEMORY;
+		goto done;
+	}
+
+	/* Grab the named mutex under root with 30 second timeout. */
+	become_root();
+	mtx = grab_named_mutex(mem_ctx, mutex_name_by_user, 30);
+	if (mtx != NULL) {
+		/* Re-load the account information if we got the mutex. */
+		ret = pdb_getsampwnam(sampass, user_info->mapped.account_name);
+	}
+	unbecome_root();
+
+	/* Everything from here on until mtx is freed is done under the mutex.*/
+
+	if (mtx == NULL) {
+		DBG_ERR("Acquisition of mutex %s failed "
+			"for user %s\n",
+			mutex_name_by_user,
+			user_info->mapped.account_name);
+		nt_status = NT_STATUS_INTERNAL_ERROR;
+		goto done;
+	}
+
+	if (!ret) {
+		/*
+		 * Re-load of account failed. This could only happen if the
+		 * user was deleted in the meantime.
+		 */
+		DBG_NOTICE("reload of user '%s' in passdb failed.\n",
+			   user_info->mapped.account_name);
+		nt_status = NT_STATUS_NO_SUCH_USER;
+		goto done;
+	}
+
+	/* Re-load the account control info. */
+	acct_ctrl = pdb_get_acct_ctrl(sampass);
+	username = pdb_get_username(sampass);
+
+	/*
+	 * Check if the account is now locked out - now under the mutex.
+	 * This can happen if the server is under
+	 * a password guess attack and the ACB_AUTOLOCK is set by
+	 * another process.
+	 */
+	if (acct_ctrl & ACB_AUTOLOCK) {
+		DBG_NOTICE("Account for user %s was locked out.\n", username);
+		nt_status = NT_STATUS_ACCOUNT_LOCKED_OUT;
+		goto done;
+	}
 
 	/* Notify passdb backend of login success/failure. If not
 	   NT_STATUS_OK the backend doesn't like the login */
@@ -487,8 +569,6 @@ NTSTATUS check_sam_security(const DATA_BLOB *challenge,
 	nt_status = make_server_info_sam(mem_ctx, sampass, server_info);
 	unbecome_root();
 
-	TALLOC_FREE(sampass);
-
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		DEBUG(0,("check_sam_security: make_server_info_sam() failed with '%s'\n", nt_errstr(nt_status)));
 		goto done;
@@ -507,9 +587,16 @@ NTSTATUS check_sam_security(const DATA_BLOB *challenge,
 	(*server_info)->nss_token |= user_info->was_mapped;
 
 done:
+	/*
+	 * Always flush the getpwsid cache or this will grow indefinetly for
+	 * each NTLM auththentication.
+	 */
+	memcache_flush(NULL, PDB_GETPWSID_CACHE);
 	TALLOC_FREE(sampass);
 	data_blob_free(&user_sess_key);
 	data_blob_free(&lm_sess_key);
+	TALLOC_FREE(mutex_name_by_user);
+	TALLOC_FREE(mtx);
 	return nt_status;
 }
 

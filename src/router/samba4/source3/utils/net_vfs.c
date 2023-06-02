@@ -252,6 +252,7 @@ static int net_vfs_get_ntacl(struct net_context *net,
 	status = SMB_VFS_CREATE_FILE(
 		state.conn_tos->conn,
 		NULL,				/* req */
+		NULL,
 		smb_fname,
 		FILE_READ_ATTRIBUTES|READ_CONTROL_ACCESS,
 		FILE_SHARE_READ|FILE_SHARE_WRITE,
@@ -275,7 +276,7 @@ static int net_vfs_get_ntacl(struct net_context *net,
 
 	status = SMB_VFS_FGET_NT_ACL(fsp,
 				     SECINFO_OWNER|SECINFO_GROUP|SECINFO_DACL,
-				     fsp,
+				     talloc_tos(),
 				     &sd);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("SMB_VFS_FGET_NT_ACL [%s] failed: %s\n",
@@ -283,23 +284,24 @@ static int net_vfs_get_ntacl(struct net_context *net,
 		goto done;
 	}
 
-	status = close_file(NULL, fsp, NORMAL_CLOSE);
+	status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("close_file [%s] failed: %s\n",
 			smb_fname_str_dbg(smb_fname),
 			nt_errstr(status));
 		goto done;
 	}
-	fsp = NULL;
 
 	sec_desc_print(NULL, stdout, sd, true);
 
 	rc = 0;
 done:
+	TALLOC_FREE(sd);
+
 	if (fsp != NULL) {
-		status = close_file(NULL, fsp, NORMAL_CLOSE);
+		status = close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		if (!NT_STATUS_IS_OK(status)) {
-			DBG_ERR("close_file [%s] failed: %s\n",
+			DBG_ERR("close_file_free() [%s] failed: %s\n",
 				smb_fname_str_dbg(smb_fname),
 				nt_errstr(status));
 			rc = 1;

@@ -35,7 +35,6 @@
 #include "smbd/smbd.h"
 #include "rpc_server/rpc_config.h"
 #include "printing/load.h"
-#include "printing/spoolssd.h"
 #include "rpc_server/spoolss/srv_spoolss_nt.h"
 #include "auth.h"
 #include "nt_printing.h"
@@ -320,6 +319,9 @@ struct bq_state *register_printing_bq_handlers(
 		goto fail_free_handlers;
 	}
 
+	/* Initialize the printcap cache as soon as the daemon starts. */
+	pcap_cache_reload(state->ev, state->msg, reload_pcap_change_notify);
+
 	ok = printing_subsystem_queue_tasks(state);
 	if (!ok) {
 		goto fail_free_handlers;
@@ -369,7 +371,7 @@ pid_t start_background_queue(struct tevent_context *ev,
 	str_list_add_printf(
 		&argv, "--ready-signal-fd=%d", ready_fds[1]);
 	str_list_add_printf(
-		&argv, "--parent-watch-fd=%d", parent_watch_fd());
+		&argv, "--parent-watch-fd=%d", 0);
 	str_list_add_printf(
 		&argv, "--debuglevel=%d", debuglevel_get_class(DBGC_RPC_SRV));
 	if (!is_default_dyn_CONFIGFILE()) {
@@ -417,70 +419,21 @@ fail:
 /* Run before the parent forks */
 bool printing_subsystem_init(struct tevent_context *ev_ctx,
 			     struct messaging_context *msg_ctx,
-			     struct dcesrv_context *dce_ctx,
-			     bool start_daemons,
-			     bool background_queue)
+			     struct dcesrv_context *dce_ctx)
 {
 	pid_t pid = -1;
 
-	if (!print_backend_init(msg_ctx)) {
-		return false;
-	}
-
-	/* start spoolss daemon */
-	/* start as a separate daemon only if enabled */
-	if (start_daemons && rpc_spoolss_daemon() == RPC_DAEMON_FORK) {
-
-		pid = start_spoolssd(ev_ctx, msg_ctx, dce_ctx);
-
-	} else if (start_daemons && background_queue) {
-
-		pid = start_background_queue(ev_ctx, msg_ctx, NULL);
-
-	} else {
-		bool ret;
-		struct bq_state *state;
-
-		state = talloc_zero(NULL, struct bq_state);
-		if (state == NULL) {
-			exit(1);
-		}
-		state->ev = ev_ctx;
-		state->msg = msg_ctx;
-
-		ret = printing_subsystem_queue_tasks(state);
-
-		/* Publish nt printers, this requires a working winreg pipe */
-		pcap_cache_reload(ev_ctx, msg_ctx,
-				  delete_and_reload_printers_full);
-
-		return ret;
-	}
-
+	pid = start_background_queue(NULL, NULL, NULL);
 	if (pid == -1) {
 		return false;
 	}
 	background_lpq_updater_pid = pid;
 
-	return true;
-}
-
-void printing_subsystem_update(struct tevent_context *ev_ctx,
-			       struct messaging_context *msg_ctx,
-			       bool force)
-{
-	if (background_lpq_updater_pid != -1) {
-		load_printers();
-		if (force) {
-			/* Send a sighup to the background process.
-			 * this will force it to reload printers */
-			kill(background_lpq_updater_pid, SIGHUP);
-		}
-		return;
+	if (!print_backend_init(msg_ctx)) {
+		return false;
 	}
 
-	pcap_cache_reload(ev_ctx, msg_ctx,
-			  delete_and_reload_printers_full);
+	return true;
 }
 
 void send_to_bgqd(struct messaging_context *msg_ctx,

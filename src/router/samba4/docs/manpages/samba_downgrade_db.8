@@ -2,12 +2,12 @@
 .\"     Title: samba_downgrade_db
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "SAMBA_DOWNGRADE_DB" "8" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
+.TH "SAMBA_DOWNGRADE_DB" "8" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -42,7 +42,7 @@ The format of the Samba Active Directory (AD) database changed in version 4\&.8 
 \fIbefore\fR
 the Samba packages can be safely downgraded\&.
 .PP
-This tool downgrades a Samba sam\&.ldb database from the format used in version 4\&.15\&.5 to that of version 4\&.7\&. The v4\&.7 database format can safely be read by any version of Samba\&. If necessary, later versions of Samba will repack and reconfigure a v4\&.7\-format database when the samba executable is first started\&.
+This tool downgrades a Samba sam\&.ldb database from the format used in version 4\&.18\&.3 to that of version 4\&.7\&. The v4\&.7 database format can safely be read by any version of Samba\&. If necessary, later versions of Samba will repack and reconfigure a v4\&.7\-format database when the samba executable is first started\&.
 .PP
 Note that all Samba services must be stopped on the DC before running this tool\&. Once the tool has run, do not restart samba or modify the database before the Samba software package has been downgraded\&.
 .SH "OPTIONS"
@@ -58,7 +58,7 @@ Link directly to smb\&.conf file instead of system default (usually in /usr/loca
 .RE
 .SH "VERSION"
 .PP
-This man page is complete for version 4\&.15\&.5 of the Samba suite\&.
+This man page is complete for version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

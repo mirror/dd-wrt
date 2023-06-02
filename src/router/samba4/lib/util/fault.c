@@ -64,6 +64,7 @@ _PUBLIC_ void fault_setup_disable(void)
 }
 
 
+#if !defined(HAVE_DISABLE_FAULT_HANDLING)
 /*******************************************************************
 report a fault
 ********************************************************************/
@@ -91,7 +92,7 @@ static void sig_fault(int sig)
 {
 	fault_report(sig);
 }
-
+#endif
 /*******************************************************************
 setup our fault handlers
 ********************************************************************/
@@ -221,9 +222,13 @@ _PUBLIC_ void smb_panic(const char *why)
 void log_stack_trace(void)
 {
 #ifdef HAVE_LIBUNWIND
-	/* Try to use libunwind before any other technique since on ia64
-	 * libunwind correctly walks the stack in more circumstances than
-	 * backtrace.
+	/*
+	 * --with-libunwind is required to use libunwind, the
+	 * backtrace_symbols() code below is the default.
+	 *
+	 * This code is available because a previous version of this
+	 * comment asserted that on ia64 libunwind correctly walks the
+	 * stack in more circumstances than backtrace.
 	 */
 	unw_cursor_t cursor;
 	unw_context_t uc;

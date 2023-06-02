@@ -1,4 +1,4 @@
-/* 
+/*
    ldb database library
 
    Copyright (C) Andrew Bartlett 2005-2009
@@ -7,7 +7,7 @@
      ** NOTE! The following LGPL license applies to the ldb
      ** library. This does NOT imply that all of Samba is released
      ** under the LGPL
-   
+
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -116,7 +116,7 @@ static int rdn_name_add(struct ldb_module *module, struct ldb_request *req)
 	if (rdn_name == NULL) {
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
-	
+
 	rdn_val_p = ldb_dn_get_rdn_val(msg->dn);
 	if (rdn_val_p == NULL) {
 		return LDB_ERR_OPERATIONS_ERROR;
@@ -176,13 +176,13 @@ static int rdn_name_add(struct ldb_module *module, struct ldb_request *req)
 		}
 		if (i == attribute->num_values) {
 			char *rdn_errstring = talloc_asprintf(ac,
-				"RDN mismatch on %s: %s (%.*s) should match one of:", 
-				ldb_dn_get_linearized(msg->dn), rdn_name, 
+				"RDN mismatch on %s: %s (%.*s) should match one of:",
+				ldb_dn_get_linearized(msg->dn), rdn_name,
 				(int)rdn_val.length, (const char *)rdn_val.data);
 			for (i = 0; i < attribute->num_values; i++) {
-				rdn_errstring = talloc_asprintf_append(
-					rdn_errstring, " (%.*s)",
-					(int)attribute->values[i].length, 
+				talloc_asprintf_addbuf(
+					&rdn_errstring, " (%.*s)",
+					(int)attribute->values[i].length,
 					(const char *)attribute->values[i].data);
 			}
 			ldb_set_errstring(ldb, rdn_errstring);
@@ -308,16 +308,10 @@ static int rdn_rename_callback(struct ldb_request *req, struct ldb_reply *ares)
 	}
 	rdn_val = ldb_val_dup(msg, rdn_val_p);
 
-	if (ldb_msg_add_empty(msg, rdn_name, LDB_FLAG_MOD_REPLACE, NULL) != 0) {
+	if (ldb_msg_append_value(msg, rdn_name, &rdn_val, LDB_FLAG_MOD_REPLACE) != 0) {
 		goto error;
 	}
-	if (ldb_msg_add_value(msg, rdn_name, &rdn_val, NULL) != 0) {
-		goto error;
-	}
-	if (ldb_msg_add_empty(msg, "name", LDB_FLAG_MOD_REPLACE, NULL) != 0) {
-		goto error;
-	}
-	if (ldb_msg_add_value(msg, "name", &rdn_val, NULL) != 0) {
+	if (ldb_msg_append_value(msg, "name", &rdn_val, LDB_FLAG_MOD_REPLACE) != 0) {
 		goto error;
 	}
 
@@ -466,11 +460,7 @@ static int rdn_name_modify(struct ldb_module *module, struct ldb_request *req)
 		if (ret != 0) {
 			return ldb_module_oom(module);
 		}
-		ret = ldb_msg_add_empty(msg, rdn_name, LDB_FLAG_MOD_ADD, NULL);
-		if (ret != 0) {
-			return ldb_module_oom(module);
-		}
-		ret = ldb_msg_add_value(msg, rdn_name, &rdn_val, NULL);
+		ret = ldb_msg_append_value(msg, rdn_name, &rdn_val, LDB_FLAG_MOD_ADD);
 		if (ret != 0) {
 			return ldb_module_oom(module);
 		}
@@ -479,11 +469,7 @@ static int rdn_name_modify(struct ldb_module *module, struct ldb_request *req)
 		if (ret != 0) {
 			return ldb_module_oom(module);
 		}
-		ret = ldb_msg_add_empty(msg, "name", LDB_FLAG_MOD_ADD, NULL);
-		if (ret != 0) {
-			return ldb_module_oom(module);
-		}
-		ret = ldb_msg_add_value(msg, "name", &rdn_val, NULL);
+		ret = ldb_msg_append_value(msg, "name", &rdn_val, LDB_FLAG_MOD_ADD);
 		if (ret != 0) {
 			return ldb_module_oom(module);
 		}
@@ -545,7 +531,7 @@ static int rdn_name_modify(struct ldb_module *module, struct ldb_request *req)
 	if (e != NULL) {
 		ldb_asprintf_errstring(ldb, "Modify of 'distinguishedName' on %s not permitted, must use 'rename' operation instead",
 				       ldb_dn_get_linearized(req->op.mod.message->dn));
-		if (e->flags == LDB_FLAG_MOD_REPLACE) {
+		if (LDB_FLAG_MOD_TYPE(e->flags) == LDB_FLAG_MOD_REPLACE) {
 			return LDB_ERR_CONSTRAINT_VIOLATION;
 		} else {
 			return LDB_ERR_UNWILLING_TO_PERFORM;

@@ -36,7 +36,7 @@ from samba.upgradehelpers import get_ldbs, get_paths
 
 __docformat__ = "restructuredText"
 
-parser = optparse.OptionParser("provision [options]")
+parser = optparse.OptionParser("renamedc [options]")
 sambaopts = options.SambaOptions(parser)
 parser.add_option_group(sambaopts)
 parser.add_option_group(options.VersionOptions(parser))
@@ -59,7 +59,6 @@ creds.set_kerberos_state(DONT_USE_KERBEROS)
 
 
 if __name__ == '__main__':
-    global defSDmodified
     defSDmodified = False
    # 1) First get files paths
     paths = get_paths(param, smbconf=smbconf)

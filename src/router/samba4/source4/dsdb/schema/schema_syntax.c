@@ -1726,6 +1726,7 @@ static WERROR dsdb_syntax_one_DN_drsuapi_to_ldb(TALLOC_CTX *mem_ctx, struct ldb_
 
 	*out = data_blob_string_const(ldb_dn_get_extended_linearized(mem_ctx, dn, 1));
 	talloc_free(tmp_ctx);
+	W_ERROR_HAVE_NO_MEMORY(out->data);
 	return WERR_OK;
 }
 
@@ -2054,12 +2055,21 @@ static WERROR dsdb_syntax_DN_BINARY_drsuapi_to_ldb(const struct dsdb_syntax_ctx 
 		/* set binary stuff */
 		dsdb_dn = dsdb_dn_construct(tmp_ctx, dn, id3.binary, attr->syntax->ldap_oid);
 		if (!dsdb_dn) {
-			/* If this fails, it must be out of memory, we know the ldap_oid is valid */
+			if (errno == EINVAL) {
+				/*
+				 * This might be Object(OR-Name)
+				 * failing because of a non empty
+				 * binary part.
+				 */
+				talloc_free(tmp_ctx);
+				return WERR_DS_INVALID_ATTRIBUTE_SYNTAX;
+			}
 			talloc_free(tmp_ctx);
 			W_ERROR_HAVE_NO_MEMORY(dsdb_dn);
 		}
 		out->values[i] = data_blob_string_const(dsdb_dn_get_extended_linearized(out->values, dsdb_dn, 1));
 		talloc_free(tmp_ctx);
+		W_ERROR_HAVE_NO_MEMORY(out->values[i].data);
 	}
 
 	return WERR_OK;
@@ -2584,8 +2594,8 @@ static const struct dsdb_syntax dsdb_syntaxes[] = {
 		.attributeSyntax_oid	= "2.5.5.7",
 		.drsuapi_to_ldb		= dsdb_syntax_DN_BINARY_drsuapi_to_ldb,
 		.ldb_to_drsuapi		= dsdb_syntax_DN_BINARY_ldb_to_drsuapi,
-		.validate_ldb		= dsdb_syntax_DN_BINARY_validate_ldb,
-		.equality		= "caseIgnoreMatch",
+		.validate_ldb		= dsdb_syntax_DN_validate_ldb,
+		.equality               = "distinguishedNameMatch",
 		.ldb_syntax		= LDB_SYNTAX_DN,
 	},{
 	/*

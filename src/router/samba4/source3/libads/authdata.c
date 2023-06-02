@@ -57,11 +57,16 @@ NTSTATUS kerberos_return_pac(TALLOC_CTX *mem_ctx,
 			     time_t renewable_time,
 			     const char *impersonate_princ_s,
 			     const char *local_service,
+			     char **_canon_principal,
+			     char **_canon_realm,
 			     struct PAC_DATA_CTR **_pac_data_ctr)
 {
 	krb5_error_code ret;
 	NTSTATUS status = NT_STATUS_INVALID_PARAMETER;
-	DATA_BLOB tkt, tkt_wrapped, ap_rep, sesskey1;
+	DATA_BLOB tkt = data_blob_null;
+	DATA_BLOB tkt_wrapped = data_blob_null;
+	DATA_BLOB ap_rep = data_blob_null;
+	DATA_BLOB sesskey1 = data_blob_null;
 	const char *auth_princ = NULL;
 	const char *cc = "MEMORY:kerberos_return_pac";
 	struct auth_session_info *session_info;
@@ -72,6 +77,8 @@ NTSTATUS kerberos_return_pac(TALLOC_CTX *mem_ctx,
 	struct auth4_context *auth_context;
 	struct loadparm_context *lp_ctx;
 	struct PAC_DATA_CTR *pac_data_ctr = NULL;
+	char *canon_principal = NULL;
+	char *canon_realm = NULL;
 
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
 	NT_STATUS_HAVE_NO_MEMORY(tmp_ctx);
@@ -81,7 +88,16 @@ NTSTATUS kerberos_return_pac(TALLOC_CTX *mem_ctx,
 	ZERO_STRUCT(sesskey1);
 
 	if (!name || !pass) {
-		return NT_STATUS_INVALID_PARAMETER;
+		status = NT_STATUS_INVALID_PARAMETER;
+		goto out;
+	}
+
+	if (_canon_principal != NULL) {
+		*_canon_principal = NULL;
+	}
+
+	if (_canon_realm != NULL) {
+		*_canon_realm = NULL;
 	}
 
 	if (cache_name) {
@@ -105,7 +121,9 @@ NTSTATUS kerberos_return_pac(TALLOC_CTX *mem_ctx,
 					  request_pac,
 					  add_netbios_addr,
 					  renewable_time,
-					  NULL, NULL, NULL,
+					  tmp_ctx,
+					  &canon_principal,
+					  &canon_realm,
 					  &status);
 	if (ret) {
 		DEBUG(1,("kinit failed for '%s' with: %s (%d)\n",
@@ -131,7 +149,8 @@ NTSTATUS kerberos_return_pac(TALLOC_CTX *mem_ctx,
 
 	if (expire_time && renew_till_time &&
 	    (*expire_time == 0) && (*renew_till_time == 0)) {
-		return NT_STATUS_INVALID_LOGON_TYPE;
+		status = NT_STATUS_INVALID_LOGON_TYPE;
+		goto out;
 	}
 
 	ret = ads_krb5_cli_get_ticket(mem_ctx,
@@ -238,6 +257,12 @@ NTSTATUS kerberos_return_pac(TALLOC_CTX *mem_ctx,
 	}
 
 	*_pac_data_ctr = talloc_move(mem_ctx, &pac_data_ctr);
+	if (_canon_principal != NULL) {
+		*_canon_principal = talloc_move(mem_ctx, &canon_principal);
+	}
+	if (_canon_realm != NULL) {
+		*_canon_realm = talloc_move(mem_ctx, &canon_realm);
+	}
 
 out:
 	talloc_free(tmp_ctx);

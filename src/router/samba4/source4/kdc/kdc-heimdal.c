@@ -40,9 +40,12 @@
 #include <kdc.h>
 #include <hdb.h>
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
+
 NTSTATUS server_service_kdc_init(TALLOC_CTX *);
 
-extern struct krb5plugin_windc_ftable windc_plugin_table;
+extern struct krb5plugin_kdc_ftable kdc_plugin_table;
 
 /**
    Wrapper for krb5_kdc_process_krb5_request, converting to/from Samba
@@ -191,7 +194,7 @@ static NTSTATUS kdc_check_generic_kerberos(struct irpc_message *msg,
 		(krb5_kdc_configuration *)kdc->private_data;
 	enum ndr_err_code ndr_err;
 	int ret;
-	hdb_entry_ex ent;
+	hdb_entry ent;
 	krb5_principal principal;
 
 
@@ -235,7 +238,7 @@ static NTSTATUS kdc_check_generic_kerberos(struct irpc_message *msg,
 						 &ent);
 
 	if (ret != 0) {
-		hdb_free_entry(kdc->smb_krb5_context->krb5_context, &ent);
+		hdb_free_entry(kdc->smb_krb5_context->krb5_context, kdc_config->db[0], &ent);
 		krb5_free_principal(kdc->smb_krb5_context->krb5_context, principal);
 
 		return NT_STATUS_LOGON_FAILURE;
@@ -247,7 +250,7 @@ static NTSTATUS kdc_check_generic_kerberos(struct irpc_message *msg,
 
 	ret = kdc_check_pac(kdc->smb_krb5_context->krb5_context, srv_sig, &kdc_sig, &ent);
 
-	hdb_free_entry(kdc->smb_krb5_context->krb5_context, &ent);
+	hdb_free_entry(kdc->smb_krb5_context->krb5_context, kdc_config->db[0], &ent);
 	krb5_free_principal(kdc->smb_krb5_context->krb5_context, principal);
 
 	if (ret != 0) {
@@ -388,27 +391,45 @@ static void kdc_post_fork(struct task_server *task, struct process_details *pd)
 	kdc_config->num_db = 1;
 
 	/*
-	 * This restores the behavior before
-	 * commit 255e3e18e00f717d99f3bc57c8a8895ff624f3c3
-	 * s4:heimdal: import lorikeet-heimdal-201107150856
-	 * (commit 48936803fae4a2fb362c79365d31f420c917b85b)
+	 * Note with the CVE-2022-37966 patches,
+	 * see https://bugzilla.samba.org/show_bug.cgi?id=15219
+	 * and https://bugzilla.samba.org/show_bug.cgi?id=15237
+	 * we want to use the strongest keys for everything.
 	 *
-	 * as_use_strongest_session_key,preauth_use_strongest_session_key
-	 * and tgs_use_strongest_session_key are input to the
-	 * _kdc_find_etype() function. The old bahavior is in
-	 * the use_strongest_session_key=FALSE code path.
-	 * (The only remaining difference in _kdc_find_etype()
-	 *  is the is_preauth parameter.)
-	 *
-	 * The old behavior in the _kdc_get_preferred_key()
-	 * function is use_strongest_server_key=TRUE.
+	 * Some of these don't have any real effect anymore,
+	 * but it is better to have them as true...
 	 */
-	kdc_config->as_use_strongest_session_key = false;
+	kdc_config->tgt_use_strongest_session_key = true;
 	kdc_config->preauth_use_strongest_session_key = true;
-	kdc_config->tgs_use_strongest_session_key = false;
+	kdc_config->svc_use_strongest_session_key = true;
 	kdc_config->use_strongest_server_key = true;
 
-	kdc_config->autodetect_referrals = false;
+	kdc_config->force_include_pa_etype_salt = true;
+
+	/*
+	 * For Samba CVE-2020-25719 Require PAC to be present
+	 * This instructs Heimdal to match AD behaviour,
+	 * as seen after Microsoft's CVE-2021-42287 when
+	 * PacRequestorEnforcement is set to 2.
+	 *
+	 * Samba BUG: https://bugzilla.samba.org/show_bug.cgi?id=14686
+	 * REF: https://support.microsoft.com/en-au/topic/kb5008380-authentication-updates-cve-2021-42287-9dafac11-e0d0-4cb8-959a-143bd0201041
+	 */
+
+	kdc_config->require_pac = true;
+
+	/*
+	 * By default we enable RFC6113/FAST support,
+	 * but we have an option to disable in order to
+	 * test against a KDC with FAST support.
+	 */
+	kdc_config->enable_fast = lpcfg_kdc_enable_fast(task->lp_ctx);
+
+	/*
+	 * Match Windows and RFC6113 and Windows but break older
+	 * Heimdal clients.
+	 */
+	kdc_config->enable_armored_pa_enc_timestamp = false;
 
 	/* Register hdb-samba4 hooks for use as a keytab */
 
@@ -431,40 +452,40 @@ static void kdc_post_fork(struct task_server *task, struct process_details *pd)
 	}
 
 	ret = krb5_plugin_register(kdc->smb_krb5_context->krb5_context,
-				   PLUGIN_TYPE_DATA, "hdb",
+				   PLUGIN_TYPE_DATA, "hdb_samba4_interface",
 				   &hdb_samba4_interface);
 	if(ret) {
 		task_server_terminate(task, "kdc: failed to register hdb plugin", true);
 		return;
 	}
 
-	ret = krb5_kt_register(kdc->smb_krb5_context->krb5_context, &hdb_kt_ops);
-	if(ret) {
-		task_server_terminate(task, "kdc: failed to register keytab plugin", true);
-		return;
-	}
-
-	kdc->keytab_name = talloc_asprintf(kdc, "HDB:samba4&%p", kdc->base_ctx);
-	if (kdc->keytab_name == NULL) {
+	kdc->kpasswd_keytab_name = talloc_asprintf(kdc, "HDBGET:samba4:&%p", kdc->base_ctx);
+	if (kdc->kpasswd_keytab_name == NULL) {
 		task_server_terminate(task,
 				      "kdc: Failed to set keytab name",
 				      true);
 		return;
 	}
 
-	/* Register WinDC hooks */
-	ret = krb5_plugin_register(kdc->smb_krb5_context->krb5_context,
-				   PLUGIN_TYPE_DATA, "windc",
-				   &windc_plugin_table);
+	ret = krb5_kt_register(kdc->smb_krb5_context->krb5_context, &hdb_get_kt_ops);
 	if(ret) {
-		task_server_terminate(task, "kdc: failed to register windc plugin", true);
+		task_server_terminate(task, "kdc: failed to register keytab plugin", true);
 		return;
 	}
 
-	ret = krb5_kdc_windc_init(kdc->smb_krb5_context->krb5_context);
+	/* Register KDC hooks */
+	ret = krb5_plugin_register(kdc->smb_krb5_context->krb5_context,
+				   PLUGIN_TYPE_DATA, "kdc",
+				   &kdc_plugin_table);
+	if(ret) {
+		task_server_terminate(task, "kdc: failed to register kdc plugin", true);
+		return;
+	}
+
+	ret = krb5_kdc_plugin_init(kdc->smb_krb5_context->krb5_context);
 
 	if(ret) {
-		task_server_terminate(task, "kdc: failed to init windc plugin", true);
+		task_server_terminate(task, "kdc: failed to init kdc plugin", true);
 		return;
 	}
 

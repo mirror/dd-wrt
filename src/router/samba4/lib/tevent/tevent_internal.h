@@ -1,10 +1,10 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
 
    generalised event loop handling
 
    INTERNAL STRUCTS. THERE ARE NO API GUARANTEES.
-   External users should only ever have to include this header when 
+   External users should only ever have to include this header when
    implementing new tevent backends.
 
    Copyright (C) Stefan Metzmacher 2005-2009
@@ -169,6 +169,8 @@ struct tevent_req {
 		 * @brief The place where profiling data is kept
 		 */
 		struct tevent_req_profile *profile;
+
+		size_t call_depth;
 	} internal;
 };
 
@@ -366,6 +368,11 @@ struct tevent_context {
 			tevent_trace_immediate_callback_t callback;
 			void *private_data;
 		} im;
+
+		struct {
+			tevent_trace_queue_callback_t callback;
+			void *private_data;
+		} qe;
 	} tracing;
 
 	struct {
@@ -391,8 +398,6 @@ struct tevent_context {
 	struct tevent_context *prev, *next;
 #endif
 };
-
-const struct tevent_ops *tevent_find_ops_byname(const char *name);
 
 int tevent_common_context_destructor(struct tevent_context *ev);
 int tevent_common_loop_wait(struct tevent_context *ev,
@@ -493,10 +498,8 @@ void tevent_epoll_set_panic_fallback(struct tevent_context *ev,
 			bool (*panic_fallback)(struct tevent_context *ev,
 					       bool replay));
 #endif
-#ifdef HAVE_SOLARIS_PORTS
-bool tevent_port_init(void);
-#endif
 
+void tevent_thread_call_depth_set(size_t depth);
 
 void tevent_trace_point_callback(struct tevent_context *ev,
 				 enum tevent_trace_point);
@@ -516,3 +519,7 @@ void tevent_trace_timer_callback(struct tevent_context *ev,
 void tevent_trace_immediate_callback(struct tevent_context *ev,
 				     struct tevent_immediate *im,
 				     enum tevent_event_trace_point);
+
+void tevent_trace_queue_callback(struct tevent_context *ev,
+				 struct tevent_queue_entry *qe,
+				 enum tevent_event_trace_point);

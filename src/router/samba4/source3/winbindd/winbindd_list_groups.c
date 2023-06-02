@@ -18,6 +18,7 @@
 */
 
 #include "includes.h"
+#include "util/debug.h"
 #include "winbindd.h"
 #include "librpc/gen_ndr/ndr_winbind_c.h"
 
@@ -28,9 +29,9 @@ struct winbindd_list_groups_domstate {
 };
 
 struct winbindd_list_groups_state {
-	int num_received;
+	uint32_t num_received;
 	/* All domains */
-	int num_domains;
+	uint32_t num_domains;
 	struct winbindd_list_groups_domstate *domains;
 };
 
@@ -44,13 +45,20 @@ struct tevent_req *winbindd_list_groups_send(TALLOC_CTX *mem_ctx,
 	struct tevent_req *req;
 	struct winbindd_list_groups_state *state;
 	struct winbindd_domain *domain;
-	int i;
+	uint32_t i;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct winbindd_list_groups_state);
 	if (req == NULL) {
 		return NULL;
 	}
+
+	D_NOTICE("[%s (%u)] Winbind external command LIST_GROUPS start.\n"
+		 "WBFLAG_FROM_NSS is %s, winbind enum groups is %d.\n",
+		 cli->client_name,
+		 (unsigned int)cli->pid,
+		 request->wb_flags & WBFLAG_FROM_NSS ? "Set" : "Unset",
+		 lp_winbind_enum_groups());
 
 	if (request->wb_flags & WBFLAG_FROM_NSS && !lp_winbind_enum_groups()) {
 		tevent_req_done(req);
@@ -60,15 +68,15 @@ struct tevent_req *winbindd_list_groups_send(TALLOC_CTX *mem_ctx,
 	/* Ensure null termination */
 	request->domain_name[sizeof(request->domain_name)-1]='\0';
 
-	DEBUG(3, ("list_groups %s\n", request->domain_name));
-
 	if (request->domain_name[0] != '\0') {
 		state->num_domains = 1;
+		D_DEBUG("List groups for domain %s.\n", request->domain_name);
 	} else {
 		state->num_domains = 0;
 		for (domain = domain_list(); domain; domain = domain->next) {
 			state->num_domains += 1;
 		}
+		D_DEBUG("List groups for %"PRIu32" domain(s).\n", state->num_domains);
 	}
 
 	state->domains = talloc_array(state,
@@ -121,7 +129,7 @@ static void winbindd_list_groups_done(struct tevent_req *subreq)
 	struct winbindd_list_groups_state *state = tevent_req_data(
 		req, struct winbindd_list_groups_state);
 	NTSTATUS status, result;
-	int i;
+	uint32_t i;
 
 	status = dcerpc_wbint_QueryGroupList_recv(subreq, state->domains,
 						  &result);
@@ -134,14 +142,14 @@ static void winbindd_list_groups_done(struct tevent_req *subreq)
 	if (i < state->num_domains) {
 		struct winbindd_list_groups_domstate *d = &state->domains[i];
 
-		DEBUG(10, ("Domain %s returned %d groups\n", d->domain->name,
-			   d->groups.num_principals));
+		D_DEBUG("Domain %s returned %"PRIu32" groups\n", d->domain->name,
+			   d->groups.num_principals);
 
 		d->subreq = NULL;
 
 		if (!NT_STATUS_IS_OK(status) || !NT_STATUS_IS_OK(result)) {
-			DEBUG(10, ("list_groups for domain %s failed\n",
-				   d->domain->name));
+			D_WARNING("list_groups for domain %s failed\n",
+				   d->domain->name);
 			d->groups.num_principals = 0;
 		}
 	}
@@ -162,11 +170,12 @@ NTSTATUS winbindd_list_groups_recv(struct tevent_req *req,
 		req, struct winbindd_list_groups_state);
 	NTSTATUS status;
 	char *result;
-	int i;
-	uint32_t j, num_entries = 0;
+	uint32_t i, j, num_entries = 0;
 	size_t len;
 
+	D_NOTICE("Winbind external command LIST_GROUPS end.\n");
 	if (tevent_req_is_nterror(req, &status)) {
+		D_WARNING("Failed with %s.\n", nt_errstr(status));
 		return status;
 	}
 

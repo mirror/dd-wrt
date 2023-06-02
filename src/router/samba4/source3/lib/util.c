@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Samba utility functions
    Copyright (C) Andrew Tridgell 1992-1998
@@ -429,8 +429,7 @@ static void reinit_after_fork_pipe_handler(struct tevent_context *ev,
 
 NTSTATUS reinit_after_fork(struct messaging_context *msg_ctx,
 			   struct tevent_context *ev_ctx,
-			   bool parent_longlived,
-			   const char *comment)
+			   bool parent_longlived)
 {
 	NTSTATUS status = NT_STATUS_OK;
 	int ret;
@@ -455,7 +454,16 @@ NTSTATUS reinit_after_fork(struct messaging_context *msg_ctx,
 	}
 
 	if (ev_ctx != NULL) {
+		/*
+		 * The parent can have different private data for the callbacks,
+		 * which are gone in the child. Reset the callbacks to be safe.
+		 */
 		tevent_set_trace_callback(ev_ctx, NULL, NULL);
+		tevent_set_trace_fd_callback(ev_ctx, NULL, NULL);
+		tevent_set_trace_signal_callback(ev_ctx, NULL, NULL);
+		tevent_set_trace_timer_callback(ev_ctx, NULL, NULL);
+		tevent_set_trace_immediate_callback(ev_ctx, NULL, NULL);
+		tevent_set_trace_queue_callback(ev_ctx, NULL, NULL);
 		if (tevent_re_initialise(ev_ctx) != 0) {
 			smb_panic(__location__ ": Failed to re-initialise event context");
 		}
@@ -492,10 +500,6 @@ NTSTATUS reinit_after_fork(struct messaging_context *msg_ctx,
 				return map_nt_error_from_unix(ret);
 			}
 		}
-	}
-
-	if (comment) {
-		prctl_set_comment("%s", comment);
 	}
 
  done:
@@ -651,7 +655,7 @@ uid_t nametouid(const char *name)
 }
 
 /*******************************************************************
- Convert a name to a gid_t if possible. Return -1 if not a group. 
+ Convert a name to a gid_t if possible. Return -1 if not a group.
 ********************************************************************/
 
 gid_t nametogid(const char *name)
@@ -726,7 +730,7 @@ const char *readdirname(DIR *p)
 }
 
 /*******************************************************************
- Utility function used to decide if the last component 
+ Utility function used to decide if the last component
  of a path matches a (possibly wildcarded) entry in a namelist.
 ********************************************************************/
 
@@ -737,6 +741,11 @@ bool is_in_path(const char *name, name_compare_entry *namelist, bool case_sensit
 	/* if we have no list it's obviously not in the path */
 	if((namelist == NULL ) || ((namelist != NULL) && (namelist[0].name == NULL))) {
 		return False;
+	}
+
+	/* Do not reject path components if namelist is set to '.*' */
+	if (ISDOT(name) || ISDOTDOT(name)) {
+		return false;
 	}
 
 	DEBUG(8, ("is_in_path: %s\n", name));
@@ -768,10 +777,10 @@ bool is_in_path(const char *name, name_compare_entry *namelist, bool case_sensit
 }
 
 /*******************************************************************
- Strip a '/' separated list into an array of 
- name_compare_enties structures suitable for 
+ Strip a '/' separated list into an array of
+ name_compare_enties structures suitable for
  passing to is_in_path(). We do this for
- speed so we can pre-parse all the names in the list 
+ speed so we can pre-parse all the names in the list
  and don't do it for each call to is_in_path().
  We also check if the entry contains a wildcard to
  remove a potentially expensive call to mask_match
@@ -789,7 +798,7 @@ void set_namearray(name_compare_entry **ppname_array, const char *namelist_in)
 
 	(*ppname_array) = NULL;
 
-	if((namelist_in == NULL ) || ((namelist_in != NULL) && (*namelist_in == '\0'))) 
+	if((namelist_in == NULL ) || ((namelist_in != NULL) && (*namelist_in == '\0')))
 		return;
 
 	namelist = talloc_strdup(talloc_tos(), namelist_in);
@@ -1231,13 +1240,6 @@ bool remote_arch_cache_delete(const struct GUID *client_guid)
 	return true;
 }
 
-const char *tab_depth(int level, int depth)
-{
-	if( CHECK_DEBUGLVL(level) ) {
-		dbgtext("%*s", depth*4, "");
-	}
-	return "";
-}
 
 /*****************************************************************************
  Provide a checksum on a string
@@ -1262,7 +1264,7 @@ int str_checksum(const char *s)
 
 /*****************************************************************
  Zero a memory area then free it. Used to catch bugs faster.
-*****************************************************************/  
+*****************************************************************/
 
 void zero_free(void *p, size_t size)
 {
@@ -1272,7 +1274,7 @@ void zero_free(void *p, size_t size)
 
 /*****************************************************************
  Set our open file limit to a requested max and return the limit.
-*****************************************************************/  
+*****************************************************************/
 
 int set_maxfiles(int requested_max)
 {
@@ -1287,9 +1289,9 @@ int set_maxfiles(int requested_max)
 		return requested_max;
 	}
 
-	/* 
+	/*
 	 * Set the fd limit to be real_max_open_files + MAX_OPEN_FUDGEFACTOR to
-	 * account for the extra fd we need 
+	 * account for the extra fd we need
 	 * as well as the log files and standard
 	 * handles etc. Save the limit we want to set in case
 	 * we are running on an OS that doesn't support this limit (AIX)
@@ -1309,7 +1311,7 @@ int set_maxfiles(int requested_max)
 			support our default request of 10,000 open files. JRA. */
 
 		if(setrlimit(RLIMIT_NOFILE, &rlp)) {
-			DEBUG(3,("set_maxfiles: setrlimit for RLIMIT_NOFILE for %d max files failed with error %s\n", 
+			DEBUG(3,("set_maxfiles: setrlimit for RLIMIT_NOFILE for %d max files failed with error %s\n",
 				(int)rlp.rlim_max, strerror(errno) ));
 
 			/* Set failed - restore original value from get. */
@@ -1323,7 +1325,7 @@ int set_maxfiles(int requested_max)
 	saved_current_limit = rlp.rlim_cur = MIN(requested_max,rlp.rlim_max);
 
 	if(setrlimit(RLIMIT_NOFILE, &rlp)) {
-		DEBUG(0,("set_maxfiles: setrlimit for RLIMIT_NOFILE for %d files failed with error %s\n", 
+		DEBUG(0,("set_maxfiles: setrlimit for RLIMIT_NOFILE for %d files failed with error %s\n",
 			(int)rlp.rlim_cur, strerror(errno) ));
 		/* just guess... */
 		return saved_current_limit;
@@ -1355,7 +1357,7 @@ int set_maxfiles(int requested_max)
 
 /*****************************************************************
  malloc that aborts with smb_panic on fail or zero size.
- *****************************************************************/  
+ *****************************************************************/
 
 void *smb_xmalloc_array(size_t size, unsigned int count)
 {
@@ -1429,10 +1431,10 @@ bool parent_dirname(TALLOC_CTX *mem_ctx, const char *dir, char **parent,
 
 	len = p-dir;
 
-	if (!(*parent = (char *)talloc_memdup(mem_ctx, dir, len+1))) {
+	*parent = talloc_strndup(mem_ctx, dir, len);
+	if (*parent == NULL) {
 		return False;
 	}
-	(*parent)[len] = '\0';
 
 	if (name) {
 		*name = p+1;
@@ -1582,27 +1584,6 @@ bool name_to_fqdn(fstring fqdn, const char *name)
 	return true;
 }
 
-uint32_t map_share_mode_to_deny_mode(uint32_t share_access, uint32_t private_options)
-{
-	switch (share_access & ~FILE_SHARE_DELETE) {
-		case FILE_SHARE_NONE:
-			return DENY_ALL;
-		case FILE_SHARE_READ:
-			return DENY_WRITE;
-		case FILE_SHARE_WRITE:
-			return DENY_READ;
-		case FILE_SHARE_READ|FILE_SHARE_WRITE:
-			return DENY_NONE;
-	}
-	if (private_options & NTCREATEX_FLAG_DENY_DOS) {
-		return DENY_DOS;
-	} else if (private_options & NTCREATEX_FLAG_DENY_FCB) {
-		return DENY_FCB;
-	}
-
-	return (uint32_t)-1;
-}
-
 struct server_id interpret_pid(const char *pid_string)
 {
 	return server_id_from_string(get_my_vnn(), pid_string);
@@ -1634,16 +1615,6 @@ bool is_offset_safe(const char *buf_base, size_t buf_len, char *ptr, size_t off)
 }
 
 /****************************************************************
- Return a safe pointer into a buffer, or NULL.
-****************************************************************/
-
-char *get_safe_ptr(const char *buf_base, size_t buf_len, char *ptr, size_t off)
-{
-	return is_offset_safe(buf_base, buf_len, ptr, off) ?
-			ptr + off : NULL;
-}
-
-/****************************************************************
  Return a safe pointer into a string within a buffer, or NULL.
 ****************************************************************/
 
@@ -1659,37 +1630,6 @@ char *get_safe_str_ptr(const char *buf_base, size_t buf_len, char *ptr, size_t o
 	return ptr + off;
 }
 
-/****************************************************************
- Return an SVAL at a pointer, or failval if beyond the end.
-****************************************************************/
-
-int get_safe_SVAL(const char *buf_base, size_t buf_len, char *ptr, size_t off, int failval)
-{
-	/*
-	 * Note we use off+1 here, not off+2 as SVAL accesses ptr[0] and ptr[1],
- 	 * NOT ptr[2].
- 	 */
-	if (!is_offset_safe(buf_base, buf_len, ptr, off+1)) {
-		return failval;
-	}
-	return SVAL(ptr,off);
-}
-
-/****************************************************************
- Return an IVAL at a pointer, or failval if beyond the end.
-****************************************************************/
-
-int get_safe_IVAL(const char *buf_base, size_t buf_len, char *ptr, size_t off, int failval)
-{
-	/*
-	 * Note we use off+3 here, not off+4 as IVAL accesses 
-	 * ptr[0] ptr[1] ptr[2] ptr[3] NOT ptr[4].
- 	 */
-	if (!is_offset_safe(buf_base, buf_len, ptr, off+3)) {
-		return failval;
-	}
-	return IVAL(ptr,off);
-}
 
 /****************************************************************
  Split DOM\user into DOM and user. Do not mix with winbind variants of that
@@ -2030,19 +1970,10 @@ char *utok_string(TALLOC_CTX *mem_ctx, const struct security_unix_token *tok)
 		(uintmax_t)(tok->uid),
 		(uintmax_t)(tok->gid),
 		tok->ngroups);
-	if (str == NULL) {
-		return NULL;
-	}
 
 	for (i=0; i<tok->ngroups; i++) {
-		char *tmp;
-		tmp = talloc_asprintf_append_buffer(
-			str, " %ju", (uintmax_t)tok->groups[i]);
-		if (tmp == NULL) {
-			TALLOC_FREE(str);
-			return NULL;
-		}
-		str = tmp;
+		talloc_asprintf_addbuf(
+			&str, " %ju", (uintmax_t)tok->groups[i]);
 	}
 
 	return str;

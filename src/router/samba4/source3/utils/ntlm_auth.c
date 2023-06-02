@@ -37,13 +37,13 @@
 #include "librpc/crypto/gse.h"
 #include "smb_krb5.h"
 #include "lib/util/tiniparser.h"
-#include "nsswitch/winbind_client.h"
 #include "librpc/gen_ndr/krb5pac.h"
-#include "../lib/util/asn1.h"
 #include "auth/common_auth.h"
 #include "source3/include/auth.h"
 #include "source3/auth/proto.h"
 #include "nsswitch/libwbclient/wbclient.h"
+#include "nsswitch/winbind_struct_protocol.h"
+#include "nsswitch/libwbclient/wbclient_internal.h"
 #include "lib/param/loadparm.h"
 #include "lib/util/base64.h"
 #include "cmdline_contexts.h"
@@ -366,7 +366,7 @@ const char *get_winbind_netbios_name(void)
 
 }
 
-DATA_BLOB get_challenge(void) 
+DATA_BLOB get_challenge(void)
 {
 	static DATA_BLOB chal;
 	if (opt_challenge.length)
@@ -442,7 +442,7 @@ static bool get_require_membership_sid(void) {
  * need to contact trusted domain
  */
 
-int get_pam_winbind_config()
+int get_pam_winbind_config(void)
 {
 	int ctrl = 0;
 	struct tiniparser_dictionary *d = NULL;
@@ -473,7 +473,7 @@ static bool check_plaintext_auth(const char *user, const char *pass,
 {
 	struct winbindd_request request;
 	struct winbindd_response response;
-        NSS_STATUS result;
+	wbcErr ret;
 
 	if (!get_require_membership_sid()) {
 		return False;
@@ -496,12 +496,13 @@ static bool check_plaintext_auth(const char *user, const char *pass,
 		request.flags |= WBFLAG_PAM_CACHED_LOGIN;
 	}
 
-	result = winbindd_request_response(NULL, WINBINDD_PAM_AUTH, &request, &response);
+	ret = wbcRequestResponse(NULL, WINBINDD_PAM_AUTH,
+				 &request, &response);
 
 	/* Display response */
 
 	if (stdout_diagnostics) {
-		if ((result != NSS_STATUS_SUCCESS) && (response.data.auth.nt_status == 0)) {
+		if (!WBC_ERROR_IS_OK(ret) && (response.data.auth.nt_status == 0)) {
 			d_fprintf(stderr, "Reading winbind reply failed! (0x01)\n");
 		}
 
@@ -510,7 +511,7 @@ static bool check_plaintext_auth(const char *user, const char *pass,
 			 response.data.auth.error_string,
 			 response.data.auth.nt_status);
 	} else {
-		if ((result != NSS_STATUS_SUCCESS) && (response.data.auth.nt_status == 0)) {
+		if (!WBC_ERROR_IS_OK(ret) && (response.data.auth.nt_status == 0)) {
 			DEBUG(1, ("Reading winbind reply failed! (0x01)\n"));
 		}
 
@@ -520,7 +521,7 @@ static bool check_plaintext_auth(const char *user, const char *pass,
 			  response.data.auth.nt_status));
 	}
 
-        return (result == NSS_STATUS_SUCCESS);
+	return WBC_ERROR_IS_OK(ret);
 }
 
 /* authenticate a user with an encrypted username/password */
@@ -540,7 +541,7 @@ NTSTATUS contact_winbind_auth_crap(const char *username,
 				   char **unix_name)
 {
 	NTSTATUS nt_status;
-        NSS_STATUS result;
+	wbcErr ret;
 	struct winbindd_request request;
 	struct winbindd_response response;
 
@@ -598,7 +599,7 @@ NTSTATUS contact_winbind_auth_crap(const char *username,
                 request.data.auth_crap.nt_resp_len = nt_response->length;
 	}
 
-	result = winbindd_priv_request_response(
+	ret = wbcRequestResponsePriv(
 		NULL,
 		WINBINDD_PAM_AUTH_CRAP,
 		&request,
@@ -607,7 +608,7 @@ NTSTATUS contact_winbind_auth_crap(const char *username,
 
 	/* Display response */
 
-	if ((result != NSS_STATUS_SUCCESS) && (response.data.auth.nt_status == 0)) {
+	if (!WBC_ERROR_IS_OK(ret) && (response.data.auth.nt_status == 0)) {
 		nt_status = NT_STATUS_UNSUCCESSFUL;
 		if (error_string)
 			*error_string = smb_xstrdup("Reading winbind reply failed!");
@@ -655,7 +656,7 @@ static NTSTATUS contact_winbind_change_pswd_auth_crap(const char *username,
 						      char  **error_string)
 {
 	NTSTATUS nt_status;
-	NSS_STATUS result;
+	wbcErr ret;
 	struct winbindd_request request;
 	struct winbindd_response response;
 
@@ -698,11 +699,12 @@ static NTSTATUS contact_winbind_change_pswd_auth_crap(const char *username,
 		request.data.chng_pswd_auth_crap.old_lm_hash_enc_len = old_lm_hash_enc.length;
 	}
 
-	result = winbindd_request_response(NULL, WINBINDD_PAM_CHNG_PSWD_AUTH_CRAP, &request, &response);
+	ret = wbcRequestResponse(NULL, WINBINDD_PAM_CHNG_PSWD_AUTH_CRAP,
+				 &request, &response);
 
 	/* Display response */
 
-	if ((result != NSS_STATUS_SUCCESS) && (response.data.auth.nt_status == 0))
+	if (!WBC_ERROR_IS_OK(ret) && (response.data.auth.nt_status == 0))
 	{
 		nt_status = NT_STATUS_UNSUCCESSFUL;
 		if (error_string)
@@ -714,7 +716,7 @@ static NTSTATUS contact_winbind_change_pswd_auth_crap(const char *username,
 	nt_status = (NT_STATUS(response.data.auth.nt_status));
 	if (!NT_STATUS_IS_OK(nt_status))
 	{
-		if (error_string) 
+		if (error_string)
 			*error_string = smb_xstrdup(response.data.auth.error_string);
 		winbindd_free_response(&response);
 		return nt_status;
@@ -864,7 +866,7 @@ done:
 
 
 /**
- * Return the challenge as determined by the authentication subsystem 
+ * Return the challenge as determined by the authentication subsystem
  * @return an 8 byte random challenge
  */
 
@@ -872,7 +874,7 @@ static NTSTATUS ntlm_auth_get_challenge(struct auth4_context *auth_ctx,
 					uint8_t chal[8])
 {
 	if (auth_ctx->challenge.data.length == 8) {
-		DEBUG(5, ("auth_get_challenge: returning previous challenge by module %s (normal)\n", 
+		DEBUG(5, ("auth_get_challenge: returning previous challenge by module %s (normal)\n",
 			  auth_ctx->challenge.set_by));
 		memcpy(chal, auth_ctx->challenge.data.data, 8);
 		return NT_STATUS_OK;
@@ -1938,7 +1940,7 @@ static void manage_ntlm_server_1_request(enum stdio_helper_mode stdio_helper_mod
 
 				printf("Authenticated: Yes\n");
 
-				if (ntlm_server_1_lm_session_key 
+				if (ntlm_server_1_lm_session_key
 				    && (!all_zero(lm_key,
 						  sizeof(lm_key)))) {
 					hex_lm_key = hex_encode_talloc(NULL,
@@ -2585,7 +2587,7 @@ enum {
 			.argInfo    = POPT_ARG_NONE,
 			.arg        = &request_lm_key,
 			.val        = OPT_LM_KEY,
-			.descrip    = "Retrieve LM session key"
+			.descrip    = "Retrieve LM session key (or, with --diagnostics, expect LM support)"
 		},
 		{
 			.longName   = "request-nt-key",
@@ -2814,7 +2816,7 @@ enum {
 	}
 
 	if (diagnostics) {
-		if (!diagnose_ntlm_auth()) {
+		if (!diagnose_ntlm_auth(request_lm_key)) {
 			poptFreeContext(pc);
 			return 1;
 		}

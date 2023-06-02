@@ -37,6 +37,7 @@ import samba.dcerpc.base
 from random import randint
 from random import SystemRandom
 from contextlib import contextmanager
+import shutil
 import string
 try:
     from samba.samdb import SamDB
@@ -50,11 +51,8 @@ import samba.ndr
 import samba.dcerpc.dcerpc
 import samba.dcerpc.epmapper
 
-try:
-    from unittest import SkipTest
-except ImportError:
-    class SkipTest(Exception):
-        """Test skipped."""
+from unittest import SkipTest
+
 
 BINDIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                       "../../../../bin"))
@@ -171,6 +169,8 @@ class TestCase(unittest.TestCase):
             username = template.get_username()
             userpass = template.get_password()
 
+        simple_bind_dn = template.get_bind_dn()
+
         if kerberos_state is None:
             kerberos_state = template.get_kerberos_state()
 
@@ -184,6 +184,8 @@ class TestCase(unittest.TestCase):
         c.set_gensec_features(c.get_gensec_features()
                               | gensec.FEATURE_SEAL)
         c.set_kerberos_state(kerberos_state)
+        if simple_bind_dn:
+            c.set_bind_dn(simple_bind_dn)
         return c
 
     def assertStringsEqual(self, a, b, msg=None, strip=False):
@@ -291,6 +293,40 @@ class TestCaseInTempDir(TestCase):
                 print("could not remove temporary file: %s" % e,
                       file=sys.stderr)
 
+    def rm_files(self, *files, allow_missing=False, _rm=os.remove):
+        """Remove listed files from the temp directory.
+
+        The files must be true files in the directory itself, not in
+        sub-directories.
+
+        By default a non-existent file will cause a test failure (or
+        error if used outside a test in e.g. tearDown), but if
+        allow_missing is true, the absence will be ignored.
+        """
+        for f in files:
+            path = os.path.join(self.tempdir, f)
+
+            # os.path.join will happily step out of the tempdir,
+            # so let's just check.
+            if os.path.dirname(path) != self.tempdir:
+                raise ValueError("{path} might be outside {self.tempdir}")
+
+            try:
+                _rm(path)
+            except FileNotFoundError as e:
+                if not allow_missing:
+                    raise AssertionError(f"{f} not in {self.tempdir}: {e}")
+
+                print(f"{f} not in {self.tempdir}")
+
+    def rm_dirs(self, *dirs, allow_missing=False):
+        """Remove listed directories from temp directory.
+
+        This works like rm_files, but only removes directories,
+        including their contents.
+        """
+        self.rm_files(*dirs, allow_missing=allow_missing, _rm=shutil.rmtree)
+
 
 def env_loadparm():
     lp = param.LoadParm()
@@ -304,7 +340,7 @@ def env_loadparm():
 def env_get_var_value(var_name, allow_missing=False):
     """Returns value for variable in os.environ
 
-    Function throws AssertionError if variable is defined.
+    Function throws AssertionError if variable is undefined.
     Unit-test based python tests require certain input params
     to be set in environment, otherwise they can't be run
     """
@@ -320,18 +356,6 @@ cmdline_credentials = None
 
 class RpcInterfaceTestCase(TestCase):
     """DCE/RPC Test case."""
-
-
-class ValidNetbiosNameTests(TestCase):
-
-    def test_valid(self):
-        self.assertTrue(samba.valid_netbios_name("FOO"))
-
-    def test_too_long(self):
-        self.assertFalse(samba.valid_netbios_name("FOO" * 10))
-
-    def test_invalid_characters(self):
-        self.assertFalse(samba.valid_netbios_name("*BLA"))
 
 
 class BlackboxProcessError(Exception):

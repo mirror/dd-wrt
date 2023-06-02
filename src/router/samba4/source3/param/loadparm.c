@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Parameter loading functions
    Copyright (C) Karl Auer 1993-1998
@@ -41,7 +41,7 @@
  * 3) add it to the list of available functions (eg: using FN_GLOBAL_STRING())
  * 4) If it's a global then initialise it in init_globals. If a local
  *    (ie. service) parameter then initialise it in the sDefault structure
- *  
+ *
  *
  * Notes:
  *   The configuration file is processed sequentially for speed. It is NOT
@@ -63,7 +63,7 @@
 #include "lib/smbconf/smbconf.h"
 #include "lib/smbconf/smbconf_init.h"
 
-#include "ads.h"
+#include "include/smb_ldap.h"
 #include "../librpc/gen_ndr/svcctl.h"
 #include "intl.h"
 #include "../libcli/smb/smb_signing.h"
@@ -71,20 +71,21 @@
 #include "dbwrap/dbwrap_rbt.h"
 #include "../lib/util/bitmap.h"
 #include "librpc/gen_ndr/nbt.h"
+#include "librpc/gen_ndr/dns.h"
 #include "source4/lib/tls/tls.h"
 #include "libcli/auth/ntlm_check.h"
 #include "lib/crypto/gnutls_helpers.h"
 #include "lib/util/string_wrappers.h"
 #include "auth/credentials/credentials.h"
 #include "source3/lib/substitute.h"
+#include "source3/librpc/gen_ndr/ads.h"
+#include "lib/util/time_basic.h"
 
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
 
 bool bLoaded = false;
-
-extern userdom_struct current_user_info;
 
 /* the special value for the include parameter
  * to be interpreted not as a file name but to
@@ -247,7 +248,7 @@ static const struct loadparm_service _sDefault =
 	.map_readonly = MAP_READONLY_NO,
 	.directory_name_cache_size = 100,
 	.server_smb_encrypt = SMB_ENCRYPTION_DEFAULT,
-	.kernel_share_modes = true,
+	.kernel_share_modes = false,
 	.durable_handles = true,
 	.check_parent_directory_delete_on_close = false,
 	.param_opt = NULL,
@@ -255,6 +256,7 @@ static const struct loadparm_service _sDefault =
 	.smbd_getinfo_ask_sharemode = true,
 	.spotlight_backend = SPOTLIGHT_BACKEND_NOINDEX,
 	.honor_change_notify_privilege = false,
+	.volume_serial_number = -1,
 	.dummy = ""
 };
 
@@ -664,7 +666,10 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.client_schannel = true;
 	Globals.winbind_sealed_pipes = true;
 	Globals.require_strong_key = true;
+	Globals.reject_md5_servers = true;
 	Globals.server_schannel = true;
+	Globals.server_schannel_require_seal = true;
+	Globals.reject_md5_clients = true;
 	Globals.read_raw = true;
 	Globals.write_raw = true;
 	Globals.null_passwords = false;
@@ -676,6 +681,7 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	lpcfg_string_set(Globals.ctx, &Globals.log_level, "0");
 	Globals.debug_prefix_timestamp = false;
 	Globals.debug_hires_timestamp = true;
+	Globals.debug_syslog_format = false;
 	Globals.debug_pid = false;
 	Globals.debug_uid = false;
 	Globals.debug_class = false;
@@ -702,6 +708,7 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.client_plaintext_auth = false;	/* Do NOT use a plaintext password even if is requested by the server */
 	Globals._lanman_auth = false;	/* Do NOT use the LanMan hash, even if it is supplied */
 	Globals.ntlm_auth = NTLM_AUTH_NTLMV2_ONLY;	/* Do NOT use NTLMv1 if it is supplied by the client (otherwise NTLMv2) */
+	Globals.nt_hash_store = NT_HASH_STORE_ALWAYS;	/* Fill in NT hash when setting password */
 	Globals.raw_ntlmv2_auth = false; /* Reject NTLMv2 without NTLMSSP */
 	Globals.client_ntlmv2_auth = true; /* Client should always use use NTLMv2, as we can't tell that the server supports it, but most modern servers do */
 	/* Note, that we will also use NTLM2 session security (which is different), if it is available */
@@ -714,7 +721,7 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.lock_spin_time = WINDOWS_MINIMUM_LOCK_TIMEOUT_MS; /* msec. */
 	Globals.use_mmap = true;
 	Globals.unicode = true;
-	Globals.unix_extensions = true;
+	Globals.smb1_unix_extensions = true;
 	Globals.reset_on_zero_vc = false;
 	Globals.log_writeable_files_on_exit = false;
 	Globals.create_krb5_conf = true;
@@ -749,13 +756,13 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.ldap_debug_level = 0;
 	Globals.ldap_debug_threshold = 10;
 
-	Globals.client_ldap_sasl_wrapping = ADS_AUTH_SASL_SIGN;
+	Globals.client_ldap_sasl_wrapping = ADS_AUTH_SASL_SEAL;
 
 	Globals.ldap_server_require_strong_auth =
 		LDAP_SERVER_REQUIRE_STRONG_AUTH_YES;
 
-	/* This is what we tell the afs client. in reality we set the token 
-	 * to never expire, though, when this runs out the afs client will 
+	/* This is what we tell the afs client. in reality we set the token
+	 * to never expire, though, when this runs out the afs client will
 	 * forget the token. Set to 0 to get NEVERDATE.*/
 	Globals.afs_token_lifetime = 604800;
 	Globals.cups_connection_timeout = CUPS_DEFAULT_CONNECTION_TIMEOUT;
@@ -785,6 +792,7 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	Globals.init_logon_delay = 100; /* 100 ms default delay */
 
 	Globals.wins_dns_proxy = true;
+	Globals.dns_port = DNS_SERVICE_PORT;
 
 	Globals.allow_trusted_domains = true;
 	lpcfg_string_set(Globals.ctx, &Globals.idmap_backend, "tdb");
@@ -941,6 +949,8 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 
 	Globals.kpasswd_port = 464;
 
+	Globals.kdc_enable_fast = true;
+
 	Globals.aio_max_threads = 100;
 
 	lpcfg_string_set(Globals.ctx,
@@ -978,6 +988,12 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 		str_list_make_v3_const(NULL, DEFAULT_SMB3_ENCRYPTION_ALGORITHMS, NULL);
 
 	Globals.min_domain_uid = 1000;
+
+	/*
+	 * By default allow smbd and winbindd to start samba-dcerpcd as
+	 * a named-pipe helper.
+	 */
+	Globals.rpc_start_on_demand_helpers = true;
 
 	/* Now put back the settings that were set with lp_set_cmdline() */
 	apply_lp_set_cmdline();
@@ -1038,14 +1054,14 @@ static char *loadparm_s3_global_substitution_fn(
 
 	ret = talloc_sub_basic(mem_ctx,
 			get_current_username(),
-			current_user_info.domain,
+			get_current_user_info_domain(),
 			s);
 	if (trim_char(ret, '\"', '\"')) {
 		if (strchr(ret,'\"') != NULL) {
 			TALLOC_FREE(ret);
 			ret = talloc_sub_basic(mem_ctx,
 					get_current_username(),
-					current_user_info.domain,
+					get_current_user_info_domain(),
 					s);
 		}
 	}
@@ -1430,7 +1446,7 @@ static void free_service(struct loadparm_service *pservice)
 
 static void free_service_byindex(int idx)
 {
-	if ( !LP_SNUM_OK(idx) ) 
+	if ( !LP_SNUM_OK(idx) )
 		return;
 
 	ServicePtrs[idx]->valid = false;
@@ -1451,8 +1467,8 @@ static void free_service_byindex(int idx)
 }
 
 /***************************************************************************
- Add a new service to the services array initialising it with the given 
- service. 
+ Add a new service to the services array initialising it with the given
+ service.
 ***************************************************************************/
 
 static int add_a_service(const struct loadparm_service *pservice, const char *name)
@@ -1500,7 +1516,7 @@ static int add_a_service(const struct loadparm_service *pservice, const char *na
 		lpcfg_string_set(ServicePtrs[i], &ServicePtrs[i]->szService,
 				 name);
 
-	DEBUG(8,("add_a_service: Creating snum = %d for %s\n", 
+	DEBUG(8,("add_a_service: Creating snum = %d for %s\n",
 		i, ServicePtrs[i]->szService));
 
 	if (!hash_a_service(ServicePtrs[i]->szService, i)) {
@@ -1612,7 +1628,7 @@ bool lp_add_home(const char *pszHomename, int iDefaultService,
 
 	ServicePtrs[i]->autoloaded = true;
 
-	DEBUG(3, ("adding home's share [%s] for user '%s' at '%s'\n", pszHomename, 
+	DEBUG(3, ("adding home's share [%s] for user '%s' at '%s'\n", pszHomename,
 	       user, ServicePtrs[i]->path ));
 
 	return true;
@@ -2132,7 +2148,7 @@ struct loadparm_service *lp_servicebynum(int snum)
 	return ServicePtrs[snum];
 }
 
-struct loadparm_service *lp_default_loadparm_service()
+struct loadparm_service *lp_default_loadparm_service(void)
 {
 	return &sDefault;
 }
@@ -2393,30 +2409,47 @@ bool lp_file_list_changed(void)
 				return true;
 			}
 		} else {
-			time_t mod_time;
+			struct timespec mod_time = {
+				.tv_sec = 0,
+			};
+			struct timeval_buf tbuf = {
+				.buf = {0},
+			};
 			char *n2 = NULL;
+			struct stat sb = {0};
+			int rc;
 
 			n2 = talloc_sub_basic(talloc_tos(),
 					      get_current_username(),
-					      current_user_info.domain,
+					      get_current_user_info_domain(),
 					      f->name);
 			if (!n2) {
 				return false;
 			}
 			DEBUGADD(6, ("file %s -> %s  last mod_time: %s\n",
-				     f->name, n2, ctime(&f->modtime)));
+				     f->name, n2,
+				     timespec_string_buf(&f->modtime,
+							 true,
+							 &tbuf)));
 
-			mod_time = file_modtime(n2);
+			rc = stat(n2, &sb);
+			if (rc == 0) {
+				mod_time = get_mtimespec(&sb);
+			}
 
-			if (mod_time &&
-			    ((f->modtime != mod_time) ||
+			if (mod_time.tv_sec > 0 &&
+			    ((timespec_compare(&mod_time, &f->modtime) != 0) ||
 			     (f->subfname == NULL) ||
 			     (strcmp(n2, f->subfname) != 0)))
 			{
+				f->modtime = mod_time;
+
 				DEBUGADD(6,
 					 ("file %s modified: %s\n", n2,
-					  ctime(&mod_time)));
-				f->modtime = mod_time;
+					  timespec_string_buf(&f->modtime,
+							      true,
+							      &tbuf)));
+
 				TALLOC_FREE(f->subfname);
 				f->subfname = talloc_strdup(f, n2);
 				if (f->subfname == NULL) {
@@ -2486,7 +2519,7 @@ bool lp_include(struct loadparm_context *lp_ctx, struct loadparm_service *servic
 	}
 
 	fname = talloc_sub_basic(talloc_tos(), get_current_username(),
-				 current_user_info.domain,
+				 get_current_user_info_domain(),
 				 pszParmValue);
 
 	add_to_file_list(NULL, &file_lists, pszParmValue, fname);
@@ -2871,7 +2904,7 @@ bool lp_do_section(const char *pszSectionName, void *userdata)
 	/* if we have a current service, tidy it up before moving on */
 	bRetval = true;
 
-	if (iServiceIndex >= 0)
+	if ((iServiceIndex >= 0) && (ServicePtrs[iServiceIndex] != NULL))
 		bRetval = lpcfg_service_ok(ServicePtrs[iServiceIndex]);
 
 	/* if all is still well, move to the next record in the services array */
@@ -3059,7 +3092,7 @@ void lp_killservice(int iServiceIn)
 }
 
 /***************************************************************************
- Save the curent values of all global and sDefault parameters into the 
+ Save the curent values of all global and sDefault parameters into the
  defaults union. This allows testparm to show only the
  changed (ie. non-default) parameters.
 ***************************************************************************/
@@ -3989,7 +4022,7 @@ static bool lp_load_ex(const char *pszFname,
 
 	if (lp_config_backend_is_file()) {
 		n2 = talloc_sub_basic(talloc_tos(), get_current_username(),
-					current_user_info.domain,
+					get_current_user_info_domain(),
 					pszFname);
 		if (!n2) {
 			smb_panic("lp_load_ex: out of memory");
@@ -4305,7 +4338,7 @@ int lp_servicenumber(const char *pszServiceName)
 			 */
 			fstrcpy(serviceName, ServicePtrs[iService]->szService);
 			standard_sub_basic(get_current_username(),
-					   current_user_info.domain,
+					   get_current_user_info_domain(),
 					   serviceName,sizeof(serviceName));
 			if (strequal(serviceName, pszServiceName)) {
 				break;
@@ -4344,7 +4377,7 @@ int lp_servicenumber(const char *pszServiceName)
 }
 
 /*******************************************************************
- A useful volume label function. 
+ A useful volume label function.
 ********************************************************************/
 
 const char *volume_label(TALLOC_CTX *ctx, int snum)
@@ -4408,8 +4441,8 @@ int lp_default_server_announce(void)
 	default_server_announce |= SV_TYPE_SERVER;
 	default_server_announce |= SV_TYPE_SERVER_UNIX;
 
-	/* note that the flag should be set only if we have a 
-	   printer service but nmbd doesn't actually load the 
+	/* note that the flag should be set only if we have a
+	   printer service but nmbd doesn't actually load the
 	   services so we can't tell   --jerry */
 
 	default_server_announce |= SV_TYPE_PRINTQ_SERVER;
@@ -4653,18 +4686,27 @@ void widelinks_warning(int snum)
 		return;
 	}
 
-	if (lp_unix_extensions() && lp_wide_links(snum)) {
-		DBG_ERR("Share '%s' has wide links and unix extensions enabled. "
+	if (lp_wide_links(snum)) {
+		if (lp_smb1_unix_extensions()) {
+			DBG_ERR("Share '%s' has wide links and SMB1 unix "
+			"extensions enabled. "
 			"These parameters are incompatible. "
 			"Wide links will be disabled for this share.\n",
 			 lp_const_servicename(snum));
+		} else if (lp_smb3_unix_extensions()) {
+			DBG_ERR("Share '%s' has wide links and SMB3 unix "
+			"extensions enabled. "
+			"These parameters are incompatible. "
+			"Wide links will be disabled for this share.\n",
+			 lp_const_servicename(snum));
+		}
 	}
 }
 
 bool lp_widelinks(int snum)
 {
 	/* wide links is always incompatible with unix extensions */
-	if (lp_unix_extensions()) {
+	if (lp_smb1_unix_extensions() || lp_smb3_unix_extensions()) {
 		/*
 		 * Unless we have "allow insecure widelinks"
 		 * turned on.
@@ -4783,7 +4825,7 @@ unsigned int * get_flags(void)
 	return flags_list;
 }
 
-enum samba_weak_crypto lp_weak_crypto()
+enum samba_weak_crypto lp_weak_crypto(void)
 {
 	if (Globals.weak_crypto == SAMBA_WEAK_CRYPTO_UNKNOWN) {
 		Globals.weak_crypto = SAMBA_WEAK_CRYPTO_DISALLOWED;
@@ -4803,4 +4845,17 @@ uint32_t lp_get_async_dns_timeout(void)
 	 * as per the man page.
 	 */
 	return MAX(Globals.async_dns_timeout, 1);
+}
+
+bool lp_smb3_unix_extensions(void)
+{
+	/*
+	 * FIXME: If this gets always enabled, check source3/selftest/tests.py
+	 * and source3/wscript for HAVE_SMB3_UNIX_EXTENSIONS.
+	 */
+#if defined(DEVELOPER)
+	return lp__smb3_unix_extensions();
+#else
+	return false;
+#endif
 }

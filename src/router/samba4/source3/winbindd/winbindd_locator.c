@@ -39,23 +39,7 @@ struct dcerpc_binding_handle *locator_child_handle(void)
 	return static_locator_child.binding_handle;
 }
 
-static const struct winbindd_child_dispatch_table locator_dispatch_table[] = {
-	{
-		.name		= "PING",
-		.struct_cmd	= WINBINDD_PING,
-		.struct_fn	= winbindd_dual_ping,
-	},{
-		.name		= "NDRCMD",
-		.struct_cmd	= WINBINDD_DUAL_NDRCMD,
-		.struct_fn	= winbindd_dual_ndrcmd,
-	},{
-		.name		= NULL,
-	}
-};
-
 void init_locator_child(void)
 {
-	setup_child(NULL, &static_locator_child,
-		    locator_dispatch_table,
-		    "log.winbindd", "locator");
+	setup_child(NULL, &static_locator_child, "log.winbindd", "locator");
 }

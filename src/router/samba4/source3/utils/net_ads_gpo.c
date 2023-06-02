@@ -62,7 +62,7 @@ static int net_ads_gpo_list_all(struct net_context *c, int argc, const char **ar
 		return -1;
 	}
 
-	status = ads_startup(c, false, &ads);
+	status = ads_startup(c, false, mem_ctx, &ads);
 	if (!ADS_ERR_OK(status)) {
 		goto out;
 	}
@@ -107,7 +107,6 @@ out:
 	ads_msgfree(ads, res);
 
 	TALLOC_FREE(mem_ctx);
-	ads_destroy(&ads);
 
 	return 0;
 }
@@ -139,7 +138,7 @@ static int net_ads_gpo_list(struct net_context *c, int argc, const char **argv)
 		goto out;
 	}
 
-	status = ads_startup(c, false, &ads);
+	status = ads_startup(c, false, mem_ctx, &ads);
 	if (!ADS_ERR_OK(status)) {
 		goto out;
 	}
@@ -178,7 +177,6 @@ out:
 	ads_msgfree(ads, res);
 
 	talloc_destroy(mem_ctx);
-	ads_destroy(&ads);
 
 	return 0;
 }
@@ -204,7 +202,7 @@ static int net_ads_gpo_link_get(struct net_context *c, int argc, const char **ar
 		return -1;
 	}
 
-	status = ads_startup(c, false, &ads);
+	status = ads_startup(c, false, mem_ctx, &ads);
 	if (!ADS_ERR_OK(status)) {
 		goto out;
 	}
@@ -220,7 +218,6 @@ static int net_ads_gpo_link_get(struct net_context *c, int argc, const char **ar
 
 out:
 	talloc_destroy(mem_ctx);
-	ads_destroy(&ads);
 
 	return 0;
 }
@@ -253,7 +250,7 @@ static int net_ads_gpo_link_add(struct net_context *c, int argc, const char **ar
 		gpo_opt = atoi(argv[2]);
 	}
 
-	status = ads_startup(c, false, &ads);
+	status = ads_startup(c, false, mem_ctx, &ads);
 	if (!ADS_ERR_OK(status)) {
 		goto out;
 	}
@@ -266,7 +263,6 @@ static int net_ads_gpo_link_add(struct net_context *c, int argc, const char **ar
 
 out:
 	talloc_destroy(mem_ctx);
-	ads_destroy(&ads);
 
 	return 0;
 }
@@ -293,7 +289,7 @@ static int net_ads_gpo_link_delete(struct net_context *c, int argc, const char *
 		return -1;
 	}
 
-	status = ads_startup(c, false, &ads);
+	status = ads_startup(c, false, mem_ctx, &ads);
 	if (!ADS_ERR_OK(status)) {
 		goto out;
 	}
@@ -306,7 +302,6 @@ static int net_ads_gpo_link_delete(struct net_context *c, int argc, const char *
 
 out:
 	talloc_destroy(mem_ctx);
-	ads_destroy(&ads);
 
 	return 0;
 }
@@ -346,7 +341,7 @@ static int net_ads_gpo_get_gpo(struct net_context *c, int argc, const char **arg
 		return -1;
 	}
 
-	status = ads_startup(c, false, &ads);
+	status = ads_startup(c, false, mem_ctx, &ads);
 	if (!ADS_ERR_OK(status)) {
 		goto out;
 	}
@@ -367,7 +362,6 @@ static int net_ads_gpo_get_gpo(struct net_context *c, int argc, const char **arg
 
 out:
 	talloc_destroy(mem_ctx);
-	ads_destroy(&ads);
 
 	return 0;
 }

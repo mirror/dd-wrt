@@ -24,14 +24,24 @@ AES128_CTS_HMAC_SHA1_96 = int(
     krb5_asn1.EncryptionTypeValues('kRB5-ENCTYPE-AES128-CTS-HMAC-SHA1-96'))
 ARCFOUR_HMAC_MD5 = int(
     krb5_asn1.EncryptionTypeValues('kRB5-ENCTYPE-ARCFOUR-HMAC-MD5'))
+DES_CBC_CRC = int(
+    krb5_asn1.EncryptionTypeValues('kRB5-ENCTYPE-DES-CBC-CRC'))
+DES_CBC_MD5 = int(
+    krb5_asn1.EncryptionTypeValues('kRB5-ENCTYPE-DES-CBC-MD5'))
+DES3_CBC_MD5 = int(
+    krb5_asn1.EncryptionTypeValues('kRB5-ENCTYPE-DES3-CBC-MD5'))
+DES3_CBC_SHA1 = int(
+    krb5_asn1.EncryptionTypeValues('kRB5-ENCTYPE-DES3-CBC-SHA1'))
 
 # Message types
 KRB_ERROR = int(krb5_asn1.MessageTypeValues('krb-error'))
+KRB_AP_REP = int(krb5_asn1.MessageTypeValues('krb-ap-rep'))
 KRB_AP_REQ = int(krb5_asn1.MessageTypeValues('krb-ap-req'))
 KRB_AS_REP = int(krb5_asn1.MessageTypeValues('krb-as-rep'))
 KRB_AS_REQ = int(krb5_asn1.MessageTypeValues('krb-as-req'))
 KRB_TGS_REP = int(krb5_asn1.MessageTypeValues('krb-tgs-rep'))
 KRB_TGS_REQ = int(krb5_asn1.MessageTypeValues('krb-tgs-req'))
+KRB_PRIV = int(krb5_asn1.MessageTypeValues('krb-priv'))
 
 # PAData types
 PADATA_ENC_TIMESTAMP = int(
@@ -64,6 +74,12 @@ PADATA_PW_SALT = int(
     krb5_asn1.PADataTypeValues('kRB5-PADATA-PW-SALT'))
 PADATA_SUPPORTED_ETYPES = int(
     krb5_asn1.PADataTypeValues('kRB5-PADATA-SUPPORTED-ETYPES'))
+PADATA_PKINIT_KX = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-PKINIT-KX'))
+PADATA_GSS = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-GSS'))
+PADATA_REQ_ENC_PA_REP = int(
+    krb5_asn1.PADataTypeValues('kRB5-PADATA-REQ-ENC-PA-REP'))
 
 # Error codes
 KDC_ERR_C_PRINCIPAL_UNKNOWN = 6
@@ -72,19 +88,33 @@ KDC_ERR_POLICY = 12
 KDC_ERR_BADOPTION = 13
 KDC_ERR_ETYPE_NOSUPP = 14
 KDC_ERR_SUMTYPE_NOSUPP = 15
+KDC_ERR_CLIENT_REVOKED = 18
 KDC_ERR_TGT_REVOKED = 20
 KDC_ERR_PREAUTH_FAILED = 24
 KDC_ERR_PREAUTH_REQUIRED = 25
 KDC_ERR_BAD_INTEGRITY = 31
+KDC_ERR_TKT_EXPIRED = 32
+KRB_ERR_TKT_NYV = 33
 KDC_ERR_NOT_US = 35
 KDC_ERR_BADMATCH = 36
 KDC_ERR_SKEW = 37
 KDC_ERR_MODIFIED = 41
+KDC_ERR_BADKEYVER = 44
 KDC_ERR_INAPP_CKSUM = 50
 KDC_ERR_GENERIC = 60
 KDC_ERR_WRONG_REALM = 68
 KDC_ERR_CLIENT_NAME_MISMATCH = 75
 KDC_ERR_UNKNOWN_CRITICAL_FAST_OPTIONS = 93
+
+# Kpasswd error codes
+KPASSWD_SUCCESS = 0
+KPASSWD_MALFORMED = 1
+KPASSWD_HARDERROR = 2
+KPASSWD_AUTHERROR = 3
+KPASSWD_SOFTERROR = 4
+KPASSWD_ACCESSDENIED = 5
+KPASSWD_BAD_VERSION = 6
+KPASSWD_INITIAL_FLAG_NEEDED = 7
 
 # Extended error types
 KERB_AP_ERR_TYPE_SKEW_RECOVERY = int(
@@ -180,6 +210,7 @@ KU_FAST_REP = 52
 KU_FAST_FINISHED = 53
 KU_ENC_CHALLENGE_CLIENT = 54
 KU_ENC_CHALLENGE_KDC = 55
+KU_AS_REQ = 56
 
 # Armor types
 FX_FAST_ARMOR_AP_REQUEST = 1

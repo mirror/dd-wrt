@@ -108,6 +108,13 @@ struct file_info {
 	struct timespec ctime_ts;
 	char *name;
 	char *short_name;
+	uint32_t mode;
+	uint32_t reparse_tag;
+	dev_t st_ex_dev;
+	mode_t st_ex_mode;
+	nlink_t st_ex_nlink;
+	struct dom_sid owner_sid;
+	struct dom_sid group_sid;
 };
 
 #define CLI_FULL_CONNECTION_DONT_SPNEGO 0x0001
@@ -119,5 +126,6 @@ struct file_info {
 #define CLI_FULL_CONNECTION_FORCE_SMB1 0x0400
 #define CLI_FULL_CONNECTION_DISABLE_SMB1 0x0800
 #define CLI_FULL_CONNECTION_IPC          0x1000
+#define CLI_FULL_CONNECTION_REQUEST_POSIX 0x2000
 
 #endif /* _CLIENT_H */

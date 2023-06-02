@@ -35,12 +35,14 @@
 
 enum virusfilter_scanner_enum {
 	VIRUSFILTER_SCANNER_CLAMAV,
+	VIRUSFILTER_SCANNER_DUMMY,
 	VIRUSFILTER_SCANNER_FSAV,
 	VIRUSFILTER_SCANNER_SOPHOS
 };
 
 static const struct enum_list scanner_list[] = {
 	{ VIRUSFILTER_SCANNER_CLAMAV,	"clamav" },
+	{ VIRUSFILTER_SCANNER_DUMMY,	"dummy" },
 	{ VIRUSFILTER_SCANNER_FSAV,	"fsav" },
 	{ VIRUSFILTER_SCANNER_SOPHOS,	"sophos" },
 	{ -1,				NULL }
@@ -199,6 +201,7 @@ static int virusfilter_vfs_connect(
 	int snum = SNUM(handle->conn);
 	struct virusfilter_config *config = NULL;
 	const char *exclude_files = NULL;
+	const char *infected_files = NULL;
 	const char *temp_quarantine_dir_mode = NULL;
 	const char *infected_file_command = NULL;
 	const char *scan_error_command = NULL;
@@ -253,6 +256,12 @@ static int virusfilter_vfs_connect(
 		snum, "virusfilter", "exclude files", NULL);
 	if (exclude_files != NULL) {
 		set_namearray(&config->exclude_files, exclude_files);
+	}
+
+	infected_files = lp_parm_const_string(
+		snum, "virusfilter", "infected files", NULL);
+	if (infected_files != NULL) {
+		set_namearray(&config->infected_files, infected_files);
 	}
 
 	config->cache_entry_limit = lp_parm_int(
@@ -536,6 +545,9 @@ static int virusfilter_vfs_connect(
 		break;
 	case VIRUSFILTER_SCANNER_CLAMAV:
 		ret = virusfilter_clamav_init(config);
+		break;
+	case VIRUSFILTER_SCANNER_DUMMY:
+		ret = virusfilter_dummy_init(config);
 		break;
 	default:
 		DBG_ERR("Unhandled scanner %d\n", backend);
@@ -1225,8 +1237,7 @@ static int virusfilter_vfs_openat(struct vfs_handle_struct *handle,
 				  const struct files_struct *dirfsp,
 				  const struct smb_filename *smb_fname_in,
 				  struct files_struct *fsp,
-				  int flags,
-				  mode_t mode)
+				  const struct vfs_open_how *how)
 {
 	TALLOC_CTX *mem_ctx = talloc_tos();
 	struct virusfilter_config *config = NULL;
@@ -1279,7 +1290,7 @@ static int virusfilter_vfs_openat(struct vfs_handle_struct *handle,
 		goto virusfilter_vfs_open_next;
 	}
 
-	if (flags & O_TRUNC) {
+	if (how->flags & O_TRUNC) {
 		DBG_INFO("Not scanned: Open flags have O_TRUNC: %s/%s\n",
 			 cwd_fname, fname);
 		goto virusfilter_vfs_open_next;
@@ -1297,21 +1308,21 @@ static int virusfilter_vfs_openat(struct vfs_handle_struct *handle,
 		 */
 		goto virusfilter_vfs_open_next;
 	}
-	ret = S_ISREG(smb_fname->st.st_ex_mode);
+	ret = S_ISREG(sbuf.st_ex_mode);
 	if (ret == 0) {
 		DBG_INFO("Not scanned: Directory or special file: %s/%s\n",
 			 cwd_fname, fname);
 		goto virusfilter_vfs_open_next;
 	}
 	if (config->max_file_size > 0 &&
-	    smb_fname->st.st_ex_size > config->max_file_size)
+	    sbuf.st_ex_size > config->max_file_size)
 	{
 		DBG_INFO("Not scanned: file size > max file size: %s/%s\n",
 			 cwd_fname, fname);
 		goto virusfilter_vfs_open_next;
 	}
 	if (config->min_file_size > 0 &&
-	    smb_fname->st.st_ex_size < config->min_file_size)
+	    sbuf.st_ex_size < config->min_file_size)
 	{
 		DBG_INFO("Not scanned: file size < min file size: %s/%s\n",
 		      cwd_fname, fname);
@@ -1390,7 +1401,7 @@ static int virusfilter_vfs_openat(struct vfs_handle_struct *handle,
 	TALLOC_FREE(smb_fname);
 
 virusfilter_vfs_open_next:
-	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname_in, fsp, flags, mode);
+	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname_in, fsp, how);
 
 virusfilter_vfs_open_fail:
 	TALLOC_FREE(smb_fname);
@@ -1447,7 +1458,7 @@ static int virusfilter_vfs_close(
 		return close_result;
 	}
 
-	if (is_named_stream(fsp->fsp_name)) {
+	if (fsp_is_alternate_stream(fsp)) {
 		if (config->scan_on_open && fsp->fsp_flags.modified) {
 			if (config->cache) {
 				DBG_DEBUG("Removing cache entry (if existent)"

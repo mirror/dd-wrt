@@ -31,7 +31,6 @@
 
 NTSTATUS smbd_do_locks_try(
 	struct files_struct *fsp,
-	enum brl_flavour lock_flav,
 	uint16_t num_locks,
 	struct smbd_lock_element *locks,
 	uint16_t *blocker_idx,
@@ -52,7 +51,7 @@ NTSTATUS smbd_do_locks_try(
 			e->count,
 			e->offset,
 			e->brltype,
-			lock_flav,
+			e->lock_flav,
 			blocking_pid,
 			blocking_smblctx);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -75,7 +74,7 @@ NTSTATUS smbd_do_locks_try(
 			  e->smblctx,
 			  e->count,
 			  e->offset,
-			  lock_flav);
+			  e->lock_flav);
 	}
 
 	return status;
@@ -109,7 +108,6 @@ struct smbd_smb1_do_locks_state {
 	uint32_t retry_msecs;
 	struct timeval endtime;
 	bool large_offset;	/* required for correct cancel */
-	enum brl_flavour lock_flav;
 	uint16_t num_locks;
 	struct smbd_lock_element *locks;
 	uint16_t blocker;
@@ -122,7 +120,6 @@ static void smbd_smb1_blocked_locks_cleanup(
 	struct tevent_req *req, enum tevent_req_state req_state);
 static NTSTATUS smbd_smb1_do_locks_check(
 	struct files_struct *fsp,
-	enum brl_flavour lock_flav,
 	uint16_t num_locks,
 	struct smbd_lock_element *locks,
 	uint16_t *blocker_idx,
@@ -251,7 +248,6 @@ struct tevent_req *smbd_smb1_do_locks_send(
 	struct files_struct *fsp,
 	uint32_t lock_timeout,
 	bool large_offset,
-	enum brl_flavour lock_flav,
 	uint16_t num_locks,
 	struct smbd_lock_element *locks)
 {
@@ -269,26 +265,24 @@ struct tevent_req *smbd_smb1_do_locks_send(
 	state->fsp = fsp;
 	state->timeout = lock_timeout;
 	state->large_offset = large_offset;
-	state->lock_flav = lock_flav;
 	state->num_locks = num_locks;
 	state->locks = locks;
+	state->deny_status = NT_STATUS_LOCK_NOT_GRANTED;
 
-	if (lock_flav == POSIX_LOCK) {
+	DBG_DEBUG("state=%p, state->smbreq=%p\n", state, state->smbreq);
+
+	if (num_locks == 0 || locks == NULL) {
+		DBG_DEBUG("no locks\n");
+		tevent_req_done(req);
+		return tevent_req_post(req, ev);
+	}
+
+	if (state->locks[0].lock_flav == POSIX_LOCK) {
 		/*
 		 * SMB1 posix locks always use
 		 * NT_STATUS_FILE_LOCK_CONFLICT.
 		 */
 		state->deny_status = NT_STATUS_FILE_LOCK_CONFLICT;
-	} else {
-		state->deny_status = NT_STATUS_LOCK_NOT_GRANTED;
-	}
-
-	DBG_DEBUG("state=%p, state->smbreq=%p\n", state, state->smbreq);
-
-	if (num_locks == 0) {
-		DBG_DEBUG("no locks\n");
-		tevent_req_done(req);
-		return tevent_req_post(req, ev);
 	}
 
 	smbd_smb1_do_locks_try(req);
@@ -386,7 +380,6 @@ static NTSTATUS smbd_smb1_do_locks_check_blocked(
 
 static NTSTATUS smbd_smb1_do_locks_check(
 	struct files_struct *fsp,
-	enum brl_flavour lock_flav,
 	uint16_t num_locks,
 	struct smbd_lock_element *locks,
 	uint16_t *blocker_idx,
@@ -413,7 +406,6 @@ static NTSTATUS smbd_smb1_do_locks_check(
 
 		if (blocked_state->locks == locks) {
 			SMB_ASSERT(blocked_state->num_locks == num_locks);
-			SMB_ASSERT(blocked_state->lock_flav == lock_flav);
 
 			/*
 			 * We found ourself...
@@ -437,7 +429,6 @@ static NTSTATUS smbd_smb1_do_locks_check(
 
 	status = smbd_do_locks_try(
 		fsp,
-		lock_flav,
 		num_locks,
 		locks,
 		blocker_idx,
@@ -472,7 +463,6 @@ static void smbd_smb1_do_locks_try(struct tevent_req *req)
 
 	status = smbd_smb1_do_locks_check(
 		fsp,
-		state->lock_flav,
 		state->num_locks,
 		state->locks,
 		&state->blocker,
@@ -697,7 +687,6 @@ void smbd_smb1_brl_finish_by_req(struct tevent_req *req, NTSTATUS status)
 bool smbd_smb1_brl_finish_by_lock(
 	struct files_struct *fsp,
 	bool large_offset,
-	enum brl_flavour lock_flav,
 	struct smbd_lock_element lock,
 	NTSTATUS finish_status)
 {
@@ -715,8 +704,7 @@ bool smbd_smb1_brl_finish_by_lock(
 
 		DBG_DEBUG("i=%zu, req=%p\n", i, req);
 
-		if ((state->large_offset != large_offset) ||
-		    (state->lock_flav != lock_flav)) {
+		if (state->large_offset != large_offset) {
 			continue;
 		}
 

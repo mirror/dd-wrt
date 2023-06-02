@@ -452,8 +452,14 @@ kill_tcp_connections ()
 	    return
 	fi
 
+	if [ -n "$CTDB_KILLTCP_DEBUGLEVEL" ]; then
+		_debuglevel="$CTDB_KILLTCP_DEBUGLEVEL"
+	else
+		_debuglevel="$CTDB_DEBUGLEVEL"
+	fi
 	echo "$_connections" | \
-		"${CTDB_HELPER_BINDIR}/ctdb_killtcp" "$_iface" || {
+		CTDB_DEBUGLEVEL="$_debuglevel" \
+			"${CTDB_HELPER_BINDIR}/ctdb_killtcp" "$_iface" || {
 		echo "Failed to kill TCP connections"
 		return
 	}
@@ -631,26 +637,11 @@ flush_route_cache ()
 # underlying interface
 interface_get_real ()
 {
-    # Output of "ip link show <iface>"
-    _iface_info="$1"
+	_iface="$1"
 
-    # Extract the full interface description to see if it is a VLAN
-    _t=$(echo "$_iface_info" |
-		awk 'NR == 1 { iface = $2; sub(":$", "", iface) ;
-			       print iface }')
-    case "$_t" in
-	*@*)
-	    # VLAN: use the underlying interface, after the '@'
-	    echo "${_t##*@}"
-	    ;;
-	*)
-	    # Not a regular VLAN.  For backward compatibility, assume
-	    # there is some other sort of VLAN that doesn't have the
-	    # '@' in the output and only use what is before a '.'.  If
-	    # there is no '.' then this will be the whole interface
-	    # name.
-	    echo "${_t%%.*}"
-    esac
+	# If $_iface is a VLAN (i.e. contains an '@') then strip every
+	# before the '@', otherwise print the whole interface
+	echo "${_iface##*@}"
 }
 
 # Check whether an interface is operational
@@ -658,7 +649,7 @@ interface_monitor ()
 {
     _iface="$1"
 
-    _iface_info=$(ip link show "$_iface" 2>&1) || {
+    _iface_info=$(ip -br link show "$_iface" 2>&1) || {
 	echo "ERROR: Monitored interface ${_iface} does not exist"
 	return 1
     }
@@ -666,7 +657,7 @@ interface_monitor ()
 
     # If the interface is a virtual one (e.g. VLAN) then get the
     # underlying interface.
-    _realiface=$(interface_get_real "$_iface_info")
+    _realiface=$(interface_get_real "${_iface_info%% *}")
 
     if _bi=$(get_proc "net/bonding/${_realiface}" 2>/dev/null) ; then
 	# This is a bond: various monitoring strategies
@@ -920,7 +911,7 @@ nfs_callout_register ()
 
     echo "$CTDB_NFS_CALLOUT" >"$nfs_callout_cache_callout"
 
-    _t=$(eval "$CTDB_NFS_CALLOUT" "register")
+    _t=$("$CTDB_NFS_CALLOUT" "register")
     if [ -n "$_t" ] ; then
 	echo "$_t" |
 	    while IFS="" read _op ; do
@@ -945,7 +936,7 @@ nfs_callout ()
     # Run the operation if it is registered...
     if [ -e "${nfs_callout_cache_ops}/${1}" ] || \
 	   [ -e "${nfs_callout_cache_ops}/ALL" ]; then
-	eval "$CTDB_NFS_CALLOUT" "$@"
+	"$CTDB_NFS_CALLOUT" "$@"
     fi
 }
 

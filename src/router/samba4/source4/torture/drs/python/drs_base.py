@@ -432,13 +432,15 @@ class DrsBaseTestCase(SambaToolCmdTest):
 
     def _exop_req8(self, dest_dsa, invocation_id, nc_dn_str, exop,
                    replica_flags=0, max_objects=0, partial_attribute_set=None,
-                   partial_attribute_set_ex=None, mapping_ctr=None):
+                   partial_attribute_set_ex=None, mapping_ctr=None, nc_guid=None):
         req8 = drsuapi.DsGetNCChangesRequest8()
 
         req8.destination_dsa_guid = misc.GUID(dest_dsa) if dest_dsa else misc.GUID()
         req8.source_dsa_invocation_id = misc.GUID(invocation_id)
         req8.naming_context = drsuapi.DsReplicaObjectIdentifier()
         req8.naming_context.dn = str(nc_dn_str)
+        if nc_guid is not None:
+            req8.naming_context.guid = nc_guid
         req8.highwatermark = drsuapi.DsReplicaHighWaterMark()
         req8.highwatermark.tmp_highest_usn = 0
         req8.highwatermark.reserved_usn = 0
@@ -462,13 +464,15 @@ class DrsBaseTestCase(SambaToolCmdTest):
     def _getnc_req10(self, dest_dsa, invocation_id, nc_dn_str, exop,
                      replica_flags=0, max_objects=0, partial_attribute_set=None,
                      partial_attribute_set_ex=None, mapping_ctr=None,
-                     more_flags=0):
+                     more_flags=0, nc_guid=None):
         req10 = drsuapi.DsGetNCChangesRequest10()
 
         req10.destination_dsa_guid = misc.GUID(dest_dsa) if dest_dsa else misc.GUID()
         req10.source_dsa_invocation_id = misc.GUID(invocation_id)
         req10.naming_context = drsuapi.DsReplicaObjectIdentifier()
         req10.naming_context.dn = str(nc_dn_str)
+        if nc_guid is not None:
+            req10.naming_context.guid = nc_guid
         req10.highwatermark = drsuapi.DsReplicaHighWaterMark()
         req10.highwatermark.tmp_highest_usn = 0
         req10.highwatermark.reserved_usn = 0
@@ -490,8 +494,11 @@ class DrsBaseTestCase(SambaToolCmdTest):
 
         return req10
 
-    def _ds_bind(self, server_name, creds=None):
-        binding_str = "ncacn_ip_tcp:%s[seal]" % server_name
+    def _ds_bind(self, server_name, creds=None, ip=None):
+        if ip is None:
+            binding_str = f"ncacn_ip_tcp:{server_name}[seal]"
+        else:
+            binding_str = f"ncacn_ip_tcp:{ip}[seal,target_hostname={server_name}]"
 
         if creds is None:
             creds = self.get_credentials()

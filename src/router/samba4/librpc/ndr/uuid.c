@@ -143,11 +143,7 @@ _PUBLIC_ struct GUID GUID_random(void)
  */
 _PUBLIC_ struct GUID GUID_zero(void)
 {
-	struct GUID guid;
-
-	ZERO_STRUCT(guid);
-
-	return guid;
+	return (struct GUID) { .time_low = 0 };
 }
 
 _PUBLIC_ bool GUID_all_zero(const struct GUID *u)
@@ -226,31 +222,23 @@ _PUBLIC_ char* GUID_buf_string(const struct GUID *guid,
 
 _PUBLIC_ char *GUID_string2(TALLOC_CTX *mem_ctx, const struct GUID *guid)
 {
-	char *ret, *s = GUID_string(mem_ctx, guid);
-	ret = talloc_asprintf(mem_ctx, "{%s}", s);
-	talloc_free(s);
+	struct GUID_txt_buf buf;
+	char *ret = talloc_asprintf(
+		mem_ctx, "{%s}", GUID_buf_string(guid, &buf));
 	return ret;
 }
 
 _PUBLIC_ char *GUID_hexstring(TALLOC_CTX *mem_ctx, const struct GUID *guid)
 {
-	char *ret;
-	DATA_BLOB guid_blob;
-	TALLOC_CTX *tmp_mem;
+	char *ret = NULL;
+	DATA_BLOB guid_blob = { .data = NULL };
 	NTSTATUS status;
 
-	tmp_mem = talloc_new(mem_ctx);
-	if (!tmp_mem) {
-		return NULL;
+	status = GUID_to_ndr_blob(guid, mem_ctx, &guid_blob);
+	if (NT_STATUS_IS_OK(status)) {
+		ret = data_blob_hex_string_upper(mem_ctx, &guid_blob);
 	}
-	status = GUID_to_ndr_blob(guid, tmp_mem, &guid_blob);
-	if (!NT_STATUS_IS_OK(status)) {
-		talloc_free(tmp_mem);
-		return NULL;
-	}
-
-	ret = data_blob_hex_string_upper(mem_ctx, &guid_blob);
-	talloc_free(tmp_mem);
+	TALLOC_FREE(guid_blob.data);
 	return ret;
 }
 

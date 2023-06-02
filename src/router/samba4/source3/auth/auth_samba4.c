@@ -29,6 +29,7 @@
 #include "auth/gensec/gensec.h"
 #include "auth/credentials/credentials.h"
 #include "lib/global_contexts.h"
+#include "lib/util/idtree.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
@@ -241,12 +242,12 @@ static NTSTATUS prepare_gensec(const struct auth_context *auth_context,
 		return NT_STATUS_INVALID_SERVER_STATE;
 	}
 
-	msg_ctx = imessaging_init(frame,
+	msg_ctx = imessaging_init_discard_incoming(frame,
 				  lp_ctx,
 				  *server_id,
 				  event_ctx);
 	if (msg_ctx == NULL) {
-		DEBUG(1, ("imessaging_init failed\n"));
+		DEBUG(1, ("imessaging_init_discard_incoming failed\n"));
 		TALLOC_FREE(frame);
 		return NT_STATUS_INVALID_SERVER_STATE;
 	}
@@ -324,12 +325,12 @@ static NTSTATUS make_auth4_context_s4(const struct auth_context *auth_context,
 		return NT_STATUS_INVALID_SERVER_STATE;
 	}
 
-	msg_ctx = imessaging_init(frame,
+	msg_ctx = imessaging_init_discard_incoming(frame,
 				  lp_ctx,
 				  *server_id,
 				  event_ctx);
 	if (msg_ctx == NULL) {
-		DEBUG(1, ("imessaging_init failed\n"));
+		DEBUG(1, ("imessaging_init_discard_incoming failed\n"));
 		TALLOC_FREE(frame);
 		return NT_STATUS_INVALID_SERVER_STATE;
 	}

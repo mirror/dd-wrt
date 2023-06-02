@@ -109,6 +109,15 @@ EXCLUDE_USAGE = {
     'python/samba/tests/krb5/alias_tests.py',
     'python/samba/tests/krb5/test_min_domain_uid.py',
     'python/samba/tests/krb5/test_idmap_nss.py',
+    'python/samba/tests/krb5/pac_align_tests.py',
+    'python/samba/tests/krb5/protected_users_tests.py',
+    'python/samba/tests/krb5/nt_hash_tests.py',
+    'python/samba/tests/krb5/kpasswd_tests.py',
+    'python/samba/tests/krb5/claims_tests.py',
+    'python/samba/tests/krb5/lockout_tests.py',
+    'python/samba/tests/krb5/group_tests.py',
+    'lib/compression/tests/scripts/three-byte-hash',
+    'python/samba/tests/krb5/etype_tests.py',
 }
 
 EXCLUDE_HELP = {
@@ -126,6 +135,7 @@ EXCLUDE_DIRS = {
     'bin/python/samba/tests',
     'bin/python/samba/tests/dcerpc',
     'bin/python/samba/tests/krb5',
+    'python/samba/tests/bin',
 }
 
 

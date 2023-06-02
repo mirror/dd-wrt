@@ -3,10 +3,10 @@
 # Test for 'samba-tool computer edit'
 
 if [ $# -lt 3 ]; then
-cat <<EOF
+	cat <<EOF
 Usage: computer_edit.sh SERVER USERNAME PASSWORD
 EOF
-exit 1;
+	exit 1
 fi
 
 SERVER="$1"
@@ -15,6 +15,9 @@ PASSWORD="$3"
 
 STpath=$(pwd)
 . $STpath/testprogs/blackbox/subunit.sh
+. "${STpath}/testprogs/blackbox/common_test_fns.inc"
+
+ldbsearch=$(system_or_builddir_binary ldbsearch "${BINDIR}")
 
 display_name="Björns laptop"
 display_name_b64="QmrDtnJucyBsYXB0b3A="
@@ -26,13 +29,17 @@ display_name_con_b64="dGVzdCAHIHN0cmluZwo="
 tmpeditor=$(mktemp --suffix .sh -p $SELFTEST_TMPDIR samba-tool-editor-XXXXXXXX)
 chmod +x $tmpeditor
 
-create_test_computer() {
+TEST_MACHINE="$(mktemp -u testmachineXXXXXX)"
+
+create_test_computer()
+{
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool \
-		computer create testmachine1 \
+		computer create ${TEST_MACHINE} \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-edit_computer() {
+edit_computer()
+{
 	# create editor.sh
 	# enable computer account
 	cat >$tmpeditor <<-'EOF'
@@ -43,34 +50,37 @@ $SED -i -e 's/userAccountControl: 4098/userAccountControl: 4096/' $computer_ldif
 EOF
 
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool \
-		computer edit testmachine1 --editor=$tmpeditor \
+		computer edit ${TEST_MACHINE} --editor=$tmpeditor \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
 # Test edit computer - add base64 attributes
-add_attribute_base64() {
+add_attribute_base64()
+{
 	# create editor.sh
 	cat >$tmpeditor <<EOF
 #!/usr/bin/env bash
 computer_ldif="\$1"
 
-grep -v '^$' \$computer_ldif > \${computer_ldif}.tmp
+grep -v '^\$' \$computer_ldif > \${computer_ldif}.tmp
 echo "displayName:: $display_name_b64" >> \${computer_ldif}.tmp
 
 mv \${computer_ldif}.tmp \$computer_ldif
 EOF
 
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer edit \
-		testmachine1 --editor=$tmpeditor \
+		${TEST_MACHINE} --editor=$tmpeditor \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-get_attribute_base64() {
-	${STpath}/bin/ldbsearch '(sAMAccountName=testmachine1$)' displayName \
+get_attribute_base64()
+{
+	${ldbsearch} "(sAMAccountName=${TEST_MACHINE}\$)" displayName \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-delete_attribute() {
+delete_attribute()
+{
 	# create editor.sh
 	cat >$tmpeditor <<EOF
 #!/usr/bin/env bash
@@ -80,42 +90,46 @@ grep -v '^displayName' \$computer_ldif >> \${computer_ldif}.tmp
 mv \${computer_ldif}.tmp \$computer_ldif
 EOF
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer edit \
-		testmachine1 --editor=$tmpeditor \
+		${TEST_MACHINE} --editor=$tmpeditor \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
 # Test edit computer - add base64 attribute value including control character
-add_attribute_base64_control() {
+add_attribute_base64_control()
+{
 	# create editor.sh
 	cat >$tmpeditor <<EOF
 #!/usr/bin/env bash
 computer_ldif="\$1"
 
-grep -v '^$' \$computer_ldif > \${computer_ldif}.tmp
+grep -v '^\$' \$computer_ldif > \${computer_ldif}.tmp
 echo "displayName:: $display_name_con_b64" >> \${computer_ldif}.tmp
 
 mv \${computer_ldif}.tmp \$computer_ldif
 EOF
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer edit \
-		testmachine1 --editor=$tmpeditor \
+		${TEST_MACHINE} --editor=$tmpeditor \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-get_attribute_base64_control() {
+get_attribute_base64_control()
+{
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer show \
-		testmachine1 --attributes=displayName \
+		${TEST_MACHINE} --attributes=displayName \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-get_attribute_force_no_base64() {
+get_attribute_force_no_base64()
+{
 	# LDB_FLAG_FORCE_NO_BASE64_LDIF should be used here.
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer show \
-		testmachine1 --attributes=displayName \
+		${TEST_MACHINE} --attributes=displayName \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
 # Test edit computer - change base64 attribute value including control character
-change_attribute_base64_control() {
+change_attribute_base64_control()
+{
 	# create editor.sh
 	cat >$tmpeditor <<EOF
 #!/usr/bin/env bash
@@ -125,12 +139,13 @@ sed -i -e 's/displayName:: $display_name_con_b64/displayName: $display_name/' \
 	\$computer_ldif
 EOF
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer edit \
-		testmachine1 --editor=$tmpeditor \
+		${TEST_MACHINE} --editor=$tmpeditor \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
 # Test edit computer - change attributes with LDB_FLAG_FORCE_NO_BASE64_LDIF
-change_attribute_force_no_base64() {
+change_attribute_force_no_base64()
+{
 	# create editor.sh
 	# Expects that the original attribute is available as clear text,
 	# because the LDB_FLAG_FORCE_NO_BASE64_LDIF should be used here.
@@ -143,37 +158,39 @@ sed -i -e 's/displayName: $display_name/displayName: $display_name_new/' \
 EOF
 
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer edit \
-		testmachine1 --editor=$tmpeditor \
+		${TEST_MACHINE} --editor=$tmpeditor \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-get_changed_attribute_force_no_base64() {
+get_changed_attribute_force_no_base64()
+{
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool computer show \
-		 testmachine1 --attributes=displayName \
-		 -H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
+		${TEST_MACHINE} --attributes=displayName \
+		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
-delete_computer() {
+delete_computer()
+{
 	$PYTHON ${STpath}/source4/scripting/bin/samba-tool \
-		computer delete testmachine1 \
+		computer delete ${TEST_MACHINE} \
 		-H "ldap://$SERVER" "-U$USERNAME" "--password=$PASSWORD"
 }
 
 failed=0
 
-testit "create_test_computer" create_test_computer || failed=`expr $failed + 1`
-testit "edit_computer" edit_computer || failed=`expr $failed + 1`
-testit "add_attribute_base64" add_attribute_base64 || failed=`expr $failed + 1`
-testit_grep "get_attribute_base64" "^displayName:: $display_name_b64" get_attribute_base64 || failed=`expr $failed + 1`
-testit "delete_attribute" delete_attribute || failed=`expr $failed + 1`
-testit "add_attribute_base64_control" add_attribute_base64_control || failed=`expr $failed + 1`
-testit_grep "get_attribute_base64_control" "^displayName:: $display_name_con_b64" get_attribute_base64_control || failed=`expr $failed + 1`
-testit "change_attribute_base64_control" change_attribute_base64_control || failed=`expr $failed + 1`
-testit_grep "get_attribute_base64" "^displayName:: $display_name_b64" get_attribute_base64 || failed=`expr $failed + 1`
-testit_grep "get_attribute_force_no_base64" "^displayName: $display_name" get_attribute_force_no_base64 || failed=`expr $failed + 1`
-testit "change_attribute_force_no_base64" change_attribute_force_no_base64 || failed=`expr $failed + 1`
-testit_grep "get_changed_attribute_force_no_base64" "^displayName: $display_name_new" get_changed_attribute_force_no_base64 || failed=`expr $failed + 1`
-testit "delete_computer" delete_computer || failed=`expr $failed + 1`
+testit "create_test_computer" create_test_computer || failed=$(expr $failed + 1)
+testit "edit_computer" edit_computer || failed=$(expr $failed + 1)
+testit "add_attribute_base64" add_attribute_base64 || failed=$(expr $failed + 1)
+testit_grep "get_attribute_base64" "^displayName:: $display_name_b64" get_attribute_base64 || failed=$(expr $failed + 1)
+testit "delete_attribute" delete_attribute || failed=$(expr $failed + 1)
+testit "add_attribute_base64_control" add_attribute_base64_control || failed=$(expr $failed + 1)
+testit_grep "get_attribute_base64_control" "^displayName:: $display_name_con_b64" get_attribute_base64_control || failed=$(expr $failed + 1)
+testit "change_attribute_base64_control" change_attribute_base64_control || failed=$(expr $failed + 1)
+testit_grep "get_attribute_base64" "^displayName:: $display_name_b64" get_attribute_base64 || failed=$(expr $failed + 1)
+testit_grep "get_attribute_force_no_base64" "^displayName: $display_name" get_attribute_force_no_base64 || failed=$(expr $failed + 1)
+testit "change_attribute_force_no_base64" change_attribute_force_no_base64 || failed=$(expr $failed + 1)
+testit_grep "get_changed_attribute_force_no_base64" "^displayName: $display_name_new" get_changed_attribute_force_no_base64 || failed=$(expr $failed + 1)
+testit "delete_computer" delete_computer || failed=$(expr $failed + 1)
 
 rm -f $tmpeditor
 

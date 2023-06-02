@@ -38,7 +38,6 @@
 #include "ctdb_private.h"
 #include "ctdb_client.h"
 
-#include "common/rb_tree.h"
 #include "common/reqid.h"
 #include "common/system.h"
 #include "common/system_socket.h"
@@ -374,8 +373,17 @@ static void ctdb_control_send_arp(struct tevent_context *ev,
 							struct ctdb_takeover_arp);
 	int ret;
 	struct ctdb_tcp_array *tcparray;
-	const char *iface = ctdb_vnn_iface_string(arp->vnn);
+	const char *iface;
 
+	/* IP address might have been released between sends */
+	if (arp->vnn->iface == NULL) {
+		DBG_INFO("Cancelling ARP send for released IP %s\n",
+			 ctdb_addr_to_str(&arp->vnn->public_address));
+		talloc_free(arp);
+		return;
+	}
+
+	iface = ctdb_vnn_iface_string(arp->vnn);
 	ret = ctdb_sys_send_arp(&arp->addr, iface);
 	if (ret != 0) {
 		DBG_ERR("Failed to send ARP on interface %s: %s\n",
@@ -388,19 +396,25 @@ static void ctdb_control_send_arp(struct tevent_context *ev,
 
 		for (i=0;i<tcparray->num;i++) {
 			struct ctdb_connection *tcon;
+			char buf[128];
 
 			tcon = &tcparray->connections[i];
-			DEBUG(DEBUG_INFO,("sending tcp tickle ack for %u->%s:%u\n",
-				(unsigned)ntohs(tcon->dst.ip.sin_port),
-				ctdb_addr_to_str(&tcon->src),
-				(unsigned)ntohs(tcon->src.ip.sin_port)));
+			ret = ctdb_connection_to_buf(buf,
+						     sizeof(buf),
+						     tcon,
+						     false,
+						     " -> ");
+			if (ret != 0) {
+				strlcpy(buf, "UNKNOWN", sizeof(buf));
+			}
+			D_INFO("Send TCP tickle ACK: %s\n", buf);
 			ret = ctdb_sys_send_tcp(
 				&tcon->src,
 				&tcon->dst,
 				0, 0, 0);
 			if (ret != 0) {
-				DEBUG(DEBUG_CRIT,(__location__ " Failed to send tcp tickle ack for %s\n",
-					ctdb_addr_to_str(&tcon->src)));
+				DBG_ERR("Failed to send TCP tickle ACK: %s\n",
+					buf);
 			}
 		}
 	}
@@ -1056,9 +1070,8 @@ static int ctdb_add_public_address(struct ctdb_context *ctdb,
 	/* Verify that we don't have an entry for this IP yet */
 	for (vnn = ctdb->vnn; vnn != NULL; vnn = vnn->next) {
 		if (ctdb_same_sockaddr(addr, &vnn->public_address)) {
-			DEBUG(DEBUG_ERR,
-			      ("Duplicate public IP address '%s'\n",
-			       ctdb_addr_to_str(addr)));
+			D_ERR("Duplicate public IP address '%s'\n",
+			      ctdb_addr_to_str(addr));
 			return -1;
 		}
 	}
@@ -1066,39 +1079,40 @@ static int ctdb_add_public_address(struct ctdb_context *ctdb,
 	/* Create a new VNN structure for this IP address */
 	vnn = talloc_zero(ctdb, struct ctdb_vnn);
 	if (vnn == NULL) {
-		DEBUG(DEBUG_ERR, (__location__ " out of memory\n"));
+		DBG_ERR("Memory allocation error\n");
 		return -1;
 	}
 	tmp = talloc_strdup(vnn, ifaces);
 	if (tmp == NULL) {
-		DEBUG(DEBUG_ERR, (__location__ " out of memory\n"));
+		DBG_ERR("Memory allocation error\n");
 		talloc_free(vnn);
 		return -1;
 	}
 	for (iface = strtok(tmp, ","); iface; iface = strtok(NULL, ",")) {
 		struct vnn_interface *vnn_iface;
 		struct ctdb_interface *i;
+
 		if (!ctdb_sys_check_iface_exists(iface)) {
-			DEBUG(DEBUG_ERR,
-			      ("Unknown interface %s for public address %s\n",
-			       iface, ctdb_addr_to_str(addr)));
+			D_ERR("Unknown interface %s for public address %s\n",
+			      iface,
+			      ctdb_addr_to_str(addr));
 			talloc_free(vnn);
 			return -1;
 		}
 
 		i = ctdb_add_local_iface(ctdb, iface);
 		if (i == NULL) {
-			DEBUG(DEBUG_ERR,
-			      ("Failed to add interface '%s' "
-			       "for public address %s\n",
-			       iface, ctdb_addr_to_str(addr)));
+			D_ERR("Failed to add interface '%s' "
+			      "for public address %s\n",
+			      iface,
+			      ctdb_addr_to_str(addr));
 			talloc_free(vnn);
 			return -1;
 		}
 
 		vnn_iface = talloc_zero(vnn, struct vnn_interface);
 		if (vnn_iface == NULL) {
-			DEBUG(DEBUG_ERR, (__location__ " out of memory\n"));
+			DBG_ERR("Memory allocation error\n");
 			talloc_free(vnn);
 			return -1;
 		}

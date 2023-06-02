@@ -71,16 +71,35 @@
       Options in this section affect the CTDB cluster setup. They
       are valid within the <span class="emphasis"><em>cluster</em></span> section of
       file, indicated by <code class="literal">[cluster]</code>.
-    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">recovery lock = <em class="parameter"><code>LOCK</code></em></span></dt><dd><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">cluster lock = <em class="parameter"><code>LOCK</code></em></span></dt><dd><p>
 	    LOCK specifies the cluster-wide mutex used to detect and
 	    prevent a partitioned cluster (or "split brain").
 	  </p><p>
-	    For information about the recovery lock please see the
-	    <em class="citetitle">RECOVERY LOCK</em> section in
+	    For information about the cluster lock please see the
+	    <em class="citetitle">CLUSTER LOCK</em> section in
 	    <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
 	  </p><p>
-	    Default: NONE.  However, uses of a recovery lock is
+	    Default: NONE.  However, uses of a cluster lock is
 	    <span class="emphasis"><em>strongly recommended</em></span>.
+	  </p></dd><dt><span class="term">leader capability = true|false</span></dt><dd><p>
+	    Indicates whether a node can become the leader
+	    for the cluster. If this is set to
+	    <code class="literal">false</code> then the node will not be able to
+	    become the leader for the cluster. This feature
+	    is primarily used for making a cluster span across a WAN
+	    link and use CTDB as a WAN-accelerator.
+	  </p><p>
+	    Please see the <em class="citetitle">REMOTE CLUSTER NODES</em>
+	    section in
+	    <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span> for more
+	    information.
+	  </p><p>
+	    Default: <code class="literal">true</code>
+	  </p></dd><dt><span class="term">leader timeout = <em class="parameter"><code>SECONDS</code></em></span></dt><dd><p>
+	    Number of SECONDS without a leader broadcast before a node
+	    triggers an election.
+	  </p><p>
+	    Default: <code class="literal">5</code>
 	  </p></dd><dt><span class="term">node address = <em class="parameter"><code>IPADDR</code></em></span></dt><dd><p>
 	    IPADDR is the private IP address that ctdbd will bind to.
 	  </p><p>
@@ -105,7 +124,7 @@
 	    <code class="literal">ib</code> is considered invalid.
 	  </p><p>
 	    Default: <code class="literal">tcp</code>
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm111"></a><h2>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm130"></a><h2>
       DATABASE CONFIGURATION
     </h2><p>
       Options in this section affect the CTDB database setup. They
@@ -161,7 +180,7 @@
 	    <code class="filename">/usr/local/etc/ctdb/debug_locks.sh</code>.
 	  </p><p>
 	    Default: NONE
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm155"></a><h2>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm174"></a><h2>
       EVENT HANDLING CONFIGURATION
     </h2><p>
       Options in this section affect CTDB event handling. They are
@@ -183,7 +202,7 @@
 	    <code class="filename">/usr/local/etc/ctdb/debug-hung-script.sh</code>.
 	  </p><p>
 	    Default: NONE
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm171"></a><h2>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm190"></a><h2>
       FAILOVER CONFIGURATION
     </h2><p>
       Options in this section affect CTDB failover. They are
@@ -194,7 +213,7 @@
 	    is disabled.
 	  </p><p>
 	    Default: <code class="literal">false</code>
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm184"></a><h2>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm203"></a><h2>
       LEGACY CONFIGURATION
     </h2><p>
       Options in this section affect legacy CTDB setup. They are valid
@@ -234,20 +253,6 @@
 	    priority, you can set this to <code class="literal">false</code>.
 	  </p><p>
 	    Default: <code class="literal">true</code>
-	  </p></dd><dt><span class="term">recmaster capability = true|false</span></dt><dd><p>
-	    Indicates whether a node can become the recovery master
-	    for the cluster. If this is set to
-	    <code class="literal">false</code> then the node will not be able to
-	    become the recovery master for the cluster. This feature
-	    is primarily used for making a cluster span across a WAN
-	    link and use CTDB as a WAN-accelerator.
-	  </p><p>
-	    Please see the <em class="citetitle">REMOTE CLUSTER NODES</em>
-	    section in
-	    <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span> for more
-	    information.
-	  </p><p>
-	    Default: <code class="literal">true</code>
 	  </p></dd><dt><span class="term">lmaster capability = true|false</span></dt><dd><p>
 	    Indicates whether a node can become a location master for
 	    records in a database. If this is set to
@@ -271,7 +276,7 @@
 	    information.
 	  </p><p>
 	    Default: <code class="literal">ERROR</code>
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm261"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/ctdb.conf</code></td></tr></table></div><div class="refsect1"><a name="idm266"></a><h2>SEE ALSO</h2><p>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm268"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/ctdb.conf</code></td></tr></table></div><div class="refsect1"><a name="idm273"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">onnode</span>(1)</span>,

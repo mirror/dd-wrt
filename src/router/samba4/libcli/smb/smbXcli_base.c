@@ -104,7 +104,7 @@ struct smbXcli_conn {
 
 		uint16_t mid;
 
-		struct smb_signing_state *signing;
+		struct smb1_signing_state *signing;
 		struct smb_trans_enc_state *trans_enc;
 
 		struct tevent_req *read_braw_req;
@@ -130,6 +130,7 @@ struct smbXcli_conn {
 			DATA_BLOB gss_blob;
 			uint16_t sign_algo;
 			uint16_t cipher;
+			bool smb311_posix;
 		} server;
 
 		uint64_t mid;
@@ -425,7 +426,7 @@ struct smbXcli_conn *smbXcli_conn_create(TALLOC_CTX *mem_ctx,
 	conn->smb1.mid = 1;
 
 	/* initialise signing */
-	conn->smb1.signing = smb_signing_init(conn,
+	conn->smb1.signing = smb1_signing_init(conn,
 					      conn->allow_signing,
 					      conn->desire_signing,
 					      conn->mandatory_signing);
@@ -498,6 +499,17 @@ bool smbXcli_conn_use_unicode(struct smbXcli_conn *conn)
 bool smbXcli_conn_signing_mandatory(struct smbXcli_conn *conn)
 {
 	return conn->mandatory_signing;
+}
+
+bool smbXcli_conn_have_posix(struct smbXcli_conn *conn)
+{
+	if (conn->protocol >= PROTOCOL_SMB3_11) {
+		return conn->smb2.server.smb311_posix;
+	}
+	if (conn->protocol <= PROTOCOL_NT1) {
+		return (conn->smb1.capabilities & CAP_UNIX);
+	}
+	return false;
 }
 
 /*
@@ -790,7 +802,7 @@ bool smb1cli_conn_activate_signing(struct smbXcli_conn *conn,
 				   const DATA_BLOB user_session_key,
 				   const DATA_BLOB response)
 {
-	return smb_signing_activate(conn->smb1.signing,
+	return smb1_signing_activate(conn->smb1.signing,
 				    user_session_key,
 				    response);
 }
@@ -801,12 +813,12 @@ bool smb1cli_conn_check_signing(struct smbXcli_conn *conn,
 	const uint8_t *hdr = buf + NBT_HDR_SIZE;
 	size_t len = smb_len_nbt(buf);
 
-	return smb_signing_check_pdu(conn->smb1.signing, hdr, len, seqnum);
+	return smb1_signing_check_pdu(conn->smb1.signing, hdr, len, seqnum);
 }
 
 bool smb1cli_conn_signing_is_active(struct smbXcli_conn *conn)
 {
-	return smb_signing_is_active(conn->smb1.signing);
+	return smb1_signing_is_active(conn->smb1.signing);
 }
 
 void smb1cli_conn_set_encryption(struct smbXcli_conn *conn,
@@ -949,7 +961,7 @@ static NTSTATUS smbXcli_req_cancel_write_req(struct tevent_req *req)
 		 * pending, we're able to recover the signing
 		 * state.
 		 */
-		smb_signing_cancel_reply(conn->smb1.signing,
+		smb1_signing_cancel_reply(conn->smb1.signing,
 					 state->smb1.one_way_seqnum);
 		return NT_STATUS_OK;
 	}
@@ -1673,9 +1685,9 @@ static NTSTATUS smb1cli_conn_signv(struct smbXcli_conn *conn,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	*seqnum = smb_signing_next_seqnum(conn->smb1.signing,
+	*seqnum = smb1_signing_next_seqnum(conn->smb1.signing,
 					  one_way_seqnum);
-	status = smb_signing_sign_pdu(conn->smb1.signing,
+	status = smb1_signing_sign_pdu(conn->smb1.signing,
 				      buf,
 				      talloc_get_size(buf),
 				      *seqnum);
@@ -1761,7 +1773,7 @@ static NTSTATUS smb1cli_req_writev_submit(struct tevent_req *req,
 	}
 
 	/*
-	 * If we supported multiple encrytion contexts
+	 * If we supported multiple encryption contexts
 	 * here we'd look up based on tid.
 	 */
 	if (common_encryption_on(state->conn->smb1.trans_enc)) {
@@ -2228,7 +2240,7 @@ static NTSTATUS smb1cli_conn_dispatch_incoming(struct smbXcli_conn *conn,
 	}
 
 	/*
-	 * If we supported multiple encrytion contexts
+	 * If we supported multiple encryption contexts
 	 * here we'd look up based on tid.
 	 */
 	if (common_encryption_on(conn->smb1.trans_enc)
@@ -2295,7 +2307,7 @@ static NTSTATUS smb1cli_conn_dispatch_incoming(struct smbXcli_conn *conn,
 	state = tevent_req_data(req, struct smbXcli_req_state);
 
 	if (!oplock_break /* oplock breaks are not signed */
-	    && !smb_signing_check_pdu(conn->smb1.signing,
+	    && !smb1_signing_check_pdu(conn->smb1.signing,
 				      inhdr, len, state->smb1.seqnum+1)) {
 		DEBUG(10, ("cli_check_sign_mac failed\n"));
 		return NT_STATUS_ACCESS_DENIED;
@@ -2985,11 +2997,17 @@ struct tevent_req *smb2cli_req_create(TALLOC_CTX *mem_ctx,
 	bool use_channel_sequence = conn->smb2.force_channel_sequence;
 	uint16_t channel_sequence = 0;
 	bool use_replay_flag = false;
+	enum protocol_types proto = smbXcli_conn_protocol(conn);
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct smbXcli_req_state);
 	if (req == NULL) {
 		return NULL;
+	}
+
+	if ((proto > PROTOCOL_NONE) && (proto < PROTOCOL_SMB2_02)) {
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return req;
 	}
 
 	state->ev = ev;
@@ -3069,9 +3087,8 @@ struct tevent_req *smb2cli_req_create(TALLOC_CTX *mem_ctx,
 	}
 
 	state->smb2.recv_iov = talloc_zero_array(state, struct iovec, 3);
-	if (state->smb2.recv_iov == NULL) {
-		TALLOC_FREE(req);
-		return NULL;
+	if (tevent_req_nomem(state->smb2.recv_iov, req)) {
+		return req;
 	}
 
 	flags |= additional_flags;
@@ -3996,12 +4013,12 @@ static NTSTATUS smb2cli_conn_dispatch_incoming(struct smbXcli_conn *conn,
 			 * to the caller.
 			 */
 			if (signing_key) {
-				int cmp;
+				bool cmp;
 
-				cmp = memcmp(inhdr+SMB2_HDR_SIGNATURE,
-					     state->smb2.hdr+SMB2_HDR_SIGNATURE,
-					     16);
-				if (cmp == 0) {
+				cmp = mem_equal_const_time(inhdr+SMB2_HDR_SIGNATURE,
+							   state->smb2.hdr+SMB2_HDR_SIGNATURE,
+							   16);
+				if (cmp) {
 					state->smb2.signing_skipped = true;
 					signing_key = NULL;
 				}
@@ -4220,6 +4237,8 @@ static const struct {
 struct smbXcli_negprot_state {
 	struct smbXcli_conn *conn;
 	struct tevent_context *ev;
+	struct smb2_negotiate_contexts *in_ctx;
+	struct smb2_negotiate_contexts *out_ctx;
 	uint32_t timeout_msec;
 
 	struct {
@@ -4242,7 +4261,8 @@ struct tevent_req *smbXcli_negprot_send(TALLOC_CTX *mem_ctx,
 					uint32_t timeout_msec,
 					enum protocol_types min_protocol,
 					enum protocol_types max_protocol,
-					uint16_t max_credits)
+					uint16_t max_credits,
+					struct smb2_negotiate_contexts *in_ctx)
 {
 	struct tevent_req *req, *subreq;
 	struct smbXcli_negprot_state *state;
@@ -4254,6 +4274,7 @@ struct tevent_req *smbXcli_negprot_send(TALLOC_CTX *mem_ctx,
 	}
 	state->conn = conn;
 	state->ev = ev;
+	state->in_ctx = in_ctx;
 	state->timeout_msec = timeout_msec;
 
 	if (min_protocol == PROTOCOL_NONE) {
@@ -4469,7 +4490,11 @@ static void smbXcli_negprot_smb1_done(struct tevent_req *subreq)
 				  NULL, /* pinbuf */
 				  expected, ARRAY_SIZE(expected));
 	TALLOC_FREE(subreq);
-	if (inhdr == NULL || tevent_req_nterror(req, status)) {
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+	if (inhdr == NULL) {
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
 		return;
 	}
 
@@ -4659,7 +4684,7 @@ static void smbXcli_negprot_smb1_done(struct tevent_req *subreq)
 			server_mandatory = true;
 		}
 
-		ok = smb_signing_set_negotiated(conn->smb1.signing,
+		ok = smb1_signing_set_negotiated(conn->smb1.signing,
 						server_allowed,
 						server_mandatory);
 		if (!ok) {
@@ -4930,6 +4955,25 @@ static struct tevent_req *smbXcli_negprot_smb2_subreq(struct smbXcli_negprot_sta
 			return NULL;
 		}
 
+		if (state->in_ctx != NULL) {
+			struct smb2_negotiate_contexts *ctxs = state->in_ctx;
+
+			for (i=0; i<ctxs->num_contexts; i++) {
+				struct smb2_negotiate_context *ctx =
+					&ctxs->contexts[i];
+
+				status = smb2_negotiate_context_add(
+					state,
+					&c,
+					ctx->type,
+					ctx->data.data,
+					ctx->data.length);
+				if (!NT_STATUS_IS_OK(status)) {
+					return NULL;
+				}
+			}
+		}
+
 		status = smb2_negotiate_context_push(state, &b, c);
 		if (!NT_STATUS_IS_OK(status)) {
 			return NULL;
@@ -4984,7 +5028,6 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 	uint8_t *body;
 	size_t i;
 	uint16_t dialect_revision;
-	struct smb2_negotiate_contexts c = { .num_contexts = 0, };
 	uint32_t negotiate_context_offset = 0;
 	uint16_t negotiate_context_count = 0;
 	DATA_BLOB negotiate_context_blob = data_blob_null;
@@ -4998,6 +5041,7 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 	gnutls_hash_hd_t hash_hnd = NULL;
 	struct smb2_negotiate_context *sign_algo = NULL;
 	struct smb2_negotiate_context *cipher = NULL;
+	struct smb2_negotiate_context *posix = NULL;
 	struct iovec sent_iov[3] = {{0}, {0}, {0}};
 	static const struct smb2cli_req_expected_response expected[] = {
 	{
@@ -5009,7 +5053,11 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 
 	status = smb2cli_req_recv(subreq, state, &iov,
 				  expected, ARRAY_SIZE(expected));
-	if (tevent_req_nterror(req, status) || iov == NULL) {
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+	if (iov == NULL) {
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
 		return;
 	}
 
@@ -5080,8 +5128,34 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 	conn->smb2.server.system_time	= BVAL(body, 40);
 	conn->smb2.server.start_time	= BVAL(body, 48);
 
+	if (conn->smb2.server.max_trans_size == 0 ||
+	    conn->smb2.server.max_read_size == 0 ||
+	    conn->smb2.server.max_write_size == 0) {
+		/*
+		 * We can't connect to servers we can't
+		 * do any operations on.
+		 */
+		tevent_req_nterror(req, NT_STATUS_INVALID_NETWORK_RESPONSE);
+		return;
+	}
+
 	security_offset = SVAL(body, 56);
 	security_length = SVAL(body, 58);
+
+	if (security_offset == 0) {
+		/*
+		 * Azure sends security_offset = 0 and security_length = 0
+		 *
+		 * We just set security_offset to the expected value
+		 * in order to allow the further logic to work
+		 * as before.
+		 */
+		if (security_length != 0) {
+			tevent_req_nterror(req, NT_STATUS_INVALID_NETWORK_RESPONSE);
+			return;
+		}
+		security_offset = SMB2_HDR_BODY + iov[1].iov_len;
+	}
 
 	if (security_offset != SMB2_HDR_BODY + iov[1].iov_len) {
 		tevent_req_nterror(req, NT_STATUS_INVALID_NETWORK_RESPONSE);
@@ -5161,10 +5235,15 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 	negotiate_context_blob.data += ctx_ofs;
 	negotiate_context_blob.length -= ctx_ofs;
 
-	status = smb2_negotiate_context_parse(state,
+	state->out_ctx = talloc_zero(state, struct smb2_negotiate_contexts);
+	if (tevent_req_nomem(state->out_ctx, req)) {
+		return;
+	}
+
+	status = smb2_negotiate_context_parse(state->out_ctx,
 					      negotiate_context_blob,
 					      negotiate_context_count,
-					      &c);
+					      state->out_ctx);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_INVALID_PARAMETER)) {
 		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
 	}
@@ -5172,8 +5251,8 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 		return;
 	}
 
-	preauth = smb2_negotiate_context_find(&c,
-					SMB2_PREAUTH_INTEGRITY_CAPABILITIES);
+	preauth = smb2_negotiate_context_find(
+		state->out_ctx, SMB2_PREAUTH_INTEGRITY_CAPABILITIES);
 	if (preauth == NULL) {
 		tevent_req_nterror(req, NT_STATUS_INVALID_NETWORK_RESPONSE);
 		return;
@@ -5203,7 +5282,8 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 		return;
 	}
 
-	sign_algo = smb2_negotiate_context_find(&c, SMB2_SIGNING_CAPABILITIES);
+	sign_algo = smb2_negotiate_context_find(
+		state->out_ctx, SMB2_SIGNING_CAPABILITIES);
 	if (sign_algo != NULL) {
 		const struct smb3_signing_capabilities *client_sign_algos =
 			&state->conn->smb2.client.smb3_capabilities.signing;
@@ -5262,7 +5342,8 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 		conn->smb2.server.sign_algo = sign_algo_selected;
 	}
 
-	cipher = smb2_negotiate_context_find(&c, SMB2_ENCRYPTION_CAPABILITIES);
+	cipher = smb2_negotiate_context_find(
+		state->out_ctx, SMB2_ENCRYPTION_CAPABILITIES);
 	if (cipher != NULL) {
 		const struct smb3_encryption_capabilities *client_ciphers =
 			&state->conn->smb2.client.smb3_capabilities.encryption;
@@ -5327,6 +5408,17 @@ static void smbXcli_negprot_smb2_done(struct tevent_req *subreq)
 
 		conn->smb2.server.cipher = cipher_selected;
 	}
+
+	posix = smb2_negotiate_context_find(
+		state->out_ctx, SMB2_POSIX_EXTENSIONS_AVAILABLE);
+	if (posix != NULL) {
+		DATA_BLOB posix_blob = data_blob_const(
+			SMB2_CREATE_TAG_POSIX, strlen(SMB2_CREATE_TAG_POSIX));
+		int cmp = data_blob_cmp(&posix->data, &posix_blob);
+
+		conn->smb2.server.smb311_posix = (cmp == 0);
+	}
+
 
 	/* First we hash the request */
 	smb2cli_req_get_sent_iov(subreq, sent_iov);
@@ -5482,9 +5574,26 @@ static NTSTATUS smbXcli_negprot_dispatch_incoming(struct smbXcli_conn *conn,
 	return NT_STATUS_INVALID_NETWORK_RESPONSE;
 }
 
-NTSTATUS smbXcli_negprot_recv(struct tevent_req *req)
+NTSTATUS smbXcli_negprot_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct smb2_negotiate_contexts **out_ctx)
 {
-	return tevent_req_simple_recv_ntstatus(req);
+	struct smbXcli_negprot_state *state = tevent_req_data(
+		req, struct smbXcli_negprot_state);
+	NTSTATUS status;
+
+	if (tevent_req_is_nterror(req, &status)) {
+		tevent_req_received(req);
+		return status;
+	}
+
+	if (out_ctx != NULL) {
+		*out_ctx = talloc_move(mem_ctx, &state->out_ctx);
+	}
+
+	tevent_req_received(req);
+	return NT_STATUS_OK;
 }
 
 NTSTATUS smbXcli_negprot(struct smbXcli_conn *conn,
@@ -5509,9 +5618,15 @@ NTSTATUS smbXcli_negprot(struct smbXcli_conn *conn,
 	if (ev == NULL) {
 		goto fail;
 	}
-	req = smbXcli_negprot_send(frame, ev, conn, timeout_msec,
-				   min_protocol, max_protocol,
-				   WINDOWS_CLIENT_PURE_SMB2_NEGPROT_INITIAL_CREDIT_ASK);
+	req = smbXcli_negprot_send(
+		frame,
+		ev,
+		conn,
+		timeout_msec,
+		min_protocol,
+		max_protocol,
+		WINDOWS_CLIENT_PURE_SMB2_NEGPROT_INITIAL_CREDIT_ASK,
+		NULL);
 	if (req == NULL) {
 		goto fail;
 	}
@@ -5519,7 +5634,7 @@ NTSTATUS smbXcli_negprot(struct smbXcli_conn *conn,
 	if (!ok) {
 		goto fail;
 	}
-	status = smbXcli_negprot_recv(req);
+	status = smbXcli_negprot_recv(req, NULL, NULL);
  fail:
 	TALLOC_FREE(frame);
 	return status;
@@ -6138,7 +6253,7 @@ NTSTATUS smb1cli_session_protect_session_key(struct smbXcli_session *session)
 		return NT_STATUS_INVALID_PARAMETER_MIX;
 	}
 
-	status = smb_key_derivation(session->smb1.application_key.data,
+	status = smb1_key_derivation(session->smb1.application_key.data,
 				    session->smb1.application_key.length,
 				    session->smb1.application_key.data);
 	if (!NT_STATUS_IS_OK(status)) {

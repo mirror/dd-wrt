@@ -34,6 +34,10 @@
 #include "modules/vfs_hpuxacl.h"
 #endif
 
+#if defined(HAVE_AIX_ACLS)
+#include "modules/vfs_aixacl.h"
+#endif
+
 #undef  DBGC_CLASS
 #define DBGC_CLASS DBGC_ACLS
 
@@ -387,7 +391,7 @@ SMB_ACL_T sys_acl_get_fd(vfs_handle_struct *handle,
 			 SMB_ACL_TYPE_T type,
 			 TALLOC_CTX *mem_ctx)
 {
-	return aixacl_sys_acl_get_fd(handle, fsp, mem_ctx);
+	return aixacl_sys_acl_get_fd(handle, fsp, type, mem_ctx);
 }
 
 int sys_acl_set_fd(vfs_handle_struct *handle,
@@ -410,7 +414,7 @@ SMB_ACL_T sys_acl_get_fd(vfs_handle_struct *handle,
 			 SMB_ACL_TYPE_T type,
 			 TALLOC_CTX *mem_ctx)
 {
-	return solarisacl_sys_acl_get_fd(handle, fsp,
+	return solarisacl_sys_acl_get_fd(handle, fsp, type,
 					 mem_ctx);
 }
 

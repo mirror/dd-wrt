@@ -67,7 +67,12 @@ static int ldb_eval_transitive_filter_helper(TALLOC_CTX *mem_ctx,
 	 * Note also that we don't have the original request
 	 * here, so we can not apply controls or timeouts here.
 	 */
-	ret = dsdb_search_dn(ldb, tmp_ctx, &res, to_visit->dn, attrs, 0);
+	ret = dsdb_search_dn(ldb,
+			     tmp_ctx,
+			     &res,
+			     to_visit->dn,
+			     attrs,
+			     DSDB_MARK_REQ_UNTRUSTED);
 	if (ret != LDB_SUCCESS) {
 		talloc_free(tmp_ctx);
 		return ret;
@@ -370,6 +375,11 @@ static int dsdb_match_for_dns_to_tombstone_time(struct ldb_context *ldb,
 		return LDB_SUCCESS;
 	}
 
+	if (ldb_msg_element_is_inaccessible(el)) {
+		*matched = false;
+		return LDB_SUCCESS;
+	}
+
 	session_info = talloc_get_type(ldb_get_opaque(ldb, "sessionInfo"),
 				       struct auth_session_info);
 	if (session_info == NULL) {
@@ -486,6 +496,11 @@ static int dsdb_match_for_expunge(struct ldb_context *ldb,
 
 	el = ldb_msg_find_element(msg, attribute_to_match);
 	if (el == NULL) {
+		return LDB_SUCCESS;
+	}
+
+	if (ldb_msg_element_is_inaccessible(el)) {
+		*matched = false;
 		return LDB_SUCCESS;
 	}
 

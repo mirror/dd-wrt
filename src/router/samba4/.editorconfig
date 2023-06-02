@@ -5,17 +5,22 @@ charset = utf-8
 max_line_length = 80
 end_of_line = lf
 trim_trailing_whitespace = true
-insert_final_newline = false
+insert_final_newline = true
 
 [*.{c,h,idl}]
 indent_style = tab
 indent_size = 8
 tab_width = 8
 
-[*.{py,sh}]
+[*.{py}]
 indent_style = space
 indent_size = 4
 tab_width = 4
+
+[*.sh]
+indent_style = tab
+indent_size = 8
+tab_width = 8
 
 [*.{pl,pm}]
 indent_style = tab
@@ -27,7 +32,7 @@ indent_style = space
 indent_size = 4
 tab_width = 4
 
-[source4/heimdal/**.{c,h}]
+[third_party/heimdal/**.{c,h}]
 indent_style = space
 indent_size = 4
-tab_width = 4
+tab_width = 8

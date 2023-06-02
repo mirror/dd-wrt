@@ -78,7 +78,11 @@ void error_packet_set(char *outbuf, uint8_t eclass, uint32_t ecode, NTSTATUS nts
 		DEBUG(3,("NT error packet at %s(%d) cmd=%d (%s) %s\n",
 			 file, line,
 			 (int)CVAL(outbuf,smb_com),
+#if defined(WITH_SMB1SERVER)
 			 smb_fn_name(CVAL(outbuf,smb_com)),
+#else
+			 "",
+#endif
 			 nt_errstr(ntstatus)));
 	} else {
 		/* We're returning a DOS error only,
@@ -99,7 +103,11 @@ void error_packet_set(char *outbuf, uint8_t eclass, uint32_t ecode, NTSTATUS nts
 		DEBUG(3,("DOS error packet at %s(%d) cmd=%d (%s) eclass=%d ecode=%d\n",
 			  file, line,
 			  (int)CVAL(outbuf,smb_com),
+#if defined(WITH_SMB1SERVER)
 			  smb_fn_name(CVAL(outbuf,smb_com)),
+#else
+			  "",
+#endif
 			  eclass,
 			  ecode));
 	}
@@ -107,7 +115,7 @@ void error_packet_set(char *outbuf, uint8_t eclass, uint32_t ecode, NTSTATUS nts
 
 size_t error_packet(char *outbuf, uint8_t eclass, uint32_t ecode, NTSTATUS ntstatus, int line, const char *file)
 {
-	size_t outsize = srv_set_message(outbuf,0,0,True);
+	size_t outsize = srv_smb1_set_message(outbuf,0,0,True);
 	error_packet_set(outbuf, eclass, ecode, ntstatus, line, file);
 	return outsize;
 }
@@ -116,7 +124,7 @@ void reply_nt_error(struct smb_request *req, NTSTATUS ntstatus,
 		    int line, const char *file)
 {
 	TALLOC_FREE(req->outbuf);
-	reply_outbuf(req, 0, 0);
+	reply_smb1_outbuf(req, 0, 0);
 	error_packet_set((char *)req->outbuf, 0, 0, ntstatus, line, file);
 }
 
@@ -128,7 +136,7 @@ void reply_force_dos_error(struct smb_request *req, uint8_t eclass, uint32_t eco
 		    int line, const char *file)
 {
 	TALLOC_FREE(req->outbuf);
-	reply_outbuf(req, 0, 0);
+	reply_smb1_outbuf(req, 0, 0);
 	error_packet_set((char *)req->outbuf,
 			eclass, ecode,
 			NT_STATUS_DOS(eclass, ecode),
@@ -140,7 +148,7 @@ void reply_both_error(struct smb_request *req, uint8_t eclass, uint32_t ecode,
 		      NTSTATUS status, int line, const char *file)
 {
 	TALLOC_FREE(req->outbuf);
-	reply_outbuf(req, 0, 0);
+	reply_smb1_outbuf(req, 0, 0);
 	error_packet_set((char *)req->outbuf, eclass, ecode, status,
 			 line, file);
 }

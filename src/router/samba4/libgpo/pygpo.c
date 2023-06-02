@@ -29,6 +29,7 @@
 #include "libcli/util/pyerrors.h"
 #include "python/py3compat.h"
 #include "python/modules.h"
+#include <pytalloc.h>
 
 /* A Python C API module to use LIBGPO */
 
@@ -141,7 +142,7 @@ typedef struct {
 
 static void py_ads_dealloc(ADS* self)
 {
-	ads_destroy(&(self->ads_ptr));
+	TALLOC_FREE(self->ads_ptr);
 	Py_CLEAR(self->py_creds);
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
@@ -206,11 +207,14 @@ static int py_ads_init(ADS *self, PyObject *args, PyObject *kwds)
 
 	/* in case __init__ is called more than once */
 	if (self->ads_ptr) {
-		ads_destroy(&self->ads_ptr);
-		self->ads_ptr = NULL;
+		TALLOC_FREE(self->ads_ptr);
 	}
 	/* always succeeds or crashes */
-	self->ads_ptr = ads_init(realm, workgroup, ldap_server, ADS_SASL_PLAIN);
+	self->ads_ptr = ads_init(pytalloc_get_mem_ctx(args),
+				 realm,
+				 workgroup,
+				 ldap_server,
+				 ADS_SASL_PLAIN);
 	
 	return 0;
 }
@@ -225,47 +229,67 @@ static PyObject* py_ads_connect(ADS *self,
 		PyErr_SetString(PyExc_RuntimeError, "Uninitialized");
 		return NULL;
 	}
-	SAFE_FREE(self->ads_ptr->auth.user_name);
-	SAFE_FREE(self->ads_ptr->auth.password);
-	SAFE_FREE(self->ads_ptr->auth.realm);
+	ADS_TALLOC_CONST_FREE(self->ads_ptr->auth.user_name);
+	ADS_TALLOC_CONST_FREE(self->ads_ptr->auth.password);
+	ADS_TALLOC_CONST_FREE(self->ads_ptr->auth.realm);
 	if (self->cli_creds) {
-		self->ads_ptr->auth.user_name =
-			SMB_STRDUP(cli_credentials_get_username(self->cli_creds));
-		self->ads_ptr->auth.password =
-			SMB_STRDUP(cli_credentials_get_password(self->cli_creds));
-		self->ads_ptr->auth.realm =
-			SMB_STRDUP(cli_credentials_get_realm(self->cli_creds));
+		self->ads_ptr->auth.user_name = talloc_strdup(self->ads_ptr,
+			cli_credentials_get_username(self->cli_creds));
+		if (self->ads_ptr->auth.user_name == NULL) {
+			PyErr_NoMemory();
+			goto err;
+		}
+		self->ads_ptr->auth.password = talloc_strdup(self->ads_ptr,
+			cli_credentials_get_password(self->cli_creds));
+		if (self->ads_ptr->auth.password == NULL) {
+			PyErr_NoMemory();
+			goto err;
+		}
+		self->ads_ptr->auth.realm = talloc_strdup(self->ads_ptr,
+			cli_credentials_get_realm(self->cli_creds));
+		if (self->ads_ptr->auth.realm == NULL) {
+			PyErr_NoMemory();
+			goto err;
+		}
 		self->ads_ptr->auth.flags |= ADS_AUTH_USER_CREDS;
 		status = ads_connect_user_creds(self->ads_ptr);
 	} else {
 		char *passwd = NULL;
-		int ret;
+
 		if (!secrets_init()) {
 			PyErr_SetString(PyExc_RuntimeError,
 					"secrets_init() failed");
 			goto err;
 		}
 
-		passwd = secrets_fetch_machine_password(self->ads_ptr->server.workgroup,
-							NULL, NULL);
+		self->ads_ptr->auth.user_name = talloc_asprintf(self->ads_ptr,
+							"%s$",
+							lp_netbios_name());
+		if (self->ads_ptr->auth.user_name == NULL) {
+			PyErr_NoMemory();
+			goto err;
+		}
+
+		passwd = secrets_fetch_machine_password(
+			self->ads_ptr->server.workgroup, NULL, NULL);
 		if (passwd == NULL) {
 			PyErr_SetString(PyExc_RuntimeError,
 					"Failed to fetch the machine account "
 					"password");
 			goto err;
 		}
-		ret = asprintf(&(self->ads_ptr->auth.user_name), "%s$",
-				   lp_netbios_name());
-		if (ret == -1) {
-			SAFE_FREE(passwd);
+
+		self->ads_ptr->auth.password = talloc_strdup(self->ads_ptr,
+							     passwd);
+		SAFE_FREE(passwd);
+		if (self->ads_ptr->auth.password == NULL) {
 			PyErr_NoMemory();
 			goto err;
 		}
-		self->ads_ptr->auth.password = passwd; /* take ownership of this data */
-		self->ads_ptr->auth.realm =
-			SMB_STRDUP(self->ads_ptr->server.realm);
-		if (!strupper_m(self->ads_ptr->auth.realm)) {
-			PyErr_SetString(PyExc_RuntimeError, "Failed to strupper");
+		self->ads_ptr->auth.realm = talloc_asprintf_strupper_m(
+			self->ads_ptr, "%s", self->ads_ptr->server.realm);
+		if (self->ads_ptr->auth.realm == NULL) {
+			PyErr_NoMemory();
 			goto err;
 		}
 		self->ads_ptr->auth.flags |= ADS_AUTH_USER_CREDS;
@@ -498,6 +522,7 @@ static PyMethodDef ADS_methods[] = {
 static PyTypeObject ads_ADSType = {
 	.tp_name = "gpo.ADS_STRUCT",
 	.tp_basicsize = sizeof(ADS),
+	.tp_new = PyType_GenericNew,
 	.tp_dealloc = (destructor)py_ads_dealloc,
 	.tp_flags = Py_TPFLAGS_DEFAULT,
 	.tp_doc = "ADS struct",
@@ -540,8 +565,7 @@ MODULE_INIT_FUNC(gpo)
 		goto err;
 	}
 
-	ads_ADSType.tp_new = PyType_GenericNew;
-	if (PyType_Ready(&ads_ADSType) < 0) {
+	if (pytalloc_BaseObject_PyType_Ready(&ads_ADSType) < 0) {
 		goto err;
 	}
 

@@ -9,7 +9,7 @@
     authenticate users using the NTLM encrypted password response for
     this local passdb (SAM or account database). </para>
 
-    <para>If disabled, both NTLM and LanMan authencication against the
+    <para>If disabled, both NTLM and LanMan authentication against the
     local passdb is disabled.</para>
 
     <para>Note that these settings apply only to local users,
@@ -55,6 +55,21 @@
           <para><constant>disabled</constant> - Do not accept NTLM (or
           LanMan) authentication of any level, nor permit
           NTLM password changes.</para>
+
+	  <para><emphasis>WARNING:</emphasis> Both Microsoft Windows
+	  and Samba <emphasis>Read Only Domain Controllers</emphasis>
+	  (RODCs) convert a plain-text LDAP Simple Bind into an NTLMv2
+	  authentication to forward to a full DC.  Setting this option
+	  to <constant>disabled</constant> will cause these forwarded
+	  authentications to fail.</para>
+
+	  <para>Additionally, for Samba acting as an Active Directory
+	  Domain Controller, for user accounts, if <parameter moreinfo="none">nt hash store</parameter>
+	  is set to the default setting of <constant>auto</constant>,
+	  the <emphasis>NT hash will not be stored</emphasis>
+	  in the sam.ldb database for new users and after a
+	  password change.</para>
+
         </listitem>
 
     </itemizedlist>
@@ -65,6 +80,7 @@
     behaviour is unchanged.</para>
 </description>
 
+<related>nt hash store</related>
 <related>lanman auth</related>
 <related>raw NTLMv2 auth</related>
 <value type="default">ntlmv2-only</value>

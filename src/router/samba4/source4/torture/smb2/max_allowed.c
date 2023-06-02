@@ -27,8 +27,8 @@
 #include "torture/smb2/proto.h"
 
 #define MAXIMUM_ALLOWED_FILE    "torture_maximum_allowed"
-bool torture_smb2_maximum_allowed(struct torture_context *tctx,
-    struct smb2_tree *tree)
+static bool torture_smb2_maximum_allowed(struct torture_context *tctx,
+					 struct smb2_tree *tree)
 {
 	struct security_descriptor *sd = NULL, *sd_orig = NULL;
 	struct smb2_create io = {0};
@@ -189,4 +189,60 @@ bool torture_smb2_maximum_allowed(struct torture_context *tctx,
 	smb2_util_unlink(tree, MAXIMUM_ALLOWED_FILE);
 	talloc_free(mem_ctx);
 	return ret;
+}
+
+static bool torture_smb2_read_only_file(struct torture_context *tctx,
+					struct smb2_tree *tree)
+{
+	struct smb2_create c;
+	struct smb2_handle h = {{0}};
+	bool ret = true;
+	NTSTATUS status;
+
+	smb2_deltree(tree, MAXIMUM_ALLOWED_FILE);
+
+	c = (struct smb2_create) {
+		.in.desired_access = SEC_RIGHTS_FILE_ALL,
+		.in.file_attributes = FILE_ATTRIBUTE_READONLY,
+		.in.create_disposition = NTCREATEX_DISP_CREATE,
+		.in.fname = MAXIMUM_ALLOWED_FILE,
+	};
+
+	status = smb2_create(tree, tctx, &c);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_create failed\n");
+	h = c.out.file.handle;
+	smb2_util_close(tree, h);
+	ZERO_STRUCT(h);
+
+	c = (struct smb2_create) {
+		.in.desired_access = SEC_FLAG_MAXIMUM_ALLOWED,
+		.in.file_attributes = FILE_ATTRIBUTE_READONLY,
+		.in.create_disposition = NTCREATEX_DISP_OPEN,
+		.in.fname = MAXIMUM_ALLOWED_FILE,
+	};
+
+	status = smb2_create(tree, tctx, &c);
+	torture_assert_ntstatus_ok_goto(
+		tctx, status, ret, done,
+		"Failed to open READ-ONLY file with SEC_FLAG_MAXIMUM_ALLOWED\n");
+	h = c.out.file.handle;
+	smb2_util_close(tree, h);
+	ZERO_STRUCT(h);
+
+done:
+	if (!smb2_util_handle_empty(h)) {
+		smb2_util_close(tree, h);
+	}
+	smb2_deltree(tree, MAXIMUM_ALLOWED_FILE);
+	return ret;
+}
+
+struct torture_suite *torture_smb2_max_allowed(TALLOC_CTX *ctx)
+{
+	struct torture_suite *suite = torture_suite_create(ctx, "maximum_allowed");
+
+	torture_suite_add_1smb2_test(suite, "maximum_allowed", torture_smb2_maximum_allowed);
+	torture_suite_add_1smb2_test(suite, "read_only", torture_smb2_read_only_file);
+	return suite;
 }

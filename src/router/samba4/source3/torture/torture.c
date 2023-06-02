@@ -513,7 +513,7 @@ static NTSTATUS torture_delete_fn(struct file_info *finfo,
 					  FILE_ATTRIBUTE_SYSTEM,
 				  torture_delete_fn,
 				  cli);
-		if (NT_STATUS_IS_OK(status)) {
+		if (!NT_STATUS_IS_OK(status)) {
 			printf("torture_delete_fn: cli_list "
 				"of %s failed (%s)\n",
 				subdirname,
@@ -1435,6 +1435,7 @@ static bool run_tcon_test(int dummy)
 	uint16_t fnum1;
 	uint32_t cnum1, cnum2, cnum3;
 	struct smbXcli_tcon *orig_tcon = NULL;
+	char *orig_share = NULL;
 	uint16_t vuid1, vuid2;
 	char buf[4];
 	bool ret = True;
@@ -1466,16 +1467,13 @@ static bool run_tcon_test(int dummy)
 		return False;
 	}
 
-	orig_tcon = cli_state_save_tcon(cli);
-	if (orig_tcon == NULL) {
-		return false;
-	}
+	cli_state_save_tcon_share(cli, &orig_tcon, &orig_share);
 
 	status = cli_tree_connect_creds(cli, share, "?????", torture_creds);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("%s refused 2nd tree connect (%s)\n", host,
 		       nt_errstr(status));
-		cli_state_restore_tcon(cli, orig_tcon);
+		cli_state_restore_tcon_share(cli, orig_tcon, orig_share);
 		cli_shutdown(cli);
 		return False;
 	}
@@ -1528,7 +1526,7 @@ static bool run_tcon_test(int dummy)
 	status = cli_close(cli, fnum1);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("close failed (%s)\n", nt_errstr(status));
-		cli_state_restore_tcon(cli, orig_tcon);
+		cli_state_restore_tcon_share(cli, orig_tcon, orig_share);
 		cli_shutdown(cli);
 		return False;
 	}
@@ -1538,12 +1536,12 @@ static bool run_tcon_test(int dummy)
 	status = cli_tdis(cli);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("secondary tdis failed (%s)\n", nt_errstr(status));
-		cli_state_restore_tcon(cli, orig_tcon);
+		cli_state_restore_tcon_share(cli, orig_tcon, orig_share);
 		cli_shutdown(cli);
 		return False;
 	}
 
-	cli_state_restore_tcon(cli, orig_tcon);
+	cli_state_restore_tcon_share(cli, orig_tcon, orig_share);
 
 	cli_state_set_tid(cli, cnum1);
 
@@ -3953,8 +3951,15 @@ static bool run_negprot_nowait(int dummy)
 	for (i=0;i<50000;i++) {
 		struct tevent_req *req;
 
-		req = smbXcli_negprot_send(ev, ev, cli->conn, cli->timeout,
-					   PROTOCOL_CORE, PROTOCOL_NT1, 0);
+		req = smbXcli_negprot_send(
+			ev,
+			ev,
+			cli->conn,
+			cli->timeout,
+			PROTOCOL_CORE,
+			PROTOCOL_NT1,
+			0,
+			NULL);
 		if (req == NULL) {
 			TALLOC_FREE(ev);
 			return false;
@@ -4333,6 +4338,50 @@ static bool run_attrtest(int dummy)
 	return correct;
 }
 
+static NTSTATUS cli_qfilename(
+	struct cli_state *cli,
+	uint16_t fnum,
+	TALLOC_CTX *mem_ctx,
+	char **_name)
+{
+	uint16_t recv_flags2;
+	uint8_t *rdata;
+	uint32_t num_rdata;
+	NTSTATUS status;
+	char *name = NULL;
+	uint32_t namelen;
+
+	status = cli_qfileinfo(talloc_tos(), cli, fnum,
+			       SMB_QUERY_FILE_NAME_INFO,
+			       4, CLI_BUFFER_SIZE, &recv_flags2,
+			       &rdata, &num_rdata);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	namelen = IVAL(rdata, 0);
+	if (namelen > (num_rdata - 4)) {
+		TALLOC_FREE(rdata);
+		return NT_STATUS_INVALID_NETWORK_RESPONSE;
+	}
+
+	pull_string_talloc(mem_ctx,
+			   (const char *)rdata,
+			   recv_flags2,
+			   &name,
+			   rdata + 4,
+			   namelen,
+			   STR_UNICODE);
+	if (name == NULL) {
+		status = map_nt_error_from_unix(errno);
+		TALLOC_FREE(rdata);
+		return status;
+	}
+
+	*_name = name;
+	TALLOC_FREE(rdata);
+	return NT_STATUS_OK;
+}
 
 /*
   This checks a couple of trans2 calls
@@ -4347,7 +4396,7 @@ static bool run_trans2test(int dummy)
 	const char *fname = "\\trans2.tst";
 	const char *dname = "\\trans2";
 	const char *fname2 = "\\trans2\\trans2.tst";
-	char *pname;
+	char *pname = NULL;
 	bool correct = True;
 	NTSTATUS status;
 	uint32_t fs_attr;
@@ -7714,6 +7763,7 @@ static bool run_simple_posix_open_test(int dummy)
 	size_t nread;
 	const char *fname_windows = "windows_file";
 	uint16_t fnum2 = (uint16_t)-1;
+	bool ok;
 
 	printf("Starting simple POSIX open test\n");
 
@@ -7982,18 +8032,19 @@ static bool run_simple_posix_open_test(int dummy)
 	if (NT_STATUS_IS_OK(status)) {
 		printf("POSIX open of %s succeeded (should have failed)\n", sname);
 		goto out;
-	} else {
-		if (!check_both_error(__LINE__, status, ERRDOS, ERRbadpath,
-				NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
-			printf("POSIX open of %s should have failed "
-				"with NT_STATUS_OBJECT_NAME_NOT_FOUND, "
-				"failed with %s instead.\n",
-				sname, nt_errstr(status));
-			goto out;
-		}
+	}
+	ok = check_both_error(
+		__LINE__, status, ERRDOS, ERRbadpath,
+		NT_STATUS_OBJECT_NAME_NOT_FOUND);
+	if (!ok) {
+		printf("POSIX open of %s should have failed "
+		       "with NT_STATUS_OBJECT_NAME_NOT_FOUND, "
+		       "failed with %s instead.\n",
+		       sname, nt_errstr(status));
+		goto out;
 	}
 
-	status = cli_posix_readlink(cli1, sname, talloc_tos(), &target);
+	status = cli_readlink(cli1, sname, talloc_tos(), &target, NULL, NULL);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("POSIX readlink on %s failed (%s)\n", sname, nt_errstr(status));
 		goto out;
@@ -9949,8 +10000,7 @@ static bool run_eatest(int dummy)
 	const char *fname = "\\eatest.txt";
 	bool correct = True;
 	uint16_t fnum;
-	int i;
-	size_t num_eas;
+	size_t i, num_eas;
 	struct ea_struct *ea_list = NULL;
 	TALLOC_CTX *mem_ctx = talloc_init("eatest");
 	NTSTATUS status;
@@ -9977,7 +10027,7 @@ static bool run_eatest(int dummy)
 	for (i = 0; i < 10; i++) {
 		fstring ea_name, ea_val;
 
-		slprintf(ea_name, sizeof(ea_name), "EA_%d", i);
+		slprintf(ea_name, sizeof(ea_name), "EA_%zu", i);
 		memset(ea_val, (char)i+1, i+1);
 		status = cli_set_ea_fnum(cli, fnum, ea_name, ea_val, i+1);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -9992,7 +10042,7 @@ static bool run_eatest(int dummy)
 	for (i = 0; i < 10; i++) {
 		fstring ea_name, ea_val;
 
-		slprintf(ea_name, sizeof(ea_name), "EA_%d", i+10);
+		slprintf(ea_name, sizeof(ea_name), "EA_%zu", i+10);
 		memset(ea_val, (char)i+1, i+1);
 		status = cli_set_ea_path(cli, fname, ea_name, ea_val, i+1);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -10017,7 +10067,7 @@ static bool run_eatest(int dummy)
 	}
 
 	for (i = 0; i < num_eas; i++) {
-		printf("%d: ea_name = %s. Val = ", i, ea_list[i].name);
+		printf("%zu: ea_name = %s. Val = ", i, ea_list[i].name);
 		dump_data(0, ea_list[i].value.data,
 			  ea_list[i].value.length);
 	}
@@ -10049,7 +10099,7 @@ static bool run_eatest(int dummy)
 
 	printf("num_eas = %d\n", (int)num_eas);
 	for (i = 0; i < num_eas; i++) {
-		printf("%d: ea_name = %s. Val = ", i, ea_list[i].name);
+		printf("%zu: ea_name = %s. Val = ", i, ea_list[i].name);
 		dump_data(0, ea_list[i].value.data,
 			  ea_list[i].value.length);
 	}
@@ -10650,10 +10700,9 @@ static void torture_createdels_done(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct torture_createdels_state *state = tevent_req_data(
 		req, struct torture_createdels_state);
-	size_t num_parallel = talloc_array_length(state->reqs);
+	size_t i, num_parallel = talloc_array_length(state->reqs);
 	NTSTATUS status;
 	char *name;
-	int i;
 
 	status = torture_createdel_recv(subreq);
 	if (!NT_STATUS_IS_OK(status)){
@@ -11805,7 +11854,7 @@ static bool run_uid_regression_test(int dummy)
 	 * second tdis call with invalid vuid.
 	 *
 	 * This is a test-only hack. Real client code
-	 * uses cli_state_save_tcon()/cli_state_restore_tcon().
+	 * uses cli_state_save_tcon_share()/cli_state_restore_tcon_share().
 	 */
 	tcon_copy = smbXcli_tcon_copy(cli, cli->smb1.tcon);
 	if (tcon_copy == NULL) {
@@ -14343,7 +14392,7 @@ static bool run_local_hex_encode_buf(int dummy)
 {
 	char buf[17];
 	uint8_t src[8];
-	int i;
+	size_t i;
 
 	for (i=0; i<sizeof(src); i++) {
 		src[i] = i;
@@ -15301,6 +15350,42 @@ static struct {
 		.fn    = run_delete_on_close_non_empty,
 	},
 	{
+		.name  = "SMB2-DEL-ON-CLOSE-NONWRITE-DELETE-YES",
+		.fn    = run_delete_on_close_nonwrite_delete_yes_test,
+	},
+	{
+		.name  = "SMB2-DEL-ON-CLOSE-NONWRITE-DELETE-NO",
+		.fn    = run_delete_on_close_nonwrite_delete_no_test,
+	},
+	{
+		.name  = "SMB2-DFS-PATHS",
+		.fn    = run_smb2_dfs_paths,
+	},
+	{
+		.name  = "SMB2-NON-DFS-SHARE",
+		.fn    = run_smb2_non_dfs_share,
+	},
+	{
+		.name  = "SMB2-DFS-SHARE-NON-DFS-PATH",
+		.fn    = run_smb2_dfs_share_non_dfs_path,
+	},
+	{
+		.name  = "SMB2-DFS-FILENAME-LEADING-BACKSLASH",
+		.fn    = run_smb2_dfs_filename_leading_backslash,
+	},
+	{
+		.name  = "SMB1-DFS-PATHS",
+		.fn    = run_smb1_dfs_paths,
+	},
+	{
+		.name  = "SMB1-DFS-SEARCH-PATHS",
+		.fn    = run_smb1_dfs_search_paths,
+	},
+	{
+		.name  = "SMB1-DFS-OPERATIONS",
+		.fn    = run_smb1_dfs_operations,
+	},
+	{
 		.name  = "CLEANUP1",
 		.fn    = run_cleanup1,
 	},
@@ -15532,6 +15617,10 @@ static struct {
 		.name  = "hide-new-files-timeout",
 		.fn    = run_hidenewfiles,
 	},
+	{
+		.name  = "hide-new-files-timeout-showdirs",
+		.fn    = run_hidenewfiles_showdirs,
+	},
 #ifdef CLUSTER_SUPPORT
 	{
 		.name  = "ctdbd-conn1",
@@ -15541,6 +15630,10 @@ static struct {
 	{
 		.name  = "readdir-timestamp",
 		.fn    = run_readdir_timestamp,
+	},
+	{
+		.name  = "rpc-scale",
+		.fn    = run_rpc_scale,
 	},
 	{
 		.name = NULL,

@@ -37,11 +37,193 @@
 #include "source3/lib/substitute.h"
 
 /**********************************************************************
- Parse a DFS pathname of the form \hostname\service\reqpath
+ Function to determine if a given sharename matches a connection.
+**********************************************************************/
+
+static bool msdfs_servicename_matches_connection(struct connection_struct *conn,
+						 const char *servicename,
+						 const char *vfs_user)
+{
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	char *conn_servicename = NULL;
+	int snum;
+	bool match = false;
+
+	snum = SNUM(conn);
+
+	conn_servicename = lp_servicename(talloc_tos(), lp_sub, snum);
+	if (conn_servicename == NULL) {
+		DBG_ERR("lp_servicename() failed, OOM!\n");
+		return false;
+	}
+
+	if (strequal(servicename, conn_servicename)) {
+		match = true;
+		goto done;
+	}
+	if (strequal(servicename, HOMES_NAME)) {
+		match = true;
+		goto done;
+	}
+	if (strequal(vfs_user, conn_servicename)) {
+		match = true;
+		goto done;
+	}
+done:
+	TALLOC_FREE(conn_servicename);
+	return match;
+}
+
+/**********************************************************************
+ Parse a DFS pathname of the form(s)
+
+ \hostname\service			- self referral
+ \hostname\service\remainingpath	- Windows referral path
+
+ FIXME! Should we also parse:
+ \hostname\service/remainingpath	- POSIX referral path
+ as currently nothing uses this ?
+
+ into the dfs_path components. Strict form.
+
+ Checks DFS path starts with separator.
+ Checks hostname is ours.
+ Ensures servicename (share) is sent, and
+     if so, terminates the name or is followed by
+     \pathname.
+
+ If returned, remainingpath is untouched. Caller must call
+ check_path_syntaxXXX() on it.
+
+ Called by all non-fileserver processing (DFS RPC, FSCTL_DFS_GET_REFERRALS)
+ etc. Errors out on any inconsistency in the path.
+**********************************************************************/
+
+static NTSTATUS parse_dfs_path_strict(TALLOC_CTX *ctx,
+				const char *pathname,
+				char **_hostname,
+				char **_servicename,
+				char **_remaining_path)
+{
+	char *pathname_local = NULL;
+	char *p = NULL;
+	const char *hostname = NULL;
+	const char *servicename = NULL;
+	const char *reqpath = NULL;
+	bool my_hostname = false;
+	NTSTATUS status;
+
+	DBG_DEBUG("path = |%s|\n", pathname);
+
+	pathname_local = talloc_strdup(talloc_tos(), pathname);
+	if (pathname_local == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	/*
+	 * parse_dfs_path_strict() is called from
+	 * get_referred_path() and create_junction()
+	 * which use Windows DFS paths of \server\share.
+	 */
+
+	/*
+	 * Strict DFS paths *must* start with the
+	 * path separator '\\'.
+	 */
+
+	if (pathname_local[0] != '\\') {
+		DBG_ERR("path %s doesn't start with \\\n",
+			pathname_local);
+		status = NT_STATUS_NOT_FOUND;
+		goto out;
+	}
+
+	/* Now tokenize. */
+	/* Parse out hostname. */
+	p = strchr(pathname_local + 1, '\\');
+	if (p == NULL) {
+		DBG_ERR("can't parse hostname from path %s\n",
+			pathname_local);
+		status = NT_STATUS_NOT_FOUND;
+		goto out;
+	}
+	*p = '\0';
+	hostname = &pathname_local[1];
+
+	DBG_DEBUG("hostname: %s\n", hostname);
+
+	/* Is this really our hostname ? */
+	my_hostname = is_myname_or_ipaddr(hostname);
+	if (!my_hostname) {
+		DBG_ERR("Hostname %s is not ours.\n",
+			hostname);
+		status = NT_STATUS_NOT_FOUND;
+		goto out;
+	}
+
+	servicename = p + 1;
+
+	/*
+	 * Find the end of servicename by looking for
+	 * a directory separator character. The character
+	 * should be '\\' for a Windows path.
+	 * If there is no separator, then this is a self-referral
+	 * of "\server\share".
+	 */
+
+	p = strchr(servicename, '\\');
+	if (p != NULL) {
+		*p = '\0';
+	}
+
+	DBG_DEBUG("servicename: %s\n", servicename);
+
+	if (p == NULL) {
+		/* Client sent self referral "\server\share". */
+		reqpath = "";
+	} else {
+		/* Step past the '\0' we just replaced '\\' with. */
+		reqpath = p + 1;
+	}
+
+	DBG_DEBUG("rest of the path: %s\n", reqpath);
+
+	if (_hostname != NULL) {
+		*_hostname = talloc_strdup(ctx, hostname);
+		if (*_hostname == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+	if (_servicename != NULL) {
+		*_servicename = talloc_strdup(ctx, servicename);
+		if (*_servicename == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+	if (_remaining_path != NULL) {
+		*_remaining_path = talloc_strdup(ctx, reqpath);
+		if (*_remaining_path == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+
+	status = NT_STATUS_OK;
+out:
+	TALLOC_FREE(pathname_local);
+	return status;
+}
+
+/**********************************************************************
+ Parse a DFS pathname of the form /hostname/service/reqpath
  into the dfs_path structure.
- If POSIX pathnames is true, the pathname may also be of the
- form /hostname/service/reqpath.
- We cope with either here.
+
+ NB. srvstr_get_path_internal() now *always* calls
+ check_path_syntax_XXX() on an incoming name, so
+ the path separator is now always '/', even from
+ Windows clients.
 
  Unfortunately, due to broken clients who might set the
  SVAL(inbuf,smb_flg2) & FLAGS2_DFS_PATHNAMES bit and then
@@ -56,54 +238,50 @@
  JRA.
 **********************************************************************/
 
-static NTSTATUS parse_dfs_path(connection_struct *conn,
+static NTSTATUS parse_dfs_path(TALLOC_CTX *ctx,
+				connection_struct *conn,
 				const char *pathname,
-				bool allow_wcards,
-				bool allow_broken_path,
-				struct dfs_path *pdp) /* MUST BE TALLOCED */
+				char **_hostname,
+				char **_servicename,
+				char **_remaining_path)
 {
-	const struct loadparm_substitution *lp_sub =
-		loadparm_s3_global_substitution();
-	char *pathname_local;
-	char *p,*temp;
-	char *servicename;
-	char *eos_ptr;
-	NTSTATUS status = NT_STATUS_OK;
-	char sepchar;
+	char *hostname = NULL;
+	char *pathname_local = NULL;
+	char *p = NULL;
+	char *servicename = NULL;
+	char *reqpath = NULL;
+	char *eos_ptr = NULL;
+	bool servicename_matches = false;
+	bool using_smb1 = !conn->sconn->using_smb2;
 
-	ZERO_STRUCTP(pdp);
-
-	/*
-	 * This is the only talloc we should need to do
-	 * on the struct dfs_path. All the pointers inside
-	 * it should point to offsets within this string.
-	 */
-
-	pathname_local = talloc_strdup(pdp, pathname);
-	if (!pathname_local) {
+	pathname_local = talloc_strdup(ctx, pathname);
+	if (pathname_local == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
+	/*
+	 * parse_dfs_path() is only called from
+	 * dfs_filename_convert() with SMB1/2/3 DFS
+	 * names. Ensure we only have to cope with
+	 * '/' separators.
+	 */
+	string_replace(pathname_local, '\\', '/');
+
 	/* Get a pointer to the terminating '\0' */
 	eos_ptr = &pathname_local[strlen(pathname_local)];
-	p = temp = pathname_local;
+	p = pathname_local;
 
 	/*
-	 * Non-broken DFS paths *must* start with the
-	 * path separator. For Windows this is always '\\',
-	 * for posix paths this is always '/'.
+	 * SMB1 DFS paths sent to the fileserver should start with
+	 * the path separator '/'. However, libsmbclient libraries
+	 * will set the DFS bit on SMB1 calls and then send non-DFS
+	 * paths. We must cope with this.
+	 *
+	 * Note SMB2 paths sent to the fileserver never start with
+	 * the path separator '/'.
 	 */
 
-	if (*pathname == '/') {
-		pdp->posix_path = true;
-		sepchar = '/';
-	} else {
-		pdp->posix_path = false;
-		sepchar = '\\';
-	}
-
-	if (allow_broken_path && (*pathname != sepchar)) {
-		DEBUG(10,("parse_dfs_path: path %s doesn't start with %c\n",
-			pathname, sepchar ));
+	if (using_smb1 && (*p != '/')) {
+		DBG_ERR("path %s doesn't start with /\n", p);
 		/*
 		 * Possibly client sent a local path by mistake.
 		 * Try and convert to a local path.
@@ -111,15 +289,10 @@ static NTSTATUS parse_dfs_path(connection_struct *conn,
 		 * to cope with known broken SMB1 clients.
 		 */
 
-		pdp->hostname = eos_ptr; /* "" */
-		pdp->servicename = eos_ptr; /* "" */
+		hostname = eos_ptr; /* "" */
+		servicename = eos_ptr; /* "" */
 
-		/* We've got no info about separators. */
-		pdp->posix_path = lp_posix_pathnames();
-		p = temp;
-		DEBUG(10,("parse_dfs_path: trying to convert %s to a "
-			"local path\n",
-			temp));
+		DBG_ERR("trying to convert %s to a local path\n", p);
 		goto local_path;
 	}
 
@@ -127,104 +300,115 @@ static NTSTATUS parse_dfs_path(connection_struct *conn,
 	 * Safe to use on talloc'ed string as it only shrinks.
 	 * It also doesn't affect the eos_ptr.
 	 */
-	trim_char(temp,sepchar,sepchar);
+	trim_char(p, '/', '/');
 
-	DEBUG(10,("parse_dfs_path: temp = |%s| after trimming %c's\n",
-		temp, sepchar));
+	DBG_DEBUG("p = |%s| after trimming /'s\n", p);
 
 	/* Now tokenize. */
 	/* Parse out hostname. */
-	p = strchr_m(temp,sepchar);
+	p = strchr(p,'/');
 	if(p == NULL) {
-		DEBUG(10,("parse_dfs_path: can't parse hostname from path %s\n",
-			temp));
+		DBG_ERR("can't parse hostname from path %s\n", pathname_local);
 		/*
 		 * Possibly client sent a local path by mistake.
 		 * Try and convert to a local path.
 		 */
 
-		pdp->hostname = eos_ptr; /* "" */
-		pdp->servicename = eos_ptr; /* "" */
+		hostname = eos_ptr; /* "" */
+		servicename = eos_ptr; /* "" */
 
-		p = temp;
-		DEBUG(10,("parse_dfs_path: trying to convert %s "
-			"to a local path\n",
-			temp));
+		p = pathname_local;
+		DBG_ERR("trying to convert %s to a local path\n", p);
 		goto local_path;
 	}
 	*p = '\0';
-	pdp->hostname = temp;
+	hostname = pathname_local;
 
-	DEBUG(10,("parse_dfs_path: hostname: %s\n",pdp->hostname));
+	DBG_DEBUG("hostname: %s\n", hostname);
 
 	/* Parse out servicename. */
 	servicename = p+1;
-	p = strchr_m(servicename,sepchar);
+	p = strchr(servicename, '/');
 	if (p) {
 		*p = '\0';
 	}
 
 	/* Is this really our servicename ? */
-	if (conn && !( strequal(servicename, lp_servicename(talloc_tos(), lp_sub, SNUM(conn)))
-			|| (strequal(servicename, HOMES_NAME)
-			&& strequal(lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
-				get_current_username()) )) ) {
-		DEBUG(10,("parse_dfs_path: %s is not our servicename\n",
-			servicename));
+	servicename_matches = msdfs_servicename_matches_connection(
+					conn,
+					servicename,
+					get_current_username());
+
+	if (!servicename_matches) {
+		DBG_ERR("%s is not our servicename\n", servicename);
 
 		/*
 		 * Possibly client sent a local path by mistake.
 		 * Try and convert to a local path.
 		 */
 
-		pdp->hostname = eos_ptr; /* "" */
-		pdp->servicename = eos_ptr; /* "" */
-
 		/* Repair the path - replace the sepchar's
 		   we nulled out */
 		servicename--;
-		*servicename = sepchar;
+		*servicename = '/';
 		if (p) {
-			*p = sepchar;
+			*p = '/';
 		}
 
-		p = temp;
-		DEBUG(10,("parse_dfs_path: trying to convert %s "
-			"to a local path\n",
-			temp));
+		hostname = eos_ptr; /* "" */
+		servicename = eos_ptr; /* "" */
+
+		p = pathname_local;
+		DBG_ERR("trying to convert %s to a local path\n",
+			pathname_local);
 		goto local_path;
 	}
 
-	pdp->servicename = servicename;
+	servicename = servicename;
 
-	DEBUG(10,("parse_dfs_path: servicename: %s\n",pdp->servicename));
+	DBG_DEBUG("servicename: %s\n", servicename);
 
 	if(p == NULL) {
 		/* Client sent self referral \server\share. */
-		pdp->reqpath = eos_ptr; /* "" */
-		return NT_STATUS_OK;
+		reqpath = eos_ptr; /* "" */
+		goto out;
 	}
 
 	p++;
 
   local_path:
 
-	pdp->reqpath = p;
+	/*
+	 * As check_path_syntax_XXX() has already been
+	 * called we know this is a normal path containing
+	 * '/' separators.
+	 */
 
-	/* Rest is reqpath. */
-	if (pdp->posix_path) {
-		status = check_path_syntax_posix(pdp->reqpath);
-	} else {
-		status = check_path_syntax(pdp->reqpath);
+	reqpath = p;
+
+  out:
+
+	DBG_DEBUG("rest of the path: %s\n", reqpath);
+
+	if (_hostname != NULL) {
+		*_hostname = talloc_strdup(ctx, hostname);
+		if (*_hostname == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
 	}
-
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(10,("parse_dfs_path: '%s' failed with %s\n",
-			p, nt_errstr(status) ));
-		return status;
+	if (_servicename != NULL) {
+		*_servicename = talloc_strdup(ctx, servicename);
+		if (*_servicename == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
 	}
-
-	DEBUG(10,("parse_dfs_path: rest of the path: %s\n",pdp->reqpath));
+	if (_remaining_path != NULL) {
+		*_remaining_path = talloc_strdup(ctx, reqpath);
+		if (*_remaining_path == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+	}
+	TALLOC_FREE(pathname_local);
 	return NT_STATUS_OK;
 }
 
@@ -676,309 +860,318 @@ bool is_msdfs_link(struct files_struct *dirfsp,
 
  consumedcntp: how much of the dfs path is being redirected. the client
  should try the remaining path on the redirected server.
-
- If this returns NT_STATUS_PATH_NOT_COVERED the contents of the msdfs
- link redirect are in targetpath.
 *****************************************************************/
 
 static NTSTATUS dfs_path_lookup(TALLOC_CTX *ctx,
 		connection_struct *conn,
 		const char *dfspath, /* Incoming complete dfs path */
-		const struct dfs_path *pdp, /* Parsed out
-					       server+share+extrapath. */
+		const char *reqpath, /* Parsed out remaining path. */
 		uint32_t ucf_flags,
-		NTTIME *_twrp,
-		int *consumedcntp,
+		size_t *consumedcntp,
 		struct referral **ppreflist,
 		size_t *preferral_count)
 {
-	char *p = NULL;
-	char *q = NULL;
 	NTSTATUS status;
-	struct smb_filename *smb_fname = NULL;
-	struct smb_filename *parent_fname = NULL;
-	struct smb_filename *atname = NULL;
-	char *canon_dfspath = NULL; /* Canonicalized dfs path. (only '/'
-				  components). */
+	struct smb_filename *parent_smb_fname = NULL;
+	struct smb_filename *smb_fname_rel = NULL;
+	NTTIME twrp = 0;
+	char *local_pathname = NULL;
+	char *last_component = NULL;
+	char *atname = NULL;
+	size_t removed_components = 0;
+	bool posix = (ucf_flags & UCF_POSIX_PATHNAMES);
+	char *p = NULL;
+	char *canon_dfspath = NULL;
 
-	DEBUG(10,("dfs_path_lookup: Conn path = %s reqpath = %s\n",
-		conn->connectpath, pdp->reqpath));
+	DBG_DEBUG("Conn path = %s reqpath = %s\n", conn->connectpath, reqpath);
+
+	local_pathname = talloc_strdup(ctx, reqpath);
+	if (local_pathname == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto out;
+	}
+
+	/* We know reqpath isn't a DFS path. */
+	ucf_flags &= ~UCF_DFS_PATHNAME;
+
+	if (ucf_flags & UCF_GMT_PATHNAME) {
+		extract_snapshot_token(local_pathname, &twrp);
+		ucf_flags &= ~UCF_GMT_PATHNAME;
+	}
 
 	/*
- 	 * Note the unix path conversion here we're doing we
-	 * throw away. We're looking for a symlink for a dfs
-	 * resolution, if we don't find it we'll do another
-	 * unix_convert later in the codepath.
+	 * We should have been given a DFS path to resolve.
+	 * This should return NT_STATUS_PATH_NOT_COVERED.
+	 *
+	 * Do a pathname walk, stripping off components
+	 * until we get NT_STATUS_OK instead of
+	 * NT_STATUS_PATH_NOT_COVERED.
+	 *
+	 * Fail on any other error.
 	 */
 
-	status = unix_convert(ctx, conn, pdp->reqpath, 0, &smb_fname,
-			      ucf_flags);
+	for (;;) {
+		TALLOC_CTX *frame = NULL;
+		struct files_struct *dirfsp = NULL;
+		struct smb_filename *smb_fname_walk = NULL;
 
-	if (!NT_STATUS_IS_OK(status)) {
-		if (!NT_STATUS_EQUAL(status,
-				     NT_STATUS_OBJECT_PATH_NOT_FOUND)) {
-			return status;
-		}
-		if (smb_fname == NULL || smb_fname->base_name == NULL) {
-			return status;
-		}
-	}
+		TALLOC_FREE(parent_smb_fname);
 
-	/* Optimization - check if we can redirect the whole path. */
-	status = parent_pathref(ctx,
-				conn->cwd_fsp,
-				smb_fname,
-				&parent_fname,
-				&atname);
-	if (NT_STATUS_IS_OK(status)) {
 		/*
-		 * We must have a parent_fname->fsp before
-		 * we can call SMB_VFS_READ_DFS_PATHAT().
+		 * Use a local stackframe as filename_convert_dirfsp()
+		 * opens handles on the last two components in the path.
+		 * Allow these to be freed as we step back through
+		 * the local_pathname.
 		 */
-		status = SMB_VFS_READ_DFS_PATHAT(conn,
-						 ctx,
-						 parent_fname->fsp,
-						 atname,
-						 ppreflist,
-						 preferral_count);
-		/* We're now done with parent_fname and atname. */
-		TALLOC_FREE(parent_fname);
+		frame = talloc_stackframe();
+		status = filename_convert_dirfsp(frame,
+						 conn,
+						 local_pathname,
+						 ucf_flags,
+						 twrp,
+						 &dirfsp,
+						 &smb_fname_walk);
+		/* If we got a name, save it. */
+		if (smb_fname_walk != NULL) {
+			parent_smb_fname = talloc_move(ctx, &smb_fname_walk);
+		}
+		TALLOC_FREE(frame);
 
-		if (NT_STATUS_IS_OK(status)) {
-			DBG_INFO("%s resolves to a valid dfs link\n",
-				 dfspath);
+		if (!NT_STATUS_EQUAL(status, NT_STATUS_PATH_NOT_COVERED)) {
+			/*
+			 * For any other status than NT_STATUS_PATH_NOT_COVERED
+			 * (including NT_STATUS_OK) we exit the walk.
+			 * If it's an error we catch it outside the loop.
+			 */
+			break;
+		}
 
-			if (consumedcntp) {
-				*consumedcntp = strlen(dfspath);
-			}
-			status = NT_STATUS_PATH_NOT_COVERED;
+		/* Step back one component and save it off as last_component. */
+		TALLOC_FREE(last_component);
+		p = strrchr(local_pathname, '/');
+		if (p == NULL) {
+			/*
+			 * We removed all components.
+			 * Go around once more to make
+			 * sure we can open the root '\0'.
+			 */
+			last_component = talloc_strdup(ctx, local_pathname);
+			*local_pathname = '\0';
+		} else {
+			last_component = talloc_strdup(ctx, p+1);
+			*p = '\0';
+		}
+		if (last_component == NULL) {
+			status = NT_STATUS_NO_MEMORY;
 			goto out;
 		}
+		/* Integer wrap check. */
+		if (removed_components + 1 < removed_components) {
+			status = NT_STATUS_INVALID_PARAMETER;
+			goto out;
+		}
+		removed_components++;
 	}
 
-	/* Prepare to test only for '/' components in the given path,
-	 * so if a Windows path replace all '\\' characters with '/'.
-	 * For a POSIX DFS path we know all separators are already '/'. */
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dfspath = %s. reqpath = %s. Error %s.\n",
+			dfspath,
+			reqpath,
+			nt_errstr(status));
+		goto out;
+	}
 
+	if (parent_smb_fname->fsp == NULL) {
+		/* Unable to open parent. */
+		DBG_DEBUG("dfspath = %s. reqpath = %s. "
+			  "Unable to open parent directory (%s).\n",
+			dfspath,
+			reqpath,
+			smb_fname_str_dbg(parent_smb_fname));
+		status = NT_STATUS_OBJECT_PATH_NOT_FOUND;
+		goto out;
+	}
+
+	if (removed_components == 0) {
+		/*
+		 * We never got NT_STATUS_PATH_NOT_COVERED.
+		 * There was no DFS redirect.
+		 */
+		DBG_DEBUG("dfspath = %s. reqpath = %s. "
+			"No removed components.\n",
+			dfspath,
+			reqpath);
+		status = NT_STATUS_OBJECT_PATH_NOT_FOUND;
+		goto out;
+	}
+
+	/*
+	 * One of the removed_components was the MSDFS link
+	 * at the end. We need to count this in the resolved
+	 * path below, so remove one from removed_components.
+	 */
+	removed_components--;
+
+	/*
+	 * Now parent_smb_fname->fsp is the parent directory dirfsp,
+	 * last_component is the untranslated MS-DFS link name.
+	 * Search for it in the parent directory to get the real
+	 * filename on disk.
+	 */
+	status = get_real_filename_at(parent_smb_fname->fsp,
+				      last_component,
+				      ctx,
+				      &atname);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dfspath = %s. reqpath = %s "
+			"get_real_filename_at(%s, %s) error (%s)\n",
+			dfspath,
+			reqpath,
+			smb_fname_str_dbg(parent_smb_fname),
+			last_component,
+			nt_errstr(status));
+		goto out;
+	}
+
+        smb_fname_rel = synthetic_smb_fname(ctx,
+				atname,
+				NULL,
+				NULL,
+				twrp,
+				posix ? SMB_FILENAME_POSIX_PATH : 0);
+	if (smb_fname_rel == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto out;
+	}
+
+	/* Get the referral to return. */
+	status = SMB_VFS_READ_DFS_PATHAT(conn,
+					 ctx,
+					 parent_smb_fname->fsp,
+					 smb_fname_rel,
+					 ppreflist,
+					 preferral_count);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("dfspath = %s. reqpath = %s. "
+			"SMB_VFS_READ_DFS_PATHAT(%s, %s) error (%s)\n",
+			dfspath,
+			reqpath,
+			smb_fname_str_dbg(parent_smb_fname),
+			smb_fname_str_dbg(smb_fname_rel),
+			nt_errstr(status));
+		goto out;
+	}
+
+	/*
+	 * Now we must work out how much of the
+	 * given pathname we consumed.
+	 */
 	canon_dfspath = talloc_strdup(ctx, dfspath);
 	if (!canon_dfspath) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
-	if (!pdp->posix_path) {
-		string_replace(canon_dfspath, '\\', '/');
-	}
+	/* Canonicalize the raw dfspath. */
+	string_replace(canon_dfspath, '\\', '/');
 
 	/*
-	 * localpath comes out of unix_convert, so it has
+	 * reqpath comes out of parse_dfs_path(), so it has
 	 * no trailing backslash. Make sure that canon_dfspath hasn't either.
-	 * Fix for bug #4860 from Jan Martin <Jan.Martin@rwedea.com>.
 	 */
+	trim_char(canon_dfspath, 0, '/');
 
-	trim_char(canon_dfspath,0,'/');
+	DBG_DEBUG("Unconsumed path: %s\n", canon_dfspath);
 
-	/*
-	 * Redirect if any component in the path is a link.
-	 * We do this by walking backwards through the
-	 * local path, chopping off the last component
-	 * in both the local path and the canonicalized
-	 * DFS path. If we hit a DFS link then we're done.
-	 */
-
-	p = strrchr_m(smb_fname->base_name, '/');
-	if (consumedcntp) {
-		q = strrchr_m(canon_dfspath, '/');
-	}
-
-	while (p) {
-		*p = '\0';
-		if (q) {
-			*q = '\0';
+	while (removed_components > 0) {
+		p = strrchr(canon_dfspath, '/');
+		if (p != NULL) {
+			*p = '\0';
 		}
-
-		/*
-		 * Ensure parent_pathref() calls vfs_stat() on
-		 * the newly truncated path.
-		 */
-		SET_STAT_INVALID(smb_fname->st);
-		status = parent_pathref(ctx,
-					conn->cwd_fsp,
-					smb_fname,
-					&parent_fname,
-					&atname);
-		if (NT_STATUS_IS_OK(status)) {
-			/*
-			 * We must have a parent_fname->fsp before
-			 * we can call SMB_VFS_READ_DFS_PATHAT().
-			 */
-			status = SMB_VFS_READ_DFS_PATHAT(conn,
-							 ctx,
-							 parent_fname->fsp,
-							 atname,
-							 ppreflist,
-							 preferral_count);
-
-			/* We're now done with parent_fname and atname. */
-			TALLOC_FREE(parent_fname);
-
-			if (NT_STATUS_IS_OK(status)) {
-				DBG_INFO("Redirecting %s because "
-					 "parent %s is a dfs link\n",
-					 dfspath,
-					 smb_fname_str_dbg(smb_fname));
-
-				if (consumedcntp) {
-					*consumedcntp = strlen(canon_dfspath);
-					DBG_DEBUG("Path consumed: %s "
-						  "(%d)\n",
-						  canon_dfspath,
-						  *consumedcntp);
-				}
-
-				status = NT_STATUS_PATH_NOT_COVERED;
-				goto out;
-			}
-		}
-
-		/* Step back on the filesystem. */
-		p = strrchr_m(smb_fname->base_name, '/');
-
-		if (consumedcntp) {
-			/* And in the canonicalized dfs path. */
-			q = strrchr_m(canon_dfspath, '/');
+		removed_components--;
+		if (p == NULL && removed_components != 0) {
+			DBG_ERR("Component mismatch. path = %s, "
+				"%zu components left\n",
+				canon_dfspath,
+				removed_components);
+			status = NT_STATUS_OBJECT_PATH_NOT_FOUND;
+			goto out;
 		}
 	}
-
-	if ((ucf_flags & UCF_GMT_PATHNAME) && _twrp != NULL) {
-		*_twrp = smb_fname->twrp;
-	}
-
+	*consumedcntp = strlen(canon_dfspath);
+	DBG_DEBUG("Path consumed: %s (%zu)\n", canon_dfspath, *consumedcntp);
 	status = NT_STATUS_OK;
- out:
 
-	/* This should already be free, but make sure. */
-	TALLOC_FREE(parent_fname);
-	TALLOC_FREE(smb_fname);
+  out:
+
+	TALLOC_FREE(parent_smb_fname);
+	TALLOC_FREE(local_pathname);
+	TALLOC_FREE(last_component);
+	TALLOC_FREE(atname);
+	TALLOC_FREE(smb_fname_rel);
+	TALLOC_FREE(canon_dfspath);
 	return status;
 }
 
 /*****************************************************************
  Decides if a dfs pathname should be redirected or not.
  If not, the pathname is converted to a tcon-relative local unix path
-
- search_wcard_flag: this flag performs 2 functions both related
- to searches.  See resolve_dfs_path() and parse_dfs_path_XX()
- for details.
-
- This function can return NT_STATUS_OK, meaning use the returned path as-is
- (mapped into a local path).
- or NT_STATUS_NOT_COVERED meaning return a DFS redirect, or
- any other NT_STATUS error which is a genuine error to be
- returned to the client.
+ This is now a simple wrapper around parse_dfs_path()
+ as it does all the required checks.
 *****************************************************************/
 
-NTSTATUS dfs_redirect(TALLOC_CTX *ctx,
-			connection_struct *conn,
-			const char *path_in,
-			uint32_t ucf_flags,
-			bool allow_broken_path,
-			NTTIME *_twrp,
-			char **pp_path_out)
+NTSTATUS dfs_filename_convert(TALLOC_CTX *ctx,
+			      connection_struct *conn,
+			      uint32_t ucf_flags,
+			      const char *dfs_path_in,
+			      char **pp_path_out)
 {
-	const struct loadparm_substitution *lp_sub =
-		loadparm_s3_global_substitution();
+	char *reqpath = NULL;
 	NTSTATUS status;
-	struct dfs_path *pdp = talloc(ctx, struct dfs_path);
 
-	if (!pdp) {
-		return NT_STATUS_NO_MEMORY;
-	}
+	/*
+	 * We must use the non-strict version of parse_dfs_path for
+	 * pathnames sent to the fileserver over SMB1/2/3.
+	 * libsmbclient callers always set the FLAGS2_DFS_PATHNAMES
+	 * but then don't send a DFS path in (for example) FindFirst
+	 * or other calls. This is a problem with our client libraries
+	 * for both SMB1 and SMB2+ and will remain so whilst broken
+	 * versions of libsmbclient are being used.
+	 */
 
-	status = parse_dfs_path(conn, path_in, false,
-				allow_broken_path, pdp);
-	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(pdp);
-		return status;
-	}
-
-	if (pdp->reqpath[0] == '\0') {
-		TALLOC_FREE(pdp);
-		*pp_path_out = talloc_strdup(ctx, "");
-		if (!*pp_path_out) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		DEBUG(5,("dfs_redirect: self-referral.\n"));
-		return NT_STATUS_OK;
-	}
-
-	/* If dfs pathname for a non-dfs share, convert to tcon-relative
-	   path and return OK */
-
-	if (!lp_msdfs_root(SNUM(conn))) {
-		*pp_path_out = talloc_strdup(ctx, pdp->reqpath);
-		TALLOC_FREE(pdp);
-		if (!*pp_path_out) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		return NT_STATUS_OK;
-	}
-
-	/* If it looked like a local path (zero hostname/servicename)
-	 * just treat as a tcon-relative path. */
-
-	if (pdp->hostname[0] == '\0' && pdp->servicename[0] == '\0') {
-		*pp_path_out = talloc_strdup(ctx, pdp->reqpath);
-		TALLOC_FREE(pdp);
-		if (!*pp_path_out) {
-			return NT_STATUS_NO_MEMORY;
-		}
-		return NT_STATUS_OK;
-	}
-
-	if (!( strequal(pdp->servicename, lp_servicename(talloc_tos(), lp_sub, SNUM(conn)))
-			|| (strequal(pdp->servicename, HOMES_NAME)
-			&& strequal(lp_servicename(talloc_tos(), lp_sub, SNUM(conn)),
-				conn->session_info->unix_info->sanitized_username) )) ) {
-
-		/* The given sharename doesn't match this connection. */
-		TALLOC_FREE(pdp);
-
-		return NT_STATUS_OBJECT_PATH_NOT_FOUND;
-	}
-
-	status = dfs_path_lookup(ctx,
+	status = parse_dfs_path(ctx,
 				conn,
-				path_in,
-				pdp,
-				ucf_flags,
-				_twrp, /* twrp. */
-				NULL, /* int *consumedcntp */
-				NULL, /* struct referral **ppreflist */
-				NULL); /* size_t *preferral_count */
+				dfs_path_in,
+				NULL, /* hostname */
+				NULL, /* servicename */
+				&reqpath);
 	if (!NT_STATUS_IS_OK(status)) {
-		if (NT_STATUS_EQUAL(status, NT_STATUS_PATH_NOT_COVERED)) {
-			DEBUG(3,("dfs_redirect: Redirecting %s\n", path_in));
-		} else {
-			DEBUG(10,("dfs_redirect: dfs_path_lookup "
-				"failed for %s with %s\n",
-				path_in, nt_errstr(status) ));
-		}
 		return status;
 	}
 
-	DEBUG(3,("dfs_redirect: Not redirecting %s.\n", path_in));
-
-	/* Form non-dfs tcon-relative path */
-	*pp_path_out = talloc_strdup(ctx, pdp->reqpath);
-	TALLOC_FREE(pdp);
-	if (!*pp_path_out) {
-		return NT_STATUS_NO_MEMORY;
+	/*
+	 * If parse_dfs_path fell back to a local path
+	 * after skipping hostname or servicename, ensure
+	 * we still have called check_path_syntax()
+	 * on the full returned local path. check_path_syntax()
+	 * is idempotent so this is safe.
+	 */
+	if (ucf_flags & UCF_POSIX_PATHNAMES) {
+		status = check_path_syntax_posix(reqpath);
+	} else {
+		status = check_path_syntax(reqpath);
 	}
-
-	DEBUG(3,("dfs_redirect: Path %s converted to non-dfs path %s\n",
-				path_in,
-				*pp_path_out));
-
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+	/*
+	 * Previous (and current logic) just ignores
+	 * the server, share components if a DFS
+	 * path is sent on a non-DFS share except to
+	 * check that they match an existing share. Should
+	 * we tighten this up to return an error here ?
+	 */
+	*pp_path_out = reqpath;
 	return NT_STATUS_OK;
 }
 
@@ -989,7 +1182,7 @@ NTSTATUS dfs_redirect(TALLOC_CTX *ctx,
 static NTSTATUS self_ref(TALLOC_CTX *ctx,
 			const char *dfs_path,
 			struct junction_map *jucn,
-			int *consumedcntp,
+			size_t *consumedcntp,
 			bool *self_referralp)
 {
 	struct referral *ref;
@@ -1023,9 +1216,8 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 			   const char *dfs_path,
 			   const struct tsocket_address *remote_address,
 			   const struct tsocket_address *local_address,
-			   bool allow_broken_path,
 			   struct junction_map *jucn,
-			   int *consumedcntp,
+			   size_t *consumedcntp,
 			   bool *self_referralp)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
@@ -1033,25 +1225,33 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 		loadparm_s3_global_substitution();
 	struct conn_struct_tos *c = NULL;
 	struct connection_struct *conn = NULL;
+	char *servicename = NULL;
+	char *reqpath = NULL;
 	int snum;
 	NTSTATUS status = NT_STATUS_NOT_FOUND;
-	struct dfs_path *pdp = talloc_zero(frame, struct dfs_path);
-
-	if (!pdp) {
-		TALLOC_FREE(frame);
-		return NT_STATUS_NO_MEMORY;
-	}
 
 	*self_referralp = False;
 
-	status = parse_dfs_path(NULL, dfs_path, False, allow_broken_path, pdp);
+	status = parse_dfs_path_strict(
+				frame,
+				dfs_path,
+				NULL, /* hostname */
+				&servicename,
+				&reqpath);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(frame);
 		return status;
 	}
 
-	jucn->service_name = talloc_strdup(ctx, pdp->servicename);
-	jucn->volume_name = talloc_strdup(ctx, pdp->reqpath);
+	/* Path referrals are always non-POSIX. */
+	status = check_path_syntax(reqpath);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return status;
+	}
+
+	jucn->service_name = talloc_strdup(ctx, servicename);
+	jucn->volume_name = talloc_strdup(ctx, reqpath);
 	if (!jucn->service_name || !jucn->volume_name) {
 		TALLOC_FREE(frame);
 		return NT_STATUS_NO_MEMORY;
@@ -1080,7 +1280,7 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 	if (!lp_msdfs_root(snum) && (*lp_msdfs_proxy(talloc_tos(), lp_sub, snum) == '\0')) {
 		DEBUG(3,("get_referred_path: |%s| in dfs path %s is not "
 			"a dfs root.\n",
-			pdp->servicename, dfs_path));
+			servicename, dfs_path));
 		TALLOC_FREE(frame);
 		return NT_STATUS_NOT_FOUND;
 	}
@@ -1093,7 +1293,7 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 	 * user). Cope with this.
 	 */
 
-	if (pdp->reqpath[0] == '\0') {
+	if (reqpath[0] == '\0') {
 		char *tmp;
 		struct referral *ref;
 		size_t refcount;
@@ -1168,40 +1368,21 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 		}
 	}
 
-	/* If this is a DFS path dfs_lookup should return
-	 * NT_STATUS_PATH_NOT_COVERED. */
-
 	status = dfs_path_lookup(ctx,
 				conn,
 				dfs_path,
-				pdp,
+				reqpath,
 				0, /* ucf_flags */
-				NULL,
 				consumedcntp,
 				&jucn->referral_list,
 				&jucn->referral_count);
 
-	if (!NT_STATUS_EQUAL(status, NT_STATUS_PATH_NOT_COVERED)) {
-		DEBUG(3,("get_referred_path: No valid referrals for path %s\n",
-			dfs_path));
-		if (NT_STATUS_IS_OK(status)) {
-			/*
-			 * We are in an error path here (we
-			 * know it's not a DFS path), but
-			 * dfs_path_lookup() can return
-			 * NT_STATUS_OK. Ensure we always
-			 * return a valid error code.
-			 *
-			 * #9588 - ACLs are not inherited to directories
-			 *         for DFS shares.
-			 */
-			status = NT_STATUS_NOT_FOUND;
-		}
-		goto err_exit;
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_NOTICE("No valid referrals for path %s (%s)\n",
+			dfs_path,
+			nt_errstr(status));
 	}
 
-	status = NT_STATUS_OK;
- err_exit:
 	TALLOC_FREE(frame);
 	return status;
 }
@@ -1281,47 +1462,44 @@ int setup_dfs_referral(connection_struct *orig_conn,
 
 bool create_junction(TALLOC_CTX *ctx,
 		const char *dfs_path,
-		bool allow_broken_path,
 		struct junction_map *jucn)
 {
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
 	int snum;
-	struct dfs_path *pdp = talloc(ctx,struct dfs_path);
+	char *servicename = NULL;
+	char *reqpath = NULL;
 	NTSTATUS status;
 
-	if (!pdp) {
-		return False;
-	}
-	status = parse_dfs_path(NULL, dfs_path, False, allow_broken_path, pdp);
+	status = parse_dfs_path_strict(
+				ctx,
+				dfs_path,
+				NULL,
+				&servicename,
+				&reqpath);
 	if (!NT_STATUS_IS_OK(status)) {
 		return False;
 	}
 
-	/* check if path is dfs : validate first token */
-	if (!is_myname_or_ipaddr(pdp->hostname)) {
-		DEBUG(4,("create_junction: Invalid hostname %s "
-			"in dfs path %s\n",
-			pdp->hostname, dfs_path));
-		TALLOC_FREE(pdp);
-		return False;
-	}
-
 	/* Check for a non-DFS share */
-	snum = lp_servicenumber(pdp->servicename);
+	snum = lp_servicenumber(servicename);
 
 	if(snum < 0 || !lp_msdfs_root(snum)) {
 		DEBUG(4,("create_junction: %s is not an msdfs root.\n",
-			pdp->servicename));
-		TALLOC_FREE(pdp);
+			servicename));
 		return False;
 	}
 
-	jucn->service_name = talloc_strdup(ctx, pdp->servicename);
-	jucn->volume_name = talloc_strdup(ctx, pdp->reqpath);
+	/* Junction create paths are always non-POSIX. */
+	status = check_path_syntax(reqpath);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
+
+	jucn->service_name = talloc_strdup(ctx, servicename);
+	jucn->volume_name = talloc_strdup(ctx, reqpath);
 	jucn->comment = lp_comment(ctx, lp_sub, snum);
 
-	TALLOC_FREE(pdp);
 	if (!jucn->service_name || !jucn->volume_name || ! jucn->comment) {
 		return False;
 	}
@@ -1647,8 +1825,14 @@ static size_t count_dfs_links(TALLOC_CTX *ctx,
 	}
 
 	/* Now enumerate all dfs links */
-	dir_hnd = OpenDir(frame, conn, smb_fname, NULL, 0);
-	if (dir_hnd == NULL) {
+	status = OpenDir(frame,
+			 conn,
+			 smb_fname,
+			 NULL,
+			 0,
+			 &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		errno = map_errno_from_nt_status(status);
 		goto out;
 	}
 
@@ -1784,8 +1968,14 @@ static int form_junctions(TALLOC_CTX *ctx,
 	}
 
 	/* Now enumerate all dfs links */
-	dir_hnd = OpenDir(frame, conn, smb_fname, NULL, 0);
-	if (dir_hnd == NULL) {
+	status = OpenDir(frame,
+			 conn,
+			 smb_fname,
+			 NULL,
+			 0,
+			 &dir_hnd);
+	if (!NT_STATUS_IS_OK(status)) {
+		errno = map_errno_from_nt_status(status);
 		goto out;
 	}
 

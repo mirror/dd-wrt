@@ -183,6 +183,9 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                  os.environ["PASSWORD"]),
                                                 "--restore-metadata")
 
+            self.assertCmdSuccess(result, out, err,
+                                  "Ensure gpo restore successful")
+
             gpo_guid = "{%s}" % out.split("{")[1].split("}")[0]
 
             (result, out, err) = self.runsubcmd("gpo", "backup", gpo_guid,
@@ -237,6 +240,9 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                  os.environ["PASSWORD"]),
                                                 "--restore-metadata")
 
+            self.assertCmdSuccess(result, out, err,
+                                  "Ensure gpo restore successful")
+
             gpo_guid = "{%s}" % out.split("{")[1].split("}")[0]
             gpo_guid1 = gpo_guid
 
@@ -258,6 +264,9 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                 (os.environ["USERNAME"],
                                                  os.environ["PASSWORD"]),
                                                 "--restore-metadata")
+
+            self.assertCmdSuccess(result, out, err,
+                                  "Ensure gpo restore successful")
 
             gpo_guid = "{%s}" % out.split("{")[1].split("}")[0]
             gpo_guid2 = gpo_guid
@@ -322,6 +331,9 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                  os.environ["PASSWORD"]),
                                                 "--restore-metadata")
 
+            self.assertCmdSuccess(result, out, err,
+                                  "Ensure gpo restore successful")
+
             gpo_guid = "{%s}" % out.split("{")[1].split("}")[0]
             gpo_guid1 = gpo_guid
 
@@ -341,6 +353,9 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                 (os.environ["USERNAME"],
                                                  os.environ["PASSWORD"]),
                                                 "--restore-metadata")
+
+            self.assertCmdSuccess(result, out, err,
+                                  "Ensure gpo restore successful")
 
             gpo_guid = "{%s}" % out.split("{")[1].split("}")[0]
             gpo_guid2 = gpo_guid
@@ -730,6 +745,24 @@ class GpoCmdTestCase(SambaToolCmdTest):
         self.assertFalse(inf_data.has_section('Kerberos Policy'))
 
     def test_sudoers_add(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        # Stage the Registry.pol file with test data
+        stage = preg.file()
+        e = preg.entry()
+        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
+        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
+        e.type = 1
+        e.data = b'fakeu ALL=(ALL) NOPASSWD: ALL'
+        stage.num_entries = 1
+        stage.entries = [e]
+        ret = stage_file(reg_pol, ndr_pack(stage))
+        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+
         (result, out, err) = self.runsublevelcmd("gpo", ("manage",
                                                  "sudoers", "add"),
                                                  self.gpo_guid, 'ALL', 'ALL',
@@ -751,10 +784,22 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                  (os.environ["USERNAME"],
                                                  os.environ["PASSWORD"]))
         self.assertIn(sudoer, out, 'The test entry was not found!')
+        self.assertIn(get_string(e.data), out, 'The test entry was not found!')
 
         (result, out, err) = self.runsublevelcmd("gpo", ("manage",
                                                  "sudoers", "remove"),
                                                  self.gpo_guid, sudoer,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Sudoers remove failed')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage",
+                                                 "sudoers", "remove"),
+                                                 self.gpo_guid,
+                                                 get_string(e.data),
                                                  "-H", "ldap://%s" %
                                                  os.environ["SERVER"],
                                                  "-U%s%%%s" %
@@ -771,6 +816,11 @@ class GpoCmdTestCase(SambaToolCmdTest):
                                                  (os.environ["USERNAME"],
                                                  os.environ["PASSWORD"]))
         self.assertNotIn(sudoer, out, 'The test entry was still found!')
+        self.assertNotIn(get_string(e.data), out,
+                         'The test entry was still found!')
+
+        # Unstage the Registry.pol file
+        unstage_file(reg_pol)
 
     def test_sudoers_list(self):
         lp = LoadParm()
@@ -825,6 +875,21 @@ class GpoCmdTestCase(SambaToolCmdTest):
         ret = stage_file(vgp_xml, etree.tostring(stage, 'utf-8'))
         self.assertTrue(ret, 'Could not create the target %s' % vgp_xml)
 
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        # Stage the Registry.pol file with test data
+        stage = preg.file()
+        e = preg.entry()
+        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
+        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
+        e.type = 1
+        e.data = b'fakeu3 ALL=(ALL) NOPASSWD: ALL'
+        stage.num_entries = 1
+        stage.entries = [e]
+        ret = stage_file(reg_pol, ndr_pack(stage))
+        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+
         sudoer = 'fakeu ALL=(ALL) NOPASSWD: ALL'
         sudoer2 = 'fakeu2,fakeg2% ALL=(ALL) NOPASSWD: ALL'
         sudoer_no_principal = 'ALL ALL=(ALL) NOPASSWD: ALL'
@@ -839,6 +904,7 @@ class GpoCmdTestCase(SambaToolCmdTest):
         self.assertCmdSuccess(result, out, err, 'Sudoers list failed')
         self.assertIn(sudoer, out, 'The test entry was not found!')
         self.assertIn(sudoer2, out, 'The test entry was not found!')
+        self.assertIn(get_string(e.data), out, 'The test entry was not found!')
         self.assertIn(sudoer_no_principal, out,
                       'The test entry was not found!')
 
@@ -877,6 +943,8 @@ class GpoCmdTestCase(SambaToolCmdTest):
 
         # Unstage the manifest.xml file
         unstage_file(vgp_xml)
+        # Unstage the Registry.pol file
+        unstage_file(reg_pol)
 
     def test_symlink_list(self):
         lp = LoadParm()

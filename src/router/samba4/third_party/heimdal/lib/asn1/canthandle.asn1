@@ -1,0 +1,15 @@
+-- $Id$ --
+
+CANTHANDLE DEFINITIONS ::= BEGIN
+
+--  Currently the compiler handles SET { ... } types, but does NOT sort
+--  their members as should be done in the case of conforming DER encoders.
+--  The workaround is to sort the members of such types manually in their
+--  definitions.  See X.690, section 10.3, and X.680, section 8.6 for details.
+
+--  Can't handle primitives in SET OF, causing the compiler to crash
+--  Workaround is to define a type that is only an integer and use that
+
+Baz ::= SET OF INTEGER
+
+END

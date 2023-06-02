@@ -76,7 +76,7 @@ NTSTATUS rpccli_pre_open_netlogon_creds(void)
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	status = netlogon_creds_cli_set_global_db(&global_db);
+	status = netlogon_creds_cli_set_global_db(lp_ctx, &global_db);
 	TALLOC_FREE(frame);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
@@ -325,10 +325,10 @@ again:
 	status = netlogon_creds_cli_get(creds_ctx, frame, &creds);
 
 	if (NT_STATUS_IS_OK(status)) {
-		int cmp = memcmp(found_session_key,
-				 creds->session_key,
-				 sizeof(found_session_key));
-		found_existing_creds = (cmp != 0);
+		bool cmp = mem_equal_const_time(found_session_key,
+						creds->session_key,
+						sizeof(found_session_key));
+		found_existing_creds = !cmp;
 
 		memcpy(found_session_key,
 		       creds->session_key,
@@ -356,10 +356,10 @@ again:
 		status = netlogon_creds_cli_get(creds_ctx, frame, &creds);
 
 		if (NT_STATUS_IS_OK(status)) {
-			int cmp = memcmp(found_session_key,
-					 creds->session_key,
-					 sizeof(found_session_key));
-			found_existing_creds = (cmp != 0);
+			bool cmp = mem_equal_const_time(found_session_key,
+							creds->session_key,
+							sizeof(found_session_key));
+			found_existing_creds = !cmp;
 
 			memcpy(found_session_key, creds->session_key,
 			       sizeof(found_session_key));
@@ -644,7 +644,7 @@ NTSTATUS rpccli_netlogon_network_logon(
 	const char *domain,
 	const char *workstation,
 	const uint64_t logon_id,
-	const uint8_t chal[8],
+	DATA_BLOB chal,
 	DATA_BLOB lm_response,
 	DATA_BLOB nt_response,
 	enum netr_LogonInfoClass logon_type,
@@ -687,6 +687,10 @@ NTSTATUS rpccli_netlogon_network_logon(
 		return NT_STATUS_NO_MEMORY;
 	}
 
+	if (workstation == NULL) {
+		workstation = lp_netbios_name();
+	}
+
 	if (workstation[0] != '\\' && workstation[1] != '\\') {
 		workstation_name_slash = talloc_asprintf(mem_ctx, "\\\\%s", workstation);
 	} else {
@@ -711,7 +715,12 @@ NTSTATUS rpccli_netlogon_network_logon(
 	network_info->identity_info.account_name.string		= username;
 	network_info->identity_info.workstation.string		= workstation_name_slash;
 
-	memcpy(network_info->challenge, chal, 8);
+	if (chal.length != 8) {
+		DBG_WARNING("Invalid challenge length %zd\n", chal.length);
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	memcpy(network_info->challenge, chal.data, chal.length);
 	network_info->nt = nt;
 	network_info->lm = lm;
 

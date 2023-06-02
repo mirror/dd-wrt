@@ -146,7 +146,7 @@ def header_list(conf, headers=None, lib=None):
 
 
 @conf
-def CHECK_TYPE(conf, t, alternate=None, headers=None, define=None, lib=None, msg=None):
+def CHECK_TYPE(conf, t, alternate=None, headers=None, define=None, lib=None, msg=None, cflags=''):
     '''check for a single type'''
     if define is None:
         define = 'HAVE_' + t.upper().replace(' ', '_')
@@ -158,6 +158,7 @@ def CHECK_TYPE(conf, t, alternate=None, headers=None, define=None, lib=None, msg
                      headers=headers,
                      local_include=False,
                      msg=msg,
+                     cflags=cflags,
                      lib=lib,
                      link=False)
     if not ret and alternate:
@@ -177,14 +178,15 @@ def CHECK_TYPES(conf, list, headers=None, define=None, alternate=None, lib=None)
 
 
 @conf
-def CHECK_TYPE_IN(conf, t, headers=None, alternate=None, define=None):
+def CHECK_TYPE_IN(conf, t, headers=None, alternate=None, define=None, cflags=''):
     '''check for a single type with a header'''
-    return CHECK_TYPE(conf, t, headers=headers, alternate=alternate, define=define)
+    return CHECK_TYPE(conf, t, headers=headers, alternate=alternate, define=define, cflags=cflags)
 
 
 @conf
 def CHECK_VARIABLE(conf, v, define=None, always=False,
-                   headers=None, msg=None, lib=None):
+                   headers=None, msg=None, lib=None,
+                   mandatory=False):
     '''check for a variable declaration (or define)'''
     if define is None:
         define = 'HAVE_%s' % v.upper()
@@ -208,11 +210,12 @@ def CHECK_VARIABLE(conf, v, define=None, always=False,
                       lib=lib,
                       headers=headers,
                       define=define,
+                      mandatory=mandatory,
                       always=always)
 
 
 @conf
-def CHECK_DECLS(conf, vars, reverse=False, headers=None, always=False):
+def CHECK_DECLS(conf, vars, reverse=False, headers=None, lib=None, always=False):
     '''check a list of variable declarations, using the HAVE_DECL_xxx form
        of define
 
@@ -227,6 +230,7 @@ def CHECK_DECLS(conf, vars, reverse=False, headers=None, always=False):
         if not CHECK_VARIABLE(conf, v,
                               define=define,
                               headers=headers,
+                              lib=lib,
                               msg='Checking for declaration of %s' % v,
                               always=always):
             if not CHECK_CODE(conf,
@@ -238,6 +242,7 @@ def CHECK_DECLS(conf, vars, reverse=False, headers=None, always=False):
                       msg='Checking for declaration of %s (as enum)' % v,
                       local_include=False,
                       headers=headers,
+                      lib=lib,
                       define=define,
                       always=always):
                 ret = False
@@ -340,6 +345,23 @@ def CHECK_SIZEOF(conf, vars, headers=None, define=None, critical=True):
             Logs.error("Couldn't determine size of '%s'" % v)
             sys.exit(1)
     return ret
+
+@conf
+def CHECK_SIGN(conf, v, headers=None):
+    '''check the sign of a type'''
+    define_name = v.upper().replace(' ', '_')
+    for op, signed in [('<', 'signed'),
+                       ('>', 'unsigned')]:
+        if CHECK_CODE(conf,
+                      f'static int test_array[1 - 2 * !((({v})-1) {op} 0)];',
+                      define=f'{define_name}_{signed.upper()}',
+                      quote=False,
+                      headers=headers,
+                      local_include=False,
+                      msg=f"Checking if '{v}' is {signed}"):
+            return True
+
+    return False
 
 @conf
 def CHECK_VALUEOF(conf, v, headers=None, define=None):
@@ -755,6 +777,8 @@ def SAMBA_CONFIG_H(conf, path=None):
                         testflags=True)
         conf.ADD_CFLAGS('-Werror-implicit-function-declaration',
                         testflags=True)
+        conf.ADD_CFLAGS('-Werror=implicit-int',
+                        testflags=True)
         conf.ADD_CFLAGS('-Werror=pointer-arith -Wpointer-arith',
                         testflags=True)
         conf.ADD_CFLAGS('-Werror=declaration-after-statement -Wdeclaration-after-statement',
@@ -766,6 +790,8 @@ def SAMBA_CONFIG_H(conf, path=None):
         conf.ADD_CFLAGS('-Wimplicit-fallthrough',
                         testflags=True)
         conf.ADD_CFLAGS('-Werror=strict-overflow -Wstrict-overflow=2',
+                        testflags=True)
+        conf.ADD_CFLAGS('-Werror=old-style-definition -Wold-style-definition',
                         testflags=True)
 
         conf.ADD_CFLAGS('-Wformat=2 -Wno-format-y2k', testflags=True)
@@ -786,6 +812,9 @@ int main(void) {
             if not 'EXTRA_CFLAGS' in conf.env:
                 conf.env['EXTRA_CFLAGS'] = []
             conf.env['EXTRA_CFLAGS'].extend(TO_LIST("-Werror=format"))
+
+        if CHECK_CFLAGS(conf, ["-Wno-error=array-bounds"]):
+            conf.define('HAVE_WNO_ERROR_ARRAY_BOUNDS', 1)
 
         if not Options.options.disable_warnings_as_errors:
             conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Werror -Wno-error=deprecated-declarations', testflags=True)

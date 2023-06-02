@@ -21,9 +21,7 @@
 #include "messages.h"
 #include "ntdomain.h"
 #include "rpc_server/rpc_server.h"
-#include "rpc_server/rpc_service_setup.h"
 #include "rpc_server/rpc_config.h"
-#include "rpc_server/rpc_modules.h"
 #include "rpc_server/mdssvc/srv_mdssvc_nt.h"
 #include "libcli/security/security_token.h"
 #include "libcli/security/dom_sid.h"
@@ -39,50 +37,6 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
-static bool rpc_setup_mdssvc(struct tevent_context *ev_ctx,
-			     struct messaging_context *msg_ctx)
-{
-	const struct ndr_interface_table *t = &ndr_table_mdssvc;
-	NTSTATUS status;
-	enum rpc_service_mode_e service_mode = rpc_service_mode(t->name);
-	enum rpc_daemon_type_e mdssvc_type = rpc_mdssd_daemon();
-	bool external = service_mode != RPC_SERVICE_MODE_EMBEDDED ||
-			mdssvc_type != RPC_DAEMON_EMBEDDED;
-	bool in_mdssd = external && am_parent == NULL;
-	const struct dcesrv_endpoint_server *ep_server = NULL;
-
-	if (external && !in_mdssd) {
-		return true;
-	}
-
-	ep_server = mdssvc_get_ep_server();
-	if (ep_server == NULL) {
-		DBG_ERR("Failed to get endpoint server\n");
-		return false;
-	}
-
-	status = dcerpc_register_ep_server(ep_server);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("Failed to register 'mdssvc' endpoint "
-			"server: %s\n", nt_errstr(status));
-		return false;
-	}
-
-	return true;
-}
-
-static struct rpc_module_fns rpc_module_mdssvc_fns = {
-	.setup = rpc_setup_mdssvc,
-};
-
-static_decl_rpc;
-NTSTATUS rpc_mdssvc_module_init(TALLOC_CTX *mem_ctx)
-{
-	DBG_DEBUG("Registering mdsvc RPC service\n");
-
-	return register_rpc_module(&rpc_module_mdssvc_fns, "mdssvc");
-}
-
 static NTSTATUS create_mdssvc_policy_handle(TALLOC_CTX *mem_ctx,
 					    struct pipes_struct *p,
 					    int snum,
@@ -90,20 +44,26 @@ static NTSTATUS create_mdssvc_policy_handle(TALLOC_CTX *mem_ctx,
 					    const char *path,
 					    struct policy_handle *handle)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct mds_ctx *mds_ctx;
+	NTSTATUS status;
 
 	ZERO_STRUCTP(handle);
 
-	mds_ctx = mds_init_ctx(mem_ctx,
-			       messaging_tevent_context(p->msg_ctx),
-			       p->msg_ctx,
-			       p->session_info,
-			       snum,
-			       sharename,
-			       path);
-	if (mds_ctx == NULL) {
-		DEBUG(1, ("error in mds_init_ctx for: %s\n", path));
-		return NT_STATUS_UNSUCCESSFUL;
+	status = mds_init_ctx(mem_ctx,
+			      messaging_tevent_context(p->msg_ctx),
+			      p->msg_ctx,
+			      session_info,
+			      snum,
+			      sharename,
+			      path,
+			      &mds_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("mds_init_ctx() path [%s] failed: %s\n",
+			  path, nt_errstr(status));
+		return status;
 	}
 
 	if (!create_policy_hnd(p, handle, 0, mds_ctx)) {
@@ -149,6 +109,11 @@ void _mdssvc_open(struct pipes_struct *p, struct mdssvc_open *r)
 					     r->in.share_name,
 					     path,
 					     r->out.handle);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_WRONG_VOLUME)) {
+		ZERO_STRUCTP(r->out.handle);
+		talloc_free(path);
+		return;
+	}
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("Couldn't create policy handle for %s\n",
 			r->in.share_name);
@@ -162,19 +127,6 @@ void _mdssvc_open(struct pipes_struct *p, struct mdssvc_open *r)
 	return;
 }
 
-static bool is_zero_policy_handle(const struct policy_handle *h)
-{
-	struct GUID zero_uuid = {0};
-
-	if (h->handle_type != 0) {
-		return false;
-	}
-	if (!GUID_equal(&h->uuid, &zero_uuid)) {
-		return false;
-	}
-	return true;
-}
-
 void _mdssvc_unknown1(struct pipes_struct *p, struct mdssvc_unknown1 *r)
 {
 	struct mds_ctx *mds_ctx;
@@ -186,7 +138,7 @@ void _mdssvc_unknown1(struct pipes_struct *p, struct mdssvc_unknown1 *r)
 				     struct mds_ctx,
 				     &status);
 	if (!NT_STATUS_IS_OK(status)) {
-		if (is_zero_policy_handle(r->in.handle)) {
+		if (ndr_policy_handle_empty(r->in.handle)) {
 			p->fault_state = 0;
 		} else {
 			p->fault_state = DCERPC_NCA_S_PROTO_ERROR;
@@ -208,6 +160,9 @@ void _mdssvc_unknown1(struct pipes_struct *p, struct mdssvc_unknown1 *r)
 
 void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	bool ok;
 	char *rbuf;
 	struct mds_ctx *mds_ctx;
@@ -219,7 +174,7 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 				     struct mds_ctx,
 				     &status);
 	if (!NT_STATUS_IS_OK(status)) {
-		if (is_zero_policy_handle(r->in.handle)) {
+		if (ndr_policy_handle_empty(r->in.handle)) {
 			p->fault_state = 0;
 		} else {
 			p->fault_state = DCERPC_NCA_S_PROTO_ERROR;
@@ -232,7 +187,7 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 
 	DEBUG(10, ("%s: path: %s\n", __func__, mds_ctx->spath));
 
-	ok = security_token_is_sid(p->session_info->security_token,
+	ok = security_token_is_sid(session_info->security_token,
 				   &mds_ctx->sid);
 	if (!ok) {
 		struct dom_sid_buf buf;
@@ -300,7 +255,7 @@ void _mdssvc_close(struct pipes_struct *p, struct mdssvc_close *r)
 				     &status);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("invalid handle\n");
-		if (is_zero_policy_handle(r->in.in_handle)) {
+		if (ndr_policy_handle_empty(r->in.in_handle)) {
 			p->fault_state = 0;
 		} else {
 			p->fault_state = DCERPC_NCA_S_PROTO_ERROR;

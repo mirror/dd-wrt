@@ -2,12 +2,12 @@
 .\"     Title: ctdb-etcd
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB\-ETCD" "7" "01/31/2022" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB\-ETCD" "7" "05/31/2023" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,7 +34,7 @@ ctdb-etcd \- CTDB etcd integration
 \fBctdb_etcd_lock\fR
 .SH "DESCRIPTION"
 .PP
-ctdb_etcd_lock is intended to be run as a mutex helper for CTDB\&. It will try to connect to an existing etcd cluster and grab a lock in that cluster to function as CTDB\*(Aqs recovery lock\&. Please see
+ctdb_etcd_lock is intended to be run as a mutex helper for CTDB\&. It will try to connect to an existing etcd cluster and grab a lock in that cluster to function as CTDB\*(Aqs cluster lock\&. Please see
 \fIctdb/doc/cluster_mutex_helper\&.txt\fR
 for details on the mutex helper API\&. To use this, include the following line in the
 [cluster]
@@ -45,7 +45,7 @@ section of
 .RS 4
 .\}
 .nf
-recovery lock = !/usr/local/usr/libexec/ctdb/ctdb_etcd_lock
+cluster lock = !/usr/local/usr/libexec/ctdb/ctdb_etcd_lock
     
 .fi
 .if n \{\

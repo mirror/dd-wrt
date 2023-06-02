@@ -1,21 +1,21 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Password and authentication handling
    Copyright (C) Andrew Bartlett <abartlet@samba.org> 2001-2010
    Copyright (C) Gerald Carter                             2003
    Copyright (C) Stefan Metzmacher                         2005
    Copyright (C) Matthias Dieter Wallnöfer                 2009
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -31,6 +31,8 @@
 #include "libcli/ldap/ldap_ndr.h"
 #include "param/param.h"
 #include "librpc/gen_ndr/ndr_winbind_c.h"
+#include "lib/dbwrap/dbwrap.h"
+#include "cluster/cluster.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
@@ -46,9 +48,9 @@
 	"msDS-SupportedEncryptionTypes",	\
 	"supplementalCredentials",		\
 	"msDS-AllowedToDelegateTo",		\
+	"msDS-AllowedToActOnBehalfOfOtherIdentity", \
 						\
 	/* passwords */				\
-	"dBCSPwd",				\
 	"unicodePwd",				\
 						\
 	"userAccountControl",	                \
@@ -122,7 +124,7 @@ const char *user_attrs[] = {
  servers local time, as logon hours are just specified as a weekly
  bitmask.
 ****************************************************************************/
-                                                                                                              
+
 static bool logon_hours_ok(struct ldb_message *msg, const char *name_for_logs)
 {
 	/* In logon hours first bit is Sunday from 12AM to 1AM */
@@ -140,7 +142,7 @@ static bool logon_hours_ok(struct ldb_message *msg, const char *name_for_logs)
 
 	if (hours->length != 168/8) {
 		DEBUG(5,("logon_hours_ok: malformed logon hours restrictions for user %s\n", name_for_logs));
-		return true;		
+		return true;
 	}
 
 	lasttime = time(NULL);
@@ -165,7 +167,7 @@ static bool logon_hours_ok(struct ldb_message *msg, const char *name_for_logs)
 				asct = "INVALID TIME";
 			}
 		}
-		
+
 		DEBUG(1, ("logon_hours_ok: Account for user %s not allowed to "
 			  "logon at this time (%s).\n",
 			  name_for_logs, asct ));
@@ -203,7 +205,7 @@ _PUBLIC_ NTSTATUS authsam_account_ok(TALLOC_CTX *mem_ctx,
 	DEBUG(4,("authsam_account_ok: Checking SMB password for user %s\n", name_for_logs));
 
 	acct_flags = samdb_result_acct_flags(msg, "msDS-User-Account-Control-Computed");
-	
+
 	acct_expiry = samdb_result_account_expires(msg);
 
 	/* Check for when we must change this password, taking the
@@ -228,7 +230,7 @@ _PUBLIC_ NTSTATUS authsam_account_ok(TALLOC_CTX *mem_ctx,
 	/* Test account expire time */
 	if (now > acct_expiry) {
 		DEBUG(2,("authsam_account_ok: Account for user '%s' has expired.\n", name_for_logs));
-		DEBUG(3,("authsam_account_ok: Account expired at '%s'.\n", 
+		DEBUG(3,("authsam_account_ok: Account expired at '%s'.\n",
 			 nt_time_string(mem_ctx, acct_expiry)));
 		return NT_STATUS_ACCOUNT_EXPIRED;
 	}
@@ -271,11 +273,11 @@ _PUBLIC_ NTSTATUS authsam_account_ok(TALLOC_CTX *mem_ctx,
 			return NT_STATUS_INVALID_WORKSTATION;
 		}
 	}
-	
+
 	if (!logon_hours_ok(msg, name_for_logs)) {
 		return NT_STATUS_INVALID_LOGON_HOURS;
 	}
-	
+
 	if (!allow_domain_trust) {
 		if (acct_flags & ACB_DOMTRUST) {
 			DEBUG(2,("sam_account_ok: Domain trust account %s denied by server\n", name_for_logs));
@@ -308,25 +310,19 @@ static NTSTATUS authsam_domain_group_filter(TALLOC_CTX *mem_ctx,
 	*_filter = NULL;
 
 	filter = talloc_strdup(mem_ctx, "(&(objectClass=group)");
-	if (filter == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
 
 	/*
 	 * Skip all builtin groups, they're added later.
 	 */
-	filter = talloc_asprintf_append_buffer(filter,
-				"(!(groupType:1.2.840.113556.1.4.803:=%u))",
-				GROUP_TYPE_BUILTIN_LOCAL_GROUP);
-	if (filter == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
+	talloc_asprintf_addbuf(&filter,
+			       "(!(groupType:1.2.840.113556.1.4.803:=%u))",
+			       GROUP_TYPE_BUILTIN_LOCAL_GROUP);
 	/*
 	 * Only include security groups.
 	 */
-	filter = talloc_asprintf_append_buffer(filter,
-				"(groupType:1.2.840.113556.1.4.803:=%u))",
-				GROUP_TYPE_SECURITY_ENABLED);
+	talloc_asprintf_addbuf(&filter,
+			       "(groupType:1.2.840.113556.1.4.803:=%u))",
+			       GROUP_TYPE_SECURITY_ENABLED);
 	if (filter == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -340,7 +336,7 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 					   const char *netbios_name,
 					   const char *domain_name,
 					   const char *dns_domain_name,
-					   struct ldb_dn *domain_dn, 
+					   struct ldb_dn *domain_dn,
 					   struct ldb_message *msg,
 					   DATA_BLOB user_sess_key,
 					   DATA_BLOB lm_sess_key,
@@ -363,7 +359,7 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 	TALLOC_CTX *tmp_ctx;
 	struct ldb_message_element *el;
 
-	user_info_dc = talloc(mem_ctx, struct auth_user_info_dc);
+	user_info_dc = talloc_zero(mem_ctx, struct auth_user_info_dc);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc);
 
 	tmp_ctx = talloc_new(user_info_dc);
@@ -454,12 +450,15 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 	user_info_dc->info = info = talloc_zero(user_info_dc, struct auth_user_info);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc->info);
 
-	info->account_name = talloc_steal(info,
-		ldb_msg_find_attr_as_string(msg, "sAMAccountName", NULL));
+	str = ldb_msg_find_attr_as_string(msg, "sAMAccountName", NULL);
+	info->account_name = talloc_strdup(info, str);
+	if (info->account_name == NULL) {
+		TALLOC_FREE(user_info_dc);
+		return NT_STATUS_NO_MEMORY;
+	}
 
-	info->user_principal_name = talloc_steal(info,
-		ldb_msg_find_attr_as_string(msg, "userPrincipalName", NULL));
-	if (info->user_principal_name == NULL && dns_domain_name != NULL) {
+	str = ldb_msg_find_attr_as_string(msg, "userPrincipalName", NULL);
+	if (str == NULL && dns_domain_name != NULL) {
 		info->user_principal_name = talloc_asprintf(info, "%s@%s",
 					info->account_name,
 					dns_domain_name);
@@ -468,6 +467,12 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 			return NT_STATUS_NO_MEMORY;
 		}
 		info->user_principal_constructed = true;
+	} else if (str != NULL) {
+		info->user_principal_name = talloc_strdup(info, str);
+		if (info->user_principal_name == NULL) {
+			TALLOC_FREE(user_info_dc);
+			return NT_STATUS_NO_MEMORY;
+		}
 	}
 
 	info->domain_name = talloc_strdup(info, domain_name);
@@ -531,7 +536,7 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 	info->last_password_change = samdb_result_nttime(msg,
 		"pwdLastSet", 0);
 	info->allow_password_change
-		= samdb_result_allow_password_change(sam_ctx, mem_ctx, 
+		= samdb_result_allow_password_change(sam_ctx, mem_ctx,
 			domain_dn, msg, "pwdLastSet");
 	info->force_password_change = samdb_result_nttime(msg,
 		"msDS-UserPasswordExpiryTimeComputed", 0);
@@ -665,7 +670,7 @@ NTSTATUS sam_get_results_principal(struct ldb_context *sam_ctx,
 				   const char **attrs,
 				   struct ldb_dn **domain_dn,
 				   struct ldb_message **msg)
-{			   
+{
 	struct ldb_dn *user_dn;
 	NTSTATUS nt_status;
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
@@ -675,13 +680,13 @@ NTSTATUS sam_get_results_principal(struct ldb_context *sam_ctx,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	nt_status = crack_user_principal_name(sam_ctx, tmp_ctx, principal, 
+	nt_status = crack_user_principal_name(sam_ctx, tmp_ctx, principal,
 					      &user_dn, domain_dn);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		talloc_free(tmp_ctx);
 		return nt_status;
 	}
-	
+
 	/* pull the user attributes */
 	ret = dsdb_search_one(sam_ctx, tmp_ctx, msg, user_dn,
 			      LDB_SCOPE_BASE, attrs,
@@ -694,7 +699,7 @@ NTSTATUS sam_get_results_principal(struct ldb_context *sam_ctx,
 	talloc_steal(mem_ctx, *msg);
 	talloc_steal(mem_ctx, *domain_dn);
 	talloc_free(tmp_ctx);
-	
+
 	return NT_STATUS_OK;
 }
 
@@ -816,6 +821,240 @@ static int authsam_get_user_pso(struct ldb_context *sam_ctx,
 	return LDB_SUCCESS;
 }
 
+/*
+ * Re-read the bad password and successful logon data for a user.
+ *
+ * The DN in the passed user record should contain the "objectGUID" in case the
+ * object DN has changed.
+ */
+NTSTATUS authsam_reread_user_logon_data(
+	struct ldb_context *sam_ctx,
+	TALLOC_CTX *mem_ctx,
+	const struct ldb_message *user_msg,
+	struct ldb_message **current)
+{
+	const struct ldb_val *v = NULL;
+	struct ldb_result *res = NULL;
+	uint16_t acct_flags = 0;
+	const char *attr_name = "msDS-User-Account-Control-Computed";
+
+	int ret;
+
+	/*
+	 * Re-read the account details, using the GUID in case the DN
+	 * is being changed (this is automatic in LDB because the
+	 * original search also used DSDB_SEARCH_SHOW_EXTENDED_DN)
+	 *
+	 * We re read all the attributes in user_attrs, rather than using a
+	 * subset to ensure that we can reuse existing validation code.
+	 */
+	ret = dsdb_search_dn(sam_ctx,
+			     mem_ctx,
+			     &res,
+			     user_msg->dn,
+			     user_attrs,
+			     DSDB_SEARCH_SHOW_EXTENDED_DN);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Unable to re-read account control data for %s\n",
+			ldb_dn_get_linearized(user_msg->dn));
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	/*
+	 * Ensure the account has not been locked out by another request
+	 */
+	v = ldb_msg_find_ldb_val(res->msgs[0], attr_name);
+	if (v == NULL || v->data == NULL) {
+		DBG_ERR("No %s attribute for %s\n",
+			attr_name,
+			ldb_dn_get_linearized(user_msg->dn));
+		TALLOC_FREE(res);
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+	acct_flags = samdb_result_acct_flags(res->msgs[0], attr_name);
+	if (acct_flags & ACB_AUTOLOCK) {
+		DBG_WARNING(
+			"Account for user %s was locked out.\n",
+			ldb_dn_get_linearized(user_msg->dn));
+		TALLOC_FREE(res);
+		return NT_STATUS_ACCOUNT_LOCKED_OUT;
+	}
+	*current = talloc_steal(mem_ctx, res->msgs[0]);
+	TALLOC_FREE(res);
+	return NT_STATUS_OK;
+}
+
+static struct db_context *authsam_get_bad_password_db(
+	TALLOC_CTX *mem_ctx,
+	struct ldb_context *sam_ctx)
+{
+	struct loadparm_context *lp_ctx = NULL;
+	const char *db_name = "bad_password";
+	struct db_context *db_ctx =  NULL;
+
+	lp_ctx = ldb_get_opaque(sam_ctx, "loadparm");
+	if (lp_ctx == NULL) {
+		DBG_ERR("Unable to get loadparm_context\n");
+		return NULL;
+	}
+
+	db_ctx = cluster_db_tmp_open(mem_ctx, lp_ctx, db_name, TDB_DEFAULT);
+	if (db_ctx == NULL) {
+		DBG_ERR("Unable to open bad password attempts database\n");
+		return NULL;
+	}
+	return db_ctx;
+}
+
+static NTSTATUS get_object_sid_as_tdb_data(
+	TALLOC_CTX *mem_ctx,
+	const struct ldb_message *msg,
+	struct dom_sid_buf *buf,
+	TDB_DATA *key)
+{
+	struct dom_sid *objectsid = NULL;
+
+	/*
+	 * Convert the objectSID to a human readable form to
+	 * make debugging easier
+	 */
+	objectsid = samdb_result_dom_sid(mem_ctx, msg, "objectSID");
+	if (objectsid == NULL) {
+		DBG_ERR("Unable to extract objectSID\n");
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+	dom_sid_str_buf(objectsid, buf);
+	key->dptr = (unsigned char *)buf->buf;
+	key->dsize = strlen(buf->buf);
+
+	talloc_free(objectsid);
+
+	return NT_STATUS_OK;
+}
+
+/*
+ * Add the users objectSID to the bad password attempt database
+ * to indicate that last authentication failed due to a bad password
+ */
+static NTSTATUS authsam_set_bad_password_indicator(
+	struct ldb_context *sam_ctx,
+	TALLOC_CTX *mem_ctx,
+	const struct ldb_message *msg)
+{
+	NTSTATUS status = NT_STATUS_OK;
+	struct dom_sid_buf buf;
+	TDB_DATA key = {0};
+	TDB_DATA value = {0};
+	struct db_context *db = NULL;
+
+	TALLOC_CTX *ctx = talloc_new(mem_ctx);
+	if (ctx == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	db = authsam_get_bad_password_db(ctx, sam_ctx);
+	if (db == NULL) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto exit;
+	}
+
+	status = get_object_sid_as_tdb_data(ctx, msg, &buf, &key);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto exit;
+	}
+
+	status = dbwrap_store(db, key, value, 0);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Unable to store bad password indicator\n");
+	}
+exit:
+	talloc_free(ctx);
+	return status;
+}
+
+/*
+ * see if the users objectSID is in the bad password attempt database
+ */
+static NTSTATUS authsam_check_bad_password_indicator(
+	struct ldb_context *sam_ctx,
+	TALLOC_CTX *mem_ctx,
+	bool *exists,
+	const struct ldb_message *msg)
+{
+	NTSTATUS status = NT_STATUS_OK;
+	struct dom_sid_buf buf;
+	TDB_DATA key = {0};
+	struct db_context *db = NULL;
+
+	TALLOC_CTX *ctx = talloc_new(mem_ctx);
+	if (ctx == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	db = authsam_get_bad_password_db(ctx, sam_ctx);
+	if (db == NULL) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto exit;
+	}
+
+	status = get_object_sid_as_tdb_data(ctx, msg, &buf, &key);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto exit;
+	}
+
+	*exists = dbwrap_exists(db, key);
+exit:
+	talloc_free(ctx);
+	return status;
+}
+
+/*
+ * Remove the users objectSID to the bad password attempt database
+ * to indicate that last authentication succeeded.
+ */
+static NTSTATUS authsam_clear_bad_password_indicator(
+	struct ldb_context *sam_ctx,
+	TALLOC_CTX *mem_ctx,
+	const struct ldb_message *msg)
+{
+	NTSTATUS status = NT_STATUS_OK;
+	struct dom_sid_buf buf;
+	TDB_DATA key = {0};
+	struct db_context *db = NULL;
+
+	TALLOC_CTX *ctx = talloc_new(mem_ctx);
+	if (ctx == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	db = authsam_get_bad_password_db(ctx, sam_ctx);
+	if (db == NULL) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto exit;
+	}
+
+	status = get_object_sid_as_tdb_data(ctx, msg, &buf, &key);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto exit;
+	}
+
+	status = dbwrap_delete(db, key);
+	if (NT_STATUS_EQUAL(NT_STATUS_NOT_FOUND, status)) {
+		/*
+		 * Ok there was no bad password indicator this is expected
+		 */
+		status = NT_STATUS_OK;
+	}
+	if (NT_STATUS_IS_ERR(status)) {
+		DBG_ERR("Unable to delete bad password indicator, %s %s\n",
+			nt_errstr(status),
+			get_friendly_nt_error_msg(status));
+	}
+exit:
+	talloc_free(ctx);
+	return status;
+}
+
 NTSTATUS authsam_update_bad_pwd_count(struct ldb_context *sam_ctx,
 				      struct ldb_message *msg,
 				      struct ldb_dn *domain_dn)
@@ -829,7 +1068,9 @@ NTSTATUS authsam_update_bad_pwd_count(struct ldb_context *sam_ctx,
 	NTSTATUS status;
 	struct ldb_result *domain_res;
 	struct ldb_message *msg_mod = NULL;
+	struct ldb_message *current = NULL;
 	struct ldb_message *pso_msg = NULL;
+	bool txn_active = false;
 	TALLOC_CTX *mem_ctx;
 
 	mem_ctx = talloc_new(msg);
@@ -850,18 +1091,69 @@ NTSTATUS authsam_update_bad_pwd_count(struct ldb_context *sam_ctx,
 		 * fallback to using the domain defaults so that we still
 		 * record the bad password attempt
 		 */
-		DBG_ERR("Error (%d) checking PSO for %s",
+		DBG_ERR("Error (%d) checking PSO for %s\n",
 			ret, ldb_dn_get_linearized(msg->dn));
 	}
 
-	status = dsdb_update_bad_pwd_count(mem_ctx, sam_ctx,
-					   msg, domain_res->msgs[0], pso_msg,
-					   &msg_mod);
+	/*
+	 * To ensure that the bad password count is updated atomically,
+	 * we need to:
+	 *    begin a transaction
+	 *       re-read the account details,
+	 *         using the <GUID= part of the DN
+	 *       update the bad password count
+	 *    commit the transaction.
+	 */
+
+	/*
+	 * Start a new transaction
+	 */
+	ret = ldb_transaction_start(sam_ctx);
+	if (ret != LDB_SUCCESS) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto error;
+	}
+	txn_active = true;
+
+	/*
+	 * Re-read the account details, using the GUID in case the DN
+	 * is being changed.
+	 */
+	status = authsam_reread_user_logon_data(
+		sam_ctx, mem_ctx, msg, &current);
 	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(mem_ctx);
-		return status;
+		/* The re-read can return account locked out, as well
+		 * as an internal error
+		 */
+		if (NT_STATUS_EQUAL(status, NT_STATUS_ACCOUNT_LOCKED_OUT)) {
+			/*
+			 * For NT_STATUS_ACCOUNT_LOCKED_OUT we want to commit
+			 * the transaction. Again to avoid cluttering the
+			 * audit logs with spurious errors
+			 */
+			goto exit;
+		}
+		goto error;
 	}
 
+	/*
+	 * Update the bad password count and if required lock the account
+	 */
+	status = dsdb_update_bad_pwd_count(
+		mem_ctx,
+		sam_ctx,
+		current,
+		domain_res->msgs[0],
+		pso_msg,
+		&msg_mod);
+	if (!NT_STATUS_IS_OK(status)) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto error;
+	}
+
+	/*
+	 * Write the data back to disk if required.
+	 */
 	if (msg_mod != NULL) {
 		struct ldb_request *req;
 
@@ -872,7 +1164,9 @@ NTSTATUS authsam_update_bad_pwd_count(struct ldb_context *sam_ctx,
 					ldb_op_default_callback,
 					NULL);
 		if (ret != LDB_SUCCESS) {
-			goto done;
+			TALLOC_FREE(msg_mod);
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
 		}
 
 		ret = ldb_request_add_control(req,
@@ -880,62 +1174,103 @@ NTSTATUS authsam_update_bad_pwd_count(struct ldb_context *sam_ctx,
 					      false, NULL);
 		if (ret != LDB_SUCCESS) {
 			talloc_free(req);
-			goto done;
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
 		}
 
-		ret = dsdb_autotransaction_request(sam_ctx, req);
+		/*
+		 * As we're in a transaction, make the ldb request directly
+		 * to avoid the nested transaction that would result if we
+		 * called dsdb_autotransaction_request
+		 */
+		ret = ldb_request(sam_ctx, req);
+		if (ret == LDB_SUCCESS) {
+			ret = ldb_wait(req->handle, LDB_WAIT_ALL);
+		}
 		talloc_free(req);
+		if (ret != LDB_SUCCESS) {
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
+		}
+		status = authsam_set_bad_password_indicator(
+			sam_ctx, mem_ctx, msg);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto error;
+		}
 	}
-
-done:
+	/*
+	 * Note that we may not have updated the user record, but
+	 * committing the transaction in that case is still the correct
+	 * thing to do.
+	 * If the transaction was cancelled, this would be logged by
+	 * the dsdb audit log as a failure. When in fact it is expected
+	 * behaviour.
+	 */
+exit:
+	TALLOC_FREE(mem_ctx);
+	ret = ldb_transaction_commit(sam_ctx);
 	if (ret != LDB_SUCCESS) {
-		DBG_ERR("Failed to update badPwdCount, badPasswordTime or "
-			"set lockoutTime on %s: %s\n",
-			ldb_dn_get_linearized(msg->dn),
-			ldb_errstring(sam_ctx));
-		TALLOC_FREE(mem_ctx);
+		DBG_ERR("Error (%d) %s, committing transaction,"
+			" while updating bad password count"
+			" for (%s)\n",
+			ret,
+			ldb_errstring(sam_ctx),
+			ldb_dn_get_linearized(msg->dn));
 		return NT_STATUS_INTERNAL_ERROR;
 	}
+	return status;
 
+error:
+	DBG_ERR("Failed to update badPwdCount, badPasswordTime or "
+		"set lockoutTime on %s: %s\n",
+		ldb_dn_get_linearized(msg->dn),
+		ldb_errstring(sam_ctx) != NULL ?
+			ldb_errstring(sam_ctx) :nt_errstr(status));
+	if (txn_active) {
+		ret = ldb_transaction_cancel(sam_ctx);
+		if (ret != LDB_SUCCESS) {
+			DBG_ERR("Error rolling back transaction,"
+				" while updating bad password count"
+				" on %s: %s\n",
+				ldb_dn_get_linearized(msg->dn),
+				ldb_errstring(sam_ctx));
+		}
+	}
 	TALLOC_FREE(mem_ctx);
-	return NT_STATUS_OK;
+	return status;
+
 }
 
+/*
+ * msDS-LogonTimeSyncInterval is an int32_t number of days.
+ *
+ * The docs say: "the initial update, after the domain functional
+ * level is raised to DS_BEHAVIOR_WIN2003 or higher, is calculated as
+ * 14 days minus a random percentage of 5 days", but we aren't doing
+ * that. The blogosphere seems to think that this randomised update
+ * happens everytime, but [MS-ADA1] doesn't agree.
+ *
+ * Dochelp referred us to the following blog post:
+ * http://blogs.technet.com/b/askds/archive/2009/04/15/the-lastlogontimestamp-attribute-what-it-was-designed-for-and-how-it-works.aspx
+ *
+ * when msDS-LogonTimeSyncInterval is zero, the lastLogonTimestamp is
+ * not changed.
+ */
 
-static NTSTATUS authsam_update_lastlogon_timestamp(struct ldb_context *sam_ctx,
-					    struct ldb_message *msg_mod,
-					    struct ldb_dn *domain_dn,
-					    NTTIME old_timestamp,
-					    NTTIME now)
+static NTSTATUS authsam_calculate_lastlogon_sync_interval(
+	struct ldb_context *sam_ctx,
+	TALLOC_CTX *ctx,
+	struct ldb_dn *domain_dn,
+	NTTIME *sync_interval_nt)
 {
-	/*
-	 * We only set lastLogonTimestamp if the current value is older than
-	 * now - msDS-LogonTimeSyncInterval days.
-	 *
-	 * msDS-LogonTimeSyncInterval is an int32_t number of days, while
-	 * lastLogonTimestamp is in the 64 bit 100ns NTTIME format.
-	 *
-	 * The docs say: "the initial update, after the domain functional
-	 * level is raised to DS_BEHAVIOR_WIN2003 or higher, is calculated as
-	 * 14 days minus a random percentage of 5 days", but we aren't doing
-	 * that. The blogosphere seems to think that this randomised update
-	 * happens everytime, but [MS-ADA1] doesn't agree.
-	 *
-	 * Dochelp referred us to the following blog post:
-	 * http://blogs.technet.com/b/askds/archive/2009/04/15/the-lastlogontimestamp-attribute-what-it-was-designed-for-and-how-it-works.aspx
-	 *
-	 * en msDS-LogonTimeSyncInterval is zero, the lastLogonTimestamp is
-	 * not changed.
-	 */
 	static const char *attrs[] = { "msDS-LogonTimeSyncInterval",
 					NULL };
 	int ret;
 	struct ldb_result *domain_res = NULL;
 	TALLOC_CTX *mem_ctx = NULL;
-	int32_t sync_interval;
-	NTTIME sync_interval_nt;
+	uint32_t sync_interval;
 
-	mem_ctx = talloc_new(msg_mod);
+	mem_ctx = talloc_new(ctx);
 	if (mem_ctx == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -951,15 +1286,7 @@ static NTSTATUS authsam_update_lastlogon_timestamp(struct ldb_context *sam_ctx,
 						 "msDS-LogonTimeSyncInterval",
 						 14);
 	DEBUG(5, ("sync interval is %d\n", sync_interval));
-	if (sync_interval == 0){
-		/*
-		 * Setting msDS-LogonTimeSyncInterval to zero is how you ask
-		 * that nothing happens here.
-		 */
-		TALLOC_FREE(mem_ctx);
-		return NT_STATUS_OK;
-	}
-	else if (sync_interval >= 5){
+	if (sync_interval >= 5){
 		/*
 		 * Subtract "a random percentage of 5" days. Presumably this
 		 * percentage is between 0 and 100, and modulus is accurate
@@ -967,17 +1294,47 @@ static NTSTATUS authsam_update_lastlogon_timestamp(struct ldb_context *sam_ctx,
 		 */
 		uint32_t r = generate_random() % 6;
 		sync_interval -= r;
-		DEBUG(5, ("randomised sync interval is %d (-%d)\n", sync_interval, r));
+		DBG_INFO("randomised sync interval is %d (-%d)\n", sync_interval, r);
 	}
 	/* In the case where sync_interval < 5 there is no randomisation */
 
-	sync_interval_nt = sync_interval * 24LL * 3600LL * 10000000LL;
+	/*
+	 * msDS-LogonTimeSyncInterval is an int32_t number of days,
+	 * while lastLogonTimestamp (to be updated) is in the 64 bit
+	 * 100ns NTTIME format so we must convert.
+	 */
+	*sync_interval_nt = sync_interval * 24LL * 3600LL * 10000000LL;
+	TALLOC_FREE(mem_ctx);
+	return NT_STATUS_OK;
+}
 
+
+/*
+ * We only set lastLogonTimestamp if the current value is older than
+ * now - msDS-LogonTimeSyncInterval days.
+ *
+ * lastLogonTimestamp is in the 64 bit 100ns NTTIME format
+ */
+static NTSTATUS authsam_update_lastlogon_timestamp(struct ldb_context *sam_ctx,
+						   struct ldb_message *msg_mod,
+						   struct ldb_dn *domain_dn,
+						   NTTIME old_timestamp,
+						   NTTIME now,
+						   NTTIME sync_interval_nt)
+{
+	int ret;
 	DEBUG(5, ("old timestamp is %lld, threshold %lld, diff %lld\n",
 		  (long long int)old_timestamp,
 		  (long long int)(now - sync_interval_nt),
 		  (long long int)(old_timestamp - now + sync_interval_nt)));
 
+	if (sync_interval_nt == 0){
+		/*
+		 * Setting msDS-LogonTimeSyncInterval to zero is how you ask
+		 * that nothing happens here.
+		 */
+		return NT_STATUS_OK;
+	}
 	if (old_timestamp > now){
 		DEBUG(0, ("lastLogonTimestamp is in the future! (%lld > %lld)\n",
 			  (long long int)old_timestamp, (long long int)now));
@@ -992,11 +1349,9 @@ static NTSTATUS authsam_update_lastlogon_timestamp(struct ldb_context *sam_ctx,
 					  "lastLogonTimestamp", now);
 
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(mem_ctx);
 			return NT_STATUS_NO_MEMORY;
 		}
 	}
-	TALLOC_FREE(mem_ctx);
 	return NT_STATUS_OK;
 }
 
@@ -1035,6 +1390,7 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 					  const struct ldb_message *msg,
 					  struct ldb_dn *domain_dn,
 					  bool interactive_or_kerberos,
+					  TALLOC_CTX *send_to_sam_mem_ctx,
 					  struct netr_SendToSamBase **send_to_sam)
 {
 	int ret;
@@ -1047,20 +1403,121 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 	struct timeval tv_now;
 	NTTIME now;
 	NTTIME lastLogonTimestamp;
+	int64_t lockOutObservationWindow;
+	NTTIME sync_interval_nt = 0;
 	bool am_rodc = false;
+	bool txn_active = false;
+	bool need_db_reread;
 
 	mem_ctx = talloc_new(msg);
 	if (mem_ctx == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
+	/*
+	 * Any update of the last logon data, needs to be done inside a
+	 * transaction.
+	 * And the user data needs to be re-read, and the account re-checked
+	 * for lockout.
+	 *
+	 * Howevver we have long-running transactions like replication
+	 * that could otherwise grind the system to a halt so we first
+	 * determine if *this* account has seen a bad password,
+	 * otherwise we only start a transaction if there was a need
+	 * (because a change was to be made).
+	 */
+
+	status = authsam_check_bad_password_indicator(
+		sam_ctx, mem_ctx, &need_db_reread, msg);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	if (interactive_or_kerberos == false) {
+		/*
+		 * Avoid calculating this twice, it reads the PSO.  A
+		 * race on this is unimportant.
+		 */
+		lockOutObservationWindow
+			= samdb_result_msds_LockoutObservationWindow(
+				sam_ctx, mem_ctx, domain_dn, msg);
+	}
+
+	ret = samdb_rodc(sam_ctx, &am_rodc);
+	if (ret != LDB_SUCCESS) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto error;
+	}
+
+	if (!am_rodc) {
+		/*
+		 * Avoid reading the main domain DN twice.  A race on
+		 * this is unimportant.
+		 */
+		status = authsam_calculate_lastlogon_sync_interval(
+			sam_ctx, mem_ctx, domain_dn, &sync_interval_nt);
+
+		if (!NT_STATUS_IS_OK(status)) {
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
+		}
+	}
+
+get_transaction:
+
+	if (need_db_reread) {
+		struct ldb_message *current = NULL;
+
+		/*
+		 * Start a new transaction
+		 */
+		ret = ldb_transaction_start(sam_ctx);
+		if (ret != LDB_SUCCESS) {
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
+		}
+
+		txn_active = true;
+
+		/*
+		 * Re-read the account details, using the GUID
+		 * embedded in DN so this is safe against a race where
+		 * it is being renamed.
+		 */
+		status = authsam_reread_user_logon_data(
+			sam_ctx, mem_ctx, msg, &current);
+		if (!NT_STATUS_IS_OK(status)) {
+			/*
+			 * The re-read can return account locked out, as well
+			 * as an internal error
+			 */
+			if (NT_STATUS_EQUAL(status, NT_STATUS_ACCOUNT_LOCKED_OUT)) {
+				/*
+				 * For NT_STATUS_ACCOUNT_LOCKED_OUT we want to commit
+				 * the transaction. Again to avoid cluttering the
+				 * audit logs with spurious errors
+				 */
+				goto exit;
+			}
+			goto error;
+		}
+		msg = current;
+	}
+
 	lockoutTime = ldb_msg_find_attr_as_int64(msg, "lockoutTime", 0);
 	dbBadPwdCount = ldb_msg_find_attr_as_int(msg, "badPwdCount", 0);
+	tv_now = timeval_current();
+	now = timeval_to_nttime(&tv_now);
+
 	if (interactive_or_kerberos) {
 		badPwdCount = dbBadPwdCount;
 	} else {
-		badPwdCount = samdb_result_effective_badPwdCount(sam_ctx, mem_ctx,
-								 domain_dn, msg);
+		/*
+		 * We get lockOutObservationWindow above, before the
+		 * transaction
+		 */
+		badPwdCount = dsdb_effective_badPwdCount(
+			msg, lockOutObservationWindow, now);
 	}
 	lastLogonTimestamp =
 		ldb_msg_find_attr_as_int64(msg, "lastLogonTimestamp", 0);
@@ -1070,9 +1527,15 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 
 	msg_mod = ldb_msg_new(mem_ctx);
 	if (msg_mod == NULL) {
-		TALLOC_FREE(mem_ctx);
-		return NT_STATUS_NO_MEMORY;
+		status = NT_STATUS_NO_MEMORY;
+		goto error;
 	}
+
+	/*
+	 * By using the DN from msg->dn directly, we allow LDB to
+	 * prefer the embedded GUID form, so this is actually quite
+	 * safe even in the case where DN has been changed
+	 */
 	msg_mod->dn = msg->dn;
 
 	if (lockoutTime != 0) {
@@ -1081,27 +1544,24 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 		 */
 		ret = samdb_msg_add_int(sam_ctx, msg_mod, msg_mod, "lockoutTime", 0);
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(mem_ctx);
-			return NT_STATUS_NO_MEMORY;
+			status = NT_STATUS_NO_MEMORY;
+			goto error;
 		}
 	} else if (badPwdCount != 0) {
 		ret = samdb_msg_add_int(sam_ctx, msg_mod, msg_mod, "badPwdCount", 0);
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(mem_ctx);
-			return NT_STATUS_NO_MEMORY;
+			status = NT_STATUS_NO_MEMORY;
+			goto error;
 		}
 	}
-
-	tv_now = timeval_current();
-	now = timeval_to_nttime(&tv_now);
 
 	if (interactive_or_kerberos ||
 	    (badPwdCount != 0 && lockoutTime == 0)) {
 		ret = samdb_msg_add_int64(sam_ctx, msg_mod, msg_mod,
 					  "lastLogon", now);
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(mem_ctx);
-			return NT_STATUS_NO_MEMORY;
+			status = NT_STATUS_NO_MEMORY;
+			goto error;
 		}
 	}
 
@@ -1115,8 +1575,8 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 		ret = samdb_msg_add_int(sam_ctx, msg_mod, msg_mod,
 					"logonCount", logonCount);
 		if (ret != LDB_SUCCESS) {
-			TALLOC_FREE(mem_ctx);
-			return NT_STATUS_NO_MEMORY;
+			status = NT_STATUS_NO_MEMORY;
+			goto error;
 		}
 	} else {
 		/* Set an unset logonCount to 0 on first successful login */
@@ -1130,25 +1590,30 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 		}
 	}
 
-	ret = samdb_rodc(sam_ctx, &am_rodc);
-	if (ret != LDB_SUCCESS) {
-		TALLOC_FREE(mem_ctx);
-		return NT_STATUS_INTERNAL_ERROR;
-	}
-
 	if (!am_rodc) {
-		status = authsam_update_lastlogon_timestamp(sam_ctx, msg_mod, domain_dn,
-							    lastLogonTimestamp, now);
+		status = authsam_update_lastlogon_timestamp(
+			sam_ctx,
+			msg_mod,
+			domain_dn,
+			lastLogonTimestamp,
+			now,
+			sync_interval_nt);
 		if (!NT_STATUS_IS_OK(status)) {
-			TALLOC_FREE(mem_ctx);
-			return NT_STATUS_NO_MEMORY;
+			status = NT_STATUS_NO_MEMORY;
+			goto error;
 		}
 	} else {
 		/* Perform the (async) SendToSAM calls for MS-SAMS */
 		if (dbBadPwdCount != 0 && send_to_sam != NULL) {
 			struct netr_SendToSamBase *base_msg;
 			struct GUID guid = samdb_result_guid(msg, "objectGUID");
-			base_msg = talloc_zero(msg, struct netr_SendToSamBase);
+
+			base_msg = talloc_zero(send_to_sam_mem_ctx,
+					       struct netr_SendToSamBase);
+			if (base_msg == NULL) {
+				status = NT_STATUS_NO_MEMORY;
+				goto error;
+			}
 
 			base_msg->message_type = SendToSamResetBadPasswordCount;
 			base_msg->message_size = 16;
@@ -1160,6 +1625,16 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 	if (msg_mod->num_elements > 0) {
 		unsigned int i;
 		struct ldb_request *req;
+
+		/*
+		 * If it turns out we are going to update the DB, go
+		 * back to the start, get a transaction and the
+		 * current DB state and try again
+		 */
+		if (txn_active == false) {
+			need_db_reread = true;
+			goto get_transaction;
+		}
 
 		/* mark all the message elements as LDB_FLAG_MOD_REPLACE */
 		for (i=0;i<msg_mod->num_elements;i++) {
@@ -1173,32 +1648,84 @@ NTSTATUS authsam_logon_success_accounting(struct ldb_context *sam_ctx,
 					ldb_op_default_callback,
 					NULL);
 		if (ret != LDB_SUCCESS) {
-			goto done;
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
 		}
 
 		ret = ldb_request_add_control(req,
 					      DSDB_CONTROL_FORCE_RODC_LOCAL_CHANGE,
 					      false, NULL);
 		if (ret != LDB_SUCCESS) {
-			talloc_free(req);
-			goto done;
+			TALLOC_FREE(req);
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
 		}
-
-		ret = dsdb_autotransaction_request(sam_ctx, req);
-		talloc_free(req);
+		/*
+		 * As we're in a transaction, make the ldb request directly
+		 * to avoid the nested transaction that would result if we
+		 * called dsdb_autotransaction_request
+		 */
+		ret = ldb_request(sam_ctx, req);
+		if (ret == LDB_SUCCESS) {
+			ret = ldb_wait(req->handle, LDB_WAIT_ALL);
+		}
+		TALLOC_FREE(req);
+		if (ret != LDB_SUCCESS) {
+			status = NT_STATUS_INTERNAL_ERROR;
+			goto error;
+		}
+	}
+	status = authsam_clear_bad_password_indicator(sam_ctx, mem_ctx, msg);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto error;
 	}
 
-done:
+	/*
+	 * Note that we may not have updated the user record, but
+	 * committing the transaction in that case is still the correct
+	 * thing to do.
+	 * If the transaction was cancelled, this would be logged by
+	 * the dsdb audit log as a failure. When in fact it is expected
+	 * behaviour.
+	 *
+	 * Thankfully both TDB and LMDB seem to optimise for the empty
+	 * transaction case
+	 */
+exit:
+	TALLOC_FREE(mem_ctx);
+
+	if (txn_active == false) {
+		return status;
+	}
+
+	ret = ldb_transaction_commit(sam_ctx);
 	if (ret != LDB_SUCCESS) {
-		DEBUG(0, ("Failed to set badPwdCount and lockoutTime "
-			  "to 0 and/or  lastlogon to now (%lld) "
-			  "%s: %s\n", (long long int)now,
-			  ldb_dn_get_linearized(msg_mod->dn),
-			  ldb_errstring(sam_ctx)));
-		TALLOC_FREE(mem_ctx);
+		DBG_ERR("Error (%d) %s, committing transaction,"
+			" while updating successful logon accounting"
+			" for (%s)\n",
+			ret,
+			ldb_errstring(sam_ctx),
+			ldb_dn_get_linearized(msg->dn));
 		return NT_STATUS_INTERNAL_ERROR;
 	}
+	return status;
 
+error:
+	DBG_ERR("Failed to update badPwdCount, badPasswordTime or "
+		"set lockoutTime on %s: %s\n",
+		ldb_dn_get_linearized(msg->dn),
+		ldb_errstring(sam_ctx) != NULL ?
+			ldb_errstring(sam_ctx) :nt_errstr(status));
+	if (txn_active) {
+		ret = ldb_transaction_cancel(sam_ctx);
+		if (ret != LDB_SUCCESS) {
+			DBG_ERR("Error rolling back transaction,"
+				" while updating bad password count"
+				" on %s: %s\n",
+				ldb_dn_get_linearized(msg->dn),
+				ldb_errstring(sam_ctx));
+		}
+	}
 	TALLOC_FREE(mem_ctx);
-	return NT_STATUS_OK;
+	return status;
 }

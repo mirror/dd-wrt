@@ -56,7 +56,7 @@ extern "C" {
  */
 
 #define TALLOC_VERSION_MAJOR 2
-#define TALLOC_VERSION_MINOR 3
+#define TALLOC_VERSION_MINOR 4
 
 _PUBLIC_ int talloc_version_major(void);
 _PUBLIC_ int talloc_version_minor(void);
@@ -1577,6 +1577,20 @@ _PUBLIC_ char *talloc_vasprintf_append(char *s, const char *fmt, va_list ap) PRI
  * @see talloc_vasprintf()
  */
 _PUBLIC_ char *talloc_vasprintf_append_buffer(char *s, const char *fmt, va_list ap) PRINTF_ATTRIBUTE(2,0);
+
+/**
+ * @brief Build up a string buffer, handle allocation failure
+ *
+ * @param[in] ps Pointer to the talloc'ed string to be extended
+ * @param[in] fmt The format string
+ * @param[in] ... The parameters used to fill fmt.
+ *
+ * This does nothing if *ps is NULL and sets *ps to NULL if the
+ * intermediate reallocation fails. Useful when building up a string
+ * step by step, no intermediate NULL checks are required.
+ */
+_PUBLIC_ void talloc_asprintf_addbuf(char **ps, const char *fmt, ...) \
+	PRINTF_ATTRIBUTE(2,3);
 
 /**
  * @brief Format a string.

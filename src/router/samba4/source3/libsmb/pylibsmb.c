@@ -21,11 +21,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+Template code to use this library:
+
+-------------------------
+from samba.samba3 import libsmb_samba_internal as libsmb
+from samba.samba3 import param as s3param
+from samba import (credentials,NTSTATUSError)
+
+lp = s3param.get_context()
+lp.load("/etc/samba/smb.conf");
+
+creds = credentials.Credentials()
+creds.guess(lp)
+creds.set_username("administrator")
+creds.set_password("1234")
+
+c = libsmb.Conn("127.0.0.1",
+                "tmp",
+                lp,
+                creds,
+                multi_threaded=True)
+-------------------------
+*/
+
 #include <Python.h>
 #include "includes.h"
 #include "python/py3compat.h"
 #include "python/modules.h"
 #include "libcli/smb/smbXcli_base.h"
+#include "libcli/smb/smb2_negotiate_context.h"
+#include "libcli/smb/reparse_symlink.h"
 #include "libsmb/libsmb.h"
 #include "libcli/security/security.h"
 #include "system/select.h"
@@ -423,6 +449,86 @@ static PyObject *py_cli_state_new(PyTypeObject *type, PyObject *args,
 	return (PyObject *)self;
 }
 
+static struct smb2_negotiate_contexts *py_cli_get_negotiate_contexts(
+	TALLOC_CTX *mem_ctx, PyObject *list)
+{
+	struct smb2_negotiate_contexts *ctxs = NULL;
+	Py_ssize_t i, len;
+	int ret;
+
+	ret = PyList_Check(list);
+	if (!ret) {
+		goto fail;
+	}
+
+	len = PyList_Size(list);
+	if (len == 0) {
+		goto fail;
+	}
+
+	ctxs = talloc_zero(mem_ctx, struct smb2_negotiate_contexts);
+	if (ctxs == NULL) {
+		goto fail;
+	}
+
+	for (i=0; i<len; i++) {
+		NTSTATUS status;
+
+		PyObject *t = PyList_GetItem(list, i);
+		Py_ssize_t tlen;
+
+		PyObject *ptype = NULL;
+		long type;
+
+		PyObject *pdata = NULL;
+		DATA_BLOB data = { .data = NULL, };
+
+		if (t == NULL) {
+			goto fail;
+		}
+
+		ret = PyTuple_Check(t);
+		if (!ret) {
+			goto fail;
+		}
+
+		tlen = PyTuple_Size(t);
+		if (tlen != 2) {
+			goto fail;
+		}
+
+		ptype = PyTuple_GetItem(t, 0);
+		if (ptype == NULL) {
+			goto fail;
+		}
+		type = PyLong_AsLong(ptype);
+		if ((type < 0) || (type > UINT16_MAX)) {
+			goto fail;
+		}
+
+		pdata = PyTuple_GetItem(t, 1);
+
+		ret = PyBytes_Check(pdata);
+		if (!ret) {
+			goto fail;
+		}
+
+		data.data = (uint8_t *)PyBytes_AsString(pdata);
+		data.length = PyBytes_Size(pdata);
+
+		status = smb2_negotiate_context_add(
+			ctxs, ctxs, type, data.data, data.length);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto fail;
+		}
+	}
+	return ctxs;
+
+fail:
+	TALLOC_FREE(ctxs);
+	return NULL;
+}
+
 static void py_cli_got_oplock_break(struct tevent_req *req);
 
 static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
@@ -438,7 +544,11 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 	PyObject *py_force_smb1 = Py_False;
 	bool force_smb1 = false;
 	PyObject *py_ipc = Py_False;
+	PyObject *py_posix = Py_False;
+	PyObject *py_negotiate_contexts = NULL;
+	struct smb2_negotiate_contexts *negotiate_contexts = NULL;
 	bool use_ipc = false;
+	bool request_posix = false;
 	struct tevent_req *req;
 	bool ret;
 	int flags = 0;
@@ -447,6 +557,8 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 		"host", "share", "lp", "creds",
 		"multi_threaded", "force_smb1",
 		"ipc",
+		"posix",
+		"negotiate_contexts",
 		NULL
 	};
 
@@ -457,12 +569,14 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 	}
 
 	ret = ParseTupleAndKeywords(
-		args, kwds, "ssO|O!OOO", kwlist,
+		args, kwds, "ssO|O!OOOOO", kwlist,
 		&host, &share, &py_lp,
 		py_type_Credentials, &creds,
 		&py_multi_threaded,
 		&py_force_smb1,
-		&py_ipc);
+		&py_ipc,
+		&py_posix,
+		&py_negotiate_contexts);
 
 	Py_DECREF(py_type_Credentials);
 
@@ -486,6 +600,19 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 	use_ipc = PyObject_IsTrue(py_ipc);
 	if (use_ipc) {
 		flags |= CLI_FULL_CONNECTION_IPC;
+	}
+
+	request_posix = PyObject_IsTrue(py_posix);
+	if (request_posix) {
+		flags |= CLI_FULL_CONNECTION_REQUEST_POSIX;
+	}
+
+	if (py_negotiate_contexts != NULL) {
+		negotiate_contexts = py_cli_get_negotiate_contexts(
+			talloc_tos(), py_negotiate_contexts);
+		if (negotiate_contexts == NULL) {
+			return -1;
+		}
 	}
 
 	if (multi_threaded) {
@@ -514,7 +641,8 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 
 	req = cli_full_connection_creds_send(
 		NULL, self->ev, "myname", host, NULL, 0, share, "?????",
-		cli_creds, flags);
+		cli_creds, flags,
+		negotiate_contexts);
 	if (!py_tevent_req_wait_exc(self, req)) {
 		return -1;
 	}
@@ -732,6 +860,391 @@ static PyObject *py_cli_create(struct py_cli_state *self, PyObject *args,
 		return NULL;
 	}
 	return Py_BuildValue("I", (unsigned)fnum);
+}
+
+static struct smb2_create_blobs *py_cli_get_create_contexts(
+	TALLOC_CTX *mem_ctx, PyObject *list)
+{
+	struct smb2_create_blobs *ctxs = NULL;
+	Py_ssize_t i, len;
+	int ret;
+
+	ret = PyList_Check(list);
+	if (!ret) {
+		goto fail;
+	}
+
+	len = PyList_Size(list);
+	if (len == 0) {
+		goto fail;
+	}
+
+	ctxs = talloc_zero(mem_ctx, struct smb2_create_blobs);
+	if (ctxs == NULL) {
+		goto fail;
+	}
+
+	for (i=0; i<len; i++) {
+		NTSTATUS status;
+
+		PyObject *t = NULL;
+		Py_ssize_t tlen;
+
+		PyObject *pname = NULL;
+		char *name = NULL;
+
+		PyObject *pdata = NULL;
+		DATA_BLOB data = { .data = NULL, };
+
+		t = PyList_GetItem(list, i);
+		if (t == NULL) {
+			goto fail;
+		}
+
+		ret = PyTuple_Check(t);
+		if (!ret) {
+			goto fail;
+		}
+
+		tlen = PyTuple_Size(t);
+		if (tlen != 2) {
+			goto fail;
+		}
+
+		pname = PyTuple_GetItem(t, 0);
+		if (pname == NULL) {
+			goto fail;
+		}
+		ret = PyBytes_Check(pname);
+		if (!ret) {
+			goto fail;
+		}
+		name = PyBytes_AsString(pname);
+
+		pdata = PyTuple_GetItem(t, 1);
+		if (pdata == NULL) {
+			goto fail;
+		}
+		ret = PyBytes_Check(pdata);
+		if (!ret) {
+			goto fail;
+		}
+		data = (DATA_BLOB) {
+			.data = (uint8_t *)PyBytes_AsString(pdata),
+			.length = PyBytes_Size(pdata),
+		};
+		status = smb2_create_blob_add(ctxs, ctxs, name, data);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto fail;
+		}
+	}
+	return ctxs;
+
+fail:
+	TALLOC_FREE(ctxs);
+	return NULL;
+}
+
+static PyObject *py_cli_create_contexts(const struct smb2_create_blobs *blobs)
+{
+	PyObject *py_blobs = NULL;
+	uint32_t i;
+
+	if (blobs == NULL) {
+		Py_RETURN_NONE;
+	}
+
+	py_blobs = PyList_New(blobs->num_blobs);
+	if (py_blobs == NULL) {
+		return NULL;
+	}
+
+	for (i=0; i<blobs->num_blobs; i++) {
+		struct smb2_create_blob *blob = &blobs->blobs[i];
+		PyObject *py_blob = NULL;
+		int ret;
+
+		py_blob = Py_BuildValue(
+			"(yy#)",
+			blob->tag,
+			blob->data.data,
+			(int)blob->data.length);
+		if (py_blob == NULL) {
+			goto fail;
+		}
+
+		ret = PyList_SetItem(py_blobs, i, py_blob);
+		if (ret == -1) {
+			Py_XDECREF(py_blob);
+			goto fail;
+		}
+	}
+	return py_blobs;
+
+fail:
+	Py_XDECREF(py_blobs);
+	return NULL;
+}
+
+static PyObject *py_cli_create_returns(const struct smb_create_returns *r)
+{
+	PyObject *v = NULL;
+
+	v = Py_BuildValue(
+		"{sLsLsLsLsLsLsLsLsL}",
+		"oplock_level",
+		(unsigned long long)r->oplock_level,
+		"create_action",
+		(unsigned long long)r->create_action,
+		"creation_time",
+		(unsigned long long)r->creation_time,
+		"last_access_time",
+		(unsigned long long)r->last_access_time,
+		"last_write_time",
+		(unsigned long long)r->last_write_time,
+		"change_time",
+		(unsigned long long)r->change_time,
+		"allocation_size",
+		(unsigned long long)r->allocation_size,
+		"end_of_file",
+		(unsigned long long)r->end_of_file,
+		"file_attributes",
+		(unsigned long long)r->file_attributes);
+	return v;
+}
+
+static PyObject *py_cli_symlink_error(const struct symlink_reparse_struct *s)
+{
+	char *subst_utf8 = NULL, *print_utf8 = NULL;
+	size_t subst_utf8_len, print_utf8_len;
+	PyObject *v = NULL;
+	bool ok = true;
+
+	/*
+	 * Python wants utf-8, regardless of our unix charset (which
+	 * most likely is utf-8 these days, but you never know).
+	 */
+
+	ok = convert_string_talloc(
+		talloc_tos(),
+		CH_UNIX,
+		CH_UTF8,
+		s->substitute_name,
+		strlen(s->substitute_name),
+		&subst_utf8,
+		&subst_utf8_len);
+	if (!ok) {
+		goto fail;
+	}
+
+	ok = convert_string_talloc(
+		talloc_tos(),
+		CH_UNIX,
+		CH_UTF8,
+		s->print_name,
+		strlen(s->print_name),
+		&print_utf8,
+		&print_utf8_len);
+	if (!ok) {
+		goto fail;
+	}
+
+	v = Py_BuildValue(
+		"{sLsssssL}",
+		"unparsed_path_length",
+		(unsigned long long)s->unparsed_path_length,
+		"substitute_name",
+		subst_utf8,
+		"print_name",
+		print_utf8,
+		"flags",
+		(unsigned long long)s->flags);
+
+fail:
+	TALLOC_FREE(subst_utf8);
+	TALLOC_FREE(print_utf8);
+	return v;
+}
+
+static PyObject *py_cli_create_ex(
+	struct py_cli_state *self, PyObject *args, PyObject *kwds)
+{
+	char *fname = NULL;
+	unsigned CreateFlags = 0;
+	unsigned DesiredAccess = FILE_GENERIC_READ;
+	unsigned FileAttributes = 0;
+	unsigned ShareAccess = 0;
+	unsigned CreateDisposition = FILE_OPEN;
+	unsigned CreateOptions = 0;
+	unsigned ImpersonationLevel = SMB2_IMPERSONATION_IMPERSONATION;
+	unsigned SecurityFlags = 0;
+	PyObject *py_create_contexts_in = NULL;
+	PyObject *py_create_contexts_out = NULL;
+	struct smb2_create_blobs *create_contexts_in = NULL;
+	struct smb2_create_blobs create_contexts_out = { .num_blobs = 0 };
+	struct smb_create_returns cr = { .create_action = 0, };
+	struct symlink_reparse_struct *symlink = NULL;
+	PyObject *py_cr = NULL;
+	uint16_t fnum;
+	struct tevent_req *req;
+	NTSTATUS status;
+	int ret;
+	bool ok;
+	PyObject *v = NULL;
+
+	static const char *kwlist[] = {
+		"Name",
+		"CreateFlags",
+		"DesiredAccess",
+		"FileAttributes",
+		"ShareAccess",
+		"CreateDisposition",
+		"CreateOptions",
+		"ImpersonationLevel",
+		"SecurityFlags",
+		"CreateContexts",
+		NULL };
+
+	ret = ParseTupleAndKeywords(
+		args,
+		kwds,
+		"s|IIIIIIIIO",
+		kwlist,
+		&fname,
+		&CreateFlags,
+		&DesiredAccess,
+		&FileAttributes,
+		&ShareAccess,
+		&CreateDisposition,
+		&CreateOptions,
+		&ImpersonationLevel,
+		&SecurityFlags,
+		&py_create_contexts_in);
+	if (!ret) {
+		return NULL;
+	}
+
+	if (py_create_contexts_in != NULL) {
+		create_contexts_in = py_cli_get_create_contexts(
+			NULL, py_create_contexts_in);
+		if (create_contexts_in == NULL) {
+			errno = EINVAL;
+			PyErr_SetFromErrno(PyExc_RuntimeError);
+			return NULL;
+		}
+	}
+
+	if (smbXcli_conn_protocol(self->cli->conn) >= PROTOCOL_SMB2_02) {
+		req = cli_smb2_create_fnum_send(
+			NULL,
+			self->ev,
+			self->cli,
+			fname,
+			CreateFlags,
+			ImpersonationLevel,
+			DesiredAccess,
+			FileAttributes,
+			ShareAccess,
+			CreateDisposition,
+			CreateOptions,
+			create_contexts_in);
+	} else {
+		req = cli_ntcreate_send(
+			NULL,
+			self->ev,
+			self->cli,
+			fname,
+			CreateFlags,
+			DesiredAccess,
+			FileAttributes,
+			ShareAccess,
+			CreateDisposition,
+			CreateOptions,
+			ImpersonationLevel,
+			SecurityFlags);
+	}
+
+	TALLOC_FREE(create_contexts_in);
+
+	ok = py_tevent_req_wait_exc(self, req);
+	if (!ok) {
+		return NULL;
+	}
+
+	if (smbXcli_conn_protocol(self->cli->conn) >= PROTOCOL_SMB2_02) {
+		status = cli_smb2_create_fnum_recv(
+			req,
+			&fnum,
+			&cr,
+			NULL,
+			&create_contexts_out,
+			&symlink);
+	} else {
+		status = cli_ntcreate_recv(req, &fnum, &cr);
+	}
+
+	TALLOC_FREE(req);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+
+	SMB_ASSERT(symlink == NULL);
+
+	py_create_contexts_out = py_cli_create_contexts(&create_contexts_out);
+	TALLOC_FREE(create_contexts_out.blobs);
+	if (py_create_contexts_out == NULL) {
+		goto nomem;
+	}
+
+	py_cr = py_cli_create_returns(&cr);
+	if (py_cr == NULL) {
+		goto nomem;
+	}
+
+	v = PyTuple_New(3);
+	if (v == NULL) {
+		goto nomem;
+	}
+	ret = PyTuple_SetItem(v, 0, Py_BuildValue("I", (unsigned)fnum));
+	if (ret == -1) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto fail;
+	}
+	ret = PyTuple_SetItem(v, 1, py_cr);
+	if (ret == -1) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto fail;
+	}
+	ret = PyTuple_SetItem(v, 2, py_create_contexts_out);
+	if (ret == -1) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		goto fail;
+	}
+
+	return v;
+nomem:
+	status = NT_STATUS_NO_MEMORY;
+fail:
+	Py_XDECREF(py_create_contexts_out);
+	Py_XDECREF(py_cr);
+	Py_XDECREF(v);
+
+	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK) &&
+	    (symlink != NULL)) {
+		PyErr_SetObject(
+			PyObject_GetAttrString(
+				PyImport_ImportModule("samba"),
+				"NTSTATUSError"),
+			Py_BuildValue(
+				"I,s,O",
+				NT_STATUS_V(status),
+				get_friendly_nt_error_msg(status),
+				py_cli_symlink_error(symlink)));
+	} else {
+		PyErr_SetNTSTATUS(status);
+	}
+	return NULL;
 }
 
 static PyObject *py_cli_close(struct py_cli_state *self, PyObject *args)
@@ -1378,6 +1891,52 @@ static PyTypeObject py_cli_notify_state_type = {
 };
 
 /*
+ * Helper to add posix directory listing entries to an overall Python list
+ */
+static NTSTATUS list_posix_helper(struct file_info *finfo,
+				  const char *mask, void *state)
+{
+	PyObject *result = (PyObject *)state;
+	PyObject *file = NULL;
+	PyObject *size = NULL;
+	int ret;
+
+	size = PyLong_FromUnsignedLongLong(finfo->size);
+	/*
+	 * Build a dictionary representing the file info.
+	 * Note: Windows does not always return short_name (so it may be None)
+	 */
+	file = Py_BuildValue("{s:s,s:i,s:s,s:O,s:l,s:i,s:i,s:i,s:s,s:s}",
+			     "name", finfo->name,
+			     "attrib", (int)finfo->attr,
+			     "short_name", finfo->short_name,
+			     "size", size,
+			     "mtime",
+			     convert_timespec_to_time_t(finfo->mtime_ts),
+			     "perms", finfo->st_ex_mode,
+			     "ino", finfo->ino,
+			     "dev", finfo->st_ex_dev,
+			     "owner_sid",
+			     dom_sid_string(finfo, &finfo->owner_sid),
+			     "group_sid",
+			     dom_sid_string(finfo, &finfo->group_sid));
+
+	Py_CLEAR(size);
+
+	if (file == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	ret = PyList_Append(result, file);
+	Py_CLEAR(file);
+	if (ret == -1) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	return NT_STATUS_OK;
+}
+
+/*
  * Helper to add directory listing entries to an overall Python list
  */
 static NTSTATUS list_helper(struct file_info *finfo,
@@ -1409,6 +1968,18 @@ static NTSTATUS list_helper(struct file_info *finfo,
 
 	if (file == NULL) {
 		return NT_STATUS_NO_MEMORY;
+	}
+
+	if (finfo->attr & FILE_ATTRIBUTE_REPARSE_POINT) {
+		unsigned long tag = finfo->reparse_tag;
+
+		ret = PyDict_SetItemString(
+			file,
+			"reparse_tag",
+			PyLong_FromUnsignedLong(tag));
+		if (ret == -1) {
+			return NT_STATUS_INTERNAL_ERROR;
+		}
 	}
 
 	ret = PyList_Append(result, file);
@@ -1446,12 +2017,13 @@ static void do_listing_cb(struct tevent_req *subreq)
 static NTSTATUS do_listing(struct py_cli_state *self,
 			   const char *base_dir, const char *user_mask,
 			   uint16_t attribute,
+			   unsigned int info_level,
+			   bool posix,
 			   NTSTATUS (*callback_fn)(struct file_info *,
 						   const char *, void *),
 			   void *priv)
 {
 	char *mask = NULL;
-	unsigned int info_level = SMB_FIND_FILE_BOTH_DIRECTORY_INFO;
 	struct do_listing_state state = {
 		.mask = mask,
 		.callback_fn = callback_fn,
@@ -1472,7 +2044,7 @@ static NTSTATUS do_listing(struct py_cli_state *self,
 	dos_format(mask);
 
 	req = cli_list_send(NULL, self->ev, self->cli, mask, attribute,
-			    info_level);
+			    info_level, posix);
 	if (req == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto done;
@@ -1501,12 +2073,19 @@ static PyObject *py_cli_list(struct py_cli_state *self,
 	char *base_dir;
 	char *user_mask = NULL;
 	unsigned int attribute = LIST_ATTRIBUTE_MASK;
+	unsigned int info_level = 0;
+	bool posix = false;
 	NTSTATUS status;
+	enum protocol_types proto = smbXcli_conn_protocol(self->cli->conn);
 	PyObject *result = NULL;
-	const char *kwlist[] = { "directory", "mask", "attribs", NULL };
+	const char *kwlist[] = { "directory", "mask", "attribs", "posix",
+				 "info_level", NULL };
+	NTSTATUS (*callback_fn)(struct file_info *, const char *, void *) =
+		&list_helper;
 
-	if (!ParseTupleAndKeywords(args, kwds, "z|sI:list", kwlist,
-				   &base_dir, &user_mask, &attribute)) {
+	if (!ParseTupleAndKeywords(args, kwds, "z|sIpI:list", kwlist,
+				   &base_dir, &user_mask, &attribute,
+				   &posix, &info_level)) {
 		return NULL;
 	}
 
@@ -1515,8 +2094,19 @@ static PyObject *py_cli_list(struct py_cli_state *self,
 		return NULL;
 	}
 
+	if (!info_level) {
+		if (proto >= PROTOCOL_SMB2_02) {
+			info_level = SMB2_FIND_ID_BOTH_DIRECTORY_INFO;
+		} else {
+			info_level = SMB_FIND_FILE_BOTH_DIRECTORY_INFO;
+		}
+	}
+
+	if (posix) {
+		callback_fn = &list_posix_helper;
+	}
 	status = do_listing(self, base_dir, user_mask, attribute,
-			    list_helper, result);
+			    info_level, posix, callback_fn, result);
 
 	if (!NT_STATUS_IS_OK(status)) {
 		Py_XDECREF(result);
@@ -1742,6 +2332,25 @@ static PyObject *py_smb_chkpath(struct py_cli_state *self, PyObject *args)
 	return PyBool_FromLong(dir_exists);
 }
 
+static PyObject *py_smb_have_posix(struct py_cli_state *self,
+				   PyObject *Py_UNUSED(ignored))
+{
+	bool posix = smbXcli_conn_have_posix(self->cli->conn);
+
+	if (posix) {
+		Py_RETURN_TRUE;
+	}
+	Py_RETURN_FALSE;
+}
+
+static PyObject *py_smb_protocol(struct py_cli_state *self,
+				 PyObject *Py_UNUSED(ignored))
+{
+	enum protocol_types proto = smbXcli_conn_protocol(self->cli->conn);
+	PyObject *result = PyLong_FromLong(proto);
+	return result;
+}
+
 static PyObject *py_smb_get_sd(struct py_cli_state *self, PyObject *args)
 {
 	int fnum;
@@ -1799,6 +2408,154 @@ static PyObject *py_smb_set_sd(struct py_cli_state *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+static PyObject *py_smb_smb1_posix(
+	struct py_cli_state *self, PyObject *Py_UNUSED(ignored))
+{
+	NTSTATUS status;
+	struct tevent_req *req = NULL;
+	uint16_t major, minor;
+	uint32_t caplow, caphigh;
+	PyObject *result = NULL;
+
+	req = cli_unix_extensions_version_send(NULL, self->ev, self->cli);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_unix_extensions_version_recv(
+		req, &major, &minor, &caplow, &caphigh);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	req = cli_set_unix_extensions_capabilities_send(
+		NULL, self->ev, self->cli, major, minor, caplow, caphigh);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_set_unix_extensions_capabilities_recv(req);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	result = Py_BuildValue(
+		"[IIII]",
+		(unsigned)minor,
+		(unsigned)major,
+		(unsigned)caplow,
+		(unsigned)caphigh);
+	return result;
+}
+
+static PyObject *py_smb_smb1_readlink(
+	struct py_cli_state *self, PyObject *args)
+{
+	NTSTATUS status;
+	const char *filename = NULL;
+	struct tevent_req *req = NULL;
+	char *target = NULL;
+	PyObject *result = NULL;
+
+	if (!PyArg_ParseTuple(args, "s:smb1_readlink", &filename)) {
+		return NULL;
+	}
+
+	req = cli_posix_readlink_send(NULL, self->ev, self->cli, filename);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_posix_readlink_recv(req, NULL, &target);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	result = PyBytes_FromString(target);
+	TALLOC_FREE(target);
+	return result;
+}
+
+static PyObject *py_smb_smb1_symlink(
+	struct py_cli_state *self, PyObject *args)
+{
+	NTSTATUS status;
+	const char *target = NULL, *newname = NULL;
+	struct tevent_req *req = NULL;
+
+	if (!PyArg_ParseTuple(args, "ss:smb1_symlink", &target, &newname)) {
+		return NULL;
+	}
+
+	req = cli_posix_symlink_send(
+		NULL, self->ev, self->cli, target, newname);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_posix_symlink_recv(req);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *py_cli_fsctl(
+	struct py_cli_state *self, PyObject *args, PyObject *kwds)
+{
+	int fnum, ctl_code;
+	int max_out = 0;
+	char *buf = NULL;
+	Py_ssize_t buflen;
+	DATA_BLOB in = { .data = NULL, };
+	DATA_BLOB out = { .data = NULL, };
+	struct tevent_req *req = NULL;
+	PyObject *result = NULL;
+	static const char *kwlist[] = {
+		"fnum", "ctl_code", "in", "max_out", NULL,
+	};
+	NTSTATUS status;
+	bool ok;
+
+	ok = ParseTupleAndKeywords(
+		    args,
+		    kwds,
+		    "ii" PYARG_BYTES_LEN "i",
+		    kwlist,
+		    &fnum,
+		    &ctl_code,
+		    &buf,
+		    &buflen,
+		    &max_out);
+	if (!ok) {
+		return NULL;
+	}
+
+	in = (DATA_BLOB) { .data = (uint8_t *)buf, .length = buflen, };
+
+	req = cli_fsctl_send(
+		NULL, self->ev, self->cli, fnum, ctl_code, &in, max_out);
+
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+
+	status = cli_fsctl_recv(req, NULL, &out);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	result = PyBytes_FromStringAndSize((char *)out.data, out.length);
+	data_blob_free(&out);
+	return result;
+}
+
 static PyMethodDef py_cli_state_methods[] = {
 	{ "settimeout", (PyCFunction)py_cli_settimeout, METH_VARARGS,
 	  "settimeout(new_timeout_msecs) => return old_timeout_msecs" },
@@ -1807,6 +2564,10 @@ static PyMethodDef py_cli_state_methods[] = {
 	{ "create", PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_create),
 		METH_VARARGS|METH_KEYWORDS,
 	  "Open a file" },
+	{ "create_ex",
+	  PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_create_ex),
+	  METH_VARARGS|METH_KEYWORDS,
+	  "Open a file, SMB2 version returning create contexts" },
 	{ "close", (PyCFunction)py_cli_close, METH_VARARGS,
 	  "Close a file handle" },
 	{ "write", PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_write),
@@ -1870,6 +2631,37 @@ static PyMethodDef py_cli_state_methods[] = {
 	{ "set_sd", (PyCFunction)py_smb_set_sd, METH_VARARGS,
 	  "set_sd(fnum, security_descriptor[, security_info=0]) -> None\n\n"
 	  "\t\tSet security descriptor for opened file." },
+	{ "protocol",
+	  (PyCFunction)py_smb_protocol,
+	  METH_NOARGS,
+	  "protocol() -> Number"
+	},
+	{ "have_posix",
+	  (PyCFunction)py_smb_have_posix,
+	  METH_NOARGS,
+	  "have_posix() -> True/False\n\n"
+	  "\t\tReturn if the server has posix extensions"
+	},
+	{ "smb1_posix",
+	  (PyCFunction)py_smb_smb1_posix,
+	  METH_NOARGS,
+	  "Negotiate SMB1 posix extensions",
+	},
+	{ "smb1_readlink",
+	  (PyCFunction)py_smb_smb1_readlink,
+	  METH_VARARGS,
+	  "smb1_readlink(path) -> link target",
+	},
+	{ "smb1_symlink",
+	  (PyCFunction)py_smb_smb1_symlink,
+	  METH_VARARGS,
+	  "smb1_symlink(target, newname) -> None",
+	},
+	{ "fsctl",
+	  (PyCFunction)py_cli_fsctl,
+	  METH_VARARGS|METH_KEYWORDS,
+	  "fsctl(fnum, ctl_code, in_bytes, max_out) -> out_bytes",
+	},
 	{ NULL, NULL, 0, NULL }
 };
 
@@ -1935,6 +2727,18 @@ MODULE_INIT_FUNC(libsmb_samba_cwrapper)
 
 #define ADD_FLAGS(val)	PyModule_AddObject(m, #val, PyLong_FromLong(val))
 
+	ADD_FLAGS(PROTOCOL_NONE);
+	ADD_FLAGS(PROTOCOL_CORE);
+	ADD_FLAGS(PROTOCOL_COREPLUS);
+	ADD_FLAGS(PROTOCOL_LANMAN1);
+	ADD_FLAGS(PROTOCOL_LANMAN2);
+	ADD_FLAGS(PROTOCOL_NT1);
+	ADD_FLAGS(PROTOCOL_SMB2_02);
+	ADD_FLAGS(PROTOCOL_SMB2_10);
+	ADD_FLAGS(PROTOCOL_SMB3_00);
+	ADD_FLAGS(PROTOCOL_SMB3_02);
+	ADD_FLAGS(PROTOCOL_SMB3_11);
+
 	ADD_FLAGS(FILE_ATTRIBUTE_READONLY);
 	ADD_FLAGS(FILE_ATTRIBUTE_HIDDEN);
 	ADD_FLAGS(FILE_ATTRIBUTE_SYSTEM);
@@ -1951,6 +2755,27 @@ MODULE_INIT_FUNC(libsmb_samba_cwrapper)
 	ADD_FLAGS(FILE_ATTRIBUTE_NONINDEXED);
 	ADD_FLAGS(FILE_ATTRIBUTE_ENCRYPTED);
 	ADD_FLAGS(FILE_ATTRIBUTE_ALL_MASK);
+
+	ADD_FLAGS(FILE_DIRECTORY_FILE);
+	ADD_FLAGS(FILE_WRITE_THROUGH);
+	ADD_FLAGS(FILE_SEQUENTIAL_ONLY);
+	ADD_FLAGS(FILE_NO_INTERMEDIATE_BUFFERING);
+	ADD_FLAGS(FILE_SYNCHRONOUS_IO_ALERT);
+	ADD_FLAGS(FILE_SYNCHRONOUS_IO_NONALERT);
+	ADD_FLAGS(FILE_NON_DIRECTORY_FILE);
+	ADD_FLAGS(FILE_CREATE_TREE_CONNECTION);
+	ADD_FLAGS(FILE_COMPLETE_IF_OPLOCKED);
+	ADD_FLAGS(FILE_NO_EA_KNOWLEDGE);
+	ADD_FLAGS(FILE_EIGHT_DOT_THREE_ONLY);
+	ADD_FLAGS(FILE_RANDOM_ACCESS);
+	ADD_FLAGS(FILE_DELETE_ON_CLOSE);
+	ADD_FLAGS(FILE_OPEN_BY_FILE_ID);
+	ADD_FLAGS(FILE_OPEN_FOR_BACKUP_INTENT);
+	ADD_FLAGS(FILE_NO_COMPRESSION);
+	ADD_FLAGS(FILE_RESERVER_OPFILTER);
+	ADD_FLAGS(FILE_OPEN_REPARSE_POINT);
+	ADD_FLAGS(FILE_OPEN_NO_RECALL);
+	ADD_FLAGS(FILE_OPEN_FOR_FREE_SPACE_QUERY);
 
 	ADD_FLAGS(FILE_SHARE_READ);
 	ADD_FLAGS(FILE_SHARE_WRITE);
@@ -1981,6 +2806,106 @@ MODULE_INIT_FUNC(libsmb_samba_cwrapper)
 	ADD_FLAGS(NOTIFY_ACTION_ADDED_STREAM);
 	ADD_FLAGS(NOTIFY_ACTION_REMOVED_STREAM);
 	ADD_FLAGS(NOTIFY_ACTION_MODIFIED_STREAM);
+
+	/* CreateDisposition values */
+	ADD_FLAGS(FILE_SUPERSEDE);
+	ADD_FLAGS(FILE_OPEN);
+	ADD_FLAGS(FILE_CREATE);
+	ADD_FLAGS(FILE_OPEN_IF);
+	ADD_FLAGS(FILE_OVERWRITE);
+	ADD_FLAGS(FILE_OVERWRITE_IF);
+
+	ADD_FLAGS(FSCTL_DFS_GET_REFERRALS);
+	ADD_FLAGS(FSCTL_DFS_GET_REFERRALS_EX);
+	ADD_FLAGS(FSCTL_REQUEST_OPLOCK_LEVEL_1);
+	ADD_FLAGS(FSCTL_REQUEST_OPLOCK_LEVEL_2);
+	ADD_FLAGS(FSCTL_REQUEST_BATCH_OPLOCK);
+	ADD_FLAGS(FSCTL_OPLOCK_BREAK_ACKNOWLEDGE);
+	ADD_FLAGS(FSCTL_OPBATCH_ACK_CLOSE_PENDING);
+	ADD_FLAGS(FSCTL_OPLOCK_BREAK_NOTIFY);
+	ADD_FLAGS(FSCTL_GET_COMPRESSION);
+	ADD_FLAGS(FSCTL_FILESYS_GET_STATISTICS);
+	ADD_FLAGS(FSCTL_GET_NTFS_VOLUME_DATA);
+	ADD_FLAGS(FSCTL_IS_VOLUME_DIRTY);
+	ADD_FLAGS(FSCTL_FIND_FILES_BY_SID);
+	ADD_FLAGS(FSCTL_SET_OBJECT_ID);
+	ADD_FLAGS(FSCTL_GET_OBJECT_ID);
+	ADD_FLAGS(FSCTL_DELETE_OBJECT_ID);
+	ADD_FLAGS(FSCTL_SET_REPARSE_POINT);
+	ADD_FLAGS(FSCTL_GET_REPARSE_POINT);
+	ADD_FLAGS(FSCTL_DELETE_REPARSE_POINT);
+	ADD_FLAGS(FSCTL_SET_OBJECT_ID_EXTENDED);
+	ADD_FLAGS(FSCTL_CREATE_OR_GET_OBJECT_ID);
+	ADD_FLAGS(FSCTL_SET_SPARSE);
+	ADD_FLAGS(FSCTL_SET_ZERO_DATA);
+	ADD_FLAGS(FSCTL_SET_ZERO_ON_DEALLOCATION);
+	ADD_FLAGS(FSCTL_READ_FILE_USN_DATA);
+	ADD_FLAGS(FSCTL_WRITE_USN_CLOSE_RECORD);
+	ADD_FLAGS(FSCTL_QUERY_ALLOCATED_RANGES);
+	ADD_FLAGS(FSCTL_QUERY_ON_DISK_VOLUME_INFO);
+	ADD_FLAGS(FSCTL_QUERY_SPARING_INFO);
+	ADD_FLAGS(FSCTL_FILE_LEVEL_TRIM);
+	ADD_FLAGS(FSCTL_OFFLOAD_READ);
+	ADD_FLAGS(FSCTL_OFFLOAD_WRITE);
+	ADD_FLAGS(FSCTL_SET_INTEGRITY_INFORMATION);
+	ADD_FLAGS(FSCTL_DUP_EXTENTS_TO_FILE);
+	ADD_FLAGS(FSCTL_DUPLICATE_EXTENTS_TO_FILE_EX);
+	ADD_FLAGS(FSCTL_STORAGE_QOS_CONTROL);
+	ADD_FLAGS(FSCTL_SVHDX_SYNC_TUNNEL_REQUEST);
+	ADD_FLAGS(FSCTL_QUERY_SHARED_VIRTUAL_DISK_SUPPORT);
+	ADD_FLAGS(FSCTL_PIPE_PEEK);
+	ADD_FLAGS(FSCTL_NAMED_PIPE_READ_WRITE);
+	ADD_FLAGS(FSCTL_PIPE_TRANSCEIVE);
+	ADD_FLAGS(FSCTL_PIPE_WAIT);
+	ADD_FLAGS(FSCTL_GET_SHADOW_COPY_DATA);
+	ADD_FLAGS(FSCTL_SRV_ENUM_SNAPS);
+	ADD_FLAGS(FSCTL_SRV_REQUEST_RESUME_KEY);
+	ADD_FLAGS(FSCTL_SRV_COPYCHUNK);
+	ADD_FLAGS(FSCTL_SRV_COPYCHUNK_WRITE);
+	ADD_FLAGS(FSCTL_SRV_READ_HASH);
+	ADD_FLAGS(FSCTL_LMR_REQ_RESILIENCY);
+	ADD_FLAGS(FSCTL_LMR_SET_LINK_TRACKING_INFORMATION);
+	ADD_FLAGS(FSCTL_QUERY_NETWORK_INTERFACE_INFO);
+
+	ADD_FLAGS(SYMLINK_ERROR_TAG);
+	ADD_FLAGS(SYMLINK_FLAG_RELATIVE);
+	ADD_FLAGS(SYMLINK_ADMIN);
+	ADD_FLAGS(SYMLINK_UNTRUSTED);
+	ADD_FLAGS(SYMLINK_TRUST_UNKNOWN);
+	ADD_FLAGS(SYMLINK_TRUST_MASK);
+
+	ADD_FLAGS(IO_REPARSE_TAG_SYMLINK);
+	ADD_FLAGS(IO_REPARSE_TAG_MOUNT_POINT);
+	ADD_FLAGS(IO_REPARSE_TAG_HSM);
+	ADD_FLAGS(IO_REPARSE_TAG_SIS);
+	ADD_FLAGS(IO_REPARSE_TAG_DFS);
+	ADD_FLAGS(IO_REPARSE_TAG_NFS);
+
+#define ADD_STRING(val) PyModule_AddObject(m, #val, PyBytes_FromString(val))
+
+	ADD_STRING(SMB2_CREATE_TAG_EXTA);
+	ADD_STRING(SMB2_CREATE_TAG_MXAC);
+	ADD_STRING(SMB2_CREATE_TAG_SECD);
+	ADD_STRING(SMB2_CREATE_TAG_DHNQ);
+	ADD_STRING(SMB2_CREATE_TAG_DHNC);
+	ADD_STRING(SMB2_CREATE_TAG_ALSI);
+	ADD_STRING(SMB2_CREATE_TAG_TWRP);
+	ADD_STRING(SMB2_CREATE_TAG_QFID);
+	ADD_STRING(SMB2_CREATE_TAG_RQLS);
+	ADD_STRING(SMB2_CREATE_TAG_DH2Q);
+	ADD_STRING(SMB2_CREATE_TAG_DH2C);
+	ADD_STRING(SMB2_CREATE_TAG_AAPL);
+	ADD_STRING(SMB2_CREATE_TAG_APP_INSTANCE_ID);
+	ADD_STRING(SVHDX_OPEN_DEVICE_CONTEXT);
+	ADD_STRING(SMB2_CREATE_TAG_POSIX);
+	ADD_FLAGS(SMB2_FIND_POSIX_INFORMATION);
+	ADD_FLAGS(FILE_SUPERSEDE);
+	ADD_FLAGS(FILE_OPEN);
+	ADD_FLAGS(FILE_CREATE);
+	ADD_FLAGS(FILE_OPEN_IF);
+	ADD_FLAGS(FILE_OVERWRITE);
+	ADD_FLAGS(FILE_OVERWRITE_IF);
+	ADD_FLAGS(FILE_DIRECTORY_FILE);
 
 	return m;
 }

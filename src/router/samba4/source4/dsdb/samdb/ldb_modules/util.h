@@ -28,6 +28,7 @@ struct dom_sid;
 struct netlogon_samlogon_response;
 
 #include "librpc/gen_ndr/misc.h"
+#include "librpc/gen_ndr/security.h"
 #include "dsdb/samdb/ldb_modules/util_proto.h"
 #include "dsdb/common/util.h"
 #include "../libcli/netlogon/netlogon.h"
@@ -39,3 +40,4 @@ struct netlogon_samlogon_response;
 #define DSDB_FLAG_TOP_MODULE		      0x00800000
 #define DSDB_FLAG_TRUSTED		      0x01000000
 #define DSDB_FLAG_REPLICATED_UPDATE           0x02000000
+#define DSDB_FLAG_FORCE_ALLOW_VALIDATED_DNS_HOSTNAME_SPN_WRITE 0x04000000

@@ -61,13 +61,18 @@ void copy_id24_to_sam_passwd(struct samu *to,
 			     struct samr_UserInfo24 *from);
 void copy_id25_to_sam_passwd(struct samu *to,
 			     struct samr_UserInfo25 *from);
-void copy_id26_to_sam_passwd(struct samu *to,
-			     struct samr_UserInfo26 *from);
+void copy_id32_to_sam_passwd(struct samu *to, struct samr_UserInfo32 *from);
+void copy_pwd_expired_to_sam_passwd(struct samu *to,
+				    uint8_t password_expired);
 
 /* The following definitions come from rpc_server/srv_samr_chgpasswd.c  */
 
 bool chgpasswd(const char *name, const char *rhost, const struct passwd *pass,
 	       const char *oldpass, const char *newpass, bool as_root);
+NTSTATUS change_oem_password(struct samu *hnd, const char *rhost,
+			     char *old_passwd, char *new_passwd,
+			     bool as_root,
+			     enum samPwdChangeReason *samr_reject_reason);
 NTSTATUS pass_oem_change(char *user, const char *rhost,
 			 uchar password_encrypted_with_lm_hash[516],
 			 const uchar old_lm_hash_encrypted[16],
@@ -78,3 +83,7 @@ NTSTATUS check_password_complexity(const char *username,
 				   const char *fullname,
 				   const char *password,
 				   enum samPwdChangeReason *samr_reject_reason);
+NTSTATUS samr_set_password_aes(TALLOC_CTX *mem_ctx,
+			       const DATA_BLOB *cdk,
+			       struct samr_EncryptedPasswordAES *pwbuf,
+			       char **new_password_str);

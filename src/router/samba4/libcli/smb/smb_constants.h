@@ -329,6 +329,7 @@ enum csc_policy {
 #define FLAGS2_UNICODE_STRINGS         0x8000
 
 /* FileAttributes (search attributes) field */
+#define FILE_ATTRIBUTES_INVALID 	0x0000L
 #define FILE_ATTRIBUTE_READONLY		0x0001L
 #define FILE_ATTRIBUTE_HIDDEN		0x0002L
 #define FILE_ATTRIBUTE_SYSTEM		0x0004L
@@ -617,5 +618,21 @@ enum csc_policy {
  * Flag from [MS-FSCC] 2.1.2.4 Symbolic Link Reparse Data Buffer
  */
 #define SYMLINK_FLAG_RELATIVE	     0x00000001
+
+/*
+ * Symlink error tag from [MS-SMB2] 2.2.2.2.1 Symbolic Link Error Response
+ */
+#define SYMLINK_ERROR_TAG	     0x4C4D5953
+
+/*
+ * Flags according to answer from Dochelp:
+ * https://lists.samba.org/archive/cifs-protocol/2022-November/003909.html
+ */
+#define SYMLINK_ADMIN           0x20000000   /* The symlink creator is an admin */
+#define SYMLINK_UNTRUSTED       0x10000000   /* The symlink creator is untrusted */
+#define SYMLINK_TRUST_UNKNOWN   0x00000000   /* The symlink creator is unknown/legacy */
+
+#define SYMLINK_TRUST_MASK      0x30000000   /* Encodes the redirection trust level (maps to REDIRECTION_TRUST_LEVEL) */
+#define SYMLINK_TRUST_SHIFT     28           /* Bits to shift to convert to/from REDIRECTION_TRUST_LEVEL */
 
 #endif /* _SMB_CONSTANTS_H */

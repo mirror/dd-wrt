@@ -20,30 +20,33 @@
     <category displayName="$(string.CAT_10827749_64ED_5052_87F7_E81AD421856A)" name="CAT_10827749_64ED_5052_87F7_E81AD421856A">
       <parentCategory ref="CAT_3338C1DD_8A00_4273_8547_158D8B8C19E9"/>
     </category>
+    <category name="CAT_371A8FF5_990F_47DD_B200_D436AC28A4F9" displayName="$(string.CAT_371A8FF5_990F_47DD_B200_D436AC28A4F9)">
+      <parentCategory ref="CAT_7D8D7DC8_5A9D_4BE1_8227_F09CDD5AFFC6" />
+    </category>
   </categories>
   <policies>
-    <policy name="POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061" class="Machine" displayName="$(string.POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061)" explainText="$(string.POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061_Help)" presentation="$(presentation.POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061)" key="Software\Policies\Samba\Unix Settings">
+    <policy name="POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061" class="Both" displayName="$(string.POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061)" explainText="$(string.POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061_Help)" presentation="$(presentation.POL_9320E11F_AC80_4A7D_A5C8_1C0F3F727061)" key="Software\Policies\Samba\Unix Settings">
       <parentCategory ref="CAT_2B6D622C_5721_4C23_A2D6_5C70D6E059BA" />
       <supportedOn ref="windows:SUPPORTED_WindowsVista" />
       <elements>
         <list id="LST_2E9A4684_3C0E_415B_8FD6_D4AF68BC8AC6" key="Software\Policies\Samba\Unix Settings\Daily Scripts" valueName="Daily Scripts" />
       </elements>
     </policy>
-    <policy name="POL_825D441F_905E_4C7E_9E4B_03013697C6C1" class="Machine" displayName="$(string.POL_825D441F_905E_4C7E_9E4B_03013697C6C1)" explainText="$(string.POL_825D441F_905E_4C7E_9E4B_03013697C6C1_Help)" presentation="$(presentation.POL_825D441F_905E_4C7E_9E4B_03013697C6C1)" key="Software\Policies\Samba\Unix Settings">
+    <policy name="POL_825D441F_905E_4C7E_9E4B_03013697C6C1" class="Both" displayName="$(string.POL_825D441F_905E_4C7E_9E4B_03013697C6C1)" explainText="$(string.POL_825D441F_905E_4C7E_9E4B_03013697C6C1_Help)" presentation="$(presentation.POL_825D441F_905E_4C7E_9E4B_03013697C6C1)" key="Software\Policies\Samba\Unix Settings">
       <parentCategory ref="CAT_2B6D622C_5721_4C23_A2D6_5C70D6E059BA" />
       <supportedOn ref="windows:SUPPORTED_WindowsVista" />
       <elements>
         <list id="LST_1AA93D59_6372_4F1E_90BB_D4CBBBB77238" key="Software\Policies\Samba\Unix Settings\Hourly Scripts" valueName="Hourly Scripts" />
       </elements>
     </policy>
-    <policy name="POL_D298F3BD_44D9_426D_AF11_3163D31582F6" class="Machine" displayName="$(string.POL_D298F3BD_44D9_426D_AF11_3163D31582F6)" explainText="$(string.POL_D298F3BD_44D9_426D_AF11_3163D31582F6_Help)" presentation="$(presentation.POL_D298F3BD_44D9_426D_AF11_3163D31582F6)" key="Software\Policies\Samba\Unix Settings">
+    <policy name="POL_D298F3BD_44D9_426D_AF11_3163D31582F6" class="Both" displayName="$(string.POL_D298F3BD_44D9_426D_AF11_3163D31582F6)" explainText="$(string.POL_D298F3BD_44D9_426D_AF11_3163D31582F6_Help)" presentation="$(presentation.POL_D298F3BD_44D9_426D_AF11_3163D31582F6)" key="Software\Policies\Samba\Unix Settings">
       <parentCategory ref="CAT_2B6D622C_5721_4C23_A2D6_5C70D6E059BA" />
       <supportedOn ref="windows:SUPPORTED_WindowsVista" />
       <elements>
         <list id="LST_8BC6757D_B1FB_4780_83B4_F85F27BF6E60" key="Software\Policies\Samba\Unix Settings\Monthly Scripts" valueName="Monthly Scripts" />
       </elements>
     </policy>
-    <policy name="POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674" class="Machine" displayName="$(string.POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674)" explainText="$(string.POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674_Help)" presentation="$(presentation.POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674)" key="Software\Policies\Samba\Unix Settings">
+    <policy name="POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674" class="Both" displayName="$(string.POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674)" explainText="$(string.POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674_Help)" presentation="$(presentation.POL_3ACC7ECD_8086_4F4A_96DF_85B8FDE2F674)" key="Software\Policies\Samba\Unix Settings">
       <parentCategory ref="CAT_2B6D622C_5721_4C23_A2D6_5C70D6E059BA" />
       <supportedOn ref="windows:SUPPORTED_WindowsVista" />
       <elements>
@@ -2526,6 +2529,20 @@
       <supportedOn ref="windows:SUPPORTED_WindowsVista" />
       <elements>
         <text id="TXT_8075D9EA_6E15_4B2A_833A_B918EE90856F" key="Software\Policies\Samba\Unix Settings\Messages" valueName="issue" />
+      </elements>
+    </policy>
+    <policy name="POL_ADABE9E0_FFF9_4FFE_A105_03E646C79978" class="Machine" displayName="$(string.POL_ADABE9E0_FFF9_4FFE_A105_03E646C79978)" explainText="$(string.POL_ADABE9E0_FFF9_4FFE_A105_03E646C79978_Help)" presentation="$(presentation.POL_ADABE9E0_FFF9_4FFE_A105_03E646C79978)" key="Software\Policies\Samba\Unix Settings\Firewalld" valueName="Zones">
+      <parentCategory ref="CAT_371A8FF5_990F_47DD_B200_D436AC28A4F9" />
+      <supportedOn ref="SUPPORTED_SAMBA_4_16" />
+      <elements>
+        <list id="LST_5B9AE80A_6529_4313_A9A1_764DF5320930" key="Software\Policies\Samba\Unix Settings\Firewalld\Zones" />
+      </elements>
+    </policy>
+    <policy name="POL_B21F349F_4BF6_473E_8452_047D714F156C" class="Machine" displayName="$(string.POL_B21F349F_4BF6_473E_8452_047D714F156C)" explainText="$(string.POL_B21F349F_4BF6_473E_8452_047D714F156C_Help)" presentation="$(presentation.POL_B21F349F_4BF6_473E_8452_047D714F156C)" key="Software\Policies\Samba\Unix Settings\Firewalld" valueName="Rules">
+      <parentCategory ref="CAT_371A8FF5_990F_47DD_B200_D436AC28A4F9" />
+      <supportedOn ref="SUPPORTED_SAMBA_4_16" />
+      <elements>
+        <text id="TXT_76109A0B_AA79_4F69_ADFC_2B3CA52763D2" key="Software\Policies\Samba\Unix Settings\Firewalld\Rules" valueName="Rules" />
       </elements>
     </policy>
   </policies>

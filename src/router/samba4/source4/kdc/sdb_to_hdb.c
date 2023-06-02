@@ -26,7 +26,11 @@
 #include "sdb.h"
 #include "sdb_hdb.h"
 #include "lib/krb5_wrap/krb5_samba.h"
+#include "librpc/gen_ndr/security.h"
 #include "kdc/samba_kdc.h"
+
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
 
 static void sdb_flags_to_hdb_flags(const struct SDBFlags *s,
 				   HDBFlags *h)
@@ -51,19 +55,19 @@ static void sdb_flags_to_hdb_flags(const struct SDBFlags *s,
 	h->allow_kerberos4 = s->allow_kerberos4;
 	h->allow_digest = s->allow_digest;
 	h->locked_out = s->locked_out;
-	h->_unused18 = s->_unused18;
-	h->_unused19 = s->_unused19;
-	h->_unused20 = s->_unused20;
-	h->_unused21 = s->_unused21;
-	h->_unused22 = s->_unused22;
-	h->_unused23 = s->_unused23;
+	h->require_pwchange = s->require_pwchange;
+	h->materialize = s->materialize;
+	h->virtual_keys = s->virtual_keys;
+	h->virtual = s->virtual;
+	h->synthetic = s->synthetic;
+	h->no_auth_data_reqd = s->no_auth_data_reqd;
 	h->_unused24 = s->_unused24;
 	h->_unused25 = s->_unused25;
 	h->_unused26 = s->_unused26;
 	h->_unused27 = s->_unused27;
 	h->_unused28 = s->_unused28;
 	h->_unused29 = s->_unused29;
-	h->_unused30 = s->_unused30;
+	h->force_canonicalize = s->force_canonicalize;
 	h->do_not_store = s->do_not_store;
 }
 
@@ -86,15 +90,7 @@ static int sdb_key_to_Key(const struct sdb_key *s, Key *h)
 {
 	int rc;
 
-	if (s->mkvno != NULL) {
-		h->mkvno = malloc(sizeof(unsigned int));
-		if (h->mkvno == NULL) {
-			goto error_nomem;
-		}
-		*h->mkvno = *s->mkvno;
-	} else {
-		h->mkvno = NULL;
-	}
+	ZERO_STRUCTP(h);
 
 	h->key.keytype = s->key.keytype;
 	rc = smb_krb5_copy_data_contents(&h->key.keyvalue,
@@ -172,11 +168,11 @@ static int sdb_event_to_Event(krb5_context context,
 	return 0;
 }
 
-
-static int sdb_entry_to_hdb_entry(krb5_context context,
-				  const struct sdb_entry *s,
-				  struct hdb_entry *h)
+int sdb_entry_to_hdb_entry(krb5_context context,
+			   const struct sdb_entry *s,
+			   hdb_entry *h)
 {
+	struct samba_kdc_entry *ske = s->skdc_entry;
 	unsigned int i;
 	int rc;
 
@@ -278,14 +274,14 @@ static int sdb_entry_to_hdb_entry(krb5_context context,
 	sdb_flags_to_hdb_flags(&s->flags, &h->flags);
 
 	h->etypes = NULL;
-	if (h->keys.val != NULL) {
+	if (s->etypes != NULL) {
 		h->etypes = malloc(sizeof(*h->etypes));
 		if (h->etypes == NULL) {
 			rc = ENOMEM;
 			goto error;
 		}
 
-		h->etypes->len = s->keys.len;
+		h->etypes->len = s->etypes->len;
 
 		h->etypes->val = calloc(h->etypes->len, sizeof(int));
 		if (h->etypes->val == NULL) {
@@ -294,59 +290,37 @@ static int sdb_entry_to_hdb_entry(krb5_context context,
 		}
 
 		for (i = 0; i < h->etypes->len; i++) {
-			Key k = h->keys.val[i];
-
-			h->etypes->val[i] = KRB5_KEY_TYPE(&(k.key));
+			h->etypes->val[i] = s->etypes->val[i];
 		}
 	}
 
-	h->generation = NULL;
-	h->extensions = NULL; /* really sure ? FIXME */
+	h->session_etypes = NULL;
+	if (s->session_etypes != NULL) {
+		h->session_etypes = malloc(sizeof(*h->session_etypes));
+		if (h->session_etypes == NULL) {
+			rc = ENOMEM;
+			goto error;
+		}
 
+		h->session_etypes->len = s->session_etypes->len;
+
+		h->session_etypes->val = calloc(h->session_etypes->len, sizeof(*h->session_etypes->val));
+		if (h->session_etypes->val == NULL) {
+			rc = ENOMEM;
+			goto error;
+		}
+
+		for (i = 0; i < h->session_etypes->len; ++i) {
+			h->session_etypes->val[i] = s->session_etypes->val[i];
+		}
+	}
+
+	h->context = ske;
+	if (ske != NULL) {
+		ske->kdc_entry = h;
+	}
 	return 0;
 error:
 	free_hdb_entry(h);
 	return rc;
-}
-
-static int samba_kdc_hdb_entry_destructor(struct samba_kdc_entry *p)
-{
-	struct hdb_entry_ex *entry_ex = p->entry_ex;
-	free_hdb_entry(&entry_ex->entry);
-
-	return 0;
-}
-
-static void samba_kdc_free_hdb_entry(krb5_context context,
-				     struct hdb_entry_ex *entry_ex)
-{
-	/* this function is called only from hdb_free_entry().
-	 * Make sure we neutralize the destructor or we will
-	 * get a double free later when hdb_free_entry() will
-	 * try to call free_hdb_entry() */
-	talloc_set_destructor(entry_ex->ctx, NULL);
-
-	/* now proceed to free the talloc part */
-	talloc_free(entry_ex->ctx);
-}
-
-int sdb_entry_ex_to_hdb_entry_ex(krb5_context context,
-				 const struct sdb_entry_ex *s,
-				 struct hdb_entry_ex *h)
-{
-	struct samba_kdc_entry *skdc_entry;
-
-	ZERO_STRUCTP(h);
-
-	if (s->ctx != NULL) {
-		skdc_entry = talloc_get_type(s->ctx, struct samba_kdc_entry);
-
-		h->ctx		= skdc_entry;
-		h->free_entry	= samba_kdc_free_hdb_entry;
-
-		talloc_set_destructor(skdc_entry,
-				      samba_kdc_hdb_entry_destructor);
-	}
-
-	return sdb_entry_to_hdb_entry(context, &s->entry, &h->entry);
 }

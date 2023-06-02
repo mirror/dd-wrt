@@ -2,12 +2,12 @@
 .\"     Title: smbget
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "SMBGET" "1" "01/31/2022" "Samba 4\&.15\&.5" "User Commands"
+.TH "SMBGET" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 smbget \- wget\-like utility for download files over SMB
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-smbget [\-a,\ \-\-guest] [\-r,\ \-\-resume] [\-R,\ \-\-recursive] [\-U,\ \-\-user=STRING] [\-w,\ \-\-workgroup=STRING] [\-n,\ \-\-nonprompt] [\-d,\ \-\-debuglevel=INT] [\-D,\ \-\-dots] [\-o,\ \-\-outputfile] [\-f,\ \-\-rcfile] [\-q,\ \-\-quiet] [\-v,\ \-\-verbose] [\-b,\ \-\-blocksize] [\-O,\ \-\-stdout] [\-u,\ \-\-update] [\-?,\ \-\-help] [\-\-usage] {smb://host/share/path/to/file} [smb://url2/] [\&.\&.\&.]
+smbget [\-a,\ \-\-guest] [\-r,\ \-\-resume] [\-R,\ \-\-recursive] [\-U,\ \-\-user=STRING] [\-w,\ \-\-workgroup=STRING] [\-n,\ \-\-nonprompt] [\-d,\ \-\-debuglevel=INT] [\-D,\ \-\-dots] [\-o,\ \-\-outputfile] [\-f,\ \-\-rcfile] [\-q,\ \-\-quiet] [\-v,\ \-\-verbose] [\-b,\ \-\-blocksize] [\-O,\ \-\-stdout] [\-u,\ \-\-update] [\-e,\ \-\-encrypt] [\-\-limit\-rate=INT] [\-?,\ \-\-help] [\-\-usage] {smb://host/share/path/to/file} [smb://url2/] [\&.\&.\&.]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -128,6 +128,16 @@ Display brief usage message
 .RS 4
 Download only when remote file is newer than local file or local file is missing\&.
 .RE
+.PP
+\-e, \-\-encrypt
+.RS 4
+Enable SMB encryption\&.
+.RE
+.PP
+\-\-limit\-rate=INT
+.RS 4
+Limit download rate by this many KB/s\&.
+.RE
 .SH "SMB URLS"
 .PP
 SMB URL\*(Aqs should be specified in the following format:
@@ -184,7 +194,7 @@ smbget \-Rr smb://rhonwyn/
 Permission denied is returned in some cases where the cause of the error is unknown (such as an illegally formatted smb:// url or trying to get a directory without \-R turned on)\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

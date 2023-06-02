@@ -1,0 +1,79 @@
+from waflib import Options
+import os
+
+def parse_version(v):
+    return tuple(map(int, (v.split("."))))
+
+gnutls_min_required_version = "3.4.7"
+
+gnutls_required_version = gnutls_min_required_version
+
+conf.CHECK_CFG(package='gnutls',
+               args=('"gnutls >= %s" --cflags --libs' % gnutls_required_version),
+                     msg='Checking for GnuTLS >= %s' % gnutls_required_version,
+                     mandatory=False)
+
+gnutls_version_str = "3.6.10" 
+gnutls_version = parse_version(gnutls_version_str)
+
+#conf.cmd_and_log(conf.env.PKGCONFIG + ['--modversion', 'gnutls']).strip()
+
+# Define gnutls as a system library
+conf.SET_TARGET_TYPE('gnutls', 'SYSLIB')
+
+# Check for gnutls_pkcs7_get_embedded_data_oid (>= 3.5.5) required by libmscat
+conf.CHECK_FUNCS_IN('gnutls_pkcs7_get_embedded_data_oid', 'gnutls')
+
+# Check for gnutls_set_default_priority_append (>= 3.6.3)
+conf.CHECK_FUNCS_IN('gnutls_set_default_priority_append', 'gnutls')
+
+# Check for gnutls_aead_cipher_encryptv2
+#
+# This is available since version 3.6.10, but 3.6.10 has a bug which got fixed
+# in 3.6.11, see:
+#
+#     https://gitlab.com/gnutls/gnutls/-/merge_requests/1085
+#
+# 3.6.10 - 3.6.14 have a severe memory leak with AES-CCM
+#     https://gitlab.com/gnutls/gnutls/-/merge_requests/1278
+if (gnutls_version > parse_version('3.6.10')):
+    if conf.CHECK_FUNCS_IN('gnutls_aead_cipher_encryptv2', 'gnutls'):
+        conf.DEFINE('ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM', 1)
+        if (gnutls_version > parse_version('3.6.14')):
+            conf.DEFINE('ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_CCM', 1)
+
+# Check if gnutls has fips mode support
+# gnutls_fips140_mode_enabled() is available since 3.3.0
+fragment = '''
+#include <gnutls/gnutls.h>
+#include <stdlib.h>
+
+int main(void)
+{
+    unsigned int ok;
+
+    ok = gnutls_fips140_mode_enabled();
+
+    return !ok;
+}
+'''
+
+os.environ['GNUTLS_FORCE_FIPS_MODE'] = '1'
+conf.CHECK_CODE(fragment,
+                'HAVE_GNUTLS_FIPS_MODE_SUPPORTED',
+                execute=True,
+                addmain=False,
+                add_headers=False,
+                lib='gnutls',
+                msg='Checking for gnutls fips mode support')
+del os.environ['GNUTLS_FORCE_FIPS_MODE']
+
+if conf.CHECK_VALUEOF('GNUTLS_CIPHER_AES_128_CFB8', headers='gnutls/gnutls.h'):
+    conf.DEFINE('HAVE_GNUTLS_AES_CFB8', 1)
+else:
+    Logs.warn('No gnutls support for AES CFB8')
+
+if conf.CHECK_VALUEOF('GNUTLS_MAC_AES_CMAC_128', headers='gnutls/gnutls.h'):
+    conf.DEFINE('HAVE_GNUTLS_AES_CMAC', 1)
+else:
+    Logs.warn('No gnutls support for AES CMAC')

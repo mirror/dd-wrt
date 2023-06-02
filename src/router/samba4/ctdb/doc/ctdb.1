@@ -2,12 +2,12 @@
 .\"     Title: ctdb
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB" "1" "01/31/2022" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB" "1" "05/31/2023" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -175,7 +175,7 @@ NORMAL \- The cluster is fully operational\&.
 .PP
 RECOVERY \- The cluster databases have all been frozen, pausing all services while the cluster awaits a recovery process to complete\&. A recovery process should finish within seconds\&. If a cluster is stuck in the RECOVERY state this would indicate a cluster malfunction which needs to be investigated\&.
 .PP
-Once the recovery master detects an inconsistency, for example a node becomes disconnected/connected, the recovery daemon will trigger a cluster recovery process, where all databases are remerged across the cluster\&. When this process starts, the recovery master will first "freeze" all databases to prevent applications such as samba from accessing the databases and it will also mark the recovery mode as RECOVERY\&.
+Once the leader detects an inconsistency, for example a node becomes disconnected/connected, the recovery daemon will trigger a cluster recovery process, where all databases are remerged across the cluster\&. When this process starts, the leader will first "freeze" all databases to prevent applications such as samba from accessing the databases and it will also mark the recovery mode as RECOVERY\&.
 .PP
 When the CTDB daemon starts up, it will start in RECOVERY mode\&. Once the node has been merged into a cluster and all databases have been recovered, the node mode will change into NORMAL mode and the databases will be "thawed", allowing samba to access the databases again\&.
 .RE
@@ -185,12 +185,12 @@ When the CTDB daemon starts up, it will start in RECOVERY mode\&. Once the node 
 .nr an-break-flag 1
 .br
 .ps +1
-\fBRecovery master\fR
+\fBLeader\fR
 .RS 4
 .PP
-This is the cluster node that is currently designated as the recovery master\&. This node is responsible of monitoring the consistency of the cluster and to perform the actual recovery process when reqired\&.
+This is the cluster node that is currently designated as the leader\&. This node is responsible of monitoring the consistency of the cluster and to perform the actual recovery process when reqired\&.
 .PP
-Only one node at a time can be the designated recovery master\&. Which node is designated the recovery master is decided by an election process in the recovery daemons running on each node\&.
+Only one node at a time can be the designated leader\&. Which node is designated the leader is decided by an election process in the recovery daemons running on each node\&.
 .RE
 .sp
 .it 1 an-trap
@@ -218,7 +218,7 @@ hash:1 lmaster:1
 hash:2 lmaster:2
 hash:3 lmaster:3
 Recovery mode:NORMAL (0)
-Recovery master:0
+Leader:0
 	
 .fi
 .if n \{\
@@ -287,9 +287,9 @@ pnn:1 10\&.0\&.0\&.31        OK
 .RE
 .\}
 .RE
-.SS "recmaster"
+.SS "leader"
 .PP
-This command shows the pnn of the node which is currently the recmaster\&.
+This command shows the pnn of the node which is currently the leader\&.
 .PP
 Note: If the queried node is INACTIVE then the status might not be current\&.
 .SS "uptime"
@@ -882,7 +882,7 @@ Example output:
 .RS 4
 .\}
 .nf
-RECMASTER: YES
+LEADER: YES
 LMASTER: YES
       
 .fi
@@ -1084,11 +1084,13 @@ Nodes will by default have this capability, but it can be stripped off nodes by 
 Once this setting has been enabled/disabled, you need to perform a recovery for it to take effect\&.
 .PP
 See also "ctdb getcapabilities"
-.SS "setrecmasterrole on|off"
+.SS "setleaderrole on|off"
 .PP
-This command is used to enable/disable the RECMASTER capability for a node at runtime\&. This capability determines whether or not a node can be used as an RECMASTER for the cluster\&. A node that does not have the RECMASTER capability can not win a recmaster election\&. A node that already is the recmaster for the cluster when the capability is stripped off the node will remain the recmaster until the next cluster election\&.
+This command is used to enable/disable the LEADER capability for a node at runtime\&. This capability determines whether or not a node can be elected leader of the cluster\&. A node that does not have the LEADER capability can not be elected leader\&. If the current leader has this capability removed then an election will occur\&.
 .PP
-Nodes will by default have this capability, but it can be stripped off nodes by the setting in the sysconfig file or by using this command\&.
+Nodes have this capability enabled by default, but it can be removed via the
+\fBcluster:leader capability\fR
+configuration setting or by using this command\&.
 .PP
 See also "ctdb getcapabilities"
 .SS "reloadnodes"
@@ -1473,7 +1475,7 @@ Remove all contents of database DB\&.
 This command will trigger the recovery daemon to do a cluster recovery\&.
 .SS "ipreallocate, sync"
 .PP
-This command will force the recovery master to perform a full ip reallocation process and redistribute all ip addresses\&. This is useful to "reset" the allocations back to its default state if they have been changed using the "moveip" command\&. While a "recover" will also perform this reallocation, a recovery is much more hevyweight since it will also rebuild all the databases\&.
+This command will force the leader to perform a full ip reallocation process and redistribute all ip addresses\&. This is useful to "reset" the allocations back to its default state if they have been changed using the "moveip" command\&. While a "recover" will also perform this reallocation, a recovery is much more hevyweight since it will also rebuild all the databases\&.
 .SS "attach \fIDBNAME\fR [persistent|replicated]"
 .PP
 Create a new CTDB database called DBNAME and attach to it on all nodes\&.

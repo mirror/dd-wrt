@@ -167,7 +167,10 @@ static const char *b9_format_fqdn(TALLOC_CTX *mem_ctx, const char *str)
 }
 
 /*
-  format a record for bind9
+ * Format a record for bind9.
+ *
+ * On failure/error returns false, OR sets *data to NULL.
+ * Callers should check for both!
  */
 static bool b9_format(struct dlz_bind9_data *state,
 		      TALLOC_CTX *mem_ctx,
@@ -198,7 +201,7 @@ static bool b9_format(struct dlz_bind9_data *state,
 		*type = "txt";
 		tmp = talloc_asprintf(mem_ctx, "\"%s\"", rec->data.txt.str[0]);
 		for (i=1; i<rec->data.txt.count; i++) {
-			tmp = talloc_asprintf_append(tmp, " \"%s\"", rec->data.txt.str[i]);
+			talloc_asprintf_addbuf(&tmp, " \"%s\"", rec->data.txt.str[i]);
 		}
 		*data = tmp;
 		break;
@@ -1955,7 +1958,13 @@ _PUBLIC_ isc_result_t dlz_addrdataset(const char *name, const char *rdatastr, vo
 	}
 
 	if (i == num_recs) {
-		/* adding a new value */
+		/* set dwTimeStamp before increasing num_recs */
+		if (dns_name_is_static(recs, num_recs)) {
+			rec->dwTimeStamp = 0;
+		} else {
+			rec->dwTimeStamp = unix_to_dns_timestamp(time(NULL));
+		}
+		/* adding space for a new value */
 		recs = talloc_realloc(rec, recs,
 				      struct dnsp_DnssrvRpcRecord,
 				      num_recs + 1);
@@ -1965,11 +1974,16 @@ _PUBLIC_ isc_result_t dlz_addrdataset(const char *name, const char *rdatastr, vo
 			goto exit;
 		}
 		num_recs++;
-
-		if (dns_name_is_static(recs, num_recs)) {
-			rec->dwTimeStamp = 0;
-		} else {
-			rec->dwTimeStamp = unix_to_dns_timestamp(time(NULL));
+	} else {
+		/*
+		 * We are updating a record. Depending on whether aging is
+		 * enabled, and how old the old timestamp is,
+		 * dns_common_replace() will work out whether to bump the
+		 * timestamp or not. But to do that, we need to tell it the
+		 * old timestamp.
+		 */		
+		if (! dns_name_is_static(recs, num_recs)) {
+			rec->dwTimeStamp = recs[i].dwTimeStamp;
 		}
 	}
 

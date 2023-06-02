@@ -307,20 +307,20 @@ static void test_connection_list_read_bad(const char *s1)
 
 #define CONN6 \
 "\
-fe80::6af7:28ff:fefa:d136:12345 fe80::6af7:28ff:fefa:d137:54321\n\
-fe80::6af7:28ff:fefa:d138:12345 fe80::6af7:28ff:fefa:d137:54322\n\
-fe80::6af7:28ff:fefa:d136:12346 fe80::6af7:28ff:fefa:d137:54323\n\
-fe80::6af7:28ff:fefa:d132:12345 fe80::6af7:28ff:fefa:d137:54324\n\
-fe80::6af7:28ff:fefa:d136:12345 fe80::6af7:28ff:fefa:d137:54325\n\
+[fe80::6af7:28ff:fefa:d136]:12345 [fe80::6af7:28ff:fefa:d137]:54321\n\
+[fe80::6af7:28ff:fefa:d138]:12345 [fe80::6af7:28ff:fefa:d137]:54322\n\
+[fe80::6af7:28ff:fefa:d136]:12346 [fe80::6af7:28ff:fefa:d137]:54323\n\
+[fe80::6af7:28ff:fefa:d132]:12345 [fe80::6af7:28ff:fefa:d137]:54324\n\
+[fe80::6af7:28ff:fefa:d136]:12345 [fe80::6af7:28ff:fefa:d137]:54325\n\
 "
 
 #define CONN6_SORT \
 "\
-fe80::6af7:28ff:fefa:d132:12345 fe80::6af7:28ff:fefa:d137:54324\n\
-fe80::6af7:28ff:fefa:d136:12345 fe80::6af7:28ff:fefa:d137:54321\n\
-fe80::6af7:28ff:fefa:d136:12345 fe80::6af7:28ff:fefa:d137:54325\n\
-fe80::6af7:28ff:fefa:d136:12346 fe80::6af7:28ff:fefa:d137:54323\n\
-fe80::6af7:28ff:fefa:d138:12345 fe80::6af7:28ff:fefa:d137:54322\n\
+[fe80::6af7:28ff:fefa:d132]:12345 [fe80::6af7:28ff:fefa:d137]:54324\n\
+[fe80::6af7:28ff:fefa:d136]:12345 [fe80::6af7:28ff:fefa:d137]:54321\n\
+[fe80::6af7:28ff:fefa:d136]:12345 [fe80::6af7:28ff:fefa:d137]:54325\n\
+[fe80::6af7:28ff:fefa:d136]:12346 [fe80::6af7:28ff:fefa:d137]:54323\n\
+[fe80::6af7:28ff:fefa:d138]:12345 [fe80::6af7:28ff:fefa:d137]:54322\n\
 "
 
 int main(int argc, char *argv[])
@@ -333,9 +333,9 @@ int main(int argc, char *argv[])
 
 	test_sock_addr_to_string("0.0.0.0:0", true);
 	test_sock_addr_to_string("127.0.0.1:123", true);
-	test_sock_addr_to_string("::1:234", true);
+	test_sock_addr_to_string("[::1]:234", true);
 	test_sock_addr_to_string("192.168.2.1:123", true);
-	test_sock_addr_to_string("fe80::6af7:28ff:fefa:d136:234", true);
+	test_sock_addr_to_string("[fe80::6af7:28ff:fefa:d136]:234", true);
 
 	test_sock_addr_from_string_bad("0.0.0", false);
 	test_sock_addr_from_string_bad("0.0.0:0", true);
@@ -367,19 +367,38 @@ int main(int argc, char *argv[])
 	test_sock_addr_cmp("fe80::6af7:28ff:fefa:d136:123",
 			   "fe80::6af7:28ff:fefa:d136:122" , true, 1);
 
+	/*
+	 * Confirm equivalence of IPv6 sockets with and without
+	 * square-brackets
+	 */
+	test_sock_addr_cmp("[::1]:234", "::1:234", true, 0);
+	test_sock_addr_cmp("[fe80::6af7:28ff:fefa:d136]:234",
+			   "fe80::6af7:28ff:fefa:d136:234",
+			   true,
+			   0);
+	/* Check IPv4-mapped IPv6 addresses */
+	test_sock_addr_cmp("::ffff:172.16.0.27:977",
+			   "172.16.0.27:977",
+			   true,
+			   0);
+	test_sock_addr_cmp("[::ffff:172.16.0.27]:977",
+			   "172.16.0.27:977",
+			   true,
+			   0);
+
 	test_sock_addr_mask_from_string("127.0.0.1/8");
 	test_sock_addr_mask_from_string("::1/128");
 	test_sock_addr_mask_from_string("fe80::6af7:28ff:fefa:d136/64");
 	test_sock_addr_mask_from_string_bad("127.0.0.1");
 
 	test_connection_to_string("127.0.0.1:12345 127.0.0.2:54321");
-	test_connection_to_string("fe80::6af7:28ff:fefa:d137:12345 "
-				  "fe80::6af7:28ff:fefa:d138:54321");
+	test_connection_to_string("[fe80::6af7:28ff:fefa:d137]:12345 "
+				  "[fe80::6af7:28ff:fefa:d138]:54321");
 
 	test_connection_from_string_bad("127.0.0.1:12345 127.0.0.2:");
 	test_connection_from_string_bad("127.0.0.1:12345");
 	test_connection_from_string_bad("127.0.0.1:12345 "
-					"fe80::6af7:28ff:fefa:d136:122");
+					"[fe80::6af7:28ff:fefa:d136]:122");
 	test_connection_from_string_bad("Junk!");
 	test_connection_from_string_bad("More junk");
 

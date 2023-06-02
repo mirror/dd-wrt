@@ -34,9 +34,13 @@ from selftesthelpers import smbtorture4, ntlm_auth3, samba3srcdir
 print("OPTIONS %s" % " ".join(smbtorture4_options), file=sys.stderr)
 
 
-def plansmbtorture4testsuite(name, env, options, modname=None):
-    return selftesthelpers.plansmbtorture4testsuite(name, env, options,
-                                                    target='samba4', modname=modname)
+def plansmbtorture4testsuite(name, env, options, modname=None, environ={}):
+    return selftesthelpers.plansmbtorture4testsuite(name,
+                                                    env,
+                                                    options,
+                                                    target='samba4',
+                                                    modname=modname,
+                                                    environ=environ)
 
 
 samba4srcdir = source4dir()
@@ -188,7 +192,15 @@ ncacn_np_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.alt
 ncalrpc_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.altercontext", "rpc.netlogon", "rpc.netlogon.admin", "rpc.netlogon.zerologon", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext"]
 drs_rpc_tests = smbtorture4_testsuites("drs.rpc")
 ncacn_ip_tcp_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.drsuapi", "rpc.drsuapi_w2k8", "rpc.netlogon", "rpc.netlogon.admin", "rpc.netlogon.zerologon", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext", "rpc.samr.passwords.validate"] + drs_rpc_tests
-slow_ncacn_np_tests = ["rpc.samlogon", "rpc.samr", "rpc.samr.users", "rpc.samr.large-dc", "rpc.samr.users.privileges", "rpc.samr.passwords", "rpc.samr.passwords.pwdlastset", "rpc.samr.passwords.lockout", "rpc.samr.passwords.badpwdcount"]
+slow_ncacn_np_tests = ["rpc.samlogon",
+                       "rpc.samr",
+                       "rpc.samr.users",
+                       "rpc.samr.large-dc",
+                       "rpc.samr.users.privileges",
+                       "rpc.samr.passwords.default",
+                       "rpc.samr.passwords.pwdlastset",
+                       "rpc.samr.passwords.lockout",
+                       "rpc.samr.passwords.badpwdcount"]
 slow_ncacn_ip_tcp_tests = ["rpc.cracknames"]
 
 all_rpc_tests = ncalrpc_tests + ncacn_np_tests + ncacn_ip_tcp_tests + slow_ncacn_np_tests + slow_ncacn_ip_tcp_tests + ["rpc.lsa.secrets", "rpc.pac", "rpc.samba3-sharesec", "rpc.countcalls"]
@@ -197,7 +209,11 @@ all_rpc_tests = ncalrpc_tests + ncacn_np_tests + ncacn_ip_tcp_tests + slow_ncacn
 rpc_s3only = [
     "rpc.mdssvc",
 ]
-rpc_tests = [x for x in smbtorture4_testsuites("rpc.") if x not in rpc_s3only]
+rpc_fipsonly = [
+    "rpc.fips.netlogon.crypto",
+]
+rpc_exclude = rpc_s3only + rpc_fipsonly
+rpc_tests = [x for x in smbtorture4_testsuites("rpc.") if x not in rpc_exclude]
 auto_rpc_tests = list(filter(lambda t: t not in all_rpc_tests, rpc_tests))
 
 for bindoptions in ["seal,padcheck"] + validate_list + ["bigendian"]:
@@ -369,8 +385,11 @@ smb2_s3only = [
     "smb2.durable-v2-delay",
     "smb2.aio_delay",
     "smb2.fileid",
-    "smb2.fileid_unique",
     "smb2.timestamps",
+    "smb2.async_dosmode",
+    "smb2.twrp",
+    "smb2.ea",
+    "smb2.create_no_streams",
 ]
 smb2 = [x for x in smbtorture4_testsuites("smb2.") if x not in smb2_s3only]
 
@@ -513,7 +532,7 @@ for t in smbtorture4_testsuites("dlz_bind9."):
     # The dlz_bind9 tests needs to look at the DNS database
     plansmbtorture4testsuite(t, "chgdcpass:local", ["ncalrpc:$SERVER", '-U$USERNAME%$PASSWORD'])
 
-planpythontestsuite("nt4_dc_smb1", "samba.tests.libsmb")
+planpythontestsuite("fileserver_smb1", "samba.tests.libsmb-basic")
 
 planpythontestsuite("ad_member", "samba.tests.smb-notify",
                     environ={'USERNAME':'$DC_USERNAME',
@@ -535,7 +554,7 @@ plantestsuite("samba4.blackbox.smbtorture_subunit_names", "none",
                  smbtorture4
               ])
 
-for env in ["ad_member", "s4member", "ad_dc_ntvfs", "chgdcpass"]:
+for env in ["ad_member", "ad_dc_ntvfs", "chgdcpass"]:
     plantestsuite("samba4.blackbox.smbclient(%s:local)" % env, "%s:local" % env, [os.path.join(samba4srcdir, "utils/tests/test_smbclient.sh"), '$SERVER', '$SERVER_IP', '$USERNAME', '$PASSWORD', '$DOMAIN', smbclient4])
 
 plantestsuite("samba4.blackbox.samba_tool(ad_dc_default:local)", "ad_dc_default:local", [os.path.join(samba4srcdir, "utils/tests/test_samba_tool.sh"), '$SERVER', '$SERVER_IP', '$USERNAME', '$PASSWORD', '$DOMAIN', smbclient3])
@@ -546,9 +565,6 @@ plantestsuite("samba4.blackbox.test_primary_group", "ad_dc:local", [os.path.join
 plantestsuite("samba4.blackbox.test_old_enctypes", "fl2003dc:local", [os.path.join(bbdir, "test_old_enctypes.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$NETBIOSNAME', '$PREFIX_ABS'])
 
 if have_heimdal_support:
-    for env in ["ad_dc_ntvfs", "ad_dc"]:
-        plantestsuite("samba4.blackbox.pkinit", "%s:local" % env, [os.path.join(bbdir, "test_pkinit_heimdal.sh"), '$SERVER', 'pkinit', '$PASSWORD', '$REALM', '$DOMAIN', '$PREFIX/%s' % env, "aes256-cts-hmac-sha1-96", smbclient3, configuration])
-        plantestsuite("samba4.blackbox.pkinit_pac", "%s:local" % env, [os.path.join(bbdir, "test_pkinit_pac_heimdal.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', '$PREFIX/%s' % env, "aes256-cts-hmac-sha1-96", configuration])
     plantestsuite("samba4.blackbox.kinit", "ad_dc_ntvfs:local", [os.path.join(bbdir, "test_kinit_heimdal.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', '$PREFIX', "aes256-cts-hmac-sha1-96", smbclient4, configuration])
     plantestsuite("samba4.blackbox.kinit", "fl2000dc:local", [os.path.join(bbdir, "test_kinit_heimdal.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', '$PREFIX', "arcfour-hmac-md5", smbclient3, configuration])
     plantestsuite("samba4.blackbox.kinit", "fl2008r2dc:local", [os.path.join(bbdir, "test_kinit_heimdal.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', '$PREFIX', "aes256-cts-hmac-sha1-96", smbclient3, configuration])
@@ -567,6 +583,28 @@ else:
     plantestsuite("samba4.blackbox.kinit_trust", "fl2000dc:local", [os.path.join(bbdir, "test_kinit_trusts_mit.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', '$TRUST_SERVER', '$TRUST_USERNAME', '$TRUST_PASSWORD', '$TRUST_REALM', '$TRUST_DOMAIN', '$PREFIX', "external"])
     plantestsuite("samba4.blackbox.export.keytab", "ad_dc_ntvfs:local", [os.path.join(bbdir, "test_export_keytab_mit.sh"), '$SERVER', '$USERNAME', '$REALM', '$DOMAIN', "$PREFIX", smbclient4])
     plantestsuite("samba4.blackbox.kpasswd", "ad_dc_ntvfs:local", [os.path.join(bbdir, "test_kpasswd_mit.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', "$PREFIX/ad_dc_ntvfs"])
+
+plantestsuite("samba4.blackbox.pkinit_simple",
+              "ad_dc:local",
+              [os.path.join(bbdir, "test_pkinit_simple.sh"),
+               '$SERVER',
+               'pkinit',
+               '$PASSWORD',
+               '$REALM',
+               '$DOMAIN',
+               '$PREFIX/ad_dc',
+               smbclient3,
+               configuration])
+plantestsuite("samba4.blackbox.pkinit_pac",
+              "ad_dc:local",
+              [os.path.join(bbdir, "test_pkinit_pac.sh"),
+               '$SERVER',
+               '$USERNAME',
+               '$PASSWORD',
+               '$REALM',
+               '$DOMAIN',
+               '$PREFIX/ad_dc',
+               configuration])
 
 plantestsuite("samba.blackbox.client_kerberos", "ad_dc", [os.path.join(bbdir, "test_client_kerberos.sh"), '$DOMAIN', '$REALM', '$USERNAME', '$PASSWORD', '$SERVER', '$PREFIX_ABS', '$SMB_CONF_PATH'])
 
@@ -626,24 +664,71 @@ plantestsuite("samba4.blackbox.client_etypes_all(ad_dc:client)", "ad_dc:client",
 plantestsuite("samba4.blackbox.client_etypes_legacy(ad_dc:client)", "ad_dc:client", [os.path.join(bbdir, "test_client_etypes.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$PREFIX_ABS', 'legacy', '23'])
 plantestsuite("samba4.blackbox.client_etypes_strong(ad_dc:client)", "ad_dc:client", [os.path.join(bbdir, "test_client_etypes.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$PREFIX_ABS', 'strong', '17_18'])
 plantestsuite("samba4.blackbox.net_ads_dns(ad_member:local)", "ad_member:local", [os.path.join(bbdir, "test_net_ads_dns.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$REALM', '$USERNAME', '$PASSWORD'])
-plantestsuite("samba4.blackbox.net_ads_dns_async(ad_member:local)",
-        "ad_member:local",
-        [os.path.join(bbdir,
-            "test_net_ads_dns_async.sh"),
-            '$DC_SERVER',
-            '$REALM'])
 plantestsuite("samba4.blackbox.samba-tool_ntacl(ad_member:local)", "ad_member:local", [os.path.join(bbdir, "test_samba-tool_ntacl.sh"), '$PREFIX', '$DOMSID'])
+
+env = "ad_member:local"
+plantestsuite("samba4.blackbox.net_ads_search_server_P.primary", env,
+              [os.path.join(bbdir, "test_net_ads_search_server.sh"),
+              '$DC_SERVER', '$REALM'])
+plantestsuite("samba4.blackbox.net_ads_search_server_P.trust_e_both", env,
+              [os.path.join(bbdir, "test_net_ads_search_server.sh"),
+              '$TRUST_E_BOTH_SERVER', '$TRUST_E_BOTH_REALM'])
+plantestsuite("samba4.blackbox.net_ads_search_server_P.trust_f_both", env,
+              [os.path.join(bbdir, "test_net_ads_search_server.sh"),
+              '$TRUST_F_BOTH_SERVER', '$TRUST_F_BOTH_REALM'])
 
 if have_gnutls_fips_mode_support:
     plantestsuite("samba4.blackbox.weak_crypto.client", "ad_dc", [os.path.join(bbdir, "test_weak_crypto.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', "$PREFIX/ad_dc"])
+    plantestsuite("samba4.blackbox.test_weak_disable_ntlmssp_ldap", "ad_member:local", [os.path.join(bbdir, "test_weak_disable_ntlmssp_ldap.sh"),'$DC_USERNAME', '$DC_PASSWORD'])
 
     for env in ["ad_dc_fips", "ad_member_fips"]:
-        plantestsuite("samba4.blackbox.weak_crypto.server", env, [os.path.join(bbdir, "test_weak_crypto_server.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$REALM', '$DOMAIN', "$PREFIX/ad_dc_fips", configuration])
-    plantestsuite("samba4.blackbox.net_ads_fips", "ad_dc_fips:client", [os.path.join(bbdir, "test_net_ads_fips.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$PREFIX_ABS'])
+        plantestsuite("samba4.blackbox.weak_crypto.server",
+                      env,
+                      [os.path.join(bbdir, "test_weak_crypto_server.sh"),
+                       '$SERVER',
+                       '$USERNAME',
+                       '$PASSWORD',
+                       '$REALM',
+                       '$DOMAIN',
+                       "$PREFIX/ad_dc_fips",
+                       configuration],
+                      environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                               'OPENSSL_FORCE_FIPS_MODE': '1'})
+
+    plantestsuite("samba4.blackbox.net_ads_fips",
+                  "ad_dc_fips:client",
+                  [os.path.join(bbdir, "test_net_ads_fips.sh"),
+                   '$DC_SERVER',
+                   '$DC_USERNAME',
+                   '$DC_PASSWORD',
+                   '$PREFIX_ABS'],
+                  environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                           'OPENSSL_FORCE_FIPS_MODE': '1'})
 
     t = "--krb5auth=$DOMAIN/$DC_USERNAME%$DC_PASSWORD"
-    plantestsuite("samba3.wbinfo_simple.fips.%s" % t, "ad_member_fips:local", [os.path.join(srcdir(), "nsswitch/tests/test_wbinfo_simple.sh"), t])
-    plantestsuite("samba4.wbinfo_name_lookup.fips", "ad_member_fips", [os.path.join(srcdir(), "nsswitch/tests/test_wbinfo_name_lookup.sh"), '$DOMAIN', '$REALM', '$DC_USERNAME'])
+    plantestsuite("samba3.wbinfo_simple.fips.%s" % t,
+                  "ad_member_fips:local",
+                  [os.path.join(srcdir(), "nsswitch/tests/test_wbinfo_simple.sh"), t],
+                  environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                           'OPENSSL_FORCE_FIPS_MODE': '1'})
+    plantestsuite("samba4.wbinfo_name_lookup.fips",
+                  "ad_member_fips",
+                  [os.path.join(srcdir(), "nsswitch/tests/test_wbinfo_name_lookup.sh"),
+                   '$DOMAIN',
+                   '$REALM',
+                   '$DC_USERNAME'],
+                  environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                           'OPENSSL_FORCE_FIPS_MODE': '1'})
+
+    plansmbtorture4testsuite('rpc.fips.netlogon.crypto',
+                             'ad_dc_fips',
+                             ['ncacn_np:$SERVER[krb5]',
+                              '-U$USERNAME%$PASSWORD',
+                              '--workgroup=$DOMAIN',
+                              '--client-protection=encrypt'],
+                             'samba4.rpc.fips.netlogon.crypto',
+                             environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                                      'OPENSSL_FORCE_FIPS_MODE': '1'})
 
 plansmbtorture4testsuite('rpc.echo', "ad_dc_ntvfs", ['ncacn_np:$NETBIOSALIAS', '-U$DOMAIN/$USERNAME%$PASSWORD'], "samba4.rpc.echo against NetBIOS alias")
 
@@ -668,7 +753,11 @@ plansmbtorture4testsuite('rpc.echo', "s4member", ['ncacn_np:$NETBIOSNAME', '-U$N
 plansmbtorture4testsuite('rpc.echo', "s4member", ['ncacn_np:$NETBIOSNAME', '-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'], "samba4.rpc.echo against s4member server with domain creds")
 plansmbtorture4testsuite('rpc.samr', "s4member", ['ncacn_np:$NETBIOSNAME', '-U$NETBIOSNAME/$USERNAME%$PASSWORD'], "samba4.rpc.samr against s4member server with local creds")
 plansmbtorture4testsuite('rpc.samr.users', "s4member", ['ncacn_np:$NETBIOSNAME', '-U$NETBIOSNAME/$USERNAME%$PASSWORD'], "samba4.rpc.samr.users against s4member server with local creds",)
-plansmbtorture4testsuite('rpc.samr.passwords', "s4member", ['ncacn_np:$NETBIOSNAME', '-U$NETBIOSNAME/$USERNAME%$PASSWORD'], "samba4.rpc.samr.passwords against s4member server with local creds")
+plansmbtorture4testsuite('rpc.samr.passwords.default',
+                         "s4member",
+                         ['ncacn_np:$NETBIOSNAME',
+                          '-U$NETBIOSNAME/$USERNAME%$PASSWORD'],
+                         "samba4.rpc.samr.passwords.default against s4member server with local creds")
 plantestsuite("samba4.blackbox.smbclient against s4member server with local creds", "s4member", [os.path.join(samba4srcdir, "client/tests/test_smbclient.sh"), '$NETBIOSNAME', '$USERNAME', '$PASSWORD', '$NETBIOSNAME', '$PREFIX', smbclient4])
 
 # RPC Proxy
@@ -693,7 +782,6 @@ for mech in [
     "-k yes"]:
     signoptions = "%s --client-protection=off" % mech
     name = "smb.signing disabled on with %s" % signoptions
-    plansmbtorture4testsuite('base.xcopy', "s4member", ['//$NETBIOSNAME/xcopy_share', signoptions, '-U$DC_USERNAME%$DC_PASSWORD'], "samba4.%s domain-creds" % name)
     plansmbtorture4testsuite('base.xcopy', "ad_member", ['//$NETBIOSNAME/xcopy_share', signoptions, '-U$DC_USERNAME%$DC_PASSWORD'], "samba4.%s domain-creds" % name)
     plansmbtorture4testsuite('base.xcopy', "ad_dc", ['//$NETBIOSNAME/xcopy_share', signoptions, '-U$USERNAME%$PASSWORD'], "samba4.%s" % name)
     plansmbtorture4testsuite('base.xcopy', "ad_dc",
@@ -720,7 +808,7 @@ wb_opts_default = ["--option=\"torture:strict mode=no\"", "--option=\"torture:ti
 
 winbind_ad_client_tests = smbtorture4_testsuites("winbind.struct") + smbtorture4_testsuites("winbind.pac")
 winbind_wbclient_tests = smbtorture4_testsuites("winbind.wbclient")
-for env in ["ad_dc", "s4member", "ad_member", "nt4_member"]:
+for env in ["ad_dc", "ad_member", "nt4_member"]:
     wb_opts = wb_opts_default[:]
     if env in ["ad_member"]:
         wb_opts += ["--option=\"torture:winbindd_domain_without_prefix=$DOMAIN\""]
@@ -731,7 +819,7 @@ for env in ["nt4_dc", "fl2003dc"]:
     for t in winbind_wbclient_tests:
         plansmbtorture4testsuite(t, "%s:local" % env, '//$SERVER/tmp -U$DC_USERNAME%$DC_PASSWORD')
 
-for env in ["nt4_dc", "nt4_member", "ad_dc", "ad_member", "s4member", "chgdcpass", "rodc"]:
+for env in ["nt4_dc", "nt4_member", "ad_dc", "ad_member", "chgdcpass", "rodc"]:
     tests = ["--ping", "--separator",
              "--own-domain",
              "--all-domains",
@@ -764,6 +852,11 @@ for env in ["nt4_dc", "nt4_member", "ad_dc", "ad_member", "s4member", "chgdcpass
 
     planpythontestsuite(env + ":local", "samba.tests.ntlm_auth")
 
+plantestsuite(
+    "samba.wbinfo_u_large_ad.(ad_dc:local)",
+    "ad_dc:local",
+    [os.path.join(samba3srcdir, "script/tests/test_wbinfo_u_large_ad.sh")])
+
 for env in ["ktest"]:
     planpythontestsuite(env + ":local", "samba.tests.ntlm_auth_krb5")
 
@@ -778,7 +871,7 @@ for env in ["s4member_dflt_domain", "s4member"]:
 nsstest4 = binpath("nsstest")
 for env in ["ad_dc:local", "s4member:local", "nt4_dc:local", "ad_member:local", "nt4_member:local"]:
     if os.path.exists(nsstest4):
-        plantestsuite("samba.nss.test using winbind(%s)" % env, env, [os.path.join(bbdir, "nsstest.sh"), nsstest4, os.path.join(samba4bindir, "shared/libnss_wrapper_winbind.so.2")])
+        plantestsuite("samba.nss.test using winbind(%s)" % env, env, [os.path.join(bbdir, "nsstest.sh"), nsstest4, os.path.join(samba4bindir, "plugins/libnss_wrapper_winbind.so.2")])
     else:
         skiptestsuite("samba.nss.test using winbind(%s)" % env, "nsstest not available")
 
@@ -798,8 +891,14 @@ def planoldpythontestsuite(env, module, name=None, extra_path=[], environ={}, ex
     plantestsuite_loadlist(name, env, args)
 
 if have_gnutls_fips_mode_support:
-    planoldpythontestsuite("ad_dc", "samba.tests.dcerpc.createtrustrelax", environ={'GNUTLS_FORCE_FIPS_MODE':'1'})
-    planoldpythontestsuite("ad_dc_fips", "samba.tests.dcerpc.createtrustrelax", environ={'GNUTLS_FORCE_FIPS_MODE':'1'})
+    planoldpythontestsuite("ad_dc",
+                           "samba.tests.dcerpc.createtrustrelax",
+                           environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                                    'OPENSSL_FORCE_FIPS_MODE': '1'})
+    planoldpythontestsuite("ad_dc_fips",
+                           "samba.tests.dcerpc.createtrustrelax",
+                           environ={'GNUTLS_FORCE_FIPS_MODE': '1',
+                                    'OPENSSL_FORCE_FIPS_MODE': '1'})
 
 # Run complex search expressions test once for each database backend.
 # Right now ad_dc has mdb and ad_dc_ntvfs has tdb
@@ -819,6 +918,7 @@ planpythontestsuite("ad_dc_default:local", "samba.tests.dcerpc.unix")
 planpythontestsuite("ad_dc_ntvfs:local", "samba.tests.dcerpc.srvsvc")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.timecmd")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.join")
+planpythontestsuite("ad_member_s3_join", "samba.tests.samba_tool.join_member")
 planpythontestsuite("ad_dc_default",
                     "samba.tests.samba_tool.join_lmdb_size")
 planpythontestsuite("ad_dc_default",
@@ -852,12 +952,18 @@ for env in ["ad_dc_ntvfs", "ad_dc"]:
     planpythontestsuite(env + ":local", "samba.tests.samba_tool.gpo_exts")
 
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.processes")
+
 planpythontestsuite("ad_dc_ntvfs:local", "samba.tests.samba_tool.user")
-planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.user_wdigest")
-planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user")
-planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user_virtualCryptSHA_userPassword")
-planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user_virtualCryptSHA_gpg")
+for env in ["ad_dc_default:local", "ad_dc_no_ntlm:local"]:
+    planpythontestsuite(env, "samba.tests.samba_tool.user_wdigest")
+for env, nt_hash in [("ad_dc:local", True),
+                     ("ad_dc_no_ntlm:local", False)]:
+    planpythontestsuite(env, "samba.tests.samba_tool.user",
+                        environ={"EXPECT_NT_HASH": int(nt_hash)})
+    planpythontestsuite(env, "samba.tests.samba_tool.user_virtualCryptSHA_userPassword")
+    planpythontestsuite(env, "samba.tests.samba_tool.user_virtualCryptSHA_gpg")
 planpythontestsuite("chgdcpass:local", "samba.tests.samba_tool.user_check_password_script")
+
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.group")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.ou")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.computer")
@@ -891,105 +997,102 @@ planpythontestsuite("chgdcpass:local", "samba.tests.samba_tool.dnscmd")
 planpythontestsuite("chgdcpass:local", "samba.tests.dcerpc.rpcecho")
 
 planoldpythontestsuite("nt4_dc", "samba.tests.netbios", extra_args=['-U"$USERNAME%$PASSWORD"'])
-planoldpythontestsuite("ad_dc:local", "samba.tests.gpo", extra_args=['-U"$USERNAME%$PASSWORD"'])
+test_bin = os.path.abspath(os.path.join(os.getenv('BINDIR', './bin'), '../python/samba/tests/bin'))
+planoldpythontestsuite("ad_dc:local", "samba.tests.gpo", extra_args=['-U"$USERNAME%$PASSWORD"'],
+                       environ={'PATH':':'.join([test_bin, os.getenv('PATH', '')])})
 planoldpythontestsuite("ad_member", "samba.tests.gpo_member", extra_args=['-U"$USERNAME%$PASSWORD"'])
 planoldpythontestsuite("ad_dc:local", "samba.tests.dckeytab", extra_args=['-U"$USERNAME%$PASSWORD"'])
+
+planoldpythontestsuite("ad_dc", "samba.tests.sid_strings")
 
 # Run the import test in environments that may not have the ad-dc built
 for env in ['fileserver_smb1', 'nt4_member', 'clusteredmember', 'ktest', 'nt4_dc', 'nt4_dc_smb1_done', 'nt4_dc_smb1', 'simpleserver', 'fileserver_smb1_done', 'fileserver', 'maptoguest', 'nt4_dc_schannel']:
     planoldpythontestsuite(env, "samba.tests.imports")
 
-have_fast_support = int('SAMBA_USES_MITKDC' in config_hash)
-tkt_sig_support = int('SAMBA4_USES_HEIMDAL' in config_hash)
+have_fast_support = 1
+claims_support = 0
+compound_id_support = 0
+if ('SAMBA4_USES_HEIMDAL' in config_hash or
+    'HAVE_MIT_KRB5_1_20' in config_hash):
+    tkt_sig_support = 1
+else:
+    tkt_sig_support = 0
+
+if 'SAMBA4_USES_HEIMDAL' in config_hash:
+    full_sig_support = 1
+else:
+    full_sig_support = 0
+
+gnutls_pbkdf2_support = int('HAVE_GNUTLS_PBKDF2' in config_hash)
+
+if 'HAVE_MIT_KRB5_1_20' in config_hash:
+    kadmin_is_tgs = 1
+else:
+    kadmin_is_tgs = 0
+
 expect_pac = int('SAMBA4_USES_HEIMDAL' in config_hash)
+extra_pac_buffers = int('SAMBA4_USES_HEIMDAL' in config_hash)
+check_cname = int('SAMBA4_USES_HEIMDAL' in config_hash)
+check_padata = int('SAMBA4_USES_HEIMDAL' in config_hash)
+krb5_environ = {
+    'SERVICE_USERNAME': '$SERVER',
+    'ADMIN_USERNAME': '$DC_USERNAME',
+    'ADMIN_PASSWORD': '$DC_PASSWORD',
+    'ADMIN_KVNO': '1',
+    'FOR_USER': '$DC_USERNAME',
+    'STRICT_CHECKING':'0',
+    'FAST_SUPPORT': have_fast_support,
+    'CLAIMS_SUPPORT': claims_support,
+    'COMPOUND_ID_SUPPORT': compound_id_support,
+    'TKT_SIG_SUPPORT': tkt_sig_support,
+    'FULL_SIG_SUPPORT': full_sig_support,
+    'GNUTLS_PBKDF2_SUPPORT': gnutls_pbkdf2_support,
+    'EXPECT_PAC': expect_pac,
+    'EXPECT_EXTRA_PAC_BUFFERS': extra_pac_buffers,
+    'CHECK_CNAME': check_cname,
+    'CHECK_PADATA': check_padata,
+    'KADMIN_IS_TGS': kadmin_is_tgs,
+}
 planoldpythontestsuite("none", "samba.tests.krb5.kcrypto")
 planoldpythontestsuite("ad_dc_default", "samba.tests.krb5.simple_tests",
-                       environ={'SERVICE_USERNAME':'$SERVER',
-                                'FAST_SUPPORT': have_fast_support,
-                                'TKT_SIG_SUPPORT': tkt_sig_support,
-                                'EXPECT_PAC': expect_pac})
-planoldpythontestsuite("ad_dc_default:local", "samba.tests.krb5.s4u_tests",
-                       environ={'ADMIN_USERNAME':'$USERNAME',
-                                'ADMIN_PASSWORD':'$PASSWORD',
-                                'FOR_USER':'$USERNAME',
-                                'STRICT_CHECKING':'0',
-                                'FAST_SUPPORT': have_fast_support,
-                                'TKT_SIG_SUPPORT': tkt_sig_support,
-                                'EXPECT_PAC': expect_pac})
+                       environ=krb5_environ)
+for env, fast_support in [("ad_dc_default:local", True),
+                          ("fl2003dc:local", False)]:
+    planoldpythontestsuite(env, "samba.tests.krb5.s4u_tests",
+                           environ={
+                               **krb5_environ,
+                               'FAST_SUPPORT': int(fast_support),
+                           })
 planoldpythontestsuite("rodc:local", "samba.tests.krb5.rodc_tests",
-                       environ={'ADMIN_USERNAME':'$USERNAME',
-                                'ADMIN_PASSWORD':'$PASSWORD',
-                                'STRICT_CHECKING':'0',
-                                'FAST_SUPPORT': have_fast_support,
-                                'TKT_SIG_SUPPORT': tkt_sig_support,
-                                'EXPECT_PAC': expect_pac})
+                       environ=krb5_environ)
 
 planoldpythontestsuite("ad_dc_default", "samba.tests.dsdb_dns")
 
 planoldpythontestsuite("fl2008r2dc:local", "samba.tests.krb5.xrealm_tests",
-                       environ={'FAST_SUPPORT': have_fast_support,
-                                'TKT_SIG_SUPPORT': tkt_sig_support,
-                                'EXPECT_PAC': expect_pac})
+                       environ=krb5_environ)
 
 planoldpythontestsuite("ad_dc_default", "samba.tests.krb5.test_ccache",
-                       environ={
-                           'ADMIN_USERNAME': '$USERNAME',
-                           'ADMIN_PASSWORD': '$PASSWORD',
-                           'STRICT_CHECKING': '0',
-                           'FAST_SUPPORT': have_fast_support,
-                           'TKT_SIG_SUPPORT': tkt_sig_support,
-                           'EXPECT_PAC': expect_pac
-                       })
+                       environ=krb5_environ)
 planoldpythontestsuite("ad_dc_default", "samba.tests.krb5.test_ldap",
-                       environ={
-                           'ADMIN_USERNAME': '$USERNAME',
-                           'ADMIN_PASSWORD': '$PASSWORD',
-                           'STRICT_CHECKING': '0',
-                           'FAST_SUPPORT': have_fast_support,
-                           'TKT_SIG_SUPPORT': tkt_sig_support,
-                           'EXPECT_PAC': expect_pac
-                       })
+                       environ=krb5_environ)
 for env in ['ad_dc_default', 'ad_member']:
     planoldpythontestsuite(env, "samba.tests.krb5.test_rpc",
-                           environ={
-                               'ADMIN_USERNAME': '$DC_USERNAME',
-                               'ADMIN_PASSWORD': '$DC_PASSWORD',
-                               'STRICT_CHECKING': '0',
-                               'FAST_SUPPORT': have_fast_support,
-                               'TKT_SIG_SUPPORT': tkt_sig_support,
-                               'EXPECT_PAC': expect_pac
-                           })
+                           environ=krb5_environ)
 planoldpythontestsuite("ad_dc_smb1", "samba.tests.krb5.test_smb",
-                       environ={
-                           'ADMIN_USERNAME': '$USERNAME',
-                           'ADMIN_PASSWORD': '$PASSWORD',
-                           'STRICT_CHECKING': '0',
-                           'FAST_SUPPORT': have_fast_support,
-                           'TKT_SIG_SUPPORT': tkt_sig_support,
-                           'EXPECT_PAC': expect_pac
-                       })
+                       environ=krb5_environ)
 planoldpythontestsuite("ad_member_idmap_nss:local",
                        "samba.tests.krb5.test_min_domain_uid",
-                       environ={
-                           'ADMIN_USERNAME': '$DC_USERNAME',
-                           'ADMIN_PASSWORD': '$DC_PASSWORD',
-                           'STRICT_CHECKING': '0'
-                       })
+                       environ=krb5_environ)
 planoldpythontestsuite("ad_member_idmap_nss:local",
                        "samba.tests.krb5.test_idmap_nss",
                        environ={
-                           'ADMIN_USERNAME': '$DC_USERNAME',
-                           'ADMIN_PASSWORD': '$DC_PASSWORD',
+                           **krb5_environ,
                            'MAPPED_USERNAME': 'bob',
                            'MAPPED_PASSWORD': 'Secret007',
                            'UNMAPPED_USERNAME': 'jane',
                            'UNMAPPED_PASSWORD': 'Secret007',
                            'INVALID_USERNAME': 'joe',
                            'INVALID_PASSWORD': 'Secret007',
-                           'STRICT_CHECKING': '0',
-                           'FAST_SUPPORT': have_fast_support,
-                           'TKT_SIG_SUPPORT': tkt_sig_support,
-                           'EXPECT_PAC': expect_pac
                        })
 
 for env in ["ad_dc", smbv1_disabled_testenv]:
@@ -1018,9 +1121,11 @@ if have_heimdal_support:
                            environ={'CLIENT_IP': '10.53.57.11',
                                     'SOCKET_WRAPPER_DEFAULT_IFACE': 11})
     planoldpythontestsuite("ad_dc_smb1", "samba.tests.auth_log_pass_change",
-                           extra_args=['-U"$USERNAME%$PASSWORD"'])
+                           extra_args=['-U"$USERNAME%$PASSWORD"'],
+                           environ={'GNUTLS_PBKDF2_SUPPORT': gnutls_pbkdf2_support})
     planoldpythontestsuite("ad_dc_ntvfs", "samba.tests.auth_log_pass_change",
-                           extra_args=['-U"$USERNAME%$PASSWORD"'])
+                           extra_args=['-U"$USERNAME%$PASSWORD"'],
+                           environ={'GNUTLS_PBKDF2_SUPPORT': gnutls_pbkdf2_support})
 
     # these tests use a NCA local RPC connection, so always run on the
     # :local testenv, and so don't need to fake a client connection
@@ -1037,7 +1142,8 @@ if have_heimdal_support:
                            "samba.tests.auth_log_winbind",
                            extra_args=['-U"$DC_USERNAME%$DC_PASSWORD"'])
     planoldpythontestsuite("ad_dc", "samba.tests.audit_log_pass_change",
-                           extra_args=['-U"$USERNAME%$PASSWORD"'])
+                           extra_args=['-U"$USERNAME%$PASSWORD"'],
+                           environ={'GNUTLS_PBKDF2_SUPPORT': gnutls_pbkdf2_support})
     planoldpythontestsuite("ad_dc", "samba.tests.audit_log_dsdb",
                            extra_args=['-U"$USERNAME%$PASSWORD"'])
     planoldpythontestsuite("ad_dc", "samba.tests.group_audit",
@@ -1161,6 +1267,8 @@ for env in ["ad_dc_ntvfs:local", "ad_dc:local",
 
 planoldpythontestsuite("none", "samba.tests.blackbox.downgradedatabase")
 
+planpythontestsuite("ad_member:local", "samba.tests.blackbox.netads_dns")
+
 plantestsuite_loadlist("samba4.ldap.python(ad_dc_default)", "ad_dc_default", [python, os.path.join(DSDB_PYTEST_DIR, "ldap.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
 
 plantestsuite_loadlist("samba4.ldap_modify_order.python(ad_dc_default)",
@@ -1210,8 +1318,8 @@ plantestsuite_loadlist("samba.tests.ldap_upn_sam_account", "ad_dc_ntvfs",
                         '$LOADLIST', '$LISTOPT'])
 
 
-plantestsuite_loadlist("samba4.tokengroups.krb5.python(ad_dc_default)", "ad_dc_default:local", [python, os.path.join(DSDB_PYTEST_DIR, "token_group.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '-k', 'yes', '$LOADLIST', '$LISTOPT'])
-plantestsuite_loadlist("samba4.tokengroups.ntlm.python(ad_dc_default)", "ad_dc_default:local", [python, os.path.join(DSDB_PYTEST_DIR, "token_group.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '-k', 'no', '$LOADLIST', '$LISTOPT'])
+plantestsuite_loadlist("samba4.tokengroups.krb5.python", "ad_dc_default:local", [python, os.path.join(DSDB_PYTEST_DIR, "token_group.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '-k', 'yes', '$LOADLIST', '$LISTOPT'])
+plantestsuite_loadlist("samba4.tokengroups.ntlm.python", "ad_dc_default:local", [python, os.path.join(DSDB_PYTEST_DIR, "token_group.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '-k', 'no', '$LOADLIST', '$LISTOPT'])
 plantestsuite("samba4.sam.python(fl2008r2dc)", "fl2008r2dc", [python, os.path.join(DSDB_PYTEST_DIR, "sam.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN'])
 plantestsuite("samba4.sam.python(ad_dc_default)", "ad_dc_default", [python, os.path.join(DSDB_PYTEST_DIR, "sam.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN'])
 plantestsuite("samba4.asq.python(ad_dc_default)", "ad_dc_default", [python, os.path.join(DSDB_PYTEST_DIR, "asq.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN'])
@@ -1230,6 +1338,7 @@ for env in ['ad_dc_default:local', 'schema_dc:local']:
 plantestsuite_loadlist("samba4.urgent_replication.python(ad_dc_ntvfs)", "ad_dc_ntvfs:local", [python, os.path.join(DSDB_PYTEST_DIR, "urgent_replication.py"), '$PREFIX_ABS/ad_dc_ntvfs/private/sam.ldb', '$LOADLIST', '$LISTOPT'])
 plantestsuite_loadlist("samba4.ldap.dirsync.python(ad_dc_ntvfs)", "ad_dc_ntvfs", [python, os.path.join(DSDB_PYTEST_DIR, "dirsync.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
 plantestsuite_loadlist("samba4.ldap.match_rules.python", "ad_dc_ntvfs", [python, os.path.join(srcdir(), "lib/ldb-samba/tests/match_rules.py"), '$PREFIX_ABS/ad_dc_ntvfs/private/sam.ldb', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
+plantestsuite_loadlist("samba4.ldap.match_rules.python", "ad_dc_ntvfs", [python, os.path.join(srcdir(), "lib/ldb-samba/tests/match_rules_remote.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
 plantestsuite("samba4.ldap.index.python", "none", [python, os.path.join(srcdir(), "lib/ldb-samba/tests/index.py")])
 plantestsuite_loadlist("samba4.ldap.notification.python(ad_dc_ntvfs)", "ad_dc_ntvfs", [python, os.path.join(DSDB_PYTEST_DIR, "notification.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
 plantestsuite_loadlist("samba4.ldap.sites.python(ad_dc_default)", "ad_dc_default", [python, os.path.join(DSDB_PYTEST_DIR, "sites.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
@@ -1325,6 +1434,9 @@ for env in all_fl_envs + ["schema_dc"]:
     plantestsuite("samba4.ldap.possibleInferiors.python(%s)" % env, env, [python, os.path.join(samba4srcdir, "dsdb/samdb/ldb_modules/tests/possibleinferiors.py"), "ldap://$SERVER", '-U"$USERNAME%$PASSWORD"', "-W$DOMAIN"])
     plantestsuite_loadlist("samba4.ldap.secdesc.python(%s)" % env, env, [python, os.path.join(DSDB_PYTEST_DIR, "sec_descriptor.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
     plantestsuite_loadlist("samba4.ldap.acl.python(%s)" % env, env, ["STRICT_CHECKING=0", python, os.path.join(DSDB_PYTEST_DIR, "acl.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
+    plantestsuite_loadlist("samba4.ldap.acl_modify.python(%s)" % env, env, ["STRICT_CHECKING=0", python, os.path.join(DSDB_PYTEST_DIR, "acl_modify.py"), '$SERVER', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
+
+for env in all_fl_envs + ["schema_dc", "ad_dc_no_ntlm"]:
     if env != "fl2000dc":
         # This test makes excessive use of the "userPassword" attribute which
         # isn't available on DCs with Windows 2000 domain function level -
@@ -1348,7 +1460,7 @@ for env in ["ad_dc_slowtests"]:
                            extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
 
 # this is a basic sanity-check of Kerberos/NTLM user login
-for env in ["offlinebackupdc", "restoredc", "renamedc", "labdc"]:
+for env in ["offlinebackupdc", "restoredc", "renamedc", "labdc", "ad_dc_no_ntlm"]:
     plantestsuite_loadlist("samba4.ldap.login_basics.python(%s)" % env, env,
                            [python, os.path.join(DSDB_PYTEST_DIR, "login_basics.py"),
                             "$SERVER", '-U"$USERNAME%$PASSWORD"', "-W$DOMAIN", "--realm=$REALM",
@@ -1430,6 +1542,9 @@ planoldpythontestsuite(env, "ridalloc_exop",
 #
 # That is why this test is run on the isolated environment and not on
 # those connected with ad_dc (vampiredc/promoteddc)
+#
+# The chgdcpass enviroment is likewise isolated and emulates Samba 4.5
+# with regard to GET_ANC
 
 env = 'schema_pair_dc'
 planoldpythontestsuite("%s:local" % env, "samba_tool_drs",
@@ -1437,6 +1552,12 @@ planoldpythontestsuite("%s:local" % env, "samba_tool_drs",
                        name="samba4.drs.samba_tool_drs.python(%s)" % env,
                        environ={'DC1': '$DC_SERVER', 'DC2': '$SERVER'},
                        extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
+for env in ['chgdcpass', 'schema_pair_dc']:
+    planoldpythontestsuite("%s:local" % env, "samba_tool_drs_critical",
+                           extra_path=[os.path.join(samba4srcdir, 'torture/drs/python')],
+                           name="samba4.drs.samba_tool_drs_critical.python(%s)" % env,
+                           environ={'DC1': '$DC_SERVER', 'DC2': '$SERVER'},
+                           extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
 planoldpythontestsuite(env, "getnc_schema",
                        extra_path=[os.path.join(samba4srcdir, 'torture/drs/python')],
                        name="samba4.drs.getnc_schema.python(%s)" % env,
@@ -1449,7 +1570,8 @@ planoldpythontestsuite(env, "getnc_schema",
 # not the set of environments connected with ad_dc.
 
 # This will show the replication state of ad_dc
-planoldpythontestsuite("promoted_dc:local", "samba_tool_drs_showrepl",
+env = "schema_pair_dc"
+planoldpythontestsuite("%s:local" % env, "samba_tool_drs_showrepl",
                        extra_path=[os.path.join(samba4srcdir, 'torture/drs/python')],
                        name="samba4.drs.samba_tool_drs_showrepl.python(%s)" % env,
                        environ={'DC1': '$DC_SERVER', 'DC2': '$SERVER'},
@@ -1481,11 +1603,6 @@ for env in ['vampire_dc', 'promoted_dc']:
                            name="samba4.drs.repl_move.python(%s)" % env,
                            environ={'DC1': "$DC_SERVER", 'DC2': '$SERVER'},
                            extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
-    planoldpythontestsuite(env, "getnc_exop",
-                           extra_path=[os.path.join(samba4srcdir, 'torture/drs/python')],
-                           name="samba4.drs.getnc_exop.python(%s)" % env,
-                           environ={'DC1': "$DC_SERVER", 'DC2': '$SERVER'},
-                           extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
     planoldpythontestsuite(env, "getnc_unpriv",
                            extra_path=[os.path.join(samba4srcdir, 'torture/drs/python')],
                            name="samba4.drs.getnc_unpriv.python(%s)" % env,
@@ -1501,6 +1618,15 @@ for env in ['vampire_dc', 'promoted_dc']:
                            name="samba4.drs.link_conflicts.python(%s)" % env,
                            environ={'DC1': "$DC_SERVER", 'DC2': '$SERVER'},
 			   extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
+
+# Environment chgdcpass has the Samba 4.5 GET_ANC behaviour, which we
+# set a knownfail to expect
+for env in ['vampire_dc', 'promoted_dc', 'chgdcpass']:
+    planoldpythontestsuite(env, "getnc_exop",
+                           extra_path=[os.path.join(samba4srcdir, 'torture/drs/python')],
+                           name="samba4.drs.getnc_exop.python(%s)" % env,
+                           environ={'DC1': "$DC_SERVER", 'DC2': '$SERVER'},
+                           extra_args=['-U$DOMAIN/$DC_USERNAME%$DC_PASSWORD'])
 
 for env in ['vampire_dc', 'promoted_dc', 'vampire_2000_dc']:
     planoldpythontestsuite(env, "repl_schema",
@@ -1534,7 +1660,7 @@ for env in ['ad_dc_ntvfs']:
 planoldpythontestsuite("chgdcpass:local", "samba.tests.blackbox.samba_dnsupdate",
                        environ={'DNS_SERVER_IP': '$SERVER_IP'})
 
-for env in ["ad_dc_ntvfs", "s4member", "rodc", "promoted_dc", "ad_dc", "ad_member"]:
+for env in ["s4member", "rodc", "promoted_dc", "ad_dc", "ad_member"]:
     plantestsuite("samba.blackbox.wbinfo(%s:local)" % env, "%s:local" % env, [os.path.join(samba4srcdir, "../nsswitch/tests/test_wbinfo.sh"), '$DOMAIN', '$DC_USERNAME', '$DC_PASSWORD', env])
 
 # Offline logon (ad_member)
@@ -1577,25 +1703,17 @@ plansmbtorture4testsuite('krb5.kdc', env, ['ncacn_np:$SERVER_IP', "-k", "yes", '
                                            '--option=torture:krb5-service=http'],
                          "samba4.krb5.kdc with account having identical UPN and SPN")
 for env in ["fl2008r2dc", "fl2003dc"]:
+    fast_support = have_fast_support
+    if env in ["fl2003dc"]:
+        fast_support = 0
     planoldpythontestsuite(env, "samba.tests.krb5.as_req_tests",
                            environ={
-                               'ADMIN_USERNAME': '$USERNAME',
-                               'ADMIN_PASSWORD': '$PASSWORD',
-                               'STRICT_CHECKING': '0',
-                               'FAST_SUPPORT': have_fast_support,
-                               'TKT_SIG_SUPPORT': tkt_sig_support,
-                               'EXPECT_PAC': expect_pac
+                               **krb5_environ,
+                               'FAST_SUPPORT': fast_support,
                            })
 
 planoldpythontestsuite('fl2008r2dc', 'samba.tests.krb5.salt_tests',
-                       environ={
-                           'ADMIN_USERNAME': '$USERNAME',
-                           'ADMIN_PASSWORD': '$PASSWORD',
-                           'STRICT_CHECKING': '0',
-                           'FAST_SUPPORT': have_fast_support,
-                           'TKT_SIG_SUPPORT': tkt_sig_support,
-                           'EXPECT_PAC': expect_pac
-                       })
+                       environ=krb5_environ)
 
 for env in ["rodc", "promoted_dc", "fl2000dc", "fl2008r2dc"]:
     if env == "rodc":
@@ -1612,81 +1730,81 @@ for env in ["rodc", "promoted_dc", "fl2000dc", "fl2008r2dc"]:
                              "samba4.krb5.kdc with machine account")
 
 planpythontestsuite("ad_dc", "samba.tests.krb5.as_canonicalization_tests",
-                       environ={
-                           'ADMIN_USERNAME': '$USERNAME',
-                           'ADMIN_PASSWORD': '$PASSWORD',
-                           'FAST_SUPPORT': have_fast_support,
-                           'TKT_SIG_SUPPORT': tkt_sig_support,
-                           'EXPECT_PAC': expect_pac
-                       })
-planpythontestsuite("ad_dc", "samba.tests.krb5.compatability_tests",
-                    environ={
-                        'ADMIN_USERNAME': '$USERNAME',
-                        'ADMIN_PASSWORD': '$PASSWORD',
-                        'STRICT_CHECKING': '0',
-                        'FAST_SUPPORT': have_fast_support,
-                        'TKT_SIG_SUPPORT': tkt_sig_support,
-                        'EXPECT_PAC': expect_pac
-                    })
+                    environ=krb5_environ)
+for env, fast_support in [("ad_dc", True),
+                          ("fl2003dc", False)]:
+    planpythontestsuite(env, "samba.tests.krb5.compatability_tests",
+                        environ={
+                            **krb5_environ,
+                            'FAST_SUPPORT': int(fast_support),
+                        })
 planpythontestsuite("ad_dc", "samba.tests.krb5.kdc_tests",
-                    environ={'FAST_SUPPORT': have_fast_support,
-                             'TKT_SIG_SUPPORT': tkt_sig_support,
-                             'EXPECT_PAC': expect_pac})
+                    environ=krb5_environ)
 planpythontestsuite(
     "ad_dc",
     "samba.tests.krb5.kdc_tgs_tests",
-    environ={
-        'ADMIN_USERNAME': '$USERNAME',
-        'ADMIN_PASSWORD': '$PASSWORD',
-        'STRICT_CHECKING': '0',
-        'FAST_SUPPORT': have_fast_support,
-        'TKT_SIG_SUPPORT': tkt_sig_support,
-        'EXPECT_PAC': expect_pac
-    })
+    environ=krb5_environ)
 planpythontestsuite(
     "ad_dc",
     "samba.tests.krb5.fast_tests",
-    environ={
-        'ADMIN_USERNAME': '$USERNAME',
-        'ADMIN_PASSWORD': '$PASSWORD',
-        'STRICT_CHECKING': '0',
-        'FAST_SUPPORT': have_fast_support,
-        'TKT_SIG_SUPPORT': tkt_sig_support,
-        'EXPECT_PAC': expect_pac
-    })
+    environ=krb5_environ)
 planpythontestsuite(
     "ad_dc",
     "samba.tests.krb5.ms_kile_client_principal_lookup_tests",
-    environ={
-        'ADMIN_USERNAME': '$USERNAME',
-        'ADMIN_PASSWORD': '$PASSWORD',
-        'STRICT_CHECKING': '0',
-        'FAST_SUPPORT': have_fast_support,
-        'TKT_SIG_SUPPORT': tkt_sig_support,
-        'EXPECT_PAC': expect_pac
-    })
+    environ=krb5_environ)
 planpythontestsuite(
     "ad_dc",
     "samba.tests.krb5.spn_tests",
-    environ={
-        'ADMIN_USERNAME': '$USERNAME',
-        'ADMIN_PASSWORD': '$PASSWORD',
-        'STRICT_CHECKING': '0',
-        'FAST_SUPPORT': have_fast_support,
-        'TKT_SIG_SUPPORT': tkt_sig_support,
-        'EXPECT_PAC': expect_pac
-    })
+    environ=krb5_environ)
 planpythontestsuite(
     "ad_dc",
     "samba.tests.krb5.alias_tests",
-    environ={
-        'ADMIN_USERNAME': '$USERNAME',
-        'ADMIN_PASSWORD': '$PASSWORD',
-        'STRICT_CHECKING': '0',
-        'FAST_SUPPORT': have_fast_support,
-        'TKT_SIG_SUPPORT': tkt_sig_support,
-        'EXPECT_PAC': expect_pac
+    environ=krb5_environ)
+planoldpythontestsuite(
+    'ad_dc',
+    'samba.tests.krb5.pac_align_tests',
+    environ=krb5_environ)
+planoldpythontestsuite(
+    'ad_dc',
+    'samba.tests.krb5.protected_users_tests',
+    environ=krb5_environ)
+for env, nt_hash in [("ad_dc:local", True),
+                     ("ad_dc_no_ntlm:local", False)]:
+    planoldpythontestsuite(
+        env,
+        'samba.tests.krb5.nt_hash_tests',
+        environ={
+            **krb5_environ,
+            'EXPECT_NT_HASH': int(nt_hash),
     })
+planoldpythontestsuite(
+    'ad_dc',
+    'samba.tests.krb5.kpasswd_tests',
+    environ=krb5_environ)
+planoldpythontestsuite(
+    'ad_dc',
+    'samba.tests.krb5.claims_tests',
+    environ=krb5_environ)
+planoldpythontestsuite(
+    'ad_dc:local',
+    'samba.tests.krb5.lockout_tests',
+    environ=krb5_environ)
+planoldpythontestsuite(
+    'ad_dc',
+    'samba.tests.krb5.group_tests',
+    environ=krb5_environ)
+for env, forced_rc4 in [('ad_dc', False),
+                        ('promoted_dc', True)]:
+    planoldpythontestsuite(
+        env,
+        'samba.tests.krb5.etype_tests',
+        environ={
+            **krb5_environ,
+            'DC_SERVER': '$SERVER',
+            'DC_SERVER_IP': '$SERVER_IP',
+            'DC_SERVER_IPV6': '$SERVER_IPV6',
+            'FORCED_RC4': int(forced_rc4),
+        })
 
 for env in [
         'vampire_dc',
@@ -1702,7 +1820,7 @@ for env in [
 
 planpythontestsuite("ad_dc_default:local", "samba.tests.kcc.kcc_utils")
 
-for env in ["simpleserver", "fileserver", "nt4_dc", "ad_dc", "ad_dc_ntvfs",
+for env in ["simpleserver", "fileserver", "nt4_dc", "ad_dc",
             "ad_member", "offlinebackupdc", "restoredc", "renamedc", "labdc", 'schema_pair_dc']:
     planoldpythontestsuite(env, "netlogonsvc",
                            extra_path=[os.path.join(srcdir(), 'python/samba/tests')],
@@ -1726,7 +1844,7 @@ for env in ['vampire_dc', 'promoted_dc', 'rodc']:
 # TODO: Verifying the databases really should be a part of the
 # environment teardown.
 # check the databases are all OK. PLEASE LEAVE THIS AS THE LAST TEST
-for env in ["ad_dc_ntvfs", "ad_dc", "fl2000dc", "fl2003dc", "fl2008r2dc",
+for env in ["ad_dc", "fl2000dc", "fl2003dc", "fl2008r2dc",
             'vampire_dc', 'promoted_dc', 'backupfromdc', 'restoredc',
             'renamedc', 'offlinebackupdc', 'labdc']:
     plantestsuite("samba4.blackbox.dbcheck(%s)" % env, env + ":local", ["PYTHON=%s" % python, os.path.join(bbdir, "dbcheck.sh"), '$PREFIX/provision', configuration])
@@ -1803,3 +1921,4 @@ planoldpythontestsuite("proclimitdc",
 
 planoldpythontestsuite("none", "samba.tests.usage")
 planpythontestsuite("fileserver", "samba.tests.dcerpc.mdssvc")
+planoldpythontestsuite("none", "samba.tests.compression")

@@ -19,16 +19,19 @@
 
 import sys
 import os
-from enum import Enum, unique
-import pyasn1
 
 sys.path.insert(0, "bin/python")
 os.environ["PYTHONUNBUFFERED"] = "1"
 
+from enum import Enum, unique
+import pyasn1
+
 from samba.tests.krb5.kdc_base_test import KDCBaseTest
 import samba.tests.krb5.rfc4120_pyasn1 as krb5_asn1
 from samba.credentials import DONT_USE_KERBEROS
+from samba.dcerpc import krb5pac
 from samba.dcerpc.misc import SEC_CHAN_WKSTA
+from samba.ndr import ndr_unpack
 from samba.tests import DynamicTestCase
 from samba.tests.krb5.rfc4120_constants import (
     AES256_CTS_HMAC_SHA1_96,
@@ -39,6 +42,7 @@ from samba.tests.krb5.rfc4120_constants import (
     KU_AS_REP_ENC_PART,
     KRB_ERROR,
     KU_PA_ENC_TIMESTAMP,
+    KU_TICKET,
     PADATA_ENC_TIMESTAMP,
     NT_ENTERPRISE_PRINCIPAL,
     NT_PRINCIPAL,
@@ -135,6 +139,12 @@ USER_NAME = "tstkrb5cnnusr"
 class KerberosASCanonicalizationTests(KDCBaseTest):
 
     @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user_creds = None
+        cls.machine_creds = None
+
+    @classmethod
     def setUpDynamicTestCases(cls):
 
         def skip(ct, options):
@@ -164,14 +174,14 @@ class KerberosASCanonicalizationTests(KDCBaseTest):
     def user_account_creds(self):
         if self.user_creds is None:
             samdb = self.get_samdb()
-            self.user_creds, _ = self.create_account(samdb, USER_NAME)
+            type(self).user_creds, _ = self.create_account(samdb, USER_NAME)
 
         return self.user_creds
 
     def machine_account_creds(self):
         if self.machine_creds is None:
             samdb = self.get_samdb()
-            self.machine_creds, _ = self.create_account(
+            type(self).machine_creds, _ = self.create_account(
                 samdb,
                 MACHINE_NAME,
                 account_type=self.AccountType.COMPUTER)
@@ -184,9 +194,6 @@ class KerberosASCanonicalizationTests(KDCBaseTest):
         super().setUp()
         self.do_asn1_print = global_asn1_print
         self.do_hexdump = global_hexdump
-
-        self.user_creds = None
-        self.machine_creds = None
 
     def _test_with_args(self, x, ct):
         if ct == CredentialsType.User:
@@ -225,6 +232,38 @@ class KerberosASCanonicalizationTests(KDCBaseTest):
 
             srealm = as_rep['srealm'].decode('ascii')
             self.check_srealm(srealm, data)
+
+            if TestOptions.AsReqSelf.is_set(data.options):
+                ticket_creds = creds
+            else:
+                ticket_creds = self.get_krbtgt_creds()
+            ticket_key = self.TicketDecryptionKey_from_creds(ticket_creds)
+
+            ticket_encpart = rep['ticket']['enc-part']
+            self.assertElementEqual(ticket_encpart, 'etype',
+                                    ticket_key.etype)
+            self.assertElementEqual(ticket_encpart, 'kvno',
+                                    ticket_key.kvno)
+            ticket_decpart = ticket_key.decrypt(KU_TICKET,
+                                                ticket_encpart['cipher'])
+            ticket_private = self.der_decode(
+                ticket_decpart,
+                asn1Spec=krb5_asn1.EncTicketPart())
+
+            pac_data = self.get_pac(ticket_private['authorization-data'])
+            pac = ndr_unpack(krb5pac.PAC_DATA, pac_data)
+
+            for pac_buffer in pac.buffers:
+                if pac_buffer.type == krb5pac.PAC_TYPE_LOGON_NAME:
+                    if TestOptions.Canonicalize.is_set(data.options):
+                        expected = data.user_creds.get_username()
+                    else:
+                        expected = data.user_name
+
+                    self.assertEqual(expected, pac_buffer.info.account_name)
+                    break
+            else:
+                self.fail('PAC_TYPE_LOGON_NAME not found')
 
     def as_req(self, data):
         user_creds = data.user_creds

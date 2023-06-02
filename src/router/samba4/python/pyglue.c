@@ -1,18 +1,18 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2007
    Copyright (C) Matthias Dieter Wallnöfer          2009
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -37,9 +37,15 @@ static PyObject *py_generate_random_str(PyObject *self, PyObject *args)
 	int len;
 	PyObject *ret;
 	char *retstr;
-	if (!PyArg_ParseTuple(args, "i", &len))
+	if (!PyArg_ParseTuple(args, "i", &len)) {
 		return NULL;
-
+	}
+	if (len < 0) {
+		PyErr_Format(PyExc_ValueError,
+			     "random string length should be positive, not %d",
+			     len);
+		return NULL;
+	}
 	retstr = generate_random_str(NULL, len);
 	ret = PyUnicode_FromString(retstr);
 	talloc_free(retstr);
@@ -51,11 +57,28 @@ static PyObject *py_generate_random_password(PyObject *self, PyObject *args)
 	int min, max;
 	PyObject *ret;
 	char *retstr;
-	if (!PyArg_ParseTuple(args, "ii", &min, &max))
+	if (!PyArg_ParseTuple(args, "ii", &min, &max)) {
 		return NULL;
+	}
+	if (max < 0 || min < 0) {
+		/*
+		 * The real range checks happen in generate_random_password().
+		 * Here we are just checking the values won't overflow into
+		 * numbers when cast to size_t.
+		 */
+		PyErr_Format(PyExc_ValueError,
+			     "invalid range: %d - %d",
+			     min, max);
+		return NULL;
+	}
 
 	retstr = generate_random_password(NULL, min, max);
 	if (retstr == NULL) {
+		if (errno == EINVAL) {
+			PyErr_Format(PyExc_ValueError,
+				     "invalid range: %d - %d",
+				     min, max);
+		}
 		return NULL;
 	}
 	ret = PyUnicode_FromString(retstr);
@@ -68,11 +91,29 @@ static PyObject *py_generate_random_machine_password(PyObject *self, PyObject *a
 	int min, max;
 	PyObject *ret;
 	char *retstr;
-	if (!PyArg_ParseTuple(args, "ii", &min, &max))
+	if (!PyArg_ParseTuple(args, "ii", &min, &max)) {
 		return NULL;
+	}
+	if (max < 0 || min < 0) {
+		/*
+		 * The real range checks happen in
+		 * generate_random_machine_password().
+		 * Here we are just checking the values won't overflow into
+		 * numbers when cast to size_t.
+		 */
+		PyErr_Format(PyExc_ValueError,
+			     "invalid range: %d - %d",
+			     min, max);
+		return NULL;
+	}
 
 	retstr = generate_random_machine_password(NULL, min, max);
 	if (retstr == NULL) {
+		if (errno == EINVAL) {
+			PyErr_Format(PyExc_ValueError,
+				     "invalid range: %d - %d",
+				     min, max);
+		}
 		return NULL;
 	}
 	ret = PyUnicode_FromString(retstr);
@@ -97,10 +138,20 @@ static PyObject *py_generate_random_bytes(PyObject *self, PyObject *args)
 	PyObject *ret;
 	uint8_t *bytes = NULL;
 
-	if (!PyArg_ParseTuple(args, "i", &len))
+	if (!PyArg_ParseTuple(args, "i", &len)) {
 		return NULL;
-
+	}
+	if (len < 0) {
+		PyErr_Format(PyExc_ValueError,
+			     "random bytes length should be positive, not %d",
+			     len);
+		return NULL;
+	}
 	bytes = talloc_zero_size(NULL, len);
+	if (bytes == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
 	generate_random_buffer(bytes, len);
 	ret = PyBytes_FromStringAndSize((const char *)bytes, len);
 	talloc_free(bytes);
@@ -518,4 +569,3 @@ MODULE_INIT_FUNC(_glue)
 
 	return m;
 }
-

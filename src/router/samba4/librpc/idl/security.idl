@@ -206,6 +206,15 @@ interface security
 		 SEC_ADS_GENERIC_READ           |
 		 SEC_ADS_GENERIC_ALL_DS);
 
+	/*
+	 * Rights implicitly granted to a user who is an owner of the security
+	 * descriptor being processed.
+	 */
+	typedef enum {
+		IMPLICIT_OWNER_READ_CONTROL_RIGHTS,
+		IMPLICIT_OWNER_READ_CONTROL_AND_WRITE_DAC_RIGHTS
+	} implicit_owner_rights;
+
 	/***************************************************************/
 	/* WELL KNOWN SIDS */
 
@@ -274,16 +283,24 @@ interface security
 	const string SID_BUILTIN_AUTH_ACCESS 		= "S-1-5-32-560";
 	const string SID_BUILTIN_TS_LICENSE_SERVERS	= "S-1-5-32-561";
 	const string SID_BUILTIN_DISTRIBUTED_COM_USERS	= "S-1-5-32-562";
+	const string SID_BUILTIN_IUSERS		= "S-1-5-32-568";
 	const string SID_BUILTIN_CRYPTO_OPERATORS	= "S-1-5-32-569";
 	const string SID_BUILTIN_EVENT_LOG_READERS	= "S-1-5-32-573";
 	const string SID_BUILTIN_CERT_SERV_DCOM_ACCESS	= "S-1-5-32-574";
+	const string SID_BUILTIN_RDS_REMOTE_ACCESS_SERVERS	= "S-1-5-32-575";
+	const string SID_BUILTIN_RDS_ENDPOINT_SERVERS	= "S-1-5-32-576";
+	const string SID_BUILTIN_RDS_MANAGEMENT_SERVERS	= "S-1-5-32-577";
+	const string SID_BUILTIN_HYPER_V_ADMINS	= "S-1-5-32-578";
+	const string SID_BUILTIN_ACCESS_CONTROL_ASSISTANCE_OPS	= "S-1-5-32-579";
+	const string SID_BUILTIN_REMOTE_MANAGEMENT_USERS	= "S-1-5-32-580";
+	const string SID_BUILTIN_SYSTEM_MANAGED_ACCOUNTS_GRP	= "S-1-5-32-581";
+	const string SID_BUILTIN_STORAGE_REPLICA_ADMINISTRATORS	= "S-1-5-32-582";
+
+	const string SID_SECURITY_RESTRICTED_CODE = "S-1-5-33";
 
 	/* UID/GID mapping Samba style */
 	const string SID_SAMBA_UNIX_USER_OWNER		= "S-1-22-1";
 	const string SID_SAMBA_UNIX_GROUP_OWNER		= "S-1-22-2";
-
-	/* Information passing via security token */
-	const string SID_SAMBA_SMB3			= "S-1-22-1397571891";
 
 	/* SECURITY_NT_SERVICE */
 	const string NAME_NT_SERVICE            = "NT SERVICE";
@@ -292,11 +309,32 @@ interface security
 	const string SID_NT_TRUSTED_INSTALLER =
 		"S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464";
 
+	/*
+	 * This is added during the AS-REQ/AS-REP exchange after
+	 * pre-authentication was successful.
+	 */
 	const string SID_AUTHENTICATION_AUTHORITY_ASSERTED_IDENTITY = "S-1-18-1";
+	/*
+	 * This is added during S4U2Self PAC creation.
+	 *
+	 * It won't replace a possible
+	 * SID_AUTHENTICATION_AUTHORITY_ASSERTED_IDENTITY
+	 * during S4U2Proxy.
+	 */
 	const string SID_SERVICE_ASSERTED_IDENTITY = "S-1-18-2";
 
 	const string SID_COMPOUNDED_AUTHENTICATION = "S-1-5-21-0-0-0-496";
 	const string SID_CLAIMS_VALID = "S-1-5-21-0-0-0-497";
+
+	const string SID_USER_MODE_DRIVERS = "S-1-5-84-0-0-0-0-0";
+
+	const string SID_SECURITY_BUILTIN_PACKAGE_ANY_PACKAGE = "S-1-15-2-1";
+
+	const string SID_SECURITY_MANDATORY_LOW = "S-1-16-4096";
+	const string SID_SECURITY_MANDATORY_MEDIUM = "S-1-16-8192";
+	const string SID_SECURITY_MANDATORY_MEDIUM_PLUS = "S-1-16-8448";
+	const string SID_SECURITY_MANDATORY_HIGH = "S-1-16-12288";
+	const string SID_SECURITY_MANDATORY_SYSTEM = "S-1-16-16384";
 
 	/*
 	 * http://technet.microsoft.com/en-us/library/hh509017(v=ws.10).aspx
@@ -323,6 +361,10 @@ interface security
 	const int DOMAIN_RID_ENTERPRISE_ADMINS       = 519;
 	const int DOMAIN_RID_POLICY_ADMINS           = 520;
 	const int DOMAIN_RID_READONLY_DCS            = 521;
+	const int DOMAIN_RID_CLONEABLE_CONTROLLERS   = 522;
+	const int DOMAIN_RID_PROTECTED_USERS         = 525;
+	const int DOMAIN_RID_KEY_ADMINS              = 526;
+	const int DOMAIN_RID_ENTERPRISE_KEY_ADMINS   = 527;
 	const int DOMAIN_RID_RAS_SERVERS             = 553;
 	const int DOMAIN_RID_RODC_ALLOW              = 571;
 	const int DOMAIN_RID_RODC_DENY               = 572;
@@ -347,9 +389,16 @@ interface security
 	const int BUILTIN_RID_AUTH_ACCESS		= 560;
 	const int BUILTIN_RID_TS_LICENSE_SERVERS	= 561;
 	const int BUILTIN_RID_DISTRIBUTED_COM_USERS	= 562;
+	const int BUILTIN_RID_IUSERS			= 568;
 	const int BUILTIN_RID_CRYPTO_OPERATORS		= 569;
 	const int BUILTIN_RID_EVENT_LOG_READERS		= 573;
 	const int BUILTIN_RID_CERT_SERV_DCOM_ACCESS	= 574;
+	const int BUILTIN_RID_RDS_REMOTE_ACCESS_SERVERS	= 575;
+	const int BUILTIN_RID_RDS_ENDPOINT_SERVERS	= 576;
+	const int BUILTIN_RID_RDS_MANAGEMENT_SERVERS	= 577;
+	const int BUILTIN_RID_HYPER_V_ADMINS	= 578;
+	const int BUILTIN_RID_ACCESS_CONTROL_ASSISTANCE_OPS	= 579;
+	const int BUILTIN_RID_REMOTE_MANAGEMENT_USERS	= 580;
 
 /********************************************************************
  This is a list of privileges reported by a WIndows 2008 R2 DC
@@ -685,6 +734,7 @@ interface security
 		KERB_ENCTYPE_RC4_HMAC_MD5            = 0x00000004,
 		KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 = 0x00000008,
 		KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96 = 0x00000010,
+		KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK = 0x00000020,
 		KERB_ENCTYPE_FAST_SUPPORTED          = 0x00010000,
 		KERB_ENCTYPE_COMPOUND_IDENTITY_SUPPORTED = 0x00020000,
 		KERB_ENCTYPE_CLAIMS_SUPPORTED        = 0x00040000,

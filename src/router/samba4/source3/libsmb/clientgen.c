@@ -238,7 +238,7 @@ static void _cli_shutdown(struct cli_state *cli)
 	cli_nt_pipes_close(cli);
 
 	/*
-	 * tell our peer to free his resources.  Wihtout this, when an
+	 * tell our peer to free his resources.  Without this, when an
 	 * application attempts to do a graceful shutdown and calls
 	 * smbc_free_context() to clean up all connections, some connections
 	 * can remain active on the peer end, until some (long) timeout period
@@ -359,7 +359,7 @@ uint32_t cli_state_set_tid(struct cli_state *cli, uint32_t tid)
 	return ret;
 }
 
-struct smbXcli_tcon *cli_state_save_tcon(struct cli_state *cli)
+static struct smbXcli_tcon *cli_state_save_tcon(struct cli_state *cli)
 {
 	/*
 	 * Note. This used to make a deep copy of either
@@ -394,7 +394,21 @@ struct smbXcli_tcon *cli_state_save_tcon(struct cli_state *cli)
 	return tcon_ret;
 }
 
-void cli_state_restore_tcon(struct cli_state *cli, struct smbXcli_tcon *tcon)
+void cli_state_save_tcon_share(struct cli_state *cli,
+			       struct smbXcli_tcon **_tcon_ret,
+			       char **_sharename_ret)
+{
+	*_tcon_ret = cli_state_save_tcon(cli);
+	/*
+	 * No talloc_copy as cli->share is already
+	 * allocated off cli.
+	 */
+	*_sharename_ret = cli->share;
+	cli->share = NULL;
+}
+
+static void cli_state_restore_tcon(struct cli_state *cli,
+				   struct smbXcli_tcon *tcon)
 {
 	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
 		TALLOC_FREE(cli->smb2.tcon);
@@ -403,6 +417,16 @@ void cli_state_restore_tcon(struct cli_state *cli, struct smbXcli_tcon *tcon)
 		TALLOC_FREE(cli->smb1.tcon);
 		cli->smb1.tcon = tcon;
 	}
+}
+
+void cli_state_restore_tcon_share(struct cli_state *cli,
+				  struct smbXcli_tcon *tcon,
+				  char *share)
+{
+	/* cli->share will have been replaced by a cli_tree_connect() call. */
+	TALLOC_FREE(cli->share);
+	cli->share = share;
+	cli_state_restore_tcon(cli, tcon);
 }
 
 uint16_t cli_state_get_uid(struct cli_state *cli)

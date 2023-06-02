@@ -42,8 +42,10 @@
 #include "librpc/gen_ndr/ndr_irpc.h"
 #include "librpc/gen_ndr/ndr_winbind.h"
 #include "librpc/gen_ndr/ndr_winbind_c.h"
+#include "librpc/rpc/server/netlogon/schannel_util.h"
 #include "lib/socket/netif.h"
 #include "lib/util/util_str_escape.h"
+#include "lib/param/loadparm.h"
 
 #define DCESRV_INTERFACE_NETLOGON_BIND(context, iface) \
        dcesrv_interface_netlogon_bind(context, iface)
@@ -62,14 +64,59 @@
 static NTSTATUS dcesrv_interface_netlogon_bind(struct dcesrv_connection_context *context,
 					       const struct dcesrv_interface *iface)
 {
+	struct loadparm_context *lp_ctx = context->conn->dce_ctx->lp_ctx;
+	bool global_allow_nt4_crypto = lpcfg_allow_nt4_crypto(lp_ctx);
+	bool global_reject_md5_client = lpcfg_reject_md5_clients(lp_ctx);
+	int schannel = lpcfg_server_schannel(lp_ctx);
+	bool schannel_global_required = (schannel == true);
+	bool global_require_seal = lpcfg_server_schannel_require_seal(lp_ctx);
+	static bool warned_global_nt4_once = false;
+	static bool warned_global_md5_once = false;
+	static bool warned_global_schannel_once = false;
+	static bool warned_global_seal_once = false;
+
+	if (global_allow_nt4_crypto && !warned_global_nt4_once) {
+		/*
+		 * We want admins to notice their misconfiguration!
+		 */
+		D_ERR("CVE-2022-38023 (and others): "
+		      "Please configure 'allow nt4 crypto = no' (the default), "
+		      "See https://bugzilla.samba.org/show_bug.cgi?id=15240\n");
+		warned_global_nt4_once = true;
+	}
+
+	if (!global_reject_md5_client && !warned_global_md5_once) {
+		/*
+		 * We want admins to notice their misconfiguration!
+		 */
+		D_ERR("CVE-2022-38023: "
+		      "Please configure 'reject md5 clients = yes' (the default), "
+		      "See https://bugzilla.samba.org/show_bug.cgi?id=15240\n");
+		warned_global_md5_once = true;
+	}
+
+	if (!schannel_global_required && !warned_global_schannel_once) {
+		/*
+		 * We want admins to notice their misconfiguration!
+		 */
+		D_ERR("CVE-2020-1472(ZeroLogon): "
+		      "Please configure 'server schannel = yes' (the default), "
+		      "See https://bugzilla.samba.org/show_bug.cgi?id=14497\n");
+		warned_global_schannel_once = true;
+	}
+
+	if (!global_require_seal && !warned_global_seal_once) {
+		/*
+		 * We want admins to notice their misconfiguration!
+		 */
+		D_ERR("CVE-2022-38023 (and others): "
+		      "Please configure 'server schannel require seal = yes' (the default), "
+		      "See https://bugzilla.samba.org/show_bug.cgi?id=15240\n");
+		warned_global_seal_once = true;
+	}
+
 	return dcesrv_interface_bind_reject_connect(context, iface);
 }
-
-#define NETLOGON_SERVER_PIPE_STATE_MAGIC 0x4f555358
-struct netlogon_server_pipe_state {
-	struct netr_Credential client_challenge;
-	struct netr_Credential server_challenge;
-};
 
 static NTSTATUS dcesrv_netr_ServerReqChallenge(struct dcesrv_call_state *dce_call, TALLOC_CTX *mem_ctx,
 					struct netr_ServerReqChallenge *r)
@@ -115,6 +162,231 @@ static NTSTATUS dcesrv_netr_ServerReqChallenge(struct dcesrv_call_state *dce_cal
 	return NT_STATUS_OK;
 }
 
+static NTSTATUS dcesrv_netr_ServerAuthenticate3_check_downgrade(
+	struct dcesrv_call_state *dce_call,
+	struct netr_ServerAuthenticate3 *r,
+	struct netlogon_server_pipe_state *pipe_state,
+	uint32_t negotiate_flags,
+	const char *trust_account_in_db,
+	NTSTATUS orig_status)
+{
+	struct loadparm_context *lp_ctx = dce_call->conn->dce_ctx->lp_ctx;
+	bool global_allow_nt4_crypto = lpcfg_allow_nt4_crypto(lp_ctx);
+	bool account_allow_nt4_crypto = global_allow_nt4_crypto;
+	const char *explicit_nt4_opt = NULL;
+	bool global_reject_md5_client = lpcfg_reject_md5_clients(lp_ctx);
+	bool account_reject_md5_client = global_reject_md5_client;
+	const char *explicit_md5_opt = NULL;
+	bool reject_des_client;
+	bool allow_nt4_crypto;
+	bool reject_md5_client;
+	bool need_des = true;
+	bool need_md5 = true;
+	int CVE_2022_38023_warn_level = lpcfg_parm_int(lp_ctx, NULL,
+			"CVE_2022_38023", "warn_about_unused_debug_level", DBGLVL_ERR);
+	int CVE_2022_38023_error_level = lpcfg_parm_int(lp_ctx, NULL,
+			"CVE_2022_38023", "error_debug_level", DBGLVL_ERR);
+
+	/*
+	 * We don't use lpcfg_parm_bool(), as we
+	 * need the explicit_opt pointer in order to
+	 * adjust the debug messages.
+	 */
+
+	if (trust_account_in_db != NULL) {
+		explicit_nt4_opt = lpcfg_get_parametric(lp_ctx,
+							NULL,
+							"allow nt4 crypto",
+							trust_account_in_db);
+	}
+	if (explicit_nt4_opt != NULL) {
+		account_allow_nt4_crypto = lp_bool(explicit_nt4_opt);
+	}
+	allow_nt4_crypto = account_allow_nt4_crypto;
+	if (trust_account_in_db != NULL) {
+		explicit_md5_opt = lpcfg_get_parametric(lp_ctx,
+							NULL,
+							"server reject md5 schannel",
+							trust_account_in_db);
+	}
+	if (explicit_md5_opt != NULL) {
+		account_reject_md5_client = lp_bool(explicit_md5_opt);
+	}
+	reject_md5_client = account_reject_md5_client;
+
+	reject_des_client = !allow_nt4_crypto;
+
+	/*
+	 * If weak cryto is disabled, do not announce that we support RC4.
+	 */
+	if (lpcfg_weak_crypto(lp_ctx) == SAMBA_WEAK_CRYPTO_DISALLOWED) {
+		/* Without RC4 and DES we require AES */
+		reject_des_client = true;
+		reject_md5_client = true;
+	}
+
+	if (negotiate_flags & NETLOGON_NEG_STRONG_KEYS) {
+		need_des = false;
+		reject_des_client = false;
+	}
+
+	if (negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+		need_des = false;
+		need_md5 = false;
+		reject_des_client = false;
+		reject_md5_client = false;
+	}
+
+	if (reject_des_client || reject_md5_client) {
+		TALLOC_CTX *frame = talloc_stackframe();
+
+		if (lpcfg_weak_crypto(lp_ctx) == SAMBA_WEAK_CRYPTO_DISALLOWED) {
+			if (CVE_2022_38023_error_level < DBGLVL_NOTICE) {
+				CVE_2022_38023_error_level = DBGLVL_NOTICE;
+			}
+			DEBUG(CVE_2022_38023_error_level, (
+			      "CVE-2022-38023: "
+			      "client_account[%s] computer_name[%s] "
+			      "schannel_type[%u] "
+			      "client_negotiate_flags[0x%x] "
+			      "%s%s%s "
+			      "NT_STATUS_DOWNGRADE_DETECTED "
+			      "WEAK_CRYPTO_DISALLOWED\n",
+			      log_escape(frame, r->in.account_name),
+			      log_escape(frame, r->in.computer_name),
+			      r->in.secure_channel_type,
+			      (unsigned)*r->in.negotiate_flags,
+			      trust_account_in_db ? "real_account[" : "",
+			      trust_account_in_db ? trust_account_in_db : "",
+			      trust_account_in_db ? "]" : ""));
+			goto return_downgrade;
+		}
+
+		DEBUG(CVE_2022_38023_error_level, (
+		      "CVE-2022-38023: "
+		      "client_account[%s] computer_name[%s] "
+		      "schannel_type[%u] "
+		      "client_negotiate_flags[0x%x] "
+		      "%s%s%s "
+		      "NT_STATUS_DOWNGRADE_DETECTED "
+		      "reject_des[%u] reject_md5[%u]\n",
+		      log_escape(frame, r->in.account_name),
+		      log_escape(frame, r->in.computer_name),
+		      r->in.secure_channel_type,
+		      (unsigned)*r->in.negotiate_flags,
+		      trust_account_in_db ? "real_account[" : "",
+		      trust_account_in_db ? trust_account_in_db : "",
+		      trust_account_in_db ? "]" : "",
+		      reject_des_client,
+		      reject_md5_client));
+		if (trust_account_in_db == NULL) {
+			goto return_downgrade;
+		}
+
+		if (reject_md5_client && explicit_md5_opt == NULL) {
+			DEBUG(CVE_2022_38023_error_level, (
+			      "CVE-2022-38023: Check if option "
+			      "'server reject md5 schannel:%s = no' "
+			      "might be needed for a legacy client.\n",
+			      trust_account_in_db));
+		}
+		if (reject_des_client && explicit_nt4_opt == NULL) {
+			DEBUG(CVE_2022_38023_error_level, (
+			      "CVE-2022-38023: Check if option "
+			      "'allow nt4 crypto:%s = yes' "
+			      "might be needed for a legacy client.\n",
+			      trust_account_in_db));
+		}
+
+return_downgrade:
+		/*
+		 * Here we match Windows 2012 and return no flags.
+		 */
+		*r->out.negotiate_flags = 0;
+		TALLOC_FREE(frame);
+		return NT_STATUS_DOWNGRADE_DETECTED;
+	}
+
+	/*
+	 * This talloc_free is important to prevent re-use of the
+	 * challenge.  We have to delay it this far due to NETApp
+	 * servers per:
+	 * https://bugzilla.samba.org/show_bug.cgi?id=11291
+	 */
+	TALLOC_FREE(pipe_state);
+
+	/*
+	 * At this point we must also cleanup the TDB cache
+	 * entry, if we fail the client needs to call
+	 * netr_ServerReqChallenge again.
+	 *
+	 * Note: this handles a non existing record just fine,
+	 * the r->in.computer_name might not be the one used
+	 * in netr_ServerReqChallenge(), but we are trying to
+	 * just tidy up the normal case to prevent re-use.
+	 */
+	schannel_delete_challenge(dce_call->conn->dce_ctx->lp_ctx,
+				  r->in.computer_name);
+
+	/*
+	 * According to Microsoft (see bugid #6099)
+	 * Windows 7 looks at the negotiate_flags
+	 * returned in this structure *even if the
+	 * call fails with access denied!
+	 */
+	*r->out.negotiate_flags = negotiate_flags;
+
+	if (!NT_STATUS_IS_OK(orig_status) || trust_account_in_db == NULL) {
+		return orig_status;
+	}
+
+	if (global_reject_md5_client && account_reject_md5_client && explicit_md5_opt) {
+		D_INFO("CVE-2022-38023: Check if option "
+		       "'server reject md5 schannel:%s = yes' not needed!?\n",
+		       trust_account_in_db);
+	} else if (need_md5 && !account_reject_md5_client && explicit_md5_opt) {
+		D_INFO("CVE-2022-38023: Check if option "
+			 "'server reject md5 schannel:%s = no' "
+			 "still needed for a legacy client.\n",
+			 trust_account_in_db);
+	} else if (need_md5 && explicit_md5_opt == NULL) {
+		DEBUG(CVE_2022_38023_error_level, (
+		      "CVE-2022-38023: Check if option "
+		      "'server reject md5 schannel:%s = no' "
+		      "might be needed for a legacy client.\n",
+		      trust_account_in_db));
+	} else if (!account_reject_md5_client && explicit_md5_opt) {
+		DEBUG(CVE_2022_38023_warn_level, (
+		      "CVE-2022-38023: Check if option "
+		      "'server reject md5 schannel:%s = no' not needed!?\n",
+		      trust_account_in_db));
+	}
+
+	if (!global_allow_nt4_crypto && !account_allow_nt4_crypto && explicit_nt4_opt) {
+		D_INFO("CVE-2022-38023: Check if option "
+		       "'allow nt4 crypto:%s = no' not needed!?\n",
+		       trust_account_in_db);
+	} else if (need_des && account_allow_nt4_crypto && explicit_nt4_opt) {
+		D_INFO("CVE-2022-38023: Check if option "
+			 "'allow nt4 crypto:%s = yes' "
+			 "still needed for a legacy client.\n",
+			 trust_account_in_db);
+	} else if (need_des && explicit_nt4_opt == NULL) {
+		DEBUG(CVE_2022_38023_error_level, (
+		      "CVE-2022-38023: Check if option "
+		      "'allow nt4 crypto:%s = yes' "
+		      "might be needed for a legacy client.\n",
+		      trust_account_in_db));
+	} else if (account_allow_nt4_crypto && explicit_nt4_opt) {
+		DEBUG(CVE_2022_38023_warn_level, (
+		      "CVE-2022-38023: Check if option "
+		      "'allow nt4 crypto:%s = yes' not needed!?\n",
+		      trust_account_in_db));
+	}
+
+	return orig_status;
+}
+
 /*
  * Do the actual processing of a netr_ServerAuthenticate3 message.
  * called from dcesrv_netr_ServerAuthenticate3, which handles the logging.
@@ -142,11 +414,9 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 			       "objectSid", "samAccountName", NULL};
 	uint32_t server_flags = 0;
 	uint32_t negotiate_flags = 0;
-	bool allow_nt4_crypto = lpcfg_allow_nt4_crypto(dce_call->conn->dce_ctx->lp_ctx);
-	bool reject_des_client = !allow_nt4_crypto;
-	bool reject_md5_client = lpcfg_reject_md5_clients(dce_call->conn->dce_ctx->lp_ctx);
 
 	ZERO_STRUCTP(r->out.return_credentials);
+	*r->out.negotiate_flags = 0;
 	*r->out.rid = 0;
 
 	pipe_state = dcesrv_iface_state_find_conn(dce_call,
@@ -223,53 +493,15 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 		       NETLOGON_NEG_AUTHENTICATED_RPC_LSASS |
 		       NETLOGON_NEG_AUTHENTICATED_RPC;
 
+	/*
+	 * If weak cryto is disabled, do not announce that we support RC4.
+	 */
+	if (lpcfg_weak_crypto(dce_call->conn->dce_ctx->lp_ctx) ==
+	    SAMBA_WEAK_CRYPTO_DISALLOWED) {
+		server_flags &= ~NETLOGON_NEG_ARCFOUR;
+	}
+
 	negotiate_flags = *r->in.negotiate_flags & server_flags;
-
-	if (negotiate_flags & NETLOGON_NEG_STRONG_KEYS) {
-		reject_des_client = false;
-	}
-
-	if (negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
-		reject_des_client = false;
-		reject_md5_client = false;
-	}
-
-	if (reject_des_client || reject_md5_client) {
-		/*
-		 * Here we match Windows 2012 and return no flags.
-		 */
-		*r->out.negotiate_flags = 0;
-		return NT_STATUS_DOWNGRADE_DETECTED;
-	}
-
-	/*
-	 * This talloc_free is important to prevent re-use of the
-	 * challenge.  We have to delay it this far due to NETApp
-	 * servers per:
-	 * https://bugzilla.samba.org/show_bug.cgi?id=11291
-	 */
-	TALLOC_FREE(pipe_state);
-
-	/*
-	 * At this point we must also cleanup the TDB cache
-	 * entry, if we fail the client needs to call
-	 * netr_ServerReqChallenge again.
-	 *
-	 * Note: this handles a non existing record just fine,
-	 * the r->in.computer_name might not be the one used
-	 * in netr_ServerReqChallenge(), but we are trying to
-	 * just tidy up the normal case to prevent re-use.
-	 */
-	schannel_delete_challenge(dce_call->conn->dce_ctx->lp_ctx,
-				  r->in.computer_name);
-
-	/*
-	 * According to Microsoft (see bugid #6099)
-	 * Windows 7 looks at the negotiate_flags
-	 * returned in this structure *even if the
-	 * call fails with access denied!
-	 */
-	*r->out.negotiate_flags = negotiate_flags;
 
 	switch (r->in.secure_channel_type) {
 	case SEC_CHAN_WKSTA:
@@ -279,16 +511,25 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 	case SEC_CHAN_RODC:
 		break;
 	case SEC_CHAN_NULL:
-		return NT_STATUS_INVALID_PARAMETER;
+		return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_INVALID_PARAMETER);
 	default:
 		DEBUG(1, ("Client asked for an invalid secure channel type: %d\n",
 			  r->in.secure_channel_type));
-		return NT_STATUS_INVALID_PARAMETER;
+		return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_INVALID_PARAMETER);
 	}
 
 	sam_ctx = dcesrv_samdb_connect_as_system(mem_ctx, dce_call);
 	if (sam_ctx == NULL) {
-		return NT_STATUS_INVALID_SYSTEM_SERVICE;
+		return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_INVALID_SYSTEM_SERVICE);
 	}
 
 	if (r->in.secure_channel_type == SEC_CHAN_DOMAIN ||
@@ -317,16 +558,25 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 		encoded_name = ldb_binary_encode_string(mem_ctx,
 							r->in.account_name);
 		if (encoded_name == NULL) {
-			return NT_STATUS_NO_MEMORY;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_MEMORY);
 		}
 
 		len = strlen(encoded_name);
 		if (len < 2) {
-			return NT_STATUS_NO_TRUST_SAM_ACCOUNT;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_TRUST_SAM_ACCOUNT);
 		}
 
 		if (require_trailer && encoded_name[len - 1] != trailer) {
-			return NT_STATUS_NO_TRUST_SAM_ACCOUNT;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_TRUST_SAM_ACCOUNT);
 		}
 		encoded_name[len - 1] = '\0';
 
@@ -344,30 +594,48 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 				  "but there's no tdo for [%s] => [%s] \n",
 				  log_escape(mem_ctx, r->in.account_name),
 				  encoded_name));
-			return NT_STATUS_NO_TRUST_SAM_ACCOUNT;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_TRUST_SAM_ACCOUNT);
 		}
 		if (!NT_STATUS_IS_OK(nt_status)) {
-			return nt_status;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				nt_status);
 		}
 
 		nt_status = dsdb_trust_get_incoming_passwords(tdo_msg, mem_ctx,
 							      &curNtHash,
 							      &prevNtHash);
 		if (NT_STATUS_EQUAL(nt_status, NT_STATUS_ACCOUNT_DISABLED)) {
-			return NT_STATUS_NO_TRUST_SAM_ACCOUNT;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_TRUST_SAM_ACCOUNT);
 		}
 		if (!NT_STATUS_IS_OK(nt_status)) {
-			return nt_status;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				nt_status);
 		}
 
 		flatname = ldb_msg_find_attr_as_string(tdo_msg, "flatName", NULL);
 		if (flatname == NULL) {
-			return NT_STATUS_NO_TRUST_SAM_ACCOUNT;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_TRUST_SAM_ACCOUNT);
 		}
 
 		*trust_account_for_search = talloc_asprintf(mem_ctx, "%s$", flatname);
 		if (*trust_account_for_search == NULL) {
-			return NT_STATUS_NO_MEMORY;
+			return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_MEMORY);
 		}
 	} else {
 		*trust_account_for_search = r->in.account_name;
@@ -382,14 +650,20 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 	if (num_records == 0) {
 		DEBUG(3,("Couldn't find user [%s] in samdb.\n",
 			 log_escape(mem_ctx, r->in.account_name)));
-		return NT_STATUS_NO_TRUST_SAM_ACCOUNT;
+		return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_NO_TRUST_SAM_ACCOUNT);
 	}
 
 	if (num_records > 1) {
 		DEBUG(0,("Found %d records matching user [%s]\n",
 			 num_records,
 			 log_escape(mem_ctx, r->in.account_name)));
-		return NT_STATUS_INTERNAL_DB_CORRUPTION;
+		return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_INTERNAL_DB_CORRUPTION);
 	}
 
 	*trust_account_in_db = ldb_msg_find_attr_as_string(msgs[0],
@@ -398,9 +672,20 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 	if (*trust_account_in_db == NULL) {
 		DEBUG(0,("No samAccountName returned in record matching user [%s]\n",
 			 r->in.account_name));
-		return NT_STATUS_INTERNAL_DB_CORRUPTION;
+		return dcesrv_netr_ServerAuthenticate3_check_downgrade(
+				dce_call, r, pipe_state, negotiate_flags,
+				NULL, /* trust_account_in_db */
+				NT_STATUS_INTERNAL_DB_CORRUPTION);
 	}
-	
+
+	nt_status = dcesrv_netr_ServerAuthenticate3_check_downgrade(
+			dce_call, r, pipe_state, negotiate_flags,
+			*trust_account_in_db,
+			NT_STATUS_OK);
+	if (!NT_STATUS_IS_OK(nt_status)) {
+		return nt_status;
+	}
+
 	user_account_control = ldb_msg_find_attr_as_uint(msgs[0], "userAccountControl", 0);
 
 	if (user_account_control & UF_ACCOUNTDISABLE) {
@@ -439,7 +724,7 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate3_helper(
 	if (!(user_account_control & UF_INTERDOMAIN_TRUST_ACCOUNT)) {
 		nt_status = samdb_result_passwords_no_lockout(mem_ctx,
 					dce_call->conn->dce_ctx->lp_ctx,
-					msgs[0], NULL, &curNtHash);
+					msgs[0], &curNtHash);
 		if (!NT_STATUS_IS_OK(nt_status)) {
 			return NT_STATUS_ACCESS_DENIED;
 		}
@@ -606,132 +891,6 @@ static NTSTATUS dcesrv_netr_ServerAuthenticate2(struct dcesrv_call_state *dce_ca
 }
 
 /*
- * NOTE: The following functions are nearly identical to the ones available in
- * source3/rpc_server/srv_nelog_nt.c
- * The reason we keep 2 copies is that they use different structures to
- * represent the auth_info and the decrpc pipes.
- */
-static NTSTATUS dcesrv_netr_creds_server_step_check(struct dcesrv_call_state *dce_call,
-						    TALLOC_CTX *mem_ctx,
-						    const char *computer_name,
-						    struct netr_Authenticator *received_authenticator,
-						    struct netr_Authenticator *return_authenticator,
-						    struct netlogon_creds_CredentialState **creds_out)
-{
-	NTSTATUS nt_status;
-	int schannel = lpcfg_server_schannel(dce_call->conn->dce_ctx->lp_ctx);
-	bool schannel_global_required = (schannel == true);
-	bool schannel_required = schannel_global_required;
-	const char *explicit_opt = NULL;
-	struct netlogon_creds_CredentialState *creds = NULL;
-	enum dcerpc_AuthType auth_type = DCERPC_AUTH_TYPE_NONE;
-	uint16_t opnum = dce_call->pkt.u.request.opnum;
-	const char *opname = "<unknown>";
-	static bool warned_global_once = false;
-
-	if (opnum < ndr_table_netlogon.num_calls) {
-		opname = ndr_table_netlogon.calls[opnum].name;
-	}
-
-	dcesrv_call_auth_info(dce_call, &auth_type, NULL);
-
-	nt_status = schannel_check_creds_state(mem_ctx,
-					       dce_call->conn->dce_ctx->lp_ctx,
-					       computer_name,
-					       received_authenticator,
-					       return_authenticator,
-					       &creds);
-	if (!NT_STATUS_IS_OK(nt_status)) {
-		ZERO_STRUCTP(return_authenticator);
-		return nt_status;
-	}
-
-	/*
-	 * We don't use lpcfg_parm_bool(), as we
-	 * need the explicit_opt pointer in order to
-	 * adjust the debug messages.
-	 */
-	explicit_opt = lpcfg_get_parametric(dce_call->conn->dce_ctx->lp_ctx,
-					    NULL,
-					    "server require schannel",
-					    creds->account_name);
-	if (explicit_opt != NULL) {
-		schannel_required = lp_bool(explicit_opt);
-	}
-
-	if (schannel_required) {
-		if (auth_type == DCERPC_AUTH_TYPE_SCHANNEL) {
-			*creds_out = creds;
-			return NT_STATUS_OK;
-		}
-
-		DBG_ERR("CVE-2020-1472(ZeroLogon): "
-			"%s request (opnum[%u]) without schannel from "
-			"client_account[%s] client_computer_name[%s]\n",
-			opname, opnum,
-			log_escape(mem_ctx, creds->account_name),
-			log_escape(mem_ctx, creds->computer_name));
-		DBG_ERR("CVE-2020-1472(ZeroLogon): Check if option "
-			"'server require schannel:%s = no' is needed! \n",
-			log_escape(mem_ctx, creds->account_name));
-		TALLOC_FREE(creds);
-		ZERO_STRUCTP(return_authenticator);
-		return NT_STATUS_ACCESS_DENIED;
-	}
-
-	if (!schannel_global_required && !warned_global_once) {
-		/*
-		 * We want admins to notice their misconfiguration!
-		 */
-		DBG_ERR("CVE-2020-1472(ZeroLogon): "
-			"Please configure 'server schannel = yes', "
-			"See https://bugzilla.samba.org/show_bug.cgi?id=14497\n");
-		warned_global_once = true;
-	}
-
-	if (auth_type == DCERPC_AUTH_TYPE_SCHANNEL) {
-		DBG_ERR("CVE-2020-1472(ZeroLogon): "
-			"%s request (opnum[%u]) WITH schannel from "
-			"client_account[%s] client_computer_name[%s]\n",
-			opname, opnum,
-			log_escape(mem_ctx, creds->account_name),
-			log_escape(mem_ctx, creds->computer_name));
-		DBG_ERR("CVE-2020-1472(ZeroLogon): "
-			"Option 'server require schannel:%s = no' not needed!?\n",
-			log_escape(mem_ctx, creds->account_name));
-
-		*creds_out = creds;
-		return NT_STATUS_OK;
-	}
-
-
-	if (explicit_opt != NULL) {
-		DBG_INFO("CVE-2020-1472(ZeroLogon): "
-			 "%s request (opnum[%u]) without schannel from "
-			 "client_account[%s] client_computer_name[%s]\n",
-			 opname, opnum,
-			 log_escape(mem_ctx, creds->account_name),
-			 log_escape(mem_ctx, creds->computer_name));
-		DBG_INFO("CVE-2020-1472(ZeroLogon): "
-			 "Option 'server require schannel:%s = no' still needed!\n",
-			 log_escape(mem_ctx, creds->account_name));
-	} else {
-		DBG_ERR("CVE-2020-1472(ZeroLogon): "
-			"%s request (opnum[%u]) without schannel from "
-			"client_account[%s] client_computer_name[%s]\n",
-			opname, opnum,
-			log_escape(mem_ctx, creds->account_name),
-			log_escape(mem_ctx, creds->computer_name));
-		DBG_ERR("CVE-2020-1472(ZeroLogon): Check if option "
-			"'server require schannel:%s = no' might be needed!\n",
-			log_escape(mem_ctx, creds->account_name));
-	}
-
-	*creds_out = creds;
-	return NT_STATUS_OK;
-}
-
-/*
   Change the machine account password for the currently connected
   client.  Supplies only the NT#.
 */
@@ -741,11 +900,7 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet(struct dcesrv_call_state *dce_call
 {
 	struct netlogon_creds_CredentialState *creds;
 	struct ldb_context *sam_ctx;
-	const char * const attrs[] = { "unicodePwd", NULL };
-	struct ldb_message **res;
-	struct samr_Password *oldNtHash;
 	NTSTATUS nt_status;
-	int ret;
 
 	nt_status = dcesrv_netr_creds_server_step_check(dce_call,
 							mem_ctx,
@@ -762,29 +917,13 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet(struct dcesrv_call_state *dce_call
 	nt_status = netlogon_creds_des_decrypt(creds, r->in.new_password);
 	NT_STATUS_NOT_OK_RETURN(nt_status);
 
-	/* fetch the old password hashes (the NT hash has to exist) */
-
-	ret = gendb_search(sam_ctx, mem_ctx, NULL, &res, attrs,
-			   "(&(objectClass=user)(objectSid=%s))",
-			   ldap_encode_ndr_dom_sid(mem_ctx, creds->sid));
-	if (ret != 1) {
-		return NT_STATUS_WRONG_PASSWORD;
-	}
-
-	nt_status = samdb_result_passwords_no_lockout(mem_ctx,
-						      dce_call->conn->dce_ctx->lp_ctx,
-						      res[0], NULL, &oldNtHash);
-	if (!NT_STATUS_IS_OK(nt_status) || !oldNtHash) {
-		return NT_STATUS_WRONG_PASSWORD;
-	}
-
 	/* Using the sid for the account as the key, set the password */
 	nt_status = samdb_set_password_sid(sam_ctx, mem_ctx,
 					   creds->sid,
 					   NULL, /* Don't have version */
 					   NULL, /* Don't have plaintext */
-					   NULL, r->in.new_password,
-					   NULL, oldNtHash, /* Password change */
+					   r->in.new_password,
+					   DSDB_PASSWORD_CHECKED_AND_CORRECT, /* Password change */
 					   NULL, NULL);
 	return nt_status;
 }
@@ -798,9 +937,6 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 {
 	struct netlogon_creds_CredentialState *creds;
 	struct ldb_context *sam_ctx;
-	const char * const attrs[] = { "dBCSPwd", "unicodePwd", NULL };
-	struct ldb_message **res;
-	struct samr_Password *oldLmHash, *oldNtHash;
 	struct NL_PASSWORD_VERSION version = {};
 	const uint32_t *new_version = NULL;
 	NTSTATUS nt_status;
@@ -808,7 +944,6 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 	size_t confounder_len;
 	DATA_BLOB dec_blob = data_blob_null;
 	DATA_BLOB enc_blob = data_blob_null;
-	int ret;
 	struct samr_CryptPassword password_buf;
 
 	nt_status = dcesrv_netr_creds_server_step_check(dce_call,
@@ -894,7 +1029,7 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 	confounder_len = 512 - new_password.length;
 	enc_blob = data_blob_const(r->in.new_password->data, confounder_len);
 	dec_blob = data_blob_const(password_buf.data, confounder_len);
-	if (confounder_len > 0 && data_blob_cmp(&dec_blob, &enc_blob) == 0) {
+	if (confounder_len > 0 && data_blob_equal_const_time(&dec_blob, &enc_blob)) {
 		DBG_WARNING("Confounder buffer not encrypted Length[%zu]\n",
 			    confounder_len);
 		return NT_STATUS_WRONG_PASSWORD;
@@ -908,7 +1043,7 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 				   new_password.length);
 	dec_blob = data_blob_const(password_buf.data + confounder_len,
 				   new_password.length);
-	if (data_blob_cmp(&dec_blob, &enc_blob) == 0) {
+	if (data_blob_equal_const_time(&dec_blob, &enc_blob)) {
 		DBG_WARNING("Password buffer not encrypted Length[%zu]\n",
 			    new_password.length);
 		return NT_STATUS_WRONG_PASSWORD;
@@ -923,29 +1058,13 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 		return NT_STATUS_WRONG_PASSWORD;
 	}
 
-	/* fetch the old password hashes (at least one of both has to exist) */
-
-	ret = gendb_search(sam_ctx, mem_ctx, NULL, &res, attrs,
-			   "(&(objectClass=user)(objectSid=%s))",
-			   ldap_encode_ndr_dom_sid(mem_ctx, creds->sid));
-	if (ret != 1) {
-		return NT_STATUS_WRONG_PASSWORD;
-	}
-
-	nt_status = samdb_result_passwords_no_lockout(mem_ctx,
-						      dce_call->conn->dce_ctx->lp_ctx,
-						      res[0], &oldLmHash, &oldNtHash);
-	if (!NT_STATUS_IS_OK(nt_status) || (!oldLmHash && !oldNtHash)) {
-		return NT_STATUS_WRONG_PASSWORD;
-	}
-
 	/* Using the sid for the account as the key, set the password */
 	nt_status = samdb_set_password_sid(sam_ctx, mem_ctx,
 					   creds->sid,
 					   new_version,
 					   &new_password, /* we have plaintext */
-					   NULL, NULL,
-					   oldLmHash, oldNtHash, /* Password change */
+					   NULL,
+					   DSDB_PASSWORD_CHECKED_AND_CORRECT, /* Password change */
 					   NULL, NULL);
 	return nt_status;
 }
@@ -1093,6 +1212,35 @@ static NTSTATUS dcesrv_netr_LogonSamLogon_base_call(struct dcesrv_netr_LogonSamL
 	struct auth_usersupplied_info *user_info = NULL;
 	NTSTATUS nt_status;
 	struct tevent_req *subreq = NULL;
+	enum dcerpc_AuthType auth_type = DCERPC_AUTH_TYPE_NONE;
+	enum dcerpc_AuthLevel auth_level = DCERPC_AUTH_LEVEL_NONE;
+
+	dcesrv_call_auth_info(dce_call, &auth_type, &auth_level);
+
+	switch (dce_call->pkt.u.request.opnum) {
+	case NDR_NETR_LOGONSAMLOGON:
+	case NDR_NETR_LOGONSAMLOGONWITHFLAGS:
+		/*
+		 * These already called dcesrv_netr_check_schannel()
+		 * via dcesrv_netr_creds_server_step_check()
+		 */
+		break;
+	case NDR_NETR_LOGONSAMLOGONEX:
+	default:
+		if (auth_type != DCERPC_AUTH_TYPE_SCHANNEL) {
+			return NT_STATUS_ACCESS_DENIED;
+		}
+
+		nt_status = dcesrv_netr_check_schannel(dce_call,
+						       creds,
+						       auth_type,
+						       auth_level,
+						       dce_call->pkt.u.request.opnum);
+		if (!NT_STATUS_IS_OK(nt_status)) {
+			return nt_status;
+		}
+		break;
+	}
 
 	*r->out.authoritative = 1;
 
@@ -1441,7 +1589,6 @@ static void dcesrv_netr_LogonSamLogon_base_reply(
 static NTSTATUS dcesrv_netr_LogonSamLogonEx(struct dcesrv_call_state *dce_call, TALLOC_CTX *mem_ctx,
 				     struct netr_LogonSamLogonEx *r)
 {
-	enum dcerpc_AuthType auth_type = DCERPC_AUTH_TYPE_NONE;
 	struct dcesrv_netr_LogonSamLogon_base_state *state;
 	NTSTATUS nt_status;
 
@@ -1477,12 +1624,6 @@ static NTSTATUS dcesrv_netr_LogonSamLogonEx(struct dcesrv_call_state *dce_call, 
 					     r->in.computer_name, &state->creds);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		return nt_status;
-	}
-
-	dcesrv_call_auth_info(dce_call, &auth_type, NULL);
-
-	if (auth_type != DCERPC_AUTH_TYPE_SCHANNEL) {
-		return NT_STATUS_ACCESS_DENIED;
 	}
 
 	nt_status = dcesrv_netr_LogonSamLogon_base_call(state);
@@ -2450,7 +2591,7 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 	};
 	const char * const attrs2[] = { "sAMAccountName", "dNSHostName",
 		"msDS-SupportedEncryptionTypes", NULL };
-	const char *sam_account_name, *old_dns_hostname, *prefix1, *prefix2;
+	const char *sam_account_name, *old_dns_hostname;
 	struct ldb_context *sam_ctx;
 	const struct GUID *our_domain_guid = NULL;
 	struct lsa_TrustDomainInfoInfoEx *our_tdo = NULL;
@@ -2459,6 +2600,7 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 	struct ldb_dn *workstation_dn;
 	struct netr_DomainInformation *domain_info;
 	struct netr_LsaPolicyInformation *lsa_policy_info;
+	struct auth_session_info *workstation_session_info = NULL;
 	uint32_t default_supported_enc_types = 0xFFFFFFFF;
 	bool update_dns_hostname = true;
 	int ret, i;
@@ -2487,7 +2629,8 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 	}
 	NT_STATUS_NOT_OK_RETURN(status);
 
-	sam_ctx = dcesrv_samdb_connect_as_system(mem_ctx, dce_call);
+	/* We want to avoid connecting as system. */
+	sam_ctx = dcesrv_samdb_connect_as_user(mem_ctx, dce_call);
 	if (sam_ctx == NULL) {
 		return NT_STATUS_INVALID_SYSTEM_SERVICE;
 	}
@@ -2503,6 +2646,33 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 		workstation_dn = ldb_dn_new_fmt(mem_ctx, sam_ctx, "<SID=%s>",
 						dom_sid_string(mem_ctx, creds->sid));
 		NT_STATUS_HAVE_NO_MEMORY(workstation_dn);
+
+		/* Get the workstation's session info from the database. */
+		status = authsam_get_session_info_principal(mem_ctx,
+							    dce_call->conn->dce_ctx->lp_ctx,
+							    sam_ctx,
+							    NULL, /* principal */
+							    workstation_dn,
+							    0, /* session_info_flags */
+							    &workstation_session_info);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+
+		/*
+		 * Reconnect to samdb as the workstation, now that we have its
+		 * session info. We do this so the database update can be
+		 * attributed to the workstation account in the audit logs --
+		 * otherwise it might be incorrectly attributed to
+		 * SID_NT_ANONYMOUS.
+		 */
+		sam_ctx = dcesrv_samdb_connect_session_info(mem_ctx,
+							    dce_call,
+							    workstation_session_info,
+							    workstation_session_info);
+		if (sam_ctx == NULL) {
+			return NT_STATUS_INVALID_SYSTEM_SERVICE;
+		}
 
 		/* Lookup for attributes in workstation object */
 		ret = gendb_search_dn(sam_ctx, mem_ctx, workstation_dn, &res1,
@@ -2520,24 +2690,7 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 			return NT_STATUS_INTERNAL_DB_CORRUPTION;
 		}
 
-		/*
-		 * Checks that the sam account name without a possible "$"
-		 * matches as prefix with the DNS hostname in the workstation
-		 * info structure.
-		 */
-		prefix1 = talloc_strndup(mem_ctx, sam_account_name,
-					 strcspn(sam_account_name, "$"));
-		NT_STATUS_HAVE_NO_MEMORY(prefix1);
-		if (r->in.query->workstation_info->dns_hostname != NULL) {
-			prefix2 = talloc_strndup(mem_ctx,
-						 r->in.query->workstation_info->dns_hostname,
-						 strcspn(r->in.query->workstation_info->dns_hostname, "."));
-			NT_STATUS_HAVE_NO_MEMORY(prefix2);
-
-			if (strcasecmp(prefix1, prefix2) != 0) {
-				update_dns_hostname = false;
-			}
-		} else {
+		if (r->in.query->workstation_info->dns_hostname == NULL) {
 			update_dns_hostname = false;
 		}
 
@@ -2549,13 +2702,10 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 		/*
 		 * Updates the DNS hostname when the client wishes that the
 		 * server should handle this for him
-		 * ("NETR_WS_FLAG_HANDLES_SPN_UPDATE" not set). And this is
-		 * obviously only checked when we do already have a
-		 * "dNSHostName".
+		 * ("NETR_WS_FLAG_HANDLES_SPN_UPDATE" not set).
 		 * See MS-NRPC section 3.5.4.3.9
 		 */
-		if ((old_dns_hostname != NULL) &&
-		    (r->in.query->workstation_info->workstation_flags
+		if ((r->in.query->workstation_info->workstation_flags
 		    & NETR_WS_FLAG_HANDLES_SPN_UPDATE) != 0) {
 			update_dns_hostname = false;
 		}
@@ -2599,9 +2749,14 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 							 os_version->BuildNumber);
 			NT_STATUS_HAVE_NO_MEMORY(os_version_str);
 
-			ret = ldb_msg_add_string(new_msg,
-						 "operatingSystemServicePack",
-						 os_version->CSDVersion);
+			if (strlen(os_version->CSDVersion) != 0) {
+				ret = ldb_msg_add_string(new_msg,
+							 "operatingSystemServicePack",
+							 os_version->CSDVersion);
+			} else {
+				ret = samdb_msg_add_delete(sam_ctx, mem_ctx, new_msg,
+							   "operatingSystemServicePack");
+			}
 			if (ret != LDB_SUCCESS) {
 				return NT_STATUS_NO_MEMORY;
 			}
@@ -2659,7 +2814,7 @@ static NTSTATUS dcesrv_netr_LogonGetDomainInfo(struct dcesrv_call_state *dce_cal
 			}
 		}
 
-		if (dsdb_replace(sam_ctx, new_msg, 0) != LDB_SUCCESS) {
+		if (dsdb_replace(sam_ctx, new_msg, DSDB_FLAG_FORCE_ALLOW_VALIDATED_DNS_HOSTNAME_SPN_WRITE) != LDB_SUCCESS) {
 			DEBUG(3,("Impossible to update samdb: %s\n",
 				ldb_errstring(sam_ctx)));
 		}
@@ -2987,6 +3142,31 @@ struct dcesrv_netr_DsRGetDCName_base_state {
 
 static void dcesrv_netr_DsRGetDCName_base_done(struct tevent_req *subreq);
 
+/* Returns a nonzero value if multiple bits in 'val' are set. */
+static bool multiple_bits_set(uint32_t val)
+{
+	/*
+	 * Subtracting one from an integer has the effect of flipping all the
+	 * bits from the least significant bit up to and including the least
+	 * significant '1' bit. For example,
+	 *
+	 *   0b101000 - 1
+	 * = 0b100111
+	 *       ====
+	 *
+	 * If 'val' is zero, all the bits will be flipped and thus the bitwise
+	 * AND of 'val' with 'val - 1' will be zero.
+	 *
+	 * If the integer is nonzero, the least significant '1' bit will be
+	 * ANDed with a '0' bit and so will be reset in the final result, but
+	 * all other '1' bits will remain set. In other words, the effect of
+	 * this expression is to mask off the least significant bit that is
+	 * set. Therefore iff the result of 'val & (val - 1)' is non-zero, 'val'
+	 * must contain multiple set bits.
+	 */
+	return val & (val - 1);
+}
+
 static WERROR dcesrv_netr_DsRGetDCName_base_call(struct dcesrv_netr_DsRGetDCName_base_state *state)
 {
 	struct dcesrv_call_state *dce_call = state->dce_call;
@@ -3009,6 +3189,8 @@ static WERROR dcesrv_netr_DsRGetDCName_base_call(struct dcesrv_netr_DsRGetDCName
 	const char *domain_name = NULL;
 	const char *pdc_ip;
 	bool different_domain = true;
+	uint32_t valid_flags;
+	int dc_level;
 
 	ZERO_STRUCTP(r->out.info);
 
@@ -3031,28 +3213,100 @@ static WERROR dcesrv_netr_DsRGetDCName_base_call(struct dcesrv_netr_DsRGetDCName
 
 	/* "server_unc" is ignored by w2k3 */
 
-	if (r->in.flags & ~(DSGETDC_VALID_FLAGS)) {
+	/*
+	 * With the following flags:
+	 * DS_FORCE_REDISCOVERY (Flag A)
+	 * DS_DIRECTORY_SERVICE_REQUIRED (Flag B)
+	 * DS_DIRECTORY_SERVICE_PREFERRED (Flag C)
+	 * DS_GC_SERVER_REQUIRED (Flag D)
+	 * DS_PDC_REQUIRED (Flag E)
+	 * DS_BACKGROUND_ONLY (Flag F)
+	 * DS_IP_REQUIRED (Flag G)
+	 * DS_KDC_REQUIRED (Flag H)
+	 * DS_TIMESERV_REQUIRED (Flag I)
+	 * DS_WRITABLE_REQUIRED (Flag J)
+	 * DS_GOOD_TIMESERV_PREFERRED (Flag K)
+	 * DS_AVOID_SELF (Flag L)
+	 * DS_ONLY_LDAP_NEEDED (Flag M)
+	 * DS_IS_FLAT_NAME (Flag N)
+	 * DS_IS_DNS_NAME (Flag O)
+	 * DS_TRY_NEXTCLOSEST_SITE (Flag P)
+	 * DS_DIRECTORY_SERVICE_6_REQUIRED  (Flag Q)
+	 * DS_WEB_SERVICE_REQUIRED (Flag T)
+	 * DS_DIRECTORY_SERVICE_8_REQUIRED  (Flag U)
+	 * DS_DIRECTORY_SERVICE_9_REQUIRED  (Flag V)
+	 * DS_DIRECTORY_SERVICE_10_REQUIRED (Flag W)
+	 * DS_RETURN_DNS_NAME (Flag R)
+	 * DS_RETURN_FLAT_NAME (Flag S)
+	 *
+	 * MS-NRPC 3.5.4.3.1 says:
+	 * ...
+	 * On receiving this call, the server MUST perform the following Flags
+	 * parameter validations:
+	 * - Flags D, E, and H MUST NOT be combined with each other.
+	 * - Flag N MUST NOT be combined with the O flag.
+	 * - Flag R MUST NOT be combined with the S flag.
+	 * - Flags B, Q, U, V, and W MUST NOT be combined with each other.
+	 * - Flag K MUST NOT be combined with any of the flags: B, C, D, E, or H.
+	 * - Flag P MUST NOT be set when the SiteName parameter is provided.
+	 * The server MUST return ERROR_INVALID_FLAGS for any of the previously
+	 * mentioned conflicting combinations.
+	 * ...
+	 */
+
+	dc_level = dsdb_dc_functional_level(sam_ctx);
+	valid_flags = DSGETDC_VALID_FLAGS;
+	if (dc_level >= DS_DOMAIN_FUNCTION_2012) {
+		valid_flags |= DS_DIRECTORY_SERVICE_8_REQUIRED;
+	}
+	if (dc_level >= DS_DOMAIN_FUNCTION_2012_R2) {
+		valid_flags |= DS_DIRECTORY_SERVICE_9_REQUIRED;
+	}
+	if (dc_level >= DS_DOMAIN_FUNCTION_2016) {
+		valid_flags |= DS_DIRECTORY_SERVICE_10_REQUIRED;
+	}
+	if (r->in.flags & ~valid_flags) {
+		/*
+		 * TODO: add tests to prove this (maybe based on the
+		 * msDS-Behavior-Version levels of dc, domain and/or forest
+		 */
 		return WERR_INVALID_FLAGS;
 	}
 
-	if (r->in.flags & DS_GC_SERVER_REQUIRED &&
-	    r->in.flags & DS_PDC_REQUIRED &&
-	    r->in.flags & DS_KDC_REQUIRED) {
+	/* Flags D, E, and H MUST NOT be combined with each other. */
+#define _DEH (DS_GC_SERVER_REQUIRED|DS_PDC_REQUIRED|DS_KDC_REQUIRED)
+	if (multiple_bits_set(r->in.flags & _DEH)) {
 		return WERR_INVALID_FLAGS;
 	}
+
+	/* Flag N MUST NOT be combined with the O flag. */
 	if (r->in.flags & DS_IS_FLAT_NAME &&
 	    r->in.flags & DS_IS_DNS_NAME) {
 		return WERR_INVALID_FLAGS;
 	}
+
+	/* Flag R MUST NOT be combined with the S flag. */
 	if (r->in.flags & DS_RETURN_DNS_NAME &&
 	    r->in.flags & DS_RETURN_FLAT_NAME) {
 		return WERR_INVALID_FLAGS;
 	}
-	if (r->in.flags & DS_DIRECTORY_SERVICE_REQUIRED &&
-	    r->in.flags & DS_DIRECTORY_SERVICE_6_REQUIRED) {
+
+	/* Flags B, Q, U, V, and W MUST NOT be combined with each other */
+#define _BQUVW ( \
+	DS_DIRECTORY_SERVICE_REQUIRED | \
+	DS_DIRECTORY_SERVICE_6_REQUIRED | \
+	DS_DIRECTORY_SERVICE_8_REQUIRED | \
+	DS_DIRECTORY_SERVICE_9_REQUIRED | \
+	DS_DIRECTORY_SERVICE_10_REQUIRED | \
+0)
+	if (multiple_bits_set(r->in.flags & _BQUVW)) {
 		return WERR_INVALID_FLAGS;
 	}
 
+	/*
+	 * Flag K MUST NOT be combined with any of the flags:
+	 * B, C, D, E, or H.
+	 */
 	if (r->in.flags & DS_GOOD_TIMESERV_PREFERRED &&
 	    r->in.flags &
 	    (DS_DIRECTORY_SERVICE_REQUIRED |
@@ -3063,6 +3317,7 @@ static WERROR dcesrv_netr_DsRGetDCName_base_call(struct dcesrv_netr_DsRGetDCName
 		return WERR_INVALID_FLAGS;
 	}
 
+	/* Flag P MUST NOT be set when the SiteName parameter is provided. */
 	if (r->in.flags & DS_TRY_NEXTCLOSEST_SITE &&
 	    r->in.site_name) {
 		return WERR_INVALID_FLAGS;
@@ -4212,7 +4467,7 @@ static NTSTATUS dcesrv_netr_ServerGetTrustInfo(struct dcesrv_call_state *dce_cal
 	default:
 		nt_status = samdb_result_passwords_no_lockout(mem_ctx, lp_ctx,
 							      res[0],
-							      NULL, &curNtHash);
+							      &curNtHash);
 		if (!NT_STATUS_IS_OK(nt_status)) {
 			return nt_status;
 		}

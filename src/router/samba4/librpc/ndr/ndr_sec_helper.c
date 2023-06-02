@@ -129,13 +129,10 @@ size_t ndr_size_dom_sid(const struct dom_sid *sid, int flags)
 
 size_t ndr_size_dom_sid28(const struct dom_sid *sid, int flags)
 {
-	if (!sid) return 0;
-
 	if (all_zero((const uint8_t *)sid, sizeof(struct dom_sid))) {
 		return 0;
 	}
-
-	return 8 + 4*sid->num_auths;
+	return ndr_size_dom_sid(sid, flags);
 }
 
 size_t ndr_size_dom_sid0(const struct dom_sid *sid, int flags)
@@ -181,7 +178,7 @@ enum ndr_err_code ndr_pull_dom_sid2(struct ndr_pull *ndr, int ndr_flags, struct 
 	NDR_CHECK(ndr_pull_dom_sid(ndr, ndr_flags, sid));
 	if (sid->num_auths != num_auths) {
 		return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, 
-				      "Bad array size %u should exceed %u", 
+				      "Bad num_auths %u; should equal %u",
 				      num_auths, sid->num_auths);
 	}
 	return NDR_ERR_SUCCESS;

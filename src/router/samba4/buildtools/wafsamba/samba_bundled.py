@@ -5,18 +5,8 @@ from waflib import Build, Options, Logs
 from waflib.Configure import conf
 from wafsamba import samba_utils
 
-def PRIVATE_NAME(bld, name, private_extension, private_library):
+def PRIVATE_NAME(bld, name):
     '''possibly rename a library to include a bundled extension'''
-
-    if not private_library:
-        return name
-
-    # we now use the same private name for libraries as the public name.
-    # see http://git.samba.org/?p=tridge/junkcode.git;a=tree;f=shlib for a
-    # demonstration that this is the right thing to do
-    # also see http://lists.samba.org/archive/samba-technical/2011-January/075816.html
-    if private_extension:
-        return name
 
     extension = bld.env.PRIVATE_EXTENSION
 
@@ -95,20 +85,22 @@ def LIB_MAY_BE_BUNDLED(conf, libname):
         return False
     return True
 
-@conf
-def LIB_MUST_BE_BUNDLED(conf, libname):
-    if libname in conf.env.BUNDLED_LIBS:
+def __LIB_MUST_BE(liblist, libname):
+    if libname in liblist:
         return True
-    if '!%s' % libname in conf.env.BUNDLED_LIBS:
+    if '!%s' % libname in liblist:
         return False
-    if 'ALL' in conf.env.BUNDLED_LIBS:
+    if 'ALL' in liblist:
         return True
     return False
 
 @conf
+def LIB_MUST_BE_BUNDLED(conf, libname):
+    return __LIB_MUST_BE(conf.env.BUNDLED_LIBS, libname)
+
+@conf
 def LIB_MUST_BE_PRIVATE(conf, libname):
-    return ('ALL' in conf.env.PRIVATE_LIBS or
-            libname in conf.env.PRIVATE_LIBS)
+    return __LIB_MUST_BE(conf.env.PRIVATE_LIBS, libname)
 
 @conf
 def CHECK_BUNDLED_SYSTEM_PKG(conf, libname, minversion='0.0.0',

@@ -153,7 +153,7 @@ def define_what_to_log(opts):
     return what
 
 
-parser = optparse.OptionParser("provision [options]")
+parser = optparse.OptionParser("samba_upgradeprovision [options]")
 sambaopts = options.SambaOptions(parser)
 parser.add_option_group(sambaopts)
 parser.add_option_group(options.VersionOptions(parser))
@@ -1571,7 +1571,6 @@ def sync_calculated_attributes(samdb, names):
 
 
 if __name__ == '__main__':
-    global defSDmodified
     defSDmodified = False
 
     # From here start the big steps of the program

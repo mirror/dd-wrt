@@ -134,6 +134,21 @@ typedef struct {
 #define KRB5_ERROR_CODE(k)	((k)->error)
 #endif /* HAVE_E_DATA_POINTER_IN_KRB5_ERROR */
 
+#ifndef HAVE_KRB5_CONST_PAC
+#ifdef KRB5_CONST_PAC_GET_BUFFER
+typedef const struct krb5_pac_data *krb5_const_pac;
+#else
+/*
+ * Certain Heimdal versions include a version of krb5_pac_get_buffer() that is
+ * unusable in certain cases, taking a krb5_pac when a krb5_const_pac may be all
+ * that we can supply. Furthermore, MIT Kerberos doesn't declare krb5_const_pac
+ * at all. In such cases, we must declare krb5_const_pac as a non-const typedef
+ * so that the build can succeed.
+ */
+typedef struct krb5_pac_data *krb5_const_pac;
+#endif
+#endif
+
 krb5_error_code smb_krb5_parse_name(krb5_context context,
 				const char *name, /* in unix charset */
                                 krb5_principal *principal);
@@ -209,12 +224,13 @@ krb5_error_code smb_krb5_kt_get_name(TALLOC_CTX *mem_ctx,
 				     const char **keytab_name);
 krb5_error_code smb_krb5_kt_seek_and_delete_old_entries(krb5_context context,
 							krb5_keytab keytab,
+							bool keep_old_kvno,
 							krb5_kvno kvno,
+							bool enctype_only,
 							krb5_enctype enctype,
 							const char *princ_s,
 							krb5_principal princ,
-							bool flush,
-							bool keep_old_entries);
+							bool flush);
 krb5_error_code smb_krb5_kt_add_entry(krb5_context context,
 				      krb5_keytab keytab,
 				      krb5_kvno kvno,
@@ -222,8 +238,7 @@ krb5_error_code smb_krb5_kt_add_entry(krb5_context context,
 				      const char *salt_principal,
 				      krb5_enctype enctype,
 				      krb5_data *password,
-				      bool no_salt,
-				      bool keep_old_entries);
+				      bool no_salt);
 
 krb5_error_code smb_krb5_get_credentials(krb5_context context,
 					 krb5_ccache ccache,
@@ -252,7 +267,6 @@ krb5_error_code smb_krb5_kinit_password_ccache(krb5_context ctx,
 					       krb5_get_init_creds_opt *krb_options,
 					       time_t *expire_time,
 					       time_t *kdc_time);
-#ifdef SAMBA4_USES_HEIMDAL
 krb5_error_code smb_krb5_kinit_s4u2_ccache(krb5_context ctx,
 					   krb5_ccache store_cc,
 					   krb5_principal init_principal,
@@ -263,7 +277,6 @@ krb5_error_code smb_krb5_kinit_s4u2_ccache(krb5_context ctx,
 					   krb5_get_init_creds_opt *krb_options,
 					   time_t *expire_time,
 					   time_t *kdc_time);
-#endif
 
 #if defined(HAVE_KRB5_MAKE_PRINCIPAL)
 #define smb_krb5_make_principal krb5_make_principal
@@ -308,6 +321,9 @@ void smb_krb5_principal_set_type(krb5_context context,
 				 krb5_principal principal,
 				 int type);
 
+int smb_krb5_principal_is_tgs(krb5_context context,
+			      krb5_const_principal principal);
+
 krb5_error_code smb_krb5_principal_set_realm(krb5_context context,
 					     krb5_principal principal,
 					     const char *realm);
@@ -319,16 +335,6 @@ char *smb_krb5_get_realm_from_hostname(TALLOC_CTX *mem_ctx,
 char *smb_get_krb5_error_message(krb5_context context,
 				 krb5_error_code code,
 				 TALLOC_CTX *mem_ctx);
-
-krb5_error_code kt_copy(krb5_context context,
-			const char *from,
-			const char *to);
-krb5_error_code kt_copy_one_principal(krb5_context context,
-				      const char *from,
-				      const char *to,
-				      const char *principal,
-				      krb5_kvno kvno,
-				      const krb5_enctype *enctypes);
 
 #if defined(HAVE_KRB5_KT_COMPARE)
 #define smb_krb5_kt_compare krb5_kt_compare
@@ -370,8 +376,8 @@ int smb_krb5_salt_principal2data(krb5_context context,
 
 int smb_krb5_create_key_from_string(krb5_context context,
 				    krb5_const_principal host_princ,
-				    krb5_data *salt,
-				    krb5_data *password,
+				    const krb5_data *salt,
+				    const krb5_data *password,
 				    krb5_enctype enctype,
 				    krb5_keyblock *key);
 
@@ -391,6 +397,11 @@ char *smb_krb5_principal_get_comp_string(TALLOC_CTX *mem_ctx,
 krb5_error_code smb_krb5_copy_data_contents(krb5_data *p,
 					    const void *data,
 					    size_t len);
+
+krb5_data smb_krb5_make_data(void *data,
+			     size_t len);
+
+krb5_data smb_krb5_data_from_blob(DATA_BLOB blob);
 
 int smb_krb5_principal_get_type(krb5_context context,
 				krb5_const_principal principal);

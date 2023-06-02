@@ -1,4 +1,4 @@
-/* 
+/*
    ldb database library
 
    Copyright (C) Andrew Tridgell  2004
@@ -6,7 +6,7 @@
      ** NOTE! The following LGPL license applies to the ldb
      ** library. This does NOT imply that all of Samba is released
      ** under the LGPL
-   
+
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -62,7 +62,7 @@ char *ldb_casefold_default(void *context, TALLOC_CTX *mem_ctx, const char *s, si
 		return NULL;
 	}
 	for (i=0;ret[i];i++) {
-		ret[i] = toupper((unsigned char)ret[i]);
+		ret[i] = ldb_ascii_toupper((unsigned char)ret[i]);
 	}
 	return ret;
 }
@@ -118,7 +118,7 @@ char *ldb_attr_casefold(TALLOC_CTX *mem_ctx, const char *s)
 		return NULL;
 	}
 	for (i = 0; ret[i]; i++) {
-		ret[i] = toupper((unsigned char)ret[i]);
+		ret[i] = ldb_ascii_toupper((unsigned char)ret[i]);
 	}
 	return ret;
 }
@@ -133,4 +133,8 @@ int ldb_attr_dn(const char *attr)
 		return 0;
 	}
 	return -1;
+}
+
+_PRIVATE_ char ldb_ascii_toupper(char c) {
+	return ('a' <= c && c <= 'z') ? c ^ 0x20 : toupper(c);
 }

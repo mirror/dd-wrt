@@ -38,6 +38,9 @@ def truncate_string(s, cutoff=100):
 
 
 class SambaToolCmdTest(samba.tests.BlackboxTestCase):
+    # Use a class level reference to StringIO, which subclasses can
+    # override if they need to (to e.g. add a lying isatty() method).
+    stringIO = StringIO
 
     def getSamDB(self, *argv):
         """a convenience function to get a samdb instance so that we can query it"""
@@ -69,41 +72,22 @@ class SambaToolCmdTest(samba.tests.BlackboxTestCase):
                       credentials=creds, lp=lp)
         return samdb
 
-    def runcmd(self, name, *args):
-        """run a single level command"""
-        cmd = cmd_sambatool.subcommands[name]
-        cmd.outf = StringIO()
-        cmd.errf = StringIO()
-        result = cmd._run("samba-tool %s" % name, *args)
+    def _run(self, *argv):
+        """run a samba-tool command"""
+        cmd, args = cmd_sambatool()._resolve('samba-tool', *argv,
+                                             outf=self.stringIO(),
+                                             errf=self.stringIO())
+        result = cmd._run(*args)
         return (result, cmd.outf.getvalue(), cmd.errf.getvalue())
 
-    def runsubcmd(self, name, sub, *args):
-        """run a command with sub commands"""
-        # The reason we need this function separate from runcmd is
-        # that the .outf StringIO assignment is overridden if we use
-        # runcmd, so we can't capture stdout and stderr
-        cmd = cmd_sambatool.subcommands[name].subcommands[sub]
-        cmd.outf = StringIO()
-        cmd.errf = StringIO()
-        result = cmd._run("samba-tool %s %s" % (name, sub), *args)
-        return (result, cmd.outf.getvalue(), cmd.errf.getvalue())
+    runcmd = _run
+    runsubcmd = _run
 
     def runsublevelcmd(self, name, sublevels, *args):
         """run a command with any number of sub command levels"""
-        # Same as runsubcmd, except this handles a varying number of sub-command
-        # levels, e.g. 'samba-tool domain passwordsettings pso set', whereas
-        # runsubcmd() only handles exactly one level of sub-commands.
-        # First, traverse the levels of sub-commands to get the actual cmd
-        # object we'll run, and construct the cmd string along the way
-        cmd = cmd_sambatool.subcommands[name]
-        cmd_str = "samba-tool %s" % name
-        for sub in sublevels:
-            cmd = cmd.subcommands[sub]
-            cmd_str += " %s" % sub
-        cmd.outf = StringIO()
-        cmd.errf = StringIO()
-        result = cmd._run(cmd_str, *args)
-        return (result, cmd.outf.getvalue(), cmd.errf.getvalue())
+        # This is a weird and clunky interface for running a
+        # subcommand. Use self.runcmd() instead.
+        return self._run(name, *sublevels, *args)
 
     def assertCmdSuccess(self, exit, out, err, msg=""):
         # Make sure we allow '\n]\n' in stdout and stderr

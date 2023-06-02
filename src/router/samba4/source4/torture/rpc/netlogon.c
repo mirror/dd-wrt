@@ -191,7 +191,7 @@ bool test_SetupCredentials(struct dcerpc_pipe *p, struct torture_context *tctx,
 
 	/* This allows the tests to continue against the more fussy windows 2008 */
 	if (NT_STATUS_EQUAL(a.out.result, NT_STATUS_DOWNGRADE_DETECTED)) {
-		return test_SetupCredentials2(p, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS,
+		return test_SetupCredentials2(p, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES,
 					      credentials,
 					      cli_credentials_get_secure_channel_type(credentials),
 					      creds_out);
@@ -431,7 +431,7 @@ bool test_SetupCredentialsDowngrade(struct torture_context *tctx,
 		"ServerAuthenticate3 failed");
 	torture_assert_ntstatus_equal(tctx, a.out.result, NT_STATUS_DOWNGRADE_DETECTED, "ServerAuthenticate3 should have failed");
 
-	negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES;
 	creds = netlogon_creds_client_init(tctx, a.in.account_name,
 					   a.in.computer_name,
 					   a.in.secure_channel_type,
@@ -498,7 +498,7 @@ static bool test_ServerReqChallenge(
 	const char *machine_name;
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct netr_ServerAuthenticate2 a;
-	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES;
 	uint32_t out_negotiate_flags = 0;
 	const struct samr_Password *mach_password = NULL;
 	enum netr_SchannelType sec_chan_type = 0;
@@ -570,7 +570,7 @@ static bool test_ServerReqChallenge_zero_challenge(
 	const char *machine_name;
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct netr_ServerAuthenticate2 a;
-	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES;
 	uint32_t out_negotiate_flags = 0;
 	const struct samr_Password *mach_password = NULL;
 	enum netr_SchannelType sec_chan_type = 0;
@@ -647,7 +647,7 @@ static bool test_ServerReqChallenge_5_repeats(
 	const char *machine_name;
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct netr_ServerAuthenticate2 a;
-	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES;
 	uint32_t out_negotiate_flags = 0;
 	const struct samr_Password *mach_password = NULL;
 	enum netr_SchannelType sec_chan_type = 0;
@@ -731,7 +731,7 @@ static bool test_ServerReqChallenge_4_repeats(
 	const char *machine_name;
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct netr_ServerAuthenticate2 a;
-	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t in_negotiate_flags = NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES;
 	uint32_t out_negotiate_flags = 0;
 	const struct samr_Password *mach_password = NULL;
 	enum netr_SchannelType sec_chan_type = 0;
@@ -1527,7 +1527,7 @@ static bool test_SetPassword2_all_zeros(
 	struct netr_CryptPassword new_password;
 	struct dcerpc_pipe *p = NULL;
 	struct dcerpc_binding_handle *b = NULL;
-	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS; /* no AES desired here */
 
 	if (!test_SetupCredentials2(
 		p1,
@@ -1603,7 +1603,7 @@ static bool test_SetPassword2_maximum_length_password(
 	struct netr_CryptPassword new_password;
 	struct dcerpc_pipe *p = NULL;
 	struct dcerpc_binding_handle *b = NULL;
-	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES;
 	DATA_BLOB new_random_pass = data_blob_null;
 
 	if (!test_SetupCredentials2(
@@ -1686,7 +1686,7 @@ static bool test_SetPassword2_all_zero_password(
 	struct netr_CryptPassword new_password;
 	struct dcerpc_pipe *p = NULL;
 	struct dcerpc_binding_handle *b = NULL;
-	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS; /* no AES desired here */
 
 	if (!test_SetupCredentials2(
 		p1,
@@ -4046,7 +4046,7 @@ static bool test_netr_GetForestTrustInformation(struct torture_context *tctx,
 	struct dcerpc_pipe *p = NULL;
 	struct dcerpc_binding_handle *b = NULL;
 
-	if (!test_SetupCredentials3(p1, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS,
+	if (!test_SetupCredentials3(p1, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES,
 				    machine_credentials, &creds)) {
 		return false;
 	}
@@ -4985,7 +4985,7 @@ static bool test_GetDomainInfo(struct torture_context *tctx,
 
 	torture_comment(tctx, "Testing netr_LogonGetDomainInfo\n");
 
-	if (!test_SetupCredentials3(p1, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS,
+	if (!test_SetupCredentials3(p1, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES,
 				    machine_credentials, &creds)) {
 		return false;
 	}
@@ -5143,8 +5143,8 @@ static bool test_GetDomainInfo(struct torture_context *tctx,
 	torture_comment(tctx, "Testing netr_LogonGetDomainInfo 2nd call (variation of DNS hostname doesn't work)\n");
 	netlogon_creds_client_authenticator(creds, &a);
 
-	/* Wipe out the osVersion, and prove which values still 'stick' */
-	q1.os_version.os = NULL;
+	/* Wipe out the CSDVersion, and prove which values still 'stick' */
+	os.os.CSDVersion = "";
 
 	/* Change also the DNS hostname to test differences in behaviour */
 	talloc_free(discard_const_p(char, q1.dns_hostname));
@@ -5175,9 +5175,9 @@ static bool test_GetDomainInfo(struct torture_context *tctx,
 		torture_assert(tctx,
 			       ldb_msg_find_attr_as_string(res[0], "operatingSystemServicePack", NULL) == NULL,
 			       "'operatingSystemServicePack' shouldn't stick!");
-		torture_assert(tctx,
-			       ldb_msg_find_attr_as_string(res[0], "operatingSystemVersion", NULL) == NULL,
-			       "'operatingSystemVersion' shouldn't stick!");
+		torture_assert_str_equal(tctx,
+					 ldb_msg_find_attr_as_string(res[0], "operatingSystemVersion", NULL),
+					 version_str, "'operatingSystemVersion' wrong!");
 
 		/* The DNS host name shouldn't have been updated by the server */
 
@@ -5251,9 +5251,9 @@ static bool test_GetDomainInfo(struct torture_context *tctx,
 		torture_assert(tctx,
 			       ldb_msg_find_attr_as_string(res[0], "operatingSystemServicePack", NULL) == NULL,
 			       "'operatingSystemServicePack' shouldn't stick!");
-		torture_assert(tctx,
-			       ldb_msg_find_attr_as_string(res[0], "operatingSystemVersion", NULL) == NULL,
-			       "'operatingSystemVersion' shouldn't stick!");
+		torture_assert_str_equal(tctx,
+					 ldb_msg_find_attr_as_string(res[0], "operatingSystemVersion", NULL),
+					 version_str, "'operatingSystemVersion' wrong!");
 
 		/* The DNS host name shouldn't have been updated by the server */
 
@@ -5387,9 +5387,11 @@ static bool test_GetDomainInfo(struct torture_context *tctx,
 
 		torture_assert(tctx, odiT->domainname.string != NULL,
 			       "trust_list domainname should be valid");
-		if (texT->trust_type == LSA_TRUST_TYPE_DOWNLEVEL) {
+		if (texT->trust_type == LSA_TRUST_TYPE_DOWNLEVEL ||
+		    texT->trust_type == LSA_TRUST_TYPE_MIT)
+		{
 			torture_assert(tctx, odiT->dns_domainname.string == NULL,
-			       "trust_list dns_domainname should be NULL for downlevel");
+			       "trust_list dns_domainname should be NULL for downlevel or MIT");
 		} else {
 			torture_assert(tctx, odiT->dns_domainname.string != NULL,
 			       "trust_list dns_domainname should be valid for uplevel");
@@ -5560,7 +5562,7 @@ static bool test_GetDomainInfo_async(struct torture_context *tctx,
 
 	torture_comment(tctx, "Testing netr_LogonGetDomainInfo - async count %d\n", ASYNC_COUNT);
 
-	if (!test_SetupCredentials3(p, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS,
+	if (!test_SetupCredentials3(p, tctx, NETLOGON_NEG_AUTH2_ADS_FLAGS | NETLOGON_NEG_SUPPORTS_AES,
 				    machine_credentials, &creds)) {
 		return false;
 	}

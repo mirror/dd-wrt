@@ -19,7 +19,7 @@ bld.SAMBA_BINARY('fuzz_tiniparser',
 
 bld.SAMBA_BINARY('fuzz_parse_lpq_entry',
                  source='fuzz_parse_lpq_entry.c',
-                 deps='fuzzing  afl-fuzz-main smbd_base',
+                 deps='fuzzing  afl-fuzz-main smbd_base PRINTING',
                  fuzzer=True)
 
 bld.SAMBA_BINARY('fuzz_oLschema2ldif',
@@ -44,6 +44,31 @@ bld.SAMBA_BINARY('fuzz_regfio',
 
 bld.SAMBA_BINARY('fuzz_lzxpress',
                  source='fuzz_lzxpress.c',
+                 deps='fuzzing LZXPRESS afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_lzxpress_compress',
+                 source='fuzz_lzxpress_compress.c',
+                 deps='fuzzing LZXPRESS afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_lzxpress_round_trip',
+                 source='fuzz_lzxpress_round_trip.c',
+                 deps='fuzzing LZXPRESS afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_lzxpress_huffman_decompress',
+                 source='fuzz_lzxpress_huffman_decompress.c',
+                 deps='fuzzing LZXPRESS afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_lzxpress_huffman_compress',
+                 source='fuzz_lzxpress_huffman_compress.c',
+                 deps='fuzzing LZXPRESS afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_lzxpress_huffman_round_trip',
+                 source='fuzz_lzxpress_huffman_round_trip.c',
                  deps='fuzzing LZXPRESS afl-fuzz-main',
                  fuzzer=True)
 
@@ -85,6 +110,16 @@ bld.SAMBA_BINARY('fuzz_dcerpc_parse_binding',
 bld.SAMBA_BINARY('fuzz_cli_credentials_parse_string',
                  source='fuzz_cli_credentials_parse_string.c',
                  deps='fuzzing samba-credentials afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_stable_sort',
+                 source='fuzz_stable_sort.c',
+                 deps='fuzzing stable_sort afl-fuzz-main',
+                 fuzzer=True)
+
+bld.SAMBA_BINARY('fuzz_stable_sort_r',
+                 source='fuzz_stable_sort_r.c',
+                 deps='fuzzing stable_sort afl-fuzz-main',
                  fuzzer=True)
 
 # The fuzz_type and fuzz_function parameters make the built

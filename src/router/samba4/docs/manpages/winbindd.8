@@ -2,12 +2,12 @@
 .\"     Title: winbindd
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.15.5
+.\"    Source: Samba 4.18.3
 .\"  Language: English
 .\"
-.TH "WINBINDD" "8" "01/31/2022" "Samba 4\&.15\&.5" "System Administration tools"
+.TH "WINBINDD" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -200,7 +200,7 @@ Levels above 1 will generate considerable amounts of log data, and should only b
 Note that specifying this parameter here will override the
 \m[blue]\fBlog level\fR\m[]
 parameter in the
-smb\&.conf
+${prefix}/etc/smb\&.conf
 file\&.
 This will redirect debug output to STDOUT\&. By default server daemons are logging to a log file\&.
 .RE
@@ -208,7 +208,7 @@ This will redirect debug output to STDOUT\&. By default server daemons are loggi
 \-\-configfile=CONFIGFILE
 .RS 4
 The file specified contains the configuration details required by the server\&. The information in this file includes server\-specific information such as what printcap file to use, as well as descriptions of all the services that the server is to provide\&. See
-smb\&.conf
+${prefix}/etc/smb\&.conf
 for more information\&. The default configuration file name is determined at compile time\&.
 .RE
 .PP
@@ -537,28 +537,34 @@ Log files are stored in the filename specified by the log file parameter\&.
 Name service switch configuration file\&.
 .RE
 .PP
-/tmp/\&.winbindd/pipe
+${prefix}/var/run/winbindd/pipe
 .RS 4
 The UNIX pipe over which clients communicate with the
 winbindd
 program\&. For security reasons, the winbind client will only attempt to connect to the winbindd daemon if both the
-/tmp/\&.winbindd
+${prefix}/var/run/winbindd
 directory and
-/tmp/\&.winbindd/pipe
+${prefix}/var/run/winbindd/pipe
 file are owned by root\&.
+.sp
+\m[blue]\fBwinbindd socket directory\fR\m[]
+overrides this default\&.
 .RE
 .PP
-$LOCKDIR/winbindd_privileged/pipe
+$STATEDIR/winbindd_privileged/pipe
 .RS 4
 The UNIX pipe over which \*(Aqprivileged\*(Aq clients communicate with the
 winbindd
 program\&. For security reasons, access to some winbindd functions \- like those needed by the
 ntlm_auth
-utility \- is restricted\&. By default, only users in the \*(Aqroot\*(Aq group will get this access, however the administrator may change the group permissions on $LOCKDIR/winbindd_privileged to allow programs like \*(Aqsquid\*(Aq to use ntlm_auth\&. Note that the winbind client will only attempt to connect to the winbindd daemon if both the
-$LOCKDIR/winbindd_privileged
+utility \- is restricted\&. By default, only users in the \*(Aqroot\*(Aq group will get this access, however the administrator may change the group permissions on $STATEDIR/winbindd_privileged to allow programs like \*(Aqsquid\*(Aq to use ntlm_auth\&. Note that the winbind client will only attempt to connect to the winbindd daemon if both the
+$STATEDIR/winbindd_privileged
 directory and
-$LOCKDIR/winbindd_privileged/pipe
+$STATEDIR/winbindd_privileged/pipe
 file are owned by root\&.
+.sp
+\m[blue]\fBstate dir\fR\m[]
+controls what $STATEDIR refers to\&.
 .RE
 .PP
 /lib/libnss_winbind\&.so\&.X
@@ -566,12 +572,13 @@ file are owned by root\&.
 Implementation of name service switch library\&.
 .RE
 .PP
-$LOCKDIR/winbindd_idmap\&.tdb
+$STATEDIR/winbindd_idmap\&.tdb
 .RS 4
-Storage for the Windows NT rid to UNIX user/group id mapping\&. The lock directory is specified when Samba is initially compiled using the
-\fI\-\-with\-lockdir\fR
-option\&. This directory is by default
-/usr/local/samba/var/locks\&.
+Storage for the Windows NT rid to UNIX user/group id mapping\&. The directory is specified when Samba is initially compiled using the
+\fI\-\-with\-statedir\fR
+option or
+\m[blue]\fBstate dir\fR\m[]\&. The default directory in this installation is
+${prefix}/var/locks\&.
 .RE
 .PP
 $LOCKDIR/winbindd_cache\&.tdb
@@ -580,7 +587,7 @@ Storage for cached user and group information\&.
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.15\&.5 of the Samba suite\&.
+This man page is part of version 4\&.18\&.3 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 nsswitch\&.conf(5),

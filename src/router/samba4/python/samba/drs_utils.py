@@ -41,12 +41,13 @@ class drsException(Exception):
         return "drsException: " + self.value
 
 
-def drsuapi_connect(server, lp, creds):
+def drsuapi_connect(server, lp, creds, ip=None):
     """Make a DRSUAPI connection to the server.
 
     :param server: the name of the server to connect to
     :param lp: a samba line parameter object
     :param creds: credential used for the connection
+    :param ip: Forced target server name
     :return: A tuple with the drsuapi bind object, the drsuapi handle
                 and the supported extensions.
     :raise drsException: if the connection fails
@@ -55,7 +56,14 @@ def drsuapi_connect(server, lp, creds):
     binding_options = "seal"
     if lp.log_level() >= 9:
         binding_options += ",print"
-    binding_string = "ncacn_ip_tcp:%s[%s]" % (server, binding_options)
+
+    # Allow forcing the IP
+    if ip is not None:
+        binding_options += f",target_hostname={server}"
+        binding_string = f"ncacn_ip_tcp:{ip}[{binding_options}]"
+    else:
+        binding_string = "ncacn_ip_tcp:%s[%s]" % (server, binding_options)
+
     try:
         drsuapiBind = drsuapi.drsuapi(binding_string, lp, creds)
         (drsuapiHandle, bindSupportedExtensions) = drs_DsBind(drsuapiBind)
@@ -200,12 +208,47 @@ class drs_Replicate(object):
         # (if we support it and haven't already tried that)
         supports_ext = self.supports_ext
 
-        # TODO fix up the below line when we next update werror_err_table.txt
-        # and pull in the new error-code
-        # return (error_code == werror.WERR_DS_DRA_RECYCLED_TARGET and
-        return (error_code == 0x21bf and
+        return (error_code == werror.WERR_DS_DRA_RECYCLED_TARGET and
                 supports_ext & DRSUAPI_SUPPORTED_EXTENSION_GETCHGREQ_V10 and
                 (req.more_flags & drsuapi.DRSUAPI_DRS_GET_TGT) == 0)
+
+    @staticmethod
+    def _should_calculate_missing_anc_locally(error_code, req):
+        # If the error indicates we fail to resolve the parent object
+        # for a new object, then we assume we are replicating from a
+        # buggy server (Samba 4.5 and earlier) that doesn't really
+        # understand how to implement GET_ANC
+
+        return ((error_code == werror.WERR_DS_DRA_MISSING_PARENT) and
+                (req.replica_flags & drsuapi.DRSUAPI_DRS_GET_ANC) != 0)
+
+
+    def _calculate_missing_anc_locally(self, ctr):
+        self.guids_seen = set()
+
+        # walk objects in ctr, add to guid_seen as we see them
+        # note if an object doesn't have a parent
+
+        object_to_check = ctr.first_object
+
+        while True:
+            if object_to_check is None:
+                break
+
+            self.guids_seen.add(str(object_to_check.object.identifier.guid))
+
+            if object_to_check.parent_object_guid is not None \
+               and object_to_check.parent_object_guid \
+               != misc.GUID("00000000-0000-0000-0000-000000000000") \
+               and str(object_to_check.parent_object_guid) not in self.guids_seen:
+                obj_dn = ldb.Dn(self.samdb, object_to_check.object.identifier.dn)
+                parent_dn = obj_dn.parent()
+                print(f"Object {parent_dn} with "
+                      f"GUID {object_to_check.parent_object_guid} "
+                      "was not sent by the server in this chunk")
+
+            object_to_check = object_to_check.next_object
+
 
     def process_chunk(self, level, ctr, schema, req_level, req, first_chunk):
         '''Processes a single chunk of received replication data'''
@@ -329,8 +372,13 @@ class drs_Replicate(object):
                     # of causing the DC to restart the replication from scratch)
                     first_chunk = True
                     continue
-                else:
-                    raise e
+
+                if self._should_calculate_missing_anc_locally(e.args[0],
+                                                              req):
+                    print("Missing parent object - calculating missing objects locally")
+
+                    self._calculate_missing_anc_locally(ctr)
+                raise e
 
             first_chunk = False
             num_objects += ctr.object_count

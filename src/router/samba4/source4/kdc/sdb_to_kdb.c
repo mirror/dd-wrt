@@ -28,6 +28,9 @@
 #include "kdc/samba_kdc.h"
 #include "lib/krb5_wrap/krb5_samba.h"
 
+#undef DBGC_CLASS
+#define DBGC_CLASS DBGC_KERBEROS
+
 static int SDBFlags_to_kflags(const struct SDBFlags *s,
 			      krb5_flags *k)
 {
@@ -65,9 +68,16 @@ static int SDBFlags_to_kflags(const struct SDBFlags *s,
 	if (s->change_pw) {
 		*k |= KRB5_KDB_PWCHANGE_SERVICE;
 	}
+#if 0
+	/*
+	 * Do not set KRB5_KDB_REQUIRES_HW_AUTH as this would tell the client
+	 * to enforce hardware authentication. It prevents the use of files
+	 * based public key authentication which we use for testing.
+	 */
 	if (s->require_hwauth) {
 		*k |= KRB5_KDB_REQUIRES_HW_AUTH;
 	}
+#endif
 	if (s->ok_as_delegate) {
 		*k |= KRB5_KDB_OK_AS_DELEGATE;
 	}
@@ -85,6 +95,9 @@ static int SDBFlags_to_kflags(const struct SDBFlags *s,
 	}
 	if (s->allow_digest) {
 		;
+	}
+	if (s->no_auth_data_reqd) {
+		*k |= KRB5_KDB_NO_AUTH_DATA_REQUIRED;
 	}
 
 	return 0;
@@ -224,12 +237,15 @@ static void free_krb5_db_entry(krb5_context context,
 	ZERO_STRUCTP(k);
 }
 
-static int sdb_entry_ex_to_krb5_db_entry(krb5_context context,
-					 const struct sdb_entry *s,
-					 krb5_db_entry *k)
+int sdb_entry_to_krb5_db_entry(krb5_context context,
+			       const struct sdb_entry *s,
+			       krb5_db_entry *k)
 {
+	struct samba_kdc_entry *ske = s->skdc_entry;
 	krb5_error_code ret;
 	int i;
+
+	ZERO_STRUCTP(k);
 
 	k->magic = KRB5_KDB_MAGIC_NUMBER;
 	k->len = KRB5_KDB_V1_BASE_LENGTH;
@@ -284,7 +300,11 @@ static int sdb_entry_ex_to_krb5_db_entry(krb5_context context,
 
 	/* FIXME: TODO HDB Extensions */
 
-	if (s->keys.len > 0) {
+	/*
+	 * Don't copy keys (allow password auth) if s->flags.require_hwauth is
+	 * set which translates to UF_SMARTCARD_REQUIRED.
+	 */
+	if (s->keys.len > 0 && s->flags.require_hwauth == 0) {
 		k->key_data = malloc(s->keys.len * sizeof(krb5_key_data));
 		if (k->key_data == NULL) {
 			free_krb5_db_entry(context, k);
@@ -304,53 +324,9 @@ static int sdb_entry_ex_to_krb5_db_entry(krb5_context context,
 		}
 	}
 
+	k->e_data = (void *)ske;
+	if (ske != NULL) {
+		ske->kdc_entry = k;
+	}
 	return 0;
-}
-
-static int samba_kdc_kdb_entry_destructor(struct samba_kdc_entry *p)
-{
-	krb5_db_entry *entry_ex = p->entry_ex;
-	krb5_error_code ret;
-	krb5_context context;
-
-	if (entry_ex->e_data != NULL) {
-		struct samba_kdc_entry *skdc_entry;
-
-		skdc_entry = talloc_get_type(entry_ex->e_data,
-					     struct samba_kdc_entry);
-		talloc_set_destructor(skdc_entry, NULL);
-		entry_ex->e_data = NULL;
-	}
-
-	ret = smb_krb5_init_context_common(&context);
-	if (ret) {
-		DBG_ERR("kerberos init context failed (%s)\n",
-			error_message(ret));
-		return ret;
-	}
-
-	krb5_db_free_principal(context, entry_ex);
-	krb5_free_context(context);
-
-	return 0;
-}
-
-int sdb_entry_ex_to_kdb_entry_ex(krb5_context context,
-				 const struct sdb_entry_ex *s,
-				 krb5_db_entry *k)
-{
-	ZERO_STRUCTP(k);
-
-	if (s->ctx != NULL) {
-		struct samba_kdc_entry *skdc_entry;
-
-		skdc_entry = talloc_get_type(s->ctx, struct samba_kdc_entry);
-
-		k->e_data	= (void *)skdc_entry;
-
-		talloc_set_destructor(skdc_entry,
-				      samba_kdc_kdb_entry_destructor);
-	}
-
-	return sdb_entry_ex_to_krb5_db_entry(context, &s->entry, k);
 }

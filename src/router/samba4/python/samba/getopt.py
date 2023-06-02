@@ -31,6 +31,9 @@ from samba.credentials import (
 import sys
 
 
+OptionError = optparse.OptionValueError
+
+
 class SambaOptions(optparse.OptionGroup):
     """General Samba-related command line options."""
 
@@ -64,18 +67,24 @@ class SambaOptions(optparse.OptionGroup):
         self._configfile = arg
 
     def _set_debuglevel(self, option, opt_str, arg, parser):
-        self._lp.set('debug level', arg)
+        try:
+            self._lp.set('debug level', arg)
+        except RuntimeError:
+            raise OptionError(f"invalid -d/--debug value: '{arg}'")
         parser.values.debuglevel = arg
 
     def _set_realm(self, option, opt_str, arg, parser):
-        self._lp.set('realm', arg)
+        try:
+            self._lp.set('realm', arg)
+        except RuntimeError:
+            raise OptionError(f"invalid --realm value: '{arg}'")
         self.realm = arg
 
     def _set_option(self, option, opt_str, arg, parser):
         if arg.find('=') == -1:
             raise optparse.OptionValueError(
                 "--option option takes a 'a=b' argument")
-        a = arg.split('=')
+        a = arg.split('=', 1)
         try:
             self._lp.set(a[0], a[1])
         except Exception as e:
@@ -91,6 +100,15 @@ class SambaOptions(optparse.OptionGroup):
         else:
             self._lp.load_default()
         return self._lp
+
+
+class Samba3Options(SambaOptions):
+    """General Samba-related command line options with an s3 param."""
+
+    def __init__(self, parser):
+        SambaOptions.__init__(self, parser)
+        from samba.samba3 import param as s3param
+        self._lp = s3param.get_context()
 
 
 class VersionOptions(optparse.OptionGroup):
@@ -174,6 +192,10 @@ class CredentialsOptions(optparse.OptionGroup):
                          action="callback", type=str,
                          help="Kerberos Credentials cache",
                          callback=self._set_krb5_ccache)
+        self._add_option("-A", "--authentication-file", metavar="AUTHFILE",
+                         action="callback", type=str,
+                         help="Authentication file",
+                         callback=self._set_auth_file)
 
         # LEGACY
         self._add_option("-k", "--kerberos", metavar="KERBEROS",
@@ -274,6 +296,12 @@ class CredentialsOptions(optparse.OptionGroup):
     def _set_krb5_ccache(self, option, opt_str, arg, parser):
         self.creds.set_kerberos_state(MUST_USE_KERBEROS)
         self.creds.set_named_ccache(arg)
+
+    def _set_auth_file(self, option, opt_str, arg, parser):
+        if os.path.exists(arg):
+            self.creds.parse_file(arg)
+            self.ask_for_password = False
+            self.machine_pass = False
 
     def get_credentials(self, lp, fallback_machine=False):
         """Obtain the credentials set on the command-line.

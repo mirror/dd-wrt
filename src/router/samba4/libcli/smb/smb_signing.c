@@ -27,9 +27,9 @@
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 
-/* Used by the SMB signing functions. */
+/* Used by the SMB1 signing functions. */
 
-struct smb_signing_state {
+struct smb1_signing_state {
 	/* is signing localy allowed */
 	bool allowed;
 
@@ -55,7 +55,7 @@ struct smb_signing_state {
 	void (*free_fn)(TALLOC_CTX *mem_ctx, void *ptr);
 };
 
-static void smb_signing_reset_info(struct smb_signing_state *si)
+static void smb1_signing_reset_info(struct smb1_signing_state *si)
 {
 	si->active = false;
 	si->seqnum = 0;
@@ -69,27 +69,27 @@ static void smb_signing_reset_info(struct smb_signing_state *si)
 	si->mac_key.length = 0;
 }
 
-struct smb_signing_state *smb_signing_init_ex(TALLOC_CTX *mem_ctx,
+struct smb1_signing_state *smb1_signing_init_ex(TALLOC_CTX *mem_ctx,
 					      bool allowed,
 					      bool desired,
 					      bool mandatory,
 					      void *(*alloc_fn)(TALLOC_CTX *, size_t),
 					      void (*free_fn)(TALLOC_CTX *, void *))
 {
-	struct smb_signing_state *si;
+	struct smb1_signing_state *si;
 
 	if (alloc_fn) {
-		void *p = alloc_fn(mem_ctx, sizeof(struct smb_signing_state));
+		void *p = alloc_fn(mem_ctx, sizeof(struct smb1_signing_state));
 		if (p == NULL) {
 			return NULL;
 		}
-		memset(p, 0, sizeof(struct smb_signing_state));
-		si = (struct smb_signing_state *)p;
+		memset(p, 0, sizeof(struct smb1_signing_state));
+		si = (struct smb1_signing_state *)p;
 		si->mem_ctx = mem_ctx;
 		si->alloc_fn = alloc_fn;
 		si->free_fn = free_fn;
 	} else {
-		si = talloc_zero(mem_ctx, struct smb_signing_state);
+		si = talloc_zero(mem_ctx, struct smb1_signing_state);
 		if (si == NULL) {
 			return NULL;
 		}
@@ -110,16 +110,16 @@ struct smb_signing_state *smb_signing_init_ex(TALLOC_CTX *mem_ctx,
 	return si;
 }
 
-struct smb_signing_state *smb_signing_init(TALLOC_CTX *mem_ctx,
+struct smb1_signing_state *smb1_signing_init(TALLOC_CTX *mem_ctx,
 					   bool allowed,
 					   bool desired,
 					   bool mandatory)
 {
-	return smb_signing_init_ex(mem_ctx, allowed, desired, mandatory,
+	return smb1_signing_init_ex(mem_ctx, allowed, desired, mandatory,
 				   NULL, NULL);
 }
 
-static bool smb_signing_good(struct smb_signing_state *si,
+static bool smb1_signing_good(struct smb1_signing_state *si,
 			     bool good, uint32_t seq)
 {
 	if (good) {
@@ -131,18 +131,18 @@ static bool smb_signing_good(struct smb_signing_state *si,
 
 	if (!si->mandatory && !si->active) {
 		/* Non-mandatory signing - just turn off if this is the first bad packet.. */
-		DEBUG(5, ("smb_signing_good: signing negotiated but not required and peer\n"
-			  "isn't sending correct signatures. Turning off.\n"));
-		smb_signing_reset_info(si);
+		DBG_INFO("signing negotiated but not required and peer\n"
+			  "isn't sending correct signatures. Turning off.\n");
+		smb1_signing_reset_info(si);
 		return true;
 	}
 
 	/* Mandatory signing or bad packet after signing started - fail and disconnect. */
-	DEBUG(0, ("smb_signing_good: BAD SIG: seq %u\n", (unsigned int)seq));
+	DBG_ERR("BAD SIG: seq %u\n", (unsigned int)seq);
 	return false;
 }
 
-static NTSTATUS smb_signing_md5(const DATA_BLOB *mac_key,
+static NTSTATUS smb1_signing_md5(const DATA_BLOB *mac_key,
 				const uint8_t *hdr, size_t len,
 				uint32_t seq_number,
 				uint8_t calc_md5_mac[16])
@@ -159,7 +159,7 @@ static NTSTATUS smb_signing_md5(const DATA_BLOB *mac_key,
 	 * We do this here, to avoid modifying the packet.
 	 */
 
-	DEBUG(10,("smb_signing_md5: sequence number %u\n", seq_number ));
+	DBG_DEBUG("sequence number %u\n", seq_number );
 
 	SIVAL(sequence_buf, 0, seq_number);
 	SIVAL(sequence_buf, 4, 0);
@@ -204,7 +204,7 @@ static NTSTATUS smb_signing_md5(const DATA_BLOB *mac_key,
 	return NT_STATUS_OK;
 }
 
-uint32_t smb_signing_next_seqnum(struct smb_signing_state *si, bool oneway)
+uint32_t smb1_signing_next_seqnum(struct smb1_signing_state *si, bool oneway)
 {
 	uint32_t seqnum;
 
@@ -222,7 +222,7 @@ uint32_t smb_signing_next_seqnum(struct smb_signing_state *si, bool oneway)
 	return seqnum;
 }
 
-void smb_signing_cancel_reply(struct smb_signing_state *si, bool oneway)
+void smb1_signing_cancel_reply(struct smb1_signing_state *si, bool oneway)
 {
 	if (si->mac_key.length == 0) {
 		return;
@@ -235,7 +235,7 @@ void smb_signing_cancel_reply(struct smb_signing_state *si, bool oneway)
 	}
 }
 
-NTSTATUS smb_signing_sign_pdu(struct smb_signing_state *si,
+NTSTATUS smb1_signing_sign_pdu(struct smb1_signing_state *si,
 			      uint8_t *outhdr, size_t len,
 			      uint32_t seqnum)
 {
@@ -251,9 +251,9 @@ NTSTATUS smb_signing_sign_pdu(struct smb_signing_state *si,
 
 	/* JRA Paranioa test - we should be able to get rid of this... */
 	if (len < (HDR_SS_FIELD + 8)) {
-		DEBUG(1,("smb_signing_sign_pdu: Logic error. "
+		DBG_WARNING("Logic error. "
 			 "Can't check signature on short packet! smb_len = %u\n",
-			 (unsigned)len));
+			 (unsigned)len);
 		abort();
 	}
 
@@ -286,7 +286,7 @@ NTSTATUS smb_signing_sign_pdu(struct smb_signing_state *si,
 	} else {
 		NTSTATUS status;
 
-		status = smb_signing_md5(&si->mac_key,
+		status = smb1_signing_md5(&si->mac_key,
 				         outhdr,
 					 len,
 					 seqnum,
@@ -296,7 +296,7 @@ NTSTATUS smb_signing_sign_pdu(struct smb_signing_state *si,
 		}
 	}
 
-	DEBUG(10, ("smb_signing_sign_pdu: sent SMB signature of\n"));
+	DBG_DEBUG("sent SMB signature of\n");
 	dump_data(10, calc_md5_mac, 8);
 
 	memcpy(&outhdr[HDR_SS_FIELD], calc_md5_mac, 8);
@@ -307,7 +307,7 @@ NTSTATUS smb_signing_sign_pdu(struct smb_signing_state *si,
 	return NT_STATUS_OK;
 }
 
-bool smb_signing_check_pdu(struct smb_signing_state *si,
+bool smb1_signing_check_pdu(struct smb1_signing_state *si,
 			   const uint8_t *inhdr, size_t len,
 			   uint32_t seqnum)
 {
@@ -321,13 +321,13 @@ bool smb_signing_check_pdu(struct smb_signing_state *si,
 	}
 
 	if (len < (HDR_SS_FIELD + 8)) {
-		DEBUG(1,("smb_signing_check_pdu: Can't check signature "
+		DBG_WARNING("Can't check signature "
 			 "on short packet! smb_len = %u\n",
-			 (unsigned)len));
+			 (unsigned)len);
 		return false;
 	}
 
-	status = smb_signing_md5(&si->mac_key,
+	status = smb1_signing_md5(&si->mac_key,
 				 inhdr,
 				 len,
 				 seqnum,
@@ -339,41 +339,39 @@ bool smb_signing_check_pdu(struct smb_signing_state *si,
 	}
 
 	reply_sent_mac = &inhdr[HDR_SS_FIELD];
-	good = (memcmp(reply_sent_mac, calc_md5_mac, 8) == 0);
+	good = mem_equal_const_time(reply_sent_mac, calc_md5_mac, 8);
 
 	if (!good) {
 		int i;
 		const int sign_range = 5;
 
-		DEBUG(5, ("smb_signing_check_pdu: BAD SIG: wanted SMB signature of\n"));
+		DBG_INFO("BAD SIG: wanted SMB signature of\n");
 		dump_data(5, calc_md5_mac, 8);
 
-		DEBUG(5, ("smb_signing_check_pdu: BAD SIG: got SMB signature of\n"));
+		DBG_INFO("BAD SIG: got SMB signature of\n");
 		dump_data(5, reply_sent_mac, 8);
 
 		for (i = -sign_range; i < sign_range; i++) {
-			smb_signing_md5(&si->mac_key, inhdr, len,
+			smb1_signing_md5(&si->mac_key, inhdr, len,
 					seqnum+i, calc_md5_mac);
-			if (memcmp(reply_sent_mac, calc_md5_mac, 8) == 0) {
-				DEBUG(0,("smb_signing_check_pdu: "
-					 "out of seq. seq num %u matches. "
+			if (mem_equal_const_time(reply_sent_mac, calc_md5_mac, 8)) {
+				DBG_ERR("out of seq. seq num %u matches. "
 					 "We were expecting seq %u\n",
 					 (unsigned int)seqnum+i,
-					 (unsigned int)seqnum));
+					 (unsigned int)seqnum);
 				break;
 			}
 		}
 	} else {
-		DEBUG(10, ("smb_signing_check_pdu: seq %u: "
-			   "got good SMB signature of\n",
-			   (unsigned int)seqnum));
+		DBG_DEBUG("seq %u: got good SMB signature of\n",
+			   (unsigned int)seqnum);
 		dump_data(10, reply_sent_mac, 8);
 	}
 
-	return smb_signing_good(si, good, seqnum);
+	return smb1_signing_good(si, good, seqnum);
 }
 
-bool smb_signing_activate(struct smb_signing_state *si,
+bool smb1_signing_activate(struct smb1_signing_state *si,
 			  const DATA_BLOB user_session_key,
 			  const DATA_BLOB response)
 {
@@ -396,7 +394,7 @@ bool smb_signing_activate(struct smb_signing_state *si,
 		return false;
 	}
 
-	smb_signing_reset_info(si);
+	smb1_signing_reset_info(si);
 
 	len = response.length + user_session_key.length;
 	if (si->alloc_fn) {
@@ -415,19 +413,19 @@ bool smb_signing_activate(struct smb_signing_state *si,
 	ofs = 0;
 	memcpy(&si->mac_key.data[ofs], user_session_key.data, user_session_key.length);
 
-	DEBUG(10, ("smb_signing_activate: user_session_key\n"));
+	DBG_DEBUG("user_session_key\n");
 	dump_data(10, user_session_key.data, user_session_key.length);
 
 	if (response.length) {
 		ofs = user_session_key.length;
 		memcpy(&si->mac_key.data[ofs], response.data, response.length);
-		DEBUG(10, ("smb_signing_activate: response_data\n"));
+		DBG_DEBUG("response_data\n");
 		dump_data(10, response.data, response.length);
 	} else {
-		DEBUG(10, ("smb_signing_activate: NULL response_data\n"));
+		DBG_DEBUG("NULL response_data\n");
 	}
 
-	dump_data_pw("smb_signing_activate: mac key is:\n",
+	dump_data_pw("smb1_signing_activate: mac key is:\n",
 		     si->mac_key.data, si->mac_key.length);
 
 	/* Initialise the sequence number */
@@ -436,27 +434,22 @@ bool smb_signing_activate(struct smb_signing_state *si,
 	return true;
 }
 
-bool smb_signing_is_active(struct smb_signing_state *si)
+bool smb1_signing_is_active(struct smb1_signing_state *si)
 {
 	return si->active;
 }
 
-bool smb_signing_is_allowed(struct smb_signing_state *si)
-{
-	return si->allowed;
-}
-
-bool smb_signing_is_desired(struct smb_signing_state *si)
+bool smb1_signing_is_desired(struct smb1_signing_state *si)
 {
 	return si->desired;
 }
 
-bool smb_signing_is_mandatory(struct smb_signing_state *si)
+bool smb1_signing_is_mandatory(struct smb1_signing_state *si)
 {
 	return si->mandatory;
 }
 
-bool smb_signing_set_negotiated(struct smb_signing_state *si,
+bool smb1_signing_set_negotiated(struct smb1_signing_state *si,
 				bool allowed, bool mandatory)
 {
 	if (si->active) {
@@ -499,12 +492,12 @@ bool smb_signing_set_negotiated(struct smb_signing_state *si,
 	return true;
 }
 
-bool smb_signing_is_negotiated(struct smb_signing_state *si)
+bool smb1_signing_is_negotiated(struct smb1_signing_state *si)
 {
 	return si->negotiated;
 }
 
-NTSTATUS smb_key_derivation(const uint8_t *KI,
+NTSTATUS smb1_key_derivation(const uint8_t *KI,
 			    size_t KI_len,
 			    uint8_t KO[16])
 {

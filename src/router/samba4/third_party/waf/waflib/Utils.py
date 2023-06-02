@@ -11,7 +11,7 @@ through Python versions 2.5 to 3.X and across different platforms (win32, linux,
 
 from __future__ import with_statement
 
-import atexit, os, sys, errno, inspect, re, datetime, platform, base64, signal, functools, time
+import atexit, os, sys, errno, inspect, re, datetime, platform, base64, signal, functools, time, shlex
 
 try:
 	import cPickle
@@ -452,6 +452,8 @@ def console_encoding():
 			pass
 		else:
 			if codepage:
+				if 65001 == codepage and sys.version_info < (3, 3):
+					return 'utf-8'
 				return 'cp%d' % codepage
 	return sys.stdout.encoding or ('cp1252' if is_win32 else 'latin-1')
 
@@ -577,10 +579,13 @@ def quote_define_name(s):
 	fu = fu.upper()
 	return fu
 
-re_sh = re.compile('\\s|\'|"')
-"""
-Regexp used for shell_escape below
-"""
+# shlex.quote didn't exist until python 3.3. Prior to that it was a non-documented
+# function in pipes.
+try:
+	shell_quote = shlex.quote
+except AttributeError:
+	import pipes
+	shell_quote = pipes.quote
 
 def shell_escape(cmd):
 	"""
@@ -589,7 +594,7 @@ def shell_escape(cmd):
 	"""
 	if isinstance(cmd, str):
 		return cmd
-	return ' '.join(repr(x) if re_sh.search(x) else x for x in cmd)
+	return ' '.join(shell_quote(x) for x in cmd)
 
 def h_list(lst):
 	"""
@@ -864,6 +869,19 @@ def lib64():
 			if os.path.exists('/usr/lib64') and not os.path.exists('/usr/lib32'):
 				return '64'
 	return ''
+
+def loose_version(ver_str):
+	# private for the time being!
+	# see #2402
+	lst = re.split(r'([.]|\\d+|[a-zA-Z])', ver_str)
+	ver = []
+	for i, val in enumerate(lst):
+		try:
+			ver.append(int(val))
+		except ValueError:
+			if val != '.':
+				ver.append(val)
+	return ver
 
 def sane_path(p):
 	# private function for the time being!

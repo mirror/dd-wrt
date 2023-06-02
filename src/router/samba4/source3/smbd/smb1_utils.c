@@ -20,7 +20,8 @@
  */
 
 #include "includes.h"
-#include "smb1_utils.h"
+#include "smbd/smbd.h"
+#include "smbd/globals.h"
 #include "libcli/security/security.h"
 #include "lib/util/sys_rw_data.h"
 #include "smbd/fd_handle.h"
@@ -96,12 +97,7 @@ struct files_struct *fcb_or_dos_open(
 		return NULL;
 	}
 
-	status = dup_file_fsp(
-		req,
-		fsp,
-		access_mask,
-		create_options,
-		new_fsp);
+	status = dup_file_fsp(fsp, access_mask, new_fsp);
 
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_DEBUG("dup_file_fsp failed: %s\n", nt_errstr(status));
@@ -124,4 +120,59 @@ bool send_keepalive(int client)
 	buf[1] = buf[2] = buf[3] = 0;
 
 	return(write_data(client,(char *)buf,4) == 4);
+}
+
+/*******************************************************************
+ Add a string to the end of a smb_buf, adjusting bcc and smb_len.
+ Return the bytes added
+********************************************************************/
+
+ssize_t message_push_string(uint8_t **outbuf, const char *str, int flags)
+{
+	size_t buf_size = smb_len(*outbuf) + 4;
+	size_t grow_size;
+	size_t result = 0;
+	uint8_t *tmp;
+	NTSTATUS status;
+
+	/*
+	 * We need to over-allocate, now knowing what srvstr_push will
+	 * actually use. This is very generous by incorporating potential
+	 * padding, the terminating 0 and at most 4 chars per UTF-16 code
+	 * point.
+	 */
+	grow_size = (strlen(str) + 2) * 4;
+
+	if (!(tmp = talloc_realloc(NULL, *outbuf, uint8_t,
+					 buf_size + grow_size))) {
+		DEBUG(0, ("talloc failed\n"));
+		return -1;
+	}
+
+	status = srvstr_push((char *)tmp, SVAL(tmp, smb_flg2),
+			     tmp + buf_size, str, grow_size, flags, &result);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		DEBUG(0, ("srvstr_push failed\n"));
+		return -1;
+	}
+
+	/*
+	 * Ensure we clear out the extra data we have
+	 * grown the buffer by, but not written to.
+	 */
+	if (buf_size + result < buf_size) {
+		return -1;
+	}
+	if (grow_size < result) {
+		return -1;
+	}
+
+	memset(tmp + buf_size + result, '\0', grow_size - result);
+
+	set_message_bcc((char *)tmp, smb_buflen(tmp) + result);
+
+	*outbuf = tmp;
+
+	return result;
 }

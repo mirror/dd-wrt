@@ -771,7 +771,6 @@ static NTSTATUS ntlmssp_server_preauth(struct gensec_security *gensec_security,
 
 	user_info->logon_parameters = MSV1_0_ALLOW_SERVER_TRUST_ACCOUNT | MSV1_0_ALLOW_WORKSTATION_TRUST_ACCOUNT;
 	user_info->flags = 0;
-	user_info->mapped_state = false;
 	user_info->client.account_name = ntlmssp_state->user;
 	user_info->client.domain_name = ntlmssp_state->domain;
 	user_info->workstation_name = ntlmssp_state->client.netbios_name;
@@ -1048,7 +1047,7 @@ static NTSTATUS ntlmssp_server_postauth(struct gensec_security *gensec_security,
 	if (ntlmssp_state->new_spnego) {
 		gnutls_hmac_hd_t hmac_hnd = NULL;
 		uint8_t mic_buffer[NTLMSSP_MIC_SIZE] = { 0, };
-		int cmp;
+		bool cmp;
 		int rc;
 
 		rc = gnutls_hmac_init(&hmac_hnd,
@@ -1096,9 +1095,9 @@ static NTSTATUS ntlmssp_server_postauth(struct gensec_security *gensec_security,
 		}
 		gnutls_hmac_deinit(hmac_hnd, mic_buffer);
 
-		cmp = memcmp(request.data + NTLMSSP_MIC_OFFSET,
-			     mic_buffer, NTLMSSP_MIC_SIZE);
-		if (cmp != 0) {
+		cmp = mem_equal_const_time(request.data + NTLMSSP_MIC_OFFSET,
+					   mic_buffer, NTLMSSP_MIC_SIZE);
+		if (!cmp) {
 			DEBUG(1,("%s: invalid NTLMSSP_MIC for "
 				 "user=[%s] domain=[%s] workstation=[%s]\n",
 				 __func__,
@@ -1113,7 +1112,7 @@ static NTSTATUS ntlmssp_server_postauth(struct gensec_security *gensec_security,
 
 		ZERO_ARRAY(mic_buffer);
 
-		if (cmp != 0) {
+		if (!cmp) {
 			return NT_STATUS_INVALID_PARAMETER;
 		}
 	}

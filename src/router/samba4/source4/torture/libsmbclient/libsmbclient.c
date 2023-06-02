@@ -668,7 +668,7 @@ static bool torture_libsmbclient_readdirplus_seek(struct torture_context *tctx)
 		success,
 		done,
 		talloc_asprintf(tctx,
-				"after seek (20) readdir name missmatch "
+				"after seek (20) readdir name mismatch "
 				"file %s - got %s\n",
 				dirent_20->name,
 				getdentries[0].name));
@@ -700,7 +700,7 @@ static bool torture_libsmbclient_readdirplus_seek(struct torture_context *tctx)
 		success,
 		done,
 		talloc_asprintf(tctx,
-				"after seek (20) readdirplus name missmatch "
+				"after seek (20) readdirplus name mismatch "
 				"file %s - got %s\n",
 				dirent_20->name,
 				direntries_20->name));
@@ -733,7 +733,7 @@ static bool torture_libsmbclient_readdirplus_seek(struct torture_context *tctx)
 		success,
 		done,
 		talloc_asprintf(tctx,
-				"after seek (20) readdirplus2 name missmatch "
+				"after seek (20) readdirplus2 name mismatch "
 				"file %s - got %s\n",
 				dirent_20->name,
 				direntries_20->name));
@@ -937,7 +937,7 @@ static bool torture_libsmbclient_readdirplus2(struct torture_context *tctx)
 		success,
 		done,
 		talloc_asprintf(tctx,
-			"filename '%s' ino missmatch. "
+			"filename '%s' ino mismatch. "
 			"From smbc_readdirplus2 = %"PRIx64" "
 			"From smbc_stat = %"PRIx64"",
 			filename,
@@ -1303,6 +1303,268 @@ out:
 	return ok;
 }
 
+static bool torture_libsmbclient_rename(struct torture_context *tctx)
+{
+	SMBCCTX *ctx = NULL;
+	int fhandle = -1;
+	bool success = false;
+	const char *filename_src = NULL;
+	const char *filename_dst = NULL;
+	int ret;
+	const char *smburl = torture_setting_string(tctx, "smburl", NULL);
+
+	if (smburl == NULL) {
+		torture_fail(tctx,
+			"option --option=torture:smburl="
+			"smb://user:password@server/share missing\n");
+	}
+
+	torture_assert_goto(tctx,
+				torture_libsmbclient_init_context(tctx, &ctx),
+				success,
+				done,
+				"");
+
+	smbc_set_context(ctx);
+
+	filename_src = talloc_asprintf(tctx,
+			"%s/src",
+			smburl);
+	if (filename_src == NULL) {
+		torture_fail_goto(tctx, done, "talloc fail\n");
+	}
+
+	filename_dst = talloc_asprintf(tctx,
+			"%s/dst",
+			smburl);
+	if (filename_dst == NULL) {
+		torture_fail_goto(tctx, done, "talloc fail\n");
+	}
+
+	/* Ensure the files don't exist. */
+	smbc_unlink(filename_src);
+	smbc_unlink(filename_dst);
+
+	/* Create them. */
+	fhandle = smbc_creat(filename_src, 0666);
+	if (fhandle < 0) {
+		torture_fail_goto(tctx,
+			done,
+			talloc_asprintf(tctx,
+				"failed to create file '%s': %s",
+				filename_src,
+				strerror(errno)));
+	}
+	ret = smbc_close(fhandle);
+	torture_assert_int_equal_goto(tctx,
+		ret,
+		0,
+		success,
+		done,
+		talloc_asprintf(tctx,
+			"failed to close handle for '%s'",
+			filename_src));
+
+	fhandle = smbc_creat(filename_dst, 0666);
+	if (fhandle < 0) {
+		torture_fail_goto(tctx,
+			done,
+			talloc_asprintf(tctx,
+				"failed to create file '%s': %s",
+				filename_dst,
+				strerror(errno)));
+	}
+	ret = smbc_close(fhandle);
+	torture_assert_int_equal_goto(tctx,
+		ret,
+		0,
+		success,
+		done,
+		talloc_asprintf(tctx,
+			"failed to close handle for '%s'",
+			filename_dst));
+
+	ret = smbc_rename(filename_src, filename_dst);
+
+	/*
+	 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14938
+	 * gives ret == -1, but errno = 0 for overwrite renames
+	 * over SMB2.
+	 */
+	torture_assert_int_equal_goto(tctx,
+		ret,
+		0,
+		success,
+		done,
+		talloc_asprintf(tctx,
+			"smbc_rename '%s' -> '%s' failed with %s\n",
+			filename_src,
+			filename_dst,
+			strerror(errno)));
+
+	/* Remove them again. */
+	smbc_unlink(filename_src);
+	smbc_unlink(filename_dst);
+	success = true;
+
+  done:
+	smbc_free_context(ctx, 1);
+	return success;
+}
+
+static bool torture_libsmbclient_getatr(struct torture_context *tctx)
+{
+	const char *smburl = torture_setting_string(tctx, "smburl", NULL);
+	SMBCCTX *ctx = NULL;
+	char *getatr_name = NULL;
+	struct stat st = {0};
+	bool ok;
+	int ret = 0;
+	int err = 0;
+
+	if (smburl == NULL) {
+		torture_fail(tctx,
+			     "option --option=torture:smburl="
+			     "smb://user:password@server missing\n");
+	}
+
+	ok = torture_libsmbclient_init_context(tctx, &ctx);
+	torture_assert(tctx, ok, "Failed to init context");
+	smbc_set_context(ctx);
+
+	getatr_name = talloc_asprintf(tctx,
+			"%s/noexist",
+			smburl);
+	if (getatr_name == NULL) {
+		torture_result(tctx,
+			       TORTURE_FAIL,
+			       __location__": %s",
+			       "talloc fail\n");
+		return false;
+	}
+	/* Ensure the file doesn't exist. */
+	smbc_unlink(getatr_name);
+	/*
+	 * smbc_stat() internally uses SMBC_getatr().
+	 * Make sure doing getatr on a non-existent file gives
+	 * an error of -1, errno = ENOENT.
+	 */
+
+	ret = smbc_stat(getatr_name, &st);
+	if (ret == -1) {
+		err = errno;
+	}
+	torture_assert_int_equal(tctx,
+				 ret,
+				 -1,
+				 talloc_asprintf(tctx,
+					"smbc_stat on '%s' should "
+					"get -1, got %d\n",
+					getatr_name,
+					ret));
+	torture_assert_int_equal(tctx,
+				 err,
+				 ENOENT,
+				 talloc_asprintf(tctx,
+					"smbc_stat on '%s' should "
+					"get errno = ENOENT, got %s\n",
+					getatr_name,
+					strerror(err)));
+	return true;
+}
+
+static bool torture_libsmbclient_getxattr(struct torture_context *tctx)
+{
+	const char *smburl = torture_setting_string(tctx, "smburl", NULL);
+	int fhandle = -1;
+	SMBCCTX *ctx = NULL;
+	char *getxattr_name = NULL;
+	char value[4096];
+	bool ok = false;
+	int ret = -1;
+
+	if (smburl == NULL) {
+		torture_fail(tctx,
+			     "option --option=torture:smburl="
+			     "smb://user:password@server missing\n");
+	}
+
+	ok = torture_libsmbclient_init_context(tctx, &ctx);
+	torture_assert(tctx, ok, "Failed to init context");
+	smbc_set_context(ctx);
+
+	getxattr_name = talloc_asprintf(tctx,
+			"%s/getxattr",
+			smburl);
+	if (getxattr_name == NULL) {
+		torture_result(tctx,
+			       TORTURE_FAIL,
+			       __location__": %s",
+			       "talloc fail\n");
+		return false;
+	}
+	/* Ensure the file doesn't exist. */
+	smbc_unlink(getxattr_name);
+
+	/* Create testfile. */
+	fhandle = smbc_creat(getxattr_name, 0666);
+	if (fhandle < 0) {
+		torture_fail_goto(tctx,
+			done,
+			talloc_asprintf(tctx,
+				"failed to create file '%s': %s",
+				getxattr_name,
+				strerror(errno)));
+	}
+	ret = smbc_close(fhandle);
+	torture_assert_int_equal_goto(tctx,
+		ret,
+		0,
+		ok,
+		done,
+		talloc_asprintf(tctx,
+			"failed to close handle for '%s'",
+			getxattr_name));
+
+	/*
+	 * Ensure getting a non-existent attribute returns -1.
+	 */
+	ret = smbc_getxattr(getxattr_name, "foobar", value, sizeof(value));
+	torture_assert_int_equal_goto(tctx,
+		ret,
+		-1,
+		ok,
+		done,
+		talloc_asprintf(tctx,
+			"smbc_getxattr(foobar) on '%s' should "
+			"get -1, got %d\n",
+			getxattr_name,
+			ret));
+
+	/*
+	 * Ensure getting a valid attribute returns 0.
+	 */
+	ret = smbc_getxattr(getxattr_name, "system.*", value, sizeof(value));
+	torture_assert_int_equal_goto(tctx,
+		ret,
+		0,
+		ok,
+		done,
+		talloc_asprintf(tctx,
+			"smbc_getxattr(foobar) on '%s' should "
+			"get -1, got %d\n",
+			getxattr_name,
+			ret));
+
+	ok = true;
+
+  done:
+
+	smbc_unlink(getxattr_name);
+	smbc_free_context(ctx, 1);
+	return ok;
+}
+
 NTSTATUS torture_libsmbclient_init(TALLOC_CTX *ctx)
 {
 	struct torture_suite *suite;
@@ -1326,6 +1588,13 @@ NTSTATUS torture_libsmbclient_init(TALLOC_CTX *ctx)
 		suite, "utimes", torture_libsmbclient_utimes);
 	torture_suite_add_simple_test(
 		suite, "noanon_list", torture_libsmbclient_noanon_list);
+	torture_suite_add_simple_test(suite,
+					"rename",
+					torture_libsmbclient_rename);
+	torture_suite_add_simple_test(suite, "getatr",
+		torture_libsmbclient_getatr);
+	torture_suite_add_simple_test(suite, "getxattr",
+		torture_libsmbclient_getxattr);
 
 	suite->description = talloc_strdup(suite, "libsmbclient interface tests");
 

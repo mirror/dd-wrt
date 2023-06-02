@@ -2,12 +2,12 @@
 .\"     Title: vfs_virusfilter
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2022
+.\"      Date: 05/31/2023
 .\"    Manual: System Administration tools
 .\"    Source: Samba 4.8
 .\"  Language: English
 .\"
-.TH "VFS_VIRUSFILTER" "8" "01/31/2022" "Samba 4\&.8" "System Administration tools"
+.TH "VFS_VIRUSFILTER" "8" "05/31/2023" "Samba 4\&.8" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -75,6 +75,19 @@ The antivirus scan\-engine\&.
 .IP \(bu 2.3
 .\}
 \fIclamav\fR, the ClamAV scanner
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdummy\fR, dummy scanner used in tests\&. Checks against the
+\fIinfected files\fR
+parameter and flags any name that matches as infected\&.
 .RE
 .sp
 .RE
@@ -252,6 +265,15 @@ If this option is not set, the default is none\&.
 virusfilter:exclude files = empty
 .RS 4
 Files to exclude from scanning\&.
+.sp
+If this option is not set, the default is empty\&.
+.RE
+.PP
+virusfilter:infected files = empty
+.RS 4
+Files that virusfilter
+\fIdummy\fR
+flags as infected\&.
 .sp
 If this option is not set, the default is empty\&.
 .RE

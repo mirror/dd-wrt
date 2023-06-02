@@ -40,6 +40,7 @@
 #include "lib/messaging/messages_dgm_ref.h"
 #include "../source3/lib/messages_util.h"
 #include <tdb.h>
+#include "lib/util/idtree.h"
 
 /* change the message version with any incompatible changes in the protocol */
 #define IMESSAGING_VERSION 1
@@ -48,6 +49,7 @@
   a pending irpc call
 */
 struct irpc_request {
+	struct irpc_request *prev, *next;
 	struct imessaging_context *msg_ctx;
 	int callid;
 	struct {
@@ -400,6 +402,16 @@ NTSTATUS imessaging_process_cleanup(
 
 static int imessaging_context_destructor(struct imessaging_context *msg)
 {
+	struct irpc_request *irpc = NULL;
+	struct irpc_request *next = NULL;
+
+	for (irpc = msg->requests; irpc != NULL; irpc = next) {
+		next = irpc->next;
+
+		DLIST_REMOVE(msg->requests, irpc);
+		irpc->callid = -1;
+	}
+
 	DLIST_REMOVE(msg_ctxs, msg);
 	TALLOC_FREE(msg->msg_dgm_ref);
 	return 0;
@@ -428,6 +440,12 @@ static NTSTATUS imessaging_reinit(struct imessaging_context *msg)
 	int ret = -1;
 
 	TALLOC_FREE(msg->msg_dgm_ref);
+
+	if (msg->discard_incoming) {
+		msg->num_incoming_listeners = 0;
+	} else {
+		msg->num_incoming_listeners = 1;
+	}
 
 	msg->server_id.pid = getpid();
 
@@ -469,7 +487,9 @@ NTSTATUS imessaging_reinit_all(void)
 /*
   create the listening socket and setup the dispatcher
 */
-struct imessaging_context *imessaging_init(TALLOC_CTX *mem_ctx,
+static struct imessaging_context *imessaging_init_internal(
+					   TALLOC_CTX *mem_ctx,
+					   bool discard_incoming,
 					   struct loadparm_context *lp_ctx,
 					   struct server_id server_id,
 					   struct tevent_context *ev)
@@ -490,6 +510,12 @@ struct imessaging_context *imessaging_init(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 	msg->ev = ev;
+	msg->discard_incoming = discard_incoming;
+	if (msg->discard_incoming) {
+		msg->num_incoming_listeners = 0;
+	} else {
+		msg->num_incoming_listeners = 1;
+	}
 
 	talloc_set_destructor(msg, imessaging_context_destructor);
 
@@ -601,6 +627,36 @@ fail:
 	return NULL;
 }
 
+/*
+  create the listening socket and setup the dispatcher
+*/
+struct imessaging_context *imessaging_init(TALLOC_CTX *mem_ctx,
+					   struct loadparm_context *lp_ctx,
+					   struct server_id server_id,
+					   struct tevent_context *ev)
+{
+	bool discard_incoming = false;
+	return imessaging_init_internal(mem_ctx,
+					discard_incoming,
+					lp_ctx,
+					server_id,
+					ev);
+}
+
+struct imessaging_context *imessaging_init_discard_incoming(
+						TALLOC_CTX *mem_ctx,
+						struct loadparm_context *lp_ctx,
+						struct server_id server_id,
+						struct tevent_context *ev)
+{
+	bool discard_incoming = true;
+	return imessaging_init_internal(mem_ctx,
+					discard_incoming,
+					lp_ctx,
+					server_id,
+					ev);
+}
+
 struct imessaging_post_state {
 	struct imessaging_context *msg_ctx;
 	struct imessaging_post_state **busy_ref;
@@ -697,6 +753,22 @@ static void imessaging_dgm_recv(struct tevent_context *ev,
 		return;
 	}
 
+	if (msg->num_incoming_listeners == 0) {
+		struct server_id_buf selfbuf;
+
+		message_hdr_get(&msg_type, &src, &dst, buf);
+
+		DBG_DEBUG("not listening - discarding message from "
+			  "src[%s] to dst[%s] (self[%s]) type=0x%x "
+			  "on %s event context\n",
+			   server_id_str_buf(src, &srcbuf),
+			   server_id_str_buf(dst, &dstbuf),
+			   server_id_str_buf(msg->server_id, &selfbuf),
+			   (unsigned)msg_type,
+			   (ev != msg->ev) ? "different" : "main");
+		return;
+	}
+
 	if (ev != msg->ev) {
 		int ret;
 		ret = imessaging_post_self(msg, buf, buf_len);
@@ -758,8 +830,9 @@ struct imessaging_context *imessaging_client_init(TALLOC_CTX *mem_ctx,
 	/* This is because we are not in the s3 serverid database */
 	id.unique_id = SERVERID_UNIQUE_ID_NOT_TO_VERIFY;
 
-	return imessaging_init(mem_ctx, lp_ctx, id, ev);
+	return imessaging_init_discard_incoming(mem_ctx, lp_ctx, id, ev);
 }
+
 /*
   a list of registered irpc server functions
 */
@@ -974,7 +1047,14 @@ failed:
 static int irpc_destructor(struct irpc_request *irpc)
 {
 	if (irpc->callid != -1) {
+		DLIST_REMOVE(irpc->msg_ctx->requests, irpc);
 		idr_remove(irpc->msg_ctx->idr, irpc->callid);
+		if (irpc->msg_ctx->discard_incoming) {
+			SMB_ASSERT(irpc->msg_ctx->num_incoming_listeners > 0);
+		} else {
+			SMB_ASSERT(irpc->msg_ctx->num_incoming_listeners > 1);
+		}
+		irpc->msg_ctx->num_incoming_listeners -= 1;
 		irpc->callid = -1;
 	}
 
@@ -1168,6 +1248,10 @@ static struct tevent_req *irpc_bh_raw_call_send(TALLOC_CTX *mem_ctx,
 	state->irpc->incoming.handler = irpc_bh_raw_call_incoming_handler;
 	state->irpc->incoming.private_data = req;
 
+	/* make sure we accept incoming messages */
+	SMB_ASSERT(state->irpc->msg_ctx->num_incoming_listeners < UINT64_MAX);
+	state->irpc->msg_ctx->num_incoming_listeners += 1;
+	DLIST_ADD_END(state->irpc->msg_ctx->requests, state->irpc);
 	talloc_set_destructor(state->irpc, irpc_destructor);
 
 	/* setup the header */
@@ -1321,6 +1405,38 @@ static bool irpc_bh_ref_alloc(struct dcerpc_binding_handle *h)
 	return true;
 }
 
+static void irpc_bh_do_ndr_print(struct dcerpc_binding_handle *h,
+				 int ndr_flags,
+				 const void *_struct_ptr,
+				 const struct ndr_interface_call *call)
+{
+	void *struct_ptr = discard_const(_struct_ptr);
+	bool print_in = false;
+	bool print_out = false;
+
+	if (DEBUGLEVEL >= 11) {
+		print_in = true;
+		print_out = true;
+	}
+
+	if (ndr_flags & NDR_IN) {
+		if (print_in) {
+			ndr_print_function_debug(call->ndr_print,
+						 call->name,
+						 ndr_flags,
+						 struct_ptr);
+		}
+	}
+	if (ndr_flags & NDR_OUT) {
+		if (print_out) {
+			ndr_print_function_debug(call->ndr_print,
+						 call->name,
+						 ndr_flags,
+						 struct_ptr);
+		}
+	}
+}
+
 static const struct dcerpc_binding_handle_ops irpc_bh_ops = {
 	.name			= "wbint",
 	.is_connected		= irpc_bh_is_connected,
@@ -1331,6 +1447,7 @@ static const struct dcerpc_binding_handle_ops irpc_bh_ops = {
 	.disconnect_recv	= irpc_bh_disconnect_recv,
 
 	.ref_alloc		= irpc_bh_ref_alloc,
+	.do_ndr_print		= irpc_bh_do_ndr_print,
 };
 
 /* initialise a irpc binding handle */

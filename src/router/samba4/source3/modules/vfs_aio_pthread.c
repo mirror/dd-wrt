@@ -302,8 +302,8 @@ static struct aio_open_private_data *create_private_open_data(
 		return NULL;
 	}
 
-	if (fsp_get_io_fd(dirfsp) != AT_FDCWD) {
-		opd->dir_fd = fsp_get_io_fd(dirfsp);
+	if (fsp_get_pathref_fd(dirfsp) != AT_FDCWD) {
+		opd->dir_fd = fsp_get_pathref_fd(dirfsp);
 	} else {
 #if defined(O_DIRECTORY)
 		opd->dir_fd = open(".", O_RDONLY|O_DIRECTORY);
@@ -450,15 +450,19 @@ static int aio_pthread_openat_fn(vfs_handle_struct *handle,
 				 const struct files_struct *dirfsp,
 				 const struct smb_filename *smb_fname,
 				 struct files_struct *fsp,
-				 int flags,
-				 mode_t mode)
+				 const struct vfs_open_how *how)
 {
 	int my_errno = 0;
 	int fd = -1;
 	bool aio_allow_open = lp_parm_bool(
 		SNUM(handle->conn), "aio_pthread", "aio open", false);
 
-	if (smb_fname->stream_name != NULL) {
+	if (how->resolve != 0) {
+		errno = ENOSYS;
+		return -1;
+	}
+
+	if (is_named_stream(smb_fname)) {
 		/* Don't handle stream opens. */
 		errno = ENOENT;
 		return -1;
@@ -473,26 +477,26 @@ static int aio_pthread_openat_fn(vfs_handle_struct *handle,
 
 	if (!aio_allow_open) {
 		/* aio opens turned off. */
-		return openat(fsp_get_io_fd(dirfsp),
+		return openat(fsp_get_pathref_fd(dirfsp),
 			      smb_fname->base_name,
-			      flags,
-			      mode);
+			      how->flags,
+			      how->mode);
 	}
 
-	if (!(flags & O_CREAT)) {
+	if (!(how->flags & O_CREAT)) {
 		/* Only creates matter. */
-		return openat(fsp_get_io_fd(dirfsp),
+		return openat(fsp_get_pathref_fd(dirfsp),
 			      smb_fname->base_name,
-			      flags,
-			      mode);
+			      how->flags,
+			      how->mode);
 	}
 
-	if (!(flags & O_EXCL)) {
+	if (!(how->flags & O_EXCL)) {
 		/* Only creates with O_EXCL matter. */
-		return openat(fsp_get_io_fd(dirfsp),
+		return openat(fsp_get_pathref_fd(dirfsp),
 			      smb_fname->base_name,
-			      flags,
-			      mode);
+			      how->flags,
+			      how->mode);
 	}
 
 	/*
@@ -508,7 +512,7 @@ static int aio_pthread_openat_fn(vfs_handle_struct *handle,
 	}
 
 	/* Ok, it's a create exclusive call - pass it to a thread helper. */
-	return open_async(dirfsp, smb_fname, fsp, flags, mode);
+	return open_async(dirfsp, smb_fname, fsp, how->flags, how->mode);
 }
 #endif
 

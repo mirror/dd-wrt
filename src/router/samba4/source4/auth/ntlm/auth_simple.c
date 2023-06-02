@@ -26,6 +26,7 @@
 #include "lib/util/tevent_ntstatus.h"
 #include "auth/auth.h"
 #include "dsdb/samdb/samdb.h"
+#include "lib/param/param.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
@@ -80,7 +81,7 @@ _PUBLIC_ struct tevent_req *authenticate_ldap_simple_bind_send(TALLOC_CTX *mem_c
 	/* No client.domain_name, use account_name instead */
 	/* user_info->mapped.* will be filled below */
 
-	user_info->workstation_name = NULL;
+	user_info->workstation_name = lpcfg_netbios_name(lp_ctx);
 
 	user_info->remote_host = remote_address;
 	user_info->local_host = local_address;
@@ -88,9 +89,9 @@ _PUBLIC_ struct tevent_req *authenticate_ldap_simple_bind_send(TALLOC_CTX *mem_c
 	user_info->service_description = "LDAP";
 
 	if (using_tls) {
-		user_info->auth_description = "simple bind";
-	} else {
 		user_info->auth_description = "simple bind/TLS";
+	} else {
+		user_info->auth_description = "simple bind";
 	}
 
 	user_info->password_state = AUTH_PASSWORD_PLAIN;
@@ -120,9 +121,10 @@ _PUBLIC_ struct tevent_req *authenticate_ldap_simple_bind_send(TALLOC_CTX *mem_c
 		return tevent_req_post(req, ev);
 	}
 
-	user_info->mapped.account_name = nt4_username;
-	user_info->mapped.domain_name = nt4_domain;
-	user_info->mapped_state = true;
+	user_info->orig_client = user_info->client;
+	user_info->client.account_name = nt4_username;
+	user_info->client.domain_name = nt4_domain;
+	user_info->cracknames_called = true;
 
 	subreq = auth_check_password_send(state, ev,
 					  state->auth_context,

@@ -19,6 +19,7 @@
 */
 #include <Python.h>
 #include "py3compat.h"
+#include "libcli/security/sddl.h"
 #include "libcli/security/security.h"
 
 static void PyType_AddMethods(PyTypeObject *type, PyMethodDef *methods)
@@ -234,6 +235,52 @@ static PyObject *py_descriptor_sacl_del(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+static PyObject *py_descriptor_dacl_del_ace(PyObject *self, PyObject *args)
+{
+	struct security_descriptor *desc = pytalloc_get_ptr(self);
+	NTSTATUS status;
+	struct security_ace *ace = NULL;
+	PyObject *py_ace = Py_None;
+
+	if (!PyArg_ParseTuple(args, "O!", &security_ace_Type, &py_ace))
+		return NULL;
+
+	if (!PyObject_TypeCheck(py_ace, &security_ace_Type)) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected security.security_ace "
+				"for first argument to .dacl_del_ace");
+		return NULL;
+	}
+
+	ace = pytalloc_get_ptr(py_ace);
+	status = security_descriptor_dacl_del_ace(desc, ace);
+	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	Py_RETURN_NONE;
+}
+
+static PyObject *py_descriptor_sacl_del_ace(PyObject *self, PyObject *args)
+{
+	struct security_descriptor *desc = pytalloc_get_ptr(self);
+	NTSTATUS status;
+	struct security_ace *ace = NULL;
+	PyObject *py_ace = Py_None;
+
+	if (!PyArg_ParseTuple(args, "O!", &security_ace_Type, &py_ace))
+		return NULL;
+
+	if (!PyObject_TypeCheck(py_ace, &security_ace_Type)) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected security.security_ace "
+				"for first argument to .sacl_del_ace");
+		return NULL;
+	}
+
+	ace = pytalloc_get_ptr(py_ace);
+	status = security_descriptor_sacl_del_ace(desc, ace);
+	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	Py_RETURN_NONE;
+}
+
 static PyObject *py_descriptor_new(PyTypeObject *self, PyObject *args, PyObject *kwargs)
 {
 	return pytalloc_steal(self, security_descriptor_initialise(NULL));
@@ -302,7 +349,11 @@ static PyMethodDef py_descriptor_extra_methods[] = {
 		NULL },
 	{ "sacl_del", (PyCFunction)py_descriptor_sacl_del, METH_VARARGS,
 		NULL },
-	{ "from_sddl", (PyCFunction)py_descriptor_from_sddl, METH_VARARGS|METH_CLASS, 
+	{ "dacl_del_ace", (PyCFunction)py_descriptor_dacl_del_ace, METH_VARARGS,
+		NULL },
+	{ "sacl_del_ace", (PyCFunction)py_descriptor_sacl_del_ace, METH_VARARGS,
+		NULL },
+	{ "from_sddl", (PyCFunction)py_descriptor_from_sddl, METH_VARARGS|METH_CLASS,
 		NULL },
 	{ "as_sddl", (PyCFunction)py_descriptor_as_sddl, METH_VARARGS,
 		NULL },
@@ -532,3 +583,81 @@ static void py_mod_security_patch(PyObject *m)
 }
 
 #define PY_MOD_SECURITY_PATCH py_mod_security_patch
+
+static PyObject *py_security_ace_equal(PyObject *py_self, PyObject *py_other, int op)
+{
+	struct security_ace *self = pytalloc_get_ptr(py_self);
+	struct security_ace *other = NULL;
+	bool eq;
+
+	if (!PyObject_TypeCheck(py_other, &security_ace_Type)) {
+		eq = false;
+	} else {
+		other = pytalloc_get_ptr(py_other);
+		eq = security_ace_equal(self, other);
+	}
+
+	switch(op) {
+	case Py_EQ:
+		if (eq) {
+			Py_RETURN_TRUE;
+		} else {
+			Py_RETURN_FALSE;
+		}
+		break;
+	case Py_NE:
+		if (eq) {
+			Py_RETURN_FALSE;
+		} else {
+			Py_RETURN_TRUE;
+		}
+		break;
+	default:
+		break;
+	}
+
+	Py_RETURN_NOTIMPLEMENTED;
+}
+
+static PyObject *py_security_ace_as_sddl(PyObject *self, PyObject *args)
+{
+	struct security_ace *ace = pytalloc_get_ptr(self);
+	PyObject *py_sid = Py_None;
+	struct dom_sid *sid = NULL;
+	char *text = NULL;
+	PyObject *ret = Py_None;
+
+	if (!PyArg_ParseTuple(args, "O!", &dom_sid_Type, &py_sid))
+		return NULL;
+
+	if (!PyObject_TypeCheck(py_sid, &dom_sid_Type)) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected security.dom_sid "
+				"for second argument to .sddl_encode_ace");
+		return NULL;
+	}
+
+	sid = pytalloc_get_ptr(py_sid);
+
+	text = sddl_encode_ace(NULL, ace, sid);
+	if (text == NULL) {
+		return NULL;
+	}
+	ret = PyUnicode_FromString(text);
+	talloc_free(text);
+
+	return ret;
+}
+
+static PyMethodDef py_security_ace_extra_methods[] = {
+	{ "as_sddl", (PyCFunction)py_security_ace_as_sddl, METH_VARARGS, NULL },
+	{0}
+};
+
+#define PY_ACE_PATCH py_security_ace_patch
+
+static void py_security_ace_patch(PyTypeObject *type)
+{
+	type->tp_richcompare = py_security_ace_equal;
+	PyType_AddMethods(type, py_security_ace_extra_methods);
+}

@@ -146,16 +146,16 @@ static void rpc_transport_np_init_pipe_open(struct tevent_req *subreq)
 					"tevent_timer"));
 		}
 		return;
-	} else if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+	}
+
+	if (tevent_req_nterror(req, status)) {
 		return;
 	}
 
 	status = rpc_transport_tstream_init(state,
 					    &stream,
 					    &state->transport);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
+	if (tevent_req_nterror(req, status)) {
 		return;
 	}
 
@@ -176,35 +176,4 @@ NTSTATUS rpc_transport_np_init_recv(struct tevent_req *req,
 
 	*presult = talloc_move(mem_ctx, &state->transport);
 	return NT_STATUS_OK;
-}
-
-NTSTATUS rpc_transport_np_init(TALLOC_CTX *mem_ctx, struct cli_state *cli,
-			       const struct ndr_interface_table *table,
-			       struct rpc_cli_transport **presult)
-{
-	TALLOC_CTX *frame = talloc_stackframe();
-	struct tevent_context *ev;
-	struct tevent_req *req;
-	NTSTATUS status = NT_STATUS_OK;
-
-	ev = samba_tevent_context_init(frame);
-	if (ev == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto fail;
-	}
-
-	req = rpc_transport_np_init_send(frame, ev, cli, table);
-	if (req == NULL) {
-		status = NT_STATUS_NO_MEMORY;
-		goto fail;
-	}
-
-	if (!tevent_req_poll_ntstatus(req, ev, &status)) {
-		goto fail;
-	}
-
-	status = rpc_transport_np_init_recv(req, mem_ctx, presult);
- fail:
-	TALLOC_FREE(frame);
-	return status;
 }

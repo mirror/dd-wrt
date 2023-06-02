@@ -699,12 +699,8 @@ int rep_strerror_r(int errnum, char *buf, size_t buflen);
 #include <stdbool.h>
 #endif
 
-#if !defined(HAVE_BOOL)
-#ifdef HAVE__Bool
-#define bool _Bool
-#else
-typedef int bool;
-#endif
+#ifndef HAVE_BOOL
+#error Need a real boolean type
 #endif
 
 #if !defined(HAVE_INTPTR_T)
@@ -847,6 +843,35 @@ typedef unsigned long long ptrdiff_t ;
 #define ZERO_ARRAY_LEN(x, l) memset_s((char *)(x), (l), 0, (l))
 
 /**
+ * Explicitly zero data from memory. This is guaranteed to be not optimized
+ * away.
+ */
+#define BURN_DATA(x) memset_s((char *)&(x), sizeof(x), 0, sizeof(x))
+
+/**
+ * Explicitly zero data from memory. This is guaranteed to be not optimized
+ * away.
+ */
+#define BURN_DATA_SIZE(x, s) memset_s((char *)&(x), (s), 0, (s))
+
+/**
+ * Explicitly zero data from memory. This is guaranteed to be not optimized
+ * away.
+ */
+#define BURN_PTR_SIZE(x, s) memset_s((x), (s), 0, (s))
+
+/**
+ * Explicitly zero data in string. This is guaranteed to be not optimized
+ * away.
+ */
+#define BURN_STR(x)	do { \
+				if ((x) != NULL) { \
+					size_t s = strlen(x); \
+					memset_s((x), s, 0, s); \
+				} \
+			} while(0)
+
+/**
  * Work out how many elements there are in a static array.
  */
 #ifdef ARRAY_SIZE
@@ -982,10 +1007,59 @@ ssize_t rep_copy_file_range(int fd_in,
 # endif /* HAVE_FALLTHROUGH_ATTRIBUTE */
 #endif /* FALL_THROUGH */
 
-bool nss_wrapper_enabled(void);
-bool nss_wrapper_hosts_enabled(void);
-bool socket_wrapper_enabled(void);
-bool uid_wrapper_enabled(void);
+struct __rep_cwrap_enabled_state {
+	const char *fnname;
+	bool cached;
+	bool retval;
+};
+
+static inline bool __rep_cwrap_enabled_fn(struct __rep_cwrap_enabled_state *state)
+{
+	bool (*__wrapper_enabled_fn)(void) = NULL;
+
+	if (state->cached) {
+		return state->retval;
+	}
+	state->retval = false;
+	state->cached = true;
+
+	__wrapper_enabled_fn = (bool (*)(void))dlsym(RTLD_DEFAULT, state->fnname);
+	if (__wrapper_enabled_fn == NULL) {
+		return state->retval;
+	}
+
+	state->retval = __wrapper_enabled_fn();
+	return state->retval;
+}
+
+static inline bool nss_wrapper_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "nss_wrapper_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+static inline bool nss_wrapper_hosts_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "nss_wrapper_hosts_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+static inline bool socket_wrapper_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "socket_wrapper_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+static inline bool uid_wrapper_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "uid_wrapper_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
 
 static inline bool _hexcharval(char c, uint8_t *val)
 {
@@ -1006,6 +1080,18 @@ static inline bool hex_byte(const char *in, uint8_t *out)
 /* Needed for Solaris atomic_add_XX functions. */
 #if defined(HAVE_SYS_ATOMIC_H)
 #include <sys/atomic.h>
+#endif
+
+/*
+ * This handles the case of missing pthread support and ensures code can use
+ * __thread unconditionally, such that when built on a platform without pthread
+ * support, the __thread qualifier is an empty define.
+ */
+#ifndef HAVE___THREAD
+# ifdef HAVE_PTHREAD
+# error Configure failed to detect pthread library with missing TLS support
+# endif
+#define HAVE___THREAD
 #endif
 
 #endif /* _LIBREPLACE_REPLACE_H */

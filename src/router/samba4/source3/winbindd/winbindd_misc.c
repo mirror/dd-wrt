@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
 
    Winbind daemon - miscellaneous other functions
@@ -228,7 +228,7 @@ bool winbindd_list_trusted_domains(struct winbindd_cli_state *state)
 
 	for ( i = 0; i < num_domains; i++ ) {
 		struct winbindd_domain *domain;
-		bool is_online = true;		
+		bool is_online = true;
 		struct winbindd_tdc_domain *d = NULL;
 		char *trust_type = NULL;
 		struct dom_sid_buf buf;
@@ -275,81 +275,6 @@ bool winbindd_list_trusted_domains(struct winbindd_cli_state *state)
 done:
 	TALLOC_FREE( dom_list );
 	return ret;
-}
-
-enum winbindd_result winbindd_dual_list_trusted_domains(struct winbindd_domain *domain,
-							struct winbindd_cli_state *state)
-{
-	uint32_t i;
-	int extra_data_len = 0;
-	char *extra_data;
-	NTSTATUS result;
-	bool have_own_domain = False;
-	struct netr_DomainTrustList trusts;
-
-	DBG_NOTICE("[%s %u]: list trusted domains\n",
-		   state->client_name,
-		   (unsigned int)state->pid);
-
-	result = wb_cache_trusted_domains(domain, state->mem_ctx, &trusts);
-
-	if (!NT_STATUS_IS_OK(result)) {
-		DEBUG(3, ("winbindd_dual_list_trusted_domains: trusted_domains returned %s\n",
-			nt_errstr(result) ));
-		return WINBINDD_ERROR;
-	}
-
-	extra_data = talloc_strdup(state->mem_ctx, "");
-
-	for (i=0; i<trusts.count; i++) {
-		struct dom_sid_buf buf;
-
-		if (trusts.array[i].sid == NULL) {
-			continue;
-		}
-		if (dom_sid_equal(trusts.array[i].sid, &global_sid_NULL)) {
-			continue;
-		}
-
-		extra_data = talloc_asprintf_append_buffer(
-		    extra_data, "%s\\%s\\%s\\%u\\%u\\%u\n",
-		    trusts.array[i].netbios_name, trusts.array[i].dns_name,
-		    dom_sid_str_buf(trusts.array[i].sid, &buf),
-		    trusts.array[i].trust_flags,
-		    (uint32_t)trusts.array[i].trust_type,
-		    trusts.array[i].trust_attributes);
-	}
-
-	/* add our primary domain */
-
-	for (i=0; i<trusts.count; i++) {
-		if (strequal(trusts.array[i].netbios_name, domain->name)) {
-			have_own_domain = True;
-			break;
-		}
-	}
-
-	if (state->request->data.list_all_domains && !have_own_domain) {
-		struct dom_sid_buf buf;
-		extra_data = talloc_asprintf_append_buffer(
-			extra_data, "%s\\%s\\%s\n", domain->name,
-			domain->alt_name != NULL ?
-				domain->alt_name :
-				domain->name,
-			dom_sid_str_buf(&domain->sid, &buf));
-	}
-
-	extra_data_len = strlen(extra_data);
-	if (extra_data_len > 0) {
-
-		/* Strip the last \n */
-		extra_data[extra_data_len-1] = '\0';
-
-		state->response->extra_data.data = extra_data;
-		state->response->length += extra_data_len;
-	}
-
-	return WINBINDD_OK;
 }
 
 bool winbindd_dc_info(struct winbindd_cli_state *cli)
@@ -462,6 +387,11 @@ bool winbindd_netbios_name(struct winbindd_cli_state *state)
 
 /* Where can I find the privileged pipe? */
 
+char *get_winbind_priv_pipe_dir(void)
+{
+	return state_path(talloc_tos(), WINBINDD_PRIV_SOCKET_SUBDIR);
+}
+
 bool winbindd_priv_pipe_dir(struct winbindd_cli_state *state)
 {
 	char *priv_dir;
@@ -484,4 +414,64 @@ bool winbindd_priv_pipe_dir(struct winbindd_cli_state *state)
 		   priv_dir);
 
 	return true;
+}
+
+static void winbindd_setup_max_fds(void)
+{
+	int num_fds = MAX_OPEN_FUDGEFACTOR;
+	int actual_fds;
+
+	num_fds += lp_winbind_max_clients();
+	/* Add some more to account for 2 sockets open
+	   when the client transitions from unprivileged
+	   to privileged socket
+	*/
+	num_fds += lp_winbind_max_clients() / 10;
+
+	/* Add one socket per child process
+	   (yeah there are child processes other than the
+	   domain children but only domain children can vary
+	   with configuration
+	*/
+	num_fds += lp_winbind_max_domain_connections() *
+		   (lp_allow_trusted_domains() ? WINBIND_MAX_DOMAINS_HINT : 1);
+
+	actual_fds = set_maxfiles(num_fds);
+
+	if (actual_fds < num_fds) {
+		DEBUG(1, ("winbindd_setup_max_fds: Information only: "
+			  "requested %d open files, %d are available.\n",
+			  num_fds, actual_fds));
+	}
+}
+
+bool winbindd_reload_services_file(const char *lfile)
+{
+	const struct loadparm_substitution *lp_sub =
+		loadparm_s3_global_substitution();
+	bool ret;
+
+	if (lp_loaded()) {
+		char *fname = lp_next_configfile(talloc_tos(), lp_sub);
+
+		if (file_exist(fname) && !strcsequal(fname,get_dyn_CONFIGFILE())) {
+			set_dyn_CONFIGFILE(fname);
+		}
+		TALLOC_FREE(fname);
+	}
+
+	reopen_logs();
+	ret = lp_load_global(get_dyn_CONFIGFILE());
+
+	/* if this is a child, restore the logfile to the special
+	   name - <domain>, idmap, etc. */
+	if (lfile && *lfile) {
+		lp_set_logfile(lfile);
+	}
+
+	reopen_logs();
+	load_interfaces();
+	winbindd_setup_max_fds();
+
+	return(ret);
 }

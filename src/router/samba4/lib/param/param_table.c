@@ -36,6 +36,7 @@
 #include "libds/common/roles.h"
 #include "source4/lib/tls/tls.h"
 #include "auth/credentials/credentials.h"
+#include "source3/librpc/gen_ndr/ads.h"
 
 #ifndef N_
 #define N_(x) x
@@ -402,6 +403,13 @@ static const struct enum_list enum_ntlm_auth[] = {
 	{NTLM_AUTH_MSCHAPv2_NTLMV2_ONLY, "mschapv2-and-ntlmv2-only"},
 	{-1, NULL}
 };
+
+static const struct enum_list enum_nt_hash_store[] = {
+	{NT_HASH_STORE_AUTO, "auto"},
+	{NT_HASH_STORE_NEVER, "never"},
+	{NT_HASH_STORE_ALWAYS, "always"},
+};
+
 
 static const struct enum_list enum_spotlight_backend[] = {
 	{SPOTLIGHT_BACKEND_NOINDEX, "noindex"},

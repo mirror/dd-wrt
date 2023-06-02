@@ -90,6 +90,7 @@
 ^samba4.rpc.epmapper.*.Lookup_simple
 ^samba4.rpc.epmapper.*.Map_simple
 ^samba4.rpc.epmapper.*.Map_full
+^samba3.rpc.epmapper.*.Map_full
 ^samba4.rpc.lsalookup on ncalrpc
 ^samba4.rpc.lsalookup on ncacn_np
 ^samba4.rpc.lsalookup with seal,padcheck
@@ -117,7 +118,7 @@
 ^samba4.smb2.charset.*.Testing partial surrogate # This test is currently broken
 ^samba3.smb2.charset.*.Testing partial surrogate # This test is currently broken
 ^samba4.*.base.maximum_allowed		# broken until we implement NTCREATEX_OPTIONS_BACKUP_INTENT
-^samba..*.smb2.maximum_allowed
+^samba..*.smb2.maximum_allowed.maximum_allowed
 .*net.api.delshare.*				# DelShare isn't implemented yet
 ^samba4.smb2.oplock.doc
 ^samba4.smb2.lock.valid-request
@@ -145,6 +146,7 @@
 ^samba4.smb2.create.*.acldir
 ^samba4.smb2.create.*.impersonation
 ^samba4.smb2.create.quota-fake-file\(ad_dc_ntvfs\) # not supported by the NTVFS
+^samba4.smb2.create.dosattr_tmp_dir\(ad_dc_ntvfs\)
 ^samba4.smb2.acls.*.generic
 ^samba4.smb2.acls.*.inheritflags
 ^samba4.smb2.acls.*.owner
@@ -175,6 +177,7 @@
 ^samba4.smb2.oplock.stream1 # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.statopen1\(ad_dc_ntvfs\)$ # fails with ACCESS_DENIED on a SYNCHRONIZE_ACCESS open
 ^samba4.smb2.getinfo.complex # streams on directories does not work
+^samba4.smb2.getinfo.getinfo_access\(ad_dc_ntvfs\) # Access checks not implemented
 ^samba4.smb2.getinfo.qfs_buffercheck # S4 does not do the INFO_LENGTH_MISMATCH/BUFFER_OVERFLOW thingy
 ^samba4.smb2.getinfo.qfile_buffercheck # S4 does not do the INFO_LENGTH_MISMATCH/BUFFER_OVERFLOW thingy
 ^samba4.smb2.getinfo.qsec_buffercheck # S4 does not do the BUFFER_TOO_SMALL thingy
@@ -193,29 +196,28 @@
 ^samba3.smb2.durable-open.delete_on_close2
 ^samba3.smb2.durable-v2-open.app-instance
 ^samba3.smb2.durable-open.reopen1a-lease\(ad_dc\)$
+^samba3.smb2.durable-open.stat-open\(ad_dc\)$
 ^samba3.smb2.durable-v2-open.reopen1a-lease\(ad_dc\)$
 ^samba4.smb2.ioctl.req_resume_key\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
 ^samba4.smb2.ioctl.req_two_resume_keys\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
 ^samba4.smb2.ioctl.copy_chunk_\w*\(ad_dc_ntvfs\)	# not supported by s4 ntvfs server
 ^samba4.smb2.ioctl.copy-chunk streams\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
 ^samba4.smb2.ioctl.bug14769\(ad_dc_ntvfs\) # not supported by s4 ntvfs server
+^samba4.smb2.ioctl-on-stream.ioctl-on-stream\(ad_dc_ntvfs\)
 ^samba3.smb2.dir.one
 ^samba3.smb2.dir.modify
 ^samba3.smb2.oplock.batch20
 ^samba3.smb2.oplock.stream1
 ^samba3.smb2.streams.rename
 ^samba3.smb2.streams.rename2
-^samba3.smb2.streams.attributes
 ^samba3.smb2.streams streams_xattr.rename\(nt4_dc\)
 ^samba3.smb2.streams streams_xattr.rename2\(nt4_dc\)
-^samba3.smb2.streams streams_xattr.attributes\(nt4_dc\)
 ^samba3.smb2.getinfo.complex
 ^samba3.smb2.getinfo.fsinfo # quotas don't work yet
 ^samba3.smb2.setinfo.setinfo
 ^samba3.smb2.session.*reauth5 # some special anonymous checks?
 ^samba3.smb2.compound.interim2 # wrong return code (STATUS_CANCELLED)
 ^samba3.smb2.compound.aio.interim2 # wrong return code (STATUS_CANCELLED)
-^samba3.smb2.lock.replay_smb3_specification_durable\(nt4_dc\) # Requires durable handles
 ^samba3.smb2.lock.*replay_broken_windows # This tests the windows behaviour
 ^samba3.smb2.lease.statopen3
 ^samba3.smb2.lease.unlink # we currently do not downgrade RH lease to R after unlink
@@ -343,29 +345,37 @@
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_no_auth_presentation_ctx_invalid4
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_auth_type2
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_transfer
-# Association groups between processes not implemented yet in s3 server implementation
-^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_ok2\(ad_member\)
-^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail1\(ad_member\)
-^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail2\(ad_member\)
-^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail3\(ad_member\)
+# NETLOGON is disabled in any non-DC environments
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_2nd_cancel_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_08_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_cancel_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_cmpx_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_didnot_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_maybe_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_first_only_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests01\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests02\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests03\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests04\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_fragmented_requests05\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_last_cancel_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_last_only_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_mix_requests\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_none_only_requests\(ad_member\)
+
 ^samba4.rpc.echo.*on.*with.object.echo.doublepointer.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.surrounding.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.enum.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.testcall.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.testcall2.*nt4_dc
-^samba4.rpc.echo.*on.*ncacn_ip_tcp.*with.object.*nt4_dc
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_add_duplicate_different_type.*
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_rank_none.*
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_security_descriptor.*
 ^samba4.blackbox.dbcheck-links.release-4-5-0-pre1.dbcheck_dangling_multi_valued_clean
 ^samba4.blackbox.dbcheck-links.release-4-5-0-pre1.dangling_multi_valued_check_missing
-#
-# rap password tests don't function in the ad_dc_ntvfs environment
-#
-^samba.tests.auth_log_pass_change.samba.tests.auth_log_pass_change.AuthLogPassChangeTests.test_rap_change_password\(ad_dc_ntvfs\)
+
 # We currently don't send referrals for LDAP modify of non-replicated attrs
 ^samba4.ldap.rodc.python\(rodc\).__main__.RodcTests.test_modify_nonreplicated.*
-^samba4.ldap.rodc_rwdc.python.*.__main__.RodcRwdcTests.test_change_password_reveal_on_demand_kerberos
 # NETLOGON is disabled in any non-DC environments
 ^samba.tests.netlogonsvc.python\(ad_member\)
 ^samba.tests.netlogonsvc.python\(simpleserver\)
@@ -376,5 +386,4 @@
 # Disabling NTLM means you can't use samr to change the password
 ^samba.tests.ntlmdisabled.python\(ktest\).ntlmdisabled.NtlmDisabledTests.test_samr_change_password\(ktest\)
 ^samba.tests.ntlmdisabled.python\(ad_dc_no_ntlm\).ntlmdisabled.NtlmDisabledTests.test_ntlm_connection\(ad_dc_no_ntlm\)
-
 

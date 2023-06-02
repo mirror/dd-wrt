@@ -26,7 +26,10 @@ struct ctdb_config {
 	/* Cluster */
 	const char *transport;
 	const char *node_address;
+	const char *cluster_lock;
 	const char *recovery_lock;
+	int leader_timeout;
+	bool leader_capability;
 
 	/* Database */
 	const char *dbdir_volatile;
@@ -43,7 +46,6 @@ struct ctdb_config {
 
 	/* Legacy */
 	bool realtime_scheduling;
-	bool recmaster_capability;
 	bool lmaster_capability;
 	bool start_as_stopped;
 	bool start_as_disabled;

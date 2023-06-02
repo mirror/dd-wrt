@@ -413,6 +413,9 @@ static WERROR delete_printer_hook(TALLOC_CTX *ctx, struct security_token *token,
 
 static WERROR delete_printer_handle(struct pipes_struct *p, struct policy_handle *hnd)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, hnd);
 	WERROR result;
 
@@ -447,7 +450,7 @@ static WERROR delete_printer_handle(struct pipes_struct *p, struct policy_handle
 		return WERR_INVALID_HANDLE;
 	}
 
-	result = delete_printer_hook(p->mem_ctx, p->session_info->security_token,
+	result = delete_printer_hook(p->mem_ctx, session_info->security_token,
 				     Printer->sharename, p->msg_ctx);
 	if (!W_ERROR_IS_OK(result)) {
 		return result;
@@ -1676,6 +1679,12 @@ static WERROR copy_devicemode(TALLOC_CTX *mem_ctx,
 WERROR _spoolss_OpenPrinterEx(struct pipes_struct *p,
 			      struct spoolss_OpenPrinterEx *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
+	const struct tsocket_address *remote_address =
+		dcesrv_connection_get_remote_address(dcesrv_conn);
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	int snum;
 	char *raddr;
 	char *rhost;
@@ -1801,10 +1810,12 @@ WERROR _spoolss_OpenPrinterEx(struct pipes_struct *p,
 			/* if the user is not root, doesn't have SE_PRINT_OPERATOR privilege,
 			   and not a printer admin, then fail */
 
-			if ((p->session_info->unix_token->uid != sec_initial_uid()) &&
-			    !security_token_has_privilege(p->session_info->security_token, SEC_PRIV_PRINT_OPERATOR) &&
+			if ((session_info->unix_token->uid != sec_initial_uid()) &&
+			    !security_token_has_privilege(
+				    session_info->security_token,
+				    SEC_PRIV_PRINT_OPERATOR) &&
 			    !nt_token_check_sid(&global_sid_Builtin_Print_Operators,
-						p->session_info->security_token)) {
+						session_info->security_token)) {
 				close_printer_handle(p, r->out.handle);
 				ZERO_STRUCTP(r->out.handle);
 				DEBUG(3,("access DENIED as user is not root, "
@@ -1858,13 +1869,13 @@ WERROR _spoolss_OpenPrinterEx(struct pipes_struct *p,
 		}
 
 		/* check smb.conf parameters and the the sec_desc */
-		raddr = tsocket_address_inet_addr_string(p->remote_address,
+		raddr = tsocket_address_inet_addr_string(remote_address,
 							 p->mem_ctx);
 		if (raddr == NULL) {
 			return WERR_NOT_ENOUGH_MEMORY;
 		}
 
-		rc = get_remote_hostname(p->remote_address,
+		rc = get_remote_hostname(remote_address,
 					 &rhost,
 					 p->mem_ctx);
 		if (rc < 0) {
@@ -1881,10 +1892,10 @@ WERROR _spoolss_OpenPrinterEx(struct pipes_struct *p,
 			return WERR_ACCESS_DENIED;
 		}
 
-		if (!user_ok_token(p->session_info->unix_info->unix_name,
-				   p->session_info->info->domain_name,
-				   p->session_info->security_token, snum) ||
-		    !W_ERROR_IS_OK(print_access_check(p->session_info,
+		if (!user_ok_token(session_info->unix_info->unix_name,
+				   session_info->info->domain_name,
+				   session_info->security_token, snum) ||
+		    !W_ERROR_IS_OK(print_access_check(session_info,
 						      p->msg_ctx,
 						      snum,
 						      r->in.access_mask))) {
@@ -2032,6 +2043,9 @@ WERROR _spoolss_DeletePrinterDriver(struct pipes_struct *p,
 				    struct spoolss_DeletePrinterDriver *r)
 {
 
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct spoolss_DriverInfo8 *info = NULL;
 	int				version;
 	WERROR				status;
@@ -2043,8 +2057,8 @@ WERROR _spoolss_DeletePrinterDriver(struct pipes_struct *p,
 	/* if the user is not root, doesn't have SE_PRINT_OPERATOR privilege,
 	   and not a printer admin, then fail */
 
-	if ((p->session_info->unix_token->uid != sec_initial_uid()) &&
-	    !security_token_has_privilege(p->session_info->security_token,
+	if ((session_info->unix_token->uid != sec_initial_uid()) &&
+	    !security_token_has_privilege(session_info->security_token,
 					  SEC_PRIV_PRINT_OPERATOR)) {
 		return WERR_ACCESS_DENIED;
 	}
@@ -2114,6 +2128,9 @@ static WERROR spoolss_dpd_version(TALLOC_CTX *mem_ctx,
 				  struct dcerpc_binding_handle *b,
 				  struct spoolss_DriverInfo8 *info)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	WERROR status;
 	bool delete_files;
 
@@ -2162,7 +2179,7 @@ static WERROR spoolss_dpd_version(TALLOC_CTX *mem_ctx,
 	 * because the driver doesn not exist any more
 	 */
 	if (delete_files) {
-		delete_driver_files(p->session_info, info);
+		delete_driver_files(session_info, info);
 	}
 
 done:
@@ -2176,6 +2193,9 @@ done:
 WERROR _spoolss_DeletePrinterDriverEx(struct pipes_struct *p,
 				      struct spoolss_DeletePrinterDriverEx *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct spoolss_DriverInfo8 *info = NULL;
 	WERROR				status;
 	struct dcerpc_binding_handle *b;
@@ -2186,8 +2206,8 @@ WERROR _spoolss_DeletePrinterDriverEx(struct pipes_struct *p,
 	/* if the user is not root, doesn't have SE_PRINT_OPERATOR privilege,
 	   and not a printer admin, then fail */
 
-	if ((p->session_info->unix_token->uid != sec_initial_uid()) &&
-	    !security_token_has_privilege(p->session_info->security_token,
+	if ((session_info->unix_token->uid != sec_initial_uid()) &&
+	    !security_token_has_privilege(session_info->security_token,
 					  SEC_PRIV_PRINT_OPERATOR)) {
 		return WERR_ACCESS_DENIED;
 	}
@@ -2658,6 +2678,10 @@ static struct spoolss_NotifyOption *dup_spoolss_NotifyOption(TALLOC_CTX *mem_ctx
 WERROR _spoolss_RemoteFindFirstPrinterChangeNotifyEx(struct pipes_struct *p,
 						     struct spoolss_RemoteFindFirstPrinterChangeNotifyEx *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
+	const struct tsocket_address *remote_address =
+		dcesrv_connection_get_remote_address(dcesrv_conn);
 	int snum = -1;
 	struct spoolss_NotifyOption *option = r->in.notify_options;
 	struct sockaddr_storage client_ss;
@@ -2694,7 +2718,7 @@ WERROR _spoolss_RemoteFindFirstPrinterChangeNotifyEx(struct pipes_struct *p,
 
 	DEBUG(10,("_spoolss_RemoteFindFirstPrinterChangeNotifyEx: "
 		  "remote_address is %s\n",
-		  tsocket_address_string(p->remote_address, p->mem_ctx)));
+		  tsocket_address_string(remote_address, p->mem_ctx)));
 
 	if (!lp_print_notify_backchannel(snum)) {
 		DEBUG(10, ("_spoolss_RemoteFindFirstPrinterChangeNotifyEx: "
@@ -2702,7 +2726,7 @@ WERROR _spoolss_RemoteFindFirstPrinterChangeNotifyEx(struct pipes_struct *p,
 		return WERR_RPC_S_SERVER_UNAVAILABLE;
 	}
 
-	client_len = tsocket_address_bsd_sockaddr(p->remote_address,
+	client_len = tsocket_address_bsd_sockaddr(remote_address,
 						  (struct sockaddr *) &client_ss,
 						  sizeof(struct sockaddr_storage));
 	if (client_len < 0) {
@@ -5927,6 +5951,12 @@ WERROR _spoolss_EndPagePrinter(struct pipes_struct *p,
 WERROR _spoolss_StartDocPrinter(struct pipes_struct *p,
 				struct spoolss_StartDocPrinter *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
+	const struct tsocket_address *remote_address =
+		dcesrv_connection_get_remote_address(dcesrv_conn);
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct spoolss_DocumentInfo1 *info_1;
 	int snum;
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, r->in.handle);
@@ -5980,21 +6010,21 @@ WERROR _spoolss_StartDocPrinter(struct pipes_struct *p,
 		return WERR_INVALID_HANDLE;
 	}
 
-	rc = get_remote_hostname(p->remote_address,
+	rc = get_remote_hostname(remote_address,
 				 &rhost,
 				 p->mem_ctx);
 	if (rc < 0) {
 		return WERR_NOT_ENOUGH_MEMORY;
 	}
 	if (strequal(rhost,"UNKNOWN")) {
-		rhost = tsocket_address_inet_addr_string(p->remote_address,
+		rhost = tsocket_address_inet_addr_string(remote_address,
 							 p->mem_ctx);
 		if (rhost == NULL) {
 			return WERR_NOT_ENOUGH_MEMORY;
 		}
 	}
 
-	werr = print_job_start(p->session_info,
+	werr = print_job_start(session_info,
 			       p->msg_ctx,
 			       rhost,
 			       snum,
@@ -6097,7 +6127,9 @@ WERROR _spoolss_WritePrinter(struct pipes_struct *p,
 static WERROR control_printer(struct policy_handle *handle, uint32_t command,
 			      struct pipes_struct *p)
 {
-	const struct auth_session_info *session_info = p->session_info;
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	int snum;
 	WERROR errcode = WERR_INVALID_FUNCTION;
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, handle);
@@ -6139,6 +6171,9 @@ static WERROR control_printer(struct policy_handle *handle, uint32_t command,
 WERROR _spoolss_AbortPrinter(struct pipes_struct *p,
 			     struct spoolss_AbortPrinter *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct printer_handle 	*Printer = find_printer_index_by_hnd(p, r->in.handle);
 	int		snum;
 	WERROR 		errcode = WERR_OK;
@@ -6156,7 +6191,7 @@ WERROR _spoolss_AbortPrinter(struct pipes_struct *p,
 		return WERR_SPL_NO_STARTDOC;
 	}
 
-	errcode = print_job_delete(p->session_info,
+	errcode = print_job_delete(session_info,
 				   p->msg_ctx,
 				   snum,
 				   Printer->jobid);
@@ -6950,6 +6985,12 @@ static WERROR update_printer(struct pipes_struct *p,
 			     struct spoolss_SetPrinterInfoCtr *info_ctr,
 			     struct spoolss_DeviceMode *devmode)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
+	const struct tsocket_address *remote_address =
+		dcesrv_connection_get_remote_address(dcesrv_conn);
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	uint32_t printer_mask = SPOOLSS_PRINTER_INFO_ALL;
 	struct spoolss_SetPrinterInfo2 *printer = info_ctr->info.info2;
 	struct spoolss_PrinterInfo2 *old_printer;
@@ -7021,7 +7062,7 @@ static WERROR update_printer(struct pipes_struct *p,
 	{
 		char *raddr;
 
-		raddr = tsocket_address_inet_addr_string(p->remote_address,
+		raddr = tsocket_address_inet_addr_string(remote_address,
 							 p->mem_ctx);
 		if (raddr == NULL) {
 			result = WERR_NOT_ENOUGH_MEMORY;
@@ -7029,7 +7070,7 @@ static WERROR update_printer(struct pipes_struct *p,
 		}
 
 		/* add_printer_hook() will call reload_services() */
-		if (!add_printer_hook(tmp_ctx, p->session_info->security_token,
+		if (!add_printer_hook(tmp_ctx, session_info->security_token,
 				      printer, raddr,
 				      p->msg_ctx)) {
 			result = WERR_ACCESS_DENIED;
@@ -7779,7 +7820,9 @@ static WERROR spoolss_setjob_1(TALLOC_CTX *mem_ctx,
 WERROR _spoolss_SetJob(struct pipes_struct *p,
 		       struct spoolss_SetJob *r)
 {
-	const struct auth_session_info *session_info = p->session_info;
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	int snum;
 	WERROR errcode = WERR_INVALID_FUNCTION;
 
@@ -8435,6 +8478,12 @@ static WERROR spoolss_addprinterex_level_2(struct pipes_struct *p,
 					   struct spoolss_UserLevelCtr *user_ctr,
 					   struct policy_handle *handle)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
+	const struct tsocket_address *remote_address =
+		dcesrv_connection_get_remote_address(dcesrv_conn);
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct spoolss_SetPrinterInfo2 *info2 = info_ctr->info.info2;
 	uint32_t info2_mask = SPOOLSS_PRINTER_INFO_ALL;
 	const struct loadparm_substitution *lp_sub =
@@ -8487,13 +8536,13 @@ static WERROR spoolss_addprinterex_level_2(struct pipes_struct *p,
 	if (*lp_addprinter_command(talloc_tos(), lp_sub) ) {
 		char *raddr;
 
-		raddr = tsocket_address_inet_addr_string(p->remote_address,
+		raddr = tsocket_address_inet_addr_string(remote_address,
 							 p->mem_ctx);
 		if (raddr == NULL) {
 			return WERR_NOT_ENOUGH_MEMORY;
 		}
 
-		if ( !add_printer_hook(p->mem_ctx, p->session_info->security_token,
+		if ( !add_printer_hook(p->mem_ctx, session_info->security_token,
 				       info2, raddr,
 				       p->msg_ctx) ) {
 			return WERR_ACCESS_DENIED;
@@ -8510,7 +8559,7 @@ static WERROR spoolss_addprinterex_level_2(struct pipes_struct *p,
 	}
 
 	/* you must be a printer admin to add a new printer */
-	if (!W_ERROR_IS_OK(print_access_check(p->session_info,
+	if (!W_ERROR_IS_OK(print_access_check(session_info,
 					      p->msg_ctx,
 					      snum,
 					      PRINTER_ACCESS_ADMINISTER))) {
@@ -8616,6 +8665,9 @@ WERROR _spoolss_AddPrinter(struct pipes_struct *p,
 WERROR _spoolss_AddPrinterDriverEx(struct pipes_struct *p,
 				   struct spoolss_AddPrinterDriverEx *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	WERROR err = WERR_OK;
 	const char *driver_name = NULL;
 	const char *driver_directory = NULL;
@@ -8646,7 +8698,7 @@ WERROR _spoolss_AddPrinterDriverEx(struct pipes_struct *p,
 
 	DEBUG(5,("Cleaning driver's information\n"));
 	err = clean_up_driver_struct(p->mem_ctx,
-				     p->session_info,
+				     session_info,
 				     r->in.info_ctr,
 				     r->in.flags,
 				     &driver_directory);
@@ -8657,7 +8709,7 @@ WERROR _spoolss_AddPrinterDriverEx(struct pipes_struct *p,
 	}
 
 	DEBUG(5,("Moving driver to final destination\n"));
-	err = move_driver_to_download_area(p->session_info,
+	err = move_driver_to_download_area(session_info,
 					   r->in.info_ctr,
 					   driver_directory);
 	if (!W_ERROR_IS_OK(err)) {
@@ -9077,6 +9129,9 @@ WERROR _spoolss_DeletePrinterData(struct pipes_struct *p,
 WERROR _spoolss_AddForm(struct pipes_struct *p,
 			struct spoolss_AddForm *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct spoolss_AddFormInfo1 *form;
 	int snum = -1;
 	WERROR status = WERR_OK;
@@ -9095,8 +9150,8 @@ WERROR _spoolss_AddForm(struct pipes_struct *p,
 	/* if the user is not root, doesn't have SE_PRINT_OPERATOR privilege,
 	   and not a printer admin, then fail */
 
-	if ((p->session_info->unix_token->uid != sec_initial_uid()) &&
-	    !security_token_has_privilege(p->session_info->security_token,
+	if ((session_info->unix_token->uid != sec_initial_uid()) &&
+	    !security_token_has_privilege(session_info->security_token,
 					  SEC_PRIV_PRINT_OPERATOR)) {
 		DEBUG(2,("_spoolss_Addform: denied by insufficient permissions.\n"));
 		return WERR_ACCESS_DENIED;
@@ -9163,6 +9218,9 @@ done:
 WERROR _spoolss_DeleteForm(struct pipes_struct *p,
 			   struct spoolss_DeleteForm *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	const char *form_name = r->in.form_name;
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, r->in.handle);
 	int snum = -1;
@@ -9178,8 +9236,8 @@ WERROR _spoolss_DeleteForm(struct pipes_struct *p,
 		return WERR_INVALID_HANDLE;
 	}
 
-	if ((p->session_info->unix_token->uid != sec_initial_uid()) &&
-	    !security_token_has_privilege(p->session_info->security_token,
+	if ((session_info->unix_token->uid != sec_initial_uid()) &&
+	    !security_token_has_privilege(session_info->security_token,
 					  SEC_PRIV_PRINT_OPERATOR)) {
 		DEBUG(2,("_spoolss_DeleteForm: denied by insufficient permissions.\n"));
 		return WERR_ACCESS_DENIED;
@@ -9228,6 +9286,9 @@ done:
 WERROR _spoolss_SetForm(struct pipes_struct *p,
 			struct spoolss_SetForm *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct spoolss_AddFormInfo1 *form;
 	const char *form_name = r->in.form_name;
 	int snum = -1;
@@ -9248,8 +9309,8 @@ WERROR _spoolss_SetForm(struct pipes_struct *p,
 	/* if the user is not root, doesn't have SE_PRINT_OPERATOR privilege,
 	   and not a printer admin, then fail */
 
-	if ((p->session_info->unix_token->uid != sec_initial_uid()) &&
-	     !security_token_has_privilege(p->session_info->security_token,
+	if ((session_info->unix_token->uid != sec_initial_uid()) &&
+	     !security_token_has_privilege(session_info->security_token,
 					   SEC_PRIV_PRINT_OPERATOR)) {
 		DEBUG(2,("_spoolss_Setform: denied by insufficient permissions.\n"));
 		return WERR_ACCESS_DENIED;
@@ -10742,6 +10803,9 @@ static WERROR process_xcvlocal_command(TALLOC_CTX *mem_ctx,
 WERROR _spoolss_XcvData(struct pipes_struct *p,
 			struct spoolss_XcvData *r)
 {
+	struct dcesrv_call_state *dce_call = p->dce_call;
+	struct auth_session_info *session_info =
+		dcesrv_call_session_info(dce_call);
 	struct printer_handle *Printer = find_printer_index_by_hnd(p, r->in.handle);
 	DATA_BLOB out_data = data_blob_null;
 	WERROR werror;
@@ -10778,14 +10842,14 @@ WERROR _spoolss_XcvData(struct pipes_struct *p,
 	switch ( Printer->printer_type ) {
 	case SPLHND_PORTMON_TCP:
 		werror = process_xcvtcp_command(p->mem_ctx,
-						p->session_info->security_token,
+						session_info->security_token,
 						r->in.function_name,
 						&r->in.in_data, &out_data,
 						r->out.needed);
 		break;
 	case SPLHND_PORTMON_LOCAL:
 		werror = process_xcvlocal_command(p->mem_ctx,
-						  p->session_info->security_token,
+						  session_info->security_token,
 						  r->in.function_name,
 						  &r->in.in_data, &out_data,
 						  r->out.needed);
@@ -11544,13 +11608,7 @@ static NTSTATUS spoolss_init_server(struct dcesrv_context *dce_ctx,
 		const struct dcesrv_endpoint_server *ep_server)
 {
 	struct messaging_context *msg_ctx = global_messaging_context();
-	NTSTATUS status;
 	bool ok;
-
-	status = dcesrv_init_ep_server(dce_ctx, "winreg");
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
 
 	/*
 	 * Migrate the printers first.

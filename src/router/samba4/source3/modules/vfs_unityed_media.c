@@ -798,8 +798,7 @@ static int um_openat(struct vfs_handle_struct *handle,
 		     const struct files_struct *dirfsp,
 		     const struct smb_filename *smb_fname,
 		     struct files_struct *fsp,
-		     int flags,
-		     mode_t mode)
+		     const struct vfs_open_how *how)
 {
 	struct smb_filename *client_fname = NULL;
 	int ret;
@@ -812,8 +811,7 @@ static int um_openat(struct vfs_handle_struct *handle,
 					   dirfsp,
 					   smb_fname,
 					   fsp,
-					   flags,
-					   mode);
+					   how);
 	}
 
 	if (alloc_get_client_smb_fname(handle, talloc_tos(),
@@ -840,8 +838,7 @@ static int um_openat(struct vfs_handle_struct *handle,
 				  dirfsp,
 				  client_fname,
 				  fsp,
-				  flags,
-				  mode);
+				  how);
 err:
 	TALLOC_FREE(client_fname);
 	DEBUG(10, ("Leaving with smb_fname->base_name '%s'\n",
@@ -851,6 +848,7 @@ err:
 
 static NTSTATUS um_create_file(vfs_handle_struct *handle,
 			       struct smb_request *req,
+			       struct files_struct *dirfsp,
 			       struct smb_filename *smb_fname,
 			       uint32_t access_mask,
 			       uint32_t share_access,
@@ -878,6 +876,7 @@ static NTSTATUS um_create_file(vfs_handle_struct *handle,
 		return SMB_VFS_NEXT_CREATE_FILE(
 			handle,
 			req,
+			dirfsp,
 			smb_fname,
 			access_mask,
 			share_access,
@@ -912,6 +911,7 @@ static NTSTATUS um_create_file(vfs_handle_struct *handle,
 	status = SMB_VFS_NEXT_CREATE_FILE(
 		handle,
 		req,
+		dirfsp,
 		client_fname,
 		access_mask,
 		share_access,

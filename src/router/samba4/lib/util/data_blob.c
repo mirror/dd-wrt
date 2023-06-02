@@ -21,6 +21,7 @@
 #include "replace.h"
 #include "attr.h"
 #include "data_blob.h"
+#include "lib/util/samba_util.h"
 
 const DATA_BLOB data_blob_null = { NULL, 0 };
 
@@ -82,8 +83,7 @@ free a data blob
 _PUBLIC_ void data_blob_free(DATA_BLOB *d)
 {
 	if (d) {
-		talloc_free(d->data);
-		d->data = NULL;
+		TALLOC_FREE(d->data);
 		d->length = 0;
 	}
 }
@@ -127,6 +127,29 @@ _PUBLIC_ int data_blob_cmp(const DATA_BLOB *d1, const DATA_BLOB *d2)
 	if (ret == 0) {
 		return d1->length - d2->length;
 	}
+	return ret;
+}
+
+/**
+check if two data blobs are equal, where the time taken should not depend on the
+contents of either blob.
+**/
+_PUBLIC_ bool data_blob_equal_const_time(const DATA_BLOB *d1, const DATA_BLOB *d2)
+{
+	bool ret;
+	if (d1->data == NULL && d2->data != NULL) {
+		return false;
+	}
+	if (d1->data != NULL && d2->data == NULL) {
+		return false;
+	}
+	if (d1->length != d2->length) {
+		return false;
+	}
+	if (d1->data == d2->data) {
+		return true;
+	}
+	ret = mem_equal_const_time(d1->data, d2->data, d1->length);
 	return ret;
 }
 
@@ -212,9 +235,11 @@ _PUBLIC_ DATA_BLOB data_blob_const(const void *p, size_t length)
 **/
 _PUBLIC_ bool data_blob_realloc(TALLOC_CTX *mem_ctx, DATA_BLOB *blob, size_t length)
 {
-	blob->data = talloc_realloc(mem_ctx, blob->data, uint8_t, length);
-	if (blob->data == NULL)
+	uint8_t *tmp = talloc_realloc(mem_ctx, blob->data, uint8_t, length);
+	if (tmp == NULL) {
 		return false;
+	}
+	blob->data = tmp;
 	blob->length = length;
 	return true;
 }
@@ -228,6 +253,11 @@ _PUBLIC_ bool data_blob_append(TALLOC_CTX *mem_ctx, DATA_BLOB *blob,
 {
 	size_t old_len = blob->length;
 	size_t new_len = old_len + length;
+
+	if (length == 0) {
+		return true;
+	}
+
 	if (new_len < length || new_len < old_len) {
 		return false;
 	}
@@ -244,3 +274,24 @@ _PUBLIC_ bool data_blob_append(TALLOC_CTX *mem_ctx, DATA_BLOB *blob,
 	return true;
 }
 
+/**
+  pad the length of a data blob to a multiple of
+  'pad'. 'pad' must be a power of two.
+**/
+_PUBLIC_ bool data_blob_pad(TALLOC_CTX *mem_ctx, DATA_BLOB *blob,
+			    size_t pad)
+{
+	size_t old_len = blob->length;
+	size_t new_len = (old_len + pad - 1) & ~(pad - 1);
+
+	if (new_len < old_len) {
+		return false;
+	}
+
+	if (!data_blob_realloc(mem_ctx, blob, new_len)) {
+		return false;
+	}
+
+	memset(blob->data + old_len, 0, new_len - old_len);
+	return true;
+}

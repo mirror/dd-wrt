@@ -33,6 +33,7 @@
 #include "samba/process_model.h"
 #include "lib/util/samba_modules.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "lib/util/idtree_random.h"
 
 /*
   take a reference to an existing association group
@@ -99,7 +100,8 @@ static struct dcesrv_assoc_group *dcesrv_assoc_group_new(struct dcesrv_connectio
 		return NULL;
 	}
 
-	id = idr_get_new_random(dce_ctx->assoc_groups_idr, assoc_group, UINT16_MAX);
+	id = idr_get_new_random(
+		dce_ctx->assoc_groups_idr, assoc_group, 1, UINT16_MAX);
 	if (id == -1) {
 		talloc_free(assoc_group);
 		DEBUG(0,(__location__ ": Out of association groups!\n"));
@@ -115,7 +117,7 @@ static struct dcesrv_assoc_group *dcesrv_assoc_group_new(struct dcesrv_connectio
 	return assoc_group;
 }
 
-NTSTATUS dcesrv_assoc_group_find(
+NTSTATUS dcesrv_assoc_group_find_s4(
 	struct dcesrv_call_state *call,
 	void *private_data)
 {
@@ -238,7 +240,7 @@ static void dcesrv_sock_accept(struct stream_connection *srv_conn)
 
 	dcesrv_conn->transport.private_data		= srv_conn;
 	dcesrv_conn->transport.report_output_data	= dcesrv_sock_report_output_data;
-	dcesrv_conn->transport.terminate_connection	= dcesrv_transport_terminate_connection;
+	dcesrv_conn->transport.terminate_connection	= dcesrv_transport_terminate_connection_s4;
 
 	TALLOC_FREE(srv_conn->event.fde);
 
@@ -705,8 +707,8 @@ NTSTATUS dcesrv_gensec_prepare(
 					 out);
 }
 
-void dcesrv_transport_terminate_connection(struct dcesrv_connection *dce_conn,
-					   const char *reason)
+void dcesrv_transport_terminate_connection_s4(struct dcesrv_connection *dce_conn,
+					      const char *reason)
 {
 	struct stream_connection *srv_conn =
 		talloc_get_type_abort(dce_conn->transport.private_data,

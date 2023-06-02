@@ -27,6 +27,7 @@ from samba.netcmd import (
     Option
 )
 from samba.dbchecker import dbcheck
+from samba import colour
 
 
 class cmd_dbcheck(Command):
@@ -71,7 +72,11 @@ class cmd_dbcheck(Command):
         Option("--attrs", dest="attrs", default=None, help="list of attributes to check (space separated)"),
         Option("--reindex", dest="reindex", default=False, action="store_true", help="force database re-index"),
         Option("--force-modules", dest="force_modules", default=False, action="store_true", help="force loading of Samba modules and ignore the @MODULES record (for very old databases)"),
-        Option("--reset-well-known-acls", dest="reset_well_known_acls", default=False, action="store_true", help="reset ACLs on objects with well known default ACL values to the default"),
+        Option("--reset-well-known-acls",
+               dest="reset_well_known_acls",
+               default=False, action="store_true",
+               help=("reset ACLs on objects with well known default values"
+                     " (for updating from early 4.0.x)")),
         Option("--quick-membership-checks", dest="quick_membership_checks",
                help=("Skips missing/orphaned memberOf backlinks checks, "
                      "but speeds up dbcheck dramatically for domains with "
@@ -135,6 +140,11 @@ class cmd_dbcheck(Command):
         else:
             attrs = attrs.split()
 
+        # The dbcheck module always prints to stdout, not our self.outf
+        # (yes, maybe FIXME).
+        stdout_colour = colour.colour_if_wanted(sys.stdout,
+                                                hint=self.requested_colour)
+
         started_transaction = False
         if yes and fix:
             samdb.transaction_start()
@@ -145,7 +155,8 @@ class cmd_dbcheck(Command):
                           in_transaction=started_transaction,
                           quick_membership_checks=quick_membership_checks,
                           reset_well_known_acls=reset_well_known_acls,
-                          check_expired_tombstones=selftest_check_expired_tombstones)
+                          check_expired_tombstones=selftest_check_expired_tombstones,
+                          colour=stdout_colour)
 
             for option in yes_rules:
                 if hasattr(chk, option):

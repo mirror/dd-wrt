@@ -45,12 +45,15 @@
 #include "lib/crypto/md4.h"
 #include "param/param.h"
 #include "lib/krb5_wrap/krb5_samba.h"
+#include "auth/auth_sam.h"
 #include "auth/common_auth.h"
 #include "lib/messaging/messaging.h"
 #include "lib/param/loadparm.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/crypto.h>
+
+#include "kdc/db-glue.h"
 
 #ifdef ENABLE_GPGME
 #undef class
@@ -149,36 +152,51 @@ struct setup_password_fields_io {
 		bool is_krbtgt;
 		uint32_t restrictions;
 		struct dom_sid *account_sid;
+		bool store_nt_hash;
 	} u;
 
 	/* new credentials and old given credentials */
 	struct setup_password_fields_given {
 		const struct ldb_val *cleartext_utf8;
 		const struct ldb_val *cleartext_utf16;
+
 		struct samr_Password *nt_hash;
-		struct samr_Password *lm_hash;
+
+		/*
+		 * The AES256 kerberos key to confirm the previous password was
+		 * not reused (for n) and to prove the old password was known
+		 * (for og).
+		 *
+		 * We don't have any old salts, so we won't catch password reuse
+		 * if said password was used prior to an account rename and
+		 * another password change.
+		 */
+		DATA_BLOB aes_256;
 	} n, og;
 
 	/* old credentials */
 	struct {
 		struct samr_Password *nt_hash;
-		struct samr_Password *lm_hash;
 		uint32_t nt_history_len;
 		struct samr_Password *nt_history;
-		uint32_t lm_history_len;
-		struct samr_Password *lm_history;
 		const struct ldb_val *supplemental;
 		struct supplementalCredentialsBlob scb;
+
+		/*
+		 * The AES256 kerberos key as stored in the DB.
+		 * Used to confirm the given password was correct
+		 * and in case the previous password was reused.
+		 */
+		DATA_BLOB aes_256;
+		DATA_BLOB salt;
+		uint32_t kvno;
 	} o;
 
 	/* generated credentials */
 	struct {
 		struct samr_Password *nt_hash;
-		struct samr_Password *lm_hash;
 		uint32_t nt_history_len;
 		struct samr_Password *nt_history;
-		uint32_t lm_history_len;
-		struct samr_Password *lm_history;
 		const char *salt;
 		DATA_BLOB aes_256;
 		DATA_BLOB aes_128;
@@ -232,6 +250,12 @@ static int password_hash_bypass(struct ldb_module *module, struct ldb_request *r
 } while(0)
 
 	GET_VALUES(nte, "unicodePwd");
+
+	/*
+	 * Even as Samba contiuues to ignore the LM hash, and reset it
+	 * when practical, we keep the constraint that it must be a 16
+	 * byte value if specified.
+	 */
 	GET_VALUES(lme, "dBCSPwd");
 	GET_VALUES(nthe, "ntPwdHistory");
 	GET_VALUES(lmhe, "lmPwdHistory");
@@ -602,7 +626,7 @@ static int password_hash_bypass(struct ldb_module *module, struct ldb_request *r
 					 "supplementalCredentialsBlob length differ");
 		}
 
-		if (memcmp(sce->values[0].data, blob.data, blob.length) != 0) {
+		if (!mem_equal_const_time(sce->values[0].data, blob.data, blob.length)) {
 			return ldb_error(ldb, LDB_ERR_CONSTRAINT_VIOLATION,
 					 "supplementalCredentialsBlob memcmp differ");
 		}
@@ -619,17 +643,34 @@ static int password_hash_bypass(struct ldb_module *module, struct ldb_request *r
 
 static int setup_nt_fields(struct setup_password_fields_io *io)
 {
-	struct ldb_context *ldb;
+	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
 	uint32_t i;
-
-	io->g.nt_hash = io->n.nt_hash;
-	ldb = ldb_module_get_ctx(io->ac->module);
+	if (io->u.store_nt_hash) {
+		io->g.nt_hash = io->n.nt_hash;
+	}
 
 	if (io->ac->status->domain_data.pwdHistoryLength == 0) {
 		return LDB_SUCCESS;
 	}
 
 	/* We might not have an old NT password */
+
+	if (io->g.nt_hash == NULL) {
+		/*
+		 * If there was not an NT hash specified, then don't
+		 * store the NT password history.
+		 *
+		 * While the NTLM code on a Windows DC will cope with
+		 * a missing unicodePwd, if it finds a last password
+		 * in the ntPwdHistory, even if the bytes are zero ,
+		 * it will (quite reasonably) treat it as a valid NT
+		 * hash.  NTLM logins with the previous password are
+		 * allowed for a short time after the password is
+		 * changed to allow for password propagation delays.
+		 */
+		return LDB_SUCCESS;
+	}
+
 	io->g.nt_history = talloc_array(io->ac,
 					struct samr_Password,
 					io->ac->status->domain_data.pwdHistoryLength);
@@ -643,53 +684,7 @@ static int setup_nt_fields(struct setup_password_fields_io *io)
 	}
 	io->g.nt_history_len = i + 1;
 
-	if (io->g.nt_hash) {
-		io->g.nt_history[0] = *io->g.nt_hash;
-	} else {
-		/* 
-		 * TODO: is this correct?
-		 * the simular behavior is correct for the lm history case
-		 */
-		E_md4hash("", io->g.nt_history[0].hash);
-	}
-
-	return LDB_SUCCESS;
-}
-
-/* Get the LANMAN hash, and fill it in as an entry in the password history, 
-   and specify it into io->g.lm_hash */
-
-static int setup_lm_fields(struct setup_password_fields_io *io)
-{
-	struct ldb_context *ldb;
-	uint32_t i;
-
-	io->g.lm_hash = io->n.lm_hash;
-	ldb = ldb_module_get_ctx(io->ac->module);
-
-	if (io->ac->status->domain_data.pwdHistoryLength == 0) {
-		return LDB_SUCCESS;
-	}
-
-	/* We might not have an old LM password */
-	io->g.lm_history = talloc_array(io->ac,
-					struct samr_Password,
-					io->ac->status->domain_data.pwdHistoryLength);
-	if (!io->g.lm_history) {
-		return ldb_oom(ldb);
-	}
-
-	for (i = 0; i < MIN(io->ac->status->domain_data.pwdHistoryLength-1,
-			    io->o.lm_history_len); i++) {
-		io->g.lm_history[i+1] = io->o.lm_history[i];
-	}
-	io->g.lm_history_len = i + 1;
-
-	if (io->g.lm_hash) {
-		io->g.lm_history[0] = *io->g.lm_hash;
-	} else {
-		E_deshash("", io->g.lm_history[0].hash);
-	}
+	io->g.nt_history[0] = *io->g.nt_hash;
 
 	return LDB_SUCCESS;
 }
@@ -819,6 +814,63 @@ static int setup_kerberos_keys(struct setup_password_fields_io *io)
 		return ldb_oom(ldb);
 	}
 	generate_secret_buffer(io->g.des_crc.data, 8);
+
+	return LDB_SUCCESS;
+}
+
+static int setup_kerberos_key_hash(struct setup_password_fields_io *io,
+				   struct setup_password_fields_given *g)
+{
+	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
+	krb5_error_code krb5_ret;
+	krb5_data salt;
+	krb5_keyblock key;
+	krb5_data cleartext_data;
+
+	if (io->ac->search_res == NULL) {
+		/* No old data so nothing to do */
+		return LDB_SUCCESS;
+	}
+
+	if (io->o.salt.data == NULL) {
+		/* We didn't fetch the salt in setup_io(), so nothing to do */
+		return LDB_SUCCESS;
+	}
+
+	salt.data = (char *)io->o.salt.data;
+	salt.length = io->o.salt.length;
+
+	cleartext_data.data = (char *)g->cleartext_utf8->data;
+	cleartext_data.length = g->cleartext_utf8->length;
+
+	/*
+	 * create ENCTYPE_AES256_CTS_HMAC_SHA1_96 key out of the salt
+	 * and the cleartext password
+	 */
+	krb5_ret = smb_krb5_create_key_from_string(io->smb_krb5_context->krb5_context,
+						   NULL,
+						   &salt,
+						   &cleartext_data,
+						   ENCTYPE_AES256_CTS_HMAC_SHA1_96,
+						   &key);
+	if (krb5_ret) {
+		ldb_asprintf_errstring(ldb,
+				       "setup_kerberos_key_hash: "
+				       "generation of a aes256-cts-hmac-sha1-96 key failed: %s",
+				       smb_get_krb5_error_message(io->smb_krb5_context->krb5_context,
+								  krb5_ret, io->ac));
+		return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	g->aes_256 = data_blob_talloc(io->ac,
+				      KRB5_KEY_DATA(&key),
+				      KRB5_KEY_LENGTH(&key));
+	krb5_free_keyblock_contents(io->smb_krb5_context->krb5_context, &key);
+	if (g->aes_256.data == NULL) {
+		return ldb_oom(ldb);
+	}
+
+	talloc_keep_secret(g->aes_256.data);
 
 	return LDB_SUCCESS;
 }
@@ -1638,11 +1690,21 @@ static int setup_primary_userPassword(
 	 * used in preference to the NT password hash
 	 */
 	if (io->g.nt_hash == NULL) {
-		ldb_asprintf_errstring(ldb,
-			"No NT Hash, unable to calculate userPassword hashes");
-			return LDB_ERR_UNWILLING_TO_PERFORM;
+		/*
+		 * When the NT hash is not available, we use this field to store
+		 * the first 16 bytes of the AES256 key instead. This allows
+		 * 'samba-tool user' to verify that the user's password is in
+		 * sync with the userPassword package.
+		 */
+		uint8_t hash_len = MIN(16, io->g.aes_256.length);
+
+		ZERO_STRUCT(p_userPassword_b->current_nt_hash);
+		memcpy(p_userPassword_b->current_nt_hash.hash,
+		       io->g.aes_256.data,
+		       hash_len);
+	} else {
+		p_userPassword_b->current_nt_hash = *io->g.nt_hash;
 	}
-	p_userPassword_b->current_nt_hash = *io->g.nt_hash;
 
 	/*
 	 * Determine the number of hashes
@@ -2399,10 +2461,7 @@ static int setup_last_set_field(struct setup_password_fields_io *io)
 static int setup_given_passwords(struct setup_password_fields_io *io,
 				 struct setup_password_fields_given *g)
 {
-	struct ldb_context *ldb;
-	bool ok;
-
-	ldb = ldb_module_get_ctx(io->ac->module);
+	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
 
 	if (g->cleartext_utf8) {
 		struct ldb_val *cleartext_utf16_blob;
@@ -2477,20 +2536,21 @@ static int setup_given_passwords(struct setup_password_fields_io *io,
 		       g->cleartext_utf16->length);
 	}
 
-	if (g->cleartext_utf8) {
-		struct samr_Password *lm_hash;
-
-		lm_hash = talloc(io->ac, struct samr_Password);
-		if (!lm_hash) {
-			return ldb_oom(ldb);
-		}
-
-		/* compute the new lm hash */
-		ok = E_deshash((char *)g->cleartext_utf8->data, lm_hash->hash);
-		if (ok) {
-			g->lm_hash = lm_hash;
-		} else {
-			talloc_free(lm_hash);
+	/*
+	 * We need to build one more hash, so we can compare with what might
+	 * have been stored in the old password (for the LDAP password change)
+	 *
+	 * We don't have any old salts, so we won't catch password reuse if said
+	 * password was used prior to an account rename and another password
+	 * change.
+	 *
+	 * We don't have to store the 'opaque' (string2key iterations)
+	 * as Heimdal doesn't allow that to be changed.
+	 */
+	if (g->cleartext_utf8 != NULL) {
+		int ret = setup_kerberos_key_hash(io, g);
+		if (ret != LDB_SUCCESS) {
+			return ret;
 		}
 	}
 
@@ -2500,9 +2560,6 @@ static int setup_given_passwords(struct setup_password_fields_io *io,
 static int setup_password_fields(struct setup_password_fields_io *io)
 {
 	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
-	struct loadparm_context *lp_ctx =
-		talloc_get_type(ldb_get_opaque(ldb, "loadparm"),
-				struct loadparm_context);
 	int ret;
 
 	ret = setup_last_set_field(io);
@@ -2586,19 +2643,14 @@ static int setup_password_fields(struct setup_password_fields_io *io)
 		}
 	}
 
+	/*
+	 * This relies on setup_kerberos_keys to make a NT-hash-like
+	 * value for password history purposes
+	 */
+
 	ret = setup_nt_fields(io);
 	if (ret != LDB_SUCCESS) {
 		return ret;
-	}
-
-	if (lpcfg_lanman_auth(lp_ctx)) {
-		ret = setup_lm_fields(io);
-		if (ret != LDB_SUCCESS) {
-			return ret;
-		}
-	} else {
-		io->g.lm_hash = NULL;
-		io->g.lm_history_len = 0;
 	}
 
 	ret = setup_supplemental_field(io);
@@ -2612,8 +2664,6 @@ static int setup_password_fields(struct setup_password_fields_io *io)
 static int setup_smartcard_reset(struct setup_password_fields_io *io)
 {
 	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
-	struct loadparm_context *lp_ctx = talloc_get_type(
-		ldb_get_opaque(ldb, "loadparm"), struct loadparm_context);
 	struct supplementalCredentialsBlob scb = { .__ndr_size = 0 };
 	enum ndr_err_code ndr_err;
 
@@ -2628,18 +2678,6 @@ static int setup_smartcard_reset(struct setup_password_fields_io *io)
 	generate_secret_buffer(io->g.nt_hash->hash,
 			       sizeof(io->g.nt_hash->hash));
 	io->g.nt_history_len = 0;
-
-	if (lpcfg_lanman_auth(lp_ctx)) {
-		io->g.lm_hash = talloc(io->ac, struct samr_Password);
-		if (io->g.lm_hash == NULL) {
-			return ldb_module_oom(io->ac->module);
-		}
-		generate_secret_buffer(io->g.lm_hash->hash,
-				       sizeof(io->g.lm_hash->hash));
-	} else {
-		io->g.lm_hash = NULL;
-	}
-	io->g.lm_history_len = 0;
 
 	/*
 	 * We take the "old" value and store it
@@ -2692,26 +2730,10 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
 	struct ldb_message *mod_msg = NULL;
 	struct ldb_message *pso_msg = NULL;
-	NTSTATUS status;
-	int ret;
-
-	/* PSO search result is optional (NULL if no PSO applies) */
-	if (io->ac->pso_res != NULL) {
-		pso_msg = io->ac->pso_res->message;
-	}
-
-	status = dsdb_update_bad_pwd_count(io->ac, ldb,
-					   io->ac->search_res->message,
-					   io->ac->dom_res->message,
-					   pso_msg,
-					   &mod_msg);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto done;
-	}
-
-	if (mod_msg == NULL) {
-		goto done;
-	}
+	struct ldb_message *current = NULL;
+	NTSTATUS status = NT_STATUS_OK;
+	int ret; /* The errors we will actually return */
+	int dbg_ret; /* The errors we can only complain about in logs */
 
 	/*
 	 * OK, horrible semantics ahead.
@@ -2730,8 +2752,8 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 	 * Checking errors here is a bit pointless.
 	 * What can we do if we can't end the transaction?
 	 */
-	ret = ldb_next_del_trans(io->ac->module);
-	if (ret != LDB_SUCCESS) {
+	dbg_ret = ldb_next_del_trans(io->ac->module);
+	if (dbg_ret != LDB_SUCCESS) {
 		ldb_debug(ldb, LDB_DEBUG_FATAL,
 			  "Failed to abort transaction prior to update of badPwdCount of %s: %s",
 			  ldb_dn_get_linearized(io->ac->search_res->message->dn),
@@ -2743,8 +2765,8 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 	}
 
 	/* Likewise, what should we do if we can't open a new transaction? */
-	ret = ldb_next_start_trans(io->ac->module);
-	if (ret != LDB_SUCCESS) {
+	dbg_ret = ldb_next_start_trans(io->ac->module);
+	if (dbg_ret != LDB_SUCCESS) {
 		ldb_debug(ldb, LDB_DEBUG_ERROR,
 			  "Failed to open transaction to update badPwdCount of %s: %s",
 			  ldb_dn_get_linearized(io->ac->search_res->message->dn),
@@ -2755,10 +2777,43 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 		goto done;
 	}
 
-	ret = dsdb_module_modify(io->ac->module, mod_msg,
+	/*
+	 * Re-read the account details, using the GUID in case the DN
+	 * is being changed.
+	 */
+	status = authsam_reread_user_logon_data(
+		ldb, io->ac,
+		io->ac->search_res->message,
+		&current);
+	if (!NT_STATUS_IS_OK(status)) {
+		/* The re-read can return account locked out, as well
+		 * as an internal error
+		 */
+		goto end_transaction;
+	}
+
+	/* PSO search result is optional (NULL if no PSO applies) */
+	if (io->ac->pso_res != NULL) {
+		pso_msg = io->ac->pso_res->message;
+	}
+
+	status = dsdb_update_bad_pwd_count(io->ac, ldb,
+					   current,
+					   io->ac->dom_res->message,
+					   pso_msg,
+					   &mod_msg);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto end_transaction;
+	}
+
+	if (mod_msg == NULL) {
+		goto end_transaction;
+	}
+
+	dbg_ret = dsdb_module_modify(io->ac->module, mod_msg,
 				 DSDB_FLAG_NEXT_MODULE,
 				 io->ac->req);
-	if (ret != LDB_SUCCESS) {
+	if (dbg_ret != LDB_SUCCESS) {
 		ldb_debug(ldb, LDB_DEBUG_ERROR,
 			  "Failed to update badPwdCount of %s: %s",
 			  ldb_dn_get_linearized(io->ac->search_res->message->dn),
@@ -2768,8 +2823,9 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 		 */
 	}
 
-	ret = ldb_next_end_trans(io->ac->module);
-	if (ret != LDB_SUCCESS) {
+end_transaction:
+	dbg_ret = ldb_next_end_trans(io->ac->module);
+	if (dbg_ret != LDB_SUCCESS) {
 		ldb_debug(ldb, LDB_DEBUG_ERROR,
 			  "Failed to close transaction to update badPwdCount of %s: %s",
 			  ldb_dn_get_linearized(io->ac->search_res->message->dn),
@@ -2779,8 +2835,8 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 		 */
 	}
 
-	ret = ldb_next_start_trans(io->ac->module);
-	if (ret != LDB_SUCCESS) {
+	dbg_ret = ldb_next_start_trans(io->ac->module);
+	if (dbg_ret != LDB_SUCCESS) {
 		ldb_debug(ldb, LDB_DEBUG_ERROR,
 			  "Failed to open transaction after update of badPwdCount of %s: %s",
 			  ldb_dn_get_linearized(io->ac->search_res->message->dn),
@@ -2792,7 +2848,11 @@ static int make_error_and_update_badPwdCount(struct setup_password_fields_io *io
 
 done:
 	ret = LDB_ERR_CONSTRAINT_VIOLATION;
-	*werror = WERR_INVALID_PASSWORD;
+	if (NT_STATUS_EQUAL(status, NT_STATUS_ACCOUNT_LOCKED_OUT)) {
+		*werror = WERR_ACCOUNT_LOCKED_OUT;
+	} else {
+		*werror = WERR_INVALID_PASSWORD;
+	}
 	ldb_asprintf_errstring(ldb,
 			       "%08X: %s - check_password_restrictions: "
 			       "The old password specified doesn't match!",
@@ -2805,6 +2865,7 @@ static int check_password_restrictions(struct setup_password_fields_io *io, WERR
 {
 	struct ldb_context *ldb = ldb_module_get_ctx(io->ac->module);
 	int ret;
+	uint32_t i;
 	struct loadparm_context *lp_ctx =
 		talloc_get_type(ldb_get_opaque(ldb, "loadparm"),
 				struct loadparm_context);
@@ -2815,12 +2876,20 @@ static int check_password_restrictions(struct setup_password_fields_io *io, WERR
 		return LDB_SUCCESS;
 	}
 
-	/* First check the old password is correct, for password changes */
-	if (!io->ac->pwd_reset) {
-		bool nt_hash_checked = false;
-
-		/* we need the old nt or lm hash given by the client */
-		if (!io->og.nt_hash && !io->og.lm_hash) {
+	/*
+	 * First check the old password is correct, for password
+	 * changes when this hasn't already been checked by a
+	 * trustwrothy layer above
+	 */
+	if (!io->ac->pwd_reset && !(io->ac->change
+				    && io->ac->change->old_password_checked == DSDB_PASSWORD_CHECKED_AND_CORRECT)) {
+		bool hash_checked = false;
+		/*
+		 * we need the old nt hash given by the client (this
+		 * is for the plaintext over LDAP password change,
+		 * Kpasswd and SAMR supply the control)
+		 */
+		if (io->og.nt_hash == NULL && io->og.aes_256.length == 0) {
 			ldb_asprintf_errstring(ldb,
 				"check_password_restrictions: "
 				"You need to provide the old password in order "
@@ -2828,25 +2897,22 @@ static int check_password_restrictions(struct setup_password_fields_io *io, WERR
 			return LDB_ERR_UNWILLING_TO_PERFORM;
 		}
 
-		/* The password modify through the NT hash is encouraged and
-		   has no problems at all */
-		if (io->og.nt_hash) {
-			if (!io->o.nt_hash || memcmp(io->og.nt_hash->hash, io->o.nt_hash->hash, 16) != 0) {
-				return make_error_and_update_badPwdCount(io, werror);
-			}
+		/*
+		 * First compare the ENCTYPE_AES256_CTS_HMAC_SHA1_96 password and see if we have a match
+		 */
 
-			nt_hash_checked = true;
+		if (io->og.aes_256.length > 0 && io->o.aes_256.length) {
+			hash_checked = data_blob_equal_const_time(&io->og.aes_256, &io->o.aes_256);
 		}
 
-		/* But it is also possible to change a password by the LM hash
-		 * alone for compatibility reasons. This check is optional if
-		 * the NT hash was already checked - otherwise it's mandatory.
-		 * (as the SAMR operations request it). */
-		if (io->og.lm_hash) {
-			if ((!io->o.lm_hash && !nt_hash_checked)
-			    || (io->o.lm_hash && memcmp(io->og.lm_hash->hash, io->o.lm_hash->hash, 16) != 0)) {
-				return make_error_and_update_badPwdCount(io, werror);
-			}
+		/* The password modify through the NT hash is encouraged and
+		   has no problems at all */
+		if (!hash_checked && io->og.nt_hash && io->o.nt_hash) {
+		        hash_checked = mem_equal_const_time(io->og.nt_hash->hash, io->o.nt_hash->hash, 16);
+		}
+
+		if (!hash_checked) {
+			return make_error_and_update_badPwdCount(io, werror);
 		}
 	}
 
@@ -2928,13 +2994,40 @@ static int check_password_restrictions(struct setup_password_fields_io *io, WERR
 		return LDB_SUCCESS;
 	}
 
-	if (io->n.nt_hash) {
-		uint32_t i;
+	/*
+	 * This check works by using the current Kerberos password to
+	 * make up a password history.  We already did the salted hash
+	 * creation to pass the password change check.
+	 *
+	 * We check the pwdHistoryLength to ensure we honour the
+	 * policy on if the history should be checked
+	 */
+	if (io->ac->status->domain_data.pwdHistoryLength > 0
+	    && io->g.aes_256.length && io->o.aes_256.length)
+	{
+		bool equal = data_blob_equal_const_time(&io->g.aes_256,
+							&io->o.aes_256);
+		if (equal) {
+			ret = LDB_ERR_CONSTRAINT_VIOLATION;
+			*werror = WERR_PASSWORD_RESTRICTION;
+			ldb_asprintf_errstring(ldb,
+					       "%08X: %s - check_password_restrictions: "
+					       "the password was already used (previous password)!",
+					       W_ERROR_V(*werror),
+					       ldb_strerror(ret));
+			io->ac->status->reject_reason = SAM_PWD_CHANGE_PWD_IN_HISTORY;
+			return ret;
+		}
+	}
 
-		/* checks the NT hash password history */
+	if (io->n.nt_hash) {
+		/*
+		 * checks the NT hash password history, against the
+		 * generated NT hash
+		 */
 		for (i = 0; i < io->o.nt_history_len; i++) {
-			ret = memcmp(io->n.nt_hash, io->o.nt_history[i].hash, 16);
-			if (ret == 0) {
+			bool pw_cmp = mem_equal_const_time(io->n.nt_hash, io->o.nt_history[i].hash, 16);
+			if (pw_cmp) {
 				ret = LDB_ERR_CONSTRAINT_VIOLATION;
 				*werror = WERR_PASSWORD_RESTRICTION;
 				ldb_asprintf_errstring(ldb,
@@ -2948,23 +3041,87 @@ static int check_password_restrictions(struct setup_password_fields_io *io, WERR
 		}
 	}
 
-	if (io->n.lm_hash) {
-		uint32_t i;
+	/*
+	 * This check works by using the old Kerberos passwords
+	 * (old and older) to make up a password history.
+	 *
+	 * We check the pwdHistoryLength to ensure we honour the
+	 * policy on if the history should be checked
+	 */
+	for (i = 1;
+	     i <= io->o.kvno && i < MIN(3, io->ac->status->domain_data.pwdHistoryLength);
+	     i++)
+	{
+		krb5_error_code krb5_ret;
+		const uint32_t request_kvno = io->o.kvno - i;
+		DATA_BLOB db_key_blob;
+		bool pw_equal;
 
-		/* checks the LM hash password history */
-		for (i = 0; i < io->o.lm_history_len; i++) {
-			ret = memcmp(io->n.lm_hash, io->o.lm_history[i].hash, 16);
-			if (ret == 0) {
-				ret = LDB_ERR_CONSTRAINT_VIOLATION;
-				*werror = WERR_PASSWORD_RESTRICTION;
-				ldb_asprintf_errstring(ldb,
-					"%08X: %s - check_password_restrictions: "
-					"the password was already used (in history)!",
-					W_ERROR_V(*werror),
-					ldb_strerror(ret));
-				io->ac->status->reject_reason = SAM_PWD_CHANGE_PWD_IN_HISTORY;
-				return ret;
-			}
+		if (io->n.cleartext_utf8 == NULL) {
+			/*
+			 * No point checking history if we don't have
+			 * a cleartext password.
+			 */
+			break;
+		}
+
+		if (io->ac->search_res == NULL) {
+			/*
+			 * This is an ADD, no existing history to check
+			 */
+			break;
+		}
+
+		/*
+		 * If this account requires a smartcard for login, we don't
+		 * attempt a comparison with the old password.
+		 */
+		if (io->u.userAccountControl & UF_SMARTCARD_REQUIRED) {
+			break;
+		}
+
+		/*
+		 * Extract the old ENCTYPE_AES256_CTS_HMAC_SHA1_96 value from
+		 * the supplementalCredentials.
+		 */
+		krb5_ret = dsdb_extract_aes_256_key(io->smb_krb5_context->krb5_context,
+						    io->ac,
+						    io->ac->search_res->message,
+						    io->u.userAccountControl,
+						    &request_kvno, /* kvno */
+						    NULL, /* kvno_out */
+						    &db_key_blob,
+						    NULL); /* salt */
+		if (krb5_ret == ENOENT) {
+			/*
+			 * If there is no old AES hash (perhaps an imported DB with
+			 * just unicodePwd) then we just wont have an old
+			 * password to compare to if there is no NT hash
+			 */
+			break;
+		} else if (krb5_ret) {
+			ldb_asprintf_errstring(ldb,
+					       "check_password_restrictions: "
+					       "extraction of old[%u - %d = %d] aes256-cts-hmac-sha1-96 key failed: %s",
+					       io->o.kvno, i, io->o.kvno - i,
+					       smb_get_krb5_error_message(io->smb_krb5_context->krb5_context,
+									  krb5_ret, io->ac));
+			return LDB_ERR_OPERATIONS_ERROR;
+		}
+
+		/* This is the actual history check */
+		pw_equal = data_blob_equal_const_time(&io->n.aes_256,
+						      &db_key_blob);
+		if (pw_equal) {
+			ret = LDB_ERR_CONSTRAINT_VIOLATION;
+			*werror = WERR_PASSWORD_RESTRICTION;
+			ldb_asprintf_errstring(ldb,
+					       "%08X: %s - check_password_restrictions: "
+					       "the password was already used (in history)!",
+					       W_ERROR_V(*werror),
+					       ldb_strerror(ret));
+			io->ac->status->reject_reason = SAM_PWD_CHANGE_PWD_IN_HISTORY;
+			return ret;
 		}
 	}
 
@@ -3028,7 +3185,6 @@ static int check_password_restrictions_and_log(struct setup_password_fields_io *
 		 * logs are consistent, even if some elements are always NULL.
 		 */
 		struct auth_usersupplied_info ui = {
-			.mapped_state = true,
 			.was_mapped = true,
 			.client = {
 				.account_name = io->u.sAMAccountName,
@@ -3125,6 +3281,14 @@ static int update_final_msg(struct setup_password_fields_io *io)
 		if (ret != LDB_SUCCESS) {
 			return ret;
 		}
+
+		/*
+		 * This wipes any old LM password after any password
+		 * update operation.
+		 *
+		 * This is the same as the previous default behaviour
+		 * of 'lanman auth = no'
+		 */
 		ret = ldb_msg_add_empty(io->ac->update_msg,
 					"dBCSPwd",
 					el_flags, NULL);
@@ -3137,6 +3301,13 @@ static int update_final_msg(struct setup_password_fields_io *io)
 		if (ret != LDB_SUCCESS) {
 			return ret;
 		}
+		/*
+		 * This wipes any LM password history after any password
+		 * update operation.
+		 *
+		 * This is the same as the previous default behaviour
+		 * of 'lanman auth = no'
+		 */
 		ret = ldb_msg_add_empty(io->ac->update_msg,
 					"lmPwdHistory",
 					el_flags, NULL);
@@ -3170,31 +3341,13 @@ static int update_final_msg(struct setup_password_fields_io *io)
 			return ret;
 		}
 	}
-	if (io->g.lm_hash != NULL) {
-		ret = samdb_msg_add_hash(ldb, io->ac,
-					 io->ac->update_msg,
-					 "dBCSPwd",
-					 io->g.lm_hash);
-		if (ret != LDB_SUCCESS) {
-			return ret;
-		}
-	}
+
 	if (io->g.nt_history_len > 0) {
 		ret = samdb_msg_add_hashes(ldb, io->ac,
 					   io->ac->update_msg,
 					   "ntPwdHistory",
 					   io->g.nt_history,
 					   io->g.nt_history_len);
-		if (ret != LDB_SUCCESS) {
-			return ret;
-		}
-	}
-	if (io->g.lm_history_len > 0) {
-		ret = samdb_msg_add_hashes(ldb, io->ac,
-					   io->ac->update_msg,
-					   "lmPwdHistory",
-					   io->g.lm_history,
-					   io->g.lm_history_len);
 		if (ret != LDB_SUCCESS) {
 			return ret;
 		}
@@ -3291,6 +3444,8 @@ static int setup_io(struct ph_context *ac,
 	struct ldb_context *ldb = ldb_module_get_ctx(ac->module);
 	struct loadparm_context *lp_ctx = talloc_get_type(
 		ldb_get_opaque(ldb, "loadparm"), struct loadparm_context);
+	enum store_nt_hash store_hash_setting =
+		lpcfg_nt_hash_store(lp_ctx);
 	int ret;
 	const struct ldb_message *info_msg = NULL;
 	struct dom_sid *account_sid = NULL;
@@ -3409,6 +3564,30 @@ static int setup_io(struct ph_context *ac,
 		io->u.restrictions = 0;
 		io->ac->status->domain_data.pwdHistoryLength =
 			MAX(io->ac->status->domain_data.pwdHistoryLength, 3);
+	}
+
+	/*
+	 * Machine accounts need the NT hash to operate the NETLOGON
+	 * ServerAuthenticate{,2,3} logic
+	 */
+	if (!(io->u.userAccountControl & UF_NORMAL_ACCOUNT)) {
+		store_hash_setting = NT_HASH_STORE_ALWAYS;
+	}
+
+	switch (store_hash_setting) {
+	case NT_HASH_STORE_ALWAYS:
+		io->u.store_nt_hash = true;
+		break;
+	case NT_HASH_STORE_NEVER:
+		io->u.store_nt_hash = false;
+		break;
+	case NT_HASH_STORE_AUTO:
+		if (lpcfg_ntlm_auth(lp_ctx) == NTLM_AUTH_DISABLED) {
+			io->u.store_nt_hash = false;
+			break;
+		}
+		io->u.store_nt_hash = true;
+		break;
 	}
 
 	if (ac->userPassword) {
@@ -3589,7 +3768,6 @@ static int setup_io(struct ph_context *ac,
 	}
 
 	/* Handles the "dBCSPwd" attribute (LM hash) */
-	io->n.lm_hash = NULL; io->og.lm_hash = NULL;
 	ret = msg_find_old_and_new_pwd_val(client_msg, "dBCSPwd",
 					   ac->req->operation,
 					   &lm_hash, &old_lm_hash);
@@ -3600,24 +3778,12 @@ static int setup_io(struct ph_context *ac,
 		return ret;
 	}
 
-	if (((lm_hash != NULL) || (old_lm_hash != NULL)) && (!ac->hash_values)) {
-		/* refuse the change if someone wants to change the hash
-		   without control specified... */
+	if (((lm_hash != NULL) || (old_lm_hash != NULL))) {
+		/* refuse the change if someone wants to change the LM hash */
 		ldb_asprintf_errstring(ldb,
 			"setup_io: "
-			"it's not allowed to set the LM hash password directly'");
+			"it's not allowed to set the LM hash password (dBCSPwd)'");
 		return LDB_ERR_UNWILLING_TO_PERFORM;
-	}
-
-	if (lpcfg_lanman_auth(lp_ctx) && (lm_hash != NULL)) {
-		io->n.lm_hash = talloc(io->ac, struct samr_Password);
-		memcpy(io->n.lm_hash->hash, lm_hash->data, MIN(lm_hash->length,
-		       sizeof(io->n.lm_hash->hash)));
-	}
-	if (lpcfg_lanman_auth(lp_ctx) && (old_lm_hash != NULL)) {
-		io->og.lm_hash = talloc(io->ac, struct samr_Password);
-		memcpy(io->og.lm_hash->hash, old_lm_hash->data, MIN(old_lm_hash->length,
-		       sizeof(io->og.lm_hash->hash)));
 	}
 
 	/*
@@ -3628,23 +3794,12 @@ static int setup_io(struct ph_context *ac,
 	 */
 	if (ac->change != NULL) {
 		io->og.nt_hash = NULL;
-		if (ac->change->old_nt_pwd_hash != NULL) {
-			io->og.nt_hash = talloc_memdup(io->ac,
-						       ac->change->old_nt_pwd_hash,
-						       sizeof(struct samr_Password));
-		}
-		io->og.lm_hash = NULL;
-		if (lpcfg_lanman_auth(lp_ctx) && (ac->change->old_lm_pwd_hash != NULL)) {
-			io->og.lm_hash = talloc_memdup(io->ac,
-						       ac->change->old_lm_pwd_hash,
-						       sizeof(struct samr_Password));
-		}
 	}
 
 	/* refuse the change if someone wants to change the clear-
 	   text and supply his own hashes at the same time... */
 	if ((io->n.cleartext_utf8 || io->n.cleartext_utf16)
-			&& (io->n.nt_hash || io->n.lm_hash)) {
+			&& (io->n.nt_hash)) {
 		ldb_asprintf_errstring(ldb,
 			"setup_io: "
 			"it's only allowed to set the password in form of cleartext attributes or as hashes");
@@ -3661,11 +3816,10 @@ static int setup_io(struct ph_context *ac,
 	}
 
 	/* refuse the change if someone tries to set/change the password by
-	 * the lanman hash alone and we've deactivated that mechanism. This
-	 * would end in an account without any password! */
+	 * any method that would leave us without a password! */
 	if (io->ac->update_password
 	    && (!io->n.cleartext_utf8) && (!io->n.cleartext_utf16)
-	    && (!io->n.nt_hash) && (!io->n.lm_hash)) {
+	    && (!io->n.nt_hash)) {
 		ldb_asprintf_errstring(ldb,
 			"setup_io: "
 			"It's not possible to delete the password (changes using the LAN Manager hash alone could be deactivated)!");
@@ -3678,13 +3832,16 @@ static int setup_io(struct ph_context *ac,
 		return LDB_ERR_UNWILLING_TO_PERFORM;
 	}
 
-	/* refuse the change if someone wants to compare against a plaintext
-	   or hash at the same time for a "password modify" operation... */
+	/*
+	 * refuse the change if someone wants to compare against a
+	 * plaintext or dsdb_control_password_change at the same time
+	 * for a "password modify" operation...
+	 */
 	if ((io->og.cleartext_utf8 || io->og.cleartext_utf16)
-	    && (io->og.nt_hash || io->og.lm_hash)) {
+	    && ac->change) {
 		ldb_asprintf_errstring(ldb,
 			"setup_io: "
-			"it's only allowed to provide the old password in form of cleartext attributes or as hashes");
+			"it's only allowed to provide the old password in form of cleartext attributes or as the dsdb_control_password_change");
 		return LDB_ERR_UNWILLING_TO_PERFORM;
 	}
 
@@ -3731,9 +3888,12 @@ static int setup_io(struct ph_context *ac,
 			 */
 			ac->pwd_reset = pav->pwd_reset;
 		} else if (io->og.cleartext_utf8 || io->og.cleartext_utf16
-		    || io->og.nt_hash || io->og.lm_hash) {
-			/* If we have an old password specified then for sure it
-			 * is a user "password change" */
+		    || ac->change) {
+			/*
+			 * If we have an old password specified or the
+			 * dsdb_control_password_change then for sure
+			 * it is a user "password change"
+			 */
 			ac->pwd_reset = false;
 		} else {
 			/* Otherwise we have also here a "password reset" */
@@ -3746,20 +3906,22 @@ static int setup_io(struct ph_context *ac,
 
 	if (existing_msg != NULL) {
 		NTSTATUS status;
+		krb5_error_code krb5_ret;
+		DATA_BLOB key_blob;
+		DATA_BLOB salt_blob;
+		uint32_t kvno;
 
 		if (ac->pwd_reset) {
 			/* Get the old password from the database */
 			status = samdb_result_passwords_no_lockout(ac,
 								   lp_ctx,
 								   existing_msg,
-								   &io->o.lm_hash,
 								   &io->o.nt_hash);
 		} else {
 			/* Get the old password from the database */
 			status = samdb_result_passwords(ac,
 							lp_ctx,
 							existing_msg,
-							&io->o.lm_hash,
 							&io->o.nt_hash);
 		}
 
@@ -3782,9 +3944,6 @@ static int setup_io(struct ph_context *ac,
 		io->o.nt_history_len = samdb_result_hashes(ac, existing_msg,
 							   "ntPwdHistory",
 							   &io->o.nt_history);
-		io->o.lm_history_len = samdb_result_hashes(ac, existing_msg,
-							   "lmPwdHistory",
-							   &io->o.lm_history);
 		io->o.supplemental = ldb_msg_find_ldb_val(existing_msg,
 							  "supplementalCredentials");
 
@@ -3803,6 +3962,47 @@ static int setup_io(struct ph_context *ac,
 				return LDB_ERR_OPERATIONS_ERROR;
 			}
 		}
+
+		/*
+		 * If this account requires a smartcard for login, we don't
+		 * attempt a comparison with the old password.
+		 */
+		if (io->u.userAccountControl & UF_SMARTCARD_REQUIRED) {
+			return LDB_SUCCESS;
+		}
+
+		/*
+		 * Extract the old ENCTYPE_AES256_CTS_HMAC_SHA1_96
+		 * value from the supplementalCredentials.
+		 */
+		krb5_ret = dsdb_extract_aes_256_key(io->smb_krb5_context->krb5_context,
+						    io->ac,
+						    existing_msg,
+						    io->u.userAccountControl,
+						    NULL, /* kvno */
+						    &kvno, /* kvno_out */
+						    &key_blob,
+						    &salt_blob);
+		if (krb5_ret == ENOENT) {
+			/*
+			 * If there is no old AES hash (perhaps an imported DB with
+			 * just unicodePwd) then we just wont have an old
+			 * password to compare to if there is no NT hash
+			 */
+			return LDB_SUCCESS;
+		}
+		if (krb5_ret) {
+			ldb_asprintf_errstring(ldb,
+					       "setup_io: "
+					       "extraction of salt for old aes256-cts-hmac-sha1-96 key failed: %s",
+					       smb_get_krb5_error_message(io->smb_krb5_context->krb5_context,
+									  krb5_ret, io->ac));
+			return LDB_ERR_OPERATIONS_ERROR;
+		}
+
+		io->o.salt = salt_blob;
+		io->o.aes_256 = key_blob;
+		io->o.kvno = kvno;
 	}
 
 	return LDB_SUCCESS;
@@ -3864,9 +4064,9 @@ static void ph_apply_controls(struct ph_context *ac)
 	}
 
 	ctrl = ldb_request_get_control(ac->req,
-				       DSDB_CONTROL_PASSWORD_CHANGE_OID);
+				       DSDB_CONTROL_PASSWORD_CHANGE_OLD_PW_CHECKED_OID);
 	if (ctrl != NULL) {
-		ac->change = (struct dsdb_control_password_change *) ctrl->data;
+		ac->change = talloc_get_type_abort(ctrl->data, struct dsdb_control_password_change);
 
 		/* Mark the "change" control as uncritical (done) */
 		ctrl->critical = false;
@@ -4828,6 +5028,7 @@ static int password_hash_mod_search_self(struct ph_context *ac)
 					      "badPasswordTime",
 					      "badPwdCount",
 					      "lockoutTime",
+					      "msDS-KeyVersionNumber",
 					      "msDS-SecondaryKrbTgtNumber",
 					      NULL };
 	struct ldb_request *search_req;

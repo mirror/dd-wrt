@@ -23,17 +23,9 @@
 	  </p><p>
 	    Default: NONE.  Guessed, based on features of
 	    distribution.
-	  </p></dd><dt><span class="term">CTDB_STARTUP_TIMEOUT=<em class="parameter"><code>NUM</code></em></span></dt><dd><p>
-	    NUM is the number of seconds to wait for
-	    <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span> complete early
-	    initialisation up to a point where it is unlikely to
-	    abort.  If <span class="command"><strong>ctdbd</strong></span> doesn't complete the
-	    "setup" event before this timeout then it is killed.
-	  </p><p>
-	    Defaults: 10
-	  </p></dd></dl></div></div><div class="refsect1"><a name="idm40"></a><h2>
+	  </p></dd></dl></div></div><div class="refsect1"><a name="idm30"></a><h2>
       RESOURCE LIMITS
-    </h2><div class="refsect2"><a name="idm42"></a><h3>
+    </h2><div class="refsect2"><a name="idm32"></a><h3>
 	Maximum number of open files
       </h3><p>
 	CTDB can use a lot of file descriptors, especially when used
@@ -59,7 +51,7 @@
 	      <code class="option">LIMIT</code></strong></span> to increase the maximum
 	      number of open files.  This command can be put in the
 	      relevant distribution-specific service configuration file.
-	    </p></dd></dl></div></div><div class="refsect2"><a name="idm62"></a><h3>
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm52"></a><h3>
 	Allowing core dumps
       </h3><p>
 	Many distributions do not allow core dump files to be
@@ -81,7 +73,7 @@
 	      to disable or enable core files as required.  This
 	      command can be put in the relevant distribution-specific
 	      service configuration file.
-	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm81"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/etc/sysconfig/ctdb</code></td></tr><tr><td><code class="filename">/etc/default/ctdb</code></td></tr><tr><td><code class="filename">/usr/local/etc/ctdb/script.options</code></td></tr></table></div><div class="refsect1"><a name="idm90"></a><h2>SEE ALSO</h2><p>
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm71"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/etc/sysconfig/ctdb</code></td></tr><tr><td><code class="filename">/etc/default/ctdb</code></td></tr><tr><td><code class="filename">/usr/local/etc/ctdb/script.options</code></td></tr></table></div><div class="refsect1"><a name="idm80"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">ctdb-script.options</span>(5)</span>,

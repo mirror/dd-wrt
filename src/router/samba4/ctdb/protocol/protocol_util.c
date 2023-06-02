@@ -119,6 +119,7 @@ int ctdb_sock_addr_to_buf(char *buf, socklen_t buflen,
 			  ctdb_sock_addr *addr, bool with_port)
 {
 	const char *t;
+	size_t len = 0;
 
 	switch (addr->sa.sa_family) {
 	case AF_INET:
@@ -127,15 +128,36 @@ int ctdb_sock_addr_to_buf(char *buf, socklen_t buflen,
 		if (t == NULL) {
 			return errno;
 		}
+		if (with_port) {
+			len = strlen(buf);
+		}
 		break;
 
-	case AF_INET6:
-		t = inet_ntop(addr->ip6.sin6_family, &addr->ip6.sin6_addr,
-			      buf, buflen);
+	case AF_INET6: {
+		char tmp[INET6_ADDRSTRLEN];
+
+		t = inet_ntop(addr->ip6.sin6_family,
+			      &addr->ip6.sin6_addr,
+			      tmp,
+			      sizeof(tmp));
 		if (t == NULL) {
 			return errno;
 		}
+
+		if (with_port) {
+			int ret = snprintf(buf, buflen, "[%s]", tmp);
+			if (ret < 0) {
+				return ENOSPC;
+			}
+			len = (size_t)ret;
+		} else {
+			len = strlcpy(buf, tmp, buflen);
+		}
+		if (len >= buflen){
+			return ENOSPC;
+		}
 		break;
+	}
 
 	default:
 		return EAFNOSUPPORT;
@@ -143,7 +165,6 @@ int ctdb_sock_addr_to_buf(char *buf, socklen_t buflen,
 	}
 
 	if (with_port) {
-		size_t len = strlen(buf);
 		int ret;
 
 		ret = snprintf(buf+len, buflen-len,
@@ -230,14 +251,14 @@ static int ip_from_string(const char *str, ctdb_sock_addr *addr)
 
 	/* IPv4 or IPv6 address?
 	 *
-	 * Use rindex() because we need the right-most ':' below for
+	 * Use strrchr() because we need the right-most ':' below for
 	 * IPv4-mapped IPv6 addresses anyway...
 	 */
-	p = rindex(str, ':');
+	p = strrchr(str, ':');
 	if (p == NULL) {
 		ret = ipv4_from_string(str, &addr->ip);
 	} else {
-		uint8_t ipv4_mapped_prefix[12] = {
+		static const uint8_t ipv4_mapped_prefix[12] = {
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff
 		};
 		size_t len = strlen(str);
@@ -299,7 +320,7 @@ int ctdb_sock_addr_from_string(const char *str,
 		return EINVAL;
 	}
 
-	p = rindex(s, ':');
+	p = strrchr(s, ':');
 	if (p == NULL) {
 		return EINVAL;
 	}
@@ -337,7 +358,7 @@ int ctdb_sock_addr_mask_from_string(const char *str,
 		return EINVAL;
 	}
 
-	p = rindex(s, '/');
+	p = strrchr(s, '/');
 	if (p == NULL) {
 		return EINVAL;
 	}
@@ -476,8 +497,11 @@ bool ctdb_sock_addr_same(const ctdb_sock_addr *addr1,
 	return (ctdb_sock_addr_cmp(addr1, addr2) == 0);
 }
 
-int ctdb_connection_to_buf(char *buf, size_t buflen,
-			   struct ctdb_connection *conn, bool client_first)
+int ctdb_connection_to_buf(char *buf,
+			   size_t buflen,
+			   struct ctdb_connection *conn,
+			   bool client_first,
+			   const char *sep)
 {
 	char server[64], client[64];
 	int ret;
@@ -495,9 +519,9 @@ int ctdb_connection_to_buf(char *buf, size_t buflen,
 	}
 
 	if (! client_first) {
-		ret = snprintf(buf, buflen, "%s %s", server, client);
+		ret = snprintf(buf, buflen, "%s%s%s", server, sep, client);
 	} else {
-		ret = snprintf(buf, buflen, "%s %s", client, server);
+		ret = snprintf(buf, buflen, "%s%s%s", client, sep, server);
 	}
 	if (ret < 0 || (size_t)ret >= buflen) {
 		return ENOSPC;
@@ -519,7 +543,7 @@ char *ctdb_connection_to_string(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 
-	ret = ctdb_connection_to_buf(out, len, conn, client_first);
+	ret = ctdb_connection_to_buf(out, len, conn, client_first, " ");
 	if (ret != 0) {
 		talloc_free(out);
 		return NULL;
@@ -645,8 +669,11 @@ char *ctdb_connection_list_to_string(
 		char buf[128];
 		int ret;
 
-		ret = ctdb_connection_to_buf(buf, sizeof(buf),
-					     &conn_list->conn[i], client_first);
+		ret = ctdb_connection_to_buf(buf,
+					     sizeof(buf),
+					     &conn_list->conn[i],
+					     client_first,
+					     " ");
 		if (ret != 0) {
 			talloc_free(out);
 			return NULL;

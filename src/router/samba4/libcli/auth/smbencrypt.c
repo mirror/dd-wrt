@@ -27,6 +27,7 @@
 #include "../lib/crypto/crypto.h"
 #include "../libcli/auth/libcli_auth.h"
 #include "../librpc/gen_ndr/ndr_ntlmssp.h"
+#include "lib/util/bytearray.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
@@ -856,35 +857,76 @@ NTSTATUS NTLMv2_RESPONSE_verify_netlogon_creds(const char *account_name,
 	return NT_STATUS_OK;
 }
 
+enum encode_order {
+	ENCODE_ORDER_PASSWORD_FIRST,
+	ENCODE_ORDER_PASSWORD_LAST,
+};
+
+#define PASSWORD_BUFFER_LEN 512
+
+static ssize_t _encode_pwd_buffer_from_str(uint8_t buf[PASSWORD_BUFFER_LEN],
+					   const char *password,
+					   int string_flags,
+					   enum encode_order order)
+{
+	ssize_t new_pw_len;
+	size_t pw_pos = 0;
+	size_t random_pos = 0;
+	size_t random_len = 0;
+
+	/* The incoming buffer can be any alignment. */
+	string_flags |= STR_NOALIGN;
+
+	new_pw_len = push_string(buf,
+				 password,
+				 PASSWORD_BUFFER_LEN,
+				 string_flags);
+	if (new_pw_len < 0) {
+		BURN_DATA_SIZE(buf, PASSWORD_BUFFER_LEN);
+		return -1;
+	}
+
+	if (new_pw_len == PASSWORD_BUFFER_LEN) {
+		return new_pw_len;
+	}
+
+	switch (order) {
+	case ENCODE_ORDER_PASSWORD_FIRST:
+		pw_pos = 0;
+		random_pos = new_pw_len;
+		random_len = PASSWORD_BUFFER_LEN - random_pos;
+		break;
+	case ENCODE_ORDER_PASSWORD_LAST:
+		pw_pos = PASSWORD_BUFFER_LEN - new_pw_len;
+		random_pos = 0;
+		random_len = pw_pos;
+		memmove(buf + pw_pos, buf, new_pw_len);
+		break;
+	}
+
+	generate_random_buffer(buf + random_pos, random_len);
+
+	return new_pw_len;
+}
+
 /***********************************************************
  encode a password buffer with a unicode password.  The buffer
  is filled with random data to make it harder to attack.
 ************************************************************/
 bool encode_pw_buffer(uint8_t buffer[516], const char *password, int string_flags)
 {
-	uint8_t new_pw[512];
-	ssize_t new_pw_len;
+	ssize_t pw_len;
 
-	/* the incoming buffer can be any alignment. */
-	string_flags |= STR_NOALIGN;
-
-	new_pw_len = push_string(new_pw,
-				 password,
-				 sizeof(new_pw), string_flags);
-	if (new_pw_len == -1) {
+	pw_len = _encode_pwd_buffer_from_str(buffer,
+					     password,
+					     string_flags,
+					     ENCODE_ORDER_PASSWORD_LAST);
+	if (pw_len < 0 || pw_len > PASSWORD_BUFFER_LEN) {
 		return false;
 	}
 
-	memcpy(&buffer[512 - new_pw_len], new_pw, new_pw_len);
+	PUSH_LE_U32(buffer, PASSWORD_BUFFER_LEN, pw_len);
 
-	generate_random_buffer(buffer, 512 - new_pw_len);
-
-	/*
-	 * The length of the new password is in the last 4 bytes of
-	 * the data buffer.
-	 */
-	SIVAL(buffer, 512, new_pw_len);
-	ZERO_STRUCT(new_pw);
 	return true;
 }
 
@@ -901,10 +943,17 @@ bool decode_pw_buffer(TALLOC_CTX *ctx,
 		      size_t *new_pw_len,
 		      charset_t string_charset)
 {
+	DATA_BLOB new_password;
 	int byte_len=0;
+	bool ok;
 
 	*pp_new_pwrd = NULL;
 	*new_pw_len = 0;
+
+	ok = extract_pw_from_buffer(ctx, in_buffer, &new_password);
+	if (!ok) {
+		return false;
+	}
 
 	/*
 	  Warning !!! : This function is called from some rpc call.
@@ -913,30 +962,20 @@ bool decode_pw_buffer(TALLOC_CTX *ctx,
 	  If you reuse that code somewhere else check first.
 	*/
 
-	/* The length of the new password is in the last 4 bytes of the data buffer. */
-
-	byte_len = IVAL(in_buffer, 512);
-
-#ifdef DEBUG_PASSWORD
-	dump_data(100, in_buffer, 516);
-#endif
-
-	/* Password cannot be longer than the size of the password buffer */
-	if ( (byte_len < 0) || (byte_len > 512)) {
-		DEBUG(0, ("decode_pw_buffer: incorrect password length (%d).\n", byte_len));
-		DEBUG(0, ("decode_pw_buffer: check that 'encrypt passwords = yes'\n"));
-		return false;
-	}
-
 	/* decode into the return buffer. */
-	if (!convert_string_talloc(ctx, string_charset, CH_UNIX,
-				   &in_buffer[512 - byte_len],
-				   byte_len,
+	ok = convert_string_talloc(ctx,
+				   string_charset,
+				   CH_UNIX,
+				   new_password.data,
+				   new_password.length,
 				   (void *)pp_new_pwrd,
-				   new_pw_len)) {
-		DEBUG(0, ("decode_pw_buffer: failed to convert incoming password\n"));
+				   new_pw_len);
+	data_blob_free(&new_password);
+	if (!ok) {
+		DBG_ERR("Failed to convert incoming password\n");
 		return false;
 	}
+	talloc_keep_secret(*pp_new_pwrd);
 
 #ifdef DEBUG_PASSWORD
 	DEBUG(100,("decode_pw_buffer: new_pwrd: "));
@@ -944,6 +983,92 @@ bool decode_pw_buffer(TALLOC_CTX *ctx,
 	DEBUG(100,("multibyte len:%lu\n", (unsigned long int)*new_pw_len));
 	DEBUG(100,("original char len:%d\n", byte_len/2));
 #endif
+
+	return true;
+}
+
+#define MAX_PASSWORD_LEN 256
+
+/*
+ * [MS-SAMR] 2.2.6.32 This creates the buffer to be sent. It is of type
+ * SAMPR_USER_PASSWORD_AES.
+ */
+bool encode_pwd_buffer514_from_str(uint8_t buffer[514],
+				   const char *password,
+				   uint32_t string_flags)
+{
+	ssize_t pw_len;
+
+	pw_len = _encode_pwd_buffer_from_str(buffer + 2,
+					     password,
+					     string_flags,
+					     ENCODE_ORDER_PASSWORD_FIRST);
+	if (pw_len < 0) {
+		return false;
+	}
+
+	PUSH_LE_U16(buffer, 0, pw_len);
+
+	return true;
+}
+
+bool extract_pwd_blob_from_buffer514(TALLOC_CTX *mem_ctx,
+				     const uint8_t in_buffer[514],
+				     DATA_BLOB *new_password)
+{
+#ifdef DEBUG_PASSWORD
+	DEBUG(100, ("in_buffer: "));
+	dump_data(100, in_buffer, 514);
+#endif
+
+	new_password->length = PULL_LE_U16(in_buffer, 0);
+	if (new_password->length == 0 || new_password->length > 512) {
+		return false;
+	}
+
+	new_password->data =
+		talloc_memdup(mem_ctx, in_buffer + 2, new_password->length);
+	if (new_password->data == NULL) {
+		return false;
+	}
+	talloc_keep_secret(new_password->data);
+
+#ifdef DEBUG_PASSWORD
+	DEBUG(100, ("new_pwd_len: %zu\n", new_password->length));
+	DEBUG(100, ("new_pwd: "));
+	dump_data(100, new_password->data, new_password->length);
+#endif
+
+	return true;
+}
+
+bool decode_pwd_string_from_buffer514(TALLOC_CTX *mem_ctx,
+				      const uint8_t in_buffer[514],
+				      charset_t string_charset,
+				      DATA_BLOB *decoded_password)
+{
+	DATA_BLOB new_password = {
+		.length = 0,
+	};
+	bool ok;
+
+	ok = extract_pwd_blob_from_buffer514(mem_ctx, in_buffer, &new_password);
+	if (!ok) {
+		return false;
+	}
+
+	ok = convert_string_talloc(mem_ctx,
+				   string_charset,
+				   CH_UNIX,
+				   new_password.data,
+				   new_password.length,
+				   (void *)&decoded_password->data,
+				   &decoded_password->length);
+	data_blob_free(&new_password);
+	if (!ok) {
+		return false;
+	}
+	talloc_keep_secret(decoded_password->data);
 
 	return true;
 }
@@ -1017,21 +1142,54 @@ NTSTATUS decode_rc4_passwd_buffer(const DATA_BLOB *psession_key,
  encode a password buffer with an already unicode password.  The
  rest of the buffer is filled with random data to make it harder to attack.
 ************************************************************/
-bool set_pw_in_buffer(uint8_t buffer[516], const DATA_BLOB *password)
+
+static bool create_pw_buffer_from_blob(uint8_t buffer[512],
+				       const DATA_BLOB *in_password,
+				       enum encode_order order)
 {
-	if (password->length > 512) {
+	size_t pwd_pos = 0;
+	size_t random_pos = 0;
+	size_t random_len = 0;
+
+	if (in_password->length > 512) {
 		return false;
 	}
 
-	memcpy(&buffer[512 - password->length], password->data, password->length);
+	switch (order) {
+	case ENCODE_ORDER_PASSWORD_FIRST:
+		pwd_pos = 0;
+		random_pos = in_password->length;
+		break;
+	case ENCODE_ORDER_PASSWORD_LAST:
+		pwd_pos = PASSWORD_BUFFER_LEN - in_password->length;
+		random_pos = 0;
+		break;
+	}
+	random_len = PASSWORD_BUFFER_LEN - in_password->length;
 
-	generate_random_buffer(buffer, 512 - password->length);
+	memcpy(buffer + pwd_pos, in_password->data, in_password->length);
+	generate_random_buffer(buffer + random_pos, random_len);
+
+	return true;
+}
+
+bool set_pw_in_buffer(uint8_t buffer[516], const DATA_BLOB *password)
+{
+	bool ok;
+
+	ok = create_pw_buffer_from_blob(buffer,
+					password,
+					ENCODE_ORDER_PASSWORD_LAST);
+	if (!ok) {
+		return false;
+	}
 
 	/*
 	 * The length of the new password is in the last 4 bytes of
 	 * the data buffer.
 	 */
-	SIVAL(buffer, 512, password->length);
+	PUSH_LE_U32(buffer, PASSWORD_BUFFER_LEN, password->length);
+
 	return true;
 }
 
@@ -1062,6 +1220,7 @@ bool extract_pw_from_buffer(TALLOC_CTX *mem_ctx,
 	if (!new_pass->data) {
 		return false;
 	}
+	talloc_keep_secret(new_pass->data);
 
 	return true;
 }

@@ -16,7 +16,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
-from distutils.sysconfig import get_python_lib
+from sysconfig import get_path
 import platform
 
 try:
@@ -31,6 +31,11 @@ os.environ["PYTHONUNBUFFERED"] = "1"
 # This speeds up testing remarkably.
 os.environ['TDB_NO_FSYNC'] = '1'
 
+# allow autobuild to run within git rebase -i
+if "GIT_DIR" in os.environ:
+    del os.environ["GIT_DIR"]
+if "GIT_WORK_TREE" in os.environ:
+    del os.environ["GIT_WORK_TREE"]
 
 def find_git_root():
     '''get to the top of the git repo'''
@@ -119,6 +124,11 @@ else:
     PUBLISH_DOCS = 'echo "HTML documentation publishing skipped since no --enable-coverage specified"'
 
 CLEAN_SOURCE_TREE_CMD = "cd ${TEST_SOURCE_DIR} && script/clean-source-tree.sh"
+
+
+def check_symbols(sofile, expected_symbols=""):
+    return "objdump --dynamic-syms " + sofile + " | " + \
+           "awk \'$0 !~ /" + expected_symbols + "/ {if ($2 == \"g\" && $3 ~ /D(F|O)/ && $4 ~ /(.bss|.text)/ && $7 !~ /(__gcov_|mangle_path)/) exit 1}\'"
 
 if args:
     # If we are only running specific test,
@@ -265,6 +275,16 @@ tasks = {
         ],
     },
 
+    "samba-without-smb1-build": {
+        "git-clone-required": True,
+        "sequence": [
+            ("configure", "./configure.developer --without-smb1-server --without-ad-dc" + samba_configure_params),
+            ("make", "make -j"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("chmod-R-a-w", "chmod -R a-w ."),
+        ],
+    },
+
     "samba-no-opath-build": {
         "git-clone-required": True,
         "sequence": [
@@ -303,6 +323,7 @@ tasks = {
             "fl2008r2dc",
             "ad_member",
             "ad_member_idmap_rid",
+            "admem_idmap_autorid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
             "ad_member_oneway",
@@ -331,6 +352,8 @@ tasks = {
             "schema_pair_dc",
             "schema_dc",
             "clusteredmember",
+            "ad_dc_fips",
+            "ad_member_fips",
             ])),
             ("test-slow-none", make_test(cmd='make test', TESTS="--include=selftest/slow-none", include_envs=["none"])),
             ("lcov", LCOV_CMD),
@@ -369,6 +392,7 @@ tasks = {
             "fl2008r2dc",
             "ad_member",
             "ad_member_idmap_rid",
+            "admem_idmap_autorid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
             "ad_member_oneway",
@@ -397,6 +421,8 @@ tasks = {
             "schema_pair_dc",
             "schema_dc",
             "clusteredmember",
+            "ad_dc_fips",
+            "ad_member_fips",
             ])),
             ("lcov", LCOV_CMD),
             ("install", "make install"),
@@ -440,14 +466,25 @@ tasks = {
         ],
     },
 
+    "samba-fileserver-without-smb1": {
+        "dependency": "samba-without-smb1-build",
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("test", make_test(include_envs=["fileserver"])),
+            ("lcov", LCOV_CMD),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+        ],
+    },
+
     # This is a full build without the AD DC so we test the build with
     # MIT Kerberos from the current system.  Runtime behaviour is
     # confirmed via the ktest (static ccache and keytab) environment
 
+    # This environment also used to confirm we can still build with --with-libunwind
     "samba-ktest-mit": {
         "sequence": [
             ("random-sleep", random_sleep(300, 900)),
-            ("configure", "./configure.developer --without-ad-dc --with-system-mitkrb5 " + samba_configure_params),
+            ("configure", "./configure.developer --without-ad-dc --with-libunwind --with-system-mitkrb5 " + samba_configure_params),
             ("make", "make -j"),
             ("test", make_test(include_envs=[
             "ktest", # ktest is also tested in fileserver, samba and
@@ -466,6 +503,7 @@ tasks = {
             ("test", make_test(include_envs=[
             "ad_member",
             "ad_member_idmap_rid",
+            "admem_idmap_autorid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
             "ad_member_offlogon",
@@ -671,6 +709,7 @@ tasks = {
             ("test", make_test(include_envs=[
             "ad_member",
             "ad_member_idmap_rid",
+            "admem_idmap_autorid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
             "ad_member_offlogon",
@@ -772,6 +811,20 @@ tasks = {
         ],
     },
 
+    "samba-32bit": {
+        "sequence": [
+            ("random-sleep", random_sleep(300, 900)),
+            ("configure", "./configure.developer --abi-check-disable --disable-warnings-as-errors" + samba_configure_params),
+            ("make", "make -j"),
+            ("nonetest", make_test(cmd='make test', TESTS="--exclude=selftest/slow-none", include_envs=["none"])),
+            ("quicktest", make_test(cmd='make quicktest', include_envs=["ad_dc", "ad_dc_smb1", "ad_dc_smb1_done"])),
+            ("ktest", make_test(cmd='make test', include_envs=["ktest"])),
+            ("install", "make install"),
+            ("check-clean-tree", CLEAN_SOURCE_TREE_CMD),
+            ("clean", "make clean"),
+        ],
+    },
+
     "samba-ctdb": {
         "sequence": [
             ("random-sleep", random_sleep(900, 1500)),
@@ -787,7 +840,6 @@ tasks = {
          "PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH} "
          "./configure.developer ${PREFIX} "
          "--with-selftest-prefix=./bin/ab "
-         "--enable-clangdb "
          "--with-cluster-support "
          "--without-ad-dc "
          "--bundled-libraries=!tdb"),
@@ -828,16 +880,79 @@ tasks = {
             ("ldb-make", "cd lib/ldb && make"),
             ("ldb-install", "cd lib/ldb && make install"),
 
-            ("nondevel-configure", "./configure ${PREFIX}"),
+            ("nondevel-configure", samba_libs_envvars + " ./configure ${PREFIX}"),
             ("nondevel-make", "make -j"),
             ("nondevel-check", "./bin/smbd -b | grep WITH_NTVFS_FILESERVER && exit 1; exit 0"),
-            ("nondevel-install", "make install"),
+            ("nondevel-no-libtalloc", "find ./bin | grep -v 'libtalloc-report' | grep 'libtalloc' && exit 1; exit 0"),
+            ("nondevel-no-libtdb", "find ./bin | grep -v 'libtdb-wrap' | grep 'libtdb' && exit 1; exit 0"),
+            ("nondevel-no-libtevent", "find ./bin | grep -v 'libtevent-util' | grep 'libtevent' && exit 1; exit 0"),
+            ("nondevel-no-libldb", "find ./bin | grep -v 'module' | grep -v 'libldbsamba' | grep 'libldb' && exit 1; exit 0"),
+            ("nondevel-no-samba-nss_winbind", "ldd ./bin/plugins/libnss_winbind.so.2 | grep 'samba' && exit 1; exit 0"),
+            ("nondevel-no-samba-nss_wins", "ldd ./bin/plugins/libnss_wins.so.2 | grep 'samba' && exit 1; exit 0"),
+            ("nondevel-no-samba-libwbclient", "ldd ./bin/shared/libwbclient.so.0 | grep 'samba' && exit 1; exit 0"),
+            ("nondevel-no-samba-pam_winbind", "ldd ./bin/plugins/pam_winbind.so | grep -v 'libtalloc.so.2' | grep 'samba' && exit 1; exit 0"),
+            ("nondevel-no-public-nss_winbind",
+                check_symbols("./bin/plugins/libnss_winbind.so.2", "_nss_winbind_")),
+            ("nondevel-no-public-nss_wins",
+                check_symbols("./bin/plugins/libnss_wins.so.2", "_nss_wins_")),
+            ("nondevel-no-public-libwbclient",
+                check_symbols("./bin/shared/libwbclient.so.0", "wbc")),
+            ("nondevel-no-public-pam_winbind",
+                check_symbols("./bin/plugins/pam_winbind.so", "pam_sm_")),
+            ("nondevel-no-public-winbind_krb5_locator",
+                check_symbols("./bin/plugins/winbind_krb5_locator.so", "service_locator")),
+            ("nondevel-no-public-async_dns_krb5_locator",
+                check_symbols("./bin/plugins/async_dns_krb5_locator.so", "service_locator")),
+            ("nondevel-install", "make -j install"),
             ("nondevel-dist", "make dist"),
 
-        # retry with all modules shared
+            ("prefix-no-private-libtalloc", "find ${PREFIX_DIR} | grep -v 'libtalloc-report' | grep 'private.*libtalloc' && exit 1; exit 0"),
+            ("prefix-no-private-libtdb", "find ${PREFIX_DIR} | grep -v 'libtdb-wrap' | grep 'private.*libtdb' && exit 1; exit 0"),
+            ("prefix-no-private-libtevent", "find ${PREFIX_DIR} | grep -v 'libtevent-util' | grep 'private.*libtevent' && exit 1; exit 0"),
+            ("prefix-no-private-libldb", "find ${PREFIX_DIR} | grep -v 'module' | grep -v 'libldbsamba' | grep 'private.*libldb' && exit 1; exit 0"),
+            ("prefix-no-samba-nss_winbind", "ldd ${PREFIX_DIR}/lib/libnss_winbind.so.2 | grep 'samba' && exit 1; exit 0"),
+            ("prefix-no-samba-nss_wins", "ldd ${PREFIX_DIR}/lib/libnss_wins.so.2 | grep 'samba' && exit 1; exit 0"),
+            ("prefix-no-samba-libwbclient", "ldd ${PREFIX_DIR}/lib/libwbclient.so.0 | grep 'samba' && exit 1; exit 0"),
+            ("prefix-no-samba-pam_winbind", "ldd ${PREFIX_DIR}/lib/security/pam_winbind.so | grep -v 'libtalloc.so.2' | grep 'samba' && exit 1; exit 0"),
+            ("prefix-no-public-nss_winbind",
+                check_symbols("${PREFIX_DIR}/lib/libnss_winbind.so.2", "_nss_winbind_")),
+            ("prefix-no-public-nss_wins",
+                check_symbols("${PREFIX_DIR}/lib/libnss_wins.so.2", "_nss_wins_")),
+            ("prefix-no-public-libwbclient",
+                check_symbols("${PREFIX_DIR}/lib/libwbclient.so.0", "wbc")),
+            ("prefix-no-public-pam_winbind",
+                check_symbols("${PREFIX_DIR}/lib/security/pam_winbind.so", "pam_sm_")),
+            ("prefix-no-public-winbind_krb5_locator",
+                check_symbols("${PREFIX_DIR}/lib/krb5/winbind_krb5_locator.so",
+                              "service_locator")),
+            ("prefix-no-public-async_dns_krb5_locator",
+                check_symbols("${PREFIX_DIR}/lib/krb5/async_dns_krb5_locator.so",
+                              "service_locator")),
+
+            # retry with all modules shared
             ("allshared-distclean", "make distclean"),
             ("allshared-configure", samba_libs_configure_samba + " --with-shared-modules=ALL"),
             ("allshared-make", "make -j"),
+            ("allshared-no-libtalloc", "find ./bin | grep -v 'libtalloc-report' | grep 'libtalloc' && exit 1; exit 0"),
+            ("allshared-no-libtdb", "find ./bin | grep -v 'libtdb-wrap' | grep 'libtdb' && exit 1; exit 0"),
+            ("allshared-no-libtevent", "find ./bin | grep -v 'libtevent-util' | grep 'libtevent' && exit 1; exit 0"),
+            ("allshared-no-libldb", "find ./bin | grep -v 'module' | grep -v 'libldbsamba' | grep 'libldb' && exit 1; exit 0"),
+            ("allshared-no-samba-nss_winbind", "ldd ./bin/plugins/libnss_winbind.so.2 | grep 'samba' && exit 1; exit 0"),
+            ("allshared-no-samba-nss_wins", "ldd ./bin/plugins/libnss_wins.so.2 | grep 'samba' && exit 1; exit 0"),
+            ("allshared-no-samba-libwbclient", "ldd ./bin/shared/libwbclient.so.0 | grep 'samba' && exit 1; exit 0"),
+            ("allshared-no-samba-pam_winbind", "ldd ./bin/plugins/pam_winbind.so | grep -v 'libtalloc.so.2' | grep 'samba' && exit 1; exit 0"),
+            ("allshared-no-public-nss_winbind",
+                check_symbols("./bin/plugins/libnss_winbind.so.2", "_nss_winbind_")),
+            ("allshared-no-public-nss_wins",
+                check_symbols("./bin/plugins/libnss_wins.so.2", "_nss_wins_")),
+            ("allshared-no-public-libwbclient",
+                check_symbols("./bin/shared/libwbclient.so.0", "wbc")),
+            ("allshared-no-public-pam_winbind",
+                check_symbols("./bin/plugins/pam_winbind.so", "pam_sm_")),
+            ("allshared-no-public-winbind_krb5_locator",
+                check_symbols("./bin/plugins/winbind_krb5_locator.so", "service_locator")),
+            ("allshared-no-public-async_dns_krb5_locator",
+                check_symbols("./bin/plugins/async_dns_krb5_locator.so", "service_locator")),
         ],
     },
 
@@ -916,6 +1031,12 @@ tasks = {
             ("libs-check-clean-tree", CLEAN_SOURCE_TREE_CMD),
             ("libs-clean", "make clean"),
 
+        ],
+    },
+
+    "samba-shellcheck": {
+        "sequence": [
+            ("run", "script/check-shell-scripts.sh ."),
         ],
     },
 
@@ -1058,6 +1179,8 @@ defaulttasks.remove("samba-addc-mit-1")
 defaulttasks.remove("samba-addc-mit-4a")
 defaulttasks.remove("samba-addc-mit-4b")
 
+defaulttasks.remove("samba-32bit")
+
 if os.environ.get("AUTOBUILD_SKIP_SAMBA_O3", "0") == "1":
     defaulttasks.remove("samba-o3")
 
@@ -1175,7 +1298,11 @@ class builder(object):
             do_print('%s: Remaining consumers %u' % (self.name, len(self.consumers)))
             return
         (self.stage, self.cmd) = self.sequence[self.next]
-        self.cmd = self.cmd.replace("${PYTHON_PREFIX}", get_python_lib(plat_specific=1, standard_lib=0, prefix=self.prefix))
+        self.cmd = self.cmd.replace("${PYTHON_PREFIX}",
+                                    get_path(name='platlib',
+                                             scheme="posix_prefix",
+                                             vars={"base": self.prefix,
+                                                   "platbase": self.prefix}))
         self.cmd = self.cmd.replace("${PREFIX}", "--prefix=%s" % self.prefix)
         self.cmd = self.cmd.replace("${PREFIX_DIR}", "%s" % self.prefix)
         self.cmd = self.cmd.replace("${TESTS}", options.restrict_tests)

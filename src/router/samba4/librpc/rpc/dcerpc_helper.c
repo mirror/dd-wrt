@@ -20,6 +20,7 @@
 #include "librpc/gen_ndr/auth.h"
 #include "lib/crypto/gnutls_helpers.h"
 #include "libcli/security/dom_sid.h"
+#include "libcli/security/security_token.h"
 #include "libcli/smb/smb2_constants.h"
 
 #include "dcerpc_helper.h"
@@ -33,7 +34,7 @@ static bool smb3_sid_parse(const struct dom_sid *sid,
 	uint16_t encrypt;
 	uint16_t cipher;
 
-	if (sid->sub_auths[0] != 1397571891) {
+	if (sid->sub_auths[0] != global_sid_Samba_SMB3.sub_auths[0]) {
 		return false;
 	}
 
@@ -48,7 +49,12 @@ static bool smb3_sid_parse(const struct dom_sid *sid,
 	}
 
 	cipher = sid->sub_auths[3];
-	if (cipher > SMB2_ENCRYPTION_AES128_GCM) {
+	if (cipher > 256) {
+		/*
+		 * It is unlikely that we
+		 * ever have more then 256
+		 * encryption algorithms
+		 */
 		return false;
 	}
 
@@ -70,33 +76,22 @@ static bool smb3_sid_parse(const struct dom_sid *sid,
 bool dcerpc_is_transport_encrypted(struct auth_session_info *session_info)
 {
 	struct security_token *token = session_info->security_token;
-	struct dom_sid smb3_dom_sid;
+	struct dom_sid smb3_dom_sid = global_sid_Samba_SMB3;
 	const struct dom_sid *smb3_sid = NULL;
 	uint16_t dialect = 0;
 	uint16_t encrypt = 0;
 	uint16_t cipher = 0;
-	uint32_t i;
+	size_t num_smb3_sids;
 	bool ok;
 
-	ok = dom_sid_parse(SID_SAMBA_SMB3, &smb3_dom_sid);
-	if (!ok) {
+	num_smb3_sids = security_token_count_flag_sids(token,
+						       &smb3_dom_sid,
+						       3,
+						       &smb3_sid);
+	if (num_smb3_sids > 1) {
+		DBG_ERR("ERROR: The SMB3 SID has been detected %zu times\n",
+			num_smb3_sids);
 		return false;
-	}
-
-	for (i = 0; i < token->num_sids; i++) {
-		int cmp;
-
-		/* There is only one SMB3 SID allowed! */
-		cmp = dom_sid_compare_domain(&token->sids[i], &smb3_dom_sid);
-		if (cmp == 0) {
-			if (smb3_sid == NULL) {
-				smb3_sid = &token->sids[i];
-			} else {
-				DBG_ERR("ERROR: The SMB3 SID has been detected "
-					"multiple times\n");
-				return false;
-			}
-		}
 	}
 
 	if (smb3_sid == NULL) {
