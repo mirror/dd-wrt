@@ -709,7 +709,7 @@ static void update_chunk_allocation(struct btrfs_fs_info *fs_info,
 	}
 }
 
-int main(int argc, char **argv)
+int mkfs_main(int argc, char **argv)
 {
 	char *file;
 	struct btrfs_root *root;
