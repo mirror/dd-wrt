@@ -117,7 +117,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
 	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
 	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
 	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o \
-	  multi.o
+
 	  
 cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
@@ -210,8 +210,8 @@ MAKEOPTS = --no-print-directory Q=$(Q)
 
 
 # Programs to install.
-progs_install = btrfs mkfs.btrfs btrfs-map-logical btrfs-image \
-		btrfs-find-root btrfstune btrfs-select-super
+progs_install = btrfs btrfs-map-logical btrfs-image \
+		btrfs-find-root btrfs-select-super
 
 # Programs to build.
 progs_build = $(progs_install) btrfsck btrfs-corrupt-block
@@ -333,11 +333,11 @@ test-convert: btrfs btrfs-convert
 	$(Q)bash tests/convert-tests.sh
 
 test-check: test-fsck
-test-fsck: btrfs btrfs-image btrfs-corrupt-block mkfs.btrfs btrfstune
+test-fsck: btrfs btrfs-image btrfs-corrupt-block
 	@echo "    [TEST]   fsck-tests.sh"
 	$(Q)bash tests/fsck-tests.sh
 
-test-misc: btrfs btrfs-image btrfs-corrupt-block mkfs.btrfs btrfstune fssum \
+test-misc: btrfs btrfs-image btrfs-corrupt-block fssum \
 		btrfs-find-root btrfs-select-super btrfs-convert
 	@echo "    [TEST]   misc-tests.sh"
 	$(Q)bash tests/misc-tests.sh
@@ -463,7 +463,7 @@ btrfs-%: btrfs-%.o $(objects) $(standalone_deps) $(libs_static)
 		$(libs_static) \
 		$(LDFLAGS) $(LIBS) $($(subst -,_,$@-libs))
 
-btrfs: btrfs.o $(objects) $(cmds_objects) $(libs_static)
+btrfs: btrfs.o multi.o btrfstune.o $(mkfs_objects) $(objects) $(cmds_objects) $(libs_static)
 	@echo "    [LD]     $@"
 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_COMP)
 
@@ -480,21 +480,6 @@ btrfsck.static: btrfs.static
 	@echo "    [LN]     $@"
 	$(Q)$(LN_S) -f $^ $@
 
-mkfs.btrfs: $(mkfs_objects) $(objects) $(libs_static)
-	@echo "    [LD]     $@"
-	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
-
-mkfs.btrfs.static: $(static_mkfs_objects) $(static_objects) $(static_libbtrfs_objects)
-	@echo "    [LD]     $@"
-	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(STATIC_LIBS)
-
-btrfstune: btrfstune.o $(objects) $(libs_static)
-	@echo "    [LD]     $@"
-	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
-
-btrfstune.static: btrfstune.static.o $(static_objects) $(static_libbtrfs_objects)
-	@echo "    [LD]     $@"
-	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(STATIC_LIBS)
 
 btrfs-image: $(image_objects) $(objects) $(libs_static)
 	@echo "    [LD]     $@"
@@ -650,6 +635,8 @@ ifeq ($(BUILD_PROGRAMS),1)
 	$(INSTALL) fsck.btrfs $(DESTDIR)$(bindir)
 	# btrfsck is a link to btrfs in the src tree, make it so for installed file as well
 	$(LN_S) -f btrfs $(DESTDIR)$(bindir)/btrfsck
+	$(LN_S) -f btrfs $(DESTDIR)$(bindir)/btrfstune
+	$(LN_S) -f btrfs $(DESTDIR)$(bindir)/mkfs.btrfs
 ifneq ($(udevdir),)
 	$(INSTALL) -m755 -d $(DESTDIR)$(udevruledir)
 	$(INSTALL) -m644 $(udev_rules) $(DESTDIR)$(udevruledir)

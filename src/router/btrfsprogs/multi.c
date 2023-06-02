@@ -14,14 +14,12 @@ int main(int argc, char **argv)
 	const char *prog = argv[0];
 //	airbag_init();
 restart:
-	if (strstr(argv[0], "mactelnetd"))
-		return mactelnetd_main(argc, argv);
-	else if (strstr(argv[0], "mactelnet"))
-		return mactelnet_main(argc, argv);
-	else if (strstr(argv[0], "macping"))
-		return macping_main(argc, argv);
-	else if (strstr(argv[0], "mndp"))
-		return mndp_main(argc, argv);
+	if (strstr(argv[0], "btrfstune"))
+		return btrfstune_main(argc, argv);
+	else if (strstr(argv[0], "btrfstune"))
+		return btrfs_main(argc, argv);
+	else if (strstr(argv[0], "mkfs.btrfs"))
+		return mkfs_main(argc, argv);
 
 	if (!restart && argc > 1) {
 		argv++;
