@@ -74,10 +74,9 @@ int mk_nodog_conf(void)
 	nvram_default_get("ND_GatewayAddr", "0.0.0.0");
 	if (!nvram_match("ND_GatewayAddr", "0.0.0.0"))
 		fprintf(fp, "GatewayAddress\t%s\n", nvram_safe_get("ND_GatewayAddr"));
-	if (!nvram_match("ND_GatewayIPRange", "0.0.0.0") && !nvram_match("ND_GatewayIPRange", "") && !nvram_match("ND_GatewayIPRange_mask", ""))
-	{
+	if (!nvram_match("ND_GatewayIPRange", "0.0.0.0") && !nvram_match("ND_GatewayIPRange", "") && !nvram_match("ND_GatewayIPRange_mask", "")) {
 		char range[64];
-		snprintf(range,sizeof(range), "%s/%s", nvram_safe_get("ND_GatewayIPRange"),nvram_safe_get("ND_GatewayIPRange_mask"));
+		snprintf(range, sizeof(range), "%s/%s", nvram_safe_get("ND_GatewayIPRange"), nvram_safe_get("ND_GatewayIPRange_mask"));
 		fprintf(fp, "GatewayIPRange\t%s\n", range);
 	}
 	fprintf(fp, "WebRoot\t%s\n", nvram_safe_get("ND_DocumentRoot"));
@@ -90,7 +89,7 @@ int mk_nodog_conf(void)
 	fprintf(fp, "MaxClients\t%s\n", nvram_default_get("ND_MaxClients", "250"));
 	fprintf(fp, "PreAuthIdleTimeout\t%s\n", nvram_default_get("ND_PreAuthIdleTimeout", "30"));
 	fprintf(fp, "AuthIdleTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
-//	fprintf(fp, "SessionTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
+//      fprintf(fp, "SessionTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
 	fprintf(fp, "CheckInterval\t%s\n", nvram_default_get("ND_CheckInterval", "600"));
 	fprintf(fp, "TrafficControl yes\n");
 	fprintf(fp, "DownloadLimit\t%s\n", nvram_default_get("ND_dl", "0"));
@@ -110,13 +109,13 @@ void start_splashd(void)
 
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
-	addHost("connectivitycheck.gstatic.com", "108.177.122.94",0);
-	addHost("www.google.com", "64.233.177.104",0);
-	addHost("captive.apple.com", "17.253.7.203",0);
-	addHost("dns.msftncsi.com", "131.107.255.255",0);
-	addHost("www.msftncsi.com", "23.63.249.202",0);
-	addHost("www.msftconnecttest.com", "13.107.4.52",0);
-	addHost("detectportal.firefox.com", "34.107.221.82",0);
+	addHost("connectivitycheck.gstatic.com", "108.177.122.94", 0);
+	addHost("www.google.com", "64.233.177.104", 0);
+	addHost("captive.apple.com", "17.253.7.203", 0);
+	addHost("dns.msftncsi.com", "131.107.255.255", 0);
+	addHost("www.msftncsi.com", "23.63.249.202", 0);
+	addHost("www.msftconnecttest.com", "13.107.4.52", 0);
+	addHost("detectportal.firefox.com", "34.107.221.82", 0);
 	eval("nodogsplash", "-c", NODOG_CONF);
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
