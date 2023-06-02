@@ -5,6 +5,7 @@
 #
 # Base Features
 #
+CONFIG_HOTPLUG2=y
 CONFIG_EAD=y
 
 CONFIG_EOP_TUNNEL=y
@@ -172,7 +173,7 @@ CONFIG_LIBUTIL=y
 #
 ARCHITECTURE=rt2880
 PLATFORM=mipsel
-LINUXDIR=$(SRCBASE)/linux/rt2880/linux-2.6.23
+LINUXDIR=$(SRCBASE)/linux/universal/linux-3.2
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 
