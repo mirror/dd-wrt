@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <services.h>
 #define NODOG_CONF      "/tmp/etc/nodogsplash/nodogsplash.conf"
+extern void addHost(char *host, char *ip, int withdomain);
 
 int mk_nodog_conf(void)
 {
@@ -109,13 +110,13 @@ void start_splashd(void)
 
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
-	addHost("connectivitycheck.gstatic.com", "108.177.122.94");
-	addHost("www.google.com", "64.233.177.104");
-	addHost("captive.apple.com", "17.253.7.203");
-	addHost("dns.msftncsi.com", "131.107.255.255");
-	addHost("www.msftncsi.com", "23.63.249.202");
-	addHost("www.msftconnecttest.com", "13.107.4.52");
-	addHost("detectportal.firefox.com", "34.107.221.82");
+	addHost("connectivitycheck.gstatic.com", "108.177.122.94",0);
+	addHost("www.google.com", "64.233.177.104",0);
+	addHost("captive.apple.com", "17.253.7.203",0);
+	addHost("dns.msftncsi.com", "131.107.255.255",0);
+	addHost("www.msftncsi.com", "23.63.249.202",0);
+	addHost("www.msftconnecttest.com", "13.107.4.52",0);
+	addHost("detectportal.firefox.com", "34.107.221.82",0);
 	eval("nodogsplash", "-c", NODOG_CONF);
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
