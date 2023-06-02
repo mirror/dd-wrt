@@ -262,10 +262,10 @@ endif
 	rm -rf $(INSTALLDIR)/glib20/usr/libexec
 	rm -rf $(INSTALLDIR)/glib20/usr/lib/gio
 	rm -f $(INSTALLDIR)/glib20/usr/lib/*.a
-	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-8*
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-16*
 ifneq ($(CONFIG_FRR),y)
 ifneq ($(CONFIG_MC),y)
-	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-16*
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-8*
 endif
 endif
 ifneq ($(CONFIG_MC),y)
