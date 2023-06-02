@@ -76,6 +76,8 @@ void start_nfs(void)
 	insmod("nfsd");
 	if (pidof("rpcbind") <=0)
 		log_eval("rpcbind");
+	if (pidof("fsidd") <=0)
+		log_eval("fsidd");
 	if (pidof("rpc.mountd") <=0)
 		log_eval("rpc.mountd");
 	char threads[32];
