@@ -516,7 +516,7 @@ iptables_fw_init(void)
 		// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
 		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s", gw_address);
 		// CHAIN_OUTGOING, other packets ACCEPT
-		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j RETURN");
 	}
 	/*
 	 * End of nat table chains and rules (ip4 only)
@@ -547,13 +547,13 @@ iptables_fw_init(void)
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j REJECT", FW_MARK_BLOCKED, markmask);
 	// CHAIN_TO_ROUTER, invalid packets REJECT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate INVALID -j REJECT");
-	// CHAIN_TO_ROUTER, related and established packets ACCEPT
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+	// CHAIN_TO_ROUTER, related and established packets RETURN
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN");
 	// CHAIN_TO_ROUTER, bogus SYN packets REJECT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN \\! --tcp-option 2 -j REJECT");
 
-	// CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
+	// CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router RETURN
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j RETURN", gw_port);
 
 	// CHAIN_TO_ROUTER, packets marked TRUSTED:
 
@@ -566,8 +566,8 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j %s", FW_MARK_TRUSTED, markmask, get_empty_ruleset_policy("trusted-users-to-router"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED_TO_ROUTER, FW_MARK_TRUSTED, markmask);
-		// CHAIN_TRUSTED_TO_ROUTER, related and established packets ACCEPT
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+		// CHAIN_TRUSTED_TO_ROUTER, related and established packets RETURN
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN");
 		// CHAIN_TRUSTED_TO_ROUTER, append the "trusted-users-to-router" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users-to-router", CHAIN_TRUSTED_TO_ROUTER);
 		// CHAIN_TRUSTED_TO_ROUTER, any packets not matching that ruleset REJECT
@@ -625,8 +625,8 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j %s", FW_MARK_TRUSTED, markmask, get_empty_ruleset_policy("trusted-users"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED, FW_MARK_TRUSTED, markmask);
-		// CHAIN_TRUSTED, related and established packets ACCEPT
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+		// CHAIN_TRUSTED, related and established packets RETURN
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN");
 		// CHAIN_TRUSTED, append the "trusted-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users", CHAIN_TRUSTED);
 		// CHAIN_TRUSTED, any packets not matching that ruleset REJECT
@@ -645,8 +645,8 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j %s", FW_MARK_AUTHENTICATED, markmask, get_empty_ruleset_policy("authenticated-users"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED, markmask);
-		// CHAIN_AUTHENTICATED, related and established packets ACCEPT
-		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+		// CHAIN_AUTHENTICATED, related and established packets RETURN
+		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN");
 		// CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
 		// CHAIN_AUTHENTICATED, any packets not matching that ruleset REJECT
@@ -1037,7 +1037,7 @@ iptables_fw_counters_update(void)
 		rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %*s %15[0-9.]", &counter, target, ip);
 		/* eat rest of line */
 		while (('\n' != fgetc(output)) && !feof(output)) {}
-		if (3 == rc && !strcmp(target, "ACCEPT")) {
+		if (3 == rc && (!strcmp(target, "ACCEPT") || !strcmp(target, "RETURN"))) {
 			/* Sanity*/
 			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
