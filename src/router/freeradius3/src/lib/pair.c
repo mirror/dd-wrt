@@ -1,7 +1,7 @@
 /*
  * pair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: c86deb8a142c0fb366b603993c5e8e0760c1debf $
+ * Version:	$Id: 449e0e1ca50afaa63e4b873cf16ae8a7977530d0 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: c86deb8a142c0fb366b603993c5e8e0760c1debf $")
+RCSID("$Id: 449e0e1ca50afaa63e4b873cf16ae8a7977530d0 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/regex.h>
@@ -2302,6 +2302,8 @@ void fr_pair_value_bstrncpy(VALUE_PAIR *vp, void const *src, size_t len)
 	char *p, *q;
 
 	VERIFY_VP(vp);
+
+	if (!src) return;
 
 	p = talloc_array(vp, char, len + 1);
 	if (!p) return;

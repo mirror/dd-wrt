@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 5d87f848cadda957e64a1254596ba5ad6da5515b $
+#  $Id: 997d41efcbdf26282dad8bd87f051abecc6f88e9 $
 
 #
 #  Lightweight Directory Access Protocol (LDAP)
@@ -92,7 +92,7 @@ ldap {
 	#  Where:
 	#  	<radius attr>:	Is the attribute you wish to create
 	# 			with any valid list and request qualifiers.
-	#  	<op>: 		Is any assignment operator (=, :=, +=, -=).
+	#  	<op>: 		Is any assignment operator (=, :=, +=).
 	#  	<value>:	Is the value to parse into the new valuepair.
 	# 			If the value is wrapped in double quotes it
 	#			will be xlat expanded.
@@ -618,6 +618,13 @@ ldap {
 #		require_cert	= 'demand'
 
 		#
+		#  Check the CRL, as with the EAP module.
+		#
+		#  The default is "no".
+		#
+#		check_crl = yes
+
+		#
 		#  Minimum TLS version to accept. We STRONGLY recommend
 		#  setting this to "1.2"
 		#
@@ -696,5 +703,10 @@ ldap {
 		#
 		#  The solution is to either lower the 'min' connections,
 		#  or increase lifetime/idle_timeout.
+
+		#  Maximum number of times an operation can be retried
+		#  if it returns an error which indicates the connection
+		#  needs to be restarted.  This includes timeouts.
+		max_retries = 5
 	}
 }

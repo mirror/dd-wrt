@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 37bd406c4afcd527f27ca61112462be06e249f98 $
+ * Version:	$Id: 49da461149995f7f8bbeadfcfffc5b491563fc9e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 37bd406c4afcd527f27ca61112462be06e249f98 $")
+RCSID("$Id: 49da461149995f7f8bbeadfcfffc5b491563fc9e $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -935,6 +935,9 @@ static int send_one_packet(rc_request_t *request)
 #endif
 			}
 			if (!fr_packet_list_socket_add(pl, mysockfd, ipproto,
+#ifdef WITH_RADIUSV11
+						       false,
+#endif
 						       &request->packet->dst_ipaddr,
 						       request->packet->dst_port, NULL)) {
 				ERROR("Can't add new socket");
@@ -1202,6 +1205,7 @@ packet_done:
 	return 0;
 }
 
+DIAG_OFF(deprecated-declarations)
 int main(int argc, char **argv)
 {
 	int		c;
@@ -1524,8 +1528,11 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (!fr_packet_list_socket_add(pl, sockfd, ipproto, &server_ipaddr,
-				       server_port, NULL)) {
+	if (!fr_packet_list_socket_add(pl, sockfd, ipproto,
+#ifdef WITH_RADIUSV11
+				       false,
+#endif
+				       &server_ipaddr, server_port, NULL)) {
 		ERROR("Out of memory");
 		exit(1);
 	}
@@ -1702,3 +1709,4 @@ int main(int argc, char **argv)
 
 	exit(0);
 }
+DIAG_ON(deprecated-declarations)

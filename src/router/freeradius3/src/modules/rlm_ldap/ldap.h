@@ -1,5 +1,5 @@
 /**
- * $Id: 2ab8ba375fab08a6c6c15ea43c470aa9622cd744 $
+ * $Id: e2e628d90d4a7bd6b3e9770fe17c712f8c9de002 $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *
@@ -82,8 +82,7 @@ USES_APPLE_DEPRECATED_API	/* Apple wants us to use OpenDirectory Framework, we d
 							//!< and profile attribute.
 
 #define LDAP_MAX_CACHEABLE		64		//!< Maximum number of groups we retrieve from the server for
-							//!< a given user. If more than this number are retrieve the
-							//!< module returns invalid.
+							//!< a given user which need resolving from name to DN.
 
 #define LDAP_MAX_GROUP_NAME_LEN		128		//!< Maximum name of a group name.
 #define LDAP_MAX_ATTR_STR_LEN		256		//!< Maximum length of an xlat expanded LDAP attribute.
@@ -265,6 +264,8 @@ typedef struct ldap_instance {
 							//!< server presents.
 
 	int		tls_require_cert;		//!< OpenLDAP constant representing the require cert string.
+
+	bool		tls_check_crl;			//!< whether we do CRL checks or not
 
 	char const	*tls_min_version_str;		//!< Minimum TLS version
 	int		tls_min_version;

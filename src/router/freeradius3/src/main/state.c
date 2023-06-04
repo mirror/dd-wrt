@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3694fe6aa68ce350cad317d4bf5acae10ea7c035 $
+ * $Id: 3700062f642826a067b6de0fe6914398a5ede83e $
  *
  * @brief Multi-packet state handling
  * @file main/state.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSID("$Id: 3694fe6aa68ce350cad317d4bf5acae10ea7c035 $")
+RCSID("$Id: 3700062f642826a067b6de0fe6914398a5ede83e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/state.h>
@@ -270,8 +270,11 @@ static REQUEST *fr_state_cleanup_request(state_entry_t *entry)
 	request->handle = rad_postauth;
 
 	/*
-	 *	Move session-state VPS over
+	 *	Move session-state VPS over, after first freeing the
+	 *	separately-parented state_ctx that was allocated along with the
+	 *	fake request.
 	 */
+	talloc_free(request->state_ctx);
 	request->state_ctx = entry->ctx;
 	request->state = entry->vps;
 

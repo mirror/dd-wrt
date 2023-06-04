@@ -6,7 +6,7 @@
 #
 #       WiFi-Alliance attributes for Hotspot 2.0
 #
-#       $Id: 8f330ad2c3ad0bc23bb960503c44e13096fa7f72 $
+#       $Id: a8955618027ba007beb09c82bf1eeafd1cddf4f1 $
 #
 ##############################################################################
 
@@ -82,5 +82,13 @@ ATTRIBUTE	HS20-Deauthentication-Request		4	octets
 #  extend the session.
 #
 ATTRIBUTE	HS20-Session-Information-URL		5	octets
+
+#  Values are:
+#
+#  5A-03-BA-00-00 OpenRoaming for All Identities, settlement-free, no personal data requested, baseline QoS
+#  5A-03-BA-08-00 "OpenRoaming for Educational or Research Identities, settlement-free, no personal data requested, baseline QoS"
+ATTRIBUTE      HS20-Roaming-Consortium                 6       octets
+
+
 
 END-VENDOR    WiFi-Alliance

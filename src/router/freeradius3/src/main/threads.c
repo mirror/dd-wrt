@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: 774affce29976d65db4a016363f32db8a312c43b $
+ * Version:	$Id: a1871060d0a0de7ab4d681050b61d1075ca121ab $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 774affce29976d65db4a016363f32db8a312c43b $")
+RCSID("$Id: a1871060d0a0de7ab4d681050b61d1075ca121ab $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -234,7 +234,7 @@ static const CONF_PARSER thread_config[] = {
 };
 #endif
 
-#ifdef HAVE_OPENSSL_CRYPTO_H
+#if defined(HAVE_OPENSSL_CRYPTO_H) && defined(HAVE_CRYPTO_SET_LOCKING_CALLBACK)
 
 /*
  *	If we're linking against OpenSSL, then it is the
@@ -247,78 +247,64 @@ static const CONF_PARSER thread_config[] = {
  *	right now, but may in the future, so we will have
  *	to add them at some point.
  */
-
 static pthread_mutex_t *ssl_mutexes = NULL;
 
-#ifdef HAVE_CRYPTO_SET_ID_CALLBACK
-static unsigned long get_ssl_id(void)
-{
-	unsigned long ret;
-	pthread_t thread = pthread_self();
-
-	if (sizeof(ret) >= sizeof(thread)) {
-		memcpy(&ret, &thread, sizeof(thread));
-	} else {
-		memcpy(&ret, &thread, sizeof(ret));
-	}
-
-	return ret;
-}
-
-/*
- *	Use preprocessor magic to get the right function and argument
- *	to use.  This avoids ifdef's through the rest of the code.
- */
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
-#define ssl_id_function get_ssl_id
-#define set_id_callback CRYPTO_set_id_callback
-
-#else
-static void ssl_id_function(CRYPTO_THREADID *id)
-{
-	CRYPTO_THREADID_set_numeric(id, get_ssl_id());
-}
-#define set_id_callback CRYPTO_THREADID_set_callback
-#endif
-#endif
-
-#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 static void ssl_locking_function(int mode, int n, UNUSED char const *file, UNUSED int line)
 {
+	rad_assert(&ssl_mutexes[n] != NULL);
+
 	if (mode & CRYPTO_LOCK) {
-		pthread_mutex_lock(&(ssl_mutexes[n]));
+		pthread_mutex_lock(&ssl_mutexes[n]);
 	} else {
-		pthread_mutex_unlock(&(ssl_mutexes[n]));
+		pthread_mutex_unlock(&ssl_mutexes[n]);
 	}
 }
-#endif
 
 /*
  *	Create the TLS mutexes.
  */
 int tls_mutexes_init(void)
 {
-	int i;
+	int i, num;
 
-	ssl_mutexes = rad_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+	rad_assert(ssl_mutexes == NULL);
+
+	num = CRYPTO_num_locks();
+
+	ssl_mutexes = rad_malloc(num * sizeof(pthread_mutex_t));
 	if (!ssl_mutexes) {
 		ERROR("Error allocating memory for SSL mutexes!");
 		return -1;
 	}
 
-	for (i = 0; i < CRYPTO_num_locks(); i++) {
-		pthread_mutex_init(&(ssl_mutexes[i]), NULL);
+	for (i = 0; i < num; i++) {
+		pthread_mutex_init(&ssl_mutexes[i], NULL);
 	}
 
-#ifdef HAVE_CRYPTO_SET_ID_CALLBACK
-	set_id_callback(ssl_id_function);
-#endif
-#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 	CRYPTO_set_locking_callback(ssl_locking_function);
-#endif
 
 	return 0;
 }
+
+static void tls_mutexes_destroy(void)
+{
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
+	int i, num;
+
+	rad_assert(ssl_mutex != NULL);
+
+	num = CRYPTO_num_locks();
+
+	for (i = 0; i < num; i++) {
+		pthread_mutex_destroy(&ssl_mutexes[i]);
+	}
+	free(ssl_mutexes);
+
+	CRYPTO_set_locking_callback(NULL);
+#endif
+}
+#else
+#define tls_mutexes_destroy()
 #endif
 
 #ifdef WNOHANG
@@ -1036,6 +1022,7 @@ static int pid_cmp(void const *one, void const *two)
  *
  *	FIXME: What to do on a SIGHUP???
  */
+DIAG_OFF(deprecated-declarations)
 int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 {
 #ifndef WITH_GCD
@@ -1046,6 +1033,9 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 	time_t		now;
 #ifdef HAVE_STDATOMIC_H
 	int num;
+	TALLOC_CTX *autofree;
+
+	autofree = talloc_autofree_context();
 #endif
 
 	now = time(NULL);
@@ -1166,7 +1156,7 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 	 */
 	for (i = 0; i < NUM_FIFOS; i++) {
 #ifdef HAVE_STDATOMIC_H
-		thread_pool.queue[i] = fr_atomic_queue_create(NULL, thread_pool.max_queue_size);
+		thread_pool.queue[i] = fr_atomic_queue_alloc(autofree, thread_pool.max_queue_size);
 		if (!thread_pool.queue[i]) {
 			ERROR("FATAL: Failed to set up request fifo");
 			return -1;
@@ -1204,7 +1194,7 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 	pool_initialized = true;
 	return 0;
 }
-
+DIAG_ON(deprecated-declarations)
 
 /*
  *	Stop all threads in the pool.
@@ -1243,7 +1233,7 @@ void thread_pool_stop(void)
 
 	for (i = 0; i < NUM_FIFOS; i++) {
 #ifdef HAVE_STDATOMIC_H
-		talloc_free(thread_pool.queue[i]);
+		fr_atomic_queue_free(&thread_pool.queue[i]);
 #else
 		fr_fifo_free(thread_pool.fifo[i]);
 #endif
@@ -1253,21 +1243,11 @@ void thread_pool_stop(void)
 	fr_hash_table_free(thread_pool.waiters);
 #endif
 
-#ifdef HAVE_OPENSSL_CRYPTO_H
 	/*
 	 *	We're no longer threaded.  Remove the mutexes and free
 	 *	the memory.
 	 */
-#ifdef HAVE_CRYPTO_SET_ID_CALLBACK
-	set_id_callback(NULL);
-#endif
-#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
-	CRYPTO_set_locking_callback(NULL);
-#endif
-
-	free(ssl_mutexes);
-#endif
-
+	tls_mutexes_destroy();
 #endif
 }
 

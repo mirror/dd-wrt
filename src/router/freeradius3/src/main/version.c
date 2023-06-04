@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: c7c76591df5d5fd1db09d8d04deacd04991f17a8 $
+ * Version:	$Id: 2fe3428de704857aaf2c396d7967427d74f02f05 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: c7c76591df5d5fd1db09d8d04deacd04991f17a8 $")
+RCSID("$Id: 2fe3428de704857aaf2c396d7967427d74f02f05 $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -207,7 +207,7 @@ char const *ssl_version_num(void)
 	return "not linked";
 }
 
-char const *ssl_version()
+char const *ssl_version(void)
 {
 	return "not linked";
 }

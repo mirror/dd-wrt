@@ -2,7 +2,7 @@
  * event.c	Non-thread-safe event handling, specific to a RADIUS
  *		server.
  *
- * Version:	$Id: fefa2951444562d8edf8a4175a977cb92b42edf2 $
+ * Version:	$Id: 9eb9d1ab136ea07f92e6532875b85e02a12ca7b2 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,11 +22,13 @@
  *  Copyright 2007  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: fefa2951444562d8edf8a4175a977cb92b42edf2 $")
+RCSID("$Id: 9eb9d1ab136ea07f92e6532875b85e02a12ca7b2 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/heap.h>
 #include <freeradius-devel/event.h>
+
+#include <pthread.h>
 
 #ifdef HAVE_KQUEUE
 #ifndef HAVE_SYS_EVENT_H
@@ -39,6 +41,7 @@ RCSID("$Id: fefa2951444562d8edf8a4175a977cb92b42edf2 $")
 
 typedef struct fr_event_fd_t {
 	int			fd;
+
 	fr_event_fd_handler_t	handler;
 	fr_event_fd_handler_t	write_handler;
 	void			*ctx;
@@ -70,6 +73,7 @@ struct fr_event_list_t {
 	int		kq;
 	struct kevent	events[FR_EV_MAX_FDS]; /* so it doesn't go on the stack every time */
 #endif
+
 	fr_event_fd_t	readers[FR_EV_MAX_FDS];
 };
 
@@ -667,6 +671,7 @@ int fr_event_loop(fr_event_list_t *el)
 			ts_wake = &ts_when;
 			ts_when.tv_sec = when.tv_sec;
 			ts_when.tv_nsec = when.tv_usec * 1000;
+
 		} else {
 			ts_wake = NULL;
 		}
@@ -778,7 +783,7 @@ static uint32_t event_rand(void)
 {
 	uint32_t num;
 
-	num = rand_pool.randrsl[rand_pool.randcnt++];
+	num = rand_pool.randrsl[rand_pool.randcnt++ & 0xff];
 	if (rand_pool.randcnt == 256) {
 		fr_isaac(&rand_pool);
 		rand_pool.randcnt = 0;

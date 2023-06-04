@@ -16,7 +16,7 @@
 #ifndef FR_CONNECTION_H
 #define FR_CONNECTION_H
 /**
- * $Id: e63820db84e9e3129a71ee8599280c2592f78605 $
+ * $Id: 1fd4be4c8e79acc02961bb60437d688a15fb54ff $
  *
  * @file connection.h
  * @brief Structures, prototypes and global variables for server connection pools.
@@ -25,7 +25,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(connection_h, "$Id: e63820db84e9e3129a71ee8599280c2592f78605 $")
+RCSIDH(connection_h, "$Id: 1fd4be4c8e79acc02961bb60437d688a15fb54ff $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -83,6 +83,8 @@ fr_connection_pool_t	*fr_connection_pool_module_init(CONF_SECTION *module,
  *	Pool getters
  */
 int	fr_connection_pool_get_num(fr_connection_pool_t *pool);
+
+int	fr_connection_pool_get_retries(fr_connection_pool_t *pool);
 
 /*
  *	Pool management

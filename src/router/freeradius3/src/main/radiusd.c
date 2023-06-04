@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 06b566d073505e93f4dd81eec75cfad0bc03512c $
+ * Version:	$Id: f2acec7dd90f25eb17b92cc314639e001260dc98 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 06b566d073505e93f4dd81eec75cfad0bc03512c $")
+RCSID("$Id: f2acec7dd90f25eb17b92cc314639e001260dc98 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -717,6 +717,7 @@ cleanup:
 	if (main_config.memory_report) {
 		INFO("Allocated memory at time of report:");
 		fr_log_talloc_report(NULL);
+		talloc_disable_null_tracking();
 	}
 
 	return rcode;

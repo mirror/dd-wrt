@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 0e0b3bc189373425ca512473b591c2c37cffebcb $
+ * $Id: a8df048af7d222acc0c29d6864c46de33a1c0e81 $
  * @file rlm_ldap.c
  * @brief LDAP authorization and authentication module.
  *
@@ -27,7 +27,7 @@
  * @copyright 2012 Alan DeKok <aland@freeradius.org>
  * @copyright 1999-2013 The FreeRADIUS Server Project.
  */
-RCSID("$Id: 0e0b3bc189373425ca512473b591c2c37cffebcb $")
+RCSID("$Id: a8df048af7d222acc0c29d6864c46de33a1c0e81 $")
 
 #include	<freeradius-devel/rad_assert.h>
 
@@ -113,6 +113,11 @@ static CONF_PARSER tls_config[] = {
 #ifdef LDAP_OPT_X_TLS_CIPHER_SUITE
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, tls_cipher_list), NULL },
 #endif
+
+#ifdef LDAP_OPT_X_TLS_CTX
+	{ "check_crl", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_ldap_t, tls_check_crl), "no" },
+#endif
+
 	/*
 	 *	LDAP Specific TLS attributes
 	 */

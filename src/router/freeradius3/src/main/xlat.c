@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 8000aa15258aaf47cfe29c773c33d520575832a4 $
+ * $Id: 4bd0a379cb418e78e148b1fb171fdc3035788e8c $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 8000aa15258aaf47cfe29c773c33d520575832a4 $")
+RCSID("$Id: 4bd0a379cb418e78e148b1fb171fdc3035788e8c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -203,7 +203,7 @@ static ssize_t xlat_integer(UNUSED void *instance, REQUEST *request,
 		return snprintf(out, outlen, "%u", htonl(vp->vp_ipaddr));
 
 	case PW_TYPE_IPV4_PREFIX:
-		return snprintf(out, outlen, "%u", htonl((*(uint32_t *)(vp->vp_ipv4prefix + 2))));
+		return snprintf(out, outlen, "%u", htonl((*(uint32_t *)(&vp->vp_ipv4prefix[2]))));
 
 	case PW_TYPE_INTEGER:
 		return snprintf(out, outlen, "%u", vp->vp_integer);

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 7762b153e7cfc074950fb737f0fb885292e46259 $
+ * $Id: e289bc264db5b0842fda1d4ad7aa54df15432bd9 $
  * @file rlm_ippool.c
  * @brief Allocates an IPv4 address from a pool stored in a GDBM database.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2002  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 7762b153e7cfc074950fb737f0fb885292e46259 $")
+RCSID("$Id: e289bc264db5b0842fda1d4ad7aa54df15432bd9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -355,6 +355,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 		fr_md5_init(&md5_context);
 		fr_md5_update(&md5_context, (uint8_t *)xlat_str, strlen(xlat_str));
 		fr_md5_final(key_str, &md5_context);
+		fr_md5_destroy(&md5_context);
 
 		key_str[16] = '\0';
 		fr_bin2hex(hex_str, key_str, 16);
@@ -494,6 +495,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	fr_md5_init(&md5_context);
 	fr_md5_update(&md5_context, (uint8_t *)xlat_str, strlen(xlat_str));
 	fr_md5_final(key_str, &md5_context);
+	fr_md5_destroy(&md5_context);
 	key_str[16] = '\0';
 	fr_bin2hex(hex_str, key_str, 16);
 	hex_str[32] = '\0';

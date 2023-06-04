@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 8a9297b5d6b6e8f039fa475364b0e1c00fb2c270 $
+ * Version:	$Id: 7bb206cedf9483029fc174ac2b97956256f5ba1c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 8a9297b5d6b6e8f039fa475364b0e1c00fb2c270 $")
+RCSID("$Id: 7bb206cedf9483029fc174ac2b97956256f5ba1c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -353,6 +353,7 @@ error:
 
 	file->filename = filename;
 	file->cs = cs;
+	file->from_dir = from_dir;
 
 	if (fstat(fd, &file->buf) == 0) {
 #ifdef S_IWOTH
@@ -1803,6 +1804,7 @@ static void cf_section_parse_init(CONF_SECTION *cs, void *base,
 				  CONF_PARSER const *variables)
 {
 	int i;
+	void *data;
 
 	for (i = 0; variables[i].name != NULL; i++) {
 		if (variables[i].type == PW_TYPE_SUBSECTION) {
@@ -1827,9 +1829,13 @@ static void cf_section_parse_init(CONF_SECTION *cs, void *base,
 				subcs->item.lineno = cs->item.lineno;
 				cf_item_add(cs, &(subcs->item));
 			}
+			if (base) {
+				data = ((uint8_t *)base) + variables[i].offset;
+			} else {
+				data = NULL;
+			}
 
-			cf_section_parse_init(subcs, (uint8_t *)base + variables[i].offset,
-					      (CONF_PARSER const *) variables[i].dflt);
+			cf_section_parse_init(subcs, data, (CONF_PARSER const *) variables[i].dflt);
 			continue;
 		}
 
@@ -1927,8 +1933,13 @@ int cf_section_parse(CONF_SECTION *cs, void *base, CONF_PARSER const *variables)
 				goto finish;
 			}
 
-			ret = cf_section_parse(subcs, (uint8_t *)base + variables[i].offset,
-					       (CONF_PARSER const *) variables[i].dflt);
+			if (base) {
+				data = ((uint8_t *)base) + variables[i].offset;
+			} else {
+				data = NULL;
+			}
+
+			ret = cf_section_parse(subcs, data, (CONF_PARSER const *) variables[i].dflt);
 			if (ret < 0) goto finish;
 			continue;
 		} /* else it's a CONF_PAIR */

@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id: f8b2edbecc7079e2d73ce20c726785e7fbaf001c $
+ * Version:     $Id: db764aa327e691e62ed45b674c16d567119cf689 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: f8b2edbecc7079e2d73ce20c726785e7fbaf001c $")
+RCSID("$Id: db764aa327e691e62ed45b674c16d567119cf689 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -147,7 +147,7 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 	 */
 	if ((content_type > UINT8_MAX) && (content_type != SSL3_RT_INNER_CONTENT_TYPE)) {
 #endif
-		DEBUG4("(TLS) Ignoring cbtls_msg call with pseudo content type %i, version %i",
+		DEBUG4("(TLS) Ignoring cbtls_msg call with pseudo content type %i, version %08x",
 		       content_type, msg_version);
 		return;
 	}

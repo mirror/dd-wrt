@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 4f34d70faccc5098bc1175cfae047c141fee6b90 $
+ * Version:     $Id: c8cae3be46a94cfd1239d09eef77d79e51d9fdf4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 4f34d70faccc5098bc1175cfae047c141fee6b90 $")
+RCSID("$Id: c8cae3be46a94cfd1239d09eef77d79e51d9fdf4 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -634,6 +634,9 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 			break;
 
 		case SSL_ERROR_WANT_READ:
+			ssn->connected = false;
+			return ssn;
+
 		case SSL_ERROR_WANT_WRITE:
 			ssn->connected = false;
 			return ssn;
@@ -725,7 +728,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 
 #ifdef TLS1_3_VERSION
 	/*
-	 *	Disallow TLS 1.3 for TTLS, PEAP, and FAST.
+	 *	Disallow TLS 1.3 for FAST.
 	 *
 	 *	We need another magic configuration option to allow
 	 *	it.
@@ -736,9 +739,6 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		WARN("!! There is no standard for using this EAP method with TLS 1.3");
 		WARN("!! Please set tls_max_version = \"1.2\"");
-		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
-		WARN("!! This limitation is likely to change in late 2021.");
-		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
 		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 		if (SSL_set_max_proto_version(new_tls, TLS1_2_VERSION) == 0) {
@@ -1710,6 +1710,10 @@ static CONF_PARSER tls_server_config[] = {
 #endif
 	},
 
+#ifdef WITH_RADIUSV11
+	{ "radiusv1_1", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, radiusv11_name), NULL },
+#endif
+
 	{ "realm_dir", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, realm_dir), NULL },
 
 	{ "cache", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) cache_config },
@@ -1772,6 +1776,10 @@ static CONF_PARSER tls_client_config[] = {
 	  "1.0"
 #endif
 	},
+
+#ifdef WITH_RADIUSV11
+	{ "radiusv1_1", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, radiusv11_name), NULL },
+#endif
 
 	{ "hostname", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, client_hostname), NULL },
 
@@ -3625,12 +3633,18 @@ static int set_ecdh_curve(SSL_CTX *ctx, char const *ecdh_curve, bool disable_sin
 #endif
 #endif
 
+#if defined(HAVE_OPENSSL_CRYPTO_H) && defined(HAVE_CRYPTO_SET_LOCKING_CALLBACK)
+#define TLS_UNUSED
+#else
+#define TLS_UNUSED UNUSED
+#endif
+
 /** Add all the default ciphers and message digests reate our context.
  *
  * This should be called exactly once from main, before reading the main config
  * or initialising any modules.
  */
-int tls_global_init(bool spawn_flag, bool check)
+int tls_global_init(TLS_UNUSED bool spawn_flag, TLS_UNUSED bool check)
 {
 	SSL_load_error_strings();	/* readable error messages (examples show call before library_init) */
 	SSL_library_init();		/* initialize library */
@@ -3642,6 +3656,7 @@ int tls_global_init(bool spawn_flag, bool check)
 	 */
 	fr_tls_ex_index_certs = SSL_SESSION_get_ex_new_index(0, NULL, NULL, NULL, NULL);
 
+#if defined(HAVE_OPENSSL_CRYPTO_H) && defined(HAVE_CRYPTO_SET_LOCKING_CALLBACK)
 	/*
 	 *	If we're linking with OpenSSL too, then we need
 	 *	to set up the mutexes and enable the thread callbacks.
@@ -3653,6 +3668,7 @@ int tls_global_init(bool spawn_flag, bool check)
 		ERROR("(TLS) FATAL: Failed to set up SSL mutexes");
 		return -1;
 	}
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 	/*
@@ -4115,6 +4131,16 @@ post_ca:
 		 *	time.
 		 */
 #if defined(TLS1_3_VERSION)
+#ifdef WITH_RADIUSV11
+		/*
+		 *	RADIUS 1.1 requires TLS 1.3 or later.
+		 */
+		if (conf->radiusv11) {
+			max_version = TLS1_3_VERSION;
+		} else
+#endif
+
+
 		max_version = TLS1_2_VERSION; /* yes, we only use TLS 1.3 if it's EXPLICITELY ENABLED */
 #elif defined(TLS1_2_VERSION)
 		max_version = TLS1_2_VERSION;
@@ -4135,6 +4161,14 @@ post_ca:
 			return NULL;
 		}
 	} else {
+#ifdef WITH_RADIUSV11
+		/*
+		 *	RADIUS 1.1 requires TLS 1.3 or later.
+		 */
+		if (conf->radiusv11) {
+			min_version = TLS1_3_VERSION;
+		} else
+#endif
 		/*
 		 *	Allow TLS 1.0.  It is horribly insecure, but
 		 *	some systems still use it.
@@ -4257,6 +4291,17 @@ post_ca:
 	if (max_version < TLS1_3_VERSION) ctx_options |= SSL_OP_NO_TLSv1_3;
 #endif
 
+
+#ifdef WITH_RADIUSV11
+	/*
+	 *	RADIUS 1.1 requires TLS 1.3 or later.
+	 */
+	if (conf->radiusv11 && (min_version < TLS1_3_VERSION)) {
+		ERROR(LOG_PREFIX ": Please set 'tls_min_version = 1.2' or greater to use 'radiusv1_1 = true'");
+		return NULL;
+	}
+#endif
+
 	/*
 	 *	Set the cipher list if we were told to do so.  We do
 	 *	this before setting min/max TLS version.  In a sane
@@ -4335,7 +4380,6 @@ post_ca:
 		ERROR("Failed setting TLS maximum version");
 		return NULL;
 	}
-
 	if (!SSL_CTX_set_min_proto_version(ctx, min_version)) {
 		ERROR("Failed setting TLS minimum version");
 		return NULL;

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 94fbcc861092e775d797d99472a6c10454c7e0cb $
+ * $Id: 463ff66b7100bf15656efb90b55adc28e21e5e1f $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: 94fbcc861092e775d797d99472a6c10454c7e0cb $")
+RCSID("$Id: 463ff66b7100bf15656efb90b55adc28e21e5e1f $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -611,6 +611,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_auth_md5(rlm_pap_t *inst, REQUEST *reque
 	fr_md5_update(&md5_context, request->password->vp_octets,
 		     request->password->vp_length);
 	fr_md5_final(digest, &md5_context);
+	fr_md5_destroy(&md5_context);
 
 	if (rad_digest_cmp(digest, vp->vp_octets, vp->vp_length) != 0) {
 		REDEBUG("MD5 digest does not match \"known good\" digest");
@@ -641,6 +642,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_auth_smd5(rlm_pap_t *inst, REQUEST *requ
 		     request->password->vp_length);
 	fr_md5_update(&md5_context, &vp->vp_octets[16], vp->vp_length - 16);
 	fr_md5_final(digest, &md5_context);
+	fr_md5_destroy(&md5_context);
 
 	/*
 	 *	Compare only the MD5 hash results, not the salt.
@@ -902,7 +904,9 @@ static inline rlm_rcode_t CC_HINT(nonnull) pap_auth_pbkdf2_parse(REQUEST *reques
 		goto finish;
 	}
 
-	strlcpy(hash_token, (char const *)p, (q - p) + 1);
+	memcpy(hash_token, (char const *)p, (q - p));
+	hash_token[q - p] = '\0';
+
 	digest_type = fr_str2int(hash_names, hash_token, -1);
 	switch (digest_type) {
 	case PW_SSHA1_PASSWORD:

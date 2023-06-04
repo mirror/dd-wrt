@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 205f32d4adc0fc494bac63edbcb7787e0f965da9 $
+ * $Id: 21fe2326d291e0229d6dfd32b87db15f551b9b45 $
  * @file groups.c
  * @brief LDAP module group functions.
  *
@@ -283,7 +283,7 @@ rlm_rcode_t rlm_ldap_cacheable_userobj(rlm_ldap_t const *inst, REQUEST *request,
 	TALLOC_CTX *list_ctx, *value_ctx;
 	vp_cursor_t list_cursor, groups_cursor;
 
-	int is_dn, i, count;
+	int is_dn, i, count, to_resolve = 0;
 
 	rad_assert(entry);
 	rad_assert(attr);
@@ -314,7 +314,7 @@ rlm_rcode_t rlm_ldap_cacheable_userobj(rlm_ldap_t const *inst, REQUEST *request,
 	 */
 	fr_cursor_init(&groups_cursor, &groups);
 
-	for (i = 0; (i < LDAP_MAX_CACHEABLE) && (i < count); i++) {
+	for (i = 0; (to_resolve < LDAP_MAX_CACHEABLE) && (i < count); i++) {
 		is_dn = rlm_ldap_is_dn(values[i]->bv_val, values[i]->bv_len);
 
 		if (inst->cacheable_group_dn) {
@@ -331,6 +331,7 @@ rlm_rcode_t rlm_ldap_cacheable_userobj(rlm_ldap_t const *inst, REQUEST *request,
 			 */
 			} else {
 				*name_p++ = rlm_ldap_berval_to_string(value_ctx, values[i]);
+				to_resolve++;
 			}
 		}
 
@@ -537,6 +538,7 @@ rlm_rcode_t rlm_ldap_check_groupobj_dynamic(rlm_ldap_t const *inst, REQUEST *req
 
 {
 	ldap_rcode_t	status;
+	LDAPMessage	*result = NULL;
 
 	char const	*base_dn;
 	char		base_dn_buff[LDAP_MAX_DN_STR_LEN + 1];
@@ -608,11 +610,19 @@ rlm_rcode_t rlm_ldap_check_groupobj_dynamic(rlm_ldap_t const *inst, REQUEST *req
 	}
 
 	RINDENT();
-	status = rlm_ldap_search(NULL, inst, request, pconn, base_dn, inst->groupobj_scope, filter, NULL, NULL, NULL);
+	status = rlm_ldap_search(&result, inst, request, pconn, base_dn, inst->groupobj_scope, filter, NULL, NULL, NULL);
 	REXDENT();
 	switch (status) {
 	case LDAP_PROC_SUCCESS:
-		RDEBUG("User found in group object \"%s\"", base_dn);
+	{
+		LDAPMessage	*entry = NULL;
+		char		*dn = NULL;
+		entry = ldap_first_entry((*pconn)->handle, result);
+		if (entry) dn = ldap_get_dn((*pconn)->handle, entry);
+		RDEBUG("User found in group object \"%s\"", dn);
+		ldap_memfree(dn);
+		ldap_msgfree(result);
+	}
 		break;
 
 	case LDAP_PROC_NO_RESULT:

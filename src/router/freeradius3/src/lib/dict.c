@@ -1,7 +1,7 @@
 /*
  * dict.c	Routines to read the dictionary file.
  *
- * Version:	$Id: c171abd434454011c7ff518e937efe9cd70c37d7 $
+ * Version:	$Id: d425a67aef48e2934fd1375fd1bae6d087b41cb0 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  * Copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: c171abd434454011c7ff518e937efe9cd70c37d7 $")
+RCSID("$Id: d425a67aef48e2934fd1375fd1bae6d087b41cb0 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -1342,7 +1342,7 @@ int dict_addvalue(char const *namestr, char const *attrstr, int value)
 
 static int sscanf_i(char const *str, unsigned int *pvalue)
 {
-	int rcode = 0;
+	unsigned int rcode = 0;
 	int base = 10;
 	static char const *tab = "0123456789";
 

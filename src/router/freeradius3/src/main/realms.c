@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: d707f085e6c2ec57f6ad77a8d4b968d416ff9b1d $
+ * Version:     $Id: 2959d8278a2a839c3f5aaa047e12b15630127485 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: d707f085e6c2ec57f6ad77a8d4b968d416ff9b1d $")
+RCSID("$Id: 2959d8278a2a839c3f5aaa047e12b15630127485 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -93,6 +93,9 @@ static const FR_NAME_NUMBER home_proto[] = {
 	{ NULL, 0 }
 };
 
+#ifdef WITH_RADIUSV11
+extern int fr_radiusv11_client_init(fr_tls_server_conf_t *tls);
+#endif
 
 static realm_config_t *realm_config = NULL;
 
@@ -1129,6 +1132,24 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 
 			home->listeners = rbtree_create(home, listener_cmp, NULL, RBTREE_FLAG_LOCK);
 			if (!home->listeners) goto error;
+
+#ifdef WITH_RADIUSV11
+			if (home->tls->radiusv11_name) {
+				rcode = fr_str2int(radiusv11_types, home->tls->radiusv11_name, -1);
+				if (rcode < 0) {
+					cf_log_err_cs(cs, "Invalid value for 'radiusv11'");
+					goto error;
+				}
+
+				home->tls->radiusv11 = rcode;
+
+				if (fr_radiusv11_client_init(home->tls) < 0) {
+					cf_log_err_cs(cs, "Failed setting OpenSSL callbacks for radiusv11");
+					goto error;
+				}
+			}
+#endif
+
 		}
 #endif
 	} /* end of parse home server */
@@ -2682,7 +2703,7 @@ void home_server_update_request(home_server_t *home, REQUEST *request)
 		 *	the 'hints' file.
 		 */
 		request->proxy->vps = fr_pair_list_copy(request->proxy,
-					       request->packet->vps);
+							request->packet->vps);
 	}
 
 	/*
@@ -2702,6 +2723,9 @@ void home_server_update_request(home_server_t *home, REQUEST *request)
 	 *	unless one already exists.
 	 */
 	if ((request->packet->code == PW_CODE_ACCESS_REQUEST) &&
+#ifdef WITH_RADIUSV11
+	    !request->proxy->radiusv11 &&
+#endif
 	    !fr_pair_find_by_num(request->proxy->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY)) {
 		fr_pair_make(request->proxy, &request->proxy->vps,
 			 "Message-Authenticator", "0x00",

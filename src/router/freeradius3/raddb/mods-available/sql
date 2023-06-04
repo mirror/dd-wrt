@@ -2,7 +2,7 @@
 ##
 ## mods-available/sql -- SQL modules
 ##
-##	$Id: 7bcb664d32fecca0cd20c1d81bac13f0e1b9991b $
+##	$Id: 0f435add70c1816005deb12975aabee5d64e5e1c $
 
 ######################################################################
 #
@@ -325,6 +325,11 @@ sql {
 		#
 		#  The solution is to either lower the "min" connections,
 		#  or increase lifetime/idle_timeout.
+
+		#  Maximum number of times an operation can be retried
+		#  if it returns an error which indicates the connection
+		#  needs to be restarted.  This includes timeouts.
+		max_retries = 5
 	}
 
 	# Set to 'yes' to read radius clients from the database ('nas' table)

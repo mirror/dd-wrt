@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:      $Id: 3580fdfa7403abc593fcbb966b12674cbc5bd574 $
+# Version:      $Id: eef85d77a719c73d3ca27be4751aae7967cd707c $
 #
 TARGET		:= libfreeradius-radius.a
 
@@ -42,7 +42,8 @@ SOURCES		:= cbuff.c \
 		   tcp.c \
 		   base64.c \
 		   version.c \
-		   atomic_queue.c
+		   atomic_queue.c \
+		   talloc.c
 
 SRC_CFLAGS	:= -D_LIBRADIUS -I$(top_builddir)/src
 

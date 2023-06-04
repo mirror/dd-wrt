@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 77c65e08380b93e682666faa39e3281dfe7cef9d $
+ * $Id: cae5f0b254e0be86aa2bf61534d499a0a1b9fabf $
  * @file rlm_passwd.c
  * @brief Enables authentication against unix passwd files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 77c65e08380b93e682666faa39e3281dfe7cef9d $")
+RCSID("$Id: cae5f0b254e0be86aa2bf61534d499a0a1b9fabf $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -123,10 +123,8 @@ static void destroy_password (struct mypasswd * pass)
 
 static unsigned int hash(char const * username, unsigned int tablesize)
 {
-	int h=1;
-	while (*username) {
-		h = h * 7907 + *username++;
-	}
+	uint32_t h = fr_hash_string(username);
+
 	return h%tablesize;
 }
 

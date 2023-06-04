@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: e58f34da2a6693cdb17b8e6adc93d67ca92c261f $
+ * $Id: b3d0037312a7366a36a87b485d57f927720e1b4b $
  * @file rlm_radutmp.c
  * @brief Tracks sessions.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id: e58f34da2a6693cdb17b8e6adc93d67ca92c261f $")
+RCSID("$Id: b3d0037312a7366a36a87b485d57f927720e1b4b $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>
@@ -699,14 +699,14 @@ static rlm_rcode_t CC_HINT(nonnull) mod_checksimul(void *instance, REQUEST *requ
 			 *	to block everyone else while
 			 *	that's happening.  */
 			rad_unlockfd(fd, LOCK_LEN);
-			rcode = rad_check_ts(&nasaddr, u.nas_port, utmp_login, session_id);
+			rcode = rad_check_ts(&nasaddr, u.nas_port, NULL, utmp_login, session_id);
 			rad_lockfd(fd, LOCK_LEN);
 
 			if (rcode == 0) {
 				/*
 				 *	Stale record - zap it.
 				 */
-				session_zap(request, &nasaddr, u.nas_port, expanded, session_id,
+				session_zap(request, &nasaddr, u.nas_port, NULL, expanded, session_id,
 					    u.framed_address, u.proto, 0);
 			}
 			else if (rcode == 1) {

@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: 8deed795d9d0e6f3160bbbd6db476ab9f13b28d6 $
+ * $Id: 594a6bde8721b540dcaf6f51d461046c5836ab12 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: 8deed795d9d0e6f3160bbbd6db476ab9f13b28d6 $")
+RCSIDH(radiusd_h, "$Id: 594a6bde8721b540dcaf6f51d461046c5836ab12 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -357,8 +357,8 @@ extern char const	*radacct_dir;
 extern char const	*radlog_dir;
 extern char const	*radlib_dir;
 extern bool		log_stripped_names;
-extern char const	*radiusd_version;
-extern char const	*radiusd_version_short;
+extern HIDDEN char const	*radiusd_version;
+extern HIDDEN char const	*radiusd_version_short;
 void			radius_signal_self(int flag);
 
 typedef enum {
@@ -380,9 +380,9 @@ int		rad_accounting(REQUEST *);
 int		rad_coa_recv(REQUEST *request);
 
 /* session.c */
-int		rad_check_ts(fr_ipaddr_t const *nas_addr, uint32_t nas_port, char const *user, char const *sessionid);
+int		rad_check_ts(fr_ipaddr_t const *nas_addr, uint32_t nas_port, char const *nas_port_id, char const *user, char const *sessionid);
 int		session_zap(REQUEST *request, fr_ipaddr_t const *nas_addr,
-			    uint32_t nas_port, char const *user,
+			    uint32_t nas_port, char const *nas_port_id, char const *user,
 			    char const *sessionid, uint32_t cliaddr,
 			    char proto, int session_time);
 

@@ -5,7 +5,7 @@
  * packet.h	Structures and prototypes
  *		for packet manipulation
  *
- * Version:	$Id: 7e41a8dec6630a42738f38cf4f940eb8014d75d2 $
+ * Version:	$Id: 5b414983a8d4590f2480b5f4f540f684cd15b70a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2001,2002,2003,2004,2005,2006  The FreeRADIUS server project
  */
 
-RCSIDH(packet_h, "$Id: 7e41a8dec6630a42738f38cf4f940eb8014d75d2 $")
+RCSIDH(packet_h, "$Id: 5b414983a8d4590f2480b5f4f540f684cd15b70a $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,8 +55,11 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 bool fr_packet_list_id_free(fr_packet_list_t *pl,
 			    RADIUS_PACKET *request, bool yank);
 bool fr_packet_list_socket_add(fr_packet_list_t *pl, int sockfd, int proto,
-			      fr_ipaddr_t *dst_ipaddr, uint16_t dst_port,
-			      void *ctx);
+#ifdef WITH_RADIUSV11
+			       bool radiusv11,
+#endif
+			       fr_ipaddr_t *dst_ipaddr, uint16_t dst_port,
+			       void *ctx);
 bool fr_packet_list_socket_del(fr_packet_list_t *pl, int sockfd);
 bool fr_packet_list_socket_freeze(fr_packet_list_t *pl, int sockfd);
 bool fr_packet_list_socket_thaw(fr_packet_list_t *pl, int sockfd);
