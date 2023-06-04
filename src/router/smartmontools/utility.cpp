@@ -55,6 +55,9 @@
 #endif
 #endif // USE_CLOCK_MONOTONIC
 
+// TODO: This smartctl only variable is also used in some os_*.cpp
+unsigned char failuretest_permissive = 0;
+
 const char * utility_cpp_cvsid = "$Id$"
   UTILITY_H_CVSID;
 
