@@ -18,8 +18,8 @@ python-configure: libffi-configure libffi libffi-install zlib
 		CONFIG_SITE="$(TOP)/python/site/config.site" \
 		OPT="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
 		LDFLAGS="$(COPTS) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/python -L$(INSTALLDIR)/libffi/usr/lib" \
-		CFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib -I$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
-		CXXFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib -I$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
+		CFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib -I$(INSTALLDIR)/libffi/usr/include" \
+		CXXFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib -I$(INSTALLDIR)/libffi/usr/include" \
 		CC="ccache $(ARCH)-linux-uclibc-gcc $(COPTS)" \
 		LIBFFI_INCLUDEDIR="$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
 		ac_cv_file__dev_ptmx=yes \
