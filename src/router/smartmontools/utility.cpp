@@ -41,6 +41,7 @@
 #include "atacmds.h"
 #include "dev_interface.h"
 #include "sg_unaligned.h"
+#include "json.h"
 
 #ifndef USE_CLOCK_MONOTONIC
 #ifdef __MINGW32__
@@ -899,4 +900,139 @@ void check_config()
 {
   check_endianness();
   check_snprintf();
+}
+json jglb;
+
+bool print_as_json = false;
+json::print_options print_as_json_options;
+bool print_as_json_output = false;
+bool print_as_json_impl = false;
+bool print_as_json_unimpl = false;
+
+
+__attribute_format_printf(3, 0)
+static void vjpout(bool is_js_impl, const char * msg_severity,
+                   const char *fmt, va_list ap)
+{
+  if (!print_as_json) {
+    // Print out directly
+    vprintf(fmt, ap);
+    fflush(stdout);
+  }
+  else {
+    // Add lines to JSON output
+    static char buf[1024];
+    static char * bufnext = buf;
+    vsnprintf(bufnext, sizeof(buf) - (bufnext - buf), fmt, ap);
+    for (char * p = buf, *q; ; p = q) {
+      if (!(q = strchr(p, '\n'))) {
+        // Keep remaining line for next call
+        for (bufnext = buf; *p; bufnext++, p++)
+          *bufnext = *p;
+        break;
+      }
+      *q++ = 0; // '\n' -> '\0'
+
+      static int lineno = 0;
+      lineno++;
+      if (print_as_json_output) {
+        // Collect full output in array
+        static int outindex = 0;
+        jglb["smartctl"]["output"][outindex++] = p;
+      }
+      if (!*p)
+        continue; // Skip empty line
+
+      if (msg_severity) {
+        // Collect non-empty messages in array
+        static int errindex = 0;
+        json::ref jref = jglb["smartctl"]["messages"][errindex++];
+        jref["string"] = p;
+        jref["severity"] = msg_severity;
+      }
+
+      if (   ( is_js_impl && print_as_json_impl  )
+          || (!is_js_impl && print_as_json_unimpl)) {
+        // Add (un)implemented non-empty lines to global object
+        jglb[strprintf("smartctl_%04d_%c", lineno,
+                     (is_js_impl ? 'i' : 'u')).c_str()] = p;
+      }
+    }
+  }
+}
+
+bool printing_is_switchable = false;
+bool printing_is_off = false;
+
+// Default: print to stdout
+// --json: ignore
+// --json=o: append to "output" array
+// --json=u: add "smartctl_NNNN_u" element(s)
+void pout(const char *fmt, ...)
+{
+  if (printing_is_off)
+    return;
+  if (print_as_json && !(print_as_json_output
+      || print_as_json_impl || print_as_json_unimpl))
+    return;
+
+  va_list ap;
+  va_start(ap, fmt);
+  vjpout(false, 0, fmt, ap);
+  va_end(ap);
+}
+
+// Default: Print to stdout
+// --json: ignore
+// --json=o: append to "output" array
+// --json=i: add "smartctl_NNNN_i" element(s)
+void jout(const char *fmt, ...)
+{
+  if (printing_is_off)
+    return;
+  if (print_as_json && !(print_as_json_output
+      || print_as_json_impl || print_as_json_unimpl))
+    return;
+
+  va_list ap;
+  va_start(ap, fmt);
+  vjpout(true, 0, fmt, ap);
+  va_end(ap);
+}
+
+// Default: print to stdout
+// --json: append to "messages"
+// --json=o: append to "output" array
+// --json=i: add "smartctl_NNNN_i" element(s)
+void jinf(const char *fmt, ...)
+{
+  if (printing_is_off)
+    return;
+
+  va_list ap;
+  va_start(ap, fmt);
+  vjpout(true, "information", fmt, ap);
+  va_end(ap);
+}
+
+void jwrn(const char *fmt, ...)
+{
+  if (printing_is_off)
+    return;
+
+  va_list ap;
+  va_start(ap, fmt);
+  vjpout(true, "warning", fmt, ap);
+  va_end(ap);
+}
+
+void jerr(const char *fmt, ...)
+{
+  if (printing_is_off)
+    return;
+
+  va_list ap;
+  va_start(ap, fmt);
+  vjpout(true, "error", fmt, ap);
+  va_end(ap);
 }
