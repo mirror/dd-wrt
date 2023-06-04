@@ -6,7 +6,7 @@
 #
 #	Dictionary for Ciena
 #
-#	$Id: b0350d56c4f31f35873a52cf3627abab24709f46 $
+#	$Id: 28e090a20d18ccb972403120131ca5b6d43bf193 $
 #
 ##############################################################################
 
@@ -27,6 +27,8 @@ VALUE	Ciena-CES-Priv-Level		limited			1
 VALUE	Ciena-CES-Priv-Level		admin			2
 VALUE	Ciena-CES-Priv-Level		super-user		3
 VALUE	Ciena-CES-Priv-Level		diag			4
+
+ATTRIBUTE	Ciena-CES-NACM-Groups			11	string
 
 ATTRIBUTE	Ciena-BP-Role				220	string
 ATTRIBUTE	Ciena-NCS-Role				240	integer

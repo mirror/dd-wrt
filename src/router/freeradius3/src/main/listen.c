@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 53c6079354b2c79d017c2ffa59138421a8e5bdc1 $
+ * Version:	$Id: ee73a571aedb81939bb72ac36b65089adee681ac $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 53c6079354b2c79d017c2ffa59138421a8e5bdc1 $")
+RCSID("$Id: ee73a571aedb81939bb72ac36b65089adee681ac $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -50,6 +50,17 @@ RCSID("$Id: 53c6079354b2c79d017c2ffa59138421a8e5bdc1 $")
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+
+#ifdef WITH_TLS
+#include <netinet/tcp.h>
+
+#  ifdef __APPLE__
+#    if !defined(SOL_TCP) && defined(IPPROTO_TCP)
+#      define SOL_TCP IPPROTO_TCP
+#    endif
+#  endif
+
 #endif
 
 #ifdef DEBUG_PRINT_PACKET
@@ -708,6 +719,159 @@ static int tls_sni_callback(SSL *ssl, UNUSED int *al, void *arg)
 }
 #endif
 
+#ifdef WITH_RADIUSV11
+static const unsigned char radiusv11_alpn_protos[] = {
+	10, 'r', 'a', 'd', 'i', 'u', 's', '/', '1', '.', '1',
+};
+
+/*
+ *	On the server, get the ALPN list requested by the client.
+ */
+static int radiusv11_server_alpn_cb(SSL *ssl,
+				    const unsigned char **out,
+				    unsigned char *outlen,
+				    const unsigned char *in,
+				    unsigned int inlen,
+				    void *arg)
+{
+	rad_listen_t *this = arg;
+	listen_socket_t *sock = this->data;
+	unsigned char **hack;
+	const unsigned char *server;
+	unsigned int server_len, i;
+	int rcode;
+	REQUEST *request;
+
+	request = (REQUEST *)SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_REQUEST);
+	fr_assert(request != NULL);
+
+	fr_assert(inlen > 0);
+
+	memcpy(&hack, &out, sizeof(out)); /* const issues */
+
+	/*
+	 *	The RADIUSv11 configuration for this socket is a combination of what we require, and what we
+	 *	require of the client.
+	 */
+	switch (this->radiusv11) {
+		/*
+		 *	If we forbid RADIUSv11, then we never advertised it via ALPN, and this callback should
+		 *	never have been registered.
+		 */
+	case FR_RADIUSV11_FORBID:
+		*out = NULL;
+		*outlen = 0;
+		return SSL_TLSEXT_ERR_OK;
+
+	case FR_RADIUSV11_ALLOW:
+	case FR_RADIUSV11_REQUIRE:
+		server = radiusv11_alpn_protos;
+		server_len = sizeof(radiusv11_alpn_protos);
+		break;
+	}
+
+	for (i = 0; i < inlen; i += in[0] + 1) {
+		RDEBUG("(TLS) ALPN sent by client is \"%.*s\"", in[i], &in[i + 1]);
+	}
+
+	/*
+	 *	Select the next protocol.
+	 */
+	rcode = SSL_select_next_proto(hack, outlen, server, server_len, in, inlen);
+	if (rcode == OPENSSL_NPN_NEGOTIATED) {
+		server = *out;
+
+		/*
+		 *	Tell our socket which protocol we negotiated.
+		 */
+		fr_assert(*outlen == 10);
+		sock->radiusv11 = (server[9] == '1');
+
+		RDEBUG("(TLS) ALPN server negotiated application protocol \"%.*s\"", (int) *outlen, server);
+		return SSL_TLSEXT_ERR_OK;
+	}
+
+	/*
+	 *	No common ALPN.
+	 */
+	RDEBUG("(TLS) ALPN failure - no protocols in common");
+	return SSL_TLSEXT_ERR_ALERT_FATAL;
+}
+
+int fr_radiusv11_client_init(fr_tls_server_conf_t *tls);
+int fr_radiusv11_client_get_alpn(rad_listen_t *listener);
+
+int fr_radiusv11_client_init(fr_tls_server_conf_t *tls)
+{
+	switch (tls->radiusv11) {
+	case FR_RADIUSV11_ALLOW:
+	case FR_RADIUSV11_REQUIRE:
+		if (SSL_CTX_set_alpn_protos(tls->ctx, radiusv11_alpn_protos, sizeof(radiusv11_alpn_protos)) != 0) {
+			ERROR("Failed setting RADIUSv11 negotiation flags");
+			return -1;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+int fr_radiusv11_client_get_alpn(rad_listen_t *listener)
+{
+	const unsigned char *data;
+	unsigned int len;
+	listen_socket_t *sock = listener->data;
+
+	SSL_get0_alpn_selected(sock->ssn->ssl, &data, &len);
+	if (!data) {
+		DEBUG("(TLS) ALPN home server did not send any application protocol");
+		if (listener->radiusv11 == FR_RADIUSV11_REQUIRE) {
+			DEBUG("(TLS) We have 'radiusv11 = require', but the home server has not negotiated it - closing socket");
+			return -1;
+		}
+
+		DEBUG("(TLS) ALPN assuming historical RADIUS");
+		return 0;
+	}
+
+	DEBUG("(TLS) ALPN home server sent application protocol \"%.*s\"", (int) len, data);
+
+	if (len != 10) {
+	radiusv11_unknown:
+		DEBUG("(TLS) ALPN home server sent unknown application protocol - closing connection");
+		return -1;
+	}
+
+	/*
+	 *	Should always be "radius/1.1".  The server MUST echo back one of the strings
+	 *	we sent.  If it doesn't, it's a bad server.
+	 */
+	if (memcmp(data, "radius/1.1", 10) != 0) goto radiusv11_unknown;
+
+	/*
+	 *	Double-check what the server sent us.  It SHOULD be sane, but it never hurts to check.
+	 */
+	switch (listener->radiusv11) {
+	case FR_RADIUSV11_FORBID:
+		DEBUG("(TLS) ALPN home server sent \"radius/v1.1\" but we forbid it - closing connection to home server");
+		return -1;
+
+	case FR_RADIUSV11_ALLOW:
+	case FR_RADIUSV11_REQUIRE:
+		DEBUG("(TLS) ALPN using \"radius/1.1\"");
+		sock->radiusv11 = true;
+		break;
+	}
+
+	sock->alpn_checked = true;
+	return 0;
+}
+#endif
+
+
 static int dual_tcp_accept(rad_listen_t *listener)
 {
 	int newfd;
@@ -770,6 +934,35 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		close(newfd);
 		return 0;
 	}
+
+#ifdef WITH_RADIUSV11
+	if (listener->tls) {
+		switch (listener->tls->radiusv11) {
+		case FR_RADIUSV11_FORBID:
+			if (client->radiusv11 == FR_RADIUSV11_REQUIRE) {
+				INFO("Ignoring new connection as client is marked as 'radiusv11 = require', and this socket has 'radiusv11 = forbid'");
+				close(newfd);
+				return 0;
+			}
+			break;
+
+		case FR_RADIUSV11_ALLOW:
+			/*
+			 *	We negotiate it as per the client recommendations (forbid, allow, require)
+			 */
+			break;
+
+		case FR_RADIUSV11_REQUIRE:
+			if (client->radiusv11 == FR_RADIUSV11_FORBID) {
+				INFO("Ignoring new connection as client is marked as 'radiusv11 = forbid', and this socket has 'radiusv11 = require'");
+				close(newfd);
+				return 0;
+			}
+			break;
+		}
+	}
+#endif
+
 #endif
 
 	/*
@@ -862,6 +1055,9 @@ static int dual_tcp_accept(rad_listen_t *listener)
 
 #ifdef WITH_TLS
 		if (this->tls) {
+			this->recv = dual_tls_recv;
+			this->send = dual_tls_send;
+
 			/*
 			 *	Set up SNI callback.  We don't do it
 			 *	in the main TLS code, because EAP
@@ -869,9 +1065,18 @@ static int dual_tcp_accept(rad_listen_t *listener)
 			 */
 			SSL_CTX_set_tlsext_servername_callback(this->tls->ctx, tls_sni_callback);
 			SSL_CTX_set_tlsext_servername_arg(this->tls->ctx, this->tls);
-
-			this->recv = dual_tls_recv;
-			this->send = dual_tls_send;
+#ifdef WITH_RADIUSV11
+			/*
+			 *      Default is "forbid" (0).  In which case we don't set any ALPN callbacks, and
+			 *      the ServerHello does not contain an ALPN section.
+			 */
+			if (client->radiusv11 != FR_RADIUSV11_FORBID) {
+				SSL_CTX_set_alpn_select_cb(this->tls->ctx, radiusv11_server_alpn_cb, this);
+				DEBUG("(TLS) ALPN radiusv11 = allow / require");
+			} else {
+				DEBUG("(TLS) ALPN radiusv11 = forbid");
+			}
+#endif
 		}
 #endif
 	}
@@ -1270,9 +1475,20 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			}
 #endif
 
-
 			rcode = cf_item_parse(cs, "check_client_connections", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &this->check_client_connections), "no");
 			if (rcode < 0) return -1;
+
+#ifdef WITH_RADIUSV11
+			if (this->tls->radiusv11_name) {
+				rcode = fr_str2int(radiusv11_types, this->tls->radiusv11_name, -1);
+				if (rcode < 0) {
+					cf_log_err_cs(cs, "Invalid value for 'radiusv11'");
+					return -1;
+				}
+
+				this->radiusv11 = this->tls->radiusv11 = rcode;
+			}
+#endif
 		}
 #else  /* WITH_TLS */
 		/*
@@ -2343,6 +2559,11 @@ static int client_socket_encode(TLS_UNUSED rad_listen_t *listener, REQUEST *requ
 	 */
 	listen_socket_t *sock = listener->data;
 	if (sock->state == LISTEN_TLS_CHECKING) return 0;
+
+#ifdef WITH_RADIUSV11
+	request->reply->radiusv11 = sock->radiusv11;
+#endif
+
 #endif
 
 	if (!request->reply->code) return 0;
@@ -2373,7 +2594,11 @@ static int client_socket_encode(TLS_UNUSED rad_listen_t *listener, REQUEST *requ
 static int client_socket_decode(UNUSED rad_listen_t *listener, REQUEST *request)
 {
 #ifdef WITH_TLS
-	listen_socket_t *sock;
+	listen_socket_t *sock = request->listener->data;
+
+#ifdef WITH_RADIUSV11
+	request->packet->radiusv11 = sock->radiusv11;
+#endif
 #endif
 
 	if (rad_verify(request->packet, NULL,
@@ -2382,9 +2607,6 @@ static int client_socket_decode(UNUSED rad_listen_t *listener, REQUEST *request)
 	}
 
 #ifdef WITH_TLS
-	sock = request->listener->data;
-	rad_assert(sock != NULL);
-
 	/*
 	 *	FIXME: Add the rest of the TLS parameters, too?  But
 	 *	how do we separate EAP-TLS parameters from RADIUS/TLS
@@ -2406,8 +2628,20 @@ static int client_socket_decode(UNUSED rad_listen_t *listener, REQUEST *request)
 }
 
 #ifdef WITH_PROXY
-static int proxy_socket_encode(UNUSED rad_listen_t *listener, REQUEST *request)
+#ifdef WITH_RADIUSV11
+#define RADIUSV11_UNUSED
+#else
+#define RADIUSV11_UNUSED UNUSED
+#endif
+
+static int proxy_socket_encode(RADIUSV11_UNUSED rad_listen_t *listener, REQUEST *request)
 {
+#ifdef WITH_RADIUSV11
+	listen_socket_t *sock = listener->data;
+
+	request->proxy->radiusv11 = sock->radiusv11;
+#endif
+
 	if (rad_encode(request->proxy, NULL, request->home_server->secret) < 0) {
 		RERROR("Failed encoding proxied packet: %s", fr_strerror());
 
@@ -2431,6 +2665,12 @@ static int proxy_socket_encode(UNUSED rad_listen_t *listener, REQUEST *request)
 
 static int proxy_socket_decode(UNUSED rad_listen_t *listener, REQUEST *request)
 {
+#ifdef WITH_RADIUSV11
+	listen_socket_t *sock = listener->data;
+
+	request->proxy_reply->radiusv11 = sock->radiusv11;
+#endif
+
 	/*
 	 *	rad_verify is run in event.c, received_proxy_response()
 	 */
@@ -3020,6 +3260,7 @@ static rad_listen_t *listen_alloc(TALLOC_CTX *ctx, RAD_LISTEN_TYPE type)
 		this->encode = master_listen[this->type].encode;
 		this->decode = master_listen[this->type].decode;
 	} else {
+		this->send = NULL; /* proxy packets shouldn't call this! */
 		this->proxy_send = master_listen[this->type].send;
 		this->proxy_encode = master_listen[this->type].encode;
 		this->proxy_decode = master_listen[this->type].decode;
@@ -3033,6 +3274,7 @@ static rad_listen_t *listen_alloc(TALLOC_CTX *ctx, RAD_LISTEN_TYPE type)
 }
 
 #ifdef WITH_PROXY
+
 /*
  *	Externally visible function for creating a new proxy LISTENER.
  *
@@ -3130,6 +3372,10 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			(void) SSL_set_tlsext_host_name(sock->ssn->ssl, (void *) (uintptr_t) home->tls->client_hostname);
 		}
 
+#ifdef WITH_RADIUSV11
+		this->radiusv11 = home->tls->radiusv11;
+#endif
+
 		this->nonblock |= home->nonblock;
 
 		/*
@@ -3147,6 +3393,20 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 				ERROR("(TLS) Failed adding tracking informtion for proxy socket '%s'", buffer);
 				goto error;
 			}
+
+#ifdef TCP_NODELAY
+			/*
+			 *	Also set TCP_NODELAY, to force the data to be written quickly.
+			 */
+			if (sock->proto == IPPROTO_TCP) {
+				int on = 1;
+
+				if (setsockopt(this->fd, SOL_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
+					ERROR("(TLS) Failed to set TCP_NODELAY: %s", fr_syserror(errno));
+					goto error;
+				}
+			}
+#endif
 		}
 
 		/*
@@ -3158,10 +3418,27 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			goto error;
 		}
 
+#ifdef WITH_RADIUSV11
+		/*
+		 *	Must not have alpn_checked yet.  This code only runs for blocking sockets.
+		 */
+		if (sock->ssn->connected && (fr_radiusv11_client_get_alpn(this) < 0)) {
+			goto error;
+		}
+#endif
+
 		sock->connect_timeout = home->connect_timeout;
 
 		this->recv = proxy_tls_recv;
 		this->proxy_send = proxy_tls_send;
+
+#ifdef HAVE_PTHREAD_H
+		if (pthread_mutex_init(&sock->mutex, NULL) < 0) {
+			rad_assert(0 == 1);
+			listen_free(&this);
+			return 0;
+		}
+#endif
 
 		/*
 		 *	Make sure that this listener is associated with the home server.

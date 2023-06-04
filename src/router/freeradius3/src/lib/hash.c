@@ -11,7 +11,7 @@
  *  rather than being able to move 1/2 of the entries in the chain with
  *  one update.
  *
- * Version:	$Id: f9d088196f294b1cf1df4a64bdc7d8715bc69220 $
+ * Version:	$Id: 9efff6e825b7bf4eb9ba2e0a7825c5729d957bd7 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@
  *  Copyright 2005,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: f9d088196f294b1cf1df4a64bdc7d8715bc69220 $")
+RCSID("$Id: 9efff6e825b7bf4eb9ba2e0a7825c5729d957bd7 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -150,10 +150,17 @@ static uint8_t parent_byte[256] = {
  */
 static uint32_t reverse(uint32_t key)
 {
-	return ((reversed_byte[key & 0xff] << 24) |
-		(reversed_byte[(key >> 8) & 0xff] << 16) |
-		(reversed_byte[(key >> 16) & 0xff] << 8) |
-		(reversed_byte[(key >> 24) & 0xff]));
+	/*
+	 *	Cast to uint32_t is required because the
+	 *	default type of of the expression is an
+	 *	int and ubsan correctly complains that
+	 *	the result of 0xff << 24 won't fit in an
+	 *	unsigned 32bit integer.
+	 */
+	return (((uint32_t)reversed_byte[key & 0xff] << 24) |
+		((uint32_t)reversed_byte[(key >> 8) & 0xff] << 16) |
+		((uint32_t)reversed_byte[(key >> 16) & 0xff] << 8) |
+		((uint32_t)reversed_byte[(key >> 24) & 0xff]));
 }
 
 /*

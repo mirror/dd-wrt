@@ -30,7 +30,7 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.2.2
+Version: 3.2.3
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
@@ -917,6 +917,7 @@ fi
 %defattr(-,root,root)
 %{_libdir}/freeradius/rlm_redis.so
 %{_libdir}/freeradius/rlm_rediswho.so
+%{_libdir}/freeradius/rlm_cache_redis.so
 %endif
 
 %files rest

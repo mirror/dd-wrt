@@ -1,7 +1,7 @@
 /*
  * rlm_eap.h    Local Header file.
  *
- * Version:     $Id: 384f7f78d79f1c20a186e6b0512e00affec77f21 $
+ * Version:     $Id: 0b9311cd83a32ea741b51cb656017179772b3f73 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _RLM_EAP_H
 #define _RLM_EAP_H
 
-RCSIDH(rlm_eap_h, "$Id: 384f7f78d79f1c20a186e6b0512e00affec77f21 $")
+RCSIDH(rlm_eap_h, "$Id: 0b9311cd83a32ea741b51cb656017179772b3f73 $")
 
 #include <freeradius-devel/modpriv.h>
 #include "eap.h"
@@ -56,6 +56,7 @@ typedef struct rlm_eap {
 	 *	Configuration items.
 	 */
 	uint32_t	timer_limit;
+	uint32_t	max_eap_type;
 
 	char const	*default_method_name;
 	eap_type_t	default_method;

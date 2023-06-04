@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: a1464e3de5439e2e3f1f88bb5649f486b98acb8f $
+ * $Id: e59fcec6f056eea50493c1fd77c4b77d1514b24e $
  *
  * @brief map / template functions
  * @file main/map.c
@@ -26,7 +26,7 @@
  * @copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: a1464e3de5439e2e3f1f88bb5649f486b98acb8f $")
+RCSID("$Id: e59fcec6f056eea50493c1fd77c4b77d1514b24e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1108,6 +1108,11 @@ int map_to_request(REQUEST *request, vp_map_t const *map, radius_map_getvalue_t 
 	 */
 	if (((map->lhs->tmpl_list == PAIR_LIST_COA) ||
 	     (map->lhs->tmpl_list == PAIR_LIST_DM)) && !request->coa) {
+		if (request->parent) {
+			REDEBUG("You can only do 'update coa' when processing a packet which was received from the network");
+			return -2;
+		}
+
 		if ((request->packet->code == PW_CODE_COA_REQUEST) ||
 		    (request->packet->code == PW_CODE_DISCONNECT_REQUEST)) {
 			REDEBUG("You cannot do 'update coa' when processing a CoA / Disconnect request.  Use 'update request' instead.");
@@ -1218,9 +1223,10 @@ int map_to_request(REQUEST *request, vp_map_t const *map, radius_map_getvalue_t 
 	 */
 	num = map->lhs->tmpl_num;
 	(void) fr_cursor_init(&dst_list, list);
-	if (num != NUM_ANY) {
+	if ((num != NUM_ANY) && (num > 0)) {
 		while ((dst = fr_cursor_next_by_da(&dst_list, map->lhs->tmpl_da, map->lhs->tmpl_tag))) {
-			if (num-- == 0) break;
+			if (num <= 0) break;
+			num--;
 		}
 	} else {
 		dst = fr_cursor_next_by_da(&dst_list, map->lhs->tmpl_da, map->lhs->tmpl_tag);

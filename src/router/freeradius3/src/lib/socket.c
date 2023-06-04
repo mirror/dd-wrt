@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3c88b78f9f00b188267ab16ad88a71d1663a5ab2 $
+ * $Id: 970f4f495e967891976df2a97a028517e8a8eba3 $
  * @file socket.c
  * @brief Functions for establishing and managing low level sockets.
  *
@@ -24,14 +24,10 @@
  *
  * @copyright 2015 The FreeRADIUS project
  */
- #include <freeradius-devel/libradius.h>
+#include <freeradius-devel/libradius.h>
+#include <freeradius-devel/socket.h>
 
 #ifdef HAVE_SYS_UN_H
-#  include <sys/un.h>
-#  ifndef SUN_LEN
-#    define SUN_LEN(su)  (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
-#  endif
-
 /** Open a Unix socket
  *
  * @note If the file doesn't exist then errno will be set to ENOENT.

@@ -2,7 +2,7 @@
  *  sql.c		rlm_sql - FreeRADIUS SQL Module
  *		Main code directly taken from ICRADIUS
  *
- * Version:	$Id: 5cc020eb452a961ed3cb036314d8a25f47b21c6c $
+ * Version:	$Id: a18e00b1fe7bc6c189ef5d0aaaed3b9d3d9d8b00 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 5cc020eb452a961ed3cb036314d8a25f47b21c6c $")
+RCSID("$Id: a18e00b1fe7bc6c189ef5d0aaaed3b9d3d9d8b00 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -292,7 +292,7 @@ sql_rcode_t rlm_sql_query(rlm_sql_t *inst, REQUEST *request, rlm_sql_handle_t **
 	/*
 	 *  inst->pool may be NULL is this function is called by mod_conn_create.
 	 */
-	count = inst->pool ? fr_connection_pool_get_num(inst->pool) : 0;
+	count = inst->pool ? fr_connection_pool_get_retries(inst->pool) : 0;
 
 	/*
 	 *  Here we try with each of the existing connections, then try to create
@@ -392,7 +392,7 @@ sql_rcode_t rlm_sql_select_query(rlm_sql_t *inst, REQUEST *request, rlm_sql_hand
 	/*
 	 *  inst->pool may be NULL is this function is called by mod_conn_create.
 	 */
-	count = inst->pool ? fr_connection_pool_get_num(inst->pool) : 0;
+	count = inst->pool ? fr_connection_pool_get_retries(inst->pool) : 0;
 
 	/*
 	 *  For sanity, for when no connections are viable, and we can't make a new one

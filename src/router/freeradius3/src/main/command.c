@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 12d1afdfdb1a8c675526f29a5fd2c5336f2484f5 $
+ * Version:	$Id: 988f43bb02451d9ad744d23bc60fac69f2a92e13 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,17 +28,11 @@
 #include <freeradius-devel/md5.h>
 #include <freeradius-devel/channel.h>
 #include <freeradius-devel/connection.h>
+#include <freeradius-devel/socket.h>
 
 #include <libgen.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
-#endif
-
-#ifdef HAVE_SYS_UN_H
-#include <sys/un.h>
-#ifndef SUN_LEN
-#define SUN_LEN(su)  (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
-#endif
 #endif
 
 #ifdef HAVE_SYS_STAT_H

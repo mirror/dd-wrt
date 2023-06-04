@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: d011e24a6ecc37ce6f2f181f0e69dc3af4cc4f83 $
+ * $Id: 8e8c813061d8e38380f55365aff359d559d89bd2 $
  *
  * @brief Integrate FreeRADIUS with the Couchbase document database.
  * @file rlm_couchbase.c
@@ -24,7 +24,7 @@
  * @copyright 2013-2014 The FreeRADIUS Server Project.
  */
 
-RCSID("$Id: d011e24a6ecc37ce6f2f181f0e69dc3af4cc4f83 $")
+RCSID("$Id: 8e8c813061d8e38380f55365aff359d559d89bd2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/libradius.h>
@@ -709,7 +709,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 		}
 
 		/* check terminal server */
-		int check = rad_check_ts(&nas_addr, nas_port, user_name, session_id);
+		int check = rad_check_ts(&nas_addr, nas_port, NULL, user_name, session_id);
 
 		/* take action based on check return */
 		if (check == 0) {
@@ -744,7 +744,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST *request) {
 				}
 
 				/* zap session */
-				session_zap(request, &nas_addr, nas_port, user_name, session_id,
+				session_zap(request, &nas_addr, nas_port, NULL, user_name, session_id,
 					    framed_ip_addr, framed_proto, session_time);
 			}
 		} else if (check == 1) {

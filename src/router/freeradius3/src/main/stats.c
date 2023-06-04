@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: c1e4ec98fec5f8fdaffab2339643c3adce37df30 $
+ * Version:	$Id: a5c672e365582c102f85db7dabff363670195f49 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: c1e4ec98fec5f8fdaffab2339643c3adce37df30 $")
+RCSID("$Id: a5c672e365582c102f85db7dabff363670195f49 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -90,6 +90,8 @@ static void stats_time(fr_stats_t *stats, struct timeval *start,
 
 void request_stats_final(REQUEST *request)
 {
+	rad_listen_t *listener;
+
 	if (request->master_state == REQUEST_COUNTED) return;
 
 	if (!request->listener) return;
@@ -108,26 +110,32 @@ void request_stats_final(REQUEST *request)
 	if (request->packet->code == PW_CODE_STATUS_SERVER)
 		return;
 
+	/*
+	 *	Deal with TCP / TLS issues.  The statistics are kept in the parent socket.
+	 */
+	listener = request->listener;
+	if (listener->parent) listener = listener->parent;
+
 #undef INC_AUTH
-#define INC_AUTH(_x) radius_auth_stats._x++;request->listener->stats._x++;request->client->auth._x++;
+#define INC_AUTH(_x) radius_auth_stats._x++;listener->stats._x++;request->client->auth._x++;
 
 #undef INC_ACCT
 #ifdef WITH_ACCOUNTING
-#define INC_ACCT(_x) radius_acct_stats._x++;request->listener->stats._x++;request->client->acct._x++
+#define INC_ACCT(_x) radius_acct_stats._x++;listener->stats._x++;request->client->acct._x++
 #else
 #define INC_ACCT(_x)
 #endif
 
 #undef INC_COA
 #ifdef WITH_COA
-#define INC_COA(_x) radius_coa_stats._x++;request->listener->stats._x++;request->client->coa._x++
+#define INC_COA(_x) radius_coa_stats._x++;listener->stats._x++;request->client->coa._x++
 #else
 #define INC_COA(_x)
 #endif
 
 #undef INC_DSC
 #ifdef WITH_DSC
-#define INC_DSC(_x) radius_dsc_stats._x++;request->listener->stats._x++;request->client->dsc._x++
+#define INC_DSC(_x) radius_dsc_stats._x++;listener->stats._x++;request->client->dsc._x++
 #else
 #define INC_DSC(_x)
 #endif
@@ -156,7 +164,7 @@ void request_stats_final(REQUEST *request)
 		stats_time(&request->client->auth,
 			   &request->packet->timestamp,
 			   &request->reply->timestamp);
-		stats_time(&request->listener->stats,
+		stats_time(&listener->stats,
 			   &request->packet->timestamp,
 			   &request->reply->timestamp);
 		break;
@@ -341,7 +349,6 @@ void request_stats_final(REQUEST *request)
 
 
 	if (request->max_time) {
-		rad_listen_t *listener = request->listener;
 		RADCLIENT *client = request->client;
 
 		switch (request->packet->code) {
@@ -787,6 +794,9 @@ void request_stats_reply(REQUEST *request)
 		 *	Not found: don't do anything
 		 */
 		this = listener_find_byipaddr(&ipaddr, server_port->vp_integer, IPPROTO_UDP);
+#ifdef WITH_TCP
+		if (!this) this = listener_find_byipaddr(&ipaddr, server_port->vp_integer, IPPROTO_TCP);
+#endif
 		if (!this) {
 			stats_error(request, "No such listener");
 			return;
@@ -861,6 +871,9 @@ void request_stats_reply(REQUEST *request)
 		 *	Not found: don't do anything
 		 */
 		home = home_server_find(&ipaddr, server_port->vp_integer, IPPROTO_UDP);
+#ifdef WITH_TCP
+		if (!home) home = home_server_find(&ipaddr, server_port->vp_integer, IPPROTO_TCP);
+#endif
 		if (!home) {
 			stats_error(request, "Failed to find home server IP");
 			return;

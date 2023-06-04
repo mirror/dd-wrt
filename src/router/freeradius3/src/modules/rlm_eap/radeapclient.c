@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: 955df1eae030110520222c084ed4bbe8ac41766f $
+ * Version:	$Id: ae24f06cc7154e87c02ed2b46c6afed4dc41c5e1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 955df1eae030110520222c084ed4bbe8ac41766f $")
+RCSID("$Id: ae24f06cc7154e87c02ed2b46c6afed4dc41c5e1 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -190,6 +190,11 @@ rlm_rcode_t process_post_auth(UNUSED int postauth_type, UNUSED REQUEST *request)
 	return RLM_MODULE_FAIL;
 }
 
+
+fr_event_list_t *radius_event_list_corral(UNUSED event_corral_t hint)
+{
+	return NULL;
+}
 
 static void NEVER_RETURNS usage(void)
 {
@@ -1346,7 +1351,11 @@ static void rc_add_socket(fr_ipaddr_t *src_ipaddr, uint16_t src_port, fr_ipaddr_
 		exit(1);
 	}
 
-	if (!fr_packet_list_socket_add(pl, mysockfd, ipproto, dst_ipaddr, dst_port, NULL)) {
+	if (!fr_packet_list_socket_add(pl, mysockfd, ipproto,
+#ifdef WITH_RADIUSV11
+				       false,
+#endif
+				       dst_ipaddr, dst_port, NULL)) {
 		ERROR("Failed to add new socket: %s\n", fr_strerror());
 		exit(1);
 	}
@@ -1972,7 +1981,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: 955df1eae030110520222c084ed4bbe8ac41766f $"
+			printf("$Id: ae24f06cc7154e87c02ed2b46c6afed4dc41c5e1 $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif

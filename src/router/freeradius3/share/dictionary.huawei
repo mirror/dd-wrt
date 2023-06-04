@@ -6,7 +6,7 @@
 #
 #	Dictionary for Huawei.  See also dictionary.h3c
 #
-#	$Id: 78bc25630e7a05c9f9525901653a60d32e7c0f89 $
+#	$Id: 8af00113f8d88e23c1adfc90e1c98f24df5ff79f $
 #
 #  https://support.huawei.com/enterprise/en/doc/EDOC1100055480/6a2e56b2/description-of-radius-attributes
 #
@@ -202,6 +202,13 @@ ATTRIBUTE	Huawei-MNG-IPv6				196	integer
 VALUE	Huawei-MNG-IPv6			Unsupported		0
 VALUE	Huawei-MNG-IPv6			Supported		1
 
+#
+#  Huawei supports supplying a DPSK by setting the Attribute HW-DPSK-Info
+#
+#  https://support.huawei.com/hedex/hdx.do?docid=EDOC1100192518&id=EN-US_CONCEPT_0277881327
+#
+ATTRIBUTE	Huawei-DPSK-Info			206	string
+
 ATTRIBUTE	Huawei-Flow-Info			211	string
 ATTRIBUTE	Huawei-Flow-Id				212	integer
 ATTRIBUTE	Huawei-DHCP-Server-IP			214	ipaddr
@@ -228,7 +235,7 @@ ATTRIBUTE	Huawei-Application-Scene		221	octets
 ATTRIBUTE	Huawei-MS-Maximum-MAC-Study-Number	222	octets # ether??
 ATTRIBUTE	Huawei-GGSN-Vendor			232	string
 ATTRIBUTE	Huawei-GGSN-Version			233	string
-ATTRIBUTE	Huawei-Ext-Specific		        238	string
+ATTRIBUTE	Huawei-Ext-Specific			238	string
 ATTRIBUTE	Huawei-Web-URL				253	string
 ATTRIBUTE	Huawei-Version				254	string
 ATTRIBUTE	Huawei-Product-ID			255	string

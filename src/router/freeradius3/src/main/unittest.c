@@ -1,7 +1,7 @@
 /*
  * unittest.c	Unit test wrapper for the RADIUS daemon.
  *
- * Version:	$Id: 5a15ee2e5773217555ea82efa8ce87623a0459a3 $
+ * Version:	$Id: 72fdadcbf1bee0b98dd328fd9e215df67fc75ca5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2013  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 5a15ee2e5773217555ea82efa8ce87623a0459a3 $")
+RCSID("$Id: 72fdadcbf1bee0b98dd328fd9e215df67fc75ca5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -71,6 +71,15 @@ void request_inject(UNUSED REQUEST *request)
 {
 	/* do nothing */
 }
+
+#ifdef WITH_RADIUSV11
+int fr_radiusv11_client_init(UNUSED fr_tls_server_conf_t *tls);
+
+int fr_radiusv11_client_init(UNUSED fr_tls_server_conf_t *tls)
+{
+	return 0;
+}
+#endif
 
 static rad_listen_t *listen_alloc(void *ctx)
 {

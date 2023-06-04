@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 7bb994b3242fada0c99823e632ca63d99ebfc47f $
+ * $Id: 4bf1665483b667e5229e704cd0509df3b9ce3301 $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 7bb994b3242fada0c99823e632ca63d99ebfc47f $")
+RCSIDH(tls_h, "$Id: 4bf1665483b667e5229e704cd0509df3b9ce3301 $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -67,7 +67,7 @@ typedef enum {
 } fr_tls_status_t;
 extern FR_NAME_NUMBER const fr_tls_status_table[];
 
-#define MAX_RECORD_SIZE 16384
+#define MAX_RECORD_SIZE 65536
 
 /*
  *	A single TLS record may be up to 16384 octets in length, but a
@@ -89,8 +89,8 @@ extern FR_NAME_NUMBER const fr_tls_status_table[];
  * 	or configure TLS not to exceed MAX_RECORD_SIZE.
  */
 typedef struct _record_t {
-	uint8_t data[MAX_RECORD_SIZE];
 	size_t  used;
+	uint8_t data[MAX_RECORD_SIZE];
 } record_t;
 
 typedef struct _tls_info_t {
@@ -438,6 +438,11 @@ struct fr_tls_server_conf_t {
 	fr_hash_table_t	*realms;
 
 	char const	*client_hostname;
+
+#ifdef WITH_RADIUSV11
+       char const	*radiusv11_name;
+       fr_radiusv11_t	radiusv11;
+#endif
 };
 
 #ifdef __cplusplus

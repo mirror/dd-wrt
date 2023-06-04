@@ -23,7 +23,7 @@ dnl #############################################################
 AC_PREREQ([2.59])
 export CFLAGS LIBS LDFLAGS CPPFLAGS
 
-AC_INIT([freeradius],[$Id: f8acb873674998e59a8dfaa182b470a9b958a359 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
+AC_INIT([freeradius],[$Id: a24a8061f62ba434a92675ad55fb33af9b1dc5b9 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
@@ -481,6 +481,24 @@ AC_ARG_WITH(ascend-binary,
 )
 if test "x$WITH_ASCEND_BINARY" = "xyes"; then
   AC_DEFINE(WITH_ASCEND_BINARY, [1], [include support for Ascend binary filter attributes])
+fi
+
+dnl #
+dnl #  extra argument: --with-radiusv11
+dnl #
+WITH_RADIUSV11=
+AC_ARG_WITH(radiusv11,
+[  --with-radiusv11        compile in RADIUSv11 support. (default=no)],
+[ case "$withval" in
+  yes)
+    WITH_RADIUSV11=yes
+    ;;
+  *)
+    ;;
+  esac ]
+)
+if test "x$WITH_RADIUSCV11" = "xyes"; then
+  AC_DEFINE(WITH_RADIUSV11, [1], [define if you want RADIUSv11 support (For RADSec et al)])
 fi
 
 dnl #

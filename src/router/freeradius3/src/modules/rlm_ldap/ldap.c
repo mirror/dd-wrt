@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 97fdcbe2f35d57c7f7e6bebbfc44a94c6da4304e $
+ * $Id: c3569214b7b7a195007f422786662e24a49bf034 $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -30,6 +30,10 @@
 
 #include <stdarg.h>
 #include <ctype.h>
+
+#ifdef HAVE_OPENSSL_SSL_H
+#  include <openssl/ssl.h>
+#endif
 
 #include "ldap.h"
 
@@ -717,7 +721,7 @@ ldap_rcode_t rlm_ldap_bind(rlm_ldap_t const *inst, REQUEST *request, ldap_handle
 	 *	For sanity, for when no connections are viable,
 	 *	and we can't make a new one.
 	 */
-	num = retry ? fr_connection_pool_get_num(inst->pool) : 0;
+	num = retry ? fr_connection_pool_get_retries(inst->pool) : 0;
 	for (i = num; i >= 0; i--) {
 #ifdef WITH_SASL
 		if (sasl && sasl->mech) {
@@ -877,7 +881,7 @@ ldap_rcode_t rlm_ldap_search(LDAPMessage **result, rlm_ldap_t const *inst, REQUE
 	 *	For sanity, for when no connections are viable,
 	 *	and we can't make a new one.
 	 */
-	for (i = fr_connection_pool_get_num(inst->pool); i >= 0; i--) {
+	for (i = fr_connection_pool_get_retries(inst->pool); i >= 0; i--) {
 		(void) ldap_search_ext((*pconn)->handle, dn, scope, filter, search_attrs,
 				       0, serverctrls, clientctrls, &tv, 0, &msgid);
 
@@ -1004,7 +1008,7 @@ ldap_rcode_t rlm_ldap_modify(rlm_ldap_t const *inst, REQUEST *request, ldap_hand
 	 *	For sanity, for when no connections are viable,
 	 *	and we can't make a new one.
 	 */
-	for (i = fr_connection_pool_get_num(inst->pool); i >= 0; i--) {
+	for (i = fr_connection_pool_get_retries(inst->pool); i >= 0; i--) {
 		RDEBUG2("Modifying object with DN \"%s\"", dn);
 		(void) ldap_modify_ext((*pconn)->handle, dn, mods, NULL, NULL, &msgid);
 
@@ -1328,7 +1332,6 @@ static int rlm_ldap_rebind(LDAP *handle, LDAP_CONST char *url, UNUSED ber_tag_t 
 		return ldap_errno;
 	}
 
-
 	return LDAP_SUCCESS;
 }
 #endif
@@ -1336,6 +1339,9 @@ static int rlm_ldap_rebind(LDAP *handle, LDAP_CONST char *url, UNUSED ber_tag_t 
 int rlm_ldap_global_init(rlm_ldap_t *inst)
 {
 	int ldap_errno;
+#if defined(LDAP_OPT_X_TLS_PACKAGE) && defined(LDAP_OPT_X_TLS_CTX) && defined(HAVE_OPENSSL_SSL_H)
+	bool use_openssl = false;
+#endif
 
 #define do_ldap_global_option(_option, _name, _value) \
 	if (ldap_set_option(NULL, _option, _value) != LDAP_OPT_SUCCESS) { \
@@ -1363,6 +1369,50 @@ int rlm_ldap_global_init(rlm_ldap_t *inst)
 	 */
 	maybe_ldap_global_option(LDAP_OPT_X_TLS_RANDOM_FILE, "random_file", inst->tls_random_file);
 #endif
+
+#ifdef LDAP_OPT_X_TLS_PACKAGE
+	{
+		char *name = NULL;
+
+		if (ldap_get_option(NULL, LDAP_OPT_X_TLS_PACKAGE, (void *) &name) == LDAP_OPT_SUCCESS) {
+			if (strcmp(name, "OpenSSL") != 0) {
+				WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				WARN("!! libldap is using %s, while FreeRADIUS is using OpenSSL", name);
+				WARN("!! There may be random issues with TLS connections due to this conflict.");
+				WARN("!! The server may also crash.");
+				WARN("!! See https://wiki.freeradius.org/modules/Rlm_ldap for more information.");
+				WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			}
+#if defined(LDAP_OPT_X_TLS_CTX) && defined(HAVE_OPENSSL_SSL_H)
+			else {
+				use_openssl = true;
+			}
+#endif
+
+			ldap_memfree(name);
+		}
+	}
+#endif
+
+#ifdef LDAP_OPT_X_TLS_CTX
+#ifdef HAVE_OPENSSL_SSL_H
+	{
+		X509_STORE *store;
+		SSL_CTX *ssl_ctx;
+
+		if (inst->tls_check_crl &&
+#ifdef LDAP_OPT_X_TLS_PACKAGE
+		    use_openssl &&
+#endif
+
+		    (ldap_get_option(NULL, LDAP_OPT_X_TLS_CTX, (void *) &ssl_ctx) == LDAP_OPT_SUCCESS)) {
+			store = SSL_CTX_get_cert_store(ssl_ctx);
+			X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK);
+		}
+	}
+#endif
+#endif
+
 	return 0;
 }
 

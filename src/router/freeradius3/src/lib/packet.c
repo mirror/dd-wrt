@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id: acba8d9f0172ab0cb8e06943904327bca953f0a2 $
+ * Version:	$Id: 971980b38e8a14767879303059eb8883ace5aae3 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: acba8d9f0172ab0cb8e06943904327bca953f0a2 $")
+RCSID("$Id: 971980b38e8a14767879303059eb8883ace5aae3 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -41,14 +41,30 @@ int fr_packet_cmp(RADIUS_PACKET const *a, RADIUS_PACKET const *b)
 {
 	int rcode;
 
+	if (a->sockfd < b->sockfd) return -1;
+	if (a->sockfd > b->sockfd) return +1;
+
 	/*
-	 *	256-way fanout.
+	 *	IDs should be spread effectively randomly
 	 */
 	if (a->id < b->id) return -1;
 	if (a->id > b->id) return +1;
 
-	if (a->sockfd < b->sockfd) return -1;
-	if (a->sockfd > b->sockfd) return +1;
+#ifdef WITH_TCP
+	/*
+	 *	TCP sockets have (by definition) the same src/dst
+	 *	IP/port combos.  We we can just ignore those fields.
+	 */
+	if (a->proto == IPPROTO_TCP) {
+		return 0;
+	}
+#endif
+
+	/*
+	 *	RADIUS can have unconnected UDP sockets, in which case
+	 *	the socket FD is the same, but the src/dst IP/ports
+	 *	may be different.
+	 */
 
 	/*
 	 *	Source ports are pretty much random.
@@ -114,6 +130,12 @@ void fr_request_from_reply(RADIUS_PACKET *request,
 	request->id = reply->id;
 #ifdef WITH_TCP
 	request->proto = reply->proto;
+
+#ifdef WITH_RADIUSV11
+	if (reply->radiusv11) {
+		memcpy(request->vector, reply->vector, sizeof(request->vector));
+	}
+#endif
 #endif
 	request->src_port = reply->dst_port;
 	request->dst_port = reply->src_port;
@@ -249,6 +271,12 @@ typedef struct fr_packet_socket_t {
 	int		proto;
 #endif
 
+#ifdef WITH_RADIUSV11
+	bool		radiusv11;
+
+	uint32_t	counter;
+#endif
+
 	uint8_t		id[32];
 } fr_packet_socket_t;
 
@@ -348,8 +376,11 @@ bool fr_packet_list_socket_del(fr_packet_list_t *pl, int sockfd)
 
 
 bool fr_packet_list_socket_add(fr_packet_list_t *pl, int sockfd, int proto,
-			      fr_ipaddr_t *dst_ipaddr, uint16_t dst_port,
-			      void *ctx)
+#ifdef WITH_RADIUSV11
+			       bool radiusv11,
+#endif
+			       fr_ipaddr_t *dst_ipaddr, uint16_t dst_port,
+			       void *ctx)
 {
 	int i, start;
 	struct sockaddr_storage	src;
@@ -394,6 +425,16 @@ bool fr_packet_list_socket_add(fr_packet_list_t *pl, int sockfd, int proto,
 	ps->ctx = ctx;
 #ifdef WITH_TCP
 	ps->proto = proto;
+#ifdef WITH_RADIUSV11
+	ps->radiusv11 = radiusv11;
+
+	/*
+	 *	Start our packet counter at a random 64-bit number.
+	 */
+	if (radiusv11) {
+		ps->counter = fr_rand();
+	}
+#endif
 #endif
 
 	/*
@@ -563,6 +604,11 @@ RADIUS_PACKET **fr_packet_list_find_byreply(fr_packet_list_t *pl,
 #ifdef WITH_TCP
 	my_request.proto = reply->proto;
 #endif
+
+#ifdef WITH_RADIUSV11
+	my_request.radiusv11 = reply->radiusv11;
+#endif
+
 	request = &my_request;
 
 	return rbtree_finddata(pl->tree, &request);
@@ -692,11 +738,6 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 		 */
 		if (ps->dont_use) continue;
 
-		/*
-		 *	All IDs are allocated: ignore it.
-		 */
-		if (ps->num_outgoing == 256) continue;
-
 #ifdef WITH_TCP
 		if (ps->proto != proto) continue;
 #endif
@@ -756,6 +797,36 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 		    (fr_ipaddr_cmp(&request->dst_ipaddr,
 				   &ps->dst_ipaddr) != 0)) continue;
 
+#ifdef WITH_RADIUSV11
+		/*
+		 *	RADIUSV11 matches on src/dst IP/port, but
+		 *	doesn't care about num_outgoing or ID allocation.
+		 */
+		if (ps->radiusv11) {
+			request->radiusv11 = true;
+
+			fd = ps->sockfd;
+
+			/*
+			 *	Increment the counter.  It has to be
+			 *	unique, but its exact value doesn't
+			 *	matter.  i.e. the receiver doesn't
+			 *	care if it's a counter or a random
+			 *	number.
+			 */
+			ps->counter++;
+			id = 0;
+			memcpy(request->vector, &ps->counter, sizeof(ps->counter));
+			memset(request->vector + sizeof(ps->counter), 0, sizeof(request->vector) - sizeof(ps->counter));
+			break;
+		}
+#endif
+
+		/*
+		 *	All IDs are allocated: ignore it.
+		 */
+		if (ps->num_outgoing == 256) continue;
+
 		/*
 		 *	Otherwise, this socket is OK to use.
 		 */
@@ -799,6 +870,9 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 	 *	Set the ID, source IP, and source port.
 	 */
 	request->id = id;
+#ifdef WITH_RADIUSV11
+	if (ps->radiusv11) request->id = ps->counter;
+#endif
 
 	request->sockfd = ps->sockfd;
 	request->src_ipaddr = ps->src_ipaddr;
@@ -818,7 +892,7 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 	 *	Mark the ID as free.  This is the one line from
 	 *	id_free() that we care about here.
 	 */
-	ps->id[(request->id >> 3) & 0x1f] &= ~(1 << (request->id & 0x07));
+	ps->id[(id >> 3) & 0x1f] &= ~(1 << (id & 0x07));
 
 	request->id = -1;
 	request->sockfd = -1;
@@ -846,13 +920,13 @@ bool fr_packet_list_id_free(fr_packet_list_t *pl,
 	ps = fr_socket_find(pl, request->sockfd);
 	if (!ps) return false;
 
-#if 0
-	if (!ps->id[(request->id >> 3) & 0x1f] & (1 << (request->id & 0x07))) {
-		fr_exit(1);
-	}
+#ifdef WITH_RADIUSV11
+	/*
+	 *	RADIUSV11 packets don't track individual IDs.
+	 */
+	if (!ps->radiusv11)
 #endif
-
-	ps->id[(request->id >> 3) & 0x1f] &= ~(1 << (request->id & 0x07));
+		ps->id[(request->id >> 3) & 0x1f] &= ~(1 << (request->id & 0x07));
 
 	ps->num_outgoing--;
 	pl->num_outgoing--;
@@ -1002,7 +1076,7 @@ void fr_packet_header_print(FILE *fp, RADIUS_PACKET *packet, bool received)
 	 *	This really belongs in a utility library
 	 */
 	if (is_radius_code(packet->code)) {
-		fprintf(fp, "%s %s Id %i from %s%s%s:%i to %s%s%s:%i length %zu\n",
+		fprintf(fp, "%s %s Id %i from %s%s%s:%x to %s%s%s:%u length %zu\n",
 		        received ? "Received" : "Sent",
 		        fr_packet_codes[packet->code],
 		        packet->id,
@@ -1020,7 +1094,7 @@ void fr_packet_header_print(FILE *fp, RADIUS_PACKET *packet, bool received)
 		        packet->dst_port,
 		        packet->data_len);
 	} else {
-		fprintf(fp, "%s code %u Id %i from %s%s%s:%i to %s%s%s:%i length %zu\n",
+		fprintf(fp, "%s code %u Id %i from %s%s%s:%u to %s%s%s:%i length %zu\n",
 		        received ? "Received" : "Sent",
 		        packet->code,
 		        packet->id,

@@ -15,18 +15,22 @@
  */
 
 /**
- * $Id: 0c58cc88a2d7c67eabdbb7f80128ded4413f9f28 $
+ * $Id: 59759aea853746ec7c3a2b159487bb850d9d241d $
  * @file rlm_perl.c
  * @brief Translates requests between the server an a perl interpreter.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Boian Jordanov <bjordanov@orbitel.bg>
  */
-RCSID("$Id: 0c58cc88a2d7c67eabdbb7f80128ded4413f9f28 $")
+RCSID("$Id: 59759aea853746ec7c3a2b159487bb850d9d241d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
+
+DIAG_OFF(DIAG_UNKNOWN_PRAGMAS)
+DIAG_OFF(compound-token-split-by-macro) /* Perl does horrible things with macros */
+DIAG_ON(DIAG_UNKNOWN_PRAGMAS)
 
 #ifdef INADDR_ANY
 #  undef INADDR_ANY

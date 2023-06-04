@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9db0c0fb1eff4396cd91e1b1b7f34fc2a9c0a7f6 $
+ * $Id: 035f5578fe749c6c0ed4e046a02bafa4626f60f9 $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id: 9db0c0fb1eff4396cd91e1b1b7f34fc2a9c0a7f6 $")
+RCSID("$Id: 035f5578fe749c6c0ed4e046a02bafa4626f60f9 $")
 
 #include <ctype.h>
 #include <string.h>
@@ -964,6 +964,7 @@ static ssize_t rest_request_encode_wrapper(char **buffer, rest_read_t func, size
 	size_t alloc = REST_BODY_INIT;	/* Size of buffer to alloc */
 	size_t used = 0;		/* Size of data written */
 	size_t len = 0;
+	rlm_rest_request_t *ctx = userdata;
 
 	while (alloc <= limit) {
 		current = rad_malloc(alloc);
@@ -975,7 +976,7 @@ static ssize_t rest_request_encode_wrapper(char **buffer, rest_read_t func, size
 
 		len = func(current + used, alloc - used, 1, userdata);
 		used += len;
-		if (!len) {
+		if (ctx->state == READ_STATE_END || !len) {
 			*buffer = current;
 			return used;
 		}

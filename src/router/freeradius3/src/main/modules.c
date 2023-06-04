@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: e18977d34f7d4dfe8a9f51e51bcba418b64a9910 $
+ * Version:	$Id: fd4334db96e213beee068d9dcac00e4c6ed4a978 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: e18977d34f7d4dfe8a9f51e51bcba418b64a9910 $")
+RCSID("$Id: fd4334db96e213beee068d9dcac00e4c6ed4a978 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1639,6 +1639,11 @@ int module_hup_module(CONF_SECTION *cs, module_instance_t *node, time_t when)
 	if ((node->last_hup + 2) >= when) return 1;
 	node->last_hup = when;
 
+	/*
+	 *	Clear any old instances before attempting to reload
+	 */
+	module_instance_free_old(cs, node, when);
+
 	cf_log_module(cs, "Trying to reload module \"%s\"", node->name);
 
 	/*
@@ -1661,8 +1666,6 @@ int module_hup_module(CONF_SECTION *cs, module_instance_t *node, time_t when)
 	}
 
 	INFO(" Module: Reloaded module \"%s\"", node->name);
-
-	module_instance_free_old(cs, node, when);
 
 	/*
 	 *	Save the old instance handle for later deletion.

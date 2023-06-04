@@ -17,7 +17,7 @@
  */
 
 /**
- * $Id: e36d81dac00719bab95020ba88ddde3d6c944437 $
+ * $Id: f2aea776d61c3635410d9baaed7df5939adf60cb $
  *
  * @file threads.h
  * @brief Macros to abstract Thread Local Storage
@@ -49,6 +49,7 @@ static inline int __fr_thread_local_destructor_##_n(pthread_destructor_t *ctx)\
 	func(_n);\
 	return 0;\
 }\
+DIAG_OFF(deprecated-declarations) \
 static inline _t __fr_thread_local_init_##_n(pthread_destructor_t func)\
 {\
 	static pthread_destructor_t *ctx;\
@@ -58,7 +59,9 @@ static inline _t __fr_thread_local_init_##_n(pthread_destructor_t func)\
 		*ctx = func;\
 	}\
 	return _n;\
-}
+} \
+DIAG_ON(deprecated-declarations)
+
 #  define fr_thread_local_init(_n, _f) __fr_thread_local_init_##_n(_f)
 #  define fr_thread_local_set(_n, _v) ((int)!((_n = _v) || 1))
 #  define fr_thread_local_get(_n) _n

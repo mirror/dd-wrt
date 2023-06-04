@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1e5624782dcaf61a2739e115c0dfbe5b1ca0e171 $
+ * $Id: 05896975b203b1f50097946cc565c38f00ae3360 $
  * @file ldap.c
  * @brief Functions for mapping between LDAP and FreeRADIUS attributes.
  *
@@ -190,12 +190,11 @@ int rlm_ldap_map_verify(vp_map_t *map, void *instance)
 	}
 
 	/*
-	 *	Only =, :=, += and -= operators are supported for LDAP mappings.
+	 *	Only =, :=, and += aoperators are supported for LDAP mappings.
 	 */
 	switch (map->op) {
 	case T_OP_SET:
 	case T_OP_EQ:
-	case T_OP_SUB:
 	case T_OP_ADD:
 		break;
 

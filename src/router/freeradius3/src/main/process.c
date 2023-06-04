@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3ca352497a575d024e36d2cd854ff28384efc990 $
+ * $Id: ed778392775bf73339d813da56974765500408e4 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 3ca352497a575d024e36d2cd854ff28384efc990 $")
+RCSID("$Id: ed778392775bf73339d813da56974765500408e4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -2471,6 +2471,9 @@ static int insert_into_proxy_hash(REQUEST *request)
 		sock = this->data;
 		if (!fr_packet_list_socket_add(proxy_list, this->fd,
 					       sock->proto,
+#ifdef WITH_RADIUSV11
+					       sock->radiusv11,
+#endif
 					       &sock->other_ipaddr, sock->other_port,
 					       this)) {
 
@@ -2517,7 +2520,9 @@ static int insert_into_proxy_hash(REQUEST *request)
 		return 0;
 	}
 
+#ifndef WITH_RADIUSV11
 	rad_assert(request->proxy->id >= 0);
+#endif
 
 	request->proxy_listener = proxy_listener;
 	request->in_proxy_hash = true;
@@ -2784,11 +2789,17 @@ int request_proxy_reply(RADIUS_PACKET *packet)
 	 *	ignore it.  This does the MD5 calculations in the
 	 *	server core, but I guess we can fix that later.
 	 */
-	if (!request->proxy_reply &&
-	    (rad_verify(packet, request->proxy,
-			request->home_server->secret) != 0)) {
-		DEBUG("Ignoring spoofed proxy reply.  Signature is invalid");
-		return 0;
+	if (!request->proxy_reply) {
+		if (!request->home_server) {
+			proxy_reply_too_late(request);
+			return 0;
+		}
+
+		if (rad_verify(packet, request->proxy,
+			       request->home_server->secret) != 0) {
+			DEBUG("Ignoring spoofed proxy reply.  Signature is invalid");
+			return 0;
+		}
 	}
 
 	/*
@@ -3623,7 +3634,9 @@ static int request_proxy(REQUEST *request)
 		return -1;
 	}
 
+#ifndef WITH_RADIUSV11
 	rad_assert(request->proxy->id >= 0);
+#endif
 
 	if (rad_debug_lvl) {
 		struct timeval *response_window;
@@ -3632,6 +3645,14 @@ static int request_proxy(REQUEST *request)
 
 #ifdef WITH_TLS
 		if (request->home_server->tls) {
+#ifdef WITH_RADIUSV11
+			listen_socket_t *sock = request->proxy_listener->data;
+
+			if (sock->radiusv11) {
+				fr_pair_delete_by_num(&request->proxy->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY);
+			}
+#endif
+
 			RDEBUG2("Proxying request to home server %s port %d (TLS) timeout %d.%06d",
 				inet_ntop(request->proxy->dst_ipaddr.af,
 					  &request->proxy->dst_ipaddr.ipaddr,
@@ -4022,8 +4043,8 @@ static void ping_home_server(void *ctx)
 	rad_assert(request->proxy_listener != NULL);
 	request->proxy_listener->proxy_encode(request->proxy_listener, request);
 	debug_packet(request, request->proxy, false);
-	request->proxy_listener->send(request->proxy_listener,
-				      request);
+	request->proxy_listener->proxy_send(request->proxy_listener,
+					    request);
 
 	/*
 	 *	Add +/- 2s of jitter, as suggested in RFC 3539
@@ -4355,7 +4376,7 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		home->last_packet_sent = now.tv_sec;
 		request->proxy->timestamp = now;
 		debug_packet(request, request->proxy, false);
-		request->proxy_listener->send(request->proxy_listener, request);
+		request->proxy_listener->proxy_send(request->proxy_listener, request);
 		break;
 
 	case FR_ACTION_TIMER:
@@ -5331,15 +5352,14 @@ static void event_status(struct timeval *wake)
 	}
 }
 
-#ifdef WITH_TCP
 static void listener_free_cb(void *ctx)
 {
 	rad_listen_t *this = talloc_get_type_abort(ctx, rad_listen_t);
+	listen_socket_t *sock = this->data;
 	char buffer[1024];
 
 	if (this->count > 0) {
 		struct timeval when;
-		listen_socket_t *sock = this->data;
 
 		fr_event_now(el, &when);
 		when.tv_sec += 3;
@@ -5360,9 +5380,13 @@ static void listener_free_cb(void *ctx)
 	this->print(this, buffer, sizeof(buffer));
 	DEBUG("... cleaning up socket %s", buffer);
 	rad_assert(this->next == NULL);
+#ifdef WITH_TCP
+	fr_event_delete(el, &sock->ev);
+#endif
 	talloc_free(this);
 }
 
+#ifdef WITH_TCP
 #ifdef WITH_PROXY
 static int proxy_eol_cb(void *ctx, void *data)
 {
@@ -5407,6 +5431,7 @@ static int proxy_eol_cb(void *ctx, void *data)
 static void event_new_fd(rad_listen_t *this)
 {
 	char buffer[1024];
+	listen_socket_t *sock = NULL;
 
 	ASSERT_MASTER;
 
@@ -5414,10 +5439,12 @@ static void event_new_fd(rad_listen_t *this)
 
 	this->print(this, buffer, sizeof(buffer));
 
-	if (this->status == RAD_LISTEN_STATUS_INIT) {
-		listen_socket_t *sock = this->data;
-
+	if (this->type != RAD_LISTEN_DETAIL) {
+		sock = this->data;
 		rad_assert(sock != NULL);
+	}
+
+	if (this->status == RAD_LISTEN_STATUS_INIT) {
 		if (just_started) {
 			DEBUG("Listening on %s", buffer);
 
@@ -5464,6 +5491,7 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		case RAD_LISTEN_PROXY:
 #ifdef WITH_TCP
+			rad_assert(sock != NULL);
 			rad_assert((sock->proto == IPPROTO_UDP) || (sock->home != NULL));
 
 			/*
@@ -5538,6 +5566,9 @@ static void event_new_fd(rad_listen_t *this)
 				PTHREAD_MUTEX_LOCK(&proxy_mutex);
 				if (!fr_packet_list_socket_add(proxy_list, this->fd,
 							       sock->proto,
+#ifdef WITH_RADIUSV11
+							       sock->radiusv11,
+#endif
 							       &sock->other_ipaddr, sock->other_port,
 							       this)) {
 					ERROR("Failed adding coa proxy socket");
@@ -5593,7 +5624,6 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		if (this->count > 0) {
 			struct timeval when;
-			listen_socket_t *sock = this->data;
 
 			/*
 			 *	Try again to clean up the socket in 30
@@ -5655,7 +5685,6 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		if (this->count > 0) {
 			struct timeval when;
-			listen_socket_t *sock = this->data;
 
 			/*
 			 *	Try again to clean up the socket in 30
@@ -5681,15 +5710,15 @@ static void event_new_fd(rad_listen_t *this)
 	} /* socket is at EOL */
 #endif	  /* WITH_TCP */
 
+	if (this->dead) goto wait_some_more;
+
 	/*
 	 *	Nuke the socket.
 	 */
 	if (this->status == RAD_LISTEN_STATUS_REMOVE_NOW) {
 		int devnull;
-#ifdef WITH_TCP
-		listen_socket_t *sock = this->data;
-		struct timeval when;
-#endif
+
+		this->dead = true;
 
 		/*
 		 *      Re-open the socket, pointing it to /dev/null.
@@ -5735,6 +5764,7 @@ static void event_new_fd(rad_listen_t *this)
 #endif
 			) {
 			home_server_t *home;
+			sock = this->data;
 
 			home = sock->home;
 			if (!home || !home->limit.max_connections) {
@@ -5788,16 +5818,6 @@ static void event_new_fd(rad_listen_t *this)
 			 *	EOL all requests using this socket.
 			 */
 			rbtree_walk(pl, RBTREE_DELETE_ORDER, eol_listener, this);
-
-#ifdef WITH_COA_TUNNEL
-			/*
-			 *	Delete the listener from the set of
-			 *	listeners by key.  This is done early,
-			 *	so that it won't be used while the
-			 *	cleanup timers are being run.
-			 */
-			if (this->tls) this->dead = true;
-#endif
 		}
 
 		/*
@@ -5805,7 +5825,10 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		if (!spawn_flag) {
 			ASSERT_MASTER;
-			if (sock->ev) fr_event_delete(el, &sock->ev);
+
+			if (this->type != RAD_LISTEN_DETAIL && sock && sock->ev) {
+				fr_event_delete(el, &sock->ev);
+			}
 			listen_free(&this);
 			return;
 		}
@@ -5813,14 +5836,8 @@ static void event_new_fd(rad_listen_t *this)
 		/*
 		 *	Wait until all requests using this socket are done.
 		 */
-		gettimeofday(&when, NULL);
-		when.tv_sec += 3;
-
-		ASSERT_MASTER;
-		if (!fr_event_insert(el, listener_free_cb, this, &when,
-				     &(sock->ev))) {
-			rad_panic("Failed to insert event");
-		}
+	wait_some_more:
+		listener_free_cb(this);
 #endif	/* WITH_TCP */
 	}
 
@@ -6062,6 +6079,9 @@ static void create_default_proxy_listener(int af)
 	sock = this->data;
 	if (!fr_packet_list_socket_add(proxy_list, this->fd,
 				       sock->proto,
+#ifdef WITH_RADIUSV11
+				       sock->radiusv11,
+#endif
 				       &sock->other_ipaddr, sock->other_port,
 				       this)) {
 		ERROR("Failed adding proxy socket");

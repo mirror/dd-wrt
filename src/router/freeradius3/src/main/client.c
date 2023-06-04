@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: b5c38d408f8f9db64e64cfa26dbee080cc4f3307 $
+ * $Id: 12f7824aba2b3105fb7de84be14c38b8083d3429 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: b5c38d408f8f9db64e64cfa26dbee080cc4f3307 $")
+RCSID("$Id: 12f7824aba2b3105fb7de84be14c38b8083d3429 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -179,7 +179,8 @@ bool client_add(RADCLIENT_LIST *clients, RADCLIENT *client)
 	 *	Initialize the global list, if not done already.
 	 */
 	if (!root_clients) {
-		root_clients = client_list_init(NULL);
+		root_clients = cf_data_find(main_config.config, "clients");
+		if (!root_clients) root_clients = client_list_init(main_config.config);
 		if (!root_clients) {
 			ERROR("Cannot add client - failed creating client list");
 			return false;
@@ -532,6 +533,10 @@ static const CONF_PARSER client_config[] = {
 	{ "dynamic_clients", FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, client_server), NULL },
 	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, RADCLIENT, lifetime), NULL },
 	{ "rate_limit", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, RADCLIENT, rate_limit), NULL },
+#endif
+
+#ifdef WITH_RADIUSV11
+	{ "radiusv1_1", FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, radiusv11_name), NULL },
 #endif
 
 	CONF_PARSER_TERMINATOR
@@ -1043,6 +1048,20 @@ RADCLIENT *client_afrom_cs(TALLOC_CTX *ctx, CONF_SECTION *cs, bool in_server, bo
 #endif
 		cl_srcipaddr = NULL;
 	}
+
+#ifdef WITH_RADIUSV11
+	if (c->tls_required && c->radiusv11_name) {
+		int rcode;
+
+		rcode = fr_str2int(radiusv11_types, c->radiusv11_name, -1);
+		if (rcode < 0) {
+			cf_log_err_cs(cs, "Invalid value for 'radiusv11'");
+			goto error;
+		}
+
+		c->radiusv11 = rcode;
+	}
+#endif
 
 	/*
 	 *	A response_window of zero is OK, and means that it's

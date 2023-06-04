@@ -1,7 +1,7 @@
 /*
  * eap_sim.h    Header file containing the EAP-SIM types
  *
- * Version:     $Id: 74dda258d0a4061bafd4648219684fc573769430 $
+ * Version:     $Id: 0d92f67eb4a3369c57abcce0501415fc8b2251e8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_SIM_H
 #define _EAP_SIM_H
 
-RCSIDH(eap_sim_h, "$Id: 74dda258d0a4061bafd4648219684fc573769430 $")
+RCSIDH(eap_sim_h, "$Id: 0d92f67eb4a3369c57abcce0501415fc8b2251e8 $")
 
 #include "eap_types.h"
 
@@ -108,7 +108,7 @@ struct eapsim_keys {
  * interfaces in eapsimlib.c
  */
 int eapsim_checkmac(TALLOC_CTX *ctx, VALUE_PAIR *rvps,
-		    uint8_t key[8],
+		    uint8_t key[EAPSIM_AUTH_SIZE],
 		    uint8_t *extra, int extralen,
 		    uint8_t calcmac[20]);
 

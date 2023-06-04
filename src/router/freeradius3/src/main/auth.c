@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: 76f87b7289ab8b8df0d3cd2f5fcfe357354d33f8 $
+ * Version:	$Id: 84889b8c6fe6037af4f97b9d64e3850a9b7ae530 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 76f87b7289ab8b8df0d3cd2f5fcfe357354d33f8 $")
+RCSID("$Id: 84889b8c6fe6037af4f97b9d64e3850a9b7ae530 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -318,6 +318,10 @@ int rad_postauth(REQUEST *request)
 		postauth_type = vp->vp_integer;
 		RDEBUG2("Using Post-Auth-Type %s",
 			dict_valnamebyattr(PW_POST_AUTH_TYPE, 0, postauth_type));
+
+		if (postauth_type == PW_POST_AUTH_TYPE_CHALLENGE) request->reply->code = PW_CODE_ACCESS_CHALLENGE;
+
+		if (postauth_type == PW_POST_AUTH_TYPE_REJECT) request->reply->code = PW_CODE_ACCESS_REJECT;
 	}
 
 	result = process_post_auth(postauth_type, request);
