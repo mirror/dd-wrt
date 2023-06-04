@@ -165,6 +165,13 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	} else {
 		disable_wifitemp = 1;
 	}
+#elif defined(HAVE_MT7621)
+	char *wifiname0 = getWifiDeviceName("wlan0", NULL);
+	char *wifiname1 = getWifiDeviceName("wlan1", NULL);
+	cpufound = 0;
+	if (!wifiname0) {
+		disable_wifitemp = 1;
+	}
 #endif
 #ifdef HAVE_BCMMODERN
 	static int tempcount = -2;
