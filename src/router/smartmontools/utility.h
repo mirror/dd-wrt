@@ -39,6 +39,11 @@
 #define __attribute_format_printf(x, y)  __attribute__((format (printf, x, y)))
 #endif
 
+// Checksum error mode
+enum checksum_err_mode_t {
+  CHECKSUM_ERR_WARN, CHECKSUM_ERR_EXIT, CHECKSUM_ERR_IGNORE
+};
+
 // Make version information string
 std::string format_version_info(const char * prog_name, bool full = false);
 
