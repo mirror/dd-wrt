@@ -30,7 +30,7 @@ find $TARGETS -type f -a -exec file {} \; | \
 		eval "$STRIP_KMOD $F"
 	} || {
 		b=$(stat -c '%a' $F)
-		eval "$STRIP $F"
+		eval "$STRIP \"$F\""
 		a=$(stat -c '%a' $F)
 		[ "$a" = "$b" ] || chmod $b $F
 	}
