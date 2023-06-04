@@ -301,12 +301,7 @@ static void printvalidarglistmessage(int opt)
   return;
 }
 
-// Checksum error mode
-enum checksum_err_mode_t {
-  CHECKSUM_ERR_WARN, CHECKSUM_ERR_EXIT, CHECKSUM_ERR_IGNORE
-};
-
-static checksum_err_mode_t checksum_err_mode = CHECKSUM_ERR_WARN;
+extern checksum_err_mode_t checksum_err_mode = CHECKSUM_ERR_WARN;
 
 static void scan_devices(const smart_devtype_list & types, bool with_open, char ** argv);
 
@@ -1351,21 +1346,6 @@ void failuretest(failure_type type, int returnvalue)
   }
 
   throw std::logic_error("failuretest: Unknown type");
-}
-
-// Used to warn users about invalid checksums. Called from atacmds.cpp.
-// Action to be taken may be altered by the user.
-void checksumwarning(const char * string)
-{
-  // user has asked us to ignore checksum errors
-  if (checksum_err_mode == CHECKSUM_ERR_IGNORE)
-    return;
-
-  pout("Warning! %s error: invalid SMART checksum.\n", string);
-
-  // user has asked us to fail on checksum errors
-  if (checksum_err_mode == CHECKSUM_ERR_EXIT)
-    throw int(FAILSMART);
 }
 
 // Return info string about device protocol

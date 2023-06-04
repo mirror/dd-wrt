@@ -1036,3 +1036,24 @@ void jerr(const char *fmt, ...)
   vjpout(true, "error", fmt, ap);
   va_end(ap);
 }
+
+checksum_err_mode_t checksum_err_mode = CHECKSUM_ERR_WARN;
+
+// smart command failed, or ATA identify device structure missing information
+#define FAILSMART (0x01<<2)
+
+
+// Used to warn users about invalid checksums. Called from atacmds.cpp.
+// Action to be taken may be altered by the user.
+void checksumwarning(const char * string)
+{
+  // user has asked us to ignore checksum errors
+  if (checksum_err_mode == CHECKSUM_ERR_IGNORE)
+    return;
+
+  pout("Warning! %s error: invalid SMART checksum.\n", string);
+
+  // user has asked us to fail on checksum errors
+  if (checksum_err_mode == CHECKSUM_ERR_EXIT)
+    throw int(FAILSMART);
+}
