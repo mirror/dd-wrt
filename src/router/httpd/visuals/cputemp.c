@@ -165,6 +165,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	} else {
 		disable_wifitemp = 1;
 	}
+#endif
 #ifdef HAVE_BCMMODERN
 	static int tempcount = -2;
 	char buf[WLC_IOCTL_SMLEN];
