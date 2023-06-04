@@ -19,7 +19,6 @@ libmicrohttpd-configure:
 		--disable-examples \
 		--disable-poll \
 		--enable-epoll \
-		--disable-sendfile \
 		--disable-messages \
 		--with-pic \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections" LDFLAGS="$(LDLTO)" \
