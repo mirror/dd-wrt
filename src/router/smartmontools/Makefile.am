@@ -71,6 +71,8 @@ libsmart_la_SOURCES = \
         scsinvme.cpp \
         drivedb.h \
         static_assert.h \
+        json.h \
+        json.cpp \
         utility.cpp \
         utility.h \
         sg_unaligned.h
@@ -86,7 +88,6 @@ smartctl_SOURCES = \
         ataidentify.h \
         ataprint.cpp \
         ataprint.h \
-        json.cpp \
         json.h \
         farmcmds.cpp \
         farmcmds.h \
