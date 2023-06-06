@@ -365,9 +365,11 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (!disable_wifitemp) {
 		int c = getdevicecount();
 		for (i = 0; i < c; i++) {
+			#if !defined(HAVE_MT76)
 			if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 				continue;
 			}
+			#endif
 			char path[64];
 			int scan = 0;
 			for (scan = 0; scan < 20; scan++) {
