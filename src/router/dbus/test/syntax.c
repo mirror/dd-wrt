@@ -155,12 +155,22 @@ const char * const invalid_bus_names[] = {
 const char * const valid_signatures[] = {
     "",
     "a{sv}",
+    "a{s(i)}",
+    "a(sa{ii})",
     NULL
 };
 
 const char * const invalid_signatures[] = {
     "a",
     "a{s_}",
+    "a{s(i}",
+    "a{s(i})",
+    "a{s(i)",
+    "a{s(i})",
+    "a(sa{ii)",
+    "a(sa{ii)}",
+    ")",
+    "}",
     NULL
 };
 

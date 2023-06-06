@@ -39,6 +39,7 @@
 #ifdef DBUS_ENABLE_LAUNCHD
 #include <launch.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "dbus-misc.h"
 #include "dbus-server-socket.h"

@@ -2,7 +2,7 @@ This file describes how to compile dbus using the cmake build system
 
 Requirements
 ------------
-- cmake version >= 2.6.0 see http://www.cmake.org
+- cmake version >= 3.4 see http://www.cmake.org
 - installed libexpat see http://sourceforge.net/projects/expat/ 
     unsupported RelWithDebInfo builds could be fetched 
     from http://sourceforge.net/projects/kde-windows/files/expat/
@@ -178,6 +178,9 @@ DBUS_SESSION_BUS_LISTEN_ADDRESS:STRING=autolaunch:
 
 // session bus fallback address for clients
 DBUS_SESSION_BUS_CONNECT_ADDRESS:STRING=autolaunch:
+
+//Default directory for session socket
+DBUS_SESSION_SOCKET_DIR:STRING=/tmp
 
 // system bus default address (only useful on Unix)
 DBUS_SYSTEM_BUS_DEFAULT_ADDRESS:STRING=unix:path=/var/run/dbus/system_bus_socket

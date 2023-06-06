@@ -28,7 +28,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>The <command>dbus-cleanup-sockets</command> command cleans up unused D-Bus
-connection sockets. See <ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink> for
+connection sockets. See <ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink> for
 more information about the big picture.</para>
 
 
@@ -60,6 +60,6 @@ linc-cleanup-sockets written by Michael Meeks.</para>
 
 <refsect1 id='bugs'><title>BUGS</title>
 <para>Please send bug reports to the D-Bus mailing list or bug tracker,
-see <ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink></para>
+see <ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink></para>
 </refsect1>
 </refentry>

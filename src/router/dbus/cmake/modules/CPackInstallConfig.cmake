@@ -9,8 +9,8 @@ endif()
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "D-BUS For Windows")
 set(CPACK_PACKAGE_VENDOR "D-BUS Windows Team")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/COPYING")
 # duplicated from VERSION
 set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
@@ -22,7 +22,7 @@ if(WIN32 AND NOT UNIX)
     set(CPACK_NSIS_COMPRESSOR "/SOLID lzma")
   # There is a bug in NSI that does not handle full unix paths properly. Make
   # sure there is at least one set of four (4) backlasshes.
-# SET(CPACK_PACKAGE_ICON "${CMake_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
+# SET(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
     set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\dbus-launch.bat")
     set(CPACK_NSIS_DISPLAY_NAME "D-Bus for Windows")
     set(CPACK_NSIS_HELP_LINK "http:\\\\\\\\sourceforge.net/projects/windbus")

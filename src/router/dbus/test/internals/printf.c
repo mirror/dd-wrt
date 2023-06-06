@@ -66,6 +66,34 @@ do_test (int minimum,
 #define X_TIMES_512  X_TIMES_256 X_TIMES_256
 #define X_TIMES_1024 X_TIMES_512 X_TIMES_512
 
+static void
+print64 (void)
+{
+  dbus_int64_t i = -123;
+  dbus_uint64_t u = 456;
+  DBusString buf = _DBUS_STRING_INIT_INVALID;
+  const char expected[] = "i=-123;u=456;x=1c8";
+
+  if (!_dbus_string_init (&buf))
+    _dbus_test_fatal ("out of memory");
+
+  if (!_dbus_string_append_printf (&buf,
+                                   "i=%" DBUS_INT64_MODIFIER "d;"
+                                   "u=%" DBUS_INT64_MODIFIER "u;"
+                                   "x=%" DBUS_INT64_MODIFIER "x",
+                                   i, u, u))
+    _dbus_test_fatal ("out of memory");
+
+  if (_dbus_string_get_length (&buf) != (int) strlen (expected) ||
+      strcmp (_dbus_string_get_const_data (&buf), expected) != 0)
+    _dbus_test_fatal ("expected: \"%s\", got: %d chars \"%s\"",
+                      expected,
+                      _dbus_string_get_length (&buf),
+                      _dbus_string_get_const_data (&buf));
+
+  _dbus_string_free (&buf);
+}
+
 /* This test outputs TAP syntax: http://testanything.org/ */
 int
 main (int argc,
@@ -99,6 +127,9 @@ main (int argc,
       do_test (i, "%s", buf);
       do_test (i + 3, "%s:%d", buf, 42);
     }
+  printf ("ok %d\n", ++test_num);
+
+  print64 ();
   printf ("ok %d\n", ++test_num);
 
   /* Tell the TAP driver that we have done all the tests we plan to do.

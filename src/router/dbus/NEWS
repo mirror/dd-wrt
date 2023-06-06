@@ -1,3 +1,408 @@
+dbus 1.15.6 (2023-06-06)
+========================
+
+Denial-of-service fixes:
+
+• Fix an assertion failure in dbus-daemon when a privileged Monitoring
+  connection (dbus-monitor, busctl monitor, gdbus monitor or similar)
+  is active, and a message from the bus driver cannot be delivered to a
+  client connection due to <deny> rules or outgoing message quota. This
+  is a denial of service if triggered maliciously by a local attacker.
+  (dbus#457; hongjinghao, Simon McVittie)
+
+Enhancements:
+
+• Special-case reading pseudo-files from Linux /proc to take into
+  account the filesystem's unusual semantics (dbus!401, Luca Boccassi)
+
+Other fixes:
+
+• Fix compilation on compilers not supporting __FUNCTION__
+  (dbus!404, Barnabás Pőcze)
+
+• Fix some memory leaks on out-of-memory conditions
+  (dbus!403, Barnabás Pőcze)
+
+• Documentation:
+  · Update the README to recommend building with Meson
+    (dbus!402, Ahmed Abdelfattah)
+  · Fix syntax of a code sample in dbus-api-design
+    (dbus!396; Yen-Chin, Lee)
+
+• CMake build fixes:
+  · Detect presence of <sys/syscall.h> (dbus!400, Luca Boccassi)
+
+Tests and CI enhancements:
+
+• Fix CI pipelines after freedesktop/freedesktop#540
+  (dbus!405, dbus#456; Simon McVittie)
+
+• Ensure the messagebus user is created if necessary
+  (dbus#445, Ralf Habacker)
+
+dbus 1.15.4 (2023-02-08)
+========================
+
+Dependencies:
+
+• Building with CMake now requires CMake ≥ 3.9.
+
+Build-time configuration changes:
+
+• On Unix platforms, a path in the runtime state directory (often /run)
+  is now used for the well-known system bus socket by default. OS
+  distributors should check that the path used is equivalent to the
+  interoperable path /var/run/dbus/system_bus_socket, especially if
+  running on an OS where /var/run is not guaranteed to be a symbolic
+  link to /run.
+  (dbus#180; Issam E. Maghni, Simon McVittie)
+  · With Autotools, this is controlled by --runstatedir, which defaults
+    to ${localstatedir}/run but is often set to /run by OS distributors.
+    The path to the system bus socket can be overridden with the
+    --with-system-socket option if required.
+  · With CMake, this is controlled by the RUNSTATEDIR option, which has
+    behaviour similar to Autotools. There is no separate option for the
+    path to the system bus socket.
+  · With Meson, this is controlled by the runtime_dir option, which
+    defaults to /run if the installation prefix is set to /usr, or has
+    behaviour similar to Autotools otherwise. The path to the system bus
+    socket can be overridden with the system_socket option if required.
+
+Denial of service fixes:
+
+• Fix an incorrect assertion that could be used to crash dbus-daemon or
+  other users of DBusServer prior to authentication, if libdbus was compiled
+  with assertions enabled.
+  We recommend that production builds of dbus, for example in OS distributions,
+  should be compiled with checks but without assertions.
+  (dbus#421, Ralf Habacker; thanks to Evgeny Vereshchagin)
+
+Enhancements:
+
+• D-Bus Specification 0.41:
+  · Clarify handling of /run vs. /var/run on Unix systems
+    (dbus#180, Simon McVittie)
+
+• Add dbus_connection_set_builtin_filters_enabled(), intended to be called
+  by tools that use BecomeMonitor() such as dbus-monitor
+  (dbus#301, Kai A. Hiller)
+
+• When using the Meson build system, dbus can now be used as a subproject.
+  To avoid colliding with a separate system copy of dbus, building it as a
+  static library with tests, tools and the message bus disabled is
+  strongly recommended. See test/use-as-subproject for sample code.
+  (dbus!368, dbus!388; Daniel Wagner)
+
+Other fixes:
+
+• When connected to a dbus-broker, stop dbus-monitor from incorrectly
+  replying to Peer method calls that were sent to the dbus-broker with
+  a NULL destination (dbus#301, Kai A. Hiller)
+
+• Fix out-of-bounds varargs read in the dbus-daemon's config-parser.
+  This is not attacker-triggerable and appears to be harmless in practice,
+  but is technically undefined behaviour and is detected as such by
+  AddressSanitizer. (dbus!357, Evgeny Vereshchagin)
+
+• Avoid a data race in multi-threaded use of DBusCounter
+  (dbus#426, Ralf Habacker)
+
+• Fix a crash with some glibc versions when non-auditable SELinux events
+  are logged (dbus!386, Jeremi Piotrowski)
+
+• If dbus_message_demarshal() runs out of memory while validating a message,
+  report it as NoMemory rather than InvalidArgs (dbus#420, Simon McVittie)
+
+• Use C11 _Alignof if available, for better standards-compliance
+  (dbus!389, Khem Raj)
+
+• Stop including an outdated copy of pkg.m4 in the git tree
+  (dbus!365, Simon McVittie)
+
+• Meson build fixes:
+  · Use -fvisibility=hidden on Unix if supported, in particular on Linux
+    (dbus!383, dbus#437; Simon McVittie)
+  · Fix build on macOS, and any other platform that has
+    CLOCK_MONOTONIC but not pthread_condattr_setclock()
+    (dbus#419, Jordan Williams)
+
+• Documentation:
+  · Consistently use Gitlab bug reporting URL (dbus!372, Marco Trevisan)
+
+• Licensing:
+  · Use MIT license for some test files that did not previous specify a
+    license, with permission from their authors (dbus!359, Simon McVittie)
+  · Add more SPDX/REUSE license markers
+    (dbus!311, dbus!369, dbus!370, dbus!371, dbus!375, dbus!376;
+    Ralf Habacker, Simon McVittie)
+  · Correct syntax of some SPDX license markers (dbus!360, Ralf Habacker)
+
+• Tests fixes:
+  · Fix an assertion failure in test-autolaunch-win
+    (dbus#422, Ralf Habacker)
+  · Expand test coverage under CMake (dbus!322, Ralf Habacker)
+  · Fix the test-apparmor-activation test after dbus#416
+    (dbus!380, Dave Jones)
+
+Internal changes:
+
+• Add static assertions for some things we assume about pointers
+  (dbus!345, Simon McVittie)
+
+• Refactoring (dbus!356, dbus#430, dbus#431; Simon McVittie, Xin Shi)
+
+• Fix CI builds with recent git versions (dbus#447, Simon McVittie)
+
+• Build dbus with clang during CI (dbus!358, Evgeny Vereshchagin)
+
+dbus 1.15.2 (2022-10-05)
+========================
+
+This development release incorporates the same denial-of-service fixes and
+security hardening as dbus 1.14.4.
+
+Behaviour changes:
+
+• On Linux, dbus-daemon and other uses of DBusServer now create a
+  path-based Unix socket, unix:path=..., when asked to listen on a
+  unix:tmpdir=... address. This makes unix:tmpdir=... equivalent to
+  unix:dir=... on all platforms.
+  Previous versions would have created an abstract socket, unix:abstract=...,
+  in this situation.
+  This change primarily affects the well-known session bus when run via
+  dbus-launch(1) or dbus-run-session(1). The user bus, enabled by configuring
+  dbus with --enable-user-session and running it on a systemd system,
+  already used path-based Unix sockets and is unaffected by this change.
+  This behaviour change prevents a sandbox escape via the session bus socket
+  in sandboxing frameworks that can share the network namespace with the host
+  system, such as Flatpak.
+  This change might cause a regression in situations where the abstract socket
+  is intentionally shared between the host system and a chroot or container,
+  such as some use-cases of schroot(1). That regression can be resolved by
+  using a bind-mount to share either the D-Bus socket, or the whole /tmp
+  directory, with the chroot or container.
+  (dbus#416, Simon McVittie)
+
+Denial of service fixes:
+
+Evgeny Vereshchagin discovered several ways in which an authenticated
+local attacker could cause a crash (denial of service) in
+dbus-daemon --system or a custom DBusServer. In uncommon configurations
+these could potentially be carried out by an authenticated remote attacker.
+
+• An invalid array of fixed-length elements where the length of the array
+  is not a multiple of the length of the element would cause an assertion
+  failure in debug builds or an out-of-bounds read in production builds.
+  This was a regression in version 1.3.0.
+  (dbus#413, CVE-2022-42011; Simon McVittie)
+
+• A syntactically invalid type signature with incorrectly nested parentheses
+  and curly brackets would cause an assertion failure in debug builds.
+  Similar messages could potentially result in a crash or incorrect message
+  processing in a production build, although we are not aware of a practical
+  example. (dbus#418, CVE-2022-42010; Simon McVittie)
+
+• A message in non-native endianness with out-of-band Unix file descriptors
+  would cause a use-after-free and possible memory corruption in production
+  builds, or an assertion failure in debug builds. This was a regression in
+  version 1.3.0. (dbus#417, CVE-2022-42012; Simon McVittie)
+
+Enhancements:
+
+• D-Bus Specification 0.40 (dbus#416, Simon McVittie)
+  · Clarify that unix:tmpdir is not required to use abstract sockets,
+    even where supported
+  · Mention implications of abstract sockets for Linux namespacing
+
+dbus 1.15.0 (2022-09-22)
+========================
+
+Dependencies:
+
+• On platforms where a pointer is larger than 64 bits, dbus requires at
+  least a C11 compiler.
+  On other platforms, dbus now requires either a C99 compiler such as
+  gcc or clang, or Microsoft Visual Studio 2015 or later. Some workarounds
+  for pre-C99 environments are currently still present, but we plan to
+  remove them during this development cycle.
+
+• Building with CMake now requires CMake ≥ 3.4.
+
+• Building with Meson requires Meson ≥ 0.56 and Python ≥ 3.5.
+
+Feature removal:
+
+• Remove support for the obsolete pam_console and pam_foreground modules
+  (the Autotools --with-console-auth-dir= and CMake -DDBUS_CONSOLE_AUTH_DIR=
+  options, which have been deprecated since dbus 1.11.18).
+  (dbus#181, fd.o#101629)
+
+Build-time configuration changes:
+
+• Add a Meson build system. This is currently considered experimental,
+  but the intention is for it to replace Autotools and/or CMake in future
+  releases, preferably both. Please test!
+  (dbus!303, dbus!325; Félix Piédallu, Marc-André Lureau, Simon McVittie)
+  · This requires Meson 0.56 or newer, and Python 3.5 or newer.
+  · Expat can be built as a subproject using Meson's "wrap" mechanism,
+    if desired. This should make it considerably easier to build dbus
+    for Windows or other platforms without a library packaging system.
+  · GLib can also be built as a subproject using Meson's "wrap" mechanism,
+    if desired. This should make it considerably easier to build full
+    test coverage on Windows or other platforms without a library
+    packaging system.
+
+• Please note that not all Meson build options correspond 1:1 to how
+  the closest equivalents in Autotools or CMake behave, and the Meson
+  build options are subject to change.
+  Distributors and developers evaluating the Meson build should check
+  that they are configuring dbus the way they intend to.
+
+Enhancements:
+
+• D-Bus Specification 0.39:
+  · Document how to represent internationalized domain names in D-Bus
+    names (dbus!324, Simon McVittie)
+  · Improve documentation of AF_UNIX sockets (Marc-André Lureau)
+
+• On Unix, speed up closing file descriptors for subprocesses by using
+  closefrom() or close_range() where available
+  (dbus#278; rim, Simon McVittie)
+
+• On Windows, dbus can now use AF_UNIX sockets, not just TCP.
+  This requires Windows 10 build 17063 or later at runtime,
+  and either Windows 10 SDK 17063 or mingw-w64 version 9.0.0 or later
+  at compile-time. (dbus!249, Marc-André Lureau)
+
+• Teach dbus-send to handle variants in containers: arrays of variants,
+  variant values in dictionaries, and nested variants
+  (dbus!206, Frederik Van Bogaert)
+
+• Detect programming errors with Windows mutexes if assertions are
+  enabled, similar to what we already did for pthreads mutexes
+  (dbus#369, Ralf Habacker)
+
+• Move license text into LICENSES, and start to use SPDX markers
+  (Simon McVittie, Ralf Habacker)
+
+Fixes:
+
+• Portability to CPU architectures with larger-than-64-bit pointers
+  (dbus!335, dbus!318; Alex Richardson)
+
+• Fix build failure on FreeBSD (dbus!277, Alex Richardson)
+
+• Fix build failure on macOS with launchd enabled
+  (dbus!287, Dawid Wróbel)
+
+• Preserve errno on failure to open /proc/self/oom_score_adj
+  (dbus!285, Gentoo#834725; Mike Gilbert)
+
+• Improve dbus-launch --autolaunch so it can pick up an existing bus from
+  Linux XDG_RUNTIME_DIR or macOS launchd, even if X11 autolaunching was
+  disabled (dbus#385, dbus#392; Simon McVittie, Alex Richardson)
+
+• Correctly escape AF_UNIX socket paths when converting them to D-Bus
+  address strings (dbus#405, Marc-André Lureau)
+
+• On Linux, don't log warnings if oom_score_adj is read-only but does not
+  need to be changed (dbus!291, Simon McVittie)
+
+• Slightly improve error-handling for inotify
+  (dbus!235, Simon McVittie)
+
+• Don't crash if dbus-daemon is asked to watch more than 128 directories
+  for changes (dbus!302, Jan Tojnar)
+
+• Silence various compiler warnings
+  (dbus!275, dbus!289, dbus!305, dbus!307, dbus!312, dbus!315;
+  Ralf Habacker, Simon McVittie, Alex Richardson, Marc-André Lureau)
+
+• On Windows, use safer locking patterns for the system-global mutex used
+  to implement autolaunching (dbus#368, dbus#370; Ralf Habacker)
+
+• Index dbus-arch-deps.h for API documentation when building out-of-tree
+  (dbus!312, Marc-André Lureau)
+
+• Silence xmlto warnings when building man pages
+  (dbus!312, Marc-André Lureau)
+
+• Fix build failure when checks are disabled but assertions are enabled
+  (dbus#412, Johannes Kauffmann)
+
+• Use C99 flexible arrays in the memory pool implementation for better
+  support for modern compilers
+  (dbus!343, dbus!344; Alex Richardson, Simon McVittie)
+
+• Autotools build system fixes:
+  · Don't treat --with-x or --with-x=yes as a request to disable X11,
+    fixing a regression in 1.13.20. Instead, require X11 libraries and
+    fail if they cannot be detected. (dbus!263, Lars Wendler)
+  · When a CMake project uses an Autotools-built libdbus in a
+    non-standard prefix, find dbus-arch-deps.h successfully
+    (dbus#314, Simon McVittie)
+  · Don't include generated XML catalog in source releases
+    (dbus!317, Jan Tojnar)
+  · Improve robustness of detecting gcc __sync atomic builtins
+    (dbus!320, Alex Richardson)
+
+• CMake build system fixes:
+  · Detect endianness correctly, fixing interoperability with other D-Bus
+    implementations on big-endian systems (dbus#375, Ralf Habacker)
+  · Fix a race condition generating man pages and HTML documentation
+    (dbus#381, Ralf Habacker)
+  · When building for Unix, install session and system bus setup
+    in the intended locations
+    (dbus!267, dbus!297; Ralf Habacker, Alex Richardson)
+  · Detect setresuid() and getresuid() (dbus!319, Alex Richardson)
+  · Detect backtrace() on FreeBSD (dbus!281, Alex Richardson)
+  · Don't include headers from parent directory (dbus!282, Alex Richardson)
+  · Fix -Wunused-command-line-argument on FreeBSD
+    (dbus!278, Alex Richardson)
+  · Only add warning flags if the compiler supports them
+    (dbus!276, Alex Richardson)
+  · Distinguish between host and target TMPDIR when cross-compiling
+    (dbus!279, Alex Richardson)
+  · Improve compiler warning detection (dbus#387, Ralf Habacker)
+  · Allow TEST_SOCKET_DIR to be overridden (dbus!295, Ralf Habacker)
+  · Fix detection of atomic operations (dbus!306, Alex Richardson)
+  · Use DWARF 2 instead of STABS for debug symbols on Windows, for
+    compatibility with newer gcc versions (dbus!323, Marc-André Lureau)
+  · Fix use of paths relative to the dbus project directory when dbus is
+    vendored into a larger CMake project (dbus!332, Jordan Williams)
+
+Tests and CI enhancements:
+
+• Add an automated test for Windows autolaunching
+  (dbus#235, Ralf Habacker)
+
+• Avoid compiler warnings in test code
+  (dbus#383, dbus!274, dbus!275; Simon McVittie, Ralf Habacker)
+
+• Avoid LeakSanitizer warnings in test code
+  (dbus!326, Simon McVittie)
+
+• Speed up a particularly slow unit test by a factor of 30
+  (dbus!328, Simon McVittie)
+
+• On Unix, skip tests that switch uid if run in a container that is
+  unable to do so, instead of failing (dbus#407, Simon McVittie)
+
+• On Unix, consistently create test sockets in DBUS_TEST_SOCKET_DIR and
+  not the build directory, allowing the build directory to be mounted with
+  a non-POSIX filesystem (dbus!334, Alex Richardson)
+
+• Gitlab-CI improvements
+  (dbus#383, dbus#388, dbus!262, dbus!288, dbus!292, dbus!296, dbus!299,
+  dbus!301;
+  Ralf Habacker, Simon McVittie, Alex Richardson)
+
+• Added FreeBSD Gitlab-CI build jobs
+  (dbus!280, dbus!347; Alex Richardson)
+
+• Use the latest MSYS2 packages for CI
+  (Ralf Habacker, Simon McVittie)
+
 dbus 1.14.0 (2022-02-28)
 ========================
 

@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 SCRIPTNAME=$0
 MODE=$1
@@ -12,7 +12,7 @@ if test -z "$DBUS_TEST_NAME_IN_RUN_TEST"; then
   DBUS_TEST_NAME_IN_RUN_TEST=1
   export DBUS_TEST_NAME_IN_RUN_TEST
   exec $DBUS_TOP_SRCDIR/tools/run-with-tmp-session-bus.sh $SCRIPTNAME $MODE
-fi 
+fi
 
 if test -n "$DBUS_TEST_MONITOR"; then
   dbus-monitor --session >&2 &
@@ -48,7 +48,11 @@ c_test () {
   shift
   e=0
   echo "# running test $t"
-  "${DBUS_TOP_BUILDDIR}/libtool" --mode=execute $DEBUG "$DBUS_TOP_BUILDDIR/test/name-test/$t" "$@" >&2 || e=$?
+  if [ -f "${DBUS_TOP_BUILDDIR}/libtool" ]; then
+    "${DBUS_TOP_BUILDDIR}/libtool" --mode=execute $DEBUG "$DBUS_TOP_BUILDDIR/test/name-test/$t" "$@" >&2 || e=$?
+  else
+    "$DBUS_TOP_BUILDDIR/test/name-test/$t" "$@" >&2 || e=$?
+  fi
   echo "# exit status $e"
   interpret_result "$e" "$t" "$@"
 }

@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2005 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -62,6 +64,8 @@ _dbus_validate_signature_with_reason (const DBusString *type_str,
 
   int element_count;
   DBusList *element_count_stack;
+  char opened_brackets[DBUS_MAXIMUM_TYPE_RECURSION_DEPTH * 2 + 1] = { '\0' };
+  char last_bracket;
 
   result = DBUS_VALID;
   element_count_stack = NULL;
@@ -93,6 +97,10 @@ _dbus_validate_signature_with_reason (const DBusString *type_str,
 
   while (p != end)
     {
+      _dbus_assert (struct_depth + dict_entry_depth >= 0);
+      _dbus_assert (struct_depth + dict_entry_depth < _DBUS_N_ELEMENTS (opened_brackets));
+      _dbus_assert (opened_brackets[struct_depth + dict_entry_depth] == '\0');
+
       switch (*p)
         {
         case DBUS_TYPE_BYTE:
@@ -136,6 +144,10 @@ _dbus_validate_signature_with_reason (const DBusString *type_str,
               goto out;
             }
 
+          _dbus_assert (struct_depth + dict_entry_depth >= 1);
+          _dbus_assert (struct_depth + dict_entry_depth < _DBUS_N_ELEMENTS (opened_brackets));
+          _dbus_assert (opened_brackets[struct_depth + dict_entry_depth - 1] == '\0');
+          opened_brackets[struct_depth + dict_entry_depth - 1] = DBUS_STRUCT_BEGIN_CHAR;
           break;
 
         case DBUS_STRUCT_END_CHAR:
@@ -151,9 +163,20 @@ _dbus_validate_signature_with_reason (const DBusString *type_str,
               goto out;
             }
 
+          _dbus_assert (struct_depth + dict_entry_depth >= 1);
+          _dbus_assert (struct_depth + dict_entry_depth < _DBUS_N_ELEMENTS (opened_brackets));
+          last_bracket = opened_brackets[struct_depth + dict_entry_depth - 1];
+
+          if (last_bracket != DBUS_STRUCT_BEGIN_CHAR)
+            {
+              result = DBUS_INVALID_STRUCT_ENDED_BUT_NOT_STARTED;
+              goto out;
+            }
+
           _dbus_list_pop_last (&element_count_stack);
 
           struct_depth -= 1;
+          opened_brackets[struct_depth + dict_entry_depth] = '\0';
           break;
 
         case DBUS_DICT_ENTRY_BEGIN_CHAR:
@@ -178,6 +201,10 @@ _dbus_validate_signature_with_reason (const DBusString *type_str,
               goto out;
             }
 
+          _dbus_assert (struct_depth + dict_entry_depth >= 1);
+          _dbus_assert (struct_depth + dict_entry_depth < _DBUS_N_ELEMENTS (opened_brackets));
+          _dbus_assert (opened_brackets[struct_depth + dict_entry_depth - 1] == '\0');
+          opened_brackets[struct_depth + dict_entry_depth - 1] = DBUS_DICT_ENTRY_BEGIN_CHAR;
           break;
 
         case DBUS_DICT_ENTRY_END_CHAR:
@@ -186,8 +213,19 @@ _dbus_validate_signature_with_reason (const DBusString *type_str,
               result = DBUS_INVALID_DICT_ENTRY_ENDED_BUT_NOT_STARTED;
               goto out;
             }
-            
+
+          _dbus_assert (struct_depth + dict_entry_depth >= 1);
+          _dbus_assert (struct_depth + dict_entry_depth < _DBUS_N_ELEMENTS (opened_brackets));
+          last_bracket = opened_brackets[struct_depth + dict_entry_depth - 1];
+
+          if (last_bracket != DBUS_DICT_ENTRY_BEGIN_CHAR)
+            {
+              result = DBUS_INVALID_DICT_ENTRY_ENDED_BUT_NOT_STARTED;
+              goto out;
+            }
+
           dict_entry_depth -= 1;
+          opened_brackets[struct_depth + dict_entry_depth] = '\0';
 
           element_count = 
             _DBUS_POINTER_TO_INT (_dbus_list_pop_last (&element_count_stack));
@@ -332,10 +370,12 @@ validate_body_helper (DBusTypeReader       *reader,
 
       switch (current_type)
         {
+        /* Special case of fixed-length types: every byte is valid */
         case DBUS_TYPE_BYTE:
           ++p;
           break;
 
+        /* Multi-byte fixed-length types require padding to their alignment */
         case DBUS_TYPE_BOOLEAN:
         case DBUS_TYPE_INT16:
         case DBUS_TYPE_UINT16:
@@ -372,6 +412,7 @@ validate_body_helper (DBusTypeReader       *reader,
           p += alignment;
           break;
 
+        /* Types that start with a 4-byte length */
         case DBUS_TYPE_ARRAY:
         case DBUS_TYPE_STRING:
         case DBUS_TYPE_OBJECT_PATH:
@@ -394,6 +435,10 @@ validate_body_helper (DBusTypeReader       *reader,
             /* p may now be == end */
             _dbus_assert (p <= end);
 
+            /* Arrays have padding between the length and the first
+             * array item, if it's necessary for the array's element type.
+             * This padding is not counted as part of the length
+             * claimed_len. */
             if (current_type == DBUS_TYPE_ARRAY)
               {
                 int array_elem_type = _dbus_type_reader_get_element_type (reader);
@@ -459,6 +504,9 @@ validate_body_helper (DBusTypeReader       *reader,
                 _dbus_type_reader_recurse (reader, &sub);
 
                 array_end = p + claimed_len;
+                /* We effectively already checked this, by checking that
+                 * claimed_len <= (end - p) */
+                _dbus_assert (array_end <= end);
 
                 array_elem_type = _dbus_type_reader_get_element_type (reader);
 
@@ -467,13 +515,24 @@ validate_body_helper (DBusTypeReader       *reader,
                  */ 
                 if (dbus_type_is_fixed (array_elem_type))
                   {
+                    /* Note that fixed-size types all have sizes equal to
+                     * their alignments, so this is really the item size. */
+                    alignment = _dbus_type_get_alignment (array_elem_type);
+                    _dbus_assert (alignment == 1 || alignment == 2 ||
+                                  alignment == 4 || alignment == 8);
+
+                    /* Because the alignment is a power of 2, this is
+                     * equivalent to: (claimed_len % alignment) != 0,
+                     * but avoids slower integer division */
+                    if ((claimed_len & (alignment - 1)) != 0)
+                      return DBUS_INVALID_ARRAY_LENGTH_INCORRECT;
+
                     /* bools need to be handled differently, because they can
                      * have an invalid value
                      */
                     if (array_elem_type == DBUS_TYPE_BOOLEAN)
                       {
                         dbus_uint32_t v;
-                        alignment = _dbus_type_get_alignment (array_elem_type);
 
                         while (p < array_end)
                           {

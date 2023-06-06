@@ -2,9 +2,6 @@
 
 #ifndef _DBUS_CONFIG_H
 #define _DBUS_CONFIG_H
-/****************************/
-/* indicate that we are building with cmake */
-#define DBUS_CMAKE 1
 
 /* On Windows, we expect to be using msvcrt.dll-compatible printf
  * (%I64u instead of %llu) unless otherwise specified. This must be
@@ -21,6 +18,9 @@
  * should be placed in this file
 */
 
+/* AC_C_BIGENDIAN */
+#cmakedefine WORDS_BIGENDIAN
+
 /* Opt-in to modern APIs and thread-safety for Solaris. In the Autotools
  * build system we do the equivalent of this by appending to CFLAGS
  * in configure.ac */
@@ -31,7 +31,6 @@
 # define _XOPEN_SOURCE 500
 #endif
 
-#cmakedefine DBUS_CONSOLE_AUTH_DIR "@DBUS_CONSOLE_AUTH_DIR@"
 #cmakedefine DBUS_DATADIR  "@DBUS_DATADIR@"
 #cmakedefine DBUS_BINDIR   "@DBUS_BINDIR@"
 #cmakedefine DBUS_PREFIX "@DBUS_PREFIX@"
@@ -84,17 +83,12 @@
 # define DBUS_ENABLE_X11_AUTOLAUNCH 1
 #endif
 
-/* A 'va_copy' style function */
-#cmakedefine DBUS_VA_COPY @DBUS_VA_COPY@
-
-/* for msvc */
-#define _DBUS_VA_COPY_ASSIGN(a1,a2) { a1 = a2; }
-
 #cmakedefine DBUS_WITH_GLIB 1
 #cmakedefine GLIB_VERSION_MIN_REQUIRED @GLIB_VERSION_MIN_REQUIRED@
 #cmakedefine GLIB_VERSION_MAX_ALLOWED  @GLIB_VERSION_MAX_ALLOWED@
 
 // headers
+#cmakedefine HAVE_AFUNIX_H 1
 #cmakedefine HAVE_ALLOCA_H 1
 #cmakedefine HAVE_BYTESWAP_H 1
 #cmakedefine HAVE_CRT_EXTERNS_H 1
@@ -102,16 +96,8 @@
 /* Define to 1 if you have dirent.h */
 #cmakedefine   HAVE_DIRENT_H 1
 
-#cmakedefine HAVE_DLFCN_H 1
-
 /* Define to 1 if you have errno.h */
 #cmakedefine   HAVE_ERRNO_H 1
-
-#cmakedefine HAVE_EXECINFO_H 1
-#cmakedefine HAVE_EXPAT_H 1
-
-/* Define to 1 if you have grp.h */
-#cmakedefine   HAVE_GRP_H 1
 
 /* Define to 1 if you have inttypes.h */
 #cmakedefine   HAVE_INTTYPES_H 1
@@ -122,47 +108,27 @@
 /* Define to 1 if you have locale.h */
 #cmakedefine   HAVE_LOCALE_H 1
 
-#cmakedefine HAVE_MEMORY_H 1
-
 /* Define to 1 if you have poll */
 #cmakedefine    HAVE_POLL 1
 
 /* Define to 1 if you have signal.h */
 #cmakedefine   HAVE_SIGNAL_H 1
 
-/* Define to 1 if you have stdint.h */
-#cmakedefine   HAVE_STDINT_H 1
-
-#cmakedefine HAVE_STDLIB_H 1
-
 /* Define to 1 if you have stdio.h */
 #cmakedefine   HAVE_STDIO_H 1
 
-#cmakedefine HAVE_STRINGS_H 1
-#cmakedefine HAVE_STRING_H 1
 #cmakedefine HAVE_SYSLOG_H 1
 #cmakedefine HAVE_SYS_EVENTS_H 1
 #cmakedefine HAVE_SYS_INOTIFY_H 1
+#cmakedefine HAVE_LINUX_MAGIC_H 1
 #cmakedefine HAVE_SYS_PRCTL_H 1
 #cmakedefine HAVE_SYS_RANDOM_H 1
 #cmakedefine HAVE_SYS_RESOURCE_H 1
-#cmakedefine HAVE_SYS_STAT_H 1
-
-/* Define to 1 if you have sys/syslimits.h */
-#cmakedefine   HAVE_SYS_SYSLIMITS_H 1
+#cmakedefine HAVE_SYS_SYSCALL_H 1
+#cmakedefine HAVE_SYS_VFS_H 1
 
 /* Define to 1 if you have sys/time.h */
 #cmakedefine    HAVE_SYS_TIME_H 1
-
-#cmakedefine HAVE_SYS_TYPES_H 1
-
-#cmakedefine HAVE_SYS_UIO_H 1
-
-/* Define to 1 if you have sys/wait.h */
-#cmakedefine    HAVE_SYS_WAIT_H 1
-
-/* Define to 1 if you have time.h */
-#cmakedefine   HAVE_TIME_H 1
 
 /* Define to 1 if you have unistd.h */
 #cmakedefine   HAVE_UNISTD_H 1
@@ -198,6 +164,12 @@
 /* Define to 1 if you have clearenv */
 #cmakedefine   HAVE_CLEARENV 1
 
+/* Define to 1 if you have closefrom */
+#cmakedefine   HAVE_CLOSEFROM 1
+
+/* Define to 1 if you have close_range */
+#cmakedefine   HAVE_CLOSE_RANGE 1
+
 /* Define to 1 if you have writev */
 #cmakedefine   HAVE_WRITEV 1
 
@@ -210,23 +182,12 @@
 /* Define to 1 if you have localeconv */
 #cmakedefine   HAVE_LOCALECONV 1
 
-/* Define to 1 if you have strtoll */
-#cmakedefine   HAVE_STRTOLL 1
-
-/* Define to 1 if you have strtoull */
-#cmakedefine   HAVE_STRTOULL 1
-
 /* Define to 1 if you have pip2 */
 #cmakedefine   HAVE_PIPE2 1
 
 #cmakedefine HAVE_ACCEPT4 1
 
-/* Have dirfd function */
-#cmakedefine HAVE_DIRFD 1
-
-/* Have the ddfd member of DIR */
-#cmakedefine HAVE_DDFD 1
-
+#cmakedefine HAVE_FSTATFS 1
 #cmakedefine HAVE_INOTIFY_INIT1 1
 #cmakedefine HAVE_GETRANDOM 1
 #cmakedefine HAVE_GETRLIMIT 1
@@ -236,17 +197,15 @@
 #cmakedefine HAVE_SETRLIMIT 1
 #cmakedefine HAVE_UNIX_FD_PASSING 1
 #cmakedefine HAVE_SYSTEMD
-#cmakedefine HAVE_VASPRINTF 1
-#cmakedefine HAVE_VSNPRINTF 1
 
 /* Define to use epoll(4) on Linux */
 #cmakedefine DBUS_HAVE_LINUX_EPOLL 1
 
 /* Use the gcc __sync extension */
-#cmakedefine DBUS_USE_SYNC 1
-#cmakedefine HAVE_VASPRINTF 1
-#cmakedefine HAVE_VSNPRINTF 1
+#cmakedefine01 DBUS_USE_SYNC
 
+#cmakedefine HAVE_SETRESUID 1
+#cmakedefine HAVE_GETRESUID 1
 /* whether -export-dynamic was passed to libtool */
 #cmakedefine DBUS_BUILT_R_DYNAMIC 1
 
@@ -264,6 +223,8 @@
 #cmakedefine DBUS_USER "@DBUS_USER@"
 #cmakedefine DBUS_TEST_USER "@DBUS_TEST_USER@"
 #cmakedefine DBUS_TEST_EXEC "@DBUS_TEST_EXEC@"
+/* Where to put test sockets */
+#define DBUS_TEST_SOCKET_DIR "@TEST_SOCKET_DIR@"
 
 // system type defines
 #if defined(_WIN32) || defined(_WIN64) || defined (_WIN32_WCE)
@@ -288,14 +249,7 @@
 #  define uid_t int
 #  define gid_t int
 # else
-#  define snprintf _snprintf
    typedef int mode_t;
-#  if !defined(_WIN32_WCE)
-#    define strtoll _strtoi64
-#    define strtoull _strtoui64
-#    define HAVE_STRTOLL 1
-#    define HAVE_STRTOULL 1
-#  endif
 # endif
 #endif	// defined(_WIN32) || defined(_WIN64)
 
@@ -305,17 +259,6 @@
 
 #ifndef SIGHUP
 #define SIGHUP	1
-#endif
-
-#cmakedefine DBUS_VERBOSE_C_S 1
-#ifdef DBUS_VERBOSE_C_S
-#define _dbus_verbose_C_S printf
-#else
-#define _dbus_verbose_C_S _dbus_verbose
-#endif 
-
-# if defined(_MSC_VER) && !defined(inline)
-#define inline __inline
 #endif
 
 #ifdef DBUS_WIN

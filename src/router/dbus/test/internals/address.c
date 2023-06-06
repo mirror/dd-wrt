@@ -6,6 +6,8 @@
  * Copyright (C) 2007  Ralf Habacker
  * Copyright (C) 2013  Chengwei Yang / Intel
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify

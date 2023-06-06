@@ -4,6 +4,8 @@
  * Copyright (C) 2002, 2003, 2004, 2005  Red Hat, Inc.
  * Copyright (C) 2003 CodeFactory AB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,6 +45,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
@@ -54,10 +57,6 @@
 
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
-#endif
-
-#ifdef HAVE_SYS_SYSLIMITS_H
-#include <sys/syslimits.h>
 #endif
 
 #ifdef HAVE_SYSTEMD
@@ -567,53 +566,6 @@ _dbus_file_exists (const char *file)
 {
   return (access (file, F_OK) == 0);
 }
-
-/** Checks if user is at the console
-*
-* @param username user to check
-* @param error return location for errors
-* @returns #TRUE is the user is at the consolei and there are no errors
-*/
-dbus_bool_t 
-_dbus_user_at_console (const char *username,
-                       DBusError  *error)
-{
-#ifdef DBUS_CONSOLE_AUTH_DIR
-  DBusString u, f;
-  dbus_bool_t result;
-
-  result = FALSE;
-  if (!_dbus_string_init (&f))
-    {
-      _DBUS_SET_OOM (error);
-      return FALSE;
-    }
-
-  if (!_dbus_string_append (&f, DBUS_CONSOLE_AUTH_DIR))
-    {
-      _DBUS_SET_OOM (error);
-      goto out;
-    }
-
-  _dbus_string_init_const (&u, username);
-
-  if (!_dbus_concat_dir_and_file (&f, &u))
-    {
-      _DBUS_SET_OOM (error);
-      goto out;
-    }
-
-  result = _dbus_file_exists (_dbus_string_get_const_data (&f));
-
- out:
-  _dbus_string_free (&f);
-
-  return result;
-#else
-  return FALSE;
-#endif
-}
-
 
 /**
  * Checks whether the filename is an absolute path
@@ -1627,13 +1579,14 @@ _dbus_reset_oom_score_adj (const char **error_str_p)
   const char *error_str = NULL;
 
 #ifdef O_CLOEXEC
-  fd = open ("/proc/self/oom_score_adj", O_RDWR | O_CLOEXEC);
+  fd = open ("/proc/self/oom_score_adj", O_RDONLY | O_CLOEXEC);
 #endif
 
   if (fd < 0)
     {
-      fd = open ("/proc/self/oom_score_adj", O_RDWR);
-      _dbus_fd_set_close_on_exec (fd);
+      fd = open ("/proc/self/oom_score_adj", O_RDONLY);
+      if (fd >= 0)
+        _dbus_fd_set_close_on_exec (fd);
     }
 
   if (fd >= 0)
@@ -1679,6 +1632,26 @@ _dbus_reset_oom_score_adj (const char **error_str_p)
           goto out;
         }
 
+      close (fd);
+#ifdef O_CLOEXEC
+      fd = open ("/proc/self/oom_score_adj", O_WRONLY | O_CLOEXEC);
+
+      if (fd < 0)
+#endif
+        {
+          fd = open ("/proc/self/oom_score_adj", O_WRONLY);
+          if (fd >= 0)
+            _dbus_fd_set_close_on_exec (fd);
+        }
+
+      if (fd < 0)
+        {
+          ret = FALSE;
+          error_str = "open(/proc/self/oom_score_adj) for writing";
+          saved_errno = errno;
+          goto out;
+        }
+
       if (pwrite (fd, "0", sizeof (char), 0) < 0)
         {
           ret = FALSE;
@@ -1699,7 +1672,7 @@ _dbus_reset_oom_score_adj (const char **error_str_p)
   else
     {
       ret = FALSE;
-      error_str = "open(/proc/self/oom_score_adj)";
+      error_str = "open(/proc/self/oom_score_adj) for reading";
       saved_errno = errno;
       goto out;
     }

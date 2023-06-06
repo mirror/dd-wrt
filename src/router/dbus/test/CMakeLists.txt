@@ -78,6 +78,7 @@ add_helper_executable(manual-dir-iter ${manual-dir-iter_SOURCES} ${DBUS_INTERNAL
 add_helper_executable(test-service ${test-service_SOURCES} dbus-testutils)
 add_helper_executable(test-names ${test-names_SOURCES} dbus-testutils)
 add_test_executable(test-shell ${test-shell_SOURCES} ${DBUS_INTERNAL_LIBRARIES})
+add_test_executable(test-string internals/strings.c dbus-testutils)
 add_test_executable(test-printf internals/printf.c dbus-testutils)
 add_helper_executable(test-privserver test-privserver.c dbus-testutils)
 add_helper_executable(test-shell-service ${test-shell-service_SOURCES} dbus-testutils)
@@ -144,23 +145,37 @@ if(DBUS_ENABLE_EMBEDDED_TESTS)
     add_test_executable(test-misc-internals "${SOURCES}" dbus-testutils)
     set_target_properties(test-misc-internals PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
-    set(SOURCES bus/main.c)
+    add_test_executable(test-platform-mutex test-platform-mutex.c ${DBUS_INTERNAL_LIBRARIES} dbus-testutils)
+
+    set(SOURCES bus/main.c bus/common.c bus/common.h)
     add_test_executable(test-bus "${SOURCES}" dbus-daemon-internal dbus-testutils ${EXPAT_LIBRARIES})
     set_target_properties(test-bus PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
-    set(SOURCES bus/dispatch.c)
-    add_test_executable(test-bus-dispatch "${SOURCES}" dbus-daemon-internal dbus-testutils ${EXPAT_LIBRARIES})
-    set_target_properties(test-bus-dispatch PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
+    if(ENABLE_TRADITIONAL_ACTIVATION)
+        set(SOURCES bus/normal-activation.c bus/common.c bus/common.h)
+        add_test_executable(test-bus-normal-activation "${SOURCES}" dbus-daemon-internal dbus-testutils ${EXPAT_LIBRARIES})
+        set_target_properties(test-bus-normal-activation PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
+    endif()
 
-    set(SOURCES bus/dispatch-sha1.c)
+
+    set(SOURCES bus/dispatch-sha1.c bus/common.c bus/common.h)
     add_test_executable(test-bus-dispatch-sha1 "${SOURCES}" dbus-daemon-internal dbus-testutils ${EXPAT_LIBRARIES})
     set_target_properties(test-bus-dispatch-sha1 PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
     if(NOT WIN32)
         add_test_executable(test-bus-system bus/system.c launch-helper-internal dbus-testutils)
+        add_test_executable(test-counter internals/counter.c dbus-testutils)
         if(ENABLE_TRADITIONAL_ACTIVATION)
             add_test_executable(test-bus-launch-helper-oom bus/launch-helper-oom.c launch-helper-internal dbus-testutils)
             add_helper_executable(dbus-daemon-launch-helper-for-tests bus/launch-helper-for-tests.c launch-helper-internal)
+
+            set(SOURCES bus/failed-helper-activation.c bus/common.c bus/common.h)
+            add_test_executable(test-bus-failed-helper-activation "${SOURCES}" dbus-daemon-internal dbus-testutils ${EXPAT_LIBRARIES})
+            set_target_properties(test-bus-failed-helper-activation PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
+
+            set(SOURCES bus/helper-activation.c bus/common.c bus/common.h)
+            add_test_executable(test-bus-helper-activation "${SOURCES}" dbus-daemon-internal dbus-testutils ${EXPAT_LIBRARIES})
+            set_target_properties(test-bus-helper-activation PROPERTIES COMPILE_FLAGS ${DBUS_INTERNAL_CLIENT_DEFINITIONS})
         endif()
     endif()
 endif()
@@ -189,6 +204,7 @@ if(DBUS_WITH_GLIB)
     add_test_executable(test-dbus-daemon-eavesdrop dbus-daemon-eavesdrop.c ${TEST_LIBRARIES})
     add_test_executable(test-desktop-file internals/desktop-file.c ${TEST_LIBRARIES})
     add_test_executable(test-fdpass fdpass.c ${TEST_LIBRARIES})
+    add_test_executable(test-header-fields header-fields.c ${TEST_LIBRARIES})
     add_test_executable(test-loopback loopback.c ${TEST_LIBRARIES})
     add_test_executable(test-marshal marshal.c ${TEST_LIBRARIES})
     add_test_executable(test-monitor monitor.c ${TEST_LIBRARIES})
@@ -215,6 +231,7 @@ set(TESTDIRS
     data/valid-config-files/session.d
     data/valid-config-files-system
     data/valid-config-files-system/system.d
+    data/valid-messages
     data/valid-service-files
     data/valid-service-files-system
     data/invalid-config-files
@@ -229,7 +246,7 @@ set(TESTDIRS
 )
 
 foreach(DIR ${TESTDIRS})
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${DIR})
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DIR})
 endforeach()
 
 ### copy tests to builddir so that generated tests and static tests 
@@ -274,5 +291,5 @@ foreach(FILE_TYPE *.conf.in *.service.in)
 endforeach()
 
 message(STATUS "Copying generated bus config files to test directory${HINT}")
-dbus_configure_file(../bus/session.conf.in ${CMAKE_BINARY_DIR}/test/data/valid-config-files/session.conf @ONLY)
-dbus_configure_file(../bus/system.conf.in ${CMAKE_BINARY_DIR}/test/data/valid-config-files-system/system.conf @ONLY)
+dbus_configure_file(../bus/session.conf.in ${PROJECT_BINARY_DIR}/test/data/valid-config-files/session.conf @ONLY)
+dbus_configure_file(../bus/system.conf.in ${PROJECT_BINARY_DIR}/test/data/valid-config-files-system/system.conf @ONLY)

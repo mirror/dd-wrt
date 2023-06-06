@@ -93,8 +93,7 @@ host_triplet = @host@
 @DBUS_DOXYGEN_DOCS_ENABLED_TRUE@@DBUS_DUCKTYPE_DOCS_ENABLED_TRUE@am__append_3 = $(YELP_HTML)
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_ac_append_to_file.m4 \
 	$(top_srcdir)/m4/ax_ac_print_to_file.m4 \
 	$(top_srcdir)/m4/ax_add_am_macro_static.m4 \
 	$(top_srcdir)/m4/ax_am_macros_static.m4 \
@@ -103,12 +102,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
 	$(top_srcdir)/m4/ld-version-script.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(dist_doc_DATA) $(dist_dtd_DATA) \
-	$(dist_html_DATA) $(dist_xmlcatalog_DATA) $(am__DIST_COMMON)
+	$(dist_html_DATA) $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = dbus-cleanup-sockets.1.xml dbus-daemon.1.xml \
@@ -166,11 +165,11 @@ am__uninstall_files_from_dir = { \
 man1dir = $(mandir)/man1
 am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)" \
 	"$(DESTDIR)$(dtddir)" "$(DESTDIR)$(htmldir)" \
-	"$(DESTDIR)$(xmlcatalogdir)" "$(DESTDIR)$(htmldir)"
+	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(xmlcatalogdir)"
 NROFF = nroff
 MANS = $(man1_MANS)
 DATA = $(dist_doc_DATA) $(dist_dtd_DATA) $(dist_html_DATA) \
-	$(dist_xmlcatalog_DATA) $(html_DATA)
+	$(html_DATA) $(xmlcatalog_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in \
 	$(srcdir)/dbus-cleanup-sockets.1.xml.in \
@@ -222,6 +221,7 @@ DBUS_GENERATE_MAN = @DBUS_GENERATE_MAN@
 DBUS_INT16_TYPE = @DBUS_INT16_TYPE@
 DBUS_INT32_TYPE = @DBUS_INT32_TYPE@
 DBUS_INT64_CONSTANT = @DBUS_INT64_CONSTANT@
+DBUS_INT64_MODIFIER = @DBUS_INT64_MODIFIER@
 DBUS_INT64_TYPE = @DBUS_INT64_TYPE@
 DBUS_LIBEXECDIR = @DBUS_LIBEXECDIR@
 DBUS_MAJOR_VERSION = @DBUS_MAJOR_VERSION@
@@ -232,6 +232,7 @@ DBUS_SESSION_BUS_CONNECT_ADDRESS = @DBUS_SESSION_BUS_CONNECT_ADDRESS@
 DBUS_SESSION_BUS_LISTEN_ADDRESS = @DBUS_SESSION_BUS_LISTEN_ADDRESS@
 DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL = @DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL@
 DBUS_SESSION_SOCKET_DIR = @DBUS_SESSION_SOCKET_DIR@
+DBUS_SIZEOF_VOID_P = @DBUS_SIZEOF_VOID_P@
 DBUS_STATIC_BUILD_CPPFLAGS = @DBUS_STATIC_BUILD_CPPFLAGS@
 DBUS_SYSTEM_BUS_DEFAULT_ADDRESS = @DBUS_SYSTEM_BUS_DEFAULT_ADDRESS@
 DBUS_SYSTEM_PID_FILE = @DBUS_SYSTEM_PID_FILE@
@@ -277,6 +278,7 @@ EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
@@ -327,6 +329,8 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QHELPGENERATOR = @QHELPGENERATOR@
 RANLIB = @RANLIB@
 RC = @RC@
@@ -442,7 +446,7 @@ dist_dtd_DATA = \
 	introspect.dtd
 
 xmlcatalogdir = $(dtddir)
-dist_xmlcatalog_DATA = \
+xmlcatalog_DATA = \
 	catalog.xml
 
 dist_doc_DATA = system-activation.txt
@@ -457,12 +461,9 @@ STATIC_DOCS = \
 	dcop-howto.txt \
 	introspect.xsl
 
-EXTRA_DIST = \
-	catalog.xml.in \
-	file-boilerplate.c \
-	doxygen_to_devhelp.xsl \
-	$(STATIC_DOCS)
-
+EXTRA_DIST = catalog.xml.in file-boilerplate.c doxygen_to_devhelp.xsl \
+	$(STATIC_DOCS) list-doc-source.py maintainer-upload-docs.sh \
+	meson.build meson_post_install.py
 html_DATA = $(am__append_1) $(am__append_2) $(am__append_3)
 dist_html_DATA = $(STATIC_HTML)
 
@@ -515,6 +516,7 @@ XMLTO_HTML = \
 CLEANFILES = \
 	$(man1_MANS) \
 	$(MAN_XML_FILES) \
+	$(xmlcatalog_DATA) \
 	$(XMLTO_HTML) \
 	$(YELP_HTML) \
 	$(YELP_STATIC_HTML) \
@@ -682,27 +684,6 @@ uninstall-dist_htmlDATA:
 	@list='$(dist_html_DATA)'; test -n "$(htmldir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(htmldir)'; $(am__uninstall_files_from_dir)
-install-dist_xmlcatalogDATA: $(dist_xmlcatalog_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(dist_xmlcatalog_DATA)'; test -n "$(xmlcatalogdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(xmlcatalogdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(xmlcatalogdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(xmlcatalogdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(xmlcatalogdir)" || exit $$?; \
-	done
-
-uninstall-dist_xmlcatalogDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_xmlcatalog_DATA)'; test -n "$(xmlcatalogdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(xmlcatalogdir)'; $(am__uninstall_files_from_dir)
 install-htmlDATA: $(html_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(html_DATA)'; test -n "$(htmldir)" || list=; \
@@ -724,6 +705,27 @@ uninstall-htmlDATA:
 	@list='$(html_DATA)'; test -n "$(htmldir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(htmldir)'; $(am__uninstall_files_from_dir)
+install-xmlcatalogDATA: $(xmlcatalog_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(xmlcatalog_DATA)'; test -n "$(xmlcatalogdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(xmlcatalogdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(xmlcatalogdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(xmlcatalogdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(xmlcatalogdir)" || exit $$?; \
+	done
+
+uninstall-xmlcatalogDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(xmlcatalog_DATA)'; test -n "$(xmlcatalogdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(xmlcatalogdir)'; $(am__uninstall_files_from_dir)
 tags TAGS:
 
 ctags CTAGS:
@@ -768,7 +770,7 @@ check: check-am
 @DBUS_DOXYGEN_DOCS_ENABLED_FALSE@all-local:
 all-am: Makefile $(MANS) $(DATA) all-local
 installdirs:
-	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(dtddir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(xmlcatalogdir)" "$(DESTDIR)$(htmldir)"; do \
+	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(dtddir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(xmlcatalogdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -825,8 +827,8 @@ info: info-am
 info-am:
 
 install-data-am: install-data-local install-dist_docDATA \
-	install-dist_dtdDATA install-dist_htmlDATA \
-	install-dist_xmlcatalogDATA install-htmlDATA install-man
+	install-dist_dtdDATA install-dist_htmlDATA install-htmlDATA \
+	install-man install-xmlcatalogDATA
 
 install-dvi: install-dvi-am
 
@@ -871,8 +873,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-dist_docDATA uninstall-dist_dtdDATA \
-	uninstall-dist_htmlDATA uninstall-dist_xmlcatalogDATA \
-	uninstall-htmlDATA uninstall-local uninstall-man
+	uninstall-dist_htmlDATA uninstall-htmlDATA uninstall-local \
+	uninstall-man uninstall-xmlcatalogDATA
 
 uninstall-man: uninstall-man1
 
@@ -883,18 +885,17 @@ uninstall-man: uninstall-man1
 	distclean-generic distclean-libtool distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-data-local install-dist_docDATA \
-	install-dist_dtdDATA install-dist_htmlDATA \
-	install-dist_xmlcatalogDATA install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-htmlDATA install-info install-info-am install-man \
-	install-man1 install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am tags-am uninstall uninstall-am uninstall-dist_docDATA \
-	uninstall-dist_dtdDATA uninstall-dist_htmlDATA \
-	uninstall-dist_xmlcatalogDATA uninstall-htmlDATA \
-	uninstall-local uninstall-man uninstall-man1
+	install-dist_dtdDATA install-dist_htmlDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-htmlDATA install-info install-info-am \
+	install-man install-man1 install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip install-xmlcatalogDATA \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
+	uninstall-am uninstall-dist_docDATA uninstall-dist_dtdDATA \
+	uninstall-dist_htmlDATA uninstall-htmlDATA uninstall-local \
+	uninstall-man uninstall-man1 uninstall-xmlcatalogDATA
 
 .PRECIOUS: Makefile
 

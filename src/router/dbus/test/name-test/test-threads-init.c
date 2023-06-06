@@ -1,3 +1,9 @@
+/*
+ * Copyright 2006 Red Hat, Inc.
+ * Copyright 2013-2018 Collabora Ltd.
+ * Copyright 2017 Endless OS Foundation, LLC
+ * SPDX-License-Identifier: MIT
+ */
 /**
  * Test to make sure late thread initialization works
  */

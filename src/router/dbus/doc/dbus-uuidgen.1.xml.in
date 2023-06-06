@@ -37,7 +37,7 @@ UUIDs compatible with that spec. Many systems have a separate command
 for that (often called "uuidgen").</para>
 
 
-<para>See <ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink> for more information
+<para>See <ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink> for more information
 about D-Bus.</para>
 
 
@@ -115,12 +115,12 @@ On success, prints no output.</para>
 </refsect1>
 
 <refsect1 id='author'><title>AUTHOR</title>
-<para>See <ulink url='http://www.freedesktop.org/software/dbus/doc/AUTHORS'>http://www.freedesktop.org/software/dbus/doc/AUTHORS</ulink></para>
+<para>See <ulink url='https://dbus.freedesktop.org/doc/AUTHORS'>https://dbus.freedesktop.org/doc/AUTHORS</ulink></para>
 
 </refsect1>
 
 <refsect1 id='bugs'><title>BUGS</title>
 <para>Please send bug reports to the D-Bus mailing list or bug tracker,
-see <ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink></para>
+see <ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink></para>
 </refsect1>
 </refentry>

@@ -85,17 +85,27 @@ TEST_BINARIES               += test-spawn
 endif
 
 uninstallable_test_programs += \
+	test-platform-mutex \
 	test-bus \
-	test-bus-dispatch \
 	test-bus-dispatch-sha1 \
 	test-marshal-recursive \
 	test-message-internals \
+	test-strings \
 	$(NULL)
 
+if ENABLE_TRADITIONAL_ACTIVATION
+uninstallable_test_programs += test-normal-activation
+endif
+
 if DBUS_UNIX
+test_counter_SOURCES = internals/counter.c
+test_counter_LDADD = libdbus-testutils.la
+
 if ENABLE_TRADITIONAL_ACTIVATION
 uninstallable_test_programs += test-bus-launch-helper-oom
 uninstallable_test_programs += test-bus-system
+uninstallable_test_programs += test-failed-helper-activation
+uninstallable_test_programs += test-helper-activation
 # this is used by the tests but is not, itself, a test
 TEST_BINARIES += dbus-daemon-launch-helper-for-tests
 endif ENABLE_TRADITIONAL_ACTIVATION
@@ -128,6 +138,8 @@ test_privserver_LDADD = libdbus-testutils.la
 test_shell_service_LDADD = libdbus-testutils.la
 test_shell_SOURCES = shell-test.c
 test_shell_LDADD = libdbus-testutils.la
+test_strings_SOURCES = internals/strings.c
+test_strings_LDADD = libdbus-testutils.la
 
 if ENABLE_TRADITIONAL_ACTIVATION
 test_spawn_SOURCES = spawn-test.c
@@ -140,7 +152,7 @@ test_assertions_SOURCES = internals/assertions.c
 test_assertions_LDADD = libdbus-testutils.la $(GLIB_LIBS)
 
 test_printf_SOURCES = internals/printf.c
-test_printf_LDADD = $(top_builddir)/dbus/libdbus-internal.la
+test_printf_LDADD = libdbus-testutils.la
 
 test_refs_SOURCES = internals/refs.c
 test_refs_LDADD = libdbus-testutils.la $(GLIB_LIBS)
@@ -198,19 +210,13 @@ test_bus_system_LDADD = \
 	libdbus-testutils.la \
 	$(NULL)
 
-test_bus_SOURCES = bus/main.c
+test_bus_SOURCES = bus/main.c bus/common.c bus/common.h
 test_bus_LDADD = \
 	$(top_builddir)/bus/libdbus-daemon-internal.la \
 	libdbus-testutils.la \
 	$(NULL)
 
-test_bus_dispatch_SOURCES = bus/dispatch.c
-test_bus_dispatch_LDADD = \
-	$(top_builddir)/bus/libdbus-daemon-internal.la \
-	libdbus-testutils.la \
-	$(NULL)
-
-test_bus_dispatch_sha1_SOURCES = bus/dispatch-sha1.c
+test_bus_dispatch_sha1_SOURCES = bus/dispatch-sha1.c bus/common.c bus/common.h
 test_bus_dispatch_sha1_LDADD = \
 	$(top_builddir)/bus/libdbus-daemon-internal.la \
 	libdbus-testutils.la \
@@ -218,6 +224,26 @@ test_bus_dispatch_sha1_LDADD = \
 
 test_hash_SOURCES = internals/hash.c
 test_hash_LDADD = libdbus-testutils.la
+
+test_failed_helper_activation_SOURCES = \
+	bus/failed-helper-activation.c \
+	bus/common.c \
+	bus/common.h \
+	$(NULL)
+test_failed_helper_activation_LDADD = \
+	$(top_builddir)/bus/libdbus-daemon-internal.la \
+	libdbus-testutils.la \
+	$(NULL)
+
+test_helper_activation_SOURCES = \
+	bus/helper-activation.c \
+	bus/common.c \
+	bus/common.h \
+	$(NULL)
+test_helper_activation_LDADD = \
+	$(top_builddir)/bus/libdbus-daemon-internal.la \
+	libdbus-testutils.la \
+	$(NULL)
 
 test_marshal_recursive_SOURCES = \
 	internals/dbus-marshal-recursive-util.c \
@@ -255,6 +281,22 @@ test_misc_internals_SOURCES = \
 	internals/sha.c \
 	$(NULL)
 test_misc_internals_LDADD = libdbus-testutils.la
+
+test_normal_activation_SOURCES = \
+	bus/normal-activation.c \
+	bus/common.c \
+	bus/common.h \
+	$(NULL)
+test_normal_activation_LDADD = \
+	$(top_builddir)/bus/libdbus-daemon-internal.la \
+	libdbus-testutils.la \
+	$(NULL)
+
+test_platform_mutex_SOURCES = test-platform-mutex.c
+test_platform_mutex_LDADD = \
+	$(top_builddir)/dbus/libdbus-internal.la \
+	libdbus-testutils.la \
+	$(NULL)
 
 EXTRA_DIST += dbus-test-runner
 
@@ -355,6 +397,14 @@ installable_manual_tests += \
 	$(NULL)
 endif DBUS_WITH_GLIB
 
+if DBUS_UNIX
+if DBUS_ENABLE_EMBEDDED_TESTS
+installable_tests += \
+	test-counter \
+	$(NULL)
+endif DBUS_ENABLE_EMBEDDED_TESTS
+endif DBUS_UNIX
+
 installable_test_meta = \
 	$(dist_installable_test_scripts:=.test) \
 	$(dist_installed_test_scripts:=.test) \
@@ -403,6 +453,8 @@ AM_TESTS_ENVIRONMENT = \
 	export DBUS_TEST_EXEC=@abs_top_builddir@/test; \
 	export DBUS_TEST_HOMEDIR=@abs_top_builddir@/dbus; \
 	export DBUS_TEST_UNINSTALLED=1; \
+	export G_TEST_BUILDDIR=@abs_builddir@; \
+	export G_TEST_SRCDIR=@abs_srcdir@; \
 	export HOME=@abs_top_builddir@/dbus; \
 	$(NULL)
 
@@ -603,6 +655,7 @@ in_data = \
 	data/valid-config-files/forbidding.conf.in \
 	data/valid-config-files/incoming-limit.conf.in \
 	data/valid-config-files/limit-containers.conf.in \
+	data/valid-config-files/listen-autolaunch-win.conf.in \
 	data/valid-config-files/max-completed-connections.conf.in \
 	data/valid-config-files/max-connections-per-user.conf.in \
 	data/valid-config-files/max-containers.conf.in \
@@ -689,6 +742,16 @@ static_data = \
 	data/invalid-config-files/send-and-receive.conf \
 	data/invalid-config-files/unknown-limit.conf \
 	data/invalid-messages/boolean-has-no-value.message-raw \
+	data/invalid-messages/fixed-array-not-divisible.message-raw \
+	data/invalid-messages/fixed-array-not-divisible.message-raw.hex \
+	data/invalid-messages/issue418.message-raw \
+	data/invalid-messages/issue418.message-raw.hex \
+	data/invalid-messages/mis-nested-sig.message-raw \
+	data/invalid-messages/mis-nested-sig.message-raw.hex \
+	data/invalid-messages/truncated-variant-sig.message-raw \
+	data/invalid-messages/truncated-variant-sig.message-raw.hex \
+	data/invalid-messages/zero-length-variant-sig.message-raw \
+	data/invalid-messages/zero-length-variant-sig.message-raw.hex \
 	data/sha-1/Readme.txt \
 	data/sha-1/bit-hashes.sha1 \
 	data/sha-1/bit-messages.sha1 \
@@ -713,6 +776,10 @@ static_data = \
 	data/valid-config-files/standard-session-dirs.conf \
 	data/valid-config-files-system/many-rules.conf \
 	data/valid-config-files-system/system.d/test.conf \
+	data/valid-messages/byteswap-fd-index.message-raw \
+	data/valid-messages/byteswap-fd-index.message-raw.hex \
+	data/valid-messages/minimal.message-raw \
+	data/valid-messages/minimal.message-raw.hex \
 	$(NULL)
 
 EXTRA_DIST += $(static_data)
@@ -842,6 +909,13 @@ $(installable_test_meta_with_config): %_with_config.test: %$(EXEEXT) Makefile
 		echo 'Output=TAP'; \
 		echo 'Exec=env DBUS_TEST_EXEC=$(testexecdir) DBUS_TEST_DATA=$(testexecdir)/data $(testexecdir)/$* --tap'; \
 	) > $@.tmp && mv $@.tmp $@
+
+EXTRA_DIST += data/copy_data_for_tests.py
+EXTRA_DIST += data/installable/meson.build
+EXTRA_DIST += data/meson.build
+EXTRA_DIST += meson.build
+EXTRA_DIST += meta_template.test.in
+EXTRA_DIST += mkdir-m700.py
 
 # Add rules for code-coverage testing, as defined by AX_CODE_COVERAGE
 include $(top_srcdir)/aminclude_static.am

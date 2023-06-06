@@ -4,6 +4,8 @@
  * Copyright (C) 2002, 2003  Red Hat, Inc.
  * Copyright (C) 2003 CodeFactory AB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,9 +27,7 @@
 #ifndef DBUS_PIPE_H
 #define DBUS_PIPE_H
 
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>

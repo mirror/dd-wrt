@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # aminclude_static.am generated automatically by Autoconf
-# from AX_AM_MACROS_STATIC on Mon Feb 28 12:24:19 GMT 2022
+# from AX_AM_MACROS_STATIC on Tue Jun  6 14:01:51 BST 2023
 
 VPATH = @srcdir@
 am__is_gnu_make = { \
@@ -93,8 +93,7 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_ac_append_to_file.m4 \
 	$(top_srcdir)/m4/ax_ac_print_to_file.m4 \
 	$(top_srcdir)/m4/ax_add_am_macro_static.m4 \
 	$(top_srcdir)/m4/ax_am_macros_static.m4 \
@@ -103,8 +102,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
 	$(top_srcdir)/m4/ld-version-script.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -309,6 +308,7 @@ DBUS_GENERATE_MAN = @DBUS_GENERATE_MAN@
 DBUS_INT16_TYPE = @DBUS_INT16_TYPE@
 DBUS_INT32_TYPE = @DBUS_INT32_TYPE@
 DBUS_INT64_CONSTANT = @DBUS_INT64_CONSTANT@
+DBUS_INT64_MODIFIER = @DBUS_INT64_MODIFIER@
 DBUS_INT64_TYPE = @DBUS_INT64_TYPE@
 DBUS_LIBEXECDIR = @DBUS_LIBEXECDIR@
 DBUS_MAJOR_VERSION = @DBUS_MAJOR_VERSION@
@@ -319,6 +319,7 @@ DBUS_SESSION_BUS_CONNECT_ADDRESS = @DBUS_SESSION_BUS_CONNECT_ADDRESS@
 DBUS_SESSION_BUS_LISTEN_ADDRESS = @DBUS_SESSION_BUS_LISTEN_ADDRESS@
 DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL = @DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL@
 DBUS_SESSION_SOCKET_DIR = @DBUS_SESSION_SOCKET_DIR@
+DBUS_SIZEOF_VOID_P = @DBUS_SIZEOF_VOID_P@
 DBUS_STATIC_BUILD_CPPFLAGS = @DBUS_STATIC_BUILD_CPPFLAGS@
 DBUS_SYSTEM_BUS_DEFAULT_ADDRESS = @DBUS_SYSTEM_BUS_DEFAULT_ADDRESS@
 DBUS_SYSTEM_PID_FILE = @DBUS_SYSTEM_PID_FILE@
@@ -364,6 +365,7 @@ EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
@@ -414,6 +416,8 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QHELPGENERATOR = @QHELPGENERATOR@
 RANLIB = @RANLIB@
 RC = @RC@
@@ -519,6 +523,17 @@ EXTRA_DIST = \
 	CONTRIBUTING.md		\
 	dbus-1.pc.in		\
 	cleanup-man-pages.sh    \
+	LICENSES/AFL-2.0.txt	\
+	LICENSES/AFL-2.1.txt	\
+	LICENSES/Apache-2.0.txt	\
+	LICENSES/BSD-3-Clause.txt	\
+	LICENSES/GPL-2.0-or-later.txt	\
+	LICENSES/LGPL-2.1-or-later.txt	\
+	LICENSES/LicenseRef-CMakeScripts.txt	\
+	LICENSES/LicenseRef-GAP.txt	\
+	LICENSES/LicenseRef-pycrypto-orig.txt	\
+	LICENSES/MIT.txt	\
+	LICENSES/TCL.txt	\
         NEWS.pre-1-0            \
         NEWS.pre-1-2		\
 	README.cmake		\
@@ -531,9 +546,16 @@ EXTRA_DIST = \
 	bus/CMakeLists.txt \
 	dbus/CMakeLists.txt \
 	doc/CMakeLists.txt \
+	maint/update-authors.sh \
+	meson.build \
+	meson_options.txt \
+	meson_post_install.py \
+	subprojects/expat.wrap \
+	subprojects/glib.wrap \
 	test/CMakeLists.txt \
 	test/name-test/CMakeLists.txt \
 	tools/CMakeLists.txt \
+	tools/check-runstatedir.sh \
 	cmake \
 	$(NULL)
 
@@ -1121,7 +1143,7 @@ uninstall-am: uninstall-cmakeconfigDATA uninstall-pkgconfigDATA
 all-local: Doxyfile
 
 update-authors:
-	( cd $(srcdir) && git shortlog -s -e ) | cut -c 8- | sort > $(srcdir)/AUTHORS
+	cd $(srcdir) && ./maint/update-authors.sh
 
 # Code coverage
 #

@@ -12,8 +12,8 @@ if(DOXYGEN_EXECUTABLE)
 endif()
 
 if(DBUS_ENABLE_DOXYGEN_DOCS)
-    set(top_srcdir ${CMAKE_SOURCE_DIR})
-    set(top_builddir ${CMAKE_BINARY_DIR})
+    set(top_srcdir ${PROJECT_SOURCE_DIR})
+    set(top_builddir ${PROJECT_BINARY_DIR})
     if(WIN32)
         set(DBUS_GENERATE_MAN NO)
     else()
@@ -35,15 +35,15 @@ if(DBUS_ENABLE_DOXYGEN_DOCS)
         set(DOXYGEN_GENERATE_QHP NO)
         set(DBUS_ENABLE_QTHELP_DOCS OFF PARENT_SCOPE)
     endif()
-    configure_file(../Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile )
-    file(GLOB dbus_files "${CMAKE_SOURCE_DIR}/dbus/*.[ch]*")
+    configure_file(../Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile )
+    file(GLOB dbus_files "${PROJECT_SOURCE_DIR}/dbus/*.[ch]*")
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen.stamp
-        DEPENDS ${CMAKE_SOURCE_DIR}/Doxyfile.in  ${CMAKE_BINARY_DIR}/Doxyfile ${dbus_files}
+        DEPENDS ${PROJECT_SOURCE_DIR}/Doxyfile.in  ${PROJECT_BINARY_DIR}/Doxyfile ${dbus_files}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/api/html
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/api/man
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/api/xml
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
+        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
         COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/doxygen.stamp
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
@@ -93,60 +93,47 @@ if(DOCBOOKXSL_DIR AND XSLTPROC_EXECUTABLE)
 endif()
 
 if(DBUS_ENABLE_XML_DOCS)
-#
-# generate docbook file from template
-#
-# @param _infile docbook source template file
-# @param _outfile generated docbook source file
-#
-macro(generate_docbook_file _infile _outfile)
-    get_filename_component(outname ${_outfile} NAME)
-    set(srcfile ${CMAKE_CURRENT_SOURCE_DIR}/${_infile})
-    set(tmpfile ${CMAKE_CURRENT_BINARY_DIR}/${outname}.tmp.cmake)
-    file(WRITE ${tmpfile} "
-set(EXPANDED_SYSCONFDIR ${CMAKE_INSTALL_FULL_SYSCONFDIR})
-set(EXPANDED_DATADIR ${CMAKE_INSTALL_FULL_DATADIR})
-set(DBUS_VERSION ${DBUS_VERSION})
-configure_file(${srcfile} ${_outfile})
-    ")
-    add_custom_command(OUTPUT ${_outfile}
-        COMMAND ${CMAKE_COMMAND} -E remove ${_outfile}
-        COMMAND ${CMAKE_COMMAND} -P ${tmpfile}
-        DEPENDS ${srcfile} ${CMAKE_BINARY_DIR}/CMakeCache.txt
-        COMMENT "Generating ${outname}"
-    )
-    add_custom_target(xmldoc-${outname} DEPENDS ${_outfile})
-endmacro()
 
 #
-# generate docbook file from source
+# generate output file from docbook xml source template or file
 #
-# @param _source           docbook xml source file
-# @param FORMATS <formats> list with output formats to generate ('html' and/or 'man')
+# @param _target            base name for the generated file
+# @param TEMPLATE <file>    docbook xml template file to generated the output from
+#                           (with '@var@' variable substitution)
+# @param SOURCE <file>      alternative docbook xml file to generated the output from
+#                           (without variable substitution)
+# @param MAN_CATEGORY <cat> category for creating man pages (also used for html output)
+# @param FORMATS <formats>  list with output formats to generate ('html' and/or 'man')
 #
-macro(DOCBOOK _source)
+macro(add_docbook _target)
     set(options)
-    set(oneValueArgs)
+    set(oneValueArgs SOURCE TEMPLATE MAN_CATEGORY)
     set(multiValueArgs FORMATS)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    get_filename_component(_infile ${_source} ABSOLUTE)
-    get_filename_component(_name ${_infile} NAME)
     foreach(_format ${ARGS_FORMATS})
-        if(${_format} STREQUAL "man")
-            string(REPLACE ".xml" "" _outname ${_name})
-            set(STYLESHEET "${DOCBOOKXSL_DIR}/manpages/docbook.xsl")
-            set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/man/man1)
+        if(ARGS_TEMPLATE)
+            set(_xmlfile "${CMAKE_CURRENT_BINARY_DIR}/${_target}-${_format}.xml")
+            get_filename_component(_infile ${ARGS_TEMPLATE} ABSOLUTE)
+            configure_file(${_infile} ${_xmlfile})
         else()
-            string(REPLACE ".xml" ".html" _outname ${_name})
+            get_filename_component(_infile ${ARGS_SOURCE} ABSOLUTE)
+            set(_xmlfile ${_infile})
+        endif()
+        if(${_format} STREQUAL "man")
+            set(_outname "${_target}.${ARGS_MAN_CATEGORY}")
+            set(STYLESHEET "${DOCBOOKXSL_DIR}/manpages/docbook.xsl")
+            set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/man/man${ARGS_MAN_CATEGORY})
+        else()
+            set(_outname "${_target}.${ARGS_MAN_CATEGORY}.html")
             set(STYLESHEET "${DOCBOOKXSL_DIR}/html/docbook.xsl")
             set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/doc/dbus)
         endif()
         set(_outfile ${CMAKE_CURRENT_BINARY_DIR}/${_outname})
         add_custom_command(
             OUTPUT ${_outfile}
-            COMMAND ${XSLTPROC_EXECUTABLE} --output ${_outfile} --nonet --xinclude  --param passivetex.extensions '1' --param generate.consistent.ids '1' ${STYLESHEET} ${_infile}
-            DEPENDS ${XSLTPROC_EXECUTABLE} ${_infile}
+            COMMAND ${XSLTPROC_EXECUTABLE} --output ${_outfile} --nonet --xinclude  --param passivetex.extensions '1' --param generate.consistent.ids '1' ${STYLESHEET} ${_xmlfile}
+            DEPENDS ${XSLTPROC_EXECUTABLE} ${_xmlfile}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
         add_custom_target(xmldoc-${_outname} DEPENDS ${_outfile})
@@ -162,10 +149,10 @@ macro(COPYDIR _src _type)
     foreach(FILE_TYPE ${_type})
         foreach(DIR ${_src})
             file(GLOB FILES "${DIR}/${FILE_TYPE}" )
-            file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${DIR})
+            file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DIR})
             foreach(FILE ${FILES})
                 get_filename_component(FILENAME ${FILE} NAME)
-                set(TARGET ${CMAKE_BINARY_DIR}/${DIR}/${FILENAME})
+                set(TARGET ${PROJECT_BINARY_DIR}/${DIR}/${FILENAME})
                 configure_file(${FILE} ${TARGET} COPYONLY)
                 if(CONFIG_VERBOSE)
                     message("FROM: ${FILE}\nTO: ${TARGET}\n")
@@ -175,32 +162,29 @@ macro(COPYDIR _src _type)
     endforeach()
 endmacro()
 
+# copy source files from doc directory into associated binary directory
+# which is required to run generated xml docs from build directory
 COPYDIR(doc *.png)
 COPYDIR(doc *.svg)
 
-generate_docbook_file(dbus-cleanup-sockets.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-cleanup-sockets.1.xml)
-generate_docbook_file(dbus-daemon.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-daemon.1.xml)
-generate_docbook_file(dbus-launch.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-launch.1.xml)
-generate_docbook_file(dbus-monitor.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-monitor.1.xml)
-generate_docbook_file(dbus-run-session.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-run-session.1.xml)
-generate_docbook_file(dbus-send.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-send.1.xml)
-generate_docbook_file(dbus-test-tool.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-test-tool.1.xml)
-generate_docbook_file(dbus-update-activation-environment.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-update-activation-environment.1.xml)
-generate_docbook_file(dbus-uuidgen.1.xml.in ${CMAKE_CURRENT_BINARY_DIR}/dbus-uuidgen.1.xml)
+# setup variables used in docbook templates
+set(EXPANDED_SYSCONFDIR ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+set(EXPANDED_DATADIR ${CMAKE_INSTALL_FULL_DATADIR})
 
 set(formats html)
 if(UNIX)
     list(APPEND formats man)
 endif()
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-cleanup-sockets.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-daemon.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-launch.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-monitor.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-run-session.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-send.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-test-tool.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-uuidgen.1.xml FORMATS ${formats})
-docbook(${CMAKE_CURRENT_BINARY_DIR}/dbus-update-activation-environment.1.xml FORMATS ${formats})
+# generate docbook output
+add_docbook(dbus-cleanup-sockets TEMPLATE dbus-cleanup-sockets.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-daemon TEMPLATE dbus-daemon.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-launch TEMPLATE dbus-launch.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-monitor TEMPLATE dbus-monitor.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-run-session TEMPLATE dbus-run-session.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-send TEMPLATE dbus-send.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-test-tool TEMPLATE dbus-test-tool.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-uuidgen TEMPLATE dbus-uuidgen.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-update-activation-environment TEMPLATE dbus-update-activation-environment.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
 
 #
 # handle html index file

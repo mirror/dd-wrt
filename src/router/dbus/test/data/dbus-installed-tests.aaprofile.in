@@ -32,6 +32,7 @@
   # We aren't really confining this process seriously; allow most things.
   /** mrix,
   /tmp/dbus-daemon-test.*/{,**} w,
+  /tmp/dbus-* w,
   @{sys}/kernel/security/apparmor/** w,
   dbus (send, receive, bind),
   network,
@@ -44,6 +45,7 @@
     #include <abstractions/base>
 
     /** mrix,
+    /tmp/dbus-* w,
     @{sys}/kernel/security/apparmor/** w,
     dbus (send, receive, bind),
     network,
@@ -62,6 +64,7 @@
     #include <abstractions/base>
 
     /** mrix,
+    /tmp/dbus-* w,
     @{sys}/kernel/security/apparmor/** w,
     dbus,
     network,
@@ -88,6 +91,7 @@
     #include <abstractions/base>
 
     /** mrix,
+    /tmp/dbus-* w,
     @{sys}/kernel/security/apparmor/** w,
     dbus (send, receive, bind),
     network,

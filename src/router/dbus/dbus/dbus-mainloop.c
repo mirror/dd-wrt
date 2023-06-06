@@ -4,6 +4,8 @@
  * Copyright © 2003, 2004  Red Hat, Inc.
  * Copyright © 2011 Nokia Corporation
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -575,7 +577,7 @@ _dbus_loop_iterate (DBusLoop     *loop,
   DBusList *link;
   int n_ready;
   int initial_serial;
-  long timeout;
+  int timeout;
   int orig_depth;
 
   retval = FALSE;      

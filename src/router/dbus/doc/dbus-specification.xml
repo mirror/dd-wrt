@@ -6,8 +6,8 @@
 <article id="index">
   <articleinfo>
     <title>D-Bus Specification</title>
-    <releaseinfo>Version 0.38</releaseinfo>
-    <date>2022-02-23</date>
+    <releaseinfo>Version 0.41</releaseinfo>
+    <date>2023-02-08</date>
     <authorgroup>
       <author>
         <firstname>Havoc</firstname>
@@ -77,6 +77,38 @@
        <revremark>
          See <ulink url='http://cgit.freedesktop.org/dbus/dbus/log/doc/dbus-specification.xml'>commit log</ulink>
        </revremark>
+     </revision>
+     <revision>
+       <revnumber>0.41</revnumber>
+       <date>2023-02-08</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Clarify intended handling of /run vs. /var/run</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
+     </revision>
+     <revision>
+       <revnumber>0.40</revnumber>
+       <date>2022-10-05</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Clarify that unix:tmpdir is not required to use an abstract socket on Linux</simpara></listitem>
+           <listitem><simpara>Mention implications of abstract sockets for Linux namespacing</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
+     </revision>
+     <revision>
+       <revnumber>0.39</revnumber>
+       <date>2022-09-22</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Document a recommendation for IDNs in reversed domain names</simpara></listitem>
+           <listitem><simpara>Clarify documentation regarding AF_UNIX sockets</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
      </revision>
      <revision>
        <revnumber>0.38</revnumber>
@@ -1976,6 +2008,21 @@
         </para>
 
         <para>
+          If the author's DNS domain name is an internationalized domain
+          name (IDN) such as <literal>δοκιμή.example</literal>,
+          the ASCII encoding (known as ACE-encoding or Punycode) such as
+          <literal>xn--jxalpdlp.example</literal>
+          should be used as a basis for the reversed-domain-name form.
+          As with any other name, hyphen/minus characters should be
+          replaced by underscores in the reversed-domain-name form, for
+          example <literal>example.xn__jxalpdlp.ExampleService1</literal>.
+          For more information about internationalized domain names, see
+          <ulink url="https://datatracker.ietf.org/doc/html/rfc5890">RFC
+            5890 "Internationalized Domain Names for Applications (IDNA):
+            Definitions and Document Framework"</ulink>.
+        </para>
+
+        <para>
           D-Bus does not distinguish between the concepts that would be
           called classes and interfaces in Java: either can be identified on
           D-Bus by an interface name.
@@ -2049,12 +2096,18 @@
         </para>
 
         <para>
-          As with interface names, if the author's DNS domain name
+          As with <link linkend="message-protocol-names-interface">interface
+            names</link>, if the author's DNS domain name
           contains hyphen/minus characters they should be replaced by
-          underscores, and if it contains leading digits they should be
-          escaped by prepending an underscore. For example, if the owner
+          underscores, if it contains leading digits they should be
+          escaped by prepending an underscore, and internationalized
+          domain names (IDN) need to be encoded in their ASCII form
+          (ACE-encoding, Punycode) before replacing dashes with underscores.
+          For example, if the owner
           of 7-zip.org used a D-Bus name for an archiving application,
-          it might be named <literal>org._7_zip.Archiver</literal>.
+          it might be named <literal>org._7_zip.Archiver</literal>,
+          while the owner of <literal>δοκιμή.example</literal> might
+          use the name <literal>example.xn__jxalpdlp.ExampleService1</literal>.
         </para>
 
         <para>
@@ -3634,18 +3687,14 @@
       </para>
 
       <para>
-        When a socket is opened by the D-Bus library it truncates the path
-        name right before the first trailing Nul byte.  This is true for both
-        normal paths and abstract paths.  Note that this is a departure from
-        previous versions of D-Bus that would create sockets with a fixed
-        length path name.  Names which were shorter than the fixed length
-        would be padded by Nul bytes.
+        When a Unix socket is opened by the D-Bus library, the socket address
+        length does not include the whole <literal>struct sockaddr_un</literal>,
+        but only the length of the pathname or abstract string (beside other
+        fields).
       </para>
       <para>
-        Unix domain sockets are not available on Windows.
-        On all other platforms, they are the recommended transport for
-        D-Bus, either used alone or in conjunction with
-        <link linkend="transports-systemd">systemd</link> or
+        They are the recommended transport for D-Bus, either used alone or in
+        conjunction with <link linkend="transports-systemd">systemd</link> or
         <link linkend="transports-launchd">launchd</link> addresses.
       </para>
       <para>
@@ -3700,7 +3749,14 @@
               The same as "dir", except that on platforms with
               abstract sockets, the server may attempt to create an
               abstract socket whose name starts with this directory instead
-              of a path-based socket. This key can only be used in server
+              of a path-based socket.
+              The server is not required to create an abstract socket, even
+              on platforms that support it: treating "tmpdir" as being
+              equivalent to "dir" is a valid implementation, and recent
+              versions of the reference implementation of D-Bus do this.
+              See "abstract", below, for more details of the consequences
+              of using abstract sockets.
+              Like "dir", this key can only be used in server
               addresses, not in client addresses; the resulting client address
               will have the "abstract" or "path" key instead.
             </entry>
@@ -3713,6 +3769,21 @@
               resembling a path but unconnected to the filesystem namespace.
               This key is only supported on platforms with abstract Unix
               sockets, of which Linux is the only known example.
+              Implementors should note that on Linux, abstract sockets are
+              namespaced according to
+              <ulink url="https://man7.org/linux/man-pages/man7/network_namespaces.7.html"
+                >network namespaces</ulink>
+              rather than being part of the filesystem.
+              This means that abstract sockets are unaffected by mechanisms
+              like
+              <ulink url="https://man7.org/linux/man-pages/man2/chroot.2.html"
+                >chroot(2)</ulink>
+              and
+              <ulink url="https://man7.org/linux/man-pages/man7/mount_namespaces.7.html"
+                >mount namespaces</ulink>,
+              which can lead to a sandbox escape if a sandboxing
+              implementation alters the sandboxed process's view of the
+              filesystem but shares the network namespace with the host.
             </entry>
           </row>
           <row>
@@ -3945,14 +4016,6 @@
         See <xref linkend="transports-tcp-sockets"/> for more
         information on situations where these transports have been used,
         and alternatives to these transports.
-      </para>
-      <para>
-        Implementations of D-Bus on Windows operating systems normally
-        use a nonce-tcp transport via the local loopback interface.
-        This is because the
-        <link linkend="transports-unix-domain-sockets">unix</link>
-        transport, which would otherwise be recommended, is not
-        available on these operating systems.
       </para>
 
       <para>
@@ -5730,13 +5793,27 @@
           variable. If that variable is not set, applications should try
           to connect to the well-known address
           <literal>unix:path=/var/run/dbus/system_bus_socket</literal>.
-          <footnote>
-            <para>
-              The D-Bus reference implementation actually honors the
-              <literal>$(localstatedir)</literal> configure option
-              for this address, on both client and server side.
-            </para>
-          </footnote>
+          Implementations of the well-known system bus should listen on
+          an address that will result in that connection being successful.
+        </para>
+        <para>
+          On systems where <filename>/var/run/</filename> is known to be
+          synonymous with <filename>/run/</filename> (such as most Linux
+          operating system distributions), implementations might prefer
+          to make use of that knowledge to connect to or listen on
+          <literal>unix:path=/run/dbus/system_bus_socket</literal> instead,
+          which has some minor technical advantages, particularly during
+          early startup and late shutdown.
+        </para>
+        <para>
+          In practice, implementations of D-Bus often have build-time
+          configuration options for the system bus address, whose defaults
+          often depend on other build-time options such as the installation
+          prefix (in particular, this is the case for dbus, the reference
+          implementation of D-Bus).
+          Distributors intending to provide access to the well-known
+          system bus should verify that they are using an interoperable
+          address.
         </para>
         <para>
           On Unix systems, the system bus should default to searching

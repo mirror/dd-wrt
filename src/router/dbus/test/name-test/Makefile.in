@@ -88,7 +88,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = $(am__EXEEXT_1) $(am__EXEEXT_2)
+TESTS = $(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_1)
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@am__append_1 = \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	run-test.sh \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	run-test-systemserver.sh \
@@ -111,11 +111,14 @@ TESTS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	test-ids$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	test-shutdown$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	test-privserver-client$(EXEEXT) \
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	test-autolaunch$(EXEEXT)
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(am__EXEEXT_1) \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(am__EXEEXT_2)
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@am__append_3 = test-autolaunch-win
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@am__append_4 = test-autolaunch-win
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@am__append_5 = test-autolaunch
 subdir = test/name-test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_ac_append_to_file.m4 \
 	$(top_srcdir)/m4/ax_ac_print_to_file.m4 \
 	$(top_srcdir)/m4/ax_add_am_macro_static.m4 \
 	$(top_srcdir)/m4/ax_am_macros_static.m4 \
@@ -124,8 +127,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
 	$(top_srcdir)/m4/ld-version-script.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -133,17 +136,24 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@am__EXEEXT_1 = test-autolaunch-win$(EXEEXT)
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@am__EXEEXT_2 = test-autolaunch$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-test_autolaunch_SOURCES = test-autolaunch.c
-test_autolaunch_OBJECTS = test-autolaunch.$(OBJEXT)
+am__test_autolaunch_SOURCES_DIST = test-autolaunch.c
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@am_test_autolaunch_OBJECTS = test-autolaunch.$(OBJEXT)
+test_autolaunch_OBJECTS = $(am_test_autolaunch_OBJECTS)
 am__DEPENDENCIES_1 =
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@test_autolaunch_DEPENDENCIES =  \
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(am__DEPENDENCIES_1) \
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	../libdbus-testutils.la
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@test_autolaunch_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@	../libdbus-testutils.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am__test_autolaunch_win_SOURCES_DIST = test-autolaunch-win.c
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@am_test_autolaunch_win_OBJECTS = test-autolaunch-win.$(OBJEXT)
+test_autolaunch_win_OBJECTS = $(am_test_autolaunch_win_OBJECTS)
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@test_autolaunch_win_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@	../libdbus-testutils.la
 test_ids_SOURCES = test-ids.c
 test_ids_OBJECTS = test-ids.$(OBJEXT)
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@test_ids_DEPENDENCIES =  \
@@ -198,8 +208,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/test-autolaunch.Po \
-	./$(DEPDIR)/test-ids.Po \
+am__depfiles_remade = ./$(DEPDIR)/test-autolaunch-win.Po \
+	./$(DEPDIR)/test-autolaunch.Po ./$(DEPDIR)/test-ids.Po \
 	./$(DEPDIR)/test-pending-call-disconnected.Po \
 	./$(DEPDIR)/test-pending-call-dispatch.Po \
 	./$(DEPDIR)/test-pending-call-timeout.Po \
@@ -224,11 +234,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = test-autolaunch.c test-ids.c \
-	test-pending-call-disconnected.c test-pending-call-dispatch.c \
-	test-pending-call-timeout.c test-privserver-client.c \
-	test-shutdown.c test-threads-init.c
-DIST_SOURCES = test-autolaunch.c test-ids.c \
+SOURCES = $(test_autolaunch_SOURCES) $(test_autolaunch_win_SOURCES) \
+	test-ids.c test-pending-call-disconnected.c \
+	test-pending-call-dispatch.c test-pending-call-timeout.c \
+	test-privserver-client.c test-shutdown.c test-threads-init.c
+DIST_SOURCES = $(am__test_autolaunch_SOURCES_DIST) \
+	$(am__test_autolaunch_win_SOURCES_DIST) test-ids.c \
 	test-pending-call-disconnected.c test-pending-call-dispatch.c \
 	test-pending-call-timeout.c test-privserver-client.c \
 	test-shutdown.c test-threads-init.c
@@ -439,13 +450,13 @@ am__set_TESTS_bases = \
 AM_TESTSUITE_SUMMARY_HEADER = ' for $(PACKAGE_STRING)'
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check recheck
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@am__EXEEXT_1 =  \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@am__EXEEXT_3 =  \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	run-test.sh \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	run-test-systemserver.sh \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	test-ids$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	test-pending-call-disconnected$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@	test-shutdown$(EXEEXT)
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@@ENABLE_TRADITIONAL_ACTIVATION_TRUE@am__EXEEXT_2 = test-pending-call-dispatch$(EXEEXT) \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@@ENABLE_TRADITIONAL_ACTIVATION_TRUE@am__EXEEXT_4 = test-pending-call-dispatch$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@@ENABLE_TRADITIONAL_ACTIVATION_TRUE@	test-pending-call-timeout$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@@ENABLE_TRADITIONAL_ACTIVATION_TRUE@	test-privserver-client$(EXEEXT) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@@ENABLE_TRADITIONAL_ACTIVATION_TRUE@	test-threads-init$(EXEEXT)
@@ -509,6 +520,7 @@ DBUS_GENERATE_MAN = @DBUS_GENERATE_MAN@
 DBUS_INT16_TYPE = @DBUS_INT16_TYPE@
 DBUS_INT32_TYPE = @DBUS_INT32_TYPE@
 DBUS_INT64_CONSTANT = @DBUS_INT64_CONSTANT@
+DBUS_INT64_MODIFIER = @DBUS_INT64_MODIFIER@
 DBUS_INT64_TYPE = @DBUS_INT64_TYPE@
 DBUS_LIBEXECDIR = @DBUS_LIBEXECDIR@
 DBUS_MAJOR_VERSION = @DBUS_MAJOR_VERSION@
@@ -519,6 +531,7 @@ DBUS_SESSION_BUS_CONNECT_ADDRESS = @DBUS_SESSION_BUS_CONNECT_ADDRESS@
 DBUS_SESSION_BUS_LISTEN_ADDRESS = @DBUS_SESSION_BUS_LISTEN_ADDRESS@
 DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL = @DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL@
 DBUS_SESSION_SOCKET_DIR = @DBUS_SESSION_SOCKET_DIR@
+DBUS_SIZEOF_VOID_P = @DBUS_SIZEOF_VOID_P@
 DBUS_STATIC_BUILD_CPPFLAGS = @DBUS_STATIC_BUILD_CPPFLAGS@
 DBUS_SYSTEM_BUS_DEFAULT_ADDRESS = @DBUS_SYSTEM_BUS_DEFAULT_ADDRESS@
 DBUS_SYSTEM_PID_FILE = @DBUS_SYSTEM_PID_FILE@
@@ -564,6 +577,7 @@ EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
@@ -614,6 +628,8 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QHELPGENERATOR = @QHELPGENERATOR@
 RANLIB = @RANLIB@
 RC = @RC@
@@ -747,7 +763,7 @@ SH_LOG_COMPILER = $(SHELL)
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@        unset DBUS_SESSION_BUS_PID; \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_UNIX_TRUE@        $(NULL)
 
-EXTRA_DIST = run-test.sh run-test-systemserver.sh
+EXTRA_DIST = run-test.sh run-test-systemserver.sh meson.build
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@test_pending_call_dispatch_LDADD = \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(CODE_COVERAGE_LIBS) \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(top_builddir)/dbus/libdbus-1.la \
@@ -783,10 +799,17 @@ EXTRA_DIST = run-test.sh run-test-systemserver.sh
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	../libdbus-testutils.la \
 @DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(NULL)
 
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@test_autolaunch_LDADD = \
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(CODE_COVERAGE_LIBS) \
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	../libdbus-testutils.la \
-@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@	$(NULL)
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@test_autolaunch_win_SOURCES = test-autolaunch-win.c
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@test_autolaunch_win_LDADD = \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@	$(CODE_COVERAGE_LIBS) \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@	../libdbus-testutils.la \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_TRUE@	$(NULL)
+
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@test_autolaunch_SOURCES = test-autolaunch.c
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@test_autolaunch_LDADD = \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@	$(CODE_COVERAGE_LIBS) \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@	../libdbus-testutils.la \
+@DBUS_ENABLE_EMBEDDED_TESTS_TRUE@@DBUS_WIN_FALSE@	$(NULL)
 
 all: all-am
 
@@ -835,6 +858,10 @@ test-autolaunch$(EXEEXT): $(test_autolaunch_OBJECTS) $(test_autolaunch_DEPENDENC
 	@rm -f test-autolaunch$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(test_autolaunch_OBJECTS) $(test_autolaunch_LDADD) $(LIBS)
 
+test-autolaunch-win$(EXEEXT): $(test_autolaunch_win_OBJECTS) $(test_autolaunch_win_DEPENDENCIES) $(EXTRA_test_autolaunch_win_DEPENDENCIES) 
+	@rm -f test-autolaunch-win$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test_autolaunch_win_OBJECTS) $(test_autolaunch_win_LDADD) $(LIBS)
+
 test-ids$(EXEEXT): $(test_ids_OBJECTS) $(test_ids_DEPENDENCIES) $(EXTRA_test_ids_DEPENDENCIES) 
 	@rm -f test-ids$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(test_ids_OBJECTS) $(test_ids_LDADD) $(LIBS)
@@ -869,6 +896,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-autolaunch-win.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-autolaunch.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-ids.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-pending-call-disconnected.Po@am__quote@ # am--include-marker
@@ -1156,6 +1184,13 @@ test-threads-init.log: test-threads-init$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-autolaunch-win.log: test-autolaunch-win$(EXEEXT)
+	@p='test-autolaunch-win$(EXEEXT)'; \
+	b='test-autolaunch-win'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .sh.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -1247,7 +1282,8 @@ clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/test-autolaunch.Po
+		-rm -f ./$(DEPDIR)/test-autolaunch-win.Po
+	-rm -f ./$(DEPDIR)/test-autolaunch.Po
 	-rm -f ./$(DEPDIR)/test-ids.Po
 	-rm -f ./$(DEPDIR)/test-pending-call-disconnected.Po
 	-rm -f ./$(DEPDIR)/test-pending-call-dispatch.Po
@@ -1300,7 +1336,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/test-autolaunch.Po
+		-rm -f ./$(DEPDIR)/test-autolaunch-win.Po
+	-rm -f ./$(DEPDIR)/test-autolaunch.Po
 	-rm -f ./$(DEPDIR)/test-ids.Po
 	-rm -f ./$(DEPDIR)/test-pending-call-disconnected.Po
 	-rm -f ./$(DEPDIR)/test-pending-call-dispatch.Po

@@ -5,6 +5,8 @@
  * Copyright 2011 Collabora Ltd.
  * Copyright 2018 Laurent Bigonville
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify

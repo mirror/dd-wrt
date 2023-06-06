@@ -1,6 +1,10 @@
 add_definitions(${DBUS_INTERNAL_CLIENT_DEFINITIONS})
 
-add_helper_executable(test-autolaunch test-autolaunch.c dbus-testutils)
+if(WIN32)
+    add_test_executable(test-autolaunch-win test-autolaunch-win.c ${DBUS_INTERNAL_LIBRARIES} dbus-testutils)
+else()
+    add_helper_executable(test-autolaunch test-autolaunch.c dbus-testutils)
+endif()
 
 add_session_test_executable(test-ids test-ids.c ${DBUS_INTERNAL_LIBRARIES})
 add_session_test_executable(test-pending-call-disconnected test-pending-call-disconnected.c ${DBUS_INTERNAL_LIBRARIES})

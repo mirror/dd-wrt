@@ -4,6 +4,8 @@
  * Copyright (C) 2003  CodeFactory AB
  * Copyright (C) 2003, 2004  Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -260,8 +262,8 @@ _dbus_transport_debug_pipe_new (const char     *server_name,
                                                      NULL, &address);
   if (client_transport == NULL)
     {
-      _dbus_close_socket (client_fd, NULL);
-      _dbus_close_socket (server_fd, NULL);
+      _dbus_close_socket (&client_fd, NULL);
+      _dbus_close_socket (&server_fd, NULL);
       dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
       _dbus_string_free (&address);
       return NULL;
@@ -276,7 +278,7 @@ _dbus_transport_debug_pipe_new (const char     *server_name,
   if (server_transport == NULL)
     {
       _dbus_transport_unref (client_transport);
-      _dbus_close_socket (server_fd, NULL);
+      _dbus_close_socket (&server_fd, NULL);
       dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
       return NULL;
     }

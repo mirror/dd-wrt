@@ -4,6 +4,8 @@
  * Copyright (C) 2003  Red Hat, Inc.
  * Copyright (C) 2003  CodeFactory AB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1082,6 +1084,7 @@ bus_service_swap_owner (BusService     *service,
       _dbus_assert (link != NULL);
       link = _dbus_list_get_next_link (&service->owners, link);
       _dbus_assert (link != NULL);
+      _dbus_assert (link->data != NULL);
 
       new_owner = (BusOwner *)link->data;
       new_owner_conn = new_owner->conn;
@@ -1147,6 +1150,10 @@ bus_service_remove_owner (BusService     *service,
       BusOwner *temp_owner;
 
       link = _bus_service_find_owner_link (service, connection);
+      /* This function is only valid to call if connection owns service.
+       * If that's the case, we should always find connection in the
+       * list of owners. */
+      _dbus_assert (link != NULL);
       _dbus_list_unlink (&service->owners, link);
       temp_owner = (BusOwner *)link->data;
       bus_owner_unref (temp_owner); 
@@ -1176,6 +1183,7 @@ bus_service_remove_owner (BusService     *service,
       _dbus_assert (link != NULL);
       link = _dbus_list_get_next_link (&service->owners, link);
       _dbus_assert (link != NULL);
+      _dbus_assert (link->data != NULL);
 
       new_owner = (BusOwner *)link->data;
       new_owner_conn = new_owner->conn;

@@ -4,6 +4,8 @@
  * Copyright (C) 2002, 2003  Red Hat, Inc.
  * Copyright (C) 2003 CodeFactory AB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,9 +32,7 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
@@ -212,7 +212,7 @@ dbus_bool_t _dbus_set_socket_nonblocking (DBusSocket      fd,
                                           DBusError      *error);
 
 DBUS_PRIVATE_EXPORT
-dbus_bool_t _dbus_close_socket     (DBusSocket        fd,
+dbus_bool_t _dbus_close_socket     (DBusSocket       *fd,
                                     DBusError        *error);
 DBUS_PRIVATE_EXPORT
 int         _dbus_read_socket      (DBusSocket        fd,
@@ -307,7 +307,7 @@ dbus_bool_t _dbus_windows_user_is_process_owner (const char        *windows_sid)
 dbus_bool_t _dbus_append_keyring_directory_for_credentials (DBusString      *directory,
                                                             DBusCredentials *credentials);
 
-void _dbus_daemon_unpublish_session_bus_address (void);
+dbus_bool_t _dbus_daemon_unpublish_session_bus_address (void);
 
 dbus_bool_t _dbus_socket_can_pass_unix_fd(DBusSocket fd);
 
@@ -561,6 +561,18 @@ typedef struct
 dbus_bool_t _dbus_stat             (const DBusString *filename,
                                     DBusStat         *statbuf,
                                     DBusError        *error);
+
+DBusSocket _dbus_connect_unix_socket (const char     *path,
+                                      dbus_bool_t     abstract,
+                                      DBusError      *error);
+DBusSocket _dbus_listen_unix_socket  (const char     *path,
+                                      dbus_bool_t     abstract,
+                                      DBusError      *error);
+
+DBusSocket _dbus_connect_exec (const char     *path,
+                               char *const    argv[],
+                               DBusError      *error);
+
 DBUS_PRIVATE_EXPORT
 dbus_bool_t _dbus_socketpair (DBusSocket       *fd1,
                               DBusSocket       *fd2,
@@ -589,9 +601,6 @@ dbus_bool_t _dbus_command_for_pid (unsigned long  pid,
                                    int            max_len,
                                    DBusError     *error);
 
-dbus_bool_t _dbus_user_at_console (const char *username,
-                                   DBusError  *error);
-
 typedef enum {
   DBUS_LOG_FLAGS_STDERR = (1 << 0),
   DBUS_LOG_FLAGS_SYSTEM_LOG = (1 << 1)
@@ -617,31 +626,18 @@ void _dbus_logv (DBusSystemLogSeverity  severity,
                  const char            *msg,
                  va_list args) _DBUS_GNUC_PRINTF (2, 0);
 
-/**
- * Casts a primitive C type to a byte array and then indexes
- * a particular byte of the array.
- */
-#define _DBUS_BYTE_OF_PRIMITIVE(p, i) \
-    (((const char*)&(p))[(i)])
 /** On x86 there is an 80-bit FPU, and if you do "a == b" it may have a
  * or b in an 80-bit register, thus failing to compare the two 64-bit
  * doubles for bitwise equality. So this macro compares the two doubles
  * bitwise.
  */
-#define _DBUS_DOUBLES_BITWISE_EQUAL(a, b)                                       \
-     (_DBUS_BYTE_OF_PRIMITIVE (a, 0) == _DBUS_BYTE_OF_PRIMITIVE (b, 0) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 1) == _DBUS_BYTE_OF_PRIMITIVE (b, 1) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 2) == _DBUS_BYTE_OF_PRIMITIVE (b, 2) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 3) == _DBUS_BYTE_OF_PRIMITIVE (b, 3) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 4) == _DBUS_BYTE_OF_PRIMITIVE (b, 4) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 5) == _DBUS_BYTE_OF_PRIMITIVE (b, 5) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 6) == _DBUS_BYTE_OF_PRIMITIVE (b, 6) &&       \
-      _DBUS_BYTE_OF_PRIMITIVE (a, 7) == _DBUS_BYTE_OF_PRIMITIVE (b, 7))
+#define _DBUS_DOUBLES_BITWISE_EQUAL(a, b) (memcmp (&(a), &(b), sizeof (double)) == 0)
 
 dbus_bool_t _dbus_get_autolaunch_address (const char *scope,
                                           DBusString *address,
 					                      DBusError  *error);
 
+DBUS_PRIVATE_EXPORT
 dbus_bool_t _dbus_lookup_session_address (dbus_bool_t *supported,
                                           DBusString  *address,
                                           DBusError   *error);
@@ -733,6 +729,20 @@ void _dbus_combine_tcp_errors (DBusList **sources,
                                const char *host,
                                const char *port,
                                DBusError *dest);
+
+/**
+ * @def _DBUS_MAX_SUN_PATH_LENGTH
+ *
+ * Maximum length of the path to a UNIX domain socket,
+ * sockaddr_un::sun_path member. POSIX requires that all systems
+ * support at least 100 bytes here, including the nul termination.
+ * We use 99 for the max value to allow for the nul.
+ *
+ * We could probably also do sizeof (addr.sun_path)
+ * but this way we are the same on all platforms
+ * which is probably a good idea.
+ */
+#define _DBUS_MAX_SUN_PATH_LENGTH 99
 
 /** @} */
 

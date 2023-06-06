@@ -2,6 +2,7 @@
 /* dbus-arch-deps.h Header with architecture/compiler specific information, installed to libdir
  *
  * Copyright (C) 2003 Red Hat, Inc.
+ * SPDX-License-Identifier: AFL-2.0 OR GPL-2.0-or-later
  *
  * Licensed under the Academic Free License version 2.0
  * 
@@ -35,6 +36,7 @@ DBUS_BEGIN_DECLS
 #define DBUS_HAVE_INT64 1
 _DBUS_GNUC_EXTENSION typedef @DBUS_INT64_TYPE@ dbus_int64_t;
 _DBUS_GNUC_EXTENSION typedef unsigned @DBUS_INT64_TYPE@ dbus_uint64_t;
+#define DBUS_INT64_MODIFIER "@DBUS_INT64_MODIFIER@"
 
 #define DBUS_INT64_CONSTANT(val)  (_DBUS_GNUC_EXTENSION @DBUS_INT64_CONSTANT@)
 #define DBUS_UINT64_CONSTANT(val) (_DBUS_GNUC_EXTENSION @DBUS_UINT64_CONSTANT@)
@@ -44,6 +46,8 @@ typedef unsigned @DBUS_INT32_TYPE@ dbus_uint32_t;
 
 typedef @DBUS_INT16_TYPE@ dbus_int16_t;
 typedef unsigned @DBUS_INT16_TYPE@ dbus_uint16_t;
+
+#define DBUS_SIZEOF_VOID_P @DBUS_SIZEOF_VOID_P@
 
 /* This is not really arch-dependent, but it's not worth
  * creating an additional generated header just for this

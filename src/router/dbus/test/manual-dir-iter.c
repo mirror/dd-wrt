@@ -1,3 +1,7 @@
+/*
+ * Copyright 2014 Ralf Habacker
+ * SPDX-License-Identifier: MIT
+ */
 #include <config.h>
 #include "test-utils.h"
 

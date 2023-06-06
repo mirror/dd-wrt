@@ -4,6 +4,8 @@
  * Copyright (C) 2003, 2006 Red Hat, Inc.
  * Copyright (C) 2006 Thiago Macieira <thiago@kde.org>
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -843,12 +845,10 @@ main (int argc, char **argv)
   int bus_pid_to_babysitter_pipe[2];
   int bus_address_to_launcher_pipe[2];
   char *config_file;
-  dbus_bool_t user_bus_supported = FALSE;
-  DBusString user_bus;
+  dbus_bool_t existing_bus_supported = FALSE;
+  DBusString existing_bus;
   const char *error_str;
-#ifdef DBUS_BUILD_X11
   DBusError error = DBUS_ERROR_INIT;
-#endif
 
   exit_with_session = FALSE;
   config_file = NULL;
@@ -1009,31 +1009,20 @@ main (int argc, char **argv)
 
   if (autolaunch)
     {      
-#ifndef DBUS_BUILD_X11
-      fprintf (stderr, "Autolaunch requested, but X11 support not compiled in.\n"
-	       "Cannot continue.\n");
-      exit (1);
-#else /* DBUS_BUILD_X11 */
-#ifndef DBUS_ENABLE_X11_AUTOLAUNCH
-      fprintf (stderr, "X11 autolaunch support disabled at compile time.\n");
-      exit (1);
-#else /* DBUS_ENABLE_X11_AUTOLAUNCH */
-      char *address;
-      pid_t pid;
-      long wid;
-      
       if (get_machine_uuid () == NULL)
         {
           fprintf (stderr, "Machine UUID not provided as arg to --autolaunch\n");
           exit (1);
         }
 
-      if (!_dbus_string_init (&user_bus))
+      if (!_dbus_string_init (&existing_bus))
         tool_oom ("initializing");
 
       /* If we have an XDG_RUNTIME_DIR and it contains a suitable socket,
        * dbus-launch --autolaunch can use it, since --autolaunch implies
        * "I'm OK with getting a bus that is already active".
+       * Similarly, if we're on macOS with launchd enabled, we can reuse
+       * that here.
        *
        * (However, plain dbus-launch without --autolaunch must not do so,
        * because that would break lots of regression tests, which often
@@ -1044,21 +1033,23 @@ main (int argc, char **argv)
        * on the X11 display and in ~/.dbus/session-bus, for full
        * backwards compatibility.
        */
-      if (!_dbus_lookup_user_bus (&user_bus_supported, &user_bus, &error))
+      if (!_dbus_lookup_session_address (&existing_bus_supported,
+                                         &existing_bus, &error))
         {
           fprintf (stderr, "%s\n", error.message);
           exit (1);
         }
-      else if (user_bus_supported)
+      else if (existing_bus_supported)
         {
-          verbose ("=== Using existing user bus \"%s\"\n",
-                   _dbus_string_get_const_data (&user_bus));
+          verbose ("=== Using existing session bus \"%s\"\n",
+                   _dbus_string_get_const_data (&existing_bus));
         }
       else
         {
-          _dbus_string_free (&user_bus);
+          _dbus_string_free (&existing_bus);
         }
 
+#if defined(DBUS_BUILD_X11) && defined(DBUS_ENABLE_X11_AUTOLAUNCH)
       verbose ("Autolaunch enabled (using X11).\n");
       if (!exit_with_x11)
 	{
@@ -1066,27 +1057,38 @@ main (int argc, char **argv)
           exit_with_x11 = TRUE;
 	}
 
-      if (!x11_init ())
-	{
-	  fprintf (stderr, "Autolaunch error: X11 initialization failed.\n");
-	  exit (1);
-	}
+      if (x11_init ())
+        {
+          char *address;
+          pid_t pid;
+          long wid;
 
-      if (!x11_get_address (&address, &pid, &wid))
-	{
-	  fprintf (stderr, "Autolaunch error: X11 communication error.\n");
-	  exit (1);
-	}
+          _dbus_assert (xdisplay != NULL);
+          verbose ("Connected to X11 display\n");
 
-      if (address != NULL)
-	{
-	  verbose ("dbus-daemon is already running. Returning existing parameters.\n");
-	  pass_info (runprog, address, pid, wid, c_shell_syntax,
-			   bourne_shell_syntax, binary_syntax, argc, argv, remaining_args);
-	  exit (0);
-	}
-#endif /* DBUS_ENABLE_X11_AUTOLAUNCH */
-#endif /* DBUS_BUILD_X11 */
+          if (!x11_get_address (&address, &pid, &wid))
+            {
+              fprintf (stderr, "dbus-launch: Autolaunch error: X11 communication error.\n");
+              exit (1);
+            }
+
+          if (address != NULL)
+            {
+              verbose ("dbus-daemon is already running. Returning existing parameters.\n");
+              pass_info (runprog, address, pid, wid, c_shell_syntax,
+                         bourne_shell_syntax, binary_syntax, argc, argv,
+                         remaining_args);
+              exit (0);
+            }
+        }
+      else
+        {
+          verbose ("Failed to connect to X11 display\n");
+          _dbus_assert (xdisplay == NULL);
+        }
+#else
+      verbose ("X11 autolaunch disabled at compile time, skipping that.\n");
+#endif /* DBUS_BUILD_X11 && DBUS_ENABLE_X11_AUTOLAUNCH */
     }
   else if (exit_with_x11)
     {
@@ -1121,6 +1123,23 @@ main (int argc, char **argv)
     }
 #endif /* DBUS_BUILD_X11 */
 
+  if (autolaunch && !existing_bus_supported)
+    {
+#if defined(DBUS_BUILD_X11) && defined(DBUS_ENABLE_X11_AUTOLAUNCH)
+      if (xdisplay == NULL)
+        {
+          fprintf (stderr,
+                   "dbus-launch: No existing session bus was found, and "
+                   "failed to connect to X11 display.\n");
+          exit (1);
+        }
+#else
+      fprintf (stderr,
+               "dbus-launch: No existing session bus was found, and X11 "
+               "autolaunch support was disabled at compile time.\n");
+      exit (1);
+#endif
+    }
 
   if (pipe (bus_pid_to_launcher_pipe) < 0 ||
       pipe (bus_address_to_launcher_pipe) < 0 ||
@@ -1203,16 +1222,16 @@ main (int argc, char **argv)
       close (bus_pid_to_babysitter_pipe[READ_END]);
       close (bus_pid_to_babysitter_pipe[WRITE_END]);
 
-      /* If we have a user bus and want to use it, do so instead of
+      /* If we have an existing bus and want to use it, do so instead of
        * exec'ing a new dbus-daemon. */
-      if (autolaunch && user_bus_supported)
+      if (autolaunch && existing_bus_supported)
         {
           do_write (bus_pid_to_launcher_pipe[WRITE_END], "0\n", 2);
           close (bus_pid_to_launcher_pipe[WRITE_END]);
 
           do_write (bus_address_to_launcher_pipe[WRITE_END],
-                    _dbus_string_get_const_data (&user_bus),
-                    _dbus_string_get_length (&user_bus));
+                    _dbus_string_get_const_data (&existing_bus),
+                    _dbus_string_get_length (&existing_bus));
           do_write (bus_address_to_launcher_pipe[WRITE_END], "\n", 1);
           close (bus_address_to_launcher_pipe[WRITE_END]);
 

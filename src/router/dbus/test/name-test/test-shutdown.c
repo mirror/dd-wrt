@@ -1,3 +1,9 @@
+/*
+ * Copyright 2008 Red Hat, Inc.
+ * Copyright 2016-2018 Collabora Ltd.
+ * Copyright 2018 Ralf Habacker
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <config.h>
 #include <dbus/dbus-valgrind-internal.h>

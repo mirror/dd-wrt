@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002, 2003  Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,15 +33,10 @@
 #include <dbus/dbus-types.h>
 #include <dbus/dbus-errors.h>
 #include <dbus/dbus-sysdeps.h>
+#include <dbus/dbus-macros-internal.h>
 #include <dbus/dbus-threads-internal.h>
 
 DBUS_BEGIN_DECLS
-
-#ifdef DBUS_ENABLE_EMBEDDED_TESTS
-#define DBUS_EMBEDDED_TESTS_EXPORT DBUS_PRIVATE_EXPORT
-#else
-#define DBUS_EMBEDDED_TESTS_EXPORT /* nothing */
-#endif
 
 DBUS_PRIVATE_EXPORT
 void _dbus_warn               (const char *format,
@@ -53,6 +50,9 @@ void _dbus_warn_return_if_fail (const char *function,
                                 const char *assertion,
                                 const char *file,
                                 int line);
+
+DBUS_EMBEDDED_TESTS_EXPORT
+int _dbus_get_check_failed_count (void);
 
 #if defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #define _DBUS_FUNCTION_NAME __func__
@@ -104,7 +104,7 @@ void _dbus_warn_return_if_fail (const char *function,
 DBUS_PRIVATE_EXPORT
 void _dbus_verbose_real       (const char *file, const int line, const char *function, 
                                const char *format,...) _DBUS_GNUC_PRINTF (4, 5);
-#  define _dbus_verbose(fmt,...) _dbus_verbose_real( __FILE__,__LINE__,__FUNCTION__,fmt, ## __VA_ARGS__)
+#  define _dbus_verbose(fmt,...) _dbus_verbose_real( __FILE__,__LINE__,_DBUS_FUNCTION_NAME,fmt, ## __VA_ARGS__)
 #else
 DBUS_PRIVATE_EXPORT
 void _dbus_verbose_real       (const char *format,
@@ -201,8 +201,12 @@ void _dbus_real_assert_not_reached (const char *explanation,
     ((intptr_t) ((unsigned char*) &((struct_type*) 0)->member))
 #endif
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__cplusplus)
+#define _DBUS_ALIGNOF(type) _Alignof(type)
+#else
 #define _DBUS_ALIGNOF(type) \
     (_DBUS_STRUCT_OFFSET (struct { char _1; type _2; }, _2))
+#endif
 
 #if defined(DBUS_DISABLE_CHECKS) || defined(DBUS_DISABLE_ASSERT)
 /* this is an assert and not an error, but in the typical --disable-checks case (you're trying
@@ -279,11 +283,27 @@ _dbus_assert_error_xor_bool (const DBusError *error,
  */
 
 #define _DBUS_ALIGN_VALUE(this, boundary) \
-  (( ((uintptr_t)(this)) + (((uintptr_t)(boundary)) -1)) & (~(((uintptr_t)(boundary))-1)))
+  ((((uintptr_t) (this)) + (((size_t) (boundary)) - 1)) & \
+   (~(((size_t) (boundary)) - 1)))
 
 #define _DBUS_ALIGN_ADDRESS(this, boundary) \
   ((void*)_DBUS_ALIGN_VALUE(this, boundary))
 
+#define _DBUS_IS_ALIGNED(this, boundary) \
+  ((((size_t) (uintptr_t) (this)) & ((size_t) (boundary) - 1)) == 0)
+
+/**
+ * Aligning a pointer to _DBUS_ALIGNOF(dbus_max_align_t) guarantees that all
+ * scalar types can be loaded/stored from/to such an address without incurring
+ * an alignment fault (or a slow misaligned access).
+ * This is based on C11 max_align_t, but falls back to DBusBasicValue for
+ * older C standards.
+ */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+typedef max_align_t dbus_max_align_t;
+#else
+typedef DBusBasicValue dbus_max_align_t;
+#endif
 
 DBUS_PRIVATE_EXPORT
 char*       _dbus_strdup                (const char  *str);
@@ -467,6 +487,41 @@ dbus_bool_t _dbus_get_local_machine_uuid_encoded (DBusString *uuid_str,
 
 #define _DBUS_STRINGIFY(x) #x
 #define _DBUS_FILE_LINE __FILE__ ":" _DBUS_STRINGIFY(__LINE__)
+
+#ifndef __has_feature
+# define __has_feature(x) 0
+#endif
+
+/* MSVC defines __SANITIZE_ADDRESS__, but does not provide the special
+ * builtins associated with it. */
+#if ((defined(__SANITIZE_ADDRESS__) || __has_feature(address_sanitizer)) && \
+     !defined(_MSC_VER))
+# include <sanitizer/lsan_interface.h>
+/* Defined if we are building with AddressSanitizer */
+# define _DBUS_ADDRESS_SANITIZER
+/* Ignore memory allocations until the next _DBUS_END_IGNORE_LEAKS when
+ * checking for memory leaks */
+# define _DBUS_BEGIN_IGNORE_LEAKS __lsan_disable ()
+/* End the scope of a previous _DBUS_BEGIN_IGNORE_LEAKS */
+# define _DBUS_END_IGNORE_LEAKS __lsan_enable ()
+#else
+# undef _DBUS_ADDRESS_SANITIZER
+# define _DBUS_BEGIN_IGNORE_LEAKS do { } while (0)
+# define _DBUS_END_IGNORE_LEAKS do { } while (0)
+#endif
+
+/** @def DBUS_IS_DIR_SEPARATOR(c)
+ * macro for checking if character c is a path separator
+ */
+#ifdef DBUS_WIN
+#define DBUS_IS_DIR_SEPARATOR(c) (c == '\\' || c == '/')
+#define DBUS_DIR_SEPARATOR '\\'
+#define DBUS_DIR_SEPARATOR_S "\\"
+#else
+#define DBUS_IS_DIR_SEPARATOR(c) (c == '/')
+#define DBUS_DIR_SEPARATOR '/'
+#define DBUS_DIR_SEPARATOR_S "/"
+#endif
 
 DBUS_END_DECLS
 

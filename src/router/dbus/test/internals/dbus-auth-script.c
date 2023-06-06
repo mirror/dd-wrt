@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2003 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -307,7 +309,6 @@ _dbus_auth_script_run (const DBusString *filename)
   state = DBUS_AUTH_STATE_NEED_DISCONNECT;
   line_no = 0;
 
- next_iteration:
   while (_dbus_string_pop_line (&file, &line))
     {
       line_no += 1;
@@ -336,20 +337,20 @@ _dbus_auth_script_run (const DBusString *filename)
       if (_dbus_string_get_length (&line) == 0)
         {
           /* empty line */
-          goto next_iteration;
+          continue;
         }
       else if (_dbus_string_starts_with_c_str (&line,
                                                "#"))
         {
           /* Ignore this comment */
-          goto next_iteration;
+          continue;
         }
 #ifdef DBUS_WIN
       else if (_dbus_string_starts_with_c_str (&line,
                                                "WIN_ONLY"))
         {
           /* Ignore this line */
-          goto next_iteration;
+          continue;
         }
       else if (_dbus_string_starts_with_c_str (&line,
                                                "UNIX_ONLY"))
@@ -365,7 +366,7 @@ _dbus_auth_script_run (const DBusString *filename)
                                                "UNIX_ONLY"))
         {
           /* Ignore this line */
-          goto next_iteration;
+          continue;
         }
       else if (_dbus_string_starts_with_c_str (&line,
                                                "WIN_ONLY"))
@@ -837,7 +838,7 @@ _dbus_auth_script_run (const DBusString *filename)
       else
         goto parse_failed;
 
-      goto next_iteration; /* skip parse_failed */
+      continue; /* skip parse_failed */
 
     parse_failed:
       {

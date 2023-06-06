@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2003 Red Hat, Inc.
  * Copyright (C) 2002 Michael Meeks
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Note that this file is NOT licensed under the Academic Free License,
  * as it is based on linc-cleanup-sockets which is LGPL.

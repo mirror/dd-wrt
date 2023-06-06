@@ -1,3 +1,9 @@
+/*
+ * Copyright 2008 Red Hat, Inc.
+ * Copyright 2011-2017 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "config.h"
 
 #include <stdio.h>

@@ -2,6 +2,7 @@
 /* dbus-send.c  Utility program to send messages from the command line
  *
  * Copyright (C) 2003 Philip Blundell <philb@gnu.org>
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,18 +27,6 @@
 
 #include <dbus/dbus.h>
 #include "dbus/dbus-internals.h"
-
-#ifndef HAVE_STRTOLL
-#undef strtoll
-#define strtoll mystrtoll
-#include "strtoll.c"
-#endif
-
-#ifndef HAVE_STRTOULL
-#undef strtoull
-#define strtoull mystrtoull
-#include "strtoull.c"
-#endif
 
 #ifdef DBUS_WINCE
 #ifndef strdup
@@ -68,6 +57,8 @@ handle_oom (dbus_bool_t success)
       exit (1);
     }
 }
+
+static int type_from_name (const char *arg, dbus_bool_t allow_container_types);
 
 static void
 append_arg (DBusMessageIter *iter, int type, const char *value)
@@ -151,6 +142,33 @@ append_arg (DBusMessageIter *iter, int type, const char *value)
 	}
       break;
 
+    case DBUS_TYPE_VARIANT:
+      {
+        DBusMessageIter subiter;
+
+        char sig[2] = "\0\0";
+        char *subtype = strdup (value);
+        char *c = NULL;
+
+        handle_oom (subtype != NULL);
+        c = strchr (subtype, ':');
+        if (!c)
+          {
+            fprintf (stderr, "%s: missing variant subtype specifier\n",
+                     appname);
+            exit (1);
+          }
+        *c = '\0';
+
+        sig[0] = (char) type_from_name (subtype, TRUE);
+
+        handle_oom (dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT,
+                                                      sig, &subiter));
+        append_arg (&subiter, sig[0], c + 1);
+        free (subtype);
+        ret = dbus_message_iter_close_container (iter, &subiter);
+        break;
+      }
     default:
       fprintf (stderr, "%s: Unsupported data type %c\n", appname, (char) type);
       exit (1);
@@ -210,7 +228,7 @@ append_dict (DBusMessageIter *iter, int keytype, int valtype, const char *value)
 }
 
 static int
-type_from_name (const char *arg)
+type_from_name (const char *arg, dbus_bool_t allow_container_types)
 {
   int type;
   if (!strcmp (arg, "string"))
@@ -235,6 +253,16 @@ type_from_name (const char *arg)
     type = DBUS_TYPE_BOOLEAN;
   else if (!strcmp (arg, "objpath"))
     type = DBUS_TYPE_OBJECT_PATH;
+  else if (!strcmp(arg, "variant"))
+    {
+        if (!allow_container_types)
+          {
+            fprintf (stderr, "%s: A variant cannot be the key in a dictionary\n", appname);
+            exit (1);
+          }
+
+        type = DBUS_TYPE_VARIANT;
+    }
   else
     {
       fprintf (stderr, "%s: Unknown type \"%s\"\n", appname, arg);
@@ -609,7 +637,7 @@ main (int argc, char *argv[])
       if (arg[0] == 0)
 	type2 = DBUS_TYPE_STRING;
       else
-	type2 = type_from_name (arg);
+	type2 = type_from_name (arg, FALSE);
 
       if (container_type == DBUS_TYPE_DICT_ENTRY)
 	{
@@ -622,7 +650,7 @@ main (int argc, char *argv[])
 	      exit (1);
 	    }
 	  *(c++) = 0;
-	  secondary_type = type_from_name (arg);
+	  secondary_type = type_from_name (arg, TRUE);
 	  sig[0] = DBUS_DICT_ENTRY_BEGIN_CHAR;
 	  sig[1] = type2;
 	  sig[2] = secondary_type;

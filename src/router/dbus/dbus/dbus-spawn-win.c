@@ -5,7 +5,7 @@
 #if !defined(SPAWN_DEBUG) || defined(_MSC_VER)
 #define PING()
 #else
-#define PING() fprintf (stderr, "%s:%s:%d\n", __FILE__, __FUNCTION__, __LINE__); fflush (stderr)
+#define PING() fprintf (stderr, "%s:%s:%d\n", __FILE__, _DBUS_FUNCTION_NAME, __LINE__); fflush (stderr)
 #endif
 
 #include <stdio.h>
@@ -16,6 +16,8 @@
  * Copyright (C) 2002, 2003, 2004  Red Hat, Inc.
  * Copyright (C) 2003 CodeFactory AB
  * Copyright (C) 2005 Novell, Inc.
+ *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
  *
  * Licensed under the Academic Free License version 2.1
  *
@@ -105,7 +107,7 @@ _dbus_babysitter_new (void)
 
   old_refcount = _dbus_atomic_inc (&sitter->refcount);
 
-  _dbus_babysitter_trace_ref (sitter, old_refcount, old_refcount+1, __FUNCTION__);
+  _dbus_babysitter_trace_ref (sitter, old_refcount, old_refcount+1, _DBUS_FUNCTION_NAME);
 
   sitter->child_handle = NULL;
 
@@ -139,7 +141,7 @@ _dbus_babysitter_ref (DBusBabysitter *sitter)
 
   old_refcount = _dbus_atomic_inc (&sitter->refcount);
   _dbus_assert (old_refcount > 0);
-  _dbus_babysitter_trace_ref (sitter, old_refcount, old_refcount+1, __FUNCTION__);
+  _dbus_babysitter_trace_ref (sitter, old_refcount, old_refcount+1, _DBUS_FUNCTION_NAME);
 
   return sitter;
 }
@@ -160,7 +162,7 @@ close_socket_to_babysitter (DBusBabysitter *sitter)
 
   if (sitter->socket_to_babysitter.sock != INVALID_SOCKET)
     {
-      _dbus_close_socket (sitter->socket_to_babysitter, NULL);
+      _dbus_close_socket (&sitter->socket_to_babysitter, NULL);
       sitter->socket_to_babysitter.sock = INVALID_SOCKET;
     }
 }
@@ -180,7 +182,7 @@ _dbus_babysitter_unref (DBusBabysitter *sitter)
 
   old_refcount = _dbus_atomic_dec (&sitter->refcount);
   _dbus_assert (old_refcount > 0);
-  _dbus_babysitter_trace_ref (sitter, old_refcount, old_refcount-1, __FUNCTION__);
+  _dbus_babysitter_trace_ref (sitter, old_refcount, old_refcount-1, _DBUS_FUNCTION_NAME);
 
   if (old_refcount == 1)
     {
@@ -188,7 +190,7 @@ _dbus_babysitter_unref (DBusBabysitter *sitter)
 
       if (sitter->socket_to_main.sock != INVALID_SOCKET)
         {
-          _dbus_close_socket (sitter->socket_to_main, NULL);
+          _dbus_close_socket (&sitter->socket_to_main, NULL);
           sitter->socket_to_main.sock = INVALID_SOCKET;
         }
 

@@ -86,9 +86,10 @@ setup (Fixture *f,
   dbus_error_init (&f->e);
   g_queue_init (&f->client_messages);
 
-  if ((g_str_has_prefix (addr, "tcp:") ||
-       g_str_has_prefix (addr, "nonce-tcp:")) &&
-      !test_check_tcp_works ())
+  if ((g_str_has_prefix (addr, "unix:") && !test_check_af_unix_works ()) ||
+      ((g_str_has_prefix (addr, "tcp:") ||
+        g_str_has_prefix (addr, "nonce-tcp:")) &&
+       !test_check_tcp_works ()))
     {
       f->skip = TRUE;
       return;
@@ -406,26 +407,31 @@ main (int argc,
     char **argv)
 {
   int ret;
+#ifdef DBUS_UNIX
+  char *tmp = _dbus_strdup ("/tmp");
+#else
+  char *tmp = dbus_address_escape_value (g_get_tmp_dir ());
+#endif
+  gchar *unix_tmpdir = g_strdup_printf ("unix:tmpdir=%s", tmp);
 
   test_init (&argc, &argv);
 
   g_test_add ("/corrupt/tcp", Fixture, "tcp:host=127.0.0.1", setup,
       test_corrupt, teardown);
 
-#ifdef DBUS_UNIX
-  g_test_add ("/corrupt/unix", Fixture, "unix:tmpdir=/tmp", setup,
+  g_test_add ("/corrupt/unix", Fixture, unix_tmpdir, setup,
       test_corrupt, teardown);
-#endif
 
   g_test_add ("/corrupt/byte-order/tcp", Fixture, "tcp:host=127.0.0.1", setup,
       test_byte_order, teardown);
 
-#ifdef DBUS_UNIX
-  g_test_add ("/corrupt/byte-order/unix", Fixture, "unix:tmpdir=/tmp", setup,
+  g_test_add ("/corrupt/byte-order/unix", Fixture, unix_tmpdir, setup,
       test_byte_order, teardown);
-#endif
 
   ret = g_test_run ();
   dbus_shutdown ();
+
+  g_free (unix_tmpdir);
+  dbus_free (tmp);
   return ret;
 }

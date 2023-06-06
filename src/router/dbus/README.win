@@ -13,8 +13,11 @@ test not running yet and there is help needed to get them running.
 
 Supported compilers
 -------------------
-On windows Microsoft Visual Studio 2010 (Express and professional variants)
-and mingw-w64|32 are known to work.
+Building dbus for Windows requires either Microsoft Visual Studio 2015
+or later, or a recent mingw-w64 compiler.
+
+Compilers older than the ones we test in continuous integration are
+not supported.
 
 Building
 --------

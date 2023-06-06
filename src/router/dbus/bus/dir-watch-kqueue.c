@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2003 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,7 +53,7 @@ static DBusWatch *watch = NULL;
 static DBusLoop *loop = NULL;
 
 static dbus_bool_t
-_handle_kqueue_watch (DBusWatch *watch, unsigned int flags, void *data)
+_handle_kqueue_watch (DBusWatch *_watch, unsigned int flags, void *data)
 {
   struct kevent ev;
   struct timespec nullts = { 0, 0 };
@@ -73,6 +75,7 @@ _handle_kqueue_watch (DBusWatch *watch, unsigned int flags, void *data)
   else if (res < 0 && errno == EBADF)
     {
       kq = -1;
+      _dbus_assert (watch == _watch);
       if (watch != NULL)
         {
           _dbus_loop_remove_watch (loop, watch);
@@ -218,10 +221,15 @@ bus_set_watched_dirs (BusContext *context, DBusList **directories)
 
   i = 0;
   link = _dbus_list_get_first_link (directories);
-  while (link != NULL)
+  while (link != NULL && i < MAX_DIRS_TO_WATCH)
     {
       new_dirs[i++] = (char *)link->data;
       link = _dbus_list_get_next_link (directories, link);
+    }
+
+  if (link != NULL)
+    {
+      _dbus_warn ("Too many directories to watch them all, only watching first %d.", MAX_DIRS_TO_WATCH);
     }
 
   /* Look for directories in both the old and new sets, if

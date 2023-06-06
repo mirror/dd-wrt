@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002, 2006  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,7 +41,13 @@ DBusTransportOpenResult _dbus_transport_open_socket        (DBusAddressEntry  *e
                                                             DBusTransport    **transport_p,
                                                             DBusError         *error);
 
+DBusTransport* _dbus_transport_new_for_domain_socket (const char       *path,
+                                                      dbus_bool_t       abstract,
+                                                      DBusError        *error);
 
+DBusTransportOpenResult _dbus_transport_open_unix_socket   (DBusAddressEntry  *entry,
+                                                            DBusTransport    **transport_p,
+                                                            DBusError         *error);
 
 DBUS_END_DECLS
 

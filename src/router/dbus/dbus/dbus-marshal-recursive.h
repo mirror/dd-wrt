@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2004, 2005 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,18 +40,19 @@ typedef struct DBusArrayLenFixup   DBusArrayLenFixup;
  */
 struct DBusTypeReader
 {
+  const DBusTypeReaderClass *klass; /**< the vtable for the reader */
+  const DBusString *type_str;   /**< string containing signature of block */
+  const DBusString *value_str;  /**< string containing values of block */
+
   dbus_uint32_t byte_order : 8; /**< byte order of the block */
 
   dbus_uint32_t finished : 1;   /**< marks we're at end iterator for cases
                                  * where we don't have another way to tell
                                  */
   dbus_uint32_t array_len_offset : 3; /**< bytes back from start_pos that len ends */
-  const DBusString *type_str;   /**< string containing signature of block */
   int type_pos;                 /**< current position in signature */
-  const DBusString *value_str;  /**< string containing values of block */
   int value_pos;                /**< current position in values */
 
-  const DBusTypeReaderClass *klass; /**< the vtable for the reader */
   union
   {
     struct {
@@ -63,6 +66,8 @@ struct DBusTypeReader
  */
 struct DBusTypeWriter
 {
+  DBusString *type_str; /**< where to write typecodes (or read type expectations) */
+  DBusString *value_str; /**< where to write values */
   dbus_uint32_t byte_order : 8;            /**< byte order to write values with */
 
   dbus_uint32_t container_type : 8;        /**< what are we inside? (e.g. struct, variant, array) */
@@ -71,9 +76,7 @@ struct DBusTypeWriter
 
   dbus_uint32_t enabled : 1; /**< whether to write values */
 
-  DBusString *type_str; /**< where to write typecodes (or read type expectations) */
   int type_pos;         /**< current pos in type_str */
-  DBusString *value_str; /**< where to write values */
   int value_pos;         /**< next position to write */
 
   union

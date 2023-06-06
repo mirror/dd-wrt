@@ -89,7 +89,6 @@ set(DBUS_LIB_HEADERS
     dbus-resources.h
     dbus-server-debug-pipe.h
     dbus-server-protected.h
-    dbus-server-unix.h
     dbus-sha.h
     dbus-timeout.h
     dbus-threads.h
@@ -98,7 +97,7 @@ set(DBUS_LIB_HEADERS
     dbus-transport-protected.h
     dbus-uuidgen.h
     dbus-watch.h
-    ${CMAKE_BINARY_DIR}/config.h
+    ${PROJECT_BINARY_DIR}/config.h
 )
 if(UNIX)
     set(DBUS_LIB_HEADERS ${DBUS_LIB_HEADERS}
@@ -135,6 +134,7 @@ set(DBUS_SHARED_HEADERS
     dbus-hash.h
     dbus-internals.h
     dbus-list.h
+    dbus-macros-internal.h
     dbus-marshal-basic.h
     dbus-mempool.h
     dbus-string.h
@@ -177,6 +177,7 @@ set(DBUS_UTIL_HEADERS
 ### platform specific settings
 if(WIN32)
     set(DBUS_SHARED_SOURCES ${DBUS_SHARED_SOURCES}
+        dbus-backtrace-win.c
         dbus-file-win.c
         dbus-init-win.cpp
         dbus-sysdeps-win.c
@@ -208,7 +209,6 @@ else(WIN32)
         dbus-userdb.c
     )
     set(DBUS_SHARED_HEADERS ${DBUS_SHARED_HEADERS}
-        dbus-server-unix.h
         dbus-transport-unix.h
         dbus-sysdeps-unix.h
         dbus-userdb.h
@@ -291,6 +291,10 @@ else(WIN32)
     endif()
     if(LIBSOCKET)
         target_link_libraries(dbus-1 ${LIBSOCKET})
+    endif()
+    if (HAVE_BACKTRACE)
+        target_link_libraries(dbus-1 ${Backtrace_LIBRARY})
+        target_include_directories(dbus-1 PRIVATE ${Backtrace_INCLUDE_DIR})
     endif()
 endif()
 

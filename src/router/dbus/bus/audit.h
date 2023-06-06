@@ -1,6 +1,8 @@
 /* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*-
  * audit.h - libaudit integration for SELinux and AppArmor
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify

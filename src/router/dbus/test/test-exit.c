@@ -1,3 +1,8 @@
+/*
+ * Copyright 2003 Red Hat, Inc.
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "config.h"
 
 /* This is a process that just exits with a failure code */

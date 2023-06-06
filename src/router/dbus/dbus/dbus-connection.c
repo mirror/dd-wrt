@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002-2006  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -315,6 +317,8 @@ struct DBusConnection
   unsigned int shareable : 1; /**< #TRUE if libdbus owns a reference to the connection and can return it from dbus_connection_open() more than once */
   
   unsigned int exit_on_disconnect : 1; /**< If #TRUE, exit after handling disconnect signal */
+
+  unsigned int builtin_filters_enabled : 1; /**< If #TRUE, handle org.freedesktop.DBus.Peer messages automatically, whether they have a bus name or not */
 
   unsigned int route_peer_messages : 1; /**< If #TRUE, if org.freedesktop.DBus.Peer messages have a bus name, don't handle them automatically */
 
@@ -1343,6 +1347,7 @@ _dbus_connection_new_for_transport (DBusTransport *transport)
   connection->objects = objects;
   connection->exit_on_disconnect = FALSE;
   connection->shareable = FALSE;
+  connection->builtin_filters_enabled = TRUE;
   connection->route_peer_messages = FALSE;
   connection->disconnected_message_arrived = FALSE;
   connection->disconnected_message_processed = FALSE;
@@ -1456,7 +1461,16 @@ _dbus_connection_unref_unlocked (DBusConnection *connection)
     _dbus_connection_last_unref (connection);
 }
 
-static dbus_uint32_t
+/**
+ * Allocate and return the next non-zero serial number for outgoing messages.
+ *
+ * This method is only valid to call from single-threaded code, such as
+ * the dbus-daemon, or with the connection lock held.
+ *
+ * @param connection the connection
+ * @returns A suitable serial number for the next message to be sent on the connection.
+ */
+dbus_uint32_t
 _dbus_connection_get_next_client_serial (DBusConnection *connection)
 {
   dbus_uint32_t serial;
@@ -4657,10 +4671,14 @@ dbus_connection_dispatch (DBusConnection *connection)
       goto out;
     }
 
-  result = _dbus_connection_run_builtin_filters_unlocked_no_update (connection, message);
-  if (result != DBUS_HANDLER_RESULT_NOT_YET_HANDLED)
-    goto out;
- 
+  /* If skipping builtin filters, we are probably a monitor. */
+  if (connection->builtin_filters_enabled)
+    {
+      result = _dbus_connection_run_builtin_filters_unlocked_no_update (connection, message);
+      if (result != DBUS_HANDLER_RESULT_NOT_YET_HANDLED)
+        goto out;
+    }
+
   if (!_dbus_list_copy (&connection->filter_list, &filter_list_copy))
     {
       _dbus_connection_release_dispatch (connection);
@@ -5529,6 +5547,38 @@ dbus_connection_set_allow_anonymous (DBusConnection             *connection,
   
   CONNECTION_LOCK (connection);
   _dbus_transport_set_allow_anonymous (connection->transport, value);
+  CONNECTION_UNLOCK (connection);
+}
+
+/**
+ * Enables the builtin filtering of messages.
+ *
+ * Currently the only filtering implemented by libdbus and mandated by the spec
+ * is that of peer messages.
+ *
+ * If #TRUE, #DBusConnection automatically handles all messages to the
+ * org.freedesktop.DBus.Peer interface. For monitors this can break the
+ * specification if the response is sending a message.
+ *
+ * If #FALSE, the result is similar to calling
+ * dbus_connection_set_route_peer_messages() with argument TRUE, but
+ * messages with a NULL destination are also dispatched to the
+ * application instead of being passed to the built-in filters.
+ *
+ * If a normal application disables this flag, it can break things badly. So
+ * only unset this if you are a monitor.
+ *
+ * @param connection the connection
+ * @param value #TRUE to pass through org.freedesktop.DBus.Peer messages
+ */
+void
+dbus_connection_set_builtin_filters_enabled (DBusConnection         *connection,
+                                             dbus_bool_t             value)
+{
+  _dbus_return_if_fail (connection != NULL);
+
+  CONNECTION_LOCK (connection);
+  connection->builtin_filters_enabled = value;
   CONNECTION_UNLOCK (connection);
 }
 

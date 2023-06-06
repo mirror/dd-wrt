@@ -6,6 +6,8 @@
  * Copyright 2009 Lennart Poettering
  * Copyright 2018 Collabora Ltd.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,7 +38,9 @@
 typedef dbus_bool_t (* BusConnectionForeachFunction) (DBusConnection *connection,
                                                       void           *data);
 
-dbus_bool_t bus_dispatch_test         (const char                   *test_data_dir_cstr);
+dbus_bool_t bus_test_normal_activation (const char                  *test_data_dir_cstr);
+dbus_bool_t bus_test_helper_activation (const char                  *test_data_dir_cstr);
+dbus_bool_t bus_test_failed_helper_activation (const char           *test_data_dir_cstr);
 dbus_bool_t bus_dispatch_sha1_test    (const char                   *test_data_dir_cstr);
 dbus_bool_t bus_config_parser_test    (const char                   *test_data_dir_cstr);
 dbus_bool_t bus_config_parser_trivial_test (const char              *test_data_dir_cstr);

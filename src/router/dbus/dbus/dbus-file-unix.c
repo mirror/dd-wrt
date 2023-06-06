@@ -4,6 +4,8 @@
  * Copyright (C) 2002, 2003, 2006  Red Hat, Inc.
  * Copyright (C) 2003 CodeFactory AB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,7 +33,13 @@
 #include "dbus-sysdeps.h"
 #include "dbus-sysdeps-unix.h"
 
+#ifdef HAVE_LINUX_MAGIC_H
+#include <linux/magic.h>
+#endif
 #include <sys/stat.h>
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -58,9 +66,14 @@ _dbus_file_get_contents (DBusString       *str,
 {
   int fd;
   struct stat sb;
+#ifdef HAVE_FSTATFS
+  struct statfs sfs;
+#endif
   int orig_len;
   int total;
+  int file_size;
   const char *filename_c;
+  dbus_bool_t is_procfs = FALSE;
 
   _DBUS_ASSERT_ERROR_IS_CLEAR (error);
   
@@ -102,17 +115,47 @@ _dbus_file_get_contents (DBusString       *str,
       _dbus_close (fd, NULL);
       return FALSE;
     }
+
+  /* procfs has different semantics - most files are 0 size,
+   * we can do only one read, and at most we can read 4M.
+   */
+#ifdef HAVE_FSTATFS
+  if (sb.st_size == 0)
+    {
+      if (fstatfs(fd, &sfs) < 0)
+        {
+          dbus_set_error (error, _dbus_error_from_errno (errno),
+                          "Failed to stat \"%s\": %s",
+                          filename_c,
+                          _dbus_strerror (errno));
+
+          _dbus_verbose ("fstatvfs() failed: %s",
+                        _dbus_strerror (errno));
+
+          _dbus_close (fd, NULL);
+
+          return FALSE;
+        }
+      if (sfs.f_type == PROC_SUPER_MAGIC)
+        is_procfs = TRUE;
+    }
+#endif
+
+  if (is_procfs)
+    file_size = _DBUS_ONE_MEGABYTE;
+  else
+    file_size = sb.st_size;
   
   total = 0;
   orig_len = _dbus_string_get_length (str);
-  if (sb.st_size > 0 && S_ISREG (sb.st_mode))
+  if (file_size > 0 && S_ISREG (sb.st_mode))
     {
       int bytes_read;
 
-      while (total < (int) sb.st_size)
+      do
         {
           bytes_read = _dbus_read (fd, str,
-                                   sb.st_size - total);
+                                   file_size - total);
           if (bytes_read <= 0)
             {
               dbus_set_error (error, _dbus_error_from_errno (errno),
@@ -130,11 +173,12 @@ _dbus_file_get_contents (DBusString       *str,
           else
             total += bytes_read;
         }
+      while (total < file_size && !is_procfs);
 
       _dbus_close (fd, NULL);
       return TRUE;
     }
-  else if (sb.st_size != 0)
+  else if (file_size != 0)
     {
       _dbus_verbose ("Can only open regular files at the moment.\n");
       dbus_set_error (error, DBUS_ERROR_FAILED,

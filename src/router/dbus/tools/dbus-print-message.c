@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2003 Philip Blundell <philb@gnu.org>
  * Copyright (C) 2003 Red Hat, Inc.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,15 +42,6 @@
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
-#endif
-
-#if defined(DBUS_WIN)
-#if !defined(PRId64)
-#define PRId64 "I64d"
-#endif
-#if !defined(PRIu64)
-#define PRIu64 "I64u"
-#endif
 #endif
 
 #ifndef HAVE_SOCKLEN_T
@@ -401,7 +393,7 @@ print_iter (DBusMessageIter *iter, dbus_bool_t literal, int depth)
           {
             dbus_int64_t val;
             dbus_message_iter_get_basic (iter, &val);
-            printf ("int64 %" PRId64 "\n", val);
+            printf ("int64 %" DBUS_INT64_MODIFIER "d\n", val);
             break;
           }
 
@@ -409,7 +401,7 @@ print_iter (DBusMessageIter *iter, dbus_bool_t literal, int depth)
           {
             dbus_uint64_t val;
             dbus_message_iter_get_basic (iter, &val);
-            printf ("uint64 %" PRIu64 "\n", val);
+            printf ("uint64 %" DBUS_INT64_MODIFIER "u\n", val);
             break;
           }
 

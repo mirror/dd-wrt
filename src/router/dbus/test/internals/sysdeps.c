@@ -28,9 +28,19 @@
 #include "dbus/dbus-sysdeps.h"
 #include "test-utils-glib.h"
 
+#ifdef G_OS_UNIX
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include "dbus/dbus-sysdeps-unix.h"
+#endif
+
 typedef struct
 {
-  int dummy;
+  size_t n_fds;
+  int *fds;
 } Fixture;
 
 static void
@@ -43,10 +53,6 @@ setup (Fixture *f G_GNUC_UNUSED,
  * handle (a HANDLE, vaguely analogous to a file descriptor) on Windows.
  * For _dbus_command_for_pid() we need an actual process ID. */
 #ifdef G_OS_UNIX
-# include <errno.h>
-# include <sys/wait.h>
-# include <sys/types.h>
-
 # define NO_PROCESS 0
 # ifndef G_PID_FORMAT
 #   define G_PID_FORMAT "i"
@@ -184,10 +190,129 @@ test_command_for_pid (Fixture *f,
   g_free (argv[0]);
 }
 
+#ifdef G_OS_UNIX
+static gboolean
+check_valid_fd (int fd,
+                gboolean *close_on_exec)
+{
+  int flags = fcntl (fd, F_GETFD);
+
+  if (flags < 0)
+    {
+      int saved_errno = errno;
+
+      g_assert_cmpint (saved_errno, ==, EBADF);
+      return FALSE;
+    }
+
+  if (close_on_exec != NULL)
+    *close_on_exec = ((flags & FD_CLOEXEC) != 0);
+
+  return TRUE;
+}
+
+static void
+fixture_open_some_fds (Fixture *f)
+{
+  const size_t n = 50;  /* must be divisible by 2, otherwise arbitrary */
+  size_t i;
+  const char *error_str = NULL;
+
+  /* Ensure that fds[] will not contain 0, 1 or 2 */
+  if (!_dbus_ensure_standard_fds (0, &error_str))
+    g_error ("_dbus_ensure_standard_fds: %s (%s)",
+             error_str, g_strerror (errno));
+
+  g_assert_cmpuint (f->n_fds, ==, 0);
+  g_assert_null (f->fds);
+  f->n_fds = n;
+  f->fds = g_new0 (int, n);
+
+  for (i = 0; i < n; i++)
+    f->fds[i] = -1;
+
+  for (i = 0; i < n; i += 2)
+    {
+      gboolean cloexec;
+
+      if (pipe (&f->fds[i]) < 0)
+        g_error ("pipe: %s", g_strerror (errno));
+
+      g_assert_cmpint (f->fds[i], >=, 3);
+      g_assert_cmpint (f->fds[i + 1], >=, 3);
+      _dbus_fd_clear_close_on_exec (f->fds[i]);
+      _dbus_fd_clear_close_on_exec (f->fds[i + 1]);
+      g_assert_true (check_valid_fd (f->fds[i], &cloexec));
+      g_assert_false (cloexec);
+      g_assert_true (check_valid_fd (f->fds[i + 1], &cloexec));
+      g_assert_false (cloexec);
+    }
+}
+
+static void
+test_close_all (Fixture *f,
+                gconstpointer context G_GNUC_UNUSED)
+{
+  size_t i;
+
+  fixture_open_some_fds (f);
+
+  for (i = 0; i < f->n_fds; i++)
+    g_assert_true (check_valid_fd (f->fds[i], NULL));
+
+  _dbus_close_all ();
+
+  for (i = 0; i < f->n_fds; i++)
+    {
+      g_assert_false (check_valid_fd (f->fds[i], NULL));
+      /* Don't re-close the fd in teardown */
+      f->fds[i] = -1;
+    }
+}
+
+static void
+test_set_all_close_on_exec (Fixture *f,
+                            gconstpointer context G_GNUC_UNUSED)
+{
+  size_t i;
+
+  fixture_open_some_fds (f);
+
+  for (i = 0; i < f->n_fds; i++)
+    {
+      gboolean cloexec;
+
+      g_assert_true (check_valid_fd (f->fds[i], &cloexec));
+      g_assert_false (cloexec);
+    }
+
+  _dbus_fd_set_all_close_on_exec ();
+
+  for (i = 0; i < f->n_fds; i++)
+    {
+      gboolean cloexec;
+
+      g_assert_true (check_valid_fd (f->fds[i], &cloexec));
+      g_assert_true (cloexec);
+    }
+}
+#endif
+
 static void
 teardown (Fixture *f G_GNUC_UNUSED,
           gconstpointer context G_GNUC_UNUSED)
 {
+#ifdef G_OS_UNIX
+  size_t i;
+
+  for (i = 0; i < f->n_fds; i++)
+    {
+      if (f->fds[i] >= 0)
+        _dbus_close (f->fds[i], NULL);
+    }
+
+  g_free (f->fds);
+#endif
 }
 
 int
@@ -200,6 +325,13 @@ main (int argc,
 
   g_test_add ("/sysdeps/command_for_pid",
               Fixture, NULL, setup, test_command_for_pid, teardown);
+
+#ifdef G_OS_UNIX
+  g_test_add ("/sysdeps/close_all",
+              Fixture, NULL, setup, test_close_all, teardown);
+  g_test_add ("/sysdeps/set_all_close_on_exec",
+              Fixture, NULL, setup, test_set_all_close_on_exec, teardown);
+#endif
 
   ret = g_test_run ();
   dbus_shutdown ();

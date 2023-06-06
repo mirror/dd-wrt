@@ -4,6 +4,8 @@
  * Copyright (C) 2002, 2003, 2004, 2005  Red Hat Inc.
  * Copyright (C) 2002, 2003  CodeFactory AB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -136,6 +138,15 @@ struct DBusMessageRealIter
   } u; /**< the type writer or reader that does all the work */
 };
 
+#if DBUS_SIZEOF_VOID_P > 8
+/*
+ * Architectures with 128-bit pointers were not supported in DBus 1.10, so we
+ * do no check for DBus 1.10 structure layout compatibility for such
+ * architectures (e.g. Arm Morello).
+ */
+#define CHECK_DBUS_1_10_BINARY_COMPATIBILITY 0
+#else
+#define CHECK_DBUS_1_10_BINARY_COMPATIBILITY 1
 /**
  * Layout of a DBusMessageIter on the stack in dbus 1.10.0. This is no
  * longer used, but for ABI compatibility we need to assert that the
@@ -158,6 +169,7 @@ typedef struct
   int pad2;
   void *pad3;
 } DBusMessageIter_1_10_0;
+#endif
 
 static void
 get_const_signature (DBusHeader        *header,
@@ -843,7 +855,7 @@ _dbus_message_iter_get_args_valist (DBusMessageIter *iter,
   /* copy var_args first, then we can do another iteration over it to
    * free memory and close unix fds if parse failed at some point.
    */
-  DBUS_VA_COPY (copy_args, var_args);
+  va_copy (copy_args, var_args);
 
   while (spec_type != DBUS_TYPE_INVALID)
     {
@@ -2069,17 +2081,23 @@ _dbus_message_iter_init_common (DBusMessage         *message,
   _DBUS_STATIC_ASSERT (sizeof (DBusMessageRealIter) <= sizeof (DBusMessageIter));
   _DBUS_STATIC_ASSERT (_DBUS_ALIGNOF (DBusMessageRealIter) <=
       _DBUS_ALIGNOF (DBusMessageIter));
+#if CHECK_DBUS_1_10_BINARY_COMPATIBILITY
   /* A failure of these two assertions would indicate that we've broken
    * ABI on this platform since 1.10.0. */
   _DBUS_STATIC_ASSERT (sizeof (DBusMessageIter_1_10_0) ==
       sizeof (DBusMessageIter));
   _DBUS_STATIC_ASSERT (_DBUS_ALIGNOF (DBusMessageIter_1_10_0) ==
       _DBUS_ALIGNOF (DBusMessageIter));
+#endif
   /* If this static assertion fails, it means the DBusMessageIter struct
    * is not "packed", which might result in "iter = other_iter" not copying
    * every byte. */
+#if DBUS_SIZEOF_VOID_P > 8
+  _DBUS_STATIC_ASSERT (sizeof (DBusMessageIter) == 16 * sizeof (void *));
+#else
   _DBUS_STATIC_ASSERT (sizeof (DBusMessageIter) ==
       4 * sizeof (void *) + sizeof (dbus_uint32_t) + 9 * sizeof (int));
+#endif
 
   /* Since the iterator will read or write who-knows-what from the
    * message, we need to get in the right byte order
@@ -2275,7 +2293,7 @@ dbus_message_iter_get_signature (DBusMessageIter *iter)
 {
   const DBusString *sig;
   DBusString retstr;
-  char *ret;
+  char *ret = NULL;
   int start, len;
   DBusMessageRealIter *real = (DBusMessageRealIter *)iter;
 
@@ -2289,9 +2307,13 @@ dbus_message_iter_get_signature (DBusMessageIter *iter)
   if (!_dbus_string_append_len (&retstr,
 				_dbus_string_get_const_data (sig) + start,
 				len))
-    return NULL;
-  if (!_dbus_string_steal_data (&retstr, &ret))
-    return NULL;
+    goto oom;
+
+  /* This is correct whether it succeeds or fails: on success it sets `ret`,
+   * and on failure it leaves `ret` set to NULL. */
+  _dbus_string_steal_data (&retstr, &ret);
+
+oom:
   _dbus_string_free (&retstr);
   return ret;
 }
@@ -2675,7 +2697,7 @@ _dbus_message_iter_abandon_signature (DBusMessageRealIter *real)
   dbus_free (str);
 }
 
-#ifndef DBUS_DISABLE_CHECKS
+#if defined(DBUS_ENABLE_CHECKS) || defined(DBUS_ENABLE_ASSERT)
 static dbus_bool_t
 _dbus_message_iter_append_check (DBusMessageRealIter *iter)
 {
@@ -2690,7 +2712,7 @@ _dbus_message_iter_append_check (DBusMessageRealIter *iter)
 
   return TRUE;
 }
-#endif /* DBUS_DISABLE_CHECKS */
+#endif
 
 #ifdef HAVE_UNIX_FD_PASSING
 static int *
@@ -5185,6 +5207,9 @@ dbus_message_demarshal (const char *str,
   return msg;
 
  fail_corrupt:
+  if (loader->corruption_reason == DBUS_VALIDITY_UNKNOWN_OOM_ERROR)
+    goto fail_oom;
+
   dbus_set_error (error, DBUS_ERROR_INVALID_ARGS, "Message is corrupted (%s)",
                   _dbus_validity_to_error_message (loader->corruption_reason));
   _dbus_message_loader_unref (loader);
@@ -5459,14 +5484,18 @@ oom:
 const char *
 _dbus_variant_get_signature (DBusVariant *self)
 {
-  unsigned char len;
   const char *ret;
+#ifndef DBUS_DISABLE_ASSERT
+  unsigned char len;
+#endif
 
   _dbus_assert (self != NULL);
 
+#ifndef DBUS_DISABLE_ASSERT
   /* Here we make use of the fact that the serialization of a variant starts
    * with the 1-byte length, then that many bytes of signature, then \0. */
   len = _dbus_string_get_byte (&self->data, 0);
+#endif
   ret = _dbus_string_get_const_data_len (&self->data, 1, len);
   _dbus_assert (strlen (ret) == len);
   return ret;
