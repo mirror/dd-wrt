@@ -3,60 +3,58 @@
  * nse_ssl_cert.cc -- NSE userdatum representing an SSL certificate.       *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
- *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
- * Project"). Nmap is also a registered trademark of the Nmap Project.     *
- *                                                                         *
- * This program is distributed under the terms of the Nmap Public Source   *
- * License (NPSL). The exact license text applying to a particular Nmap    *
- * release or source code control revision is contained in the LICENSE     *
- * file distributed with that version of Nmap or source code control       *
- * revision. More Nmap copyright/legal information is available from       *
- * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
- * header summarizes some key points from the Nmap license, but is no      *
- * substitute for the actual license text.                                 *
- *                                                                         *
- * Nmap is generally free for end users to download and use themselves,    *
- * including commercial use. It is available from https://nmap.org.        *
- *                                                                         *
- * The Nmap license generally prohibits companies from using and           *
- * redistributing Nmap in commercial products, but we sell a special Nmap  *
- * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem/                                 *
- *                                                                         *
- * If you have received a written Nmap license agreement or contract       *
- * stating terms other than these (such as an Nmap OEM license), you may   *
- * choose to use and redistribute Nmap under those terms instead.          *
- *                                                                         *
- * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.com) for packet capture and transmission. It is under    *
- * separate license terms which forbid redistribution without special      *
- * permission. So the official Nmap Windows builds may not be              *
- * redistributed without special permission (such as an Nmap OEM           *
- * license).                                                               *
- *                                                                         *
- * Source is provided to this software because we believe users have a     *
- * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes.          *
- *                                                                         *
- * Source code also allows you to port Nmap to new platforms, fix bugs,    *
- * and add new features.  You are highly encouraged to submit your         *
- * changes as a Github PR or by email to the dev@nmap.org mailing list     *
- * for possible incorporation into the main distribution. Unless you       *
- * specify otherwise, it is understood that you are offering us very       *
- * broad rights to use your submissions as described in the Nmap Public    *
- * Source License Contributor Agreement. This is important because we      *
- * fund the project by selling licenses with various terms, and also       *
- * because the inability to relicense code has caused devastating          *
- * problems for other Free Software projects (such as KDE and NASM).       *
- *                                                                         *
- * The free version of Nmap is distributed in the hope that it will be     *
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
- * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem/                            *
- *                                                                         *
+ *
+ * The Nmap Security Scanner is (C) 1996-2023 Nmap Software LLC ("The Nmap
+ * Project"). Nmap is also a registered trademark of the Nmap Project.
+ *
+ * This program is distributed under the terms of the Nmap Public Source
+ * License (NPSL). The exact license text applying to a particular Nmap
+ * release or source code control revision is contained in the LICENSE
+ * file distributed with that version of Nmap or source code control
+ * revision. More Nmap copyright/legal information is available from
+ * https://nmap.org/book/man-legal.html, and further information on the
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This
+ * header summarizes some key points from the Nmap license, but is no
+ * substitute for the actual license text.
+ *
+ * Nmap is generally free for end users to download and use themselves,
+ * including commercial use. It is available from https://nmap.org.
+ *
+ * The Nmap license generally prohibits companies from using and
+ * redistributing Nmap in commercial products, but we sell a special Nmap
+ * OEM Edition with a more permissive license and special features for
+ * this purpose. See https://nmap.org/oem/
+ *
+ * If you have received a written Nmap license agreement or contract
+ * stating terms other than these (such as an Nmap OEM license), you may
+ * choose to use and redistribute Nmap under those terms instead.
+ *
+ * The official Nmap Windows builds include the Npcap software
+ * (https://npcap.com) for packet capture and transmission. It is under
+ * separate license terms which forbid redistribution without special
+ * permission. So the official Nmap Windows builds may not be redistributed
+ * without special permission (such as an Nmap OEM license).
+ *
+ * Source is provided to this software because we believe users have a
+ * right to know exactly what a program is going to do before they run it.
+ * This also allows you to audit the software for security holes.
+ *
+ * Source code also allows you to port Nmap to new platforms, fix bugs, and add
+ * new features. You are highly encouraged to submit your changes as a Github PR
+ * or by email to the dev@nmap.org mailing list for possible incorporation into
+ * the main distribution. Unless you specify otherwise, it is understood that
+ * you are offering us very broad rights to use your submissions as described in
+ * the Nmap Public Source License Contributor Agreement. This is important
+ * because we fund the project by selling licenses with various terms, and also
+ * because the inability to relicense code has caused devastating problems for
+ * other Free Software projects (such as KDE and NASM).
+ *
+ * The free version of Nmap is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,
+ * indemnification and commercial support are all available through the
+ * Npcap OEM program--see https://nmap.org/oem/
+ *
  ***************************************************************************/
 
 /* $Id:$ */
@@ -89,19 +87,7 @@
 #define X509_get0_notAfter X509_get_notAfter
 #endif
 
-/* OPENSSL_API_LEVEL per OpenSSL 3.0: decimal MMmmpp */
-#ifndef OPENSSL_API_LEVEL
-# if OPENSSL_API_COMPAT < 0x900000L
-#  define OPENSSL_API_LEVEL (OPENSSL_API_COMPAT)
-# else
-#  define OPENSSL_API_LEVEL \
-     (((OPENSSL_API_COMPAT >> 28) & 0xF) * 10000  \
-      + ((OPENSSL_API_COMPAT >> 20) & 0xFF) * 100 \
-      + ((OPENSSL_API_COMPAT >> 12) & 0xFF))
-# endif
-#endif
-
-#if OPENSSL_API_LEVEL >= 30000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/core_names.h>
 /* Deprecated in OpenSSL 3.0 */
 #define SSL_get_peer_certificate SSL_get1_peer_certificate
@@ -116,16 +102,12 @@
 #include "nse_lua.h"
 
 #include "nse_nsock.h"
+#include "nse_openssl.h"
 
 struct cert_userdata {
   X509 *cert;
   int attributes_table;
 };
-
-typedef struct bignum_data {
-  BIGNUM * bn;
-  bool should_free;
-} bignum_data_t;
 
 SSL *nse_nsock_get_ssl(lua_State *L);
 
@@ -459,7 +441,7 @@ static const char *pkey_type_to_string(int type)
 }
 
 int lua_push_ecdhparams(lua_State *L, EVP_PKEY *pubkey) {
-#if OPENSSL_API_LEVEL >= 30000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
   char tmp[64] = {0};
   size_t len = 0;
   /* This structure (ecdhparams.curve_params) comes from tls.lua */
@@ -634,48 +616,36 @@ static int parse_ssl_cert(lua_State *L, X509 *cert)
   else
 #endif
   if (pkey_type == EVP_PKEY_RSA) {
-#if OPENSSL_API_LEVEL < 30000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    BIGNUM *n = NULL, *e = NULL;
+    bool should_free = true;
+    EVP_PKEY_get_bn_param(pubkey, OSSL_PKEY_PARAM_RSA_E, &e);
+    EVP_PKEY_get_bn_param(pubkey, OSSL_PKEY_PARAM_RSA_N, &n);
+#else
+    bool should_free = false;
     RSA *rsa = EVP_PKEY_get1_RSA(pubkey);
-    if (rsa) {
-#endif
-      /* exponent */
-      bignum_data_t * data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
-      luaL_getmetatable( L, "BIGNUM" );
-      lua_setmetatable( L, -2 );
-#if HAVE_OPAQUE_STRUCTS
-#if OPENSSL_API_LEVEL < 30000
-      const BIGNUM *n = NULL, *e = NULL;
-      data->should_free = false;
-      RSA_get0_key(rsa, &n, &e, NULL);
-#else
-      BIGNUM *n = NULL, *e = NULL;
-      data->should_free = true;
-      EVP_PKEY_get_bn_param(pubkey, OSSL_PKEY_PARAM_RSA_E, &e);
-      EVP_PKEY_get_bn_param(pubkey, OSSL_PKEY_PARAM_RSA_N, &n);
-#endif
-      data->bn = (BIGNUM*) e;
-#else
-      data->bn = rsa->e;
-#endif
-      lua_setfield(L, -2, "exponent");
-      /* modulus */
-      data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
-      luaL_getmetatable( L, "BIGNUM" );
-      lua_setmetatable( L, -2 );
-#if HAVE_OPAQUE_STRUCTS
-#if OPENSSL_API_LEVEL < 30000
-      data->should_free = false;
-#else
-      data->should_free = true;
-#endif
-      data->bn = (BIGNUM*) n;
-#else
-      data->bn = rsa->n;
-#endif
-      lua_setfield(L, -2, "modulus");
-#if OPENSSL_API_LEVEL < 30000
-      RSA_free(rsa);
+    if (!rsa) {
+      // This should be impossible for this key type
+      return luaL_error(L, "EVP_PKEY_RSA missing RSA key!");
     }
+# if HAVE_OPAQUE_STRUCTS
+    const BIGNUM *n = NULL, *e = NULL;
+    RSA_get0_key(rsa, &n, &e, NULL);
+# endif
+#endif
+#if HAVE_OPAQUE_STRUCTS
+# define PASS_RSA_PARAM(_P) ((BIGNUM *)(_P))
+#else /* not HAVE_OPAQUE_STRUCTS */
+# define PASS_RSA_PARAM(_P) (rsa->_P)
+#endif
+    /* exponent */
+    nse_pushbn(L, PASS_RSA_PARAM(e), should_free);
+    lua_setfield(L, -2, "exponent");
+    /* modulus */
+    nse_pushbn(L, PASS_RSA_PARAM(n), should_free);
+    lua_setfield(L, -2, "modulus");
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    RSA_free(rsa);
 #endif
   }
   lua_pushstring(L, pkey_type_to_string(pkey_type));

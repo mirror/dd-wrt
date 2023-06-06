@@ -5,63 +5,61 @@
  * for collecting SYN/connect scan responses.                              *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
- *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
- * Project"). Nmap is also a registered trademark of the Nmap Project.     *
- *                                                                         *
- * This program is distributed under the terms of the Nmap Public Source   *
- * License (NPSL). The exact license text applying to a particular Nmap    *
- * release or source code control revision is contained in the LICENSE     *
- * file distributed with that version of Nmap or source code control       *
- * revision. More Nmap copyright/legal information is available from       *
- * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
- * header summarizes some key points from the Nmap license, but is no      *
- * substitute for the actual license text.                                 *
- *                                                                         *
- * Nmap is generally free for end users to download and use themselves,    *
- * including commercial use. It is available from https://nmap.org.        *
- *                                                                         *
- * The Nmap license generally prohibits companies from using and           *
- * redistributing Nmap in commercial products, but we sell a special Nmap  *
- * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem/                                 *
- *                                                                         *
- * If you have received a written Nmap license agreement or contract       *
- * stating terms other than these (such as an Nmap OEM license), you may   *
- * choose to use and redistribute Nmap under those terms instead.          *
- *                                                                         *
- * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.com) for packet capture and transmission. It is under    *
- * separate license terms which forbid redistribution without special      *
- * permission. So the official Nmap Windows builds may not be              *
- * redistributed without special permission (such as an Nmap OEM           *
- * license).                                                               *
- *                                                                         *
- * Source is provided to this software because we believe users have a     *
- * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes.          *
- *                                                                         *
- * Source code also allows you to port Nmap to new platforms, fix bugs,    *
- * and add new features.  You are highly encouraged to submit your         *
- * changes as a Github PR or by email to the dev@nmap.org mailing list     *
- * for possible incorporation into the main distribution. Unless you       *
- * specify otherwise, it is understood that you are offering us very       *
- * broad rights to use your submissions as described in the Nmap Public    *
- * Source License Contributor Agreement. This is important because we      *
- * fund the project by selling licenses with various terms, and also       *
- * because the inability to relicense code has caused devastating          *
- * problems for other Free Software projects (such as KDE and NASM).       *
- *                                                                         *
- * The free version of Nmap is distributed in the hope that it will be     *
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
- * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem/                            *
- *                                                                         *
+ *
+ * The Nmap Security Scanner is (C) 1996-2023 Nmap Software LLC ("The Nmap
+ * Project"). Nmap is also a registered trademark of the Nmap Project.
+ *
+ * This program is distributed under the terms of the Nmap Public Source
+ * License (NPSL). The exact license text applying to a particular Nmap
+ * release or source code control revision is contained in the LICENSE
+ * file distributed with that version of Nmap or source code control
+ * revision. More Nmap copyright/legal information is available from
+ * https://nmap.org/book/man-legal.html, and further information on the
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This
+ * header summarizes some key points from the Nmap license, but is no
+ * substitute for the actual license text.
+ *
+ * Nmap is generally free for end users to download and use themselves,
+ * including commercial use. It is available from https://nmap.org.
+ *
+ * The Nmap license generally prohibits companies from using and
+ * redistributing Nmap in commercial products, but we sell a special Nmap
+ * OEM Edition with a more permissive license and special features for
+ * this purpose. See https://nmap.org/oem/
+ *
+ * If you have received a written Nmap license agreement or contract
+ * stating terms other than these (such as an Nmap OEM license), you may
+ * choose to use and redistribute Nmap under those terms instead.
+ *
+ * The official Nmap Windows builds include the Npcap software
+ * (https://npcap.com) for packet capture and transmission. It is under
+ * separate license terms which forbid redistribution without special
+ * permission. So the official Nmap Windows builds may not be redistributed
+ * without special permission (such as an Nmap OEM license).
+ *
+ * Source is provided to this software because we believe users have a
+ * right to know exactly what a program is going to do before they run it.
+ * This also allows you to audit the software for security holes.
+ *
+ * Source code also allows you to port Nmap to new platforms, fix bugs, and add
+ * new features. You are highly encouraged to submit your changes as a Github PR
+ * or by email to the dev@nmap.org mailing list for possible incorporation into
+ * the main distribution. Unless you specify otherwise, it is understood that
+ * you are offering us very broad rights to use your submissions as described in
+ * the Nmap Public Source License Contributor Agreement. This is important
+ * because we fund the project by selling licenses with various terms, and also
+ * because the inability to relicense code has caused devastating problems for
+ * other Free Software projects (such as KDE and NASM).
+ *
+ * The free version of Nmap is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,
+ * indemnification and commercial support are all available through the
+ * Npcap OEM program--see https://nmap.org/oem/
+ *
  ***************************************************************************/
 
-/* $Id: scan_engine.cc 38353 2022-02-18 17:38:46Z dmiller $ */
+/* $Id: scan_engine.cc 38653 2023-04-14 17:11:46Z dmiller $ */
 
 #ifdef WIN32
 #include "nmap_winconfig.h"
@@ -100,6 +98,8 @@ extern "C" int g_has_npcap_loopback;
 
 /* How long extra to wait before retransmitting for rate-limit detection */
 #define RLD_TIME_MS 1000
+/* Keep a completed host around for a standard TCP MSL (2 min) */
+#define COMPL_HOST_LIFETIME_MS 120000
 
 int HssPredicate::operator() (const HostScanStats *lhs, const HostScanStats *rhs) const {
   const struct sockaddr_storage *lss, *rss;
@@ -327,8 +327,7 @@ bool GroupScanStats::sendOK(struct timeval *when) const {
   if (when)
     TIMEVAL_MSEC_ADD(*when, USI->now, 1000);
 
-  if ((USI->scantype == CONNECT_SCAN || USI->ptech.connecttcpscan)
-      && CSI->numSDs >= CSI->maxSocketsAllowed)
+  if (CSI && !CSI->sendOK())
     return false;
 
   /* We need to stop sending if it has been a long time since
@@ -629,27 +628,32 @@ bool HostScanStats::sendOK(struct timeval *when) const {
    the earliest one and returns true.  Otherwise returns false and
    puts now in when. */
 bool HostScanStats::nextTimeout(struct timeval *when) const {
-  struct timeval probe_to, earliest_to;
+  struct timeval earliest_to = USI->now;
   std::list<UltraProbe *>::const_iterator probeI;
-  bool firstgood = true;
+  bool pending_probes = false;
 
   assert(when);
-  memset(&probe_to, 0, sizeof(probe_to));
-  memset(&earliest_to, 0, sizeof(earliest_to));
 
+  /* For any given invocation, the probe timeout is the same for all probes, so
+   * we can get the earliest-sent probe and then add the timeout to that.
+   */
   for (probeI = probes_outstanding.begin(); probeI != probes_outstanding.end();
        probeI++) {
-    if (!(*probeI)->timedout) {
-      TIMEVAL_ADD(probe_to, (*probeI)->sent, probeTimeout());
-      if (firstgood || TIMEVAL_SUBTRACT(probe_to, earliest_to) < 0) {
-        earliest_to = probe_to;
-        firstgood = false;
+    UltraProbe *probe = *probeI;
+    if (!probe->timedout) {
+      pending_probes = true;
+      if (TIMEVAL_BEFORE(probe->sent, earliest_to)) {
+        earliest_to = probe->sent;
       }
     }
   }
-
-  *when = (firstgood) ? USI->now : earliest_to;
-  return !firstgood;
+  if (pending_probes) {
+    TIMEVAL_ADD(*when, earliest_to, probeTimeout());
+  }
+  else {
+    *when = USI->now;
+  }
+  return pending_probes;
 }
 
 /* gives the maximum try number (try numbers start at zero and
@@ -912,8 +916,6 @@ void UltraScanInfo::Init(std::vector<Target *> &Targets, const struct scan_lists
 
   set_default_port_state(Targets, scantype);
 
-  /* Keep a completed host around for a standard TCP MSL (2 min) */
-  completedHostLifetime = 120000;
   memset(&lastCompletedHostRemoval, 0, sizeof(lastCompletedHostRemoval));
 
   for (targetno = 0; targetno < Targets.size(); targetno++) {
@@ -968,6 +970,8 @@ void UltraScanInfo::Init(std::vector<Target *> &Targets, const struct scan_lists
       unblock_socket(rawsd);*/
       ethsd = NULL;
     }
+    /* Raw scan types also need to know the source IP. */
+    Targets[0]->SourceSockAddr(&sourceSockAddr, NULL);
   }
   base_port = UltraScanInfo::increment_base_port();
 }
@@ -1139,8 +1143,10 @@ int UltraScanInfo::removeCompletedHosts() {
   struct timeval compare;
 
   /* We don't want to run this all of the time */
-  TIMEVAL_MSEC_ADD(compare, lastCompletedHostRemoval, completedHostLifetime / 2);
+  TIMEVAL_MSEC_ADD(compare, lastCompletedHostRemoval, COMPL_HOST_LIFETIME_MS / 2);
   if (TIMEVAL_AFTER(now, compare) ) {
+    /* Remove any that were completed before this time: */
+    TIMEVAL_MSEC_ADD(compare, now, -COMPL_HOST_LIFETIME_MS);
     for (hostI = completedHosts.begin(); hostI != completedHosts.end(); hostI = nxt) {
       nxt = hostI;
       nxt++;
@@ -1150,8 +1156,7 @@ int UltraScanInfo::removeCompletedHosts() {
       if (hss == gstats->pinghost)
         continue;
 
-      TIMEVAL_MSEC_ADD(compare, hss->completiontime, completedHostLifetime);
-      if (TIMEVAL_AFTER(now, compare) ) {
+      if (TIMEVAL_BEFORE(hss->completiontime, compare) ) {
         /* Any active probes in completed hosts count against our global
          * cwnd, so be sure to remove them or we can run out of space. */
         hss->destroyAllOutstandingProbes();
@@ -2431,14 +2436,18 @@ static void retransmitProbe(UltraScanInfo *USI, HostScanStats *hss,
   USI->gstats->probes_sent++;
 }
 
+struct ProbeCacheNode {
+  HostScanStats *hss;
+  std::list<UltraProbe *>::iterator probeI;
+};
+
 /* Go through the ProbeQueue of each host, identify any
    timed out probes, then try to retransmit them as appropriate */
 static void doAnyOutstandingRetransmits(UltraScanInfo *USI) {
   std::multiset<HostScanStats *, HssPredicate>::iterator hostI;
-  std::list<UltraProbe *>::iterator probeI;
   /* A cache of the last processed probe from each host, to avoid re-examining a
      bunch of probes to find the next one that needs to be retransmitted. */
-  std::map<HostScanStats *, std::list<UltraProbe *>::iterator> probe_cache;
+  std::vector<struct ProbeCacheNode> probe_cache;
   HostScanStats *host = NULL;
   UltraProbe *probe = NULL;
   int retrans = 0; /* Number of retransmissions during a loop */
@@ -2451,14 +2460,29 @@ static void doAnyOutstandingRetransmits(UltraScanInfo *USI) {
   if (o.debugging)
     tv_start = USI->now;
 
+  probe_cache.reserve(USI->numIncompleteHosts());
+  for (hostI = USI->incompleteHosts.begin();
+      hostI != USI->incompleteHosts.end();
+      hostI++) {
+    struct ProbeCacheNode pcn;
+    pcn.hss = *hostI;
+    /* Skip this host if it has nothing to send. */
+    if (pcn.hss->num_probes_active == 0
+          && pcn.hss->num_probes_waiting_retransmit == 0)
+      continue;
+    assert(!pcn.hss->probes_outstanding.empty());
+    pcn.probeI = pcn.hss->probes_outstanding.end();
+    probe_cache.push_back(pcn);
+  }
   /* Loop until we get through all the hosts without a retransmit or we're not
      OK to send any more. */
   do {
     retrans = 0;
-    for (hostI = USI->incompleteHosts.begin();
-         hostI != USI->incompleteHosts.end() && USI->gstats->sendOK(NULL);
-         hostI++) {
-      host = *hostI;
+    for (std::vector<struct ProbeCacheNode>::iterator pci = probe_cache.begin();
+        pci != probe_cache.end() && USI->gstats->sendOK(NULL);
+        pci++) {
+      host = pci->hss;
+      std::list<UltraProbe *>::iterator &probeI = pci->probeI;
       /* Skip this host if it has nothing to send. */
       if ((host->num_probes_active == 0
            && host->num_probes_waiting_retransmit == 0))
@@ -2466,12 +2490,6 @@ static void doAnyOutstandingRetransmits(UltraScanInfo *USI) {
       if (!host->sendOK(NULL))
         continue;
       assert(!host->probes_outstanding.empty());
-
-      /* Initialize the probe cache if necessary. */
-      if (probe_cache.find(host) == probe_cache.end())
-        probe_cache[host] = host->probes_outstanding.end();
-      /* Restore the probe iterator from the cache. */
-      probeI = probe_cache[host];
 
       maxtries = host->allowedTryno(NULL, NULL);
       do {
@@ -2502,8 +2520,6 @@ static void doAnyOutstandingRetransmits(UltraScanInfo *USI) {
       /* Wrap the probe iterator around. */
       if (probeI == host->probes_outstanding.begin())
         probeI = host->probes_outstanding.end();
-      /* Cache the probe iterator. */
-      probe_cache[host] = probeI;
     }
   } while (USI->gstats->sendOK(NULL) && retrans != 0);
 
@@ -2748,7 +2764,7 @@ void ultra_scan(std::vector<Target *> &Targets, const struct scan_lists *ports,
   UltraScanInfo USI(Targets, ports, scantype);
 
   /* Load up _all_ payloads into a mapped table. Only needed for raw scans. */
-  if (USI.udp_scan) {
+  if (USI.udp_scan || (USI.ping_scan && USI.ptech.rawudpscan) ) {
     init_payloads();
   }
 
@@ -2777,6 +2793,10 @@ void ultra_scan(std::vector<Target *> &Targets, const struct scan_lists *ports,
   /* Otherwise, no sniffer needed! */
 
   while (!USI.incompleteHostsEmpty()) {
+#ifdef WIN32
+    // Reset system idle timer to avoid going to sleep
+    SetThreadExecutionState(ES_SYSTEM_REQUIRED);
+#endif
     doAnyPings(&USI);
     doAnyOutstandingRetransmits(&USI); // Retransmits from probes_outstanding
     /* Retransmits from retry_stack -- goes after OutstandingRetransmits for
