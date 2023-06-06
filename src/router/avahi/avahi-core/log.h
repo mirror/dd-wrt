@@ -38,10 +38,10 @@ typedef enum {
     AVAHI_LOG_DEBUG  = 4,    /**< Debug messages */
     AVAHI_LOG_LEVEL_MAX
 } AvahiLogLevel;
-
 /** Prototype for a user supplied log function */
 typedef void (*AvahiLogFunction)(AvahiLogLevel level, const char *txt);
 
+#ifdef NEED_PRINTF
 /** Set a user supplied log function, replacing the default which
  * prints to log messages unconditionally to STDERR. Pass NULL for
  * resetting to the default log function */
@@ -67,7 +67,33 @@ void avahi_log_info(const char*format, ...) AVAHI_GCC_PRINTF_ATTR12;
 
 /** Shortcut for avahi_log(AVAHI_LOG_DEBUG, ...) */
 void avahi_log_debug(const char*format, ...) AVAHI_GCC_PRINTF_ATTR12;
+#else
 
+static inline void avahi_set_log_function(AvahiLogFunction function) {} 
+
+/** Issue a log message using a va_list object */
+static inline void avahi_log_ap(AvahiLogLevel level, const char *format, va_list ap) {}
+
+/** Issue a log message by passing a log level and a format string */
+static inline void avahi_log(AvahiLogLevel level, const char*format, ...) {}
+
+/** Shortcut for avahi_log(AVAHI_LOG_ERROR, ...) */
+static inline void avahi_log_error(const char*format, ...) {}
+
+/** Shortcut for avahi_log(AVAHI_LOG_WARN, ...) */
+static inline void avahi_log_warn(const char*format, ...) {}
+
+/** Shortcut for avahi_log(AVAHI_LOG_NOTICE, ...) */
+static inline void avahi_log_notice(const char*format, ...) {}
+
+/** Shortcut for avahi_log(AVAHI_LOG_INFO, ...) */
+static inline void avahi_log_info(const char*format, ...) {}
+
+/** Shortcut for avahi_log(AVAHI_LOG_DEBUG, ...) */
+static inline void avahi_log_debug(const char*format, ...) {}
+
+
+#endif
 AVAHI_C_DECL_END
 
 #endif

@@ -16,7 +16,7 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
   USA.
 ***/
-
+#ifdef NEED_PRINTF
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -84,3 +84,4 @@ void avahi_log_debug(const char*format, ...) {
     avahi_log_ap(AVAHI_LOG_DEBUG, format, ap);
     va_end(ap);
 }
+#endif
