@@ -455,12 +455,6 @@ endif
 	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
 	cp ../../opt/etc/preinit mipsel-uclibc/target/etc
 	cp ../../opt/etc/postinit mipsel-uclibc/target/etc
-ifneq ($(CONFIG_DIST),"micro")
-ifneq ($(CONFIG_DIST),"micro-special")
-	cp ../../opt/bin/ipkg mipsel-uclibc/target/bin
-	cp ../../opt/etc/ipkg.conf mipsel-uclibc/target/etc
-endif
-endif
 	cp ../../opt/etc/config/* mipsel-uclibc/target/etc/config
 	../../tools/process_nvramconfigfile mipsel-uclibc/target/etc/config/*.nvramconfig
 	-./strip_libs.sh $(ARCH)

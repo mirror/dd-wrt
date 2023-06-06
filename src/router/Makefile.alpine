@@ -231,7 +231,6 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	cd  $(ARCH)-uclibc/target/lib
 	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
-	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	# optimize the others library by removing unneeded symbols

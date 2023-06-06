@@ -685,11 +685,9 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	mkdir -p $(ARCH)-uclibc/target/etc/config
 	mkdir -p $(ARCH)-uclibc/target/etc/kaid
 	mkdir -p $(ARCH)-uclibc/target/etc/langpack
-	cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
 	cd  $(ARCH)-uclibc/target/lib
 	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
-	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
@@ -724,7 +722,6 @@ endif
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
-	rm -f $(TARGETDIR)/bin/ipkg
 	rm -f $(TARGETDIR)/usr/lib/smb.conf
 #	mkdir $(TARGETDIR)/usr/local
 ifeq ($(CONFIG_KAID),y)
