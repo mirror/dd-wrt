@@ -344,11 +344,9 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	mkdir -p $(ARCH)-uclibc/target/etc/config
 	mkdir -p $(ARCH)-uclibc/target/etc/kaid
 	mkdir -p $(ARCH)-uclibc/target/etc/langpack
-	cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
 	cd  $(ARCH)-uclibc/target/lib
 	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
-	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
 ifeq ($(CONFIG_HTTPD),y)
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
