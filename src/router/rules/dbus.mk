@@ -45,10 +45,10 @@ dbus-install:
 	#install -c dbus/dbuslaunch $(INSTALLDIR)/dbus/usr/sbin
 	#install -c dbus/dbus-avahi-launch $(INSTALLDIR)/dbus/usr/sbin
 	
-	install -D dbus/dbus/.libs/libdbus-1.so.3.32.0 $(INSTALLDIR)/dbus/usr/lib/libdbus-1.so.3.32.0
+	install -D dbus/dbus/.libs/libdbus-1.so.3.37.0 $(INSTALLDIR)/dbus/usr/lib/libdbus-1.so.3.37.0
 	cd $(INSTALLDIR)/dbus/usr/lib && \
-		ln -sf libdbus-1.so.3.32.0 libdbus-1.so && \
-		ln -sf libdbus-1.so.3.32.0 libdbus-1.so.3
+		ln -sf libdbus-1.so.3.37.0 libdbus-1.so && \
+		ln -sf libdbus-1.so.3.37.0 libdbus-1.so.3
 
 
 dbus-clean:
