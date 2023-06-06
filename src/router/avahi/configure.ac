@@ -99,8 +99,7 @@ if test x"$enable_ssp" = x"yes"; then
     LDFLAGS="$LDFLAGS -Wl,-z,defs"
     cat confdefs.h > conftest.c
     cat >>conftest.c <<_ACEOF
-void test_broken_ssp(c)
-    const char *c;
+void test_broken_ssp(const char *c)
 {
     char arr[[123]], *p; /* beware of possible double-braces if copying this */
     for (p = arr; *c; ++p) {
@@ -300,7 +299,7 @@ AM_CONDITIONAL(TARGET_FREEBSD, test x"$with_distro" = xfreebsd)
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
 
 test_gcc_flag() {
-    AC_LANG_CONFTEST([int main() {}])
+    AC_LANG_CONFTEST([int main(void) {}])
     $CC -c conftest.c $CFLAGS $@ > /dev/null 2> /dev/null
     ret=$?
     rm -f conftest.o
@@ -314,7 +313,7 @@ if test "x$GCC" = "xyes" ; then
 
     if test "x$HAVE_NETLINK" = "xyes" ; then
         # Test whether rtnetlink.h can be included when compiled with -std=c99
-        # some distributions (e.g. archlinux) have broken headers that dont
+        # some distributions (e.g. archlinux) have broken headers that don't
         # define __u64 with -std=c99
         AC_MSG_CHECKING([checking whether rtnetlink.h can be included with -std=c99])
         OLDCFLAGS="$CFLAGS"
@@ -674,7 +673,7 @@ if test "x$HAVE_DBUS" = "xyes" ; then
     if ! test -z "$with_dbus_sys" ; then
         DBUS_SYS_DIR="$with_dbus_sys"
     else
-        DBUS_SYS_DIR="${sysconfdir}/dbus-1/system.d"
+        DBUS_SYS_DIR="${datadir}/dbus-1/system.d"
     fi
     AC_SUBST(DBUS_SYS_DIR)
 
@@ -974,7 +973,7 @@ fi
 AC_SUBST(AVAHI_GROUP)
 AC_DEFINE_UNQUOTED(AVAHI_GROUP,"$AVAHI_GROUP", [Group for Avahi])
 
-AC_ARG_WITH(avahi_priv_access_group,AS_HELP_STRING([--with-avahi-priv-access-group=<group>],[Priviliged access group for Avahi clients (netdev)]))
+AC_ARG_WITH(avahi_priv_access_group,AS_HELP_STRING([--with-avahi-priv-access-group=<group>],[Privileged access group for Avahi clients (netdev)]))
 if test -z "$with_avahi_priv_access_group" ; then
     AVAHI_PRIV_ACCESS_GROUP=netdev
 else
@@ -1069,7 +1068,7 @@ if test x$manpages = xyes ; then
 
     if test x$have_xmltoman = xno -o x$xmltoman = xno; then
         if ! test -e $srcdir/man/avahi-daemon.8 ; then
-            AC_MSG_ERROR([*** xmltoman was not found or was disabled, it is required to build the manpages as they have not been pre-built, install xmltoman, pass --disable-manpages or dont pass --disable-xmltoman])
+            AC_MSG_ERROR([*** xmltoman was not found or was disabled, it is required to build the manpages as they have not been pre-built, install xmltoman, pass --disable-manpages or don't pass --disable-xmltoman])
             exit 1
         fi
         AC_MSG_WARN([*** Not rebuilding man pages as xmltoman is not found ***])
@@ -1211,7 +1210,7 @@ echo "
     Distribution/OS:                           ${with_distro}
     User for avahi-daemon:                     ${AVAHI_USER}
     Group for avahi-daemon:                    ${AVAHI_GROUP}
-    Priviliged access group for Avahi clients: ${AVAHI_PRIV_ACCESS_GROUP}
+    Privileged access group for Avahi clients: ${AVAHI_PRIV_ACCESS_GROUP}
     User for avahi-autoipd:                    ${AVAHI_AUTOIPD_USER}
     Group for avahi-autoipd:                   ${AVAHI_AUTOIPD_GROUP}
     Enable chroot():                           ${enable_chroot}
