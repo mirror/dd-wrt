@@ -40,11 +40,14 @@
 #include "asterisk/uuid.h"
 #include "asterisk/sorcery.h"
 #include "asterisk/file.h"
+#include "asterisk/causes.h"
 #include "asterisk/cli.h"
+#include "asterisk/callerid.h"
 #include "asterisk/res_pjsip_cli.h"
 #include "asterisk/test.h"
 #include "asterisk/res_pjsip_presence_xml.h"
 #include "asterisk/res_pjproject.h"
+#include "asterisk/utf8.h"
 
 /*** MODULEINFO
 	<depend>pjproject</depend>
@@ -2450,6 +2453,249 @@ int ast_sip_call_codec_str_to_pref(struct ast_flags *pref, const char *pref_str,
 }
 
 /*!
+ * \internal
+ * \brief Set an ast_party_id name and number based on an identity header.
+ * \param hdr From, P-Asserted-Identity, or Remote-Party-ID header on incoming message
+ * \param[out] id The ID to set data on
+ */
+static void set_id_from_hdr(pjsip_fromto_hdr *hdr, struct ast_party_id *id)
+{
+	char cid_name[AST_CHANNEL_NAME];
+	char cid_num[AST_CHANNEL_NAME];
+	size_t cid_name_size = AST_CHANNEL_NAME;
+	pjsip_name_addr *id_name_addr = (pjsip_name_addr *) hdr->uri;
+	char *semi;
+	enum ast_utf8_replace_result result;
+
+	ast_copy_pj_str(cid_num, ast_sip_pjsip_uri_get_username(hdr->uri), sizeof(cid_num));
+	/* Always truncate caller-id number at a semicolon. */
+	semi = strchr(cid_num, ';');
+	if (semi) {
+		/*
+		 * We need to be able to handle URI's looking like
+		 * "sip:1235557890;phone-context=national@x.x.x.x;user=phone"
+		 *
+		 * Where the uri->user field will result in:
+		 * "1235557890;phone-context=national"
+		 *
+		 * People don't care about anything after the semicolon
+		 * showing up on their displays even though the RFC
+		 * allows the semicolon.
+		 */
+		*semi = '\0';
+	}
+
+	/*
+	 * It's safe to pass a NULL or empty string as the source.
+	 * The result will be an empty string assuming the destination
+	 * size was at least 1.
+	 */
+	result = ast_utf8_replace_invalid_chars(cid_name, &cid_name_size,
+		id_name_addr->display.ptr, id_name_addr->display.slen);
+
+	if (result != AST_UTF8_REPLACE_VALID) {
+		ast_log(LOG_WARNING, "CallerID Name '" PJSTR_PRINTF_SPEC
+			"' for number '%s' has invalid UTF-8 characters which "
+			"were replaced",
+			PJSTR_PRINTF_VAR(id_name_addr->display), cid_num);
+	}
+
+	ast_free(id->name.str);
+	id->name.str = ast_strdup(cid_name);
+	if (!ast_strlen_zero(cid_name)) {
+		id->name.valid = 1;
+	}
+	ast_free(id->number.str);
+	id->number.str = ast_strdup(cid_num);
+	if (!ast_strlen_zero(cid_num)) {
+		id->number.valid = 1;
+	}
+}
+
+/*!
+ * \internal
+ * \brief Get a P-Asserted-Identity or Remote-Party-ID header from an incoming message
+ *
+ * This function will parse the header as if it were a From header. This allows for us
+ * to easily manipulate the URI, as well as add, modify, or remove parameters from the
+ * header
+ *
+ * \param rdata The incoming message
+ * \param header_name The name of the ID header to find
+ * \retval NULL No ID header present or unable to parse ID header
+ * \retval non-NULL The parsed ID header
+ */
+static pjsip_fromto_hdr *get_id_header(pjsip_rx_data *rdata, const pj_str_t *header_name)
+{
+	static const pj_str_t from = { "From", 4 };
+	pj_str_t header_content;
+	pjsip_fromto_hdr *parsed_hdr;
+	pjsip_generic_string_hdr *ident = pjsip_msg_find_hdr_by_name(rdata->msg_info.msg,
+			header_name, NULL);
+	int parsed_len;
+
+	if (!ident) {
+		return NULL;
+	}
+
+	pj_strdup_with_null(rdata->tp_info.pool, &header_content, &ident->hvalue);
+
+	parsed_hdr = pjsip_parse_hdr(rdata->tp_info.pool, &from, header_content.ptr,
+			pj_strlen(&header_content), &parsed_len);
+
+	if (!parsed_hdr) {
+		return NULL;
+	}
+
+	return parsed_hdr;
+}
+
+/*!
+ * \internal
+ * \brief Set an ast_party_id structure based on data in a P-Asserted-Identity header
+ *
+ * This makes use of \ref set_id_from_hdr for setting name and number. It uses
+ * the contents of a Privacy header in order to set presentation information.
+ *
+ * \param rdata The incoming message
+ * \param[out] id The ID to set
+ * \retval 0 Successfully set the party ID
+ * \retval non-zero Could not set the party ID
+ */
+static int set_id_from_pai(pjsip_rx_data *rdata, struct ast_party_id *id)
+{
+	static const pj_str_t pai_str = { "P-Asserted-Identity", 19 };
+	static const pj_str_t privacy_str = { "Privacy", 7 };
+	pjsip_fromto_hdr *pai_hdr = get_id_header(rdata, &pai_str);
+	pjsip_generic_string_hdr *privacy;
+
+	if (!pai_hdr) {
+		return -1;
+	}
+
+	set_id_from_hdr(pai_hdr, id);
+
+	if (!id->number.valid) {
+		return -1;
+	}
+
+	privacy = pjsip_msg_find_hdr_by_name(rdata->msg_info.msg, &privacy_str, NULL);
+	if (!privacy || !pj_stricmp2(&privacy->hvalue, "none")) {
+		id->number.presentation = AST_PRES_ALLOWED_USER_NUMBER_NOT_SCREENED;
+		id->name.presentation = AST_PRES_ALLOWED_USER_NUMBER_NOT_SCREENED;
+	} else {
+		id->number.presentation = AST_PRES_PROHIB_USER_NUMBER_NOT_SCREENED;
+		id->name.presentation = AST_PRES_PROHIB_USER_NUMBER_NOT_SCREENED;
+	}
+
+	return 0;
+}
+
+/*!
+ * \internal
+ * \brief Set an ast_party_id structure based on data in a Remote-Party-ID header
+ *
+ * This makes use of \ref set_id_from_hdr for setting name and number. It uses
+ * the privacy and screen parameters in order to set presentation information.
+ *
+ * \param rdata The incoming message
+ * \param[out] id The ID to set
+ * \retval 0 Succesfully set the party ID
+ * \retval non-zero Could not set the party ID
+ */
+static int set_id_from_rpid(pjsip_rx_data *rdata, struct ast_party_id *id)
+{
+	static const pj_str_t rpid_str = { "Remote-Party-ID", 15 };
+	static const pj_str_t privacy_str = { "privacy", 7 };
+	static const pj_str_t screen_str = { "screen", 6 };
+	pjsip_fromto_hdr *rpid_hdr = get_id_header(rdata, &rpid_str);
+	pjsip_param *screen;
+	pjsip_param *privacy;
+
+	if (!rpid_hdr) {
+		return -1;
+	}
+
+	set_id_from_hdr(rpid_hdr, id);
+
+	if (!id->number.valid) {
+		return -1;
+	}
+
+	privacy = pjsip_param_find(&rpid_hdr->other_param, &privacy_str);
+	screen = pjsip_param_find(&rpid_hdr->other_param, &screen_str);
+	if (privacy && !pj_stricmp2(&privacy->value, "full")) {
+		id->number.presentation = AST_PRES_RESTRICTED;
+		id->name.presentation = AST_PRES_RESTRICTED;
+	} else {
+		id->number.presentation = AST_PRES_ALLOWED;
+		id->name.presentation = AST_PRES_ALLOWED;
+	}
+	if (screen && !pj_stricmp2(&screen->value, "yes")) {
+		id->number.presentation |= AST_PRES_USER_NUMBER_PASSED_SCREEN;
+		id->name.presentation |= AST_PRES_USER_NUMBER_PASSED_SCREEN;
+	} else {
+		id->number.presentation |= AST_PRES_USER_NUMBER_UNSCREENED;
+		id->name.presentation |= AST_PRES_USER_NUMBER_UNSCREENED;
+	}
+
+	return 0;
+}
+
+/*!
+ * \internal
+ * \brief Set an ast_party_id structure based on data in a From
+ *
+ * This makes use of \ref set_id_from_hdr for setting name and number. It uses
+ * no information from the message in order to set privacy. It relies on endpoint
+ * configuration for privacy information.
+ *
+ * \param rdata The incoming message
+ * \param[out] id The ID to set
+ * \retval 0 Succesfully set the party ID
+ * \retval non-zero Could not set the party ID
+ */
+static int set_id_from_from(struct pjsip_rx_data *rdata, struct ast_party_id *id)
+{
+	pjsip_fromto_hdr *from = pjsip_msg_find_hdr(rdata->msg_info.msg,
+			PJSIP_H_FROM, rdata->msg_info.msg->hdr.next);
+
+	if (!from) {
+		/* This had better not happen */
+		return -1;
+	}
+
+	set_id_from_hdr(from, id);
+
+	if (!id->number.valid) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int ast_sip_set_id_connected_line(struct pjsip_rx_data *rdata, struct ast_party_id *id)
+{
+	return !set_id_from_pai(rdata, id) || !set_id_from_rpid(rdata, id) ? 0 : -1;
+}
+
+int ast_sip_set_id_from_invite(struct pjsip_rx_data *rdata, struct ast_party_id *id, struct ast_party_id *default_id, int trust_inbound)
+{
+	if (trust_inbound && (!set_id_from_pai(rdata, id) || !set_id_from_rpid(rdata, id))) {
+		/* Trusted: Check PAI and RPID */
+		ast_free(id->tag);
+		id->tag = ast_strdup(default_id->tag);
+		return 0;
+	}
+	/* Not trusted: check the endpoint config or use From. */
+	ast_party_id_copy(id, default_id);
+	if (!default_id->number.valid) {
+		set_id_from_from(rdata, id);
+	}
+	return 0;
+}
+
+/*!
  * \brief Set name and number information on an identity header.
  *
  * \param pool Memory pool to use for string duplication
@@ -2565,6 +2811,97 @@ struct pjsip_param *ast_sip_pjsip_uri_get_other_param(pjsip_uri *uri, const pj_s
 	}
 
 	return NULL;
+}
+
+/*! \brief Convert SIP hangup causes to Asterisk hangup causes */
+const int ast_sip_hangup_sip2cause(int cause)
+{
+	/* Possible values taken from causes.h */
+
+	switch(cause) {
+	case 401:       /* Unauthorized */
+		return AST_CAUSE_CALL_REJECTED;
+	case 403:       /* Not found */
+		return AST_CAUSE_CALL_REJECTED;
+	case 404:       /* Not found */
+		return AST_CAUSE_UNALLOCATED;
+	case 405:       /* Method not allowed */
+		return AST_CAUSE_INTERWORKING;
+	case 407:       /* Proxy authentication required */
+		return AST_CAUSE_CALL_REJECTED;
+	case 408:       /* No reaction */
+		return AST_CAUSE_NO_USER_RESPONSE;
+	case 409:       /* Conflict */
+		return AST_CAUSE_NORMAL_TEMPORARY_FAILURE;
+	case 410:       /* Gone */
+		return AST_CAUSE_NUMBER_CHANGED;
+	case 411:       /* Length required */
+		return AST_CAUSE_INTERWORKING;
+	case 413:       /* Request entity too large */
+		return AST_CAUSE_INTERWORKING;
+	case 414:       /* Request URI too large */
+		return AST_CAUSE_INTERWORKING;
+	case 415:       /* Unsupported media type */
+		return AST_CAUSE_INTERWORKING;
+	case 420:       /* Bad extension */
+		return AST_CAUSE_NO_ROUTE_DESTINATION;
+	case 480:       /* No answer */
+		return AST_CAUSE_NO_ANSWER;
+	case 481:       /* No answer */
+		return AST_CAUSE_INTERWORKING;
+	case 482:       /* Loop detected */
+		return AST_CAUSE_INTERWORKING;
+	case 483:       /* Too many hops */
+		return AST_CAUSE_NO_ANSWER;
+	case 484:       /* Address incomplete */
+		return AST_CAUSE_INVALID_NUMBER_FORMAT;
+	case 485:       /* Ambiguous */
+		return AST_CAUSE_UNALLOCATED;
+	case 486:       /* Busy everywhere */
+		return AST_CAUSE_BUSY;
+	case 487:       /* Request terminated */
+		return AST_CAUSE_INTERWORKING;
+	case 488:       /* No codecs approved */
+		return AST_CAUSE_BEARERCAPABILITY_NOTAVAIL;
+	case 491:       /* Request pending */
+		return AST_CAUSE_INTERWORKING;
+	case 493:       /* Undecipherable */
+		return AST_CAUSE_INTERWORKING;
+	case 500:       /* Server internal failure */
+		return AST_CAUSE_FAILURE;
+	case 501:       /* Call rejected */
+		return AST_CAUSE_FACILITY_REJECTED;
+	case 502:
+		return AST_CAUSE_DESTINATION_OUT_OF_ORDER;
+	case 503:       /* Service unavailable */
+		return AST_CAUSE_CONGESTION;
+	case 504:       /* Gateway timeout */
+		return AST_CAUSE_RECOVERY_ON_TIMER_EXPIRE;
+	case 505:       /* SIP version not supported */
+		return AST_CAUSE_INTERWORKING;
+	case 600:       /* Busy everywhere */
+		return AST_CAUSE_USER_BUSY;
+	case 603:       /* Decline */
+		return AST_CAUSE_CALL_REJECTED;
+	case 604:       /* Does not exist anywhere */
+		return AST_CAUSE_UNALLOCATED;
+	case 606:       /* Not acceptable */
+		return AST_CAUSE_BEARERCAPABILITY_NOTAVAIL;
+	default:
+		if (cause < 500 && cause >= 400) {
+			/* 4xx class error that is unknown - someting wrong with our request */
+			return AST_CAUSE_INTERWORKING;
+		} else if (cause < 600 && cause >= 500) {
+			/* 5xx class error - problem in the remote end */
+			return AST_CAUSE_CONGESTION;
+		} else if (cause < 700 && cause >= 600) {
+			/* 6xx - global errors in the 4xx class */
+			return AST_CAUSE_INTERWORKING;
+		}
+		return AST_CAUSE_NORMAL;
+	}
+	/* Never reached */
+	return 0;
 }
 
 #ifdef TEST_FRAMEWORK

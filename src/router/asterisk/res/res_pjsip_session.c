@@ -3641,6 +3641,21 @@ struct ast_sip_session *ast_sip_dialog_get_session(pjsip_dialog *dlg)
 	return session;
 }
 
+/*! \brief Fetch just the Caller ID number in order of PAI, RPID, From */
+static int fetch_callerid_num(struct ast_sip_session *session, pjsip_rx_data *rdata, char *buf, size_t len)
+{
+	int res = -1;
+	struct ast_party_id id;
+
+	ast_party_id_init(&id);
+	if (!ast_sip_set_id_from_invite(rdata, &id, &session->endpoint->id.self, session->endpoint->id.trust_inbound)) {
+		ast_copy_string(buf, id.number.str, len);
+		res = 0;
+	}
+	ast_party_id_free(&id);
+	return res;
+}
+
 enum sip_get_destination_result {
 	/*! The extension was successfully found */
 	SIP_GET_DEST_EXTEN_FOUND,
@@ -3664,6 +3679,7 @@ enum sip_get_destination_result {
  */
 static enum sip_get_destination_result get_destination(struct ast_sip_session *session, pjsip_rx_data *rdata)
 {
+	char cid_num[AST_CHANNEL_NAME];
 	pjsip_uri *ruri = rdata->msg_info.msg->line.req.uri;
 	struct ast_features_pickup_config *pickup_cfg;
 	const char *pickupexten;
@@ -3695,8 +3711,12 @@ static enum sip_get_destination_result get_destination(struct ast_sip_session *s
 		ao2_ref(pickup_cfg, -1);
 	}
 
+	fetch_callerid_num(session, rdata, cid_num, sizeof(cid_num));
+
+	/* If there's an overlap_context override specified, use that; otherwise, just use the endpoint's context */
+
 	if (!strcmp(session->exten, pickupexten) ||
-		ast_exists_extension(NULL, session->endpoint->context, session->exten, 1, NULL)) {
+		ast_exists_extension(NULL, S_OR(session->endpoint->overlap_context, session->endpoint->context), session->exten, 1, S_OR(cid_num, NULL))) {
 		/*
 		 * Save off the INVITE Request-URI in case it is
 		 * needed: CHANNEL(pjsip,request_uri)
@@ -3711,7 +3731,7 @@ static enum sip_get_destination_result get_destination(struct ast_sip_session *s
 	 */
 	if (session->endpoint->allow_overlap && (
 		!strncmp(session->exten, pickupexten, strlen(session->exten)) ||
-		ast_canmatch_extension(NULL, session->endpoint->context, session->exten, 1, NULL))) {
+		ast_canmatch_extension(NULL, S_OR(session->endpoint->overlap_context, session->endpoint->context), session->exten, 1, S_OR(cid_num, NULL)))) {
 		/* Overlap partial match */
 		return SIP_GET_DEST_EXTEN_PARTIAL;
 	}
@@ -5328,14 +5348,16 @@ static void session_inv_on_create_offer(pjsip_inv_session *inv, pjmedia_sdp_sess
 	/* Some devices send a re-INVITE offer with empty SDP. Asterisk by default return
 	 * an answer with the current used codecs, which is not strictly compliant to RFC
 	 * 3261 (SHOULD requirement). So we detect this condition and include all
-	 * configured codecs in the answer if the workaround is activated.
+	 * configured codecs in the answer if the workaround is activated. The actual
+	 * logic is in the create_local_sdp function. We can't detect here that we have
+	 * no SDP body in the INVITE, as we don't have access to the message.
 	 */
 	if (inv->invite_tsx && inv->state == PJSIP_INV_STATE_CONFIRMED
 			&& inv->invite_tsx->method.id == PJSIP_INVITE_METHOD) {
 		ast_trace(-1, "re-INVITE\n");
-		if (inv->invite_tsx->role == PJSIP_ROLE_UAS && !pjmedia_sdp_neg_was_answer_remote(inv->neg)
+		if (inv->invite_tsx->role == PJSIP_ROLE_UAS
 				&& ast_sip_get_all_codecs_on_empty_reinvite()) {
-			ast_trace(-1, "no codecs in re-INIVTE, include all codecs in the answer\n");
+			ast_trace(-1, "UAS role, include all codecs in the answer on empty SDP\n");
 			ignore_active_stream_topology = 1;
 		}
 	}

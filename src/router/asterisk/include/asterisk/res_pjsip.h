@@ -98,8 +98,8 @@
 /*!
  * \brief Fill a buffer with a pjsip transport's remote ip address and port
  *
- * \param transport The pjsip_transport to use
- * \param dest The destination buffer of at least IP6ADDR_COLON_PORT_BUFLEN bytes
+ * \param _transport The pjsip_transport to use
+ * \param _dest The destination buffer of at least IP6ADDR_COLON_PORT_BUFLEN bytes
  */
 #define AST_SIP_MAKE_REMOTE_IPADDR_PORT_STR(_transport, _dest) \
 	snprintf(_dest, IP6ADDR_COLON_PORT_BUFLEN, \
@@ -1065,6 +1065,8 @@ struct ast_sip_endpoint {
 	AST_STRING_FIELD_EXTENDED(geoloc_incoming_call_profile);
 	/*! The name of the geoloc profile to apply when Asterisk sends a call to this endpoint */
 	AST_STRING_FIELD_EXTENDED(geoloc_outgoing_call_profile);
+	/*! The context to use for overlap dialing, if different from the endpoint's context */
+	AST_STRING_FIELD_EXTENDED(overlap_context);
 	/*! 100rel mode to use with this endpoint */
 	enum ast_sip_100rel_mode rel100;
 	/*! Send Advice-of-Charge messages */
@@ -1092,8 +1094,8 @@ extern pjsip_media_type pjsip_media_type_text_plain;
 /*!
  * \brief Compare pjsip media types
  *
- * \param pjsip_media_type a
- * \param pjsip_media_type b
+ * \param a the first media type
+ * \param b the second media type
  * \retval 1 Media types are equal
  * \retval 0 Media types are not equal
  */
@@ -1136,7 +1138,7 @@ void ast_sip_header_to_security_mechanism(const pjsip_generic_string_hdr *hdr,
 /*!
  * \brief Initialize security mechanism vector from string of security mechanisms.
  *
- * \param security_mechanisms Pointer to vector of security mechanisms to initialize.
+ * \param security_mechanism Pointer to vector of security mechanisms to initialize.
  * \param value String of security mechanisms as defined in RFC 3329.
  * \retval 0 Success
  * \retval non-zero Failure
@@ -1174,11 +1176,24 @@ void ast_sip_security_mechanisms_vector_destroy(struct ast_sip_security_mechanis
  *
  * \param security_mechanism Pointer-pointer to the security mechanism to allocate.
  * \param value The security mechanism string as defined in RFC 3329 (section 2.2)
- * \param ... in the form <mechanism_name>;q=<q_value>;<mechanism_parameters>
+ *				in the form <mechanism_name>;q=<q_value>;<mechanism_parameters>
  * \retval 0 Success
  * \retval non-zero Failure
  */
 int ast_sip_str_to_security_mechanism(struct ast_sip_security_mechanism **security_mechanism, const char *value);
+
+/*!
+ * \brief Writes the security mechanisms of an endpoint into a buffer as a string and returns the buffer.
+ *
+ * \note The buffer must be freed by the caller.
+ *
+ * \param endpoint Pointer to endpoint.
+ * \param add_qvalue If non-zero, the q-value is printed as well
+ * \param buf The buffer to write the string into
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_sip_security_mechanisms_to_str(const struct ast_sip_security_mechanism_vector *security_mechanisms, int add_qvalue, char **buf);
 
 /*!
  * \brief Set the security negotiation based on a given string.
@@ -3604,6 +3619,25 @@ struct ast_sip_service_route_vector *ast_sip_service_route_vector_alloc(void);
 void ast_sip_service_route_vector_destroy(struct ast_sip_service_route_vector *service_routes);
 
 /*!
+ * \brief Set the ID for a connected line update
+ *
+ * \retval -1 on failure, 0 on success
+ */
+int ast_sip_set_id_connected_line(struct pjsip_rx_data *rdata, struct ast_party_id *id);
+
+/*!
+ * \brief Set the ID from an INVITE
+ *
+ * \param rdata
+ * \param id ID structure to fill
+ * \param default_id Default ID structure with data to use (for non-trusted endpoints)
+ * \param trust_inbound Whether or not the endpoint is trusted (controls whether PAI or RPID can be used)
+ *
+ * \retval -1 on failure, 0 on success
+ */
+int ast_sip_set_id_from_invite(struct pjsip_rx_data *rdata, struct ast_party_id *id, struct ast_party_id *default_id, int trust_inbound);
+
+/*!
  * \brief Set name and number information on an identity header.
  *
  * \param pool Memory pool to use for string duplication
@@ -3943,7 +3977,7 @@ int ast_sip_is_uri_sip_sips(pjsip_uri *uri);
  *
  * \param uri The pjsip_uri to check
  *
- * \retva; 1 if allowed
+ * \retval 1 if allowed
  * \retval 0 if not allowed
  */
 int ast_sip_is_allowed_uri(pjsip_uri *uri);
@@ -3975,15 +4009,27 @@ const pj_str_t *ast_sip_pjsip_uri_get_username(pjsip_uri *uri);
 const pj_str_t *ast_sip_pjsip_uri_get_hostname(pjsip_uri *uri);
 
 /*!
- * \brief Get the other_param portion of the pjsip_uri
+ * \brief Find an 'other' SIP/SIPS URI parameter by name
  * \since 16.28.0
  *
- * \param uri The pjsip_uri to get hte other_param from
+ * A convenience function to find a named parameter from a SIP/SIPS URI. This
+ * function will not find the following standard SIP/SIPS URI parameters which
+ * are stored separately by PJSIP:
+ *
+ * \li `user`
+ * \li `method`
+ * \li `transport`
+ * \li `ttl`
+ * \li `lr`
+ * \li `maddr`
+ *
+ * \param uri The pjsip_uri to get the parameter from
+ * \param param_str The name of the parameter to find
  *
  * \note This function will check what kind of URI it receives and return
- * the other_param based off of that
+ * the parameter based off of that
  *
- * \return other_param or NULL if not present
+ * \return Find parameter or NULL if not present
  */
 struct pjsip_param *ast_sip_pjsip_uri_get_other_param(pjsip_uri *uri, const pj_str_t *param_str);
 
@@ -3993,5 +4039,16 @@ struct pjsip_param *ast_sip_pjsip_uri_get_other_param(pjsip_uri *uri, const pj_s
  * \retval non zero if we should return all codecs on empty re-INVITE
  */
 unsigned int ast_sip_get_all_codecs_on_empty_reinvite(void);
+
+
+/*!
+ * \brief Convert SIP hangup causes to Asterisk hangup causes
+ *
+ * \param cause SIP cause
+ *
+ * \retval matched cause code from causes.h
+ */
+const int ast_sip_hangup_sip2cause(int cause);
+
 
 #endif /* _RES_PJSIP_H */

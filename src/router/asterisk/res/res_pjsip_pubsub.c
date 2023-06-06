@@ -945,6 +945,8 @@ static struct resource_list *retrieve_resource_list(const char *resource, const 
  * \param resource The name of the resource for this tree node.
  * \param visited The vector of resources that have been visited.
  * \param full_state if allocating a list, indicate whether full state is requested in notifications.
+ * \param display_name the display name to include with this tree node.
+ *
  * \retval NULL Allocation failure.
  * \retval non-NULL The newly-allocated tree_node
  */
@@ -3771,29 +3773,29 @@ static void set_state_terminated(struct ast_sip_subscription *sub)
 /*!
  * \brief Callback sequence for subscription terminate:
  *
+ * * Please note that the descriptions below represent pjproject behavior on versions
+ *   >= 2.13.
  * * Client initiated:
  *     pjproject receives SUBSCRIBE on the subscription's serializer thread
+ *         calls pubsub_evsub_set_state with state = TERMINATED
+ *             pubsub_on_evsub_state checks the event and finds it is due to a received
+ *             SUBSCRIBE with an expires of 0 and so does nothing.
  *         calls pubsub_on_rx_refresh with dialog locked
  *             pubsub_on_rx_refresh sets TERMINATE_PENDING
- *             pushes serialized_pubsub_on_refresh_timeout
+ *             calls pubsub_on_refresh_timeout to push final NOTIFY to pjproject
+ *                 checks state == TERMINATE_PENDING
+ *                 sets TERMINATE_IN_PROGRESS
+ *                 calls send_notify (2)
+ *                 send_notify ultimately calls pjsip_evsub_send_request
+ *                 pjsip_evsub_send_request calls evsub's set_state
+ *                     set_state calls pubsub_evsub_set_state
+ *                         pubsub_on_evsub_state checks state == TERMINATE_IN_PROGRESS
+ *                         removes the subscriptions
+ *                         cleans up references to evsub
+ *                         sets state = TERMINATED
+ *             pubsub_on_refresh_timeout unlocks dialog
  *             returns to pjproject
- *         pjproject calls pubsub_on_evsub_state
- *             pubsub_evsub_set_state checks state == TERMINATE_IN_PROGRESS (no)
- *             ignore and return
  *         pjproject unlocks dialog
- *     serialized_pubsub_on_refresh_timeout starts (1)
- *       locks dialog
- *       checks state == TERMINATE_PENDING
- *       sets TERMINATE_IN_PROGRESS
- *       calls send_notify (2)
- *           send_notify ultimately calls pjsip_evsub_send_request
- *               pjsip_evsub_send_request calls evsub's set_state
- *                   set_state calls pubsub_evsub_set_state
- *                       pubsub_on_evsub_state checks state == TERMINATE_IN_PROGRESS
- *                       removes the subscriptions
- *                       cleans up references to evsub
- *                       sets state = TERMINATED
- *       serialized_pubsub_on_refresh_timeout unlocks dialog
  *
  * * Subscription timer expires:
  *     pjproject timer expires
@@ -3804,8 +3806,20 @@ static void set_state_terminated(struct ast_sip_subscription *sub)
  *             pushes serialized_pubsub_on_refresh_timeout
  *             returns to pjproject
  *         pjproject unlocks dialog
- *     serialized_pubsub_on_refresh_timeout starts
- *         See (1) Above
+ *     serialized_pubsub_on_refresh_timeout starts (1)
+ *       locks dialog
+ *       checks state == TERMINATE_PENDING
+ *       sets TERMINATE_IN_PROGRESS
+ *       calls send_notify (2)
+ *           send_notify ultimately calls pjsip_evsub_send_request
+ *               pjsip_evsub_send_request calls evsub's set_state
+ *                   set_state calls pubsub_evsub_set_state
+ *                       pubsub_on_evsub_state checks state == TERMINATE_IN_PROGRESS
+ *                       checks that the event is not due to un-SUBSCRIBE
+ *                       removes the subscriptions
+ *                       cleans up references to evsub
+ *                       sets state = TERMINATED
+ *       serialized_pubsub_on_refresh_timeout unlocks dialog
  *
  * * Transmission failure sending NOTIFY or error response from client
  *     pjproject transaction timer expires or non OK response
@@ -3836,35 +3850,14 @@ static void set_state_terminated(struct ast_sip_subscription *sub)
  *
  */
 
-/*!
- * \brief PJSIP callback when underlying SIP subscription changes state
- *
- * Although this function is called for every state change, we only care
- * about the TERMINATED state, and only when we're actually processing the final
- * notify (SIP_SUB_TREE_TERMINATE_IN_PROGRESS) OR when a transmission failure
- * occurs (PJSIP_EVENT_TSX_STATE).  In this case, we do all the subscription tree
- * cleanup tasks and decrement the evsub reference.
- */
-static void pubsub_on_evsub_state(pjsip_evsub *evsub, pjsip_event *event)
-{
-	struct sip_subscription_tree *sub_tree =
-		pjsip_evsub_get_mod_data(evsub, pubsub_module.id);
 
-	ast_debug(3, "evsub %p state %s event %s sub_tree %p sub_tree state %s\n", evsub,
-		pjsip_evsub_get_state_name(evsub), pjsip_event_str(event->type), sub_tree,
-		(sub_tree ? sub_tree_state_description[sub_tree->state] : "UNKNOWN"));
+/* The code in this function was previously in pubsub_on_evsub_state. */
+static void clean_sub_tree(pjsip_evsub *evsub){
 
-	if (!sub_tree || pjsip_evsub_get_state(evsub) != PJSIP_EVSUB_STATE_TERMINATED) {
-		return;
-	}
+	struct sip_subscription_tree *sub_tree;
+	sub_tree = pjsip_evsub_get_mod_data(evsub, pubsub_module.id);
 
-	/* It's easier to write this as what we WANT to process, then negate it. */
-	if (!(sub_tree->state == SIP_SUB_TREE_TERMINATE_IN_PROGRESS
-		|| (event->type == PJSIP_EVENT_TSX_STATE && sub_tree->state == SIP_SUB_TREE_NORMAL)
-		)) {
-		ast_debug(3, "Do nothing.\n");
-		return;
-	}
+	ast_debug(3, "Cleaning subscription %p\n", evsub);
 
 	if (sub_tree->expiration_task) {
 		char task_name[256];
@@ -3895,6 +3888,55 @@ static void pubsub_on_evsub_state(pjsip_evsub *evsub, pjsip_event *event)
 	sub_tree->state = SIP_SUB_TREE_TERMINATED;
 	/* Remove evsub's reference to the sub_tree */
 	ao2_ref(sub_tree, -1);
+}
+
+/*!
+ * \brief PJSIP callback when underlying SIP subscription changes state
+ *
+ * Although this function is called for every state change, we only care
+ * about the TERMINATED state, and only when we're actually processing the final
+ * notify (SIP_SUB_TREE_TERMINATE_IN_PROGRESS) OR when a transmission failure
+ * occurs (PJSIP_EVENT_TSX_STATE).  In this case, we do all the subscription tree
+ * cleanup tasks and decrement the evsub reference.
+ */
+static void pubsub_on_evsub_state(pjsip_evsub *evsub, pjsip_event *event)
+{
+	struct sip_subscription_tree *sub_tree =
+		pjsip_evsub_get_mod_data(evsub, pubsub_module.id);
+
+	ast_debug(3, "evsub %p state %s event %s sub_tree %p sub_tree state %s\n", evsub,
+		pjsip_evsub_get_state_name(evsub), pjsip_event_str(event->type), sub_tree,
+		(sub_tree ? sub_tree_state_description[sub_tree->state] : "UNKNOWN"));
+
+	if (!sub_tree || pjsip_evsub_get_state(evsub) != PJSIP_EVSUB_STATE_TERMINATED) {
+		return;
+	}
+
+
+	/* It's easier to write this as what we WANT to process, then negate it. */
+	if (!(sub_tree->state == SIP_SUB_TREE_TERMINATE_IN_PROGRESS
+		|| (event->type == PJSIP_EVENT_TSX_STATE && sub_tree->state == SIP_SUB_TREE_NORMAL)
+		)) {
+		ast_debug(3, "Do nothing.\n");
+		return;
+	}
+
+#ifdef HAVE_PJSIP_EVSUB_PENDING_NOTIFY
+	/* This check looks for re-subscribes with an expires of 0. If we receive one of those,
+	   we don't want to clean the evsub because we still need it to send the final NOTIFY.
+	   This was previously handled by pubsub_on_rx_refresh setting:
+	   'sub_tree->state = SIP_SUB_TREE_TERMINATE_PENDING' */
+	if (event->body.tsx_state.type == PJSIP_EVENT_RX_MSG &&
+	    !pjsip_method_cmp(&event->body.tsx_state.tsx->method, &pjsip_subscribe_method) &&
+	    pjsip_evsub_get_expires(evsub) == 0) {
+
+		ast_debug(3, "Subscription ending, do nothing.\n");
+		return;
+	}
+#endif
+	/* If we made it this far, we want to clean the sub tree. For pjproject <2.13, the sub_tree
+	   state check makes sure the evsub is not cleaned at the wrong time */
+	clean_sub_tree(evsub);
 }
 
 static int pubsub_on_refresh_timeout(void *userdata)
@@ -4010,8 +4052,7 @@ static int destroy_subscriptions_task(void *obj)
  * This includes both SUBSCRIBE requests that actually refresh the subscription
  * as well as SUBSCRIBE requests that end the subscription.
  *
- * In either case we push serialized_pubsub_on_refresh_timeout to send an
- * appropriate NOTIFY request.
+ * In either case we push an appropriate NOTIFY via pubsub_on_refresh_timeout.
  */
 static void pubsub_on_rx_refresh(pjsip_evsub *evsub, pjsip_rx_data *rdata,
 		int *p_st_code, pj_str_t **p_st_text, pjsip_hdr *res_hdr, pjsip_msg_body **p_body)
@@ -4105,12 +4146,21 @@ static void pubsub_on_rx_refresh(pjsip_evsub *evsub, pjsip_rx_data *rdata,
 
 	subscription_persistence_update(sub_tree, rdata, SUBSCRIPTION_PERSISTENCE_REFRESHED);
 
+#ifdef HAVE_PJSIP_EVSUB_PENDING_NOTIFY
+	/* As of pjsip 2.13, the NOTIFY has to be sent within this function as pjproject now
+	   requires it.  Previously this would have caused an early NOTIFY to go out before the
+	   SUBSCRIBE's 200 OK. The previous solution was to push the NOTIFY, but now pjproject
+	   looks for the NOTIFY to be sent from this function and caches it to send after it
+	   auto-replies to the SUBSCRIBE. */
+	pubsub_on_refresh_timeout(sub_tree);
+#else
 	if (ast_sip_push_task(sub_tree->serializer, serialized_pubsub_on_refresh_timeout, ao2_bump(sub_tree))) {
 		/* If we can't push the NOTIFY refreshing task...we'll just go with it. */
 		ast_log(LOG_ERROR, "Failed to push task to send NOTIFY.\n");
 		sub_tree->state = SIP_SUB_TREE_NORMAL;
 		ao2_ref(sub_tree, -1);
 	}
+#endif
 
 	if (sub_tree->is_list) {
 		pj_list_insert_before(res_hdr, create_require_eventlist(rdata->tp_info.pool));

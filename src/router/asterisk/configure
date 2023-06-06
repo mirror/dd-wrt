@@ -90,6 +90,13 @@ fi
 # splitting by setting IFS to empty value.)
 IFS=" ""	$as_nl"
 
+# IFS
+# We need space, tab and new line, in precisely that order.  Quoting is
+# there to prevent editors from complaining about space-tab.
+# (If _AS_PATH_WALK were called with IFS unset, it would disable word
+# splitting by setting IFS to empty value.)
+IFS=" ""	$as_nl"
+
 # Find who we are.  Look in the path if we contain no directory separator.
 as_myself=
 case $0 in #((
@@ -34470,7 +34477,6 @@ as_fn_error ()
   $as_echo "$as_me: error: $2" >&2
   as_fn_exit $as_status
 } # as_fn_error
-
 
 # as_fn_set_status STATUS
 # -----------------------
