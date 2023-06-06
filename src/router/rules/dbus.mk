@@ -9,6 +9,9 @@ dbus-configure:
 	--disable-xml-docs \
 	--without-x \
 	--enable-systemd=no \
+	--disable-asserts \
+	--disable-checks \
+	--disable-verbose-mode \
 	--with-dbus-user="nobody" \
 	--with-dbus-session-bus-connect-address="/tmp/var/run/dbus/dbussocket" \
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib" \
