@@ -105,8 +105,8 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
             (ifinfomsg->ifi_flags & IFF_UP) &&
             (!m->server->config.use_iff_running || (ifinfomsg->ifi_flags & IFF_RUNNING)) &&
             ((ifinfomsg->ifi_flags & IFF_LOOPBACK) ||
-             (ifinfomsg->ifi_flags & IFF_MULTICAST)) &&
-            (m->server->config.allow_point_to_point || !(ifinfomsg->ifi_flags & IFF_POINTOPOINT));
+             (ifinfomsg->ifi_flags & IFF_MULTICAST) ||
+             ((ifinfomsg->ifi_flags & IFF_POINTOPOINT) && m->server->config.allow_point_to_point));
 
         /* Handle interface attributes */
         l = NLMSG_PAYLOAD(n, sizeof(struct ifinfomsg));
@@ -189,7 +189,7 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
             return;
 
         /* Try to get a reference to our AvahiInterface object for the
-         * interface this address is assigned to. If ther is no object
+         * interface this address is assigned to. If there is no object
          * for this interface, we ignore this address. */
         if (!(i = avahi_interface_monitor_get_interface(m, (AvahiIfIndex) ifaddrmsg->ifa_index, avahi_af_to_proto(ifaddrmsg->ifa_family))))
             return;
@@ -239,7 +239,7 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
             a = RTA_NEXT(a, l);
         }
 
-        /* If there was no adress attached to this message, let's quit. */
+        /* If there was no address attached to this message, let's quit. */
         if (rlocal_valid)
             r = &rlocal;
         else if (raddr_valid)
@@ -306,7 +306,7 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
 
             /* Only after this boolean variable has been set, Avahi
              * will start to announce or browse on all interfaces. It
-             * is originaly set to 0, which means that relevancy
+             * is originally set to 0, which means that relevancy
              * checks and RR updates are disabled during the wild
              * dumps. */
             m->list_complete = 1;
@@ -387,5 +387,5 @@ void avahi_interface_monitor_sync(AvahiInterfaceMonitor *m) {
             break;
 
     /* At this point Avahi knows about all local interfaces and
-     * addresses in existance. */
+     * addresses in existence. */
 }

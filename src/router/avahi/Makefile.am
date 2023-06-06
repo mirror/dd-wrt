@@ -19,7 +19,7 @@ ACLOCAL_AMFLAGS = -I common
 
 include $(srcdir)/common/doxygen.mk
 
-EXTRA_DIST = config.rpath  \
+EXTRA_DIST = \
 	autogen.sh \
 	bootstrap.sh \
 	LICENSE \
