@@ -1520,5 +1520,11 @@ ALTER TABLE ps_endpoints ADD COLUMN send_aoc ast_bool_values;
 
 UPDATE alembic_version SET version_num='5a2247c957d2' WHERE alembic_version.version_num = 'ccf795ee535f';
 
+-- Running upgrade 5a2247c957d2 -> f261363a857f
+
+ALTER TABLE ps_endpoints ADD COLUMN overlap_context VARCHAR(80);
+
+UPDATE alembic_version SET version_num='f261363a857f' WHERE alembic_version.version_num = '5a2247c957d2';
+
 COMMIT;
 

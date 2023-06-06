@@ -161,7 +161,10 @@
 						<para>Continue in the dialplan if the callee hangs up.</para>
 					</option>
 					<option name="d">
-						<para>data-quality (modem) call (minimum delay).</para>
+						<para>Data-quality (modem) call (minimum delay).</para>
+						<para>This option only applies to DAHDI channels. By default,
+						DTMF is verified by muting audio TX/RX to verify the tone
+						is still present. This option disables that behavior.</para>
 					</option>
 					<option name="F" argsep="^">
 						<argument name="context" required="false" />
@@ -169,12 +172,6 @@
 						<argument name="priority" required="true" />
 						<para>When the caller hangs up, transfer the <emphasis>called member</emphasis>
 						to the specified destination and <emphasis>start</emphasis> execution at that location.</para>
-						<para>NOTE: Any channel variables you want the called channel to inherit from the caller channel must be
-						prefixed with one or two underbars ('_').</para>
-					</option>
-					<option name="F">
-						<para>When the caller hangs up, transfer the <emphasis>called member</emphasis> to the next priority of
-						the current extension and <emphasis>start</emphasis> execution at that location.</para>
 						<para>NOTE: Any channel variables you want the called channel to inherit from the caller channel must be
 						prefixed with one or two underbars ('_').</para>
 						<para>NOTE: Using this option from a Macro() or GoSub() might not make sense as there would be no return points.</para>
@@ -1277,7 +1274,7 @@
 			</syntax>
 			<see-also>
 				<ref type="application">PauseQueueMember</ref>
-				<ref type="application">UnPauseQueueMember</ref>
+				<ref type="application">UnpauseQueueMember</ref>
 			</see-also>
 		</managerEventInstance>
 	</managerEvent>
@@ -2956,7 +2953,11 @@ static void init_queue(struct call_queue *q)
 	q->timeout = DEFAULT_TIMEOUT;
 	q->maxlen = 0;
 
+	ast_string_field_set(q, announce, "");
 	ast_string_field_set(q, context, "");
+	ast_string_field_set(q, membermacro, "");
+	ast_string_field_set(q, membergosub, "");
+	ast_string_field_set(q, defaultrule, "");
 
 	q->announcefrequency = 0;
 	q->minannouncefrequency = DEFAULT_MIN_ANNOUNCE_FREQUENCY;
@@ -2985,7 +2986,10 @@ static void init_queue(struct call_queue *q)
 	q->periodicannouncefrequency = 0;
 	q->randomperiodicannounce = 0;
 	q->numperiodicannounce = 0;
+	q->relativeperiodicannounce = 0;
 	q->autopause = QUEUE_AUTOPAUSE_OFF;
+	q->autopausebusy = 0;
+	q->autopauseunavail = 0;
 	q->timeoutpriority = TIMEOUT_PRIORITY_APP;
 	q->autopausedelay = 0;
 	if (!q->members) {
@@ -3010,6 +3014,7 @@ static void init_queue(struct call_queue *q)
 	ast_string_field_set(q, sound_minute, "queue-minute");
 	ast_string_field_set(q, sound_seconds, "queue-seconds");
 	ast_string_field_set(q, sound_thanks, "queue-thankyou");
+	ast_string_field_set(q, sound_callerannounce, "");
 	ast_string_field_set(q, sound_reporthold, "queue-reporthold");
 
 	if (!q->sound_periodicannounce[0]) {
@@ -8172,7 +8177,7 @@ static int pqm_exec(struct ast_channel *chan, const char *data)
 	return 0;
 }
 
-/*! \brief UnPauseQueueMember application */
+/*! \brief UnpauseQueueMember application */
 static int upqm_exec(struct ast_channel *chan, const char *data)
 {
 	char *parse;
@@ -8193,7 +8198,7 @@ static int upqm_exec(struct ast_channel *chan, const char *data)
 	AST_STANDARD_APP_ARGS(args, parse);
 
 	if (ast_strlen_zero(args.interface)) {
-		ast_log(LOG_WARNING, "Missing interface argument to PauseQueueMember ([queuename],interface[,options[,reason]])\n");
+		ast_log(LOG_WARNING, "Missing interface argument to UnpauseQueueMember ([queuename],interface[,options[,reason]])\n");
 		return -1;
 	}
 
