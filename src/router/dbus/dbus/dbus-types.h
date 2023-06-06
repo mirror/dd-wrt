@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -112,6 +114,27 @@ typedef dbus_uint32_t  dbus_bool_t;
  * Declare a 64-bit unsigned integer constant. The macro
  * adds the necessary "ULL" or whatever after the integer,
  * giving a literal such as "325145246765ULL"
+ */
+
+/**
+ * @def DBUS_INT64_MODIFIER
+ *
+ * A string literal for a length modifier that is appropriate to print
+ * the #dbus_int64_t and #dbus_uint64_t types.
+ * For example, it might be an empty string, "l", "ll", or "I64".
+ *
+ * This modifier needs to be concatenated with a literal "%" and a
+ * conversion specifier that can print signed or unsigned integers,
+ * for example:
+ *
+ * @code
+ * dbus_int64_t i = -123;
+ * dbus_uint64_t u = 456;
+ *
+ * printf ("signed: %" DBUS_INT64_MODIFIER "d\n", i);
+ * printf ("unsigned decimal: %" DBUS_INT64_MODIFIER "u\n", u);
+ * printf ("unsigned hex: 0x%" DBUS_INT64_MODIFIER "x\n", x);
+ * @endcode
  */
 
 /**

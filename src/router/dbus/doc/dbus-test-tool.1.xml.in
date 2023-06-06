@@ -7,6 +7,9 @@
       <holder>Collabora Ltd.</holder>
     </copyright>
     <legalnotice>
+      <!--
+        SPDX-License-Identifier: GPL-2.0-or-later
+      -->
       <para>This man page is distributed under the same terms as
         dbus-test-tool (GPL-2+). There is NO WARRANTY, to the extent
         permitted by law.</para>
@@ -315,7 +318,12 @@
   <refsect1 id="bugs">
     <title>BUGS</title>
       <para>Please send bug reports to the D-Bus bug tracker or mailing list.
-        See <ulink url="http://www.freedesktop.org/software/dbus/">http://www.freedesktop.org/software/dbus/</ulink>.</para>
+        See <ulink url="https://www.freedesktop.org/wiki/Software/dbus/">https://www.freedesktop.org/wiki/Software/dbus/</ulink>.</para>
+  </refsect1>
+
+  <refsect1 id='author'>
+    <title>AUTHOR</title>
+    <para>See <ulink url='https://dbus.freedesktop.org/doc/AUTHORS'>https://dbus.freedesktop.org/doc/AUTHORS</ulink></para>
   </refsect1>
 
   <refsect1 id="see_also">

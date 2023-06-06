@@ -4,6 +4,8 @@
  *
  * Copyright (C) 2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -348,7 +350,7 @@ exec_for_correct_user (char *exec, char *user, DBusError *error)
   /* Resetting the OOM score adjustment is best-effort, so we don't
    * treat a failure to do so as fatal. */
   if (!_dbus_reset_oom_score_adj (&error_str))
-    _dbus_warn ("%s: %s", error_str, strerror (errno));
+    _dbus_log (DBUS_SYSTEM_LOG_WARNING, "%s: %s", error_str, strerror (errno));
 
   if (!switch_user (user, error))
     return FALSE;

@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2006  Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +29,7 @@
 #ifndef DBUS_UUIDGEN_H
 #define DBUS_UUIDGEN_H
 
+#include <dbus/dbus-macros-internal.h>
 #include <dbus/dbus-types.h>
 #include <dbus/dbus-errors.h>
 

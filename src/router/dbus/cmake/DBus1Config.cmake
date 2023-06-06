@@ -9,6 +9,7 @@
 #     to a target with target_link_libraries
 
 get_filename_component(DBus1_PKGCONFIG_DIR "${CMAKE_CURRENT_LIST_DIR}/../../pkgconfig" ABSOLUTE)
+get_filename_component(DBus1_NEARBY_ARCH_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../dbus-1.0/include" ABSOLUTE)
 find_package(PkgConfig)
 if(DEFINED ENV{PKG_CONFIG_DIR})
     set(_dbus_pkgconfig_dir "$ENV{PKG_CONFIG_DIR}")
@@ -50,6 +51,9 @@ set(DBus1_DEFINITIONS ${PC_DBUS1_CFLAGS_OTHER})
 find_path(DBus1_INCLUDE_DIR dbus/dbus.h
     HINTS ${PC_DBUS1_INCLUDEDIR} ${PC_DBUS1_INCLUDE_DIRS}
     PATH_SUFFIXES dbus-1.0)
+find_path(DBus1_ARCH_INCLUDE_DIR dbus/dbus-arch-deps.h
+    PATHS ${DBus1_NEARBY_ARCH_INCLUDE_DIR}
+    NO_DEFAULT_PATH)
 find_path(DBus1_ARCH_INCLUDE_DIR dbus/dbus-arch-deps.h
     HINTS ${PC_DBUS1_INCLUDE_DIRS}
     PATH_SUFFIXES dbus-1.0)

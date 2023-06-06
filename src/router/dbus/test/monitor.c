@@ -155,6 +155,21 @@ static Config side_effects_config = {
     TRUE
 };
 
+static dbus_bool_t
+config_forbids_name_acquired_signal (const Config *config)
+{
+  if (config == NULL)
+    return FALSE;
+
+  if (config->config_file == NULL)
+    return FALSE;
+
+  if (strcmp (config->config_file, forbidding_config.config_file) == 0)
+    return TRUE;
+
+  return FALSE;
+}
+
 static inline const char *
 not_null2 (const char *x,
     const char *fallback)
@@ -196,6 +211,10 @@ _log_message (DBusMessage *m,
       not_null (dbus_message_get_signature (m)));
   g_test_message ("\terror name: %s",
       not_null (dbus_message_get_error_name (m)));
+  g_test_message ("\tserial number: %u",
+      dbus_message_get_serial (m));
+  g_test_message ("\tin reply to: %u",
+      dbus_message_get_reply_serial (m));
 
   if (strcmp ("s", dbus_message_get_signature (m)) == 0)
     {
@@ -249,9 +268,6 @@ do { \
 
 #define assert_name_acquired(m) \
 do { \
-  DBusError _e = DBUS_ERROR_INIT; \
-  const char *_s; \
-    \
   g_assert_cmpstr (dbus_message_type_to_string (dbus_message_get_type (m)), \
       ==, dbus_message_type_to_string (DBUS_MESSAGE_TYPE_SIGNAL)); \
   g_assert_cmpstr (dbus_message_get_sender (m), ==, DBUS_SERVICE_DBUS); \
@@ -261,7 +277,14 @@ do { \
   g_assert_cmpstr (dbus_message_get_signature (m), ==, "s"); \
   g_assert_cmpint (dbus_message_get_serial (m), !=, 0); \
   g_assert_cmpint (dbus_message_get_reply_serial (m), ==, 0); \
+} while (0)
+
+#define assert_unique_name_acquired(m) \
+do { \
+  DBusError _e = DBUS_ERROR_INIT; \
+  const char *_s; \
     \
+  assert_name_acquired (m); \
   dbus_message_get_args (m, &_e, \
         DBUS_TYPE_STRING, &_s, \
         DBUS_TYPE_INVALID); \
@@ -329,6 +352,21 @@ do { \
   g_assert_cmpint (dbus_message_get_reply_serial (m), !=, 0); \
 } while (0)
 
+/* forbidding.conf does not allow receiving NameAcquired, so if we are in
+ * that configuration, then dbus-daemon synthesizes an error reply to itself
+ * and sends that to monitors */
+#define expect_name_acquired_error(queue, in_reply_to) \
+do { \
+  DBusMessage *message; \
+  \
+  message = g_queue_pop_head (queue); \
+  assert_error_reply (message, DBUS_SERVICE_DBUS, DBUS_SERVICE_DBUS, \
+                      DBUS_ERROR_ACCESS_DENIED); \
+  g_assert_cmpint (dbus_message_get_reply_serial (message), ==, \
+                   dbus_message_get_serial (in_reply_to)); \
+  dbus_message_unref (message); \
+} while (0)
+
 /* This is called after processing pending replies to our own method
  * calls, but before anything else.
  */
@@ -338,6 +376,9 @@ monitor_filter (DBusConnection *connection,
     void *user_data)
 {
   Fixture *f = user_data;
+
+  g_test_message ("Monitor received message:");
+  log_message (message);
 
   g_assert_cmpstr (dbus_message_get_interface (message), !=,
       "com.example.Tedious");
@@ -505,7 +546,7 @@ become_monitor (Fixture *f,
   int i;
   dbus_uint32_t zero = 0;
 
-  dbus_connection_set_route_peer_messages (f->monitor, TRUE);
+  dbus_connection_set_builtin_filters_enabled (f->monitor, FALSE);
 
   if (config == NULL)
     config = f->config;
@@ -719,6 +760,11 @@ test_become_monitor (Fixture *f,
       DBUS_NAME_FLAG_DO_NOT_QUEUE, &f->e);
   test_assert_no_error (&f->e);
   g_assert_cmpint (ret, ==, DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
+
+  /* If the policy forbids receiving NameAcquired, then we'll never
+   * receive it, so behave as though we had */
+  if (config_forbids_name_acquired_signal (f->config))
+    got_unique = got_a = got_b = got_c = TRUE;
 
   while (!got_unique || !got_a || !got_b || !got_c)
     {
@@ -1371,6 +1417,7 @@ test_dbus_daemon (Fixture *f,
 {
   DBusMessage *m;
   int res;
+  size_t n_expected;
 
   if (f->address == NULL)
     return;
@@ -1386,7 +1433,12 @@ test_dbus_daemon (Fixture *f,
   test_assert_no_error (&f->e);
   g_assert_cmpint (res, ==, DBUS_RELEASE_NAME_REPLY_RELEASED);
 
-  while (g_queue_get_length (&f->monitored) < 8)
+  n_expected = 8;
+
+  if (config_forbids_name_acquired_signal (context))
+    n_expected += 1;
+
+  while (g_queue_get_length (&f->monitored) < n_expected)
     test_main_context_iterate (f->ctx, TRUE);
 
   m = g_queue_pop_head (&f->monitored);
@@ -1399,10 +1451,12 @@ test_dbus_daemon (Fixture *f,
       "NameOwnerChanged", "sss", NULL);
   dbus_message_unref (m);
 
-  /* FIXME: should we get this? */
   m = g_queue_pop_head (&f->monitored);
-  assert_signal (m, DBUS_SERVICE_DBUS, DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS,
-      "NameAcquired", "s", f->sender_name);
+  assert_name_acquired (m);
+
+  if (config_forbids_name_acquired_signal (f->config))
+    expect_name_acquired_error (&f->monitored, m);
+
   dbus_message_unref (m);
 
   m = g_queue_pop_head (&f->monitored);
@@ -1624,8 +1678,14 @@ static void
 expect_new_connection (Fixture *f)
 {
   DBusMessage *m;
+  size_t n_expected;
 
-  while (g_queue_get_length (&f->monitored) < 4)
+  n_expected = 4;
+
+  if (config_forbids_name_acquired_signal (f->config))
+    n_expected += 1;
+
+  while (g_queue_get_length (&f->monitored) < n_expected)
     test_main_context_iterate (f->ctx, TRUE);
 
   m = g_queue_pop_head (&f->monitored);
@@ -1642,7 +1702,11 @@ expect_new_connection (Fixture *f)
   dbus_message_unref (m);
 
   m = g_queue_pop_head (&f->monitored);
-  assert_name_acquired (m);
+  assert_unique_name_acquired (m);
+
+  if (config_forbids_name_acquired_signal (f->config))
+    expect_name_acquired_error (&f->monitored, m);
+
   dbus_message_unref (m);
 }
 
@@ -1981,6 +2045,8 @@ main (int argc,
       setup, test_method_call, teardown);
   g_test_add ("/monitor/forbidden-method", Fixture, &forbidding_config,
       setup, test_forbidden_method_call, teardown);
+  g_test_add ("/monitor/forbidden-reply", Fixture, &forbidding_config,
+      setup, test_dbus_daemon, teardown);
   g_test_add ("/monitor/dbus-daemon", Fixture, NULL,
       setup, test_dbus_daemon, teardown);
   g_test_add ("/monitor/selective", Fixture, &selective_config,

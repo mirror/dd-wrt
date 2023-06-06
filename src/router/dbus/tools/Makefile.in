@@ -98,10 +98,10 @@ bin_PROGRAMS = dbus-launch$(EXEEXT) dbus-monitor$(EXEEXT) \
 @DBUS_UNIX_TRUE@	dbus-uuidgen \
 @DBUS_UNIX_TRUE@	$(NULL)
 
+@DBUS_WIN_TRUE@am__append_2 = disable-uac.rc
 subdir = tools
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_ac_append_to_file.m4 \
 	$(top_srcdir)/m4/ax_ac_print_to_file.m4 \
 	$(top_srcdir)/m4/ax_add_am_macro_static.m4 \
 	$(top_srcdir)/m4/ax_am_macros_static.m4 \
@@ -110,8 +110,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
 	$(top_srcdir)/m4/ld-version-script.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(dist_examples_SCRIPTS) \
@@ -163,14 +163,15 @@ am_dbus_test_tool_OBJECTS = dbus-echo.$(OBJEXT) dbus-spam.$(OBJEXT) \
 dbus_test_tool_OBJECTS = $(am_dbus_test_tool_OBJECTS)
 dbus_test_tool_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(top_builddir)/dbus/libdbus-1.la
+am__dbus_update_activation_environment_SOURCES_DIST =  \
+	dbus-update-activation-environment.c tool-common.c \
+	tool-common.h disable-uac.rc
+@DBUS_WIN_TRUE@am__objects_1 = disable-uac.$(OBJEXT)
 am_dbus_update_activation_environment_OBJECTS =  \
 	dbus-update-activation-environment.$(OBJEXT) \
-	tool-common.$(OBJEXT)
-@DBUS_WIN_TRUE@nodist_dbus_update_activation_environment_OBJECTS =  \
-@DBUS_WIN_TRUE@	disable-uac.$(OBJEXT)
+	tool-common.$(OBJEXT) $(am__objects_1)
 dbus_update_activation_environment_OBJECTS =  \
-	$(am_dbus_update_activation_environment_OBJECTS) \
-	$(nodist_dbus_update_activation_environment_OBJECTS)
+	$(am_dbus_update_activation_environment_OBJECTS)
 dbus_update_activation_environment_DEPENDENCIES =  \
 	$(am__DEPENDENCIES_1) $(top_builddir)/dbus/libdbus-1.la
 am_dbus_uuidgen_OBJECTS = dbus-uuidgen.$(OBJEXT)
@@ -255,13 +256,12 @@ SOURCES = $(dbus_cleanup_sockets_SOURCES) $(dbus_launch_SOURCES) \
 	$(dbus_monitor_SOURCES) $(dbus_run_session_SOURCES) \
 	$(dbus_send_SOURCES) $(dbus_test_tool_SOURCES) \
 	$(dbus_update_activation_environment_SOURCES) \
-	$(nodist_dbus_update_activation_environment_SOURCES) \
 	$(dbus_uuidgen_SOURCES)
 DIST_SOURCES = $(dbus_cleanup_sockets_SOURCES) \
 	$(am__dbus_launch_SOURCES_DIST) $(dbus_monitor_SOURCES) \
 	$(dbus_run_session_SOURCES) $(dbus_send_SOURCES) \
 	$(dbus_test_tool_SOURCES) \
-	$(dbus_update_activation_environment_SOURCES) \
+	$(am__dbus_update_activation_environment_SOURCES_DIST) \
 	$(dbus_uuidgen_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -329,6 +329,7 @@ DBUS_GENERATE_MAN = @DBUS_GENERATE_MAN@
 DBUS_INT16_TYPE = @DBUS_INT16_TYPE@
 DBUS_INT32_TYPE = @DBUS_INT32_TYPE@
 DBUS_INT64_CONSTANT = @DBUS_INT64_CONSTANT@
+DBUS_INT64_MODIFIER = @DBUS_INT64_MODIFIER@
 DBUS_INT64_TYPE = @DBUS_INT64_TYPE@
 DBUS_LIBEXECDIR = @DBUS_LIBEXECDIR@
 DBUS_MAJOR_VERSION = @DBUS_MAJOR_VERSION@
@@ -339,6 +340,7 @@ DBUS_SESSION_BUS_CONNECT_ADDRESS = @DBUS_SESSION_BUS_CONNECT_ADDRESS@
 DBUS_SESSION_BUS_LISTEN_ADDRESS = @DBUS_SESSION_BUS_LISTEN_ADDRESS@
 DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL = @DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL@
 DBUS_SESSION_SOCKET_DIR = @DBUS_SESSION_SOCKET_DIR@
+DBUS_SIZEOF_VOID_P = @DBUS_SIZEOF_VOID_P@
 DBUS_STATIC_BUILD_CPPFLAGS = @DBUS_STATIC_BUILD_CPPFLAGS@
 DBUS_SYSTEM_BUS_DEFAULT_ADDRESS = @DBUS_SYSTEM_BUS_DEFAULT_ADDRESS@
 DBUS_SYSTEM_PID_FILE = @DBUS_SYSTEM_PID_FILE@
@@ -384,6 +386,7 @@ EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
@@ -434,6 +437,8 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QHELPGENERATOR = @QHELPGENERATOR@
 RANLIB = @RANLIB@
 RC = @RC@
@@ -633,20 +638,19 @@ dbus_test_tool_LDADD = \
 	$(top_builddir)/dbus/libdbus-1.la \
 	$(NULL)
 
-dbus_update_activation_environment_SOURCES = \
-	dbus-update-activation-environment.c \
-	tool-common.c \
-	tool-common.h \
-	$(NULL)
-
+dbus_update_activation_environment_SOURCES =  \
+	dbus-update-activation-environment.c tool-common.c \
+	tool-common.h $(NULL) $(am__append_2)
 dbus_update_activation_environment_LDADD = \
 	$(CODE_COVERAGE_LIBS) \
 	$(top_builddir)/dbus/libdbus-1.la \
 	$(NULL)
 
 @DBUS_WIN_TRUE@SUFFIXES = .rc
-@DBUS_WIN_TRUE@nodist_dbus_update_activation_environment_SOURCES = disable-uac.rc
-EXTRA_DIST = run-with-tmp-session-bus.sh strtoll.c strtoull.c Win32.Manifest
+EXTRA_DIST = run-with-tmp-session-bus.sh Win32.Manifest \
+	build-timestamp.py meson.build \
+	meson-compat-install-emptydirs.py \
+	meson-compat-install-symlink.py
 CLEANFILES = \
 	run-with-tmp-session-bus.conf \
 	$(nodist_dbus_update_activation_environment_SOURCES)
@@ -1159,9 +1163,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_examplesSCRIPTS
 
 @DBUS_WIN_TRUE@.rc.o:
 @DBUS_WIN_TRUE@	$(RC) $< -o $@
-
-@DBUS_WIN_TRUE@disable-uac.rc: Win32.Manifest
-@DBUS_WIN_TRUE@	echo '1 24 "$<"' > $@
 
 # create the /var/lib/dbus directory for dbus-uuidgen
 install-data-local:

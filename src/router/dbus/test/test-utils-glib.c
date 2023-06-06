@@ -40,6 +40,7 @@
 # include <unistd.h>
 # include <sys/socket.h>
 # include <sys/types.h>
+# include <sys/wait.h>
 # include <pwd.h>
 #endif
 
@@ -66,6 +67,61 @@ _test_assert_no_error (const DBusError *e,
 }
 
 #ifdef DBUS_UNIX
+static gboolean
+can_become_user_or_skip (uid_t uid)
+{
+  gchar *message;
+  pid_t child_pid;
+  pid_t pid;
+  int wstatus;
+
+  /* We can't switch to the uid without affecting the whole process,
+   * which we don't necessarily want to do, so try it in a child process. */
+  child_pid = fork ();
+
+  if (child_pid < 0)
+    g_error ("fork: %s", g_strerror (errno));
+
+  if (child_pid == 0)
+    {
+      /* Child process: try to become uid, exit 0 on success, exit with
+       * status = errno on failure */
+
+      if (setuid (uid) != 0)
+        {
+          /* make sure we report failure even if errno is wrong */
+          if (errno == 0)
+            errno = EPERM;
+
+          _exit (errno);
+        }
+
+      /* success */
+      _exit (0);
+    }
+
+  /* Parent process: wait for child and report result */
+
+  pid = waitpid (child_pid, &wstatus, 0);
+  g_assert_cmpuint (child_pid, ==, pid);
+
+  if (WIFEXITED (wstatus) && WEXITSTATUS (wstatus) == 0)
+    return TRUE;
+
+  if (WIFEXITED (wstatus))
+    message = g_strdup_printf ("unable to become uid %lu: %s",
+                               (unsigned long) uid,
+                               g_strerror (WEXITSTATUS (wstatus)));
+  else
+    message = g_strdup_printf ("unable to become uid %lu: unknown wait status %d",
+                               (unsigned long) uid,
+                               wstatus);
+
+  g_test_skip (message);
+  g_free (message);
+  return FALSE;
+}
+
 static void
 child_setup (gpointer user_data)
 {
@@ -141,6 +197,9 @@ spawn_dbus_daemon (const gchar *binary,
                 return NULL;
               }
 
+            if (!can_become_user_or_skip (pwd->pw_uid))
+              return NULL;
+
             if (user == TEST_USER_ROOT_DROP_TO_MESSAGEBUS)
               {
                 /* Let the dbus-daemon start as root and drop privileges
@@ -162,6 +221,9 @@ spawn_dbus_daemon (const gchar *binary,
                 g_free (message);
                 return NULL;
               }
+
+            if (!can_become_user_or_skip (pwd->pw_uid))
+              return NULL;
 
             break;
 
@@ -491,16 +553,20 @@ become_other_user (TestUser user,
 }
 
 /* Undo the effect of a successful call to become_other_user() */
+#if defined(HAVE_GETRESUID) && defined(HAVE_SETRESUID) && defined(__linux__)
 static void
 back_to_root (void)
 {
-#if defined(HAVE_GETRESUID) && defined(HAVE_SETRESUID) && defined(__linux__)
-  if (setresuid (0, 0, 0) != 0)
-    g_error ("setresuid(0, 0, 0): %s", g_strerror (errno));
-#else
-  g_error ("become_other_user() cannot succeed on this platform");
-#endif
+  if (setresuid(0, 0, 0) != 0)
+    g_error ("setresuid(0, 0, 0): %s", g_strerror(errno));
 }
+#else
+_DBUS_GNUC_NORETURN static void
+back_to_root (void)
+{
+  g_error ("become_other_user() cannot succeed on this platform");
+}
+#endif
 
 /*
  * Raise G_IO_ERROR_NOT_SUPPORTED if the requested user is impossible.
@@ -896,6 +962,25 @@ test_check_tcp_works (void)
 #else
   /* Assume that on Windows, TCP always works */
   return TRUE;
+#endif
+}
+
+gboolean
+test_check_af_unix_works (void)
+{
+#if defined(G_OS_WIN32) && !defined(HAVE_AFUNIX_H)
+  /* AFUNIX support is compiled out, skip system check */
+  return FALSE;
+#else
+#ifdef G_OS_WIN32
+  SOCKET fd = socket (AF_UNIX, SOCK_STREAM, 0);
+  closesocket (fd);
+  return fd != INVALID_SOCKET;
+#else
+  int fd = socket (AF_UNIX, SOCK_STREAM, 0);
+  close (fd);
+  return fd >= 0;
+#endif
 #endif
 }
 

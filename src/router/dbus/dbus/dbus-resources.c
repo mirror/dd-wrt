@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2003  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -273,7 +275,11 @@ _dbus_counter_adjust_unix_fd (DBusCounter *counter,
 long
 _dbus_counter_get_size_value (DBusCounter *counter)
 {
-  return counter->size_value;
+  long result;
+  _dbus_rmutex_lock (counter->mutex);
+  result = counter->size_value;
+  _dbus_rmutex_unlock (counter->mutex);
+  return result;
 }
 
 /**
@@ -285,7 +291,11 @@ _dbus_counter_get_size_value (DBusCounter *counter)
 long
 _dbus_counter_get_unix_fd_value (DBusCounter *counter)
 {
-  return counter->unix_fd_value;
+  long result;
+  _dbus_rmutex_lock (counter->mutex);
+  result = counter->unix_fd_value;
+  _dbus_rmutex_unlock (counter->mutex);
+  return result;
 }
 
 /**

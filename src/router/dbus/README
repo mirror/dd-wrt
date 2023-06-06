@@ -15,7 +15,7 @@ The "and coordination" part is important; D-Bus provides a bus daemon that does 
  - start services on demand
  - support single-instance applications
 
-See http://www.freedesktop.org/software/dbus/ for lots of documentation, 
+See https://www.freedesktop.org/wiki/Software/dbus/ for lots of documentation,
 mailing lists, etc.
 
 See also the file CONTRIBUTING.md for notes of interest to developers
@@ -31,13 +31,16 @@ only by accident; so you should evaluate carefully whether D-Bus makes
 sense for your project.
 
 Security
-==
+===
 
 If you find a security vulnerability that is not known to the public,
 please report it privately to dbus-security@lists.freedesktop.org
 or by reporting a Gitlab issue at
 https://gitlab.freedesktop.org/dbus/dbus/issues/new and marking it
 as "confidential".
+Please do not open merge requests for security issues: if you have a
+proposed patch, it can be discussed on the confidential issue or by
+private email.
 
 On Unix systems, the system bus (dbus-daemon --system) is designed
 to be a security boundary between users with different privileges.
@@ -80,28 +83,84 @@ Development snapshots make no ABI stability guarantees for new ABI
 introduced since the last stable release. Development snapshots are
 likely to have more bugs than stable releases, obviously.
 
-Configuration 
+Configuration
 ===
 
-dbus could be build by using autotools or cmake. 
+This branch of dbus can be built by using Autotools, CMake or Meson.
+The Meson build system is the recommended build system for the master
+branch (versions >= 1.15.0).
 
-When using autotools the configure step is initiated by running ./configure 
-with or without additional configuration flags. dbus requires GNU Make
-(on BSD systems, this is typically called gmake) or a "make" implementation
-with compatible extensions.
+Meson only supports out-of-tree builds, and must be passed a directory to put
+built and generated sources into. We'll call that directory "build" here. It's
+recommended to create a separate build directory for each configuration you
+might want to use.
 
-When using cmake the configure step is initiated by running the cmake 
-program with or without additional configuration flags. 
+Basic configuration is done with:
+
+``` sh
+meson build/
+```
+
+This will create the build directory. If any dependencies are missing, you can
+install them, or try to remove the dependency with a Meson configuration option
+(see below).
 
 Configuration flags
 ===
 
-When using autotools, run "./configure --help" to see the possible
+When using Meson, to review the options which Meson chose, run:
+
+``` sh
+meson configure build/
+```
+
+With additional arguments meson configure can be used to change options for a
+previously configured build directory. All options passed to this command are in
+the form `-D "option"="value"`. For example:
+
+``` sh
+meson configure build/ -Dprefix=/tmp/install
+```
+
+
+Building
+===
+
+To build with meson, here is a quick guide:
+
+``` sh
+cd dbus
+meson setup build/ && cd build/
+meson compile
+meson test
+```
+
+Full build instructions can be found on mesonbuild website:
+https://mesonbuild.com/Running-Meson.html
+
+
+Configuration and Building for Older Versions
+===
+
+Older versions of dbus required Autotools or CMake, with Autotools
+recommended for Unix systems and CMake recommended for Windows systems.
+
+When using Autotools, the configure step is initiated by running ./configure
+with or without additional configuration flags. dbus requires GNU Make
+(on BSD systems, this is typically called gmake) or a "make" implementation
+with compatible extensions.
+
+When using CMake, the configure step is initiated by running the cmake
+program with or without additional configuration flags.
+
+When using Autotools, run "./configure --help" to see the possible
 configuration options and environment variables.
 
-When using cmake, inspect README.cmake to see the possible
+When using CMake, inspect README.cmake to see the possible
 configuration options and environment variables.
-    
+
+Building instructions using cmake are described under README.cmake
+
 API/ABI Policy
 ===
 

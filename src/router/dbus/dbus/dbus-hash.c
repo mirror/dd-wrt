@@ -9,6 +9,7 @@
  * Copyright 2010 Fridrich Štrba
  * Copyright 2016 Ralf Habacker
  * Copyright 2017 Endless Mobile, Inc.
+ * SPDX-License-Identifier: (AFL-2.1 OR GPL-2.0-or-later) AND TCL
  *
  * Hash table implementation based on generic/tclHash.c from the Tcl
  * source code. The original Tcl license applies to portions of the

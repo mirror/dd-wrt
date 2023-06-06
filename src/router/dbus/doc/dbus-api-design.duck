@@ -320,7 +320,7 @@ passing nothing.
     -->
     <signal name="ProgressNotification">
       <arg name="progress_message" type="s" />
-    </method>
+    </signal>
 
   The progress should be reported as an enumerated value:
   [code style="valid" mime="application/xml"]
@@ -335,7 +335,7 @@ passing nothing.
     -->
     <signal name="ProgressNotification">
       <arg name="progress_state" type="u" />
-    </method>
+    </signal>
 
 D-Bus has none of the problems of signed versus unsigned integers which C has
 (specifically, it does not do implicit sign conversion), so integer types should

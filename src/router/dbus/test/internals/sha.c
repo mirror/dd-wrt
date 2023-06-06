@@ -5,6 +5,8 @@
  * Copyright (C) 1995 A. M. Kuchling
  * Copyright (C) 2017 Thomas Zimmermann
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -188,22 +190,27 @@ get_next_expected_result (DBusString *results,
   if (!_dbus_string_init (&line))
     _dbus_test_fatal ("no memory");
 
- next_iteration:
   while (_dbus_string_pop_line (results, &line))
     {
       _dbus_string_delete_leading_blanks (&line);
 
       if (_dbus_string_get_length (&line) == 0)
-        goto next_iteration;
+        {
+          continue;
+        }
       else if (_dbus_string_starts_with_c_str (&line, "#"))
-        goto next_iteration;
+        {
+          continue;
+        }
       else if (_dbus_string_starts_with_c_str (&line, "H>"))
         {
           /* don't print */
         }
       else if (_dbus_string_starts_with_c_str (&line, "D>") ||
                _dbus_string_starts_with_c_str (&line, "<D"))
-        goto next_iteration;
+        {
+          continue;
+        }
       else
         {
           int i;
@@ -324,7 +331,6 @@ process_test_data (const char *test_data_dir)
 
   success_count = 0;
   line_no = 0;
- next_iteration:
   while (_dbus_string_pop_line (&tests, &line))
     {
       line_no += 1;
@@ -332,9 +338,13 @@ process_test_data (const char *test_data_dir)
       _dbus_string_delete_leading_blanks (&line);
 
       if (_dbus_string_get_length (&line) == 0)
-        goto next_iteration;
+        {
+          continue;
+        }
       else if (_dbus_string_starts_with_c_str (&line, "#"))
-        goto next_iteration;
+        {
+          continue;
+        }
       else if (_dbus_string_starts_with_c_str (&line, "H>"))
         {
           _dbus_test_diag ("SHA-1: %s", _dbus_string_get_const_data (&line));
@@ -353,7 +363,9 @@ process_test_data (const char *test_data_dir)
         }
       else if (_dbus_string_starts_with_c_str (&line, "D>") ||
                _dbus_string_starts_with_c_str (&line, "<D"))
-        goto next_iteration;
+        {
+          continue;
+        }
       else
         {
           DBusString test;

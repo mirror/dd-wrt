@@ -752,6 +752,15 @@ test_odd_limit (Fixture *f,
   if (f->skip)
     return;
 
+#ifdef __FreeBSD__
+  g_test_message ("Running test on FreeBSD %d...", getosreldate ());
+  if (GPOINTER_TO_INT (data) == 0 && getosreldate () < 1400000)
+    {
+      g_test_skip ("This test fails on FreeBSD < 14.0");
+      return;
+    }
+#endif
+
   test_connect (f, TRUE);
   dbus_connection_set_max_message_unix_fds (f->left_server_conn, 7);
   dbus_connection_set_max_message_unix_fds (f->right_server_conn, 7);

@@ -5,6 +5,8 @@
  * Copyright (C) 2003 CodeFactory AB
  * Copyright (C) 2005 Novell, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,6 +33,7 @@ extern void *_dbus_win_get_dll_hmodule (void);
 
 #include "dbus-hash.h"
 #include "dbus-string.h"
+#include "dbus-threads-internal.h"
 #include <ctype.h>
 #include <malloc.h>
 #include <windows.h>
@@ -113,7 +116,13 @@ dbus_bool_t _dbus_win_event_free (HANDLE handle, DBusError *error);
 dbus_bool_t _dbus_daemon_is_session_bus_address_published (const char *scope);
 dbus_bool_t _dbus_daemon_publish_session_bus_address (const char *address,
                                                       const char *shm_name);
+DBUS_PRIVATE_EXPORT
+DBusRMutex  *_dbus_win_rmutex_named_new (const char* name);
 
+DBUS_PRIVATE_EXPORT
+void _dbus_test_win_autolaunch_set_command_line_parameter (const char *path);
+DBUS_PRIVATE_EXPORT
+void _dbus_test_win_set_autolaunch_handle_location (HANDLE *location);
 #endif
 
 /** @} end of sysdeps-win.h */

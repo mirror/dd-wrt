@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # aminclude_static.am generated automatically by Autoconf
-# from AX_AM_MACROS_STATIC on Mon Feb 28 12:24:19 GMT 2022
+# from AX_AM_MACROS_STATIC on Tue Jun  6 14:01:51 BST 2023
 
 
 
@@ -121,8 +121,7 @@ host_triplet = @host@
 noinst_PROGRAMS =
 subdir = dbus
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
-	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_ac_append_to_file.m4 \
 	$(top_srcdir)/m4/ax_ac_print_to_file.m4 \
 	$(top_srcdir)/m4/ax_add_am_macro_static.m4 \
 	$(top_srcdir)/m4/ax_am_macros_static.m4 \
@@ -131,8 +130,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/as-ac-expand.m4 \
 	$(top_srcdir)/m4/ld-version-script.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/pkg.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(dbusinclude_HEADERS) \
@@ -189,15 +188,16 @@ am__libdbus_1_la_SOURCES_DIST = dbus-address.c dbus-auth.c dbus-auth.h \
 	dbus-server.c dbus-server-debug-pipe.c \
 	dbus-server-debug-pipe.h dbus-server-protected.h \
 	dbus-server-socket.c dbus-server-socket.h dbus-uuidgen.c \
-	dbus-uuidgen.h dbus-server-unix.c dbus-server-unix.h \
-	dbus-server-win.c dbus-server-win.h dbus-sha.c dbus-sha.h \
-	dbus-signature.c dbus-syntax.c dbus-timeout.c dbus-timeout.h \
+	dbus-uuidgen.h dbus-server-unix.c dbus-server-win.c \
+	dbus-server-win.h dbus-sha.c dbus-sha.h dbus-signature.c \
+	dbus-syntax.c dbus-timeout.c dbus-timeout.h \
 	dbus-threads-internal.h dbus-threads.c dbus-transport.c \
 	dbus-transport.h dbus-transport-protected.h \
 	dbus-transport-socket.c dbus-transport-socket.h dbus-watch.c \
 	dbus-watch.h dbus-dataslot.c dbus-dataslot.h dbus-file.c \
 	dbus-file.h dbus-hash.c dbus-hash.h dbus-internals.c \
-	dbus-internals.h dbus-list.c dbus-list.h dbus-marshal-basic.c \
+	dbus-internals.h dbus-list.c dbus-list.h \
+	dbus-macros-internal.h dbus-marshal-basic.c \
 	dbus-marshal-basic.h dbus-memory.c dbus-mempool.c \
 	dbus-mempool.h dbus-pipe.c dbus-pipe.h dbus-string.c \
 	dbus-string.h dbus-string-private.h dbus-server-launchd.h \
@@ -205,11 +205,12 @@ am__libdbus_1_la_SOURCES_DIST = dbus-address.c dbus-auth.c dbus-auth.h \
 	dbus-sysdeps-unix.c dbus-sysdeps-unix.h dbus-sysdeps-pthread.c \
 	dbus-transport-unix.c dbus-transport-unix.h dbus-userdb.c \
 	dbus-userdb.h dbus-sysdeps-wince-glue.h \
-	dbus-sysdeps-wince-glue.c dbus-file-win.c dbus-pipe-win.c \
-	dbus-sockets-win.h dbus-sysdeps-win.c dbus-sysdeps-win.h \
-	dbus-sysdeps-thread-win.c dbus-transport-win.c \
-	dbus-transport-win.h dbus-sysdeps.c dbus-sysdeps.h \
-	dbus-valgrind-internal.h dbus-test-tap.c dbus-test-tap.h
+	dbus-sysdeps-wince-glue.c dbus-backtrace-win.c dbus-file-win.c \
+	dbus-pipe-win.c dbus-sockets-win.h dbus-sysdeps-win.c \
+	dbus-sysdeps-win.h dbus-sysdeps-thread-win.c \
+	dbus-transport-win.c dbus-transport-win.h dbus-sysdeps.c \
+	dbus-sysdeps.h dbus-valgrind-internal.h dbus-test-tap.c \
+	dbus-test-tap.h
 @DBUS_WIN_FALSE@am__objects_1 = libdbus_1_la-dbus-uuidgen.lo \
 @DBUS_WIN_FALSE@	libdbus_1_la-dbus-server-unix.lo
 @DBUS_WIN_TRUE@am__objects_1 = libdbus_1_la-dbus-server-win.lo
@@ -242,6 +243,7 @@ am__objects_2 = libdbus_1_la-dbus-address.lo libdbus_1_la-dbus-auth.lo \
 @DBUS_WIN_FALSE@	libdbus_1_la-dbus-transport-unix.lo \
 @DBUS_WIN_FALSE@	libdbus_1_la-dbus-userdb.lo
 @DBUS_WIN_TRUE@am__objects_5 = $(am__objects_4) \
+@DBUS_WIN_TRUE@	libdbus_1_la-dbus-backtrace-win.lo \
 @DBUS_WIN_TRUE@	libdbus_1_la-dbus-file-win.lo \
 @DBUS_WIN_TRUE@	libdbus_1_la-dbus-pipe-win.lo \
 @DBUS_WIN_TRUE@	libdbus_1_la-dbus-sysdeps-win.lo \
@@ -326,6 +328,7 @@ am__depfiles_remade = ./$(DEPDIR)/dbus-asv-util.Plo \
 	./$(DEPDIR)/dbus-userdb-util.Plo \
 	./$(DEPDIR)/libdbus_1_la-dbus-address.Plo \
 	./$(DEPDIR)/libdbus_1_la-dbus-auth.Plo \
+	./$(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Plo \
 	./$(DEPDIR)/libdbus_1_la-dbus-bus.Plo \
 	./$(DEPDIR)/libdbus_1_la-dbus-connection.Plo \
 	./$(DEPDIR)/libdbus_1_la-dbus-credentials.Plo \
@@ -491,6 +494,7 @@ DBUS_GENERATE_MAN = @DBUS_GENERATE_MAN@
 DBUS_INT16_TYPE = @DBUS_INT16_TYPE@
 DBUS_INT32_TYPE = @DBUS_INT32_TYPE@
 DBUS_INT64_CONSTANT = @DBUS_INT64_CONSTANT@
+DBUS_INT64_MODIFIER = @DBUS_INT64_MODIFIER@
 DBUS_INT64_TYPE = @DBUS_INT64_TYPE@
 DBUS_LIBEXECDIR = @DBUS_LIBEXECDIR@
 DBUS_MAJOR_VERSION = @DBUS_MAJOR_VERSION@
@@ -501,6 +505,7 @@ DBUS_SESSION_BUS_CONNECT_ADDRESS = @DBUS_SESSION_BUS_CONNECT_ADDRESS@
 DBUS_SESSION_BUS_LISTEN_ADDRESS = @DBUS_SESSION_BUS_LISTEN_ADDRESS@
 DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL = @DBUS_SESSION_CONF_MAYBE_AUTH_EXTERNAL@
 DBUS_SESSION_SOCKET_DIR = @DBUS_SESSION_SOCKET_DIR@
+DBUS_SIZEOF_VOID_P = @DBUS_SIZEOF_VOID_P@
 DBUS_STATIC_BUILD_CPPFLAGS = @DBUS_STATIC_BUILD_CPPFLAGS@
 DBUS_SYSTEM_BUS_DEFAULT_ADDRESS = @DBUS_SYSTEM_BUS_DEFAULT_ADDRESS@
 DBUS_SYSTEM_PID_FILE = @DBUS_SYSTEM_PID_FILE@
@@ -546,6 +551,7 @@ EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
@@ -596,6 +602,8 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 QHELPGENERATOR = @QHELPGENERATOR@
 RANLIB = @RANLIB@
 RC = @RC@
@@ -717,8 +725,7 @@ nodist_libdbus_1_la_SOURCES = $(am__append_3)
 @DBUS_WIN_FALSE@DBUS_LIB_arch_sources = \
 @DBUS_WIN_FALSE@	dbus-uuidgen.c				\
 @DBUS_WIN_FALSE@	dbus-uuidgen.h				\
-@DBUS_WIN_FALSE@	dbus-server-unix.c 			\
-@DBUS_WIN_FALSE@	dbus-server-unix.h
+@DBUS_WIN_FALSE@	dbus-server-unix.c
 
 
 #
@@ -746,6 +753,7 @@ nodist_libdbus_1_la_SOURCES = $(am__append_3)
 
 @DBUS_WIN_TRUE@DBUS_SHARED_arch_sources = \
 @DBUS_WIN_TRUE@	$(wince_source)				\
+@DBUS_WIN_TRUE@	dbus-backtrace-win.c 			\
 @DBUS_WIN_TRUE@	dbus-file-win.c 			\
 @DBUS_WIN_TRUE@	dbus-pipe-win.c 			\
 @DBUS_WIN_TRUE@	dbus-sockets-win.h			\
@@ -849,7 +857,8 @@ DBUS_LIB_SOURCES = \
 ### be underscore-prefixed)
 DBUS_SHARED_SOURCES = dbus-dataslot.c dbus-dataslot.h dbus-file.c \
 	dbus-file.h dbus-hash.c dbus-hash.h dbus-internals.c \
-	dbus-internals.h dbus-list.c dbus-list.h dbus-marshal-basic.c \
+	dbus-internals.h dbus-list.c dbus-list.h \
+	dbus-macros-internal.h dbus-marshal-basic.c \
 	dbus-marshal-basic.h dbus-memory.c dbus-mempool.c \
 	dbus-mempool.h dbus-pipe.c dbus-pipe.h dbus-string.c \
 	dbus-string.h dbus-string-private.h \
@@ -887,7 +896,7 @@ libdbus_internal_la_SOURCES = \
 	$(DBUS_UTIL_SOURCES)
 
 BUILT_SOURCES = $(nodist_dbusarchinclude_HEADERS)
-EXTRA_DIST = dbus-arch-deps.h.in
+EXTRA_DIST = dbus-arch-deps.h.in meson.build test-version-script
 noinst_LTLIBRARIES = libdbus-internal.la $(am__append_8)
 libdbus_1_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -1062,6 +1071,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbus-userdb-util.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdbus_1_la-dbus-address.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdbus_1_la-dbus-auth.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdbus_1_la-dbus-bus.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdbus_1_la-dbus-connection.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdbus_1_la-dbus-credentials.Plo@am__quote@ # am--include-marker
@@ -1490,6 +1500,13 @@ libdbus_1_la-dbus-sysdeps-wince-glue.lo: dbus-sysdeps-wince-glue.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libdbus_1_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libdbus_1_la-dbus-sysdeps-wince-glue.lo `test -f 'dbus-sysdeps-wince-glue.c' || echo '$(srcdir)/'`dbus-sysdeps-wince-glue.c
 
+libdbus_1_la-dbus-backtrace-win.lo: dbus-backtrace-win.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libdbus_1_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libdbus_1_la-dbus-backtrace-win.lo -MD -MP -MF $(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Tpo -c -o libdbus_1_la-dbus-backtrace-win.lo `test -f 'dbus-backtrace-win.c' || echo '$(srcdir)/'`dbus-backtrace-win.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Tpo $(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dbus-backtrace-win.c' object='libdbus_1_la-dbus-backtrace-win.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libdbus_1_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libdbus_1_la-dbus-backtrace-win.lo `test -f 'dbus-backtrace-win.c' || echo '$(srcdir)/'`dbus-backtrace-win.c
+
 libdbus_1_la-dbus-file-win.lo: dbus-file-win.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libdbus_1_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libdbus_1_la-dbus-file-win.lo -MD -MP -MF $(DEPDIR)/libdbus_1_la-dbus-file-win.Tpo -c -o libdbus_1_la-dbus-file-win.lo `test -f 'dbus-file-win.c' || echo '$(srcdir)/'`dbus-file-win.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libdbus_1_la-dbus-file-win.Tpo $(DEPDIR)/libdbus_1_la-dbus-file-win.Plo
@@ -1759,6 +1776,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/dbus-userdb-util.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-address.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-auth.Plo
+	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-bus.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-connection.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-credentials.Plo
@@ -1876,6 +1894,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/dbus-userdb-util.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-address.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-auth.Plo
+	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-backtrace-win.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-bus.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-connection.Plo
 	-rm -f ./$(DEPDIR)/libdbus_1_la-dbus-credentials.Plo

@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002, 2003  Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -177,6 +179,35 @@
  * Unlocks a global lock
  */
 
+/* The build system should have checked for DBUS_SIZEOF_VOID_P */
+_DBUS_STATIC_ASSERT (sizeof (void *) == DBUS_SIZEOF_VOID_P);
+
+/* dbus currently assumes that function pointers are essentially
+ * interchangeable with data pointers. There's nothing special about
+ * DBusShutdownFunction, it's just an arbitrary function pointer type.
+ * If this assertion fails on your platform, some porting will be required. */
+_DBUS_STATIC_ASSERT (sizeof (void *) == sizeof (DBusShutdownFunction));
+_DBUS_STATIC_ASSERT (_DBUS_ALIGNOF (void *) == _DBUS_ALIGNOF (DBusShutdownFunction));
+
+/* This is meant to be true by definition. */
+_DBUS_STATIC_ASSERT (sizeof (void *) == sizeof (intptr_t));
+_DBUS_STATIC_ASSERT (sizeof (void *) == sizeof (uintptr_t));
+
+/*
+ * Some frequent assumptions that we should *avoid* making include these,
+ * all of which are false on CHERI (which has 128-bit tagged pointers,
+ * but a 64-bit address space and therefore 64-bit sizes):
+ *
+ * sizeof (void *) <= sizeof (size_t)
+ * sizeof (void *) <= 8
+ * _DBUS_ALIGNOF (void *) <= 8
+ *
+ * We should also avoid making these assumptions, although we don't currently
+ * know a concrete example of platforms where they're false:
+ *
+ * sizeof (ptrdiff_t) == sizeof (size_t)
+ */
+
 /**
  * Fixed "out of memory" error message, just to avoid
  * making up a different string every time and wasting
@@ -194,6 +225,13 @@ static dbus_bool_t warn_initted = FALSE;
  * fatal/non-fatal nature. */
 static dbus_bool_t fatal_warnings = FALSE;
 static dbus_bool_t fatal_warnings_on_check_failed = TRUE;
+
+static int check_failed_count = 0;
+
+int _dbus_get_check_failed_count (void)
+{
+  return check_failed_count;
+}
 
 static void
 init_warnings(void)
@@ -220,6 +258,8 @@ init_warnings(void)
                       s);
             }
         }
+
+      check_failed_count = 0;
 
       warn_initted = TRUE;
     }
@@ -288,6 +328,8 @@ _dbus_warn_check_failed(const char *format,
       fflush (stderr);
       _dbus_abort ();
     }
+  else
+    check_failed_count++;
 }
 
 #ifdef DBUS_ENABLE_VERBOSE_MODE
@@ -323,18 +365,7 @@ _dbus_verbose_init (void)
     }
 }
 
-/** @def DBUS_IS_DIR_SEPARATOR(c)
- * macro for checking if character c is a patch separator
- * 
- * @todo move to a header file so that others can use this too
- */
-#ifdef DBUS_WIN 
-#define DBUS_IS_DIR_SEPARATOR(c) (c == '\\' || c == '/')
-#else
-#define DBUS_IS_DIR_SEPARATOR(c) (c == '/')
-#endif
-
-/** 
+/**
  remove source root from file path 
  the source root is determined by 
 */ 

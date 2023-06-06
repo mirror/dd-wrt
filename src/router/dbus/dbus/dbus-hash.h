@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002  Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,9 +26,7 @@
 #ifndef DBUS_HASH_H
 #define DBUS_HASH_H
 
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>

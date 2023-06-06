@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 SCRIPTNAME=$0
 MODE=$1
@@ -14,7 +14,7 @@ if test -z "$DBUS_TEST_NAME_IN_SYS_RUN_TEST"; then
   DBUS_TEST_NAME_IN_SYS_RUN_TEST=1
   export DBUS_TEST_NAME_IN_SYS_RUN_TEST
   exec $DBUS_TOP_SRCDIR/tools/run-with-tmp-session-bus.sh $SCRIPTNAME $MODE
-fi 
+fi
 
 if test -n "$DBUS_TEST_MONITOR"; then
   dbus-monitor --session >&2 &
@@ -52,7 +52,12 @@ dbus_send_test () {
   shift 3
   e=0
   echo "# running test $t"
-  "${DBUS_TOP_BUILDDIR}/libtool" --mode=execute $DEBUG "$DBUS_TOP_BUILDDIR/tools/dbus-send" "$@" > output.tmp 2>&1 || e=$?
+  if [ -f "${DBUS_TOP_BUILDDIR}/libtool" ]; then
+    "${DBUS_TOP_BUILDDIR}/libtool" --mode=execute $DEBUG "$DBUS_TOP_BUILDDIR/tools/dbus-send" "$@" > output.tmp 2>&1 || e=$?
+  else
+    "$DBUS_TOP_BUILDDIR/tools/dbus-send" "$@" > output.tmp 2>&1 || e=$?
+  fi
+
   if [ $e != $expected_exit ]; then
     sed -e 's/^/#  /' < output.tmp
     interpret_result "1" "$t" "$@" "(expected exit status $expected_exit, got $e)"

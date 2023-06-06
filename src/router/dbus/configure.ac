@@ -2,15 +2,15 @@ dnl -*- mode: m4 -*-
 AC_PREREQ([2.63])
 
 m4_define([dbus_major_version], [1])
-m4_define([dbus_minor_version], [14])
-m4_define([dbus_micro_version], [0])
+m4_define([dbus_minor_version], [15])
+m4_define([dbus_micro_version], [6])
 m4_define([dbus_version],
           [dbus_major_version.dbus_minor_version.dbus_micro_version])
 AC_INIT([dbus], [dbus_version], [https://gitlab.freedesktop.org/dbus/dbus/issues], [dbus])
 
 AC_CONFIG_AUX_DIR([build-aux])
 
-m4_pattern_forbid([^AX_(CHECK_ENABLE_DEBUG|CODE_COVERAGE|COMPILER_FLAGS|COMPILER_FLAGS_(CFLAGS|CXXFLAGS|LDFLAGS))\b],
+m4_pattern_forbid([^AX_(CHECK_ENABLE_DEBUG|CODE_COVERAGE|COMPILER_FLAGS|COMPILER_FLAGS_(CFLAGS|CXXFLAGS|LDFLAGS)|RECURSIVE_EVAL)\b],
   [Unexpanded AX_ macro found. Please install GNU autoconf-archive])
 
 AC_CANONICAL_HOST
@@ -38,7 +38,7 @@ AC_DEFINE_UNQUOTED(DBUS_DAEMON_NAME,"dbus-daemon",[Name of executable])
 #
 
 ## increment if the interface has additions, changes, removals.
-LT_CURRENT=35
+LT_CURRENT=40
 
 ## increment any time the source changes; set to
 ##  0 if you increment CURRENT
@@ -47,7 +47,7 @@ LT_REVISION=0
 ## increment if any interfaces have been added; set to 0
 ## if any interfaces have been changed or removed. removal has
 ## precedence over adding, so set to 0 if both happened.
-LT_AGE=32
+LT_AGE=37
 
 AC_SUBST(LT_CURRENT)
 AC_SUBST(LT_REVISION)
@@ -101,7 +101,6 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
 AC_ISC_POSIX
 AC_HEADER_STDC
-AC_C_INLINE
 AM_PROG_LIBTOOL
 AC_PROG_MKDIR_P
 PKG_PROG_PKG_CONFIG
@@ -223,7 +222,6 @@ AC_ARG_WITH(session-socket-dir, AS_HELP_STRING([--with-session-socket-dir=[dirna
 AC_ARG_WITH(test-socket-dir, AS_HELP_STRING([--with-test-socket-dir=[dirname]],[Where to put sockets for make check]))
 AC_ARG_WITH(system-pid-file, AS_HELP_STRING([--with-system-pid-file=[pidfile]],[PID file for systemwide daemon]))
 AC_ARG_WITH(system-socket, AS_HELP_STRING([--with-system-socket=[filename]],[UNIX domain socket for systemwide daemon]))
-AC_ARG_WITH(console-auth-dir, AS_HELP_STRING([--with-console-auth-dir=[dirname]],[directory to check for console ownerhip]))
 AC_ARG_WITH(console-owner-file, AS_HELP_STRING([--with-console-owner-file=[filename]],[file whose owner determines current console owner]))
 AC_ARG_WITH(launchd-agent-dir, AS_HELP_STRING([--with-launchd-agent-dir=[dirname]],[directory to put the launchd agent (default: /Library/LaunchAgents)]))
 AC_ARG_WITH(dbus_user, AS_HELP_STRING([--with-dbus-user=<user>],[User for running the DBUS daemon (messagebus)]))
@@ -382,6 +380,8 @@ AS_IF([test x$enable_code_coverage = xyes],[
 AC_CHECK_FUNCS_ONCE([
 accept4
 clearenv
+close_range
+closefrom
 fpathconf
 getgrouplist
 getpeereid
@@ -403,8 +403,6 @@ setlocale
 setresuid
 setrlimit
 socketpair
-strtoll
-strtoull
 unsetenv
 usleep
 ])
@@ -418,17 +416,23 @@ byteswap.h
 crt_externs.h
 dirent.h
 errno.h
+linux/close_range.h
 locale.h
 signal.h
-stdint.h
 sys/prctl.h
 sys/random.h
 sys/resource.h
-sys/syslimits.h
+sys/syscall.h
 sys/time.h
 unistd.h
+winsock2.h
 ws2tcpip.h
 ])
+
+#### Pointer size
+AC_CHECK_SIZEOF(void *)
+DBUS_SIZEOF_VOID_P=$ac_cv_sizeof_void_p
+AC_SUBST(DBUS_SIZEOF_VOID_P)
 
 #### Integer sizes
 
@@ -436,7 +440,6 @@ AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(void *)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
 
@@ -448,23 +451,30 @@ $ac_cv_sizeof_int)
   dbusint64=int
   dbusint64_constant='(val)'
   dbusuint64_constant='(val)'
+  dbusint64_modifier=""
   ;;
 $ac_cv_sizeof_long)
   dbusint64=long
   dbusint64_constant='(val##L)'
   dbusuint64_constant='(val##UL)'
+  dbusint64_modifier="l"
   ;;
 $ac_cv_sizeof_long_long)
   dbusint64='long long'
   dbusint64_constant='(val##LL)'
   dbusuint64_constant='(val##ULL)'
+  dbusint64_modifier="ll"
   ;;
 $ac_cv_sizeof___int64)
   dbusint64=__int64
   dbusint64_constant='(val##i64)'
   dbusuint64_constant='(val##ui64)'
+  dbusint64_modifier="I64"
   ;;
 esac
+
+# MSVCRT.dll printf() doesn't support %lld
+AS_IF([test "$dbus_win" = yes], [dbusint64_modifier="I64"])
 
 AS_IF(
   [test -z "$dbusint64"],
@@ -480,12 +490,14 @@ Please report a bug here with details of your platform and compiler:
         DBUS_INT64_TYPE="$dbusint64"
         DBUS_INT64_CONSTANT="$dbusint64_constant"
         DBUS_UINT64_CONSTANT="$dbusuint64_constant"
+        DBUS_INT64_MODIFIER="$dbusint64_modifier"
         AC_MSG_RESULT($DBUS_INT64_TYPE)
   ])
 
 AC_SUBST(DBUS_INT64_TYPE)
 AC_SUBST(DBUS_INT64_CONSTANT)
 AC_SUBST(DBUS_UINT64_CONSTANT)
+AC_SUBST(DBUS_INT64_MODIFIER)
 
 ### see what 32-bit int is called
 AC_MSG_CHECKING([32-bit integer type])
@@ -555,65 +567,12 @@ esac
 # the AC_INCLUDES_DEFAULT.
 AC_CHECK_DECLS([environ])
 
-dnl **********************************
-dnl *** va_copy checks (from GLib) ***
-dnl **********************************
-dnl we currently check for all three va_copy possibilities, so we get
-dnl all results in config.log for bug reports.
-AC_CACHE_CHECK([for an implementation of va_copy()],dbus_cv_va_copy,[
-	AC_LINK_IFELSE([AC_LANG_SOURCE([#include <stdarg.h>
-#include <stdlib.h>
-	static void f (int i, ...) {
-	va_list args1, args2;
-	va_start (args1, i);
-	va_copy (args2, args1);
-	if (va_arg (args2, int) != 42 || va_arg (args1, int) != 42)
-	  exit (1);
-	va_end (args1); va_end (args2);
-	}
-	int main() {
-	  f (0, 42);
-	  return 0;
-	}])],
-	[dbus_cv_va_copy=yes],
-	[dbus_cv_va_copy=no])
-])
-AC_CACHE_CHECK([for an implementation of __va_copy()],dbus_cv___va_copy,[
-	AC_LINK_IFELSE([AC_LANG_SOURCE([#include <stdarg.h>
-#include <stdlib.h>
-	static void f (int i, ...) {
-	va_list args1, args2;
-	va_start (args1, i);
-	__va_copy (args2, args1);
-	if (va_arg (args2, int) != 42 || va_arg (args1, int) != 42)
-	  exit (1);
-	va_end (args1); va_end (args2);
-	}
-	int main() {
-	  f (0, 42);
-	  return 0;
-	}])],
-	[dbus_cv___va_copy=yes],
-	[dbus_cv___va_copy=no])
-])
-
-if test "x$dbus_cv_va_copy" = "xyes"; then
-  dbus_va_copy_func=va_copy
-else if test "x$dbus_cv___va_copy" = "xyes"; then
-  dbus_va_copy_func=__va_copy
-fi
-fi
-
-AS_IF([test -n "$dbus_va_copy_func"],
-  [AC_DEFINE_UNQUOTED([DBUS_VA_COPY], [$dbus_va_copy_func], [A 'va_copy' style function])],
-  [AC_MSG_ERROR([dbus requires an ISO C99-compatible va_copy() macro, or a compatible __va_copy(), or MSVC >= 2010 and CMake])])
-
 #### Atomic integers
 
 AC_CACHE_CHECK([whether $CC knows __sync_sub_and_fetch()],
   dbus_cv_sync_sub_and_fetch,
   [AC_LINK_IFELSE([
-     AC_LANG_PROGRAM([[]], [[int a = 4; int b = __sync_sub_and_fetch(&a, 4); exit(b); ]])],
+     AC_LANG_PROGRAM([[]], [[int a = 4; int b = __sync_sub_and_fetch(&a, 4); return b; ]])],
      [dbus_cv_sync_sub_and_fetch=yes],
      [dbus_cv_sync_sub_and_fetch=no])
   ])
@@ -633,41 +592,6 @@ AC_CHECK_FUNC(gethostbyname,,[AC_CHECK_LIB(nsl,gethostbyname)])
 AC_CHECK_HEADERS([syslog.h])
 if test "x$ac_cv_header_syslog_h" = "xyes"; then
   AC_CHECK_DECLS([LOG_PERROR], [], [], [[#include <syslog.h>]])
-fi
-
-AC_MSG_CHECKING(for dirfd)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <dirent.h>
-]], [[
-DIR *dirp;
-dirp = opendir(".");
-dirfd(dirp);
-closedir(dirp);
-]])],
-[dbus_have_dirfd=yes],
-[dbus_have_dirfd=no])
-AC_MSG_RESULT($dbus_have_dirfd)
-if test "$dbus_have_dirfd" = yes; then
-	AC_DEFINE(HAVE_DIRFD,1,[Have dirfd function])
-else
-	AC_MSG_CHECKING(for DIR *dirp->dd_fd)
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <dirent.h>
-	]], [[
-DIR *dirp;
-int fd;
-dirp = opendir(".");
-fd = dirp->dd_fd;
-closedir(dirp);
-        ]])],
-        [dbus_have_ddfd=yes],
-        [dbus_have_ddfd=no])
-	AC_MSG_RESULT($dbus_have_ddfd)
-	if test "$dbus_have_ddfd" = yes; then
-		AC_DEFINE(HAVE_DDFD,1,[Have the ddfd member of DIR])
-	fi
 fi
 
 AC_CHECK_HEADERS([execinfo.h],
@@ -748,7 +672,7 @@ AC_ARG_VAR([THREAD_LIBS])
 save_libs="$LIBS"
 LIBS="$LIBS $THREAD_LIBS"
 
-is_missing_pthread_function="is required when compiling D-Bus on Unix platforms, but is not in your libc or libpthread. Please open a bug on https://bugs.freedesktop.org/enter_bug.cgi?product=dbus with details of your platform."
+is_missing_pthread_function="is required when compiling D-Bus on Unix platforms, but is not in your libc or libpthread. Please open a bug on https://gitlab.freedesktop.org/dbus/dbus/-/issues/new with details of your platform."
 
 # Don't do these automatic checks if the user set THREAD_LIBS on the
 # configure command-line. If they did, we assume they're right.
@@ -1075,6 +999,13 @@ if test x$dbus_win = xyes ; then
   fi
 fi
 
+AC_CHECK_HEADERS([afunix.h], [], [],
+  [AC_INCLUDES_DEFAULT[
+   #ifdef HAVE_WINSOCK2_H
+   # include <winsock2.h>
+   #endif
+  ]])
+
 AC_SUBST([NETWORK_libs])
 
 AC_ARG_WITH([valgrind],
@@ -1092,6 +1023,9 @@ if test x$with_valgrind != xno; then
   AC_DEFINE([WITH_VALGRIND], [1], [Define to add Valgrind instrumentation])
 fi
 
+AC_CHECK_HEADERS(sys/vfs.h, [AC_CHECK_FUNCS(fstatfs)])
+AC_CHECK_HEADERS([linux/magic.h])
+
 #### Set up final flags
 LIBDBUS_LIBS="$THREAD_LIBS $NETWORK_libs $SYSTEMD_LIBS"
 AC_SUBST([LIBDBUS_LIBS])
@@ -1108,31 +1042,32 @@ AC_ARG_ENABLE([x11-autolaunch],
   AS_HELP_STRING([--enable-x11-autolaunch], [build with X11 auto-launch support]),
   [], [enable_x11_autolaunch=auto])
 
-if test "x$dbus_win" = xyes; then
-    if test "x$enable_x11_autolaunch" = xyes; then
+AS_IF([test "x$dbus_win" = xyes], [
+    AS_IF([test "x$enable_x11_autolaunch" = xyes], [
         AC_MSG_ERROR([X11 auto-launch is not supported on Windows])
-    fi
+    ])
 
     enable_x11_autolaunch=no
     have_x11=no
-else if test "x$with_x" = xauto; then
+], [test "x$with_x" != xno], [
     PKG_CHECK_MODULES([X], [x11],
-            [AC_DEFINE([HAVE_X11], [1], [Define to 1 if you have X11 library])],
-            [ have_x11=no ])
-
-    if test "x$have_x11" = xno; then
-        AC_MSG_WARN([Couldn't found X11, tried with pkg-config.])
-    else
-        have_x11=yes
-        DBUS_X_LIBS="$X_LIBS"
-        DBUS_X_CFLAGS="$X_CFLAGS"
-    fi
-else
+            [AC_DEFINE([HAVE_X11], [1], [Define to 1 if you have X11 library])
+	     have_x11=yes
+	     DBUS_X_LIBS="$X_LIBS"
+	     DBUS_X_CFLAGS="$X_CFLAGS"
+            ], [
+             AS_IF([test "x$with_x" = xyes],
+                [AC_MSG_ERROR([Couldn't find X11, tried with pkg-config.])],
+                [AC_MSG_WARN([Couldn't find X11, tried with pkg-config.])]
+             )
+             have_x11=no
+            ])
+], [
+    have_x11=no
     AS_IF([test "x$enable_x11_autolaunch" = "xyes"], [
       AC_MSG_ERROR([--enable-x11-autolaunch and --without-x are not compatible])
     ])
-fi
-fi
+])
 
 if test "x$enable_x11_autolaunch,$have_x11" = xyes,no; then
     AC_MSG_ERROR([X11 auto-launch requires X headers/libraries])
@@ -1354,8 +1289,8 @@ AM_CONDITIONAL(DBUS_CAN_UPLOAD_DOCS,
     [test x$enable_doxygen_docs = xyes && test x$enable_xml_docs = xyes &&
      test x$enable_ducktype_docs = xyes])
 
-# Autoconf 2.70 will support this, and many distros patch this option in,
-# but Autoconf 2.70 hasn't actually been released yet.
+# Autoconf 2.70 supports this, and many distros patched this option in
+# before Autoconf 2.70 was released
 AS_IF([test -z "${runstatedir}"], [runstatedir='${localstatedir}/run'])
 AC_SUBST([runstatedir])
 
@@ -1364,14 +1299,22 @@ AC_SUBST([runstatedir])
 #### find the actual value for $prefix that we'll end up with
 ##   (I know this is broken and should be done in the Makefile, but
 ##    that's a major pain and almost nobody actually seems to care)
-AS_AC_EXPAND(EXPANDED_PREFIX, "$prefix")
-AS_AC_EXPAND(EXPANDED_LOCALSTATEDIR, "$localstatedir")
-AS_AC_EXPAND(EXPANDED_SYSCONFDIR, "$sysconfdir")
-AS_AC_EXPAND(EXPANDED_BINDIR, "$bindir")
-AS_AC_EXPAND(EXPANDED_LIBDIR, "$libdir")
-AS_AC_EXPAND(EXPANDED_LIBEXECDIR, "$libexecdir")
-AS_AC_EXPAND(EXPANDED_DATADIR, "$datadir")
-AS_AC_EXPAND(EXPANDED_RUNSTATEDIR, "$runstatedir")
+AX_RECURSIVE_EVAL(["$prefix"], [EXPANDED_PREFIX])
+AX_RECURSIVE_EVAL(["$localstatedir"], [EXPANDED_LOCALSTATEDIR])
+AX_RECURSIVE_EVAL(["$sysconfdir"], [EXPANDED_SYSCONFDIR])
+AX_RECURSIVE_EVAL(["$bindir"], [EXPANDED_BINDIR])
+AX_RECURSIVE_EVAL(["$libdir"], [EXPANDED_LIBDIR])
+AX_RECURSIVE_EVAL(["$libexecdir"], [EXPANDED_LIBEXECDIR])
+AX_RECURSIVE_EVAL(["$datadir"], [EXPANDED_DATADIR])
+AX_RECURSIVE_EVAL(["$runstatedir"], [EXPANDED_RUNSTATEDIR])
+AC_SUBST([EXPANDED_PREFIX])
+AC_SUBST([EXPANDED_LOCALSTATEDIR])
+AC_SUBST([EXPANDED_SYSCONFDIR])
+AC_SUBST([EXPANDED_BINDIR])
+AC_SUBST([EXPANDED_LIBDIR])
+AC_SUBST([EXPANDED_LIBEXECDIR])
+AC_SUBST([EXPANDED_DATADIR])
+AC_SUBST([EXPANDED_RUNSTATEDIR])
 
 ##### systemd unit files
 AC_ARG_WITH([systemdsystemunitdir],
@@ -1398,14 +1341,14 @@ AS_HELP_STRING([--with-systemduserunitdir=DIR], [Directory for systemd user serv
 AC_SUBST([systemduserunitdir], [$with_systemduserunitdir])
 
 ##### Set up location for system bus socket
-if ! test -z "$with_system_socket"; then
-   DBUS_SYSTEM_SOCKET=$with_system_socket
-else
-   # We don't use runstatedir for this (yet?), because /var/run has been the
-   # interoperable system bus socket for 10+ years.
-   # See https://bugs.freedesktop.org/show_bug.cgi?id=101628
-   DBUS_SYSTEM_SOCKET=${EXPANDED_LOCALSTATEDIR}/run/dbus/system_bus_socket
-fi
+
+AS_IF([test -n "$with_system_socket"],
+   [DBUS_SYSTEM_SOCKET=$with_system_socket],
+   [DBUS_SYSTEM_SOCKET=${EXPANDED_RUNSTATEDIR}/dbus/system_bus_socket])
+
+dnl The actual check script is shared between Autotools and CMake.
+AS_IF([test "$dbus_win" != yes],
+    [${CONFIG_SHELL-/bin/sh} "${srcdir}/tools/check-runstatedir.sh" "$DBUS_SYSTEM_SOCKET"])
 
 AC_SUBST(DBUS_SYSTEM_SOCKET)
 AC_DEFINE_UNQUOTED(DBUS_SYSTEM_SOCKET,"$DBUS_SYSTEM_SOCKET",[The name of the socket the system bus listens on by default])
@@ -1433,12 +1376,6 @@ else
 fi
 
 AC_SUBST(DBUS_SYSTEM_PID_FILE)
-
-#### Directory to check for console ownership
-AS_IF([test -n "$with_console_auth_dir" && test "x$with_console_auth_dir" != xno],
-    [AC_DEFINE_UNQUOTED([DBUS_CONSOLE_AUTH_DIR], ["$with_console_auth_dir"],
-        [Directory to check for pam_console/pam_foreground flag files, or undefined])],
-    [with_console_auth_dir=])
 
 #### File to check for console ownership
 if test x$have_console_owner_file = xyes; then
@@ -1784,6 +1721,7 @@ echo "
 	64-bit int:		  ${DBUS_INT64_TYPE}
 	32-bit int:		  ${DBUS_INT32_TYPE}
 	16-bit int:		  ${DBUS_INT16_TYPE}
+	pointer size:		  ${DBUS_SIZEOF_VOID_P}
         Doxygen:                  ${DOXYGEN:-not found}
         xmlto:                    ${XMLTO:-not found}
         ducktype:                 ${DUCKTYPE:-not found}
@@ -1817,7 +1755,6 @@ echo "
         System bus PID file:      ${DBUS_SYSTEM_PID_FILE}
         Session bus listens on:   ${DBUS_SESSION_BUS_LISTEN_ADDRESS}
         Session clients connect to: ${DBUS_SESSION_BUS_CONNECT_ADDRESS}
-        pam_console auth dir:     ${with_console_auth_dir:-(none)}
         Console owner file:       ${have_console_owner_file}
         Console owner file path:  ${DBUS_CONSOLE_OWNER_FILE}
 	System bus user:          ${DBUS_USER}

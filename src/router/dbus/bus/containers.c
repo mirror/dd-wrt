@@ -2,6 +2,8 @@
  *
  * Copyright © 2017 Collabora Ltd.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -414,10 +416,8 @@ bus_container_instance_new (BusContext *context,
       goto fail;
     }
 
-  /* We assume PRIu64 exists on all Unix platforms: it's ISO C99, and the
-   * only non-C99 platform we support is MSVC on Windows. */
   if (!_dbus_string_append_printf (&path,
-                                   "/org/freedesktop/DBus/Containers1/c%" PRIu64,
+                                   "/org/freedesktop/DBus/Containers1/c%" DBUS_INT64_MODIFIER "u",
                                    containers->next_container_id++))
     {
       BUS_SET_OOM (error);

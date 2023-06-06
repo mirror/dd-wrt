@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002, 2003, 2004, 2005 Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,7 +25,6 @@
 
 #include <config.h>
 #include "dbus-server.h"
-#include "dbus-server-unix.h"
 #include "dbus-server-socket.h"
 #include "dbus-string.h"
 #ifdef DBUS_ENABLE_EMBEDDED_TESTS
@@ -527,6 +528,7 @@ static const struct {
                                    DBusError        *error);
 } listen_funcs[] = {
   { _dbus_server_listen_socket }
+  , { _dbus_server_listen_unix_socket }
   , { _dbus_server_listen_platform_specific }
 #ifdef DBUS_ENABLE_EMBEDDED_TESTS
   , { _dbus_server_listen_debug_pipe }

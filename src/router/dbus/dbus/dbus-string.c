@@ -11,6 +11,8 @@
  * Copyright 2011 Roberto Guido
  * Copyright 2013 Chengwei Yang / Intel
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,8 +43,6 @@
 #include "dbus-marshal-basic.h" /* probably should be removed by moving the usage of DBUS_TYPE
                                  * into the marshaling-related files
                                  */
-/* for DBUS_VA_COPY */
-#include "dbus-sysdeps.h"
 
 /**
  * @defgroup DBusString DBusString class
@@ -464,6 +464,20 @@ open_gap (int             len,
            dest->len - len - insert_at);
 
   return TRUE;
+}
+
+/**
+ * Returns the allocated size of the string
+ *
+ * @param str the string
+ * @returns the allocated size
+ */
+int
+_dbus_string_get_allocated_size (const DBusString *str)
+{
+  DBUS_CONST_STRING_PREAMBLE (str);
+
+  return real->allocated;
 }
 
 #ifndef _dbus_string_get_data
@@ -978,18 +992,6 @@ _dbus_string_append (DBusString *str,
   return append (real, buffer, buffer_len);
 }
 
-/** assign 2 bytes from one string to another */
-#define ASSIGN_2_OCTETS(p, octets) \
-  *((dbus_uint16_t*)(p)) = *((dbus_uint16_t*)(octets));
-
-/** assign 4 bytes from one string to another */
-#define ASSIGN_4_OCTETS(p, octets) \
-  *((dbus_uint32_t*)(p)) = *((dbus_uint32_t*)(octets));
-
-/** assign 8 bytes from one string to another */
-#define ASSIGN_8_OCTETS(p, octets) \
-  *((dbus_uint64_t*)(p)) = *((dbus_uint64_t*)(octets));
-
 /**
  * Inserts 2 bytes aligned on a 2 byte boundary
  * with any alignment padding initialized to 0.
@@ -1009,7 +1011,7 @@ _dbus_string_insert_2_aligned (DBusString         *str,
   if (!align_insert_point_then_open_gap (str, &insert_at, 2, 2))
     return FALSE;
 
-  ASSIGN_2_OCTETS (real->str + insert_at, octets);
+  memcpy (real->str + insert_at, octets, 2);
 
   return TRUE;
 }
@@ -1033,7 +1035,7 @@ _dbus_string_insert_4_aligned (DBusString         *str,
   if (!align_insert_point_then_open_gap (str, &insert_at, 4, 4))
     return FALSE;
 
-  ASSIGN_4_OCTETS (real->str + insert_at, octets);
+  memcpy (real->str + insert_at, octets, 4);
 
   return TRUE;
 }
@@ -1058,8 +1060,8 @@ _dbus_string_insert_8_aligned (DBusString         *str,
     return FALSE;
 
   _dbus_assert (_DBUS_ALIGN_VALUE (insert_at, 8) == (unsigned) insert_at);
-  
-  ASSIGN_8_OCTETS (real->str + insert_at, octets);
+
+  memcpy (real->str + insert_at, octets, 8);
 
   return TRUE;
 }
@@ -1110,7 +1112,7 @@ _dbus_string_append_printf_valist  (DBusString        *str,
 
   DBUS_STRING_PREAMBLE (str);
 
-  DBUS_VA_COPY (args_copy, args);
+  va_copy (args_copy, args);
 
   /* Measure the message length without terminating nul */
   len = _dbus_printf_string_upper_bound (format, args);
@@ -1878,7 +1880,7 @@ _dbus_string_skip_blank (const DBusString *str,
       ++i;
     }
 
-  _dbus_assert (i == real->len || !DBUS_IS_ASCII_WHITE (real->str[i]));
+  _dbus_assert (i == real->len || !DBUS_IS_ASCII_BLANK (real->str[i]));
   
   if (end)
     *end = i;
@@ -2330,6 +2332,41 @@ _dbus_string_append_byte_as_hex (DBusString *str,
 
   return TRUE;
 }
+
+/* Currently only used when embedded tests are enabled */
+#ifdef DBUS_ENABLE_EMBEDDED_TESTS
+/**
+ * Appends \p size bytes from the buffer \p buf as hex digits to the string \p str
+ *
+ * If \p size is nonzero, then \p buf must be non-NULL.
+ *
+ * @param str the string
+ * @param buf the buffer to add bytes from
+ * @param size the number of bytes to add
+ * @returns #FALSE if no memory
+ */
+dbus_bool_t
+_dbus_string_append_buffer_as_hex (DBusString *str,
+                                   void *buf,
+                                   int size)
+{
+  unsigned char *p;
+  int i;
+
+  _dbus_assert (size >= 0);
+  _dbus_assert (size == 0 || buf != NULL);
+
+  p = (unsigned char *) buf;
+
+  for (i = 0; i < size; i++)
+    {
+      if (!_dbus_string_append_byte_as_hex (str, p[i]))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+#endif
 
 /**
  * Encodes a string in hex, the way MD5 and SHA-1 are usually

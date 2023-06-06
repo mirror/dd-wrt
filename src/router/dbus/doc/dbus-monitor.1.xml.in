@@ -32,7 +32,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>The <command>dbus-monitor</command> command is used to monitor messages going
 through a D-Bus message bus.  See
-<ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink> for more information about
+<ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink> for more information about
 the big picture.</para>
 
 
@@ -128,6 +128,6 @@ The profiling output mode was added by Olli Salli.</para>
 
 <refsect1 id='bugs'><title>BUGS</title>
 <para>Please send bug reports to the D-Bus mailing list or bug tracker,
-see <ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink></para>
+see <ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink></para>
 </refsect1>
 </refentry>

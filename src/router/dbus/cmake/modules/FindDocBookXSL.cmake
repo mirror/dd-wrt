@@ -6,6 +6,7 @@
 #  used to process DocBook XML
 
 # Copyright (c) 2010, Luigi Toscano, <luigi.toscano@tiscali.it>
+# SPDX-License-Identifier: BSD-3-Clause
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions

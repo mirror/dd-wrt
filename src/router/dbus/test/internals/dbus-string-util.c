@@ -10,6 +10,8 @@
  * Copyright 2011 Roberto Guido
  * Copyright 2016-2018 Collabora Ltd.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -746,7 +748,7 @@ _dbus_string_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
       _dbus_test_fatal ("failed to compact after set_length");
 
     /* peek inside to make sure it worked */
-    if (((DBusRealString *)&str)->allocated > 30)
+    if (_dbus_string_get_allocated_size (&str) > 30)
       _dbus_test_fatal ("compacting string didn't do anything");
 
     if (!_dbus_string_equal_c_str (&str, "abcdefghij"))

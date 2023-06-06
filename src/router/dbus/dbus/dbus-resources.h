@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2003  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,6 +26,7 @@
 #define DBUS_RESOURCES_H
 
 #include <dbus/dbus-macros.h>
+#include <dbus/dbus-macros-internal.h>
 #include <dbus/dbus-errors.h>
 #include <dbus/dbus-connection.h>
 
@@ -33,17 +36,22 @@ typedef struct DBusCounter DBusCounter;
 
 typedef void (* DBusCounterNotifyFunction) (DBusCounter *counter,
                                             void        *user_data);
-
+DBUS_EMBEDDED_TESTS_EXPORT
 DBusCounter* _dbus_counter_new       (void);
 DBusCounter* _dbus_counter_ref       (DBusCounter *counter);
+DBUS_EMBEDDED_TESTS_EXPORT
 void         _dbus_counter_unref     (DBusCounter *counter);
 
+DBUS_EMBEDDED_TESTS_EXPORT
 void         _dbus_counter_adjust_size       (DBusCounter *counter,
                                               long         delta);
+DBUS_EMBEDDED_TESTS_EXPORT
 void         _dbus_counter_adjust_unix_fd    (DBusCounter *counter,
                                               long         delta);
 void         _dbus_counter_notify            (DBusCounter *counter);
+DBUS_EMBEDDED_TESTS_EXPORT
 long         _dbus_counter_get_size_value    (DBusCounter *counter);
+DBUS_EMBEDDED_TESTS_EXPORT
 long         _dbus_counter_get_unix_fd_value (DBusCounter *counter);
 
 void _dbus_counter_set_notify    (DBusCounter               *counter,

@@ -4,6 +4,8 @@
  * Copyright 2003-2009 Red Hat, Inc.
  * Copyright 2011-2018 Collabora Ltd.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,32 +25,7 @@
  */
 
 #include <config.h>
-
-#include "bus/test.h"
-
-#include <dbus/dbus-test-tap.h>
-
-#include "bus/audit.h"
-#include "bus/selinux.h"
-#include "test/test-utils.h"
-
-#ifndef DBUS_ENABLE_EMBEDDED_TESTS
-#error This file is only relevant for the embedded tests
-#endif
-
-static void
-test_pre_hook (void)
-{
-}
-
-static void
-test_post_hook (void)
-{
-  if (_dbus_getenv ("DBUS_TEST_SELINUX"))
-    bus_selinux_shutdown ();
-
-  bus_audit_shutdown ();
-}
+#include "test/bus/common.h"
 
 static DBusTestCase tests[] =
 {
@@ -63,9 +40,5 @@ static DBusTestCase tests[] =
 int
 main (int argc, char **argv)
 {
-  return _dbus_test_main (argc, argv, _DBUS_N_ELEMENTS (tests), tests,
-                          (DBUS_TEST_FLAGS_CHECK_MEMORY_LEAKS |
-                           DBUS_TEST_FLAGS_CHECK_FD_LEAKS |
-                           DBUS_TEST_FLAGS_REQUIRE_DATA),
-                          test_pre_hook, test_post_hook);
+  return bus_test_main (argc, argv, _DBUS_N_ELEMENTS (tests), tests);
 }

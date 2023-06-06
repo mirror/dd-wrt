@@ -1,4 +1,8 @@
 /*
+ * Copyright 2015 Ralf Habacker
+ * Copyright 2015-2020 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
+ *
  * Simple manual paths check
  *
  * syntax:  manual-paths

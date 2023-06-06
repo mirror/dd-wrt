@@ -1,0 +1,10 @@
+NOT_REALLY_LIBDBUS_1_3 {
+  global:
+    dbus_*;
+  local:
+    *;
+};
+NOT_REALLY_LIBDBUS_PRIVATE_1.2.3 {
+  global:
+    _dbus_*;
+};

@@ -1,0 +1,314 @@
+# Copyright © 2019-2020 Salamandar <felix@piedallu.me>
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+option(
+  'apparmor',
+  type: 'feature',
+  value: 'auto',
+  description: 'AppArmor support'
+)
+
+option(
+  'asserts',
+  type: 'boolean',
+  value: false,
+  description: 'Include assertion checks'
+)
+
+option(
+  'checks',
+  type: 'boolean',
+  value: true,
+  description: 'Check for usage errors at public API'
+)
+
+option(
+  'containers',
+  type: 'boolean',
+  value: false,
+  description: 'Enable restricted servers for app containers'
+)
+
+option(
+  'dbus_daemondir',
+  type: 'string',
+  description: 'Directory for installing the dbus-daemon'
+)
+
+option(
+  'dbus_user',
+  type: 'string',
+  description: 'User for running the system dbus-daemon',
+  value: 'messagebus'
+)
+
+option(
+  'dbus_session_bus_connect_address',
+  type: 'string',
+  value: '',
+  description: 'Fallback address for a session bus client to connect to',
+)
+
+option(
+  'dbus_session_bus_listen_address',
+  type: 'string',
+  value: '',
+  description: 'Default address for a session bus to listen on',
+)
+
+option(
+  'doxygen_docs',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build Doxygen documentation'
+)
+
+option(
+  'ducktype_docs',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build Ducktype documentation'
+)
+
+option(
+  'embedded_tests',
+  type: 'boolean',
+  value: false,
+  description: 'Enable unit test code in the library and binaries'
+)
+
+option(
+  'epoll',
+  type: 'feature',
+  value: 'auto',
+  description: 'Use epoll(4) on Linux'
+)
+
+option(
+  'inotify',
+  type: 'feature',
+  value: 'auto',
+  description: 'Inotify support on Linux'
+)
+
+option(
+  'installed_tests',
+  type: 'boolean',
+  value: false,
+  description: 'Install automated tests for "as-installed" testing'
+)
+
+option(
+  'kqueue',
+  type: 'feature',
+  value: 'auto',
+  description: 'Kqueue support'
+)
+
+option(
+  'launchd',
+  type: 'feature',
+  value: 'auto',
+  description: 'Launchd auto-launch support'
+)
+
+option(
+  'launchd_agent_dir',
+  type: 'string',
+  description: 'Directory to put the launchd agent'
+)
+
+option(
+  'libaudit',
+  type: 'feature',
+  value: 'auto',
+  description: 'Audit logging support for SELinux and AppArmor'
+)
+
+option(
+  'message_bus',
+  type: 'boolean',
+  value: 'true',
+  description: 'Enable dbus-daemon'
+)
+
+option(
+  'modular_tests',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable modular regression tests (requires GLib)'
+)
+
+option(
+  'qch_dir',
+  type: 'string',
+  description: 'Directory to put the Qt help file'
+)
+
+option(
+  'qt_help',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build Qt help documentation'
+)
+
+option(
+  'relocation',
+  type: 'feature',
+  value: 'auto',
+  description: 'Make pkg-config metadata relocatable'
+)
+
+# Deliberately not named runstatedir to avoid colliding with
+# https://github.com/mesonbuild/meson/issues/4141
+option(
+  'runtime_dir',
+  type: 'string',
+  value: '',
+  description: 'Directory for transient runtime state [default: LOCALSTATEDIR/run or /run]'
+)
+
+option(
+  'selinux',
+  type: 'feature',
+  value: 'auto',
+  description: 'SELinux support'
+)
+
+option(
+  'session_socket_dir',
+  type: 'string',
+  description: 'Where to put sockets for the per-login-session message bus'
+)
+
+option(
+  'solaris_console_owner_file',
+  type: 'string',
+  value: '',
+  description: 'File to determine current console owner on Solaris (or "auto")'
+)
+
+option(
+  'stats',
+  type: 'boolean',
+  value: true,
+  description: 'Enable bus daemon usage statistics'
+)
+
+option(
+  'system_pid_file',
+  type: 'string',
+  description: 'PID file for systemwide daemon'
+)
+
+option(
+  'system_socket',
+  type: 'string',
+  description: 'UNIX domain socket for systemwide daemon'
+)
+
+option(
+  'systemd_system_unitdir',
+  type: 'string',
+  description: 'Directory for systemd system service files'
+)
+
+option(
+  'systemd_user_unitdir',
+  type: 'string',
+  description: 'Directory for systemd user service files'
+)
+
+option(
+  'systemd',
+  type: 'feature',
+  value: 'auto',
+  description: 'Systemd at_console support'
+)
+
+option(
+  'test_socket_dir',
+  type: 'string',
+  description: 'Where to put sockets for make check'
+)
+
+option(
+  'test_user',
+  type: 'string',
+  description: 'Unprivileged user for regression tests, other than root and the dbus_user',
+  value: 'nobody'
+)
+
+option(
+  'tools',
+  type: 'boolean',
+  value: 'true',
+  description: 'Enable CLI tools such as dbus-send and dbus-monitor'
+)
+
+option(
+  'traditional_activation',
+  type: 'boolean',
+  value: true,
+  description: 'Build support for service activation without using SystemdService'
+)
+
+option(
+  'user_session',
+  type: 'boolean',
+  value: true,
+  description: 'Enable user-session semantics for session bus under systemd'
+)
+
+option(
+  'valgrind',
+  type: 'feature',
+  value: 'disabled',
+  description: 'Build with Valgrind instrumentation (note that this currently adds a hard dependency on valgrind)'
+)
+
+option(
+  'verbose_mode',
+  type: 'boolean',
+  value: false,
+  description: 'Support verbose debug mode'
+)
+
+option(
+  'x11_autolaunch',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build with X11 auto-launch support'
+)
+
+option(
+  'xml_docs',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build XML documentation'
+)
+
+option(
+  'windows_output_debug_string',
+  type: 'boolean',
+  value: false,
+  description: 'use OutputDebugString() to log messages to Windows debug port'
+)

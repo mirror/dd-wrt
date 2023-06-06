@@ -1,4 +1,7 @@
 /*
+ * Copyright 2015 Ralf Habacker
+ * SPDX-License-Identifier: MIT
+ *
  * Simple manual tcp check
  *
  * supports:

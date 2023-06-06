@@ -75,6 +75,7 @@ endif
 
 DBUS_SHARED_arch_sources = 			\
 	$(wince_source)				\
+	dbus-backtrace-win.c 			\
 	dbus-file-win.c 			\
 	dbus-pipe-win.c 			\
 	dbus-sockets-win.h			\
@@ -102,8 +103,7 @@ endif
 DBUS_LIB_arch_sources = 			\
 	dbus-uuidgen.c				\
 	dbus-uuidgen.h				\
-	dbus-server-unix.c 			\
-	dbus-server-unix.h
+	dbus-server-unix.c
 
 DBUS_SHARED_arch_sources = 			\
 	$(launchd_source)			\
@@ -227,6 +227,7 @@ DBUS_SHARED_SOURCES=				\
 	dbus-internals.h			\
 	dbus-list.c				\
 	dbus-list.h				\
+	dbus-macros-internal.h			\
 	dbus-marshal-basic.c			\
 	dbus-marshal-basic.h			\
 	dbus-memory.c				\
@@ -327,6 +328,9 @@ libdbus_1_la_LIBADD += libdbus-init-win.la
 endif
 
 noinst_PROGRAMS =
+
+EXTRA_DIST += meson.build
+EXTRA_DIST += test-version-script
 
 # Add rules for code-coverage testing, as defined by AX_CODE_COVERAGE
 include $(top_srcdir)/aminclude_static.am

@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2009 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.net
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -194,8 +196,7 @@ _dbus_accept_with_noncefile (DBusSocket listen_fd, const DBusNonceFile *noncefil
 
   if (do_check_nonce(fd, &nonce, NULL) != TRUE) {
     _dbus_verbose ("nonce check failed. Closing socket.\n");
-    _dbus_close_socket(fd, NULL);
-    _dbus_socket_invalidate (&fd);
+    _dbus_close_socket (&fd, NULL);
     goto out;
   }
 

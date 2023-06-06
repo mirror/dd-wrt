@@ -40,7 +40,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><command>dbus-daemon</command> is the D-Bus message bus daemon. See
-<ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink> for more information about
+<ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink> for more information about
 the big picture. D-Bus is first a library that provides one-to-one
 communication between any two applications; <command>dbus-daemon</command> is an
 application that uses this library to implement a message bus
@@ -1545,12 +1545,12 @@ for example.</para>
 </refsect1>
 
 <refsect1 id='author'><title>AUTHOR</title>
-<para>See <ulink url='http://www.freedesktop.org/software/dbus/doc/AUTHORS'>http://www.freedesktop.org/software/dbus/doc/AUTHORS</ulink></para>
+<para>See <ulink url='https://dbus.freedesktop.org/doc/AUTHORS'>https://dbus.freedesktop.org/doc/AUTHORS</ulink></para>
 
 </refsect1>
 
 <refsect1 id='bugs'><title>BUGS</title>
 <para>Please send bug reports to the D-Bus mailing list or bug tracker,
-see <ulink url='http://www.freedesktop.org/software/dbus/'>http://www.freedesktop.org/software/dbus/</ulink></para>
+see <ulink url='https://www.freedesktop.org/wiki/Software/dbus/'>https://www.freedesktop.org/wiki/Software/dbus/</ulink></para>
 </refsect1>
 </refentry>

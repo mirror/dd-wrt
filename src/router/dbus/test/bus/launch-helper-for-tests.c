@@ -1,4 +1,8 @@
-/* Embed a version of the real activation helper that has been altered
+/*
+ * Copyright 2018 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
+ *
+ * Embed a version of the real activation helper that has been altered
  * to be testable. We monkey-patch it like this because we don't want to
  * compile test-only code into the real setuid executable, and Automake
  * versions older than 1.16 can't cope with expanding directory variables

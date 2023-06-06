@@ -8,6 +8,8 @@
  * Copyright (C) 2006 Christian Ehrlicher <ch.ehrlicher@gmx.de>
  * Copyright (C) 2006-2021 Ralf Habacker <ralf.habacker@freenet.de>
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,7 +25,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
  */
 
 #include <config.h>
@@ -48,6 +49,9 @@
 #include <windows.h>
 #include <wincrypt.h>
 #include <iphlpapi.h>
+#ifdef HAVE_AFUNIX_H
+#include <afunix.h>
+#endif
 
 /* Declarations missing in mingw's and windows sdk 7.0 headers */
 extern BOOL WINAPI ConvertStringSidToSidA (LPCSTR  StringSid, PSID *Sid);
@@ -483,20 +487,21 @@ _dbus_write_socket (DBusSocket        fd,
 
 
 /**
- * Closes a file descriptor.
+ * Closes a socket and invalidates it.
  *
  * @param fd the file descriptor
  * @param error error object
  * @returns #FALSE if error set
  */
 dbus_bool_t
-_dbus_close_socket (DBusSocket fd,
-                    DBusError *error)
+_dbus_close_socket (DBusSocket *fd,
+                    DBusError  *error)
 {
+  _dbus_assert (fd != NULL);
   _DBUS_ASSERT_ERROR_IS_CLEAR (error);
 
  again:
-  if (closesocket (fd.sock) == SOCKET_ERROR)
+  if (closesocket (fd->sock) == SOCKET_ERROR)
     {
       DBUS_SOCKET_SET_ERRNO ();
       
@@ -505,11 +510,13 @@ _dbus_close_socket (DBusSocket fd,
         
       dbus_set_error (error, _dbus_error_from_errno (errno),
                       "Could not close socket: socket=%Iu, , %s",
-                      fd.sock, _dbus_strerror_from_errno ());
+                      fd->sock, _dbus_strerror_from_errno ());
+      _dbus_socket_invalidate (fd);
       return FALSE;
     }
-  _dbus_verbose ("socket=%Iu, \n", fd.sock);
+  _dbus_verbose ("socket=%Iu, \n", fd->sock);
 
+  _dbus_socket_invalidate (fd);
   return TRUE;
 }
 
@@ -738,7 +745,7 @@ int _dbus_printf_string_upper_bound (const char *format,
   va_list args_copy;
 
   bufsize = sizeof (buf);
-  DBUS_VA_COPY (args_copy, args);
+  va_copy (args_copy, args);
   len = _vsnprintf (buf, bufsize - 1, format, args_copy);
   va_end (args_copy);
 
@@ -753,7 +760,7 @@ int _dbus_printf_string_upper_bound (const char *format,
       if (p == NULL)
         return -1;
 
-      DBUS_VA_COPY (args_copy, args);
+      va_copy (args_copy, args);
       len = _vsnprintf (p, bufsize - 1, format, args_copy);
       va_end (args_copy);
       free (p);
@@ -1012,12 +1019,12 @@ _dbus_getsid(char **sid, dbus_pid_t process_id)
   psid = token_user->User.Sid;
   if (!IsValidSid (psid))
     {
-      _dbus_verbose("%s invalid sid\n",__FUNCTION__);
+      _dbus_verbose("invalid sid\n");
       goto failed;
     }
   if (!ConvertSidToStringSidA (psid, sid))
     {
-      _dbus_verbose("%s invalid sid\n",__FUNCTION__);
+      _dbus_verbose("invalid sid\n");
       goto failed;
     }
 //okay:
@@ -1431,10 +1438,7 @@ _dbus_poll_select (DBusPollFD *fds,
 #ifdef DBUS_ENABLE_VERBOSE_MODE
   _dbus_verbose("_dbus_poll: to=%d\n", timeout_milliseconds);
   if (!_dbus_dump_fd_events (fds, n_fds))
-    {
-      ready = -1;
-      goto oom;
-    }
+    return -1;
 #endif
 
   for (i = 0; i < n_fds; i++)
@@ -1474,8 +1478,7 @@ _dbus_poll_select (DBusPollFD *fds,
         if (!_dbus_dump_fdset (fds, n_fds, &read_set, &write_set, &err_set))
           {
             _dbus_win_set_errno (ENOMEM);
-            ready = -1;
-            goto oom;
+            return -1;
           }
 #endif
         for (i = 0; i < n_fds; i++)
@@ -1494,7 +1497,6 @@ _dbus_poll_select (DBusPollFD *fds,
               fdp->revents |= _DBUS_POLLERR;
           }
       }
-oom:
   return ready;
 }
 #endif
@@ -1647,7 +1649,7 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
                           _dbus_error_from_errno (saved_errno),
                           "Failed to open socket: %s",
                           _dbus_strerror (saved_errno));
-          _dbus_socket_invalidate (&fd);
+          _dbus_assert (!_dbus_socket_is_valid (fd));
           goto out;
         }
       _DBUS_ASSERT_ERROR_IS_CLEAR(error);
@@ -1655,8 +1657,7 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
       if (connect (fd.sock, (struct sockaddr*) tmp->ai_addr, tmp->ai_addrlen) == SOCKET_ERROR)
         {
           saved_errno = _dbus_get_low_level_socket_errno ();
-          closesocket(fd.sock);
-          _dbus_socket_invalidate (&fd);
+          _dbus_close_socket (&fd, NULL);
 
           connect_error = dbus_new0 (DBusError, 1);
 
@@ -1703,8 +1704,7 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
 
       if (!ret)
         {
-          closesocket (fd.sock);
-          _dbus_socket_invalidate (&fd);
+          _dbus_close_socket (&fd, NULL);
           goto out;
         }
     }
@@ -1714,8 +1714,7 @@ _dbus_connect_tcp_socket_with_nonce (const char     *host,
 
   if (!_dbus_set_socket_nonblocking (fd, error))
     {
-      closesocket (fd.sock);
-      _dbus_socket_invalidate (&fd);
+      _dbus_close_socket (&fd, NULL);
       goto out;
     }
 
@@ -1833,6 +1832,7 @@ _dbus_listen_tcp_socket (const char     *host,
                           _dbus_error_from_errno (saved_errno),
                          "Failed to open socket: %s",
                          _dbus_strerror (saved_errno));
+          _dbus_assert (!_dbus_socket_is_valid (fd));
           goto failed;
         }
       _DBUS_ASSERT_ERROR_IS_CLEAR(error);
@@ -1853,7 +1853,7 @@ _dbus_listen_tcp_socket (const char     *host,
                       host ? host : "*", port, _dbus_strerror (saved_errno));
         }
 
-      if (bind (fd.sock, (struct sockaddr*) tmp->ai_addr, tmp->ai_addrlen) == SOCKET_ERROR)
+      if (bind (fd.sock, (struct sockaddr *) tmp->ai_addr, tmp->ai_addrlen) == SOCKET_ERROR)
         {
           saved_errno = _dbus_get_low_level_socket_errno ();
           closesocket (fd.sock);
@@ -2117,6 +2117,56 @@ again:
   return TRUE;
 }
 
+#ifdef HAVE_AFUNIX_H
+/*
+ * Returns false with no error set if the socket is non-AF_UNIX
+ * (contrary to our usual convention).
+ *
+ * Returns false with an error set on failure to identify it.
+ */
+static dbus_bool_t
+_dbus_socket_is_af_unix (DBusSocket s,
+                         DBusError *error)
+{
+  struct sockaddr_un saddr;
+  int len;
+
+  len = sizeof (saddr);
+  if (getsockname (s.sock, (struct sockaddr *)&saddr, &len) == SOCKET_ERROR)
+    {
+      DBUS_SOCKET_SET_ERRNO ();
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "Failed to getsockname: %s",
+                      _dbus_strerror_from_errno ());
+      return FALSE;
+    }
+
+  return saddr.sun_family == AF_UNIX;
+}
+
+/**
+ * @brief return peer process id from Unix domain socket handle
+ * @param handle AF_UNIX socket descriptor
+ * @return process id or 0 in case the process id could not be fetched
+ */
+static dbus_pid_t
+_dbus_get_peer_pid_from_uds_handle (int handle)
+{
+  DWORD pid, drc;
+
+  if (WSAIoctl (handle, SIO_AF_UNIX_GETPEERPID,
+                NULL, 0U,
+                &pid, sizeof (pid), &drc,
+                NULL, NULL) == SOCKET_ERROR)
+    {
+      _dbus_verbose ("failed to get peer's pid\n");
+      return 0;
+    }
+
+  return pid;
+}
+#endif
+
 /**
  * Reads a single byte which must be nul (an error occurs otherwise),
  * and reads unix credentials if available. Fills in pid/uid/gid with
@@ -2142,6 +2192,9 @@ _dbus_read_credentials_socket  (DBusSocket       handle,
 {
   int bytes_read = 0;
   DBusString buf;
+#ifdef HAVE_AFUNIX_H
+  dbus_bool_t uds = FALSE;
+#endif
 
   char *sid = NULL;
   dbus_pid_t pid;
@@ -2158,7 +2211,16 @@ _dbus_read_credentials_socket  (DBusSocket       handle,
       _dbus_string_free (&buf);
     }
 
-  pid = _dbus_get_peer_pid_from_tcp_handle (handle.sock);
+#ifdef HAVE_AFUNIX_H
+  uds = _dbus_socket_is_af_unix (handle, error);
+  if (dbus_error_is_set (error))
+    return FALSE;
+
+  if (uds)
+    pid = _dbus_get_peer_pid_from_uds_handle (handle.sock);
+  else
+#endif
+    pid = _dbus_get_peer_pid_from_tcp_handle (handle.sock);
   if (pid == 0)
     return TRUE;
 
@@ -2529,8 +2591,7 @@ _dbus_generate_random_bytes (DBusString *str,
 }
 
 /**
- * Gets the temporary files directory by inspecting the environment variables 
- * TMPDIR, TMP, and TEMP in that order. If none of those are set "/tmp" is returned
+ * Gets the temporary files directory, using GetTempPath()
  *
  * @returns location of temp directory, or #NULL if no memory for locking
  */
@@ -2602,209 +2663,6 @@ _dbus_delete_file (const DBusString *filename,
   else
     return TRUE;
 }
-
-#if !defined (DBUS_DISABLE_ASSERT) || defined(DBUS_ENABLE_EMBEDDED_TESTS)
-
-#if defined(_MSC_VER) || defined(DBUS_WINCE)
-# ifdef BACKTRACES
-#  undef BACKTRACES
-# endif
-#else
-# define BACKTRACES
-#endif
-
-#ifdef BACKTRACES
-/*
- * Backtrace Generator
- *
- * Copyright 2004 Eric Poech
- * Copyright 2004 Robert Shearman
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- */
-
-#include <winver.h>
-#include <imagehlp.h>
-#include <stdio.h>
-
-#define DPRINTF(fmt, ...) fprintf (stderr, fmt, ##__VA_ARGS__)
-
-#ifdef _MSC_VER
-#define BOOL int
-
-#define __i386__
-#endif
-
-static void dump_backtrace_for_thread (HANDLE hThread)
-{
-  ADDRESS old_address;
-  STACKFRAME sf;
-  CONTEXT context;
-  DWORD dwImageType;
-  int i = 0;
-
-  SymSetOptions (SYMOPT_UNDNAME | SYMOPT_LOAD_LINES);
-  SymInitialize (GetCurrentProcess (), NULL, TRUE);
-
-
-  /* can't use this function for current thread as GetThreadContext
-   * doesn't support getting context from current thread */
-  if (hThread == GetCurrentThread())
-    return;
-
-  DPRINTF ("Backtrace:\n");
-
-  _DBUS_ZERO (old_address);
-  _DBUS_ZERO (context);
-  context.ContextFlags = CONTEXT_FULL;
-
-  SuspendThread (hThread);
-
-  if (!GetThreadContext (hThread, &context))
-    {
-      DPRINTF ("Couldn't get thread context (error %ld)\n", GetLastError ());
-      ResumeThread (hThread);
-      return;
-    }
-
-  _DBUS_ZERO (sf);
-
-#ifdef __i386__
-  dwImageType         = IMAGE_FILE_MACHINE_I386;
-  sf.AddrFrame.Offset = context.Ebp;
-  sf.AddrFrame.Mode   = AddrModeFlat;
-  sf.AddrPC.Offset    = context.Eip;
-  sf.AddrPC.Mode      = AddrModeFlat;
-#elif defined(_M_X64)
-  dwImageType         = IMAGE_FILE_MACHINE_AMD64;
-  sf.AddrPC.Offset    = context.Rip;
-  sf.AddrPC.Mode      = AddrModeFlat;
-  sf.AddrFrame.Offset = context.Rsp;
-  sf.AddrFrame.Mode   = AddrModeFlat;
-  sf.AddrStack.Offset = context.Rsp;
-  sf.AddrStack.Mode   = AddrModeFlat;
-#elif defined(_M_IA64)
-  dwImageType         = IMAGE_FILE_MACHINE_IA64;
-  sf.AddrPC.Offset    = context.StIIP;
-  sf.AddrPC.Mode      = AddrModeFlat;
-  sf.AddrFrame.Offset = context.IntSp;
-  sf.AddrFrame.Mode   = AddrModeFlat;
-  sf.AddrBStore.Offset= context.RsBSP;
-  sf.AddrBStore.Mode  = AddrModeFlat;
-  sf.AddrStack.Offset = context.IntSp;
-  sf.AddrStack.Mode   = AddrModeFlat;
-#else
-# error You need to fill in the STACKFRAME structure for your architecture
-#endif
-
-  /*
-    backtrace format
-    <level> <address> <symbol>[+offset] [ '[' <file> ':' <line> ']' ] [ 'in' <module> ]
-    example:
-      6 0xf75ade6b wine_switch_to_stack+0x2a [/usr/src/debug/wine-snapshot/libs/wine/port.c:59] in libwine.so.1
-  */
-  while (StackWalk (dwImageType, GetCurrentProcess (),
-                    hThread, &sf, &context, NULL, SymFunctionTableAccess,
-                    SymGetModuleBase, NULL))
-    {
-      char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(char)];
-      PSYMBOL_INFO pSymbol = (PSYMBOL_INFO)buffer;
-      DWORD64 displacement;
-      IMAGEHLP_LINE line;
-      DWORD dwDisplacement;
-      IMAGEHLP_MODULE moduleInfo;
-
-      /*
-         on Wine64 version 1.7.54, we get an infinite number of stack entries
-         pointing to the same stack frame  (_start+0x29 in <wine-loader>)
-         see bug https://bugs.winehq.org/show_bug.cgi?id=39606
-      */
-#ifndef __i386__
-      if (old_address.Offset == sf.AddrPC.Offset)
-        {
-          break;
-        }
-#endif
-
-      pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-      pSymbol->MaxNameLen = MAX_SYM_NAME;
-
-      if (SymFromAddr (GetCurrentProcess (), sf.AddrPC.Offset, &displacement, pSymbol))
-        {
-          if (displacement)
-            DPRINTF ("%3d %s+0x%I64x", i++, pSymbol->Name, displacement);
-          else
-            DPRINTF ("%3d %s", i++, pSymbol->Name);
-        }
-      else
-        DPRINTF ("%3d 0x%Ix", i++, sf.AddrPC.Offset);
-
-      line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
-      if (SymGetLineFromAddr (GetCurrentProcess (), sf.AddrPC.Offset, &dwDisplacement, &line))
-        {
-          DPRINTF (" [%s:%ld]", line.FileName, line.LineNumber);
-        }
-
-      moduleInfo.SizeOfStruct = sizeof(moduleInfo);
-      if (SymGetModuleInfo (GetCurrentProcess (), sf.AddrPC.Offset, &moduleInfo))
-        {
-          DPRINTF (" in %s", moduleInfo.ModuleName);
-        }
-      DPRINTF ("\n");
-      old_address = sf.AddrPC;
-    }
-  ResumeThread (hThread);
-}
-
-static DWORD WINAPI dump_thread_proc (LPVOID lpParameter)
-{
-  dump_backtrace_for_thread ((HANDLE) lpParameter);
-  return 0;
-}
-
-/* cannot get valid context from current thread, so we have to execute
- * backtrace from another thread */
-static void
-dump_backtrace (void)
-{
-  HANDLE hCurrentThread;
-  HANDLE hThread;
-  DWORD dwThreadId;
-  DuplicateHandle (GetCurrentProcess (), GetCurrentThread (),
-                   GetCurrentProcess (), &hCurrentThread,
-                   0, FALSE, DUPLICATE_SAME_ACCESS);
-  hThread = CreateThread (NULL, 0, dump_thread_proc, (LPVOID)hCurrentThread,
-                          0, &dwThreadId);
-  WaitForSingleObject (hThread, INFINITE);
-  CloseHandle (hThread);
-  CloseHandle (hCurrentThread);
-}
-#endif
-#endif /* asserts or tests enabled */
-
-#ifdef BACKTRACES
-void _dbus_print_backtrace (void)
-{
-  dump_backtrace ();
-}
-#else
-void _dbus_print_backtrace (void)
-{
-  _dbus_verbose ("  D-Bus not compiled with backtrace support\n");
-}
-#endif
 
 static dbus_uint32_t fromAscii(char ascii)
 {
@@ -2888,40 +2746,6 @@ dbus_bool_t _dbus_read_local_machine_uuid   (DBusGUID         *machine_id,
     return TRUE;
 }
 
-static
-HANDLE _dbus_global_lock (const char *mutexname)
-{
-  HANDLE mutex;
-  DWORD gotMutex;
-
-  mutex = CreateMutexA (NULL, FALSE, mutexname);
-  if (!mutex)
-    {
-      return FALSE;
-    }
-
-   gotMutex = WaitForSingleObject (mutex, INFINITE);
-   switch (gotMutex)
-     {
-       case WAIT_ABANDONED:
-               ReleaseMutex (mutex);
-               CloseHandle (mutex);
-               return 0;
-       case WAIT_FAILED:
-       case WAIT_TIMEOUT:
-               return 0;
-       default:
-               return mutex;
-     }
-}
-
-static
-void _dbus_global_unlock (HANDLE mutex)
-{
-  ReleaseMutex (mutex);
-  CloseHandle (mutex); 
-}
-
 // for proper cleanup in dbus-daemon
 static HANDLE hDBusDaemonMutex = NULL;
 static HANDLE hDBusSharedMem = NULL;
@@ -2933,6 +2757,44 @@ static const char *cDBusAutolaunchMutex = "DBusAutolaunchMutex";
 static const char *cDBusDaemonMutex = "DBusDaemonMutex";
 // named shm for dbus adress info (per user)
 static const char *cDBusDaemonAddressInfo = "DBusDaemonAddressInfo";
+
+/* custom command line parameter for autolaunching daemon */
+static const char *autolaunch_custom_command_line_parameter = "";
+
+/**
+ * Set command line parameters for the dbus daemon to start
+ * for an autolaunch session.
+ *
+ * The specified instance must be valid until the dbus-daemon
+ * is started.
+ *
+ * This function is not thread-safe, and can only be called from a
+ * single-threaded unit test.
+ *
+ * @param path string to use as command line parameter
+ */
+void _dbus_test_win_autolaunch_set_command_line_parameter (const char *path)
+{
+  autolaunch_custom_command_line_parameter = path;
+}
+
+static HANDLE *autolaunch_handle_location;
+
+/**
+ * Set location where to store process handle of an autostarted server
+ *
+ * This function is not thread-safe, and can only be called from a
+ * single-threaded unit test.
+ *
+ * After using the handle it must be closed with @ref CloseHandle().
+ *
+ * @param location Pointer where to store the handle
+ */
+void
+_dbus_test_win_set_autolaunch_handle_location (HANDLE *location)
+{
+  autolaunch_handle_location = location;
+}
 
 /**
  * Return the hash of the installation root directory, which can be
@@ -3084,7 +2946,7 @@ _dbus_get_mutex_name (DBusString *out, const char *scope)
 dbus_bool_t
 _dbus_daemon_is_session_bus_address_published (const char *scope)
 {
-  HANDLE lock;
+  DBusRMutex *lock = NULL;
   DBusString mutex_name;
 
   if (!_dbus_string_init (&mutex_name))
@@ -3104,9 +2966,12 @@ _dbus_daemon_is_session_bus_address_published (const char *scope)
       _dbus_verbose ("(scope:%s) -> yes\n", scope);
       return TRUE;
     }
+  lock = _dbus_win_rmutex_named_new (cUniqueDBusInitMutex);
+  if (!lock)
+    return FALSE;
 
   // sync _dbus_daemon_publish_session_bus_address, _dbus_daemon_unpublish_session_bus_address and _dbus_daemon_already_runs
-  lock = _dbus_global_lock (cUniqueDBusInitMutex);
+  _dbus_platform_rmutex_lock (lock);
 
   // we use CreateMutex instead of OpenMutex because of possible race conditions,
   // see http://msdn.microsoft.com/en-us/library/ms684315%28VS.85%29.aspx
@@ -3116,7 +2981,8 @@ _dbus_daemon_is_session_bus_address_published (const char *scope)
      Fortunally the client deletes the mutex in the lock protected area, so checking presence 
      will work too.  */
 
-  _dbus_global_unlock (lock);
+  _dbus_platform_rmutex_unlock (lock);
+  _dbus_platform_rmutex_free (lock);
 
   _dbus_string_free (&mutex_name);
 
@@ -3142,11 +3008,12 @@ _dbus_daemon_is_session_bus_address_published (const char *scope)
 dbus_bool_t
 _dbus_daemon_publish_session_bus_address (const char* address, const char *scope)
 {
-  HANDLE lock;
+  DBusRMutex *lock = NULL;
   char *shared_addr = NULL;
-  DBusString shm_name;
+  DBusString shm_name  = _DBUS_STRING_INIT_INVALID;
   DBusString mutex_name;
   dbus_uint64_t len;
+  dbus_bool_t retval = FALSE;
 
   _dbus_assert (address);
 
@@ -3163,7 +3030,14 @@ _dbus_daemon_publish_session_bus_address (const char* address, const char *scope
     }
 
   // sync _dbus_daemon_publish_session_bus_address, _dbus_daemon_unpublish_session_bus_address and _dbus_daemon_already_runs
-  lock = _dbus_global_lock (cUniqueDBusInitMutex);
+  lock = _dbus_win_rmutex_named_new (cUniqueDBusInitMutex);
+  if (lock == NULL)
+    {
+      _dbus_string_free (&mutex_name);
+      return FALSE;
+    }
+
+  _dbus_platform_rmutex_lock (lock);
 
   if (!hDBusDaemonMutex)
     {
@@ -3174,24 +3048,20 @@ _dbus_daemon_publish_session_bus_address (const char* address, const char *scope
   // acquire the mutex
   if (WaitForSingleObject (hDBusDaemonMutex, 10) != WAIT_OBJECT_0)
     {
-      _dbus_global_unlock (lock);
       CloseHandle (hDBusDaemonMutex);
-      return FALSE;
+      goto out;
     }
 
   if (!_dbus_string_init (&shm_name))
     {
-      _dbus_global_unlock (lock);
-      return FALSE;
+      goto out;
     }
 
   if (!_dbus_get_shm_name (&shm_name, scope) ||
       /* not determinable */
       _dbus_string_get_length (&shm_name) == 0)
     {
-      _dbus_string_free (&shm_name);
-      _dbus_global_unlock (lock);
-      return FALSE;
+      goto out;
     }
 
   // create shm
@@ -3211,11 +3081,14 @@ _dbus_daemon_publish_session_bus_address (const char* address, const char *scope
   // cleanup
   UnmapViewOfFile (shared_addr);
 
-  _dbus_global_unlock (lock);
   _dbus_verbose ("published session bus address at %s\n",_dbus_string_get_const_data (&shm_name));
+  retval = TRUE;
 
+out:
+  _dbus_platform_rmutex_unlock (lock);
+  _dbus_platform_rmutex_free (lock);
   _dbus_string_free (&shm_name);
-  return TRUE;
+  return retval;
 }
 
 /**
@@ -3233,15 +3106,20 @@ _dbus_daemon_publish_session_bus_address (const char* address, const char *scope
  * equivalent on Unix is that the session bus address is published by the
  * dbus-launch tool, and unpublished automatically when the dbus-launch
  * tool exits.
+ * @return NULL in case of error
  */
-void
+dbus_bool_t
 _dbus_daemon_unpublish_session_bus_address (void)
 {
-  HANDLE lock;
+  DBusRMutex *lock = NULL;
 
   _dbus_verbose ("\n");
   // sync _dbus_daemon_publish_session_bus_address, _dbus_daemon_unpublish_session_bus_address and _dbus_daemon_already_runs
-  lock = _dbus_global_lock (cUniqueDBusInitMutex);
+  lock = _dbus_win_rmutex_named_new (cUniqueDBusInitMutex);
+  if (lock == NULL)
+    return FALSE;
+
+  _dbus_platform_rmutex_lock (lock);
 
   CloseHandle (hDBusSharedMem);
 
@@ -3253,58 +3131,72 @@ _dbus_daemon_unpublish_session_bus_address (void)
 
   hDBusDaemonMutex = NULL;
 
-  _dbus_global_unlock (lock);
+  _dbus_platform_rmutex_unlock (lock);
+  _dbus_platform_rmutex_free (lock);
+  return TRUE;
 }
 
+/**
+ * Get server bus address from shared memory segment provided by running dbus-daemon
+ *
+ * @param address initialized DBusString instance to store the retrieved address
+ * @param shm_name the name of the shared memory segment
+ * @param wait if TRUE wait maximum 2 seconds for the presence of the shared memory segment
+ * @return #TRUE the bus address was fetched from the shared memory segment
+ * @return #FALSE error during execution
+ */
 static dbus_bool_t
-_dbus_get_autolaunch_shm (DBusString *address, DBusString *shm_name)
+_dbus_get_autolaunch_shm (DBusString *address, DBusString *shm_name, dbus_bool_t wait)
 {
-  HANDLE sharedMem;
+  HANDLE sharedMem = NULL;
   char *shared_addr;
   int i;
+  int max = 20; /* max 2 seconds */
+  dbus_bool_t retval = FALSE;
+
+  if (!wait)
+    max = 1;
 
   // read shm
-  for(i=0;i<20;++i) {
+  for (i = 0; i < max; ++i)
+    {
       // we know that dbus-daemon is available, so we wait until shm is available
       sharedMem = OpenFileMappingA (FILE_MAP_READ, FALSE, _dbus_string_get_const_data (shm_name));
       if (sharedMem == 0)
-          Sleep (100);
-      if ( sharedMem != 0)
-          break;
-  }
+        Sleep (100);
+      if (sharedMem != 0)
+        break;
+    }
 
   if (sharedMem == 0)
-      return FALSE;
+    return FALSE;
 
   shared_addr = MapViewOfFile (sharedMem, FILE_MAP_READ, 0, 0, 0);
 
   if (!shared_addr)
-      return FALSE;
+    goto out;
 
-  _dbus_string_init (address);
+  retval = _dbus_string_append (address, shared_addr);
 
-  _dbus_string_append (address, shared_addr);
-
-  // cleanup
   UnmapViewOfFile (shared_addr);
 
+out:
   CloseHandle (sharedMem);
-
-  return TRUE;
+  return retval;
 }
 
 static dbus_bool_t
 _dbus_daemon_already_runs (DBusString *address, DBusString *shm_name, const char *scope)
 {
-  HANDLE lock;
+  DBusRMutex *lock = NULL;
   HANDLE daemon;
   DBusString mutex_name;
-  dbus_bool_t bRet = TRUE;
+  dbus_bool_t retval = FALSE;
 
   if (!_dbus_string_init (&mutex_name))
     return FALSE;
 
-  if (!_dbus_get_mutex_name (&mutex_name,scope) ||
+  if (!_dbus_get_mutex_name (&mutex_name, scope) ||
       /* not determinable */
       _dbus_string_get_length (&mutex_name) == 0)
     {
@@ -3313,30 +3205,33 @@ _dbus_daemon_already_runs (DBusString *address, DBusString *shm_name, const char
     }
 
   // sync _dbus_daemon_publish_session_bus_address, _dbus_daemon_unpublish_session_bus_address and _dbus_daemon_already_runs
-  lock = _dbus_global_lock (cUniqueDBusInitMutex);
+  lock = _dbus_win_rmutex_named_new (cUniqueDBusInitMutex);
+  if (lock == NULL)
+    return FALSE;
+
+  _dbus_platform_rmutex_lock (lock);
 
   // do checks
   daemon = CreateMutexA (NULL, FALSE, _dbus_string_get_const_data (&mutex_name));
-  if(WaitForSingleObject (daemon, 10) != WAIT_TIMEOUT)
+  if (WaitForSingleObject (daemon, 10) != WAIT_TIMEOUT)
     {
       ReleaseMutex (daemon);
       CloseHandle (daemon);
-
-      _dbus_global_unlock (lock);
-      _dbus_string_free (&mutex_name);
-      return FALSE;
+      goto out;
     }
 
-  // read shm
-  bRet = _dbus_get_autolaunch_shm (address, shm_name);
+  // read shm, wait max 2 seconds
+  retval = _dbus_get_autolaunch_shm (address, shm_name, TRUE);
 
   // cleanup
   CloseHandle (daemon);
 
-  _dbus_global_unlock (lock);
+out:
+  _dbus_platform_rmutex_unlock (lock);
+  _dbus_platform_rmutex_free (lock);
   _dbus_string_free (&mutex_name);
 
-  return bRet;
+  return retval;
 }
 
 dbus_bool_t
@@ -3344,21 +3239,22 @@ _dbus_get_autolaunch_address (const char *scope,
                               DBusString *address,
                               DBusError *error)
 {
-  HANDLE mutex = NULL;
+  DBusRMutex *lock = NULL;
   STARTUPINFOA si;
   PROCESS_INFORMATION pi;
   dbus_bool_t retval = FALSE;
   LPSTR lpFile;
   char dbus_exe_path[MAX_PATH];
   DBusString dbus_args = _DBUS_STRING_INIT_INVALID;
-  const char * daemon_name = DBUS_DAEMON_NAME ".exe";
+  const char *daemon_name = DBUS_DAEMON_NAME ".exe";
   DBusString shm_name;
+  HANDLE ready_event_handle = NULL;
 
   _DBUS_ASSERT_ERROR_IS_CLEAR (error);
 
   if (!_dbus_string_init (&shm_name))
     {
-      _DBUS_SET_OOM(error);
+      _DBUS_SET_OOM (error);
       return FALSE;
     }
 
@@ -3370,17 +3266,25 @@ _dbus_get_autolaunch_address (const char *scope,
       goto out;
     }
 
-  mutex = _dbus_global_lock (cDBusAutolaunchMutex);
+  lock = _dbus_win_rmutex_named_new (cDBusAutolaunchMutex);
+  if (lock == NULL)
+    {
+      dbus_set_error (error, DBUS_ERROR_FAILED, "Could not lock '%s'", cDBusAutolaunchMutex);
+      _dbus_string_free (&shm_name);
+      return FALSE;
+    }
+
+  _dbus_platform_rmutex_lock (lock);
 
   if (_dbus_daemon_already_runs (address, &shm_name, scope))
     {
       _dbus_verbose ("found running dbus daemon for scope '%s' at %s\n",
-                     scope ? scope : "", _dbus_string_get_const_data (&shm_name) );
+                     scope ? scope : "", _dbus_string_get_const_data (&shm_name));
       retval = TRUE;
       goto out;
     }
 
-  if (!SearchPathA (NULL, daemon_name, NULL, sizeof(dbus_exe_path), dbus_exe_path, &lpFile))
+  if (!SearchPathA (NULL, daemon_name, NULL, sizeof (dbus_exe_path), dbus_exe_path, &lpFile))
     {
       // Look in directory containing dbus shared library
       HMODULE hmod;
@@ -3391,7 +3295,7 @@ _dbus_get_autolaunch_address (const char *scope,
                      "trying path where dbus shared library is located");
 
       hmod = _dbus_win_get_dll_hmodule ();
-      rc = GetModuleFileNameA (hmod, dbus_module_path, sizeof(dbus_module_path));
+      rc = GetModuleFileNameA (hmod, dbus_module_path, sizeof (dbus_module_path));
       if (rc <= 0)
         {
           dbus_set_error_const (error, DBUS_ERROR_FAILED, "could not retrieve dbus shared library file name");
@@ -3403,7 +3307,7 @@ _dbus_get_autolaunch_address (const char *scope,
           char *ext_idx = strrchr (dbus_module_path, '\\');
           if (ext_idx)
             *ext_idx = '\0';
-          if (!SearchPathA (dbus_module_path, daemon_name, NULL, sizeof(dbus_exe_path), dbus_exe_path, &lpFile))
+          if (!SearchPathA (dbus_module_path, daemon_name, NULL, sizeof (dbus_exe_path), dbus_exe_path, &lpFile))
             {
               dbus_set_error (error, DBUS_ERROR_FAILED,
                               "Could not find dbus-daemon executable. "
@@ -3417,11 +3321,10 @@ _dbus_get_autolaunch_address (const char *scope,
         }
     }
 
-
   // Create process
-  ZeroMemory (&si, sizeof(si));
+  ZeroMemory (&si, sizeof (si));
   si.cb = sizeof (si);
-  ZeroMemory (&pi, sizeof(pi));
+  ZeroMemory (&pi, sizeof (pi));
 
   if (!_dbus_string_init (&dbus_args))
     {
@@ -3430,19 +3333,79 @@ _dbus_get_autolaunch_address (const char *scope,
       goto out;
     }
 
-  if (!_dbus_string_append_printf (&dbus_args, "\"%s\" --session", dbus_exe_path))
+  if (!_dbus_string_append_printf (&dbus_args, "\"%s\" %s", dbus_exe_path,
+                                   autolaunch_custom_command_line_parameter ? autolaunch_custom_command_line_parameter : "--session"))
     {
-      dbus_set_error_const (error, DBUS_ERROR_NO_MEMORY, "Failed to append string to argument buffer");
+      _DBUS_SET_OOM (error);
       retval = FALSE;
       goto out;
     }
 
-//  argv[i] = "--config-file=bus\\session.conf";
-  if(CreateProcessA (dbus_exe_path, _dbus_string_get_data (&dbus_args), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+  ready_event_handle = _dbus_win_event_create_inheritable (error);
+  if (ready_event_handle == NULL)
+    goto out;
+
+  _dbus_verbose ("Creating connection readiness event: handle=%p\n", ready_event_handle);
+  if (!_dbus_string_append_printf (&dbus_args, " \"--ready-event-handle=%p\"", ready_event_handle))
     {
+      _DBUS_SET_OOM (error);
+      goto out;
+    }
+
+  _dbus_verbose ("Starting dbus daemon with args: '%s'\n", _dbus_string_get_const_data (&dbus_args));
+  if (CreateProcessA (dbus_exe_path, _dbus_string_get_data (&dbus_args), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+    {
+      DWORD status;
+      HANDLE events[2];
+
       CloseHandle (pi.hThread);
-      CloseHandle (pi.hProcess);
-      retval = _dbus_get_autolaunch_shm (address, &shm_name);
+
+      _dbus_verbose ("Wait until dbus-daemon is ready for connections (event handle %p)\n", ready_event_handle);
+
+      events[0] = ready_event_handle;
+      events[1] = pi.hProcess;
+      status = WaitForMultipleObjects (2, events, FALSE, 30000);
+
+      switch (status)
+        {
+        case WAIT_OBJECT_0:
+          /* ready event signalled, everything is okay */
+          retval = TRUE;
+          break;
+
+        case WAIT_OBJECT_0 + 1:
+          /* dbus-daemon process has exited */
+          dbus_set_error (error, DBUS_ERROR_SPAWN_CHILD_EXITED, "dbus-daemon exited before signalling ready");
+          goto out;
+
+        case WAIT_FAILED:
+          _dbus_win_set_error_from_last_error (error, "Unable to wait for server readiness (handle %p)", ready_event_handle);
+          goto out;
+
+        case WAIT_TIMEOUT:
+          /* GetLastError() is not set */
+          dbus_set_error (error, DBUS_ERROR_TIMEOUT, "Timed out waiting for server readiness or exit (handle %p)", ready_event_handle);
+          goto out;
+
+        default:
+          /* GetLastError() is probably not set? */
+          dbus_set_error (error, DBUS_ERROR_FAILED, "Unknown result '%lu' while waiting for server readiness (handle %p)", status, ready_event_handle);
+          goto out;
+        }
+      _dbus_verbose ("Got signal that dbus-daemon with process id '%ld' is ready for connections\n", GetProcessId (pi.hProcess));
+
+      if (autolaunch_handle_location != NULL)
+        {
+          *autolaunch_handle_location = pi.hProcess;
+          _dbus_verbose ("Returning process handle of started server (handle=%p)\n", pi.hProcess);
+        }
+      else
+        {
+          CloseHandle (pi.hProcess);
+        }
+
+      /* do not wait for the appearance of shm, we can assume that it is present */
+      retval = _dbus_get_autolaunch_shm (address, &shm_name, FALSE);
       if (retval == FALSE)
         dbus_set_error_const (error, DBUS_ERROR_FAILED, "Failed to get autolaunch address from launched dbus-daemon");
     }
@@ -3454,14 +3417,16 @@ _dbus_get_autolaunch_address (const char *scope,
 
 out:
   _DBUS_ASSERT_ERROR_XOR_BOOL (error, retval);
-  if (mutex != NULL)
-    _dbus_global_unlock (mutex);
+  _dbus_platform_rmutex_unlock (lock);
+  _dbus_platform_rmutex_free (lock);
   _dbus_string_free (&shm_name);
   _dbus_string_free (&dbus_args);
+  if (ready_event_handle)
+    _dbus_win_event_free (ready_event_handle, NULL);
 
+  _DBUS_ASSERT_ERROR_XOR_BOOL (error, retval);
   return retval;
- }
-
+}
 
 /** Makes the file readable by every user in the system.
  *
@@ -4082,7 +4047,7 @@ _dbus_logv (DBusSystemLogSeverity  severity,
     {
       DBusString out = _DBUS_STRING_INIT_INVALID;
       const char *message = NULL;
-      DBUS_VA_COPY (tmp, args);
+      va_copy (tmp, args);
 
       if (!_dbus_string_init (&out))
         goto out;
@@ -4109,7 +4074,7 @@ out:
 
   if (log_flags & DBUS_LOG_FLAGS_STDERR)
     {
-      DBUS_VA_COPY (tmp, args);
+      va_copy (tmp, args);
       fprintf (stderr, "%s[%lu]: %s: ", log_tag, _dbus_pid_for_log (), s);
       vfprintf (stderr, msg, tmp);
       fprintf (stderr, "\n");
@@ -4304,6 +4269,229 @@ _dbus_win_event_free (HANDLE handle, DBusError *error)
 
   _dbus_win_set_error_from_last_error (error, "Could not close event (handle %p)", handle);
   return FALSE;
+}
+
+#ifdef HAVE_AFUNIX_H
+static dbus_bool_t
+_dbus_open_socket (SOCKET           *socket_p,
+                   int               domain,
+                   int               type,
+                   int               protocol,
+                   DBusError        *error)
+{
+  if (!_dbus_win_startup_winsock ())
+    {
+      _DBUS_SET_OOM (error);
+      return FALSE;
+    }
+
+  *socket_p = socket (domain, type, protocol);
+  if (*socket_p == INVALID_SOCKET)
+    {
+      DBUS_SOCKET_SET_ERRNO ();
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "Failed to open socket: %s",
+                      _dbus_strerror_from_errno ());
+      return FALSE;
+    }
+
+  _dbus_win_handle_set_close_on_exec ((HANDLE) *socket_p);
+  return TRUE;
+}
+
+/**
+ * Opens a UNIX domain socket (as in the socket() call).
+ * Does not bind the socket.
+ *
+ * This will set CLOEXEC for the socket returned
+ *
+ * @param return location for socket descriptor
+ * @param error return location for an error
+ * @returns #FALSE if error is set
+ */
+static dbus_bool_t
+_dbus_open_unix_socket (SOCKET           *socket,
+                        DBusError        *error)
+{
+  return _dbus_open_socket (socket, AF_UNIX, SOCK_STREAM, 0, error);
+}
+#endif /* HAVE_AFUNIX_H */
+
+/**
+ * Creates a socket and connects it to the UNIX domain socket at the
+ * given path.  The socket is returned, and is set up as
+ * nonblocking.
+ *
+ * Abstract socket usage always fails.
+ *
+ * This will set FD_CLOEXEC for the socket returned.
+ *
+ * @param path the path to UNIX domain socket
+ * @param abstract #TRUE to use abstract namespace
+ * @param error return location for error code
+ * @returns a valid socket on success or an invalid socket on error
+ */
+DBusSocket
+_dbus_connect_unix_socket (const char     *path,
+                           dbus_bool_t     abstract,
+                           DBusError      *error)
+{
+  DBusSocket s = DBUS_SOCKET_INIT;
+
+#ifdef HAVE_AFUNIX_H
+  struct sockaddr_un addr;
+  size_t path_len;
+
+  _DBUS_STATIC_ASSERT (sizeof (addr.sun_path) > _DBUS_MAX_SUN_PATH_LENGTH);
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  _dbus_verbose ("connecting to unix socket %s abstract=%d\n",
+                 path, abstract);
+
+  if (abstract)
+    {
+      dbus_set_error (error, DBUS_ERROR_NOT_SUPPORTED,
+                      "Failed to connect: UNIX abstract socket is not supported on this system");
+      return s;
+    }
+
+  path_len = strlen (path);
+  if (path_len > _DBUS_MAX_SUN_PATH_LENGTH)
+    {
+      dbus_set_error (error, DBUS_ERROR_BAD_ADDRESS,
+                      "Failed to connect: socket name too long");
+      return s;
+    }
+
+  if (!_dbus_open_unix_socket (&s.sock, error))
+    {
+      _DBUS_ASSERT_ERROR_IS_SET (error);
+      return s;
+    }
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  _DBUS_ZERO (addr);
+  addr.sun_family = AF_UNIX;
+  strncpy (addr.sun_path, path, sizeof (addr.sun_path) - 1);
+
+  if (connect (s.sock, (struct sockaddr *) &addr, _DBUS_STRUCT_OFFSET (struct sockaddr_un, sun_path) + path_len) < 0)
+    {
+      DBUS_SOCKET_SET_ERRNO ();
+      dbus_set_error (error,
+                      _dbus_error_from_errno (errno),
+                      "Failed to connect to socket %s: %s",
+                      path, _dbus_strerror (errno));
+
+      _dbus_close_socket (&s, NULL);
+      return s;
+    }
+
+  if (!_dbus_set_socket_nonblocking (s, error))
+    _dbus_close_socket (&s, NULL);
+
+#else
+  dbus_set_error (error, DBUS_ERROR_NOT_SUPPORTED,
+                  "Failed to connect: UNIX socket is not supported with this build");
+#endif
+
+  return s;
+}
+
+/**
+ * Creates a socket and binds it to the given path,
+ * then listens on the socket. The socket is
+ * set to be nonblocking.
+ *
+ * Abstract socket usage always fails.
+ *
+ * This will set CLOEXEC for the socket returned
+ *
+ * @param path the socket name
+ * @param abstract #TRUE to use abstract namespace
+ * @param error return location for errors
+ * @returns a valid socket on success or an invalid socket on error
+ */
+DBusSocket
+_dbus_listen_unix_socket (const char     *path,
+                          dbus_bool_t     abstract,
+                          DBusError      *error)
+{
+  DBusSocket s = DBUS_SOCKET_INIT;
+
+#ifdef HAVE_AFUNIX_H
+  struct sockaddr_un addr;
+  size_t path_len;
+  _DBUS_STATIC_ASSERT (sizeof (addr.sun_path) > _DBUS_MAX_SUN_PATH_LENGTH);
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  _dbus_verbose ("listening on unix socket %s abstract=%d\n",
+                 path, abstract);
+
+  if (abstract)
+    {
+      dbus_set_error (error, DBUS_ERROR_NOT_SUPPORTED,
+                      "Failed to listen: UNIX abstract socket is not supported on this system");
+      return s;
+    }
+
+  if (!_dbus_open_unix_socket (&s.sock, error))
+    {
+      _DBUS_ASSERT_ERROR_IS_SET (error);
+      return s;
+    }
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  _DBUS_ZERO (addr);
+  addr.sun_family = AF_UNIX;
+  path_len = strlen (path);
+
+  /* see related comment in dbus-sysdeps-unix.c */
+  /* there is no S_ISSOCK on windows yet, so just unlink the path */
+  unlink (path);
+
+  if (path_len > _DBUS_MAX_SUN_PATH_LENGTH)
+    {
+      dbus_set_error (error, DBUS_ERROR_BAD_ADDRESS,
+                      "Failed to listen: socket name too long");
+      _dbus_close_socket (&s, NULL);
+      return s;
+    }
+
+  strncpy (addr.sun_path, path, sizeof (addr.sun_path) - 1);
+
+  if (bind (s.sock, (struct sockaddr *) &addr, _DBUS_STRUCT_OFFSET (struct sockaddr_un, sun_path) + path_len) < 0)
+    {
+      DBUS_SOCKET_SET_ERRNO ();
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "Failed to bind socket \"%s\": %s",
+                      path, _dbus_strerror (errno));
+      _dbus_close_socket (&s, NULL);
+      return s;
+    }
+
+  if (listen (s.sock, SOMAXCONN /* backlog */) < 0)
+    {
+      DBUS_SOCKET_SET_ERRNO ();
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "Failed to listen on socket \"%s\": %s",
+                      path, _dbus_strerror (errno));
+      _dbus_close_socket (&s, NULL);
+      return s;
+    }
+
+  if (!_dbus_set_socket_nonblocking (s, error))
+    {
+      _DBUS_ASSERT_ERROR_IS_SET (error);
+      _dbus_close_socket (&s, NULL);
+      return s;
+    }
+#else
+  dbus_set_error (error, DBUS_ERROR_NOT_SUPPORTED,
+                  "Failed to listen: UNIX socket is not supported with this build");
+#endif
+
+  return s;
 }
 
 /** @} end of sysdeps-win */

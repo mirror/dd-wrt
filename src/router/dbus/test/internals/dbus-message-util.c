@@ -12,6 +12,8 @@
  * Copyright 2014 Ralf Habacker
  * Copyright 2017 Endless Mobile, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -510,7 +512,6 @@ process_test_subdir (const DBusString          *test_base_dir,
 
   _dbus_test_diag ("Testing %s:", subdir);
 
- next:
   while (_dbus_directory_get_next_file (dir, &filename, &error))
     {
       DBusString full_path;
@@ -531,7 +532,7 @@ process_test_subdir (const DBusString          *test_base_dir,
           _dbus_verbose ("Skipping non-.message-raw file %s\n",
                          _dbus_string_get_const_data (&filename));
 	  _dbus_string_free (&full_path);
-          goto next;
+          continue;
         }
 
       _dbus_test_diag ("    %s",
@@ -588,6 +589,10 @@ foreach_message_file (const char                *test_data_dir,
   retval = FALSE;
 
   _dbus_string_init_const (&test_directory, test_data_dir);
+
+  if (!process_test_subdir (&test_directory, "valid-messages",
+                            DBUS_VALID, func, user_data))
+    goto failed;
 
   if (!process_test_subdir (&test_directory, "invalid-messages",
                             DBUS_INVALID_FOR_UNKNOWN_REASON, func, user_data))

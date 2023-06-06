@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2006 Thiago Macieira <thiago@kde.org>
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -36,6 +38,8 @@
 #include <pwd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
+
+#include "dbus/dbus-internals.h"
 
 Display *xdisplay = NULL;
 static Atom selection_atom;
@@ -333,7 +337,7 @@ x11_get_address (char **paddress, pid_t *pid, long *wid)
                                    XA_CARDINAL, &type, &format, &items, &after,
                                    (unsigned char **) &data);
       if (result == Success && type != None && after == 0 && data != NULL && format == 32)
-        *pid = (pid_t) *(long*) data;
+        *pid = (pid_t) *(long*) (void*) data;
       XFree (data);
     }
 
@@ -451,7 +455,24 @@ x11_save_address (char *address, pid_t pid, long *wid)
 int
 x11_init (void)
 {
-  return open_x11 () != NULL && init_x_atoms (xdisplay);
+  int ok;
+
+  /*
+   * The X11 connection is opened and never closed. Because dbus-launch
+   * forks and continues to run non-trivial code in a forked child, it is
+   * not clear whether (or where) it would be safe to close it; instead, we
+   * leave it open until process exit, at which point the socket is cleaned
+   * up by the kernel.
+   *
+   * Any memory allocated for the X11 connection is only allocated once per
+   * run of dbus-launch, so there's no need to keep track of it, and we can
+   * silence memory leak warnings from AddressSanitizer as uninteresting.
+   */
+  _DBUS_BEGIN_IGNORE_LEAKS;
+  ok = open_x11 () != NULL && init_x_atoms (xdisplay);
+  _DBUS_END_IGNORE_LEAKS;
+
+  return ok;
 }
 
 void

@@ -10,15 +10,16 @@
 int
 main (int argc, char **argv)
 {
-  char *p;  
-
   _dbus_disable_crash_handling ();
 
 #ifdef HAVE_RAISE
   raise (SIGSEGV);
+#else
+  {
+    volatile char *p = NULL;
+    *p = 'a';
+  }
 #endif
-  p = NULL;
-  *p = 'a';
-  
+
   return 0;
 }

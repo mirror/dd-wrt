@@ -24,5 +24,8 @@
     <allow send_interface="com.example.CannotUnicast2" send_broadcast="true"/>
 
     <deny receive_interface="com.example.CannotReceive"/>
+
+    <!-- Used to reproduce dbus#457 -->
+    <deny receive_interface="org.freedesktop.DBus" receive_member="NameAcquired"/>
   </policy>
 </busconfig>

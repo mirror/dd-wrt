@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -125,6 +127,10 @@ typedef enum
   DBUS_SERVER_LISTEN_DID_NOT_CONNECT, /**< well-formed address but failed to set it up */
   DBUS_SERVER_LISTEN_ADDRESS_ALREADY_USED /**< address is already used */
 } DBusServerListenResult;
+
+DBusServerListenResult _dbus_server_listen_unix_socket (DBusAddressEntry *entry,
+                                                        DBusServer      **server_p,
+                                                        DBusError        *error);
 
 DBusServerListenResult _dbus_server_listen_platform_specific (DBusAddressEntry  *entry,
                                                               DBusServer       **server_p,

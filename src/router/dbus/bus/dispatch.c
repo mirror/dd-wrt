@@ -5,6 +5,8 @@
  * Copyright (C) 2003, 2004, 2005  Red Hat, Inc.
  * Copyright (C) 2004  Imendio HB
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -4797,25 +4799,27 @@ setenv_TEST_LAUNCH_HELPER_CONFIG(const DBusString *test_data_dir,
 }
 
 static dbus_bool_t
-bus_dispatch_test_conf (const DBusString *test_data_dir,
-		        const char       *filename,
-		        dbus_bool_t       use_launcher)
+bus_dispatch_test_conf (const char  *test_data_dir_cstr,
+                        const char  *filename,
+                        dbus_bool_t  use_launcher)
 {
   BusContext *context;
   DBusConnection *foo;
   DBusConnection *bar;
   DBusConnection *baz;
   DBusError error;
+  DBusString test_data_dir;
 
+  _dbus_string_init_const (&test_data_dir, test_data_dir_cstr);
   _dbus_test_diag ("%s:%s...", _DBUS_FUNCTION_NAME, filename);
 
   /* save the config name for the activation helper */
-  if (!setenv_TEST_LAUNCH_HELPER_CONFIG (test_data_dir, filename))
+  if (!setenv_TEST_LAUNCH_HELPER_CONFIG (&test_data_dir, filename))
     _dbus_test_fatal ("no memory setting TEST_LAUNCH_HELPER_CONFIG");
 
   dbus_error_init (&error);
 
-  context = bus_context_new_test (test_data_dir, filename);
+  context = bus_context_new_test (&test_data_dir, filename);
   if (context == NULL)
     {
       _dbus_test_not_ok ("%s:%s - bus_context_new_test() failed",
@@ -4972,22 +4976,24 @@ bus_dispatch_test_conf (const DBusString *test_data_dir,
 
 #if defined(ENABLE_TRADITIONAL_ACTIVATION) && !defined(DBUS_WIN)
 static dbus_bool_t
-bus_dispatch_test_conf_fail (const DBusString *test_data_dir,
-		             const char       *filename)
+bus_dispatch_test_conf_fail (const char *test_data_dir_cstr,
+                             const char *filename)
 {
   BusContext *context;
   DBusConnection *foo;
   DBusError error;
+  DBusString test_data_dir;
 
+  _dbus_string_init_const (&test_data_dir, test_data_dir_cstr);
   _dbus_test_diag ("%s:%s...", _DBUS_FUNCTION_NAME, filename);
 
   /* save the config name for the activation helper */
-  if (!setenv_TEST_LAUNCH_HELPER_CONFIG (test_data_dir, filename))
+  if (!setenv_TEST_LAUNCH_HELPER_CONFIG (&test_data_dir, filename))
     _dbus_test_fatal ("no memory setting TEST_LAUNCH_HELPER_CONFIG");
 
   dbus_error_init (&error);
 
-  context = bus_context_new_test (test_data_dir, filename);
+  context = bus_context_new_test (&test_data_dir, filename);
   if (context == NULL)
     {
       _dbus_test_not_ok ("%s:%s - bus_context_new_test() failed",
@@ -5036,36 +5042,40 @@ bus_dispatch_test_conf_fail (const DBusString *test_data_dir,
 }
 #endif
 
-dbus_bool_t
-bus_dispatch_test (const char *test_data_dir_cstr)
-{
-  DBusString test_data_dir;
-
-  _dbus_string_init_const (&test_data_dir, test_data_dir_cstr);
-
 #ifdef ENABLE_TRADITIONAL_ACTIVATION
-  /* run normal activation tests */
-  _dbus_verbose ("Normal activation tests\n");
-  if (!bus_dispatch_test_conf (&test_data_dir,
-  			       "valid-config-files/debug-allow-all.conf", FALSE))
+dbus_bool_t
+bus_test_normal_activation (const char *test_data_dir_cstr)
+{
+  if (!bus_dispatch_test_conf (test_data_dir_cstr,
+                               "valid-config-files/debug-allow-all.conf", FALSE))
     return FALSE;
-
-#ifndef DBUS_WIN
-  /* run launch-helper activation tests */
-  _dbus_verbose ("Launch helper activation tests\n");
-  if (!bus_dispatch_test_conf (&test_data_dir,
-  			       "valid-config-files-system/debug-allow-all-pass.conf", TRUE))
-    return FALSE;
-
-  /* run select launch-helper activation tests on broken service files */
-  if (!bus_dispatch_test_conf_fail (&test_data_dir,
-  			            "valid-config-files-system/debug-allow-all-fail.conf"))
-    return FALSE;
-#endif
-#endif
 
   return TRUE;
 }
+
+#ifndef DBUS_WIN
+dbus_bool_t
+bus_test_helper_activation (const char *test_data_dir_cstr)
+{
+  if (!bus_dispatch_test_conf (test_data_dir_cstr,
+                               "valid-config-files-system/debug-allow-all-pass.conf", TRUE))
+    return FALSE;
+
+  return TRUE;
+}
+
+dbus_bool_t
+bus_test_failed_helper_activation (const char *test_data_dir_cstr)
+{
+  /* run select launch-helper activation tests on broken service files */
+  if (!bus_dispatch_test_conf_fail (test_data_dir_cstr,
+                                    "valid-config-files-system/debug-allow-all-fail.conf"))
+    return FALSE;
+
+  return TRUE;
+}
+#endif  /* !DBUS_WIN */
+#endif  /* ENABLE_TRADITIONAL_ACTIVATION */
 
 dbus_bool_t
 bus_dispatch_sha1_test (const char *test_data_dir_cstr)
@@ -5181,9 +5191,9 @@ bus_unix_fds_passing_test (const char *test_data_dir_cstr)
                                 DBUS_TYPE_INVALID))
     _dbus_test_fatal ("Failed to attach fds.");
 
-  if (!_dbus_close_socket (one[0], &error))
+  if (!_dbus_close_socket (&one[0], &error))
     _dbus_test_fatal ("Failed to close pipe #1 ");
-  if (!_dbus_close_socket (two[0], &error))
+  if (!_dbus_close_socket (&two[0], &error))
     _dbus_test_fatal ("Failed to close pipe #2 ");
 
   if (!(dbus_connection_can_send_type(foo, DBUS_TYPE_UNIX_FD)))
@@ -5250,9 +5260,9 @@ bus_unix_fds_passing_test (const char *test_data_dir_cstr)
   if (read(two[1].fd, &r, 1) != 1 || r != 'Z')
     _dbus_test_fatal ("Failed to read value from pipe.");
 
-  if (!_dbus_close_socket (one[1], &error))
+  if (!_dbus_close_socket (&one[1], &error))
     _dbus_test_fatal ("Failed to close pipe #1 ");
-  if (!_dbus_close_socket (two[1], &error))
+  if (!_dbus_close_socket (&two[1], &error))
     _dbus_test_fatal ("Failed to close pipe #2 ");
 
   _dbus_verbose ("Disconnecting foo\n");

@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -55,6 +57,8 @@ DBUS_PRIVATE_EXPORT
 DBusConnection *  _dbus_connection_ref_unlocked                (DBusConnection     *connection);
 DBUS_PRIVATE_EXPORT
 void              _dbus_connection_unref_unlocked              (DBusConnection     *connection);
+DBUS_PRIVATE_EXPORT
+dbus_uint32_t     _dbus_connection_get_next_client_serial      (DBusConnection *connection);
 void              _dbus_connection_queue_received_message_link (DBusConnection     *connection,
                                                                 DBusList           *link);
 dbus_bool_t       _dbus_connection_has_messages_to_send_unlocked (DBusConnection     *connection);

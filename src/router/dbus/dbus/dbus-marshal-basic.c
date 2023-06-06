@@ -4,6 +4,8 @@
  * Copyright (C) 2002 CodeFactory AB
  * Copyright (C) 2003, 2004, 2005 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,23 +32,10 @@
 
 #include <string.h>
 
-#if !defined(PRIx64) && defined(DBUS_WIN)
-#define PRIx64 "I64x"
-#endif
-
-#if defined(__GNUC__) && (__GNUC__ >= 4)
-# define _DBUS_ASSERT_ALIGNMENT(type, op, val) \
-  _DBUS_STATIC_ASSERT (__extension__ __alignof__ (type) op val)
-# define _DBUS_ASSERT_CMP_ALIGNMENT(left, op, right) \
-  _DBUS_STATIC_ASSERT (__extension__ __alignof__ (left) op __extension__ __alignof__ (right))
-#else
-  /* not gcc, so probably no alignof operator: just use a no-op statement
-   * that's valid in the same contexts */
-# define _DBUS_ASSERT_ALIGNMENT(type, op, val) \
-  _DBUS_STATIC_ASSERT (TRUE)
-# define _DBUS_ASSERT_CMP_ALIGNMENT(left, op, right) \
-  _DBUS_STATIC_ASSERT (TRUE)
-#endif
+#define _DBUS_ASSERT_ALIGNMENT(type, op, val) \
+  _DBUS_STATIC_ASSERT (_DBUS_ALIGNOF (type) op val)
+#define _DBUS_ASSERT_CMP_ALIGNMENT(left, op, right) \
+  _DBUS_STATIC_ASSERT (_DBUS_ALIGNOF (left) op _DBUS_ALIGNOF (right))
 
 /* True by definition, but just for completeness... */
 _DBUS_STATIC_ASSERT (sizeof (char) == 1);
@@ -106,7 +95,7 @@ _DBUS_ASSERT_ALIGNMENT (DBus8ByteStruct, <=, 8);
 static void
 pack_2_octets (dbus_uint16_t   value,
                int             byte_order,
-               unsigned char  *data)
+               void           *data)
 {
   _dbus_assert (_DBUS_ALIGN_ADDRESS (data, 2) == data);
 
@@ -119,7 +108,7 @@ pack_2_octets (dbus_uint16_t   value,
 static void
 pack_4_octets (dbus_uint32_t   value,
                int             byte_order,
-               unsigned char  *data)
+               void           *data)
 {
   _dbus_assert (_DBUS_ALIGN_ADDRESS (data, 4) == data);
 
@@ -132,7 +121,7 @@ pack_4_octets (dbus_uint32_t   value,
 static void
 pack_8_octets (dbus_uint64_t      value,
                int                byte_order,
-               unsigned char     *data)
+               void              *data)
 {
   _dbus_assert (_DBUS_ALIGN_ADDRESS (data, 8) == data);
 
@@ -182,9 +171,9 @@ _dbus_unpack_uint16 (int                  byte_order,
   _dbus_assert (_DBUS_ALIGN_ADDRESS (data, 2) == data);
 
   if (byte_order == DBUS_LITTLE_ENDIAN)
-    return DBUS_UINT16_FROM_LE (*(dbus_uint16_t*)data);
+    return DBUS_UINT16_FROM_LE (*(dbus_uint16_t *) (void *) data);
   else
-    return DBUS_UINT16_FROM_BE (*(dbus_uint16_t*)data);
+    return DBUS_UINT16_FROM_BE (*(dbus_uint16_t *) (void *) data);
 }
 #endif /* _dbus_unpack_uint16 */
 
@@ -203,9 +192,9 @@ _dbus_unpack_uint32 (int                  byte_order,
   _dbus_assert (_DBUS_ALIGN_ADDRESS (data, 4) == data);
 
   if (byte_order == DBUS_LITTLE_ENDIAN)
-    return DBUS_UINT32_FROM_LE (*(dbus_uint32_t*)data);
+    return DBUS_UINT32_FROM_LE (*(dbus_uint32_t *) (void *) data);
   else
-    return DBUS_UINT32_FROM_BE (*(dbus_uint32_t*)data);
+    return DBUS_UINT32_FROM_BE (*(dbus_uint32_t *) (void *) data);
 }
 #endif /* _dbus_unpack_uint32 */
 
@@ -553,7 +542,7 @@ _dbus_marshal_read_basic (const DBusString      *str,
       {
       volatile dbus_uint16_t *vp = value;
       pos = _DBUS_ALIGN_VALUE (pos, 2);
-      *vp = *(dbus_uint16_t *)(str_data + pos);
+      *vp = *(dbus_uint16_t *) (void *) (str_data + pos);
       if (byte_order != DBUS_COMPILER_BYTE_ORDER)
 	*vp = DBUS_UINT16_SWAP_LE_BE (*vp);
       pos += 2;
@@ -566,7 +555,7 @@ _dbus_marshal_read_basic (const DBusString      *str,
       {
       volatile dbus_uint32_t *vp = value;
       pos = _DBUS_ALIGN_VALUE (pos, 4);
-      *vp = *(dbus_uint32_t *)(str_data + pos);
+      *vp = *(dbus_uint32_t *) (void *) (str_data + pos);
       if (byte_order != DBUS_COMPILER_BYTE_ORDER)
 	*vp = DBUS_UINT32_SWAP_LE_BE (*vp);
       pos += 4;
@@ -579,9 +568,10 @@ _dbus_marshal_read_basic (const DBusString      *str,
       volatile dbus_uint64_t *vp = value;
       pos = _DBUS_ALIGN_VALUE (pos, 8);
       if (byte_order != DBUS_COMPILER_BYTE_ORDER)
-        *vp = DBUS_UINT64_SWAP_LE_BE (*(dbus_uint64_t*)(str_data + pos));
+        *vp = DBUS_UINT64_SWAP_LE_BE (
+            *(dbus_uint64_t *) (void *) (str_data + pos));
       else
-        *vp = *(dbus_uint64_t*)(str_data + pos);
+        *vp = *(dbus_uint64_t *) (void *) (str_data + pos);
       pos += 8;
       }
       break;
@@ -938,8 +928,8 @@ _dbus_swap_array (unsigned char *data,
                   int            n_elements,
                   int            alignment)
 {
-  unsigned char *d;
-  unsigned char *end;
+  void *d;
+  void *end;
 
   _dbus_assert (_DBUS_ALIGN_ADDRESS (data, alignment) == data);
 
@@ -947,14 +937,14 @@ _dbus_swap_array (unsigned char *data,
    * for the unit tests. don't ask.
    */
   d = data;
-  end = d + (n_elements * alignment);
+  end = data + (n_elements * alignment);
   
   if (alignment == 8)
     {
       while (d != end)
         {
           *((dbus_uint64_t*)d) = DBUS_UINT64_SWAP_LE_BE (*((dbus_uint64_t*)d));
-          d += 8;
+          d = ((unsigned char *) d) + 8;
         }
     }
   else if (alignment == 4)
@@ -962,7 +952,7 @@ _dbus_swap_array (unsigned char *data,
       while (d != end)
         {
           *((dbus_uint32_t*)d) = DBUS_UINT32_SWAP_LE_BE (*((dbus_uint32_t*)d));
-          d += 4;
+          d = ((unsigned char *) d) + 4;
         }
     }
   else
@@ -972,7 +962,7 @@ _dbus_swap_array (unsigned char *data,
       while (d != end)
         {
           *((dbus_uint16_t*)d) = DBUS_UINT16_SWAP_LE_BE (*((dbus_uint16_t*)d));
-          d += 2;
+          d = ((unsigned char *) d) + 2;
         }
     }
 }
@@ -1152,6 +1142,7 @@ _dbus_marshal_skip_basic (const DBusString      *str,
       break;
     case DBUS_TYPE_INT16:
     case DBUS_TYPE_UINT16:
+      /* Advance to the next suitably-aligned position >= *pos */
       *pos = _DBUS_ALIGN_VALUE (*pos, 2);
       *pos += 2;
       break;
@@ -1173,6 +1164,8 @@ _dbus_marshal_skip_basic (const DBusString      *str,
       {
         int len;
 
+        /* Let len be the number of bytes of string data, and advance
+         * *pos to just after the length */
         len = _dbus_marshal_read_uint32 (str, *pos, byte_order, pos);
         
         *pos += len + 1; /* length plus nul */
@@ -1193,6 +1186,10 @@ _dbus_marshal_skip_basic (const DBusString      *str,
       _dbus_assert_not_reached ("not a basic type");
       break;
     }
+
+  /* We had better still be in-bounds at this point (pointing either into
+   * the content of the string, or 1 past the logical length of the string) */
+  _dbus_assert (*pos <= _dbus_string_get_length (str));
 }
 
 /**
@@ -1214,23 +1211,34 @@ _dbus_marshal_skip_array (const DBusString  *str,
   int i;
   int alignment;
 
+  /* Advance to the next 4-byte-aligned position >= *pos */
   i = _DBUS_ALIGN_VALUE (*pos, 4);
 
+  /* Let array_len be the number of bytes of array data, and advance
+   * i to just after the length */
   array_len = _dbus_marshal_read_uint32 (str, i, byte_order, &i);
 
+  /* If the element type is more strictly-aligned than the length,
+   * advance i to the next suitably-aligned position
+   * (in other words, skip the padding) */
   alignment = _dbus_type_get_alignment (element_type);
 
   i = _DBUS_ALIGN_VALUE (i, alignment);
 
+  /* Skip the actual array data */
   *pos = i + array_len;
+
+  /* We had better still be in-bounds at this point (pointing either into
+   * the content of the string, or 1 past the logical length of the string) */
+  _dbus_assert (*pos <= _dbus_string_get_length (str));
 }
 
 /**
  * Gets the alignment requirement for the given type;
- * will be 1, 4, or 8.
+ * will be 1, 2, 4, or 8.
  *
  * @param typecode the type
- * @returns alignment of 1, 4, or 8
+ * @returns alignment of 1, 2, 4, or 8
  */
 int
 _dbus_type_get_alignment (int typecode)
@@ -1397,10 +1405,9 @@ _dbus_verbose_bytes (const unsigned char *data,
           if (i > 7 &&
               _DBUS_ALIGN_ADDRESS (&data[i], 8) == &data[i])
             {
-              _dbus_verbose (" u64: 0x%" PRIx64,
-                             *(dbus_uint64_t*)&data[i-8]);
-              _dbus_verbose (" dbl: %g",
-                             *(double*)&data[i-8]);
+              _dbus_verbose (" u64: 0x%" DBUS_INT64_MODIFIER "x",
+                             *(dbus_uint64_t *) (void *) &data[i - 8]);
+              _dbus_verbose (" dbl: %g", *(double *) (void *) &data[i - 8]);
             }
 
           _dbus_verbose ("\n");

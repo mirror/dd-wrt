@@ -78,10 +78,10 @@ static void
 test_assert_error_is_set (Fixture *f,
                           gconstpointer context G_GNUC_UNUSED)
 {
+#if defined(DBUS_ENABLE_ASSERT) && defined(DBUS_ENABLE_CHECKS)
   DBusError e = DBUS_ERROR_INIT;
   DBusError *ep = NULL;
 
-#if defined(DBUS_ENABLE_ASSERT) && defined(DBUS_ENABLE_CHECKS)
   if (!g_test_undefined ())
     {
       g_test_skip ("Not testing programming errors");

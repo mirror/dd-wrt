@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2002, 2003  Red Hat Inc.
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -284,6 +286,9 @@ void               dbus_connection_set_windows_user_function    (DBusConnection 
                                                                  DBusFreeFunction            free_data_function);
 DBUS_EXPORT
 void               dbus_connection_set_allow_anonymous          (DBusConnection             *connection,
+                                                                 dbus_bool_t                 value);
+DBUS_EXPORT
+void               dbus_connection_set_builtin_filters_enabled  (DBusConnection             *connection,
                                                                  dbus_bool_t                 value);
 DBUS_EXPORT
 void               dbus_connection_set_route_peer_messages      (DBusConnection             *connection,

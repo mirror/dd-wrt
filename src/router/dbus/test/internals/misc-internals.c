@@ -6,6 +6,8 @@
  * Copyright 2011-2019 Collabora Ltd.
  * Copyright 2012 Lennart Poettering
  *
+ * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
+ *
  * Licensed under the Academic Free License version 2.1
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,6 +37,7 @@
 
 #ifdef DBUS_UNIX
 #include "dbus/dbus-userdb.h"
+#include <unistd.h>
 #endif
 
 #include "misc-internals.h"
@@ -671,55 +674,96 @@ _dbus_misc_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   return TRUE;
 }
 
+_DBUS_GNUC_PRINTF (1, 2) static void
+start_test_dbus_server (const char *fmt, ...)
+{
+  DBusServer *server;
+
+  DBusError error = DBUS_ERROR_INIT;
+  DBusString listen_address = _DBUS_STRING_INIT_INVALID;
+  char *address;
+  char *id;
+  va_list ap;
+
+  if (!_dbus_string_init (&listen_address))
+    _dbus_test_fatal ("Out of memory");
+
+  va_start (ap, fmt);
+  if (!_dbus_string_append_printf_valist (&listen_address, fmt, ap))
+    _dbus_test_fatal ("Out of memory");
+  va_end (ap);
+
+  _dbus_test_diag ("checking server address '%s'",
+                   _dbus_string_get_const_data (&listen_address));
+  server = dbus_server_listen (_dbus_string_get_const_data (&listen_address),
+                               &error);
+  if (server == NULL)
+    {
+      _dbus_warn ("server listen error: %s: %s", error.name, error.message);
+      dbus_error_free (&error);
+      _dbus_test_fatal ("Failed to listen for valid address '%s'.",
+                        _dbus_string_get_const_data (&listen_address));
+    }
+
+  id = dbus_server_get_id (server);
+  _dbus_test_check (id != NULL);
+  address = dbus_server_get_address (server);
+  _dbus_test_check (address != NULL);
+
+  if (strstr (address, id) == NULL)
+    {
+      _dbus_warn ("server id '%s' is not in the server address '%s'", id,
+                  address);
+      _dbus_test_fatal ("bad server id or address");
+    }
+
+  dbus_free (id);
+  dbus_free (address);
+
+  dbus_server_disconnect (server);
+  dbus_server_unref (server);
+  _dbus_string_free (&listen_address);
+}
+
+#ifdef DBUS_UNIX
+static char test_socket_dir[] = DBUS_TEST_SOCKET_DIR "/dbus-test-XXXXXX";
+static void
+cleanup_test_socket_tempdir (void)
+{
+  if (rmdir (test_socket_dir) != 0)
+    _dbus_test_not_ok ("failed to remove test socket directory %s",
+                       test_socket_dir);
+  else
+    _dbus_test_diag ("removed test socket directory %s", test_socket_dir);
+}
+#endif
+
 static dbus_bool_t
 _dbus_server_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 {
-  const char *valid_addresses[] = {
-    "tcp:port=1234",
-    "tcp:host=localhost,port=1234",
-    "tcp:host=localhost,port=1234;tcp:port=5678",
+  start_test_dbus_server ("tcp:port=1234");
+  start_test_dbus_server ("tcp:host=localhost,port=1234");
+  start_test_dbus_server ("tcp:host=localhost,port=1234;tcp:port=5678");
+  start_test_dbus_server ("tcp:port=1234");
 #ifdef DBUS_UNIX
-    "unix:path=./boogie",
-    "tcp:port=1234;unix:path=./boogie",
+  /* Create a unique temporary directory for socket paths. */
+  if (mkdtemp (test_socket_dir) == NULL)
+    _dbus_test_fatal ("Failed to create temporary dir from template '%s'.",
+                      test_socket_dir);
+  /* Clean up the test socket directory using atexit() since the test function
+   * can call _dbus_test_fatal() which terminates the test program. */
+  atexit (cleanup_test_socket_tempdir);
+
+  /* Check that both absolute and relative paths work. */
+  start_test_dbus_server ("unix:path=%s/boogie", test_socket_dir);
+  start_test_dbus_server ("tcp:port=1234;unix:path=%s/boogie",
+                          test_socket_dir);
+
+  if (chdir (test_socket_dir) != 0)
+    _dbus_test_fatal ("Failed to chdir() to %s.", test_socket_dir);
+  start_test_dbus_server ("unix:path=./boogie");
+  start_test_dbus_server ("tcp:port=1234;unix:path=./boogie");
 #endif
-  };
-
-  DBusServer *server;
-  int i;
-
-  for (i = 0; i < _DBUS_N_ELEMENTS (valid_addresses); i++)
-    {
-      DBusError error = DBUS_ERROR_INIT;
-      char *address;
-      char *id;
-
-      server = dbus_server_listen (valid_addresses[i], &error);
-      if (server == NULL)
-        {
-          _dbus_warn ("server listen error: %s: %s", error.name, error.message);
-          dbus_error_free (&error);
-          _dbus_test_fatal ("Failed to listen for valid address.");
-        }
-
-      id = dbus_server_get_id (server);
-      _dbus_test_check (id != NULL);
-      address = dbus_server_get_address (server);
-      _dbus_test_check (address != NULL);
-
-      if (strstr (address, id) == NULL)
-        {
-          _dbus_warn ("server id '%s' is not in the server address '%s'",
-                      id, address);
-          _dbus_test_fatal ("bad server id or address");
-        }
-
-      dbus_free (id);
-      dbus_free (address);
-
-      dbus_server_disconnect (server);
-      dbus_server_unref (server);
-    }
-
   return TRUE;
 }
 

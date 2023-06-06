@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2003 Red Hat Inc.
  * Copyright (C) 1995 A. M. Kuchling
+ * SPDX-License-Identifier: (AFL-2.1 OR GPL-2.0-or-later) AND LicenseRef-pycrypto-orig
  *
  * Licensed under the Academic Free License version 2.1
  *
