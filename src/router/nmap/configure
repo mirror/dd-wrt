@@ -5498,13 +5498,13 @@ $as_echo "no" >&6; }
 
         if test -n "$PYTHON"; then
       # If the user set $PYTHON, use it and don't search something else.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $PYTHON version is >= 2.4" >&5
-$as_echo_n "checking whether $PYTHON version is >= 2.4... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $PYTHON version is >= 3" >&5
+$as_echo_n "checking whether $PYTHON version is >= 3... " >&6; }
       prog="import sys
 # split strings by '.' and convert to numeric.  Append some zeros
 # because we need at least 4 digits for the hex conversion.
 # map returns an iterator in Python 3.0 and a list in 2.x
-minver = list(map(int, '2.4'.split('.'))) + [0, 0, 0]
+minver = list(map(int, '3'.split('.'))) + [0, 0, 0]
 minverhex = 0
 # xrange is not present in Python 3.0 and range returns an iterator
 for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
@@ -5525,19 +5525,19 @@ fi
     else
       # Otherwise, try each interpreter until we find one that satisfies
       # VERSION.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a Python interpreter with version >= 2.4" >&5
-$as_echo_n "checking for a Python interpreter with version >= 2.4... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a Python interpreter with version >= 3" >&5
+$as_echo_n "checking for a Python interpreter with version >= 3... " >&6; }
 if ${am_cv_pathless_PYTHON+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	for am_cv_pathless_PYTHON in python2 python2.7 python2.6 python2.5 python2.4 python none; do
+	for am_cv_pathless_PYTHON in python3 python none; do
 	  test "$am_cv_pathless_PYTHON" = none && break
 	  prog="import sys
 # split strings by '.' and convert to numeric.  Append some zeros
 # because we need at least 4 digits for the hex conversion.
 # map returns an iterator in Python 3.0 and a list in 2.x
-minver = list(map(int, '2.4'.split('.'))) + [0, 0, 0]
+minver = list(map(int, '3'.split('.'))) + [0, 0, 0]
 minverhex = 0
 # xrange is not present in Python 3.0 and range returns an iterator
 for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
@@ -5751,10 +5751,6 @@ $as_echo "$am_cv_python_pyexecdir" >&6; }
   fi
 
 
-HAVE_PYTHON2=false
-if test $HAVE_PYTHON && test "x${PYTHON_VERSION%%.*}" = "x2"; then
-    HAVE_PYTHON2=true
-fi
 
 NDIFFDIR=ndiff
 
@@ -5767,15 +5763,15 @@ else
   with_ndiff=check
 fi
 
-if $HAVE_PYTHON2 ; then : ;
+if $HAVE_PYTHON ; then : ;
 else
   if test "$with_ndiff" = "check" ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Ndiff because Python 2.x with x>=4 was not found" >&5
-$as_echo "$as_me: WARNING: Not building Ndiff because Python 2.x with x>=4 was not found" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Ndiff because Python was not found" >&5
+$as_echo "$as_me: WARNING: Not building Ndiff because Python was not found" >&2;}
   elif test "$with_ndiff" = "yes"; then
     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "--with-ndiff requires Python 2.x with x>=4
+as_fn_error $? "--with-ndiff requires Python
 See \`config.log' for more details" "$LINENO" 5; }
   fi
   with_ndiff=no
@@ -5817,15 +5813,15 @@ else
 fi
 
 
-if $HAVE_PYTHON2 ; then : ;
+if $HAVE_PYTHON ; then : ;
 else
   if test "$with_zenmap" = "check"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Zenmap because Python 2.x with x>=4 was not found" >&5
-$as_echo "$as_me: WARNING: Not building Zenmap because Python 2.x with x>=4 was not found" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Zenmap because Python was not found" >&5
+$as_echo "$as_me: WARNING: Not building Zenmap because Python was not found" >&2;}
   elif test "$with_zenmap" = "yes"; then
     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "--with-zenmap requires Python 2.x with x>=4
+as_fn_error $? "--with-zenmap requires Python
 See \`config.log' for more details" "$LINENO" 5; }
   fi
   with_zenmap=no
@@ -7034,7 +7030,7 @@ else
 
   # If they didn't specify it, we try to find it
   if test $have_lua != yes; then
-    for ac_header in lua5.3/lua.h lua/5.3/lua.h lua.h lua/lua.h
+    for ac_header in lua5.4/lua.h lua/5.4/lua.h lua.h lua/lua.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -7071,7 +7067,7 @@ return lua_isyieldable ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' lua5.3 lua53 lua; do
+for ac_lib in '' lua5.4 lua54 lua; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -7109,30 +7105,30 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-    # We need Lua 5.3 exactly
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lua version == 503" >&5
-$as_echo_n "checking for lua version == 503... " >&6; }
+    # We need Lua 5.4 exactly
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lua version == 504" >&5
+$as_echo_n "checking for lua version == 504... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-      #ifdef HAVE_LUA5_3_LUA_H
-          #include <lua5.3/lua.h>
-      #elif defined HAVE_LUA_5_3_LUA_H
-          #include <lua/5.3/lua.h>
+      #ifdef HAVE_LUA5_4_LUA_H
+          #include <lua5.4/lua.h>
+      #elif defined HAVE_LUA_5_4_LUA_H
+          #include <lua/5.4/lua.h>
       #elif defined HAVE_LUA_H || defined LUA_INCLUDED
           #include <lua.h>
       #elif defined HAVE_LUA_LUA_H
           #include <lua/lua.h>
       #endif
 
-      #if (LUA_VERSION_NUM != 503)
+      #if (LUA_VERSION_NUM != 504)
           #error Incorrect Lua version
       #endif
 
 int
 main ()
 {
-if(LUA_VERSION_NUM != 503) return 1;
+if(LUA_VERSION_NUM != 504) return 1;
   ;
   return 0;
 }

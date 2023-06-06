@@ -15,17 +15,13 @@
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined LIBRESSL_VERSION_NUMBER
 #define HAVE_OPAQUE_STRUCTS 1
-#define FUNC_EVP_MD_CTX_init EVP_MD_CTX_reset
-#define FUNC_EVP_MD_CTX_cleanup EVP_MD_CTX_reset
-#define FUNC_EVP_CIPHER_CTX_init EVP_CIPHER_CTX_reset
-#define FUNC_EVP_CIPHER_CTX_cleanup EVP_CIPHER_CTX_reset
-#define PASS_EVP_CTX(ctx) (ctx)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+# include <openssl/provider.h>
+#endif
 #else
-#define FUNC_EVP_MD_CTX_init EVP_MD_CTX_init
-#define FUNC_EVP_MD_CTX_cleanup EVP_MD_CTX_cleanup
-#define FUNC_EVP_CIPHER_CTX_init EVP_CIPHER_CTX_init
-#define FUNC_EVP_CIPHER_CTX_cleanup EVP_CIPHER_CTX_cleanup
-#define PASS_EVP_CTX(ctx) (&(ctx))
+#define EVP_MD_CTX_new EVP_MD_CTX_create
+#define EVP_MD_CTX_free EVP_MD_CTX_destroy
+#define EVP_CIPHER_CTX_free EVP_CIPHER_CTX_cleanup
 #endif
 
 #include "nse_lua.h"
@@ -37,23 +33,6 @@ extern NmapOps o;
 
 #include "nse_openssl.h"
 
-/* OPENSSL_API_LEVEL per OpenSSL 3.0: decimal MMmmpp */
-#ifndef OPENSSL_API_LEVEL
-# if OPENSSL_API_COMPAT < 0x900000L
-#  define OPENSSL_API_LEVEL (OPENSSL_API_COMPAT)
-# else
-#  define OPENSSL_API_LEVEL \
-     (((OPENSSL_API_COMPAT >> 28) & 0xF) * 10000  \
-      + ((OPENSSL_API_COMPAT >> 20) & 0xFF) * 100 \
-      + ((OPENSSL_API_COMPAT >> 12) & 0xFF))
-# endif
-#endif
-
-
-#if OPENSSL_API_LEVEL >= 30000
-#include <openssl/provider.h>
-#endif
-
 #define NSE_SSL_LUA_ERR(_L) \
     luaL_error(_L, "OpenSSL error: %s", ERR_error_string(ERR_get_error(), NULL))
 
@@ -62,14 +41,14 @@ typedef struct bignum_data {
   bool should_free;
 } bignum_data_t;
 
-static int nse_pushbn( lua_State *L, BIGNUM *num)
+int nse_pushbn( lua_State *L, BIGNUM *num, bool should_free)
 {
   bignum_data_t * data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
   luaL_getmetatable( L, "BIGNUM" );
   lua_setmetatable( L, -2 );
   data->bn = num;
   /* Currently this is true for all uses in this file. */
-  data->should_free = true;
+  data->should_free = should_free;
   return 1;
 }
 
@@ -79,7 +58,7 @@ static int l_bignum_bin2bn( lua_State *L ) /** bignum_bin2bn( string s ) */
   const unsigned char * s = (unsigned char *) luaL_checklstring( L, 1, &len );
   BIGNUM * num = BN_new();
   BN_bin2bn( s, len, num );
-  return nse_pushbn(L, num);
+  return nse_pushbn(L, num, true);
 }
 
 static int l_bignum_dec2bn( lua_State *L ) /** bignum_dec2bn( string s ) */
@@ -87,7 +66,7 @@ static int l_bignum_dec2bn( lua_State *L ) /** bignum_dec2bn( string s ) */
   const char * s = luaL_checkstring( L, 1 );
   BIGNUM * num = BN_new();
   BN_dec2bn( &num, s );
-  return nse_pushbn(L, num);
+  return nse_pushbn(L, num, true);
 }
 
 static int l_bignum_hex2bn( lua_State *L ) /** bignum_hex2bn( string s ) */
@@ -95,7 +74,7 @@ static int l_bignum_hex2bn( lua_State *L ) /** bignum_hex2bn( string s ) */
   const char * s = luaL_checkstring( L, 1 );
   BIGNUM * num = BN_new();
   BN_hex2bn( &num, s );
-  return nse_pushbn(L, num);
+  return nse_pushbn(L, num, true);
 }
 
 static int l_bignum_rand( lua_State *L ) /** bignum_rand( number bits ) */
@@ -103,7 +82,7 @@ static int l_bignum_rand( lua_State *L ) /** bignum_rand( number bits ) */
   size_t bits = luaL_checkinteger( L, 1 );
   BIGNUM * num = BN_new();
   BN_rand( num, bits, -1, 0 );
-  return nse_pushbn(L, num);
+  return nse_pushbn(L, num, true);
 }
 
 static int l_bignum_mod_exp( lua_State *L ) /** bignum_mod_exp( BIGNUM a, BIGNUM p, BIGNUM m ) */
@@ -115,7 +94,7 @@ static int l_bignum_mod_exp( lua_State *L ) /** bignum_mod_exp( BIGNUM a, BIGNUM
   BN_CTX * ctx = BN_CTX_new();
   BN_mod_exp( result, a->bn, p->bn, m->bn, ctx );
   BN_CTX_free( ctx );
-  return nse_pushbn(L, result);
+  return nse_pushbn(L, result, true);
 }
 
 static int l_bignum_div( lua_State *L ) /* bignum_div( BIGNUM a, BIGNUM d ) */
@@ -127,8 +106,8 @@ static int l_bignum_div( lua_State *L ) /* bignum_div( BIGNUM a, BIGNUM d ) */
   BN_CTX * ctx = BN_CTX_new();
   BN_div(dv, rem, a->bn, d->bn, ctx);
   BN_CTX_free( ctx );
-  nse_pushbn(L, dv);
-  nse_pushbn(L, rem);
+  nse_pushbn(L, dv, true);
+  nse_pushbn(L, rem, true);
   return 2;
 }
 
@@ -138,7 +117,7 @@ static int l_bignum_add( lua_State *L ) /** bignum_add( BIGNUM a, BIGNUM b ) */
   bignum_data_t * b = (bignum_data_t *) luaL_checkudata(L, 2, "BIGNUM");
   BIGNUM * result = BN_new();
   BN_add( result, a->bn, b->bn );
-  return nse_pushbn(L, result);
+  return nse_pushbn(L, result, true);
 }
 
 static int l_bignum_num_bits( lua_State *L ) /** bignum_num_bits( BIGNUM bn ) */
@@ -184,7 +163,7 @@ static int l_bignum_is_prime( lua_State *L ) /** bignum_is_prime( BIGNUM p ) */
   bignum_data_t * p = (bignum_data_t *) luaL_checkudata( L, 1, "BIGNUM" );
   BN_CTX * ctx = BN_CTX_new();
   int is_prime =
-#if OPENSSL_API_LEVEL < 30000
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     BN_is_prime_ex( p->bn, BN_prime_checks, ctx, NULL );
 #else
     BN_check_prime( p->bn, ctx, NULL );
@@ -199,7 +178,7 @@ static int l_bignum_is_safe_prime( lua_State *L ) /** bignum_is_safe_prime( BIGN
   bignum_data_t * p = (bignum_data_t *) luaL_checkudata( L, 1, "BIGNUM" );
   BN_CTX * ctx = BN_CTX_new();
   int is_prime =
-#if OPENSSL_API_LEVEL < 30000
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     BN_is_prime_ex( p->bn, BN_prime_checks, ctx, NULL );
 #else
     BN_check_prime( p->bn, ctx, NULL );
@@ -210,7 +189,7 @@ static int l_bignum_is_safe_prime( lua_State *L ) /** bignum_is_safe_prime( BIGN
     BN_sub_word( n, (BN_ULONG)1 );
     BN_div_word( n, (BN_ULONG)2 );
     is_safe =
-#if OPENSSL_API_LEVEL < 30000
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
       BN_is_prime_ex( n, BN_prime_checks, ctx, NULL );
 #else
       BN_check_prime( n, ctx, NULL );
@@ -230,6 +209,18 @@ static int l_bignum_bn2bin( lua_State *L ) /** bignum_bn2bin( BIGNUM bn ) */
   if (!result) return luaL_error( L, "Couldn't allocate memory.");
 
   int len = BN_bn2bin( userdata->bn, result );
+  lua_pushlstring( L, (char *) result, len );
+  free( result );
+  return 1;
+}
+
+static int l_bignum_bn2mpi( lua_State *L ) /** bignum_bn2mpi( BIGNUM bn ) */
+{
+  bignum_data_t * userdata = (bignum_data_t *) luaL_checkudata(L, 1, "BIGNUM");
+  unsigned char * result = (unsigned char *) malloc( BN_bn2mpi( userdata->bn, NULL ) );
+  if (!result) return luaL_error( L, "Couldn't allocate memory.");
+
+  int len = BN_bn2mpi( userdata->bn, result );
   lua_pushlstring( L, (char *) result, len );
   free( result );
   return 1;
@@ -296,25 +287,23 @@ static int l_digest(lua_State *L)     /** digest(string algorithm, string messag
   const unsigned char *msg = (unsigned char *) luaL_checklstring( L, 2, &msg_len );
   unsigned char digest[EVP_MAX_MD_SIZE];
   const EVP_MD * evp_md;
-#if HAVE_OPAQUE_STRUCTS
-  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-#else
-  EVP_MD_CTX mdctx;
-#endif
+  EVP_MD_CTX *mdctx = NULL;
 
   evp_md = EVP_get_digestbyname( algorithm );
 
   if (!evp_md) return luaL_error( L, "Unknown digest algorithm: %s", algorithm );
 
-  FUNC_EVP_MD_CTX_init(PASS_EVP_CTX(mdctx));
+  mdctx = EVP_MD_CTX_new();
+  if (!mdctx) return NSE_SSL_LUA_ERR(L);
+
   if (!(
-      EVP_DigestInit_ex( PASS_EVP_CTX(mdctx), evp_md, NULL ) &&
-      EVP_DigestUpdate( PASS_EVP_CTX(mdctx), msg, msg_len ) &&
-      EVP_DigestFinal_ex( PASS_EVP_CTX(mdctx), digest, &digest_len ))) {
-    FUNC_EVP_MD_CTX_cleanup( PASS_EVP_CTX(mdctx) );
+      EVP_DigestInit_ex( mdctx, evp_md, NULL ) &&
+      EVP_DigestUpdate( mdctx, msg, msg_len ) &&
+      EVP_DigestFinal_ex( mdctx, digest, &digest_len ))) {
+    EVP_MD_CTX_free( mdctx );
     return NSE_SSL_LUA_ERR(L);
   }
-  FUNC_EVP_MD_CTX_cleanup( PASS_EVP_CTX(mdctx) );
+  EVP_MD_CTX_free( mdctx );
 
   lua_pushlstring( L, (char *) digest, digest_len );
   return 1;
@@ -407,41 +396,46 @@ static int l_encrypt(lua_State *L) /** encrypt( string algorithm, string key, st
 #if HAVE_OPAQUE_STRUCTS
   EVP_CIPHER_CTX *cipher_ctx = EVP_CIPHER_CTX_new();
 #else
-  EVP_CIPHER_CTX cipher_ctx;
+  EVP_CIPHER_CTX stack_ctx;
+  EVP_CIPHER_CTX *cipher_ctx = &stack_ctx;
+  EVP_CIPHER_CTX_init( cipher_ctx );
 #endif
-
-  FUNC_EVP_CIPHER_CTX_init( PASS_EVP_CTX(cipher_ctx) );
 
   /* First create the cipher context, then set the key length and padding, and
      check the iv length. Below we set the key and iv. */
   if (!(
-      EVP_EncryptInit_ex( PASS_EVP_CTX(cipher_ctx), evp_cipher, NULL, NULL, NULL ) &&
-      EVP_CIPHER_CTX_set_key_length( PASS_EVP_CTX(cipher_ctx), key_len ) &&
-      EVP_CIPHER_CTX_set_padding( PASS_EVP_CTX(cipher_ctx), padding ))) {
+      EVP_EncryptInit_ex( cipher_ctx, evp_cipher, NULL, NULL, NULL ) &&
+      EVP_CIPHER_CTX_set_key_length( cipher_ctx, key_len ) &&
+      EVP_CIPHER_CTX_set_padding( cipher_ctx, padding ))) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
     return NSE_SSL_LUA_ERR(L);
   }
 
-  if (iv != NULL && (int) iv_len != EVP_CIPHER_CTX_iv_length( PASS_EVP_CTX(cipher_ctx) )) {
+  if (iv != NULL && (int) iv_len != EVP_CIPHER_CTX_iv_length( cipher_ctx )) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
     return luaL_error( L, "Length of iv is %d; should be %d",
-      (int) iv_len, EVP_CIPHER_CTX_iv_length( PASS_EVP_CTX(cipher_ctx) ));
+      (int) iv_len, EVP_CIPHER_CTX_iv_length( cipher_ctx ));
   }
 
   int out_len, final_len;
   unsigned char * out = (unsigned char *) malloc( data_len + EVP_MAX_BLOCK_LENGTH );
-  if (!out) return luaL_error( L, "Couldn't allocate memory.");
+  if (!out) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
+    return luaL_error( L, "Couldn't allocate memory.");
+  }
 
   if (!(
-      EVP_EncryptInit_ex( PASS_EVP_CTX(cipher_ctx), NULL, NULL, key, iv ) &&
-      EVP_EncryptUpdate( PASS_EVP_CTX(cipher_ctx), out, &out_len, data, data_len ) &&
-      EVP_EncryptFinal_ex( PASS_EVP_CTX(cipher_ctx), out + out_len, &final_len ) )) {
-    FUNC_EVP_CIPHER_CTX_cleanup( PASS_EVP_CTX(cipher_ctx) );
+      EVP_EncryptInit_ex( cipher_ctx, NULL, NULL, key, iv ) &&
+      EVP_EncryptUpdate( cipher_ctx, out, &out_len, data, data_len ) &&
+      EVP_EncryptFinal_ex( cipher_ctx, out + out_len, &final_len ) )) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
     free( out );
     return NSE_SSL_LUA_ERR(L);
   }
 
   lua_pushlstring( L, (char *) out, out_len + final_len );
 
-  FUNC_EVP_CIPHER_CTX_cleanup( PASS_EVP_CTX(cipher_ctx) );
+  EVP_CIPHER_CTX_free( cipher_ctx );
   free( out );
 
   return 1;
@@ -464,39 +458,44 @@ static int l_decrypt(lua_State *L) /** decrypt( string algorithm, string key, st
 #if HAVE_OPAQUE_STRUCTS
   EVP_CIPHER_CTX *cipher_ctx = EVP_CIPHER_CTX_new();
 #else
-  EVP_CIPHER_CTX cipher_ctx;
+  EVP_CIPHER_CTX stack_ctx;
+  EVP_CIPHER_CTX *cipher_ctx = &stack_ctx;
+  EVP_CIPHER_CTX_init( cipher_ctx );
 #endif
 
-  FUNC_EVP_CIPHER_CTX_init( PASS_EVP_CTX(cipher_ctx) );
-
   if (!(
-      EVP_DecryptInit_ex( PASS_EVP_CTX(cipher_ctx), evp_cipher, NULL, NULL, NULL ) &&
-      EVP_CIPHER_CTX_set_key_length( PASS_EVP_CTX(cipher_ctx), key_len ) &&
-      EVP_CIPHER_CTX_set_padding( PASS_EVP_CTX(cipher_ctx), padding ))) {
+      EVP_DecryptInit_ex( cipher_ctx, evp_cipher, NULL, NULL, NULL ) &&
+      EVP_CIPHER_CTX_set_key_length( cipher_ctx, key_len ) &&
+      EVP_CIPHER_CTX_set_padding( cipher_ctx, padding ))) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
     return NSE_SSL_LUA_ERR(L);
   }
 
-  if (iv != NULL && (int) iv_len != EVP_CIPHER_CTX_iv_length( PASS_EVP_CTX(cipher_ctx) )) {
+  if (iv != NULL && (int) iv_len != EVP_CIPHER_CTX_iv_length( cipher_ctx )) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
     return luaL_error( L, "Length of iv is %d; should be %d",
-      (int) iv_len, EVP_CIPHER_CTX_iv_length( PASS_EVP_CTX(cipher_ctx) ));
+      (int) iv_len, EVP_CIPHER_CTX_iv_length( cipher_ctx ));
   }
 
   int out_len, final_len;
   unsigned char * out = (unsigned char *) malloc( data_len );
-  if (!out) return luaL_error( L, "Couldn't allocate memory.");
+  if (!out) {
+    EVP_CIPHER_CTX_free(cipher_ctx);
+    return luaL_error( L, "Couldn't allocate memory.");
+  }
 
   if (!(
-      EVP_DecryptInit_ex( PASS_EVP_CTX(cipher_ctx), NULL, NULL, key, iv ) &&
-      EVP_DecryptUpdate( PASS_EVP_CTX(cipher_ctx), out, &out_len, data, data_len ) &&
-      EVP_DecryptFinal_ex( PASS_EVP_CTX(cipher_ctx), out + out_len, &final_len ) )) {
-    FUNC_EVP_CIPHER_CTX_cleanup( PASS_EVP_CTX(cipher_ctx) );
+      EVP_DecryptInit_ex( cipher_ctx, NULL, NULL, key, iv ) &&
+      EVP_DecryptUpdate( cipher_ctx, out, &out_len, data, data_len ) &&
+      EVP_DecryptFinal_ex( cipher_ctx, out + out_len, &final_len ) )) {
+    EVP_CIPHER_CTX_free( cipher_ctx );
     free( out );
     return NSE_SSL_LUA_ERR(L);
   }
 
   lua_pushlstring( L, (char *) out, out_len + final_len );
 
-  FUNC_EVP_CIPHER_CTX_cleanup( PASS_EVP_CTX(cipher_ctx) );
+  EVP_CIPHER_CTX_free( cipher_ctx );
   free( out );
 
   return 1;
@@ -528,6 +527,7 @@ static const struct luaL_Reg bignum_methods[] = {
   { "num_bits", l_bignum_num_bits },
   { "num_bytes", l_bignum_num_bytes },
   { "tobin", l_bignum_bn2bin },
+  { "tompi", l_bignum_bn2mpi },
   { "todec", l_bignum_bn2dec },
   { "tohex", l_bignum_bn2hex },
   { "is_bit_set", l_bignum_is_bit_set },
@@ -554,6 +554,7 @@ static const struct luaL_Reg openssllib[] = {
   { "bignum_rand", l_bignum_rand },
   { "bignum_pseudo_rand", l_bignum_rand },
   { "bignum_bn2bin", l_bignum_bn2bin },
+  { "bignum_bn2mpi", l_bignum_bn2mpi },
   { "bignum_bn2dec", l_bignum_bn2dec },
   { "bignum_bn2hex", l_bignum_bn2hex },
   { "bignum_add", l_bignum_add },
@@ -582,7 +583,7 @@ LUALIB_API int luaopen_openssl(lua_State *L) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined LIBRESSL_VERSION_NUMBER
   OpenSSL_add_all_algorithms();
   ERR_load_crypto_strings();
-#elif OPENSSL_API_LEVEL >= 30000
+#elif OPENSSL_VERSION_NUMBER >= 0x30000000L
   if (NULL == OSSL_PROVIDER_load(NULL, "legacy") && o.debugging > 1)
   {
     // Legacy provider may not be available.

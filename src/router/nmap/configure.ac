@@ -230,23 +230,19 @@ AC_SEARCH_LIBS(gethostbyname, nsl)
 dnl Check IPv6 raw sending flavor.
 CHECK_IPV6_IPPROTO_RAW
 
-m4_define_default([_AM_PYTHON_INTERPRETER_LIST],[python2 python2.7 python2.6 python2.5 python2.4 python])
-AM_PATH_PYTHON([2.4], [HAVE_PYTHON=true], [HAVE_PYTHON=false])
-HAVE_PYTHON2=false
-if test $HAVE_PYTHON && test "x${PYTHON_VERSION%%.*}" = "x2"; then
-    HAVE_PYTHON2=true
-fi
+m4_define_default([_AM_PYTHON_INTERPRETER_LIST],[python3 python])
+AM_PATH_PYTHON([3], [HAVE_PYTHON=true], [HAVE_PYTHON=false])
 
 NDIFFDIR=ndiff
 
 # Do they want Ndiff?
 AC_ARG_WITH(ndiff, AC_HELP_STRING([--without-ndiff], [Skip installation of the Ndiff utility]), [], [with_ndiff=check])
-if $HAVE_PYTHON2 ; then : ;
+if $HAVE_PYTHON ; then : ;
 else
   if test "$with_ndiff" = "check" ; then
-    AC_MSG_WARN([Not building Ndiff because Python 2.x with x>=4 was not found])
+    AC_MSG_WARN([Not building Ndiff because Python was not found])
   elif test "$with_ndiff" = "yes"; then
-    AC_MSG_FAILURE([--with-ndiff requires Python 2.x with x>=4])
+    AC_MSG_FAILURE([--with-ndiff requires Python])
   fi
   with_ndiff=no
 fi
@@ -280,12 +276,12 @@ ZENMAPDIR=zenmap
 # Do they want Zenmap?
 AC_ARG_WITH(zenmap, AC_HELP_STRING([--without-zenmap], [Skip installation of the Zenmap graphical frontend]), [], [with_zenmap=check])
 
-if $HAVE_PYTHON2 ; then : ;
+if $HAVE_PYTHON ; then : ;
 else
   if test "$with_zenmap" = "check"; then
-    AC_MSG_WARN([Not building Zenmap because Python 2.x with x>=4 was not found])
+    AC_MSG_WARN([Not building Zenmap because Python was not found])
   elif test "$with_zenmap" = "yes"; then
-    AC_MSG_FAILURE([--with-zenmap requires Python 2.x with x>=4])
+    AC_MSG_FAILURE([--with-zenmap requires Python])
   fi
   with_zenmap=no
 fi
@@ -830,27 +826,27 @@ else
 
   # If they didn't specify it, we try to find it
   if test $have_lua != yes; then
-    AC_CHECK_HEADERS([lua5.3/lua.h lua/5.3/lua.h lua.h lua/lua.h], [break])
-    AC_SEARCH_LIBS(lua_isyieldable, [lua5.3 lua53 lua], [have_lua=yes],, [-lm])
+    AC_CHECK_HEADERS([lua5.4/lua.h lua/5.4/lua.h lua.h lua/lua.h], [break])
+    AC_SEARCH_LIBS(lua_isyieldable, [lua5.4 lua54 lua], [have_lua=yes],, [-lm])
     AC_LANG_PUSH(C)
-    # We need Lua 5.3 exactly
-    AC_MSG_CHECKING([for lua version == 503])
+    # We need Lua 5.4 exactly
+    AC_MSG_CHECKING([for lua version == 504])
     AC_PREPROC_IFELSE([ AC_LANG_PROGRAM( [[
-      #ifdef HAVE_LUA5_3_LUA_H
-          #include <lua5.3/lua.h>
-      #elif defined HAVE_LUA_5_3_LUA_H
-          #include <lua/5.3/lua.h>
+      #ifdef HAVE_LUA5_4_LUA_H
+          #include <lua5.4/lua.h>
+      #elif defined HAVE_LUA_5_4_LUA_H
+          #include <lua/5.4/lua.h>
       #elif defined HAVE_LUA_H || defined LUA_INCLUDED
           #include <lua.h>
       #elif defined HAVE_LUA_LUA_H
           #include <lua/lua.h>
       #endif
 
-      #if (LUA_VERSION_NUM != 503)
+      #if (LUA_VERSION_NUM != 504)
           #error Incorrect Lua version
       #endif
         ]],
-        [[if(LUA_VERSION_NUM != 503) return 1;]])
+        [[if(LUA_VERSION_NUM != 504) return 1;]])
     ],
     [have_lua=yes], [have_lua=no])
     AC_LANG_POP(C)
