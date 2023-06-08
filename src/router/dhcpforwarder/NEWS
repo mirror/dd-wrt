@@ -1,3 +1,27 @@
+Version 0.11 (2015-05-30)
+-------------------------
+	- implemented 'suboption' configuration tag which allows to set
+	  other relay-agent information beside the agent-id.  In detail,
+          setting of RFC 3527 link selection and RFC 5107 server identifier
+	  is now supported (thanks to Michael Rack for idea and code).
+
+	- fixed possible misalignment problem when calculating the ip
+	  checksum
+
+	- massive cleanup of code which handles the relay-agent information.
+
+	  COMPATIBILITY: this can change the generated DHCP requests when
+	  relaying non RFC compliant messages (e.g. when multiple 82 relay
+	  agent information are present).
+
+	- require a C99 compiler; this allows to cleanup code by using
+	  flexible arrays and designated array initializers
+
+	  COMPATIBILITY: this will break build with ancient toolchains but
+	  C99 exists now for 16 years already...
+
+	- fixed build with recent glibc
+
 Version 0.10 (2012-04-30)
 -------------------------
 	- removed duplicate dot in logged timestamp

@@ -1,5 +1,5 @@
-# Copyright (C) 2002, 2004, 2008
-#               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+# Copyright (C) 2002, 2004, 2008, 2014
+#               Enrico Scholz <enrico.scholz@ensc.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
 			   src/parser.h src/output.h src/logging.h		\
 			   src/ulimit_codes.h
 
-CLEANFILES		=  doc/dhcp-fwd.1
+CLEANFILES		=  doc/dhcp-fwd.1 */*.gcov */*.gcda */*.gcno
 
 EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 			   doc/dhcp-fwd.man

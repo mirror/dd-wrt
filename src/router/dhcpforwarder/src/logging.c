@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2008
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2008, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ static void WRITESTR(/*@sef@*//*@observer@*/char const *STR)
 #define WRITESTR(STR)	writeMsgStr((STR), strlen(STR))
 
 
-inline static char *
+static char *
 Xinet_ntop(sa_family_t af, /*@in@*/void const *src,
 	   /*@returned@*//*@out@*/char *dst, size_t cnt)
     /*@requires cnt>=8 /\ maxSet(dst) >= cnt@*/
@@ -61,7 +61,7 @@ Xinet_ntop(sa_family_t af, /*@in@*/void const *src,
 
 typedef /*@out@*/ char *	char_outptr;
 
-inline static void
+static void
 Xsnprintf(/*@out@*/char_outptr * const buffer, size_t * const len,
 	  /*@in@*/char const * const format, ...)
     /*@requires notnull *buffer@*/
@@ -89,7 +89,7 @@ Xsnprintf(/*@out@*/char_outptr * const buffer, size_t * const len,
   }
 }
 
-inline static void
+static void
 Xstrncat(/*@unique@*/char * const buffer,
 	 /*@in@*/char const * const what, size_t *len)
     /*@modifies *buffer, *len@*/

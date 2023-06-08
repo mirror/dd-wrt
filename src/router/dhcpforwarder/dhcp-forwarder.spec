@@ -1,7 +1,7 @@
 ## --*- rpm-spec -*--
 
-# Copyright (C) 2004, 2008
-#               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+# Copyright (C) 2004, 2008, 2014
+#               Enrico Scholz <enrico.scholz@ensc.de>
 #  
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
-Version:	0.10
+Version:	0.11
 Release:	%release_func 0
 Epoch:		0
 License:	GPLv3

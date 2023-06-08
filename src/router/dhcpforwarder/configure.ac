@@ -1,5 +1,5 @@
-dnl Copyright (C) 2002, 2003, 2004, 2008, 2010, 2012
-dnl               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+dnl Copyright (C) 2002, 2003, 2004, 2008, 2010, 2012, 2014
+dnl               Enrico Scholz <enrico.scholz@ensc.de>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with this program. If not, see http://www.gnu.org/licenses/.
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.10, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.11, [enrico.scholz@ensc.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-xz subdir-objects])
@@ -46,7 +46,7 @@ ENSC_INITRDDIR(initrddir)
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
 ENSC_CHECK_CC_FLAG(${RELEASE_CFLAGS})
-ENSC_CHECK_CC_FLAG([-Wall -W -Wno-unused-function])
+ENSC_CHECK_CC_FLAG([-Wall -W -Wshadow])
 
 if test x"${ensc_use_dietlibc}" != xyes; then
 	dnl dietlibc <= 0.17 does not compile with -std=c99... :(

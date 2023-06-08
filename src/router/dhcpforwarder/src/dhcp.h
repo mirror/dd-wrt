@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2008
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2008, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,14 +46,14 @@ struct DHCPHeader  {
 } __attribute__((__packed__));
 
 struct DHCPOptions {
-    uint32_t			cookie;
-    __extension__ char		data __flexarr;
+    uint32_t		cookie;
+    char		data[];
 } __attribute__((__packed__));
 
 struct DHCPSingleOption {
-    uint8_t			code;
-    uint8_t			len;
-    __extension__ uint8_t	data __flexarr;
+    uint8_t		code;
+    uint8_t		len;
+    uint8_t		data[];
 } __attribute__((__packed__));
 
 
@@ -103,10 +103,21 @@ enum {
 };
 
 enum {
-  agCIRCUITID	= 1u,
-  agREMOTEID	= 2u
+  agCIRCUITID	  = 1u,
+  agREMOTEID	  = 2u,
+  /* Link Selection  RFC3527 */
+  agLINKSELECT	  = 5u,
+  /* Server Identifier Override Suboption Definition - RFC 5107 */
+  agREPLACESERVER = 11u,
 };
 #endif
+
+inline static size_t
+DHCP_ptrdiff(struct DHCPSingleOption const *a,
+	     struct DHCPSingleOption const *b)
+{
+  return reinterpret_cast(uintptr_t)(a) - reinterpret_cast(uintptr_t)(b);
+}
 
 /*@unused@*/
 inline static size_t
@@ -121,18 +132,20 @@ DHCP_getOptionLength(/*@sef@*//*@in@*/struct DHCPSingleOption const *opt)
 }
 
 /*@unused@*/
-inline static void
+inline static size_t
 DHCP_removeOption(struct DHCPSingleOption *opt,
-		  struct DHCPSingleOption const *end_opt)
+		  struct DHCPSingleOption **end_opt)
     /*@requires opt <= end_opt@*/
     /*@modifies *opt@*/
 {
   size_t		len = DHCP_getOptionLength(opt);
   char * const		start = reinterpret_cast(char *)(opt);
-  char const * const	end   = reinterpret_cast(char const *)(end_opt);
+  char const * const	end   = reinterpret_cast(char const *)(*end_opt);
 
-  assert(opt <= end_opt);
-  if (start+len > end) return;	// TODO: broken option-list ... what to do?
+  assert(opt <= *end_opt);
+  if (start+len > end)
+    // TODO: broken option-list ... what to do?
+    return 0;
 
     // end-start  -->  character count between opt and end_opt without end_opt
     // -len       -->  size of the option to be removed
@@ -140,6 +153,10 @@ DHCP_removeOption(struct DHCPSingleOption *opt,
     /*@-strictops@*/
   memmove(start, start+len, end-(start+len) + 1);
     /*@=strictops@*/
+
+  *end_opt = reinterpret_cast(struct DHCPSingleOption *)(end - len);
+
+  return len;
 }
 
 /*@unused@*/

@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2003, 2004, 2008
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2003, 2004, 2008, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -170,7 +170,7 @@ Erealloc(/*@only@*//*@out@*//*@null@*/ void *ptr,
     /*@ensures maxSet(result) == new_size@*/
     /*@modifies *ptr@*/
 {
-  register void		*res = realloc(ptr, new_size);
+  void		*res = realloc(ptr, new_size);
   FatalErrnoError(res==0 && new_size!=0, 1, "realloc()");
 
   return res;
@@ -182,7 +182,7 @@ Emalloc(size_t size)
     /*@*/
     /*@ensures maxSet(result) == size@*/
 {
-  register void /*@out@*/		*res = malloc(size);
+  void /*@out@*/		*res = malloc(size);
   FatalErrnoError(res==0 && size!=0, 1, "malloc()");
     /*@-compdef@*/
   return res;
@@ -233,7 +233,7 @@ Esocket(int domain, int type, int protocol)
     /*@globals internalState@*/
     /*@modifies internalState@*/
 {
-  register int		res = socket(domain, type, protocol);
+  int		res = socket(domain, type, protocol);
   FatalErrnoError(res==-1, 1, "socket()");
 
   return res;
@@ -296,7 +296,7 @@ Wselect(int n,
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno, *readfds, *writefds, *exceptfds, *timeout@*/
 {
-  register int			res;
+  int			res;
 
   retry:
   res = select(n, readfds, writefds, exceptfds, timeout);
@@ -315,7 +315,7 @@ Wrecv(int s,
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno, *buf@*/
 {
-  register ssize_t		res;
+  ssize_t		res;
 
   retry:
   res = recv(s, buf, len, flags);
@@ -336,8 +336,8 @@ WrecvfromInet4(int s,
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno, *buf, *from@*/
 {
-  register ssize_t		res;
-  socklen_t			size = sizeof(*from);
+  ssize_t		res;
+  socklen_t		size = sizeof(*from);
 
   retry:
   res = recvfrom(s, buf, len, flags,
@@ -366,8 +366,8 @@ WrecvfromFlagsInet4(int					s,
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno, *buf, *flags, *from, *pktp@*/
 {
-  register ssize_t		res;
-  socklen_t			size = sizeof(*from);
+  ssize_t		res;
+  socklen_t		size = sizeof(*from);
 
   retry:
   res = recvfrom_flags(s, buf, len, flags,
@@ -397,7 +397,7 @@ Wsendto(int s,
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno@*/
 {
-  register ssize_t		res;
+  ssize_t		res;
 
   retry:
   res = sendto(s, msg, len, flags, to, to_len);
@@ -413,7 +413,7 @@ Wsendmsg(int s, /*@dependent@*//*@in@*/struct msghdr const *msg, int flags)
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno@*/
 {
-  register ssize_t		res;
+  ssize_t		res;
 
   retry:
   res = sendmsg(s, msg, flags);

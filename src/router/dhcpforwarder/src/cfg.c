@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2003, 2004, 2008, 2010
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2003, 2004, 2008, 2010, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,20 +42,20 @@
 
 
 /*@noreturn@*/ static void
-exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
+exitFatal(char const msg[], size_t len) __attribute__ ((noreturn))
   /*:requires maxRead(msg)+1 >= len@*/
   /*@*/ ;
 
   /*@noreturn@*/
 #ifdef NEED_PRINTF
-static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/;
+void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/;
 #define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 #else
 #define scEXITFATAL(msg)	exit(-1)
 #endif
 
-inline static void
-exitFatal(char const msg[], register size_t len)
+static void
+exitFatal(char const msg[], size_t len)
 {
   (void)write(2, msg, len);
   (void)write(2, "\n", 1);
@@ -64,7 +64,7 @@ exitFatal(char const msg[], register size_t len)
 }
 
 
-inline static in_addr_t
+static in_addr_t
 sockaddrToInet4(/*@in@*//*@sef@*/struct sockaddr const *addr)
     /*@*/
 {
@@ -75,7 +75,7 @@ sockaddrToInet4(/*@in@*//*@sef@*/struct sockaddr const *addr)
   return (reinterpret_cast(struct sockaddr_in const *)(addr))->sin_addr.s_addr;
 }
 
-inline static void
+static void
 initClientFD(struct FdInfo *fd,
 	     /*@in@*//*@observer@*/struct InterfaceInfo const *iface)
     /*@globals internalState, fileSystem@*/
@@ -108,7 +108,7 @@ initClientFD(struct FdInfo *fd,
   Ebind(fd->fd, &s);
 }
 
-inline static void
+static void
 initRawFD(/*@out@*/int *fd)
     /*@globals internalState@*/
     /*@modifies internalState, *fd@*/
@@ -119,7 +119,7 @@ initRawFD(/*@out@*/int *fd)
   *fd = Esocket(AF_PACKET, SOCK_RAW, 0xFFFF);
 }
 
-inline static int
+static int
 initSenderFD(struct InterfaceInfo const *iface)
     /*@globals internalState, fileSystem@*/
     /*@modifies internalState, fileSystem@*/
@@ -149,7 +149,7 @@ initSenderFD(struct InterfaceInfo const *iface)
   return fd;
 }
 
-inline static void
+static void
 sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
 		 /*@out@*/uint8_t		mac[],
 		 /*@out@*/size_t		*len)
@@ -171,7 +171,7 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
   memcpy(mac, addr->sa_data, *len);
 }
 
-inline static void
+static void
 fillInterfaceInfo(struct InterfaceInfoList *ifs)
     /*@globals fileSystem, internalState@*/
     /*@modifies ifs->dta, fileSystem, internalState@*/
@@ -242,7 +242,7 @@ getSenderIfaceName(struct InterfaceInfoList const * const ifs,
   else     return 0;
 }
 
-inline static void
+static void
 initFDs(/*@out@*/struct FdInfoList		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
     /*@globals internalState, fileSystem@*/
@@ -305,7 +305,7 @@ initFDs(/*@out@*/struct FdInfoList		*fds,
   }
 }
 
-inline static void
+static void
 getConfig(/*@in@*/char const				*filename,
 	  /*@partial@*//*@dependent@*/struct ConfigInfo	*cfg)
     /*@globals internalState, fileSystem@*/
@@ -347,7 +347,7 @@ getConfig(/*@in@*/char const				*filename,
 }
 
   /*@maynotreturn@*/
-inline static void
+static void
 showVersion() /*@*/
 {
   (void)write(1, PACKAGE_STRING, strlen(PACKAGE_STRING));
@@ -355,7 +355,7 @@ showVersion() /*@*/
 }
 
   /*@maynotreturn@*/
-inline static void
+static void
 showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
 /*
@@ -377,7 +377,7 @@ showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
   (void)write(1, msg, strlen(msg));*/
 }
 
-inline static void
+static void
 limitResources(/*@in@*/struct UlimitInfoList const *limits)
     /*@globals internalState@*/
     /*@modifies internalState@*/
@@ -393,7 +393,7 @@ limitResources(/*@in@*/struct UlimitInfoList const *limits)
   }
 }
 
-inline static void
+static void
 freeLimitList(struct UlimitInfoList *limits)
     /*@modifies limits->dta, limits->len@*/
     /*@requires only   limits->dta@*/
@@ -404,7 +404,7 @@ freeLimitList(struct UlimitInfoList *limits)
   limits->len=0;
 }
 
-inline static pid_t
+static pid_t
 initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
     /*@globals  fileSystem, internalState@*/
     /*@modifies fileSystem, internalState@*/
@@ -434,7 +434,7 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
     return getpid();
 }
 
-inline static void
+static void
 parseCommandline(int argc, char *argv[],
 		 /*@out@*/struct ConfigInfo *	cfg)
     /*@modifies cfg@*/

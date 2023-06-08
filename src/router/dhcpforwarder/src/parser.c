@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2003, 2004, 2008, 2010
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2003, 2004, 2008, 2010, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include "compat.h"
 #include "output.h"
 #include "inet.h"
+#include "dhcp.h"
 
 #define tkEOF			(256)
 
@@ -63,7 +64,7 @@ static unsigned int	*CHARACTERS;
 
 enum { MAX_VARNAME_SZ = 32 };
 
-inline static void
+static void
 initCharacterClassification(/*@out@*/unsigned int *chrs)
     /*@requires maxSet(*chrs)==257@*/
     /*@globals CHARACTERS@*/
@@ -102,7 +103,7 @@ initCharacterClassification(/*@out@*/unsigned int *chrs)
 }
 
 
-inline static bool
+static bool
 isCharType(/*@sef@*/int c, /*@sef@*/unsigned int type) /*@*/
 {
     /*@-globs@*/
@@ -118,7 +119,7 @@ char const				*cfg_end;
 
   /*@noreturn@*//*@unused@*/
 #ifdef NEED_PRINTF
-static void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
+void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
 #define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 #define scWRITE(msg)		(void)write(2, msg, sizeof(msg)-1)
 #else
@@ -126,12 +127,13 @@ static void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
 #define scWRITE(msg)		(void)write(2, msg, sizeof(msg)-1)
 #endif
 /*@noreturn@*/
+
 static void
 exitFatal(/*@observer@*/char const msg[],
-	  register size_t len) __attribute__ ((noreturn)) /*@*/ ;
+	  size_t len) __attribute__ ((noreturn)) /*@*/ ;
 
-inline static void
-exitFatal(char const msg[], register size_t len)
+static void
+exitFatal(char const msg[], size_t len)
 {
     /*@-internalglobs@*//*@-globs@*/
   if (filename!=0) (void)write(2, filename, strlen(filename));
@@ -148,7 +150,7 @@ exitFatal(char const msg[], register size_t len)
   exit(3);
 }
 
-inline static void
+static void
 setNext()
     /*@globals col_nr, line_nr, fd, look_ahead@*/
     /*@modifies col_nr, line_nr, look_ahead@*/
@@ -170,7 +172,7 @@ setNext()
   }
 }
 
-inline static int
+static int
 getLookAhead()
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
@@ -180,12 +182,12 @@ getLookAhead()
   return look_ahead;
 }
 
-inline static void
+static void
 match(char /*@alt int@*/ c)
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
 {
-  register int		got = getLookAhead();
+  int		got = getLookAhead();
 
   if (got==tkEOF) scEXITFATAL("unexpected EOF while parsing");
   if (got!=c)     scEXITFATAL("unexpected symbol");
@@ -193,7 +195,7 @@ match(char /*@alt int@*/ c)
   look_ahead = tkEOF;
 }
 
-inline static void
+static void
 matchStr(/*@in@*/char const *str)
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
@@ -202,12 +204,12 @@ matchStr(/*@in@*/char const *str)
   for (; *str!='\0'; ++str) match(*str);
 }
 
-inline static /*@exposed@*/ struct InterfaceInfo *
+static /*@exposed@*/ struct InterfaceInfo *
 newInterface(struct InterfaceInfoList *ifs)
     /*@modifies *ifs@*/
 {
-  size_t		new_len;
-  struct InterfaceInfo	*result;
+  size_t			new_len;
+  struct InterfaceInfo		*result;
 
   ++ifs->len;
 
@@ -217,7 +219,7 @@ newInterface(struct InterfaceInfoList *ifs)
   assert(ifs->dta!=0);
 
   result              = &ifs->dta[ifs->len - 1];
-  memset(result, 0, sizeof result);
+  memset(result, 0, sizeof *result);
 
   result->if_ip       = INADDR_NONE;
   result->port_client = htons(DHCP_PORT_CLIENT);
@@ -227,7 +229,7 @@ newInterface(struct InterfaceInfoList *ifs)
   return result;
 }
 
-inline static /*@exposed@*/struct ServerInfo *
+static /*@exposed@*/struct ServerInfo *
 newServer(struct ServerInfoList *servers)
     /*@modifies *servers@*/
 {
@@ -246,7 +248,35 @@ newServer(struct ServerInfoList *servers)
   return result;
 }
 
-inline static /*@exposed@*/ struct UlimitInfo *
+static /*@exposed@*/struct DHCPSubOption *
+newDHCPSubOption(struct DHCPSuboptionsList *suboptionlist, unsigned int code)
+    /*@modifies *suboptionlist@*/
+{
+  size_t		new_len;
+  struct DHCPSubOption	*result;
+  size_t		i;
+
+  assert(code < 0x100);
+
+  for (i = 0; i < suboptionlist->len; ++i) {
+	  if (suboptionlist->dta[i].code == code)
+		 scEXITFATAL("duplicate suboption");
+  }
+
+  ++suboptionlist->len;
+  new_len            = suboptionlist->len * (sizeof(*suboptionlist->dta));
+  suboptionlist->dta = Erealloc(suboptionlist->dta, new_len);
+
+  assert(suboptionlist->dta!=0);
+  result = &suboptionlist->dta[suboptionlist->len - 1];
+  memset(result, 0, sizeof *result);
+
+  result->code = code;
+
+  return result;
+}
+
+static /*@exposed@*/ struct UlimitInfo *
 registerUlimit(struct UlimitInfoList *ulimits, int code, rlim_t val)
     /*@modifies *ulimits@*/
 {
@@ -285,11 +315,11 @@ registerUlimit(struct UlimitInfoList *ulimits, int code, rlim_t val)
   return result;
 }
 
-inline static /*@exposed@*/ struct InterfaceInfo *
+static /*@exposed@*/ struct InterfaceInfo *
 searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
    /*@*/
 {
-  register struct InterfaceInfo		*iface;
+  struct InterfaceInfo		*iface;
 
   assert(ifs->dta!=0 || ifs->len==0);
 
@@ -307,12 +337,12 @@ searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
   return iface;
 }
 
-inline static void
+static void
 matchEOL()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
 {
-  register int		state = 0xFF00;
+  int			state = 0xFF00;
 
   while (state!=0xFFFF) {
     int			c = getLookAhead();
@@ -342,13 +372,13 @@ matchEOL()
   scEXITFATAL("unexpected character");
 }
 
-inline static void
+static void
 readBlanks()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
 {
-  int			c   = 0;
-  register size_t	cnt = 0;
+  int		c   = 0;
+  size_t	cnt = 0;
 
   while (c!=tkEOF) {
     c = getLookAhead();
@@ -361,13 +391,13 @@ readBlanks()
 }
 
 /*@+charintliteral@*/
-inline static size_t
+static size_t
 readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
     /*@requires (maxSet(buffer)+1) >= len@*/
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
 {
-  register char		*ptr = buffer;
+  char		*ptr = buffer;
 
     /*@-ptrarith@*/
   while (ptr+1 < buffer+len) {
@@ -391,7 +421,7 @@ readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
 }
 /*@=charintliteral@*/
 
-inline static size_t
+static size_t
 readStringExpanded(/*@out@*/char *buffer, size_t len, unsigned int char_class)
 {
   int		c = getLookAhead();
@@ -429,7 +459,7 @@ readStringExpanded(/*@out@*/char *buffer, size_t len, unsigned int char_class)
   return readString(buffer, len, char_class);
 }
 
-inline static void
+static void
 readFileName(/*@out@*/char buffer[], size_t len)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
@@ -438,7 +468,7 @@ readFileName(/*@out@*/char buffer[], size_t len)
     scEXITFATAL("Invalid filename");
 }
 
-inline static void
+static void
 readUserName(/*@out@*/char buffer[], size_t len)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
@@ -447,7 +477,7 @@ readUserName(/*@out@*/char buffer[], size_t len)
     scEXITFATAL("Invalid user- or groupname");
 }
 
-inline static int
+static int
 readLimit()
     /*@globals fd, look_ahead, ULIMIT_CODES@*/
     /*@modifies look_ahead@*/
@@ -463,7 +493,7 @@ readLimit()
   scEXITFATAL("Unknown ulimit-specifier");
 }
 
-inline static long
+static long
 readLong()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -540,7 +570,7 @@ readLong()
   scEXITFATAL("Can not parse integer");
 }
 
-inline static int
+static int
 readInteger()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -548,7 +578,7 @@ readInteger()
   return static_cast(int)(readLong());
 }
 
-inline static int
+static int
 readIntegerExpanded()
 {
   char			buffer[1024];
@@ -567,7 +597,7 @@ readIntegerExpanded()
   return res;
 }
 
-inline static uint16_t
+static uint16_t
 readPort(uint16_t dflt)
 {
   int			res = readIntegerExpanded();
@@ -580,7 +610,7 @@ readPort(uint16_t dflt)
   return res;
 }
 
-inline static rlim_t
+static rlim_t
 readLimitVal()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -603,7 +633,7 @@ readLimitVal()
   return result;
 }
 
-inline static void
+static void
 readIfname(/*@out@*/char *iface)
     /*@requires (maxSet(iface)+1) >= IFNAMSIZ @*/
     /*@globals fd, look_ahead@*/
@@ -613,7 +643,7 @@ readIfname(/*@out@*/char *iface)
     scEXITFATAL("Invalid interface name");
 }
 
-inline static void
+static void
 readIp(/*@out@*/struct in_addr	*ip)
     /*@requires maxSet(ip) == 0@*/
     /*@globals fd, look_ahead@*/
@@ -626,7 +656,7 @@ readIp(/*@out@*/struct in_addr	*ip)
   if (inet_aton(buffer, ip)==0) scEXITFATAL("Invalid IP");
 }
 
-inline static void
+static void
 readBool(/*@out@*/bool *val)
     /*@requires maxSet(val) >= 0@*/
     /*@globals fd, look_ahead@*/
@@ -687,6 +717,59 @@ readBool(/*@out@*/bool *val)
   scEXITFATAL("unexpected character");
 }
 
+static struct InterfaceInfo *
+readExistingInterface(struct InterfaceInfoList *ifs)
+{
+	char			ifname[IFNAMSIZ];
+	struct InterfaceInfo	*iface;
+
+	readIfname(ifname);
+	iface = searchInterface(ifs, ifname);
+	readBlanks();
+
+	return iface;
+}
+
+static int suboptionCompare(void const *a_, void const *b_)
+{
+	struct DHCPSubOption const *a = a_;
+	struct DHCPSubOption const *b = b_;
+
+	if (a->code < b->code)
+		return -1;
+	else if (a->code > b->code)
+		return +1;
+	else
+		return 0;
+}
+
+static void finishSuboptions(struct InterfaceInfo *iface)
+{
+	struct DHCPSubOption	*opts = iface->suboptions.dta;
+	size_t			i;
+
+	if (!opts)
+		return;
+
+	qsort(opts, iface->suboptions.len, sizeof opts[0], suboptionCompare);
+
+	for (i = 0; i < iface->suboptions.len; ++i) {
+		if (opts[i].data == NULL)
+			opts[i].data = &opts[i].val;
+	}
+}
+
+static void finishInterfaces(struct InterfaceInfoList *ifaces)
+{
+	size_t		i;
+
+	for (i = 0; i < ifaces->len; ++i) {
+		struct InterfaceInfo	*iface = &ifaces->dta[i];
+
+		finishSuboptions(iface);
+	}
+}
+
 void
 parse(/*@in@*/char const		fname[],
       /*@dependent@*/struct ConfigInfo	*cfg)
@@ -696,7 +779,6 @@ parse(/*@in@*/char const		fname[],
   TokenTable		chrs;
   int			state = 0x0;
   char			ifname[IFNAMSIZ];
-  char			agent_id[IFNAMSIZ];
   char			name[PATH_MAX];
   long			nr = 0;
   struct in_addr	ip;
@@ -712,7 +794,7 @@ parse(/*@in@*/char const		fname[],
   int			fd;
   struct stat		st;
   char			*cfg_start;
-
+  struct DHCPSubOption	*suboption = suboption;
 
   filename = fname;
   line_nr  = 1u;
@@ -757,16 +839,16 @@ parse(/*@in@*/char const		fname[],
 	if      (isCharType(c, chrBLANK)) match(c);
 	else if (isCharType(c, chrNL))    matchEOL();
 	else switch (c) {
-	  case '#'	:  state = 0xFF00; break;
-	  case 'i'	:  state = 0x0100; break;
-	  case 'n'	:  state = 0x0200; break;
-	  case 's'	:  state = 0x0300; break;
-	  case 'u'	:  state = 0x0400; break;
-	  case 'g'	:  state = 0x0500; break;
-	  case 'c'	:  state = 0x0699; break;
-	  case 'l'	:  state = 0x0700; break;
-	  case 'p'	:  state = 0x0890; break;
-	  case tkEOF	:  state = 0xFFFF; break;
+	  case '#'	:  state = 0xFF00; break; // comment
+	  case 'i'	:  state = 0x0100; break; // interface
+	  case 'n'	:  state = 0x0200; break; // name
+	  case 's'	:  state = 0x0300; break; // server, suboption
+	  case 'u'	:  state = 0x0400; break; // uid, ulimit
+	  case 'g'	:  state = 0x0500; break; // gid
+	  case 'c'	:  state = 0x0699; break; // chroot
+	  case 'l'	:  state = 0x0700; break; // logfile, loglevel
+	  case 'p'	:  state = 0x0890; break; // pidfile, ports
+	  case tkEOF	:  state = 0xFFFF; break; // end of file
 	  default	:  goto err;
 	}
 	if (state!=0 && state!=0xFFFF) match(c);
@@ -1013,44 +1095,104 @@ parse(/*@in@*/char const		fname[],
 	break;
       }
 
-
       case 0x200	:
 	matchStr("ame");      readBlanks();
 	state = 0x201;
 	break;
 
       case 0x201	:
-	readIfname(ifname);   readBlanks();
-	readIfname(agent_id);
-	state = 0x202;
-	break;
-
-      case 0x202	:
       {
-	struct InterfaceInfo *	iface;
+        struct InterfaceInfo	*iface;
 
-	  // Reachable from state 0x201 only
-	assertDefined(ifname);
-	assertDefined(agent_id);
-	iface = searchInterface(&cfg->interfaces, ifname);
+	iface = readExistingInterface(&cfg->interfaces);
+	suboption = newDHCPSubOption(&iface->suboptions, agREMOTEID);
 
-	strcpy(iface->aid, agent_id);
-	state = 0xFFFE;
+	suboption->val.str = iface->aid;
+	state = 0x352;
 	break;
       }
 
       case 0x300	:
-	matchStr("erver");  readBlanks();
-	state=0x301;
+	// match option: s
+	switch (c) {
+	  case 'e' : state = 0x301; break;
+	  case 'u' : state = 0x350; break;
+	  default  : goto err;
+	}
 	break;
 
       case 0x301	:
+	// match option: server
+	matchStr("erver"); readBlanks();
+	state = 0x302;
+	break;
+
+      case 0x302	:
+	// get first parameter (ip / bcast)
 	switch (c) {
 	  case 'i'	:  state = 0x310; break;
 	  case 'b'	:  state = 0x320; break;
 	  default	:  goto err;
 	}
 	match(c);
+	break;
+
+      case 0x350	:
+      {
+	struct InterfaceInfo	*iface;
+	unsigned int		code;
+
+	/* match option: (s)uboption */
+	matchStr("uboption");
+	readBlanks();
+
+	iface = readExistingInterface(&cfg->interfaces);
+	code  = readInteger();
+
+	suboption = newDHCPSubOption(&iface->suboptions, code);
+
+	switch (code) {
+	  case agLINKSELECT:
+	  case agREPLACESERVER:
+	    state = 0x351;
+	    break;
+
+	  case agREMOTEID:
+	    suboption->val.str = iface->aid;
+	    state = 0x352;
+	    break;
+
+	  /* Unknown */
+	  default:
+	    scEXITFATAL("Unknown suboption - feel free to implement this feature by your own");
+	}
+
+	readBlanks();
+	break;
+      }
+
+      case 0x351	:
+	/* read a suboption which specifies an IPv4 address */
+	readIp(&ip);
+
+	suboption->len    = sizeof(suboption->val.ip);
+	suboption->data   = NULL;
+	suboption->val.ip = ip.s_addr;
+
+	state = 0xFFFE;
+	break;
+
+      case 0x352:
+	/* read an interface-name like suboption */
+	assertDefined(suboption->val.str);
+	readIfname(suboption->val.str);
+
+	suboption->len    = strlen(suboption->val.str);
+	suboption->data   = suboption->val.str;
+
+	suboption = NULL;		/* just for debugging... */
+
+	state = 0xFFFE;
 	break;
 
       case 0x310	:
@@ -1114,6 +1256,9 @@ parse(/*@in@*/char const		fname[],
 
   munmap(cfg_start, st.st_size);
   Eclose(fd);
+
+  finishInterfaces(&cfg->interfaces);
+
   return;
 
   err:

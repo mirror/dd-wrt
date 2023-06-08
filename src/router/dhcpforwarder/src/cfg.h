@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2003, 2004, 2008
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2003, 2004, 2008, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,28 @@
 #include "compat.h"
 
 
+struct DHCPSubOption {
+    uint8_t			code;  //< suboption-id
+    size_t			len;   //< suboption length
+
+    /** payload Points to a member of 'val' or to the 'aid' field of
+     *	interface. During parsing (when memory can be realloc()ed later), it can
+     *	be NULL which will be fixed later to point to 'val' */
+    void const			*data;
+
+    /** scratch buffer; 'data' will point to this */
+    union {
+	    in_addr_t		ip;
+	    char		*str;
+	    uint8_t		test[4];
+    }				val;
+};
+
+struct DHCPSuboptionsList {
+    struct DHCPSubOption	*dta; //< array of DHCPSuboptionsList
+    size_t			len;
+};
+
 struct InterfaceInfo {
     char	name[IFNAMSIZ];	//< name of the interface
     char	aid[IFNAMSIZ];	//< agent id
@@ -53,6 +75,8 @@ struct InterfaceInfo {
     size_t		if_maclen;	//< length of MAC
 
     int			sender_fd;	//< the sender-filedescriptor
+
+    struct DHCPSuboptionsList	suboptions; //< dhcp-relay suboptions
 };
 
 struct InterfaceInfoList {

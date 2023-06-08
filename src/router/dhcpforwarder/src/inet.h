@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2008
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2008, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ struct DHCPllPacket
     struct ether_header         eth;
     struct iphdr		ip;
     struct udphdr		udp;
-    __extension__ char		data __flexarr;
+    char			data[];
 } __attribute__((__packed__));
 
 #endif	/* DHCP_FORWARDER_SRC_INET_H */

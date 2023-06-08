@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2003, 2004, 2008, 2012
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2003, 2004, 2008, 2012, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,12 +52,10 @@
 
 typedef enum {
   acIGNORE,		//< Do nothing...
-  acREMOVE_ID,		//< Remove an already existing agent-id field
-  acADD_ID		//< Add an agent-id field if such a field does not
+  acREMOVE_AGENT_INFO,	//< Remove an already existing agent-id field
+  acADD_AGENT_INFO,	//< Add an agent-id field if such a field does not
 			//< already exists
-#ifdef ENABLE_AGENT_REPLACE
-  ,acREPLACE_ID		//< Replace an already existing agent-id field
-#endif
+  acREPLACE_AGENT_INFO,	//< Replace an already existing agent-id field
 } OptionFillAction;
 
 /*@checkmod@*/static struct ServerInfoList	servers;
@@ -65,7 +63,7 @@ typedef enum {
 
 unsigned long	g_compat_hacks;
 
-inline static void
+static void
 fillFDSet(/*@out@*/fd_set			*fdset,
 	  /*@out@*/int				*max)
     /*@globals fds@*/
@@ -89,7 +87,7 @@ fillFDSet(/*@out@*/fd_set			*fdset,
   }
 }
 
-inline static /*@exposed@*//*@null@*/struct FdInfo const *
+static /*@exposed@*//*@null@*/struct FdInfo const *
 lookupFD(/*@in@*/struct in_addr const addr)
     /*@globals fds@*/
 {
@@ -111,7 +109,7 @@ lookupFD(/*@in@*/struct in_addr const addr)
   return 0;
 }
 
-inline static size_t
+static size_t
 determineMaxMTU()
     /*@globals fds@*/
     /*@modifies@*/
@@ -133,7 +131,7 @@ determineMaxMTU()
   return result;
 }
 
-inline static bool
+static bool
 isValidHeader(/*@in@*/struct DHCPHeader *header)
     /*@globals internalState@*/
     /*@modifies internalState@*/
@@ -167,7 +165,7 @@ isValidHeader(/*@in@*/struct DHCPHeader *header)
   return reason==0;
 }
 
-inline static bool
+static bool
 isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 	       size_t				o_len)
     /*@*/
@@ -193,126 +191,159 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
   return (seen_end && opt==end_options);
 }
 
-inline static size_t
+static void *fillSuboption(struct DHCPSingleOption *out,
+			   struct DHCPSubOption const *opt)
+{
+	out->code = opt->code;
+	out->len  = opt->len;
+	memcpy(out->data, opt->data, opt->len);
+
+	return &out->data[opt->len];
+}
+
+struct DHCPOptionList {
+	struct DHCPSingleOption const	*start;
+	struct DHCPSingleOption		*cursor;
+	size_t				len;
+};
+
+static void validateDHCPOptionList(struct DHCPOptionList const *options)
+{
+  assert(options->cursor >= options->start);
+  assert(options->len >= 1u);
+  assert((uintptr_t)(options->cursor) <
+	 (uintptr_t)(options->start) + options->len);
+}
+
+static void
 addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
-	       struct DHCPSingleOption				*end_opt,
-	       size_t						len)
-    /*@modifies *end_opt@*/
+	       struct DHCPOptionList				*options)
 {
-    /* Replace the end-tag
+  struct DHCPSubOption const	*subopt = &iface->suboptions.dta[0];
+  struct DHCPSingleOption	*pos = options->cursor;
+  size_t			len = options->len;
+  size_t			i;
+  size_t			opt_len;
+  void				*ptr;
 
-     *  - - - - - - -----
-     * |           | END |
-     *  - - - - - - -----
-     * with
-     *  - - - - - - ----- ----- ----- ----- ------------ -----
-     * |           | 82  | len | sub | sub | ... id ... | END |
-     * |           |     |     | opt | len |            |     |
-     *  - - - - - - ----- ----- ----- ----- ------------ -----
-     * */
+  /* Replace the end-tag
+   *  - - - - - - -----
+   * |           | END |
+   *  - - - - - - -----
+   * with
+   *  - - - - - - ----- ----- ----- ----- ------------ -----
+   * |           | 82  | len | sub | sub | ... id ... | END |
+   * |           |     |     | opt | len |            |     |
+   *  - - - - - - ----- ----- ----- ----- ------------ -----
+   *                          \                     /
+   *                           `   repeat x times  '
+   * */
 
-  assert(strlen(iface->aid)<=IFNAMSIZ);
+  validateDHCPOptionList(options);
+  assert(pos->code == cdEND);
 
-    /* Add space needed for our RFC 3046 agent id. See figure above for
-     * details. */
-  len += 4 + strlen(iface->aid);
+  /* no suboptions specified; exit immediately */
+  if (iface->suboptions.len == 0)
+    return;
 
-    /* 'len' should now have the length of the complete option-field. RFC 2131
-     * sets a lower limit of 312 octets, so we are checking against this
-     * value. Since the function got only the real options without the
-     * magic-cookie, 4 octets must be added.
-     *
-     * Because the underlying buffer was declared to hold more than this
-     * minimum amount, we can exclude overflows here.
-     *
-     * Further versions of this software should make it possible to configure
-     * the maximum size at runtime. */
-  if (len+4 < 312) {
-      /* replace old end-tag with our information */
-    end_opt->code    = cdRELAY_AGENT;
-    end_opt->data[0] = agCIRCUITID;	/* circuit id code as specified by RFC 3046 */
-    end_opt->data[1] = static_cast(uint8_t)(strlen(iface->aid));
-    end_opt->len     = 2 + end_opt->data[1];
-    memcpy(&end_opt->data[2], iface->aid, end_opt->data[1]);
+  opt_len = 2;			       /* the two initial '82' + 'len' fields */
+  for (i = 0; i < iface->suboptions.len; ++i)
+    opt_len += 2 + subopt[i].len;
 
-      /* set new end-tag */
-    end_opt = DHCP_nextSingleOption(end_opt);
-    end_opt->code = cdEND;
+  /* 'len' should now have the length of the complete option-field. RFC 2131
+   * sets a lower limit of 312 octets, so we are checking against this
+   * value. Since the function got only the real options without the
+   * magic-cookie, 4 octets must be added.
+   *
+   * Because the underlying buffer was declared to hold more than this
+   * minimum amount, we can exclude overflows here.
+   *
+   * Further versions of this software should make it possible to configure
+   * the maximum size at runtime. */
+  if (len + opt_len + 4 >= 312 || opt_len > 255) {
+    LOG("New DHCP packet would be too large; dropping configured suboptions");
+    return;
   }
 
-  return len;
+  pos->code = cdRELAY_AGENT;
+  pos->len  = opt_len - 2;
+  ptr       = pos->data;
+
+  for (i = 0; i < iface->suboptions.len; ++i)
+    ptr = fillSuboption(ptr, &subopt[i]);
+
+  pos = DHCP_nextSingleOption(pos);
+  assert(ptr == pos);
+
+  pos->code = cdEND;
+
+  options->len += opt_len;
+  options->cursor = pos;
+
+  validateDHCPOptionList(options);
 }
 
-#ifdef ENABLE_AGENT_REPLACE
-inline static size_t
-replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
-		   struct DHCPSingleOption			*relay_opt,
-		   struct DHCPSingleOption			*end_opt,
-		   size_t					len)
-    /*@requires end_opt > relay_opt@*/
-{
-  size_t	opt_len = DHCP_getOptionLength(relay_opt);
-  size_t	str_len = strlen(iface->aid);
-
-  assert(relay_opt!=0);
-
-  if (str_len+4<=opt_len) {
-    relay_opt->len     = str_len + 2;
-    relay_opt->data[1] = static_cast(uint8_t)(str_len);
-    memcpy(relay_opt->data+2, iface->aid, str_len);
-
-    if (str_len+4<opt_len)
-	// TODO: move memory; do not pad to satisfy WinNT
-      memset(relay_opt->data+2+str_len, /*@+charint@*/cdPAD/*@=charint@*/, opt_len-str_len-4);
-  }
-  else if (opt_len>=len) {
-    DHCP_removeOption(relay_opt, end_opt);
-
-    len -= opt_len;
-    len  = addAgentOption(iface, end_opt, len);
-  }
-  else {
-    LOGSTR("Failed assertion 'opt_len < len'");
-  }
-
-  return len;
-}
-#endif
-
-inline static size_t
-removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
-		  struct DHCPSingleOption const		*end_opt,
-		  size_t					len)
+static void removeAgentOption(struct DHCPOptionList *options)
     /*@requires (opt+1) <= end_opt@*/
     /*@modifies *opt@*/
 {
-  size_t	opt_len = DHCP_getOptionLength(opt);
+  struct DHCPSingleOption const		*in = options->cursor;
+  struct DHCPSingleOption		*out = options->cursor;
+  size_t				len = options->len;
 
-  if (opt_len < len) {
-    DHCP_removeOption(opt, end_opt);
-    len -= opt_len;
-  }
-  else LOGSTR("Failed assertion 'opt_len < len'");
+  validateDHCPOptionList(options);
+  assert(in->code == cdRELAY_AGENT);
 
-  return len;
+  do {
+    struct DHCPSingleOption const	*next;
+    size_t				l;
+
+    /* content of 'in' can be overwritten in this loop; save the pointer to the
+     * next option */
+    next = DHCP_nextSingleOptionConst(in);
+    l	 = DHCP_getOptionLength(in);
+
+    if (in->code == cdRELAY_AGENT) {
+      /* we have at least a 'cdEND' option so that 'len' should never become
+	 zero*/
+      assert(len > l);
+      len -= l;
+    } else {
+      memmove(out, in, l);
+      out = DHCP_nextSingleOption(out);
+    }
+
+    in = next;
+  } while (in->code != cdEND);
+
+  out->code = cdEND;
+
+  options->len    = len;
+  options->cursor = out;
+
+  validateDHCPOptionList(options);
 }
 
   /*@-mustmod@*/
-inline static size_t
+static size_t
 fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 	    /*@dependent@*/void				*option_ptr,
 	    OptionFillAction				action)
     /*@modifies *option_ptr@*/
 {
-  /*@dependent@*/struct DHCPSingleOption	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
+  /*@dependent@*/struct DHCPSingleOption	*opt       = option_ptr;
   /*@dependent@*/struct DHCPSingleOption	*end_opt   = 0;
   /*@dependent@*/struct DHCPSingleOption	*relay_opt = 0;
-  size_t			len;
+  struct DHCPOptionList		options = {
+	  .start	= option_ptr,
+  };
 
   do {
     switch (opt->code) {
       case cdRELAY_AGENT	:
-	if (opt->data[0]==agCIRCUITID) relay_opt = opt;
+	/* we are interested in the first relay agent option only */
+	if (!relay_opt)
+	  relay_opt = opt;
 	break;
       case cdEND		:  end_opt   = opt; break;
       default			:  break;
@@ -326,54 +357,57 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 
     /* Determine used space until end-tag and add space for the end-tag itself
      * (1 octet). */
-    /*@-strictops@*/
-  len  = (reinterpret_cast(char *)(end_opt) -
-	  static_cast(char *)(option_ptr) + 1u);
-    /*@=strictops@*/
+  options.len  = DHCP_ptrdiff(end_opt, option_ptr) + 1u;
+
+  if (relay_opt)
+    options.cursor = relay_opt;
+  else
+    options.cursor = end_opt;
 
   switch (action) {
-    case acREMOVE_ID	:
-      if (relay_opt!=0) len = removeAgentOption(relay_opt, end_opt, len);
+    case acREMOVE_AGENT_INFO:
+      if (relay_opt)
+	removeAgentOption(&options);
       break;
-    case acADD_ID	:
-      if (relay_opt==0) len = addAgentOption(iface, end_opt, len);
+
+    case acADD_AGENT_INFO:
+    case acREPLACE_AGENT_INFO:
+      if (!relay_opt) {
+	addAgentOption(iface, &options);
+      } else if (action == acREPLACE_AGENT_INFO) {
+	removeAgentOption(&options);
+	addAgentOption(iface, &options);
+      } else {
+	LOG("DCHP relay agent info already set");
+      }
+
       break;
-#ifdef ENABLE_AGENT_REPLACE
-    case acREPLACE_ID	:
-      if (relay_opt==0) len = addOption(end_opt, len);
-      else              len = replaceAgentOption(iface, relay_opt, end_opt, len);
+
+    case acIGNORE:
       break;
-#endif
-    case acIGNORE	:  break;
-    default		:  assert(false);
+
+    default:
+      assert(false);
   }
 
-  return len;
+  return options.len;
 }
   /*@=mustmod@*/
 
-inline static uint16_t
+static uint16_t
 calculateCheckSum(/*@in@*/void const * const	dta,
 		  size_t size,
 		  uint32_t sum)
     /*@*/
 {
   size_t		i;
-  uint16_t const	*data = reinterpret_cast(uint16_t const *)(dta);
+  uint8_t const		*data = dta;
 
-  for (i=0; i<size/2; ++i) sum += ntohs(data[i]);
+  for (i=0; i+1 < size; i += 2)
+    sum += (data[i] << 8) + data[i + 1];
 
-  if (size%2 != 0) {
-    union {
-	uint8_t		aval[2];
-	uint16_t	ival;
-    } end_data;
-
-    end_data.ival    = 0;
-    end_data.aval[0] = reinterpret_cast(uint8_t const *)(data)[size-1];
-    end_data.aval[1] = 0;
-    sum += ntohs(end_data.ival);
-  }
+  if (size%2 != 0)
+    sum += data[size-1] << 8;
 
   while ( (sum>>16)!=0 )
     sum = (sum & 0xFFFF) + (sum >> 16);
@@ -381,7 +415,7 @@ calculateCheckSum(/*@in@*/void const * const	dta,
   return sum;
 }
 
-inline static void
+static void
 fixCheckSumIP(struct iphdr * const	ip)
     /*@modifies *ip@*/
 {
@@ -420,7 +454,7 @@ fixCheckSumUDP(struct udphdr * const			udp,
   udp->check = sum;
 }
 
-inline static void
+static void
 sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
 	       /*@dependent@*/struct DHCPllPacket	*frame,
 	       /*@dependent@*//*@in@*/char const	*buffer,
@@ -480,7 +514,7 @@ sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
   Wsendmsg(fds.raw_fd, &msg, 0);
 }
 
-inline static void
+static void
 sendToClient(/*@in@*/struct FdInfo const * const	fd,
 	     /*@in@*/struct DHCPHeader const * const	header,
 	     /*@in@*//*@dependent@*/char const * const	buffer,
@@ -551,7 +585,7 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
   sendEtherFrame(iface, &frame, buffer, size);
 }
 
-inline static void
+static void
 sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
 		/*@dependent@*//*@in@*/char const * const	buffer,
 		size_t const					size)
@@ -574,7 +608,7 @@ sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
   sendEtherFrame(iface, &frame, buffer, size);
 }
 
-inline static void
+static void
 sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
 		  /*@in@*/char const * const			buffer,
 		  size_t const					size)
@@ -594,7 +628,7 @@ sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
 	  sizeof sock);
 }
 
-inline static void
+static void
 sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
 	     size_t const				size)
     /*@globals servers, fds, internalState@*/
@@ -623,7 +657,7 @@ sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
   }
 }
 
-inline static void
+static void
 handlePacket(/*@in@*/struct FdInfo const * const		fd,
 	     /*@in@*/struct InterfaceInfo const * const		iface_orig,
 	     /*@dependent@*/char * const			buffer,
@@ -656,9 +690,9 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
       OptionFillAction		action;
 
       switch (header->op) {
-	case opBOOTREPLY	:  action = acREMOVE_ID; break;
-	case opBOOTREQUEST	:  action = acADD_ID;    break;
-	default			:  assert(false); action = acIGNORE; break;
+	case opBOOTREPLY:	action = acREMOVE_AGENT_INFO; break;
+	case opBOOTREQUEST:	action = acADD_AGENT_INFO;    break;
+	default:		assert(false); action = acIGNORE; break;
       }
 
 	/* Fill agent-info and adjust size-information */
@@ -688,7 +722,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 }
 
 /*@noreturn@*/
-inline static void
+static void
 execRelay()
     /*@globals fds, servers, internalState@*/
     /*@modifies internalState@*/
