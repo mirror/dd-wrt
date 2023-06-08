@@ -450,11 +450,11 @@ void stop_dnsmasq(void);
 #define IDX_LEASEMAX 3
 #define IDX_LEASETIME 4
 
-char *getmdhcp(int count, int index, char *word, char *buffer)
+char *getmdhcp(int count, int index, char *buffer)
 {
 	int cnt = 0;
 	char *next, *wordlist;
-
+	char word[128];
 	wordlist = nvram_safe_get("mdhcpd");
 	foreach(word, wordlist, next) {
 		if (cnt < index) {
@@ -678,13 +678,12 @@ void start_dnsmasq(void)
 	int mdhcpcount = 0;
 	/* this is usally not required anymore since we add all interfaces with valid ip addresses anyway before */
 	if (nvram_exists("mdhcpd_count")) {
-		char *word = calloc(128, 1);
 		mdhcpcount = nvram_geti("mdhcpd_count");
 		for (i = 0; i < mdhcpcount; i++) {
 			char buffer[128];
-			if (!strcmp(getmdhcp(IDX_DHCPON, i, word, buffer), "Off"))
+			if (!strcmp(getmdhcp(IDX_DHCPON, i, buffer), "Off"))
 				continue;
-			char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
+			char *ifname = getmdhcp(IDX_IFNAME, i, buffer);
 			if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
 				continue;
 			if (canlan() || i > 0) {
@@ -701,7 +700,6 @@ void start_dnsmasq(void)
 			} else
 				fprintf(fp, "%s", ifname);
 		}
-		free(word);
 	}
 	fprintf(fp, "\n");
 	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n");
@@ -768,27 +766,25 @@ void start_dnsmasq(void)
 
 		int dhcp_max = 0;
 
-		char *word = calloc(128, 1);
-
 		if (landhcp())
 			dhcp_max += nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 		for (i = 0; i < mdhcpcount; i++) {
 			char buffer[128];
-			if (strcmp(getmdhcp(IDX_DHCPON, i, word, buffer), "On"))
+			if (strcmp(getmdhcp(IDX_DHCPON, i, buffer), "On"))
 				continue;
-			char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
+			char *ifname = getmdhcp(IDX_IFNAME, i, buffer);
 			if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
 				continue;
-			dhcp_max += atoi(getmdhcp(IDX_LEASEMAX, i, word, buffer));
+			dhcp_max += atoi(getmdhcp(IDX_LEASEMAX, i, buffer));
 		}
 		fprintf(fp, "dhcp-lease-max=%d\n", dhcp_max);
 		if (landhcp())
 			fprintf(fp, "dhcp-option=%s,3,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 		for (i = 0; i < mdhcpcount; i++) {
 			char buffer[128];
-			if (strcmp(getmdhcp(IDX_DHCPON, i, word, buffer), "On"))
+			if (strcmp(getmdhcp(IDX_DHCPON, i, buffer), "On"))
 				continue;
-			char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
+			char *ifname = getmdhcp(IDX_IFNAME, i, buffer);
 			if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
 				continue;
 			fprintf(fp, "dhcp-option=%s,3,", ifname);
@@ -797,7 +793,6 @@ void start_dnsmasq(void)
 		if (nvram_invmatch("wan_wins", "")
 		    && nvram_invmatch("wan_wins", "0.0.0.0"))
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
-		free(word);
 		if (nvram_matchi("dns_dnsmasq", 0)) {
 			fprintf(fp, "port=0\n");
 #ifdef HAVE_UNBOUND
@@ -836,21 +831,19 @@ void start_dnsmasq(void)
 		}
 
 		for (i = 0; i < mdhcpcount; i++) {
-			char *word = calloc(128, 1);
 			char buffer[128];
 			char buffer2[128];
-			if (strcmp(getmdhcp(IDX_DHCPON, i, word, buffer), "On"))
+			if (strcmp(getmdhcp(IDX_DHCPON, i, buffer), "On"))
 				continue;
-			char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
+			char *ifname = getmdhcp(IDX_IFNAME, i, buffer);
 			if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
 				continue;
-			unsigned int dhcpnum = atoi(getmdhcp(IDX_LEASEMAX, i, word, buffer2));
-			unsigned int dhcpstart = atoi(getmdhcp(IDX_LEASESTART, i, word, buffer2));
+			unsigned int dhcpnum = atoi(getmdhcp(IDX_LEASEMAX, i, buffer2));
+			unsigned int dhcpstart = atoi(getmdhcp(IDX_LEASESTART, i, buffer2));
 			char *ip = nvram_nget("%s_ipaddr", ifname);
 			char *netmask = nvram_nget("%s_netmask", ifname);
-			char *leasetime = getmdhcp(IDX_LEASETIME, i, word, buffer2);
+			char *leasetime = getmdhcp(IDX_LEASETIME, i, buffer2);
 			makeentry(fp, ifname, dhcpnum, dhcpstart, ip, netmask, leasetime);
-			free(word);
 		}
 
 		int leasenum = nvram_geti("static_leasenum");

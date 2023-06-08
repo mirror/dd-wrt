@@ -51,8 +51,20 @@ void start_dhcpfwd(void)
 	}
 #ifdef HAVE_DHCPFORWARD
 	FILE *fp;
+	int mdhcpcount = 0;
+	int hasfwd = 0;
+	int i;
+	if (nvram_exists("mdhcpd_count")) {
+		mdhcpcount = nvram_geti("mdhcpd_count");
+		for (i = 0; i < mdhcpcount; i++) {
+			char buffer[128];
+			if (!strcmp(getmdhcp(i, IDX_DHCPON, buffer), "fwd")) {
+				hasfwd = 1;
+			}
+		}
+	}
 
-	if (nvram_matchi("dhcpfwd_enable", 1)) {
+	if (nvram_matchi("dhcpfwd_enable", 1) || hasfwd) {
 		nvram_set("lan_proto", "static");
 		mkdir("/tmp/dhcp-fwd", 0700);
 		mkdir("/var/run/dhcp-fwd", 0700);
@@ -63,9 +75,16 @@ void start_dhcpfwd(void)
 			"logfile		/tmp/dhcp-fwd.log\n"
 			"loglevel	1\n"
 			"pidfile		/var/run/dhcp-fwd.pid\n"
-			"ulimit core	0\n"
-			"ulimit stack	64K\n"
-			"ulimit data	32K\n" "ulimit rss	200K\n" "ulimit nproc	0\n" "ulimit nofile	0\n" "ulimit as	0\n" "if	%s	true	false	true\n", nvram_safe_get("lan_ifname"));
+			"ulimit core	0\n" "ulimit stack	64K\n" "ulimit data	32K\n" "ulimit rss	200K\n" "ulimit nproc	0\n" "ulimit nofile	0\n" "ulimit as	0\n");
+		if (nvram_matchi("dhcpfwd_enable", 1))
+			fprintf(fp, "if	%s	true	false	true\n", nvram_safe_get("lan_ifname"));
+		for (i = 0; i < mdhcpcount; i++) {
+			char buffer[128];
+			if (!strcmp(getmdhcp(i, IDX_DHCPON, buffer), "fwd")) {
+				fprintf(fp, "if	%s	true	false	true\n", getmdhcp(i, IDX_IFNAME, buffer));
+			}
+
+		}
 
 		char *wan_proto = nvram_safe_get("wan_proto");
 		char *wan_ifname = nvram_safe_get("wan_ifname");
@@ -124,7 +143,16 @@ void start_dhcpfwd(void)
 			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
 
-		fprintf(fp, "name	%s	ws-c\n" "server	ip	%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
+		if (nvram_matchi("dhcpfwd_enable", 1))
+			fprintf(fp, "name	%s	ws-c\n", nvram_safe_get("lan_ifname"));
+		for (i = 0; i < mdhcpcount; i++) {
+			char buffer[128];
+			if (!strcmp(getmdhcp(i, IDX_DHCPON, buffer), "fwd")) {
+				fprintf(fp, "name	%s	ws-c\n", getmdhcp(i, IDX_IFNAME, buffer));
+			}
+		}
+		fprintf(fp, "server	ip	%s\n", nvram_safe_get("dhcpfwd_ip"));
+
 		fclose(fp);
 		log_eval("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
 		return;
