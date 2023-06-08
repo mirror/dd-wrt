@@ -470,19 +470,19 @@ static char *getmdhcp(int count, int index, char *word, char *buffer)
 			leasetime = "3660";
 		}
 		switch (count) {
-		case 0:
+		case IDX_IFNAME:
 			strcpy(buffer, interface);
 			return buffer;
-		case 1:
+		case IDX_DHCPON:
 			strcpy(buffer, dhcpon);
 			return buffer;
-		case 2:
+		case IDX_LEASESTART:
 			strcpy(buffer, start);
 			return buffer;
-		case 3:
+		case IDX_LEASEMAX:
 			strcpy(buffer, max);
 			return buffer;
-		case 4:
+		case IDX_LEASETIME:
 			strcpy(buffer, leasetime);
 			return buffer;
 		}
