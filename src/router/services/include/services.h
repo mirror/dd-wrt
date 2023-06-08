@@ -221,6 +221,14 @@ void start_setup_vlans(void);
 void start_set_routes(void);
 int mk_nodog_conf(void);
 
+#define IDX_IFNAME 0
+#define IDX_DHCPON 1
+#define IDX_LEASESTART 2
+#define IDX_LEASEMAX 3
+#define IDX_LEASETIME 4
+
+char *getmdhcp(int count, int index, char *buffer);
+
 void start_wifidog(void);
 void stop_wifidog(void);
 void start_freeradius(void);
