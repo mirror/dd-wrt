@@ -1,5 +1,5 @@
-.\" Copyright (C) 2002, 2003, 2004, 2008
-.\"               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+.\" Copyright (C) 2002, 2003, 2004, 2008, 2014
+.\"               Enrico Scholz <enrico.scholz@ensc.de>
 .\"
 .\" Permission is granted to make and distribute verbatim copies of
 .\" this manual provided the copyright notice and this permission notice
@@ -246,6 +246,24 @@ contacted with broadcast messages.
 .RE
 .\"
 .TP
+.B suboption \fIinterface \fIcode value
+sets a relay-agent option. The following values for \fIcode\fR are
+supported:
+.RS
+.TP
+.B suboption \fIinterface \fB2 \fIagent-id
+Sets the agent remote id; this is the same as "\fRname \fIinterface
+\fIagent-id".
+.TP
+.B suboption \fIinterface \fB5 \fIip
+Set the RFC3527 link selection.
+.TP
+.B suboption \fIinterface \fB11 \fIip
+Set the RFC5107 server identifier..
+.\"
+.RE
+.\"
+.TP
 .B compathack \fItype hack
 Sometimes, new versions of dhcp-fwd will contain changes/fixes which
 might break existing installations. To restore old behavior,
@@ -305,4 +323,4 @@ RFC 2131, 2132, 3046
 .\" ====================
 .\"
 .SH AUTHOR
-Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Enrico Scholz <enrico.scholz@ensc.de>

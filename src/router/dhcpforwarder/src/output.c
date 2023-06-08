@@ -1,5 +1,5 @@
-// Copyright (C) 2002, 2003, 2008, 2012
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2002, 2003, 2008, 2012, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,8 +90,8 @@ writeMsgTimestamp()
 void
 writeUInt(int fd, unsigned int val)
 {
-  char			buffer[32];
-  register char		*ptr = &buffer[sizeof(buffer) - 1];
+  char		buffer[32];
+  char		*ptr = &buffer[sizeof(buffer) - 1];
 
   do {
       /*@-strictops@*/

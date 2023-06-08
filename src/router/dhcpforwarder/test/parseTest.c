@@ -1,5 +1,5 @@
-// Copyright (C) 2004, 2008
-//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+// Copyright (C) 2004, 2008, 2014
+//               Enrico Scholz <enrico.scholz@ensc.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,12 +31,13 @@
 
 #include <parser.h>
 #include <cfg.h>
+#include <dhcp.h>
 #include <output.h>
 
 #define ensc_DHCP_FORWARDER_ULIMIT_H_I_KNOW_WHAT_I_DO
 #include "ulimit_codes.h"
 
-inline static void
+static void
 showUInt(char const varname[], unsigned int value)
 {
   write(1, varname, strlen(varname));
@@ -45,7 +46,7 @@ showUInt(char const varname[], unsigned int value)
   write(1, "\n", 1);
 }
 
-inline static void
+static void
 showString(char const varname[], char const value[])
 {
   write(1, varname, strlen(varname));
@@ -54,7 +55,7 @@ showString(char const varname[], char const value[])
   write(1, "'\n", 2);
 }
 
-inline static void
+static void
 showRlimit(struct rlimit const *val)
 {
   if (val->rlim_cur==RLIM_INFINITY) write(1, "INF", 3);
@@ -64,6 +65,16 @@ showRlimit(struct rlimit const *val)
 
   if (val->rlim_max==RLIM_INFINITY) write(1, "INF", 3);
   else                              writeUInt(1, val->rlim_max);
+}
+
+static void writeIP(int fd, in_addr_t ip)
+{
+    char const			*aux;
+    struct in_addr		in = { .s_addr = ip };
+
+    aux = inet_ntoa(in);
+    if (aux==0)  write(fd, "<null>", 6);
+    else         write(fd, aux, strlen(aux));
 }
 
 int main(int argc, char const *argv[])
@@ -128,8 +139,7 @@ int main(int argc, char const *argv[])
   write(1, ", data={", 8);
   for (i=0; i<cfg.interfaces.len; ++i) {
     struct InterfaceInfo	*iface = &cfg.interfaces.dta[i];
-    char			*aux;
-    struct in_addr		in;
+    size_t			j;
 
     write(1, "\n  '", 4);
     write(1, iface->name, strlen(iface->name));
@@ -147,10 +157,32 @@ int main(int argc, char const *argv[])
     writeUInt(1, ntohs(iface->port_server));
     write(1, ", ", 2);
 
-    in.s_addr = iface->if_ip;
-    aux = inet_ntoa(in);
-    if (aux==0)  write(1, "<null>", 6);
-    else         write(1, aux, strlen(aux));
+    writeIP(1, iface->if_ip);
+
+    for (j = 0; j < iface->suboptions.len; ++j) {
+      struct DHCPSubOption const	*opt = &iface->suboptions.dta[j];
+
+      write(1, ", ", 2);
+
+      writeUInt(1, opt->code);
+      write(1, ":", 1);
+
+      switch (opt->code) {
+      case agREMOTEID:
+	write(1, opt->data, opt->len);
+	break;
+
+      case agLINKSELECT:
+      case agREPLACESERVER:
+	assert(opt->data == &opt->val.ip);
+	assert(opt->len == 4);
+	writeIP(1, opt->val.ip);
+	break;
+
+      default:
+	assert(false);
+      }
+    }
   }
   write(1, "}}\n", 3);
 
@@ -159,15 +191,12 @@ int main(int argc, char const *argv[])
   write(1, ", data={", 8);
   for (i=0; i<cfg.servers.len; ++i) {
     struct ServerInfo	*svr = &cfg.servers.dta[i];
-    char			*aux;
 
     write(1, "\n  ", 3);
     switch (svr->type) {
       case svUNICAST	:
 	write(1, "UNICAST, ", 9);
-	aux = inet_ntoa(svr->info.unicast.ip);
-	if (aux==0)  write(1, "<null>", 6);
-	else         write(1, aux, strlen(aux));
+	writeIP(1, svr->info.unicast.ip.s_addr);
 
 	if (svr->iface) {
 	  write(1, ", &", 3);
