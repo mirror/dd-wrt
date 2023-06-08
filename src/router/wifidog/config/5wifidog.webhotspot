@@ -37,11 +37,11 @@
 			<input class="text" maxlength="100" size="39" name="wd_httpdname" value="<% nvg("wd_httpdname"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("hotspot.nocat_extifname"); %></div>
+			<div class="label"><% tran("hotspot.nodog_extifname"); %></div>
 			<% show_ifselect("wd_extiface"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("hotspot.nocat_ifname"); %></div>
+			<div class="label"><% tran("hotspot.nodog_ifname"); %></div>
 			<% show_ifselect("wd_iface"); %>
 		</div>
 		<div class="setting">
