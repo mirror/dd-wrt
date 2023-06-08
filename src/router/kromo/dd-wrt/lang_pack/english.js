@@ -183,6 +183,7 @@ share.oui="OUI Search";
 share.sttic="Static";
 share.off="Off";
 share.on="On";
+share.forwarding="Forwarding";
 share.stp="STP";
 share.mstp="MSTP";
 share.rstp="RSTP";
