@@ -397,8 +397,18 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"bacnet",
 	"oicq",
 	"heroes_of_the_storm",
+	"facebook_reel_story",
+	"srtp",
+	"gambling",
+	"epicgames",
+	"geforcenow",
+	"nvidia",
+	"bitcoin",
+	"protonvpn",
 	NULL,
 };
+
+
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 static int risk_index_max = 0;
 static uint64_t risk_map = 0;
