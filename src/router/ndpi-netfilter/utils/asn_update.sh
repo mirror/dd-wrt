@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 FAILED_ASN=0
 TOTAL_ASN=0
@@ -28,6 +30,7 @@ function create_list() {
 }
 
 cd "$(dirname "${0}")" || exit 1
+. ./common.sh || exit 1
 
 echo "(1) Downloading Apple routes..."
 DEST="../src/lib/inc_generated/ndpi_asn_apple.c.inc"
@@ -156,7 +159,7 @@ echo "(3) AliBaba IPs are available in $DEST"
 
 echo "(1) Downloading AliBaba..."
 DEST=../src/lib/inc_generated/ndpi_asn_alibaba.c.inc
-create_list NDPI_PROTOCOL_ALIBABA $DEST "AS134963"
+create_list NDPI_PROTOCOL_ALIBABA $DEST "AS59055" "AS59054" "AS59053" "AS59052" "AS59051" "AS59028" "AS45104" "AS45103" "AS45102" "AS37963" "AS34947" "AS211914" "AS134963"
 echo "(3) AliBaba IPs are available in $DEST"
 
 echo "(1) Downloading AVAST..."
@@ -199,7 +202,17 @@ DEST=../src/lib/inc_generated/ndpi_asn_hulu.c.inc
 create_list NDPI_PROTOCOL_HULU $DEST "AS23286"
 echo "(3) Hulu IPs are available in $DEST"
 
-if [ ${TOTAL_ASN} -eq ${FAILED_ASN} ]; then
+echo "(1) Downloading EpicGames.."
+DEST=../src/lib/inc_generated/ndpi_asn_epicgames.c.inc
+create_list NDPI_PROTOCOL_EPICGAMES $DEST "AS4356" "AS397645" "AS395701" "AS393326"
+echo "(3) EpicGames IPs are available in $DEST"
+
+echo "(1) Downloading Nvidia..."
+DEST=../src/lib/inc_generated/ndpi_asn_nvidia.c.inc
+create_list NDPI_PROTOCOL_NVIDIA $DEST "AS60977" "AS50889" "AS20347" "AS11414"
+echo "(3) Nvidia IPs are available in $DEST"
+
+if [ ${TOTAL_ASN} -eq 0 -o ${TOTAL_ASN} -eq ${FAILED_ASN} ]; then
 	printf '%s: %s\n' "${0}" "All download(s) failed, ./get_routes_by_asn.sh broken?"
 	exit 1
 else

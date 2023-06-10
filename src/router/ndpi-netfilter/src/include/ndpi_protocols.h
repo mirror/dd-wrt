@@ -43,6 +43,9 @@ NDPI_STATIC ndpi_port_range* ndpi_build_default_ports(ndpi_port_range *ports,
 					  u_int16_t portE);
 
 /* TCP/UDP protocols */
+#ifdef __cplusplus
+extern "C"
+#endif
 NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
 				 u_int8_t protocol,
@@ -277,8 +280,6 @@ NDPI_STATIC void init_armagetron_dissector(struct ndpi_detection_module_struct *
 NDPI_STATIC void init_amqp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_bgp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC int ndpi_search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
-				      u_int32_t saddr, u_int16_t sport, u_int32_t daddr, u_int16_t dport);
 NDPI_STATIC u_int32_t ndpi_bittorrent_hash_funct(u_int32_t ip, u_int16_t port);
 NDPI_STATIC void init_lisp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -463,6 +464,8 @@ NDPI_STATIC void init_tailscale_dissector(struct ndpi_detection_module_struct *n
 NDPI_STATIC void init_source_engine_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_bacnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_oicq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_epicgames_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bitcoin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 /* ndpi_main.c */
 NDPI_STATIC  u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port);

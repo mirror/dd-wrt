@@ -1,7 +1,7 @@
 /*
  * ndpi_utils.c
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-23 - ntop.org and contributors
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -100,13 +100,14 @@ _Static_assert(sizeof(struct ndpi_str_hash) == sizeof(struct ndpi_str_hash_priva
 int ndpi_check_punycode_string(char * buffer , int len) {
   int i = 0;
 
-  while(i++ < len - 3) {
+  while(i < len - 3) {
     if((buffer[i] == 'x')
        && (buffer[i+1] == 'n')
        && (buffer[i+2] == '-')
        && (buffer[i+3] == '-'))
       // is a punycode string
       return(1);
+    i++;
   }
 
   // not a punycode string
@@ -1759,7 +1760,7 @@ static void ndpi_compile_rce_regex() {
 #endif
   }
 
-  free((void *)pcreErrorStr);
+  ndpi_free((void *)pcreErrorStr);
 }
 
 static int ndpi_is_rce_injection(char* query) {
@@ -2043,39 +2044,30 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
 
   case NDPI_POSSIBLE_EXPLOIT:
     return("Possible Exploit");
-    break;
 
   case NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE:
     return("TLS Cert About To Expire");
-    break;
 
   case NDPI_PUNYCODE_IDN:
     return("IDN Domain Name");
-    break;
 
   case NDPI_ERROR_CODE_DETECTED:
     return("Error Code");
-    break;
 
   case NDPI_HTTP_CRAWLER_BOT:
     return("Crawler/Bot");
-    break;
 
   case NDPI_ANONYMOUS_SUBSCRIBER:
     return("Anonymous Subscriber");
-    break;
 
   case NDPI_UNIDIRECTIONAL_TRAFFIC:
     return("Unidirectional Traffic");
-    break;
 
   case NDPI_HTTP_OBSOLETE_SERVER:
     return("HTTP Obsolete Server");
-    break;
 
   case NDPI_PERIODIC_FLOW:
     return("Periodic Flow");
-    break;
 
   case NDPI_MINOR_ISSUES:
     return("Minor Issues");
@@ -2095,27 +2087,21 @@ const char* ndpi_severity2str(ndpi_risk_severity s) {
   switch(s) {
   case NDPI_RISK_LOW:
     return("Low");
-    break;
 
   case NDPI_RISK_MEDIUM:
     return("Medium");
-    break;
 
   case NDPI_RISK_HIGH:
     return("High");
-    break;
 
   case NDPI_RISK_SEVERE:
     return("Severe");
-    break;
 
   case NDPI_RISK_CRITICAL:
     return("Critical");
-    break;
     
   case NDPI_RISK_EMERGENCY:
     return("Emergency");
-    break;
   }
 
   return("");
@@ -2293,7 +2279,7 @@ void ndpi_hash_free(ndpi_str_hash **h, void (*cleanup_func)(ndpi_str_hash *h))
     {
       cleanup_func((ndpi_str_hash *)current);
     }
-    free(current);
+    ndpi_free(current);
   }
 
   *h = NULL;
@@ -2327,6 +2313,7 @@ int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, void *va
 {
   struct ndpi_str_hash_private **h_priv = (struct ndpi_str_hash_private **)h;
   struct ndpi_str_hash_private *new = ndpi_calloc(1, sizeof(*new));
+  struct ndpi_str_hash_private *found;
   unsigned int hash_value;
 
   if (new == NULL)
@@ -2338,6 +2325,14 @@ int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, void *va
   new->hash = hash_value;
   new->value = value;
   HASH_ADD_INT(*h_priv, hash, new);
+
+  HASH_FIND_INT(*h_priv, &hash_value, found);
+  if (found == NULL) /* The insertion failed (because of a memory allocation error) */
+  {
+    ndpi_free(new);
+    return 1;
+  }
+
   return 0;
 }
 #endif
@@ -2392,7 +2387,7 @@ static u_int8_t ndpi_check_hostname_risk_exception(struct ndpi_detection_module_
     ndpi_automa *automa = &ndpi_str->host_risk_mask_automa;
     u_int8_t ret = 0;
     
-    if(automa->ac_automa) {
+    if(automa && automa->ac_automa) {
       AC_TEXT_t ac_input_text;
       AC_REP_t match;
 
@@ -2506,6 +2501,26 @@ void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str,
 	    flow->num_risk_infos++;
 	  }
 	}
+      }
+    }
+  } else if(risk_message) {
+    u_int8_t i;
+
+    for(i = 0; i < flow->num_risk_infos; i++)
+      if(flow->risk_infos[i].id == r)
+        return;
+
+    /* Risk already set without any details, but now we have a specific risk_message
+       that we want to save.
+       This might happen with NDPI_HTTP_CRAWLER_BOT which might have been set early via
+       IP matching (no details) and now via UA matching (with message). */
+    if(flow->num_risk_infos < MAX_NUM_RISK_INFOS) {
+      char *s = ndpi_strdup(risk_message);
+
+      if(s != NULL) {
+        flow->risk_infos[flow->num_risk_infos].id = r;
+        flow->risk_infos[flow->num_risk_infos].info = s;
+        flow->num_risk_infos++;
       }
     }
   }
@@ -2907,6 +2922,9 @@ u_int8_t ndpi_check_flow_risk_exceptions(struct ndpi_detection_module_struct *nd
 					 u_int num_params,
 					 ndpi_risk_params params[]) {
   u_int i;
+
+  if(!ndpi_str)
+    return(0);
 
   for(i=0; i<num_params; i++) {
     switch(params[i].id) {

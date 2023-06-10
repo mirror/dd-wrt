@@ -282,7 +282,7 @@ typedef struct ndpi_flow_info {
   } rtp;
 
   struct {
-    char url[256], request_content_type[64], content_type[64], user_agent[256], server[128];
+    char url[256], request_content_type[64], content_type[64], user_agent[256], server[128], nat_ip[32];
     u_int response_status_code;
   } http;
 
@@ -397,7 +397,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 void ndpi_flow_info_free_data(struct ndpi_flow_info *flow);
 void ndpi_flow_info_freer(void *node);
 const char* print_cipher_id(u_int32_t cipher);
-float ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256], unsigned int num_bytes);
+double ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256], unsigned int num_bytes);
 
 extern int nDPI_LogLevel;
 

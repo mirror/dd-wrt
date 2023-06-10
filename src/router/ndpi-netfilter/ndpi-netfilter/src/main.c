@@ -492,29 +492,21 @@ static	struct kmem_cache *osdpi_id_cache = NULL;
 static struct kmem_cache *ct_info_cache = NULL;
 static struct kmem_cache *bt_port_cache = NULL;
 
-#ifdef NDPI_ENABLE_DEBUG_MESSAGES
-#if 0
-static char *dbl_lvl_txt[5] = {
-	"ERR",
-	"TRACE",
-	"DEBUG",
-	"DEBUG2",
-	NULL
-};
-#endif
 /* debug functions */
-static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t log_level,
-	const char *file_name, const char *func_name, unsigned line_number, const char * format, ...)
+static void debug_printf(u_int32_t protocol, struct ndpi_detection_module_struct *id_struct,
+		ndpi_log_level_t log_level, const char *file_name,
+		const char *func_name, unsigned line_number,
+		const char * format, ...)
 {
-	struct ndpi_net *n = id_struct ? ((struct ndpi_detection_module_struct *)id_struct)->user_data : NULL;
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
+	struct ndpi_net *n = id_struct ? id_struct->user_data : NULL;
 //	if(!n || protocol >= NDPI_NUM_BITS)
 //		pr_info("ndpi_debug n=%d, p=%u, l=%s\n",n != NULL,protocol,
 //				log_level < 5 ? dbl_lvl_txt[log_level]:"???");
-//	if(!n || protocol >= NDPI_NUM_BITS) return;
+	if(!n || protocol >= NDPI_NUM_BITS) return;
 
-	if( !n || protocol >= NDPI_NUM_BITS || 
-		log_level+1 <= ( ndpi_lib_trace < n->debug_level[protocol] ?
-				ndpi_lib_trace : n->debug_level[protocol]))  {
+	if(log_level+1 <= ( ndpi_lib_trace < n->debug_level[protocol] ?
+			    ndpi_lib_trace : n->debug_level[protocol]))  {
 		char buf[256];
 		const char *short_fn;
         	va_list args;
@@ -546,9 +538,11 @@ static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t l
 			;
 		}
         }
+#endif
 }
 
 void set_debug_trace( struct ndpi_net *n) {
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
 	int i;
 	const char *t_proto;
 	ndpi_debug_function_ptr dbg_printf = (ndpi_debug_function_ptr)NULL;
@@ -571,8 +565,13 @@ void set_debug_trace( struct ndpi_net *n) {
 		  pr_info("ndpi:%s debug %s (not changed)\n",n->ns_name,
 			n->ndpi_struct->ndpi_debug_printf != NULL ? "on":"off");
 	}
+#endif
 }
+
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
+
 #define DBG_NAMES_CNT (sizeof(dbg_ipt_names)/sizeof(dbg_ipt_names[0]))
+
 int dbg_ipt_opt(char *lbuf,size_t count) {
 	size_t i,l;
 	lbuf[0] = '\0';
@@ -587,25 +586,13 @@ int dbg_ipt_opt(char *lbuf,size_t count) {
 	lbuf[l] = '\0';
 	return l;
 }
+
 uint32_t dbg_ipt_opt_get(const char *lbuf) {
 	size_t i;
 	if(!strcmp(lbuf,"all")) return 0xffffffff;
 	for(i=0; i < DBG_NAMES_CNT;i++) {
 		if(!strcmp(lbuf,dbg_ipt_names[i].name)) return dbg_ipt_names[i].mask;
 	}
-	return 0;
-}
-#else
-
-static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t log_level,
-	const char *file_name, const char *func_name, unsigned line_number, const char * format, ...) {
-}
-
-uint32_t dbg_ipt_opt_get(const char *lbuf) {
-	return 0;
-}
-int dbg_ipt_opt(char *lbuf,size_t count) {
-	strncpy(lbuf,"off\n",count);
 	return 0;
 }
 #endif

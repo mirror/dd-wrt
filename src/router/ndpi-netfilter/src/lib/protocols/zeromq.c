@@ -37,8 +37,8 @@ static void ndpi_check_zmq(struct ndpi_detection_module_struct *ndpi_struct, str
   u_char p1[] =  { 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x7f };
   u_char p2[] =  { 0x28, 0x66, 0x6c, 0x6f, 0x77, 0x00 };
 
-  /* Break after 17 packets. */
-  if(flow->packet_counter > 17) {
+  /* Break after 10 packets. */
+  if(flow->packet_counter > 10) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }
@@ -84,10 +84,7 @@ static void ndpi_check_zmq(struct ndpi_detection_module_struct *ndpi_struct, str
 static void ndpi_search_zmq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   NDPI_LOG_DBG(ndpi_struct, "search ZMQ\n");
 
-  /* skip marked packets */
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_ZMQ) {
-    ndpi_check_zmq(ndpi_struct, flow);
-  }
+  ndpi_check_zmq(ndpi_struct, flow);
 }
 
 

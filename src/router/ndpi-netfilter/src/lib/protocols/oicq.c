@@ -51,7 +51,7 @@ static void ndpi_int_oicq_add_connection(struct ndpi_detection_module_struct * c
 static void ndpi_search_oicq(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct const * const packet = ndpi_get_packet_struct(ndpi_struct);
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   struct oicq_hdr const * const hdr = (struct oicq_hdr *)&packet->payload[0];
 
   NDPI_LOG_DBG(ndpi_struct, "search OICQ\n");

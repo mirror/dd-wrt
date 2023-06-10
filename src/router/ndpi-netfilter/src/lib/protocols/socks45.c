@@ -39,8 +39,8 @@ static void ndpi_check_socks4(struct ndpi_detection_module_struct *ndpi_struct, 
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 
-  /* Break after 20 packets. */
-  if(flow->packet_counter > 20) {
+  /* Break after 10 packets. */
+  if(flow->packet_counter > 10) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }
@@ -80,8 +80,8 @@ static void ndpi_check_socks5(struct ndpi_detection_module_struct *ndpi_struct, 
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 
-  /* Break after 20 packets. */
-  if(flow->packet_counter > 20) {
+  /* Break after 10 packets. */
+  if(flow->packet_counter > 10) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }
@@ -121,13 +121,10 @@ static void ndpi_search_socks(struct ndpi_detection_module_struct *ndpi_struct, 
 {
   NDPI_LOG_DBG(ndpi_struct, "search SOCKS\n");
 
-  /* skip marked packets */
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS) {
-    ndpi_check_socks4(ndpi_struct, flow);
+  ndpi_check_socks4(ndpi_struct, flow);
 
-    if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS)
-      ndpi_check_socks5(ndpi_struct, flow);
-  }
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS)
+    ndpi_check_socks5(ndpi_struct, flow);
 }
 
 void init_socks_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)

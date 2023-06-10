@@ -1,7 +1,7 @@
 /*
  * ndpi_utils.c
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-23 - ntop.org and contributors
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -112,6 +112,13 @@ void ndpi_bitmap_and(ndpi_bitmap* a, ndpi_bitmap* b_and) {
 /* b = b | b_or */
 void ndpi_bitmap_or(ndpi_bitmap* a, ndpi_bitmap* b_or) {
   roaring_bitmap_or_inplace((ndpi_bitmap*)a, (ndpi_bitmap*)b_or);
+}
+
+/* ******************************************* */
+
+/* b = b ^ b_xor */
+void ndpi_bitmap_xor(ndpi_bitmap* a, ndpi_bitmap* b_xor) {
+  roaring_bitmap_xor_inplace((ndpi_bitmap*)a, (ndpi_bitmap*)b_xor);
 }
 
 /* ******************************************* */

@@ -46,8 +46,9 @@
    * https://groups.google.com/a/chromium.org/g/proto-quic/c/OAVgFqw2fko/m/jCbjP0AVAAAJ
    * https://groups.google.com/a/chromium.org/g/proto-quic/c/OAVgFqw2fko/m/-NYxlh88AgAJ
    * https://docs.google.com/document/d/1FcpCJGTDEMblAs-Bm5TYuqhHyUqeWpqrItw2vkMFsdY/edit
-   * https://tools.ietf.org/html/draft-ietf-quic-tls-29
-   * https://tools.ietf.org/html/draft-ietf-quic-transport-29
+   * https://www.rfc-editor.org/rfc/rfc9001.txt [Using TLS over QUIC]
+   * https://www.rfc-editor.org/rfc/rfc9000.txt [v1]
+   * https://www.rfc-editor.org/rfc/rfc9369.txt [v2]
    */
 
 NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
@@ -58,6 +59,7 @@ NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndp
 NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
 
 /* Versions */
+#define V_2		0x6b3343cf
 #define V_1		0x00000001
 #define V_Q024		0x51303234
 #define V_Q025		0x51303235
@@ -78,6 +80,10 @@ NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
 
 #define QUIC_MAX_CID_LENGTH  20
 
+static int is_version_forcing_vn(uint32_t version)
+{
+  return (version & 0x0F0F0F0F) == 0x0a0a0a0a; /* Forcing Version Negotiation */
+}
 static int is_version_gquic(uint32_t version)
 {
   return ((version & 0xFFFFFF00) == 0x54303500) /* T05X */ ||
@@ -91,8 +97,8 @@ static int is_version_quic(uint32_t version)
   return version == V_1 ||
     ((version & 0xFFFFFF00) == 0xFF000000) /* IETF Drafts*/ ||
     ((version & 0xFFFFF000) == 0xfaceb000) /* Facebook */ ||
-    ((version & 0x0F0F0F0F) == 0x0a0a0a0a) /* Forcing Version Negotiation */ ||
-    (version == 0x709A50C4);               /* V2 IETF Drafts */
+    is_version_forcing_vn(version) ||
+    (version == V_2);
 }
 static int is_version_valid(uint32_t version)
 {
@@ -116,16 +122,16 @@ static uint8_t get_u8_quic_ver(uint32_t version)
 
   /* "Versions that follow the pattern 0x?a?a?a?a are reserved for use in
      forcing version negotiation to be exercised".
-     It is tricky to return a correct draft version: such number is primarly
-     used to select a proper salt (which depends on the version itself), but
-     we don't have a real version here! Let's hope that we need to handle
-     only latest drafts... */
-  if ((version & 0x0F0F0F0F) == 0x0a0a0a0a)
-    return 29;
+     We can't return a correct draft version because we don't have a real
+     version here! That means that we can't decode any data and we can dissect
+     only the cleartext header.
+     Let's return v1 (any other numbers should be fine, anyway) to only allow
+     the dissection of the (expected) long header */
+  if(is_version_forcing_vn(version))
+    return 34;
 
   /* QUIC Version 2 */
-  /* For the time being use 100 as a number for V2 and let see how v2 drafts evolve */
-  if (version == 0x709A50C4)
+  if (version == V_2)
     return 100;
 
   return 0;
@@ -206,7 +212,7 @@ static int is_version_with_v1_labels(uint32_t version)
 }
 static int is_version_quic_v2(uint32_t version)
 {
-  return version == 0x709A50C4;
+  return version == V_2;
 }
 
 NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value)
@@ -890,8 +896,8 @@ static int quic_derive_initial_secrets(struct ndpi_detection_module_struct *ndpi
     0x9a, 0xe6, 0xa4, 0xc8, 0x0c, 0xad, 0xcc, 0xbb, 0x7f, 0x0a
   };
   static const uint8_t handshake_salt_v2_draft_00[20] = {
-    0xa7, 0x07, 0xc2, 0x03, 0xa5, 0x9b, 0x47, 0x18, 0x4a, 0x1d,
-    0x62, 0xca, 0x57, 0x04, 0x06, 0xea, 0x7a, 0xe3, 0xe5, 0xd3
+    0x0d, 0xed, 0xe3, 0xde, 0xf7, 0x00, 0xa6, 0xdb, 0x81, 0x93,
+    0x81, 0xbe, 0x6e, 0x26, 0x9d, 0xcb, 0xf9, 0xbd, 0x2e, 0xd9
   };
   gcry_error_t err;
   uint8_t secret[HASH_SHA2_256_LENGTH];
@@ -1594,7 +1600,7 @@ static int may_be_initial_pkt(struct ndpi_detection_module_struct *ndpi_struct,
      if the packet includes a token provided by the server in a NEW_TOKEN
      frame on a connection where the server also included the
      grease_quic_bit transport parameter." */
-  if((*version & 0x0F0F0F0F) == 0x0a0a0a0a &&
+  if(is_version_forcing_vn(*version) &&
      !(pub_bit1 == 1 && pub_bit2 == 1)) {
     NDPI_LOG_DBG2(ndpi_struct, "Version 0x%x with first byte 0x%x\n", *version, first_byte);
     return 0;
@@ -1671,6 +1677,9 @@ static int ndpi_search_quic_extra(struct ndpi_detection_module_struct *ndpi_stru
 
   NDPI_LOG_DBG(ndpi_struct, "search QUIC extra func\n");
 
+  if(packet->payload_packet_len == 0)
+    return 1;
+
   if (is_ch_reassembler_pending(flow)) {
     ndpi_search_quic(ndpi_struct, flow);
     if(is_ch_reassembler_pending(flow))
@@ -1715,6 +1724,84 @@ static int ndpi_search_quic_extra(struct ndpi_detection_module_struct *ndpi_stru
   }
 
   return 0;
+}
+
+static int is_vn(struct ndpi_detection_module_struct *ndpi_struct,
+		 struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  u_int32_t version;
+  u_int8_t first_byte;
+  u_int8_t pub_bit1;
+  u_int8_t dest_conn_id_len, source_conn_id_len;
+
+  /* RFC 8999 6 */
+
+  /* First byte + version (4) + 2 CID lengths (set to 0) + at least one supported version */
+  if(packet->payload_packet_len < 11) {
+    return 0;
+  }
+
+  first_byte = packet->payload[0];
+  pub_bit1 = ((first_byte & 0x80) != 0);
+  if(!pub_bit1) {
+    NDPI_LOG_DBG2(ndpi_struct, "Not a long header\n");
+    return 0;
+  }
+
+  version = ntohl(*((u_int32_t *)&packet->payload[1]));
+  if(version != 0) {
+    NDPI_LOG_DBG2(ndpi_struct, "Invalid version 0x%x\n", version);
+    return 0;
+  }
+
+  /* Check that CIDs lengths are valid: QUIC limits the CID length to 20 */
+  dest_conn_id_len = packet->payload[5];
+  if(5 + 1 + dest_conn_id_len >= packet->payload_packet_len) {
+    NDPI_LOG_DBG2(ndpi_struct, "Invalid Length %d\n", packet->payload_packet_len);
+    return 0;
+  }
+  source_conn_id_len = packet->payload[5 + 1 + dest_conn_id_len];
+  if (dest_conn_id_len > QUIC_MAX_CID_LENGTH ||
+      source_conn_id_len > QUIC_MAX_CID_LENGTH) {
+    NDPI_LOG_DBG2(ndpi_struct, "Invalid CIDs length %u %u",
+		  dest_conn_id_len, source_conn_id_len);
+    return 0;
+  }
+
+  return 1;
+}
+
+static int ndpi_search_quic_extra_vn(struct ndpi_detection_module_struct *ndpi_struct,
+				     struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+
+  /* We are elaborating a packet following the Forcing VN, i.e. we are expecting:
+     1) first a VN packet (from the server)
+     2) then a "standard" Initial from the client */
+  /* TODO: could we unify ndpi_search_quic() and ndpi_search_quic_extra_vn() somehow? */
+
+  NDPI_LOG_DBG(ndpi_struct, "search QUIC extra func VN\n");
+
+  if(packet->payload_packet_len == 0)
+    return 1; /* Keep going */
+
+  if(flow->l4.udp.quic_vn_pair == 0) {
+    if(is_vn(ndpi_struct, flow)) {
+      NDPI_LOG_DBG(ndpi_struct, "Valid VN\n");
+      flow->l4.udp.quic_vn_pair = 1;
+      return 1;
+    } else {
+      NDPI_LOG_DBG(ndpi_struct, "Invalid reply to a Force VN. Stop\n");
+      flow->extra_packets_func = NULL;
+      return 0; /* Stop */
+    }
+  } else {
+    flow->extra_packets_func = NULL;
+    ndpi_search_quic(ndpi_struct, flow);
+    return 0;
+  }
 }
 
 static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
@@ -1781,6 +1868,20 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
   if(!is_version_supported(version)) {
     NDPI_LOG_DBG(ndpi_struct, "Unsupported version 0x%x\n", version);
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    return;
+  }
+
+  /*
+   * 3a) Forcing VN. There is no payload to analyze yet.
+   * Expecteed flow:
+   *  *) C->S: Forcing VN
+   *  *) S->C: VN
+   *  *) C->S: "Standard" Initial with crypto data
+   */
+  if(is_version_forcing_vn(version)) {
+    NDPI_LOG_DBG(ndpi_struct, "Forcing VN\n");
+    flow->max_extra_packets_to_check = 4; /* TODO */
+    flow->extra_packets_func = ndpi_search_quic_extra_vn;
     return;
   }
 

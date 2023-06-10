@@ -100,7 +100,7 @@ NDPI_STATIC  void ndpi_set_detected_protocol(struct ndpi_detection_module_struct
 					      struct ndpi_flow_struct *flow);
 
   NDPI_STATIC u_int16_t ndpi_check_for_email_address(struct ndpi_detection_module_struct *ndpi_struct,
-						u_int16_t counter);
+                                                u_int16_t counter);
 
   NDPI_STATIC void ndpi_int_change_category(struct ndpi_detection_module_struct *ndpi_struct,
 				       struct ndpi_flow_struct *flow,
