@@ -30,7 +30,7 @@
 extern char *strptime(const char *s, const char *format, struct tm *tm);
 extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
-extern int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 extern int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
@@ -87,7 +87,7 @@ typedef union ja3_info ja3_info_t;
 extern char *strptime(const char *s, const char *format, struct tm *tm);
 extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
-extern int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 /* QUIC/GQUIC stuff */

@@ -952,7 +952,7 @@ static void ndpi_search_bittorrent_hash(struct ndpi_detection_module_struct *ndp
 
 /* *********************************************** */
 
-u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset) {
+NDPI_STATIC u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset) {
   u_int32_t key;
 
   /* network byte order */
@@ -973,7 +973,7 @@ u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, in
 
 /* *********************************************** */
 
-u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow) {
+NDPI_STATIC u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow) {
   u_int32_t key;
 
   /* network byte order */

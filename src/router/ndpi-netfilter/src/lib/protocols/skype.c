@@ -23,7 +23,7 @@
 
 #include "ndpi_api.h"
 
-static int is_port(u_int16_t a, u_int16_t b, u_int16_t c) {
+static int skype_is_port(u_int16_t a, u_int16_t b, u_int16_t c) {
   return(((a == c) || (b == c)) ? 1 : 0);
 }
 
@@ -48,8 +48,8 @@ static void ndpi_check_skype(struct ndpi_detection_module_struct *ndpi_struct, s
     u_int16_t dport = ntohs(packet->udp->dest);
 
     /* skype-to-skype */
-    if(is_port(sport, dport, 1119) /* It can be confused with battle.net */
-       || is_port(sport, dport, 80) /* No HTTP-like protocols UDP/80 */
+    if(skype_is_port(sport, dport, 1119) /* It can be confused with battle.net */
+       || skype_is_port(sport, dport, 80) /* No HTTP-like protocols UDP/80 */
       ) {
       ;
     } else {
@@ -65,7 +65,7 @@ static void ndpi_check_skype(struct ndpi_detection_module_struct *ndpi_struct, s
 	  && (packet->payload[0] != 0x00) /* Avoid invalid CAPWAP detection */
 	  && (packet->payload[2] == 0x02))) {
 
-	if(is_port(sport, dport, 8801)) {
+	if(skype_is_port(sport, dport, 8801)) {
 	  NDPI_LOG_INFO(ndpi_struct, "found ZOOM (in SKYPE_TEAMS code)\n");
 	  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ZOOM, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	} else if (payload_len >= 16 && packet->payload[0] != 0x01) /* Avoid invalid Cisco HSRP detection / RADIUS */ {
