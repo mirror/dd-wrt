@@ -377,3 +377,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/source_engine.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/bitcoin.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/epicgames.c"
+#undef NDPI_CURRENT_PROTO

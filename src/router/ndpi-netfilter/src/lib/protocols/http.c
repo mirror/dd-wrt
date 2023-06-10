@@ -592,7 +592,7 @@ static void ndpi_check_user_agent(struct ndpi_detection_module_struct *ndpi_stru
 
 /* ************************************************************* */
 
-NDPI_STATIC http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow,
 			     const u_int8_t *ua_ptr, u_int16_t ua_ptr_len) {
   /**
