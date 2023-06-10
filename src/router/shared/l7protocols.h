@@ -79,6 +79,7 @@ l7filters filters_list[] = {
 	{ "biff", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "binary app transfer", NDPI_RISK, 4, "http" },
+	{ "bitcoin", NDPI_ONLY, 0, NULL },
 #endif
 	{ "bittorrent", PDPI, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -167,12 +168,14 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "egp", NDPI_ONLY, 0, NULL },
 	{ "elasticsearch", NDPI_ONLY, 0, NULL },
+	{ "epicgames", NDPI_ONLY, 0, NULL },
 	{ "ethernetip", NDPI_ONLY, 0, NULL },
 	{ "error code", NDPI_RISK, 43, "dns,snmp,http" },
 #endif
 	{ "exe", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "facebook", NDPI_ONLY, 0, NULL },
+	{ "facebook_reel_story", NDPI_ONLY, 0, NULL },
 	{ "facebookvoip", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
@@ -197,6 +200,10 @@ l7filters filters_list[] = {
 	{ "ftp_data", NDPI_ONLY, 0, NULL },
 	{ "fuze", NDPI_ONLY, 0, NULL },
 	{ "genshinimpact", NDPI_ONLY, 0, NULL },
+#endif
+#ifdef HAVE_OPENDPI
+	{ "gambling", NDPI_ONLY, 0, NULL },
+	{ "geforcenow", NDPI_ONLY, 0, NULL },
 #endif
 	{ "gif", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -416,6 +423,7 @@ l7filters filters_list[] = {
 #endif
 	{ "ntp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "nvidia", NDPI_ONLY, 0, NULL },
 	{ "ocs", NDPI_ONLY, 0, NULL },
 	{ "ocsp", NDPI_ONLY, 0, NULL },
 #endif
@@ -466,6 +474,7 @@ l7filters filters_list[] = {
 	{ "pre_yahoo_login", L7_ONLY, 0, NULL },
 	{ "pressplay", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "protonvpn", NDPI_ONLY, 0, NULL },
 	{ "psiphon", NDPI_ONLY, 0, NULL },
 #endif
 	{ "qianlong", L7_ONLY, 0, NULL },
@@ -581,6 +590,7 @@ l7filters filters_list[] = {
 	{ "source_engine", NDPI_ONLY, 0, NULL },
 	{ "spotify", NDPI_ONLY, 0, NULL },
 	{ "sql injection", NDPI_RISK, 2, "http,http_connect,http_proxy" },
+	{ "srtp", NDPI_ONLY, 0},
 #endif
 	{ "ssdp", DPI, 0, NULL },
 	{ "ssh", DPI, 0, NULL },
