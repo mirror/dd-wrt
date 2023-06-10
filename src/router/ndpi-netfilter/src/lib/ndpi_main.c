@@ -6488,7 +6488,7 @@ NDPI_STATIC u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port) {
 
 /* #define BITTORRENT_CACHE_DEBUG */
 
-int ndpi_search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int ndpi_search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct,
 				      struct ndpi_flow_struct *flow) {
 
 #ifdef BITTORRENT_CACHE_DEBUG

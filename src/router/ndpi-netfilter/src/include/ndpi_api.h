@@ -449,7 +449,7 @@ NDPI_STATIC   ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection
    * @return the struct ndpi_protocol that match the port base protocol
    *
    */
-  ndpi_protocol ndpi_guess_undetected_protocol_v4(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC ndpi_protocol ndpi_guess_undetected_protocol_v4(struct ndpi_detection_module_struct *ndpi_struct,
 						  struct ndpi_flow_struct *flow,
 						  u_int8_t proto,
 						  u_int32_t shost,
@@ -1985,7 +1985,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @par user_data = user data pointer you want to retrieve later with `ndpi_get_user_data()`
    *
    */
-  void ndpi_set_user_data(struct ndpi_detection_module_struct *ndpi_str, void *user_data);
+  NDPI_STATIC void ndpi_set_user_data(struct ndpi_detection_module_struct *ndpi_str, void *user_data);
 
   /**
    * Get user data which was previously set with `ndpi_set_user_data()`.
@@ -1993,7 +1993,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @return the user data pointer
    *
    */
-  void *ndpi_get_user_data(struct ndpi_detection_module_struct *ndpi_str);
+  NDPI_STATIC void *ndpi_get_user_data(struct ndpi_detection_module_struct *ndpi_str);
 
 #ifdef __cplusplus
 }
