@@ -119,16 +119,17 @@ u_int16_t max_pattern_len = 8;
 
 /* *********************************************************** */
 
-void ndpi_analyze_payload(struct ndpi_flow_info *flow,
-			  u_int8_t src_to_dst_direction,
-			  u_int8_t *payload,
-			  u_int16_t payload_len,
-			  u_int32_t packet_id) {
-  struct payload_stats *ret;
-  struct flow_id_stats *f;
-  struct packet_id_stats *p;
+int ndpi_analyze_payload(struct ndpi_flow_info *flow,
+			 u_int8_t src_to_dst_direction,
+			 u_int8_t *payload,
+			 u_int16_t payload_len,
+			 u_int32_t packet_id) {
+  struct payload_stats *ret, *ret_found;
+  struct flow_id_stats *f, *f_found;
+  struct packet_id_stats *p, *p_found;
 
 #ifdef DEBUG_PAYLOAD
+  u_int16_t i;
   for(i=0; i<payload_len; i++)
     printf("%c", isprint(payload[i]) ? payload[i] : '.');
   printf("\n");
@@ -137,11 +138,11 @@ void ndpi_analyze_payload(struct ndpi_flow_info *flow,
   HASH_FIND(hh, pstats, payload, payload_len, ret);
   if(ret == NULL) {
     if((ret = (struct payload_stats*)ndpi_calloc(1, sizeof(struct payload_stats))) == NULL)
-      return; /* OOM */
+      return -1; /* OOM */
 
     if((ret->pattern = (u_int8_t*)ndpi_malloc(payload_len)) == NULL) {
       ndpi_free(ret);
-      return;
+      return -1;
     }
 
     memcpy(ret->pattern, payload, payload_len);
@@ -149,6 +150,13 @@ void ndpi_analyze_payload(struct ndpi_flow_info *flow,
     ret->num_occurrencies = 1;
 
     HASH_ADD(hh, pstats, pattern[0], payload_len, ret);
+
+    HASH_FIND(hh, pstats, payload, payload_len, ret_found);
+    if(ret_found == NULL) { /* The insertion failed (because of a memory allocation error) */
+      ndpi_free(ret->pattern);
+      ndpi_free(ret);
+      return -1;
+    }
 
 #ifdef DEBUG_PAYLOAD
     printf("Added element [total: %u]\n", HASH_COUNT(pstats));
@@ -161,20 +169,32 @@ void ndpi_analyze_payload(struct ndpi_flow_info *flow,
   HASH_FIND_INT(ret->flows, &flow->flow_id, f);
   if(f == NULL) {
     if((f = (struct flow_id_stats*)ndpi_calloc(1, sizeof(struct flow_id_stats))) == NULL)
-      return; /* OOM */
+      return -1; /* OOM */
 
     f->flow_id = flow->flow_id;
     HASH_ADD_INT(ret->flows, flow_id, f);
+
+    HASH_FIND_INT(ret->flows, &flow->flow_id, f_found);
+    if(f_found == NULL) { /* The insertion failed (because of a memory allocation error) */
+      ndpi_free(f);
+      return -1;
+    }
   }
 
   HASH_FIND_INT(ret->packets, &packet_id, p);
   if(p == NULL) {
     if((p = (struct packet_id_stats*)ndpi_calloc(1, sizeof(struct packet_id_stats))) == NULL)
-      return; /* OOM */
+      return -1; /* OOM */
     p->packet_id = packet_id;
 
     HASH_ADD_INT(ret->packets, packet_id, p);
+
+    HASH_FIND_INT(ret->packets, &packet_id, p_found);
+    if(p_found == NULL) { /* The insertion failed (because of a memory allocation error) */
+      ndpi_free(p);
+    }
   }
+  return 0;
 }
 
 /* *********************************************************** */
@@ -201,7 +221,12 @@ void ndpi_payload_analyzer(struct ndpi_flow_info *flow,
   for(i=0; i<scan_len; i++) {
     for(j=min_pattern_len; j <= max_pattern_len; j++) {
       if((i+j) < payload_len) {
-	ndpi_analyze_payload(flow, src_to_dst_direction, &payload[i], j, packet_id);
+	if(ndpi_analyze_payload(flow, src_to_dst_direction, &payload[i], j, packet_id) == -1) {
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+          /* Avoid too much logging while fuzzing */
+          LOG(NDPI_LOG_ERROR, "Error ndpi_analyze_payload (allocation failure)\n");
+#endif
+	}
       }
     }
   }
@@ -219,68 +244,68 @@ static int payload_stats_sort_asc(void *_a, void *_b) {
 
 /* ***************************************************** */
 
-void print_payload_stat(struct payload_stats *p) {
+static void print_payload_stat(struct payload_stats *p, FILE *out) {
   u_int i;
   struct flow_id_stats *s, *tmp;
   struct packet_id_stats *s1, *tmp1;
 
-  printf("\t[");
+  fprintf(out, "\t[");
 
   for(i=0; i<p->pattern_len; i++) {
-    printf("%c", isprint(p->pattern[i]) ? p->pattern[i] : '.');
+    fprintf(out, "%c", isprint(p->pattern[i]) ? p->pattern[i] : '.');
   }
 
-  printf("]");
-  for(; i<16; i++) printf(" ");
-  printf("[");
+  fprintf(out, "]");
+  for(; i<16; i++) fprintf(out, " ");
+  fprintf(out, "[");
 
   for(i=0; i<p->pattern_len; i++) {
-    printf("%s%02X", (i > 0) ? " " : "", isprint(p->pattern[i]) ? p->pattern[i] : '.');
+    fprintf(out, "%s%02X", (i > 0) ? " " : "", isprint(p->pattern[i]) ? p->pattern[i] : '.');
   }
 
-  printf("]");
+  fprintf(out, "]");
 
-  for(; i<16; i++) printf("  ");
-  for(i=p->pattern_len; i<max_pattern_len; i++) printf(" ");
+  for(; i<16; i++) fprintf(out, "  ");
+  for(i=p->pattern_len; i<max_pattern_len; i++) fprintf(out, " ");
 
-  printf("[len: %u][num_occurrencies: %u][flowId: ",
-	 p->pattern_len, p->num_occurrencies);
+  fprintf(out, "[len: %u][num_occurrencies: %u][flowId: ",
+	  p->pattern_len, p->num_occurrencies);
 
   i = 0;
   HASH_ITER(hh, p->flows, s, tmp) {
-    printf("%s%u", (i > 0) ? " " : "", s->flow_id);
+    fprintf(out, "%s%u", (i > 0) ? " " : "", s->flow_id);
     i++;
   }
 
-  printf("][packetIds: ");
+  fprintf(out, "][packetIds: ");
 
   /* ******************************** */
 
   i = 0;
   HASH_ITER(hh, p->packets, s1, tmp1) {
-    printf("%s%u", (i > 0) ? " " : "", s1->packet_id);
+    fprintf(out, "%s%u", (i > 0) ? " " : "", s1->packet_id);
     i++;
   }
 
-  printf("]\n");
+  fprintf(out, "]\n");
 
 
 }
 
 /* ***************************************************** */
 
-void ndpi_report_payload_stats(int print) {
+void ndpi_report_payload_stats(FILE *out) {
   struct payload_stats *p, *tmp;
   u_int num = 0;
 
-  if(print)
-    printf("\n\nPayload Analysis\n");
+  if(out)
+    fprintf(out, "\n\nPayload Analysis\n");
 
   HASH_SORT(pstats, payload_stats_sort_asc);
 
   HASH_ITER(hh, pstats, p, tmp) {
-    if(print && num <= max_num_reported_top_payloads)
-      print_payload_stat(p);
+    if(out && num <= max_num_reported_top_payloads)
+      print_payload_stat(p, out);
 
     ndpi_free(p->pattern);
 
@@ -465,6 +490,8 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
   workflow->pcap_handle = pcap_handle;
   workflow->prefs       = *prefs;
   workflow->ndpi_struct = module;
+
+  ndpi_set_user_data(module, workflow);
 
   ndpi_set_log_level(module, nDPI_LogLevel);
 
@@ -719,20 +746,20 @@ ndpi_flow_update_byte_dist_mean_var(ndpi_flow_info_t *flow, const void *x,
 
 /* ***************************************************** */
 
-float ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256],
+double ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256],
 				       unsigned int num_bytes)
 {
   int i;
-  float sum = 0.0;
+  double sum = 0.0;
 
   for(i=0; i<256; i++) {
-    float tmp = (float) byte_count[i] / (float) num_bytes;
+    double tmp = (double) byte_count[i] / (double) num_bytes;
 
     if(tmp > FLT_EPSILON) {
       sum -= tmp * logf(tmp);
     }
   }
-  return(sum / logf(2.0));
+  return(sum / log(2.0));
 }
 
 /* ***************************************************** */
@@ -967,6 +994,12 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
       if(enable_flow_stats) {
         newflow->entropy = ndpi_calloc(1, sizeof(struct ndpi_entropy));
         newflow->last_entropy = ndpi_calloc(1, sizeof(struct ndpi_entropy));
+        if(!newflow->entropy || !newflow->last_entropy) {
+          ndpi_tdelete(newflow, &workflow->ndpi_flows_root[idx], ndpi_workflow_node_cmp);
+          ndpi_flow_info_free_data(newflow);
+          ndpi_free(newflow);
+          return(NULL);
+        }
         newflow->entropy->src2dst_pkt_len[newflow->entropy->src2dst_pkt_count] = l4_data_len;
         newflow->entropy->src2dst_pkt_time[newflow->entropy->src2dst_pkt_count] = when;
         if(newflow->entropy->src2dst_pkt_count == 0) {
@@ -1129,6 +1162,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     if(flow->ndpi_flow->protos.dhcp.class_ident[0] != '\0')
       flow->dhcp_class_ident = ndpi_strdup(flow->ndpi_flow->protos.dhcp.class_ident);
   } else if(is_ndpi_proto(flow, NDPI_PROTOCOL_BITTORRENT) &&
+            !is_ndpi_proto(flow, NDPI_PROTOCOL_DNS) &&
             !is_ndpi_proto(flow, NDPI_PROTOCOL_TLS)) {
     u_int j;
 
@@ -1259,18 +1293,6 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
                   sizeof(flow->kerberos.username),
                   "%s", flow->ndpi_flow->protos.kerberos.username);
   }
-  /* HTTP */
-  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP)
-	  || is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP_PROXY)
-	  || is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP_CONNECT)) {
-    if(flow->ndpi_flow->http.url != NULL) {
-      ndpi_snprintf(flow->http.url, sizeof(flow->http.url), "%s", flow->ndpi_flow->http.url);
-      flow->http.response_status_code = flow->ndpi_flow->http.response_status_code;
-      ndpi_snprintf(flow->http.content_type, sizeof(flow->http.content_type), "%s", flow->ndpi_flow->http.content_type ? flow->ndpi_flow->http.content_type : "");
-      ndpi_snprintf(flow->http.server, sizeof(flow->http.server), "%s", flow->ndpi_flow->http.server ? flow->ndpi_flow->http.server : "");
-      ndpi_snprintf(flow->http.request_content_type, sizeof(flow->http.request_content_type), "%s", flow->ndpi_flow->http.request_content_type ? flow->ndpi_flow->http.request_content_type : "");
-    }
-  }
   /* RTP */
   else if(is_ndpi_proto(flow, NDPI_PROTOCOL_RTP)) {
     flow->info_type = INFO_RTP;
@@ -1367,6 +1389,21 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 	ndpi_inc_bin(&flow->payload_len_bin, plen2slot(len), 1);
       }
     }
+  }
+
+  /* HTTP metadata are "global" not in `flow->ndpi_flow->protos` union; for example, we can have
+     HTTP/BitTorrent and in that case we want to export also HTTP attributes */
+  if(is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP)
+	  || is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP_PROXY)
+	  || is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP_CONNECT)) {
+    if(flow->ndpi_flow->http.url != NULL) {
+      ndpi_snprintf(flow->http.url, sizeof(flow->http.url), "%s", flow->ndpi_flow->http.url);
+    }
+    flow->http.response_status_code = flow->ndpi_flow->http.response_status_code;
+    ndpi_snprintf(flow->http.content_type, sizeof(flow->http.content_type), "%s", flow->ndpi_flow->http.content_type ? flow->ndpi_flow->http.content_type : "");
+    ndpi_snprintf(flow->http.server, sizeof(flow->http.server), "%s", flow->ndpi_flow->http.server ? flow->ndpi_flow->http.server : "");
+    ndpi_snprintf(flow->http.request_content_type, sizeof(flow->http.request_content_type), "%s", flow->ndpi_flow->http.request_content_type ? flow->ndpi_flow->http.request_content_type : "");
+    ndpi_snprintf(flow->http.nat_ip, sizeof(flow->http.nat_ip), "%s", flow->ndpi_flow->http.nat_ip ? flow->ndpi_flow->http.nat_ip : "");
   }
 
   ndpi_snprintf(flow->http.user_agent,
@@ -1528,7 +1565,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
       if(flow->iat_flow
 	 && (tdiff.tv_sec >= 0) /* Discard backward time */
 	 ) {
-	u_int32_t ms = ndpi_timeval_to_milliseconds(tdiff);
+	u_int64_t ms = ndpi_timeval_to_milliseconds(tdiff);
 
 	if(ms > 0)
 	  ndpi_data_add_value(flow->iat_flow, ms);
@@ -1544,7 +1581,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 	if(flow->iat_c_to_s
 	   && (tdiff.tv_sec >= 0) /* Discard backward time */
 	   ) {
-	  u_int32_t ms = ndpi_timeval_to_milliseconds(tdiff);
+	  u_int64_t ms = ndpi_timeval_to_milliseconds(tdiff);
 
 	  ndpi_data_add_value(flow->iat_c_to_s, ms);
 	}
@@ -1563,7 +1600,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 	ndpi_timer_sub(&when, &flow->dst2src_last_pkt_time, &tdiff);
 
 	if(flow->iat_s_to_c) {
-	  u_int32_t ms = ndpi_timeval_to_milliseconds(tdiff);
+	  u_int64_t ms = ndpi_timeval_to_milliseconds(tdiff);
 
 	  ndpi_data_add_value(flow->iat_s_to_c, ms);
 	}
@@ -1604,7 +1641,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
           flow->entropy->score = ndpi_classify(flow->entropy->src2dst_pkt_len, flow->entropy->src2dst_pkt_time,
 					      flow->entropy->dst2src_pkt_len, flow->entropy->dst2src_pkt_time,
 					      flow->entropy->src2dst_start, flow->entropy->dst2src_start,
-					      max_num_packets_per_flow, flow->src_port, flow->dst_port,
+					      max_num_packets_per_flow, ntohs(flow->src_port), ntohs(flow->dst_port),
 					      flow->src2dst_packets, flow->dst2src_packets,
 					      flow->entropy->src2dst_opackets, flow->entropy->dst2src_opackets,
 					      flow->entropy->src2dst_l4_bytes, flow->entropy->dst2src_l4_bytes, 1,
@@ -1612,7 +1649,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 	else
 	  flow->entropy->score = ndpi_classify(flow->entropy->src2dst_pkt_len, flow->entropy->src2dst_pkt_time,
 					      NULL, NULL, flow->entropy->src2dst_start, flow->entropy->src2dst_start,
-					      max_num_packets_per_flow, flow->src_port, flow->dst_port,
+					      max_num_packets_per_flow, ntohs(flow->src_port), ntohs(flow->dst_port),
 					      flow->src2dst_packets, 0,
 					      flow->entropy->src2dst_opackets, 0,
 					      flow->entropy->src2dst_l4_bytes, 0, 1,

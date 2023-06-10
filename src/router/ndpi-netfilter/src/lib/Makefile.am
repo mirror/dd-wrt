@@ -43,6 +43,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/amqp.c \
 		     protocols/bacnet.c \
 		     protocols/bgp.c \
+		     protocols/bitcoin.c \
 		     protocols/bittorrent.c \
 		     protocols/bjnp.c \
 		     protocols/capwap.c \
@@ -71,6 +72,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/eaq.c \
 		     protocols/edonkey.c \
 		     protocols/elastic_search.c \
+		     protocols/epicgames.c \
 		     protocols/ethernet_ip.c \
 		     protocols/fastcgi.c \
 		     protocols/fix.c \
@@ -84,9 +86,9 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/hangout.c \
 		     protocols/h323.c \
 		     protocols/halflife2_and_mods.c \
+		     protocols/hots.c \
 		     protocols/hpvirtgrp.c \
 		     protocols/hsrp.c \
-		     protocols/hots.c \
 		     protocols/http.c \
 		     protocols/iax.c \
 		     protocols/icecast.c \

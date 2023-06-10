@@ -61,6 +61,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = { /*NDPI_PROTOCOL_SHORT_STRING,*/ N
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 static int risk_index_max = 0;
 static uint64_t risk_map = 0;
+static int proto_init=0;
+static int risk_init=0;
 
 #define EXT_OPT_BASE 0
 // #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
@@ -101,6 +103,74 @@ enum ndpi_opt_index {
 #define FLAGS_HPROTO 0x4000
 #define FLAGS_RISK 0x8000
 
+static void load_kernel_proto (void) {
+	char buf[128],*c,pname[32],mark[32];
+	uint32_t index;
+	FILE *f_proto;
+
+	if(proto_init) return;
+
+	f_proto = fopen("/proc/net/xt_ndpi/proto","r");
+
+	if(!f_proto)
+		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module is not loaded.");
+	pname[0] = '\0';
+	index = 0;
+	while(!feof(f_proto)) {
+		c = fgets(buf,sizeof(buf)-1,f_proto);
+		if(!c) break;
+		if(buf[0] == '#') {
+			if(!pname[0] && !strncmp(buf,"#id",3)) {
+			   char *vs;
+			   vs = strchr(buf,'\n');
+			   if(vs) *vs = '\0';
+			   vs = strstr(buf,"#version");
+			   if(!vs)
+	    			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: #version missing");
+			   if(!strstr(vs+8,NDPI_GIT_RELEASE))
+	    			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: module version %s != %s",
+						vs+8,NDPI_GIT_RELEASE);
+			    pname[0] = ' ';
+			}
+			continue;
+		}
+		if(!pname[0]) continue;
+		if(sscanf(buf,"%x %s %s",&index,mark,pname) != 3) continue;
+		if(index >= NDPI_NUM_BITS) continue;
+		prot_disabled[index] = strncmp(mark,"disable",7) == 0;
+		prot_short_str[index] = strdup(pname);	
+	}
+	fclose(f_proto);
+	if(index >= NDPI_NUM_BITS)
+	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module version missmatch.");
+	proto_init = 1;
+}
+static void load_kernel_risk (void) {
+	char buf[128],*c,re;
+	FILE *f_risk;
+	int ri;
+
+	if(risk_init) return;
+
+	f_risk = fopen("/proc/net/xt_ndpi/risks","r");
+	if(!f_risk)
+		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: no risks file");
+	while(!feof(f_risk)) {
+		c = fgets(buf,sizeof(buf)-1,f_risk);
+		if(!c) break;
+		if(sscanf(buf,"%d %c ",&ri,&re) != 2) 
+			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risks format.");
+		
+		if(ri < 0 || ri >= 64)
+			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risk index.");
+		if(risk_index_max < ri)
+			risk_index_max = ri;
+		if(re == 'd')
+			risk_map |= (1ull << ri);
+	}
+	fclose(f_risk);
+	risk_init  = 1;
+}
 
 static void ndpi_mt_init(struct xt_entry_match *match)
 {
@@ -222,6 +292,7 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 	const char *csave = save ? "--":"";
         int i,c,l,t;
 
+	load_kernel_proto();
         for (t = l = c = i = 0; i < NDPI_NUM_BITS; i++) {
 		if (!prot_short_str[i] || prot_disabled[i] || 
 				!strncmp(prot_short_str[i],"badproto_",9)) continue;
@@ -254,8 +325,10 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 		printf(" %sclevel %s%s", csave, clevel_op2str(info->clevel_op),
 				clevel2str(info->clevel-1));
 	}
-	if(info->risk)
+	if(info->risk) {
+		load_kernel_risk();
 		printf(" %srisk %s", csave, risk2str(info->risk));
+	}
 
 	if(info->m_proto && !info->p_proto)
 		printf(" %smatch-m-proto",csave);
@@ -439,6 +512,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		char *np = optarg,*n;
 		int num;
 		int op;
+		load_kernel_proto();
 		while((n = strtok(np,",")) != NULL) {
 			num = -1;
 			op = 1;
@@ -499,6 +573,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_ALL) {
+		load_kernel_proto();
 		for (i = 1; i < NDPI_NUM_BITS; i++) {
 	    	    if(prot_short_str[i] && strncmp(prot_short_str[i],"badproto_",9) && !prot_disabled[i])
 			NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
@@ -576,6 +651,7 @@ static int ndpi_print_prot_list(int cond, char *msg) {
 	char line[128];
 	char *pn[NDPI_NUM_BITS+1];
 
+	load_kernel_proto();
 	bzero((char *)&pn[0],sizeof(pn));
 
         for (i = 1,d = 0,cp = 0; i < NDPI_NUM_BITS; i++) {
@@ -876,64 +952,6 @@ static struct xtables_target ndpi_tg_reg[] = {
 void _init(void)
 {
         int i;
-	char buf[128],*c,pname[32],mark[32];
-	uint32_t index;
-
-	FILE *f_proto = fopen("/proc/net/xt_ndpi/proto","r");
-
-	if(!f_proto)
-		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module is not loaded.");
-	pname[0] = '\0';
-	index = 0;
-	while(!feof(f_proto)) {
-		c = fgets(buf,sizeof(buf)-1,f_proto);
-		if(!c) break;
-		if(buf[0] == '#') {
-			if(!pname[0] && !strncmp(buf,"#id",3)) {
-			   char *vs;
-			   vs = strchr(buf,'\n');
-			   if(vs) *vs = '\0';
-			   vs = strstr(buf,"#version");
-			   if(!vs)
-	    			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: #version missing");
-			   if(!strstr(vs+8,NDPI_GIT_RELEASE))
-	    			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: module version %s != %s",
-						vs+8,NDPI_GIT_RELEASE);
-			    pname[0] = ' ';
-			}
-			continue;
-		}
-		if(!pname[0]) continue;
-		if(sscanf(buf,"%x %s %s",&index,mark,pname) != 3) continue;
-		if(index >= NDPI_NUM_BITS) continue;
-		prot_disabled[index] = strncmp(mark,"disable",7) == 0;
-		prot_short_str[index] = strdup(pname);	
-	}
-	fclose(f_proto);
-	if(index >= NDPI_NUM_BITS)
-	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module version missmatch.");
-
-	f_proto = fopen("/proc/net/xt_ndpi/risks","r");
-	if(!f_proto)
-		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: no risks file");
-	index = 0;
-	while(!feof(f_proto)) {
-		int  ri;
-		char re;
-		c = fgets(buf,sizeof(buf)-1,f_proto);
-		if(!c) break;
-		if(sscanf(buf,"%d %c ",&ri,&re) != 2) 
-			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risks format.");
-		
-		if(ri < 0 || ri >= 64)
-			xtables_error(PARAMETER_PROBLEM, "xt_ndpi: bad risk index.");
-		if(risk_index_max < ri)
-			risk_index_max = ri;
-		if(re == 'd')
-			risk_map |= (1ull << ri);
-	}
-	fclose(f_proto);
-
 
 #define MT_OPT(np,protoname,nargs) { i=(np); \
 	ndpi_mt_opts[i].name = protoname; ndpi_mt_opts[i].flag = NULL; \

@@ -1,7 +1,7 @@
 /*
  * ndpi_serializer.c
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-23 - ntop.org and contributors
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -438,13 +438,13 @@ NDPI_STATIC void ndpi_term_serializer(ndpi_serializer *_serializer) {
   ndpi_private_serializer *serializer = (ndpi_private_serializer*)_serializer;
 
   if(serializer->buffer.data) {
-    free(serializer->buffer.data);
+    ndpi_free(serializer->buffer.data);
     serializer->buffer.size = 0;
     serializer->buffer.data = NULL;
   }
 
   if(serializer->header.data) {
-    free(serializer->header.data);
+    ndpi_free(serializer->header.data);
     serializer->header.size = 0;
     serializer->header.data = NULL;
   }

@@ -285,7 +285,11 @@ ssize_t ndebug_proc_read(struct file *file, char __user *buf,
 
 	p = 0;
 	memset(lbuf,0,sizeof(lbuf));
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
 	l = dbg_ipt_opt(lbuf,sizeof(lbuf));
+#else
+	l = snprintf(lbuf,sizeof(lbuf)-1,"Debug is not enabled\n");
+#endif
 
 	if(i_pos + l <= *ppos )	return 0; // EOF
 

@@ -406,7 +406,7 @@ static void checkTLSSubprotocol(struct ndpi_detection_module_struct *ndpi_struct
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-static void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct,
+void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow,
 				u_int16_t p_offset, u_int16_t certificate_len) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -822,7 +822,7 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int is_dtls = packet->udp ? 1 : 0;
@@ -1082,7 +1082,8 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
   }
 
   while(!something_went_wrong) {
-    u_int16_t len, p_len;
+    u_int32_t len;
+    u_int16_t p_len;
     const u_int8_t *p;
     u_int8_t content_type;
 
@@ -1154,7 +1155,7 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
        && (content_type != 0x17 /* Application Data */)
        && (!flow->tls_quic.certificate_processed)) {
       /* Split the element in blocks */
-      u_int16_t processed = 5;
+      u_int32_t processed = 5;
 
       while((processed+4) <= len) {
 	const u_int8_t *block = (const u_int8_t *)&message->buffer[processed];
@@ -1441,7 +1442,7 @@ static void tlsInitExtraPacketProcessing(struct ndpi_detection_module_struct *nd
 
 /* **************************************** */
 
-NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow)
 {
 #ifdef DEBUG_TLS

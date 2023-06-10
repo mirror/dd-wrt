@@ -1,4 +1,4 @@
-#/bin/sh
+#/bin/bash
 
 cd "$(dirname "${0}")" || exit 1
 
@@ -28,8 +28,15 @@ RETVAL=$(( RETVAL + $? ))
 RETVAL=$(( RETVAL + $? ))
 ./icloud_private_relay_ip_addresses_download.sh
 RETVAL=$(( RETVAL + $? ))
+./crawlers_ip_addresses_download.sh
+RETVAL=$(( RETVAL + $? ))
 
 ./asn_update.sh
+RETVAL=$(( RETVAL + $? ))
+
+./gambling_sites_download.sh
+RETVAL=$(( RETVAL + $? ))
+./protonvpn_ip_addresses_download.sh
 RETVAL=$(( RETVAL + $? ))
 
 test ${RETVAL} -ne 0 && printf '%s: %s\n' "${0}" "${RETVAL} script(s) failed"

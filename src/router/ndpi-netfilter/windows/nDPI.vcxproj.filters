@@ -5,6 +5,7 @@
     <ClCompile Include="..\src\lib\protocols\bjnp.c" />
     <ClCompile Include="..\src\lib\protocols\armagetron.c" />
     <ClCompile Include="..\src\lib\protocols\bgp.c" />
+    <ClCompile Include="..\src\lib\protocols\bitcoin.c" />
     <ClCompile Include="..\src\lib\protocols\bittorrent.c" />
     <ClCompile Include="..\src\lib\protocols\btlib.c" />
     <ClCompile Include="..\src\lib\protocols\ciscovpn.c" />
@@ -21,6 +22,7 @@
     <ClCompile Include="..\src\lib\protocols\dropbox.c" />
     <ClCompile Include="..\src\lib\protocols\eaq.c" />
     <ClCompile Include="..\src\lib\protocols\edonkey.c" />
+    <ClCompile Include="..\src\lib\protocols\epicgames.c" />
     <ClCompile Include="..\src\lib\protocols\ftp_control.c" />
     <ClCompile Include="..\src\lib\protocols\ftp_data.c" />
     <ClCompile Include="..\src\lib\protocols\git.c" />

@@ -235,8 +235,10 @@ typedef struct ndpi_protocol_bitmask_struct {
   ndpi_ndpi_mask fds_bits[NDPI_NUM_FDS_BITS];
 } ndpi_protocol_bitmask_struct_t;
 
+struct ndpi_detection_module_struct;
+
 /* NDPI_DEBUG_FUNCTION_PTR (cast) */
-typedef void (*ndpi_debug_function_ptr) (u_int32_t protocol, void *module_struct,
+typedef void (*ndpi_debug_function_ptr) (u_int32_t protocol, struct ndpi_detection_module_struct *module_struct,
 					 ndpi_log_level_t log_level, const char *file,
 					 const char *func, unsigned line,
 					 const char *format, ...);
@@ -813,8 +815,7 @@ struct ndpi_flow_tcp_struct {
   u_int32_t usenet_stage:2;
 
   /* NDPI_PROTOCOL_HTTP */
-  u_int32_t http_stage:2;
-  u_int32_t http_empty_line_seen:1;
+  u_int32_t http_stage:3;
 
   /* NDPI_PROTOCOL_GNUTELLA */
   u_int32_t gnutella_stage:2;		       // 0 - 2
@@ -894,6 +895,11 @@ struct ndpi_flow_udp_struct {
 
   /* NDPI_PROTOCOL_QUIC */
   u_int32_t quic_0rtt_found:1;
+  u_int32_t quic_vn_pair:1;
+
+  /* NDPI_PROTOCOL_EPICGAMES */
+  u_int32_t epicgames_stage:1;
+  u_int32_t epicgames_word;
 
   /* NDPI_PROTOCOL_SKYPE */
   u_int8_t skype_crc[4];
@@ -1154,6 +1160,11 @@ typedef enum {
   CUSTOM_CATEGORY_ANTIMALWARE      = 105,
   
   /*
+    Crypto Currency e.g Bitcoin, Litecoin, Etherum ..et.
+  */
+  NDPI_PROTOCOL_CATEGORY_CRYPTO_CURRENCY = 106,
+  
+  /*
     IMPORTANT
 
     Please keep in sync with
@@ -1256,8 +1267,8 @@ typedef struct {
 struct ndpi_detection_module_struct {
   NDPI_PROTOCOL_BITMASK detection_bitmask;
 
-  u_int32_t current_ts;
   u_int32_t ticks_per_second;
+  u_int64_t current_ts;
   u_int16_t max_packets_to_process;
   u_int16_t num_tls_blocks_to_follow;
   u_int8_t skip_tls_blocks_until_change_cipher:1, enable_ja3_plus:1, _notused:6;
@@ -1393,6 +1404,8 @@ struct ndpi_detection_module_struct {
   int opportunistic_tls_ftp_enabled;
 
   u_int32_t aggressiveness_ookla;
+
+  int tcp_ack_paylod_heuristic;
 
   u_int16_t ndpi_to_user_proto_id[NDPI_MAX_NUM_CUSTOM_PROTOCOLS]; /* custom protocolId mapping */
   ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
@@ -1715,9 +1728,6 @@ struct ndpi_flow_struct {
   u_int8_t bittorrent_stage;		      // can be 0 - 255
   u_int8_t bt_check_performed : 1;
 
-  /* NDPI_PROTOCOL_HTTP */
-  u_int8_t http_detected:1;
-
   /* NDPI_PROTOCOL_RTSP */
   u_int8_t rtsprdt_stage:2;
 
@@ -1826,6 +1836,19 @@ typedef enum {
     ndpi_dont_init_risk_ptree      = (1 << 14),
     ndpi_dont_load_cachefly_list   = (1 << 15),
     ndpi_track_flow_payload        = (1 << 16),
+    /* In some networks, there are some anomalous TCP flows where
+       the smallest ACK packets have some kind of zero padding.
+       It looks like the IP and TCP headers in those frames wrongly consider the
+       0x00 Ethernet padding bytes as part of the TCP payload.
+       While this kind of packets is perfectly valid per-se, in some conditions
+       they might be treated by the TCP reassembler logic as (partial) overlaps,
+       deceiving the classification engine.
+       Add an heuristic to detect these packets and to ignore them, allowing
+       correct detection/classification.
+       See #1946 for other details */
+    ndpi_enable_tcp_ack_payload_heuristic = (1 << 17),
+    ndpi_dont_load_crawlers_list = (1 << 18),
+    ndpi_dont_load_protonvpn_list = (1 << 19),
   } ndpi_prefs;
 
 typedef struct {
@@ -1924,8 +1947,9 @@ typedef struct {
 /* **************************************** */
 
 struct ndpi_analyze_struct {
-  u_int32_t *values;
-  u_int32_t min_val, max_val, sum_total, num_data_entries, next_value_insert_index;
+  u_int64_t *values;
+  u_int64_t min_val, max_val, sum_total;
+  u_int32_t num_data_entries, next_value_insert_index;
   u_int16_t num_values_array_len /* length of the values array */;
 
   struct {

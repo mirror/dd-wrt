@@ -867,6 +867,7 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 /********************* ndpi debug *********************************/
 
 int parse_ndpi_debug(struct ndpi_net *n,char *cmd) {
+#ifdef NDPI_ENABLE_DEBUG_MESSAGES
 	char *v;
 	uint32_t mask;
 	v = cmd;
@@ -897,6 +898,10 @@ int parse_ndpi_debug(struct ndpi_net *n,char *cmd) {
 	}
 	pr_err("NDPI: bad cmd %s\n",cmd);
 	return *v ? 0:1;
+#else
+	pr_err("NDPI: Debug is not enabled\n");
+	return 1;
+#endif
 }
 
 int parse_ndpi_risk(struct ndpi_net *n,char *cmd) {
