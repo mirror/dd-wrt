@@ -69,7 +69,7 @@ static struct config_val config[] = {
 	{ "incomplete-dir-enabled", "false", 0, 0 },
 	{ "lpd-enabled", "true", 0, 0 },
 	{ "max-peers-global", "200", 0, 0 },
-	{ "message-level", "1", 0, 0 },
+	{ "message-level", "4", 0, 0 },
 	{ "peer-congestion-algorithm", "", 0, 0 },
 	{ "peer-id-ttl-hours", "6", 0, 0 },
 	{ "peer-limit-global", "200", 0, 0 },
