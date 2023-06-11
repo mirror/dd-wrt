@@ -5,6 +5,7 @@
 #
 # Base Features
 #
+CONFIG_CPUTEMP=y
 CONFIG_SWAP=y
 CONFIG_IPSET=y
 CONFIG_RSYNC=y
