@@ -7,6 +7,8 @@ define CMakeConfigure
 		CPPFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT) $(4)" \
 		cmake \
 			--debug-output \
+			-DCMAKE_CXX_COMPILER_LAUNCHER="ccache" \
+			-DCMAKE_C_COMPILER_LAUNCHER="ccache" \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
 			-DCMAKE_SYSTEM_PROCESSOR=$(ARCH) \
