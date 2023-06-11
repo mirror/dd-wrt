@@ -385,7 +385,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"dailymotion",
 	"livestream",
 	"tencentvideo",
-	"iheartradio"
+	"iheartradio",
 	"tidal",
 	"tunein",
 	"siriusxmradio",
