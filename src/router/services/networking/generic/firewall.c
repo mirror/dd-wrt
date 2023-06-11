@@ -1788,13 +1788,13 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		save2file_A("advgrp_%d -m ndpi --proto bittorrent -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m ndpi --proto edonkey -j %s", seq, log_drop);
 		/*atm rarly used protocols */
-//		save2file_A("advgrp_%d -p tcp -m ndpi --proto applejuice -j %s", seq, log_drop);
-//		save2file_A("advgrp_%d -p tcp -m ndpi --proto directconnect -j %s", seq, log_drop);
-//		save2file_A("advgrp_%d -m ndpi --proto fasttrack -j %s", seq, log_drop);
+//              save2file_A("advgrp_%d -p tcp -m ndpi --proto applejuice -j %s", seq, log_drop);
+//              save2file_A("advgrp_%d -p tcp -m ndpi --proto directconnect -j %s", seq, log_drop);
+//              save2file_A("advgrp_%d -m ndpi --proto fasttrack -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -p tcp -m ndpi --proto filetopia -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m ndpi --proto gnutella -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
-//		save2file_A("advgrp_%d -p tcp -m ndpi --proto openft -j %s", seq, log_drop);
+//              save2file_A("advgrp_%d -p tcp -m ndpi --proto openft -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -m ndpi --pando_media_booster -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_drop);
 //              save2file_A("advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_drop);
@@ -2171,7 +2171,7 @@ int filtersync_main(int argc, char *argv[])
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		int state = if_tod_intime(seq);
 		char enabled[32];
-		sprintf(enabled, "tod%d_enabled",seq);
+		sprintf(enabled, "tod%d_enabled", seq);
 		switch (state) {
 		case 2:	// is in time now
 			if (!nvram_match(enabled, "1")) {
@@ -2195,7 +2195,7 @@ int filtersync_main(int argc, char *argv[])
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		int state = if_tod_intime(seq);
 		char enabled[32];
-		sprintf(enabled, "tod%d_enabled",seq);
+		sprintf(enabled, "tod%d_enabled", seq);
 		switch (state) {
 		case 2:	// is in time now
 			if (!nvram_match(enabled, "1")) {
@@ -3731,7 +3731,7 @@ void start_firewall(void)
 	stop_splashd();
 	start_splashd();
 #endif
-	
+
 	cprintf("ready");
 	cprintf("done\n");
 #ifdef HAVE_SYSCTL_EDIT
@@ -3805,3 +3805,23 @@ void stop_firewall(void)
 #endif
 	return;
 }
+
+#ifdef HAVE_OPENDPI
+extern l7filters *get_raw_filters(void);
+void start_test_ndpi(void)
+{
+	l7filters *filters = get_raw_filters();
+	int cnt = 0;
+	eval("iptables", "-N", "testchain");
+	while (filters[cnt].name) {
+		if (filters[cnt].protocol == 2) {
+			if (eval("iptables", "-A", "testchain", "-m", "ndpi", "--proto", filters[cnt].name, "-j", "DROP"))
+				fprintf(stderr, "error in %s\n", filters[cnt].name);
+			eval("iptables", "-D", "testchain", "-m", "ndpi", "--proto", filters[cnt].name, "-j", "DROP");
+		}
+		cnt++;
+	}
+	eval("iptables", "-X", "testchain");
+
+}
+#endif
