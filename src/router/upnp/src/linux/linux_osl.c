@@ -682,6 +682,8 @@ add_nat_entry(netconf_nat_t *entry)
 	set_forward_port(&nat);
 	/* Do it */
 	netconf_add_nat(&nat);
+	/* try to delete first */
+	netconf_del_filter(&filter);
 	netconf_add_filter(&filter);
 }
 
