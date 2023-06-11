@@ -2643,6 +2643,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	//save2file_A_forward("-m state --state INVALID -j %s", log_drop);
 	save2file_A_forward("! -s %s -o %s -p tcp -m state --state INVALID -j %s", nvram_safe_get("wan_ipaddr"), wanface, log_drop);
 
+	save2file_A_forward("-j upnp");
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_forward("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 		save2file_A_forward("-o %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
@@ -2945,7 +2946,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		save2file(":limaccept - [0:0]\n");
 #endif
 	}
-	save2file(":trigger_out - [0:0]\n" ":lan2wan - [0:0]");
+	save2file(":trigger_out - [0:0]\n" ":upnp - [0:0]\n" ":lan2wan - [0:0]");
 	int seq;
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		save2file(":grp_%d - [0:0]", seq);
