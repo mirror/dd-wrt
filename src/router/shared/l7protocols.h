@@ -9,8 +9,8 @@
 typedef struct _l7filters {
 
 	char *name;
-	int protocol;		// 1=p2p, 0=l7, 2=opendpi
-	unsigned char level;	// risk code
+	unsigned short protocol:2;	// 1=p2p, 0=l7, 2=opendpi
+	unsigned short level:14;
 	char *matchdep;		// for risk only
 } l7filters;
 #define L7_ONLY 0
@@ -181,7 +181,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "fastcgi", NDPI_ONLY, 0, NULL },
 #endif
-	{ "filetopia", DPI, 0, NULL },
+	{ "filetopia", L7_ONLY, 0, NULL },
 	{ "finger", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "fix", NDPI_ONLY, 0, NULL },
@@ -193,7 +193,7 @@ l7filters filters_list[] = {
 	{ "freegate_dns", L7_ONLY, 0, NULL },
 	{ "freegate_http", L7_ONLY, 0, NULL },
 	{ "freenet", L7_ONLY, 0, NULL },
-	{ "ftp", DPI, 0, NULL },
+	{ "ftp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ftp_control", NDPI_ONLY, 0, NULL },
 	{ "ftps", NDPI_ONLY, 0, NULL },
@@ -427,7 +427,7 @@ l7filters filters_list[] = {
 	{ "ocs", NDPI_ONLY, 0, NULL },
 	{ "ocsp", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ogg", DPI, 0, NULL },
+	{ "ogg", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "oicq", NDPI_ONLY, 0, NULL },
 	{ "ookla", NDPI_ONLY, 0, NULL },
@@ -441,7 +441,7 @@ l7filters filters_list[] = {
 	{ "pandora", NDPI_ONLY, 0, NULL },
 	{ "pastebin", NDPI_ONLY, 0, NULL },
 #endif
-	{ "pcanywhere", DPI, 0, NULL },
+	{ "pcanywhere", L7_ONLY, 0, NULL },
 	{ "pdf", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 //      { "periodic flow", NDPI_RISK, 48, NULL }, /* unused */
@@ -463,7 +463,7 @@ l7filters filters_list[] = {
 	{ "postgresql", NDPI_ONLY, 0, NULL },
 #endif
 	{ "postscript", L7_ONLY, 0, NULL },
-	{ "pplive", DPI, 0, NULL },
+	{ "pplive", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ppstream", NDPI_ONLY, 0, NULL },
 	{ "pptp", NDPI_ONLY, 0, NULL },
@@ -488,14 +488,14 @@ l7filters filters_list[] = {
 	{ "qqdownload_3", L7_ONLY, 0, NULL },
 	{ "qqfile", L7_ONLY, 0, NULL },
 	{ "qqgame", L7_ONLY, 0, NULL },
-	{ "qqlive", DPI, 0, NULL },
+	{ "qqlive", L7_ONLY, 0, NULL },
 	{ "qqlive2", L7_ONLY, 0, NULL },
 	{ "quake-halflife", L7_ONLY, 0, NULL },
 	{ "quake1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "quic", NDPI_ONLY, 0, NULL },
 #endif
-	{ "quicktime", DPI, 0, NULL },
+	{ "quicktime", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "radius", NDPI_ONLY, 0, NULL },
 #endif
@@ -559,7 +559,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "slack", NDPI_ONLY, 0, NULL },
 #endif
-	{ "smb", DPI, 0, NULL },
+	{ "smb", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "smb insecure vers", NDPI_RISK, 20, "smb" },
 	{ "smbv1", NDPI_ONLY, 0, NULL },
@@ -584,7 +584,7 @@ l7filters filters_list[] = {
 	{ "someip", NDPI_ONLY, 0, NULL },
 #endif
 	{ "soribada", L7_ONLY, 0, NULL },
-	{ "soulseek", PDPI, 0, NULL },
+	{ "soulseek", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "soundcloud", NDPI_ONLY, 0, NULL },
 	{ "source_engine", NDPI_ONLY, 0, NULL },
@@ -598,7 +598,7 @@ l7filters filters_list[] = {
 	{ "ssh obsolete cli ver/cipher", NDPI_RISK, 18, "ssh" },
 	{ "ssh obsolete ser ver/cipher", NDPI_RISK, 19, "ssh" },
 #endif
-	{ "ssl", DPI, 0, NULL },
+	{ "ssl", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "starcraft", NDPI_ONLY, 0, NULL },
 	{ "steam", NDPI_ONLY, 0, NULL },
