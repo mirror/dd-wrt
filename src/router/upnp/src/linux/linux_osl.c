@@ -633,7 +633,7 @@ static void
 add_nat_entry(netconf_nat_t *entry)
 {
 	int dir = NETCONF_UPNP;
-	int log_level = atoi(nvram_safe_get("log_level"));
+	int log_level = nvram_match("log_enable", "1") ? atoi(nvram_safe_get("log_level")) : 0;
 	int target = (log_level & 2) ? NETCONF_LOG_ACCEPT : NETCONF_ACCEPT;
 	netconf_filter_t filter;
 	struct in_addr netmask = { 0xffffffff };
@@ -667,8 +667,8 @@ add_nat_entry(netconf_nat_t *entry)
 	filter.match.dst.netmask.s_addr = netmask.s_addr;
 	filter.match.dst.ports[0] = nat.ports[0];
 	filter.match.dst.ports[1] = nat.ports[1];
-	strncpy(filter.match.in.name, nat.match.in.name, IFNAMSIZ);
 
+	strncpy(filter.match.in.name, nat.match.in.name, IFNAMSIZ);
 	/* Accept connection */
 	filter.target = target;
 	filter.dir = dir;
@@ -690,7 +690,7 @@ static void
 delete_nat_entry(netconf_nat_t *entry)
 {
 	int dir = NETCONF_UPNP;
-	int log_level = atoi(nvram_safe_get("log_level"));
+	int log_level = nvram_match("log_enable", "1") ? atoi(nvram_safe_get("log_level")) : 0;
 	int target = (log_level & 2) ? NETCONF_LOG_ACCEPT : NETCONF_ACCEPT;
 	netconf_filter_t filter;
 	struct in_addr netmask = { 0xffffffff };
@@ -740,10 +740,12 @@ upnp_osl_nat_config(UPNP_PORTMAP *map)
 	char *IntIP = map->internal_client;
 	unsigned short IntPort = map->internal_port;
 	char *rthost = map->remote_host;
+	char *ifname = g_wandevs;
 
 	memset(entry, 0, sizeof(netconf_nat_t));
 
 	/* accept from any port */
+	strncpy(entry->match.in.name, ifname, IFNAMSIZ);
 	entry->match.src.ports[0] = 0;
 	entry->match.src.ports[1] = htons(0xffff);
 	entry->match.dst.ports[0] = htons(ExtPort);

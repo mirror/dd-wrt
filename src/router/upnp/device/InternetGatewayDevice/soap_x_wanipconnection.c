@@ -451,13 +451,16 @@ action_GetSpecificPortMappingEntry
 	OUT_ARGUMENT *out_NewLeaseDuration = UPNP_OUT_ARG("NewLeaseDuration");
 	
     UPNP_PORTMAP *map;
-
+	fprintf(stderr, "getspecificport %s %d %s\n", ARG_STR(in_NewRemoteHost), ARG_UI2(in_NewExternalPort), ARG_STR(in_NewProtocol));
     map = upnp_portmap_find(context,
 							ARG_STR(in_NewRemoteHost), 
 							ARG_UI2(in_NewExternalPort),
 							ARG_STR(in_NewProtocol));
-	if (!map)
+	
+	if (!map) {
+		fprintf(stderr, "invalid\n");
 		return SOAP_INVALID_ARGS;
+	}
     
 	strcpy(ARG_STR(out_NewInternalClient), map->internal_client);
 	strcpy(ARG_STR(out_NewPortMappingDescription), map->description);
