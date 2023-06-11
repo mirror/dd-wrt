@@ -1748,6 +1748,12 @@ char *get_dep_by_name(char *name)
 	}
     return 0;
 }
+
+l7filters *get_raw_filters(void)
+{
+    return filters_list;
+}
+
 char *get_filter_services(void)
 {
 
