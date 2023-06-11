@@ -1,18 +1,3 @@
-miniupnpc:
-	make -C miniupnpc OS="Linux" OS_STRING="DD-WRT" PREFIX="/usr" CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC"
-
-miniupnpc-clean:
-	make -C miniupnpc clean
-
-miniupnpc-configure:
-	make -C miniupnpc
-
-miniupnpc-install:
-	make -C miniupnpc install INSTALLPREFIX=$(INSTALLDIR)/miniupnpc/usr 
-	rm -rf $(INSTALLDIR)/miniupnpc/usr/bin
-	rm -rf $(INSTALLDIR)/miniupnpc/usr/include
-	rm -rf $(INSTALLDIR)/miniupnpc/usr/share
-	rm -f $(INSTALLDIR)/miniupnpc/usr/lib/*.a
 
 tor-configure: openssl xz zstd libevent zlib
 	cd tor && libtoolize -ci --force 
