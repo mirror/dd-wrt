@@ -332,7 +332,7 @@ obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 obj-$(CONFIG_PRIVOXY) += zlib pcre privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
 obj-$(CONFIG_WEBSERVER) += libffi zlib libzip libucontext openssl glib20 libxml2 libmcrypt lighttpd curl libpng sqlite php8 util-linux
-obj-$(CONFIG_TRANSMISSION) += libevent curl transmission zlib
+obj-$(CONFIG_TRANSMISSION) += curl transmission zlib
 obj-$(CONFIG_CLOUD4WI) += curl zlib
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
 ifeq ($(CONFIG_OPENSSL),y)

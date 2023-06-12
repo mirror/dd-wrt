@@ -13,7 +13,7 @@ TRANSMISSION_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP) -I $(TOP)/opens
 TRANSMISSION_EXTRA_LDFLAGS=$(LDLTO) -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lz -latomic -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
-transmission: libevent curl zlib
+transmission: curl zlib
 	install -D transmission/configs/transmission.webnas httpd/ej_temp/06transmission.webnas
 	$(MAKE) -C transmission/build
 
@@ -32,7 +32,7 @@ transmission-install:
 transmission-clean:
 	$(MAKE) -C transmission/build clean
 
-transmission-configure: libevent-configure curl-configure zlib
+transmission-configure: curl-configure zlib
 	rm -f $(TOP)/transmission/CMakeCache.txt
 	rm -rf $(TOP)/transmission/build
 	mkdir -p $(TOP)/transmission/build
