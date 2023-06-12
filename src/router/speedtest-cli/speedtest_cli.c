@@ -421,7 +421,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 			}
 		}
 	}
-
+	free(buf);
 	system("rm /tmp/speedtest-servers.php");
 
 	return 0;
