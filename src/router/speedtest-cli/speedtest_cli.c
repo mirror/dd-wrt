@@ -25,9 +25,9 @@
 #include <shutils.h>
 
 #define CONF_SERVER	"http://www.speedtest.net/speedtest-config.php"
-#define STATIC_SERVER	{"http://www.speedtest.net/speedtest-servers-static.php","http://c.speedtest.net/speedtest-servers-static.php","http://www.speedtest.net/speedtest-servers.php","http://c.speedtest.net/speedtest-servers.php"}
+#define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
 
-#define CLOSEST_SERVERS_NUM 5
+#define CLOSEST_SERVERS_NUM 20
 #define DL_FILE_NUM 10
 #define DL_FILE_TIMES 4
 #define MAX_FILE_LEN 20
@@ -172,6 +172,31 @@ static char *get_str(char *in, char *line)
 	return NULL;
 }
 
+static char *get_str_json(char *search, char **p)
+{
+	char *buf = *p;
+	char s[32];
+	sprintf(s, "\"%s\"", search);
+	char *look = strstr(buf, s);
+	if (!look)
+		return NULL;
+	look += strlen(s) + 2;
+	char *ret;
+	char *orig = ret = malloc(128);
+	char *dest = strchr(look, '"');
+	char *i;
+	for (i = look; i < dest; i++) {
+		if (*i == '\\') {
+			continue;
+		}
+		*ret = *i;
+		ret++;
+	}
+	*ret = 0;
+	*p = i;
+	return orig;
+}
+
 static int get_speedtest_config(client_config_t * client)
 {
 	FILE *fp1;
@@ -286,63 +311,63 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	char line[256];
 	server_config_t server;
 	int j, k;
-
-	const char *server_url[]= STATIC_SERVER;
 	int i;
-	for (i = 0; i < sizeof(server_url) / sizeof(char *); i++) {
-		SPEEDTEST_INFO("%s\n",server_url[i]);
-		eval("curl", "-L", "-s", "-o", "/tmp/speedtest-servers.php", server_url[i]);
-
-		if ((fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
-			break;
-		}
-	}
-	if (i == sizeof(server_url) / sizeof(char *)) {
+	SPEEDTEST_INFO(STATIC_SERVER "\n");
+	eval("curl", "-L", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
+	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
 		return errno;
 	}
 	init_server(&server);
 
-	while (fgets(line, 255, fp1)) {
-		if ((server.url = get_str("url", line)) == NULL) {
+	fseek(fp1, 0, SEEK_END);
+	size_t len = ftell(fp1);
+	rewind(fp1);
+	char *buf = malloc(len + 1);
+	buf[len] = 0;
+	fread(buf, len, 1, fp1);
+	fclose(fp1);
+	int ccc = 0;
+	while (1) {
+		if ((server.url = get_str_json("url", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.lat = get_str("lat", line)) == NULL) {
+		if ((server.lat = get_str_json("lat", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.lon = get_str("lon", line)) == NULL) {
+		if ((server.lon = get_str_json("lon", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.name = get_str("name", line)) == NULL) {
+		if ((server.name = get_str_json("name", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.country = get_str("country", line)) == NULL) {
+		if ((server.country = get_str_json("country", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.cc = get_str("cc", line)) == NULL) {
+		if ((server.cc = get_str_json("cc", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.sponsor = get_str("sponsor", line)) == NULL) {
+		if ((server.sponsor = get_str_json("sponsor", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
-		if ((server.id = get_str("id", line)) == NULL) {
+		if ((server.id = get_str_json("id", &buf)) == NULL) {
 			server_free(&server);
 			init_server(&server);
-			continue;
+			break;
 		}
 
 		/* calculate distance between client and server */
@@ -397,9 +422,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 		}
 	}
 
-	fclose(fp1);
-
-	eval("rm", "/tmp/speedtest-servers.php");
+	system("rm /tmp/speedtest-servers.php");
 
 	return 0;
 }
