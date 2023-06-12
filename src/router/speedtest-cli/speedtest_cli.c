@@ -814,7 +814,7 @@ static void usage(void)
 	printf("speedtest_cli [options] [1|0](download test enable|disable) ");
 	printf("[download thread number] ");
 	printf("[1|0](upload test enable|disable) [upload thread number]\n");
-	printf("Range of thread number: 1 - 7\n");
+	printf("Range of thread number: 1 - 32\n");
 	printf("\noptions\n");
 	printf("\t-d\n");
 	printf("\t\tturn on debug message\n");
@@ -853,7 +853,7 @@ int main(int argc, char **argv)
 		i++;
 
 		num = atoi(argv[i]);
-		if ((num < 1) || (num > 7)) {
+		if ((num < 1) || (num > 32)) {
 			usage();
 			return 0;
 		} else {
@@ -872,7 +872,7 @@ int main(int argc, char **argv)
 		i++;
 
 		num = atoi(argv[i]);
-		if ((num < 1) || (num > 7)) {
+		if ((num < 1) || (num > 32)) {
 			usage();
 			return 0;
 		} else {
