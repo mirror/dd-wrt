@@ -550,7 +550,6 @@ static int test_download_speed(server_config_t * best_server)
 	double duration;
 	double time_dl_end;
 	FILE *fp_result;
-	char result[32];
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	url_len = strlen(best_server->url) - strlen("upload.php");
@@ -610,10 +609,7 @@ static int test_download_speed(server_config_t * best_server)
 		perror("fopen /tmp/speedtest_download_result");
 		return errno;
 	}
-	strcpy(result, "ceil_down=");
-	sprintf(&result[strlen("ceil_down=")], "%ld", (long)(finished / 1024 / duration));
-	strcat(result, "kbps");
-	fprintf(fp_result, "%s", result);
+	fprintf(fp_result, "%.2f", ((finished / 1024 / 1024 / duration) * 8));
 	fclose(fp_result);
 
 	return 0;
@@ -670,7 +666,6 @@ static int test_upload_speed(server_config_t * best_server)
 	pthread_t q[ul_thread_num];
 	FILE *fp[UL_SIZE_NUM];
 	FILE *fp_result;
-	char result[32];
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	for (i = 0; i < UL_SIZE_NUM; i++) {
@@ -738,10 +733,7 @@ static int test_upload_speed(server_config_t * best_server)
 		perror("fopen /tmp/speedtest_upload_result");
 		return errno;
 	}
-	strcpy(result, "ceil_up=");
-	sprintf(&result[strlen("ceil_up=")], "%ld", (long)(finished / 1024 / duration));
-	strcat(result, "kbps");
-	fprintf(fp_result, "%s", result);
+	fprintf(fp_result, "%.2f", ((finished / 1024 / 1024 / duration) * 8));
 	fclose(fp_result);
 
 	for (i = 0; i < UL_SIZE_NUM; i++) {
