@@ -177,6 +177,12 @@ macro(tr_add_external_auto_library ID DIRNAME LIBNAME)
                 --no-warn-unused-cli
                 "-DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_TOOLCHAIN_FILE}"
                 "-DCMAKE_USER_MAKE_RULES_OVERRIDE=${CMAKE_USER_MAKE_RULES_OVERRIDE}"
+                "-DCMAKE_AR=${CMAKE_AR}"
+                "-DCMAKE_RANLIB=${CMAKE_RANLIB}"
+                "-DCMAKE_C_COMPILER_AR=${CMAKE_C_COMPILER_AR}"
+                "-DCMAKE_C_COMPILER_RANLIB=${CMAKE_C_COMPILER_RANLIB}"
+                "-DCMAKE_CXX_COMPILER_AR=${CMAKE_CXX_COMPILER_AR}"
+                "-DCMAKE_CXX_COMPILER_RANLIB=${CMAKE_CXX_COMPILER_RANLIB}"
                 "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
                 "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}"
                 "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
