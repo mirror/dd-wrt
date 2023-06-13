@@ -178,8 +178,9 @@ static char *get_str_json(char *search, char **p)
 	char s[32];
 	sprintf(s, "\"%s\"", search);
 	char *look = strstr(buf, s);
-	if (!look)
+	if (!look) {
 		return NULL;
+	}
 	look += strlen(s) + 2;
 	char *ret;
 	char *orig = ret = malloc(128);
@@ -323,7 +324,8 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	fseek(fp1, 0, SEEK_END);
 	size_t len = ftell(fp1);
 	rewind(fp1);
-	char *buf = malloc(len + 1);
+	char *orig;
+	char *buf = orig = malloc(len + 1);
 	buf[len] = 0;
 	fread(buf, len, 1, fp1);
 	fclose(fp1);
@@ -421,17 +423,9 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 			}
 		}
 	}
-	free(buf);
+	
+	free(orig);
 	eval("rm", "-f", "/tmp/speedtest-servers.php");
-	FILE *fp = fopen("/tmp/speedtest_name", "wb");
-	fprintf(fp, "%s", server.name);
-	fclose(fp);
-	fp = fopen("/tmp/speedtest_country", "wb");
-	fprintf(fp, "%s", server.country);
-	fclose(fp);
-	fp = fopen("/tmp/speedtest_sponsor", "wb");
-	fprintf(fp, "%s", server.sponsor);
-	fclose(fp);
 	return 0;
 }
 
@@ -785,6 +779,16 @@ static int speedtest(int dl_enable, int ul_enable)
 		fprintf(stderr, "get_lowest_latency_server error!\n");
 		return -1;
 	}
+
+	FILE *fp = fopen("/tmp/speedtest_name", "wb");
+	fprintf(fp, "%s", best_server.name);
+	fclose(fp);
+	fp = fopen("/tmp/speedtest_country", "wb");
+	fprintf(fp, "%s", best_server.country);
+	fclose(fp);
+	fp = fopen("/tmp/speedtest_sponsor", "wb");
+	fprintf(fp, "%s", best_server.sponsor);
+	fclose(fp);
 
 	if (dl_enable == 1) {
 		if (test_download_speed(&best_server)) {
