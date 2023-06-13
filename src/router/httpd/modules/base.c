@@ -1131,6 +1131,9 @@ static struct gozila_action gozila_actions[] = {
 #endif
 	{ "Status_Internet", "Connect_pppoe", "start_pppoe", RESTART, NULL },	// for
 	{ "Status_Internet", "Disconnect_pppoe", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for
+#ifdef HAVE_SPEEDTEST_CLI
+	{ "Status_Internet", "speedtest", "speedtest", SERVICE_RESTART, NULL },	// for
+#endif
 
 	{ "Status_Internet", "Connect_pptp", "start_pptp", RESTART, NULL },	// for
 	{ "Status_Internet", "Disconnect_pptp", "stop_pptp", SERVICE_RESTART, "stop_ppp" },	// for
