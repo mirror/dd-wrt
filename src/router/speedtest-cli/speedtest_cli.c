@@ -314,7 +314,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	int j, k;
 	int i;
 	SPEEDTEST_INFO(STATIC_SERVER "\n");
-	eval("curl", "-L", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
+	eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
 	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
 		return errno;
