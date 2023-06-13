@@ -190,8 +190,10 @@ static char *get_str_json(char *search, char **p)
 		if (*i == '\\') {
 			continue;
 		}
-		*ret = *i;
-		ret++;
+		if ((ret-orig) < 128) {
+		    *ret = *i;
+		    ret++;
+		}
 	}
 	*ret = 0;
 	*p = i;
