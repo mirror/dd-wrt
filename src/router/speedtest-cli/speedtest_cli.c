@@ -426,10 +426,10 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	FILE *fp = fopen("/tmp/speedtest_name", "wb");
 	fprintf(fp, "%s", server.name);
 	fclose(fp);
-	FILE *fp = fopen("/tmp/speedtest_country", "wb");
+	fp = fopen("/tmp/speedtest_country", "wb");
 	fprintf(fp, "%s", server.country);
 	fclose(fp);
-	FILE *fp = fopen("/tmp/speedtest_sponsor", "wb");
+	fp = fopen("/tmp/speedtest_sponsor", "wb");
 	fprintf(fp, "%s", server.sponsor);
 	fclose(fp);
 	return 0;
