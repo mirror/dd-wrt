@@ -12,4 +12,9 @@
 {ttraff_out::<% get_totaltraff("out"); %>}
 {uptime::<% get_uptime(); %>}
 {ipinfo::<% show_wanipinfo(); %>}
+{speed_up::<% speed_up(); %>}
+{speed_down::<% speed_down(); %>}
+{speed_town::<% speed_name(); %>}
+{speed_sponsor::<% speed_sponsor(); %>}
+{speed_country::<% speed_country(); %>}
 <% show_status("adsl"); %>
