@@ -2137,6 +2137,15 @@ status_inet.previous="Vorhergehender Monat";
 status_inet.next="Nächster Monat";
 status_inet.dataadmin="Daten Administration";
 status_inet.delete_confirm="WARNUNG! Dies löscht alle ihre Traffic Daten. Fortfahren??";
+status_inet.speed="Internet Geschwindigkeit";
+status_inet.speedtest="Speedtest";
+status_inet.down="Download Geschwindigkeit";
+status_inet.up="Upload Geschwindigkeit";
+status_inet.server="Server";
+status_inet.sponsor="Sponsor";
+status_inet.town="Stadt";
+status_inet.country="Land";
+status_inet.test="Starte Test";
 
 
 //help container
