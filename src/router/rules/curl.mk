@@ -1,3 +1,7 @@
+curl-static-clean:
+	$(MAKE) -C curl/build_static clean
+
+
 curl-static: openssl
 	$(MAKE) -C curl/build_static
 
@@ -27,7 +31,7 @@ curl: openssl zlib
 	$(MAKE) -C curl/build
 
 curl-clean:
-	$(MAKE) -C curl clean
+	$(MAKE) -C curl/build clean
 
 curl-configure: openssl zlib
 	cd curl && ./buildconf
