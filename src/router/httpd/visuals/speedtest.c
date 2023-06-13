@@ -30,29 +30,65 @@
 
 #include <broadcom.h>
 
-
 EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t ** argv)
 {
-FILE *in = fopen("/tmp/speedtest_upload_result","rb");
-if (!in) {
-	return;
-}
-double f;
-fscanf(in,"%.2f", &f);
-fclose(in);
-websWrite(wp,"%.2f",f);
+	FILE *in = fopen("/tmp/speedtest_upload_result", "rb");
+	if (!in) {
+		return;
+	}
+	double f;
+	fscanf(in, "%.2f", &f);
+	fclose(in);
+	websWrite(wp, "%.2f", f);
 }
 
 EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t ** argv)
 {
-FILE *in = fopen("/tmp/speedtest_download_result","rb");
-if (!in) {
-	return;
+	FILE *in = fopen("/tmp/speedtest_download_result", "rb");
+	if (!in) {
+		return;
+	}
+	double f;
+	fscanf(in, "%.2f", &f);
+	fclose(in);
+	websWrite(wp, "%.2f", f);
 }
-double f;
-fscanf(in,"%.2f", &f);
-fclose(in);
-websWrite(wp,"%.2f",f);
+
+EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *in = fopen("/tmp/speedtest_name", "rb");
+	if (!in) {
+		return;
+	}
+	char name[128];
+	memset(name, 0, sizeof(name));
+	fread(name, sizeof(name), 1, in);
+	websWrite(wp, "%s", name);
+	fclose(in);
+}
+EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *in = fopen("/tmp/speedtest_country", "rb");
+	if (!in) {
+		return;
+	}
+	char name[128];
+	memset(name, 0, sizeof(name));
+	fread(name, sizeof(name), 1, in);
+	websWrite(wp, "%s", name);
+	fclose(in);
+}
+EJ_VISIBLE void ej_speed_sponsor(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *in = fopen("/tmp/speedtest_sponsor", "rb");
+	if (!in) {
+		return;
+	}
+	char name[128];
+	memset(name, 0, sizeof(name));
+	fread(name, sizeof(name), 1, in);
+	websWrite(wp, "%s", name);
+	fclose(in);
 }
 
 #endif
