@@ -1,8 +1,20 @@
-curl: openssl zlib
-	$(MAKE) -C curl
+curl-static: openssl
+	$(MAKE) -C curl/build_static
+
+curl-static-install:
+	$(MAKE) -C curl/build_static install DESTDIR=$(INSTALLDIR)/curl
+	rm -f $(INSTALLDIR)/curl/usr/bin/curl-config
+	rm -rf $(INSTALLDIR)/curl/usr/include
+	rm -rf $(INSTALLDIR)/curl/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/curl/usr/lib/*.a
+	rm -f $(INSTALLDIR)/curl/usr/lib/*.la
+	rm -rf $(INSTALLDIR)/curl/usr/share
+	rm -rf $(INSTALLDIR)/curl/usr/lib
+	mkdir -p $(INSTALLDIR)/curl/etc/ssl
+	cp $(TOP)/curl/build_static/lib/ca-bundle.crt $(INSTALLDIR)/curl/etc/ssl/
 
 curl-install:
-	$(MAKE) -C curl install DESTDIR=$(INSTALLDIR)/curl
+	$(MAKE) -C curl/build install DESTDIR=$(INSTALLDIR)/curl
 	rm -f $(INSTALLDIR)/curl/usr/bin/curl-config
 	rm -rf $(INSTALLDIR)/curl/usr/include
 	rm -rf $(INSTALLDIR)/curl/usr/lib/pkgconfig
@@ -10,13 +22,79 @@ curl-install:
 	rm -f $(INSTALLDIR)/curl/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/curl/usr/share
 	mkdir -p $(INSTALLDIR)/curl/etc/ssl
-	cp $(TOP)/curl/lib/ca-bundle.crt $(INSTALLDIR)/curl/etc/ssl/
+	cp $(TOP)/curl/build/lib/ca-bundle.crt $(INSTALLDIR)/curl/etc/ssl/
+
+curl: openssl zlib
+	$(MAKE) -C curl/build
 
 curl-clean:
 	$(MAKE) -C curl clean
 
 curl-configure: openssl zlib
-	cd curl && ./buildconf && ./configure --with-ca-bundle=/etc/ssl/ca-bundle.crt --with-openssl --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	cd curl && ./buildconf
+	mkdir -p curl/build
+	mkdir -p curl/build_static
+	cd curl/build && ../configure --disable-verbose \
+	--disable-ntlm \
+	--disable-debug \
+	--disable-ares \
+	--disable-manual \
+	--without-nss \
+	--without-librtmp \
+	--without-libidn \
+	--without-ca-path \
+	--without-libpsl \
+	--without-zstd \
+	--with-ca-bundle=/etc/ssl/ca-bundle.crt --with-openssl --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="-DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib  -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/openssl -lcrypto -lssl -ldl" \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	NM="$(ARCH)-linux-nm $(LTOPLUGIN)" \
+	lt_cv_sys_global_symbol_pipe="sed -n -e 's/^.*[	 ]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[	 ][	 ]*\\([_A-Za-z][_A-Za-z0-9]*\\)\$$/\\1 \\2 \\2/p' | sed '/ __gnu_lto/d'" \
+	lt_cv_sys_global_symbol_to_cdecl="sed -n -e 's/^T .* \\(.*\\)\$$/extern int \\1();/p' -e 's/^[ABCDGIRSTW][ABCDGIRSTW]* .* \\(.*\\)\$$/extern char \\1;/p'"
+
+	cd curl/build_static && ../configure \
+	--disable-verbose \
+	--disable-ftp \
+	--disable-gopher \
+	--disable-ldap \
+	--disable-ldaps \
+	--disable-rtsp \
+	--disable-proxy \
+	--disable-dict \
+	--disable-hsts \
+	--disable-file \
+	--disable-alt-svc \
+	--disable-telnet \
+	--disable-tftp \
+	--disable-pop3 \
+	--disable-imap \
+	--disable-smb \
+	--disable-smtp \
+	--disable-mqtt \
+	--disable-ech \
+	--disable-curldebug \
+	--disable-shared \
+	--disable-ntlm \
+	--disable-debug \
+	--disable-ares \
+	--disable-manual \
+	--without-nss \
+	--without-librtmp \
+	--without-libidn \
+	--without-ca-path \
+	--without-libpsl \
+	--without-zstd \
+	--enable-static \
+	--with-ca-bundle=/etc/ssl/ca-bundle.crt \
+	--with-openssl \
+	--prefix=/usr \
+	ac_cv_host=$(ARCH)-uclibc-linux \
+	--libdir=/usr/lib \
+	--target=$(ARCH)-linux \
+	--host=$(ARCH) \
+	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib  -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/openssl -lcrypto -lssl -ldl" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
@@ -24,5 +102,8 @@ curl-configure: openssl zlib
 	NM="$(ARCH)-linux-nm $(LTOPLUGIN)" \
 	lt_cv_sys_global_symbol_pipe="sed -n -e 's/^.*[	 ]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[	 ][	 ]*\\([_A-Za-z][_A-Za-z0-9]*\\)\$$/\\1 \\2 \\2/p' | sed '/ __gnu_lto/d'" \
 	lt_cv_sys_global_symbol_to_cdecl="sed -n -e 's/^T .* \\(.*\\)\$$/extern int \\1();/p' -e 's/^[ABCDGIRSTW][ABCDGIRSTW]* .* \\(.*\\)\$$/extern char \\1;/p'"
-	$(MAKE) -C curl
-	$(MAKE) -C curl ca-bundle
+
+	$(MAKE) -C curl/build
+	$(MAKE) -C curl/build ca-bundle
+	$(MAKE) -C curl/build_static
+	$(MAKE) -C curl/build_static ca-bundle
