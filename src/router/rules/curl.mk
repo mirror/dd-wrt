@@ -11,7 +11,6 @@ curl-static-install:
 	rm -rf $(INSTALLDIR)/curl/usr/share
 	rm -rf $(INSTALLDIR)/curl/usr/lib
 	mkdir -p $(INSTALLDIR)/curl/etc/ssl
-	cp $(TOP)/curl/build_static/lib/ca-bundle.crt $(INSTALLDIR)/curl/etc/ssl/
 
 curl-install:
 	$(MAKE) -C curl/build install DESTDIR=$(INSTALLDIR)/curl
