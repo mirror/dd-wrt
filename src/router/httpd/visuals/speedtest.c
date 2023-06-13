@@ -36,28 +36,30 @@ EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t ** argv)
 	if (!in) {
 		return;
 	}
-	double f;
-	fscanf(in, "%.2f", &f);
+	char str[32];
+	fscanf(in, "%s", &str[0]);
 	fclose(in);
-	websWrite(wp, "%.2f", f);
+	websWrite(wp, "%s", str);
 }
 
 EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_download_result", "rb");
 	if (!in) {
+		websWrite(wp, "&nbsp;");
 		return;
 	}
-	double f;
-	fscanf(in, "%.2f", &f);
+	char str[32];
+	fscanf(in, "%s", &str[0]);
 	fclose(in);
-	websWrite(wp, "%.2f", f);
+	websWrite(wp, "%s", str);
 }
 
 EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_name", "rb");
 	if (!in) {
+		websWrite(wp, "&nbsp;");
 		return;
 	}
 	char name[128];
@@ -70,6 +72,7 @@ EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_country", "rb");
 	if (!in) {
+		websWrite(wp, "&nbsp;");
 		return;
 	}
 	char name[128];
@@ -82,6 +85,7 @@ EJ_VISIBLE void ej_speed_sponsor(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_sponsor", "rb");
 	if (!in) {
+		websWrite(wp, "&nbsp;");
 		return;
 	}
 	char name[128];
