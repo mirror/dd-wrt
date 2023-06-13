@@ -34,6 +34,7 @@ EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_upload_result", "rb");
 	if (!in) {
+		websWrite(wp, "0");
 		return;
 	}
 	char str[32];
@@ -46,7 +47,7 @@ EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_download_result", "rb");
 	if (!in) {
-		websWrite(wp, "&nbsp;");
+		websWrite(wp, "0");
 		return;
 	}
 	char str[32];
