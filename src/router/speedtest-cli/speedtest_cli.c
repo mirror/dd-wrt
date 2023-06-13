@@ -185,6 +185,9 @@ static char *get_str_json(char *search, char **p)
 	char *ret;
 	char *orig = ret = malloc(128);
 	char *dest = strchr(look, '"');
+	if (!dest) {
+		return NULL;
+	}
 	char *i;
 	for (i = look; i < dest; i++) {
 		if (*i == '\\') {
