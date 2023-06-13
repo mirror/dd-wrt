@@ -3,7 +3,7 @@ TRANSMISSION_CMAKE_OPTIONS=-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so 
 		    -DOPENSSL_SSL_LIBRARY=$(TOP)/openssl/libssl.so \
 		    -DOPENSSL_INCLUDE_DIR=$(TOP)/openssl/include \
 		    -DCURL_INCLUDE_DIR=$(TOP)/curl/include \
-		    -DCURL_LIBRARY=$(TOP)/curl/lib/.libs/libcurl.so \
+		    -DCURL_LIBRARY=$(TOP)/curl/build/lib/.libs/libcurl.so \
 		    -DCMAKE_BUILD_TYPE=release \
 		    -DCMAKE_AR=${shell which $(ARCH)-linux-gcc-ar} \
 		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib}
