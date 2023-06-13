@@ -739,6 +739,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_HTTPS
 	{ "HTTPS", NULL },
 #endif
+#ifdef HAVE_SPEEDTEST_CLI
+	{ "SPEEDTEST_CLI", NULL },
+#endif
 #ifdef HAVE_REAL_OPENSSL
 	{ "OPENSSL", NULL },
 #endif
