@@ -2419,6 +2419,15 @@ status_inet.previous="Previous Month";
 status_inet.next="Next Month";
 status_inet.dataadmin="Data Administration";
 status_inet.delete_confirm="WARNING! This will delete all traffic data. Proceed?";
+status_inet.speed="Internet Speed";
+status_inet.speedtest="Speedtest";
+status_inet.down="Downstream";
+status_inet.up="Upstream";
+status_inet.server="Server";
+status_inet.sponsor="Sponsor";
+status_inet.town="Town";
+status_inet.country="Country";
+status_inet.test="Run Test";
 
 //help container
 var hstatus_inet=new Object();

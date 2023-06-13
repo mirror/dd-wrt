@@ -17,6 +17,12 @@ function connect(F,I) {
 	apply(F);
 }
 
+function speedtest(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "speedtest";
+	apply(F);
+}
+
 function ttraff_remove_submit(F) {
 	if(!confirm(status_inet.delete_confirm)) {
 		return false;
@@ -177,6 +183,40 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
+							<% ifdef("SPEEDTEST_CLI", "<!--"); %>
+							<h2><% tran("status_inet.speed"); %></h2>
+								<fieldset>
+									<legend><% tran("status_inet.speedtest"); %></legend>
+										 <div class="setting">
+											<div class="label"><% tran("status_inet.test"); %></div>
+											<script>
+											//<![CDATA[
+											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.test +"\" onclick=\"speedtest(this.form);\">");
+											//]]>
+											</script>
+										</div>
+										 <div class="setting">
+											<div class="label"><% tran("status_inet.sponsor"); %></div>
+											<span id="speed_sponsor"><% speed_sponsor(); %></span>
+										</div>
+										 <div class="setting">
+											<div class="label"><% tran("status_inet.town"); %></div>
+											<span id="speed_town"><% speed_town(); %></span>
+										</div>
+										 <div class="setting">
+											<div class="label"><% tran("status_inet.country"); %></div>
+											<span id="speed_country"><% speed_country(); %></span>
+										</div>
+										 <div class="setting">
+											<div class="label"><% tran("status_inet.down"); %></div>
+											<span id="speed_down"><% speed_down(); %></span>&nbsp;Mbit/s
+										</div>
+										 <div class="setting">
+											<div class="label"><% tran("status_inet.up"); %></div>
+											<span id="speed_up"><% speed_up(); %></span>&nbsp;Mbit/s
+										</div>
+								</fieldset>
+							<% ifdef("SPEEDTEST_CLI", "-->"); %>
 							<div id="wan_showtraff" style="display:none">
 							<h2><% tran("status_inet.traff"); %> <% nvg("ttraff_iface"); %></h2>
 								<fieldset>
