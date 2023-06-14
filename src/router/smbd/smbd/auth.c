@@ -1080,12 +1080,8 @@ struct derivation {
 	bool binding;
 };
 
-#define SMB3_SIGN_KEY	1
-#define SMB3_ENC_KEY	2
-
-static int generate_key(struct ksmbd_conn *conn, struct ksmbd_session *sess,
-			unsigned int type, struct kvec label, struct kvec context, __u8 *key,
-			unsigned int key_size)
+static int generate_key(struct ksmbd_session *sess, struct kvec label,
+			struct kvec context, __u8 *key, unsigned int key_size)
 {
 	unsigned char zero = 0x0;
 	__u8 i[4] = {0, 0, 0, 1};
@@ -1157,8 +1153,9 @@ static int generate_key(struct ksmbd_conn *conn, struct ksmbd_session *sess,
 		goto smb3signkey_ret;
 	}
 
-	if (type == SMB3_ENC_KEY && (conn->cipher_type == SMB2_ENCRYPTION_AES256_CCM ||
-	    conn->cipher_type == SMB2_ENCRYPTION_AES256_GCM))
+	if (key_size == SMB3_ENC_DEC_KEY_SIZE &&
+		sess->conn->cipher_type == SMB2_ENCRYPTION_AES256_CCM ||
+		sess->conn->cipher_type == SMB2_ENCRYPTION_AES256_GCM)
 		rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx), L256, 4);
 	else
 		rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx), L128, 4);
@@ -1203,7 +1200,7 @@ static int generate_smb3signingkey(struct ksmbd_session *sess,
 	else
 		key = sess->smb3signingkey;
 
-	rc = generate_key(conn, sess, SMB3_SIGN_KEY, signing->label, signing->context, key,
+	rc = generate_key(sess, signing->label, signing->context, key,
 			  SMB3_SIGN_KEY_SIZE);
 	if (rc)
 		return rc;
@@ -1267,13 +1264,13 @@ static int generate_smb3encryptionkey(struct ksmbd_session *sess,
 {
 	int rc;
 
-	rc = generate_key(conn, sess, SMB3_ENC_KEY, ptwin->encryption.label,
+	rc = generate_key(sess, ptwin->encryption.label,
 			  ptwin->encryption.context, sess->smb3encryptionkey,
 			  SMB3_ENC_DEC_KEY_SIZE);
 	if (rc)
 		return rc;
 
-	rc = generate_key(conn, sess, SMB3_ENC_KEY, ptwin->decryption.label,
+	rc = generate_key(sess, ptwin->decryption.label,
 			  ptwin->decryption.context,
 			  sess->smb3decryptionkey, SMB3_ENC_DEC_KEY_SIZE);
 	if (rc)
