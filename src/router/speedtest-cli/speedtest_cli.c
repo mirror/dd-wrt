@@ -260,7 +260,7 @@ static int get_speedtest_config(client_config_t * client)
 	}
 	fclose(fp1);
 
-	eval("rm", "/tmp/speedtest-config.php");
+	unlink("/tmp/speedtest-config.php");
 
 	return 0;
 }
@@ -430,7 +430,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	}
 	
 	free(orig);
-	eval("rm", "-f", "/tmp/speedtest-servers.php");
+	unlink("/tmp/speedtest-servers.php");
 	return 0;
 }
 
@@ -468,7 +468,7 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 				latency[j] = 3600000000;
 			}
 			fclose(fp1);
-			eval("rm", "/tmp/latency.txt");
+			unlink("/tmp/latency.txt");
 			memset(line, 0, sizeof(line));
 		}
 		servers[i].latency = (latency[0] + latency[1] + latency[2]) / 3;
@@ -533,7 +533,7 @@ static void *download_thread(void *ptr)
 	finished += (double)file_stat.st_size;
 	pthread_mutex_unlock(&finished_mutex);
 
-	eval("rm", file);
+	unlink(file);
 
 	return NULL;
 }
@@ -649,7 +649,7 @@ static void *upload_thread(void *ptr)
 	}
 	pthread_mutex_unlock(&finished_mutex);
 
-	eval("rm", in->file_result);
+	unlink(in->file_result);
 
 	return NULL;
 }
@@ -744,7 +744,7 @@ static int test_upload_speed(server_config_t * best_server)
 	fclose(fp_result);
 
 	for (i = 0; i < UL_SIZE_NUM; i++) {
-		eval("rm", &file_tmp[i][0]);
+		unlink(&file_tmp[i][0]);
 	}
 
 	return 0;
