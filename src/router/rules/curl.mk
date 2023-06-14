@@ -58,7 +58,24 @@ curl-configure: openssl zlib
 	lt_cv_sys_global_symbol_to_cdecl="sed -n -e 's/^T .* \\(.*\\)\$$/extern int \\1();/p' -e 's/^[ABCDGIRSTW][ABCDGIRSTW]* .* \\(.*\\)\$$/extern char \\1;/p'"
 
 	cd curl/build_static && ../configure \
+	--disable-pthreads \
+	--disable-threaded-resolver \
+	--disable-progress-meter \
 	--disable-verbose \
+	--disable-http-auth \
+	--disable-mime \
+	--disable-libcurl-option \
+	--disable-largefile \
+	--disable-netrc \
+	--disable-socketpair \
+	--disable-cookies \
+	--disable-dateparse \
+	--disable-dnsshuffle \
+	--disable-option-checking \
+	--disable-get-easy-options \
+	--disable-doh \
+	--disable-crypto-auth \
+	--disable-openssl-auto-load-config \
 	--disable-ftp \
 	--disable-gopher \
 	--disable-ldap \
