@@ -166,6 +166,7 @@ void start_samba3(void)
 #if defined(HAVE_SMBD) || defined(HAVE_SAMBA4)
 			"server min protocol = %s\n"	//
 			"server max protocol = %s\n"	//
+			"vfs objects = streams_xattr\n"
 #else
 			"min protocol = %s\n"	//
 			"max protocol = %s\n"	//
