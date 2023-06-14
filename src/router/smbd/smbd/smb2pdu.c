@@ -4077,7 +4077,7 @@ int smb2_query_dir(struct ksmbd_work *work)
 
 	if (srch_flag & SMB2_REOPEN || srch_flag & SMB2_RESTART_SCANS) {
 		ksmbd_debug(SMB, "Restart directory scan\n");
-		generic_file_llseek(dir_fp->filp, 0, SEEK_SET);
+		vfs_llseek(dir_fp->filp, 0, SEEK_SET);
 	}
 
 	memset(&d_info, 0, sizeof(struct ksmbd_dir_info));
