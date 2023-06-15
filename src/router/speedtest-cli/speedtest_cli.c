@@ -43,13 +43,26 @@
 
 #include <curl/curl.h>
 
-int download(char *url, char *filename, int connecttimeout, int maxtimeout)
+static size_t countonly(void *mem, size_t num, size_t n, void *data)
+{
+	size_t *count = (size_t *)data;
+	*count += n * num;
+	return n * num;
+}
+
+size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, int sizeonly)
 {
 	CURL *hnd;
 	hnd = curl_easy_init();
 	FILE *out = fopen(filename, "wb");
-	curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, fwrite);
-	curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
+	size_t cnt = 0;
+	if (!sizeonly) {
+		curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, fwrite);
+		curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
+	} else {
+		curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, countonly);
+		curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &cnt);
+	}
 	curl_easy_setopt(hnd, CURLOPT_URL, url);
 	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -64,7 +77,8 @@ int download(char *url, char *filename, int connecttimeout, int maxtimeout)
 	CURLcode ret = curl_easy_perform(hnd);
 	curl_easy_cleanup(hnd);
 	fclose(out);
-	return ret != CURLE_OK;
+	fprintf(stderr, "count = %d\n", cnt);
+	return cnt;
 }
 
 int upload(char *url, char *filename, char *result, int connecttimeout, int maxtimeout)
@@ -271,8 +285,8 @@ static int get_speedtest_config(client_config_t * client)
 	char line[256];
 
 	SPEEDTEST_INFO(CONF_SERVER "\n");
-	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0);
-//	eval("curl", "-k", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
+	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0, 0);
+//      eval("curl", "-k", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
 
 	if (!(fp1 = fopen("/tmp/speedtest-config.php", "r"))) {
 		perror("fopen /tmp/speedtest-config.php");
@@ -382,8 +396,8 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	int j, k;
 	int i;
 	SPEEDTEST_INFO(STATIC_SERVER "\n");
-	download(STATIC_SERVER, "/tmp/speedtest-servers.php", 0, 0);
-//	eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
+	download(STATIC_SERVER, "/tmp/speedtest-servers.php", 0, 0, 0);
+//      eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
 	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
 		return errno;
@@ -517,8 +531,8 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 		SPEEDTEST_INFO("%s\n", url);
 		for (j = 0; j < 3; j++) {
 			gettimeofday(&tv1, NULL);
-			download(url, "/tmp/latency.txt", 5, 5);
-//			eval("curl", "--connect-timeout", "5", "--max-time", "5", "-L", "-s", "-o", "/tmp/latency.txt", url);
+			download(url, "/tmp/latency.txt", 5, 5, 0);
+//                      eval("curl", "--connect-timeout", "5", "--max-time", "5", "-L", "-s", "-o", "/tmp/latency.txt", url);
 			gettimeofday(&tv2, NULL);
 
 			if (!(fp1 = fopen("/tmp/latency.txt", "r"))) {
@@ -587,16 +601,16 @@ static void *download_thread(void *ptr)
 
 	strcpy(file, "/tmp/random");
 	strcat(file, in->file_count);
-	download(in->url, file, 0, 0);
-//	eval("curl", "-L", "-s", "-o", file, in->url);
+	size_t cnt = download(in->url, file, 0, 0, 1);
+//      eval("curl", "-L", "-s", "-o", file, in->url);
 
-	if (stat(file, &file_stat)) {
+/*	if (stat(file, &file_stat)) {
 		fprintf(stderr, "stat file %s error\n", file);
 		return NULL;
-	}
+	}*/
 
 	pthread_mutex_lock(&finished_mutex);
-	finished += (double)file_stat.st_size;
+	finished += (double)cnt;
 	pthread_mutex_unlock(&finished_mutex);
 
 	unlink(file);
@@ -691,7 +705,7 @@ static void *upload_thread(void *ptr)
 
 	in = (ul_thread_arg_t *) ptr;
 	upload(in->url, in->ul_file, in->file_result, 0, 0);
-//	eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
+//      eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
 
 	pthread_mutex_lock(&finished_mutex);
 	if (stat(in->file_result, &file_stat)) {
@@ -740,7 +754,7 @@ static int test_upload_speed(server_config_t * best_server)
 		}
 		fprintf(fp[i], "%s", tail);
 		fclose(fp[i]);
-//		strcpy(&ul_file_name[i][0], "@");
+//              strcpy(&ul_file_name[i][0], "@");
 		strcpy(&ul_file_name[i][0], &file_tmp[i][0]);
 	}
 	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
