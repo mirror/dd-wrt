@@ -111,7 +111,6 @@ int upload(char *url, char *filename, char *result, int connecttimeout, int maxt
 		curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT_MS, (long)(connecttimeout * 1000));
 
 	CURLcode ret = curl_easy_perform(hnd);
-//free(enc); /* no matter if it worked or not */
 	curl_easy_cleanup(hnd);
 	fclose(out);
 	return ret != CURLE_OK;
