@@ -6,15 +6,7 @@ curl-static: openssl
 	$(MAKE) -C curl/build_static
 
 curl-static-install:
-	$(MAKE) -C curl/build_static install DESTDIR=$(INSTALLDIR)/curl-static
-	rm -f $(INSTALLDIR)/curl-static/usr/bin/curl-config
-	rm -rf $(INSTALLDIR)/curl-static/usr/include
-	rm -rf $(INSTALLDIR)/curl-static/usr/lib/pkgconfig
-	rm -f $(INSTALLDIR)/curl-static/usr/lib/*.a
-	rm -f $(INSTALLDIR)/curl-static/usr/lib/*.la
-	rm -rf $(INSTALLDIR)/curl-static/usr/share
-	rm -rf $(INSTALLDIR)/curl-static/usr/lib
-	mkdir -p $(INSTALLDIR)/curl-static/etc/ssl
+	@true
 
 curl-install:
 	$(MAKE) -C curl/build install DESTDIR=$(INSTALLDIR)/curl
