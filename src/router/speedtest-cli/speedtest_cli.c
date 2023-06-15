@@ -725,7 +725,7 @@ static int test_upload_speed(server_config_t * best_server)
 	const char *tail = "0123456789ABCDEFGHIJKLMNOPQ";
 	const char *ul_file = "/tmp/speedtest_ulfile";
 	const char *ul_file_result = "/tmp/speedtest_ulfile_result";
-	const int ul_times = 5;
+	const int ul_times = 25;
 	char file_tmp[UL_SIZE_NUM][strlen(ul_file) + 2];
 	char ul_file_name[UL_SIZE_NUM][strlen(ul_file) + 3];
 	char ul_file_result_name[UL_SIZE_NUM * ul_times][strlen(ul_file_result) + 3];
