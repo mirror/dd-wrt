@@ -30,6 +30,7 @@
 #define DL_FILE_TIMES 4
 #define MAX_FILE_LEN 20
 #define UL_SIZE_NUM 4
+const char *search = NULL;
 
 /* Debug Print */
 #define DEBUG_NONE	0x000000
@@ -391,8 +392,14 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	server_config_t server;
 	int j, k;
 	int i;
-	SPEEDTEST_INFO(STATIC_SERVER "\n");
-	download(STATIC_SERVER, "/tmp/speedtest-servers.php", 0, 0, 0);
+	char url[128];
+	if (search)
+		sprintf(url, "%s?search=%s", STATIC_SERVER, search);
+	else
+		sprintf(url, "%s", STATIC_SERVER);
+	SPEEDTEST_INFO("%s\n", url);
+
+	download(url, "/tmp/speedtest-servers.php", 0, 0, 0);
 //      eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
 	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
@@ -889,7 +896,7 @@ static void usage(void)
 	printf("\noptions\n");
 	printf("\t-d\n");
 	printf("\t\tturn on debug message\n");
-	printf("\t\tex. speedtest_cli -d 1 3 1 2\n");
+	printf("\t\tex. speedtest_cli -d 1 3 1 2 [search]\n");
 }
 
 int main(int argc, char **argv)
@@ -898,11 +905,11 @@ int main(int argc, char **argv)
 	int dl_enable, ul_enable;
 	curl_global_init(CURL_GLOBAL_ALL);
 
-	if (argc != 5 && argc != 6) {
+	if (argc != 5 && argc != 6 && argc != 7) {
 		usage();
 		return 0;
 	} else {
-		if (argc == 6) {
+		if (argc == 6 || argc == 7) {
 			if (!strcmp(argv[i], "-d")) {
 				i++;
 				debug_msg = DEBUG_INFO;
@@ -950,6 +957,10 @@ int main(int argc, char **argv)
 		} else {
 			ul_thread_num = num;
 		}
+		i++;
+		if (i < argc)
+			search = argv[i];
+
 	}
 
 	if ((dl_enable == 0) && (ul_enable == 0)) {
