@@ -15,7 +15,7 @@
 CFLAGS += -I. -I$(TOP)/shared -Wall
 CFLAGS += $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/curl/include $(LTO)
 
-LDFLAGS	+= $(LDLTO) -L$(TOP)/nvram -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils
+LDFLAGS	+= $(LDLTO)
 LDFLAGS += $(EXTRA_LDFLAGS)
 LDFLAGS	+= -lpthread -lm -L$(TOP)/curl/build_static/lib/.libs -lcurl -L$(TOP)/openssl -lssl -lcrypto
 
