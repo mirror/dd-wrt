@@ -41,6 +41,68 @@
 		do { if (debug_msg & DEBUG_INFO) \
 			printf("speedtest_cli >>%s: "fmt, __FUNCTION__, ##arg); } while (0)
 
+#include <curl/curl.h>
+
+int download(char *url, char *filename, int connecttimeout, int maxtimeout)
+{
+	CURL *hnd;
+	hnd = curl_easy_init();
+	FILE *out = fopen(filename, "wb");
+	curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, fwrite);
+	curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
+	curl_easy_setopt(hnd, CURLOPT_URL, url);
+	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
+	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(hnd, CURLOPT_VERBOSE, 0L);
+	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
+	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
+	if (maxtimeout)
+		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
+	if (connecttimeout)
+		curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT_MS, (long)(connecttimeout * 1000));
+
+	CURLcode ret = curl_easy_perform(hnd);
+	curl_easy_cleanup(hnd);
+	fclose(out);
+	return ret != CURLE_OK;
+}
+
+int upload(char *url, char *filename, char *result, int connecttimeout, int maxtimeout)
+{
+	CURL *hnd;
+	hnd = curl_easy_init();
+	FILE *in = fopen(filename, "rb");
+	fseek(in, 0, SEEK_END);
+	curl_off_t len = ftell(in);
+	rewind(in);
+	char *mem = malloc(len + 1);
+	fread(mem, len, 1, in);
+	mem[len] = 0;
+	fclose(in);
+	FILE *out = fopen(result, "wb");
+	curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, fwrite);
+	curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
+	curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, mem);
+	curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, len);
+	curl_easy_setopt(hnd, CURLOPT_URL, url);
+	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
+	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
+	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
+	curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+
+	if (maxtimeout)
+		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
+	if (connecttimeout)
+		curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT_MS, (long)(connecttimeout * 1000));
+
+	CURLcode ret = curl_easy_perform(hnd);
+//free(enc); /* no matter if it worked or not */
+	curl_easy_cleanup(hnd);
+	fclose(out);
+	return ret != CURLE_OK;
+}
+
 static pthread_mutex_t finished_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static double finished = 0;
@@ -193,9 +255,9 @@ static char *get_str_json(char *search, char **p)
 		if (*i == '\\') {
 			continue;
 		}
-		if ((ret-orig) < 128) {
-		    *ret = *i;
-		    ret++;
+		if ((ret - orig) < 128) {
+			*ret = *i;
+			ret++;
 		}
 	}
 	*ret = 0;
@@ -209,7 +271,8 @@ static int get_speedtest_config(client_config_t * client)
 	char line[256];
 
 	SPEEDTEST_INFO(CONF_SERVER "\n");
-	eval("curl", "-k", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
+	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0);
+//	eval("curl", "-k", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
 
 	if (!(fp1 = fopen("/tmp/speedtest-config.php", "r"))) {
 		perror("fopen /tmp/speedtest-config.php");
@@ -319,7 +382,8 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	int j, k;
 	int i;
 	SPEEDTEST_INFO(STATIC_SERVER "\n");
-	eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
+	download(STATIC_SERVER, "/tmp/speedtest-servers.php", 0, 0);
+//	eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
 	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
 		return errno;
@@ -428,7 +492,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 			}
 		}
 	}
-	
+
 	free(orig);
 	unlink("/tmp/speedtest-servers.php");
 	return 0;
@@ -453,7 +517,8 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 		SPEEDTEST_INFO("%s\n", url);
 		for (j = 0; j < 3; j++) {
 			gettimeofday(&tv1, NULL);
-			eval("curl", "--connect-timeout", "5", "--max-time", "5", "-L", "-s", "-o", "/tmp/latency.txt", url);
+			download(url, "/tmp/latency.txt", 5, 5);
+//			eval("curl", "--connect-timeout", "5", "--max-time", "5", "-L", "-s", "-o", "/tmp/latency.txt", url);
 			gettimeofday(&tv2, NULL);
 
 			if (!(fp1 = fopen("/tmp/latency.txt", "r"))) {
@@ -522,7 +587,8 @@ static void *download_thread(void *ptr)
 
 	strcpy(file, "/tmp/random");
 	strcat(file, in->file_count);
-	eval("curl", "-L", "-s", "-o", file, in->url);
+	download(in->url, file, 0, 0);
+//	eval("curl", "-L", "-s", "-o", file, in->url);
 
 	if (stat(file, &file_stat)) {
 		fprintf(stderr, "stat file %s error\n", file);
@@ -552,7 +618,7 @@ static int test_download_speed(server_config_t * best_server)
 
 	for (i = 0; i < DL_FILE_NUM; i++) {
 		for (j = 0; j < DL_FILE_TIMES; j++) {
-			asprintf(&download_url[k].url, "%sdownload?size=5000000",best_server->url);
+			asprintf(&download_url[k].url, "%sdownload?size=5000000", best_server->url);
 			k++;
 		}
 	}
@@ -624,8 +690,8 @@ static void *upload_thread(void *ptr)
 		return NULL;
 
 	in = (ul_thread_arg_t *) ptr;
-
-	eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
+	upload(in->url, in->ul_file, in->file_result, 0, 0);
+//	eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
 
 	pthread_mutex_lock(&finished_mutex);
 	if (stat(in->file_result, &file_stat)) {
@@ -674,11 +740,11 @@ static int test_upload_speed(server_config_t * best_server)
 		}
 		fprintf(fp[i], "%s", tail);
 		fclose(fp[i]);
-		strcpy(&ul_file_name[i][0], "@");
-		strcat(&ul_file_name[i][0], &file_tmp[i][0]);
+//		strcpy(&ul_file_name[i][0], "@");
+		strcpy(&ul_file_name[i][0], &file_tmp[i][0]);
 	}
 	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
-		asprintf(&upload_arg[i].url, "%supload",best_server->url);
+		asprintf(&upload_arg[i].url, "%supload", best_server->url);
 		upload_arg[i].size = ((int)round(size[i / ul_times] / strlen(data))) * strlen(data);
 		upload_arg[i].ul_file = &ul_file_name[i / ul_times][0];
 		sprintf(&ul_file_result_name[i][0], "%s%d", ul_file_result, i);
@@ -820,6 +886,7 @@ int main(int argc, char **argv)
 {
 	int num, i = 1;
 	int dl_enable, ul_enable;
+	curl_global_init(CURL_GLOBAL_ALL);
 
 	if (argc != 5 && argc != 6) {
 		usage();
