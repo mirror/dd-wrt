@@ -28,7 +28,7 @@
 #define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
 
 #define CLOSEST_SERVERS_NUM 20
-#define DL_FILE_NUM 10
+#define DL_FILE_NUM 5
 #define DL_FILE_TIMES 4
 #define MAX_FILE_LEN 20
 #define UL_SIZE_NUM 4
@@ -541,17 +541,6 @@ static void *download_thread(void *ptr)
 static int test_download_speed(server_config_t * best_server)
 {
 	int i, j, k = 0, ret, url_len, queue_count = 0;
-	const char sizes[DL_FILE_NUM][MAX_FILE_LEN] = { "random350x350.jpg",
-		"random500x500.jpg",
-		"random750x750.jpg",
-		"random1000x1000.jpg",
-		"random1500x1500.jpg",
-		"random2000x2000.jpg",
-		"random2500x2500.jpg",
-		"random3000x3000.jpg",
-		"random3500x3500.jpg",
-		"random4000x4000.jpg"
-	};
 	dl_thread_arg_t download_url[DL_FILE_NUM * DL_FILE_TIMES];
 	pthread_t q[dl_thread_num];
 	double duration;
@@ -559,14 +548,11 @@ static int test_download_speed(server_config_t * best_server)
 	FILE *fp_result;
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
-	url_len = strlen(best_server->url) - strlen("upload.php");
+	best_server->url[strlen(best_server->url) - strlen("speedtest/upload.php")] = '\0';
 
 	for (i = 0; i < DL_FILE_NUM; i++) {
 		for (j = 0; j < DL_FILE_TIMES; j++) {
-			download_url[k].url = malloc(url_len + MAX_FILE_LEN);
-			strncpy(download_url[k].url, best_server->url, url_len);
-			download_url[k].url[url_len] = '\0';
-			strcat(download_url[k].url, (char *)&sizes[i]);
+			asprintf(&download_url[k].url, "%sdownload?size=5000000",best_server->url);
 			k++;
 		}
 	}
@@ -692,7 +678,7 @@ static int test_upload_speed(server_config_t * best_server)
 		strcat(&ul_file_name[i][0], &file_tmp[i][0]);
 	}
 	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
-		upload_arg[i].url = best_server->url;
+		asprintf(&upload_arg[i].url, "%supload",best_server->url);
 		upload_arg[i].size = ((int)round(size[i / ul_times] / strlen(data))) * strlen(data);
 		upload_arg[i].ul_file = &ul_file_name[i / ul_times][0];
 		sprintf(&ul_file_result_name[i][0], "%s%d", ul_file_result, i);
