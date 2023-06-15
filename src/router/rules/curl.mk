@@ -106,6 +106,7 @@ curl-configure: openssl zlib
 	--without-ca-path \
 	--without-libpsl \
 	--without-zstd \
+	--without-zlib \
 	--enable-static \
 	--with-ca-bundle=/etc/ssl/ca-bundle.crt \
 	--with-openssl \
