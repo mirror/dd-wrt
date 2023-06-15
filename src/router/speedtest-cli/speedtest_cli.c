@@ -22,8 +22,6 @@
 #include <pthread.h>
 #include <sys/stat.h>
 
-#include <shutils.h>
-
 #define CONF_SERVER	"http://www.speedtest.net/speedtest-config.php"
 #define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
 
