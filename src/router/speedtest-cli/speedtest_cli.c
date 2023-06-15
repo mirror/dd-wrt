@@ -77,7 +77,6 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, i
 	CURLcode ret = curl_easy_perform(hnd);
 	curl_easy_cleanup(hnd);
 	fclose(out);
-	fprintf(stderr, "count = %d\n", cnt);
 	return cnt;
 }
 
