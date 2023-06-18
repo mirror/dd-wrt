@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 
 #define CONF_SERVER	"http://www.speedtest.net/speedtest-config.php"
 #define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
@@ -79,22 +80,15 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, i
 	return cnt;
 }
 
-int upload(char *url, char *filename, char *result, int connecttimeout, int maxtimeout)
+int upload(char *url, char *filedata, int size, int connecttimeout, int maxtimeout)
 {
+	size_t cnt;
 	CURL *hnd;
 	hnd = curl_easy_init();
-	FILE *in = fopen(filename, "rb");
-	fseek(in, 0, SEEK_END);
-	curl_off_t len = ftell(in);
-	rewind(in);
-	char *mem = malloc(len + 1);
-	fread(mem, len, 1, in);
-	mem[len] = 0;
-	fclose(in);
-	FILE *out = fopen(result, "wb");
-	curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, fwrite);
-	curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
-	curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, mem);
+	curl_off_t len = size;
+	curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, countonly);
+	curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &cnt);
+	curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, filedata);
 	curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, len);
 	curl_easy_setopt(hnd, CURLOPT_URL, url);
 	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -110,8 +104,7 @@ int upload(char *url, char *filename, char *result, int connecttimeout, int maxt
 
 	CURLcode ret = curl_easy_perform(hnd);
 	curl_easy_cleanup(hnd);
-	fclose(out);
-	return ret != CURLE_OK;
+	return cnt;
 }
 
 static pthread_mutex_t finished_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -157,7 +150,6 @@ typedef struct ul_thread_arg {
 	char *url;
 	char *ul_file;
 	int size;
-	char *file_result;
 } ul_thread_arg_t;
 
 static int get_uptime(double *uptime)
@@ -707,18 +699,12 @@ static void *upload_thread(void *ptr)
 		return NULL;
 
 	in = (ul_thread_arg_t *) ptr;
-	upload(in->url, in->ul_file, in->file_result, 0, 0);
+	upload(in->url, in->ul_file,in->size, 0, 0);
 //      eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
 
 	pthread_mutex_lock(&finished_mutex);
-	if (stat(in->file_result, &file_stat)) {
-		fprintf(stderr, "stat file %s error\n", in->file_result);
-	} else {
-		finished += (double)in->size;
-	}
+	finished += (double)in->size;
 	pthread_mutex_unlock(&finished_mutex);
-
-	unlink(in->file_result);
 
 	return NULL;
 }
@@ -728,46 +714,29 @@ static int test_upload_speed(server_config_t * best_server)
 	const char *data = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	const char *head = "content1=";
 	const char *tail = "0123456789ABCDEFGHIJKLMNOPQ";
-	const char *ul_file = "/tmp/speedtest_ulfile";
-	const char *ul_file_result = "/tmp/speedtest_ulfile_result";
 	const int ul_times = 25;
-	char file_tmp[UL_SIZE_NUM][strlen(ul_file) + 2];
-	char ul_file_name[UL_SIZE_NUM][strlen(ul_file) + 3];
-	char ul_file_result_name[UL_SIZE_NUM * ul_times][strlen(ul_file_result) + 3];
 	double size[UL_SIZE_NUM] = { 250000, 500000, 1000000, 2000000 };
 	double duration;
 	double time_ul_end;
 	int i, j, data_len, queue_count = 0;
 	ul_thread_arg_t upload_arg[UL_SIZE_NUM * ul_times];
 	pthread_t q[ul_thread_num];
-	FILE *fp[UL_SIZE_NUM];
 	FILE *fp_result;
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
-	for (i = 0; i < UL_SIZE_NUM; i++) {
-		data_len = (int)round(size[i] / strlen(data));
-		sprintf(&file_tmp[i][0], "%s%d", ul_file, i);
-		if (!(fp[i] = fopen(&file_tmp[i][0], "w"))) {
-			fprintf(stderr, "open %s error\n", &file_tmp[i][0]);
-			return errno;
-		}
-		fprintf(fp[i], "%s", head);
-		for (j = 0; j < (data_len - 1); j++) {
-			fprintf(fp[i], "%s", data);
-		}
-		fprintf(fp[i], "%s", tail);
-		fclose(fp[i]);
-//              strcpy(&ul_file_name[i][0], "@");
-		strcpy(&ul_file_name[i][0], &file_tmp[i][0]);
+	char *mem;
+	char *databuf = mem = malloc(2000000 + strlen(head) + strlen(tail));
+	databuf+=sprintf(databuf, "%s", head);
+	data_len = (int)round(size[i] / strlen(data));
+	for (j = 0; j < (data_len - 1); j++) {
+		databuf+=sprintf(databuf, "%s", data);
 	}
+	sprintf(databuf, "%s", tail);
 	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
 		asprintf(&upload_arg[i].url, "%supload", best_server->url);
 		upload_arg[i].size = ((int)round(size[i / ul_times] / strlen(data))) * strlen(data);
-		upload_arg[i].ul_file = &ul_file_name[i / ul_times][0];
-		sprintf(&ul_file_result_name[i][0], "%s%d", ul_file_result, i);
-		upload_arg[i].file_result = &ul_file_result_name[i][0];
+		upload_arg[i].ul_file = mem;
 	}
-
 	if (get_uptime(&time_ul_start)) {
 		fprintf(stderr, "Error on getting /proc/uptime\n");
 		return -1;
@@ -796,6 +765,7 @@ static int test_upload_speed(server_config_t * best_server)
 		}
 
 	}
+	free(mem);
 
 	if (get_uptime(&time_ul_end)) {
 		fprintf(stderr, "Error on getting /proc/uptime\n");
@@ -812,9 +782,6 @@ static int test_upload_speed(server_config_t * best_server)
 	fprintf(fp_result, "%.2f", ((finished / 1024 / 1024 / duration) * 8));
 	fclose(fp_result);
 
-	for (i = 0; i < UL_SIZE_NUM; i++) {
-		unlink(&file_tmp[i][0]);
-	}
 
 	return 0;
 }
