@@ -50,13 +50,14 @@ static size_t countonly(void *mem, size_t num, size_t n, void *data)
 	return n * num;
 }
 
-size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, int sizeonly)
+size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 {
 	CURL *hnd;
 	hnd = curl_easy_init();
-	FILE *out = fopen(filename, "wb");
 	size_t cnt = 0;
-	if (!sizeonly) {
+	FILE *out = NULL;
+	if (filename) {
+		out = fopen(filename, "wb");
 		curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, fwrite);
 		curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
 	} else {
@@ -76,7 +77,8 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, i
 
 	CURLcode ret = curl_easy_perform(hnd);
 	curl_easy_cleanup(hnd);
-	fclose(out);
+	if (out)
+		fclose(out);
 	return cnt;
 }
 
@@ -274,8 +276,7 @@ static int get_speedtest_config(client_config_t * client)
 	char line[256];
 
 	SPEEDTEST_INFO(CONF_SERVER "\n");
-	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0, 0);
-//      eval("curl", "-k", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
+	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0);
 
 	if (!(fp1 = fopen("/tmp/speedtest-config.php", "r"))) {
 		perror("fopen /tmp/speedtest-config.php");
@@ -391,8 +392,7 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 		sprintf(url, "%s", STATIC_SERVER);
 	SPEEDTEST_INFO("%s\n", url);
 
-	download(url, "/tmp/speedtest-servers.php", 0, 0, 0);
-//      eval("curl", "-L", "-k", "-s", "-o", "/tmp/speedtest-servers.php", STATIC_SERVER);
+	download(url, "/tmp/speedtest-servers.php", 0, 0);
 	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
 		return errno;
@@ -526,8 +526,7 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 		SPEEDTEST_INFO("%s\n", url);
 		for (j = 0; j < 3; j++) {
 			gettimeofday(&tv1, NULL);
-			download(url, "/tmp/latency.txt", 5, 5, 0);
-//                      eval("curl", "--connect-timeout", "5", "--max-time", "5", "-L", "-s", "-o", "/tmp/latency.txt", url);
+			download(url, "/tmp/latency.txt", 5, 5);
 			gettimeofday(&tv2, NULL);
 
 			if (!(fp1 = fopen("/tmp/latency.txt", "r"))) {
@@ -580,7 +579,6 @@ static void *download_thread(void *ptr)
 {
 	dl_thread_arg_t *in;
 	struct stat file_stat;
-	char file[16];
 	double time_diff, time_thread;
 
 	if (get_uptime(&time_thread)) {
@@ -593,22 +591,11 @@ static void *download_thread(void *ptr)
 	}
 
 	in = (dl_thread_arg_t *) ptr;
-
-	strcpy(file, "/tmp/random");
-	strcat(file, in->file_count);
-	size_t cnt = download(in->url, file, 0, 0, 1);
-//      eval("curl", "-L", "-s", "-o", file, in->url);
-
-/*	if (stat(file, &file_stat)) {
-		fprintf(stderr, "stat file %s error\n", file);
-		return NULL;
-	}*/
+	size_t cnt = download(in->url, NULL, 0, 0);
 
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)cnt;
 	pthread_mutex_unlock(&finished_mutex);
-
-	unlink(file);
 
 	return NULL;
 }
@@ -700,7 +687,6 @@ static void *upload_thread(void *ptr)
 
 	in = (ul_thread_arg_t *) ptr;
 	upload(in->url, in->ul_file, in->size, 0, 0);
-//      eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
 
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)in->size;
