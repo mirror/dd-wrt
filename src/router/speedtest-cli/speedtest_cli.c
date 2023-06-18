@@ -699,7 +699,7 @@ static void *upload_thread(void *ptr)
 		return NULL;
 
 	in = (ul_thread_arg_t *) ptr;
-	upload(in->url, in->ul_file,in->size, 0, 0);
+	upload(in->url, in->ul_file, in->size, 0, 0);
 //      eval("curl", "-L", "-s", "-0", "-d", in->ul_file, "-o", in->file_result, in->url);
 
 	pthread_mutex_lock(&finished_mutex);
@@ -726,10 +726,10 @@ static int test_upload_speed(server_config_t * best_server)
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	char *mem;
 	char *databuf = mem = malloc(2000000 + strlen(head) + strlen(tail));
-	databuf+=sprintf(databuf, "%s", head);
+	databuf += sprintf(databuf, "%s", head);
 	data_len = (int)round(size[i] / strlen(data));
 	for (j = 0; j < (data_len - 1); j++) {
-		databuf+=sprintf(databuf, "%s", data);
+		databuf += sprintf(databuf, "%s", data);
 	}
 	sprintf(databuf, "%s", tail);
 	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
@@ -781,7 +781,6 @@ static int test_upload_speed(server_config_t * best_server)
 	}
 	fprintf(fp_result, "%.2f", ((finished / 1024 / 1024 / duration) * 8));
 	fclose(fp_result);
-
 
 	return 0;
 }
