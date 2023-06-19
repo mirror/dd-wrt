@@ -43,3 +43,6 @@ ifndef: all
 endif: all
 # \
 !endif
+
+install:
+	@true
