@@ -344,8 +344,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /fixed:no
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /fixed:no
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /fixed:no
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /fixed:no
 
 !ELSEIF  "$(CFG)" == "curl - Win32 LIB Debug DLL OpenSSL DLL LibSSH2"
 
@@ -369,8 +369,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL - DLL LibSSH2\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL - DLL LibSSH2\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL - DLL LibSSH2\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL - DLL LibSSH2\curld.exe" /pdbtype:con /libpath:"..\..\..\..\build\Win32\VC6\LIB Debug - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
 
 !ELSEIF  "$(CFG)" == "curl - Win32 LIB Debug DLL Windows SSPI"
 
@@ -518,8 +518,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /fixed:no
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /fixed:no
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /fixed:no
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /fixed:no
 
 !ELSEIF  "$(CFG)" == "curl - Win32 LIB Release DLL OpenSSL DLL LibSSH2"
 
@@ -543,8 +543,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL - DLL LibSSH2\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL - DLL LibSSH2\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL - DLL LibSSH2\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL - DLL LibSSH2\curl.exe" /libpath:"..\..\..\..\build\Win32\VC6\LIB Release - DLL OpenSSL" /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no
 
 !ELSEIF  "$(CFG)" == "curl - Win32 LIB Release DLL Windows SSPI"
 
@@ -679,15 +679,27 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\curl_ctype.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\curl_multibyte.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\dynbuf.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\nonblock.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\rawstr.c
+SOURCE=..\..\..\..\lib\strtoofft.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\strtoofft.c
+SOURCE=..\..\..\..\lib\version_win32.c
 # End Source File
 # Begin Source File
 
@@ -751,6 +763,10 @@ SOURCE=..\..\..\..\src\tool_easysrc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\src\tool_filetime.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\src\tool_formparse.c
 # End Source File
 # Begin Source File
@@ -791,10 +807,6 @@ SOURCE=..\..\..\..\src\tool_metalink.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\src\tool_mfiles.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\src\tool_msgs.c
 # End Source File
 # Begin Source File
@@ -816,6 +828,10 @@ SOURCE=..\..\..\..\src\tool_paramhlp.c
 # Begin Source File
 
 SOURCE=..\..\..\..\src\tool_parsecfg.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\src\tool_progress.c
 # End Source File
 # Begin Source File
 
@@ -843,11 +859,11 @@ SOURCE=..\..\..\..\src\tool_vms.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\src\tool_writeenv.c
+SOURCE=..\..\..\..\src\tool_writeout.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\src\tool_writeout.c
+SOURCE=..\..\..\..\src\tool_writeout_json.c
 # End Source File
 # Begin Source File
 
@@ -863,7 +879,19 @@ SOURCE=..\..\..\..\lib\config-win32.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\curl_ctype.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\curl_multibyte.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\curl_setup.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\dynbuf.h
 # End Source File
 # Begin Source File
 
@@ -871,11 +899,11 @@ SOURCE=..\..\..\..\lib\nonblock.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\rawstr.h
+SOURCE=..\..\..\..\lib\strtoofft.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\strtoofft.h
+SOURCE=..\..\..\..\lib\version_win32.h
 # End Source File
 # Begin Source File
 
@@ -939,6 +967,10 @@ SOURCE=..\..\..\..\src\tool_easysrc.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\src\tool_filetime.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\src\tool_formparse.h
 # End Source File
 # Begin Source File
@@ -979,10 +1011,6 @@ SOURCE=..\..\..\..\src\tool_metalink.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\src\tool_mfiles.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\src\tool_msgs.h
 # End Source File
 # Begin Source File
@@ -1004,6 +1032,10 @@ SOURCE=..\..\..\..\src\tool_paramhlp.h
 # Begin Source File
 
 SOURCE=..\..\..\..\src\tool_parsecfg.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\src\tool_progress.h
 # End Source File
 # Begin Source File
 
@@ -1043,11 +1075,11 @@ SOURCE=..\..\..\..\src\tool_vms.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\src\tool_writeenv.h
+SOURCE=..\..\..\..\src\tool_writeout.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\src\tool_writeout.h
+SOURCE=..\..\..\..\src\tool_writeout_json.h
 # End Source File
 # Begin Source File
 

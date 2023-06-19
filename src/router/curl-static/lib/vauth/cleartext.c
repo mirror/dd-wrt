@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -25,6 +25,9 @@
 
 #include "curl_setup.h"
 
+#if !defined(CURL_DISABLE_IMAP) || !defined(CURL_DISABLE_SMTP) ||       \
+  !defined(CURL_DISABLE_POP3)
+
 #include <curl/curl.h>
 #include "urldata.h"
 
@@ -33,8 +36,6 @@
 #include "curl_md5.h"
 #include "warnless.h"
 #include "strtok.h"
-#include "strequal.h"
-#include "rawstr.h"
 #include "sendf.h"
 #include "curl_printf.h"
 
@@ -51,8 +52,9 @@
  * Parameters:
  *
  * data    [in]     - The session handle.
- * userp   [in]     - The user name.
- * passdwp [in]     - The user's password.
+ * authzid [in]     - The authorization identity.
+ * authcid [in]     - The authentication identity.
+ * passwd  [in]     - The password.
  * outptr  [in/out] - The address where a pointer to newly allocated memory
  *                    holding the result will be stored upon completion.
  * outlen  [out]    - The length of the output message.
@@ -60,35 +62,44 @@
  * Returns CURLE_OK on success.
  */
 CURLcode Curl_auth_create_plain_message(struct Curl_easy *data,
-                                        const char *userp,
-                                        const char *passwdp,
+                                        const char *authzid,
+                                        const char *authcid,
+                                        const char *passwd,
                                         char **outptr, size_t *outlen)
 {
   CURLcode result;
   char *plainauth;
-  size_t ulen;
+  size_t zlen;
+  size_t clen;
   size_t plen;
+  size_t plainlen;
 
-  ulen = strlen(userp);
-  plen = strlen(passwdp);
+  *outlen = 0;
+  *outptr = NULL;
+  zlen = (authzid == NULL ? 0 : strlen(authzid));
+  clen = strlen(authcid);
+  plen = strlen(passwd);
 
-  plainauth = malloc(2 * ulen + plen + 2);
-  if(!plainauth) {
-    *outlen = 0;
-    *outptr = NULL;
+  /* Compute binary message length. Check for overflows. */
+  if((zlen > SIZE_T_MAX/4) || (clen > SIZE_T_MAX/4) ||
+     (plen > (SIZE_T_MAX/2 - 2)))
     return CURLE_OUT_OF_MEMORY;
-  }
+  plainlen = zlen + clen + plen + 2;
+
+  plainauth = malloc(plainlen);
+  if(!plainauth)
+    return CURLE_OUT_OF_MEMORY;
 
   /* Calculate the reply */
-  memcpy(plainauth, userp, ulen);
-  plainauth[ulen] = '\0';
-  memcpy(plainauth + ulen + 1, userp, ulen);
-  plainauth[2 * ulen + 1] = '\0';
-  memcpy(plainauth + 2 * ulen + 2, passwdp, plen);
+  if(zlen != 0)
+    memcpy(plainauth, authzid, zlen);
+  plainauth[zlen] = '\0';
+  memcpy(plainauth + zlen + 1, authcid, clen);
+  plainauth[zlen + clen + 1] = '\0';
+  memcpy(plainauth + zlen + clen + 2, passwd, plen);
 
   /* Base64 encode the reply */
-  result = Curl_base64_encode(data, plainauth, 2 * ulen + plen + 2, outptr,
-                              outlen);
+  result = Curl_base64_encode(data, plainauth, plainlen, outptr, outlen);
   free(plainauth);
 
   return result;
@@ -155,3 +166,5 @@ CURLcode Curl_auth_create_external_message(struct Curl_easy *data,
   /* This is the same formatting as the login message */
   return Curl_auth_create_login_message(data, user, outptr, outlen);
 }
+
+#endif /* if no users */

@@ -50,7 +50,9 @@ http-proxy
 <tool>
 lib503
 </tool>
-
+<features>
+proxy
+</features>
  <name>
 simple multi http:// through proxytunnel with authentication info
  </name>
@@ -72,6 +74,7 @@ moo
 CONNECT machine.503:%HTTPPORT HTTP/1.1
 Host: machine.503:%HTTPPORT
 Proxy-Authorization: Basic dGVzdDppbmc=
+Proxy-Connection: Keep-Alive
 
 </proxy>
 <protocol>

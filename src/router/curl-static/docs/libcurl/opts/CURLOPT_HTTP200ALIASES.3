@@ -5,11 +5,11 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
-.\" * are also available at https://curl.haxx.se/docs/copyright.html.
+.\" * are also available at https://curl.se/docs/copyright.html.
 .\" *
 .\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
 .\" * copies of the Software, and permit persons to whom the Software is
@@ -20,7 +20,8 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HTTP200ALIASES 3 "17 Jun 2014" "libcurl 7.37.0" "curl_easy_setopt options"
+.TH CURLOPT_HTTP200ALIASES 3 "November 04, 2020" "libcurl 7.74.0" "curl_easy_setopt options"
+
 .SH NAME
 CURLOPT_HTTP200ALIASES \- specify alternative matches for HTTP 200 OK
 .SH SYNOPSIS
@@ -49,7 +50,20 @@ NULL
 .SH PROTOCOLS
 HTTP
 .SH EXAMPLE
-TODO
+.nf
+CURL *curl = curl_easy_init();
+if(curl) {
+  struct curl_slist *list;
+  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+
+  list = curl_slist_append(NULL, "ICY 200 OK");
+  list = curl_slist_append(list, "WEIRDO 99 FINE");
+
+  curl_easy_setopt(curl, CURLOPT_HTTP200ALIASES, list);
+  curl_easy_perform(curl);
+  curl_slist_free_all(list); /* free the list again */
+}
+.fi
 .SH AVAILABILITY
 Added in 7.10.3
 .SH RETURN VALUE

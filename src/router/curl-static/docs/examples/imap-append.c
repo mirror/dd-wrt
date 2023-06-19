@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -85,12 +85,15 @@ int main(void)
 {
   CURL *curl;
   CURLcode res = CURLE_OK;
-  struct upload_status upload_ctx;
-
-  upload_ctx.lines_read = 0;
 
   curl = curl_easy_init();
   if(curl) {
+    const char **p;
+    long infilesize;
+    struct upload_status upload_ctx;
+
+    upload_ctx.lines_read = 0;
+
     /* Set username and password */
     curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
     curl_easy_setopt(curl, CURLOPT_PASSWORD, "secret");
@@ -106,6 +109,12 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, payload_source);
     curl_easy_setopt(curl, CURLOPT_READDATA, &upload_ctx);
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+    infilesize = 0;
+    for(p = payload_text; *p; ++p) {
+      infilesize += (long)strlen(*p);
+    }
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE, infilesize);
 
     /* Perform the append */
     res = curl_easy_perform(curl);

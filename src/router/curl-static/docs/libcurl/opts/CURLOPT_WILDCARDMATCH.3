@@ -5,11 +5,11 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
-.\" * are also available at https://curl.haxx.se/docs/copyright.html.
+.\" * are also available at https://curl.se/docs/copyright.html.
 .\" *
 .\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
 .\" * copies of the Software, and permit persons to whom the Software is
@@ -20,7 +20,8 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_WILDCARDMATCH 3 "16 Jun 2014" "libcurl 7.37.0" "curl_easy_setopt options"
+.TH CURLOPT_WILDCARDMATCH 3 "November 04, 2020" "libcurl 7.74.0" "curl_easy_setopt options"
+
 .SH NAME
 CURLOPT_WILDCARDMATCH \- enable directory wildcard transfers
 .SH SYNOPSIS
@@ -41,7 +42,7 @@ A brief introduction of its syntax follows:
 .RS
 .IP "* - ASTERISK"
 \&ftp://example.com/some/path/\fB*.txt\fP (for all txt's from the root
-directory)
+directory). Only two asterisks are allowed within the same pattern string.
 .RE
 .RS
 .IP "? - QUESTION MARK"
@@ -78,7 +79,7 @@ Using the rules above, a file name pattern can be constructed:
 .SH PROTOCOLS
 This feature is only supported for FTP download.
 .SH EXAMPLE
-See https://curl.haxx.se/libcurl/c/ftp-wildcard.html
+See https://curl.se/libcurl/c/ftp-wildcard.html
 .SH AVAILABILITY
 Added in 7.21.0
 .SH RETURN VALUE
