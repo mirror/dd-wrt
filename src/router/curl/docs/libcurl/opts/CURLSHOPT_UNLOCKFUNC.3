@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,10 +18,8 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
-.\" * SPDX-License-Identifier: curl
-.\" *
 .\" **************************************************************************
-.TH CURLSHOPT_UNLOCKFUNC 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
+.TH CURLSHOPT_UNLOCKFUNC 3 "November 12, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 CURLSHOPT_UNLOCKFUNC - mutex unlock callback
@@ -29,7 +27,8 @@ CURLSHOPT_UNLOCKFUNC - mutex unlock callback
 .nf
 #include <curl/curl.h>
 
-void unlockcb(CURL *handle, curl_lock_data data, void *clientp);
+void unlockcb(CURL *handle, curl_lock_data data, curl_lock_access access,
+              void *userptr);
 
 CURLSHcode curl_share_setopt(CURLSH *share, CURLSHOPT_UNLOCKFUNC, unlockcb);
 .fi
@@ -46,13 +45,15 @@ is released.
 The \fIdata\fP argument tells what kind of data libcurl wants to unlock. Make
 sure that the callback uses a different lock for each kind of data.
 
-\fIclientp\fP is the private pointer you set with \fICURLSHOPT_USERDATA\fP.
+\fIaccess\fP defines what access type libcurl wants, shared or single.
+
+\fIuserptr\fP is the private pointer you set with \fICURLSHOPT_USERDATA\fP.
 This pointer is not used by libcurl itself.
 .SH PROTOCOLS
 All
 .SH EXAMPLE
 .nf
-  CURLSHcode sh;
+  CURLSHcode sh
   share = curl_share_init();
   sh = curl_share_setopt(share, CURLSHOPT_UNLOCKFUNC, mutex_unlock);
   if(sh)

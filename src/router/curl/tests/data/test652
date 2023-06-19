@@ -14,9 +14,6 @@ MIME
 #
 # Client-side
 <client>
-<features>
-Mime
-</features>
 <server>
 smtp
 </server>

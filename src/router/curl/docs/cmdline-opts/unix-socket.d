@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: unix-socket
 Arg: <path>
 Help: Connect through this Unix domain socket
@@ -8,6 +6,5 @@ Protocols: HTTP
 Category: connection
 See-also: abstract-unix-socket
 Example: --unix-socket socket-path $URL
-Multi: single
 ---
 Connect through this Unix domain socket, instead of using the network.

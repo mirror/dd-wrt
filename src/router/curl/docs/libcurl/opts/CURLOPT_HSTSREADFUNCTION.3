@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,11 +18,9 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
-.\" * SPDX-License-Identifier: curl
-.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HSTSREADFUNCTION 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
+.TH CURLOPT_HSTSREADFUNCTION 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_HSTSREADFUNCTION \- read callback for HSTS hosts
@@ -30,14 +28,7 @@ CURLOPT_HSTSREADFUNCTION \- read callback for HSTS hosts
 .nf
 #include <curl/curl.h>
 
-struct curl_hstsentry {
-  char *name;
-  size_t namelen;
-  unsigned int includeSubDomains:1;
-  char expire[18]; /* YYYYMMDD HH:MM:SS [null-terminated] */
-};
-
-CURLSTScode hstsread(CURL *easy, struct curl_hstsentry *sts, void *clientp);
+CURLSTScode hstsread(CURL *easy, struct curl_hstsentry *sts, void *userp);
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HSTSREADFUNCTION, hstsread);
 .fi
@@ -47,14 +38,14 @@ Pass a pointer to your callback function, as the prototype shows above.
 This callback function gets called by libcurl repeatedly when it populates the
 in-memory HSTS cache.
 
-Set the \fIclientp\fP argument with the \fICURLOPT_HSTSREADDATA(3)\fP option
-or it will be NULL.
+Set the \fIuserp\fP argument with the \fICURLOPT_HSTSREADDATA(3)\fP option or
+it will be NULL.
 
 When this callback is invoked, the \fIsts\fP pointer points to a populated
-struct: Copy the host name to \fIname\fP (no longer than \fInamelen\fP
-bytes). Make it null-terminated. Set \fIincludeSubDomains\fP to TRUE or
-FALSE. Set \fIexpire\fP to a date stamp or a zero length string for *forever*
-(wrong date stamp format might cause the name to not get accepted)
+struct: Copy the host name to 'name' (no longer than 'namelen' bytes). Make it
+null-terminated. Set 'includeSubDomains' to TRUE or FALSE. Set 'expire' to a
+date stamp or a zero length string for *forever* (wrong date stamp format
+might cause the name to not get accepted)
 
 The callback should return \fICURLSTS_OK\fP if it returns a name and is
 prepared to be called again (for another host) or \fICURLSTS_DONE\fP if it has

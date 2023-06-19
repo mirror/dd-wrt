@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,11 +18,9 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
-.\" * SPDX-License-Identifier: curl
-.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROGRESSFUNCTION 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
+.TH CURLOPT_PROGRESSFUNCTION 3 "February 23, 2022" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_PROGRESSFUNCTION \- progress meter callback
@@ -43,8 +41,8 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PROGRESSFUNCTION,
 Pass a pointer to your callback function, which should match the prototype
 shown above.
 
-This option is deprecated and we encourage users to use the
-newer \fICURLOPT_XFERINFOFUNCTION(3)\fP instead, if you can.
+We encourage users to use the newer \fICURLOPT_XFERINFOFUNCTION(3)\fP instead,
+if you can.
 
 This function gets called by libcurl instead of its internal equivalent with a
 frequent interval. While data is being transferred it will be called
@@ -96,7 +94,7 @@ All
                                  double ultotal,
                                  double ulnow)
  {
-   struct progress *memory = (struct progress *)clientp;
+   struct progress *memory = (struct progress *)userp;
 
    /* use the values */
 
@@ -111,9 +109,8 @@ All
  curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, progress_callback);
 .fi
 .SH AVAILABILITY
-Deprecated since 7.32.0.
+Always
 .SH RETURN VALUE
 Returns CURLE_OK.
 .SH "SEE ALSO"
 .BR CURLOPT_VERBOSE "(3), " CURLOPT_NOPROGRESS "(3), "
-.BR CURLOPT_XFERINFOFUNCTION "(3)"

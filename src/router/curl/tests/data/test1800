@@ -23,9 +23,6 @@ Content-Type: text/html
 
 # Client-side
 <client>
-<features>
-h2c
-</features>
 <server>
 http
 </server>
@@ -49,7 +46,7 @@ User-Agent: curl/%VERSION
 Accept: */*
 Connection: Upgrade, HTTP2-Settings
 Upgrade: %H2CVER
-HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA
+HTTP2-Settings: AAMAAABkAAQCAAAAAAIAAAAA
 
 </protocol>
 </verify>

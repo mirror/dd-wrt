@@ -18,7 +18,6 @@ HTTP proxy NTLM auth
 http
 </server>
 <features>
-Mime
 NTLM
 SSL
 !SSPI

@@ -18,9 +18,9 @@ ftp
 FTP upload two files to the same dir
  </name>
  <command>
--T %LOGDIR/upload.%TESTNUMBER ftp://%HOSTIP:%FTPPORT/a/path/%TESTNUMBER/ -T %LOGDIR/upload.%TESTNUMBER ftp://%HOSTIP:%FTPPORT/a/path/%TESTNUMBER/%2e%2eanotherup.%TESTNUMBER
+-T log/upload.%TESTNUMBER ftp://%HOSTIP:%FTPPORT/a/path/%TESTNUMBER/ -T log/upload.%TESTNUMBER ftp://%HOSTIP:%FTPPORT/a/path/%TESTNUMBER/%2e%2eanotherup.%TESTNUMBER
 </command>
-<file name="%LOGDIR/upload.%TESTNUMBER">
+<file name="log/upload.%TESTNUMBER">
 upload this file twice
 </file>
 </client>

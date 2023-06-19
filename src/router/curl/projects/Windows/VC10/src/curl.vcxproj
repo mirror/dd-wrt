@@ -2627,11 +2627,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\lib\curl_ctype.c" />
     <ClCompile Include="..\..\..\..\lib\curl_multibyte.c" />
     <ClCompile Include="..\..\..\..\lib\dynbuf.c" />
     <ClCompile Include="..\..\..\..\lib\nonblock.c" />
     <ClCompile Include="..\..\..\..\lib\strtoofft.c" />
-    <ClCompile Include="..\..\..\..\lib\timediff.c" />
     <ClCompile Include="..\..\..\..\lib\version_win32.c" />
     <ClCompile Include="..\..\..\..\lib\warnless.c" />
     <ClCompile Include="..\..\..\..\src\slist_wc.c" />
@@ -2661,12 +2661,12 @@
     <ClCompile Include="..\..\..\..\src\tool_msgs.c" />
     <ClCompile Include="..\..\..\..\src\tool_operate.c" />
     <ClCompile Include="..\..\..\..\src\tool_operhlp.c" />
+    <ClCompile Include="..\..\..\..\src\tool_panykey.c" />
     <ClCompile Include="..\..\..\..\src\tool_paramhlp.c" />
     <ClCompile Include="..\..\..\..\src\tool_parsecfg.c" />
     <ClCompile Include="..\..\..\..\src\tool_progress.c" />
     <ClCompile Include="..\..\..\..\src\tool_setopt.c" />
     <ClCompile Include="..\..\..\..\src\tool_sleep.c" />
-    <ClCompile Include="..\..\..\..\src\tool_stderr.c" />
     <ClCompile Include="..\..\..\..\src\tool_strdup.c" />
     <ClCompile Include="..\..\..\..\src\tool_urlglob.c" />
     <ClCompile Include="..\..\..\..\src\tool_util.c" />
@@ -2683,7 +2683,6 @@
     <ClInclude Include="..\..\..\..\lib\dynbuf.h" />
     <ClInclude Include="..\..\..\..\lib\nonblock.h" />
     <ClInclude Include="..\..\..\..\lib\strtoofft.h" />
-    <ClInclude Include="..\..\..\..\lib\timediff.h" />
     <ClInclude Include="..\..\..\..\lib\version_win32.h" />
     <ClInclude Include="..\..\..\..\lib\warnless.h" />
     <ClInclude Include="..\..\..\..\src\slist_wc.h" />
@@ -2712,6 +2711,7 @@
     <ClInclude Include="..\..\..\..\src\tool_msgs.h" />
     <ClInclude Include="..\..\..\..\src\tool_operate.h" />
     <ClInclude Include="..\..\..\..\src\tool_operhlp.h" />
+    <ClInclude Include="..\..\..\..\src\tool_panykey.h" />
     <ClInclude Include="..\..\..\..\src\tool_paramhlp.h" />
     <ClInclude Include="..\..\..\..\src\tool_parsecfg.h" />
     <ClInclude Include="..\..\..\..\src\tool_progress.h" />
@@ -2719,7 +2719,6 @@
     <ClInclude Include="..\..\..\..\src\tool_setopt.h" />
     <ClInclude Include="..\..\..\..\src\tool_setup.h" />
     <ClInclude Include="..\..\..\..\src\tool_sleep.h" />
-    <ClInclude Include="..\..\..\..\src\tool_stderr.h" />
     <ClInclude Include="..\..\..\..\src\tool_strdup.h" />
     <ClInclude Include="..\..\..\..\src\tool_urlglob.h" />
     <ClInclude Include="..\..\..\..\src\tool_util.h" />

@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: location
 Short: L
 Help: Follow redirects
@@ -8,7 +6,6 @@ Category: http
 Example: -L $URL
 Added: 4.9
 See-also: resolve alt-svc
-Multi: boolean
 ---
 If the server reports that the requested page has moved to a different
 location (indicated with a Location: header and a 3XX response code), this

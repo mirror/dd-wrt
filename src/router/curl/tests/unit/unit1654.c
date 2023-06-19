@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2019 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "curlcheck.h"
@@ -38,76 +36,105 @@ unit_stop(void)
   curl_global_cleanup();
 }
 
+#if defined(CURL_DISABLE_HTTP) || defined(CURL_DISABLE_ALTSVC)
 UNITTEST_START
-#if !defined(CURL_DISABLE_HTTP) && !defined(CURL_DISABLE_ALTSVC)
+{
+  return 0; /* nothing to do when HTTP or alt-svc is disabled */
+}
+UNITTEST_STOP
+#else
+UNITTEST_START
 {
   char outname[256];
   CURL *curl;
   CURLcode result;
   struct altsvcinfo *asi = Curl_altsvc_init();
-  abort_if(!asi, "Curl_altsvc_i");
+  if(!asi)
+    return 1;
   result = Curl_altsvc_load(asi, arg);
   if(result) {
-    fail_if(result, "Curl_altsvc_load");
-    goto fail;
+    Curl_altsvc_cleanup(&asi);
+    return result;
   }
   curl_global_init(CURL_GLOBAL_ALL);
   curl = curl_easy_init();
-  if(!curl) {
-    fail_if(!curl, "curl_easy_init");
+  if(!curl)
     goto fail;
-  }
   fail_unless(asi->list.size == 4, "wrong number of entries");
   msnprintf(outname, sizeof(outname), "%s-out", arg);
 
   result = Curl_altsvc_parse(curl, asi, "h2=\"example.com:8080\"\r\n",
                              ALPN_h1, "example.org", 8080);
-  fail_if(result, "Curl_altsvc_parse() failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse() failed!\n");
+    unitfail++;
+  }
   fail_unless(asi->list.size == 5, "wrong number of entries");
 
   result = Curl_altsvc_parse(curl, asi, "h3=\":8080\"\r\n",
                              ALPN_h1, "2.example.org", 8080);
-  fail_if(result, "Curl_altsvc_parse(2) failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse(2) failed!\n");
+    unitfail++;
+  }
   fail_unless(asi->list.size == 6, "wrong number of entries");
 
   result = Curl_altsvc_parse(curl, asi,
                              "h2=\"example.com:8080\", h3=\"yesyes.com\"\r\n",
                              ALPN_h1, "3.example.org", 8080);
-  fail_if(result, "Curl_altsvc_parse(3) failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse(3) failed!\n");
+    unitfail++;
+  }
   /* that one should make two entries */
   fail_unless(asi->list.size == 8, "wrong number of entries");
 
   result = Curl_altsvc_parse(curl, asi,
                              "h2=\"example.com:443\"; ma = 120;\r\n",
                              ALPN_h2, "example.org", 80);
-  fail_if(result, "Curl_altsvc_parse(4) failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse(4) failed!\n");
+    unitfail++;
+  }
   fail_unless(asi->list.size == 9, "wrong number of entries");
 
   /* quoted 'ma' value */
   result = Curl_altsvc_parse(curl, asi,
                              "h2=\"example.net:443\"; ma=\"180\";\r\n",
                              ALPN_h2, "example.net", 80);
-  fail_if(result, "Curl_altsvc_parse(4) failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse(4) failed!\n");
+    unitfail++;
+  }
   fail_unless(asi->list.size == 10, "wrong number of entries");
 
   result =
     Curl_altsvc_parse(curl, asi,
                       "h2=\":443\", h3=\":443\"; ma = 120; persist = 1\r\n",
                       ALPN_h1, "curl.se", 80);
-  fail_if(result, "Curl_altsvc_parse(5) failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse(5) failed!\n");
+    unitfail++;
+  }
   fail_unless(asi->list.size == 12, "wrong number of entries");
 
   /* clear that one again and decrease the counter */
   result = Curl_altsvc_parse(curl, asi, "clear;\r\n",
                              ALPN_h1, "curl.se", 80);
-  fail_if(result, "Curl_altsvc_parse(6) failed!");
+  if(result) {
+    fprintf(stderr, "Curl_altsvc_parse(6) failed!\n");
+    unitfail++;
+  }
   fail_unless(asi->list.size == 10, "wrong number of entries");
 
   Curl_altsvc_save(curl, asi, outname);
 
   curl_easy_cleanup(curl);
-fail:
+  curl_global_cleanup();
+  fail:
   Curl_altsvc_cleanup(&asi);
+  curl_global_cleanup();
+  return unitfail;
 }
-#endif
 UNITTEST_STOP
+#endif

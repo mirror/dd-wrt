@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: tftp-no-options
 Help: Do not send any TFTP options
 Protocols: TFTP
@@ -7,7 +5,6 @@ Added: 7.48.0
 Category: tftp
 Example: --tftp-no-options tftp://192.168.0.1/
 See-also: tftp-blksize
-Multi: boolean
 ---
 Tells curl not to send TFTP options requests.
 

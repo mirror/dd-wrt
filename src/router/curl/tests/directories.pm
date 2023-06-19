@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,27 +18,8 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
-# SPDX-License-Identifier: curl
-#
 ###########################################################################
-
-package directories;
-
-use strict;
-use warnings;
-
-BEGIN {
-    use base qw(Exporter);
-
-    our @EXPORT = qw(
-        ftp_contentlist
-        wildcard_filesize
-        wildcard_getfile
-    );
-}
-
-
-my %file_chmod1 = (
+%file_chmod1 = (
   'name'      => 'chmod1',
   'content'   => "This file should have permissions 444\n",
   'perm'      => 'r--r--r--',
@@ -46,7 +27,7 @@ my %file_chmod1 = (
   'dostime'   => '01-11-10  10:00AM',
 );
 
-my %file_chmod2 = (
+%file_chmod2 = (
   'name'      => 'chmod2',
   'content'   => "This file should have permissions 666\n",
   'perm'      => 'rw-rw-rw-',
@@ -54,7 +35,7 @@ my %file_chmod2 = (
   'dostime'   => '02-01-10  08:00AM',
 );
 
-my %file_chmod3 = (
+%file_chmod3 = (
   'name'      => 'chmod3',
   'content'   => "This file should have permissions 777\n",
   'perm'      => 'rwxrwxrwx',
@@ -62,7 +43,7 @@ my %file_chmod3 = (
   'dostime'   => '02-01-10  08:00AM',
 );
 
-my %file_chmod4 = (
+%file_chmod4 = (
   'type'      => 'd',
   'name'      => 'chmod4',
   'content'   => "This file should have permissions 001\n",
@@ -71,7 +52,7 @@ my %file_chmod4 = (
   'dostime'   => '05-04-10  04:31AM'
 );
 
-my %file_chmod5 = (
+%file_chmod5 = (
   'type'      => 'd',
   'name'      => 'chmod5',
   'content'   => "This file should have permissions 110\n",
@@ -80,7 +61,7 @@ my %file_chmod5 = (
   'dostime'   => '05-04-10  04:31AM'
 );
 
-my %link_link = (
+%link_link = (
   'type'      => 'l',
   'name'      => 'link -> file.txt',
   'size'      => '8',
@@ -88,7 +69,7 @@ my %link_link = (
   'time'      => 'Jan  6  4:42'
 );
 
-my %link_link_absolute = (
+%link_link_absolute = (
   'type'      => 'l',
   'name'      => 'link_absolute -> /data/ftp/file.txt',
   'size'      => '15',
@@ -96,7 +77,7 @@ my %link_link_absolute = (
   'time'      => 'Jan  6  4:45'
 );
 
-my %dir_dot = (
+%dir_dot = (
   'type'      => "d",
   'name'      => ".",
   'hlink'     => "4",
@@ -106,7 +87,7 @@ my %dir_dot = (
   'perm'      => "rwxrwxrwx"
 );
 
-my %dir_ddot = (
+%dir_ddot = (
   'type'      => "d",
   'name'      => "..",
   'hlink'     => "4",
@@ -116,7 +97,7 @@ my %dir_ddot = (
   'perm'      => "rwxrwxrwx"
 );
 
-my %dir_weirddir_txt = (
+%dir_weirddir_txt = (
   'type'      => "d",
   'name'      => "weirddir.txt",
   'hlink'     => "2",
@@ -126,7 +107,7 @@ my %dir_weirddir_txt = (
   'perm'      => "rwxr-xrwx"
 );
 
-my %dir_UNIX = (
+%dir_UNIX = (
   'type'      => "d",
   'name'      => "UNIX",
   'hlink'     => "11",
@@ -136,7 +117,7 @@ my %dir_UNIX = (
   'perm'      => "rwx--x--x"
 );
 
-my %dir_DOS = (
+%dir_DOS = (
   'type'      => "d",
   'name'      => "DOS",
   'hlink'     => "11",
@@ -146,7 +127,7 @@ my %dir_DOS = (
   'perm'      => "rwx--x--x"
 );
 
-my %dir_dot_NeXT = (
+%dir_dot_NeXT = (
   'type'      => "d",
   'name'      => ".NeXT",
   'hlink'     => "4",
@@ -156,7 +137,7 @@ my %dir_dot_NeXT = (
   'perm'      => "rwxrwxrwx"
 );
 
-my %file_empty_file_dat = (
+%file_empty_file_dat = (
   'name'      => "empty_file.dat",
   'content'   => "",
   'perm'      => "rw-r--r--",
@@ -164,7 +145,7 @@ my %file_empty_file_dat = (
   'dostime'   => "04-27-10  11:01AM"
 );
 
-my %file_file_txt = (
+%file_file_txt = (
   'name'      => "file.txt",
   'content'   => "This is content of file \"file.txt\"\n",
   'time'      => "Apr 27 11:01",
@@ -172,7 +153,7 @@ my %file_file_txt = (
   'perm'      => "rw-r--r--"
 );
 
-my %file_someothertext_txt = (
+%file_someothertext_txt = (
   'name'      => "someothertext.txt",
   'content'   => "Some junk ;-) This file does not really exist.\n",
   'time'      => "Apr 27 11:01",
@@ -180,7 +161,7 @@ my %file_someothertext_txt = (
   'perm'      => "rw-r--r--"
 );
 
-my %lists = (
+%lists = (
   '/fully_simulated/' => {
     'files'   => [ \%dir_dot, \%dir_ddot, \%dir_DOS, \%dir_UNIX ],
     'eol'     => "\r\n",
@@ -205,12 +186,12 @@ my %lists = (
   }
 );
 
-sub ftp_createcontent {
-  my ($list) = $_[0];
+sub ftp_createcontent($) {
+  my (%list) = @_;
 
-  my $type = $$list{'type'};
-  my $eol  = $$list{'eol'};
-  my $list_ref = $$list{'files'};
+  $type = $$list{'type'};
+  $eol  = $$list{'eol'};
+  $list_ref = $$list{'files'};
 
   my @diroutput;
   my @contentlist;
@@ -223,11 +204,11 @@ sub ftp_createcontent {
       my $fuser  = $file{'user'}  ? sprintf("%15s", $file{'user'})   : "ftp-default";
       my $fgroup = $file{'group'} ? sprintf("%15s", $file{'group'})  : "ftp-default";
       my $fsize = "";
-      if(exists($file{'type'}) && $file{'type'} eq "d") {
+      if($file{'type'} eq "d") {
         $fsize = $file{'size'} ? sprintf("%7s", $file{'size'}) : sprintf("%7d", 4096);
       }
       else {
-        $fsize = sprintf("%7d", exists($file{'content'}) ? length $file{'content'} : 0);
+        $fsize = sprintf("%7d", length $file{'content'});
       }
       my $fhlink = $file{'hlink'} ? sprintf("%4d",  $file{'hlink'})  : "   1";
       my $ftime  = $file{'time'}  ? sprintf("%10s", $file{'time'})   : "Jan 9  1933";
@@ -242,7 +223,7 @@ sub ftp_createcontent {
       my $line = "";
       my $time = $file{'dostime'} ? $file{'dostime'} : "06-25-97  09:12AM";
       my $size_or_dir;
-      if(exists($file{'type'}) && $file{'type'} =~ /^d$/) {
+      if($file{'type'} =~ /^d$/) {
         $size_or_dir = "      <DIR>         ";
       }
       else {
@@ -254,9 +235,9 @@ sub ftp_createcontent {
   }
 }
 
-sub wildcard_filesize {
+sub wildcard_filesize($$) {
   my ($list_type, $file) = @_;
-  my $list = $lists{$list_type};
+  $list = $lists{$list_type};
   if($list) {
     my $files = $list->{'files'};
     for(@$files) {
@@ -276,10 +257,9 @@ sub wildcard_filesize {
   }
   return -1;
 }
-
-sub wildcard_getfile {
+sub wildcard_getfile($$) {
   my ($list_type, $file) = @_;
-  my $list = $lists{$list_type};
+  $list = $lists{$list_type};
   if($list) {
     my $files = $list->{'files'};
     for(@$files) {
@@ -288,7 +268,7 @@ sub wildcard_getfile {
         if($f{'content'}) {
           return (length $f{'content'}, $f{'content'});
         }
-        elsif (!exists($f{'type'}) or $f{'type'} ne "d"){
+        elsif ($f{'type'} ne "d"){
           return (0, "");
         }
         else {
@@ -302,6 +282,6 @@ sub wildcard_getfile {
 
 sub ftp_contentlist {
   my $listname = $_[0];
-  my $list = $lists{$listname};
-  return ftp_createcontent($list);
+  $list = $lists{$listname};
+  return ftp_createcontent(\$list);
 }

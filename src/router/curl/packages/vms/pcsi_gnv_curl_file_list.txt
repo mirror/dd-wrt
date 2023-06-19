@@ -1,5 +1,7 @@
 ! File: PCSI_GNV_CURL_FILE_LIST.TXT
 !
+! $Id$
+!
 ! File list for building a PCSI kit.
 ! Very simple format so that the parsing logic can be simple.
 ! links first, directory second, and files third.
@@ -13,7 +15,7 @@
 !
 ! [xxx.yyy]file.ext is a file for the rename and add phases.
 !
-! Copyright (C) John Malmberg
+! Copyright 2009 - 2020, John Malmberg
 !
 ! Permission to use, copy, modify, and/or distribute this software for any
 ! purpose with or without fee is hereby granted, provided that the above
@@ -27,8 +29,7 @@
 ! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 ! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 !
-! SPDX-License-Identifier: ISC
-!
+! 15-Jun-2009  J. Malmberg
 !============================================================================
 [gnv.usr.bin]curl. -> [gnv.usr.bin]gnv$curl.exe
 [gnv.usr.bin]curl.exe -> [gnv.usr.bin]gnv$curl.exe

@@ -5,8 +5,8 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Mandy Wu, <mandy.wu@intel.com>
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2010, Mandy Wu, <mandy.wu@intel.com>
+ * Copyright (C) 2011 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "server_setup.h"
@@ -39,8 +37,7 @@
 /* include memdebug.h last */
 #include "memdebug.h"
 
-#define LOGFILE "%s/fake_ntlm%ld.log"
-const char *logdir = "log";
+#define LOGFILE "log/fake_ntlm%ld.log"
 
 const char *serverlogfile;
 
@@ -160,11 +157,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  env = getenv("CURL_NTLM_LOGDIR");
-  if(env) {
-    logdir = env;
-  }
-
   env = getenv("CURL_NTLM_AUTH_TESTNUM");
   if(env) {
     char *endptr;
@@ -181,7 +173,7 @@ int main(int argc, char *argv[])
   }
 
   /* logmsg cannot be used until this file name is set */
-  msnprintf(logfilename, sizeof(logfilename), LOGFILE, logdir, testnum);
+  msnprintf(logfilename, sizeof(logfilename), LOGFILE, testnum);
   serverlogfile = logfilename;
 
   logmsg("fake_ntlm (user: %s) (proto: %s) (domain: %s) (cached creds: %s)",
@@ -193,7 +185,7 @@ int main(int argc, char *argv[])
     path = env;
   }
 
-  stream = test2fopen(testnum, logdir);
+  stream = test2fopen(testnum);
   if(!stream) {
     error = errno;
     logmsg("fopen() failed with error: %d %s", error, strerror(error));
@@ -210,7 +202,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  stream = test2fopen(testnum, logdir);
+  stream = test2fopen(testnum);
   if(!stream) {
     error = errno;
     logmsg("fopen() failed with error: %d %s", error, strerror(error));
@@ -228,7 +220,7 @@ int main(int argc, char *argv[])
 
   while(fgets(buf, sizeof(buf), stdin)) {
     if(strcmp(buf, type1_input) == 0) {
-      stream = test2fopen(testnum, logdir);
+      stream = test2fopen(testnum);
       if(!stream) {
         error = errno;
         logmsg("fopen() failed with error: %d %s", error, strerror(error));
@@ -249,7 +241,7 @@ int main(int argc, char *argv[])
       fflush(stdout);
     }
     else if(strncmp(buf, type3_input, strlen(type3_input)) == 0) {
-      stream = test2fopen(testnum, logdir);
+      stream = test2fopen(testnum);
       if(!stream) {
         error = errno;
         logmsg("fopen() failed with error: %d %s", error, strerror(error));

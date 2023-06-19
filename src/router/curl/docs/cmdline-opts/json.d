@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: json
 Arg: <data>
 Help: HTTP POST JSON
@@ -12,7 +10,6 @@ Example: --json '{ "drink":' --json ' "coffe" }' $URL
 Example: --json @prepared $URL
 Example: --json @- $URL < json.txt
 Added: 7.82.0
-Multi: append
 ---
 Sends the specified JSON data in a POST request to the HTTP server. --json
 works as a shortcut for passing on these three options:
@@ -26,10 +23,10 @@ the syntax is correct.
 
 If you start the data with the letter @, the rest should be a file name to
 read the data from, or a single dash (-) if you want curl to read the data
-from stdin. Posting data from a file named 'foobar' would thus be done with
+from stdin. Posting data from a file named \&'foobar' would thus be done with
 --json @foobar and to instead read the data from stdin, use --json @-.
 
 If this option is used more than once on the same command line, the additional
 data pieces will be concatenated to the previous before sending.
 
-The headers this option sets can be overridden with --header as usual.
+The headers this option sets can be overriden with --header as usual.

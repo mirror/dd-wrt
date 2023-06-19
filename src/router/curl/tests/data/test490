@@ -35,9 +35,9 @@ http
 Two globbed HTTP PUTs
  </name>
  <command>
-http://%HOSTIP:%HTTPPORT/%TESTNUMBER -T '{%LOGDIR/in%TESTNUMBER,%LOGDIR/in%TESTNUMBER}'
+http://%HOSTIP:%HTTPPORT/%TESTNUMBER -T '{log/in%TESTNUMBER,log/in%TESTNUMBER}'
 </command>
-<file name="%LOGDIR/in%TESTNUMBER">
+<file name="log/in%TESTNUMBER">
 surprise!
 </file>
 </client>
@@ -51,6 +51,7 @@ Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Accept: */*
 Content-Length: 10
+Expect: 100-continue
 
 surprise!
 PUT /%TESTNUMBER HTTP/1.1
@@ -58,6 +59,7 @@ Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Accept: */*
 Content-Length: 10
+Expect: 100-continue
 
 surprise!
 </protocol>

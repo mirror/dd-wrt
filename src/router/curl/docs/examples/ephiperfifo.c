@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -166,7 +164,7 @@ static int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g)
     memset(&its, 0, sizeof(struct itimerspec));
   }
 
-  timerfd_settime(g->tfd, /* flags= */0, &its, NULL);
+  timerfd_settime(g->tfd, /*flags=*/0, &its, NULL);
   return 0;
 }
 
@@ -197,7 +195,7 @@ static void check_multi_info(GlobalInfo *g)
   }
 }
 
-/* Called by libevent when we get action on a multi socket filedescriptor */
+/* Called by libevent when we get action on a multi socket filedescriptor*/
 static void event_cb(GlobalInfo *g, int fd, int revents)
 {
   CURLMcode rc;

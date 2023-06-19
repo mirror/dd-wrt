@@ -23,9 +23,6 @@ boo
 
 # Client-side
 <client>
-<features>
-proxy
-</features>
 <server>
 http
 </server>

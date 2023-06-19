@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,10 +18,8 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
-.\" * SPDX-License-Identifier: curl
-.\" *
 .\" **************************************************************************
-.TH curl_strequal 3 "April 26, 2023" "libcurl 8.1.2" "libcurl"
+.TH curl_strequal 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
 
 .SH NAME
 curl_strequal, curl_strnequal - case insensitive string comparisons
@@ -40,7 +38,7 @@ of the characters. It returns a non-zero (TRUE) integer if the strings are
 identical.
 .sp
 The \fBcurl_strnequal()\fP function is similar, except it only compares the
-first \fIlength\fP characters of \fIstr1\fP.
+first \fIlenght\fP characters of \fIstr1\fP.
 .sp
 These functions are provided by libcurl to enable applications to compare
 strings in a truly portable manner. There are no standard portable case
@@ -53,7 +51,9 @@ if(curl_strnequal(name, input, 5))
   printf("Name and input matches in the 5 first bytes\\n");
 .fi
 .SH AVAILABILITY
-Always
+These functions will be removed from the public libcurl API in a near
+future. They will instead be made "available" by source code access only, and
+then as curlx_strequal() and curlx_strenqual().
 .SH RETURN VALUE
 Non-zero if the strings are identical. Zero if they are not.
 .SH "SEE ALSO"

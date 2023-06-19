@@ -1,5 +1,7 @@
 $! File: Backup_gnv_curl_src.com
 $!
+$! $Id$
+$!
 $! Procedure to create backup save sets for installing in a PCSI kit.
 $!
 $! To comply with most Open Source licenses, the source used for building
@@ -15,7 +17,7 @@ $! This file is created from a template file for the purpose of making it
 $! easier to port Unix code, particularly open source code to VMS.
 $! Therefore permission is freely granted for any use.
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2009 - 2020, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -29,7 +31,7 @@ $! WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 $! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
-$! SPDX-License-Identifier: ISC
+$! 13-Jun-2009 J. Malmberg
 $!
 $!===========================================================================
 $!

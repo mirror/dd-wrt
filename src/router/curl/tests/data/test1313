@@ -37,7 +37,7 @@ http
 HTTP GET with -J, Content-Disposition, uneven quotes
 </name>
 <setenv>
-CURL_TESTDIR=%LOGDIR
+CURL_TESTDIR=%PWD/log
 </setenv>
 <command option="no-output,no-include">
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -J -O
@@ -54,7 +54,7 @@ User-Agent: curl/%VERSION
 Accept: */*
 
 </protocol>
-<file name="%LOGDIR/name%TESTNUMBER">
+<file name="log/name%TESTNUMBER">
 12345
 </file>
 

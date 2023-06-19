@@ -19,9 +19,6 @@ silly content
 #
 # Client-side
 <client>
-<features>
-proxy
-</features>
 <server>
 ftp
 socks5

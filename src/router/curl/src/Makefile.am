@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
-#
-# SPDX-License-Identifier: curl
 #
 ###########################################################################
 AUTOMAKE_OPTIONS = foreign nostdinc
@@ -55,10 +53,6 @@ include Makefile.inc
 
 # CURL_FILES comes from Makefile.inc
 curl_SOURCES = $(CURL_FILES)
-if HAVE_WINDRES
-curl_SOURCES += $(CURL_RCFILES)
-$(CURL_RCFILES): tool_version.h
-endif
 
 # This might hold -Werror
 CFLAGS += @CURL_CFLAG_EXTRAS@
@@ -79,7 +73,7 @@ libcurltool_la_CPPFLAGS = $(AM_CPPFLAGS) \
                           -DCURL_STATICLIB -DUNITTESTS
 libcurltool_la_CFLAGS =
 libcurltool_la_LDFLAGS = -static $(LINKFLAGS)
-libcurltool_la_SOURCES = $(CURL_FILES)
+libcurltool_la_SOURCES = $(curl_SOURCES)
 endif
 
 CLEANFILES = tool_hugehelp.c
@@ -87,8 +81,10 @@ CLEANFILES = tool_hugehelp.c
 # embedded text.
 NROFF=env LC_ALL=C @NROFF@ @MANOPT@ # figured out by the configure script
 
-EXTRA_DIST = mkhelp.pl \
- Makefile.mk curl.rc Makefile.inc CMakeLists.txt
+EXTRA_DIST = mkhelp.pl makefile.dj                                     \
+ Makefile.m32 macos/curl.mcp.xml.sit.hqx macos/MACINSTALL.TXT          \
+ macos/src/curl_GUSIConfig.cpp macos/src/macos_main.cpp makefile.amiga \
+ curl.rc Makefile.inc CMakeLists.txt
 
 # Use absolute directory to disable VPATH
 MANPAGE=$(abs_top_builddir)/docs/curl.1
@@ -131,13 +127,15 @@ endif
 else # USE_MANUAL
 # built-in manual has been disabled, make a blank file
 $(HUGE):
-	echo '#include "tool_hugehelp.h"' >> $(HUGE)
+	$(HUGECMD)(echo "/* built-in manual is disabled, blank function */" > $(HUGE); \
+	echo '#include "tool_hugehelp.h"' >> $(HUGE); \
+	echo "void hugehelp(void) {}" >>$(HUGE) )
 endif
 
 # ignore tool_hugehelp.c since it is generated source code and it plays
 # by slightly different rules!
 checksrc:
-	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir) \
+	$(CHECKSRC)(@PERL@ $(top_srcdir)/lib/checksrc.pl -D$(srcdir)        \
 	-W$(srcdir)/tool_hugehelp.c $(srcdir)/*.[ch])
 
 if CURLDEBUG
@@ -155,8 +153,3 @@ tidy:
 
 listhelp:
 	(cd $(top_srcdir)/docs/cmdline-opts && ./gen.pl listhelp *.d) > tool_listhelp.c
-
-if HAVE_WINDRES
-.rc.o:
-	$(RC) -I$(top_srcdir)/include -DCURL_EMBED_MANIFEST $(RCFLAGS) -i $< -o $@
-endif

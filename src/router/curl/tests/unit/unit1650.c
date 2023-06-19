@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2018 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "curlcheck.h"
@@ -159,27 +157,25 @@ UNITTEST_START
   unsigned char buffer[256];
   size_t i;
   unsigned char *p;
-
   for(i = 0; i < sizeof(req) / sizeof(req[0]); i++) {
     int rc = doh_encode(req[i].name, req[i].type,
                         buffer, sizeof(buffer), &size);
     if(rc != req[i].rc) {
       fprintf(stderr, "req %zu: Expected return code %d got %d\n", i,
               req[i].rc, rc);
-      abort_if(rc != req[i].rc, "return code");
+      return 1;
     }
-    if(size != req[i].size) {
+    else if(size != req[i].size) {
       fprintf(stderr, "req %zu: Expected size %zu got %zu\n", i,
               req[i].size, size);
       fprintf(stderr, "DNS encode made: %s\n", hexdump(buffer, size));
-      abort_if(size != req[i].size, "size");
+      return 2;
     }
-    if(req[i].packet && memcmp(req[i].packet, buffer, size)) {
+    else if(req[i].packet && memcmp(req[i].packet, buffer, size)) {
       fprintf(stderr, "DNS encode made: %s\n", hexdump(buffer, size));
       fprintf(stderr, "... instead of: %s\n",
              hexdump((unsigned char *)req[i].packet, size));
-      abort_if(req[i].packet && memcmp(req[i].packet, buffer, size),
-               "contents");
+      return 3;
     }
   }
 
@@ -195,7 +191,7 @@ UNITTEST_START
     if(rc != resp[i].rc) {
       fprintf(stderr, "resp %zu: Expected return code %d got %d\n", i,
               resp[i].rc, rc);
-      abort_if(rc != resp[i].rc, "return code");
+      return 4;
     }
     len = sizeof(buffer);
     ptr = (char *)buffer;
@@ -236,61 +232,63 @@ UNITTEST_START
     if(resp[i].out && strcmp((char *)buffer, resp[i].out)) {
       fprintf(stderr, "resp %zu: Expected %s got %s\n", i,
               resp[i].out, buffer);
-      abort_if(resp[i].out && strcmp((char *)buffer, resp[i].out), "content");
-    }
-  }
-
-  /* pass all sizes into the decoder until full */
-  for(i = 0; i < sizeof(full49)-1; i++) {
-    struct dohentry d;
-    int rc;
-    memset(&d, 0, sizeof(d));
-    rc = doh_decode((const unsigned char *)full49, i, DNS_TYPE_A, &d);
-    if(!rc) {
-      /* none of them should work */
-      fprintf(stderr, "%zu: %d\n", i, rc);
-      abort_if(!rc, "error rc");
-    }
-  }
-
-  /* and try all pieces from the other end of the packet */
-  for(i = 1; i < sizeof(full49); i++) {
-    struct dohentry d;
-    int rc;
-    memset(&d, 0, sizeof(d));
-    rc = doh_decode((const unsigned char *)&full49[i], sizeof(full49)-i-1,
-                    DNS_TYPE_A, &d);
-    if(!rc) {
-      /* none of them should work */
-      fprintf(stderr, "2 %zu: %d\n", i, rc);
-      abort_if(!rc, "error rc");
+      return 1;
     }
   }
 
   {
-    int rc;
-    struct dohentry d;
-    struct dohaddr *a;
-    memset(&d, 0, sizeof(d));
-    rc = doh_decode((const unsigned char *)full49, sizeof(full49)-1,
-                    DNS_TYPE_A, &d);
-    fail_if(d.numaddr != 1, "missing address");
-    a = &d.addr[0];
-    p = &a->ip.v4[0];
-    msnprintf((char *)buffer, sizeof(buffer),
-              "%u.%u.%u.%u", p[0], p[1], p[2], p[3]);
-    if(rc || strcmp((char *)buffer, "127.0.0.1")) {
-      fprintf(stderr, "bad address decoded: %s, rc == %d\n", buffer, rc);
-      abort_if(rc || strcmp((char *)buffer, "127.0.0.1"), "bad address");
+    /* pass all sizes into the decoder until full */
+    for(i = 0; i < sizeof(full49)-1; i++) {
+      struct dohentry d;
+      int rc;
+      memset(&d, 0, sizeof(d));
+      rc = doh_decode((const unsigned char *)full49, i, DNS_TYPE_A, &d);
+      if(!rc) {
+        /* none of them should work */
+        fprintf(stderr, "%zu: %d\n", i, rc);
+        return 5;
+      }
     }
-    fail_if(d.numcname, "bad cname counter");
+    /* and try all pieces from the other end of the packet */
+    for(i = 1; i < sizeof(full49); i++) {
+      struct dohentry d;
+      int rc;
+      memset(&d, 0, sizeof(d));
+      rc = doh_decode((const unsigned char *)&full49[i], sizeof(full49)-i-1,
+                      DNS_TYPE_A, &d);
+      if(!rc) {
+        /* none of them should work */
+        fprintf(stderr, "2 %zu: %d\n", i, rc);
+        return 7;
+      }
+    }
+    {
+      int rc;
+      struct dohentry d;
+      struct dohaddr *a;
+      memset(&d, 0, sizeof(d));
+      rc = doh_decode((const unsigned char *)full49, sizeof(full49)-1,
+                      DNS_TYPE_A, &d);
+      fail_if(d.numaddr != 1, "missing address");
+      a = &d.addr[0];
+      p = &a->ip.v4[0];
+      msnprintf((char *)buffer, sizeof(buffer),
+                "%u.%u.%u.%u", p[0], p[1], p[2], p[3]);
+      if(rc || strcmp((char *)buffer, "127.0.0.1")) {
+        fprintf(stderr, "bad address decoded: %s, rc == %d\n", buffer, rc);
+        return 7;
+      }
+      fail_if(d.numcname, "bad cname counter");
+    }
   }
 }
 UNITTEST_STOP
 
 #else /* CURL_DISABLE_DOH */
 UNITTEST_START
-/* nothing to do, just succeed */
+{
+  return 1; /* nothing to do, just fail */
+}
 UNITTEST_STOP
 
 

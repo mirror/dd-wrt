@@ -16,15 +16,11 @@ none
 <features>
 unittest
 http
-Mime
 </features>
  <name>
 formpost unit tests
  </name>
-<command>
-%LOGDIR/test-%TESTNUMBER
-</command>
-<file name="%LOGDIR/test-%TESTNUMBER">
+<file name="log/test-%TESTNUMBER">
 Piece of the file that is to uploaded as a formpost
 </file>
 </client>

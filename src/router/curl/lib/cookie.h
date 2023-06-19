@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -19,8 +19,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "curl_setup.h"
@@ -61,6 +59,7 @@ struct Cookie {
 struct CookieInfo {
   /* linked list of cookies we know of */
   struct Cookie *cookies[COOKIE_HASH_SIZE];
+
   char *filename;  /* file we read from/write to */
   long numcookies; /* number of cookies in the "jar" */
   bool running;    /* state info, for cookie adding information */
@@ -69,44 +68,22 @@ struct CookieInfo {
   curl_off_t next_expiration; /* the next time at which expiration happens */
 };
 
-/* The maximum sizes we accept for cookies. RFC 6265 section 6.1 says
-   "general-use user agents SHOULD provide each of the following minimum
-   capabilities":
+/* This is the maximum line length we accept for a cookie line. RFC 2109
+   section 6.3 says:
 
-   - At least 4096 bytes per cookie (as measured by the sum of the length of
-     the cookie's name, value, and attributes).
+   "at least 4096 bytes per cookie (as measured by the size of the characters
+   that comprise the cookie non-terminal in the syntax description of the
+   Set-Cookie header)"
 
-   In the 6265bis draft document section 5.4 it is phrased even stronger: "If
-   the sum of the lengths of the name string and the value string is more than
-   4096 octets, abort these steps and ignore the set-cookie-string entirely."
+   We allow max 5000 bytes cookie header. Max 4095 bytes length per cookie
+   name and value. Name + value may not exceed 4096 bytes.
+
 */
-
-/** Limits for INCOMING cookies **/
-
-/* The longest we allow a line to be when reading a cookie from a HTTP header
-   or from a cookie jar */
 #define MAX_COOKIE_LINE 5000
 
-/* Maximum length of an incoming cookie name or content we deal with. Longer
-   cookies are ignored. */
+/* This is the maximum length of a cookie name or content we deal with: */
 #define MAX_NAME 4096
-
-/* Maximum number of Set-Cookie: lines accepted in a single response. If more
-   such header lines are received, they are ignored. This value must be less
-   than 256 since an unsigned char is used to count. */
-#define MAX_SET_COOKIE_AMOUNT 50
-
-/** Limits for OUTGOING cookies **/
-
-/* Maximum size for an outgoing cookie line libcurl will use in an http
-   request. This is the default maximum length used in some versions of Apache
-   httpd. */
-#define MAX_COOKIE_HEADER_LEN 8190
-
-/* Maximum number of cookies libcurl will send in a single request, even if
-   there might be more cookies that match. One reason to cap the number is to
-   keep the maximum HTTP request within the maximum allowed size. */
-#define MAX_COOKIE_SEND_AMOUNT 150
+#define MAX_NAME_TXT "4095"
 
 struct Curl_easy;
 /*
@@ -120,8 +97,7 @@ struct Cookie *Curl_cookie_add(struct Curl_easy *data,
                                const char *domain, const char *path,
                                bool secure);
 
-struct Cookie *Curl_cookie_getlist(struct Curl_easy *data,
-                                   struct CookieInfo *c, const char *host,
+struct Cookie *Curl_cookie_getlist(struct CookieInfo *c, const char *host,
                                    const char *path, bool secure);
 void Curl_cookie_freelist(struct Cookie *cookies);
 void Curl_cookie_clearall(struct CookieInfo *cookies);

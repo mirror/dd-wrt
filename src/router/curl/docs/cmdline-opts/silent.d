@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: silent
 Short: s
 Help: Silent mode
@@ -7,7 +5,6 @@ See-also: verbose stderr no-progress-meter
 Category: important verbose
 Example: -s $URL
 Added: 4.0
-Multi: boolean
 ---
 Silent or quiet mode. Do not show progress meter or error messages. Makes Curl
 mute. It will still output the data you ask for, potentially even to the

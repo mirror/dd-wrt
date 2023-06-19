@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * SPDX-License-Identifier: curl
- *
  * RFC6749 OAuth 2.0 Authorization Framework
  *
  ***************************************************************************/
@@ -27,8 +25,7 @@
 #include "curl_setup.h"
 
 #if !defined(CURL_DISABLE_IMAP) || !defined(CURL_DISABLE_SMTP) || \
-  !defined(CURL_DISABLE_POP3) || \
-  (!defined(CURL_DISABLE_LDAP) && defined(USE_OPENLDAP))
+  !defined(CURL_DISABLE_POP3)
 
 #include <curl/curl.h>
 #include "urldata.h"

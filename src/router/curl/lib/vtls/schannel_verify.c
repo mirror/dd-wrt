@@ -5,9 +5,9 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Marc Hoersken, <info@marc-hoersken.de>
- * Copyright (C) Mark Salisbury, <mark.salisbury@hp.com>
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2016, Marc Hoersken, <info@marc-hoersken.de>
+ * Copyright (C) 2012, Mark Salisbury, <mark.salisbury@hp.com>
+ * Copyright (C) 2012 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -19,8 +19,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -42,7 +40,6 @@
 #ifdef HAS_MANUAL_VERIFY_API
 
 #include "vtls.h"
-#include "vtls_int.h"
 #include "sendf.h"
 #include "strerror.h"
 #include "curl_multibyte.h"
@@ -289,6 +286,7 @@ static CURLcode add_certs_file_to_store(HCERTSTORE trust_store,
     goto cleanup;
   }
 
+  result = CURLE_OK;
   while(total_bytes_read < ca_file_bufsize) {
     DWORD bytes_to_read = (DWORD)(ca_file_bufsize - total_bytes_read);
     DWORD bytes_read = 0;
@@ -315,6 +313,9 @@ static CURLcode add_certs_file_to_store(HCERTSTORE trust_store,
   /* Null terminate the buffer */
   ca_file_buffer[ca_file_bufsize] = '\0';
 
+  if(result != CURLE_OK) {
+    goto cleanup;
+  }
   result = add_certs_data_to_store(trust_store,
                                    ca_file_buffer, ca_file_bufsize,
                                    ca_file,
@@ -459,7 +460,7 @@ static DWORD cert_get_name_string(struct Curl_easy *data,
 
 static CURLcode verify_host(struct Curl_easy *data,
                             CERT_CONTEXT *pCertContextServer,
-                            const char *conn_hostname)
+                            const char * const conn_hostname)
 {
   CURLcode result = CURLE_PEER_FAILED_VERIFICATION;
   TCHAR *cert_hostname_buff = NULL;
@@ -563,18 +564,17 @@ cleanup:
   return result;
 }
 
-CURLcode Curl_verify_certificate(struct Curl_cfilter *cf,
-                                 struct Curl_easy *data)
+CURLcode Curl_verify_certificate(struct Curl_easy *data,
+                                 struct connectdata *conn, int sockindex)
 {
-  struct ssl_connect_data *connssl = cf->ctx;
-  struct ssl_primary_config *conn_config = Curl_ssl_cf_get_primary_config(cf);
-  struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
   SECURITY_STATUS sspi_status;
+  struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   CURLcode result = CURLE_OK;
   CERT_CONTEXT *pCertContextServer = NULL;
   const CERT_CHAIN_CONTEXT *pChainContext = NULL;
   HCERTCHAINENGINE cert_chain_engine = NULL;
   HCERTSTORE trust_store = NULL;
+  const char * const conn_hostname = SSL_HOST_NAME();
 
   DEBUGASSERT(BACKEND);
 
@@ -591,7 +591,7 @@ CURLcode Curl_verify_certificate(struct Curl_cfilter *cf,
   }
 
   if(result == CURLE_OK &&
-      (conn_config->CAfile || conn_config->ca_info_blob) &&
+      (SSL_CONN_CONFIG(CAfile) || SSL_CONN_CONFIG(ca_info_blob)) &&
       BACKEND->use_manual_cred_validation) {
     /*
      * Create a chain engine that uses the certificates in the CA file as
@@ -618,7 +618,7 @@ CURLcode Curl_verify_certificate(struct Curl_cfilter *cf,
         result = CURLE_SSL_CACERT_BADFILE;
       }
       else {
-        const struct curl_blob *ca_info_blob = conn_config->ca_info_blob;
+        const struct curl_blob *ca_info_blob = SSL_CONN_CONFIG(ca_info_blob);
         if(ca_info_blob) {
           result = add_certs_data_to_store(trust_store,
                                            (const char *)ca_info_blob->data,
@@ -628,7 +628,7 @@ CURLcode Curl_verify_certificate(struct Curl_cfilter *cf,
         }
         else {
           result = add_certs_file_to_store(trust_store,
-                                           conn_config->CAfile,
+                                           SSL_CONN_CONFIG(CAfile),
                                            data);
         }
       }
@@ -671,7 +671,7 @@ CURLcode Curl_verify_certificate(struct Curl_cfilter *cf,
                                 NULL,
                                 pCertContextServer->hCertStore,
                                 &ChainPara,
-                                (ssl_config->no_revoke ? 0 :
+                                (SSL_SET_OPTION(no_revoke) ? 0 :
                                  CERT_CHAIN_REVOCATION_CHECK_CHAIN),
                                 NULL,
                                 &pChainContext)) {
@@ -720,8 +720,8 @@ CURLcode Curl_verify_certificate(struct Curl_cfilter *cf,
   }
 
   if(result == CURLE_OK) {
-    if(conn_config->verifyhost) {
-      result = verify_host(data, pCertContextServer, connssl->hostname);
+    if(SSL_CONN_CONFIG(verifyhost)) {
+      result = verify_host(data, pCertContextServer, conn_hostname);
     }
   }
 

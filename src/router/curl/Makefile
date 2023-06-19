@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
-# SPDX-License-Identifier: curl
-#
 ###########################################################################
 
 all:
@@ -31,25 +29,25 @@ ssl:
 	make
 
 mingw32:
-	$(MAKE) -C lib -f Makefile.mk
-	$(MAKE) -C src -f Makefile.mk
+	$(MAKE) -C lib -f Makefile.m32
+	$(MAKE) -C src -f Makefile.m32
 
 mingw32-clean:
-	$(MAKE) -C lib -f Makefile.mk clean
-	$(MAKE) -C src -f Makefile.mk clean
-	$(MAKE) -C docs/examples -f Makefile.mk clean
+	$(MAKE) -C lib -f Makefile.m32 clean
+	$(MAKE) -C src -f Makefile.m32 clean
+	$(MAKE) -C docs/examples -f Makefile.m32 clean
 
 mingw32-vclean mingw32-distclean:
-	$(MAKE) -C lib -f Makefile.mk vclean
-	$(MAKE) -C src -f Makefile.mk vclean
-	$(MAKE) -C docs/examples -f Makefile.mk vclean
+	$(MAKE) -C lib -f Makefile.m32 vclean
+	$(MAKE) -C src -f Makefile.m32 vclean
+	$(MAKE) -C docs/examples -f Makefile.m32 vclean
 
 mingw32-examples%:
-	$(MAKE) -C docs/examples -f Makefile.mk CFG=$@
+	$(MAKE) -C docs/examples -f Makefile.m32 CFG=$@
 
 mingw32%:
-	$(MAKE) -C lib -f Makefile.mk CFG=$@
-	$(MAKE) -C src -f Makefile.mk CFG=$@
+	$(MAKE) -C lib -f Makefile.m32 CFG=$@
+	$(MAKE) -C src -f Makefile.m32 CFG=$@
 
 vc:
 	cd winbuild
@@ -59,9 +57,9 @@ vc-x64:
 	cd winbuild
 	nmake /f Makefile.vc MACHINE=x64
 
-djgpp%:
-	$(MAKE) -C lib -f Makefile.mk CFG=$@ CROSSPREFIX=i586-pc-msdosdjgpp-
-	$(MAKE) -C src -f Makefile.mk CFG=$@ CROSSPREFIX=i586-pc-msdosdjgpp-
+djgpp:
+	$(MAKE) -C lib -f Makefile.dj
+	$(MAKE) -C src -f Makefile.dj
 
 cygwin:
 	./configure
@@ -71,9 +69,9 @@ cygwin-ssl:
 	./configure --with-openssl
 	make
 
-amiga%:
-	$(MAKE) -C lib -f Makefile.mk CFG=$@ CROSSPREFIX=m68k-amigaos-
-	$(MAKE) -C src -f Makefile.mk CFG=$@ CROSSPREFIX=m68k-amigaos-
+amiga:
+	cd ./lib && make -f makefile.amiga
+	cd ./src && make -f makefile.amiga
 
 unix: all
 
@@ -83,7 +81,7 @@ linux: all
 
 linux-ssl: ssl
 
-ca-bundle: scripts/mk-ca-bundle.pl
+ca-bundle: lib/mk-ca-bundle.pl
 	@echo "generate a fresh ca-bundle.crt"
 	@perl $< -b -l -u lib/ca-bundle.crt
 

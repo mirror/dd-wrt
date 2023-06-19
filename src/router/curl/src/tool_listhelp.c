@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "tool_setup.h"
@@ -64,7 +62,7 @@ const struct helptxt helptext[] = {
    "Verify the status of the server cert via OCSP-staple",
    CURLHELP_TLS},
   {"    --cert-type <type>",
-   "Certificate type (DER/PEM/ENG/P12)",
+   "Certificate type (DER/PEM/ENG)",
    CURLHELP_TLS},
   {"    --ciphers <list of ciphers>",
    "SSL ciphers to use",
@@ -121,7 +119,7 @@ const struct helptxt helptext[] = {
    "HTTP POST data, '@' allowed",
    CURLHELP_HTTP | CURLHELP_POST | CURLHELP_UPLOAD},
   {"    --data-urlencode <data>",
-   "HTTP POST data URL encoded",
+   "HTTP POST data url encoded",
    CURLHELP_HTTP | CURLHELP_POST | CURLHELP_UPLOAD},
   {"    --delegation <LEVEL>",
    "GSS-API delegation permission",
@@ -139,7 +137,7 @@ const struct helptxt helptext[] = {
    "Inhibit using EPSV",
    CURLHELP_FTP},
   {"    --disallow-username-in-url",
-   "Disallow username in URL",
+   "Disallow username in url",
    CURLHELP_CURL | CURLHELP_HTTP},
   {"    --dns-interface <interface>",
    "Interface to use for DNS requests",
@@ -181,7 +179,7 @@ const struct helptxt helptext[] = {
    "How long to wait for 100-continue",
    CURLHELP_HTTP},
   {"-f, --fail",
-   "Fail fast with no output on HTTP errors",
+   "Fail silently (no output at all) on HTTP errors",
    CURLHELP_IMPORTANT | CURLHELP_HTTP},
   {"    --fail-early",
    "Fail on first transfer error, do not continue",
@@ -197,7 +195,7 @@ const struct helptxt helptext[] = {
    CURLHELP_HTTP | CURLHELP_UPLOAD},
   {"    --form-escape",
    "Escape multipart form field/file names using backslash",
-   CURLHELP_HTTP | CURLHELP_UPLOAD},
+   CURLHELP_HTTP | CURLHELP_POST},
   {"    --form-string <name=string>",
    "Specify multipart MIME data",
    CURLHELP_HTTP | CURLHELP_UPLOAD},
@@ -251,7 +249,7 @@ const struct helptxt helptext[] = {
    CURLHELP_HTTP | CURLHELP_FTP | CURLHELP_FILE},
   {"-H, --header <header/@file>",
    "Pass custom header(s) to server",
-   CURLHELP_HTTP | CURLHELP_IMAP | CURLHELP_SMTP},
+   CURLHELP_HTTP},
   {"-h, --help <category>",
    "Get help for commands",
    CURLHELP_IMPORTANT | CURLHELP_CURL},
@@ -281,9 +279,6 @@ const struct helptxt helptext[] = {
    CURLHELP_HTTP},
   {"    --http3",
    "Use HTTP v3",
-   CURLHELP_HTTP},
-  {"    --http3-only",
-   "Use HTTP v3 only",
    CURLHELP_HTTP},
   {"    --ignore-content-length",
    "Ignore the size of the remote resource",
@@ -390,9 +385,6 @@ const struct helptxt helptext[] = {
   {"-N, --no-buffer",
    "Disable buffering of the output stream",
    CURLHELP_CURL},
-  {"    --no-clobber",
-   "Do not overwrite files that already exist",
-   CURLHELP_CURL | CURLHELP_OUTPUT},
   {"    --no-keepalive",
    "Disable TCP keepalive on the connection",
    CURLHELP_CONNECTION},
@@ -498,9 +490,6 @@ const struct helptxt helptext[] = {
   {"    --proxy-header <header/@file>",
    "Pass custom header(s) to proxy",
    CURLHELP_PROXY},
-  {"    --proxy-http2",
-   "Use HTTP/2 with HTTPS proxy",
-   CURLHELP_HTTP | CURLHELP_PROXY},
   {"    --proxy-insecure",
    "Do HTTPS proxy connections without verifying the proxy",
    CURLHELP_PROXY | CURLHELP_TLS},
@@ -567,9 +556,6 @@ const struct helptxt helptext[] = {
   {"-r, --range <range>",
    "Retrieve only the bytes within RANGE",
    CURLHELP_HTTP | CURLHELP_FTP | CURLHELP_SFTP | CURLHELP_FILE},
-  {"    --rate <max request rate>",
-   "Request rate for serial transfers",
-   CURLHELP_CONNECTION},
   {"    --raw",
    "Do HTTP \"raw\"; no transfer decoding",
    CURLHELP_HTTP},
@@ -588,9 +574,6 @@ const struct helptxt helptext[] = {
   {"-R, --remote-time",
    "Set the remote file's time on the local output",
    CURLHELP_OUTPUT},
-  {"    --remove-on-error",
-   "Remove output file on errors",
-   CURLHELP_CURL},
   {"-X, --request <method>",
    "Specify request method to use",
    CURLHELP_CONNECTION},
@@ -599,7 +582,7 @@ const struct helptxt helptext[] = {
    CURLHELP_HTTP},
   {"    --resolve <[+]host:port:addr[,addr]...>",
    "Resolve the host+port to this address",
-   CURLHELP_CONNECTION | CURLHELP_DNS},
+   CURLHELP_CONNECTION},
   {"    --retry <num>",
    "Retry request if transient problems occur",
    CURLHELP_CURL},
@@ -762,9 +745,6 @@ const struct helptxt helptext[] = {
   {"    --url <url>",
    "URL to work with",
    CURLHELP_CURL},
-  {"    --url-query <data>",
-   "Add a URL query part",
-   CURLHELP_HTTP | CURLHELP_POST | CURLHELP_UPLOAD},
   {"-B, --use-ascii",
    "Use ASCII/text transfer",
    CURLHELP_MISC},
