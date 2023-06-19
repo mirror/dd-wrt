@@ -1,4 +1,5 @@
 curl-static-clean:
+	$(MAKE) -C bearssl
 	$(MAKE) -C curl/build_static clean
 
 
@@ -26,6 +27,7 @@ curl-clean:
 	$(MAKE) -C curl/build clean
 
 curl-configure: openssl zlib
+	$(MAKE) -C bearssl
 	cd curl && ./buildconf
 	mkdir -p curl/build
 	mkdir -p curl/build_static
