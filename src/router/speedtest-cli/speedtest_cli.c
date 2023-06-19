@@ -139,6 +139,10 @@ typedef struct server_config {
 	char *cc;
 	char *sponsor;
 	char *id;
+	char *preferred;
+	char *https_functional;
+	char *host;
+	char *force_ping_select;
 	double dist;		/* distance */
 	double latency;
 } server_config_t;
@@ -350,6 +354,14 @@ static void server_free(server_config_t * server)
 		free(server->sponsor);
 	if (server->id)
 		free(server->id);
+	if (server->preferred)
+		free(server->preferred);
+	if (server->https_functional)
+		free(server->https_functional);
+	if (server->host)
+		free(server->host);
+	if (server->force_ping_select)
+		free(server->force_ping_select);
 }
 
 static void init_server(server_config_t * server)
@@ -448,6 +460,24 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 			server_free(&server);
 			init_server(&server);
 			break;
+		}
+		if ((server.preferred = get_str_json("preferred", &buf)) == NULL) {
+			server_free(&server);
+			init_server(&server);
+			break;
+		}
+		if ((server.https_functional = get_str_json("https_functional", &buf)) == NULL) {
+			server_free(&server);
+			init_server(&server);
+			break;
+		}
+		if ((server.host = get_str_json("host", &buf)) == NULL) {
+			server_free(&server);
+			init_server(&server);
+			break;
+		}
+		if ((server.force_ping_select = get_str_json("force_ping_select", &buf)) == NULL) {
+			// ignore
 		}
 
 		/* calculate distance between client and server */
