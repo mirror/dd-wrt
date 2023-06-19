@@ -4,6 +4,7 @@
 HTTP
 HTTP GET
 Range
+DELAY
 </keywords>
 </info>
 
@@ -31,7 +32,7 @@ partial body
 </data1>
 
 <servercmd>
-writedelay: 1
+writedelay: 1000
 </servercmd>
 </reply>
 

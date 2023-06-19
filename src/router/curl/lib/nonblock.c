@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,6 +18,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 #include "curl_setup.h"
@@ -29,9 +31,6 @@
 #include <fcntl.h>
 #endif
 
-#if (defined(HAVE_IOCTL_FIONBIO) && defined(NETWARE))
-#include <sys/filio.h>
-#endif
 #ifdef __VMS
 #include <in.h>
 #include <inet.h>
@@ -72,6 +71,12 @@ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
   /* Amiga */
   long flags = nonblock ? 1L : 0L;
   return IoctlSocket(sockfd, FIONBIO, (char *)&flags);
+
+#elif defined(HAVE_SETSOCKOPT_SO_NONBLOCK)
+
+  /* Orbis OS */
+  long b = nonblock ? 1L : 0L;
+  return setsockopt(sockfd, SOL_SOCKET, SO_NONBLOCK, &b, sizeof(b));
 
 #else
 #  error "no non-blocking method was found/used/set"

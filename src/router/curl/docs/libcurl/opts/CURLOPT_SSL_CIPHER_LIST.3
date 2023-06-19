@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSL_CIPHER_LIST 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_SSL_CIPHER_LIST 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
 
 .SH NAME
 CURLOPT_SSL_CIPHER_LIST \- ciphers to use for TLS
@@ -49,6 +51,13 @@ enabled.
 For WolfSSL, valid examples of cipher lists include \fBECDHE-RSA-RC4-SHA\fP,
 \fBAES256-SHA:AES256-SHA256\fP, etc.
 
+For BearSSL, valid examples of cipher lists include
+\fBECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256\fP, or when using IANA names
+\fBTLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256\fP,
+etc.
+With BearSSL you do not add/remove ciphers. If one uses this option then all
+known ciphers are disabled and only those passed in are enabled.
+
 you will find more details about cipher lists on this URL:
 
  https://curl.se/docs/ssl-ciphers.html
@@ -70,6 +79,8 @@ if(curl) {
 }
 .fi
 .SH AVAILABILITY
+Added in 7.9, in 7.83.0 for BearSSL
+
 If built TLS enabled.
 .SH RETURN VALUE
 Returns CURLE_OK if TLS is supported, CURLE_UNKNOWN_OPTION if not, or

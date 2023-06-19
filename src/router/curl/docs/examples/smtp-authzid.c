@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -107,7 +109,7 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_USERNAME, "kurt");
     curl_easy_setopt(curl, CURLOPT_PASSWORD, "xipj3plmq");
 
-    /* Set the authorisation identity (identity to act as) */
+    /* Set the authorization identity (identity to act as) */
     curl_easy_setopt(curl, CURLOPT_SASL_AUTHZID, "ursel");
 
     /* Force PLAIN authentication */

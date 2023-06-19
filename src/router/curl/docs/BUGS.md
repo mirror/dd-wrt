@@ -3,7 +3,7 @@
 ## There are still bugs
 
  Curl and libcurl keep being developed. Adding features and changing code
- means that bugs will sneak in, no matter how hard we try not to.
+ means that bugs will sneak in, no matter how hard we try to keep them out.
 
  Of course there are lots of bugs left. And lots of misfeatures.
 
@@ -44,7 +44,7 @@
 ## What to report
 
  When reporting a bug, you should include all information that will help us
- understand what's wrong, what you expected to happen and how to repeat the
+ understand what is wrong, what you expected to happen and how to repeat the
  bad behavior. You therefore need to tell us:
 
  - your operating system's name and version number
@@ -65,7 +65,7 @@
  debug dump with your bug report. The output you get by using the `-v` or
  `--trace` options.
 
- If curl crashed, causing a core dump (in unix), there is hardly any use to
+ If curl crashed, causing a core dump (in Unix), there is hardly any use to
  send that huge file to anyone of us. Unless we have the same system setup as
  you, we cannot do much with it. Instead, we ask you to get a stack trace and
  send that (much smaller) output to us instead.
@@ -128,7 +128,7 @@
 
  The list that is presented is the stack trace. If everything worked, it is
  supposed to contain the chain of functions that were called when curl
- crashed. Include the stack trace with your detailed bug report. it will help a
+ crashed. Include the stack trace with your detailed bug report, it will help a
  lot.
 
 ## Bugs in libcurl bindings
@@ -162,7 +162,7 @@
  experimental build or similar, to get this confirmed or not.
 
  At times people insist that they cannot upgrade to a modern curl version, but
- instead they "just want the bug fixed". That is fine, just do not count on us
+ instead, they "just want the bug fixed". That is fine, just do not count on us
  spending many cycles on trying to identify which single commit, if that is
  even possible, that at some point in the past fixed the problem you are now
  experiencing.
@@ -181,7 +181,7 @@
  maybe they are off in the woods hunting. Have patience. Allow at least a few
  days before expecting someone to have responded.
 
- In the issue tracker you can expect that some labels will be set on the issue
+ In the issue tracker, you can expect that some labels will be set on the issue
  to help categorize it.
 
 ## First response
@@ -199,14 +199,13 @@
 
 ## Not reproducible
 
- For problems that we cannot reproduce and cannot understand even after having
- gotten all the info we need and having studied the source code over again,
- are really hard to solve so then we may require further work from you who
- actually see or experience the problem.
+ We may require further work from you who actually see or experience the 
+ problem if we cannot reproduce it and cannot understand it even after having
+ gotten all the info we need and having studied the source code over again.
 
 ## Unresponsive
 
- If the problem have not been understood or reproduced, and there's nobody
+ If the problem have not been understood or reproduced, and there is nobody
  responding to follow-up questions or questions asking for clarifications or
  for discussing possible ways to move forward with the task, we take that as a
  strong suggestion that the bug is unimportant.
@@ -246,7 +245,7 @@
  tracker.
 
  The `TODO` document is full of ideas and suggestions of what we can add or
- fix one day. you are always encouraged and free to grab one of those items and
+ fix one day. You are always encouraged and free to grab one of those items and
  take up a discussion with the curl development team on how that could be
  implemented or provided in the project so that you can work on ticking it odd
  that document.

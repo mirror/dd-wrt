@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH curl_mime_headers 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH curl_mime_headers 3 "April 26, 2023" "libcurl 8.1.2" "libcurl"
 
 .SH NAME
 curl_mime_headers - set a mime part's custom headers
@@ -42,8 +44,8 @@ to remove a previously attached custom header list.
 replacement or mime structure deletion; in this case the list must not be
 freed explicitly.
 
-Setting a part's custom headers list twice is valid: only the value set by
-the last call is retained.
+Setting a part's custom headers list multiple times is valid: only the value
+set by the last call is retained.
 .SH EXAMPLE
 .nf
  struct curl_slist *headers = NULL;

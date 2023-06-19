@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
 #
 #***************************************************************************
 
@@ -93,6 +95,7 @@ if test "x$OPT_WOLFSSL" != xno; then
    They are set up properly later if it is detected.  */
 #undef SIZEOF_LONG
 #undef SIZEOF_LONG_LONG
+#include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 	]],[[
 	  return wolfSSL_Init();
@@ -120,7 +123,7 @@ if test "x$OPT_WOLFSSL" != xno; then
       check_for_ca_bundle=1
 
       dnl wolfssl/ctaocrypt/types.h needs SIZEOF_LONG_LONG defined!
-      AX_COMPILE_CHECK_SIZEOF(long long)
+      CURL_SIZEOF(long long)
 
       LIBS="$addlib -lm $LIBS"
 
@@ -136,20 +139,16 @@ if test "x$OPT_WOLFSSL" != xno; then
         [
             AC_DEFINE(HAVE_WOLFSSL_DES_ECB_ENCRYPT, 1,
                       [if you have wolfSSL_DES_ecb_encrypt])
-            if test -n "$addcflags"; then
-              dnl use a for loop to strip off whitespace
-              for f in $addcflags; do
-                CPPFLAGS="$f/wolfssl $CPPFLAGS"
-                AC_MSG_NOTICE([Add $f/wolfssl to CPPFLAGS])
-                break
-              done
-            else
-              dnl user didn't give a path, so guess/hope they installed wolfssl
-              dnl headers to system default location
-              CPPFLAGS="-I/usr/include/wolfssl $CPPFLAGS"
-              AC_MSG_NOTICE([Add /usr/include/wolfssl to CPPFLAGS])
-            fi
             WOLFSSL_NTLM=1
+        ]
+        )
+
+      dnl if this symbol is present, we can make use of BIO filter chains
+      AC_CHECK_FUNC(wolfSSL_BIO_set_shutdown,
+        [
+            AC_DEFINE(HAVE_WOLFSSL_FULL_BIO, 1,
+                      [if you have wolfSSL_BIO_set_shutdown])
+            WOLFSSL_FULL_BIO=1
         ]
         )
 
@@ -164,7 +163,8 @@ if test "x$OPT_WOLFSSL" != xno; then
           AC_MSG_NOTICE([Added $wolfssllibpath to CURL_LIBRARY_PATH])
         fi
       fi
-
+    else
+        AC_MSG_ERROR([--with-wolfssl but wolfSSL was not found or doesn't work])
     fi
 
   fi dnl wolfSSL not disabled

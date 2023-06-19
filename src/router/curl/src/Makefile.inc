@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
 #
 ###########################################################################
 # ./src/Makefile.inc
@@ -31,9 +33,9 @@
 # the official API, but we re-use the code here to avoid duplication.
 CURLX_CFILES = \
   ../lib/strtoofft.c \
+  ../lib/timediff.c \
   ../lib/nonblock.c \
   ../lib/warnless.c \
-  ../lib/curl_ctype.c \
   ../lib/curl_multibyte.c \
   ../lib/version_win32.c \
   ../lib/dynbuf.c
@@ -41,6 +43,7 @@ CURLX_CFILES = \
 CURLX_HFILES = \
   ../lib/curl_setup.h \
   ../lib/strtoofft.h \
+  ../lib/timediff.h \
   ../lib/nonblock.h \
   ../lib/warnless.h \
   ../lib/curl_ctype.h \
@@ -76,10 +79,10 @@ CURL_CFILES = \
   tool_msgs.c \
   tool_operate.c \
   tool_operhlp.c \
-  tool_panykey.c \
   tool_paramhlp.c \
   tool_parsecfg.c \
   tool_progress.c \
+  tool_stderr.c \
   tool_strdup.c \
   tool_setopt.c \
   tool_sleep.c \
@@ -117,7 +120,6 @@ CURL_HFILES = \
   tool_msgs.h \
   tool_operate.h \
   tool_operhlp.h \
-  tool_panykey.h \
   tool_paramhlp.h \
   tool_parsecfg.h \
   tool_progress.h \
@@ -125,6 +127,7 @@ CURL_HFILES = \
   tool_setopt.h \
   tool_setup.h \
   tool_sleep.h \
+  tool_stderr.h \
   tool_strdup.h \
   tool_urlglob.h \
   tool_util.h \

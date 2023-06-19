@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
 #
 ###########################################################################
 
@@ -34,8 +36,10 @@ CMAKE_DIST =                                    \
  CMake/FindBrotli.cmake                         \
  CMake/FindCARES.cmake                          \
  CMake/FindGSS.cmake                            \
+ CMake/FindLibPSL.cmake                         \
  CMake/FindLibSSH2.cmake                        \
  CMake/FindMbedTLS.cmake                        \
+ CMake/FindMSH3.cmake                           \
  CMake/FindNGHTTP2.cmake                        \
  CMake/FindNGHTTP3.cmake                        \
  CMake/FindNGTCP2.cmake                         \
@@ -45,6 +49,7 @@ CMAKE_DIST =                                    \
  CMake/FindZstd.cmake                           \
  CMake/Macros.cmake                             \
  CMake/OtherTests.cmake                         \
+ CMake/PickyWarnings.cmake                      \
  CMake/Platforms/WindowsCache.cmake             \
  CMake/Utilities.cmake                          \
  CMakeLists.txt
@@ -77,56 +82,56 @@ VC14_SRCTMPL = projects/Windows/VC14/src/curl.tmpl
 VC14_SRCVCXPROJ = projects/Windows/VC14/src/curl.vcxproj.dist
 VC14_SRCVCXPROJ_DEPS = $(VC14_SRCTMPL) Makefile.am src/Makefile.inc
 
-VC15_LIBTMPL = projects/Windows/VC15/lib/libcurl.tmpl
-VC15_LIBVCXPROJ = projects/Windows/VC15/lib/libcurl.vcxproj.dist
-VC15_LIBVCXPROJ_DEPS = $(VC15_LIBTMPL) Makefile.am lib/Makefile.inc
-VC15_SRCTMPL = projects/Windows/VC15/src/curl.tmpl
-VC15_SRCVCXPROJ = projects/Windows/VC15/src/curl.vcxproj.dist
-VC15_SRCVCXPROJ_DEPS = $(VC15_SRCTMPL) Makefile.am src/Makefile.inc
+VC14_10_LIBTMPL = projects/Windows/VC14.10/lib/libcurl.tmpl
+VC14_10_LIBVCXPROJ = projects/Windows/VC14.10/lib/libcurl.vcxproj.dist
+VC14_10_LIBVCXPROJ_DEPS = $(VC14_10_LIBTMPL) Makefile.am lib/Makefile.inc
+VC14_10_SRCTMPL = projects/Windows/VC14.10/src/curl.tmpl
+VC14_10_SRCVCXPROJ = projects/Windows/VC14.10/src/curl.vcxproj.dist
+VC14_10_SRCVCXPROJ_DEPS = $(VC14_10_SRCTMPL) Makefile.am src/Makefile.inc
 
-VC17_LIBTMPL = projects/Windows/VC17/lib/libcurl.tmpl
-VC17_LIBVCXPROJ = projects/Windows/VC17/lib/libcurl.vcxproj.dist
-VC17_LIBVCXPROJ_DEPS = $(VC17_LIBTMPL) Makefile.am lib/Makefile.inc
-VC17_SRCTMPL = projects/Windows/VC17/src/curl.tmpl
-VC17_SRCVCXPROJ = projects/Windows/VC17/src/curl.vcxproj.dist
-VC17_SRCVCXPROJ_DEPS = $(VC17_SRCTMPL) Makefile.am src/Makefile.inc
+VC14_30_LIBTMPL = projects/Windows/VC14.30/lib/libcurl.tmpl
+VC14_30_LIBVCXPROJ = projects/Windows/VC14.30/lib/libcurl.vcxproj.dist
+VC14_30_LIBVCXPROJ_DEPS = $(VC14_30_LIBTMPL) Makefile.am lib/Makefile.inc
+VC14_30_SRCTMPL = projects/Windows/VC14.30/src/curl.tmpl
+VC14_30_SRCVCXPROJ = projects/Windows/VC14.30/src/curl.vcxproj.dist
+VC14_30_SRCVCXPROJ_DEPS = $(VC14_30_SRCTMPL) Makefile.am src/Makefile.inc
 
-VC_DIST = projects/README                           \
- projects/build-openssl.bat                         \
- projects/build-wolfssl.bat                         \
- projects/checksrc.bat                              \
- projects/Windows/VC10/curl-all.sln                 \
- projects/Windows/VC10/lib/libcurl.sln              \
- projects/Windows/VC10/lib/libcurl.vcxproj.filters  \
- projects/Windows/VC10/src/curl.sln                 \
- projects/Windows/VC10/src/curl.vcxproj.filters     \
- projects/Windows/VC11/curl-all.sln                 \
- projects/Windows/VC11/lib/libcurl.sln              \
- projects/Windows/VC11/lib/libcurl.vcxproj.filters  \
- projects/Windows/VC11/src/curl.sln                 \
- projects/Windows/VC11/src/curl.vcxproj.filters     \
- projects/Windows/VC12/curl-all.sln                 \
- projects/Windows/VC12/lib/libcurl.sln              \
- projects/Windows/VC12/lib/libcurl.vcxproj.filters  \
- projects/Windows/VC12/src/curl.sln                 \
- projects/Windows/VC12/src/curl.vcxproj.filters     \
- projects/Windows/VC14/curl-all.sln                 \
- projects/Windows/VC14/lib/libcurl.sln              \
- projects/Windows/VC14/lib/libcurl.vcxproj.filters  \
- projects/Windows/VC14/src/curl.sln                 \
- projects/Windows/VC14/src/curl.vcxproj.filters     \
- projects/Windows/VC15/curl-all.sln                 \
- projects/Windows/VC15/lib/libcurl.sln              \
- projects/Windows/VC15/lib/libcurl.vcxproj.filters  \
- projects/Windows/VC15/src/curl.sln                 \
- projects/Windows/VC15/src/curl.vcxproj.filters     \
- projects/Windows/VC17/curl-all.sln                 \
- projects/Windows/VC17/lib/libcurl.sln              \
- projects/Windows/VC17/lib/libcurl.vcxproj.filters  \
- projects/Windows/VC17/src/curl.sln                 \
- projects/Windows/VC17/src/curl.vcxproj.filters     \
- projects/generate.bat                              \
- projects/wolfssl_options.h                         \
+VC_DIST = projects/README.md                           \
+ projects/build-openssl.bat                            \
+ projects/build-wolfssl.bat                            \
+ projects/checksrc.bat                                 \
+ projects/Windows/VC10/curl-all.sln                    \
+ projects/Windows/VC10/lib/libcurl.sln                 \
+ projects/Windows/VC10/lib/libcurl.vcxproj.filters     \
+ projects/Windows/VC10/src/curl.sln                    \
+ projects/Windows/VC10/src/curl.vcxproj.filters        \
+ projects/Windows/VC11/curl-all.sln                    \
+ projects/Windows/VC11/lib/libcurl.sln                 \
+ projects/Windows/VC11/lib/libcurl.vcxproj.filters     \
+ projects/Windows/VC11/src/curl.sln                    \
+ projects/Windows/VC11/src/curl.vcxproj.filters        \
+ projects/Windows/VC12/curl-all.sln                    \
+ projects/Windows/VC12/lib/libcurl.sln                 \
+ projects/Windows/VC12/lib/libcurl.vcxproj.filters     \
+ projects/Windows/VC12/src/curl.sln                    \
+ projects/Windows/VC12/src/curl.vcxproj.filters        \
+ projects/Windows/VC14/curl-all.sln                    \
+ projects/Windows/VC14/lib/libcurl.sln                 \
+ projects/Windows/VC14/lib/libcurl.vcxproj.filters     \
+ projects/Windows/VC14/src/curl.sln                    \
+ projects/Windows/VC14/src/curl.vcxproj.filters        \
+ projects/Windows/VC14.10/curl-all.sln                 \
+ projects/Windows/VC14.10/lib/libcurl.sln              \
+ projects/Windows/VC14.10/lib/libcurl.vcxproj.filters  \
+ projects/Windows/VC14.10/src/curl.sln                 \
+ projects/Windows/VC14.10/src/curl.vcxproj.filters     \
+ projects/Windows/VC14.30/curl-all.sln                 \
+ projects/Windows/VC14.30/lib/libcurl.sln              \
+ projects/Windows/VC14.30/lib/libcurl.vcxproj.filters  \
+ projects/Windows/VC14.30/src/curl.sln                 \
+ projects/Windows/VC14.30/src/curl.vcxproj.filters     \
+ projects/generate.bat                                 \
+ projects/wolfssl_options.h                            \
  projects/wolfssl_override.props
 
 WINBUILD_DIST = winbuild/README.md winbuild/gen_resp_file.bat \
@@ -142,16 +147,14 @@ PLAN9_DIST = plan9/include/mkfile \
  plan9/src/mkfile.inc             \
  plan9/src/mkfile
 
-EXTRA_DIST = CHANGES COPYING maketgz Makefile.dist curl-config.in \
- RELEASE-NOTES buildconf libcurl.pc.in MacOSX-Framework \
- scripts/updatemanpages.pl $(CMAKE_DIST) \
- $(VC_DIST) $(WINBUILD_DIST) $(PLAN9_DIST) \
- lib/libcurl.vers.in buildconf.bat scripts/coverage.sh scripts/completion.pl
+EXTRA_DIST = CHANGES COPYING maketgz Makefile.dist curl-config.in            \
+ RELEASE-NOTES buildconf libcurl.pc.in MacOSX-Framework $(CMAKE_DIST)        \
+ $(VC_DIST) $(WINBUILD_DIST) $(PLAN9_DIST) lib/libcurl.vers.in buildconf.bat
 
 CLEANFILES = $(VC10_LIBVCXPROJ) $(VC10_SRCVCXPROJ) $(VC11_LIBVCXPROJ)        \
  $(VC11_SRCVCXPROJ) $(VC12_LIBVCXPROJ) $(VC12_SRCVCXPROJ) $(VC14_LIBVCXPROJ) \
- $(VC14_SRCVCXPROJ) $(VC15_LIBVCXPROJ) $(VC15_SRCVCXPROJ) $(VC17_LIBVCXPROJ) \
- $(VC17_SRCVCXPROJ)
+ $(VC14_SRCVCXPROJ) $(VC14_10_LIBVCXPROJ) $(VC14_10_SRCVCXPROJ)              \
+ $(VC14_30_LIBVCXPROJ) $(VC14_30_SRCVCXPROJ)
 
 bin_SCRIPTS = curl-config
 
@@ -279,13 +282,13 @@ uninstall-hook:
 	(cd docs && $(MAKE) uninstall)
 	(cd docs/libcurl && $(MAKE) uninstall)
 
-ca-bundle: lib/mk-ca-bundle.pl
+ca-bundle: $(srcdir)/scripts/mk-ca-bundle.pl
 	@echo "generating a fresh ca-bundle.crt"
-	@perl $< -b -l -u lib/ca-bundle.crt
+	@perl $(srcdir)/scripts/mk-ca-bundle.pl -b -l -u lib/ca-bundle.crt
 
-ca-firefox: lib/firefox-db2pem.sh
+ca-firefox: $(srcdir)/scripts/firefox-db2pem.sh
 	@echo "generating a fresh ca-bundle.crt"
-	./lib/firefox-db2pem.sh lib/ca-bundle.crt
+	$(srcdir)/scripts/firefox-db2pem.sh lib/ca-bundle.crt
 
 checksrc:
 	(cd lib && $(MAKE) checksrc)
@@ -300,8 +303,8 @@ checksrc:
 vc-ide: $(VC10_LIBVCXPROJ_DEPS) $(VC10_SRCVCXPROJ_DEPS)                  \
  $(VC11_LIBVCXPROJ_DEPS) $(VC11_SRCVCXPROJ_DEPS) $(VC12_LIBVCXPROJ_DEPS) \
  $(VC12_SRCVCXPROJ_DEPS) $(VC14_LIBVCXPROJ_DEPS) $(VC14_SRCVCXPROJ_DEPS) \
- $(VC15_LIBVCXPROJ_DEPS) $(VC15_SRCVCXPROJ_DEPS) $(VC17_LIBVCXPROJ_DEPS) \
- $(VC17_SRCVCXPROJ_DEPS)
+ $(VC14_10_LIBVCXPROJ_DEPS) $(VC14_10_SRCVCXPROJ_DEPS)                   \
+ $(VC14_30_LIBVCXPROJ_DEPS) $(VC14_30_SRCVCXPROJ_DEPS)
 	@(win32_lib_srcs='$(LIB_CFILES)'; \
 	win32_lib_hdrs='$(LIB_HFILES) config-win32.h'; \
 	win32_lib_rc='$(LIB_RCFILES)'; \
@@ -558,7 +561,7 @@ function gen_element(type, dir, file)\
 		-v src_x_hdrs="$$sorted_src_x_hdrs" \
 		"$$awk_code" $(srcdir)/$(VC14_SRCTMPL) > $(VC14_SRCVCXPROJ) || { exit 1; }; \
 	\
-	echo "generating '$(VC15_LIBVCXPROJ)'"; \
+	echo "generating '$(VC14_10_LIBVCXPROJ)'"; \
 	awk -v proj_type=vcxproj \
 		-v lib_srcs="$$sorted_lib_srcs" \
 		-v lib_hdrs="$$sorted_lib_hdrs" \
@@ -571,18 +574,18 @@ function gen_element(type, dir, file)\
 		-v lib_vssh_hdrs="$$sorted_lib_vssh_hdrs" \
 		-v lib_vtls_srcs="$$sorted_lib_vtls_srcs" \
 		-v lib_vtls_hdrs="$$sorted_lib_vtls_hdrs" \
-		"$$awk_code" $(srcdir)/$(VC15_LIBTMPL) > $(VC15_LIBVCXPROJ) || { exit 1; }; \
+		"$$awk_code" $(srcdir)/$(VC14_10_LIBTMPL) > $(VC14_10_LIBVCXPROJ) || { exit 1; }; \
 	\
-	echo "generating '$(VC15_SRCVCXPROJ)'"; \
+	echo "generating '$(VC14_10_SRCVCXPROJ)'"; \
 	awk -v proj_type=vcxproj \
 		-v src_srcs="$$sorted_src_srcs" \
 		-v src_hdrs="$$sorted_src_hdrs" \
 		-v src_rc="$$win32_src_rc" \
 		-v src_x_srcs="$$sorted_src_x_srcs" \
 		-v src_x_hdrs="$$sorted_src_x_hdrs" \
-		"$$awk_code" $(srcdir)/$(VC15_SRCTMPL) > $(VC15_SRCVCXPROJ) || { exit 1; }; \
+		"$$awk_code" $(srcdir)/$(VC14_10_SRCTMPL) > $(VC14_10_SRCVCXPROJ) || { exit 1; }; \
 	\
-	echo "generating '$(VC17_LIBVCXPROJ)'"; \
+	echo "generating '$(VC14_30_LIBVCXPROJ)'"; \
 	awk -v proj_type=vcxproj \
 		-v lib_srcs="$$sorted_lib_srcs" \
 		-v lib_hdrs="$$sorted_lib_hdrs" \
@@ -595,16 +598,16 @@ function gen_element(type, dir, file)\
 		-v lib_vssh_hdrs="$$sorted_lib_vssh_hdrs" \
 		-v lib_vtls_srcs="$$sorted_lib_vtls_srcs" \
 		-v lib_vtls_hdrs="$$sorted_lib_vtls_hdrs" \
-		"$$awk_code" $(srcdir)/$(VC17_LIBTMPL) > $(VC17_LIBVCXPROJ) || { exit 1; }; \
+		"$$awk_code" $(srcdir)/$(VC14_30_LIBTMPL) > $(VC14_30_LIBVCXPROJ) || { exit 1; }; \
 	\
-	echo "generating '$(VC17_SRCVCXPROJ)'"; \
+	echo "generating '$(VC14_30_SRCVCXPROJ)'"; \
 	awk -v proj_type=vcxproj \
 		-v src_srcs="$$sorted_src_srcs" \
 		-v src_hdrs="$$sorted_src_hdrs" \
 		-v src_rc="$$win32_src_rc" \
 		-v src_x_srcs="$$sorted_src_x_srcs" \
 		-v src_x_hdrs="$$sorted_src_x_hdrs" \
-		"$$awk_code" $(srcdir)/$(VC17_SRCTMPL) > $(VC17_SRCVCXPROJ) || { exit 1; };)
+		"$$awk_code" $(srcdir)/$(VC14_30_SRCTMPL) > $(VC14_30_SRCVCXPROJ) || { exit 1; };)
 
 tidy:
 	(cd src && $(MAKE) tidy)

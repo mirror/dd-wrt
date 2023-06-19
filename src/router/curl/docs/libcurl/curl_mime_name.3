@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH curl_mime_name 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH curl_mime_name 3 "April 26, 2023" "libcurl 8.1.2" "libcurl"
 
 .SH NAME
 curl_mime_name - set a mime part's name
@@ -38,9 +40,9 @@ fields are named.
 \fIname\fP points to the null-terminated name string.
 
 The name string is copied into the part, thus the associated storage may
-safely be released or reused after call. Setting a part's name twice is valid:
-only the value set by the last call is retained. It is possible to "unname" a
-part by setting \fIname\fP to NULL.
+safely be released or reused after call. Setting a part's name multiple times
+is valid: only the value set by the last call is retained. It is possible to
+reset the name of a part by setting \fIname\fP to NULL.
 .SH EXAMPLE
 .nf
  curl_mime *mime;

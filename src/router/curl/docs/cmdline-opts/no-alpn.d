@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: no-alpn
 Tags: HTTP/2
 Protocols: HTTPS
@@ -7,6 +9,7 @@ Requires: TLS
 Help: Disable the ALPN TLS extension
 Category: tls http
 Example: --no-alpn $URL
+Multi: boolean
 ---
 Disable the ALPN TLS extension. ALPN is enabled by default if libcurl was built
 with an SSL library that supports ALPN. ALPN is used by a libcurl that supports
