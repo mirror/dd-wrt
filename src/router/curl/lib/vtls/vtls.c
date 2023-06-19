@@ -1373,7 +1373,11 @@ static size_t multissl_version(char *buffer, size_t size)
   static size_t backends_len;
   const struct Curl_ssl *current;
 
-  current = Curl_ssl == &Curl_ssl_multi ? available_backends[0] : Curl_ssl;
+#if defined(CURL_WITH_MULTI_SSL)  
+    current = Curl_ssl == &Curl_ssl_multi ? available_backends[0] : Curl_ssl;
+#else
+    current = Curl_ssl;
+#endif
 
   if(current != selected) {
     char *p = backends;
@@ -1415,9 +1419,12 @@ static int multissl_setup(const struct Curl_ssl *backend)
   const char *env;
   char *env_tmp;
 
+#if defined(CURL_WITH_MULTI_SSL)  
   if(Curl_ssl != &Curl_ssl_multi)
     return 1;
-
+#else
+    return 1;
+#endif
   if(backend) {
     Curl_ssl = backend;
     return 0;
@@ -1455,7 +1462,9 @@ CURLsslset curl_global_sslset(curl_sslbackend id, const char *name,
 
   if(avail)
     *avail = (const curl_ssl_backend **)&available_backends;
-
+#if !defined(CURL_WITH_MULTI_SSL)
+    return CURLSSLSET_OK;
+#else
   if(Curl_ssl != &Curl_ssl_multi)
     return id == Curl_ssl->info.id ||
            (name && strcasecompare(name, Curl_ssl->info.name)) ?
@@ -1475,6 +1484,7 @@ CURLsslset curl_global_sslset(curl_sslbackend id, const char *name,
   }
 
   return CURLSSLSET_UNKNOWN_BACKEND;
+#endif
 }
 
 #else /* USE_SSL */
