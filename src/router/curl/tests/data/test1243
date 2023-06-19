@@ -16,9 +16,9 @@ tftp
 TFTP send without TFTP options requests
  </name>
  <command>
--T %LOGDIR/test%TESTNUMBER.txt tftp://%HOSTIP:%TFTPPORT// --tftp-no-options
+-T log/test%TESTNUMBER.txt tftp://%HOSTIP:%TFTPPORT// --tftp-no-options
 </command>
-<file name="%LOGDIR/test%TESTNUMBER.txt">
+<file name="log/test%TESTNUMBER.txt">
 a chunk of
 data
 sent

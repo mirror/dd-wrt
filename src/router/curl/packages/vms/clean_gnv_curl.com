@@ -1,5 +1,7 @@
 $! File: clean_gnv_curl.COM
 $!
+$! $Id$
+$!
 $! The GNV environment leaves behind some during the configure and build
 $! procedure that need to be cleaned up.
 $!
@@ -13,7 +15,7 @@ $! Parameter P1: REALCLEAN
 $!   This removes all build products and brings the environment back to
 $!   the point where the gnv_curl_configure.sh procedure needs to be run again.
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2009 - 2020, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -27,8 +29,8 @@ $! WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 $! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
-$! SPDX-License-Identifier: ISC
 $!
+$! 07-Jul-2009	J. Malmberg
 $!============================================================================
 $!
 $! Save this so we can get back.
@@ -177,9 +179,6 @@ $ file = "lcl_root:[.lib]curl_config.h"
 $ if f$search(file) .nes. "" then delete 'file';*
 $!
 $ file = "lcl_root:[.lib]libcurl.vers"
-$ if f$search(file) .nes. "" then delete 'file';*
-$!
-$ file = "lcl_root:[.lib]libcurl.plist"
 $ if f$search(file) .nes. "" then delete 'file';*
 $!
 $ file = "lcl_root:[]ca-bundle.h"

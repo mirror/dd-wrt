@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,11 +18,9 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
-.\" * SPDX-License-Identifier: curl
-.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TCP_KEEPIDLE 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
+.TH CURLOPT_TCP_KEEPIDLE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_TCP_KEEPIDLE \- TCP keep-alive idle time wait
@@ -36,9 +34,6 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TCP_KEEPIDLE, long delay);
 Pass a long. Sets the \fIdelay\fP, in seconds, that the operating system will
 wait while the connection is idle before sending keepalive probes. Not all
 operating systems support this option.
-
-The maximum value this accepts is 2147483648. Any larger value will be capped
-to this amount.
 .SH DEFAULT
 60
 .SH PROTOCOLS

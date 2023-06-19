@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: max-filesize
 Arg: <bytes>
 Help: Maximum file size to download
@@ -8,7 +6,6 @@ See-also: limit-rate
 Category: connection
 Example: --max-filesize 100K $URL
 Added: 7.10.8
-Multi: single
 ---
 Specify the maximum size (in bytes) of a file to download. If the file
 requested is larger than this value, the transfer will not start and curl will

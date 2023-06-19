@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: proxy
 Short: x
 Arg: [protocol://]host[:port]
@@ -8,7 +6,6 @@ Category: proxy
 Example: --proxy http://proxy.example $URL
 Added: 4.0
 See-also: socks5 proxy-basic
-Multi: single
 ---
 Use the specified proxy.
 
@@ -17,12 +14,8 @@ specified or http:// will be treated as HTTP proxy. Use socks4://, socks4a://,
 socks5:// or socks5h:// to request a specific SOCKS version to be used.
 (Added in 7.21.7)
 
-Unix domain sockets are supported for socks proxy. Set localhost for the host
-part. e.g. socks5h://localhost/path/to/socket.sock
-
 HTTPS proxy support via https:// protocol prefix was added in 7.52.0 for
-OpenSSL, GnuTLS and NSS. Since 7.87.0, it also works for BearSSL, mbedTLS,
-rustls, Schannel, Secure Transport and wolfSSL.
+OpenSSL, GnuTLS and NSS.
 
 Unrecognized and unsupported proxy protocols cause an error since 7.52.0.
 Prior versions may ignore the protocol and use http:// instead.
@@ -32,7 +25,7 @@ If the port number is not specified in the proxy string, it is assumed to be
 
 This option overrides existing environment variables that set the proxy to
 use. If there's an environment variable setting a proxy, you can set proxy to
-"" to override it.
+\&"" to override it.
 
 All operations that are performed over an HTTP proxy will transparently be
 converted to HTTP. It means that certain protocol specific operations might
@@ -47,5 +40,4 @@ The proxy host can be specified the same way as the proxy environment
 variables, including the protocol prefix (http://) and the embedded user +
 password.
 
-When a proxy is used, the active FTP mode as set with --ftp-port, cannot be
-used.
+If this option is used several times, the last one will be used.

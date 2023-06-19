@@ -1,5 +1,7 @@
 $! File: stage_curl_install.com
 $!
+$! $Id$
+$!
 $! This updates or removes the GNV$CURL.EXE and related files for the
 $! new_gnu:[*...] directory tree for running the self tests.
 $!
@@ -22,7 +24,7 @@ $!     [usr.share.man.man3]curl*.3
 $!     [usr.share.man.man3]libcurl*.3
 $! Future: A symbolic link to the release notes?
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2012 - 2020, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -36,7 +38,8 @@ $! WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 $! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
-$! SPDX-License-Identifier: ISC
+$!
+$! 20-Aug-2012  J. Malmberg
 $!
 $!===========================================================================
 $!

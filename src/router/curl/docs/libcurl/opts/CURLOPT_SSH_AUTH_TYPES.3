@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,11 +18,9 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
-.\" * SPDX-License-Identifier: curl
-.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSH_AUTH_TYPES 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
+.TH CURLOPT_SSH_AUTH_TYPES 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_SSH_AUTH_TYPES \- auth types for SFTP and SCP
@@ -42,7 +40,7 @@ CURLSSH_AUTH_HOST has no effect. If CURLSSH_AUTH_AGENT is used, libcurl
 attempts to connect to ssh-agent or pageant and let the agent attempt the
 authentication.
 .SH DEFAULT
-CURLSSH_AUTH_ANY (all available)
+None
 .SH PROTOCOLS
 SFTP and SCP
 .SH EXAMPLE

@@ -6,7 +6,7 @@ rem *                             / __| | | | |_) | |
 rem *                            | (__| |_| |  _ <| |___
 rem *                             \___|\___/|_| \_\_____|
 rem *
-rem * Copyright (C) Steve Holme, <steve_holme@hotmail.com>.
+rem * Copyright (C) 2014 - 2022, Steve Holme, <steve_holme@hotmail.com>.
 rem *
 rem * This software is licensed as described in the file COPYING, which
 rem * you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@ rem * furnished to do so, under the terms of the COPYING file.
 rem *
 rem * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 rem * KIND, either express or implied.
-rem *
-rem * SPDX-License-Identifier: curl
 rem *
 rem ***************************************************************************
 
@@ -54,10 +52,10 @@ rem ***************************************************************************
     set VERSION=VC12
   ) else if /i "%~1" == "vc14" (
     set VERSION=VC14
-  ) else if /i "%~1" == "vc14.10" (
-    set VERSION=VC14.10
-  ) else if /i "%~1" == "vc14.30" (
-    set VERSION=VC14.30
+  ) else if /i "%~1" == "vc15" (
+    set VERSION=VC15
+  ) else if /i "%~1" == "vc17" (
+    set VERSION=VC17
   ) else if /i "%~1" == "-clean" (
     set MODE=CLEAN
   ) else if /i "%~1" == "-?" (
@@ -87,8 +85,8 @@ rem ***************************************************************************
   if "%VERSION%" == "VC11" goto vc11
   if "%VERSION%" == "VC12" goto vc12
   if "%VERSION%" == "VC14" goto vc14
-  if "%VERSION%" == "VC14.10" goto vc14.10
-  if "%VERSION%" == "VC14.30" goto vc14.30
+  if "%VERSION%" == "VC15" goto vc15
+  if "%VERSION%" == "VC17" goto vc17
 
 :vc10
   echo.
@@ -150,39 +148,39 @@ rem ***************************************************************************
 
   if not "%VERSION%" == "ALL" goto success
 
-:vc14.10
+:vc15
   echo.
 
   if "%MODE%" == "GENERATE" (
-    echo Generating VC14.10 project files
-    call :generate vcxproj Windows\VC14.10\src\curl.tmpl Windows\VC14.10\src\curl.vcxproj
-    call :generate vcxproj Windows\VC14.10\lib\libcurl.tmpl Windows\VC14.10\lib\libcurl.vcxproj
+    echo Generating VC15 project files
+    call :generate vcxproj Windows\VC15\src\curl.tmpl Windows\VC15\src\curl.vcxproj
+    call :generate vcxproj Windows\VC15\lib\libcurl.tmpl Windows\VC15\lib\libcurl.vcxproj
   ) else (
-    echo Removing VC14.10 project files
-    call :clean Windows\VC14.10\src\curl.vcxproj
-    call :clean Windows\VC14.10\lib\libcurl.vcxproj
+    echo Removing VC15 project files
+    call :clean Windows\VC15\src\curl.vcxproj
+    call :clean Windows\VC15\lib\libcurl.vcxproj
   )
 
   if not "%VERSION%" == "ALL" goto success
 
-:vc14.30
+:vc17
   echo.
 
   if "%MODE%" == "GENERATE" (
-    echo Generating VC14.30 project files
-    call :generate vcxproj Windows\VC14.30\src\curl.tmpl Windows\VC14.30\src\curl.vcxproj
-    call :generate vcxproj Windows\VC14.30\lib\libcurl.tmpl Windows\VC14.30\lib\libcurl.vcxproj
+    echo Generating VC17 project files
+    call :generate vcxproj Windows\VC17\src\curl.tmpl Windows\VC17\src\curl.vcxproj
+    call :generate vcxproj Windows\VC17\lib\libcurl.tmpl Windows\VC17\lib\libcurl.vcxproj
   ) else (
-    echo Removing VC14.30 project files
-    call :clean Windows\VC14.30\src\curl.vcxproj
-    call :clean Windows\VC14.30\lib\libcurl.vcxproj
+    echo Removing VC17 project files
+    call :clean Windows\VC17\src\curl.vcxproj
+    call :clean Windows\VC17\lib\libcurl.vcxproj
   )
 
   goto success
 
 rem Main generate function.
 rem
-rem %1 - Project Type (vcxproj for VC10, VC11, VC12, VC14, VC14.10 and VC14.30)
+rem %1 - Project Type (vcxproj for VC10, VC11, VC12, VC14, VC15 and VC17)
 rem %2 - Input template file
 rem %3 - Output project file
 rem
@@ -211,9 +209,9 @@ rem
       for /f "delims=" %%r in ('dir /b ..\src\*.rc') do call :element %1 src "%%r" %3
     ) else if "!var!" == "CURL_SRC_X_C_FILES" (
       call :element %1 lib "strtoofft.c" %3
-      call :element %1 lib "timediff.c" %3
       call :element %1 lib "nonblock.c" %3
       call :element %1 lib "warnless.c" %3
+      call :element %1 lib "curl_ctype.c" %3
       call :element %1 lib "curl_multibyte.c" %3
       call :element %1 lib "version_win32.c" %3
       call :element %1 lib "dynbuf.c" %3
@@ -221,7 +219,6 @@ rem
       call :element %1 lib "config-win32.h" %3
       call :element %1 lib "curl_setup.h" %3
       call :element %1 lib "strtoofft.h" %3
-      call :element %1 lib "timediff.h" %3
       call :element %1 lib "nonblock.h" %3
       call :element %1 lib "warnless.h" %3
       call :element %1 lib "curl_ctype.h" %3
@@ -261,7 +258,7 @@ rem
 
 rem Generates a single file xml element.
 rem
-rem %1 - Project Type (vcxproj for VC10, VC11, VC12, VC14, VC14.10 and VC14.30)
+rem %1 - Project Type (vcxproj for VC10, VC11, VC12, VC14, VC15 and VC17)
 rem %2 - Directory (src, lib, lib\vauth, lib\vquic, lib\vssh, lib\vtls)
 rem %3 - Source filename
 rem %4 - Output project file
@@ -356,8 +353,8 @@ rem
   echo vc11      - Use Visual Studio 2012
   echo vc12      - Use Visual Studio 2013
   echo vc14      - Use Visual Studio 2015
-  echo vc14.10   - Use Visual Studio 2017
-  echo vc14.30   - Use Visual Studio 2022
+  echo vc15      - Use Visual Studio 2017
+  echo vc17      - Use Visual Studio 2022
   echo.
   echo -clean    - Removes the project files
   goto error

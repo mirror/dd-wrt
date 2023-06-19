@@ -4,11 +4,9 @@ We are always in need of more help. If you are new to the project and are
 looking for ways to contribute and help out, this document aims to give a few
 good starting points.
 
-You may subscribe to the [curl-library mailing
+A good idea is to start by subscribing to the [curl-library mailing
 list](https://lists.haxx.se/listinfo/curl-library) to keep track of the
-current discussion topics; or if you are registered on GitHub, you can use the
-[Discussions section](https://github.com/curl/curl/discussions) on the main
-curl repository.
+current discussion topics.
 
 ## Scratch your own itch
 

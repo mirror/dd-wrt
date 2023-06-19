@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 2009 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
-# SPDX-License-Identifier: curl
-#
 ###########################################################################
 
 noinst_PROGRAMS = getpart resolve rtspd sockfilt sws tftpd fake_ntlm    \
@@ -30,10 +28,9 @@ CURLX_SRCS = \
  ../../lib/nonblock.c \
  ../../lib/strtoofft.c \
  ../../lib/warnless.c \
- ../../lib/timediff.c \
+ ../../lib/curl_ctype.c \
  ../../lib/dynbuf.c \
  ../../lib/strdup.c \
- ../../lib/strcase.c \
  ../../lib/curl_multibyte.c
 
 CURLX_HDRS = \
@@ -41,7 +38,6 @@ CURLX_HDRS = \
  ../../lib/nonblock.h \
  ../../lib/strtoofft.h \
  ../../lib/warnless.h \
- ../../lib/timediff.h \
  ../../lib/curl_ctype.h \
  ../../lib/dynbuf.h \
  ../../lib/strdup.h \

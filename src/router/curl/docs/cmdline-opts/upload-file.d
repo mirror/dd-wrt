@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: upload-file
 Short: T
 Arg: <file>
@@ -10,7 +8,6 @@ Example: -T "img[1-1000].png" ftp://ftp.example.com/
 Example: --upload-file "{file1,file2}" $URL
 Added: 4.0
 See-also: get head
-Multi: append
 ---
 This transfers the specified local file to the remote URL. If there is no file
 part in the specified URL, curl will append the local file name. NOTE that you

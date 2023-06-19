@@ -27,9 +27,6 @@ contents2
 #
 # Client-side
 <client>
-<features>
-Mime
-</features>
 <server>
 http
 </server>

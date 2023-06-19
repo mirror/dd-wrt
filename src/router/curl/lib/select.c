@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -45,7 +43,7 @@
 #include "urldata.h"
 #include "connect.h"
 #include "select.h"
-#include "timediff.h"
+#include "timeval.h"
 #include "warnless.h"
 
 /*
@@ -61,8 +59,8 @@
  * for the intended use of this function in the library.
  *
  * Return values:
- *   -1 = system call error, or invalid timeout value
- *    0 = specified timeout has elapsed, or interrupted
+ *   -1 = system call error, invalid timeout value, or interrupted
+ *    0 = specified timeout has elapsed
  */
 int Curl_wait_ms(timediff_t timeout_ms)
 {
@@ -95,17 +93,31 @@ int Curl_wait_ms(timediff_t timeout_ms)
 #else
   {
     struct timeval pending_tv;
-    r = select(0, NULL, NULL, NULL, curlx_mstotv(&pending_tv, timeout_ms));
+    timediff_t tv_sec = timeout_ms / 1000;
+    timediff_t tv_usec = (timeout_ms % 1000) * 1000; /* max=999999 */
+#ifdef HAVE_SUSECONDS_T
+#if TIMEDIFF_T_MAX > TIME_T_MAX
+    /* tv_sec overflow check in case time_t is signed */
+    if(tv_sec > TIME_T_MAX)
+      tv_sec = TIME_T_MAX;
+#endif
+    pending_tv.tv_sec = (time_t)tv_sec;
+    pending_tv.tv_usec = (suseconds_t)tv_usec;
+#else
+#if TIMEDIFF_T_MAX > INT_MAX
+    /* tv_sec overflow check in case time_t is signed */
+    if(tv_sec > INT_MAX)
+      tv_sec = INT_MAX;
+#endif
+    pending_tv.tv_sec = (int)tv_sec;
+    pending_tv.tv_usec = (int)tv_usec;
+#endif
+    r = select(0, NULL, NULL, NULL, &pending_tv);
   }
 #endif /* HAVE_POLL_FINE */
 #endif /* USE_WINSOCK */
-  if(r) {
-    if((r == -1) && (SOCKERRNO == EINTR))
-      /* make EINTR from select or poll not a "lethal" error */
-      r = 0;
-    else
-      r = -1;
-  }
+  if(r)
+    r = -1;
   return r;
 }
 
@@ -140,7 +152,43 @@ static int our_select(curl_socket_t maxfd,   /* highest socket number */
   }
 #endif
 
-  ptimeout = curlx_mstotv(&pending_tv, timeout_ms);
+  ptimeout = &pending_tv;
+  if(timeout_ms < 0) {
+    ptimeout = NULL;
+  }
+  else if(timeout_ms > 0) {
+    timediff_t tv_sec = timeout_ms / 1000;
+    timediff_t tv_usec = (timeout_ms % 1000) * 1000; /* max=999999 */
+#ifdef HAVE_SUSECONDS_T
+#if TIMEDIFF_T_MAX > TIME_T_MAX
+    /* tv_sec overflow check in case time_t is signed */
+    if(tv_sec > TIME_T_MAX)
+      tv_sec = TIME_T_MAX;
+#endif
+    pending_tv.tv_sec = (time_t)tv_sec;
+    pending_tv.tv_usec = (suseconds_t)tv_usec;
+#elif defined(WIN32) /* maybe also others in the future */
+#if TIMEDIFF_T_MAX > LONG_MAX
+    /* tv_sec overflow check on Windows there we know it is long */
+    if(tv_sec > LONG_MAX)
+      tv_sec = LONG_MAX;
+#endif
+    pending_tv.tv_sec = (long)tv_sec;
+    pending_tv.tv_usec = (long)tv_usec;
+#else
+#if TIMEDIFF_T_MAX > INT_MAX
+    /* tv_sec overflow check in case time_t is signed */
+    if(tv_sec > INT_MAX)
+      tv_sec = INT_MAX;
+#endif
+    pending_tv.tv_sec = (int)tv_sec;
+    pending_tv.tv_usec = (int)tv_usec;
+#endif
+  }
+  else {
+    pending_tv.tv_sec = 0;
+    pending_tv.tv_usec = 0;
+  }
 
 #ifdef USE_WINSOCK
   /* WinSock select() must not be called with an fd_set that contains zero
@@ -235,14 +283,14 @@ int Curl_socket_check(curl_socket_t readfd0, /* two sockets to read from */
   if(readfd0 != CURL_SOCKET_BAD) {
     if(pfd[num].revents & (POLLRDNORM|POLLIN|POLLERR|POLLHUP))
       r |= CURL_CSELECT_IN;
-    if(pfd[num].revents & (POLLPRI|POLLNVAL))
+    if(pfd[num].revents & (POLLRDBAND|POLLPRI|POLLNVAL))
       r |= CURL_CSELECT_ERR;
     num++;
   }
   if(readfd1 != CURL_SOCKET_BAD) {
     if(pfd[num].revents & (POLLRDNORM|POLLIN|POLLERR|POLLHUP))
       r |= CURL_CSELECT_IN2;
-    if(pfd[num].revents & (POLLPRI|POLLNVAL))
+    if(pfd[num].revents & (POLLRDBAND|POLLPRI|POLLNVAL))
       r |= CURL_CSELECT_ERR;
     num++;
   }
@@ -315,12 +363,8 @@ int Curl_poll(struct pollfd ufds[], unsigned int nfds, timediff_t timeout_ms)
   else
     pending_ms = 0;
   r = poll(ufds, nfds, pending_ms);
-  if(r <= 0) {
-    if((r == -1) && (SOCKERRNO == EINTR))
-      /* make EINTR from select or poll not a "lethal" error */
-      r = 0;
+  if(r <= 0)
     return r;
-  }
 
   for(i = 0; i < nfds; i++) {
     if(ufds[i].fd == CURL_SOCKET_BAD)
@@ -363,12 +407,8 @@ int Curl_poll(struct pollfd ufds[], unsigned int nfds, timediff_t timeout_ms)
      value).
   */
   r = our_select(maxfd, &fds_read, &fds_write, &fds_err, timeout_ms);
-  if(r <= 0) {
-    if((r == -1) && (SOCKERRNO == EINTR))
-      /* make EINTR from select or poll not a "lethal" error */
-      r = 0;
+  if(r <= 0)
     return r;
-  }
 
   r = 0;
   for(i = 0; i < nfds; i++) {

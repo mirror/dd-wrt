@@ -6,7 +6,7 @@
 # *                            | (__| |_| |  _ <| |___
 # *                             \___|\___/|_| \_\_____|
 # *
-# * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# * Copyright (C) 2015 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 # *
 # * This software is licensed as described in the file COPYING, which
 # * you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
 # *
 # * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # * KIND, either express or implied.
-# *
-# * SPDX-License-Identifier: curl
 # *
 # ***************************************************************************
 
@@ -37,7 +35,7 @@ print <<HEADER
 .\\" *                            | (__| |_| |  _ <| |___
 .\\" *                             \\___|\\___/|_| \\_\\_____|
 .\\" *
-.\\" * Copyright (C) Daniel Stenberg, <daniel\@haxx.se>, et al.
+.\\" * Copyright (C) 1998 - $year, Daniel Stenberg, <daniel\@haxx.se>, et al.
 .\\" *
 .\\" * This software is licensed as described in the file COPYING, which
 .\\" * you should have received as part of this distribution. The terms
@@ -50,10 +48,8 @@ print <<HEADER
 .\\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\\" * KIND, either express or implied.
 .\\" *
-.\\" * SPDX-License-Identifier: curl
-.\\" *
 .\\" **************************************************************************
-.TH libcurl-symbols 3 "$date" "libcurl" "libcurl"
+.TH libcurl-symbols 3 "$date" "libcurl $version" "libcurl symbols"
 .SH NAME
 libcurl-symbols \\- libcurl symbol version information
 .SH "libcurl symbols"

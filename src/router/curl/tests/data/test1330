@@ -31,7 +31,7 @@ nothing
 #
 # Verify data after the test has been "shot"
 <verify>
-<file name="%LOGDIR/memdump">
+<file name="log/memdump">
 MEM unit%TESTNUMBER.c: malloc()
 MEM unit%TESTNUMBER.c: free()
 </file>

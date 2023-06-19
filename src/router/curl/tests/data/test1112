@@ -6,7 +6,6 @@ EPSV
 RETR
 timeout
 FAILURE
-SLOWDOWN
 </keywords>
 </info>
 

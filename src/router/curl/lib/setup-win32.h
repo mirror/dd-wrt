@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -19,8 +19,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -37,21 +35,10 @@
 
 #ifdef HAVE_WINDOWS_H
 #  if defined(UNICODE) && !defined(_UNICODE)
-#    error "UNICODE is defined but _UNICODE is not defined"
+#    define _UNICODE
 #  endif
 #  if defined(_UNICODE) && !defined(UNICODE)
-#    error "_UNICODE is defined but UNICODE is not defined"
-#  endif
-/*
- * Don't include unneeded stuff in Windows headers to avoid compiler
- * warnings and macro clashes.
- * Make sure to define this macro before including any Windows headers.
- */
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN
-#  endif
-#  ifndef NOGDI
-#    define NOGDI
+#    define UNICODE
 #  endif
 #  include <winerror.h>
 #  include <windows.h>

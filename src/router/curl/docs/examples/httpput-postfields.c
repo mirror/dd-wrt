@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -37,13 +35,11 @@ static const char olivertwist[]=
   "small: to wit, a workhouse; and in this workhouse was born; on a day and "
   "date which I need not trouble myself to repeat, inasmuch as it can be of "
   "no possible consequence to the reader, in this stage of the business at "
-  "all events; the item of mortality whose name is prefixed";
-
-/* ... to the head of this chapter. String cut off to stick within the C90
-   509 byte limit. */
+  "all events; the item of mortality whose name is prefixed to the head of "
+  "this chapter.";
 
 /*
- * This example shows an HTTP PUT operation that sends a fixed buffer with
+ * This example shows a HTTP PUT operation that sends a fixed buffer with
  * CURLOPT_POSTFIELDS to the URL given as an argument.
  */
 

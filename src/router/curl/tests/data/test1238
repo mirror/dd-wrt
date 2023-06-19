@@ -3,9 +3,6 @@
 <keywords>
 TFTP
 TFTP RRQ
-timeout
-FAILURE
-DELAY
 </keywords>
 </info>
 
@@ -13,7 +10,7 @@ DELAY
 # Server-side
 <reply>
 <servercmd>
-writedelay: 2000
+writedelay: 2
 </servercmd>
 # ~1200 bytes (so that they don't fit in two 512 byte chunks)
 <data nocheck="yes">

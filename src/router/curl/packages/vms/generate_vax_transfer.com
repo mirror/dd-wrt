@@ -1,5 +1,7 @@
 $! File: generate_vax_transfer.com
 $!
+$! $Id$
+$!
 $! File to generate and compile the VAX transfer vectors from reading in the
 $! Alpha/Itanium gnv_libcurl_symbols.opt file.
 $!
@@ -12,7 +14,7 @@ $!     gnv_libcurl_xfer.obj
 $!     gnv_libcurl_xfer.opt
 $!     macro32_exactcase.exe
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2013 - 2020, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -26,8 +28,7 @@ $! WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 $! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
-$! SPDX-License-Identifier: ISC
-$!
+$! 20-Jul-2013  J. Malmberg
 $!============================================================================
 $!
 $! Save this so we can get back.

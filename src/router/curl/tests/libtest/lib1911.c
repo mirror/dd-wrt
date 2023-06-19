@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "test.h"
@@ -47,7 +45,7 @@ int test(char *URL)
     return 1;
   }
 
-  /* make it a null-terminated C string with just As */
+  /* make it a zero terminated C string with just As */
   memset(buffer, 'A', MAX_INPUT_LENGTH + 1);
   buffer[MAX_INPUT_LENGTH + 1] = 0;
 
@@ -61,18 +59,14 @@ int test(char *URL)
       /*
        * Whitelist string options that are safe for abuse
        */
-      CURL_IGNORE_DEPRECATION(
-        switch(o->id) {
-        case CURLOPT_PROXY_TLSAUTH_TYPE:
-        case CURLOPT_TLSAUTH_TYPE:
-        case CURLOPT_RANDOM_FILE:
-        case CURLOPT_EGDSOCKET:
-          continue;
-        default:
-          /* check this */
-          break;
-        }
-      )
+      switch(o->id) {
+      case CURLOPT_PROXY_TLSAUTH_TYPE:
+      case CURLOPT_TLSAUTH_TYPE:
+        continue;
+      default:
+        /* check this */
+        break;
+      }
 
       /* This is a string. Make sure that passing in a string longer
          CURL_MAX_INPUT_LENGTH returns an error */
@@ -81,7 +75,6 @@ int test(char *URL)
       case CURLE_BAD_FUNCTION_ARGUMENT: /* the most normal */
       case CURLE_UNKNOWN_OPTION: /* left out from the build */
       case CURLE_NOT_BUILT_IN: /* not supported */
-      case CURLE_UNSUPPORTED_PROTOCOL: /* detected by protocol2num() */
         break;
       default:
         /* all other return codes are unexpected */

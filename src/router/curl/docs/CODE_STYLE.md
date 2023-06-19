@@ -9,9 +9,8 @@ style is more important than individual contributors having their own personal
 tastes satisfied.
 
 Our C code has a few style rules. Most of them are verified and upheld by the
-`scripts/checksrc.pl` script. Invoked with `make checksrc` or even by default
-by the build system when built after `./configure --enable-debug` has been
-used.
+`lib/checksrc.pl` script. Invoked with `make checksrc` or even by default by
+the build system when built after `./configure --enable-debug` has been used.
 
 It is normally not a problem for anyone to follow the guidelines, as you just
 need to copy the style already used in the source code and there are no
@@ -64,7 +63,7 @@ resolution screens:
    newspapers have used columns for decades or centuries.
 
 2. Narrower columns allow developers to easier show multiple pieces of code
-   next to each other in different windows. It allows two or three source
+   next to each other in different windows. I often have two or three source
    code windows next to each other on the same screen - as well as multiple
    terminal and debugging windows.
 

@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: data-binary
 Arg: <data>
 Help: HTTP POST binary data
@@ -8,7 +6,6 @@ Category: http post upload
 Example: --data-binary @filename $URL
 Added: 7.2
 See-also: data-ascii
-Multi: append
 ---
 This posts data exactly as specified with no extra processing whatsoever.
 

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "test.h"
@@ -44,8 +42,6 @@
 #  include "memdebug.h"
 #endif
 
-#include "timediff.h"
-
 int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
                    struct timeval *tv)
 {
@@ -60,7 +56,7 @@ int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
    * select() can not be used to sleep without a single fd_set.
    */
   if(!nfds) {
-    Sleep((DWORD)curlx_tvtoms(tv));
+    Sleep((1000*tv->tv_sec) + (DWORD)(((double)tv->tv_usec)/1000.0));
     return 0;
   }
 #endif
@@ -69,13 +65,11 @@ int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
 
 void wait_ms(int ms)
 {
-#ifdef USE_WINSOCK
-  Sleep(ms);
-#else
   struct timeval t;
-  curlx_mstotv(&t, ms);
+  t.tv_sec = ms/1000;
+  ms -= (int)t.tv_sec * 1000;
+  t.tv_usec = ms * 1000;
   select_wrapper(0, NULL, NULL, NULL, &t);
-#endif
 }
 
 char *libtest_arg2 = NULL;
@@ -85,7 +79,9 @@ char **test_argv;
 
 struct timeval tv_test_start; /* for test timing */
 
+#ifdef UNITTESTS
 int unitfail; /* for unittests */
+#endif
 
 #ifdef CURLDEBUG
 static void memory_tracking_init(void)
@@ -183,12 +179,5 @@ int main(int argc, char **argv)
     PR_Cleanup();
 #endif
 
-#ifdef WIN32
-  /* flush buffers of all streams regardless of mode */
-  _flushall();
-#endif
-
-  /* Regular program status codes are limited to 0..127 and 126 and 127 have
-   * special meanings by the shell, so limit a normal return code to 125 */
-  return result <= 125 ? result : 125;
+  return result;
 }

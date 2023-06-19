@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -130,7 +128,7 @@ int my_trace(CURL *handle, curl_infotype type,
 
 #define OUTPUTFILE "dl"
 
-static int setup(CURL *hnd, const char *url)
+static int setup(CURL *hnd)
 {
   FILE *out = fopen(OUTPUTFILE, "wb");
   if(!out)
@@ -141,7 +139,7 @@ static int setup(CURL *hnd, const char *url)
   curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
 
   /* set the same URL */
-  curl_easy_setopt(hnd, CURLOPT_URL, url);
+  curl_easy_setopt(hnd, CURLOPT_URL, "https://localhost:8443/index.html");
 
   /* please be verbose */
   curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
@@ -211,16 +209,12 @@ static int server_push_callback(CURL *parent,
 /*
  * Download a file over HTTP/2, take care of server push.
  */
-int main(int argc, char *argv[])
+int main(void)
 {
   CURL *easy;
   CURLM *multi_handle;
   int transfers = 1; /* we start with one */
   struct CURLMsg *m;
-  const char *url = "https://localhost:8443/index.html";
-
-  if(argc == 2)
-    url = argv[1];
 
   /* init a multi stack */
   multi_handle = curl_multi_init();
@@ -228,7 +222,7 @@ int main(int argc, char *argv[])
   easy = curl_easy_init();
 
   /* set options */
-  if(setup(easy, url)) {
+  if(setup(easy)) {
     fprintf(stderr, "failed\n");
     return 1;
   }

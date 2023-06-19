@@ -58,9 +58,6 @@ curl_easy_reset with referer and other strings set
  <command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>
-<features>
-cookies
-</features>
 </client>
 
 #

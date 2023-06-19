@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
-#
-# SPDX-License-Identifier: curl
 #
 #***************************************************************************
 
@@ -37,14 +35,6 @@ if test "x$OPT_RUSTLS" != xno; then
     if test "$OPT_RUSTLS" = "yes"; then
       OPT_RUSTLS=""
     fi
-
-    case $host_os in
-      darwin*)
-        LDFLAGS="$LDFLAGS -framework Security"
-        ;;
-      *)
-        ;;
-    esac
 
     if test -z "$OPT_RUSTLS" ; then
       dnl check for lib first without setting any new path

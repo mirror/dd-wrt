@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
-#
-# SPDX-License-Identifier: curl
 #
 #***************************************************************************
 
@@ -421,8 +419,10 @@ dnl Check for how to set a socket into non-blocking state.
 
 AC_DEFUN([CURL_CHECK_NONBLOCKING_SOCKET], [
   AC_REQUIRE([CURL_CHECK_FUNC_FCNTL])dnl
+  AC_REQUIRE([CURL_CHECK_FUNC_IOCTL])dnl
   AC_REQUIRE([CURL_CHECK_FUNC_IOCTLSOCKET])dnl
   AC_REQUIRE([CURL_CHECK_FUNC_IOCTLSOCKET_CAMEL])dnl
+  AC_REQUIRE([CURL_CHECK_FUNC_SETSOCKOPT])dnl
   #
   tst_method="unknown"
 
@@ -458,7 +458,8 @@ AC_DEFUN([CURL_CONFIGURE_SYMBOL_HIDING], [
   AC_MSG_CHECKING([whether hiding of library internal symbols will actually happen])
   CFLAG_CURL_SYMBOL_HIDING=""
   doing_symbol_hiding="no"
-  if test "$want_symbol_hiding" = "yes" &&
+  if test x"$curl_cv_native_windows" != "xyes" &&
+    test "$want_symbol_hiding" = "yes" &&
     test "$supports_symbol_hiding" = "yes"; then
     doing_symbol_hiding="yes"
     CFLAG_CURL_SYMBOL_HIDING="$symbol_hiding_CFLAGS"
@@ -475,8 +476,9 @@ AC_DEFUN([CURL_CONFIGURE_SYMBOL_HIDING], [
 
 dnl CURL_CHECK_LIB_ARES
 dnl -------------------------------------------------
-dnl When c-ares library support has been requested, performs necessary checks
-dnl and adjustments needed to enable support of this library.
+dnl When c-ares library support has been requested,
+dnl performs necessary checks and adjustsments needed
+dnl to enable support of this library.
 
 AC_DEFUN([CURL_CHECK_LIB_ARES], [
   #
@@ -616,9 +618,6 @@ AC_DEFUN([CURL_CHECK_NTLM_WB], [
   if test "$curl_cv_native_windows" = "yes" ||
     test "x$SSL_ENABLED" = "x"; then
     want_ntlm_wb_file=""
-    want_ntlm_wb="no"
-  elif test "x$ac_cv_func_fork" != "xyes"; then
-    dnl ntlm_wb requires fork
     want_ntlm_wb="no"
   fi
   AC_MSG_RESULT([$want_ntlm_wb])

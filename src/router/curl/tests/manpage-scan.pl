@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 2016 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
-#
-# SPDX-License-Identifier: curl
 #
 ###########################################################################
 #
@@ -67,9 +65,9 @@ my %alias = (
 sub scanmanpage {
     my ($file, @words) = @_;
 
-    open(my $mh, "<", "$file");
+    open(M, "<$file");
     my @m;
-    while(<$mh>) {
+    while(<M>) {
         if($_ =~ /^\.IP (.*)/) {
             my $w = $1;
             # "unquote" minuses
@@ -77,7 +75,7 @@ sub scanmanpage {
             push @m, $w;
         }
     }
-    close($mh);
+    close(M);
 
     foreach my $m (@words) {
         my @g = grep(/$m/, @m);
@@ -88,24 +86,22 @@ sub scanmanpage {
     }
 }
 
-my $r;
-
 # check for define alises
-open($r, "<", "$curlh") ||
+open(R, "<$curlh") ||
     die "no curl.h";
-while(<$r>) {
+while(<R>) {
     if(/^\#define (CURL(OPT|INFO|MOPT)_\w+) (.*)/) {
         $alias{$1}=$3;
     }
 }
-close($r);
+close(R);
 
 my @curlopt;
 my @curlinfo;
 my @curlmopt;
-open($r, "<", "$syms") ||
+open(R, "<$syms") ||
     die "no input file";
-while(<$r>) {
+while(<R>) {
     chomp;
     my $l= $_;
     if($l =~ /(CURL(OPT|INFO|MOPT)_\w+) *([0-9.]*) *([0-9.-]*) *([0-9.]*)/) {
@@ -135,7 +131,7 @@ while(<$r>) {
         }
     }
 }
-close($r);
+close(R);
 
 scanmanpage("$root/docs/libcurl/curl_easy_setopt.3", @curlopt);
 scanmanpage("$root/docs/libcurl/curl_easy_getinfo.3", @curlinfo);
@@ -150,7 +146,6 @@ my %opts = (
     '--no-sessionid' => 1,
     '--no-keepalive' => 1,
     '--no-progress-meter' => 1,
-    '--no-clobber' => 1,
 
     # pretend these options without -no exist in curl.1 and tool_listhelp.c
     '--alpn' => 6,
@@ -161,9 +156,8 @@ my %opts = (
     '-N, --buffer' => 6,
     '--sessionid' => 6,
     '--progress-meter' => 6,
-    '--clobber' => 6,
 
-    # deprecated options do not need to be in tool_help.c nor curl.1
+    # deprecated options do not need to be in tool_listhelp.c nor curl.1
     '--krb4' => 6,
     '--ftp-ssl' => 6,
     '--ftp-ssl-reqd' => 6,
@@ -176,12 +170,12 @@ my %opts = (
 
 #########################################################################
 # parse the curl code that parses the command line arguments!
-open($r, "<", "$root/src/tool_getparam.c") ||
+open(R, "<$root/src/tool_getparam.c") ||
     die "no input file";
 my $list;
 my @getparam; # store all parsed parameters
 
-while(<$r>) {
+while(<R>) {
     chomp;
     my $l= $_;
     if(/struct LongShort aliases/) {
@@ -208,15 +202,15 @@ while(<$r>) {
         }
     }
 }
-close($r);
+close(R);
 
 #########################################################################
 # parse the curl.1 man page, extract all documented command line options
 # The man page may or may not be rebuilt, so check both possible locations
-open($r, "<", "$buildroot/docs/curl.1") || open($r, "<", "$root/docs/curl.1") ||
+open(R, "<$buildroot/docs/curl.1") || open(R, "<$root/docs/curl.1") ||
     die "no input file";
 my @manpage; # store all parsed parameters
-while(<$r>) {
+while(<R>) {
     chomp;
     my $l= $_;
     $l =~ s/\\-/-/g;
@@ -237,15 +231,15 @@ while(<$r>) {
         }
     }
 }
-close($r);
+close(R);
 
 
 #########################################################################
 # parse the curl code that outputs the curl -h list
-open($r, "<", "$root/src/tool_listhelp.c") ||
+open(R, "<$root/src/tool_listhelp.c") ||
     die "no input file";
 my @toolhelp; # store all parsed parameters
-while(<$r>) {
+while(<R>) {
     chomp;
     my $l= $_;
     if(/^  \{\" *(.*)/) {
@@ -266,7 +260,7 @@ while(<$r>) {
 
     }
 }
-close($r);
+close(R);
 
 #
 # Now we have three arrays with options to cross-reference.

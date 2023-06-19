@@ -32,9 +32,6 @@ hello
 
 # Client-side
 <client>
-<features>
-Mime
-</features>
 <server>
 http
 </server>
@@ -47,9 +44,9 @@ lib%TESTNUMBER
 HTTP mimepost early end of data detection
  </name>
  <command>
-http://%HOSTIP:%HTTPPORT/%TESTNUMBER %LOGDIR/file%TESTNUMBER.txt
+http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>
-<file name="%LOGDIR/file%TESTNUMBER.txt">
+<file name="log/file%TESTNUMBER.txt">
 This is data from a file
 </file>
 </client>

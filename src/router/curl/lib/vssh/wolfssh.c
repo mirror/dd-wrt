@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2019 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * SPDX-License-Identifier: curl
- *
  ***************************************************************************/
 
 #include "curl_setup.h"
@@ -31,7 +29,6 @@
 #include <wolfssh/ssh.h>
 #include <wolfssh/wolfsftp.h>
 #include "urldata.h"
-#include "cfilters.h"
 #include "connect.h"
 #include "sendf.h"
 #include "progress.h"
@@ -425,7 +422,7 @@ static CURLcode wssh_connect(struct Curl_easy *data, bool *done)
     state(data, SSH_SFTP_INIT);
 
   return wssh_multi_statemach(data, done);
-error:
+  error:
   wolfSSH_free(sshc->ssh_session);
   wolfSSH_CTX_free(sshc->ctx);
   return CURLE_FAILED_INIT;
@@ -472,7 +469,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         state(data, SSH_STOP);
         return CURLE_SSH;
       }
-      infof(data, "wolfssh connected");
+      infof(data, "wolfssh connected!");
       state(data, SSH_STOP);
       break;
     case SSH_STOP:
@@ -493,7 +490,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         return CURLE_OK;
       }
       else if(rc == WS_SUCCESS) {
-        infof(data, "wolfssh SFTP connected");
+        infof(data, "wolfssh SFTP connected!");
         state(data, SSH_SFTP_REALPATH);
       }
       else {
@@ -522,7 +519,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         else {
           memcpy(sshc->homedir, name->fName, name->fSz);
           sshc->homedir[name->fSz] = 0;
-          infof(data, "wolfssh SFTP realpath succeeded");
+          infof(data, "wolfssh SFTP realpath succeeded!");
         }
         wolfSSH_SFTPNAME_list_free(name);
         state(data, SSH_STOP);
@@ -557,7 +554,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
       }
       break;
     case SSH_SFTP_TRANS_INIT:
-      if(data->state.upload)
+      if(data->set.upload)
         state(data, SSH_SFTP_UPLOAD_INIT);
       else {
         if(sftp_scp->path[strlen(sftp_scp->path)-1] == '/')
@@ -620,7 +617,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         return CURLE_OK;
       }
       else if(rc == WS_SUCCESS) {
-        infof(data, "wolfssh SFTP open succeeded");
+        infof(data, "wolfssh SFTP open succeeded!");
       }
       else {
         failf(data, "wolfssh SFTP upload open failed: %d", rc);
@@ -731,7 +728,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         return CURLE_OK;
       }
       else if(rc == WS_SUCCESS) {
-        infof(data, "wolfssh SFTP open succeeded");
+        infof(data, "wolfssh SFTP open succeeded!");
         state(data, SSH_SFTP_DOWNLOAD_STAT);
         return CURLE_OK;
       }
@@ -757,7 +754,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         return CURLE_OK;
       }
       else if(rc == WS_SUCCESS) {
-        infof(data, "wolfssh STAT succeeded");
+        infof(data, "wolfssh STAT succeeded!");
       }
       else {
         failf(data, "wolfssh SFTP open failed: %d", rc);
@@ -837,7 +834,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
 
     case SSH_SFTP_READDIR_INIT:
       Curl_pgrsSetDownloadSize(data, -1);
-      if(data->req.no_body) {
+      if(data->set.opt_no_body) {
         state(data, SSH_STOP);
         break;
       }
@@ -940,6 +937,7 @@ CURLcode wsftp_perform(struct Curl_easy *data,
                        bool *dophase_done)
 {
   CURLcode result = CURLE_OK;
+  struct connectdata *conn = data->conn;
 
   DEBUGF(infof(data, "DO phase starts"));
 
@@ -951,7 +949,7 @@ CURLcode wsftp_perform(struct Curl_easy *data,
   /* run the state-machine */
   result = wssh_multi_statemach(data, dophase_done);
 
-  *connected = Curl_conn_is_connected(data->conn, FIRSTSOCKET);
+  *connected = conn->bits.tcpconnect[FIRSTSOCKET];
 
   if(*dophase_done) {
     DEBUGF(infof(data, "DO phase is complete"));

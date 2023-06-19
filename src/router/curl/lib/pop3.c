@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  * RFC1734 POP3 Authentication
  * RFC1939 POP3 protocol
@@ -58,6 +56,11 @@
 #include <inet.h>
 #endif
 
+#if (defined(NETWARE) && defined(__NOVELL_LIBC__))
+#undef in_addr_t
+#define in_addr_t unsigned long
+#endif
+
 #include <curl/curl.h>
 #include "urldata.h"
 #include "sendf.h"
@@ -71,7 +74,6 @@
 #include "strtoofft.h"
 #include "strcase.h"
 #include "vtls/vtls.h"
-#include "cfilters.h"
 #include "connect.h"
 #include "select.h"
 #include "multiif.h"
@@ -369,19 +371,11 @@ static CURLcode pop3_perform_upgrade_tls(struct Curl_easy *data,
 {
   /* Start the SSL connection */
   struct pop3_conn *pop3c = &conn->proto.pop3c;
-  CURLcode result;
-  bool ssldone = FALSE;
-
-  if(!Curl_conn_is_ssl(conn, FIRSTSOCKET)) {
-    result = Curl_ssl_cfilter_add(data, conn, FIRSTSOCKET);
-    if(result)
-      goto out;
-  }
-
-  result = Curl_conn_connect(data, FIRSTSOCKET, FALSE, &ssldone);
+  CURLcode result =
+    Curl_ssl_connect_nonblocking(data, conn, FALSE, FIRSTSOCKET,
+                                 &pop3c->ssldone);
 
   if(!result) {
-    pop3c->ssldone = ssldone;
     if(pop3c->state != POP3_UPGRADETLS)
       state(data, POP3_UPGRADETLS);
 
@@ -390,7 +384,7 @@ static CURLcode pop3_perform_upgrade_tls(struct Curl_easy *data,
       result = pop3_perform_capa(data, conn);
     }
   }
-out:
+
   return result;
 }
 
@@ -577,7 +571,7 @@ static CURLcode pop3_perform_authentication(struct Curl_easy *data,
       result = pop3_perform_user(data, conn);
     else {
       /* Other mechanisms not supported */
-      infof(data, "No known authentication mechanisms supported");
+      infof(data, "No known authentication mechanisms supported!");
       result = CURLE_LOGIN_DENIED;
     }
   }
@@ -771,7 +765,7 @@ static CURLcode pop3_state_capa_resp(struct Curl_easy *data, int pop3code,
     if(pop3code != '+')
       pop3c->authtypes |= POP3_TYPE_CLEARTEXT;
 
-    if(!data->set.use_ssl || Curl_conn_is_ssl(conn, FIRSTSOCKET))
+    if(!data->set.use_ssl || conn->ssl[FIRSTSOCKET].use)
       result = pop3_perform_authentication(data, conn);
     else if(pop3code == '+' && pop3c->tls_supported)
       /* Switch to TLS connection now */
@@ -930,7 +924,7 @@ static CURLcode pop3_state_command_resp(struct Curl_easy *data,
 
   if(pop3code != '+') {
     state(data, POP3_STOP);
-    return CURLE_WEIRD_SERVER_REPLY;
+    return CURLE_RECV_ERROR;
   }
 
   /* This 'OK' line ends with a CR LF pair which is the two first bytes of the
@@ -952,7 +946,7 @@ static CURLcode pop3_state_command_resp(struct Curl_easy *data,
          content so send it as such. Note that there may even be additional
          "headers" after the body */
 
-      if(!data->req.no_body) {
+      if(!data->set.opt_no_body) {
         result = Curl_pop3_write(data, pp->cache, pp->cache_size);
         if(result)
           return result;
@@ -1058,9 +1052,8 @@ static CURLcode pop3_multi_statemach(struct Curl_easy *data, bool *done)
   struct pop3_conn *pop3c = &conn->proto.pop3c;
 
   if((conn->handler->flags & PROTOPT_SSL) && !pop3c->ssldone) {
-    bool ssldone = FALSE;
-    result = Curl_conn_connect(data, FIRSTSOCKET, FALSE, &ssldone);
-    pop3c->ssldone = ssldone;
+    result = Curl_ssl_connect_nonblocking(data, conn, FALSE,
+                                          FIRSTSOCKET, &pop3c->ssldone);
     if(result || !pop3c->ssldone)
       return result;
   }
@@ -1197,11 +1190,12 @@ static CURLcode pop3_perform(struct Curl_easy *data, bool *connected,
 {
   /* This is POP3 and no proxy */
   CURLcode result = CURLE_OK;
+  struct connectdata *conn = data->conn;
   struct POP3 *pop3 = data->req.p.pop3;
 
   DEBUGF(infof(data, "DO phase starts"));
 
-  if(data->req.no_body) {
+  if(data->set.opt_no_body) {
     /* Requested no body means no transfer */
     pop3->transfer = PPTRANSFER_INFO;
   }
@@ -1215,7 +1209,7 @@ static CURLcode pop3_perform(struct Curl_easy *data, bool *connected,
 
   /* Run the state-machine */
   result = pop3_multi_statemach(data, dophase_done);
-  *connected = Curl_conn_is_connected(data->conn, FIRSTSOCKET);
+  *connected = conn->bits.tcpconnect[FIRSTSOCKET];
 
   if(*dophase_done)
     DEBUGF(infof(data, "DO phase is complete"));
@@ -1376,7 +1370,7 @@ static CURLcode pop3_parse_url_options(struct connectdata *conn)
     const char *value;
 
     while(*ptr && *ptr != '=')
-      ptr++;
+        ptr++;
 
     value = ptr + 1;
 

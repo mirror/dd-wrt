@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,8 +17,6 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
- *
- * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -106,7 +104,7 @@ int curlx_win32_open(const char *filename, int oflag, ...)
 #ifdef _UNICODE
   if(filename_w) {
     result = _wopen(filename_w, oflag, pmode);
-    curlx_unicodefree(filename_w);
+    free(filename_w);
   }
   else
     errno = EINVAL;
@@ -126,8 +124,8 @@ FILE *curlx_win32_fopen(const char *filename, const char *mode)
     result = _wfopen(filename_w, mode_w);
   else
     errno = EINVAL;
-  curlx_unicodefree(filename_w);
-  curlx_unicodefree(mode_w);
+  free(filename_w);
+  free(mode_w);
   return result;
 #else
   return (fopen)(filename, mode);
@@ -145,7 +143,7 @@ int curlx_win32_stat(const char *path, struct_stat *buffer)
 #else
     result = _wstati64(path_w, buffer);
 #endif
-    curlx_unicodefree(path_w);
+    free(path_w);
   }
   else
     errno = EINVAL;
@@ -166,7 +164,7 @@ int curlx_win32_access(const char *path, int mode)
   wchar_t *path_w = curlx_convert_UTF8_to_wchar(path);
   if(path_w) {
     result = _waccess(path_w, mode);
-    curlx_unicodefree(path_w);
+    free(path_w);
   }
   else
     errno = EINVAL;

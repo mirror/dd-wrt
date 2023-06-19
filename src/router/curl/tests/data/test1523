@@ -2,7 +2,6 @@
 <info>
 <keywords>
 CURLINFO_LOW_SPEED_LIMIT
-DELAY
 </keywords>
 </info>
 
@@ -18,7 +17,7 @@ Funny-head: yesyes
 AA
 </data>
 <servercmd>
-writedelay: 1000
+writedelay: 1
 </servercmd>
 </reply>
 #

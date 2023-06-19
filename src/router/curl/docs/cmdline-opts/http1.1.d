@@ -1,5 +1,3 @@
-c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-SPDX-License-Identifier: curl
 Long: http1.1
 Tags: Versions
 Protocols: HTTP
@@ -9,6 +7,5 @@ Help: Use HTTP 1.1
 Category: http
 Example: --http1.1 $URL
 See-also: http1.0 http0.9
-Multi: mutex
 ---
 Tells curl to use HTTP version 1.1.

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * SPDX-License-Identifier: curl
- *
  ***************************************************************************/
 #include "test.h"
 
@@ -31,7 +29,7 @@ int test(char *URL)
 {
   CURL *curl, *dupe = NULL;
   long protocol;
-  CURLcode res = CURLE_OK;
+  int res = CURLE_OK;
 
   global_init(CURL_GLOBAL_ALL);
 
@@ -40,9 +38,7 @@ int test(char *URL)
   /* Test that protocol is properly initialized on curl_easy_init.
   */
 
-  CURL_IGNORE_DEPRECATION(
-    res = curl_easy_getinfo(curl, CURLINFO_PROTOCOL, &protocol);
-  )
+  res = curl_easy_getinfo(curl, CURLINFO_PROTOCOL, &protocol);
   if(res) {
     fprintf(stderr, "%s:%d curl_easy_getinfo() failed with code %d (%s)\n",
             __FILE__, __LINE__, res, curl_easy_strerror(res));
@@ -67,9 +63,7 @@ int test(char *URL)
   /* Test that a protocol is properly set after receiving an HTTP resource.
   */
 
-  CURL_IGNORE_DEPRECATION(
-    res = curl_easy_getinfo(curl, CURLINFO_PROTOCOL, &protocol);
-  )
+  res = curl_easy_getinfo(curl, CURLINFO_PROTOCOL, &protocol);
   if(res) {
     fprintf(stderr, "%s:%d curl_easy_getinfo() failed with code %d (%s)\n",
             __FILE__, __LINE__, res, curl_easy_strerror(res));
@@ -94,9 +88,7 @@ int test(char *URL)
     goto test_cleanup;
   }
 
-  CURL_IGNORE_DEPRECATION(
-    res = curl_easy_getinfo(dupe, CURLINFO_PROTOCOL, &protocol);
-  )
+  res = curl_easy_getinfo(dupe, CURLINFO_PROTOCOL, &protocol);
   if(res) {
     fprintf(stderr, "%s:%d curl_easy_getinfo() failed with code %d (%s)\n",
             __FILE__, __LINE__, res, curl_easy_strerror(res));
@@ -115,9 +107,7 @@ int test(char *URL)
 
   curl_easy_reset(curl);
 
-  CURL_IGNORE_DEPRECATION(
-    res = curl_easy_getinfo(curl, CURLINFO_PROTOCOL, &protocol);
-  )
+  res = curl_easy_getinfo(curl, CURLINFO_PROTOCOL, &protocol);
   if(res) {
     fprintf(stderr, "%s:%d curl_easy_getinfo() failed with code %d (%s)\n",
             __FILE__, __LINE__, res, curl_easy_strerror(res));
@@ -134,5 +124,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_easy_cleanup(dupe);
   curl_global_cleanup();
-  return (int)res;
+  return res;
 }

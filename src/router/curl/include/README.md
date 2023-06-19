@@ -1,9 +1,3 @@
-<!--
-Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-
-SPDX-License-Identifier: curl
--->
-
 # include
 
 Public include files for libcurl, external users.

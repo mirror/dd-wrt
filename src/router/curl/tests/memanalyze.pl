@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,8 +18,6 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
-#
-# SPDX-License-Identifier: curl
 #
 ###########################################################################
 #
@@ -81,22 +79,22 @@ if(! -f $file) {
     exit;
 }
 
-open(my $fileh, "<", "$file");
+open(FILE, "<$file");
 
 if($showlimit) {
-    while(<$fileh>) {
+    while(<FILE>) {
         if(/^LIMIT.*memlimit$/) {
             print $_;
             last;
         }
     }
-    close($fileh);
+    close(FILE);
     exit;
 }
 
 
 my $lnum=0;
-while(<$fileh>) {
+while(<FILE>) {
     chomp $_;
     $line = $_;
     $lnum++;
@@ -375,7 +373,7 @@ while(<$fileh>) {
         print "Not recognized prefix line: $line\n";
     }
 }
-close($fileh);
+close(FILE);
 
 if($totalmem) {
     print "Leak detected: memory still allocated: $totalmem bytes\n";
