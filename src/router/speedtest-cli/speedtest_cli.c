@@ -26,7 +26,7 @@
 #define CONF_SERVER	"http://www.speedtest.net/speedtest-config.php"
 #define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
 
-#define CLOSEST_SERVERS_NUM 20
+#define CLOSEST_SERVERS_NUM 10
 #define DL_FILE_NUM 5
 #define DL_FILE_TIMES 4
 #define MAX_FILE_LEN 20
