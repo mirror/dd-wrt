@@ -494,7 +494,7 @@ printf "\n") >> Rules.mk
 
 cat >> Rules.mk <<EOF
 
-all: \$(STATICLIB) \$(DLL) \$(TOOLS) \$(TESTS)
+all: \$(STATICLIB) \$(TOOLS) \$(TESTS)
 
 no:
 

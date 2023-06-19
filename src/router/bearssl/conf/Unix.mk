@@ -37,22 +37,22 @@ RM = rm -f
 MKDIR = mkdir -p
 
 # C compiler and flags.
-CC = cc
-CFLAGS = -W -Wall -Os -fPIC
+#CC = 
+CFLAGS = -W -Wall $(COPTS) $(MIPS16_OPT) -flto -fPIC
 CCOUT = -c -o 
 
 # Static library building tool.
-AR = ar
-ARFLAGS = -rcs
+#AR = ar
+ARFLAGS = cru $(LTOPLUGIN)
 AROUT =
 
 # DLL building tool.
-LDDLL = cc
+LDDLL = $(CC)
 LDDLLFLAGS = -shared
 LDDLLOUT = -o 
 
 # Static linker.
-LD = cc
+LD = $(CC)
 LDFLAGS = 
 LDOUT = -o 
 
