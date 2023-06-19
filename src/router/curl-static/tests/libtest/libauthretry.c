@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -25,7 +25,6 @@
  */
 
 #include "test.h"
-#include "strequal.h"
 #include "memdebug.h"
 
 static CURLcode send_request(CURL *curl, const char *url, int seq,
@@ -33,13 +32,13 @@ static CURLcode send_request(CURL *curl, const char *url, int seq,
 {
   CURLcode res;
   size_t len = strlen(url) + 4 + 1;
-  char* full_url = malloc(len);
+  char *full_url = malloc(len);
   if(!full_url) {
     fprintf(stderr, "Not enough memory for full url\n");
     return CURLE_OUT_OF_MEMORY;
   }
 
-  snprintf(full_url, len, "%s%04d", url, seq);
+  msnprintf(full_url, len, "%s%04d", url, seq);
   fprintf(stderr, "Sending new request %d to %s with credential %s "
           "(auth %ld)\n", seq, full_url, userpwd, auth_scheme);
   test_setopt(curl, CURLOPT_URL, full_url);
@@ -72,11 +71,11 @@ static long parse_auth_name(const char *arg)
 {
   if(!arg)
     return CURLAUTH_NONE;
-  if(strequal(arg, "basic"))
+  if(curl_strequal(arg, "basic"))
     return CURLAUTH_BASIC;
-  if(strequal(arg, "digest"))
+  if(curl_strequal(arg, "digest"))
     return CURLAUTH_DIGEST;
-  if(strequal(arg, "ntlm"))
+  if(curl_strequal(arg, "ntlm"))
     return CURLAUTH_NTLM;
   return CURLAUTH_NONE;
 }
@@ -102,7 +101,8 @@ int test(char *url)
 
   /* Send wrong password, then right password */
 
-  if((curl = curl_easy_init()) == NULL) {
+  curl = curl_easy_init();
+  if(!curl) {
     fprintf(stderr, "curl_easy_init() failed\n");
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
@@ -111,18 +111,16 @@ int test(char *url)
   res = send_wrong_password(curl, url, 100, main_auth_scheme);
   if(res != CURLE_OK)
     goto test_cleanup;
-  curl_easy_reset(curl);
 
   res = send_right_password(curl, url, 200, fallback_auth_scheme);
   if(res != CURLE_OK)
     goto test_cleanup;
-  curl_easy_reset(curl);
 
   curl_easy_cleanup(curl);
 
   /* Send wrong password twice, then right password */
-
-  if((curl = curl_easy_init()) == NULL) {
+  curl = curl_easy_init();
+  if(!curl) {
     fprintf(stderr, "curl_easy_init() failed\n");
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
@@ -131,17 +129,14 @@ int test(char *url)
   res = send_wrong_password(curl, url, 300, main_auth_scheme);
   if(res != CURLE_OK)
     goto test_cleanup;
-  curl_easy_reset(curl);
 
   res = send_wrong_password(curl, url, 400, fallback_auth_scheme);
   if(res != CURLE_OK)
     goto test_cleanup;
-  curl_easy_reset(curl);
 
   res = send_right_password(curl, url, 500, fallback_auth_scheme);
   if(res != CURLE_OK)
     goto test_cleanup;
-  curl_easy_reset(curl);
 
 test_cleanup:
 
@@ -150,4 +145,3 @@ test_cleanup:
 
   return (int)res;
 }
-

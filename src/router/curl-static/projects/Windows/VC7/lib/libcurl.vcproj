@@ -35,7 +35,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
-				AdditionalDependencies="wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2.lib"
+				AdditionalDependencies="crypt32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -87,7 +87,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
-				AdditionalDependencies="wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -592,7 +592,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
-				AdditionalDependencies="wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -849,7 +849,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
-				AdditionalDependencies="wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2d.lib"
+				AdditionalDependencies="crypt32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1110,6 +1110,9 @@
 			Name="Source Files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\..\lib\altsvc.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\amigaos.c">
 			</File>
 			<File
@@ -1137,6 +1140,9 @@
 				RelativePath="..\..\..\..\lib\curl_addrinfo.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_des.c">
 			</File>
 			<File
@@ -1147,6 +1153,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_gethostname.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_get_line.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_gssapi.c">
@@ -1164,6 +1173,12 @@
 				RelativePath="..\..\..\..\lib\curl_ntlm_wb.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_path.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_range.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_rtmp.c">
 			</File>
 			<File
@@ -1179,10 +1194,22 @@
 				RelativePath="..\..\..\..\lib\dict.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\doh.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\dotdot.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\dynbuf.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\easy.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\easygetopt.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\easyoptions.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\escape.c">
@@ -1234,6 +1261,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\hostsyn.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\hsts.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\http2.c">
@@ -1290,7 +1320,13 @@
 				RelativePath="..\..\..\..\lib\memdebug.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\mime.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\mprintf.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\mqtt.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\multi.c">
@@ -1314,28 +1350,34 @@
 				RelativePath="..\..\..\..\lib\pingpong.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\pipeline.c">
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\pop3.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\progress.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.c">
+				RelativePath="..\..\..\..\lib\psl.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rand.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rename.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rtsp.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\security.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\select.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\sha256.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\share.c">
@@ -1348,6 +1390,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\smtp.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\socketpair.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\socks.c">
@@ -1365,13 +1410,10 @@
 				RelativePath="..\..\..\..\lib\splay.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\ssh.c">
+				RelativePath="..\..\..\..\lib\strcase.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strdup.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\strequal.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strerror.c">
@@ -1398,10 +1440,16 @@
 				RelativePath="..\..\..\..\lib\transfer.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\url.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\version.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\version_win32.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\warnless.c">
@@ -1416,6 +1464,9 @@
 		<Filter
 			Name="Header Files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\..\lib\altsvc.h">
+			</File>
 			<File
 				RelativePath="..\..\..\..\lib\amigaos.h">
 			</File>
@@ -1447,6 +1498,9 @@
 				RelativePath="..\..\..\..\lib\curl_base64.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_des.h">
 			</File>
 			<File
@@ -1459,10 +1513,16 @@
 				RelativePath="..\..\..\..\lib\curl_gethostname.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_get_line.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_gssapi.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_hmac.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_krb5.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_ldap.h">
@@ -1489,7 +1549,13 @@
 				RelativePath="..\..\..\..\lib\curl_ntlm_wb.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_path.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_printf.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_range.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_rtmp.h">
@@ -1498,13 +1564,13 @@
 				RelativePath="..\..\..\..\lib\curl_sasl.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\curl_sec.h">
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\curl_setup.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_setup_once.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_sha256.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_sspi.h">
@@ -1519,10 +1585,19 @@
 				RelativePath="..\..\..\..\lib\dict.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\doh.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\dotdot.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\dynbuf.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\easyif.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\easyoptions.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\escape.h">
@@ -1556,6 +1631,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\hostip.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\hsts.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\http2.h">
@@ -1597,6 +1675,12 @@
 				RelativePath="..\..\..\..\lib\memdebug.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\mime.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\mqtt.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\multihandle.h">
 			</File>
 			<File
@@ -1618,16 +1702,22 @@
 				RelativePath="..\..\..\..\lib\pingpong.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\pipeline.h">
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\pop3.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\progress.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.h">
+				RelativePath="..\..\..\..\lib\psl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\quic.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rand.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rename.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rtsp.h">
@@ -1637,6 +1727,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\setup-vms.h">
@@ -1660,6 +1753,9 @@
 				RelativePath="..\..\..\..\lib\sockaddr.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\socketpair.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\socks.h">
 			</File>
 			<File
@@ -1669,13 +1765,10 @@
 				RelativePath="..\..\..\..\lib\splay.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\ssh.h">
+				RelativePath="..\..\..\..\lib\strcase.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strdup.h">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\strequal.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strerror.h">
@@ -1702,10 +1795,16 @@
 				RelativePath="..\..\..\..\lib\transfer.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi-int.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\urldata.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\url.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\version_win32.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\warnless.h">
@@ -1782,19 +1881,67 @@
 			</Filter>
 		</Filter>
 		<Filter
+			Name="vquic"
+			Filter="">
+			<Filter
+				Name="Source Files"
+				Filter="">
+				<File
+					RelativePath="..\..\..\..\lib\vquic\ngtcp2.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\quiche.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\vquic.c">
+				</File>
+			</Filter>
+			<Filter
+				Name="Header Files"
+				Filter="">
+				<File
+					RelativePath="..\..\..\..\lib\vquic\ngtcp2.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\quiche.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\vquic.h">
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="vssh"
+			Filter="">
+			<Filter
+				Name="Source Files"
+				Filter="">
+				<File
+					RelativePath="..\..\..\..\lib\vssh\libssh2.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vssh\libssh.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vssh\wolfssh.c">
+				</File>
+			</Filter>
+			<Filter
+				Name="Header Files"
+				Filter="">
+				<File
+					RelativePath="..\..\..\..\lib\vssh\ssh.h">
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
 			Name="vtls"
 			Filter="">
 			<Filter
 				Name="Source Files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.c">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\cyassl.c">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\darwinssl.c">
+					RelativePath="..\..\..\..\lib\vtls\bearssl.c">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\gskit.c">
@@ -1803,7 +1950,16 @@
 					RelativePath="..\..\..\..\lib\vtls\gtls.c">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\keylog.c">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mbedtls_threadlock.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.c">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nss.c">
@@ -1812,29 +1968,26 @@
 					RelativePath="..\..\..\..\lib\vtls\openssl.c">
 				</File>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl.c">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl_threadlock.c">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\schannel.c">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\schannel_verify.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\sectransp.c">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\wolfssl.c">
 				</File>
 			</Filter>
 			<Filter
 				Name="Header Files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.h">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\cyassl.h">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\darwinssl.h">
+					RelativePath="..\..\..\..\lib\vtls\bearssl.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\gskit.h">
@@ -1843,7 +1996,16 @@
 					RelativePath="..\..\..\..\lib\vtls\gtls.h">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\keylog.h">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mbedtls_threadlock.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nssg.h">
@@ -1852,16 +2014,16 @@
 					RelativePath="..\..\..\..\lib\vtls\openssl.h">
 				</File>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl.h">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl_threadlock.h">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\schannel.h">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\sectransp.h">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\wolfssl.h">
 				</File>
 			</Filter>
 		</Filter>

@@ -1,4 +1,4 @@
-# cURL C code style
+# curl C code style
 
 Source code that has a common style is easier to read than code that uses
 different styles in different places. It helps making the code feel like one
@@ -9,8 +9,8 @@ style is more important than individual contributors having their own personal
 tastes satisfied.
 
 Our C code has a few style rules. Most of them are verified and upheld by the
-lib/checksrc.pl script. Invoked with `make checksrc` or even by default by the
-build system when built after `./configure --enable-debug` has been used.
+`lib/checksrc.pl` script. Invoked with `make checksrc` or even by default by
+the build system when built after `./configure --enable-debug` has been used.
 
 It is normally not a problem for anyone to follow the guidelines, as you just
 need to copy the style already used in the source code and there are no
@@ -28,7 +28,8 @@ other places of the code, just that the names should be logical,
 understandable and be named according to what they're used for. File-local
 functions should be made static. We like lower case names.
 
-See the INTERNALS document on how we name non-exported library-global symbols.
+See the [INTERNALS](INTERNALS.md) document on how we name non-exported
+library-global symbols.
 
 ## Indenting
 
@@ -43,14 +44,14 @@ open brace.
 
 ## Comments
 
-Since we write C89 code, `//` comments are not allowed. They weren't
-introduced in the C standard until C99. We use only `/*` and `*/` comments:
+Since we write C89 code, **//** comments are not allowed. They weren't
+introduced in the C standard until C99. We use only **/* comments */**.
 
     /* this is a comment */
 
 ## Long lines
 
-Source code in curl may never be wider than 80 columns and there are two
+Source code in curl may never be wider than 79 columns and there are two
 reasons for maintaining this even in the modern era of very large and high
 resolution screens:
 
@@ -72,8 +73,12 @@ the initial keyword. Like this:
       /* clearly a youngster */
     }
 
-When we write functions however, the opening brace should be in the first
-column of the first line:
+You may omit the braces if they would contain only a one-line statement:
+
+    if(!x)
+      continue;
+
+For functions the opening brace should be on a separate line:
 
     int main(int argc, char **argv)
     {
@@ -82,8 +87,8 @@ column of the first line:
 
 ## 'else' on the following line
 
-When adding an `else` clause to a conditional expression using braces, we add
-it on a new line after the closing brace. Like this:
+When adding an **else** clause to a conditional expression using braces, we
+add it on a new line after the closing brace. Like this:
 
     if(age < 40) {
       /* clearly a youngster */
@@ -144,8 +149,8 @@ and NEVER:
 
 ## Space around operators
 
-Please use spaces on both sides of operators in C expressions.  Postfix `(),
-[], ->, ., ++, --` and Unary `+, - !, ~, &` operators excluded they should
+Please use spaces on both sides of operators in C expressions.  Postfix **(),
+[], ->, ., ++, --** and Unary **+, - !, ~, &** operators excluded they should
 have no space.
 
 Examples:
@@ -162,16 +167,71 @@ Examples:
     complement = ~bits;
     empty = (!*string) ? TRUE : FALSE;
 
+## No parentheses for return values
+
+We use the 'return' statement without extra parentheses around the value:
+
+    int works(void)
+    {
+      return TRUE;
+    }
+
+## Parentheses for sizeof arguments
+
+When using the sizeof operator in code, we prefer it to be written with
+parentheses around its argument:
+
+    int size = sizeof(int);
+
+## Column alignment
+
+Some statements cannot be completed on a single line because the line would be
+too long, the statement too hard to read, or due to other style guidelines
+above. In such a case the statement will span multiple lines.
+
+If a continuation line is part of an expression or sub-expression then you
+should align on the appropriate column so that it's easy to tell what part of
+the statement it is. Operators should not start continuation lines. In other
+cases follow the 2-space indent guideline. Here are some examples from
+libcurl:
+
+    if(Curl_pipeline_wanted(handle->multi, CURLPIPE_HTTP1) &&
+       (handle->set.httpversion != CURL_HTTP_VERSION_1_0) &&
+       (handle->set.httpreq == HTTPREQ_GET ||
+        handle->set.httpreq == HTTPREQ_HEAD))
+      /* didn't ask for HTTP/1.0 and a GET or HEAD */
+      return TRUE;
+
+If no parenthesis, use the default indent:
+
+    data->set.http_disable_hostname_check_before_authentication =
+      (0 != va_arg(param, long)) ? TRUE : FALSE;
+
+Function invoke with an open parenthesis:
+
+    if(option) {
+      result = parse_login_details(option, strlen(option),
+                                   (userp ? &user : NULL),
+                                   (passwdp ? &passwd : NULL),
+                                   NULL);
+    }
+
+Align with the "current open" parenthesis:
+
+    DEBUGF(infof(data, "Curl_pp_readresp_ %d bytes of trailing "
+                 "server response left\n",
+                 (int)clipamount));
+
 ## Platform dependent code
 
-Use `#ifdef HAVE_FEATURE` to do conditional code. We avoid checking for
+Use **#ifdef HAVE_FEATURE** to do conditional code. We avoid checking for
 particular operating systems or hardware in the #ifdef lines. The HAVE_FEATURE
 shall be generated by the configure script for unix-like systems and they are
-hard-coded in the config-[system].h files for the others.
+hard-coded in the `config-[system].h` files for the others.
 
 We also encourage use of macros/functions that possibly are empty or defined
 to constants when libcurl is built without that feature, to make the code
-seamless. Like this style where the `magic()` function works differently
+seamless. Like this example where the **magic()** function works differently
 depending on a build-time conditional:
 
     #ifdef HAVE_MAGIC
@@ -184,3 +244,22 @@ depending on a build-time conditional:
     #endif
 
     int content = magic(3);
+
+## No typedefed structs
+
+Use structs by all means, but do not typedef them. Use the `struct name` way
+of identifying them:
+
+    struct something {
+       void *valid;
+       size_t way_to_write;
+    };
+    struct something instance;
+
+**Not okay**:
+
+    typedef struct {
+       void *wrong;
+       size_t way_to_write;
+    } something;
+    something instance;

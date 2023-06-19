@@ -2351,7 +2351,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC9\DLL Debug"
@@ -2434,7 +2434,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC9\DLL Debug"
@@ -2516,7 +2516,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC9\DLL Release"
@@ -2597,7 +2597,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC9\DLL Release"
@@ -2677,7 +2677,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC9\DLL Debug;..\..\..\..\..\libssh2\build\Win32\VC9\DLL Debug"
@@ -2760,7 +2760,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC9\DLL Debug;..\..\..\..\..\libssh2\build\Win64\VC9\DLL Debug"
@@ -2842,7 +2842,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC9\DLL Release;..\..\..\..\..\libssh2\build\Win32\VC9\DLL Release"
@@ -2923,7 +2923,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libssh2.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libssh2.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC9\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC9\DLL Release;..\..\..\..\..\libssh2\build\Win64\VC9\DLL Release"
@@ -3938,15 +3938,27 @@
 			Name="Source Files"
 			>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_multibyte.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\dynbuf.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\nonblock.c"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.c"
+				RelativePath="..\..\..\..\lib\strtoofft.c"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strtoofft.c"
+				RelativePath="..\..\..\..\lib\version_win32.c"
 			>
 			</File>
 			<File
@@ -4010,6 +4022,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\tool_filetime.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\tool_formparse.c"
 			>
 			</File>
@@ -4050,10 +4066,6 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_mfiles.c"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\src\tool_msgs.c"
 			>
 			</File>
@@ -4075,6 +4087,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_parsecfg.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\tool_progress.c"
 			>
 			</File>
 			<File
@@ -4102,11 +4118,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_writeenv.c"
+				RelativePath="..\..\..\..\src\tool_writeout.c"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_writeout.c"
+				RelativePath="..\..\..\..\src\tool_writeout_json.c"
 			>
 			</File>
 			<File
@@ -4122,7 +4138,19 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_multibyte.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_setup.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\dynbuf.h"
 			>
 			</File>
 			<File
@@ -4130,11 +4158,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.h"
+				RelativePath="..\..\..\..\lib\strtoofft.h"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strtoofft.h"
+				RelativePath="..\..\..\..\lib\version_win32.h"
 			>
 			</File>
 			<File
@@ -4198,6 +4226,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\tool_filetime.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\tool_formparse.h"
 			>
 			</File>
@@ -4238,10 +4270,6 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_mfiles.h"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\src\tool_msgs.h"
 			>
 			</File>
@@ -4263,6 +4291,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_parsecfg.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\tool_progress.h"
 			>
 			</File>
 			<File
@@ -4302,11 +4334,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_writeenv.h"
+				RelativePath="..\..\..\..\src\tool_writeout.h"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_writeout.h"
+				RelativePath="..\..\..\..\src\tool_writeout_json.h"
 			>
 			</File>
 			<File

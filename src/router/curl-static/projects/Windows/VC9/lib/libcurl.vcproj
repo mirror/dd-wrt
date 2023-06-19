@@ -51,7 +51,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -136,7 +136,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -221,7 +221,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -304,7 +304,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -380,7 +380,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -447,7 +447,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -514,7 +514,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -581,7 +581,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -651,7 +651,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -671,7 +671,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win32\VC9\DLL Debug"
@@ -736,7 +736,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -756,7 +756,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win64\VC9\DLL Debug"
@@ -821,7 +821,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -840,7 +840,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win32\VC9\DLL Release"
@@ -904,7 +904,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -923,7 +923,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win64\VC9\DLL Release"
@@ -985,7 +985,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1070,7 +1070,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1155,7 +1155,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -1238,7 +1238,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -1319,7 +1319,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1339,7 +1339,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2d.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win32\VC9\DLL Debug;..\..\..\..\..\libssh2\build\Win32\VC9\DLL Debug"
@@ -1404,7 +1404,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1424,7 +1424,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2d.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win64\VC9\DLL Debug;..\..\..\..\..\libssh2\build\Win64\VC9\DLL Debug"
@@ -1489,7 +1489,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -1508,7 +1508,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win32\VC9\DLL Release;..\..\..\..\..\libssh2\build\Win32\VC9\DLL Release"
@@ -1572,7 +1572,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -1591,7 +1591,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2.lib"
+				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\..\openssl\build\Win64\VC9\DLL Release;..\..\..\..\..\libssh2\build\Win64\VC9\DLL Release"
@@ -1648,7 +1648,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1715,7 +1715,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1781,7 +1781,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1848,7 +1848,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1914,7 +1914,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -1981,7 +1981,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -2047,7 +2047,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -2114,7 +2114,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -2180,7 +2180,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -2247,7 +2247,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -2314,7 +2314,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2381,7 +2381,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2447,7 +2447,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2514,7 +2514,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2580,7 +2580,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2647,7 +2647,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2713,7 +2713,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2780,7 +2780,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_IPV6"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2846,7 +2846,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2913,7 +2913,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib;..\..\..\..\..\openssl\inc32;..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;USE_IPV6;HAVE_LIBSSH2_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -2983,7 +2983,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -3068,7 +3068,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -3153,7 +3153,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -3236,7 +3236,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -3312,7 +3312,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -3379,7 +3379,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -3446,7 +3446,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -3513,7 +3513,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;USE_IPV6;WANT_IDN_PROTOTYPES"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -3558,6 +3558,10 @@
 			Name="Source Files"
 			>
 			<File
+				RelativePath="..\..\..\..\lib\altsvc.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\amigaos.c"
 			>
 			</File>
@@ -3594,6 +3598,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_des.c"
 			>
 			</File>
@@ -3607,6 +3615,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_gethostname.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_get_line.c"
 			>
 			</File>
 			<File
@@ -3630,6 +3642,14 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_path.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_range.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_rtmp.c"
 			>
 			</File>
@@ -3650,11 +3670,27 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\doh.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\dotdot.c"
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\dynbuf.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\easy.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\easygetopt.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\easyoptions.c"
 			>
 			</File>
 			<File
@@ -3723,6 +3759,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\hostsyn.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\hsts.c"
 			>
 			</File>
 			<File
@@ -3798,7 +3838,15 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\mime.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\mprintf.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\mqtt.c"
 			>
 			</File>
 			<File
@@ -3830,10 +3878,6 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\pipeline.c"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\pop3.c"
 			>
 			</File>
@@ -3842,15 +3886,19 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.c"
+				RelativePath="..\..\..\..\lib\psl.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rand.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rename.c"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rtsp.c"
-			>
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\security.c"
 			>
 			</File>
 			<File
@@ -3859,6 +3907,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\sha256.c"
 			>
 			</File>
 			<File
@@ -3875,6 +3931,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\smtp.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\socketpair.c"
 			>
 			</File>
 			<File
@@ -3898,15 +3958,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\ssh.c"
+				RelativePath="..\..\..\..\lib\strcase.c"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strdup.c"
-			>
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\strequal.c"
 			>
 			</File>
 			<File
@@ -3942,11 +3998,19 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\url.c"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\version.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\version_win32.c"
 			>
 			</File>
 			<File
@@ -3965,6 +4029,10 @@
 		<Filter
 			Name="Header Files"
 			>
+			<File
+				RelativePath="..\..\..\..\lib\altsvc.h"
+			>
+			</File>
 			<File
 				RelativePath="..\..\..\..\lib\amigaos.h"
 			>
@@ -4006,6 +4074,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_des.h"
 			>
 			</File>
@@ -4022,11 +4094,19 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_get_line.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_gssapi.h"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_hmac.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_krb5.h"
 			>
 			</File>
 			<File
@@ -4062,7 +4142,15 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_path.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_printf.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_range.h"
 			>
 			</File>
 			<File
@@ -4074,15 +4162,15 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\curl_sec.h"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\curl_setup.h"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_setup_once.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_sha256.h"
 			>
 			</File>
 			<File
@@ -4102,11 +4190,23 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\doh.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\dotdot.h"
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\dynbuf.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\easyif.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\easyoptions.h"
 			>
 			</File>
 			<File
@@ -4151,6 +4251,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\hostip.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\hsts.h"
 			>
 			</File>
 			<File
@@ -4206,6 +4310,14 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\mime.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\mqtt.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\multihandle.h"
 			>
 			</File>
@@ -4234,10 +4346,6 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\pipeline.h"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\pop3.h"
 			>
 			</File>
@@ -4246,7 +4354,19 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.h"
+				RelativePath="..\..\..\..\lib\psl.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\quic.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rand.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rename.h"
 			>
 			</File>
 			<File
@@ -4259,6 +4379,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.h"
 			>
 			</File>
 			<File
@@ -4290,6 +4414,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\socketpair.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\socks.h"
 			>
 			</File>
@@ -4302,15 +4430,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\ssh.h"
+				RelativePath="..\..\..\..\lib\strcase.h"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strdup.h"
-			>
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\strequal.h"
 			>
 			</File>
 			<File
@@ -4346,11 +4470,19 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi-int.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\urldata.h"
 			>
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\url.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\version_win32.h"
 			>
 			</File>
 			<File
@@ -4447,21 +4579,77 @@
 			</Filter>
 		</Filter>
 		<Filter
+			Name="vquic"
+			>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\ngtcp2.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\quiche.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\vquic.c"
+				>
+				</File>
+			</Filter>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\ngtcp2.h"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\quiche.h"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vquic\vquic.h"
+				>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="vssh"
+			>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\..\..\..\lib\vssh\libssh2.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vssh\libssh.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vssh\wolfssh.c"
+				>
+				</File>
+			</Filter>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\..\..\..\lib\vssh\ssh.h"
+				>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
 			Name="vtls"
 			>
 			<Filter
 				Name="Source Files"
 				>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.c"
-				>
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\cyassl.c"
-				>
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\darwinssl.c"
+					RelativePath="..\..\..\..\lib\vtls\bearssl.c"
 				>
 				</File>
 				<File
@@ -4473,7 +4661,19 @@
 				>
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\keylog.c"
+				>
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mbedtls_threadlock.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.c"
 				>
 				</File>
 				<File
@@ -4485,19 +4685,23 @@
 				>
 				</File>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl.c"
-				>
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl_threadlock.c"
-				>
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\schannel.c"
 				>
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\schannel_verify.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\sectransp.c"
+				>
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\wolfssl.c"
 				>
 				</File>
 			</Filter>
@@ -4505,15 +4709,7 @@
 				Name="Header Files"
 				>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.h"
-				>
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\cyassl.h"
-				>
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\darwinssl.h"
+					RelativePath="..\..\..\..\lib\vtls\bearssl.h"
 				>
 				</File>
 				<File
@@ -4525,7 +4721,19 @@
 				>
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\keylog.h"
+				>
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.h"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mbedtls_threadlock.h"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.h"
 				>
 				</File>
 				<File
@@ -4537,19 +4745,19 @@
 				>
 				</File>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl.h"
-				>
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\polarssl_threadlock.h"
-				>
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\schannel.h"
 				>
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\sectransp.h"
+				>
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.h"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\wolfssl.h"
 				>
 				</File>
 			</Filter>
