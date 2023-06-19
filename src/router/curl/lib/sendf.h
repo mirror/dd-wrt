@@ -30,8 +30,10 @@ void Curl_failf(struct Curl_easy *, const char *fmt, ...);
 #if defined(CURL_DISABLE_VERBOSE_STRINGS)
 
 #if defined(HAVE_VARIADIC_MACROS_C99)
+#define failf(...) Curl_nop_stmt
 #define infof(...)  Curl_nop_stmt
 #elif defined(HAVE_VARIADIC_MACROS_GCC)
+#define failf(x...) Curl_nop_stmt
 #define infof(x...)  Curl_nop_stmt
 #else
 #error "missing VARIADIC macro define, fix and rebuild!"
@@ -40,10 +42,10 @@ void Curl_failf(struct Curl_easy *, const char *fmt, ...);
 #else /* CURL_DISABLE_VERBOSE_STRINGS */
 
 #define infof Curl_infof
+#define failf Curl_failf
 
 #endif /* CURL_DISABLE_VERBOSE_STRINGS */
 
-#define failf Curl_failf
 
 #define CLIENTWRITE_BODY   (1<<0)
 #define CLIENTWRITE_HEADER (1<<1)
