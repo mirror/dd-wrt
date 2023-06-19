@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "tool_filetime.h"
@@ -37,7 +39,7 @@ curl_off_t getfiletime(const char *filename, struct GlobalConfig *global)
 /* Windows stat() may attempt to adjust the unix GMT file time by a daylight
    saving time offset and since it's GMT that is bad behavior. When we have
    access to a 64-bit type we can bypass stat and get the times directly. */
-#if defined(WIN32) && (SIZEOF_CURL_OFF_T >= 8)
+#if defined(WIN32)
   HANDLE hfile;
   TCHAR *tchar_filename = curlx_convert_UTF8_to_tchar((char *)filename);
 
@@ -83,8 +85,7 @@ curl_off_t getfiletime(const char *filename, struct GlobalConfig *global)
   return result;
 }
 
-#if defined(HAVE_UTIME) || defined(HAVE_UTIMES) ||      \
-  (defined(WIN32) && (SIZEOF_CURL_OFF_T >= 8))
+#if defined(HAVE_UTIME) || defined(HAVE_UTIMES) || defined(WIN32)
 void setfiletime(curl_off_t filetime, const char *filename,
                  struct GlobalConfig *global)
 {
@@ -92,7 +93,7 @@ void setfiletime(curl_off_t filetime, const char *filename,
 /* Windows utime() may attempt to adjust the unix GMT file time by a daylight
    saving time offset and since it's GMT that is bad behavior. When we have
    access to a 64-bit type we can bypass utime and set the times directly. */
-#if defined(WIN32) && (SIZEOF_CURL_OFF_T >= 8)
+#if defined(WIN32)
     HANDLE hfile;
     TCHAR *tchar_filename = curlx_convert_UTF8_to_tchar((char *)filename);
 
@@ -149,5 +150,5 @@ void setfiletime(curl_off_t filetime, const char *filename,
 #endif
   }
 }
-#endif /* defined(HAVE_UTIME) || defined(HAVE_UTIMES) || \
-          (defined(WIN32) && (SIZEOF_CURL_OFF_T >= 8)) */
+#endif /* defined(HAVE_UTIME) || defined(HAVE_UTIMES) ||        \
+          defined(WIN32) */

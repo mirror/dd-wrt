@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Short: :
 Long: next
 Tags:
@@ -9,6 +11,7 @@ Category: curl
 Example: $URL --next -d postthis www2.example.com
 Example: -I $URL --next https://example.net/
 See-also: parallel config
+Multi: append
 ---
 Tells curl to use a separate operation for the following URL and associated
 options. This allows you to send several URL requests, each with their own

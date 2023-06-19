@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "curlcheck.h"
@@ -45,7 +47,7 @@ static void unit_stop(void)
 }
 
 UNITTEST_START
-{
+
   int i;
   CURLcode code;
   struct Curl_addrinfo *addrhead = addrs;
@@ -69,6 +71,4 @@ UNITTEST_START
 
   abort_unless(addrhead != addrs, "addresses are not being reordered");
 
-  return 0;
-}
 UNITTEST_STOP

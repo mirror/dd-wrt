@@ -1,3 +1,9 @@
+<!--
+  Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+
+  SPDX-License-Identifier: curl
+-->
+
 # curl man page generator
 
 This is the curl man page generator. It generates a single nroff man page
@@ -17,18 +23,23 @@ Each file has a set of meta-data and a body of text.
 
 ### Meta-data
 
-    Short: (single letter, without dash)
-    Long: (long form name, without dashes)
-    Arg: (the argument the option takes)
-    Magic: (description of "magic" options)
-    Tags: (space separated list)
-    Protocols: (space separated list for which protocols this option works)
     Added: (version number in which this was added)
-    Mutexed: (space separated list of options this overrides, no dashes)
-    Requires: (space separated list of features this requires, no dashes)
-    See-also: (space separated list of related options, no dashes)
-    Help: (short text for the --help output for this option)
+    Arg: (the argument the option takes)
+    c: (copyright line)
     Example: (example command line, without "curl" and can use `$URL`)
+    Experimental: yes (if so)
+    Help: (short text for the --help output for this option)
+    Long: (long form name, without dashes)
+    Magic: (description of "magic" options)
+    Multi: single/append/boolean/mutex/custom (if used more than once)
+    Mutexed: (space separated list of options this overrides, no dashes)
+    Protocols: (space separated list for which protocols this option works)
+    Requires: (space separated list of features this requires, no dashes)
+    Scope: global (if the option is global)
+    See-also: (space separated list of related options, no dashes)
+    Short: (single letter, without dash)
+    SPDX-License-Identifier: curl
+    Tags: (space separated list)
     --- (end of meta-data)
 
 ### Body

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,6 +18,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 #include "curl_setup.h"
@@ -27,7 +29,7 @@
 /*
  * NTLM details:
  *
- * https://davenport.sourceforge.io/ntlm.html
+ * https://davenport.sourceforge.net/ntlm.html
  * https://www.innovation.ch/java/ntlm.html
  */
 
@@ -62,6 +64,10 @@
 /* "NTLMSSP" signature is always in ASCII regardless of the platform */
 #define NTLMSSP_SIGNATURE "\x4e\x54\x4c\x4d\x53\x53\x50"
 
+/* The fixed host name we provide, in order to not leak our real local host
+   name. Copy the name used by Firefox. */
+#define NTLM_HOSTNAME "WORKSTATION"
+
 #if DEBUG_ME
 # define DEBUG_OUT(x) x
 static void ntlm_print_flags(FILE *handle, unsigned long flags)
@@ -82,8 +88,6 @@ static void ntlm_print_flags(FILE *handle, unsigned long flags)
     fprintf(handle, "NTLMFLAG_NEGOTIATE_DATAGRAM_STYLE ");
   if(flags & NTLMFLAG_NEGOTIATE_LM_KEY)
     fprintf(handle, "NTLMFLAG_NEGOTIATE_LM_KEY ");
-  if(flags & NTLMFLAG_NEGOTIATE_NETWARE)
-    fprintf(handle, "NTLMFLAG_NEGOTIATE_NETWARE ");
   if(flags & NTLMFLAG_NEGOTIATE_NTLM_KEY)
     fprintf(handle, "NTLMFLAG_NEGOTIATE_NTLM_KEY ");
   if(flags & (1<<10))
@@ -376,8 +380,8 @@ CURLcode Curl_auth_create_ntlm_type1_message(struct Curl_easy *data,
   (void)data;
   (void)userp;
   (void)passwdp;
-  (void)service,
-  (void)hostname,
+  (void)service;
+  (void)hostname;
 
   /* Clean up any former leftovers and initialise to defaults */
   Curl_auth_cleanup_ntlm(ntlm);
@@ -507,6 +511,8 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
   size_t userlen = 0;
   size_t domlen = 0;
 
+  memset(lmresp, 0, sizeof(lmresp));
+  memset(ntresp, 0, sizeof(ntresp));
   user = strchr(userp, '\\');
   if(!user)
     user = strchr(userp, '/');
@@ -521,15 +527,20 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
 
   userlen = strlen(user);
 
+#ifndef NTLM_HOSTNAME
   /* Get the machine's un-qualified host name as NTLM doesn't like the fully
      qualified domain name */
   if(Curl_gethostname(host, sizeof(host))) {
-    infof(data, "gethostname() failed, continuing without!");
+    infof(data, "gethostname() failed, continuing without");
     hostlen = 0;
   }
   else {
     hostlen = strlen(host);
   }
+#else
+  (void)msnprintf(host, sizeof(host), "%s", NTLM_HOSTNAME);
+  hostlen = sizeof(NTLM_HOSTNAME)-1;
+#endif
 
   if(ntlm->flags & NTLMFLAG_NEGOTIATE_NTLM2_KEY) {
     unsigned char ntbuffer[0x18];
@@ -589,7 +600,7 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
 
     /* A safer but less compatible alternative is:
      *   Curl_ntlm_core_lm_resp(ntbuffer, &ntlm->nonce[0], lmresp);
-     * See https://davenport.sourceforge.io/ntlm.html#ntlmVersion2 */
+     * See https://davenport.sourceforge.net/ntlm.html#ntlmVersion2 */
   }
 
   if(unicode) {
@@ -647,7 +658,7 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
                    /* LanManager response */
                    /* NT response */
 
-                   0,                /* zero termination */
+                   0,                /* null-termination */
                    0, 0, 0,          /* type-3 long, the 24 upper bits */
 
                    SHORTPAIR(0x18),  /* LanManager response length, twice */

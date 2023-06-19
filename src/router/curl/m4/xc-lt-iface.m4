@@ -2,7 +2,7 @@
 #
 # xc-lt-iface.m4
 #
-# Copyright (c) 2013 - 2021, Daniel Stenberg <daniel@haxx.se>
+# Copyright (C), Daniel Stenberg <daniel@haxx.se>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -15,6 +15,8 @@
 # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+# SPDX-License-Identifier: ISC
 #
 #---------------------------------------------------------------------------
 
@@ -317,7 +319,7 @@ dnl   xc_lt_build_static_with_pic
 m4_define([_XC_CHECK_LT_BUILD_WITH_PIC],
 [dnl
 #
-# Find out whether libtool libraries would be built wit PIC
+# Find out whether libtool libraries would be built with PIC
 #
 
 case "x$pic_mode" in @%:@ ((((

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 /* <DESC>
- * An example of curl_easy_send() and curl_easy_recv() usage.
+ * Demonstrate curl_easy_send() and curl_easy_recv() usage.
  * </DESC>
  */
 
@@ -36,7 +38,7 @@ static int wait_on_socket(curl_socket_t sockfd, int for_recv, long timeout_ms)
   int res;
 
   tv.tv_sec = timeout_ms / 1000;
-  tv.tv_usec = (timeout_ms % 1000) * 1000;
+  tv.tv_usec = (int)(timeout_ms % 1000) * 1000;
 
   FD_ZERO(&infd);
   FD_ZERO(&outfd);

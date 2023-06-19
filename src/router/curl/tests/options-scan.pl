@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2010 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,6 +18,8 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
 #
 ###########################################################################
 #
@@ -48,8 +50,8 @@ sub cmdfiles {
 sub mentions {
     my ($f) = @_;
     my @options;
-    open(F, "<$f");
-    while(<F>) {
+    open(my $fh, "<", "$f");
+    while(<$fh>) {
         chomp;
         if(/(.*) +([0-9.]+)/) {
             my ($flag, $version)=($1, $2);
@@ -69,13 +71,14 @@ sub mentions {
             $oiv{$flag} = $version;
         }
     }
+    close($fh);
     return @options;
 }
 
 sub versioncheck {
     my ($f, $v)=@_;
-    open(F, "<$cmddir/$f.d");
-    while(<F>) {
+    open(my $fh, "<", "$cmddir/$f.d");
+    while(<$fh>) {
         chomp;
         if(/^Added: ([0-9.]+)/) {
             if($1 ne $v) {
@@ -85,7 +88,7 @@ sub versioncheck {
             last;
         }
     }
-    close(F);
+    close($fh);
 }
 
 # get all the files

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH curl_free 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH curl_free 3 "April 26, 2023" "libcurl 8.1.2" "libcurl"
 
 .SH NAME
 curl_free - reclaim memory that has been obtained through a libcurl call
@@ -27,7 +29,7 @@ curl_free - reclaim memory that has been obtained through a libcurl call
 .nf
 #include <curl/curl.h>
 
-void curl_free(char *ptr);
+void curl_free(void *ptr);
 .fi
 .SH DESCRIPTION
 curl_free reclaims memory that has been obtained through a libcurl call. Use

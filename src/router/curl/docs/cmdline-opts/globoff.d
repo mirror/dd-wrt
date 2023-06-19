@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: globoff
 Short: g
 Help: Disable URL sequences and ranges using {} and []
@@ -5,6 +7,7 @@ Category: curl
 Example: -g "https://example.com/{[]}}}}"
 Added: 7.6
 See-also: config disable
+Multi: boolean
 ---
 This option switches off the "URL globbing parser". When you set this option,
 you can specify URLs that contain the letters {}[] without having curl itself

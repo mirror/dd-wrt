@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: disable-eprt
 Help: Inhibit using EPRT or LPRT
 Protocols: FTP
@@ -5,6 +7,7 @@ Category: ftp
 Example: --disable-eprt ftp://example.com/
 Added: 7.10.5
 See-also: disable-epsv ftp-port
+Multi: boolean
 ---
 Tell curl to disable the use of the EPRT and LPRT commands when doing active
 FTP transfers. Curl will normally always first attempt to use EPRT, then LPRT

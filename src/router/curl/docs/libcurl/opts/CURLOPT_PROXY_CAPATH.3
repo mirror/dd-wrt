@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROXY_CAPATH 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_PROXY_CAPATH 3 "April 26, 2023" "ibcurl 8.1.2" libcurl
 
 .SH NAME
 CURLOPT_PROXY_CAPATH \- directory holding HTTPS proxy CA certificates
@@ -33,12 +35,14 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_PROXY_CAPATH, char *capath);
 .SH DESCRIPTION
 Pass a char * to a null-terminated string naming a directory holding multiple
 CA certificates to verify the HTTPS proxy with. If libcurl is built against
-OpenSSL, the certificate directory must be prepared using the openssl c_rehash
-utility. This makes sense only when \fICURLOPT_PROXY_SSL_VERIFYPEER(3)\fP is
-enabled (which it is by default).
+OpenSSL, the certificate directory must be prepared using the OpenSSL
+\fBc_rehash\fP utility. This makes sense only when
+\fICURLOPT_PROXY_SSL_VERIFYPEER(3)\fP is enabled (which it is by default).
 
 The application does not have to keep the string around after setting this
 option.
+
+The default value for this can be figured out with \fICURLINFO_CAPATH(3)\fP.
 .SH DEFAULT
 NULL
 .SH PROTOCOLS

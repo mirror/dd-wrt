@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2012 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  * RFC2195 CRAM-MD5 authentication
  * RFC2617 Basic and Digest Access Authentication
@@ -34,7 +36,8 @@
 #include "curl_setup.h"
 
 #if !defined(CURL_DISABLE_IMAP) || !defined(CURL_DISABLE_SMTP) || \
-  !defined(CURL_DISABLE_POP3)
+  !defined(CURL_DISABLE_POP3) || \
+  (!defined(CURL_DISABLE_LDAP) && defined(USE_OPENLDAP))
 
 #include <curl/curl.h>
 #include "urldata.h"
@@ -42,6 +45,7 @@
 #include "curl_base64.h"
 #include "curl_md5.h"
 #include "vauth/vauth.h"
+#include "cfilters.h"
 #include "vtls/vtls.h"
 #include "curl_hmac.h"
 #include "curl_sasl.h"
@@ -338,8 +342,8 @@ CURLcode Curl_sasl_start(struct SASL *sasl, struct Curl_easy *data,
   struct bufref resp;
   saslstate state1 = SASL_STOP;
   saslstate state2 = SASL_FINAL;
-  const char * const hostname = SSL_HOST_NAME();
-  const long int port = SSL_HOST_PORT();
+  const char *hostname, *disp_hostname;
+  int port;
 #if defined(USE_KERBEROS5) || defined(USE_NTLM)
   const char *service = data->set.str[STRING_SERVICE_NAME] ?
     data->set.str[STRING_SERVICE_NAME] :
@@ -348,6 +352,7 @@ CURLcode Curl_sasl_start(struct SASL *sasl, struct Curl_easy *data,
   const char *oauth_bearer = data->set.str[STRING_BEARER];
   struct bufref nullmsg;
 
+  Curl_conn_get_host(data, FIRSTSOCKET, &hostname, &disp_hostname, &port);
   Curl_bufref_init(&nullmsg);
   Curl_bufref_init(&resp);
   sasl->force_ir = force_ir;    /* Latch for future use */
@@ -523,8 +528,8 @@ CURLcode Curl_sasl_continue(struct SASL *sasl, struct Curl_easy *data,
   struct connectdata *conn = data->conn;
   saslstate newstate = SASL_FINAL;
   struct bufref resp;
-  const char * const hostname = SSL_HOST_NAME();
-  const long int port = SSL_HOST_PORT();
+  const char *hostname, *disp_hostname;
+  int port;
 #if !defined(CURL_DISABLE_CRYPTO_AUTH) || defined(USE_KERBEROS5) ||     \
   defined(USE_NTLM)
   const char *service = data->set.str[STRING_SERVICE_NAME] ?
@@ -534,6 +539,7 @@ CURLcode Curl_sasl_continue(struct SASL *sasl, struct Curl_easy *data,
   const char *oauth_bearer = data->set.str[STRING_BEARER];
   struct bufref serverdata;
 
+  Curl_conn_get_host(data, FIRSTSOCKET, &hostname, &disp_hostname, &port);
   Curl_bufref_init(&serverdata);
   Curl_bufref_init(&resp);
   *progress = SASL_INPROGRESS;
@@ -670,7 +676,7 @@ CURLcode Curl_sasl_continue(struct SASL *sasl, struct Curl_easy *data,
 #endif
 
   case SASL_OAUTH2:
-    /* Create the authorisation message */
+    /* Create the authorization message */
     if(sasl->authused == SASL_MECH_OAUTHBEARER) {
       result = Curl_auth_create_oauth_bearer_message(conn->user,
                                                      hostname,
