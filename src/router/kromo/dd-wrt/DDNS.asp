@@ -25,7 +25,7 @@ function ddns_check(F,T) {
 			return false;
 		}
 	}
-	if(hostname.value == "") {
+	if(hostname && hostname.value == "") {
 		alert(errmsg.err7);
 		hostname.focus();
 		return false;
