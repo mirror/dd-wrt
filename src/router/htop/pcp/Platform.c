@@ -1,8 +1,8 @@
 /*
 htop - linux/Platform.c
 (C) 2014 Hisham H. Muhammad
-(C) 2020-2021 htop dev team
-(C) 2020-2021 Red Hat, Inc.
+(C) 2020-2022 htop dev team
+(C) 2020-2022 Red Hat, Inc.
 Released under the GNU GPLv2+, see the COPYING file
 in the source distribution for its full text.
 */
@@ -178,6 +178,7 @@ static const char* Platform_metricNames[] = {
    [PCP_ZFS_ARC_BONUS_SIZE] = "zfs.arc.bonus_size",
    [PCP_ZFS_ARC_COMPRESSED_SIZE] = "zfs.arc.compressed_size",
    [PCP_ZFS_ARC_UNCOMPRESSED_SIZE] = "zfs.arc.uncompressed_size",
+   [PCP_ZFS_ARC_C_MIN] = "zfs.arc.c_min",
    [PCP_ZFS_ARC_C_MAX] = "zfs.arc.c_max",
    [PCP_ZFS_ARC_DBUF_SIZE] = "zfs.arc.dbuf_size",
    [PCP_ZFS_ARC_DNODE_SIZE] = "zfs.arc.dnode_size",
@@ -246,6 +247,37 @@ static const char* Platform_metricNames[] = {
 
    [PCP_METRIC_COUNT] = NULL
 };
+
+#ifndef HAVE_PMLOOKUPDESCS
+/*
+ * pmLookupDescs(3) exists in latest versions of libpcp (5.3.6+),
+ * but for older versions we provide an implementation here. This
+ * involves multiple round trips to pmcd though, which the latest
+ * libpcp version avoids by using a protocol extension.  In time,
+ * perhaps in a few years, we could remove this back-compat code.
+ */
+int pmLookupDescs(int numpmid, pmID* pmids, pmDesc* descs) {
+   int count = 0;
+
+   for (int i = 0; i < numpmid; i++) {
+      /* expect some metrics to be missing - e.g. PMDA not available */
+      if (pmids[i] == PM_ID_NULL)
+         continue;
+
+      int sts = pmLookupDesc(pmids[i], &descs[i]);
+      if (sts < 0) {
+         if (pmDebugOptions.appl0)
+            fprintf(stderr, "Error: cannot lookup metric %s(%s): %s\n",
+                    pcp->names[i], pmIDStr(pcp->pmids[i]), pmErrStr(sts));
+         pmids[i] = PM_ID_NULL;
+         continue;
+      }
+
+      count++;
+   }
+   return count;
+}
+#endif
 
 size_t Platform_addMetric(PCPMetric id, const char* name) {
    unsigned int i = (unsigned int)id;
@@ -324,21 +356,14 @@ bool Platform_init(void) {
       return false;
    }
 
-   for (size_t i = 0; i < pcp->totalMetrics; i++) {
-      pcp->fetch[i] = PM_ID_NULL; /* default is to not sample */
-
-      /* expect some metrics to be missing - e.g. PMDA not available */
-      if (pcp->pmids[i] == PM_ID_NULL)
-         continue;
-
-      sts = pmLookupDesc(pcp->pmids[i], &pcp->descs[i]);
-      if (sts < 0) {
-         if (pmDebugOptions.appl0)
-            fprintf(stderr, "Error: cannot lookup metric %s(%s): %s\n",
-                    pcp->names[i], pmIDStr(pcp->pmids[i]), pmErrStr(sts));
-         pcp->pmids[i] = PM_ID_NULL;
-         continue;
-      }
+   sts = pmLookupDescs(pcp->totalMetrics, pcp->pmids, pcp->descs);
+   if (sts < 1) {
+      if (sts < 0)
+         fprintf(stderr, "Error: cannot lookup descriptors: %s\n", pmErrStr(sts));
+      else /* ensure we have at least one valid metric to work with */
+         fprintf(stderr, "Error: cannot find a single valid metric, exiting\n");
+      Platform_done();
+      return false;
    }
 
    /* set proc.control.perclient.threads to 1 for live contexts */
@@ -503,23 +528,28 @@ void Platform_setMemoryValues(Meter* this) {
    const PCPProcessList* ppl = (const PCPProcessList*) pl;
 
    this->total     = pl->totalMem;
-   this->values[0] = pl->usedMem;
-   this->values[1] = pl->buffersMem;
-   this->values[2] = pl->sharedMem;
-   this->values[3] = pl->cachedMem;
-   this->values[4] = pl->availableMem;
+   this->values[MEMORY_METER_USED] = pl->usedMem;
+   this->values[MEMORY_METER_BUFFERS] = pl->buffersMem;
+   this->values[MEMORY_METER_SHARED] = pl->sharedMem;
+   this->values[MEMORY_METER_CACHE] = pl->cachedMem;
+   this->values[MEMORY_METER_AVAILABLE] = pl->availableMem;
 
    if (ppl->zfs.enabled != 0) {
-      this->values[0] -= ppl->zfs.size;
-      this->values[3] += ppl->zfs.size;
+      // ZFS does not shrink below the value of zfs_arc_min.
+      unsigned long long int shrinkableSize = 0;
+      if (ppl->zfs.size > ppl->zfs.min)
+         shrinkableSize = ppl->zfs.size - ppl->zfs.min;
+      this->values[MEMORY_METER_USED] -= shrinkableSize;
+      this->values[MEMORY_METER_CACHE] += shrinkableSize;
+      this->values[MEMORY_METER_AVAILABLE] += shrinkableSize;
    }
 }
 
 void Platform_setSwapValues(Meter* this) {
    const ProcessList* pl = this->pl;
    this->total = pl->totalSwap;
-   this->values[0] = pl->usedSwap;
-   this->values[1] = pl->cachedSwap;
+   this->values[SWAP_METER_USED] = pl->usedSwap;
+   this->values[SWAP_METER_CACHE] = pl->cachedSwap;
 }
 
 void Platform_setZramValues(Meter* this) {
@@ -637,12 +667,6 @@ char* Platform_getProcessEnv(pid_t pid) {
    if (!PCPMetric_instance(PCP_PROC_ENVIRON, pid, 0, &value, PM_TYPE_STRING))
       return NULL;
    return value.cp;
-}
-
-char* Platform_getInodeFilename(pid_t pid, ino_t inode) {
-   (void)pid;
-   (void)inode;
-   return NULL;
 }
 
 FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {

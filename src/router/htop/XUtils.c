@@ -21,7 +21,7 @@ in the source distribution for its full text.
 #include "CRT.h"
 
 
-void fail() {
+void fail(void) {
    CRT_done();
    abort();
 
@@ -104,9 +104,9 @@ inline bool String_contains_i(const char* s1, const char* s2, bool multi) {
             String_freeArray(needles);
             return true;
          }
-       }
-       String_freeArray(needles);
-       return false;
+      }
+      String_freeArray(needles);
+      return false;
    } else {
       return strcasestr(s1, s2) != NULL;
    }
@@ -115,7 +115,9 @@ inline bool String_contains_i(const char* s1, const char* s2, bool multi) {
 char* String_cat(const char* s1, const char* s2) {
    const size_t l1 = strlen(s1);
    const size_t l2 = strlen(s2);
-   assert(SIZE_MAX - l1 > l2);
+   if (SIZE_MAX - l1 <= l2) {
+      fail();
+   }
    char* out = xMalloc(l1 + l2 + 1);
    memcpy(out, s1, l1);
    memcpy(out + l1, s2, l2);
@@ -310,4 +312,27 @@ ssize_t xReadfileat(openat_arg_t dirfd, const char* pathname, void* buffer, size
       return -errno;
 
    return readfd_internal(fd, buffer, count);
+}
+
+ssize_t full_write(int fd, const void* buf, size_t count) {
+   ssize_t written = 0;
+
+   while (count > 0) {
+      ssize_t r = write(fd, buf, count);
+      if (r < 0) {
+         if (errno == EINTR)
+            continue;
+
+         return r;
+      }
+
+      if (r == 0)
+         break;
+
+      written += r;
+      buf = (const unsigned char*)buf + r;
+      count -= (size_t)r;
+   }
+
+   return written;
 }

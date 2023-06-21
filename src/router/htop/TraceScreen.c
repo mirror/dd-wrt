@@ -90,7 +90,9 @@ bool TraceScreen_forkTracer(TraceScreen* this) {
 
       char buffer[32] = {0};
       xSnprintf(buffer, sizeof(buffer), "%d", this->super.process->pid);
-      execlp("strace", "strace", "-T", "-tt", "-s", "512", "-p", buffer, NULL);
+      // Use of NULL in variadic functions must have a pointer cast.
+      // The NULL constant is not required by standard to have a pointer type.
+      execlp("strace", "strace", "-T", "-tt", "-s", "512", "-p", buffer, (char *)NULL);
 
       // Should never reach here, unless execlp fails ...
       const char* message = "Could not execute 'strace'. Please make sure it is available in your $PATH.";
@@ -162,17 +164,17 @@ static void TraceScreen_updateTrace(InfoScreen* super) {
 
 static bool TraceScreen_onKey(InfoScreen* super, int ch) {
    TraceScreen* this = (TraceScreen*) super;
-   switch(ch) {
+   switch (ch) {
       case 'f':
       case KEY_F(8):
          this->follow = !(this->follow);
          if (this->follow)
-            Panel_setSelected(super->display, Panel_size(super->display)-1);
+            Panel_setSelected(super->display, Panel_size(super->display) - 1);
          return true;
       case 't':
       case KEY_F(9):
          this->tracing = !this->tracing;
-         FunctionBar_setLabel(super->display->defaultBar, KEY_F(9), this->tracing?"Stop Tracing   ":"Resume Tracing ");
+         FunctionBar_setLabel(super->display->defaultBar, KEY_F(9), this->tracing ? "Stop Tracing   " : "Resume Tracing ");
          InfoScreen_draw(this);
          return true;
    }
