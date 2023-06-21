@@ -39,8 +39,12 @@ plist_la_CFLAGS = \
 	-Wno-implicit-function-declaration \
 	-fvisibility=default
 
-plist_la_LDFLAGS = -module -avoid-version $(PYTHON_LIBS) $(AM_LDFLAGS)
+plist_la_LDFLAGS = -module -avoid-version $(PYTHON_LIBS) $(AM_LDFLAGS) -shared -export-dynamic
 plist_la_LIBADD = $(top_builddir)/src/libplist-2.0.la
+
+if WIN32
+plist_la_LDFLAGS += -no-undefined
+endif
 
 plist.c: plist.pyx $(PXDINCLUDES) $(PXIINCLUDES)
 

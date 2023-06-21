@@ -3,7 +3,7 @@
  * @brief Main include of libplist
  * \internal
  *
- * Copyright (c) 2012-2019 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2012-2023 Nikias Bassen, All Rights Reserved.
  * Copyright (c) 2008-2009 Jonathan Beck, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -44,6 +44,7 @@ extern "C"
 #include <stdint.h>
 #endif
 
+/*{{{ deprecation macros */
 #ifdef __llvm__
   #if defined(__has_extension)
     #if (__has_extension(attribute_deprecated_with_message))
@@ -72,9 +73,11 @@ extern "C"
   #define PLIST_WARN_DEPRECATED(x)
   #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
 #endif
+/*}}}*/
 
 #include <sys/types.h>
 #include <stdarg.h>
+#include <stdio.h>
 
     /**
      * \mainpage libplist : A library to handle Apple Property Lists
@@ -103,18 +106,65 @@ extern "C"
      */
     typedef enum
     {
-        PLIST_BOOLEAN,	/**< Boolean, scalar type */
-        PLIST_UINT,	/**< Unsigned integer, scalar type */
-        PLIST_REAL,	/**< Real, scalar type */
-        PLIST_STRING,	/**< ASCII string, scalar type */
-        PLIST_ARRAY,	/**< Ordered array, structured type */
-        PLIST_DICT,	/**< Unordered dictionary (key/value pair), structured type */
-        PLIST_DATE,	/**< Date, scalar type */
-        PLIST_DATA,	/**< Binary data, scalar type */
-        PLIST_KEY,	/**< Key in dictionaries (ASCII String), scalar type */
+        PLIST_NONE =-1, /**< No type */
+        PLIST_BOOLEAN,  /**< Boolean, scalar type */
+        PLIST_INT,      /**< Integer, scalar type */
+        PLIST_REAL,     /**< Real, scalar type */
+        PLIST_STRING,   /**< ASCII string, scalar type */
+        PLIST_ARRAY,    /**< Ordered array, structured type */
+        PLIST_DICT,     /**< Unordered dictionary (key/value pair), structured type */
+        PLIST_DATE,     /**< Date, scalar type */
+        PLIST_DATA,     /**< Binary data, scalar type */
+        PLIST_KEY,      /**< Key in dictionaries (ASCII String), scalar type */
         PLIST_UID,      /**< Special type used for 'keyed encoding' */
-        PLIST_NONE	/**< No type */
+        PLIST_NULL,     /**< NULL type */
     } plist_type;
+
+    /* for backwards compatibility */
+    #define PLIST_UINT PLIST_INT
+
+    /**
+     * libplist error values
+     */
+    typedef enum
+    {
+        PLIST_ERR_SUCCESS      =  0,  /**< operation successful */
+        PLIST_ERR_INVALID_ARG  = -1,  /**< one or more of the parameters are invalid */
+        PLIST_ERR_FORMAT       = -2,  /**< the plist contains nodes not compatible with the output format */
+        PLIST_ERR_PARSE        = -3,  /**< parsing of the input format failed */
+        PLIST_ERR_NO_MEM       = -4,  /**< not enough memory to handle the operation */
+        PLIST_ERR_IO           = -5,  /**< I/O error */
+        PLIST_ERR_UNKNOWN      = -255 /**< an unspecified error occurred */
+    } plist_err_t;
+
+    /**
+     * libplist format types
+     */
+    typedef enum
+    {
+        PLIST_FORMAT_XML     = 1,  /**< XML format */
+        PLIST_FORMAT_BINARY  = 2,  /**< bplist00 format */
+        PLIST_FORMAT_JSON    = 3,  /**< JSON format */
+        PLIST_FORMAT_OSTEP   = 4,  /**< OpenStep "old-style" plist format */
+        /* 5-9 are reserved for possible future use */
+        PLIST_FORMAT_PRINT   = 10, /**< human-readable output-only format */
+        PLIST_FORMAT_LIMD    = 11, /**< "libimobiledevice" output-only format (ideviceinfo) */
+        PLIST_FORMAT_PLUTIL  = 12, /**< plutil-style output-only format */
+    } plist_format_t;
+
+    /**
+     * libplist write options
+     */
+    typedef enum
+    {
+        PLIST_OPT_COMPACT   = 1 << 0, /**< Use a compact representation (non-prettified). Only valid for #PLIST_FORMAT_JSON and #PLIST_FORMAT_OSTEP. */
+        PLIST_OPT_PARTIAL_DATA = 1 << 1, /**< Print 24 bytes maximum of #PLIST_DATA values. If the data is longer than 24 bytes,  the first 16 and last 8 bytes will be written. Only valid for #PLIST_FORMAT_PRINT. */
+        PLIST_OPT_NO_NEWLINE = 1 << 2, /**< Do not print a final newline character. Only valid for #PLIST_FORMAT_PRINT, #PLIST_FORMAT_LIMD, and #PLIST_FORMAT_PLUTIL. */
+        PLIST_OPT_INDENT = 1 << 3, /**< Indent each line of output. Currently only #PLIST_FORMAT_PRINT and #PLIST_FORMAT_LIMD are supported. Use #PLIST_OPT_INDENT_BY() macro to specify the level of indentation. */
+    } plist_write_options_t;
+
+    /** To be used with #PLIST_OPT_INDENT. Encodes the level of indentation for OR'ing it into the #plist_write_options_t bitfield. */
+    #define PLIST_OPT_INDENT_BY(x) ((x & 0xFF) << 24)
 
 
     /********************************************
@@ -158,13 +208,26 @@ extern "C"
     plist_t plist_new_bool(uint8_t val);
 
     /**
-     * Create a new plist_t type #PLIST_UINT
+     * Create a new plist_t type #PLIST_INT with an unsigned integer value
      *
      * @param val the unsigned integer value
      * @return the created item
      * @sa #plist_type
+     * @note The value is always stored as uint64_t internally.
+     *    Use #plist_get_uint_val or #plist_get_int_val to get the unsigned or signed value.
      */
     plist_t plist_new_uint(uint64_t val);
+
+    /**
+     * Create a new plist_t type #PLIST_INT with a signed integer value
+     *
+     * @param val the signed integer value
+     * @return the created item
+     * @sa #plist_type
+     * @note The value is always stored as uint64_t internally.
+     *    Use #plist_get_uint_val or #plist_get_int_val to get the unsigned or signed value.
+     */
+    plist_t plist_new_int(int64_t val);
 
     /**
      * Create a new plist_t type #PLIST_REAL
@@ -203,6 +266,15 @@ extern "C"
      * @sa #plist_type
      */
     plist_t plist_new_uid(uint64_t val);
+
+    /**
+     * Create a new plist_t type #PLIST_NULL
+     * @return the created item
+     * @sa #plist_type
+     * @note This type is not valid for all formats, e.g. the XML format
+     *     does not support it.
+     */
+    plist_t plist_new_null(void);
 
     /**
      * Destruct a plist_t node and all its children recursively
@@ -390,18 +462,6 @@ extern "C"
     void plist_dict_set_item(plist_t node, const char* key, plist_t item);
 
     /**
-     * Insert a new item into a #PLIST_DICT node.
-     *
-     * @deprecated Deprecated. Use plist_dict_set_item instead.
-     *
-     * @param node the node of type #PLIST_DICT
-     * @param item the new item to insert
-     * @param key The identifier of the item to insert.
-     */
-    PLIST_WARN_DEPRECATED("use plist_dict_set_item instead")
-    void plist_dict_insert_item(plist_t node, const char* key, plist_t item);
-
-    /**
      * Remove an existing position in a #PLIST_DICT node.
      * Removed position will be freed using #plist_free
      *
@@ -449,6 +509,7 @@ extern "C"
      * @param node the node
      * @param val a pointer to a C-string. This function allocates the memory,
      *            caller is responsible for freeing it.
+     * @note Use plist_mem_free() to free the allocated memory.
      */
     void plist_get_key_val(plist_t node, char **val);
 
@@ -459,6 +520,7 @@ extern "C"
      * @param node the node
      * @param val a pointer to a C-string. This function allocates the memory,
      *            caller is responsible for freeing it. Data is UTF-8 encoded.
+     * @note Use plist_mem_free() to free the allocated memory.
      */
     void plist_get_string_val(plist_t node, char **val);
 
@@ -485,13 +547,22 @@ extern "C"
     void plist_get_bool_val(plist_t node, uint8_t * val);
 
     /**
-     * Get the value of a #PLIST_UINT node.
-     * This function does nothing if node is not of type #PLIST_UINT
+     * Get the unsigned integer value of a #PLIST_INT node.
+     * This function does nothing if node is not of type #PLIST_INT
      *
      * @param node the node
      * @param val a pointer to a uint64_t variable.
      */
     void plist_get_uint_val(plist_t node, uint64_t * val);
+
+    /**
+     * Get the signed integer value of a #PLIST_INT node.
+     * This function does nothing if node is not of type #PLIST_INT
+     *
+     * @param node the node
+     * @param val a pointer to a int64_t variable.
+     */
+    void plist_get_int_val(plist_t node, int64_t * val);
 
     /**
      * Get the value of a #PLIST_REAL node.
@@ -510,6 +581,7 @@ extern "C"
      * @param val a pointer to an unallocated char buffer. This function allocates the memory,
      *            caller is responsible for freeing it.
      * @param length the length of the buffer
+     * @note Use plist_mem_free() to free the allocated memory.
      */
     void plist_get_data_val(plist_t node, char **val, uint64_t * length);
 
@@ -582,12 +654,21 @@ extern "C"
 
     /**
      * Set the value of a node.
-     * Forces type of node to #PLIST_UINT
+     * Forces type of node to #PLIST_INT
      *
      * @param node the node
      * @param val the unsigned integer value
      */
     void plist_set_uint_val(plist_t node, uint64_t val);
+
+    /**
+     * Set the value of a node.
+     * Forces type of node to #PLIST_INT
+     *
+     * @param node the node
+     * @param val the signed integer value
+     */
+    void plist_set_int_val(plist_t node, int64_t val);
 
     /**
      * Set the value of a node.
@@ -642,15 +723,10 @@ extern "C"
      * @param plist_xml a pointer to a C-string. This function allocates the memory,
      *            caller is responsible for freeing it. Data is UTF-8 encoded.
      * @param length a pointer to an uint32_t variable. Represents the length of the allocated buffer.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     * @note Use plist_mem_free() to free the allocated memory.
      */
-    void plist_to_xml(plist_t plist, char **plist_xml, uint32_t * length);
-
-    /**
-     * Frees the memory allocated by plist_to_xml().
-     *
-     * @param plist_xml The buffer allocated by plist_to_xml().
-     */
-    void plist_to_xml_free(char *plist_xml);
+    plist_err_t plist_to_xml(plist_t plist, char **plist_xml, uint32_t * length);
 
     /**
      * Export the #plist_t structure to binary format.
@@ -659,15 +735,37 @@ extern "C"
      * @param plist_bin a pointer to a char* buffer. This function allocates the memory,
      *            caller is responsible for freeing it.
      * @param length a pointer to an uint32_t variable. Represents the length of the allocated buffer.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     * @note Use plist_mem_free() to free the allocated memory.
      */
-    void plist_to_bin(plist_t plist, char **plist_bin, uint32_t * length);
+    plist_err_t plist_to_bin(plist_t plist, char **plist_bin, uint32_t * length);
 
     /**
-     * Frees the memory allocated by plist_to_bin().
+     * Export the #plist_t structure to JSON format.
      *
-     * @param plist_bin The buffer allocated by plist_to_bin().
+     * @param plist the root node to export
+     * @param plist_json a pointer to a char* buffer. This function allocates the memory,
+     *     caller is responsible for freeing it.
+     * @param length a pointer to an uint32_t variable. Represents the length of the allocated buffer.
+     * @param prettify pretty print the output if != 0
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     * @note Use plist_mem_free() to free the allocated memory.
      */
-    void plist_to_bin_free(char *plist_bin);
+    plist_err_t plist_to_json(plist_t plist, char **plist_json, uint32_t* length, int prettify);
+
+    /**
+     * Export the #plist_t structure to OpenStep format.
+     *
+     * @param plist the root node to export
+     * @param plist_openstep a pointer to a char* buffer. This function allocates the memory,
+     *     caller is responsible for freeing it.
+     * @param length a pointer to an uint32_t variable. Represents the length of the allocated buffer.
+     * @param prettify pretty print the output if != 0
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     * @note Use plist_mem_free() to free the allocated memory.
+     */
+    plist_err_t plist_to_openstep(plist_t plist, char **plist_openstep, uint32_t* length, int prettify);
+
 
     /**
      * Import the #plist_t structure from XML format.
@@ -675,8 +773,9 @@ extern "C"
      * @param plist_xml a pointer to the xml buffer.
      * @param length length of the buffer to read.
      * @param plist a pointer to the imported plist.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
      */
-    void plist_from_xml(const char *plist_xml, uint32_t length, plist_t * plist);
+    plist_err_t plist_from_xml(const char *plist_xml, uint32_t length, plist_t * plist);
 
     /**
      * Import the #plist_t structure from binary format.
@@ -684,27 +783,123 @@ extern "C"
      * @param plist_bin a pointer to the xml buffer.
      * @param length length of the buffer to read.
      * @param plist a pointer to the imported plist.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
      */
-    void plist_from_bin(const char *plist_bin, uint32_t length, plist_t * plist);
+    plist_err_t plist_from_bin(const char *plist_bin, uint32_t length, plist_t * plist);
+
+    /**
+     * Import the #plist_t structure from JSON format.
+     *
+     * @param json a pointer to the JSON buffer.
+     * @param length length of the buffer to read.
+     * @param plist a pointer to the imported plist.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     */
+    plist_err_t plist_from_json(const char *json, uint32_t length, plist_t * plist);
+
+    /**
+     * Import the #plist_t structure from OpenStep plist format.
+     *
+     * @param openstep a pointer to the OpenStep plist buffer.
+     * @param length length of the buffer to read.
+     * @param plist a pointer to the imported plist.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     */
+    plist_err_t plist_from_openstep(const char *openstep, uint32_t length, plist_t * plist);
 
     /**
      * Import the #plist_t structure from memory data.
-     * This method will look at the first bytes of plist_data
-     * to determine if plist_data contains a binary or XML plist.
      *
-     * @param plist_data a pointer to the memory buffer containing plist data.
-     * @param length length of the buffer to read.
-     * @param plist a pointer to the imported plist.
+     * This function will look at the first bytes of plist_data
+     * to determine if plist_data contains a binary, JSON, OpenStep, or XML plist
+     * and tries to parse the data in the appropriate format.
+     * @note This is just a convenience function and the format detection is
+     *     very basic. It checks with plist_is_binary() if the data supposedly
+     *     contains binary plist data, if not it checks if the first bytes have
+     *     either '{' or '[' and assumes JSON format, and XML tags will result
+     *     in parsing as XML, otherwise it will try to parse as OpenStep.
+     *
+     * @param plist_data A pointer to the memory buffer containing plist data.
+     * @param length Length of the buffer to read.
+     * @param plist A pointer to the imported plist.
+     * @param format If non-NULL, the #plist_format_t value pointed to will be set to the parsed format.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
      */
-    void plist_from_memory(const char *plist_data, uint32_t length, plist_t * plist);
+    plist_err_t plist_from_memory(const char *plist_data, uint32_t length, plist_t *plist, plist_format_t *format);
 
     /**
-     * Test if in-memory plist data is binary or XML
-     * This method will look at the first bytes of plist_data
-     * to determine if plist_data contains a binary or XML plist.
-     * This method is not validating the whole memory buffer to check if the
-     * content is truly a plist, it's only using some heuristic on the first few
-     * bytes of plist_data.
+     * Import the #plist_t structure directly from file.
+     *
+     * This function will look at the first bytes of the file data
+     * to determine if it contains a binary, JSON, OpenStep, or XML plist
+     * and tries to parse the data in the appropriate format.
+     * Uses #plist_read_from_data() internally.
+     *
+     * @param filename The name of the file to parse.
+     * @param plist A pointer to the imported plist.
+     * @param format If non-NULL, the #plist_format_t value pointed to will be set to the parsed format.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure
+     */
+    plist_err_t plist_read_from_file(const char *filename, plist_t *plist, plist_format_t *format);
+
+    /**
+     * Write the #plist_t structure to a NULL-terminated string using the given format and options.
+     *
+     * @param plist The input plist structure
+     * @param output Pointer to a char* buffer. This function allocates the memory,
+     *     caller is responsible for freeing it.
+     * @param length A pointer to a uint32_t value that will receive the lenght of the allocated buffer.
+     * @param format A #plist_format_t value that specifies the output format to use.
+     * @param options One or more bitwise ORed values of #plist_write_options_t.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure.
+     * @note Use plist_mem_free() to free the allocated memory.
+     * @note #PLIST_FORMAT_BINARY is not supported by this function.
+     */
+    plist_err_t plist_write_to_string(plist_t plist, char **output, uint32_t* length, plist_format_t format, plist_write_options_t options);
+
+    /**
+     * Write the #plist_t structure to a FILE* stream using the given format and options.
+     *
+     * @param plist The input plist structure
+     * @param stream A writeable FILE* stream that the data will be written to.
+     * @param format A #plist_format_t value that specifies the output format to use.
+     * @param options One or more bitwise ORed values of #plist_write_options_t.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure.
+     * @note While this function allows all formats to be written to the given stream,
+     *     only the formats #PLIST_FORMAT_PRINT, #PLIST_FORMAT_LIMD, and #PLIST_FORMAT_PLUTIL
+     *     (basically all output-only formats) are directly and efficiently written to the stream;
+     *     the other formats are written to a memory buffer first.
+     */
+    plist_err_t plist_write_to_stream(plist_t plist, FILE* stream, plist_format_t format, plist_write_options_t options);
+
+    /**
+     * Write the #plist_t structure to a file at given path using the given format and options.
+     *
+     * @param plist The input plist structure
+     * @param filename The file name of the file to write to. Existing files will be overwritten.
+     * @param format A #plist_format_t value that specifies the output format to use.
+     * @param options One or more bitwise ORed values of #plist_write_options_t.
+     * @return PLIST_ERR_SUCCESS on success or a #plist_err_t on failure.
+     * @note Use plist_mem_free() to free the allocated memory.
+     */
+    plist_err_t plist_write_to_file(plist_t plist, const char *filename, plist_format_t format, plist_write_options_t options);
+
+    /**
+     * Print the given plist in human-readable format to standard output.
+     * This is equivalent to
+     * <code>plist_write_to_stream(plist, stdout, PLIST_FORMAT_PRINT, PLIST_OPT_PARTIAL_DATA);</code>
+     * @param plist The #plist_t structure to print
+     * @note For #PLIST_DATA nodes, only a maximum of 24 bytes (first 16 and last 8) are written.
+     */
+    void plist_print(plist_t plist);
+
+    /**
+     * Test if in-memory plist data is in binary format.
+     * This function will look at the first bytes of plist_data to determine
+     * if it supposedly contains a binary plist.
+     * @note The function is not validating the whole memory buffer to check
+     * if the content is truly a plist, it is only using some heuristic on
+     * the first few bytes of plist_data.
      *
      * @param plist_data a pointer to the memory buffer containing plist data.
      * @param length length of the buffer to read.
@@ -752,7 +947,7 @@ extern "C"
 
     /* Helper macros for the different plist types */
     #define PLIST_IS_BOOLEAN(__plist) _PLIST_IS_TYPE(__plist, BOOLEAN)
-    #define PLIST_IS_UINT(__plist)    _PLIST_IS_TYPE(__plist, UINT)
+    #define PLIST_IS_INT(__plist)     _PLIST_IS_TYPE(__plist, INT)
     #define PLIST_IS_REAL(__plist)    _PLIST_IS_TYPE(__plist, REAL)
     #define PLIST_IS_STRING(__plist)  _PLIST_IS_TYPE(__plist, STRING)
     #define PLIST_IS_ARRAY(__plist)   _PLIST_IS_TYPE(__plist, ARRAY)
@@ -761,21 +956,42 @@ extern "C"
     #define PLIST_IS_DATA(__plist)    _PLIST_IS_TYPE(__plist, DATA)
     #define PLIST_IS_KEY(__plist)     _PLIST_IS_TYPE(__plist, KEY)
     #define PLIST_IS_UID(__plist)     _PLIST_IS_TYPE(__plist, UID)
+    /* for backwards compatibility */
+    #define PLIST_IS_UINT             PLIST_IS_INT
 
     /**
      * Helper function to check the value of a PLIST_BOOL node.
      *
      * @param boolnode node of type PLIST_BOOL
-     * @return 1 if the boolean node has a value of TRUE, 0 if FALSE,
-     *   or -1 if the node is not of type PLIST_BOOL
+     * @return 1 if the boolean node has a value of TRUE or 0 if FALSE.
      */
     int plist_bool_val_is_true(plist_t boolnode);
 
     /**
-     * Helper function to compare the value of a PLIST_UINT node against
-     * a given value.
+     * Helper function to test if a given #PLIST_INT node's value is negative
      *
-     * @param uintnode node of type PLIST_UINT
+     * @param intnode node of type PLIST_INT
+     * @return 1 if the node's value is negative, or 0 if positive.
+     */
+    int plist_int_val_is_negative(plist_t intnode);
+
+    /**
+     * Helper function to compare the value of a PLIST_INT node against
+     * a given signed integer value.
+     *
+     * @param uintnode node of type PLIST_INT
+     * @param cmpval value to compare against
+     * @return 0 if the node's value and cmpval are equal,
+     *         1 if the node's value is greater than cmpval,
+     *         or -1 if the node's value is less than cmpval.
+     */
+    int plist_int_val_compare(plist_t uintnode, int64_t cmpval);
+
+    /**
+     * Helper function to compare the value of a PLIST_INT node against
+     * a given unsigned integer value.
+     *
+     * @param uintnode node of type PLIST_INT
      * @param cmpval value to compare against
      * @return 0 if the node's value and cmpval are equal,
      *         1 if the node's value is greater than cmpval,
@@ -944,6 +1160,37 @@ extern "C"
      *     or 0 if not.
      */
     int plist_data_val_contains(plist_t datanode, const uint8_t* cmpval, size_t n);
+
+    /**
+     * Sort all PLIST_DICT key/value pairs in a property list lexicographically
+     * by key. Recurses into the child nodes if necessary.
+     *
+     * @param plist The property list to perform the sorting operation on.
+     */
+    void plist_sort(plist_t plist);
+
+    /**
+     * Free memory allocated by relevant libplist API calls:
+     * - plist_to_xml()
+     * - plist_to_bin()
+     * - plist_get_key_val()
+     * - plist_get_string_val()
+     * - plist_get_data_val()
+     *
+     * @param ptr pointer to the memory to free
+     *
+     * @note Do not use this function to free plist_t nodes, use plist_free()
+     *     instead.
+     */
+    void plist_mem_free(void* ptr);
+
+    /**
+     * Set debug level for the format parsers.
+     * @note This function does nothing if libplist was not configured with --enable-debug .
+     *
+     * @param debug Debug level. Currently, only 0 (off) and 1 (enabled) are supported.
+     */
+    void plist_set_debug(int debug);
 
     /*@}*/
 

@@ -22,6 +22,12 @@ libplist_2_0_la_SOURCES = \
 	time64_limits.h \
 	xplist.c \
 	bplist.c \
+	jsmn.c jsmn.h \
+	jplist.c \
+	oplist.c \
+	out-default.c \
+	out-plutil.c \
+	out-limd.c \
 	plist.c plist.h
 
 libplist___2_0_la_LIBADD = libplist-2.0.la

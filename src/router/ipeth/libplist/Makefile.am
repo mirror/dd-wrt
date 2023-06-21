@@ -11,10 +11,14 @@ SUBDIRS += fuzz
 endif
 
 EXTRA_DIST = \
-	README.md
+	README.md \
+	git-version-gen
+
+dist-hook:
+	echo $(VERSION) > $(distdir)/.tarball-version
 
 docs/html: $(top_builddir)/doxygen.cfg $(top_srcdir)/include/plist/*.h
-	rm -rf docs
+	rm -rf docs/html
 	doxygen doxygen.cfg
 
 docs: doxygen.cfg docs/html

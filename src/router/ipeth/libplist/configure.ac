@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.64)
-AC_INIT([libplist], [2.2.0], [https://github.com/libimobiledevice/libplist/issues],, [https://libimobiledevice.org])
+AC_PREREQ(2.68)
+AC_INIT([libplist], [m4_esyscmd(./git-version-gen $RELEASE_VERSION)], [https://github.com/libimobiledevice/libplist/issues],, [https://libimobiledevice.org])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip check-news])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -15,14 +15,13 @@ dnl libtool versioning
 #                 changes to the signature and the semantic)
 #  ? :+1 : ?   == just internal changes
 # CURRENT : REVISION : AGE
-LIBPLIST_SO_VERSION=6:0:3
+LIBPLIST_SO_VERSION=7:0:3
 
 AC_SUBST(LIBPLIST_SO_VERSION)
 
-# prefer clang if it is available and CC is not set
-if test -z "$CC" && test -z "$CXX" && test -x "`which clang`"; then
-    CC=clang
-    CXX=clang++
+# Check if we have a version defined
+if test -z $PACKAGE_VERSION; then
+  AC_MSG_ERROR([PACKAGE_VERSION is not defined. Make sure to configure a source tree checked out from git or that .tarball-version is present.])
 fi
 
 # Checks for programs.
@@ -39,10 +38,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
 AC_LANG_POP
 
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([stdint.h stdlib.h string.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -62,58 +60,72 @@ AC_C_BIGENDIAN([AC_DEFINE([__BIG_ENDIAN__], [1], [big endian])],
 
 
 # Check for operating system
-AC_MSG_CHECKING([wether we need platform-specific build settings for ${host_os}])
+AC_MSG_CHECKING([for platform-specific build settings])
 case ${host_os} in
   *mingw32*|*cygwin*)
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([${host_os}])
     win32=true
     ;;
   darwin*|*android*)
-    AC_MSG_RESULT([no])
+    AC_MSG_RESULT([${host_os}])
     ;;
   *)
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([${host_os}])
     AX_PTHREAD([], [AC_MSG_ERROR([pthread is required to build libplist])])
     AC_CHECK_LIB(pthread, [pthread_once], [], [AC_MSG_ERROR([pthread with pthread_once required to build libplist])])
     ;;
 esac
 AM_CONDITIONAL(WIN32, test x$win32 = xtrue)
 
-# Check if we need libm for fmin
-CACHED_CFLAGS="$CFLAGS"
-CFLAGS="-O0"
-AC_CACHE_CHECK(if fmin is a builtin function, ac_cv_fmin_builtin,
-	AC_TRY_LINK([
-		#include <math.h>
-		#include <float.h>
-	], [
-		double val = 3.1415f * 0.55555f;
-		double diff = fmin(val, DBL_MAX);
-		if (diff > 0) return 1;
-	], ac_cv_fmin_builtin=yes, ac_cv_fmin_builtin=no))
-CFLAGS="$CACHED_CFLAGS"
+AC_SEARCH_LIBS([fmin],[m])
+
+# Check if the C compiler supports __attribute__((constructor))
+AC_CACHE_CHECK([wether the C compiler supports constructor/destructor attributes],
+  ac_cv_attribute_constructor, [
+  ac_cv_attribute_constructor=no
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+    [[
+      static void __attribute__((constructor)) test_constructor(void) {
+      }
+      static void __attribute__((destructor)) test_destructor(void) {
+      }
+    ]], [])],
+    [ac_cv_attribute_constructor=yes]
+  )]
+)
+if test "$ac_cv_attribute_constructor" = "yes"; then
+  AC_DEFINE(HAVE_ATTRIBUTE_CONSTRUCTOR, 1, [Define if the C compiler supports constructor/destructor attributes])
+fi
 
 # Check if struct tm has a tm_gmtoff member
 AC_CACHE_CHECK(for tm_gmtoff in struct tm, ac_cv_struct_tm_gmtoff,
-	AC_TRY_COMPILE([
-		#include <time.h>
-	], [
-		struct tm tm;
-		tm.tm_gmtoff = 1;
-	], ac_cv_struct_tm_gmtoff=yes, ac_cv_struct_tm_gmtoff=no))
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+      #include <time.h>
+    ], [
+      struct tm tm;
+      tm.tm_gmtoff = 1;
+    ])],
+    [ac_cv_struct_tm_gmtoff=yes],
+    [ac_cv_struct_tm_gmtoff=no]
+  )
+)
 
 if (test "$ac_cv_struct_tm_gmtoff" = "yes"); then
-	AC_DEFINE(HAVE_TM_TM_GMTOFF, 1, [Define if struct tm has a tm_gmtoff member])
+  AC_DEFINE(HAVE_TM_TM_GMTOFF, 1, [Define if struct tm has a tm_gmtoff member])
 fi
 
 # Check if struct tm has a tm_zone member
 AC_CACHE_CHECK(for tm_zone in struct tm, ac_cv_struct_tm_zone,
-	AC_TRY_COMPILE([
-		#include <time.h>
-	], [
-		struct tm tm;
-		tm.tm_zone = 1;
-	], ac_cv_struct_tm_zone=yes, ac_cv_struct_tm_zone=no))
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+      #include <time.h>
+    ], [
+      struct tm tm;
+      tm.tm_zone = 1;
+    ])],
+    [ac_cv_struct_tm_zone=yes],
+    [ac_cv_struct_tm_zone=no]
+  )
+)
 
 if (test "$ac_cv_struct_tm_zone" = "yes"); then
 	AC_DEFINE(HAVE_TM_TM_ZONE, 1, [Define if struct tm has a tm_zone member])
@@ -135,7 +147,9 @@ fi
 if [test "x$CYTHON" != "xfalse"]; then
             PKG_PROG_PKG_CONFIG
             AC_MSG_CHECKING([for libplist Cython bindings])
-            CYTHON_PLIST_INCLUDE_DIR=$($PKG_CONFIG --variable=includedir libplist-2.0)/plist/cython
+            if test -x "$PKG_CONFIG"; then
+                CYTHON_PLIST_INCLUDE_DIR=$($PKG_CONFIG --variable=includedir libplist-2.0)/plist/cython
+            fi
             if [test ! -d "$CYTHON_PLIST_INCLUDE_DIR"]; then
                 CYTHON_PLIST_INCLUDE_DIR=.
                 cython_python_bindings=yes
@@ -152,10 +166,6 @@ AM_CONDITIONAL([HAVE_CYTHON],[test "x$cython_python_bindings" = "xyes"])
 
 AS_COMPILER_FLAGS(GLOBAL_CFLAGS, "-Wall -Wextra -Wredundant-decls -Wshadow -Wpointer-arith  -Wwrite-strings -Wswitch-default -Wno-unused-parameter -Wno-strict-aliasing -fvisibility=hidden $PTHREAD_CFLAGS")
 GLOBAL_LDFLAGS="$PTHREAD_LIBS"
-
-if test "x$ac_cv_fmin_builtin" != "xyes"; then
-	GLOBAL_LDFLAGS+=" -lm"
-fi
 
 AC_ARG_ENABLE(debug,
 AS_HELP_STRING([--enable-debug],
@@ -262,9 +272,14 @@ if test "x$build_sanitizers" = "xyes"; then
 fi
 
 if test "x$build_fuzzers" = "xyes"; then
-    if test "$CXX" != "clang++"; then
+    IS_CLANG=`$CXX --version 2>/dev/null |grep clang`
+    case "$IS_CLANG" in
+        *clang*)
+        ;;
+        *)
         AC_MSG_WARN([building fuzzers requires clang/clang++ (continuing anyway)])
-    fi
+        ;;
+    esac
 
     CFLAGS+=" -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION"
 
@@ -280,7 +295,7 @@ fi
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 libcnary/Makefile
 src/Makefile
@@ -294,6 +309,7 @@ test/Makefile
 fuzz/Makefile
 doxygen.cfg
 ])
+AC_OUTPUT
 
 echo "
 Configuration for $PACKAGE $VERSION:
