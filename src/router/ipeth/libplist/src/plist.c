@@ -2,7 +2,7 @@
  * plist.c
  * Builds plist XML structures
  *
- * Copyright (c) 2009-2019 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2009-2023 Nikias Bassen, All Rights Reserved.
  * Copyright (c) 2010-2015 Martin Szulecki, All Rights Reserved.
  * Copyright (c) 2008 Zach C., All Rights Reserved.
  *
@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <float.h>
+#include <ctype.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -42,6 +43,7 @@
 #endif
 
 #include <node.h>
+#include <node_list.h>
 #include <hashtable.h>
 #include <ptrarray.h>
 
@@ -49,21 +51,28 @@ extern void plist_xml_init(void);
 extern void plist_xml_deinit(void);
 extern void plist_bin_init(void);
 extern void plist_bin_deinit(void);
+extern void plist_json_init(void);
+extern void plist_json_deinit(void);
+extern void plist_ostep_init(void);
+extern void plist_ostep_deinit(void);
 
 static void internal_plist_init(void)
 {
     plist_bin_init();
     plist_xml_init();
+    plist_json_init();
+    plist_ostep_init();
 }
 
 static void internal_plist_deinit(void)
 {
     plist_bin_deinit();
     plist_xml_deinit();
+    plist_json_deinit();
+    plist_ostep_deinit();
 }
 
 #ifdef WIN32
-
 typedef volatile struct {
     LONG lock;
     int state;
@@ -72,7 +81,7 @@ typedef volatile struct {
 static thread_once_t init_once = {0, 0};
 static thread_once_t deinit_once = {0, 0};
 
-void thread_once(thread_once_t *once_control, void (*init_routine)(void))
+static void thread_once(thread_once_t *once_control, void (*init_routine)(void))
 {
     while (InterlockedExchange(&(once_control->lock), 1) != 0) {
         Sleep(1);
@@ -83,7 +92,29 @@ void thread_once(thread_once_t *once_control, void (*init_routine)(void))
     }
     InterlockedExchange(&(once_control->lock), 0);
 }
+#else
+static pthread_once_t init_once = PTHREAD_ONCE_INIT;
+static pthread_once_t deinit_once = PTHREAD_ONCE_INIT;
+#define thread_once pthread_once
+#endif
 
+#ifndef HAVE_ATTRIBUTE_CONSTRUCTOR
+  #if defined(__llvm__) || defined(__GNUC__)
+    #define HAVE_ATTRIBUTE_CONSTRUCTOR
+  #endif
+#endif
+
+#ifdef HAVE_ATTRIBUTE_CONSTRUCTOR
+static void __attribute__((constructor)) libplist_initialize(void)
+{
+    thread_once(&init_once, internal_plist_init);
+}
+
+static void __attribute__((destructor)) libplist_deinitialize(void)
+{
+    thread_once(&deinit_once, internal_plist_deinit);
+}
+#elif defined(WIN32)
 BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
 {
     switch (dwReason) {
@@ -98,22 +129,8 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
     }
     return 1;
 }
-
 #else
-
-static pthread_once_t init_once = PTHREAD_ONCE_INIT;
-static pthread_once_t deinit_once = PTHREAD_ONCE_INIT;
-
-static void __attribute__((constructor)) libplist_initialize(void)
-{
-    pthread_once(&init_once, internal_plist_init);
-}
-
-static void __attribute__((destructor)) libplist_deinitialize(void)
-{
-    pthread_once(&deinit_once, internal_plist_deinit);
-}
-
+#warning No compiler support for constructor/destructor attributes, some features might not be available.
 #endif
 
 #ifndef HAVE_MEMMEM
@@ -175,19 +192,119 @@ PLIST_API int plist_is_binary(const char *plist_data, uint32_t length)
     return (memcmp(plist_data, "bplist00", 8) == 0);
 }
 
+#define SKIP_WS(blob, pos, len) \
+    while (pos < len && ((blob[pos] == ' ') || (blob[pos] == '\t') || (blob[pos] == '\r') || (blob[pos] == '\n'))) pos++;
+#define FIND_NEXT(blob, pos, len, chr) \
+    while (pos < len && (blob[pos] != chr)) pos++;
 
-PLIST_API void plist_from_memory(const char *plist_data, uint32_t length, plist_t * plist)
+PLIST_API plist_err_t plist_from_memory(const char *plist_data, uint32_t length, plist_t *plist, plist_format_t *format)
 {
-    if (length < 8) {
-        *plist = NULL;
-        return;
+    int res = -1;
+    if (!plist) {
+        return PLIST_ERR_INVALID_ARG;
     }
-
+    *plist = NULL;
+    if (!plist_data || length == 0) {
+        return PLIST_ERR_INVALID_ARG;
+    }
+    plist_format_t fmt = 0;
+    if (format) *format = 0;
     if (plist_is_binary(plist_data, length)) {
-        plist_from_bin(plist_data, length, plist);
+        res = plist_from_bin(plist_data, length, plist);
+        fmt = PLIST_FORMAT_BINARY;
     } else {
-        plist_from_xml(plist_data, length, plist);
+        uint32_t pos = 0;
+        int is_json = 0;
+        int is_xml = 0;
+        /* skip whitespace */
+        SKIP_WS(plist_data, pos, length);
+        if (plist_data[pos] == '<' && (length-pos > 3) && !isxdigit(plist_data[pos+1]) && !isxdigit(plist_data[pos+2]) && !isxdigit(plist_data[pos+3])) {
+            is_xml = 1;
+        } else if (plist_data[pos] == '[') {
+            /* only valid for json */
+            is_json = 1;
+        } else if (plist_data[pos] == '(') {
+            /* only valid for openstep */
+        } else if (plist_data[pos] == '{') {
+            /* this could be json or openstep */
+            pos++;
+            SKIP_WS(plist_data, pos, length);
+            if (plist_data[pos] == '"') {
+                /* still could be both */
+                pos++;
+                do {
+                    FIND_NEXT(plist_data, pos, length, '"');
+                    if (plist_data[pos-1] != '\\') {
+                        break;
+                    }
+                    pos++;
+                } while (pos < length);
+                if (plist_data[pos] == '"') {
+                    pos++;
+                    SKIP_WS(plist_data, pos, length);
+                    if (plist_data[pos] == ':') {
+                        /* this is definitely json */
+                        is_json = 1;
+                    }
+                }
+            }
+        }
+        if (is_xml) {
+            res = plist_from_xml(plist_data, length, plist);
+            fmt = PLIST_FORMAT_XML;
+        } else if (is_json) {
+            res = plist_from_json(plist_data, length, plist);
+            fmt = PLIST_FORMAT_JSON;
+        } else {
+            res = plist_from_openstep(plist_data, length, plist);
+            fmt = PLIST_FORMAT_OSTEP;
+        }
     }
+    if (format && res == PLIST_ERR_SUCCESS) {
+        *format = fmt;
+    }
+    return res;
+}
+
+PLIST_API plist_err_t plist_read_from_file(const char *filename, plist_t *plist, plist_format_t *format)
+{
+    if (!filename || !plist) {
+        return PLIST_ERR_INVALID_ARG;
+    }
+    FILE *f = fopen(filename, "rb");
+    if (!f) {
+        return PLIST_ERR_IO;
+    }
+    struct stat fst;
+    fstat(fileno(f), &fst);
+    if (fst.st_size > UINT32_MAX) {
+        return PLIST_ERR_NO_MEM;
+    }
+    uint32_t total = (uint32_t)fst.st_size;
+    if (total == 0) {
+        return PLIST_ERR_PARSE;
+    }
+    char *buf = malloc(total);
+    if (!buf) {
+        fclose(f);
+        return PLIST_ERR_NO_MEM;
+    }
+    uint32_t done = 0;
+    while (done < total) {
+        ssize_t r = fread(buf + done, 1, total - done, f);
+        if (r <= 0) {
+            break;
+        }
+        done += r;
+    }
+    fclose(f);
+    if (done < total) {
+        free(buf);
+        return PLIST_ERR_IO;
+    }
+    plist_err_t res = plist_from_memory(buf, total, plist, format);
+    free(buf);
+    return res;
 }
 
 plist_t plist_new_node(plist_data_t data)
@@ -195,11 +312,11 @@ plist_t plist_new_node(plist_data_t data)
     return (plist_t) node_create(NULL, data);
 }
 
-plist_data_t plist_get_data(const plist_t node)
+plist_data_t plist_get_data(plist_t node)
 {
     if (!node)
         return NULL;
-    return ((node_t*)node)->data;
+    return ((node_t)node)->data;
 }
 
 plist_data_t plist_new_plist_data(void)
@@ -259,7 +376,7 @@ void plist_free_data(plist_data_t data)
     }
 }
 
-static int plist_free_node(node_t* node)
+static int plist_free_node(node_t node)
 {
     plist_data_t data = NULL;
     int node_index = node_detach(node->parent, node);
@@ -267,9 +384,9 @@ static int plist_free_node(node_t* node)
     plist_free_data(data);
     node->data = NULL;
 
-    node_t *ch;
+    node_t ch;
     for (ch = node_first_child(node); ch; ) {
-        node_t *next = node_next_sibling(ch);
+        node_t next = node_next_sibling(ch);
         plist_free_node(ch);
         ch = next;
     }
@@ -324,7 +441,16 @@ PLIST_API plist_t plist_new_bool(uint8_t val)
 PLIST_API plist_t plist_new_uint(uint64_t val)
 {
     plist_data_t data = plist_new_plist_data();
-    data->type = PLIST_UINT;
+    data->type = PLIST_INT;
+    data->intval = val;
+    data->length = (val > INT_MAX) ? sizeof(uint64_t)*2 : sizeof(uint64_t);
+    return plist_new_node(data);
+}
+
+PLIST_API plist_t plist_new_int(int64_t val)
+{
+    plist_data_t data = plist_new_plist_data();
+    data->type = PLIST_INT;
     data->intval = val;
     data->length = sizeof(uint64_t);
     return plist_new_node(data);
@@ -367,6 +493,15 @@ PLIST_API plist_t plist_new_date(int32_t sec, int32_t usec)
     return plist_new_node(data);
 }
 
+PLIST_API plist_t plist_new_null(void)
+{
+    plist_data_t data = plist_new_plist_data();
+    data->type = PLIST_NULL;
+    data->intval = 0;
+    data->length = 0;
+    return plist_new_node(data);
+}
+
 PLIST_API void plist_free(plist_t plist)
 {
     if (plist)
@@ -375,7 +510,15 @@ PLIST_API void plist_free(plist_t plist)
     }
 }
 
-static plist_t plist_copy_node(node_t *node)
+PLIST_API void plist_mem_free(void* ptr)
+{
+    if (ptr)
+    {
+        free(ptr);
+    }
+}
+
+static plist_t plist_copy_node(node_t node)
 {
     plist_type node_type = PLIST_NONE;
     plist_t newnode = NULL;
@@ -395,7 +538,7 @@ static plist_t plist_copy_node(node_t *node)
             break;
         case PLIST_KEY:
         case PLIST_STRING:
-            newdata->strval = strdup((char *) data->strval);
+            newdata->strval = strdup(data->strval);
             break;
         case PLIST_ARRAY:
             if (data->hashtable) {
@@ -416,7 +559,7 @@ static plist_t plist_copy_node(node_t *node)
     }
     newnode = plist_new_node(newdata);
 
-    node_t *ch;
+    node_t ch;
     unsigned int node_index = 0;
     for (ch = node_first_child(node); ch; ch = node_next_sibling(ch)) {
         /* copy child node */
@@ -432,7 +575,7 @@ static plist_t plist_copy_node(node_t *node)
                 break;
             case PLIST_DICT:
                 if (newdata->hashtable && (node_index % 2 != 0)) {
-                    hash_table_insert((hashtable_t*)newdata->hashtable, (node_prev_sibling((node_t*)newch))->data, newch);
+                    hash_table_insert((hashtable_t*)newdata->hashtable, (node_prev_sibling((node_t)newch))->data, newch);
                 }
                 break;
             default:
@@ -463,7 +606,7 @@ PLIST_API plist_t plist_array_get_item(plist_t node, uint32_t n)
     plist_t ret = NULL;
     if (node && PLIST_ARRAY == plist_get_node_type(node) && n < INT_MAX)
     {
-        ptrarray_t *pa = ((plist_data_t)((node_t*)node)->data)->hashtable;
+        ptrarray_t *pa = ((plist_data_t)((node_t)node)->data)->hashtable;
         if (pa) {
             ret = (plist_t)ptr_array_index(pa, n);
         } else {
@@ -485,12 +628,12 @@ PLIST_API uint32_t plist_array_get_item_index(plist_t node)
 
 static void _plist_array_post_insert(plist_t node, plist_t item, long n)
 {
-    ptrarray_t *pa = ((plist_data_t)((node_t*)node)->data)->hashtable;
+    ptrarray_t *pa = ((plist_data_t)((node_t)node)->data)->hashtable;
     if (pa) {
         /* store pointer to item in array */
         ptr_array_insert(pa, item, n);
     } else {
-        if (((node_t*)node)->count > 100) {
+        if (((node_t)node)->count > 100) {
             /* make new lookup array */
             pa = ptr_array_new(128);
             plist_t current = NULL;
@@ -500,7 +643,7 @@ static void _plist_array_post_insert(plist_t node, plist_t item, long n)
             {
                 ptr_array_add(pa, current);
             }
-            ((plist_data_t)((node_t*)node)->data)->hashtable = pa;
+            ((plist_data_t)((node_t)node)->data)->hashtable = pa;
         }
     }
 }
@@ -516,12 +659,11 @@ PLIST_API void plist_array_set_item(plist_t node, plist_t item, uint32_t n)
             assert(idx >= 0);
             if (idx < 0) {
                 return;
-            } else {
-                node_insert(node, idx, item);
-                ptrarray_t* pa = ((plist_data_t)((node_t*)node)->data)->hashtable;
-                if (pa) {
-                    ptr_array_set(pa, item, idx);
-                }
+            }
+            node_insert(node, idx, item);
+            ptrarray_t* pa = ((plist_data_t)((node_t)node)->data)->hashtable;
+            if (pa) {
+                ptr_array_set(pa, item, idx);
             }
         }
     }
@@ -552,7 +694,7 @@ PLIST_API void plist_array_remove_item(plist_t node, uint32_t n)
         plist_t old_item = plist_array_get_item(node, n);
         if (old_item)
         {
-            ptrarray_t* pa = ((plist_data_t)((node_t*)node)->data)->hashtable;
+            ptrarray_t* pa = ((plist_data_t)((node_t)node)->data)->hashtable;
             if (pa) {
                 ptr_array_remove(pa, n);
             }
@@ -568,7 +710,7 @@ PLIST_API void plist_array_item_remove(plist_t node)
     {
         int n = node_child_position(father, node);
         if (n < 0) return;
-        ptrarray_t* pa = ((plist_data_t)((node_t*)father)->data)->hashtable;
+        ptrarray_t* pa = ((plist_data_t)((node_t)father)->data)->hashtable;
         if (pa) {
             ptr_array_remove(pa, n);
         }
@@ -580,14 +722,14 @@ PLIST_API void plist_array_new_iter(plist_t node, plist_array_iter *iter)
 {
     if (iter)
     {
-        *iter = malloc(sizeof(node_t*));
-        *((node_t**)(*iter)) = node_first_child(node);
+        *iter = malloc(sizeof(node_t));
+        *((node_t*)(*iter)) = node_first_child(node);
     }
 }
 
 PLIST_API void plist_array_next_item(plist_t node, plist_array_iter iter, plist_t *item)
 {
-    node_t** iter_node = (node_t**)iter;
+    node_t* iter_node = (node_t*)iter;
 
     if (item)
     {
@@ -618,14 +760,14 @@ PLIST_API void plist_dict_new_iter(plist_t node, plist_dict_iter *iter)
 {
     if (iter)
     {
-        *iter = malloc(sizeof(node_t*));
-        *((node_t**)(*iter)) = node_first_child(node);
+        *iter = malloc(sizeof(node_t));
+        *((node_t*)(*iter)) = node_first_child(node);
     }
 }
 
 PLIST_API void plist_dict_next_item(plist_t node, plist_dict_iter iter, char **key, plist_t *val)
 {
-    node_t** iter_node = (node_t**)iter;
+    node_t* iter_node = (node_t*)iter;
 
     if (key)
     {
@@ -707,16 +849,15 @@ PLIST_API plist_t plist_dict_get_item(plist_t node, const char* key)
 PLIST_API void plist_dict_set_item(plist_t node, const char* key, plist_t item)
 {
     if (node && PLIST_DICT == plist_get_node_type(node)) {
-        node_t* old_item = plist_dict_get_item(node, key);
+        node_t old_item = plist_dict_get_item(node, key);
         plist_t key_node = NULL;
         if (old_item) {
             int idx = plist_free_node(old_item);
             assert(idx >= 0);
             if (idx < 0) {
                 return;
-            } else {
-                node_insert(node, idx, item);
             }
+            node_insert(node, idx, item);
             key_node = node_prev_sibling(item);
         } else {
             key_node = plist_new_key(key);
@@ -724,12 +865,12 @@ PLIST_API void plist_dict_set_item(plist_t node, const char* key, plist_t item)
             node_attach(node, item);
         }
 
-        hashtable_t *ht = ((plist_data_t)((node_t*)node)->data)->hashtable;
+        hashtable_t *ht = ((plist_data_t)((node_t)node)->data)->hashtable;
         if (ht) {
             /* store pointer to item in hash table */
-            hash_table_insert(ht, (plist_data_t)((node_t*)key_node)->data, item);
+            hash_table_insert(ht, (plist_data_t)((node_t)key_node)->data, item);
         } else {
-            if (((node_t*)node)->count > 500) {
+            if (((node_t)node)->count > 500) {
                 /* make new hash table */
                 ht = hash_table_new(dict_key_hash, dict_key_compare, NULL);
                 /* calculate the hashes for all entries we have so far */
@@ -738,17 +879,12 @@ PLIST_API void plist_dict_set_item(plist_t node, const char* key, plist_t item)
                      ht && current;
                      current = (plist_t)node_next_sibling(node_next_sibling(current)))
                 {
-                    hash_table_insert(ht, ((node_t*)current)->data, node_next_sibling(current));
+                    hash_table_insert(ht, ((node_t)current)->data, node_next_sibling(current));
                 }
-                ((plist_data_t)((node_t*)node)->data)->hashtable = ht;
+                ((plist_data_t)((node_t)node)->data)->hashtable = ht;
             }
         }
     }
-}
-
-PLIST_API void plist_dict_insert_item(plist_t node, const char* key, plist_t item)
-{
-    plist_dict_set_item(node, key, item);
 }
 
 PLIST_API void plist_dict_remove_item(plist_t node, const char* key)
@@ -759,9 +895,9 @@ PLIST_API void plist_dict_remove_item(plist_t node, const char* key)
         if (old_item)
         {
             plist_t key_node = node_prev_sibling(old_item);
-            hashtable_t* ht = ((plist_data_t)((node_t*)node)->data)->hashtable;
+            hashtable_t* ht = ((plist_data_t)((node_t)node)->data)->hashtable;
             if (ht) {
-                hash_table_remove(ht, ((node_t*)key_node)->data);
+                hash_table_remove(ht, ((node_t)key_node)->data);
             }
             plist_free(key_node);
             plist_free(old_item);
@@ -845,7 +981,7 @@ static void plist_get_type_and_value(plist_t node, plist_type * type, void *valu
     case PLIST_BOOLEAN:
         *((char *) value) = data->boolval;
         break;
-    case PLIST_UINT:
+    case PLIST_INT:
     case PLIST_UID:
         *((uint64_t *) value) = data->intval;
         break;
@@ -870,7 +1006,7 @@ static void plist_get_type_and_value(plist_t node, plist_type * type, void *valu
 
 PLIST_API plist_t plist_get_parent(plist_t node)
 {
-    return node ? (plist_t) ((node_t*) node)->parent : NULL;
+    return node ? (plist_t) ((node_t) node)->parent : NULL;
 }
 
 PLIST_API plist_type plist_get_node_type(plist_t node)
@@ -943,10 +1079,15 @@ PLIST_API void plist_get_uint_val(plist_t node, uint64_t * val)
         return;
     plist_type type = plist_get_node_type(node);
     uint64_t length = 0;
-    if (PLIST_UINT != type)
+    if (PLIST_INT != type)
         return;
     plist_get_type_and_value(node, &type, (void *) val, &length);
     assert(length == sizeof(uint64_t) || length == 16);
+}
+
+PLIST_API void plist_get_int_val(plist_t node, int64_t * val)
+{
+    plist_get_uint_val(node, (uint64_t*)val);
 }
 
 PLIST_API void plist_get_uid_val(plist_t node, uint64_t * val)
@@ -1009,7 +1150,10 @@ PLIST_API void plist_get_date_val(plist_t node, int32_t * sec, int32_t * usec)
     if (sec)
         *sec = (int32_t)val;
     if (usec)
-        *usec = (int32_t)fabs((val - (int64_t)val) * 1000000);
+    {
+	val = fabs((val - (int64_t)val) * 1000000);
+        *usec = (int32_t)val;
+    }
 }
 
 int plist_data_compare(const void *a, const void *b)
@@ -1020,7 +1164,7 @@ int plist_data_compare(const void *a, const void *b)
     if (!a || !b)
         return FALSE;
 
-    if (!((node_t*) a)->data || !((node_t*) b)->data)
+    if (!((node_t) a)->data || !((node_t) b)->data)
         return FALSE;
 
     val_a = plist_get_data((plist_t) a);
@@ -1032,39 +1176,29 @@ int plist_data_compare(const void *a, const void *b)
     switch (val_a->type)
     {
     case PLIST_BOOLEAN:
-    case PLIST_UINT:
+    case PLIST_NULL:
+    case PLIST_INT:
     case PLIST_REAL:
     case PLIST_DATE:
     case PLIST_UID:
         if (val_a->length != val_b->length)
             return FALSE;
-        if (val_a->intval == val_b->intval)	//it is an union so this is sufficient
-            return TRUE;
-        else
-            return FALSE;
+        return val_a->intval == val_b->intval;	//it is an union so this is sufficient
 
     case PLIST_KEY:
     case PLIST_STRING:
-        if (!strcmp(val_a->strval, val_b->strval))
-            return TRUE;
-        else
-            return FALSE;
+        return strcmp(val_a->strval, val_b->strval) == 0;
 
     case PLIST_DATA:
         if (val_a->length != val_b->length)
             return FALSE;
-        if (!memcmp(val_a->buff, val_b->buff, val_a->length))
-            return TRUE;
-        else
-            return FALSE;
+        return memcmp(val_a->buff, val_b->buff, val_a->length) == 0;
+
     case PLIST_ARRAY:
     case PLIST_DICT:
         //compare pointer
-        if (a == b)
-            return TRUE;
-        else
-            return FALSE;
-        break;
+        return a == b;
+
     default:
         break;
     }
@@ -1107,7 +1241,7 @@ static void plist_set_element_val(plist_t node, plist_type type, const void *val
     case PLIST_BOOLEAN:
         data->boolval = *((char *) value);
         break;
-    case PLIST_UINT:
+    case PLIST_INT:
     case PLIST_UID:
         data->intval = *((uint64_t *) value);
         break;
@@ -1152,7 +1286,12 @@ PLIST_API void plist_set_bool_val(plist_t node, uint8_t val)
 
 PLIST_API void plist_set_uint_val(plist_t node, uint64_t val)
 {
-    plist_set_element_val(node, PLIST_UINT, &val, sizeof(uint64_t));
+    plist_set_element_val(node, PLIST_INT, &val, (val > INT64_MAX) ? sizeof(uint64_t)*2 : sizeof(uint64_t));
+}
+
+PLIST_API void plist_set_int_val(plist_t node, int64_t val)
+{
+    plist_set_element_val(node, PLIST_INT, &val, sizeof(uint64_t));
 }
 
 PLIST_API void plist_set_uid_val(plist_t node, uint64_t val)
@@ -1186,20 +1325,55 @@ PLIST_API int plist_bool_val_is_true(plist_t boolnode)
     return (bv == 1);
 }
 
+PLIST_API int plist_int_val_is_negative(plist_t intnode)
+{
+    if (!PLIST_IS_INT(intnode)) {
+        return 0;
+    }
+    plist_data_t data = plist_get_data(intnode);
+    if (data->length == 16) {
+        return 0;
+    }
+    if ((int64_t)data->intval < 0) {
+        return 1;
+    }
+    return 0;
+}
+
+PLIST_API int plist_int_val_compare(plist_t uintnode, int64_t cmpval)
+{
+    if (!PLIST_IS_INT(uintnode)) {
+        return -1;
+    }
+    int64_t uintval = 0;
+    plist_get_int_val(uintnode, &uintval);
+    if (uintval == cmpval) {
+        return 0;
+    }
+
+    if (uintval < cmpval) {
+        return -1;
+    }
+
+    return 1;
+}
+
 PLIST_API int plist_uint_val_compare(plist_t uintnode, uint64_t cmpval)
 {
-    if (!PLIST_IS_UINT(uintnode)) {
+    if (!PLIST_IS_INT(uintnode)) {
         return -1;
     }
     uint64_t uintval = 0;
     plist_get_uint_val(uintnode, &uintval);
     if (uintval == cmpval) {
         return 0;
-    } else if (uintval < cmpval) {
-        return -1;
-    } else {
-        return 1;
     }
+
+    if (uintval < cmpval) {
+        return -1;
+    }
+
+    return 1;
 }
 
 PLIST_API int plist_uid_val_compare(plist_t uidnode, uint64_t cmpval)
@@ -1211,11 +1385,13 @@ PLIST_API int plist_uid_val_compare(plist_t uidnode, uint64_t cmpval)
     plist_get_uid_val(uidnode, &uidval);
     if (uidval == cmpval) {
         return 0;
-    } else if (uidval < cmpval) {
-        return -1;
-    } else {
-        return 1;
     }
+
+    if (uidval < cmpval) {
+        return -1;
+    }
+
+    return 1;
 }
 
 PLIST_API int plist_real_val_compare(plist_t realnode, double cmpval)
@@ -1231,16 +1407,22 @@ PLIST_API int plist_real_val_compare(plist_t realnode, double cmpval)
     double diff = fabs(a - b);
     if (a == b) {
         return 0;
-    } else if (a == 0 || b == 0 || (abs_a + abs_b < DBL_MIN)) {
+    }
+
+    if (a == 0 || b == 0 || (abs_a + abs_b < DBL_MIN)) {
         if (diff < (DBL_EPSILON * DBL_MIN)) {
             return 0;
-        } else if (a < b) {
+        }
+
+        if (a < b) {
             return -1;
         }
     } else {
         if ((diff / fmin(abs_a + abs_b, DBL_MAX)) < DBL_EPSILON) {
             return 0;
-        } else if (a < b) {
+        }
+
+        if (a < b) {
             return -1;
         }
     }
@@ -1259,11 +1441,13 @@ PLIST_API int plist_date_val_compare(plist_t datenode, int32_t cmpsec, int32_t c
     uint64_t cmpval = ((int64_t)cmpsec << 32) | cmpusec;
     if (dateval == cmpval) {
         return 0;
-    } else if (dateval < cmpval) {
-        return -1;
-    } else {
-        return 1;
     }
+
+    if (dateval < cmpval) {
+        return -1;
+    }
+
+    return 1;
 }
 
 PLIST_API int plist_string_val_compare(plist_t strnode, const char* cmpval)
@@ -1328,9 +1512,12 @@ PLIST_API int plist_data_val_compare(plist_t datanode, const uint8_t* cmpval, si
     plist_data_t data = plist_get_data(datanode);
     if (data->length < n) {
         return -1;
-    } else if (data->length > n) {
+    }
+
+    if (data->length > n) {
         return 1;
     }
+
     return memcmp(data->buff, cmpval, n);
 }
 
@@ -1353,4 +1540,173 @@ PLIST_API int plist_data_val_contains(plist_t datanode, const uint8_t* cmpval, s
     }
     plist_data_t data = plist_get_data(datanode);
     return (memmem(data->buff, data->length, cmpval, n) != NULL);
+}
+
+extern void plist_xml_set_debug(int debug);
+extern void plist_bin_set_debug(int debug);
+extern void plist_json_set_debug(int debug);
+extern void plist_ostep_set_debug(int debug);
+
+PLIST_API void plist_set_debug(int debug)
+{
+    plist_xml_set_debug(debug);
+    plist_bin_set_debug(debug);
+    plist_json_set_debug(debug);
+    plist_ostep_set_debug(debug);
+}
+
+PLIST_API void plist_sort(plist_t plist)
+{
+    if (!plist) {
+        return;
+    }
+    if (PLIST_IS_ARRAY(plist)) {
+        uint32_t n = plist_array_get_size(plist);
+        uint32_t i = 0;
+        for (i = 0; i < n; i++) {
+            plist_sort(plist_array_get_item(plist, i));
+        }
+    } else if (PLIST_IS_DICT(plist)) {
+        node_t node = (node_t)plist;
+        node_t ch;
+        for (ch = node_first_child(node); ch; ch = node_next_sibling(ch)) {
+            ch = node_next_sibling(ch);
+            plist_sort((plist_t)ch);
+        }
+        #define KEY_DATA(x) (x->data)
+        #define NEXT_KEY(x) (x->next->next)
+        #define KEY_STRVAL(x) ((plist_data_t)(KEY_DATA(x)))->strval
+        int swapped = 0;
+        do {
+            swapped = 0;
+            node_t lptr = NULL;
+            node_t cur_key = node_first_child((node_t)plist);
+
+            while (NEXT_KEY(cur_key) != lptr) {
+                node_t next_key = NEXT_KEY(cur_key);
+                if (strcmp(KEY_STRVAL(cur_key), KEY_STRVAL(next_key)) > 0) {
+                    node_t cur_val = cur_key->next;
+                    node_t next_val = next_key->next;
+                    // we need to swap 2 consecutive nodes with the 2 after them
+                    // a -> b -> [c] -> [d] -> [e] -> [f] -> g -> h
+                    //              cur           next
+                    // swapped:
+                    // a -> b -> [e] -> [f] -> [c] -> [d] -> g -> h
+                    //              next           cur
+                    node_t tmp_prev = cur_key->prev;
+                    node_t tmp_next = next_val->next;
+                    cur_key->prev = next_val;
+                    cur_val->next = tmp_next;
+                    next_val->next = cur_key;
+                    next_key->prev = tmp_prev;
+                    if (tmp_prev) {
+                        tmp_prev->next = next_key;
+                    } else {
+                        ((node_t)plist)->children->begin = next_key;
+                    }
+                    if (tmp_next) {
+                        tmp_next->prev = cur_val;
+                    } else {
+                        ((node_t)plist)->children->end = cur_val;
+                    }
+                    cur_key = next_key;
+                    swapped = 1;
+                }
+                cur_key = NEXT_KEY(cur_key);
+            }
+            lptr = cur_key;
+        } while (swapped);
+    }
+}
+
+PLIST_API plist_err_t plist_write_to_string(plist_t plist, char **output, uint32_t* length, plist_format_t format, plist_write_options_t options)
+{
+    plist_err_t err = PLIST_ERR_UNKNOWN;
+    switch (format) {
+        case PLIST_FORMAT_XML:
+            err = plist_to_xml(plist, output, length);
+            break;
+        case PLIST_FORMAT_JSON:
+            err = plist_to_json(plist, output, length, ((options & PLIST_OPT_COMPACT) == 0));
+            break;
+        case PLIST_FORMAT_OSTEP:
+            err = plist_to_openstep(plist, output, length, ((options & PLIST_OPT_COMPACT) == 0));
+            break;
+        case PLIST_FORMAT_PRINT:
+            err = plist_write_to_string_default(plist, output, length, options);
+            break;
+        case PLIST_FORMAT_LIMD:
+            err = plist_write_to_string_limd(plist, output, length, options);
+            break;
+        case PLIST_FORMAT_PLUTIL:
+            err = plist_write_to_string_plutil(plist, output, length, options);
+            break;
+        default:
+            // unsupported output format
+            err = PLIST_ERR_FORMAT;
+            break;
+    }
+    return err;
+}
+
+PLIST_API plist_err_t plist_write_to_stream(plist_t plist, FILE *stream, plist_format_t format, plist_write_options_t options)
+{
+    if (!plist || !stream) {
+        return PLIST_ERR_INVALID_ARG;
+    }
+    plist_err_t err = PLIST_ERR_UNKNOWN;
+    char *output = NULL;
+    uint32_t length = 0;
+    switch (format) {
+        case PLIST_FORMAT_BINARY:
+            err = plist_to_bin(plist, &output, &length);
+            break;
+        case PLIST_FORMAT_XML:
+            err = plist_to_xml(plist, &output, &length);
+            break;
+        case PLIST_FORMAT_JSON:
+            err = plist_to_json(plist, &output, &length, ((options & PLIST_OPT_COMPACT) == 0));
+            break;
+        case PLIST_FORMAT_OSTEP:
+            err = plist_to_openstep(plist, &output, &length, ((options & PLIST_OPT_COMPACT) == 0));
+            break;
+        case PLIST_FORMAT_PRINT:
+            err = plist_write_to_stream_default(plist, stream, options);
+            break;
+        case PLIST_FORMAT_LIMD:
+            err = plist_write_to_stream_limd(plist, stream, options);
+            break;
+        case PLIST_FORMAT_PLUTIL:
+            err = plist_write_to_stream_plutil(plist, stream, options);
+            break;
+        default:
+            // unsupported output format
+            err = PLIST_ERR_FORMAT;
+            break;
+    }
+    if (output && err == PLIST_ERR_SUCCESS) {
+        if (fwrite(output, 1, length, stream) < length) {
+            err = PLIST_ERR_IO;
+        }
+    }
+    return err;
+}
+
+PLIST_API plist_err_t plist_write_to_file(plist_t plist, const char* filename, plist_format_t format, plist_write_options_t options)
+{
+    if (!plist || !filename) {
+        return PLIST_ERR_INVALID_ARG;
+    }
+    FILE* f = fopen(filename, "wb");
+    if (!f) {
+        return PLIST_ERR_IO;
+    }
+    plist_err_t err = plist_write_to_stream(plist, f, format, options);
+    fclose(f);
+    return err;
+}
+
+PLIST_API void plist_print(plist_t plist)
+{
+     plist_write_to_stream(plist, stdout, PLIST_FORMAT_PRINT, PLIST_OPT_PARTIAL_DATA);
 }

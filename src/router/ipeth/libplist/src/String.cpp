@@ -32,12 +32,12 @@ String::String(plist_t node, Node* parent) : Node(node, parent)
 {
 }
 
-String::String(const PList::String& s) : Node(PLIST_UINT)
+String::String(const PList::String& s) : Node(PLIST_INT)
 {
     plist_set_string_val(_node, s.GetValue().c_str());
 }
 
-String& String::operator=(PList::String& s)
+String& String::operator=(const PList::String& s)
 {
     plist_free(_node);
     _node = plist_copy(s.GetPlist());
@@ -67,13 +67,8 @@ std::string String::GetValue() const
 {
     char* s = NULL;
     plist_get_string_val(_node, &s);
-    std::string ret;
-    if (s) {
-        ret = s;
-        free(s);
-    } else {
-        ret = "";
-    }
+    std::string ret = s ? s : "";
+    delete s;
     return ret;
 }
 
