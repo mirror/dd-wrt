@@ -1,28 +1,20 @@
-/*  Arg_parser - POSIX/GNU command line argument parser. (C++ version)
-    Copyright (C) 2006-2014 Antonio Diaz Diaz.
+/* Arg_parser - POSIX/GNU command line argument parser. (C++ version)
+   Copyright (C) 2006-2023 Antonio Diaz Diaz.
 
-    This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+   This library is free software. Redistribution and use in source and
+   binary forms, with or without modification, are permitted provided
+   that the following conditions are met:
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+   1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions, and the following disclaimer.
 
-    You should have received a copy of the GNU General Public License
-    along with this library.  If not, see <http://www.gnu.org/licenses/>.
+   2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions, and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
 
-    As a special exception, you may use this file as part of a free
-    software library without restriction.  Specifically, if other files
-    instantiate templates or use macros or inline functions from this
-    file, or you compile this file and link it with other files to
-    produce an executable, this file does not by itself cause the
-    resulting executable to be covered by the GNU General Public
-    License.  This exception does not however invalidate any other
-    reasons why the executable file might be covered by the GNU General
-    Public License.
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 */
 
 #include <cstring>
@@ -43,14 +35,15 @@ bool Arg_parser::parse_long_option( const char * const opt, const char * const a
 
   // Test all long options for either exact match or abbreviated matches.
   for( int i = 0; options[i].code != 0; ++i )
-    if( options[i].name && std::strncmp( options[i].name, &opt[2], len ) == 0 )
+    if( options[i].long_name &&
+        std::strncmp( options[i].long_name, &opt[2], len ) == 0 )
       {
-      if( std::strlen( options[i].name ) == len )	// Exact match found
+      if( std::strlen( options[i].long_name ) == len )	// Exact match found
         { index = i; exact = true; break; }
       else if( index < 0 ) index = i;		// First nonexact match found
       else if( options[index].code != options[i].code ||
                options[index].has_arg != options[i].has_arg )
-        ambig = true;			// Second or later nonexact match found
+        ambig = true;		// Second or later nonexact match found
       }
 
   if( ambig && !exact )
@@ -66,19 +59,19 @@ bool Arg_parser::parse_long_option( const char * const opt, const char * const a
     }
 
   ++argind;
-  data.push_back( Record( options[index].code ) );
+  data.push_back( Record( options[index].code, options[index].long_name ) );
 
   if( opt[len+2] )		// '--<long_option>=<argument>' syntax
     {
     if( options[index].has_arg == no )
       {
-      error_ = "option '--"; error_ += options[index].name;
+      error_ = "option '--"; error_ += options[index].long_name;
       error_ += "' doesn't allow an argument";
       return false;
       }
     if( options[index].has_arg == yes && !opt[len+3] )
       {
-      error_ = "option '--"; error_ += options[index].name;
+      error_ = "option '--"; error_ += options[index].long_name;
       error_ += "' requires an argument";
       return false;
       }
@@ -90,7 +83,7 @@ bool Arg_parser::parse_long_option( const char * const opt, const char * const a
     {
     if( !arg || !arg[0] )
       {
-      error_ = "option '--"; error_ += options[index].name;
+      error_ = "option '--"; error_ += options[index].long_name;
       error_ += "' requires an argument";
       return false;
       }
@@ -150,7 +143,7 @@ Arg_parser::Arg_parser( const int argc, const char * const argv[],
   {
   if( argc < 2 || !argv || !options ) return;
 
-  std::vector< std::string > non_options;	// skipped non-options
+  std::vector< const char * > non_options;	// skipped non-options
   int argind = 1;				// index in argv
 
   while( argind < argc )
@@ -171,17 +164,17 @@ Arg_parser::Arg_parser( const int argc, const char * const argv[],
       }
     else
       {
-      if( !in_order ) non_options.push_back( argv[argind++] );
-      else { data.push_back( Record() ); data.back().argument = argv[argind++]; }
+      if( in_order ) data.push_back( Record( argv[argind++] ) );
+      else non_options.push_back( argv[argind++] );
       }
     }
-  if( error_.size() ) data.clear();
+  if( !error_.empty() ) data.clear();
   else
     {
     for( unsigned i = 0; i < non_options.size(); ++i )
-      { data.push_back( Record() ); data.back().argument.swap( non_options[i] ); }
+      data.push_back( Record( non_options[i] ) );
     while( argind < argc )
-      { data.push_back( Record() ); data.back().argument = argv[argind++]; }
+      data.push_back( Record( argv[argind++] ) );
     }
   }
 
@@ -198,7 +191,7 @@ Arg_parser::Arg_parser( const char * const opt, const char * const arg,
       { if( opt[2] ) parse_long_option( opt, arg, options, argind ); }
     else
       parse_short_option( opt, arg, options, argind );
-    if( error_.size() ) data.clear();
+    if( !error_.empty() ) data.clear();
     }
-  else { data.push_back( Record() ); data.back().argument = opt; }
+  else data.push_back( Record( opt ) );
   }

@@ -1,74 +1,222 @@
+2023-01-23  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.27 released.
+	* command_mode.cc (do_commands): Fix flush stdout after each command.
+	  (Reported by Jeffrey Bosboom).
+	* New option '-W, --compare-before-write'.
+	 (Suggested by Kajetan Harald Hinner and Petr Slansky).
+	* main_common.cc (show_option_error):
+	  New function showing argument and option name.
+	* main.cc: Remove synonym '--direct'.
+	* Use 'long long' instead of 'long' for time variables.
+	* loggers.cc: Missing '#include <cstdlib>'.
+	* Fix two compiler warnings reported by Christian Franke.
+
+2022-01-21  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.26 released.
+	* mapfile.cc (write_mapfile): Check all calls to fprintf.
+	  (Hole in mapfile reported by Radomír Tomis).
+	  (read_mapfile): Allow unordered, overlapping blocks in loose domain.
+	  (Suggested by Gábor Katona and Shaya Potter).
+	* Show file name in all diagnostics with a file involved.
+	  (Reported by Radomír Tomis).
+	* rescuebook.cc (copy_block): Exit with status 1 on fatal errors.
+	  (Suggested by Marco Marques).
+	  (do_rescue): Don't run empty phases.
+	  (show_status): Scroll forward after each pass.
+	  (Based on a suggestion by David Morrison).
+	* main_common.cc (getnum): Show option name and valid range if error.
+	* main.cc, ddrescuelog.cc: Remove synonyms '*-logfile', '--pause'.
+	* ddrescuelog.cc: New option '-F, --format'.
+	  (Bitmap format proposed by Florian Sedivy).
+	  (test_if_done): Don't try to delete stdin.
+	  (do_show_status): Round percentages up.
+	* command_mode.cc, io.cc, loggers.cc: Missing '#include <algorithm>'.
+	  (Reported by Richard Burkert).
+	* ddrescue.texi: Improve description of algorithm.
+	* check.sh: A POSIX shell is required to run the tests.
+
+2020-02-21  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.25 released.
+	* block.h: Add default constructors to classes Block and Sblock.
+	  (Reported by Rosen Penev).
+	* check.sh: Quote all file name variables to allow names with spaces.
+	  (Reported by David Morrison).
+	* In rescue mode, join non-finished subsectors read from mapfile.
+	  (Reported by David Burton).
+	* mapbook.cc (update_mapfile): Exclude writing time from intervals.
+	  (Reported by David Burton).
+	* rescuebook.cc (extend_outfile_size): Use ftruncate if it works.
+	* Print large numbers in groups of 3 digits separated by underscores.
+	* main.cc: Set a valid invocation_name even if argc == 0.
+
+2019-02-24  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.24 released.
+	* New option '--command-mode'.
+	* Implement mapfile backup. (Suggested by Joe Kickman).
+	* ddrescue.texi: Document final contents of bad areas in outfile.
+	* configure: Accept appending to CXXFLAGS; 'CXXFLAGS+=OPTIONS'.
+
+2018-02-13  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.23 released.
+	* rescuebook.cc (trim_errors): Fix wrong status change to non-scraped.
+	* New option '--same-file'.
+	* ddrescuelog.cc: New option '--shift'.
+	* fillbook.cc (fill_block): Write location data as one line.
+	* fillbook.cc (read_buffer): Don't require a seekable infile.
+	* ddrescue.texi: New chapter 'Output'.
+	* check.sh: Add test 'combined rescue'.
+	* io.cc: Add missing '#include <cstdio>'.
+
+2017-02-03  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.22 released.
+	* Replace option '-X, --exit-on-error' with '-X, --max-read-errors'.
+	* New option '--max-slow-reads'.
+	* New option '--delay-slow'.
+	* New option '--reset-slow'.
+	* New option '--log-events'.
+	* New option '--mapfile-interval'.
+	* New option '--pause-on-error'. (Suggested by Dmitri Kostin).
+	* Rename option '--pause' to '--pause-on-pass'.
+	* Rename option '--max-errors' to '--max-bad-areas'.
+	* Rename 'errsize' to 'bad_size' and 'errors' to 'bad_areas'
+	* Rescuebook: Show read_errors, error_rate and slow_reads.
+	* Add 'current_pass' field to mapfile.
+	* Add two new passes (3 and 4) to the copying phase.
+	* main.cc (parse_cpass): Accept ranges of passes.
+	* Option '-K, --skip-size' now accepts sizes up to 1 EiB.
+	* Initial skip size now defaults to (infile_size / 100_000).
+	* rescuebook.cc (copy_non_tried): Don't reduce min_read_rate,
+	  enable it only for passes 1 and 2.
+	* rescuebook.cc (trim_errors): Don't trim bad edges.
+	* main_common.cc (getnum): Accept 's' after other multiplier.
+	* '--ask', '-vv' now show size along with model and serial number.
+	* non_posix.cc: Add 'device_id' for Cygwin.
+	  (Patch written by Christian Franke <franke@computer.org>).
+	* rescuebook.cc (do_rescue): Show full sizes in domain warning.
+	* ddrescuelog.cc: New option '-A, --annotate-mapfile'.
+
+2016-03-17  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.21 released.
+	* mapbook.cc (Mapbook): Fix iobuf alignment.
+	  (Reported by Heikki Tauriainen).
+	* Remove short option names '-1' and '-2'.
+	* Allow only regular files for '--log-rates' and '--log-reads'.
+	* Option '-D, --odirect' now works also in fill mode.
+	* rescuebook.cc (copy_block): Return 1 on unaligned read error.
+	  Set e_code on any error if verify_on_error.
+	* Option '-X, --exit-on-error' has been extended to all phases.
+	* Assign short name '-Z' to option '--max-read-rate'.
+	* mapbook.cc (update_mapfile): 'fsync' the mapfile every 5 minutes.
+	* Rescuebook: Show full range of sizes from non-tried to finished.
+	* rescuebook.cc (show_status): Show percentage rescued.
+	* configure: Avoid warning on some shells when testing for g++.
+	* Makefile.in: Detect the existence of install-info.
+
+2015-09-10  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.20 released.
+	* Rename 'logfile' to 'mapfile' everywhere.
+	* Change short name of option '--synchronous' to '-y'.
+	* Change long name of option '-d' to '--idirect'.
+	* New option '-D, --odirect'.
+	* New option '-J, --verify-on-error'.
+	* New option '--max-read-rate'.
+	* rescuebook.cc (copy_block): Copy arbitrary blocks with '--idirect'.
+	* Include only bad-sector blocks in 'errsize'.
+	* rescuebook.cc (show_status): Show the estimated remaining time.
+	* io.cc (format_time): Show time in days, hours, minutes and seconds.
+	* Add per sector location data to fill mode.
+	* mapbook.cc: Add emergency save of the mapfile.
+	* Show device name with '--ask' or '-vv' on Haiku.
+	* mapfile.cc (read_mapfile): Read read-only mapfiles from stdin.
+	* ddrescuelog.cc: Allow multiple mapfiles for '-t, --show-status'.
+	* ddrescuelog.cc (create_mapfile): '-' writes mapfile to stdout.
+	* ddrescue.texi: New chapter 'Optical media'.
+	* ddrescue.texi: Document maximum size of the rescue domain.
+	* configure: Rename option '--enable-linux' to '--enable-non-posix'.
+	* Makefile.in: New targets 'install*-compress'.
+	* ddrescue.h: Rename to mapbook.h.
+	* logbook.cc: Rename to mapbook.cc.
+	* logfile.cc: Rename to mapfile.cc.
+	* linux.{h,cc}: Rename to non_posix.{h,cc}.
+
 2014-10-03  Antonio Diaz Diaz  <antonio@gnu.org>
 
 	* Version 1.19 released.
-	* Fixed a race condition at start of run with '--timeout=0'.
-	* Added new option '-P, --data-preview'.
-	* Added new option '-u, --unidirectional'.
-	* Added new option '-X, --exit-on-error'.
-	* Added new option '--ask' to ask for user confirmation.
-	* Added new option '--cpass' to select passes during copying phase.
-	* Added new option '--pause' to insert a pause between passes.
-	* Removed option '-l, --logfile-size'.
+	* Fix a race condition at start of run with '--timeout=0'.
+	* New option '-P, --data-preview'.
+	* New option '-u, --unidirectional'.
+	* New option '-X, --exit-on-error'.
+	* New option '--ask' to ask for user confirmation.
+	* New option '--cpass' to select passes during copying phase.
+	* New option '--pause' to insert a pause between passes.
+	* Remove option '-l, --logfile-size'.
 	* Skip on the first error during the copying phase.
 	* rescuebook.cc: Trimming done in one pass, may be run in reverse.
 	* The splitting phase has been replaced by a scraping phase.
-	* Changed long name of option '-n' to '--no-scrape'.
+	* Change long name of option '-n' to '--no-scrape'.
 	* rescuebook.cc: Alternate direction of passes during retrying phase.
 	* Show ATA model and serial number with '--ask' or '-vv' on Linux.
-	* configure: Added new option '--enable-linux'.
-	* New files linux.h linux.cc.
-	* License changed to GPL version 2 or later.
+	* configure: New option '--enable-linux'.
+	* New files linux.h and linux.cc.
+	* Change license to GPL version 2 or later.
 
 2014-06-10  Antonio Diaz Diaz  <antonio@gnu.org>
 
 	* Version 1.18.1 released.
-	* ddrescuelog.cc (do_logic_ops): Fixed 'or' and 'xor'.
-	* Added new option '-H, --test-mode' to simulate read errors.
-	* Added new option '-L, --loose-domain' to ddrescue and ddrescuelog.
-	* Added new option '-N, --no-trim' to disable trimming of
-	  damaged areas.
-	* Added new option '-O, --reopen-on-error'.
-	* Added new options '-1, --log-rates', and '-2, --log-reads'.
-	* Extended '-K, --skip-size' with maximum and disable values.
-	* Changed long name of option '-r' to '--retry-passes'.
-	* Changed short name of option '--generate-mode' to '-G'.
+	* ddrescuelog.cc (do_logic_ops): Fix 'or' and 'xor'.
+	* New option '-H, --test-mode' to simulate read errors.
+	* New option '-L, --loose-domain' (both ddrescue and ddrescuelog).
+	* New option '-N, --no-trim' to disable trimming of damaged areas.
+	* New option '-O, --reopen-on-error'. (Suggested by Paul L Daniels).
+	* New options '-1, --log-rates' and '-2, --log-reads'.
+	 (Suggested by Alexander Sashnov and Paul L Daniels).
+	* Extend '-K, --skip-size' with maximum and disable values.
+	* Change long name of option '-r' to '--retry-passes'.
+	* Change short name of option '--generate-mode' to '-G'.
 	* Default value of option '-l, --logfile-size' increased to 10000.
 	* If interrupted, ddrescue terminates by raising the signal received.
-	* rescuebook.cc (copy_non_tried): Do not mark skipped blocks as
+	* rescuebook.cc (copy_non_tried): Don't mark skipped blocks as
 	  non-trimmed. Try them in additional passes (before trimming).
 	* rescuebook.cc: Limit the copying phase to 3 passes.
 	* rescuebook.cc: Alternate direction of passes during copying phase.
 	* rescuebook.cc: Smallest blocks are trimmed first.
 	* rescuebook.cc (split_errors): Read largest first if logfile full.
-	* Improved speed when using option '-m, --domain-logfile'.
+	* Improve speed when using option '-m, --domain-logfile'.
 	* io.cc (show_status): Show the current total run time.
 	* rescuebook.cc: Show pass number and direction during copying.
 	* rescuebook.cc (show_status): Show block pos instead of current_pos.
-	* main.cc: Show "an unknown number of bytes" for unknown isize.
-	* Added option '-B, --binary-prefixes' to ddrescuelog.
-	* Added new option '-C, --complete-logfile' to ddrescuelog.
-	* Added new option '-P, --compare-as-domain' to ddrescuelog.
-	* Improved speed of logic operations in ddrescuelog.
-	* rescuebook.cc (Rescuebook::do_rescue): Show warning when domain
-	  is smaller than logfile.
+	* main.cc: Show "an unknown number of bytes" for unknown insize.
+	* ddrescuelog.cc: New options '-B, --binary-prefixes',
+	  -C, --complete-logfile', and '-P, --compare-as-domain'.
+	* Improve speed of logic operations in ddrescuelog.
+	* rescuebook.cc (do_rescue): Show warning when domain is smaller
+	  than logfile.
 	* ddrescuelog.cc (do_show_status): Show logfile and domain extents
 	  when domain is smaller than logfile.
 	* block.h: Class Block now forces the invariant by itself.
 	* Code reorganization. New class 'Logfile'.
-	* Added status message to rescue logfile.
+	* Add status message to rescue logfile.
 	* Many improvements to documentation.
-	* ddrescue.texinfo: Renamed to ddrescue.texi.
+	* ddrescue.texinfo: Rename to ddrescue.texi.
 
 2013-07-09  Antonio Diaz Diaz  <antonio@gnu.org>
 
 	* Version 1.17 released.
-	* Added new option '-l, --logfile-size'.
-	* Added new option '-w, --ignore-write-errors'.
-	* Option '--fill' has been renamed to '--fill-mode'.
-	* Option '--generate-logfile' has been renamed to '--generate-mode'.
-	* Added option '--sector-size' as a synonym of '--block-size'.
-	* Added option '--retries' as a synonym of '--max-retries'.
-	* Added option '--size' as a synonym of '--max-size'.
+	* New option '-l, --logfile-size'.
+	* New option '-w, --ignore-write-errors'.
+	* Rename option '--fill' to '--fill-mode'.
+	* Rename option '--generate-logfile' to '--generate-mode'.
+	* Add option '--sector-size' as a synonym of '--block-size'.
+	* Add option '--retries' as a synonym of '--max-retries'.
+	* Add option '--size' as a synonym of '--max-size'.
 	* rescuebook.cc: Trimming is now done from both edges of each
 	  non-trimmed block. Largest blocks are trimmed first.
 	* rescuebook.cc: Largest blocks are now split first until
@@ -77,191 +225,189 @@
 	  if truncation would discard finished blocks.
 	* rescuebook.cc: Mark failed blocks with 1 sector as bad-sector.
 	* logbook.cc (extend_sblock_vector): Remove last block of
-	  logfile if it starts at isize and is not marked as finished.
+	  logfile if it starts at insize and is not marked as finished.
 	* io.cc (show_status, update_rates): Detect a jump back in time
 	  and adjust status.
 	* ddrescue.h (slow_read): Return false for the first 10 seconds.
 	* io.cc (show_status) Leave cursor after message so that ^C does
 	  not overwrite it.
-	* main.cc: Do not require '--force' for generate mode.
-	* ddrescue.h (Logbook::logfile_exists): Do not return false if
+	* main.cc: Don't require '--force' for generate mode.
+	* ddrescue.h (Logbook::logfile_exists): Don't return false if
 	  logfile exists but is empty.
-	* Added new chapter 'Using ddrescue safely' to the manual.
-	* Documented that 'direct disc access' only reads whole sectors.
+	* ddrescue.texinfo: New chapter 'Using ddrescue safely'.
+	* Document that 'direct disc access' only reads whole sectors.
 	* configure: Options now accept a separate argument.
-	* Makefile.in: Added new target 'install-bin'.
+	* Makefile.in: New target 'install-bin'.
 
 2012-06-11  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.16 released.
-	* Added new option '-K, --skip-size'.
-	* Added new option '-T, --timeout'.
-	* Changed short name of option '--try-again' to '-A'.
+	* New option '-K, --skip-size'.
+	* New option '-T, --timeout'.
+	* Change short name of option '--try-again' to '-A'.
 	* Maximum skip size is now limited to 1% of infile size or 1 GiB
-	  (whichever is smaller), rounded to the next multiple of sector
-	  size.
+	  (whichever is smaller), rounded to the next multiple of sector size.
 	* Set current_pos to end of block when reading backwards.
-	* The '-E, --max-error-rate' option now checks the rate of
+	* The option '-E, --max-error-rate' now checks the rate of
 	  actually failed reads, not the growth of error size.
 	* The option '-v, --verbose' now increases verbosity if repeated.
-	* Changed quote characters in messages as advised by GNU Standards.
-	* configure: 'datadir' renamed to 'datarootdir'.
+	* Change quote characters in messages as advised by GNU Standards.
+	* configure: Rename 'datadir' to 'datarootdir'.
 	* New files rational.h, rational.cc.
 
 2012-01-01  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.15 released.
-	* Added new option '-a, --min-read-rate'.
-	* Added new option '-I, --verify-input-size'.
-	* Added new option '-x, --extend-outfile'.
-	* main.cc: Verify that infile, outfile and logfile are all
-	  different.
+	* New option '-a, --min-read-rate'.
+	* New option '-I, --verify-input-size'.
+	* New option '-x, --extend-outfile'.
+	* main.cc: Verify that infile, outfile and logfile are all different.
 	* Non-tried blocks are now read aligned to cluster-size sectors.
-	* rescuebook.cc: Improved skip algorithm for the split pass.
-	* main.cc: Removed spurious warning about '-D' ignored in fill mode.
-	* ddrescue.texinfo: Improved description of algorithm.
+	* rescuebook.cc: Improve skip algorithm for the split pass.
+	* main.cc: Remove spurious warning about '-D' ignored in fill mode.
+	* ddrescue.texinfo: Improve description of algorithm.
 	* logbook.cc (change_chunk_status): Return an adjust value (-1, 0, 1)
 	  to keep "errors" updated without calling count_errors every time.
-	* ddrescue.cc: Renamed to io.cc.
-	* Added 'ddrescuelog', a program for logfile manipulation.
+	* ddrescue.cc: Rename to io.cc.
+	* Add 'ddrescuelog', a program for logfile manipulation.
 
 2011-01-10  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.14 released.
-	* Added new option '-R, --reverse'.
-	* Added new option '-E, --max-error-rate'.
-	* Extended syntax '--max-errors=+N' to specify new errors.
-	* Changed short name of option '--retrim' to '-M'.
-	* Removed spurious warning about 'preallocation not available'.
+	* New option '-R, --reverse'.
+	* New option '-E, --max-error-rate'.
+	* Extend syntax of '--max-errors' (+N) to specify new errors.
+	* Change short name of option '--retrim' to '-M'.
+	* Remove spurious warning about 'preallocation not available'.
 	* Code reorganization. New class 'Genbook'.
 
 2010-08-27  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.13 released.
-	* Non-regular output files are no more overwritten by default.
-	* Added new option '-f, --force'.
-	* Added new option '-p, --preallocate'.
+	* Non-regular output files are no longer overwritten by default.
+	* New option '-f, --force'.
+	* New option '-p, --preallocate'.
 	* main.cc (write_logfile_header): Write command line to logfile.
-	* ddrescue.texinfo: Added info about logfile and recoverable formats.
-	* ddrescue.texinfo: Added a couple more warnings to the tutorial.
-	* testsuite: 'test1' renamed to 'test.txt'
+	* ddrescue.texinfo: Add info about logfile and recoverable formats.
+	* ddrescue.texinfo: Add a couple more warnings to the tutorial.
+	* testsuite: Rename 'test1' to 'test.txt'
 	* Revert to use 'long' instead of 'time_t' for time variables.
-	  Ddrescue only needs counting seconds and 'time_t' causes
-	  warnings on some systems.
+	  Ddrescue only needs counting seconds, and 'time_t' causes warnings
+	  on some systems.
 
 2010-04-06  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.12 released.
 	* main.cc: Outfile is now created with mode 0666 if umask allows it.
 	* main.cc: New constant 'o_binary'.
-	* Makefile.in: Added quotes to directory names.
-	* Makefile.in: Added '--name' option to help2man invocation.
-	* testsuite/check.sh: Use 'test1' instead of 'COPYING' for testing.
+	* Makefile.in: Add quotes to directory names.
+	* Makefile.in: Add option '--name' to help2man invocation.
+	* check.sh: Use 'test1' instead of 'COPYING' for testing.
 	* Use 'time_t' instead of 'long' for time variables.
 
 2009-07-10  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.11 released.
 	* logbook.cc (update_logfile): Ask user in case of write error.
-	* rescuebook.cc (split_errors): Modified the split threshold.
+	* rescuebook.cc (split_errors): Modify the split threshold.
 	* rescuebook.cc (copy_and_update): Verify after every read error
 	  that the input file does still exist.
 	* ddrescue.cc (Rescuebook::show_status): Show the time elapsed
 	  since last successful read.
 	* ddrescue.cc (set_signals): Ignore SIGUSR1 and SIGUSR2.
-	* ddrescue.texinfo: Improved description of '-d', '-D' and '-S'.
-	* ddrescue.texinfo: Improved description of algorithm.
-	* testsuite/check.sh: Verify that files are open in binary mode.
-	* Added logfile usage warning to 'ddrescue --help' output.
+	* ddrescue.texinfo: Improve description of '-d', '-D', and '-S'.
+	* ddrescue.texinfo: Improve description of algorithm.
+	* check.sh: Verify that files are opened in binary mode.
+	* Add logfile usage warning to the output of 'ddrescue --help'.
 
 2009-02-19  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.10 released.
-	* Added new option '-T, --try-again'.
+	* New option '-T, --try-again'.
 	* rescuebook.cc: 'skip_size' has been made independent of 'softbs'.
 	* 'change_chunk_status' is now faster for large logfiles.
-	* Fixed overflow when reading from devices of undefined size.
-	* Block does no more admit negative sizes.
+	* Fix overflow when reading from devices of undefined size.
+	* Block does no longer admit negative sizes.
 	* 'make install-info' should now work on Debian and OS X.
 	* New file testsuite/check.sh.
 
 2008-11-17  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.9 released.
-	* Added new option '-m, --domain-logfile'.
+	* New option '-m, --domain-logfile'.
 	* Verbosity control of messages has been simplified.
-	* Changed LONG_LONG_MAX to LLONG_MAX.
+	* Change LONG_LONG_MAX to LLONG_MAX.
 
 2008-02-24  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.8 released.
-	* Added new option '-g, --generate-logfile'.
-	* Added new option '-D, --synchronous'.
+	* New option '-g, --generate-logfile'.
+	* New option '-D, --synchronous'.
 	* Fill mode now works when outfile offset differs from 0.
-	* Updated 'Fill Mode' chapter of the manual.
+	* ddrescue.texinfo: Update chapter 'Fill Mode'.
 
 2008-01-04  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.7 released.
 	* Skips faster over damaged areas (small read, big jump).
-	* Logfile is maintaned minimized at all times.
+	* Logfile is kept minimized at all times.
 	* Rescuebook::errors now counts the error areas found.
 	* Target 'check' added to Makefile.
-	* rescuebook.cc (split_errors): Added new variable 'error_counter'.
-	* Added new option '-R, --retrim'.
+	* rescuebook.cc (split_errors): New variable 'error_counter'.
+	* New option '-R, --retrim'.
 
 2007-11-16  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.6 released.
 	* Code reorganization. New classes 'Fillbook' and 'Rescuebook'.
-	* logbook.cc (copy_non_tried): Added new variable 'skip_counter'.
-	* Added new pass that trims error areas backwards before splitting.
-	* Added support for sparse output files.
+	* logbook.cc (copy_non_tried): New variable 'skip_counter'.
+	* Add new pass that trims error areas backwards before splitting.
+	* Add support for sparse output files.
 	* Blocks longer than hardbs are now split at sector boundaries.
-	* Added new option '-F, --fill'.
-	* Added new chapter 'Fill Mode' to the manual.
-	* Added status line to logfile.
+	* New option '-F, --fill'.
+	* ddrescue.texinfo: New chapter 'Fill Mode'.
+	* Add status line to logfile.
 	* An interrupted retry pass is now resumed instead of reinitiated.
 	* Perfect resumability if interrupted during trimming or splitting.
 	* ddrescue.cc (set_signals): Handle also SIGHUP and SIGTERM.
-	* '--quiet' option also quiets error messages.
+	* Option '--quiet' now also quiets error messages.
 	* Print a more informative error message when reading an old logfile.
-	* Added note to ddrescue.texinfo about old logfiles.
-	* Added some consistency checks.
+	* ddrescue.texinfo: Add note about old logfiles.
+	* Add some consistency checks.
 
 2007-06-29  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.5 released.
-	* License updated to GPL version 3 or later.
+	* Update license to GPL version 3 or later.
 
 2007-06-18  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.4 released.
-	* Added new option '-d, --direct'.
-	* Fixed a bug showing bad initial error size.
-	* Fixed error counting.
+	* New option '-d, --direct'.
+	* Fix a bug showing bad initial error size.
+	* Fix error counting.
 	* Small changes to documentation.
 
 2006-12-13  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.3 released.
 	* Some fixes made to 'configure' script.
-	* Added 'sddrescue' target to Makefile.in.
+	* Makefile.in: New target 'sddrescue'.
 
 2006-04-03  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.2 released.
-	* Added new option '-C, --complete-only'.
-	* Added new argument parser that replaces 'getopt_long'.
+	* New option '-C, --complete-only'.
+	* Replace 'getopt_long' with a new argument parser.
 	* Logfile save interval is now dependent on logfile size.
 	* Small changes to documentation.
 
 2005-10-10  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.1 released.
-	* 'iobuf' is aligned to the sector size for use with raw devices.
-	* Added a small tutorial to the info file.
-	* Added two missing #includes.
+	* Align 'iobuf' to the sector size for use with raw devices.
+	* ddrescue.texinfo: Add a small tutorial.
+	* Add two missing #includes.
 
 2005-06-07  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
@@ -269,7 +415,7 @@
 	* A new logfile format makes multi-part rescue possible.
 	* Logfile is saved every 30 seconds.
 	* Logfile is now also saved in case of write error on outfile.
-	* Fixed a race condition that could result in data not written
+	* Fix a race condition that could result in data not written
 	  to outfile but annotated in logfile if computer crashes at
 	  the wrong moment.
 
@@ -277,19 +423,18 @@
 
 	* Version 0.9 released.
 	* ddrescue is now part of the GNU project.
-	* Added configure script and info file.
+	* configure, ddrescue.texinfo: New files.
 	* Two small bugs corrected.
-	* Added new option '-B, --binary-prefixes' to show binary
-	  multipliers in numbers (SI prefixes are used by default).
+	* New option '-B, --binary-prefixes' to show binary multipliers in
+	  numbers (SI prefixes are used by default).
 	* Numbers are accepted with decimal (SI) or binary multipliers.
-	* 'badblocks file' renamed to 'logfile'.
-	* Logfile is now also saved if max_errors are exceeded.
+	* Rename 'badblocks file' to 'logfile'.
+	* Save logfile also if max_errors are exceeded.
 
 2004-12-14  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.8 released.
-	* Added new option '-n, --no-split' to disable splitting of
-	  damaged areas.
+	* New option '-n, --no-split' to disable splitting of damaged areas.
 
 2004-10-30  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
@@ -300,41 +445,40 @@
 2004-09-28  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.6 released.
-	* Skips faster over damaged areas (tries 1 block first).
-	* Error messages have been improved.
+	* Skip faster over damaged areas (try 1 block first).
+	* Improve error messages.
 
 2004-09-15  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.5 released.
-	* Badblocks file is now also saved if ddrescue is interrupted
-	  while splitting damaged areas.
-	* Added man page.
+	* Save badblocks file also if ddrescue is interrupted while
+	  splitting damaged areas.
+	* ddrescue.1: New man page.
 
 2004-09-03  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.4 released.
-	* The project name has been changed to 'ddrescue' to meet
-	  command name standards.
-	* Added long option names.
+	* Change project name to 'ddrescue' to meet command name standards.
+	* Add long option names.
 
 2004-08-18  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.3 released.
-	* Added badblocks file, making the rescue much more efficient.
+	* Add badblocks file, making the rescue much more efficient.
 
 2004-08-14  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.2 released.
-	* Fixed bug that sometimes ignored the last sectors of a damaged area.
-	* The algorithm is now faster in presence of errors.
+	* Fix bug that sometimes ignored the last sectors of a damaged area.
+	* Make the algorithm faster in presence of errors.
 
 2004-08-12  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 0.1 released.
 
 
-Copyright (C) 2004-2014 Antonio Diaz Diaz.
+Copyright (C) 2004-2023 Antonio Diaz Diaz.
 
 This file is a collection of facts, and thus it is not copyrightable,
-but just in case, you have unlimited permission to copy, distribute and
+but just in case, you have unlimited permission to copy, distribute, and
 modify it.

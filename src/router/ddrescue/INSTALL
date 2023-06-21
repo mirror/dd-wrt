@@ -1,8 +1,9 @@
 Requirements
 ------------
-You will need a C++ compiler.
-I use gcc 4.9.1 and 3.3.6, but the code should compile with any
-standards compliant compiler.
+You will need a C++98 compiler with support for 'long long'.
+(gcc 3.3.6 or newer is recommended).
+I use gcc 6.1.0 and 3.3.6, but the code should compile with any standards
+compliant compiler.
 Gcc is available at http://gcc.gnu.org.
 
 
@@ -14,8 +15,8 @@ Procedure
 or
 	lzip -cd ddrescue[version].tar.lz | tar -xf -
 
-This creates the directory ./ddrescue[version] containing the source from
-the main archive.
+This creates the directory ./ddrescue[version] containing the source code
+extracted from the archive.
 
 2. Change to ddrescue directory and run configure.
    (Try 'configure --help' for usage instructions).
@@ -29,32 +30,36 @@ the main archive.
 
 4. Optionally, type 'make check' to run the tests that come with ddrescue.
 
-5. Type 'make install' to install the program and any data files and
+5. Type 'make install' to install the programs and any data files and
    documentation.
 
-   You can install only the program, the info manual or the man page by
-   typing 'make install-bin', 'make install-info' or 'make install-man'
+   Or type 'make install-compress', which additionally compresses the
+   info manual and the man pages after installation.
+   (Installing compressed docs may become the default in the future).
+
+   You can install only the programs, the info manual, or the man pages by
+   typing 'make install-bin', 'make install-info', or 'make install-man'
    respectively.
 
 
 Another way
 -----------
 You can also compile ddrescue into a separate directory.
-To do this, you must use a version of 'make' that supports the 'VPATH'
-variable, such as GNU 'make'. 'cd' to the directory where you want the
+To do this, you must use a version of 'make' that supports the variable
+'VPATH', such as GNU 'make'. 'cd' to the directory where you want the
 object files and executables to go and run the 'configure' script.
-'configure' automatically checks for the source code in '.', in '..' and
+'configure' automatically checks for the source code in '.', in '..', and
 in the directory that 'configure' is in.
 
-'configure' recognizes the option '--srcdir=DIR' to control where to
-look for the sources. Usually 'configure' can determine that directory
+'configure' recognizes the option '--srcdir=DIR' to control where to look
+for the source code. Usually 'configure' can determine that directory
 automatically.
 
 After running 'configure', you can run 'make' and 'make install' as
 explained above.
 
 
-Copyright (C) 2004-2014 Antonio Diaz Diaz.
+Copyright (C) 2004-2023 Antonio Diaz Diaz.
 
 This file is free documentation: you have unlimited permission to copy,
-distribute and modify it.
+distribute, and modify it.

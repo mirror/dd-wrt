@@ -1,25 +1,33 @@
-/*  Rational - Rational number class with overflow detection
-    Copyright (C) 2005-2014 Antonio Diaz Diaz.
+/* Rational - Rational number class with overflow detection
+   Copyright (C) 2005-2023 Antonio Diaz Diaz.
 
-    This library is free software: you have unlimited permission to
-    copy, distribute and modify it.
+   This library is free software. Redistribution and use in source and
+   binary forms, with or without modification, are permitted provided
+   that the following conditions are met:
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions, and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions, and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-// Rationals are kept normalized at all times.
-// Invariant = ( gcd( num, den ) == 1 && den > 0 ).
-// Range extends from INT_MAX to -INT_MAX.
-// Maximum resolution is 1 / INT_MAX.
-// In case of domain error or overflow, den is set to 0 and num is set
-// to >0, <0 or 0, meaning +INF, -INF and NAN respectively. This error
-// condition can be tested with the 'error' function, and can only be
-// cleared assigning a new value to the Rational.
-// While in error state, arithmetic operators become no ops and
-// relational operators return false, except !=, which returns true.
-//
+/* Rationals are kept normalized at all times.
+   Invariant = ( gcd( num, den ) == 1 && den > 0 ).
+   Range extends from INT_MAX to -INT_MAX.
+   Maximum resolution is 1 / INT_MAX.
+   In case of domain error or overflow, den is set to 0 and num is set
+   to >0, <0, or 0, meaning +INF, -INF, and NAN respectively. This error
+   condition can be tested with the function 'error', and can only be
+   cleared by assigning a new value to the Rational.
+   While in error state, arithmetic operators become no ops and
+   relational operators return false, except !=, which returns true.
+*/
 class Rational
   {
   int num, den;
@@ -42,8 +50,7 @@ public:
 
   int numerator() const { return num; }
   int denominator() const { return den; }
-  int sign() const
-    { if( num > 0 ) return 1; if( num < 0 ) return -1; return 0; }
+  int sign() const { return ( num > 0 ) - ( num < 0 ); }
   bool error() const { return ( den <= 0 ); }	// true if in error state
 
   const Rational & operator+() const { return *this; }	// unary plus const
@@ -103,12 +110,14 @@ public:
     { return ( den > 0 && r.den > 0 &&
                (long long)num * r.den < (long long)r.num * den ); }
   bool operator<=( const Rational & r ) const
-    { return ( *this < r || *this == r ); }
+    { return ( den > 0 && r.den > 0 &&
+               (long long)num * r.den <= (long long)r.num * den ); }
   bool operator> ( const Rational & r ) const
     { return ( den > 0 && r.den > 0 &&
                (long long)num * r.den > (long long)r.num * den ); }
   bool operator>=( const Rational & r ) const
-    { return ( *this > r || *this == r ); }
+    { return ( den > 0 && r.den > 0 &&
+               (long long)num * r.den >= (long long)r.num * den ); }
 
   bool operator< ( const int n ) const { return operator< ( Rational( n ) ); }
   bool operator<=( const int n ) const { return operator<=( Rational( n ) ); }
@@ -120,8 +129,9 @@ public:
     { if( den > 0 ) return ( num / den ); else return num; }
 
   int parse( const char * const s );		// returns parsed size
-  const std::string to_decimal( const unsigned iwidth = 1, int prec = -2 ) const;
-  const std::string to_fraction( const unsigned width = 1 ) const;
+  std::string to_decimal( const unsigned iwidth = 1, int prec = -2,
+                          const bool rounding = false ) const;
+  std::string to_fraction( const unsigned width = 1 ) const;
   };
 
 

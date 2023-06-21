@@ -1,7 +1,7 @@
 GNU ddrescue was written by Antonio Diaz Diaz.
 
-Thanks to Dave Burton for his ideas about the logfile format and the raw
-devices.
+Thanks to Dave Burton for his ideas about the mapfile format, the raw
+devices, and more.
 
-Thanks also to the many people who have contributed useful ideas,
-testing, etc...
+Thanks also to the many people who have contributed useful ideas, testing,
+etc...

@@ -1,45 +1,17 @@
-Changes in version 1.19:
+Changes in version 1.27:
 
-A race condition at start of run with "--timeout=0" has been fixed.
+A deadlock in command mode when stdout is fully buffered has been fixed by
+flushing stdout after executing each command. (Reported by Jeffrey Bosboom).
 
-The new option "-P, --data-preview", which makes ddrescue show a few
-lines of the latest data read, has been added.
+The new option '-W, --compare-before-write' has been added. It omits
+superfluous writes in rescue mode.
+(Suggested by Kajetan Harald Hinner and Petr Slansky).
 
-The new option "-u, --unidirectional", which runs all passes in the same
-direction (forwards or backwards), has been added.
+Diagnostics caused by invalid arguments to command line options now show the
+argument and the name of the option.
 
-The new option "-X, --exit-on-error", which makes ddrescue exit after
-the first read error is encountered during the copying phase, has been
-added.
+The option synonym '--direct' has been removed and is no longer recognized.
 
-The new option "--ask", which asks for confirmation before starting the
-copy, has been added.
+'long long' is now used instead of 'long' for time variables.
 
-The new option "--cpass", which selects what passes to run during the
-copying phase, has been added.
-
-The new option "--pause", which inserts a pause between passes, has been
-added.
-
-The option "-l, --logfile-size" is no more needed and has been removed.
-
-Ddrescue now skips on the first error during the copying phase.
-
-Trimming is now done in one pass and may be run in reverse.
-
-The splitting phase has been replaced by a "scraping" phase that scrapes
-together the data not recovered by the copying or trimming phases.
-Scraping reads each non-scraped block forwards, one sector at a time.
-
-The long name of option "-n" has been changed to "--no-scrape".
-
-During the retrying phase the direction is now reversed after each pass.
-Use "--unidirectional" to override.
-
-Model and serial number of ATA devices are shown with "--ask" or "-vv"
-on Linux.
-
-The configure script now accepts the option "--enable-linux" to enable
-the compilation of linux-specific code.
-
-The license has been changed to GPL version 2 or later.
+A missing '#include <cstdlib>' has been added.
