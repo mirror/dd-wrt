@@ -59,11 +59,11 @@ static const short julian_days_by_month[2][12] = {
     {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335},
 };
 
-static const char wday_name[7][4] = {
+static char wday_name[7][4] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
-static const char mon_name[12][4] = {
+static char mon_name[12][4] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
@@ -176,28 +176,34 @@ static int is_exception_century(Year year)
 static int cmp_date( const struct TM* left, const struct tm* right ) {
     if( left->tm_year > right->tm_year )
         return 1;
-    if( left->tm_year < right->tm_year )
+    else if( left->tm_year < right->tm_year )
         return -1;
+
     if( left->tm_mon > right->tm_mon )
         return 1;
-    if( left->tm_mon < right->tm_mon )
+    else if( left->tm_mon < right->tm_mon )
         return -1;
+
     if( left->tm_mday > right->tm_mday )
         return 1;
-    if( left->tm_mday < right->tm_mday )
+    else if( left->tm_mday < right->tm_mday )
         return -1;
+
     if( left->tm_hour > right->tm_hour )
         return 1;
-    if( left->tm_hour < right->tm_hour )
+    else if( left->tm_hour < right->tm_hour )
         return -1;
+
     if( left->tm_min > right->tm_min )
         return 1;
-    if( left->tm_min < right->tm_min )
+    else if( left->tm_min < right->tm_min )
         return -1;
+
     if( left->tm_sec > right->tm_sec )
         return 1;
-    if( left->tm_sec < right->tm_sec )
+    else if( left->tm_sec < right->tm_sec )
         return -1;
+
     return 0;
 }
 
@@ -227,7 +233,12 @@ Time64_T timegm64(const struct TM *date) {
     Year     orig_year = (Year)date->tm_year;
     int      cycles  = 0;
 
-    if( (orig_year > 100) || (orig_year < -300) ) {
+    if( orig_year > 100 ) {
+        cycles = (orig_year - 100) / 400;
+        orig_year -= cycles * 400;
+        days      += (Time64_T)cycles * days_in_gregorian_cycle;
+    }
+    else if( orig_year < -300 ) {
         cycles = (orig_year - 100) / 400;
         orig_year -= cycles * 400;
         days      += (Time64_T)cycles * days_in_gregorian_cycle;
@@ -531,7 +542,7 @@ Time64_T mktime64(struct TM *input_date) {
     /* Correct the user's possibly out of bound input date */
     copy_tm_to_TM64(&safe_date, input_date);
 
-    timev += seconds_between_years(year, (Year)(safe_date.tm_year) + 1900);
+    timev += seconds_between_years(year, (Year)(safe_date.tm_year + 1900));
 
     return timev;
 }
@@ -706,7 +717,7 @@ struct TM *localtime64_r (const Time64_T *timev, struct TM *local_tm)
        )
     {
         TIME64_TRACE1("Mapping tm_year %lld to safe_year\n", (Year)gm_tm.tm_year);
-        gm_tm.tm_year = safe_year((Year)(gm_tm.tm_year) + 1900) - 1900;
+        gm_tm.tm_year = safe_year((Year)(gm_tm.tm_year + 1900)) - 1900;
     }
 
     safe_time = (time_t)timegm64(&gm_tm);
@@ -763,15 +774,15 @@ struct TM *localtime64_r (const Time64_T *timev, struct TM *local_tm)
 static int valid_tm_wday( const struct TM* date ) {
     if( 0 <= date->tm_wday && date->tm_wday <= 6 )
         return 1;
-
-    return 0;
+    else
+        return 0;
 }
 
 static int valid_tm_mon( const struct TM* date ) {
     if( 0 <= date->tm_mon && date->tm_mon <= 11 )
         return 1;
-
-    return 0;
+    else
+        return 0;
 }
 
 

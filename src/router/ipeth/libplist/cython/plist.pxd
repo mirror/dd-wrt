@@ -19,8 +19,7 @@ cdef class Bool(Node):
 
 cdef class Integer(Node):
     cpdef set_value(self, object value)
-    cpdef get_value(self)
-    cpdef bint is_negative(self)
+    cpdef uint64_t get_value(self)
 
 cdef class Uid(Node):
     cpdef set_value(self, object value)

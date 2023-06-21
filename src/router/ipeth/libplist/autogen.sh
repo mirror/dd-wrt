@@ -1,6 +1,5 @@
 #!/bin/sh
 
-chmod +x git-version-gen
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 

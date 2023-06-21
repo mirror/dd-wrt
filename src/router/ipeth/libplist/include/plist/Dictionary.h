@@ -35,7 +35,7 @@ public :
     Dictionary(Node* parent = NULL);
     Dictionary(plist_t node, Node* parent = NULL);
     Dictionary(const Dictionary& d);
-    Dictionary& operator=(const Dictionary& d);
+    Dictionary& operator=(Dictionary& d);
     virtual ~Dictionary();
 
     Node* Clone() const;
@@ -45,18 +45,14 @@ public :
 
     Node* operator[](const std::string& key);
     iterator Begin();
-    iterator begin();
     iterator End();
-    iterator end();
     iterator Find(const std::string& key);
     const_iterator Begin() const;
-    const_iterator begin() const;
     const_iterator End() const;
-    const_iterator end() const;
-    size_t size() const;
     const_iterator Find(const std::string& key) const;
     iterator Set(const std::string& key, const Node* node);
     iterator Set(const std::string& key, const Node& node);
+    iterator Insert(const std::string& key, Node* node) PLIST_WARN_DEPRECATED("use Set() instead");
     void Remove(Node* node);
     void Remove(const std::string& key);
     std::string GetNodeKey(Node* node);

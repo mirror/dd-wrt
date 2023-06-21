@@ -34,24 +34,12 @@ public :
     Array(Node* parent = NULL);
     Array(plist_t node, Node* parent = NULL);
     Array(const Array& a);
-    Array& operator=(const Array& a);
+    Array& operator=(Array& a);
     virtual ~Array();
 
     Node* Clone() const;
 
-    typedef std::vector<Node*>::iterator iterator;
-    typedef std::vector<Node*>::const_iterator const_iterator;
-
     Node* operator[](unsigned int index);
-    iterator Begin();
-    iterator begin();
-    iterator End();
-    iterator end();
-    const_iterator Begin() const;
-    const_iterator begin() const;
-    const_iterator End() const;
-    const_iterator end() const;
-    size_t size() const;
     void Append(Node* node);
     void Insert(Node* node, unsigned int pos);
     void Remove(Node* node);

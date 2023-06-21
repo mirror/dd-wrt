@@ -39,7 +39,7 @@ static void dictionary_fill(Dictionary *_this, std::map<std::string,Node*> &map,
         plist_dict_next_item(node, it, &key, &subnode);
         if (key && subnode)
             map[std::string(key)] = Node::FromPlist(subnode, _this);
-        delete key;
+        free(key);
     } while (subnode);
     free(it);
 }
@@ -62,7 +62,7 @@ Dictionary::Dictionary(const PList::Dictionary& d)
     dictionary_fill(this, _map, _node);
 }
 
-Dictionary& Dictionary::operator=(const PList::Dictionary& d)
+Dictionary& Dictionary::operator=(PList::Dictionary& d)
 {
     for (Dictionary::iterator it = _map.begin(); it != _map.end(); it++)
     {
@@ -99,17 +99,7 @@ Dictionary::iterator Dictionary::Begin()
     return _map.begin();
 }
 
-Dictionary::iterator Dictionary::begin()
-{
-    return _map.begin();
-}
-
 Dictionary::iterator Dictionary::End()
-{
-    return _map.end();
-}
-
-Dictionary::iterator Dictionary::end()
 {
     return _map.end();
 }
@@ -119,23 +109,9 @@ Dictionary::const_iterator Dictionary::Begin() const
     return _map.begin();
 }
 
-Dictionary::const_iterator Dictionary::begin() const
-{
-    return _map.begin();
-}
-
 Dictionary::const_iterator Dictionary::End() const
 {
     return _map.end();
-}
-
-Dictionary::const_iterator Dictionary::end() const
-{
-    return _map.end();
-}
-
-size_t Dictionary::size() const {
-    return _map.size();
 }
 
 Dictionary::iterator Dictionary::Find(const std::string& key)
@@ -167,6 +143,11 @@ Dictionary::iterator Dictionary::Set(const std::string& key, const Node& node)
     return Set(key, &node);
 }
 
+Dictionary::iterator Dictionary::Insert(const std::string& key, Node* node)
+{
+    return this->Set(key, node);
+}
+
 void Dictionary::Remove(Node* node)
 {
     if (node)
@@ -175,7 +156,7 @@ void Dictionary::Remove(Node* node)
         plist_dict_get_item_key(node->GetPlist(), &key);
         plist_dict_remove_item(_node, key);
         std::string skey = key;
-        delete key;
+        free(key);
         _map.erase(skey);
         delete node;
     }

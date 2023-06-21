@@ -52,7 +52,7 @@ Node::Node(plist_type type, Node* parent) : _parent(parent)
     case PLIST_BOOLEAN:
         _node = plist_new_bool(0);
         break;
-    case PLIST_INT:
+    case PLIST_UINT:
         _node = plist_new_uint(0);
         break;
     case PLIST_REAL:
@@ -134,7 +134,7 @@ Node* Node::FromPlist(plist_t node, Node* parent)
         case PLIST_BOOLEAN:
             ret = new Boolean(node, parent);
             break;
-        case PLIST_INT:
+        case PLIST_UINT:
             ret = new Integer(node, parent);
             break;
         case PLIST_REAL:

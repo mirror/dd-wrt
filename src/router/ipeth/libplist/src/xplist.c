@@ -41,6 +41,7 @@
 #include <limits.h>
 
 #include <node.h>
+#include <node_list.h>
 
 #include "plist.h"
 #include "base64.h"
@@ -70,7 +71,7 @@
 
 #define MAC_EPOCH 978307200
 
-#define MAX_DATA_BYTES_PER_LINE(__i) (((76 - ((__i) << 3)) >> 2) * 3)
+#define MAX_DATA_BYTES_PER_LINE(__i) (((76 - (__i << 3)) >> 2) * 3)
 
 static const char XML_PLIST_PROLOG[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
@@ -80,10 +81,8 @@ static const char XML_PLIST_EPILOG[] = "</plist>\n";
 #ifdef DEBUG
 static int plist_xml_debug = 0;
 #define PLIST_XML_ERR(...) if (plist_xml_debug) { fprintf(stderr, "libplist[xmlparser] ERROR: " __VA_ARGS__); }
-#define PLIST_XML_WRITE_ERR(...) if (plist_xml_debug) { fprintf(stderr, "libplist[xmlwriter] ERROR: " __VA_ARGS__); }
 #else
 #define PLIST_XML_ERR(...)
-#define PLIST_XML_WRITE_ERR(...)
 #endif
 
 void plist_xml_init(void)
@@ -102,13 +101,6 @@ void plist_xml_deinit(void)
     /* deinit XML stuff */
 }
 
-void plist_xml_set_debug(int debug)
-{
-#if DEBUG
-    plist_xml_debug = debug;
-#endif
-}
-
 static size_t dtostr(char *buf, size_t bufsize, double realval)
 {
     size_t len = 0;
@@ -121,7 +113,7 @@ static size_t dtostr(char *buf, size_t bufsize, double realval)
     } else {
         size_t i = 0;
         len = snprintf(buf, bufsize, "%.*g", 17, realval);
-        for (i = 0; buf && i < len; i++) {
+        for (i = 0; i < len; i++) {
             if (buf[i] == ',') {
                 buf[i] = '.';
                 break;
@@ -133,7 +125,7 @@ static size_t dtostr(char *buf, size_t bufsize, double realval)
     return len;
 }
 
-static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
+static void node_to_xml(node_t* node, bytearray_t **outbuf, uint32_t depth)
 {
     plist_data_t node_data = NULL;
 
@@ -147,10 +139,8 @@ static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
 
     uint32_t i = 0;
 
-    if (!node) {
-        PLIST_XML_WRITE_ERR("Encountered invalid empty node in property list\n");
-        return PLIST_ERR_INVALID_ARG;
-    }
+    if (!node)
+        return;
 
     node_data = plist_get_data(node);
 
@@ -168,7 +158,7 @@ static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
     }
     break;
 
-    case PLIST_INT:
+    case PLIST_UINT:
         tag = XPLIST_INT;
         tag_len = XPLIST_INT_LEN;
         val = (char*)malloc(64);
@@ -221,7 +211,8 @@ static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
             struct TM _btime;
             struct TM *btime = gmtime64_r(&timev, &_btime);
             if (btime) {
-                val = (char*)calloc(1, 24);
+                val = (char*)malloc(24);
+                memset(val, 0, 24);
                 struct tm _tmcopy;
                 copy_TM64_to_tm(btime, &_tmcopy);
                 val_len = strftime(val, 24, "%Y-%m-%dT%H:%M:%SZ", &_tmcopy);
@@ -242,11 +233,8 @@ static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
             val_len = snprintf(val, 64, "%"PRIi64, node_data->intval);
         }
         break;
-    case PLIST_NULL:
-        PLIST_XML_WRITE_ERR("PLIST_NULL type is not valid for XML format\n");
-        return PLIST_ERR_FORMAT;
     default:
-        return PLIST_ERR_UNKNOWN;
+        break;
     }
 
     for (i = 0; i < depth; i++) {
@@ -364,10 +352,9 @@ static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
         if (node_data->type == PLIST_DICT && node->children) {
             assert((node->children->count % 2) == 0);
         }
-        node_t ch;
+        node_t *ch;
         for (ch = node_first_child(node); ch; ch = node_next_sibling(ch)) {
-            int res = node_to_xml(ch, outbuf, depth+1);
-            if (res < 0) return res;
+            node_to_xml(ch, outbuf, depth+1);
         }
 
         /* fix indent for structured types */
@@ -383,7 +370,6 @@ static int node_to_xml(node_t node, bytearray_t **outbuf, uint32_t depth)
         str_buf_append(*outbuf, ">", 1);
     }
     str_buf_append(*outbuf, "\n", 1);
-    return PLIST_ERR_SUCCESS;
 }
 
 static void parse_date(const char *strval, struct TM *btime)
@@ -415,7 +401,7 @@ static int num_digits_i(int64_t i)
     int64_t po10;
     n=1;
     if (i < 0) {
-        i = (i == INT64_MIN) ? INT64_MAX : -i;
+        i = -i;
         n++;
     }
     po10=10;
@@ -444,15 +430,15 @@ static int num_digits_u(uint64_t i)
     return n;
 }
 
-static int node_estimate_size(node_t node, uint64_t *size, uint32_t depth)
+static void node_estimate_size(node_t *node, uint64_t *size, uint32_t depth)
 {
     plist_data_t data;
     if (!node) {
-        return PLIST_ERR_INVALID_ARG;
+        return;
     }
     data = plist_get_data(node);
     if (node->children) {
-        node_t ch;
+        node_t *ch;
         for (ch = node_first_child(node); ch; ch = node_next_sibling(ch)) {
             node_estimate_size(ch, size, depth + 1);
         }
@@ -485,7 +471,7 @@ static int node_estimate_size(node_t node, uint64_t *size, uint32_t depth)
             *size += data->length;
             *size += (XPLIST_KEY_LEN << 1) + 6;
             break;
-        case PLIST_INT:
+        case PLIST_UINT:
             if (data->length == 16) {
                 *size += num_digits_u(data->intval);
             } else {
@@ -494,7 +480,7 @@ static int node_estimate_size(node_t node, uint64_t *size, uint32_t depth)
             *size += (XPLIST_INT_LEN << 1) + 6;
             break;
         case PLIST_REAL:
-            *size += dtostr(NULL, 0, data->realval);
+            *size += num_digits_i((int64_t)data->realval) + 7;
             *size += (XPLIST_REAL_LEN << 1) + 6;
             break;
         case PLIST_DATE:
@@ -517,48 +503,24 @@ static int node_estimate_size(node_t node, uint64_t *size, uint32_t depth)
             *size += 18; /* <key>CF$UID</key> */
             *size += (XPLIST_INT_LEN << 1) + 6;
             break;
-        case PLIST_NULL:
-            PLIST_XML_WRITE_ERR("PLIST_NULL type is not valid for XML format\n");
-            return PLIST_ERR_FORMAT;
         default:
-            PLIST_XML_WRITE_ERR("invalid node type encountered\n");
-            return PLIST_ERR_UNKNOWN;
+            break;
         }
         *size += indent;
     }
-    return PLIST_ERR_SUCCESS;
 }
 
-PLIST_API plist_err_t plist_to_xml(plist_t plist, char **plist_xml, uint32_t * length)
+PLIST_API void plist_to_xml(plist_t plist, char **plist_xml, uint32_t * length)
 {
     uint64_t size = 0;
-    int res;
-
-    if (!plist || !plist_xml || !length) {
-        return PLIST_ERR_INVALID_ARG;
-    }
-
-    res = node_estimate_size(plist, &size, 0);
-    if (res < 0) {
-        return res;
-    }
+    node_estimate_size(plist, &size, 0);
     size += sizeof(XML_PLIST_PROLOG) + sizeof(XML_PLIST_EPILOG) - 1;
 
     strbuf_t *outbuf = str_buf_new(size);
-    if (!outbuf) {
-        PLIST_XML_WRITE_ERR("Could not allocate output buffer\n");
-        return PLIST_ERR_NO_MEM;
-    }
 
     str_buf_append(outbuf, XML_PLIST_PROLOG, sizeof(XML_PLIST_PROLOG)-1);
 
-    res = node_to_xml(plist, &outbuf, 0);
-    if (res < 0) {
-        str_buf_free(outbuf);
-        *plist_xml = NULL;
-        *length = 0;
-        return res;
-    }
+    node_to_xml(plist, &outbuf, 0);
 
     str_buf_append(outbuf, XML_PLIST_EPILOG, sizeof(XML_PLIST_EPILOG));
 
@@ -567,8 +529,11 @@ PLIST_API plist_err_t plist_to_xml(plist_t plist, char **plist_xml, uint32_t * l
 
     outbuf->data = NULL;
     str_buf_free(outbuf);
+}
 
-    return PLIST_ERR_SUCCESS;
+PLIST_API void plist_to_xml_free(char *plist_xml)
+{
+    free(plist_xml);
 }
 
 struct _parse_ctx {
@@ -784,7 +749,7 @@ static text_part_t* get_text_parts(parse_ctx ctx, const char* tag, size_t tag_le
         }
     } while (1);
     ctx->pos++;
-    if (ctx->pos >= ctx->end-tag_len || strncmp(ctx->pos, tag, tag_len) != 0) {
+    if (ctx->pos >= ctx->end-tag_len || strncmp(ctx->pos, tag, tag_len)) {
         PLIST_XML_ERR("EOF or end tag mismatch\n");
         ctx->err++;
         return NULL;
@@ -959,7 +924,7 @@ static char* text_parts_get_content(text_part_t *tp, int unesc_entities, size_t 
     return str;
 }
 
-static int node_from_xml(parse_ctx ctx, plist_t *plist)
+static void node_from_xml(parse_ctx ctx, plist_t *plist)
 {
     char *tag = NULL;
     char *keyname = NULL;
@@ -1000,7 +965,7 @@ static int node_from_xml(parse_ctx ctx, plist_t *plist)
                 ctx->err++;
                 goto err_out;
             }
-            if (strncmp(ctx->pos, "?>", 2) != 0) {
+            if (strncmp(ctx->pos, "?>", 2)) {
                 PLIST_XML_ERR("Couldn't find <? tag closing marker\n");
                 ctx->err++;
                 goto err_out;
@@ -1012,7 +977,7 @@ static int node_from_xml(parse_ctx ctx, plist_t *plist)
             if (((ctx->end - ctx->pos) > 3) && !strncmp(ctx->pos, "!--", 3)) {
                 ctx->pos += 3;
                 find_str(ctx,"-->", 3, 0);
-                if (ctx->pos > ctx->end-3 || strncmp(ctx->pos, "-->", 3) != 0) {
+                if (ctx->pos > ctx->end-3 || strncmp(ctx->pos, "-->", 3)) {
                     PLIST_XML_ERR("Couldn't find end of comment\n");
                     ctx->err++;
                     goto err_out;
@@ -1041,7 +1006,7 @@ static int node_from_xml(parse_ctx ctx, plist_t *plist)
                 }
                 if (embedded_dtd) {
                     find_str(ctx, "]>", 2, 1);
-                    if (ctx->pos > ctx->end-2 || strncmp(ctx->pos, "]>", 2) != 0) {
+                    if (ctx->pos > ctx->end-2 || strncmp(ctx->pos, "]>", 2)) {
                         PLIST_XML_ERR("Couldn't find end of DOCTYPE\n");
                         ctx->err++;
                         goto err_out;
@@ -1177,7 +1142,7 @@ static int node_from_xml(parse_ctx ctx, plist_t *plist)
                             }
                             str++;
                         }
-                        data->intval = strtoull(str, NULL, 0);
+                        data->intval = strtoull((char*)str, NULL, 0);
                         if (is_negative || (data->intval <= INT64_MAX)) {
                             uint64_t v = data->intval;
                             if (is_negative) {
@@ -1200,7 +1165,7 @@ static int node_from_xml(parse_ctx ctx, plist_t *plist)
                     data->intval = 0;
                     data->length = 8;
                 }
-                data->type = PLIST_INT;
+                data->type = PLIST_UINT;
             } else if (!strcmp(tag, XPLIST_REAL)) {
                 if (!is_empty) {
                     text_part_t first_part = { NULL, 0, 0, NULL };
@@ -1419,7 +1384,7 @@ static int node_from_xml(parse_ctx ctx, plist_t *plist)
                 node_path = node_path->prev;
                 free(path_item);
 
-                parent = ((node_t)parent)->parent;
+                parent = ((node_t*)parent)->parent;
                 if (!parent) {
                     goto err_out;
                 }
@@ -1454,34 +1419,17 @@ err_out:
     if (ctx->err) {
         plist_free(*plist);
         *plist = NULL;
-        return PLIST_ERR_PARSE;
     }
-
-    /* check if we have a UID "dict" so we can replace it with a proper UID node */
-    if (PLIST_IS_DICT(*plist) && plist_dict_get_size(*plist) == 1) {
-        plist_t value = plist_dict_get_item(*plist, "CF$UID");
-        if (PLIST_IS_UINT(value)) {
-            uint64_t u64val = 0;
-            plist_get_uint_val(value, &u64val);
-            plist_free(*plist);
-            *plist = plist_new_uid(u64val);
-        }
-    }
-
-    return PLIST_ERR_SUCCESS;
 }
 
-PLIST_API plist_err_t plist_from_xml(const char *plist_xml, uint32_t length, plist_t * plist)
+PLIST_API void plist_from_xml(const char *plist_xml, uint32_t length, plist_t * plist)
 {
-    if (!plist) {
-        return PLIST_ERR_INVALID_ARG;
-    }
-    *plist = NULL;
     if (!plist_xml || (length == 0)) {
-        return PLIST_ERR_INVALID_ARG;
+        *plist = NULL;
+        return;
     }
 
     struct _parse_ctx ctx = { plist_xml, plist_xml + length, 0 };
 
-    return node_from_xml(&ctx, plist);
+    node_from_xml(&ctx, plist);
 }
