@@ -5848,7 +5848,7 @@ void ddns_save_value(webs_t wp)
 	force = websGetVari(wp, _force, 0);
 	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
-	if (!hostname || !force || !wan_ip) {
+	if (!force || !wan_ip) {
 		return;
 	}
 
