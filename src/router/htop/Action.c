@@ -88,6 +88,7 @@ static void Action_runSetup(State* st) {
    ScreenManager_run(scr, NULL, NULL, "Setup");
    ScreenManager_delete(scr);
    if (st->settings->changed) {
+      CRT_setMouse(st->settings->enableMouse);
       Header_writeBackToSettings(st->header);
    }
 }
@@ -212,22 +213,37 @@ static Htop_Reaction actionSortByTime(State* st) {
 
 static Htop_Reaction actionToggleKernelThreads(State* st) {
    st->settings->hideKernelThreads = !st->settings->hideKernelThreads;
+   st->settings->lastUpdate++;
+
    return HTOP_RECALCULATE | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING;
 }
 
 static Htop_Reaction actionToggleUserlandThreads(State* st) {
    st->settings->hideUserlandThreads = !st->settings->hideUserlandThreads;
+   st->settings->lastUpdate++;
+
+   return HTOP_RECALCULATE | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING;
+}
+
+static Htop_Reaction actionToggleRunningInContainer(State* st) {
+   st->settings->hideRunningInContainer = !st->settings->hideRunningInContainer;
+   st->settings->lastUpdate++;
+
    return HTOP_RECALCULATE | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING;
 }
 
 static Htop_Reaction actionToggleProgramPath(State* st) {
    st->settings->showProgramPath = !st->settings->showProgramPath;
-   return HTOP_REFRESH | HTOP_SAVE_SETTINGS;
+   st->settings->lastUpdate++;
+
+   return HTOP_REFRESH | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING;
 }
 
 static Htop_Reaction actionToggleMergedCommand(State* st) {
    st->settings->showMergedCommand = !st->settings->showMergedCommand;
-   return HTOP_REFRESH | HTOP_SAVE_SETTINGS;
+   st->settings->lastUpdate++;
+
+   return HTOP_REFRESH | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING | HTOP_UPDATE_PANELHDR;
 }
 
 static Htop_Reaction actionToggleTreeView(State* st) {
@@ -239,8 +255,16 @@ static Htop_Reaction actionToggleTreeView(State* st) {
    return HTOP_REFRESH | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING | HTOP_REDRAW_BAR | HTOP_UPDATE_PANELHDR;
 }
 
+static Htop_Reaction actionToggleHideMeters(State* st) {
+   st->hideMeters = !st->hideMeters;
+   return HTOP_RESIZE | HTOP_KEEP_FOLLOWING;
+}
+
 static Htop_Reaction actionExpandOrCollapseAllBranches(State* st) {
    ScreenSettings* ss = st->settings->ss;
+   if (!ss->treeView) {
+      return HTOP_OK;
+   }
    ss->allBranchesCollapsed = !ss->allBranchesCollapsed;
    if (ss->allBranchesCollapsed)
       ProcessList_collapseAllBranches(st->pl);
@@ -281,10 +305,13 @@ static Htop_Reaction actionLowerPriority(State* st) {
 static Htop_Reaction actionInvertSortOrder(State* st) {
    ScreenSettings_invertSortOrder(st->settings->ss);
    st->pl->needsSort = true;
-   return HTOP_REFRESH | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING;
+   return HTOP_REFRESH | HTOP_SAVE_SETTINGS | HTOP_KEEP_FOLLOWING | HTOP_UPDATE_PANELHDR;
 }
 
 static Htop_Reaction actionExpandOrCollapse(State* st) {
+   if (!st->settings->ss->treeView)
+      return HTOP_OK;
+
    bool changed = expandCollapse((Panel*)st->mainPanel);
    return changed ? HTOP_RECALCULATE : HTOP_OK;
 }
@@ -308,7 +335,7 @@ static Htop_Reaction actionNextScreen(State* st) {
       settings->ssIndex = 0;
    }
    settings->ss = settings->screens[settings->ssIndex];
-   return HTOP_REFRESH;
+   return HTOP_UPDATE_PANELHDR | HTOP_REFRESH;
 }
 
 static Htop_Reaction actionPrevScreen(State* st) {
@@ -319,7 +346,7 @@ static Htop_Reaction actionPrevScreen(State* st) {
       settings->ssIndex--;
    }
    settings->ss = settings->screens[settings->ssIndex];
-   return HTOP_REFRESH;
+   return HTOP_UPDATE_PANELHDR | HTOP_REFRESH;
 }
 
 Htop_Reaction Action_setScreenTab(Settings* settings, int x) {
@@ -333,7 +360,7 @@ Htop_Reaction Action_setScreenTab(Settings* settings, int x) {
       if (x <= s + len + 1) {
          settings->ssIndex = i;
          settings->ss = settings->screens[i];
-         return HTOP_REFRESH;
+         return HTOP_UPDATE_PANELHDR | HTOP_REFRESH;
       }
       s += len + 3;
    }
@@ -502,6 +529,7 @@ static const struct {
    bool roInactive;
    const char* info;
 } helpLeft[] = {
+   { .key = "      #: ",  .roInactive = false, .info = "hide/show header meters" },
    { .key = "    Tab: ",  .roInactive = false, .info = "switch to next screen tab" },
    { .key = " Arrows: ",  .roInactive = false, .info = "scroll process list" },
    { .key = " Digits: ",  .roInactive = false, .info = "incremental PID search" },
@@ -533,7 +561,7 @@ static const struct {
    { .key = "      U: ", .roInactive = false, .info = "untag all processes" },
    { .key = "   F9 k: ", .roInactive = true,  .info = "kill process/tagged processes" },
    { .key = "   F7 ]: ", .roInactive = true,  .info = "higher priority (root only)" },
-   { .key = "   F8 [: ", .roInactive = false, .info = "lower priority (+ nice)" },
+   { .key = "   F8 [: ", .roInactive = true,  .info = "lower priority (+ nice)" },
 #if (defined(HAVE_LIBHWLOC) || defined(HAVE_AFFINITY))
    { .key = "      a: ", .roInactive = true, .info = "set CPU affinity" },
 #endif
@@ -570,46 +598,57 @@ static Htop_Reaction actionHelp(State* st) {
    line++;
    mvaddstr(line++, 0, "CPU usage bar: ");
 
+#define addbartext(attr, prefix, text)               \
+   do {                                              \
+      addattrstr(CRT_colors[DEFAULT_COLOR], prefix); \
+      addattrstr(attr, text);                        \
+   } while(0)
+
    addattrstr(CRT_colors[BAR_BORDER], "[");
+   addbartext(CRT_colors[CPU_NICE_TEXT], "", "low");
+   addbartext(CRT_colors[CPU_NORMAL], "/", "normal");
+   addbartext(CRT_colors[CPU_SYSTEM], "/", "kernel");
    if (st->settings->detailedCPUTime) {
-      addattrstr(CRT_colors[CPU_NICE_TEXT], "low"); addstr("/");
-      addattrstr(CRT_colors[CPU_NORMAL], "normal"); addstr("/");
-      addattrstr(CRT_colors[CPU_SYSTEM], "kernel"); addstr("/");
-      addattrstr(CRT_colors[CPU_IRQ], "irq"); addstr("/");
-      addattrstr(CRT_colors[CPU_SOFTIRQ], "soft-irq"); addstr("/");
-      addattrstr(CRT_colors[CPU_STEAL], "steal"); addstr("/");
-      addattrstr(CRT_colors[CPU_GUEST], "guest"); addstr("/");
-      addattrstr(CRT_colors[CPU_IOWAIT], "io-wait");
-      addattrstr(CRT_colors[BAR_SHADOW], " used%");
+      addbartext(CRT_colors[CPU_IRQ], "/", "irq");
+      addbartext(CRT_colors[CPU_SOFTIRQ], "/", "soft-irq");
+      addbartext(CRT_colors[CPU_STEAL], "/", "steal");
+      addbartext(CRT_colors[CPU_GUEST], "/", "guest");
+      addbartext(CRT_colors[CPU_IOWAIT], "/", "io-wait");
+      addbartext(CRT_colors[BAR_SHADOW], " ", "used%");
    } else {
-      addattrstr(CRT_colors[CPU_NICE_TEXT], "low-priority"); addstr("/");
-      addattrstr(CRT_colors[CPU_NORMAL], "normal"); addstr("/");
-      addattrstr(CRT_colors[CPU_SYSTEM], "kernel"); addstr("/");
-      addattrstr(CRT_colors[CPU_GUEST], "virtualized");
-      addattrstr(CRT_colors[BAR_SHADOW], "             used%");
+      addbartext(CRT_colors[CPU_GUEST], "/", "guest");
+      addbartext(CRT_colors[BAR_SHADOW], "                  ", "used%");
    }
    addattrstr(CRT_colors[BAR_BORDER], "]");
+
    attrset(CRT_colors[DEFAULT_COLOR]);
    mvaddstr(line++, 0, "Memory bar:    ");
    addattrstr(CRT_colors[BAR_BORDER], "[");
-   addattrstr(CRT_colors[MEMORY_USED], "used"); addstr("/");
-   addattrstr(CRT_colors[MEMORY_BUFFERS_TEXT], "buffers"); addstr("/");
-   addattrstr(CRT_colors[MEMORY_SHARED], "shared"); addstr("/");
-   addattrstr(CRT_colors[MEMORY_CACHE], "cache");
-   addattrstr(CRT_colors[BAR_SHADOW], "                     used/total");
+   addbartext(CRT_colors[MEMORY_USED], "", "used");
+   addbartext(CRT_colors[MEMORY_BUFFERS_TEXT], "/", "buffers");
+   addbartext(CRT_colors[MEMORY_SHARED], "/", "shared");
+   addbartext(CRT_colors[MEMORY_CACHE], "/", "cache");
+   addbartext(CRT_colors[BAR_SHADOW], "                     ", "used");
+   addbartext(CRT_colors[BAR_SHADOW], "/", "total");
    addattrstr(CRT_colors[BAR_BORDER], "]");
+
    attrset(CRT_colors[DEFAULT_COLOR]);
    mvaddstr(line++, 0, "Swap bar:      ");
    addattrstr(CRT_colors[BAR_BORDER], "[");
-   addattrstr(CRT_colors[SWAP], "used");
+   addbartext(CRT_colors[SWAP], "", "used");
 #ifdef HTOP_LINUX
-   addstr("/");
-   addattrstr(CRT_colors[SWAP_CACHE], "cache");
-   addattrstr(CRT_colors[BAR_SHADOW], "                                    used/total");
+   addbartext(CRT_colors[SWAP_CACHE], "/", "cache");
 #else
-   addattrstr(CRT_colors[BAR_SHADOW], "                                          used/total");
+   addbartext(CRT_colors[SWAP_CACHE], "      ", "");
 #endif
+   addbartext(CRT_colors[BAR_SHADOW], "                                    ", "used");
+   addbartext(CRT_colors[BAR_SHADOW], "/", "total");
    addattrstr(CRT_colors[BAR_BORDER], "]");
+
+   line++;
+
+#undef addbartext
+
    attrset(CRT_colors[DEFAULT_COLOR]);
    mvaddstr(line++, 0, "Type and layout of header meters are configurable in the setup screen.");
    if (CRT_colorScheme == COLORSCHEME_MONOCHROME) {
@@ -617,9 +656,23 @@ static Htop_Reaction actionHelp(State* st) {
    }
    line++;
 
-   mvaddstr(line++, 0, "Process state: R: running; S: sleeping; T: traced/stopped; Z: zombie; D: disk sleep");
+#define addattrstatestr(attr, state, desc)              \
+   do {                                                 \
+      addattrstr(attr, state);                          \
+      addattrstr(CRT_colors[DEFAULT_COLOR], ": " desc); \
+   } while(0)
 
-   line++;
+   mvaddstr(line, 0, "Process state: ");
+   addattrstatestr(CRT_colors[PROCESS_RUN_STATE], "R", "running; ");
+   addattrstatestr(CRT_colors[PROCESS_SHADOW], "S", "sleeping; ");
+   addattrstatestr(CRT_colors[PROCESS_RUN_STATE], "t", "traced/stopped; ");
+   addattrstatestr(CRT_colors[PROCESS_D_STATE], "Z", "zombie; ");
+   addattrstatestr(CRT_colors[PROCESS_D_STATE], "D", "disk sleep");
+   attrset(CRT_colors[DEFAULT_COLOR]);
+
+#undef addattrstatestr
+
+   line += 2;
 
    const bool readonly = Settings_isReadonly();
 
@@ -703,6 +756,7 @@ static Htop_Reaction actionShowCommandScreen(State* st) {
 
 void Action_setBindings(Htop_Action* keys) {
    keys[' '] = actionTag;
+   keys['#'] = actionToggleHideMeters;
    keys['*'] = actionExpandOrCollapseAllBranches;
    keys['+'] = actionExpandOrCollapse;
    keys[','] = actionSetSortColumn;
@@ -720,6 +774,7 @@ void Action_setBindings(Htop_Action* keys) {
    keys['K'] = actionToggleKernelThreads;
    keys['M'] = actionSortByMemory;
    keys['N'] = actionSortByPID;
+   keys['O'] = actionToggleRunningInContainer;
    keys['P'] = actionSortByCPU;
    keys['S'] = actionSetup;
    keys['T'] = actionSortByTime;

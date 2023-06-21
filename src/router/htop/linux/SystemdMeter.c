@@ -219,15 +219,18 @@ static void updateViaExec(void) {
          exit(1);
       dup2(fdnull, STDERR_FILENO);
       close(fdnull);
-      execlp("systemctl",
-             "systemctl",
-             "show",
-             "--property=SystemState",
-             "--property=NFailedUnits",
-             "--property=NNames",
-             "--property=NJobs",
-             "--property=NInstalledJobs",
-             NULL);
+      // Use of NULL in variadic functions must have a pointer cast.
+      // The NULL constant is not required by standard to have a pointer type.
+      execlp(
+         "systemctl",
+         "systemctl",
+         "show",
+         "--property=SystemState",
+         "--property=NFailedUnits",
+         "--property=NNames",
+         "--property=NJobs",
+         "--property=NInstalledJobs",
+         (char *)NULL);
       exit(127);
    }
    close(fdpair[1]);
@@ -307,8 +310,12 @@ static int valueDigitColor(unsigned int value) {
 static void SystemdMeter_display(ATTR_UNUSED const Object* cast, RichString* out) {
    char buffer[16];
    int len;
+   int color = METER_VALUE_ERROR;
 
-   int color = (systemState && String_eq(systemState, "running")) ? METER_VALUE_OK : METER_VALUE_ERROR;
+   if (systemState) {
+      color = String_eq(systemState, "running") ? METER_VALUE_OK :
+              String_eq(systemState, "degraded") ? METER_VALUE_ERROR : METER_VALUE_WARN;
+   }
    RichString_writeAscii(out, CRT_colors[color], systemState ? systemState : "N/A");
 
    RichString_appendAscii(out, CRT_colors[METER_TEXT], " (");

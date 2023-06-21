@@ -120,7 +120,9 @@ static OpenFiles_ProcessData* OpenFilesScreen_getProcessData(pid_t pid) {
       close(fdnull);
       char buffer[32] = {0};
       xSnprintf(buffer, sizeof(buffer), "%d", pid);
-      execlp("lsof", "lsof", "-P", "-o", "-p", buffer, "-F", NULL);
+      // Use of NULL in variadic functions must have a pointer cast.
+      // The NULL constant is not required by standard to have a pointer type.
+      execlp("lsof", "lsof", "-P", "-o", "-p", buffer, "-F", (char *)NULL);
       exit(127);
    }
    close(fdpair[1]);
@@ -224,7 +226,7 @@ static OpenFiles_ProcessData* OpenFilesScreen_getProcessData(pid_t pid) {
       struct stat st;
       if (stat(filename, &st) == 0) {
          char fileSizeBuf[21]; /* 20 (long long) + 1 (NULL) */
-         xSnprintf(fileSizeBuf, sizeof(fileSizeBuf), "%"PRIu64, st.st_size); /* st.st_size is long long on macOS, long on linux */
+         xSnprintf(fileSizeBuf, sizeof(fileSizeBuf), "%"PRIu64, (uint64_t)st.st_size); /* st.st_size is long long on macOS, long on linux */
          free_and_xStrdup(&item->data[fileSizeIndex], fileSizeBuf);
       }
    }
