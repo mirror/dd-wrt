@@ -131,9 +131,8 @@ int ipeth_main(int argc, char **argv)
     return 0;
 }
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 system("ifconfig iph0 up");
 return ipeth_main(argc,argv);
-
 }
