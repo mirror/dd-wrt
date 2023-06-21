@@ -32,7 +32,7 @@ Array::Array(Node* parent) : Structure(PLIST_ARRAY, parent)
     _array.clear();
 }
 
-static void array_fill(Array *_this, std::vector<Node*> &array, plist_t node)
+static void array_fill(Array *_this, std::vector<Node*> array, plist_t node)
 {
     plist_array_iter iter = NULL;
     plist_array_new_iter(node, &iter);
@@ -58,10 +58,11 @@ Array::Array(const PList::Array& a)
     array_fill(this, _array, _node);
 }
 
-Array& Array::operator=(const PList::Array& a)
+Array& Array::operator=(PList::Array& a)
 {
     plist_free(_node);
-    for (size_t it = 0; it < _array.size(); it++) {
+    for (unsigned int it = 0; it < _array.size(); it++)
+    {
         delete _array.at(it);
     }
     _array.clear();
@@ -72,7 +73,8 @@ Array& Array::operator=(const PList::Array& a)
 
 Array::~Array()
 {
-    for (size_t it = 0; it < _array.size(); it++) {
+    for (unsigned int it = 0; it < _array.size(); it++)
+    {
         delete (_array.at(it));
     }
     _array.clear();
@@ -86,50 +88,6 @@ Node* Array::Clone() const
 Node* Array::operator[](unsigned int array_index)
 {
     return _array.at(array_index);
-}
-
-Array::iterator Array::Begin()
-{
-    return _array.begin();
-}
-
-Array::iterator Array::begin()
-{
-    return _array.begin();
-}
-
-Array::iterator Array::End()
-{
-    return _array.end();
-}
-
-Array::iterator Array::end()
-{
-    return _array.end();
-}
-
-Array::const_iterator Array::Begin() const
-{
-    return _array.begin();
-}
-
-Array::const_iterator Array::begin() const
-{
-    return _array.begin();
-}
-
-Array::const_iterator Array::End() const
-{
-    return _array.end();
-}
-
-Array::const_iterator Array::end() const
-{
-    return _array.end();
-}
-
-size_t Array::size() const {
-    return _array.size();
 }
 
 void Array::Append(Node* node)

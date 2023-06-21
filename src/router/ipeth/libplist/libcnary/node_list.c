@@ -28,17 +28,16 @@
 #include "node.h"
 #include "node_list.h"
 
-void node_list_destroy(node_list_t list)
-{
+void node_list_destroy(node_list_t* list) {
 	free(list);
 }
 
-node_list_t node_list_create()
-{
-	node_list_t list = (node_list_t)calloc(1, sizeof(struct node_list));
-	if (list == NULL) {
+node_list_t* node_list_create() {
+	node_list_t* list = (node_list_t*) malloc(sizeof(node_list_t));
+	if(list == NULL) {
 		return NULL;
 	}
+	memset(list, '\0', sizeof(node_list_t));
 
 	// Initialize structure
 	list->begin = NULL;
@@ -47,12 +46,11 @@ node_list_t node_list_create()
 	return list;
 }
 
-int node_list_add(node_list_t list, node_t node)
-{
+int node_list_add(node_list_t* list, node_t* node) {
 	if (!list || !node) return -1;
 
 	// Find the last element in the list
-	node_t last = list->end;
+	node_t* last = list->end;
 
 	// Setup our new node as the new last element
 	node->next = NULL;
@@ -75,18 +73,17 @@ int node_list_add(node_list_t list, node_t node)
 	return 0;
 }
 
-int node_list_insert(node_list_t list, unsigned int node_index, node_t node)
-{
+int node_list_insert(node_list_t* list, unsigned int node_index, node_t* node) {
 	if (!list || !node) return -1;
 	if (node_index >= list->count) {
 		return node_list_add(list, node);
 	}
 
 	// Get the first element in the list
-	node_t cur = list->begin;
+	node_t* cur = list->begin;
 
 	unsigned int pos = 0;
-	node_t prev = NULL;
+	node_t* prev = NULL;
 
 	if (node_index > 0) {
 		while (pos < node_index) {
@@ -124,16 +121,15 @@ int node_list_insert(node_list_t list, unsigned int node_index, node_t node)
 	return 0;
 }
 
-int node_list_remove(node_list_t list, node_t node)
-{
+int node_list_remove(node_list_t* list, node_t* node) {
 	if (!list || !node) return -1;
 	if (list->count == 0) return -1;
 
 	int node_index = 0;
-	node_t n;
+	node_t* n;
 	for (n = list->begin; n; n = n->next) {
 		if (node == n) {
-			node_t newnode = node->next;
+			node_t* newnode = node->next;
 			if (node->prev) {
 				node->prev->next = newnode;
 				if (newnode) {
@@ -158,3 +154,4 @@ int node_list_remove(node_list_t list, node_t node)
 	}
 	return -1;
 }
+
