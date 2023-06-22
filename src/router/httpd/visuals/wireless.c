@@ -522,22 +522,22 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 	if (!strcmp(type, "passphrase")) {
 		if (wordlist[0] == ':')
 			return "";
-		substring(0, pos_nthoccurence(wordlist, ':', cnt - 4), wordlist, temp);
+		substring(0, pos_nthoccurence(wordlist, ':', cnt - 4), wordlist, temp,sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key1")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 4) + 1, pos_nthoccurence(wordlist, ':', cnt - 3), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 4) + 1, pos_nthoccurence(wordlist, ':', cnt - 3), wordlist, temp,sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key2")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 3) + 1, pos_nthoccurence(wordlist, ':', cnt - 2), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 3) + 1, pos_nthoccurence(wordlist, ':', cnt - 2), wordlist, temp,sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key3")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 2) + 1, pos_nthoccurence(wordlist, ':', cnt - 1), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 2) + 1, pos_nthoccurence(wordlist, ':', cnt - 1), wordlist, temp,sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key4")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 1) + 1, pos_nthoccurence(wordlist, ':', cnt), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 1) + 1, pos_nthoccurence(wordlist, ':', cnt), wordlist, temp,sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "tx")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt) + 1, strlen(wordlist), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt) + 1, strlen(wordlist), wordlist, temp,sizeof(temp));
 		return temp;
 	}
 

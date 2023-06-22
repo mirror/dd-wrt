@@ -498,7 +498,7 @@ char *hash_string(char *string, char *hashbuf,size_t len)
 	dd_md5_end((unsigned char *)hash, &MD);
 	for (i = 0; i < 16; i++) {
 		unsigned int k = hash[i];
-		sprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
+		snprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
 	}
 	return hashbuf;
 }
