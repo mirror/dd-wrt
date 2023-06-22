@@ -2500,7 +2500,7 @@ void start_lan(void)
 #endif
 
 				snprintf(wdsbc, sizeof(wdsbc), "%s", wdsip);
-				get_broadcast(wdsbc, wdsnm);
+				get_broadcast(wdsbc, sizeof(wdsbc), wdsnm);
 				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
 			} else if (nvram_matchi(wdsvarname, 2)
 				   && nvram_matchi(br1enable, 1)) {

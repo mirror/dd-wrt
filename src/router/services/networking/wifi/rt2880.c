@@ -1454,7 +1454,7 @@ void init_network(int idx)
 			wdsnm = nvram_nget("wl%d_wds%d_netmask", idx, s);
 
 			snprintf(wdsbc, 31, "%s", wdsip);
-			get_broadcast(wdsbc, wdsnm);
+			get_broadcast(wdsbc, sizeof(wdsbc), wdsnm);
 			eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
 		} else if (nvram_matchi(wdsvarname, 2)
 			   && nvram_matchi(br1enable, 1)) {

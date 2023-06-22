@@ -214,7 +214,7 @@ void start_pptpd(void)
 	char bcast[32];
 
 	strcpy(bcast, nvram_safe_get("lan_ipaddr"));
-	get_broadcast(bcast, nvram_safe_get("lan_netmask"));
+	get_broadcast(bcast, sizeof(bcast), nvram_safe_get("lan_netmask"));
 
 	fp = fopen("/tmp/pptpd/ip-up", "w");
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes -f\n"	// reinitialize 
