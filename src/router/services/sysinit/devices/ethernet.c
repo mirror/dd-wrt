@@ -231,9 +231,9 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 			snprintf(final, sizeof(final) - 1, "%s %x ", final, vendor);
 		}
 		fclose(fp);
-		hash = hash_string(final, s_hash);
+		hash = hash_string(final, s_hash,sizeof(s_hash));
 	} else {
-		hash = hash_file_string(buspath, s_hash);
+		hash = hash_file_string(buspath, s_hash,sizeof(s_hash));
 	}
 	if (!hash)
 		return 0;	// bus not present. ignore
