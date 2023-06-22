@@ -444,7 +444,7 @@ void hotspotsys_config(void)
 		int i;
 
 		for (i = 0; i < 6; i++)
-			sprintf(&idkey[2 * i], "%02d", (hash[i] + hash[i + 1]) % 100);
+			snprintf(&idkey[2 * i], sizeof(idkey)-(2*i), "%02d", (hash[i] + hash[i + 1]) % 100);
 		idkey[12] = '\0';
 		nvram_set("hotss_remotekey", idkey);
 		nvram_async_commit();

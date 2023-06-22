@@ -275,7 +275,7 @@ int stop_process_hard(char *name, char *desc);
 
 void network_delay(char *service);
 
-char *getMacAddr(char *ifname, char *mac);
+char *getMacAddr(char *ifname, char *mac,size_t len);
 
 #ifdef HAVE_ATH9K
 void deconfigure_single_ath9k(int count);

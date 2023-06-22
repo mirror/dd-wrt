@@ -141,7 +141,7 @@ void run_tmp_ppp(int num)
 
 void run_pppoe(int pppoe_num)
 {
-	char idletime[20], retry_num[20], param[4];
+	char idletime[20], retry_num[20], param[16];
 	char username[80], passwd[80];
 
 	char ppp_username[2][20] = { "ppp_username", "ppp_username_1" };

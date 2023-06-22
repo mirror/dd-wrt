@@ -2131,7 +2131,7 @@ static void configure_single(int count)
 			sprintf(vathmac, "%s_hwaddr", var);
 			char vmacaddr[32];
 
-			getMacAddr(var, vmacaddr);
+			getMacAddr(var, vmacaddr,sizeof(vmacaddr));
 			nvram_set(vathmac, vmacaddr);
 
 		}
@@ -2210,7 +2210,7 @@ static void configure_single(int count)
 
 	char macaddr[32];
 
-	getMacAddr(dev, macaddr);
+	getMacAddr(dev, macaddr,sizeof(macaddr));
 	nvram_set(athmac, macaddr);
 
 	cprintf("adjust sensitivity\n");
