@@ -38,7 +38,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 {
 	struct fsentry *fs, *current;
 	struct nfs_share *cs, *csnext;
-	char buffer[64], number[4], perms[16];
+	char buffer[64], number[16], perms[16];
 	int found, rows = 0;
 
 	fs = getfsentries();

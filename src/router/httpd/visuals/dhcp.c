@@ -63,7 +63,7 @@ EJ_VISIBLE void ej_dhcpenabled(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, argv[1]);
 }
 
-static char *dhcp_reltime(char *buf, time_t t, int sub)
+static char *dhcp_reltime(char *buf, size_t len, time_t t, int sub)
 {
 	if (sub) {
 		time_t now = time(NULL);
@@ -74,7 +74,7 @@ static char *dhcp_reltime(char *buf, time_t t, int sub)
 	int days = t / 86400;
 	int min = t / 60;
 
-	sprintf(buf, "%d day%s %02d:%02d:%02d", days, ((days == 1) ? "" : "s"), ((min / 60) % 24), (min % 60), (int)(t % 60));
+	snprintf(buf, len, "%d day%s %02d:%02d:%02d", days, ((days == 1) ? "" : "s"), ((min / 60) % 24), (min % 60), (int)(t % 60));
 	return buf;
 }
 
@@ -156,7 +156,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp,
 						  "%c'%s','%s','%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
 						  ((expires == 0) ? live_translate(wp, "share.sttic")
-						   : dhcp_reltime(buf, expires, 1)), p + 1, ifname, nvram_nget("%s_label", ifname));
+						   : dhcp_reltime(buf, sizeof(buf), expires, 1)), p + 1, ifname, nvram_nget("%s_label", ifname));
 					++count;
 				}
 				fclose(fp);
@@ -186,7 +186,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				}
 				websWrite(wp, "%c'%s','%s','%s','%s','%s','N/A',''",
 					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
-					  ((expires == 0) ? live_translate(wp, "share.sttic") : dhcp_reltime(buf, expires, 1)), p + 1);
+					  ((expires == 0) ? live_translate(wp, "share.sttic") : dhcp_reltime(buf, sizeof(buf), expires, 1)), p + 1);
 				++count;
 			}
 		}
@@ -213,7 +213,7 @@ EJ_VISIBLE void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
 			exp = n - si.uptime;
 		}
 	}
-	websWrite(wp, dhcp_reltime(buf, exp, 0));
+	websWrite(wp, dhcp_reltime(buf, sizeof(buf), exp, 0));
 
 	return;
 }

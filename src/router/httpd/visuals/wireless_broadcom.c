@@ -282,7 +282,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta2->in, str));
+						strcpy(time, UPTIME(sta2->in, str,sizeof(str)));
 					}
 					break;
 				case 3:
@@ -295,7 +295,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta3->in, str));
+						strcpy(time, UPTIME(sta3->in, str,sizeof(str)));
 					}
 					sprintf(info, "LEGACY");
 					if (sta3->flags & WL_STA_N_CAP)
@@ -315,7 +315,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta4->in, str));
+						strcpy(time, UPTIME(sta4->in, str,sizeof(str)));
 					}
 					chain_rssi[0] = sta4->rssi[0];
 					chain_rssi[1] = sta4->rssi[1];
