@@ -189,11 +189,7 @@ void setRouter(char *name)
 	nvram_set(NVROUTER_ALT, "Industrial Router");
 #endif				/*HAVE_ANTAIRA_MINI */
 #elif HAVE_NDTRADE
-#ifdef HAVE_SUPERCHANNEL
-	nvram_set(NVROUTER_ALT, "KT412H-Hours");
-#else
-	nvram_set(NVROUTER_ALT, "DW02-412H-8000");
-#endif
+	nvram_set(NVROUTER_ALT, "KT412H-8000");
 #endif
 	cprintf("router is %s\n", getRouter());
 }
