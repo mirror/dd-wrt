@@ -1205,12 +1205,12 @@ static int schedule_by_tod(FILE * cfd, int seq)
 				st = end = atoi(token);
 
 			if (rotate == 1 && st == 0)
-				sprintf(wday_end + strlen(wday_end), ",%d", end);
+				snprintf(wday_end + strlen(wday_end),sizeof(wday_end) - strlen(wday_end) , ",%d", end);
 			else if (rotate == 1 && end == 6)
-				sprintf(wday_st + strlen(wday_st), ",%d", st);
+				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_end), ",%d", st);
 			else {
-				sprintf(wday_st + strlen(wday_st), ",%d", st);
-				sprintf(wday_end + strlen(wday_end), ",%d", end);
+				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_st), ",%d", st);
+				snprintf(wday_end + strlen(wday_end),sizeof(wday_end) - strlen(wday_end), ",%d", end);
 			}
 
 			token = strtok(NULL, sep);

@@ -524,13 +524,13 @@ void configure_single_ath9k(int count)
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	int board = getRouterBrand();
 	if (board == ROUTER_ASROCK_G10) {
-		getMacAddr(dev, macaddr);
+		getMacAddr(dev, macaddr,sizeof(macaddr));
 	} else {
 		getWirelessMac(macaddr, count);
 		set_hwaddr(dev, macaddr);
 	}
 #else
-	getMacAddr(dev, macaddr);
+	getMacAddr(dev, macaddr,sizeof(macaddr));
 #endif
 	if (!*nvram_safe_get(athmac))
 		nvram_set(athmac, macaddr);

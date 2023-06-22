@@ -1214,7 +1214,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		sprintf(vathmac, "wl%d_hwaddr", idx);
 		char vmacaddr[32];
 
-		getMacAddr(raif, vmacaddr);
+		getMacAddr(raif, vmacaddr,sizeof(vmacaddr));
 		nvram_set(vathmac, vmacaddr);
 		setupSupplicant(dev);
 	} else {
@@ -1306,7 +1306,7 @@ void init_network(int idx)
 		sprintf(vathmac, "wl%d_hwaddr", idx);
 		char vmacaddr[32];
 
-		getMacAddr(raif, vmacaddr);
+		getMacAddr(raif, vmacaddr,sizeof(vmacaddr));
 		nvram_set(vathmac, vmacaddr);
 
 		vifs = nvram_nget("wl%d_vifs", idx);
@@ -1337,7 +1337,7 @@ void init_network(int idx)
 				}
 
 				sprintf(vathmac, "%s_hwaddr", var);
-				getMacAddr(getRADev(var), vmacaddr);
+				getMacAddr(getRADev(var), vmacaddr,sizeof(vmacaddr));
 				nvram_set(vathmac, vmacaddr);
 
 				count++;

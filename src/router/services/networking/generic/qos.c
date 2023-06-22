@@ -507,8 +507,8 @@ static void aqos_tables(void)
 		char chainname_out[32];
 		sprintf(chainname_out, "FILTER_%s_OUT", data);
 		if (*proto) {
-
-			char *svcs = malloc(strlen(qos_svcs) + 128 + 2);
+			size_t plen = strlen(qos_svcs) + 128 + 2;
+			char *svcs = malloc(plen);
 			char *m = svcs;
 			filters *s_filters = get_filters_list();
 			int count = 0;
@@ -524,7 +524,7 @@ static void aqos_tables(void)
 				count++;
 			}
 			free_filters(s_filters);
-			sprintf(svcs, "%s %s %s %s", proto1, proto2, proto3, proto4);
+			snprintf(svcs, plen, "%s %s %s %s", proto1, proto2, proto3, proto4);
 			do {
 				if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 					break;

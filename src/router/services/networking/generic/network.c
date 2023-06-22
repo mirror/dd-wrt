@@ -137,14 +137,14 @@ void config_loopback(void)
 	route_add("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
 }
 
-char *getMacAddr(char *ifname, char *mac)
+char *getMacAddr(char *ifname, char *mac, size_t len)
 {
 	unsigned char hwbuff[16];
 	int i = wl_hwaddr(ifname, hwbuff);
 
 	if (i < 0)
 		return NULL;
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+	snprintf(mac, len, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 	return mac;
 }
 
@@ -432,10 +432,11 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 			dhcp_argv[i++] = "-x";	// user class
 
 			int c;
-			s_userclass = malloc(6 + (strlen(userclass) * 2));	// 5 bytes trailer, 2*string lenght for hex values + 1 zero termination
-			sprintf(s_userclass, "0x4d:");
+			size_t slen = 6 + (strlen(userclass) * 2);
+			s_userclass = malloc(slen);	// 5 bytes trailer, 2*string lenght for hex values + 1 zero termination
+			snprintf(s_userclass,slen, "0x4d:");
 			for (c = 0; c < strlen(userclass); c++) {
-				sprintf(s_userclass, "%s%02X", s_userclass, userclass[c]);
+				snprintf(s_userclass,slen, "%s%02X", s_userclass, userclass[c]);
 			}
 			dhcp_argv[i++] = s_userclass;
 		}
@@ -2024,7 +2025,7 @@ void start_lan(void)
 			{
 				if (!eadline) {
 					eadline = malloc(64);
-					sprintf(eadline, "-d %s", name);
+					snprintf(eadline,64, "-d %s", name);
 				} else {
 					eadline = realloc(eadline, strlen(eadline) + 64);
 					strcat(eadline, " -d ");
@@ -3051,7 +3052,7 @@ void run_wan(int status)
 		get3GControlDevice();
 		char *controldevice = nvram_safe_get("3gcontrol");
 		int timeout = 5;
-		char wsel[5];
+		char wsel[16];
 		char wsbuf[30];
 		sprintf(wsel, "");
 
