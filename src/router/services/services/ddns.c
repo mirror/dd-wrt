@@ -217,7 +217,7 @@ static int init_ddns(FILE * fp)
 			ipv6_only = nvram_matchi(_ipv6_only, 1);
 	}
 #endif
-	snprintf(_wildcard, sizeof(_hostname), "%s%s", "ddns_wildcard", postfix);
+	snprintf(_wildcard, sizeof(_wildcard), "%s%s", "ddns_wildcard", postfix);
 	snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_nget("ddns_hostname%s", postfix));
 	snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache", provider6, nvram_nget("ddns_hostname%s", postfix));
 	if (fp) {
