@@ -194,11 +194,12 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 		if (!ret && (newcount = getifcount("eth")) > basecount) {
 			basecount = newcount;
 			char *pcid = nvram_safe_get(list);
-			char *newdriver = malloc(strlen(pcid) + strlen(driver) + 2);
+			size_t slen = strlen(pcid) + strlen(driver) + 2;
+			char *newdriver = malloc(slen);
 			if (*pcid)
-				sprintf(newdriver, "%s %s", pcid, driver);
+				snprintf(newdriver,slen, "%s %s", pcid, driver);
 			else
-				sprintf(newdriver, "%s", driver);
+				snprintf(newdriver,slen, "%s", driver);
 			nvram_set(list, newdriver);
 			free(newdriver);
 			rcc |= 1;

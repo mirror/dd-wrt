@@ -72,7 +72,7 @@ BCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
 HCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -g
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
@@ -2007,7 +2007,7 @@ endif
 	gcc -o genmain genmain.c
 	./genmain
 	$(CC) $(CFLAGS) $(MAD_FLAGS) $(LTO) -c -o main.o main.c  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
-	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.o $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
+	$(CC) $(CFLAGS) $(MAD_FLAGS) -g -o services_main $^ main.o $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
 	
 services.a: $(OBJS)
 	@echo "[AR] $@"
