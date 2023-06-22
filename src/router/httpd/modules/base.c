@@ -1462,26 +1462,27 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	}
 
 	next_page = websGetVar(wp, "next_page", NULL);
+	char newpath[128];
 	if (next_page && *next_page != '/' && *next_page != '.') {
-		sprintf(path, "%s", next_page);
+		sprintf(newpath, "%s", next_page);
 	} else
-		sprintf(path, "%s.asp", submit_button);
-	if (!strncmp(path, "WL_FilterTable", 14))
-		do_filtertable(METHOD_GET, handler, path, wp);	// refresh
+		sprintf(newpath, "%s.asp", submit_button);
+	if (!strncmp(newpath, "WL_FilterTable", 14))
+		do_filtertable(METHOD_GET, handler, newpath, wp);	// refresh
 #ifdef HAVE_FREERADIUS
-	else if (!strncmp(path, "FreeRadiusCert", 14))
-		do_radiuscert(METHOD_GET, handler, path, wp);	// refresh
+	else if (!strncmp(newpath, "FreeRadiusCert", 14))
+		do_radiuscert(METHOD_GET, handler, newpath, wp);	// refresh
 #endif
 	// #ifdef HAVE_MADWIFI
-	else if (!strncmp(path, "WL_ActiveTable", 14))
-		do_activetable(METHOD_GET, handler, path, wp);	// refresh
-	else if (!strncmp(path, "Wireless_WDS", 12))
-		do_wds(METHOD_GET, handler, path, wp);	// refresh
+	else if (!strncmp(newpath, "WL_ActiveTable", 14))
+		do_activetable(METHOD_GET, handler, newpath, wp);	// refresh
+	else if (!strncmp(newpath, "Wireless_WDS", 12))
+		do_wds(METHOD_GET, handler, newpath, wp);	// refresh
 	// #endif
-	else if (!strncmp(path, "Wireless_Advanced", 17))
-		do_wireless_adv(METHOD_GET, handler, path, wp);	// refresh
+	else if (!strncmp(newpath, "Wireless_Advanced", 17))
+		do_wireless_adv(METHOD_GET, handler, newpath, wp);	// refresh
 	else
-		do_ej(METHOD_GET, handler, path, wp);	// refresh
+		do_ej(METHOD_GET, handler, newpath, wp);	// refresh
 
 #ifdef HAVE_ANTAIRA
 	// @markus. this is wrong here, it works as a hack but structural it should use handlers
@@ -1859,12 +1860,13 @@ footer:
 
 	if (action != REBOOT) {
 		next_page = websGetVar(wp, "next_page", NULL);
+		char newpath[128];
 		if (next_page)
-			sprintf(path, "%s", next_page);
+			sprintf(newpath, "%s", next_page);
 		else {
-			sprintf(path, "%s.asp", submit_button);
+			sprintf(newpath, "%s.asp", submit_button);
 		}
-		do_redirect(METHOD_GET, handler, path, wp);
+		do_redirect(METHOD_GET, handler, newpath, wp);
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
@@ -2792,6 +2794,7 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char *path, *query;
+	char newpath[128];
 	if (stream->post == 1) {
 		query = stream->post_buf;
 		path = url;
@@ -2807,13 +2810,12 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 		nvram_set("wifi_display", select);
 	char *next_page = websGetVar(stream, "next_page", NULL);
 	char *submit_button = websGetVar(stream, "submit_button", "");
-
 	if (next_page)
-		sprintf(path, "%s", next_page);
+		sprintf(newpath, "%s", next_page);
 	else {
-		sprintf(path, "%s.asp", submit_button);
+		sprintf(newpath, "%s.asp", submit_button);
 	}
-	do_redirect(METHOD_GET, handler, path, stream);
+	do_redirect(METHOD_GET, handler, newpath, stream);
 	websDone(stream, 200);
 	deinit_cgi(stream);
 	return 0;

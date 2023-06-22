@@ -478,18 +478,18 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 
 }
 
-char *cidr_to_nm(char *netmask, unsigned int netmask_cidr)
+char *cidr_to_nm(char *netmask, size_t len, unsigned int netmask_cidr)
 {
 	strcpy(netmask, "");
 	unsigned int nm = (((unsigned long long)1 << 32) - ((unsigned long long)((unsigned long long)1 << ((unsigned long long)32 - (unsigned long long)netmask_cidr))));
-	sprintf(netmask, "%d.%d.%d.%d", (nm >> 24) & 0xff, (nm >> 16) & 0xff, (nm >> 8) & 0xff, nm & 0xff);
+	snprintf(netmask, len, "%d.%d.%d.%d", (nm >> 24) & 0xff, (nm >> 16) & 0xff, (nm >> 8) & 0xff, nm & 0xff);
 	return netmask;
 }
 
 int get_merge_ipaddr_cidr(webs_t wp, char *name, char *ipaddr, char *value, int netmask_cidr)
 {
 	char netmask[20];
-	return get_merge_ipaddr(wp, name, ipaddr, value, cidr_to_nm(netmask, netmask_cidr));
+	return get_merge_ipaddr(wp, name, ipaddr, value, cidr_to_nm(netmask, sizeof(netmask), netmask_cidr));
 }
 
 EJ_VISIBLE void validate_merge_ipaddrs(webs_t wp, char *value, struct variable *v)
@@ -760,12 +760,12 @@ EJ_VISIBLE void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	which = &wan_variables[0];
 
 	get_merge_ipaddr(wp, "wan_ipaddr", wan_ipaddr, NULL, NULL);
-	cidr_to_nm(wan_netmask, websGetVari(wp, "wan_netmask", 0));
+	cidr_to_nm(wan_netmask, sizeof(wan_netmask),websGetVari(wp, "wan_netmask", 0));
 	get_merge_ipaddr(wp, "wan_gateway", wan_gateway, NULL, NULL);
 	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway, NULL, NULL);
 	get_merge_ipaddr(wp, "l2tp_wan_gateway", l2tp_wan_gateway, NULL, NULL);
 	get_merge_ipaddr(wp, "wan_ipaddr_static", wan_ipaddr_static, NULL, NULL);
-	cidr_to_nm(wan_netmask_static, websGetVari(wp, "wan_netmask_static", 0));
+	cidr_to_nm(wan_netmask_static, sizeof(wan_netmask_static),websGetVari(wp, "wan_netmask_static", 0));
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_seti("pptp_pass", 0);	// disable pptp passthrough
 	}
@@ -871,7 +871,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			char buf[32];
 			char temp[32];
 			sprintf(temp, "%s_netmask", var);
-			nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
+			nvram_set(temp, cidr_to_nm(buf, sizeof(buf),websGetVari(wp, temp, 0)));
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 			if (1) {
 				copytonv(wp, "nld_%s_enable", var);
@@ -899,7 +899,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 EJ_VISIBLE void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char lan_ipaddr[20], lan_netmask[20];
-	cidr_to_nm(lan_netmask, websGetVari(wp, "lan_netmask", 0));
+	cidr_to_nm(lan_netmask, sizeof(lan_netmask),websGetVari(wp, "lan_netmask", 0));
 	get_merge_ipaddr(wp, v->name, lan_ipaddr, NULL, NULL);
 
 	if (!valid_ipaddr(wp, lan_ipaddr, v))
@@ -2974,8 +2974,8 @@ EJ_VISIBLE void validate_filter_mac_grp(webs_t wp, char *value, struct variable 
 					strncpy(hex, mac, 2);
 					h = (unsigned char)strtoul(hex, NULL, 16);
 					if (*(mac1))
-						sprintf(mac1 + strlen(mac1), ":");
-					sprintf(mac1 + strlen(mac1), "%02X", h);
+						snprintf(mac1 + strlen(mac1),sizeof(mac1) - strlen(mac1), ":");
+					snprintf(mac1 + strlen(mac1),sizeof(mac1) - strlen(mac1), "%02X", h);
 					mac += 2;
 				}
 				mac1[17] = '\0';
@@ -3170,7 +3170,7 @@ EJ_VISIBLE void validate_port_trigger(webs_t wp, char *value, struct variable *v
 			len++;
 		}
 		entry = (char *)safe_malloc(len);
-		sprintf(entry, "%s%s:%s:%s:%s-%s>%s-%s", strlen(buf) > 0 ? " " : "", new_name, enable, proto, i_from, i_to, o_from, o_to);
+		snprintf(entry, len, "%s%s:%s:%s:%s-%s>%s-%s", strlen(buf) > 0 ? " " : "", new_name, enable, proto, i_from, i_to, o_from, o_to);
 
 		/*cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
 		   cur == buf ? "" : " ", new_name, enable, proto,
@@ -3306,7 +3306,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	 * validate netmask 
 	 */
 	int cidr_nm = websGetVari(wp, "route_netmask", 0);
-	cidr_to_nm(netmask, cidr_nm);
+	cidr_to_nm(netmask, sizeof(netmask),cidr_nm);
 	/*
 	 * validate gateway 
 	 */
