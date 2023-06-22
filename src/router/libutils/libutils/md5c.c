@@ -471,7 +471,7 @@ char *hash_file(char *filename, char *hashbuf)
 	return hashbuf;
 }
 
-char *hash_file_string(char *filename, char *hashbuf)
+char *hash_file_string(char *filename, char *hashbuf,size_t len)
 {
 	char hash[16];
 	int i;
@@ -480,12 +480,12 @@ char *hash_file_string(char *filename, char *hashbuf)
 		return NULL;
 	for (i = 0; i < 16; i++) {
 		unsigned int k = hash[i];
-		sprintf(hashbuf, "%s%02X", hashbuf, k & 0xff);
+		snprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
 	}
 	return hashbuf;
 }
 
-char *hash_string(char *string, char *hashbuf)
+char *hash_string(char *string, char *hashbuf,size_t len)
 {
 	char hash[16];
 	int i;
@@ -498,7 +498,7 @@ char *hash_string(char *string, char *hashbuf)
 	dd_md5_end((unsigned char *)hash, &MD);
 	for (i = 0; i < 16; i++) {
 		unsigned int k = hash[i];
-		sprintf(hashbuf, "%s%02X", hashbuf, k & 0xff);
+		sprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
 	}
 	return hashbuf;
 }
